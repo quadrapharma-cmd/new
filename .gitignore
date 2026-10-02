@@ -1,0 +1,6 @@
+node_modules/
+web/dist/
+web/build/_chk.js
+.env
+.env.*
+!.env.example

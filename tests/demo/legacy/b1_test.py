@@ -1,0 +1,40 @@
+from playwright.sync_api import sync_playwright
+import subprocess, time
+R=[]; U='http://localhost:54321/'
+def T(n,ok,d=''): R.append(ok); print(('✅ ' if ok else '❌ ')+n+('' if ok else '  → '+str(d)[:200]))
+def sql(q): return subprocess.run(['psql','-h','/tmp','-p','5433','-U','postgres','-d','drugbox_live','-tA','-c',q],capture_output=True,text=True).stdout.strip()
+EMAIL=f'test{int(time.time())}@quadra.test'
+with sync_playwright() as p:
+    b=p.chromium.launch(args=["--no-sandbox"]); ctx=b.new_context(viewport={'width':1440,'height':900}); pg=ctx.new_page(); errs=[]
+    pg.on("pageerror",lambda e:errs.append(str(e)[:150]))
+    pg.goto(U,wait_until='load'); pg.wait_for_timeout(500); pg.evaluate('endSplash()'); pg.wait_for_timeout(900)
+    T('login page shows; demo shortcut hidden in the live app', pg.is_visible('#loginPage') and not pg.is_visible('.lg-demo'))
+    pg.fill('#loginEmail', EMAIL); pg.fill('#loginPw','whatever123'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(1200)
+    T('unknown account is refused with a clear message', pg.is_visible('#loginErr') and 'Wrong email or password' in pg.inner_text('#loginErr') and not pg.is_visible('#app'), pg.inner_text('#loginErr') if pg.is_visible('#loginErr') else '')
+    pg.evaluate("showSignup()"); pg.wait_for_timeout(300)
+    pg.fill('#suName','Dr. Test Person'); pg.fill('#suEmail',EMAIL); pg.fill('#suPw','short'); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(500)
+    T('short password refused', 'at least 8' in pg.inner_text('#suErr'))
+    pg.fill('#suPw','Strong-pass-2026'); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(2500)
+    T('sign-up creates the account and opens the app', pg.is_visible('#app'))
+    me=pg.evaluate("({id:ME.id,name:ME.name,ini:ME.initials})")
+    T('ME is the real person (database id, entered name)', len(str(me['id']))==36 and me['name']=='Dr. Test Person' and me['ini']=='DT', me)
+    T('profile row created in the database with the name', sql(f"select name from public.profiles where id='{me['id']}'")=='Dr. Test Person')
+    T('password stored encrypted (bcrypt), never plain', sql(f"select encrypted_password like '$2%' and encrypted_password<>'Strong-pass-2026' from auth.users where email='{EMAIL}'")=='t')
+    pg.evaluate("doLogout()"); pg.wait_for_timeout(1000)
+    T('sign-out returns to the login page', pg.is_visible('#loginPage') and not pg.is_visible('#app'))
+    T('session removed from the browser', pg.evaluate("!localStorage.getItem('dx-auth')"))
+    pg.evaluate("showSignup()"); pg.fill('#suName','Someone Else'); pg.fill('#suEmail',EMAIL); pg.fill('#suPw','Another-pass-1'); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(1500)
+    T('duplicate email refused', 'already exists' in pg.inner_text('#suErr'), pg.inner_text('#suErr'))
+    pg.evaluate("showLogin()"); pg.fill('#loginEmail',EMAIL); pg.fill('#loginPw','wrong-password'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(1200)
+    T('wrong password refused', 'Wrong email or password' in pg.inner_text('#loginErr'))
+    pg.fill('#loginPw','Strong-pass-2026'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(2500)
+    T('correct password signs in', pg.is_visible('#app') and pg.evaluate("ME.name")=='Dr. Test Person')
+    pg.reload(wait_until='load'); pg.wait_for_timeout(600); pg.evaluate('endSplash()'); pg.wait_for_timeout(2500)
+    T('reload keeps you signed in (opens the app after the splash)', pg.is_visible('#app') and pg.evaluate("ME.name")=='Dr. Test Person')
+    other=sql("insert into auth.users (email, encrypted_password) values ('other@x.test', crypt('x-pass-123', gen_salt('bf'))) returning id").split('\n')[0]
+    r=pg.evaluate(f"dxLive.sb.from('profiles').update({{name:'HACKED'}}).eq('id','{other}').select().then(r=>({{n:(r.data||[]).length,e:r.error&&r.error.message}}))")
+    T("cannot change another person's profile (row-level security)", r['n']==0 and sql(f"select name from public.profiles where id='{other}'")!='HACKED', r)
+    r=pg.evaluate("dxLive.sb.from('profiles').update({headline:'QA lead'}).eq('id',ME.id).select().then(r=>({n:(r.data||[]).length,e:r.error&&r.error.message}))")
+    T('can change your own profile', r['n']==1 and sql(f"select headline from public.profiles where id='{me['id']}'")=='QA lead', r)
+    T('no errors in the page', not errs, errs)
+    print(sum(R),'/',len(R)); b.close()

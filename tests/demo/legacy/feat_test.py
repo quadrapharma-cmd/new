@@ -1,0 +1,40 @@
+from playwright.sync_api import sync_playwright
+R=[]
+def T(n,ok,d=''): R.append(ok); print(('✅ ' if ok else '❌ ')+n+('' if ok else '  → '+str(d)[:200]))
+with sync_playwright() as p:
+    b=p.chromium.launch(args=["--no-sandbox"]); pg=b.new_page(viewport={'width':1440,'height':900}); errs=[]
+    pg.on("pageerror",lambda e:errs.append(str(e)[:150]))
+    pg.goto('file:///tmp/drugbox_brand.html',wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
+    pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(2800)
+    if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
+    E=pg.evaluate
+    T('nothing loads before use: no structure chips on Home', E("goto('feed')||document.querySelectorAll('.dx-molchip').length")==0)
+    E("goto('market')"); pg.wait_for_timeout(800)
+    chips=E("[...document.querySelectorAll('.dx-molchip')].map(b=>b.dataset.mol)")
+    T('structure chips appear on API listings', 'metformin' in chips and 'ciprofloxacin' in chips and 'retinol' in chips, chips)
+    T('no chip on polymers (hyaluronic acid, MCC)', E("[...document.querySelectorAll('#mkx .lc-title,#mkx .dc-title')].filter(e=>/Hyaluronic|MCC/.test(e.textContent)&&e.querySelector('.dx-molchip')).length")==0)
+    pg.locator('.dx-molchip[data-mol="metformin"]').first.click(); pg.wait_for_timeout(300)
+    T('structure opens: drawing + C4H11N5 + 129.17 g/mol', E("(()=>{var o=document.querySelector('.dbk-ov');return !!(o&&o.querySelector('.dx-mol-svg svg')&&/C4H11N5/.test(o.textContent.replace(/\\s/g,''))&&/129\\.17/.test(o.textContent))})()"))
+    E("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
+    lc=E("document.querySelectorAll('.dx-lc-chip').length"); T('landed-cost link beside US$ prices', lc>=1, lc)
+    pg.locator('.dx-lc-chip').first.click(); pg.wait_for_timeout(300)
+    T('calculator opens with the listing price filled in', E("+document.querySelector('#lcP').value")>0, E("document.querySelector('#lcP').value"))
+    E("""(()=>{var s=(id,v)=>{var e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))};s('lcP','5.40');s('lcQ','2000');s('lcR','50');s('lcD','2');s('lcV','14');s('lcB','1');s('lcCl','15000');s('lcT','5000')})()""")
+    # manual: CIF 10,800 USD × 50 = 540,000; duty 2% = 10,800; VAT 14% × 550,800 = 77,112; bank 1% = 5,400; +15,000 +5,000 = 653,312 → per kg 326.66
+    tot=E("document.querySelector('.dx-lc-tot b').textContent"); per=E("document.querySelector('.dx-lc-tot em').textContent")
+    T('arithmetic matches a manual calculation (EGP 653,312 · 327/kg)', tot=='EGP 653,312' and per.startswith('EGP 327'), (tot,per))
+    E("(()=>{var e=document.getElementById('lcI');e.value='FOB';e.dispatchEvent(new Event('change',{bubbles:true}));var f=document.getElementById('lcF');f.value='1200';f.dispatchEvent(new Event('input',{bubbles:true}))})()")
+    tot2=E("document.querySelector('.dx-lc-tot b').textContent")
+    # FOB: goods 10,800 + freight 1,200 + ins 0.5% × 10,800 = 54 → 12,054 × 50 = 602,700; duty 12,054; VAT 14% × 614,754 = 86,065.56; bank 6,027; +20,000 = 726,846.56
+    T('FOB adds freight & insurance (EGP 726,847)', tot2=='EGP 726,847', tot2)
+    E("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
+    E("localStorage.setItem('dx_acting',JSON.stringify('quadra-pharm'))")
+    E("(()=>{var d=dxDeals.create('quote','medsinia-industries','Metformin — 2 MT',{qty:'2',unit:'MT'},'x');dxDeals.act(d.id,'quote',{price:'US$ 5.40 / kg',validity:'14 days'},'to');dxDeals.thread(d.id)})()"); pg.wait_for_timeout(400)
+    T('landed-cost link on a deal offer', E("!!document.querySelector('.dbk-ov .dl-offer .dx-lc-chip')"))
+    E("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
+    E("goto('companies')"); pg.wait_for_timeout(400); pg.fill('#hbQ','ميتفورمين'); pg.wait_for_timeout(700)
+    T('Arabic search results still work', E("document.querySelectorAll('#dxDir .hb-card').length")>0)
+    E("toggleLang()"); pg.wait_for_timeout(300); E("goto('market')"); pg.wait_for_timeout(600)
+    T('Arabic mode: chips still work and the page does not break', E("document.querySelectorAll('.dx-molchip').length")>0 and not errs, errs)
+    E("toggleLang()")
+    print('errors:', errs or 'none'); print(sum(R),'/',len(R)); b.close()

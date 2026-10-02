@@ -1,0 +1,68 @@
+from playwright.sync_api import sync_playwright
+import time
+R=[]
+def T(n,ok,d=''): R.append(ok); print(('✅ ' if ok else '❌ ')+n+('' if ok else '  → '+str(d)))
+with sync_playwright() as p:
+    b=p.chromium.launch(args=["--no-sandbox"]); pg=b.new_page(viewport={'width':1440,'height':900}); errs=[]; warns=[]
+    pg.on("pageerror",lambda e:errs.append(str(e)[:200])); pg.on("console",lambda m: warns.append(m.text[:200]) if '[drugbox]' in m.text else None)
+    pg.goto('file:///tmp/drugbox_brand.html',wait_until='networkidle',timeout=60000); pg.evaluate('endSplash()'); pg.wait_for_timeout(600)
+    pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(3300)
+    if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
+    # 1 · one company everywhere
+    pg.evaluate("goto('jobs')"); pg.wait_for_timeout(500); pg.locator('#jx .mode-opt',has_text='Job Hunting').click(); pg.wait_for_timeout(300)
+    T('company names in Jobs link to the company page', pg.locator('#jx #huntingView .dx-colink').count()>=4, pg.locator('#jx #huntingView .dx-colink').count())
+    T('jobs trust layer still reads the company name', pg.locator('#jx #huntingView .jcard',has_text='Quadra Pharm').first.locator('.jx-rate').count()==1)
+    pg.locator('#jx #huntingView .dx-colink',has_text='Medsinia Industries').first.click(); pg.wait_for_timeout(400)
+    T('…opens that company page', 'Medsinia Industries' in pg.inner_text('#dxDir .cp-name'))
+    # 2 · two ratings, employer one = Jobs page
+    emp=pg.evaluate("dxEmployerStats('Medsinia Industries').avg.toFixed(1)")
+    T('supplier and employer ratings shown separately', 'as a supplier' in pg.inner_text('#dxDir .cp-ratings') and 'as an employer' in pg.inner_text('#dxDir .cp-ratings'))
+    T('employer rating is the same number as in Jobs', emp in pg.inner_text('#dxDir .cp-rate-emp'), (emp, pg.inner_text('#dxDir .cp-rate-emp')))
+    # jobs = same as Jobs page
+    pg.locator('#dxDir .cp-tab[data-tab=jobs]').click(); pg.wait_for_timeout(200)
+    T('company jobs come from the Jobs page', 'Production Supervisor' in pg.inner_text('#dxDir .cp-body') and 'Junior Lab Technician' in pg.inner_text('#dxDir .cp-body'))
+    pg.locator('#dxDir [data-apply]').first.click(); pg.wait_for_timeout(700)
+    T('Apply → the same application on the Jobs page', pg.evaluate("document.body.getAttribute('data-page')")=='jobs' and pg.locator('#jx #applyModal.show, #jx .jx-modal:visible').count()>=1)
+    pg.evaluate("closeApplyModal && closeApplyModal()")
+    # offers from the marketplace
+    pg.evaluate("dxDirectory.open('quadra-pharm','offers')"); pg.wait_for_timeout(300)
+    n=pg.locator('#dxDir .cp-body [data-offer]').count()
+    T('company page shows its live Marketplace offers', n>=1, n)
+    # 4 · licensed buyers
+    pg.evaluate("dxDirectory.open('medsinia-industries','products')"); pg.wait_for_timeout(300)
+    pg.locator('#dxDir .cp-prod',has_text='Paracetamol').locator('[data-rfq]').click(); pg.wait_for_timeout(200)
+    T('medicine RFQ shows the legal notice', 'egyptian law' in pg.inner_text('.dbk-ov').lower())
+    # 3 · routed to the right person + tracking
+    T('request goes to the sales contact, not a "company person"', 'Eng. Omar Khaled' in ' '.join(pg.locator('.dbk-ov .rq-to').all_inner_texts()))
+    pg.fill('#rqQty','200000'); pg.select_option('#rqUnit','tablets'); pg.fill('#rqMsg','Blister 2x10, EDA-registered pack, monthly.'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(400)
+    T('deal created with Medsinia', pg.evaluate("dxDeals.all()[0].to.slug")=='medsinia-industries')
+    pg.evaluate("ME.verified=false"); pg.locator('#dxDir .cp-prod',has_text='Paracetamol').locator('[data-rfq]').click(); pg.wait_for_timeout(200)
+    T('no block: anyone can send the request (notice shown)', pg.locator('.dbk-ov #rqQty').count()==1); pg.keyboard.press('Escape'); pg.evaluate("ME.verified=true")
+    pg.evaluate("goto('companies')"); pg.wait_for_timeout(300)
+    pg.locator('#dxDir [data-myreq]').click(); pg.wait_for_timeout(250)
+    T('Requests & deals lists it as Sent', 'Paracetamol' in pg.inner_text('.dbk-ov') and 'Sent' in pg.inner_text('.dbk-ov'))
+    pg.locator('.dbk-ov .dl-row',has_text='Paracetamol').first.click(); pg.wait_for_timeout(300)
+    pg.click('.dbk-ov .dl-sim'); pg.wait_for_timeout(350)
+    T('…the supplier quote arrives with price and terms', 'Quote received' in pg.inner_text('.dbk-ov') and 'US$' in pg.inner_text('.dbk-ov .dl-offer'))
+    pg.click('.dbk-ov [data-act=accept]'); pg.wait_for_timeout(300)
+    T('accept the quote', pg.evaluate("dxDeals.all().find(d=>d.title.indexOf('Paracetamol')===0).status")=='accepted')
+    pg.keyboard.press('Escape')
+    pg.evaluate("dxDirectory.open('quadra-pharm','requests')"); pg.wait_for_timeout(300)
+    pg.locator('#dxDir .cp-body .dl-row',has_text='Toll manufacturing').first.click(); pg.wait_for_timeout(300)
+    pg.click('.dbk-ov [data-act=quote]'); pg.wait_for_timeout(250); pg.fill('#af_price','US$ 0.045 per tablet'); pg.fill('#af_lead','5 weeks'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(300)
+    T('owner sends a quote → request marked Quote received for the buyer', pg.evaluate("dxDeals.all().find(d=>d.title.indexOf('Toll manufacturing')===0).status")=='quoted')
+    pg.keyboard.press('Escape')
+    # 5 · certificates need verification
+    pg.locator('#dxDir [data-edit=all]').click(); pg.wait_for_timeout(300)
+    pg.select_option('#edCName','ISO 22716'); pg.set_input_files('#edCFile',files=[{'name':'iso.pdf','mimeType':'application/pdf','buffer':b'%PDF'}]); pg.click('#edCAdd'); pg.wait_for_timeout(200)
+    T('new certificate goes to review, not published', 'under review' in pg.inner_text('#dxEditor .ed-certs'))
+    pg.click('#edSave'); pg.wait_for_timeout(300)
+    pg.locator('#dxDir .cp-tab[data-tab=overview]').click(); pg.wait_for_timeout(200)
+    T('…and is not shown publicly yet', 'ISO 22716' not in pg.inner_text('#dxDir .cp-certs'))
+    # 6 · creating a company is the verification wizard (details in vip_test.py)
+    pg.evaluate("ME.id=999"); pg.evaluate("goto('companies')"); pg.wait_for_timeout(300)
+    T('non-owner sees "Create a company page" and no "My companies"', pg.locator('#dxDir [data-create]').count()==1 and pg.locator('#dxDir [data-mycos]').count()==0)
+    pg.locator('#dxDir [data-create]').click(); pg.wait_for_timeout(200)
+    T('…which starts with choosing a plan', pg.locator('.dbk-ov .pl-card').count()==2); pg.keyboard.press('Escape')
+    pg.evaluate("ME.id=1")
+    print('\nJS errors:',errs or 'none','| feature warnings:',warns or 'none'); print(sum(R),'/',len(R)); b.close()

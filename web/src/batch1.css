@@ -1,0 +1,59 @@
+/* ═════════ Batch 1 ═════════ */
+:root{--cat-supply:#16a34a;--cat-demand:#ea580c;--cat-license:#ca8a04;--cat-cmo:#4f46e5;--cat-equipment:#475569;--cat-service:#1a56db;--cat-job:#db2777;--cat-training:#7c3aed;
+  --catbg-supply:#DCFCE7;--catbg-demand:#FFEDD5;--catbg-license:#FEF9C3;--catbg-cmo:#E0E7FF;--catbg-equipment:#F1F5F9;--catbg-service:#DBEAFE;--catbg-job:#FCE7F3;--catbg-training:#EDE9FE}
+/* 1 · one colour per listing type */
+#mkx [data-dxcat="supply"]{--c:var(--cat-supply);--cb:var(--catbg-supply)}#mkx [data-dxcat="demand"]{--c:var(--cat-demand);--cb:var(--catbg-demand)}
+#mkx [data-dxcat="license"]{--c:var(--cat-license);--cb:var(--catbg-license)}#mkx [data-dxcat="cmo"]{--c:var(--cat-cmo);--cb:var(--catbg-cmo)}
+#mkx [data-dxcat="equipment"]{--c:var(--cat-equipment);--cb:var(--catbg-equipment)}#mkx [data-dxcat="service"]{--c:var(--cat-service);--cb:var(--catbg-service)}
+#mkx [data-dxcat="job"]{--c:var(--cat-job);--cb:var(--catbg-job)}#mkx [data-dxcat="training"]{--c:var(--cat-training);--cb:var(--catbg-training)}
+#mkx :is(.lcard,.scard,.dcard,.jcard)[data-dxcat]{border-left:4px solid var(--c)!important}
+#mkx .lt[data-dxcat]{background:var(--cb)!important;color:var(--c)!important;border:1px solid color-mix(in srgb,var(--c) 35%,transparent)!important}
+#mkx .cat-item[data-dxcat]{border-top:4px solid var(--c)!important}
+#mkx .cat-item[data-dxcat] .cat-ic .dx-svg{stroke:var(--c)!important}
+#mkx .cat-item.on[data-dxcat]{background:var(--cb)!important;border-color:var(--c)!important}
+#mkx .f-opt[data-dxcat]{position:relative}
+#mkx .f-opt[data-dxcat] input{accent-color:var(--c)}
+.tick-i b[data-dxcat="supply"]{color:#4ade80!important}.tick-i b[data-dxcat="demand"]{color:#fb923c!important}.tick-i b[data-dxcat="license"]{color:#facc15!important}
+.tick-i b[data-dxcat="cmo"]{color:#a5b4fc!important}.tick-i b[data-dxcat="equipment"]{color:#cbd5e1!important}.tick-i b[data-dxcat="job"]{color:#f9a8d4!important}.tick-i b[data-dxcat="service"]{color:#93c5fd!important}
+/* 2 · product pictures */
+#mkx .dx-prod-box{background:var(--cb,#EEF4FF)!important;display:flex!important;align-items:center;justify-content:center;border:none!important}
+.dx-prod{width:64%;aspect-ratio:1/1.12;display:flex;align-items:center;justify-content:center;background:var(--c,#1a56db);color:#fff;
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);box-shadow:0 8px 18px -8px var(--c,#1a56db)}
+.dx-prod .dx-ic{margin:0}.dx-prod .dx-svg{width:52%;height:52%;stroke-width:1.7}
+/* 3 · hexagon live signals */
+.online-dot,.live-dot,.live-pulse,.intel-dot,.act-dot,.dx-live{border-radius:0!important;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);animation:dxLive 1.8s ease-in-out infinite}
+.dx-live{display:inline-block;width:9px;height:10px;background:#22c55e;margin-right:6px;vertical-align:0}
+@keyframes dxLive{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.22);opacity:.7}}
+@media (prefers-reduced-motion:reduce){.online-dot,.live-dot,.live-pulse,.intel-dot,.act-dot,.dx-live{animation:none}}
+/* 4 · undo bar */
+.dx-gone{display:none!important}
+#dxUndo{visibility:hidden;pointer-events:none;position:fixed;left:50%;bottom:24px;transform:translate(-50%,160%);z-index:3050;display:flex;align-items:center;gap:14px;min-width:280px;max-width:92vw;
+  background:#0a1f4d;color:#fff;border-radius:16px;padding:12px 12px 12px 18px;box-shadow:var(--sh-3);font:600 13.5px Poppins,sans-serif;overflow:hidden;transition:transform .28s ease}
+#dxUndo.on{transform:translate(-50%,0);visibility:visible;pointer-events:auto}
+#dxUndo .u-msg{flex:1}
+#dxUndo .u-btn{border:none;background:#E99F54;color:#3A1E05;font:700 13px Poppins,sans-serif;border-radius:999px;padding:7px 16px;cursor:pointer}
+#dxUndo .u-bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:#E99F54;transform-origin:left;animation:dxUndoBar linear forwards}
+@keyframes dxUndoBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@media (max-width:700px){#dxUndo{bottom:84px}}
+html.dx-dark #dxUndo{filter:none}
+/* 5 · text size (Theme → Text size) */
+@media (min-width:901px){html.dx-fs-l .content{zoom:1.22}html.dx-fs-xl .content{zoom:1.34}html.dx-fs-l body[data-page="messages"] .content,html.dx-fs-xl body[data-page="messages"] .content{zoom:1}
+  html.dx-fs-l #mx{font-size:17px}html.dx-fs-xl #mx{font-size:18.5px}}
+@media (max-width:900px){html.dx-fs-l body{font-size:16.5px}html.dx-fs-xl body{font-size:18px}
+  html.dx-fs-l .post-body,html.dx-fs-l #mkx .lc-desc,html.dx-fs-l #mkx .sp-desc,html.dx-fs-l #jx .jc-desc{font-size:16.5px!important}
+  html.dx-fs-xl .post-body,html.dx-fs-xl #mkx .lc-desc,html.dx-fs-xl #mkx .sp-desc,html.dx-fs-xl #jx .jc-desc{font-size:18px!important}
+  html.dx-fs-l .nl,html.dx-fs-l .sec-title{font-size:18px!important}html.dx-fs-xl .nl,html.dx-fs-xl .sec-title{font-size:20px!important}}
+/* profile tabs fit small phones */
+@media (max-width:420px){.ptab{padding-left:10px!important;padding-right:10px!important;font-size:13px!important;flex:none}
+  .ptab:first-child{margin-left:0}}
+
+.dx-ptabs{overflow-x:auto;scrollbar-width:none}.dx-ptabs::-webkit-scrollbar{display:none}
+
+/* very small phones (320 px) */
+.dx-insights,.dx-certwall,.dx-mycos{box-sizing:border-box;max-width:100%;min-width:0}
+.dx-insights *,.dx-certwall *,.dx-mycos *{min-width:0}
+@media (max-width:380px){.dx-pstats{flex-wrap:wrap!important;row-gap:10px!important;column-gap:18px!important}
+  .dx-insights,.dx-certwall,.dx-mycos{padding:14px 12px}.in-h span{display:none}.in-bars{gap:5px}}
+/* small phones: columns that had a fixed minimum width now shrink to the screen */
+@media (max-width:420px){.feed-wrap>div,.net-grid>div{min-width:0!important;max-width:100%!important;width:auto!important;flex-basis:100%!important;box-sizing:border-box}}
+@media (max-width:420px){.dx-fltrow{flex-wrap:wrap!important}.notif-item{flex-wrap:wrap}.notif-item .btn-ghost,.notif-item .btn-p{padding:5px 10px!important}}

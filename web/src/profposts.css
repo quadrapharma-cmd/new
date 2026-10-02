@@ -1,0 +1,7 @@
+.dx-pp-h{display:flex;align-items:baseline;gap:10px;margin:4px 0 12px}
+.dx-pp-h b{font:700 17px Poppins,sans-serif;color:var(--cx,#0B1B3D)}
+.dx-pp-h span{font:500 13px Poppins,sans-serif;color:#65676b}
+.dx-pp .post{margin-bottom:14px}
+.dx-pp .post{max-width:none;width:100%;box-sizing:border-box}
+.dx-pp-comp{margin:0 0 14px}
+.dx-pp-empty{padding:18px 16px;border:1px dashed #d6dbe6;border-radius:12px;color:#65676b;font:14px/1.5 Poppins,sans-serif;text-align:center;background:#fff}

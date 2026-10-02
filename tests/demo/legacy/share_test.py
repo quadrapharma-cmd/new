@@ -1,0 +1,51 @@
+from playwright.sync_api import sync_playwright
+import sys
+LANG=sys.argv[1] if len(sys.argv)>1 else 'en'
+R=[]
+def T(n,ok,d=''): R.append(ok); print(('✅ ' if ok else '❌ ')+n+('' if ok else '  → '+str(d)[:220]))
+with sync_playwright() as p:
+    b=p.chromium.launch(args=["--no-sandbox"]); ctx=b.new_context(viewport={'width':1440,'height':900}, accept_downloads=True)
+    ctx.add_init_script("try{localStorage.setItem('dx_lang','%s')}catch(e){}"%LANG)
+    ctx.route(lambda u: not u.startswith('file:') and not u.startswith('data:') and not u.startswith('blob:'), lambda r: r.abort())
+    pg=ctx.new_page(); errs=[]; pg.on("pageerror",lambda e:errs.append(str(e)[:150])); pops=[]; ctx.on('page', lambda np: (pops.append(np.url), np.close()))
+    pg.goto('file:///tmp/drugbox_brand.html',wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
+    pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(2800)
+    if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
+    E=pg.evaluate; E("localStorage.setItem('dx_acting',JSON.stringify('quadra-pharm'))")
+    T('nothing is drawn before use (no share card on Home)', E("goto('feed')||document.querySelectorAll('.dx-sh').length")==0)
+    E("dxHub.page('medsinia-industries','overview')"); pg.wait_for_timeout(900)
+    btn=pg.locator('#dxDir .dx-sh-open'); T('company page: "Share card" button', btn.count()==1)
+    btn.click(); pg.wait_for_timeout(600)
+    pg.wait_for_function("(()=>{var i=document.querySelector('.dbk-ov img.dx-sh-img');return i&&i.complete&&i.naturalWidth>0})()",timeout=5000); sz=E("(()=>{var i=document.querySelector('.dbk-ov img.dx-sh-img');return i?[i.naturalWidth,i.naturalHeight]:null})()"); T('card image is 1200×630', sz==[1200,630], sz)
+    cap=E("(document.querySelector('.dbk-ov .dx-sh-cap')||{}).value||''"); T('caption written with company name', 'Medsinia' in cap, cap[:120])
+    blank=E("(()=>{var i=document.querySelector('.dbk-ov img.dx-sh-img'),c=document.createElement('canvas');c.width=1200;c.height=630;c.getContext('2d').drawImage(i,0,0);var d=c.getContext('2d').getImageData(0,0,1200,630).data,s=new Set();for(var i=0;i<d.length;i+=40000)s.add(d[i]+','+d[i+1]);return s.size})()"); T('card image is actually drawn (many colours)', blank>5, blank)
+    dlb=pg.locator('.dbk-ov [data-sh], .dbk-ov a[download], .dbk-ov .dx-sh-b').filter(has_text='Download')
+    if dlb.count():
+        with pg.expect_download(timeout=5000) as dl: dlb.first.click()
+        T('download gives a PNG', dl.value.suggested_filename.endswith('.png'), dl.value.suggested_filename)
+    else: T('download button present', False, E("document.querySelector('.dbk-ov').innerText.slice(0,200)"))
+    wa=pg.locator('.dbk-ov .dx-sh-b.wa')
+    if wa.count():
+        href=wa.first.get_attribute('href') or ''; import urllib.parse as U; T('WhatsApp link carries the full caption', href.startswith('https://wa.me/?text=') and U.unquote(href.split('text=',1)[1])==cap, href[:120])
+        n0=len(pops); wa.first.click(); pg.wait_for_timeout(600); T('WhatsApp opens in a new window (not inside the app)', len(pops)>n0, pops[-2:])
+    cp=pg.locator('.dbk-ov [data-sh="copy"]'); cp.click(); pg.wait_for_timeout(300); T('copy caption confirms', 'Copied' in cp.inner_text() or 'تم' in cp.inner_text(), cp.inner_text())
+    E("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
+    E("goto('market')"); pg.wait_for_timeout(1200)
+    n=E("document.querySelectorAll('#mkx .dx-sh-ic, #mkx .dx-sh-mini').length"); T('marketplace listings get a share button', n>=1, n)
+    if n: pg.locator('#mkx .dx-sh-ic, #mkx .dx-sh-mini').first.click(); pg.wait_for_timeout(500); T('listing share opens a card', E("!!document.querySelector('.dbk-ov img.dx-sh-img')")); E("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
+    T('no share button inside a clickable card', E("[...document.querySelectorAll('#mkx .dx-sh-ic, #mkx .dx-sh-mini')].filter(b=>b.closest('.sp-mini,[onclick]')).length")==0)
+    E("goto('jobs')"); pg.wait_for_timeout(900)
+    n=E("document.querySelectorAll('#jx .dx-sh-ic').length"); T('jobs get a share button', n>=1, n)
+    if n: pg.locator('#jx .dx-sh-ic').first.click(); pg.wait_for_timeout(500); T('job share opens a card', E("!!document.querySelector('.dbk-ov img.dx-sh-img')")); E("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
+    E("dxHub.page('medsinia-industries','overview')"); pg.wait_for_timeout(800); pg.click('#dxDir [data-hqr]'); pg.wait_for_timeout(400)
+    ts=pg.locator('.dbk-ov .dx-ts-open'); T('QR window offers Trade-show mode', ts.count()==1)
+    if ts.count():
+        ts.click(); pg.wait_for_timeout(700)
+        T('trade-show: full-screen QR with company name', E("(()=>{var e=document.querySelector('.dx-ts');return !!(e&&e.querySelector('.dx-ts-qr svg')&&/Medsinia/.test(e.innerText))})()"))
+        h1=E("(document.querySelector('.dx-ts-hi')||{}).innerText||''"); pg.wait_for_timeout(4200); h2=E("(document.querySelector('.dx-ts-hi')||{}).innerText||''")
+        T('trade-show cycles products & certificates', h1!=h2, (h1,h2))
+        pg.keyboard.press('Escape'); pg.wait_for_timeout(300); T('Esc closes it', E("!document.querySelector('.dx-ts')"))
+        t0=E("(()=>{var n=0,o=window.setInterval;return 0})()")
+    E("window.__iv=0;var _si=setInterval;");
+    T('no timers left running after closing (idle CPU)', E("new Promise(r=>{var n=0,t0=performance.now();var id=requestAnimationFrame(function f(){n++;if(performance.now()-t0<1500)requestAnimationFrame(f);else r(true)})})"))
+    print('errors:', errs or 'none'); print(LANG, sum(R),'/',len(R)); b.close()

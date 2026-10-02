@@ -1,0 +1,60 @@
+from playwright.sync_api import sync_playwright
+R=[]
+def T(n,ok,d=''): R.append(ok); print(('✅ ' if ok else '❌ ')+n+('' if ok else '  → '+str(d)))
+def pdf(n): return {'name':n,'mimeType':'application/pdf','buffer':b'%PDF'}
+with sync_playwright() as p:
+    b=p.chromium.launch(args=["--no-sandbox"]); pg=b.new_page(viewport={'width':1440,'height':900}); errs=[]; warns=[]
+    pg.on("pageerror",lambda e:errs.append(str(e)[:200])); pg.on("console",lambda m: warns.append(m.text[:200]) if '[drugbox]' in m.text else None)
+    pg.goto('file:///tmp/drugbox_brand.html',wait_until='networkidle',timeout=60000); pg.evaluate('endSplash()'); pg.wait_for_timeout(600)
+    pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(3300)
+    if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
+    T('company switch in the top bar on every page', pg.locator('#dxCoSwitch').count()==1 and 'Quadra Pharm' in pg.inner_text('#dxCoSwitch'))
+    def create(name, reg, plan='free'):
+        pg.evaluate("goto('companies')"); pg.wait_for_timeout(250); pg.click('#dxDir [data-create]'); pg.wait_for_timeout(200)
+        if pg.locator('.dbk-ov .pl-card').count()==0: return 'blocked'
+        pg.locator(f'.dbk-ov input[name=plPick][value={plan}]').check(force=True); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(200)
+        pg.fill('#ccN',name); pg.select_option('#ccS','Manufacturer'); pg.select_option('#ccG','Giza'); pg.fill('#ccC','Giza'); pg.fill('#ccP','+20 2 1'); pg.fill('#ccE','a@b.example'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(200)
+        pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(400)
+        if pg.is_visible('#dxEditor'): pg.click('#dxEditor .ed-x'); pg.wait_for_timeout(150)
+        return 'created'
+    r1=create('Alpha Pharma Industries','900001'); r2=create('Beta Cosmetics Egypt','900002','vip')
+    T('user creates several companies', r1=='created' and r2=='created', (r1,r2))
+    T('newest company becomes the acting one', 'Beta Cosmetics Egypt' in pg.inner_text('#dxCoSwitch'))
+    r3=create('Gamma Labs Egypt','900003')
+    T('third pending company allowed', r3=='created')
+    T('no cap: a fourth and fifth company', create('Delta Trading Egypt','900004')=='created' and create('Epsilon Pharma','900005')=='created')
+    T('same name allowed, link stays unique', create('Alpha Pharma Industries','900006')=='created' and pg.evaluate("dxDirectory.list().filter(c=>c.name==='Alpha Pharma Industries').map(c=>c.slug).join(',')")=='alpha-pharma-industries,alpha-pharma-industries-2')
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(100)
+    pg.click('#dxCoSwitch'); pg.wait_for_timeout(150)
+    T('switch menu lists all my companies', pg.locator('#dxCoMenu [data-cs]').count()==7, pg.locator('#dxCoMenu [data-cs]').count())
+    pg.locator('#dxCoMenu [data-cs=quadra-pharm]').click(); pg.wait_for_timeout(200)
+    T('switch acting company from anywhere', 'Quadra Pharm' in pg.inner_text('#dxCoSwitch'))
+    # requests carry the sending company, and can be filtered
+    pg.evaluate("dxDirectory.open('delta-analytical-labs','products')"); pg.wait_for_timeout(250)
+    pg.locator('#dxDir [data-rfq]').first.click(); pg.wait_for_timeout(200); pg.fill('#rqQty','1'); pg.fill('#rqMsg','Stability for two SKUs.'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(300)
+    pg.click('#dxCoSwitch'); pg.wait_for_timeout(120); pg.locator('#dxCoMenu [data-cs=beta-cosmetics-egypt]').click(); pg.wait_for_timeout(150)
+    pg.evaluate("dxDirectory.open('nile-pharma-packaging','products')"); pg.wait_for_timeout(250)
+    pg.locator('#dxDir [data-rfq]').first.click(); pg.wait_for_timeout(200); pg.fill('#rqQty','20000'); pg.fill('#rqMsg','Cartons for 3 SKUs.'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(300)
+    pg.evaluate("goto('companies')"); pg.wait_for_timeout(250); pg.click('#dxDir [data-myreq]'); pg.wait_for_timeout(250)
+    txt=pg.inner_text('.dbk-ov')
+    T('each request shows which company sent it', 'Quadra Pharm → Delta Analytical Labs' in txt and 'Beta Cosmetics Egypt → Nile Pharma Packaging' in txt, txt[:400])
+    pg.locator('.dbk-ov [data-dco=beta-cosmetics-egypt]').click(); pg.wait_for_timeout(300)
+    T('filter requests by company', pg.locator('.dbk-ov .dl-row').count()==1 and 'Nile' in pg.inner_text('.dbk-ov .dl-row'))
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(100)
+    # subscriptions overview
+    pg.click('#dxDir [data-mycos]'); pg.wait_for_timeout(200)
+    t=pg.inner_text('.dbk-ov')
+    T('My companies: plan, status, renewal per company', 'renews' in t and 'not verified' in t and 'VIP monthly' in t and t.count('Basic')>=2, t[:400])
+    pg.locator('.dbk-ov [data-act2=alpha-pharma-industries]').first.click(); pg.wait_for_timeout(250)
+    T('Act as from My companies', 'Alpha Pharma Industries' in pg.inner_text('#dxCoSwitch'))
+    pg.keyboard.press('Escape')
+    # each company has its own page/editor
+    pg.evaluate("dxDirectory.open('gamma-labs-egypt')"); pg.wait_for_timeout(250); pg.locator('#dxDir [data-edit=all]').click(); pg.wait_for_timeout(250)
+    pg.fill('#edTag','Contract testing lab in Giza.'); pg.click('#edSave'); pg.wait_for_timeout(300)
+    pg.evaluate("dxDirectory.open('alpha-pharma-industries')"); pg.wait_for_timeout(250)
+    T('each company keeps its own page content', 'Contract testing lab' not in pg.inner_text('#dxDir .cp-tagline'))
+    pg.evaluate("dxDirectory.open('gamma-labs-egypt')"); pg.wait_for_timeout(250)
+    T('…edits stay on the right company', 'Contract testing lab' in pg.inner_text('#dxDir .cp-tagline'))
+    pg.evaluate("goto('profile')"); pg.wait_for_timeout(400)
+    T('profile lists all 7 companies', pg.locator('.dx-mycos .mc-co').count()==7)
+    print('\nJS errors:',errs or 'none','| feature warnings:',warns or 'none'); print(sum(R),'/',len(R)); b.close()

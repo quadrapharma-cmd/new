@@ -1,0 +1,6 @@
+/* Arabic interface: fonts already on every device (no internet needed) */
+html[lang=ar] body,html[lang=ar] button,html[lang=ar] input,html[lang=ar] select,html[lang=ar] textarea{font-family:Poppins,"Segoe UI","Noto Sans Arabic","Noto Naskh Arabic","Geeza Pro","SF Arabic",Tahoma,Arial,sans-serif}
+html[lang=ar] .dx-ic svg,html[lang=ar] .dx-svg{direction:ltr}
+html[lang=ar] input[type=email],html[lang=ar] input[type=password],html[lang=ar] code{direction:ltr;text-align:right}
+/* touch screens in right-to-left: no space reserved for a scrollbar on the left (scrolling itself is unchanged) */
+@media (hover:none) and (pointer:coarse){html[dir=rtl] #content{scrollbar-width:none}html[dir=rtl] #content::-webkit-scrollbar{width:0;height:0;display:none}}

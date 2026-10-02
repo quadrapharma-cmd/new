@@ -1,0 +1,24 @@
+/* ═════════ Accessibility: colour contrast to WCAG AA (4.5:1) with the closest shades of the same colours ═════════ */
+.tick-i,.tick-i span{color:#475569!important}
+.tick-i b[data-dxcat="supply"]{color:#15803d!important}.tick-i b[data-dxcat="demand"]{color:#c2410c!important}.tick-i b[data-dxcat="license"]{color:#a16207!important}
+.tick-i b[data-dxcat="cmo"]{color:#4338ca!important}.tick-i b[data-dxcat="equipment"]{color:#334155!important}.tick-i b[data-dxcat="service"]{color:#1d4ed8!important}
+.tick-i b[data-dxcat="job"]{color:#be185d!important}.tick-i b[data-dxcat="training"]{color:#6d28d9!important}
+.t-time,.hb-src,.intel-item,.msg-date-divider,.dr-stats small,.in-bars small,.ss-x,.cs-c,.dl-tl small{color:#64748b!important}
+.hb-src.old{color:#92400E!important}
+.ch-status{color:#15803d!important}
+em{color:inherit}
+.av[style*="0e8c66" i],.av[style*="0E8C66"]{background:#0d8661!important}
+.av[style*="b0883f" i],.av[style*="B0883F"]{background:#906f33!important}
+.dr-logo[style*="0891b2" i],.cs-logo[style*="0891b2" i],.cp-logo[style*="0891b2" i]{background:#077f9c!important}
+.dr-logo[style*="ca8a04" i],.cs-logo[style*="ca8a04" i],.cp-logo[style*="ca8a04" i]{background:#9d6b03!important}
+/* visible keyboard focus everywhere */
+:focus-visible{outline:3px solid #1a56db!important;outline-offset:2px!important}
+.t-time{color:#526072!important}   /* also readable on the tinted (selected / unread) conversation rows */
+.tick-i b[data-dxcat="other"],.tick-i b:not([data-dxcat]){color:#334155!important}
+.st-expired em,.cw-seal.st-expired em{color:#475569!important}
+/* layout: grid/flex children may shrink to the screen at every width */
+#mx .mx-chat-panel{min-width:0!important;flex:1 1 auto!important;max-width:100%!important}
+.net-grid>div,.feed-wrap>div{min-width:0!important}
+@media (max-width:1000px){.net-grid>div{max-width:100%!important}}
+.dx-jobs-empty{background:#fff;border:1px dashed #CBD5E1;border-radius:16px;padding:22px;text-align:center;color:#475569;font:14px/1.6 Poppins,sans-serif}.dx-jobs-empty b{display:block;color:#0E1320;font-size:15px}.dx-jobs-empty p{margin:4px 0 12px}
+.dx-entity{cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:text-decoration-color .15s}.dx-entity:hover,.dx-entity:focus-visible{text-decoration-color:currentColor;color:#1a56db}

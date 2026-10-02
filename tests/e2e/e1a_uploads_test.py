@@ -1,0 +1,61 @@
+"""E1a end-to-end: a post with a photo and a PDF (public storage), a message with a photo and a PDF (private storage, signed links),
+and the storage/row rules for an outsider."""
+from playwright.sync_api import sync_playwright
+import subprocess, time, os, urllib.request
+U = os.environ.get('APP_URL', 'http://localhost:54321/'); DB = os.environ.get('DB_NAME', 'drugbox_live'); V = '/tmp/vids'; R = []
+def T(n, ok, d=''): R.append(ok); print(('✅ ' if ok else '❌ ') + n + ('' if ok else '  → ' + str(d)[:220]))
+def sql(q):
+    r = subprocess.run(['psql', '-h', '/tmp', '-p', '5433', '-U', 'postgres', '-d', DB, '-tA', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True)
+    if r.returncode: raise SystemExit('SQL failed: ' + r.stderr.strip()[:300])
+    return r.stdout.strip()
+def http(u):
+    try: return urllib.request.urlopen(u, timeout=5).status
+    except Exception as e: return getattr(e, 'code', 0)
+st = int(time.time()); PW = 'Strong-pass-2026'
+def signup(pg, name, email):
+    pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
+    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(3500)
+    return pg.evaluate("dxLive.uuidOf(ME.id)")
+with sync_playwright() as p:
+    b = p.chromium.launch(args=["--no-sandbox"]); errs = []
+    A, B, C = [b.new_context(viewport={'width': 1440, 'height': 900}).new_page() for _ in range(3)]
+    for pg in (A, B, C): pg.on("pageerror", lambda e: errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.accept())
+    a = signup(A, 'Dr. Upload Author', f'upa{st}@x.test'); bb = signup(B, 'Dr. Upload Reader', f'upb{st}@x.test'); c = signup(C, 'Dr. Outsider', f'upc{st}@x.test')
+    # a post with a photo and a PDF
+    A.evaluate("showPostModal()"); A.wait_for_timeout(400)
+    A.fill('#postBody', f'New CoA format and line photo {st}')
+    A.set_input_files('input[onchange*="previewPostImgs"]', V + '/photo.png'); A.wait_for_timeout(300)
+    A.set_input_files('input[onchange*="previewPostFile"]', V + '/spec.pdf'); A.wait_for_timeout(300)
+    A.evaluate("submitPost()"); A.wait_for_timeout(4000)
+    pid = sql(f"select id from public.posts where body='New CoA format and line photo {st}'")
+    media = sql(f"select string_agg(type||':'||name,',' order by type) from public.post_media where post_id={pid}")
+    T('the post is saved with its photo and its PDF', media == 'file:spec.pdf,image:photo', media)
+    url = sql(f"select url from public.post_media where post_id={pid} and type='image'")
+    T('the photo is publicly reachable from storage', http(url) == 200, url)
+    B.evaluate("goto('feed')"); B.wait_for_timeout(500); B.reload(wait_until='load'); B.wait_for_timeout(400); B.evaluate('endSplash()'); B.wait_for_timeout(4000)
+    shown = B.evaluate(f"(()=>{{var p=document.getElementById('post-{pid}');if(!p)return null;var i=p.querySelector('img[src*=\"/post-media/\"]');return {{img:!!i,loaded:i?i.complete&&i.naturalWidth>0:false,file:p.innerText.indexOf('spec.pdf')>=0}}}})()")
+    T('another member sees the photo (loaded) and the file in the post', shown and shown['img'] and shown['loaded'] and shown['file'], shown)
+    # a private message with a photo and a PDF
+    A.evaluate(f"(()=>{{var x=dxLive.aid('{bb}');USERS.push({{id:x,name:'Dr. Upload Reader',initials:'DU',color:'#1A56DB'}});messageUser(x)}})()"); A.wait_for_timeout(2500)
+    A.set_input_files('input[onchange*="handleAttach"][onchange*="photo"]', V + '/photo.png'); A.wait_for_timeout(300)
+    A.set_input_files('input[onchange*="handleAttach"]:not([onchange*="photo"])', V + '/spec.pdf'); A.wait_for_timeout(300)
+    A.fill('#composeInput', 'Photo of the label and the spec'); A.evaluate("sendMessage()"); A.wait_for_timeout(4000)
+    rows = sql(f"select string_agg((attachment->>'kind')||':'||(attachment->>'name'),',' order by id) from public.messages where sender_id='{a}' and receiver_id='{bb}'")
+    T('the message carries the photo and the PDF', rows == 'photo:photo.png,file:spec.pdf', rows)
+    path = sql(f"select attachment->>'path' from public.messages where sender_id='{a}' and attachment->>'kind'='photo'")
+    T('message files are stored privately (no public link)', http(f'http://localhost:54321/storage/v1/object/public/message-media/{path}') == 404)
+    B.evaluate("goto('messages')"); B.wait_for_timeout(4000)
+    got = B.evaluate("(()=>{var i=document.querySelector('#messagesArea img.msg-image');var f=document.querySelector('#messagesArea a.dx-msg-file');return {img:!!i&&/\\/object\\/sign\\//.test(i.src),loaded:i?i.complete&&i.naturalWidth>0:false,file:f?/\\/object\\/sign\\//.test(f.href):false}})()")
+    T('the receiver sees the photo and the file through signed links', got['img'] and got['loaded'] and got['file'], got)
+    r = C.evaluate(f"dxLive.sb.storage.from('message-media').createSignedUrl('{path}',60).then(r=>!!r.error)")
+    T('an outsider cannot get a link to a private message file', r)
+    r = C.evaluate(f"dxLive.sb.storage.from('message-media').upload('{a}/{c}/x.png', new Blob([new Uint8Array(8)],{{type:'image/png'}})).then(r=>!!r.error)")
+    T("cannot upload into someone else's message folder", r)
+    r = C.evaluate(f"dxLive.sb.storage.from('post-media').upload('posts/{a}/x.png', new Blob([new Uint8Array(8)],{{type:'image/png'}})).then(r=>!!r.error)")
+    T("cannot upload into someone else's post folder", r)
+    r = C.evaluate(f"dxLive.sb.from('post_media').insert({{post_id:{pid},url:'https://evil.example/x.png',type:'image',name:'x',size:1}}).then(r=>!!r.error)")
+    T("cannot attach media to someone else's post", r)
+    r = C.evaluate(f"dxLive.sb.from('messages').insert({{sender_id:'{c}',receiver_id:'{bb}',body:'x',attachment:{{path:'{path}',name:'stolen.png',size:1,kind:'photo'}}}}).then(r=>!!r.error)")
+    T("cannot point a message at someone else's file", r)
+    T('no errors in the pages', not errs, errs)
+    print(sum(R), '/', len(R)); b.close()
