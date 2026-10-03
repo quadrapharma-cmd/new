@@ -1,0 +1,65 @@
+/* Ledger paper and ink. Neutrals lean slightly green (ledger-pad paper), ONE accent (ink blue),
+   semantic good / warning / critical colours are separate from the accent.
+   Every colour token is defined here on bare :root (light); dark.css redefines them for dark mode. */
+:root {
+  color-scheme: light;
+
+  --bg: #f1f3ef;
+  --surface: #fbfcfa;
+  --surface-2: #e9ede7;
+  --surface-3: #dfe5dd;
+  --ink: #1a211d;
+  --ink-2: #3c4640;
+  --muted: #59635c;
+  --line: #d8dfd6;
+  --line-strong: #aeb9b0;
+
+  --accent: #27509a;
+  --accent-hover: #1e4180;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2e9f8;
+  --accent-line: #b6c6ea;
+
+  --good: #176a3d;
+  --good-soft: #e1f0e6;
+  --good-line: #a9d3b8;
+  --warn: #8a5300;
+  --warn-soft: #faefd6;
+  --warn-line: #e3c88d;
+  --crit: #a62626;
+  --crit-soft: #f9e4e1;
+  --crit-line: #e3a9a3;
+
+  --focus: #1b6fe0;
+  --overlay: rgba(14, 20, 16, 0.5);
+  --shadow: 0 8px 28px rgba(18, 28, 22, 0.18);
+  --rule-ink: #1a211d;
+
+  --font-ui: "IBM Plex Sans Arabic", system-ui, "Segoe UI", Tahoma, "Noto Sans Arabic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --text-xs: 0.78rem;
+  --text-sm: 0.875rem;
+  --text-base: 0.9375rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+
+  --gutter: clamp(16px, 3.2vw, 36px);
+  --header-h: 56px;
+  --nav-w: 232px;
+  --content-max: 1280px;
+}

@@ -1,0 +1,22 @@
+/* Screens: dashboard tiles, system screen, stubs */
+.tile {
+  display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-4);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); min-width: 0;
+  color: inherit; text-decoration: none;
+}
+.tile--link:hover { border-color: var(--accent-line); background: var(--accent-soft); }
+.tile__label { color: var(--muted); font-size: var(--text-sm); }
+.tile__value { font-size: var(--text-xl); font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; text-align: start; align-self: flex-start; }
+.tile__sub { font-size: var(--text-xs); color: var(--muted); }
+.section-title { font-size: var(--text-md); font-weight: 600; margin-bottom: var(--space-2); }
+.stub {
+  display: grid; gap: var(--space-4); padding: var(--space-6) var(--space-5);
+  background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--radius-lg);
+}
+.stub__tag { justify-self: start; }
+.stub__text { color: var(--ink-2); max-width: 62ch; }
+.stub__list { color: var(--ink-2); display: flex; flex-direction: column; gap: 4px; max-width: 62ch; }
+.issue { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }
+.issue:last-child { border-bottom: 0; }
+.issue__body { min-width: 0; overflow-wrap: anywhere; }
+.err-box { padding: var(--space-6) var(--gutter); max-width: 640px; margin: var(--space-7) auto; display: flex; flex-direction: column; gap: var(--space-3); }

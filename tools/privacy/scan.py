@@ -9,7 +9,8 @@ The deny-list is built at run time from the PRIVATE workbook (STRIFA_REAL_XLSX) 
 is never written to disk or printed. Without the workbook the scan cannot run and
 exits 2 (so a push script must treat "cannot scan" as "do not push").
 
-Usage:  python3 tools/privacy/scan.py [--show]
+Usage:  python3 tools/privacy/scan.py [--show] [--staged]
+        --staged scans only the files in the git index (what a commit would contain)
         --show prints the matched token (local terminal only); default prints an id.
 """
 import glob
@@ -23,6 +24,7 @@ import unicodedata
 DEFAULT_XLSX = glob.glob('/root/.claude/uploads/*/*.xlsx')
 XLSX = os.environ.get('STRIFA_REAL_XLSX') or (DEFAULT_XLSX[0] if DEFAULT_XLSX else '')
 SHOW = '--show' in sys.argv
+STAGED = '--staged' in sys.argv
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 # Words that are ordinary accounting / UI vocabulary and may legitimately appear in code.
@@ -113,7 +115,17 @@ def build_denylist():
     return strings, tokens
 
 
+def staged_files():
+    out = subprocess.check_output(['git', '-C', REPO, 'diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'])
+    for p in out.decode().split('\0'):
+        if p:
+            yield p
+
+
 def repo_files():
+    if STAGED:
+        yield from staged_files()
+        return
     out = subprocess.check_output(['git', '-C', REPO, 'ls-files', '-z', '--cached', '--others', '--exclude-standard'])
     for p in out.decode().split('\0'):
         if p:
@@ -139,19 +151,27 @@ def main():
         if p.startswith(SKIP_PREFIXES):
             continue
         full = os.path.join(REPO, p)
-        if os.path.islink(full) or not os.path.isfile(full):
-            continue
-        try:
-            with open(full, 'rb') as fh:
-                raw = fh.read()
-        except OSError:
-            continue
+        if STAGED:
+            try:
+                raw = subprocess.check_output(['git', '-C', REPO, 'show', ':' + p])
+            except subprocess.CalledProcessError:
+                continue
+        else:
+            if os.path.islink(full) or not os.path.isfile(full):
+                continue
+            try:
+                with open(full, 'rb') as fh:
+                    raw = fh.read()
+            except OSError:
+                continue
         if b'\0' in raw[:4096]:
             continue  # binary
         text = raw.decode('utf-8', 'ignore')
         for i, line in enumerate(text.splitlines(), 1):
             check(f'{p}:{i}', line)
     try:
+        if STAGED:
+            raise subprocess.CalledProcessError(1, 'skip')
         msgs = subprocess.check_output(['git', '-C', REPO, 'log', '--format=%H%n%B%n--END--'], stderr=subprocess.DEVNULL).decode()
         for i, line in enumerate(msgs.splitlines(), 1):
             check(f'git-log:{i}', line)

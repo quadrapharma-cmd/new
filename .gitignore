@@ -1,0 +1,25 @@
+# build output and local tooling (never committed)
+dist/
+node_modules/
+.local/
+.venv/
+.DS_Store
+*.log
+
+# private data and spreadsheets: real company data never enters the repo
+*.xlsx
+*.xls
+*.pkl
+.strifa-private/
+private/
+seed-private/
+oracle*.json
+
+# csv files are only allowed as synthetic test fixtures
+*.csv
+!tests/synthetic/**/*.csv
+
+# local planning document (also listed in .git/info/exclude)
+docs/PLAN.ar.md
+__pycache__/
+*.pyc
