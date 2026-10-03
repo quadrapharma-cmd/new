@@ -51,6 +51,11 @@ function readCss() {
   const dark = read('dark.css').trim();
   const order = ['tokens.css', 'base.css', 'layout.css', 'components.css', 'screens.css'];
   let css = order.filter((f) => existsSync(join(dir, f))).map(read).join('\n');
+  // per-screen styles: src/styles/screens/<name>.css (one file per screen owner), appended in name order
+  const sdir = join(dir, 'screens');
+  if (existsSync(sdir)) {
+    for (const f of readdirSync(sdir).filter((n) => n.endsWith('.css')).sort()) css += '\n' + readFileSync(join(sdir, f), 'utf8');
+  }
   css += `\n@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){${dark}}}\n:root[data-theme="dark"]{${dark}}\n`;
   return css;
 }
@@ -85,11 +90,12 @@ async function main() {
     process.exit(1);
   }
   const { html, js, css, warnings } = await assemble();
-  mkdirSync(join(ROOT, 'dist'), { recursive: true });
-  writeFileSync(join(ROOT, 'dist/index.html'), html);
+  const DISTDIR = process.env.STRIFA_DIST || 'dist';
+  mkdirSync(join(ROOT, DISTDIR), { recursive: true });
+  writeFileSync(join(ROOT, DISTDIR, 'index.html'), html);
   const size = Buffer.byteLength(html);
 
-  console.log(`dist/index.html  ${kb(size)}  (${(size / 1048576).toFixed(2)} MB)  js ${kb(Buffer.byteLength(js))}  css ${kb(Buffer.byteLength(css))}`);
+  console.log(`${DISTDIR}/index.html  ${kb(size)}  (${(size / 1048576).toFixed(2)} MB)  js ${kb(Buffer.byteLength(js))}  css ${kb(Buffer.byteLength(css))}`);
   if (usedStubs.size) console.log(`note: dev stubs used for not-yet-created modules: ${[...usedStubs].join(', ')}`);
   for (const w of warnings) console.warn('warning:', w.text);
   if (size > MAX_BYTES) {

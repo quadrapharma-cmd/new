@@ -12,7 +12,7 @@ import { loadSeedDir } from './load-seed.js';
 import { assemble } from '../scripts/build.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const DIST = join(ROOT, 'dist/index.html');
+const DIST = join(ROOT, process.env.STRIFA_DIST || 'dist', 'index.html');
 
 const SKELETON_HEAD =
   '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">' +

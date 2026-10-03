@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { startServer } from './serve.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = join(ROOT, '.local/shots');
+const OUT = join(ROOT, process.env.STRIFA_SHOTS || '.local/shots');
 
 const args = process.argv.slice(2);
 const opt = (name) => {
