@@ -43,7 +43,9 @@
   }
   function copy(text, btn) { function done() { btn.textContent = 'Copied ✓'; setTimeout(function () { btn.textContent = 'Copy caption'; }, 1600); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
-    function fallback() { var t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (e) {} t.remove(); done(); } }
+    function fallback() { var t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} t.remove();
+      if (ok) return done();   /* the clipboard was refused: leave the caption selected for a manual copy */
+      var cap = btn.closest('.dx-sh') && btn.closest('.dx-sh').querySelector('.dx-sh-cap'); if (cap) { cap.focus(); cap.select(); } D.toast('Press Ctrl+C to copy the caption'); } }
   function openShare(kind, src) {
     var d = dataFor(kind, src); if (!d.title) return; var cv = draw(d), url = cv.toDataURL('image/png'), fname = (d.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'drugbox') + '-card.png';
     var canNative = !!(navigator.canShare && window.File);
@@ -78,7 +80,7 @@
     TS = { close: close };
   }
   /* ── entry points ── */
-  function coFromHeader() { var h = document.querySelector('#dxDir.cp h1.cp-name'); if (!h) return null; var t = orig(h); return window.dxDir.companies().find(function (c) { return t.indexOf(c.name) === 0; }); }
+  function coFromHeader() { if (!document.querySelector('#dxDir.cp h1.cp-name')) return null; var s = window.dxDir.S && window.dxDir.S.open; return s ? (window.dxDir.bySlug(s) || null) : null; }   /* the open slug, never the heading text: names are not unique */
   function decorate() {
     var q = document.querySelector('#dxDir.cp [data-hqr]'); if (q && !q.parentElement.querySelector('.dx-sh-open')) q.insertAdjacentHTML('afterend', '<button type="button" class="dr-btn dx-sh-open" data-share="co">' + SHARE_IC + 'Share card</button>');
     var pg = document.body.getAttribute('data-page');

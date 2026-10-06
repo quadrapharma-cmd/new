@@ -12,7 +12,7 @@
         return Promise.resolve({
           verifications: cos.filter(function (c) { return c.status === 'pending' && !decided['v' + c.slug]; }).map(function (c) { return { id: c.slug, company: c.name, registry: c.registry || '—', at: '', docs: [] }; }),
           warnings: refs.filter(function (r) { return r.kind === 'warn' && r.status === 'pending' && !decided['w' + r.cand + r.text]; }).map(function (r) { return { id: r.cand + r.text, company: r.company, candidate: r.cand, category: r.category, text: r.text, docs: [] }; }),
-          certs: H ? cos.slice(0, 30).reduce(function (a, c) { (H.credentials(c) || []).forEach(function (x) { if (!x.checked && !/^Member:/.test(x.name) && !decided['c' + c.slug + x.name]) a.push({ id: c.slug + '|' + x.name, company: c.name, site: x.site, name: x.name, expiry: x.expiry }); }); return a; }, []) : [],
+          certs: H ? cos.slice(0, 30).reduce(function (a, c) { (H.credentials(c) || []).forEach(function (x) { if (!x.checked && !/^Member:/.test(x.name) && !decided['c' + c.slug + '|' + x.name]) a.push({ id: c.slug + '|' + x.name, company: c.name, site: x.site, name: x.name, expiry: x.expiry }); }); return a; }, []) : [],
           payments: [],
           reports: H && H.reports ? H.reports().filter(function (r) { return r.status === 'open' && !decided['r' + r.id]; }).map(function (r) { return { id: r.id, company: r.slug, section: r.section, issue: r.text, correction: r.fix }; }) : []
         });
@@ -59,9 +59,12 @@
     if (t.classList.contains('dx-mod-tab')) { cur = t.dataset.q; paint(c); return; }
     if (t.classList.contains('dx-mod-doc')) { window.dxModeration.link(t.dataset.doc, t.dataset.bucket).then(function (u) { if (u) window.open(u, '_blank', 'noopener'); else D.toast && D.toast('Documents open in the live app'); }); return; }
     var k = t.dataset.k, id = t.dataset.id, v = t.dataset.v, note = '';
-    if (v === 'rejected' && k === 'verifications') { note = window.prompt('Reason for the company (they will see it):', 'The registry document is not readable') || ''; }
-    t.disabled = true;
-    window.dxModeration.decide(k, id, v, note).then(function () { data[k] = (data[k] || []).filter(function (x) { return String(x.id) !== String(id); }); paint(c); D.toast && D.toast('Done'); },
-      function (err) { t.disabled = false; D.toast && D.toast((err && err.message) || 'Could not save the decision'); });
+    function go() { t.disabled = true;
+      window.dxModeration.decide(k, id, v, note).then(function () { data[k] = (data[k] || []).filter(function (x) { return String(x.id) !== String(id); }); paint(c); D.toast && D.toast('Done'); },
+        function (err) { t.disabled = false; D.toast && D.toast((err && err.message) || 'Could not save the decision'); }); }
+    if (v === 'rejected' && k === 'verifications') { note = window.prompt('Reason for the company (they will see it):', 'The registry document is not readable'); if (note === null) return; return go(); }   /* Cancel keeps the request */
+    var ask = { rejected: ['Reject this reference?', 'It will not be published.', 'Reject'], dismissed: ['Dismiss this report?', 'The company page stays as it is.', 'Dismiss'], failed: ['Mark this transfer as not received?', 'The order stays unpaid.', 'Not received'] }[v];
+    if (ask) { D.modal({ title: ask[0], body: '<p>' + esc(ask[1]) + '</p>', primary: { label: ask[2], danger: true, onClick: function () { go(); } } }); return; }   /* destructive decisions are confirmed first */
+    go();
   });
 })();

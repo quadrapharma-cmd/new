@@ -11,7 +11,7 @@
   var GMP = /GMP|ISO 17025|GDP|ISO 15378|ISO 22716/i;
   var TIER = [['Not verified', '#94A3B8'], ['Registered', '#1A56DB'], ['Licensed', '#7C3AED'], ['Inspected', '#10B981']];
   var MEMO = {};
-  function sig(co) { var e = ''; try { e = localStorage.getItem('dx_company_edits') || localStorage.getItem('company_edits') || ''; } catch (x) {} return [co.status, co.licensed, co.registry, (co.certs || []).join(','), e.length].join('|'); }
+  function sig(co) { return [co.status, co.licensed, co.registry, (co.certs || []).join(','), window.__dxStoreVer || 0].join('|'); }   /* the store version changes on every write */
   function tierOf(co) { if (!co) return 0; var k = sig(co), m = MEMO[co.slug]; if (m && m.k === k) return m.t; var t = tierCalc(co); MEMO[co.slug] = { k: k, t: t }; return t; }   /* recomputed only when the company's data changes */
   function tierCalc(co) {
     if (!co || co.status !== 'verified' || !co.registry) return 0;
@@ -45,12 +45,12 @@
       h += '<div class="dx-pass-g">' + g + '</div>';
       groups[g].forEach(function (r) { var s = ST[r.s] || ST.declared;
         h += '<div class="dx-pass-r"><div><b>' + esc(r.n) + '</b>' + (r.v ? '<span>' + esc(r.v) + '</span>' : '') + '</div><div class="dx-pass-s"><em style="--sc:' + s[1] + '">' + s[0] + '</em>' +
-             (r.req && !own ? '<button type="button" class="dx-pass-req" data-req="' + esc(r.req) + '" data-slug="' + co.slug + '">Request</button>' : '') + '</div></div>'; });
+             (r.req && !own ? '<button type="button" class="dx-pass-req" data-req="' + esc(r.req) + '" data-slug="' + esc(co.slug) + '">Request</button>' : '') + '</div></div>'; });
     });
     h += '<p class="dx-pass-n">Levels: 1 Registered — registry & tax card checked · 2 Licensed — EDA / industrial licence · 3 Inspected — a site with a valid GMP-type certificate. Self-declared documents are shown as provided by the company.</p></section>';
     return h;
   }
-  function coFromHeader() { var h = document.querySelector('#dxDir.cp h1.cp-name'); if (!h) return null; var t = (window.dxOrigText ? window.dxOrigText(h) : h.textContent).trim(); return window.dxDir.companies().find(function (c) { return t.indexOf(c.name) === 0; }); }
+  function coFromHeader() { if (!document.querySelector('#dxDir.cp h1.cp-name')) return null; var s = window.dxDir.S && window.dxDir.S.open; return s ? (window.dxDir.bySlug(s) || null) : null; }   /* the open slug, never the heading text: names are not unique */
   function activeTab() { var a = document.querySelector('#dxDir .cp-tabs .on, #dxDir .cp-tabs [aria-selected="true"], #dxDir .cp-tabs .active'); return a ? (window.dxOrigText ? window.dxOrigText(a) : a.textContent).trim() : ''; }
   function decorate() {
     var dir = document.getElementById('dxDir'); if (!dir) return;
@@ -61,7 +61,7 @@
     if (dir.classList.contains('cp')) {
       var co = coFromHeader(); if (!co) return; var h1 = dir.querySelector('h1.cp-name');
       if (h1 && !h1.parentElement.querySelector('.dx-tier-h')) h1.insertAdjacentHTML('afterend', '<div class="dx-tier-h">' + badge(tierOf(co)) + '</div>');
-      if (/^Overview/.test(activeTab()) && !dir.querySelector('.dx-pass')) { var body = dir.querySelector('.cp-body'); if (body) body.insertAdjacentHTML('afterbegin', passportHTML(co, window.dxDir.ownsPage && window.dxDir.ownsPage(co.slug))); }
+      if (/^Overview/.test(activeTab()) && !dir.querySelector('.dx-pass')) { var body = dir.querySelector('.cp-body'); if (body) body.insertAdjacentHTML('afterbegin', passportHTML(co, window.dxDir.ownsPage && window.dxDir.ownsPage(co))); }
     }
     /* workspace: ladder + add documents on "Plan & verification" */
     if (dir.classList.contains('ws') && /Plan/.test(activeTab()) && !dir.querySelector('.dx-ladder')) {

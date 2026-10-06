@@ -9,6 +9,7 @@
   function ic(n) { return window.dxIcon ? window.dxIcon(n) : ''; }
   function toast(m) { D.toast(m); }
   function st(k, v) { return X().store(k, v); }
+  function ed(co) { return X().edits()[co.slug]; }   /* company_edits parsed once per store version */
   function acting() { return X().mine(); }
   function later(fn) { setTimeout(fn, 40); }
 
@@ -44,8 +45,8 @@
     { id: 's3', slug: 'quadra-pharm', product: 'Printed cartons — Hair Serum (old artwork)', qty: '9,500 pcs', batch: 'CT-HS-07', expiry: '—', price: 'EGP 0.60/pc', off: 70 },
     { id: 's4', slug: 'nile-valley-pharma', product: 'Paracetamol DC grade', qty: '300 kg', batch: 'PC-25-044', expiry: '2026-12', price: 'US$ 3.10/kg', off: 25 }
   ];
-  function lookingOf(co) { var e = (st('company_edits') || {})[co.slug]; return (e && e.looking) || LOOKING[co.slug] || []; }
-  function membersOf(co) { var e = (st('company_edits') || {})[co.slug]; return MEMBERS[co.slug] ? MEMBERS[co.slug].map(function (m) { return { name: m[0], short: m[1], ok: true }; }).concat((e && e.memberPending) || []) : ((e && e.memberPending) || []); }
+  function lookingOf(co) { var e = ed(co); return (e && Array.isArray(e.looking) ? e.looking : null) || LOOKING[co.slug] || []; }
+  function membersOf(co) { var e = ed(co), pend = e && Array.isArray(e.memberPending) ? e.memberPending : []; return MEMBERS[co.slug] ? MEMBERS[co.slug].map(function (m) { return { name: m[0], short: m[1], ok: true }; }).concat(pend) : pend; }
   function dossiers() { return (window.dxLiveListings ? [] : DOSSIERS).concat(st('dossiers') || []); }
   function groups() { var extra = st('groups_state') || {}; return (window.dxLiveListings ? [] : GROUPS).concat(st('groups_new') || []).map(function (g) { var x = extra[g.id]; return x ? Object.assign({}, g, { shares: g.shares.concat(x) }) : g; }); }
   function surplus() { return (st('surplus_new') || []).concat((window.dxLiveListings ? [] : SURPLUS)); }
@@ -56,6 +57,7 @@
   function setAvl(slug, status) {
     var m = avl(); if (status) m[slug] = { status: status, since: new Date().toISOString().slice(0, 10) }; else delete m[slug]; avl(m);
   }
+  function cell(v) { v = String(v == null ? '' : v); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }   /* a company name is never a spreadsheet formula */
   function vendorDialog() {
     var a = acting(); if (!a) { toast('Act as a company to keep an approved vendor list'); return; }
     var m = avl(), keys = Object.keys(m);
@@ -66,7 +68,7 @@
         : '<p class="cp-muted">No suppliers yet. Open a supplier page and set its vendor status.</p>') +
         (keys.length ? '<div class="fd-act"><a class="dr-btn" id="avlCsv" download="approved-vendors.csv">' + ic('doc') + 'Export CSV</a></div>' : '') });
     var csv = dlg.el.querySelector('#avlCsv');
-    if (csv) csv.href = URL.createObjectURL(new Blob(['Supplier,Status,Since\n' + keys.map(function (k) { var co = X().bySlug(k); return '"' + (co ? co.name : k) + '",' + AVL[m[k].status][0] + ',' + m[k].since; }).join('\n')], { type: 'text/csv' }));
+    if (csv) csv.href = URL.createObjectURL(new Blob(['Supplier,Status,Since\n' + keys.map(function (k) { var co = X().bySlug(k); return [co ? co.name : k, AVL[m[k].status][0], m[k].since].map(cell).join(','); }).join('\n')], { type: 'text/csv' }));
     dlg.el.addEventListener('click', function (e) {
       var o = e.target.closest('[data-avlopen]'); if (o) { dlg.close(); later(function () { X().open(o.dataset.avlopen); }); }
       var v = e.target.closest('[data-sqview]'); if (v) { dlg.close(); later(function () { window.dxDeals.thread(v.dataset.sqview, vendorDialog); }); }
@@ -76,7 +78,6 @@
   /* ── 2 · qualification questionnaire filled from the supplier's page ── */
   function qDeal(fromSlug, toSlug) { return window.dxDeals.all().filter(function (d) { return d.type === 'questionnaire' && d.from.slug === fromSlug && d.to.slug === toSlug; })[0]; }
   function answersFor(co) {
-    var cap = null; try { cap = (st('company_edits') || {})[co.slug]; } catch (e) {}
     var A = function (q, a, src) { return { q: q, a: a, src: a ? src : 'To be answered by the supplier' }; };
     return [
       ['Company', [A('Legal name', co.name, 'Company page'), A('Address', co.address, 'Company page'), A('Commercial registry number', co.registry || '', 'Verification'), A('Year founded', String(co.founded || ''), 'Company page'), A('Employees', co.employees, 'Company page')]],
@@ -134,8 +135,8 @@
     dlg.el.addEventListener('click', function (e) { var r = e.target.closest('[data-dreq]'); if (!r) return; var d = dossiers().find(function (x) { return x.id === r.dataset.dreq; }); dlg.close(); later(function () { dossierRequest(d); }); });
   }
   function dossierRequest(d) {
-    var co = X().bySlug(d.slug), a = acting();
-    if (a && co && a.slug === co.slug) { toast('This is your own dossier'); return; }
+    var co = X().bySlug(d.slug), a = acting(); if (!a) { toast('Create or claim your company page first'); return; }   /* only a company can request a dossier */
+    if (co && a.slug === co.slug) { toast('This is your own dossier'); return; }
     D.modal({ title: 'Request dossier details', body: '<p><b>' + esc(d.product) + '</b> — ' + esc(d.status) + ' · ' + esc(d.deal) + '</p><label class="sq-nda"><input type="checkbox" id="dNda"> ' + esc(a ? a.name : 'I') + ' agrees to the standard mutual NDA before details are shared.</label><div class="dbk-f"><label for="dMsg">Message</label><textarea id="dMsg" placeholder="Target markets, expected volumes, timeline…"></textarea></div>',
       primary: { label: 'Send request', onClick: function (b) {
         if (!b.querySelector('#dNda').checked) { toast('Please accept the NDA'); return false; }
@@ -186,15 +187,16 @@
     D.modal({ title: 'Start a buying group', body: '<div class="dbk-f"><label for="ngP">Product *</label><input id="ngP" data-req></div><div class="dbk-row"><div class="dbk-f"><label for="ngS">Supplier *</label><select id="ngS" data-req><option value="">Choose…</option>' + sups.map(function (c) { return '<option value="' + c.slug + '">' + esc(c.name) + '</option>'; }).join('') + '</select></div><div class="dbk-f"><label for="ngT">Target quantity *</label><input id="ngT" data-req type="number" min="1"></div></div>' +
       '<div class="dbk-row"><div class="dbk-f"><label for="ngU">Unit</label><select id="ngU"><option>kg</option><option>MT</option><option>pcs</option></select></div><div class="dbk-f"><label for="ngQ">Your share *</label><input id="ngQ" data-req type="number" min="1"></div></div><div class="dbk-f"><label for="ngR">Target price</label><input id="ngR" placeholder="e.g. US$ 2.90/kg"></div>',
       primary: { label: 'Start group', onClick: function (b) { if (!D.requireFields(b)) return false; var a = acting(); if (!a) { toast('Act as a company to start a group'); return false; }
-        var DL = window.dxDeals, d = DL.mk('group', { slug: a.slug, name: a.name }, b.querySelector('#ngS').value, 'Group buy — ' + b.querySelector('#ngP').value.trim(), { product: b.querySelector('#ngP').value.trim(), target: +b.querySelector('#ngT').value, unit: b.querySelector('#ngU').value, price: b.querySelector('#ngR').value.trim() || 'To be confirmed', inc: 'EXW', by: new Date(Date.now() + 21 * 864e5).toISOString().slice(0, 10) }, 'Buying group opened');
-        d.members = [{ slug: a.slug, name: a.name, qty: +b.querySelector('#ngQ').value }]; DL.save(d); toast('Group started — other companies can join now'); later(groupsDialog); } } });
+        var tgt = Math.floor(+b.querySelector('#ngT').value), share = Math.floor(+b.querySelector('#ngQ').value); if (!(tgt > 0) || !(share > 0)) { toast('Quantities must be at least 1'); return false; }
+        var DL = window.dxDeals, d = DL.mk('group', { slug: a.slug, name: a.name }, b.querySelector('#ngS').value, 'Group buy — ' + b.querySelector('#ngP').value.trim(), { product: b.querySelector('#ngP').value.trim(), target: tgt, unit: b.querySelector('#ngU').value, price: b.querySelector('#ngR').value.trim() || 'To be confirmed', inc: 'EXW', by: new Date(Date.now() + 21 * 864e5).toISOString().slice(0, 10) }, 'Buying group opened');
+        d.members = [{ slug: a.slug, name: a.name, qty: share }]; DL.save(d); toast('Group started — other companies can join now'); later(groupsDialog); } } });
   }
 
   /* ── 6 · surplus stock ── */
   function surplusDialog() {
     var dlg = D.modal({ title: 'Surplus stock', secondary: 'Close', primary: { label: 'Post surplus', onClick: function () { later(postSurplus); } },
       body: '<p class="cp-muted">Unused raw materials, packaging and near-expiry stock at a discount — turn frozen stock into cash.</p>' + surplus().map(function (s) { var co = X().bySlug(s.slug);
-        return '<div class="mr-row"><span class="sp-off">−' + s.off + '%</span><div class="mr-b"><b>' + esc(s.product) + '</b><small>' + esc(s.qty) + ' · batch ' + esc(s.batch) + (s.expiry !== '—' ? ' · expires ' + esc(s.expiry) : '') + ' · ' + esc(co ? co.name : '') + '</small></div><b class="sp-price">' + esc(s.price) + '</b><button type="button" class="dr-btn p sm" data-soffer="' + s.id + '">Make an offer</button></div>'; }).join('') });
+        return '<div class="mr-row"><span class="sp-off">−' + esc(s.off) + '%</span><div class="mr-b"><b>' + esc(s.product) + '</b><small>' + esc(s.qty) + ' · batch ' + esc(s.batch) + (s.expiry !== '—' ? ' · expires ' + esc(s.expiry) : '') + ' · ' + esc(co ? co.name : '') + '</small></div><b class="sp-price">' + esc(s.price) + '</b><button type="button" class="dr-btn p sm" data-soffer="' + s.id + '">Make an offer</button></div>'; }).join('') });
     dlg.el.querySelector('.dbk-box').classList.add('dbk-wide');
     dlg.el.addEventListener('click', function (e) { var o = e.target.closest('[data-soffer]'); if (!o) return; var s = surplus().find(function (x) { return x.id === o.dataset.soffer; }); dlg.close(); later(function () { surplusOffer(s); }); });
   }
@@ -210,7 +212,7 @@
   function postSurplus() {
     var a = acting(); if (!a) { toast('Act as a company to post surplus'); return; }
     D.modal({ title: 'Post surplus stock', body: '<div class="dbk-f"><label for="spP">Product *</label><input id="spP" data-req></div><div class="dbk-row"><div class="dbk-f"><label for="spQ">Quantity *</label><input id="spQ" data-req></div><div class="dbk-f"><label for="spB">Batch</label><input id="spB"></div></div><div class="dbk-row"><div class="dbk-f"><label for="spE">Expiry</label><input id="spE" type="month"></div><div class="dbk-f"><label for="spR">Price *</label><input id="spR" data-req placeholder="e.g. US$ 2.40/kg"></div></div><div class="dbk-f"><label for="spO">Discount %</label><input id="spO" type="number" min="0" max="95" value="30"></div>',
-      primary: { label: 'Post', onClick: function (b) { if (!D.requireFields(b)) return false; var l = st('surplus_new') || []; l.unshift({ id: 's' + Date.now(), slug: a.slug, product: b.querySelector('#spP').value.trim(), qty: b.querySelector('#spQ').value.trim(), batch: b.querySelector('#spB').value.trim() || '—', expiry: b.querySelector('#spE').value || '—', price: b.querySelector('#spR').value.trim(), off: +b.querySelector('#spO').value || 0 }); st('surplus_new', l); toast('Surplus posted'); later(surplusDialog); } } });
+      primary: { label: 'Post', onClick: function (b) { if (!D.requireFields(b)) return false; var l = st('surplus_new') || []; l.unshift({ id: 's' + Date.now(), slug: a.slug, product: b.querySelector('#spP').value.trim(), qty: b.querySelector('#spQ').value.trim(), batch: b.querySelector('#spB').value.trim() || '—', expiry: b.querySelector('#spE').value || '—', price: b.querySelector('#spR').value.trim(), off: Math.min(95, Math.max(0, Math.round(+b.querySelector('#spO').value) || 0)) }); st('surplus_new', l); toast('Surplus posted'); later(surplusDialog); } } });
   }
 
   /* ── 7 · memberships ── */
@@ -219,74 +221,7 @@
       primary: { label: 'Send for confirmation', onClick: function (b) { if (!D.requireFields(b)) return false; var e = st('company_edits') || {}, cur = (e[co.slug] && e[co.slug].memberPending) || []; e[co.slug] = Object.assign({}, e[co.slug] || {}, { memberPending: cur.concat([{ name: b.querySelector('#mbB').value, short: b.querySelector('#mbB').value.split(' ').map(function (w) { return w[0]; }).join('').replace(/[^A-Z]/g, ''), ok: false }]) }); st('company_edits', e); X().render(); toast('Sent to ' + b.querySelector('#mbB').value + ' for confirmation'); } } });
   }
 
-  /* ── page additions ── */
-  function tools() {
-    if (window.dxHub) return;   /* replaced by the company hub */
-    var dir = document.getElementById('dxDir'); if (!dir) return;
-    var S = X().S, a = acting();
-    if (!S.open) {
-      var hero = dir.querySelector('.dr-hero'); if (!hero) return;
-      var bar = dir.querySelector('.dr-tools');
-      var mc = a ? matchesFor(a).length : 0, sig = (a ? a.slug : '') + '|' + mc + '|' + Object.keys(avl()).length;
-      if (bar && bar.dataset.sig === sig) { avlBadges(); return; } if (bar) bar.remove();
-      bar = document.createElement('div'); bar.className = 'dr-tools'; bar.dataset.sig = sig;
-      bar.innerHTML = '<button type="button" class="dr-tool" data-t="toll">' + ic('factory') + 'Find a toll manufacturer</button><button type="button" class="dr-tool" data-t="dossiers">' + ic('doc') + 'Dossiers for licensing</button>' +
-        '<button type="button" class="dr-tool" data-t="groups">' + ic('users') + 'Group buying</button><button type="button" class="dr-tool" data-t="surplus">' + ic('box') + 'Surplus stock</button>' +
-        (a ? '<button type="button" class="dr-tool" data-t="avl">' + ic('clipboard') + 'Approved vendors (' + Object.keys(avl()).length + ')</button><button type="button" class="dr-tool hl" data-t="match">' + ic('handshake') + 'Matches for ' + esc(a.name) + ' (' + mc + ')</button>' : '');
-      hero.insertAdjacentElement('afterend', bar);
-      bar.onclick = function (e) { var b = e.target.closest('[data-t]'); if (!b) return; var t = b.dataset.t;
-        if (t === 'toll' && window.dxFindToll) window.dxFindToll(); else if (t === 'dossiers') dossiersDialog(); else if (t === 'groups') groupsDialog(); else if (t === 'surplus') surplusDialog(); else if (t === 'avl') vendorDialog(); else if (t === 'match') matchesDialog(); };
-      var old = dir.querySelector('.dr-hero-row [data-finder]'); if (old) old.remove();
-      avlBadges(); return;
-    }
-    var co = X().bySlug(S.open); if (!co) return;
-    var owner = X().ownsPage(co);
-    /* memberships under the ratings */
-    var rat = dir.querySelector('.cp-ratings');
-    if (rat && !dir.querySelector('.cp-members')) {
-      var ms = membersOf(co), box = document.createElement('div'); box.className = 'cp-members';
-      box.innerHTML = ms.map(function (m) { return '<span class="mb-badge' + (m.ok ? '' : ' pend') + '" title="' + esc(m.name) + (m.ok ? ' — confirmed by the organisation' : ' — waiting for confirmation') + '">' + ic('seal') + 'Member: ' + esc(m.short || m.name) + (m.ok ? '' : ' · pending') + '</span>'; }).join('') + (owner ? '<button type="button" class="dr-link" data-addmb="1">+ Add membership</button>' : '');
-      if (ms.length || owner) rat.insertAdjacentElement('afterend', box);
-      var ab = box.querySelector('[data-addmb]'); if (ab) ab.onclick = function () { addMembership(co); };
-    }
-    /* vendor status + questionnaire for the company you act for */
-    var cta = dir.querySelector('.cp-cta');
-    if (cta && a && a.slug !== co.slug && !cta.querySelector('.avl-ctl')) {   /* the company you act for evaluates this supplier — even a sister company */
-      var cur = avl()[co.slug], ctl = document.createElement('span'); ctl.className = 'avl-ctl';
-      ctl.innerHTML = '<select aria-label="Vendor status for ' + esc(a.name) + '"><option value="">Vendor status: not on list</option>' + Object.keys(AVL).map(function (k) { return '<option value="' + k + '"' + (cur && cur.status === k ? ' selected' : '') + '>' + AVL[k][0] + '</option>'; }).join('') + '</select><button type="button" class="dr-btn sm" data-sq="1">' + ic('clipboard') + 'Send questionnaire</button>';
-      cta.appendChild(ctl);
-      ctl.querySelector('select').onchange = function (e) { setAvl(co.slug, e.target.value); toast(e.target.value ? co.name + ': ' + AVL[e.target.value][0] + ' for ' + a.name : co.name + ' removed from your vendor list'); };
-      ctl.querySelector('[data-sq]').onclick = function () { sendQuestionnaire(co); };
-    }
-    /* looking for (overview) */
-    var body = dir.querySelector('.cp-body');
-    if (S.tab === 'overview' && body && !body.querySelector('.cp-look')) {
-      var lk = lookingOf(co);
-      if (lk.length || owner) { var sec = document.createElement('section'); sec.className = 'cp-sec cp-look'; sec.innerHTML = '<h3>' + esc(co.name) + ' is looking for</h3><div class="cap-forms">' + (lk.length ? lk.map(function (l) { return '<span class="lk">' + esc(l) + '</span>'; }).join('') : '<span class="cp-muted">Nothing yet</span>') + '</div>' + (owner ? '<button type="button" class="dr-btn sm" data-lk="1">' + ic('pen') + 'Edit</button>' : '<button type="button" class="dr-btn sm" data-lkmsg="1">' + ic('chat') + 'We can help</button>');
-        body.insertBefore(sec, body.firstChild);
-        var e1 = sec.querySelector('[data-lk]'); if (e1) e1.onclick = function () { editLooking(co); };
-        var e2 = sec.querySelector('[data-lkmsg]'); if (e2) e2.onclick = function () { if (window.dxOpenChat) window.dxOpenChat(co.name); }; }
-    }
-    /* dossiers tab */
-    var tabs = dir.querySelector('.cp-tabs'), ds = dossiers().filter(function (d) { return d.slug === co.slug; });
-    if (tabs && (ds.length || owner) && !tabs.querySelector('[data-tab="dossiers"]')) {
-      var t = document.createElement('button'); t.type = 'button'; t.className = 'cp-tab' + (S.tab === 'dossiers' ? ' on' : ''); t.dataset.tab = 'dossiers'; t.setAttribute('role', 'tab'); t.textContent = 'Dossiers (' + ds.length + ')';
-      var jobs = tabs.querySelector('[data-tab="jobs"]'); tabs.insertBefore(t, jobs);
-    }
-    if (S.tab === 'dossiers' && body && !body.querySelector('.cp-dos')) {
-      body.innerHTML = '<section class="cp-sec cp-dos"><h3>Dossiers for licensing</h3>' + (ds.length ? ds.map(function (d) { return '<div class="cp-job"><span class="cp-jic cp-oic">' + ic('doc') + '</span><span><b>' + esc(d.product) + '</b><small>' + esc(d.status) + ' · ' + esc(d.markets) + ' · ' + esc(d.deal) + '</small></span>' + (owner ? '' : '<button type="button" class="dr-btn p sm" data-dreq2="' + d.id + '">Request details</button>') + '</div>'; }).join('') : '<p class="cp-muted">No dossiers listed.</p>') + (owner ? '<button type="button" class="dr-btn sm" data-dadd="1">' + ic('plus') + 'Add a dossier</button>' : '') + '</section>';
-      var add = body.querySelector('[data-dadd]'); if (add) add.onclick = function () { addDossier(co); };
-      body.querySelectorAll('[data-dreq2]').forEach(function (b) { b.onclick = function () { dossierRequest(dossiers().find(function (x) { return x.id === b.dataset.dreq2; })); }; });
-    }
-  }
-  function avlBadges() {
-    var m = avl(); document.querySelectorAll('#dxDir .dr-card').forEach(function (c) {
-      var s = m[c.dataset.slug], old = c.querySelector('.avl'); if (old && (!s || old.dataset.s !== s.status)) old.remove();
-      if (s && !c.querySelector('.avl')) { var b = document.createElement('span'); b.className = 'avl ' + AVL[s.status][1]; b.dataset.s = s.status; b.textContent = AVL[s.status][0]; var n = c.querySelector('.dr-name'); if (n) n.appendChild(b); }
-    });
-  }
   window.dxVendor = { list: vendorDialog, set: setAvl, get: function () { return avl(); } };
   window.dxDir3 = { AVL: AVL, avl: avl, setAvl: setAvl, vendorDialog: vendorDialog, sendQuestionnaire: sendQuestionnaire, qDeal: function (f, t) { return qDeal(f, t); }, lookingOf: lookingOf, editLooking: editLooking, matchesFor: matchesFor, membersOf: membersOf, addMembership: addMembership,
     dossiers: dossiers, dossierRequest: dossierRequest, addDossier: addDossier, groupDeals: groupDeals, total: total, groupsDialog: groupsDialog, newGroup: newGroup, surplus: surplus, surplusOffer: surplusOffer, postSurplus: postSurplus, dossiersDialog: dossiersDialog, surplusDialog: surplusDialog };
-  C.onRender('directory-tools', tools);
 })();
