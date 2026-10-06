@@ -113,7 +113,7 @@
     var b = e.target.closest('[data-act]'); if (!b) return;
     var uid = +hc.dataset.uid, name = hc.dataset.name; hideCard();
     if (b.dataset.act === 'profile' && uid && window.gotoProfile) window.gotoProfile(uid);
-    if (b.dataset.act === 'msg') { if (window.dxOpenChat && window.dxCore.on('chat-dock') && document.body.getAttribute('data-page') !== 'messages') window.dxOpenChat(name); else if (uid && window.messageUser) window.messageUser(uid); else { window.__mxTo = name; if (window.goto) window.goto('messages'); } }
+    if (b.dataset.act === 'msg') { if (!window.dxLive && window.dxOpenChat && window.dxCore.on('chat-dock') && document.body.getAttribute('data-page') !== 'messages') window.dxOpenChat(name); else if (uid && window.messageUser) window.messageUser(uid); else { window.__mxTo = name; if (window.goto) window.goto('messages'); } }   /* live (window.dxLive): straight to the real Messages page */
   });
 
   /* ═════ B10 · compare marketplace listings ═════ */
@@ -177,7 +177,7 @@
   function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
   var STATES = [['new', 'New', 'spark'], ['drop', 'Price dropped 8%', 'trend'], ['exp', 'Expiring in 3 days', 'warning'], ['ver', 'Recently verified', 'seal']];
   function states() {
-    var mk = document.getElementById('mkx'); if (!mk) return;
+    var mk = document.getElementById('mkx'); if (!mk || window.dxLive) return;   /* demo only: the badges come from a hash of the title, not from data */
     mk.querySelectorAll('#mkx .sponsored-card, #mkx .lcard, #mkx .scard').forEach(function (c, i) {
       if (c.querySelector('.dx-state')) return;
       var t = txt(c.querySelector('.sp-title,.lc-title,.sc-title')), s;

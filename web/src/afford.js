@@ -44,7 +44,8 @@
     if (/profile-av-cam/.test(cls)) return changePhoto;
     var u = user(t) || (row && user(txt(row.querySelector('.sugg-name,.post-name,.me-name,.p-name,.n-name,.name')))); if (u && /av|name|me-row|author|person|sugg|post-head|user/i.test(cls + ' ' + t)) return function () { window.gotoProfile ? window.gotoProfile(u.id) : search(u.name); };
     var co = company(t); if (co) return function () { window.dxHub ? window.dxHub.page(co.slug) : search(co.name); };
-    var t2 = t.replace(/^[^A-Za-z\u0600-\u06FF]+/, ''); var g = groupTitles().find(function (x) { return x && (t2 === x || t2.indexOf(x) === 0 || x.indexOf(t2) === 0 || (row && txt(row).replace(/^[^A-Za-z\u0600-\u06FF]+/, '').indexOf(x) === 0)); }); if (g && /group|gcard|mygroup|mg-|sh-row|sug/i.test(cls) || (g && t.length < 60)) return function () { openGroup(g); };
+    if (el.closest('.dx-ic,.dx-seal') || /verified/i.test(t)) return null;   /* a verification seal is a label, not a link anywhere */
+    var t2 = t.replace(/^[^A-Za-z\u0600-\u06FF]+/, ''); var g = t2.length >= 3 ? groupTitles().find(function (x) { return x && (t2 === x || t2.indexOf(x) === 0 || x.indexOf(t2) === 0 || (row && txt(row).replace(/^[^A-Za-z\u0600-\u06FF]+/, '').indexOf(x) === 0)); }) : null; if (g && /group|gcard|mygroup|mg-|sh-row|sug/i.test(cls) || (g && t.length < 60)) return function () { openGroup(g); };
     if (/^connections/i.test(t)) return function () { window.goto('network'); };
     if (/profile views|impressions|views/i.test(t)) return function () { window.goto('profile'); };
     if (/saved/i.test(t)) return function () { window.goto('saved'); };

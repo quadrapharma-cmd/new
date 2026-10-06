@@ -1,5 +1,6 @@
 .dx-molchip{display:inline-flex;align-items:center;gap:5px;margin-inline-start:8px;padding:2px 9px 2px 6px;border-radius:999px;border:1px solid #BFD3F8;background:#EEF4FF;color:#1A56DB;font:600 11px/1.6 Poppins,sans-serif;vertical-align:middle;cursor:pointer}
 .dx-molchip svg{width:14px;height:14px}
+.dx-molchip::after{content:"Structure"}html[lang=ar] .dx-molchip::after{content:"التركيب"}   /* label outside the title's text nodes (the title is what share cards and search read) */
 .dx-molchip:hover{background:#1A56DB;color:#fff;border-color:#1A56DB}
 .dx-mol{display:grid;grid-template-columns:1fr;gap:16px}
 .dx-mol-svg{background:#fff;border:1px solid #E6EBF3;border-radius:14px;padding:8px;display:grid;place-items:center}

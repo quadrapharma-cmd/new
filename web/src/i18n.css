@@ -4,3 +4,6 @@ html[lang=ar] .dx-ic svg,html[lang=ar] .dx-svg{direction:ltr}
 html[lang=ar] input[type=email],html[lang=ar] input[type=password],html[lang=ar] code{direction:ltr;text-align:right}
 /* touch screens in right-to-left: no space reserved for a scrollbar on the left (scrolling itself is unchanged) */
 @media (hover:none) and (pointer:coarse){html[dir=rtl] #content{scrollbar-width:none}html[dir=rtl] #content::-webkit-scrollbar{width:0;height:0;display:none}}
+/* Arabic interface: what people wrote keeps its own direction, so an English sentence ends with its own full stop and "10:32 AM" reads in order
+   (the same as dir="auto", done in CSS: no element is rewritten and nothing changes in English) */
+html[dir=rtl] :is(.post-text,.post-body,.cmt-text,.msg-text,.bubble,.mx-bubble,.t-preview,.lc-title,.sp-title,.sc-title,.jc-title,.dc-title,.sm-title,.gcard-title,.gcard-desc,.dl-title,.ctx-title,.ctx-meta,.sl-title,.qv-title,.qv-desc,.sp-desc,.lc-desc,.jc-desc,.bubble-time,.mx-bubble-time,.t-time,.notif-time){unicode-bidi:plaintext}
