@@ -52,7 +52,7 @@
   document.addEventListener('dx:beforepage', closeCachedWindows);
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    var open = document.querySelectorAll(OPEN_SEL); if (open.length) { closeCachedWindows(); e.stopPropagation(); }
+    var open = document.querySelectorAll(OPEN_SEL); if (open.length) closeCachedWindows();   /* the event goes on to the page's own Escape handling (lightbox, .modal-bg) */
   });
   function onPage(name, fn, before) { document.addEventListener(before ? 'dx:beforepage' : 'dx:page', function (e) { run(name, fn, [e.detail.page]); }); }
   /* one render bus */

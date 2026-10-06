@@ -154,14 +154,18 @@
   var dock = document.createElement('div'); dock.id = 'dxDock'; document.body.appendChild(dock);
   var chats = D ? D.store.get('dock', {}) : {}, open = [];
   function saveChats() { if (D) D.store.set('dock', chats); }
+  /* live app (window.dxLive is defined by the adapter, never by the demo): the dock only sends through the adapter's
+     dxLiveHook('dockMessage', {to, text}) — a null payload asks whether it is supported — otherwise it points to the real Messages page */
+  function liveSend() { try { return !!window.dxLive && typeof window.dxLiveHook === 'function' && window.dxLiveHook('dockMessage', null) === true; } catch (e) { return false; } }
   function drawDock() {
     if (document.body.getAttribute('data-page') === 'messages' || !document.getElementById('app') || !document.getElementById('app').offsetWidth) { dock.innerHTML = ''; return; }
+    var form = !window.dxLive || liveSend() ? '<form class="dk-f"><input placeholder="Write a message…" aria-label="Message"><button type="submit">' + ic('send') + '</button></form>'
+      : '<div class="dk-f dk-live"><button type="button" class="dk-open" data-a="full">' + ic('chat') + 'Open Messages to send</button></div>';
     dock.innerHTML = open.map(function (o) {
-      var msgs = chats[o.name] || [];
+      var msgs = window.dxLive ? [] : (chats[o.name] || []);   /* live: the real thread lives in Messages, nothing is kept in this browser */
       return '<div class="dk-win' + (o.min ? ' min' : '') + '" data-n="' + esc(o.name) + '" title="' + (o.min ? 'Open chat' : '') + '"><div class="dk-h"><span class="dk-av">' + esc(o.name.replace(/^(Dr\.|Eng\.)\s*/, '').split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2)) + '</span><b>' + esc(o.name) + '</b>' +
         '<button type="button" data-a="full" title="Open full chat">' + ic('chat') + '</button><button type="button" data-a="min" title="Minimize">–</button><button type="button" data-a="x" title="Close">×</button></div>' +
-        '<div class="dk-b">' + msgs.slice(-30).map(function (m) { return '<div class="dk-m ' + (m.me ? 'me' : 'them') + '">' + esc(m.text) + '</div>'; }).join('') + '</div>' +
-        '<form class="dk-f"><input placeholder="Write a message…" aria-label="Message"><button type="submit">' + ic('send') + '</button></form></div>';
+        '<div class="dk-b">' + msgs.slice(-30).map(function (m) { return '<div class="dk-m ' + (m.me ? 'me' : 'them') + '">' + esc(m.text) + '</div>'; }).join('') + '</div>' + form + '</div>';
     }).join('');
     dock.querySelectorAll('.dk-b').forEach(function (b) { b.scrollTop = b.scrollHeight; });
   }
@@ -182,15 +186,19 @@
   });
   dock.addEventListener('submit', function (e) {
     e.preventDefault(); var f = e.target, win = f.closest('.dk-win'), name = win.dataset.n, inp = f.querySelector('input'), v = inp.value.trim(); if (!v) return;
+    if (window.dxLive) {   /* live: the adapter writes the real message; the thread is read in Messages, no reply is invented */
+      if (!liveSend()) { drawDock(); return; }
+      window.dxLiveHook('dockMessage', { to: name, text: v }); inp.value = ''; if (D) D.toast('Message sent — see Messages for the reply'); return;
+    }
     push(name, { me: true, text: v }); if (rawSend) rawSend.call(D, { to: name, text: v });   /* straight to the inbox, window stays open */
     drawDock(); var i2 = dock.querySelector('.dk-win[data-n="' + name.replace(/"/g, '') + '"] input'); if (i2) i2.focus();
-    setTimeout(function () { push(name, { me: false, text: 'Thanks — I\u2019ll get back to you shortly.' }); if (open.some(function (x) { return x.name === name; })) drawDock(); }, 1800);
+    setTimeout(function () { push(name, { me: false, text: 'Thanks — I\u2019ll get back to you shortly.' }); if (open.some(function (x) { return x.name === name; })) drawDock(); }, 1800);   /* demo only: a sample reply */
   });
   /* messages sent from listings / jobs / hover card open a dock window */
   var rawSend = D && D.sendToOutbox;
   if (D && D.sendToOutbox) {
     var send = D.sendToOutbox;
-    D.sendToOutbox = function (item) { var r = send.apply(this, arguments); if (item && item.to && !(chats[item.to] || []).some(function (m) { return m.me && m.text === item.text; })) push(item.to, { me: true, text: item.text }); if (item && item.to) openChat(item.to, true); return r; };   /* opens minimised: never covers the page */
+    D.sendToOutbox = function (item) { var r = send.apply(this, arguments); if (window.dxLive) return r; if (item && item.to && !(chats[item.to] || []).some(function (m) { return m.me && m.text === item.text; })) push(item.to, { me: true, text: item.text }); if (item && item.to) openChat(item.to, true); return r; };   /* opens minimised: never covers the page */
   }
   document.addEventListener('dx:page', function () { open.forEach(function (o) { o.min = true; }); drawDock(); });   /* changing page tucks chats away */
 

@@ -2,6 +2,8 @@
 (function () {
   var C = window.dxCore, D = window.DBK; if (!C || !D) return;
   function txt(el) { return el ? el.textContent.replace(/\s+/g, ' ').trim() : ''; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function digits(s) { return String(s == null ? '' : s).replace(/[^0-9+]/g, ''); }   /* tel: and wa.me links carry digits only — never text a company admin typed */
   function store(k, v) { try { if (v === undefined) { var x = JSON.parse(localStorage.getItem('dx_' + k) || 'null'); return Array.isArray(x) ? x : []; } localStorage.setItem('dx_' + k, JSON.stringify(v)); } catch (e) { return []; } }
 
   /* ── Groups: "+ Join" / "✓ Joined" join and leave, remembered ── */
@@ -47,11 +49,11 @@
     } else if (/Calling/i.test(oc) || label === '📞') {
       e.preventDefault(); e.stopImmediatePropagation();
       var q = partner(), co = q.user && window.dxDir ? window.dxDir.companies().find(function (c) { return c.name === q.user.company; }) : null;
-      var phone = co && co.phone, wa = co && co.whatsapp;
+      var phone = co && co.phone, wa = co && digits(co.whatsapp);
       D.modal({ title: 'Call ' + (q.name || 'contact'), secondary: 'Close',
-        body: phone || wa ? '<p>' + (q.user && q.user.company ? 'Company phone of ' + q.user.company + ':' : 'Phone:') + '</p>' +
-            (phone ? '<p><a class="dr-btn p" href="tel:' + phone.replace(/\s/g, '') + '">📞 ' + phone + '</a></p>' : '') + (wa ? '<p><a class="dr-btn" href="https://wa.me/' + wa + '" target="_blank" rel="noopener">WhatsApp</a></p>' : '')
-          : '<p>' + (q.name || 'This contact') + ' has not shared a phone number. Send a message and ask for a call — the quick reply “Schedule a call” does it in one tap.</p>' });
+        body: phone || wa ? '<p>' + (q.user && q.user.company ? 'Company phone of ' + esc(q.user.company) + ':' : 'Phone:') + '</p>' +
+            (phone ? '<p><a class="dr-btn p" href="tel:' + esc(digits(phone)) + '">📞 ' + esc(phone) + '</a></p>' : '') + (wa ? '<p><a class="dr-btn" href="https://wa.me/' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp</a></p>' : '')
+          : '<p>' + esc(q.name || 'This contact') + ' has not shared a phone number. Send a message and ask for a call — the quick reply “Schedule a call” does it in one tap.</p>' });
     }
   }, true);
 
@@ -60,9 +62,10 @@
   document.addEventListener('click', function (e) {
     var s = e.target.closest && e.target.closest('#content .post-stats span'); if (!s || s.getAttribute('onclick')) return;
     var m = /(\d[\d,]*)\s*reposts?/i.exec(txt(s)); if (!m) return;
+    if (window.dxLive) return;   /* live: only a count is known — the demo list of sample people must not be shown as reposters */
     e.preventDefault(); e.stopPropagation();
     var people = (window.USERS || []).slice(0, Math.min(6, parseInt(m[1].replace(/,/g, ''), 10) || 1));
-    D.modal({ title: m[1] + ' reposts', secondary: 'Close', body: people.map(function (u) { return '<div class="mr-row"><div class="mr-b"><b>' + u.name + '</b><small>' + (u.headline || '').split('|')[0] + '</small></div><button type="button" class="dr-btn sm" data-rp="' + u.id + '">Profile</button></div>'; }).join('') + (parseInt(m[1], 10) > people.length ? '<p class="cp-muted">and ' + (parseInt(m[1], 10) - people.length) + ' more in your network</p>' : '') }).el.addEventListener('click', function (ev) { var b = ev.target.closest('[data-rp]'); if (b && window.gotoProfile) { document.querySelectorAll('.dbk-ov').forEach(function (o) { o.remove(); }); window.gotoProfile(+b.dataset.rp); } });
+    D.modal({ title: m[1] + ' reposts', secondary: 'Close', body: people.map(function (u) { return '<div class="mr-row"><div class="mr-b"><b>' + esc(u.name) + '</b><small>' + esc((u.headline || '').split('|')[0]) + '</small></div><button type="button" class="dr-btn sm" data-rp="' + (+u.id || 0) + '">Profile</button></div>'; }).join('') + (parseInt(m[1], 10) > people.length ? '<p class="cp-muted">and ' + (parseInt(m[1], 10) - people.length) + ' more in your network</p>' : '') }).el.addEventListener('click', function (ev) { var b = ev.target.closest('[data-rp]'); if (b && window.gotoProfile) { document.querySelectorAll('.dbk-ov').forEach(function (o) { o.remove(); }); window.gotoProfile(+b.dataset.rp); } });
   }, true);
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('#content .badge-cat'); if (!b) return;

@@ -24,13 +24,15 @@
 .fy-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .fy-act{display:inline-flex;align-items:center;gap:4px;border:1px solid #D5D9E1;background:#fff;border-radius:999px;padding:7px 14px;font:600 12.5px Poppins,sans-serif;color:#0E1320;cursor:pointer}
 .fy-act:hover{border-color:#1a56db;color:#1a56db}
-.fy-note{margin-left:auto;font-size:12px;color:#64748b}.fy-link{border:none;background:none;color:#1a56db;font:600 12px Poppins,sans-serif;cursor:pointer;text-decoration:underline}
+.fy-note{margin-left:auto;font-size:12px;color:#64748b}.fy-link{border:none;background:none;color:#1a56db;font:600 12px Poppins,sans-serif;cursor:pointer;text-decoration:underline;padding:3px 0;margin:-3px 0}   /* 24px tall tap target without moving the line */
 @media (max-width:900px){#dxForYou{padding:0 12px}.fy-grid{grid-template-columns:1fr}#dxForYou h2{font-size:21px}.fy-roles{border-radius:18px}.fy-note{margin-left:0;flex-basis:100%}}
 .dx-flash{animation:dxFlash 1.8s ease}
 @keyframes dxFlash{0%,100%{box-shadow:var(--sh-1)}20%,60%{box-shadow:0 0 0 4px rgba(233,159,84,.85),var(--sh-2)}}
 /* 16 · command search */
 .dx-kbd{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:1px solid #D5D9E1;background:#fff;border-radius:8px;padding:2px 7px;font:600 11px 'JetBrains Mono',monospace;color:#64748b;cursor:pointer}
 .top-search{position:relative}
+/* the input reserves the badge's width, so typed text (and the Arabic placeholder, which starts on the right) never runs under it */
+.top-search.dx-has-kbd input{padding-right:66px}
 .dx-search-btn{display:none;width:40px;height:40px;border-radius:50%;border:1px solid #E6E8EE;background:#fff;color:#374151;align-items:center;justify-content:center;cursor:pointer;margin-right:8px}
 .dx-search-btn .dx-ic{margin:0}.dx-search-btn .dx-svg{width:18px;height:18px}
 @media (max-width:900px){.dx-search-btn{display:inline-flex}}
@@ -63,7 +65,7 @@ html.dx-dark #dxCmd .cm-box{filter:invert(1) hue-rotate(180deg)}
 .ss-pill{display:inline-flex;align-items:center;border:1px solid #D5D9E1;border-radius:999px;background:#fff;overflow:hidden}
 .ss-go{border:none;background:none;padding:6px 6px 6px 12px;font:600 12.5px Poppins,sans-serif;color:#0E1320;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .ss-go em{font-style:normal;background:#E99F54;color:#3A1E05;border-radius:999px;padding:1px 8px;font:700 10.5px Poppins,sans-serif}
-.ss-x{border:none;background:none;color:#94a3b8;padding:0 10px 0 4px;font-size:15px;cursor:pointer}
+.ss-x{border:none;background:none;color:#94a3b8;padding:0 10px 0 4px;font-size:15px;cursor:pointer;min-width:24px;min-height:24px}
 .ss-seg{display:flex;gap:8px;flex-wrap:wrap}.ss-seg label{display:inline-flex;gap:5px;align-items:center;border:1px solid #D5D9E1;border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
 /* 18 · profile insights */
 .dx-insights{flex-basis:100%;background:#fff;border:1px solid #E6E8EE;border-radius:var(--r-lg,22px);padding:18px 20px;margin:14px 0 4px;box-shadow:var(--sh-1)}
@@ -85,5 +87,5 @@ html.dx-dark #dxCmd .cm-box{filter:invert(1) hue-rotate(180deg)}
 .in-person:hover{background:#F8FAFC}
 .in-av{width:32px;height:32px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:700 11px Poppins,sans-serif}
 .in-person span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column}.in-person b{font-size:13px;color:#0E1320}.in-person small{font-size:11.5px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.in-person em{font-style:normal;font:600 11px 'JetBrains Mono',monospace;color:#94a3b8}
+.in-person em{font-style:normal;font:600 11px 'JetBrains Mono',monospace;color:#64748b}   /* 4.8:1 on white (was #94a3b8, 2.6:1) */
 @media (max-width:900px){.in-grid{grid-template-columns:1fr}}

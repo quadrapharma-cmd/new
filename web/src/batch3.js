@@ -51,7 +51,7 @@
     seeker: { label: 'Find a job', icon: 'briefcase', title: 'Jobs that match your profile', sub: 'Based on your skills, experience and preferred locations.', items: JOBS, act: [['Post my profile', 'user', 'jobs'], ['Improve my profile', 'trend', 'profile']] },
     hiring: { label: 'Hire', icon: 'users', title: 'Candidates for your open roles', sub: 'Available professionals ranked by fit and by what past employers say.', items: CANDS, act: [['Post a job', 'plus', 'jobs'], ['Top-rated candidates', 'trophy', 'jobs']] }
   };
-  var role = store('role') || 'supplier';
+  var role = ROLES[store('role')] ? store('role') : 'supplier';   /* an unknown stored role falls back instead of breaking the panel */
 
   /* ── flash a card after navigating to it ── */
   function flashText(sel, q, tries) {
@@ -76,7 +76,7 @@
   /* ── 14 + 15: the "For you" panel on Home ── */
   function ring(p) { return '<span class="fy-score" style="--p:' + p + '"><b>' + p + '</b><i>%</i></span>'; }
   function forYou() {
-    if (page() !== 'feed') return;
+    if (page() !== 'feed' || window.dxLive) return;   /* demo content (production: live queries) */
     var hero = document.querySelector('#content > .dg-hero'); if (!hero) return;
     var panel = document.getElementById('dxForYou');
     if (panel && panel.dataset.role === role && panel.previousElementSibling === hero) return;
@@ -179,13 +179,17 @@
   });
   function searchEntry() {
     var si = document.getElementById('searchIn');
-    if (si && !si.parentNode.querySelector('.dx-kbd')) { var k = document.createElement('button'); k.type = 'button'; k.className = 'dx-kbd'; k.title = 'Search everything (Ctrl+K)'; k.innerHTML = 'Ctrl K'; k.onclick = openCmd; si.parentNode.appendChild(k); }
+    if (si && !si.parentNode.querySelector('.dx-kbd')) { var k = document.createElement('button'); k.type = 'button'; k.className = 'dx-kbd'; k.title = 'Search everything (Ctrl+K)'; k.innerHTML = 'Ctrl K'; k.onclick = openCmd; si.parentNode.appendChild(k); si.parentNode.classList.add('dx-has-kbd'); }
     var right = document.querySelector('.topbar .top-right');
     if (right && !document.getElementById('dxSearchBtn')) { var b = document.createElement('button'); b.id = 'dxSearchBtn'; b.type = 'button'; b.className = 'dx-search-btn'; b.setAttribute('aria-label', 'Search everything'); b.innerHTML = ic('search'); b.onclick = openCmd; right.insertBefore(b, right.firstChild); }
   }
 
   /* ── 17: saved searches with alerts (Marketplace) ── */
-  function saved(v) { if (v === undefined) return store('saved_searches') || []; store('saved_searches', v); }
+  function saved(v) {   /* stored searches are re-checked on read: numbers stay numbers, anything malformed is dropped */
+    if (v !== undefined) return store('saved_searches', v);
+    return (store('saved_searches') || []).filter(function (s) { return s && typeof s === 'object' && s.f && typeof s.f === 'object' && Array.isArray(s.f.checks); })
+      .map(function (s) { s.id = +s.id || 0; s.name = String(s.name == null ? '' : s.name); if (s.fresh != null) s.fresh = +s.fresh || 0; return s; });
+  }
   function mk() { return document.getElementById('mkx'); }
   function captureFilters() {
     var m = mk(); if (!m) return null;
@@ -219,15 +223,15 @@
         if (!D.requireFields(b)) return false;
         var s = { id: Date.now(), name: b.querySelector('#ssName').value.trim(), alert: b.querySelector('input[name=ssAlert]:checked').value, f: f, seen: Date.now(), fresh: 0 };
         var list = saved(); list.unshift(s); saved(list.slice(0, 12)); savedBar(true);
-        if (s.alert !== 'off' && window.NOTIFS) { window.NOTIFS.unshift({ id: Date.now(), uid: (window.ME || {}).id || 1, icon: '🔔', text: 'Saved search <b>' + esc(s.name) + '</b> — we\u2019ll alert you ' + (s.alert === 'instant' ? 'as soon as' : s.alert === 'daily' ? 'daily when' : 'weekly when') + ' new listings match', ts: 'now', read: false, type: 'search' }); if (window.updateBadges) window.updateBadges(); }
+        if (s.alert !== 'off' && window.NOTIFS && !window.dxLive) { window.NOTIFS.unshift({ id: Date.now(), uid: (window.ME || {}).id || 1, icon: '🔔', text: 'Saved search <b>' + esc(s.name) + '</b> — we\u2019ll alert you ' + (s.alert === 'instant' ? 'as soon as' : s.alert === 'daily' ? 'daily when' : 'weekly when') + ' new listings match', ts: 'now', read: false, type: 'search' }); if (window.updateBadges) window.updateBadges(); }
         D.toast('Search saved' + (s.alert !== 'off' ? ' — alerts ' + s.alert : ''));
       } } });
   }
   function savedBar(force) {
     var m = mk(); if (!m) return; var main = m.querySelector('#tab-browse .main'); if (!main) return;
     var list = saved(), bar = main.querySelector(':scope > .dx-saved');
-    /* demo: pretend new matches arrived since you last opened each search */
-    list.forEach(function (s) { if (s.fresh == null || (Date.now() - (s.seen || 0) > 60000 && !s.fresh)) s.fresh = s.alert === 'off' ? 0 : (s.id % 4) + 1; });
+    /* demo: pretend new matches arrived since you last opened each search (never in the live app) */
+    list.forEach(function (s) { if (window.dxLive) { s.fresh = 0; return; } if (s.fresh == null || (Date.now() - (s.seen || 0) > 60000 && !s.fresh)) s.fresh = s.alert === 'off' ? 0 : (s.id % 4) + 1; });
     var sig = JSON.stringify(list.map(function (s) { return [s.id, s.fresh]; }));
     if (bar && bar.dataset.sig === sig && !force) return;
     if (!list.length) { if (bar) bar.remove(); return; }
@@ -252,6 +256,7 @@
 
   /* ── 18: profile insights (your own profile) ── */
   function insights() {
+    if (window.dxLive) return;   /* demo figures only — the live app has no view statistics yet */
     var nameEl = document.querySelector('.profile-name'), me = window.ME; if (!nameEl || !me || txt(nameEl).indexOf(me.name) !== 0) return;
     var host = document.getElementById('profileTabContent'); if (!host || host.parentNode.querySelector('.dx-insights')) return;
     var views = [38, 44, 41, 57, 63, 59, 71], total = views.reduce(function (a, b) { return a + b; }, 0), prev = 262, delta = Math.round((total - prev) / prev * 100);

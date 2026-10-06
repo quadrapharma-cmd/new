@@ -1,8 +1,12 @@
 /* ═════════ Accessibility: colour contrast to WCAG AA (4.5:1) with the closest shades of the same colours ═════════ */
-.tick-i,.tick-i span{color:#475569!important}
-.tick-i b[data-dxcat="supply"]{color:#15803d!important}.tick-i b[data-dxcat="demand"]{color:#c2410c!important}.tick-i b[data-dxcat="license"]{color:#a16207!important}
-.tick-i b[data-dxcat="cmo"]{color:#4338ca!important}.tick-i b[data-dxcat="equipment"]{color:#334155!important}.tick-i b[data-dxcat="service"]{color:#1d4ed8!important}
-.tick-i b[data-dxcat="job"]{color:#be185d!important}.tick-i b[data-dxcat="training"]{color:#6d28d9!important}
+/* the ticker runs on the navy band (#0a1f4d): the approved light text and light shades of the category colours, 7:1 or better
+   (the dark shades below 3:1 were made for white). Each item carries the band's own colour so checkers that cannot see the band behind
+   the moving strip measure the right pair — it looks exactly the same. */
+.tick-i{background-color:var(--dg-ink,#0a1f4d)}
+.tick-i,.tick-i span{color:#C9CFDB!important}
+.tick-i b[data-dxcat="supply"]{color:#4ade80!important}.tick-i b[data-dxcat="demand"]{color:#fb923c!important}.tick-i b[data-dxcat="license"]{color:#facc15!important}
+.tick-i b[data-dxcat="cmo"]{color:#a5b4fc!important}.tick-i b[data-dxcat="equipment"]{color:#C9CFDB!important}.tick-i b[data-dxcat="service"]{color:#93c5fd!important}
+.tick-i b[data-dxcat="job"]{color:#f9a8d4!important}.tick-i b[data-dxcat="training"]{color:#c4b5fd!important}
 .t-time,.hb-src,.intel-item,.msg-date-divider,.dr-stats small,.in-bars small,.ss-x,.cs-c,.dl-tl small{color:#64748b!important}
 .hb-src.old{color:#92400E!important}
 .ch-status{color:#15803d!important}
@@ -14,7 +18,9 @@ em{color:inherit}
 /* visible keyboard focus everywhere */
 :focus-visible{outline:3px solid #1a56db!important;outline-offset:2px!important}
 .t-time{color:#526072!important}   /* also readable on the tinted (selected / unread) conversation rows */
-.tick-i b[data-dxcat="other"],.tick-i b:not([data-dxcat]){color:#334155!important}
+.tick-i b[data-dxcat="other"],.tick-i b:not([data-dxcat]){color:#C9CFDB!important}
+/* verification-level badge: the label ink is the tier colour darkened to 4.5:1 on its 10% tint (green #10b981 measured 2.3:1); bars and border keep the tier colour */
+.dx-tier[style*="10B981" i]{color:#047857!important}.dx-tier[style*="94A3B8" i]{color:#5b6778!important}   /* Inspected 2.3→5.0:1, Not verified 2.4→5.3:1; Registered (5.3) and Licensed (4.9) already pass */
 .st-expired em,.cw-seal.st-expired em{color:#475569!important}
 /* layout: grid/flex children may shrink to the screen at every width */
 #mx .mx-chat-panel{min-width:0!important;flex:1 1 auto!important;max-width:100%!important}

@@ -230,8 +230,11 @@
   }
   /* ── A5 + A6: appearance (light / dark · standard / Ramadan / Eid) ── */
   var theme = { mode: 'light', season: 'standard', fs: 'm' };
-  try { theme = Object.assign(theme, JSON.parse(localStorage.getItem('dx_theme') || '{}')); } catch (e) {}
+  var THEME_OK = { mode: ['light', 'dark'], season: ['standard', 'ramadan', 'eid'], fs: ['m', 'l', 'xl'] };
+  function cleanTheme() { Object.keys(THEME_OK).forEach(function (k) { if (THEME_OK[k].indexOf(theme[k]) < 0) theme[k] = THEME_OK[k][0]; }); }   /* a stored value that is not one of ours is ignored */
+  try { theme = Object.assign(theme, JSON.parse(localStorage.getItem('dx_theme') || '{}')); } catch (e) {} cleanTheme();
   function applyTheme() {
+    cleanTheme();
     document.documentElement.classList.toggle('dx-dark', theme.mode === 'dark');
     document.documentElement.classList.remove('dx-ramadan', 'dx-eid', 'dx-fs-l', 'dx-fs-xl');
     if (theme.fs && theme.fs !== 'm') document.documentElement.classList.add('dx-fs-' + theme.fs);
@@ -265,5 +268,5 @@
   var st = document.createElement('style');
   st.textContent = ':root{--dx-hex:url(' + HEX.light + ');--dx-hex-dark:url(' + HEX.dark + ');--dx-hex-gold:url(' + HEX.gold + ')}';
   document.head.appendChild(st);
-  addThemeButton(); applyTheme();
+  try { addThemeButton(); applyTheme(); } catch (e) { if (window.console) console.warn('[drugbox] appearance', e); }
 })();

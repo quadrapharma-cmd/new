@@ -14,7 +14,7 @@
       if (el.dataset.dxmol !== undefined) return; var k = which(el.textContent); el.dataset.dxmol = k || '';
       if (!k || el.closest('.sp-mini,[onclick],[role=link],a,button')) return;   /* never inside something that is itself clickable */
       var b = document.createElement('button'); b.type = 'button'; b.className = 'dx-molchip'; b.dataset.mol = k; b.title = 'Chemical structure'; b.setAttribute('aria-label', 'Chemical structure of ' + MOLS[k].name);
-      b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 9.5v5M16 9.5v5" stroke="currentColor" stroke-width="1.6"/></svg>Structure';
+      b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 9.5v5M16 9.5v5" stroke="currentColor" stroke-width="1.6"/></svg>';   /* the "Structure" label is drawn by CSS so the title's text stays the product name */
       el.appendChild(b);
     });
   }
