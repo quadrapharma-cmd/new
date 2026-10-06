@@ -8,12 +8,18 @@
   function ic(n) { return window.dxIcon ? window.dxIcon(n) : ''; }
   var __A = /^(deals|created_companies|reports|dossiers|surplus_new|groups_new|follows|saved_searches|my_requests|activity_.*|inbox_.*)$/, __O = /^(company_edits|supplier_reviews|review_meta|avl_.*|groups_state|meta_.*|quoted_.*|sqq_.*)$/, __S = /^(acting|role)$/;
   function __typed(k, v) { if (v == null) return null; if (__A.test(k)) return Array.isArray(v) ? v : null; if (__O.test(k)) return (typeof v === 'object' && !Array.isArray(v)) ? v : null; if (__S.test(k)) return typeof v === 'string' ? v : null; return v; }   /* a stored value of the wrong type is ignored, never trusted */
-  function store(k, v) { if (window.dxStoreHook) { var __h = window.dxStoreHook(k, v); if (__h !== undefined) return __h; } try { if (v === undefined) return __typed(k, JSON.parse(localStorage.getItem('dx_' + k) || 'null')); localStorage.setItem('dx_' + k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function store(k, v) { if (v !== undefined) window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;   /* every write invalidates the memoised company list (directory, hub, tiers) */
+    if (window.dxStoreHook) { var __h = window.dxStoreHook(k, v); if (__h !== undefined) return __h; } try { if (v === undefined) return __typed(k, JSON.parse(localStorage.getItem('dx_' + k) || 'null')); localStorage.setItem('dx_' + k, JSON.stringify(v)); return true; } catch (e) { quotaToast(); return false; } }
+  var __qt = 0; function quotaToast() { if (Date.now() - __qt < 3000) return; __qt = Date.now(); toast('Could not save — the browser storage is full. Remove large photos or old data and try again.'); }   /* a failed save is never reported as success */
   function toast(m) { if (D) D.toast(m); }
+  /* ── sinks: a picture or colour that comes from the store (or the database) is used only when it is a safe URL / colour ── */
+  function safeUrl(u) { u = String(u == null ? '' : u).trim(); if (!u || /["'<>()\s\\]/.test(u)) return ''; if (/^data:image\/(png|jpe?g|gif|webp|svg\+xml);/i.test(u) || /^blob:/i.test(u)) return u; try { var x = new URL(u, location.href); return x.protocol === 'https:' || x.protocol === 'http:' ? u : ''; } catch (e) { return ''; } }
+  function cssUrl(u) { u = safeUrl(u); return u ? 'background-image:url("' + esc(u) + '")' : ''; }   /* '' → the caller falls back to the brand colour */
+  function safeColor(c) { return /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : '#1a56db'; }
 
   /* ── product pictures (packshots) drawn in the company's colour; owners replace them with real photos ── */
   function packshot(kind, color, label) {
-    var c = color || '#1a56db', l = esc(String(label || '').slice(0, 14)), body;
+    var c = safeColor(color), l = esc(String(label || '').slice(0, 14)), body;
     var S = {
       box: '<rect x="70" y="70" width="160" height="170" rx="10" fill="#fff" stroke="' + c + '" stroke-width="4"/><rect x="70" y="70" width="160" height="46" rx="10" fill="' + c + '"/><path d="M70 70l20-24h120l20 24" fill="#fff" stroke="' + c + '" stroke-width="4"/><rect x="92" y="138" width="116" height="10" rx="5" fill="' + c + '" opacity=".25"/><rect x="92" y="158" width="80" height="10" rx="5" fill="' + c + '" opacity=".18"/>',
       bottle: '<rect x="128" y="40" width="44" height="30" rx="6" fill="' + c + '"/><path d="M112 80h76l12 30v120a14 14 0 0 1-14 14h-72a14 14 0 0 1-14-14V110z" fill="#fff" stroke="' + c + '" stroke-width="4"/><rect x="100" y="140" width="100" height="62" rx="8" fill="' + c + '" opacity=".92"/>',
@@ -96,26 +102,39 @@
   var SECTORS = ['All', 'Manufacturer', 'Cosmetics', 'CMO / Toll', 'API & excipients', 'Packaging', 'Labs & testing', 'Distribution', 'Regulatory & consulting', 'Supplements'];
   var GOVS = ['All governorates', 'Cairo', 'Giza', 'Alexandria', 'Sharqia', 'Qalyubia', 'Ismailia'];
   var CERTS = ['WHO-GMP', 'ISO 9001', 'ISO 22716', 'ISO 17025', 'GDP', 'EDA licensed'];
-  var LV = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze' };
 
+  /* The merged company list is built once per store version (window.__dxStoreVer, bumped by every store() write and by
+     each directory render) instead of on every call: a render used to re-read and JSON.parse localStorage per card. */
+  var __cc = null, __ed = null;
+  function ver() { return window.__dxStoreVer || 0; }
+  function edits_() { var v = ver(); if (!__ed || __ed.v !== v) __ed = { v: v, o: store('company_edits') || {} }; return __ed.o; }   /* read-only; writers still call store() */
   function companies(all) {
-    var edits = store('company_edits') || {}, created = store('created_companies') || [], me = window.ME || {};
-    var rv = store('supplier_reviews') || {};
-    return (window.dxLiveCompanies || SEED.concat(window.dxDirSeeds || [], created)).map(function (s) { var e = edits[s.slug], c = e ? Object.assign({}, s, e) : s, r = rv[c.slug];
+    var live = window.dxLiveCompanies, v = ver(), seeds = window.dxDirSeeds;
+    if (__cc && __cc.v === v && __cc.live === live && __cc.n === (live ? live.length : -1) && __cc.seeds === seeds) return __cc.list;
+    var edits = edits_(), created = store('created_companies') || [], rv = store('supplier_reviews') || {};
+    var list = (live || SEED.concat(seeds || [], created)).map(function (s) { var e = edits[s.slug], c = e ? Object.assign({}, s, e) : s, r = rv[c.slug];
       if (r && r.length) { var sum = r.reduce(function (a, x) { return a + x.stars; }, 0); c = Object.assign({}, c, { rating: ((c.rating || 0) * (c.reviews || 0) + sum) / ((c.reviews || 0) + r.length), reviews: (c.reviews || 0) + r.length }); }
-      return c; })
-      .filter(function () { return true; });   /* pages are public from creation; unverified ones are labelled */
+      return c; });   /* pages are public from creation; unverified ones are labelled */
+    __cc = { v: v, live: live, n: live ? live.length : -1, seeds: seeds, list: list };
+    return list;
   }
-  function bySlug(slug) { return companies().find(function (c) { return c.slug === slug; }); }
+  var __bs = null;
+  function bySlug(slug) { var list = companies(); if (!__bs || __bs.list !== list) { var m = Object.create(null); list.forEach(function (c) { if (!(c.slug in m)) m[c.slug] = c; }); __bs = { list: list, m: m }; } return __bs.m[slug]; }
   function myCompanies() { var me = window.ME || {}; return companies().filter(function (c) { return c.owner === me.id; }); }
   function mine() { var list = myCompanies(); if (!list.length) return null; var a = store('acting'); return list.find(function (c) { return c.slug === a; }) || list[0]; }   /* the company you act as */
   function ownsPage(co) { var me = window.ME || {}; return co && co.owner === me.id; }
-  function initials(n) { return String(n).replace(/[^A-Za-z ]/g, '').split(/\s+/).filter(Boolean).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase(); }
-  function logo(c, cls) { return c.logo ? '<span class="' + cls + ' has-img"><img src="' + c.logo + '" alt=""></span>' : '<span class="' + cls + '" style="background:' + esc(c.color) + '">' + esc(initials(c.name)) + '</span>'; }
-  function pimg(c, p) { return p.img || packshot(p.kind, c.color, p.name.split(' ')[0]); }
+  /* monogram from the first letter of the first two words — Arabic names included */
+  function initials(n) { var w = String(n == null ? '' : n).replace(/^(Dr\.|Eng\.)\s*/i, '').split(/\s+/).map(function (x) { var m = /\p{L}/u.exec(x); return m ? m[0] : ''; }).filter(Boolean); return w.slice(0, 2).join('').toUpperCase(); }
+  function logo(c, cls) { var u = safeUrl(c.logo); return u ? '<span class="' + esc(cls) + ' has-img"><img src="' + esc(u) + '" alt=""></span>' : '<span class="' + esc(cls) + '" style="background:' + safeColor(c.color) + '">' + esc(initials(c.name)) + '</span>'; }
+  function pimg(c, p) { return safeUrl(p.img) || packshot(p.kind, c.color, String(p.name || '').split(' ')[0]); }
 
 
   /* ── one company, everywhere: company names across the app open the company page ── */
+  var WORD = /[\p{L}\p{N}]/u;
+  function wordAt(text, name) {   /* index of `name` as whole words ('Quadra Pharm' is not linked inside 'Quadra Pharmaceuticals'), else -1 */
+    for (var k = text.indexOf(name); k >= 0; k = text.indexOf(name, k + 1)) { var a = text.charAt(k - 1), b = text.charAt(k + name.length); if (!WORD.test(a) && !WORD.test(b)) return k; }
+    return -1;
+  }
   function linkNames() {
     var list = companies(); if (!list.length) return;
     var names = list.map(function (c) { return { n: c.name, s: c.slug }; }).sort(function (a, b) { return b.n.length - a.n.length; });
@@ -124,7 +143,7 @@
       var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), n;
       while ((n = w.nextNode())) {
         for (var i = 0; i < names.length; i++) {
-          var k = n.nodeValue.indexOf(names[i].n); if (k < 0) continue;
+          var k = wordAt(n.nodeValue, names[i].n); if (k < 0) continue;
           var mid = n.splitText(k); mid.splitText(names[i].n.length);
           var b = document.createElement('button'); b.type = 'button'; b.className = 'dx-colink'; b.dataset.co = names[i].s; b.title = 'Open company page'; b.textContent = names[i].n;
           mid.parentNode.replaceChild(b, mid); return;
@@ -168,109 +187,14 @@
   /* ── state ── */
   var S = { open: null, q: '', sector: 'All', gov: 'All governorates', certs: [], verified: false, sort: 'rating', tab: 'overview', editing: false };
 
-  /* ── directory view ── */
-  function filtered() {
-    var q = S.q.toLowerCase();
-    return companies().filter(function (c) {
-      if (S.sector !== 'All' && c.sectors.indexOf(S.sector) < 0) return false;
-      if (S.gov !== 'All governorates' && c.gov !== S.gov) return false;
-      if (S.verified && !c.verified) return false;
-      if (S.certs.length && !S.certs.every(function (x) { return c.certs.indexOf(x) >= 0; })) return false;
-      if (q) { var hay = (c.name + ' ' + c.tagline + ' ' + c.city + ' ' + c.sectors.join(' ') + ' ' + c.products.map(function (p) { return p.name; }).join(' ') + ' ' + (c.services || []).join(' ')).toLowerCase(); if (q.split(/\s+/).some(function (w) { return hay.indexOf(w) < 0; })) return false; }
-      return true;
-    }).sort(function (a, b) { return (isVip(b) ? 1 : 0) - (isVip(a) ? 1 : 0) || (S.sort === 'name' ? a.name.localeCompare(b.name) : S.sort === 'newest' ? b.founded - a.founded : (b.rating - a.rating) || (b.reviews - a.reviews)); });
-  }
-  function vipStrip() {
-    var v = companies().filter(function (c) { return isVip(c); }); if (!v.length) return '';
-    return '<section class="dr-vipstrip"><div class="dr-vs-h">' + ic('crown') + '<b>VIP companies</b><span>Sponsored placement · paid plan</span></div><div class="dr-vs-row">' +
-      v.map(function (c) { return '<button type="button" class="dr-vs-card" data-go="' + c.slug + '">' + logo(c, 'dr-logo sm') + '<span><b>' + esc(c.name) + '</b><small>' + esc(c.sectors[0]) + ' · ' + esc(c.city) + '</small></span></button>'; }).join('') + '</div></section>';
-  }
-  function card(c) {
-    return '<article class="dr-card" data-slug="' + c.slug + '"><div class="dr-cover" style="' + (c.cover ? 'background-image:url(' + c.cover + ')' : '--cc:' + esc(c.color)) + '"></div>' +
-      '<div class="dr-card-b">' + logo(c, 'dr-logo') + '<div class="dr-name">' + esc(c.name) + (c.verified ? '<span class="dr-seal" title="Verified company">' + ic('seal') + '</span>' : '') + (c.level ? '<span class="dr-lv lv-' + c.level + '">' + LV[c.level] + '</span>' : '') + vipBadge(c) + (c.status !== 'verified' ? '<span class="dr-pend' + (c.status === 'unclaimed' ? ' unc' : '') + '">' + (c.status === 'pending' ? 'Verification in review' : c.status === 'unclaimed' ? 'Unclaimed' : 'Not verified') + '</span>' : '') + '</div>' +
-      '<div class="dr-meta">' + esc(c.sectors.join(' · ')) + ' · ' + esc(c.city) + '</div><p class="dr-tag">' + esc(c.tagline) + '</p>' +
-      '<div class="dr-stats"><span>' + ic('box') + c.products.length + ' products</span><span title="Rated by buyers">' + (c.reviews ? '★ ' + c.rating.toFixed(1) + ' <small>supplier (' + c.reviews + ')</small>' : '<small>No reviews yet</small>') + '</span>' + (employer(c) ? '<span title="Rated by candidates and employees">★ ' + employer(c).avg.toFixed(1) + ' <small>employer (' + employer(c).n + ')</small></span>' : '') + (c.reply && c.reply !== '—' ? '<span>' + ic('chat') + 'replies in ' + esc(c.reply) + '</span>' : '') + '</div>' +
-      '<div class="dr-acts"><button type="button" class="dr-btn p" data-go="' + c.slug + '">Visit page</button><button type="button" class="dr-btn" data-rfq="' + c.slug + '">Request a quote</button></div></div></article>';
-  }
-  function renderDirectory(c) {
-    var list = filtered(), my = mine();
-    c.innerHTML = '<div id="dxDir"><section class="dr-hero"><div><span class="dr-k">COMPANY DIRECTORY</span><h1 class="dr-h">Egypt\u2019s pharma companies — one page each</h1>' +
-      '<p class="dr-sub">Find manufacturers, suppliers, labs and service providers. See their products, ask for a quote or apply for a job directly from their page.</p></div>' +
-      '<div class="dr-hero-cta"><div class="dr-ill" aria-hidden="true"></div><button type="button" class="dr-btn p lg" data-create="1">' + ic('plus') + 'Create a company page</button>' +
-      '<div class="dr-hero-row">' + (myCompanies().length ? '<button type="button" class="dr-btn" data-mycos="1">' + ic('building') + 'My companies (' + myCompanies().length + ')</button>' : '') + '<button type="button" class="dr-btn" data-myreq="1">' + ic('clipboard') + 'Requests & deals' + (window.dxDeals && window.dxDeals.waiting() ? ' <em class="dl-todo">' + window.dxDeals.waiting() + '</em>' : '') + '</button></div>' +
-      (my ? '<label class="dr-acting">Acting as <select id="drActing">' + myCompanies().map(function (c) { return '<option value="' + c.slug + '"' + (c.slug === my.slug ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label>' : '') + '</div></section>' +
-      (!S.q && S.sector === 'All' && !S.certs.length && S.gov === 'All governorates' && !S.verified ? vipStrip() : '') +
-      '<div class="dr-bar"><div class="dr-search">' + ic('search') + '<input type="search" id="drQ" placeholder="Search companies, products or services…" value="' + esc(S.q) + '" aria-label="Search the directory"></div>' +
-      '<select id="drGov" aria-label="Governorate">' + GOVS.map(function (g) { return '<option' + (g === S.gov ? ' selected' : '') + '>' + g + '</option>'; }).join('') + '</select>' +
-      '<select id="drSort" aria-label="Sort"><option value="rating"' + (S.sort === 'rating' ? ' selected' : '') + '>Top rated</option><option value="name"' + (S.sort === 'name' ? ' selected' : '') + '>Name A–Z</option><option value="newest"' + (S.sort === 'newest' ? ' selected' : '') + '>Newest</option></select></div>' +
-      '<div class="dr-chips">' + SECTORS.map(function (s) { return '<button type="button" class="dr-chip' + (S.sector === s ? ' on' : '') + '" data-sector="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div>' +
-      '<div class="dr-chips dr-certs"><span>Certified:</span>' + CERTS.map(function (x) { return '<button type="button" class="dr-chip sm' + (S.certs.indexOf(x) >= 0 ? ' on' : '') + '" data-cert="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') +
-      '<label class="dr-ver"><input type="checkbox" id="drVer"' + (S.verified ? ' checked' : '') + '> Verified only</label></div>' +
-      '<div class="dr-count">' + list.length + ' compan' + (list.length === 1 ? 'y' : 'ies') + '</div>' +
-      (list.length ? '<div class="dr-grid">' + list.map(card).join('') + '</div>' : '<div class="dbk-empty">No company matches these filters. <button type="button" class="dr-link" data-reset="1">Clear filters</button></div>') + '</div>';
-    var ill = c.querySelector('.dr-ill'); if (ill && window.dxIll) ill.innerHTML = window.dxIll('factory');
-  }
-
-  /* ── company page (storefront) ── */
-  function tabs(co, owner) {
-    var t = [['overview', 'Overview'], ['products', 'Products (' + co.products.length + ')'], ['offers', 'Marketplace offers (' + offersOf(co).length + ')'], ['services', 'Services'], ['jobs', 'Jobs (' + jobsOf(co).length + ')'], ['contact', 'Contact']];
-    if (owner) t.push(['requests', 'Requests (' + (window.dxDeals ? window.dxDeals.openCount(co.slug) : 0) + ')']);
-    return '<nav class="cp-tabs" role="tablist">' + t.map(function (x) { return '<button type="button" role="tab" class="cp-tab' + (S.tab === x[0] ? ' on' : '') + '" data-tab="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</nav>';
-  }
-  function productCard(co, p) {
-    return '<article class="cp-prod"><button type="button" class="cp-pimg" data-pdetail="' + p.id + '"><img src="' + pimg(co, p) + '" alt="' + esc(p.name) + '"></button>' +
-      '<div class="cp-pb"><span class="cp-pcat">' + esc(p.cat) + '</span><b>' + esc(p.name) + '</b><p>' + esc(p.desc) + '</p>' +
-      '<div class="cp-pmeta">' + (p.price ? '<span class="cp-price">' + esc(p.price) + '</span>' : '<span class="cp-por">Price on request</span>') + (p.moq ? '<span>MOQ ' + esc(p.moq) + '</span>' : '') + '</div>' +
-      '<button type="button" class="dr-btn p sm" data-rfq="' + co.slug + '" data-prod="' + p.id + '">Request a quote</button></div></article>';
-  }
-  function certWall(co) {
-    if (!co.certs.length) return '';
-    return '<div class="cp-certs">' + co.certs.map(function (x) { return '<span class="cp-cert">' + ic('seal') + esc(x) + '</span>'; }).join('') + '</div>';
-  }
-  function renderCompany(c, co) {
-    var owner = ownsPage(co), url = (isVip(co) ? co.slug + '.drugbox.app' : 'drugbox.app/c/' + co.slug);
-    var team = (co.team || []).map(function (id) { return (window.USERS || []).find(function (u) { return u.id === id; }); }).filter(Boolean);
-    var body = '';
-    if (S.tab === 'overview') body = '<div class="cp-two"><section class="cp-sec"><h3>About ' + esc(co.name) + '</h3><p class="cp-about">' + esc(co.about) + '</p>' + certWall(co) +
-        '<div class="cp-facts"><div><small>Founded</small><b>' + esc(co.founded) + '</b></div><div><small>Team</small><b>' + esc(co.employees) + '</b></div><div><small>Location</small><b>' + esc(co.city) + '</b></div><div><small>Replies</small><b>within ' + esc(co.reply) + '</b></div></div></section>' +
-        '<aside class="cp-sec"><h3>Featured products</h3><div class="cp-mini">' + co.products.slice(0, 3).map(function (p) { return '<button type="button" class="cp-mini-i" data-pdetail="' + p.id + '"><img src="' + pimg(co, p) + '" alt=""><span><b>' + esc(p.name) + '</b><small>' + esc(p.cat) + '</small></span></button>'; }).join('') + '</div>' +
-        (team.length ? '<h3 style="margin-top:18px">People</h3>' + team.map(function (u) { return '<button type="button" class="cp-person" data-uid="' + u.id + '"><span class="cp-pav" style="background:' + esc(u.color || '#1a56db') + '">' + esc(u.initials || initials(u.name)) + '</span><span><b>' + esc(u.name) + '</b><small>' + esc((u.headline || '').split('|')[0]) + '</small></span></button>'; }).join('') : '') + '</aside></div>';
-    else if (S.tab === 'products') body = '<div class="cp-pgrid">' + co.products.map(function (p) { return productCard(co, p); }).join('') + (owner ? '<button type="button" class="cp-add" data-edit="products">' + ic('plus') + 'Add a product</button>' : '') + '</div>';
-    else if (S.tab === 'services') body = '<section class="cp-sec"><h3>What we offer</h3><ul class="cp-svc">' + (co.services || []).map(function (s) { return '<li>' + ic('seal') + '<span>' + esc(s) + '</span><button type="button" class="dr-btn sm" data-rfq="' + co.slug + '" data-svc="' + esc(s) + '">Request</button></li>'; }).join('') + '</ul></section>';
-    else if (S.tab === 'offers') { var of = offersOf(co); body = '<section class="cp-sec"><h3>Live offers in the Marketplace</h3><p class="cp-muted">Time-limited deals this company is running now. Its permanent catalogue is under Products.</p>' + (of.length ? of.map(function (o) { return '<div class="cp-job"><span class="cp-jic cp-oic">' + ic(/DEMAND/i.test(o.type) ? 'basket' : /SERVICE/i.test(o.type) ? 'tools' : 'box') + '</span><span><b>' + esc(o.t) + '</b><small>' + esc(o.type) + '</small></span><button type="button" class="dr-btn sm" data-offer="' + esc(o.t) + '">View in Marketplace</button></div>'; }).join('') : '<p class="cp-muted">No live offers right now.</p>') + '</section>'; }
-    else if (S.tab === 'jobs') { var js = jobsOf(co); body = '<section class="cp-sec"><h3>Open positions</h3><p class="cp-muted">The same jobs as on the Jobs page — applying from here or there is one application.</p>' + (js.length ? js.map(function (j, i) { return '<div class="cp-job"><span class="cp-jic">' + ic('briefcase') + '</span><span><b>' + esc(j.t) + '</b><small>' + esc(j.type) + ' · ' + esc(j.loc) + '</small></span><button type="button" class="dr-btn p sm" data-apply="' + i + '">Apply</button></div>'; }).join('') : '<p class="cp-muted">No open positions right now. <button type="button" class="dr-link" data-follow="1">Follow</button> to hear when they hire.</p>') + '</section>'; }
-    else if (S.tab === 'contact') body = '<div class="cp-two"><section class="cp-sec"><h3>Contact ' + esc(co.name) + '</h3><div class="cp-contact">' +
-        '<a href="tel:' + esc(co.phone.replace(/\s/g, '')) + '">' + ic('chat') + '<span><small>Phone</small>' + esc(co.phone) + '</span></a>' +
-        '<a href="mailto:' + esc(co.email) + '">' + ic('send') + '<span><small>Email</small>' + esc(co.email) + '</span></a>' +
-        '<a href="https://wa.me/' + esc(co.whatsapp) + '" target="_blank" rel="noopener">' + ic('chat') + '<span><small>WhatsApp</small>Message on WhatsApp</span></a>' +
-        '<a href="https://' + esc(co.website) + '" target="_blank" rel="noopener">' + ic('globe') + '<span><small>Website</small>' + esc(co.website) + '</span></a>' +
-        '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(co.address) + '" target="_blank" rel="noopener">' + ic('pin') + '<span><small>Address · get directions</small>' + esc(co.address) + '</span></a>' +
-        '<div>' + ic('bell') + '<span><small>Working hours</small>' + esc(co.hours) + '</span></div></div></section>' +
-        '<section class="cp-sec"><h3>Send a request</h3><p class="cp-muted">Requests go straight to the company\u2019s inbox on Drugbox and to their team by message.</p><div class="cp-req-btns">' +
-        '<button type="button" class="dr-btn p" data-rfq="' + co.slug + '">' + ic('cart') + 'Request a quote</button><button type="button" class="dr-btn" data-rfq="' + co.slug + '" data-svc="' + esc((co.services || [])[0] || '') + '">' + ic('tools') + 'Request a service</button>' +
-        '<button type="button" class="dr-btn" data-msg="1">' + ic('chat') + 'Send a message</button></div></section></div>';
-    else if (S.tab === 'requests' && owner) { var rv = (store('supplier_reviews') || {})[co.slug] || [];
-      body = '<div class="cp-stats"><div><small>Open requests</small><b>' + window.dxDeals.openCount(co.slug) + '</b></div><div><small>Waiting for you</small><b>' + window.dxDeals.all().filter(function (d) { return d.to.slug === co.slug && window.dxDeals.actionsFor(d, 'to').length; }).length + '</b></div><div><small>Completed orders</small><b>' + window.dxDeals.all().filter(function (d) { return d.to.slug === co.slug && d.status === 'closed'; }).length + '</b></div><div><small>Reviews from orders</small><b>' + rv.length + '</b></div></div>' +
-        '<section class="cp-sec"><h3>Received by ' + esc(co.name) + '</h3><p class="cp-muted">Quote and service requests go to ' + esc(contact(co, 'rfq')) + ' (sales); job applications to ' + esc(contact(co, 'job')) + ' (HR). Open one to reply — the sender sees each step.</p>' + window.dxDeals.receivedHtml(co.slug) + '</section>'; }
-    c.innerHTML = '<div id="dxDir" class="cp"><button type="button" class="cp-back" data-back="1">' + ic('compass') + 'All companies</button>' +
-      '<header class="cp-hero"><div class="cp-cover" style="' + (co.cover ? 'background-image:url(' + co.cover + ')' : '--cc:' + esc(co.color)) + '"></div><div class="cp-id">' + logo(co, 'cp-logo') +
-      '<div class="cp-idt"><h1 class="cp-name">' + esc(co.name) + (co.verified ? '<span class="dr-seal" title="Verified company">' + ic('seal') + '</span>' : '') + (co.level ? '<span class="dr-lv lv-' + co.level + '">' + LV[co.level] + ' partner</span>' : '') + vipBadge(co) + '</h1>' +
-      '<p class="cp-tagline">' + esc(co.tagline) + '</p><div class="cp-meta">' + esc(co.sectors.join(' · ')) + ' · ' + esc(co.city) + ', ' + esc(co.gov) + '</div>' +
-      '<div class="cp-ratings"><span title="Rated by buyers after real orders">' + (co.reviews ? '★ ' + co.rating.toFixed(1) + ' <b>as a supplier</b> <small>(' + co.reviews + ' buyers)</small>' : '<b>No supplier reviews yet</b>') + '</span>' + (employer(co) ? '<button type="button" class="cp-rate-emp" data-empreviews="1" title="Rated by candidates and employees in Jobs">★ ' + employer(co).avg.toFixed(1) + ' <b>as an employer</b> <small>(' + employer(co).n + ' reviews)</small></button>' : '') + '</div></div>' +
-      '<div class="cp-cta">' + (owner ? '<button type="button" class="dr-btn p" data-edit="all">' + ic('pen') + 'Edit page</button>' : '<button type="button" class="dr-btn p" data-rfq="' + co.slug + '">Request a quote</button><button type="button" class="dr-btn" data-msg="1">' + ic('chat') + 'Message</button><button type="button" class="dr-btn" data-follow="1">' + (followed(co.slug) ? '✓ Following' : '+ Follow') + '</button>') +
-      '<button type="button" class="dr-btn ghost" data-share="1" title="Copy the page link">' + ic('send') + '<span class="cp-url">' + esc(url) + '</span></button></div></div></header>' +
-      (owner && co.status === 'unverified' ? '<div class="cp-banner pend">' + ic('warning') + '<span><b>Not verified.</b> Your page is live. Verify the company to get the Verified badge.</span><button type="button" class="dr-btn p sm" data-verify="' + co.slug + '">Get verified</button></div>' : '') +
-      (owner && co.status === 'pending' ? '<div class="cp-banner pend">' + ic('seal') + '<span><b>Verification in review.</b> We check your documents' + (isVip(co) ? ' within 48 hours (VIP)' : ' within 2 working days') + '. Your page stays live meanwhile.</span></div>' : '') +
-      (!owner && co.status !== 'verified' ? '<div class="cp-banner pend">' + ic('warning') + '<span>This company has not been verified by Drugbox yet.</span></div>' : '') +
-      (owner && !isVip(co) ? '<div class="cp-banner up">' + ic('crown') + '<span><b>Want more visibility?</b> VIP adds the VIP badge, top placement in the directory, your own link and 3 Marketplace boosts a month.</span><button type="button" class="dr-btn p sm" data-upgrade="' + co.slug + '">See VIP</button></div>' : '') +
-      tabs(co, owner) + '<div class="cp-body">' + body + '</div></div>';
-  }
+  /* The directory, company page and tabs are drawn by the company hub (hub-ui.js); the pre-hub renderers were removed. */
   function render(c) {
     c = c || document.getElementById('content'); if (!c) return;
     c.style.padding = '';
+    window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;   /* fresh company list for this render (the live adapter updates company objects in place) */
     var co = S.open && bySlug(S.open);
-    if (window.dxHub && window.dxHub.render(c, S, co)) return;   /* the company hub draws the new directory, company page and workspace */
-    if (co) renderCompany(c, co); else { S.open = null; renderDirectory(c); }
+    if (window.dxHub && window.dxHub.render(c, S, co)) return;   /* the company hub draws the directory, company page and workspace */
+    S.open = null; c.innerHTML = '<div id="dxDir"></div>';
   }
   function openCompany(slug, tab) {
     S.open = slug; S.tab = tab || 'overview';
@@ -279,7 +203,7 @@
   window.dxOpenCompany = openCompany;
   window.dxDirectory = { list: companies, open: openCompany };
   window.dxDir = { companies: companies, bySlug: bySlug, render: function () { render(); }, S: S, open: function (s, t) { openCompany(s, t); }, rfq: function (s, p, v) { rfqDialog(s, p, v); },
-    myCompanies: function () { return myCompanies(); }, mine: function () { return mine(); }, store: store, logo: logo, pimg: pimg, packshot: packshot, isVip: isVip, inbox: inbox, myReqs: myReqs,
+    myCompanies: function () { return myCompanies(); }, mine: function () { return mine(); }, store: store, edits: edits_, logo: logo, initials: initials, safeUrl: safeUrl, cssUrl: cssUrl, safeColor: safeColor, pimg: pimg, packshot: packshot, isVip: isVip, inbox: inbox, myReqs: myReqs,
     jobsOf: function (c) { return jobsOf(c); }, offersOf: function (c) { return offersOf(c); }, employer: function (c) { return employer(c); }, productDialog: function (c, p) { productDialog(c, p); }, applyDialog: function (c, j) { applyDialog(c, j); },
     editor: function (f) { openEditor(f); }, verify: function (s) { verifyDialog(s); }, upgrade: function (s) { upgradeDialog(s); }, create: function () { createCompanyDialog(); }, myCosDialog: function () { myCompaniesDialog(); }, followed: function (s) { return followed(s); }, esc: esc, ic: ic,
     reqStatus: function (r) { return reqStatus(r); }, quoteFor: function (r) { return quoteFor(r); }, contact: contact, P: P, SECTORS: SECTORS, GOVS: GOVS, CERTS: CERTS, ownsPage: function (c) { return ownsPage(c); } };
@@ -303,10 +227,10 @@
   }
   function quoteFor(r) { var h = 0, key = r.title + '|' + (r.to || ''); for (var i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0; var base = 2 + Math.abs(h) % 40; return 'US$ ' + base.toFixed(2) + ' per ' + (r.unit || 'unit') + ' · valid 14 days · ' + (r.inc || 'EXW'); }
   var ST = { sent: ['Sent', 'st-sent'], viewed: ['Viewed', 'st-viewed'], quoted: ['Quote received', 'st-quoted'], replied: ['Replied', 'st-quoted'], accepted: ['Accepted', 'st-acc'], declined: ['Declined', 'st-dec'] };
-  function myRequestsDialog() { window.dxDeals.center('sent'); }
   function rfqDialog(slug, prodId, svc) {
     var co = bySlug(slug); if (!co || !D) return;
-    var __a = mine(); if (__a && __a.slug === co.slug) { D.toast('You are acting as ' + co.name + ' — switch company to request from it'); return; }
+    var __a = mine(); if (!__a) { D.toast('Create or claim your company page first'); return; }   /* quotes and service requests are sent on behalf of a company */
+    if (__a.slug === co.slug) { D.toast('You are acting as ' + co.name + ' — switch company to request from it'); return; }
     var isSvc = svc != null && svc !== '';
     var opts = (isSvc ? (co.services || []).map(function (s) { return '<option' + (s === svc ? ' selected' : '') + '>' + esc(s) + '</option>'; }) : co.products.map(function (p) { return '<option value="' + p.id + '"' + (p.id === prodId ? ' selected' : '') + '>' + esc(p.name) + '</option>'; })).join('') + '<option value="other">Something else</option>';
     var prod = !isSvc && prodId ? co.products.find(function (p) { return p.id === prodId; }) : null, me = window.ME || {};
@@ -333,17 +257,6 @@
         D.toast('Sent to ' + who + ' at ' + co.name + ' — follow it in Requests & deals');
       } } });
   }
-  function sendQuoteDialog(co, i) {
-    var r = inbox(co)[i]; if (!r) return;
-    D.modal({ title: 'Send a quote to ' + r.from, body: '<p class="cp-muted">' + esc(r.title) + '</p><div class="dbk-row"><div class="dbk-f"><label for="sqP">Price *</label><input id="sqP" data-req placeholder="e.g. US$ 0.45 per tablet"></div><div class="dbk-f"><label for="sqV">Valid for</label><select id="sqV"><option>7 days</option><option selected>14 days</option><option>30 days</option></select></div></div>' +
-      '<div class="dbk-row"><div class="dbk-f"><label for="sqI">Delivery terms</label><select id="sqI"><option>EXW</option><option>FOB</option><option selected>CIF</option><option>DDP</option></select></div><div class="dbk-f"><label for="sqL">Lead time</label><input id="sqL" placeholder="e.g. 4 weeks"></div></div><div class="dbk-f"><label for="sqN">Note</label><textarea id="sqN" placeholder="Payment terms, samples, documents…"></textarea></div>',
-      primary: { label: 'Send quote', onClick: function (b) {
-        if (!D.requireFields(b)) return false;
-        var q = b.querySelector('#sqP').value.trim() + ' · ' + b.querySelector('#sqI').value + ' · valid ' + b.querySelector('#sqV').value, done = store('quoted_' + co.slug) || {}; done[r.title + '|' + r.from] = q; store('quoted_' + co.slug, done);
-        if (D.sendToOutbox) D.sendToOutbox({ to: r.from, text: 'Quote from ' + co.name + ' for “' + r.title + '”: ' + q + (b.querySelector('#sqL').value ? ' · lead time ' + b.querySelector('#sqL').value : '') + (b.querySelector('#sqN').value.trim() ? '\n' + b.querySelector('#sqN').value.trim() : '') });
-        D.toast('Quote sent to ' + r.from); render();
-      } } });
-  }
   function applyDialog(co, job) {
     D.modal({ title: 'Apply: ' + job.t, body: '<p class="cp-muted">' + esc(co.name) + ' · ' + esc(job.type) + ' · ' + esc(job.loc) + '</p>' +
       '<div class="dbk-f"><label for="apCv">CV (PDF or Word) *</label><input id="apCv" type="file" accept=".pdf,.doc,.docx"></div>' +
@@ -362,19 +275,10 @@
     m.el.querySelector('.dbk-box').classList.add('dbk-wide');
   }
 
-  function listCompanyDialog() {
-    D.modal({ title: 'List your company on Drugbox', body: '<p class="cp-muted">Your page goes live after we verify the company — usually within 2 working days. Until then only you can see it.</p>' +
-      '<div class="dbk-f"><label for="lcN">Company legal name *</label><input id="lcN" data-req></div><div class="dbk-row"><div class="dbk-f"><label for="lcS">Main activity *</label><select id="lcS" data-req><option value="">Choose…</option>' + SECTORS.slice(1).map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('') + '</select></div><div class="dbk-f"><label for="lcG">Governorate *</label><select id="lcG" data-req><option value="">Choose…</option>' + GOVS.slice(1).map(function (g) { return '<option>' + g + '</option>'; }).join('') + '</select></div></div>' +
-      '<div class="dbk-f"><label for="lcR">Commercial registry *</label><input id="lcR" type="file" accept=".pdf,.jpg,.png"></div><div class="dbk-f"><label for="lcT">Tax card *</label><input id="lcT" type="file" accept=".pdf,.jpg,.png"></div><div class="dbk-f"><label for="lcL">Licence (EDA, pharmacy, distribution or industrial) — needed to sell or buy medicines</label><input id="lcL" type="file" accept=".pdf,.jpg,.png"></div>',
-      primary: { label: 'Submit for verification', onClick: function (b) {
-        if (!D.requireFields(b)) return false;
-        if (!b.querySelector('#lcR').files.length || !b.querySelector('#lcT').files.length) { D.toast('Commercial registry and tax card are required'); return false; }
-        store('company_application', { name: b.querySelector('#lcN').value.trim(), sector: b.querySelector('#lcS').value, gov: b.querySelector('#lcG').value, licence: !!b.querySelector('#lcL').files.length, at: Date.now(), status: 'pending' });
-        D.toast('Submitted — we will verify ' + b.querySelector('#lcN').value.trim() + ' and publish your page');
-      } } });
-  }
 
-  function slugify(n) { return String(n).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || ('company-' + Date.now()); }
+  /* Arabic letters are transliterated so an Arabic-only name still gets a readable link (drugbox.app/c/shrka-alnyl-lladwya) */
+  var AR2L = { 'ا': 'a', 'أ': 'a', 'إ': 'a', 'آ': 'a', 'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'g', 'ح': 'h', 'خ': 'kh', 'د': 'd', 'ذ': 'z', 'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'd', 'ط': 't', 'ظ': 'z', 'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'k', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h', 'ة': 'a', 'و': 'w', 'ؤ': 'o', 'ي': 'y', 'ى': 'a', 'ئ': 'e', 'ء': '', 'ـ': '', '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
+  function slugify(n) { var s = String(n == null ? '' : n).replace(/[\u064B-\u0652]/g, '').replace(/[\u0600-\u06FF]/g, function (ch) { return ch in AR2L ? AR2L[ch] : ' '; }).normalize('NFD').replace(/[\u0300-\u036F]/g, '').toLowerCase(); return s.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40).replace(/-$/, '') || ('company-' + Date.now()); }
   function planCards(sel, billing) {
     return '<div class="pl-grid">' + ['free', 'vip'].map(function (k) { var p = PLANS[k];
       return '<label class="pl-card' + (sel === k ? ' on' : '') + (k === 'vip' ? ' vip' : '') + '"><input type="radio" name="plPick" value="' + k + '"' + (sel === k ? ' checked' : '') + '>' +
@@ -386,7 +290,7 @@
   var MAX_PENDING = 3;
   function createCompanyDialog() {
     if (!D) return;
-    var W = { plan: REQUIRE_VIP_FOR_PAGE ? 'vip' : 'vip', billing: 'month' };
+    var W = { plan: REQUIRE_VIP_FOR_PAGE ? 'vip' : 'free', billing: 'month' };
     function step1() {
       var m = D.modal({ title: 'Create a company page · 1 of 3 — choose a plan', body: planCards(W.plan, W.billing) + (REQUIRE_VIP_FOR_PAGE ? '<p class="cp-muted">Company pages are available on VIP.</p>' : ''),
         primary: { label: 'Next: company details', onClick: function (b) { W.plan = b.querySelector('input[name=plPick]:checked').value; W.billing = b.querySelector('input[name=plBill]:checked').value; if (REQUIRE_VIP_FOR_PAGE && W.plan !== 'vip') { toast('Company pages need VIP'); return false; } setTimeout(step2, 40); } } });
@@ -449,7 +353,7 @@
       primary: { label: 'Continue to payment', onClick: function (b) {
         var billing = b.querySelector('input[name=plBill]:checked').value, amount = billing === 'year' ? PLANS.vip.year : PLANS.vip.price, vat = Math.round(amount * 0.14);
         setTimeout(function () {
-          D.modal({ title: 'Pay for VIP', body: '<table class="cp-spec"><tr><td>' + esc(co.name) + ' · VIP ' + (billing === 'year' ? 'yearly' : 'monthly') + '</td><td>EGP ' + amount.toLocaleString() + '</td></tr><tr><td>VAT 14%</td><td>EGP ' + vat.toLocaleString() + '</td></tr><tr><td><b>Total</b></td><td><b>EGP ' + (amount + vat).toLocaleString() + '</b></td></tr></table><p class="cp-muted">Demo — no payment is taken.</p>',
+          D.modal({ title: 'Pay for VIP', body: '<table class="cp-spec" data-billing="' + (billing === 'year' ? 'year' : 'month') + '"><tr><td>' + esc(co.name) + ' · VIP ' + (billing === 'year' ? 'yearly' : 'monthly') + '</td><td>EGP ' + amount.toLocaleString() + '</td></tr><tr><td>VAT 14%</td><td>EGP ' + vat.toLocaleString() + '</td></tr><tr><td><b>Total</b></td><td><b>EGP ' + (amount + vat).toLocaleString() + '</b></td></tr></table><p class="cp-muted">Demo — no payment is taken.</p>',
             primary: { label: 'Pay EGP ' + (amount + vat).toLocaleString(), onClick: function () {
               var created = store('created_companies') || [], edits = store('company_edits') || {};
               if (created.some(function (c) { return c.slug === slug; })) { created.forEach(function (c) { if (c.slug === slug) { c.plan = 'vip'; c.billing = billing; } }); store('created_companies', created); }
@@ -461,12 +365,13 @@
     m.el.querySelector('.dbk-box').classList.add('dbk-wide');
     m.el.addEventListener('change', function (e) { if (e.target.name === 'plBill' || e.target.name === 'plPick') { m.el.querySelector('.dbk-bd').innerHTML = planCards('vip', m.el.querySelector('input[name=plBill]:checked').value); } });
   }
+  function addMonths(d, m) { var day = d.getDate(), x = new Date(d.getFullYear(), d.getMonth() + m, 1); x.setDate(Math.min(day, new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate())); return x; }   /* 31 Jan + 1 month = 28/29 Feb, never 3 Mar */
   function myCompaniesDialog() {
     var list = myCompanies();
     var m = D.modal({ title: 'My companies', secondary: 'Close', primary: { label: 'Create another company', onClick: function () { setTimeout(createCompanyDialog, 40); } },
       body: '<p class="cp-muted">Each company has its own page, plan, verification and inbox. “Act as” decides which company sends your requests.</p>' + list.map(function (c) {
         var acting = mine() && mine().slug === c.slug, renew = '';
-        if (isVip(c)) { var d = new Date(c.createdAt || Date.now()); if (c.billing === 'year') d.setFullYear(d.getFullYear() + 1); else d.setMonth(d.getMonth() + 1); renew = ' · renews ' + d.toLocaleDateString(); }
+        if (isVip(c)) { renew = ' · renews ' + addMonths(new Date(c.createdAt || Date.now()), c.billing === 'year' ? 12 : 1).toLocaleDateString(); }
         return '<div class="mr-row">' + logo(c, 'dr-logo sm') + '<div class="mr-b"><b>' + esc(c.name) + (acting ? ' <span class="mr-st st-acc">Acting as</span>' : '') + '</b><small>' + (isVip(c) ? 'VIP' + (c.billing === 'year' ? ' yearly' : ' monthly') : 'Basic') + renew + ' · ' + (c.status === 'verified' ? 'verified' : c.status === 'pending' ? 'verification in review' : 'not verified') + ' · ' + c.products.length + ' products · ' + (window.dxDeals ? window.dxDeals.openCount(c.slug) : 0) + ' open requests</small></div>' +
           '<span class="mr-acts"><button type="button" class="dr-btn sm" data-open2="' + c.slug + '">Open</button>' + (acting ? '' : '<button type="button" class="dr-btn sm" data-act2="' + c.slug + '">Act as</button>') + (isVip(c) ? '' : '<button type="button" class="dr-btn p sm" data-up2="' + c.slug + '">Upgrade</button>') + '</span></div>'; }).join('') });
     m.el.addEventListener('click', function (e) { var o = e.target.closest('[data-open2]'), u = e.target.closest('[data-up2]'), a = e.target.closest('[data-act2]');
@@ -480,7 +385,7 @@
     var right = document.querySelector('.topbar .top-right'); if (!right) return;
     var list = myCompanies(), btn = document.getElementById('dxCoSwitch');
     if (!list.length) { if (btn) btn.remove(); return; }
-    var act = mine(), sig = act.slug + '|' + list.length + '|' + act.plan;
+    var act = mine(), sig = [act.slug, list.length, act.plan, act.name, act.color, (act.logo || '').length].join('|');   /* a new logo, colour or name redraws the button too */
     if (btn && btn.dataset.sig === sig && !force) return;
     if (!btn) { btn = document.createElement('button'); btn.id = 'dxCoSwitch'; btn.type = 'button'; btn.className = 'dx-coswitch'; btn.setAttribute('aria-haspopup', 'menu'); right.insertBefore(btn, right.firstChild); }
     btn.dataset.sig = sig; btn.title = 'You are acting as ' + act.name;
@@ -566,10 +471,10 @@
       var pd = e.target.closest('[data-pd]'); if (pd) { collect(); draft.products.splice(+pd.dataset.pd, 1); draw(); return; }
       if (e.target.closest('#edSave')) {
         collect();
-        var created = store('created_companies') || []; if (created.some(function (c) { return c.slug === draft.slug; })) { created = created.map(function (c) { return c.slug === draft.slug ? Object.assign({}, c, { tagline: draft.tagline, about: draft.about, founded: draft.founded, employees: draft.employees, phone: draft.phone, whatsapp: draft.whatsapp, email: draft.email, website: draft.website, address: draft.address, hours: draft.hours, services: draft.services, products: draft.products, color: draft.color, logo: draft.logo || null, cover: draft.cover || null, certsPending: draft.certsPending || [] }) : c; }); if (!store('created_companies', created)) { toast('Could not save — the photos are too large for this demo.'); return; } el.remove(); S.open = draft.slug; render(); toast('Page saved'); return; }
+        var created = store('created_companies') || []; if (created.some(function (c) { return c.slug === draft.slug; })) { created = created.map(function (c) { return c.slug === draft.slug ? Object.assign({}, c, { tagline: draft.tagline, about: draft.about, founded: draft.founded, employees: draft.employees, phone: draft.phone, whatsapp: draft.whatsapp, email: draft.email, website: draft.website, address: draft.address, hours: draft.hours, services: draft.services, products: draft.products, color: draft.color, logo: draft.logo || null, cover: draft.cover || null, certsPending: draft.certsPending || [] }) : c; }); if (!store('created_companies', created)) { toast('Could not save — the photos are too large for this demo.'); return; } el.remove(); S.open = draft.slug; render(); drawSwitch(true); toast('Page saved'); return; }
         var edits = store('company_edits') || {}; edits[draft.slug] = { tagline: draft.tagline, about: draft.about, founded: draft.founded, employees: draft.employees, phone: draft.phone, whatsapp: draft.whatsapp, email: draft.email, website: draft.website, address: draft.address, hours: draft.hours, services: draft.services, products: draft.products, color: draft.color, logo: draft.logo || null, cover: draft.cover || null, certsPending: draft.certsPending || [] };
         if (!store('company_edits', edits)) { toast('Could not save — the photos are too large for this demo. Try smaller images.'); return; }
-        el.remove(); S.open = draft.slug; render(); toast('Company page published');
+        el.remove(); S.open = draft.slug; render(); drawSwitch(true); toast('Company page published');
       }
     });
     el.addEventListener('change', function (e) {
@@ -579,48 +484,7 @@
     draw(); document.body.appendChild(el);
   }
 
-  /* ── one click handler for the whole directory ── */
-  document.addEventListener('click', function (e) {
-    var root = e.target.closest && e.target.closest('#dxDir'); if (!root) return;
-    var t = e.target.closest('[data-go],[data-rfq],[data-mine],[data-sector],[data-cert],[data-reset],[data-back],[data-tab],[data-edit],[data-msg],[data-follow],[data-share],[data-apply],[data-pdetail],[data-uid],[data-reply],[data-offer],[data-empreviews],[data-myreq],[data-sendquote],[data-create],[data-mycos],[data-upgrade],[data-verify]');
-    if (!t) { var cardEl = e.target.closest('.dr-card'); if (cardEl && !e.target.closest('button,a,input,select')) openCompany(cardEl.dataset.slug); return; }
-    var co = S.open && bySlug(S.open);
-    if (t.dataset.go) openCompany(t.dataset.go);
-    else if (t.dataset.rfq) rfqDialog(t.dataset.rfq, t.dataset.prod, t.dataset.svc);
-    else if (t.dataset.mine) { var my = mine(); if (my) { openCompany(my.slug); setTimeout(function () { openEditor(); }, 30); } else listCompanyDialog(); }
-    else if (t.dataset.sector) { S.sector = t.dataset.sector; render(); }
-    else if (t.dataset.cert) { var i = S.certs.indexOf(t.dataset.cert); if (i >= 0) S.certs.splice(i, 1); else S.certs.push(t.dataset.cert); render(); }
-    else if (t.dataset.reset) { S.q = ''; S.sector = 'All'; S.gov = 'All governorates'; S.certs = []; S.verified = false; render(); }
-    else if (t.dataset.back) { S.open = null; render(); var sc = document.getElementById('content'); if (sc) sc.scrollTop = 0; }
-    else if (t.dataset.tab) { S.tab = t.dataset.tab; render(); }
-    else if (t.dataset.edit) openEditor(t.dataset.edit);
-    else if (t.dataset.msg && co) { if (window.dxOpenChat) window.dxOpenChat(co.name); else { window.__mxTo = co.name; window.goto('messages'); } }
-    else if (t.dataset.follow && co) { var f = store('follows') || [], k = f.indexOf(co.slug); if (k >= 0) f.splice(k, 1); else f.push(co.slug); store('follows', f); render(); toast(k >= 0 ? 'Unfollowed ' + co.name : 'Following ' + co.name + ' — you\u2019ll see their new products and jobs'); }
-    else if (t.dataset.share && co) { var url = 'https://drugbox.app/c/' + co.slug; if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { toast('Link copied: ' + url); }, function () { toast(url); }); else toast(url); }
-    else if (t.dataset.apply != null && co) { var job = jobsOf(co)[+t.dataset.apply]; if (!job) return;
-      if (job.onJobs) { window.goto('jobs'); var h = document.querySelector('#jx .mode-opt[data-mode="hunting"]'); if (h) h.click();
-        setTimeout(function () { var card = Array.prototype.find.call(document.querySelectorAll('#jx #huntingView .jcard'), function (c) { return c.textContent.indexOf(job.t) >= 0; }); if (card) { card.scrollIntoView({ block: 'center' }); card.classList.add('dx-flash'); var ab = card.querySelector('.apply-btn'); if (ab && !ab.classList.contains('dbk-done')) ab.click(); } }, 60); }
-      else applyDialog(co, job); }
-    else if (t.dataset.offer) { var q = t.dataset.offer.split('—')[0].trim(); window.goto('market'); var si = document.getElementById('searchIn'); if (si) si.value = q; if (window.__mkxFilter) window.__mkxFilter(q); }
-    else if (t.dataset.empreviews && co) { window.goto('jobs'); var hm = document.querySelector('#jx .mode-opt[data-mode="hunting"]'); if (hm) hm.click(); setTimeout(function () { var card = Array.prototype.find.call(document.querySelectorAll('#jx #huntingView .jcard'), function (c) { return (c.querySelector('.jc-company span') || {}).textContent === co.name; }); var r = card && card.querySelector('.jx-rate'); if (r) r.click(); }, 80); }
-    else if (t.dataset.myreq) myRequestsDialog();
-    else if (t.dataset.create) createCompanyDialog();
-    else if (t.dataset.mycos) myCompaniesDialog();
-    else if (t.dataset.upgrade) upgradeDialog(t.dataset.upgrade);
-    else if (t.dataset.verify) verifyDialog(t.dataset.verify);
-    else if (t.dataset.sendquote && co) sendQuoteDialog(co, +t.dataset.sendquote);
-    else if (t.dataset.pdetail && co) { var p = co.products.find(function (x) { return x.id === t.dataset.pdetail; }); if (p) productDialog(co, p); }
-    else if (t.dataset.uid && window.gotoProfile) window.gotoProfile(+t.dataset.uid);
-    else if (t.dataset.reply && window.dxOpenChat) window.dxOpenChat(t.dataset.reply);
-  });
-  document.addEventListener('input', function (e) {
-    if (e.target.id !== 'drQ') return; S.q = e.target.value; var pos = e.target.selectionStart;
-    clearTimeout(window.__drT); window.__drT = setTimeout(function () { render(); var q = document.getElementById('drQ'); if (q) { q.focus(); try { q.setSelectionRange(pos, pos); } catch (x) {} } }, 180);
-  });
-  document.addEventListener('change', function (e) {
-    if (e.target.id === 'drActing') { setActing(e.target.value); return; }
-    if (e.target.id === 'drGov') { S.gov = e.target.value; render(); } else if (e.target.id === 'drSort') { S.sort = e.target.value; render(); } else if (e.target.id === 'drVer') { S.verified = e.target.checked; render(); }
-  });
+  /* clicks inside the directory are handled by the hub (hub-ui.js) */
 
   function profileCompanies() {
     var nameEl = document.querySelector('.profile-name'), me = window.ME; if (!nameEl || !me || nameEl.textContent.indexOf(me.name) !== 0) return;

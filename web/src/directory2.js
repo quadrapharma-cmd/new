@@ -49,7 +49,7 @@
     'orient-cosmetics': { forms: ['Creams', 'Serums', 'Shampoos', 'Gels'], minBatch: '5,000 units', capacity: '200,000 units / month', slots: [1, 2, 5] }
   };
   var FORMS = ['Tablets', 'Capsules', 'Sachets', 'Syrups', 'Effervescent tablets', 'Sterile injectables', 'Eye drops', 'Creams', 'Serums', 'Gels', 'Shampoos'];
-  function capOf(co) { var e = (X().store('company_edits') || {})[co.slug]; return (e && e.cap) || CAP[co.slug] || null; }
+  function capOf(co) { var e = X().edits()[co.slug]; return (e && e.cap && typeof e.cap === 'object' && Array.isArray(e.cap.forms) && Array.isArray(e.cap.slots) ? e.cap : null) || CAP[co.slug] || null; }
 
   function finderDialog() {
     var m = D.modal({ title: 'Find a toll manufacturer', secondary: 'Close',
@@ -102,24 +102,11 @@
     if (e.target.closest('.tr-go')) bulkRfqDialog(picks.slice());
   });
   window.dxPicks = { get: function () { return picks; }, set: function (p) { picks = p; drawTray(); }, draw: function () { drawTray(); } };
-  function pickBoxes() {
-    document.querySelectorAll('#dxDir .dr-card').forEach(function (card) {
-      if (card.querySelector('.dr-pick')) return;
-      var slug = card.dataset.slug, acts = card.querySelector('.dr-acts'); if (!acts) return;
-      var l = document.createElement('label'); l.className = 'dr-pick'; l.title = 'Select to request quotes from several companies at once';
-      l.innerHTML = '<input type="checkbox"' + (picks.indexOf(slug) >= 0 ? ' checked' : '') + '> Select';
-      l.addEventListener('click', function (e) { e.stopPropagation(); });
-      l.querySelector('input').addEventListener('change', function (e) {
-        if (e.target.checked) { if (picks.length >= 10) { e.target.checked = false; toast('Up to 10 companies per request'); return; } picks.push(slug); } else picks = picks.filter(function (s) { return s !== slug; });
-        drawTray();
-      });
-      acts.appendChild(l);
-    });
-    drawTray();
-  }
+  /* the hub draws the Select boxes on its cards (data-hpick) and reads window.dxPicks */
   function bulkRfqDialog(slugs, preset) {
     preset = preset || {};
     var act = X().mine(), cos = slugs.map(function (s) { return X().bySlug(s); }).filter(function (c) { return c && !(act && c.slug === act.slug); });   /* never your own company */
+    if (!act) { toast('Create or claim your company page first'); return; }   /* quotes are requested on behalf of a company */
     if (!cos.length) { toast('Select other companies — not the one you act as'); return; }
     D.modal({ title: 'Request quotes from ' + cos.length + ' companies',
       body: '<div class="bq-to">' + cos.map(function (c) { return '<span>' + X().logo(c, 'cs-logo') + esc(c.name) + '</span>'; }).join('') + '</div>' + (act ? '<div class="rq-to">' + ic('building') + 'Requesting as <b>' + esc(act.name) + '</b></div>' : '') +
@@ -170,10 +157,10 @@
   function brochure(co) {
     var url = pageUrl(co), cap = capOf(co), w = window.open('', '_blank');
     if (!w) { toast('Allow pop-ups to create the PDF'); return; }
-    var logo = co.logo ? '<img class="lg" src="' + co.logo + '">' : '<div class="lg" style="background:' + esc(co.color) + '">' + esc(co.name.replace(/[^A-Za-z ]/g, '').split(/\s+/).map(function (x) { return x[0]; }).join('').slice(0, 2)) + '</div>';
+    var lg = X().safeUrl(co.logo), logo = lg ? '<img class="lg" src="' + esc(lg) + '">' : '<div class="lg" style="background:' + X().safeColor(co.color) + '">' + esc(X().initials(co.name)) + '</div>';
     w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(co.name) + ' — Company profile</title><style>' +
       '@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Poppins,Arial,sans-serif;color:#0E1320;margin:0}h1{font-size:28px;margin:0}h2{font-size:15px;color:#1a56db;text-transform:uppercase;letter-spacing:.08em;margin:22px 0 8px;border-bottom:2px solid #E6E8EE;padding-bottom:4px}' +
-      '.top{display:flex;gap:16px;align-items:center;border-bottom:6px solid ' + esc(co.color) + ';padding-bottom:14px}.lg{width:70px;height:78px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:24px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);object-fit:cover}' +
+      '.top{display:flex;gap:16px;align-items:center;border-bottom:6px solid ' + X().safeColor(co.color) + ';padding-bottom:14px}.lg{width:70px;height:78px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:24px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);object-fit:cover}' +
       '.tag{color:#374151;margin:4px 0 0}.meta{color:#64748b;font-size:12px;margin-top:2px}.qr{margin-left:auto;text-align:center;font-size:9px;color:#64748b}.qr svg{width:92px;height:92px}' +
       '.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.facts div{background:#F4F6FA;border-radius:8px;padding:8px}.facts small{display:block;color:#64748b;font-size:10px}' +
       '.prods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.p{border:1px solid #E6E8EE;border-radius:10px;padding:8px;break-inside:avoid}.p img{width:100%;height:110px;object-fit:cover;border-radius:6px;background:#F6F8FC}.p b{display:block;font-size:12.5px;margin-top:4px}.p small{color:#64748b;font-size:10.5px}' +
@@ -192,24 +179,12 @@
   /* ── 5 · who makes an active ingredient ── */
   var INN = ['Metformin', 'Paracetamol', 'Amoxicillin', 'Ciprofloxacin', 'Omeprazole', 'Ceftriaxone', 'Ascorbic acid', 'Vitamin C', 'Niacinamide', 'Hyaluronic acid', 'Neomycin', 'Hypromellose', 'Ibuprofen', 'Azithromycin', 'Atorvastatin', 'Amlodipine', 'Diclofenac', 'Cholecalciferol', 'Vitamin D3'];
   function apiOf(p) { if (p.api) return p.api; var h = (p.name + ' ' + p.desc).toLowerCase(); for (var i = 0; i < INN.length; i++) if (h.indexOf(INN[i].toLowerCase()) >= 0) return INN[i]; return ''; }
-  function whoMakes() {
-    var dir = document.getElementById('dxDir'); if (!dir || X().S.open) return;
-    var q = (X().S.q || '').trim().toLowerCase(), old = dir.querySelector('.wm-panel');
-    var inn = q.length >= 4 ? INN.find(function (n) { return n.toLowerCase().indexOf(q) === 0 || q.indexOf(n.toLowerCase()) === 0; }) : null;
-    if (!inn) { if (old) old.remove(); return; }
-    if (old && old.dataset.inn === inn) return; if (old) old.remove();
-    var hits = []; X().companies().forEach(function (co) { co.products.forEach(function (p) { var a = apiOf(p); if (a && (a.toLowerCase() === inn.toLowerCase() || (inn === 'Vitamin C' && a === 'Ascorbic acid'))) hits.push({ co: co, p: p }); }); });
-    var panel = document.createElement('section'); panel.className = 'wm-panel'; panel.dataset.inn = inn;
-    panel.innerHTML = '<div class="wm-h">' + ic('flask') + '<b>Who makes ' + esc(inn) + ' in Egypt</b><span>' + hits.length + ' product' + (hits.length === 1 ? '' : 's') + ' · ' + hits.map(function (h) { return h.co.slug; }).filter(function (s, i, a) { return a.indexOf(s) === i; }).length + ' companies</span></div>' +
-      (hits.length ? '<div class="wm-list">' + hits.map(function (h) { return '<div class="wm-row"><img src="' + X().pimg(h.co, h.p) + '" alt=""><span class="wm-b"><b>' + esc(h.p.name) + '</b><small>' + esc(h.p.cat) + ' · ' + esc(h.p.desc) + '</small></span><button type="button" class="dx-colink" data-wmco="' + h.co.slug + '">' + esc(h.co.name) + '</button>' + (h.co.status === 'unclaimed' ? '<em class="dr-pend unc">Unclaimed</em>' : '') + '<button type="button" class="dr-btn p sm" data-wmrfq="' + h.co.slug + '" data-wmp="' + h.p.id + '">Request a quote</button></div>'; }).join('') + '</div>' : '<p class="cp-muted">No listed product with this active ingredient yet.</p>');
-    var anchor = dir.querySelector('.dr-count'); if (anchor) anchor.parentNode.insertBefore(panel, anchor); else dir.appendChild(panel);
-  }
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('[data-wmco]'); if (a) { e.stopPropagation(); X().open(a.dataset.wmco, 'products'); return; }
     var r = e.target.closest && e.target.closest('[data-wmrfq]'); if (r) { e.stopPropagation(); X().rfq(r.dataset.wmrfq, r.dataset.wmp); }
   }, true);
 
-  /* ── page additions: claim banner, capabilities, brochure/QR buttons, finder entry ── */
+  /* ── claim an unclaimed page (opened from the hub's claim banner) ── */
   function claimDialog(co) {
     var me = window.ME || {}, code = String(1000 + Math.floor(Math.random() * 9000));
     D.modal({ title: 'Claim ' + co.name, body: '<p class="cp-muted">Prove you work at ' + esc(co.name) + ' and the page becomes yours to manage. Nothing is published until you edit it.</p>' +
@@ -228,47 +203,8 @@
         }, 40);
       } } });
   }
-  function pageExtras() {
-    if (window.dxHub) return;   /* the company hub renders these natively */
-    var dir = document.getElementById('dxDir'); if (!dir) return;
-    var S = X().S;
-    if (!S.open) {
-      var cta = dir.querySelector('.dr-hero-row');
-      if (cta && !cta.querySelector('[data-finder]')) { var b = document.createElement('button'); b.type = 'button'; b.className = 'dr-btn'; b.dataset.finder = '1'; b.innerHTML = ic('factory') + 'Find a toll manufacturer'; b.onclick = finderDialog; cta.insertBefore(b, cta.firstChild); }
-      pickBoxes(); whoMakes(); return;
-    }
-    drawTray();
-    var co = X().bySlug(S.open); if (!co) return;
-    var ctaBox = dir.querySelector('.cp-cta');
-    if (ctaBox && !ctaBox.querySelector('[data-pdf]')) {
-      var pdf = document.createElement('button'); pdf.type = 'button'; pdf.className = 'dr-btn'; pdf.dataset.pdf = '1'; pdf.innerHTML = ic('doc') + 'Profile PDF'; pdf.onclick = function () { brochure(X().bySlug(S.open)); };
-      var qr = document.createElement('button'); qr.type = 'button'; qr.className = 'dr-btn'; qr.dataset.qr = '1'; qr.innerHTML = ic('target') + 'QR code'; qr.onclick = function () { qrDialog(X().bySlug(S.open)); };
-      ctaBox.appendChild(pdf); ctaBox.appendChild(qr);
-    }
-    if (co.status === 'unclaimed' && !dir.querySelector('.cp-claim')) {
-      var hero = dir.querySelector('.cp-hero'), ban = document.createElement('div'); ban.className = 'cp-banner cp-claim';
-      ban.innerHTML = ic('building') + '<span><b>Is this your company?</b> This page was created from public industry lists (' + esc(co.source || 'public sources') + '). Claim it to manage products, receive requests and get verified.</span><button type="button" class="dr-btn p sm" data-claim="1">Claim this page</button>';
-      ban.querySelector('[data-claim]').onclick = function () { claimDialog(X().bySlug(S.open)); };
-      hero.parentNode.insertBefore(ban, hero.nextSibling);
-    }
-    var cap = capOf(co), body = dir.querySelector('.cp-body');
-    if (cap && S.tab === 'overview' && body && !body.querySelector('.cp-cap')) {
-      var owner = X().ownsPage(co), sec = document.createElement('section'); sec.className = 'cp-sec cp-cap';
-      sec.innerHTML = '<h3>Manufacturing capabilities</h3><div class="cap-forms">' + cap.forms.map(function (f) { return '<span>' + esc(f) + '</span>'; }).join('') + '</div>' +
-        '<div class="cp-facts"><div><small>Minimum batch</small><b>' + esc(cap.minBatch) + '</b></div><div><small>Capacity</small><b>' + esc(cap.capacity) + '</b></div></div>' +
-        '<div class="cap-slots"><small>Free production slots' + (owner ? ' — tap a month to update' : '') + '</small><div>' + MONTHS.map(function (mo, i) { var free = cap.slots.indexOf(i) >= 0; return '<button type="button" class="cap-m' + (free ? ' free' : '') + '"' + (owner ? ' data-slot="' + i + '"' : ' disabled') + '>' + esc(mo) + '<em>' + (free ? 'Free' : 'Booked') + '</em></button>'; }).join('') + '</div></div>';
-      body.insertBefore(sec, body.firstChild);
-      if (owner) sec.addEventListener('click', function (e) {
-        var s = e.target.closest('[data-slot]'); if (!s) return;
-        var i = +s.dataset.slot, c2 = JSON.parse(JSON.stringify(capOf(co))), k = c2.slots.indexOf(i); if (k >= 0) c2.slots.splice(k, 1); else c2.slots.push(i);
-        var edits = X().store('company_edits') || {}; edits[co.slug] = Object.assign({}, edits[co.slug] || {}, { cap: c2 }); X().store('company_edits', edits); X().render(); toast(MONTHS[i] + (k >= 0 ? ' marked booked' : ' marked free'));
-      });
-    }
-  }
   window.dxFindToll = finderDialog;
   window.dxDir2 = { bulk: function (slugs, preset) { bulkRfqDialog(slugs, preset); }, brochure: brochure, qr: qrDialog, claim: claimDialog, capOf: capOf, MONTHS: MONTHS, FORMS: FORMS, apiOf: apiOf, INN: INN, CAP: CAP };
 
-  C.onRender('directory-extras', pageExtras);
-  document.addEventListener('input', function (e) { if (e.target.id === 'drQ') setTimeout(function () { C.run('who-makes', whoMakes); }, 260); });
   document.addEventListener('dx:page', drawTray);
 })();

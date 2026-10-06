@@ -1,8 +1,8 @@
 .dx-lc-chip{margin-inline-start:8px;padding:2px 9px;border-radius:999px;border:1px solid #F5C77A;background:#FFF7E8;color:#B45309;font:600 11px/1.6 Poppins,sans-serif;cursor:pointer;vertical-align:middle}
 .dx-lc-chip:hover{background:#F59E0B;color:#fff;border-color:#F59E0B}
 .dx-lc-f{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
-.dx-lc-f label{display:flex;flex-direction:column;gap:4px;font:600 12px/1.4 Poppins,sans-serif;color:#475569}
-.dx-lc-f input,.dx-lc-f select{height:38px;border:1px solid #D6DEEB;border-radius:10px;padding:0 10px;font:500 14px Poppins,sans-serif;color:#0B1B3D;background:#fff}
+.dx-lc-f label{display:flex;flex-direction:column;gap:4px;min-width:0;font:600 12px/1.4 Poppins,sans-serif;color:#475569}
+.dx-lc-f input,.dx-lc-f select{width:100%;min-width:0;box-sizing:border-box;height:38px;border:1px solid #D6DEEB;border-radius:10px;padding:0 10px;font:500 14px Poppins,sans-serif;color:#0B1B3D;background:#fff}
 .dx-lc-out{margin-top:16px;background:#F4F7FB;border-radius:14px;padding:14px 16px}
 .dx-lc-tot{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .dx-lc-tot span{font:600 12px Poppins,sans-serif;letter-spacing:.06em;color:#64748B;text-transform:uppercase}

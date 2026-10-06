@@ -20,7 +20,7 @@
 .gb-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.gb-h span{font-size:12px;color:#64748b}
 .gb-bar{height:10px;background:#F1F5F9;border-radius:9px;overflow:hidden;margin:10px 0 6px}.gb-bar i{display:block;height:100%;background:linear-gradient(90deg,#16a34a,#22c55e)}
 .gb-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12.5px}.gb-price{color:#15803d;font-weight:700}
-.gb-join{display:flex;gap:8px;margin-top:10px}.gb-join input{flex:1;height:36px;border:1px solid #D5D9E1;border-radius:999px;padding:0 14px;font:13px Poppins,sans-serif}
+.gb-join{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.gb-join input{flex:1;min-width:0;height:36px;border:1px solid #D5D9E1;border-radius:999px;padding:0 14px;font:13px Poppins,sans-serif}
 .sp-off{flex:none;background:#FEE2E2;color:#991B1B;border-radius:12px;padding:8px 8px;font:800 13px 'JetBrains Mono',monospace}
 .sp-price{font:700 13px 'JetBrains Mono',monospace;white-space:nowrap}
 @media (max-width:700px){.sq-row{grid-template-columns:1fr}.dr-tool{font-size:12px;padding:7px 11px}}

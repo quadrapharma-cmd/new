@@ -6,7 +6,11 @@
   function X() { return window.dxDir; }
   var __A = /^(deals|created_companies|reports|dossiers|surplus_new|groups_new|follows|saved_searches|my_requests|activity_.*|inbox_.*)$/, __O = /^(company_edits|supplier_reviews|review_meta|avl_.*|groups_state|meta_.*|quoted_.*|sqq_.*)$/, __S = /^(acting|role)$/;
   function __typed(k, v) { if (v == null) return null; if (__A.test(k)) return Array.isArray(v) ? v : null; if (__O.test(k)) return (typeof v === 'object' && !Array.isArray(v)) ? v : null; if (__S.test(k)) return typeof v === 'string' ? v : null; return v; }   /* a stored value of the wrong type is ignored, never trusted */
-  function store(k, v) { if (window.dxStoreHook) { var __h = window.dxStoreHook(k, v); if (__h !== undefined) return __h; } try { if (v === undefined) return __typed(k, JSON.parse(localStorage.getItem('dx_' + k) || 'null')); localStorage.setItem('dx_' + k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function store(k, v) { if (v !== undefined) window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;   /* every write invalidates the memoised company list (directory.js) */
+    if (window.dxStoreHook) { var __h = window.dxStoreHook(k, v); if (__h !== undefined) return __h; } try { if (v === undefined) return __typed(k, JSON.parse(localStorage.getItem('dx_' + k) || 'null')); localStorage.setItem('dx_' + k, JSON.stringify(v)); return true; } catch (e) { quotaToast(); return false; } }
+  var __qt = 0; function quotaToast() { if (Date.now() - __qt < 3000) return; __qt = Date.now(); if (window.DBK) window.DBK.toast('Could not save — the browser storage is full. Remove large photos or old data and try again.'); }   /* a failed save is never reported as success */
+  function ver() { return window.__dxStoreVer || 0; }
+  function edits() { return X() && X().edits ? X().edits() : (store('company_edits') || {}); }   /* company_edits parsed once per store version, shared with the directory */
   var DAY = 864e5, NOW = function () { return Date.now(); };
 
   /* ── Arabic ⇄ English search ── */
@@ -22,7 +26,7 @@
     'alex-excipients': 'الإسكندرية لتجارة الإضافات الدوائية', 'sinai-herbal-extracts': 'سيناء للمستخلصات النباتية', 'pharaonic-logistics': 'الفرعونية للنقل المبرد', 'regpath-consulting': 'ريج باث للاستشارات التسجيلية', 'nile-valley-pharma': 'وادي النيل للأدوية',
     'obour-medica': 'العبور ميديكا للصناعات', 'alexandria-sterile': 'الإسكندرية للمستحضرات المعقمة', 'ramadan-pharma': 'رمضان فارما للصناعات', 'orient-cosmetics': 'أورينت لتصنيع مستحضرات التجميل', 'cairo-api-trading': 'القاهرة لتجارة المواد الخام',
     'suez-pharma-packaging': 'السويس لعبوات الأدوية', 'giza-bioequivalence': 'مركز الجيزة للتكافؤ الحيوي' };
-  function nameAr(co) { var e = (store('company_edits') || {})[co.slug]; return (e && e.nameAr) || co.nameAr || NAME_AR[co.slug] || ''; }
+  function nameAr(co) { var e = edits()[co.slug]; return (e && e.nameAr) || co.nameAr || NAME_AR[co.slug] || ''; }
 
   /* ── sites: certificates and capabilities belong to a site, not to the whole company ── */
   function Cf(name, expiry, src, checked) { return { name: name, expiry: expiry || '', src: src || 'Certificate document', checked: checked || '2025-11-02' }; }
@@ -39,13 +43,18 @@
     'regpath-consulting': [{ id: 'dk', name: 'Dokki office', type: 'Office', city: 'Dokki', gov: 'Giza', certs: [] }]
   };
   function siteType(co) { var s = co.sectors.join(' '); return /Labs/.test(s) ? 'Laboratory' : /Distribution|API/.test(s) && !/Manufacturer/.test(s) ? 'Warehouse' : /Regulatory/.test(s) ? 'Office' : 'Factory'; }
+  var __sites = typeof WeakMap === 'function' ? new WeakMap() : null;   /* per company object and store version: the directory asks for sites several times per card */
   function sitesOf(co) {
-    var e = (store('company_edits') || {})[co.slug];
-    var list = (window.dxLiveSites && window.dxLiveSites[co.slug]) || (e && e.sites) || SITES[co.slug] || [{ id: 'main', name: co.city + ' site', type: siteType(co), city: co.city, gov: co.gov, certs: (co.certs || []).map(function (n) { return Cf(n, '', co.status === 'unclaimed' ? 'Public industry list' : 'Company', '2025-06-01'); }) }];
+    var ls = window.dxLiveSites && window.dxLiveSites[co.slug], v = ver(), m = __sites && __sites.get(co);
+    if (m && m.v === v && m.ls === ls) return m.list;
+    var e = edits()[co.slug];
+    var list = ls || (e && Array.isArray(e.sites) ? e.sites : null) || SITES[co.slug] || [{ id: 'main', name: co.city + ' site', type: siteType(co), city: co.city, gov: co.gov, certs: (co.certs || []).map(function (n) { return Cf(n, '', co.status === 'unclaimed' ? 'Public industry list' : 'Company', '2025-06-01'); }) }];
     var cap = window.dxDir2 ? window.dxDir2.capOf(co) : null, gave = false;
-    return list.map(function (s) { var o = JSON.parse(JSON.stringify(s)); if (!o.cap && cap && !gave && (o.type === 'Factory' || o.type === 'Laboratory')) { o.cap = cap; gave = true; } return o; });
+    list = list.map(function (s) { var o = JSON.parse(JSON.stringify(s)); if (!o.cap && cap && !gave && (o.type === 'Factory' || o.type === 'Laboratory')) { o.cap = cap; gave = true; } if (!Array.isArray(o.certs)) o.certs = []; return o; });
+    if (__sites) __sites.set(co, { v: v, ls: ls, list: list });
+    return list;
   }
-  function saveSites(slug, sites) { var e = store('company_edits') || {}; e[slug] = Object.assign({}, e[slug] || {}, { sites: sites }); store('company_edits', e); touch(slug, 'sites'); }
+  function saveSites(slug, sites) { var e = store('company_edits') || {}; e[slug] = Object.assign({}, e[slug] || {}, { sites: sites }); if (!store('company_edits', e)) return false; touch(slug, 'sites'); return true; }
   function certState(c, co) {
     var t = new Date().toISOString().slice(0, 7), exp = c.expiry, st = 'valid';
     if (exp && exp < t) st = 'expired'; else if (exp) { var d = new Date(exp + '-01').getTime() - NOW(); if (d < 90 * DAY) st = 'soon'; }
@@ -80,8 +89,13 @@
     if (r.maker === co.slug && r.holder) return 'Manufacturer for ' + nm(r.holder);
     return 'Manufacturer';
   }
-  /* products a company makes for others appear on the maker's page too */
-  function madeFor(co) { var out = []; X().companies().forEach(function (o) { if (o.slug === co.slug) return; o.products.forEach(function (p) { var r = rolesOf(o, p); if (r.maker === co.slug && r.holder !== co.slug) out.push({ owner: o, p: p }); }); }); return out; }
+  /* products a company makes for others appear on the maker's page too — one maker index per company list, not a scan of every company per company */
+  var __mf = null;
+  function madeFor(co) {
+    var list = X().companies();
+    if (!__mf || __mf.list !== list) { var idx = {}; list.forEach(function (o) { (o.products || []).forEach(function (p) { var r = rolesOf(o, p); if (r.maker && r.maker !== o.slug && r.holder !== r.maker) (idx[r.maker] = idx[r.maker] || []).push({ owner: o, p: p }); }); }); __mf = { list: list, idx: idx }; }
+    return __mf.idx[co.slug] || [];
+  }
 
   /* ── corporate groups ── */
   var CGROUPS = [{ name: 'Ramadan Group', members: ['ramadan-pharma', 'orient-cosmetics'] }];
@@ -95,12 +109,12 @@
     'beauty-lab-egypt': [{ uid: 6, name: 'Dr. Sara El-Amin', role: 'Admin', consent: true }]
   };
   function teamOf(co) {
-    var e = (store('company_edits') || {})[co.slug]; if (e && e.team) return e.team;
+    var e = edits()[co.slug]; if (e && Array.isArray(e.team)) return e.team;
     if (TEAM[co.slug]) return TEAM[co.slug].map(function (m) { return Object.assign({}, m); });
     if (co.owner) { var u = (window.USERS || []).find(function (x) { return x.id === co.owner; }); return [{ uid: co.owner, name: u ? u.name : (window.ME || {}).name || 'Owner', role: 'Admin', consent: true }]; }
     return [];
   }
-  function saveTeam(slug, team) { var e = store('company_edits') || {}; e[slug] = Object.assign({}, e[slug] || {}, { team: team }); store('company_edits', e); }
+  function saveTeam(slug, team) { var e = store('company_edits') || {}; e[slug] = Object.assign({}, e[slug] || {}, { team: team }); return store('company_edits', e); }
   var ROUTE = { quote: ['Sales', 'Management', 'Admin'], surplus: ['Sales', 'Admin'], group: ['Sales', 'Admin'], service: ['Sales', 'Management', 'Admin'], questionnaire: ['Quality', 'Regulatory', 'Admin'], dossier: ['Regulatory', 'Management', 'Admin'], job: ['HR', 'Management', 'Admin'] };
   function route(slug, type) {
     var co = X().bySlug(slug); if (!co) return null;
@@ -152,9 +166,15 @@
 
   /* ── active ── */
   var SEED_ACTIVE = { 'quadra-pharm': 2, 'medsinia-industries': 5, 'delta-analytical-labs': 1, 'pharaonic-logistics': 3, 'beauty-lab-egypt': 20, 'regpath-consulting': 40 };
+  var __la = null;
+  function dealTimes() {   /* last deal event per company, computed once per store version instead of a pass over every deal for every company */
+    var v = ver(); if (__la && __la.v === v) return __la.m;
+    var m = {}; if (window.dxDeals) window.dxDeals.all().forEach(function (d) { (d.events || []).forEach(function (e) { var s = e.by === 'to' ? d.to.slug : e.by === 'from' ? d.from.slug : null; if (s && !(m[s] >= e.at)) m[s] = e.at; }); });
+    __la = { v: v, m: m }; return m;
+  }
   function lastActive(co) {
     var t = 0, a = activity(co.slug)[0]; if (a) t = a.at;
-    if (window.dxDeals) window.dxDeals.all().forEach(function (d) { d.events.forEach(function (e) { if ((e.by === 'to' && d.to.slug === co.slug) || (e.by === 'from' && d.from.slug === co.slug)) t = Math.max(t, e.at); }); });
+    t = Math.max(t, dealTimes()[co.slug] || 0);
     SECTIONS.forEach(function (s) { var m = (store('meta_' + co.slug) || {})[s]; if (m) t = Math.max(t, m.at); });
     if (SEED_ACTIVE[co.slug] != null) t = Math.max(t, NOW() - SEED_ACTIVE[co.slug] * DAY);
     return t;
@@ -165,7 +185,7 @@
   /* ── completeness + next step ── */
   function completeness(co) {
     var items = [
-      ['logo', 'Add your logo', !!co.logo], ['about', 'Describe the company', (co.about || '').length > 40], ['sites', 'Add your sites (plants, warehouses)', !!(((store('company_edits') || {})[co.slug] || {}).sites || SITES[co.slug])],
+      ['logo', 'Add your logo', !!co.logo], ['about', 'Describe the company', (co.about || '').length > 40], ['sites', 'Add your sites (plants, warehouses)', !!((edits()[co.slug] || {}).sites || SITES[co.slug])],
       ['products', 'Add products', co.products.length > 0], ['contact', 'Add phone or email', !!(co.phone || co.email)], ['team', 'Invite your team', teamOf(co).length >= 2],
       ['certs', 'Add certificates with expiry dates', credentials(co).length > 0], ['verify', 'Get verified (free)', co.status === 'verified' || co.status === 'pending'], ['arabic', 'Add the Arabic company name', !!nameAr(co)]];
     var done = items.filter(function (i) { return i[2]; }).length;

@@ -10,7 +10,9 @@
   function toast(m) { D.toast(m); }
   var __A = /^(deals|created_companies|reports|dossiers|surplus_new|groups_new|follows|saved_searches|my_requests|activity_.*|inbox_.*)$/, __O = /^(company_edits|supplier_reviews|review_meta|avl_.*|groups_state|meta_.*|quoted_.*|sqq_.*)$/, __S = /^(acting|role)$/;
   function __typed(k, v) { if (v == null) return null; if (__A.test(k)) return Array.isArray(v) ? v : null; if (__O.test(k)) return (typeof v === 'object' && !Array.isArray(v)) ? v : null; if (__S.test(k)) return typeof v === 'string' ? v : null; return v; }   /* a stored value of the wrong type is ignored, never trusted */
-  function store(k, v) { if (window.dxStoreHook) { var __h = window.dxStoreHook(k, v); if (__h !== undefined) return __h; } try { if (v === undefined) return __typed(k, JSON.parse(localStorage.getItem('dx_' + k) || 'null')); localStorage.setItem('dx_' + k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function store(k, v) { if (v !== undefined) window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;   /* every write invalidates the memoised company list (directory.js) */
+    if (window.dxStoreHook) { var __h = window.dxStoreHook(k, v); if (__h !== undefined) return __h; } try { if (v === undefined) return __typed(k, JSON.parse(localStorage.getItem('dx_' + k) || 'null')); localStorage.setItem('dx_' + k, JSON.stringify(v)); return true; } catch (e) { quotaToast(); return false; } }
+  var __qt = 0; function quotaToast() { if (Date.now() - __qt < 3000) return; __qt = Date.now(); toast('Could not save — the browser storage is full. Remove large photos or old data and try again.'); }   /* a failed save is never reported as success */
   function later(fn) { setTimeout(fn, 40); }
   function now() { return Date.now(); }
 
@@ -60,7 +62,13 @@
   };
 
   /* ── storage ── */
-  function all(v) { if (v === undefined) return store('deals') || seed(); store('deals', v); }
+  var __dl = null;
+  function all(v) {
+    if (v !== undefined) { store('deals', v); return; }
+    if (window.dxStoreHook) return store('deals') || seed();   /* live: the adapter's list is always current */
+    var ver = window.__dxStoreVer || 0; if (__dl && __dl.v === ver) return __dl.l;   /* demo: parsed once per store version, not once per company per render */
+    var l = store('deals') || seed(); __dl = { v: ver, l: l }; return l;
+  }
   function seed() {
     var t = now(), d = [
       mk('quote', { slug: null, name: 'Nour Pharma (Cairo)' }, 'quadra-pharm', 'Toll manufacturing — film-coated tablets', { qty: '500,000', unit: 'tablets / year', inc: 'EXW' }, 'We have an EDA-registered formula and need a WHO-GMP site. Toll price per 1,000 tablets and earliest slot?', t - 7200e3),
@@ -93,7 +101,8 @@
   /* ── create ── */
   function create(type, toSlug, title, lines, message, extra) {
     var a = X().mine(), me = window.ME || {};
-    var from = type === 'job' ? { slug: null, name: me.name || 'You', person: true, userId: me.id } : a ? { slug: a.slug, name: a.name } : { slug: null, name: me.name || 'You', person: true, userId: me.id };
+    if (type !== 'job' && !a) { toast('Create or claim your company page first'); return null; }   /* only a company can send these (the engine refuses person-sent ones) */
+    var from = type === 'job' ? { slug: null, name: me.name || 'You', person: true, userId: me.id } : { slug: a.slug, name: a.name };
     if (from.slug && from.slug === toSlug) { toast('You are acting as ' + from.name + ' — you cannot send this to your own company'); return null; }
     var d = mk(type, from, toSlug, title, lines, message); if (extra) Object.keys(extra).forEach(function (k) { d[k] = extra[k]; });
     if (window.dxHub) d.assignee = window.dxHub.route(toSlug, type);
@@ -109,7 +118,7 @@
   var NEXT = { quote: 'quoted', revise: 'quoted', counter: 'countered', accept: 'accepted', confirm: 'confirmed', ship: 'shipped', receive: 'delivered', rate: 'closed', decline: 'declined', cancel: 'cancelled',
     propose: 'proposed', start: 'in_progress', deliver: 'delivered', accept_offer: 'accepted', counter_offer: 'countered', accept_counter: 'accepted', answer: 'answered', approve: 'approved', reject: 'rejected',
     sign_nda: 'nda_signed', share: 'shared', agree: 'agreed', shortlist: 'shortlisted', interview: 'interview', offer: 'offer', accept_job: 'hired', confirm_group: 'confirmed' };
-  function offerAt(d) { for (var i = d.events.length - 1; i >= 0; i--) if (['quote', 'revise', 'propose'].indexOf(d.events[i].kind) >= 0) return d.events[i].at; return d.updated; }
+  function offerAt(d) { if (!Array.isArray(d.events)) return d.updated; for (var i = d.events.length - 1; i >= 0; i--) if (['quote', 'revise', 'propose'].indexOf(d.events[i].kind) >= 0) return d.events[i].at; return d.updated; }
   function offerExpired(d) { var m = d.offer && /(\d+)\s*day/.exec(d.offer.validity || ''); return !!(m && Date.now() - offerAt(d) > (+m[1]) * 864e5); }
   function offerExpiry(d) { var m = d.offer && /(\d+)\s*day/.exec(d.offer.validity || ''); return m ? new Date(offerAt(d) + (+m[1]) * 864e5) : null; }
   function act(id, action, data, side) {
@@ -215,9 +224,9 @@
         (lines ? '<table class="cp-spec">' + lines + '</table>' : '') +
         (d.offer ? '<div class="dl-offer' + (offerExpired(d) && ['quoted', 'proposed'].indexOf(d.status) >= 0 ? ' ctr' : '') + '">' + ic('tag') + '<b>' + esc(d.offer.price) + '</b>' + (d.offer.validity ? (offerExpired(d) && ['quoted', 'proposed'].indexOf(d.status) >= 0 ? ' · <b>expired ' + esc(offerExpiry(d).toLocaleDateString()) + '</b>' : ' · valid ' + esc(d.offer.validity) + (offerExpiry(d) ? ' (to ' + esc(offerExpiry(d).toLocaleDateString()) + ')' : '')) : '') + (d.offer.terms ? ' · ' + esc(d.offer.terms) : '') + (d.offer.lead ? ' · ' + esc(d.offer.lead) : '') + '</div>' : '') +
         (d.counter && d.status === 'countered' ? '<div class="dl-offer ctr">' + ic('trend') + 'Counter-offer: <b>' + esc(d.counter.price) + '</b>' + (d.counter.note ? ' — ' + esc(d.counter.note) : '') + '</div>' : '') +
-        (d.type === 'group' ? '<div class="dl-members">' + (d.members || []).map(function (mb) { return '<span>' + esc(mb.name) + ' · ' + mb.qty.toLocaleString() + '</span>'; }).join('') + '</div>' : '') +
-        (d.answers && (d.status === 'answered' || d.status === 'approved' || d.status === 'rejected') ? '<div class="dl-ans">' + d.answers.map(function (s) { return '<h4 class="sq-h">' + esc(s[0]) + '</h4>' + s[1].map(function (x) { return '<div class="sq-row"><span>' + esc(x.q) + '</span><b>' + esc(x.a || '—') + '</b><small>' + esc(x.src || '') + '</small></div>'; }).join(''); }).join('') + '</div>' : '') +
-        '<h4 class="sq-h">Timeline</h4><ul class="dl-tl">' + d.events.slice().reverse().map(function (ev) { var who = ev.by === 'from' ? d.from.name : ev.by === 'to' ? d.to.name : ev.by === 'member' ? 'Member' : 'Drugbox'; return '<li><b>' + esc(who) + '</b> · ' + esc(LABEL[ev.kind] || (ACT[ev.kind] ? ACT[ev.kind][0] : ev.kind)) + '<small>' + new Date(ev.at).toLocaleString() + '</small>' + (ev.text && ev.text !== (LABEL[ev.kind] || '') ? '<p>' + esc(ev.text) + '</p>' : '') + '</li>'; }).join('') + '</ul>' +
+        (d.type === 'group' ? '<div class="dl-members">' + (d.members || []).map(function (mb) { return '<span>' + esc(mb.name) + ' · ' + esc(Number(mb.qty || 0).toLocaleString()) + '</span>'; }).join('') + '</div>' : '') +
+        (Array.isArray(d.answers) && (d.status === 'answered' || d.status === 'approved' || d.status === 'rejected') ? '<div class="dl-ans">' + d.answers.filter(function (s) { return Array.isArray(s) && Array.isArray(s[1]); }).map(function (s) { return '<h4 class="sq-h">' + esc(s[0]) + '</h4>' + s[1].map(function (x) { return '<div class="sq-row"><span>' + esc(x.q) + '</span><b>' + esc(x.a || '—') + '</b><small>' + esc(x.src || '') + '</small></div>'; }).join(''); }).join('') + '</div>' : '') +
+        '<h4 class="sq-h">Timeline</h4><ul class="dl-tl">' + (Array.isArray(d.events) ? d.events : []).slice().reverse().map(function (ev) { var who = ev.by === 'from' ? d.from.name : ev.by === 'to' ? d.to.name : ev.by === 'member' ? 'Member' : 'Drugbox'; return '<li><b>' + esc(who) + '</b> · ' + esc(LABEL[ev.kind] || (ACT[ev.kind] ? ACT[ev.kind][0] : ev.kind)) + '<small>' + new Date(ev.at).toLocaleString() + '</small>' + (ev.text && ev.text !== (LABEL[ev.kind] || '') ? '<p>' + esc(ev.text) + '</p>' : '') + '</li>'; }).join('') + '</ul>' +
         '<div class="dl-acts">' + acts.map(function (a) { return '<button type="button" class="dr-btn ' + (ACT[a][1] === 'p' ? 'p' : '') + (ACT[a][1] === 'd' ? ' dl-d' : '') + '" data-act="' + a + '">' + esc(ACT[a][0]) + '</button>'; }).join('') +
         (sim ? '<button type="button" class="dr-btn ghost dl-sim" data-sim="1">' + ic('spark') + 'Simulate ' + esc(o.name) + '\u2019s reply (demo)</button>' : '') +
         (d.group ? '<button type="button" class="dr-btn" data-cmpq="1">' + ic('clipboard') + 'Compare all quotes</button>' : '') + (o.name && !o.person ? '<button type="button" class="dr-btn" data-chat="1">' + ic('chat') + 'Message</button>' : '') + (!acts.length && !sim ? '<span class="cp-muted">' + (['closed', 'declined', 'cancelled', 'rejected', 'approved', 'agreed', 'hired', 'confirmed'].indexOf(d.status) >= 0 && FLOWS[d.type].steps.indexOf(d.status) === FLOWS[d.type].steps.length - 1 || ['declined', 'cancelled', 'rejected'].indexOf(d.status) >= 0 ? 'This deal is finished.' : 'Waiting for ' + esc(o.name) + '.') + '</span>' : '') + '</div>' });
@@ -241,7 +250,7 @@
       } } });
   }
   function answerForm(d, back) {
-    var ans = d.answers || [], idx = 0;
+    var ans = (Array.isArray(d.answers) ? d.answers : []).filter(function (s) { return Array.isArray(s) && Array.isArray(s[1]); }), idx = 0;
     D.modal({ title: 'Answer questionnaire from ' + d.from.name, body: '<p class="cp-muted">Answers from your company page are pre-filled. Check them and complete the rest.</p>' + ans.map(function (s) { return '<h4 class="sq-h">' + esc(s[0]) + '</h4>' + s[1].map(function (x) { var i = idx++; return '<div class="dbk-f"><label for="qa_' + i + '">' + esc(x.q) + (x.a ? ' <small class="cp-muted">(from ' + esc(x.src) + ')</small>' : ' *') + '</label><input id="qa_' + i + '" value="' + esc(x.a) + '"' + (x.a ? '' : ' data-req') + '></div>'; }).join(''); }).join(''),
       primary: { label: 'Send answers', onClick: function (b) {
         if (!D.requireFields(b)) return false; var i = 0; ans.forEach(function (s) { s[1].forEach(function (x) { var v = b.querySelector('#qa_' + (i++)).value.trim(); if (v !== x.a) { x.a = v; x.src = 'Supplier'; } }); });
