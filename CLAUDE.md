@@ -30,11 +30,14 @@ comes from. Never rewrite or restyle a page for the live app.
 - People get small local numeric ids (1001+) mapped to UUIDs (`aid()`/`uuidOf()`), because the interface writes ids
   unquoted and `parseInt`s them. `gotoProfile` fetches unseen people first (otherwise `U()` falls back to "me").
 
-## Database (supabase/migrations 0001–0025)
+## Database (supabase/migrations 0001–0026)
 - Every migration ends with `notify pgrst, 'reload schema';`.
-- After any migration run `psql -f supabase/tests/schema_sweep.sql` — it must print three "none" lines:
+- After any migration run `psql -f supabase/tests/schema_sweep.sql` — every line must say "none" (six checks), including
   **RLS on with no policy** (made five features unusable in production: group members, post media, company followers…),
-  RLS off, and **two counter triggers on one table** (double counts).
+  RLS off, and **two counter triggers on one table** (double counts). Also `python3 tools/migration_check.py` (re-run safety).
+- **Grants are explicit (0026):** Supabase no longer auto-exposes new tables, so every new table, sequence or function
+  needs its own GRANT to anon/authenticated/service_role (and new functions a REVOKE from public/anon) in the same migration.
+- Migrations are applied by `deploy/supabase_deploy.sh`, which keeps a ledger: never edit an applied migration — add a new one.
 - One counter trigger per table (+1/−1). Server-only functions are `security definer` and revoked from
   public/anon/authenticated (`confirm_payment`, `activate_order`, `set_order_provider_ref`).
 - Never trust amounts, roles or statuses from the browser: prices come from `payment_products`; company
@@ -77,11 +80,13 @@ Done: A foundation · B auth/feed/network/notifications/messages · C companies/
 D marketplace/jobs/trust layer/groups · intro videos · E1 uploads and private documents · E2 Admin → Review ·
 E3 training · E4 payments (server + checkout).
 Code review (October 2026, `docs/CODE-REVIEW-2026-10.md`, F-01…F-178): fixed in migrations 0020 security core, 0021 trust/hub/deals,
-0022 integrity/speed, 0023 payments/moderation/storage, 0024 round-2 follow-ups, 0025 small follow-ups (group-invite notice, members-only company documents, unique slugs), plus the adapter, local stack, build and tests — run everything with
+0022 integrity/speed, 0023 payments/moderation/storage, 0024 round-2 follow-ups, 0025 small follow-ups (group-invite notice, members-only company documents, unique slugs), 0026 launch readiness (explicit grants, cheaper directory page, race-free slugs), plus the adapter, local stack, build and tests — run everything with
 `python3 tests/run_all.py` (exits non-zero on any failure); the build is deterministic and parity compares the whole file.
 
-**Next — E5 launch:** real Supabase project (apply 0001–0025, storage buckets, function secrets), Vercel deploy (web/dist/live + its vercel.json),
-k6 load test at 100k users / 2,000 concurrent against staging, Sentry, backups, domain.
+**Next — E5 launch:** follow `docs/LAUNCH.md` (staging first): `deploy/supabase_deploy.sh` (migrations 0001–0026, sweep, buckets,
+realtime, function secrets + deploy), `deploy/vercel_deploy.sh` (preview), `tools/scale/seed_100k.sql` + `tests/load/k6_drugbox.js`
+(2,000 concurrent, decides the compute size), Sentry, `deploy/backup.sh` + restore drill, domain. Blocked here on network access to
+Supabase/Vercel and on the owner's credentials.
 
 ### Waiting on the owner
 - Paymob keys + card and wallet integration ids, HMAC secret; Fawry merchant code + secure key; InstaPay address.
