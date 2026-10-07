@@ -45,6 +45,7 @@ supabase/
   migrations/0022_integrity_perf.sql  code review 2026-10: FKs, notification dedupe, deals policy + indexes, lean directory RPC, counters, speed
   migrations/0023_payments_moderation_storage.sql  code review 2026-10: payments, moderation, storage buckets (+ Edge Functions)
   migrations/0024_followups.sql  code review 2026-10, round 2: Fawry reference check, faster my_interactions, review roles, company reports read via RPC, account deletion keeps companies
+  migrations/0025_small_followups.sql  round 3: group-invite notification, company documents for members only, the database keeps company slugs unique
   functions/                     payments-create, paymob-webhook, fawry-webhook (see functions/PAYMENTS.md)
   tests/_local_supabase_stub.sql the parts of Supabase the migrations need (auth.uid, storage.foldername… with Supabase's own definitions)
   tests/*.rls.sql, integrity_perf.sql   database security / integrity suites (each on a fresh database: stub + all migrations)
@@ -156,7 +157,7 @@ F-09, F-115) fail on a database without migrations 0020–0023 — they are the 
 | E3 | Training: courses and enrollments from the database (approved course card as template), six courses seeded, Drugbox manages courses, enrollment stored and private, one counter | ✅ done — 10/10 |
 | E4a | Payments server side: card + Vodafone Cash/wallets (Paymob Unified Checkout), Fawry reference numbers (FawryPay), InstaPay transfer + receipt reviewed by Drugbox; prices and VAT from the database; activation only after a verified signature and matching amount; see supabase/functions/PAYMENTS.md | ✅ done — 20/20 through the real functions |
 | E4b | Checkout in the app: the VIP and boost windows offer card, Vodafone Cash & wallets, Fawry and InstaPay (demo shows the choice; the demo flow is unchanged). Live: Paymob page and back ("Payment received"), Fawry reference screen, InstaPay transfer number + receipt; Admin → Review → Payments to confirm transfers | ✅ done — 14/14 in the browser |
-| Review | Code review October 2026 (docs/CODE-REVIEW-2026-10.md): fixes in migrations 0020–0024, the adapter, the local stack, the build and the test suites | ✅ done |
+| Review | Code review October 2026 (docs/CODE-REVIEW-2026-10.md): fixes in migrations 0020–0025, the adapter, the local stack, the build and the test suites | ✅ done |
 | E5 | Real Supabase project, load test at 100k users, launch checklist (below) | |
 
 

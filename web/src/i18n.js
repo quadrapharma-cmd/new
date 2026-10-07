@@ -322,6 +322,21 @@
     'Checked by Drugbox within 48 hours (VIP). Never shown to other users. Your page stays live meanwhile.': 'يراجعها Drugbox خلال 48 ساعة (VIP). لا تظهر لأي مستخدم آخر، وتبقى صفحتك منشورة في أثناء ذلك.',
     'Checked by Drugbox within 2 working days. Never shown to other users. Your page stays live meanwhile.': 'يراجعها Drugbox خلال يومي عمل. لا تظهر لأي مستخدم آخر، وتبقى صفحتك منشورة في أثناء ذلك.',
     /* notices */
+    /* groups: create and invite (N-9) */
+    'Invite': 'ادعُ', 'Invite people': 'ادعُ أشخاصًا', 'Emails or names *': 'البريد الإلكتروني أو الأسماء *', 'Personal note': 'ملاحظة شخصية', 'Optional': 'اختياري', 'Send invites': 'أرسل الدعوات',
+    'one per line or separated by commas': 'واحد في كل سطر أو مفصولة بفواصل', 'Group created': 'تم إنشاء المجموعة', 'Group created! 👥': 'تم إنشاء المجموعة! 👥',
+    'Group created — invite your first members': 'تم إنشاء المجموعة — ادعُ أول أعضائها', 'Give your group a name': 'اكتب اسمًا لمجموعتك', 'Add the group name': 'اكتب اسم المجموعة',
+    'Invite someone other than yourself': 'ادعُ شخصًا غيرك',
+    'Create a Group': 'أنشئ مجموعة', 'Group name': 'اسم المجموعة', 'Group type': 'نوع المجموعة', 'Privacy': 'الخصوصية', 'Manage Group': 'إدارة المجموعة', 'DISCUSSION': 'نقاش', 'NEW': 'جديد',
+    'Buy/sell, RFQs & quotes': 'بيع وشراء وطلبات وعروض أسعار', 'Knowledge sharing, Q&A': 'تبادل المعرفة وأسئلة وأجوبة', 'e.g. Sterile Manufacturing Egypt': 'مثال: التصنيع المعقم في مصر',
+    'Anyone can find, view, and join': 'يمكن لأي شخص أن يجدها ويطّلع عليها وينضم إليها', 'Members must be approved or invited': 'العضوية بالموافقة أو بالدعوة',
+    'Created just now': 'أُنشئت الآن', 'you are the admin': 'أنت المدير',
+    /* form checks (sign in, sign up, posts, listings, groups) */
+    'Email is required': 'البريد الإلكتروني مطلوب', 'Password is required': 'كلمة المرور مطلوبة', 'Name is required': 'الاسم مطلوب',
+    'Password must be at least 8 characters': 'كلمة المرور يجب ألا تقل عن 8 أحرف', 'Title is required': 'العنوان مطلوب', 'Title required': 'العنوان مطلوب',
+    'Details are required': 'التفاصيل مطلوبة', 'Product name required': 'اسم المنتج مطلوب', 'Product name is required': 'اسم المنتج مطلوب',
+    'Group name required': 'اسم المجموعة مطلوب', 'Group name is required': 'اسم المجموعة مطلوب',
+    'Please write at least 20 characters': 'اكتب 20 حرفًا على الأقل', 'Please write at least 40 characters of facts': 'اكتب 40 حرفًا على الأقل من الوقائع',
     'Welcome back, Haytham!': 'أهلًا بعودتك يا هيثم!', 'Post shared': 'تم نشر المنشور', 'Copied': 'تم النسخ', 'Deleted': 'تم الحذف', 'Undo': 'تراجع',
     'Discard your changes?': 'تجاهل تعديلاتك؟', 'Your edits to this page are not saved yet.': 'تعديلاتك على هذه الصفحة لم تُحفظ بعد.', 'Keep editing': 'متابعة التعديل', 'Discard changes': 'تجاهل التعديلات', 'Main navigation': 'التنقل الرئيسي'
   };
@@ -349,7 +364,11 @@
     [/^Open (.+)’s profile$/, function (m) { return 'افتح ملف ' + m[1]; }], [/^Open (.+)$/, function (m) { return D[m[1]] ? 'افتح ' + D[m[1]] : coName(m[1]) ? 'افتح صفحة ' + m[1] : null; }],
     [/^listed (.+)$/, function (m) { return 'أدرج ' + m[1]; }], [/^commented: (.+)$/, function (m) { return 'علّق: ' + m[1]; }],   /* activity and notification verbs; the quoted words stay as written */
     [/^\((.+?)\)\. Questionnaires go to (.+); job applications to (.+)\.$/, function (m) { return '(' + (D[m[1]] || m[1]) + '). الاستبيانات تذهب إلى ' + m[2] + '؛ وطلبات التوظيف إلى ' + m[3] + '.'; }],
-    [/^You joined (.+)$/, function (m) { return 'انضممت إلى ' + m[1]; }], [/^You left (.+)$/, function (m) { return 'غادرت ' + m[1]; }]
+    [/^You joined (.+)$/, function (m) { return 'انضممت إلى ' + m[1]; }], [/^You left (.+)$/, function (m) { return 'غادرت ' + m[1]; }],
+    [/^Invites sent to (\d+) (person|people)$/, function (m) { var n = +m[1]; return n === 1 ? 'تم إرسال الدعوة إلى شخص واحد' : n === 2 ? 'تم إرسال الدعوات إلى شخصين' : 'تم إرسال الدعوات إلى ' + n + ' ' + (n <= 10 ? 'أشخاص' : 'شخصًا'); }],   /* groups (N-9) */
+    [/^invited you to join the private group "(.+)"$/, function (m) { return 'دعاك للانضمام إلى المجموعة الخاصة "' + m[1] + '"'; }],   /* live notification (N-8) */
+    [/^Not found on Drugbox: (.+)$/, function (m) { return 'غير موجود على Drugbox: ' + m[1]; }],
+    [/^No Drugbox member found for (.+) — use the name on their Drugbox profile$/, function (m) { return 'لا يوجد عضو في Drugbox باسم ' + m[1] + ' — استخدم الاسم المكتوب في ملفه على Drugbox'; }]
   ];
   PATTERNS.push(
     [/^▶ Video intro · (\d+:\d+)$/, function (m) { return '▶ فيديو تعريفي · ' + m[1]; }],

@@ -53,6 +53,10 @@ with sync_playwright() as p:
     A.fill('#ivE', BN.upper()); A.evaluate("document.querySelector('.dbk-box [data-a=ok]').click()")
     wait_for(lambda: sql(f"select count(*) from public.group_invites where group_id={pid}") == '1', 10)
     T('the invitation is saved (group_invites row by the admin)', sql(f"select user_id||'|'||invited_by from public.group_invites where group_id={pid}") == f'{bb}|{a}')
+    T('the invited member is told: one group_invite notification from the admin (N-8)',
+      sql(f"select from_user||'|'||message from public.notifications where user_id='{bb}' and group_id={pid} and type='group_invite'") == f'{a}|invited you to join the private group "Private room {st}"')
+    r = B.evaluate("dxT('invited you to join the private group \"Private room X\"')")
+    T('the notice reads in Arabic too', r == 'دعاك للانضمام إلى المجموعة الخاصة "Private room X"', r)
     A.wait_for_timeout(300)
     T('the approved toast confirms it and the window closes', 'Invites sent to 1 person' in A.evaluate(TOASTS) and not A.evaluate("!!document.querySelector('.dbk-box #ivE')"),
       A.evaluate(TOASTS))
@@ -62,6 +66,8 @@ with sync_playwright() as p:
     wait_for(lambda: sql(f"select count(*) from public.group_members where group_id={pid} and user_id='{bb}'") == '1', 10)
     T('the invited member joins; member_count 2; the invitation is used up', sql(f"select role from public.group_members where group_id={pid} and user_id='{bb}'") == 'member'
       and sql(f"select member_count from public.groups where id={pid}") == '2' and sql(f"select count(*) from public.group_invites where group_id={pid}") == '0')
+    T('joining keeps the invitation notice (only a withdrawn invitation removes it)',
+      sql(f"select count(*) from public.notifications where user_id='{bb}' and group_id={pid} and type='group_invite'") == '1')
     r = B.evaluate(f"dxLive.sb.from('group_invites').insert({{group_id:{pid},user_id:'{a}',invited_by:'{bb}'}})" + ERR)
     T('a plain member cannot invite', refused(r), r)
     r = B.evaluate(f"dxLive.sb.from('groups').delete().eq('id',{gid}).select().then(r=>(r.data||[]).length)")

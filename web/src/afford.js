@@ -16,7 +16,12 @@
     }
     return false;
   }
-  function user(name) { name = String(name || '').replace(/[✓✔]/g, '').trim(); return (window.USERS || []).find(function (u) { return u.name === name || (name.length > 3 && name.indexOf(u.name) === 0); }); }
+  function user(name) {   /* exact name, or a name followed only by a separator ('Mona Ali · 2h'); the longest such name wins, so 'Mona Ali Hassan' never opens 'Mona Ali' (N-10) */
+    name = String(name || '').replace(/[✓✔]/g, '').trim(); if (!name) return null; var best = null;
+    (window.USERS || []).some(function (u) { var n = u.name; if (!n) return false; if (n === name) { best = u; return true; }
+      if (name.length > n.length && name.indexOf(n) === 0 && !/^\s*[A-Za-z0-9\u0600-\u06FF&]/.test(name.slice(n.length)) && (!best || n.length > best.name.length)) best = u; return false; });
+    return best;
+  }
   function company(name) {   /* exact name, or a name followed only by a separator ('Pharco · Cairo'); the longest such name wins, so a shorter company never takes a longer one's click */
     if (!window.dxDir) return null; name = String(name || '').trim(); if (!name) return null; var best = null;
     window.dxDir.companies().some(function (c) { var n = c.name; if (!n) return false; if (n === name) { best = c; return true; }
