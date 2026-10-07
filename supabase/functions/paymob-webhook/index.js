@@ -5,7 +5,8 @@ export async function handler(req) {
   if (req.method !== 'POST') return new Response('POST only', { status: 405 });
   const hmac = new URL(req.url).searchParams.get('hmac'); let body; try { body = await req.json(); } catch { return new Response('bad json', { status: 400 }); }
   const obj = body && body.obj; if (!obj) return new Response('no transaction', { status: 400 });
-  if (!safeEqual(await paymobHmac(obj, env('PAYMOB_HMAC_SECRET')), hmac)) return new Response('bad signature', { status: 401 });
+  const secret = env('PAYMOB_HMAC_SECRET'); if (!secret) return new Response('not configured', { status: 503 });   // fail closed: never verify with an empty key
+  if (!safeEqual(await paymobHmac(obj, secret), hmac)) return new Response('bad signature', { status: 401 });
   const ok = obj.success === true && obj.pending === false && !obj.is_voided && !obj.is_refunded && !obj.error_occured;
   if (!ok) return new Response('noted (not a successful payment)', { status: 200 });
   // The order is found by Paymob's order id: obj.order.id is part of the signed string, merchant_order_id is not (a valid

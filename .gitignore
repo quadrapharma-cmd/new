@@ -14,3 +14,11 @@ __pycache__/
 *.log
 supabase/.temp/
 .vercel/
+# deploy/: settings with real values, logs, build output, backups and keys never go to git (the env.*.example files do)
+deploy/.env*
+!deploy/env.*.example
+deploy/logs/
+deploy/.out/
+deploy/backups/
+deploy/*.key
+*.dump.enc

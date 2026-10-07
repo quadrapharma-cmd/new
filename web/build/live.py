@@ -1,6 +1,9 @@
 """Live build: the demo build + the data adapter. Writes web/dist/live/ (index.html + separate, cacheable files).
 The demo build (web/dist/drugbox.html) is not changed.
-Needs DRUGBOX_SUPABASE_URL and DRUGBOX_SUPABASE_ANON_KEY (public values; never the service key)."""
+Needs DRUGBOX_SUPABASE_URL and DRUGBOX_SUPABASE_ANON_KEY (public values; never the service key).
+Optional: DRUGBOX_SENTRY_LOADER (the Sentry "Loader Script" URL https://js.sentry-cdn.com/<key>.min.js — injected first in <head>, and its
+hosts are allowed by the CSP only then), DRUGBOX_LIVE_OUT (output folder, default web/dist/live), DRUGBOX_DEMO (the demo build to package,
+default web/dist/drugbox.html). Hosting headers come from deploy/vercel.json (the one template)."""
 import os, re, json, base64, hashlib, glob
 from urllib.parse import urlparse
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -16,13 +19,21 @@ if claims.get('role') != 'anon':
 u = urlparse(url)
 if u.scheme not in ('http', 'https') or not u.hostname or (u.scheme == 'http' and u.hostname not in ('localhost', '127.0.0.1')):
     raise SystemExit('DRUGBOX_SUPABASE_URL must be https://<project>.supabase.co (http only for localhost)')
-DEMO = ROOT + '/dist/drugbox.html'
+DEMO = os.path.abspath(os.environ.get('DRUGBOX_DEMO') or ROOT + '/dist/drugbox.html')
+# Sentry (optional): only the official loader URL is accepted (a pasted <script src="…"> tag is reduced to its URL)
+sentry = os.environ.get('DRUGBOX_SENTRY_LOADER', '').strip()
+if sentry:
+    sm = re.search(r'https://[^\s"\'<>]+', sentry); sentry = sm.group(0) if sm else sentry
+    su = urlparse(sentry)
+    if su.scheme != 'https' or not (su.hostname or '').endswith('.sentry-cdn.com') or not re.fullmatch(r'/[A-Za-z0-9]+\.min\.js', su.path or '') or su.query:
+        raise SystemExit('DRUGBOX_SENTRY_LOADER must be the Sentry loader URL, e.g. https://js.sentry-cdn.com/<public key>.min.js '
+                         '(Sentry → Settings → Projects → <project> → Loader Script)')
 # the live app is the demo build: refuse to package an older demo than the sources (run web/build/build.py first)
 srcs = [ROOT + '/base/app.html'] + [f for f in glob.glob(ROOT + '/src/*') if os.path.isfile(f) and not f.endswith(('_static.html', '_static.css'))]
 newer = [os.path.relpath(f, ROOT) for f in srcs if os.path.getmtime(f) > os.path.getmtime(DEMO)] if os.path.exists(DEMO) else ['(no demo build)']
 if newer and os.environ.get('DRUGBOX_ALLOW_STALE') != '1':
     raise SystemExit('web/dist/drugbox.html is older than %s — run python3 web/build/build.py first (or DRUGBOX_ALLOW_STALE=1)' % ', '.join(newer[:3]))
-OUT = ROOT + '/dist/live'; os.makedirs(OUT + '/js', exist_ok=True); os.makedirs(OUT + '/media', exist_ok=True)
+OUT = os.path.abspath(os.environ.get('DRUGBOX_LIVE_OUT') or ROOT + '/dist/live'); os.makedirs(OUT + '/js', exist_ok=True); os.makedirs(OUT + '/media', exist_ok=True)
 def asset(src, name, sub='js', ext='js', data=None):   # content-hashed file name → safe to cache forever on a CDN
     data = data if data is not None else open(src, 'rb').read(); h = hashlib.sha256(data).hexdigest()[:10]; fn = f'{name}.{h}.{ext}'
     open(f'{OUT}/{sub}/{fn}', 'wb').write(data); return f'{sub}/{fn}'
@@ -62,16 +73,33 @@ cfg = json.dumps({'url': url, 'anonKey': key, 'realtime': os.environ.get('DRUGBO
 live = ('<style data-dx="live">.lg-demo{display:none!important}[data-sim]{display:none!important}</style>\n'
         '<script data-dx="live-config">window.DRUGBOX_CONFIG=' + cfg + ';</script>\n'
         f'<script data-dx="supabase-js" src="{lib}"></script>\n<script data-dx="live-adapter" src="{ada}"></script>\n')
-z = H.rfind('</body>'); H = H[:z] + live + H[z:]; open(OUT + '/index.html', 'w', encoding='utf-8').write(H)
+z = H.rfind('</body>'); H = H[:z] + live + H[z:]
+if sentry:   # first script after the charset: it must be there before anything can throw (the loader queues errors until the SDK arrives)
+    cm = re.search(r'<meta charset="[^"]*">', H)
+    assert cm and cm.start() < H.find('</head>'), 'no <meta charset> in <head>: cannot place the Sentry loader'
+    H = H[:cm.end()] + '\n<script data-dx="sentry-loader" src="%s" crossorigin="anonymous"></script>' % sentry + H[cm.end():]
+open(OUT + '/index.html', 'w', encoding='utf-8').write(H)
 # N-3: only the files this index.html references are published — older hashed copies (an old adapter, an old video) are removed
 used = set(re.findall(r'(?:src|data-src)="((?:js|media)/[\w.-]+)"', H)); stale = []
 for sub in ('js', 'media'):
     for f in sorted(os.listdir(f'{OUT}/{sub}')):
         if f'{sub}/{f}' not in used: os.remove(f'{OUT}/{sub}/{f}'); stale.append(f'{sub}/{f}')
-# hosting headers (CSP, frame, cache): the template in the repository root, with this build's Supabase origin
-tpl = os.path.join(os.path.dirname(ROOT), 'vercel.json')
-if os.path.exists(tpl):
-    origin = '%s://%s' % (u.scheme, u.netloc)
-    open(OUT + '/vercel.json', 'w', encoding='utf-8').write(open(tpl, encoding='utf-8').read().replace('https://YOUR-PROJECT.supabase.co', origin).replace('wss://YOUR-PROJECT.supabase.co', origin.replace('https://', 'wss://').replace('http://', 'ws://')))
+# hosting headers (CSP, frame, cache): ONE template, deploy/vercel.json, with this build's Supabase origin (and Sentry's hosts only when set)
+tpl = os.path.join(os.path.dirname(ROOT), 'deploy', 'vercel.json')
+if not os.path.exists(tpl): raise SystemExit('deploy/vercel.json (the hosting headers template) is missing')
+origin = '%s://%s' % (u.scheme, u.netloc)
+vj = json.loads(open(tpl, encoding='utf-8').read().replace('https://YOUR-PROJECT.supabase.co', origin).replace('wss://YOUR-PROJECT.supabase.co', origin.replace('https://', 'wss://').replace('http://', 'ws://')))
+def add_src(csp, directive, hosts):
+    parts = [p.strip() for p in csp.split(';')]; i = next(k for k, p in enumerate(parts) if p.split(' ')[0] == directive)
+    parts[i] = ' '.join([parts[i]] + [h for h in hosts if h not in parts[i].split(' ')]); return '; '.join(parts)
+csps = [h for r in vj['headers'] for h in r['headers'] if h['key'] == 'Content-Security-Policy']
+assert csps, 'deploy/vercel.json has no Content-Security-Policy'
+if sentry:
+    for h in csps:
+        h['value'] = add_src(h['value'], 'script-src', sorted({'https://' + urlparse(sentry).hostname, 'https://browser.sentry-cdn.com'}))
+        h['value'] = add_src(h['value'], 'connect-src', ['https://*.sentry.io'])
+vj.pop('$comment', None)   # the template's note is for people; the published file carries only what Vercel reads
+assert 'YOUR-PROJECT' not in json.dumps(vj), 'deploy/vercel.json: a YOUR-PROJECT placeholder was not replaced'
+open(OUT + '/vercel.json', 'w', encoding='utf-8').write(json.dumps(vj, indent=2, ensure_ascii=False) + '\n')
 print('live build →', OUT, '| index.html %.2f MB' % (len(H.encode('utf-8')) / 1e6), '| scripts:', lib, ada, '+ %d page scripts as files' % len(moved),
-      '| media:', 'splash' if m else 'none', '| removed old files: %d' % len(stale), '| lite copy → no-script notice' if lite else '')
+      '| media:', 'splash' if m else 'none', '| removed old files: %d' % len(stale), '| lite copy → no-script notice' if lite else '', '| sentry loader' if sentry else '')

@@ -4,7 +4,8 @@ import { fawryNotificationSignature, safeEqual } from '../_shared/signatures.js'
 export async function handler(req) {
   if (req.method !== 'POST') return new Response('POST only', { status: 405 });
   let b; try { b = await req.json(); } catch { return new Response('bad json', { status: 400 }); }
-  if (!safeEqual(await fawryNotificationSignature(b, env('FAWRY_SECURE_KEY')), b.messageSignature)) return new Response('bad signature', { status: 401 });
+  const key = env('FAWRY_SECURE_KEY'); if (!key) return new Response('not configured', { status: 503 });   // fail closed: a missing key would sign with "undefined"
+  if (!safeEqual(await fawryNotificationSignature(b, key), b.messageSignature)) return new Response('bad signature', { status: 401 });
   if (String(b.orderStatus).toUpperCase() !== 'PAID') return new Response('noted (' + b.orderStatus + ')', { status: 200 });
   // F-115: the signed string joins the fields with no separator, so a signature for merchantRefNumber 'DBX18' + paymentAmount
   // '2850.00' also fits 'DBX182' + '850.00'. Both amounts must be the same real number (Drugbox pays Fawry's fee: the customer

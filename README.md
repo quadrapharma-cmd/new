@@ -59,7 +59,8 @@ tests/demo/                      demo-build suites (legacy/ = older suites; lega
 tests/fixtures/make_fixtures.py  makes the files the suites upload (WebM clips, photo, PDF)
 tests/fixtures/make_demo_variants.py  the no-script viewer variants of the demo the lite suites open (csp_block, worst, sanitized)
 docs/DATA-CONTRACT.md            every data list the interface reads → its table
-vercel.json                      security and cache headers (template: live.py writes web/dist/live/vercel.json with the project's URL)
+deploy/                          launch scripts (supabase_deploy.sh, vercel_deploy.sh, backup.sh — docs/LAUNCH.md) and vercel.json: the one
+                                 template for the security and cache headers (live.py writes <live out>/vercel.json with the project's URL)
 ```
 
 ## Build and verify
@@ -196,10 +197,10 @@ Every phase ends with: parity check, database security tests, the demo's own tes
   (`prepareThreshold=0` / PostgREST `db-prepared-statements = false`). PostgREST and Realtime stay on the direct connection
   (prepared statements, `notify pgrst` schema reloads, the replication slot). After the first production migration, check that
   the schema reload happened (a new column is visible through the API at once).
-- **Headers:** `vercel.json` sends a Content-Security-Policy (the page scripts are same-origin files under `js/` ('self'); a few
+- **Headers:** `deploy/vercel.json` sends a Content-Security-Policy (the page scripts are same-origin files under `js/` ('self'); a few
   small scripts and the approved page's `onclick` handlers stay inline, so `'unsafe-inline'` is still needed; no `eval`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, Referrer-Policy,
   Permissions-Policy and HSTS, plus caching: `index.html` no-cache, `js/` and `media/` (content-hashed) immutable.
-  Replace `YOUR-PROJECT` in it with the Supabase project reference. The local gateway sends the same headers (without HSTS).
+  `web/build/live.py` replaces `YOUR-PROJECT` with the build's Supabase origin (never edit it by hand). The local gateway sends the same headers (without HSTS).
 - **supabase-js:** the vendored `web/src/vendor/supabase-2.45.4.min.js` is byte-identical to the npm release; its bundled
   auth-js 2.65.0 has one low advisory (GHSA-8r88-6cj9-9fh5, `auth.admin.*` path building — service-role only, not used by the
   browser build). Upgrade to the current 2.x UMD build before launch and re-run b1, b4 and e4b.
