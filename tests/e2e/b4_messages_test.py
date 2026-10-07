@@ -24,7 +24,7 @@ with sync_playwright() as p:
     A.evaluate(f"messageUser({bob})"); A.wait_for_timeout(2500)
     T('Message from a profile opens a conversation with that person', 'Dr. Basem Reader' in A.inner_text('.chat-head') and A.evaluate("!!document.querySelector('#threadList .mx-thread[data-person^=u]')"), A.inner_text('.chat-head')[:80])
     demo = A.inner_text('#threadList') + A.inner_text('#messagesArea')
-    T('no demo conversations or seeded filler messages', 'Allison' not in demo and 'following up on our discussion' not in demo, demo[:200])
+    T('no demo conversations or seeded filler messages', 'Vivian' not in demo and 'Allison' not in demo and 'following up on our discussion' not in demo, demo[:200])
     A.fill('#composeInput', f'Hello Basem, can you share the COA? {st}'); A.evaluate("sendMessage()"); A.wait_for_timeout(1500)
     T('message saved in the database', sql(f"select count(*) from public.messages where sender_id='{a_id}' and receiver_id='{b_id}' and body like 'Hello Basem%{st}'") == '1')
     A.wait_for_timeout(3500)

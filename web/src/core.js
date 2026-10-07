@@ -59,16 +59,18 @@
   var subs = [], queued = false, perf = {};
   function timed(s) { var t = performance.now(); run(s.name, s.fn); var d = performance.now() - t; var p = perf[s.name] || (perf[s.name] = { runs: 0, ms: 0, max: 0 }); p.runs++; p.ms += d; if (d > p.max) p.max = d; }
   /* run features in slices of at most ~8 ms, then yield to the browser so taps and scrolling stay smooth */
-  var cursor = 0, again = false;   /* again: the page changed while a sliced pass was half done, so the layers already run see it on one more pass */
+  /* the page can change while a sliced pass is half done: the layers still to run see it, the ones already run (subs[0..cursor))
+     see it on a short follow-up pass over just those (againTo). limit = the end of such a short pass, 0 = every layer */
+  var cursor = 0, againTo = 0, limit = 0;
   function flush() {
     queued = false; var start = performance.now();
-    while (cursor < subs.length) { timed(subs[cursor++]); if (performance.now() - start > 8 && cursor < subs.length) { queued = true; requestAnimationFrame(flush); return; } }
-    cursor = 0;
-    if (again) { again = false; queued = true; requestAnimationFrame(flush); }
+    while (cursor < (limit || subs.length)) { timed(subs[cursor++]); if (performance.now() - start > 8 && cursor < (limit || subs.length)) { queued = true; requestAnimationFrame(flush); return; } }
+    cursor = 0; limit = 0;
+    if (againTo) { limit = againTo; againTo = 0; queued = true; requestAnimationFrame(flush); }
   }
-  function onRender(name, fn) { subs.push({ name: name, fn: fn }); if (!queued) { queued = true; requestAnimationFrame(flush); } }
+  function onRender(name, fn) { subs.push({ name: name, fn: fn }); limit = 0; if (!queued) { queued = true; requestAnimationFrame(flush); } }
   new MutationObserver(function (list) {
-    if (queued && !cursor || again) return;   /* a pass that has not started yet sees the change anyway */
+    if (queued && !limit && againTo >= cursor) return;   /* a full pass that has not reached any layer yet (or is already due to re-run them) sees the change anyway */
     for (var i = 0; i < list.length; i++) {
       var n = list[i].addedNodes; if (!n.length) continue;
       /* ignore changes made by our own layers (floating widgets and in-page decorations) */
@@ -76,7 +78,7 @@
       var ours = true;
       for (var j = 0; j < n.length && ours; j++) { var x = n[j]; ours = x.nodeType === 3 ? !!(x.parentNode && x.parentNode.closest && x.parentNode.closest('abbr.dx-term,.dx-num,.dx-egp')) : !!(x.className && typeof x.className === 'string' && /(^|\s)dx-/.test(x.className)) || x.tagName === 'ABBR'; }
       if (ours) continue;
-      if (queued) { again = true; return; }
+      if (queued) { limit = 0; if (cursor > againTo) againTo = cursor; return; }   /* finish this pass in full; re-run the layers it already ran */
       queued = true; requestAnimationFrame(flush); return;
     }
   }).observe(document.body, { childList: true, subtree: true });

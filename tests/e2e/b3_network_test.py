@@ -22,7 +22,7 @@ with sync_playwright() as p:
     sql(f"insert into public.connections (requester, addressee, status) values ('{m_id}','{f_id}','accepted')")
     A.evaluate("goto('network')"); A.wait_for_timeout(2500)
     net = A.inner_text('#content')
-    T('network shows real people only (no demo people)', 'Dr. Bob Receiver' in net and 'Allison Wang' not in net and 'Muhammed Musthafa' not in net, net[:300])
+    T('network shows real people only (no demo people)', 'Dr. Bob Receiver' in net and not any(n in net for n in ('Vivian Zhou', 'Faisal Rahmani', 'Allison Wang', 'Muhammed Musthafa')), net[:300])
     sug = A.evaluate("dxLive.sb.rpc('suggest_people',{p_limit:12}).then(r=>(r.data||[]).map(x=>[x.id,x.mutual]))")
     T('a friend-of-friend is suggested first with its mutual count; existing friends are not suggested', sug and sug[0] == [f_id, 1] and all(i != m_id for i, _ in sug) and len({i for i, _ in sug}) == len(sug), sug[:4])
     nums = A.evaluate("[...document.querySelectorAll('#content .net-overview-n')].map(e=>e.textContent)")

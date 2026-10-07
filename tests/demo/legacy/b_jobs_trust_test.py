@@ -26,7 +26,7 @@ with sync_playwright() as p:
     T('public review published, count grows', '(2)' in card.locator('.jx-rate').inner_text())
     card.locator('.jx-rate').click(); pg.wait_for_timeout(150)
     T('everyone sees reviews + anonymous author', 'Verified applicant' in pg.inner_text('.dbk-ov') and 'salary shared early' in pg.inner_text('.dbk-ov')); pg.keyboard.press('Escape')
-    ep=pg.locator(J+'#jobList .jcard',has_text='Epione').first; ep.locator('[data-a=black]').click(); pg.wait_for_timeout(150)
+    ep=pg.locator(J+'#jobList .jcard',has_text='Azurea').first; ep.locator('[data-a=black]').click(); pg.wait_for_timeout(150)
     pg.select_option('#blR','My current employer (confidential search)'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(250)
     T('candidate blocks a company → hidden + note', not ep.is_visible() and pg.locator(J+'#huntingView .jx-hidden-note:visible').count()==1)
     qp=pg.locator(J+'#jobList .jcard',has_text='Medsinia').first; qp.locator('[data-a=white]').click(); pg.wait_for_timeout(200)
@@ -48,6 +48,7 @@ with sync_playwright() as p:
     pg.fill('#rfFrom','2024-01'); pg.fill('#rfTo','2025-06'); pg.fill('#rfRole','Formulator'); pg.fill('#rfText','Submitted a falsified stability report for batch 24-117 during the internal audit.')
     pg.select_option('#rfCat','False documents or certificates'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(150)
     T('warning requires evidence', 'needs evidence' in pg.inner_text('.dbk-toast'))
+    pg.wait_for_timeout(500)   # the window ignores a second OK within 500 ms (double-click guard); a person attaching a file takes longer
     pg.set_input_files('#rfEv',files=[{'name':'audit.pdf','mimeType':'application/pdf','buffer':b'%PDF'}]); pg.check('#rfAck'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(300)
     T('warning goes to moderation, not published', nf.locator('.jx-b.warn').count()==0 and 'reviews the evidence' in pg.inner_text('.dbk-toast'))
     pg.locator(J+'#hiringView .jx-tool',has_text='Warning list').click(); pg.wait_for_timeout(150)

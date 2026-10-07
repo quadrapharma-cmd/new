@@ -18,7 +18,7 @@ with sync_playwright() as p:
     pg.click('.dbk-qv [data-a=ok]'); pg.wait_for_timeout(400)
     T('quick view → contact continues to the message form', pg.locator('#dbkMsg').count()==1)
     pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(500)
-    T('sending adds a minimised chat in the corner', pg.locator('#dxDock .dk-win.min').count()==1 and 'Allison' in pg.inner_text('#dxDock .dk-h'))
+    T('sending adds a minimised chat in the corner', pg.locator('#dxDock .dk-win.min').count()==1 and 'Vivian' in pg.inner_text('#dxDock .dk-h'))
     pg.locator('#dxDock .dk-h').click(); pg.wait_for_timeout(200)
     pg.fill('#dxDock .dk-f input','Can you ship 1 MT by November?'); pg.keyboard.press('Enter'); pg.wait_for_timeout(2300)
     T('chat in the dock + reply', 'November' in pg.inner_text('#dxDock') and 'get back to you' in pg.inner_text('#dxDock'))

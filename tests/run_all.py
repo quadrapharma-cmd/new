@@ -16,7 +16,7 @@ import os, re, sys, glob, time, subprocess
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PG = ['psql', '-X', '-h', os.environ.get('PGHOST', '/tmp'), '-p', os.environ.get('PGPORT', '5433'), '-U', os.environ.get('PGUSER', 'postgres')]
 PREFIX = os.environ.get('DB_PREFIX', 'rv_runall')
-DEMO = os.environ.get('DEMO_FILE', ROOT + '/web/dist/drugbox.html')
+DEMO = os.path.abspath(os.environ.get('DEMO_FILE', ROOT + '/web/dist/drugbox.html'))   # suites build file:// URLs from it
 MIGRATIONS = sorted(glob.glob(ROOT + '/supabase/migrations/[0-9][0-9][0-9][0-9]_*.sql'))
 results = []   # (group, name, ok, seconds, detail)
 

@@ -63,6 +63,7 @@ with sync_playwright() as p:
     T('the buyer receives and rates → closed', ref_status(ref) == 'closed')
     T('the full trail is recorded in order', sql(f"select string_agg(e.action,'>' order by e.id) from public.deal_events e join public.deals d on d.id=e.deal_id where d.ref='{ref}'") == 'sent>quote>accept>confirm>ship>receive>rate')
     relogin(A); A.wait_for_timeout(1500)
+    A.evaluate(f"goto('companies');dxDir.open('{SB}')"); A.wait_for_timeout(3000)   # the directory and the track record load when the pages open
     tr = A.evaluate(f"(()=>{{var t=dxHubData.track('{SB}');return t?[t.orders,t.ontime,t.rating,t.reviews]:null}})()") if A.evaluate("!!(window.dxHubData&&dxHubData.track)") else A.evaluate(f"window.dxLiveTrack('{SB}')&&[dxLiveTrack('{SB}').orders,dxLiveTrack('{SB}').ontime,dxLiveTrack('{SB}').rating,dxLiveTrack('{SB}').reviews]")
     T("the supplier's track record comes from the database: 1 order, 100% on time, ★5.0 from 1 review", tr == [1, 100, 5, 1], tr)
     T('the directory shows the real rating', A.evaluate(f"(()=>{{var c=dxDir.bySlug('{SB}');return c&&c.rating===5&&c.reviews===1}})()"))

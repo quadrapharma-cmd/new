@@ -54,8 +54,8 @@ with sync_playwright() as p:
     # the real dialog: the candidate's card → Work reference → Warning tab
     opened = E.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#jx .jcard')].find(x=>x.textContent.indexOf('Dr. Doc Candidate {st}')>=0);var b=c&&c.querySelector('[data-a=ref]');if(!b)return false;b.click();return true}})()"); E.wait_for_timeout(500)
     E.evaluate("(()=>{var t=document.querySelector('.dbk-ov .jx-tab[data-k=warn]');if(t)t.click()})()"); E.wait_for_timeout(500)
-    T('the real warning form (candidate card → Work reference → Warning) gets a required evidence field', opened and E.evaluate("!!document.querySelector('.dbk-ov #rfCat') && !!document.querySelector('.dbk-ov #dxEv')"), opened)
-    E.set_input_files('#dxEv', V + '/spec.pdf'); E.wait_for_timeout(300); E.evaluate("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
+    T('the real warning form (candidate card → Work reference → Warning) gets a required evidence field', opened and E.evaluate("!!document.querySelector('.dbk-ov #rfCat') && !!document.querySelector('.dbk-ov #rfEv')"), opened)
+    E.set_input_files('#rfEv', V + '/spec.pdf'); E.wait_for_timeout(300); E.evaluate("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
     E.evaluate(warn); E.wait_for_timeout(2500)
     w = sql(f"select status||'|'||coalesce(evidence_path,'') from public.work_references where author='{e}' and kind='warn'")
     T('with evidence, the warning is submitted and waits for review (not published)', w.startswith('pending|' + e + '/'), w)

@@ -910,7 +910,11 @@
     MKT.demand = a[1].data || []; MKT.at = Date.now();
     MKT.products.forEach(function (p) { putUser(p.seller); }); MKT.demand.forEach(function (e) { putUser(e.buyer); });
   }
-  function el(html) { var b = document.createElement('div'); b.innerHTML = html; return b.firstElementChild; }
+  /* a card from the approved page's first card; the decorations other layers added to that card (the structure chip and its
+     "already looked at" mark) are not copied, so they are added for the real product instead */
+  function el(html) { var b = document.createElement('div'); b.innerHTML = html;
+    b.querySelectorAll('.dx-molchip').forEach(function (x) { x.remove(); }); b.querySelectorAll('[data-dxmol]').forEach(function (x) { x.removeAttribute('data-dxmol'); });
+    return b.firstElementChild; }
   function supplyCard(p) {
     var c = el(MKT.tplL), u = p.seller || {}, docs = p.docs || [];
     c.dataset.live = 'p' + p.id; c.dataset.uid = aid(p.user_id);

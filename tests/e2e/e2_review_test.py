@@ -24,6 +24,7 @@ with sync_playwright() as p:
     sql(f"insert into public.verification_requests (company_id, submitted_by, registry, registry_path) values ({cid},'{o}','778899','{path}')")
     CO2 = f'Author Pharma {st}'
     sql(f"update public.profiles set company='{CO2}' where id='{e}'"); sql(f"""update public.profiles set experience='[{{"company":"{CO2}","title":"QC","from":"2021-01","to":"2024-12"}}]'::jsonb where id='{c}'""")
+    sql(f"insert into public.companies (owner_id, name, slug, type, status) values ('{e}','{CO2}','author-pharma-{st}','Manufacturer','verified')")   # DB2 handoff: the author's company must be a real, verified page
     fresh(E)
     ev = f'{e}/ev-{st}.pdf'
     E.evaluate(f"fetch('data:application/pdf;base64,JVBERi0xLjQK').then(r=>r.blob()).then(b=>dxLive.sb.storage.from('reference-evidence').upload('{ev}', new Blob([b],{{type:'application/pdf'}})))"); E.wait_for_timeout(800)

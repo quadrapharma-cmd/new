@@ -23,8 +23,8 @@ with sync_playwright() as p:
     # 16
     pg.keyboard.press('Control+k'); pg.wait_for_timeout(250)
     T('Ctrl+K opens search', pg.is_visible('#dxCmd.on'))
-    pg.keyboard.type('allison'); pg.wait_for_timeout(200)
-    T('finds people', 'Allison Wang' in pg.inner_text('#dxCmd .cm-res'))
+    pg.keyboard.type('vivian'); pg.wait_for_timeout(200)
+    T('finds people', 'Vivian Zhou' in pg.inner_text('#dxCmd .cm-res'))
     pg.fill('#dxCmd input',''); pg.keyboard.type('metformin'); pg.wait_for_timeout(200)
     res=pg.inner_text('#dxCmd .cm-res')
     T('finds listings', 'LISTINGS' in res.upper() and 'Metformin' in res, res[:120])

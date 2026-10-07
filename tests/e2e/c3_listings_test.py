@@ -36,6 +36,7 @@ with sync_playwright() as p:
     T('dossier listed through the dialog is saved', sql(f"select kind||'|'||markets from public.company_listings where product='Esomeprazole 40 mg {st}'") == 'dossier|Egypt, GCC')
     S.evaluate(CLOSE)
     # group buying
+    A.evaluate("goto('companies')"); A.wait_for_timeout(3000)   # the directory loads when the Companies page opens
     A.evaluate("dxDir3.newGroup()"); A.wait_for_timeout(600)
     A.fill('#ngP', f'Metformin HCl {st}'); A.select_option('#ngS', SS); A.fill('#ngT', '1000'); A.fill('#ngQ', '400')
     for sel in ('#ngD', '#ngB'):

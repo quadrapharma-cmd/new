@@ -26,7 +26,9 @@ with sync_playwright() as p:
     T('a card shows price, MOQ, seller, certificates and the verified seller badge', card and card['price'].startswith('US$ 4.20/kg') and 'MOQ: 1 MT' in card['moq'] and f'Dr. Real Seller {st}' in card['moq'] and 'CEP' in card['certs'] and 'Verified seller' in card['trust'], card)
     dem = pg.evaluate("[...document.querySelectorAll('#mkx .dcard')].map(c=>c.innerText.replace(/\\s+/g,' '))")
     T('demand cards are real buy requests with the buyer and URGENT', any(f'Need Omeprazole pellets 8.5% {st}' in x and f'Dr. Real Buyer {st}' in x and 'URGENT' in x for x in dem), dem[:2])
-    T('the chemical-structure button appears on real API listings', any(x.endswith('Structure') for x in sup))
+    # the "Structure" label is drawn by CSS (UI2), so the chip is looked for as an element on the real card's title
+    mol = pg.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#mkx .supply-grid .lcard[data-live]')].find(x=>x.querySelector('.lc-title').textContent.indexOf('Paracetamol DC 90% {st}')===0);var b=c&&c.querySelector('.lc-title .dx-molchip');return b?b.dataset.mol:null}})()")
+    T('the chemical-structure button appears on real API listings', mol == 'paracetamol', mol)
     T('no demo demand cards', not any('Ciprofloxacin HCl 2MT/month' in x for x in dem))
     T('demo sponsored listings are not shown', not pg.evaluate("[...document.querySelectorAll('#mkx .sponsored-card,#mkx .sp-mini')].some(e=>e.offsetWidth>0)"))
     tick = pg.evaluate("(document.getElementById('tickerInner')||{}).innerText||''")
