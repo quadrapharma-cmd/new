@@ -88,7 +88,7 @@
     var color = (u && u.color) || '#1a56db';
     var head = u ? (u.headline || '').split('|')[0].trim() : (el.closest('.jcard,.sponsored-card,.dcard,.scard') ? txt((el.closest('.jcard,.sponsored-card,.dcard,.scard').querySelector('.seller-role,.jc-title,.sc-title,.dc-title') || {})) : '');
     var place = u ? [u.company, u.location].filter(Boolean).join(' · ') : '';
-    var stats = u ? '<div class="hc-stats"><span><b>' + (u.connections || 0).toLocaleString() + '</b> connections</span><span><b>' + (u.followers || 0).toLocaleString() + '</b> followers</span></div>' : '';
+    var stats = u ? '<div class="hc-stats"><span><b>' + (u.connections || 0).toLocaleString('en-US') + '</b> connections</span><span><b>' + (u.followers || 0).toLocaleString('en-US') + '</b> followers</span></div>' : '';
     hc.innerHTML = '<div class="hc-top"><div class="hc-av' + (comp ? ' dx-hex' : '') + '" style="background:' + esc(color) + '">' + esc(ini) + '</div><div class="hc-id"><div class="hc-name">' + esc(u ? u.name : name) +
       (u && u.verified ? '<span class="hc-seal" title="Verified">' + icon('seal') + '</span>' : '') + '</div>' + (head ? '<div class="hc-head">' + esc(head.slice(0, 90)) + '</div>' : '') + (place ? '<div class="hc-place">' + esc(place) + '</div>' : '') + '</div></div>' +
       stats + (u && u.hiring ? '<div class="hc-flag">Hiring now</div>' : '') + (u && u.openToWork ? '<div class="hc-flag ow">Open to work</div>' : '') +
@@ -224,7 +224,8 @@
     { sel: '#dxThemeBtn, .top-av, .me-av', t: 'Make it yours', d: 'Complete your profile to be found by buyers and employers, and switch to dark mode or the Ramadan theme here.', ic: 'user' }
   ];
   var tourEl = null, tourI = 0;
-  function endTour(done) { if (tourEl) { tourEl.remove(); tourEl = null; } try { localStorage.setItem('dx_tour_done', '1'); } catch (e) {} }
+  var tourFrom = null;   /* the control that had the focus before the tour took it gets it back */
+  function endTour(done) { if (tourEl) { var back = tourEl.contains(document.activeElement); tourEl.remove(); tourEl = null; if (back && tourFrom && tourFrom.isConnected && tourFrom.offsetParent) try { tourFrom.focus({ preventScroll: true }); } catch (e) {} } tourFrom = null; try { localStorage.setItem('dx_tour_done', '1'); } catch (e) {} }
   function drawTour() {
     var s = TOUR[tourI], target = null;
     s.sel.split(',').some(function (q) { var el = document.querySelector(q.trim()); if (!el) return false; var rr = el.getBoundingClientRect(); if (rr.width && rr.right > 0 && rr.left < innerWidth && rr.bottom > 0 && rr.top < innerHeight) { target = el; return true; } return false; });
@@ -241,7 +242,7 @@
       '<button type="button" class="tour-skip">Skip</button><button type="button" class="tour-next">' + (tourI < TOUR.length - 1 ? 'Next' : 'Done') + '</button></div></div>';
     tourEl.querySelector('.tour-skip').onclick = function () { endTour(false); };
     tourEl.querySelector('.tour-next').onclick = function () { if (tourI < TOUR.length - 1) { tourI++; drawTour(); } else { endTour(true); if (window.DBK) window.DBK.toast('You are all set — welcome to Drugbox'); } };
-    var a = document.activeElement; if (had || !a || a === document.body || !a.offsetParent) try { tourEl.querySelector('.tour-next').focus({ preventScroll: true }); } catch (e) {}   /* keyboard users land on Next, never taken from a field they are typing in */
+    var a = document.activeElement; if (had || !a || !a.closest || !a.offsetParent || !a.closest('input,textarea,select,[contenteditable]')) { if (!had) tourFrom = a; try { tourEl.querySelector('.tour-next').focus({ preventScroll: true }); } catch (e) {} }   /* keyboard users land on Next, never taken from a field they are typing in */
   }
   function startTour(force) {
     try { if (!force && localStorage.getItem('dx_tour_done')) return; } catch (e) {}

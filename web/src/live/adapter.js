@@ -23,8 +23,8 @@
     u = String(u == null ? '' : u).trim(); if (!u || /["'<>()\s\\]/.test(u)) return ''; if (/^data:image\/(png|jpe?g|gif|webp);/i.test(u) || /^blob:/i.test(u)) return u;
     try { var x = new URL(u, location.href); return x.protocol === 'https:' || x.protocol === 'http:' ? u : ''; } catch (e) { return ''; } }
   /* lookalikes, not entities: the approved markup puts this text both through esc() and straight into innerHTML / attributes /
-     inline handlers, so it must read the same either way (& only where it would start an entity such as &#39;) */
-  function txt(s) { return String(s == null ? '' : s).replace(/[<>"'`]|&(?=[#a-z0-9])/gi, function (c) { return { '<': '‹', '>': '›', '"': '”', "'": '’', '`': '‘', '&': '＆' }[c]; }); }
+     inline handlers, so it must read the same either way (& only where it would start an entity such as &#39; or &quot — "R&D" stays) */
+  function txt(s) { return String(s == null ? '' : s).replace(/[<>"'`\\]|&(?=#|[a-z][a-z0-9]*;|(?:quot|lt|gt|amp)(?![a-z0-9=]))/gi, function (c) { return { '<': '‹', '>': '›', '"': '”', "'": '’', '`': '‘', '\\': '＼', '&': '＆' }[c]; }); }
   /* a company address (slug) is written into the markup unescaped by the approved directory: one with markup characters is never shown */
   function okSlug(s) { return typeof s === 'string' && /^[^\s"'<>`&\\]{1,120}$/.test(s); }
   function sslug(s) { return okSlug(s) ? s : null; }
@@ -361,9 +361,11 @@
     if (!ME_UUID || !uuidOf(a)) return o3.connect(a);
     if (INCOMING[a]) { var n = (window.NOTIFS || []).find(function (x) { return x.uid === a && x.type === 'connection'; }); return window.acceptConnection(a, n ? n.id : null); }
     var before = window.CONN_STATE[a]; o3.connect(a); var now = window.CONN_STATE[a], other = uuidOf(a);
-    var op = now === 'pending' ? sb.from('connections').insert({ requester: ME_UUID, addressee: other, status: 'pending' })
+    var op = now === 'pending' ? sb.from('connections').insert({ requester: ME_UUID, addressee: other, status: 'pending' }).select('id')
            : before === 'pending' ? sb.from('connections').delete().eq('requester', ME_UUID).eq('addressee', other).eq('status', 'pending') : null;
-    if (op) op.then(function (r) { if (r.error) { window.CONN_STATE[a] = before; gotoB2(window.curPage || 'network'); toastErr(r.error); } });
+    if (op) op.then(function (r) { if (r.error) { window.CONN_STATE[a] = before; gotoB2(window.curPage || 'network'); toastErr(r.error); return; }
+      /* one row per pair: a request crossing theirs is accepted by the database and no new row comes back — we are connected */
+      if (now === 'pending' && !(r.data || []).length) { window.CONN_STATE[a] = 'connected'; NET_AT = 0; if (document.body.getAttribute('data-page') === 'network') gotoB2('network'); } });
   };
   window.acceptConnection = function (a, nid) {
     if (!ME_UUID || !uuidOf(a)) return o3.accept(a, nid);
@@ -735,7 +737,7 @@
     window.DBK.modal({ title: 'Claim ' + co.name, body: '<p class="cp-muted">Prove you work at ' + esc2(co.name) + ' and the page becomes yours to manage. Drugbox checks every claim before handing a page over.</p>' +
       '<div class="dbk-row"><div class="dbk-f"><label for="clRole">Your role *</label><input id="clRole" data-req placeholder="e.g. Business Development Manager"></div><div class="dbk-f"><label for="clPhone">Mobile *</label><input id="clPhone" data-req inputmode="tel"></div></div>' +
       '<div class="dbk-f"><label for="clMail">Work email *</label><input id="clMail" data-req type="email" placeholder="you@company.com"></div>',
-      primary: { label: 'Send claim', onClick: function (b, close) {
+      primary: { label: 'Send request', onClick: function (b, close) {
         if (!window.DBK.requireFields(b)) return false; var ok = b.querySelector('[data-a=ok]') || b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
         var note = 'Role: ' + b.querySelector('#clRole').value.trim() + ' · Mobile: ' + b.querySelector('#clPhone').value.trim() + ' · Work email: ' + b.querySelector('#clMail').value.trim();
         sb.rpc('claim_company', { p_company_id: raw.id, p_note: note }).then(function (r) { if (ok) ok.disabled = false;

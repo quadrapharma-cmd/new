@@ -152,7 +152,7 @@
     if (d.type === 'questionnaire' && d.from.slug && (action === 'approve' || action === 'reject')) { var k = 'avl_' + d.from.slug, m = store(k) || {}; m[d.to.slug] = { status: action === 'approve' ? 'approved' : 'suspended', since: new Date().toISOString().slice(0, 10), via: d.id }; store(k, m); }
     if (d.type === 'group' && action === 'confirm_group') {
       /* the supplier confirmed the pooled price → one order per member, already accepted at the group price */
-      (d.members || []).forEach(function (mb) { var o = mk('quote', { slug: mb.slug, name: mb.name }, d.to.slug, d.lines.product + ' — ' + mb.qty.toLocaleString() + ' ' + d.lines.unit + ' (group order)', { qty: mb.qty, unit: d.lines.unit, inc: d.lines.inc || 'EXW' }, 'Share in group ' + d.title);
+      (d.members || []).forEach(function (mb) { var o = mk('quote', { slug: mb.slug, name: mb.name }, d.to.slug, d.lines.product + ' — ' + mb.qty.toLocaleString('en-US') + ' ' + d.lines.unit + ' (group order)', { qty: mb.qty, unit: d.lines.unit, inc: d.lines.inc || 'EXW' }, 'Share in group ' + d.title);
         o.status = 'accepted'; o.offer = { price: d.lines.price, validity: 'group price', terms: d.lines.inc || 'EXW' }; o.events.push({ at: now(), by: 'to', kind: 'accept', text: 'Group price confirmed by ' + d.to.name + ': ' + d.lines.price }); o.groupOf = d.id; save(o); });
     }
   }
@@ -164,9 +164,9 @@
     if (member.slug && member.slug === d.to.slug) { toast('The supplier cannot join its own buying group'); return null; }
     var ex = (d.members || []).find(function (m) { return m.slug === member.slug; });
     if (ex) ex.qty += qty; else (d.members = d.members || []).push({ slug: member.slug, name: member.name, qty: qty });
-    d.events.push({ at: now(), by: 'member', kind: 'join', text: member.name + ' joined with ' + qty.toLocaleString() + ' ' + d.lines.unit });
+    d.events.push({ at: now(), by: 'member', kind: 'join', text: member.name + ' joined with ' + qty.toLocaleString('en-US') + ' ' + d.lines.unit });
     var sum = d.members.reduce(function (a, m) { return a + m.qty; }, 0);
-    if (sum >= d.lines.target) { d.status = 'target_reached'; d.events.push({ at: now(), by: 'system', kind: 'target', text: 'Target reached (' + sum.toLocaleString() + ' ' + d.lines.unit + ') — waiting for ' + d.to.name + ' to confirm the group price' }); }
+    if (sum >= d.lines.target) { d.status = 'target_reached'; d.events.push({ at: now(), by: 'system', kind: 'target', text: 'Target reached (' + sum.toLocaleString('en-US') + ' ' + d.lines.unit + ') — waiting for ' + d.to.name + ' to confirm the group price' }); }
     d.updated = now(); save(d); return d;
   }
 
@@ -225,7 +225,7 @@
         (lines ? '<table class="cp-spec">' + lines + '</table>' : '') +
         (d.offer ? '<div class="dl-offer' + (offerExpired(d) && ['quoted', 'proposed'].indexOf(d.status) >= 0 ? ' ctr' : '') + '">' + ic('tag') + '<b>' + esc(d.offer.price) + '</b>' + (d.offer.validity ? (offerExpired(d) && ['quoted', 'proposed'].indexOf(d.status) >= 0 ? ' · <b>expired ' + esc(when(offerExpiry(d))) + '</b>' : ' · valid ' + esc(d.offer.validity) + (offerExpiry(d) ? ' (to ' + esc(when(offerExpiry(d))) + ')' : '')) : '') + (d.offer.terms ? ' · ' + esc(d.offer.terms) : '') + (d.offer.lead ? ' · ' + esc(d.offer.lead) : '') + '</div>' : '') +
         (d.counter && d.status === 'countered' ? '<div class="dl-offer ctr">' + ic('trend') + 'Counter-offer: <b>' + esc(d.counter.price) + '</b>' + (d.counter.note ? ' — ' + esc(d.counter.note) : '') + '</div>' : '') +
-        (d.type === 'group' ? '<div class="dl-members">' + (d.members || []).map(function (mb) { return '<span>' + esc(mb.name) + ' · ' + esc(Number(mb.qty || 0).toLocaleString()) + '</span>'; }).join('') + '</div>' : '') +
+        (d.type === 'group' ? '<div class="dl-members">' + (d.members || []).map(function (mb) { return '<span>' + esc(mb.name) + ' · ' + esc(Number(mb.qty || 0).toLocaleString('en-US')) + '</span>'; }).join('') + '</div>' : '') +
         (Array.isArray(d.answers) && (d.status === 'answered' || d.status === 'approved' || d.status === 'rejected') ? '<div class="dl-ans">' + d.answers.filter(function (s) { return Array.isArray(s) && Array.isArray(s[1]); }).map(function (s) { return '<h4 class="sq-h">' + esc(s[0]) + '</h4>' + s[1].map(function (x) { return '<div class="sq-row"><span>' + esc(x.q) + '</span><b>' + esc(x.a || '—') + '</b><small>' + esc(x.src || '') + '</small></div>'; }).join(''); }).join('') + '</div>' : '') +
         '<h4 class="sq-h">Timeline</h4><ul class="dl-tl">' + (Array.isArray(d.events) ? d.events : []).slice().reverse().map(function (ev) { var who = ev.by === 'from' ? d.from.name : ev.by === 'to' ? d.to.name : ev.by === 'member' ? 'Member' : 'Drugbox'; return '<li><b>' + esc(who) + '</b> · ' + esc(LABEL[ev.kind] || (ACT[ev.kind] ? ACT[ev.kind][0] : ev.kind)) + '<small>' + when(ev.at, true) + '</small>' + (ev.text && ev.text !== (LABEL[ev.kind] || '') ? '<p>' + esc(ev.text) + '</p>' : '') + '</li>'; }).join('') + '</ul>' +
         '<div class="dl-acts">' + acts.map(function (a) { return '<button type="button" class="dr-btn ' + (ACT[a][1] === 'p' ? 'p' : '') + (ACT[a][1] === 'd' ? ' dl-d' : '') + '" data-act="' + a + '">' + esc(ACT[a][0]) + '</button>'; }).join('') +

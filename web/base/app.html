@@ -2455,7 +2455,7 @@ function renderPost(post){
   out+='<div style="flex:1;min-width:0;overflow:hidden">';
   out+='<div class="post-name" data-gp2="'+author.id+'" onclick="gotoProfile(this.dataset.gp2)" style="cursor:pointer">'+esc(author.name)+(author.verified?' <span style="color:var(--cp);font-size:11px">&#10003;</span>':'')+(author.openToWork?'<span style="background:#dcfce7;color:#15803d;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;margin-left:6px">OPEN</span>':'')+'</div>';
   out+='<div class="post-sub">'+esc((author.headline||'').split('|')[0].trim().split('·')[0].trim())+(author.company?' <span style="color:#9ca3af">·</span> '+esc(author.company):'')+'</div>';
-  out+='<div style="font-size:11px;color:#9ca3af;display:flex;align-items:center;gap:5px;margin-top:1px">'+esc(post.ts)+' · 🌐'+(post.viewCount?' · '+post.viewCount.toLocaleString()+' views':'')+'</div>';
+  out+='<div style="font-size:11px;color:#9ca3af;display:flex;align-items:center;gap:5px;margin-top:1px">'+esc(post.ts)+' · 🌐'+(post.viewCount?' · '+post.viewCount.toLocaleString('en-US')+' views':'')+'</div>';
   out+='</div>';
   // ── Badges + Menu ──────────────────────────────────────────────
   out+='<div style="display:flex;align-items:center;gap:5px;flex:none;margin-left:8px">';
@@ -2485,10 +2485,10 @@ function renderPost(post){
   if(totalReacts>0||totalCmts>0||post.shareCount){
     out+='<div class="post-stats">';
     out+='<span style="display:flex;align-items:center;gap:4px;cursor:pointer" data-sr="'+post.id+'" onclick="showReactors(parseInt(this.dataset.sr))">';
-    if(totalReacts>0)out+=rxnStr+' <span style="color:#65676b;font-size:12.5px">'+totalReacts.toLocaleString()+'</span>';
+    if(totalReacts>0)out+=rxnStr+' <span style="color:#65676b;font-size:12.5px">'+totalReacts.toLocaleString('en-US')+'</span>';
     out+='</span>';
     out+='<span style="display:flex;gap:10px">';
-    if(totalCmts>0)out+='<span style="cursor:pointer;color:#65676b;font-size:12.5px" data-tc="'+post.id+'" onclick="toggleComments(parseInt(this.dataset.tc))">'+totalCmts.toLocaleString()+' comments</span>';
+    if(totalCmts>0)out+='<span style="cursor:pointer;color:#65676b;font-size:12.5px" data-tc="'+post.id+'" onclick="toggleComments(parseInt(this.dataset.tc))">'+totalCmts.toLocaleString('en-US')+' comments</span>';
     if(post.shareCount)out+='<span style="color:#65676b;font-size:12.5px">'+post.shareCount+' reposts</span>';
     out+='</span></div>';
   }
@@ -2571,7 +2571,7 @@ function renderFeedSidebar(){
   h+='<div style="font-size:12px;color:#65676b;margin-top:2px">'+esc(ME.headline)+'</div>';
   h+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid #f0f2f5;font-size:12.5px">';
   [['Profile viewers',me.profileViews||342],['Post impressions',impressions],['Search appearances',87],['Connections',me.connections||481]].forEach(function(r){
-    h+='<div style="display:flex;justify-content:space-between;padding:4px 0;cursor:pointer"><span style="color:#65676b">'+r[0]+'</span><b style="color:var(--cp)">'+Number(r[1]).toLocaleString()+'</b></div>';
+    h+='<div style="display:flex;justify-content:space-between;padding:4px 0;cursor:pointer"><span style="color:#65676b">'+r[0]+'</span><b style="color:var(--cp)">'+Number(r[1]).toLocaleString('en-US')+'</b></div>';
   });
   h+='</div>';
   h+='<div style="margin-top:8px;padding-top:8px;border-top:1px solid #f0f2f5;font-size:12.5px;font-weight:700;color:var(--cx);cursor:pointer" onclick="toast(\'Saved items\')">&#128278; Saved items</div>';
@@ -3020,7 +3020,7 @@ function renderProfile(c,userId){
   h+='<div style="font-size:13px;color:#65676b;margin-top:4px">'+flag(user.country)+' '+esc(user.location||'')+(user.company?' &middot; '+esc(user.company):'')+'</div>';
   h+='<div class="profile-stats">';
   [[userPosts.length,'Posts'],[user.connections||0,'Connections'],[user.followers||0,'Followers'],[user.profileViews||0,'Profile views']].forEach(function(s){
-    h+='<div><div class="pstat-n">'+Number(s[0]).toLocaleString()+'</div><div class="pstat-l">'+s[1]+'</div></div>';
+    h+='<div><div class="pstat-n">'+Number(s[0]).toLocaleString('en-US')+'</div><div class="pstat-l">'+s[1]+'</div></div>';
   });
   h+='</div>';
   if(isMe){
@@ -3062,7 +3062,7 @@ function renderProfileTab(tab){
     if(!posts.length)return '<div style="text-align:center;padding:40px;color:#65676b"><div style="font-size:40px;margin-bottom:12px">&#128221;</div><div style="font-weight:700">No posts yet</div></div>';
     posts.forEach(function(p){
       h+=card+'<div style="font-size:13.5px;color:var(--cx);line-height:1.6;white-space:pre-wrap">'+esc(p.body.slice(0,220))+(p.body.length>220?'…':'')+'</div>';
-      h+='<div style="font-size:12px;color:#65676b;margin-top:8px">'+esc(p.ts)+' &middot; '+(p.likeCount||0)+' reactions &middot; '+(p.commentCount||0)+' comments'+(p.viewCount?' &middot; '+p.viewCount.toLocaleString()+' views':'')+'</div></div>';
+      h+='<div style="font-size:12px;color:#65676b;margin-top:8px">'+esc(p.ts)+' &middot; '+(p.likeCount||0)+' reactions &middot; '+(p.commentCount||0)+' comments'+(p.viewCount?' &middot; '+p.viewCount.toLocaleString('en-US')+' views':'')+'</div></div>';
     });
     return h;
   }
@@ -3924,7 +3924,7 @@ document.querySelectorAll('#mkx input, #mkx textarea').forEach(function(el){
   el.addEventListener('input', function(){
     if(!draftShown){
       draftShown = true;
-      setTimeout(function(){ document.getElementById('draftBanner').classList.add('show'); }, 1500);
+      setTimeout(function(){ var d = document.getElementById('draftBanner'); if (d) d.classList.add('show'); }, 1500);   /* the page may have changed meanwhile */
     }
   });
 });
@@ -4032,7 +4032,7 @@ function updateLiveCount(){
     if(cb.checked) total += categoryTotals[cb.dataset.cat] || 0;
   });
   var el = document.getElementById('liveResultCount');
-  if(el) el.textContent = total.toLocaleString();
+  if(el) el.textContent = total.toLocaleString('en-US');
 }
 
 document.querySelectorAll('.cat-cb').forEach(function(cb){
@@ -4155,7 +4155,7 @@ window.mkxComplete = function (root) {
     var total = 0;
     document.querySelectorAll('.cat-cb').forEach(function (cb) { if (cb.checked) total += (window.categoryTotals || {})[cb.dataset.cat] || 0; });
     if ((state.touched && state.sector !== 'all') || state.q || state.touched) total = inCats ? Math.round(total * shown / inCats) : 0;
-    var el = document.getElementById('liveResultCount'); if (el) el.textContent = total.toLocaleString();
+    var el = document.getElementById('liveResultCount'); if (el) el.textContent = total.toLocaleString('en-US');
   }
   window.updateLiveCount = applyFilters;
   function resetFilters() {
@@ -4448,7 +4448,7 @@ window.mkxComplete = function (root) {
   function bumpStat(i, delta) {
     var m = document.getElementById('tab-manage'); if (!m) return;
     var n = m.querySelectorAll('div[style*="font-size:18px;font-weight:800"]')[i];
-    if (n) n.textContent = Math.max(0, (parseInt(n.textContent.replace(/,/g, ''), 10) || 0) + delta).toLocaleString();
+    if (n) n.textContent = Math.max(0, (parseInt(n.textContent.replace(/,/g, ''), 10) || 0) + delta).toLocaleString('en-US');
   }
   function addManageRow(d, status) {
     var list = manageList(); if (!list) return;
@@ -5495,7 +5495,7 @@ window.gxComplete = function (root) {
     var b = card.querySelector('.gcard-btn'), mc = card.querySelector('.member-count');
     if (!b || isJoined(card) === on) return;
     b.classList.toggle('btn-joined', on); b.classList.toggle('btn-join', !on); b.textContent = on ? '✓ Joined' : '+ Join';
-    if (mc) { var n = num(mc.textContent) + (on ? 1 : -1), suffix = /members/.test(mc.textContent) ? ' members' : ''; mc.textContent = n.toLocaleString() + suffix; }
+    if (mc) { var n = num(mc.textContent) + (on ? 1 : -1), suffix = /members/.test(mc.textContent) ? ' members' : ''; mc.textContent = n.toLocaleString('en-US') + suffix; }
     joined[txt(card.querySelector('.gcard-title'))] = on; D.store.set('groupsJoined', joined);
     if (!quiet) D.toast(on ? 'You joined ' + txt(card.querySelector('.gcard-title')) : 'You left ' + txt(card.querySelector('.gcard-title')));
   }
@@ -5529,7 +5529,7 @@ window.gxComplete = function (root) {
       var members = num(txt(c.querySelector('.member-count'))), sig = txt(c.querySelector('.activity-signal'));
       var posts = (sig.match(/(\d+)\s+new posts/) || [])[1] || '0';
       var priv = /private/i.test(txt(c.querySelector('.gcard-meta'))) ? '🔒 Private' : '🌍 Public';
-      stats.innerHTML = '<div><b>' + members.toLocaleString() + '</b> members</div><div><b>' + posts + '</b> new posts today</div><div>' + priv + '</div>';
+      stats.innerHTML = '<div><b>' + members.toLocaleString('en-US') + '</b> members</div><div><b>' + posts + '</b> new posts today</div><div>' + priv + '</div>';
     }
     var cp = document.querySelector('#leaveConfirm .cp-desc');
     if (cp) cp.textContent = "You'll stop seeing posts from " + title + ' and lose access to its members and listings.';
@@ -5542,7 +5542,7 @@ window.gxComplete = function (root) {
     var nm = document.querySelector('#tab-settings .field-input'); if (nm) nm.value = title;
     var ds = document.querySelector('#tab-settings .field-textarea'); if (ds) ds.value = txt(c.querySelector('.gcard-desc'));
     var dmt = document.querySelector('#deleteModal .dm-title'); if (dmt) dmt.textContent = 'Delete "' + title + '"?';
-    var dmd = document.querySelector('#deleteModal .dm-desc'); if (dmd) dmd.textContent = 'This will permanently remove all ' + num(txt(c.querySelector('.member-count'))).toLocaleString() + ' members, every post, and the full history. There is no undo.';
+    var dmd = document.querySelector('#deleteModal .dm-desc'); if (dmd) dmd.textContent = 'This will permanently remove all ' + num(txt(c.querySelector('.member-count'))).toLocaleString('en-US') + ' members, every post, and the full history. There is no undo.';
     var di = document.getElementById('deleteConfirmInput'); if (di) di.placeholder = title;
   };
   /* leave from the detail view */

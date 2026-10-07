@@ -13,8 +13,8 @@
     document.querySelectorAll('input:not([type=hidden]),select,textarea').forEach(function (el) {
       if (named(el)) return;
       var box = el.closest('.f-opt,.cat-item,.dbk-f,.dr-ver,.fd-row,li,label,div'), fld = el.closest('.f-field,.dbk-f'), lab = fld && fld.querySelector('label,.f-label');
-      var name = (lab && txt(lab)) || el.getAttribute('placeholder') || (box && txt(box).replace(el.tagName === 'SELECT' ? txt(el) : '', '').trim().slice(0, 60)) || el.getAttribute('name') ||
-        (el.tagName === 'SELECT' && el.options.length ? txt(el.options[Math.max(0, el.selectedIndex)]) : '');   /* the field's own label first; a list's options are not its name */
+      var name = (lab && txt(lab)) || el.getAttribute('placeholder') || (box && txt(box).replace(el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' ? txt(el) : '', '').trim().slice(0, 60)) || el.getAttribute('name') ||
+        (el.tagName === 'SELECT' && el.options.length ? txt(el.options[Math.max(0, el.selectedIndex)]) : '');   /* the field's own label first; a list's options and a text box's contents are not its name */
       if (name) el.setAttribute('aria-label', name);
     });
     /* elements that act as buttons but have no name */

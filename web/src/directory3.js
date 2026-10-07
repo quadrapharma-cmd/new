@@ -169,7 +169,7 @@
     var dlg = D.modal({ title: 'Group buying', secondary: 'Close', primary: { label: 'Start a group', onClick: function () { later(newGroup); } },
       body: '<p class="cp-muted">Small factories combine orders to reach the supplier\u2019s minimum order and a better price. When the target is reached the supplier confirms the group price, and every member gets its own order.</p>' + gs.map(function (g) { var have = total(g), pct = Math.min(100, Math.round(have / g.lines.target * 100)), mineIn = a && (g.members || []).some(function (s) { return s.slug === a.slug; });
         return '<div class="gb-card"><div class="gb-h"><b>' + esc(g.lines.product) + '</b><span>supplier ' + esc(g.to.name) + ' · organised by ' + esc(g.from.name) + ' · closes ' + esc(g.lines.by) + '</span></div><div class="gb-bar"><i style="width:' + pct + '%"></i></div>' +
-          '<div class="gb-meta"><span><b>' + have.toLocaleString() + '</b> of ' + g.lines.target.toLocaleString() + ' ' + esc(g.lines.unit) + ' · ' + (g.members || []).length + ' companies</span><span class="gb-price">' + esc(g.lines.price) + '</span></div>' +
+          '<div class="gb-meta"><span><b>' + have.toLocaleString('en-US') + '</b> of ' + g.lines.target.toLocaleString('en-US') + ' ' + esc(g.lines.unit) + ' · ' + (g.members || []).length + ' companies</span><span class="gb-price">' + esc(g.lines.price) + '</span></div>' +
           (g.status === 'confirmed' ? '<span class="avl avl-ok">Supplier confirmed — orders created for every member</span>' : g.status === 'target_reached' ? '<div class="gb-join"><span class="avl avl-ev">Target reached — waiting for ' + esc(g.to.name) + '</span>' + (DL.sideOf(g) === 'to' ? '<button type="button" class="dr-btn p sm" data-gconf="' + g.id + '">Confirm group price</button>' : '<button type="button" class="dr-btn ghost sm" data-gsim="' + g.id + '">Simulate supplier confirmation (demo)</button>') + '</div>'
             : (mineIn ? '<span class="avl avl-ok">You joined</span> ' : '') + '<div class="gb-join"><input type="number" min="1" placeholder="' + (mineIn ? 'Add more' : 'Your quantity') + ' (' + esc(g.lines.unit) + ')" data-gq="' + g.id + '"><button type="button" class="dr-btn p sm" data-gjoin="' + g.id + '">' + (mineIn ? 'Add' : 'Join') + '</button></div>') + '</div>'; }).join('') });
     dlg.el.querySelector('.dbk-box').classList.add('dbk-wide');
@@ -179,7 +179,7 @@
       if (!a) { toast('Act as a company to join'); return; }
       var q = +(dlg.el.querySelector('[data-gq="' + j.dataset.gjoin + '"]').value || 0); if (!(q > 0)) { toast('Enter your quantity'); return; }
       var d = DL.joinGroup(j.dataset.gjoin, { slug: a.slug, name: a.name }, q); if (!d) return;
-      dlg.close(); toast(d && d.status === 'target_reached' ? 'Target reached! ' + d.to.name + ' now confirms the group price' : a.name + ' joined with ' + q.toLocaleString()); later(groupsDialog);
+      dlg.close(); toast(d && d.status === 'target_reached' ? 'Target reached! ' + d.to.name + ' now confirms the group price' : a.name + ' joined with ' + q.toLocaleString('en-US')); later(groupsDialog);
     });
   }
   function newGroup() {

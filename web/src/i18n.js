@@ -383,6 +383,8 @@
   var QTYPE = { 'Quote request': 'طلب عرض سعر', 'Service request': 'طلب خدمة', 'Surplus offer': 'عرض فائض', 'Dossier request': 'طلب ملف', 'Job application': 'طلب توظيف', 'Qualification questionnaire': 'استبيان تأهيل', 'Group order': 'طلب جماعي', 'Requests & deals': 'الطلبات والصفقات' };
   PATTERNS.push(
     [/^(Quote request|Service request|Surplus offer|Dossier request|Job application|Qualification questionnaire|Group order|Requests & deals) — (.+)$/, function (m) { return QTYPE[m[1]] + ' — ' + m[2]; }],
+    [/^(Quote request|Service request|Surplus offer|Dossier request|Job application|Qualification questionnaire|Group order) → (.+)$/, function (m) { return QTYPE[m[1]] + ' ← ' + m[2]; }],
+    [/^Surplus · (.+) · batch (.+)$/, function (m) { return 'فائض · ' + m[1] + ' · تشغيلة ' + m[2]; }], [/^(.+) · to (\d{4}-\d{2}(?:-\d{2})?)$/, function (m) { return m[1] + ' · حتى ' + m[2]; }],
     [/^(\d+) waiting for you$/, function (m) { return m[1] + ' بانتظارك'; }],
     [/^·?\s*(Accept quote|Confirm order|Mark shipped|Send quote|Confirm received)$/, function (m) { return '· ' + D[m[1]]; }],
     [/^Send quote: (.+) · valid (\d+) days$/, function (m) { return 'أرسل عرضًا: ' + m[1] + ' · صالح ' + m[2] + ' يومًا'; }],

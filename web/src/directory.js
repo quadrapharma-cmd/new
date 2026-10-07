@@ -283,7 +283,7 @@
     return '<div class="pl-grid">' + ['free', 'vip'].map(function (k) { var p = PLANS[k];
       return '<label class="pl-card' + (sel === k ? ' on' : '') + (k === 'vip' ? ' vip' : '') + '"><input type="radio" name="plPick" value="' + k + '"' + (sel === k ? ' checked' : '') + '>' +
         '<div class="pl-h">' + (k === 'vip' ? ic('crown') : ic('building')) + '<b>' + p.name + '</b>' + (k === 'vip' ? '<em>Recommended</em>' : '') + '</div>' +
-        '<div class="pl-price">' + (p.price ? (billing === 'year' ? 'EGP ' + p.year.toLocaleString() + '<small>/year · 2 months free</small>' : 'EGP ' + p.price.toLocaleString() + '<small>/month</small>') : 'Free') + '</div>' +
+        '<div class="pl-price">' + (p.price ? (billing === 'year' ? 'EGP ' + p.year.toLocaleString('en-US') + '<small>/year · 2 months free</small>' : 'EGP ' + p.price.toLocaleString('en-US') + '<small>/month</small>') : 'Free') + '</div>' +
         '<ul>' + p.feats.map(function (f) { return '<li>' + ic('seal') + esc(f) + '</li>'; }).join('') + '</ul></label>'; }).join('') + '</div>' +
       '<div class="pl-bill"><label><input type="radio" name="plBill" value="month"' + (billing !== 'year' ? ' checked' : '') + '> Monthly</label><label><input type="radio" name="plBill" value="year"' + (billing === 'year' ? ' checked' : '') + '> Yearly</label><span class="cp-muted">Example prices in EGP — set by Drugbox.</span></div>';
   }
@@ -315,9 +315,9 @@
       D.modal({ title: 'Create a company page · 3 of 3 — review' + (amount ? ' and pay' : ''),
         body: '<table class="cp-spec"><tr><td>Company</td><td>' + esc(W.name) + '</td></tr><tr><td>Activity</td><td>' + esc(W.sector) + '</td></tr><tr><td>Location</td><td>' + esc(W.city) + ', ' + esc(W.gov) + '</td></tr>' +
           '<tr><td>Verification</td><td>Optional, later — from your page (gives the Verified badge)</td></tr><tr><td>Plan</td><td><b>' + p.name + '</b>' + (amount ? ' · ' + (W.billing === 'year' ? 'yearly' : 'monthly') : '') + '</td></tr>' +
-          (amount ? '<tr><td>Subtotal</td><td>EGP ' + amount.toLocaleString() + '</td></tr><tr><td>VAT 14%</td><td>EGP ' + vat.toLocaleString() + '</td></tr><tr><td><b>Total</b></td><td><b>EGP ' + (amount + vat).toLocaleString() + '</b></td></tr>' : '') + '</table>' +
+          (amount ? '<tr><td>Subtotal</td><td>EGP ' + amount.toLocaleString('en-US') + '</td></tr><tr><td>VAT 14%</td><td>EGP ' + vat.toLocaleString('en-US') + '</td></tr><tr><td><b>Total</b></td><td><b>EGP ' + (amount + vat).toLocaleString('en-US') + '</b></td></tr>' : '') + '</table>' +
           (amount ? '<div class="pay-row"><label><input type="radio" name="pay" checked> Card</label><label><input type="radio" name="pay"> Fawry</label><label><input type="radio" name="pay"> Bank transfer</label></div><p class="cp-muted">Demo — no payment is taken.</p>' : ''),
-        primary: { label: amount ? 'Pay EGP ' + (amount + vat).toLocaleString() + ' and create' : 'Create my page', onClick: function () {
+        primary: { label: amount ? 'Pay EGP ' + (amount + vat).toLocaleString('en-US') + ' and create' : 'Create my page', onClick: function () {
           var me = window.ME || {}, base = slugify(W.name), slug = base, n = 2, created = store('created_companies') || [];
           while (companies(true).some(function (c) { return c.slug === slug; })) slug = base + '-' + (n++);   /* same name allowed; the link stays unique */
           var co = { slug: slug, registry: '', plan: W.plan, licensed: false, status: 'unverified', name: W.name, owner: me.id, color: '#1a56db', sector: W.sector, sectors: [W.sector], city: W.city, gov: W.gov,
@@ -353,8 +353,8 @@
       primary: { label: 'Continue to payment', onClick: function (b) {
         var billing = b.querySelector('input[name=plBill]:checked').value, amount = billing === 'year' ? PLANS.vip.year : PLANS.vip.price, vat = Math.round(amount * 0.14);
         setTimeout(function () {
-          D.modal({ title: 'Pay for VIP', body: '<table class="cp-spec" data-billing="' + (billing === 'year' ? 'year' : 'month') + '"><tr><td>' + esc(co.name) + ' · VIP ' + (billing === 'year' ? 'yearly' : 'monthly') + '</td><td>EGP ' + amount.toLocaleString() + '</td></tr><tr><td>VAT 14%</td><td>EGP ' + vat.toLocaleString() + '</td></tr><tr><td><b>Total</b></td><td><b>EGP ' + (amount + vat).toLocaleString() + '</b></td></tr></table><p class="cp-muted">Demo — no payment is taken.</p>',
-            primary: { label: 'Pay EGP ' + (amount + vat).toLocaleString(), onClick: function () {
+          D.modal({ title: 'Pay for VIP', body: '<table class="cp-spec" data-billing="' + (billing === 'year' ? 'year' : 'month') + '"><tr><td>' + esc(co.name) + ' · VIP ' + (billing === 'year' ? 'yearly' : 'monthly') + '</td><td>EGP ' + amount.toLocaleString('en-US') + '</td></tr><tr><td>VAT 14%</td><td>EGP ' + vat.toLocaleString('en-US') + '</td></tr><tr><td><b>Total</b></td><td><b>EGP ' + (amount + vat).toLocaleString('en-US') + '</b></td></tr></table><p class="cp-muted">Demo — no payment is taken.</p>',
+            primary: { label: 'Pay EGP ' + (amount + vat).toLocaleString('en-US'), onClick: function () {
               var created = store('created_companies') || [], edits = store('company_edits') || {};
               if (created.some(function (c) { return c.slug === slug; })) { created.forEach(function (c) { if (c.slug === slug) { c.plan = 'vip'; c.billing = billing; } }); store('created_companies', created); }
               else { edits[slug] = Object.assign({}, edits[slug] || {}, { plan: 'vip', billing: billing }); store('company_edits', edits); }

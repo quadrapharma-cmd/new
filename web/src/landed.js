@@ -43,7 +43,8 @@
   function mark() {
     var pg = document.body.getAttribute('data-page'); if (pg !== 'market') return;
     document.querySelectorAll('#mkx .sp-price, #mkx .lc-price').forEach(function (el) {   /* full listing cards only — never inside a card that is itself a button */
-      if (el.dataset.dxlc) return; el.dataset.dxlc = '1'; if (el.closest('.sp-mini,[onclick]')) return; var pp = parsePrice(el.textContent); if (!pp) return;
+      if (el.dataset.dxlc) return; if (el.closest('.sp-mini,[onclick]')) { el.dataset.dxlc = '1'; return; }
+      var pp = parsePrice(el.textContent); if (!pp) return; el.dataset.dxlc = '1';   /* "$5.80" becomes "US$ 5.80" when craft.js formats it: until then, look again on the next render */
       var b = document.createElement('button'); b.type = 'button'; b.className = 'dx-lc-chip'; b.textContent = 'Landed cost'; b.dataset.p = pp.price; b.dataset.u = pp.unit; el.appendChild(b);
     });
   }
