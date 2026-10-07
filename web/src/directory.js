@@ -86,7 +86,7 @@
       services: ['EDA new registration (CTD)', 'Variations (PAC)', 'GMP mock inspections', 'SFDA & MOHAP filings'], products: [P('EDA Registration Package', 'Service', 'lab', 'Dossier gap analysis, compilation and follow-up.', '1 product')], jobs: [{ t: 'Regulatory Affairs Officer', type: 'Full-time', loc: 'Giza' }] }
   ];
   /* who receives requests inside each company (a company is not a person) */
-  var CONTACTS = { 'quadra-pharm': { sales: 'Dr. Asmaa Meabed', hr: 'Dr. Asmaa Meabed' }, 'medsinia-industries': { sales: 'Eng. Omar Khaled', hr: 'Eng. Omar Khaled' } };
+  var CONTACTS = { 'quadra-pharm': { sales: 'Dr. Alia Mourad', hr: 'Dr. Alia Mourad' }, 'medsinia-industries': { sales: 'Eng. Omar Khaled', hr: 'Eng. Omar Khaled' } };
   function contact(co, kind) { var c = CONTACTS[co.slug]; return c ? c[kind === 'job' ? 'hr' : 'sales'] : co.name + (kind === 'job' ? ' · HR' : ' · Sales'); }
   /* medicines are sold only to licensed buyers (pharmacies, distributors, manufacturers) */
   function licensedOnly(p) { return p && /finished dosage/i.test(p.cat); }

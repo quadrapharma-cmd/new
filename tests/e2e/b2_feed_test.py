@@ -6,7 +6,7 @@ DB = os.environ.get('DB_NAME', 'drugbox_live')
 
 stamp = ST; EMAIL = f'feed{stamp}@quadra.test'
 # another member with 25 posts, one minute apart
-other = sql(f"insert into auth.users (email, encrypted_password, raw_user_meta_data) values ('author{stamp}@x.test', crypt('x-pass-123', gen_salt('bf')), '{{\"name\":\"Dr. Asmaa Author\"}}') returning id").split('\n')[0]
+other = sql(f"insert into auth.users (email, encrypted_password, raw_user_meta_data) values ('author{stamp}@x.test', crypt('x-pass-123', gen_salt('bf')), '{{\"name\":\"Dr. Alia Author\"}}') returning id").split('\n')[0]
 sql(f"insert into public.posts (user_id, body, category, created_at) select '{other}', 'Seed post #' || g || ' — EDA stability update', 'regulatory', now() - (g || ' minutes')::interval from generate_series(1,25) g")
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); ctx = b.new_context(viewport={'width': 1440, 'height': 900}); pg = ctx.new_page(); errs = []
@@ -15,7 +15,7 @@ with sync_playwright() as p:
     pg.evaluate("showSignup()"); pg.fill('#suName', 'Dr. Feed Tester'); pg.fill('#suEmail', EMAIL); pg.fill('#suPw', 'Strong-pass-2026'); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
     n1 = pg.evaluate("document.querySelectorAll('#content .post').length")
     T('first page: 20 real posts from the database (not demo posts)', n1 == 20 and pg.evaluate("POSTS.every(p=>typeof p.id==='number'&&p.uid>1000&&String(dxLive.uuidOf(p.uid)).length===36)"), n1)
-    T('author name comes from the database', 'Dr. Asmaa Author' in pg.inner_text('#content'))
+    T('author name comes from the database', 'Dr. Alia Author' in pg.inner_text('#content'))
     pg.evaluate("document.querySelectorAll('#content .post')[19].scrollIntoView()"); pg.wait_for_timeout(2500)
     n2 = pg.evaluate("document.querySelectorAll('#content .post').length"); ids = pg.evaluate("[...document.querySelectorAll('#content .post')].map(e=>e.id)")
     total = int(sql("select count(*) from public.posts")); want = min(40, total)

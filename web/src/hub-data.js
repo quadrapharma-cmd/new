@@ -106,7 +106,7 @@
   /* ── team, roles and routing ── */
   var ROLES = ['Admin', 'Management', 'Sales', 'Quality', 'Regulatory', 'HR'];
   var TEAM = {
-    'quadra-pharm': [{ uid: 1, name: 'Dr. Haytham Dweedar', role: 'Admin', consent: true }, { uid: 2, name: 'Dr. Asmaa Meabed', role: 'Regulatory', consent: true }, { uid: null, name: 'Mona Adel', role: 'Sales', consent: true }, { uid: null, name: 'Eng. Karim Fouad', role: 'Quality', consent: false }],
+    'quadra-pharm': [{ uid: 1, name: 'Dr. Haytham Dweedar', role: 'Admin', consent: true }, { uid: 2, name: 'Dr. Alia Mourad', role: 'Regulatory', consent: true }, { uid: null, name: 'Mona Adel', role: 'Sales', consent: true }, { uid: null, name: 'Eng. Karim Fouad', role: 'Quality', consent: false }],
     'medsinia-industries': [{ uid: 5, name: 'Eng. Omar Khaled', role: 'Admin', consent: true }, { uid: null, name: 'Hany Samir', role: 'Sales', consent: true }],
     'beauty-lab-egypt': [{ uid: 6, name: 'Dr. Sara El-Amin', role: 'Admin', consent: true }]
   };

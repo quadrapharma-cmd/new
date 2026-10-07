@@ -2,7 +2,7 @@ from playwright.sync_api import sync_playwright
 import collections
 PAGES=['feed','market','companies','company','jobs','network','messages','notifs','profile','groups','training','saved']
 FIND=r"""((k)=>{var s=document.getElementById('p-'+k); if(!s) return [];
-  var names=['Dr. Haytham Dweedar','Dr. Asmaa Meabed','Vivian Zhou','Faisal Rahmani','Eng. Omar Khaled','Dr. Sara El-Amin','Indovista Pharma'];
+  var names=['Dr. Haytham Dweedar','Dr. Alia Mourad','Vivian Zhou','Faisal Rahmani','Eng. Omar Khaled','Dr. Sara El-Amin','Indovista Pharma'];
   var LINKY=/(^|\s)(tag|chip|pill|hashtag|trend|ad|ads|sponsor|promo|banner|name|title|link|more|see-?all|view-?all|author|company|seller|brand|topic|badge|cta|headline|stat|count|sug|who|person|user|member|jc-title|lc-title|sp-title|sc-title|dc-title|gcard-title|post-name|seller-name)(\s|-|_|$)/i;
   var out=[];
   s.querySelectorAll('.lm-c *').forEach(function(e){

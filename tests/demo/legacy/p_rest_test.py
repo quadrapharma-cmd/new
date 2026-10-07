@@ -22,7 +22,7 @@ with sync_playwright() as p:
     # ── MESSAGES from elsewhere in the app
     pg.evaluate("goto('network')"); pg.wait_for_timeout(300)
     pg.evaluate("messageUser(2)"); pg.wait_for_timeout(700)
-    T('app "Message" button → approved inbox on that person', pg.evaluate("curPage")=='messages' and 'Asmaa' in pg.inner_text('#mx .ch-name'))
+    T('app "Message" button → approved inbox on that person', pg.evaluate("curPage")=='messages' and 'Alia' in pg.inner_text('#mx .ch-name'))
     T('no duplicate Rahmani thread', pg.locator('#mx .mx-thread',has_text='Rahmani').count()==1, pg.locator('#mx .mx-thread',has_text='Rahmani').count())
     pg.locator('#mx .mx-thread',has_text='Eng. Omar Khaled').click(); pg.wait_for_timeout(200)
     T('msg: switch thread', 'Omar' in pg.inner_text('#mx .ch-name') and 'Sounds good' in pg.inner_text('#mx #messagesArea'))
