@@ -229,6 +229,9 @@ insert into public.site_certificates (site_id, company_id, name, expiry, source,
 select s.id, s.company_id, (array['GMP','ISO 9001','ISO 17025','GDP'])[1 + (s.company_id + k) % 4], current_date + ((s.company_id * k) % 900 - 100)::int, 'company', case when (s.company_id + k) % 2 = 0 then now() end
 from public.company_sites s join public.companies c on c.id = s.company_id and c.slug like 'ip-company-%', generate_series(1, 2) k;
 analyze public.companies; analyze public.company_members; analyze public.company_products; analyze public.site_certificates;
+-- 0024 took the whole-list directory_companies() out of the API (the app pages it); it is called here only to compare with
+-- the page (keys, timings) — granted back inside this rolled-back transaction
+grant execute on function public.directory_companies(int) to authenticated;
 select pg_temp.as_user(pg_temp.u(1)::text);
 select pg_temp.ok('a page has the same keys as a directory_companies() row', $$(select array_agg(k order by k) from json_object_keys((public.directory_companies_page(1)) -> 0) k)
   = (select array_agg(k order by k) from json_object_keys((public.directory_companies(1)) -> 0) k)$$);

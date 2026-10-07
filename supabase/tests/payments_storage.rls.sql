@@ -1,6 +1,6 @@
 -- Payments, moderation and storage (0018 + 0023): Paymob callbacks bound to the signed order id with amount and currency,
 -- provider never confirms InstaPay, one transaction pays one order, nothing "active" when the listing/company is gone,
--- VIP ends at vip_until, InstaPay rejection only in review, the reported company cannot dismiss or rewrite reports,
+-- VIP ends at vip_until, InstaPay rejection only in review, the reported company cannot change reports nor see the reporter,
 -- a deleted post takes its files, evidence bucket limits/removal, storage paths in the writer's own folder.
 -- Runs as the real API roles with a JWT (the webhooks as service_role), in one transaction that is rolled back; test data carries
 -- the "PS " marker. Run on a fresh database (stub + migrations): psql -f supabase/tests/payments_storage.rls.sql
@@ -96,6 +96,9 @@ select pg_temp.as_server();
 select pg_temp.ok('…the InstaPay order still waits for Drugbox', $$(select status = 'review' from public.payment_orders where id = pg_temp.id('insta')) and (select featured_until is null from public.products where id = pg_temp.id('l1'))$$);
 select pg_temp.as_user(:O);
 select pg_temp.step('the owner orders a boost by Fawry', $$insert into ids select 'fawry', (public.create_order('boost','fawry',null,pg_temp.id('l1'))).id$$);
+select pg_temp.as_service();
+select pg_temp.step('Fawry''s reference number for the boost order (payments-create)', $$select public.set_order_provider_ref(pg_temp.id('fawry'), 'fw-ps-1')$$);
+select pg_temp.ok('F-115 a Fawry notification with another reference number does not pay the order', $$pg_temp.confirm('fawry', pg_temp.ref('fawry'), 'fw-ps-other', 165300, 'EGP') = 'reference mismatch'$$);
 select pg_temp.as_server();
 update public.payment_orders set status = 'expired' where id = pg_temp.id('fawry');
 select pg_temp.as_service();
@@ -129,6 +132,7 @@ select pg_temp.step('the owner orders VIP for the second company by card', $$ins
 select pg_temp.step('…then deletes the listing', $$delete from public.products where id = pg_temp.id('l2')$$);
 select pg_temp.as_service();
 select pg_temp.step('Paymob''s order id for the company order', $$select public.set_order_provider_ref(pg_temp.id('gonec'), 'pi_ps_3', '7700003')$$);
+select pg_temp.step('Fawry''s reference number for the listing-two order', $$select public.set_order_provider_ref(pg_temp.id('gone'), 'fw-ps-2')$$);
 select pg_temp.ok('the payment is recorded but nothing is activated', $$pg_temp.confirm('fawry', pg_temp.ref('gone'), 'fw-ps-2', 165300, 'EGP') = 'paid, not activated (refund due)'$$);
 select pg_temp.as_server();
 delete from public.companies where id = pg_temp.id('co2');
@@ -178,22 +182,27 @@ select pg_temp.no('a member cannot set the provider references', $$select public
 select pg_temp.no('a member cannot activate an order', $$select public.activate_order(pg_temp.id('wallet'))$$, '42501');
 select pg_temp.ok('a member cannot write orders (no row, or no privilege once 0020 is in)', $$pg_temp.rows('update public.payment_orders set provider_order = ''1'' where id = pg_temp.id(''wallet'')') <= 0$$);
 
--- ══ F-32 the reported company may only mark a report fixed ═══════════════════════════════════
+-- ══ F-32 (0024) the reported company reads its reports without the reporter and changes nothing; Drugbox decides ══
 select pg_temp.as_user(:B);
 select pg_temp.step('a member reports wrong information', $$with x as (insert into public.company_reports (company_id, reporter, section, issue, correction)
   values (pg_temp.id('co'), '0d000000-0000-0000-0000-00000000000d', 'About', 'PS the founding year is wrong', '1998') returning id) insert into ids select 'rep', id from x$$);
 select pg_temp.step('…and another one', $$with x as (insert into public.company_reports (company_id, reporter, section, issue)
   values (pg_temp.id('co'), '0d000000-0000-0000-0000-00000000000d', 'Contact', 'PS the phone number is dead') returning id) insert into ids select 'rep2', id from x$$);
+select pg_temp.ok('the reporter reads their own reports', $$(select count(*) from public.company_reports where id in (pg_temp.id('rep'), pg_temp.id('rep2'))) = 2$$);
 select pg_temp.as_user(:O);
-select pg_temp.no('the company cannot dismiss a report', $$update public.company_reports set status = 'dismissed' where id = pg_temp.id('rep')$$, '42501');
-select pg_temp.no('the company cannot rewrite the report', $$update public.company_reports set issue = 'nothing wrong here' where id = pg_temp.id('rep')$$, '42501');
-select pg_temp.no('the company cannot rewrite the correction', $$update public.company_reports set correction = 'x', status = 'resolved' where id = pg_temp.id('rep')$$, '42501');
-select pg_temp.no('the company cannot move the report to another company', $$update public.company_reports set company_id = pg_temp.id('co3') where id = pg_temp.id('rep')$$, '42501');
-select pg_temp.step('the company marks it fixed (the page''s "Mark fixed" sends ''fixed'')', $$update public.company_reports set status = 'fixed' where id = pg_temp.id('rep')$$);
-select pg_temp.ok('…it is resolved, the text as filed', $$(select status = 'resolved' and issue = 'PS the founding year is wrong' and correction = '1998' from public.company_reports where id = pg_temp.id('rep'))$$);
-select pg_temp.step('the company marks the other one resolved', $$update public.company_reports set status = 'resolved' where id = pg_temp.id('rep2')$$);
-select pg_temp.no('the company cannot re-open or dismiss a resolved report', $$update public.company_reports set status = 'dismissed' where id = pg_temp.id('rep2')$$, '42501');
+select pg_temp.ok('the company does not read the report rows (who reported stays private)', $$(select count(*) from public.company_reports where id in (pg_temp.id('rep'), pg_temp.id('rep2'))) = 0$$);
+select pg_temp.ok('the company reads its reports through company_reports_received(), without the reporter',
+  $$(select count(*) from public.company_reports_received(pg_temp.id('co'))) = 2 and not exists (select 1 from public.company_reports_received(pg_temp.id('co')) r where to_jsonb(r) ? 'reporter')$$);
+select pg_temp.ok('the company cannot mark a report fixed (Drugbox checks the page)', $$pg_temp.rows('update public.company_reports set status = ''fixed'' where id = pg_temp.id(''rep'')') = 0$$);
+select pg_temp.ok('the company cannot dismiss, rewrite or move a report', $$pg_temp.rows('update public.company_reports set status = ''dismissed'' where id = pg_temp.id(''rep'')') = 0
+  and pg_temp.rows('update public.company_reports set issue = ''nothing wrong here'', correction = ''x'' where id = pg_temp.id(''rep'')') = 0
+  and pg_temp.rows('update public.company_reports set company_id = pg_temp.id(''co3'') where id = pg_temp.id(''rep'')') = 0$$);
+select pg_temp.as_server();
+select pg_temp.ok('…the report is as filed and still in Drugbox''s open queue', $$(select status = 'open' and issue = 'PS the founding year is wrong' and correction = '1998' and company_id = pg_temp.id('co') from public.company_reports where id = pg_temp.id('rep'))$$);
 select pg_temp.as_user(:A);
+select pg_temp.ok('Drugbox sees the open reports (Admin → Review)', $$(select count(*) from public.company_reports where status = 'open' and id in (pg_temp.id('rep'), pg_temp.id('rep2'))) = 2$$);
+select pg_temp.step('Drugbox marks one fixed (Admin → Review sends ''fixed'')', $$update public.company_reports set status = 'fixed' where id = pg_temp.id('rep')$$);
+select pg_temp.ok('…it is resolved, the text as filed', $$(select status = 'resolved' and issue = 'PS the founding year is wrong' and correction = '1998' from public.company_reports where id = pg_temp.id('rep'))$$);
 select pg_temp.step('Drugbox dismisses / re-opens reports', $$update public.company_reports set status = 'dismissed' where id = pg_temp.id('rep2')$$);
 select pg_temp.ok('…Drugbox decided', $$(select status = 'dismissed' from public.company_reports where id = pg_temp.id('rep2'))$$);
 select pg_temp.as_user(:X);

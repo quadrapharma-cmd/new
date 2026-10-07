@@ -17,7 +17,12 @@
     return false;
   }
   function user(name) { name = String(name || '').replace(/[✓✔]/g, '').trim(); return (window.USERS || []).find(function (u) { return u.name === name || (name.length > 3 && name.indexOf(u.name) === 0); }); }
-  function company(name) { if (!window.dxDir) return null; name = String(name || '').trim(); return window.dxDir.companies().find(function (c) { return c.name === name || (name.length > 4 && name.indexOf(c.name) === 0); }); }
+  function company(name) {   /* exact name, or a name followed only by a separator ('Pharco · Cairo'); the longest such name wins, so a shorter company never takes a longer one's click */
+    if (!window.dxDir) return null; name = String(name || '').trim(); if (!name) return null; var best = null;
+    window.dxDir.companies().some(function (c) { var n = c.name; if (!n) return false; if (n === name) { best = c; return true; }
+      if (name.length > n.length && name.indexOf(n) === 0 && !/^\s*[A-Za-z0-9\u0600-\u06FF&]/.test(name.slice(n.length)) && (!best || n.length > best.name.length)) best = c; return false; });
+    return best;
+  }
   function groupTitles() { return Array.prototype.map.call(document.querySelectorAll('#gx .gcard-title, #gx .mg-name'), txt).concat((window.GX_HTML || '').match(/class="gcard-title">([^<]+)</g) ? window.GX_HTML.match(/class="gcard-title">([^<]+)</g).map(function (s) { return s.replace(/.*>/, ''); }) : []); }
   function openGroup(name) {
     window.goto('groups');
@@ -90,6 +95,7 @@
       if (getComputedStyle(el).cursor === 'pointer' && el.closest('[onclick],[data-hopen],[data-slug]')) return;   /* already handled by its card */
       el.dataset.dxent = u ? 'u' + u.id : 'c' + co.slug; el.classList.add('dx-entity'); el.setAttribute('role', 'link'); el.setAttribute('tabindex', '0');
       el.setAttribute('title', u ? 'Open ' + u.name + '\u2019s profile' : 'Open ' + co.name);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(el);   /* set after the page was translated: translate the tooltip now (Arabic only) */
     });
   }
   function openEntity(el) { var v = el.dataset.dxent || ''; if (v[0] === 'u' && window.gotoProfile) window.gotoProfile(+v.slice(1)); else if (v[0] === 'c' && window.dxHub) window.dxHub.page(v.slice(1)); }

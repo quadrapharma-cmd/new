@@ -162,7 +162,8 @@
   /* ── Workspace heading: the company name opens its public page ── */
   document.addEventListener('click', function (e) {
     var h = e.target.closest && e.target.closest('#dxDir.ws .ws-h'); if (!h) return;
-    var co = window.dxDir && (window.dxDir.companies().find(function (c) { return txt(h).indexOf(c.name) === 0; }) || (window.dxDir.mine && window.dxDir.mine()));
+    var X = window.dxDir, name = txt(h), co = X && ((X.S && X.S.ws && X.bySlug(X.S.ws)) ||   /* the workspace on screen, by slug */
+      X.companies().find(function (c) { return c.name === name; }) || (X.mine && X.mine()));     /* never a name prefix: 'Look Pharma X' is not 'Look Pharma X Egypt' */
     if (co && window.dxHub) { e.preventDefault(); window.dxHub.page(co.slug); }
   }, true);
   C.onRender('ws-heading-link', function () { var h = document.querySelector('#dxDir.ws .ws-h'); if (h && !h.dataset.lk) { h.dataset.lk = '1'; h.style.cursor = 'pointer'; h.setAttribute('title', 'View public page'); h.setAttribute('role', 'link'); h.setAttribute('tabindex', '0'); } });

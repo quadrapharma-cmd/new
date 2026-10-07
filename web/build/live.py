@@ -32,14 +32,46 @@ H = open(DEMO, encoding='utf-8').read()
 # the splash video is most of the demo's weight: online it is a separate, cacheable file (same bytes, same markup otherwise)
 m = re.search(r'<source src="data:video/mp4;base64,([A-Za-z0-9+/=]+)"', H)
 if m: H = H[:m.start()] + '<source src="' + asset(None, 'splash', 'media', 'mp4', base64.b64decode(m.group(1))) + '"' + H[m.end():]
+# F-71: the scripts are most of the rest. Online every inline classic script over 2 KB (the layers, the app, the people photos)
+# becomes a content-hashed file (cacheable for ever) referenced by a plain <script src> in the SAME place with the same attributes:
+# parser-blocking, run in document order exactly like the inline copy (no defer/async). Small inline scripts stay inline.
+# three.js (inert text read by the lazy-globe loader on large screens only) becomes a file the loader fetches when it needs it.
+# The read-only lite copy (0.5 MB of sample screens for file previews that cannot run scripts) is for the offline file only:
+# every browser that runs the app deletes it at once. Online, a viewer without scripts gets a short bilingual notice instead.
+NOJS = ('<noscript><div role="alert" style="display:flex;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:#0a1f4d;color:#fff;'
+        'padding:24px;font:16px/1.6 Arial,sans-serif;text-align:center"><div style="max-width:420px"><b style="color:#F3B258">Drugbox</b>'
+        '<p dir="rtl" lang="ar" style="margin:14px 0">الصفحة دي محتاجة متصفح علشان تشتغل. افتح الرابط في <b>Chrome</b> أو <b>Safari</b>، وشغّل JavaScript.</p>'
+        '<p style="margin:14px 0">This page needs a web browser with JavaScript. Open the link in <b>Chrome</b> or <b>Safari</b>.</p></div></div></noscript>')
+H, lite = re.subn(r'<div id="dxStaticWrap">[\s\S]*?<!--/dxStaticWrap--><script>[\s\S]*?</script>', lambda _: NOJS, H, count=1)
+moved = []
+def outline(mm):
+    attrs, body = mm.group(1), mm.group(2)
+    if 'src=' in attrs or len(body.encode('utf-8')) < 2048: return mm.group(0)
+    if 'id="dxThreeSrc"' in attrs:
+        moved.append('three'); return '<script%s data-src="%s"></script>' % (attrs, asset(None, 'three', data=body.encode('utf-8')))
+    if re.search(r'\btype=', attrs): return mm.group(0)   # other non-JavaScript blocks stay as they are
+    d = re.search(r'data-dx="([\w-]+)"', attrs); name = d.group(1) if d else 'page%d' % (sum(x.startswith('page') for x in moved) + 1)
+    moved.append(name); return '<script%s src="%s"></script>' % (attrs, asset(None, name, data=body.encode('utf-8')))
+H = re.sub(r'<script([^>]*)>([\s\S]*?)</script>', outline, H)
+OLD_LOAD = 's.text=src.text; document.head.appendChild(s); }catch(e){} if(window.dxGlobeStart) setTimeout(window.dxGlobeStart,30); }'
+if 'three' in moved:   # the loader: fetch the file once, start the globe when it has run (dxGlobeStart does nothing until THREE exists)
+    assert H.count(OLD_LOAD) == 1, 'lazy-globe loader not found: update live.py with web/src/mobile_opt.py'
+    H = H.replace(OLD_LOAD, 'if(src.getAttribute(\'data-src\')){ if(src.dataset.loading) return; src.dataset.loading=\'1\'; s.src=src.getAttribute(\'data-src\'); '
+                  's.onload=function(){ if(window.dxGlobeStart) setTimeout(window.dxGlobeStart,30); }; } else s.text=src.text; ' + OLD_LOAD[len('s.text=src.text; '):])
 cfg = json.dumps({'url': url, 'anonKey': key, 'realtime': os.environ.get('DRUGBOX_REALTIME', '1') != '0'}).replace('<', '\\u003c')   # never ends the <script>
 live = ('<style data-dx="live">.lg-demo{display:none!important}[data-sim]{display:none!important}</style>\n'
         '<script data-dx="live-config">window.DRUGBOX_CONFIG=' + cfg + ';</script>\n'
         f'<script data-dx="supabase-js" src="{lib}"></script>\n<script data-dx="live-adapter" src="{ada}"></script>\n')
-z = H.rfind('</body>'); open(OUT + '/index.html', 'w', encoding='utf-8').write(H[:z] + live + H[z:])
+z = H.rfind('</body>'); H = H[:z] + live + H[z:]; open(OUT + '/index.html', 'w', encoding='utf-8').write(H)
+# N-3: only the files this index.html references are published — older hashed copies (an old adapter, an old video) are removed
+used = set(re.findall(r'(?:src|data-src)="((?:js|media)/[\w.-]+)"', H)); stale = []
+for sub in ('js', 'media'):
+    for f in sorted(os.listdir(f'{OUT}/{sub}')):
+        if f'{sub}/{f}' not in used: os.remove(f'{OUT}/{sub}/{f}'); stale.append(f'{sub}/{f}')
 # hosting headers (CSP, frame, cache): the template in the repository root, with this build's Supabase origin
 tpl = os.path.join(os.path.dirname(ROOT), 'vercel.json')
 if os.path.exists(tpl):
     origin = '%s://%s' % (u.scheme, u.netloc)
     open(OUT + '/vercel.json', 'w', encoding='utf-8').write(open(tpl, encoding='utf-8').read().replace('https://YOUR-PROJECT.supabase.co', origin).replace('wss://YOUR-PROJECT.supabase.co', origin.replace('https://', 'wss://').replace('http://', 'ws://')))
-print('live build →', OUT, '| scripts:', lib, ada, '| media:', 'splash' if m else 'none')
+print('live build →', OUT, '| index.html %.2f MB' % (len(H.encode('utf-8')) / 1e6), '| scripts:', lib, ada, '+ %d page scripts as files' % len(moved),
+      '| media:', 'splash' if m else 'none', '| removed old files: %d' % len(stale), '| lite copy → no-script notice' if lite else '')

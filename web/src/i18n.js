@@ -164,7 +164,9 @@
     /* deals */
     'Accept quote': 'اقبل العرض', 'Accepted': 'مقبول', 'Applied': 'تم التقديم', 'Closed': 'مغلقة', 'Confirm order': 'أكّد الطلب', 'Confirm received': 'أكّد الاستلام', 'Delivered': 'تم التسليم',
     'Delivery terms': 'شروط التسليم', 'Mark shipped': 'تم الشحن', 'Order confirmed': 'تم تأكيد الطلب', 'Quantity': 'الكمية', 'Quote received': 'وصل العرض', 'Shipped': 'تم الشحن',
-    'Timeline': 'التسلسل الزمني', 'Unit': 'الوحدة', 'You are the sender': 'أنت المرسل', 'You are the receiver': 'أنت المستقبل', 'Send quote': 'أرسل عرضًا', 'Request sent': 'تم إرسال الطلب',
+    'Timeline': 'التسلسل الزمني', 'Unit': 'الوحدة', 'You are the sender': 'أنت المرسل', 'You are the receiver': 'أنت المستقبل', 'Services one per line': 'الخدمات (عنصر في كل سطر)', 'e.g. Metformin HCl': 'مثلًا Metformin HCl', 'e.g. R1-CEP 20XX-XXX': 'مثلًا R1-CEP 20XX-XXX', 'Send quote': 'أرسل عرضًا',
+    /* the other deal actions (they also appear inside notifications: '<company>: <action> — <deal>') */
+    'Revise quote': 'عدّل العرض', 'Withdraw': 'اسحب الطلب', 'Rate supplier': 'قيّم هذا المورّد', 'Send proposal': 'أرسل مقترحًا', 'Start work': 'ابدأ العمل', 'Mark delivered': 'سجّل التسليم', 'Accept offer': 'وافق على العرض', 'Accept counter-offer': 'اقبل العرض المضاد', 'Answer questionnaire': 'أجب عن الاستبيان', 'Approve supplier': 'اعتمد المورّد', 'Reject': 'ارفض', 'Sign NDA': 'وقّع اتفاقية السرية', 'Share details': 'شارك التفاصيل', 'Agree terms': 'وافق على الشروط', 'Shortlist': 'أضف للقائمة المختصرة', 'Invite to interview': 'ادعُ لمقابلة', 'Make offer': 'قدّم عرض عمل', 'Accept job offer': 'اقبل عرض العمل', 'Confirm group price': 'أكّد سعر المجموعة', 'Request sent': 'تم إرسال الطلب',
     'Counter-offer': 'عرض مضاد', 'Rate the supplier': 'قيّم المورّد', 'Rated': 'تم التقييم', 'Proposal sent': 'تم إرسال المقترح', 'In progress': 'قيد التنفيذ', 'Offer sent': 'تم إرسال العرض',
     'Simulate their reply (demo)': 'محاكاة ردهم (تجريبي)', 'Open deal': 'افتح الصفقة', 'Waiting for them': 'بانتظارهم',     
 
@@ -334,6 +336,8 @@
     'new posts this week': ['منشور جديد هذا الأسبوع', 'منشورات جديدة هذا الأسبوع'], 'deals closed': ['صفقة مكتملة', 'صفقات مكتملة'], 'new posts': ['منشور جديد', 'منشورات جديدة'],
     'new requests today': ['طلب جديد اليوم', 'طلبات جديدة اليوم'], 'quote requests today': ['طلب تسعير اليوم', 'طلبات تسعير اليوم'], listing: ['إعلان', 'إعلانات'] };
   function word(n, w) { w = w.toLowerCase().replace(/^request received$/, 'requests received').replace(/^company$/, 'companies'); var f = WORDS[w] || WORDS[w + 's']; return f ? n + ' ' + plural(n, f) : null; }
+  var __cn = null;   /* company names, for the 'Open <company>' tooltip; rebuilt when the directory list changes */
+  function coName(n) { var X = window.dxDir; if (!X || !X.companies) return false; var l = X.companies(); if (!__cn || __cn.l !== l) { __cn = { l: l, s: new Set() }; l.forEach(function (c) { __cn.s.add(c.name); }); } return __cn.s.has(n); }
   var PATTERNS = [
     [/^(\d+)\s*(m|min|h|d|w) ago$/i, function (m) { return 'منذ ' + m[1] + ' ' + unit(m[1], m[2].toLowerCase()); }],
     [/^(\d+)(min|h|d) ago(.*)$/i, function (m) { return 'منذ ' + m[1] + ' ' + unit(m[1], m[2].toLowerCase()) + tr(m[3]); }],
@@ -342,7 +346,9 @@
     [/^(Surplus stock|Licensing dossiers|Group buying)\s*\((\d+)\)$/, function (m) { return ({ 'Surplus stock': 'مخزون فائض', 'Licensing dossiers': 'ملفات ترخيص', 'Group buying': 'شراء جماعي' })[m[1]] + ' (' + m[2] + ')'; }],
     [/^expires (\d{4}-\d{2})$/, function (m) { return 'تنتهي ' + m[1]; }], [/^expired (\d{4}-\d{2})$/, function (m) { return 'انتهت ' + m[1]; }],
     [/^Source: (.+) · updated (.+)$/, function (m) { return 'المصدر: ' + (D[m[1]] || m[1]) + ' · حُدّث ' + gbIn(m[2]); }],
-    [/^Open (.+)’s profile$/, function (m) { return 'افتح ملف ' + m[1]; }], [/^Open (.+)$/, function (m) { return D[m[1]] ? 'افتح ' + D[m[1]] : null; }],
+    [/^Open (.+)’s profile$/, function (m) { return 'افتح ملف ' + m[1]; }], [/^Open (.+)$/, function (m) { return D[m[1]] ? 'افتح ' + D[m[1]] : coName(m[1]) ? 'افتح صفحة ' + m[1] : null; }],
+    [/^listed (.+)$/, function (m) { return 'أدرج ' + m[1]; }], [/^commented: (.+)$/, function (m) { return 'علّق: ' + m[1]; }],   /* activity and notification verbs; the quoted words stay as written */
+    [/^\((.+?)\)\. Questionnaires go to (.+); job applications to (.+)\.$/, function (m) { return '(' + (D[m[1]] || m[1]) + '). الاستبيانات تذهب إلى ' + m[2] + '؛ وطلبات التوظيف إلى ' + m[3] + '.'; }],
     [/^You joined (.+)$/, function (m) { return 'انضممت إلى ' + m[1]; }], [/^You left (.+)$/, function (m) { return 'غادرت ' + m[1]; }]
   ];
   PATTERNS.push(
@@ -443,6 +449,7 @@
     [/^⏱ (\d+) hours?$/, function (m) { return '⏱ ' + m[1] + ' ' + plural(m[1], ['ساعة', 'ساعات']); }], [/^valid (\d+) days$/, function (m) { return 'صالح ' + m[1] + ' ' + plural(m[1], ['يوم', 'أيام']); }],
     [/^You're in the top (\d+)% of active members across your (\d+) groups this month\.$/, function (m) { return 'أنت ضمن أنشط ' + m[1] + '% من الأعضاء في مجموعاتك (' + m[2] + ') هذا الشهر.'; }]
   );
+  PATTERNS.push([/^(.+?): ([A-Z][A-Za-z -]+) — (.+)$/, function (m) { return D[m[2]] ? m[1] + ': ' + D[m[2]] + ' — ' + m[3] : null; }]);   /* last: '<company>: Send quote — <deal>' in notifications */
   var ARROWS = { '→': '←', '←': '→' };
   function put(raw, t, r) {   /* keep the original's surrounding spaces even when its inner spacing differs */
     if (raw.indexOf(t) >= 0) return raw.replace(t, r);
@@ -457,7 +464,7 @@
   function look(t) {
     if (D[t]) return D[t];
     for (var i = 0; i < PATTERNS.length; i++) { var m = PATTERNS[i][0].exec(t); if (m) { var r = PATTERNS[i][1](m); if (r) return r; } }
-    if (t.indexOf(' · ') > 0) { var parts = t.split(' · '), hit = 0; parts = parts.map(function (p) { var q = tr(p); if (q !== p) hit++; return q; }); if (hit) return parts.join(' · '); }
+    if (t.indexOf(' · ') > 0) { var tail = / ·$/.test(t) ? ' ·' : '', parts = (tail ? t.slice(0, -2) : t).split(' · '), hit = 0; parts = parts.map(function (p) { var q = tr(p); if (q !== p) hit++; return q; }); if (hit) return parts.join(' · ') + tail; }   /* 'site · source ·' before a bold expiry */
     var pre = /^([A-Za-z][A-Za-z &/]+:)\s+(.+)$/.exec(t); if (pre && D[pre[1]]) return D[pre[1]] + ' ' + pre[2];
     /* leading icons / trailing arrows around a known phrase */
     var mm = /^([^A-Za-z]*?)([A-Za-z][^→←]*?)(\s*[→←])?$/.exec(t);
@@ -473,6 +480,10 @@
   var ORIG = new WeakMap(), LAST = new WeakMap(), LASTA = new WeakMap(), ATTR = ['placeholder', 'title', 'aria-label'];   /* LAST = what we wrote, so our own output is never translated again */
   window.dxOrigText = function (el) { if (!el) return ''; var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), o = ''; while (w.nextNode()) { var n = w.currentNode; o += ORIG.has(n) ? ORIG.get(n) : n.nodeValue; } return o; };
   function isAr() { return document.documentElement.lang === 'ar'; }
+  /* layers that split a text node (emoji → icon, ✓ → seal) rebuild it from the English original and hand each piece back here, so switching to English restores it */
+  window.dxI18nOrig = function (n) { return ORIG.has(n) ? ORIG.get(n) : null; };
+  window.dxI18nAdopt = function (n) { if (!n || !isAr()) return; var v = n.nodeValue, t = tr(v); if (t !== v) { ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else { ORIG.delete(n); LAST.delete(n); } };
+  window.dxI18nAttrs = function (el) { if (el && isAr()) walk(el); };   /* attributes a layer set after the page was translated (tooltips) */
   function walk(root) {
     if (!root || !isAr()) return;
     var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { var p = n.parentElement; return !p || p.closest(SKIP) || p.matches(SKIP_SELF) || !/[A-Za-z]/.test(n.nodeValue) ? 2 : 1; } });

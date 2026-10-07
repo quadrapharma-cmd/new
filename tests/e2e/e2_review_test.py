@@ -1,5 +1,6 @@
 """E2 end-to-end: Admin → Review with real cases — approve a verification (company verified, owner notified), publish a warning
-(person notified, can reply), mark a certificate checked, resolve a report filed through the real dialog; documents open
+(person notified, can reply), mark a certificate checked, resolve a report filed through the real dialog (the reported company sees it without the
+reporter and cannot close it itself — F-32); documents open
 through short-lived links; nobody outside the Drugbox team can decide."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os, urllib.request
@@ -39,6 +40,14 @@ with sync_playwright() as p:
     C.fill('.dbk-ov #rpT', 'The phone number is out of service'); C.fill('.dbk-ov #rpF', '+20 2 0000 0000')
     C.evaluate("(()=>{var o=[...document.querySelectorAll('.dbk-ov')].filter(e=>e.offsetWidth>0).pop();[...o.querySelectorAll('button')].find(x=>/send report/i.test(x.textContent)).click()})()"); C.wait_for_timeout(2000)
     T('a report filed through the real dialog is stored', sql(f"select section||'|'||status from public.company_reports where company_id={cid}") == 'About|open')
+    # the reported company: sees the report without the reporter, and "Mark fixed" leaves it to Drugbox (F-32)
+    fresh(O); O.evaluate(f"dxHub.workspace('pending-pharma-{st}')"); O.wait_for_timeout(1500)
+    O.evaluate("document.querySelector('#dxDir [data-wtab=reports]').click()"); O.wait_for_timeout(600)
+    wt = O.inner_text('#dxDir')
+    T('the company sees the report in its workspace, without who sent it', 'out of service' in wt and f'Dr. Warned {st}' not in wt, wt[:300])
+    O.evaluate("document.querySelector('#dxDir [data-wfix]').click()"); O.wait_for_timeout(2500)
+    T('"Mark fixed" by the company does not close it (it stays in the Drugbox queue)', sql(f"select status from public.company_reports where company_id={cid}") == 'open'
+      and O.evaluate("!!document.querySelector('#dxDir [data-wfix]')"), O.inner_text('#dxDir')[:300])
     # the reviewer
     fresh(A); A.evaluate("goto('admin')"); A.wait_for_timeout(800); A.evaluate("switchAdminTab('review')"); A.wait_for_timeout(2500)
     tabs = A.evaluate("[...document.querySelectorAll('.dx-mod-tab')].map(t=>t.textContent.trim())")

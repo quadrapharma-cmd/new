@@ -44,6 +44,7 @@ supabase/
   migrations/0021_trust_hub_deals.sql  code review 2026-10: trust layer, company hub, deals engine, groups
   migrations/0022_integrity_perf.sql  code review 2026-10: FKs, notification dedupe, deals policy + indexes, lean directory RPC, counters, speed
   migrations/0023_payments_moderation_storage.sql  code review 2026-10: payments, moderation, storage buckets (+ Edge Functions)
+  migrations/0024_followups.sql  code review 2026-10, round 2: Fawry reference check, faster my_interactions, review roles, company reports read via RPC, account deletion keeps companies
   functions/                     payments-create, paymob-webhook, fawry-webhook (see functions/PAYMENTS.md)
   tests/_local_supabase_stub.sql the parts of Supabase the migrations need (auth.uid, storage.foldername… with Supabase's own definitions)
   tests/*.rls.sql, integrity_perf.sql   database security / integrity suites (each on a fresh database: stub + all migrations)
@@ -65,6 +66,7 @@ vercel.json                      security and cache headers (template: live.py w
 python3 web/build/build.py                                    # → web/dist/drugbox.html (needs Pillow + Playwright/Chromium)
 python3 tools/parity_check.py web/reference/demo-approved.html   # must print PARITY OK
 python3 tests/run_all.py sql sweep                            # database suites + schema sweep, each on a fresh database
+python3 tests/run_all.py demo demo-full                       # demo suites + legacy suites + page-switching speed A/B (stress.py vs stress_base.py)
 python3 tools/migration_check.py                              # every migration re-runs cleanly and puts back a missing policy (must print OK)
 ```
 The build is deterministic: two builds of the same sources give the same file. The lite snapshot (the read-only copy shown
@@ -117,7 +119,9 @@ python3 tests/e2e/c2_deals_test.py     # two companies — RFQ → quote → acc
 Demo suites open `DEMO_FILE` (default /tmp/drugbox_brand.html — copy web/dist/drugbox.html there, or set it); the lite suites
 also need `python3 tests/fixtures/make_demo_variants.py` (`DEMO_VARIANTS`, default /tmp) and run on the browsers in
 `DX_ENGINES` (default webkit,chromium; `tests/run_all.py legacy` sets both). Speed: `legacy/stress.py` (DEMO_FILE) vs
-`legacy/stress_base.py` (BASE_FILE) side by side.
+`legacy/stress_base.py` (BASE_FILE) side by side — `tests/run_all.py stress` runs them alternated (`STRESS_ROUNDS`, default 2;
+BASE_FILE defaults to web/reference/demo-approved.html) and fails when the build switches pages more than 25% slower or has
+JS errors; `tests/run_all.py demo-full` = legacy + stress.
 Every suite prints `N / N` and exits 1 when a check fails. Checks marked in the code with a finding number (F-01, F-03, F-08,
 F-09, F-115) fail on a database without migrations 0020–0023 — they are the code review's exploits, kept as tests.
 
@@ -152,7 +156,7 @@ F-09, F-115) fail on a database without migrations 0020–0023 — they are the 
 | E3 | Training: courses and enrollments from the database (approved course card as template), six courses seeded, Drugbox manages courses, enrollment stored and private, one counter | ✅ done — 10/10 |
 | E4a | Payments server side: card + Vodafone Cash/wallets (Paymob Unified Checkout), Fawry reference numbers (FawryPay), InstaPay transfer + receipt reviewed by Drugbox; prices and VAT from the database; activation only after a verified signature and matching amount; see supabase/functions/PAYMENTS.md | ✅ done — 20/20 through the real functions |
 | E4b | Checkout in the app: the VIP and boost windows offer card, Vodafone Cash & wallets, Fawry and InstaPay (demo shows the choice; the demo flow is unchanged). Live: Paymob page and back ("Payment received"), Fawry reference screen, InstaPay transfer number + receipt; Admin → Review → Payments to confirm transfers | ✅ done — 14/14 in the browser |
-| Review | Code review October 2026 (docs/CODE-REVIEW-2026-10.md): fixes in migrations 0020–0023, the adapter, the local stack, the build and the test suites | ✅ done |
+| Review | Code review October 2026 (docs/CODE-REVIEW-2026-10.md): fixes in migrations 0020–0024, the adapter, the local stack, the build and the test suites | ✅ done |
 | E5 | Real Supabase project, load test at 100k users, launch checklist (below) | |
 
 
@@ -163,7 +167,12 @@ Every phase ends with: parity check, database security tests, the demo's own tes
   On Supabase, leave it on; Realtime events and the timer run the same code (`tick`), which the tests exercise.
 - live.py refuses a key whose JWT role is not `anon` (never the service key in the browser), a non-https URL (except
   localhost), and a demo build older than its sources (`DRUGBOX_ALLOW_STALE=1` to override). The splash video becomes a
-  separate content-hashed file (`media/`), so the page itself is small and the video is cached.
+  separate content-hashed file (`media/`), and so does every inline script over 2 KB (the layers, the app, the people photos;
+  `js/<name>.<hash>.js`, a plain `<script src>` in the same place, so they still run in the same order) and three.js (fetched
+  by the lazy globe loader on large screens only). The read-only lite copy (for file previews that cannot run scripts) is
+  for the offline file only: online it is replaced by a short `<noscript>` notice. `index.html` is about 0.6 MB (was 3.4 MB);
+  the demo file is not changed. Files in `js/` and `media/` that the new `index.html` does not reference are deleted, so an
+  old adapter or video is never deployed.
 
 ## Known follow-ups
 - Videos the browser cannot read (e.g. iPhone HEVC on some Windows PCs) are refused with "try MP4 (H.264)"; server-side transcoding would accept them — a launch-stage option.
@@ -186,8 +195,8 @@ Every phase ends with: parity check, database security tests, the demo's own tes
   (`prepareThreshold=0` / PostgREST `db-prepared-statements = false`). PostgREST and Realtime stay on the direct connection
   (prepared statements, `notify pgrst` schema reloads, the replication slot). After the first production migration, check that
   the schema reload happened (a new column is visible through the API at once).
-- **Headers:** `vercel.json` sends a Content-Security-Policy (scripts are inline in the approved page, so `'unsafe-inline'`
-  is needed for scripts; no `eval`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, Referrer-Policy,
+- **Headers:** `vercel.json` sends a Content-Security-Policy (the page scripts are same-origin files under `js/` ('self'); a few
+  small scripts and the approved page's `onclick` handlers stay inline, so `'unsafe-inline'` is still needed; no `eval`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, Referrer-Policy,
   Permissions-Policy and HSTS, plus caching: `index.html` no-cache, `js/` and `media/` (content-hashed) immutable.
   Replace `YOUR-PROJECT` in it with the Supabase project reference. The local gateway sends the same headers (without HSTS).
 - **supabase-js:** the vendored `web/src/vendor/supabase-2.45.4.min.js` is byte-identical to the npm release; its bundled

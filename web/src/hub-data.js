@@ -10,6 +10,8 @@
     if (window.dxStoreHook) { var __h = window.dxStoreHook(k, v); if (__h !== undefined) return __h; } try { if (v === undefined) return __typed(k, JSON.parse(localStorage.getItem('dx_' + k) || 'null')); localStorage.setItem('dx_' + k, JSON.stringify(v)); return true; } catch (e) { quotaToast(); return false; } }
   var __qt = 0; function quotaToast() { if (Date.now() - __qt < 3000) return; __qt = Date.now(); if (window.DBK) window.DBK.toast('Could not save — the browser storage is full. Remove large photos or old data and try again.'); }   /* a failed save is never reported as success */
   function ver() { return window.__dxStoreVer || 0; }
+  var __rc = null;   /* read-only stored values parsed once per store version: a directory render asks for supplier_reviews / meta_<slug> about a thousand times */
+  function cached(k) { var v = ver(); if (!__rc || __rc.v !== v) __rc = { v: v, m: Object.create(null) }; if (!(k in __rc.m)) __rc.m[k] = store(k); return __rc.m[k]; }
   function edits() { return X() && X().edits ? X().edits() : (store('company_edits') || {}); }   /* company_edits parsed once per store version, shared with the directory */
   var DAY = 864e5, NOW = function () { return Date.now(); };
 
@@ -126,7 +128,7 @@
   /* ── freshness: every section has a source and a date ── */
   var SECTIONS = ['about', 'products', 'sites', 'contact'];
   function metaOf(co, sec) {
-    var m = (store('meta_' + co.slug) || {})[sec];
+    var m = (cached('meta_' + co.slug) || {})[sec];
     if (m) return m;
     if (co.status === 'unclaimed') return { src: 'Public industry list', at: new Date('2025-03-01').getTime() };
     var seedAt = { 'quadra-pharm': '2026-08-20', 'medsinia-industries': '2026-07-02', 'delta-analytical-labs': '2026-09-01', 'pharaonic-logistics': '2026-06-15', 'regpath-consulting': '2026-05-10' }[co.slug] || '2025-12-10';
@@ -139,7 +141,7 @@
   /* ── reports of wrong information, review replies and disputes ── */
   function reports(v) { if (v === undefined) return store('reports') || []; store('reports', v); }
   function addReport(slug, section, text, fix) { var l = reports(); l.unshift({ id: 'R' + NOW(), slug: slug, section: section, text: text, fix: fix, by: (window.ME || {}).name || 'User', at: NOW(), status: 'open' }); reports(l); }
-  function reviewsOf(slug) { var rv = (store('supplier_reviews') || {})[slug] || [], meta = store('review_meta') || {}; return rv.map(function (r) { return Object.assign({}, r, meta[r.deal] || {}); }); }
+  function reviewsOf(slug) { var rv = (cached('supplier_reviews') || {})[slug] || [], meta = cached('review_meta') || {}; return rv.map(function (r) { return Object.assign({}, r, meta[r.deal] || {}); }); }
   function reviewMeta(dealId, patch) { var m = store('review_meta') || {}; m[dealId] = Object.assign({}, m[dealId] || {}, patch); store('review_meta', m); }
 
   /* ── activity log (inside the company) ── */
@@ -152,7 +154,7 @@
     var DL = window.dxDeals; if (!DL) return { orders: 0 };
     var recv = DL.all().filter(function (d) { return d.to.slug === slug; });
     var done = recv.filter(function (d) { return ['quote', 'surplus', 'service'].indexOf(d.type) >= 0 && ['delivered', 'closed'].indexOf(d.status) >= 0; });
-    var ontime = done.filter(function (d) { return d.ontime !== false; }).length, rv = (store('supplier_reviews') || {})[slug] || [];
+    var ontime = done.filter(function (d) { return d.ontime !== false; }).length, rv = (cached('supplier_reviews') || {})[slug] || [];
     var resp = recv.map(function (d) { var e = d.events.find(function (x) { return x.by === 'to'; }); return e ? (e.at - d.at) / 36e5 : null; }).filter(function (x) { return x != null; }).sort(function (a, b) { return a - b; });
     return { orders: done.length, ontime: done.length ? Math.round(ontime / done.length * 100) : null, rating: rv.length ? rv.reduce(function (a, r) { return a + r.stars; }, 0) / rv.length : null, reviews: rv.length,
       response: resp.length ? resp[Math.floor(resp.length / 2)] : null, requests: recv.length, answered: recv.filter(function (d) { return d.events.some(function (x) { return x.by === 'to'; }); }).length };
@@ -175,7 +177,7 @@
   function lastActive(co) {
     var t = 0, a = activity(co.slug)[0]; if (a) t = a.at;
     t = Math.max(t, dealTimes()[co.slug] || 0);
-    SECTIONS.forEach(function (s) { var m = (store('meta_' + co.slug) || {})[s]; if (m) t = Math.max(t, m.at); });
+    SECTIONS.forEach(function (s) { var m = (cached('meta_' + co.slug) || {})[s]; if (m) t = Math.max(t, m.at); });
     if (SEED_ACTIVE[co.slug] != null) t = Math.max(t, NOW() - SEED_ACTIVE[co.slug] * DAY);
     return t;
   }
@@ -213,7 +215,7 @@
   function health() {
     var cs = X().companies(), DL = window.dxDeals, all = DL ? DL.all() : [], month = all.filter(function (d) { return NOW() - d.at < 30 * DAY; });
     var recv = all.filter(function (d) { return d.to.slug; }), answered = recv.filter(function (d) { return d.events.some(function (e) { return e.by === 'to'; }); });
-    var disputed = Object.keys(store('review_meta') || {}).filter(function (k) { return (store('review_meta') || {})[k].disputed; });
+    var __m = cached('review_meta') || {}, disputed = Object.keys(__m).filter(function (k) { return __m[k].disputed; });
     return { total: cs.length, claimed: cs.filter(function (c) { return c.status !== 'unclaimed'; }).length, verified: cs.filter(function (c) { return c.status === 'verified'; }).length,
       complete: cs.filter(function (c) { return completeness(c).pct >= 80; }).length, avgComplete: Math.round(cs.reduce(function (a, c) { return a + completeness(c).pct; }, 0) / cs.length),
       responseRate: recv.length ? Math.round(answered.length / recv.length * 100) : null, dealsMonth: month.length, stale: cs.filter(function (c) { return staleSections(c).length; }),

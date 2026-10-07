@@ -1,9 +1,11 @@
 """D3 end-to-end: groups from the database — create through the window (creator becomes admin), another member joins with the card button,
-opens the real group detail, leaves; security on roles, private groups and deletion; the creator deletes the group."""
+opens the real group detail, leaves; security on roles, private groups and deletion; a private group's admin invites a member with
+the approved "Invite" window (real group_invites rows) and the invited member joins; the creator deletes the group."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
 from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
 
+TOASTS = "[...document.querySelectorAll('.dbk-toast, #toast')].map(t=>t.textContent).join(' | ')"   # the approved toasts (DBK and the page's own)
 st = ST; PW = 'Strong-pass-2026'; G = f'Sterile Manufacturing {st}'
 def signup(pg, name, email):
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
@@ -13,7 +15,7 @@ with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); errs = []
     A, B = [b.new_context(viewport={'width': 1440, 'height': 900}).new_page() for _ in range(2)]
     for pg in (A, B): pg.on("pageerror", lambda e: errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.accept())
-    a = signup(A, 'Dr. Group Creator', f'gcre{st}@x.test'); bb = signup(B, 'Dr. Group Member', f'gmem{st}@x.test')
+    a = signup(A, 'Dr. Group Creator', f'gcre{st}@x.test'); BN = f'Dr. Group Member {st[-8:]}'; bb = signup(B, BN, f'gmem{st}@x.test')   # a name no other run uses: invitations find people by name
     A.evaluate("goto('groups')"); A.wait_for_timeout(2500)
     T('the groups page shows real groups, not the demo ones', not A.evaluate("[...document.querySelectorAll('#gx .gcard-title')].some(t=>t.textContent==='API Sourcing & Supply')"))
     A.evaluate("openCreate()"); A.wait_for_timeout(400)
@@ -40,6 +42,28 @@ with sync_playwright() as p:
     T('cannot join a private group without an invitation', refused(r) and sql(f"select count(*) from public.group_members where group_id={pid} and user_id='{bb}'") == '0', r)
     r = B.evaluate(f"dxLive.sb.from('group_members').select('user_id').eq('group_id',{pid}).then(r=>(r.data||[]).length)")
     T("a private group's members are hidden from outsiders", r == 0)
+    # F-29: the approved "Invite" button (admin view) saves invitations; the invited member sees the private group and joins it
+    A.evaluate("goto('feed')"); A.wait_for_timeout(300); A.evaluate("goto('groups')"); wait_for(lambda: A.evaluate(f"!!document.querySelector('#gx .gcard[data-gid=\"{pid}\"]')"), 10)
+    A.evaluate(f"dxLive.openGroup({pid})"); A.wait_for_timeout(500)
+    A.evaluate("document.querySelectorAll('#adminActions .btn-secondary')[1].click()"); A.wait_for_timeout(400)
+    T('the approved "Invite people" window opens', A.evaluate("!!document.querySelector('.dbk-box #ivE')"))
+    A.fill('#ivE', f'Nobody Such {st}'); A.evaluate("document.querySelector('.dbk-box [data-a=ok]').click()"); A.wait_for_timeout(1500)
+    T('an unknown name sends nothing, keeps the window open and says why', sql(f"select count(*) from public.group_invites where group_id={pid}") == '0' and A.evaluate("!!document.querySelector('.dbk-box #ivE')")
+      and 'No Drugbox member found' in A.evaluate(TOASTS), A.evaluate(TOASTS))
+    A.fill('#ivE', BN.upper()); A.evaluate("document.querySelector('.dbk-box [data-a=ok]').click()")
+    wait_for(lambda: sql(f"select count(*) from public.group_invites where group_id={pid}") == '1', 10)
+    T('the invitation is saved (group_invites row by the admin)', sql(f"select user_id||'|'||invited_by from public.group_invites where group_id={pid}") == f'{bb}|{a}')
+    A.wait_for_timeout(300)
+    T('the approved toast confirms it and the window closes', 'Invites sent to 1 person' in A.evaluate(TOASTS) and not A.evaluate("!!document.querySelector('.dbk-box #ivE')"),
+      A.evaluate(TOASTS))
+    B.evaluate("goto('feed')"); B.wait_for_timeout(300); B.evaluate("goto('groups')"); wait_for(lambda: B.evaluate(f"!!document.querySelector('#gx .gcard[data-gid=\"{pid}\"]')"), 10)
+    T('the invited member sees the private group', B.evaluate(f"!!document.querySelector('#gx .gcard[data-gid=\"{pid}\"]')"))
+    B.evaluate(f"document.querySelector('#gx .gcard[data-gid=\"{pid}\"] .gcard-btn').click()")
+    wait_for(lambda: sql(f"select count(*) from public.group_members where group_id={pid} and user_id='{bb}'") == '1', 10)
+    T('the invited member joins; member_count 2; the invitation is used up', sql(f"select role from public.group_members where group_id={pid} and user_id='{bb}'") == 'member'
+      and sql(f"select member_count from public.groups where id={pid}") == '2' and sql(f"select count(*) from public.group_invites where group_id={pid}") == '0')
+    r = B.evaluate(f"dxLive.sb.from('group_invites').insert({{group_id:{pid},user_id:'{a}',invited_by:'{bb}'}})" + ERR)
+    T('a plain member cannot invite', refused(r), r)
     r = B.evaluate(f"dxLive.sb.from('groups').delete().eq('id',{gid}).select().then(r=>(r.data||[]).length)")
     T("cannot delete someone else's group", r == 0 and sql(f"select count(*) from public.groups where id={gid}") == '1')
     A.evaluate("goto('feed')"); A.wait_for_timeout(300); A.evaluate("goto('groups')"); A.wait_for_timeout(2500)

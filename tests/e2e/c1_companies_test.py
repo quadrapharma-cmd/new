@@ -1,5 +1,7 @@
 """C1 end-to-end: directory from the database, Arabic ingredient search, company page sites/certificates, the real create wizard,
-my companies / acting, page edits saved, verification request, and the database guards."""
+my companies / acting, page edits saved, verification request, the database guards, and the directory a page at a time (F-05):
+100 companies when Companies opens, the next 100 on "Show more", a search asks the database, a company from a page not loaded
+opens by its slug, and a revisit within 2 minutes downloads nothing."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
 from _dx import APP_URL as U, DB, R, T, sql, ST, STN, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
@@ -21,7 +23,9 @@ with sync_playwright() as p:
     pg.evaluate("dxDir.S.view=null;goto('companies')"); pg.wait_for_timeout(3000)
     names = pg.evaluate("dxDir.companies().map(c=>c.name)")
     T('directory lists companies from the database, not the 17 demo companies', CO in names and 'Medsinia Industries' not in names, names[:5])
-    T('an unclaimed page from the public list is listed (labelled unclaimed)', pg.evaluate(f"dxDir.companies().some(c=>c.name==='Unclaimed Pharma {st}'&&c.status==='unclaimed'&&c.owner!==ME.id)"))
+    unc = f"dxDir.companies().some(c=>c.name==='Unclaimed Pharma {st}'&&c.status==='unclaimed'&&c.owner!==ME.id)"
+    if not pg.evaluate(unc): pg.fill('#hbQ', f'Unclaimed Pharma {st}'); wait_for(lambda: pg.evaluate(unc), 10); pg.fill('#hbQ', ''); pg.wait_for_timeout(300)   # beyond the first page: found by a search
+    T('an unclaimed page from the public list is listed (labelled unclaimed)', pg.evaluate(unc))
     T('the company shows as verified with its certificate', pg.evaluate(f"(()=>{{var c=dxDir.bySlug('{slug}');return c&&c.status==='verified'&&c.certs.indexOf('WHO-GMP')>=0}})()"))
     pg.fill('#hbQ', 'ميتفورمين'); pg.wait_for_timeout(1500)
     T('Arabic active-ingredient search finds the company ("Who makes")', CO in pg.inner_text('#dxDir'), pg.inner_text('#dxDir')[:200])
@@ -67,6 +71,36 @@ with sync_playwright() as p:
     T('a new company can never start verified or VIP', r == 'pending|free', r)
     r = pg.evaluate(f"dxLive.sb.from('companies').update({{tagline:'hacked'}}).eq('id',{cid}).select().then(r=>(r.data||[]).length)")
     T("cannot edit someone else's company", r == 0 and sql(f"select tagline from public.companies where id={cid}") == 'Solid dosage forms')
+    # F-05: the directory a page at a time — a fresh tab (same session, a fresh adapter) at 260+ companies
+    sql(f"insert into public.companies (name, type, status, source, sectors, governorate) select 'Paging Co {st} '||lpad(g::text,3,'0'),'Manufacturer','unclaimed','public_list','{{Manufacturer}}','Cairo' from generate_series(1,260) g")
+    total = int(sql("select count(*) from public.companies where status <> 'suspended'"))
+    P2 = pg.context.new_page(); P2.on("pageerror", lambda e: errs.append(str(e)[:150])); calls = []
+    P2.on('response', lambda r: calls.append(r) if '/rpc/directory_companies' in r.url else None)
+    P2.goto(U, wait_until='load'); P2.wait_for_timeout(400); P2.evaluate('endSplash()'); wait_for(lambda: P2.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); P2.wait_for_timeout(1500)
+    T('signing in loads no directory page', not calls, [c.url for c in calls])
+    P2.evaluate("dxDir.S.view=null;goto('companies')"); wait_for(lambda: P2.evaluate("document.querySelectorAll('#dxDir .dr-card').length") > 0 and len(calls) >= 1, 10)   # evaluate first: it lets Playwright deliver the response events; P2.wait_for_timeout(800)
+    import json as _j
+    body = lambda c: _j.loads(c.request.post_data or '{}')
+    first = [body(c) for c in calls]; kb = sum(len(c.body()) for c in calls) / 1024
+    n1 = P2.evaluate("dxDir.companies().length")
+    T('opening Companies downloads ONE page of 100 (not every company)', len(calls) == 1 and first[0].get('p_limit') == 100 and first[0].get('p_offset') == 0 and 100 <= n1 <= 110 and n1 < total, (first, n1, total))
+    print(f'   (first open: {len(calls)} request, {kb:.0f} KB for {n1} of {total} companies)')
+    T('the old full-directory call is never made', not any(c.url.split('?')[0].endswith('/rpc/directory_companies') for c in calls))
+    P2.evaluate("document.querySelector('#dxDir [data-hmore]').click()"); wait_for(lambda: P2.evaluate("dxDir.companies().length") > n1 and len(calls) >= 2, 10)
+    T('"Show more" fetches the next page (offset 100)', len(calls) == 2 and body(calls[1]).get('p_offset') == 100 and P2.evaluate("dxDir.companies().length") >= 200, [body(c) for c in calls])
+    P2.evaluate("goto('feed')"); P2.wait_for_timeout(300); P2.evaluate("dxDir.S.view=null;goto('companies')"); P2.wait_for_timeout(1200)
+    T('a revisit within 2 minutes downloads nothing', len(calls) == 2, [body(c) for c in calls])
+    far = f'Paging Co {st} 259'
+    T('(a company beyond the loaded pages is not in the list yet)', not P2.evaluate(f"dxDir.companies().some(c=>c.name==='{far}')"))
+    P2.fill('#hbQ', far); wait_for(lambda: far in P2.inner_text('#dxDir'), 10)
+    T('a search asks the database (p_q) and finds a company beyond the loaded pages', far in P2.inner_text('#dxDir') and any(body(c).get('p_q') == far.lower() and body(c).get('p_offset') == 0 for c in calls), [body(c) for c in calls])
+    T('the search box keeps focus while the results arrive', P2.evaluate("document.activeElement && document.activeElement.id") == 'hbQ')
+    P2.fill('#hbQ', ''); P2.wait_for_timeout(400)
+    s250 = sql(f"select slug from public.companies where name='Paging Co {st} 250'")
+    T('(that one is not loaded either)', not P2.evaluate(f"!!dxDir.bySlug('{s250}')"))
+    P2.evaluate(f"goto('feed')"); P2.wait_for_timeout(300); P2.evaluate(f"dxDir.open('{s250}')"); wait_for(lambda: f'Paging Co {st} 250' in P2.inner_text('#dxDir'), 10)
+    T('a link to a company from a page not loaded opens its page (fetched by its slug)', P2.evaluate(f"dxDir.S.open") == s250 and f'Paging Co {st} 250' in P2.inner_text('#dxDir') and 'Find any pharma company' not in P2.inner_text('#dxDir'), P2.inner_text('#dxDir')[:200])
+    P2.close()
     T('no errors in the page', not errs, errs)
     b.close()
 done()

@@ -30,7 +30,7 @@ comes from. Never rewrite or restyle a page for the live app.
 - People get small local numeric ids (1001+) mapped to UUIDs (`aid()`/`uuidOf()`), because the interface writes ids
   unquoted and `parseInt`s them. `gotoProfile` fetches unseen people first (otherwise `U()` falls back to "me").
 
-## Database (supabase/migrations 0001–0019)
+## Database (supabase/migrations 0001–0024)
 - Every migration ends with `notify pgrst, 'reload schema';`.
 - After any migration run `psql -f supabase/tests/schema_sweep.sql` — it must print three "none" lines:
   **RLS on with no policy** (made five features unusable in production: group members, post media, company followers…),
@@ -77,10 +77,10 @@ Done: A foundation · B auth/feed/network/notifications/messages · C companies/
 D marketplace/jobs/trust layer/groups · intro videos · E1 uploads and private documents · E2 Admin → Review ·
 E3 training · E4 payments (server + checkout).
 Code review (October 2026, `docs/CODE-REVIEW-2026-10.md`, F-01…F-178): fixed in migrations 0020 security core, 0021 trust/hub/deals,
-0022 integrity/speed, 0023 payments/moderation/storage, plus the adapter, local stack, build and tests — run everything with
+0022 integrity/speed, 0023 payments/moderation/storage, 0024 round-2 follow-ups, plus the adapter, local stack, build and tests — run everything with
 `python3 tests/run_all.py` (exits non-zero on any failure); the build is deterministic and parity compares the whole file.
 
-**Next — E5 launch:** real Supabase project (apply 0001–0023, storage buckets, function secrets), Vercel deploy (web/dist/live + its vercel.json),
+**Next — E5 launch:** real Supabase project (apply 0001–0024, storage buckets, function secrets), Vercel deploy (web/dist/live + its vercel.json),
 k6 load test at 100k users / 2,000 concurrent against staging, Sentry, backups, domain.
 
 ### Waiting on the owner

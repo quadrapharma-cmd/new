@@ -16,7 +16,7 @@ function userJson(u) { return { id: u.id, aud: 'authenticated', role: 'authentic
 function session(u) { const now = Math.floor(Date.now() / 1000), rt = crypto.randomBytes(24).toString('hex'); refresh.set(rt, { uid: u.id, used: 0 });
   for (const [k, v] of refresh) if (v.used && Date.now() - v.used > REUSE_MS) refresh.delete(k);   // the map does not grow for ever
   return { access_token: sign({ sub: u.id, role: 'authenticated', aud: 'authenticated', email: u.email, iat: now, exp: now + 3600 }), token_type: 'bearer', expires_in: 3600, expires_at: now + 3600, refresh_token: rt, user: userJson(u) }; }
-/* the same response headers a production host sends (see vercel.json); the app is one page with inline scripts, so 'unsafe-inline' is needed for scripts (no eval) */
+/* the same response headers a production host sends (see vercel.json): the page scripts are same-origin files in /js ('self'); small inline scripts and onclick handlers remain, so 'unsafe-inline' too (no eval) */
 const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; " +
   "img-src 'self' data: blob: http://localhost:* http://127.0.0.1:*; media-src 'self' data: blob: http://localhost:* http://127.0.0.1:*; " +
   "connect-src 'self' data: blob: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:* https://api.exchangerate.host; worker-src 'self' blob:; " +   // data:/blob: — the app turns picked files into uploads with fetch()

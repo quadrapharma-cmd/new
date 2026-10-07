@@ -244,7 +244,7 @@ insert into r(name,ok) select 'F-26 anon finds no open-to-work candidate', pg_te
 insert into r(name,ok) select 'F-26 the login page still has what it needs (settings, ticker, prices)', (select count(*)>0 from public.settings) and (select count(*)>0 from public.ticker_items) and (select count(*)>0 from public.payment_products);
 insert into r(name,ok) select 'F-169 anon cannot list the objects of a public bucket', (select count(*)=0 from storage.objects where bucket_id='videos');
 select pg_temp.as_user(:C);
-insert into r(name,ok) select 'F-26 members read people and companies', (select count(*)>0 from public.profiles) and (select count(*)>0 from public.companies) and (select json_array_length(public.directory_companies(10))>0);
+insert into r(name,ok) select 'F-26 members read people and companies', (select count(*)>0 from public.profiles) and (select count(*)>0 from public.companies) and (select json_array_length(public.directory_companies_page(10))>0);
 insert into r(name,ok) select 'F-26 members still see the open buying groups', (select count(*)=1 from public.deals where type='group' and title='Metformin buying group');
 insert into r(name,ok) select 'F-169 members still see bucket objects (replace/remove keep working)', (select count(*)=1 from storage.objects where bucket_id='videos');
 
@@ -262,7 +262,7 @@ insert into r(name,ok) select 'F-27 members cannot run pgcrypto / pg_trgm either
   and not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace join pg_depend d on d.objid=p.oid and d.classid='pg_proc'::regclass and d.deptype='e'
                  where n.nspname='public' and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute')));
 insert into r(name,ok) select 'F-27 deal_receiver is internal to the deals engine', pg_temp.err($$select public.deal_receiver(1,'quote')$$)='42501';
-insert into r(name,ok) select 'F-27 the RPCs the app calls still run for members', (select json_typeof(public.directory_companies(5))='array') and (select count(*)>=0 from public.get_reviews_many(array['b0000000-0000-0000-0000-00000000000b'::uuid],'employer')) and (select count(*)>=0 from public.my_interactions()) and public.company_track_record(1) is not null;
+insert into r(name,ok) select 'F-27 the RPCs the app calls still run for members', (select json_typeof(public.directory_companies_page(5))='array') and (select count(*)>=0 from public.get_reviews_many(array['b0000000-0000-0000-0000-00000000000b'::uuid],'employer')) and (select count(*)>=0 from public.my_interactions()) and public.company_track_record(1) is not null;
 reset role;
 select pg_temp.as_user(:C);
 set local enable_seqscan = off;

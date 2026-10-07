@@ -13,7 +13,9 @@ Amounts always come from `payment_products` (VAT 14% added in the database). Act
 How a callback finds its order (migration 0023):
 - **Paymob** — by Paymob's own order id (`obj.order.id`), which is inside the HMAC. `payments-create` stores it
   (`intention_order_id` of the intention) with the order; `merchant_order_id` is *not* signed, so it is only logged.
-- **Fawry** — by `merchantRefNumber` (`DBX<id>`), which is inside Fawry's signature.
+- **Fawry** — by `merchantRefNumber` (`DBX<id>`), which is inside Fawry's signature, and only with the Fawry reference number
+  `payments-create` received for that order (migration 0024): Fawry's signed string has no separators, so the webhook also
+  requires `paymentAmount` = `orderAmount` (Drugbox pays Fawry's fee; the customer pays exactly the order amount).
 - Only a `pending` order paid by that provider's method is confirmed: an InstaPay order is confirmed only in Admin → Review.
   One provider transaction pays one order (unique in the database).
 - If the listing or company page was deleted (or the buyer no longer manages the company) before the money arrived, the order

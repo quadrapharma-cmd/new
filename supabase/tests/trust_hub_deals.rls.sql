@@ -104,10 +104,14 @@ select pg_temp.no('F-10 connection + a one-way message: still no review',
 select pg_temp.as_user('d2000000-0000-0000-0000-000000000001');
 select pg_temp.step('the employer writes back', $$insert into public.messages (sender_id, receiver_id, body) values (pg_temp.u(1), pg_temp.u(4), 'hello back')$$);
 select pg_temp.as_user('d2000000-0000-0000-0000-000000000004');
-select pg_temp.step('the contact reviews the employer',
-  $$insert into public.job_reviews (reviewer, reviewee, reviewee_role, c1,c2,c3,c4, body, anonymous) values (pg_temp.u(4), pg_temp.u(1), 'employer', 3,3,3,3, 'We talked at length about a role; a fair and clear process.', true)$$);
-select pg_temp.ok('F-10 connection + messages both ways = real interaction (review stored)', $$exists (select 1 from public.job_reviews where reviewer = pg_temp.u(4) and reviewee = pg_temp.u(1))$$);
-select pg_temp.ok('F-10 …and its anonymous label is "Anonymous", not "Verified applicant"', $$(select author from public.get_reviews(pg_temp.u(1), 'employer') where mine) = 'Anonymous'$$);
+select pg_temp.no('F-10 (0024) a conversation does not make someone reviewable as an employer (only applying does)',
+  $$insert into public.job_reviews (reviewer, reviewee, reviewee_role, c1,c2,c3,c4, body, anonymous) values (pg_temp.u(4), pg_temp.u(1), 'employer', 3,3,3,3, 'We talked at length about a role; a fair and clear process.', true)$$, '42501');
+select pg_temp.as_user('d2000000-0000-0000-0000-000000000001');
+select pg_temp.step('the employer reviews the candidate they contacted (signed)',
+  $$insert into public.job_reviews (reviewer, reviewee, reviewee_role, c1,c2,c3,c4, body) values (pg_temp.u(1), pg_temp.u(4), 'candidate', 4,4,4,4, 'We talked at length about a role; clear and professional.')$$);
+select pg_temp.ok('F-10 connection + messages both ways: the hiring side reviews the candidate (review stored)', $$exists (select 1 from public.job_reviews where reviewer = pg_temp.u(1) and reviewee = pg_temp.u(4))$$);
+select pg_temp.ok('F-10 …and my_interactions() lists that candidate for the employer', $$exists (select 1 from public.my_interactions() where party = pg_temp.u(4))$$);
+select pg_temp.as_user('d2000000-0000-0000-0000-000000000004');
 select pg_temp.no('F-34 a non-moderator cannot hide a review', $$select public.moderate_review((select id from public.job_reviews where reviewer = pg_temp.u(4)), true)$$, '42501');
 select pg_temp.as_user('d2000000-0000-0000-0000-000000000006');
 select pg_temp.ok('F-34 a moderator sees the raw reviews', $$(select count(*) from public.job_reviews where reviewer in (pg_temp.u(1), pg_temp.u(3), pg_temp.u(4))) = 3$$);
@@ -140,8 +144,10 @@ select pg_temp.as_user('d2000000-0000-0000-0000-000000000003');
 select pg_temp.ok('F-35 everyone else still sees the job and the outsider', $$(select count(*) from public.jobs where id = pg_temp.id('job')) = 1 and exists (select 1 from public.open_candidates(100) where id = pg_temp.u(4))$$);
 select pg_temp.as_user('d2000000-0000-0000-0000-000000000001');
 select pg_temp.ok('F-35 the employer sees their own job; open_candidates() hides the blocked person', $$(select count(*) from public.jobs where id = pg_temp.id('job')) = 1 and not exists (select 1 from public.open_candidates(100) where id = pg_temp.u(4))$$);
+select pg_temp.as_user('d2000000-0000-0000-0000-000000000003');
+select pg_temp.ok('F-35 a member nobody blocked still reads the open job', $$(select count(*) from public.jobs where id = pg_temp.id('job')) = 1$$);
 select pg_temp.as_anon();
-select pg_temp.ok('F-35 an anonymous visitor still reads open jobs', $$(select count(*) from public.jobs where id = pg_temp.id('job')) = 1$$);
+select pg_temp.ok('F-26 (0024) an anonymous visitor reads no jobs (members only)', $$(select count(*) from public.jobs) = 0$$);
 
 -- ══ F-28: the applicant cannot set the status; the poster can ═══════════════════════════════
 select pg_temp.as_user('d2000000-0000-0000-0000-000000000003');
@@ -211,7 +217,7 @@ select pg_temp.ok('F-13 the public site page lists only the site''s own certific
   $$(public.company_sites_public('t21-vco')::jsonb -> 0 -> 'certs') = '[]'::jsonb and (public.company_sites_public('t21-bco')::jsonb -> 0 -> 'certs' -> 0 ->> 'name') = 'ISO 9001'$$);
 select pg_temp.ok('F-108 search_companies() lists the company while it is active', $$exists (select 1 from public.search_companies('T21 C Co') where slug = 't21-cco')$$);
 select pg_temp.ok('F-109 the directory keeps a deterministic order when it is cut by its limit (verified first, then name)',
-  $$(public.directory_companies(1)::jsonb -> 0 ->> 'slug') = (select slug from public.companies where status <> 'suspended' order by (status = 'verified') desc, name, id limit 1)$$);
+  $$(public.directory_companies_page(1)::jsonb -> 0 ->> 'slug') = (select slug from public.companies where status <> 'suspended' order by (status = 'verified') desc, name, id limit 1)$$);
 
 -- ══ F-14: editing a verified document clears the verification ══════════════════════════════
 select pg_temp.as_user('d2000000-0000-0000-0000-000000000005');

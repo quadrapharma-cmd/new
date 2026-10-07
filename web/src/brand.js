@@ -83,6 +83,9 @@
     '.jx-ic', '.jx-tool', '.jx-b', '.jx-tab', '#jx .mode-opt', '#jx .cf-tag', '#jx .sen-opt', '#jx .save-btn', '#jx .post-cta-title', '#jx .post-cta-btn', '#jx .role-badge', '#jx .hero-title',
     '#mkx .master-tab', '#mkx .cat-ic', '#mkx .plan', '#mkx .sort-opt', '#mkx .f-tag', '#mkx .sec-title', '#mkx .btn-save', '#mkx .btn-contact', '#mkx .btn-contact-gold', '#mkx .sp-ribbon', '#mkx .role-badge', '#mkx .uc-btn', '#mkx .ss-btn', '#mkx .js-btn', '#mkx .qt-btn',
     '#gx .cf-tag', '#gx .hero-btn', '#gx .sec-title', '#gx .gcard-btn', '#gx .sb-title', '#gx .create-link-ic', '#mx .tp-filter', '.dbk-hd b', '.dbk-btn', '.dg-band-k'].join(',');
+  function orig(n) { return window.dxI18nOrig ? window.dxI18nOrig(n) : null; }   /* the English a translated text node came from (i18n.js) */
+  function adopt(n) { if (window.dxI18nAdopt) window.dxI18nAdopt(n); }
+  function text(s, o) { var n = document.createTextNode(s); if (o != null) adopt(n); return n; }
   function iconify(root) {
     (root || document).querySelectorAll(CHROME).forEach(function (el) {
       if (el.closest('.post-body,.cmt-text,.bubble,.mx-bubble,textarea,input,[contenteditable]')) return;
@@ -90,14 +93,14 @@
       var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), n, hits = [];
       while ((n = w.nextNode())) { RX.lastIndex = 0; if (RX.test(n.nodeValue) && !(n.parentElement && n.parentElement.closest('.dx-ic'))) hits.push(n); }
       hits.forEach(function (t) {
-        var frag = document.createDocumentFragment(), s = t.nodeValue, last = 0, m; RX.lastIndex = 0;
+        var o = orig(t), frag = document.createDocumentFragment(), s = o != null ? o : t.nodeValue, last = 0, m; RX.lastIndex = 0;   /* a translated label is split from its English original, each piece translated again */
         while ((m = RX.exec(s))) {
-          if (m.index > last) frag.appendChild(document.createTextNode(s.slice(last, m.index)));
+          if (m.index > last) frag.appendChild(text(s.slice(last, m.index), o));
           var sp = document.createElement('span'); sp.className = 'dx-ic'; sp.innerHTML = svg(MAP[m[1]]); frag.appendChild(sp);
           last = m.index + m[0].length;
           if (s[last] === ' ' && s[last + 1] === ' ') last++;
         }
-        if (last < s.length) frag.appendChild(document.createTextNode(s.slice(last)));
+        if (last < s.length) frag.appendChild(text(s.slice(last), o));
         t.parentNode.replaceChild(frag, t);
       });
       el.__dxSig = el.textContent.length;
@@ -108,7 +111,8 @@
       var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), n;
       while ((n = w.nextNode())) {
         var i = n.nodeValue.indexOf('✓'); if (i < 0) continue;
-        var after = n.splitText(i); after.nodeValue = after.nodeValue.slice(1);
+        var o = orig(n); if (o != null && o.indexOf('✓') >= 0) { n.nodeValue = o; i = o.indexOf('✓'); } else o = null;   /* split the English original, then translate both halves */
+        var after = n.splitText(i); after.nodeValue = after.nodeValue.slice(1); if (o != null) { adopt(n); adopt(after); }
         var sp = document.createElement('span'); sp.className = 'dx-ic dx-seal'; sp.title = 'Verified'; sp.innerHTML = svg('seal');
         after.parentNode.insertBefore(sp, after); break;
       }

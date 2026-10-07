@@ -1,7 +1,7 @@
 # Data contract — demo ↔ database
 
 Extracted automatically from the approved demo (every data list the interface reads, and every key it stores);
-table names checked against supabase/migrations 0001–0023 (October 2026).
+table names checked against supabase/migrations 0001–0024 (October 2026).
 The live data adapter must provide exactly these shapes, so the interface runs unchanged.
 
 | Demo data | Records | Fields | Database | Status |

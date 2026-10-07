@@ -342,8 +342,9 @@
         var rn = b.querySelector('#vfRN').value.replace(/\D/g, '');
         if (rn.length < 4) { b.querySelector('#vfRN').classList.add('dbk-err'); toast('Enter the commercial registry number'); return false; }
         if (!b.querySelector('#vfR').files.length || !b.querySelector('#vfT').files.length) { toast('Registry document and tax card are required'); return false; }
-        var created = store('created_companies') || [];
-        created.forEach(function (c) { if (c.slug === co.slug) { c.status = 'pending'; c.registry = rn; c.licencePending = !!b.querySelector('#vfL').files.length; } }); store('created_companies', created);
+        var created = store('created_companies') || [], vf = { status: 'pending', registry: rn, licencePending: !!b.querySelector('#vfL').files.length };
+        if (created.some(function (c) { return c.slug === co.slug; })) { created.forEach(function (c) { if (c.slug === co.slug) Object.assign(c, vf); }); store('created_companies', created); }
+        else { var edits = store('company_edits') || {}; edits[co.slug] = Object.assign({}, edits[co.slug] || {}, vf); store('company_edits', edits); }   /* a claimed page lives in company_edits */
         render(); toast('Documents sent — we will verify ' + co.name);
       } } });
   }
@@ -434,7 +435,7 @@
   function openEditor(focus) {
     var cur = S.open && bySlug(S.open), co = cur && ownsPage(cur) ? cur : mine(); if (!co) { toast('Only company owners can edit a page'); return; }
     var draft = JSON.parse(JSON.stringify(co));
-    var el = document.createElement('div'); el.id = 'dxEditor'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Edit company page');
+    var el = document.createElement('div'); el.id = 'dxEditor'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Edit company page');
     function prodRows() { return draft.products.map(function (p, i) { return '<div class="ed-prod"><img src="' + pimg(draft, p) + '" alt=""><span><b>' + esc(p.name) + '</b><small>' + esc(p.cat) + (p.moq ? ' · MOQ ' + esc(p.moq) : '') + '</small></span><button type="button" data-pe="' + i + '">Edit</button><button type="button" data-pd="' + i + '" aria-label="Delete">×</button></div>'; }).join(''); }
     function draw() {
       el.innerHTML = '<div class="ed-box"><div class="ed-h"><b>Edit your company page</b><button type="button" class="ed-x" aria-label="Close">×</button></div><div class="ed-b">' +

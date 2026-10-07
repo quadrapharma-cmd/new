@@ -1,12 +1,17 @@
 """Run every test suite and exit non-zero if anything failed (for CI and before handing over).
   python3 tests/run_all.py                 # sql + demo + e2e
-  python3 tests/run_all.py sql demo        # only some groups: sql | sweep | demo | legacy | e2e | migrations
+  python3 tests/run_all.py sql demo        # only some groups: sql | sweep | demo | legacy | stress | demo-full | e2e | migrations
+  python3 tests/run_all.py demo demo-full  # every demo check: the quick suites, the legacy suites and the speed A/B
 Groups:
   sql    each supabase/tests/*.sql suite (not the stub / sweep) on its OWN fresh database: stub + every migration in order;
          passes when psql exits 0, a "TOTAL n / n" line is printed with both numbers equal, and no line starts with FAIL
   sweep  supabase/tests/schema_sweep.sql on a fresh database: every line must end in "none"
   demo   tests/demo/*.py on the demo build (DEMO_FILE, default web/dist/drugbox.html), in English and Arabic
   legacy tests/demo/legacy suites that check something ("n / n" lines) on the same build — long; not in the default run
+  stress page-switching speed A/B: legacy/stress_base.py on BASE_FILE (default web/reference/demo-approved.html) and
+         legacy/stress.py on DEMO_FILE, alternated STRESS_ROUNDS times (default 2); passes when the build has no JS errors or
+         leftover overlays and its median switch time is at most 25% (+1 ms) slower than the base's — not in the default run
+  demo-full  legacy + stress (one command for the long demo checks) — not in the default run
   e2e    tests/e2e/*_test.py against the running local stack (tools/local-supabase/start.sh, and start-payments.sh for e4*)
   migrations  tools/migration_check.py (every migration re-runnable, puts back each policy it creates) — not in the default run
          while older migrations still group several policies in one block
@@ -91,6 +96,28 @@ def legacy():
         code, out, s = run([sys.executable, f], env=env)
         record('legacy', os.path.basename(f), code == 0 and fractions_ok(out), s, out[-1500:], out)
 
+def stress():
+    import statistics
+    base = os.path.abspath(os.environ.get('BASE_FILE', ROOT + '/web/reference/demo-approved.html'))
+    if not os.path.exists(DEMO) or not os.path.exists(base): record('stress', 'A/B', False, 0, f'missing {DEMO if not os.path.exists(DEMO) else base}'); return
+    env = {**os.environ, 'DEMO_FILE': DEMO, 'BASE_FILE': base}; runs = {'base': [], 'build': []}; t = time.time(); bad = []
+    for i in range(max(1, int(os.environ.get('STRESS_ROUNDS', '2')))):   # alternated, so a busy machine slows both sides alike
+        for side, f in ((('base', 'stress_base.py'), ('build', 'stress.py')) if i % 2 == 0 else (('build', 'stress.py'), ('base', 'stress_base.py'))):
+            code, out, _ = run([sys.executable, ROOT + '/tests/demo/legacy/' + f], timeout=900, env=env)
+            med = re.search(r'switch time ms: median ([\d.]+) \| p95 ([\d.]+)', out); er = re.search(r'JS errors: (\d+)', out); lo = re.search(r'leftover overlays: (\d+)', out)
+            if code or not (med and er and lo): bad.append(f'{f} did not finish (exit {code}): {out[-600:]}'); continue
+            if er.group(1) != '0' or lo.group(1) != '0':   # only the build is judged: an older base may have known errors
+                (bad.append if side == 'build' else print)(f'      {side}: {er.group(1)} JS errors, {lo.group(1)} leftover overlays\n{out[-600:]}')
+            runs[side].append(float(med.group(1)))
+    if runs['base'] and runs['build']:
+        b, n = statistics.median(runs['base']), statistics.median(runs['build'])
+        detail = f'median switch {n:.1f} ms vs base {b:.1f} ms (runs {runs["build"]} vs {runs["base"]})'; print('      ' + detail)
+        if n > b * 1.25 + 1: bad.append('page switching slower than the base: ' + detail)
+    elif not bad: bad.append('no timings')
+    record('stress', 'stress.py vs stress_base.py', not bad, time.time() - t, '\n'.join(bad))
+
+def demo_full(): legacy(); stress()
+
 def e2e():
     skip = set(filter(None, os.environ.get('E2E_SKIP', '').split(',')))
     for f in sorted(glob.glob(ROOT + '/tests/e2e/*_test.py')):
@@ -103,7 +130,7 @@ def migrations():
     code, out, s = run([sys.executable, ROOT + '/tools/migration_check.py'])
     record('migr', 'tools/migration_check.py', code == 0, s, out[-3000:])
 
-GROUPS = {'sql': sql_suites, 'sweep': sweep, 'demo': demo, 'legacy': legacy, 'e2e': e2e, 'migrations': migrations}
+GROUPS = {'sql': sql_suites, 'sweep': sweep, 'demo': demo, 'legacy': legacy, 'stress': stress, 'demo-full': demo_full, 'e2e': e2e, 'migrations': migrations}
 want = sys.argv[1:] or ['sql', 'sweep', 'demo', 'e2e']
 for g in want:
     if g not in GROUPS: raise SystemExit(f'unknown group {g!r} — use: ' + ' '.join(GROUPS))
