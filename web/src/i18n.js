@@ -367,6 +367,7 @@
     [/^You joined (.+)$/, function (m) { return 'انضممت إلى ' + m[1]; }], [/^You left (.+)$/, function (m) { return 'غادرت ' + m[1]; }],
     [/^Invites sent to (\d+) (person|people)$/, function (m) { var n = +m[1]; return n === 1 ? 'تم إرسال الدعوة إلى شخص واحد' : n === 2 ? 'تم إرسال الدعوات إلى شخصين' : 'تم إرسال الدعوات إلى ' + n + ' ' + (n <= 10 ? 'أشخاص' : 'شخصًا'); }],   /* groups (N-9) */
     [/^invited you to join the private group "(.+)"$/, function (m) { return 'دعاك للانضمام إلى المجموعة الخاصة "' + m[1] + '"'; }],   /* live notification (N-8) */
+    [/^Welcome to Drugbox, (.+)!$/, function (m) { return 'أهلًا بك في Drugbox يا ' + m[1] + '!'; }],   /* the sign-up toast, demo and live (N-13) */
     [/^Not found on Drugbox: (.+)$/, function (m) { return 'غير موجود على Drugbox: ' + m[1]; }],
     [/^No Drugbox member found for (.+) — use the name on their Drugbox profile$/, function (m) { return 'لا يوجد عضو في Drugbox باسم ' + m[1] + ' — استخدم الاسم المكتوب في ملفه على Drugbox'; }]
   ];

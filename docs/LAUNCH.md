@@ -6,14 +6,17 @@
   الموقع على Vercel (`vercel_deploy.sh`)، والنسخ الاحتياطي المشفّر + تجربة الاسترجاع (`backup.sh`).
 - اللي ناقص منك **مفاتيح بس**: Supabase (رقم المشروع + باسورد قاعدة البيانات + access token)، Vercel (token + team/project id)،
   ومفاتيح الدفع **التجريبية** لـ Paymob وFawry للـ staging. تملا ملفات الـ `.example` وتشغّل أمر واحد لكل خطوة.
-- اتجرّبت كلها هنا على نسخة محلية بدل الـ staging: الـ 25 migration اتطبقت، والتشغيل التاني ما طبّقش حاجة، وتعديل migration قديمة
+- اتجرّبت كلها هنا على نسخة محلية بدل الـ staging: الـ 26 migration اتطبقت، والتشغيل التاني ما طبّقش حاجة، وتعديل migration قديمة
   اترفض، والـ schema sweep طلع "none" في الستة، والـ 5 buckets والـ realtime موجودين، والموقع اتبنى وطلع PARITY OK،
   والباك أب اتشفّر واترجع في قاعدة فاضية بنفس عدد الصفوف بالظبط.
 - **الإنتاج محمي**: أي سكربت يرفض يشتغل على مشروع الإنتاج من غير `--prod`، ويرفض `--prod` على أي مشروع تاني،
   ويرفض مفاتيح Paymob الحقيقية على الـ staging ومفاتيح التجربة على الإنتاج. وعشان كده `SUPABASE_PROD_REF` **إجباري** في كل ملف إعدادات
   (حتى بتاع الـ staging) — من غيره السكربت يوقف. وبيانات اختبار الضغط (100 ألف عضو) بترفض تتزرع على قاعدة الإنتاج.
 - **تنبيه مهم من Supabase**: ابتداءً من 30 أكتوبر 2026 المشاريع الجديدة ممكن ما تدّيش صلاحيات تلقائية للجداول الجديدة.
-  سكربت النشر بيكشف ده ويوقف (فحص "API grants") — لو حصل، محتاجين migration صغيرة فيها `grant` صريحة قبل الإطلاق.
+  **اتحلّت**: migration ‏0026 بتكتب كل الصلاحيات صراحةً (`grant`)، فالنتيجة واحدة على المشروع القديم والجديد، وسكربت النشر لسه بيفحصها
+  (فحص "API grants"). أي migration جديدة بعد كده لازم تكتب الـ `grant` بتاعتها بنفسها.
+- **اختبار الضغط (100 ألف عضو)**: صفحة دليل الشركات كانت أغلى طلب (80% من وقت قاعدة البيانات)؛ بعد 0026 بقت أسرع ~4 مرات
+  (300 مستخدم في نفس اللحظة: p95 للدليل 62ms بدل 209ms، والمعالج بتاع قاعدة البيانات نص اللي كان). صفر أخطاء في كل الجولات.
 
 ---
 
@@ -61,7 +64,7 @@ in the environment only — never on a command line (where `ps` would show them)
      (`--no-verify-jwt`: Paymob/Fawry call them without a Supabase token; they verify the provider's signature), then calls each one:
      webhooks `GET` → 405 from the function itself, `payments-create` browser preflight from `ALLOWED_ORIGINS` → 200 with CORS.
   - The direct database host is IPv6-only; on an IPv4-only network use the **Session pooler** (port 5432) — see `env.supabase.example`. Port 6543 is refused.
-  - If the database already has the migrations (applied by hand), the script stops; record them once with `--baseline-through 0025`.
+  - If the database already has the migrations (applied by hand), the script stops; record them once with `--baseline-through NNNN` (the last one applied, e.g. `0026`).
 - [ ] Supabase Auth (dashboard, manual): Site URL + redirect URLs = the staging web address; email confirmation on; **custom SMTP** (the built-in sender is for testing only — rate-limited).
 - [ ] pg_cron (Database → Extensions) on, then re-run the deploy: it schedules `drugbox-expire-vip` (daily 01:17 UTC) — otherwise VIP plans never expire.
 - [ ] Web: `cp deploy/env.web.example deploy/.env.web`, fill in (staging URL + **anon** key; Vercel token + ids), then `deploy/vercel_deploy.sh`
@@ -74,11 +77,14 @@ in the environment only — never on a command line (where `ps` would show them)
 - [ ] Make your own account admin: `update public.profiles set role = 'admin' where email = '…';`
 - [ ] First backup + drill on staging: `deploy/backup.sh`, then `DRILL_DB_URL=<empty scratch database> deploy/backup.sh --restore-drill`.
 
-**API grants check.** Supabase is changing new projects (config `api.auto_expose_new_tables`, deprecated on 2026-10-30) to stop granting new
-`public` tables to `anon`/`authenticated` automatically. The migrations rely on those automatic grants, so on such a project every API request
-would fail with "permission denied". The deploy fails the check "policy without the table grant" in that case (rehearsed: 79 gaps found
-on a database without the default grants). The fix is a new migration with explicit `grant select/insert/update/delete … to authenticated`,
-`grant select … to anon` where the anon policies allow it, and `grant usage on sequences … to authenticated` — then re-run the deploy.
+**API grants (explicit since 0026).** Supabase is changing new projects (config `api.auto_expose_new_tables`, deprecated on 2026-10-30) to stop granting new
+`public` tables to `anon`/`authenticated` automatically. Migrations 0001–0025 relied on those automatic grants (rehearsed on a database without them:
+79 policies without their table grant — every API request would fail with "permission denied"). **Migration 0026 section 3 now states every privilege
+outright**: for each table, view, sequence and function of 0001–0025 it revokes what the API roles hold and grants exactly what they held on a project
+*with* the automatic grants. Checked: a build with the default grants and one without them end with byte-identical privileges (ACL entry for ACL entry),
+unchanged when 0026 runs twice; the deploy passes on both (`supabase/tests/launch_readiness.rls.sql` covers it). The deploy still runs the
+"API grants" check. **Rule from now on:** a migration that creates a table, view, sequence or function writes its own `grant`s (as 0026 section 2 does)
+— never rely on default privileges.
 
 ## 3. Load test on staging (decides the database size)
 - [ ] Seed: `psql "$STAGING_DB_URL" -v ON_ERROR_STOP=1 -f tools/scale/seed_100k.sql` (100k members `member<N>@scale.test` / `Scale-pass-2026`).
@@ -90,6 +96,38 @@ on a database without the default grants). The fix is a new migration with expli
       (raise Auth's sign-in rate limit on staging for the run — see the header of the k6 script).
 - [ ] Pass = thresholds green (errors < 1 %, p95 feed/conversations/directory < 500 ms, post < 800 ms). If not: raise the compute size and repeat; watch Supabase → Reports (CPU, connections).
 - [ ] Database timings with RLS: `STAGING_DB_URL=… python3 tools/scale/timings.py` (from the environment the password stays out of `ps`).
+
+**Measured locally (October 2026), full 100k seed** (100,000 members, 5,000 companies, 1.03 M connections, 300k posts, 420k messages, 818k notifications,
+20k deals; seed 6 min) on PostgreSQL 16 (shared_buffers 2 GB, pg_stat_statements) + PostgREST 12.2 (pool 10) + the local gateway, k6 0.54 on the same
+4-core box (`THINK=1`, 30 s ramp + 2 m 30 s). "L-scale" = before 0026 (migrations 0001–0025); "R4" = with 0026 and the adapter's directory change
+(at most one extra directory page fetched by itself). Same seed, same script, same machine.
+
+| k6, p50 / p95 ms | 150 VUs L-scale | 150 VUs R4 | 300 VUs L-scale | 300 VUs R4 |
+|---|---|---|---|---|
+| directory (`directory_companies_page`) | 40.5 / 66.5 | **13.3 / 25.2** | 81.9 / 208.7 | **21.3 / 61.8** |
+| feed | 8.0 / 19.9 | 7.3 / 15.0 | 34.8 / 143.7 | 13.0 / 50.6 |
+| feed_mine | 3.8 / 12.5 | 3.6 / 9.3 | 24.2 / 126.9 | 7.4 / 39.3 |
+| conversations | 5.3 / 15.4 | 5.0 / 11.5 | 27.5 / 133.5 | 8.8 / 45.5 |
+| conversation | 4.2 / 12.6 | 3.9 / 10.3 | 24.0 / 129.0 | 7.5 / 40.6 |
+| notifications | 6.4 / 17.7 | 5.9 / 13.1 | 29.7 / 135.7 | 10.8 / 48.2 |
+| poll | 4.2 / 12.9 | 4.0 / 9.9 | 24.8 / 125.6 | 7.9 / 40.1 |
+| suggest | 8.0 / 20.2 | 8.1 / 16.3 | 32.3 / 140.2 | 12.9 / 53.2 |
+| post | 6.6 / 17.2 | 6.2 / 14.1 | 29.3 / 132.7 | 11.1 / 50.8 |
+| message | 6.6 / 18.1 | 6.1 / 13.4 | 28.7 / 133.1 | 10.7 / 48.0 |
+| like | 6.6 / 19.5 | 6.1 / 13.6 | 30.5 / 140.5 | 10.9 / 47.8 |
+| signin | 6.9 / 16.7 | 7.2 / 12.6 | 7.8 / 137.8 | 7.9 / 22.5 |
+| requests (per s), errors | 50,353 (251/s), 0 % | 50,481 (252/s), 0 % | 93,518 (465/s), 0 % | 99,035 (493/s), 0 % |
+| directory: mean DB ms per call | 35.8 | **8.4** | 50.1 | **11.3** |
+| directory: share of DB time (top-level statements) | not recorded¹ | **45.1 %** | 80.6 % | **48.5 %** |
+| PostgreSQL CPU, avg (100 % = 1 core) | 75 % | 43 % | 147 % | 79 % |
+
+¹ L-scale kept only the all-statements view at 150 VUs (nested statements counted too): 42.2 % there vs 31.3 % for R4.
+
+All thresholds PASS in every run. With RLS, single-query timings (`timings.py`, median, member1 / member50000): `directory_page` 27.9 / 25.7 → **5.5 / 4.3 ms**,
+`directory_page_deep` 33.7 / 24.2 → 5.6 / 4.2, `directory_search` 30.6 / 41.6 → 14.0 / 9.3; everything else unchanged within noise (all within limits).
+The directory is still the costliest single call (about half the database time under this mix), then the feed and `suggest_people`. Under 300 VUs the
+local box itself is the limit (≈ 300 % of 4 cores, PostgREST + gateway + k6 share it with PostgreSQL), so these numbers compare code, not hardware —
+the staging run with 2,000 VUs from a separate machine decides the compute size.
 
 ## 4. Production
 - [ ] `deploy/.env.supabase.prod`, `deploy/.env.functions.prod` (**live** Paymob keys; no `FAWRY_BASE`), `deploy/.env.web.prod` — the scripts refuse test keys / Fawry staging here.
@@ -114,6 +152,8 @@ database to recover specific rows. Payments are activated only by signed callbac
 ## Rehearsed locally (October 2026, no network to Supabase/Vercel from the build machine)
 - `supabase_deploy.sh --db-only --with-local-stub` on a bare PostgreSQL 16 (`--with-local-stub` loads `supabase/tests/_local_supabase_stub.sql`, a stand-in for
   Supabase's auth/storage; without it the script stops and explains that real Supabase has them): 25 migrations in 1.6 s, all checks OK; second run: nothing to apply.
+- Round 4 gate (with 0026): `supabase_deploy.sh --db-only --with-local-stub` on a fresh database: 26 migrations applied, every check OK (sweep "none" ×6,
+  buckets, realtime, API grants, jit); second run: "nothing to apply". `vercel_deploy.sh --dry-run`: build 46 s, PARITY OK, 37 files / 4.7 MB.
 - Refusals proven: changed applied file, migration numbered into the past, failing migration (rolled back, ledger unchanged), production ref/stamp without `--prod`,
   `--prod` against staging, transaction pooler port, stub against a remote host, live keys on staging, placeholders, `SUPABASE_*` secrets.
 - Functions step with a recording stand-in for the Supabase CLI and the real function code served locally: secrets + 3 deploys with the right JWT setting,

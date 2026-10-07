@@ -70,6 +70,13 @@ delete from public.groups where id in (select id from sg);
 delete from public.company_followers where user_id in (select id from su) or company_id in (select id from sc);
 delete from public.companies where id in (select id from sc);
 delete from public.profiles where id in (select id from su);         -- cascades whatever is left (products, enquiries, reviews, …)
+-- the directory's product lists of those companies (0026; kept by triggers on company_products, which are off here)
+do $$ begin
+  if to_regclass('private.directory_products') is not null then
+    delete from private.directory_products d where d.company_id in (select id from sc)
+       or not exists (select 1 from public.companies c where c.id = d.company_id);
+  end if;
+end $$;
 do $$ declare t text; begin
   for t in select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
             where n.nspname = 'public' and c.relkind = 'r' and exists (select 1 from pg_trigger g where g.tgrelid = c.oid and not g.tgisinternal) loop

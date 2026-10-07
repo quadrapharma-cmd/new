@@ -579,7 +579,7 @@
   /* ═══════════════ C1 — companies: directory, company pages, my companies, create, page edits, verification ═══════════════
      The demo's store() and company list have data hooks (inert in the demo); here they read and write the database.
      Right after sign-in only my own pages load; the directory loads, a page at a time, when the Companies page opens (F-05). */
-  var CO = { byId: {}, raw: {}, loaded: false, at: 0, loading: null, roles: {}, mine: false, mineP: null, sitesAt: {}, track: {}, trackAt: {}, seq: {}, fill: {} };
+  var CO = { byId: {}, raw: {}, alias: {}, reopen: null, loaded: false, at: 0, loading: null, roles: {}, mine: false, mineP: null, sitesAt: {}, track: {}, trackAt: {}, seq: {} };
   var TYPE = { factory: 'Factory', warehouse: 'Warehouse', lab: 'Laboratory', office: 'Office', head_office: 'Head office' };
   var ROLE = { registration_holder: 'Registration holder', manufacturer: 'Manufacturer', supplier: 'Supplier' };
   function ym(d) { return d ? String(d).slice(0, 7) : ''; }
@@ -611,7 +611,7 @@
   /* the directory, 100 companies a request in the directory's order (F-05): the first page when Companies or the Marketplace
      opens, the next one on "Show more" or at the end of the list, and a search asks the database (p_q). Never every company.
      A page is kept for 2 minutes; after that only the first page is asked again (the pages already shown stay). */
-  var DIR_PAGE = 100, DIR_FILL = 5, DIR_KEEP = 120000;
+  var DIR_PAGE = 100, DIR_FILL = 2, DIR_KEEP = 120000;   /* DIR_FILL: pages the list may fetch by itself, page 1 included */
   function addRows(rows, first) {               /* rows of directory_companies_page (or companies + products): updated in place, new ones added */
     var old = window.dxLiveCompanies || [], list = first ? [] : old, at = {};   /* first: page 1 in the directory's order, then the rest */
     list.forEach(function (x, i) { at[x.slug] = i; });
@@ -642,15 +642,14 @@
   function loadDirectory() { return loadDirPage('', true).then(function () { return window.dxLiveCompanies; }); }
   function curKey() { var S = window.dxDir && window.dxDir.S; return dirKey(S && S.q); }
   function onList() { var S = window.dxDir && window.dxDir.S; return !!S && document.body.getAttribute('data-page') === 'companies' && !S.open && S.view !== 'workspace' && !!document.querySelector('#dxDir.hub .dr-bar'); }
-  /* the next page when the list on screen has run out: no "Show more" left, and a filter that leaves less than a screenful
-     fetches at most DIR_FILL pages by itself (scrolling to the end fetches more) */
+  /* the next page when the list on screen has run out: no "Show more" left and a filter leaves less than a screenful. By itself
+     the list never goes beyond DIR_FILL pages (page 1 and one more, once — not five pages on every filter: the directory page is
+     the costliest call on the database); scrolling to the end, "Show more" and a search fetch the rest */
   function moreIfShort() {
     if (!ME_UUID || !onList() || document.querySelector('#dxDir.hub [data-hmore]')) return;
-    var S = window.dxDir.S, key = curKey(), s = CO.seq[key]; if (!s || !s.off || !s.more || s.p) return;
-    var sig = [key, S.sector, S.gov, (S.certs || []).join(','), S.verified, S.activeOnly, S.form, S.from].join('|');
-    if (CO.fill.sig !== sig) CO.fill = { sig: sig, n: 0 };
-    if (CO.fill.n >= DIR_FILL || document.querySelectorAll('#dxDir.hub .dr-card').length >= 60) return;
-    CO.fill.n++; loadDirPage(key).catch(toastErr);
+    var s = CO.seq[curKey()]; if (!s || !s.off || !s.more || s.p || s.off >= DIR_PAGE * DIR_FILL) return;
+    if (document.querySelectorAll('#dxDir.hub .dr-card').length >= 60) return;
+    loadDirPage(curKey()).catch(toastErr);
   }
   function redrawDir() {                         /* draw again what is on screen, keeping the search box's caret and the scroll */
     var pg = document.body.getAttribute('data-page');
@@ -706,7 +705,8 @@
         CO.raw[c.slug] = { pending: insP };                 /* edits saved meanwhile wait for it (F-55) */
         var ins = await insP;
         if (ins.error) { window.dxLiveCompanies = window.dxLiveCompanies.filter(function (x) { return x !== shown; }); delete CO.raw[c.slug]; rerenderCompanies(); toastErr(ins.error); continue; }
-        ins.data.mine = true; CO.raw[c.slug] = ins.data; CO.roles[ins.data.id] = 'owner'; shown._id = ins.data.id; CO.byId[ins.data.id] = c.slug;
+        var sv = okSlug(ins.data.slug) ? ins.data.slug : c.slug; if (sv !== c.slug) adoptSlug(c.slug, sv, shown);
+        ins.data.mine = true; CO.raw[sv] = ins.data; CO.roles[ins.data.id] = 'owner'; shown._id = ins.data.id; CO.byId[ins.data.id] = sv;
       } else if (c.registry && c.status === 'pending' && known.id && !SNAP['vr_' + c.slug]) {   /* verification documents submitted */
         SNAP['vr_' + c.slug] = 1; var l = live(c.slug); if (l) { l.status = 'pending'; l.registry = c.registry; }
         var docs = {}; try { docs = await window.dxLive.verificationFiles(known.id); } catch (e) { toastErr(e); }
@@ -717,6 +717,22 @@
       }
     }
   }
+  /* the database made the new page's address unique (old → old-2, F-74): the page takes the server's address everywhere at once —
+     the list, my pages, the company I act as, the page or workspace open now — and the old address is left to the company that
+     has it (N-11). The editor opened while it was being saved still holds the old address: its save is moved over (dxStoreHook). */
+  function adoptSlug(old, nu, shown) {
+    CO.alias[old] = nu; if (CO.raw[old] && CO.raw[old].pending) delete CO.raw[old]; delete CONONE[old];
+    shown.slug = nu; if (SNAP[old]) { SNAP[nu] = SNAP[old]; delete SNAP[old]; }
+    try { if (localStorage.getItem('dx_acting') === JSON.stringify(old)) localStorage.setItem('dx_acting', JSON.stringify(nu)); } catch (e) {}
+    var S = window.dxDir && window.dxDir.S; if (S) { if (S.open === old) S.open = nu; if (S.ws === old) S.ws = nu; }
+    window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies();
+  }
+  function mineAt(slug) { var r = CO.raw[slug]; return !!(r && r.id && CO.roles[r.id]); }
+  function unalias(edits) {                                 /* edits saved under an address the database changed go to the new one */
+    Object.keys(edits || {}).forEach(function (k) { var nu = CO.alias[k]; if (!nu || mineAt(k)) return;
+      edits[nu] = edits[k]; delete edits[k]; CO.reopen = { from: k, to: nu }; setTimeout(function () { CO.reopen = null; }, 0); });   /* the editor then opens the old address: the new one is drawn */
+    return edits;
+  }
   /* page edits: each field is compared with the database row and saved; only what the database accepted is kept, so a failed
      save is sent again next time, and nothing that is not saved online is shown as saved (F-55, F-122) */
   var PAGE_FIELDS = { tagline: 'tagline', about: 'bio', founded: 'founded', employees: 'employees', phone: 'phone', whatsapp: 'whatsapp', email: 'email', website: 'website', hours: 'hours' };
@@ -726,7 +742,7 @@
   async function persistEdits(edits) {
     for (var slug in edits) {
       var e = edits[slug] || {}, raw = CO.raw[slug];
-      if (raw && raw.pending) { try { await raw.pending; } catch (x) {} raw = CO.raw[slug]; }
+      if (raw && raw.pending) { try { await raw.pending; } catch (x) {} if (CO.alias[slug] && !mineAt(slug)) slug = CO.alias[slug]; raw = CO.raw[slug]; }   /* saved before the database answered with another address (N-11) */
       if (!raw || !raw.id) continue;
       var upd = {}, keep = {}, prof = Object.assign({}, raw.profile || {}), l = live(slug), profChanged = false, note = [];
       Object.keys(PAGE_FIELDS).forEach(function (k) { if (!(k in e)) return; var v = e[k] === '' ? null : e[k];
@@ -749,7 +765,7 @@
   window.dxStoreHook = function (k, v) {
     if (!ME_UUID) return undefined;
     if (k === 'created_companies') { if (v === undefined) return []; persistCreated(v).catch(toastErr); return true; }
-    if (k === 'company_edits') { if (v === undefined) return JSON.parse(JSON.stringify(SNAP_EDITS())); persistEdits(v).catch(toastErr); return true; }
+    if (k === 'company_edits') { if (v === undefined) return JSON.parse(JSON.stringify(SNAP_EDITS())); persistEdits(unalias(v)).catch(toastErr); return true; }
     if (k === 'supplier_reviews') { if (v === undefined) return {}; return true; }
     return undefined;
   };
@@ -769,6 +785,8 @@
     if (X && X.open && !X.open.__live) { var o = X.open; X.open = function (slug) { var r = o.apply(this, arguments); pageData(slug, false); return r; }; X.open.__live = true; }
     if (X && X.render && !X.render.__live) { var rd = X.render; X.render = function () { var r = rd.apply(this, arguments); openedMissing(); setTimeout(moreIfShort, 0); return r; }; X.render.__live = true; }
     if (window.dxOpenCompany && !window.dxOpenCompany.__live) { var oc = window.dxOpenCompany; window.dxOpenCompany = function (slug) { var r = oc.apply(this, arguments); pageData(slug, false); return r; }; window.dxOpenCompany.__live = true; }
+    if (H && H.render && !H.render.__live) { var hr = H.render; H.render = function (c, St, co) {      /* the page the editor saved under the old address (N-11) */
+      if (CO.reopen && St && St.open === CO.reopen.from) { St.open = CO.reopen.to; co = X && X.bySlug(St.open); } return hr.call(this, c, St, co); }; H.render.__live = true; }
     if (H && H.workspace && !H.workspace.__live) { var w = H.workspace; H.workspace = function (slug) { var r = w.apply(this, arguments); pageData(slug, true); return r; }; H.workspace.__live = true; }
   }
   var gotoB4 = window.goto;
@@ -794,10 +812,12 @@
     if (!ME_UUID || !e.target.closest || !e.target.closest('#dxDir.hub [data-hmore]')) return;
     var k = curKey(), s = CO.seq[k]; if (s && s.off && s.more) loadDirPage(k).catch(toastErr);
   }, true);
-  var DIRS = 0;
+  var DIRS = 0, DIRTOP = new WeakMap();
   document.addEventListener('scroll', function (e) {                                          /* the end of the list: the next page */
-    if (!ME_UUID || Date.now() - DIRS < 300 || !onList() || document.querySelector('#dxDir.hub [data-hmore]')) return; DIRS = Date.now();
-    var el = e.target && e.target.nodeType === 1 ? e.target : document.scrollingElement; if (!el || el.scrollTop + el.clientHeight < el.scrollHeight - 400) return;
+    var el = e.target && e.target.nodeType === 1 ? e.target : document.scrollingElement; if (!el) return;
+    var was = DIRTOP.get(el) || 0, down = el.scrollTop > was + 1; DIRTOP.set(el, el.scrollTop);   /* only a scroll DOWN: a redraw that shortens the list scrolls too, and must not fetch page after page by itself */
+    if (!down || !ME_UUID || Date.now() - DIRS < 300 || !onList() || document.querySelector('#dxDir.hub [data-hmore]')) return; DIRS = Date.now();
+    if (el.scrollTop + el.clientHeight < el.scrollHeight - 400) return;
     var k = curKey(), s = CO.seq[k]; if (s && s.off && s.more && !s.p) loadDirPage(k).catch(toastErr);
   }, true);
   /* "Claim this page": a claim request reviewed by Drugbox (claim_company), never an edit made in the browser (F-42) */
@@ -815,7 +835,7 @@
   };
   var hydrateB4 = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateB4(uid); window.dxLiveCompanies = []; CO.seq = {}; CO.loaded = false; CO.mineP = loadMine().then(wrapHub).catch(function (e) { console.error(e); }); return me; };
-  onReset(function () { CO.byId = {}; CO.raw = {}; CO.loaded = false; CO.at = 0; CO.roles = {}; CO.mine = false; CO.mineP = null; CO.sitesAt = {}; CO.track = {}; CO.trackAt = {}; CO.seq = {}; CO.fill = {}; COFETCH = {}; CONONE = {}; SNAP = {}; window.dxLiveCompanies = []; window.dxLiveSites = {}; });
+  onReset(function () { CO.byId = {}; CO.raw = {}; CO.loaded = false; CO.at = 0; CO.roles = {}; CO.mine = false; CO.mineP = null; CO.sitesAt = {}; CO.track = {}; CO.trackAt = {}; CO.seq = {}; CO.alias = {}; CO.reopen = null; COFETCH = {}; CONONE = {}; SNAP = {}; window.dxLiveCompanies = []; window.dxLiveSites = {}; });
   Object.assign(window.dxLive, { loadDirectory: loadDirectory, loadSites: loadSites, version: 'C1' });
 
   /* ═══════════════ C2 — deals: every step goes through the database engine (deal_create / deal_act) ═══════════════

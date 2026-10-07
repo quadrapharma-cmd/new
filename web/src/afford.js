@@ -16,16 +16,19 @@
     }
     return false;
   }
-  function user(name) {   /* exact name, or a name followed only by a separator ('Mona Ali · 2h'); the longest such name wins, so 'Mona Ali Hassan' never opens 'Mona Ali' (N-10) */
+  /* what continues a name rather than separating it: a letter or digit after optional spaces, or a hyphen / apostrophe joined to a
+     letter ('Sara Nabil-Fahmy', "O'Brien"), so a longer hyphenated name never opens a shorter one (N-14); ' - 2h' is still a separator */
+  var NAMECONT = /^(\s*[A-Za-z0-9\u0600-\u06FF&]|[-\u2010\u2011'\u2019][A-Za-z0-9\u0600-\u06FF])/;
+  function user(name) {   /* exact name, or a name followed only by a separator ('Mona Ali · 2h'); the longest such name wins, so 'Mona Ali Hassan' or 'Sara Nabil-Fahmy' never opens 'Mona Ali' / 'Sara Nabil' (N-10, N-14) */
     name = String(name || '').replace(/[✓✔]/g, '').trim(); if (!name) return null; var best = null;
     (window.USERS || []).some(function (u) { var n = u.name; if (!n) return false; if (n === name) { best = u; return true; }
-      if (name.length > n.length && name.indexOf(n) === 0 && !/^\s*[A-Za-z0-9\u0600-\u06FF&]/.test(name.slice(n.length)) && (!best || n.length > best.name.length)) best = u; return false; });
+      if (name.length > n.length && name.indexOf(n) === 0 && !NAMECONT.test(name.slice(n.length)) && (!best || n.length > best.name.length)) best = u; return false; });
     return best;
   }
   function company(name) {   /* exact name, or a name followed only by a separator ('Pharco · Cairo'); the longest such name wins, so a shorter company never takes a longer one's click */
     if (!window.dxDir) return null; name = String(name || '').trim(); if (!name) return null; var best = null;
     window.dxDir.companies().some(function (c) { var n = c.name; if (!n) return false; if (n === name) { best = c; return true; }
-      if (name.length > n.length && name.indexOf(n) === 0 && !/^\s*[A-Za-z0-9\u0600-\u06FF&]/.test(name.slice(n.length)) && (!best || n.length > best.name.length)) best = c; return false; });
+      if (name.length > n.length && name.indexOf(n) === 0 && !NAMECONT.test(name.slice(n.length)) && (!best || n.length > best.name.length)) best = c; return false; });
     return best;
   }
   function groupTitles() { return Array.prototype.map.call(document.querySelectorAll('#gx .gcard-title, #gx .mg-name'), txt).concat((window.GX_HTML || '').match(/class="gcard-title">([^<]+)</g) ? window.GX_HTML.match(/class="gcard-title">([^<]+)</g).map(function (s) { return s.replace(/.*>/, ''); }) : []); }
