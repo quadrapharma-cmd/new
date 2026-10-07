@@ -2,7 +2,7 @@
 Intro videos (demo build): company video by its owner, personal video on the profile, candidate chip, limits, persistence, lazy loading."""
 from playwright.sync_api import sync_playwright
 import os, sys
-F = os.environ.get('DEMO_FILE', '/tmp/drugbox_brand.html'); V = '/tmp/vids'; LANG = sys.argv[1] if len(sys.argv) > 1 else 'en'; R = []
+F = os.environ.get('DEMO_FILE', '/tmp/drugbox_brand.html'); V = os.environ.get('DRUGBOX_FIXTURES', '/tmp/vids'); LANG = sys.argv[1] if len(sys.argv) > 1 else 'en'; R = []
 def T(n, ok, d=''): R.append(ok); print(('✅ ' if ok else '❌ ') + n + ('' if ok else '  → ' + str(d)[:200]))
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox", "--autoplay-policy=no-user-gesture-required"]); ctx = b.new_context(viewport={'width': 1440, 'height': 900}); ctx.add_init_script("try{localStorage.setItem('dx_lang','%s')}catch(e){}" % LANG)
@@ -46,16 +46,17 @@ with sync_playwright() as p:
     E(f"dxMedia.put('p:{other}', new Blob([new Uint8Array(10)],{{type:'video/mp4'}}), {{poster:'',duration:42}})"); pg.wait_for_timeout(300); E("dxVideos.refresh()")
     E(f"gotoProfile({other})"); pg.wait_for_timeout(1500)
     T("another person's video shows on their profile, without upload buttons", E("!!document.querySelector('.dx-vid-play')") and not E("!!document.querySelector('.dx-vid-up')"))
-    cand = E("(()=>{var c=[...document.querySelectorAll('#jx .jcard')];return 0})()")
     E("goto('jobs')"); pg.wait_for_timeout(1500)
-    # candidate cards are linked to a real person by data-uid (that is how the live app links them)
+    # the chip mechanism the live app relies on: the live adapter links a candidate card to its person with data-uid
+    # (the demo's sample cards have no person behind them, so the link is made here — this checks the videos layer, not the data)
     uid = other
     E(f"(()=>{{var c=[...document.querySelectorAll('#jx .jcard')].find(x=>x.querySelector('.role-badge.need'));if(c){{c.dataset.uid='{uid}';delete c.dataset.vid}}}})()")
     E(f"dxMedia.put('p:{uid}', new Blob([new Uint8Array(10)],{{type:'video/mp4'}}), {{poster:'',duration:61}})"); pg.wait_for_timeout(300); E("dxVideos.refresh()"); pg.wait_for_timeout(900)
     name = uid
-    T('a candidate (linked by data-uid) with a video gets a "▶ Video intro · 1:01" chip', bool(uid) and E("[...document.querySelectorAll('#jx .dx-vid-chip')].some(c=>/1:01/.test(c.textContent))"), (name, uid))
+    T('a candidate card linked to a person (data-uid) whose video exists gets a "▶ Video intro · 1:01" chip', bool(uid) and E("[...document.querySelectorAll('#jx .dx-vid-chip')].some(c=>/1:01/.test(c.textContent))"), (name, uid))
     E("dxHub.page('quadra-pharm','overview')"); pg.wait_for_timeout(1500)
     E("document.querySelector('#dxDir .dx-vid-rm').click()"); pg.wait_for_timeout(1200)
     T('the owner can remove the company video', E("!!document.querySelector('#dxDir .dx-vid-empty')"))
     T('no errors in the page', not errs, errs)
     print(LANG, sum(R), '/', len(R)); b.close()
+sys.exit(0 if R and all(R) else 1)

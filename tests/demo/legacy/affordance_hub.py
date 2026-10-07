@@ -37,7 +37,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(args=["--no-sandbox"]); ctx=b.new_context(viewport={'width':1440,'height':900})
     ctx.route(lambda u: not u.startswith('file:') and not u.startswith('data:') and not u.startswith('blob:'), lambda r: r.abort())
     pg=ctx.new_page(); pops=[]; pg.on("dialog", lambda d: (pops.append(1), d.dismiss())); pg.on("filechooser", lambda f: pops.append(1)); ctx.on('page', lambda np: (pops.append(1), np.close()))
-    pg.goto('file:///tmp/drugbox_brand.html',wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
+    pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
     pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3200)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
     summary={}

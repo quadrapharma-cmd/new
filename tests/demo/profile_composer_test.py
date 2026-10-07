@@ -30,3 +30,4 @@ with sync_playwright() as p:
     T('one-word name: the greeting says the name, not "undefined"', 'undefined' not in E("document.querySelector('.comp-btn').textContent") and 'Probe' in E("document.querySelector('.comp-btn').textContent"), E("document.querySelector('.comp-btn').textContent"))
     T('no errors in the page', not errs, errs)
     print(LANG, sum(R), '/', len(R)); b.close()
+sys.exit(0 if R and all(R) else 1)

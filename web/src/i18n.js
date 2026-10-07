@@ -320,7 +320,8 @@
     'Checked by Drugbox within 48 hours (VIP). Never shown to other users. Your page stays live meanwhile.': 'يراجعها Drugbox خلال 48 ساعة (VIP). لا تظهر لأي مستخدم آخر، وتبقى صفحتك منشورة في أثناء ذلك.',
     'Checked by Drugbox within 2 working days. Never shown to other users. Your page stays live meanwhile.': 'يراجعها Drugbox خلال يومي عمل. لا تظهر لأي مستخدم آخر، وتبقى صفحتك منشورة في أثناء ذلك.',
     /* notices */
-    'Welcome back, Haytham!': 'أهلًا بعودتك يا هيثم!', 'Post shared': 'تم نشر المنشور', 'Copied': 'تم النسخ', 'Deleted': 'تم الحذف', 'Undo': 'تراجع'
+    'Welcome back, Haytham!': 'أهلًا بعودتك يا هيثم!', 'Post shared': 'تم نشر المنشور', 'Copied': 'تم النسخ', 'Deleted': 'تم الحذف', 'Undo': 'تراجع',
+    'Discard your changes?': 'تجاهل تعديلاتك؟', 'Your edits to this page are not saved yet.': 'تعديلاتك على هذه الصفحة لم تُحفظ بعد.', 'Keep editing': 'متابعة التعديل', 'Discard changes': 'تجاهل التعديلات', 'Main navigation': 'التنقل الرئيسي'
   };
   var UNITS = { m: ['دقيقة', 'دقائق'], h: ['ساعة', 'ساعات'], d: ['يوم', 'أيام'], w: ['أسبوع', 'أسابيع'], min: ['دقيقة', 'دقائق'] };
   function unit(n, u) { var p = UNITS[u] || [u, u]; return +n >= 3 && +n <= 10 ? p[1] : p[0]; }
@@ -340,7 +341,7 @@
     [/^(.+?)\s*\((\d+)\)$/, function (m) { var h = D[m[1]] || D[m[1].trim()]; return h ? h + ' (' + m[2] + ')' : null; }],
     [/^(Surplus stock|Licensing dossiers|Group buying)\s*\((\d+)\)$/, function (m) { return ({ 'Surplus stock': 'مخزون فائض', 'Licensing dossiers': 'ملفات ترخيص', 'Group buying': 'شراء جماعي' })[m[1]] + ' (' + m[2] + ')'; }],
     [/^expires (\d{4}-\d{2})$/, function (m) { return 'تنتهي ' + m[1]; }], [/^expired (\d{4}-\d{2})$/, function (m) { return 'انتهت ' + m[1]; }],
-    [/^Source: (.+) · updated (.+)$/, function (m) { return 'المصدر: ' + (D[m[1]] || m[1]) + ' · حُدّث ' + m[2]; }],
+    [/^Source: (.+) · updated (.+)$/, function (m) { return 'المصدر: ' + (D[m[1]] || m[1]) + ' · حُدّث ' + gbIn(m[2]); }],
     [/^Open (.+)’s profile$/, function (m) { return 'افتح ملف ' + m[1]; }], [/^Open (.+)$/, function (m) { return D[m[1]] ? 'افتح ' + D[m[1]] : null; }],
     [/^You joined (.+)$/, function (m) { return 'انضممت إلى ' + m[1]; }], [/^You left (.+)$/, function (m) { return 'غادرت ' + m[1]; }]
   ];
@@ -385,7 +386,7 @@
     [/^(\d+) waiting for you$/, function (m) { return m[1] + ' بانتظارك'; }],
     [/^·?\s*(Accept quote|Confirm order|Mark shipped|Send quote|Confirm received)$/, function (m) { return '· ' + D[m[1]]; }],
     [/^Send quote: (.+) · valid (\d+) days$/, function (m) { return 'أرسل عرضًا: ' + m[1] + ' · صالح ' + m[2] + ' يومًا'; }],
-    [/^· valid (\d+) days \(to ([^)]+)\)(.*)$/, function (m) { return '· صالح ' + m[1] + ' يومًا (حتى ' + m[2] + ')' + m[3]; }]
+    [/^· valid (\d+) days \(to ([^)]+)\)(.*)$/, function (m) { return '· صالح ' + m[1] + ' يومًا (حتى ' + gbIn(m[2]) + ')' + m[3]; }]
   );
   /* dates the app prints with the browser's default toLocaleString() (e.g. 10/3/2026, 1:36:27 AM) are re-written in Arabic */
   var DLOC = (function () { try { return Intl.DateTimeFormat().formatToParts(new Date(2001, 10, 22)).filter(function (p) { return /day|month|year/.test(p.type); }).map(function (p) { return p.type; }); } catch (e) { return ['month', 'day', 'year']; } })();
@@ -394,17 +395,27 @@
     var h = m[4] == null ? null : m[7] ? +m[4] % 12 + (/PM/i.test(m[7]) ? 12 : 0) : +m[4], d = new Date(v.year, v.month - 1, v.day, h || 0, +(m[5] || 0), +(m[6] || 0));
     try { return window.dxFmtDate(d, h != null); } catch (e) { return null; }
   }
-  window.dxFmtDate = function (d, withTime) {   /* one formatter for dates in the interface language (Latin digits, like the rest of the Arabic UI) */
-    d = d instanceof Date ? d : new Date(d); var ar = document.documentElement.lang === 'ar';
+  window.dxFmtDate = function (d, withTime, lang) {   /* one formatter for dates in the interface language (Latin digits, like the rest of the Arabic UI);
+     layers pass lang 'en' to write the English original (e.g. "2 Oct 2026, 13:36"), which the pattern below turns into Arabic and back */
+    d = d instanceof Date ? d : new Date(d); var ar = (lang || document.documentElement.lang) === 'ar';
     var o = { year: 'numeric', month: 'short', day: 'numeric' }; if (withTime) { o.hour = 'numeric'; o.minute = '2-digit'; }
     return new Intl.DateTimeFormat(ar ? 'ar-EG-u-nu-latn' : 'en-GB', o).format(d);
   };
   var DATE = '(\\d{1,2})/(\\d{1,2})/(\\d{4})(?:,? (\\d{1,2}):(\\d{2})(?::(\\d{2}))?\\s?(AM|PM)?)?';
+  var GB = '(\\d{1,2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept?|Oct|Nov|Dec) (\\d{4})(?:, (\\d{1,2}):(\\d{2}))?';   /* dxFmtDate(d, time, 'en') */
+  function gbDate(m) { var d = new Date(+m[3], 'JanFebMarAprMayJunJulAugSepOctNovDec'.indexOf(m[2].slice(0, 3)) / 3, +m[1], +(m[4] || 0), +(m[5] || 0)); try { return window.dxFmtDate(d, m[4] != null, 'ar'); } catch (e) { return null; } }
+  function gbIn(s) { var m = new RegExp('^' + GB + '$').exec(s); return m && gbDate(m) || s; }
   var MON = { Jan: 'يناير', Feb: 'فبراير', Mar: 'مارس', Apr: 'أبريل', May: 'مايو', Jun: 'يونيو', Jul: 'يوليو', Aug: 'أغسطس', Sep: 'سبتمبر', Oct: 'أكتوبر', Nov: 'نوفمبر', Dec: 'ديسمبر' };
   var WDAY = { Sat: 'السبت', Sun: 'الأحد', Mon: 'الاثنين', Tue: 'الثلاثاء', Wed: 'الأربعاء', Thu: 'الخميس', Fri: 'الجمعة' };
   var UNIT = { kg: 'كجم', g: 'جم', pc: 'قطعة', pcs: 'قطعة', unit: 'وحدة', tablet: 'قرص', box: 'علبة', L: 'لتر', mL: 'مل', MT: 'طن' };
   PATTERNS.push(
     [new RegExp('^' + DATE + '$'), arDate], [new RegExp('^sent ' + DATE + '$'), function (m) { var d = arDate(m); return d ? 'أُرسل ' + d : null; }],
+    [new RegExp('^' + GB + '$'), gbDate], [new RegExp('^sent ' + GB + '$'), function (m) { var d = gbDate(m); return d ? 'أُرسل ' + d : null; }],
+    [/^(\d+) completed orders?$/, function (m) { return m[1] + ' ' + plural(m[1], ['طلب مكتمل', 'طلبات مكتملة']); }], [/^(\d+)% on time$/, function (m) { return m[1] + '% في الموعد'; }],
+    [/^replies in ~(<1|\d+)h$/, function (m) { return m[1] === '<1' ? 'يرد خلال أقل من ساعة' : 'يرد خلال ~' + m[1] + ' ' + unit(m[1], 'h'); }], [/^valid to (\d{4}-\d{2}(?:-\d{2})?)$/, function (m) { return 'صالح حتى ' + m[1]; }],
+    [/^\((sales|business development)\) at (.+)$/, function (m) { return '(' + (m[1] === 'sales' ? 'المبيعات' : 'تطوير الأعمال') + ') في ' + m[2]; }],
+    [new RegExp('^valid until ' + GB + '$'), function (m) { var d = gbDate(m); return d ? 'صالح حتى ' + d : null; }], [new RegExp('^renews ' + GB + '$'), function (m) { var d = gbDate(m); return d ? 'يتجدد في ' + d : null; }], [new RegExp('^expired ' + GB + '$'), function (m) { var d = gbDate(m); return d ? 'انتهى في ' + d : null; }],
+    [new RegExp('^This offer expired on ' + GB + ' — ask for a new quote \\(counter-offer\\)$'), function (m) { var d = gbDate(m); return d ? 'انتهى هذا العرض في ' + d + ' — اطلب عرض سعر جديدًا (عرض مضاد)' : null; }],
     [/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4})$/, function (m) { return MON[m[1]] + ' ' + m[2]; }],
     [/^(Sat|Sun|Mon|Tue|Wed|Thu|Fri): (\d+)$/, function (m) { return WDAY[m[1]] + ': ' + m[2]; }],
     [/^(≈ )?EGP ([\d,.]+)$/, function (m) { return (m[1] || '') + m[2] + ' ج.م'; }], [/^EGP ([\d,.]+)\/(\w+)$/, function (m) { return m[1] + ' ج.م/' + (UNIT[m[2]] || m[2]); }],

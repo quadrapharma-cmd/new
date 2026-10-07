@@ -371,7 +371,7 @@
     var m = D.modal({ title: 'My companies', secondary: 'Close', primary: { label: 'Create another company', onClick: function () { setTimeout(createCompanyDialog, 40); } },
       body: '<p class="cp-muted">Each company has its own page, plan, verification and inbox. “Act as” decides which company sends your requests.</p>' + list.map(function (c) {
         var acting = mine() && mine().slug === c.slug, renew = '';
-        if (isVip(c)) { renew = ' · renews ' + addMonths(new Date(c.createdAt || Date.now()), c.billing === 'year' ? 12 : 1).toLocaleDateString(); }
+        if (isVip(c)) { var rd = addMonths(new Date(c.createdAt || Date.now()), c.billing === 'year' ? 12 : 1); renew = ' · renews ' + (window.dxFmtDate ? window.dxFmtDate(rd, false, 'en') : rd.toLocaleDateString()); }
         return '<div class="mr-row">' + logo(c, 'dr-logo sm') + '<div class="mr-b"><b>' + esc(c.name) + (acting ? ' <span class="mr-st st-acc">Acting as</span>' : '') + '</b><small>' + (isVip(c) ? 'VIP' + (c.billing === 'year' ? ' yearly' : ' monthly') : 'Basic') + renew + ' · ' + (c.status === 'verified' ? 'verified' : c.status === 'pending' ? 'verification in review' : 'not verified') + ' · ' + c.products.length + ' products · ' + (window.dxDeals ? window.dxDeals.openCount(c.slug) : 0) + ' open requests</small></div>' +
           '<span class="mr-acts"><button type="button" class="dr-btn sm" data-open2="' + c.slug + '">Open</button>' + (acting ? '' : '<button type="button" class="dr-btn sm" data-act2="' + c.slug + '">Act as</button>') + (isVip(c) ? '' : '<button type="button" class="dr-btn p sm" data-up2="' + c.slug + '">Upgrade</button>') + '</span></div>'; }).join('') });
     m.el.addEventListener('click', function (e) { var o = e.target.closest('[data-open2]'), u = e.target.closest('[data-up2]'), a = e.target.closest('[data-act2]');
@@ -387,28 +387,43 @@
     if (!list.length) { if (btn) btn.remove(); return; }
     var act = mine(), sig = [act.slug, list.length, act.plan, act.name, act.color, (act.logo || '').length].join('|');   /* a new logo, colour or name redraws the button too */
     if (btn && btn.dataset.sig === sig && !force) return;
-    if (!btn) { btn = document.createElement('button'); btn.id = 'dxCoSwitch'; btn.type = 'button'; btn.className = 'dx-coswitch'; btn.setAttribute('aria-haspopup', 'menu'); right.insertBefore(btn, right.firstChild); }
+    if (!btn) { btn = document.createElement('button'); btn.id = 'dxCoSwitch'; btn.type = 'button'; btn.className = 'dx-coswitch'; btn.setAttribute('aria-haspopup', 'menu'); btn.setAttribute('aria-expanded', 'false'); right.insertBefore(btn, right.firstChild); }
     btn.dataset.sig = sig; btn.title = 'You are acting as ' + act.name;
     btn.innerHTML = logo(act, 'cs-logo') + '<span class="cs-n">' + esc(act.name) + '</span>' + vipBadge(act) + '<span class="cs-c">▾</span>';
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('#dxCoSwitch'), pop = document.getElementById('dxCoMenu');
-    if (!b) { if (pop && !e.target.closest('#dxCoMenu')) pop.remove(); return; }
-    if (pop) { pop.remove(); return; }
+    function closeMenu(back) { if (pop) pop.remove(); var sw = document.getElementById('dxCoSwitch'); if (sw) { sw.setAttribute('aria-expanded', 'false'); if (back) sw.focus(); } }
+    if (!b) { if (pop && !e.target.closest('#dxCoMenu')) closeMenu(); return; }
+    if (pop) { closeMenu(); return; }
     var r = b.getBoundingClientRect(), list = myCompanies(), act = mine();
     pop = document.createElement('div'); pop.id = 'dxCoMenu'; pop.setAttribute('role', 'menu');
     pop.style.top = (r.bottom + 8) + 'px'; pop.style.left = Math.max(8, Math.min(innerWidth - 288, r.right - 280)) + 'px';
     pop.innerHTML = '<div class="dx-pop-h">Act as</div>' + list.map(function (c) { return '<button type="button" role="menuitemradio" aria-checked="' + (c.slug === act.slug) + '" class="cm-co' + (c.slug === act.slug ? ' on' : '') + '" data-cs="' + c.slug + '">' + logo(c, 'cs-logo') + '<span><b>' + esc(c.name) + '</b><small>' + (isVip(c) ? 'VIP' : 'Basic') + (c.status === 'pending' ? ' · pending' : '') + '</small></span></button>'; }).join('') +
-      '<div class="cm-sep"></div><button type="button" class="cm-co" data-cs-ws="1">' + ic('building') + '<span><b>' + esc(act.name) + '\u2019s workspace</b></span></button><button type="button" class="cm-co" data-cs-open="1">' + ic('building') + '<span><b>Open ' + esc(act.name) + '\u2019s page</b></span></button><button type="button" class="cm-co" data-cs-all="1">' + ic('clipboard') + '<span><b>Manage my companies</b></span></button><button type="button" class="cm-co" data-cs-new="1">' + ic('plus') + '<span><b>Create a company page</b></span></button>';
-    document.body.appendChild(pop);
+      '<div class="cm-sep"></div><button type="button" role="menuitem" class="cm-co" data-cs-ws="1">' + ic('building') + '<span><b>' + esc(act.name) + '\u2019s workspace</b></span></button><button type="button" role="menuitem" class="cm-co" data-cs-open="1">' + ic('building') + '<span><b>Open ' + esc(act.name) + '\u2019s page</b></span></button><button type="button" role="menuitem" class="cm-co" data-cs-all="1">' + ic('clipboard') + '<span><b>Manage my companies</b></span></button><button type="button" role="menuitem" class="cm-co" data-cs-new="1">' + ic('plus') + '<span><b>Create a company page</b></span></button>';
+    document.body.appendChild(pop); b.setAttribute('aria-expanded', 'true');
+    /* keyboard: opened with Enter/Space the focus moves in; arrows, Home and End move, Tab and Escape (below) close back to the button */
+    var items = [].slice.call(pop.querySelectorAll('button'));
+    if (!e.detail) (pop.querySelector('.cm-co.on') || items[0]).focus();
+    pop.addEventListener('keydown', function (ev) {
+      var k = ev.key, i = items.indexOf(document.activeElement), n = items.length;
+      if (k === 'ArrowDown' || k === 'ArrowUp') { ev.preventDefault(); items[i < 0 ? (k === 'ArrowDown' ? 0 : n - 1) : (i + (k === 'ArrowDown' ? 1 : n - 1)) % n].focus(); }
+      else if (k === 'Home' || k === 'End') { ev.preventDefault(); items[k === 'Home' ? 0 : n - 1].focus(); }
+      else if (k === 'Tab') { ev.preventDefault(); closeMenu(true); }
+    });
     pop.addEventListener('click', function (ev) {
-      var x = ev.target.closest('button'); if (!x) return; pop.remove();
+      var x = ev.target.closest('button'); if (!x) return; closeMenu(!!x.dataset.cs && !ev.detail);
       if (x.dataset.cs) setActing(x.dataset.cs);
       else if (x.dataset.csWs && window.dxHub) window.dxHub.workspace(mine().slug);
       else if (x.dataset.csOpen) openCompany(mine().slug);
       else if (x.dataset.csAll) { if (document.body.getAttribute('data-page') !== 'companies') window.goto('companies'); myCompaniesDialog(); }
       else if (x.dataset.csNew) { if (document.body.getAttribute('data-page') !== 'companies') window.goto('companies'); createCompanyDialog(); }
     });
+  });
+  document.addEventListener('keydown', function (e) {
+    var pop = document.getElementById('dxCoMenu'); if (e.key !== 'Escape' || !pop || (window.dxTopDialog && window.dxTopDialog())) return;
+    var sw = document.getElementById('dxCoSwitch'), back = pop.contains(document.activeElement); pop.remove();
+    if (sw) { sw.setAttribute('aria-expanded', 'false'); if (back) sw.focus(); }
   });
   /* ── owner editor (drawer) ── */
   function readImage(file, max, cb) {
@@ -462,7 +477,7 @@
       f.querySelector('#edPName').focus();
     }
     el.addEventListener('click', function (e) {
-      if (e.target === el || e.target.closest('.ed-x') || e.target.closest('#edCancel')) { el.remove(); return; }
+      if (e.target === el || e.target.closest('.ed-x') || e.target.closest('#edCancel')) { askClose(); return; }
       if (e.target.closest('#edAddP')) { collect(); productForm(null); return; }
       if (e.target.closest('#edCAdd')) { var cn = el.querySelector('#edCName').value, cf = el.querySelector('#edCFile').files[0];
         if (!cn) { toast('Choose the certificate'); return; } if (!cf) { toast('Attach the certificate document'); return; }
@@ -482,6 +497,19 @@
       if (e.target.id === 'edCover') readImage(e.target.files[0], 1600, function (d) { if (d) { collect(); draft.cover = d; draw(); toast('Cover photo ready — save to publish'); } });
     });
     draw(); document.body.appendChild(el);
+    /* closing (backdrop, ×, Cancel, Escape) asks first when something was changed and not saved */
+    function snap() { collect(); var pn = el.querySelector('#edPName'); return JSON.stringify(draft) + (pn && pn.value.trim() !== pn.defaultValue.trim() ? '|' + pn.value : ''); }
+    var start = snap();
+    function askClose() {
+      if (snap() === start) { el.remove(); return; }
+      var q = D.modal({ title: 'Discard your changes?', body: '<p>Your edits to this page are not saved yet.</p>', secondary: 'Keep editing', primary: { label: 'Discard changes', danger: true, onClick: function () { el.remove(); } } });
+      q.el.style.zIndex = 3200;   /* above the drawer */
+    }
+    function onKey(e) {
+      if (!el.isConnected) { window.removeEventListener('keydown', onKey); return; }
+      if (e.key === 'Escape' && window.dxTopDialog && window.dxTopDialog() === el) { e.preventDefault(); askClose(); }   /* only when no window is open on top of the drawer */
+    }
+    window.addEventListener('keydown', onKey);
   }
 
   /* clicks inside the directory are handled by the hub (hub-ui.js) */

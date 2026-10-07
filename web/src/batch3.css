@@ -10,7 +10,7 @@
 .fy-roles button .dx-ic{margin:0}.fy-roles button .dx-svg{width:15px;height:15px}
 .fy-roles button.on{background:#1a56db;color:#fff;box-shadow:0 6px 14px -8px #1a56db}
 .fy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.fy-card{display:flex;gap:14px;align-items:center;text-align:left;background:#fff;border:1px solid #E6E8EE;border-radius:var(--r-lg,22px);padding:14px 16px;cursor:pointer;box-shadow:var(--sh-1);transition:box-shadow .15s,border-color .15s;font-family:Poppins,sans-serif}
+.fy-card{display:flex;gap:14px;align-items:center;text-align:start;background:#fff;border:1px solid #E6E8EE;border-radius:var(--r-lg,22px);padding:14px 16px;cursor:pointer;box-shadow:var(--sh-1);transition:box-shadow .15s,border-color .15s;font-family:Poppins,sans-serif}
 .fy-card:hover{border-color:#93c5fd;box-shadow:var(--sh-2)}
 .fy-score{--p:70;flex:none;width:58px;height:64px;display:flex;align-items:center;justify-content:center;gap:1px;color:#0a1f4d;
   background:conic-gradient(#1a56db calc(var(--p)*1%),#E6ECF7 0);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);position:relative}
@@ -83,7 +83,7 @@ html.dx-dark #dxCmd .cm-box{filter:invert(1) hue-rotate(180deg)}
 .in-row span:first-child{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .in-row b{font-family:'JetBrains Mono',monospace;color:#0E1320}
 .in-bar{flex:0 0 38%;height:7px;background:#F1F5F9;border-radius:9px;overflow:hidden}.in-bar i{display:block;height:100%;background:#1a56db;border-radius:9px}
-.in-person{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;padding:6px 4px;border-radius:12px;cursor:pointer;text-align:left;font-family:Poppins,sans-serif}
+.in-person{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;padding:6px 4px;border-radius:12px;cursor:pointer;text-align:start;font-family:Poppins,sans-serif}
 .in-person:hover{background:#F8FAFC}
 .in-av{width:32px;height:32px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:700 11px Poppins,sans-serif}
 .in-person span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column}.in-person b{font-size:13px;color:#0E1320}.in-person small{font-size:11.5px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

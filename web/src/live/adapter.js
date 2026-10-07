@@ -17,24 +17,73 @@
   function show(id, msg) { var e = document.getElementById(id); if (e) { e.textContent = msg; e.style.display = 'block'; } }
   function hide(id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; }
   function busy(on) { document.querySelectorAll('#loginPage button.f-btn, #signupPage button.f-btn').forEach(function (b) { b.disabled = on; b.style.opacity = on ? '.6' : ''; }); }
-  function friendly(m) {
+  /* database text is never trusted as markup (F-02): a URL the interface puts in src / href / url() must be http(s), data:image/ or
+     blob: (anything else becomes ''), and identity text (names, headlines, companies…) never carries markup characters */
+  function safeUrl(u) { if (window.dxDir && window.dxDir.safeUrl) return window.dxDir.safeUrl(u);
+    u = String(u == null ? '' : u).trim(); if (!u || /["'<>()\s\\]/.test(u)) return ''; if (/^data:image\/(png|jpe?g|gif|webp);/i.test(u) || /^blob:/i.test(u)) return u;
+    try { var x = new URL(u, location.href); return x.protocol === 'https:' || x.protocol === 'http:' ? u : ''; } catch (e) { return ''; } }
+  /* lookalikes, not entities: the approved markup puts this text both through esc() and straight into innerHTML / attributes /
+     inline handlers, so it must read the same either way (& only where it would start an entity such as &#39;) */
+  function txt(s) { return String(s == null ? '' : s).replace(/[<>"'`]|&(?=[#a-z0-9])/gi, function (c) { return { '<': '‹', '>': '›', '"': '”', "'": '’', '`': '‘', '&': '＆' }[c]; }); }
+  /* a company address (slug) is written into the markup unescaped by the approved directory: one with markup characters is never shown */
+  function okSlug(s) { return typeof s === 'string' && /^[^\s"'<>`&\\]{1,120}$/.test(s); }
+  function sslug(s) { return okSlug(s) ? s : null; }
+  function tel(s) { return String(s == null ? '' : s).replace(/[^0-9+\-() ]/g, '').trim(); }
+  function hexOr(c, id) { return /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : colorFor(id); }
+  /* the columns of a person the interface shows (embedded rows carry these, never phone / résumé fields) */
+  var PCOLS = 'id,name,headline,company,country,bio,avatar_url,role,verified,location,open_to_work,hiring,profile_views,followers_count';
+  /* errors are shown in words people understand — never raw database text (table, policy or function names) */
+  var TECH = /relation|column|function|schema|syntax|constraint|violates|PGRST|null value|operator|SQLSTATE|policy|permission|privilege|JSON object|cannot coerce|does not exist/i;
+  function friendly(x) {
+    var m = typeof x === 'string' ? x : String((x && x.message) || x || ''), code = x && typeof x === 'object' && x.code ? String(x.code) : '', st = x && typeof x === 'object' ? +x.status || 0 : 0;
     if (/invalid login credentials/i.test(m)) return 'Wrong email or password';
     if (/already registered/i.test(m)) return 'An account with this email already exists — sign in instead';
     if (/at least 8/i.test(m)) return 'Password must be at least 8 characters';
-    if (/invalid email/i.test(m)) return 'Please enter a valid email';
-    if (/failed to fetch|network/i.test(m)) return 'Connection problem — check your internet and try again';
-    return m || 'Something went wrong — please try again';
+    if (/invalid email|unable to validate email/i.test(m)) return 'Please enter a valid email';
+    if (/failed to fetch|networkerror|network request failed|load failed|err_internet/i.test(m) || navigator.onLine === false) return 'Connection problem — check your internet and try again';
+    if (code === 'PGRST301' || code === 'PGRST303' || st === 401 || /jwt (expired|malformed)|invalid jwt|auth session missing/i.test(m)) return 'Your session ended — please sign in again';
+    if (code === '23505' || /duplicate key/i.test(m)) return 'This already exists';
+    /* the text limits (0022) are the *_len / *_size checks and the column checks on what people type (body, title, name, note…) */
+    if (code === '23514' || code === '22001' || /check constraint|value too long/i.test(m))
+      return code === '22001' || /value too long|_len"|_size"|_(body|title|name|reply|note|issue|correction|description|product|number|registry|text)_check"/i.test(m) ? 'This text is too long — please shorten it' : 'Some of the values are not accepted — please check and try again';
+    if (code === '23503' || /foreign key/i.test(m)) return 'This is linked to other records and cannot be changed';
+    if (code === '22P02' || code === '22007' || code === '22008' || code === '22003' || /invalid input syntax|out of range/i.test(m)) return 'Please check the values you entered';
+    if (code === 'PGRST116' || /JSON object requested/i.test(m)) return 'Not found — or you are not allowed to change it';
+    if (/row-level security|permission denied|insufficient.privilege/i.test(m) || (code === '42501' && TECH.test(m))) return 'You are not allowed to do this';
+    if (/mime type|file size|maximum allowed size|payload too large/i.test(m) || st === 413) return 'This file type or size is not accepted';
+    if (st === 429) return 'Too many requests — please wait a moment and try again';
+    if (!m || TECH.test(m) || /^(PGRST|XX|42(?!501)|53|54|55|57|58)/.test(code)) return 'Something went wrong — please try again';
+    return m;                                             /* the database's own refusals (raise exception …) are written for people */
+  }
+  /* everything kept for the signed-in person is dropped when they sign out or their session ends: each part registers its reset */
+  var RESETS = [], LEAVING = false, SIGNING = false;
+  function onReset(f) { RESETS.push(f); }
+  function resetUser() { RESETS.forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); }
+  onReset(function () {
+    ME_UUID = null; A = {}; Z = {}; SEQ = 1000;
+    var U = window.USERS || [], k = U.filter(function (u) { return u.id <= 1000 && u !== window.ME; }); U.length = 0; k.forEach(function (u) { U.push(u); });
+    Object.keys(window.CONN_STATE || {}).forEach(function (x) { if (+x > 1000) delete window.CONN_STATE[x]; });
+    /* what the interface keeps in this browser for a person (stores dx_*, kit dbx_*) goes too; only the interface preferences stay */
+    try { Object.keys(localStorage).forEach(function (x) { if (/^dbx?_/.test(x) && !/^dx_(lang|theme|tour_done|flags)$/.test(x)) localStorage.removeItem(x); }); } catch (e) {}
+  });
+  /* the demo's sample people, posts, comments and notifications never show in the live app (F-54) */
+  function clearSeeds() {
+    var U = window.USERS || [], real = U.filter(function (u) { return u.id > 1000 && u.id !== window.ME.id; }); U.length = 0; U.push(window.ME); real.forEach(function (u) { U.push(u); });
+    if (window.POSTS) window.POSTS.length = 0; if (window.NOTIFS) window.NOTIFS.length = 0;
+    Object.keys(window.COMMENTS || {}).forEach(function (k) { delete window.COMMENTS[k]; });
   }
   /* the signed-in person becomes ME — same fields the interface already reads */
   async function hydrateMe(uid) {
     var r = await sb.from('profiles').select('*').eq('id', uid).single();
     if (r.error) throw r.error;
-    var p = r.data; ME_UUID = p.id;
+    var p = r.data; if (ME_UUID && ME_UUID !== p.id) resetUser(); ME_UUID = p.id;
     Object.assign(window.ME, {
-      id: aid(p.id), name: p.name || '', initials: initials(p.name), headline: p.headline || '', company: p.company || '', country: p.country || 'EG',
-      verified: !!p.verified, role: p.role || 'user', bio: p.bio || '', web: p.website || '', phone: p.phone || '', certs: p.certs || '', avatar: p.avatar_url || '',
-      location: p.location || '', followers: p.followers_count || 0, openToWork: !!p.open_to_work, hiring: !!p.hiring, profileViews: p.profile_views || 0, color: colorFor(p.id)
+      id: aid(p.id), name: txt(p.name), initials: initials(txt(p.name)), headline: txt(p.headline), company: txt(p.company), country: txt(p.country || 'EG'),
+      verified: !!p.verified, role: p.role || 'user', bio: txt(p.bio), web: safeUrl(p.website), phone: tel(p.phone), certs: txt(p.certs), avatar: safeUrl(p.avatar_url),
+      location: txt(p.location), followers: p.followers_count || 0, openToWork: !!p.open_to_work, hiring: !!p.hiring, color: colorFor(p.id),
+      profileViews: p.profile_views || '0', connections: '0'          /* '0', not 0: the approved sidebar shows sample numbers for a falsy value */
     });
+    clearSeeds();
     return window.ME;
   }
   function enterApp() {                        /* same steps the interface's own login performs */
@@ -45,51 +94,75 @@
     var email = (document.getElementById('loginEmail') || {}).value || '', pw = (document.getElementById('loginPw') || {}).value || '';
     hide('loginErr'); email = email.trim();
     if (!email) return show('loginErr', 'Email is required'); if (!pw) return show('loginErr', 'Password is required');
-    busy(true);
-    try { var r = await sb.auth.signInWithPassword({ email: email, password: pw }); if (r.error) return show('loginErr', friendly(r.error.message));
+    busy(true); SIGNING = true;
+    try { var r = await sb.auth.signInWithPassword({ email: email, password: pw }); if (r.error) return show('loginErr', friendly(r.error));
       await hydrateMe(r.data.user.id); orig.login(); }
-    catch (e) { show('loginErr', friendly(e.message)); } finally { busy(false); }
+    catch (e) { show('loginErr', friendly(e)); } finally { busy(false); SIGNING = false; }
   };
   window.doSignup = async function () {
     var name = ((document.getElementById('suName') || {}).value || '').trim(), email = ((document.getElementById('suEmail') || {}).value || '').trim(), pw = (document.getElementById('suPw') || {}).value || '';
     hide('suErr');
     if (!name) return show('suErr', 'Name is required'); if (!email) return show('suErr', 'Email is required'); if (pw.length < 8) return show('suErr', 'Password must be at least 8 characters');
-    busy(true);
-    try { var r = await sb.auth.signUp({ email: email, password: pw, options: { data: { name: name } } }); if (r.error) return show('suErr', friendly(r.error.message));
+    busy(true); SIGNING = true;
+    try { var r = await sb.auth.signUp({ email: email, password: pw, options: { data: { name: name } } }); if (r.error) return show('suErr', friendly(r.error));
       if (!r.data.session) return show('suErr', 'Check your email to confirm your account, then sign in');
       await hydrateMe(r.data.user.id); orig.signup(); }
-    catch (e) { show('suErr', friendly(e.message)); } finally { busy(false); }
+    catch (e) { show('suErr', friendly(e)); } finally { busy(false); SIGNING = false; }
   };
-  window.doLogout = async function () { try { await sb.auth.signOut(); } catch (e) {} ME_UUID = null; orig.logout(); };
-  /* a saved session opens the app directly after the splash */
-  var pending = null, origEnd = window.endSplash;
-  window.endSplash = function () { var r = origEnd && origEnd.apply(this, arguments); if (pending) { enterApp(); pending = null; } return r; };
-  sb.auth.getSession().then(function (r) {
-    var s = r.data && r.data.session; if (!s) return;
-    hydrateMe(s.user.id).then(function () {
-      var sp = document.getElementById('splash'), splashOn = sp && getComputedStyle(sp).display !== 'none' && sp.offsetParent !== null;
-      if (splashOn) pending = true; else enterApp();
-    }).catch(function () { sb.auth.signOut(); });
+  window.doLogout = async function () { LEAVING = true; try { await sb.auth.signOut(); } catch (e) {} resetUser(); LEAVING = false; orig.logout(); };
+  /* the session ended outside this page (signed out in another tab, refresh refused, account removed): back to the login page,
+     nothing of that person stays in the page (F-52) */
+  function sessionEnded() { if (!ME_UUID || LEAVING) return; resetUser(); orig.logout(); if (typeof window.toast === 'function') window.toast('Your session ended — please sign in again'); }
+  sb.auth.onAuthStateChange(function (ev, s) {
+    if (ev === 'SIGNED_OUT') setTimeout(sessionEnded, 0);
+    else if (ev === 'SIGNED_IN' && s && !LEAVING && !SIGNING) {                   /* signed in in another tab (this tab's own sign-in is SIGNING) */
+      if (ME_UUID && s.user.id !== ME_UUID) location.reload();                    /* another account: start clean with it */
+      else if (!ME_UUID) setTimeout(function () { restore(s, 0); }, 0);           /* this tab shows the login page: open the app */
+    }
   });
-  window.dxLive = { sb: sb, hydrateMe: function (u) { return hydrateMe(u); }, version: 'B1' };
+  /* a saved session opens the app directly after the splash. The approved endSplash re-shows #authWrap 700 ms after the fade
+     starts, so the app opens after that (F-19). The splash is watched, not endSplash: its own 5.2 s timer holds the original
+     function. (#splash is position:fixed, so its offsetParent is always null — not used.) */
+  function openAfterSplash() { setTimeout(function () { if (ME_UUID) enterApp(); }, 750); }
+  function afterSplash() {
+    var sp = document.getElementById('splash'), shown = function () { return !!sp && getComputedStyle(sp).display !== 'none'; };
+    if (!shown()) return enterApp(); if (sp.classList.contains('hide')) return openAfterSplash();
+    var mo = new MutationObserver(function () { if (shown() && !sp.classList.contains('hide')) return; mo.disconnect(); if (shown()) openAfterSplash(); else enterApp(); });
+    mo.observe(sp, { attributes: true, attributeFilter: ['class', 'style'] });
+  }
+  /* only a missing account or a refused session signs out; a network blip keeps the session and tries again (F-53) */
+  function authGone(e) { var c = String((e && e.code) || ''), st = +(e && e.status) || 0; return c === 'PGRST116' || c === 'PGRST301' || c === 'PGRST303' || st === 401 || st === 403 || /jwt|session/i.test(String((e && e.message) || '')); }
+  var RESTORING = false;
+  function restore(s, tries) {
+    if (ME_UUID || RESTORING || SIGNING) return; RESTORING = true;                          /* signed in by hand meanwhile, or already opening */
+    hydrateMe(s.user.id).then(function () { RESTORING = false; hide('loginErr'); afterSplash(); }, function (e) { RESTORING = false;
+      if (authGone(e)) { sb.auth.signOut(); return; }
+      show('loginErr', friendly(e));
+      if (tries < 5) setTimeout(function () { sb.auth.getSession().then(function (r) { var x = r.data && r.data.session; if (x) restore(x, tries + 1); }); }, 2000 * Math.pow(2, tries));
+    });
+  }
+  sb.auth.getSession().then(function (r) { var s = r.data && r.data.session; if (s) restore(s, 0); });
+  window.dxLive = { sb: sb, hydrateMe: function (u) { return hydrateMe(u); }, friendly: friendly, version: 'B1' };
 
   /* ═══════════════ B2 — feed: posts, reactions, comments, saved (20 at a time) ═══════════════ */
   var PAGE = 20, FEED = { cursor: null, done: false, loading: false, at: 0 }, CMT_LOADED = {};
   function ago(ts) { var s = (Date.now() - new Date(ts).getTime()) / 1000; if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s / 60) + 'm ago';
     if (s < 86400) return Math.floor(s / 3600) + 'h ago'; if (s < 604800) return Math.floor(s / 86400) + 'd ago'; return new Date(ts).toLocaleDateString(); }
-  function userFrom(p) { return { id: aid(p.id), name: p.name || 'Member', initials: initials(p.name), headline: p.headline || '', company: p.company || '', country: p.country || 'EG',
-    verified: !!p.verified, color: colorFor(p.id), role: p.role || 'user', avatar: p.avatar_url || '', location: p.location || '', connections: 0, followers: p.followers_count || 0,
-    openToWork: !!p.open_to_work, hiring: !!p.hiring, profileViews: p.profile_views || 0, bio: p.bio || '' }; }
+  function userFrom(p) { return { id: aid(p.id), name: txt(p.name || 'Member'), initials: initials(txt(p.name)), headline: txt(p.headline), company: txt(p.company), country: txt(p.country || 'EG'),
+    verified: !!p.verified, color: colorFor(p.id), role: p.role || 'user', avatar: safeUrl(p.avatar_url), location: txt(p.location), connections: 0, followers: p.followers_count || 0,
+    openToWork: !!p.open_to_work, hiring: !!p.hiring, profileViews: p.profile_views || 0, bio: txt(p.bio) }; }
   function putUser(p) { if (!p) return; if (p.id === ME_UUID) return; var u = userFrom(p), list = window.USERS, i = list.findIndex(function (x) { return x.id === u.id; }); if (i < 0) list.push(u); else Object.assign(list[i], u); }
   function postFrom(r, mine, saved) { var media = r.post_media || [];
     return { id: r.id, uid: aid(r.user_id), cat: r.category, body: r.body, likeCount: r.like_count || 0, liked: mine.has(r.id), commentCount: r.comment_count || 0, shareCount: r.share_count || 0,
       viewCount: r.view_count || 0, saved: saved.has(r.id), pinned: !!r.pinned, ts: ago(r.created_at), created_at: r.created_at,
-      imgs: media.filter(function (m) { return m.type === 'image'; }).map(function (m) { return m.url; }),
-      files: media.filter(function (m) { return m.type !== 'image'; }).map(function (m) { return { name: m.name, size: m.size, url: m.url }; }),
+      imgs: media.filter(function (m) { return m.type === 'image' && safeUrl(m.url); }).map(function (m) { return safeUrl(m.url); }),
+      files: media.filter(function (m) { return m.type !== 'image' && safeUrl(m.url); }).map(function (m) { return { name: txt(m.name), size: +m.size || 0, url: safeUrl(m.url) }; }),
       reactions: (r.like_count ? { like: r.like_count } : {}) }; }
   async function fetchPage() {
-    var q = sb.from('posts').select('*, author:profiles!posts_user_id_fkey(*), post_media(*)').order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
-    if (FEED.cursor) q = q.or('created_at.lt.' + FEED.cursor.t + ',and(created_at.eq.' + FEED.cursor.t + ',id.lt.' + FEED.cursor.id + ')');
+    var q = sb.from('posts').select('*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*)').order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
+    /* keyset (created_at, id) < cursor: the extra created_at <= T is an index condition, so a deep page reads one page of the index
+       instead of every newer row (F-111); the or() keeps the exact tie-break */
+    if (FEED.cursor) q = q.lte('created_at', FEED.cursor.t).or('created_at.lt.' + FEED.cursor.t + ',and(created_at.eq.' + FEED.cursor.t + ',id.lt.' + FEED.cursor.id + ')');
     var r = await q; if (r.error) throw r.error; var rows = r.data || [], ids = rows.map(function (x) { return x.id; });
     var mine = new Set(), saved = new Set();
     if (ids.length) { var a = await Promise.all([sb.from('reactions').select('post_id').eq('user_id', ME_UUID).in('post_id', ids), sb.from('saved_posts').select('post_id').eq('user_id', ME_UUID).in('post_id', ids)]);
@@ -108,6 +181,8 @@
       FEED.at = Date.now(); return posts;
     } finally { FEED.loading = false; }
   }
+  onReset(function () { FEED.cursor = null; FEED.done = false; FEED.loading = false; FEED.at = 0; CMT_LOADED = {}; if (io) { io.disconnect(); io = null; }
+    if (window.POSTS) window.POSTS.length = 0; Object.keys(window.COMMENTS || {}).forEach(function (k) { delete window.COMMENTS[k]; }); });
   function feedList() { var p = document.querySelector('#content .post'); return p ? p.parentElement : null; }
   var io = null;
   function watchEnd() {
@@ -118,7 +193,8 @@
         .catch(function (e) { toastErr(e); }); }, { rootMargin: '600px' });
     io.observe(last);
   }
-  function toastErr(e) { if (typeof window.toast === 'function') window.toast(friendly((e && e.message) || String(e))); console.error('Drugbox live:', e); }
+  function toastErr(e) { if (typeof window.toast === 'function') window.toast(friendly(e)); console.error('Drugbox live:', e);
+    if (ME_UUID && authGone(e)) sb.auth.getSession().then(function (r) { if (!(r.data && r.data.session)) sessionEnded(); });   /* a refused session: back to sign-in */ }
   var origGoto = window.goto;
   window.goto = function (page) {
     var r = origGoto.apply(this, arguments);
@@ -135,13 +211,15 @@
   var EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'application/pdf': 'pdf', 'application/zip': 'zip',
               'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx' };
   function rid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+  /* a storage key never takes raw text from a file name: letters and digits only, at most 8 (F-123) */
+  function safeExt(name) { var n = String(name || ''), i = n.lastIndexOf('.'); return (i > 0 ? n.slice(i + 1).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8) : '') || 'bin'; }
   async function blobOf(x) { if (x instanceof Blob) return x; var r = await fetch(x); return r.blob(); }
   async function uploadPostMedia(postId, imgs, files) {
     var out = { imgs: [], files: [] }, rows = [];
     for (var i = 0; i < imgs.length; i++) { var b = await blobOf(imgs[i]), path = 'posts/' + ME_UUID + '/' + postId + '-' + rid() + '.' + (EXT[b.type] || 'jpg');
       var up = await sb.storage.from('post-media').upload(path, b, { contentType: b.type || 'image/jpeg' }); if (up.error) { toastErr(up.error); continue; }
       var u = sb.storage.from('post-media').getPublicUrl(path).data.publicUrl; out.imgs.push(u); rows.push({ post_id: postId, url: u, type: 'image', name: 'photo', size: b.size }); }
-    for (var j = 0; j < files.length; j++) { var f = files[j], fb = await blobOf(f.url || f.file || f), ext = (f.name || '').split('.').pop().toLowerCase(), p2 = 'posts/' + ME_UUID + '/' + postId + '-' + rid() + '.' + ext;
+    for (var j = 0; j < files.length; j++) { var f = files[j], fb = await blobOf(f.url || f.file || f), ext = EXT[fb.type] || safeExt(f.name), p2 = 'posts/' + ME_UUID + '/' + postId + '-' + rid() + '.' + ext;
       var up2 = await sb.storage.from('post-media').upload(p2, fb, { contentType: fb.type || 'application/octet-stream' }); if (up2.error) { toastErr(up2.error); continue; }
       var u2 = sb.storage.from('post-media').getPublicUrl(p2).data.publicUrl; out.files.push({ name: f.name, size: f.size, url: u2 }); rows.push({ post_id: postId, url: u2, type: 'file', name: f.name, size: f.size }); }
     if (rows.length) { var r = await sb.from('post_media').insert(rows); if (r.error) toastErr(r.error); }
@@ -185,7 +263,7 @@
     var box = document.getElementById('cmt-' + id), opening = box && box.style.display === 'none';
     if (!opening || CMT_LOADED[id] || typeof id !== 'number') return o2.toggleComments(id);
     CMT_LOADED[id] = true;
-    sb.from('comments').select('*, author:profiles!comments_user_id_fkey(*)').eq('post_id', id).order('created_at', { ascending: true }).order('id', { ascending: true }).limit(50).then(function (r) {
+    sb.from('comments').select('*, author:profiles!comments_user_id_fkey(' + PCOLS + ')').eq('post_id', id).order('created_at', { ascending: true }).order('id', { ascending: true }).limit(50).then(function (r) {
       if (r.error) throw r.error; var p = window.POSTS.find(function (x) { return x.id === id; });
       (r.data || []).forEach(function (c) { putUser(c.author); });
       window.COMMENTS[id] = (r.data || []).map(function (c) { return { uid: aid(c.user_id), text: c.body, ts: ago(c.created_at), likes: 0 }; });
@@ -208,20 +286,35 @@
       sb.from('posts').delete().eq('id', id).select().then(function (r) { if (r.error || !(r.data || []).length) { FEED.at = 0; origGoto('feed'); toastErr(r.error || { message: 'This post could not be deleted' }); } });
     }, 400);
   };
+  /* the feed sidebar's "Who viewed your profile" lists sample people and "Search appearances" is a fixed sample number in the
+     demo; the live app keeps neither, so they are left out rather than showing invented figures or real members as viewers (F-54) */
+  var oSide = window.renderFeedSidebar;
+  if (oSide) window.renderFeedSidebar = function () { var h = oSide.apply(this, arguments); if (!ME_UUID || typeof h !== 'string') return h;
+    var k = h.indexOf('Who viewed your profile'), a = k < 0 ? -1 : h.lastIndexOf('<div class="card"', k), z = k < 0 ? -1 : h.indexOf('<div class="card"', k);
+    if (a >= 0 && z > a) h = h.slice(0, a) + h.slice(z);
+    var s = h.indexOf('>Search appearances<'), ra = s < 0 ? -1 : h.lastIndexOf('<div', s), rz = s < 0 ? -1 : h.indexOf('</div>', s);
+    return ra >= 0 && rz > s ? h.slice(0, ra) + h.slice(rz + 6) : h; };
   window.dxLive.loadFeed = loadFeed; window.dxLive.version = 'B2';
 
   /* ═══════════════ B3 — network (requests, connections, suggestions) + notifications ═══════════════ */
   var INCOMING = {}, NET_AT = 0, NOTIF_AT = 0, NOTIF_IDS = [];
   var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼' };
   var esc2 = function (t) { return window.esc ? window.esc(t) : String(t || ''); };
+  /* every connection, 1,000 rows a request in id order (the API's row cap) — a big network is never cut short (F-50) */
   async function loadConnections() {
-    var r = await sb.from('connections').select('id,requester,addressee,status,rp:profiles!connections_requester_fkey(*),ap:profiles!connections_addressee_fkey(*)')
-      .or('requester.eq.' + ME_UUID + ',addressee.eq.' + ME_UUID).limit(1000);
-    if (r.error) throw r.error;
+    var rows = [], last = 0;
+    for (;;) {
+      var r = await sb.from('connections').select('id,requester,addressee,status,rp:profiles!connections_requester_fkey(' + PCOLS + '),ap:profiles!connections_addressee_fkey(' + PCOLS + ')')
+        .or('requester.eq.' + ME_UUID + ',addressee.eq.' + ME_UUID).gt('id', last).order('id').limit(1000);
+      if (r.error) throw r.error; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; last = r.data[r.data.length - 1].id;
+    }
     Object.keys(window.CONN_STATE).forEach(function (k) { if (+k > 1000) delete window.CONN_STATE[k]; }); INCOMING = {};
-    (r.data || []).forEach(function (c) { var mine = c.requester === ME_UUID, other = mine ? c.ap : c.rp; if (!other) return; putUser(other); var a = aid(other.id);
-      if (c.status === 'accepted') window.CONN_STATE[a] = 'connected'; else if (c.status === 'pending') { if (mine) window.CONN_STATE[a] = 'pending'; else INCOMING[a] = true; } });
+    var n = 0;
+    rows.forEach(function (c) { var mine = c.requester === ME_UUID, other = mine ? c.ap : c.rp; if (!other) return; putUser(other); var a = aid(other.id);
+      if (c.status === 'accepted') { window.CONN_STATE[a] = 'connected'; n++; } else if (c.status === 'pending') { if (mine) window.CONN_STATE[a] = 'pending'; else INCOMING[a] = true; } });
+    window.ME.connections = n || '0';
   }
+  onReset(function () { INCOMING = {}; NET_AT = 0; NOTIF_AT = 0; NOTIF_IDS = []; if (window.NOTIFS) window.NOTIFS.length = 0; badges(); });
   async function loadSuggestions() { var r = await sb.rpc('suggest_people', { p_limit: 12 }); if (r.error) throw r.error; (r.data || []).forEach(function (p) { putUser(p); }); return r.data || []; }
   function notifFrom(n) {
     var who = esc2(n.actor ? n.actor.name : 'Someone'), a = aid(n.from_user), t;
@@ -234,7 +327,7 @@
     return { id: n.id, uid: a, icon: ICON[n.type] || '🔔', text: t, ts: ago(n.created_at), read: !!n.read, type: type };
   }
   async function loadNotifs() {
-    var r = await sb.from('notifications').select('*, actor:profiles!notifications_from_user_fkey(*)').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(50);
+    var r = await sb.from('notifications').select('*, actor:profiles!notifications_from_user_fkey(' + PCOLS + ')').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(50);
     if (r.error) throw r.error; (r.data || []).forEach(function (n) { putUser(n.actor); });
     var list = window.NOTIFS; list.length = 0; (r.data || []).forEach(function (n) { list.push(notifFrom(n)); }); NOTIF_IDS = list.map(function (n) { return n.id; });
     NOTIF_AT = Date.now(); badges();
@@ -344,8 +437,8 @@
 
   async function sendAttachments(partner, atts, text, area) {
     for (var i = 0; i < atts.length; i++) { var x = atts[i], b; try { b = await blobOf(x.file || x.url); } catch (e) { toastErr(e); continue; }
-      var ext = (x.name || '').split('.').pop().toLowerCase() || EXT[b.type] || 'bin', path = ME_UUID + '/' + partner + '/' + rid() + '.' + ext, kind = x.kind === 'photo' ? 'photo' : 'file';
-      var local = URL.createObjectURL(b), att = { path: path, name: x.name, size: b.size, kind: kind }, body = i === 0 ? (text || '') : '';
+      var ext = EXT[b.type] || safeExt(x.name), path = ME_UUID + '/' + partner + '/' + rid() + '.' + ext, kind = x.kind === 'photo' ? 'photo' : 'file';
+      var local = URL.createObjectURL(b), att = { path: path, name: String(x.name || 'file').slice(0, 200), size: b.size, kind: kind }, body = i === 0 ? (text || '') : '';
       area.insertAdjacentHTML('beforeend', rowMine(body, 'Sending…', att, local)); var bubble = area.lastElementChild; area.scrollTop = area.scrollHeight;
       var up = await sb.storage.from('message-media').upload(path, b, { contentType: b.type || 'application/octet-stream' });
       if (up.error) { bubble.remove(); toastErr(up.error); continue; }
@@ -403,28 +496,45 @@
   var origMessageUser = window.messageUser;
   window.messageUser = function (a) { if (ME_UUID && uuidOf(+a)) { MX.to = +a; window.__mxTo = null; window.goto('messages'); return; } return origMessageUser.apply(this, arguments); };
 
-  /* live updates: one code path (tick) — triggered by Supabase Realtime when available, and by a gentle timer as a safety net */
-  async function tick() {
-    if (!ME_UUID || document.hidden) return;
-    var r = await sb.rpc('new_messages', { p_after: MX.lastMsg });
-    if (!r.error && (r.data || []).length) {
-      var onMx = document.body.getAttribute('data-page') === 'messages', fresh = [];
-      r.data.forEach(function (m) { MX.lastMsg = Math.max(MX.lastMsg, m.id); var a = aid(m.sender_id);
+  /* live updates: one code path (tick) — triggered by Supabase Realtime when available, and by a gentle timer as a safety net.
+     One tick at a time (Realtime events, the timer and a returning tab share the run in progress), each incoming message is shown
+     once, and only what a notification is about is reloaded (F-51). */
+  var TICK = null, SHOWN = {};
+  function tick() { if (TICK) return TICK; TICK = tickOnce().finally(function () { TICK = null; }); return TICK; }
+  async function tickOnce() {
+    if (!ME_UUID || document.hidden) return false;
+    var me = ME_UUID, got = false, r = await sb.rpc('new_messages', { p_after: MX.lastMsg });
+    if (me !== ME_UUID) return false;                                            /* signed out meanwhile */
+    var rows = (!r.error && r.data || []).filter(function (m) { return m.id > MX.lastMsg && !SHOWN[m.id]; });
+    if (rows.length) {
+      got = true; var onMx = document.body.getAttribute('data-page') === 'messages', fresh = [];
+      rows.forEach(function (m) { MX.lastMsg = Math.max(MX.lastMsg, m.id); SHOWN[m.id] = 1; var a = aid(m.sender_id);
         if (onMx && MX.open === a) { var area = document.getElementById('messagesArea'); if (area) { area.insertAdjacentHTML('beforeend', rowTheirs(window.U(a), m.attachment ? (m.body || '') : (m.body || '📷 Photo'), 'now', m.attachment)); area.scrollTop = area.scrollHeight; signAll(area); }
           sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id).then(function () {}); }
         else fresh.push(m); });
       await loadConvs(); if (onMx) { var keep = MX.open; drawThreads(); if (keep) { var t = listEl() && listEl().querySelector('.mx-thread[data-person="u' + keep + '"]'); if (t) t.classList.add('active'); } }
       if (fresh.length && !onMx && typeof window.toast === 'function') window.toast('💬 New message from ' + window.U(aid(fresh[fresh.length - 1].sender_id)).name);
     }
-    var n = await sb.from('notifications').select('id').eq('user_id', ME_UUID).gt('id', MX.lastNotif).order('id', { ascending: false }).limit(1);
-    if (!n.error && (n.data || []).length) { MX.lastNotif = n.data[0].id; await loadConnections(); await loadNotifs(); if (window.dxLive.loadDeals) await window.dxLive.loadDeals().catch(function () {}); var pg = document.body.getAttribute('data-page'); if (pg === 'notifs' || pg === 'notifications') origGoto(pg); }
+    var n = await sb.from('notifications').select('id,type').eq('user_id', ME_UUID).gt('id', MX.lastNotif).order('id', { ascending: false }).limit(50);
+    if (!n.error && (n.data || []).length && me === ME_UUID) {
+      got = true; MX.lastNotif = n.data[0].id; var types = n.data.map(function (x) { return x.type; });
+      if (types.some(function (t) { return /^connection/.test(t); })) await loadConnections();
+      await loadNotifs();
+      if (types.indexOf('deal') >= 0 && window.dxLive.loadDeals) await window.dxLive.loadDeals().catch(function () {});
+      var pg = document.body.getAttribute('data-page'); if (pg === 'notifs' || pg === 'notifications') origGoto(pg);
+    }
+    return got;
   }
+  /* polling: 5 s on Messages; elsewhere 20 s, slowing to 60 s while nothing arrives; 60 s with Realtime; nothing in a hidden tab */
   function schedule() { clearTimeout(MX.timer); if (!ME_UUID) return;
-    var every = MX.rt ? 60000 : (document.body.getAttribute('data-page') === 'messages' ? 5000 : 20000);
-    MX.timer = setTimeout(function () { tick().catch(function (e) { console.error(e); }).then(schedule); }, every); }
+    var every = MX.rt ? 60000 : (document.body.getAttribute('data-page') === 'messages' ? 5000 : Math.min(60000, 20000 * Math.pow(1.5, MX.idle || 0)));
+    MX.timer = setTimeout(function () { if (document.hidden) return schedule(); tick().then(function (b) { MX.idle = b ? 0 : (MX.idle || 0) + 1; }, function (e) { console.error(e); }).then(schedule); }, every); }
   async function startLive() {
-    var a = await sb.from('messages').select('id').eq('receiver_id', ME_UUID).order('id', { ascending: false }).limit(1); MX.lastMsg = a.data && a.data[0] ? a.data[0].id : 0;
-    var b = await sb.from('notifications').select('id').eq('user_id', ME_UUID).order('id', { ascending: false }).limit(1); MX.lastNotif = b.data && b.data[0] ? b.data[0].id : 0;
+    var me = ME_UUID, a = await sb.rpc('my_last_message_id');
+    if (a.error) { var x = await sb.from('messages').select('id').eq('receiver_id', ME_UUID).order('id', { ascending: false }).limit(1); a = { data: x.data && x.data[0] ? x.data[0].id : 0 }; }
+    var b = await sb.from('notifications').select('id').eq('user_id', ME_UUID).order('id', { ascending: false }).limit(1);
+    if (me !== ME_UUID) return;
+    MX.lastMsg = +a.data || 0; MX.lastNotif = b.data && b.data[0] ? b.data[0].id : 0; MX.idle = 0;
     loadConvs().catch(function () {});
     if (CFG.realtime !== false && sb.channel) {
       try { sb.channel('dx-' + ME_UUID)
@@ -434,42 +544,106 @@
     }
     schedule();
   }
-  document.addEventListener('visibilitychange', function () { if (!document.hidden && ME_UUID) tick().catch(function () {}); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && ME_UUID) { MX.idle = 0; tick().catch(function () {}); } });
   var hydrateB3 = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateB3(uid); startLive().catch(function (e) { console.error(e); }); return me; };
-  var logoutB3 = window.doLogout;
-  window.doLogout = async function () { clearTimeout(MX.timer); try { sb.removeAllChannels && sb.removeAllChannels(); } catch (e) {} MX.convs = []; MX.open = null; return logoutB3.apply(this, arguments); };
+  onReset(function () { clearTimeout(MX.timer); try { sb.removeAllChannels && sb.removeAllChannels(); } catch (e) {} MX.convs = []; MX.open = null; MX.to = null; MX.lastMsg = 0; MX.lastNotif = 0; MX.rt = false; MX.idle = 0; SHOWN = {}; msgBadge(); });
+  /* messages written outside the Messages page — the chat dock and the listing / job buttons — are real messages (F-22).
+     The person is the one whose card opened the window (the last click outside a window or the dock), or the one real member
+     with the name the interface shows; never a guess between two people with the same name. */
+  var LASTUID = { a: 0, at: 0 };
+  document.addEventListener('click', function (e) { var t = e.target; if (!t.closest || t.closest('.dbk-ov, #dxDock')) return;
+    var c = t.closest('[data-uid]'); LASTUID = c && +c.dataset.uid > 1000 ? { a: +c.dataset.uid, at: Date.now() } : { a: 0, at: 0 }; }, true);
+  function lastCard() { return LASTUID.a && Date.now() - LASTUID.at < 120000 ? LASTUID.a : 0; }
+  onReset(function () { LASTUID = { a: 0, at: 0 }; });                    /* local numbers start again for the next person */
+  function personByName(name) { var n = String(name || '').trim().toLowerCase(); if (!n) return null;
+    var hits = (window.USERS || []).filter(function (x) { return x.id > 1000 && x !== window.ME && String(x.name || '').trim().toLowerCase() === n; });
+    var u = hits.length === 1 ? hits[0] : hits.find(function (x) { return x.id === lastCard(); }); return u ? uuidOf(u.id) : null; }
+  function unreachable(name) { setTimeout(function () { if (typeof window.toast === 'function') window.toast('Could not send to ' + (name || 'this person') + ' — open their profile and press Message'); }, 0); }
+  function sendText(to, body) { return sb.from('messages').insert({ sender_id: ME_UUID, receiver_id: to, body: body }).then(function (r) { if (r.error) throw r.error; }); }
+  function dockMessage(d) {
+    if (d == null) return !!ME_UUID;                                      /* the dock asks whether it can send for real */
+    var to = ME_UUID && personByName(d.to); if (!to || to === ME_UUID) { unreachable(d.to); return false; }
+    sendText(to, String(d.text || '')).catch(toastErr); return true;
+  }
+  if (window.DBK) window.DBK.sendToOutbox = function (item) {             /* live: never the browser's outbox */
+    item = item || {}; if (!ME_UUID) return;
+    var to = personByName(item.to) || (lastCard() ? uuidOf(lastCard()) : null);
+    if (!to || to === ME_UUID) { unreachable(item.to); return; }
+    sendText(to, (item.ctx ? 'Re: ' + item.ctx + '\n' : '') + (item.price ? 'Price: ' + item.price + '\n' : '') + String(item.text || '')).catch(toastErr);
+  };
   Object.assign(window.dxLive, { tick: tick, loadConvs: loadConvs, version: 'B4' });
 
   /* ═══════════════ C1 — companies: directory, company pages, my companies, create, page edits, verification ═══════════════
-     The demo's store() and company list have data hooks (inert in the demo); here they read and write the database. */
-  var CO = { byId: {}, raw: {}, loaded: false, sitesAt: {} };
+     The demo's store() and company list have data hooks (inert in the demo); here they read and write the database.
+     Right after sign-in only my own pages load; the directory loads, a page at a time, when the Companies page opens (F-05). */
+  var CO = { byId: {}, raw: {}, loaded: false, at: 0, loading: null, roles: {}, mine: false, mineP: null, sitesAt: {}, track: {}, trackAt: {} };
   var TYPE = { factory: 'Factory', warehouse: 'Warehouse', lab: 'Laboratory', office: 'Office', head_office: 'Head office' };
   var ROLE = { registration_holder: 'Registration holder', manufacturer: 'Manufacturer', supplier: 'Supplier' };
   function ym(d) { return d ? String(d).slice(0, 7) : ''; }
-  function coFrom(c) { var pr = c.profile || {}, sect = c.sectors || [];
-    return { slug: c.slug, registry: c.registry || '', plan: c.plan || 'free', licensed: !!c.licensed, status: c.status, name: c.name, name_ar: c.name_ar || '',
-      owner: c.mine ? window.ME.id : null, color: pr.color || colorFor(c.id), sector: sect[0] || 'Company', sectors: sect, city: c.city || '', gov: c.governorate || '',
-      founded: c.founded || '', employees: c.employees || '', verified: c.status === 'verified', level: '', rating: (c.track && c.track.rating) ? +c.track.rating : 0, reviews: (c.track && c.track.reviews) || 0, reply: '—',
-      tagline: c.tagline || '', about: c.bio || '', certs: c.certs || [], phone: c.phone || '', email: c.email || '', whatsapp: c.whatsapp || '', website: c.website || '',
-      address: pr.address || c.location || '', hours: c.hours || '', services: pr.services || [], jobs: [], team: [], logo: c.logo_url || null, cover: pr.cover || null,
-      products: (c.products || []).map(function (p) { return { id: 'p' + String(p.name).replace(/\W+/g, '').slice(0, 10), name: p.name, cat: ROLE[p.role] || 'Finished dosage', kind: p.form || '',
-        desc: [p.ingredient ? 'Active ingredient: ' + p.ingredient : '', p.strength || ''].filter(Boolean).join(' · '), moq: '', price: '', specs: [] }; }),
+  function coFrom(c) { var pr = c.profile || {}, sect = (c.sectors || []).map(txt), role = CO.roles[c.id];
+    var owns = !!c.mine && (role ? role === 'owner' || role === 'admin' : !CO.mine);              /* plain members (sales, hr…) do not manage the page (F-121) */
+    var vip = c.plan === 'vip' && (!c.vip_until || new Date(c.vip_until) > Date.now());          /* a VIP plan that ran out is free */
+    return { slug: c.slug, registry: txt(c.registry), plan: vip ? 'vip' : 'free', licensed: !!c.licensed, status: c.status, name: txt(c.name), name_ar: txt(c.name_ar),
+      owner: owns ? window.ME.id : null, color: hexOr(pr.color, c.id), sector: sect[0] || 'Company', sectors: sect, city: txt(c.city), gov: txt(c.governorate),
+      founded: c.founded || '', employees: txt(c.employees), verified: c.status === 'verified', level: '', rating: (c.track && c.track.rating) ? +c.track.rating : 0, reviews: (c.track && +c.track.reviews) || 0, reply: '—',
+      tagline: txt(c.tagline), about: txt(c.bio), certs: (c.certs || []).map(txt), phone: tel(c.phone), email: txt(c.email), whatsapp: tel(c.whatsapp), website: safeUrl(c.website),
+      address: txt(pr.address || c.location), hours: txt(c.hours), services: (pr.services || []).map(txt), jobs: [], team: [], logo: safeUrl(c.logo_url) || null, cover: safeUrl(pr.cover) || null,
+      products: (c.products || []).map(function (p) { return { id: 'p' + String(p.name).replace(/\W+/g, '').slice(0, 10), name: txt(p.name), cat: ROLE[p.role] || 'Finished dosage', kind: txt(p.form),
+        desc: [p.ingredient ? 'Active ingredient: ' + txt(p.ingredient) : '', txt(p.strength)].filter(Boolean).join(' · '), moq: '', price: '', specs: [] }; }),
       createdAt: new Date(c.created_at).getTime(), _id: c.id, _tier: c.tier };
   }
-  async function loadDirectory() {
-    var r = await sb.rpc('directory_companies', { p_limit: 5000 }); if (r.error) throw r.error;
-    var list = (r.data || []).map(function (c) { CO.raw[c.slug] = c; CO.byId[c.id] = c.slug; return coFrom(c); });
-    window.dxLiveCompanies = list; CO.loaded = true; return list;
+  /* my pages and my role in each (owner / admin manage the page) — what jobs, listings, suppliers and deals need after sign-in */
+  async function loadMine() {
+    var me = ME_UUID, q = await Promise.all([sb.from('company_members').select('company_id, role').eq('user_id', ME_UUID).eq('accepted', true), sb.from('companies').select('id').eq('owner_id', ME_UUID)]);
+    if (q[0].error) throw q[0].error; if (me !== ME_UUID) return;
+    var roles = {}; (q[0].data || []).forEach(function (m) { roles[m.company_id] = m.role; }); (q[1].data || []).forEach(function (c) { roles[c.id] = 'owner'; });
+    CO.roles = roles; CO.mine = true;
+    var ids = Object.keys(roles).map(Number); if (!ids.length) return;
+    var r = await sb.from('companies').select('*').in('id', ids); if (r.error) throw r.error; if (me !== ME_UUID) return;
+    var list = window.dxLiveCompanies || (window.dxLiveCompanies = []);
+    (r.data || []).forEach(function (c) { if (!okSlug(c.slug)) return; var old = CO.raw[c.slug]; c.mine = true; if (old && old.id) ['track', 'certs', 'products', 'tier'].forEach(function (k) { if (k in old) c[k] = old[k]; });
+      CO.raw[c.slug] = c; CO.byId[c.id] = c.slug; var co = coFrom(c), i = list.findIndex(function (x) { return x.slug === c.slug; }); if (i < 0) list.push(co); else list[i] = co; });
+    window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
   }
+  /* the whole directory, 200 companies a request in the directory's order; the first page is drawn at once */
+  var DIR_PAGE = 200;
+  function publish(list, raw, byId, partial) {      /* pages being created and my own pages stay listed (until the last page: every page already shown) */
+    var extra = [];
+    Object.keys(CO.raw).forEach(function (slug) { var k = CO.raw[slug]; if (raw[slug] || !k || !(k.pending || (k.id && (partial || CO.roles[k.id])))) return;
+      raw[slug] = k; if (k.id) byId[k.id] = slug; var l = live(slug); if (l) extra.push(l); });
+    CO.raw = raw; CO.byId = byId; window.dxLiveCompanies = list.concat(extra); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies();
+    var mkl = document.querySelector('#mkx .hb-mk'); if (mkl && document.body.getAttribute('data-page') === 'market') { mkl.dataset.sig = ''; paintMarket(); }   /* the marketplace's company listings name the companies */
+  }
+  function loadDirectory() {
+    if (CO.loading) return CO.loading;
+    var me = ME_UUID;
+    CO.loading = (async function () {
+      var list = [], raw = {}, byId = {}, off = 0, first = !CO.loaded;
+      for (;;) {
+        var r = await sb.rpc('directory_companies_page', { p_limit: DIR_PAGE, p_offset: off, p_q: null }); if (r.error) throw r.error; if (me !== ME_UUID) return [];
+        var rows = r.data || []; off += rows.length;
+        rows.forEach(function (c) { if (byId[c.id] || !okSlug(c.slug)) return; raw[c.slug] = c; byId[c.id] = c.slug; list.push(coFrom(c)); });
+        if (rows.length < DIR_PAGE) break;
+        if (first && off === rows.length) publish(list, Object.assign({}, raw), Object.assign({}, byId), true);
+      }
+      publish(list, raw, byId, false); CO.loaded = true; CO.at = Date.now(); return window.dxLiveCompanies;
+    })().finally(function () { CO.loading = null; });
+    return CO.loading;
+  }
+  function refreshCompanies() { CO.at = 0; return (CO.loaded ? loadDirectory() : loadMine()).then(rerenderCompanies); }
   async function loadSites(slug) {
     var r = await sb.rpc('company_sites_public', { p_slug: slug }); if (r.error) throw r.error;
     window.dxLiveSites = window.dxLiveSites || {};
-    window.dxLiveSites[slug] = (r.data || []).map(function (s) { return { id: 's' + s.id, name: s.name, type: TYPE[s.type] || 'Factory', city: s.city || '', gov: s.gov || '',
-      certs: (s.certs || []).map(function (t) { return { name: t.name, expiry: ym(t.expiry), src: t.source === 'public_list' ? 'Public industry list' : 'Certificate document', checked: t.checked ? String(t.checked).slice(0, 10) : '' }; }) }; });
+    window.dxLiveSites[slug] = (r.data || []).map(function (s) { return { id: 's' + s.id, name: txt(s.name), type: TYPE[s.type] || 'Factory', city: txt(s.city), gov: txt(s.gov),
+      certs: (s.certs || []).map(function (t) { return { name: txt(t.name), expiry: ym(t.expiry), src: t.source === 'public_list' ? 'Public industry list' : 'Certificate document', checked: t.checked ? String(t.checked).slice(0, 10) : '' }; }) }; });
     if (!window.dxLiveSites[slug].length) delete window.dxLiveSites[slug];
     CO.sitesAt[slug] = Date.now();
   }
+  /* the full track record of one company (the directory carries only its rating) — loaded when its page opens */
+  async function loadTrack(slug) {
+    var raw = CO.raw[slug]; if ((!raw || !raw.id) && CO.loading) { await CO.loading; raw = CO.raw[slug]; }   /* opened while the directory is still loading */
+    if (!raw || !raw.id) return; var r = await sb.rpc('company_track_record', { p_company: raw.id }); if (r.error) throw r.error; CO.track[slug] = r.data || {}; CO.trackAt[slug] = Date.now(); }
   function rerenderCompanies() { try { if (window.dxDir && document.body.getAttribute('data-page') === 'companies') window.dxDir.render(); } catch (e) { console.error(e); } }
   function live(slug) { return (window.dxLiveCompanies || []).find(function (c) { return c.slug === slug; }); }
   /* writes that the directory makes through store() */
@@ -479,59 +653,98 @@
       var c = list[i], known = CO.raw[c.slug];
       if (!known) {                                         /* a new company: shown at once, saved, undone if the database refuses */
         var shown = Object.assign({}, c, { owner: window.ME.id, status: 'pending', plan: 'free', licensed: false, verified: false });
-        window.dxLiveCompanies.push(shown); CO.raw[c.slug] = { pending: true };
-        var ins = await sb.from('companies').insert({ owner_id: ME_UUID, name: c.name, slug: c.slug, type: c.sector || 'Manufacturer', sectors: c.sectors || [], city: c.city || null,
-          governorate: c.gov || null, location: c.address || null, phone: c.phone || null, email: c.email || null, whatsapp: c.whatsapp || null, tagline: c.tagline || null }).select().single();
+        (window.dxLiveCompanies || (window.dxLiveCompanies = [])).push(shown);
+        var insP = Promise.resolve(sb.from('companies').insert({ owner_id: ME_UUID, name: c.name, slug: c.slug, type: c.sector || 'Manufacturer', sectors: c.sectors || [], city: c.city || null,
+          governorate: c.gov || null, location: c.address || null, phone: c.phone || null, email: c.email || null, whatsapp: c.whatsapp || null, tagline: c.tagline || null }).select().single());   /* one request, shared (a query builder re-runs on every await) */
+        CO.raw[c.slug] = { pending: insP };                 /* edits saved meanwhile wait for it (F-55) */
+        var ins = await insP;
         if (ins.error) { window.dxLiveCompanies = window.dxLiveCompanies.filter(function (x) { return x !== shown; }); delete CO.raw[c.slug]; rerenderCompanies(); toastErr(ins.error); continue; }
-        CO.raw[c.slug] = ins.data; shown._id = ins.data.id; CO.byId[ins.data.id] = c.slug;
+        ins.data.mine = true; CO.raw[c.slug] = ins.data; CO.roles[ins.data.id] = 'owner'; shown._id = ins.data.id; CO.byId[ins.data.id] = c.slug;
       } else if (c.registry && c.status === 'pending' && known.id && !SNAP['vr_' + c.slug]) {   /* verification documents submitted */
         SNAP['vr_' + c.slug] = 1; var l = live(c.slug); if (l) { l.status = 'pending'; l.registry = c.registry; }
         var docs = {}; try { docs = await window.dxLive.verificationFiles(known.id); } catch (e) { toastErr(e); }
         var vr = await sb.from('verification_requests').insert(Object.assign({ company_id: known.id, submitted_by: ME_UUID, registry: String(c.registry) }, docs));
         if (vr.error) toastErr(vr.error);
-      } else if (c.plan === 'vip' && known.plan !== 'vip') {
-        window.toast('Payments open at launch — no charge was made'); var l2 = live(c.slug); if (l2) l2.plan = known.plan || 'free'; rerenderCompanies();
+      } else if (c.plan === 'vip' && known.plan !== 'vip') {   /* VIP starts only when the payment arrives (window.dxPay) */
+        var l2 = live(c.slug); if (l2) l2.plan = coFrom(known).plan; rerenderCompanies();
       }
     }
   }
+  /* page edits: each field is compared with the database row and saved; only what the database accepted is kept, so a failed
+     save is sent again next time, and nothing that is not saved online is shown as saved (F-55, F-122) */
   var PAGE_FIELDS = { tagline: 'tagline', about: 'bio', founded: 'founded', employees: 'employees', phone: 'phone', whatsapp: 'whatsapp', email: 'email', website: 'website', hours: 'hours' };
+  var PROF_FIELDS = ['services', 'address', 'color'];
+  function same(a, b) { var n = function (x) { return x == null || x === '' ? null : x; }; return JSON.stringify(n(a)) === JSON.stringify(n(b)); }
+  function names(l) { return (l || []).map(function (p) { return p && p.name; }).join('|'); }
   async function persistEdits(edits) {
     for (var slug in edits) {
-      var e = edits[slug], before = SNAP[slug] || {}, raw = CO.raw[slug]; if (!raw || !raw.id) continue;
-      var upd = {}, prof = Object.assign({}, raw.profile || {}), l = live(slug), profChanged = false;
-      Object.keys(PAGE_FIELDS).forEach(function (k) { if (k in e && JSON.stringify(e[k]) !== JSON.stringify(before[k])) { upd[PAGE_FIELDS[k]] = e[k] === '' ? null : e[k]; if (l) l[k] = e[k]; } });
-      ['services', 'address', 'color'].forEach(function (k) { if (k in e && JSON.stringify(e[k]) !== JSON.stringify(before[k])) { prof[k] = e[k]; profChanged = true; if (l) l[k] = e[k]; } });
-      if (e.plan === 'vip' && raw.plan !== 'vip') window.toast('Payments open at launch — no charge was made');
-      if (e.sites && JSON.stringify(e.sites) !== JSON.stringify(before.sites)) window.toast('Site and certificate changes are sent for review in the next update');
+      var e = edits[slug] || {}, raw = CO.raw[slug];
+      if (raw && raw.pending) { try { await raw.pending; } catch (x) {} raw = CO.raw[slug]; }
+      if (!raw || !raw.id) continue;
+      var upd = {}, keep = {}, prof = Object.assign({}, raw.profile || {}), l = live(slug), profChanged = false, note = [];
+      Object.keys(PAGE_FIELDS).forEach(function (k) { if (!(k in e)) return; var v = e[k] === '' ? null : e[k];
+        if (k === 'founded' && v != null) { var y = String(v).match(/\b(1[89]\d\d|20\d\d)\b/); if (!y) { note.push('Founded: enter a year, e.g. 1998'); return; } v = +y[0]; }
+        keep[k] = k === 'founded' ? v : e[k]; if (!same(v, raw[PAGE_FIELDS[k]])) upd[PAGE_FIELDS[k]] = v; });
+      PROF_FIELDS.forEach(function (k) { if (!(k in e)) return; keep[k] = e[k]; if (!same(e[k], prof[k])) { prof[k] = e[k]; profChanged = true; } });
       if (profChanged) upd.profile = prof;
-      SNAP[slug] = JSON.parse(JSON.stringify(e));
-      if (!Object.keys(upd).length) continue;
-      var r = await sb.from('companies').update(upd).eq('id', raw.id).select().single();
-      if (r.error) { toastErr(r.error); loadDirectory().then(rerenderCompanies); } else { CO.raw[slug] = Object.assign(raw, r.data); }
+      if (e.plan === 'vip' && raw.plan !== 'vip') note.push('VIP starts after payment — use Upgrade to VIP on your page');
+      if (e.sites && JSON.stringify(e.sites) !== JSON.stringify((SNAP[slug] || {}).sites)) { keep.sites = e.sites; note.push('Site and certificate changes are sent for review in the next update'); }
+      if (l && ((('products' in e) && names(e.products) !== names(l.products)) || (('logo' in e) && !same(e.logo, l.logo)) || (('cover' in e) && !same(e.cover, l.cover)) || (e.certsPending || []).length))
+        note.push('Products, logo, cover and certificate files are not saved online yet — they come with the next update');
+      if (note.length) setTimeout(function (t) { window.toast(t); }, 600, note[0]);    /* after the editor's own "published" message */
+      if (!Object.keys(upd).length) { SNAP[slug] = keep; continue; }
+      var r = await sb.from('companies').update(upd).eq('id', raw.id).select();
+      if (r.error || !(r.data || []).length) { toastErr(r.error || { message: 'Only the page’s owner or admins can change it' }); rerenderCompanies(); continue; }
+      Object.assign(raw, r.data[0]); SNAP[slug] = keep;
+      if (l) { var fresh = coFrom(raw); Object.keys(keep).forEach(function (k) { if (k in fresh) l[k] = fresh[k]; }); }
     }
   }
   window.dxStoreHook = function (k, v) {
-    if (!ME_UUID || !CO.loaded) return undefined;
+    if (!ME_UUID) return undefined;
     if (k === 'created_companies') { if (v === undefined) return []; persistCreated(v).catch(toastErr); return true; }
     if (k === 'company_edits') { if (v === undefined) return JSON.parse(JSON.stringify(SNAP_EDITS())); persistEdits(v).catch(toastErr); return true; }
     if (k === 'supplier_reviews') { if (v === undefined) return {}; return true; }
     return undefined;
   };
   function SNAP_EDITS() { var o = {}; Object.keys(SNAP).forEach(function (k) { if (k.indexOf('vr_') !== 0) o[k] = SNAP[k]; }); return o; }
-  /* company pages load their sites before drawing */
+  /* a company page (or my workspace) loads its sites and full track record when it opens, and is drawn again only if the viewer
+     is still on it (F-56) */
+  function pageData(slug, ws) {
+    var fresh = function (at) { return at && Date.now() - at < 60000; };     /* each kept for a minute */
+    if (!ME_UUID || !slug || (fresh(CO.sitesAt[slug]) && fresh(CO.trackAt[slug]))) return;
+    Promise.all([fresh(CO.sitesAt[slug]) || loadSites(slug), fresh(CO.trackAt[slug]) || loadTrack(slug)]).then(function () {
+      var S = window.dxDir && window.dxDir.S; if (!S || document.body.getAttribute('data-page') !== 'companies') return;
+      if (ws ? S.view === 'workspace' && S.ws === slug : S.open === slug && S.view !== 'workspace') window.dxDir.render();
+    }).catch(toastErr);
+  }
   function wrapHub() {
-    var H = window.dxHub; if (!H || H.__live) return; H.__live = true;
-    ['page', 'workspace'].forEach(function (fn) { var o = H[fn]; if (!o) return;
-      H[fn] = function (slug) { var args = arguments, self = this; if (!ME_UUID || !slug || (CO.sitesAt[slug] && Date.now() - CO.sitesAt[slug] < 60000)) return o.apply(self, args);
-        var r = o.apply(self, args); loadSites(slug).then(function () { o.apply(self, args); }).catch(toastErr); return r; }; });
+    var X = window.dxDir, H = window.dxHub;
+    if (X && X.open && !X.open.__live) { var o = X.open; X.open = function (slug) { var r = o.apply(this, arguments); pageData(slug, false); return r; }; X.open.__live = true; }
+    if (H && H.workspace && !H.workspace.__live) { var w = H.workspace; H.workspace = function (slug) { var r = w.apply(this, arguments); pageData(slug, true); return r; }; H.workspace.__live = true; }
   }
   var gotoB4 = window.goto;
   window.goto = function (page) {
-    if (page === 'companies' && ME_UUID && !CO.loaded) { var r0 = gotoB4.apply(this, arguments); loadDirectory().then(function () { wrapHub(); rerenderCompanies(); }).catch(toastErr); return r0; }
-    wrapHub(); return gotoB4.apply(this, arguments);
+    var r = gotoB4.apply(this, arguments); wrapHub();
+    /* the pages that show other companies (the directory, the marketplace's company listings) load it; refreshed after 2 minutes */
+    if ((page === 'companies' || page === 'market') && ME_UUID && (!CO.loaded || Date.now() - CO.at > 120000)) loadDirectory().catch(toastErr);
+    return r;
+  };
+  /* "Claim this page": a claim request reviewed by Drugbox (claim_company), never an edit made in the browser (F-42) */
+  if (window.dxDir2 && window.dxDir2.claim) window.dxDir2.claim = function (co) {
+    var raw = co && CO.raw[co.slug]; if (!raw || !raw.id) return;
+    window.DBK.modal({ title: 'Claim ' + co.name, body: '<p class="cp-muted">Prove you work at ' + esc2(co.name) + ' and the page becomes yours to manage. Drugbox checks every claim before handing a page over.</p>' +
+      '<div class="dbk-row"><div class="dbk-f"><label for="clRole">Your role *</label><input id="clRole" data-req placeholder="e.g. Business Development Manager"></div><div class="dbk-f"><label for="clPhone">Mobile *</label><input id="clPhone" data-req inputmode="tel"></div></div>' +
+      '<div class="dbk-f"><label for="clMail">Work email *</label><input id="clMail" data-req type="email" placeholder="you@company.com"></div>',
+      primary: { label: 'Send claim', onClick: function (b, close) {
+        if (!window.DBK.requireFields(b)) return false; var ok = b.querySelector('[data-a=ok]') || b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
+        var note = 'Role: ' + b.querySelector('#clRole').value.trim() + ' · Mobile: ' + b.querySelector('#clPhone').value.trim() + ' · Work email: ' + b.querySelector('#clMail').value.trim();
+        sb.rpc('claim_company', { p_company_id: raw.id, p_note: note }).then(function (r) { if (ok) ok.disabled = false;
+          if (r.error) return toastErr(r.error); close(); window.toast('Claim sent — Drugbox checks it and tells you when the page is yours'); });
+        return false; } } });
   };
   var hydrateB4 = hydrateMe;
-  hydrateMe = async function (uid) { var me = await hydrateB4(uid); loadDirectory().then(wrapHub).catch(function (e) { console.error(e); }); return me; };
+  hydrateMe = async function (uid) { var me = await hydrateB4(uid); window.dxLiveCompanies = []; CO.mineP = loadMine().then(wrapHub).catch(function (e) { console.error(e); }); return me; };
+  onReset(function () { CO.byId = {}; CO.raw = {}; CO.loaded = false; CO.at = 0; CO.roles = {}; CO.mine = false; CO.mineP = null; CO.sitesAt = {}; CO.track = {}; CO.trackAt = {}; SNAP = {}; window.dxLiveCompanies = []; window.dxLiveSites = {}; });
   Object.assign(window.dxLive, { loadDirectory: loadDirectory, loadSites: loadSites, version: 'C1' });
 
   /* ═══════════════ C2 — deals: every step goes through the database engine (deal_create / deal_act) ═══════════════
@@ -541,8 +754,8 @@
   function tms(t) { return new Date(t).getTime(); }
   function dealFrom(r) {
     var fc = r.fc, tc = r.tc || {};
-    var from = r.from_company_id && fc ? { slug: fc.slug, name: fc.name } : { slug: null, name: (r.fu && r.fu.name) || 'Member', person: true, userId: aid(r.from_user) };
-    var d = { id: r.ref, type: r.type, title: r.title, from: from, to: { slug: tc.slug, name: tc.name }, lines: r.lines || {}, status: r.status,
+    var from = r.from_company_id && fc ? { slug: sslug(fc.slug), name: fc.name } : { slug: null, name: (r.fu && r.fu.name) || 'Member', person: true, userId: aid(r.from_user) };
+    var d = { id: r.ref, type: r.type, title: r.title, from: from, to: { slug: sslug(tc.slug), name: tc.name }, lines: r.lines || {}, status: r.status,
       at: tms(r.created_at), updated: tms(r.updated_at),
       events: (r.deal_events || []).slice().sort(function (a, b) { return a.id - b.id; }).map(function (e) { return { at: tms(e.created_at), by: e.side, kind: e.action, text: e.note || '', data: e.data || {} }; }) };
     if (r.offer) d.offer = r.offer; if (r.counter) d.counter = r.counter; if (r.answers) d.answers = r.answers; if (r.ontime !== null && r.ontime !== undefined) d.ontime = r.ontime;
@@ -583,24 +796,25 @@
     if (k === 'deals' && ME_UUID) { if (v === undefined) return DEALS.list; syncDeals(v); return true; }
     return hookC1 ? hookC1(k, v) : undefined;
   };
-  /* track record from the database (directory_companies carries it for every company) */
-  window.dxLiveTrack = function (slug) { var raw = CO.raw[slug], t = raw && raw.track; if (!t) return null;
+  /* track record from the database: company_track_record once the page has opened, the directory's rating until then */
+  window.dxLiveTrack = function (slug) { var raw = CO.raw[slug], t = CO.track[slug] || (raw && raw.track); if (!t) return null;
     return { orders: t.orders || 0, ontime: t.ontime == null ? null : +t.ontime, rating: t.rating == null ? null : +t.rating, reviews: t.reviews || 0,
              response: t.response == null ? null : +t.response, requests: t.requests || 0, answered: t.answered || 0 }; };
   ICON.deal = '📨';
   var hydrateC1 = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateC1(uid); loadDeals().catch(function (e) { console.error(e); }); return me; };
+  onReset(function () { DEALS.list = []; DEALS.snap = {}; DEALS.mem = {}; DEALS.loaded = false; DEALS.at = 0; DEALS.busy = Promise.resolve(); });
   window.dxLive.loadDeals = loadDeals; window.dxLive.dealsBusy = function () { return DEALS.busy; }; window.dxLive.version = 'C2';
 
   /* ═══════════════ C3 — company listings (surplus, dossiers), group buying, approved suppliers ═══════════════ */
   var LIST = { surplus: [], dossiers: [], known: {}, avl: {} };
-  function listingFrom(r) { var slug = CO.byId[r.company_id] || (r.co && r.co.slug);
+  function listingFrom(r) { var slug = CO.byId[r.company_id] || sslug(r.co && r.co.slug);
     return r.kind === 'surplus' ? { id: r.ref, slug: slug, product: r.product, qty: r.qty || '', batch: r.batch || '—', expiry: r.expiry || '—', price: r.price || '', off: r.off || 0 }
       : { id: r.ref, slug: slug, product: r.product, status: r.reg_status || '', deal: r.deal_kind || '', markets: r.markets || 'Egypt' }; }
   async function loadListings() {
+    window.dxLiveListings = true;                     /* set first: the demo's sample listings never show, even when this load fails (F-54) */
     var r = await sb.from('company_listings').select('*, co:companies(slug)').eq('active', true).order('created_at', { ascending: false }).limit(500); if (r.error) throw r.error;
     LIST.surplus = []; LIST.dossiers = []; (r.data || []).forEach(function (x) { LIST.known[x.ref] = 1; (x.kind === 'surplus' ? LIST.surplus : LIST.dossiers).push(listingFrom(x)); });
-    window.dxLiveListings = true;
   }
   async function persistListings(kind, list) {
     for (var i = 0; i < (list || []).length; i++) { var it = list[i]; if (LIST.known[it.id]) continue; LIST.known[it.id] = 1;
@@ -614,7 +828,7 @@
     var mine = (window.dxLiveCompanies || []).filter(function (c) { return c.owner === window.ME.id; }); LIST.avl = {}; if (!mine.length) return;
     var r = await sb.from('approved_suppliers').select('status, updated_at, buyer:companies!approved_suppliers_buyer_company_id_fkey(slug), sup:companies!approved_suppliers_supplier_company_id_fkey(slug)')
       .in('buyer_company_id', mine.map(function (c) { return c._id; })); if (r.error) throw r.error;
-    (r.data || []).forEach(function (x) { var b = x.buyer && x.buyer.slug, s = x.sup && x.sup.slug; if (!b || !s) return; (LIST.avl[b] = LIST.avl[b] || {})[s] = { status: x.status, since: String(x.updated_at).slice(0, 10) }; });
+    (r.data || []).forEach(function (x) { var b = sslug(x.buyer && x.buyer.slug), s = sslug(x.sup && x.sup.slug); if (!b || !s) return; (LIST.avl[b] = LIST.avl[b] || {})[s] = { status: x.status, since: String(x.updated_at).slice(0, 10) }; });
   }
   async function persistAvl(buyerSlug, map) {
     var before = LIST.avl[buyerSlug] || {}, buyer = CO.raw[buyerSlug]; LIST.avl[buyerSlug] = JSON.parse(JSON.stringify(map || {})); if (!buyer || !buyer.id) return;
@@ -641,7 +855,7 @@
   DEALS.mem = {};
   var dealFromC2 = dealFrom;
   dealFrom = function (r) { var d = dealFromC2(r);
-    if (r.deal_members && r.deal_members.length) d.members = r.deal_members.map(function (m) { return { slug: m.co && m.co.slug, name: m.co && m.co.name, qty: +m.qty }; });
+    if (r.deal_members && r.deal_members.length) d.members = r.deal_members.map(function (m) { return { slug: sslug(m.co && m.co.slug), name: m.co && m.co.name, qty: +m.qty }; });
     if (r.group_of) d.groupOf = r.group_of; return d; };
   loadDeals = async function () {
     var r = await sb.from('deals').select('*, deal_events(*), deal_members(qty, co:companies(slug,name)), fc:companies!deals_from_company_id_fkey(slug,name), tc:companies!deals_to_company_id_fkey(slug,name), fu:profiles!deals_from_user_fkey(name)')
@@ -671,19 +885,27 @@
     jobs.forEach(function (j) { DEALS.busy = DEALS.busy.then(j).catch(toastErr); });
   };
   var hydrateC2 = hydrateMe;
-  hydrateMe = async function (uid) { var me = await hydrateC2(uid); loadListings().then(function () { return loadAvl(); }).catch(function (e) { console.error(e); }); return me; };
+  hydrateMe = async function (uid) { var me = await hydrateC2(uid); loadListings().then(function () { return CO.mineP; }).then(function () { return loadAvl(); }).catch(function (e) { console.error(e); }); return me; };
+  onReset(function () { LIST.surplus = []; LIST.dossiers = []; LIST.known = {}; LIST.avl = {}; });
   Object.assign(window.dxLive, { loadListings: loadListings, loadAvl: loadAvl, version: 'C3' });
 
   /* ═══════════════ D1 — marketplace: supply and demand cards from the database, using the approved page's own cards as templates ═══════════════ */
-  var MKT = { tplL: null, tplD: null, products: [], demand: [], at: 0 };
+  var MKT = { tplL: null, tplD: null, tplS: null, tplM: null, products: [], demand: [], at: 0 };
   var CAT = { supply: 'api', demand: 'api', cmo: 'cmo', license: 'registration', equipment: 'equipment', service: 'service', training: 'service' };
   var FLAG = { EG: '🇪🇬', SA: '🇸🇦', AE: '🇦🇪', CN: '🇨🇳', IN: '🇮🇳', DE: '🇩🇪', US: '🇺🇸', GB: '🇬🇧', JO: '🇯🇴', IQ: '🇮🇶' };
+  function promoted(p, k) { return !!p[k] && new Date(p[k]) > Date.now(); }
   async function loadMarket() {
+    var now = new Date().toISOString(), sel = '*, seller:profiles!products_user_id_fkey(' + PCOLS + ')';
     var a = await Promise.all([
-      sb.from('products').select('*, seller:profiles!products_user_id_fkey(*)').eq('active', true).eq('type', 'supply').order('created_at', { ascending: false }).limit(40),
-      sb.from('enquiries').select('*, buyer:profiles!enquiries_user_id_fkey(*)').eq('status', 'active').eq('type', 'demand').order('created_at', { ascending: false }).limit(40)]);
+      sb.from('products').select(sel).eq('active', true).eq('type', 'supply').order('created_at', { ascending: false }).limit(40),
+      sb.from('enquiries').select('*, buyer:profiles!enquiries_user_id_fkey(' + PCOLS + ')').eq('status', 'active').eq('type', 'demand').order('created_at', { ascending: false }).limit(40),
+      sb.from('products').select(sel).eq('active', true).eq('type', 'supply').or('featured_until.gt.' + now + ',boosted_until.gt.' + now).order('created_at', { ascending: false }).limit(20)]);
     if (a[0].error) throw a[0].error; if (a[1].error) throw a[1].error;
-    MKT.products = a[0].data || []; MKT.demand = a[1].data || []; MKT.at = Date.now();
+    /* paid placement (F-06): featured listings first, then boosted ones, then the newest; featured ones also fill the sponsored strip */
+    var seen = {}, rank = function (p) { return promoted(p, 'featured_until') ? 2 : promoted(p, 'boosted_until') ? 1 : 0; };
+    MKT.products = (a[2].data || []).concat(a[0].data || []).filter(function (p) { if (seen[p.id]) return false; seen[p.id] = 1; return true; })
+      .map(function (p, i) { return [p, i]; }).sort(function (x, y) { return rank(y[0]) - rank(x[0]) || x[1] - y[1]; }).map(function (x) { return x[0]; });
+    MKT.demand = a[1].data || []; MKT.at = Date.now();
     MKT.products.forEach(function (p) { putUser(p.seller); }); MKT.demand.forEach(function (e) { putUser(e.buyer); });
   }
   function el(html) { var b = document.createElement('div'); b.innerHTML = html; return b.firstElementChild; }
@@ -695,6 +917,7 @@
     var badges = c.querySelector('.lc-top .lt'); if (badges) docs.slice(0, 3).forEach(function (d) { badges.insertAdjacentHTML('afterend', '<span class="cert-p">' + esc2(d) + '</span>'); });
     var t = c.querySelector('.lc-title'); if (t) t.textContent = p.name;
     var ds = c.querySelector('.lc-desc'); if (ds) ds.textContent = p.description || '';
+    if (promoted(p, 'featured_until') || promoted(p, 'boosted_until')) c.dataset.promoted = promoted(p, 'featured_until') ? 'featured' : 'boost';
     var tb = c.querySelector('.trust-bar'); if (tb) { tb.innerHTML = (u.verified ? '<span class="ti g">✓ Verified seller</span>' : '') + docs.slice(0, 2).map(function (d) { return '<span class="ti b">✓ ' + esc2(d) + '</span>'; }).join(''); tb.style.display = tb.innerHTML ? '' : 'none'; }
     var pr = c.querySelector('.price'); if (pr) pr.textContent = (p.price || 'On request') + (p.price && p.unit ? '/' + p.unit : '');
     var mq = c.querySelector('.moq'); if (mq) mq.textContent = (p.moq ? 'MOQ: ' + p.moq + ' · ' : '') + (FLAG[u.country] || '') + ' ' + (u.name || '');
@@ -705,9 +928,47 @@
     c.dataset.live = 'e' + e.id; c.dataset.uid = a;
     var t = c.querySelector('.dc-title'); if (t) { var badge = t.querySelector('.role-badge'); t.textContent = e.title; if (badge) t.insertBefore(badge, t.firstChild); }
     var ur = c.querySelector('.db-badge'); if (ur) ur.style.display = e.urgent ? '' : 'none';
-    var dt = c.querySelector('.dc-det'); if (dt) dt.innerHTML = esc2((e.body || '').slice(0, 70)) + '<br>' + (FLAG[e.country] || e.flag || '') + ' ' + esc2(e.country || '') + ' · ' + ago(e.created_at);
+    var dt = c.querySelector('.dc-det'); if (dt) dt.innerHTML = esc2((e.body || '').slice(0, 70)) + '<br>' + (FLAG[e.country] || esc2(e.flag || '')) + ' ' + esc2(e.country || '') + ' · ' + ago(e.created_at);   /* stored text is escaped (F-02) */
     var by = c.querySelector('.dc-buyer'); if (by) by.innerHTML = '<div class="av" style="background:' + usr.color + ';width:17px;height:17px;font-size:7px">' + esc2(usr.initials) + '</div> ' + esc2(u.name || 'Member') + (u.verified ? ' ✓' : '');
     return c;
+  }
+  /* a featured listing in the approved sponsored card / mini card (no invented view or enquiry numbers) */
+  function sponsoredCard(p) {
+    var c = el(MKT.tplS), u = p.seller || {}, docs = p.docs || [], usr = window.U(aid(p.user_id));
+    c.dataset.live = 'p' + p.id; c.dataset.uid = aid(p.user_id); c.style.marginBottom = '';
+    var lab = c.querySelector('.sp-label'); if (lab) lab.textContent = '⭐ SPONSORED · FEATURED';
+    var an = c.querySelector('.sp-analytics'); if (an) an.remove();
+    var im = c.querySelector('.sp-img'); if (im) im.textContent = p.emoji || '📦';
+    c.querySelectorAll('.sp-meta .cert').forEach(function (x) { x.remove(); });
+    var lt = c.querySelector('.sp-meta .lt'); if (lt) docs.slice(0, 3).reverse().forEach(function (d) { lt.insertAdjacentHTML('afterend', '<span class="cert">' + esc2(d) + '</span>'); });
+    var t = c.querySelector('.sp-title'); if (t) t.textContent = p.name;
+    var ds = c.querySelector('.sp-desc'); if (ds) ds.textContent = p.description || '';
+    var tr = c.querySelector('.sp-trust'); if (tr) { tr.innerHTML = (u.verified ? '<span class="ti g">✓ Verified seller</span>' : '') + docs.slice(0, 3).map(function (d) { return '<span class="ti b">✓ ' + esc2(d) + '</span>'; }).join(''); tr.style.display = tr.innerHTML ? '' : 'none'; }
+    var av = c.querySelector('.sp-seller .av'); if (av) { av.style.background = usr.color; av.textContent = usr.initials; }
+    var sn = c.querySelector('.seller-name'); if (sn) sn.innerHTML = esc2(u.name || 'Member') + (u.verified ? ' <span style="color:#1a56db;font-size:11px">✓ Verified</span>' : '');
+    var ss = c.querySelector('.seller-sub'); if (ss) ss.textContent = ((FLAG[u.country] || '') + ' ' + [u.company, String(u.headline || '').split('|')[0].trim()].filter(Boolean).join(' · ')).trim();
+    var sr = c.querySelector('.seller-resp'); if (sr) sr.remove();
+    var pr = c.querySelector('.sp-price'); if (pr) pr.textContent = (p.price || 'On request') + (p.price && p.unit ? '/' + p.unit : '');
+    var mq = c.querySelector('.sp-moq'); if (mq) mq.textContent = p.moq ? 'MOQ: ' + p.moq : '';
+    return c;
+  }
+  function sponsoredMini(p) {
+    var c = el(MKT.tplM), u = p.seller || {}; c.dataset.live = 'p' + p.id; c.dataset.uid = aid(p.user_id);
+    var t = c.querySelector('.sm-title'); if (t) t.textContent = p.name;
+    var pr = c.querySelector('.sm-price'); if (pr) pr.textContent = [(p.price || 'On request') + (p.price && p.unit ? '/' + p.unit : ''), p.moq ? 'MOQ ' + p.moq : ''].filter(Boolean).join(' · ');
+    var sl = c.querySelector('.sm-seller'); if (sl) sl.textContent = ((FLAG[u.country] || '') + ' ' + (u.name || 'Member') + (u.verified ? ' · ✓ Verified' : '')).trim();
+    return c;
+  }
+  function paintSponsored(mk) {
+    var spDemo = mk.querySelector('.sponsored-card:not([data-live])'), miDemo = mk.querySelector('.sp-mini:not([data-live])');
+    if (spDemo) { if (!MKT.tplS) MKT.tplS = spDemo.outerHTML; spDemo.parentElement.setAttribute('data-live-sponsored', '1'); }
+    if (miDemo) { if (!MKT.tplM) MKT.tplM = miDemo.outerHTML; miDemo.parentElement.setAttribute('data-live-minis', '1'); }
+    var feat = MKT.products.filter(function (p) { return promoted(p, 'featured_until'); }).slice(0, 3);
+    [['[data-live-sponsored]', '.sponsored-card', MKT.tplS, sponsoredCard], ['[data-live-minis]', '.sp-mini', MKT.tplM, sponsoredMini]].forEach(function (k) {
+      var box = mk.querySelector(k[0]); if (!box) return; box.querySelectorAll(k[1]).forEach(function (x) { x.remove(); });
+      if (k[2]) feat.forEach(function (p, i) { var c = k[3](p); if (i === feat.length - 1 && k[1] === '.sponsored-card') c.style.marginBottom = '0'; box.appendChild(c); });
+      box.style.display = feat.length ? '' : 'none';                 /* no paid placement → no sponsored block (the demo's samples never show) */
+    });
   }
   function paintMarket() {
     var mk = document.getElementById('mkx'); if (!mk) return;
@@ -719,8 +980,7 @@
     if (anyD) anyD.parentElement.setAttribute('data-live-demand', '1');          /* remember where demand cards live, even after they are cleared */
     var dgrid = mk.querySelector('[data-live-demand]');
     if (dgrid && MKT.tplD) { dgrid.querySelectorAll('.dcard').forEach(function (x) { x.remove(); }); MKT.demand.forEach(function (e) { dgrid.appendChild(demandCard(e)); }); }
-    mk.querySelectorAll('.sponsored-card, .sp-mini').forEach(function (x) { x.style.display = 'none'; });    /* demo sponsors never show in the live app */
-    [].slice.call(mk.querySelectorAll('*')).filter(function (x) { return x.children.length === 0 && /Sponsored Listings/.test(x.textContent); }).forEach(function (h) { var s = h.closest('.sec-head, .sec-h, div'); if (s) s.style.display = 'none'; });
+    paintSponsored(mk);
     /* ticker: admin items if any, otherwise the newest real listings */
     if (window.TICKER_ITEMS && typeof window.buildTicker === 'function') {
       var items = MKT.products.slice(0, 6).map(function (p) { return { label: 'Supply', text: p.name + (p.price ? ' ' + p.price : '') }; })
@@ -728,9 +988,11 @@
       if (items.length) { window.TICKER_ITEMS.length = 0; items.forEach(function (x) { window.TICKER_ITEMS.push(x); }); window.buildTicker(); }
     }
   }
-  /* Contact / Quote on a live card → a conversation with that person */
+  /* Contact / Quote on a live card → a conversation with that person; a featured mini card shows its listing */
   document.addEventListener('click', function (e) {
-    var b = e.target.closest && e.target.closest('#mkx [data-live] .btn-contact, #mkx [data-live] .qt-btn'); if (!b) return;
+    var mini = e.target.closest && e.target.closest('#mkx .sp-mini[data-live]');
+    if (mini) { e.preventDefault(); e.stopPropagation(); var tg = document.querySelector('#mkx .sponsored-card[data-live="' + mini.dataset.live + '"]'); if (tg) tg.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    var b = e.target.closest && e.target.closest('#mkx [data-live] .btn-contact, #mkx [data-live] .btn-contact-gold, #mkx [data-live] .qt-btn'); if (!b) return;
     var card = b.closest('[data-live]'); e.preventDefault(); e.stopPropagation(); window.messageUser(+card.dataset.uid);
   }, true);
   var origRenderMarket = window.renderMarket;
@@ -742,6 +1004,7 @@
   };
   /* publishing from the listing wizard */
   window.dxLiveHook = function (kind, d) {
+    if (kind === 'dockMessage') return dockMessage(d);
     if (kind !== 'listing' || !ME_UUID || !d) return;
     if (d.type === 'job') { window.toast('Job posts from the marketplace go live with the Jobs update — use the Jobs page for now'); return; }
     var q = d.type === 'demand'
@@ -749,16 +1012,16 @@
       : sb.from('products').insert({ user_id: ME_UUID, type: 'supply', category: CAT[d.type] || 'other', name: d.title, price: d.price || null, moq: d.moq || null, description: d.desc || '', docs: d.certs || [], lead_time: d.lead || null, active: true });
     q.then(function (r) { if (r.error) { toastErr(r.error); return; } MKT.at = 0; loadMarket().then(function () { if (document.body.getAttribute('data-page') === 'market') paintMarket(); }); });
   };
+  onReset(function () { MKT.products = []; MKT.demand = []; MKT.at = 0; });
   Object.assign(window.dxLive, { loadMarket: loadMarket, version: 'D1' });
 
   /* ═══════════════ D2a — jobs page from the database (the approved job card is the template) ═══════════════ */
   var JX = { tpl: null, jobs: [], saved: {}, applied: {}, at: 0, cur: null };
   var LEVEL = { entry: '🌱 Entry Level', junior: '⚙️ Junior', mid: '🎯 Mid-Level', senior: '🧭 Senior Mgmt', exec: '👑 Executive' };
   function levelOf(exp) { var n = parseInt(String(exp || '').match(/\d+/) || 0, 10); return !exp ? 'mid' : n < 1 ? 'entry' : n < 3 ? 'junior' : n < 5 ? 'mid' : n < 10 ? 'senior' : 'exec'; }
-  function catOf(dept) { var d = String(dept || '').toLowerCase(); return /regul/.test(d) ? 'regulatory' : /qa|qc|quality/.test(d) ? 'qaqc' : /produc|manufact/.test(d) ? 'production' : /sales|market/.test(d) ? 'sales' : /r&d|r&amp;d|formul|research/.test(d) ? 'rd' : 'other'; }
   async function loadJobs() {
     var a = await Promise.all([
-      sb.from('jobs').select('*, poster:profiles!jobs_user_id_fkey(*)').eq('active', true).order('created_at', { ascending: false }).limit(60),
+      sb.from('jobs').select('*, poster:profiles!jobs_user_id_fkey(' + PCOLS + ')').eq('active', true).order('created_at', { ascending: false }).limit(60),
       sb.from('saved_jobs').select('job_id').eq('user_id', ME_UUID), sb.from('job_applications').select('job_id').eq('user_id', ME_UUID)]);
     if (a[0].error) throw a[0].error;
     JX.jobs = a[0].data || []; JX.saved = {}; JX.applied = {}; (a[1].data || []).forEach(function (x) { JX.saved[x.job_id] = 1; }); (a[2].data || []).forEach(function (x) { JX.applied[x.job_id] = 1; });
@@ -804,7 +1067,7 @@
     var id = JX.cur, m = document.getElementById('applyModal'), note = ((m && m.querySelector('textarea')) || {}).value || '';
     var cvIn = document.getElementById('dxCv'), cv = cvIn && cvIn.files && cvIn.files[0];
     (cv ? upDoc('documents', 'cv/' + ME_UUID + '/' + rid() + '.' + extOf(cv), cv) : Promise.resolve(null)).then(function (cvPath) { return sb.from('job_applications').insert({ job_id: id, user_id: ME_UUID, note: note.trim(), status: 'submitted', cv_path: cvPath }); }, function (e) { return { error: e }; }).then(function (r) {
-      if (r.error) { window.toast(/duplicate|unique/i.test(r.error.message) ? 'You already applied to this job' : friendly(r.error.message)); return; }
+      if (r.error) { window.toast(/duplicate|unique/i.test(r.error.message) ? 'You already applied to this job' : friendly(r.error)); return; }
       if (cvIn) cvIn.value = ''; JX.applied[id] = 1; oApply(); var b = document.querySelector('#jx [data-live="j' + id + '"] .apply-btn'); if (b) { b.textContent = '✓ Applied'; b.disabled = true; } });
   }; window.submitApply.__live = true; }
   if (window.openPostJobModal && !window.openPostJobModal.__live) { var oOpenPost = window.openPostJobModal;
@@ -814,12 +1077,15 @@
   window.submitGeneric = function (msg) {
     var m = document.getElementById('postJobModal');
     if (!ME_UUID || !m || !m.classList.contains('show')) return oGeneric.apply(this, arguments);
-    var v = function (sel) { var x = m.querySelector(sel); return x ? String(x.value || '').trim() : ''; };
-    var title = v('input[placeholder^="e.g. Senior"]'), exp = v('input[placeholder="3-5 years"]'), co = window.dxDir && window.dxDir.mine && window.dxDir.mine();
+    /* the form is read by its structure (field order, option position), never by its English text — it works in Arabic too (F-21):
+       editable inputs in order = title, location, years of experience, salary min, salary max */
+    var f = [].slice.call(m.querySelectorAll('input.field-input:not([disabled])')).map(function (x) { return String(x.value || '').trim(); });
+    var pos = function (sel) { var all = [].slice.call(m.querySelectorAll(sel)); return all.indexOf(m.querySelector(sel + '.selected')); };
+    var dept = m.querySelector('select'), ta = m.querySelector('textarea'), title = f[0] || '', exp = f[2] || '', co = window.dxDir && window.dxDir.mine && window.dxDir.mine();
     if (!title) { window.toast('Add the job title'); return; }
-    var sal = [v('input[placeholder^="Min"]'), v('input[placeholder^="Max"]')].filter(Boolean).join(' – ');
-    var row = { user_id: ME_UUID, title: title, company: co ? co.name : (window.ME.company || ''), location: v('input[placeholder="Giza, Egypt"]'), country: 'EG', type: 'Full-time',
-      seniority: levelOf(exp), category: catOf(v('select')), description: v('textarea'), salary: sal || null, tags: exp ? [exp + ' yrs exp'] : [], active: true };
+    var sal = [f[3], f[4]].filter(Boolean).join(' – ');
+    var row = { user_id: ME_UUID, title: title, company: co ? co.name : (window.ME.company || ''), location: f[1] || '', country: 'EG', type: ['Full-time', 'Part-time', 'Contract', 'Remote'][pos('.radio-opt')] || 'Full-time',
+      seniority: levelOf(exp), category: dept ? (['regulatory', 'qaqc', 'production', 'sales', 'rd'][dept.selectedIndex] || 'other') : 'other', description: ta ? ta.value.trim() : '', salary: sal || null, tags: exp ? [exp + ' yrs exp'] : [], active: true };
     sb.from('jobs').insert(row).then(function (r) { if (r.error) return toastErr(r.error); oGeneric(msg || 'Job posted'); JX.at = 0;
       loadJobs().then(function () { if (document.body.getAttribute('data-page') === 'jobs') paintJobs(); }); });
   }; window.submitGeneric.__live = true; }
@@ -830,11 +1096,14 @@
     wrapJobFns(); setTimeout(wrapJobFns, 0); paintJobs(); if (Date.now() - JX.at > 3000 && !JX.loading) { JX.loading = true; loadJobs().then(function () { JX.loading = false; if (document.body.getAttribute('data-page') === 'jobs') paintJobs(); }, function (e) { JX.loading = false; toastErr(e); }); }   /* show what we have, then the latest */
     return r;
   };
+  onReset(function () { JX.jobs = []; JX.saved = {}; JX.applied = {}; JX.at = 0; JX.cur = null; });
   Object.assign(window.dxLive, { loadJobs: loadJobs, version: 'D2a' });
 
   /* ═══════════════ Intro videos on Supabase Storage (replaces the demo's in-browser storage, same interface) ═══════════════ */
   var PV = {};                                                      /* person uuid → intro_video (cached) */
-  function pubUrl(path, v) { return CFG.url + '/storage/v1/object/public/videos/' + path + (v ? '?v=' + v : ''); }
+  /* only the fixed intro paths ever become a URL — the stored value is never trusted (F-02) */
+  var VPATH = /^(people\/[0-9a-f-]{36}|companies\/\d+)\/intro(-poster\.jpg|\.(webm|mp4|mov))$/;
+  function pubUrl(path, v) { if (!VPATH.test(String(path || ''))) return ''; return CFG.url + '/storage/v1/object/public/videos/' + path + (+v ? '?v=' + (+v) : ''); }
   function target(key) {
     var kind = key.slice(0, 1), id = key.slice(2);
     if (kind === 'c') { var raw = CO.raw[id]; return raw && raw.id ? { kind: 'c', folder: 'companies/' + raw.id, row: raw, table: 'companies', rowId: raw.id } : null; }
@@ -847,19 +1116,19 @@
     put: async function (key, file, meta) {
       var t = target(key); if (!t) throw new Error('Save your company or profile first');
       var ext = /webm/.test(file.type) ? 'webm' : /quicktime/.test(file.type) ? 'mov' : 'mp4', path = t.folder + '/intro.' + ext, poster = t.folder + '/intro-poster.jpg', before = await current(t), v = Date.now();
-      var up = await sb.storage.from('videos').upload(path, file, { upsert: true, contentType: file.type }); if (up.error) throw new Error(friendly(up.error.message));
-      var pb = dataUrlBlob(meta.poster); if (pb) { var pu = await sb.storage.from('videos').upload(poster, pb, { upsert: true, contentType: 'image/jpeg' }); if (pu.error) throw new Error(friendly(pu.error.message)); }
+      var up = await sb.storage.from('videos').upload(path, file, { upsert: true, contentType: file.type }); if (up.error) throw new Error(friendly(up.error));
+      var pb = dataUrlBlob(meta.poster); if (pb) { var pu = await sb.storage.from('videos').upload(poster, pb, { upsert: true, contentType: 'image/jpeg' }); if (pu.error) throw new Error(friendly(pu.error)); }
       if (before && before.path && before.path !== path) await sb.storage.from('videos').remove([before.path]);
       var val = { path: path, poster: pb ? poster : null, duration: Math.round(meta.duration * 10) / 10, v: v };
-      var r = await sb.from(t.table).update({ intro_video: val }).eq('id', t.rowId).select('id'); if (r.error || !(r.data || []).length) throw new Error(friendly((r.error && r.error.message) || 'Only the owner can change this video'));
+      var r = await sb.from(t.table).update({ intro_video: val }).eq('id', t.rowId).select('id'); if (r.error || !(r.data || []).length) throw new Error(friendly(r.error || 'Only the owner can change this video'));
       if (t.kind === 'c') t.row.intro_video = val; else PV[t.uuid] = val;
       return { poster: val.poster ? pubUrl(val.poster, v) : '', duration: val.duration };
     },
-    meta: async function (key) { var t = target(key); if (!t) return null; var c = await current(t); return c ? { poster: c.poster ? pubUrl(c.poster, c.v) : '', duration: c.duration } : null; },
-    url: async function (key) { var t = target(key); if (!t) return null; var c = await current(t); return c ? pubUrl(c.path, c.v) : null; },
+    meta: async function (key) { var t = target(key); if (!t) return null; var c = await current(t); return c && pubUrl(c.path) ? { poster: c.poster ? pubUrl(c.poster, c.v) : '', duration: +c.duration || 0 } : null; },
+    url: async function (key) { var t = target(key); if (!t) return null; var c = await current(t); return c ? pubUrl(c.path, c.v) || null : null; },
     remove: async function (key) { var t = target(key); if (!t) return; var c = await current(t); if (!c) return;
       await sb.storage.from('videos').remove([c.path].concat(c.poster ? [c.poster] : []));
-      var r = await sb.from(t.table).update({ intro_video: null }).eq('id', t.rowId); if (r.error) throw new Error(friendly(r.error.message));
+      var r = await sb.from(t.table).update({ intro_video: null }).eq('id', t.rowId); if (r.error) throw new Error(friendly(r.error));
       if (t.kind === 'c') t.row.intro_video = null; else PV[t.uuid] = null; }
   };
 
@@ -889,7 +1158,9 @@
     TR.cands.forEach(function (p) { putUser(p); TR.party[p.name] = { uuid: p.id, role: 'candidate' }; });
     var emp = [], cnd = []; Object.keys(TR.party).forEach(function (n) { (TR.party[n].role === 'employer' ? emp : cnd).push(TR.party[n].uuid); });
     var q = await Promise.all([sb.rpc('get_reviews_many', { p_ids: emp, p_role: 'employer' }), sb.rpc('get_reviews_many', { p_ids: cnd, p_role: 'candidate' }),
-      sb.from('work_references').select('*, au:profiles!work_references_author_fkey(name,company), ca:profiles!work_references_candidate_fkey(name)').limit(500),
+      /* the references of the candidates on the page and my own — not the first 500 of the whole platform (F-50) */
+      sb.from('work_references').select('*, au:profiles!work_references_author_fkey(name,company), ca:profiles!work_references_candidate_fkey(name)')
+        .or('candidate.in.(' + cnd.concat([ME_UUID]).join(',') + '),author.eq.' + ME_UUID).order('created_at', { ascending: false }).limit(500),
       sb.from('job_lists').select('*, t:profiles!job_lists_target_fkey(name)').eq('owner', ME_UUID), sb.rpc('my_interactions')]);
     var rv = {};
     [q[0], q[1]].forEach(function (r) { (r.data || []).forEach(function (x) { var n = partyOfUuid(x.reviewee); if (!n) return;
@@ -906,7 +1177,7 @@
   async function syncReviews(v) {
     for (var n in v) { var mine = (v[n] || []).filter(function (r) { return r.mine && !r._id; })[0], p = TR.party[n]; if (!mine || !p) continue;
       var r = await sb.from('job_reviews').upsert({ reviewer: ME_UUID, reviewee: p.uuid, reviewee_role: p.role, c1: mine.c[0], c2: mine.c[1], c3: mine.c[2], c4: mine.c[3], body: mine.text, anonymous: !!mine.anon }, { onConflict: 'reviewer,reviewee,reviewee_role' });
-      if (r.error) { window.toast(/row-level|interaction/i.test(r.error.message) ? 'You can review only people or companies you have really dealt with (an application or a conversation)' : friendly(r.error.message)); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; }
+      if (r.error) { window.toast(/row-level|interaction/i.test(r.error.message) ? 'You can review only people or companies you have really dealt with (an application or a conversation)' : friendly(r.error)); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; }
       mine._id = -1; }
   }
   async function syncRefs(list) {
@@ -972,6 +1243,8 @@
     var b = e.target.closest && e.target.closest('#jx [data-live^="c"] .apply-btn'); if (!b) return; e.preventDefault(); e.stopPropagation();
     window.messageUser(+b.closest('[data-live]').dataset.uid);
   }, true);
+  onReset(function () { fill(TR.reviews, {}); TR.refs.length = 0; TR.party = {}; TR.cands = []; TR.loaded = false; TR.snap = {}; fill(TR.inter, {});
+    ['employer', 'candidate'].forEach(function (x) { fill(TR.lists[x].white, {}); fill(TR.lists[x].black, {}); }); PV = {}; DOCS.vf = {}; DOCS.ev = null; });
   var loadJobsD2a = loadJobs;
   loadJobs = async function () { await loadJobsD2a(); await loadTrust(); };
   var hydrateC3 = hydrateMe;
@@ -1053,12 +1326,16 @@
     if (leave && GX.cur) { e.preventDefault(); e.stopPropagation(); var g = GX.cur;
       sb.from('group_members').delete().eq('group_id', g.id).eq('user_id', ME_UUID).then(function (r) { if (r.error) return toastErr(r.error);
         delete GX.mine[g.id]; delete GX.snap[g.name]; g.member_count = Math.max(0, (g.member_count || 1) - 1); window.closeGroup(); paintGroups(); window.toast('You left ' + g.name); }); return; }
-    var mk = e.target.closest && e.target.closest('#createModal button');
-    if (mk && /create/i.test(mk.textContent) && !/cancel/i.test(mk.textContent)) { e.preventDefault(); e.stopPropagation();
-      var M = document.getElementById('createModal'), name = ((M.querySelector('input[placeholder^="e.g. Sterile"]') || {}).value || '').trim(), desc = ((M.querySelector('textarea') || {}).value || '').trim();
+    /* the approved window's Create button and its choices are found by their place in the markup, never by their (translated)
+       text: the 2nd type option is Deal Room, the 2nd privacy option is Private (F-20, F-21) */
+    var mk = e.target.closest && e.target.closest('#createModal .modal-footer .btn-create');
+    if (mk) { e.preventDefault(); e.stopPropagation();
+      var M = document.getElementById('createModal'), name = ((M.querySelector('.field-input') || {}).value || '').trim(), desc = ((M.querySelector('.field-textarea, textarea') || {}).value || '').trim();
       if (!name) { window.toast('Add the group name'); return; }
-      var priv = !!M.querySelector('input[type=radio][value=private]:checked, input[type=checkbox][name=private]:checked');
-      sb.from('groups').insert({ name: name, description: desc, emoji: '👥', type: priv ? 'private' : 'public', topic: 'DISCUSS', created_by: ME_UUID }).select().single().then(function (r) {
+      var pos = function (sel) { var all = [].slice.call(M.querySelectorAll(sel)); return all.indexOf(M.querySelector(sel + '.selected')); };
+      var priv = pos('.privacy-opt') === 1, deal = pos('.type-opt') === 1;
+      if (mk.dataset.busy) return; mk.dataset.busy = '1';
+      sb.from('groups').insert({ name: name, description: desc, emoji: deal ? '🤝' : '👥', type: priv ? 'private' : 'public', topic: deal ? 'DEAL ROOM' : 'DISCUSS', created_by: ME_UUID }).select().single().then(function (r) { delete mk.dataset.busy;
         if (r.error) return toastErr(r.error); window.closeCreate(); window.toast('Group created'); return loadGroups().then(paintGroups); }); return; }
     var del = e.target.closest && e.target.closest('#deleteConfirmBtn');
     if (del && GX.cur) { e.preventDefault(); e.stopPropagation(); var g2 = GX.cur, typed = ((document.getElementById('deleteConfirmInput') || {}).value || '').trim();
@@ -1076,8 +1353,8 @@
 
   /* following companies: the directory's store('follows') (a list of slugs) ↔ company_followers */
   var FOL = { list: [], loaded: false };
-  async function loadFollows() { var r = await sb.from('company_followers').select('company_id').eq('user_id', ME_UUID); if (r.error) throw r.error;
-    FOL.list = (r.data || []).map(function (x) { return CO.byId[x.company_id]; }).filter(Boolean); FOL.loaded = true; }
+  async function loadFollows() { var r = await sb.from('company_followers').select('company_id, co:companies(slug)').eq('user_id', ME_UUID); if (r.error) throw r.error;
+    FOL.list = (r.data || []).map(function (x) { return CO.byId[x.company_id] || sslug(x.co && x.co.slug); }).filter(Boolean); FOL.loaded = true; }
   async function syncFollows(v) {
     var now = (v || []).slice(), before = FOL.list.slice(); FOL.list = now;
     for (var i = 0; i < now.length; i++) if (before.indexOf(now[i]) < 0) { var raw = CO.raw[now[i]]; if (raw && raw.id) { var r = await sb.from('company_followers').insert({ company_id: raw.id, user_id: ME_UUID }); if (r.error) { toastErr(r.error); return loadFollows(); } } }
@@ -1089,12 +1366,13 @@
     return hookFol ? hookFol(k, v) : undefined;
   };
   var hydrateFol = hydrateMe;
-  hydrateMe = async function (uid) { var me = await hydrateFol(uid); setTimeout(function () { (CO.loaded ? Promise.resolve() : loadDirectory()).then(loadFollows).catch(function (e) { console.error(e); }); }, 0); return me; };
+  hydrateMe = async function (uid) { var me = await hydrateFol(uid); loadFollows().catch(function (e) { console.error(e); }); return me; };
+  onReset(function () { FOL.list = []; FOL.loaded = false; GX.groups = []; GX.mine = {}; GX.at = 0; GX.cur = null; GX.snap = {}; });
 
   /* ═══════════════ E1b — private documents: CV with applications, verification documents, evidence for warnings ═══════════════ */
   var DOCS = { vf: {}, ev: null };
   function extOf(f) { return ((f && f.name) || '').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'pdf'; }
-  async function upDoc(bucket, path, file) { var r = await sb.storage.from(bucket).upload(path, file, { contentType: file.type || 'application/pdf' }); if (r.error) throw new Error(friendly(r.error.message)); return path; }
+  async function upDoc(bucket, path, file) { var r = await sb.storage.from(bucket).upload(path, file, { contentType: file.type || 'application/pdf' }); if (r.error) throw new Error(friendly(r.error)); return path; }
   /* the verification dialog's file fields: keep the files so they can be sent with the request */
   document.addEventListener('change', function (e) { var t = e.target; if (t && /^(vfR|vfT|vfL)$/.test(t.id) && t.files && t.files[0]) DOCS.vf[t.id] = t.files[0]; }, true);
   window.dxLive.verificationFiles = async function (companyId) {
@@ -1106,18 +1384,16 @@
   function cvField() { var m = document.getElementById('applyModal'); if (!m || m.querySelector('#dxCv')) return; var ta = m.querySelector('textarea'), host = ta ? ta.parentElement : m.querySelector('.modal-body, .modal');
     if (host) host.insertAdjacentHTML('beforeend', '<label class="dx-cv" style="display:block;margin-top:10px;font:600 12.5px Poppins,sans-serif;color:#334155">CV (PDF or Word, optional)<input type="file" id="dxCv" accept=".pdf,.doc,.docx" style="display:block;margin-top:6px"></label>'); }
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#jx .apply-btn')) setTimeout(cvField, 0); }, true);
-  /* the warning form gets a required evidence field (live app only); the reference waits until it is attached */
-  new MutationObserver(function () { var cat = document.querySelector('.dbk-ov #rfCat'); if (!cat || document.querySelector('.dbk-ov #dxEv')) return;
-    cat.closest('label, div').insertAdjacentHTML('afterend', '<label style="display:block;margin-top:10px;font:600 12.5px Poppins,sans-serif;color:#334155">Evidence document (required — reviewed by Drugbox, never shown publicly)<input type="file" id="dxEv" accept=".pdf,.jpg,.jpeg,.png" style="display:block;margin-top:6px"></label>');
-    document.getElementById('dxEv').addEventListener('change', function (e) { DOCS.ev = e.target.files[0] || null; });
-  }).observe(document.body, { childList: true, subtree: false });
+  /* a warning's evidence is the approved form's own "Evidence *" field (shown on the Warning tab only, required there by the form);
+     the reference waits until it is attached (F-176: no second field, none on the Honour tab) */
+  document.addEventListener('change', function (e) { var t = e.target; if (t && t.id === 'rfEv' && t.closest('.dbk-ov')) DOCS.ev = (t.files && t.files[0]) || null; }, true);
 
   /* the verification dialog only updates companies created in the browser; for real companies the request is sent here */
   var oVerify = window.dxDir && window.dxDir.verify;
   if (oVerify) window.dxDir.verify = function (slug) { DOCS.vslug = slug; DOCS.vf = {}; return oVerify.apply(this, arguments); };
   document.addEventListener('click', function (e) {
-    var btn = e.target.closest && e.target.closest('.dbk-ov button'); if (!btn || !ME_UUID) return;
-    var ov = btn.closest('.dbk-ov'), rnEl = ov && ov.querySelector('#vfRN'); if (!rnEl || !/send for verification/i.test(btn.textContent)) return;
+    var btn = e.target.closest && e.target.closest('.dbk-ov [data-a=ok]'); if (!btn || !ME_UUID) return;   /* the window's send button, whatever language its label is in (F-21) */
+    var ov = btn.closest('.dbk-ov'), rnEl = ov && ov.querySelector('#vfRN'); if (!rnEl) return;
     var rn = (rnEl.value || '').replace(/\D/g, ''), raw = CO.raw[DOCS.vslug];
     if (rn.length < 4 || !DOCS.vf.vfR || !DOCS.vf.vfT || !raw || !raw.id) return;              /* the dialog's own checks show the message */
     var l = live(DOCS.vslug); if (l) { l.status = 'pending'; l.registry = rn; }
@@ -1133,7 +1409,7 @@
       var q = await Promise.all([
         sb.from('verification_requests').select('*, co:companies(name,slug)').eq('status', 'pending').order('created_at').limit(100),
         sb.from('work_references').select('*, au:profiles!work_references_author_fkey(name,company), ca:profiles!work_references_candidate_fkey(name)').eq('kind', 'warn').eq('status', 'pending').order('created_at').limit(100),
-        sb.from('site_certificates').select('*, st:company_sites(name), co:companies(name)').is('checked_at', null).or('expiry.is.null,expiry.gte.' + today).order('created_at').limit(100),
+        sb.from('site_certificates').select('*, st:company_sites!site_certificates_site_id_fkey(name), co:companies(name)').is('checked_at', null).or('expiry.is.null,expiry.gte.' + today).order('created_at').limit(100),
         sb.from('company_reports').select('*, co:companies(name)').eq('status', 'open').order('created_at').limit(100)]);
       for (var i = 0; i < q.length; i++) if (q[i].error) throw q[i].error;
       var d = function (path, bucket, label) { return path ? [{ path: path, bucket: bucket, label: label }] : []; };
@@ -1150,9 +1426,9 @@
         : kind === 'warnings' ? await sb.rpc('moderate_reference', { ref_id: +id, new_status: value })
         : kind === 'certs' ? await sb.from('site_certificates').update({ checked_at: new Date().toISOString() }).eq('id', id).select()
         : await sb.from('company_reports').update({ status: value }).eq('id', id).select();
-      if (r.error) throw new Error(friendly(r.error.message));
+      if (r.error) throw new Error(friendly(r.error));
       if (r.data && Array.isArray(r.data) && !r.data.length) throw new Error('Only the Drugbox team can do this');
-      if (kind !== 'reports') { CO.loaded = false; loadDirectory().catch(function () {}); }
+      if (kind !== 'reports') refreshCompanies().catch(function () {});
       return true;
     },
     link: async function (path, bucket) { var r = await sb.storage.from(bucket).createSignedUrl(path, 600); return r.error ? null : r.data.signedUrl; }
@@ -1160,7 +1436,7 @@
   /* company reports ("Report wrong information") ↔ company_reports */
   var REP = { list: [] };
   async function loadReports() { var r = await sb.from('company_reports').select('*, co:companies(slug), rp:profiles!company_reports_reporter_fkey(name)').order('created_at', { ascending: false }).limit(200); if (r.error) throw r.error;
-    REP.list = (r.data || []).map(function (x) { return { id: 'R' + x.id, _id: x.id, slug: x.co && x.co.slug, section: x.section, text: x.issue, fix: x.correction || '', by: (x.rp && x.rp.name) || 'Member', at: new Date(x.created_at).getTime(), status: x.status }; }); }
+    REP.list = (r.data || []).map(function (x) { return { id: 'R' + x.id, _id: x.id, slug: sslug(x.co && x.co.slug), section: x.section, text: x.issue, fix: x.correction || '', by: (x.rp && x.rp.name) || 'Member', at: new Date(x.created_at).getTime(), status: x.status }; }); }
   async function syncReports(v) {
     for (var i = 0; i < (v || []).length; i++) { var x = v[i], raw = CO.raw[x.slug];
       if (!x._id && raw && raw.id) { var r = await sb.from('company_reports').insert({ company_id: raw.id, reporter: ME_UUID, section: x.section, issue: x.text, correction: x.fix || null }).select().single();
@@ -1173,6 +1449,7 @@
     if (ME_UUID && k === 'reports') { if (v === undefined) return REP.list.slice(); syncReports(v).catch(toastErr); return true; }
     return hookRep ? hookRep(k, v) : undefined;
   };
+  onReset(function () { REP.list = []; });
   var hydrateRep = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateRep(uid); loadReports().catch(function (e) { console.error(e); }); return me; };
 
@@ -1189,15 +1466,23 @@
     },
     submitInstapay: async function (orderId, ref, file) {
       var path = null; if (file) { path = 'payments/' + ME_UUID + '/' + rid() + '.' + extOf(file); await upDoc('documents', path, file); }
-      var r = await sb.rpc('submit_instapay', { p_id: orderId, p_transfer_ref: ref, p_receipt: path }); if (r.error) throw new Error(friendly(r.error.message));
+      var r = await sb.rpc('submit_instapay', { p_id: orderId, p_transfer_ref: ref, p_receipt: path }); if (r.error) throw new Error(friendly(r.error));
     },
-    listings: async function () { var r = await sb.from('products').select('id,name').eq('user_id', ME_UUID).eq('active', true).order('created_at', { ascending: false }).limit(50); return r.data || []; }
+    listings: async function () { var r = await sb.from('products').select('id,name').eq('user_id', ME_UUID).eq('active', true).order('created_at', { ascending: false }).limit(50); return r.data || []; },
+    /* the Boost / Featured window shows the price the server charges (payment_products, same rounding as create_order) —
+       never USD × a third-party exchange rate (F-07). Code: 'boost' | 'featured' (any payment_products code). */
+    quote: async function (code) {
+      var r = await sb.from('payment_products').select('code,amount_egp,vat_rate,duration_days').eq('code', code).eq('active', true).maybeSingle();
+      if (r.error) throw new Error(friendly(r.error)); if (!r.data) throw new Error('This product is not on sale at the moment');
+      var amount = Number(r.data.amount_egp), total = Math.round(amount * (1 + Number(r.data.vat_rate)) * 100) / 100;
+      return { amount_egp: amount, vat_egp: Math.round((total - amount) * 100) / 100, total_egp: total, days: r.data.duration_days };
+    }
   };
   /* back from Paymob's page: ?payment=<order id> → tell the person what happened */
-  (function () { var m = /[?&]payment=(\d+)/.exec(location.search); if (!m) return; var id = +m[1], tries = 0;
-    function check() { if (!ME_UUID) return setTimeout(check, 800);
+  (function () { var m = /[?&]payment=(\d+)/.exec(location.search); if (!m) return; var id = +m[1], tries = 0, waited = 0;
+    function check() { if (!ME_UUID) { if ((waited += 800) < 60000) setTimeout(check, 800); return; }   /* not signed in within a minute: stop (F-119) */
       sb.from('payment_orders').select('status').eq('id', id).single().then(function (r) { var st = r.data && r.data.status;
-        if (st === 'paid') { window.toast('Payment received — it is active now'); CO.loaded = false; loadDirectory().then(rerenderCompanies).catch(function () {}); history.replaceState(null, '', location.pathname); }
+        if (st === 'paid') { window.toast('Payment received — it is active now'); refreshCompanies().catch(function () {}); MKT.at = 0; history.replaceState(null, '', location.pathname); }
         else if (++tries < 10) setTimeout(check, 2000); else window.toast('We have not received the payment confirmation yet — it will activate automatically when it arrives'); }); }
     check(); })();
   /* Review → Payments (InstaPay transfers) */
@@ -1211,7 +1496,7 @@
   };
   window.dxModeration.decide = async function (kind, id, value, note) {
     if (kind !== 'payments') return modDecide(kind, id, value, note);
-    var r = await sb.rpc('review_instapay', { p_id: +id, p_ok: value === 'paid' }); if (r.error) throw new Error(friendly(r.error.message)); return true;
+    var r = await sb.rpc('review_instapay', { p_id: +id, p_ok: value === 'paid' }); if (r.error) throw new Error(friendly(r.error)); return true;
   };
 
   /* ═══════════════ E3 — training: courses and enrollments from the database (the approved course card is the template) ═══════════════ */
@@ -1252,6 +1537,7 @@
     if (Date.now() - TRN.at > 3000 && !TRN.loading) { TRN.loading = true; loadTraining().then(function () { TRN.loading = false; if (document.body.getAttribute('data-page') === 'training') paintTraining(); }, function (e) { TRN.loading = false; toastErr(e); }); }
     return r;
   };
+  onReset(function () { TRN.courses = []; TRN.mine = {}; TRN.at = 0; });
   window.dxLive.loadTraining = loadTraining;
   window.dxLive.loadGroups = loadGroups; window.dxLive.version = 'E4';
 

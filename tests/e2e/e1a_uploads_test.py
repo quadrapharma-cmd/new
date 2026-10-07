@@ -2,19 +2,15 @@
 and the storage/row rules for an outsider."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os, urllib.request
-U = os.environ.get('APP_URL', 'http://localhost:54321/'); DB = os.environ.get('DB_NAME', 'drugbox_live'); V = '/tmp/vids'; R = []
-def T(n, ok, d=''): R.append(ok); print(('✅ ' if ok else '❌ ') + n + ('' if ok else '  → ' + str(d)[:220]))
-def sql(q):
-    r = subprocess.run(['psql', '-h', '/tmp', '-p', '5433', '-U', 'postgres', '-d', DB, '-tA', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True)
-    if r.returncode: raise SystemExit('SQL failed: ' + r.stderr.strip()[:300])
-    return r.stdout.strip()
+from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+V = FIXTURES
 def http(u):
     try: return urllib.request.urlopen(u, timeout=5).status
     except Exception as e: return getattr(e, 'code', 0)
-st = int(time.time()); PW = 'Strong-pass-2026'
+st = ST; PW = 'Strong-pass-2026'
 def signup(pg, name, email):
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
-    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(3500)
+    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
     return pg.evaluate("dxLive.uuidOf(ME.id)")
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); errs = []
@@ -43,19 +39,21 @@ with sync_playwright() as p:
     rows = sql(f"select string_agg((attachment->>'kind')||':'||(attachment->>'name'),',' order by id) from public.messages where sender_id='{a}' and receiver_id='{bb}'")
     T('the message carries the photo and the PDF', rows == 'photo:photo.png,file:spec.pdf', rows)
     path = sql(f"select attachment->>'path' from public.messages where sender_id='{a}' and attachment->>'kind'='photo'")
-    T('message files are stored privately (no public link)', http(f'http://localhost:54321/storage/v1/object/public/message-media/{path}') == 404)
+    T('message files are stored privately (no public link)', http(f"{U.rstrip('/')}/storage/v1/object/public/message-media/{path}") == 404)
     B.evaluate("goto('messages')"); B.wait_for_timeout(4000)
     got = B.evaluate("(()=>{var i=document.querySelector('#messagesArea img.msg-image');var f=document.querySelector('#messagesArea a.dx-msg-file');return {img:!!i&&/\\/object\\/sign\\//.test(i.src),loaded:i?i.complete&&i.naturalWidth>0:false,file:f?/\\/object\\/sign\\//.test(f.href):false}})()")
     T('the receiver sees the photo and the file through signed links', got['img'] and got['loaded'] and got['file'], got)
-    r = C.evaluate(f"dxLive.sb.storage.from('message-media').createSignedUrl('{path}',60).then(r=>!!r.error)")
-    T('an outsider cannot get a link to a private message file', r)
-    r = C.evaluate(f"dxLive.sb.storage.from('message-media').upload('{a}/{c}/x.png', new Blob([new Uint8Array(8)],{{type:'image/png'}})).then(r=>!!r.error)")
-    T("cannot upload into someone else's message folder", r)
-    r = C.evaluate(f"dxLive.sb.storage.from('post-media').upload('posts/{a}/x.png', new Blob([new Uint8Array(8)],{{type:'image/png'}})).then(r=>!!r.error)")
-    T("cannot upload into someone else's post folder", r)
-    r = C.evaluate(f"dxLive.sb.from('post_media').insert({{post_id:{pid},url:'https://evil.example/x.png',type:'image',name:'x',size:1}}).then(r=>!!r.error)")
-    T("cannot attach media to someone else's post", r)
-    r = C.evaluate(f"dxLive.sb.from('messages').insert({{sender_id:'{c}',receiver_id:'{bb}',body:'x',attachment:{{path:'{path}',name:'stolen.png',size:1,kind:'photo'}}}}).then(r=>!!r.error)")
-    T("cannot point a message at someone else's file", r)
+    r = C.evaluate(f"dxLive.sb.storage.from('message-media').createSignedUrl('{path}',60)" + ERR)
+    ok_owner = B.evaluate(f"dxLive.sb.storage.from('message-media').createSignedUrl('{path}',60).then(r=>!r.error)")
+    T('an outsider cannot get a link to a private message file (the receiver can)', r and refused(r) and ok_owner, (r, ok_owner))
+    r = C.evaluate(f"dxLive.sb.storage.from('message-media').upload('{a}/{c}/x.png', new Blob([new Uint8Array(8)],{{type:'image/png'}}))" + ERR)
+    T("cannot upload into someone else's message folder", r and refused(r) and sql(f"select count(*) from storage.objects where bucket_id='message-media' and name='{a}/{c}/x.png'") == '0', r)
+    r = C.evaluate(f"dxLive.sb.storage.from('post-media').upload('posts/{a}/x.png', new Blob([new Uint8Array(8)],{{type:'image/png'}}))" + ERR)
+    T("cannot upload into someone else's post folder", r and refused(r) and sql(f"select count(*) from storage.objects where bucket_id='post-media' and name='posts/{a}/x.png'") == '0', r)
+    r = C.evaluate(f"dxLive.sb.from('post_media').insert({{post_id:{pid},url:'https://evil.example/x.png',type:'image',name:'x',size:1}})" + ERR)
+    T("cannot attach media to someone else's post", r and refused(r) and sql(f"select count(*) from public.post_media where post_id={pid} and url like 'https://evil.example%'") == '0', r)
+    r = C.evaluate(f"dxLive.sb.from('messages').insert({{sender_id:'{c}',receiver_id:'{bb}',body:'x',attachment:{{path:'{path}',name:'stolen.png',size:1,kind:'photo'}}}})" + ERR)
+    T("cannot point a message at someone else's file", r and refused(r) and sql(f"select count(*) from public.messages where sender_id='{c}' and attachment->>'name'='stolen.png'") == '0', r)
     T('no errors in the pages', not errs, errs)
-    print(sum(R), '/', len(R)); b.close()
+    b.close()
+done()

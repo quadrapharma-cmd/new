@@ -2,16 +2,12 @@
 opens the real group detail, leaves; security on roles, private groups and deletion; the creator deletes the group."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
-U = os.environ.get('APP_URL', 'http://localhost:54321/'); DB = os.environ.get('DB_NAME', 'drugbox_live'); R = []
-def T(n, ok, d=''): R.append(ok); print(('✅ ' if ok else '❌ ') + n + ('' if ok else '  → ' + str(d)[:220]))
-def sql(q):
-    r = subprocess.run(['psql', '-h', '/tmp', '-p', '5433', '-U', 'postgres', '-d', DB, '-tA', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True)
-    if r.returncode: raise SystemExit('SQL failed: ' + r.stderr.strip()[:300])
-    return r.stdout.strip()
-st = int(time.time()); PW = 'Strong-pass-2026'; G = f'Sterile Manufacturing {st}'
+from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+
+st = ST; PW = 'Strong-pass-2026'; G = f'Sterile Manufacturing {st}'
 def signup(pg, name, email):
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
-    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(3500)
+    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
     return pg.evaluate("dxLive.uuidOf(ME.id)")
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); errs = []
@@ -37,11 +33,11 @@ with sync_playwright() as p:
     T('a member sees member actions, not admin tools', B.evaluate("getComputedStyle(document.getElementById('adminActions')).display") == 'none')
     B.evaluate("toggleLeaveConfirm()"); B.wait_for_timeout(300); B.evaluate("document.querySelector('#leaveConfirm .cp-btn-confirm').click()"); B.wait_for_timeout(2000)
     T('leaving removes the membership', sql(f"select count(*) from public.group_members where group_id={gid} and user_id='{bb}'") == '0')
-    r = B.evaluate(f"dxLive.sb.from('group_members').insert({{group_id:{gid},user_id:'{bb}',role:'admin'}}).then(r=>!!r.error)")
-    T('cannot join as an admin', r)
+    r = B.evaluate(f"dxLive.sb.from('group_members').insert({{group_id:{gid},user_id:'{bb}',role:'admin'}})" + ERR)
+    T('cannot join as an admin', refused(r) and sql(f"select count(*) from public.group_members where group_id={gid} and user_id='{bb}' and role='admin'") == '0', r)
     pid = sql(f"insert into public.groups (name, description, type, created_by) values ('Private room {st}','Invite only','private','{a}') returning id").split('\n')[0]
-    r = B.evaluate(f"dxLive.sb.from('group_members').insert({{group_id:{pid},user_id:'{bb}',role:'member'}}).then(r=>!!r.error)")
-    T('cannot join a private group without an invitation', r)
+    r = B.evaluate(f"dxLive.sb.from('group_members').insert({{group_id:{pid},user_id:'{bb}',role:'member'}})" + ERR)
+    T('cannot join a private group without an invitation', refused(r) and sql(f"select count(*) from public.group_members where group_id={pid} and user_id='{bb}'") == '0', r)
     r = B.evaluate(f"dxLive.sb.from('group_members').select('user_id').eq('group_id',{pid}).then(r=>(r.data||[]).length)")
     T("a private group's members are hidden from outsiders", r == 0)
     r = B.evaluate(f"dxLive.sb.from('groups').delete().eq('id',{gid}).select().then(r=>(r.data||[]).length)")
@@ -52,4 +48,5 @@ with sync_playwright() as p:
     A.evaluate("openDelete()"); A.wait_for_timeout(300); A.fill('#deleteConfirmInput', G); A.evaluate("document.getElementById('deleteConfirmBtn').disabled=false;document.getElementById('deleteConfirmBtn').click()"); A.wait_for_timeout(2000)
     T('the creator deletes the group (typed name confirmed)', sql(f"select count(*) from public.groups where id={gid}") == '0')
     T('no errors in the pages', not errs, errs)
-    print(sum(R), '/', len(R)); b.close()
+    b.close()
+done()

@@ -4,7 +4,7 @@ def check(n, ok, d=''):
     print(('✅ ' if ok else '❌ ')+n+('' if ok else '  → '+str(d)[:220]))
     if not ok: F.append(n)
 def boot(pg):
-    pg.goto('file:///tmp/drugbox_brand.html',wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
+    pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
     pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3200)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
 def tour(pg):
@@ -44,7 +44,7 @@ with sync_playwright() as p:
     b=p.webkit.launch(); ctx=b.new_context(**p.devices['iPhone 12'])
     ctx.add_init_script("(()=>{var e=function(){throw new DOMException('insecure','SecurityError')};try{Object.defineProperty(window,'localStorage',{get:e,configurable:true})}catch(x){}})()")
     pg=ctx.new_page(); errs2=[]; pg.on("pageerror",lambda e:errs2.append(str(e)[:160])); pg.on("dialog", lambda d: d.dismiss())
-    pg.goto('file:///tmp/drugbox_brand.html',wait_until='load'); pg.wait_for_timeout(400); pg.click('#splash'); pg.wait_for_timeout(900)
+    pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.wait_for_timeout(400); pg.click('#splash'); pg.wait_for_timeout(900)
     pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3000)
     bad=tour(pg)
     check('4 storage blocked: every screen renders', not bad, bad)

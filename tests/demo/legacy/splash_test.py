@@ -3,11 +3,11 @@ R=[]
 def T(n,ok,d=''): R.append(ok); print(('✅ ' if ok else '❌ ')+n+('' if ok else '  → '+str(d)))
 LOGO="(()=>{var i=document.getElementById('splLogo');return !!(i&&i.complete&&i.naturalWidth>0&&i.offsetWidth>0)})()"
 with sync_playwright() as p:
-    for eng in ('webkit','chromium'):
+    for eng in [e for e in ('webkit','chromium') if e in __import__('os').environ.get('DX_ENGINES','webkit,chromium')]:   # DX_ENGINES: the browsers installed here
         dev=p.devices['iPhone 12'] if eng=='webkit' else p.devices['Pixel 5']
         L=lambda: (p.webkit.launch() if eng=='webkit' else p.chromium.launch(args=["--no-sandbox"]))
         for how in ('tap','skip'):
-            b=L(); pg=b.new_context(**dev).new_page(); pg.goto('file:///tmp/worst.html',wait_until='load'); pg.wait_for_timeout(700)
+            b=L(); pg=b.new_context(**dev).new_page(); pg.goto('file://'+__import__('os').environ.get('DEMO_VARIANTS','/tmp')+'/worst.html',wait_until='load'); pg.wait_for_timeout(700)
             t=f'[{eng} · no scripts + no animations · {how}] '
             T(t+'splash shows with the logo', pg.is_visible('#splash') and pg.evaluate(LOGO))
             if eng=='webkit' and how=='tap': pg.screenshot(path='/tmp/worst_splash.png')
@@ -23,7 +23,7 @@ with sync_playwright() as p:
             T(t+'Sign out → login (splash does not come back)', pg.is_visible('#loginPage') and not pg.is_visible('#splash'))
             b.close()
         b=L(); pg=b.new_context(**dev).new_page(); errs=[]; pg.on("pageerror",lambda e:errs.append(str(e)[:150]))
-        pg.goto('file:///tmp/drugbox_brand.html',wait_until='load'); pg.wait_for_timeout(600)
+        pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.wait_for_timeout(600)
         t=f'[{eng} · browser] '
         T(t+'splash logo visible, lite links hidden', pg.evaluate(LOGO) and not pg.is_visible('.dx-lite-skip') and not pg.is_visible('.dx-lite-tap'))
         pg.wait_for_timeout(6500)

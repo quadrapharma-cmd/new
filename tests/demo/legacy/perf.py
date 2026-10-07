@@ -5,7 +5,7 @@ with sync_playwright() as p:
     cdp=ctx.new_cdp_session(pg); cdp.send('Emulation.setCPUThrottlingRate',{'rate':4})
     pg.add_init_script("""window.__lt=[];new PerformanceObserver(l=>l.getEntries().forEach(e=>window.__lt.push(Math.round(e.duration)))).observe({entryTypes:['longtask']});""")
     t0=pg.evaluate("Date.now()") if False else None
-    pg.goto('file:///tmp/drugbox_brand.html',wait_until='load',timeout=120000)
+    pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load',timeout=120000)
     print('load (4x slower CPU):', pg.evaluate("Math.round(performance.getEntriesByType('navigation')[0].loadEventEnd)"),'ms')
     pg.evaluate('endSplash()'); pg.wait_for_timeout(800); pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(4500)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')

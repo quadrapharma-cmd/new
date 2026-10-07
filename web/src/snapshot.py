@@ -8,15 +8,37 @@ PAGES = [('feed', 'Home', 'home', "goto('feed')"), ('market', 'Marketplace', 'ca
          ('messages', 'Messages', 'chat', "goto('messages')"), ('notifs', 'Notifications', 'bell', "goto('notifs')"), ('profile', 'My profile', 'user', "goto('profile')"),
          ('groups', 'Groups', 'handshake', "goto('groups')"), ('training', 'Training', 'cap', "goto('training')"), ('saved', 'Saved', 'bookmark', "goto('saved')")]
 PIX = 'data:image/gif;base64,R0lGODlhAQABAIAAAMLS5wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=='
+# The snapshot must be the same on every build (it is part of the delivered file and of the parity check):
+# a fixed date (the hero line names the weekday), a seeded Math.random, no network (fonts, exchange rate), finished
+# count-up animations (reduced motion makes them show the final figure) and "settle" waits instead of fixed sleeps.
+FIXED_TIME = '2026-10-02T10:00:00+03:00'   # a Friday, as in the approved demo
+SEED = ("(function(){var s=20261002;Math.random=function(){s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};"
+        # idle-time work (the layers' idle() helpers: "Landed cost" chips, molecules…) waits until settle() runs it, after the
+        # render layers, so the order of the layers never depends on how busy the machine is
+        "var Q={},n=0;window.requestIdleCallback=function(cb){Q[++n]=cb;return n;};window.cancelIdleCallback=function(i){delete Q[i];};"
+        "window.__dxRunIdle=function(){var k=Object.keys(Q).map(Number).sort(function(a,b){return a-b;});k.forEach(function(i){var cb=Q[i];delete Q[i];"
+        "try{cb({didTimeout:false,timeRemaining:function(){return 0;}});}catch(e){}});return k.length;};})();")
+SETTLE = """() => new Promise(done => { var t0 = performance.now(), last = t0, ob = new MutationObserver(() => { last = performance.now(); });
+  ob.observe(document.documentElement, {subtree: true, childList: true, attributes: true, characterData: true});
+  (function tick() { var now = performance.now(); if (now - last > 500 || now - t0 > 6000) { ob.disconnect(); done(); } else setTimeout(tick, 100); })(); })"""
 with sync_playwright() as p:
-    b = p.chromium.launch(args=["--no-sandbox"]); pg = b.new_page(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    b = p.chromium.launch(args=["--no-sandbox"])
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1, locale='en-US', timezone_id='Africa/Cairo', reduced_motion='reduce')
+    ctx.clock.set_fixed_time(FIXED_TIME); ctx.add_init_script(SEED)
+    ctx.route('**/*', lambda r: r.continue_() if r.request.url.startswith('file:') else r.abort())
+    pg = ctx.new_page()
+    def settle():   # wait until the page stops changing, run every render layer once more on the final page (a page that changes
+        pg.evaluate(SETTLE)   # while the layers run in slices can otherwise miss one: icons, company links), then the idle-time work
+        if pg.evaluate("!!(window.dxCore && dxCore.onRender)"): pg.evaluate("dxCore.onRender('snapshot', function () {})"); pg.evaluate(SETTLE)
+        for _ in range(2):
+            if pg.evaluate("window.__dxRunIdle ? __dxRunIdle() : 0"): pg.evaluate(SETTLE)
     pg.goto('file://' + SRC, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(900)
-    pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(3200)
-    if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
+    pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(3200); settle()
+    if pg.locator('.tour-skip').count(): pg.click('.tour-skip'); settle()
     icons = pg.evaluate("(()=>{var o={};['home','cart','building','briefcase','users','chat','bell','user','handshake','cap','bookmark'].forEach(k=>{o[k]=window.dxIcon?window.dxIcon(k):''});return o})()")
     parts = []
     for key, label, icon, js in PAGES:
-        pg.evaluate(js); pg.wait_for_timeout(650)
+        pg.evaluate(js); pg.wait_for_timeout(650); settle()
         html = pg.evaluate("""(()=>{var c=document.getElementById('content').cloneNode(true);
           var LITE={feed:1,market:1,companies:1,jobs:1,network:1,messages:1,notifs:1,profile:1,groups:1,training:1,saved:1};
           var SEL='button,[onclick],[role=button],a[href],.hb-card,.dr-card,label.chip,[data-hopen],[data-htab2]';
@@ -73,6 +95,33 @@ with sync_playwright() as p:
           return c.innerHTML;})()""")
         html = re.sub(r'data:image/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]{30000,}', PIX, html)
         parts.append((key, label, icon, html))
+
+    # Several pages show the same things (the feed's posts on the profile, the directory on the company page): an id may
+    # appear once only. Later copies get a page-specific id, and the page's own style rules for that id are copied for it.
+    seen, renamed = set(), {}
+    def uniq(key, html):
+        def one(m):
+            i = m.group(2)
+            if i not in seen: seen.add(i); return m.group(0)
+            renamed[i + '--' + key] = i; return m.group(1) + i + '--' + key + m.group(3)
+        return re.sub(r'(\sid=")([^"]+)(")', one, html)
+    # a page title reads as its name only: the badges after the name (Sponsored, Active, ✓) are hidden from screen readers
+    def badges(html):
+        def h1(m):
+            if not re.match(r'\s*[^<\s]', m.group(2)): return m.group(0)   # only when the title starts with its own text
+            return m.group(1) + re.sub(r'<(span|small|b|i|em)(?![^>]*aria-hidden)(\s[^>]*)?>', lambda t: '<' + t.group(1) + (t.group(2) or '') + ' aria-hidden="true">', m.group(2)) + m.group(3)
+        return re.sub(r'(<h1\b[^>]*>)([\s\S]*?)(</h1>)', h1, html)
+    parts = [(k, l, i, badges(uniq(k, h))) for k, l, i, h in parts]
+    ID_CSS = pg.evaluate(r"""(pairs) => { var out = [];   /* only the selectors that name the id: the copy never restyles anything else */
+      function split(sel) { var a = [], d = 0, cur = ''; for (var ch of sel) { if (ch === '(') d++; if (ch === ')') d--; if (ch === ',' && !d) { a.push(cur); cur = ''; } else cur += ch; } a.push(cur); return a; }
+      function walk(rules, wraps) { for (var r of rules) {
+        if (r.selectorText) pairs.forEach(function (p) { if (!/^[\w-]+$/.test(p[1])) return; var re = new RegExp('#' + p[1] + '(?![\\w-])', 'g');
+          var sel = split(r.selectorText).filter(function (x) { re.lastIndex = 0; return re.test(x); }).map(function (x) { return x.replace(re, '#' + p[0]).trim(); });
+          if (!sel.length) return; var css = sel.join(',') + '{' + r.style.cssText + '}';
+          for (var i = wraps.length - 1; i >= 0; i--) css = wraps[i] + '{' + css + '}'; out.push(css); });
+        else if (r.cssRules && r.conditionText !== undefined) walk(r.cssRules, wraps.concat([(r instanceof CSSMediaRule ? '@media ' : '@supports ') + r.conditionText])); } }
+      for (var sh of document.styleSheets) { try { walk(sh.cssRules, []); } catch (e) {} }
+      return out.join(''); }""", [[n, o] for n, o in renamed.items()])
     b.close()
 
 def ic(k): return '<span class="li-ic">' + icons.get(k, '') + '</span>'
@@ -123,8 +172,14 @@ CSS = ('<style>'
   '.lmenu{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px}.lmenu a{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E6E8EE;border-radius:16px;padding:14px;color:#0E1320;text-decoration:none;font:600 14px Poppins,Arial,sans-serif}'
   '.lmenu .lmenu-out{color:#991B1B}.lnote{margin:6px 16px;color:#64748b;font:13px/1.6 Poppins,Arial,sans-serif}'
   '@media (min-width:900px){.lm{max-width:1100px;margin:0 auto}.ln{max-width:640px;margin:0 auto;border-radius:18px 18px 0 0}}'
-  '</style>')
-open(OUT.replace('.html', '.css'), 'w', encoding='utf-8').write(CSS.replace('<style>', '').replace('</style>', ''))
-open(OUT, 'w', encoding='utf-8').write('<div id="dxStaticWrap"><a id="dxLiteTop"></a><div id="dxLite">' + secs + menu + '</div></div><!--/dxStaticWrap-->'
+  + ID_CSS + '</style>')
+def write_if_changed(path, text):   # tracked files: an unchanged snapshot leaves the working tree clean
+    try:
+        if open(path, encoding='utf-8').read() == text: return False
+    except FileNotFoundError: pass
+    open(path, 'w', encoding='utf-8').write(text); return True
+write_if_changed(OUT.replace('.html', '.css'), CSS.replace('<style>', '').replace('</style>', ''))
+LITE = ('<div id="dxStaticWrap"><a id="dxLiteTop"></a><div id="dxLite">' + secs + menu + '</div></div><!--/dxStaticWrap-->'
   + '<script>(function(){var s=document.getElementById("dxStaticWrap");if(s&&s.parentNode)s.parentNode.removeChild(s);})();</script>')
-print('lite app: %d KB, %d pages + menu' % (len(open(OUT, encoding='utf-8').read()) // 1024, len(parts)))
+changed = write_if_changed(OUT, LITE)
+print('lite app: %d KB, %d pages + menu%s' % (len(LITE) // 1024, len(parts), '' if changed else ' (unchanged)'))

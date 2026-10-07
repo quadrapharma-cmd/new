@@ -4,7 +4,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(args=["--no-sandbox"]); ctx=b.new_context(viewport={'width':1440,'height':900}); pg=ctx.new_page()
     cdp=ctx.new_cdp_session(pg); cdp.send('Emulation.setCPUThrottlingRate',{'rate':4})
     pg.add_init_script("window.__lt=[];new PerformanceObserver(l=>l.getEntries().forEach(e=>window.__lt.push(Math.round(e.duration)))).observe({entryTypes:['longtask']});")
-    pg.goto('file:///tmp/drugbox_brand.html',wait_until='load',timeout=120000)
+    pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load',timeout=120000)
     pg.evaluate('endSplash()'); pg.wait_for_timeout(1500)
     pg.evaluate("window.__lt=[]"); pg.wait_for_timeout(4000)
     lt=pg.evaluate("window.__lt"); print('LOGIN idle 4s (4x slower CPU) → long tasks:',len(lt),'total ms:',sum(lt))

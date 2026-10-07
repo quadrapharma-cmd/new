@@ -125,8 +125,8 @@ img{max-width:100%;height:auto}
 .tick-inner{display:flex;align-items:center;white-space:nowrap;animation:tick 38s linear infinite}
 .tick-inner:hover{animation-play-state:paused}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.tick-live{color:#ef4444;font-weight:800;font-size:11px;padding:0 14px;border-right:1px solid rgba(255,255,255,.15)}
-.tick-i{font-size:12px;color:rgba(255,255,255,.75);padding:0 16px;border-right:1px solid rgba(255,255,255,.1)}
+.tick-live{color:#ef4444;font-weight:800;font-size:11px;padding:0 14px;border-inline-end:1px solid rgba(255,255,255,.15)}
+.tick-i{font-size:12px;color:rgba(255,255,255,.75);padding:0 16px;border-inline-end:1px solid rgba(255,255,255,.1)}
 .tick-i b{color:#93c5fd}
 
 /* App body */
@@ -138,7 +138,8 @@ img{max-width:100%;height:auto}
 .me-row:hover{background:#f8f9fa}
 .me-av{width:40px;height:40px;border-radius:50%;background:var(--cp);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex:none;overflow:hidden}
 .me-av img{width:100%;height:100%;object-fit:cover}
-.me-name{font-size:13.5px;font-weight:700;color:var(--cx);min-width:0}
+.me-name{font-size:13.5px;font-weight:700;color:var(--cx);min-width:0;overflow-wrap:anywhere}
+.me-row>div{min-width:0}
 .me-head{font-size:11px;color:#65676b;truncate:true;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .nl{display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:10px;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--cx);transition:.15s;margin:1px 6px;position:relative}
 .nl:hover{background:#f0f2f5}
@@ -226,7 +227,7 @@ img{max-width:100%;height:auto}
 .feed-wrap{max-width:1060px;margin:0 auto;padding:14px 16px;display:grid;grid-template-columns:1fr 260px;gap:14px}
 .composer{background:#fff;border:1px solid #e4e6eb;border-radius:12px;padding:14px}
 .comp-top{display:flex;align-items:center;gap:10px}
-.comp-btn{flex:1;height:40px;border:1.5px solid #e4e6eb;border-radius:20px;padding:0 16px;font-size:13.5px;color:#65676b;background:#f0f4fb;text-align:left;cursor:pointer;transition:.15s}
+.comp-btn{flex:1;height:40px;border:1.5px solid #e4e6eb;border-radius:20px;padding:0 16px;font-size:13.5px;color:#65676b;background:#f0f4fb;text-align:start;cursor:pointer;transition:.15s}
 .comp-btn:hover{background:#e8edf5}
 .comp-acts{display:flex;border-top:1px solid #f0f2f5;margin-top:10px;padding-top:10px}
 .comp-act{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px;font-size:12px;font-weight:600;color:#65676b;border-radius:8px;cursor:pointer;transition:.15s}
@@ -520,7 +521,7 @@ img{max-width:100%;height:auto}
 .admin-ticker-item:last-child{border-bottom:none}
 .ticker-label-badge{font-size:11px;font-weight:700;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;min-width:60px;text-align:center}
 .admin-table{width:100%;border-collapse:collapse}
-.admin-table th{text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #f3f4f6;background:#f9fafb}
+.admin-table th{text-align:start;padding:10px 12px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #f3f4f6;background:#f9fafb}
 .admin-table td{padding:12px;font-size:13.5px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
 .admin-table tr:hover td{background:#f9fafb}
 .admin-save-btn{padding:9px 22px;background:var(--cp);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit}
@@ -818,7 +819,7 @@ body{font-family:'Poppins',system-ui,sans-serif!important;color:var(--dg-ink)}
 .lg-form .f-input{height:48px!important;font-family:'Poppins',sans-serif!important;font-size:14.5px!important}
 .lg-form .f-btn{height:50px!important;font-size:15px!important;margin-top:6px}
 .lg-form .f-link{text-align:center;margin-top:16px}
-.lg-demo{display:block;width:100%;margin-top:18px;padding:14px 16px;border-radius:16px;background:#EEF4FF;border:1.5px solid #BFDBFE;text-align:left;cursor:pointer;font-family:'Poppins',sans-serif}
+.lg-demo{display:block;width:100%;margin-top:18px;padding:14px 16px;border-radius:16px;background:#EEF4FF;border:1.5px solid #BFDBFE;text-align:start;cursor:pointer;font-family:'Poppins',sans-serif}
 .lg-demo:hover{border-color:#1a56db}
 .lg-demo-l{display:block;font-size:10.5px;font-weight:700;color:#1a56db;letter-spacing:.08em;margin-bottom:4px}
 .lg-demo-v{display:block;font-family:var(--mono,'JetBrains Mono',monospace);font-size:13px;font-weight:700;color:#0E1320;line-height:1.7}
@@ -1512,7 +1513,7 @@ body{font-family:'Poppins',system-ui,sans-serif!important;color:var(--dg-ink)}
 #mx .msg-empty{flex:1;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;text-align:center}
 
 #mx .ch-action-btn{position:relative}
-#mx .ch-dropdown{display:none;position:absolute;top:42px;right:0;background:#fff;border-radius:11px;box-shadow:0 12px 32px rgba(0,0,0,.18);border:1px solid #eef0f4;width:200px;z-index:50;overflow:hidden;text-align:left}
+#mx .ch-dropdown{display:none;position:absolute;top:42px;right:0;background:#fff;border-radius:11px;box-shadow:0 12px 32px rgba(0,0,0,.18);border:1px solid #eef0f4;width:200px;z-index:50;overflow:hidden;text-align:start}
 #mx .ch-dropdown.show{display:block}
 #mx .ch-dd-item{padding:11px 14px;font-size:12.5px;color:#0f172a;cursor:pointer;display:flex;align-items:center;gap:9px;font-weight:500}
 #mx .ch-dd-item:hover{background:#f4f6fb}
@@ -1683,7 +1684,7 @@ body{font-family:'Poppins',system-ui,sans-serif!important;color:var(--dg-ink)}
 #gx .role-card.member{background:linear-gradient(160deg,#f8fafc,#f1f5f9)}
 #gx .role-icon{font-size:22px;margin-bottom:6px}
 #gx .role-name{font-size:12px;font-weight:800;color:#0f172a;margin-bottom:5px}
-#gx .role-perms{font-size:9.5px;color:#475569;line-height:1.7;text-align:left}
+#gx .role-perms{font-size:9.5px;color:#475569;line-height:1.7;text-align:start}
 #gx .role-perms div{display:flex;align-items:flex-start;gap:4px}
 #gx .perm-yes{color:#15803d;font-weight:800;flex-shrink:0}
 #gx .perm-no{color:#94a3b8;font-weight:800;flex-shrink:0}
@@ -1989,15 +1990,15 @@ body{font-family:'Poppins',system-ui,sans-serif!important;color:var(--dg-ink)}
       <div class="auth-title">Join Drugbox</div>
       <div class="auth-sub">12,000+ pharma professionals are waiting</div>
       <div class="f-error" id="suErr"></div>
-      <div class="f-field"><label class="f-label">Full Name *</label>
+      <div class="f-field"><label class="f-label" for="suName">Full Name *</label>
         <input class="f-input" id="suName" placeholder="Dr. Your Name"></div>
-      <div class="f-field"><label class="f-label">Email *</label>
+      <div class="f-field"><label class="f-label" for="suEmail">Email *</label>
         <input class="f-input" id="suEmail" type="email" placeholder="you@company.com"></div>
-      <div class="f-field"><label class="f-label">Password *</label>
+      <div class="f-field"><label class="f-label" for="suPw">Password *</label>
         <input class="f-input" id="suPw" type="password" placeholder="Min. 8 characters" onkeydown="authEnter(event,doSignup)"></div>
-      <div class="f-field"><label class="f-label">Company</label>
+      <div class="f-field"><label class="f-label" for="suCompany">Company</label>
         <input class="f-input" id="suCompany" placeholder="Your pharma company"></div>
-      <div class="f-field"><label class="f-label">Role</label>
+      <div class="f-field"><label class="f-label" for="suRole">Role</label>
         <select class="f-select" id="suRole">
           <option>Regulatory Affairs</option><option>Quality Control / QA</option>
           <option>Sales & Business Dev</option><option>Production</option>
@@ -3734,7 +3735,8 @@ document.getElementById('searchIn').addEventListener('keydown',function(e){if(e.
       (o.primary ? '<button class="dbk-btn ' + (o.primary.danger ? 'd' : 'p') + '" data-a="ok">' + esc(o.primary.label) + '</button>' : '') + '</div></div>';
     var opener = document.activeElement, closed = false, lastOk = 0;
     function close() { if (closed) return; closed = true; ov.remove(); window.removeEventListener('keydown', onKey, true); refocus(opener); }
-    function onKey(e) { if (e.key !== 'Escape' || closed) return; var t = topDialog(); if (t && !ov.contains(t)) return; e.stopImmediatePropagation(); close(); }   /* only the window on top */
+    function onKey(e) { if (e.key !== 'Escape' || closed) return; if (!ov.isConnected) { closed = true; window.removeEventListener('keydown', onKey, true); return; }   /* removed by a layer: this Escape belongs to someone else */
+      var t = topDialog(); if (t && !ov.contains(t)) return; e.stopImmediatePropagation(); close(); }   /* only the window on top */
     ov.addEventListener('click', function (e) {
       if (closed) return;   /* clicks that reach a window already closed do nothing */
       if (e.target === ov || e.target.closest('.dbk-x') || (e.target.dataset && e.target.dataset.a === 'cancel')) close();
@@ -3997,13 +3999,13 @@ async function openBoostModal(plan){
   var vatEgp = baseEgp * 0.14;
   var totalEgp = baseEgp + vatEgp;
 
-  var ar = document.documentElement.lang === 'ar', egp = function (n) { return 'EGP ' + Math.round(n).toLocaleString('en-US'); };
+  var ar = document.documentElement.lang === 'ar', egp = function (n) { var v = Math.round(n).toLocaleString('en-US'); return ar ? v + ' ج.م' : 'EGP ' + v; };   /* Latin digits in both languages, like the rest of the interface */
   var bm = document.getElementById('boostModalOverlay'), lb = bm.querySelectorAll('.bm-row > span:first-child'), cb = bm.querySelector('.btn-bm-close');
   bm.querySelector('.boost-modal').style.direction = ar ? 'rtl' : 'ltr'; cb.style.left = ar ? '' : 'auto'; cb.style.right = ar ? '' : '18px';   /* the window was drawn right-to-left only */
   bm.querySelector('.bm-title').textContent = ar ? '⭐ ترقية الإعلان (Boost)' : '⭐ Boost your listing';
   bm.querySelector('.bm-rate-note').textContent = ar ? 'السعر يُحسب لحظيًا بسعر الصرف الحالي — مثل فيسبوك' : 'The price is calculated live at the current exchange rate';
   (ar ? ['رسوم الترقية', 'ضريبة القيمة المضافة (14%)', 'الإجمالي'] : ['Boost fee', 'VAT (14%)', 'Total']).forEach(function (t, i) { if (lb[i]) lb[i].textContent = t; });
-  document.getElementById('bmEgpAmount').innerHTML = '<span>EGP</span> ' + Math.round(totalEgp).toLocaleString('en-US');
+  document.getElementById('bmEgpAmount').innerHTML = ar ? Math.round(totalEgp).toLocaleString('en-US') + ' <span>ج.م</span>' : '<span>EGP</span> ' + Math.round(totalEgp).toLocaleString('en-US');
   document.getElementById('bmBaseEgp').textContent = egp(baseEgp);
   document.getElementById('bmVatEgp').textContent = egp(vatEgp);
   document.getElementById('bmTotalEgp').textContent = egp(totalEgp);

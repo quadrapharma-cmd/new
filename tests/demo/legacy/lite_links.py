@@ -1,9 +1,9 @@
 from playwright.sync_api import sync_playwright
 PAGES=['feed','market','companies','company','jobs','network','messages','notifs','profile','groups','training','saved']
 with sync_playwright() as p:
-    for eng in ('chromium','webkit'):
+    for eng in [e for e in ('webkit','chromium') if e in __import__('os').environ.get('DX_ENGINES','webkit,chromium')][::-1]:   # DX_ENGINES: the browsers installed here
         b=(p.chromium.launch(args=["--no-sandbox"]) if eng=='chromium' else p.webkit.launch())
-        pg=b.new_page(**(p.devices['Pixel 5'] if eng=='chromium' else p.devices['iPhone 12'])); pg.goto('file:///tmp/sanitized.html',wait_until='load'); pg.wait_for_timeout(500)
+        pg=b.new_page(**(p.devices['Pixel 5'] if eng=='chromium' else p.devices['iPhone 12'])); pg.goto('file://'+__import__('os').environ.get('DEMO_VARIANTS','/tmp')+'/sanitized.html',wait_until='load'); pg.wait_for_timeout(500)
         tot=0; dead=[]; wrong=[]
         for k in PAGES:
             pg.evaluate(f"location.hash='#p-{k}'"); pg.wait_for_timeout(120)

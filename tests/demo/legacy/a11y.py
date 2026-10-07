@@ -1,11 +1,11 @@
 from playwright.sync_api import sync_playwright
 import json, collections
-AXE=open('/tmp/axe.min.js').read()
+AXE=open(__import__('os').environ.get('AXE_JS','/tmp/axe.min.js')).read()
 SCREENS=[('login',None),('home',"goto('feed')"),('marketplace',"goto('market')"),('directory',"goto('companies')"),('company page',"dxHub.page('quadra-pharm')"),
          ('workspace',"dxHub.workspace('quadra-pharm')"),('jobs',"goto('jobs')"),('messages',"goto('messages')"),('profile',"goto('profile')")]
 with sync_playwright() as p:
     b=p.chromium.launch(args=["--no-sandbox"]); pg=b.new_page(viewport={'width':1440,'height':900})
-    pg.goto('file:///tmp/drugbox_brand.html',wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(900)
+    pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(900)
     agg=collections.defaultdict(lambda: {'impact':'','screens':set(),'nodes':0,'help':'','sample':''})
     for name, js in SCREENS:
         if name=='home':

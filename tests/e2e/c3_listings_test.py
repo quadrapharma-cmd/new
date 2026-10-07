@@ -2,18 +2,14 @@
 created by the database), approved suppliers, and comparing quotes from two suppliers."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
-U = os.environ.get('APP_URL', 'http://localhost:54321/'); DB = os.environ.get('DB_NAME', 'drugbox_live'); R = []
-def T(n, ok, d=''): R.append(ok); print(('✅ ' if ok else '❌ ') + n + ('' if ok else '  → ' + str(d)[:220]))
-def sql(q):
-    r = subprocess.run(['psql', '-h', '/tmp', '-p', '5433', '-U', 'postgres', '-d', DB, '-tA', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True)
-    if r.returncode: raise SystemExit('SQL failed: ' + r.stderr.strip()[:300])
-    return r.stdout.strip()
-st = int(time.time()); PW = 'Strong-pass-2026'
+from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+
+st = ST; PW = 'Strong-pass-2026'
 OK = "(()=>{var o=[...document.querySelectorAll('.dbk-ov')].filter(e=>e.offsetWidth>0).pop();var b=o&&(o.querySelector('[data-a=ok]')||[...o.querySelectorAll('button')].filter(x=>!/^(×|Cancel|Close)$/.test(x.textContent.trim())).pop());b&&b.click();return b?b.textContent.trim():null})()"
 CLOSE = "document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())"
 def signup(pg, name, email):
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
-    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(3500)
+    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
     return pg.evaluate("dxLive.uuidOf(ME.id)")
 def act_as(pg, slug):
     pg.evaluate(f"localStorage.setItem('dx_acting', JSON.stringify('{slug}'))"); pg.reload(wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(4500)
@@ -77,4 +73,5 @@ with sync_playwright() as p:
     A.evaluate(CLOSE); A.evaluate(f"dxDeals.act('{refs[SS2]}','accept',{{}},'from')"); A.wait_for_timeout(300); settle(A)
     T('accepting the cheaper quote is recorded; the other stays open', sql(f"select status from public.deals where ref='{refs[SS2]}'") == 'accepted' and sql(f"select status from public.deals where ref='{refs[SS]}'") == 'quoted')
     T('no errors in the pages', not errs, errs)
-    print(sum(R), '/', len(R)); b.close()
+    b.close()
+done()

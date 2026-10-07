@@ -1,17 +1,13 @@
-"""C2 end-to-end: two companies in two browsers — RFQ from the supplier's page, quote, accept, confirm, ship, receive, rate;
+"""C2 end-to-end: two companies in two browsers — RFQ from the supplier's page, quote, accept, confirm, ship, receive, rate
 the engine refuses out-of-turn steps and expired offers (the screen returns to the true state); track record from the database."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
-U = os.environ.get('APP_URL', 'http://localhost:54321/'); DB = os.environ.get('DB_NAME', 'drugbox_live'); R = []
-def T(n, ok, d=''): R.append(ok); print(('✅ ' if ok else '❌ ') + n + ('' if ok else '  → ' + str(d)[:220]))
-def sql(q):
-    r = subprocess.run(['psql', '-h', '/tmp', '-p', '5433', '-U', 'postgres', '-d', DB, '-tA', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True)
-    if r.returncode: raise SystemExit('SQL failed: ' + r.stderr.strip()[:300])
-    return r.stdout.strip()
-st = int(time.time()); PW = 'Strong-pass-2026'
+from _dx import APP_URL as U, DB, R, T, sql, ST, STN, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+
+st = ST; PW = 'Strong-pass-2026'
 def signup(pg, name, email):
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
-    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(3500)
+    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
     return pg.evaluate("dxLive.uuidOf(ME.id)")
 def relogin(pg):
     pg.reload(wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(4000)
@@ -22,8 +18,8 @@ with sync_playwright() as p:
     for pg in (A, B): pg.on("pageerror", lambda e: errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.accept())
     a = signup(A, 'Dr. Buyer Manager', f'buyer{st}@x.test'); bb = signup(B, 'Dr. Supplier Sales', f'seller{st}@x.test')
     SA, SB = f'buyer-pharma-{st}', f'supplier-api-{st}'
-    sql(f"insert into public.companies (owner_id, name, slug, type, status, registry, sectors, governorate) values ('{a}','Buyer Pharma {st}','{SA}','Manufacturer','verified','11{st % 100000}','{{Manufacturer}}','Giza')")
-    sql(f"insert into public.companies (owner_id, name, slug, type, status, registry, licensed, sectors, governorate) values ('{bb}','Supplier API {st}','{SB}','Supplier','verified','22{st % 100000}',true,'{{API supplier}}','Cairo')")
+    sql(f"insert into public.companies (owner_id, name, slug, type, status, registry, sectors, governorate) values ('{a}','Buyer Pharma {st}','{SA}','Manufacturer','verified','11{STN % 100000}','{{Manufacturer}}','Giza')")
+    sql(f"insert into public.companies (owner_id, name, slug, type, status, registry, licensed, sectors, governorate) values ('{bb}','Supplier API {st}','{SB}','Supplier','verified','22{STN % 100000}',true,'{{API supplier}}','Cairo')")
     sql(f"insert into public.company_products (company_id, name, active_ingredient, active_ingredient_ar, dosage_form, role) select id, 'Metformin HCl {st}', 'Metformin HCl', 'ميتفورمين', 'API powder', 'supplier' from public.companies where slug='{SB}'")
     for pg, s in ((A, SA), (B, SB)): pg.evaluate(f"localStorage.setItem('dx_acting', JSON.stringify('{s}'))"); relogin(pg)
     # the buyer sends an RFQ from the supplier's page (the real dialog)
@@ -73,7 +69,9 @@ with sync_playwright() as p:
     A.evaluate(f"dxDeals.thread('{ref}')"); A.wait_for_timeout(800)
     T('the demo\'s "simulate their reply" button is hidden in the live app', not A.evaluate("[...document.querySelectorAll('[data-sim]')].some(e=>e.offsetWidth>0)"))
     A.evaluate("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
-    r = A.evaluate(f"dxLive.sb.from('deals').update({{status:'closed'}}).eq('ref','{ref}').then(r=>!!r.error)")
-    T('deals cannot be edited directly through the API', r)
+    before = sql(f"select status||'|'||title from public.deals where ref='{ref}'")
+    r = A.evaluate(f"dxLive.sb.from('deals').update({{status:'{'open' if before.startswith('closed') else 'closed'}',title:'forged'}}).eq('ref','{ref}')" + ERR)
+    T('deals cannot be edited directly through the API', before and refused(r) and sql(f"select status||'|'||title from public.deals where ref='{ref}'") == before, (r, before))
     T('no errors in the page', not errs, errs)
-    print(sum(R), '/', len(R)); b.close()
+    b.close()
+done()

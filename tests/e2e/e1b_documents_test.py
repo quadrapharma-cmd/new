@@ -2,16 +2,12 @@
 (company + Drugbox only), warning references need evidence (author + moderators only) and wait for review."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
-U = os.environ.get('APP_URL', 'http://localhost:54321/'); DB = os.environ.get('DB_NAME', 'drugbox_live'); V = '/tmp/vids'; R = []
-def T(n, ok, d=''): R.append(ok); print(('✅ ' if ok else '❌ ') + n + ('' if ok else '  → ' + str(d)[:220]))
-def sql(q):
-    r = subprocess.run(['psql', '-h', '/tmp', '-p', '5433', '-U', 'postgres', '-d', DB, '-tA', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True)
-    if r.returncode: raise SystemExit('SQL failed: ' + r.stderr.strip()[:300])
-    return r.stdout.strip()
-st = int(time.time()); PW = 'Strong-pass-2026'
+from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+V = FIXTURES
+st = ST; PW = 'Strong-pass-2026'
 def signup(pg, name, email):
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
-    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(3500)
+    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
     return pg.evaluate("dxLive.uuidOf(ME.id)")
 def fresh(pg): pg.reload(wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(5000)
 def can_sign(pg, bucket, path): return pg.evaluate(f"dxLive.sb.storage.from('{bucket}').createSignedUrl('{path}',60).then(r=>!r.error)")
@@ -49,13 +45,16 @@ with sync_playwright() as p:
     rp = vr.split('|')[0]
     T('Drugbox reviewers can open the documents', can_sign(A, 'documents', rp) if rp else False)
     T('an outsider cannot', not can_sign(X, 'documents', rp) if rp else False)
-    # warning reference: evidence required
+    # warning reference: evidence required — written by a verified company (Drugbox approves the request above, server side)
+    sql(f"update public.companies set status='verified' where id={cid}")
     E.evaluate("goto('jobs')"); E.wait_for_timeout(3000)
     warn = f"(()=>{{var r=DBK.store.get('jobRefs');r.push({{cand:'Dr. Doc Candidate {st}',company:'{CO}',kind:'warn',from:'2021-01',to:'2024-12',role:'Validation',category:'Left without notice',text:'Left in the middle of a validation campaign without notice to the lab.',status:'pending'}});DBK.store.set('jobRefs',r)}})()"
     E.evaluate(warn); E.wait_for_timeout(2000)
     T('a warning without evidence is not submitted', sql(f"select count(*) from public.work_references where author='{e}' and kind='warn'") == '0')
-    E.evaluate("(()=>{var o=document.createElement('div');o.className='dbk-ov';o.innerHTML='<div><label>Category<select id=\"rfCat\"><option>Left without notice</option></select></label></div>';document.body.appendChild(o)})()"); E.wait_for_timeout(500)
-    T('the warning form gets a required evidence field', E.evaluate("!!document.getElementById('dxEv')"))
+    # the real dialog: the candidate's card → Work reference → Warning tab
+    opened = E.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#jx .jcard')].find(x=>x.textContent.indexOf('Dr. Doc Candidate {st}')>=0);var b=c&&c.querySelector('[data-a=ref]');if(!b)return false;b.click();return true}})()"); E.wait_for_timeout(500)
+    E.evaluate("(()=>{var t=document.querySelector('.dbk-ov .jx-tab[data-k=warn]');if(t)t.click()})()"); E.wait_for_timeout(500)
+    T('the real warning form (candidate card → Work reference → Warning) gets a required evidence field', opened and E.evaluate("!!document.querySelector('.dbk-ov #rfCat') && !!document.querySelector('.dbk-ov #dxEv')"), opened)
     E.set_input_files('#dxEv', V + '/spec.pdf'); E.wait_for_timeout(300); E.evaluate("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
     E.evaluate(warn); E.wait_for_timeout(2500)
     w = sql(f"select status||'|'||coalesce(evidence_path,'') from public.work_references where author='{e}' and kind='warn'")
@@ -63,4 +62,5 @@ with sync_playwright() as p:
     ev = w.split('|')[1]
     T('the evidence is readable by its author and Drugbox reviewers only', can_sign(E, 'reference-evidence', ev) and can_sign(A, 'reference-evidence', ev) and not can_sign(X, 'reference-evidence', ev) and not can_sign(C, 'reference-evidence', ev))
     T('no errors in the pages', not errs, errs)
-    print(sum(R), '/', len(R)); b.close()
+    b.close()
+done()

@@ -7,3 +7,6 @@ html[lang=ar] input[type=email],html[lang=ar] input[type=password],html[lang=ar]
 /* Arabic interface: what people wrote keeps its own direction, so an English sentence ends with its own full stop and "10:32 AM" reads in order
    (the same as dir="auto", done in CSS: no element is rewritten and nothing changes in English) */
 html[dir=rtl] :is(.post-text,.post-body,.cmt-text,.msg-text,.bubble,.mx-bubble,.t-preview,.lc-title,.sp-title,.sc-title,.jc-title,.dc-title,.sm-title,.gcard-title,.gcard-desc,.dl-title,.ctx-title,.ctx-meta,.sl-title,.qv-title,.qv-desc,.sp-desc,.lc-desc,.jc-desc,.bubble-time,.mx-bubble-time,.t-time,.notif-time){unicode-bidi:plaintext}
+/* right-to-left ticker: the strip starts at the right edge, so it runs the other way (half its width, the items are listed twice) */
+html[dir=rtl] .tick-inner{animation-name:dxTickRtl}
+@keyframes dxTickRtl{from{transform:translateX(0)}to{transform:translateX(50%)}}

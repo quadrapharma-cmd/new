@@ -1,8 +1,13 @@
-import os
+import os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = ROOT + '/src'; BUILD = ROOT + '/build'; BASE = ROOT + '/base/app.html'
-OUT = os.environ.get('DRUGBOX_OUT', ROOT + '/dist/drugbox.html')
-os.makedirs(os.path.dirname(OUT), exist_ok=True)
+try:   # both are required: without them the delivered file would miss the lite copy / the phone optimisations
+    import PIL.Image, playwright.sync_api  # noqa: F401
+except ImportError as e:
+    raise SystemExit('build needs Pillow and Playwright (pip install pillow playwright && playwright install chromium): %s' % e)
+FINAL = os.environ.get('DRUGBOX_OUT', ROOT + '/dist/drugbox.html')
+OUT = FINAL[:-5] + '.partial.html' if FINAL.endswith('.html') else FINAL + '.partial.html'   # renamed to FINAL only when every step succeeded
+os.makedirs(os.path.dirname(FINAL), exist_ok=True)
 import json, subprocess
 H = open(BASE, encoding='utf-8').read()
 HEX, ILL = open(SRC + '/hex.json').read(), open(SRC + '/ill.json').read()
@@ -20,4 +25,9 @@ css = '\n'.join(open(SRC + '/' + c, encoding='utf-8').read() for c in CSS)
 k = H.find('</style>'); H = H[:k] + '\n/* ═════════ Drugbox layers: brand · craft · batches ═════════ */\n' + css + H[k:]
 z = H.rfind('</body>'); H = H[:z] + scripts + H[z:]
 open(OUT, 'w', encoding='utf-8').write(H); print(len(H)//1024, 'KB')
-exec(open(SRC + '/mobile_opt.py').read())   # final step: light and safe on phones
+try:
+    exec(open(SRC + '/mobile_opt.py').read())   # final step: light and safe on phones
+except BaseException:
+    if os.path.exists(OUT): os.remove(OUT)
+    raise
+os.replace(OUT, FINAL)

@@ -3,8 +3,8 @@ R=[]
 def T(n,ok,d=''): R.append(ok); print(('✅ ' if ok else '❌ ')+n+('' if ok else '  → '+str(d)))
 def cur(pg): return pg.evaluate("(()=>{var t=document.querySelector('.lp:target');return t?t.id:'(login)'})()")
 with sync_playwright() as p:
-    for eng in ('webkit','chromium'):
-        for mode, kw, path in (('JS blocked', {}, '/tmp/csp_block.html'), ('JS disabled', {'java_script_enabled': False}, '/tmp/drugbox_brand.html')):
+    for eng in [e for e in ('webkit','chromium') if e in __import__('os').environ.get('DX_ENGINES','webkit,chromium')]:   # DX_ENGINES: the browsers installed here
+        for mode, kw, path in (('JS blocked', {}, __import__('os').environ.get('DEMO_VARIANTS','/tmp')+'/csp_block.html'), ('JS disabled', {'java_script_enabled': False}, __import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'))):
             dev=p.devices['iPhone 12'] if eng=='webkit' else p.devices['Pixel 5']
             b=(p.webkit.launch() if eng=='webkit' else p.chromium.launch(args=["--no-sandbox"])); ctx=b.new_context(**dev, **kw); pg=ctx.new_page()
             pg.goto('file://'+path,wait_until='load'); pg.wait_for_timeout(600)
@@ -35,10 +35,10 @@ with sync_playwright() as p:
             T(tag+'no sideways overflow', ov<=2, ov)
             b.close()
     # normal browser untouched
-    for eng in ('webkit','chromium'):
+    for eng in [e for e in ('webkit','chromium') if e in __import__('os').environ.get('DX_ENGINES','webkit,chromium')]:   # DX_ENGINES: the browsers installed here
         dev=p.devices['iPhone 12'] if eng=='webkit' else p.devices['Pixel 5']
         b=(p.webkit.launch() if eng=='webkit' else p.chromium.launch(args=["--no-sandbox"])); ctx=b.new_context(**dev); pg=ctx.new_page(); errs=[]; pg.on("pageerror",lambda e:errs.append(str(e)[:150]))
-        pg.goto('file:///tmp/drugbox_brand.html',wait_until='load'); pg.wait_for_timeout(300)
+        pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.wait_for_timeout(300)
         lite=pg.evaluate("!!document.getElementById('dxLite')"); link=pg.is_visible('.dx-lite-enter')
         pg.click('#splash'); pg.wait_for_timeout(900); pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3000)
         T(f'[{eng} · browser] full app, lite copy not in the page', (not lite) and (not link) and pg.evaluate("document.getElementById('app').offsetWidth>0") and not errs, (lite, link, errs))

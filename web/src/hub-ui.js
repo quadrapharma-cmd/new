@@ -97,7 +97,7 @@
       '<button type="button" class="dr-btn" data-hpdf="1">' + ic('doc') + 'Profile PDF</button><button type="button" class="dr-btn" data-hqr="1">' + ic('target') + 'QR</button><button type="button" class="dr-link" data-hreport="1">Report wrong information</button></div></div></header>' +
       (co.status === 'unclaimed' ? '<div class="cp-banner cp-claim">' + ic('building') + '<span><b>Is this your company?</b> This page was built from public industry lists. Claim it to manage it and receive requests.</span><button type="button" class="dr-btn p sm" data-hclaim="1">Claim this page</button></div>' : '') +
       (H().staleSections(co).length ? '<div class="cp-banner pend">' + ic('warning') + '<span>Some information on this page was last updated more than 6 months ago (' + H().staleSections(co).join(', ') + ').</span></div>' : '') +
-      '<nav class="cp-tabs" role="tablist">' + tabs.map(function (x) { return '<button type="button" role="tab" class="cp-tab' + (tab === x[0] ? ' on' : '') + '" data-htab2="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</nav>';
+      '<nav class="cp-tabs" role="tablist">' + tabs.map(function (x) { return '<button type="button" role="tab" aria-selected="' + (tab === x[0]) + '" class="cp-tab' + (tab === x[0] ? ' on' : '') + '" data-htab2="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</nav>';
     var body = '';
     if (tab === 'overview') {
       var team = H().teamOf(co).filter(function (m) { return m.consent; }), look = X3() ? X3().lookingOf(co) : [];
@@ -186,7 +186,7 @@
         '<section class="cp-sec"><h3>Reviews</h3>' + (rv.length ? rv.map(function (r) { return '<div class="hb-rev"><b>' + '★'.repeat(r.stars) + '</b> <small>' + esc(r.from) + '</small><p>' + esc(r.note || '') + '</p>' + (r.reply ? '<div class="hb-reply">You replied: ' + esc(r.reply) + '</div>' : '<button type="button" class="dr-btn sm" data-wreply="' + esc(r.deal) + '">Reply</button>') + (r.disputed ? ' <span class="mr-st st-viewed">Under review by Drugbox</span>' : ' <button type="button" class="dr-link" data-wdispute="' + esc(r.deal) + '">Ask Drugbox to check this review</button>') + '</div>'; }).join('') : '<p class="cp-muted">No reviews yet.</p>') + '</section>';
     } else if (tab === 'activity') {
       var a = H().activity(co.slug);
-      body = '<section class="cp-sec"><h3>Activity log</h3><p class="cp-muted">Who in your team did what.</p><ul class="dl-tl">' + (a.length ? a.map(function (x) { return '<li><b>' + esc(x.who) + '</b> · ' + esc(x.text) + '<small>' + new Date(x.at).toLocaleString() + '</small></li>'; }).join('') : '<li>No activity yet.</li>') + '</ul></section>';
+      body = '<section class="cp-sec"><h3>Activity log</h3><p class="cp-muted">Who in your team did what.</p><ul class="dl-tl">' + (a.length ? a.map(function (x) { return '<li><b>' + esc(x.who) + '</b> · ' + esc(x.text) + '<small>' + (window.dxFmtDate ? window.dxFmtDate(x.at, true, 'en') : new Date(x.at).toLocaleString()) + '</small></li>'; }).join('') : '<li>No activity yet.</li>') + '</ul></section>';
     } else if (tab === 'plan') {
       body = '<div class="cp-two"><section class="cp-sec"><h3>Verification — free, always</h3><p>' + (co.status === 'verified' ? '✓ Verified: commercial registry and tax card checked.' : co.status === 'pending' ? 'Documents received — being checked.' : 'Not verified yet.') + '</p>' + (co.status === 'verified' || co.status === 'pending' ? '' : '<button type="button" class="dr-btn p" data-wverify="1">Get verified</button>') + '<p class="cp-muted">Verification and your track record can never be bought.</p></section>' +
         '<section class="cp-sec"><h3>Sponsored placement (VIP)</h3><p>' + (X().isVip(co) ? 'Your company appears in the Sponsored row of the directory.' : 'Appear in the Sponsored row of the directory, with your own link and Marketplace boosts. It never changes search order or trust.') + '</p>' + (X().isVip(co) ? '' : '<button type="button" class="dr-btn p" data-wvip="1">' + ic('crown') + 'Get VIP</button>') + '</section></div>';
@@ -194,7 +194,7 @@
     var mine = X().myCompanies();
     c.innerHTML = '<div id="dxDir" class="hub ws"><div class="ws-head">' + X().logo(co, 'dr-logo sm') + '<div><span class="dr-k">COMPANY WORKSPACE</span><h1 class="ws-h">' + esc(co.name) + '</h1></div>' +
       (mine.length > 1 ? '<select id="wsSwitch" aria-label="Company">' + mine.map(function (m) { return '<option value="' + esc(m.slug) + '"' + (m.slug === co.slug ? ' selected' : '') + '>' + esc(m.name) + '</option>'; }).join('') + '</select>' : '') + '<button type="button" class="dr-btn" data-hopen="' + esc(co.slug) + '">View public page</button></div>' +
-      '<nav class="cp-tabs" role="tablist">' + WTABS.map(function (x) { return '<button type="button" role="tab" class="cp-tab' + (tab === x[0] ? ' on' : '') + '" data-wtab="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</nav><div class="cp-body">' + body + '</div></div>';
+      '<nav class="cp-tabs" role="tablist">' + WTABS.map(function (x) { return '<button type="button" role="tab" aria-selected="' + (tab === x[0]) + '" class="cp-tab' + (tab === x[0] ? ' on' : '') + '" data-wtab="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</nav><div class="cp-body">' + body + '</div></div>';
   }
 
   /* ════════ routing between views ════════ */

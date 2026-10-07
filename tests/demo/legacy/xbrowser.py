@@ -12,7 +12,7 @@ with sync_playwright() as p:
         if eng=='firefox' and isinstance(dev,dict): opts={k:v for k,v in dev.items() if k!='is_mobile'}
         ctx=b.new_context(**opts); pg=ctx.new_page(); errs=[]
         pg.on("pageerror",lambda e:errs.append(str(e)[:120])); pg.on("dialog", lambda d: d.dismiss())
-        t0=time.time(); pg.goto('file:///tmp/drugbox_brand.html',wait_until='load'); t_load=time.time()-t0; pg.wait_for_timeout(400)
+        t0=time.time(); pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); t_load=time.time()-t0; pg.wait_for_timeout(400)
         pg.click('#splash'); pg.wait_for_timeout(900); pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3000)
         if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
         over=[]; slow=[]

@@ -4,10 +4,10 @@ def T(n,ok,d=''): R.append(ok); print(('✅ ' if ok else '❌ ')+n+('' if ok els
 def cur(pg): return pg.evaluate("(()=>{var t=document.querySelector('.lp:target');return t?t.id:'(login)'})()")
 def signins(pg): return pg.evaluate("[...document.querySelectorAll('#loginPage .f-btn')].filter(e=>e.offsetWidth>0&&getComputedStyle(e).display!=='none'&&/Sign In/.test(e.textContent)).length")
 with sync_playwright() as p:
-    for eng in ('webkit','chromium'):
+    for eng in [e for e in ('webkit','chromium') if e in __import__('os').environ.get('DX_ENGINES','webkit,chromium')]:   # DX_ENGINES: the browsers installed here
         dev=p.devices['iPhone 12'] if eng=='webkit' else p.devices['Pixel 5']
         L=lambda: (p.webkit.launch() if eng=='webkit' else p.chromium.launch(args=["--no-sandbox"]))
-        for name, path, extra in (('stripped viewer', '/tmp/sanitized.html', {'java_script_enabled': False}), ('scripts blocked + no animations', '/tmp/worst.html', {})):
+        for name, path, extra in (('stripped viewer', __import__('os').environ.get('DEMO_VARIANTS','/tmp')+'/sanitized.html', {'java_script_enabled': False}), ('scripts blocked + no animations', __import__('os').environ.get('DEMO_VARIANTS','/tmp')+'/worst.html', {})):
             b=L(); pg=b.new_context(**dev, **extra).new_page(); pg.goto('file://'+path, wait_until='load'); pg.wait_for_timeout(700)
             t=f'[{eng} · {name}] '
             T(t+'splash with logo', pg.is_visible('#splash') and pg.evaluate("document.getElementById('splLogo').naturalWidth>0"))
@@ -27,7 +27,7 @@ with sync_playwright() as p:
             T(t+'sign out → login', cur(pg)=='(login)' and pg.is_visible('#loginPage') and not pg.is_visible('#splash'))
             b.close()
         b=L(); pg=b.new_context(**dev).new_page(); errs=[]; pg.on("pageerror",lambda e:errs.append(str(e)[:150]))
-        pg.goto('file:///tmp/drugbox_brand.html',wait_until='load'); pg.wait_for_timeout(6800)
+        pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.wait_for_timeout(6800)
         t=f'[{eng} · browser] '
         T(t+'splash ends → login with ONE Sign In', (not pg.is_visible('#splash')) and signins(pg)==1, signins(pg))
         pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3000)

@@ -7,16 +7,22 @@
            ['fawry', '🏪', 'Fawry', 'Pay at any Fawry outlet or in the myFawry app'], ['instapay', '⚡', 'InstaPay', 'Transfer, then send us the receipt']];
   function methods(name) { return '<div class="dx-pay"><div class="dx-pay-t">Pay with</div>' + M.map(function (m, i) { return '<label class="dx-pay-m"><input type="radio" name="' + name + '" value="' + m[0] + '"' + (i ? '' : ' checked') + '><span class="dx-pay-i">' + m[1] + '</span><span><b>' + m[2] + '</b><small>' + m[3] + '</small></span></label>'; }).join('') + '</div>'; }
   function chosen(root, name) { var r = root.querySelector('input[name=' + name + ']:checked'); return r ? r.value : 'card'; }
-  /* amounts: Latin digits + EGP in English, Arabic-Indic digits + ج.م in Arabic (the rest of the app's convention) */
+  /* amounts: 'EGP 1,653' in English, '1,653 ج.م' in Arabic — Latin digits in both, like the rest of the Arabic interface */
   function ar() { return window.LANG === 'ar'; }
-  function egp(n) { n = Math.round(Number(n) || 0); return ar() ? n.toLocaleString('ar-EG', { maximumFractionDigits: 0 }) + ' ج.م' : 'EGP ' + n.toLocaleString('en', { maximumFractionDigits: 0 }); }
+  function egp(n) { n = Math.round(Number(n) || 0).toLocaleString('en', { maximumFractionDigits: 0 }); return ar() ? n + ' ج.م' : 'EGP ' + n; }
   /* Boost / Featured: with window.dxPay.quote (live adapter → payment_products) the window shows the price the server
      charges — never USD × a third-party FX rate, and no FX request is made. Without it (demo) the approved window runs. */
   function hasQuote() { return !!(window.dxPay && typeof window.dxPay.quote === 'function'); }
   function paintQuote(q) {
     var $ = function (id) { return document.getElementById(id); }; if (!$('bmPayBtn')) return;
     var base = Number(q.amount_egp) || 0, vat = Number(q.vat_egp) || 0, total = Number(q.total_egp) || base + vat;
-    var n = Math.round(total).toLocaleString(ar() ? 'ar-EG' : 'en', { maximumFractionDigits: 0 }); $('bmEgpAmount').innerHTML = ar() ? esc(n) + ' <span>ج.م</span>' : '<span>EGP</span> ' + esc(n); $('bmBaseEgp').textContent = egp(base); $('bmVatEgp').textContent = egp(vat); $('bmTotalEgp').textContent = egp(total);
+    var bm = $('boostModalOverlay'), A = ar(), lb = bm.querySelectorAll('.bm-row > span:first-child'), cb = bm.querySelector('.btn-bm-close'), box = bm.querySelector('.boost-modal'), days = Number(q.days) || 0;
+    /* the same labels and direction as the approved window draws for the interface language (it is not called here: it would fetch the FX rate) */
+    if (box) box.style.direction = A ? 'rtl' : 'ltr'; if (cb) { cb.style.left = A ? '' : 'auto'; cb.style.right = A ? '' : '18px'; }
+    if (bm.querySelector('.bm-title')) bm.querySelector('.bm-title').textContent = A ? '⭐ ترقية الإعلان (Boost)' : '⭐ Boost your listing';
+    if (bm.querySelector('.bm-rate-note')) bm.querySelector('.bm-rate-note').textContent = A ? (days ? days + (days >= 3 && days <= 10 ? ' أيام' : ' يومًا') + ' · ' : '') + 'السعر بالجنيه المصري وشامل ضريبة القيمة المضافة' : (days ? days + ' days · ' : '') + 'Price in Egyptian pounds, VAT included';
+    (A ? ['رسوم الترقية', 'ضريبة القيمة المضافة (14%)', 'الإجمالي'] : ['Boost fee', 'VAT (14%)', 'Total']).forEach(function (t, i) { if (lb[i]) lb[i].textContent = t; });
+    var n = Math.round(total).toLocaleString('en', { maximumFractionDigits: 0 }); $('bmEgpAmount').innerHTML = ar() ? esc(n) + ' <span>ج.م</span>' : '<span>EGP</span> ' + esc(n); $('bmBaseEgp').textContent = egp(base); $('bmVatEgp').textContent = egp(vat); $('bmTotalEgp').textContent = egp(total);
     $('bmPayBtn').textContent = ar() ? '🔒 ادفع ' + egp(total) + ' الآن' : '🔒 Pay ' + egp(total) + ' now';
   }
   function quoted(plan) {
@@ -45,7 +51,7 @@
   }).observe(document.body, { childList: true });
   function result(r, method) {
     if (r.checkout_url) { D.toast('Opening the secure Paymob page…'); window.location.assign(r.checkout_url); return; }
-    if (r.fawry_reference) { D.modal({ title: 'Pay at Fawry', secondary: 'Done', body: '<div class="dx-pay-ref"><small>Fawry reference number</small><b>' + esc(r.fawry_reference) + '</b><span>' + esc(egp(r.amount)) + ' · valid until ' + esc(new Date(r.expires_at).toLocaleString()) + '</span></div><ol class="dx-pay-steps"><li>Go to any Fawry outlet, or open myFawry → Pay with reference.</li><li>Give the reference number and pay the amount.</li><li>It activates automatically once Fawry confirms — we notify you.</li></ol>' }); return; }
+    if (r.fawry_reference) { D.modal({ title: 'Pay at Fawry', secondary: 'Done', body: '<div class="dx-pay-ref"><small>Fawry reference number</small><b>' + esc(r.fawry_reference) + '</b><span>' + esc(egp(r.amount)) + ' · valid until ' + esc(window.dxFmtDate ? window.dxFmtDate(r.expires_at, true, 'en') : new Date(r.expires_at).toLocaleString()) + '</span></div><ol class="dx-pay-steps"><li>Go to any Fawry outlet, or open myFawry → Pay with reference.</li><li>Give the reference number and pay the amount.</li><li>It activates automatically once Fawry confirms — we notify you.</li></ol>' }); return; }
     if (r.instapay) { D.modal({ title: 'Pay with InstaPay', body: '<div class="dx-pay-ref"><small>Send to</small><b>' + esc(r.instapay.address) + '</b><span>' + esc(r.instapay.name) + ' · ' + esc(egp(r.amount)) + '</span></div><p class="dx-pay-note">Write <b>' + esc(r.reference) + '</b> in the transfer note.</p>' +
         '<div class="dbk-f"><label for="dxIpRef">Transfer number *</label><input id="dxIpRef" data-req placeholder="From the InstaPay confirmation"></div><div class="dbk-f"><label for="dxIpRc">Receipt (screenshot or PDF)</label><input id="dxIpRc" type="file" accept=".png,.jpg,.jpeg,.pdf"></div>',
         primary: { label: 'Send for confirmation', onClick: function (b, close) { if (!D.requireFields(b)) return false; var f = b.querySelector('#dxIpRc').files[0], ok = b.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;

@@ -19,7 +19,7 @@ FIND=r"""((k)=>{var s=document.getElementById('p-'+k); if(!s) return [];
   window.__LA=out.map(o=>o.el);
   return out.map(o=>({why:o.why,t:o.t,cls:o.cls,side:o.side}));})"""
 with sync_playwright() as p:
-    b=p.webkit.launch(); pg=b.new_page(**p.devices['iPhone 12']); pg.goto('file:///tmp/sanitized.html',wait_until='load'); pg.wait_for_timeout(500)
+    b=p.webkit.launch(); pg=b.new_page(**p.devices['iPhone 12']); pg.goto('file://'+__import__('os').environ.get('DEMO_VARIANTS','/tmp')+'/sanitized.html',wait_until='load'); pg.wait_for_timeout(500)
     T=D=0
     for k in PAGES:
         pg.evaluate(f"location.hash='#p-{k}'"); pg.wait_for_timeout(150)

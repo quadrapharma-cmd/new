@@ -2,15 +2,11 @@
 my companies / acting, page edits saved, verification request, and the database guards."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
-U = os.environ.get('APP_URL', 'http://localhost:54321/'); DB = os.environ.get('DB_NAME', 'drugbox_live'); R = []
-def T(n, ok, d=''): R.append(ok); print(('✅ ' if ok else '❌ ') + n + ('' if ok else '  → ' + str(d)[:220]))
-def sql(q):
-    r = subprocess.run(['psql', '-h', '/tmp', '-p', '5433', '-U', 'postgres', '-d', DB, '-tA', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True)
-    if r.returncode: raise SystemExit('SQL failed: ' + r.stderr.strip()[:300])
-    return r.stdout.strip()
-st = int(time.time()); PW = 'Strong-pass-2026'; CO = f'Nile Test Pharma {st}'
+from _dx import APP_URL as U, DB, R, T, sql, ST, STN, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+
+st = ST; PW = 'Strong-pass-2026'; CO = f'Nile Test Pharma {st}'
 # a verified company with a site, a checked WHO-GMP certificate and a metformin product (set up by the platform)
-cid = sql(f"insert into public.companies (owner_id, name, type, status, registry, licensed, sectors, governorate, city, tagline) values ((select id from public.profiles order by created_at limit 1), '{CO}','Manufacturer','verified','55{st % 100000}',true,'{{Manufacturer}}','Giza','6th of October','Solid dosage forms') returning id").split('\n')[0]
+cid = sql(f"insert into public.companies (owner_id, name, type, status, registry, licensed, sectors, governorate, city, tagline) values ((select id from public.profiles order by created_at limit 1), '{CO}','Manufacturer','verified','55{STN % 100000}',true,'{{Manufacturer}}','Giza','6th of October','Solid dosage forms') returning id").split('\n')[0]
 sid = sql(f"insert into public.company_sites (company_id, name, type, city, governorate) values ({cid},'October plant','factory','6th of October','Giza') returning id").split('\n')[0]
 sql(f"insert into public.site_certificates (site_id, company_id, name, expiry, checked_at) values ({sid},{cid},'WHO-GMP','2027-04-01',now())")
 sql(f"insert into public.company_products (company_id, name, active_ingredient, active_ingredient_ar, dosage_form, strength, role) values ({cid},'Glucophage-like 500','Metformin HCl','ميتفورمين','Tablet','500 mg','manufacturer')")
@@ -20,7 +16,7 @@ with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); pg = b.new_context(viewport={'width': 1440, 'height': 900}).new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.accept())
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
-    pg.evaluate("showSignup()"); pg.fill('#suName', 'Dr. Company Owner'); pg.fill('#suEmail', f'owner{st}@x.test'); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(3500)
+    pg.evaluate("showSignup()"); pg.fill('#suName', 'Dr. Company Owner'); pg.fill('#suEmail', f'owner{st}@x.test'); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
     me = pg.evaluate("dxLive.uuidOf(ME.id)")
     pg.evaluate("dxDir.S.view=null;goto('companies')"); pg.wait_for_timeout(3000)
     names = pg.evaluate("dxDir.companies().map(c=>c.name)")
@@ -63,13 +59,14 @@ with sync_playwright() as p:
     T('verification request reaches Drugbox (pending review)', sql(f"select r.status||'|'||r.registry from public.verification_requests r join public.companies c on c.id=r.company_id where c.slug='{nslug}'") == 'pending|778899')
     # database guards through the API
     ncid = sql(f"select id from public.companies where slug='{nslug}'")
-    r = pg.evaluate(f"dxLive.sb.from('companies').update({{status:'verified'}}).eq('id',{ncid}).then(r=>!!r.error)")
-    T('an owner cannot mark their own company verified', r and sql(f"select status from public.companies where id={ncid}") == 'pending')
-    r = pg.evaluate(f"dxLive.sb.from('companies').update({{plan:'vip',licensed:true}}).eq('id',{ncid}).then(r=>!!r.error)")
-    T('an owner cannot give themselves VIP or a licence', r)
+    r = pg.evaluate(f"dxLive.sb.from('companies').update({{status:'verified'}}).eq('id',{ncid})" + ERR)
+    T('an owner cannot mark their own company verified', refused(r) and sql(f"select status from public.companies where id={ncid}") == 'pending', r)
+    r = pg.evaluate(f"dxLive.sb.from('companies').update({{plan:'vip',licensed:true}}).eq('id',{ncid})" + ERR)
+    T('an owner cannot give themselves VIP or a licence', refused(r) and sql(f"select plan||'|'||coalesce(licensed::text,'false') from public.companies where id={ncid}") == 'free|false', r)
     r = pg.evaluate(f"dxLive.sb.from('companies').insert({{name:'Sneaky Co {st}',type:'Manufacturer',status:'verified',plan:'vip',owner_id:'{me}'}}).select().single().then(r=>r.data?r.data.status+'|'+r.data.plan:'error')")
     T('a new company can never start verified or VIP', r == 'pending|free', r)
     r = pg.evaluate(f"dxLive.sb.from('companies').update({{tagline:'hacked'}}).eq('id',{cid}).select().then(r=>(r.data||[]).length)")
     T("cannot edit someone else's company", r == 0 and sql(f"select tagline from public.companies where id={cid}") == 'Solid dosage forms')
     T('no errors in the page', not errs, errs)
-    print(sum(R), '/', len(R)); b.close()
+    b.close()
+done()

@@ -2,9 +2,14 @@
 // Creates the order as the user (prices come from the database), then starts the payment with the provider.
 import { rpc, select, env } from '../_shared/db.js';
 import { fawryChargeSignature } from '../_shared/signatures.js';
-const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
-const json = (b, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
+// CORS: only the app's own site may call this from a browser — ALLOWED_ORIGINS (comma-separated) or else the origin of APP_URL.
+// Calls without an Origin header (servers, tests) are not browser calls and are judged by the user's JWT alone.
+const origins = () => (env('ALLOWED_ORIGINS') || env('APP_URL') || '').split(',').map((u) => { try { return new URL(u.trim()).origin; } catch { return ''; } }).filter(Boolean);
 export async function handler(req) {
+  const origin = req.headers.get('origin'), cors = { 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', Vary: 'Origin' };
+  if (origin && origins().includes(origin)) cors['Access-Control-Allow-Origin'] = origin;
+  const json = (b, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
+  if (origin && !cors['Access-Control-Allow-Origin']) return json({ error: 'Origin not allowed' }, 403);
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
   const jwt = (req.headers.get('authorization') || '').replace(/^Bearer /i, ''); if (!jwt) return json({ error: 'Sign in first' }, 401);
@@ -23,8 +28,9 @@ export async function handler(req) {
         amount: order.amount_cents, currency: 'EGP', payment_methods: [integration], items: [{ name: label, amount: order.amount_cents, description: label, quantity: 1 }],
         billing_data: { first_name: first, last_name: rest.join(' ') || 'NA', email: me.email || 'na@drugbox.app', phone_number: me.phone || b.phone || 'NA', apartment: 'NA', floor: 'NA', street: 'NA', building: 'NA', city: 'NA', country: 'EG', state: 'NA' },
         special_reference: order.merchant_ref, notification_url: `${fnBase}/paymob-webhook`, redirection_url: `${env('APP_URL')}?payment=${order.id}` }) });
-      const j = await r.json(); if (!r.ok || !j.client_secret) return json({ error: 'Paymob did not start the payment', detail: j }, 502);
-      await rpc('set_order_provider_ref', { p_id: order.id, p_ref: String(j.id || '') });
+      // Paymob's order id (intention_order_id) is what its signed callback names: without it the payment could never be confirmed
+      const j = await r.json(); if (!r.ok || !j.client_secret || !j.intention_order_id) return json({ error: 'Paymob did not start the payment', detail: j }, 502);
+      await rpc('set_order_provider_ref', { p_id: order.id, p_ref: String(j.id || ''), p_order: String(j.intention_order_id) });
       return json({ order_id: order.id, reference: order.merchant_ref, amount, checkout_url: `${base}/unifiedcheckout/?publicKey=${encodeURIComponent(env('PAYMOB_PUBLIC_KEY'))}&clientSecret=${encodeURIComponent(j.client_secret)}` });
     }
     if (b.method === 'fawry') {

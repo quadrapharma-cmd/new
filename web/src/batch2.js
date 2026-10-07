@@ -8,7 +8,7 @@
   var YEAR = new Date().getFullYear();
 
   /* ── 1. Drugbox partner levels (companies) ── */
-  var LEVEL = { 'quadra pharm': 'gold', 'aurobindo pharma': 'gold', 'medsinia industries': 'silver', 'shandong hope biotech': 'silver', 'epione drug store': 'bronze', 'beauty lab egypt': 'bronze' };
+  var LEVEL = { 'quadra pharm': 'gold', 'indovista pharma': 'gold', 'medsinia industries': 'silver', 'shandong hexa biotech': 'silver', 'azurea drug store': 'bronze', 'beauty lab egypt': 'bronze' };
   var LV = { gold: ['Gold partner', '3+ years on Drugbox · 50+ completed deals · rating 4.5 or higher'], silver: ['Silver partner', '1+ year on Drugbox · 15+ completed deals · rating 4.2 or higher'], bronze: ['Bronze partner', 'Verified company · 3+ completed deals'] };
   function levelOf(name) { return LEVEL[String(name || '').toLowerCase().replace(/\s*[·|].*$/, '').replace(/✓|verified/gi, '').replace(/^[^a-z]+/, '').trim()] || ''; }
   function badge(lv) { return '<button type="button" class="dx-lvl lv-' + lv + '" data-lvl="' + lv + '" title="' + LV[lv][0] + '"><i></i>' + LV[lv][0].split(' ')[0] + '</button>'; }

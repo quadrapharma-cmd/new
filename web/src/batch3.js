@@ -28,13 +28,13 @@
     { t: 'MCC PH-102 — 3 MT/month', who: 'Tablet manufacturer · Egypt', tags: ['Excipient', 'WHO-GMP', 'Egypt', 'annual'], when: '5h', q: 'MCC', icon: 'basket' },
     { t: 'Amoxicillin Trihydrate — 1 MT', who: 'Distributor · Saudi Arabia', tags: ['API', 'CEP', 'Saudi'], when: '1d', q: 'Amoxicillin', icon: 'basket' },
     { t: 'Retinol 97%+ — 500 g/month', who: 'Cosmetics brand · UAE', tags: ['ISO 22716', 'UAE'], when: '1h', q: 'Retinol', icon: 'basket' }];
-  var SUPPLY = [{ t: 'Metformin HCl BP/USP — GMP grade', who: 'Shandong Hope Biotech · China', tags: ['API', 'WHO-GMP', 'CEP', 'USFDA DMF'], price: 'US$ 5.80/kg', q: 'Metformin', icon: 'flask' },
-    { t: 'Neomycin Sulphate EP/USP', who: 'Shandong Hope Biotech · China', tags: ['API', 'CEP'], price: 'US$ 42/kg', q: 'Neomycin', icon: 'flask' },
+  var SUPPLY = [{ t: 'Metformin HCl BP/USP — GMP grade', who: 'Shandong Hexa Biotech · China', tags: ['API', 'WHO-GMP', 'CEP', 'USFDA DMF'], price: 'US$ 5.80/kg', q: 'Metformin', icon: 'flask' },
+    { t: 'Neomycin Sulphate EP/USP', who: 'Shandong Hexa Biotech · China', tags: ['API', 'CEP'], price: 'US$ 42/kg', q: 'Neomycin', icon: 'flask' },
     { t: 'Hyaluronic Acid — Dual MW cosmetic grade', who: 'Supplier · Egypt', tags: ['ISO 22716', 'Halal', 'Egypt'], price: 'US$ 180/kg', q: 'Hyaluronic', icon: 'drop' },
-    { t: 'Amoxicillin Trihydrate — compacted', who: 'Aurobindo Pharma · India', tags: ['API', 'USFDA', 'WHO-GMP'], price: 'US$ 38.50/kg', q: 'Amoxicillin', icon: 'flask' }];
+    { t: 'Amoxicillin Trihydrate — compacted', who: 'Indovista Pharma · India', tags: ['API', 'USFDA', 'WHO-GMP'], price: 'US$ 38.50/kg', q: 'Amoxicillin', icon: 'flask' }];
   var JOBS = [{ t: 'Senior Regulatory Affairs Specialist', who: 'Quadra Pharm · Giza, Egypt', tags: ['EDA', 'Regulatory', 'Egypt'], q: 'Senior Regulatory', icon: 'briefcase' },
-    { t: 'GCC Registration Coordinator', who: 'Epione Drug Store · Dubai, UAE', tags: ['SFDA/DHA', 'Registration', 'UAE'], q: 'GCC Registration', icon: 'briefcase' },
-    { t: 'QC Analyst (HPLC) — API Division', who: 'Aurobindo Pharma · India', tags: ['HPLC', 'QA'], q: 'QC Analyst', icon: 'briefcase' },
+    { t: 'GCC Registration Coordinator', who: 'Azurea Drug Store · Dubai, UAE', tags: ['SFDA/DHA', 'Registration', 'UAE'], q: 'GCC Registration', icon: 'briefcase' },
+    { t: 'QC Analyst (HPLC) — API Division', who: 'Indovista Pharma · India', tags: ['HPLC', 'QA'], q: 'QC Analyst', icon: 'briefcase' },
     { t: 'Production Supervisor — Solid Dosage', who: 'Medsinia Industries · Egypt', tags: ['GMP', 'Egypt'], q: 'Production Supervisor', icon: 'briefcase' }];
   var CANDS = [{ t: 'Sara Mansour — Regulatory Affairs Specialist', who: '4 yrs · Cairo, Egypt', tags: ['EDA', 'Registration', 'Egypt'], q: 'Sara Mansour', icon: 'user' },
     { t: 'Youssef Hassan — QC Chemist (HPLC & GC)', who: '3 yrs · Alexandria, Egypt', tags: ['QA', 'GMP', 'Egypt'], q: 'Youssef Hassan', icon: 'user' },
@@ -157,8 +157,9 @@
     cres.innerHTML = html;
     var on = cres.querySelector('.cm-i.on'); if (on) on.scrollIntoView({ block: 'nearest' });
   }
-  function openCmd() { if (!document.getElementById('app') || !document.getElementById('app').offsetWidth) return; idx = null; cmd.className = 'on'; cin.value = ''; sel = 0; cin.focus(); drawRes(); }   /* focus at once so fast typing is not lost */
-  function closeCmd() { cmd.className = ''; }
+  var cmdFrom = null;   /* the control that opened the palette gets the focus back when it is dismissed */
+  function openCmd() { if (!document.getElementById('app') || !document.getElementById('app').offsetWidth) return; if (cmd.className !== 'on') cmdFrom = document.activeElement; idx = null; cmd.className = 'on'; cin.value = ''; sel = 0; cin.focus(); drawRes(); }   /* focus at once so fast typing is not lost */
+  function closeCmd(back) { cmd.className = ''; var f = cmdFrom; cmdFrom = null; if (back && f && f !== document.body && f.isConnected && f.focus) try { f.focus({ preventScroll: true }); } catch (e) {} }
   function choose(i) { var x = shown[i]; if (!x) return; closeCmd(); try { x.go(); } catch (e) { if (window.console) console.warn(e); } }
   window.dxOpenSearch = openCmd;
   cin.addEventListener('input', function () { sel = 0; drawRes(); });
@@ -166,16 +167,16 @@
     if (e.key === 'ArrowDown') { sel = Math.min(shown.length - 1, sel + 1); drawRes(); e.preventDefault(); }
     else if (e.key === 'ArrowUp') { sel = Math.max(0, sel - 1); drawRes(); e.preventDefault(); }
     else if (e.key === 'Enter') { choose(sel); e.preventDefault(); }
-    else if (e.key === 'Escape') closeCmd();
+    else if (e.key === 'Escape') { e.stopPropagation(); closeCmd(true); }
   });
   cres.addEventListener('mousemove', function (e) { var r = e.target.closest('.cm-i'); if (r && +r.dataset.i !== sel) { sel = +r.dataset.i; cres.querySelectorAll('.cm-i').forEach(function (x) { x.classList.toggle('on', +x.dataset.i === sel); }); } });
   cres.addEventListener('click', function (e) { var r = e.target.closest('.cm-i'); if (r) choose(+r.dataset.i); });
-  cmd.addEventListener('click', function (e) { if (e.target === cmd) closeCmd(); });
+  cmd.addEventListener('click', function (e) { if (e.target === cmd) closeCmd(true); });
   document.addEventListener('keydown', function (e) {
     var typing = e.target.closest && e.target.closest('input,textarea,[contenteditable]');
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); cmd.className === 'on' ? closeCmd() : openCmd(); }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); cmd.className === 'on' ? closeCmd(true) : openCmd(); }
     else if (e.key === '/' && !typing && cmd.className !== 'on') { e.preventDefault(); openCmd(); }
-    else if (e.key === 'Escape' && cmd.className === 'on') closeCmd();
+    else if (e.key === 'Escape' && cmd.className === 'on' && (!window.dxTopDialog || window.dxTopDialog() === cmd || cmd.contains(window.dxTopDialog()))) closeCmd(true);
   });
   function searchEntry() {
     var si = document.getElementById('searchIn');

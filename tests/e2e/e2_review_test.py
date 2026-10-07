@@ -3,16 +3,12 @@
 through short-lived links; nobody outside the Drugbox team can decide."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os, urllib.request
-U = os.environ.get('APP_URL', 'http://localhost:54321/'); DB = os.environ.get('DB_NAME', 'drugbox_live'); V = '/tmp/vids'; R = []
-def T(n, ok, d=''): R.append(ok); print(('✅ ' if ok else '❌ ') + n + ('' if ok else '  → ' + str(d)[:220]))
-def sql(q):
-    r = subprocess.run(['psql', '-h', '/tmp', '-p', '5433', '-U', 'postgres', '-d', DB, '-tA', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True)
-    if r.returncode: raise SystemExit('SQL failed: ' + r.stderr.strip()[:300])
-    return r.stdout.strip()
-st = int(time.time()); PW = 'Strong-pass-2026'
+from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+V = FIXTURES
+st = ST; PW = 'Strong-pass-2026'
 def signup(pg, name, email):
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
-    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(3500)
+    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
     return pg.evaluate("dxLive.uuidOf(ME.id)")
 def fresh(pg): pg.reload(wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(4500)
 with sync_playwright() as p:
@@ -66,10 +62,11 @@ with sync_playwright() as p:
     # nobody else can decide
     O.evaluate("goto('admin')"); O.wait_for_timeout(600)
     T('a non-admin sees "Admin access required"', 'Admin access required' in O.inner_text('#content'))
-    r = C.evaluate(f"dxLive.sb.rpc('moderate_reference',{{ref_id:{wid},new_status:'rejected'}}).then(r=>!!r.error)")
-    T('a non-admin cannot moderate a warning', r and sql(f"select status from public.work_references where id={wid}") == 'published')
+    r = C.evaluate(f"dxLive.sb.rpc('moderate_reference',{{ref_id:{wid},new_status:'rejected'}})" + ERR)
+    T('a non-admin cannot moderate a warning', r and refused(r) and sql(f"select status from public.work_references where id={wid}") == 'published', r)
     vid2 = sql(f"insert into public.verification_requests (company_id, submitted_by, registry) values ({cid},'{o}','111222') returning id").split('\n')[0]
-    r = O.evaluate(f"dxLive.sb.from('verification_requests').update({{status:'approved'}}).eq('id',{vid2}).select().then(r=>!!r.error||!(r.data||[]).length)")
-    T('a company cannot approve its own verification', r and sql(f"select status from public.verification_requests where id={vid2}") == 'pending')
+    r = O.evaluate(f"dxLive.sb.from('verification_requests').update({{status:'approved'}}).eq('id',{vid2})" + ERR)
+    T('a company cannot approve its own verification', refused(r) and sql(f"select status from public.verification_requests where id={vid2}") == 'pending', r)
     T('no errors in the pages', not errs, errs)
-    print(sum(R), '/', len(R)); b.close()
+    b.close()
+done()

@@ -1,6 +1,6 @@
 # Final build step: make the page light and safe on phones. Idempotent.
-import re, base64, io
-from PIL import Image
+import re, base64, io, sys
+from PIL import Image   # required (build.py checks it before writing anything)
 P = OUT
 H = open(P, encoding='utf-8').read()
 before = len(H.encode())
@@ -47,7 +47,7 @@ if 'id="dxNoJs"' not in H:
     k = H.find('</style>'); H = H[:k] + CSS + H[k:]
 
 # 4 · splash video: original quality (audio track removed, faststart), full-size poster frame, no duplicate blurred copy on phones, tap to skip
-VID = base64.b64encode(open(SRC + '/splash_full.mp4', 'rb').read()).decode()   # original quality: 690x1132, 60 fps, stream untouched
+VID = base64.b64encode(open(SRC + '/splash_full.mp4', 'rb').read()).decode()   # 690x1132, 60 fps, H.264 Main CRF 18 (SSIM 0.992 vs the 4.6 MB master)
 POS = base64.b64encode(open(SRC + '/splash_poster_full.webp', 'rb').read()).decode()
 H = re.sub(r'<source src="data:video/mp4;base64,[A-Za-z0-9+/=]+"', '<source src="data:video/mp4;base64,' + VID + '"', H, count=1)
 if 'poster="data:image/webp' not in H:
@@ -66,8 +66,10 @@ if 'data-dx="splash-skip"' not in H:
 # 5 · a read-only static copy of the key screens for viewers that cannot run apps (iPhone file preview, mail previews)
 open(P, 'w', encoding='utf-8').write(H)
 import subprocess
-r = subprocess.run(['python3', SRC + '/snapshot.py', P, SRC + '/_static.html'], capture_output=True, text=True, timeout=180)
-print(r.stdout.strip() or r.stderr[-300:])
+r = subprocess.run([sys.executable, SRC + '/snapshot.py', P, SRC + '/_static.html'], capture_output=True, text=True, timeout=300)
+print(r.stdout.strip())
+if r.returncode:   # never ship the previous build's snapshot silently
+    raise SystemExit('lite snapshot failed (the build is not written):\n' + r.stderr[-1500:])
 H = open(P, encoding='utf-8').read()
 H = re.sub(r'<noscript id="dxStaticWrap">[\s\S]*?</noscript>', '', H)
 H = re.sub(r'<div id="dxStaticWrap">[\s\S]*?<!--/dxStaticWrap--><script>[\s\S]*?</script>', '', H)
@@ -81,7 +83,8 @@ for _b in ('<button class="f-btn" onclick="doLogin()">', '<button class="f-btn" 
 _icon = re.search(r'const LOGO_ICON = "(data:image/webp;base64,[^"]+)"', H)
 _full = re.search(r'const LOGO = "(data:image/webp;base64,[^"]+)"', H)
 if _icon and _full:   # every logo is in the page itself (the app sets the same images), so it shows even when scripts are blocked
-    for _id, _src in (('splLogo', _full), ('formLogo', _full), ('suLogo', _full), ('heroLogo', _icon), ('topLogo', _icon)):
+    # (the sign-up logo and the app bar's logo only show after a script ran, and the scripts set them: no copy needed)
+    for _id, _src in (('splLogo', _full), ('formLogo', _full), ('heroLogo', _icon)):
         H = re.sub(r'(<img[^>]*id="%s"[^>]*?)src=""' % _id, lambda mm: mm.group(1) + 'src="' + _src.group(1) + '"', H, count=1)
         H = re.sub(r'<img([^>]*?)src=""([^>]*id="%s")' % _id, lambda mm: '<img' + mm.group(1) + 'src="' + _src.group(1) + '"' + mm.group(2), H, count=1)
 # splash without scripts or animations: tap anywhere or "Skip" goes to the login page (plain links)
@@ -91,6 +94,8 @@ if 'id="dxLiteGo"' not in H:
 if 'class="f-btn dx-lite-enter"' not in H:   # lite mode: the login button becomes a link into the app
     H = re.sub(r'(<button class="f-btn[^"]*" onclick="doLogin\(\)">Sign In →</button>)', r'\1<a class="f-btn dx-lite-enter" href="#p-feed">Sign In →</a>', H, count=1)
 H = re.sub(r'(<body[^>]*>)', lambda m: m.group(1) + ST, H, count=1)
+
+H = re.sub(r'(<img id="__logo" src=")data:image/\w+;base64,[A-Za-z0-9+/=]+(" style="display:none">)', r'\1data:image/gif;base64,R0lGODlhAQABAIAAAMLS5wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==\2', H, count=1)   # hidden, never used: 1 px instead of a 28 KB third copy of the logo
 
 # 6 · every <style> that lives in the body moves to the head, same order (some viewers drop body styles)
 _hi = H.find('<body')

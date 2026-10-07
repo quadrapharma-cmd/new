@@ -68,8 +68,8 @@
       (ps ? ' style="background-image:url(\'' + esc(ps) + '\')"' : '') + '><i>▶</i></button>' +
       (canEdit ? '<div class="dx-vid-a"><button type="button" class="dx-vid-up" data-vk="' + key + '" data-kind="' + kind + '">Replace video</button><button type="button" class="dx-vid-rm" data-vk="' + key + '">Remove</button></div>' : '') + '</section>';
   }
-  function coOnPage() { var h = document.querySelector('#dxDir.cp h1.cp-name'); if (!h || !window.dxDir) return null; var t = (window.dxOrigText ? window.dxOrigText(h) : h.textContent).trim();
-    return window.dxDir.companies().find(function (c) { return t.indexOf(c.name) === 0; }); }
+  function coOnPage() { if (!window.dxDir || !document.querySelector('#dxDir.cp h1.cp-name')) return null; var s = window.dxDir.S && window.dxDir.S.open;
+    return s ? (window.dxDir.bySlug(s) || null) : null; }   /* the open slug, never the heading text: names are not unique */
   function profileUser() { return window._profUser || window.ME; }
   function personKey(u) { return 'p:' + (u && u.id); }
   function decorate() {

@@ -1,11 +1,10 @@
 """B2 end-to-end: feed paging, posting, reactions, comments, saved, delete — against the local Supabase stack."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
-U = os.environ.get('APP_URL', 'http://localhost:54321/'); DB = os.environ.get('DB_NAME', 'drugbox_live')
-R = []
-def T(n, ok, d=''): R.append(ok); print(('✅ ' if ok else '❌ ') + n + ('' if ok else '  → ' + str(d)[:220]))
-def sql(q): return subprocess.run(['psql', '-h', '/tmp', '-p', '5433', '-U', 'postgres', '-d', DB, '-tA', '-c', q], capture_output=True, text=True).stdout.strip()
-stamp = int(time.time()); EMAIL = f'feed{stamp}@quadra.test'
+from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+DB = os.environ.get('DB_NAME', 'drugbox_live')
+
+stamp = ST; EMAIL = f'feed{stamp}@quadra.test'
 # another member with 25 posts, one minute apart
 other = sql(f"insert into auth.users (email, encrypted_password, raw_user_meta_data) values ('author{stamp}@x.test', crypt('x-pass-123', gen_salt('bf')), '{{\"name\":\"Dr. Asmaa Author\"}}') returning id").split('\n')[0]
 sql(f"insert into public.posts (user_id, body, category, created_at) select '{other}', 'Seed post #' || g || ' — EDA stability update', 'regulatory', now() - (g || ' minutes')::interval from generate_series(1,25) g")
@@ -13,7 +12,7 @@ with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); ctx = b.new_context(viewport={'width': 1440, 'height': 900}); pg = ctx.new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.accept())
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(500); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
-    pg.evaluate("showSignup()"); pg.fill('#suName', 'Dr. Feed Tester'); pg.fill('#suEmail', EMAIL); pg.fill('#suPw', 'Strong-pass-2026'); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(3500)
+    pg.evaluate("showSignup()"); pg.fill('#suName', 'Dr. Feed Tester'); pg.fill('#suEmail', EMAIL); pg.fill('#suPw', 'Strong-pass-2026'); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
     n1 = pg.evaluate("document.querySelectorAll('#content .post').length")
     T('first page: 20 real posts from the database (not demo posts)', n1 == 20 and pg.evaluate("POSTS.every(p=>typeof p.id==='number'&&p.uid>1000&&String(dxLive.uuidOf(p.uid)).length===36)"), n1)
     T('author name comes from the database', 'Dr. Asmaa Author' in pg.inner_text('#content'))
@@ -40,11 +39,18 @@ with sync_playwright() as p:
     T('un-like removes the reaction', sql(f"select count(*) from public.reactions where post_id={target}") == '0')
     mine = pg.evaluate(f"POSTS.find(p=>p.body==='My first real post {stamp}').id"); pg.evaluate(f"deletePost({mine})"); pg.wait_for_timeout(1500)
     T('during the Undo window the post is still in the database', sql(f"select count(*) from public.posts where id={mine}") == '1')
-    pg.wait_for_timeout(9000)
-    T('after the Undo window, deleting my post removes it from the database', sql(f"select count(*) from public.posts where id={mine}") == '0')
+    T('after the Undo window, deleting my post removes it from the database', wait_for(lambda: sql(f"select count(*) from public.posts where id={mine}") == '0', 15))
     r = pg.evaluate(f"dxLive.sb.from('posts').delete().eq('id',{target}).select().then(r=>(r.data||[]).length)")
     T("cannot delete another member's post (row-level security)", r == 0 and sql(f"select count(*) from public.posts where id={target}") == '1')
-    r = pg.evaluate(f"dxLive.sb.from('reactions').insert({{post_id:{target},user_id:'{other}',kind:'like'}}).then(r=>!!r.error)")
-    T('cannot react on behalf of someone else', r)
+    r = pg.evaluate(f"dxLive.sb.from('reactions').insert({{post_id:{target},user_id:'{other}',kind:'like'}})" + ERR)
+    T('cannot react on behalf of someone else', r and refused(r) and sql(f"select count(*) from public.reactions where post_id={target} and user_id='{other}'") == '0', r)
+    # F-09: server-kept columns of a post (time, pin, counters) are not the browser's to choose
+    # (FAILS before migration 0020_security_core.sql — a post dated 2099 stayed pinned on top of everyone's feed)
+    me_uuid = pg.evaluate("dxLive.uuidOf(ME.id)")
+    r = pg.evaluate(f"dxLive.sb.from('posts').insert({{user_id:'{me_uuid}',body:'Forged time {stamp}',category:'market',created_at:'2099-01-01T00:00:00Z',pinned:true,like_count:5000}})" + ERR)
+    T('a new post cannot choose its own date, pin or like count', refused(r) and sql(f"select count(*) from public.posts where body='Forged time {stamp}' and (created_at > now() + interval '1 minute' or coalesce(pinned,false) or like_count > 0)") == '0', (r, sql(f"select created_at, pinned, like_count from public.posts where body='Forged time {stamp}'")))
+    r = pg.evaluate(f"dxLive.sb.from('posts').update({{created_at:'2099-01-01T00:00:00Z',pinned:true,view_count:99999}}).eq('id',{target})" + ERR)
+    T("cannot re-date, pin or inflate someone else's post", refused(r) and sql(f"select created_at < now() + interval '1 minute' and not coalesce(pinned,false) and coalesce(view_count,0) < 99999 from public.posts where id={target}") == 't', r)
     T('no errors in the page', not errs, errs)
-    print(sum(R), '/', len(R)); b.close()
+    b.close()
+done()

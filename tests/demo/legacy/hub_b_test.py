@@ -4,7 +4,7 @@ def T(n,ok,d=''): R.append(ok); print(('✅ ' if ok else '❌ ')+n+('' if ok els
 with sync_playwright() as p:
     b=p.chromium.launch(args=["--no-sandbox"]); pg=b.new_page(viewport={'width':1440,'height':900}); errs=[]; warns=[]
     pg.on("pageerror",lambda e:errs.append(str(e)[:200])); pg.on("console",lambda m: warns.append(m.text[:200]) if '[drugbox]' in m.text else None)
-    pg.goto('file:///tmp/drugbox_brand.html',wait_until='networkidle',timeout=60000); pg.evaluate('endSplash()'); pg.wait_for_timeout(600)
+    pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='networkidle',timeout=60000); pg.evaluate('endSplash()'); pg.wait_for_timeout(600)
     pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(3300)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
     # workspace from the company menu

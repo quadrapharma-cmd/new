@@ -76,8 +76,11 @@ Secrets only as Supabase function secrets — never in the browser or in git.
 Done: A foundation · B auth/feed/network/notifications/messages · C companies/deals/listings/group buying ·
 D marketplace/jobs/trust layer/groups · intro videos · E1 uploads and private documents · E2 Admin → Review ·
 E3 training · E4 payments (server + checkout).
+Code review (October 2026, `docs/CODE-REVIEW-2026-10.md`, F-01…F-178): fixed in migrations 0020 security core, 0021 trust/hub/deals,
+0022 integrity/speed, 0023 payments/moderation/storage, plus the adapter, local stack, build and tests — run everything with
+`python3 tests/run_all.py` (exits non-zero on any failure); the build is deterministic and parity compares the whole file.
 
-**Next — E5 launch:** real Supabase project (apply 0001–0019, storage buckets, function secrets), Vercel deploy,
+**Next — E5 launch:** real Supabase project (apply 0001–0023, storage buckets, function secrets), Vercel deploy (web/dist/live + its vercel.json),
 k6 load test at 100k users / 2,000 concurrent against staging, Sentry, backups, domain.
 
 ### Waiting on the owner

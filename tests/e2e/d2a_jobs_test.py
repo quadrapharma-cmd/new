@@ -2,16 +2,12 @@
 filters work on real cards, apply (once only), save; no demo jobs; row-level security."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
-U = os.environ.get('APP_URL', 'http://localhost:54321/'); DB = os.environ.get('DB_NAME', 'drugbox_live'); R = []
-def T(n, ok, d=''): R.append(ok); print(('✅ ' if ok else '❌ ') + n + ('' if ok else '  → ' + str(d)[:220]))
-def sql(q):
-    r = subprocess.run(['psql', '-h', '/tmp', '-p', '5433', '-U', 'postgres', '-d', DB, '-tA', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True)
-    if r.returncode: raise SystemExit('SQL failed: ' + r.stderr.strip()[:300])
-    return r.stdout.strip()
-st = int(time.time()); PW = 'Strong-pass-2026'
+from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+
+st = ST; PW = 'Strong-pass-2026'
 def signup(pg, name, email):
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
-    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(3500)
+    pg.evaluate("showSignup()"); pg.fill('#suName', name); pg.fill('#suEmail', email); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
     return pg.evaluate("dxLive.uuidOf(ME.id)")
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); errs = []
@@ -46,10 +42,12 @@ with sync_playwright() as p:
     T('applying saves the application with the note', sql(f"select status||'|'||note from public.job_applications where job_id={jid} and user_id='{c}'") == 'submitted|Eight years of process validation, WHO-GMP audits.')
     T('the database counts the applicant', sql(f"select applicant_count from public.jobs where id={jid}") == '1')
     T('the button shows "Applied"', '✓ Applied' in C.evaluate(f"document.querySelector('#jx [data-live=\"j{jid}\"] .apply-btn').textContent"))
-    r = C.evaluate(f"dxLive.sb.from('job_applications').insert({{job_id:{jid},user_id:'{c}',status:'submitted'}}).then(r=>!!r.error)")
-    T('applying twice is refused', r)
+    r = C.evaluate(f"dxLive.sb.from('job_applications').insert({{job_id:{jid},user_id:'{c}',status:'submitted'}})" + ERR)
+    T('applying twice is refused', r and refused(r) and sql(f"select count(*) from public.job_applications where job_id={jid} and user_id='{c}'") == '1', r)
+    for page in ('feed', 'jobs'): C.evaluate(f"goto('{page}')"); C.wait_for_timeout(1500)   # the jobs page redefines its functions on every render
+    wait_for(lambda: C.evaluate(f"!!document.querySelector('#jx [data-live=\"j{jid}\"] .save-btn')"), 10)
     C.evaluate(f"document.querySelector('#jx [data-live=\"j{jid}\"] .save-btn').click()"); C.wait_for_timeout(1500)
-    T('saving the job is stored', sql(f"select count(*) from public.saved_jobs where job_id={jid} and user_id='{c}'") == '1')
+    T('saving the job is stored (after the jobs page rendered again)', sql(f"select count(*) from public.saved_jobs where job_id={jid} and user_id='{c}'") == '1')
     r = C.evaluate(f"dxLive.sb.from('job_applications').select('user_id').eq('job_id',{jid}).neq('user_id','{c}').then(r=>(r.data||[]).length)")
     T("a candidate cannot see other candidates' applications", r == 0)
     r = E.evaluate(f"dxLive.sb.from('job_applications').select('note').eq('job_id',{jid}).then(r=>(r.data||[]).length)")
@@ -57,4 +55,5 @@ with sync_playwright() as p:
     r = C.evaluate(f"dxLive.sb.from('jobs').update({{salary:'1 EGP'}}).eq('id',{jid}).select().then(r=>(r.data||[]).length)")
     T("a candidate cannot edit the employer's job", r == 0)
     T('no errors in the pages', not errs, errs)
-    print(sum(R), '/', len(R)); b.close()
+    b.close()
+done()

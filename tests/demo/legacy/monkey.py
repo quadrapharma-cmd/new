@@ -8,7 +8,7 @@ with sync_playwright() as p:
     ctx.route(lambda u: not u.startswith('file:') and not u.startswith('data:') and not u.startswith('blob:'), lambda r: r.abort())
     pg=ctx.new_page(); errs=collections.Counter(); ctx.on('page', lambda np: np.close())
     pg.on("pageerror",lambda e:errs.update([str(e)[:140]])); pg.on("dialog", lambda d: d.dismiss())
-    pg.goto('file:///tmp/drugbox_brand.html',wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
+    pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
     pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3200)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
     pages=['feed','market','companies','jobs','network','groups','messages','notifs','profile','training','saved']

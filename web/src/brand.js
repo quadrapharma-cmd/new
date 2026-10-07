@@ -246,21 +246,32 @@
   window.dxTheme = function (k, v) { theme[k] = v; applyTheme(); };
   function addThemeButton() {
     var right = document.querySelector('.topbar .top-right'); if (!right || document.getElementById('dxThemeBtn')) return;
-    var btn = document.createElement('button'); btn.id = 'dxThemeBtn'; btn.type = 'button'; btn.className = 'dx-theme-btn'; btn.setAttribute('aria-label', 'Appearance'); btn.title = 'Appearance';
+    var btn = document.createElement('button'); btn.id = 'dxThemeBtn'; btn.type = 'button'; btn.className = 'dx-theme-btn'; btn.setAttribute('aria-label', 'Appearance'); btn.title = 'Appearance'; btn.setAttribute('aria-expanded', 'false');
     right.insertBefore(btn, right.firstChild);
     var pop;
+    function closePop(back) { if (pop) { pop.remove(); pop = null; } btn.setAttribute('aria-expanded', 'false'); if (back) btn.focus(); }
     btn.addEventListener('click', function (e) {
-      e.stopPropagation(); if (pop) { pop.remove(); pop = null; return; }
-      pop = document.createElement('div'); pop.className = 'dx-pop';
+      e.stopPropagation(); if (pop && pop.isConnected) { closePop(); return; }
+      pop = document.createElement('div'); pop.className = 'dx-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Appearance');
       var r = btn.getBoundingClientRect(); pop.style.top = (r.bottom + 8) + 'px'; pop.style.left = Math.max(8, Math.min(innerWidth - 268, r.right - 260)) + 'px';
-      function seg(k, opts) { return '<div class="dx-seg">' + opts.map(function (o) { return '<button type="button" data-k="' + k + '" data-v="' + o[0] + '" class="' + (theme[k] === o[0] ? 'on' : '') + '">' + svg(o[2]) + o[1] + '</button>'; }).join('') + '</div>'; }
+      function seg(k, opts) { return '<div class="dx-seg">' + opts.map(function (o) { return '<button type="button" data-k="' + k + '" data-v="' + o[0] + '" class="' + (theme[k] === o[0] ? 'on' : '') + '" aria-pressed="' + (theme[k] === o[0]) + '">' + svg(o[2]) + o[1] + '</button>'; }).join('') + '</div>'; }
       pop.innerHTML = '<div class="dx-pop-h">Appearance</div>' + seg('mode', [['light', 'Light', 'sun'], ['dark', 'Dark', 'moon']]) +
         '<div class="dx-pop-h">Text size</div>' + seg('fs', [['m', 'Normal', 'doc'], ['l', 'Large', 'plus'], ['xl', 'Larger', 'plus']]) +
         '<div class="dx-pop-h">Season</div>' + seg('season', [['standard', 'Standard', 'seal'], ['ramadan', 'Ramadan', 'crescent'], ['eid', 'Eid', 'spark']]);
-      pop.addEventListener('click', function (ev) { var b = ev.target.closest('button[data-k]'); if (!b) return; theme[b.dataset.k] = b.dataset.v; applyTheme(); pop.querySelectorAll('button[data-k="' + b.dataset.k + '"]').forEach(function (x) { x.classList.toggle('on', x === b); }); });
-      document.body.appendChild(pop);
+      pop.addEventListener('click', function (ev) { var b = ev.target.closest('button[data-k]'); if (!b) return; theme[b.dataset.k] = b.dataset.v; applyTheme(); pop.querySelectorAll('button[data-k="' + b.dataset.k + '"]').forEach(function (x) { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); });
+      /* keyboard: opened with Enter/Space the focus moves in; Tab past either end or Escape closes back to the button */
+      pop.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Tab') return; var f = [].slice.call(pop.querySelectorAll('button')), i = f.indexOf(document.activeElement);
+        if (ev.shiftKey ? i <= 0 : i === f.length - 1) { ev.preventDefault(); closePop(true); }
+      });
+      document.body.appendChild(pop); btn.setAttribute('aria-expanded', 'true');
+      if (!e.detail) { var on = pop.querySelector('button.on') || pop.querySelector('button'); if (on) on.focus(); }
     });
-    document.addEventListener('click', function (e) { if (pop && !e.target.closest('.dx-pop')) { pop.remove(); pop = null; } });
+    document.addEventListener('click', function (e) { if (pop && !e.target.closest('.dx-pop')) closePop(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' || !pop || !pop.isConnected || (window.dxTopDialog && window.dxTopDialog())) return;
+      var back = pop.contains(document.activeElement) || document.activeElement === btn; closePop(back);
+    });
     applyTheme();
   }
 

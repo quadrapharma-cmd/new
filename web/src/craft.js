@@ -195,12 +195,14 @@
   function currency() {
     document.querySelectorAll('#mkx .price, #mkx .sp-price, #mkx .sc-price').forEach(function (el) {
       if (el.dataset.dxCur) return;
-      var t = txt(el), m = t.match(/\$\s?([\d,]+(?:\.\d+)?)/); el.dataset.dxCur = '1'; if (!m) return;
+      var chip = el.querySelector('.dx-lc-chip'); if (chip) chip.remove();   /* the Landed-cost chip (landed.js) may be added first: keep it, outside the price text */
+      var t = txt(el), m = t.match(/\$\s?([\d,]+(?:\.\d+)?)/); el.dataset.dxCur = '1'; if (!m) { if (chip) el.appendChild(chip); return; }
       var v = parseFloat(m[1].replace(/,/g, '')), unit = (t.split('/')[1] || '').trim();
       var usd = v.toLocaleString('en-US', { minimumFractionDigits: v < 100 ? 2 : 0, maximumFractionDigits: 2 });
       var egp = Math.round(v * rate()).toLocaleString('en-US');
       var small = el.querySelector('small,span'), unitHtml = small ? small.outerHTML : (unit ? '<small>/' + esc(unit) + '</small>' : '');
       el.innerHTML = '<span class="dx-num">US$ ' + usd + '</span>' + unitHtml + '<span class="dx-egp" title="Approximate, at ' + rate() + ' EGP per USD">≈ EGP ' + egp + '</span>';
+      if (chip) el.appendChild(chip);
     });
   }
 
@@ -227,7 +229,7 @@
     var s = TOUR[tourI], target = null;
     s.sel.split(',').some(function (q) { var el = document.querySelector(q.trim()); if (!el) return false; var rr = el.getBoundingClientRect(); if (rr.width && rr.right > 0 && rr.left < innerWidth && rr.bottom > 0 && rr.top < innerHeight) { target = el; return true; } return false; });
     if (!target) { if (tourI < TOUR.length - 1) { tourI++; return drawTour(); } return endTour(true); }
-    var r = target.getBoundingClientRect(), pad = 8;
+    var r = target.getBoundingClientRect(), pad = 8, had = !!tourEl && tourEl.contains(document.activeElement);
     if (!tourEl) { tourEl = document.createElement('div'); tourEl.id = 'dxTour'; document.body.appendChild(tourEl); }
     var box = { l: r.left - pad, t: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 };
     var tipW = Math.min(300, innerWidth - 24), tipL = Math.min(innerWidth - tipW - 12, Math.max(12, box.l + box.w + 14)), tipT = Math.max(12, Math.min(innerHeight - 220, box.t));
@@ -239,6 +241,7 @@
       '<button type="button" class="tour-skip">Skip</button><button type="button" class="tour-next">' + (tourI < TOUR.length - 1 ? 'Next' : 'Done') + '</button></div></div>';
     tourEl.querySelector('.tour-skip').onclick = function () { endTour(false); };
     tourEl.querySelector('.tour-next').onclick = function () { if (tourI < TOUR.length - 1) { tourI++; drawTour(); } else { endTour(true); if (window.DBK) window.DBK.toast('You are all set — welcome to Drugbox'); } };
+    var a = document.activeElement; if (had || !a || a === document.body || !a.offsetParent) try { tourEl.querySelector('.tour-next').focus({ preventScroll: true }); } catch (e) {}   /* keyboard users land on Next, never taken from a field they are typing in */
   }
   function startTour(force) {
     try { if (!force && localStorage.getItem('dx_tour_done')) return; } catch (e) {}
@@ -246,6 +249,7 @@
   }
   window.dxStartTour = function () { startTour(true); };
   window.addEventListener('resize', function () { if (tourEl) drawTour(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && tourEl && !(window.dxTopDialog && window.dxTopDialog())) endTour(false); });   /* Escape skips the tour, unless a window is open on top */
   /* first time the app opens after sign-in */
   var appEl = document.getElementById('app');
   if (appEl) new MutationObserver(function () {

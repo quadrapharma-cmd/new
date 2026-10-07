@@ -59,15 +59,16 @@
   var subs = [], queued = false, perf = {};
   function timed(s) { var t = performance.now(); run(s.name, s.fn); var d = performance.now() - t; var p = perf[s.name] || (perf[s.name] = { runs: 0, ms: 0, max: 0 }); p.runs++; p.ms += d; if (d > p.max) p.max = d; }
   /* run features in slices of at most ~8 ms, then yield to the browser so taps and scrolling stay smooth */
-  var cursor = 0;
+  var cursor = 0, again = false;   /* again: the page changed while a sliced pass was half done, so the layers already run see it on one more pass */
   function flush() {
     queued = false; var start = performance.now();
     while (cursor < subs.length) { timed(subs[cursor++]); if (performance.now() - start > 8 && cursor < subs.length) { queued = true; requestAnimationFrame(flush); return; } }
     cursor = 0;
+    if (again) { again = false; queued = true; requestAnimationFrame(flush); }
   }
   function onRender(name, fn) { subs.push({ name: name, fn: fn }); if (!queued) { queued = true; requestAnimationFrame(flush); } }
   new MutationObserver(function (list) {
-    if (queued) return;
+    if (queued && !cursor || again) return;   /* a pass that has not started yet sees the change anyway */
     for (var i = 0; i < list.length; i++) {
       var n = list[i].addedNodes; if (!n.length) continue;
       /* ignore changes made by our own layers (floating widgets and in-page decorations) */
@@ -75,6 +76,7 @@
       var ours = true;
       for (var j = 0; j < n.length && ours; j++) { var x = n[j]; ours = x.nodeType === 3 ? !!(x.parentNode && x.parentNode.closest && x.parentNode.closest('abbr.dx-term,.dx-num,.dx-egp')) : !!(x.className && typeof x.className === 'string' && /(^|\s)dx-/.test(x.className)) || x.tagName === 'ABBR'; }
       if (ours) continue;
+      if (queued) { again = true; return; }
       queued = true; requestAnimationFrame(flush); return;
     }
   }).observe(document.body, { childList: true, subtree: true });
@@ -86,12 +88,16 @@
   function undo(msg, onUndo, onCommit, ms) {
     commitPending(); ms = ms || 5000;
     pending = { undo: onUndo, commit: onCommit };
-    bar.innerHTML = '<span class="u-msg"></span><button type="button" class="u-btn">Undo</button><i class="u-bar" style="animation-duration:' + ms + 'ms"></i>';
+    bar.innerHTML = '<span class="u-msg"></span><button type="button" class="u-btn" aria-keyshortcuts="Control+Z">Undo</button><i class="u-bar" style="animation-duration:' + ms + 'ms"></i>';
     bar.querySelector('.u-msg').textContent = msg;
     bar.querySelector('.u-btn').onclick = function () { var p = pending; pending = null; clearTimeout(timer); bar.className = ''; if (p && p.undo) run('undo', p.undo); };
     void bar.offsetWidth; bar.className = 'on';
     timer = setTimeout(commitPending, ms);
   }
+  document.addEventListener('keydown', function (e) {   /* Ctrl+Z (⌘Z) while the bar shows = Undo, so it is not mouse-only; never inside a field, where Ctrl+Z undoes typing */
+    if (!pending || !(e.ctrlKey || e.metaKey) || e.shiftKey || (e.key !== 'z' && e.key !== 'Z') || (e.target.closest && e.target.closest('input,textarea,select,[contenteditable]'))) return;
+    var b = bar.querySelector('.u-btn'); if (b) { e.preventDefault(); b.click(); }
+  });
   window.addEventListener('beforeunload', commitPending);
   document.addEventListener('dx:beforepage', commitPending);
 
