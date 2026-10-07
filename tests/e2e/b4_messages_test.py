@@ -66,9 +66,12 @@ with sync_playwright() as p:
     r = A.evaluate(f"dxLive.sb.from('messages').update({{body:'edited by receiver'}}).eq('id',{mid})" + ERR)
     T('the receiver cannot edit a received message', refused(r) and sql(f"select body from public.messages where id={mid}").startswith('Sure'), r)
     mid2 = sql(f"select id from public.messages where sender_id='{a_id}' and receiver_id='{b_id}' order by id desc limit 1")
+    # Basem still has this conversation open and his page marks new messages read (a real receipt): close it first, so only Amal could set read_at
+    B.close(); A.wait_for_timeout(500)
     sql(f"update public.messages set read_at=null where id={mid2}")
     r = A.evaluate(f"dxLive.sb.from('messages').update({{read_at:new Date().toISOString()}}).eq('id',{mid2}).select().then(r=>(r.data||[]).length)")
-    T('the sender cannot fake a read receipt', r == 0 and sql(f"select read_at is null from public.messages where id={mid2}") == 't')
+    rd = sql(f"select read_at is null from public.messages where id={mid2}")
+    T('the sender cannot fake a read receipt', r == 0 and rd == 't', (r, rd))
     T('no errors in the page', not errs, errs)
     b.close()
 done()

@@ -30,7 +30,8 @@ with sync_playwright() as p:
     mol = pg.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#mkx .supply-grid .lcard[data-live]')].find(x=>x.querySelector('.lc-title').textContent.indexOf('Paracetamol DC 90% {st}')===0);var b=c&&c.querySelector('.lc-title .dx-molchip');return b?b.dataset.mol:null}})()")
     T('the chemical-structure button appears on real API listings', mol == 'paracetamol', mol)
     T('no demo demand cards', not any('Ciprofloxacin HCl 2MT/month' in x for x in dem))
-    T('demo sponsored listings are not shown', not pg.evaluate("[...document.querySelectorAll('#mkx .sponsored-card,#mkx .sp-mini')].some(e=>e.offsetWidth>0)"))
+    # a real paid featured listing (e.g. one bought by an earlier e4b run on the same stack) may fill the sponsored strip; the demo samples never
+    T('demo sponsored listings are not shown', not pg.evaluate("[...document.querySelectorAll('#mkx .sponsored-card:not([data-live]),#mkx .sp-mini:not([data-live])')].some(e=>e.offsetWidth>0)"))
     tick = pg.evaluate("(document.getElementById('tickerInner')||{}).innerText||''")
     T('the ticker shows real listings', f'Paracetamol DC 90% {st}' in tick and 'Metformin HCl GMP $5.80/kg' not in tick, tick[:160])
     pg.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#mkx .lcard')].find(x=>x.querySelector('.lc-title').textContent.indexOf('Paracetamol DC 90% {st}')===0);c.querySelector('.btn-contact').click()}})()"); pg.wait_for_timeout(3000)
