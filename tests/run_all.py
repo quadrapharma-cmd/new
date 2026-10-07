@@ -26,8 +26,12 @@ def run(cmd, timeout=1800, env=None):
     except subprocess.TimeoutExpired as e: out, code = (e.stdout or b'').decode(errors='replace') + '\nTIMEOUT', 124
     return code, out, time.time() - t
 
-def record(group, name, ok, secs, detail=''):
-    results.append((group, name, ok, secs, detail)); print(('PASS  ' if ok else 'FAIL  ') + f'{group:6s} {name:34s} {secs:6.1f}s' + ('' if ok else '\n      ' + detail.strip().replace('\n', '\n      ')[-1500:]), flush=True)
+def tally(out):   # the suite's own result line: its last "TOTAL n / m" or "n / m"
+    fr = re.findall(r'(?m)(?:TOTAL\s+)?(\d+)\s*/\s*(\d+)\s*$', out or '')
+    return f'{fr[-1][0]} / {fr[-1][1]}' if fr else ''
+
+def record(group, name, ok, secs, detail='', out=''):
+    results.append((group, name, ok, secs, detail)); print(('PASS  ' if ok else 'FAIL  ') + f'{group:6s} {name:34s} {secs:6.1f}s' + (f'  {tally(out):>9s}' if tally(out) else '') + ('' if ok else '\n      ' + detail.strip().replace('\n', '\n      ')[-1500:]), flush=True)
 
 def fresh_db(name):
     code, out, _ = run(PG + ['-q', '-c', f'drop database if exists {name}', '-c', f'create database {name}'])
@@ -49,7 +53,7 @@ def sql_suites():
         code, out, _ = run(PG + ['-d', db, '-v', 'ON_ERROR_STOP=1', '-f', f])
         tot = re.findall(r'TOTAL\s+(\d+)\s*/\s*(\d+)', out); fails = [l for l in out.splitlines() if l.strip().startswith(('FAIL', '❌'))]
         ok = code == 0 and bool(tot) and all(a == b and a != '0' for a, b in tot) and not fails
-        record('sql', base, ok, time.time() - t, '\n'.join(fails[:20]) + '\n' + out[-600:] if not ok else '')
+        record('sql', base, ok, time.time() - t, '\n'.join(fails[:20]) + '\n' + out[-600:] if not ok else '', out)
         drop_db(db)
 
 def sweep():
@@ -58,7 +62,7 @@ def sweep():
     code, out, _ = run(PG + ['-tA', '-d', db, '-v', 'ON_ERROR_STOP=1', '-f', ROOT + '/supabase/tests/schema_sweep.sql'])
     lines = [l for l in out.splitlines() if l.strip()]
     ok = code == 0 and len(lines) >= 3 and all(l.rstrip().endswith(': none') for l in lines)
-    record('sweep', 'schema_sweep.sql', ok, time.time() - t, out if not ok else ''); drop_db(db)
+    record('sweep', 'schema_sweep.sql', ok, time.time() - t, out if not ok else '', f"{sum(l.rstrip().endswith(': none') for l in lines)} / {len(lines)}"); drop_db(db)
 
 def fractions_ok(out):   # every "n / m" result line has n == m, nothing marked ❌ / FAIL
     fr = re.findall(r'(?m)(\d+)\s*/\s*(\d+)\s*$', out)
@@ -70,7 +74,7 @@ def demo():
     for f in sorted(glob.glob(ROOT + '/tests/demo/*.py')):
         for lang in ('en', 'ar'):
             code, out, s = run([sys.executable, f, lang], env=env)
-            record('demo', f'{os.path.basename(f)} {lang}', code == 0 and fractions_ok(out), s, out[-1500:])
+            record('demo', f'{os.path.basename(f)} {lang}', code == 0 and fractions_ok(out), s, out[-1500:], out)
 
 def legacy():
     import tempfile
@@ -85,7 +89,7 @@ def legacy():
         if not re.search(r'sum\((R|o for _, ?o in R)\)', src): continue   # audits that print observations only (a11y, perf, stress…) are run by hand
         if 'webkit' in src and 'DX_ENGINES' not in src and 'webkit' not in env['DX_ENGINES']: print('SKIP  legacy ' + os.path.basename(f) + ' (needs WebKit)'); continue
         code, out, s = run([sys.executable, f], env=env)
-        record('legacy', os.path.basename(f), code == 0 and fractions_ok(out), s, out[-1500:])
+        record('legacy', os.path.basename(f), code == 0 and fractions_ok(out), s, out[-1500:], out)
 
 def e2e():
     skip = set(filter(None, os.environ.get('E2E_SKIP', '').split(',')))
@@ -93,7 +97,7 @@ def e2e():
         name = os.path.basename(f)[:-3]
         if name in skip or name.split('_')[0] in skip: continue
         code, out, s = run([sys.executable, f])
-        record('e2e', name, code == 0 and fractions_ok(out), s, out[-1500:])
+        record('e2e', name, code == 0 and fractions_ok(out), s, out[-1500:], out)
 
 def migrations():
     code, out, s = run([sys.executable, ROOT + '/tools/migration_check.py'])
