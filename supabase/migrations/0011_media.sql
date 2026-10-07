@@ -20,8 +20,14 @@ $$;
 
 do $$ begin
   create policy "videos: anyone can watch" on storage.objects for select using (bucket_id = 'videos');
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "videos: upload to your own folder" on storage.objects for insert to authenticated with check (bucket_id = 'videos' and public.can_write_video(name));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "videos: replace your own" on storage.objects for update to authenticated using (bucket_id = 'videos' and public.can_write_video(name)) with check (bucket_id = 'videos' and public.can_write_video(name));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "videos: delete your own" on storage.objects for delete to authenticated using (bucket_id = 'videos' and public.can_write_video(name));
 exception when duplicate_object then null; end $$;
 

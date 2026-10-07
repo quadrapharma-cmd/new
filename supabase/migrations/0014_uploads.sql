@@ -12,23 +12,37 @@ on conflict (id) do update set public = excluded.public, file_size_limit = exclu
 
 do $$ begin
   create policy "post media: anyone can see" on storage.objects for select using (bucket_id = 'post-media');
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "post media: upload to your own folder" on storage.objects for insert to authenticated
     with check (bucket_id = 'post-media' and (storage.foldername(name))[1] = 'posts' and (storage.foldername(name))[2] = auth.uid()::text);
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "post media: delete your own" on storage.objects for delete to authenticated
     using (bucket_id = 'post-media' and (storage.foldername(name))[1] = 'posts' and (storage.foldername(name))[2] = auth.uid()::text);
+exception when duplicate_object then null; end $$;
+do $$ begin
   -- message files live under <sender>/<receiver>/…; only those two can read them
   create policy "message media: the two people read" on storage.objects for select to authenticated
     using (bucket_id = 'message-media' and auth.uid()::text in ((storage.foldername(name))[1], (storage.foldername(name))[2]));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "message media: the sender uploads" on storage.objects for insert to authenticated
     with check (bucket_id = 'message-media' and (storage.foldername(name))[1] = auth.uid()::text);
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "message media: the sender deletes" on storage.objects for delete to authenticated
     using (bucket_id = 'message-media' and (storage.foldername(name))[1] = auth.uid()::text);
 exception when duplicate_object then null; end $$;
 
 do $$ begin
   create policy "post media rows: everyone reads" on public.post_media for select using (true);
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "post media rows: the post's author adds" on public.post_media for insert
     with check (exists (select 1 from public.posts p where p.id = post_id and p.user_id = (select auth.uid())));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "post media rows: the post's author removes" on public.post_media for delete
     using (exists (select 1 from public.posts p where p.id = post_id and p.user_id = (select auth.uid())));
 exception when duplicate_object then null; end $$;

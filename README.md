@@ -65,7 +65,7 @@ vercel.json                      security and cache headers (template: live.py w
 python3 web/build/build.py                                    # → web/dist/drugbox.html (needs Pillow + Playwright/Chromium)
 python3 tools/parity_check.py web/reference/demo-approved.html   # must print PARITY OK
 python3 tests/run_all.py sql sweep                            # database suites + schema sweep, each on a fresh database
-python3 tools/migration_check.py                              # migrations are re-runnable (lists the multi-policy blocks that are not)
+python3 tools/migration_check.py                              # every migration re-runs cleanly and puts back a missing policy (must print OK)
 ```
 The build is deterministic: two builds of the same sources give the same file. The lite snapshot (the read-only copy shown
 by apps that block scripts) is rendered with a fixed date, a seeded random generator, reduced motion and no network, so the
@@ -169,8 +169,9 @@ Every phase ends with: parity check, database security tests, the demo's own tes
 - Videos the browser cannot read (e.g. iPhone HEVC on some Windows PCs) are refused with "try MP4 (H.264)"; server-side transcoding would accept them — a launch-stage option.
 - Local tests use WebM: the open-source Chromium used for testing cannot decode H.264 (Chrome, Safari and Edge can).
 - Every migration ends with `notify pgrst, 'reload schema'` (PostgREST must see new tables/relationships at once).
-- Migrations that create several policies in one `do … exception when duplicate_object` block do not put back a single missing
-  policy when re-run (`python3 tools/migration_check.py` lists them). New migrations: one block per policy, or `drop policy if exists` + `create policy`.
+- Each `create policy` in 0007–0023 sits in its own `do … exception when duplicate_object` block, so a re-run puts back a single
+  missing policy (`python3 tools/migration_check.py` checks it; 0001 is the base schema and is not re-runnable). New migrations: one
+  block per policy, or `drop policy if exists` + `create policy`.
 - The Realtime subscription itself can only be exercised on Supabase (staging); locally the same update path runs on the timer.
 - `suggest_people`: 48 ms at 100,000 members / 200 connections — fine for opening the network page; can be precomputed nightly if it grows.
 

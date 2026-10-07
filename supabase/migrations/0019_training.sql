@@ -29,10 +29,18 @@ alter table public.training_courses enable row level security;
 alter table public.course_enrollments enable row level security;
 do $$ begin
   create policy "courses: everyone reads active" on public.training_courses for select using (active or public.is_platform_admin());
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "courses: Drugbox manages" on public.training_courses for all using (public.is_platform_admin()) with check (public.is_platform_admin());
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "enrollments: you see yours (Drugbox sees all)" on public.course_enrollments for select using (user_id = (select auth.uid()) or public.is_platform_admin());
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "enrollments: enroll yourself" on public.course_enrollments for insert with check (user_id = (select auth.uid()) and status = 'enrolled'
     and exists (select 1 from public.training_courses c where c.id = course_id and c.active));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "enrollments: leave a course" on public.course_enrollments for delete using (user_id = (select auth.uid()));
 exception when duplicate_object then null; end $$;
 create or replace function public.course_enrolled_count() returns trigger language plpgsql security definer set search_path = public as $$

@@ -162,6 +162,8 @@ alter table public.deal_events enable row level security;
 do $$ begin
   create policy "deals: the two sides read" on public.deals for select
     using (from_user = (select auth.uid()) or public.is_company_member(to_company_id) or (from_company_id is not null and public.is_company_member(from_company_id)));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "deal events: the two sides read" on public.deal_events for select
     using (exists (select 1 from public.deals d where d.id = deal_id));
 exception when duplicate_object then null; end $$;

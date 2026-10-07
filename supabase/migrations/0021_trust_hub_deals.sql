@@ -558,8 +558,12 @@ alter table public.group_invites enable row level security;
 do $$ begin
   create policy "group invites: the person and the group's admins read" on public.group_invites for select
     using (user_id = (select auth.uid()) or public.is_group_member(group_id, array['admin']));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "group invites: admins invite" on public.group_invites for insert
     with check (invited_by = (select auth.uid()) and public.is_group_member(group_id, array['admin']));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "group invites: the person declines, or an admin withdraws" on public.group_invites for delete
     using (user_id = (select auth.uid()) or public.is_group_member(group_id, array['admin']));
 exception when duplicate_object then null; end $$;

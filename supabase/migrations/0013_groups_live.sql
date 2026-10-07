@@ -13,10 +13,16 @@ $$;
 do $$ begin
   create policy "group members: visible for public groups or to members" on public.group_members for select
     using (exists (select 1 from public.groups g where g.id = group_id and g.type = 'public') or public.is_group_member(group_id));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "group members: join a public group yourself" on public.group_members for insert
     with check (user_id = (select auth.uid()) and role = 'member' and exists (select 1 from public.groups g where g.id = group_id and g.type = 'public'));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "group members: leave, or an admin removes" on public.group_members for delete
     using (user_id = (select auth.uid()) or public.is_group_member(group_id, array['admin']));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "group members: admins change roles" on public.group_members for update
     using (public.is_group_member(group_id, array['admin'])) with check (public.is_group_member(group_id, array['admin']));
 exception when duplicate_object then null; end $$;

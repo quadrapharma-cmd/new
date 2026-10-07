@@ -24,10 +24,16 @@ create index if not exists idx_listings_company on public.company_listings (comp
 alter table public.company_listings enable row level security;
 do $$ begin
   create policy "listings: everyone reads active" on public.company_listings for select using (active or public.is_company_member(company_id));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "listings: the company's sales/regulatory team posts" on public.company_listings for insert
     with check (public.is_company_member(company_id, array['owner','admin','sales','regulatory']) and created_by = (select auth.uid()));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "listings: the company's team edits" on public.company_listings for update
     using (public.is_company_member(company_id, array['owner','admin','sales','regulatory'])) with check (public.is_company_member(company_id, array['owner','admin','sales','regulatory']));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "listings: owners/admins delete" on public.company_listings for delete using (public.is_company_member(company_id, array['owner','admin']));
 exception when duplicate_object then null; end $$;
 
@@ -53,6 +59,8 @@ create table if not exists public.deal_members (
 alter table public.deal_members enable row level security;
 do $$ begin
   create policy "deals: group orders are open to all" on public.deals for select using (type = 'group');
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "deal members: readable with the deal" on public.deal_members for select using (exists (select 1 from public.deals d where d.id = deal_id));
 exception when duplicate_object then null; end $$;
 revoke insert, update, delete on public.deal_members from anon, authenticated;

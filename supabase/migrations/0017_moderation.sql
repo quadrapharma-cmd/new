@@ -17,8 +17,12 @@ create index if not exists idx_company_reports_open on public.company_reports (s
 alter table public.company_reports enable row level security;
 do $$ begin
   create policy "reports: file as yourself" on public.company_reports for insert with check (reporter = (select auth.uid()) and status = 'open');
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "reports: reporter, the company and Drugbox read" on public.company_reports for select
     using (reporter = (select auth.uid()) or public.is_company_member(company_id, array['owner','admin']) or public.is_platform_admin());
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "reports: the company or Drugbox close" on public.company_reports for update
     using (public.is_company_member(company_id, array['owner','admin']) or public.is_platform_admin())
     with check (public.is_company_member(company_id, array['owner','admin']) or public.is_platform_admin());

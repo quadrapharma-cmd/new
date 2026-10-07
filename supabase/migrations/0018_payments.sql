@@ -16,7 +16,8 @@ insert into public.payment_products (code, label, kind, amount_egp, duration_day
 on conflict (code) do nothing;
 alter table public.payment_products enable row level security;
 do $$ begin create policy "prices: everyone reads" on public.payment_products for select using (true);
-             create policy "prices: Drugbox edits" on public.payment_products for update using (public.is_platform_admin()) with check (public.is_platform_admin());
+exception when duplicate_object then null; end $$;
+do $$ begin create policy "prices: Drugbox edits" on public.payment_products for update using (public.is_platform_admin()) with check (public.is_platform_admin());
 exception when duplicate_object then null; end $$;
 
 alter table public.products add column if not exists boosted_until timestamptz, add column if not exists featured_until timestamptz;

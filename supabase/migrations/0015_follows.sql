@@ -5,7 +5,11 @@
 -- ═════════════════════════════════════════════════════════════════════
 do $$ begin
   create policy "followers: you see your own follows" on public.company_followers for select using (user_id = (select auth.uid()));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "followers: follow as yourself" on public.company_followers for insert with check (user_id = (select auth.uid()));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "followers: unfollow yourself" on public.company_followers for delete using (user_id = (select auth.uid()));
 exception when duplicate_object then null; end $$;
 do $$ begin alter table public.company_followers add constraint company_followers_pk primary key (company_id, user_id); exception when others then null; end $$;

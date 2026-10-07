@@ -222,6 +222,8 @@ alter table public.post_view_log    enable row level security;
 alter table public.profile_view_log enable row level security;
 do $$ begin
   create policy "post views: your own" on public.post_view_log for select using (viewer = (select auth.uid()));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "profile views: your own" on public.profile_view_log for select using (viewer = (select auth.uid()));
 exception when duplicate_object then null; end $$;
 revoke insert, update, delete, truncate on public.post_view_log, public.profile_view_log from anon, authenticated;   -- the functions below write them
@@ -287,13 +289,19 @@ $$;
 -- ── 9. F-164 posts: the author edits body/category, Drugbox pins; notifications are read-only ─
 do $$ begin
   create policy "posts: own edit" on public.posts for update using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "posts: admin pins" on public.posts for update using (public.is_platform_admin()) with check (public.is_platform_admin());
 exception when duplicate_object then null; end $$;
 -- notifications are written by triggers and functions; a person reads, marks read and deletes their own
 drop policy if exists "notifications: own" on public.notifications;
 do $$ begin
   create policy "notifications: own read" on public.notifications for select using ((select auth.uid()) = user_id);
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "notifications: own mark read" on public.notifications for update using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "notifications: own delete" on public.notifications for delete using ((select auth.uid()) = user_id);
 exception when duplicate_object then null; end $$;
 

@@ -30,7 +30,11 @@ create or replace function public.can_write_document(p_name text) returns boolea
 $$;
 do $$ begin
   create policy "documents: read when allowed" on storage.objects for select to authenticated using (bucket_id = 'documents' and public.can_read_document(name));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "documents: upload to your own folder" on storage.objects for insert to authenticated with check (bucket_id = 'documents' and public.can_write_document(name));
+exception when duplicate_object then null; end $$;
+do $$ begin
   create policy "documents: delete your own" on storage.objects for delete to authenticated using (bucket_id = 'documents' and public.can_write_document(name));
 exception when duplicate_object then null; end $$;
 
