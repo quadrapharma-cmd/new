@@ -82,7 +82,7 @@ def legacy():
     env = {**os.environ, 'DEMO_FILE': DEMO, 'DEMO_VARIANTS': var, 'DX_ENGINES': ','.join(engines)}
     for f in sorted(glob.glob(ROOT + '/tests/demo/legacy/*.py')):
         src = open(f, encoding='utf-8').read()
-        if 'sum(R)' not in src: continue   # audits that print observations only (a11y, perf, stress…) are run by hand
+        if not re.search(r'sum\((R|o for _, ?o in R)\)', src): continue   # audits that print observations only (a11y, perf, stress…) are run by hand
         if 'webkit' in src and 'DX_ENGINES' not in src and 'webkit' not in env['DX_ENGINES']: print('SKIP  legacy ' + os.path.basename(f) + ' (needs WebKit)'); continue
         code, out, s = run([sys.executable, f], env=env)
         record('legacy', os.path.basename(f), code == 0 and fractions_ok(out), s, out[-1500:])

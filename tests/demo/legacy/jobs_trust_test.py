@@ -4,7 +4,7 @@ def T(n,ok,d=''): R.append((n,ok)); print(('✅ ' if ok else '❌ ')+n+('' if ok
 with sync_playwright() as p:
     b=p.chromium.launch(args=["--no-sandbox"]); pg=b.new_page(viewport={'width':1440,'height':900}); errs=[]
     pg.on("pageerror",lambda e:errs.append(str(e)[:200]))
-    pg.goto('file:///tmp/drugbox_ppl.html',wait_until='networkidle',timeout=60000); pg.evaluate('endSplash()'); pg.wait_for_timeout(900)
+    pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='networkidle',timeout=60000); pg.evaluate('endSplash()'); pg.wait_for_timeout(900)
     pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(2200)
     pg.evaluate("goto('jobs')"); pg.wait_for_timeout(700)
     J='#jx '
@@ -60,6 +60,7 @@ with sync_playwright() as p:
     ka=pg.locator(J+'#hiringView .jcard',has_text='Karim').first; ka.locator('[data-a=black]').click(); pg.wait_for_timeout(150)
     pg.select_option('#blR','No-show at interview'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(150)
     T('employer block needs the non-discrimination confirmation', pg.locator('.dbk-ov').count()==1)
+    pg.wait_for_timeout(500)   # double-click guard: the window ignores a second OK within 500 ms
     pg.check('#blAck'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(250)
     T('employer blocks candidate → hidden', not ka.is_visible())
     pg.locator(J+'#hiringView .jx-tool',has_text='Top rated').click(); pg.wait_for_timeout(150)

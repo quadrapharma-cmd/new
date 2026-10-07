@@ -55,9 +55,9 @@ with sync_playwright() as p:
     pg.locator(M+'.cat-intent-row[data-cat=api] .it-opt.i-need').click(); pg.wait_for_timeout(100)
     T('intent preview updates', 'I need to buy this' in pg.inner_text(M+'#profilePreviewTags'))
     pg.evaluate("openBoostModal('featured')"); pg.wait_for_timeout(2900)
-    T('boost price in EGP', 'ج.م' in pg.inner_text(M+'#bmTotalEgp'))
+    T('boost price in EGP', 'EGP' in pg.inner_text(M+'#bmTotalEgp'))   # English interface → 'EGP 1,636' (the window follows the interface language)
     pg.click(M+'#bmPayBtn'); pg.wait_for_timeout(1500)
-    T('boost payment confirms (demo)', 'تم تفعيل الترقية' in pg.inner_text(M+'#boostModalOverlay'))
+    T('boost payment confirms (demo)', 'Boost activated' in pg.inner_text(M+'#boostModalOverlay'))
     pg.wait_for_timeout(2300)
     for pgname in ['feed','jobs','network','notifs','profile','groups','companies','messages','market']:
         pg.evaluate(f"goto('{pgname}')"); pg.wait_for_timeout(250)

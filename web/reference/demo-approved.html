@@ -7982,11 +7982,11 @@ window.mkxComplete = function (root) {
     var ov = document.getElementById('boostModalOverlay'), pay = document.getElementById('bmPayBtn'); if (!ov || !pay) return;
     ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.remove('show'); });
     pay.addEventListener('click', function () {
-      if (pay.disabled) return; pay.disabled = true; var old = pay.textContent; pay.textContent = '⏳ جاري تأكيد الدفع…';
+      if (pay.disabled) return; pay.disabled = true; var old = pay.textContent, A = window.LANG === 'ar'; pay.textContent = A ? '⏳ جاري تأكيد الدفع…' : '⏳ Confirming payment…';
       setTimeout(function () {
         var body = ov.querySelector('.bm-body'), keep = body.innerHTML;
-        body.innerHTML = '<div style="text-align:center;padding:18px 6px"><div style="font-size:40px">✅</div><div style="font-weight:800;font-size:16px;margin-top:8px">تم تفعيل الترقية</div>' +
-          '<div style="font-size:12.5px;color:#64748b;margin-top:6px">إعلانك دلوقتي في مقدمة النتائج لمدة 7 أيام.<br>(نسخة تجريبية — مفيش خصم فعلي من البطاقة)</div></div>';
+        body.innerHTML = '<div style="text-align:center;padding:18px 6px"><div style="font-size:40px">✅</div><div style="font-weight:800;font-size:16px;margin-top:8px">' + (A ? 'تم تفعيل الترقية' : 'Boost activated') + '</div>' +
+          '<div style="font-size:12.5px;color:#64748b;margin-top:6px">' + (A ? 'إعلانك دلوقتي في مقدمة النتائج لمدة 7 أيام.<br>(نسخة تجريبية — مفيش خصم فعلي من البطاقة)' : 'Your listing is now at the top of the results for 7 days.<br>(Demo — no card is charged)') + '</div></div>';
         bumpStat(3, 1); D.toast('Boost activated');
         setTimeout(function () { ov.classList.remove('show'); body.innerHTML = keep; pay.disabled = false; pay.textContent = old; }, 2200);
       }, 1200);

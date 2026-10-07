@@ -4,7 +4,7 @@ def T(n,ok,d=''): R.append((n,ok)); print(('✅ ' if ok else '❌ ')+n+('' if ok
 with sync_playwright() as p:
     b=p.chromium.launch(args=["--no-sandbox"]); pg=b.new_page(viewport={'width':1440,'height':900}); errs=[]
     pg.on("pageerror",lambda e:errs.append(str(e)[:200]))
-    pg.goto('file:///tmp/drugbox_all.html',wait_until='networkidle',timeout=60000); pg.evaluate('endSplash()'); pg.wait_for_timeout(900)
+    pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='networkidle',timeout=60000); pg.evaluate('endSplash()'); pg.wait_for_timeout(900)
     pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(2200)
     pg.evaluate("goto('market')"); pg.wait_for_timeout(800)
     M='#mkx '
@@ -55,9 +55,9 @@ with sync_playwright() as p:
     pg.locator(M+'.cat-intent-row[data-cat=api] .it-opt.i-need').click(); pg.wait_for_timeout(100)
     T('intent preview updates', 'I need to buy this' in pg.inner_text(M+'#profilePreviewTags'))
     pg.evaluate("openBoostModal('featured')"); pg.wait_for_timeout(2900)
-    T('boost price in EGP', 'ج.م' in pg.inner_text(M+'#bmTotalEgp'))
+    T('boost price in EGP', 'EGP' in pg.inner_text(M+'#bmTotalEgp'))   # English interface → 'EGP 1,636' (the window follows the interface language)
     pg.click(M+'#bmPayBtn'); pg.wait_for_timeout(1500)
-    T('boost payment confirms (demo)', 'تم تفعيل الترقية' in pg.inner_text(M+'#boostModalOverlay'))
+    T('boost payment confirms (demo)', 'Boost activated' in pg.inner_text(M+'#boostModalOverlay'))
     pg.wait_for_timeout(2300)
     for pgname in ['feed','jobs','network','notifs','profile','groups','companies','messages','market']:
         pg.evaluate(f"goto('{pgname}')"); pg.wait_for_timeout(250)

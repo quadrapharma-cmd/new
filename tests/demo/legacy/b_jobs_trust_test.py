@@ -60,6 +60,7 @@ with sync_playwright() as p:
     ka=pg.locator(J+'#hiringView .jcard',has_text='Karim').first; ka.locator('[data-a=black]').click(); pg.wait_for_timeout(150)
     pg.select_option('#blR','No-show at interview'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(150)
     T('employer block needs the non-discrimination confirmation', pg.locator('.dbk-ov').count()==1)
+    pg.wait_for_timeout(500)   # double-click guard: the window ignores a second OK within 500 ms
     pg.check('#blAck'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(250)
     T('employer blocks candidate → hidden', not ka.is_visible())
     pg.locator(J+'#hiringView .jx-tool',has_text='Top rated').click(); pg.wait_for_timeout(150)
