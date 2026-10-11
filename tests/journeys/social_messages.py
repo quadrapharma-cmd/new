@@ -78,6 +78,9 @@ def new_message_to_named_person(j):
     if j.live:
         a = j.person('Dr. Aya Writer'); b = j.person('Dr. Carim Audit'); c = j.person('Dr. Chaker Open')
         j.sql("insert into public.messages (sender_id, receiver_id, body) values ('%s','%s','Earlier thread with Chaker %s')" % (c['id'], a['id'], j.tag))
+        # real members carry their company; it is what tells two people with the same name apart in the picker (a shared
+        # test database holds a "Dr. Carim Audit" from every earlier run)
+        bco = 'Audit Labs ' + j.tag; j.sql("update public.profiles set company='%s' where id='%s'" % (bco, b['id']))
         pg = a['page']; j.reload(pg); cname, bname, bfull = 'Chaker', 'Carim', 'Dr. Carim Audit'
     else:
         pg = j.demo_signin(j.new_page()); cname, bname, bfull = 'Vivian', 'Omar', 'Eng. Omar Khaled'
@@ -96,7 +99,11 @@ def new_message_to_named_person(j):
             demo = [s for s in sugg if re.search(r'Vivian|Omar Khaled|Alia Mourad|Rahmani|Indovista|SkinBio', s)]
             j.check(not demo, 'the picker suggests demo people: %s' % demo[:4])
     with j.step('Pick B, write and send: the message goes to B only (not the previously open thread)'):
-        to.fill(bfull); pg.locator('#nmTx:visible, .dbk-ov textarea:visible').first.fill(text)
+        to.fill(bfull); pg.wait_for_timeout(800)
+        if j.live:      # choose B's suggestion, as a person does when several members share the name (the option shows the company)
+            opts = [o for o in pg.evaluate("(()=>{const i=document.querySelector('#nmTo');const l=i&&i.list;return l?[...l.options].map(o=>o.value):[]})()") if o.startswith(bfull)]
+            if len(opts) > 1: to.fill(next((o for o in opts if bco in o), bfull + ' · ' + bco))
+        pg.locator('#nmTx:visible, .dbk-ov textarea:visible').first.fill(text)
         j.click(pg, r'^(Send|إرسال)$', scope='.dbk-ov', what='Send', exact=True); j.settle(pg, 1200)
         j.check(bname in head(pg), 'after sending, the open thread is not with B (header: "%s")' % head(pg)[:60])
         open_thread(j, pg, cname); j.check(not any(text in m for m in mine(pg)), 'the new message landed in the thread with C')

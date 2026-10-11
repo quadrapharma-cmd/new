@@ -5435,20 +5435,32 @@ window.mxComplete = function (root) {
   var target = to ? ensureThread(to, {}) : openFirst;
   if (target) window.mxOpenThread(target, target.dataset.person);
 
-  /* ✎ new message */
+  /* ✎ new message: only to someone the picker offers (your conversations and the members), and only to that person —
+     never the conversation that happened to be open (S-03). The live app swaps who is offered (window.dxMxPeople) and
+     who receives it (window.dxMxNew: the one real member with that name). */
   var nb = document.querySelector('.tp-new');
   if (nb) nb.addEventListener('click', function () {
-    var names = Array.prototype.map.call(list.querySelectorAll('.mx-thread'), function (t) { return info(t).name; });
+    var seen = {}, people = [];
+    function add(n, label) { var k = String(n || '').toLowerCase(); if (!k || seen[k]) return; seen[k] = 1; people.push({ name: n, label: label || '' }); }
+    if (window.dxMxPeople) window.dxMxPeople().forEach(function (p) { add(p.name, p.label); });
+    else {
+      Array.prototype.forEach.call(list.querySelectorAll('.mx-thread'), function (t) { add(info(t).name); });
+      (window.USERS || []).forEach(function (u) { if (!window.ME || u.id !== window.ME.id) add(u.name, u.headline ? String(u.headline).split('|')[0].trim() : ''); });
+    }
     D.modal({
       title: 'New message',
-      body: '<div class="dbk-f"><label for="nmTo">To *</label><input id="nmTo" data-req list="nmList" placeholder="Name of a person or company"><datalist id="nmList">' +
-        names.concat(['Indovista Pharma', 'Dr. Alia Mourad', 'Faisal Rahmani', 'Eng. Omar Khaled']).map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist></div>' +
+      body: '<div class="dbk-f"><label for="nmTo">To *</label><input id="nmTo" data-req list="nmList" autocomplete="off" placeholder="Name of a person or company"><datalist id="nmList">' +
+        people.map(function (p) { return '<option value="' + esc(p.name) + '"' + (p.label ? ' label="' + esc(p.label) + '"' : '') + '>'; }).join('') + '</datalist></div>' +
         '<div class="dbk-f"><label for="nmTx">Message *</label><textarea id="nmTx" data-req placeholder="Write your message…"></textarea></div>',
-      primary: { label: 'Send', onClick: function (b) {
+      primary: { label: 'Send', onClick: function (b, close) {
         if (!D.requireFields(b)) return false;
-        var th = ensureThread(b.querySelector('#nmTo').value.trim(), {});
-        window.mxOpenThread(th, th.dataset.person);
-        document.getElementById('composeInput').value = b.querySelector('#nmTx').value.trim(); window.sendMessage();
+        var toEl = b.querySelector('#nmTo'), to = toEl.value.trim(), text = b.querySelector('#nmTx').value.trim();
+        if (window.dxMxNew) return window.dxMxNew(to, text, b, close);
+        var hit = people.filter(function (p) { return p.name.toLowerCase() === to.toLowerCase(); })[0];
+        if (!hit) { toEl.classList.add('dbk-err'); D.toast('No member called ' + to + ' — choose someone from the list'); return false; }
+        var th = ensureThread(hit.name, {});
+        window.mxOpenThread(th, th.dataset.person); root.classList.remove('mx-list');
+        document.getElementById('composeInput').value = text; window.sendMessage();
       } }
     });
   });

@@ -502,6 +502,70 @@
   var origMessageUser = window.messageUser;
   window.messageUser = function (a) { if (ME_UUID && uuidOf(+a)) { MX.to = +a; window.__mxTo = null; window.goto('messages'); return; } return origMessageUser.apply(this, arguments); };
 
+  /* ✎ New message (S-03): the picker offers your conversations, your connections and the members whose name matches what you
+     type (with headline and company, so two people with one name can be told apart); Send goes to the one member chosen and
+     opens that conversation — never the conversation that happened to be open. A name nobody has, or several people have,
+     is not sent. */
+  var NM = { people: {}, map: {}, t: null };
+  function nmLike(x) { return String(x).replace(/[\\%_]/g, '\\$&'); }
+  function nmAdd(p) { if (p && p.id && p.id !== ME_UUID) NM.people[p.id] = { id: p.id, name: txt(p.name || 'Member'), headline: txt(p.headline), company: txt(p.company) }; }
+  function nmOptions() {                                       /* option values are unique: a shared name carries the company */
+    var all = Object.keys(NM.people).map(function (k) { return NM.people[k]; }), n = {}; NM.map = {};
+    all.forEach(function (p) { var k = p.name.toLowerCase(); n[k] = (n[k] || 0) + 1; });
+    return all.map(function (p) {
+      var v = n[p.name.toLowerCase()] > 1 ? p.name + ' · ' + (p.company || p.headline.split('|')[0].trim() || p.id.slice(0, 8)) : p.name;
+      NM.map[v.toLowerCase()] = p.id; return { name: v, label: [p.headline.split('|')[0].trim(), p.company].filter(Boolean).join(' · ').slice(0, 90) };
+    });
+  }
+  function nmPaint() { var dl = document.getElementById('nmList'); if (!dl) return;
+    dl.innerHTML = nmOptions().map(function (o) { return '<option value="' + esc2(o.name) + '"' + (o.label ? ' label="' + esc2(o.label) + '"' : '') + '>'; }).join(''); }
+  window.dxMxPeople = function () {
+    NM.people = {}; if (!ME_UUID) return [];
+    MX.convs.forEach(function (c) { var u = window.U(aid(c.partner)); nmAdd({ id: c.partner, name: c.name || u.name, headline: c.headline || u.headline, company: u.company }); });
+    Object.keys(window.CONN_STATE || {}).forEach(function (k) { if (window.CONN_STATE[k] !== 'connected' || !uuidOf(+k)) return; var u = window.U(+k); nmAdd({ id: uuidOf(+k), name: u.name, headline: u.headline, company: u.company }); });
+    return nmOptions();
+  };
+  async function nmSearch(q) {
+    var r = await sb.from('profiles').select(PCOLS).ilike('name', '%' + nmLike(q.split(' · ')[0]) + '%').neq('id', ME_UUID).order('name').limit(12);
+    if (r.error) throw r.error; (r.data || []).forEach(function (p) { putUser(p); nmAdd(p); }); return r.data || [];
+  }
+  document.addEventListener('input', function (e) {
+    if (!ME_UUID || !e.target || e.target.id !== 'nmTo') return;
+    var q = e.target.value.trim(); clearTimeout(NM.t); if (q.length < 2 || q.length > 80 || NM.map[q.toLowerCase()]) return;
+    NM.t = setTimeout(function () { nmSearch(q).then(nmPaint, function (err) { console.error(err); }); }, 200);
+  }, true);
+  async function nmResolve(to) {
+    var id = NM.map[to.toLowerCase()]; if (id) return { id: id };
+    if (to.length <= 200) {
+      var m = /^(.+?) · (.+)$/.exec(to), name = m ? m[1].trim() : to, which = m ? m[2].trim().toLowerCase() : '';   /* "Name · Company" as the picker shows it */
+      var r = await sb.from('profiles').select(PCOLS).ilike('name', nmLike(name)).neq('id', ME_UUID).limit(m ? 50 : 5); if (r.error) throw r.error;
+      var d = (r.data || []).filter(function (p) { return !which || txt(p.company).toLowerCase() === which || txt(p.headline).split('|')[0].trim().toLowerCase() === which || p.id.slice(0, 8) === which; });
+      d.forEach(function (p) { putUser(p); nmAdd(p); });
+      if (d.length === 1) return { id: d[0].id };
+      if (d.length > 1) { nmPaint(); return { err: 'Several members are called ' + to + ' — choose one from the list' }; }
+    }
+    return { err: 'No member called ' + to + ' — choose someone from the list' };
+  }
+  window.dxMxNew = function (to, text, box, close) {
+    if (!ME_UUID) return false;
+    var toEl = box.querySelector('#nmTo'), ok = box.querySelector('[data-a=ok]'); if (ok) { if (ok.disabled) return false; ok.disabled = true; }
+    function done() { if (ok) ok.disabled = false; }
+    nmResolve(to).then(function (who) {
+      if (who.err) { done(); if (toEl) toEl.classList.add('dbk-err'); window.DBK.toast(who.err); return; }
+      return sb.from('messages').insert({ sender_id: ME_UUID, receiver_id: who.id, body: text }).select().single().then(function (r) {
+        done(); if (r.error) { toastErr(r.error); return; }
+        close(); var a = aid(who.id), u = window.U(a), i = MX.convs.findIndex(function (c) { return c.partner === who.id; });
+        var c = i >= 0 ? MX.convs.splice(i, 1)[0] : { partner: who.id, name: u.name, verified: u.verified, unread: 0 };
+        c.last_body = text; c.last_at = r.data.created_at; c.last_from_me = true; MX.convs.unshift(c);
+        if (r.data.id > MX.lastMsg && r.data.receiver_id === ME_UUID) MX.lastMsg = r.data.id;
+        if (document.body.getAttribute('data-page') !== 'messages') { MX.to = a; window.goto('messages'); return; }
+        drawThreads(); var t = listEl() && listEl().querySelector('.mx-thread[data-person="u' + a + '"]'); if (t) window.mxOpenThread(t, t.dataset.person);
+        var mx = document.getElementById('mx'); if (mx) mx.classList.remove('mx-list');                   /* phones: show the conversation */
+      });
+    }).catch(function (e) { done(); toastErr(e); });
+    return false;
+  };
+
   /* live updates: one code path (tick) — triggered by Supabase Realtime when available, and by a gentle timer as a safety net.
      One tick at a time (Realtime events, the timer and a returning tab share the run in progress), each incoming message is shown
      once, and only what a notification is about is reloaded (F-51). */
