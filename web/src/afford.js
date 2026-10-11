@@ -33,6 +33,7 @@
   }
   function groupTitles() { return Array.prototype.map.call(document.querySelectorAll('#gx .gcard-title, #gx .mg-name'), txt).concat((window.GX_HTML || '').match(/class="gcard-title">([^<]+)</g) ? window.GX_HTML.match(/class="gcard-title">([^<]+)</g).map(function (s) { return s.replace(/.*>/, ''); }) : []); }
   function openGroup(name) {
+    if (window.dxGroups) { window.goto('groups'); setTimeout(function () { if (!window.dxGroups.open(name)) D.toast(name); }, 80); return; }
     window.goto('groups');
     setTimeout(function () {
       var card = Array.prototype.find.call(document.querySelectorAll('#gx .gcard, #gx .mygroup'), function (c) { return txt(c).indexOf(name) >= 0 && c.getAttribute('onclick'); }) ||

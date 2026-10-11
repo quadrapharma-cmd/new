@@ -16,13 +16,14 @@
   function applyJoined() {
     var j = joinedSet(), left = store('groups_left');
     document.querySelectorAll('#gx .gcard').forEach(function (card) {
-      var b = card.querySelector('.gcard-btn'); if (!b) return; var t = title(card);
+      var b = card.querySelector('.gcard-btn'); if (!b || b.dataset.gpq) return; var t = title(card);   /* gpq: a private group's request state (groups.js) */
       if (j.indexOf(t) >= 0 && b.classList.contains('btn-join')) paint(b, true);
       if (left.indexOf(t) >= 0 && b.classList.contains('btn-joined')) paint(b, false);
     });
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('#gx .gcard-btn'); if (!b) return;
+    if (window.dxGroups && window.dxGroups.joinClick(b, e)) return;   /* groups.js: join, leave and private-group requests */
     e.preventDefault(); e.stopPropagation();          /* joining does not open the group */
     var card = b.closest('.gcard'), t = title(card), j = joinedSet(), left = store('groups_left');
     if (b.classList.contains('btn-join')) {
@@ -75,6 +76,7 @@
 
   /* ── Groups: every card and side row opens its group (7 of 9 cards had no action) ── */
   function openGroupNamed(name) {
+    if (window.dxGroups && window.dxGroups.open(name)) return;   /* groups.js opens the group with its inside (posts, members, about) */
     var card = Array.prototype.find.call(document.querySelectorAll('#gx .gcard'), function (c) { return txt(c.querySelector('.gcard-title')) === name; });
     var joined = card && card.querySelector('.btn-joined');
     if (typeof window.openGroup === 'function') window.openGroup(joined ? 'member' : 'member');
@@ -85,6 +87,7 @@
   }
   document.addEventListener('click', function (e) {
     var c = e.target.closest && e.target.closest('#gx .gcard, #gx .mygroup, #gx .sh-row'); if (!c || e.target.closest('.gcard-btn,button,a')) return;
+    if (window.dxGroups) return;   /* groups.js handles every card and side row */
     if (c.getAttribute('onclick')) return;
     var name = txt(c.querySelector('.gcard-title, .mg-name')) || txt(c); if (!name) return;
     e.preventDefault(); e.stopPropagation(); openGroupNamed(name.replace(/\s*\d.*$/, ''));

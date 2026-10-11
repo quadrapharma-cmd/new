@@ -1,0 +1,92 @@
+/* ═════════ Groups — the inside of a group (groups.js). Only the group page's own colours, sizes and parts. ═════════ */
+#gpBox{background:#f4f6fb}
+#gpBox .gp-tabs{position:sticky;top:0;z-index:4;overflow-x:auto;scrollbar-width:none;background:#fafbfd}
+#gpBox .gp-tabs::-webkit-scrollbar{display:none}
+#gpBox .gp-tabs .gx-ptab{white-space:nowrap;flex:none}
+#gpBox .gp-tabs .gx-ptab:focus-visible{outline:2px solid #1a56db;outline-offset:-2px}
+#gpBox .gp-pane[hidden]{display:none!important}
+#gpBox .gp-disc{padding:16px 22px 22px;display:flex;flex-direction:column;gap:10px}
+#gpBox .gp-posts{display:flex;flex-direction:column;gap:10px}
+#gpBox .gp-posts .post{margin:0}
+#gpBox .gp-empty{padding:24px 18px;text-align:center;color:#64748b;font-size:13px;font-weight:600;background:#f8fafc;border:1.5px dashed #e2e8f0;border-radius:12px;display:flex;flex-direction:column;gap:4px;align-items:center}
+#gpBox .gp-disc .gp-empty{background:#fff}
+#gpBox .gp-empty b{color:#0f172a;font-size:13.5px}
+#gpBox .gp-empty span{font-weight:500}
+#gpBox .gp-gate{align-items:center;justify-content:space-between;gap:10px;margin:0;font-size:12px;flex-wrap:wrap}
+#gpBox .gp-gate .gcard-btn{flex:none}
+#gpBox .gp-lock{background:#fff;border:1px solid #eef0f4;border-radius:14px;padding:26px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+#gpBox .gp-lock-ic{width:52px;height:52px;border-radius:14px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:24px}
+#gpBox .gp-lock b{font-size:14.5px;color:#0f172a}
+#gpBox .gp-lock p{font-size:12.5px;color:#64748b;line-height:1.6;max-width:420px}
+#gpBox .gp-lock .gcard-btn{padding:9px 18px;font-size:12.5px}
+#gpBox .panel-body .gp-lock{border:none;padding:10px 0 4px}
+#gpBox .gp-edited{color:#94a3b8;font-size:11.5px;white-space:nowrap}
+#gpBox .gp-note{margin:0 14px 10px;font-size:11.5px;color:#9a3412;background:#fff7ed;border-radius:8px;padding:6px 10px}
+#gpBox .post-acts .pact.dbk-saved{border-radius:8px}
+/* members */
+#gpBox .member-list-title{gap:10px;flex-wrap:wrap}
+#gpBox input.gp-msearch{font:inherit;font-size:12px;color:#0f172a;outline:none;min-width:0;width:220px;max-width:100%}
+#gpBox input.gp-msearch:focus{border-color:#1a56db;background:#fff}
+#gx .member-row .gp-mrow-main{flex:1;min-width:0}
+#gx .member-row .member-name{flex-wrap:wrap}
+#gx .member-row .gp-name{cursor:pointer}
+#gx .member-row .gp-name:hover{color:#1a56db;text-decoration:underline}
+#gx .member-row .gp-av{cursor:pointer;flex:none}
+#gx .member-row .member-actions{flex:none;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+#gx .member-row .member-actions .gcard-btn{padding:6px 11px}
+#gx .member-row .gp-you{font-size:11px;color:#94a3b8;align-self:center}
+#gpBox .gp-more{margin-top:12px;padding:10px 12px;background:#f8fafc;border-radius:10px;font-size:12px;color:#64748b;font-weight:600;text-align:center}
+#gpBox .gp-nores{margin-top:10px}
+#gpBox .gp-nores[hidden]{display:none}
+/* about */
+#gpBox .gp-sec{margin-bottom:18px}
+#gpBox .gp-sec:last-child{margin-bottom:0}
+#gpBox .gp-sec .field-label{display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+#gpBox .gp-text{font-size:13.5px;line-height:1.65;color:#334155;white-space:pre-line}
+#gpBox .gp-facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:18px}
+#gpBox .gp-fact{background:#f8fafc;border:1px solid #eef0f4;border-radius:11px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+#gpBox .gp-k{font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+#gpBox .gp-v{font-size:13px;font-weight:800;color:#0f172a}
+#gpBox .gp-fact small{font-size:11px;color:#64748b;line-height:1.45}
+#gpBox .gp-fact .gp-name{color:#1a56db;cursor:pointer;font-weight:700}
+#gpBox .gp-tags{display:flex;flex-wrap:wrap;gap:6px}
+#gpBox .gp-tags .gtag{font-size:10.5px;padding:4px 9px}
+#gpBox .gp-rules{counter-reset:gpr;list-style:none;display:flex;flex-direction:column;gap:8px}
+#gpBox .gp-rules li{counter-increment:gpr;position:relative;padding:10px 12px 10px 44px;background:#f8fafc;border-radius:11px;display:flex;flex-direction:column;gap:2px}
+#gpBox .gp-rules li::before{content:counter(gpr);position:absolute;left:12px;top:10px;width:22px;height:22px;border-radius:7px;background:#0f172a;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+#gpBox .gp-rules b{font-size:12.5px;color:#0f172a}
+#gpBox .gp-rules span{font-size:12px;color:#64748b;line-height:1.55}
+[dir=rtl] #gpBox .gp-rules li{padding:10px 44px 10px 12px}
+[dir=rtl] #gpBox .gp-rules li::before{left:auto;right:12px}
+/* listings (deal rooms) */
+#gpBox .gp-mk-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+#gpBox .gp-mk .gp-gate,#gpBox .gp-mk .gp-lock{margin-bottom:14px}
+#gpBox .gp-mk-sub{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#0f172a;margin:14px 0 8px}
+#gpBox .gp-mk-sub b{font-size:10.5px;background:#f1f5f9;color:#475569;border-radius:8px;padding:1px 7px}
+#gpBox .gp-rfqs .dcard{background:#fff}
+#gpBox .gp-offers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#gpBox .gp-seller{font-size:11px;color:#64748b;cursor:pointer;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#gpBox .gp-seller:hover{color:#1a56db}
+#gpBox .dc-buyer{cursor:pointer}
+#gpBox .gp-tag{font-size:10.5px;font-weight:800;color:#15803d;background:#f0fdf4;border-radius:6px;padding:3px 8px;white-space:nowrap}
+#gpBox .qt-btn[disabled]{background:#f0fdf4;color:#15803d;cursor:default}
+/* the Manage panel's reports */
+#gx #tab-reports .gp-ok{padding:22px;text-align:center;color:#15803d;font-weight:700}
+/* windows opened from a group (outside #gx) */
+.dbk-ov .gp-opt{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;text-align:start;border:1.5px solid #e2e8f0;background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font:inherit;color:#0f172a}
+.dbk-ov .gp-opt:hover,.dbk-ov .gp-opt:focus-visible{border-color:#1a56db;background:#f8faff}
+.dbk-ov .gp-opt b{font-size:13.5px}
+.dbk-ov .gp-opt small{font-size:12px;color:#64748b}
+.dbk-ov .gp-muted{font-size:12.5px;color:#64748b;line-height:1.55;margin:0 0 10px}
+.dbk-ov .gp-radio{display:flex;align-items:center;gap:8px;padding:7px 2px;font-size:13px;color:#0f172a;cursor:pointer}
+/* phones */
+@media (max-width:640px){
+  #gpBox .gp-disc{padding:12px 10px 18px}
+  #gpBox .panel-body{padding:16px 14px}
+  #gpBox .gp-offers{grid-template-columns:1fr}
+  #gpBox input.gp-msearch{width:100%}
+  #gx .member-row{flex-wrap:wrap}
+  #gx .member-row .member-actions{width:100%;justify-content:flex-start;padding-inline-start:49px}
+  #gx .group-actionbar{padding:12px 14px}
+  #gx .group-meta-stats{flex-wrap:wrap;gap:10px}
+}

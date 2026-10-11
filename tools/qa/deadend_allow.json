@@ -1,0 +1,4 @@
+{
+  "_doc": "Dead ends the owner has approved (tools/qa/deadend_crawler.py). Each entry: {\"id\": \"<page>:<kind>:<hash> from crawl.md\", \"why\": \"...\", \"approved_by\": \"owner\", \"date\": \"YYYY-MM-DD\"}. Starts empty: every dead end fails the crawl until it is fixed or approved here.",
+  "allow": []
+}
