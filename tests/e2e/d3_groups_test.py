@@ -33,6 +33,8 @@ with sync_playwright() as p:
     B.evaluate(f"dxLive.openGroup({gid})"); B.wait_for_timeout(700)
     T('the group detail shows THIS group', B.evaluate("document.getElementById('dt-title').textContent") == G and '2' in B.evaluate("document.querySelector('#groupDetail .group-meta-stats').innerText"))
     T('a member sees member actions, not admin tools', B.evaluate("getComputedStyle(document.getElementById('adminActions')).display") == 'none')
+    T('inside the group: Discussion, Members and About tabs and the composer for a member (D3b)', B.evaluate("[...document.querySelectorAll('#gpBox [data-gpt]')].map(t=>t.dataset.gpt).join()") == 'disc,members,about'
+      and wait_for(lambda: B.evaluate("!!document.querySelector('#gpBox .gp-comp')"), 8))
     B.evaluate("toggleLeaveConfirm()"); B.wait_for_timeout(300); B.evaluate("document.querySelector('#leaveConfirm .cp-btn-confirm').click()"); B.wait_for_timeout(2000)
     T('leaving removes the membership', sql(f"select count(*) from public.group_members where group_id={gid} and user_id='{bb}'") == '0')
     r = B.evaluate(f"dxLive.sb.from('group_members').insert({{group_id:{gid},user_id:'{bb}',role:'admin'}})" + ERR)
@@ -62,6 +64,8 @@ with sync_playwright() as p:
       A.evaluate(TOASTS))
     B.evaluate("goto('feed')"); B.wait_for_timeout(300); B.evaluate("goto('groups')"); wait_for(lambda: B.evaluate(f"!!document.querySelector('#gx .gcard[data-gid=\"{pid}\"]')"), 10)
     T('the invited member sees the private group', B.evaluate(f"!!document.querySelector('#gx .gcard[data-gid=\"{pid}\"]')"))
+    r = B.evaluate(f"(()=>{{var b=document.querySelector('#gx .gcard[data-gid=\"{pid}\"] .gcard-btn');return [b.dataset.gpq||'', b.textContent.trim()]}})()")
+    T('…its card offers "Accept" (the invitation), not Join', r[0] == 'accept' and r[1].endswith('Accept'), r)
     B.evaluate(f"document.querySelector('#gx .gcard[data-gid=\"{pid}\"] .gcard-btn').click()")
     wait_for(lambda: sql(f"select count(*) from public.group_members where group_id={pid} and user_id='{bb}'") == '1', 10)
     T('the invited member joins; member_count 2; the invitation is used up', sql(f"select role from public.group_members where group_id={pid} and user_id='{bb}'") == 'member'

@@ -157,7 +157,26 @@
         P(911001, 6, 'regulatory', '1d ago', 31, { like: 20, insightful: 11 }, 7, 4, 820, '“Preservative-free” claims: EDA now asks for the ISO 11930 challenge-test report for any product labelled preservative-free. Plan the test before you print the cartons.'),
         P(911002, 1, 'innovation', '3d ago', 58, { like: 30, celebrate: 28 }, 11, 0, 1500, 'Our Shaft Hair Serum line passed process validation 🎉 Thank you to everyone here who helped with the stability protocol and the packaging-compatibility questions.',
           [[6, 'Congratulations! Well deserved.', '3d ago', 4]]),
-        P(911003, 6, 'general', '5d ago', 15, { like: 15 }, 9, 0, 400, 'مين جرّب Niacinamide من مورد صيني جديد؟ عايزة أعرف ثبات اللون والريحة بعد ٣ شهور في الـ serum.')] }
+        P(911003, 6, 'general', '5d ago', 15, { like: 15 }, 9, 0, 400, 'مين جرّب Niacinamide من مورد صيني جديد؟ عايزة أعرف ثبات اللون والريحة بعد ٣ شهور في الـ serum.')] },
+
+    /* a private group you are not in (Request to join) and a private group you were invited to (Accept invitation) */
+    { k: 'pv', t: 'Pharmacovigilance Egypt', by: 2, since: '2024-02-20', focus: ['QPPV', 'PSUR / PBRER', 'Signal detection', 'EDA inspections', 'RMP'], markets: 'Egypt',
+      card: { emoji: '🩺', bg: 'linear-gradient(135deg,#0f766e,#2dd4bf)', desc: 'QPPVs and drug-safety teams: signals, PSURs, risk management plans and EDA pharmacovigilance inspections.', count: 410, faces: [['AM', '#7c3aed']], signal: '4 new posts this week', joined: false, priv: true, grid: 1 },
+      about: 'A closed group for qualified persons for pharmacovigilance (QPPVs), their deputies and drug-safety teams in Egypt. Members compare notes on signal management, PSUR/PBRER timelines, risk management plans and what EDA inspectors ask for. Membership is reviewed so that case details can be discussed safely.',
+      rules: [['No patient data', 'Never post anything that could identify a patient or a reporter.'], ['Say your role', 'Admins approve QPPVs, deputies and safety staff; tell us your role when you ask to join.'], ['Inspection findings stay anonymous', 'Share what was asked, never which company was inspected.']],
+      mem: [[2, 'admin', 'Created the group'], [6, 'member', 'Joined 1 year ago'], [5, 'member', 'Joined 6 months ago']],
+      posts: [
+        P(911101, 2, 'regulatory', '1d ago', 26, { like: 16, insightful: 10 }, 7, 0, 390, 'EDA PV inspections this quarter focused on the PSMF annexes: list of local literature sources, the backup QPPV arrangement and evidence of reconciliation with the call centre. Check yours are current.', null, 1),
+        P(911102, 6, 'regulatory', '3d ago', 12, { like: 12 }, 4, 0, 260, 'For a cosmetic with a serious adverse event report: does it go to the EDA PV centre or to the cosmetics department? We had conflicting answers.',
+          [[2, 'Serious events for cosmetics go to the cosmetics vigilance unit — the PV centre forwards them, but it costs you two weeks.', '2d ago', 3]])] },
+    { k: 'sterile', t: 'Sterile Manufacturing Leaders', by: 5, since: '2023-09-05', inv: 2, focus: ['Annex 1', 'Media fills', 'Isolators', 'Environmental monitoring', 'Lyophilisation'], markets: 'Egypt · GCC · Africa',
+      card: { emoji: '💉', bg: 'linear-gradient(135deg,#334155,#64748b)', desc: 'Aseptic processing, EU GMP Annex 1, media fills and sterile line investments — plant and QA leaders.', count: 260, faces: [['OK', '#16a34a'], ['AM', '#7c3aed']], signal: 'Invitation only', joined: false, priv: true, grid: 1 },
+      about: 'An invitation-only group for heads of sterile production, QA and engineering. Topics: Annex 1 contamination control strategies, media-fill failures and investigations, isolator versus RABS decisions, environmental monitoring trends and new filling-line projects.',
+      rules: [['Invitation only', 'Members invite peers who run or audit sterile operations.'], ['Blame-free', 'Investigations are shared to learn, not to judge.'], ['No vendor pitches', 'Suppliers may answer questions; offers go in messages.']],
+      mem: [[5, 'admin', 'Created the group'], [2, 'subadmin', 'Joined 2 years ago'], [7, 'member', 'Joined 1 year ago']],
+      posts: [
+        P(911201, 5, 'regulatory', '6h ago', 31, { like: 19, insightful: 12 }, 8, 2, 480, 'Annex 1 gap assessment done for our vial line. The biggest gaps were not the cleanroom — they were the contamination control strategy document and the glove-integrity testing frequency. Happy to share our CCS outline with members.'),
+        P(911202, 7, 'innovation', '2d ago', 22, { like: 14, insightful: 8 }, 5, 0, 350, 'Isolator or RABS for a new 6,000 vials/hour line? We went isolator: higher capex, but grade C background and far fewer interventions. Payback came from fewer EM excursions.')] }
   ];
   var BY_KEY = {}, BY_TITLE = {};
   SEED.forEach(function (s) { BY_KEY[s.k] = s; BY_TITLE[s.t] = s.k; });
@@ -195,7 +214,7 @@
   }
   function cardByKey(k) { return cards().find(function (c) { return cardKey(c) === k; }) || null; }
   function cardByTitle(t) { return cards().find(function (c) { return otxt(c.querySelector('.gcard-title')) === t; }) || null; }
-  function cardJoined(card) { var b = card && card.querySelector('.gcard-btn'); return !!(b && b.classList.contains('btn-joined')); }
+  function cardJoined(card) { var b = card && card.querySelector('.gcard-btn'); return !!(b && b.classList.contains('btn-joined') && !b.dataset.gpq); }   /* gpq: Requested looks pressed but is not membership */
   function model(card, role) {
     var key = cardKey(card), seed = isLive() || card.dataset.gid ? null : BY_KEY[key] || null, made = st().made.find(function (m) { return m.k === key; }) || null;
     var cover = card.querySelector('.gcard-cover'), tag = card.querySelector('.gcard-meta .gtag');
@@ -206,7 +225,8 @@
       count: num(otxt(card.querySelector('.member-count'))), seed: seed, made: made, live: !!card.dataset.gid || isLive() };
     var mine = seed && seed.me ? seed.me : made ? 'admin' : (card.getAttribute('onclick') || '').indexOf('admin') >= 0 ? 'admin' : 'member';
     g.role = member ? (g.live ? (role === 'admin' ? 'admin' : 'member') : (st().roles[key] && st().roles[key][me().id]) || mine) : null;
-    g.pending = !member && !g.live && !!st().req[key];
+    var cb = card.querySelector('.gcard-btn');
+    g.pending = !member && (g.live ? !!(cb && cb.dataset.gpq === 'pending') : !!st().req[key]);   /* live: the adapter paints the card from group_join_requests */
     g.invited = !member && (g.live ? card.dataset.invited === '1' : !!(seed && seed.inv));
     g.since = seed ? seed.since : made ? made.at : null;
     g.by = seed ? seed.by : made ? me().id : null;
@@ -214,6 +234,10 @@
     g.rules = seed ? seed.rules : NEW_RULES;
     g.focus = seed ? seed.focus : [];
     g.markets = seed ? seed.markets : '';
+    if (g.live) {   /* live: the adapter puts the group's own about, rules, creation date and creator on its card */
+      var dz = card.dataset; g.about = dz.about || g.desc; g.since = dz.since || null; g.by = +dz.by || null;
+      try { g.rules = dz.rules ? JSON.parse(dz.rules) : []; } catch (e) { g.rules = []; }
+    }
     g.admin = g.role === 'admin' || g.role === 'subadmin';
     g.canSee = g.member || !g.priv;   /* private: only members see posts, members and listings */
     return g;
@@ -349,7 +373,7 @@
     var ma = q('#memberActions'), aa = q('#adminActions');
     if (ma) ma.style.display = g.role === 'admin' ? 'none' : 'flex';
     if (aa) aa.style.display = g.role === 'admin' ? 'flex' : 'none';
-    var lb = q('#memberActions .btn-leave');
+    var lb = q('#memberActions [data-gpj]') || q('#memberActions .btn-leave');   /* the approved Leave button; it becomes Join / Request / Accept */
     if (lb) {
       lb.onclick = null; lb.removeAttribute('onclick');
       var state = g.member ? 'leave' : g.invited ? 'accept' : g.priv ? (g.pending ? 'pending' : 'request') : 'join';
@@ -396,7 +420,7 @@
     if (g.admin && !self && (g.role === 'admin' || m.role === 'member')) {
       acts += '<button type="button" class="action-btn" aria-label="Member options" onclick="toggleDropdown(this)">⋯</button><div class="dropdown-menu">' +
         (m.role !== 'admin' && g.role === 'admin' ? '<div class="dd-item" data-gpd="admin" role="button" tabindex="0">👑 Promote to Admin</div>' : '') +
-        (m.role === 'member' ? '<div class="dd-item" data-gpd="subadmin" role="button" tabindex="0">🛡️ Promote to Sub-Admin</div>' : '') +
+        (m.role === 'member' && !g.live ? '<div class="dd-item" data-gpd="subadmin" role="button" tabindex="0">🛡️ Promote to Sub-Admin</div>' : '') +   /* live: the database knows admins and members only */
         (m.role !== 'member' ? '<div class="dd-item" data-gpd="member" role="button" tabindex="0">👤 Demote to Member</div>' : '') +
         '<div class="dd-divider"></div><div class="dd-item" data-gpd="msg" role="button" tabindex="0">💬 Message</div><div class="dd-item danger" data-gpd="remove" role="button" tabindex="0">🚫 Remove from group</div></div>';
     }
@@ -500,7 +524,7 @@
     var r = hook('groupPosts', { group: pub(g) });
     if (!r || typeof r.then !== 'function') { CUR.posts = []; CUR.unsupported = true; return; }
     CUR.posts = null; CUR.loading = true;
-    r.then(function (list) { if (!CUR || CUR.g !== g) return; CUR.loading = false; CUR.posts = order(Array.isArray(list) ? list : []); if (CUR.tab === 'disc') paintPane('disc'); },
+    r.then(function (list) { if (!CUR || CUR.g !== g) return; CUR.loading = false; CUR.posts = order(Array.isArray(list) ? list : []); CUR.more = list && typeof list.more === 'function' ? list.more : null; if (CUR.tab === 'disc') paintPane('disc'); },
       function (e) { if (!CUR || CUR.g !== g) return; CUR.loading = false; CUR.posts = []; CUR.err = true; if (CUR.tab === 'disc') paintPane('disc'); });
   }
   function paintDisc(g, el) {
@@ -515,16 +539,40 @@
     el.innerHTML = h;
     var list = el.querySelector('.gp-posts');
     (CUR.posts || []).forEach(function (p) { try { list.appendChild(postEl(p, g)); } catch (e) { if (window.console) console.warn('[groups] post', e); } });
-    adopt(el);
+    adopt(el); moreCtl(el);
+  }
+  /* live: the next page of posts (keyset, as the Home feed) when the end of the list comes into view, or on "Show more posts" */
+  var moreIO = null;
+  function moreCtl(el) {
+    if (moreIO) { moreIO.disconnect(); moreIO = null; }
+    var old = el.querySelector('.gp-loadmore'); if (old) old.remove();
+    if (!CUR || !CUR.more) return;
+    var list = el.querySelector('.gp-posts'); if (!list) return;
+    list.insertAdjacentHTML('afterend', '<div class="gp-more gp-loadmore" data-gpa="more" role="button" tabindex="0">Show more posts</div>');
+    if ('IntersectionObserver' in window) { moreIO = new IntersectionObserver(function (en) { if (en[0] && en[0].isIntersecting) loadMore(); }, { rootMargin: '400px' }); moreIO.observe(el.querySelector('.gp-loadmore')); }
+  }
+  function loadMore() {
+    if (!CUR || !CUR.more || CUR.moreBusy) return;
+    var g = CUR.g, r = CUR.more(); if (!r || typeof r.then !== 'function') { CUR.more = null; return; }
+    CUR.moreBusy = true;
+    r.then(function (list) {
+      if (!CUR || CUR.g !== g) return; CUR.moreBusy = false; list = Array.isArray(list) ? list : [];
+      var have = {}; (CUR.posts || []).forEach(function (p) { have[p.id] = 1; });
+      var fresh = list.filter(function (p) { return !have[p.id]; });
+      CUR.posts = (CUR.posts || []).concat(fresh); CUR.more = typeof list.more === 'function' ? list.more : null;
+      var el = pane('disc'), ul = el && el.querySelector('.gp-posts'); if (!ul) return;
+      fresh.forEach(function (p) { try { ul.appendChild(postEl(p, g)); } catch (e) {} }); adopt(ul); moreCtl(el);
+    }, function (e) { if (CUR) CUR.moreBusy = false; D.toast((window.dxLive && window.dxLive.friendly ? window.dxLive.friendly(e) : (e && e.message)) || 'Could not load more posts — try again'); });
+  }
+  function liveMembers(g) {   /* live: the member list once per opening; the Members and About tabs are drawn again when it arrives */
+    if (!g.live || CUR.members || CUR.mLoading) return;
+    var r = hook('groupMembers', { group: pub(g) });
+    if (r && typeof r.then === 'function') { CUR.mLoading = true; r.then(function (l) { if (!CUR || CUR.g !== g) return; CUR.mLoading = false; CUR.members = Array.isArray(l) ? l : []; if (CUR.tab === 'members' || CUR.tab === 'about') paintPane(CUR.tab); }, function () { if (CUR && CUR.g === g) { CUR.mLoading = false; CUR.members = []; if (CUR.tab === 'members' || CUR.tab === 'about') paintPane(CUR.tab); } }); }
+    else CUR.members = [];
   }
   function paintMembers(g, el) {
+    liveMembers(g);
     var rows = g.live ? (CUR.members || null) : demoMembers(g);
-    if (g.live && !CUR.members && !CUR.mLoading) {
-      var r = hook('groupMembers', { group: pub(g) });
-      if (r && typeof r.then === 'function') { CUR.mLoading = true; r.then(function (l) { if (!CUR || CUR.g !== g) return; CUR.mLoading = false; CUR.members = Array.isArray(l) ? l : []; if (CUR.tab === 'members') paintPane('members'); }, function () { if (CUR) { CUR.mLoading = false; CUR.members = []; } }); }
-      else CUR.members = [];
-      rows = CUR.members;
-    }
     if (!g.canSee) rows = (rows || []).filter(function (m) { return m.role === 'admin'; });
     var h = '<div class="member-list-title"><span>Members (' + fmtN(Math.max(g.count, (rows || []).length)) + ')</span>' +
       (g.canSee ? '<input type="search" class="member-search gp-msearch" placeholder="🔍 Search members" aria-label="Search members">' : '') + '</div>';
@@ -539,6 +587,7 @@
     el.innerHTML = h;
   }
   function paintAbout(g, el) {
+    liveMembers(g);
     var by = g.by && person(g.by), d = g.since ? new Date(g.since + (g.since.length === 10 ? 'T12:00:00' : '')) : null;
     var date = d && !isNaN(d) ? (window.dxFmtDate ? window.dxFmtDate(d, false, 'en') : d.toDateString()) : '';
     var admins = (g.live ? (CUR.members || []) : demoMembers(g)).filter(function (m) { return m.role === 'admin' || m.role === 'subadmin'; });
@@ -598,18 +647,24 @@
     var dp = document.querySelector('#groupDetail .detail-overlay, #groupDetail'); if (dp) dp.scrollTop = 0;
   }
   function refresh(tab) {   /* the group on screen changed (joined, left, requested…): header + inside again, same tab */
-    if (!CUR) return; var card = CUR.g.card; if (!card || !card.isConnected) return;
+    if (!CUR) return; var card = CUR.g.card; if (!card || !card.isConnected) card = cardByKey(CUR.g.key); if (!card) return;   /* live: the cards may have been drawn again meanwhile */
     var g = model(card, CUR.g.role); if (!g.live) paintHeader(g); render(g, tab || CUR.tab);
   }
 
   /* ───────────────────────── membership (demo) ───────────────────────── */
-  function paintCard(card, state) {   /* state: joined | join | request | pending */
+  function paintCard(card, state) {   /* state: joined | join | request | pending | accept (invited) */
     var b = card.querySelector('.gcard-btn'); if (!b) return;
-    var on = state === 'joined' || state === 'pending';
-    b.classList.toggle('btn-joined', on); b.classList.toggle('btn-join', !on);
-    b.textContent = { joined: '✓ Joined', join: '+ Join', request: '🔒 Request', pending: '⏳ Requested' }[state];
+    var on = state === 'joined', wait = state === 'pending';   /* a pending request is not membership (the page's "My Groups" filter counts .btn-joined) */
+    b.classList.toggle('btn-joined', on); b.classList.toggle('btn-join', !on && !wait); b.classList.toggle('gp-pending', wait);
+    b.textContent = { joined: '✓ Joined', join: '+ Join', request: '🔒 Request', pending: '⏳ Requested', accept: '✉️ Accept' }[state];
     b.setAttribute('aria-pressed', state === 'joined' ? 'true' : 'false');
-    if (state === 'pending' || state === 'request') b.dataset.gpq = state; else delete b.dataset.gpq;
+    if (state === 'pending' || state === 'request' || state === 'accept') b.dataset.gpq = state; else delete b.dataset.gpq;
+    if (state === 'joined' || state === 'join') { var wb = card.querySelector('.why-banner'); if (wb && /✉️/.test(wb.textContent)) wb.remove(); }
+  }
+  function idleState(card) {   /* the card button of a group you are not in */
+    if (!/private/i.test(otxt(card.querySelector('.gcard-meta')))) return 'join';
+    var k = cardKey(card), sd = BY_KEY[k];
+    return sd && sd.inv && !card.dataset.gid ? 'accept' : st().req[k] ? 'pending' : 'request';
   }
   function setMember(card, on, quiet) {
     var t = otxt(card.querySelector('.gcard-title')), key = cardKey(card), was = cardJoined(card);
@@ -617,7 +672,7 @@
       var mc = card.querySelector('.member-count');
       if (mc) { var raw = otxt(mc), n = num(raw) + (on ? 1 : -1); mc.textContent = fmtN(Math.max(0, n)) + (/members/.test(raw) ? ' members' : ''); }
     }
-    paintCard(card, on ? 'joined' : (/private/i.test(otxt(card.querySelector('.gcard-meta'))) ? 'request' : 'join'));
+    paintCard(card, on ? 'joined' : idleState(card));
     var j = ls('groups_joined').filter(function (x) { return x !== t; }), left = ls('groups_left').filter(function (x) { return x !== t; });
     if (on) j.push(t); else left.push(t);
     ls('groups_joined', j); ls('groups_left', left);
@@ -738,7 +793,9 @@
     else gone();
   }
   function pin(p) {
-    var g = CUR.g; p.pin = !p.pin; commit(g, p, p.pin ? 'pin' : 'unpin', {});
+    var g = CUR.g; p.pin = !p.pin;   /* one pinned post per group (as groups.pinned_post_id): pinning replaces the previous one */
+    if (p.pin) (CUR.posts || []).forEach(function (x) { if (x !== p && x.pin) { x.pin = false; if (!g.live) persist(g, x); } });
+    commit(g, p, p.pin ? 'pin' : 'unpin', {});
     CUR.posts = g.live ? order(CUR.posts) : order(demoPosts(g)); paintPane('disc'); D.toast(p.pin ? 'Pinned to the top of the group' : 'Post unpinned');
   }
   function savePost(p) { p.saved = !p.saved; commit(CUR.g, p, p.saved ? 'save' : 'unsave', {}); repaint(p); D.toast(p.saved ? 'Post saved! 🔖' : 'Post removed from saved'); }
@@ -846,17 +903,24 @@
     var g = CUR ? CUR.g : null; if (!g) return;
     var u = person(uid), name = u ? u.name : 'member';
     if (act === 'msg') { closeAnd(function () { if (window.messageUser) window.messageUser(uid); else { window.__mxTo = name; window.goto('messages'); } }); return; }
-    if (g.live) { liveCall('groupMembers', { group: pub(g), op: act, uid: uid }); }
     var s = st();
+    var send = function (fin) {   /* live: the change is shown once the database accepted it */
+      if (!g.live) return fin();
+      var r = hook('groupMembers', { group: pub(g), op: act, uid: uid });
+      if (!r || typeof r.then !== 'function') return fin();
+      r.then(fin, function (e) { D.toast((window.dxLive && window.dxLive.friendly ? window.dxLive.friendly(e) : (e && e.message)) || 'Could not save — try again'); });
+    };
     if (act === 'remove') {
-      D.modal({ title: 'Remove ' + name + '?', body: '<div>They will lose access to this group.</div>', primary: { label: 'Remove', danger: true, onClick: function () {
+      D.modal({ title: 'Remove ' + name + '?', body: '<div>They will lose access to this group.</div>', primary: { label: 'Remove', danger: true, onClick: function () { send(function () {
         if (!g.live) { (s.gone[g.key] = s.gone[g.key] || {})[uid] = 1; save(); }
         g.count = Math.max(0, g.count - 1); var mc = g.card && g.card.querySelector('.member-count'); if (mc) { var raw = otxt(mc); mc.textContent = fmtN(Math.max(0, num(raw) - 1)) + (/members/.test(raw) ? ' members' : ''); }
-        refresh(); D.toast(name + ' removed from the group'); } } });
+        refresh(); D.toast(name + ' removed from the group'); }); } } });
       return;
     }
-    if (!g.live) { (s.roles[g.key] = s.roles[g.key] || {})[uid] = act; save(); }
-    refresh(); D.toast(act === 'admin' ? name + ' is now an admin' : act === 'subadmin' ? name + ' is now a sub-admin' : name + ' is now a member');
+    send(function () {
+      if (!g.live) { (s.roles[g.key] = s.roles[g.key] || {})[uid] = act; save(); }
+      refresh(); D.toast(act === 'admin' ? name + ' is now an admin' : act === 'subadmin' ? name + ' is now a sub-admin' : name + ' is now a member');
+    });
   }
 
   /* ───────────────────────── one click handler (capture: before the approved inline handlers) ───────────────────────── */
@@ -876,7 +940,7 @@
     if (mg && !live) { var c2 = cardByTitle(otxt(mg.querySelector('.mg-name'))); if (c2) { e.preventDefault(); e.stopPropagation(); open(c2); } return; }
 
     /* the header's join / leave / request button (demo) */
-    var lb = t.closest('#groupDetail #memberActions .btn-leave');
+    var lb = t.closest('#groupDetail #memberActions [data-gpj]');
     if (lb && lb.dataset.gpj && CUR && !CUR.g.live) { e.preventDefault(); e.stopPropagation(); headerJoin(lb.dataset.gpj); return; }
 
     /* approved windows that act on "the current group" (demo): leave, save settings, archive, delete */
@@ -929,6 +993,7 @@
       else if (act === 'msg') memberAct(+a.dataset.uid, 'msg');
       else if (act === 'conn') connectTo(+a.dataset.uid, a);
       else if (act === 'newlisting') newListing();
+      else if (act === 'more') loadMore();
       return;
     }
     var la = t.closest('[data-gpl]'); if (la) { e.preventDefault(); e.stopPropagation(); var lc = la.closest('[data-lid]'), all = gg.live ? (CUR.listings || []) : demoListings(gg), l = lc && all.find(function (x) { return String(x.id) === lc.dataset.lid; }); if (l && !la.disabled) listingAct(l, la.dataset.gpl); return; }
@@ -994,6 +1059,8 @@
     var c = tpl.cloneNode(true);
     ['.priority-badge', '.why-banner'].forEach(function (s) { var x = c.querySelector(s); if (x) x.remove(); });
     c.removeAttribute('onclick'); c.dataset.gk = o.k; c.style.opacity = '';
+    var by = o.inv && person(o.inv), body = c.querySelector('.gcard-body');
+    if (by && body) body.insertAdjacentHTML('afterbegin', '<div class="why-banner">✉️ <span>Invitation from</span> <span data-noi18n>' + esc(by.name) + '</span></div>');
     var cv = c.querySelector('.gcard-cover'); if (cv) { cv.textContent = o.emoji; cv.style.background = o.bg; }
     c.querySelector('.gcard-title').textContent = o.t;
     var d = c.querySelector('.gcard-desc'); if (d) d.textContent = o.desc;
@@ -1002,6 +1069,7 @@
     var f = c.querySelector('.member-faces'); if (f) f.innerHTML = (o.faces || []).map(function (x) { return '<div class="mini-av" style="background:' + x[1] + '">' + esc(x[0]) + '</div>'; }).join('');
     var mc = c.querySelector('.member-count'); if (mc) mc.textContent = fmtN(o.count) + (o.countWord ? ' members' : '');
     var b = c.querySelector('.gcard-btn'); if (b) { b.className = 'gcard-btn ' + (o.joined ? 'btn-joined' : 'btn-join'); b.textContent = o.joined ? '✓ Joined' : '+ Join'; }
+    if (!o.joined && o.priv) paintCard(c, o.inv ? 'accept' : st().req[o.k] ? 'pending' : 'request');
     return c;
   }
   function initPage(root) {
@@ -1010,10 +1078,13 @@
     var s = st(), first = root.querySelector('.gx-groups-grid'), tpl = root.querySelector('.gx-groups-grid .gcard');
     cards().forEach(function (c) { var k = cardKey(c); if (BY_KEY[k]) c.dataset.gk = k; });
     /* "Your Groups" lists four groups; the fourth (Cosmetics Formulators) had no card, so it could not be opened from the list */
+    var grids = root.querySelectorAll('.gx-groups-grid'), jn = ls('groups_joined'), lf = ls('groups_left');
     SEED.forEach(function (sd) {
       if (!sd.card || cardByKey(sd.k) || !first || !tpl) return;
-      var c = makeCard(tpl, { k: sd.k, t: sd.t, emoji: sd.card.emoji, bg: sd.card.bg, desc: sd.card.desc, count: sd.card.count, faces: sd.card.faces, signal: sd.card.signal, joined: true });
-      first.appendChild(c);
+      var joined = jn.indexOf(sd.t) >= 0 ? true : lf.indexOf(sd.t) >= 0 ? false : sd.card.joined !== false;
+      var c = makeCard(tpl, { k: sd.k, t: sd.t, emoji: sd.card.emoji, bg: sd.card.bg, desc: sd.card.desc, count: sd.card.count + (joined && sd.card.joined === false ? 1 : 0), faces: sd.card.faces, signal: sd.card.signal,
+        joined: joined, priv: sd.card.priv, deal: sd.card.deal, inv: joined ? null : sd.inv, countWord: sd.card.joined === false });
+      (grids[sd.card.grid || 0] || first).appendChild(c);
     });
     /* groups you created */
     (s.made || []).forEach(function (m) {
@@ -1026,7 +1097,7 @@
       if (s.del[k]) { c.remove(); return; }
       var ov = s.ov[k]; if (ov) { c.dataset.gk = k; c.querySelector('.gcard-title').textContent = ov.t; var d = c.querySelector('.gcard-desc'); if (d) d.textContent = ov.d; }
       if (s.arch[k]) archiveCard(c);
-      if (!cardJoined(c) && /private/i.test(otxt(c.querySelector('.gcard-meta')))) paintCard(c, s.req[k] ? 'pending' : 'request');
+      if (!cardJoined(c) && /private/i.test(otxt(c.querySelector('.gcard-meta')))) paintCard(c, idleState(c));
     });
   }
   /* creating a group (demo): the approved window makes the card; it is remembered so it is still there after a reload */
@@ -1073,6 +1144,8 @@
 
   window.dxGroups = {
     open: function (name, tab) { if (document.body.getAttribute('data-page') !== 'groups' && typeof window.goto === 'function') window.goto('groups'); var r = document.getElementById('gx'); if (r) { wire(); initPage(r); } return open(name, tab); },
+    pick: function (card, tab) { if (card && card.nodeType === 1) { LAST_CARD = card; OPEN_ARGS = { tab: tab || 'disc' }; } },
+    refresh: function (tab) { refresh(tab); },
     joinClick: joinClick, current: function () { return CUR ? { key: CUR.g.key, title: CUR.g.title, tab: CUR.tab, member: CUR.g.member, role: CUR.g.role, posts: (CUR.posts || []).length } : null; },
     seed: SEED, adopt: adopt
   };

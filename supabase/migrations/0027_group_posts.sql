@@ -39,18 +39,30 @@ create index if not exists idx_posts_main_feed on public.posts (created_at desc,
 create index if not exists idx_groups_pinned_post on public.groups (pinned_post_id) where pinned_post_id is not null;   -- FK (post deleted → unpinned)
 
 -- ── 2. who can read a group's posts ──────────────────────────────────────────────────────────
--- (used by row policies, so every role that reads the table can run it — like is_group_member())
+-- (the view/share counters below; the row policy uses readable_group_ids(), the same rule as a set)
 create or replace function public.can_read_group(gid bigint) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.groups g where g.id = gid
                  and (g.type = 'public' or exists (select 1 from public.group_members m where m.group_id = gid and m.user_id = auth.uid())))
 $$;
 revoke all on function public.can_read_group(bigint) from public, anon, authenticated, service_role;
-grant execute on function public.can_read_group(bigint) to public, anon, authenticated, service_role;
+grant execute on function public.can_read_group(bigint) to authenticated, service_role;
+
+-- the same rule as a set — every public group plus the caller's own groups — for the row policy below: "group_id in (select …)"
+-- is built once per query as a hash, where can_read_group(group_id) ran once per row (someone who is not a member asking for
+-- a private group's feed made the database check all of its posts one by one: 240 ms at 20,000 posts, now 10 ms)
+create or replace function public.readable_group_ids() returns setof bigint
+language sql stable security definer set search_path = public as $$
+  select g.id from public.groups g where g.type = 'public'
+  union
+  select m.group_id from public.group_members m where m.user_id = auth.uid()
+$$;
+revoke all on function public.readable_group_ids() from public, anon, authenticated, service_role;
+grant execute on function public.readable_group_ids() to authenticated, service_role;
 
 -- posts: the main feed (group_id null), your own posts, posts of groups you can read, and Drugbox moderators
 alter policy "posts: everyone can read" on public.posts
-  using (group_id is null or user_id = (select auth.uid()) or public.can_read_group(group_id) or (select public.is_moderator()));
+  using (group_id is null or user_id = (select auth.uid()) or group_id in (select public.readable_group_ids()) or (select public.is_moderator()));
 -- only a group's members post in it
 alter policy "posts: own insert" on public.posts
   with check ((select auth.uid()) = user_id and (group_id is null or public.is_group_member(group_id)));

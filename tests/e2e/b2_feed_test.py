@@ -18,7 +18,7 @@ with sync_playwright() as p:
     T('author name comes from the database', 'Dr. Alia Author' in pg.inner_text('#content'))
     pg.evaluate("document.querySelectorAll('#content .post')[19].scrollIntoView()"); pg.wait_for_timeout(2500)
     n2 = pg.evaluate("document.querySelectorAll('#content .post').length"); ids = pg.evaluate("[...document.querySelectorAll('#content .post')].map(e=>e.id)")
-    total = int(sql("select count(*) from public.posts")); want = min(40, total)
+    total = int(sql("select count(*) from public.posts where group_id is null")); want = min(40, total)   # group posts (0027) live in their group, not in the feed
     T(f'scrolling loads the next page (expected {want} of {total}), no duplicates', n2 == want and len(set(ids)) == n2, n2)
     pg.evaluate("showPostModal()"); pg.wait_for_timeout(300); pg.fill('#postBody', f'My first real post {stamp}'); pg.select_option('#postCat', 'market'); pg.evaluate("submitPost()"); pg.wait_for_timeout(2500)
     T('new post saved in the database with its category', sql(f"select category from public.posts where body='My first real post {stamp}'") == 'market')

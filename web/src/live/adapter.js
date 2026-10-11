@@ -159,8 +159,9 @@
       files: media.filter(function (m) { return m.type !== 'image' && safeUrl(m.url); }).map(function (m) { return { name: txt(m.name), size: +m.size || 0, url: safeUrl(m.url) }; }),
       reactions: (r.like_count ? { like: r.like_count } : {}) }; }
   async function fetchPage() {
-    var q = sb.from('posts').select('*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*)').order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
-    /* keyset (created_at, id) < cursor: the extra created_at <= T is an index condition, so a deep page reads one page of the index
+    var q = sb.from('posts').select('*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*)').is('group_id', null).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
+    /* group posts (0027) live in their group, never in the main feed — the filter is also what lets the main feed use its own index;
+       keyset (created_at, id) < cursor: the extra created_at <= T is an index condition, so a deep page reads one page of the index
        instead of every newer row (F-111); the or() keeps the exact tie-break */
     if (FEED.cursor) q = q.lte('created_at', FEED.cursor.t).or('created_at.lt.' + FEED.cursor.t + ',and(created_at.eq.' + FEED.cursor.t + ',id.lt.' + FEED.cursor.id + ')');
     var r = await q; if (r.error) throw r.error; var rows = r.data || [], ids = rows.map(function (x) { return x.id; });
@@ -213,7 +214,10 @@
   function rid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
   /* a storage key never takes raw text from a file name: letters and digits only, at most 8 (F-123) */
   function safeExt(name) { var n = String(name || ''), i = n.lastIndexOf('.'); return (i > 0 ? n.slice(i + 1).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8) : '') || 'bin'; }
-  async function blobOf(x) { if (x instanceof Blob) return x; var r = await fetch(x); return r.blob(); }
+  async function blobOf(x) { if (x instanceof Blob) return x;
+    var m = /^data:([^;,]+);base64,(.*)$/.exec(String(x));   /* a photo made smaller in the browser (groups.js): decoded here, never fetched (CSP connect-src) */
+    if (m) { var bin = atob(m[2]), u8 = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return new Blob([u8], { type: m[1] }); }
+    var r = await fetch(x); return r.blob(); }
   async function uploadPostMedia(postId, imgs, files) {
     var out = { imgs: [], files: [] }, rows = [];
     for (var i = 0; i < imgs.length; i++) { var b = await blobOf(imgs[i]), path = 'posts/' + ME_UUID + '/' + postId + '-' + rid() + '.' + (EXT[b.type] || 'jpg');
@@ -1347,20 +1351,29 @@
   Object.assign(window.dxLive, { loadTrust: loadTrust, loadJobs: function () { return loadJobs(); }, version: 'D2b' });
 
   /* ═══════════════ D3 — groups page from the database (the approved group card is the template) ═══════════════ */
-  var GX = { tpl: null, groups: [], mine: {}, at: 0, cur: null, loading: false, snap: {} };
+  var GX = { tpl: null, groups: [], mine: {}, at: 0, cur: null, loading: false, snap: {}, inv: {}, req: {}, act: {} };
   var GRAD = [['#1040a0', '#2D6BE4'], ['#0E6B4E', '#16A34A'], ['#6D28D9', '#A855F7'], ['#B45309', '#F59E0B'], ['#0E7490', '#06B6D4'], ['#BE185D', '#EC4899']];
   async function loadGroups() {
-    var a = await Promise.all([sb.from('groups').select('*').order('member_count', { ascending: false }).order('created_at', { ascending: false }).limit(60),
+    var GCOLS = '*, creator:profiles!groups_created_by_fkey(' + PCOLS + ')';
+    var a = await Promise.all([sb.from('groups').select(GCOLS).order('member_count', { ascending: false }).order('created_at', { ascending: false }).limit(60),
                                sb.from('group_members').select('group_id, role').eq('user_id', ME_UUID),
-                               sb.from('group_invites').select('g:groups(*)').eq('user_id', ME_UUID).limit(50)]);
+                               sb.from('group_invites').select('group_id, g:groups(' + GCOLS + ')').eq('user_id', ME_UUID).limit(50),
+                               sb.from('group_join_requests').select('group_id').eq('user_id', ME_UUID).eq('status', 'pending').limit(50)]);
     if (a[0].error) throw a[0].error; if (a[1].error) throw a[1].error;
     GX.groups = a[0].data || [];
+    GX.inv = {}; ((a[2] && a[2].data) || []).forEach(function (x) { GX.inv[x.group_id] = true; });
+    GX.req = {}; ((a[3] && a[3].data) || []).forEach(function (x) { GX.req[x.group_id] = true; });
     var inv = ((a[2] && a[2].data) || []).map(function (x) { return x.g; }).filter(function (g) { return g && !GX.groups.some(function (y) { return y.id === g.id; }); });
     GX.groups = inv.concat(GX.groups);                                   /* groups I was invited to come first, so the invitation can be taken up (F-29) */
-    var gone = (a[1].data || []).map(function (m) { return m.group_id; }).filter(function (id) { return !GX.groups.some(function (g) { return g.id === id; }); }).slice(0, 100);
-    if (gone.length) { var mg = await sb.from('groups').select('*').in('id', gone); if (!mg.error) GX.groups = GX.groups.concat(mg.data || []); }   /* my groups outside the 60 biggest */
+    var gone = (a[1].data || []).map(function (m) { return m.group_id; }).concat(Object.keys(GX.req).map(Number))
+      .filter(function (id, i, l) { return l.indexOf(id) === i && !GX.groups.some(function (g) { return g.id === id; }); }).slice(0, 100);
+    if (gone.length) { var mg = await sb.from('groups').select(GCOLS).in('id', gone); if (!mg.error) GX.groups = GX.groups.concat(mg.data || []); }   /* my groups (and my requests) outside the 60 biggest */
     GX.mine = {}; (a[1].data || []).forEach(function (m) { GX.mine[m.group_id] = m.role; }); GX.at = Date.now();
-    GX.snap = {}; GX.groups.forEach(function (g) { if (GX.mine[g.id]) GX.snap[g.name] = true; });
+    GX.snap = {}; GX.groups.forEach(function (g) { if (GX.mine[g.id]) GX.snap[g.name] = true; putUser(g.creator); });
+    if (GX.cur) GX.cur = GX.groups.find(function (g) { return g.id === GX.cur.id; }) || GX.cur;
+    /* "N new posts this week" on the cards and "N new posts today" in the header (0027 group_activity, one call for every card) */
+    var ids = GX.groups.map(function (g) { return g.id; }).slice(0, 100);
+    if (ids.length) { var ac = await sb.rpc('group_activity', { p_ids: ids }); if (!ac.error) { GX.act = {}; (ac.data || []).forEach(function (x) { GX.act[x.group_id] = x; }); } }
   }
   function groupCard(g) {
     var c = el(GX.tpl), gr = GRAD[g.id % GRAD.length], joined = !!GX.mine[g.id];
@@ -1370,10 +1383,30 @@
     var t = c.querySelector('.gcard-title'); if (t) t.textContent = g.name;
     var d = c.querySelector('.gcard-desc'); if (d) d.textContent = g.description || '';
     var m = c.querySelector('.gcard-meta'); if (m) m.innerHTML = '<span class="gtag gtag-deal">' + esc2(g.topic || 'DISCUSS') + '</span><span class="gtag gtag-public">' + (g.type === 'private' ? 'Private' : 'Public') + '</span>';
-    var sig = c.querySelector('.activity-signal'); if (sig) sig.remove();
+    var sig = c.querySelector('.activity-signal'), ac = GX.act[g.id];
+    if (sig) { if (ac && ac.posts_week > 0) { sig.className = 'activity-signal'; sig.textContent = ac.posts_week.toLocaleString('en') + (ac.posts_week === 1 ? ' new post this week' : ' new posts this week'); } else sig.remove(); }
     var mc = c.querySelector('.member-count'); if (mc) mc.textContent = (g.member_count || 0).toLocaleString('en') + ' members';
-    var b = c.querySelector('.gcard-btn'); if (b) { b.classList.toggle('btn-joined', joined); b.classList.toggle('btn-join', !joined); b.textContent = joined ? '✓ Joined' : '+ Join'; }
+    /* what the inside of the group (groups.js) shows under About: the group's own text, rules, creation date and creator */
+    c.dataset.about = txt(g.description || ''); c.dataset.rules = JSON.stringify(rulesOf(g.rules)); c.dataset.since = g.created_at || ''; c.dataset.by = g.created_by ? aid(g.created_by) : '';
+    paintCardState(c, g);
     return c;
+  }
+  /* the card's button: ✓ Joined · + Join (public) · ✉️ Accept (invited) · 🔒 Request / ⏳ Requested (private) — as groups.js paints it */
+  function cardState(g) { return GX.mine[g.id] ? 'joined' : GX.inv[g.id] ? 'accept' : g.type === 'private' ? (GX.req[g.id] ? 'pending' : 'request') : 'join'; }
+  function paintCardState(c, g) {
+    var b = c.querySelector('.gcard-btn'), st = cardState(g); if (!b) return;
+    var on = st === 'joined', wait = st === 'pending';
+    b.classList.toggle('btn-joined', on); b.classList.toggle('btn-join', !on && !wait); b.classList.toggle('gp-pending', wait);
+    b.textContent = { joined: '✓ Joined', join: '+ Join', request: '🔒 Request', pending: '⏳ Requested', accept: '✉️ Accept' }[st];
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (st === 'pending' || st === 'request' || st === 'accept') b.dataset.gpq = st; else delete b.dataset.gpq;
+    if (st === 'accept') c.dataset.invited = '1'; else delete c.dataset.invited;
+    var mc = c.querySelector('.member-count'); if (mc) mc.textContent = (g.member_count || 0).toLocaleString('en') + ' members';
+  }
+  /* groups.rules is plain text, one rule per line ("Title: explanation" or "Title — explanation") */
+  function rulesOf(t) {
+    return String(t || '').split(/\n+/).map(function (l) { return txt(l.trim()); }).filter(Boolean).slice(0, 20).map(function (l) {
+      var m = /^(.{1,80}?)\s*(?:—|:|–)\s+(.+)$/.exec(l); return m ? [m[1], m[2]] : [l, '']; });
   }
   function paintGroups() {
     var root = document.getElementById('gx'); if (!root) return;
@@ -1384,17 +1417,14 @@
     GX.groups.forEach(function (g) { list.appendChild(groupCard(g)); });
     if (!GX.groups.length) list.insertAdjacentHTML('beforeend', '<div class="dx-gx-empty" style="padding:18px;color:#65676b;font-size:13px">No groups yet — create the first one.</div>');
   }
-  window.dxLive.openGroup = function (gid) {
+  window.dxLive.openGroup = function (gid, tab) {
     var g = GX.groups.find(function (x) { return x.id === gid; }); if (!g) return; GX.cur = g;
+    var card = document.querySelector('#gx .gcard[data-gid="' + gid + '"]');
+    if (card && window.dxGroups && window.dxGroups.pick) window.dxGroups.pick(card, tab);   /* groups.js draws the inside of THIS group */
+    var t = document.getElementById('dt-title'); if (t) t.textContent = g.name;
     window.openGroup(GX.mine[gid] === 'admin' ? 'admin' : 'member');
-    var D = document.getElementById('groupDetail'); if (!D) return;
-    var q = function (s) { return D.querySelector(s); };
-    if (q('.group-cover-emoji')) q('.group-cover-emoji').textContent = g.emoji || '👥';
-    if (q('#dt-title')) q('#dt-title').textContent = g.name;
-    if (q('#dt-type')) q('#dt-type').textContent = (/deal/i.test(g.topic) ? '🤝 ' : '💬 ') + (g.topic || 'DISCUSS');
-    if (q('.group-meta-stats')) q('.group-meta-stats').innerHTML = '<div><b>' + (g.member_count || 0).toLocaleString('en') + '</b> members</div><div>' + (g.type === 'private' ? '🔒 Private' : '🌍 Public') + '</div>';
-    if (q('#leaveConfirm .cp-desc')) q('#leaveConfirm .cp-desc').textContent = 'You\u2019ll stop seeing posts from ' + g.name + '.';
-    var ma = q('#memberActions'); if (ma) ma.style.display = GX.mine[gid] === 'member' ? 'flex' : 'none';
+    paintHead(g);
+    if (GX.mine[gid] === 'admin') manageLoad(g);
   };
   /* joining / leaving goes through the approved code's store (groupsJoined, keyed by group name) */
   async function syncJoined(v) {
@@ -1413,13 +1443,8 @@
     var btn = e.target.closest && e.target.closest('#gx .gcard[data-gid] .gcard-btn'); if (!btn || !ME_UUID) return;
     e.preventDefault(); e.stopPropagation();
     var card = btn.closest('.gcard'), gid = +card.dataset.gid, g = GX.groups.find(function (x) { return x.id === gid; }); if (!g || btn.dataset.busy) return;
-    var on = !GX.mine[gid]; btn.dataset.busy = '1';
-    (on ? sb.from('group_members').insert({ group_id: gid, user_id: ME_UUID, role: 'member' }) : sb.from('group_members').delete().eq('group_id', gid).eq('user_id', ME_UUID)).then(function (r) {
-      delete btn.dataset.busy; if (r.error) return toastErr(r.error);
-      if (on) { GX.mine[gid] = 'member'; GX.snap[g.name] = true; g.member_count = (g.member_count || 0) + 1; } else { delete GX.mine[gid]; delete GX.snap[g.name]; g.member_count = Math.max(0, (g.member_count || 1) - 1); }
-      btn.classList.toggle('btn-joined', on); btn.classList.toggle('btn-join', !on); btn.textContent = on ? '✓ Joined' : '+ Join';
-      var mc = card.querySelector('.member-count'); if (mc) mc.textContent = g.member_count.toLocaleString('en') + ' members';
-      window.toast(on ? 'You joined ' + g.name : 'You left ' + g.name); });
+    var st = cardState(g), op = st === 'joined' ? 'leave' : st === 'pending' ? 'cancel' : st === 'request' ? 'request' : 'join'; btn.dataset.busy = '1';
+    gpJoin(g, op).then(function () { delete btn.dataset.busy; }, function (e) { delete btn.dataset.busy; toastErr(e); });
   }, true);
   document.addEventListener('click', function (e) {
     if (!ME_UUID) return;
@@ -1440,7 +1465,7 @@
       var pos = function (sel) { var all = [].slice.call(M.querySelectorAll(sel)); return all.indexOf(M.querySelector(sel + '.selected')); };
       var priv = pos('.privacy-opt') === 1, deal = pos('.type-opt') === 1;
       if (mk.dataset.busy) return; mk.dataset.busy = '1';
-      sb.from('groups').insert({ name: name, description: desc, emoji: deal ? '🤝' : '👥', type: priv ? 'private' : 'public', topic: deal ? 'DEAL ROOM' : 'DISCUSS', created_by: ME_UUID }).select().single().then(function (r) { delete mk.dataset.busy;
+      sb.from('groups').insert({ name: name, description: desc, emoji: deal ? '🤝' : '👥', type: priv ? 'private' : 'public', topic: deal ? 'DEAL ROOM' : 'DISCUSS', created_by: ME_UUID, listed: !(priv && deal) }).select().single().then(function (r) { delete mk.dataset.busy;
         if (r.error) return toastErr(r.error); window.closeCreate(); window.toast('Group created'); return loadGroups().then(paintGroups); }); return; }
     var del = e.target.closest && e.target.closest('#deleteConfirmBtn');
     if (del && GX.cur) { e.preventDefault(); e.stopPropagation(); var g2 = GX.cur, typed = ((document.getElementById('deleteConfirmInput') || {}).value || '').trim();
@@ -1483,6 +1508,274 @@
     if (Date.now() - GX.at > 3000 && !GX.loading) { GX.loading = true; loadGroups().then(function () { GX.loading = false; if (document.body.getAttribute('data-page') === 'groups') paintGroups(); }, function (e) { GX.loading = false; toastErr(e); }); }
     return r;
   };
+
+  /* ═══════════════ D3b — inside a group (0027): discussion, members, about, joining, join requests, the admin's Manage panel ═══════════════
+     groups.js draws the inside of a group from the approved Home post card and member rows and asks for its data through
+     dxLiveHook(kind, payload). A group post IS a post (posts.group_id): likes, comments, photos/files, saves and their
+     notifications are the feed's own tables; who may read or write them is decided by the database (0027), never here. */
+  var RK_IN = { love: 'support' }, RK_OUT = { support: 'love', appreciation: 'like' };   /* reactions.kind: like love insightful celebrate curious */
+  function gOf(d) { var gid = d && d.group ? +d.group.gid : 0, g = GX.groups.find(function (x) { return x.id === gid; }); if (!g) throw new Error('This group is no longer available — open the Groups page again'); return g; }
+  function joinedAgo(ts) {
+    var d = (Date.now() - new Date(ts).getTime()) / 86400000, n, u;
+    if (!(d >= 1)) return 'Joined just now';
+    if (d < 7) { n = Math.floor(d); u = 'day'; } else if (d < 30) { n = Math.floor(d / 7); u = 'week'; } else if (d < 365) { n = Math.floor(d / 30); u = 'month'; } else { n = Math.floor(d / 365); u = 'year'; }
+    return 'Joined ' + n + ' ' + u + (n === 1 ? '' : 's') + ' ago';
+  }
+  function gpPost(r, my, saved, cm, pin) {
+    var media = r.post_media || [], k = my[r.id], n = r.like_count || 0, rx = n ? { like: n } : {}, kk = k ? (RK_IN[k] || k) : null, c = cm[r.id] || [];
+    if (kk && kk !== 'like' && n) { rx.like--; if (!rx.like) delete rx.like; rx[kk] = 1; }
+    return { id: r.id, uid: aid(r.user_id), cat: r.category || 'general', body: r.body || '', ts: ago(r.created_at), created_at: r.created_at,
+      likes: n, rx: rx, liked: !!k, rk: kk, cmt: Math.max(0, (r.comment_count || 0) - c.length), cm: c, sh: r.share_count || 0, views: r.view_count || 0,
+      saved: saved.has(r.id), pin: !!pin && r.id === pin, own: r.user_id === ME_UUID,
+      imgs: media.filter(function (m) { return m.type === 'image' && safeUrl(m.url); }).map(function (m) { return safeUrl(m.url); }),
+      files: media.filter(function (m) { return m.type !== 'image' && safeUrl(m.url); }).map(function (m) { return { name: txt(m.name), size: +m.size || 0, url: safeUrl(m.url) }; }) };
+  }
+  /* one request per page: the posts with their author and files, MY reaction and save (embedded rows filtered to me) and each post's
+     latest 20 comments — the database's row rules apply to every embedded row as to the posts themselves */
+  function gpQuery(g) {
+    return sb.from('posts').select('*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*), my:reactions(kind, user_id), sv:saved_posts(user_id), ' +
+      'cm:comments(post_id, user_id, body, created_at, author:profiles!comments_user_id_fkey(' + PCOLS + '))')
+      .eq('group_id', g.id).eq('my.user_id', ME_UUID).eq('sv.user_id', ME_UUID)
+      .order('created_at', { referencedTable: 'cm', ascending: false }).order('id', { referencedTable: 'cm', ascending: false }).limit(20, { referencedTable: 'cm' });
+  }
+  /* one page of a group's posts (keyset on created_at, id — as the Home feed, index idx_posts_group_feed); the pinned post
+     (groups.pinned_post_id) comes first on page 1 and is skipped on later pages */
+  async function gpPage(g, cursor) {
+    var pin = g.pinned_post_id || null;
+    var q = gpQuery(g).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
+    if (cursor) q = q.lte('created_at', cursor.t).or('created_at.lt.' + cursor.t + ',and(created_at.eq.' + cursor.t + ',id.lt.' + cursor.id + ')');
+    var jobs = [q]; if (!cursor && pin) jobs.push(gpQuery(g).eq('id', pin).limit(1));
+    var a = await Promise.all(jobs); if (a[0].error) throw a[0].error;
+    var rows = a[0].data || [], last = rows[rows.length - 1], full = rows.length === PAGE;
+    if (a[1] && !a[1].error && (a[1].data || []).length && !rows.some(function (x) { return x.id === pin; })) rows = a[1].data.concat(rows);
+    if (cursor && pin) rows = rows.filter(function (x) { return x.id !== pin; });
+    var my = {}, saved = new Set(), cm = {};
+    rows.forEach(function (x) {
+      putUser(x.author);
+      if ((x.my || []).length) my[x.id] = x.my[0].kind || 'like';
+      if ((x.sv || []).length) saved.add(x.id);
+      cm[x.id] = (x.cm || []).slice().reverse().map(function (c) { putUser(c.author); return { uid: aid(c.user_id), text: c.body, ts: ago(c.created_at), likes: 0 }; });
+    });
+    var out = rows.map(function (x) { return gpPost(x, my, saved, cm, pin); });
+    if (full && last) { var next = { t: last.created_at, id: last.id }; out.more = function () { return gpPage(g, next); }; }
+    return out;
+  }
+  async function gpWrite(r, what) { r = await r; if (r.error) throw r.error; if (what && Array.isArray(r.data) && !r.data.length) throw new Error(what); return r.data; }
+  /* every change made inside a group: groups.js shows it at once and undoes it when this refuses */
+  async function gpOp(d) {
+    var g = gOf(d), p = d.post || {}, id = p.id;
+    switch (d.op) {
+      case 'create': {
+        var row = await gpWrite(sb.from('posts').insert({ user_id: ME_UUID, body: p.body || '', category: p.cat || 'general', group_id: g.id }).select().single());
+        var imgs = p.imgs && p.imgs.length ? p.imgs : (d.imageFiles || []), files = d.file ? [d.file] : [];
+        var m = imgs.length || files.length ? await uploadPostMedia(row.id, imgs, files) : { imgs: [], files: [] };
+        var ac = GX.act[g.id] = GX.act[g.id] || { group_id: g.id, posts_today: 0, posts_week: 0 }; ac.posts_today++; ac.posts_week++;
+        return { id: row.id, created_at: row.created_at, ts: 'just now', imgs: m.imgs, files: m.files, own: true };
+      }
+      case 'react': return gpWrite(sb.from('reactions').upsert({ post_id: id, user_id: ME_UUID, kind: RK_OUT[d.kind] || d.kind || 'like' }, { onConflict: 'post_id,user_id' }));
+      case 'unreact': return gpWrite(sb.from('reactions').delete().eq('post_id', id).eq('user_id', ME_UUID));
+      case 'comment': return gpWrite(sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: (d.comment && d.comment.text) || '' }));
+      case 'commentLike': throw new Error('Liking comments is not available yet');
+      case 'share': {   /* "Repost to your feed" (public groups only — groups.js never offers it for a private one) */
+        var who = (window.USERS || []).find(function (u) { return u.id === p.uid; }) || window.ME;
+        var body = ('Shared from ' + g.name + ' — ' + (who ? who.name : 'a member') + ':\n\n' + (p.body || '')).slice(0, 5000);
+        await gpWrite(sb.from('posts').insert({ user_id: ME_UUID, body: body, category: p.cat || 'general' }));
+        sb.rpc('increment_post_share', { p_id: id }).then(function () {}, function () {});
+        FEED.at = 0; return;
+      }
+      case 'edit': return gpWrite(sb.from('posts').update({ body: p.body || '' }).eq('id', id).select('id'), 'This post could not be changed');
+      case 'delete': case 'remove': {
+        await gpWrite(sb.from('posts').delete().eq('id', id).select('id'), 'This post could not be removed');
+        if (g.pinned_post_id === id) g.pinned_post_id = null; if (GX.cur && GX.cur.id === g.id && GX.mine[g.id] === 'admin') manageLoad(g); return;
+      }
+      case 'pin': case 'unpin': {
+        var pr = await sb.rpc('group_pin_post', { p_group: g.id, p_post: d.op === 'pin' ? id : null }); if (pr.error) throw pr.error;
+        g.pinned_post_id = d.op === 'pin' ? id : null; return;
+      }
+      case 'save': return gpWrite(sb.from('saved_posts').upsert({ user_id: ME_UUID, post_id: id }, { onConflict: 'user_id,post_id' }));
+      case 'unsave': return gpWrite(sb.from('saved_posts').delete().eq('user_id', ME_UUID).eq('post_id', id));
+      case 'report': {
+        var why = (String(d.reason || 'Breaks the group rules') + (d.note ? ' — ' + d.note : '')).slice(0, 500);
+        var rr = await sb.from('group_post_reports').insert({ post_id: id, reporter: ME_UUID, reason: why });
+        if (rr.error && rr.error.code !== '23505') throw rr.error; return;   /* reported before: the admins already have it */
+      }
+    }
+    throw new Error('This is not available yet');
+  }
+  /* members: admins first, then the newest (50 at a time); only what the database lets this person see (0013/0027) */
+  async function gmList(g) {
+    var r = await sb.from('group_members').select('user_id, role, joined_at, p:profiles!group_members_user_id_fkey(' + PCOLS + ')').eq('group_id', g.id)
+      .order('role', { ascending: true }).order('joined_at', { ascending: false }).limit(50);
+    if (r.error) throw r.error;
+    return (r.data || []).map(function (m) { putUser(m.p); return { uid: aid(m.user_id), role: m.role === 'admin' ? 'admin' : 'member', joined: m.user_id === g.created_by ? 'Created the group' : joinedAgo(m.joined_at), name: m.p ? txt(m.p.name) : '' }; });
+  }
+  async function gmOp(g, op, uid) {
+    var u = uuidOf(uid); if (!u) throw new Error('This member is no longer available');
+    if (op === 'subadmin') throw new Error('Sub-admins are not available yet — make them an admin or keep them a member');
+    if (op === 'remove') { await gpWrite(sb.from('group_members').delete().eq('group_id', g.id).eq('user_id', u).select('user_id'), 'Only the group’s admins can remove members');
+      g.member_count = Math.max(0, (g.member_count || 1) - 1); }
+    else if (op === 'admin' || op === 'member') await gpWrite(sb.from('group_members').update({ role: op }).eq('group_id', g.id).eq('user_id', u).select('user_id'), 'Only the group’s admins can change roles');
+    else throw new Error('This is not available yet');
+    if (GX.cur && GX.cur.id === g.id) manageLoad(g);
+  }
+  /* joining, leaving, asking to join, withdrawing the request, accepting an invitation — the card, the header and the inside agree */
+  async function gpJoin(g, op) {
+    var res;
+    if (op === 'leave') { await gpWrite(sb.from('group_members').delete().eq('group_id', g.id).eq('user_id', ME_UUID).select('user_id'), 'You are not a member of this group');
+      delete GX.mine[g.id]; delete GX.snap[g.name]; g.member_count = Math.max(0, (g.member_count || 1) - 1); res = 'left'; }
+    else if (op === 'cancel') { var c = await sb.rpc('group_cancel_request', { p_group: g.id }); if (c.error) throw c.error; delete GX.req[g.id]; res = 'cancelled'; }
+    else { var r = await sb.rpc('group_request_join', { p_group: g.id }); if (r.error) throw r.error; res = r.data;
+      if (res === 'member') { if (!GX.mine[g.id]) g.member_count = (g.member_count || 0) + 1; GX.mine[g.id] = GX.mine[g.id] || 'member'; GX.snap[g.name] = true; delete GX.req[g.id]; delete GX.inv[g.id]; }
+      else if (res === 'pending') GX.req[g.id] = true; }
+    var paint = function () { var card = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]'); if (card) paintCardState(card, g); if (GX.cur && GX.cur.id === g.id) paintHead(g); };
+    paint(); setTimeout(paint, 0);   /* after groups.js painted the card for the step it asked for (an invitation may make a request a membership) */
+    window.toast(res === 'member' ? 'You joined ' + g.name : res === 'pending' ? 'Request sent to the admins of ' + g.name : res === 'left' ? 'You left ' + g.name : 'Request cancelled');
+    return res;
+  }
+  /* the header of the open group: who I am in it decides the buttons (approved openGroup shows member or admin actions by role) */
+  function paintHead(g) {
+    var D = document.getElementById('groupDetail'); if (!D) return;
+    var q = function (s) { return D.querySelector(s); }, role = GX.mine[g.id], ac = GX.act[g.id], see = !!role || g.type === 'public';
+    if (q('.group-cover-emoji')) q('.group-cover-emoji').textContent = g.emoji || '👥';
+    if (q('#dt-title')) q('#dt-title').textContent = g.name;
+    if (q('#dt-type')) q('#dt-type').textContent = /deal/i.test(g.topic || '') ? '🤝 Deal Room' : '💬 Discussion';
+    if (q('.group-meta-stats')) q('.group-meta-stats').innerHTML = '<div><b>' + (g.member_count || 0).toLocaleString('en') + '</b> members</div>' +
+      (see ? '<div><b>' + ((ac && ac.posts_today) || 0).toLocaleString('en') + '</b> new posts today</div>' : '') + '<div>' + (g.type === 'private' ? '🔒 Private' : '🌍 Public') + '</div>';
+    if (q('#leaveConfirm .cp-desc')) q('#leaveConfirm .cp-desc').textContent = 'You’ll stop seeing posts from ' + g.name + ' and lose access to its members and listings.';
+    var ma = q('#memberActions'), aa = q('#adminActions');
+    if (ma) ma.style.display = role === 'admin' ? 'none' : 'flex'; if (aa) aa.style.display = role === 'admin' ? 'flex' : 'none';
+    var lb = q('#memberActions .btn-leave') || q('#memberActions [data-dxj]');
+    if (lb) {
+      var st = cardState(g), lbl = { joined: '🚪 Leave Group', join: '+ Join Group', request: '🔒 Request to join', pending: '⏳ Request sent', accept: '✉️ Accept invitation' }[st];
+      lb.textContent = lbl; lb.classList.toggle('btn-leave', st === 'joined'); lb.classList.toggle('btn-manage', st !== 'joined');
+      if (st === 'joined') { delete lb.dataset.dxj; lb.onclick = function () { window.toggleLeaveConfirm(); }; } else { lb.dataset.dxj = st; lb.onclick = null; }
+    }
+    [].forEach.call(D.querySelectorAll('#memberActions .btn-secondary'), function (b) { b.style.display = role ? '' : 'none'; });
+    var lc = q('#leaveConfirm'); if (lc && !role) lc.classList.remove('show');
+  }
+  /* the admin's Manage panel: members & roles with the join requests on top, reports from members, settings (name, description, rules) */
+  var MG = { gid: null, busy: false };
+  async function manageLoad(g) {
+    if (GX.mine[g.id] !== 'admin') return; MG.gid = g.id;
+    var a = await Promise.all([
+      sb.from('group_join_requests').select('user_id, message, created_at, p:profiles!group_join_requests_user_id_fkey(' + PCOLS + ')').eq('group_id', g.id).eq('status', 'pending').order('created_at').limit(50),
+      sb.from('group_post_reports').select('post_id, reason, created_at, post:posts(id, body, user_id, author:profiles!posts_user_id_fkey(' + PCOLS + '))').eq('group_id', g.id).eq('status', 'open').order('created_at', { ascending: false }).limit(100),
+      gmList(g)]).catch(function (e) { toastErr(e); return null; });
+    if (!a || MG.gid !== g.id || !GX.cur || GX.cur.id !== g.id) return;
+    paintManage(g, a[0].data || [], a[1].data || [], a[2]);
+  }
+  function paintManage(g, reqs, reps, mem) {
+    var D = document.getElementById('groupDetail'); if (!D) return;
+    var tm = D.querySelector('#tab-members'), old = tm && tm.querySelector('.dx-gp-reqs'); if (old) old.remove();
+    var list = tm && tm.querySelector('.member-list'), title = tm && tm.querySelector('.member-list-title');
+    if (list) list.innerHTML = mem.map(function (m) {
+      var u = (window.USERS || []).find(function (x) { return x.id === m.uid; }) || (m.uid === window.ME.id ? window.ME : null); if (!u) return '';
+      var self = m.uid === window.ME.id, pill = m.role === 'admin' ? '<span class="role-pill rp-admin">👑 Admin</span>' : '<span class="role-pill rp-member">Member</span>';
+      var acts = self ? '<div class="gp-you">You</div>' : '<button type="button" class="action-btn" aria-label="Member options" onclick="toggleDropdown(this)">⋯</button><div class="dropdown-menu">' +
+        (m.role === 'admin' ? '<div class="dd-item" data-gpd="member" role="button" tabindex="0">👤 Demote to Member</div>' : '<div class="dd-item" data-gpd="admin" role="button" tabindex="0">👑 Promote to Admin</div>') +
+        '<div class="dd-divider"></div><div class="dd-item" data-gpd="msg" role="button" tabindex="0">💬 Message</div><div class="dd-item danger" data-gpd="remove" role="button" tabindex="0">🚫 Remove from group</div></div>';
+      return '<div class="member-row" data-uid="' + m.uid + '" style="position:relative"><div class="av" style="background:' + esc2(u.color || '#1a56db') + ';width:38px;height:38px;font-size:13px">' + esc2(u.initials || '?') + '</div>' +
+        '<div><div class="member-name"><span data-noi18n>' + esc2(u.name) + '</span> ' + pill + '</div><div class="member-meta">' + esc2(m.joined || '') + '</div></div><div class="member-actions">' + acts + '</div></div>';
+    }).join('');
+    if (title) { var sp = title.querySelector('span'); if (sp) sp.textContent = 'Members (' + (g.member_count || 0).toLocaleString('en') + ')'; }
+    /* join requests (private groups): above the member list, in the approved moderation-queue item */
+    if (tm && (reqs.length || g.type === 'private')) {
+      var h = '<div class="dx-gp-reqs"><div class="member-list-title"><span>Join requests (' + reqs.length + ')</span></div><div class="mod-queue">' + (reqs.length ? reqs.map(function (r) {
+        putUser(r.p); var who = r.p ? txt(r.p.name) : 'Member', hl = r.p ? String(txt(r.p.headline) || '').split('|')[0].trim() : '';
+        return '<div class="mod-item" data-req="' + aid(r.user_id) + '"><div class="mod-icon">👤</div><div class="mod-content"><div class="mod-title"><b data-noi18n>' + esc2(who) + '</b> <span>asked to join</span></div>' +
+          '<div class="mod-meta">' + (hl ? '<span data-noi18n>' + esc2(hl) + '</span> · ' : '') + '<span>' + esc2(ago(r.created_at)) + '</span></div>' + (r.message ? '<div class="mod-reason" data-noi18n>“' + esc2(txt(r.message)) + '”</div>' : '') +
+          '<div class="mod-actions"><button type="button" class="mod-btn dismiss" data-dxreq="reject">Decline</button><button type="button" class="mod-btn" style="background:#16a34a;color:#fff" data-dxreq="approve">Approve</button></div></div></div>';
+      }).join('') : '<div class="gp-ok">✓ No pending requests</div>') + '</div></div>';
+      var anchor = title || list; if (anchor) anchor.insertAdjacentHTML('beforebegin', h); else tm.insertAdjacentHTML('afterbegin', h);
+    }
+    var tabs = D.querySelectorAll('#managePanel .panel-tabs .gx-ptab');
+    if (tabs[0]) { var rb = tabs[0].querySelector('.dx-req-badge'); if (!rb) { tabs[0].insertAdjacentHTML('beforeend', ' <span class="ptab-badge dx-req-badge"></span>'); rb = tabs[0].querySelector('.dx-req-badge'); } rb.textContent = reqs.length; rb.style.display = reqs.length ? '' : 'none'; }
+    /* reports, one item per post */
+    var by = {}, order = [];
+    reps.forEach(function (r) { if (!r.post) return; var x = by[r.post_id]; if (!x) { x = by[r.post_id] = { post: r.post, n: 0, why: [], at: r.created_at }; order.push(x); } x.n++; if (x.why.length < 3 && x.why.indexOf(r.reason) < 0) x.why.push(r.reason); });
+    var q = D.querySelector('#tab-reports .mod-queue');
+    if (q) q.innerHTML = order.length ? order.map(function (x) {
+      var au = x.post.author; putUser(au); var body = String(x.post.body || '');
+      return '<div class="mod-item report" data-rpost="' + x.post.id + '"><div class="mod-icon">🚩</div><div class="mod-content"><div class="mod-title"><span>Post by</span> <b data-noi18n>' + esc2(au ? txt(au.name) : 'Member') + '</b> <span>' + (x.n > 1 ? 'reported by ' + x.n + ' members' : 'reported by 1 member') + '</span></div>' +
+        '<div class="mod-meta"><span data-noi18n>“' + esc2(txt(body.slice(0, 90)) + (body.length > 90 ? '…' : '')) + '”</span> · <span>' + esc2(ago(x.at)) + '</span></div>' +
+        '<div class="mod-reason" data-noi18n>⚠️ ' + esc2(txt(x.why.join(' · '))) + '</div>' +
+        '<div class="mod-actions"><button type="button" class="mod-btn dismiss" data-dxrep="dismiss">Dismiss report</button><button type="button" class="mod-btn remove" data-dxrep="remove">Remove post</button></div></div></div>';
+    }).join('') : '<div class="gp-ok">✓ No pending reports</div>';
+    var badge = D.querySelector('#managePanel .panel-tabs .gx-ptab:nth-child(2) .ptab-badge'); if (badge) { badge.textContent = order.length; badge.style.display = order.length ? '' : 'none'; }
+    /* settings: the group's own name, description and rules (one rule per line) */
+    var ts = D.querySelector('#tab-settings');
+    if (ts) {
+      var nm = ts.querySelector('.field-input'), ds = ts.querySelector('.field-textarea:not(.dx-rules)'), ru = ts.querySelector('.dx-rules');
+      if (!ru && ds) { var f = ds.closest('.field'); if (f) { f.insertAdjacentHTML('afterend', '<div class="field"><label class="field-label">Group rules</label><textarea class="field-textarea dx-rules" maxlength="4000" placeholder="One rule per line — e.g. Documents first: every offer shows its GMP certificate"></textarea></div>'); ru = ts.querySelector('.dx-rules'); } }
+      if (!ts.dataset.dxFilled || ts.dataset.dxFilled !== String(g.id)) { if (nm) nm.value = g.name; if (ds) ds.value = g.description || ''; if (ru) ru.value = g.rules || ''; ts.dataset.dxFilled = g.id; }
+    }
+  }
+  document.addEventListener('click', function (e) {
+    if (!ME_UUID || !e.target.closest) return;
+    var g = GX.cur, t = e.target;
+    /* the header's Join / Request / Accept / Request sent (not a member): the same step as the button inside the group */
+    var hb = t.closest('#groupDetail #memberActions [data-dxj]');
+    if (hb && g) { e.preventDefault(); e.stopPropagation(); var st = hb.dataset.dxj, op = st === 'pending' ? 'cancel' : st === 'request' ? 'request' : 'join';
+      var inner = document.querySelector('#gpBox [data-gpa="' + (st === 'pending' ? 'cancel' : st === 'accept' ? 'accept' : st) + '"]');
+      if (inner) inner.click(); else gpJoin(g, op).then(function () { if (window.dxGroups && window.dxGroups.refresh) window.dxGroups.refresh(); }, toastErr); return; }
+    var rq = t.closest('#groupDetail [data-dxreq]');
+    if (rq && g) { e.preventDefault(); e.stopPropagation(); if (rq.disabled) return;
+      var item = rq.closest('[data-req]'), u = uuidOf(+item.dataset.req), yes = rq.dataset.dxreq === 'approve', who = (item.querySelector('.mod-title b') || {}).textContent || '';
+      item.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+      sb.rpc('group_decide_request', { p_group: g.id, p_user: u, p_approve: yes }).then(function (r) {
+        if (r.error) { item.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); return toastErr(r.error); }
+        if (yes) { g.member_count = (g.member_count || 0) + 1; var card = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]'); if (card) paintCardState(card, g); paintHead(g); }
+        window.toast(yes ? who + ' is now a member' : 'Request declined'); manageLoad(g); if (yes && window.dxGroups && window.dxGroups.refresh) window.dxGroups.refresh();
+      }, toastErr); return; }
+    var rp = t.closest('#groupDetail #tab-reports [data-dxrep]');
+    if (rp && g) { e.preventDefault(); e.stopPropagation(); if (rp.disabled) return;
+      var it = rp.closest('[data-rpost]'), pid = +it.dataset.rpost, rm = rp.dataset.dxrep === 'remove';
+      it.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+      (rm ? sb.from('posts').delete().eq('id', pid).select('id') : sb.from('group_post_reports').update({ status: 'dismissed' }).eq('group_id', g.id).eq('post_id', pid).eq('status', 'open').select('post_id')).then(function (r) {
+        if (r.error || !(r.data || []).length) { it.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); return toastErr(r.error || { message: 'This report was already answered' }); }
+        if (rm && g.pinned_post_id === pid) g.pinned_post_id = null;
+        window.toast(rm ? 'Post removed from the group' : 'Report dismissed'); manageLoad(g); if (rm && window.dxGroups && window.dxGroups.refresh) window.dxGroups.refresh();
+      }, toastErr); return; }
+    var sv = t.closest('#groupDetail #tab-settings .btn-create');
+    if (sv && g && GX.mine[g.id] === 'admin') { e.preventDefault(); e.stopPropagation(); if (sv.dataset.busy) return;
+      var ts = document.getElementById('tab-settings'), nm = ts.querySelector('.field-input'), ds = ts.querySelector('.field-textarea:not(.dx-rules)'), ru = ts.querySelector('.dx-rules');
+      var name = nm ? nm.value.trim() : ''; if (!name) { if (nm) nm.classList.add('dbk-err'); window.toast('Group name is required'); return; } if (nm) nm.classList.remove('dbk-err');
+      sv.dataset.busy = '1';
+      sb.from('groups').update({ name: name, description: ds ? ds.value.trim() : g.description, rules: ru ? (ru.value.trim() || null) : g.rules }).eq('id', g.id).select().then(function (r) { delete sv.dataset.busy;
+        if (r.error || !(r.data || []).length) return toastErr(r.error || { message: 'Only the group’s admins can change its settings' });
+        var oldName = g.name, row = r.data[0]; g.name = row.name; g.description = row.description; g.rules = row.rules; if (GX.snap[oldName]) { delete GX.snap[oldName]; GX.snap[g.name] = true; }
+        var card = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]');
+        if (card) { var nc = groupCard(g); card.replaceWith(nc); if (window.dxGroups && window.dxGroups.pick) window.dxGroups.pick(nc, 'about'); }
+        paintHead(g); window.toast('Group settings saved'); if (window.dxGroups && window.dxGroups.refresh) window.dxGroups.refresh('about');
+      }, function (e2) { delete sv.dataset.busy; toastErr(e2); }); return; }
+    if (t.closest('#groupDetail .choice-btn.archive') && g) { e.preventDefault(); e.stopPropagation(); window.toast('Archiving groups is not available yet — you can delete the group instead'); return; }
+    if (t.closest('#groupDetail .btn-manage[onclick*="toggleManage"]') && g) setTimeout(function () { var mp = document.getElementById('managePanel'); if (mp && mp.style.display !== 'none') manageLoad(g); }, 0);
+  }, true);
+  /* groups.js asks for the inside of a group here */
+  var hookD3b = window.dxLiveHook;
+  window.dxLiveHook = function (kind, d) {
+    if (ME_UUID) {
+      if (kind === 'groupPosts') { try { return gpPage(gOf(d)); } catch (e) { return Promise.reject(e); } }
+      if (kind === 'groupPost') { if (d === null) return true; return gpOp(d); }
+      if (kind === 'groupMembers') { try { var g = gOf(d); return d.op ? gmOp(g, d.op, d.uid) : gmList(g); } catch (e) { return Promise.reject(e); } }
+      if (kind === 'groupJoin') { try { var g2 = gOf(d); return gpJoin(g2, d.op === 'accept' ? 'join' : d.op); } catch (e) { return Promise.reject(e); } }
+      if (kind === 'groupListings' || kind === 'groupListing') return undefined;     /* deal-room listings inside a group: not in the database yet */
+    }
+    return hookD3b ? hookD3b(kind, d) : undefined;
+  };
+  /* a group opened from elsewhere (search, a link, the side list) opens the same way as a click on its card */
+  if (window.dxGroups && window.dxGroups.open) {
+    var dgOpen = window.dxGroups.open;
+    window.dxGroups.open = function (name, tab) {
+      if (!ME_UUID) return dgOpen.apply(this, arguments);
+      if (document.body.getAttribute('data-page') !== 'groups' && typeof window.goto === 'function') window.goto('groups');
+      var c = name && name.nodeType === 1 ? name : [].slice.call(document.querySelectorAll('#gx .gcard[data-gid]')).find(function (x) { var t = x.querySelector('.gcard-title'); return t && t.textContent === name; });
+      if (c && c.dataset.gid) { window.dxLive.openGroup(+c.dataset.gid, tab); return true; }
+      return dgOpen.apply(this, arguments);
+    };
+  }
+  ICON.group_join_request = '👥'; ICON.group_join_approved = '✅'; ICON.group_invite = '✉️';
+  onReset(function () { GX.inv = {}; GX.req = {}; GX.act = {}; MG.gid = null; });
 
   /* following companies: the directory's store('follows') (a list of slugs) ↔ company_followers */
   var FOL = { list: [], loaded: false };

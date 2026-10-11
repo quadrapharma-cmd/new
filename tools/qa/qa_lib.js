@@ -114,17 +114,24 @@
       var skey = tag + '|' + e.id + '|' + cls + '|' + oc + '|' + href + '|' + (e.getAttribute('role') || '') + '|' + (e.getAttribute('data-tab') || '');
       keyN[key] = (keyN[key] || 0); skeyN[skey] = (skeyN[skey] || 0);
       var par = e.parentElement;
-      var fam = tag + '|' + cls + '|' + oc.replace(/'[^']*'|"[^"]*"|\d+/g, '_') + '|' + href.replace(/\d+/g, '_') + '|' + (par ? par.tagName + '.' + clsOf(par, true) : '');
       var lines = (e.innerText || '').split('\n').map(norm).filter(function (x) { return x.length >= 3; });
       var cardlike = lines.length >= 2 && (e.innerText || '').length > 30 && tag !== 'select';
+      /* family = elements that look alike. Cards ignore their click handler: a grid where only some cards have an onclick
+         is one family (that is exactly the "only the first two cards work" bug). Buttons keep the handler's shape. */
+      var fam = tag + '|' + cls + '|' + (cardlike ? '*' : oc.replace(/'[^']*'|"[^"]*"|\d+/g, '_')) + '|' + href.replace(/\d+/g, '_') + '|' + (par ? par.tagName + '.' + clsOf(par, true) : '');
       var title = '';
       if (cardlike) {
-        var t = e.querySelector(CFG.title_sel);
-        title = norm(t ? t.innerText : '').split('\n')[0] || lines[0] || '';
+        /* the card's name: the first title-like element with words in it (not the "90 %" score badge) */
+        var t = Array.prototype.find.call(e.querySelectorAll(CFG.title_sel), function (x) { return /[A-Za-z\u0600-\u06ff]{3}/.test(x.innerText || ''); });
+        title = norm(t ? t.innerText : '').split('\n')[0] || lines.filter(function (l) { return /[A-Za-z\u0600-\u06ff]{3}/.test(l); })[0] || lines[0] || '';
       }
+      var rawc = typeof e.className === 'string' ? e.className : (e.getAttribute('class') || '');
+      var active = /(^|\s)(active|on|selected|checked|current|sel)(\s|$)/.test(rawc) || e.getAttribute('aria-selected') === 'true' ||
+                   e.getAttribute('aria-pressed') === 'true' || e.getAttribute('aria-checked') === 'true' || !!e.getAttribute('aria-current') || !!e.checked;
       var dis = !!(e.disabled || e.getAttribute('aria-disabled') === 'true' || /\bdisabled\b/.test(e.className || ''));
       out.push({ i: i, tag: tag, id: e.id, cls: cls.slice(0, 80), oc: oc, href: href, text: text, key: key, occ: keyN[key]++, skey: skey, socc: skeyN[skey]++,
                  fam: fam, region: region, cardlike: cardlike, title: title.slice(0, 80), disabled: dis,
+                 active: active, ctext: cardlike ? norm(e.innerText).slice(0, 600) : '',
                  target: e.getAttribute('target') || '', type: e.getAttribute('type') || '', role: e.getAttribute('role') || '' });
     });
     return out;
@@ -146,14 +153,28 @@
       if (!h) continue;
       if (h === el) return { x: x, y: y };
       if (el.contains(h)) {
+        /* where a person would click: the centre, unless a separate real control (a button, link, field) sits there —
+           a wrapper whose inner label carries the handler (role=button div around an onclick span) is clicked on the label */
         var inner = h.closest(SEL + ',[style*="cursor: pointer"]');
         if (!inner || inner === el || !el.contains(inner)) return { x: x, y: y };
-        if (!el.contains(inner.parentElement)) return { x: x, y: y };
+        if (!/^(BUTTON|A|INPUT|SELECT|TEXTAREA|LABEL|SUMMARY)$/.test(inner.tagName)) return { x: x, y: y };
         continue;
       }
     }
     var d = hit0 ? (hit0.tagName.toLowerCase() + (hit0.id ? '#' + hit0.id : '') + (hit0.className && typeof hit0.className === 'string' ? '.' + hit0.className.split(' ')[0] : '')) : 'off-screen';
     return { err: 'covered by ' + d };
+  };
+  /* an empty field next to the control (a send/post button whose text box is empty) */
+  qa.emptyField = function (i) {
+    var el = qa.els[i], p = el, n = 0;
+    while (p && p !== document.body && n++ < 5) {
+      p = p.parentElement; if (!p) break;
+      var f = Array.prototype.find.call(p.querySelectorAll('input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=button]):not([type=submit]),textarea,[contenteditable=true],[contenteditable=""]'),
+        function (x) { return x.getClientRects().length && !norm(x.value !== undefined ? x.value : x.innerText); });
+      if (f) return f.tagName.toLowerCase() + (f.placeholder ? ' "' + f.placeholder.slice(0, 40) + '"' : '');
+      if (p.matches('form,[role=dialog],.modal,.card,.post,section')) break;
+    }
+    return '';
   };
   qa.selfPath = function (i) { var el = qa.els[i]; return el ? pathOf(el) : ''; };
 
@@ -225,14 +246,16 @@
     var ints = Array.prototype.filter.call(root.querySelectorAll('button,a[href],[role=button],[onclick]'), function (b) { return b.getClientRects().length; });
     ints.forEach(function (b) { if (!ints.some(function (o) { return o !== b && o.contains(b); })) { btnChars += norm(b.innerText).length; buttons++; } });
     var inputs = Array.prototype.filter.call(root.querySelectorAll('input:not([type=hidden]):not([type=button]):not([type=submit]):not([type=file]),textarea,select,[contenteditable=true],[contenteditable=""]'), function (x) { return x.getClientRects().length; }).length;
-    var media = Array.prototype.filter.call(root.querySelectorAll('img,video,canvas,iframe'), function (m) { var r = m.getBoundingClientRect(); return r.width * r.height > 6000; }).length;
+    var media = Array.prototype.filter.call(root.querySelectorAll('img,video,canvas,iframe,svg'), function (m) { var r = m.getBoundingClientRect(); return r.width * r.height > 6000; }).length;
     var listMax = 0;
     Array.prototype.forEach.call(root.querySelectorAll('*'), function (p) {
       if (p.children.length < 3) return;
       var by = {};
       Array.prototype.forEach.call(p.children, function (c) {
-        if (c.matches('button,a,[onclick],input,select,textarea')) return;
-        if (norm(c.innerText).length < 20) return;
+        if (c.matches('input,select,textarea') || !c.getClientRects().length) return;   /* hidden sub-panels do not count */
+        /* a list item carries a sentence or several lines — header chips ("3,800 members") do not count */
+        var ct = norm(c.innerText), nl = (c.innerText || '').split('\n').filter(function (x) { return norm(x).length >= 3; }).length;
+        if (ct.length < 40 && nl < 2) return;
         var k = c.tagName + '.' + clsOf(c, true); by[k] = (by[k] || 0) + 1;
       });
       for (var k in by) if (by[k] > listMax) listMax = by[k];
@@ -240,12 +263,26 @@
     var t = root.querySelector('h1,h2,h3,[class*=title],[class*=name],[class*=hdr],[class*=head]');
     var title = norm(t ? t.innerText : '').split('\n')[0] || txt.split(' ').slice(0, 6).join(' ');
     var btnTexts = ints.map(function (b) { return norm(b.innerText).slice(0, 30); }).filter(Boolean).slice(0, 12);
-    var r = root.getBoundingClientRect();
-    return { chars: txt.length, body_chars: Math.max(0, txt.length - btnChars), inputs: inputs, buttons: buttons, list_max: listMax, media: media,
+    var box = root, guard = 0;
+    while (guard++ < 12) {
+      var kids = Array.prototype.filter.call(box.children, function (k) { return k.getClientRects().length && norm(k.innerText).length; });
+      if (kids.length !== 1 || norm(kids[0].innerText).length < 0.9 * norm(box.innerText).length) break;
+      box = kids[0];
+    }
+    var r = box.getBoundingClientRect();
+    /* the panel's own words: text that is not inside a control */
+    var bt = [], tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), tn;
+    while ((tn = tw.nextNode())) {
+      var pe = tn.parentElement; if (!pe || !norm(tn.nodeValue)) continue;
+      if (pe.closest('button,a[href],[role=button],[onclick],select,option,script,style')) continue;
+      if (!pe.getClientRects().length) continue;
+      bt.push(norm(tn.nodeValue));
+    }
+    return { body_text: bt.join(' ').slice(0, 3000), chars: txt.length, body_chars: Math.max(0, txt.length - btnChars), inputs: inputs, buttons: buttons, list_max: listMax, media: media,
              title: title.slice(0, 80), text: txt.slice(0, 2500), button_texts: btnTexts, id: root.id || '', cls: clsOf(root, true).slice(0, 60),
              area: Math.round(r.width * r.height / (innerWidth * innerHeight) * 100) };
   };
-  qa.view = function () { try { return eval(CFG.view_key_js); } catch (e) { return 'view-error'; } };
+  qa.view = function () { try { return __QA_VIEW__; } catch (e) { return 'view-error'; } };
   qa.toastText = function () {
     var t = Array.prototype.filter.call(document.querySelectorAll(CFG.toast_sel), function (e) { return e.getClientRects().length && norm(e.innerText); });
     return t.map(function (e) { return norm(e.innerText).slice(0, 120); }).join(' / ');
@@ -261,7 +298,7 @@
     var c = document.querySelector(CFG.content_sel); if (!c) return '';
     var r = c.getBoundingClientRect(), x = Math.max(r.left, 0) + Math.min(r.width, innerWidth) / 2, y = Math.min(Math.max(r.top, 0) + 200, innerHeight / 2);
     var h = document.elementFromPoint(x, y); if (!h) return '';
-    var f = fixedRoot(h); if (!f || f.contains(c)) return '';
+    var f = fixedRoot(h); if (!f || f.contains(c) || f.querySelector(CFG.content_sel)) return '';
     var fr = f.getBoundingClientRect(); if (fr.width * fr.height < 0.3 * innerWidth * innerHeight) return '';
     if (f.closest('.topbar,#sidebar,.sidebar')) return '';
     var name = f.tagName.toLowerCase() + (f.id ? '#' + f.id : '') + ' "' + norm(f.innerText).slice(0, 50) + '"';
@@ -291,5 +328,19 @@
     });
     return n;
   };
+  /* fresh-state check: the resting snapshot ("base") is kept by the crawler and compared after every reset */
+  qa.exportSnap = function (name) { var o = {}; qa.snaps[name].map.forEach(function (v, k) { if (v.split('\u0001')[0] !== 'toast') o[k] = v; }); return o; };
+  qa.loadSnap = function (name, obj) { var m = new Map(); for (var k in obj) m.set(k, obj[k]); qa.snaps[name] = { map: m, fixed: [], url: '', view: '' }; return m.size; };
+  qa.addNoise = function (list) { list.forEach(function (k) { qa.noise.add(k); }); return qa.noise.size; };
+  qa.noiseList = function () { return Array.from(qa.noise); };
+  /* paths that differ between two snapshots (toasts and known noise excluded) */
+  qa.diffPaths = function (a, b, limit) {
+    var A = qa.snaps[a].map, B = qa.snaps[b].map, out = [];
+    function tst(v) { return v && v.split('\u0001')[0] === 'toast'; }
+    B.forEach(function (v, k) { if (out.length < limit && A.get(k) !== v && !qa.noise.has(k) && !(tst(v) && (!A.has(k) || tst(A.get(k))))) out.push(k); });
+    A.forEach(function (v, k) { if (out.length < limit && !B.has(k) && !qa.noise.has(k) && !tst(v)) out.push(k); });
+    return out;
+  };
+  qa.atBase = function () { qa.snap('cur'); var d = qa.diffPaths('base', 'cur', 8); return { n: d.length, sample: d, view: qa.view() }; };
   qa.fingerprint = function () { var c = qa.cands(); return h32(c.map(function (x) { return x.key; }).join('\n')) + ':' + c.length; };
 })();
