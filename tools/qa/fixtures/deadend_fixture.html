@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dead-end crawler fixture</title>
+<!-- A tiny stand-in for the Drugbox demo with known dead ends, used by tools/qa/selftest.py to prove that
+     deadend_crawler.py finds each kind. It follows the demo's contract: endSplash(), .lg-demo + the sign-in button,
+     #app / #content, goto(page), body[data-page], #toast. -->
+<style>
+  body { margin: 0; font: 15px/1.5 Arial, sans-serif; background: #f4f6fa; color: #111; }
+  #splash { position: fixed; inset: 0; background: #0a1f4d; }
+  #authWrap { display: none; }
+  #loginPage { display: none; padding: 40px; }
+  #app { display: none; position: fixed; inset: 0; overflow: auto; }
+  .topbar { display: flex; gap: 16px; padding: 12px 20px; background: #fff; border-bottom: 1px solid #ddd; }
+  .topbar a { cursor: pointer; color: #1a56db; }
+  #content { position: relative; padding: 20px; }
+  button { padding: 8px 14px; margin: 6px; cursor: pointer; }
+  .grid { display: grid; grid-template-columns: repeat(3, 260px); gap: 14px; }
+  .gcard { background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 14px; cursor: pointer; }
+  .gcard-title { font-weight: bold; }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, .6); }
+  .overlay.show { display: block; }
+  .box { background: #fff; width: 520px; margin: 80px auto; padding: 20px; border-radius: 12px; }
+  #toast { position: fixed; bottom: 20px; left: 20px; background: #111; color: #fff; padding: 8px 14px; display: none; }
+  #toast.show { display: block; }
+</style>
+</head>
+<body>
+<div id="splash"></div>
+<div id="authWrap"><div id="loginPage">
+  <button type="button" class="lg-demo" onclick="document.getElementById('em').value='demo@example.test'">Demo account</button>
+  <input id="em"> <button type="button" class="f-btn dx-js-only" onclick="doLogin()">Sign in</button>
+</div></div>
+<div id="app">
+  <div class="topbar"><a onclick="goto('home')">Home</a><a onclick="goto('groups')">Groups</a></div>
+  <div id="content"></div>
+</div>
+<div class="overlay" id="dlg"><div class="box">
+  <h2>Request a quote</h2><p>Tell the supplier what you need and when; they answer within two working days.</p>
+  <label>Product <input id="q1"></label><label>Quantity <input id="q2"></label>
+  <button onclick="closeDlg('dlg')">Cancel</button><button onclick="sendQuote()">Send request</button>
+</div></div>
+<div class="overlay" id="cfm"><div class="box">
+  <h2>Save changes?</h2><p>Are you sure?</p>
+  <button onclick="closeDlg('cfm')">Cancel</button><button onclick="closeDlg('cfm')">Save</button>
+</div></div>
+<div class="overlay" id="groupDetail"><div class="box">
+  <button class="detail-close" onclick="closeDlg('groupDetail')" aria-label="Close">×</button>
+  <div class="group-title" id="gdTitle"></div><div id="gdMeta"></div>
+  <button onclick="toast('Notifications on')">Notifications</button>
+</div></div>
+<div id="toast"></div>
+<script>
+  var GROUPS = [
+    { n: 'API Sourcing & Supply', d: 'Buyers and suppliers of active ingredients', m: '3,800' },
+    { n: 'Regulatory Affairs Egypt', d: 'EDA submissions and stability studies', m: '1,240' },
+    { n: 'GCC Market Access', d: 'Registration strategies across the GCC', m: '920' },
+    { n: 'QA/QC Professionals', d: 'GMP audits and CAPA discussions', m: '2,300' },
+    { n: 'Nutraceuticals MENA', d: 'Formulation and supplement regulation', m: '540' },
+    { n: 'Medical Devices Egypt', d: 'Device registration and distributors', m: '380' }
+  ];
+  var current = 0;
+  function endSplash() { setTimeout(function () { document.getElementById('splash').style.display = 'none';
+    document.getElementById('authWrap').style.display = 'block'; document.getElementById('loginPage').style.display = 'block'; }, 700); }
+  function doLogin() { document.getElementById('authWrap').style.display = 'none'; document.getElementById('app').style.display = 'block'; goto('home'); }
+  function toast(t) { var e = document.getElementById('toast'); e.textContent = t; e.className = 'show'; setTimeout(function () { e.className = ''; }, 2500); }
+  function closeDlg(id) { document.getElementById(id).className = 'overlay'; }
+  function openDlg(id) { document.getElementById(id).className = 'overlay show'; }
+  function sendQuote() { closeDlg('dlg'); document.getElementById('sent').textContent = 'Quote request sent to Delta Analytical.'; }
+  /* the bug the owner found: only the first two cards have their own handler; the others open whatever was open last,
+     and the detail is a header with no discussion and no composer */
+  function openGroup(i) { current = i; showGroup(); }
+  function showGroup() { var g = GROUPS[current]; document.getElementById('gdTitle').textContent = g.n;
+    document.getElementById('gdMeta').textContent = g.m + ' members · Public'; openDlg('groupDetail'); }
+  function goto(p) {
+    var c = document.getElementById('content'); document.body.setAttribute('data-page', p);
+    if (p === 'home') {
+      c.innerHTML = '<section id="home"><h1>Home</h1>' +
+        '<button id="b-none">Does nothing</button>' +
+        '<button id="b-toast" onclick="toast(\'Saved\')">Only a toast</button>' +
+        '<button id="b-soon" onclick="toast(\'Export coming soon\')">Export</button>' +
+        '<a id="b-need" href="#p-need">Placeholder link</a>' +
+        '<button id="b-dlg" onclick="openDlg(\'dlg\')">Request a quote</button>' +
+        '<button id="b-cfm" onclick="openDlg(\'cfm\')">Edit settings</button>' +
+        '<button id="b-ok" onclick="document.getElementById(\'sent\').textContent=\'Settings refreshed at noon.\'">Refresh</button>' +
+        '<p id="sent"></p></section>';
+    } else if (p === 'groups') {
+      c.innerHTML = '<section id="groups"><h1>Groups</h1><div class="grid">' + GROUPS.map(function (g, i) {
+        return '<div class="gcard"' + (i < 2 ? ' onclick="openGroup(' + i + ')"' : '') + '><div class="gcard-title">' + g.n + '</div>' +
+          '<div class="gcard-desc">' + g.d + '</div><div class="gcard-meta">' + g.m + ' members</div></div>';
+      }).join('') + '</div></section>';
+      Array.prototype.forEach.call(c.querySelectorAll('.gcard'), function (el, i) {
+        if (i >= 2) el.addEventListener('click', showGroup);   /* opens the last group shown, not this one */
+      });
+    }
+  }
+</script>
+</body>
+</html>

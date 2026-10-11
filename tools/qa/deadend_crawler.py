@@ -43,7 +43,7 @@ Examples:
   python3 tools/qa/deadend_crawler.py --target http://localhost:54321/ --out /tmp/crawl-live
   python3 tools/qa/deadend_crawler.py --target web/dist/drugbox.html --langs en --widths 1440 --pages groups
 """
-import argparse, concurrent.futures as cf, hashlib, json, os, re, sys, time, traceback, uuid
+import argparse, concurrent.futures as cf, hashlib, json, os, re, sys, tempfile, time, traceback, uuid
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
@@ -91,7 +91,7 @@ SEVERITY = {
     'self_only': 'warn', 'stored_only': 'warn', 'request_only': 'warn', 'click_failed': 'warn', 'console_error': 'warn',
     'unsaved_change': 'warn', 'unstable_page': 'warn', 'needs_input': 'warn',
 }
-OK_KINDS = {'disabled', 'already_active', 'validation', 'navigated', 'left_app', 'new_window', 'download', 'file_picker', 'clipboard', 'share', 'print', 'dialog',
+OK_KINDS = {'disabled', 'already_active', 'validation', 'scrolled', 'navigated', 'left_app', 'new_window', 'download', 'file_picker', 'clipboard', 'share', 'print', 'dialog',
             'dialog_confirm', 'changed', 'focused_input', 'closed', 'native_dialog'}
 
 
@@ -259,7 +259,7 @@ class ViewCrawler:
         self.base, self.noise, self.learned = None, set(), 0
         self.soft_fail = []
         self.last_kind, self.depth_now = None, 1
-        self.stream = None
+        self.stream, self.is_nav = None, False
         self.only = set(opts.get('only') or []) if not view['path'] else set()
 
     # path replay: each step is {key, occ, text}
@@ -287,7 +287,7 @@ class ViewCrawler:
             if err: return 'path step "%s": %s' % (st.get('text', '')[:30], err)
             if demo:   # opening a page: let its entrance animations (numbers counting up) finish at once
                 pg.wait_for_timeout(30); pg.clock.fast_forward(2000); self.s.settle(60, 1500)
-        pg.evaluate("window.scrollTo(0,0);var c=document.querySelector('%s');if(c)c.scrollTop=0" % APP['content_sel'])
+        pg.evaluate("window.scrollTo({top:0,behavior:'instant'});var c=document.querySelector('%s');if(c)c.scrollTo({top:0,behavior:'instant'})" % APP['content_sel'])
         pg.wait_for_timeout(40 if demo else 150)
         for _ in range(3):   # a page that opens with a panel already covering it: close it (and say so)
             b = pg.evaluate('()=>window.__qa.blocking()')
@@ -323,7 +323,7 @@ class ViewCrawler:
 
     def found_view(self, nv):
         self.new_views.append(nv)
-        if self.stream is not None:
+        if self.stream is not None and self.is_nav:   # the navigation's clicks run in a fixed order: safe to act on at once
             try: self.stream.put((self.cfg['name'], len(self.view['path']), nv))
             except Exception: pass
 
@@ -400,7 +400,7 @@ class ViewCrawler:
             return k
         r = pg.evaluate("""(sp)=>{const q=window.__qa;q.snap('s2');const d=q.diff('s1','s2',sp);
             return {d:d, ov:q.newOverlays('s1','s2'), gone:q.goneOverlays('s1','s2'), fx:q.fx.slice(0,8), toast:q.toastFired.length?q.toastText().split(' / ').filter(t=>q.t1.split(' / ').indexOf(t)<0).join(' / '):'',
-                    t1:q.t1, view:q.snaps.s2.view, focus:q.focusInfo(), text:q.text(5000)}}""", selfpath)
+                    t1:q.t1, view:q.snaps.s2.view, focus:q.focusInfo(), text:q.text(5000), scroll:q.scrollMoved()}}""", selfpath)
         after = pg.evaluate('()=>window.__qa.cands().map(x=>[x.key,x.region,x.text,x.skey,x.active,x.disabled])')
         out.update(diff=r['d'], fx=r['fx'], toast=r['toast'], net=reqs)
         if errs: out['errors'] = errs
@@ -481,6 +481,8 @@ class ViewCrawler:
                 kind, out['detail'] = 'stored_only', 'toast "%s" (+ %s)' % (r['toast'][:70], 'request' if writes else 'saved in browser storage')
             else:
                 kind, out['detail'] = 'toast_only', 'toast "%s" and nothing else changed' % r['toast'][:80]
+        elif r['scroll']:
+            kind, out['detail'] = 'scrolled', 'scrolled the page to %s' % r['scroll']
         elif r['focus']:
             kind, out['detail'] = 'focused_input', 'focus moved to ' + r['focus']
         elif writes or reqs:
@@ -549,9 +551,11 @@ class ViewCrawler:
             if c['disabled']: skipped.append(dict(c, reason='disabled', disabled_rec=True)); continue
             targets.append(c)
         cap = self.L['max_per_page'] if depth == 1 else self.L['reveal_cap']
-        if len(targets) > cap and not nav:
-            for c in targets[cap:]: skipped.append(dict(c, reason='cap: more than %d elements on this %s' % (cap, 'page' if depth == 1 else 'dialog/menu')))
-            targets = targets[:cap]
+        capped = [c for c in targets if not (nav or c['region'] == 'chrome')]   # navigation is never capped
+        if len(capped) > cap:
+            over = {(c['key'], c['occ']) for c in capped[cap:]}
+            for c in capped[cap:]: skipped.append(dict(c, reason='cap: more than %d elements on this %s' % (cap, 'page' if depth == 1 else 'dialog/menu')))
+            targets = [c for c in targets if (c['key'], c['occ']) not in over]
         return targets, skipped
 
     def record(self, c, res, depth, opener=None):
@@ -621,7 +625,11 @@ class ViewCrawler:
             if res['kind'] == 'navigated':
                 self.found_view({'key': res['view_after'], 'path': self.view['path'] + [ref], 'from': c['text'][:40]})
             rv = [x for x in res.get('revealed', []) if x['region'] != 'toast']
-            if rv and res['kind'] in ('dialog', 'dialog_thin', 'dialog_confirm', 'changed', 'self_only', 'focused_input'):
+            if len(rv) > 60 and res['kind'] == 'changed' and not any(x['region'] == 'overlay' for x in rv):
+                # the whole page was drawn again (the language switch): its controls are the page's own, crawled in
+                # their own configuration — not a menu to explore
+                rec['reveal'] = 'the page was redrawn (%d new controls): not explored as a menu' % len(rv)
+            elif rv and res['kind'] in ('dialog', 'dialog_thin', 'dialog_confirm', 'changed', 'self_only', 'focused_input'):
                 sig = sha('|'.join(sorted({x['skey'] for x in rv})))
                 if sig in reveal_seen:
                     rec['reveal'] = 'same controls as an earlier dialog/menu (crawled once)'
@@ -657,7 +665,9 @@ class ViewCrawler:
                 tg = keep
             for j, x in enumerate(tg):
                 if (budget <= 0 and not nav) or time.time() > deadline:
-                    for x2 in tg[j:]: self.skips.append(self.skip_rec(dict(x2, reason='depth-2 budget/time limit for this page'), 2, opener))
+                    why = ('time limit for this page (%ds)' % self.L['view_timeout']) if time.time() > deadline else \
+                          ('revealed-elements budget for this page (%d)' % self.L['max_depth2'])
+                    for x2 in tg[j:]: self.skips.append(self.skip_rec(dict(x2, reason=why), 2, opener))
                     break
                 if not nav: budget -= 1
                 try:
@@ -720,7 +730,7 @@ def task_view(opts, cfg, view, include_chrome, account, include_content=True, st
     with sync_playwright() as pw:
         s = Session(pw, opts, cfg, account)
         vc = ViewCrawler(s, view, cfg, opts)
-        vc.stream = stream
+        vc.stream, vc.is_nav = stream, include_chrome and not include_content and not view['path']
         try:
             vc.run(include_chrome, include_content)
         except Exception as e:
@@ -849,7 +859,7 @@ def finding_id(page, kind, sid):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--target', default=os.path.join(REPO, 'web/dist/drugbox.html'), help='demo .html file or live app URL')
-    ap.add_argument('--out', default=os.path.join(REPO, 'qa-crawl'))
+    ap.add_argument('--out', default=os.path.join(tempfile.gettempdir(), 'drugbox-deadend-crawl'), help='report folder (default: a temp folder, outside the repo)')
     ap.add_argument('--allow', default=os.path.join(HERE, 'deadend_allow.json'))
     ap.add_argument('--langs', default='en,ar')
     ap.add_argument('--widths', default='1440,390')
@@ -857,7 +867,7 @@ def main():
     ap.add_argument('--workers', type=int, default=4)
     ap.add_argument('--family-sample', type=int, default=6)
     ap.add_argument('--max-per-page', type=int, default=70)
-    ap.add_argument('--reveal-cap', type=int, default=8)
+    ap.add_argument('--reveal-cap', type=int, default=12)
     ap.add_argument('--max-depth2', type=int, default=25)
     ap.add_argument('--max-views', type=int, default=30)
     ap.add_argument('--view-timeout', type=int, default=240, help='seconds per page and configuration; the rest is reported as skipped')
@@ -953,9 +963,29 @@ def main():
                 done_views[c['name']].add(nv['key']); return
             done_views[c['name']].add(nv['key'])
             submit(c, {'key': nv['key'], 'path': nv['path']}, False, True)
+        # Pages found by the start page's navigation are crawled as soon as they are found. Pages found anywhere else
+        # (a card that opens a company page) wait until everything else is done, and then the same click path is used
+        # whatever task happened to finish first — the run stays deterministic.
+        deferred = {c['name']: {} for c in cfgs}
+
+        def defer(c, parent_depth, nv):
+            deferred[c['name']].setdefault(nv['key'], []).append((parent_depth, nv))
+
+        def release():
+            n = 0
+            for c in cfgs:
+                for key in sorted(deferred[c['name']]):
+                    cands = deferred[c['name']].pop(key)
+                    if key in done_views[c['name']]: continue
+                    pdepth, nv = min(cands, key=lambda x: (x[0], len(x[1]['path']), [p.get('text', '') for p in x[1]['path']], x[1]['from']))
+                    consider(c, pdepth, nv); n += 1
+            return n
         byname = {c['name']: c for c in cfgs}
         feed_pool()
-        while pending or waiting:
+        while pending or waiting or any(deferred.values()):
+            if not pending and not waiting:
+                release(); feed_pool()
+                if not pending and not waiting: break
             feed_pool()
             done, _ = cf.wait(list(pending), timeout=1.0, return_when=cf.FIRST_COMPLETED)
             while True:   # pages found while a task is still running are crawled at once
@@ -979,8 +1009,8 @@ def main():
                                'soft_resets': r['soft_resets'], 'unchanged': r['unchanged'], 'noise_learned': r['noise_learned']})
                 log('%-8s %-44s %3d clicks %3d skipped %4.0fs  reloads %d, soft %d, untouched %d' % (c['name'], vname[:44], len(r['records']), len(r['skips']),
                     r['seconds'], r['hard_resets'], r['soft_resets'], r['unchanged']))
-                for nv in sorted(r['new_views'], key=lambda x: (x['key'], len(x['path']))):
-                    consider(c, len(v['path']), nv)
+                for nv in r['new_views']:
+                    (consider if (chrome and not v['path']) else defer)(c, len(v['path']), nv)
     if only:   # the start page is crawled for its navigation only; report just the pages asked for
         all_records = [r for r in all_records if r['view'].split('/')[0] in only]
         all_skips = [r for r in all_skips if (r.get('view') or '').split('/')[0] in only]
@@ -1087,7 +1117,7 @@ KIND_TEXT = {
     'placeholder_href': 'Placeholder link', 'network_error': 'Server request failed', 'wrong_item': 'Opens the wrong item',
     'family_partial': 'Only some of the repeated cards work', 'family_same_detail': 'Every card opens the same template',
     'family_wrong_detail': 'Cards open another item\'s detail', 'disabled': 'Disabled',
-    'needs_input': 'Does nothing while its field is empty', 'validation': 'Validation message', 'already_active': 'Already selected',
+    'needs_input': 'Does nothing while its field is empty', 'scrolled': 'Scrolled the page', 'validation': 'Validation message', 'already_active': 'Already selected',
     'alert_only': 'Only a browser alert', 'self_only': 'Only the button itself changes', 'stored_only': 'Saved locally/request only, no visible result',
     'request_only': 'Request sent, nothing visible', 'click_failed': 'Could not be clicked', 'console_error': 'Console error',
     'unsaved_change': 'Changes on screen but is not saved', 'unstable_page': 'Page differs between visits',

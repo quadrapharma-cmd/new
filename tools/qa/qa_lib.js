@@ -144,7 +144,7 @@
   /* a point inside the element that really hits it (not a nested button, not something on top) */
   qa.point = function (i) {
     var el = qa.els[i]; if (!el) return { err: 'gone' };
-    el.scrollIntoView({ block: 'center', inline: 'center' });
+    el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });   /* instant: the app scrolls smoothly, and a scroll still running would look like an effect of the click */
     var r = el.getBoundingClientRect(), xs = [0.5, 0.2, 0.8, 0.1, 0.9], ys = [0.5, 0.25, 0.75, 0.1, 0.9], hit0 = null;
     for (var a = 0; a < ys.length; a++) for (var b = 0; b < xs.length; b++) {
       var x = r.left + r.width * xs[b], y = r.top + r.height * ys[a];
@@ -186,9 +186,9 @@
       var tag = el.tagName;
       if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEMPLATE' || tag === 'LINK' || tag === 'META' || tag === 'svg') return;
       var cs = getComputedStyle(el);
-      if (cs.display === 'none' || (el.offsetParent === null && tag !== 'BODY' && cs.position !== 'fixed')) { map.set(path, region + '\u0001H'); return; }
-      if (region !== 'toast' && isToast(el)) region = 'toast';
+      if (region !== 'toast' && isToast(el)) region = 'toast';   /* before the hidden check: a toast hidden with display:none */
       else if (el === content) region = 'content';
+      if (cs.display === 'none' || (el.offsetParent === null && tag !== 'BODY' && cs.position !== 'fixed')) { map.set(path, region + '\u0001H'); return; }
       if (cs && cs.position === 'fixed' && region !== 'toast') {
         var r = el.getBoundingClientRect();
         if (r.width * r.height >= CFG.overlay_min_area * vwA && cs.visibility !== 'hidden' && parseFloat(cs.opacity) > 0.05) {
@@ -209,7 +209,7 @@
       for (var j = 0; j < ch.length; j++) walk(ch[j], path + '/' + j, region);
     }
     walk(document.body, '/1', 'chrome');
-    qa.snaps[name] = { map: map, fixed: fixed, url: location.href, view: qa.view(), focus: document.activeElement };
+    qa.snaps[name] = { map: map, fixed: fixed, url: location.href, view: qa.view(), focus: document.activeElement, scroll: qa.scrollPos() };
     return map.size;
   };
   qa.learnNoise = function (a, b) {
@@ -342,5 +342,17 @@
     return out;
   };
   qa.atBase = function () { qa.snap('cur'); var d = qa.diffPaths('base', 'cur', 8); return { n: d.length, sample: d, view: qa.view() }; };
+  /* scroll positions of the window and of every scrolled container (a "jump to" link changes nothing else) */
+  qa.scrollPos = function () {
+    var out = { win: Math.round(scrollY) }, c = document.querySelector(CFG.content_sel);
+    if (c) out.content = Math.round(c.scrollTop);
+    var se = document.scrollingElement; if (se) out.doc = Math.round(se.scrollTop);
+    return out;
+  };
+  qa.scrollMoved = function () {
+    var a = (qa.snaps.s1 || {}).scroll || {}, b = qa.scrollPos(), moved = 0;
+    for (var k in b) moved = Math.max(moved, Math.abs((b[k] || 0) - (a[k] || 0)));
+    return moved > 120 ? (b.win || b.doc || b.content) + 'px (moved ' + moved + 'px)' : '';
+  };
   qa.fingerprint = function () { var c = qa.cands(); return h32(c.map(function (x) { return x.key; }).join('\n')) + ':' + c.length; };
 })();

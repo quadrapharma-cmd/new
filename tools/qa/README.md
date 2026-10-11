@@ -10,15 +10,16 @@ python3 tools/qa/deadend_crawler.py --target http://localhost:54321/  # the live
 python3 tools/qa/deadend_crawler.py --pages groups --langs en --widths 1440 --out /tmp/crawl   # one page, one configuration
 ```
 
-Output in `--out` (default `qa-crawl/`): `crawl.md` (readable, by page, dead ends first) and `crawl.json` (every click,
+Output in `--out` (default `/tmp/drugbox-deadend-crawl/`, outside the repo): `crawl.md` (readable, by page, dead ends first) and `crawl.json` (every click,
 every skipped element, settings, timing). Exit code 1 when a JavaScript error was seen or a dead end is not in the
 allow-list, 0 when clean, 2 when the crawler itself could not run.
 
 ## What it does
 
 1. Signs in (demo account; live: signs up a brand-new account per configuration through the sign-up form).
-2. Crawls the start page and its navigation; every page a click leads to is queued at once and crawled in parallel
-   (`--workers`, default 4), one level deeper too (e.g. a company page inside the directory).
+2. Crawls the start page and its navigation; every page the navigation leads to is queued at once and crawled in
+   parallel (`--workers`, default 4). Pages reached any other way (a card that opens a company page — one more step deep)
+   are crawled after that, always through the same click path, so the run does not depend on which task finished first.
 3. On each page it lists every visible control — links, buttons, `[onclick]`, `role=button/tab/…`, and cards made
    clickable from script (outermost `cursor:pointer`) — and clicks them **one at a time from a fresh state**: the whole
    visible page must equal the snapshot taken after a clean sign-in; if not, it closes dialogs and re-opens the page, and
@@ -41,7 +42,7 @@ Warnings: `self_only` (only the button changed), `stored_only`, `request_only`, 
 box is empty — the crawler does not type), `unsaved_change` (live: changed on screen, nothing sent), `click_failed`,
 `console_error`.
 
-Fine: `navigated`, `dialog`, `dialog_confirm`, `changed`, `focused_input`, `closed`, `validation`, `already_active`,
+Fine: `navigated`, `dialog`, `dialog_confirm`, `changed`, `scrolled`, `focused_input`, `closed`, `validation`, `already_active`,
 `disabled`, `new_window`, `clipboard`, `share`, `print`, `download`, `file_picker`, `native_dialog`, `left_app`.
 
 ## Limits — never silent
@@ -52,16 +53,18 @@ Every element not clicked is listed under "Skipped" with its reason.
 |---|---|---|
 | `--family-sample` | 6 | repeated elements of one family (same tag/class/handler shape; cards: same look): first 3, middle, last 2 |
 | `--max-per-page` | 70 | elements per page after sampling, in page order |
-| `--reveal-cap` / `--max-depth2` | 8 / 25 | revealed elements per dialog/menu / per page |
+| `--reveal-cap` / `--max-depth2` | 12 / 25 | revealed elements per dialog/menu / per page |
 | `--max-views` | 30 | pages per configuration (two navigation steps deep) |
 | `--view-timeout` | 240 s | per page and configuration |
-| `--secondary-*` | 3 / 40 / 10 | lighter sampling for the 2nd…4th configuration (AR, phone); `--full` crawls them as deeply |
+| `--secondary-*` | 2 / 25 / 6 | family sample / page cap / revealed budget for the 2nd…4th configuration (phone, Arabic); `--full` crawls them as deeply |
 
 Navigation (top bar, side menu, the phone menu) is never sampled or capped. Sign-out and external links are never clicked.
 
 The demo runs offline (all network requests are blocked) with a seeded `Math.random`, and Playwright's clock skips the
-fixed waits (splash hand-over, sign-in loader, numbers counting up) — the crawl is deterministic and takes about
-15 minutes for the four configurations on 4 CPUs. In the live app actions persist in the database (the account is new and
+fixed waits (splash hand-over, sign-in loader, numbers counting up). The click order and the sampling are fixed; only the
+time limits depend on the machine, so on a heavily loaded machine a page may hit `--view-timeout` and list more elements
+as skipped (with that reason). Four configurations take about 15 minutes with 4 workers on 4 CPUs (measured 15–19 min
+while other test suites shared the machine). In the live app actions persist in the database (the account is new and
 used only by the crawler); after a reload the crawler re-learns the resting state.
 
 ## Allow-list (`deadend_allow.json`)
@@ -73,9 +76,17 @@ Starts empty: every dead end fails the run until it is fixed or the owner approv
 {"allow": [{"id": "admin:placeholder_toast:1a2b3c4d5e", "why": "sponsor form is phase 2", "approved_by": "owner", "date": "2026-10-11"}]}
 ```
 
+## Self-test
+
+`python3 tools/qa/selftest.py` crawls `fixtures/deadend_fixture.html` — a small page built like the demo with one dead
+end of each kind (a button that does nothing, a toast-only button, "coming soon", `#p-need`, a "Save" that only closes
+its dialog, group cards that open a header-only detail where only the first two cards open their own group) next to
+controls that work — and checks that every planted dead end is reported and nothing that works is. 14 / 14, ~20 s.
+
 ## Files
 
 - `deadend_crawler.py` — the crawler (the only Drugbox-specific part is the `APP` dictionary at the top).
+- `selftest.py`, `fixtures/deadend_fixture.html` — the self-test above.
 - `qa_lib.js` — injected into the page before the app loads: lists controls, takes DOM snapshots and measures dialogs.
   It replaces only the calls that would leave the page (`window.open`, print, share, clipboard) with recorders, and
   records storage writes, so "a toast after the link was copied" is not mistaken for "a toast and nothing else".

@@ -15,6 +15,13 @@ Groups:
   e2e    tests/e2e/*_test.py against the running local stack (tools/local-supabase/start.sh, and start-payments.sh for e4*)
   migrations  tools/migration_check.py (every migration re-runnable, puts back each policy it creates) — not in the default run
          while older migrations still group several policies in one block
+  journeys  user journeys (tests/journeys/run_{social,business,community}.py): every journey on the demo (DEMO_FILE) in
+         JOURNEYS_CONFIGS (default demo:en:1440,demo:ar:1440,demo:en:390) and, when APP_URL is set, on the live app too
+         (live:en:1440, with DB_NAME — tests/e2e/_dx.py); prints PASS / FAIL per journey and a summary; JOURNEYS_AREAS
+         narrows the areas, JOURNEYS_OUT keeps the reports (default: a temp folder) — not in the default run
+  crawl  tools/qa/selftest.py, then tools/qa/deadend_crawler.py on DEMO_FILE (dead ends not in tools/qa/deadend_allow.json
+         fail it; CRAWL_ARGS adds crawler options, e.g. "--langs en --widths 1440"; CRAWL_OUT keeps the report) — not in the default run
+  --report-only  journeys and crawl print their findings but do not make the run fail (status reports)
 Settings: PGHOST PGPORT PGUSER (psql), DB_PREFIX (rv_runall: databases <prefix>_<suite>, dropped afterwards), DEMO_FILE,
   E2E_SKIP (comma-separated suite names to skip), and the e2e settings in tests/e2e/_dx.py."""
 import os, re, sys, glob, time, subprocess
@@ -130,8 +137,42 @@ def migrations():
     code, out, s = run([sys.executable, ROOT + '/tools/migration_check.py'])
     record('migr', 'tools/migration_check.py', code == 0, s, out[-3000:])
 
-GROUPS = {'sql': sql_suites, 'sweep': sweep, 'demo': demo, 'legacy': legacy, 'stress': stress, 'demo-full': demo_full, 'e2e': e2e, 'migrations': migrations}
-want = sys.argv[1:] or ['sql', 'sweep', 'demo', 'e2e']
+REPORT_ONLY = '--report-only' in sys.argv   # journeys / crawl: report findings without failing the run
+
+def journeys():
+    import json, tempfile
+    out = os.environ.get('JOURNEYS_OUT') or tempfile.mkdtemp(prefix='dx_journeys_')
+    configs = os.environ.get('JOURNEYS_CONFIGS', 'demo:en:1440,demo:ar:1440,demo:en:390')
+    if os.environ.get('APP_URL') and 'live:' not in configs: configs += ',live:en:1440'
+    env = {**os.environ, 'DEMO_FILE': DEMO}; tot = {'PASS': 0, 'FAIL': 0, 'N/A': 0}
+    print(f'journeys: {configs} — reports in {out}' + ('' if os.environ.get('APP_URL') else ' (APP_URL not set: demo only)'))
+    for area in [a for a in os.environ.get('JOURNEYS_AREAS', 'social,business,community').split(',') if a]:
+        runner, summ = f'{ROOT}/tests/journeys/run_{area}.py', f'{out}/results-{area}.json'
+        if not os.path.exists(runner): record('jrny', area, False, 0, f'{runner} not found'); continue
+        code, log, s = run([sys.executable, runner, '--out', f'{out}/{area}', '--configs', configs, '--summary', summ], timeout=14400, env=env)
+        try: js = json.load(open(summ, encoding='utf-8'))['journeys']
+        except Exception as e: record('jrny', area, False, s, f'no summary ({e}): {log[-1200:]}'); continue
+        n = {'PASS': 0, 'FAIL': 0, 'N/A': 0}
+        for j in js:
+            st = [j.get('demo'), j.get('live')]; v = 'FAIL' if 'FAIL' in st else 'PASS' if 'PASS' in st else 'N/A'; tot[v] += 1; n[v] += 1
+            why = j.get('demo_reason') if j.get('demo') == 'FAIL' else j.get('live_reason') if j.get('live') == 'FAIL' else ''
+            step = j.get('demo_fail_step') if j.get('demo') == 'FAIL' else j.get('live_fail_step')
+            print(f"  {v:4s}  {j['id']:15s} demo {j.get('demo', '-'):7s} live {j.get('live', '-'):7s}" + (f'  step {step}: {(why or "")[:110]}' if v == 'FAIL' else ''), flush=True)
+        record('jrny', f"{area}: {n['PASS']} pass {n['FAIL']} fail {n['N/A']} n/a" + (' (report)' if REPORT_ONLY else ''), (n['FAIL'] == 0 and len(js) > 0) or REPORT_ONLY, s, f"{n['FAIL']} journeys failed — {summ}")
+    print(f"journeys: {tot['PASS']} pass, {tot['FAIL']} fail, {tot['N/A']} n/a" + (' (report only)' if REPORT_ONLY else ''))
+
+def crawl():
+    import shlex, tempfile
+    code, out, s = run([sys.executable, ROOT + '/tools/qa/selftest.py'], timeout=900)
+    record('crawl', 'tools/qa/selftest.py', code == 0, s, out[-1500:], out)
+    rep = os.environ.get('CRAWL_OUT') or tempfile.mkdtemp(prefix='dx_crawl_')
+    code, out, s = run([sys.executable, ROOT + '/tools/qa/deadend_crawler.py', '--target', DEMO, '--out', rep] + shlex.split(os.environ.get('CRAWL_ARGS', '')), timeout=7200)
+    last = [l for l in out.splitlines() if ' clicks, ' in l]
+    print('      ' + (last[-1].strip() if last else out[-400:]) + f' — {rep}/crawl.md')
+    record('crawl', 'tools/qa/deadend_crawler.py' + (' (report)' if REPORT_ONLY and code == 1 else ''), code == 0 or (REPORT_ONLY and code == 1), s, out[-1500:])
+
+GROUPS = {'sql': sql_suites, 'sweep': sweep, 'demo': demo, 'legacy': legacy, 'stress': stress, 'demo-full': demo_full, 'e2e': e2e, 'migrations': migrations, 'journeys': journeys, 'crawl': crawl}
+want = [a for a in sys.argv[1:] if a != '--report-only'] or ['sql', 'sweep', 'demo', 'e2e']
 for g in want:
     if g not in GROUPS: raise SystemExit(f'unknown group {g!r} — use: ' + ' '.join(GROUPS))
 for g in want: GROUPS[g]()

@@ -8,7 +8,7 @@ import _dx
 
 FIX = _dx.FIXTURES
 PDF, PNG = os.path.join(FIX, 'spec.pdf'), os.path.join(FIX, 'photo.png')
-TOP_DLG = "[...document.querySelectorAll('.dbk-ov,.modal-bg,[role=dialog][aria-modal=true],#boostModalOverlay')].filter(e=>{const r=e.getBoundingClientRect();return r.width>2&&r.height>2&&getComputedStyle(e).visibility!='hidden'&&getComputedStyle(e).display!='none'}).pop()"
+TOP_DLG = "[...document.querySelectorAll('.dbk-ov,.modal-bg,[role=dialog][aria-modal=true],#boostModalOverlay,#dxEditor')].filter(e=>{const r=e.getBoundingClientRect();return r.width>2&&r.height>2&&getComputedStyle(e).visibility!='hidden'&&getComputedStyle(e).display!='none'}).pop()"
 
 # ---- dialogs -----------------------------------------------------------------------------------------------------------
 def dlg_open(pg):
@@ -27,29 +27,40 @@ def dlg_fill(pg, sel, val):
     loc.fill(val)
 
 def close_dialogs(pg):
+    dock = pg.locator('#dxDock:visible [data-a=x]')            # the message dock (a person closes it before going on)
+    if dock.count():
+        try: dock.first.click(timeout=2000); pg.wait_for_timeout(300)
+        except Exception: pass
     for _ in range(4):
         if not dlg_open(pg): return
+        if pg.locator('#dxEditor:visible #edCancel').count(): pg.click('#dxEditor #edCancel'); pg.wait_for_timeout(300); continue
         pg.keyboard.press('Escape'); pg.wait_for_timeout(250)
     pg.evaluate("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
 
 def dlg_inputs(pg):
     return pg.evaluate("(()=>{const d=%s;return d?[...d.querySelectorAll('input,select,textarea')].filter(e=>e.getClientRects().length).map(e=>({id:e.id,name:e.name,type:e.type,ph:e.placeholder||'',label:((e.closest('label')||{}).innerText||(e.labels&&e.labels[0]&&e.labels[0].innerText)||'').trim().slice(0,60)})):[]})()" % TOP_DLG)
 
+TASHKEEL = re.compile('[\u064B-\u0652\u0640]')
+def _ar_pattern(pattern):
+    """The pattern plus the Arabic translations (web/src/i18n.js) of its plain English alternatives, without tashkeel."""
+    alts = pattern.split('|'); more = []
+    for a in alts:
+        w = a.strip('^$ ')
+        if re.fullmatch(r"[A-Za-z][A-Za-z /&'%-]*", w or '-'):
+            for k in (w, w + ' *'):
+                t = ar(k)
+                if t: more.append(re.escape(t.replace(' *', '').strip()))
+    return TASHKEEL.sub('', '|'.join(alts + more))
+
 def fill_by_label(j, pg, pattern, value, required=True):
-    """Fill the input/select/textarea of the top dialog (or the page) whose label/placeholder/id matches pattern."""
-    h = pg.evaluate_handle("""([p,dlg])=>{const re=new RegExp(p,'i');const root=dlg||document.querySelector('#content')||document;
+    """Fill the input/select/textarea of the top dialog (or the page) whose label matches pattern — or, when no label
+    matches, whose placeholder / id / aria-label does. Arabic labels match through web/src/i18n.js, ignoring tashkeel."""
+    pattern = _ar_pattern(pattern)
+    h = pg.evaluate_handle("""(p)=>{const re=new RegExp(p,'i');const N=s=>(s||'').replace(/[\u064B-\u0652\u0640]/g,'');const root=(%s)||document.querySelector('#content')||document;
         const vis=e=>e.getClientRects().length>0&&getComputedStyle(e).visibility!='hidden';
-        for(const e of root.querySelectorAll('input,select,textarea')){if(!vis(e)||e.type=='hidden'||e.type=='checkbox'||e.type=='radio'||e.type=='file')continue;
-          let lab=(e.labels&&e.labels[0]&&e.labels[0].innerText)||'';if(!lab){const l=e.closest('label');if(l)lab=l.innerText}
-          if(!lab){let p=e.previousElementSibling;if(p&&p.innerText)lab=p.innerText}
-          if(re.test(lab+' '+(e.placeholder||'')+' '+(e.id||'')+' '+(e.name||'')+' '+(e.getAttribute('aria-label')||'')))return e}return null}""", [pattern, None])
-    if dlg_open(pg):
-        h = pg.evaluate_handle("""(p)=>{const re=new RegExp(p,'i');const root=%s;if(!root)return null;
-        const vis=e=>e.getClientRects().length>0&&getComputedStyle(e).visibility!='hidden';
-        for(const e of root.querySelectorAll('input,select,textarea')){if(!vis(e)||e.type=='hidden'||e.type=='checkbox'||e.type=='radio'||e.type=='file')continue;
-          let lab=(e.labels&&e.labels[0]&&e.labels[0].innerText)||'';if(!lab){const l=e.closest('label');if(l)lab=l.innerText}
-          if(!lab){let p=e.previousElementSibling;if(p&&p.innerText)lab=p.innerText}
-          if(re.test(lab+' '+(e.placeholder||'')+' '+(e.id||'')+' '+(e.name||'')+' '+(e.getAttribute('aria-label')||'')))return e}return null}""" % TOP_DLG, pattern)
+        const els=[...root.querySelectorAll('input,select,textarea')].filter(e=>vis(e)&&!['hidden','checkbox','radio','file'].includes(e.type));
+        const lab=e=>{let l=(e.labels&&e.labels[0]&&e.labels[0].innerText)||'';if(!l){const c=e.closest('label');if(c)l=c.innerText}if(!l){const pr=e.previousElementSibling;if(pr&&pr.innerText)l=pr.innerText}return l.trim()};
+        return els.find(e=>lab(e)&&re.test(N(lab(e))))||els.find(e=>re.test(N((e.placeholder||'')+' '+(e.id||'')+' '+(e.name||'')+' '+(e.getAttribute('aria-label')||''))))||null}""" % TOP_DLG, pattern)
     el = h.as_element()
     if not el:
         if required: j.notbuilt('no field "%s"' % pattern)
@@ -57,7 +68,8 @@ def fill_by_label(j, pg, pattern, value, required=True):
     tag = el.evaluate("e=>e.tagName")
     if tag == 'SELECT':
         opts = el.evaluate("e=>[...e.options].map(o=>o.value+'|'+o.textContent.trim())")
-        pick = next((o.split('|')[0] for o in opts if re.search(value, o, re.I)), None)
+        vpat = _ar_pattern(value)
+        pick = next((o.split('|')[0] for o in opts if re.search(vpat, TASHKEEL.sub('', o), re.I)), None)
         if pick is None:
             if required: j.fail('the "%s" list has no option "%s" (options: %s)' % (pattern, value, ', '.join(o.split('|')[1] for o in opts)[:200]))
             return None
@@ -68,6 +80,7 @@ def fill_by_label(j, pg, pattern, value, required=True):
 
 # ---- navigation ----------------------------------------------------------------------------------------------------------
 def directory(j, pg):
+    close_dialogs(pg)
     j.nav(pg, 'companies'); j.settle(pg, 900)
     if not pg.locator('#dxDir').count(): j.notbuilt('the Companies page has no directory')
     # a directory left on a company page comes back to the list
@@ -89,17 +102,23 @@ def shown_count(pg):
     m = re.search(r'(\d[\d,]*)\s+(compan|شركة|شركات)', t)
     return int(m.group(1).replace(',', '')) if m else None
 
-def search_dir(j, pg, q, wait=1300):
+def search_dir(j, pg, q, wait=1300, want=None):
+    """Type in the directory search; in live the database answers — wait (up to 10 s) until the cards settle, or until a
+    card naming `want` (default: the query itself, for name searches) is shown."""
     pg.fill('#hbQ', q); pg.wait_for_timeout(wait)
     if j.live:
-        try: pg.wait_for_load_state('networkidle', timeout=4000)
-        except Exception: pass
-        pg.wait_for_timeout(400)
+        end = time.time() + 10; last = None; stable = 0
+        while time.time() < end:
+            names = card_names(pg)
+            if want and any(want in n for n in names): break
+            stable = stable + 1 if names == last else 0; last = names
+            if stable >= 3 and not want: break
+            pg.wait_for_timeout(500)
     return card_names(pg)
 
 def open_card(j, pg, name):
     """Open a company from its directory card ('View page') — searching for it first."""
-    names = search_dir(j, pg, name)
+    names = search_dir(j, pg, name, want=name)
     j.check(any(name in n for n in names), 'the directory search for "%s" does not list it (cards: %s)' % (name, ', '.join(names[:6])))
     card = pg.locator('#dxDir .dr-card', has_text=name).first
     btn = card.locator('[data-hopen], button:has-text("View page"), button:has-text("عرض الصفحة")').first
@@ -109,7 +128,10 @@ def open_card(j, pg, name):
     return pg
 
 def company_tab(j, pg, pattern, what):
-    j.click(pg, r'^\W*(%s)\W*(\(\d+\))?$' % pattern, scope='#content', what=what, settle=700)
+    """A tab of the company page (the tab bar scrolls sideways on a phone: the tab is scrolled into view first)."""
+    t = pg.locator('#content [role=tab], #content .cp-tab, #content button').filter(has_text=re.compile(r'^\W*(%s)\W*(\(\d+\))?$' % pattern))
+    if not t.count(): j.notbuilt('no "%s" tab on the company page' % what)
+    t.first.scroll_into_view_if_needed(); t.first.click(); pg.wait_for_timeout(700)
     return j.text(pg)
 
 def tab_count(pg, pattern):
@@ -120,6 +142,7 @@ def tab_count(pg, pattern):
 def workspace(j, pg, tab=None):
     """Open my company's workspace as a person does: the company page → 'Open company workspace' (or the top-bar company
     switcher → '<company>'s workspace')."""
+    close_dialogs(pg)
     if not pg.locator('#content .hb-ws, #content [data-wtab]').count():
         sw = pg.locator('#dxCoSwitch:visible')
         if sw.count():
@@ -133,7 +156,10 @@ def workspace(j, pg, tab=None):
             open_card(j, pg, mine)
             j.click(pg, r'Open company workspace|افتح مساحة عمل|مساحة عمل الشركة', scope='#content', what='Open company workspace', settle=900)
     j.check(re.search(r'COMPANY WORKSPACE|مساحة عمل|مساحة العمل', j.text(pg)[:400], re.I), 'the company workspace did not open')
-    if tab: j.click(pg, r'^\W*(%s)\W*$' % tab, scope='#content', what=tab, settle=800)
+    if tab:
+        t = pg.locator('#content [data-wtab]').filter(has_text=re.compile(r'^\W*(%s)\W*$' % tab))
+        if not t.count(): j.notbuilt('no "%s" tab in the company workspace' % tab.split('|')[0])
+        t.first.scroll_into_view_if_needed(); t.first.click(); j.settle(pg, 800)
     return j.text(pg)
 
 # ---- requests & deals ------------------------------------------------------------------------------------------------------
@@ -150,26 +176,35 @@ def deals_centre(j, pg, tab=None):
 
 def open_deal(j, pg, title, tab=None):
     """Open a deal thread from the deals centre (Received/Sent tab tried in turn)."""
+    pat = title[3:] if title.startswith('re:') else re.escape(title) + ('|' + re.escape(ar(title)) if ar(title) else '')
     for t in ([tab] if tab else [r'Received|المستلمة|الواردة', r'Sent|المرسلة|المُرسلة']):
         deals_centre(j, pg, t)
-        el = j.find(pg, re.escape(title), scope='body')
+        el = j.find(pg, pat, scope='body')
         if el:
             el.click(); pg.wait_for_timeout(900)
-            j.check(title in dlg_text(pg)[:400], 'the deal "%s" did not open' % title)
+            j.check(re.search(pat, dlg_text(pg)[:400]), 'the deal "%s" did not open' % title)
             return dlg_text(pg)
     j.fail('the deal "%s" is not in my Requests & deals' % title)
 
-def deal_act(j, pg, label, fields=None, confirm=r'^\W*(Send|Confirm|Save|OK|Submit|Decline|Withdraw|إرسال|تأكيد|حفظ|رفض|سحب)\b'):
-    """In an open deal thread: click the action button, fill its form (by label pattern) and submit."""
-    dlg_click(j, pg, r'^\W*(%s)\W*$' % label, label)
+def deal_act(j, pg, label, fields=None, submit=None):
+    """In an open deal thread: click the action button (label = English action name), fill its form by label pattern and
+    submit with the form's own button (the same action name, or 'Send answers'). Returns the thread text afterwards."""
+    pat = L(label) if isinstance(label, str) and not label.startswith('^') else label
+    j.check(dlg_open(pg), 'no deal is open')
+    el = j.find(pg, pat, scope='body')
+    if not el: j.notbuilt('no "%s" action in the deal (actions: %s)' % (label, ', '.join(pg.evaluate("(()=>{const d=%s;return d?[...d.querySelectorAll('button')].filter(b=>b.getClientRects().length).map(b=>b.innerText.trim()).filter(Boolean):[]})()" % TOP_DLG))[:200]))
+    before = pg.evaluate("document.querySelectorAll('.dbk-ov').length")
+    mark = j.toast_mark(pg); el.click(); pg.wait_for_timeout(700)
     if fields:
-        for pat, val in fields.items(): fill_by_label(j, pg, pat, val)
-        dlg_click(j, pg, confirm, 'submit ' + label)
-    pg.wait_for_timeout(900)
+        for pt, val in fields.items(): fill_by_label(j, pg, pt, val)
+        sub = j.find(pg, submit or pat, scope='body') or j.find(pg, L('Send answers', 'Send', 'Save'), scope='body')
+        j.check(sub, 'the "%s" form has no submit button' % label)
+        sub.click(); pg.wait_for_timeout(900)
+    j.dead_end(pg, mark, label)
     if j.live:
         try: pg.evaluate("window.dxLive&&dxLive.dealsBusy&&dxLive.dealsBusy()")
         except Exception: pass
-        j.settle(pg, 900)
+        j.settle(pg, 1200)
     return dlg_text(pg)
 
 def simulate(j, pg):
@@ -272,7 +307,8 @@ def post(url, body):
 
 def money(t):
     """Every 'EGP 1,653'-style amount in a text, as numbers."""
-    return [float(x.replace(',', '')) for x in re.findall(r'EGP\s*([\d,]+(?:\.\d+)?)', t or '')]
+    t = (t or '').translate(str.maketrans('٠١٢٣٤٥٦٧٨٩٬', '0123456789,'))
+    return [float(x.replace(',', '')) for x in re.findall(r'EGP\s*([\d,]+(?:\.\d+)?)', t) + re.findall(r'([\d,]+(?:\.\d+)?)\s*(?:ج\.م|جنيه)', t)]
 
 # ---- language and phone checks --------------------------------------------------------------------------------------------------
 _I18N = {}
@@ -317,3 +353,197 @@ def ui_ok(j, pg, where=''):
     if j.width <= 480:
         sw = pg.evaluate("Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth")
         j.check(sw <= 2, 'at %dpx the screen%s scrolls sideways by %dpx' % (j.width, (' (' + where + ')') if where else '', sw))
+
+def reopen(j, pg):
+    """Reload the app. The demo keeps no session (its data stays in the browser): it signs in again with the demo account.
+    Demo only: Playwright's instrumented reload of the file:// demo sometimes comes back without the page's last committed
+    localStorage writes (0 of 24 plain reloads lose one; about 1 in 10 under the harness). A person's browser keeps them,
+    so what the page had stored before the reload is put back when the reload lost it (recorded in the result as
+    data.storage_restored) — anything the page never stored is not invented."""
+    snap = None
+    if j.demo:
+        pg.wait_for_timeout(int(os.environ.get('BIZ_RELOAD_PAUSE', '1500')))
+        snap = pg.evaluate("Object.fromEntries(Object.keys(localStorage).filter(k=>k.startsWith('dx_')).map(k=>[k,localStorage.getItem(k)]))")
+    for attempt in range(3):
+        j.reload(pg)
+        if not snap: break
+        lost = pg.evaluate("s=>Object.keys(s).filter(k=>localStorage.getItem(k)===null)", snap)
+        if not lost: break
+        j.data.setdefault('storage_restored', []).extend(lost)
+        pg.evaluate("s=>{for(const k in s)if(localStorage.getItem(k)===null)localStorage.setItem(k,s[k])}", snap)
+        pg.wait_for_timeout(1500)
+    if j.demo and j.on_login(pg): j.demo_signin(pg)
+    return pg
+
+if os.environ.get('BIZ_CAL'):                                # calibration only: report every failed check and carry on
+    import _j as _jm
+    def _cal_check(self, cond, reason):
+        if not cond: print('   CAL-FAIL step %d: %s' % (self.n, reason), flush=True)
+        return cond
+    def _cal_fail(self, reason): print('   CAL-FAIL step %d: %s' % (self.n, reason), flush=True)
+    def _cal_nb(self, what): print('   CAL-FAIL step %d: not built: %s' % (self.n, what), flush=True)
+    _jm.J.check = _cal_check; _jm.J.fail = _cal_fail; _jm.J.notbuilt = _cal_nb
+
+# ---- Drugbox admin → Review ----------------------------------------------------------------------------------------------------
+QUEUES = {'verifications': r'Verification requests|طلبات التوثيق', 'certs': r'Site certificates|شهادات', 'reports': r'Company reports|بلاغات', 'payments': r'Payments|المدفوعات', 'claims': r'Claims|المطالبات|Claim'}
+def admin_review(j, pg, queue):
+    """Admin → Review → the queue tab; returns the list text. A queue that does not exist fails 'not built'."""
+    close_dialogs(pg)
+    a = pg.locator("#app [onclick=\"goto('admin')\"]")
+    if not a.count(): j.notbuilt('no Admin entry for a Drugbox admin')
+    if not a.first.is_visible() and pg.locator('#sbToggle:visible').count(): pg.click('#sbToggle'); pg.wait_for_timeout(400)
+    a.first.scroll_into_view_if_needed()
+    try: a.first.click(timeout=5000)
+    except Exception: a.first.evaluate('e=>e.click()')            # a phone sidebar footer that the page overlay covers
+    j.settle(pg, 900)
+    rv = pg.locator('.admin-nav [data-review]:visible')
+    j.check(rv.count(), 'not built: Admin has no Review entry'); rv.first.click(); j.settle(pg, 1500)
+    j.wait(pg, "!document.querySelector('.dx-mod-empty')||!/Loading/.test(document.querySelector('.dx-mod-empty').innerText)", 10)
+    tab = pg.evaluate_handle("p=>[...document.querySelectorAll('.dx-mod-tab')].find(t=>new RegExp(p,'i').test(t.innerText))||null", QUEUES.get(queue, queue)).as_element()
+    if not tab: j.notbuilt('Admin → Review has no "%s" queue (queues: %s)' % (queue, ', '.join(pg.evaluate("[...document.querySelectorAll('.dx-mod-tab')].map(t=>t.innerText.trim())"))))
+    tab.click(); pg.wait_for_timeout(500)
+    return pg.evaluate("(document.querySelector('.dx-mod-list')||{}).innerText||''")
+
+def admin_decide(j, pg, needle, ok=True, reason='The document is not readable'):
+    row = pg.locator('.dx-mod-row', has_text=needle)
+    j.check(row.count(), 'the review queue has no row for "%s"' % needle)
+    btn = row.first.locator('.dx-mod-ok' if ok else '.dx-mod-no')
+    j.check(btn.count(), 'not built: the row has no %s button' % ('approve' if ok else 'reject'))
+    if not ok: pg.once('dialog', lambda d: d.accept(reason))
+    btn.first.click(); pg.wait_for_timeout(700)
+    if dlg_open(pg):
+        b = pg.locator('.dbk-ov button.p, .dbk-ov button.danger, .dbk-ov .dbk-p').last
+        if b.count(): b.click()
+    j.settle(pg, 1200)
+
+def dlg_buttons(pg):
+    return pg.evaluate("(()=>{const d=%s;return d?[...d.querySelectorAll('button')].filter(b=>b.getClientRects().length).map(b=>b.innerText.trim()).filter(Boolean):[]})()" % TOP_DLG)
+
+def deal_row_text(pg, title):
+    """In the open deals centre: the text of the row for a deal."""
+    return pg.evaluate("t=>{const d=%s;if(!d)return '';const b=[...d.querySelectorAll('button')].find(b=>b.innerText.includes(t));return b?b.innerText:''}" % TOP_DLG, title)
+
+# ---- moved from the journey files (shared by several) -------------------------------------------------------------------
+def buyer_and_supplier(j, sup_name, product=None, sup_sector='API & excipients', buyer_name=None):
+    """Live: a buyer company and a supplier company (each a fresh account through the UI); the supplier routes quote
+    requests to its owner and lists a product. Demo: Quadra Pharm (the demo account) and a sample supplier."""
+    if j.demo:
+        pg = j.demo_signin(j.new_page())
+        return {'page': pg}, None, 'Medsinia Industries', 'Paracetamol 500 mg'
+    b = live_company_person(j, 'Eng. Karim Buyer', buyer_name or 'Nile Valley Buyer %s' % j.tag, sectors=('Manufacturer',), gov='Giza')
+    s = live_company_person(j, 'Hany Supplier Sales', '%s %s' % (sup_name, j.tag), sectors=(sup_sector,), gov='Cairo')
+    seed_route(j, s['co']['id'], 'quote', s['id'])
+    prod = product and '%s %s' % (product, j.tag)
+    if prod: seed_product(j, s['co']['id'], prod, product, '', 'API powder', '', 'supplier')
+    j.reload(b['page']); j.reload(s['page'])
+    return b, s, s['co']['name'], prod
+
+
+def request_quote(j, pg, sup, product=None, qty='500', unit='kg', to='Cairo, Egypt', inc='CIF', msg='CEP grade, CoA with each batch'):
+    directory(j, pg); open_card(j, pg, sup)
+    j.click(pg, L('Request a quote'), scope='#content', what='Request a quote')
+    j.check(dlg_open(pg), 'Request a quote opened no form')
+    if product: fill_by_label(j, pg, r'^(Product|منتج|المنتج)', re.escape(product))
+    fill_by_label(j, pg, r'Quantity|الكمية', qty); fill_by_label(j, pg, r'^Unit|الوحدة', unit, required=False)
+    fill_by_label(j, pg, r'Deliver to|التسليم إلى|التوصيل', to, required=False); fill_by_label(j, pg, r'Delivery terms|شروط', inc, required=False)
+    by = pg.locator('#rqBy')
+    if by.count(): by.fill('2026-12-15')
+    fill_by_label(j, pg, r'Message|الرسالة', msg)
+    mark = j.toast_mark(pg); dlg_click(j, pg, L('Send request'), 'Send request'); j.settle(pg, 1200)
+    return j.toasts_since(pg, mark)
+
+
+def their_move(j, pg, other, title, label, fields=None):
+    """The other party's next step: in live, as that company in its own browser (deals centre → the deal → action);
+    in the demo, 'Simulate <them>'s reply (demo)'."""
+    if j.demo:
+        open_deal(j, pg, title); t = simulate(j, pg); close_dialogs(pg); return t
+    op = other['page']; j.reload(op); open_deal(j, op, title, r'Received|الواردة')
+    t = deal_act(j, op, label, fields); close_dialogs(op)
+    j.reload(pg)                                             # the next time this side opens the app
+    return t
+
+
+def status_of(j, pg, title):
+    """The status the deal centre shows for a deal (as the page's user sees it)."""
+    t = open_deal(j, pg, title); close_dialogs(pg); return t
+
+
+def live_deal(j, title, cols='status'):
+    return j.sql1("select %s from public.deals where title like $q$%%%s%%$q$ order by id desc limit 1" % (cols, title))
+
+
+def add_or_claim(j, pg, q):
+    directory(j, pg)
+    j.click(pg, L('Add or claim your company'), scope='#content', what='Add or claim your company')
+    box = pg.locator('#acQ:visible'); j.check(box.count(), "'Add or claim your company' has no company-name search")
+    box.fill(q); pg.wait_for_timeout(1200)
+    if j.live:
+        end = time.time() + 10
+        while time.time() < end and not re.search(re.escape(q.split(' ')[0]), dlg_text(pg).split('Company name')[-1]): pg.wait_for_timeout(500)
+        pg.wait_for_timeout(500)
+    return dlg_text(pg)
+
+
+def wizard_details(j, pg, name, sector=r'Manufacturer|مصنع', gov=r'Giza|الجيزة', city='Dokki', phone='+20 100 555 0101', email=None):
+    fill_by_label(j, pg, r'legal name|الاسم القانوني|ccN', name)
+    fill_by_label(j, pg, r'Main activity|النشاط', sector); fill_by_label(j, pg, r'Governorate|المحافظة', gov)
+    fill_by_label(j, pg, r'City|المدينة', city); fill_by_label(j, pg, r'phone|الهاتف', phone)
+    fill_by_label(j, pg, r'email|البريد', email or 'info.%s@newco.example' % j.tag)
+
+
+def create_company(j, pg, name, plan='free', billing='month'):
+    """The create wizard from 'Add or claim your company' up to its last step (returns the last step's text)."""
+    t = add_or_claim(j, pg, name)
+    dlg_click(j, pg, r'not listed|create it|غير مدرجة|أنشئ', 'My company is not listed — create it')
+    pick = pg.locator('.dbk-ov input[name=plPick][value=%s]' % plan)
+    j.check(pick.count(), 'the wizard offers no %s plan' % plan); pick.first.check()
+    if plan == 'vip':
+        bl = pg.locator('.dbk-ov input[name=plBill][value=%s]' % billing)
+        if bl.count(): bl.first.check()
+    dlg_click(j, pg, L('Next: company details'), 'Next: company details')
+    return pg
+
+
+def my_companies(j, pg):
+    """Top-bar company switcher → 'Manage my companies' (the My companies dialog); returns its text."""
+    close_dialogs(pg)
+    sw = pg.locator('#dxCoSwitch:visible'); j.check(sw.count(), 'no company switcher in the top bar at %dpx' % j.width)
+    sw.click(); pg.wait_for_timeout(400)
+    it = pg.locator('#dxCoMenu [data-cs-all]'); j.check(it.count(), "the switcher has no 'Manage my companies'")
+    it.click(); pg.wait_for_timeout(700)
+    return dlg_text(pg)
+
+def chip_info(pg, name):
+    """What a person reads about a certificate on the page: the text around it plus the tooltips (title) of its chips."""
+    return pg.evaluate("""n=>[...document.querySelectorAll('#content *')].filter(e=>e.children.length<4&&(e.innerText||'').includes(n)).map(e=>(e.innerText||'')+' '+(e.getAttribute('title')||'')+' '+[...e.querySelectorAll('[title]')].map(x=>x.title).join(' ')).join(' | ')""", name)
+
+def editor_add_product(j, pg, name, photo=True):
+    """In the open page editor: 'Add a product' → name (+ photo) → 'Add product'."""
+    j.click(pg, r'^\W*(Add a product|أضف منتجًا)\W*$', scope='body', what='Add a product'); pg.wait_for_timeout(400)
+    fill_by_label(j, pg, r'Product name|اسم المنتج', name)
+    if photo:
+        ph = pg.locator('#edPFile, #dxEditor input[type=file][id^=edP]')
+        j.check(ph.count(), 'not built: a product cannot have a photo'); ph.first.set_input_files(PNG); pg.wait_for_timeout(500)
+    mark = j.toast_mark(pg)
+    j.click(pg, r'^\W*(Add product|أضف المنتج)\W*$', scope='body', what='Add product'); pg.wait_for_timeout(500)
+    return j.toasts_since(pg, mark)
+
+# ---- harness fix (business journeys only) ----------------------------------------------------------------------------------------
+# _j.J.new_ctx adds an init script that reads and writes localStorage at the start of EVERY page load. On a reload of the file://
+# demo that early access loads the storage before the previous page's last writes are committed, and in about 1 reload in 4
+# the demo comes back without them (a follow, a product, a dossier …): measured 2 of 8 reloads lost a key with the script,
+# 0 of 8 without it. Here the script touches localStorage only on the first load of an address (window.name remembers it
+# across reloads), never on a reload.
+import _j as _jm2
+def _new_ctx(self, storage_state=None, lang=None):
+    kw = {'viewport': {'width': self.width, 'height': self.height}}
+    if storage_state: kw['storage_state'] = storage_state
+    ctx = self.browser.new_context(**kw); self.ctxs.append(ctx)
+    if self.demo: ctx.route(lambda u: not u.startswith(('file:', 'data:', 'blob:')), lambda r: r.abort())
+    ctx.add_init_script("try{var k='dx-j:'+location.pathname;if(location.protocol!=='about:'&&window.name!==k){window.name=k;if(!localStorage.getItem('dx_lang'))localStorage.setItem('dx_lang','%s');localStorage.setItem('dx_tour_done','1')}}catch(e){}" % (lang or self.lang))
+    ctx.add_init_script(_jm2.TOAST_LOG)
+    try: ctx.grant_permissions(['clipboard-read', 'clipboard-write'])
+    except Exception: pass
+    return ctx
+_jm2.J.new_ctx = _new_ctx
