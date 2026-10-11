@@ -529,21 +529,4 @@ def editor_add_product(j, pg, name, photo=True):
     j.click(pg, r'^\W*(Add product|أضف المنتج)\W*$', scope='body', what='Add product'); pg.wait_for_timeout(500)
     return j.toasts_since(pg, mark)
 
-# ---- harness fix (business journeys only) ----------------------------------------------------------------------------------------
-# _j.J.new_ctx adds an init script that reads and writes localStorage at the start of EVERY page load. On a reload of the file://
-# demo that early access loads the storage before the previous page's last writes are committed, and in about 1 reload in 4
-# the demo comes back without them (a follow, a product, a dossier …): measured 2 of 8 reloads lost a key with the script,
-# 0 of 8 without it. Here the script touches localStorage only on the first load of an address (window.name remembers it
-# across reloads), never on a reload.
-import _j as _jm2
-def _new_ctx(self, storage_state=None, lang=None):
-    kw = {'viewport': {'width': self.width, 'height': self.height}}
-    if storage_state: kw['storage_state'] = storage_state
-    ctx = self.browser.new_context(**kw); self.ctxs.append(ctx)
-    if self.demo: ctx.route(lambda u: not u.startswith(('file:', 'data:', 'blob:')), lambda r: r.abort())
-    ctx.add_init_script("try{var k='dx-j:'+location.pathname;if(location.protocol!=='about:'&&window.name!==k){window.name=k;if(!localStorage.getItem('dx_lang'))localStorage.setItem('dx_lang','%s');localStorage.setItem('dx_tour_done','1')}}catch(e){}" % (lang or self.lang))
-    ctx.add_init_script(_jm2.TOAST_LOG)
-    try: ctx.grant_permissions(['clipboard-read', 'clipboard-write'])
-    except Exception: pass
-    return ctx
-_jm2.J.new_ctx = _new_ctx
+# (the reload-safe init script now lives in _j.J.new_ctx itself)

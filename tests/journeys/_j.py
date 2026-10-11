@@ -116,7 +116,9 @@ class J:
         if storage_state: kw['storage_state'] = storage_state
         ctx = self.browser.new_context(**kw); self.ctxs.append(ctx)
         if self.demo: ctx.route(lambda u: not u.startswith(('file:', 'data:', 'blob:')), lambda r: r.abort())
-        ctx.add_init_script("try{if(!localStorage.getItem('dx_lang'))localStorage.setItem('dx_lang','%s');localStorage.setItem('dx_tour_done','1')}catch(e){}" % (lang or self.lang))
+        # touch localStorage only on the first load of an address (window.name survives reloads): an init script that
+        # reads/writes storage on EVERY load makes Chromium drop the previous page's last writes on about 1 file:// reload in 4
+        ctx.add_init_script("try{var k='dx-j:'+location.pathname;if(location.protocol!=='about:'&&window.name!==k){window.name=k;if(!localStorage.getItem('dx_lang'))localStorage.setItem('dx_lang','%s');localStorage.setItem('dx_tour_done','1')}}catch(e){}" % (lang or self.lang))
         ctx.add_init_script(TOAST_LOG)
         try: ctx.grant_permissions(['clipboard-read', 'clipboard-write'])
         except Exception: pass
