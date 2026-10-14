@@ -1,5 +1,5 @@
-/* Admin → Review: four queues for the Drugbox team — verification requests, warning references, site certificates,
-   company reports. Data goes through window.dxModeration: demo data in the demo, the database in the live app. */
+/* Admin → Review: the queues for the Drugbox team — verification requests, warning references, site certificates,
+   company reports, payments and reported conversations. Data goes through window.dxModeration: demo data in the demo, the database in the live app. */
 (function () {
   var D = window.DBK; if (!D) return;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -14,6 +14,7 @@
           warnings: refs.filter(function (r) { return r.kind === 'warn' && r.status === 'pending' && !decided['w' + r.cand + r.text]; }).map(function (r) { return { id: r.cand + r.text, company: r.company, candidate: r.cand, category: r.category, text: r.text, docs: [] }; }),
           certs: H ? cos.slice(0, 30).reduce(function (a, c) { (H.credentials(c) || []).forEach(function (x) { if (!x.checked && !/^Member:/.test(x.name) && !decided['c' + c.slug + '|' + x.name]) a.push({ id: c.slug + '|' + x.name, company: c.name, site: x.site, name: x.name, expiry: x.expiry }); }); return a; }, []) : [],
           payments: [],
+          messages: (D.store.get('mxReports', []) || []).filter(function (r) { return !decided['m' + r.id]; }).map(function (r) { return { id: r.id, reporter: (window.ME && window.ME.name) || 'You', who: r.who, reason: r.reason, details: r.details, at: r.at, excerpt: r.excerpt ? [r.excerpt] : [] }; }),
           reports: H && H.reports ? H.reports().filter(function (r) { return r.status === 'open' && !decided['r' + r.id]; }).map(function (r) { return { id: r.id, company: r.slug, section: r.section, issue: r.text, correction: r.fix }; }) : []
         });
       },
@@ -21,7 +22,7 @@
       link: function () { return Promise.resolve(null); }
     };
   }
-  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments']];
+  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports']];
   var cur = 'verifications', data = null;
   function docs(list) { return (list || []).map(function (d) { return '<button type="button" class="dx-mod-doc" data-doc="' + esc(d.path) + '" data-bucket="' + esc(d.bucket) + '">📄 ' + esc(d.label) + '</button>'; }).join(''); }
   function row(kind, x) {
@@ -36,6 +37,9 @@
       acts = '<button class="dx-mod-ok" data-k="reports" data-id="' + esc(x.id) + '" data-v="resolved">Resolved</button><button class="dx-mod-no" data-k="reports" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
     if (kind === 'payments') { body = '<b>' + esc(x.who) + ' · ' + esc(x.product) + '</b><span>InstaPay transfer ' + esc(x.transfer) + ' · EGP ' + esc(x.amount) + ' · note ' + esc(x.reference) + '</span>' + docs(x.docs);
       acts = '<button class="dx-mod-ok" data-k="payments" data-id="' + esc(x.id) + '" data-v="paid">Confirm payment</button><button class="dx-mod-no" data-k="payments" data-id="' + esc(x.id) + '" data-v="failed">Not received</button>'; }
+    if (kind === 'messages') { body = '<b>' + esc(x.reporter) + ' reported ' + esc(x.who) + '</b><span>' + esc(x.reason) + (x.at ? ' · ' + esc(x.at) : '') + '</span>' + (x.details ? '<p>' + esc(x.details) + '</p>' : '') +
+        (x.excerpt || []).map(function (m) { return '<p>“' + esc(m) + '”</p>'; }).join('');
+      acts = '<button class="dx-mod-ok" data-k="messages" data-id="' + esc(x.id) + '" data-v="actioned">Action taken</button><button class="dx-mod-no" data-k="messages" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
     return '<div class="dx-mod-row"><div class="dx-mod-b">' + body + '</div><div class="dx-mod-a">' + acts + '</div></div>';
   }
   function paint(c) {
@@ -64,6 +68,7 @@
         function (err) { t.disabled = false; D.toast && D.toast((err && err.message) || 'Could not save the decision'); }); }
     if (v === 'rejected' && k === 'verifications') { note = window.prompt('Reason for the company (they will see it):', 'The registry document is not readable'); if (note === null) return; return go(); }   /* Cancel keeps the request */
     var ask = { rejected: ['Reject this reference?', 'It will not be published.', 'Reject'], dismissed: ['Dismiss this report?', 'The company page stays as it is.', 'Dismiss'], failed: ['Mark this transfer as not received?', 'The order stays unpaid.', 'Not received'] }[v];
+    if (k === 'messages' && v === 'dismissed') ask = ['Dismiss this report?', 'Nothing changes for the reported member.', 'Dismiss'];
     if (ask) { D.modal({ title: ask[0], body: '<p>' + esc(ask[1]) + '</p>', primary: { label: ask[2], danger: true, onClick: function () { go(); } } }); return; }   /* destructive decisions are confirmed first */
     go();
   });

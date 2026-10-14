@@ -5299,7 +5299,7 @@ window.mxComplete = function (root) {
   function info(th) {
     var av = th.querySelector('.av');
     return {
-      key: th.dataset.person, name: txt(th.querySelector('.t-name')).replace(/✓/g, '').trim(),
+      key: th.dataset.person, name: txt(th.querySelector('.t-name')).replace(/✓|🔇/g, '').trim(),
       initials: av ? av.childNodes[0].textContent.trim() : '?', color: av ? av.style.background : '#1a56db',
       online: !!th.querySelector('.online-dot'), ctx: txt(th.querySelector('.t-context-tag')),
       preview: txt(th.querySelector('.t-preview')), verified: /✓/.test(txt(th.querySelector('.t-name')))
@@ -5468,21 +5468,61 @@ window.mxComplete = function (root) {
   document.querySelectorAll('.ctx-view-btn').forEach(function (b) {
     b.addEventListener('click', function () { var t = txt(document.querySelector('.ctx-title')); var q = t.split('—')[0].trim(); goto('market'); var si = document.getElementById('searchIn'); if (si) si.value = q; if (window.__mkxFilter) window.__mkxFilter(q); });
   });
-  /* ⋯ menu */
+  /* ⋯ menu. Mute, block and report belong to one conversation and are kept: in the browser here, in the database in the live
+     app (window.dxMxPrefs: get(key) → {muted, blocked}; set(key, 'muted'|'blocked', on) and report(key, reason, details) may
+     return a promise). A blocked conversation is greyed out and cannot be written to until it is unblocked. */
   var pinned = D.store.get('pinned', []);
+  var PREFS = window.dxMxPrefs || {
+    get: function (key) { return D.store.get('mxPrefs', {})[key] || {}; },
+    set: function (key, what, on) { var all = D.store.get('mxPrefs', {}), p = all[key] || (all[key] = {}); p[what] = on; D.store.set('mxPrefs', all); },
+    report: function (key, reason, details) { var th = list.querySelector('.mx-thread[data-person="' + key + '"]'), l = D.store.get('mxReports', []);
+      l.push({ id: 'm' + Date.now(), who: th ? info(th).name : key, reason: reason, details: details, excerpt: txt(area).slice(-400), at: new Date().toISOString().slice(0, 10) }); D.store.set('mxReports', l); }
+  };
+  function menuItem(k) { return document.querySelector('#chatMenu .ch-dd-item[data-mx="' + k + '"]'); }
+  function paintPrefs() {
+    var th = current && list.querySelector('.mx-thread[data-person="' + current + '"]'), nm = th ? info(th).name : '', p = current ? PREFS.get(current) : {};
+    var mi = menuItem('mute'); if (mi) mi.textContent = p.muted ? '🔔 Unmute Notifications' : '🔇 Mute Notifications';
+    var bi = menuItem('block'); if (bi) bi.textContent = p.blocked ? '✅ Unblock ' + nm : '🚫 Block ' + nm;
+    var ci = document.getElementById('composeInput');
+    if (ci) { if (ci.dataset.ph == null) ci.dataset.ph = ci.placeholder; ci.disabled = !!p.blocked; ci.placeholder = p.blocked ? 'You blocked this contact' : ci.dataset.ph; }
+    list.querySelectorAll('.mx-thread').forEach(function (t) {
+      var q = PREFS.get(t.dataset.person), ic = t.querySelector('.mx-muted-ic'), n = t.querySelector('.t-name');
+      t.style.opacity = q.blocked ? '.45' : '';
+      if (q.muted && !ic && n) n.insertAdjacentHTML('beforeend', '<span class="mx-muted-ic" title="Notifications muted" style="font-size:11px;margin-inline-start:4px">🔇</span>');
+      else if (!q.muted && ic) ic.remove();
+    });
+  }
+  window.mxPaintPrefs = paintPrefs;                                   /* the live app repaints after it redraws the list */
+  function savePref(key, what, on, done) {
+    Promise.resolve(PREFS.set(key, what, on)).then(function () { paintPrefs(); D.toast(done); }, function (err) { paintPrefs(); D.toast((err && err.message) || 'Could not save — please try again'); });
+  }
+  var openPainted = window.mxOpenThread;
+  window.mxOpenThread = function () { var r = openPainted.apply(this, arguments); paintPrefs(); return r; };
   document.querySelectorAll('.ch-dd-item').forEach(function (it) {
+    var t0 = window.dxOrigText ? window.dxOrigText(it) : it.textContent;
+    it.dataset.mx = /Mute/.test(t0) ? 'mute' : /Pin/.test(t0) ? 'pin' : /Favorites/.test(t0) ? 'fav' : /Clear/.test(t0) ? 'clear' : /Block/.test(t0) ? 'block' : /Report/.test(t0) ? 'report' : '';
     it.style.cursor = 'pointer';
     it.addEventListener('click', function (e) {
       e.stopPropagation(); document.getElementById('chatMenu').classList.remove('show');
-      var t = it.textContent, th = list.querySelector('.mx-thread[data-person="' + current + '"]'), nm = th ? info(th).name : 'this contact';
-      if (/Mute/.test(t)) { it.textContent = /🔇/.test(t) ? '🔔 Unmute Notifications' : '🔇 Mute Notifications'; D.toast(/🔇/.test(t) ? 'Notifications muted for ' + nm : 'Notifications on'); }
-      else if (/Pin/.test(t)) { if (th) { list.insertBefore(th, list.firstChild); var n = th.querySelector('.t-name'); if (n && !/📌/.test(n.textContent)) n.insertAdjacentHTML('afterbegin', '📌 '); } pinned.push(current); D.store.set('pinned', pinned); D.toast('Conversation pinned'); }
-      else if (/Favorites/.test(t)) D.toast(nm + ' saved to favorites');
-      else if (/Clear/.test(t)) D.modal({ title: 'Clear chat history?', body: '<div>This removes the messages from your side of the conversation with <b>' + esc(nm) + '</b>.</div>', primary: { label: 'Clear', danger: true, onClick: function () { area.innerHTML = '<div class="msg-date-divider">History cleared</div>'; convs[current] = area.innerHTML; D.toast('Chat history cleared'); } } });
-      else if (/Block/.test(t)) D.modal({ title: 'Block ' + nm + '?', body: '<div>They won\'t be able to message you or see your listings. You can unblock them later.</div>', primary: { label: 'Block', danger: true, onClick: function () { if (th) th.style.opacity = '.45'; var ci = document.getElementById('composeInput'); if (ci) { ci.disabled = true; ci.placeholder = 'You blocked this contact'; } D.toast(nm + ' blocked'); } } });
-      else if (/Report/.test(t)) D.modal({ title: 'Report conversation', body: '<div class="dbk-f"><label>Reason</label><select id="rpR"><option>Spam or scam</option><option>Counterfeit / unlicensed product</option><option>Harassment</option><option>Other</option></select></div><div class="dbk-f"><label>Details</label><textarea id="rpD" placeholder="Optional"></textarea></div>', primary: { label: 'Send report', onClick: function () { D.toast('Report sent — our team reviews it within 24 h'); } } });
+      var k = it.dataset.mx, key = current, th = list.querySelector('.mx-thread[data-person="' + current + '"]'), nm = th ? info(th).name : 'this contact';
+      if (!key) { D.toast('Open a conversation first'); return; }
+      if (k === 'mute') { var mute = !PREFS.get(key).muted; savePref(key, 'muted', mute, mute ? 'Notifications muted for ' + nm : 'Notifications on for ' + nm); }
+      else if (k === 'pin') { if (th) { list.insertBefore(th, list.firstChild); var n = th.querySelector('.t-name'); if (n && !/📌/.test(n.textContent)) n.insertAdjacentHTML('afterbegin', '📌 '); } pinned.push(current); D.store.set('pinned', pinned); D.toast('Conversation pinned'); }
+      else if (k === 'fav') D.toast(nm + ' saved to favorites');
+      else if (k === 'clear') D.modal({ title: 'Clear chat history?', body: '<div>This removes the messages from your side of the conversation with <b>' + esc(nm) + '</b>.</div>', primary: { label: 'Clear', danger: true, onClick: function () { area.innerHTML = '<div class="msg-date-divider">History cleared</div>'; convs[current] = area.innerHTML; D.toast('Chat history cleared'); } } });
+      else if (k === 'block') {
+        if (PREFS.get(key).blocked) savePref(key, 'blocked', false, nm + ' unblocked');
+        else D.modal({ title: 'Block ' + nm + '?', body: '<div>They won\'t be able to message you, and you won\'t be able to message them. You can unblock them later from this menu.</div>', primary: { label: 'Block', danger: true, onClick: function () { savePref(key, 'blocked', true, nm + ' blocked'); } } });
+      }
+      else if (k === 'report') D.modal({ title: 'Report conversation', body: '<div class="dbk-f"><label for="rpR">Reason</label><select id="rpR"><option>Spam or scam</option><option>Counterfeit / unlicensed product</option><option>Harassment</option><option>Other</option></select></div><div class="dbk-f"><label for="rpD">Details</label><textarea id="rpD" placeholder="Optional"></textarea></div>',
+        primary: { label: 'Send report', onClick: function (b, close) {
+          var ok = b.querySelector('[data-a=ok]'); if (ok) { if (ok.disabled) return false; ok.disabled = true; }
+          Promise.resolve(PREFS.report(key, b.querySelector('#rpR').value, b.querySelector('#rpD').value.trim())).then(function () { close(); D.toast('Report sent — our team reviews it within 24 h'); },
+            function (err) { if (ok) ok.disabled = false; D.toast((err && err.message) || 'Could not send the report — please try again'); });
+          return false; } } });
     });
   });
+  paintPrefs();
 
   /* phones: list first, then the chat full-width with a back button */
   var head2 = root.querySelector('.chat-head');

@@ -307,6 +307,16 @@
     '1200 × 630 — the size WhatsApp and LinkedIn show in full. For LinkedIn, download the image and paste the caption.': '1200 × 630 — المقاس الذي يعرضه واتساب ولينكدإن كاملًا. للينكدإن: نزّل الصورة والصق النص.',
     'Edit Profile': 'تعديل الملف', 'Headline': 'العنوان المهني', 'Bio': 'نبذة', 'Save Changes': 'حفظ التغييرات', 'No notifications': 'لا توجد إشعارات', 'New message': 'رسالة جديدة', 'Attach file': 'إرفاق ملف',
     'Attach photo': 'إرفاق صورة', 'This conversation is about this listing': 'هذه المحادثة بخصوص هذا الإعلان',
+    /* Messages: the conversation menu, block / report, ✎ New message (S-03, J-SOCIAL-40) */
+    'Mute Notifications': 'كتم الإشعارات', 'Unmute Notifications': 'إلغاء الكتم', 'Pin Conversation': 'تثبيت المحادثة', 'Save to Favorites': 'حفظ في المفضلة',
+    'Clear Chat History': 'مسح سجل المحادثة', 'Report Conversation': 'الإبلاغ عن المحادثة', 'Report conversation': 'الإبلاغ عن المحادثة', 'Block': 'حظر',
+    'You blocked this contact': 'لقد حظرت هذا الشخص', 'Report sent — our team reviews it within 24 h': 'تم إرسال البلاغ — يراجعه فريقنا خلال 24 ساعة',
+    'Spam or scam': 'رسائل مزعجة أو احتيال', 'Counterfeit / unlicensed product': 'منتج مقلّد / غير مرخّص', 'Harassment': 'مضايقة أو إساءة', 'Conversation pinned': 'تم تثبيت المحادثة',
+    'They won\u2019t be able to message you, and you won\u2019t be able to message them. You can unblock them later from this menu.': 'لن يستطيع مراسلتك ولن تستطيع مراسلته. يمكنك إلغاء الحظر لاحقًا من هذه القائمة.',
+    "They won't be able to message you, and you won't be able to message them. You can unblock them later from this menu.": 'لن يستطيع مراسلتك ولن تستطيع مراسلته. يمكنك إلغاء الحظر لاحقًا من هذه القائمة.',
+    'Message reports': 'بلاغات الرسائل', 'Action taken': 'تم اتخاذ إجراء', 'Dismiss': 'تجاهل', 'Dismiss this report?': 'تجاهل هذا البلاغ؟',
+    'Nothing changes for the reported member.': 'لن يتغير شيء بالنسبة للعضو المُبلَّغ عنه.', 'Name of a person or company': 'اسم شخص أو شركة', 'Write your message…': 'اكتب رسالتك…',
+    'Notifications muted': 'الإشعارات مكتومة', 'Could not send the report — please try again': 'تعذّر إرسال البلاغ — حاول مرة أخرى', 'Could not save — please try again': 'تعذّر الحفظ — حاول مرة أخرى',
     'Knowledge communities & deal-rooms for pharma, cosmetics & device professionals': 'مجتمعات معرفة وغرف صفقات لمتخصصي الدواء والتجميل والأجهزة الطبية',
     'Matched to your listings and connections — not just popularity': 'مختارة حسب إعلاناتك واتصالاتك — لا حسب الشهرة فقط',
     'Groups where suppliers and buyers actively trade — not just talk': 'مجموعات يتاجر فيها المورّدون والمشترون فعلًا — لا مجرد كلام', 'Learn from people who’ve done it.': 'تعلّم من أهل الخبرة.',
@@ -441,7 +451,11 @@
     [/^Not found on Drugbox: (.+)$/, function (m) { return 'غير موجود على Drugbox: ' + m[1]; }],
     [/^No Drugbox member found for (.+) — use the name on their Drugbox profile$/, function (m) { return 'لا يوجد عضو في Drugbox باسم ' + m[1] + ' — استخدم الاسم المكتوب في ملفه على Drugbox'; }],
     [/^No member called (.+) — choose someone from the list$/, function (m) { return 'لا يوجد عضو باسم ' + m[1] + ' — اختر شخصًا من القائمة'; }],   /* ✎ New message (S-03) */
-    [/^Several members are called (.+) — choose one from the list$/, function (m) { return 'أكثر من عضو باسم ' + m[1] + ' — اختر واحدًا من القائمة'; }]
+    [/^Several members are called (.+) — choose one from the list$/, function (m) { return 'أكثر من عضو باسم ' + m[1] + ' — اختر واحدًا من القائمة'; }],
+    [/^🚫 Block (.+)$/, function (m) { return '🚫 حظر ' + m[1]; }], [/^✅ Unblock (.+)$/, function (m) { return '✅ إلغاء الحظر عن ' + m[1]; }],   /* the conversation menu (J-SOCIAL-40) */
+    [/^Block (.+)\?$/, function (m) { return 'حظر ' + m[1] + '؟'; }], [/^(.+) blocked$/, function (m) { return 'تم حظر ' + m[1]; }], [/^(.+) unblocked$/, function (m) { return 'تم إلغاء الحظر عن ' + m[1]; }],
+    [/^Notifications muted for (.+)$/, function (m) { return 'تم كتم إشعارات ' + m[1]; }], [/^Notifications on for (.+)$/, function (m) { return 'تم تشغيل إشعارات ' + m[1]; }],
+    [/^(.+) reported (.+)$/, function (m) { return m[1] + ' أبلغ عن ' + m[2]; }]
   ];
   PATTERNS.push(
     [/^▶ Video intro · (\d+:\d+)$/, function (m) { return '▶ فيديو تعريفي · ' + m[1]; }],
