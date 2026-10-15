@@ -300,6 +300,32 @@ def message_company(j):
         j.check('Asking Buyer' in j.text(sp), "the conversation is not in the sales person's Messages")
         j.sql("insert into public.messages (sender_id, receiver_id, body) values ('%s','%s','Yes, CEP R1-CEP 2019-123 %s')" % (sales['id'], me['id'], j.tag))
         j.reload(pg); j.check(pg.evaluate("[...document.querySelectorAll('#tnb-messages [class*=badge],#mb-messages [class*=badge],#snl-messages [class*=badge]')].some(e=>e.getClientRects().length&&+e.innerText>0)"), 'the reply gives the buyer no unread badge')
+    with j.step("A company with no routed member: 'Message' reaches its owner by name, who gets the message and a notification"):
+        if j.demo: j.skip('the demo companies have sample teams; the owner is a real second person only in live')
+        lone = j.person('Lone Owner')
+        solo = seed_company(j, lone['id'], 'Quiet Pharma %s' % j.tag, sectors=('Manufacturer',), gov='Giza')
+        close_dialogs(pg); directory(j, pg); open_card(j, pg, solo['name']); t = company_tab(j, pg, 'Contact|%s' % ar('Contact'), 'Contact')
+        j.check('Lone Owner' in t, "the Contact tab does not say the owner (Lone Owner) answers quote requests")
+        j.click(pg, L('Message'), scope='#content', what='Message'); j.settle(pg, 1200)
+        dock = pg.evaluate("[...document.querySelectorAll('#dxDock .dk-win')].filter(e=>e.getClientRects().length).map(e=>e.innerText).join(' ')")
+        j.check('Lone Owner' in dock and 'team' not in dock.lower(), "Message does not open a conversation with the owner (dock: %s)" % dock[:80].replace('\n', ' '))
+        box = pg.locator('#dxDock .dk-win[data-n="Lone Owner"] input:visible').first
+        j.check(box.count(), 'the conversation has no message box'); box.fill('Do you make Metformin 850? %s' % j.tag); box.press('Enter'); j.settle(pg, 1500)
+        j.check(j.wait_db("select count(*) from public.messages where sender_id='%s' and receiver_id='%s' and body like '%%Metformin 850? %s%%'" % (me['id'], lone['id'], j.tag), 8) == '1', 'no messages row from the buyer to the owner')
+        j.check(j.wait_db("select count(*) from public.notifications where user_id='%s' and from_user='%s' and message like '%%%s%%'" % (lone['id'], me['id'], solo['name']), 6) == '1', 'the owner gets no notification naming the company')
+        op = lone['page']; j.reload(op); j.nav(op, 'messages'); j.settle(op, 1500)
+        j.check('Asking Buyer' in j.text(op), "the conversation is not in the owner's Messages")
+    with j.step("A company nobody answers for (unclaimed): 'Message' says so plainly and shows the Contact tab — no window to an invented team"):
+        if j.demo: j.skip('the demo companies have sample teams')
+        unc = seed_company(j, None, 'Unanswered Labs %s' % j.tag, sectors=('Manufacturer',), status='unclaimed', source='public_list', gov='Cairo')
+        close_dialogs(pg); pg.evaluate("(()=>{const d=document.querySelectorAll('#dxDock [data-a=x]');d.forEach(b=>b.click())})()")
+        directory(j, pg); open_card(j, pg, unc['name']); mark = j.toast_mark(pg)
+        j.click(pg, L('Message'), scope='#content', what='Message'); j.settle(pg, 1500)
+        said = ' '.join(j.toasts_since(pg, mark) + j.toasts(pg))
+        j.check(re.search(r'Nobody at .*answers|لا أحد في', said), "Message on a page nobody answers for says nothing clear (toasts: %s)" % said[:120])
+        dock = pg.evaluate("[...document.querySelectorAll('#dxDock .dk-win')].filter(e=>e.getClientRects().length).map(e=>e.innerText).join(' ')")
+        j.check(not dock.strip(), 'a chat window opened to nobody: %s' % dock[:80].replace('\n', ' '))
+        j.check(pg.locator('#content .cp-tab.on[data-htab2=contact]').count(), 'the Contact tab (phone, email, WhatsApp) is not shown instead')
 
 @journey('J-BUSINESS-09')
 def report_wrong_info(j):

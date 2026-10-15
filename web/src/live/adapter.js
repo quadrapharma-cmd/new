@@ -400,7 +400,7 @@
   /* ═══════════════ B3 — network (requests, connections, suggestions) + notifications ═══════════════ */
   var INCOMING = window.CONN_IN || (window.CONN_IN = {}), NET_AT = 0, NOTIF_AT = 0, NOTIF_IDS = [], SUGG = [], REJ = {};   /* REJ: my requests that were declined */
   function wipe(o) { Object.keys(o).forEach(function (k) { if (+k > 1000) delete o[k]; }); }
-  var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼', post_removed: '🛡️', report_closed: '🛡️', follow: '👤' };
+  var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼', post_removed: '🛡️', report_closed: '🛡️', follow: '👤', company_message: '💬' };
   var esc2 = function (t) { return window.esc ? window.esc(t) : String(t || ''); };
   /* every connection, 1,000 rows a request in id order (the API's row cap) — a big network is never cut short (F-50) */
   async function loadConnections() {
@@ -845,7 +845,11 @@
   document.addEventListener('click', function (e) { var t = e.target; if (!t.closest || t.closest('.dbk-ov, #dxDock')) return;
     var c = t.closest('[data-uid]'); LASTUID = c && +c.dataset.uid > 1000 ? { a: +c.dataset.uid, at: Date.now() } : { a: 0, at: 0 }; }, true);
   function lastCard() { return LASTUID.a && Date.now() - LASTUID.at < 120000 ? LASTUID.a : 0; }
-  onReset(function () { LASTUID = { a: 0, at: 0 }; });                    /* local numbers start again for the next person */
+  /* a chat window a company page's "Message" opened (B-05): its name → the company; what is written there goes to company_message(),
+     which delivers it to the person who answers for that company (unless a person's card was clicked since) */
+  var DOCKTO = {};
+  function dockCompany(name) { var c = DOCKTO[name]; return c && !(LASTUID.at > c.at) ? c : null; }
+  onReset(function () { LASTUID = { a: 0, at: 0 }; DOCKTO = {}; });         /* local numbers start again for the next person */
   function personByName(name) { var n = String(name || '').trim().toLowerCase(); if (!n) return null;
     var hits = (window.USERS || []).filter(function (x) { return x.id > 1000 && x !== window.ME && String(x.name || '').trim().toLowerCase() === n; });
     var u = hits.length === 1 ? hits[0] : hits.find(function (x) { return x.id === lastCard(); }); return u ? uuidOf(u.id) : null; }
@@ -853,6 +857,8 @@
   function sendText(to, body) { return sb.from('messages').insert({ sender_id: ME_UUID, receiver_id: to, body: body }).then(function (r) { if (r.error) throw r.error; }); }
   function dockMessage(d) {
     if (d == null) return !!ME_UUID;                                      /* the dock asks whether it can send for real */
+    var co = ME_UUID && dockCompany(d.to);
+    if (co) { sb.rpc('company_message', { p_company: co.company, p_body: String(d.text || '') }).then(function (r) { if (r.error) throw r.error; }).catch(toastErr); return true; }
     var to = ME_UUID && personByName(d.to); if (!to || to === ME_UUID) { unreachable(d.to); return false; }
     sendText(to, String(d.text || '')).catch(toastErr); return true;
   }
@@ -1062,14 +1068,61 @@
      is still on it (F-56) */
   function pageData(slug, ws) {
     var fresh = function (at) { return at && Date.now() - at < 60000; };     /* each kept for a minute */
-    if (!ME_UUID || !slug || (fresh(CO.sitesAt[slug]) && fresh(CO.trackAt[slug]))) return;
-    Promise.all([fresh(CO.sitesAt[slug]) || loadSites(slug), fresh(CO.trackAt[slug]) || loadTrack(slug)]).then(function () {
+    if (!ME_UUID || !slug || (fresh(CO.sitesAt[slug]) && fresh(CO.trackAt[slug]) && fresh(CC.at[slug]))) return;
+    Promise.all([fresh(CO.sitesAt[slug]) || loadSites(slug), fresh(CO.trackAt[slug]) || loadTrack(slug), fresh(CC.at[slug]) || loadContacts(slug)]).then(function () {
       var S = window.dxDir && window.dxDir.S; if (!S || document.body.getAttribute('data-page') !== 'companies') return;
       if (ws ? S.view === 'workspace' && S.ws === slug : S.open === slug && S.view !== 'workspace') window.dxDir.render();
     }).catch(toastErr);
   }
+  /* ── B-05: who answers at a company (0032). The team and the routing are members-only, so a page asks company_contacts() who
+     answers each kind of request; the approved "Who answers" / "Who receives what" text and the chat window name that person,
+     and "Message" / "Send a message" write to them through company_message() — the database picks the receiver, never a name.
+     A company nobody answers for (unclaimed) says so and shows its Contact tab (phone, email, WhatsApp). ── */
+  var CC = { at: {}, by: {}, p: {} };
+  var CROLE = { owner: 'Admin', admin: 'Admin', sales: 'Sales', quality: 'Quality', regulatory: 'Regulatory', hr: 'HR', member: 'Team member' };
+  function loadContacts(slug) {
+    var raw = CO.raw[slug], me = ME_UUID; if (!raw || !raw.id) return Promise.resolve(null);
+    if (CC.p[slug]) return CC.p[slug];
+    return (CC.p[slug] = Promise.resolve(sb.rpc('company_contacts', { p_company: raw.id })).then(function (r) {
+      if (r.error) throw r.error; if (me !== ME_UUID) return null;
+      var c = r.data || {}, ids = [];
+      Object.keys(c).forEach(function (k) { var x = c[k]; if (x && x.id && x.id !== ME_UUID && ids.indexOf(x.id) < 0) ids.push(x.id); });
+      var known = ids.length ? sb.from('profiles').select(PCOLS).in('id', ids).then(function (q) { if (me === ME_UUID) (q.data || []).forEach(putUser); }) : null;   /* the Messages page names them */
+      return Promise.resolve(known).then(function () { if (me !== ME_UUID) return null; CC.by[slug] = c; CC.at[slug] = Date.now(); return c; });
+    }).finally(function () { delete CC.p[slug]; }));
+  }
+  function contactsOf(slug) { return CC.at[slug] && Date.now() - CC.at[slug] < 60000 ? Promise.resolve(CC.by[slug]) : loadContacts(slug); }
+  onReset(function () { CC = { at: {}, by: {}, p: {} }; });
+  function wrapRoute() {
+    var HD = window.dxHubData; if (!HD || !HD.route || HD.route.__live) return;
+    var o = HD.route;
+    HD.route = function (slug, type) {
+      var c = ME_UUID && CC.by[slug]; if (!c) return o.apply(this, arguments);
+      var x = type in c ? c[type] : c.quote;
+      if (!x) return { name: 'nobody on Drugbox yet', role: 'use the Contact tab' };
+      return { name: txt(x.name) || 'Drugbox member', role: CROLE[x.role] || 'Team member' };
+    };
+    HD.route.__live = true;
+  }
+  window.addEventListener('click', function (e) {                         /* before the page's own handler (a capture on document) */
+    var b = ME_UUID && e.target.closest && e.target.closest('#dxDir.hub [data-hmsg]'); if (!b) return;
+    var S = window.dxDir && window.dxDir.S, slug = S && (S.open || S.ws), raw = slug && CO.raw[slug]; if (!raw || !raw.id) return;
+    e.preventDefault(); e.stopPropagation();
+    contactsOf(slug).then(function (c) {
+      var q = c && c.quote, name = txt(raw.name);
+      if (!q) { window.toast('Nobody at ' + name + ' answers messages on Drugbox yet — call, email or WhatsApp them from the Contact tab');
+        if (S.open === slug && S.tab !== 'contact') { S.tab = 'contact'; rerenderCompanies(); } return; }
+      if (q.id === ME_UUID) { window.toast('You answer ' + name + '’s messages yourself'); return; }
+      var who = txt(q.name) || 'Drugbox member'; DOCKTO[who] = { company: raw.id, uid: q.id, at: Date.now() };
+      if (window.dxOpenChat) window.dxOpenChat(who);
+    }).catch(toastErr);
+  }, true);
+  document.addEventListener('click', function (e) {                       /* the chat window's "Open full chat": the real conversation */
+    var b = ME_UUID && e.target.closest && e.target.closest('#dxDock [data-a=full]'), w = b && b.closest('.dk-win'), co = w && dockCompany(w.dataset.n);
+    if (co && (window.USERS || []).some(function (u) { return u.id === aid(co.uid); })) MX.to = aid(co.uid);
+  }, true);
   function wrapHub() {
-    var X = window.dxDir, H = window.dxHub;
+    var X = window.dxDir, H = window.dxHub; wrapRoute();
     if (X && X.open && !X.open.__live) { var o = X.open; X.open = function (slug) { var r = o.apply(this, arguments); pageData(slug, false); return r; }; X.open.__live = true; }
     if (X && X.render && !X.render.__live) { var rd = X.render; X.render = function () { var r = rd.apply(this, arguments); openedMissing(); setTimeout(moreIfShort, 0); return r; }; X.render.__live = true; }
     if (window.dxOpenCompany && !window.dxOpenCompany.__live) { var oc = window.dxOpenCompany; window.dxOpenCompany = function (slug) { var r = oc.apply(this, arguments); pageData(slug, false); return r; }; window.dxOpenCompany.__live = true; }
