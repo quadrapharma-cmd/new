@@ -1,0 +1,17 @@
+/* feedacts.js — who reacted, the Saved page cards, a post opened from a link */
+.dbk-ov .dx-rx-sum{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:13px;font-weight:700;color:#0f172a;padding:0 0 10px;border-bottom:1px solid #eef1f5;margin-bottom:6px}
+.dbk-ov .dx-rx-sum span{font-weight:600;color:#475569}
+.dbk-ov .dx-rx-list{display:flex;flex-direction:column;max-height:min(52vh,420px);overflow-y:auto}
+.dbk-ov .dx-rx-row{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:6px 4px;border:0;border-bottom:1px solid #f1f5f9;background:none;text-align:start;cursor:pointer;font:inherit;color:inherit}
+.dbk-ov .dx-rx-row:hover,.dbk-ov .dx-rx-row:focus-visible{background:#f8fafc}
+.dbk-ov .dx-rx-who{flex:1;min-width:0;display:flex;flex-direction:column}
+.dbk-ov .dx-rx-who b{font-size:13.5px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dbk-ov .dx-rx-who small{font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dbk-ov .dx-rx-k{font-size:18px;flex:none}
+.dbk-ov .dx-rx-more{font-size:12.5px;color:#64748b;padding:10px 4px}
+.dx-saved-posts .post{margin-bottom:12px;max-width:none;width:100%;box-sizing:border-box}
+.post.dx-post-hit{animation:dxPostHit 1.6s ease-out 1}
+@keyframes dxPostHit{0%{box-shadow:0 0 0 3px rgba(26,86,219,.45)}100%{box-shadow:0 0 0 3px rgba(26,86,219,0)}}
+@media (prefers-reduced-motion:reduce){.post.dx-post-hit{animation:none;box-shadow:0 0 0 2px rgba(26,86,219,.35)}}
+/* the page subtitle rule (.content h1+div: mono, 13px, muted) is for a line of text under a title, not for the saved posts that follow it */
+.content .saved-list h1+div.dx-saved-posts{font-family:inherit!important;font-size:inherit!important;color:inherit!important;margin-top:0}

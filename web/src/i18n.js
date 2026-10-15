@@ -408,7 +408,17 @@
     'This post could not be changed': 'تعذّر تعديل هذا المنشور', 'This post could not be removed': 'تعذّرت إزالة هذا المنشور', 'This report was already answered': 'تم الرد على هذا البلاغ بالفعل',
     'This is not available yet': 'هذا غير متاح بعد', 'Group not found': 'المجموعة غير موجودة', 'Only the group\'s admins can answer join requests': 'الرد على طلبات الانضمام متاح لمديري المجموعة فقط',
     'There is no pending request from this person': 'لا يوجد طلب معلّق من هذا الشخص', 'Only the group\'s admins can pin a post': 'تثبيت المنشورات متاح لمديري المجموعة فقط',
-    'Only a post of this group can be pinned in it': 'لا يُثبَّت في المجموعة إلا منشور منها', 'You have 20 requests waiting for an answer — please wait for the groups to reply': 'لديك 20 طلبًا تنتظر الرد — انتظر حتى ترد المجموعات'
+    'Only a post of this group can be pinned in it': 'لا يُثبَّت في المجموعة إلا منشور منها', 'You have 20 requests waiting for an answer — please wait for the groups to reply': 'لديك 20 طلبًا تنتظر الرد — انتظر حتى ترد المجموعات',
+    /* Home feed actions (feedacts.js): reactions, Save, Copy link, Report; Admin → Review → Reported posts */
+    'Support': 'دعم', 'Celebrate': 'تهنئة', 'Insightful': 'مفيد', 'Appreciation': 'تقدير', 'Curious': 'فضول', '🔖 Saved': '🔖 محفوظ', 'Report': 'إبلاغ',
+    '🔗 Copy link': '🔗 انسخ الرابط', '🚩 Report': '🚩 إبلاغ', 'Loading…': 'جارٍ التحميل…', '(you)': '(أنت)',
+    'Drugbox reviews every report. The author is not told who reported.': 'يراجع فريق Drugbox كل بلاغ، ولا يُبلَّغ صاحب المنشور بمن أبلغ.',
+    'What should Drugbox know?': 'ما الذي يجب أن يعرفه فريق Drugbox؟', 'Thanks — Drugbox will review this post': 'شكرًا — سيراجع فريق Drugbox هذا المنشور',
+    'You already reported this post — Drugbox is reviewing it': 'سبق أن أبلغت عن هذا المنشور — فريق Drugbox يراجعه', 'Could not send the report — try again': 'تعذّر إرسال البلاغ — حاول مرة أخرى',
+    'This post is no longer available': 'هذا المنشور لم يعد متاحًا', 'Could not load the reactions': 'تعذّر تحميل التفاعلات', 'You cannot report your own post': 'لا يمكنك الإبلاغ عن منشورك',
+    'Reported posts': 'منشورات مُبلَّغ عنها', 'Remove this post?': 'إزالة هذا المنشور؟', 'Dismiss': 'تجاهل', 'Dismiss this report?': 'تجاهل هذا البلاغ؟', 'The post stays up.': 'يبقى المنشور منشورًا.',
+    'The author is told it was removed and why. Every reporter is told the outcome.': 'يُبلَّغ صاحب المنشور بإزالته وسببه، ويُبلَّغ كل من أبلغ بالنتيجة.',
+    'Note for the author (optional)': 'ملاحظة لصاحب المنشور (اختياري)', 'Nothing waiting here.': 'لا شيء في الانتظار هنا.'
   };
   var UNITS = { m: ['دقيقة', 'دقائق'], h: ['ساعة', 'ساعات'], d: ['يوم', 'أيام'], w: ['أسبوع', 'أسابيع'], min: ['دقيقة', 'دقائق'] };
   function unit(n, u) { var p = UNITS[u] || [u, u]; return +n >= 3 && +n <= 10 ? p[1] : p[0]; }
@@ -424,6 +434,7 @@
   var __cn = null;   /* company names, for the 'Open <company>' tooltip; rebuilt when the directory list changes */
   function coName(n) { var X = window.dxDir; if (!X || !X.companies) return false; var l = X.companies(); if (!__cn || __cn.l !== l) { __cn = { l: l, s: new Set() }; l.forEach(function (c) { __cn.s.add(c.name); }); } return __cn.s.has(n); }
   var PATTERNS = [
+    [/^and ([\d,]+) more$/, function (m) { return 'و' + m[1] + ' آخرون'; }], [/^([\d,]+) people reacted$/, function (m) { return 'تفاعل ' + m[1] + ' شخصًا'; }],
     [/^(\d+)\s*(m|min|h|d|w) ago$/i, function (m) { return 'منذ ' + m[1] + ' ' + unit(m[1], m[2].toLowerCase()); }],
     [/^(\d+)(min|h|d) ago(.*)$/i, function (m) { return 'منذ ' + m[1] + ' ' + unit(m[1], m[2].toLowerCase()) + tr(m[3]); }],
     [/^([\d,.]+K?)\s+(comments?|reposts?|members?|posts?|views?|connections?|listings?|companies|company|providers|clients|inquiries|results|sites?|open positions|requests received|request received|new posts today|new posts this week|deals closed)$/i, function (m) { return word(m[1], m[2]); }],
@@ -591,14 +602,19 @@
   function isAr() { return document.documentElement.lang === 'ar'; }
   /* layers that split a text node (emoji → icon, ✓ → seal) rebuild it from the English original and hand each piece back here, so switching to English restores it */
   window.dxI18nOrig = function (n) { return ORIG.has(n) ? ORIG.get(n) : null; };
-  window.dxI18nAdopt = function (n) { if (!n || !isAr()) return; var v = n.nodeValue, t = tr(v); if (t !== v) { ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else { ORIG.delete(n); LAST.delete(n); } };
+  /* the same English word in another place: a saved post or job says "محفوظ" on its own button, "المحفوظات" is the Saved page */
+  var CTX = [['.dbk-saved', { 'Saved': 'محفوظ', '🔖 Saved': '🔖 محفوظ' }]];
+  function trAt(n, v) { var p = n.parentElement, k = v.replace(/\s+/g, ' ').trim();
+    for (var i = 0; p && i < CTX.length; i++) if (CTX[i][1][k] && p.closest(CTX[i][0])) return put(v, k, CTX[i][1][k]);
+    return tr(v); }
+  window.dxI18nAdopt = function (n) { if (!n || !isAr()) return; var v = n.nodeValue, t = trAt(n, v); if (t !== v) { ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else { ORIG.delete(n); LAST.delete(n); } };
   window.dxI18nAttrs = function (el) { if (el && isAr()) walk(el); };   /* attributes a layer set after the page was translated (tooltips) */
   function walk(root) {
     if (!root || !isAr()) return;
     var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { var p = n.parentElement; return !p || p.closest(SKIP) || p.matches(SKIP_SELF) || !/[A-Za-z]/.test(n.nodeValue) ? 2 : 1; } });
     var list = []; while (w.nextNode()) list.push(w.currentNode);
     list.forEach(function (n) { var v = n.nodeValue; if (LAST.get(n) === v) return;   /* already our translation */
-      var t = tr(v); if (t !== v) { ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else if (ORIG.has(n)) { ORIG.delete(n); LAST.delete(n); } });   /* a new value from the app becomes the new original */
+      var t = trAt(n, v); if (t !== v) { ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else if (ORIG.has(n)) { ORIG.delete(n); LAST.delete(n); } });   /* a new value from the app becomes the new original */
     var withAttr = root.querySelectorAll ? Array.prototype.slice.call(root.querySelectorAll('[placeholder],[title],[aria-label]')) : []; if (root.matches && root.matches('[placeholder],[title],[aria-label]')) withAttr.push(root);
     withAttr.forEach(function (el) {
       if (el.closest('[data-noi18n]')) return;
