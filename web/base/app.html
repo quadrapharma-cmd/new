@@ -5824,14 +5824,14 @@ window.gxComplete = function (root) {
     'discussion': function (c) { return !!c.querySelector('.gtag-discuss'); },
     'deal rooms': function (c) { return !!c.querySelector('.gtag-deal'); },
     'pharma': function (c) { return /pharma|API|GMP|regulator|CMO|EDA|QA|QC|manufactur/i.test(txt(c)); },
-    'cosmetics': function (c) { return /cosmetic|skin|formulat|beauty/i.test(txt(c)); },
+    'cosmetics': function (c) { return /cosmetic|skin|beauty/i.test(txt(c)); },
     'by country': function (c) { return /Egypt|GCC|UAE|Saudi|MENA|Gulf|Africa/i.test(txt(c)); }
   };
   document.querySelectorAll('.cf-tag').forEach(function (t) {
     t.style.cursor = 'pointer'; t.setAttribute('role', 'button'); t.setAttribute('tabindex', '0');
     t.addEventListener('click', function () {
       document.querySelectorAll('.cf-tag').forEach(function (x) { x.classList.remove('on'); }); t.classList.add('on');
-      var key = txt(t).replace(/^[^A-Za-z]+/, '').replace(/\s*\(\d+\)$/, '').toLowerCase(), f = FILTERS[key];
+      var key = (window.dxOrigText ? window.dxOrigText(t).replace(/\s+/g, ' ').trim() : txt(t)).replace(/^[^A-Za-z]+/, '').replace(/\s*\(\d+\)$/, '').toLowerCase(), f = FILTERS[key];   /* the English label, whatever the language shown */
       document.querySelectorAll('.gcard').forEach(function (c) { c.style.display = !f || f(c) ? '' : 'none'; });
       document.querySelectorAll('.sec-hdr').forEach(function (h) {
         var grid = h.nextElementSibling; if (!grid) return;

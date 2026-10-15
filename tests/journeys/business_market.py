@@ -113,7 +113,8 @@ def browse_market(j):
         j.check(sup == real, "the Supply count says %s but there are %s supply listings" % (sup, real))
         if j.live:
             t = j.text(pg)
-            j.check(not re.search(r'1\.2K|Vivian Zhou|LIVE NOW', t), 'the live marketplace shows demo statistics or demo activity')
+            # the "Live now" panel itself is approved; in the live app it lists the newest real listings — only its sample items are demo
+            j.check(not re.search(r'1\.2K|150,000\+|8× more|Vivian Zhou|Neomycin Sulphate|EDA Registration by Dr\. Alia|Amoxicillin 500kg|Retinol 97% from UAE', t), 'the live marketplace shows demo statistics or demo activity')
 
 @journey('J-BUSINESS-35')
 def contact_lister(j):
