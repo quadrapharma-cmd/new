@@ -18,6 +18,7 @@ create table if not exists public.conversation_mutes (
   primary key (owner, partner),
   constraint conversation_mutes_not_self check (owner <> partner)
 );
+create index if not exists idx_conversation_mutes_partner on public.conversation_mutes (partner);   -- every foreign key is indexed (F-44)
 alter table public.conversation_mutes enable row level security;
 do $$ begin
   create policy "mutes: own read" on public.conversation_mutes for select using (owner = (select auth.uid()));
@@ -41,6 +42,7 @@ create table if not exists public.user_blocks (
   primary key (blocker, blocked),
   constraint user_blocks_not_self check (blocker <> blocked)
 );
+create index if not exists idx_user_blocks_blocked on public.user_blocks (blocked);
 alter table public.user_blocks enable row level security;
 do $$ begin
   create policy "blocks: own read" on public.user_blocks for select using (blocker = (select auth.uid()));
@@ -91,6 +93,7 @@ create table if not exists public.message_reports (
 create index if not exists idx_message_reports_open on public.message_reports (created_at) where status = 'open';
 create index if not exists idx_message_reports_reporter on public.message_reports (reporter, created_at desc);
 create index if not exists idx_message_reports_reported on public.message_reports (reported);
+create index if not exists idx_message_reports_decided_by on public.message_reports (decided_by) where decided_by is not null;
 alter table public.message_reports enable row level security;
 
 -- the database writes what a report holds: who reports (the caller), the reported messages (copied, newest 20 the reported
