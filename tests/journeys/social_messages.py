@@ -78,6 +78,9 @@ def new_message_to_named_person(j):
     if j.live:
         a = j.person('Dr. Aya Writer'); b = j.person('Dr. Carim Audit'); c = j.person('Dr. Chaker Open')
         j.sql("insert into public.messages (sender_id, receiver_id, body) values ('%s','%s','Earlier thread with Chaker %s')" % (c['id'], a['id'], j.tag))
+        # real members carry their company; it is what tells two people with the same name apart in the picker (a shared
+        # test database holds a "Dr. Carim Audit" from every earlier run)
+        bco = 'Audit Labs ' + j.tag; j.sql("update public.profiles set company='%s' where id='%s'" % (bco, b['id']))
         pg = a['page']; j.reload(pg); cname, bname, bfull = 'Chaker', 'Carim', 'Dr. Carim Audit'
     else:
         pg = j.demo_signin(j.new_page()); cname, bname, bfull = 'Vivian', 'Omar', 'Eng. Omar Khaled'
@@ -96,7 +99,11 @@ def new_message_to_named_person(j):
             demo = [s for s in sugg if re.search(r'Vivian|Omar Khaled|Alia Mourad|Rahmani|Indovista|SkinBio', s)]
             j.check(not demo, 'the picker suggests demo people: %s' % demo[:4])
     with j.step('Pick B, write and send: the message goes to B only (not the previously open thread)'):
-        to.fill(bfull); pg.locator('#nmTx:visible, .dbk-ov textarea:visible').first.fill(text)
+        to.fill(bfull); pg.wait_for_timeout(800)
+        if j.live:      # choose B's suggestion, as a person does when several members share the name (the option shows the company)
+            opts = [o for o in pg.evaluate("(()=>{const i=document.querySelector('#nmTo');const l=i&&i.list;return l?[...l.options].map(o=>o.value):[]})()") if o.startswith(bfull)]
+            if len(opts) > 1: to.fill(next((o for o in opts if bco in o), bfull + ' · ' + bco))
+        pg.locator('#nmTx:visible, .dbk-ov textarea:visible').first.fill(text)
         j.click(pg, r'^(Send|إرسال)$', scope='.dbk-ov', what='Send', exact=True); j.settle(pg, 1200)
         j.check(bname in head(pg), 'after sending, the open thread is not with B (header: "%s")' % head(pg)[:60])
         open_thread(j, pg, cname); j.check(not any(text in m for m in mine(pg)), 'the new message landed in the thread with C')
@@ -210,7 +217,7 @@ def read_receipts(j):
     with j.step('A brand-new user sees "Unread (0)" and no demo leftovers'):
         if j.demo: j.skip('a brand-new account exists only in live')
         pn = new['page']; j.nav(pn, 'messages'); t = j.text(pn)
-        j.check(re.search(r'Unread \(0\)|Unread$|غير مقروءة \(0\)', t, re.M) and not re.search(r'Unread \([1-9]', t), 'a new user sees an unread count')
+        j.check(re.search(r'Unread \(0\)|Unread$|غير مقروءة? \(0\)', t, re.M) and not re.search(r'Unread \([1-9]', t), 'a new user sees an unread count')
         demo = re.findall(r'ONLINE NOW \(\d\)|Vivian|Omar K|Shandong|Metformin HCl BP/USP', t)
         j.check(not demo, 'a new user sees demo leftovers on Messages: %s' % sorted(set(demo)))
 
@@ -237,6 +244,7 @@ def search_messages(j):
         pg.locator('#threadList .mx-thread:visible, #content [class*=search-hit]:visible').first.click(); j.settle(pg, 800)
         j.check(pg.evaluate("p=>{const m=[...document.querySelectorAll('#messagesArea .msg-row')].find(e=>e.innerText.includes(p));if(!m)return false;const r=m.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+2}", price), 'the thread does not open at the found message')
     with j.step('Arabic text search works; nonsense shows an empty state'):
+        to_list(j, pg)                                   # on a phone the opened conversation covers the list and its search box
         if arname:
             box.fill(arname); pg.wait_for_timeout(600)
             j.check(any(arname in v or 'Dina' in v for v in pg.eval_on_selector_all('#threadList .mx-thread', 'e=>e.filter(x=>x.getClientRects().length).map(x=>x.innerText)')), 'the Arabic search finds nothing')
@@ -281,8 +289,11 @@ def mute_block_report(j):
         if j.live: j.check(j.has_table('message_reports') or j.has_table('reports'), 'not built: no table for message reports')
     with j.step('Moderator M finds the report in Admin → Review'):
         if j.demo: j.skip('the moderator exists only in live')
-        m = j.person('Dr. Maha Moderator'); make_admin(j, m['id']); pm = m['page']; j.reload(pm); j.nav(pm, 'admin')
-        j.click(pm, r'^(Review|المراجعة)', scope='#content', what='Review')
+        m = j.person('Dr. Maha Moderator'); make_admin(j, m['id']); pm = m['page']; j.reload(pm)
+        # Admin is reached as the business journeys reach it (the entry sits in the sidebar footer, which j.nav does not
+        # find), and reported conversations are their own queue in Review — open it as M would
+        from _biz import admin_review
+        admin_review(j, pm, r'Message reports|بلاغات الرسائل')
         j.check('Cyrus' in j.text(pm) and 'Buy my product' in j.text(pm), 'the message report is not in Admin → Review')
     with j.step('Unblock restores messaging; states survive reload'):
         el = j.find(pg, r'Unblock|إلغاء الحظر', scope='#content') or menu(j, pg, r'Unblock|إلغاء الحظر', 'Unblock'); el.click(); pg.wait_for_timeout(600)

@@ -4773,6 +4773,11 @@ var pendingAttachments = [];
 function handleAttach(input, kind){
   var file = input.files[0];
   if(!file) return;
+  /* only what the receiver can open safely, as the server stores it: images, PDF, Word, Excel, ZIP — up to 20 MB (J-SOCIAL-37) */
+  var ext = (/\.([a-z0-9]+)$/i.exec(file.name || '') || [,''])[1].toLowerCase(), say = window.DBK && DBK.toast ? DBK.toast : window.toast;
+  var okExt = kind === 'photo' ? ['jpg','jpeg','png','webp','gif'] : ['jpg','jpeg','png','webp','gif','pdf','docx','xlsx','zip'];
+  if(okExt.indexOf(ext) < 0){ input.value = ''; if(say) say(kind === 'photo' ? 'Choose a photo (JPG, PNG, WebP or GIF)' : 'This file type can\'t be sent — use PDF, Word, Excel, ZIP or an image'); return; }
+  if(file.size > 20 * 1024 * 1024){ input.value = ''; if(say) say('Files can be up to 20 MB'); return; }
   var sizeKB = Math.round(file.size/1024);
   pendingAttachments.push({name:file.name, size:sizeKB, kind:kind, url: kind==='photo' ? URL.createObjectURL(file) : null, file: file});   /* keep the file itself so it can be uploaded (inert in the demo) */
   renderAttachPreviews();
@@ -5299,7 +5304,7 @@ window.mxComplete = function (root) {
   function info(th) {
     var av = th.querySelector('.av');
     return {
-      key: th.dataset.person, name: txt(th.querySelector('.t-name')).replace(/✓/g, '').trim(),
+      key: th.dataset.person, name: txt(th.querySelector('.t-name')).replace(/✓|🔇/g, '').trim(),
       initials: av ? av.childNodes[0].textContent.trim() : '?', color: av ? av.style.background : '#1a56db',
       online: !!th.querySelector('.online-dot'), ctx: txt(th.querySelector('.t-context-tag')),
       preview: txt(th.querySelector('.t-preview')), verified: /✓/.test(txt(th.querySelector('.t-name')))
@@ -5315,8 +5320,10 @@ window.mxComplete = function (root) {
   function rowTheirs(i, text, time) {
     return '<div class="msg-row mx-theirs"><div class="av" style="background:' + i.color + ';width:28px;height:28px;font-size:10px;flex-shrink:0">' + esc(i.initials) + '</div><div><div class="mx-bubble mx-theirs">' + esc(text) + '</div><div class="mx-bubble-time">' + time + '</div></div></div>';
   }
-  function rowMine(text, time) {
-    return '<div class="msg-row mx-mine"><div><div class="mx-bubble mx-mine" style="white-space:pre-wrap">' + esc(text) + '</div><div class="mx-bubble-time" style="text-align:right">' + time + '</div></div></div>';
+  /* st: the delivery state of a message I just sent — ✓ sent, ✓✓ seen (J-SOCIAL-38) */
+  function stMark(seen) { return ' <span class="mx-st" title="' + (seen ? 'Seen' : 'Sent') + '" aria-label="' + (seen ? 'Seen' : 'Sent') + '" style="color:' + (seen ? '#1a56db' : 'inherit') + '">' + (seen ? '✓✓' : '✓') + '</span>'; }
+  function rowMine(text, time, st) {
+    return '<div class="msg-row mx-mine"><div><div class="mx-bubble mx-mine" style="white-space:pre-wrap">' + esc(text) + '</div><div class="mx-bubble-time" style="text-align:right">' + time + (st ? stMark(st === 'seen') : '') + '</div></div></div>';
   }
   function seed(i) {
     var p = i.preview || '';
@@ -5359,12 +5366,12 @@ window.mxComplete = function (root) {
     if (!text && !atts.length) return;
     atts.forEach(function (a) {
       var row = document.createElement('div'); row.className = 'msg-row mx-mine';
-      row.innerHTML = a.kind === 'photo' ? '<div><img class="img-bubble" src="' + a.url + '"><div class="mx-bubble-time" style="text-align:right">Just now</div></div>'
-        : '<div><div class="file-bubble"><span class="file-bubble-icon">📄</span><div><div class="file-bubble-name">' + esc(a.name) + '</div><div class="file-bubble-size">' + a.size + ' KB</div></div></div><div class="mx-bubble-time" style="text-align:right">Just now</div></div>';
+      row.innerHTML = a.kind === 'photo' ? '<div><img class="img-bubble" src="' + a.url + '"><div class="mx-bubble-time" style="text-align:right">Just now' + stMark(false) + '</div></div>'
+        : '<div><div class="file-bubble"><span class="file-bubble-icon">📄</span><div><div class="file-bubble-name">' + esc(a.name) + '</div><div class="file-bubble-size">' + a.size + ' KB</div></div></div><div class="mx-bubble-time" style="text-align:right">Just now' + stMark(false) + '</div></div>';
       area.appendChild(row);
     });
     atts.length = 0; if (window.renderAttachPreviews) window.renderAttachPreviews();
-    if (text) area.insertAdjacentHTML('beforeend', rowMine(text, 'Just now'));
+    if (text) area.insertAdjacentHTML('beforeend', rowMine(text, 'Just now', 'sent'));
     area.scrollTop = area.scrollHeight; input.value = '';
     var th = list.querySelector('.mx-thread[data-person="' + current + '"]');
     if (th) { var pv = th.querySelector('.t-preview'); if (pv) { pv.textContent = 'You: ' + (text || 'Attachment'); pv.classList.remove('unread-text'); } var tm = th.querySelector('.t-time'); if (tm) tm.textContent = 'now'; list.insertBefore(th, list.firstChild); }
@@ -5374,6 +5381,7 @@ window.mxComplete = function (root) {
       if (current !== who) return;
       var typing = document.createElement('div'); typing.className = 'typing-row';
       typing.innerHTML = '<div class="av" style="background:' + i.color + ';width:28px;height:28px;font-size:10px;flex-shrink:0">' + esc(i.initials) + '</div><div class="typing-dots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>';
+      area.querySelectorAll('.mx-st').forEach(function (m) { m.outerHTML = stMark(true); });   /* they are typing: they have seen it */
       area.appendChild(typing); area.scrollTop = area.scrollHeight;
       setTimeout(function () {
         typing.remove(); if (current !== who) return;
@@ -5435,20 +5443,32 @@ window.mxComplete = function (root) {
   var target = to ? ensureThread(to, {}) : openFirst;
   if (target) window.mxOpenThread(target, target.dataset.person);
 
-  /* ✎ new message */
+  /* ✎ new message: only to someone the picker offers (your conversations and the members), and only to that person —
+     never the conversation that happened to be open (S-03). The live app swaps who is offered (window.dxMxPeople) and
+     who receives it (window.dxMxNew: the one real member with that name). */
   var nb = document.querySelector('.tp-new');
   if (nb) nb.addEventListener('click', function () {
-    var names = Array.prototype.map.call(list.querySelectorAll('.mx-thread'), function (t) { return info(t).name; });
+    var seen = {}, people = [];
+    function add(n, label) { var k = String(n || '').toLowerCase(); if (!k || seen[k]) return; seen[k] = 1; people.push({ name: n, label: label || '' }); }
+    if (window.dxMxPeople) window.dxMxPeople().forEach(function (p) { add(p.name, p.label); });
+    else {
+      Array.prototype.forEach.call(list.querySelectorAll('.mx-thread'), function (t) { add(info(t).name); });
+      (window.USERS || []).forEach(function (u) { if (!window.ME || u.id !== window.ME.id) add(u.name, u.headline ? String(u.headline).split('|')[0].trim() : ''); });
+    }
     D.modal({
       title: 'New message',
-      body: '<div class="dbk-f"><label for="nmTo">To *</label><input id="nmTo" data-req list="nmList" placeholder="Name of a person or company"><datalist id="nmList">' +
-        names.concat(['Indovista Pharma', 'Dr. Alia Mourad', 'Faisal Rahmani', 'Eng. Omar Khaled']).map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist></div>' +
+      body: '<div class="dbk-f"><label for="nmTo">To *</label><input id="nmTo" data-req list="nmList" autocomplete="off" placeholder="Name of a person or company"><datalist id="nmList">' +
+        people.map(function (p) { return '<option value="' + esc(p.name) + '"' + (p.label ? ' label="' + esc(p.label) + '"' : '') + '>'; }).join('') + '</datalist></div>' +
         '<div class="dbk-f"><label for="nmTx">Message *</label><textarea id="nmTx" data-req placeholder="Write your message…"></textarea></div>',
-      primary: { label: 'Send', onClick: function (b) {
+      primary: { label: 'Send', onClick: function (b, close) {
         if (!D.requireFields(b)) return false;
-        var th = ensureThread(b.querySelector('#nmTo').value.trim(), {});
-        window.mxOpenThread(th, th.dataset.person);
-        document.getElementById('composeInput').value = b.querySelector('#nmTx').value.trim(); window.sendMessage();
+        var toEl = b.querySelector('#nmTo'), to = toEl.value.trim(), text = b.querySelector('#nmTx').value.trim();
+        if (window.dxMxNew) return window.dxMxNew(to, text, b, close);
+        var hit = people.filter(function (p) { return p.name.toLowerCase() === to.toLowerCase(); })[0];
+        if (!hit) { toEl.classList.add('dbk-err'); D.toast('No member called ' + to + ' — choose someone from the list'); return false; }
+        var th = ensureThread(hit.name, {});
+        window.mxOpenThread(th, th.dataset.person); root.classList.remove('mx-list');
+        document.getElementById('composeInput').value = text; window.sendMessage();
       } }
     });
   });
@@ -5456,21 +5476,98 @@ window.mxComplete = function (root) {
   document.querySelectorAll('.ctx-view-btn').forEach(function (b) {
     b.addEventListener('click', function () { var t = txt(document.querySelector('.ctx-title')); var q = t.split('—')[0].trim(); goto('market'); var si = document.getElementById('searchIn'); if (si) si.value = q; if (window.__mkxFilter) window.__mkxFilter(q); });
   });
-  /* ⋯ menu */
+  /* ⋯ menu. Mute, block and report belong to one conversation and are kept: in the browser here, in the database in the live
+     app (window.dxMxPrefs: get(key) → {muted, blocked}; set(key, 'muted'|'blocked', on) and report(key, reason, details) may
+     return a promise). A blocked conversation is greyed out and cannot be written to until it is unblocked. */
   var pinned = D.store.get('pinned', []);
+  var PREFS = window.dxMxPrefs || {
+    get: function (key) { return D.store.get('mxPrefs', {})[key] || {}; },
+    set: function (key, what, on) { var all = D.store.get('mxPrefs', {}), p = all[key] || (all[key] = {}); p[what] = on; D.store.set('mxPrefs', all); },
+    report: function (key, reason, details) { var th = list.querySelector('.mx-thread[data-person="' + key + '"]'), l = D.store.get('mxReports', []);
+      l.push({ id: 'm' + Date.now(), who: th ? info(th).name : key, reason: reason, details: details, excerpt: txt(area).slice(-400), at: new Date().toISOString().slice(0, 10) }); D.store.set('mxReports', l); }
+  };
+  function menuItem(k) { return document.querySelector('#chatMenu .ch-dd-item[data-mx="' + k + '"]'); }
+  function paintPrefs() {
+    var th = current && list.querySelector('.mx-thread[data-person="' + current + '"]'), nm = th ? info(th).name : '', p = current ? PREFS.get(current) : {};
+    var mi = menuItem('mute'); if (mi) mi.textContent = p.muted ? '🔔 Unmute Notifications' : '🔇 Mute Notifications';
+    var bi = menuItem('block'); if (bi) bi.textContent = p.blocked ? '✅ Unblock ' + nm : '🚫 Block ' + nm;
+    var ci = document.getElementById('composeInput');
+    if (ci) { if (ci.dataset.ph == null) ci.dataset.ph = ci.placeholder; ci.disabled = !!p.blocked; ci.placeholder = p.blocked ? 'You blocked this contact' : ci.dataset.ph; }
+    list.querySelectorAll('.mx-thread').forEach(function (t) {
+      var q = PREFS.get(t.dataset.person), ic = t.querySelector('.mx-muted-ic'), n = t.querySelector('.t-name');
+      t.style.opacity = q.blocked ? '.45' : '';
+      if (q.muted && !ic && n) n.insertAdjacentHTML('beforeend', '<span class="mx-muted-ic" title="Notifications muted" style="font-size:11px;margin-inline-start:4px">🔇</span>');
+      else if (!q.muted && ic) ic.remove();
+    });
+    /* "Unread (n)" counts the conversations still unread (it was fixed text that never changed) */
+    var uf = document.querySelector('#mx .tp-filter[data-filter="unread"]'); if (uf) uf.textContent = 'Unread (' + list.querySelectorAll('.mx-thread.mx-unread').length + ')';
+  }
+  window.mxPaintPrefs = paintPrefs;                                   /* the live app repaints after it redraws the list */
+  function savePref(key, what, on, done) {
+    Promise.resolve(PREFS.set(key, what, on)).then(function () { paintPrefs(); D.toast(done); }, function (err) { paintPrefs(); D.toast((err && err.message) || 'Could not save — please try again'); });
+  }
+  var openPainted = window.mxOpenThread;
+  window.mxOpenThread = function (el) { var r = openPainted.apply(this, arguments); paintPrefs(); jumpToHit(el); return r; };
+
+  /* 🔍 Search conversations: by name and by what was said (J-SOCIAL-39). The live app looks for the words on the server
+     (window.dxMxSearch(q) → {conversation key: 1}). A conversation found by its messages opens at the newest message that
+     has the words, marked. */
+  var SQ = '', sqHits = null, sqT = null, sqRun = 0;
+  function plain(h) { var d = document.createElement('div'); d.innerHTML = h || ''; return d.textContent; }
+  function said(t) { var k = t.dataset.person; return k === current ? area.textContent : convs[k] != null ? plain(convs[k]) : plain(seed(info(t))); }
+  function showSearch() {
+    var q = SQ.toLowerCase(), n = 0;
+    list.querySelectorAll('.mx-thread').forEach(function (t) {
+      var on = !q || info(t).name.toLowerCase().indexOf(q) >= 0 || (t.dataset.name || '').indexOf(q) >= 0 ||
+        (window.dxMxSearch ? (txt(t.querySelector('.t-preview')).toLowerCase().indexOf(q) >= 0 || !!(sqHits && sqHits[t.dataset.person])) : said(t).toLowerCase().indexOf(q) >= 0);
+      t.style.display = on ? 'flex' : 'none'; if (on) n++;
+    });
+    var none = list.querySelector('.dx-mx-none');
+    if (q && !n) { if (!none) list.insertAdjacentHTML('beforeend', '<div class="dx-mx-none" style="padding:24px 16px;text-align:center;color:#65676b;font-size:13px">No conversations or messages match</div>'); }
+    else if (none) none.remove();
+  }
+  window.mxShowSearch = showSearch;                                    /* the live app re-applies it after it redraws the list */
+  window.filterThreads = function (q) {
+    SQ = String(q || '').trim(); sqHits = null; var run = ++sqRun; clearTimeout(sqT); showSearch();
+    if (window.dxMxSearch && SQ.length >= 2) sqT = setTimeout(function () {
+      Promise.resolve(window.dxMxSearch(SQ)).then(function (hits) { if (run !== sqRun) return; sqHits = hits || null; showSearch(); }, function () {});
+    }, 250);
+  };
+  function jumpToHit(el) {
+    var q = SQ.toLowerCase(); if (!q || (el && info(el).name.toLowerCase().indexOf(q) >= 0)) return;
+    var rows = Array.prototype.filter.call(area.querySelectorAll('.msg-row'), function (r) { return r.textContent.toLowerCase().indexOf(q) >= 0; }), r = rows[rows.length - 1];
+    if (!r) return;
+    area.querySelectorAll('.dx-mx-hit').forEach(function (x) { x.classList.remove('dx-mx-hit'); x.style.outline = ''; });
+    var b = r.querySelector('.mx-bubble, .file-bubble, .img-bubble') || r; b.classList.add('dx-mx-hit'); b.style.outline = '2px solid #f59e0b'; b.style.outlineOffset = '2px';
+    r.scrollIntoView({ block: 'center' });
+    setTimeout(function () { if (r.isConnected) r.scrollIntoView({ block: 'center' }); }, 0);   /* phones: after the chat replaces the list */
+  }
+  window.mxSearchJump = function () { var el = current && list.querySelector('.mx-thread[data-person="' + current + '"]'); jumpToHit(el); };
   document.querySelectorAll('.ch-dd-item').forEach(function (it) {
+    var t0 = window.dxOrigText ? window.dxOrigText(it) : it.textContent;
+    it.dataset.mx = /Mute/.test(t0) ? 'mute' : /Pin/.test(t0) ? 'pin' : /Favorites/.test(t0) ? 'fav' : /Clear/.test(t0) ? 'clear' : /Block/.test(t0) ? 'block' : /Report/.test(t0) ? 'report' : '';
     it.style.cursor = 'pointer';
     it.addEventListener('click', function (e) {
       e.stopPropagation(); document.getElementById('chatMenu').classList.remove('show');
-      var t = it.textContent, th = list.querySelector('.mx-thread[data-person="' + current + '"]'), nm = th ? info(th).name : 'this contact';
-      if (/Mute/.test(t)) { it.textContent = /🔇/.test(t) ? '🔔 Unmute Notifications' : '🔇 Mute Notifications'; D.toast(/🔇/.test(t) ? 'Notifications muted for ' + nm : 'Notifications on'); }
-      else if (/Pin/.test(t)) { if (th) { list.insertBefore(th, list.firstChild); var n = th.querySelector('.t-name'); if (n && !/📌/.test(n.textContent)) n.insertAdjacentHTML('afterbegin', '📌 '); } pinned.push(current); D.store.set('pinned', pinned); D.toast('Conversation pinned'); }
-      else if (/Favorites/.test(t)) D.toast(nm + ' saved to favorites');
-      else if (/Clear/.test(t)) D.modal({ title: 'Clear chat history?', body: '<div>This removes the messages from your side of the conversation with <b>' + esc(nm) + '</b>.</div>', primary: { label: 'Clear', danger: true, onClick: function () { area.innerHTML = '<div class="msg-date-divider">History cleared</div>'; convs[current] = area.innerHTML; D.toast('Chat history cleared'); } } });
-      else if (/Block/.test(t)) D.modal({ title: 'Block ' + nm + '?', body: '<div>They won\'t be able to message you or see your listings. You can unblock them later.</div>', primary: { label: 'Block', danger: true, onClick: function () { if (th) th.style.opacity = '.45'; var ci = document.getElementById('composeInput'); if (ci) { ci.disabled = true; ci.placeholder = 'You blocked this contact'; } D.toast(nm + ' blocked'); } } });
-      else if (/Report/.test(t)) D.modal({ title: 'Report conversation', body: '<div class="dbk-f"><label>Reason</label><select id="rpR"><option>Spam or scam</option><option>Counterfeit / unlicensed product</option><option>Harassment</option><option>Other</option></select></div><div class="dbk-f"><label>Details</label><textarea id="rpD" placeholder="Optional"></textarea></div>', primary: { label: 'Send report', onClick: function () { D.toast('Report sent — our team reviews it within 24 h'); } } });
+      var k = it.dataset.mx, key = current, th = list.querySelector('.mx-thread[data-person="' + current + '"]'), nm = th ? info(th).name : 'this contact';
+      if (!key) { D.toast('Open a conversation first'); return; }
+      if (k === 'mute') { var mute = !PREFS.get(key).muted; savePref(key, 'muted', mute, mute ? 'Notifications muted for ' + nm : 'Notifications on for ' + nm); }
+      else if (k === 'pin') { if (th) { list.insertBefore(th, list.firstChild); var n = th.querySelector('.t-name'); if (n && !/📌/.test(n.textContent)) n.insertAdjacentHTML('afterbegin', '📌 '); } pinned.push(current); D.store.set('pinned', pinned); D.toast('Conversation pinned'); }
+      else if (k === 'fav') D.toast(nm + ' saved to favorites');
+      else if (k === 'clear') D.modal({ title: 'Clear chat history?', body: '<div>This removes the messages from your side of the conversation with <b>' + esc(nm) + '</b>.</div>', primary: { label: 'Clear', danger: true, onClick: function () { area.innerHTML = '<div class="msg-date-divider">History cleared</div>'; convs[current] = area.innerHTML; D.toast('Chat history cleared'); } } });
+      else if (k === 'block') {
+        if (PREFS.get(key).blocked) savePref(key, 'blocked', false, nm + ' unblocked');
+        else D.modal({ title: 'Block ' + nm + '?', body: '<div>They won\'t be able to message you, and you won\'t be able to message them. You can unblock them later from this menu.</div>', primary: { label: 'Block', danger: true, onClick: function () { savePref(key, 'blocked', true, nm + ' blocked'); } } });
+      }
+      else if (k === 'report') D.modal({ title: 'Report conversation', body: '<div class="dbk-f"><label for="rpR">Reason</label><select id="rpR"><option>Spam or scam</option><option>Counterfeit / unlicensed product</option><option>Harassment</option><option>Other</option></select></div><div class="dbk-f"><label for="rpD">Details</label><textarea id="rpD" placeholder="Optional"></textarea></div>',
+        primary: { label: 'Send report', onClick: function (b, close) {
+          var ok = b.querySelector('[data-a=ok]'); if (ok) { if (ok.disabled) return false; ok.disabled = true; }
+          Promise.resolve(PREFS.report(key, b.querySelector('#rpR').value, b.querySelector('#rpD').value.trim())).then(function () { close(); D.toast('Report sent — our team reviews it within 24 h'); },
+            function (err) { if (ok) ok.disabled = false; D.toast((err && err.message) || 'Could not send the report — please try again'); });
+          return false; } } });
     });
   });
+  paintPrefs();
 
   /* phones: list first, then the chat full-width with a back button */
   var head2 = root.querySelector('.chat-head');
