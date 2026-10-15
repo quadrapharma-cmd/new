@@ -224,6 +224,8 @@ def react_to_post(j):
     if j.live:
         with j.step('Live: a reactions row (P, A, kind) exists and like_count matches'):
             j.check(j.wait_db("select count(*) from public.reactions where post_id=%d and user_id='%s'" % (p, a['id']), 5) == '1', 'no reactions row after the click')
+            j.check(j.wait_db("select kind from public.reactions where post_id=%d and user_id='%s'" % (p, a['id']), 5, want='insightful') == 'insightful', 'the reaction kind is not stored (want insightful)')
+            j.check(j.sql1("select like_count from public.posts where id=%d" % p) == j.sql1("select count(*) from public.reactions where post_id=%d" % p), 'posts.like_count does not match the reactions rows')
     with j.step('Reload: the active state and count are the same'):
         reload_or_skip(j, pg, 'the reaction after reload')
         post = post_el(j, pg, 'Useful circular for reactions ' + j.tag)
@@ -237,11 +239,18 @@ def react_to_post(j):
         j.check(j.wait_db("select count(*) from public.reactions where post_id=%d and user_id='%s'" % (p, a['id']), 5, want='0') == '0', 'the reactions row is still there after un-like')
     with j.step('B gets one notification "A reacted to your post" that opens P'):
         if j.demo: j.skip('the other party exists only in live')
+        # taking a reaction back also takes back its notification (0022, F-18/F-49): A reacts again first — after like,
+        # insightful, un-like and like again B must still have exactly one notification about P from A
+        act(post, LIKE).locator('[onclick*="doReact"]:visible').first.click()
+        j.check(j.wait_db("select count(*) from public.reactions where post_id=%d and user_id='%s'" % (p, a['id']), 5, want='1') == '1', 'reacting again stored no reactions row')
         n = j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s' and post_id=%d" % (b['id'], a['id'], p))
         j.check(n == '1', '%s notifications for B about the reaction (want exactly 1)' % n)
         pb = b['page']; j.reload(pb); j.nav(pb, 'notifs'); j.settle(pb, 1000)
-        row = pb.locator('#content [onclick]').filter(has_text=re.compile(r'react|liked|أعجب|تفاعل', re.I))
-        j.check(row.count(), 'B sees no reaction notification'); row.first.click(); j.settle(pb, 1200)
+        # a notification row ([data-nid]) — not the "Reactions" filter tab above the list, which also matches /react/
+        row = pb.locator('#content [data-nid]').filter(has_text=re.compile(r'react|liked|أعجب|تفاعل', re.I))
+        # click the notification itself, not the reactor's name inside it (a name is a link to that person's profile; in
+        # Arabic the row's centre falls on the Latin name)
+        j.check(row.count(), 'B sees no reaction notification'); row.first.locator('.notif-time').click(); j.settle(pb, 1200)
         j.check(pb.locator('#post-%d' % p).count() and pb.locator('#post-%d' % p).first.is_visible(), 'clicking the notification does not open post P')
 
 @journey('J-SOCIAL-14')
@@ -341,6 +350,7 @@ def repost_and_share(j):
         j.check(re.search(r'(https?|file)://\S*(post|#|\?)\S*%d' % p, clip or ''), 'Copy link did not put a link to post %d on the clipboard (clipboard: "%s")' % (p, (clip or '')[:60]))
     with j.step('Open the link in a new tab (signed in): exactly post P'):
         pg2 = j.new_page(pg.context, url=clip)
+        if j.demo and j.on_login(pg2): j.demo_signin(pg2)        # the demo keeps no session: every new tab starts at sign-in
         j.check(pg2.locator('#post-%d' % p).count() and pg2.locator('#post-%d' % p).first.is_visible(), 'the copied link does not open post P')
     with j.step('Open the link signed out: asks to sign in, then shows P'):
         pg3 = j.new_page(j.new_ctx(), url=clip)
@@ -509,10 +519,23 @@ def report_post(j):
         j.check(t, 'not built: no post reports table in the database')
         j.check(j.sql1("select count(*) from public.post_reports where post_id=%d" % p) == '1', 'no post_reports row')
     with j.step('Moderator M: Admin → Review lists the report with reporter, reason, post text and author; Remove'):
-        m = j.person('Dr. Mona Moderator'); make_admin(j, m['id']); pm = m['page']; j.reload(pm); j.nav(pm, 'admin')
-        j.click(pm, r'^(Review|المراجعة)', scope='#content', what='Review'); t = j.text(pm)
+        m = j.person('Dr. Mona Moderator'); make_admin(j, m['id']); pm = m['page']; j.reload(pm)
+        # Admin is reached as the business journeys reach it (its entry sits in the sidebar footer, below the fold at
+        # 1440 px, which j.nav does not scroll to), and reported posts are their own queue in Review — open it as M would
+        from _biz import admin_review
+        admin_review(j, pm, r'Reported posts|منشورات مُبلَّغ عنها')
+        t = j.text(pm)
         j.check('EDA approval (fake)' in t and 'Alaa' in t, 'Admin → Review does not show the post report')
-        j.click(pm, r'Remove post|إزالة المنشور', scope='#content', what='Remove post'); pm.wait_for_timeout(1000)
+        row = pm.locator('.dx-mod-row', has_text=j.tag)        # P's own row (earlier runs may have left other reports open)
+        j.check(row.count(), 'Admin → Review has no row for post P')
+        rm = j.find(pm, r'Remove post|إزالة المنشور|أزل المنشور', scope='#' + row.first.evaluate("e=>e.id||(e.id='dxj-row-'+Date.now())"))
+        if not rm: j.notbuilt('no "Remove post" on the report')
+        rm.click(); pm.wait_for_timeout(600)
+        note = pm.locator('.dbk-ov textarea:visible, .modal-bg textarea:visible, [role=dialog] textarea:visible')
+        if note.count():                                         # "Remove post (with a note)": the note for the author, then confirm
+            note.first.fill('No EDA approval exists for this product')
+            j.click(pm, r'^(Remove post|Remove|Confirm|إزالة المنشور|أزل المنشور|تأكيد)$', scope='body', what='Confirm remove', exact=True)   # body: j.find picks inside the open dialog
+        pm.wait_for_timeout(1200)
         j.check(j.sql1("select count(*) from public.posts where id=%d" % p) == '0', 'Remove did not remove the post')
     with j.step('A is told the outcome; C is told the post was removed and why'):
         j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and created_at>now()-interval '5 minutes'" % c['id']) >= '1', 'C was not told the post was removed')

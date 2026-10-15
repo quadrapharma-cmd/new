@@ -1,5 +1,5 @@
 /* Admin → Review: the queues for the Drugbox team — verification requests, warning references, site certificates,
-   company reports, payments and reported conversations. Data goes through window.dxModeration: demo data in the demo, the database in the live app. */
+   company reports, payments, reported conversations and reported Home posts (feedacts.js; window.dxPostSvc). Data goes through window.dxModeration: demo data in the demo, the database in the live app. */
 (function () {
   var D = window.DBK; if (!D) return;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -15,14 +15,17 @@
           certs: H ? cos.slice(0, 30).reduce(function (a, c) { (H.credentials(c) || []).forEach(function (x) { if (!x.checked && !/^Member:/.test(x.name) && !decided['c' + c.slug + '|' + x.name]) a.push({ id: c.slug + '|' + x.name, company: c.name, site: x.site, name: x.name, expiry: x.expiry }); }); return a; }, []) : [],
           payments: [],
           messages: (D.store.get('mxReports', []) || []).filter(function (r) { return !decided['m' + r.id]; }).map(function (r) { return { id: r.id, reporter: (window.ME && window.ME.name) || 'You', who: r.who, reason: r.reason, details: r.details, at: r.at, excerpt: r.excerpt ? [r.excerpt] : [] }; }),
-          reports: H && H.reports ? H.reports().filter(function (r) { return r.status === 'open' && !decided['r' + r.id]; }).map(function (r) { return { id: r.id, company: r.slug, section: r.section, issue: r.text, correction: r.fix }; }) : []
+          reports: H && H.reports ? H.reports().filter(function (r) { return r.status === 'open' && !decided['r' + r.id]; }).map(function (r) { return { id: r.id, company: r.slug, section: r.section, issue: r.text, correction: r.fix }; }) : [],
+          posts: window.dxPostSvc && window.dxPostSvc.queue ? window.dxPostSvc.queue() : []
         });
       },
-      decide: function (kind, id, value) { decided[kind.charAt(0) + id] = value; return Promise.resolve(true); },
+      decide: function (kind, id, value, note) {
+        if (kind === 'posts' && window.dxPostSvc && window.dxPostSvc.decide) return window.dxPostSvc.decide(id, value, note);
+        decided[kind.charAt(0) + id] = value; return Promise.resolve(true); },
       link: function () { return Promise.resolve(null); }
     };
   }
-  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports']];
+  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts']];
   var cur = 'verifications', data = null;
   function docs(list) { return (list || []).map(function (d) { return '<button type="button" class="dx-mod-doc" data-doc="' + esc(d.path) + '" data-bucket="' + esc(d.bucket) + '">📄 ' + esc(d.label) + '</button>'; }).join(''); }
   function row(kind, x) {
@@ -40,6 +43,10 @@
     if (kind === 'messages') { body = '<b>' + esc(x.reporter) + ' reported ' + esc(x.who) + '</b><span>' + esc(x.reason) + (x.at ? ' · ' + esc(x.at) : '') + '</span>' + (x.details ? '<p>' + esc(x.details) + '</p>' : '') +
         (x.excerpt || []).map(function (m) { return '<p>“' + esc(m) + '”</p>'; }).join('');
       acts = '<button class="dx-mod-ok" data-k="messages" data-id="' + esc(x.id) + '" data-v="actioned">Action taken</button><button class="dx-mod-no" data-k="messages" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
+    if (kind === 'posts') { var RS = { spam: 'Spam or unrelated ad', counterfeit: 'Unverified or counterfeit product', misleading: 'Misleading information', abusive: 'Harassment or hate', other: 'Something else' };
+      body = '<b>' + esc(x.author) + '</b><span>Reported by ' + esc(x.reporter) + (x.n > 1 ? ' and ' + (x.n - 1) + ' more' : '') + ' · ' + esc(RS[x.reason] || x.reason) + (x.at ? ' · ' + esc(x.at) : '') + '</span>' +
+        '<p>“' + esc(x.excerpt) + '”</p>' + (x.note ? '<span>' + esc(x.note) + '</span>' : '');
+      acts = '<button class="dx-mod-no" data-k="posts" data-id="' + esc(x.id) + '" data-v="removed">Remove post</button><button class="dx-mod-ok" data-k="posts" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
     return '<div class="dx-mod-row"><div class="dx-mod-b">' + body + '</div><div class="dx-mod-a">' + acts + '</div></div>';
   }
   function paint(c) {
@@ -66,8 +73,11 @@
     function go() { t.disabled = true;
       window.dxModeration.decide(k, id, v, note).then(function () { data[k] = (data[k] || []).filter(function (x) { return String(x.id) !== String(id); }); paint(c); D.toast && D.toast('Done'); },
         function (err) { t.disabled = false; D.toast && D.toast((err && err.message) || 'Could not save the decision'); }); }
+    if (k === 'posts' && v === 'removed') {   /* the author is told why: an optional note goes with the decision */
+      D.modal({ title: 'Remove this post?', body: '<p>The author is told it was removed and why. Every reporter is told the outcome.</p><div class="dbk-f"><label for="dxModNote">Note for the author (optional)</label><textarea id="dxModNote" maxlength="500"></textarea></div>',
+        primary: { label: 'Remove post', danger: true, onClick: function (bx) { note = bx.querySelector('#dxModNote').value.trim(); go(); } } }); return; }
     if (v === 'rejected' && k === 'verifications') { note = window.prompt('Reason for the company (they will see it):', 'The registry document is not readable'); if (note === null) return; return go(); }   /* Cancel keeps the request */
-    var ask = { rejected: ['Reject this reference?', 'It will not be published.', 'Reject'], dismissed: ['Dismiss this report?', 'The company page stays as it is.', 'Dismiss'], failed: ['Mark this transfer as not received?', 'The order stays unpaid.', 'Not received'] }[v];
+    var ask = { rejected: ['Reject this reference?', 'It will not be published.', 'Reject'], dismissed: ['Dismiss this report?', k === 'posts' ? 'The post stays up.' : 'The company page stays as it is.', 'Dismiss'], failed: ['Mark this transfer as not received?', 'The order stays unpaid.', 'Not received'] }[v];
     if (k === 'messages' && v === 'dismissed') ask = ['Dismiss this report?', 'Nothing changes for the reported member.', 'Dismiss'];
     if (ask) { D.modal({ title: ask[0], body: '<p>' + esc(ask[1]) + '</p>', primary: { label: ask[2], danger: true, onClick: function () { go(); } } }); return; }   /* destructive decisions are confirmed first */
     go();

@@ -152,26 +152,36 @@
     verified: !!p.verified, color: colorFor(p.id), role: p.role || 'user', avatar: safeUrl(p.avatar_url), location: txt(p.location), connections: 0, followers: p.followers_count || 0,
     openToWork: !!p.open_to_work, hiring: !!p.hiring, profileViews: p.profile_views || 0, bio: txt(p.bio) }; }
   function putUser(p) { if (!p) return; if (p.id === ME_UUID) return; var u = userFrom(p), list = window.USERS, i = list.findIndex(function (x) { return x.id === u.id; }); if (i < 0) list.push(u); else Object.assign(list[i], u); }
-  function postFrom(r, mine, saved) { var media = r.post_media || [];
-    return { id: r.id, uid: aid(r.user_id), cat: r.category, body: r.body, likeCount: r.like_count || 0, liked: mine.has(r.id), commentCount: r.comment_count || 0, shareCount: r.share_count || 0,
+  /* mine: Map post id → my reaction kind; kinds: post id → {kind: n} (post_reaction_summary, 0028) */
+  function postFrom(r, mine, saved, kinds) { var media = r.post_media || [], rx = (kinds && kinds[r.id]) || null;
+    return { id: r.id, uid: aid(r.user_id), cat: r.category, body: r.body, likeCount: r.like_count || 0, liked: mine.has(r.id), myKind: mine.get(r.id) || null, commentCount: r.comment_count || 0, shareCount: r.share_count || 0,
       viewCount: r.view_count || 0, saved: saved.has(r.id), pinned: !!r.pinned, ts: ago(r.created_at), created_at: r.created_at,
       imgs: media.filter(function (m) { return m.type === 'image' && safeUrl(m.url); }).map(function (m) { return safeUrl(m.url); }),
       files: media.filter(function (m) { return m.type !== 'image' && safeUrl(m.url); }).map(function (m) { return { name: txt(m.name), size: +m.size || 0, url: safeUrl(m.url) }; }),
-      reactions: (r.like_count ? { like: r.like_count } : {}) }; }
+      reactions: rx || (r.like_count ? { like: r.like_count } : {}) }; }
+  /* my reaction (and its kind), my saves and the reactions per kind for a set of posts — one round of three requests */
+  async function postState(ids) {
+    var mine = new Map(), saved = new Set(), kinds = {};
+    if (!ids.length) return { mine: mine, saved: saved, kinds: kinds };
+    var a = await Promise.all([sb.from('reactions').select('post_id,kind').eq('user_id', ME_UUID).in('post_id', ids), sb.from('saved_posts').select('post_id').eq('user_id', ME_UUID).in('post_id', ids),
+                               sb.rpc('post_reaction_summary', { p_ids: ids.slice(0, 100) })]);
+    (a[0].data || []).forEach(function (x) { mine.set(x.post_id, x.kind || 'like'); }); (a[1].data || []).forEach(function (x) { saved.add(x.post_id); });
+    (a[2].data || []).forEach(function (x) { var k = x.kind === 'love' ? 'support' : x.kind, o = kinds[x.post_id] = kinds[x.post_id] || {}; o[k] = (o[k] || 0) + x.n; });
+    return { mine: mine, saved: saved, kinds: kinds };
+  }
+  var POST_SEL = '*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*)';
   async function fetchPage() {
-    var q = sb.from('posts').select('*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*)').is('group_id', null).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
+    var q = sb.from('posts').select(POST_SEL).is('group_id', null).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
     /* group posts (0027) live in their group, never in the main feed — the filter is also what lets the main feed use its own index;
        keyset (created_at, id) < cursor: the extra created_at <= T is an index condition, so a deep page reads one page of the index
        instead of every newer row (F-111); the or() keeps the exact tie-break */
     if (FEED.cursor) q = q.lte('created_at', FEED.cursor.t).or('created_at.lt.' + FEED.cursor.t + ',and(created_at.eq.' + FEED.cursor.t + ',id.lt.' + FEED.cursor.id + ')');
     var r = await q; if (r.error) throw r.error; var rows = r.data || [], ids = rows.map(function (x) { return x.id; });
-    var mine = new Set(), saved = new Set();
-    if (ids.length) { var a = await Promise.all([sb.from('reactions').select('post_id').eq('user_id', ME_UUID).in('post_id', ids), sb.from('saved_posts').select('post_id').eq('user_id', ME_UUID).in('post_id', ids)]);
-      (a[0].data || []).forEach(function (x) { mine.add(x.post_id); }); (a[1].data || []).forEach(function (x) { saved.add(x.post_id); }); }
+    var ps = await postState(ids);
     rows.forEach(function (x) { putUser(x.author); });
     if (rows.length) { var last = rows[rows.length - 1]; FEED.cursor = { t: last.created_at, id: last.id }; }
     if (rows.length < PAGE) FEED.done = true;
-    return rows.map(function (x) { return postFrom(x, mine, saved); });
+    return rows.map(function (x) { return postFrom(x, ps.mine, ps.saved, ps.kinds); });
   }
   async function loadFeed(reset) {
     if (FEED.loading) return; FEED.loading = true;
@@ -252,10 +262,18 @@
       return uploadPostMedia(r.data.id, imgs, files).then(function (m) { if (m.imgs.length) temp.imgs = m.imgs; if (m.files.length) temp.files = m.files; refreshAfterPost(); });
     }).catch(function (e) { window.POSTS = window.POSTS.filter(function (p) { return p !== temp; }); refreshAfterPost(); toastErr(e); });
   };
-  window.likePost = function (id) {
-    o2.likePost(id); var p = window.POSTS.find(function (x) { return x.id === id; }); if (!p || typeof id !== 'number') return;
-    var op = p.liked ? sb.from('reactions').upsert({ post_id: id, user_id: ME_UUID, kind: 'like' }) : sb.from('reactions').delete().eq('post_id', id).eq('user_id', ME_UUID);
-    op.then(function (r) { if (r.error) { o2.likePost(id); toastErr(r.error); } });
+  /* reactions: the interface (feedacts.js doReact) changes the card at once; the database gets the same change, one write after
+     the other per post (a quick like → insightful → un-like arrives in that order). A refused write puts the card back. */
+  function findPost(id) { return window.POSTS.find(function (x) { return x.id === id; }) || (window.SAVED_POSTS || []).find(function (x) { return x.id === id; }) || null; }
+  function kindNow(p) { return p && p.liked ? (p.myKind || 'like') : null; }
+  var RX_Q = {}, oReact = window.doReact;
+  window.doReact = function (id, kind) {
+    var p = findPost(id), before = kindNow(p); oReact.apply(this, arguments);
+    if (!p || typeof id !== 'number' || !ME_UUID) return; var after = kindNow(p); if (after === before) return;
+    RX_Q[id] = (RX_Q[id] || Promise.resolve()).then(function () {
+      return (after ? sb.from('reactions').upsert({ post_id: id, user_id: ME_UUID, kind: after }, { onConflict: 'post_id,user_id' }) : sb.from('reactions').delete().eq('post_id', id).eq('user_id', ME_UUID))
+        .then(function (r) { if (r.error) { if (window.dxSetReaction) window.dxSetReaction(id, before); toastErr(r.error); } });
+    });
   };
   window.submitComment = function (id) {
     var inp = document.getElementById('ci-' + id), text = inp ? inp.value.trim() : ''; if (!text) return;
@@ -277,7 +295,7 @@
     }).catch(function (e) { CMT_LOADED[id] = false; o2.toggleComments(id); toastErr(e); });
   };
   window.savePost = function (id) {
-    o2.savePost(id); var p = window.POSTS.find(function (x) { return x.id === id; }); if (!p || typeof id !== 'number') return;
+    var p = findPost(id); o2.savePost(id); if (!p || typeof id !== 'number') return;
     var op = p.saved ? sb.from('saved_posts').upsert({ user_id: ME_UUID, post_id: id }) : sb.from('saved_posts').delete().eq('user_id', ME_UUID).eq('post_id', id);
     op.then(function (r) { if (r.error) { o2.savePost(id); toastErr(r.error); } });
   };
@@ -300,9 +318,56 @@
     return ra >= 0 && rz > s ? h.slice(0, ra) + h.slice(rz + 6) : h; };
   window.dxLive.loadFeed = loadFeed; window.dxLive.version = 'B2';
 
+  /* ═══════════════ P1 — feed actions on the database: who reacted, Saved, a post opened from a link, reports (0028) ═══════════════ */
+  var SAVED = { at: 0, loading: false };
+  async function loadSaved() {
+    var r = await sb.from('saved_posts').select('created_at, post:posts(' + POST_SEL + ')').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(100);
+    if (r.error) throw r.error; var rows = (r.data || []).map(function (x) { return x.post; }).filter(Boolean);
+    rows.forEach(function (x) { putUser(x.author); });
+    var ps = await postState(rows.map(function (x) { return x.id; }));
+    window.SAVED_POSTS = rows.map(function (x) { var p = postFrom(x, ps.mine, ps.saved, ps.kinds), f = window.POSTS.find(function (y) { return y.id === p.id; }); return f ? Object.assign(f, { saved: true }) : p; });
+    SAVED.at = Date.now();
+  }
+  onReset(function () { SAVED.at = 0; window.SAVED_POSTS = []; });
+  var gotoP1 = window.goto;
+  window.goto = function (page) {
+    var r = gotoP1.apply(this, arguments);
+    if (page === 'saved' && ME_UUID && !SAVED.loading) { SAVED.loading = true;
+      loadSaved().then(function () { if (document.body.getAttribute('data-page') === 'saved') origGoto('saved'); }).catch(toastErr).then(function () { SAVED.loading = false; }); }
+    return r;
+  };
+  async function fetchPost(id) {
+    var r = await sb.from('posts').select(POST_SEL).eq('id', id).maybeSingle(); if (r.error) throw r.error; if (!r.data) return null;
+    putUser(r.data.author); var ps = await postState([r.data.id]); return postFrom(r.data, ps.mine, ps.saved, ps.kinds);
+  }
+  window.dxPostSvc = {
+    reactors: async function (p) {
+      if (typeof p.id !== 'number') return [];
+      var r = await sb.from('reactions').select('kind, created_at, who:profiles!reactions_user_id_fkey(' + PCOLS + ')').eq('post_id', p.id).order('created_at', { ascending: false }).limit(100);
+      if (r.error) throw new Error(friendly(r.error));
+      return (r.data || []).filter(function (x) { return x.who; }).map(function (x) { putUser(x.who); return { uid: x.who.id === ME_UUID ? window.ME.id : aid(x.who.id), kind: x.kind === 'love' ? 'support' : x.kind }; });
+    },
+    reported: async function (p) { var r = await sb.from('post_reports').select('id').eq('post_id', p.id).eq('reporter', ME_UUID).limit(1); if (r.error) throw new Error(friendly(r.error)); return (r.data || []).length > 0; },
+    report: async function (p, reason, note) {
+      var r = await sb.from('post_reports').insert({ post_id: p.id, reporter: ME_UUID, reason: reason, note: note || null });
+      if (r.error) { if (String(r.error.code) === '23505') return 'already'; throw new Error(friendly(r.error)); } return 'ok';
+    },
+    /* a post opened from a link or a notification: Home is loaded first, then the post is fetched when it is not on the first page */
+    open: async function (id) {
+      if (Date.now() - FEED.at > 30000) await loadFeed(true);
+      var p = window.POSTS.find(function (x) { return x.id === id; }); if (p) return p;
+      p = await fetchPost(id); if (p) window.POSTS.unshift(p); return p;
+    },
+    queue: function () { return []; },
+    decide: async function (id, value, note) {
+      var r = await sb.rpc('post_report_decide', { p_report: +id, p_remove: value === 'removed', p_note: note || null }); if (r.error) throw new Error(friendly(r.error));
+      if (value === 'removed') { FEED.at = 0; } return true;
+    }
+  };
+
   /* ═══════════════ B3 — network (requests, connections, suggestions) + notifications ═══════════════ */
   var INCOMING = {}, NET_AT = 0, NOTIF_AT = 0, NOTIF_IDS = [];
-  var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼' };
+  var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼', post_removed: '🛡️', report_closed: '🛡️' };
   var esc2 = function (t) { return window.esc ? window.esc(t) : String(t || ''); };
   /* every connection, 1,000 rows a request in id order (the API's row cap) — a big network is never cut short (F-50) */
   async function loadConnections() {
@@ -326,9 +391,10 @@
     else if (n.type === 'connection_accepted') t = '<b>' + who + '</b> accepted your connection request';
     else if (n.type === 'like') t = '<b>' + who + '</b> reacted to your post';
     else if (n.type === 'comment') t = '<b>' + who + '</b> commented: "' + esc2(n.message || '') + '"';
+    else if (n.type === 'post_removed' || n.type === 'report_closed') t = esc2(n.message || '');
     else t = '<b>' + who + '</b> ' + esc2(n.message || '');
     var type = n.type === 'connection_request' ? (INCOMING[a] ? 'connection' : 'accepted') : n.type === 'connection_accepted' ? 'accepted' : n.type;
-    return { id: n.id, uid: a, icon: ICON[n.type] || '🔔', text: t, ts: ago(n.created_at), read: !!n.read, type: type };
+    return { id: n.id, uid: a, icon: ICON[n.type] || '🔔', text: t, ts: ago(n.created_at), read: !!n.read, type: type, pid: n.post_id || null };
   }
   async function loadNotifs() {
     var r = await sb.from('notifications').select('*, actor:profiles!notifications_from_user_fkey(' + PCOLS + ')').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(50);
@@ -386,7 +452,8 @@
     if (nid) sb.from('notifications').delete().eq('id', nid).then(function () {});
   };
   window.markNotifRead = function (id) { var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }), was = n && n.read; o3.read(id); badges();
-    if (ME_UUID && n && !was) sb.from('notifications').update({ read: true }).eq('id', id).then(function (r) { if (r.error) toastErr(r.error); }); };
+    if (ME_UUID && n && !was) sb.from('notifications').update({ read: true }).eq('id', id).then(function (r) { if (r.error) toastErr(r.error); });
+    if (n && n.pid && (n.type === 'like' || n.type === 'comment') && window.dxOpenPost) window.dxOpenPost(n.pid, { comments: n.type === 'comment' }); };   /* a reaction or comment notification opens its post */
   if (o3.readAll) window.markAllRead = function () { o3.readAll(); badges(); if (ME_UUID) sb.from('notifications').update({ read: true }).eq('user_id', ME_UUID).eq('read', false).then(function (r) { if (r.error) toastErr(r.error); }); };
   if (o3.clear) window.clearAllNotifs = function () {            /* keeps the interface's Undo: delete only when the list is really emptied */
     var ids = NOTIF_IDS.slice(); o3.clear(); badges(); if (!ME_UUID || !ids.length) return;
@@ -2074,6 +2141,13 @@
   window.dxModeration.load = async function () {
     var d = await modLoad(), r = await sb.from('payment_orders').select('*, pr:payment_products(label), u:profiles(name)').eq('status', 'review').order('created_at').limit(100);
     if (r.error) throw r.error;
+    var pr = await sb.from('post_reports').select('*, rp:profiles!post_reports_reporter_fkey(name), au:profiles!post_reports_post_author_fkey(name)').eq('status', 'open').order('created_at').limit(200);
+    if (pr.error) throw pr.error; var byPost = {};
+    d.posts = [];
+    (pr.data || []).forEach(function (x) { var k = x.post_id != null ? 'p' + x.post_id : 'r' + x.id, row = byPost[k];
+      if (row) { row.n++; return; }
+      row = byPost[k] = { id: x.id, pid: x.post_id, author: (x.au && x.au.name) || 'Member', reporter: (x.rp && x.rp.name) || 'Member', reason: x.reason, note: x.note, excerpt: x.post_excerpt || '', n: 1, at: ago(x.created_at) };
+      d.posts.push(row); });
     d.payments = r.data.map(function (o) { return { id: o.id, who: o.u && o.u.name, product: o.pr && o.pr.label, transfer: o.transfer_ref, amount: (o.amount_cents / 100).toLocaleString('en'), reference: o.merchant_ref,
       docs: o.receipt_path ? [{ path: o.receipt_path, bucket: 'documents', label: 'Receipt' }] : [] }; });
     return d;
@@ -2090,6 +2164,7 @@
   window.dxModeration.decide = async function (kind, id, value, note) {
     if (kind === 'messages') { var m = await sb.from('message_reports').update({ status: value }).eq('id', +id).select('id'); if (m.error) throw new Error(friendly(m.error));
       if (!(m.data || []).length) throw new Error('Only the Drugbox team can do this'); return true; }
+    if (kind === 'posts') return window.dxPostSvc.decide(id, value, note);
     if (kind !== 'payments') return modDecide(kind, id, value, note);
     var r = await sb.rpc('review_instapay', { p_id: +id, p_ok: value === 'paid' }); if (r.error) throw new Error(friendly(r.error)); return true;
   };
