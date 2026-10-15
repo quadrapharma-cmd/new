@@ -405,7 +405,18 @@
   var MXP = { mute: {}, block: {}, at: 0 };                              /* my muted and blocked partners (uuid → 1); muted ones are not counted */
   function shortAgo(ts) { var s = (Date.now() - new Date(ts).getTime()) / 1000; if (s < 60) return 'now'; if (s < 3600) return Math.floor(s / 60) + 'm'; if (s < 86400) return Math.floor(s / 3600) + 'h'; return Math.floor(s / 86400) + 'd'; }
   function rowTheirs(u, text, time, att) { return '<div class="msg-row mx-theirs"><div class="av" style="background:' + u.color + ';width:28px;height:28px;font-size:10px;flex-shrink:0">' + esc2(u.initials) + '</div><div><div class="mx-bubble mx-theirs">' + attHtml(att) + esc2(text) + '</div><div class="mx-bubble-time">' + time + '</div></div></div>'; }
-  function rowMine(text, time, att, local) { return '<div class="msg-row mx-mine"><div><div class="mx-bubble mx-mine" style="white-space:pre-wrap">' + attHtml(att, local) + esc2(text) + '</div><div class="mx-bubble-time" style="text-align:right">' + time + '</div></div></div>'; }
+  /* my messages carry their state as the demo shows it: ✓ sent, ✓✓ seen (read_at set by the receiver) — J-SOCIAL-38 */
+  function stMark(seen) { return ' <span class="mx-st" title="' + (seen ? 'Seen' : 'Sent') + '" aria-label="' + (seen ? 'Seen' : 'Sent') + '" style="color:' + (seen ? '#1a56db' : 'inherit') + '">' + (seen ? '✓✓' : '✓') + '</span>'; }
+  function rowMine(text, time, att, local, st) { return '<div class="msg-row mx-mine"' + (st && st.id ? ' data-mid="' + st.id + '"' : '') + '><div><div class="mx-bubble mx-mine" style="white-space:pre-wrap">' + attHtml(att, local) + esc2(text) + '</div><div class="mx-bubble-time" style="text-align:right">' + time + (st ? stMark(st.seen) : '') + '</div></div></div>'; }
+  function markSent(bubble, row) { if (!bubble || !row) return; bubble.dataset.mid = row.id; var tm = bubble.querySelector('.mx-bubble-time'); if (tm && !tm.querySelector('.mx-st')) tm.insertAdjacentHTML('beforeend', stMark(!!row.read_at)); }
+  /* the open conversation: my messages the other person has read since turn to ✓✓ (on each tick while Messages is open) */
+  async function refreshSeen() {
+    var area = document.getElementById('messagesArea'), a = MX.open, partner = a && uuidOf(a); if (!area || !partner) return;
+    var un = [].slice.call(area.querySelectorAll('.msg-row.mx-mine[data-mid]')).filter(function (r) { var m = r.querySelector('.mx-st'); return m && m.title !== 'Seen'; }); if (!un.length) return;
+    var r = await sb.from('messages').select('id').eq('sender_id', ME_UUID).eq('receiver_id', partner).not('read_at', 'is', null).gte('id', +un[0].dataset.mid).limit(200);
+    if (r.error || MX.open !== a) return; var seen = {}; (r.data || []).forEach(function (x) { seen[x.id] = 1; });
+    un.forEach(function (row) { if (seen[row.dataset.mid]) { var m = row.querySelector('.mx-st'); if (m) m.outerHTML = stMark(true); } });
+  }
   function threadFor(c) {
     var a = aid(c.partner), u = window.U(a), key = 'u' + a, box = document.createElement('div'); box.innerHTML = MX.tpl; var el = box.firstElementChild;
     el.className = 'mx-thread' + (c.unread ? ' mx-unread' : ''); el.dataset.name = (c.name || '').toLowerCase(); el.dataset.tags = 'deals'; el.dataset.person = key; el.dataset.uid = a;
@@ -420,12 +431,18 @@
   }
   async function loadConvs() { var q = await Promise.all([sb.rpc('my_conversations', { p_limit: 50 }), loadPrefs().catch(function (e) { console.error(e); })]), r = q[0]; if (r.error) throw r.error;
     MX.convs = r.data || []; MX.convs.forEach(function (c) { putUser({ id: c.partner, name: c.name, headline: c.headline, verified: c.verified, avatar_url: c.avatar_url }); }); msgBadge(); return MX.convs; }
-  function msgBadge() { var n = MX.convs.reduce(function (t, c) { return t + (MXP.mute[c.partner] ? 0 : (c.unread || 0)); }, 0), e = document.getElementById('nb-msg'); if (e) { e.textContent = n; e.style.display = n ? '' : 'none'; } }
+  /* the Messages count everywhere it shows — top bar, phone bar, sidebar (the sidebar is rebuilt from SB_NAV) — never the
+     demo's fixed "5" (J-SOCIAL-38) */
+  function msgBadge() { var n = MX.convs.reduce(function (t, c) { return t + (MXP.mute[c.partner] ? 0 : (c.unread || 0)); }, 0);
+    (window.SB_NAV || []).forEach(function (x) { if (x.page === 'messages') x.badge = n; });
+    var sl = document.getElementById('snl-messages'), sb2 = sl && sl.querySelector('.nl-badge');
+    if (sl && n && !sb2) { sl.insertAdjacentHTML('beforeend', '<span class="nl-badge"></span>'); sb2 = sl.querySelector('.nl-badge'); }
+    [document.getElementById('nb-msg'), document.querySelector('#mb-messages .mb-badge'), sb2].forEach(function (e) { if (e) { e.textContent = n; e.style.display = n ? '' : 'none'; } }); }
   function listEl() { return document.getElementById('threadList'); }
   function drawThreads() {
     var list = listEl(); if (!list || !MX.tpl) return; list.querySelectorAll('.mx-thread').forEach(function (t) { t.remove(); });
     var empty = list.querySelector('.dx-mx-empty'); if (empty) empty.remove();
-    if (!MX.convs.length) { list.insertAdjacentHTML('beforeend', '<div class="dx-mx-empty" style="padding:28px 16px;text-align:center;color:#65676b;font-size:13px">No conversations yet.<br>Open someone\'s profile and press Message.</div>'); return; }
+    if (!MX.convs.length) list.insertAdjacentHTML('beforeend', '<div class="dx-mx-empty" style="padding:28px 16px;text-align:center;color:#65676b;font-size:13px">No conversations yet.<br>Open someone\'s profile and press Message.</div>');
     MX.convs.forEach(function (c) { list.appendChild(threadFor(c)); });
     if (window.mxPaintPrefs) window.mxPaintPrefs();                       /* 🔇 and blocked marks on the redrawn list */
   }
@@ -435,7 +452,7 @@
     var r = await sb.rpc('conversation_messages', { p_partner: partner, p_limit: 50 }); if (r.error) { toastErr(r.error); return; }
     if (MX.open !== a) return;
     var u = window.U(a), rows = (r.data || []).slice().reverse();
-    area.innerHTML = rows.length ? rows.map(function (m) { var t = m.attachment ? (m.body || '') : (m.body || '📷 Photo'); return m.sender_id === ME_UUID ? rowMine(t, shortAgo(m.created_at), m.attachment) : rowTheirs(u, t, shortAgo(m.created_at), m.attachment); }).join('')
+    area.innerHTML = rows.length ? rows.map(function (m) { var t = m.attachment ? (m.body || '') : (m.body || '📷 Photo'); return m.sender_id === ME_UUID ? rowMine(t, shortAgo(m.created_at), m.attachment, null, { id: m.id, seen: !!m.read_at }) : rowTheirs(u, t, shortAgo(m.created_at), m.attachment); }).join('')
       : '<div class="msg-date-divider">Start the conversation with ' + esc2(u.name) + '</div>';
     area.scrollTop = area.scrollHeight; signAll(area);
     rows.forEach(function (m) { if (m.id > MX.lastMsg && m.receiver_id === ME_UUID) MX.lastMsg = m.id; });
@@ -450,9 +467,9 @@
       area.insertAdjacentHTML('beforeend', rowMine(body, 'Sending…', att, local)); var bubble = area.lastElementChild; area.scrollTop = area.scrollHeight;
       var up = await sb.storage.from('message-media').upload(path, b, { contentType: b.type || 'application/octet-stream' });
       if (up.error) { bubble.remove(); toastErr(up.error); continue; }
-      var r = await sb.from('messages').insert({ sender_id: ME_UUID, receiver_id: partner, body: body || (kind === 'file' ? '📎 ' + x.name : ''), image_url: kind === 'photo' ? path : null, attachment: att });
+      var r = await sb.from('messages').insert({ sender_id: ME_UUID, receiver_id: partner, body: body || (kind === 'file' ? '📎 ' + x.name : ''), image_url: kind === 'photo' ? path : null, attachment: att }).select('id,read_at').single();
       if (r.error) { bubble.remove(); toastErr(r.error); continue; }
-      var tm = bubble.querySelector('.mx-bubble-time'); if (tm) tm.textContent = 'Just now'; }
+      var tm = bubble.querySelector('.mx-bubble-time'); if (tm) tm.textContent = 'Just now'; markSent(bubble, r.data); }
   }
   function liveSend() {
     var input = document.getElementById('composeInput'), text = input ? input.value.trim() : '', area = document.getElementById('messagesArea');
@@ -465,6 +482,7 @@
     if (th) { var pv = th.querySelector('.t-preview'); if (pv) { pv.textContent = 'You: ' + text; pv.classList.remove('unread-text'); } var tm = th.querySelector('.t-time'); if (tm) tm.textContent = 'now'; listEl().insertBefore(th, listEl().firstElementChild); }
     sb.from('messages').insert({ sender_id: ME_UUID, receiver_id: partner, body: text }).select().single().then(function (r) {
       if (r.error) { if (bubble) bubble.remove(); input.value = text; toastErr(r.error); return; }
+      markSent(bubble, r.data);
       var c = MX.convs.find(function (x) { return x.partner === partner; });
       if (c) { c.last_body = text; c.last_at = r.data.created_at; c.last_from_me = true; } else MX.convs.unshift({ partner: partner, name: window.U(MX.open).name, last_body: text, last_at: r.data.created_at, last_from_me: true, unread: 0 });
     });
@@ -478,15 +496,18 @@
     list.querySelectorAll('.mx-thread').forEach(function (t) { t.remove(); });
     var head = document.querySelector('.chat-head .ch-name'); if (head) head.textContent = '';
     var banner = document.querySelector('.context-banner'); if (banner) banner.style.display = 'none';
+    var online = document.querySelector('#mx .online-strip'); if (online) online.style.display = 'none';   /* demo people: there is no presence in the live app yet */
     var cb = document.querySelector('.chat-head'); if (cb) cb.style.visibility = 'hidden';
     loadConvs().then(function () {
       if (document.body.getAttribute('data-page') !== 'messages') return;
       var want = MX.to; MX.to = null;
       if (want && !MX.convs.some(function (x) { return aid(x.partner) === want; })) { var u = window.U(want); MX.convs.unshift({ partner: uuidOf(want), name: u.name, verified: u.verified, last_body: '', last_at: new Date().toISOString(), last_from_me: false, unread: 0 }); }
       drawThreads();
-      var target = want ? listEl().querySelector('.mx-thread[data-person="u' + want + '"]') : listEl().querySelector('.mx-thread');
-      if (cb) cb.style.visibility = ''; if (target) window.mxOpenThread(target, target.dataset.person);
-      else if (area) area.innerHTML = '<div class="msg-date-divider">No conversations yet</div>';
+      /* without a person asked for, the newest conversation already read opens: an unread one stays unread (and counted)
+         until the member opens it (J-SOCIAL-38) */
+      var target = want ? listEl().querySelector('.mx-thread[data-person="u' + want + '"]') : listEl().querySelector('.mx-thread:not(.mx-unread)');
+      if (target) { if (cb) cb.style.visibility = ''; window.mxOpenThread(target, target.dataset.person); }
+      else if (area) area.innerHTML = '<div class="msg-date-divider">' + (MX.convs.length ? 'Choose a conversation' : 'No conversations yet') + '</div>';
     }).catch(toastErr);
     return r;
   };
@@ -496,7 +517,7 @@
     var r = gotoB3.apply(this, arguments);
     if (page === 'messages' && ME_UUID) {
       var mo = window.mxOpenThread;
-      if (mo && !mo.__live) { window.mxOpenThread = function (el, key) { var x = mo.apply(this, arguments); if (/^u\d+$/.test(String(key))) openLive(el, key); return x; }; window.mxOpenThread.__live = true; }
+      if (mo && !mo.__live) { window.mxOpenThread = function (el, key) { var x = mo.apply(this, arguments); if (/^u\d+$/.test(String(key))) { var cb = document.querySelector('.chat-head'); if (cb) cb.style.visibility = ''; openLive(el, key); } return x; }; window.mxOpenThread.__live = true; }
       window.sendMessage = liveSend;
     }
     return r;
@@ -617,6 +638,7 @@
       fresh = fresh.filter(function (m) { return !MXP.mute[m.sender_id]; });   /* muted: no notice */
       if (fresh.length && !onMx && typeof window.toast === 'function') window.toast('💬 New message from ' + window.U(aid(fresh[fresh.length - 1].sender_id)).name);
     }
+    if (document.body.getAttribute('data-page') === 'messages' && MX.open) await refreshSeen().catch(function () {});
     var n = await sb.from('notifications').select('id,type').eq('user_id', ME_UUID).gt('id', MX.lastNotif).order('id', { ascending: false }).limit(50);
     if (!n.error && (n.data || []).length && me === ME_UUID) {
       got = true; MX.lastNotif = n.data[0].id; var types = n.data.map(function (x) { return x.type; });

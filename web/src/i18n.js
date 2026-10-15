@@ -316,7 +316,7 @@
     "They won't be able to message you, and you won't be able to message them. You can unblock them later from this menu.": 'لن يستطيع مراسلتك ولن تستطيع مراسلته. يمكنك إلغاء الحظر لاحقًا من هذه القائمة.',
     'Message reports': 'بلاغات الرسائل', 'Action taken': 'تم اتخاذ إجراء', 'Dismiss': 'تجاهل', 'Dismiss this report?': 'تجاهل هذا البلاغ؟',
     'Nothing changes for the reported member.': 'لن يتغير شيء بالنسبة للعضو المُبلَّغ عنه.', 'Name of a person or company': 'اسم شخص أو شركة', 'Write your message…': 'اكتب رسالتك…',
-    'Notifications muted': 'الإشعارات مكتومة', 'Could not send the report — please try again': 'تعذّر إرسال البلاغ — حاول مرة أخرى', 'Could not save — please try again': 'تعذّر الحفظ — حاول مرة أخرى',
+    'Notifications muted': 'الإشعارات مكتومة', 'Choose a conversation': 'اختر محادثة', 'Could not send the report — please try again': 'تعذّر إرسال البلاغ — حاول مرة أخرى', 'Could not save — please try again': 'تعذّر الحفظ — حاول مرة أخرى',
     'Knowledge communities & deal-rooms for pharma, cosmetics & device professionals': 'مجتمعات معرفة وغرف صفقات لمتخصصي الدواء والتجميل والأجهزة الطبية',
     'Matched to your listings and connections — not just popularity': 'مختارة حسب إعلاناتك واتصالاتك — لا حسب الشهرة فقط',
     'Groups where suppliers and buyers actively trade — not just talk': 'مجموعات يتاجر فيها المورّدون والمشترون فعلًا — لا مجرد كلام', 'Learn from people who’ve done it.': 'تعلّم من أهل الخبرة.',
@@ -450,6 +450,7 @@
     [/^Welcome to Drugbox, (.+)!$/, function (m) { return 'أهلًا بك في Drugbox يا ' + m[1] + '!'; }],   /* the sign-up toast, demo and live (N-13) */
     [/^Not found on Drugbox: (.+)$/, function (m) { return 'غير موجود على Drugbox: ' + m[1]; }],
     [/^No Drugbox member found for (.+) — use the name on their Drugbox profile$/, function (m) { return 'لا يوجد عضو في Drugbox باسم ' + m[1] + ' — استخدم الاسم المكتوب في ملفه على Drugbox'; }],
+    [/^Unread \((\d+)\)$/, function (m) { return 'غير مقروء (' + m[1] + ')'; }],   /* the Messages filter, recounted (J-SOCIAL-38) */
     [/^No member called (.+) — choose someone from the list$/, function (m) { return 'لا يوجد عضو باسم ' + m[1] + ' — اختر شخصًا من القائمة'; }],   /* ✎ New message (S-03) */
     [/^Several members are called (.+) — choose one from the list$/, function (m) { return 'أكثر من عضو باسم ' + m[1] + ' — اختر واحدًا من القائمة'; }],
     [/^🚫 Block (.+)$/, function (m) { return '🚫 حظر ' + m[1]; }], [/^✅ Unblock (.+)$/, function (m) { return '✅ إلغاء الحظر عن ' + m[1]; }],   /* the conversation menu (J-SOCIAL-40) */

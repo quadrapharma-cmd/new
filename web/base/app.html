@@ -5315,8 +5315,10 @@ window.mxComplete = function (root) {
   function rowTheirs(i, text, time) {
     return '<div class="msg-row mx-theirs"><div class="av" style="background:' + i.color + ';width:28px;height:28px;font-size:10px;flex-shrink:0">' + esc(i.initials) + '</div><div><div class="mx-bubble mx-theirs">' + esc(text) + '</div><div class="mx-bubble-time">' + time + '</div></div></div>';
   }
-  function rowMine(text, time) {
-    return '<div class="msg-row mx-mine"><div><div class="mx-bubble mx-mine" style="white-space:pre-wrap">' + esc(text) + '</div><div class="mx-bubble-time" style="text-align:right">' + time + '</div></div></div>';
+  /* st: the delivery state of a message I just sent — ✓ sent, ✓✓ seen (J-SOCIAL-38) */
+  function stMark(seen) { return ' <span class="mx-st" title="' + (seen ? 'Seen' : 'Sent') + '" aria-label="' + (seen ? 'Seen' : 'Sent') + '" style="color:' + (seen ? '#1a56db' : 'inherit') + '">' + (seen ? '✓✓' : '✓') + '</span>'; }
+  function rowMine(text, time, st) {
+    return '<div class="msg-row mx-mine"><div><div class="mx-bubble mx-mine" style="white-space:pre-wrap">' + esc(text) + '</div><div class="mx-bubble-time" style="text-align:right">' + time + (st ? stMark(st === 'seen') : '') + '</div></div></div>';
   }
   function seed(i) {
     var p = i.preview || '';
@@ -5359,12 +5361,12 @@ window.mxComplete = function (root) {
     if (!text && !atts.length) return;
     atts.forEach(function (a) {
       var row = document.createElement('div'); row.className = 'msg-row mx-mine';
-      row.innerHTML = a.kind === 'photo' ? '<div><img class="img-bubble" src="' + a.url + '"><div class="mx-bubble-time" style="text-align:right">Just now</div></div>'
-        : '<div><div class="file-bubble"><span class="file-bubble-icon">📄</span><div><div class="file-bubble-name">' + esc(a.name) + '</div><div class="file-bubble-size">' + a.size + ' KB</div></div></div><div class="mx-bubble-time" style="text-align:right">Just now</div></div>';
+      row.innerHTML = a.kind === 'photo' ? '<div><img class="img-bubble" src="' + a.url + '"><div class="mx-bubble-time" style="text-align:right">Just now' + stMark(false) + '</div></div>'
+        : '<div><div class="file-bubble"><span class="file-bubble-icon">📄</span><div><div class="file-bubble-name">' + esc(a.name) + '</div><div class="file-bubble-size">' + a.size + ' KB</div></div></div><div class="mx-bubble-time" style="text-align:right">Just now' + stMark(false) + '</div></div>';
       area.appendChild(row);
     });
     atts.length = 0; if (window.renderAttachPreviews) window.renderAttachPreviews();
-    if (text) area.insertAdjacentHTML('beforeend', rowMine(text, 'Just now'));
+    if (text) area.insertAdjacentHTML('beforeend', rowMine(text, 'Just now', 'sent'));
     area.scrollTop = area.scrollHeight; input.value = '';
     var th = list.querySelector('.mx-thread[data-person="' + current + '"]');
     if (th) { var pv = th.querySelector('.t-preview'); if (pv) { pv.textContent = 'You: ' + (text || 'Attachment'); pv.classList.remove('unread-text'); } var tm = th.querySelector('.t-time'); if (tm) tm.textContent = 'now'; list.insertBefore(th, list.firstChild); }
@@ -5374,6 +5376,7 @@ window.mxComplete = function (root) {
       if (current !== who) return;
       var typing = document.createElement('div'); typing.className = 'typing-row';
       typing.innerHTML = '<div class="av" style="background:' + i.color + ';width:28px;height:28px;font-size:10px;flex-shrink:0">' + esc(i.initials) + '</div><div class="typing-dots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>';
+      area.querySelectorAll('.mx-st').forEach(function (m) { m.outerHTML = stMark(true); });   /* they are typing: they have seen it */
       area.appendChild(typing); area.scrollTop = area.scrollHeight;
       setTimeout(function () {
         typing.remove(); if (current !== who) return;
@@ -5491,6 +5494,8 @@ window.mxComplete = function (root) {
       if (q.muted && !ic && n) n.insertAdjacentHTML('beforeend', '<span class="mx-muted-ic" title="Notifications muted" style="font-size:11px;margin-inline-start:4px">🔇</span>');
       else if (!q.muted && ic) ic.remove();
     });
+    /* "Unread (n)" counts the conversations still unread (it was fixed text that never changed) */
+    var uf = document.querySelector('#mx .tp-filter[data-filter="unread"]'); if (uf) uf.textContent = 'Unread (' + list.querySelectorAll('.mx-thread.mx-unread').length + ')';
   }
   window.mxPaintPrefs = paintPrefs;                                   /* the live app repaints after it redraws the list */
   function savePref(key, what, on, done) {
