@@ -4773,6 +4773,11 @@ var pendingAttachments = [];
 function handleAttach(input, kind){
   var file = input.files[0];
   if(!file) return;
+  /* only what the receiver can open safely, as the server stores it: images, PDF, Word, Excel, ZIP — up to 20 MB (J-SOCIAL-37) */
+  var ext = (/\.([a-z0-9]+)$/i.exec(file.name || '') || [,''])[1].toLowerCase(), say = window.DBK && DBK.toast ? DBK.toast : window.toast;
+  var okExt = kind === 'photo' ? ['jpg','jpeg','png','webp','gif'] : ['jpg','jpeg','png','webp','gif','pdf','docx','xlsx','zip'];
+  if(okExt.indexOf(ext) < 0){ input.value = ''; if(say) say(kind === 'photo' ? 'Choose a photo (JPG, PNG, WebP or GIF)' : 'This file type can\'t be sent — use PDF, Word, Excel, ZIP or an image'); return; }
+  if(file.size > 20 * 1024 * 1024){ input.value = ''; if(say) say('Files can be up to 20 MB'); return; }
   var sizeKB = Math.round(file.size/1024);
   pendingAttachments.push({name:file.name, size:sizeKB, kind:kind, url: kind==='photo' ? URL.createObjectURL(file) : null, file: file});   /* keep the file itself so it can be uploaded (inert in the demo) */
   renderAttachPreviews();
