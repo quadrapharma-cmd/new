@@ -402,6 +402,7 @@
      The approved messages page is fixed markup; its own first thread row is the template for real conversations,
      and bubbles use the page's own markup. Demo filler (seeded messages, simulated replies) never runs in the live app. */
   var MX = { tpl: null, convs: [], open: null, lastMsg: 0, lastNotif: 0, timer: null, rt: false, to: null };
+  var MXP = { mute: {}, block: {}, at: 0 };                              /* my muted and blocked partners (uuid → 1); muted ones are not counted */
   function shortAgo(ts) { var s = (Date.now() - new Date(ts).getTime()) / 1000; if (s < 60) return 'now'; if (s < 3600) return Math.floor(s / 60) + 'm'; if (s < 86400) return Math.floor(s / 3600) + 'h'; return Math.floor(s / 86400) + 'd'; }
   function rowTheirs(u, text, time, att) { return '<div class="msg-row mx-theirs"><div class="av" style="background:' + u.color + ';width:28px;height:28px;font-size:10px;flex-shrink:0">' + esc2(u.initials) + '</div><div><div class="mx-bubble mx-theirs">' + attHtml(att) + esc2(text) + '</div><div class="mx-bubble-time">' + time + '</div></div></div>'; }
   function rowMine(text, time, att, local) { return '<div class="msg-row mx-mine"><div><div class="mx-bubble mx-mine" style="white-space:pre-wrap">' + attHtml(att, local) + esc2(text) + '</div><div class="mx-bubble-time" style="text-align:right">' + time + '</div></div></div>'; }
@@ -417,15 +418,16 @@
     var bd = el.querySelector('.t-badge'); if (c.unread) { if (!bd) { bd = document.createElement('div'); bd.className = 't-badge'; el.appendChild(bd); } bd.textContent = c.unread; } else if (bd) bd.remove();
     return el;
   }
-  async function loadConvs() { var r = await sb.rpc('my_conversations', { p_limit: 50 }); if (r.error) throw r.error;
+  async function loadConvs() { var q = await Promise.all([sb.rpc('my_conversations', { p_limit: 50 }), loadPrefs().catch(function (e) { console.error(e); })]), r = q[0]; if (r.error) throw r.error;
     MX.convs = r.data || []; MX.convs.forEach(function (c) { putUser({ id: c.partner, name: c.name, headline: c.headline, verified: c.verified, avatar_url: c.avatar_url }); }); msgBadge(); return MX.convs; }
-  function msgBadge() { var n = MX.convs.reduce(function (t, c) { return t + (c.unread || 0); }, 0), e = document.getElementById('nb-msg'); if (e) { e.textContent = n; e.style.display = n ? '' : 'none'; } }
+  function msgBadge() { var n = MX.convs.reduce(function (t, c) { return t + (MXP.mute[c.partner] ? 0 : (c.unread || 0)); }, 0), e = document.getElementById('nb-msg'); if (e) { e.textContent = n; e.style.display = n ? '' : 'none'; } }
   function listEl() { return document.getElementById('threadList'); }
   function drawThreads() {
     var list = listEl(); if (!list || !MX.tpl) return; list.querySelectorAll('.mx-thread').forEach(function (t) { t.remove(); });
     var empty = list.querySelector('.dx-mx-empty'); if (empty) empty.remove();
     if (!MX.convs.length) { list.insertAdjacentHTML('beforeend', '<div class="dx-mx-empty" style="padding:28px 16px;text-align:center;color:#65676b;font-size:13px">No conversations yet.<br>Open someone\'s profile and press Message.</div>'); return; }
     MX.convs.forEach(function (c) { list.appendChild(threadFor(c)); });
+    if (window.mxPaintPrefs) window.mxPaintPrefs();                       /* 🔇 and blocked marks on the redrawn list */
   }
   async function openLive(el, key) {
     var a = +String(key).slice(1), partner = uuidOf(a), area = document.getElementById('messagesArea'); if (!partner || !area) return;
@@ -566,6 +568,35 @@
     return false;
   };
 
+  /* ⋯ Mute / Block / Report in a conversation (J-SOCIAL-40) ↔ conversation_mutes, user_blocks, message_reports (0031).
+     Mute keeps the messages but leaves them out of the Messages badge and the "New message" notice; Block makes the database
+     refuse messages either way; a report copies the reported person's last messages to me (the database does that, not the
+     browser) for Admin → Review. */
+  async function loadPrefs() {
+    var me = ME_UUID, q = await Promise.all([sb.from('conversation_mutes').select('partner').eq('owner', ME_UUID).limit(1000),
+                                             sb.from('user_blocks').select('blocked').eq('blocker', ME_UUID).limit(1000)]);
+    if (me !== ME_UUID) return; if (q[0].error) throw q[0].error; if (q[1].error) throw q[1].error;
+    MXP.mute = {}; MXP.block = {}; q[0].data.forEach(function (x) { MXP.mute[x.partner] = 1; }); q[1].data.forEach(function (x) { MXP.block[x.blocked] = 1; }); MXP.at = Date.now();
+  }
+  function prefPartner(key) { return /^u\d+$/.test(String(key)) ? uuidOf(+String(key).slice(1)) : null; }
+  window.dxMxPrefs = {
+    get: function (key) { var p = prefPartner(key); if (!ME_UUID || !p) return {}; return { muted: !!MXP.mute[p], blocked: !!MXP.block[p] }; },
+    set: async function (key, what, on) {
+      var p = prefPartner(key); if (!ME_UUID || !p) throw new Error('Open a conversation first');
+      var t = what === 'muted' ? ['conversation_mutes', 'owner', 'partner', MXP.mute] : ['user_blocks', 'blocker', 'blocked', MXP.block], row = {}, r;
+      row[t[1]] = ME_UUID; row[t[2]] = p;
+      r = on ? await sb.from(t[0]).upsert(row, { onConflict: t[1] + ',' + t[2], ignoreDuplicates: true }) : await sb.from(t[0]).delete().eq(t[1], ME_UUID).eq(t[2], p);
+      if (r.error) throw new Error(friendly(r.error));
+      if (on) t[3][p] = 1; else delete t[3][p]; msgBadge();
+    },
+    report: async function (key, reason, details) {
+      var p = prefPartner(key); if (!ME_UUID || !p) throw new Error('Open a conversation first');
+      var r = await sb.from('message_reports').insert({ reporter: ME_UUID, reported: p, reason: String(reason || 'Other').slice(0, 120), details: details ? String(details).slice(0, 2000) : null });
+      if (r.error) throw new Error(friendly(r.error));
+    }
+  };
+  onReset(function () { MXP.mute = {}; MXP.block = {}; MXP.at = 0; });
+
   /* live updates: one code path (tick) — triggered by Supabase Realtime when available, and by a gentle timer as a safety net.
      One tick at a time (Realtime events, the timer and a returning tab share the run in progress), each incoming message is shown
      once, and only what a notification is about is reloaded (F-51). */
@@ -583,6 +614,7 @@
           sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id).then(function () {}); }
         else fresh.push(m); });
       await loadConvs(); if (onMx) { var keep = MX.open; drawThreads(); if (keep) { var t = listEl() && listEl().querySelector('.mx-thread[data-person="u' + keep + '"]'); if (t) t.classList.add('active'); } }
+      fresh = fresh.filter(function (m) { return !MXP.mute[m.sender_id]; });   /* muted: no notice */
       if (fresh.length && !onMx && typeof window.toast === 'function') window.toast('💬 New message from ' + window.U(aid(fresh[fresh.length - 1].sender_id)).name);
     }
     var n = await sb.from('notifications').select('id,type').eq('user_id', ME_UUID).gt('id', MX.lastNotif).order('id', { ascending: false }).limit(50);
@@ -2001,7 +2033,18 @@
       docs: o.receipt_path ? [{ path: o.receipt_path, bucket: 'documents', label: 'Receipt' }] : [] }; });
     return d;
   };
+  /* Review → Message reports (0031): the reported person's messages as the database copied them into the report */
+  var modLoadP = window.dxModeration.load;
+  window.dxModeration.load = async function () {
+    var d = await modLoadP(), r = await sb.from('message_reports').select('*, rp:profiles!message_reports_reporter_fkey(name), rd:profiles!message_reports_reported_fkey(name)').eq('status', 'open').order('created_at').limit(100);
+    if (r.error) throw r.error;
+    d.messages = r.data.map(function (x) { return { id: x.id, reporter: (x.rp && x.rp.name) || 'Member', who: (x.rd && x.rd.name) || 'Member', reason: x.reason, details: x.details || '', at: String(x.created_at).slice(0, 10),
+      excerpt: (x.excerpt || []).map(function (m) { return (m.body || '') + (m.file ? ' 📎 ' + m.file : ''); }) }; });
+    return d;
+  };
   window.dxModeration.decide = async function (kind, id, value, note) {
+    if (kind === 'messages') { var m = await sb.from('message_reports').update({ status: value }).eq('id', +id).select('id'); if (m.error) throw new Error(friendly(m.error));
+      if (!(m.data || []).length) throw new Error('Only the Drugbox team can do this'); return true; }
     if (kind !== 'payments') return modDecide(kind, id, value, note);
     var r = await sb.rpc('review_instapay', { p_id: +id, p_ok: value === 'paid' }); if (r.error) throw new Error(friendly(r.error)); return true;
   };

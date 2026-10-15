@@ -288,8 +288,11 @@ def mute_block_report(j):
         if j.live: j.check(j.has_table('message_reports') or j.has_table('reports'), 'not built: no table for message reports')
     with j.step('Moderator M finds the report in Admin → Review'):
         if j.demo: j.skip('the moderator exists only in live')
-        m = j.person('Dr. Maha Moderator'); make_admin(j, m['id']); pm = m['page']; j.reload(pm); j.nav(pm, 'admin')
-        j.click(pm, r'^(Review|المراجعة)', scope='#content', what='Review')
+        m = j.person('Dr. Maha Moderator'); make_admin(j, m['id']); pm = m['page']; j.reload(pm)
+        # Admin is reached as the business journeys reach it (the entry sits in the sidebar footer, which j.nav does not
+        # find), and reported conversations are their own queue in Review — open it as M would
+        from _biz import admin_review
+        admin_review(j, pm, r'Message reports|بلاغات الرسائل')
         j.check('Cyrus' in j.text(pm) and 'Buy my product' in j.text(pm), 'the message report is not in Admin → Review')
     with j.step('Unblock restores messaging; states survive reload'):
         el = j.find(pg, r'Unblock|إلغاء الحظر', scope='#content') or menu(j, pg, r'Unblock|إلغاء الحظر', 'Unblock'); el.click(); pg.wait_for_timeout(600)

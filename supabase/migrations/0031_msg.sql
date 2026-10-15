@@ -1,5 +1,5 @@
 -- ═════════════════════════════════════════════════════════════════════
--- 0039 — messages: mute, block and report a conversation (J-SOCIAL-40, the messages part of S-09)
+-- 0031 — messages: mute, block and report a conversation (J-SOCIAL-40, the messages part of S-09)
 --   1. conversation_mutes  one row per (owner, partner): the owner's badges and "new message" notices skip that partner;
 --                          the messages themselves still arrive
 --   2. user_blocks         one row per (blocker, blocked): the database refuses a message between the two in either direction
