@@ -87,6 +87,7 @@ def signup_new_professional(j):
                 demo = re.findall(DEMO_PEOPLE, t)
                 j.check(not demo, '%s of a brand-new account shows demo people: %s' % (page, sorted(set(demo))))
     with j.step('Reload: still signed in as Mona, profile unchanged'):
+        if j.demo: j.skip('demo keeps no account across a reload (no backend) — checked in live')
         j.reload(pg)
         j.check(j.in_app(pg), 'reload returned to the login page')
         j.check(pg.evaluate('ME.name') == 'Mona Fathy', 'after reload signed in as "%s"' % pg.evaluate('ME.name'))

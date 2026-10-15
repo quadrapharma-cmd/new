@@ -2312,7 +2312,8 @@ function endSplash(){var s=document.getElementById('splash');if(!s||s.classList.
 // ── AUTH ────────────────────────────────────────────────
 function doLogin(){var email=document.getElementById('loginEmail').value.trim();var pw=document.getElementById('loginPw').value;var err=document.getElementById('loginErr');err.style.display='none';if(!email){err.textContent='Email is required';err.style.display='block';return;}if(!pw){err.textContent='Password is required';err.style.display='block';return;}document.getElementById('authWrap').style.display='none';document.getElementById('app').style.display='flex';goto('feed');updateTopUser();toast('Welcome back, '+ME.name.split(' ')[1]+'!');}
 
-function doSignup(){var name=document.getElementById('suName').value.trim();var email=document.getElementById('suEmail').value.trim();var pw=document.getElementById('suPw').value;var err=document.getElementById('suErr');err.style.display='none';if(!name){err.textContent='Name is required';err.style.display='block';return;}if(!email){err.textContent='Email is required';err.style.display='block';return;}if(pw.length<8){err.textContent='Password must be at least 8 characters';err.style.display='block';return;}ME.name=name;ME.initials=name.split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();document.getElementById('authWrap').style.display='none';document.getElementById('app').style.display='flex';goto('feed');updateTopUser();toast('Welcome to Drugbox, '+name.split(' ')[0]+'!');}
+function doSignup(){var name=document.getElementById('suName').value.trim();var email=document.getElementById('suEmail').value.trim();var pw=document.getElementById('suPw').value;var err=document.getElementById('suErr');err.style.display='none';if(!name){err.textContent='Name is required';err.style.display='block';return;}if(!email){err.textContent='Email is required';err.style.display='block';return;}if(pw.length<8){err.textContent='Password must be at least 8 characters';err.style.display='block';return;}if(email.toLowerCase()==='haytham@drugbox.app'){err.textContent='An account with this email already exists — sign in instead';err.style.display='block';return;}var co=document.getElementById('suCompany'),ro=document.getElementById('suRole');if(ME.id===1){ME.id=USERS.reduce(function(m,u){return u.id<1000&&u.id>m?u.id:m;},1)+1;ME.color='#0E8C66';USERS.push(ME);}signupEnter(name,co?co.value.trim():'',ro&&ro.selectedIndex<ro.options.length-1?ro.value.trim():'');}
+function signupEnter(name,company,specialty){Object.assign(ME,{name:name,initials:name.split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase(),company:company,headline:specialty,verified:false,role:'user',bio:'',web:'',phone:'',certs:'',location:'',avatar:null,openToWork:false,hiring:false,experience:[],education:[],skills:[],languages:[],connections:'0',followers:0,profileViews:'0'});var mine=USERS.find(function(u){return u.id===ME.id;});if(mine&&mine!==ME)Object.assign(mine,ME);document.getElementById('authWrap').style.display='none';document.getElementById('app').style.display='flex';goto('feed');updateTopUser();toast('Welcome to Drugbox, '+name.split(' ')[0]+'!');}
 
 /* Enter in a sign-in field: ignored while the button is busy (the live app disables it during the request) or the key repeats */
 function authEnter(e,fn){if(e.key!=='Enter'||e.repeat)return;var p=e.target.closest('#loginPage,#signupPage'),b=p&&p.querySelector('button.f-btn');if(b&&b.disabled)return;fn();}
@@ -3070,8 +3071,10 @@ function renderProfileTab(tab){
     h+=card+'<h3 style="font-size:16px;font-weight:700;margin-bottom:10px">About</h3><p style="font-size:13.5px;color:#374151;line-height:1.7">'+esc(u.bio||'No bio yet.')+'</p></div>';
     h+=card+'<h3 style="font-size:16px;font-weight:700;margin-bottom:10px">Contact &amp; Details</h3>';
     if(u.location)h+='<div style="font-size:13.5px;margin-bottom:7px">&#128205; '+esc(u.location)+'</div>';
-    if(u.web)h+='<div style="font-size:13.5px;margin-bottom:7px">&#127760; <a href="https://'+esc(u.web)+'" target="_blank" style="color:var(--cp)">'+esc(u.web)+'</a></div>';
+    if(u.web)h+='<div style="font-size:13.5px;margin-bottom:7px">&#127760; <a href="'+esc(webHref(u.web))+'" target="_blank" rel="noopener noreferrer" style="color:var(--cp)">'+esc(u.web.replace(/^https?:\/\//i,'').replace(/\/$/,''))+'</a></div>';
     if(u.phone)h+='<div style="font-size:13.5px;margin-bottom:7px">&#128222; '+esc(u.phone)+'</div>';
+    if(typeof u.certs==='string'&&u.certs)h+='<div style="font-size:13.5px;margin-bottom:7px">&#127941; '+esc(u.certs)+'</div>';
+    if(u.openToWork)h+='<div style="font-size:13.5px;margin-bottom:7px;color:#15803d;font-weight:700">&#128188; Open to work</div>';
     h+='</div>';
     if(u.languages&&u.languages.length){
       h+=card+'<h3 style="font-size:16px;font-weight:700;margin-bottom:10px">Languages</h3>';
@@ -3123,21 +3126,37 @@ function handleAvatarChange(input){
 function showEditProfile(){
   var m=document.createElement('div');
   m.className='modal-bg show';
+  var cur=Object.assign({},USERS.find(function(u){return u.id===ME.id;})||{},ME);   /* what the profile shows: the person's card + my edits */
   m.innerHTML='<div class="modal">' +
     '<div class="modal-hdr">Edit Profile <button class="modal-close" onclick="this.closest(\'.modal-bg\').remove()">×</button></div>' +
-    [['Name','name',ME.name,'text'],['Headline','headline',ME.headline,'text'],['Company','company',ME.company,'text'],['Website','web',ME.web,'text'],['Phone','phone',ME.phone,'text'],['Certifications','certs',ME.certs,'text']].map(function(f){
-      return '<div class="m-field"><label class="m-label">'+f[0]+'</label><input class="m-input" id="ep-'+f[1]+'" value="'+esc(f[2]||'')+'"></div>';
+    [['Name','name',cur.name,'text'],['Headline','headline',cur.headline,'text'],['Company','company',cur.company,'text'],['Location','loc',cur.location,'text'],['Website','web',cur.web,'url'],['Phone','phone',cur.phone,'tel'],['Certifications','certs',typeof cur.certs==='string'?cur.certs:'','text']].map(function(f){
+      return '<div class="m-field"><label class="m-label" for="ep-'+f[1]+'">'+f[0]+'</label><input class="m-input" id="ep-'+f[1]+'" type="'+(f[3]==='url'?'text':f[3])+'"'+(f[3]==='url'?' inputmode="url" aria-describedby="ep-err"':'')+' value="'+esc(f[2]||'')+'">'+(f[3]==='url'?'<div id="ep-err" role="alert" style="display:none;color:#dc2626;font-size:12.5px;font-weight:600;margin-top:5px"></div>':'')+'</div>';
     }).join('')+
-    '<div class="m-field"><label class="m-label">Bio</label><textarea class="m-ta" id="ep-bio" rows="3">'+esc(ME.bio||'')+'</textarea></div>' +
+    '<div class="m-field"><label style="display:flex;align-items:center;gap:9px;min-height:40px;font-size:13.5px;font-weight:700;color:var(--cx);cursor:pointer"><input type="checkbox" id="ep-open" style="width:18px;height:18px;accent-color:#16a34a"'+(cur.openToWork?' checked':'')+'>Open to work</label></div>'+
+    '<div class="m-field"><label class="m-label" for="ep-bio">Bio</label><textarea class="m-ta" id="ep-bio" rows="3">'+esc(cur.bio||'')+'</textarea></div>' +
     '<div class="m-foot"><button class="btn-ghost" onclick="this.closest(\'.modal-bg\').remove()">Cancel</button><button class="btn-p" onclick="saveProfile()">Save Changes</button></div></div>';
   document.body.appendChild(m);
   m.addEventListener('click',function(e){if(e.target===m)m.remove();});
 }
-function saveProfile(){
-  ['name','headline','company','web','phone','certs'].forEach(function(f){var el=document.getElementById('ep-'+f);if(el)ME[f]=el.value.trim();});
-  var bio=document.getElementById('ep-bio');if(bio)ME.bio=bio.value.trim();
+/* a website is a web address (example.com or http(s)://…) — anything else (javascript:, data:, spaces, quotes) is refused */
+function webAddr(s){s=String(s||'').trim();if(!s)return '';if(/[\s"'<>`\\]/.test(s))return null;var has=/^https?:\/\//i.test(s);if(!has&&/^[a-z][a-z0-9+.\-]*:(?!\d)/i.test(s))return null;
+  var u;try{u=new URL(has?s:'https://'+s);}catch(e){return null;}if(u.username||u.password||!/^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]*[a-z0-9])?$/i.test(u.hostname))return null;
+  return /^[\x21-\x7e]+$/.test(s)?s:(has?u.href:u.href.replace(/^https:\/\//,''));}
+function webHref(w){return /^https?:\/\//i.test(w)?w:'https://'+w;}
+/* the Edit Profile form, checked: null (and the reason shown next to the field) when it cannot be saved */
+function profileForm(){
+  var g=function(f){var el=document.getElementById('ep-'+f);return el?el.value.trim():'';},err=document.getElementById('ep-err');
+  var f={name:g('name'),headline:g('headline'),company:g('company'),location:g('loc'),web:webAddr(g('web')),phone:g('phone'),certs:g('certs'),bio:g('bio'),openToWork:!!(document.getElementById('ep-open')||{}).checked};
+  var bad=!f.name?['name','Name is required']:f.web===null?['web','Enter a web address like example.com']:null;
+  ['name','web'].forEach(function(k){var el=document.getElementById('ep-'+k);if(el)el.removeAttribute('aria-invalid');});if(err)err.style.display='none';
+  if(bad){var el=document.getElementById('ep-'+bad[0]);if(el){el.setAttribute('aria-invalid','true');el.setAttribute('aria-describedby','ep-err');if(err)el.parentNode.appendChild(err);el.focus();}if(err){err.textContent=bad[1];err.style.display='block';}else toast(bad[1]);return null;}
+  return f;
+}
+function saveProfile(f){
+  f=f&&f.name?f:profileForm();if(!f)return;
+  ['name','headline','company','location','web','phone','certs','bio','openToWork'].forEach(function(k){ME[k]=f[k];});
   ME.initials=ME.name.split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
-  USERS[0]=Object.assign(USERS[0],ME);
+  var mine=USERS.find(function(u){return u.id===ME.id;});if(mine&&mine!==ME)Object.assign(mine,ME);
   document.querySelector('.modal-bg').remove();
   updateTopUser();
   renderProfile(document.getElementById('content'),ME.id);

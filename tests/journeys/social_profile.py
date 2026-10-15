@@ -54,13 +54,19 @@ def edit_own_profile(j):
             j.click(pg, r'Edit Profile|عدّل الملف|تعديل الملف', scope='#content', what='Edit Profile'); pg.fill('#ep-web', 'https://pharco.example.org')
             j.click(pg, r'Save Changes|Save|حفظ', scope='.modal-bg', what='Save Changes'); pg.wait_for_timeout(900)
     with j.step('Every field shows on the profile, top bar, sidebar card and own post author lines'):
-        t = j.text(pg)
+        # bio, contact details and certifications live on the profile's About tab in the approved interface: read it as a person does
+        tab(j, pg, r'^(About|نبذة)$', 'About'); t = j.text(pg)
         for k in ('ep-name', 'ep-headline', 'ep-company', 'ep-phone', 'ep-certs'):
             j.check(vals[k] in t, 'the profile does not show %s "%s"' % (k[3:], vals[k]))
-        j.check('pharco.example.org' in t and 'Cairo' in t, 'the profile does not show the website / location')
+        # the Arabic interface writes well-known places in Arabic (approved: the sample "Giza, Egypt" reads "الجيزة، مصر")
+        j.check('pharco.example.org' in t and re.search(r'Cairo|القاهرة', t), 'the profile does not show the website / location')
         j.check(re.search(r'Open to work|متاح للعمل', t), 'no Open-to-work marker on the profile')
         j.check('<b>bold?</b>' in t, 'HTML in the bio was not shown as text')
-        j.check('Mona Fathy' in j.text(pg, '#topAv') or 'MF' in j.text(pg, '#topAv') and 'Mona Fathy' in j.text(pg, '#app'), 'the top bar / sidebar still show the old name')
+        # the interface's monogram is the first letter of the first two words, title included ("Dr. Haytham Dweedar" → DH; e2e b1: "Dr. Test
+        # Person" → DT), so "Dr. Mona Fathy" is DM — the top bar must show the NEW monogram (or a photo) and the sidebar card the new name
+        ini = ''.join(w[0] for w in vals['ep-name'].split()[:2]).upper()
+        j.check(j.text(pg, '#topAv').strip() in (ini, '') and 'Mona Fathy' in pg.evaluate("(document.getElementById('meName')||{}).textContent||''")
+                and 'Mona Fathy' in j.text(pg, '#app'), 'the top bar / sidebar still show the old name')
     if j.live:
         with j.step('Live: the profiles row has every field'):
             row = j.sql1("select concat_ws('|',name,headline,company,website,phone,certs,bio,location,open_to_work) from public.profiles where id='%s'" % a['id'])
@@ -68,10 +74,10 @@ def edit_own_profile(j):
     with j.step('Reload and sign in again: all edits are still there'):
         if j.demo: j.skip('demo keeps no data across a reload (no backend) — checked in live')
         relogin(j, pg, a); own_profile(j, pg); t = j.text(pg)
-        j.check(vals['ep-headline'] in t and 'Pharco' in t and 'Cairo' in t, 'after reload the profile edits are gone')
+        j.check(vals['ep-headline'] in t and 'Pharco' in t and re.search(r'Cairo|القاهرة', t), 'after reload the profile edits are gone')
     with j.step("B opens A's profile: headline, bio, website (safe link) and Open-to-work marker"):
         if j.demo: j.skip('the other party exists only in live')
-        pb = b['page']; goto_profile(j, pb, a); t = j.text(pb)
+        pb = b['page']; goto_profile(j, pb, a); tab(j, pb, r'^(About|نبذة)$', 'About'); t = j.text(pb)
         j.check(vals['ep-headline'] in t and 'صيدلانية' in t, "B does not see A's headline/bio")
         a_web = pb.locator('#content a[href*="pharco.example.org"]'); j.check(a_web.count() and 'noopener' in (a_web.first.get_attribute('rel') or ''), 'the website is not a safe link for B')
         j.check(re.search(r'Open to work|متاح للعمل', t), 'B sees no Open-to-work marker')
