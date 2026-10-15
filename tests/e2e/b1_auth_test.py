@@ -11,11 +11,15 @@ with sync_playwright() as p:
     pg.evaluate("showSignup()"); pg.wait_for_timeout(300)
     pg.fill('#suName','Dr. Test Person'); pg.fill('#suEmail',EMAIL); pg.fill('#suPw','short'); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(500)
     T('short password refused', 'at least 8' in pg.inner_text('#suErr'))
+    pg.fill('#suCompany','Test Labs'); pg.select_option('#suRole', label='Quality Control / QA')
     pg.fill('#suPw','Strong-pass-2026'); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(2500)
     T('sign-up creates the account and opens the app', pg.is_visible('#app'))
     me=pg.evaluate("({id:dxLive.uuidOf(ME.id),local:ME.id,name:ME.name,ini:ME.initials})")
     T('ME is the real person (database id behind a local number, entered name)', len(str(me['id']))==36 and me['local']>1000 and me['name']=='Dr. Test Person' and me['ini']=='DT', me)
     T('profile row created in the database with the name', sql(f"select name from public.profiles where id='{me['id']}'")=='Dr. Test Person')
+    # S-15: the company and specialty typed at sign-up are kept (0029 handle_new_user) and shown as the new person's own
+    T('sign-up keeps the company and the specialty (profile row + the app as that person)', sql(f"select company||'|'||headline from public.profiles where id='{me['id']}'")=='Test Labs|Quality Control / QA'
+      and pg.evaluate("ME.company+'|'+ME.headline")=='Test Labs|Quality Control / QA', pg.evaluate("ME.company+'|'+ME.headline"))
     T('password stored encrypted (bcrypt), never plain', sql(f"select encrypted_password like '$2%' and encrypted_password<>'Strong-pass-2026' from auth.users where email='{EMAIL}'")=='t')
     pg.evaluate("doLogout()"); pg.wait_for_timeout(1000)
     T('sign-out returns to the login page', pg.is_visible('#loginPage') and not pg.is_visible('#app'))
@@ -45,6 +49,30 @@ with sync_playwright() as p:
     T('cannot make yourself admin or verified (role and verified are set by Drugbox only)', refused(r) and sql(f"select role||'|'||coalesce(verified::text,'f') from public.profiles where id='{me_id}'") in ('user|f','user|false'), (r, sql(f"select role, verified from public.profiles where id='{me_id}'")))
     r=pg.evaluate(f"dxLive.sb.from('profiles').update({{followers_count:99999,profile_views:99999}}).eq('id','{me_id}')"+ERR)
     T('cannot set your own follower / profile-view counters', refused(r) and sql(f"select coalesce(followers_count,0)<99999 and coalesce(profile_views,0)<99999 from public.profiles where id='{me_id}'")=='t', r)
+    # S-01: Edit Profile → Save Changes writes the profile (the real modal and button), a refusal keeps the editor and says why
+    def edit_profile(vals, open_to_work=None):
+        pg.evaluate("goto('profile')"); pg.wait_for_timeout(700); pg.click('#content button:has-text("Edit Profile")'); pg.wait_for_timeout(300)
+        for k, v in vals.items(): pg.fill('#ep-' + k, v)
+        if open_to_work is not None: pg.set_checked('#ep-open', open_to_work)
+        pg.click('.modal-bg button:has-text("Save Changes")'); pg.wait_for_timeout(1500)
+    row=lambda: sql(f"select concat_ws('|',name,headline,company,location,website,phone,certs,open_to_work,bio) from public.profiles where id='{me_id}'")
+    edit_profile({'name':'Dr. Test Person','headline':'QC Lead','company':'Test Labs','loc':'Alexandria, Egypt','web':'testlabs.example.org','phone':'+20 3 555 0101','certs':'ISO 17025','bio':'Bio <i>as typed</i>'}, True)
+    T('Edit Profile → Save Changes writes every field it edits to the profile row', row()=='Dr. Test Person|QC Lead|Test Labs|Alexandria, Egypt|testlabs.example.org|+20 3 555 0101|ISO 17025|t|Bio <i>as typed</i>'
+      and not pg.locator('.modal-bg #ep-name').count(), row())
+    edit_profile({'web':'javascript:alert(1)'})
+    T('a javascript: website is refused next to the field; nothing is written', pg.is_visible('#ep-err') and pg.locator('.modal-bg #ep-web').count()==1
+      and sql(f"select website from public.profiles where id='{me_id}'")=='testlabs.example.org', pg.inner_text('#ep-err') if pg.locator('#ep-err').count() else '')
+    pg.evaluate("document.querySelector('.modal-bg').remove()")
+    edit_profile({'phone':'+20 ' + '1'*60, 'headline':'Not saved'})
+    T('a value the database refuses (0029: phone over 40 characters): the editor stays open with what was typed, a plain message, nothing changed',
+      pg.locator('.modal-bg #ep-phone').count()==1 and pg.input_value('#ep-headline')=='Not saved' and pg.evaluate("ME.headline")=='QC Lead'
+      and sql(f"select headline from public.profiles where id='{me_id}'")=='QC Lead' and 'too long' in pg.evaluate("document.body.innerText"), row())
+    pg.evaluate("document.querySelector('.modal-bg').remove()")
+    r=pg.evaluate(f"dxLive.sb.from('profiles').update({{website:'javascript:alert(1)'}}).eq('id','{me_id}')"+ERR)
+    T('the database refuses a website that is not a web address (0029), even past the interface', refused(r) and sql(f"select website from public.profiles where id='{me_id}'")=='testlabs.example.org', r)
+    pg.reload(wait_until='load'); pg.wait_for_timeout(600); pg.evaluate('endSplash()'); pg.wait_for_timeout(2500)
+    T('after a reload the saved profile is shown (headline, location, website, Open to work)', pg.evaluate("[ME.headline,ME.location,ME.web,ME.openToWork].join('|')")=='QC Lead|Alexandria, Egypt|testlabs.example.org|true',
+      pg.evaluate("[ME.headline,ME.location,ME.web,ME.openToWork].join('|')"))
     T('no errors in the page', not errs, errs)
     b.close()
 done()

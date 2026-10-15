@@ -305,6 +305,8 @@
     'Compare quotes': 'قارن العروض', 'Terms': 'الشروط', 'Supplier rating': 'تقييم المورّد', 'Status': 'الحالة', 'Act as': 'التصرف باسم', 'Manage my companies': 'إدارة شركاتي', '🚪 Leave Group': '🚪 غادر المجموعة',
     'members': 'عضو', 'Download image': 'تنزيل الصورة', 'Copy caption': 'نسخ النص', 'Caption': 'النص', 'Exit ✕': 'خروج ✕', 'Scan to see our page, certificates and products': 'امسح الرمز لترى صفحتنا وشهاداتنا ومنتجاتنا',
     '1200 × 630 — the size WhatsApp and LinkedIn show in full. For LinkedIn, download the image and paste the caption.': '1200 × 630 — المقاس الذي يعرضه واتساب ولينكدإن كاملًا. للينكدإن: نزّل الصورة والصق النص.',
+    'Contact & Details': 'التواصل والتفاصيل', 'Languages': 'اللغات', 'Licenses & Certifications': 'التراخيص والشهادات', 'Open to work': 'متاح للعمل', 'OPEN TO WORK': 'متاح للعمل', 'Enter a web address like example.com': 'اكتب عنوان موقع مثل example.com',
+    'An account with this email already exists — sign in instead': 'يوجد حساب بهذا البريد الإلكتروني — سجّل الدخول بدلًا من ذلك', 'Profile saved! ✅': 'تم حفظ الملف ✅',
     'Edit Profile': 'تعديل الملف', 'Headline': 'العنوان المهني', 'Bio': 'نبذة', 'Save Changes': 'حفظ التغييرات', 'No notifications': 'لا توجد إشعارات', 'New message': 'رسالة جديدة', 'Attach file': 'إرفاق ملف',
     'Attach photo': 'إرفاق صورة', 'This conversation is about this listing': 'هذه المحادثة بخصوص هذا الإعلان',
     'Knowledge communities & deal-rooms for pharma, cosmetics & device professionals': 'مجتمعات معرفة وغرف صفقات لمتخصصي الدواء والتجميل والأجهزة الطبية',

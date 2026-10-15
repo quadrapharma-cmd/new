@@ -28,6 +28,9 @@
   /* a company address (slug) is written into the markup unescaped by the approved directory: one with markup characters is never shown */
   function okSlug(s) { return typeof s === 'string' && /^[^\s"'<>`&\\]{1,120}$/.test(s); }
   function sslug(s) { return okSlug(s) ? s : null; }
+  /* a person's bio is prose the approved markup only ever writes through esc() / textContent (About tab, candidate cards), so it is
+     kept exactly as written — "<b>" stays "<b>" on screen, as text (J-SOCIAL-22) */
+  function prose(s) { return String(s == null ? '' : s); }
   function tel(s) { return String(s == null ? '' : s).replace(/[^0-9+\-() ]/g, '').trim(); }
   function hexOr(c, id) { return /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : colorFor(id); }
   /* the columns of a person the interface shows (embedded rows carry these, never phone / résumé fields) */
@@ -79,7 +82,7 @@
     var p = r.data; if (ME_UUID && ME_UUID !== p.id) resetUser(); ME_UUID = p.id;
     Object.assign(window.ME, {
       id: aid(p.id), name: txt(p.name), initials: initials(txt(p.name)), headline: txt(p.headline), company: txt(p.company), country: txt(p.country || 'EG'),
-      verified: !!p.verified, role: p.role || 'user', bio: txt(p.bio), web: safeUrl(p.website), phone: tel(p.phone), certs: txt(p.certs), avatar: safeUrl(p.avatar_url),
+      verified: !!p.verified, role: p.role || 'user', bio: prose(p.bio), web: safeUrl(p.website), phone: tel(p.phone), certs: txt(p.certs), avatar: safeUrl(p.avatar_url),
       location: txt(p.location), followers: p.followers_count || 0, openToWork: !!p.open_to_work, hiring: !!p.hiring, color: colorFor(p.id),
       profileViews: p.profile_views || '0', connections: '0'          /* '0', not 0: the approved sidebar shows sample numbers for a falsy value */
     });
@@ -104,9 +107,11 @@
     hide('suErr');
     if (!name) return show('suErr', 'Name is required'); if (!email) return show('suErr', 'Email is required'); if (pw.length < 8) return show('suErr', 'Password must be at least 8 characters');
     busy(true); SIGNING = true;
-    try { var r = await sb.auth.signUp({ email: email, password: pw, options: { data: { name: name } } }); if (r.error) return show('suErr', friendly(r.error));
+    try { var co = ((document.getElementById('suCompany') || {}).value || '').trim(), ro = document.getElementById('suRole'), sp = ro && ro.selectedIndex < ro.options.length - 1 ? ro.value.trim() : '';   /* the last choice is "Other": no specialty */
+      var r = await sb.auth.signUp({ email: email, password: pw, options: { data: { name: name, company: co, specialty: sp } } }); if (r.error) return show('suErr', friendly(r.error));
       if (!r.data.session) return show('suErr', 'Check your email to confirm your account, then sign in');
-      await hydrateMe(r.data.user.id); orig.signup(); }
+      var me = await hydrateMe(r.data.user.id);
+      if (typeof window.signupEnter === 'function') window.signupEnter(me.name, me.company, me.headline); else orig.signup(); }
     catch (e) { show('suErr', friendly(e)); } finally { busy(false); SIGNING = false; }
   };
   window.doLogout = async function () { LEAVING = true; try { await sb.auth.signOut(); } catch (e) {} resetUser(); LEAVING = false; orig.logout(); };
@@ -144,13 +149,38 @@
   sb.auth.getSession().then(function (r) { var s = r.data && r.data.session; if (s) restore(s, 0); });
   window.dxLive = { sb: sb, hydrateMe: function (u) { return hydrateMe(u); }, friendly: friendly, version: 'B1' };
 
+  /* Edit Profile → Save Changes (S-01): the approved form is checked by its own profileForm(), the row is written first (the column guard
+     of 0020 keeps role / verified / counters; 0029 limits the contact fields), and only then the approved saveProfile() shows it — with the
+     values a reload would show. A refusal keeps the editor open with what was typed and says why. */
+  var oSaveProfile = window.saveProfile, PSAVE = false;
+  window.saveProfile = async function () {
+    if (!ME_UUID || typeof window.profileForm !== 'function') return oSaveProfile.apply(this, arguments);
+    if (PSAVE) return; var f = window.profileForm(); if (!f) return;
+    var btn = document.querySelector('.modal-bg [onclick^="saveProfile"]'); PSAVE = true; if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
+    try {
+      var nul = function (v) { return v ? v : null; };
+      var r = await sb.from('profiles').update({ name: f.name, headline: nul(f.headline), company: nul(f.company), location: nul(f.location), website: nul(f.web),
+        phone: nul(f.phone), certs: nul(f.certs), bio: nul(f.bio), open_to_work: !!f.openToWork, updated_at: new Date().toISOString() })
+        .eq('id', ME_UUID).select('name,headline,company,location,website,phone,certs,bio,open_to_work').single();
+      if (r.error) throw r.error;
+      var p = r.data;
+      oSaveProfile({ name: txt(p.name), headline: txt(p.headline), company: txt(p.company), location: txt(p.location), web: safeUrl(p.website), phone: tel(p.phone),
+        certs: txt(p.certs), bio: prose(p.bio), openToWork: !!p.open_to_work });
+    } catch (e) { toastErr(e); }
+    finally { PSAVE = false; if (btn && btn.isConnected) { btn.disabled = false; btn.removeAttribute('aria-busy'); } }
+  };
+
   /* ═══════════════ B2 — feed: posts, reactions, comments, saved (20 at a time) ═══════════════ */
   var PAGE = 20, FEED = { cursor: null, done: false, loading: false, at: 0 }, CMT_LOADED = {};
   function ago(ts) { var s = (Date.now() - new Date(ts).getTime()) / 1000; if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s / 60) + 'm ago';
     if (s < 86400) return Math.floor(s / 3600) + 'h ago'; if (s < 604800) return Math.floor(s / 86400) + 'd ago'; return new Date(ts).toLocaleDateString(); }
-  function userFrom(p) { return { id: aid(p.id), name: txt(p.name || 'Member'), initials: initials(txt(p.name)), headline: txt(p.headline), company: txt(p.company), country: txt(p.country || 'EG'),
+  function userFrom(p) { var u = { id: aid(p.id), name: txt(p.name || 'Member'), initials: initials(txt(p.name)), headline: txt(p.headline), company: txt(p.company), country: txt(p.country || 'EG'),
     verified: !!p.verified, color: colorFor(p.id), role: p.role || 'user', avatar: safeUrl(p.avatar_url), location: txt(p.location), connections: 0, followers: p.followers_count || 0,
-    openToWork: !!p.open_to_work, hiring: !!p.hiring, profileViews: p.profile_views || 0, bio: txt(p.bio) }; }
+    openToWork: !!p.open_to_work, hiring: !!p.hiring, profileViews: p.profile_views || 0, bio: prose(p.bio) };
+    /* website and certifications come with a whole profile row (opening the profile), not with the people embedded in lists; a list row
+       never blanks what the profile row brought (phone stays private: it is never put on another person) */
+    if ('website' in p) { u.web = safeUrl(p.website); u.certs = txt(p.certs); u.full = true; }
+    return u; }
   function putUser(p) { if (!p) return; if (p.id === ME_UUID) return; var u = userFrom(p), list = window.USERS, i = list.findIndex(function (x) { return x.id === u.id; }); if (i < 0) list.push(u); else Object.assign(list[i], u); }
   function postFrom(r, mine, saved) { var media = r.post_media || [];
     return { id: r.id, uid: aid(r.user_id), cat: r.category, body: r.body, likeCount: r.like_count || 0, liked: mine.has(r.id), commentCount: r.comment_count || 0, shareCount: r.share_count || 0,
@@ -1231,11 +1261,12 @@
       if (t.kind === 'c') t.row.intro_video = null; else PV[t.uuid] = null; }
   };
 
-  /* opening the profile of someone not seen yet: fetch them first (the interface's U() would otherwise fall back to me) */
+  /* opening the profile of someone not seen yet — or seen only in a list (no website / certifications): fetch the whole row first
+     (the interface's U() would otherwise fall back to me) */
   var oGotoProfile = window.gotoProfile;
   window.gotoProfile = function (uid) {
     var a = parseInt(uid, 10), u = uuidOf(a), self = this, args = arguments;
-    if (ME_UUID && u && !window.USERS.some(function (x) { return x.id === a; })) {
+    if (ME_UUID && u && u !== ME_UUID && !window.USERS.some(function (x) { return x.id === a && x.full; })) {
       sb.from('profiles').select('*').eq('id', u).single().then(function (r) { if (r.data) putUser(r.data); oGotoProfile.apply(self, args); }, function () { oGotoProfile.apply(self, args); });
       return;
     }
