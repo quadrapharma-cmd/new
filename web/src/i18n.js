@@ -124,6 +124,10 @@
     'Preferred only': 'المفضّلون فقط', 'My lists': 'قوائمي', 'Certified': 'معتمد', 'GCC Market': 'سوق الخليج', 'Skincare R&D': 'تطوير منتجات العناية بالبشرة',
     /* network */
     'NETWORK': 'الشبكة', 'Every generation of pharma, connected.': 'كل أجيال الدواء، متصلة.', 'People You May Know': 'أشخاص قد تعرفهم', 'Pending': 'قيد الانتظار', 'Pending Invitations': 'دعوات معلّقة',
+    'My connections': 'اتصالاتي', 'Sent requests': 'طلبات مرسلة', 'Search connections': 'ابحث في اتصالاتك', 'Back to My Network': 'العودة إلى شبكتي', 'Remove connection': 'إزالة الاتصال',
+    'from your connections? They will not be notified.': 'من اتصالاتك؟ لن يصله أي إشعار.', 'Connection removed': 'تمت إزالة الاتصال', 'No connection matches your search': 'لا يوجد اتصال يطابق بحثك',
+    'No connections yet — accept an invitation or connect with people you may know': 'لا توجد اتصالات بعد — اقبل دعوة أو تواصل مع أشخاص قد تعرفهم', 'No suggestions right now': 'لا توجد اقتراحات الآن',
+    'Same company': 'نفس الشركة', '✓ Accept': '✓ قبول', 'started following you': 'بدأ متابعتك', 'Dismiss': 'إخفاء', 'Unfollowed': 'تم إلغاء المتابعة', '✓ Following': '✓ تتابعهم', 'Declined': 'تم الرفض', 'Withdraw request': 'اسحب الطلب',
     /* groups (2) */
     'Communities that get things done.': 'مجتمعات تُنجز.', 'of your groups have new posts today': 'من مجموعاتك بها منشورات جديدة اليوم', 'unread across your groups': 'غير مقروء في مجموعاتك',
     '🔥 Trending now': '🔥 رائج الآن', 'Quiet today': 'هادئة اليوم', 'Your Group Activity Score': 'مؤشر نشاطك في المجموعات', 'Posts read': 'منشورات مقروءة', 'Connections made': 'اتصالات جديدة',
@@ -489,6 +493,7 @@
     [/^(\d+) new requests today$/, function (m) { return word(m[1], 'new requests today'); }], [/^(\d+) quote requests today$/, function (m) { return word(m[1], 'quote requests today'); }],
     [/^(\d+) unread$/, function (m) { return m[1] + ' غير مقروء'; }], [/^(\d+) UNREAD \/ (\d+) TOTAL$/, function (m) { return m[1] + ' غير مقروء / ' + m[2] + ' إجمالي'; }],
     [/^(\d+) on record$/, function (m) { return m[1] + ' مسجلة'; }], [/^(\d+) SAVED POSTS$/, function (m) { return m[1] + ' منشور محفوظ'; }],
+    [/^(\d+) mutual connections?$/, function (m) { return +m[1] === 1 ? 'اتصال مشترك واحد' : m[1] + ' اتصالات مشتركة'; }],
     [/^(\d+) CONNECTIONS \/ (\d+) PENDING$/, function (m) { return m[1] + ' اتصالات / ' + m[2] + ' معلّقة'; }], [/^View all (\d+) →$/, function (m) { return 'عرض الكل (' + m[1] + ') ←'; }],
     [/^New group · ([\d,]+) members already$/, function (m) { return 'مجموعة جديدة · ' + m[1] + ' عضو بالفعل'; }], [/^💡 (\d+) of your connections are members$/, function (m) { return '💡 ' + m[1] + ' من اتصالاتك أعضاء'; }],
     [/^Honor ×(\d+)$/, function (m) { return 'تكريم ×' + m[1]; }], [/^Today, (.+)$/, function (m) { return 'اليوم، ' + m[1]; }],

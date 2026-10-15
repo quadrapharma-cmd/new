@@ -132,7 +132,7 @@ def accept_request(j):
             j.check(j.wait_db("select status from public.connections where requester='%s' and addressee='%s'" % (a['id'], b['id']), 5, want='accepted') == 'accepted', 'connections row is not accepted')
     with j.step("Open My connections: A is listed and opens A's profile"):
         el = j.find(pg, r'My connections|Connections|اتصالاتي|جهات الاتصال', scope='#content')
-        j.act(pg, el, 'My connections', lambda: re.search(r'My connections|اتصالاتي', j.text(pg)[:300]) and aname in j.text(pg))
+        j.act(pg, el, 'My connections', lambda: re.search(r'My connections|اتصالاتي', j.text(pg)[:300], re.I) and aname in j.text(pg))
         pg.locator('#content').get_by_text(re.compile(aname)).first.click(); j.settle(pg, 900)
         j.check(aname in j.text(pg)[:400], "the connection does not open A's profile")
     with j.step('Reload: still connected'):
@@ -182,7 +182,7 @@ def remove_connection(j):
     with j.step('Network → My connections (the count is clickable): a full list with the real count'):
         network(j, pg)
         el = j.find(pg, r'My connections|^Connections|اتصالاتي', scope='#content')
-        j.act(pg, el, 'My connections', lambda: re.search(r'My connections|اتصالاتي', j.text(pg)[:400]) and cname in j.text(pg))
+        j.act(pg, el, 'My connections', lambda: re.search(r'My connections|اتصالاتي', j.text(pg)[:400], re.I) and cname in j.text(pg))
         if j.live: j.check(re.search(r'\b2\b', j.text(pg)[:400]), 'the connections count is not 2')
     with j.step('Search within connections for C'):
         box = pg.locator('#content input:visible'); j.check(box.count(), 'no search in My connections')

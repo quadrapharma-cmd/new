@@ -74,6 +74,8 @@
     var U = window.USERS || [], real = U.filter(function (u) { return u.id > 1000 && u.id !== window.ME.id; }); U.length = 0; U.push(window.ME); real.forEach(function (u) { U.push(u); });
     if (window.POSTS) window.POSTS.length = 0; if (window.NOTIFS) window.NOTIFS.length = 0;
     Object.keys(window.COMMENTS || {}).forEach(function (k) { delete window.COMMENTS[k]; });
+    /* the sample connections, requests, follows and dismissed suggestions (people 2…7) are not this member's */
+    [window.CONN_STATE, window.CONN_IN, window.FOLLOWS, window.SUGG_HIDDEN].forEach(function (o) { Object.keys(o || {}).forEach(function (k) { if (+k <= 1000) delete o[k]; }); });
   }
   /* the signed-in person becomes ME — same fields the interface already reads */
   async function hydrateMe(uid) {
@@ -396,8 +398,9 @@
   };
 
   /* ═══════════════ B3 — network (requests, connections, suggestions) + notifications ═══════════════ */
-  var INCOMING = {}, NET_AT = 0, NOTIF_AT = 0, NOTIF_IDS = [];
-  var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼', post_removed: '🛡️', report_closed: '🛡️' };
+  var INCOMING = window.CONN_IN || (window.CONN_IN = {}), NET_AT = 0, NOTIF_AT = 0, NOTIF_IDS = [], SUGG = [], REJ = {};   /* REJ: my requests that were declined */
+  function wipe(o) { Object.keys(o).forEach(function (k) { if (+k > 1000) delete o[k]; }); }
+  var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼', post_removed: '🛡️', report_closed: '🛡️', follow: '👤' };
   var esc2 = function (t) { return window.esc ? window.esc(t) : String(t || ''); };
   /* every connection, 1,000 rows a request in id order (the API's row cap) — a big network is never cut short (F-50) */
   async function loadConnections() {
@@ -407,14 +410,22 @@
         .or('requester.eq.' + ME_UUID + ',addressee.eq.' + ME_UUID).gt('id', last).order('id').limit(1000);
       if (r.error) throw r.error; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; last = r.data[r.data.length - 1].id;
     }
-    Object.keys(window.CONN_STATE).forEach(function (k) { if (+k > 1000) delete window.CONN_STATE[k]; }); INCOMING = {};
+    wipe(window.CONN_STATE); wipe(INCOMING); wipe(REJ);
     var n = 0;
     rows.forEach(function (c) { var mine = c.requester === ME_UUID, other = mine ? c.ap : c.rp; if (!other) return; putUser(other); var a = aid(other.id);
-      if (c.status === 'accepted') { window.CONN_STATE[a] = 'connected'; n++; } else if (c.status === 'pending') { if (mine) window.CONN_STATE[a] = 'pending'; else INCOMING[a] = true; } });
+      if (c.status === 'accepted') { window.CONN_STATE[a] = 'connected'; n++; } else if (c.status === 'pending') { if (mine) window.CONN_STATE[a] = 'pending'; else INCOMING[a] = true; }
+      /* a request of mine that was declined stays "Pending" for me: the sender is never told (J-SOCIAL-31) and cannot ask again at once (0030) */
+      else if (c.status === 'rejected' && mine) { window.CONN_STATE[a] = 'pending'; REJ[a] = true; } });
     window.ME.connections = n || '0';
   }
-  onReset(function () { INCOMING = {}; NET_AT = 0; NOTIF_AT = 0; NOTIF_IDS = []; if (window.NOTIFS) window.NOTIFS.length = 0; badges(); });
-  async function loadSuggestions() { var r = await sb.rpc('suggest_people', { p_limit: 12 }); if (r.error) throw r.error; (r.data || []).forEach(function (p) { putUser(p); }); return r.data || []; }
+  onReset(function () { wipe(INCOMING); wipe(REJ); wipe(window.FOLLOWS || {}); wipe(window.SUGG_HIDDEN || {}); SUGG = []; NET_AT = 0; NOTIF_AT = 0; NOTIF_IDS = []; if (window.NOTIFS) window.NOTIFS.length = 0; badges(); });
+  /* suggestions in the database's order (mutual connections, colleagues, newest), each with its mutual count for the card's reason */
+  async function loadSuggestions() { var r = await sb.rpc('suggest_people', { p_limit: 12 }); if (r.error) throw r.error;
+    SUGG = (r.data || []).map(function (p) { putUser(p); var a = aid(p.id), u = window.USERS.find(function (x) { return x.id === a; }); if (u) u.mutual = p.mutual || 0; return a; }); return r.data || []; }
+  window.netSuggestions = (function (demo) { return function () {
+    if (!ME_UUID) return demo.apply(this, arguments);
+    return SUGG.map(function (a) { return window.USERS.find(function (u) { return u.id === a; }); })
+      .filter(function (u) { return u && window.CONN_STATE[u.id] !== 'connected' && !INCOMING[u.id] && !(window.SUGG_HIDDEN || {})[u.id]; }); }; })(window.netSuggestions);
   function notifFrom(n) {
     var who = esc2(n.actor ? n.actor.name : 'Someone'), a = aid(n.from_user), t;
     if (n.type === 'connection_request') t = '<b>' + who + '</b> sent you a connection request';
@@ -460,26 +471,61 @@
   window.connect = function (a) {
     if (!ME_UUID || !uuidOf(a)) return o3.connect(a);
     if (INCOMING[a]) { var n = (window.NOTIFS || []).find(function (x) { return x.uid === a && x.type === 'connection'; }); return window.acceptConnection(a, n ? n.id : null); }
+    NET_AT = Date.now();                          /* the page redraw below must not reload the old state over this change */
     var before = window.CONN_STATE[a]; o3.connect(a); var now = window.CONN_STATE[a], other = uuidOf(a);
+    if (before === 'pending' && REJ[a]) return;    /* withdrawing a request that was declined: nothing is left to withdraw */
     var op = now === 'pending' ? sb.from('connections').insert({ requester: ME_UUID, addressee: other, status: 'pending' }).select('id')
            : before === 'pending' ? sb.from('connections').delete().eq('requester', ME_UUID).eq('addressee', other).eq('status', 'pending') : null;
-    if (op) op.then(function (r) { if (r.error) { window.CONN_STATE[a] = before; gotoB2(window.curPage || 'network'); toastErr(r.error); return; }
+    if (op) op.then(function (r) {
+      if (r.error && now === 'pending' && r.error.code === '23505') { REJ[a] = true; return; }   /* asked before and declined: it stays "Pending" */
+      if (r.error) { window.CONN_STATE[a] = before; window.netRefresh ? window.netRefresh() : gotoB2(window.curPage || 'network'); toastErr(r.error); return; }
       /* one row per pair: a request crossing theirs is accepted by the database and no new row comes back — we are connected */
       if (now === 'pending' && !(r.data || []).length) { window.CONN_STATE[a] = 'connected'; NET_AT = 0; if (document.body.getAttribute('data-page') === 'network') gotoB2('network'); } });
   };
   window.acceptConnection = function (a, nid) {
     if (!ME_UUID || !uuidOf(a)) return o3.accept(a, nid);
-    o3.accept(a, nid); delete INCOMING[a]; badges();
+    if (nid == null) { var nn = (window.NOTIFS || []).find(function (x) { return x.uid === a && x.type === 'connection'; }); if (nn) nid = nn.id; }
+    NET_AT = Date.now(); o3.accept(a, nid); delete INCOMING[a]; badges();
     sb.from('connections').update({ status: 'accepted' }).eq('requester', uuidOf(a)).eq('addressee', ME_UUID).eq('status', 'pending').select().then(function (r) {
-      if (r.error || !(r.data || []).length) { window.CONN_STATE[a] = null; NOTIF_AT = 0; toastErr(r.error || { message: 'This request is no longer available' }); return; }
+      if (r.error || !(r.data || []).length) { window.CONN_STATE[a] = null; NOTIF_AT = 0; NET_AT = 0; toastErr(r.error || { message: 'This request is no longer available' }); return; }
       if (nid) sb.from('notifications').update({ read: true }).eq('id', nid).then(function () {});
     });
   };
   window.declineConnection = function (a, nid) {
     if (!ME_UUID || !uuidOf(a)) return o3.decline(a, nid);
-    o3.decline(a, nid); delete INCOMING[a]; badges();
-    sb.from('connections').update({ status: 'rejected' }).eq('requester', uuidOf(a)).eq('addressee', ME_UUID).eq('status', 'pending').then(function (r) { if (r.error) toastErr(r.error); });
-    if (nid) sb.from('notifications').delete().eq('id', nid).then(function () {});
+    NET_AT = Date.now(); o3.decline(a, nid); delete INCOMING[a]; badges();
+    sb.from('connections').update({ status: 'rejected' }).eq('requester', uuidOf(a)).eq('addressee', ME_UUID).eq('status', 'pending').then(function (r) { if (r.error) { NET_AT = 0; toastErr(r.error); } });
+    /* the request's notice goes with the answer (from the Network page there is no notice id: it is found by its sender) */
+    sb.from('notifications').delete().eq('user_id', ME_UUID).eq('from_user', uuidOf(a)).eq('type', 'connection_request').then(function () {});
+  };
+  /* S-10 removing a connection (either side may; the other is not notified) */
+  var oDrop = window.dropConnection;
+  if (oDrop) window.dropConnection = function (a) {
+    if (!ME_UUID || !uuidOf(a)) return oDrop.apply(this, arguments);
+    var other = uuidOf(a); NET_AT = Date.now(); oDrop.apply(this, arguments);
+    sb.from('connections').delete().in('requester', [ME_UUID, other]).in('addressee', [ME_UUID, other]).eq('status', 'accepted').select('id')   /* the pair, either direction */
+      .then(function (r) { if (r.error || !(r.data || []).length) { NET_AT = 0; window.CONN_STATE[a] = 'connected'; if (window.netRefresh) window.netRefresh(); toastErr(r.error || { message: 'This connection could not be removed' }); } });
+  };
+  /* S-11 following a person (person_followers, 0030) */
+  var oFollow = window.followUser;
+  if (oFollow) window.followUser = function (a) {
+    if (!ME_UUID || !uuidOf(a)) return oFollow.apply(this, arguments);
+    var F = window.FOLLOWS, before = !!F[a], other = uuidOf(a); oFollow.apply(this, arguments);
+    var op = before ? sb.from('person_followers').delete().eq('user_id', ME_UUID).eq('person_id', other) : sb.from('person_followers').insert({ person_id: other, user_id: ME_UUID });
+    op.then(function (r) { if (r.error && !(r.error.code === '23505' && !before)) { F[a] = before; if (window.netRefresh) window.netRefresh(); toastErr(r.error); } });
+  };
+  async function loadPersonFollows() {
+    var F = window.FOLLOWS; if (!F) return; var rows = [], from = 0;
+    for (;;) { var r = await sb.from('person_followers').select('person_id').eq('user_id', ME_UUID).order('person_id').range(from, from + 999);
+      if (r.error) throw r.error; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; from += 1000; }
+    wipe(F); rows.forEach(function (x) { F[aid(x.person_id)] = true; });
+  }
+  /* J-SOCIAL-34 a dismissed suggestion stays dismissed (people_dismissed, 0030) */
+  var oDismiss = window.dismissSuggestion;
+  if (oDismiss) window.dismissSuggestion = function (a) {
+    if (!ME_UUID || !uuidOf(a)) return oDismiss.apply(this, arguments);
+    oDismiss.apply(this, arguments);
+    sb.from('people_dismissed').insert({ person_id: uuidOf(a), user_id: ME_UUID }).then(function (r) { if (r.error && r.error.code !== '23505') { delete window.SUGG_HIDDEN[a]; if (window.netRefresh) window.netRefresh(); toastErr(r.error); } });
   };
   window.markNotifRead = function (id) { var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }), was = n && n.read; o3.read(id); badges();
     if (ME_UUID && n && !was) sb.from('notifications').update({ read: true }).eq('id', id).then(function (r) { if (r.error) toastErr(r.error); });
@@ -492,8 +538,8 @@
   };
   /* badges right after sign-in */
   var hydrateB2 = hydrateMe;
-  hydrateMe = async function (uid) { var me = await hydrateB2(uid); loadConnections().then(loadNotifs).catch(function (e) { console.error(e); }); return me; };
-  Object.assign(window.dxLive, { uuidOf: uuidOf, aid: aid, loadNotifs: loadNotifs, loadConnections: loadConnections, version: 'B3' });
+  hydrateMe = async function (uid) { var me = await hydrateB2(uid); loadConnections().then(loadNotifs).catch(function (e) { console.error(e); }); loadPersonFollows().catch(function (e) { console.error(e); }); return me; };
+  Object.assign(window.dxLive, { uuidOf: uuidOf, aid: aid, loadNotifs: loadNotifs, loadConnections: loadConnections, loadPersonFollows: loadPersonFollows, version: 'B3' });
 
   /* ═══════════════ B4 — messages + live updates ═══════════════
      The approved messages page is fixed markup; its own first thread row is the template for real conversations,
