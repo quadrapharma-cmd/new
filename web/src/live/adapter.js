@@ -507,7 +507,8 @@
       /* without a person asked for, the newest conversation already read opens: an unread one stays unread (and counted)
          until the member opens it (J-SOCIAL-38) */
       var target = want ? listEl().querySelector('.mx-thread[data-person="u' + want + '"]') : listEl().querySelector('.mx-thread:not(.mx-unread)');
-      if (target) { if (cb) cb.style.visibility = ''; window.mxOpenThread(target, target.dataset.person); }
+      if (target) { if (cb) cb.style.visibility = ''; window.mxOpenThread(target, target.dataset.person);
+        if (want) { var mx = document.getElementById('mx'); if (mx) mx.classList.remove('mx-list'); } }   /* phones: Message opens the conversation, not the list */
       else if (area) area.innerHTML = '<div class="msg-date-divider">' + (MX.convs.length ? 'Choose a conversation' : 'No conversations yet') + '</div>';
     }).catch(toastErr);
     return r;

@@ -217,7 +217,7 @@ def read_receipts(j):
     with j.step('A brand-new user sees "Unread (0)" and no demo leftovers'):
         if j.demo: j.skip('a brand-new account exists only in live')
         pn = new['page']; j.nav(pn, 'messages'); t = j.text(pn)
-        j.check(re.search(r'Unread \(0\)|Unread$|غير مقروءة \(0\)', t, re.M) and not re.search(r'Unread \([1-9]', t), 'a new user sees an unread count')
+        j.check(re.search(r'Unread \(0\)|Unread$|غير مقروءة? \(0\)', t, re.M) and not re.search(r'Unread \([1-9]', t), 'a new user sees an unread count')
         demo = re.findall(r'ONLINE NOW \(\d\)|Vivian|Omar K|Shandong|Metformin HCl BP/USP', t)
         j.check(not demo, 'a new user sees demo leftovers on Messages: %s' % sorted(set(demo)))
 
