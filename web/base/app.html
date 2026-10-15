@@ -403,6 +403,13 @@ img{max-width:100%;height:auto}
 .sugg-name{font-size:13.5px;font-weight:700;color:var(--cx);padding:0 10px;cursor:pointer}
 .sugg-head{font-size:11.5px;color:#65676b;padding:2px 10px;height:28px;overflow:hidden}
 .sugg-mutual{font-size:11px;color:#8a9ab5;margin:4px 0 10px}
+.sugg-card{position:relative}
+.sugg-x{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(255,255,255,.92);color:#3a3f4b;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
+.sugg-x:hover{background:#fff}
+.net-one{grid-template-columns:1fr;max-width:760px}
+.net-conn-m{display:none}
+[dir=rtl] .net-back{transform:scaleX(-1)}
+@media (max-width:480px){.net-sent-st{display:none}}
 .sugg-btn{margin:0 10px 12px;width:calc(100% - 20px);padding:7px;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
 
 /* ── PROFILE ─────────────────────────────────────── */
@@ -563,6 +570,7 @@ img{max-width:100%;height:auto}
   .feed-wrap,.net-grid{padding:8px}
   .net-grid{grid-template-columns:1fr}
   .net-sidebar{display:none}
+  .net-conn-m{display:block}
   .msg-layout{flex-direction:column;height:auto}
   .msg-threads{width:100%;max-height:180px;border-right:none;border-bottom:1px solid #e4e6eb}
   .co-grid,.groups-grid,.training-grid,.mk-grid{grid-template-columns:repeat(2,1fr);padding:8px}
@@ -2022,7 +2030,7 @@ body{font-family:'Poppins',system-ui,sans-serif!important;color:var(--dg-ink)}
     <div class="top-nav">
       <button class="tnb active" id="tnb-feed"     onclick="goto('feed')">    <span class="icon" id="ic-feed">🏠</span>Home</button>
       <button class="tnb"        id="tnb-market"   onclick="goto('market')">  <span class="icon" id="ic-market">🛒</span>Market</button>
-      <button class="tnb"        id="tnb-network"  onclick="goto('network')" style="position:relative"> <span class="icon" id="ic-network">🤝</span>Network<span class="nbadge" id="nb-net">3</span></button>
+      <button class="tnb"        id="tnb-network"  onclick="goto('network')" style="position:relative"> <span class="icon" id="ic-network">🤝</span>Network<span class="nbadge" id="nb-net">2</span></button>
       <button class="tnb"        id="tnb-messages" onclick="goto('messages')" style="position:relative"><span class="icon" id="ic-messages">💬</span>Messages<span class="nbadge" id="nb-msg">5</span></button>
       <button class="tnb"        id="tnb-notifs"   onclick="goto('notifs')"  style="position:relative"><span class="icon" id="ic-notifs">🔔</span>Alerts<span class="nbadge" id="nb-not">8</span></button>
     </div>
@@ -2074,7 +2082,7 @@ body{font-family:'Poppins',system-ui,sans-serif!important;color:var(--dg-ink)}
 <div id="mbnav">
   <div class="mb-btn active" id="mb-feed"     onclick="goto('feed');setMbActive('feed')">    <span class="icon" id="mb-ic-feed">🏠</span>Home</div>
   <div class="mb-btn"        id="mb-market"   onclick="goto('market');setMbActive('market')"><span class="icon" id="mb-ic-market">🛒</span>Market</div>
-  <div class="mb-btn"        id="mb-network"  onclick="goto('network');setMbActive('network')" style="position:relative"><span class="icon">🤝</span>Network<span class="mb-badge">3</span></div>
+  <div class="mb-btn"        id="mb-network"  onclick="goto('network');setMbActive('network')" style="position:relative"><span class="icon">🤝</span>Network<span class="mb-badge">2</span></div>
   <div class="mb-btn"        id="mb-messages" onclick="goto('messages');setMbActive('messages')" style="position:relative"><span class="icon">💬</span>Messages<span class="mb-badge">5</span></div>
   <div class="mb-btn"        id="mb-notifs"   onclick="goto('notifs');setMbActive('notifs')" style="position:relative"><span class="icon">🔔</span>Alerts<span class="mb-badge">8</span></div>
 </div>
@@ -2163,7 +2171,9 @@ var COMMENTS={
   2:[{uid:2,text:'Congratulations Dr. Haytham! The Zone IVb stability work was especially thorough. Well deserved!',ts:'2h ago',likes:12},{uid:3,text:'Well done! Any chance of a virtual factory tour for international distributors?',ts:'1h ago',likes:7}],
   3:[{uid:4,text:'Vivian, does the CEP cover both veterinary and pharmaceutical grades? We need it for an EU product.',ts:'3h ago',likes:4},{uid:1,text:'Please DM me pricing for 200 kg. Urgent requirement for our injectable line.',ts:'2h ago',likes:2}],
 };
-var CONN_STATE={2:'connected',3:'connected',4:'pending',5:null,6:null,7:null};
+var CONN_STATE={2:'connected',3:'connected',4:null,5:null,6:null,7:null};   /* me → them: 'connected' or 'pending' (a request I sent) */
+var CONN_IN={4:true,7:true};   /* connection requests addressed to me (the two in NOTIFS) */
+var FOLLOWS={}, SUGG_HIDDEN={}, NET_VIEW='', SUGG_MUTUAL={5:1,6:3};   /* people I follow · suggestions I dismissed · Network sub-view · sample mutual connections */
 
 var MSGS=[
   {id:1,uid:3,threads:[
@@ -2276,7 +2286,7 @@ function fmtSize(b){if(b<1024)return b+' B';if(b<1048576)return Math.round(b/102
 // ── SIDEBAR ─────────────────────────────────────────────
 var SB_NAV=[
   {page:'feed',color:'#dbeafe',key:'icon_feed',badge:0,label:'Home'},
-  {page:'network',color:'#fce7f3',key:'icon_network',badge:3,label:'My Network'},
+  {page:'network',color:'#fce7f3',key:'icon_network',badge:2,label:'My Network'},
   {page:'messages',color:'#dcfce7',key:'icon_messages',badge:5,label:'Messages'},
   {page:'notifs',color:'#fff7ed',key:'icon_notifications',badge:8,label:'Notifications'},
   {page:'profile',color:'#f5f3ff',key:'icon_profile',badge:0,label:'Profile'},
@@ -2335,7 +2345,22 @@ function closeSidebar(){document.getElementById('sidebar').classList.remove('ope
 (function(){var h=document.documentElement;function sync(){var b=document.getElementById('authLangBtn');if(b)b.textContent=h.lang==='ar'?'English':'العربية';}new MutationObserver(sync).observe(h,{attributes:true,attributeFilter:['lang']});sync();})();
 function toggleLang(){LANG=LANG==='en'?'ar':'en';document.documentElement.dir=LANG==='ar'?'rtl':'ltr';document.getElementById('langBtn').textContent=LANG==='ar'?'English':'العربية';document.documentElement.lang=LANG;toast(LANG==='ar'?'تم التبديل للعربية':'Switched to English');}
 
-function connect(uid){if(CONN_STATE[uid]==='connected'){toast('Already connected');return;}CONN_STATE[uid]=CONN_STATE[uid]==='pending'?null:'pending';toast(CONN_STATE[uid]==='pending'?'Connection request sent!':'Request cancelled');goto(curPage);}
+function connect(uid){if(CONN_STATE[uid]==='connected'){toast('Already connected');return;}if(CONN_IN[uid]){acceptConnection(uid,null);return;}CONN_STATE[uid]=CONN_STATE[uid]==='pending'?null:'pending';toast(CONN_STATE[uid]==='pending'?'Connection request sent!':'Request cancelled');netRefresh();}
+/* redraw the page a network action came from: the profile being viewed, else the current page */
+function netRefresh(){netBadge();if(document.body.getAttribute('data-page')==='profile'&&window._profUser&&window._profUser.id!==ME.id){var c=document.getElementById('content');renderProfile(c,window._profUser.id);dgFooter(c,'profile');return;}goto(curPage);}
+/* the Network badge counts the requests waiting for me */
+function netBadge(){var n=USERS.filter(function(u){return CONN_IN[u.id]&&u.id!==ME.id;}).length;SB_NAV.forEach(function(x){if(x.page==='network')x.badge=n;});
+  [document.getElementById('nb-net'),document.querySelector('#mb-network .mb-badge'),document.querySelector('#snl-network .nl-badge')].forEach(function(e){if(!e)return;if(e.textContent!==String(n))e.textContent=n;e.style.display=n?'':'none';});}
+function followUser(uid){FOLLOWS[uid]=!FOLLOWS[uid];toast(FOLLOWS[uid]?'Following':'Unfollowed');netRefresh();}
+function dismissSuggestion(uid){SUGG_HIDDEN[uid]=true;goto('network');}
+function showConnections(){NET_VIEW='connections';goto('network');}
+function removeConnection(uid){var u=U(uid);if(!u||CONN_STATE[uid]!=='connected')return;
+  DBK.modal({title:'Remove connection',body:'<p style="margin:0;font-size:14px;line-height:1.5">Remove <b>'+esc(u.name)+'</b> from your connections? They will not be notified.</p>',primary:{label:'Remove',danger:true,onClick:function(){dropConnection(uid);}}});}
+function dropConnection(uid){CONN_STATE[uid]=null;NET_VIEW='connections';goto('network');toast('Connection removed');}
+function filterConnections(q){q=String(q||'').toLowerCase().trim();var n=0;document.querySelectorAll('#content .net-conn-row').forEach(function(r){var on=!q||r.dataset.q.indexOf(q)>=0;r.style.display=on?'':'none';if(on)n++;});var e=document.getElementById('netConnNone');if(e)e.style.display=n?'none':'';}
+document.addEventListener('dx:page',function(e){if(e.detail&&e.detail.page!=='network')NET_VIEW='';});
+/* a name in a Network list opens the profile (one delegated handler: the name is text, not a button, so a name such as "… Remove" is never taken for the row's action) */
+['click','keydown'].forEach(function(t){document.addEventListener(t,function(e){var n=e.target.closest&&e.target.closest('#content .net-pname[data-pu]');if(!n||(t==='keydown'&&e.key!=='Enter'))return;e.preventDefault();gotoProfile(parseInt(n.dataset.pu));});});
 function doSearch(q){if(!q||!q.trim())return;q=q.toLowerCase().trim();var c=document.getElementById('content');curPage='search';buildSidebarNav();var users=USERS.filter(function(u){return(u.name+' '+u.company+' '+u.headline).toLowerCase().includes(q);});var prods=PRODUCTS.filter(function(p){return(p.name+' '+(p.desc||'')).toLowerCase().includes(q);});c.innerHTML='<div class="search-wrap"><div style="font-size:18px;font-weight:800;color:var(--cx);margin-bottom:16px">Results for "<em>'+esc(q)+'</em>"</div>'+(users.length?'<div class="search-section"><div class="search-section-title">👥 People ('+users.length+')</div>'+users.map(function(u){return'<div class="search-user" onclick="renderProfile(document.getElementById(\'content\'),'+u.id+')" style="cursor:pointer">'+av(u,42)+'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--cx)">'+esc(u.name)+(u.verified?' ✓':'')+'</div><div style="font-size:12px;color:#65676b">'+esc(u.headline)+' · '+esc(u.company)+'</div></div><button class="btn-o" style="font-size:12px;padding:5px 14px;flex:none" onclick="event.stopPropagation();connect('+u.id+')">Connect</button></div>';}).join('')+'</div>':'')+(prods.length?'<div class="search-section"><div class="search-section-title">📦 Products ('+prods.length+')</div>'+prods.map(function(p){return'<div class="search-user"><div style="font-size:26px;width:42px;text-align:center">'+p.emoji+'</div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--cx)">'+esc(p.name)+'</div><div style="font-size:12px;color:#65676b">'+esc(U(p.uid).company)+' · '+p.price+'/'+p.unit+'</div></div><button class="btn-p" style="font-size:12px;padding:5px 14px;flex:none" onclick="messageUser('+p.uid+')">Contact</button></div>';}).join('')+'</div>':'')+(users.length===0&&prods.length===0?'<div style="text-align:center;padding:60px;color:#65676b"><div style="font-size:48px;margin-bottom:12px">🔍</div><div style="font-size:18px;font-weight:700">No results for "'+esc(q)+'"</div></div>':'')+'</div>';document.getElementById('searchIn').value=q;}
 
 // ══════════════════════════════════════════════════════
@@ -2372,7 +2397,7 @@ function dgPillText(page){
     switch(page){
       case 'market': return '1.2K LISTINGS  /  312 SUPPLY  /  187 DEMAND  /  340 SUPPLIERS';
       case 'jobs': return JOBS.length+' OPEN ROLES  /  '+dgCount(JOBS,function(j){return j.remote;})+' REMOTE  /  '+dgCount(JOBS,function(j){return j.type==='Full-time';})+' FULL-TIME';
-      case 'network': var v=Object.keys(CONN_STATE).map(function(k){return CONN_STATE[k];}); return dgCount(v,function(s){return s==='connected';})+' CONNECTIONS  /  '+dgCount(v,function(s){return s==='pending';})+' PENDING';
+      case 'network': var v=Object.keys(CONN_STATE).map(function(k){return CONN_STATE[k];}); return dgCount(v,function(s){return s==='connected';})+' CONNECTIONS  /  '+Object.keys(CONN_IN).filter(function(k){return CONN_IN[k];}).length+' PENDING';
       case 'notifs': return dgCount(NOTIFS,function(n){return !n.read;})+' UNREAD  /  '+NOTIFS.length+' TOTAL';
       case 'groups': return GROUPS.length+' GROUPS  /  '+dgCount(GROUPS,function(g){return g.joined;})+' JOINED';
       case 'companies': return ENQUIRIES.length+' ENQUIRIES  /  '+dgCount(ENQUIRIES,function(e){return e.type==='supply';})+' SUPPLY  /  '+dgCount(ENQUIRIES,function(e){return e.type==='demand';})+' DEMAND';
@@ -2945,14 +2970,33 @@ function submitProduct(){
 }
 
 // ── NETWORK ──────────────────────────────────────────────
+function netSuggestions(){return USERS.filter(function(u){return u.id!==ME.id&&CONN_STATE[u.id]!=='connected'&&!CONN_IN[u.id]&&!SUGG_HIDDEN[u.id];});}
+/* why a person is suggested: mutual connections, else the same company, else where they work */
+function suggWhy(u){var m=u.mutual!=null?u.mutual:(SUGG_MUTUAL[u.id]||0);if(m>0)return m+' mutual connection'+(m===1?'':'s');if(u.company&&ME.company&&String(u.company).toLowerCase()===String(ME.company).toLowerCase())return 'Same company';return flag(u.country)+' '+esc(u.company||'');}
+function netRow(user,btns){return '<div class="pending-row">'+av(user,46)+
+    '<div style="flex:1;min-width:0"><div class="net-pname" role="link" tabindex="0" data-pu="'+user.id+'" style="font-size:14px;font-weight:700;color:var(--cx);cursor:pointer">'+esc(user.name)+(user.verified?' <span style="color:var(--cp);font-size:11px">✓</span>':'')+'</div><div style="font-size:12px;color:#65676b">'+esc(user.headline)+'</div></div>'+btns+'</div>';}
 function renderNetwork(c){
-  var pending=USERS.filter(function(u){return CONN_STATE[u.id]==='pending'&&u.id!==ME.id;});
-  var suggested=USERS.filter(function(u){return u.id!==ME.id&&CONN_STATE[u.id]!=='connected';});
+  var pending=USERS.filter(function(u){return CONN_IN[u.id]&&u.id!==ME.id;});
+  var sent=USERS.filter(function(u){return CONN_STATE[u.id]==='pending'&&u.id!==ME.id&&!CONN_IN[u.id];});
+  var conns=USERS.filter(function(u){return CONN_STATE[u.id]==='connected'&&u.id!==ME.id;});
+  var suggested=netSuggestions();
+  netBadge();
+  if(NET_VIEW==='connections'){
+    c.innerHTML='<div class="net-grid net-one"><div><div class="pending-card">'+
+      '<div class="pending-hdr" style="display:flex;align-items:center;gap:10px"><button class="btn-ghost net-back" style="font-size:13px;padding:4px 10px" aria-label="Back to My Network" onclick="NET_VIEW=\'\';goto(\'network\')">‹</button><span>My connections ('+conns.length+')</span></div>'+
+      (conns.length?'<div style="padding:10px 16px;border-bottom:1px solid #f0f2f5"><input type="search" class="net-conn-q" placeholder="Search connections" aria-label="Search connections" oninput="filterConnections(this.value)" style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid #e4e6eb;border-radius:8px;font-size:13.5px;font-family:inherit"></div>':'')+
+      conns.map(function(user){return '<div class="net-conn-row" data-q="'+esc((user.name+' '+(user.headline||'')+' '+(user.company||'')).toLowerCase())+'">'+netRow(user,
+        '<button class="btn-ghost" style="font-size:12.5px;padding:6px 14px;margin-right:6px" data-mu="'+user.id+'" onclick="messageUser(parseInt(this.dataset.mu))">Message</button>'+
+        '<button class="btn-ghost" style="font-size:12.5px;padding:6px 14px" data-ru="'+user.id+'" onclick="removeConnection(parseInt(this.dataset.ru))">Remove</button>')+'</div>';}).join('')+
+      '<div id="netConnNone" style="padding:22px 16px;text-align:center;color:#65676b;font-size:13.5px'+(conns.length?';display:none':'')+'">'+(conns.length?'No connection matches your search':'No connections yet — accept an invitation or connect with people you may know')+'</div>'+
+      '</div></div></div>';
+    return;
+  }
   c.innerHTML='<div class="net-grid">'+
     '<div>'+
     '<div class="net-sidebar card" style="padding:14px;margin-bottom:14px">'+
     '<div style="font-size:14px;font-weight:700;color:var(--cx);margin-bottom:10px">My Network</div>'+
-    '<div class="net-overview-item"><span>Connections</span><span class="net-overview-n">148</span></div>'+
+    '<div class="net-overview-item" role="button" tabindex="0" aria-label="My connections" onclick="showConnections()"><span>Connections</span><span class="net-overview-n">'+conns.length+'</span></div>'+
     '<div class="net-overview-item"><span>Profile views</span><span class="net-overview-n">342</span></div>'+
     '<div class="net-overview-item"><span>Post impressions</span><span class="net-overview-n">2,840</span></div>'+
     '</div>'+
@@ -2961,25 +3005,29 @@ function renderNetwork(c){
     GROUPS.filter(function(g){return g.joined;}).map(function(g){return'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f2f5"><span style="font-size:20px">'+g.emoji+'</span>'+esc(g.name)+'</div>';}).join('')+
     '</div></div>'+
     '<div>'+
+    '<div class="pending-card net-conn-m" role="button" tabindex="0" onclick="showConnections()"><div class="pending-hdr" style="display:flex;justify-content:space-between;border-bottom:none;cursor:pointer"><span>My connections ('+conns.length+')</span><span aria-hidden="true">›</span></div></div>'+
     (pending.length?'<div class="pending-card"><div class="pending-hdr">Pending Invitations ('+pending.length+')</div>'+
-    pending.map(function(user){return'<div class="pending-row">'+av(user,46)+
-    '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--cx)">'+esc(user.name)+(user.verified?' <span style="color:var(--cp);font-size:11px">✓</span>':'')+'</div><div style="font-size:12px;color:#65676b">'+esc(user.headline)+'</div></div>'+
-    '<button class="btn-p" style="font-size:12.5px;padding:6px 14px;margin-right:6px" onclick="CONN_STATE['+user.id+']=\'connected\';renderNetwork(document.getElementById(\'content\'));toast(\'Connected! 🤝\')">Accept</button>'+
-    '<button class="btn-ghost" style="font-size:12.5px;padding:6px 14px" onclick="CONN_STATE['+user.id+']=null;renderNetwork(document.getElementById(\'content\'))">Decline</button></div>';}).join('')+'</div>':'') +
+    pending.map(function(user){return netRow(user,
+    '<button class="btn-p" style="font-size:12.5px;padding:6px 14px;margin-right:6px" data-au="'+user.id+'" onclick="acceptConnection(parseInt(this.dataset.au),null)">Accept</button>'+
+    '<button class="btn-ghost" style="font-size:12.5px;padding:6px 14px" data-du="'+user.id+'" onclick="declineConnection(parseInt(this.dataset.du),null)">Decline</button>');}).join('')+'</div>':'') +
+    (sent.length?'<div class="pending-card"><div class="pending-hdr">Sent requests ('+sent.length+')</div>'+
+    sent.map(function(user){return netRow(user,'<span class="net-sent-st" style="font-size:12px;color:#65676b;margin-right:6px">Pending</span>'+
+    '<button class="btn-ghost" style="font-size:12.5px;padding:6px 14px" data-wu="'+user.id+'" onclick="connect(parseInt(this.dataset.wu))">Withdraw</button>');}).join('')+'</div>':'') +
     '<div style="font-size:16px;font-weight:700;color:var(--cx);margin:14px 0 10px">People You May Know</div>'+
     '<div class="sugg-grid">'+suggested.map(function(user){
       var st=CONN_STATE[user.id];
       return '<div class="sugg-card">'+
+        '<button class="sugg-x" aria-label="Dismiss" title="Dismiss" data-xu="'+user.id+'" onclick="dismissSuggestion(parseInt(this.dataset.xu))">×</button>'+
         '<div class="sugg-cover"></div>'+
         '<div class="sugg-av" style="background:'+user.color+'">'+user.initials+'</div>'+
         '<div class="sugg-name">'+esc(user.name)+(user.verified?' <span style="color:var(--cp);font-size:10px">✓</span>':'')+'</div>'+
         '<div class="sugg-head">'+esc(user.headline)+'</div>'+
-        '<div class="sugg-mutual">'+flag(user.country)+' '+esc(user.company)+'</div>'+
+        '<div class="sugg-mutual">'+suggWhy(user)+'</div>'+
         (st==='pending'?
           '<button class="sugg-btn" style="border:1.5px solid #e4e6eb;color:#65676b;background:#fff" onclick="connect('+user.id+')">Pending</button>':
           '<button class="sugg-btn" style="border:2px solid var(--cp);color:var(--cp);background:#fff" onclick="connect('+user.id+')">+ Connect</button>')+
         '</div>';
-    }).join('')+'</div></div></div>';
+    }).join('')+'</div>'+(suggested.length?'':'<div class="card" style="padding:22px;text-align:center;color:#65676b;font-size:13.5px">No suggestions right now</div>')+'</div></div>';
 }
 
 // ── PROFILE ───────────────────────────────────────────────
@@ -3006,9 +3054,14 @@ function renderProfile(c,userId){
     h+='<button class="btn-ghost" data-mu="'+userId+'" onclick="messageUser(parseInt(this.dataset.mu))">&#9993;&#65039; Message</button>';
     if(st==='connected')h+='<button class="btn-ghost" style="color:#65676b">&#10003; Connected</button>';
     else if(st==='pending')h+='<button class="btn-ghost" style="color:#65676b">Pending</button>';
+    else if(CONN_IN[userId]){   /* they asked me: answer here rather than "Connect" */
+      h+='<button class="btn-p" data-au="'+userId+'" onclick="acceptConnection(parseInt(this.dataset.au),null)">&#10003; Accept</button>';
+      h+='<button class="btn-ghost" data-du="'+userId+'" onclick="declineConnection(parseInt(this.dataset.du),null)">Decline</button>';
+      h+='<button class="btn-ghost" data-fu="'+userId+'" onclick="followUser(parseInt(this.dataset.fu))" aria-pressed="'+(FOLLOWS[userId]?'true':'false')+'">'+(FOLLOWS[userId]?'✓ Following':'+ Follow')+'</button>';
+    }
     else{
       h+='<button class="btn-p" data-cu="'+userId+'" onclick="connect(parseInt(this.dataset.cu))">&#129309; Connect</button>';
-      h+='<button class="btn-ghost" onclick="this.textContent=\'Following\';toast(\'Following\')">+ Follow</button>';
+      h+='<button class="btn-ghost" data-fu="'+userId+'" onclick="followUser(parseInt(this.dataset.fu))" aria-pressed="'+(FOLLOWS[userId]?'true':'false')+'">'+(FOLLOWS[userId]?'✓ Following':'+ Follow')+'</button>';
     }
   }
   h+='</div></div>';
@@ -3384,8 +3437,8 @@ function setNotifFilter(f){window._notifFilter=f;var c=document.getElementById('
 function markNotifRead(id){var n=NOTIFS.find(function(x){return x.id===id;});if(n&&!n.read){n.read=true;var el=document.getElementById('notif-'+id);if(el){el.classList.remove('unread');var d=el.lastElementChild;if(d&&d.tagName==='SPAN')d.remove();}if(typeof updateBadges==='function')updateBadges();}}
 function clearAllNotifs(){NOTIFS.length=0;var c=document.getElementById('content');if(c)renderNotifs(c);toast('Notifications cleared');if(typeof updateBadges==='function')updateBadges();}
 function markAllRead(){NOTIFS.forEach(function(n){n.read=true;});renderNotifs(document.getElementById('content'));document.getElementById('nb-not').style.display='none';}
-function acceptConnection(uid,nid){CONN_STATE[uid]='connected';var n=NOTIFS.find(function(x){return x.id===nid;});if(n)n.type='accepted';renderNotifs(document.getElementById('content'));toast('Connected! 🤝');}
-function declineConnection(uid,nid){CONN_STATE[uid]=null;NOTIFS=NOTIFS.filter(function(x){return x.id!==nid;});renderNotifs(document.getElementById('content'));toast('Declined');}
+function acceptConnection(uid,nid){CONN_STATE[uid]='connected';delete CONN_IN[uid];var n=NOTIFS.find(function(x){return nid!=null?x.id===nid:(x.uid===uid&&x.type==='connection');});if(n){n.type='accepted';n.read=true;}netBadge();if(document.body.getAttribute('data-page')==='notifs')renderNotifs(document.getElementById('content'));else netRefresh();toast('Connected! 🤝');}
+function declineConnection(uid,nid){CONN_STATE[uid]=null;delete CONN_IN[uid];NOTIFS=NOTIFS.filter(function(x){return nid!=null?x.id!==nid:!(x.uid===uid&&x.type==='connection');});netBadge();if(document.body.getAttribute('data-page')==='notifs')renderNotifs(document.getElementById('content'));else netRefresh();toast('Declined');}
 
 // ── TRAINING ──────────────────────────────────────────────
 function renderTraining(c){

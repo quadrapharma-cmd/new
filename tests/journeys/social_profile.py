@@ -346,6 +346,11 @@ def view_someone_else(j):
             j.reload(pg); goto_profile(j, pg, b)
             j.check(j.find(pg, r'^\W*(Following|تتابعهم|تتابع|متابَع|تمت المتابعة)$', scope='#content', exact=True), 'after reload Follow is lost')
     with j.step('Connect from the header sends a real request; the button shows Pending'):
+        if j.live:
+            # step 3 gave A a notification by having B ask A to connect; this step needs B with no request pending (the demo's
+            # precondition): a request from B is answered with Accept, not Connect (one row per pair, 0020) — withdraw it first
+            j.sql("delete from public.connections where requester='%s' and addressee='%s' and status='pending'" % (b['id'], a['id']))
+            j.reload(pg); goto_profile(j, pg, b)
         el = j.find(pg, r'^\W*(Connect|تواصل|اتصال)$', scope='#content', exact=True); j.check(el, 'no Connect in the header')
         el.click(); pg.wait_for_timeout(800)
         where = pg.evaluate("document.body.getAttribute('data-page')")

@@ -1,5 +1,7 @@
 """B3 end-to-end: two real people in two browsers — request, notification, accept/decline, suggestions by mutual connections,
-real network numbers, notification read/clear, the profile/Connect buttons with local ids, and row-level security."""
+real network numbers, notification read/clear, the profile/Connect buttons with local ids, and row-level security.
+Phase 1 (0030): the Network page lists requests addressed to me with working Accept / Decline and my own under "Sent requests"
+(S-04), My connections with Remove (S-10), following a person (S-11), dismissed suggestions — all through the page's own buttons."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
 from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
@@ -70,6 +72,45 @@ with sync_playwright() as p:
     T("cannot read someone else's notifications", r == 0)
     r = A.evaluate("dxLive.sb.rpc('suggest_people',{p_limit:12})"); r2 = A.evaluate("fetch(DRUGBOX_CONFIG.url+'/rest/v1/rpc/suggest_people',{method:'POST',headers:{'apikey':DRUGBOX_CONFIG.anonKey,'content-type':'application/json'},body:'{}'}).then(r=>r.status)")
     T('suggestions need a signed-in user (not open to anonymous calls)', r2 in (401, 403, 404), r2)
+    # ── S-04: the Network page shows the requests addressed to me (Accept / Decline work) and mine under "Sent requests" ──
+    n_id = person('nadia', 'Dr. Nadia Netpage'); o_id = person('otto', 'Dr. Otto Ignored')
+    for x in (n_id, o_id): sql(f"insert into public.connections (requester, addressee, status) values ('{x}','{b_id}','pending')")
+    hana = B.evaluate(f"dxLive.aid('{h_id}')"); B.evaluate(f"connect({hana})"); B.wait_for_timeout(1200)
+    T('Connect on a person stores my request', sql(f"select status from public.connections where requester='{b_id}' and addressee='{h_id}'") == 'pending')
+    B.reload(wait_until='load'); B.wait_for_timeout(400); B.evaluate('endSplash()'); B.wait_for_timeout(3000)
+    B.evaluate("goto('network')"); B.wait_for_timeout(2500)
+    cards = B.evaluate("[...document.querySelectorAll('#content .pending-card')].map(c=>c.innerText)")
+    inv = next((c for c in cards if 'Nadia' in c), ''); sent = next((c for c in cards if 'Hana' in c), '')
+    T('the invitations card lists the two requests addressed to me with Accept, and not my own', 'Otto' in inv and 'Accept' in inv and 'Hana' not in inv, cards)
+    T('my own request is under "Sent requests" with Withdraw', 'sent requests' in sent.lower() and 'Withdraw' in sent and 'Accept' not in sent, cards)
+    T("the network badge counts the three requests waiting (Karim's from above, Nadia's, Otto's)", B.evaluate("(document.getElementById('nb-net')||{}).textContent") == '3')
+    nad, ott = B.evaluate(f"dxLive.aid('{n_id}')"), B.evaluate(f"dxLive.aid('{o_id}')")
+    B.click(f'#content [data-au="{nad}"]'); B.wait_for_timeout(1500)
+    T('Accept on the Network page makes a real connection', sql(f"select status from public.connections where requester='{n_id}' and addressee='{b_id}'") == 'accepted')
+    B.click(f'#content [data-du="{ott}"]'); B.wait_for_timeout(1500)
+    T('Decline on the Network page rejects it and removes its notice', sql(f"select status from public.connections where requester='{o_id}' and addressee='{b_id}'") == 'rejected'
+      and sql(f"select count(*) from public.notifications where user_id='{b_id}' and from_user='{o_id}'") == '0')
+    cards = B.evaluate("[...document.querySelectorAll('#content .pending-card')].map(c=>c.innerText).join('\\n')"); nb = B.evaluate("(document.getElementById('nb-net')||{}).textContent")
+    T('both invitations left the Network lists and the badge counts the one left', not any(n in cards for n in ('Nadia', 'Otto')) and 'Karim' in cards and nb == '1', (nb, cards[:300]))
+    r = A.evaluate(f"dxLive.sb.from('connections').delete().eq('requester','{o_id}').eq('addressee','{b_id}').select('id').then(r=>(r.data||[]).length)")
+    T('a declined request cannot be cleared by someone else', r == 0)
+    # ── S-10: My connections, Remove with a confirmation ──
+    B.click('#content .net-overview-item[aria-label="My connections"]'); B.wait_for_timeout(800)
+    T('My connections lists Alice and Nadia', all(n in B.inner_text('#content') for n in ('Dr. Alice Sender', 'Dr. Nadia Netpage')))
+    B.click(f'#content [data-ru="{nad}"]'); B.wait_for_timeout(400); B.click('.dbk-ov [data-a=ok]'); B.wait_for_timeout(1500)
+    T('Remove (confirmed) deletes the connection', sql(f"select count(*) from public.connections where requester='{n_id}' and addressee='{b_id}'") == '0' and 'Nadia' not in B.inner_text('#content'))
+    # ── S-11: following a person (someone with no connection or request: Follow shows next to Connect) ──
+    l_id = person('leila', 'Dr. Leila Leader'); hana = B.evaluate(f"dxLive.aid('{l_id}')"); h_id = l_id
+    B.evaluate(f"gotoProfile({hana})"); B.wait_for_timeout(1500); B.click(f'#content [data-fu="{hana}"]'); B.wait_for_timeout(1500)
+    T('Follow is stored and counted once', sql(f"select count(*) from public.person_followers where person_id='{h_id}' and user_id='{b_id}'") == '1'
+      and sql(f"select followers_count from public.profiles where id='{h_id}'") == '1')
+    B.reload(wait_until='load'); B.wait_for_timeout(400); B.evaluate('endSplash()'); B.wait_for_timeout(3000)
+    hana = B.evaluate(f"dxLive.aid('{h_id}')"); B.evaluate(f"gotoProfile({hana})"); B.wait_for_timeout(1500)
+    T('after a reload the profile still says Following', 'Following' in B.inner_text(f'#content [data-fu="{hana}"]'))
+    r = A.evaluate(f"dxLive.sb.from('person_followers').insert({{person_id:'{h_id}',user_id:'{b_id}'}})" + ERR)
+    T('cannot follow in someone else\'s name', r and refused(r))
+    r = A.evaluate(f"dxLive.sb.from('people_dismissed').insert({{person_id:'{h_id}',user_id:'{b_id}'}})" + ERR)
+    T('cannot dismiss suggestions in someone else\'s name', r and refused(r))
     T('no errors in the page', not errs, errs)
     b.close()
 done()
