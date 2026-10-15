@@ -30,7 +30,7 @@ comes from. Never rewrite or restyle a page for the live app.
 - People get small local numeric ids (1001+) mapped to UUIDs (`aid()`/`uuidOf()`), because the interface writes ids
   unquoted and `parseInt`s them. `gotoProfile` fetches unseen people first (otherwise `U()` falls back to "me").
 
-## Database (supabase/migrations 0001–0026)
+## Database (supabase/migrations 0001–0033)
 - Every migration ends with `notify pgrst, 'reload schema';`.
 - After any migration run `psql -f supabase/tests/schema_sweep.sql` — every line must say "none" (six checks), including
   **RLS on with no policy** (made five features unusable in production: group members, post media, company followers…),
@@ -62,6 +62,9 @@ Secrets only as Supabase function secrets — never in the browser or in git.
 - Live end-to-end (Playwright, Python): `tests/e2e/*.py` — b1 auth, b2 feed, b2b profile posts, b3 network, b4 messages,
   c1 companies, c2 deals, c3 listings, d1 market, d2a jobs, d2b trust, d3 groups, video, e1a uploads + follow,
   e1b documents, e2 review, e3 training, e4 payments (server), e4b checkout (browser). Each prints `N / N`.
+- Journeys (150, `docs/JOURNEYS.md`): `tests/journeys/run_{social,business,community}.py --only <ids>` click the real buttons and
+  check the database, on the demo (EN/AR 1440, EN 390) and live. **A feature is done only when its journey passes on both** —
+  a passing unit/e2e test is not enough. Dead-end crawler: `tools/qa/deadend_crawler.py`. Status: `docs/FEATURE-STATUS-2026-10.md`.
 - Database security: `supabase/tests/{company_hub,deals,listings_groups}.rls.sql` on a fresh database built from
   `supabase/tests/_local_supabase_stub.sql` + all migrations, plus `schema_sweep.sql`.
 - Demo: `tests/demo/*.py` and `tests/demo/legacy/*.py` (accessibility, links, dialogs, Arabic, speed, XSS…).
@@ -80,10 +83,10 @@ Done: A foundation · B auth/feed/network/notifications/messages · C companies/
 D marketplace/jobs/trust layer/groups · intro videos · E1 uploads and private documents · E2 Admin → Review ·
 E3 training · E4 payments (server + checkout).
 Code review (October 2026, `docs/CODE-REVIEW-2026-10.md`, F-01…F-178): fixed in migrations 0020 security core, 0021 trust/hub/deals,
-0022 integrity/speed, 0023 payments/moderation/storage, 0024 round-2 follow-ups, 0025 small follow-ups (group-invite notice, members-only company documents, unique slugs), 0026 launch readiness (explicit grants, cheaper directory page, race-free slugs), plus the adapter, local stack, build and tests — run everything with
+0022 integrity/speed, 0023 payments/moderation/storage, 0024 round-2 follow-ups, 0025 small follow-ups (group-invite notice, members-only company documents, unique slugs), 0026 launch readiness (explicit grants, cheaper directory page, race-free slugs), 0027 group posts; product build phase 1 (`docs/PRODUCT-GAPS-2026-10.md`, `docs/FEATURE-STATUS-2026-10.md`): 0028 reactions/post reports, 0029 profile, 0030 network, 0031 message mutes/blocks/reports, 0032 company contact, 0033 no sample content in live; plus the adapter, local stack, build and tests — run everything with
 `python3 tests/run_all.py` (exits non-zero on any failure); the build is deterministic and parity compares the whole file.
 
-**Next — E5 launch:** follow `docs/LAUNCH.md` (staging first): `deploy/supabase_deploy.sh` (migrations 0001–0026, sweep, buckets,
+**Next — E5 launch:** follow `docs/LAUNCH.md` (staging first): `deploy/supabase_deploy.sh` (migrations 0001–0033, sweep, buckets,
 realtime, function secrets + deploy), `deploy/vercel_deploy.sh` (preview), `tools/scale/seed_100k.sql` + `tests/load/k6_drugbox.js`
 (2,000 concurrent, decides the compute size), Sentry, `deploy/backup.sh` + restore drill, domain. Blocked here on network access to
 Supabase/Vercel and on the owner's credentials.
