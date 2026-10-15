@@ -1074,11 +1074,12 @@
     var anyL = mk.querySelector('.lcard'), anyD = mk.querySelector('.dcard');
     if (!MKT.tplL && anyL) MKT.tplL = anyL.outerHTML; if (!MKT.tplD && anyD) MKT.tplD = anyD.outerHTML;
     var grid = mk.querySelector('.supply-grid');
-    if (grid && MKT.tplL) { grid.querySelectorAll('.lcard').forEach(function (x) { x.remove(); }); MKT.products.forEach(function (p) { grid.appendChild(supplyCard(p)); });
+    if (grid && MKT.tplL) { grid.querySelectorAll('.lcard, .dx-mk-empty').forEach(function (x) { x.remove(); }); MKT.products.forEach(function (p) { grid.appendChild(supplyCard(p)); });
       if (!MKT.products.length) grid.insertAdjacentHTML('beforeend', '<div class="dx-mk-empty" style="padding:18px;color:#65676b;font-size:13px">No supply listings yet — be the first to post one.</div>'); }
     if (anyD) anyD.parentElement.setAttribute('data-live-demand', '1');          /* remember where demand cards live, even after they are cleared */
     var dgrid = mk.querySelector('[data-live-demand]');
-    if (dgrid && MKT.tplD) { dgrid.querySelectorAll('.dcard').forEach(function (x) { x.remove(); }); MKT.demand.forEach(function (e) { dgrid.appendChild(demandCard(e)); }); }
+    if (dgrid && MKT.tplD) { dgrid.querySelectorAll('.dcard').forEach(function (x) { x.remove(); });   /* under the board's heading, above "Latest Jobs" — where the approved cards are */
+      var at = dgrid.querySelector('.db-sub'); MKT.demand.forEach(function (e) { var c = demandCard(e); if (at) { at.insertAdjacentElement('afterend', c); at = c; } else dgrid.appendChild(c); }); }
     paintSponsored(mk);
     /* ticker: admin items if any, otherwise the newest real listings */
     if (window.TICKER_ITEMS && typeof window.buildTicker === 'function') {
@@ -1382,10 +1383,11 @@
     var cv = c.querySelector('.gcard-cover'); if (cv) { cv.textContent = g.emoji || '👥'; cv.style.background = 'linear-gradient(135deg,' + gr[0] + ',' + gr[1] + ')'; }
     var t = c.querySelector('.gcard-title'); if (t) t.textContent = g.name;
     var d = c.querySelector('.gcard-desc'); if (d) d.textContent = g.description || '';
-    var m = c.querySelector('.gcard-meta'); if (m) m.innerHTML = '<span class="gtag gtag-deal">' + esc2(g.topic || 'DISCUSS') + '</span><span class="gtag gtag-public">' + (g.type === 'private' ? 'Private' : 'Public') + '</span>';
+    var deal = /deal/i.test(g.topic || ''), m = c.querySelector('.gcard-meta');   /* the tag classes drive the page's Discussion / Deal Rooms filters */
+    if (m) m.innerHTML = '<span class="gtag ' + (deal ? 'gtag-deal' : 'gtag-discuss') + '">' + esc2(g.topic || 'DISCUSS') + '</span><span class="gtag ' + (g.type === 'private' ? 'gtag-private">Private' : 'gtag-public">Public') + '</span>';
     var sig = c.querySelector('.activity-signal'), ac = GX.act[g.id];
     if (sig) { if (ac && ac.posts_week > 0) { sig.className = 'activity-signal'; sig.textContent = ac.posts_week.toLocaleString('en') + (ac.posts_week === 1 ? ' new post this week' : ' new posts this week'); } else sig.remove(); }
-    var mc = c.querySelector('.member-count'); if (mc) mc.textContent = (g.member_count || 0).toLocaleString('en') + ' members';
+    var mc = c.querySelector('.member-count'); if (mc) mc.textContent = (g.member_count || 0).toLocaleString('en') + (g.member_count === 1 ? ' member' : ' members');
     /* what the inside of the group (groups.js) shows under About: the group's own text, rules, creation date and creator */
     c.dataset.about = txt(g.description || ''); c.dataset.rules = JSON.stringify(rulesOf(g.rules)); c.dataset.since = g.created_at || ''; c.dataset.by = g.created_by ? aid(g.created_by) : '';
     paintCardState(c, g);
@@ -1401,28 +1403,92 @@
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
     if (st === 'pending' || st === 'request' || st === 'accept') b.dataset.gpq = st; else delete b.dataset.gpq;
     if (st === 'accept') c.dataset.invited = '1'; else delete c.dataset.invited;
-    var mc = c.querySelector('.member-count'); if (mc) mc.textContent = (g.member_count || 0).toLocaleString('en') + ' members';
+    var mc = c.querySelector('.member-count'); if (mc) mc.textContent = (g.member_count || 0).toLocaleString('en') + (g.member_count === 1 ? ' member' : ' members');
   }
   /* groups.rules is plain text, one rule per line ("Title: explanation" or "Title — explanation") */
   function rulesOf(t) {
     return String(t || '').split(/\n+/).map(function (l) { return txt(l.trim()); }).filter(Boolean).slice(0, 20).map(function (l) {
       var m = /^(.{1,80}?)\s*(?:—|:|–)\s+(.+)$/.exec(l); return m ? [m[1], m[2]] : [l, '']; });
   }
+  /* Only groups from the database show (G-02): every sample card goes, in every section. My groups fill "Your Groups"; groups I am
+     not in fill the next two sections (discussion groups, then deal rooms), invitations first, then by activity. The side list,
+     the "My Groups (N)" chip, the activity strip and the section counts come from the same rows (G-03, G-04). */
+  var GSEC = ['mine', 'other', 'deal'];
+  function actOf(g) { return GX.act[g.id] || { posts_today: 0, posts_week: 0 }; }
+  function byActivity(a, b) { var x = actOf(a), y = actOf(b); return (GX.inv[b.id] ? 1 : 0) - (GX.inv[a.id] ? 1 : 0) || y.posts_today - x.posts_today || y.posts_week - x.posts_week || (b.member_count || 0) - (a.member_count || 0); }
+  function myGroups() { return GX.groups.filter(function (g) { return !!GX.mine[g.id]; }).sort(byActivity); }
+  /* change the words of one text node (found by its English original), keeping icons other layers put around it; the Arabic
+     interface translates the new words like any other */
+  function origOf(t) { return (window.dxI18nOrig && window.dxI18nOrig(t)) || t.nodeValue; }
+  function setTextNode(root, re, make) {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); while (w.nextNode()) { var t = w.currentNode, o = origOf(t); if (!re.test(o)) continue;
+      var v = make(o); if (v !== o) t.nodeValue = v; return t; }
+    return null;
+  }
+  function gxEmpty(text) { return '<div class="dx-gx-empty" style="padding:18px;color:#65676b;font-size:13px;grid-column:1/-1">' + text + '</div>'; }
   function paintGroups() {
     var root = document.getElementById('gx'); if (!root) return;
     var demo = [].slice.call(root.querySelectorAll('.gcard')).filter(function (c) { return !c.dataset.gid; });
-    if (demo.length) { if (!GX.tpl) GX.tpl = demo[0].outerHTML; demo[0].parentElement.setAttribute('data-live-groups', '1'); }
-    var list = root.querySelector('[data-live-groups]'); if (!list || !GX.tpl) return;
-    list.querySelectorAll('.gcard, .dx-gx-empty').forEach(function (x) { x.remove(); });
-    GX.groups.forEach(function (g) { list.appendChild(groupCard(g)); });
-    if (!GX.groups.length) list.insertAdjacentHTML('beforeend', '<div class="dx-gx-empty" style="padding:18px;color:#65676b;font-size:13px">No groups yet — create the first one.</div>');
+    if (demo.length && !GX.tpl) GX.tpl = demo[0].outerHTML;
+    demo.forEach(function (c) { c.remove(); });
+    var grids = [].slice.call(root.querySelectorAll('.gx-groups-grid')).slice(0, 3); if (!grids.length || !GX.tpl) return;
+    grids.forEach(function (gr, i) { gr.setAttribute('data-live-groups', GSEC[i]); gr.querySelectorAll('.gcard, .dx-gx-empty').forEach(function (x) { x.remove(); }); });
+    var mine = myGroups(), rest = GX.groups.filter(function (g) { return !GX.mine[g.id]; }).sort(byActivity);
+    var parts = [mine, rest.filter(function (g) { return !/deal/i.test(g.topic || '') || grids.length < 3; }), rest.filter(function (g) { return /deal/i.test(g.topic || ''); })];
+    var empty = !GX.at ? ['Loading groups…', '', ''] : ['You have not joined a group yet — join one below or create your own.', 'No other discussion groups yet — create the first one.', 'No other deal rooms yet — create the first one.'];
+    grids.forEach(function (gr, i) { parts[i].forEach(function (g) { gr.appendChild(groupCard(g)); }); if (!parts[i].length && empty[i]) gr.insertAdjacentHTML('beforeend', gxEmpty(empty[i])); });
+    paintGroupsChrome(root, mine);
   }
+  /* everything around the cards that the approved page fills with sample numbers */
+  function paintGroupsChrome(root, mine) {
+    var q = function (s) { return root.querySelector(s); }, today = mine.filter(function (g) { return actOf(g).posts_today > 0; });
+    var items = root.querySelectorAll('.intel-strip .intel-item'), divs = root.querySelectorAll('.intel-strip .intel-divider');
+    if (items[0]) { var b0 = items[0].querySelector('b'); if (b0) b0.textContent = today.length; }
+    if (items[1]) { var b1 = items[1].querySelector('b'); if (b1) b1.textContent = today.reduce(function (t, g) { return t + actOf(g).posts_today; }, 0).toLocaleString('en');
+      var t1 = b1 && b1.nextSibling; if (t1 && t1.nodeType === 3 && !/new posts today/.test(window.dxI18nOrig && window.dxI18nOrig(t1) || t1.nodeValue)) t1.nodeValue = ' new posts today in your groups'; }
+    var hot = GX.groups.filter(function (g) { return actOf(g).posts_today > 0; }).sort(function (a, b) { return actOf(b).posts_today - actOf(a).posts_today; })[0];
+    if (items[2]) { items[2].style.display = hot ? '' : 'none'; if (divs[1]) divs[1].style.display = hot ? '' : 'none';
+      if (hot) { var b2 = items[2].querySelector('b'); if (b2) { b2.textContent = hot.name; b2.setAttribute('data-noi18n', '');
+        var t2 = b2.nextSibling, n2 = actOf(hot).posts_today, v2 = ' trending — ' + n2 + (n2 === 1 ? ' post today' : ' posts today'); if (t2 && t2.nodeType === 3) { if ((window.dxI18nOrig && window.dxI18nOrig(t2)) !== v2 && t2.nodeValue !== v2) t2.nodeValue = v2; } else b2.insertAdjacentText('afterend', v2); } } }
+    [].forEach.call(root.querySelectorAll('.cat-filter .cf-tag'), function (c) { setTextNode(c, /My Groups \(\d+\)/, function (o) { return o.replace(/\(\d+\)/, '(' + mine.length + ')'); }); });
+    var hdrs = root.querySelectorAll('.main .sec-hdr');
+    if (hdrs[0]) { var all0 = hdrs[0].querySelector('.sec-all'); if (all0) { var v0 = 'View all ' + mine.length + ' →'; if ((window.dxOrigText ? window.dxOrigText(all0) : all0.textContent).trim() !== v0) all0.textContent = v0; } }
+    if (hdrs[1]) { var sub1 = hdrs[1].querySelector('.sec-sub'); if (sub1 && /Matched to your/.test(window.dxOrigText ? window.dxOrigText(sub1) : sub1.textContent)) sub1.textContent = 'Groups you have not joined yet — most active first'; }
+    var ip = q('.intel-panel'); if (ip) ip.style.display = 'none';      /* the activity score is not measured in the live app */
+    /* the side list "Your Groups": my groups from the database, each opens its own group */
+    var side = q('.gx-sidebar'); if (!side) return;
+    var rows = [].slice.call(side.querySelectorAll('.mygroup:not([data-gid])')); if (rows.length && !GX.tplMy) GX.tplMy = rows[0].outerHTML; rows.forEach(function (r) { r.remove(); });
+    side.querySelectorAll('.mygroup[data-gid], .dx-mg-empty').forEach(function (r) { r.remove(); });
+    var at = side.querySelector('.sb-divider'); if (!at || !GX.tplMy) return;
+    if (!mine.length) { at.insertAdjacentHTML('beforebegin', '<div class="dx-mg-empty" style="padding:6px 8px 10px;color:#65676b;font-size:12.5px">' + (GX.at ? 'You have not joined a group yet.' : 'Loading groups…') + '</div>'); return; }
+    mine.forEach(function (g, i) {
+      var r = el(GX.tplMy), a = actOf(g), gr = GRAD[g.id % GRAD.length]; r.removeAttribute('onclick'); r.dataset.gid = g.id; r.setAttribute('role', 'button'); r.setAttribute('tabindex', '0');
+      var ic = r.querySelector('.mg-ic'); if (ic) { ic.style.background = gr[0] + '22'; ic.textContent = g.emoji || '👥'; if (a.posts_today > 0) ic.insertAdjacentHTML('beforeend', '<div class="live-pulse"></div>'); }
+      var nm = r.querySelector('.mg-name'); if (nm) nm.textContent = g.name;
+      var mt = r.querySelector('.mg-meta'); if (mt) { mt.removeAttribute('style'); mt.textContent = a.posts_today > 0 ? a.posts_today + (a.posts_today === 1 ? ' new post today' : ' new posts today') : a.posts_week > 0 ? a.posts_week + (a.posts_week === 1 ? ' new post this week' : ' new posts this week') : 'Quiet today'; }
+      var bd = r.querySelector('.mg-badge'); if (a.posts_today > 0) { if (!bd) { bd = document.createElement('div'); bd.className = 'mg-badge'; r.appendChild(bd); } bd.textContent = a.posts_today; } else if (bd) bd.remove();
+      at.parentNode.insertBefore(r, at);
+    });
+  }
+  /* my groups changed (joined / left): with a group open only the counts and lists around the cards follow (the open group keeps
+     its card); otherwise the cards move to their sections too */
+  function refreshMine() {
+    var root = document.getElementById('gx'), gd = document.getElementById('groupDetail');
+    if (root && gd && gd.classList.contains('show')) { paintGroupsChrome(root, myGroups()); if (typeof syncGroupsGlobal === 'function') syncGroupsGlobal(); }
+    else paintGroups();
+  }
+  document.addEventListener('click', function (e) {                   /* a side-list row opens its group */
+    var r = e.target.closest && e.target.closest('#gx .mygroup[data-gid]'); if (!r || !ME_UUID) return;
+    e.preventDefault(); e.stopPropagation(); window.dxLive.openGroup(+r.dataset.gid);
+  }, true);
+  document.addEventListener('keydown', function (e) { if (e.key !== 'Enter' && e.key !== ' ') return; var r = e.target.closest && e.target.closest('#gx .mygroup[data-gid]'); if (r) { e.preventDefault(); r.click(); } });
   window.dxLive.openGroup = function (gid, tab) {
     var g = GX.groups.find(function (x) { return x.id === gid; }); if (!g) return; GX.cur = g;
     var card = document.querySelector('#gx .gcard[data-gid="' + gid + '"]');
     if (card && window.dxGroups && window.dxGroups.pick) window.dxGroups.pick(card, tab);   /* groups.js draws the inside of THIS group */
     var t = document.getElementById('dt-title'); if (t) t.textContent = g.name;
     window.openGroup(GX.mine[gid] === 'admin' ? 'admin' : 'member');
+    var gc = document.querySelector('#groupDetail .group-cover'), cv = card && card.querySelector('.gcard-cover'); if (gc && cv) gc.style.background = cv.style.background;
     paintHead(g);
     if (GX.mine[gid] === 'admin') manageLoad(g);
   };
@@ -1629,6 +1695,7 @@
       else if (res === 'pending') GX.req[g.id] = true; }
     var paint = function () { var card = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]'); if (card) paintCardState(card, g); if (GX.cur && GX.cur.id === g.id) paintHead(g); };
     paint(); setTimeout(paint, 0);   /* after groups.js painted the card for the step it asked for (an invitation may make a request a membership) */
+    if (res === 'member' || res === 'left') setTimeout(refreshMine, 0);   /* side list, "My Groups (N)", shortcuts */
     window.toast(res === 'member' ? 'You joined ' + g.name : res === 'pending' ? 'Request sent to the admins of ' + g.name : res === 'left' ? 'You left ' + g.name : 'Request cancelled');
     return res;
   }
@@ -1652,6 +1719,14 @@
     }
     [].forEach.call(D.querySelectorAll('#memberActions .btn-secondary'), function (b) { b.style.display = role ? '' : 'none'; });
     var lc = q('#leaveConfirm'); if (lc && !role) lc.classList.remove('show');
+    /* the admin panel never shows the sample members, reports or member count while this group's own load is on its way */
+    var n = (g.member_count || 0).toLocaleString('en'), dz = q('.danger-zone .dz-desc'); if (dz) dz.textContent = n + ' real members and their history live in this group. Choose carefully.';
+    var sv = q('.danger-zone .choice-card.severe .choice-desc'); if (sv) sv.textContent = 'Removes all ' + n + ' members & history forever. No recovery.';
+    if (role === 'admin' && MG.gid !== g.id) {
+      var wait = '<div class="dx-gx-empty" style="padding:14px 4px;color:#65676b;font-size:13px">Loading…</div>';
+      var ml = q('#tab-members .member-list'); if (ml) ml.innerHTML = wait; var mt = q('#tab-members .member-list-title span'); if (mt) mt.textContent = 'Members (' + n + ')';
+      var rq = q('#tab-reports .mod-queue'); if (rq) rq.innerHTML = wait; [].forEach.call(D.querySelectorAll('#managePanel .panel-tabs .ptab-badge'), function (b) { b.style.display = 'none'; });
+    }
   }
   /* the admin's Manage panel: members & roles with the join requests on top, reports from members, settings (name, description, rules) */
   var MG = { gid: null, busy: false };
@@ -1983,6 +2058,288 @@
   onReset(function () { TRN.courses = []; TRN.mine = {}; TRN.at = 0; });
   window.dxLive.loadTraining = loadTraining;
   window.dxLive.loadGroups = loadGroups; window.dxLive.version = 'E4';
+
+  /* ═══════════════ P1 — no sample content in the live app (S-19, B-06, B-07 rows, G-03/G-04 outside the Groups page) ═══════════════
+     Every number, card and name a signed-in person sees comes from the database, or the approved element is left empty / hidden
+     (empty states use the page's own style). The approved markup is never restyled: only its words and numbers change. */
+  var PG = { my: [], myAt: 0, stats: null, statsAt: 0, jobs: [], loading: false, members: null };
+  function onPageNow(p) { return document.body.getAttribute('data-page') === p; }
+  /* my groups for the side menu and the network page: the full list once the Groups page loaded it, a light query before */
+  async function loadMyGroups() {
+    var r = await sb.from('group_members').select('group_id, role, g:groups(id, name, emoji, topic, type, member_count)').eq('user_id', ME_UUID).limit(100);
+    if (r.error) throw r.error; PG.my = (r.data || []).map(function (x) { return x.g; }).filter(Boolean); PG.myAt = Date.now(); syncGroupsGlobal();
+  }
+  function myGroupList() { return GX.at ? myGroups() : PG.my; }
+  /* the approved code's own GROUPS list (network page "Groups", the page header counts) becomes the real groups */
+  function syncGroupsGlobal() {
+    var G = window.GROUPS; if (!Array.isArray(G)) return;
+    var src = GX.at ? GX.groups : PG.my, mine = function (g) { return GX.at ? !!GX.mine[g.id] : true; };
+    G.length = 0; src.forEach(function (g) { G.push({ id: g.id, emoji: g.emoji || '👥', name: g.name, desc: g.description || '', type: /deal/i.test(g.topic || '') ? 'DEAL ROOM' : 'DISCUSS', members: g.member_count || 0, joined: mine(g), color: GRAD[g.id % GRAD.length][0] }); });
+    paintShortcuts(); paintNetGroups();
+  }
+  /* "Your shortcuts" in the side menu: my groups (up to 5), each opens its group; hidden while I am in none */
+  function paintShortcuts() {
+    var sb0 = document.getElementById('sidebar'); if (!sb0 || !ME_UUID) return;
+    var rows = [].slice.call(sb0.querySelectorAll('.sh-row:not([data-gid])')); if (rows.length && !PG.tplSh) PG.tplSh = rows[0].outerHTML; rows.forEach(function (r) { r.remove(); });
+    var sec = [].slice.call(sb0.querySelectorAll('.sb-sec')).find(function (x) { return /shortcuts/i.test(window.dxOrigText ? window.dxOrigText(x) : x.textContent); }); if (!sec || !PG.tplSh) return;
+    sb0.querySelectorAll('.sh-row[data-gid]').forEach(function (r) { r.remove(); });
+    var list = myGroupList().slice(0, 5), after = sec;
+    list.forEach(function (g) { var r = el(PG.tplSh); r.dataset.gid = g.id; r.setAttribute('role', 'button'); r.setAttribute('tabindex', '0'); r.innerHTML = '<div class="sh-ic"></div>'; r.firstChild.textContent = g.emoji || '👥'; r.appendChild(document.createTextNode(g.name)); after.insertAdjacentElement('afterend', r); after = r; });
+    sec.style.display = list.length ? '' : 'none'; var dv = after.nextElementSibling; if (dv && dv.classList.contains('sb-div')) dv.style.display = list.length ? '' : 'none';
+  }
+  /* the network page's "Groups" card: real rows (the approved renderNetwork draws them from GROUPS), each opens its group */
+  function paintNetGroups() {
+    if (!ME_UUID || !onPageNow('network')) return;
+    var card = [].slice.call(document.querySelectorAll('#content .net-sidebar')).find(function (c) { var h = c.firstElementChild; return h && /^Groups$/.test((window.dxOrigText ? window.dxOrigText(h) : h.textContent).trim()); }); if (!card) return;
+    var joined = (window.GROUPS || []).filter(function (g) { return g.joined; }), rows = [].slice.call(card.children).slice(1).filter(function (r) { return !r.classList.contains('dx-net-empty'); });
+    if (rows.length !== joined.length) { rows.forEach(function (r) { r.remove(); }); card.querySelectorAll('.dx-net-empty').forEach(function (r) { r.remove(); });
+      joined.forEach(function (g) { var r = document.createElement('div'); r.setAttribute('style', 'display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f2f5'); r.innerHTML = '<span style="font-size:20px"></span>'; r.firstChild.textContent = g.emoji; r.appendChild(document.createTextNode(g.name)); card.appendChild(r); });
+      rows = [].slice.call(card.children).slice(1); }
+    rows.forEach(function (r, i) { if (joined[i]) { r.dataset.gid = joined[i].id; r.setAttribute('role', 'button'); r.setAttribute('tabindex', '0'); } });
+    if (!joined.length && !card.querySelector('.dx-net-empty')) card.insertAdjacentHTML('beforeend', '<div class="dx-net-empty" role="button" tabindex="0" data-goto="groups" style="padding:6px 0;font-size:13px;color:#65676b;cursor:pointer">You have not joined a group yet — find one on the Groups page.</div>');
+  }
+  /* a group opened from outside the Groups page: open the page, then the group as soon as its card is there */
+  function openGroupFromAnywhere(gid) {
+    if (!onPageNow('groups')) window.goto('groups'); var tries = 0;
+    (function wait() { if (document.querySelector('#gx .gcard[data-gid="' + gid + '"]') && GX.groups.some(function (g) { return g.id === gid; })) return window.dxLive.openGroup(gid);
+      if (++tries < 40) setTimeout(wait, 150); else window.toast('This group is not available any more'); })();
+  }
+  document.addEventListener('click', function (e) {
+    if (!ME_UUID || !e.target.closest) return;
+    var r = e.target.closest('#sidebar .sh-row[data-gid], #content .net-sidebar [data-gid]');
+    if (r) { e.preventDefault(); e.stopPropagation(); openGroupFromAnywhere(+r.dataset.gid); return; }
+    var go = e.target.closest('#content .dx-net-empty[data-goto]'); if (go) { e.preventDefault(); window.goto(go.dataset.goto); }
+  }, true);
+  document.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('#sidebar .sh-row[data-gid], #content .net-sidebar [data-gid], #content .dx-net-empty')) { e.preventDefault(); e.target.click(); } });
+  /* the side menu and phone bar badges show the same real counts as the top bar (which the parts above keep: requests, messages, alerts) */
+  var NAVB = [['nb-net', 'network'], ['nb-msg', 'messages'], ['nb-not', 'notifs']];
+  function navBadges() {
+    if (!ME_UUID) return;
+    NAVB.forEach(function (b) {
+      var top = document.getElementById(b[0]), n = top && top.style.display !== 'none' ? parseInt(top.textContent, 10) || 0 : 0;
+      (window.SB_NAV || []).forEach(function (x) { if (x.page === b[1]) x.badge = n; });
+      var sl = document.getElementById('snl-' + b[1]), nb = sl && sl.querySelector('.nl-badge');
+      if (sl && n && !nb) { sl.insertAdjacentHTML('beforeend', '<span class="nl-badge"></span>'); nb = sl.querySelector('.nl-badge'); }
+      var mb = document.querySelector('#mb-' + b[1] + ' .mb-badge');
+      [nb, mb].forEach(function (x) { if (!x) return; if (x.textContent !== String(n)) x.textContent = n; var d = n ? '' : 'none'; if (x.style.display !== d) x.style.display = d; });
+    });
+  }
+  if (window.dxCore) window.dxCore.onRender('live-nav-badges', navBadges);
+  /* Home: the sample events and hashtags are left out; the member count is the real one */
+  var oSideP1 = window.renderFeedSidebar;
+  if (oSideP1) window.renderFeedSidebar = function () { var h = oSideP1.apply(this, arguments); if (!ME_UUID || typeof h !== 'string') return h;
+    ['>Upcoming Events<', '>Trending in Pharma<'].forEach(function (k) { var i = h.indexOf(k), a = i < 0 ? -1 : h.lastIndexOf('<div class="card"', i), z = i < 0 ? -1 : h.indexOf('<div class="card"', i);
+      if (a >= 0) h = h.slice(0, a) + (z > a ? h.slice(z) : ''); });
+    return h; };
+  var oHeroP1 = window.renderFeedHero;
+  if (oHeroP1) window.renderFeedHero = function () { var h = oHeroP1.apply(this, arguments); if (!ME_UUID || typeof h !== 'string') return h;
+    return h.replace('<b>12K+</b> professionals', '<b>' + (PG.members == null ? '…' : Number(PG.members).toLocaleString('en')) + '</b> ' + (PG.members === 1 ? 'professional' : 'professionals')); };
+  async function loadMembers() { var r = await sb.from('profiles').select('id', { count: 'exact', head: true }); if (r.error) throw r.error; PG.members = r.count || 0;
+    var t = document.querySelector('#content .dg-hero .dg-faces-tx b'); if (t) t.textContent = Number(PG.members).toLocaleString('en'); }
+
+  /* ── Marketplace (B-06): counts from market_stats() (0033), the newest real listings and jobs, no sample services / jobs /
+     comparisons; My Listings (B-07) lists my own listings only ── */
+  async function loadMarketExtra() {
+    var a = await Promise.all([sb.rpc('market_stats'), sb.from('jobs').select('id, title, company, location, country, type, seniority, tags, description, created_at, user_id, poster:profiles!jobs_user_id_fkey(' + PCOLS + ')').eq('active', true).order('created_at', { ascending: false }).limit(5)]);
+    if (a[0].error) throw a[0].error; PG.stats = a[0].data || {}; PG.jobs = (a[1] && !a[1].error && a[1].data) || []; PG.jobs.forEach(function (j) { putUser(j.poster); }); PG.statsAt = Date.now();
+  }
+  function stat(k) { var s = PG.stats || {}; return +s[k] || 0; }
+  function catN(k) { var s = PG.stats || {}, c = s.by_cat || {}; return +c[k] || 0; }
+  function fmtK(n) { return n >= 10000 ? (Math.round(n / 100) / 10).toLocaleString('en') + 'K' : n.toLocaleString('en'); }
+  var oPill = window.dgPillText;
+  if (oPill) window.dgPillText = function (page) {
+    if (ME_UUID && page === 'market') { var f = function (n) { return PG.stats ? fmtK(n) : '…'; }; return f(stat('supply') + stat('demand')) + ' LISTINGS  /  ' + f(stat('supply')) + ' SUPPLY  /  ' + f(stat('demand')) + ' DEMAND  /  ' + f(stat('suppliers')) + ' SUPPLIERS'; }
+    return oPill.apply(this, arguments);
+  };
+  function setNum(e, v) { if (e && e.textContent !== v) e.textContent = v; }
+  function hideEl(e) { if (e && e.style.display !== 'none') e.style.display = 'none'; }
+  function mkEmpty(text) { return '<div class="dx-mk-empty" style="padding:18px;color:#65676b;font-size:13px;grid-column:1/-1">' + text + '</div>'; }
+  function paintMarketChrome() {
+    var mk = document.getElementById('mkx'); if (!mk || !ME_UUID) return;
+    var q = function (s) { return mk.querySelector(s); }, qa = function (s) { return [].slice.call(mk.querySelectorAll(s)); }, ok = !!PG.stats;
+    var counts = { supply: stat('supply'), demand: stat('demand'), cmo: catN('cmo'), equipment: catN('equipment'), license: catN('registration'), service: catN('service'), job: stat('jobs'), training: 0 };
+    /* the page pill, hero and category numbers */
+    var pill = document.querySelector('#content .dg-pill-page'); if (pill) setNum(pill, window.dgPillText('market'));
+    var hs = qa('.hero-stats .hstat-n'), hv = [stat('supply') + stat('demand'), stat('suppliers'), stat('jobs'), catN('service')];
+    hs.forEach(function (e, i) { setNum(e, ok ? fmtK(hv[i] || 0) : '…'); });
+    var CATS = ['supply', 'demand', 'license', 'cmo', 'equipment', 'service', 'job'];
+    qa('.cat-grid .cat-item .cat-count').forEach(function (e, i) { setNum(e, ok ? (counts[CATS[i]] || 0).toLocaleString('en') : '…'); });
+    qa('.f-count[data-cat]').forEach(function (e) { var k = e.dataset.cat; if (k === 'training') { hideEl(e); return; } setNum(e, ok ? (counts[k] || 0).toLocaleString('en') : '…'); });
+    if (window.categoryTotals) { Object.keys(window.categoryTotals).forEach(function (k) { window.categoryTotals[k] = counts[k] || 0; }); }
+    var lr = document.getElementById('liveResultCount'); if (lr && ok && !lr.dataset.dxReal) { lr.dataset.dxReal = '1'; if (typeof window.updateLiveCount === 'function') window.updateLiveCount(); }
+    var sc = q('.supply-grid') && q('.supply-grid').parentElement.querySelector('.sec-count'); if (sc) setNum(sc, ok ? stat('supply').toLocaleString('en') + (stat('supply') === 1 ? ' listing' : ' listings') : '');
+    var dbn = q('.db-title span'); if (dbn) setNum(dbn, ok ? stat('demand').toLocaleString('en') : '');
+    /* promises the live app does not measure or keep: the reach / "8×" claims and the free-vs-sponsored table */
+    var pb = q('.pricing-banner'); if (pb) { setTextNode(pb, /reach 150,000\+/, function (o) { return o.replace(/reach 150,000\+.*$/, 'show it at the top of the marketplace'); });
+      setTextNode(pb, /8× more views/, function (o) { return o.replace(/Sponsored listings get 8× more views.*$/, 'Boosted and featured listings appear before free ones'); }); }
+    hideEl(q('.compare-section'));
+    var uc = q('.upgrade-cta'); if (uc) { setTextNode(uc, /Reach 150,000\+/, function (o) { return o.replace(/Reach 150,000\+.*$/, 'Show your listing at the top of the marketplace, before free listings.'); });
+      [].forEach.call(uc.querySelectorAll('.fl-item'), function (x) { if (/Analytics|Demand alerts|Verified seller/i.test(window.dxOrigText ? window.dxOrigText(x) : x.textContent)) hideEl(x); }); }
+    /* Live now: the newest real listings, requests and jobs */
+    var act = q('.activity'); if (act) {
+      var feed = [];
+      MKT.products.slice(0, 6).forEach(function (p) { var s = p.seller || {}; feed.push({ at: p.created_at, ic: p.category === 'service' ? '🛠' : '📨', b: p.category === 'service' ? 'New service:' : (s.name || 'A member'), t: p.category === 'service' ? p.name + (s.name ? ' by ' + s.name : '') : 'listed ' + p.name }); });
+      MKT.demand.slice(0, 4).forEach(function (e) { feed.push({ at: e.created_at, ic: '🔍', b: 'Demand:', t: e.title }); });
+      PG.jobs.slice(0, 3).forEach(function (j) { feed.push({ at: j.created_at, ic: '💼', b: 'New job:', t: j.title + (j.location ? ' · ' + j.location : '') }); });
+      feed.sort(function (a, b) { return new Date(b.at) - new Date(a.at); }); feed = feed.slice(0, 5);
+      var key = feed.map(function (f) { return f.b + f.t; }).join('|') || (MKT.at ? 'none' : 'wait');
+      if (act.dataset.dxKey !== key) { act.dataset.dxKey = key; act.querySelectorAll('.act-item').forEach(function (x) { x.remove(); });
+        if (!feed.length) act.insertAdjacentHTML('beforeend', '<div class="act-item"><span>🕒</span>' + (MKT.at ? 'Nothing posted yet — new listings show here as they are posted.' : 'Loading…') + '</div>');
+        feed.forEach(function (f) { var r = document.createElement('div'); r.className = 'act-item'; r.innerHTML = '<span></span><b data-noi18n></b> '; r.firstChild.textContent = f.ic; r.children[1].textContent = f.b;
+          if (/:$/.test(f.b)) r.children[1].removeAttribute('data-noi18n'); var tx = document.createElement('span'); tx.setAttribute('data-noi18n', ''); tx.textContent = f.t; if (/^listed /.test(f.t)) { tx.removeAttribute('data-noi18n'); }
+          r.appendChild(tx); act.appendChild(r); }); }
+    }
+    /* Professional services: real service listings (the approved service card is the template) */
+    var sg = q('.services-grid'); if (sg) {
+      var demoS = [].slice.call(sg.querySelectorAll('.scard:not([data-live])')); if (demoS.length && !PG.tplS) PG.tplS = demoS[0].outerHTML; demoS.forEach(function (x) { x.remove(); });
+      var svc = MKT.products.filter(function (p) { return p.category === 'service'; }), skey = svc.map(function (p) { return p.id; }).join(',') + '|' + !!MKT.at;
+      if (PG.tplS && sg.dataset.dxKey !== skey) { sg.dataset.dxKey = skey; sg.querySelectorAll('.scard[data-live], .dx-mk-empty').forEach(function (x) { x.remove(); });
+        svc.forEach(function (p) { sg.appendChild(serviceCard(p)); }); if (!svc.length) sg.insertAdjacentHTML('beforeend', mkEmpty(MKT.at ? 'No services listed yet — offer yours with “+ Offer Service”.' : 'Loading…')); }
+      var st = q('.ss-title span'); if (st) setNum(st, ok ? stat('service_providers').toLocaleString('en') + (stat('service_providers') === 1 ? ' provider' : ' providers') : '');
+    }
+    /* Jobs & careers: the newest real jobs; Apply opens the job on the Jobs page, where applications are kept */
+    var jl = q('.jobs-list'); if (jl) {
+      var demoJ = [].slice.call(jl.querySelectorAll('.jcard:not([data-live])')); if (demoJ.length && !PG.tplJ) PG.tplJ = demoJ[0].outerHTML; demoJ.forEach(function (x) { x.remove(); });
+      var jkey = PG.jobs.map(function (j) { return j.id; }).join(',') + '|' + !!PG.statsAt;
+      if (PG.tplJ && jl.dataset.dxKey !== jkey) { jl.dataset.dxKey = jkey; jl.querySelectorAll('.jcard[data-live], .dx-mk-empty').forEach(function (x) { x.remove(); });
+        PG.jobs.slice(0, 4).forEach(function (j) { jl.appendChild(mkJobCard(j)); }); if (!PG.jobs.length) jl.insertAdjacentHTML('beforeend', mkEmpty(PG.statsAt ? 'No open jobs yet — post the first one with “+ Post a Job”.' : 'Loading…')); }
+      var jt = q('.js-title span'); if (jt) setNum(jt, ok ? stat('jobs').toLocaleString('en') + (stat('jobs') === 1 ? ' open position' : ' open positions') : '');
+    }
+    /* the side column: demand board empty state and the latest jobs */
+    var dgrid = q('[data-live-demand]'); if (dgrid) { var de = dgrid.querySelector(':scope > .dx-mk-empty'); if (MKT.at && !MKT.demand.length) { if (!de) { var h = q('.db-sub'); if (h) h.insertAdjacentHTML('afterend', mkEmpty('No open requests yet.')); } } else if (de) de.remove(); }
+    var lt = qa('.demand-board > div').find(function (x) { var o = window.dxOrigText ? window.dxOrigText(x) : x.textContent; return /Latest Jobs/.test(o) && o.length < 30; }), box = lt && lt.nextElementSibling;
+    if (box) { var lkey = PG.jobs.map(function (j) { return j.id; }).join(',') + '|' + !!PG.statsAt;
+      if (box.dataset.dxKey !== lkey) { box.dataset.dxKey = lkey; var tplRow = box.firstElementChild && !box.firstElementChild.dataset.job ? box.firstElementChild.getAttribute('style') : PG.rowStyle; PG.rowStyle = tplRow || PG.rowStyle; box.innerHTML = '';
+        PG.jobs.slice(0, 4).forEach(function (j) { var r = document.createElement('div'); r.setAttribute('style', PG.rowStyle || 'cursor:pointer;padding:4px 0;border-bottom:1px solid #f0f4fb'); r.dataset.job = j.id; r.setAttribute('role', 'link'); r.setAttribute('tabindex', '0'); r.setAttribute('data-noi18n', '');
+          r.textContent = '→ ' + j.title + (j.company ? ' · ' + j.company : '') + ' ' + (FLAG[j.country] || ''); box.appendChild(r); });
+        if (!PG.jobs.length) box.innerHTML = '<div style="padding:4px 0">' + (PG.statsAt ? 'No open jobs yet.' : 'Loading…') + '</div>'; } }
+    paintMyListings();
+  }
+  function serviceCard(p) {
+    var c = el(PG.tplS), u = p.seller || {}, docs = p.docs || []; c.dataset.live = 'p' + p.id; c.dataset.uid = aid(p.user_id);
+    var ic = c.querySelector('.sc-ic'); if (ic) ic.textContent = p.emoji && p.emoji !== '📦' ? p.emoji : '🛠️';
+    var t = c.querySelector('.sc-title'); if (t) t.textContent = p.name;
+    var pv = c.querySelector('.sc-provider'); if (pv) { pv.innerHTML = '<span data-noi18n></span>' + (u.verified ? ' · <span style="color:#1a56db">✓ Verified</span>' : ''); pv.firstChild.textContent = [u.name || 'Member', ((FLAG[u.country] || '') + ' ' + (u.location || '')).trim()].filter(Boolean).join(' · '); }
+    var tg = c.querySelector('.sc-tags'); if (tg) { tg.innerHTML = ''; docs.slice(0, 3).forEach(function (d) { var s = document.createElement('span'); s.className = 'sc-tag'; s.textContent = d; tg.appendChild(s); }); }
+    var pr = c.querySelector('.sc-price'); if (pr) pr.textContent = (p.price || 'On request') + (p.price && p.unit ? '/' + p.unit : '');
+    var ra = c.querySelector('.sc-rating'); if (ra) ra.textContent = ago(p.created_at);
+    return c;
+  }
+  function mkJobCard(j) {
+    var c = el(PG.tplJ), u = j.poster || {}; c.dataset.live = 'j' + j.id; c.dataset.uid = aid(j.user_id);
+    var lg = c.querySelector('.jc-logo'); if (lg) { lg.textContent = initials(j.company || u.name); lg.style.background = colorFor(j.company || j.user_id); }
+    var t = c.querySelector('.jc-title'); if (t) { var rb = t.querySelector('.role-badge'); t.textContent = j.title; if (rb) t.insertBefore(rb, t.firstChild); }
+    var co = c.querySelector('.jc-company'); if (co) co.innerHTML = '<span>' + esc2(j.company || u.company || u.name || '') + '</span> · <span>' + (FLAG[j.country] || '') + ' ' + esc2(j.location || '') + '</span>' + (u.verified ? ' · <span style="color:#1a56db">✓ Verified</span>' : '');
+    var tg = c.querySelector('.jc-tags'); if (tg) { var tags = [String(j.type || 'full-time').replace(/(^|-)([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); })].concat((j.tags || []).slice(0, 2));
+      tg.innerHTML = tags.map(function (x, i) { return '<span class="jt' + (i ? '' : ' jt-ft') + '">' + esc2(x) + '</span>'; }).join(''); }
+    var ds = c.querySelector('.jc-desc'); if (ds) ds.textContent = String(j.description || '').slice(0, 180);
+    var ps = c.querySelector('.jc-posted'); if (ps) ps.textContent = ago(j.created_at);
+    var sv = c.querySelector('.save-btn'); if (sv) sv.remove();
+    return c;
+  }
+  /* a job from the marketplace opens on the Jobs page (its Apply there saves the application) */
+  function openJob(id) {
+    window.goto('jobs'); var tries = 0;
+    (function wait() { var b = document.querySelector('#jx .jcard[data-live="j' + id + '"]');
+      if (b) { b.scrollIntoView({ block: 'center' }); var ap = b.querySelector('.apply-btn'); if (ap && !ap.disabled) ap.click(); return; }
+      if (++tries < 40) setTimeout(wait, 150); })();
+  }
+  document.addEventListener('click', function (e) {
+    if (!ME_UUID || !e.target.closest) return;
+    var ap = e.target.closest('#mkx .jcard[data-live] .apply-btn, #mkx .demand-board [data-job]');
+    if (ap) { e.preventDefault(); e.stopPropagation(); var id = ap.dataset.job || (ap.closest('[data-live]').dataset.live || '').slice(1); openJob(+id); return; }
+    var sv = e.target.closest('#mkx .scard[data-live] .sc-btn'); if (sv) { e.preventDefault(); e.stopPropagation(); window.messageUser(+sv.closest('[data-live]').dataset.uid); }
+  }, true);
+  /* My Listings: my own listings and requests (no sample rows). Views and inquiries are not counted by the live app yet, so those
+     numbers are left out; Boost is the real checkout. Editing, pausing and renewing come with B-07. */
+  var ML = { rows: [], at: 0, loading: false };
+  async function loadMyListings() {
+    var a = await Promise.all([sb.from('products').select('id, name, emoji, category, active, created_at, boosted_until, featured_until').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(100),
+                               sb.from('enquiries').select('id, title, category, status, created_at').eq('user_id', ME_UUID).eq('type', 'demand').order('created_at', { ascending: false }).limit(100)]);
+    if (a[0].error) throw a[0].error; if (a[1].error) throw a[1].error;
+    ML.rows = (a[0].data || []).map(function (p) { return { kind: 'p', id: p.id, name: p.name, em: p.emoji || '📦', active: p.active !== false, at: p.created_at, boosted: promoted(p, 'boosted_until') || promoted(p, 'featured_until') }; })
+      .concat((a[1].data || []).map(function (e) { return { kind: 'e', id: e.id, name: e.title, em: '🔍', active: e.status === 'active', at: e.created_at, boosted: false, demand: true }; }))
+      .sort(function (x, y) { return new Date(y.at) - new Date(x.at); });
+    ML.at = Date.now();
+  }
+  function paintMyListings() {
+    var m = document.getElementById('tab-manage'); if (!m) return;
+    var stats = [].slice.call(m.querySelectorAll('div[style*="font-size:18px;font-weight:800"]'));
+    /* the approved sample rows (and a "just published" row the page adds itself — the database row replaces it) go; a draft the
+       page saved in this browser stays: it is this person's own and only exists here */
+    var isDraft = function (x) { var b = x.querySelector('span'); return !!b && /^Draft$/i.test(((window.dxOrigText ? window.dxOrigText(b) : b.textContent) || '').trim()); };
+    var rows0 = [].slice.call(m.querySelectorAll('div[style*="padding:14px 0"]:not([data-ml])')), list = rows0.length ? rows0[0].parentElement : m.querySelector('[data-ml-list]');
+    var sample = rows0.filter(function (x) { return !isDraft(x); });
+    if (sample.length && !ML.tpl) ML.tpl = sample[0].outerHTML; sample.forEach(function (x) { x.remove(); }); if (list) list.setAttribute('data-ml-list', '1');
+    [].forEach.call(m.querySelectorAll('div[style*="#fffbeb"]'), function (x) { if (/Expiry notice/.test(window.dxOrigText ? window.dxOrigText(x) : x.textContent)) hideEl(x); });
+    var act = ML.rows.filter(function (r) { return r.active; }).length, bo = ML.rows.filter(function (r) { return r.boosted; }).length;
+    if (stats[0]) setNum(stats[0], ML.at ? act.toLocaleString('en') : '…'); if (stats[3]) setNum(stats[3], ML.at ? bo.toLocaleString('en') : '…');
+    [stats[1], stats[2]].forEach(function (s) { if (s && s.parentElement) hideEl(s.parentElement); });
+    if (!list || !ML.tpl) return;
+    var key = ML.rows.map(function (r) { return r.kind + r.id + (r.active ? 'a' : 'p') + (r.boosted ? 'b' : ''); }).join(',') + '|' + !!ML.at;
+    if (list.dataset.dxKey === key && !sample.length) return; list.dataset.dxKey = key;
+    list.querySelectorAll('[data-ml], .dx-mk-empty').forEach(function (x) { x.remove(); });
+    ML.rows.forEach(function (r) { list.appendChild(myListingRow(r)); });
+    if (!ML.rows.length) list.insertAdjacentHTML('beforeend', mkEmpty(ML.at ? 'You have no listings yet — publish one with “New Listing”.' : 'Loading…'));
+  }
+  function myListingRow(r) {
+    var row = el(ML.tpl); row.dataset.ml = r.kind + r.id; row.style.opacity = r.active ? '' : '0.5';
+    var kids = row.children, ic = kids[0], info = kids[1], nums = kids[2], acts = kids[3];
+    if (ic) ic.textContent = r.em;
+    if (info) { var t = info.children[0], sub = info.children[1], badge = t && t.querySelector('span');
+      if (t) { t.textContent = ''; var nm = document.createElement('span'); nm.setAttribute('data-noi18n', ''); nm.textContent = r.name; t.appendChild(nm);
+        if (badge) { badge.textContent = r.boosted ? 'Boosted' : r.active ? (r.demand ? 'Open request' : 'Active') : 'Closed'; badge.style.background = r.boosted ? '#fef9c3' : r.active ? '#dcfce7' : '#f1f5f9'; badge.style.color = r.boosted ? '#a16207' : r.active ? '#15803d' : '#475569'; t.appendChild(badge); } }
+      if (sub) sub.textContent = 'Posted ' + ago(r.at); }
+    if (nums) nums.remove();
+    if (acts) { acts.innerHTML = ''; if (r.kind === 'p' && r.active && !r.boosted) { var b = document.createElement('button'); b.setAttribute('style', 'padding:6px 12px;border-radius:7px;font-size:11.5px;font-weight:700;border:none;cursor:pointer;background:#fef3c7;color:#92400e'); b.setAttribute('onclick', "openBoostModal('boost')"); b.textContent = '⭐ Boost'; acts.appendChild(b); } }
+    return row;
+  }
+  var oMarketP1 = window.renderMarket;
+  window.renderMarket = function () {
+    var r = oMarketP1.apply(this, arguments); if (!ME_UUID) return r;
+    paintMarketChrome();
+    var stale = Date.now() - PG.statsAt > 20000, mlStale = Date.now() - ML.at > 20000;
+    if ((stale || mlStale) && !PG.loading) { PG.loading = true;
+      Promise.all([stale ? loadMarketExtra() : null, mlStale ? loadMyListings() : null]).then(function () { PG.loading = false; if (onPageNow('market')) paintMarketChrome(); }, function (e) { PG.loading = false; toastErr(e); }); }
+    return r;
+  };
+  var loadMarketD1 = loadMarket;
+  loadMarket = async function () { await loadMarketD1(); if (onPageNow('market')) setTimeout(paintMarketChrome, 0); };
+  var hookP1 = window.dxLiveHook;   /* a listing just published: My Listings and the counts are read again */
+  window.dxLiveHook = function (kind, d) { var r = hookP1 ? hookP1(kind, d) : undefined; if (kind === 'listing' && ME_UUID) { ML.at = 0; PG.statsAt = 0; setTimeout(function () { Promise.all([loadMyListings(), loadMarketExtra()]).then(function () { if (onPageNow('market')) paintMarketChrome(); }).catch(function () {}); }, 1200); } return r; };
+
+  /* Messages: no sample "Online now" strip (the live app has no presence yet), "Unread (N)" from my conversations, and no sample
+     chat header while there is no conversation to show */
+  function paintMsgChrome() {
+    var mx = document.getElementById('mx'); if (!mx || !ME_UUID) return;
+    hideEl(mx.querySelector('.online-strip'));
+    var un = mx.querySelector('.tp-filter[data-filter="unread"]'), n = MX.convs.filter(function (c) { return c.unread; }).length;
+    if (un) setTextNode(un, /^\s*Unread \(\d+\)\s*$/, function (o) { return o.replace(/\(\d+\)/, '(' + n + ')'); });
+    var cb = mx.querySelector('.chat-head'); if (cb && !MX.convs.length && !MX.open) cb.style.visibility = 'hidden';
+  }
+  var oMsgP1 = window.renderMessages;
+  window.renderMessages = function () { var r = oMsgP1.apply(this, arguments); if (ME_UUID) paintMsgChrome(); return r; };
+  var loadConvsB4 = loadConvs;
+  loadConvs = async function () { var r = await loadConvsB4.apply(this, arguments); setTimeout(paintMsgChrome, 0); return r; };
+
+  /* everything above starts empty at sign-in: no sample badge, shortcut, group or connection is ever on screen */
+  var hydrateP1 = hydrateMe;
+  hydrateMe = async function (uid) {
+    var me = await hydrateP1(uid);
+    Object.keys(window.CONN_STATE || {}).forEach(function (k) { if (+k <= 1000) delete window.CONN_STATE[k]; });   /* the sample people's connection states */
+    ['nb-net', 'nb-msg', 'nb-not'].forEach(function (id) { var e = document.getElementById(id); if (e) { e.textContent = '0'; e.style.display = 'none'; } });
+    if (Array.isArray(window.GROUPS)) window.GROUPS.length = 0;
+    navBadges(); paintShortcuts();
+    loadMyGroups().catch(function (e) { console.error(e); }); loadMembers().catch(function (e) { console.error(e); });
+    return me;
+  };
+  /* the Groups page loaded or changed my groups: the side menu and the network card follow */
+  var paintGroupsD3 = paintGroups;
+  paintGroups = function () { paintGroupsD3(); if (GX.at) syncGroupsGlobal(); };
+  var oNetP1 = window.renderNetwork;
+  window.renderNetwork = function () { var r = oNetP1.apply(this, arguments); if (ME_UUID) setTimeout(paintNetGroups, 0); return r; };
+  onReset(function () { PG.my = []; PG.myAt = 0; PG.stats = null; PG.statsAt = 0; PG.jobs = []; PG.members = null; ML.rows = []; ML.at = 0; });
+  window.dxLive.version = 'P1';
 
 
 

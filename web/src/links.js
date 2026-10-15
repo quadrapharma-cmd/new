@@ -14,6 +14,7 @@
   }
   function joinedSet() { return store('groups_joined'); }
   function applyJoined() {
+    if (window.dxLive) return;
     var j = joinedSet(), left = store('groups_left');
     document.querySelectorAll('#gx .gcard').forEach(function (card) {
       var b = card.querySelector('.gcard-btn'); if (!b || b.dataset.gpq) return; var t = title(card);   /* gpq: a private group's request state (groups.js) */
@@ -24,6 +25,7 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('#gx .gcard-btn'); if (!b) return;
     if (window.dxGroups && window.dxGroups.joinClick(b, e)) return;   /* groups.js: join, leave and private-group requests */
+    if (window.dxLive) return;                                          /* live app: membership is the database's (the adapter), never kept in this browser */
     e.preventDefault(); e.stopPropagation();          /* joining does not open the group */
     var card = b.closest('.gcard'), t = title(card), j = joinedSet(), left = store('groups_left');
     if (b.classList.contains('btn-join')) {
@@ -154,7 +156,7 @@
 
   /* ── Side-column group shortcuts (every page): open that group ── */
   document.addEventListener('click', function (e) {
-    var r = e.target.closest && e.target.closest('.sh-row, #sidebar .mygroup'); if (!r || r.getAttribute('onclick') || r.closest('#gx')) return;
+    var r = e.target.closest && e.target.closest('.sh-row, #sidebar .mygroup'); if (!r || r.getAttribute('onclick') || r.dataset.gid || r.closest('#gx')) return;   /* data-gid: a live group row, opened by the adapter */
     var name = txt(r.querySelector('.sh-name, .mg-name')) || txt(r); if (!name) return;
     e.preventDefault(); e.stopPropagation();
     window.goto('groups');

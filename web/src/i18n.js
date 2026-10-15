@@ -558,6 +558,28 @@
     [/^The group's admins declined your last request — you can ask again from (\d{4}-\d{2}-\d{2})$/, function (m) { return 'رفض مديرو المجموعة طلبك السابق — يمكنك الطلب مرة أخرى بدءًا من ' + m[1]; }],
     [/^(.+) is now an admin$/, function (m) { return m[1] + ' — مدير الآن'; }], [/^(.+) is now a sub-admin$/, function (m) { return m[1] + ' — مشرف الآن'; }], [/^(.+) is now a member$/, function (m) { return m[1] + ' — عضو الآن'; }]
   );
+  /* phase 1: what the live app shows instead of sample numbers and cards (groups, marketplace, my listings) */
+  Object.assign(D, {
+    'Loading…': 'جارٍ التحميل…', 'Loading groups…': 'جارٍ تحميل المجموعات…', 'You have not joined a group yet.': 'لم تنضم إلى أي مجموعة بعد.',
+    'You have not joined a group yet — join one below or create your own.': 'لم تنضم إلى أي مجموعة بعد — انضم إلى واحدة بالأسفل أو أنشئ مجموعتك.',
+    'No other discussion groups yet — create the first one.': 'لا توجد مجموعات نقاش أخرى بعد — أنشئ الأولى.', 'No other deal rooms yet — create the first one.': 'لا توجد غرف صفقات أخرى بعد — أنشئ الأولى.',
+    'new posts today in your groups': 'منشورات جديدة اليوم في مجموعاتك', 'Groups you have not joined yet — most active first': 'مجموعات لم تنضم إليها بعد — الأكثر نشاطًا أولًا',
+    'You have not joined a group yet — find one on the Groups page.': 'لم تنضم إلى أي مجموعة بعد — ابحث عن واحدة في صفحة المجموعات.',
+    'Boost your listing — show it at the top of the marketplace': 'روّج لإعلانك — اعرضه في أعلى السوق', 'Boosted and featured listings appear before free ones': 'الإعلانات المروّجة والمميّزة تظهر قبل الإعلانات المجانية',
+    'Show your listing at the top of the marketplace, before free listings.': 'اعرض إعلانك في أعلى السوق، قبل الإعلانات المجانية.',
+    'Nothing posted yet — new listings show here as they are posted.': 'لا شيء منشور بعد — تظهر الإعلانات الجديدة هنا فور نشرها.',
+    'No services listed yet — offer yours with “+ Offer Service”.': 'لا توجد خدمات بعد — اعرض خدمتك من «+ قدّم خدمة».',
+    'No open jobs yet — post the first one with “+ Post a Job”.': 'لا توجد وظائف متاحة بعد — انشر الأولى من «+ انشر وظيفة».',
+    'No open requests yet.': 'لا توجد طلبات مفتوحة بعد.', 'No open jobs yet.': 'لا توجد وظائف متاحة بعد.',
+    'You have no listings yet — publish one with “New Listing”.': 'ليس لديك إعلانات بعد — انشر إعلانًا من «إعلان جديد».',
+    'Boosted': 'مروّج', 'Open request': 'طلب مفتوح', 'professional — graduates, specialists and industry veterans': 'متخصص — خريجون ومتخصصون وخبراء صناعة'
+  });
+  PATTERNS.unshift(
+    [/^trending — (\d+) posts? today$/, function (m) { return 'رائج — ' + m[1] + ' ' + plural(m[1], ['منشور', 'منشورات']) + ' اليوم'; }],
+    [/^([\d,]+) new post (today|this week)$/, function (m) { return word(m[1], 'new posts ' + m[2]); }],
+    [/^([\d,.]+K?)\s+(provider|open position)$/i, function (m) { return word(m[1], m[2] + 's'); }],
+    [/^Posted (just now|\d+\s*(?:m|min|h|d|w) ago)$/, function (m) { return 'نُشر ' + tr(m[1]); }]
+  );
   PATTERNS.push([/^(.+?): ([A-Z][A-Za-z -]+) — (.+)$/, function (m) { return D[m[2]] ? m[1] + ': ' + D[m[2]] + ' — ' + m[3] : null; }]);   /* last: '<company>: Send quote — <deal>' in notifications */
   var ARROWS = { '→': '←', '←': '→' };
   function put(raw, t, r) {   /* keep the original's surrounding spaces even when its inner spacing differs */
@@ -639,6 +661,11 @@
   }
   window.toggleLang = function () { setLang(isAr() ? 'en' : 'ar'); if (window.DBK) window.DBK.toast(isAr() ? 'تم التبديل إلى العربية' : 'Switched to English'); };
   window.dxSetLang = setLang;
+  /* a notice is shown in the interface language at once (not in English first, then translated a frame later) */
+  [['DBK', 'toast'], [null, 'toast']].forEach(function (k) {
+    var host = k[0] ? window[k[0]] : window, f = host && host[k[1]]; if (typeof f !== 'function' || f.__i18n) return;
+    var w = function (m) { var a = [].slice.call(arguments); if (isAr() && typeof m === 'string') a[0] = tr(m); return f.apply(this, a); }; w.__i18n = 1; host[k[1]] = w;
+  });
   C.onRender('i18n', function () { if (isAr()) walk(document.body); });
   var saved = null; try { saved = localStorage.getItem('dx_lang'); } catch (e) {}
   if (saved === 'ar') setLang('ar');

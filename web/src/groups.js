@@ -489,7 +489,9 @@
   function render(g, tab) {
     var b = box(); if (!b) return;
     CUR = { g: g, posts: null, tab: tab || 'disc' };
-    var tabs = TABS.filter(function (t) { return t[0] !== 'listings' || g.deal; });
+    /* live: a deal room's Listings tab shows only once the adapter keeps them in the database (window.dxLiveGroupListings) — never a
+       tab whose Post button cannot save (G-01) */
+    var tabs = TABS.filter(function (t) { return t[0] !== 'listings' || (g.deal && (!g.live || window.dxLiveGroupListings)); });
     if (!tabs.some(function (t) { return t[0] === CUR.tab; })) CUR.tab = 'disc';
     b.innerHTML = '<div class="panel-tabs gp-tabs" role="tablist" aria-label="Group sections">' + tabs.map(function (t) {
       var on = t[0] === CUR.tab; return '<div class="gx-ptab' + (on ? ' active' : '') + '" role="tab" tabindex="0" aria-selected="' + on + '" data-gpt="' + t[0] + '">' + t[1] + '</div>'; }).join('') + '</div>' +
@@ -1136,9 +1138,29 @@
       w3.__grp = 1; window.checkDeleteInput = w3;
     }
   }
+  /* demo: the "Your Groups" side list and the "My Groups (N)" chip follow what you joined and left (G-10); the live app's
+     adapter draws them from the database */
+  function syncMine(root) {
+    if (isLive() || !root) return;
+    var side = root.querySelector('.gx-sidebar'), joined = cards().filter(cardJoined), names = joined.map(function (c) { return otxt(c.querySelector('.gcard-title')); });
+    if (side) {
+      var rows = Array.prototype.slice.call(side.querySelectorAll('.mygroup')), tpl = rows[0] || null, at = side.querySelector('.sb-divider');
+      rows.forEach(function (r) { if (names.indexOf(otxt(r.querySelector('.mg-name'))) < 0) r.remove(); });
+      var have = Array.prototype.map.call(side.querySelectorAll('.mygroup .mg-name'), otxt);
+      if (tpl && at) joined.forEach(function (c, i) { var t = names[i]; if (have.indexOf(t) >= 0) return;
+        var r = tpl.cloneNode(true); r.removeAttribute('onclick'); r.style.cursor = 'pointer';
+        var ic = r.querySelector('.mg-ic'), cv = c.querySelector('.gcard-cover'); if (ic) { ic.textContent = cv ? Array.from(txt(cv)).slice(0, 2).join('').trim() : '👥'; ic.style.background = '#eef2ff'; }
+        var nm = r.querySelector('.mg-name'); if (nm) nm.textContent = t; var mt = r.querySelector('.mg-meta'); if (mt) { mt.removeAttribute('style'); mt.textContent = 'Quiet today'; }
+        var bd = r.querySelector('.mg-badge'); if (bd) bd.remove(); at.parentNode.insertBefore(r, at); have.push(t); });
+    }
+    Array.prototype.forEach.call(root.querySelectorAll('.cat-filter .cf-tag'), function (c) {
+      var w = document.createTreeWalker(c, NodeFilter.SHOW_TEXT); while (w.nextNode()) { var n = w.currentNode, o = (window.dxI18nOrig && window.dxI18nOrig(n)) || n.nodeValue;
+        if (/My Groups \(\d+\)/.test(o)) { var v = o.replace(/\(\d+\)/, '(' + joined.length + ')'); if (v !== o) n.nodeValue = v; return; } }
+    });
+  }
   C.onRender('groups-inside', function () {
     var root = document.getElementById('gx'); if (!root) return;
-    wire(); initPage(root);
+    wire(); initPage(root); syncMine(root);
   });
   document.addEventListener('dx:beforepage', function () { var lc = document.getElementById('leaveConfirm'); if (lc) lc.classList.remove('show'); });
 
