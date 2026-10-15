@@ -316,7 +316,7 @@
     "They won't be able to message you, and you won't be able to message them. You can unblock them later from this menu.": 'لن يستطيع مراسلتك ولن تستطيع مراسلته. يمكنك إلغاء الحظر لاحقًا من هذه القائمة.',
     'Message reports': 'بلاغات الرسائل', 'Action taken': 'تم اتخاذ إجراء', 'Dismiss': 'تجاهل', 'Dismiss this report?': 'تجاهل هذا البلاغ؟',
     'Nothing changes for the reported member.': 'لن يتغير شيء بالنسبة للعضو المُبلَّغ عنه.', 'Name of a person or company': 'اسم شخص أو شركة', 'Write your message…': 'اكتب رسالتك…',
-    'Notifications muted': 'الإشعارات مكتومة', 'Choose a conversation': 'اختر محادثة', 'Choose a photo (JPG, PNG, WebP or GIF)': 'اختر صورة (JPG أو PNG أو WebP أو GIF)',
+    'Notifications muted': 'الإشعارات مكتومة', 'Choose a conversation': 'اختر محادثة', 'No conversations or messages match': 'لا توجد محادثات أو رسائل مطابقة', 'Choose a photo (JPG, PNG, WebP or GIF)': 'اختر صورة (JPG أو PNG أو WebP أو GIF)',
     'This file type can\'t be sent — use PDF, Word, Excel, ZIP or an image': 'لا يمكن إرسال هذا النوع من الملفات — استخدم PDF أو Word أو Excel أو ZIP أو صورة', 'Files can be up to 20 MB': 'الحد الأقصى لحجم الملف 20 ميجابايت', 'Could not send the report — please try again': 'تعذّر إرسال البلاغ — حاول مرة أخرى', 'Could not save — please try again': 'تعذّر الحفظ — حاول مرة أخرى',
     'Knowledge communities & deal-rooms for pharma, cosmetics & device professionals': 'مجتمعات معرفة وغرف صفقات لمتخصصي الدواء والتجميل والأجهزة الطبية',
     'Matched to your listings and connections — not just popularity': 'مختارة حسب إعلاناتك واتصالاتك — لا حسب الشهرة فقط',

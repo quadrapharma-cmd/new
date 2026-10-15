@@ -445,6 +445,7 @@
     if (!MX.convs.length) list.insertAdjacentHTML('beforeend', '<div class="dx-mx-empty" style="padding:28px 16px;text-align:center;color:#65676b;font-size:13px">No conversations yet.<br>Open someone\'s profile and press Message.</div>');
     MX.convs.forEach(function (c) { list.appendChild(threadFor(c)); });
     if (window.mxPaintPrefs) window.mxPaintPrefs();                       /* 🔇 and blocked marks on the redrawn list */
+    if (window.mxShowSearch) window.mxShowSearch();                       /* and the search typed, if any */
   }
   async function openLive(el, key) {
     var a = +String(key).slice(1), partner = uuidOf(a), area = document.getElementById('messagesArea'); if (!partner || !area) return;
@@ -454,7 +455,7 @@
     var u = window.U(a), rows = (r.data || []).slice().reverse();
     area.innerHTML = rows.length ? rows.map(function (m) { var t = m.attachment ? (m.body || '') : (m.body || '📷 Photo'); return m.sender_id === ME_UUID ? rowMine(t, shortAgo(m.created_at), m.attachment, null, { id: m.id, seen: !!m.read_at }) : rowTheirs(u, t, shortAgo(m.created_at), m.attachment); }).join('')
       : '<div class="msg-date-divider">Start the conversation with ' + esc2(u.name) + '</div>';
-    area.scrollTop = area.scrollHeight; signAll(area);
+    area.scrollTop = area.scrollHeight; signAll(area); if (window.mxSearchJump) window.mxSearchJump();
     rows.forEach(function (m) { if (m.id > MX.lastMsg && m.receiver_id === ME_UUID) MX.lastMsg = m.id; });
     var c = MX.convs.find(function (x) { return aid(x.partner) === a; });
     if (c && c.unread) { c.unread = 0; msgBadge(); sb.from('messages').update({ read_at: new Date().toISOString() }).eq('sender_id', partner).eq('receiver_id', ME_UUID).is('read_at', null).then(function (x) { if (x.error) toastErr(x.error); }); }
@@ -587,6 +588,27 @@
       });
     }).catch(function (e) { done(); toastErr(e); });
     return false;
+  };
+
+  /* 🔍 search what was said (J-SOCIAL-39): my messages that contain the words (the database only shows me my own), as
+     conversation keys; a person found this way who is not among the loaded conversations joins the list */
+  window.dxMxSearch = async function (q) {
+    if (!ME_UUID) return null; var me = ME_UUID;
+    var r = await sb.from('messages').select('sender_id,receiver_id,body,created_at').or('sender_id.eq.' + ME_UUID + ',receiver_id.eq.' + ME_UUID)
+      .ilike('body', '%' + nmLike(String(q).slice(0, 80)) + '%').order('id', { ascending: false }).limit(100);
+    if (r.error || me !== ME_UUID) { if (r.error) console.error(r.error); return null; }
+    var hits = {}, missing = {};
+    r.data.forEach(function (m) { var p = m.sender_id === ME_UUID ? m.receiver_id : m.sender_id;
+      if (!MX.convs.some(function (c) { return c.partner === p; }) && !missing[p]) missing[p] = m; });
+    var ids = Object.keys(missing);
+    if (ids.length) {
+      var pr = await sb.from('profiles').select(PCOLS).in('id', ids.slice(0, 50)); if (me !== ME_UUID) return null;
+      (pr.data || []).forEach(function (p) { putUser(p); var m = missing[p.id];
+        MX.convs.push({ partner: p.id, name: p.name, verified: p.verified, last_body: m.body, last_at: m.created_at, last_from_me: m.sender_id === ME_UUID, unread: 0 }); });
+      if ((pr.data || []).length && document.body.getAttribute('data-page') === 'messages') { var keep = MX.open; drawThreads(); if (keep) { var t = listEl() && listEl().querySelector('.mx-thread[data-person="u' + keep + '"]'); if (t) t.classList.add('active'); } }
+    }
+    r.data.forEach(function (m) { hits['u' + aid(m.sender_id === ME_UUID ? m.receiver_id : m.sender_id)] = 1; });
+    return hits;
   };
 
   /* ⋯ Mute / Block / Report in a conversation (J-SOCIAL-40) ↔ conversation_mutes, user_blocks, message_reports (0031).

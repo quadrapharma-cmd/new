@@ -244,6 +244,7 @@ def search_messages(j):
         pg.locator('#threadList .mx-thread:visible, #content [class*=search-hit]:visible').first.click(); j.settle(pg, 800)
         j.check(pg.evaluate("p=>{const m=[...document.querySelectorAll('#messagesArea .msg-row')].find(e=>e.innerText.includes(p));if(!m)return false;const r=m.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+2}", price), 'the thread does not open at the found message')
     with j.step('Arabic text search works; nonsense shows an empty state'):
+        to_list(j, pg)                                   # on a phone the opened conversation covers the list and its search box
         if arname:
             box.fill(arname); pg.wait_for_timeout(600)
             j.check(any(arname in v or 'Dina' in v for v in pg.eval_on_selector_all('#threadList .mx-thread', 'e=>e.filter(x=>x.getClientRects().length).map(x=>x.innerText)')), 'the Arabic search finds nothing')

@@ -5507,7 +5507,42 @@ window.mxComplete = function (root) {
     Promise.resolve(PREFS.set(key, what, on)).then(function () { paintPrefs(); D.toast(done); }, function (err) { paintPrefs(); D.toast((err && err.message) || 'Could not save — please try again'); });
   }
   var openPainted = window.mxOpenThread;
-  window.mxOpenThread = function () { var r = openPainted.apply(this, arguments); paintPrefs(); return r; };
+  window.mxOpenThread = function (el) { var r = openPainted.apply(this, arguments); paintPrefs(); jumpToHit(el); return r; };
+
+  /* 🔍 Search conversations: by name and by what was said (J-SOCIAL-39). The live app looks for the words on the server
+     (window.dxMxSearch(q) → {conversation key: 1}). A conversation found by its messages opens at the newest message that
+     has the words, marked. */
+  var SQ = '', sqHits = null, sqT = null, sqRun = 0;
+  function plain(h) { var d = document.createElement('div'); d.innerHTML = h || ''; return d.textContent; }
+  function said(t) { var k = t.dataset.person; return k === current ? area.textContent : convs[k] != null ? plain(convs[k]) : plain(seed(info(t))); }
+  function showSearch() {
+    var q = SQ.toLowerCase(), n = 0;
+    list.querySelectorAll('.mx-thread').forEach(function (t) {
+      var on = !q || info(t).name.toLowerCase().indexOf(q) >= 0 || (t.dataset.name || '').indexOf(q) >= 0 ||
+        (window.dxMxSearch ? (txt(t.querySelector('.t-preview')).toLowerCase().indexOf(q) >= 0 || !!(sqHits && sqHits[t.dataset.person])) : said(t).toLowerCase().indexOf(q) >= 0);
+      t.style.display = on ? 'flex' : 'none'; if (on) n++;
+    });
+    var none = list.querySelector('.dx-mx-none');
+    if (q && !n) { if (!none) list.insertAdjacentHTML('beforeend', '<div class="dx-mx-none" style="padding:24px 16px;text-align:center;color:#65676b;font-size:13px">No conversations or messages match</div>'); }
+    else if (none) none.remove();
+  }
+  window.mxShowSearch = showSearch;                                    /* the live app re-applies it after it redraws the list */
+  window.filterThreads = function (q) {
+    SQ = String(q || '').trim(); sqHits = null; var run = ++sqRun; clearTimeout(sqT); showSearch();
+    if (window.dxMxSearch && SQ.length >= 2) sqT = setTimeout(function () {
+      Promise.resolve(window.dxMxSearch(SQ)).then(function (hits) { if (run !== sqRun) return; sqHits = hits || null; showSearch(); }, function () {});
+    }, 250);
+  };
+  function jumpToHit(el) {
+    var q = SQ.toLowerCase(); if (!q || (el && info(el).name.toLowerCase().indexOf(q) >= 0)) return;
+    var rows = Array.prototype.filter.call(area.querySelectorAll('.msg-row'), function (r) { return r.textContent.toLowerCase().indexOf(q) >= 0; }), r = rows[rows.length - 1];
+    if (!r) return;
+    area.querySelectorAll('.dx-mx-hit').forEach(function (x) { x.classList.remove('dx-mx-hit'); x.style.outline = ''; });
+    var b = r.querySelector('.mx-bubble, .file-bubble, .img-bubble') || r; b.classList.add('dx-mx-hit'); b.style.outline = '2px solid #f59e0b'; b.style.outlineOffset = '2px';
+    r.scrollIntoView({ block: 'center' });
+    setTimeout(function () { if (r.isConnected) r.scrollIntoView({ block: 'center' }); }, 0);   /* phones: after the chat replaces the list */
+  }
+  window.mxSearchJump = function () { var el = current && list.querySelector('.mx-thread[data-person="' + current + '"]'); jumpToHit(el); };
   document.querySelectorAll('.ch-dd-item').forEach(function (it) {
     var t0 = window.dxOrigText ? window.dxOrigText(it) : it.textContent;
     it.dataset.mx = /Mute/.test(t0) ? 'mute' : /Pin/.test(t0) ? 'pin' : /Favorites/.test(t0) ? 'fav' : /Clear/.test(t0) ? 'clear' : /Block/.test(t0) ? 'block' : /Report/.test(t0) ? 'report' : '';
