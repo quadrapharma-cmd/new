@@ -267,7 +267,7 @@
     'Time-limited offers in the Marketplace. The permanent catalogue is under Products.': 'عروض لفترة محدودة في السوق. الكتالوج الدائم موجود في المنتجات.', 'Open positions': 'وظائف متاحة',
     'Reviews from completed orders': 'تقييمات من طلبات مكتملة',
     'Only buyers who received an order can review. The company can reply or ask Drugbox to check a review.': 'يقيّم فقط المشترون الذين استلموا طلبًا. ويمكن للشركة الرد أو طلب مراجعة التقييم من Drugbox.',
-    'Message on WhatsApp': 'راسل على واتساب', 'Address · directions': 'العنوان · الاتجاهات', 'Who answers': 'من يرد', 'Quote requests go to': 'طلبات عروض الأسعار تذهب إلى', 'Send a message': 'أرسل رسالة',
+    'Message on WhatsApp': 'راسل على واتساب', 'Address · directions': 'العنوان · الاتجاهات', 'Who answers': 'من يرد', 'nobody on Drugbox yet': 'لا أحد على Drugbox بعد', 'use the Contact tab': 'استخدم تبويب التواصل', 'Team member': 'عضو في الفريق', 'Quote requests go to': 'طلبات عروض الأسعار تذهب إلى', 'Send a message': 'أرسل رسالة',
     'Public page': 'الصفحة العامة', 'Logo, cover, about, products, services and contact.': 'الشعار والغلاف والنبذة والمنتجات والخدمات وبيانات التواصل.', 'Edit page': 'عدّل الصفحة',
     'View as visitors see it': 'اعرضها كما يراها الزوار', 'Arabic name': 'الاسم بالعربية', 'What we are looking for': 'ما نبحث عنه', 'Memberships': 'العضويات', 'Add membership': 'أضف عضوية',
     'Add manufacturing capabilities': 'أضف قدرات تصنيع', 'Edit capabilities': 'عدّل القدرات', 'Add a site': 'أضف موقعًا',
@@ -439,7 +439,11 @@
     [/^invited you to join the private group "(.+)"$/, function (m) { return 'دعاك للانضمام إلى المجموعة الخاصة "' + m[1] + '"'; }],   /* live notification (N-8) */
     [/^Welcome to Drugbox, (.+)!$/, function (m) { return 'أهلًا بك في Drugbox يا ' + m[1] + '!'; }],   /* the sign-up toast, demo and live (N-13) */
     [/^Not found on Drugbox: (.+)$/, function (m) { return 'غير موجود على Drugbox: ' + m[1]; }],
-    [/^No Drugbox member found for (.+) — use the name on their Drugbox profile$/, function (m) { return 'لا يوجد عضو في Drugbox باسم ' + m[1] + ' — استخدم الاسم المكتوب في ملفه على Drugbox'; }]
+    [/^No Drugbox member found for (.+) — use the name on their Drugbox profile$/, function (m) { return 'لا يوجد عضو في Drugbox باسم ' + m[1] + ' — استخدم الاسم المكتوب في ملفه على Drugbox'; }],
+    /* live: messaging a company from its page (B-05) */
+    [/^Nobody at (.+) answers messages on Drugbox yet — (?:call, email or WhatsApp them from the Contact tab|use the phone, email or WhatsApp on its Contact tab)$/, function (m) { return 'لا أحد في ' + m[1] + ' يرد على الرسائل على Drugbox بعد — اتصل بهم أو راسلهم بالبريد أو واتساب من تبويب التواصل'; }],
+    [/^You answer (.+)’s messages yourself$/, function (m) { return 'أنت من يرد على رسائل ' + m[1]; }],
+    [/^messaged (.+?): (".*")$/, function (m) { return 'راسل ' + m[1] + ': ' + m[2]; }]
   ];
   PATTERNS.push(
     [/^▶ Video intro · (\d+:\d+)$/, function (m) { return '▶ فيديو تعريفي · ' + m[1]; }],
