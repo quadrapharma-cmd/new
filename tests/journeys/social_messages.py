@@ -1,6 +1,6 @@
 """Social journeys — messages: start a conversation from a profile and from ✎ New message, attachments, read receipts,
 search, mute/block/report (J-SOCIAL-35 … 40). Run: python3 tests/journeys/social_messages.py --target demo|live --lang en|ar --width 1440|390"""
-import re, sys, os, time
+import re, sys, os, time, json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _j import journey, main, PW, APP_VISIBLE, LOGIN_VISIBLE
 from _social import *
@@ -118,6 +118,57 @@ def new_message_to_named_person(j):
         j.check(re.search(r'not (a )?member|no one|not found|choose|لا يوجد|غير موجود|اختر', msg, re.I), 'sending to an unknown name gives no clear message')
         j.check(not re.search(r'Nobody Unknownperson', head(pg)), 'a thread was opened with an unknown name')
         if j.live: j.check(j.sql1("select count(*) from public.messages where body like 'should not send %s'" % j.tag) == '0', 'a message to an unknown name was stored')
+    with j.step('Look-alike members (same name + same company; same name, no company, same headline): every option is different, '
+                'the connection comes first, each option sends to its own person only, and the bare shared name is refused'):
+        if j.demo: j.skip('look-alike members exist only in live (the demo has one sample person per name)')
+        def member(name, company=None, headline=None):   # a precondition: a member made by the sign-up trigger (handle_new_user)
+            meta = {'name': name}
+            if company: meta['company'] = company
+            if headline: meta['specialty'] = headline
+            return j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email('twin'), json.dumps(meta)))
+        def new_message(to_value, body):
+            to_list(j, pg); j.click(pg, r'✎|New message|رسالة جديدة', scope='#content', what='✎ New message')
+            box = pg.locator('#nmTo:visible').first; box.fill(to_value); pg.wait_for_timeout(1200)
+            pg.locator('#nmTx:visible').first.fill(body)
+            mark = j.toast_mark(pg); j.click(pg, r'^(Send|إرسال)$', scope='.dbk-ov', what='Send', exact=True); j.settle(pg, 1500)
+            return ' '.join(j.toasts_since(pg, mark))
+        def options_for(name):
+            to_list(j, pg); j.click(pg, r'✎|New message|رسالة جديدة', scope='#content', what='✎ New message')
+            pg.locator('#nmTo:visible').first.fill(name); pg.wait_for_timeout(1500)
+            o = [x for x in pg.evaluate("(()=>{const i=document.querySelector('#nmTo');const l=i&&i.list;return l?[...l.options].map(o=>o.value):[]})()") if x.lower().startswith(name.lower())]
+            pg.keyboard.press('Escape'); pg.wait_for_timeout(300)
+            if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+            return o
+        lname, nname = 'Dr. Lina Twin %s' % j.tag, 'Dr. Nour Same %s' % j.tag
+        co = 'Twin Pharma %s' % j.tag
+        l1, l2 = member(lname, co), member(lname, co)                                   # same name AND same company
+        n1, n2 = member(nname, None, 'Regulatory Affairs'), member(nname, None, 'Regulatory Affairs')   # same name, no company, same headline
+        connect_db(j, a['id'], l2)                                                      # one of the twins is A's connection
+        j.reload(pg); j.nav(pg, 'messages')
+        for name, pair, conn in ((lname, (l1, l2), l2), (nname, (n1, n2), None)):
+            opts = options_for(name); j.note('look-alike options ' + name[:14], opts)
+            j.check(len(opts) == 2 and len(set(o.lower() for o in opts)) == 2, 'the picker does not offer two different options for the two members called %s: %s' % (name, opts))
+            j.check(all(o.strip().lower() != name.lower() for o in opts), 'an option is the bare shared name (it fits both): %s' % opts)
+            if conn:
+                j.check(re.search(r'connection|اتصال', opts[0], re.I) and not re.search(r'connection|اتصال', opts[1], re.I), 'the connection is not marked and listed first: %s' % opts)
+            got = []
+            for i, o in enumerate(opts):
+                body = 'Look-alike %d %s %s' % (i, name.split()[1], j.tag)
+                said = new_message(o, body)
+                rows = j.wait_db("select string_agg(receiver_id::text, ',') from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 6)
+                j.check(rows and ',' not in rows and rows in pair, 'option "%s" was stored for %s, not for exactly one of the two members (toasts: %s)' % (o, rows or 'nobody', said[:100]))
+                got.append(rows)
+                if conn and i == 0: j.check(rows == conn, 'the option marked as your connection went to the other member')
+            j.check(set(got) == set(pair), 'the two options reached the same member (%s) — one of them was a guess' % got)
+            # typing the shared name without choosing: refused, nothing stored
+            body = 'Bare name %s %s' % (name.split()[1], j.tag); said = new_message(name, body)
+            j.check(re.search(r'Several|أكثر من', said), 'typing a name two members share is not refused with a clear message (toasts: %s)' % said[:120])
+            j.check(j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'a message to a name two members share was stored')
+            if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+        # the profile's Message button writes to that profile's own person (the no-company twin, opened by id)
+        goto_profile(j, pg, {'id': n2}); j.click(pg, r'Message|رسالة|راسل', scope='#content', what='Message')
+        body = 'From the profile %s' % j.tag; send(j, pg, body)
+        j.check(j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 6) == n2, "the profile's Message button did not write to that profile's person")
     with j.step("B receives it; C's thread is unchanged"):
         if j.demo: j.skip('the other party exists only in live')
         pb = b['page']; j.reload(pb); j.nav(pb, 'messages'); open_thread(j, pb, 'Aya')

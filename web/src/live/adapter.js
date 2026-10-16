@@ -433,12 +433,13 @@
     else if (n.type === 'like') t = '<b>' + who + '</b> reacted to your post';
     else if (n.type === 'comment') t = '<b>' + who + '</b> commented: "' + esc2(n.message || '') + '"';
     else if (n.type === 'post_removed' || n.type === 'report_closed') t = esc2(n.message || '');
+    else if (n.type === 'company_message' && n.company_id) t = '<b>' + who + '</b> messaged ' + esc2(n.company && n.company.name ? n.company.name : 'your company') + ': "' + esc2(n.message || '') + '"';   /* written here, in the reader's language (0034); older rows carry their sentence */
     else t = '<b>' + who + '</b> ' + esc2(n.message || '');
     var type = n.type === 'connection_request' ? (INCOMING[a] ? 'connection' : 'accepted') : n.type === 'connection_accepted' ? 'accepted' : n.type;
     return { id: n.id, uid: a, icon: ICON[n.type] || '🔔', text: t, ts: ago(n.created_at), read: !!n.read, type: type, pid: n.post_id || null };
   }
   async function loadNotifs() {
-    var r = await sb.from('notifications').select('*, actor:profiles!notifications_from_user_fkey(' + PCOLS + ')').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(50);
+    var r = await sb.from('notifications').select('*, actor:profiles!notifications_from_user_fkey(' + PCOLS + '), company:companies(name)').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(50);
     if (r.error) throw r.error; (r.data || []).forEach(function (n) { putUser(n.actor); });
     var list = window.NOTIFS; list.length = 0; (r.data || []).forEach(function (n) { list.push(notifFrom(n)); }); NOTIF_IDS = list.map(function (n) { return n.id; });
     NOTIF_AT = Date.now(); badges();
@@ -670,27 +671,47 @@
   var origMessageUser = window.messageUser;
   window.messageUser = function (a) { if (ME_UUID && uuidOf(+a)) { MX.to = +a; window.__mxTo = null; window.goto('messages'); return; } return origMessageUser.apply(this, arguments); };
 
-  /* ✎ New message (S-03): the picker offers your conversations, your connections and the members whose name matches what you
-     type (with headline and company, so two people with one name can be told apart); Send goes to the one member chosen and
-     opens that conversation — never the conversation that happened to be open. A name nobody has, or several people have,
-     is not sent. */
+  /* ✎ New message (S-03): the picker offers your connections (first), your conversations and the members whose name matches
+     what you type. Every option is a different text: members who share a name carry what tells them apart (company, headline,
+     city, "your connection") and, when even that is the same, a short handle from their id. Send goes to the one member whose
+     option was chosen, checked against every member with that name in the database just before sending — a name (or an option)
+     that fits more than one member, or none, is refused and nothing is sent. Never a guess. */
   var NM = { people: {}, map: {}, t: null };
   function nmLike(x) { return String(x).replace(/[\\%_]/g, '\\$&'); }
-  function nmAdd(p) { if (p && p.id && p.id !== ME_UUID) NM.people[p.id] = { id: p.id, name: txt(p.name || 'Member'), headline: txt(p.headline), company: txt(p.company) }; }
-  function nmOptions() {                                       /* option values are unique: a shared name carries the company */
-    var all = Object.keys(NM.people).map(function (k) { return NM.people[k]; }), n = {}; NM.map = {};
-    all.forEach(function (p) { var k = p.name.toLowerCase(); n[k] = (n[k] || 0) + 1; });
+  function nmAdd(p) {
+    if (!p || !p.id || p.id === ME_UUID) return; var o = NM.people[p.id] || {};
+    function pick(k, ok) { return p[k] != null ? String(p[k]) : (o[ok] || ''); }
+    var raw = String(p.name || o.raw || 'Member').trim();
+    NM.people[p.id] = { id: p.id, raw: raw, name: txt(raw), headline: txt(pick('headline', 'headline')).trim(), company: txt(pick('company', 'company')).trim(), city: txt(pick('location', 'city')).trim() };
+  }
+  function nmUser(id) { var a = aid(id); return (window.USERS || []).find(function (u) { return u.id === a; }) || null; }   /* never U(): it falls back to me */
+  function nmConn(id) { return (window.CONN_STATE || {})[aid(id)] === 'connected'; }
+  function nmOptions() {
+    var ar = document.documentElement.lang === 'ar', mark = ar ? '✓ من اتصالاتك' : '✓ Your connection';
+    function T(x) { return ar && x && window.dxT ? window.dxT(x) : x; }   /* a role from the sign-up list reads in the interface language */
+    var all = Object.keys(NM.people).map(function (k) { return NM.people[k]; }), groups = {}; NM.map = {};
+    all.forEach(function (p) { p.conn = nmConn(p.id); var k = p.name.toLowerCase(); (groups[k] = groups[k] || []).push(p); });
+    Object.keys(groups).forEach(function (k) {
+      var g = groups[k]; if (g.length === 1) { g[0].value = g[0].name; return; }
+      g.forEach(function (p) { var h = T(p.headline.split('|')[0].trim());
+        p.facts = [p.company, h.toLowerCase() === p.company.toLowerCase() ? '' : h, p.city, p.conn ? mark : ''].filter(Boolean); });
+      var max = Math.max.apply(null, g.map(function (p) { return p.facts.length; })), L = 1;
+      for (; L < max; L++) { var seen = {}, dup = false; g.forEach(function (p) { var v = p.facts.slice(0, L).join(' · ').toLowerCase(); if (seen[v]) dup = true; seen[v] = 1; }); if (!dup) break; }
+      var n = {}; g.forEach(function (p) { p.value = p.name + (p.facts.length ? ' · ' + p.facts.slice(0, L).join(' · ') : ''); var v = p.value.toLowerCase(); n[v] = (n[v] || 0) + 1; });
+      g.forEach(function (p) { if (n[p.value.toLowerCase()] > 1 || !p.facts.length) p.value += ' · #' + p.id.replace(/-/g, '').slice(0, 6); });   /* last resort: a short handle */
+    });
+    all.forEach(function (p) { var v = p.value.toLowerCase(); NM.map[v] = v in NM.map && NM.map[v] !== p.id ? null : p.id; });   /* a text that fits two people sends to nobody */
+    all.sort(function (a, b) { return (b.conn - a.conn) || a.name.localeCompare(b.name) || a.value.localeCompare(b.value); });
     return all.map(function (p) {
-      var v = n[p.name.toLowerCase()] > 1 ? p.name + ' · ' + (p.company || p.headline.split('|')[0].trim() || p.id.slice(0, 8)) : p.name;
-      NM.map[v.toLowerCase()] = p.id; return { name: v, label: [p.headline.split('|')[0].trim(), p.company].filter(Boolean).join(' · ').slice(0, 90) };
+      return { name: p.value, label: [T(p.headline.split('|')[0].trim()), p.company, p.city, p.conn ? mark : ''].filter(Boolean).join(' · ').slice(0, 120) };
     });
   }
   function nmPaint() { var dl = document.getElementById('nmList'); if (!dl) return;
     dl.innerHTML = nmOptions().map(function (o) { return '<option value="' + esc2(o.name) + '"' + (o.label ? ' label="' + esc2(o.label) + '"' : '') + '>'; }).join(''); }
   window.dxMxPeople = function () {
     NM.people = {}; if (!ME_UUID) return [];
-    MX.convs.forEach(function (c) { var u = window.U(aid(c.partner)); nmAdd({ id: c.partner, name: c.name || u.name, headline: c.headline || u.headline, company: u.company }); });
-    Object.keys(window.CONN_STATE || {}).forEach(function (k) { if (window.CONN_STATE[k] !== 'connected' || !uuidOf(+k)) return; var u = window.U(+k); nmAdd({ id: uuidOf(+k), name: u.name, headline: u.headline, company: u.company }); });
+    MX.convs.forEach(function (c) { var u = nmUser(c.partner) || {}; nmAdd({ id: c.partner, name: c.name || u.name, headline: c.headline || u.headline || '', company: u.company || '', location: u.location || '' }); });
+    Object.keys(window.CONN_STATE || {}).forEach(function (k) { if (window.CONN_STATE[k] !== 'connected' || !uuidOf(+k)) return; var u = nmUser(uuidOf(+k)); if (u) nmAdd({ id: uuidOf(+k), name: u.name, headline: u.headline || '', company: u.company || '', location: u.location || '' }); });
     return nmOptions();
   };
   async function nmSearch(q) {
@@ -699,19 +720,21 @@
   }
   document.addEventListener('input', function (e) {
     if (!ME_UUID || !e.target || e.target.id !== 'nmTo') return;
-    var q = e.target.value.trim(); clearTimeout(NM.t); if (q.length < 2 || q.length > 80 || NM.map[q.toLowerCase()]) return;
+    var q = e.target.value.trim(); clearTimeout(NM.t); if (q.length < 2 || q.length > 80 || (NM.map[q.toLowerCase()] && q.indexOf(' · ') > 0)) return;   /* a bare name is looked up even when one person with it is known: others may share it */
     NM.t = setTimeout(function () { nmSearch(q).then(nmPaint, function (err) { console.error(err); }); }, 200);
   }, true);
+  /* who receives: every member with the chosen name is fetched first, so the options are told apart with all of them known;
+     the text sent must then name exactly one of them */
   async function nmResolve(to) {
-    var id = NM.map[to.toLowerCase()]; if (id) return { id: id };
-    if (to.length <= 200) {
-      var m = /^(.+?) · (.+)$/.exec(to), name = m ? m[1].trim() : to, which = m ? m[2].trim().toLowerCase() : '';   /* "Name · Company" as the picker shows it */
-      var r = await sb.from('profiles').select(PCOLS).ilike('name', nmLike(name)).neq('id', ME_UUID).limit(m ? 50 : 5); if (r.error) throw r.error;
-      var d = (r.data || []).filter(function (p) { return !which || txt(p.company).toLowerCase() === which || txt(p.headline).split('|')[0].trim().toLowerCase() === which || p.id.slice(0, 8) === which; });
-      d.forEach(function (p) { putUser(p); nmAdd(p); });
-      if (d.length === 1) return { id: d[0].id };
-      if (d.length > 1) { nmPaint(); return { err: 'Several members are called ' + to + ' — choose one from the list' }; }
-    }
+    var key = to.toLowerCase(), was = NM.map[key], p = was && NM.people[was], name = p ? p.raw : to.split(' · ')[0].trim();
+    if (!name || name.length > 200) return { err: 'No member called ' + to + ' — choose someone from the list' };
+    var r = await sb.from('profiles').select(PCOLS).ilike('name', nmLike(name)).neq('id', ME_UUID).limit(50); if (r.error) throw r.error;
+    (r.data || []).forEach(function (x) { putUser(x); nmAdd(x); });
+    nmOptions(); var id = NM.map[key];
+    if (id && (!was || id === was)) return { id: id };
+    var same = Object.keys(NM.people).filter(function (k) { return NM.people[k].name.toLowerCase() === txt(name).toLowerCase(); }).length;
+    nmPaint();
+    if (same > 1) return { err: 'Several members are called ' + txt(name) + ' — choose one from the list' };
     return { err: 'No member called ' + to + ' — choose someone from the list' };
   }
   window.dxMxNew = function (to, text, box, close) {

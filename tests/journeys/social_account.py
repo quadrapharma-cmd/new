@@ -38,6 +38,9 @@ def signup_new_professional(j):
         pg.fill('#suName', 'Mona Fathy'); pg.fill('#suEmail', email); pg.fill('#suPw', 'abcde')
         if pg.locator('#suCompany').count(): pg.fill('#suCompany', 'Pharco')
         if pg.locator('#suRole').count():
+            # S-15: no specialty is chosen for her — the list starts on an empty "choose…" entry, so nobody gets a role by default
+            first = pg.eval_on_selector('#suRole', 'e=>({v:e.value,t:(e.options[e.selectedIndex]||{}).text||""})')
+            j.check(first['v'] == '' and re.search(r'Choose|اختر', first['t']), 'the specialty list starts on a preselected role ("%s"), not on an empty choice' % first['t'])
             opts = pg.eval_on_selector_all('#suRole option', 'o=>o.map(x=>x.textContent.trim())')
             qc = [o for o in opts if re.search(r'Quality Control|الجودة', o)]
             j.check(qc, 'the specialty list has no Quality Control (options: %s)' % opts)
@@ -76,6 +79,7 @@ def signup_new_professional(j):
             uid = j.sql1("select id from auth.users where email='%s'" % email); j.check(uid, 'no auth.users row')
             row = j.sql1("select coalesce(name,'∅')||'|'||coalesce(company,'∅')||'|'||coalesce(headline,'∅') from public.profiles where id='%s'" % uid)
             j.check('∅' not in row and 'Pharco' in row, 'profiles row is incomplete (name|company|headline): ' + row)
+            j.check(row.split('|')[-1] == 'Quality Control / QA', 'the specialty is not stored as the one canonical value whatever the interface language (headline: %s)' % row.split('|')[-1])
         with j.step('Live: the new account sees no demo people, posts, badges or messages'):
             j.nav(pg, 'feed'); t = j.text(pg)
             demo = re.findall(DEMO_PEOPLE + r'|12K\+ professionals|#EDA2025', t)
