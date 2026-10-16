@@ -52,9 +52,10 @@ def main():
         T('the demo build gives its sample ticker items', len(tick_demo) >= 6, tick_demo)
         # 1b. the sign-in page (before sign-in): the anon key counts nothing (F-26/F-27), so no invented totals and no stock faces
         lc = b.new_context(viewport={'width': 1440, 'height': 900}); lp = lc.new_page(); lp.goto(U, wait_until='load'); lp.wait_for_timeout(400); lp.evaluate('endSplash()'); lp.wait_for_timeout(600)
-        hero = lp.evaluate("(()=>{const h=document.querySelector('.lg-hero');return h?h.innerText:''})()")
-        T('the sign-in page shows no invented totals (12K+ professionals, 1,200+ listings, 18 countries)', hero and not re.search(r'12K\+|1,200\+|\b18\b', hero) and
-          lp.evaluate("(()=>{const s=document.querySelector('.lg-hero .lg-stats');return !s||getComputedStyle(s).display=='none'})()"), hero[-300:])
+        hero = lp.evaluate("""(()=>{const h=document.querySelector('.lg-hero'); if(!h) return null;
+          return [...h.querySelectorAll('*')].filter(e=>e.getClientRects().length&&!e.closest('[style*="display: none"]')).map(e=>[...e.childNodes].filter(n=>n.nodeType===3).map(n=>n.nodeValue).join('')).join(' ').replace(/\\s+/g,' ')})()""")
+        T('the sign-in page shows no invented totals (12K+ professionals, 1,200+ listings, 18 countries)', hero is not None and not re.search(r'12K\+|1,200\+|\b18\b|Professionals|Countries', hero) and
+          lp.evaluate("(()=>{const s=document.querySelector('.lg-hero .lg-stats');return !s||getComputedStyle(s).display=='none'})()"), (hero or '')[-300:])
         T('the sign-in page shows no stock faces', lp.evaluate("document.querySelectorAll('.lg-hero .dg-faces-row img').length") == 0)
         lc.close()
         # 2. a brand-new account in the live app
