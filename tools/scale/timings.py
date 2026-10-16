@@ -80,10 +80,9 @@ def queries(ctx):
         ('listings_active', wrap("select l.*, (select row_to_json(c) from (select slug from public.companies where id = l.company_id) c) as co "
                                  "from public.company_listings l where l.active order by l.created_at desc limit 500")),
         ('groups_list', wrap("select * from public.groups order by member_count desc, created_at desc limit 60")),
-        # phase 1b (0035): the ticker at sign-in, the Jobs numbers, the sign-in page / Home totals, a profile's connections, Home faces
+        # phase 1b (0035): the ticker at sign-in, the Jobs numbers, a profile's connections, My Network's numbers, Home faces
         ('ticker_feed', "select public.ticker_feed()"),
         ('jobs_stats', "select public.jobs_stats()"),
-        ('public_stats', "select public.public_stats()"),
         ('profile_counts', "select public.profile_counts('%s')" % me),
         ('home_faces', wrap("select id, avatar_url from public.profiles where avatar_url is not null order by created_at desc limit 6")),
     ]

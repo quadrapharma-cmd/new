@@ -629,7 +629,8 @@
     'I need this service': 'أحتاج إلى هذه الخدمة', 'I need to hire someone': 'أحتاج إلى توظيف شخص', "I'm looking for a job": 'أبحث عن وظيفة', 'I teach this course': 'أدرّس هذه الدورة',
     'I want to take a course': 'أريد أن أتعلّم دورة', 'Open Positions': 'الوظائف المتاحة',
     'Post your profile and let verified companies reach out to you directly': 'انشر ملفك ودع الشركات الموثّقة تتواصل معك مباشرة',
-    'Post My Profile': 'انشر ملفي', 'Favourites only': 'المفضّلة فقط'
+    'Post My Profile': 'انشر ملفي', 'Favourites only': 'المفضّلة فقط',
+    'Join pharma professionals — from new graduates to industry veterans': 'انضم إلى متخصصي الدواء — من حديثي التخرج حتى خبراء الصناعة'
   });
   PATTERNS.unshift(
     [/^Reach ([\d,]+|…) pharma professionals on Drugbox$/, function (m) { return 'صِل إلى ' + m[1] + ' ' + (m[1] === '…' ? 'متخصص' : plural(m[1], ['متخصص', 'متخصصين'])) + ' في الدواء على Drugbox'; }],

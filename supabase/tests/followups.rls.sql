@@ -176,6 +176,9 @@ select pg_temp.ok('F-32 a moderator sees it open in Admin → Review', $$(select
 select pg_temp.ok('F-32 …and closes it', $$pg_temp.rows('update public.company_reports set status = ''resolved'' where id = pg_temp.id(''rep'')') = 1$$);
 
 -- ══ F-26 the anon key reads no content ════════════════════════════════════════════════════════════════
+-- (0035 switched off the sample ticker rows 0001 seeded: an admin's announcement is what the ticker holds)
+select pg_temp.as_server();
+insert into public.ticker_items (label, text) values ('News', 'An admin''s announcement');
 select pg_temp.as_anon();
 select pg_temp.ok('F-26 anon reads none of posts, comments, reactions, post media, jobs, products, enquiries',
   $$(select count(*) from public.posts) + (select count(*) from public.comments) + (select count(*) from public.reactions) + (select count(*) from public.post_media)

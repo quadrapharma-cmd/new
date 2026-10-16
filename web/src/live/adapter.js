@@ -2821,16 +2821,13 @@
   loadMembers = async function () { await Promise.all([loadMembersP1b(), loadFaces().catch(function (e) { console.error(e); })]);
     if (onPageNow('jobs')) paintJobNumbers(); };
 
-  /* the sign-in page (before sign-in): real totals from public_stats(); no stock faces */
-  (function signInStats() {
+  /* the sign-in page is shown before sign-in: the anon key runs no function and reads no member data (F-26/F-27), so its sample
+     totals ("12K+ professionals", "1,200+ listings", "18 countries") and stock faces are left out rather than counted */
+  (function signInPage() {
     var hero = document.querySelector('.lg-hero'); if (!hero) return;
     hero.querySelectorAll('.dg-faces-row').forEach(function (r) { r.remove(); });
-    var ns = hero.querySelectorAll('.lg-stats .auth-stat-n'), fb = hero.querySelector('.dg-faces-tx b');
-    [].forEach.call(ns, function (e) { e.textContent = '…'; }); if (fb) fb.textContent = '…';
-    sb.rpc('public_stats').then(function (r) { var s = r.data;
-      if (r.error || !s) { var st = hero.querySelector('.lg-stats'); if (st) st.style.display = 'none'; var ft = hero.querySelector('.dg-faces'); if (ft) ft.style.display = 'none'; return; }
-      [s.members, s.listings, s.countries].forEach(function (v, i) { if (ns[i]) ns[i].textContent = fmtK(+v || 0); }); if (fb) fb.textContent = fmtK(+s.members || 0); },
-      function () {});
+    var st = hero.querySelector('.lg-stats'); if (st) st.style.display = 'none';
+    var tx = hero.querySelector('.dg-faces-tx'); if (tx && tx.querySelector('b')) tx.textContent = 'Join pharma professionals — from new graduates to industry veterans';
   })();
 
   /* sign-in fills the ticker; sign-out empties it */

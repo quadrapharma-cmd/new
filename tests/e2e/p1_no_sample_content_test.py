@@ -8,7 +8,7 @@ inside of a group it creates), the Marketplace and My Listings, and the visible 
     only real groups, the deal room has no Listings tab (G-01 — not kept in the database yet), and the market counts equal the
     database's.
 Phase 1b (S-19, J-05, B-06, J-SOCIAL-49): the top ticker never shows the demo's items (hidden while there is nothing real, then the
-newest real listing); the sign-in page and Home show real totals and no stock faces, and no empty TODAY card; the Jobs numbers
+newest real listing); the sign-in page shows no invented totals and Home no stock faces and no empty TODAY card; the Jobs numbers
 (strip, seniority counts, list headers) equal the database's and the 150,000+ reach claim is gone; My Intents starts empty, is kept
 in profiles.intents and shows on the profile (to others too); another member's profile shows their real connection count, a visit
 is counted in profile_views, and no "Post impressions" line (not recorded) is shown.
@@ -50,14 +50,12 @@ def main():
         vocab = set(dp.evaluate(VOCAB_JS)); tick_demo = dp.evaluate("(window.TICKER_ITEMS||[]).map(t=>t.text)"); dc.close()
         T('the demo build gives the sample words to look for (people, groups, listings, services, jobs)', len(vocab) > 40 and 'API Sourcing & Supply' in vocab and 'Vivian Zhou' in vocab, len(vocab))
         T('the demo build gives its sample ticker items', len(tick_demo) >= 6, tick_demo)
-        # 1b. the sign-in page (before sign-in): real totals, no stock faces
-        lc = b.new_context(viewport={'width': 1440, 'height': 900}); lp = lc.new_page(); lp.goto(U, wait_until='load'); lp.wait_for_timeout(400); lp.evaluate('endSplash()')
-        want = sql("select (select count(*) from public.profiles)||'|'||((select count(*) from public.products where type='supply' and active)+(select count(*) from public.enquiries where type='demand' and status='active'))||'|'||(select count(distinct country) from public.profiles)").split('|')
-        fmt = lambda n: (('%.1f' % (int(n) / 1000)).rstrip('0').rstrip('.') + 'K') if int(n) >= 10000 else '{:,}'.format(int(n))
-        got = wait_for(lambda: (lambda v: v if '…' not in ''.join(v) else None)(lp.evaluate("[...document.querySelectorAll('.lg-stats .auth-stat-n')].map(e=>e.textContent.trim())")), 10) or []
-        T('the sign-in page shows the real members, listings and countries (no 12K+ / 1,200+ / 18)', got == [fmt(x) for x in want], (got, want))
-        T('the sign-in page shows no stock faces and the real member count beside "Join … pharma professionals"', lp.evaluate("document.querySelectorAll('.lg-hero .dg-faces-row img').length") == 0 and
-          lp.evaluate("(document.querySelector('.lg-hero .dg-faces-tx b')||{}).textContent") == fmt(want[0]))
+        # 1b. the sign-in page (before sign-in): the anon key counts nothing (F-26/F-27), so no invented totals and no stock faces
+        lc = b.new_context(viewport={'width': 1440, 'height': 900}); lp = lc.new_page(); lp.goto(U, wait_until='load'); lp.wait_for_timeout(400); lp.evaluate('endSplash()'); lp.wait_for_timeout(600)
+        hero = lp.evaluate("(()=>{const h=document.querySelector('.lg-hero');return h?h.innerText:''})()")
+        T('the sign-in page shows no invented totals (12K+ professionals, 1,200+ listings, 18 countries)', hero and not re.search(r'12K\+|1,200\+|\b18\b', hero) and
+          lp.evaluate("(()=>{const s=document.querySelector('.lg-hero .lg-stats');return !s||getComputedStyle(s).display=='none'})()"), hero[-300:])
+        T('the sign-in page shows no stock faces', lp.evaluate("document.querySelectorAll('.lg-hero .dg-faces-row img').length") == 0)
         lc.close()
         # 2. a brand-new account in the live app
         ctx = b.new_context(viewport={'width': 1440, 'height': 900}); ctx.add_init_script("try{localStorage.setItem('dx_tour_done','1')}catch(e){}")

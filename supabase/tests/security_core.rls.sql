@@ -231,6 +231,7 @@ insert into r(name,ok) select 'F-165 get_ratings with ids returns those people o
 
 -- ── F-26 / F-169 nothing personal before sign-in ──
 reset role;
+insert into public.ticker_items (label, text) values ('News', 'An admin''s announcement');   -- 0035 switched off the sample rows 0001 seeded
 insert into storage.buckets (id, name, public) values ('videos','videos',true) on conflict (id) do nothing;
 insert into storage.objects (bucket_id, name, owner) values ('videos','people/a0000000-0000-0000-0000-00000000000a/intro.webm','a0000000-0000-0000-0000-00000000000a');
 insert into public.deals (type, title, from_company_id, from_user, to_company_id, status, lines)
