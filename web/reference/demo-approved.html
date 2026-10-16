@@ -10006,9 +10006,8 @@ function dgPhoto(c,page){
   function findUser(name, el) {
     var U = window.USERS || [], id = el ? idOf(el) : null, n = norm(name), last = n.split(' ').pop();
     if (id) { var byId = U.find(function (u) { return u.id === id; }); if (byId) return byId; }
-    var same = n ? U.filter(function (u) { return norm(u.name) === n || norm(u.company) === n; }) : [];
-    if (same.length === 1) return same[0]; if (same.length > 1 || window.dxLive) return null;
-    return U.find(function (u) { return last.length > 3 && norm(u.name).split(' ').pop() === last; }) || null;
+    if (window.dxLive) { var same = n ? U.filter(function (u) { return norm(u.name) === n; }) : []; return same.length === 1 ? same[0] : null; }
+    return U.find(function (u) { return norm(u.name) === n || norm(u.company) === n; }) || U.find(function (u) { return last.length > 3 && norm(u.name).split(' ').pop() === last; }) || null;
   }
   function isCompany(name) { return !/^(dr|eng|prof)\.?\s/i.test(name) && /pharma|industries|biotech|\blab\b|store|ltd|group|holding|laborator|trading|medical|healthcare|chemical/i.test(name); }
   function showCard(el) {
