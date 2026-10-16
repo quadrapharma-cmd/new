@@ -632,7 +632,7 @@
   /* ───────────────────────── opening a group ───────────────────────── */
   function open(target, tab) {
     var card = target && target.nodeType === 1 ? target : cardByKey(target) || cardByTitle(target);
-    if (!card) return false;
+    if (!card || !document.getElementById('groupDetail')) return false;   /* another page is on screen (a name on the card opened a profile): nothing to open (G-16) */
     LAST_CARD = card; OPEN_ARGS = { tab: tab || 'disc' };
     var g = model(card, null);
     if (typeof window.openGroup === 'function') window.openGroup(g.role === 'admin' ? 'admin' : 'member');
@@ -933,7 +933,7 @@
 
     /* cards and side rows on the groups page */
     var card = t.closest('#gx .gcard');
-    if (card && !t.closest('.gcard-btn')) {
+    if (card && !t.closest('.gcard-btn') && !t.closest('.dx-entity')) {   /* a person's or company's name on the card opens that page, not the group (G-16) */
       LAST_CARD = card;
       if (card.dataset.gid || live) return;   /* live cards: the adapter opens them (dxLive.openGroup) */
       e.preventDefault(); e.stopPropagation(); open(card); return;

@@ -282,6 +282,12 @@ def act_as_company(j):
         other.first.click(); j.settle(pg, 800)
         t = workspace(j, pg); m = re.search(r'(COMPANY WORKSPACE|مساحة عمل الشركة)\s*\n\s*([^\n]+)', t)
         j.check(m and m.group(2).strip() != co2, 'the workspace still shows the second company after switching back')
+    with j.step("The page I just made is current and names me as its owner: no 'updated more than 6 months ago' notice; Contact says quote requests go to me (Owner)"):
+        close_dialogs(pg); directory(j, pg); open_card(j, pg, co2); t = j.text(pg)
+        j.check(not re.search(r'more than 6 months|older than 6 months|May be outdated|أكثر من 6 أشهر|أقدم من 6 أشهر|قد تكون قديمة', t), 'a page made minutes ago says its information is more than 6 months old')
+        t = company_tab(j, pg, 'Contact|%s' % ar('Contact'), 'Contact'); who = pg.evaluate('ME.name')
+        j.check(re.search(re.escape(who) + r'\s*\((Owner|المالك)\)', t), "Contact does not name the page's owner (%s) as Owner: %s" % (who, (re.search(r'(Quote requests go to|طلبات عروض الأسعار تذهب إلى)[^\n]{0,80}', t) or [''])[0]))
+        if j.lang == 'ar': j.check(not re.search(r'Quote requests go to|\((Admin|Owner)\)|Some information on this page', t), 'the Contact tab shows English interface text in Arabic')
     with j.step('Live: acting as a company I am not a member of is refused by the database'):
         if j.demo: j.skip('database checks are live only')
         r = pg.evaluate("s=>dxLive.sb.rpc('deal_create',{p_type:'quote',p_to_slug:s,p_from_slug:%r,p_title:'forged'})%s" % (sup['co']['slug'], _dx.ERR), sup['co']['slug'])

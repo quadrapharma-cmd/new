@@ -306,6 +306,8 @@ def message_company(j):
         solo = seed_company(j, lone['id'], 'Quiet Pharma %s' % j.tag, sectors=('Manufacturer',), gov='Giza')
         close_dialogs(pg); directory(j, pg); open_card(j, pg, solo['name']); t = company_tab(j, pg, 'Contact|%s' % ar('Contact'), 'Contact')
         j.check('Lone Owner' in t, "the Contact tab does not say the owner (Lone Owner) answers quote requests")
+        j.check(re.search(r'Lone Owner\s*\((Owner|المالك)\)', t), "the Contact tab does not label the owner as Owner (it says: %s)" % (re.search(r'Lone Owner[^\n]{0,20}', t) or [''])[0])
+        j.check(not re.search(r'more than 6 months|May be outdated|أكثر من 6 أشهر|قد تكون قديمة', j.text(pg)), 'a page made minutes ago says its information is more than 6 months old')
         j.click(pg, L('Message'), scope='#content', what='Message'); j.settle(pg, 1200)
         dock = pg.evaluate("[...document.querySelectorAll('#dxDock .dk-win')].filter(e=>e.getClientRects().length).map(e=>e.innerText).join(' ')")
         j.check('Lone Owner' in dock and 'team' not in dock.lower(), "Message does not open a conversation with the owner (dock: %s)" % dock[:80].replace('\n', ' '))

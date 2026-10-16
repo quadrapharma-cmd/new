@@ -487,6 +487,14 @@ def group_about(j):
         j.check(adm.count(), 'the admins in About are not clickable'); nm = adm.inner_text().strip().split('\n')[0]
         adm.click(); j.settle(pg, 1200)
         j.check(pg.evaluate("document.body.getAttribute('data-page')") == 'profile' and nm.split()[-1] in j.text(pg)[:500], 'the admin does not open their profile')
+    with j.step("A person's name on a group card opens their profile — not the group — with no JavaScript error (G-16)"):
+        groups_page(j, pg); ent = pg.locator('#gx .gcard .dx-entity:visible')
+        if not ent.count(): j.skip('no group card names a person here')
+        nm = ent.first.inner_text().strip(); before = len(j.errors)
+        ent.first.click(); j.settle(pg, 1200)
+        j.check(pg.evaluate("document.body.getAttribute('data-page')") == 'profile' and nm.split()[-1] in j.text(pg)[:500], 'the name on the card does not open %s\'s profile' % nm)
+        bad = [e for e in j.errors[before:] if e.startswith('pageerror')]
+        j.check(not bad, 'clicking the name throws: %s' % (bad[0] if bad else ''))
     with j.step('A group without rules says so (no sample text)'):
         if j.demo: j.skip('every sample group has rules — checked in live')
         groups_page(j, pg); open_card(j, pg, g2); a = gd_tab(j, pg, 'about')

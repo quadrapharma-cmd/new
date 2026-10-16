@@ -117,6 +117,20 @@
     catch (e) { show('suErr', friendly(e)); } finally { busy(false); SIGNING = false; }
   };
   window.doLogout = async function () { LEAVING = true; try { await sb.auth.signOut(); } catch (e) {} resetUser(); LEAVING = false; orig.logout(); };
+  /* A-04: Admin is for Drugbox staff. The sidebar's "⚙️ Admin" shows only to a Drugbox admin (profiles.role, read at sign-in);
+     the database stays the authority (is_platform_admin). Anyone else who opens Admin gets the approved "Admin access required"
+     page, which says why. */
+  function isStaff() { return !!ME_UUID && window.ME.role === 'admin'; }
+  function paintAdminEntry() { var on = isStaff(); document.querySelectorAll('#app .sb-foot [onclick="goto(\'admin\')"]').forEach(function (a) { a.style.display = on ? '' : 'none'; }); }
+  var gotoA4 = window.goto;
+  window.goto = function () { var r = gotoA4.apply(this, arguments); paintAdminEntry(); return r; };
+  var rAdminA4 = window.renderAdmin;
+  if (typeof rAdminA4 === 'function') window.renderAdmin = function (c) {
+    var r = rAdminA4.apply(this, arguments), box = ME_UUID && !isStaff() && c && c.firstElementChild;
+    if (box) { var d = document.createElement('div'); d.style.cssText = 'font-size:13px;margin-top:6px'; d.textContent = 'Not allowed for your account — Admin is for Drugbox staff.'; box.appendChild(d); }
+    return r;
+  };
+  paintAdminEntry(); if (window.dxCore) window.dxCore.onRender('live-admin-entry', paintAdminEntry);
   /* the session ended outside this page (signed out in another tab, refresh refused, account removed): back to the login page,
      nothing of that person stays in the page (F-52) */
   function sessionEnded() { if (!ME_UUID || LEAVING) return; resetUser(); orig.logout(); if (typeof window.toast === 'function') window.toast('Your session ended — please sign in again'); }
@@ -887,7 +901,16 @@
       address: txt(pr.address || c.location), hours: txt(c.hours), services: (pr.services || []).map(txt), jobs: [], team: [], logo: safeUrl(c.logo_url) || null, cover: safeUrl(pr.cover) || null,
       products: (c.products || []).map(function (p) { return { id: 'p' + String(p.name).replace(/\W+/g, '').slice(0, 10), name: txt(p.name), cat: ROLE[p.role] || 'Finished dosage', kind: txt(p.form),
         desc: [p.ingredient ? 'Active ingredient: ' + txt(p.ingredient) : '', txt(p.strength)].filter(Boolean).join(' · '), moq: '', price: '', specs: [] }; }),
-      createdAt: new Date(c.created_at).getTime(), _id: c.id, _tier: c.tier };
+      createdAt: new Date(c.created_at).getTime(), updatedAt: fresher(c), _id: c.id, _tier: c.tier };
+  }
+  /* when the page was last written (companies.updated_at, set by the database on every save, B-22): the "older than 6 months"
+     notice counts from it, else from the day the page was made — never from a sample date. The directory's rows do not carry it,
+     so an opened page asks for it (loadContacts). */
+  function fresher(c) { var u = Date.parse(c.updated_at), m = new Date(c.created_at).getTime(); return u > m ? Math.min(u, Date.now()) : null; }
+  function stampFresh(slug) {                  /* "Still correct" / a fix marked: the database moves the page's date to now, for everyone */
+    var raw = CO.raw[slug], role = raw && raw.id && CO.roles[raw.id]; if (!raw || !raw.id || (role !== 'owner' && role !== 'admin')) return;
+    Promise.resolve(sb.from('companies').update({ updated_at: new Date().toISOString() }).eq('id', raw.id).select('updated_at')).then(function (r) {
+      if (r.error) return toastErr(r.error); if (r.data && r.data[0]) { raw.updated_at = r.data[0].updated_at; var l = live(slug); if (l) l.updatedAt = fresher(raw); } });
   }
   /* my pages and my role in each (owner / admin manage the page) — what jobs, listings, suppliers and deals need after sign-in */
   async function loadMine() {
@@ -1053,7 +1076,7 @@
       var r = await sb.from('companies').update(upd).eq('id', raw.id).select();
       if (r.error || !(r.data || []).length) { toastErr(r.error || { message: 'Only the page’s owner or admins can change it' }); rerenderCompanies(); continue; }
       Object.assign(raw, r.data[0]); SNAP[slug] = keep;
-      if (l) { var fresh = coFrom(raw); Object.keys(keep).forEach(function (k) { if (k in fresh) l[k] = fresh[k]; }); }
+      if (l) { var fresh = coFrom(raw); Object.keys(keep).forEach(function (k) { if (k in fresh) l[k] = fresh[k]; }); l.updatedAt = fresh.updatedAt; }
     }
   }
   window.dxStoreHook = function (k, v) {
@@ -1061,6 +1084,7 @@
     if (k === 'created_companies') { if (v === undefined) return []; persistCreated(v).catch(toastErr); return true; }
     if (k === 'company_edits') { if (v === undefined) return JSON.parse(JSON.stringify(SNAP_EDITS())); persistEdits(unalias(v)).catch(toastErr); return true; }
     if (k === 'supplier_reviews') { if (v === undefined) return {}; return true; }
+    if (v && /^meta_/.test(k) && window.dxHubData && window.dxHubData.SECTIONS.every(function (x) { return v[x] && Date.now() - v[x].at < 10000; })) { var sl = k.slice(5); stampFresh(CO.alias[sl] && !mineAt(sl) ? CO.alias[sl] : sl); }   /* the whole page confirmed now */
     return undefined;
   };
   function SNAP_EDITS() { var o = {}; Object.keys(SNAP).forEach(function (k) { if (k.indexOf('vr_') !== 0) o[k] = SNAP[k]; }); return o; }
@@ -1079,12 +1103,14 @@
      and "Message" / "Send a message" write to them through company_message() — the database picks the receiver, never a name.
      A company nobody answers for (unclaimed) says so and shows its Contact tab (phone, email, WhatsApp). ── */
   var CC = { at: {}, by: {}, p: {} };
-  var CROLE = { owner: 'Admin', admin: 'Admin', sales: 'Sales', quality: 'Quality', regulatory: 'Regulatory', hr: 'HR', member: 'Team member' };
+  var CROLE = { owner: 'Owner', admin: 'Admin', sales: 'Sales', quality: 'Quality', regulatory: 'Regulatory', hr: 'HR', member: 'Team member' };
   function loadContacts(slug) {
     var raw = CO.raw[slug], me = ME_UUID; if (!raw || !raw.id) return Promise.resolve(null);
     if (CC.p[slug]) return CC.p[slug];
-    return (CC.p[slug] = Promise.resolve(sb.rpc('company_contacts', { p_company: raw.id })).then(function (r) {
-      if (r.error) throw r.error; if (me !== ME_UUID) return null;
+    var upd = Promise.resolve(sb.from('companies').select('updated_at').eq('id', raw.id)).then(function (q) {   /* the page's last save (B-22) */
+      var u = q.data && q.data[0]; if (!u || me !== ME_UUID) return; raw.updated_at = u.updated_at; var l = live(slug); if (l) l.updatedAt = fresher(raw); }, function () {});
+    return (CC.p[slug] = Promise.all([sb.rpc('company_contacts', { p_company: raw.id }), upd]).then(function (rr) {
+      var r = rr[0]; if (r.error) throw r.error; if (me !== ME_UUID) return null;
       var c = r.data || {}, ids = [];
       Object.keys(c).forEach(function (k) { var x = c[k]; if (x && x.id && x.id !== ME_UUID && ids.indexOf(x.id) < 0) ids.push(x.id); });
       var known = ids.length ? sb.from('profiles').select(PCOLS).in('id', ids).then(function (q) { if (me === ME_UUID) (q.data || []).forEach(putUser); }) : null;   /* the Messages page names them */
@@ -1821,7 +1847,7 @@
   }, true);
   document.addEventListener('keydown', function (e) { if (e.key !== 'Enter' && e.key !== ' ') return; var r = e.target.closest && e.target.closest('#gx .mygroup[data-gid]'); if (r) { e.preventDefault(); r.click(); } });
   window.dxLive.openGroup = function (gid, tab) {
-    var g = GX.groups.find(function (x) { return x.id === gid; }); if (!g) return; GX.cur = g;
+    var g = GX.groups.find(function (x) { return x.id === gid; }); if (!g || !document.getElementById('groupDetail')) return; GX.cur = g;   /* another page is on screen: nothing to open (G-16) */
     var card = document.querySelector('#gx .gcard[data-gid="' + gid + '"]');
     if (card && window.dxGroups && window.dxGroups.pick) window.dxGroups.pick(card, tab);   /* groups.js draws the inside of THIS group */
     var t = document.getElementById('dt-title'); if (t) t.textContent = g.name;
