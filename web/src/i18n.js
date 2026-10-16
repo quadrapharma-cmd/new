@@ -627,7 +627,9 @@
     'I have this to sell': 'لدي هذا للبيع', 'I need to buy this': 'أحتاج إلى شرائه', 'I have a facility to offer': 'لدي مصنع أعرضه', 'I need a manufacturer': 'أحتاج إلى مصنّع',
     'I have one to sell': 'لدي واحدة للبيع', 'I want to buy one': 'أريد شراء واحدة', "I'm selling a registration": 'أبيع تسجيلًا', 'I provide this service': 'أقدّم هذه الخدمة',
     'I need this service': 'أحتاج إلى هذه الخدمة', 'I need to hire someone': 'أحتاج إلى توظيف شخص', "I'm looking for a job": 'أبحث عن وظيفة', 'I teach this course': 'أدرّس هذه الدورة',
-    'I want to take a course': 'أريد أن أتعلّم دورة'
+    'I want to take a course': 'أريد أن أتعلّم دورة', 'Open Positions': 'الوظائف المتاحة',
+    'Post your profile and let verified companies reach out to you directly': 'انشر ملفك ودع الشركات الموثّقة تتواصل معك مباشرة',
+    'Post My Profile': 'انشر ملفي', 'Favourites only': 'المفضّلة فقط'
   });
   PATTERNS.unshift(
     [/^Reach ([\d,]+|…) pharma professionals on Drugbox$/, function (m) { return 'صِل إلى ' + m[1] + ' ' + (m[1] === '…' ? 'متخصص' : plural(m[1], ['متخصص', 'متخصصين'])) + ' في الدواء على Drugbox'; }],

@@ -2766,7 +2766,7 @@
       var name = INT_SHORT[row.dataset.cat] || origT(row.querySelector('.cir-name')).trim(), what = origT(a).replace(/\s+/g, ' ').trim().replace(/^\S+\s*/, '');
       tags.push('<span class="pp-tag ' + cls + '">' + esc2(name.replace(/^\S+\s/, cls === 'both' ? '↔️ ' : cls === 'need' ? '🔍 ' : name.split(' ')[0] + ' ')) + ': ' + esc2(cls === 'both' ? 'Both' : what) + '</span>'); });
     var html = tags.join('') || '<span style="color:#94a3b8;font-size:12px">Nothing selected yet</span>';
-    if (box.dataset.dxKey !== html) { box.dataset.dxKey = html; box.innerHTML = html; }
+    box.innerHTML = html;   /* always: the page's own clicks redraw this box too */
   }
   var oMarketP1b = window.renderMarket;
   window.renderMarket = function () { var r = oMarketP1b.apply(this, arguments); if (ME_UUID) { paintIntents(); tickerSoon(120000); } return r; };

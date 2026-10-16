@@ -37,6 +37,11 @@ def find_jobs(j):
         if j.live:
             j.check(n == total, 'the header says %s jobs, the database has %d active jobs' % (n, total))
             hero = j.text(pg)[:600]; j.check(not re.search(r'\b76\b', hero), 'the hero still shows the sample "76 open positions"')
+            strip = pg.evaluate("[...document.querySelectorAll('#content .intel-strip .intel-item b')].map(e=>e.textContent.replace(/\\D/g,''))")
+            j.check(strip and strip[0] == str(total), 'the strip says %s open positions, the database has %d' % (strip[:1], total))
+            sen = sum(int(x or 0) for x in pg.evaluate("[...document.querySelectorAll('#content .sen-opt[data-level] .sen-count')].map(e=>e.textContent.replace(/\\D/g,''))"))
+            j.check(sen == total, 'the seniority counts add up to %d, the database has %d active jobs' % (sen, total))
+            j.check('150,000' not in j.text(pg), 'the Jobs page still claims "150,000+" professionals')
     with j.step("Search 'HPLC': matches title, company, description and tags"):
         box = pg.locator('#content input[type=search]:visible, #content input[placeholder*="earch" i]:visible, #content input[placeholder*="بحث"]:visible')
         j.check(box.count(), 'not built: no keyword search on Jobs')
