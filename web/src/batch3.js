@@ -280,4 +280,26 @@
   C.onRender('search-entry', searchEntry);
   C.onRender('saved-searches', function () { savedBar(false); saveButton(); });
   C.onRender('profile-insights', insights);
+
+  /* ── My Intents on the profile: what the member has and needs on the marketplace (Marketplace → My Intents says it "shows on
+     your profile"). Mine from the intents store, another member's from their profile (live); nothing chosen → nothing shown ── */
+  var PI = { api: ['📦', 'APIs', 'I have this to sell', 'I need to buy this'], cosmetic: ['💄', 'Cosmetic Ingredients', 'I have this to sell', 'I need to buy this'],
+    supplement: ['🥗', 'Supplements', 'I have this to sell', 'I need to buy this'], packaging: ['📦', 'Packaging', 'I have this to sell', 'I need to buy this'],
+    cmo: ['🏭', 'CMO', 'I have a facility to offer', 'I need a manufacturer'], equipment: ['⚙️', 'Equipment', 'I have one to sell', 'I want to buy one'],
+    license: ['📋', 'Licenses', "I'm selling a registration", 'I want to buy one'], service: ['🛠️', 'Services', 'I provide this service', 'I need this service'],
+    job: ['🏢', 'Jobs', 'I need to hire someone', "I'm looking for a job"], training: ['🎓', 'Training', 'I teach this course', 'I want to take a course'] };
+  function profileIntents() {
+    if (page() !== 'profile') return;
+    var stats = document.querySelector('#content .profile-stats'); if (!stats) return;
+    var u = window._profUser || {}, me = window.ME || {}, v = u.id === me.id ? (D && D.store ? D.store.get('intents', null) : null) : u.intents;
+    var tags = []; Object.keys(PI).forEach(function (k) { var x = v && v[k], p = PI[k]; if (x !== 'i-have' && x !== 'i-need' && x !== 'both') return;
+      var cls = x === 'i-have' ? 'have' : x === 'i-need' ? 'need' : 'both';
+      tags.push('<span class="pp-tag ' + cls + '">' + (cls === 'have' ? p[0] : cls === 'need' ? '🔍' : '↔️') + ' <span>' + esc(p[1]) + '</span>: <span>' + esc(cls === 'have' ? p[2] : cls === 'need' ? p[3] : 'Both') + '</span></span>'); });
+    var key = tags.join(''), box = stats.parentNode.querySelector('.dx-pintents');
+    if (!key) { if (box) box.remove(); return; }
+    if (box && box.dataset.k === key) return;
+    if (!box) { box = document.createElement('div'); box.className = 'dx-pintents'; stats.insertAdjacentElement('afterend', box); }
+    box.dataset.k = key; box.innerHTML = '<div class="dx-pi-h">Marketplace intents</div><div class="pp-tags">' + key + '</div>';
+  }
+  C.onRender('profile-intents', profileIntents);
 })();
