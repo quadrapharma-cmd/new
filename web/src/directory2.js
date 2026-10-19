@@ -185,23 +185,34 @@
   }, true);
 
   /* ── claim an unclaimed page (opened from the hub's claim banner) ── */
+  /* claims (B-01): proof of working at the company (role, work e-mail, the commercial registry document) goes to Drugbox, which
+     checks it in Admin → Review → Claims before the page is handed over. window.dxClaims: this browser in the demo, the
+     database in the live app (adapter). */
+  if (!window.dxClaims) window.dxClaims = {
+    list: function () { return X().store('claims') || []; },
+    pending: function (slug) { var me = window.ME || {}; return (X().store('claims') || []).some(function (c) { return c.slug === slug && c.by === me.id && c.status === 'pending'; }); },
+    send: function (co, d) { var l = X().store('claims') || [], me = window.ME || {}; l.push({ id: 'CL' + Date.now(), slug: co.slug, company: co.name, by: me.id, who: me.name, role: d.role, mail: d.mail, phone: d.phone, file: d.file ? d.file.name : '', at: Date.now(), status: 'pending' });
+      X().store('claims', l); return Promise.resolve(true); },
+    decide: function (id, ok, note) { var l = X().store('claims') || [], c = l.find(function (x) { return x.id === id; }); if (!c) return Promise.resolve(false);
+      c.status = ok ? 'approved' : 'rejected'; c.note = note || ''; X().store('claims', l);
+      if (ok) { var co = X().bySlug(c.slug), edits = X().store('company_edits') || {}; edits[c.slug] = Object.assign({}, edits[c.slug] || {}, { owner: c.by, status: 'unverified', claimed: true, claimedAt: Date.now(), email: c.mail, about: co && co.about.indexOf('public industry sources') >= 0 ? '' : (co ? co.about : '') }); X().store('company_edits', edits); if (window.dxHub) window.dxHub.log(c.slug, 'Claimed the company page'); }
+      return Promise.resolve(true); }
+  };
   function claimDialog(co) {
-    var me = window.ME || {}, code = String(1000 + Math.floor(Math.random() * 9000));
-    D.modal({ title: 'Claim ' + co.name, body: '<p class="cp-muted">Prove you work at ' + esc(co.name) + ' and the page becomes yours to manage. Nothing is published until you edit it.</p>' +
+    if (!co) return;
+    if (window.dxClaims.pending(co.slug)) { toast('Your claim for ' + co.name + ' is with Drugbox — you will be told when the page is yours'); return; }
+    D.modal({ title: 'Claim ' + co.name, body: '<p class="cp-muted">Prove you work at ' + esc(co.name) + ' and the page becomes yours to manage. Drugbox checks every claim before handing a page over.</p>' +
       '<div class="dbk-row"><div class="dbk-f"><label for="clRole">Your role *</label><input id="clRole" data-req placeholder="e.g. Business Development Manager"></div><div class="dbk-f"><label for="clPhone">Mobile *</label><input id="clPhone" data-req inputmode="tel"></div></div>' +
-      '<div class="dbk-f"><label for="clMail">Work email *</label><input id="clMail" data-req type="email" placeholder="you@company.com"></div>',
-      primary: { label: 'Send code', onClick: function (b) {
+      '<div class="dbk-f"><label for="clMail">Work email *</label><input id="clMail" data-req type="email" placeholder="you@company.com"></div>' +
+      '<div class="dbk-f"><label for="clDoc">Commercial registry document *</label><input id="clDoc" type="file" accept=".pdf,.jpg,.jpeg,.png"><small class="cp-muted">Seen only by Drugbox’s reviewers.</small></div>',
+      primary: { label: 'Send claim', onClick: function (b, close) {
         if (!D.requireFields(b)) return false;
-        var mail = b.querySelector('#clMail').value.trim();
-        setTimeout(function () {
-          D.modal({ title: 'Enter the code', body: '<p class="cp-muted">We sent a 4-digit code to ' + esc(mail) + '. <span class="cl-demo">Demo code: <b>' + code + '</b></span></p><div class="dbk-f"><label for="clCode">Code *</label><input id="clCode" data-req inputmode="numeric" maxlength="4"></div>',
-            primary: { label: 'Claim page', onClick: function (b2) {
-              if (b2.querySelector('#clCode').value.trim() !== code) { b2.querySelector('#clCode').classList.add('dbk-err'); toast('Wrong code'); return false; }
-              var edits = X().store('company_edits') || {}; edits[co.slug] = Object.assign({}, edits[co.slug] || {}, { owner: me.id, status: 'unverified', claimed: true, claimedAt: Date.now(), email: mail, phone: b2 ? co.phone : co.phone, about: co.about.indexOf('public industry sources') >= 0 ? '' : co.about });
-              X().store('company_edits', edits); X().store('acting', co.slug); if (window.dxHub) { window.dxHub.log(co.slug, 'Claimed the company page'); window.dxHub.workspace(co.slug); } else X().render(); toast('You now manage ' + co.name + ' — complete the page and get verified');
-            } } });
-        }, 40);
-      } } });
+        var f = b.querySelector('#clDoc').files[0]; if (!f) { b.querySelector('#clDoc').classList.add('dbk-err'); toast('Attach the commercial registry document'); return false; }
+        var ok = b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
+        window.dxClaims.send(co, { role: b.querySelector('#clRole').value.trim(), phone: b.querySelector('#clPhone').value.trim(), mail: b.querySelector('#clMail').value.trim(), file: f }).then(function () {
+          close(); toast('Claim sent — Drugbox checks it and tells you when the page is yours'); X().render(); },
+          function (e) { if (ok) ok.disabled = false; toast((e && e.message) || 'Could not send the claim'); });
+        return false; } } });
   }
   window.dxFindToll = finderDialog;
   window.dxDir2 = { bulk: function (slugs, preset) { bulkRfqDialog(slugs, preset); }, brochure: brochure, qr: qrDialog, claim: claimDialog, capOf: capOf, MONTHS: MONTHS, FORMS: FORMS, apiOf: apiOf, INN: INN, CAP: CAP };

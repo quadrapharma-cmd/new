@@ -10,6 +10,7 @@
       load: function () {
         var cos = (window.dxDir && window.dxDir.companies()) || [], refs = (D.store.get('jobRefs', []) || []), H = window.dxHubData;
         return Promise.resolve({
+          claims: (window.dxClaims ? window.dxClaims.list() : []).filter(function (c) { return c.status === 'pending'; }).map(function (c) { return { id: c.id, company: c.company, who: c.who, role: c.role, mail: c.mail, at: c.at ? new Date(c.at).toISOString().slice(0, 10) : '', docs: [] }; }),
           verifications: cos.filter(function (c) { return c.status === 'pending' && !decided['v' + c.slug]; }).map(function (c) { return { id: c.slug, company: c.name, registry: c.registry || '—', at: '', docs: [] }; }),
           warnings: refs.filter(function (r) { return r.kind === 'warn' && r.status === 'pending' && !decided['w' + r.cand + r.text]; }).map(function (r) { return { id: r.cand + r.text, company: r.company, candidate: r.cand, category: r.category, text: r.text, docs: [] }; }),
           certs: H ? cos.slice(0, 30).reduce(function (a, c) { (H.credentials(c) || []).forEach(function (x) { if (!x.checked && !/^Member:/.test(x.name) && !decided['c' + c.slug + '|' + x.name]) a.push({ id: c.slug + '|' + x.name, company: c.name, site: x.site, name: x.name, expiry: x.expiry }); }); return a; }, []) : [],
@@ -21,17 +22,20 @@
       },
       decide: function (kind, id, value, note) {
         if (kind === 'posts' && window.dxPostSvc && window.dxPostSvc.decide) return window.dxPostSvc.decide(id, value, note);
+        if (kind === 'claims' && window.dxClaims) return window.dxClaims.decide(id, value === 'approved', note);
         decided[kind.charAt(0) + id] = value; return Promise.resolve(true); },
       link: function () { return Promise.resolve(null); }
     };
   }
-  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts']];
+  var Q = [['claims', '🏷️', 'Claims'], ['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts']];
   var cur = 'verifications', data = null;
   function docs(list) { return (list || []).map(function (d) { return '<button type="button" class="dx-mod-doc" data-doc="' + esc(d.path) + '" data-bucket="' + esc(d.bucket) + '">📄 ' + esc(d.label) + '</button>'; }).join(''); }
   function row(kind, x) {
     var body = '', acts = '';
     if (kind === 'verifications') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>Commercial registry ' + esc(x.registry) + (x.at ? ' · sent ' + esc(x.at) : '') + '</span>' + docs(x.docs);
       acts = '<button class="dx-mod-ok" data-k="verifications" data-id="' + esc(x.id) + '" data-v="approved">Approve</button><button class="dx-mod-no" data-k="verifications" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
+    if (kind === 'claims') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>Claimed by ' + esc(x.who || 'a member') + (x.role ? ' · ' + esc(x.role) : '') + (x.mail ? ' · ' + esc(x.mail) : '') + (x.at ? ' · sent ' + esc(x.at) : '') + '</span>' + (x.note ? '<p>' + esc(x.note) + '</p>' : '') + docs(x.docs);
+      acts = '<button class="dx-mod-ok" data-k="claims" data-id="' + esc(x.id) + '" data-v="approved">Approve</button><button class="dx-mod-no" data-k="claims" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
     if (kind === 'warnings') { body = '<b data-noi18n>' + esc(x.company) + ' → ' + esc(x.candidate) + '</b><span>' + esc(x.category) + '</span><p>' + esc(x.text) + '</p>' + docs(x.docs);
       acts = '<button class="dx-mod-ok" data-k="warnings" data-id="' + esc(x.id) + '" data-v="published">Publish</button><button class="dx-mod-no" data-k="warnings" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
     if (kind === 'certs') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>' + esc(x.name) + ' · ' + esc(x.site || '') + (x.expiry ? ' · valid to ' + esc(x.expiry) : '') + '</span>' + docs(x.docs);
@@ -76,8 +80,8 @@
     if (k === 'posts' && v === 'removed') {   /* the author is told why: an optional note goes with the decision */
       D.modal({ title: 'Remove this post?', body: '<p>The author is told it was removed and why. Every reporter is told the outcome.</p><div class="dbk-f"><label for="dxModNote">Note for the author (optional)</label><textarea id="dxModNote" maxlength="500"></textarea></div>',
         primary: { label: 'Remove post', danger: true, onClick: function (bx) { note = bx.querySelector('#dxModNote').value.trim(); go(); } } }); return; }
-    if (v === 'rejected' && (k === 'verifications' || k === 'certs')) {   /* the company is told why: the reason is written in the window (Cancel keeps the request) */
-      D.modal({ title: k === 'certs' ? 'Reject this certificate?' : 'Reject this verification request?', body: '<p>' + (k === 'certs' ? 'It is removed from the page and the company is told why.' : 'The company is told why and can send new documents.') + '</p><div class="dbk-f"><label for="dxModWhy">Reason for the company (they will see it) *</label><textarea id="dxModWhy" data-req maxlength="300">' + esc(k === 'certs' ? 'The certificate document is not readable' : 'The registry document is not readable') + '</textarea></div>',
+    if (v === 'rejected' && (k === 'verifications' || k === 'certs' || k === 'claims')) {   /* the company is told why: the reason is written in the window (Cancel keeps the request) */
+      D.modal({ title: k === 'certs' ? 'Reject this certificate?' : k === 'claims' ? 'Reject this claim?' : 'Reject this verification request?', body: '<p>' + (k === 'certs' ? 'It is removed from the page and the company is told why.' : k === 'claims' ? 'The page stays unclaimed and the claimant is told why.' : 'The company is told why and can send new documents.') + '</p><div class="dbk-f"><label for="dxModWhy">Reason for the company (they will see it) *</label><textarea id="dxModWhy" data-req maxlength="300">' + esc(k === 'certs' ? 'The certificate document is not readable' : 'The registry document is not readable') + '</textarea></div>',
         primary: { label: 'Reject', danger: true, onClick: function (bx) { if (!D.requireFields(bx)) return false; note = bx.querySelector('#dxModWhy').value.trim(); go(); } } }); return; }
     var ask = { rejected: ['Reject this reference?', 'It will not be published.', 'Reject'], dismissed: ['Dismiss this report?', k === 'posts' ? 'The post stays up.' : 'The company page stays as it is.', 'Dismiss'], failed: ['Mark this transfer as not received?', 'The order stays unpaid.', 'Not received'] }[v];
     if (k === 'messages' && v === 'dismissed') ask = ['Dismiss this report?', 'Nothing changes for the reported member.', 'Dismiss'];

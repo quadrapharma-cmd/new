@@ -1260,19 +1260,8 @@
     if (el.scrollTop + el.clientHeight < el.scrollHeight - 400) return;
     var k = curKey(), s = CO.seq[k]; if (s && s.off && s.more && !s.p) loadDirPage(k).catch(toastErr);
   }, true);
-  /* "Claim this page": a claim request reviewed by Drugbox (claim_company), never an edit made in the browser (F-42) */
-  if (window.dxDir2 && window.dxDir2.claim) window.dxDir2.claim = function (co) {
-    var raw = co && CO.raw[co.slug]; if (!raw || !raw.id) return;
-    window.DBK.modal({ title: 'Claim ' + co.name, body: '<p class="cp-muted">Prove you work at ' + esc2(co.name) + ' and the page becomes yours to manage. Drugbox checks every claim before handing a page over.</p>' +
-      '<div class="dbk-row"><div class="dbk-f"><label for="clRole">Your role *</label><input id="clRole" data-req placeholder="e.g. Business Development Manager"></div><div class="dbk-f"><label for="clPhone">Mobile *</label><input id="clPhone" data-req inputmode="tel"></div></div>' +
-      '<div class="dbk-f"><label for="clMail">Work email *</label><input id="clMail" data-req type="email" placeholder="you@company.com"></div>',
-      primary: { label: 'Send request', onClick: function (b, close) {
-        if (!window.DBK.requireFields(b)) return false; var ok = b.querySelector('[data-a=ok]') || b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
-        var note = 'Role: ' + b.querySelector('#clRole').value.trim() + ' · Mobile: ' + b.querySelector('#clPhone').value.trim() + ' · Work email: ' + b.querySelector('#clMail').value.trim();
-        sb.rpc('claim_company', { p_company_id: raw.id, p_note: note }).then(function (r) { if (ok) ok.disabled = false;
-          if (r.error) return toastErr(r.error); close(); window.toast('Claim sent — Drugbox checks it and tells you when the page is yours'); });
-        return false; } } });
-  };
+  /* "Claim this page": a claim request reviewed by Drugbox (claim_company, with the registry document — 0052), never an edit made in
+     the browser (F-42) — window.dxClaims below (AREA business) */
   var hydrateB4 = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateB4(uid); window.dxLiveCompanies = []; CO.seq = {}; CO.loaded = false; CO.mineP = loadMine().then(wrapHub).catch(function (e) { console.error(e); }); return me; };
   onReset(function () { CO.byId = {}; CO.raw = {}; CO.loaded = false; CO.at = 0; CO.roles = {}; CO.mine = false; CO.mineP = null; CO.sitesAt = {}; CO.track = {}; CO.trackAt = {}; CO.seq = {}; CO.alias = {}; CO.reopen = null; COFETCH = {}; CONONE = {}; SNAP = {}; window.dxLiveCompanies = []; window.dxLiveSites = {}; });
@@ -2502,7 +2491,8 @@
   coFrom = function (c) {
     var o = coFromC1(c), pr = c.profile || {}, cc = coCertsOf(c.slug);
     o.products = (c.products || []).map(prodFrom);
-    if (c.mine && !o.owner && CO.roles[c.id]) o.memberIds = [window.ME.id];   /* a member of the team (sales, quality…): the company is theirs to act for, not to edit */
+    if (c.mine && !o.owner && CO.roles[c.id]) o.memberIds = [window.ME.id];
+    o.nameAr = txt(c.name_ar);                                                     /* the Arabic name is searched and shown (hub-data nameAr) */   /* a member of the team (sales, quality…): the company is theirs to act for, not to edit */
     o.logo = mediaUrl(c.logo_url) || null; o.cover = mediaUrl(c.cover_url) || null;
     if (cc.length) { o.certs = cc.filter(function (x) { return x.checked; }).map(function (x) { return txt(x.name); });
       o.certsPending = cc.filter(function (x) { return !x.checked; }).map(function (x) { return { name: txt(x.name), _id: x.id, at: 0 }; }); }
@@ -2806,6 +2796,57 @@
   function onPage(p) { return document.body.getAttribute('data-page') === p; }
   onReset(function () { TEAM.by = {}; TEAM.at = {}; TEAM.p = {}; });
   /* ===== /AREA business: company team ===== */
+
+  /* ===== AREA business: claims and the directory's search in "Add or claim" (B-01; 0052) =====
+     A claim carries the commercial registry document (documents/claims/<me>/…) and waits in Admin → Review → Claims; the
+     claimant sees "Claim pending" until Drugbox decides. "Add or claim" searches the whole directory in the database (English
+     or Arabic name), not only the companies already loaded. */
+  var CLM = { mine: {}, at: 0 };
+  async function loadMyClaims() {
+    var r = await sb.from('verification_requests').select('company_id, co:companies(slug)').eq('submitted_by', ME_UUID).eq('claim', true).eq('status', 'pending').limit(50);
+    if (r.error) throw r.error; CLM.mine = {}; (r.data || []).forEach(function (x) { var s = sslug(x.co && x.co.slug); if (s) CLM.mine[s] = 1; }); CLM.at = Date.now();
+  }
+  window.dxClaims = {
+    list: function () { return []; },
+    pending: function (slug) { return !!CLM.mine[slug]; },
+    send: async function (co, d) {
+      var raw = co && CO.raw[co.slug]; if (!raw || !raw.id) throw new Error('This company is not on Drugbox yet');
+      var path = await upDoc('documents', 'claims/' + ME_UUID + '/registry-' + rid() + '.' + extOf(d.file), d.file);
+      var r = await sb.rpc('claim_company', { p_company_id: raw.id, p_note: 'Role: ' + d.role + ' · Mobile: ' + d.phone + ' · Work email: ' + d.mail, p_registry_path: path });
+      if (r.error) throw new Error(friendly(r.error)); CLM.mine[co.slug] = 1; return true;
+    },
+    decide: async function (id, ok, note) {
+      var r = await sb.from('verification_requests').update({ status: ok ? 'approved' : 'rejected', note: ok ? null : (note || null) }).eq('id', +id).eq('claim', true).select('id');
+      if (r.error) throw new Error(friendly(r.error)); if (!(r.data || []).length) throw new Error('Only the Drugbox team can do this'); refreshCompanies().catch(function () {}); return true;
+    }
+  };
+  var modLoadCl = window.dxModeration.load, modDecideCl = window.dxModeration.decide;
+  window.dxModeration.load = async function () {
+    var d = await modLoadCl();
+    var q = await Promise.all([sb.from('verification_requests').select('*, co:companies(name,slug)').eq('status', 'pending').eq('claim', false).order('created_at').limit(100),
+      sb.from('verification_requests').select('*, co:companies(name,slug), by:profiles!verification_requests_submitted_by_fkey(name)').eq('status', 'pending').eq('claim', true).order('created_at').limit(100)]);
+    if (q[0].error) throw q[0].error; if (q[1].error) throw q[1].error;
+    var doc = function (path, label) { return path ? [{ path: path, bucket: 'documents', label: label }] : []; };
+    d.verifications = q[0].data.map(function (v) { return { id: v.id, company: v.co && v.co.name, registry: v.registry, at: String(v.created_at).slice(0, 10),
+      docs: doc(v.registry_path, 'Commercial registry').concat(doc(v.tax_card_path, 'Tax card'), doc(v.licence_path, 'Licence')) }; });
+    d.claims = q[1].data.map(function (v) { return { id: v.id, company: v.co && v.co.name, who: v.by && v.by.name, note: v.note || '', at: String(v.created_at).slice(0, 10), docs: doc(v.registry_path, 'Commercial registry') }; });
+    return d;
+  };
+  window.dxModeration.decide = async function (kind, id, value, note) {
+    if (kind === 'claims') return window.dxClaims.decide(id, value === 'approved', note);
+    return modDecideCl(kind, id, value, note);
+  };
+  /* "Add or claim": the database finds the company by its English or Arabic name; the window's list is drawn again */
+  var ACQ = null;
+  document.addEventListener('input', function (e) {
+    if (!ME_UUID || !e.target || e.target.id !== 'acQ' || e.isTrusted === false && e.detail === 'dx') return; clearTimeout(ACQ);
+    var inp = e.target; ACQ = setTimeout(function () { var k = dirKey(inp.value); if (!k) return;
+      (freshSeq(k) ? Promise.resolve() : loadDirPage(k, true)).then(function () { if (inp.isConnected) { var ev = new CustomEvent('input', { bubbles: true, detail: 'dx' }); inp.dispatchEvent(ev); } }).catch(toastErr); }, 300);
+  }, true);
+  var hydrateCl = hydrateMe;
+  hydrateMe = async function (uid) { var me = await hydrateCl(uid); loadMyClaims().catch(function (e) { console.error(e); }); return me; };
+  onReset(function () { CLM.mine = {}; CLM.at = 0; });
+  /* ===== /AREA business: claims ===== */
 
 
   /* ═══════════════ E3 — training: courses and enrollments from the database (the approved course card is the template) ═══════════════ */
