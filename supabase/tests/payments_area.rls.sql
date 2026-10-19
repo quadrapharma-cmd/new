@@ -113,7 +113,14 @@ select pg_temp.no('the buyer cannot cancel an InstaPay transfer Drugbox is check
 select pg_temp.as_server();
 with x as (insert into public.companies (owner_id, name, type) values ('e1111111-1111-1111-1111-111111111111', 'PP Suspended Co', 'Distributor') returning id) insert into ids select 'susp', id::text from x;
 update public.companies set status = 'suspended' where id = pg_temp.id('susp');
-with x as (insert into public.products (user_id, name, category, type, active) values ('e1111111-1111-1111-1111-111111111111', 'PP hidden listing', 'api', 'supply', false) returning id) insert into ids select 'lh', id::text from x;
+with x as (insert into public.products (user_id, name, category, type) values ('e1111111-1111-1111-1111-111111111111', 'PP hidden listing', 'api', 'supply') returning id) insert into ids select 'lh', id::text from x;
+do $$ begin   -- taken off the marketplace (a listing status, where the schema has one, decides `active`)
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'products' and column_name = 'status') then
+    execute 'update public.products set status = ''paused'' where id = ' || pg_temp.id('lh');
+  end if;
+  update public.products set active = false where id = pg_temp.id('lh');
+end $$;
+select pg_temp.ok('(the hidden listing is inactive)', $$(select not active from public.products where id = pg_temp.id('lh'))$$);
 select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
 select pg_temp.no('VIP cannot be bought for a suspended company', $$select public.create_order('vip_month', 'card', pg_temp.id('susp'), null)$$, '42501');
 select pg_temp.no('a paid boost of an inactive listing is refused', $$select public.create_order('boost', 'card', null, pg_temp.id('lh'))$$, '42501');
