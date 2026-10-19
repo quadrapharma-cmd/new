@@ -108,7 +108,7 @@ def browse_market(j):
     with j.step('Category counts and result counts equal the real listings (no invented numbers or sample cards in live)'):
         market(j, pg)
         counts = pg.evaluate("[...document.querySelectorAll('#tab-browse .cat-item')].map(e=>e.innerText.replace(/\\s+/g,' ').trim())")
-        sup = next((int(re.sub(r'\\D', '', x) or 0) for x in counts if x.startswith('Supply') or x.startswith('توريد')), None)
+        sup = next((int(re.sub(r'\D', '', x) or 0) for x in counts if x.startswith('Supply') or x.startswith('توريد')), None)
         real = len([c for c in cards(pg, '#tab-browse :is(.lcard,.sponsored-card)') if c['cat'] == 'supply']) if j.demo else int(j.sql1("select count(*) from public.products where type='supply' and active"))
         j.check(sup == real, "the Supply count says %s but there are %s supply listings" % (sup, real))
         if j.live:
