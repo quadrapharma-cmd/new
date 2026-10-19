@@ -625,6 +625,23 @@
     [/^([\d,.]+K?)\s+(provider|open position)$/i, function (m) { return word(m[1], m[2] + 's'); }],
     [/^Posted (just now|\d+\s*(?:m|min|h|d|w) ago)$/, function (m) { return 'نُشر ' + tr(m[1]); }]
   );
+  /* phase 1b: the live app's real numbers (ticker labels, Jobs headers, the reach line) and My Intents on the profile */
+  Object.assign(D, {
+    'Service:': 'خدمة:', 'News:': 'أخبار:', 'Marketplace intents': 'نوايا السوق', 'Nothing selected yet': 'لم تختر شيئًا بعد', 'Both': 'الاثنان',
+    'APIs': 'المواد الخام الدوائية', 'Cosmetic Ingredients': 'مكونات التجميل', 'CMO': 'التصنيع لدى الغير',
+    'I have this to sell': 'لدي هذا للبيع', 'I need to buy this': 'أحتاج إلى شرائه', 'I have a facility to offer': 'لدي مصنع أعرضه', 'I need a manufacturer': 'أحتاج إلى مصنّع',
+    'I have one to sell': 'لدي واحدة للبيع', 'I want to buy one': 'أريد شراء واحدة', "I'm selling a registration": 'أبيع تسجيلًا', 'I provide this service': 'أقدّم هذه الخدمة',
+    'I need this service': 'أحتاج إلى هذه الخدمة', 'I need to hire someone': 'أحتاج إلى توظيف شخص', "I'm looking for a job": 'أبحث عن وظيفة', 'I teach this course': 'أدرّس هذه الدورة',
+    'I want to take a course': 'أريد أن أتعلّم دورة', 'Open Positions': 'الوظائف المتاحة',
+    'Post your profile and let verified companies reach out to you directly': 'انشر ملفك ودع الشركات الموثّقة تتواصل معك مباشرة',
+    'Post My Profile': 'انشر ملفي', 'Favourites only': 'المفضّلة فقط',
+    'Join pharma professionals — from new graduates to industry veterans': 'انضم إلى متخصصي الدواء — من حديثي التخرج حتى خبراء الصناعة'
+  });
+  PATTERNS.unshift(
+    [/^Reach ([\d,]+|…) pharma professionals on Drugbox$/, function (m) { return 'صِل إلى ' + m[1] + ' ' + (m[1] === '…' ? 'متخصص' : plural(m[1], ['متخصص', 'متخصصين'])) + ' في الدواء على Drugbox'; }],
+    [/^([\d,]+) jobs?$/, function (m) { return m[1] + ' ' + plural(m[1], ['وظيفة', 'وظائف']); }],
+    [/^([\d,]+) profile$/, function (m) { return m[1] + ' ملف'; }]
+  );
   PATTERNS.push([/^(.+?): ([A-Z][A-Za-z -]+) — (.+)$/, function (m) { return D[m[2]] ? m[1] + ': ' + D[m[2]] + ' — ' + m[3] : null; }]);   /* last: '<company>: Send quote — <deal>' in notifications */
   var ARROWS = { '→': '←', '←': '→' };
   function put(raw, t, r) {   /* keep the original's surrounding spaces even when its inner spacing differs */

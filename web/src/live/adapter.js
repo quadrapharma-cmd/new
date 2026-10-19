@@ -86,7 +86,8 @@
       id: aid(p.id), name: txt(p.name), initials: initials(txt(p.name)), headline: txt(p.headline), company: txt(p.company), country: txt(p.country || 'EG'),
       verified: !!p.verified, role: p.role || 'user', bio: prose(p.bio), web: safeUrl(p.website), phone: tel(p.phone), certs: txt(p.certs), avatar: safeUrl(p.avatar_url),
       location: txt(p.location), followers: p.followers_count || 0, openToWork: !!p.open_to_work, hiring: !!p.hiring, color: colorFor(p.id),
-      profileViews: p.profile_views || '0', connections: '0'          /* '0', not 0: the approved sidebar shows sample numbers for a falsy value */
+      profileViews: p.profile_views || '0', connections: '0',         /* '0', not 0: the approved sidebar shows sample numbers for a falsy value */
+      intents: (p.intents && typeof p.intents === 'object') ? p.intents : {}
     });
     clearSeeds();
     return window.ME;
@@ -181,7 +182,7 @@
     openToWork: !!p.open_to_work, hiring: !!p.hiring, profileViews: p.profile_views || 0, bio: prose(p.bio) };
     /* website and certifications come with a whole profile row (opening the profile), not with the people embedded in lists; a list row
        never blanks what the profile row brought (phone stays private: it is never put on another person) */
-    if ('website' in p) { u.web = safeUrl(p.website); u.certs = txt(p.certs); u.full = true; }
+    if ('website' in p) { u.web = safeUrl(p.website); u.certs = txt(p.certs); u.full = true; if (p.intents && typeof p.intents === 'object') u.intents = p.intents; }
     return u; }
   function putUser(p) { if (!p) return; if (p.id === ME_UUID) return; var u = userFrom(p), list = window.USERS, i = list.findIndex(function (x) { return x.id === u.id; }); if (i < 0) list.push(u); else Object.assign(list[i], u); }
   /* mine: Map post id → my reaction kind; kinds: post id → {kind: n} (post_reaction_summary, 0028) */
@@ -1440,13 +1441,7 @@
     var dgrid = mk.querySelector('[data-live-demand]');
     if (dgrid && MKT.tplD) { dgrid.querySelectorAll('.dcard').forEach(function (x) { x.remove(); });   /* under the board's heading, above "Latest Jobs" — where the approved cards are */
       var at = dgrid.querySelector('.db-sub'); MKT.demand.forEach(function (e) { var c = demandCard(e); if (at) { at.insertAdjacentElement('afterend', c); at = c; } else dgrid.appendChild(c); }); }
-    paintSponsored(mk);
-    /* ticker: admin items if any, otherwise the newest real listings */
-    if (window.TICKER_ITEMS && typeof window.buildTicker === 'function') {
-      var items = MKT.products.slice(0, 6).map(function (p) { return { label: 'Supply', text: p.name + (p.price ? ' ' + p.price : '') }; })
-        .concat(MKT.demand.slice(0, 6).map(function (e) { return { label: 'Demand', text: e.title }; }));
-      if (items.length) { window.TICKER_ITEMS.length = 0; items.forEach(function (x) { window.TICKER_ITEMS.push(x); }); window.buildTicker(); }
-    }
+    paintSponsored(mk);   /* the ticker is filled at sign-in from ticker_feed() (P1b below), not from this page */
   }
   /* Contact / Quote on a live card → a conversation with that person; a featured mini card shows its listing */
   document.addEventListener('click', function (e) {
@@ -2720,6 +2715,149 @@
   window.renderNetwork = function () { var r = oNetP1.apply(this, arguments); if (ME_UUID) setTimeout(paintNetGroups, 0); return r; };
   onReset(function () { PG.my = []; PG.myAt = 0; PG.stats = null; PG.statsAt = 0; PG.jobs = []; PG.members = null; ML.rows = []; ML.at = 0; });
   window.dxLive.version = 'P1';
+
+  /* ═══════════════ P1b — the last sample numbers and lists (S-19 ticker, Home and sign-in page; J-05 Jobs numbers; B-06 My Intents;
+     J-SOCIAL-49 profile numbers). Data from 0035 (one call each); the approved markup only gets its words and numbers, and an
+     element with nothing real to show is hidden. ═══════════════ */
+  function fmtN(n) { return Number(n || 0).toLocaleString('en'); }
+  function origT(e) { return e ? (window.dxOrigText ? window.dxOrigText(e) : e.textContent) : ''; }
+
+  /* the top ticker: never the demo's items — empty (and hidden) until ticker_feed() answers, hidden while there is nothing real */
+  var TK = { at: 0, p: null };
+  var oBuildTicker = window.buildTicker;
+  if (typeof oBuildTicker === 'function') window.buildTicker = function () {
+    var r = oBuildTicker.apply(this, arguments), t = document.querySelector('.ticker'), d = (window.TICKER_ITEMS || []).length ? '' : 'none';
+    if (t && t.style.display !== d) t.style.display = d; return r; };
+  function setTicker(items) { var T = window.TICKER_ITEMS; if (!Array.isArray(T)) return; T.length = 0; (items || []).forEach(function (x) { if (x && x.text) T.push({ label: x.label || 'News', text: x.text }); }); if (window.buildTicker) window.buildTicker(); }
+  setTicker([]);
+  function loadTicker() { if (TK.p) return TK.p;
+    TK.p = sb.rpc('ticker_feed').then(function (r) { TK.p = null; if (r.error) throw r.error; TK.at = Date.now(); if (ME_UUID) setTicker(r.data || []); }, function (e) { TK.p = null; throw e; });
+    return TK.p; }
+  function tickerSoon(age) { if (ME_UUID && Date.now() - TK.at > age) loadTicker().catch(function (e) { console.error(e); }); }
+
+  /* Jobs (J-05): the strip, the seniority counts and the two list headers from jobs_stats(); the reach line from the member count */
+  var JS = { s: null, at: 0, p: null };
+  function jobStats() { if (JS.p) return JS.p;
+    JS.p = sb.rpc('jobs_stats').then(function (r) { JS.p = null; if (r.error) throw r.error; JS.s = r.data || null; JS.at = Date.now(); }, function (e) { JS.p = null; throw e; });
+    return JS.p; }
+  function paintJobNumbers() {
+    var root = document.getElementById('jx'); if (!root || !ME_UUID) return;
+    var s = JS.s, ok = !!s, n = function (v) { return ok ? fmtN(v) : '…'; }, lv = (s && s.by_level) || {};
+    var ib = root.querySelectorAll('.intel-strip .intel-item b'); [s && s.open, s && s.week, s && s.candidates].forEach(function (v, i) { if (ib[i]) setNum(ib[i], n(v)); });
+    [].forEach.call(root.querySelectorAll('#seniorityFilter .sen-opt[data-level] .sen-count'), function (e) { setNum(e, n(lv[e.parentElement.dataset.level])); });
+    [].forEach.call(root.querySelectorAll('.sec-title'), function (t) { var sp = t.querySelector('span'), o = origT(t); if (!sp) return;
+      if (/^\s*Open Positions/.test(o)) setNum(sp, ok ? fmtN(s.open) + (s.open === 1 ? ' job' : ' jobs') : '…');
+      else if (/^\s*Available Candidates/.test(o)) setNum(sp, ok ? fmtN(s.candidates) + (s.candidates === 1 ? ' profile' : ' profiles') : '…'); });
+    [].forEach.call(root.querySelectorAll('.post-cta-sub'), function (e) { setTextNode(e, /^Reach (150,000\+|[\d,]+|…) pharma professionals/, function () {
+      return 'Reach ' + (PG.members == null ? '…' : fmtN(PG.members)) + ' pharma professionals on Drugbox'; }); });
+  }
+  var paintJobsP1b = paintJobs;
+  paintJobs = function () { paintJobsP1b(); paintJobNumbers(); };
+  var loadJobsP1b = loadJobs;
+  loadJobs = async function () { await Promise.all([loadJobsP1b(), onPageNow('jobs') ? jobStats().catch(function (e) { console.error(e); }) : null]); };
+  var oJobsP1b = window.renderJobs;
+  window.renderJobs = function () { var r = oJobsP1b.apply(this, arguments); if (!ME_UUID) return r; paintJobNumbers();
+    if (Date.now() - JS.at > 3000) jobStats().then(function () { if (onPageNow('jobs')) paintJobNumbers(); }, function (e) { console.error(e); });
+    return r; };
+  /* a job saved with seniority "executive" is the Executive level (the counts above count it there too) */
+  var jobCardP1b = jobCard;
+  jobCard = function (j) { return jobCardP1b(j && j.seniority === 'executive' ? Object.assign({}, j, { seniority: 'exec' }) : j); };
+
+  /* My Intents (B-06): kept with my profile (profiles.intents, 0035) — a new member starts with nothing chosen; never this browser's storage */
+  var INT_CATS = ['api', 'cosmetic', 'supplement', 'packaging', 'cmo', 'equipment', 'license', 'service', 'job', 'training'], INT_V = ['i-have', 'i-need', 'both', 'na'];
+  var INT_SHORT = { api: '📦 APIs', cosmetic: '💄 Cosmetic Ingredients', supplement: '🥗 Supplements', packaging: '📦 Packaging', cmo: '🏭 CMO', equipment: '⚙️ Equipment', license: '📋 Licenses', service: '🛠️ Services', job: '🏢 Jobs', training: '📚 Training' };
+  function cleanIntents(o) { var r = {}; Object.keys(o || {}).forEach(function (k) { if (INT_CATS.indexOf(k) >= 0 && INT_V.indexOf(o[k]) >= 0) r[k] = o[k]; }); return r; }
+  var kitP1b = window.dxKitHook;
+  window.dxKitHook = function (op, k, v) {
+    if (k === 'intents' && ME_UUID) {
+      if (op === 'get') return Object.assign({}, window.ME.intents || {});
+      var val = cleanIntents(v), prev = window.ME.intents; window.ME.intents = val;
+      sb.from('profiles').update({ intents: val }).eq('id', ME_UUID).then(function (r) { if (r.error) { window.ME.intents = prev; toastErr(r.error); } });
+      return true;
+    }
+    return kitP1b ? kitP1b(op, k, v) : undefined;
+  };
+  function paintIntents() {
+    var tab = document.getElementById('tab-intents'); if (!tab || !ME_UUID) return;
+    var mine = window.ME.intents || {};
+    [].forEach.call(tab.querySelectorAll('.cat-intent-row'), function (row) { var v = mine[row.dataset.cat];
+      [].forEach.call(row.querySelectorAll('.it-opt'), function (o) { var on = !!v && o.classList.contains(v); if (o.classList.contains('active') !== on) o.classList.toggle('active', on); }); });
+    /* "How this appears on your profile": the same tags the page draws when a choice is clicked */
+    var box = tab.querySelector('#profilePreviewTags'); if (!box) return; var tags = [];
+    [].forEach.call(tab.querySelectorAll('.cat-intent-row'), function (row) { var a = row.querySelector('.it-opt.active'); if (!a || a.classList.contains('na')) return;
+      var cls = a.classList.contains('i-have') ? 'have' : a.classList.contains('i-need') ? 'need' : 'both';
+      var name = INT_SHORT[row.dataset.cat] || origT(row.querySelector('.cir-name')).trim(), what = origT(a).replace(/\s+/g, ' ').trim().replace(/^\S+\s*/, '');
+      tags.push('<span class="pp-tag ' + cls + '">' + esc2(name.replace(/^\S+\s/, cls === 'both' ? '↔️ ' : cls === 'need' ? '🔍 ' : name.split(' ')[0] + ' ')) + ': ' + esc2(cls === 'both' ? 'Both' : what) + '</span>'); });
+    var html = tags.join('') || '<span style="color:#94a3b8;font-size:12px">Nothing selected yet</span>';
+    box.innerHTML = html;   /* always: the page's own clicks redraw this box too */
+  }
+  var oMarketP1b = window.renderMarket;
+  window.renderMarket = function () { var r = oMarketP1b.apply(this, arguments); if (ME_UUID) { paintIntents(); tickerSoon(120000); } return r; };
+  var hookP1b = window.dxLiveHook;   /* a listing just published: the ticker shows it */
+  window.dxLiveHook = function (kind, d) { var r = hookP1b ? hookP1b(kind, d) : undefined; if (kind === 'listing' && ME_UUID) setTimeout(function () { TK.at = 0; tickerSoon(0); }, 1500); return r; };
+
+  /* profile numbers (J-SOCIAL-49): another member's connections from profile_counts(); a visit to someone's profile is recorded
+     (increment_profile_view, once per viewer — the database keeps the log), so "Profile views" counts real visitors. Post
+     impressions are not recorded by the live app, so that line is left out rather than showing a number that never moves. */
+  var PCNT = {}, PVIEW = {};
+  var putUserP1b = putUser;
+  putUser = function (p) { putUserP1b(p); if (p && PCNT[p.id] != null) { var a = aid(p.id), u = window.USERS.find(function (x) { return x.id === a; }); if (u) u.connections = PCNT[p.id]; } };
+  function paintProfCounts() {
+    if (!ME_UUID || !onPageNow('profile')) return; var u = window._profUser, id = u && uuidOf(u.id); if (!id || id === ME_UUID || PCNT[id] == null) return;
+    var st = document.querySelectorAll('#content .profile-stats .pstat-n'); if (st[1]) setNum(st[1], fmtN(PCNT[id]));
+  }
+  var oGotoP1b = window.gotoProfile;
+  window.gotoProfile = function (uid) {
+    var a = parseInt(uid, 10), u = uuidOf(a);
+    if (ME_UUID && u && u !== ME_UUID) {
+      if (!PVIEW[u]) { PVIEW[u] = 1; sb.rpc('increment_profile_view', { target: u }).then(function (r) { if (r.error) delete PVIEW[u]; }, function () { delete PVIEW[u]; }); }
+      sb.rpc('profile_counts', { p_id: u }).then(function (r) { if (r.error || !r.data) return; PCNT[u] = +r.data.connections || 0;
+        var x = window.USERS.find(function (y) { return y.id === a; }); if (x) x.connections = PCNT[u]; paintProfCounts(); }, function () {});
+    }
+    return oGotoP1b.apply(this, arguments);
+  };
+  if (window.dxCore) window.dxCore.onRender('live-prof-counts', paintProfCounts);
+  var oSideP1b = window.renderFeedSidebar;
+  if (oSideP1b) window.renderFeedSidebar = function () { var h = oSideP1b.apply(this, arguments); if (!ME_UUID || typeof h !== 'string') return h;
+    var s = h.indexOf('>Post impressions<'), ra = s < 0 ? -1 : h.lastIndexOf('<div', s), rz = s < 0 ? -1 : h.indexOf('</div>', s);
+    return ra >= 0 && rz > s ? h.slice(0, ra) + h.slice(rz + 6) : h; };
+  var oNetP1b = window.renderNetwork;
+  window.renderNetwork = function () { var r = oNetP1b.apply(this, arguments);
+    if (ME_UUID) [].forEach.call(document.querySelectorAll('#content .net-overview-item'), function (e) { if (/Post impressions/.test(origT(e))) hideEl(e); });
+    return r; };
+
+  /* Home: real members' photos beside "N professionals" (members who added one; none → no row), and no empty TODAY card */
+  PG.faces = null;
+  function facesHtml() { var f = (PG.faces || []).filter(function (p) { return safeUrl(p.avatar_url); });
+    return f.length ? '<div class="dg-faces-row">' + f.map(function (p) { return '<img src="' + window.escSrc(safeUrl(p.avatar_url)) + '" alt="">'; }).join('') + '</div>' : ''; }
+  var oHeroP1b = window.renderFeedHero;
+  if (oHeroP1b) window.renderFeedHero = function () { var h = oHeroP1b.apply(this, arguments); if (!ME_UUID || typeof h !== 'string') return h;
+    h = h.replace(/<div class="dg-faces-row">[\s\S]*?<\/div>/, facesHtml());
+    if (!/<aside class="dg-today">[\s\S]*?<li[\s>]/.test(h)) h = h.replace(/<aside class="dg-today">[\s\S]*?<\/aside>/, '');
+    return h; };
+  async function loadFaces() {
+    var r = await sb.from('profiles').select('id, avatar_url').not('avatar_url', 'is', null).order('created_at', { ascending: false }).limit(6); if (r.error) throw r.error;
+    PG.faces = r.data || []; var w = document.querySelector('#content .dg-hero .dg-faces'); if (!w) return;
+    var row = w.querySelector('.dg-faces-row'), html = facesHtml(); if (row) row.remove(); if (html) w.insertAdjacentHTML('afterbegin', html);
+  }
+  var loadMembersP1b = loadMembers;
+  loadMembers = async function () { await Promise.all([loadMembersP1b(), loadFaces().catch(function (e) { console.error(e); })]);
+    if (onPageNow('jobs')) paintJobNumbers(); };
+
+  /* the sign-in page is shown before sign-in: the anon key runs no function and reads no member data (F-26/F-27), so its sample
+     totals ("12K+ professionals", "1,200+ listings", "18 countries") and stock faces are left out rather than counted */
+  (function signInPage() {
+    var hero = document.querySelector('.lg-hero'); if (!hero) return;
+    hero.querySelectorAll('.dg-faces-row').forEach(function (r) { r.remove(); });
+    var st = hero.querySelector('.lg-stats'); if (st) st.style.display = 'none';
+    var tx = hero.querySelector('.dg-faces-tx'); if (tx && tx.querySelector('b')) tx.textContent = 'Join pharma professionals — from new graduates to industry veterans';
+  })();
+
+  /* sign-in fills the ticker; sign-out empties it */
+  var hydrateP1b = hydrateMe;
+  hydrateMe = async function (uid) { var me = await hydrateP1b(uid); TK.at = 0; tickerSoon(0); return me; };
+  onReset(function () { setTicker([]); TK.at = 0; JS.s = null; JS.at = 0; PCNT = {}; PVIEW = {}; PG.faces = null; });
+  window.dxLive.version = 'P1b';
 
 
 

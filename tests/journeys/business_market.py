@@ -310,6 +310,9 @@ def market_intents(j):
     me = lister(j, 'Intent Setter'); pg = me['page']
     with j.step("My Intents: set 'APIs & Raw Materials' to 'I have this to sell' and others to 'I need'; 'Save My Intents'"):
         t = market(j, pg, 'intents')
+        if j.live:   # a brand-new account has chosen nothing yet: no sample intents preset for it (B-06)
+            pre = pg.evaluate("[...document.querySelectorAll('#tab-intents .it-opt.active')].length")
+            j.check(pre == 0, 'a brand-new account sees %d intents already chosen (sample presets)' % pre)
         row = pg.locator('#tab-intents .cat-intent-row', has_text=re.compile(r'APIs & Raw Materials|المواد الخام')).first
         j.check(row.count(), 'no APIs & Raw Materials intent'); row.locator('.it-opt.i-have').click(); pg.wait_for_timeout(200)
         row2 = pg.locator('#tab-intents .cat-intent-row', has_text=re.compile(r'Equipment|المعدات')).first

@@ -89,3 +89,10 @@ html.dx-dark #dxCmd .cm-box{filter:invert(1) hue-rotate(180deg)}
 .in-person span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column}.in-person b{font-size:13px;color:#0E1320}.in-person small{font-size:11.5px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .in-person em{font-style:normal;font:600 11px 'JetBrains Mono',monospace;color:#64748b}   /* 4.8:1 on white (was #94a3b8, 2.6:1) */
 @media (max-width:900px){.in-grid{grid-template-columns:1fr}}
+/* My Intents on the profile — the marketplace's own intent tags (#mkx .pp-tag) */
+.dx-pintents{margin-top:12px}.dx-pi-h{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#65676b;margin-bottom:7px}
+.dx-pintents .pp-tags{display:flex;flex-wrap:wrap;gap:7px}
+.dx-pintents .pp-tag{padding:5px 12px;border-radius:16px;font-size:11.5px;font-weight:700;display:inline-block;white-space:nowrap}
+.dx-pintents .pp-tag.have{background:#f0fdf4;color:#15803d;border:1.5px solid #86efac}
+.dx-pintents .pp-tag.need{background:#fff7ed;color:#c2410c;border:1.5px solid #fed7aa}
+.dx-pintents .pp-tag.both{background:#eff6ff;color:#1d4ed8;border:1.5px solid #93c5fd}

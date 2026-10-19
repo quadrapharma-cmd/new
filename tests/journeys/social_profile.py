@@ -397,12 +397,17 @@ def honest_reach_numbers(j):
         j.nav(pg, 'network'); pg.wait_for_timeout(2000); t = j.text(pg)
         for k, pat in (('views', r'(?:Profile views|مشاهدات الملف)\s*([\d,]+)'), ('impr', r'(?:Post impressions|مرات ظهور المنشورات)\s*([\d,]+)'), ('conn', r'(?:Connections|الاتصالات)\s*([\d,]+)')):
             m = re.search(pat, t); out['net_' + k] = int(m.group(1).replace(',', '')) if m else None
+        j.nav(pg, 'profile'); pg.wait_for_timeout(1500)          # the profile header: Connections / Profile views (the second and fourth numbers)
+        st = pg.evaluate("[...document.querySelectorAll('#content .profile-stats .pstat-n')].map(e=>e.textContent.replace(/\\D/g,''))")
+        out['prof_conn'] = int(st[1]) if len(st) > 1 and st[1] else None; out['prof_views'] = int(st[3]) if len(st) > 3 and st[3] else None
         return out
     with j.step('Open the feed sidebar card and the Network numbers: the same real numbers everywhere'):
         n = numbers(); j.note('numbers', n)
         for k in ('views', 'impr', 'conn'):
             f, w = n.get('feed_' + k), n.get('net_' + k)
             j.check(f is None or w is None or f == w, '%s differ between Home (%s) and Network (%s)' % (k, f, w))
+        for k, w in (('prof_conn', 'net_conn'), ('prof_views', 'net_views')):
+            j.check(n.get(k) is None or n.get(w) is None or n[k] == n[w], '%s differ between the profile (%s) and Network (%s)' % (k[5:], n.get(k), n.get(w)))
         sample = [v for v in n.values() if v in (148, 342, 2840, 16909, 481, 87)]
         j.check(not sample, 'sample numbers shown as reach: %s' % sample)
         if j.live:

@@ -84,6 +84,9 @@ def signup_new_professional(j):
             j.nav(pg, 'feed'); t = j.text(pg)
             demo = re.findall(DEMO_PEOPLE + r'|12K\+ professionals|#EDA2025', t)
             j.check(not demo, 'Home of a brand-new account shows demo content: %s' % sorted(set(demo))[:6])
+            # the top ticker (outside #content) never shows the demo's sample offers (S-19)
+            tick = re.findall(r'Metformin HCl GMP \$5\.80/kg|Fette 1200 Tablet Press|WHO-GMP Tablets — Quadra Pharm|Ciprofloxacin HCl 2MT/month|Amoxicillin 500kg', j.text(pg, '#app'))
+            j.check(not tick, 'the ticker of a brand-new account shows demo offers: %s' % sorted(set(tick))[:4])
             badges = [b for b in sidebar_badges(pg) if b != '0']
             j.check(not badges, 'a brand-new account shows badge numbers %s' % badges)
             for page in ('network', 'messages', 'notifs'):
