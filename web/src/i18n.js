@@ -826,6 +826,43 @@
     [/^([\d,]+) jobs?$/, function (m) { return m[1] + ' ' + plural(m[1], ['وظيفة', 'وظائف']); }],
     [/^([\d,]+) profile$/, function (m) { return m[1] + ' ملف'; }]
   );
+  /* ===== AREA business: marketplace (B-06…B-10) ===== */
+  Object.assign(D, {
+    'Draft': 'مسودة', 'Edit listing': 'تعديل الإعلان', 'Title *': 'العنوان *', 'MOQ / quantity': 'الحد الأدنى / الكمية', 'Save changes': 'احفظ التغييرات', 'Listing updated': 'تم تحديث الإعلان',
+    '✅ Publish listing': '✅ انشر الإعلان', '⭐ Boost this listing': '⭐ روّج لهذا الإعلان', '⏸ Pause listing': '⏸ أوقف الإعلان مؤقتًا', '▶ Resume listing': '▶ استأنف الإعلان',
+    '🔁 Renew listing': '🔁 جدّد الإعلان', '🗑 Delete listing': '🗑 احذف الإعلان', 'Delete this listing?': 'هل تحذف هذا الإعلان؟', 'Delete listing': 'احذف الإعلان', 'Listing resumed': 'تم استئناف الإعلان',
+    'Listing paused — hidden from buyers': 'تم إيقاف الإعلان — مخفي عن المشترين', 'Draft saved — find it in My Listings': 'حُفظت المسودة — تجدها في إعلاناتي', 'Could not save the draft': 'تعذّر حفظ المسودة',
+    'Your listing is live': 'إعلانك منشور الآن', 'Expired — renew to show it again': 'انتهى — جدّده ليظهر من جديد', 'No expiry (license sale)': 'بلا انتهاء (بيع ترخيص)', 'not published': 'غير منشور',
+    'You have no listings yet — publish one with “New Listing”.': 'لا توجد لديك إعلانات بعد — انشر إعلانًا من «إعلان جديد».', 'Could not load your listings': 'تعذّر تحميل إعلاناتك', 'Could not save': 'تعذّر الحفظ',
+    'Your price *': 'سعرك *', 'Lead time': 'مدة التوريد', 'Note': 'ملاحظة', 'e.g. US$ 21 per kg': 'مثلًا: 21 دولار للكيلو', 'e.g. 2 MT': 'مثلًا: 2 طن', 'e.g. 3 weeks': 'مثلًا: 3 أسابيع',
+    'e.g. CEP and CoA available': 'مثلًا: CEP وشهادة التحليل متوفرتان', 'Could not send the quote': 'تعذّر إرسال عرض السعر', '🛒 Saved listings': '🛒 الإعلانات المحفوظة',
+    'Message *': 'الرسالة *', 'Send message': 'أرسل الرسالة', 'This is your own listing': 'هذا إعلانك', 'Saved to your list': 'تم الحفظ في قائمتك', 'Removed from saved': 'تمت الإزالة من المحفوظات',
+    'View': 'عرض', 'Claimed by the seller — not checked by Drugbox': 'يدّعيها البائع — لم يراجعها Drugbox', 'Create or claim your company page first — quotes are sent by a company': 'أنشئ صفحة شركتك أو طالب بها أولًا — عروض الأسعار تُرسل باسم شركة',
+    'Message this buyer instead — their request was posted before quotes': 'راسل هذا المشتري بدلًا من ذلك — نُشر طلبه قبل إتاحة عروض الأسعار', 'Create or claim your company page first': 'أنشئ صفحة شركتك أو طالب بها أولًا',
+    'Enter your price': 'أدخل سعرك', 'The file is larger than 10 MB': 'الملف أكبر من 10 ميجابايت', '📄 COA': '📄 شهادة التحليل', 'No certificate of analysis on this listing': 'لا توجد شهادة تحليل لهذا الإعلان',
+    'The certificate could not be opened': 'تعذّر فتح الشهادة', 'Only the listing’s owner can change it': 'صاحب الإعلان فقط يمكنه تعديله', 'view': 'مشاهدة', 'inquiry': 'استفسار', 'License': 'ترخيص', 'Listing': 'إعلان'
+  });
+  PATTERNS.unshift(
+    [/^Posted just now · (Expires in (\d+) days?|No expiry \(license sale\))$/, function (m) { return 'نُشر الآن · ' + (m[2] ? 'ينتهي خلال ' + m[2] + ' ' + unit(m[2], 'd') : 'بلا انتهاء (بيع ترخيص)'); }],
+    [/^(Posted|Renewed) (\d+) days? ago · (Expires in (\d+) days?|Expired — renew to show it again|No expiry \(license sale\))$/, function (m) { return (m[1] === 'Posted' ? 'نُشر منذ ' : 'جُدّد منذ ') + m[2] + ' ' + unit(m[2], 'd') + ' · ' + (m[4] ? 'ينتهي خلال ' + m[4] + ' ' + unit(m[4], 'd') : /Expired/.test(m[3]) ? 'انتهى — جدّده ليظهر من جديد' : 'بلا انتهاء (بيع ترخيص)'); }],
+    [/^Renewed just now · Expires in (\d+) days?$/, function (m) { return 'جُدّد الآن · ينتهي خلال ' + m[1] + ' ' + unit(m[1], 'd'); }],
+    [/^Saved (just now|(\d+) days? ago) · not published$/, function (m) { return 'حُفظ ' + (m[2] ? 'منذ ' + m[2] + ' ' + unit(m[2], 'd') : 'الآن') + ' · غير منشور'; }],
+    [/^Renewed — it shows for another (\d+) days$/, function (m) { return 'تم التجديد — يظهر ' + m[1] + ' يومًا أخرى'; }],
+    [/^Send a quote — (.+)$/, function (m) { return 'أرسل عرض سعر — ' + m[1]; }],
+    [/^Your quote goes to (.+) in Requests & deals, where they can accept it, counter or decline\.$/, function (m) { return 'يصل عرضك إلى ' + m[1] + ' في الطلبات والصفقات، حيث يمكنه قبوله أو تقديم عرض مضاد أو رفضه.'; }],
+    [/^Quote sent to (.+) — follow it in Requests & deals$/, function (m) { return 'تم إرسال عرض السعر إلى ' + m[1] + ' — تابعه في الطلبات والصفقات'; }],
+    [/^Show more \(([\d,]+) of ([\d,]+)\)$/, function (m) { return 'عرض المزيد (' + m[1] + ' من ' + m[2] + ')'; }],
+    [/^Message sent to (.+) — see Messages for the reply$/, function (m) { return 'تم إرسال الرسالة إلى ' + m[1] + ' — تابع الرد في الرسائل'; }],
+    [/^Write to (.+)$/, function (m) { return 'راسل ' + m[1]; }],
+    [/^“(.+)” is removed from the Marketplace and from your company page\.$/, function (m) { return 'سيُحذف «' + m[1] + '» من السوق ومن صفحة شركتك.'; }],
+    [/^📦 Products \((\d+)\)$/, function (m) { return '📦 المنتجات (' + m[1] + ')'; }],
+    [/^✓ (.+) \(checked\)$/, function (m) { return '✓ ' + m[1] + ' (تمت المراجعة)'; }],
+    [/^A buyer is looking for what you sell: (.+) — open the Marketplace$/, function (m) { return 'مشترٍ يبحث عمّا تبيعه: ' + m[1] + ' — افتح السوق'; }],
+    [/^New offer matching what you need: (.+) — open the Marketplace$/, function (m) { return 'عرض جديد يطابق ما تحتاجه: ' + m[1] + ' — افتح السوق'; }],
+    [/^📄 (.+) · attached$/, function (m) { return '📄 ' + m[1] + ' · مرفق'; }],
+    [/^target (.+)$/, function (m) { return 'السعر المستهدف ' + m[1]; }]
+  );
+  /* ===== /AREA business: marketplace ===== */
   PATTERNS.push([/^(.+?): ([A-Z][A-Za-z -]+) — (.+)$/, function (m) { return D[m[2]] ? m[1] + ': ' + D[m[2]] + ' — ' + m[3] : null; }]);   /* last: '<company>: Send quote — <deal>' in notifications */
   var ARROWS = { '→': '←', '←': '→' };
   function put(raw, t, r) {   /* keep the original's surrounding spaces even when its inner spacing differs */

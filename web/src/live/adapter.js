@@ -3398,7 +3398,8 @@
   supplyCard = function (p) {
     var c = supplyCardD1(p), u = p.seller || {}, co = p.co || null, docs = p.docs || [], ver = p.certs_verified || [];
     c.dataset.cat = typeOfRow(p) === 'supply' ? 'supply' : typeOfRow(p); c.dataset.dxcat = c.dataset.cat;
-    var tb = c.querySelector('.trust-bar'); if (tb) { tb.innerHTML = ((co && co.verified) || u.verified ? '<span class="ti g">✓ Verified seller</span>' : '') + ver.slice(0, 3).map(function (d) { return '<span class="ti b">✓ ' + esc2(d) + ' (checked)</span>'; }).join(''); tb.style.display = tb.innerHTML ? '' : 'none'; }
+    var tb = c.querySelector('.trust-bar'); if (tb) { tb.innerHTML = ((co && co.verified) || u.verified ? '<span class="ti g">✓ Verified seller</span>' : '') + ver.slice(0, 3).map(function (d) { return '<span class="ti b">✓ ' + esc2(d) + ' (checked)</span>'; }).join('') +
+      (p.has_coa ? '<span class="ti o" data-coa="' + (+p.id) + '" role="button" tabindex="0" style="cursor:pointer">📄 COA</span>' : ''); tb.style.display = tb.innerHTML ? '' : 'none'; }
     c.querySelectorAll('.cert-p').forEach(function (x) { if (ver.indexOf(x.textContent) < 0) x.title = 'Claimed by the seller — not checked by Drugbox'; });
     var pr = c.querySelector('.price'); if (pr) pr.textContent = priceText(p);
     var mq = c.querySelector('.moq'); if (mq) { mq.textContent = ''; if (p.moq) mq.appendChild(document.createTextNode('MOQ: ' + p.moq + ' · ')); var w = document.createElement('span'); w.setAttribute('data-noi18n', ''); w.textContent = ((FLAG[u.country] || '') + ' ' + (co ? co.name : u.name || '')).trim(); mq.appendChild(w); }
@@ -3438,6 +3439,9 @@
         if (r.error && !/duplicate/i.test(r.error.message || '')) { MK2.saved[id] = on; markSaved(); return toastErr(r.error); } MK2.savedAt = 0; window.toast(on ? 'Removed from saved' : 'Saved to your list'); });
       return; }
     var ct = e.target.closest('#mkx [data-live^="p"] .btn-contact, #mkx [data-live^="p"] .btn-contact-gold'); if (ct) { e.preventDefault(); e.stopPropagation(); contactDialog(ct.closest('[data-live]')); return; }
+    var cb = e.target.closest('#mkx [data-coa]'); if (cb) { e.preventDefault(); e.stopPropagation();
+      sb.from('products').select('coa_path').eq('id', +cb.dataset.coa).single().then(function (r) { var pth = r.data && r.data.coa_path; if (!pth) return window.toast('No certificate of analysis on this listing');
+        return sb.storage.from('documents').createSignedUrl(pth, 600).then(function (s) { if (s.error || !s.data) return window.toast('The certificate could not be opened'); window.open(s.data.signedUrl, '_blank', 'noopener'); }); }); return; }
     var qv = e.target.closest('#mkx [data-live^="p"] .dx-qv'); if (qv) { var lid = +qv.closest('[data-live]').dataset.live.slice(1); sb.rpc('listing_view', { p_id: lid }).then(function () {}, function () {}); }
   }, true);
   function findListing(id) { return MKT.products.concat(MK2.demandP).find(function (p) { return p.id === id; }); }
@@ -3446,7 +3450,7 @@
     if (p.user_id === ME_UUID) { window.toast('This is your own listing'); return; }
     sb.rpc('listing_view', { p_id: id }).then(function () {}, function () {});
     var who = (p.co && p.co.name) || (p.seller && p.seller.name) || 'the supplier';
-    window.DBK.modal({ title: 'Contact ' + who, body: '<div class="dbk-f"><label>About</label><input readonly data-noi18n value="' + esc2(p.name + ' · ' + priceText(p)) + '"></div>' +
+    window.DBK.modal({ title: 'Write to ' + who, body: '<div class="dbk-f"><label>About</label><input readonly data-noi18n value="' + esc2(p.name + ' · ' + priceText(p)) + '"></div>' +
       '<div class="dbk-f"><label for="mkMsg">Message *</label><textarea id="mkMsg" data-req rows="5">' + esc2('I am interested in "' + p.name + '". Could you share the COA / specifications, your best price and the lead time?') + '</textarea></div>',
       primary: { label: 'Send message', onClick: function (b, close) { if (!window.DBK.requireFields(b)) return false; var ok = b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
         sb.rpc('listing_contact', { p_id: id, p_body: b.querySelector('#mkMsg').value }).then(function (r) { if (ok) ok.disabled = false; if (r.error) return toastErr(r.error); close(); window.toast('Message sent to ' + who + ' — see Messages for the reply'); });
@@ -3462,6 +3466,9 @@
     var row = { user_id: ME_UUID, type: demand ? 'demand' : 'supply', category: CAT[d.type] || 'other', name: d.title, price: d.price || null, unit: demand ? null : unitOfForm(), moq: d.moq || null,
       description: d.desc || [d.lead, d.where].filter(Boolean).join(' · ') || '', docs: d.certs || [], lead_time: d.lead || null, status: status, company_id: a ? a.id : null };
     var r = await sb.from('products').insert(row).select('id').single(); if (r.error) throw new Error(friendly(r.error));
+    var fid = 'form-' + d.type, coa = window.dxMarket && window.dxMarket.coaOf && window.dxMarket.coaOf(fid);   /* the COA: private storage, linked to the listing */
+    if (coa) { try { var path = await upDoc('documents', 'listings/' + ME_UUID + '/coa-' + rid() + '.' + extOf(coa), coa);
+      var u = await sb.from('products').update({ coa_path: path }).eq('id', r.data.id); if (u.error) throw u.error; window.dxMarket.coaDone(fid); } catch (e) { toastErr(e); } }
     MKT.at = 0; ML.at = 0; PG.statsAt = 0; return r.data.id;
   }
   function rowFromDb(x) { return { id: x.id, title: x.name, em: (window.dxMarket && window.dxMarket.EM[typeOfRow(x)]) || '📦', type: typeOfRow(x), status: x.status, boosted: !!x.boosted,

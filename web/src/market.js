@@ -166,6 +166,20 @@
     return hookPrev ? hookPrev.apply(this, arguments) : undefined;
   };
 
+  /* ── the listing form's "COA / Spec sheet": a real file (kept private: only signed-in members open it from the listing) ── */
+  var COA = {};
+  document.addEventListener('click', function (e) {
+    var z = e.target.closest && e.target.closest('#mkx .form-section .upload-zone-sm'); if (!z) return;
+    var fd = z.closest('.field'), lab = orig(fd && fd.querySelector('.field-label')); if (!/COA|spec/i.test(lab)) return;
+    var f = z.closest('.form-section'), inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.pdf,.jpg,.jpeg,.png';
+    inp.addEventListener('change', function () { var file = inp.files[0]; if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { D.toast('The file is larger than 10 MB'); return; }
+      COA[f.id] = file; z.setAttribute('data-coa', '1'); z.textContent = '📄 ' + file.name + ' · attached'; });
+    inp.click();
+  });
+  window.dxMarket.coaOf = function (formId) { return COA[formId] || null; };
+  window.dxMarket.coaDone = function (formId) { delete COA[formId]; var z = document.querySelector('#' + formId + ' .upload-zone-sm[data-coa]'); if (z) { z.removeAttribute('data-coa'); z.innerHTML = '<b>Upload</b> Certificate of Analysis or spec sheet (PDF)'; } };
+
   /* ── "Quote →" on a buyer's request: a priced quote ── */
   function quoteDialog(card) {
     var t = card.querySelector('.dc-title'), tc = t ? t.cloneNode(true) : null; if (tc) tc.querySelectorAll('.role-badge').forEach(function (x) { x.remove(); });

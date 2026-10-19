@@ -24,7 +24,7 @@ def fill_ph(j, pg, ph_re, val, root='#tab-create'):
     if not el: j.notbuilt('no field "%s" in the listing form' % ph_re)
     el.fill(val); return el
 
-def create_listing(j, pg, side, fields, certs=(), draft=False):
+def create_listing(j, pg, side, fields, certs=(), draft=False, coa=None):
     """Market → Create Listing → I'm Offering / I'm Seeking → fill by placeholder → Preview → Publish (or Save as Draft)."""
     market(j, pg, 'create')
     if not pg.locator('#bigOfferBtn:visible').count():
@@ -35,6 +35,12 @@ def create_listing(j, pg, side, fields, certs=(), draft=False):
     for c in certs:
         el = pg.locator('#tab-create :is(div,span,label,button):visible', has_text=re.compile(r'^\W*%s\W*$' % re.escape(c))).first
         if el.count(): el.click()
+    if coa:   # the form's "COA / Spec sheet" takes a real file
+        z = pg.locator('#tab-create .form-section.active .upload-zone-sm:visible').first
+        j.check(z.count(), 'no COA upload in the listing form')
+        with pg.expect_file_chooser() as fc: z.click()
+        fc.value.set_files(coa); pg.wait_for_timeout(400)
+        j.check(re.search(r'attached|مرفق', z.inner_text()), 'the COA file is not shown as attached')
     mark = j.toast_mark(pg)
     if draft:
         b = pg.locator('#tab-create button:visible', has_text=re.compile(r'Save as Draft|حفظ كمسودة')); j.check(b.count(), "no 'Save as Draft'"); b.first.click(); j.settle(pg, 900)
@@ -161,9 +167,12 @@ def post_supply_listing(j):
     """A supplier posts a supply listing that buyers can find and contact."""
     me = lister(j); pg = me['page']; name = 'Metformin HCl BP/USP %s' % j.tag
     with j.step("Create Listing → I'm Offering: product, grade, price $5.80 per kg, MOQ 500 kg, origin, terms, WHO-GMP → Preview → Publish"):
-        said = create_listing(j, pg, 'offer', [(r'Metformin|product', name), (r'\$|price', '5.80'), (r'500 kg|MOQ', '500 kg'), (r'China|origin|Origin', 'Egypt — Obour'), (r'weeks|terms', '2 weeks · EXW Cairo')], certs=('WHO-GMP',))
+        said = create_listing(j, pg, 'offer', [(r'Metformin|product', name), (r'\$|price', '5.80'), (r'500 kg|MOQ', '500 kg'), (r'China|origin|Origin', 'Egypt — Obour'), (r'weeks|terms', '2 weeks · EXW Cairo')], certs=('WHO-GMP',), coa=PDF)
         j.check(any(re.search(r'live|منشور|نُشر', t) for t in said), "no 'Your listing is live'")
-        if j.live: j.check(j.wait_db("select count(*) from public.products where name=$q$%s$q$ and type='supply'" % name, 6) == '1', 'no products row for the listing')
+        if j.live:
+            j.check(j.wait_db("select count(*) from public.products where name=$q$%s$q$ and type='supply'" % name, 6) == '1', 'no products row for the listing')
+            j.check(j.wait_db("select (coa_path like 'listings/%%')::text||currency||coalesce(company_id::text,'') from public.products where name=$q$%s$q$" % name, 8) == 'trueUSD%s' % me['co']['id'],
+                    'the listing is not stored with its COA (private), currency and company')
     with j.step("'Save as Draft' a second listing: it is only in My Listings (Draft)"):
         create_listing(j, pg, 'offer', [(r'Metformin|product', 'Draft lactose %s' % j.tag), (r'\$|price', '1.20'), (r'500 kg|MOQ', '1 MT')], draft=True)
         t = my_listings(j, pg)
