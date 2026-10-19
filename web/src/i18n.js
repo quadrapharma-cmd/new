@@ -860,7 +860,7 @@
     'Allow pop-ups to open the invoice': 'اسمح بالنوافذ المنبثقة لفتح الفاتورة', 'The invoice could not be opened': 'تعذّر فتح الفاتورة', 'An invoice is issued once the payment is confirmed': 'تُصدر الفاتورة بعد تأكيد الدفع',
     'The payment failed or was declined — nothing was charged and nothing was activated. Try again from My payments': 'لم يكتمل الدفع — لم يُخصم أي مبلغ ولم يُفعَّل شيء. حاول مرة أخرى من مدفوعاتي',
     'Payment received — VIP is active (demo: no card was charged)': 'تم استلام الدفع — VIP مفعّل (نسخة تجريبية: لم تُخصم البطاقة)', 'Loading…': 'جارٍ التحميل…',
-    'Make your listing Featured': 'اجعل إعلانك مميزًا', '⭐ Make your listing Featured': '⭐ اجعل إعلانك مميزًا', 'Featured fee': 'رسوم الإعلان المميز', '⚡ BOOSTED': '⚡ مُرقّى', '⭐ FEATURED': '⭐ مميز',
+    'Make your listing Featured': 'اجعل إعلانك مميزًا', '⭐ Make your listing Featured': '⭐ اجعل إعلانك مميزًا', 'Featured fee': 'رسوم الإعلان المميز', '⚡ BOOSTED': '⚡ معزز', '⭐ FEATURED': '⭐ مميز',
     'Opening the secure Paymob page…': 'جارٍ فتح صفحة Paymob الآمنة…', 'Pay at Fawry': 'ادفع في فوري', 'Fawry reference number': 'رقم مرجع فوري', 'Pay with InstaPay': 'ادفع بإنستاباي', 'Send to': 'أرسل إلى',
     'Transfer number *': 'رقم التحويل *', 'Receipt (screenshot or PDF)': 'الإيصال (صورة أو PDF)', 'Send for confirmation': 'أرسل للتأكيد', 'From the InstaPay confirmation': 'من رسالة تأكيد إنستاباي',
     'Thank you — we confirm InstaPay transfers within one working day': 'شكرًا — نؤكد تحويلات إنستاباي خلال يوم عمل واحد', 'Pay with': 'ادفع بـ', 'Listing to promote': 'الإعلان المراد ترقيته'
@@ -872,7 +872,7 @@
     [/^Fawry reference (\d+)( · pay by (.+))?$/, function (m) { return 'مرجع فوري ' + m[1] + (m[3] ? ' · ادفع قبل ' + m[3] : ''); }],
     [/^Transfer (.+) — Drugbox confirms within one working day$/, function (m) { return 'التحويل ' + m[1] + ' — يؤكده Drugbox خلال يوم عمل'; }],
     [/^incl\. VAT (.+)$/, function (m) { return 'شامل ضريبة القيمة المضافة ' + m[1]; }],
-    [/^(Boosted|Featured) until (.+)$/, function (m) { return (m[1] === 'Boosted' ? 'مُرقّى حتى ' : 'مميز حتى ') + m[2]; }],
+    [/^(Boosted|Featured) until (.+)$/, function (m) { return (m[1] === 'Boosted' ? 'معزز حتى ' : 'مميز حتى ') + m[2]; }],
     [/^Every payment for (.+)’s plan, with its status\. Paid ones have a tax invoice \(VAT 14% included\)\.$/, function (m) { return 'كل مدفوعات خطة ' + m[1] + ' وحالتها. للمدفوع منها فاتورة ضريبية (شاملة ضريبة القيمة المضافة 14%).'; }],
     [/^You already have a Fawry reference for this \((.+)\) — pay it or find it in My payments$/, function (m) { return 'لديك بالفعل مرجع فوري لهذا (' + m[1] + ') — ادفعه أو تجده في مدفوعاتي'; }],
     [/^You already have an InstaPay payment waiting for this \((.+)\) — send the transfer from My payments$/, function (m) { return 'لديك بالفعل دفعة إنستاباي معلّقة لهذا (' + m[1] + ') — أرسل التحويل من مدفوعاتي'; }],

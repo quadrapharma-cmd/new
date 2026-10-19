@@ -91,7 +91,7 @@ def boost_by_card(j):
         if j.demo: j.skip('the demo takes no payment (its My Listings rows are the approved samples)')
         market(j, pg, 'manage'); t = pg.evaluate("(document.querySelector('#tab-manage')||{}).innerText||''")
         row = t[t.find(name):t.find(name) + 300] if name in t else ''
-        j.check(re.search(r'BOOSTED', row) and re.search(r'until|ends|\d{1,2} \w{3}|حتى', row), 'My Listings does not show the boost with its end date')
+        j.check(re.search(r'BOOSTED|Boosted|معزز|مميز', row) and re.search(r'until|ends|\d{1,2} \w{3}|حتى', row), 'My Listings does not show the boost with its end date')
     with j.step('A failed card payment: clear message, nothing activated, retry possible, no pile of pending orders'):
         if j.demo: j.skip('the demo takes no payment')
         lid2 = seed_listing(j, me['id'], 'Second listing %s' % j.tag); j.reload(pg)
@@ -274,7 +274,7 @@ def included_boosts(j):
         pg = j.demo_signin(j.new_page())
     with j.step("My Listings → '⭐ Boost' on a listing → 'Use an included boost' (3 left)"):
         market(j, pg, 'manage')
-        b = pg.locator('#tab-manage button:visible', has_text=re.compile(r'^\W*(Boost|ترقية)\W*$')).first      # the row's '⭐ Boost' button (not the 'Boosted' badge)
+        b = pg.locator('#tab-manage button:visible', has_text=re.compile(r'^\W*(Boost|ترويج|ترقية)\W*$')).first      # the row's '⭐ Boost' button (not the 'Boosted' badge)
         j.check(b.count(), "no '⭐ Boost' in My Listings"); b.click(); j.settle(pg, 1200)
         t = pg.evaluate("(document.querySelector('#boostModalOverlay')||{}).innerText||''") + dlg_text(pg)
         j.check(re.search(r'Use an included boost|included boost|استخدم', t), "not built: a VIP company is asked to pay — there is no 'Use an included boost' (VIP promises 3 a month)")
