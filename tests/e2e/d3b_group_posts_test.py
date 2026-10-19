@@ -18,11 +18,16 @@ def signup(pg, name, email):
     return pg.evaluate("dxLive.uuidOf(ME.id)")
 def groups_page(pg, gid):
     pg.evaluate("goto('feed')"); pg.wait_for_timeout(200); pg.evaluate("dxLive.loadGroups().then(()=>1)"); pg.evaluate("goto('groups')")   # fresh rows (the page itself reloads at most every 3 s)
-    return wait_for(lambda: pg.evaluate(f"!!document.querySelector('#gx .gcard[data-gid=\"{gid}\"]')"), 12)
+    ok = wait_for(lambda: pg.evaluate(f"!!document.querySelector('#gx .gcard[data-gid=\"{gid}\"]')"), 12)
+    pg.wait_for_timeout(800)   # the page draws its cards, then repaints them from the fresh rows and translates them: let it settle
+    return ok and wait_for(lambda: pg.evaluate(f"!!document.querySelector('#gx .gcard[data-gid=\"{gid}\"]')"), 6)
 def open_group(pg, gid, tab=None):
     """open the group the way its card does; wait until the discussion has loaded (or shows the private-group notice)"""
+    opened = "!!document.querySelector('#gpBox [data-pane=disc]') && !/Loading posts|جارٍ تحميل/.test(document.querySelector('#gpBox [data-pane=disc]').textContent)"
     click(pg, f'#gx .gcard[data-gid="{gid}"] .gcard-title')
-    wait_for(lambda: pg.evaluate("!!document.querySelector('#gpBox [data-pane=disc]') && !/Loading posts|جارٍ تحميل/.test(document.querySelector('#gpBox [data-pane=disc]').textContent)"), 12)
+    if not wait_for(lambda: pg.evaluate(opened), 6):   # a click that landed while the list was being repainted: click the new card once more
+        click(pg, f'#gx .gcard[data-gid="{gid}"] .gcard-title'); wait_for(lambda: pg.evaluate(opened), 12)
+    pg.wait_for_timeout(500)   # the window is translated on the next frames (Arabic)
     if tab: click(pg, f'#gpBox [data-gpt={tab}]'); pg.wait_for_timeout(300)
 def click(pg, sel, timeout=10):
     """click an element of the interface once it is there (a busy machine draws a little later)"""
