@@ -147,7 +147,9 @@
   };
 
   /* ── 4 · company profile (PDF) + QR code ── */
-  function pageUrl(co) { return 'https://' + (X().isVip(co) ? co.slug + '.drugbox.app' : 'drugbox.app/c/' + co.slug); }
+  /* a company's own address in this app (?co=<slug>): it opens the page — straight away when signed in, after signing in otherwise.
+     (A company subdomain for VIP waits for the domain.) */
+  function pageUrl(co) { var base = location.protocol === 'file:' ? 'https://drugbox.app/' : String(location.href).split('#')[0].split('?')[0]; return base + '?co=' + encodeURIComponent(co.slug); }   /* the offline demo file has no web address: the app's own */
   function qrSvg(text, size) { if (!window.qrcode) return ''; var q = window.qrcode(0, 'M'); q.addData(text); q.make(); var n = q.getModuleCount(), cell = Math.max(2, Math.floor((size || 200) / (n + 4))); return q.createSvgTag({ cellSize: cell, margin: cell * 2, scalable: true }); }
   function qrDialog(co) {
     var url = pageUrl(co), svg = qrSvg(url, 240), blob = new Blob([svg], { type: 'image/svg+xml' }), href = URL.createObjectURL(blob);
@@ -214,6 +216,14 @@
           function (e) { if (ok) ok.disabled = false; toast((e && e.message) || 'Could not send the claim'); });
         return false; } } });
   }
+  /* the company link (?co=<slug>) opens that page once the app is shown (after signing in when needed) */
+  var DEEP = (/[?&]co=([^&#]+)/.exec(location.search) || [])[1];
+  C.onRender('company-deep-link', function () {
+    if (!DEEP || !window.ME || !window.dxOpenCompany) return; var app = document.getElementById('app'); if (!app || !app.getClientRects().length) return;
+    var slug = decodeURIComponent(DEEP); DEEP = null;
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+    setTimeout(function () { if (document.body.getAttribute('data-page') !== 'companies') window.goto('companies'); window.dxOpenCompany(slug); }, 300);
+  });
   window.dxFindToll = finderDialog;
   window.dxDir2 = { bulk: function (slugs, preset) { bulkRfqDialog(slugs, preset); }, brochure: brochure, qr: qrDialog, claim: claimDialog, capOf: capOf, MONTHS: MONTHS, FORMS: FORMS, apiOf: apiOf, INN: INN, CAP: CAP };
 

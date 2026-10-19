@@ -1476,10 +1476,11 @@
     if (kind !== 'reviews') return modDecideRV(kind, id, value, note);
     var r = await sb.rpc('review_decide', { p_ref: String(id), p_keep: value === 'kept', p_note: note || null }); if (r.error) throw new Error(friendly(r.error)); return true;
   };
-  ICON.review_reply = '⭐'; ICON.review_decided = '⭐';
+  ICON.review_reply = '⭐'; ICON.review_decided = '⭐'; ICON.company_listing = '🏢';
   var notifFromRV = notifFrom;
   notifFrom = function (n) { var o = notifFromRV(n), d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return o;
     if (n.type === 'review_reply') o.text = esc2(String(d.company || 'The supplier') + ' replied to your review of ' + String(d.title || 'your order') + '.');
+    if (n.type === 'company_listing') o.text = esc2(String(d.company || 'A company you follow') + ' posted ' + (d.kind === 'surplus' ? 'surplus stock' : d.kind === 'dossier' ? 'a licensing dossier' : d.kind === 'demand' ? 'a request' : 'a new listing') + ': ' + String(d.listing || '') + '.');
     if (n.type === 'review_decided') { o.uid = SYS_UID; o.text = esc2(d.outcome === 'removed' ? 'Drugbox removed a review of ' + String(d.company || 'your company') + ' after checking it.' : 'Drugbox checked a review of ' + String(d.company || 'your company') + ' — it stays up.'); }
     return o; };
   /* buying groups (0057): a lower quantity or leaving goes through deal_member_set; a group past its closing date below its target
@@ -2376,9 +2377,10 @@
     FOL.list = (r.data || []).map(function (x) { return CO.byId[x.company_id] || sslug(x.co && x.co.slug); }).filter(Boolean); FOL.loaded = true; }
   async function syncFollows(v) {
     var now = (v || []).slice(), before = FOL.list.slice(); FOL.list = now;
-    for (var i = 0; i < now.length; i++) if (before.indexOf(now[i]) < 0) { var raw = CO.raw[now[i]]; if (raw && raw.id) { var r = await sb.from('company_followers').insert({ company_id: raw.id, user_id: ME_UUID }); if (r.error) { toastErr(r.error); return loadFollows(); } } }
-    for (var j = 0; j < before.length; j++) if (now.indexOf(before[j]) < 0) { var raw2 = CO.raw[before[j]]; if (raw2 && raw2.id) await sb.from('company_followers').delete().eq('company_id', raw2.id).eq('user_id', ME_UUID); }
+    for (var i = 0; i < now.length; i++) if (before.indexOf(now[i]) < 0) { var raw = CO.raw[now[i]]; if (raw && raw.id) { var r = await sb.from('company_followers').insert({ company_id: raw.id, user_id: ME_UUID }); if (r.error) { toastErr(r.error); return loadFollows(); } countFollow(now[i], 1); } }
+    for (var j = 0; j < before.length; j++) if (now.indexOf(before[j]) < 0) { var raw2 = CO.raw[before[j]]; if (raw2 && raw2.id) { var d2 = await sb.from('company_followers').delete().eq('company_id', raw2.id).eq('user_id', ME_UUID).select('company_id'); if (!d2.error && (d2.data || []).length) countFollow(before[j], -1); } }
   }
+  function countFollow(slug, n) { var raw = CO.raw[slug], l = live(slug); if (raw) raw.follower_count = Math.max(0, (raw.follower_count || 0) + n); if (l) l.followers = Math.max(0, (l.followers || 0) + n); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies(); }   /* the page's count follows (the database's counter does the same) */
   var hookFol = window.dxStoreHook;
   window.dxStoreHook = function (k, v) {
     if (ME_UUID && k === 'follows') { if (v === undefined) return FOL.list.slice(); syncFollows(v).catch(toastErr); return true; }
@@ -2587,7 +2589,7 @@
     var o = coFromC1(c), pr = c.profile || {}, cc = coCertsOf(c.slug);
     o.products = (c.products || []).map(prodFrom);
     if (c.mine && !o.owner && CO.roles[c.id]) o.memberIds = [window.ME.id];
-    o.nameAr = txt(c.name_ar);                                                     /* the Arabic name is searched and shown (hub-data nameAr) */   /* a member of the team (sales, quality…): the company is theirs to act for, not to edit */
+    o.nameAr = txt(c.name_ar); o.followers = +c.follower_count || 0;                                                     /* the Arabic name is searched and shown (hub-data nameAr) */   /* a member of the team (sales, quality…): the company is theirs to act for, not to edit */
     o.logo = mediaUrl(c.logo_url) || null; o.cover = mediaUrl(c.cover_url) || null;
     if (cc.length) { o.certs = cc.filter(function (x) { return x.checked; }).map(function (x) { return txt(x.name); });
       o.certsPending = cc.filter(function (x) { return !x.checked; }).map(function (x) { return { name: txt(x.name), _id: x.id, at: 0 }; }); }

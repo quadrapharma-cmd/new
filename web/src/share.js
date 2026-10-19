@@ -5,7 +5,9 @@
   function idle(fn) { var p = false; return function () { if (p) return; p = true; (window.requestIdleCallback || function (cb) { return setTimeout(cb, 1); })(function () { p = false; try { fn(); } catch (e) {} }, { timeout: 400 }); }; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function orig(el) { return el ? (window.dxOrigText ? window.dxOrigText(el) : el.textContent).replace(/\s+/g, ' ').trim() : ''; }
-  function pageUrl(co) { return 'https://' + (window.dxDir && window.dxDir.isVip && window.dxDir.isVip(co) ? co.slug + '.drugbox.app' : 'drugbox.app/c/' + co.slug); }
+  /* a company's own address in this app (?co=<slug>): it opens the page — straight away when signed in, after signing in otherwise.
+     (A company subdomain for VIP waits for the domain.) */
+  function pageUrl(co) { var base = location.protocol === 'file:' ? 'https://drugbox.app/' : String(location.href).split('#')[0].split('?')[0]; return base + '?co=' + encodeURIComponent(co.slug); }   /* the offline demo file has no web address: the app's own */
   var SHARE_IC = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" stroke="currentColor" stroke-width="2"/></svg>';
   /* ── the card image ── */
   var logoImg = null; function logo() { if (logoImg) return logoImg; try { if (typeof LOGO_ICON !== 'undefined') { logoImg = new Image(); logoImg.src = LOGO_ICON; } } catch (e) {} return logoImg; }

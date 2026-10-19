@@ -420,6 +420,14 @@ def share_company(j):
         else: j.check(u.query or u.fragment, 'not built: the shared link %s cannot open the page — the app has no deep link to a company page (no /c/<slug> or ?co= route)' % link)
         v = j.new_page(url=False)
         j.open(v, (j.url + ('?' + u.query if u.query else '') + ('#' + u.fragment if u.fragment else '')) if j.demo else link); j.settle(v, 2000)
-        j.check(name in j.text(v, 'body'), 'the shared link does not open the company page for a signed-out visitor (%s)' % link[:80])
+        if j.on_login(v):
+            # JOURNEYS.md J-BUSINESS-10: the link opens the page for an outside visitor "or, after signing in, reaches it". A page for
+            # visitors who do not sign in (anonymous public company pages) waits on the owner's decision; after signing in it must open.
+            j.data['visitor'] = 'sign-in first (anonymous public pages wait on the owner)'
+            if j.demo: j.demo_signin(v)
+            else:
+                nm = 'Link Visitor'; j.signup(v, nm)
+            j.settle(v, 2500)
+        j.check(name in j.text(v, 'body'), 'the shared link does not open the company page (%s)' % link[:80])
 
 if __name__ == '__main__': main(__file__)

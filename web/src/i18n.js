@@ -777,6 +777,8 @@
     [/^You joined · ([\d,]+) (.+)$/, function (m) { return 'انضممت · ' + m[1] + ' ' + m[2]; }],
     [/^(.+) left the group$/, function (m) { return 'غادرت ' + m[1] + ' المجموعة'; }],
     [/^(.+) now takes ([\d,]+)$/, function (m) { return 'حصة ' + m[1] + ' الآن ' + m[2]; }],
+    [/^([\d,]+) followers?$/, function (m) { return m[1] + ' ' + (m[1] === '1' ? 'متابع' : plural(m[1], ['متابع', 'متابعين'])); }],
+    [/^(.+) posted (surplus stock|a licensing dossier|a request|a new listing): (.*)\.$/, function (m) { return 'نشرت ' + m[1] + ' ' + { 'surplus stock': 'مخزونًا فائضًا', 'a licensing dossier': 'ملف تسجيل للترخيص', 'a request': 'طلبًا', 'a new listing': 'إعلانًا جديدًا' }[m[2]] + ': ' + m[3] + '.'; }],
     [/^(.+) attached$/, function (m) { return 'تم إرفاق ' + m[1]; }],
     [/^(PO|CoA|Invoice|Specification|NDA|Data room|Deliverable|Questionnaire evidence|Other): (.+)$/, function (m) { return (D[m[1]] || m[1]) + ': ' + m[2]; }],
     [/^(.+) replied to your review of (.+)\.$/, function (m) { return 'ردّت ' + m[1] + ' على تقييمك لـ ' + m[2] + '.'; }],
