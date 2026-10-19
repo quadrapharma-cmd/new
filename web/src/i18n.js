@@ -619,6 +619,122 @@
     'No conversations yet.': 'لا توجد محادثات بعد.', 'No conversations yet': 'لا توجد محادثات بعد', "Open someone's profile and press Message.": 'افتح ملف أحد الأعضاء واضغط «رسالة».',
     'To *': 'إلى *', 'Connected! 🤝': 'تم الاتصال! 🤝', 'Choose your specialty…': 'اختر تخصصك…'
   });
+  /* phase 1b: the Arabic leftovers on the pages phase 1 touched — company pages, the create wizard, the marketplace (create, intents,
+     my listings), messages, Admin → Review (P1b polish). Interface words only; what members wrote stays as written. */
+  Object.assign(D, {
+    /* company page, workspace and the create wizard */
+    'Owner': 'المالك', 'No description yet.': 'لا يوجد وصف بعد.', 'No credentials listed.': 'لا توجد اعتمادات مدرجة.', 'No live listings.': 'لا توجد إعلانات حالية.',
+    'No open positions.': 'لا توجد وظائف متاحة.', 'Do it': 'نفّذ', 'Reply to a request or update your page to show as Active.': 'رد على طلب أو حدّث صفحتك لتظهر كنشطة.',
+    'Tell buyers what you make or offer.': 'أخبر المشترين بما تصنعه أو تقدّمه.', 'View in Marketplace': 'اعرض في السوق', 'Still correct': 'لا تزال صحيحة',
+    'May be outdated': 'قد تكون قديمة', 'Thanks — marked as up to date': 'شكرًا — عُلّمت كمحدّثة', 'Licensing': 'ترخيص',
+    'A company exists once on Drugbox. Search first — if it is already here, claim it instead of creating a copy.': 'كل شركة موجودة مرة واحدة على Drugbox. ابحث أولًا — إن كانت موجودة فطالب بها بدلًا من إنشاء نسخة.',
+    'Company name': 'اسم الشركة', 'Arabic or English': 'بالعربية أو الإنجليزية', 'My company is not listed — create it': 'شركتي غير مدرجة — أنشئها',
+    'Company legal name *': 'الاسم القانوني للشركة *', 'Main activity *': 'النشاط الرئيسي *', 'Governorate *': 'المحافظة *', 'City / area *': 'المدينة / المنطقة *',
+    'Company phone *': 'الهاتف للشركة *', 'Company email *': 'البريد الإلكتروني للشركة *', 'Next: review': 'التالي: المراجعة', 'Create my page': 'أنشئ صفحتي',
+    'Claim': 'طالب بها', 'Open workspace': 'افتح مساحة العمل', 'Ask to join the team': 'اطلب الانضمام للفريق',
+    'Subtotal': 'المجموع الفرعي', 'VAT 14%': 'ضريبة القيمة المضافة 14%', 'Total': 'الإجمالي', 'Bank transfer': 'تحويل بنكي', 'Demo — no payment is taken.': 'نسخة تجريبية — لا يُخصم أي مبلغ.',
+    /* the company workspace (found by the Arabic sweep of its tabs) */
+    'Nothing yet': 'لا شيء بعد', 'No requests yet.': 'لا توجد طلبات بعد.', 'No listings yet.': 'لا توجد إعلانات بعد.', 'Not verified yet.': 'غير موثّقة بعد.',
+    'Documents received — being checked.': 'استلمنا المستندات — قيد الفحص.', 'Get verified': 'وثّق شركتك', 'Get VIP': 'احصل على VIP',
+    'Appear in the Sponsored row of the directory, with your own link and Marketplace boosts. It never changes search order or trust.': 'اظهر في صف الشركات المُموَّلة في الدليل، برابطك الخاص وترويج إعلاناتك في السوق. لا يغيّر ذلك ترتيب البحث ولا الثقة أبدًا.',
+    'Verification': 'التوثيق', 'Plan': 'الخطة','Optional, later — from your page (gives the Verified badge)': 'اختياري، لاحقًا — من صفحتك (يمنح شارة «موثّق»)',
+    /* Admin → Review */
+    'Review': 'المراجعة', '🛡️ Review': '🛡️ المراجعة', 'Decisions here change what everyone sees — verification, published warnings, level 3.': 'القرارات هنا تغيّر ما يراه الجميع — التوثيق والتحذيرات المنشورة والمستوى 3.',
+    'Verification requests': 'طلبات التوثيق', 'Warning references': 'مراجع التحذير', 'Site certificates': 'شهادات المواقع', 'Company reports': 'بلاغات الشركات',
+    'Mark checked': 'علّم كمراجَعة', 'Could not save the decision': 'تعذّر حفظ القرار', 'Documents open in the live app': 'تُفتح المستندات في التطبيق الفعلي',
+    'It will not be published.': 'لن يُنشر.', 'Mark this transfer as not received?': 'هل تعلّم هذا التحويل كغير مستلَم؟', 'Reject this reference?': 'هل ترفض هذه المرجعية؟',
+    'The company page stays as it is.': 'تبقى صفحة الشركة كما هي.', 'The order stays unpaid.': 'يبقى الطلب غير مدفوع.', 'The registry document is not readable': 'مستند السجل غير مقروء',
+    'admin': 'مدير', 'user': 'مستخدم',   /* the role pills on Admin → Users */
+    'Admin access required': 'يلزم صلاحية الإدارة', 'Your account is not allowed here — Admin is for Drugbox staff.': 'غير مسموح لحسابك هنا — الإدارة لفريق Drugbox فقط.',
+    /* messages */
+    'To *': 'إلى *', 'No conversations yet.': 'لا توجد محادثات بعد.', 'No conversations yet': 'لا توجد محادثات بعد', "Open someone's profile and press Message.": 'افتح ملف أحد الأعضاء واضغط «مراسلة».',
+    'Choose a conversation': 'اختر محادثة', 'Connected! 🤝': 'تم الاتصال! 🤝',
+    /* marketplace: browse */
+    'No supply listings yet — be the first to post one.': 'لا توجد إعلانات عرض بعد — كن أول من ينشر واحدًا.', '⚙ Filters': '⚙ الفلاتر', '✕ Close filters': '✕ أغلق الفلاتر',
+    'Filters': 'الفلاتر', 'Filters reset': 'أُعيد ضبط الفلاتر', 'Contact Supplier': 'تواصل مع المورّد', 'Request Quote': 'اطلب عرض سعر',
+    /* marketplace: create a listing */
+    'Create a Listing': 'أنشئ إعلانًا', 'Step 1 of 2 — Are you seeking or offering?': 'الخطوة 1 من 2 — هل تبحث أم تعرض؟', 'Step 2 of 2 — Choose a category': 'الخطوة 2 من 2 — اختر فئة',
+    'Are you seeking something, or offering something?': 'هل تبحث عن شيء أم تعرض شيئًا؟', "I'm Offering": 'أعرض', 'I have something to give': 'لدي ما أقدّمه',
+    "I'm Seeking": 'أبحث', 'I need something': 'أحتاج شيئًا', 'Draft auto-saved — you can leave and continue anytime from "My Listings"': 'حُفظت المسودة تلقائيًا — يمكنك المغادرة والمتابعة في أي وقت من «إعلاناتي»',
+    '← Change': '→ تغيير', 'New Supply Listing': 'إعلان عرض جديد', 'For raw materials, APIs, excipients & finished products': 'للمواد الخام والمواد الفعالة والسواغات والمنتجات النهائية',
+    'Material / Product name': 'اسم المادة / المنتج', 'Pharmacopoeia Grade': 'درجة دستور الأدوية', 'Price per unit': 'السعر للوحدة', 'per kg': 'للكيلوجرام', 'per ton': 'للطن', 'per unit': 'للوحدة',
+    'MOQ': 'الحد الأدنى للطلب', 'Certifications available': 'الشهادات المتاحة', 'Selected certs show as "claimed" until you upload proof for verification': 'تظهر الشهادات المختارة «مُدّعاة» حتى ترفع ما يثبتها للتوثيق',
+    'Origin country / Manufacturing site': 'بلد المنشأ / موقع التصنيع', 'Lead time & shipping terms': 'مدة التوريد وشروط الشحن', 'COA / Spec sheet': 'شهادة التحليل / المواصفات', 'Upload': 'ارفع',
+    'Certificate of Analysis or spec sheet (PDF)': 'شهادة التحليل أو ورقة المواصفات (PDF)', 'Save as Draft': 'احفظ كمسودة', 'Preview Listing': 'معاينة الإعلان',
+    'New Demand Request': 'طلب شراء جديد', "Tell suppliers exactly what you're looking for": 'أخبر المورّدين بما تبحث عنه بالضبط', 'What are you looking for?': 'عمّ تبحث؟',
+    'Quantity needed': 'الكمية المطلوبة', 'Contract type': 'نوع التعاقد', 'One-time order': 'طلب لمرة واحدة', 'Annual contract': 'عقد سنوي', 'Trial order first': 'طلب تجريبي أولًا',
+    'Required certifications': 'الشهادات المطلوبة', 'Target price (optional)': 'السعر المستهدف (اختياري)', 'Urgency': 'الاستعجال', 'Flexible': 'مرن', 'This month': 'هذا الشهر', 'Urgent': 'عاجل',
+    'Additional details': 'تفاصيل إضافية', 'New CMO Listing': 'إعلان تصنيع لدى الغير جديد', 'For contract & toll manufacturing facilities': 'لمنشآت التصنيع التعاقدي والتصنيع لدى الغير',
+    'Facility / Service name': 'اسم المنشأة / الخدمة', 'Dosage forms produced': 'الأشكال الصيدلانية المنتجة', 'Liquids': 'سوائل', 'Creams/Ointments': 'كريمات/مراهم', 'Injectables': 'حقن',
+    'Annual capacity': 'الطاقة السنوية', 'Min. batch size': 'أقل حجم تشغيلة', 'Facility certifications': 'شهادات المنشأة', 'Services included': 'الخدمات المشمولة', 'Tech transfer': 'نقل التقنية',
+    'NDA filing support': 'دعم تقديم ملفات التسجيل', 'Custom packaging': 'تعبئة حسب الطلب', 'Export markets covered': 'أسواق التصدير المغطاة', 'Facility photos / GMP certificate': 'صور المنشأة / شهادة GMP',
+    'facility photos and certification documents': 'صور المنشأة ومستندات الشهادات', 'List Equipment': 'أدرج معدات', 'For machinery, lab instruments & production equipment': 'للآلات وأجهزة المعامل ومعدات الإنتاج',
+    'Equipment name': 'اسم المعدة', 'Tablet Press': 'مكبس أقراص', 'Filling Line': 'خط تعبئة', 'Lab Instrument': 'جهاز معمل', 'Packaging Machine': 'ماكينة تغليف', 'Condition': 'الحالة',
+    'Used': 'مستعمل', 'Refurb.': 'مُجدَّد', 'Manufacture year': 'سنة الصنع', 'Capacity / Output': 'الطاقة / الإنتاج', 'Asking price': 'السعر المطلوب', 'Validation documents available': 'مستندات التأهيل المتاحة',
+    'Service history': 'سجل الصيانة', 'CE Marking': 'علامة CE', 'Location / Pickup': 'الموقع / الاستلام', 'Photos of equipment': 'صور المعدة', 'multiple angles + service records': 'زوايا متعددة + سجلات الصيانة',
+    'Sell a License / Registration': 'بيع ترخيص / تسجيل', 'For product registrations, trademarks & regulatory dossiers': 'لتسجيلات المنتجات والعلامات التجارية وملفات التسجيل',
+    'Product / Registration name': 'اسم المنتج / التسجيل', 'Registering authority': 'جهة التسجيل', 'EDA (Egypt)': 'هيئة الدواء (مصر)', 'SFDA (Saudi)': 'SFDA (السعودية)', 'DHA (Dubai)': 'DHA (دبي)',
+    'MOHAP (UAE)': 'MOHAP (الإمارات)', 'Registration status': 'حالة التسجيل', 'Active & valid': 'سارٍ وصالح', 'Pending renewal': 'بانتظار التجديد', 'Dossier only': 'الملف فقط',
+    "What's included in the sale": 'ما يشمله البيع', 'Brand name rights': 'حقوق الاسم التجاري', 'Formula/dossier': 'التركيبة/الملف', 'Manufacturing rights': 'حقوق التصنيع', 'Trademark': 'العلامة التجارية',
+    'Transfer terms': 'شروط النقل', 'Registration certificate': 'شهادة التسجيل', 'official registration document for verification': 'مستند التسجيل الرسمي للتوثيق',
+    'Offer a Service': 'قدّم خدمة', 'For consulting, regulatory, lab testing & advisory services': 'للاستشارات والتسجيل والتحاليل المعملية والخدمات الاستشارية', 'Service name': 'اسم الخدمة',
+    'Service category': 'فئة الخدمة', 'Regulatory & Registration': 'الشؤون التنظيمية والتسجيل', 'Lab Testing': 'التحاليل المعملية', 'QA/QC Consulting': 'استشارات ضمان/مراقبة الجودة',
+    'Dossier Preparation': 'إعداد الملفات', 'Pricing model': 'نموذج التسعير', 'Per project': 'للمشروع', 'Per hour/day': 'للساعة/لليوم', 'Free consult': 'استشارة مجانية',
+    'Your experience / track record': 'خبرتك / سجل أعمالك', 'Coverage area': 'نطاق التغطية', 'RAC Certified': 'حاصل على RAC', 'Description of service': 'وصف الخدمة',
+    'For full-time, part-time, or contract positions': 'لوظائف الدوام الكامل أو الجزئي أو التعاقد', 'Job title': 'المسمى الوظيفي', 'Employment type': 'نوع التوظيف', 'Salary': 'الراتب',
+    'Show range': 'اعرض النطاق', '"Competitive" (hidden)': '«تنافسي» (مخفي)', 'EDA Knowledge': 'معرفة بهيئة الدواء', 'GMP Auditing': 'تدقيق GMP', 'Job description & responsibilities': 'الوصف الوظيفي والمسؤوليات',
+    'Create a Course': 'أنشئ دورة', 'For workshops, certifications & training programs': 'لورش العمل والشهادات والبرامج التدريبية', 'Course title': 'عنوان الدورة', 'Format': 'الشكل',
+    'In-person': 'حضوري', 'Hybrid': 'مدمج', 'Duration': 'المدة', 'Course date(s)': 'تاريخ (تواريخ) الدورة', 'Max participants': 'أقصى عدد مشاركين', 'Price per seat': 'السعر للمقعد',
+    'Topics covered': 'الموضوعات المغطاة', 'CTD Structure': 'هيكل CTD', 'Stability Studies': 'دراسات الثبات', 'Ministerial Decree 122': 'القرار الوزاري 122',
+    'Certificate provided on completion?': 'هل تُمنح شهادة عند الإتمام؟', 'Yes': 'نعم', 'No': 'لا', 'Instructor credentials': 'مؤهلات المحاضر',
+    'Helps suppliers quote accurately': 'يساعد المورّدين على التسعير بدقة', 'Any other specs, preferred origin, etc.': 'أي مواصفات أخرى أو منشأ مفضّل وغير ذلك',
+    'Negotiable, or specify amount': 'قابل للتفاوض، أو حدّد المبلغ', '📅 Select date(s)': '📅 اختر التاريخ (التواريخ)',
+    /* marketplace: my intents */
+    'My Marketplace Intents': 'أهدافي في السوق', 'Tell Drugbox what you have and what you need, per category — this powers your matches, your feed, and what shows on your profile.': 'أخبر Drugbox بما لديك وما تحتاجه في كل فئة — هذا يحدد ما يطابقك وما يظهر في خلاصتك وفي ملفك.',
+    'How to read every toggle below': 'كيف تقرأ كل اختيار بالأسفل', 'One side always means': 'أحد الجانبين يعني دائمًا', '"I already HAVE this / I provide this"': '«لدي هذا بالفعل / أقدّم هذا»',
+    '— shown in green. The other side always means': '— ويظهر بالأخضر. والجانب الآخر يعني دائمًا', '"I NEED this / I\'m looking for this"': '«أحتاج هذا / أبحث عن هذا»',
+    '— shown in orange. Every label is written in plain words from your point of view — never abstract "Offer" or "Seek" alone.': '— ويظهر بالبرتقالي. كل عنوان مكتوب بكلمات بسيطة من وجهة نظرك — لا «عرض» أو «طلب» مجردين.',
+    'Set all to "I have / provide"': 'اجعل الكل «لدي / أقدّم»', 'Set all to "I need"': 'اجعل الكل «أحتاج»', 'Set all to "Both"': 'اجعل الكل «الاثنان»',
+    'Materials & Products': 'المواد والمنتجات', 'APIs & Raw Materials': 'المواد الفعالة والخامات', 'e.g. Metformin HCl, Neomycin Sulphate': 'مثلًا Metformin HCl وNeomycin Sulphate',
+    'I have this to sell': 'لدي هذا للبيع', 'I need to buy this': 'أحتاج شراء هذا', 'Both': 'الاثنان', 'Cosmetic Ingredients': 'مكونات التجميل', 'e.g. Hyaluronic Acid, Niacinamide': 'مثلًا Hyaluronic Acid وNiacinamide',
+    'Supplement Ingredients': 'مكونات المكملات', 'e.g. vitamins, nutraceutical raw materials': 'مثلًا الفيتامينات وخامات المكملات الغذائية', '— Not active here': '— غير نشط هنا',
+    'Packaging Materials': 'مواد التعبئة والتغليف', 'e.g. blister packs, cartons, labels': 'مثلًا البلستر والكرتون والملصقات', 'Facilities & Equipment': 'المنشآت والمعدات',
+    'CMO / Contract Manufacturing': 'التصنيع لدى الغير / التعاقدي', "e.g. your facility's production capacity": 'مثلًا الطاقة الإنتاجية لمنشأتك', 'I have a facility to offer': 'لدي منشأة أعرضها',
+    'I need a manufacturer': 'أحتاج مصنّعًا', 'e.g. tablet presses, lab instruments': 'مثلًا مكابس الأقراص وأجهزة المعامل', 'I have one to sell': 'لدي واحدة للبيع', 'I want to buy one': 'أريد شراء واحدة',
+    'IP & Regulatory': 'الملكية الفكرية والتسجيل', 'Licenses & Registrations': 'التراخيص والتسجيلات', 'e.g. product registration for sale': 'مثلًا تسجيل منتج للبيع', "I'm selling a registration": 'أبيع تسجيلًا',
+    'Professional Services': 'الخدمات المهنية', 'e.g. EDA registration, QA consulting': 'مثلًا التسجيل في هيئة الدواء واستشارات الجودة', 'I provide this service': 'أقدّم هذه الخدمة',
+    'I need this service': 'أحتاج هذه الخدمة', 'Career & Knowledge': 'المهنة والمعرفة', 'Are you hiring, or are you the candidate?': 'هل توظّف أم أنت المرشّح؟', 'I need to hire someone': 'أحتاج توظيف أحد',
+    "I'm looking for a job": 'أبحث عن وظيفة', 'Training & Courses': 'التدريب والدورات', 'Are you the instructor, or the student?': 'هل أنت المحاضر أم المتدرّب؟', 'I teach this course': 'أقدّم هذه الدورة',
+    'I want to take a course': 'أريد حضور دورة', 'How this appears on your profile': 'كيف يظهر هذا في ملفك', 'Save My Intents': 'احفظ أهدافي', 'Nothing selected yet': 'لم تختر شيئًا بعد',
+    'APIs': 'المواد الفعالة', 'CMO': 'التصنيع لدى الغير',
+    /* marketplace: my listings */
+    'Manage Listings': 'إدارة الإعلانات', 'Manage, edit, boost or remove your active listings': 'أدِر إعلاناتك النشطة: عدّلها أو روّج لها أو احذفها', 'New Listing': 'إعلان جديد',
+    'Active Listings': 'الإعلانات النشطة', 'Total Views': 'إجمالي المشاهدات', 'Inquiries': 'الاستفسارات', 'Renew Now': 'جدّد الآن', 'Expiring soon': 'ينتهي قريبًا', 'Paused': 'متوقف مؤقتًا', 'Resume': 'استأنف',
+    'views': 'مشاهدات', 'inquiries': 'استفسارات', 'not verified': 'غير موثّقة', 'License': 'ترخيص', 'Service': 'خدمة'
+  });
+  PATTERNS.unshift(
+    [/^Some information on this page was last updated more than 6 months ago \((.+)\)\.$/, function (m) { return 'آخر تحديث لبعض المعلومات في هذه الصفحة كان منذ أكثر من 6 أشهر (' + secs(m[1]) + ').'; }],
+    [/^Please review: (.+) \(older than 6 months\)\.$/, function (m) { return 'يُرجى المراجعة: ' + secs(m[1]) + ' (أقدم من 6 أشهر).'; }],
+    [/^May be outdated · (Source: .+)$/, function (m) { return 'قد تكون قديمة · ' + tr(m[1]); }],
+    [/^What's on your mind, (.+)\?$/, function (m) { return 'بماذا تفكر يا ' + m[1] + '؟'; }],
+    [/^(.+) is live( on VIP)? — add your products and details$/, function (m) { return m[1] + ' أصبحت متاحة' + (m[2] ? ' بخطة VIP' : '') + ' — أضف منتجاتك وتفاصيلك'; }],
+    [/^Create a company page · (\d) of 3 — (choose a plan|company details|review|review and pay)$/, function (m) { return 'أنشئ صفحة شركة · ' + m[1] + ' من 3 — ' + ({ 'choose a plan': 'اختر خطة', 'company details': 'بيانات الشركة', review: 'المراجعة', 'review and pay': 'المراجعة والدفع' })[m[2]]; }],
+    [/^(\d) of 3 — (choose a plan|company details|review|review and pay)$/, function (m) { return m[1] + ' من 3 — ' + ({ 'choose a plan': 'اختر خطة', 'company details': 'بيانات الشركة', review: 'المراجعة', 'review and pay': 'المراجعة والدفع' })[m[2]]; }],
+    [/^(\S+) ([A-Z][A-Za-z ]*): (.+)$/, function (m) { var a = D[m[2]], b = D[m[3]] || D[m[3].replace(/^\S+\s+/, '')]; return a && b ? m[1] + ' ' + a + ': ' + b : null; }],   /* "📦 APIs: I have this to sell" on the intents preview */
+    [/^Posted (\d+) days? ago · (Expires in (\d+) days?|No expiry)(.*)$/, function (m) { return 'نُشر منذ ' + m[1] + ' ' + unit(m[1], 'd') + ' · ' + (m[3] ? 'ينتهي خلال ' + m[3] + ' ' + unit(m[3], 'd') : 'بلا انتهاء') + (m[4] ? ' ' + m[4].trim().replace('(90-day CMO cycle)', '(دورة تصنيع لدى الغير 90 يومًا)').replace('(license sale)', '(بيع ترخيص)') : ''); }],
+    [/^Expiry notice: "(.+)" expires in (\d+) days? — listings auto-expire to keep the marketplace fresh$/, function (m) { return 'تنبيه انتهاء: «' + m[1] + '» ينتهي خلال ' + m[2] + ' ' + unit(m[2], 'd') + ' — تنتهي الإعلانات تلقائيًا ليبقى السوق محدّثًا'; }],
+    [/^No\. (\d+)$/, function (m) { return 'رقم ' + m[1]; }],
+    [/^(.+) · (not claimed yet|managed by its team)$/, function (m) { return m[1] + ' · ' + (m[2] === 'not claimed yet' ? 'لم يطالب بها أحد بعد' : 'يديرها فريقها'); }],   /* 'Add or claim your company' results */
+    [/^Pay EGP ([\d,]+) and create$/, function (m) { return 'ادفع ' + m[1] + ' ج.م وأنشئ الصفحة'; }],   /* the create wizard, VIP */
+    [/^(VIP|Basic|Free) · (monthly|yearly|month|year)$/, function (m) { return (D[m[1]] || m[1]) + ' · ' + ({ monthly: 'شهري', month: 'شهري', yearly: 'سنوي', year: 'سنوي' })[m[2]]; }],
+    [/^(\S+) ([A-Z][A-Za-z]+) …$/, function (m) { return D[m[2]] ? m[1] + ' ' + D[m[2]] + ' …' : null; }],   /* a filter's name while its count loads */
+    [/^Service by (.+)$/, function (m) { return 'خدمة من ' + m[1]; }],
+    [/^messaged (.+?): (.+)$/, function (m) { return 'راسل ' + (m[1] === 'your company' ? 'شركتك' : m[1]) + ': ' + m[2]; }]   /* the company_message notification (0032) */,
+    [/^Show more \((\d+) of (\d+)\)$/, function (m) { return 'اعرض المزيد (' + m[1] + ' من ' + m[2] + ')'; }],   /* the company directory */
+    [/^Commercial registry (\S+)(?: · sent (.+))?$/, function (m) { return 'السجل التجاري ' + m[1] + (m[2] ? ' · أُرسل ' + m[2] : ''); }]   /* Admin → Review, verification rows */
+  );
+  var SECS = { about: 'النبذة', products: 'المنتجات', sites: 'المواقع', contact: 'التواصل' };
+  function secs(l) { return l.split(', ').map(function (x) { return SECS[x] || x; }).join('، '); }
   PATTERNS.unshift(
     [/^trending — (\d+) posts? today$/, function (m) { return 'رائج — ' + m[1] + ' ' + plural(m[1], ['منشور', 'منشورات']) + ' اليوم'; }],
     [/^([\d,]+) new post (today|this week)$/, function (m) { return word(m[1], 'new posts ' + m[2]); }],

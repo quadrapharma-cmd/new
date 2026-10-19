@@ -38,7 +38,7 @@ def create_basic_company(j):
         wizard_details(j, pg, name)
         dlg_click(j, pg, r'Next: review|التالي', 'Next: review')
         t = dlg_text(pg); j.check(name in t, 'the review step does not show the company')
-        j.check('no payment is taken' not in t or j.demo, '')
+        j.check(not re.search(r'no payment is taken|لا يُخصم أي مبلغ', t) or j.demo, '')
         dlg_click(j, pg, r'Create my page|أنشئ صفحتي|أنشئ', 'Create my page'); j.settle(pg, 2000)
         if j.live:
             row = j.wait_db("select status||'|'||plan||'|'||owner_id from public.companies where name=$q$%s$q$" % name, 8)
@@ -76,7 +76,7 @@ def create_vip_company(j):
         dlg_click(j, pg, r'Next: review|التالي', 'Next: review')
         t = dlg_text(pg); amounts = money(t)
         j.check(2500 in amounts and 2850 in amounts, 'the VIP price shown is not EGP 2,500 + VAT = 2,850 (%s)' % amounts)
-        if j.live: j.check('no payment is taken' not in t, "the live wizard says 'Demo — no payment is taken' — the VIP page is created without paying")
+        if j.live: j.check(not re.search(r'no payment is taken|لا يُخصم أي مبلغ', t), "the live wizard says 'Demo — no payment is taken' — the VIP page is created without paying")
     with j.step('Pay by card on the payment page and return; until payment the page is Basic and says payment pending'):
         btn = j.find(pg, r'Pay EGP|ادفع', scope='body'); j.check(btn, 'no pay button')
         if j.live:
@@ -282,6 +282,12 @@ def act_as_company(j):
         other.first.click(); j.settle(pg, 800)
         t = workspace(j, pg); m = re.search(r'(COMPANY WORKSPACE|مساحة عمل الشركة)\s*\n\s*([^\n]+)', t)
         j.check(m and m.group(2).strip() != co2, 'the workspace still shows the second company after switching back')
+    with j.step("The page I just made is current and names me as its owner: no 'updated more than 6 months ago' notice; Contact says quote requests go to me (Owner)"):
+        close_dialogs(pg); directory(j, pg); open_card(j, pg, co2); t = j.text(pg)
+        j.check(not re.search(r'more than 6 months|older than 6 months|May be outdated|أكثر من 6 أشهر|أقدم من 6 أشهر|قد تكون قديمة', t), 'a page made minutes ago says its information is more than 6 months old')
+        t = company_tab(j, pg, 'Contact|%s' % ar('Contact'), 'Contact'); who = pg.evaluate('ME.name')
+        j.check(re.search(re.escape(who) + r'\s*\((Owner|المالك)\)', t), "Contact does not name the page's owner (%s) as Owner: %s" % (who, (re.search(r'(Quote requests go to|طلبات عروض الأسعار تذهب إلى)[^\n]{0,80}', t) or [''])[0]))
+        if j.lang == 'ar': j.check(not re.search(r'Quote requests go to|\((Admin|Owner)\)|Some information on this page', t), 'the Contact tab shows English interface text in Arabic')
     with j.step('Live: acting as a company I am not a member of is refused by the database'):
         if j.demo: j.skip('database checks are live only')
         r = pg.evaluate("s=>dxLive.sb.rpc('deal_create',{p_type:'quote',p_to_slug:s,p_from_slug:%r,p_title:'forged'})%s" % (sup['co']['slug'], _dx.ERR), sup['co']['slug'])

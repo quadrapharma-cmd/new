@@ -121,7 +121,7 @@
   function route(slug, type) {
     var co = X().bySlug(slug); if (!co) return null;
     var t = teamOf(co), pref = ROUTE[type] || ['Admin'];
-    for (var i = 0; i < pref.length; i++) { var m = t.find(function (x) { return x.role === pref[i]; }); if (m) return { name: m.name, role: m.role }; }
+    for (var i = 0; i < pref.length; i++) { var m = t.find(function (x) { return x.role === pref[i]; }); if (m) return { name: m.name, role: m.uid != null && m.uid === co.owner ? 'Owner' : m.role }; }   /* the page's owner is named as such (B-22) */
     return { name: co.name + ' team', role: pref[0] };
   }
 
@@ -130,6 +130,8 @@
   function metaOf(co, sec) {
     var m = (cached('meta_' + co.slug) || {})[sec];
     if (m) return m;
+    var real = co.updatedAt || co.createdAt;   /* a page made (or saved) on Drugbox: its own date, never a sample one (B-22) */
+    if (real) return { src: co.status === 'unclaimed' ? 'Public industry list' : 'Company', at: Math.min(real, NOW()) };
     if (co.status === 'unclaimed') return { src: 'Public industry list', at: new Date('2025-03-01').getTime() };
     var seedAt = { 'quadra-pharm': '2026-08-20', 'medsinia-industries': '2026-07-02', 'delta-analytical-labs': '2026-09-01', 'pharaonic-logistics': '2026-06-15', 'regpath-consulting': '2026-05-10' }[co.slug] || '2025-12-10';
     return { src: 'Company', at: new Date(seedAt).getTime() };

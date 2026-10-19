@@ -129,7 +129,7 @@ def get_verified(j):
     with j.step("Workspace → Plan & verification → 'Get verified': registry number, registry document, tax card, licence → send"):
         t = workspace(j, pg, 'Plan & verification|%s' % (ar('Plan & verification') or 'الخطة'))
         el = j.find(pg, r'Get verified|وثّق|احصل على التوثيق|Send for verification', scope='#content')
-        if not el and j.live and re.search(r'Documents received', t) and j.sql1("select count(*) from public.verification_requests where company_id=%s" % me['co']['id']) == '0':
+        if not el and j.live and re.search(r'Documents received|استلمنا المستندات', t) and j.sql1("select count(*) from public.verification_requests where company_id=%s" % me['co']['id']) == '0':
             j.fail("a new, unverified company (status 'pending', no documents sent) is told 'Documents received — being checked' and has no 'Get verified'")
         j.check(el, "no 'Get verified' on an unverified company")
         el.click(); pg.wait_for_timeout(800)
