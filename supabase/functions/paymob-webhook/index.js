@@ -8,11 +8,16 @@ export async function handler(req) {
   const secret = env('PAYMOB_HMAC_SECRET'); if (!secret) return new Response('not configured', { status: 503 });   // fail closed: never verify with an empty key
   if (!safeEqual(await paymobHmac(obj, secret), hmac)) return new Response('bad signature', { status: 401 });
   const ok = obj.success === true && obj.pending === false && !obj.is_voided && !obj.is_refunded && !obj.error_occured;
-  if (!ok) return new Response('noted (not a successful payment)', { status: 200 });
   // The order is found by Paymob's order id: obj.order.id is part of the signed string, merchant_order_id is not (a valid
   // callback re-sent with another merchant_order_id must not pay another order). Amount and currency are checked against the order.
   const order = obj.order && typeof obj.order === 'object' ? obj.order : {};
   if (order.id === undefined || order.id === null || order.id === '') return new Response('unknown order', { status: 200 });
+  if (!ok) {                                   // a finished, unsuccessful payment: the order is marked failed and the buyer told (0055); still pending → nothing yet
+    if (obj.pending !== false || obj.is_refunded || obj.is_voided) return new Response('noted (not a successful payment)', { status: 200 });
+    const r = await rpc('fail_payment', { p_provider: 'paymob', p_order_key: String(order.id), p_provider_ref: String(obj.id), p_status: 'FAILED',
+      p_payload: { provider: 'paymob', id: obj.id, order: order.id, failed: true, type: obj.source_data && obj.source_data.type } });
+    return new Response(String(r), { status: 200 });
+  }
   const result = await rpc('confirm_payment', { p_provider: 'paymob', p_order_key: String(order.id), p_provider_ref: String(obj.id), p_amount_cents: Number(obj.amount_cents),
     p_currency: String(obj.currency || ''), p_payload: { provider: 'paymob', id: obj.id, order: order.id, merchant_order_id: order.merchant_order_id ?? null, type: obj.source_data && obj.source_data.type } });
   return new Response(String(result), { status: 200 });      // 200 even for "already paid" so Paymob stops retrying

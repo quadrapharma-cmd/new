@@ -41,7 +41,7 @@ export async function handler(req) {
         signature: await fawryChargeSignature(code, order.merchant_ref, '', 'PAYATFAWRY', amount, key) };
       const r = await fetch(`${base}/ECommerceWeb/Fawry/payments/charge`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const j = await r.json(); if (!r.ok || !j.referenceNumber) return json({ error: 'Fawry did not issue a reference number', detail: j }, 502);
-      await rpc('set_order_provider_ref', { p_id: order.id, p_ref: String(j.referenceNumber) });
+      await rpc('set_order_provider_ref', { p_id: order.id, p_ref: String(j.referenceNumber), p_expires: new Date(expiry).toISOString() });   // found again in My payments until it expires
       return json({ order_id: order.id, reference: order.merchant_ref, amount, fawry_reference: j.referenceNumber, expires_at: new Date(expiry).toISOString() });
     }
     return json({ order_id: order.id, reference: order.merchant_ref, amount, instapay: { address: env('INSTAPAY_ADDRESS', ''), name: env('INSTAPAY_NAME', 'Drugbox') } });
