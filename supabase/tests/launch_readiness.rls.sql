@@ -134,6 +134,7 @@ select pg_temp.ok('(setup) with nothing granted, the API is closed: authenticate
 \ir ../migrations/0031_msg.sql
 \ir ../migrations/0032_compmsg.sql
 \ir ../migrations/0033_purge.sql
+\ir ../migrations/0034_msgsafe.sql
 \ir ../migrations/0035_livedata.sql
 select pg_temp.as_server();
 create temp table priv_after as select pg_temp.privs() as p;
