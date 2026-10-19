@@ -52,6 +52,8 @@ Card + Vodafone Cash/wallets via Paymob Unified Checkout (HMAC-SHA512 callback),
 Secrets only as Supabase function secrets — never in the browser or in git.
 
 ## Running things locally
+- Fresh cloud session or after a container restart: `bash tools/local-supabase/setup-session.sh` (installs PostgREST, Deno,
+  Playwright 1.56, starts PostgreSQL on /tmp:5433; its last line prints the `POSTGREST`/`DENO` exports).
 - Local stack (PostgreSQL 16 + PostgREST + `tools/local-supabase/gateway.mjs` emulating auth/REST/storage/functions on :54321):
   `tools/local-supabase/start.sh` (see the README for the database name and ports).
 - Payment functions + Paymob/Fawry stand-in: `tools/local-supabase/start-payments.sh <env file>` (Deno; ports 54400/54500).
