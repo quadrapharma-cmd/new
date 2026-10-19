@@ -58,11 +58,18 @@ select pg_temp.step('u2 calls herself "PN Hala X · Pharco X"', $$update public.
 select pg_temp.ok('names: the picker separator cannot be part of a name', $$(select name from public.profiles where id = pg_temp.u(2)) = 'PN Hala X - Pharco X'$$);
 select pg_temp.step('u2 tries other dot-like separators', $$update public.profiles set name = E'PN Hala X•Pharco ∙ X' where id = pg_temp.u(2)$$);
 select pg_temp.ok('names: every dot-like separator becomes "-"', $$(select name from public.profiles where id = pg_temp.u(2)) = 'PN Hala X - Pharco - X'$$);
+-- the look-alikes the p1b verifier got through 0036 (0037: one rule generated from the Unicode properties — supabase/tests/name_rule.sql)
+select pg_temp.step('u2 calls herself "PN Hala X ꞏ Pharco X" (U+A78F LATIN LETTER SINOLOGICAL DOT)', $$update public.profiles set name = U&'PN Hala X \A78F Pharco X' where id = pg_temp.u(2)$$);
+select pg_temp.ok('names: U+A78F is the picker separator too', $$(select name from public.profiles where id = pg_temp.u(2)) = 'PN Hala X - Pharco X'$$);
+select pg_temp.step('u2 renames herself "PN Zeina X" + U+1D173 (a default-ignorable character)', $$update public.profiles set name = U&'PN Zeina X\+01D173' where id = pg_temp.u(2)$$);
+select pg_temp.ok('names: U+1D173 is removed', $$(select name from public.profiles where id = pg_temp.u(2)) = 'PN Zeina X'$$);
 select pg_temp.step('u2 tries a name of only invisible characters', $$update public.profiles set name = E'​‌ ' where id = pg_temp.u(2)$$);
 select pg_temp.ok('names: an empty name becomes "Member"', $$(select name from public.profiles where id = pg_temp.u(2)) = 'Member'$$);
 select pg_temp.as_server();
 insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(5), 'pn5@pn36.test', jsonb_build_object('name', E'PN Twin​')) on conflict do nothing;
 select pg_temp.ok('names: sign-up cleans the name too', $$(select name from public.profiles where id = pg_temp.u(5)) = 'PN Twin'$$);
+insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(6), 'pn6@pn36.test', jsonb_build_object('name', U&'PN Hala X \2E33 Pharco X')) on conflict do nothing;
+select pg_temp.ok('names: sign-up maps U+2E33 RAISED DOT to the separator', $$(select name from public.profiles where id = pg_temp.u(6)) = 'PN Hala X - Pharco X'$$);
 select pg_temp.ok('names: an Arabic name keeps its letters', $$public.clean_person_name('د. نرمين  أبو زيد') = 'د. نرمين أبو زيد'$$);
 
 -- ══ 3. Drugbox notices keep their data, the app writes the sentence ═════════════════════════════

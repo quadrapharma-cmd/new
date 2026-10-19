@@ -594,7 +594,7 @@
     el.className = 'mx-thread' + (c.unread ? ' mx-unread' : ''); el.dataset.name = (c.name || '').toLowerCase(); el.dataset.tags = 'deals'; el.dataset.person = key; el.dataset.uid = a;
     el.setAttribute('onclick', "mxOpenThread(this,'" + key + "')");
     var av = el.querySelector('.av'); if (av) { av.style.background = u.color; av.childNodes[0].textContent = u.initials; var dot = av.querySelector('.online-dot'); if (dot) dot.remove(); }
-    var nm = el.querySelector('.t-name'), tw = mxTwinFact(c.partner); if (nm) nm.innerHTML = esc2(c.name || 'Member') + (c.verified ? ' <span style="color:#1a56db;font-size:10px">✓</span>' : '') + (tw ? ' <span class="dx-mx-twin" style="color:#65676b;font-weight:400">· ' + esc2(tw) + '</span>' : '');
+    var nm = el.querySelector('.t-name'), tw = mxTwinFact(c.partner); if (nm) nm.innerHTML = esc2(c.name || 'Member') + (c.verified ? ' <span style="color:#1a56db;font-size:10px">✓</span>' : '') + (tw ? ' <span class="dx-mx-twin" style="color:#65676b;font-weight:400;flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">· ' + esc2(tw) + '</span>' : '');
     var tm = el.querySelector('.t-time'); if (tm) tm.textContent = shortAgo(c.last_at);
     var pv = el.querySelector('.t-preview'); if (pv) { pv.textContent = (c.last_from_me ? 'You: ' : '') + (c.last_body || ''); pv.classList.toggle('unread-text', !!c.unread); }
     var tag = el.querySelector('.t-context-tag'); if (tag) tag.remove();
@@ -640,6 +640,8 @@
        "Last seen recently"; two members with the same name are told apart here too (S-03) */
     var hu = nmUser(partner), st = document.querySelector('.chat-head .ch-status');
     if (st) { var tf = mxTwinFact(partner), hf = mxFacts(partner); st.textContent = hf.concat(tf && tf.charAt(0) === '#' ? [tf] : []).join(' · '); }
+    var hn = document.querySelector('.chat-head .ch-name'), hc = MX.convs.find(function (x) { return x.partner === partner; });   /* the name only: the list's "· company" is said on the line below */
+    if (hn && hu) hn.innerHTML = esc2(hu.name) + ((hc ? hc.verified : hu.verified) ? ' <span style="color:#1a56db;font-size:11px">✓</span>' : '');
     var r = await sb.rpc('conversation_messages', { p_partner: partner, p_limit: 50 }); if (r.error) { toastErr(r.error); return; }
     if (MX.open !== a) return;
     var u = window.U(a), rows = (r.data || []).slice().reverse();
