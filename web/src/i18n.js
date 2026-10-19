@@ -628,6 +628,10 @@
     'Company phone *': 'الهاتف للشركة *', 'Company email *': 'البريد الإلكتروني للشركة *', 'Next: review': 'التالي: المراجعة', 'Create my page': 'أنشئ صفحتي',
     'Claim': 'طالب بها', 'Open workspace': 'افتح مساحة العمل', 'Ask to join the team': 'اطلب الانضمام للفريق',
     'Subtotal': 'المجموع الفرعي', 'VAT 14%': 'ضريبة القيمة المضافة 14%', 'Total': 'الإجمالي', 'Bank transfer': 'تحويل بنكي', 'Demo — no payment is taken.': 'نسخة تجريبية — لا يُخصم أي مبلغ.',
+    /* the company workspace (found by the Arabic sweep of its tabs) */
+    'Nothing yet': 'لا شيء بعد', 'No requests yet.': 'لا توجد طلبات بعد.', 'No listings yet.': 'لا توجد إعلانات بعد.', 'Not verified yet.': 'غير موثّقة بعد.',
+    'Documents received — being checked.': 'استلمنا المستندات — جارٍ فحصها.', 'Get verified': 'وثّق شركتك', 'Get VIP': 'احصل على VIP',
+    'Appear in the Sponsored row of the directory, with your own link and Marketplace boosts. It never changes search order or trust.': 'اظهر في صف الشركات المُموَّلة في الدليل، برابطك الخاص وترويج إعلاناتك في السوق. لا يغيّر ذلك ترتيب البحث ولا الثقة أبدًا.',
     'Verification': 'التوثيق', 'Plan': 'الخطة','Optional, later — from your page (gives the Verified badge)': 'اختياري، لاحقًا — من صفحتك (يمنح شارة «موثّق»)',
     /* Admin → Review */
     'Review': 'المراجعة', '🛡️ Review': '🛡️ المراجعة', 'Decisions here change what everyone sees — verification, published warnings, level 3.': 'القرارات هنا تغيّر ما يراه الجميع — التوثيق والتحذيرات المنشورة والمستوى 3.',

@@ -38,7 +38,7 @@ def create_basic_company(j):
         wizard_details(j, pg, name)
         dlg_click(j, pg, r'Next: review|التالي', 'Next: review')
         t = dlg_text(pg); j.check(name in t, 'the review step does not show the company')
-        j.check('no payment is taken' not in t or j.demo, '')
+        j.check(not re.search(r'no payment is taken|لا يُخصم أي مبلغ', t) or j.demo, '')
         dlg_click(j, pg, r'Create my page|أنشئ صفحتي|أنشئ', 'Create my page'); j.settle(pg, 2000)
         if j.live:
             row = j.wait_db("select status||'|'||plan||'|'||owner_id from public.companies where name=$q$%s$q$" % name, 8)
@@ -76,7 +76,7 @@ def create_vip_company(j):
         dlg_click(j, pg, r'Next: review|التالي', 'Next: review')
         t = dlg_text(pg); amounts = money(t)
         j.check(2500 in amounts and 2850 in amounts, 'the VIP price shown is not EGP 2,500 + VAT = 2,850 (%s)' % amounts)
-        if j.live: j.check('no payment is taken' not in t, "the live wizard says 'Demo — no payment is taken' — the VIP page is created without paying")
+        if j.live: j.check(not re.search(r'no payment is taken|لا يُخصم أي مبلغ', t), "the live wizard says 'Demo — no payment is taken' — the VIP page is created without paying")
     with j.step('Pay by card on the payment page and return; until payment the page is Basic and says payment pending'):
         btn = j.find(pg, r'Pay EGP|ادفع', scope='body'); j.check(btn, 'no pay button')
         if j.live:
