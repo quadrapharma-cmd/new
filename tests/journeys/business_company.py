@@ -76,7 +76,9 @@ def create_vip_company(j):
         dlg_click(j, pg, r'Next: review|التالي', 'Next: review')
         t = dlg_text(pg); amounts = money(t)
         j.check(2500 in amounts and 2850 in amounts, 'the VIP price shown is not EGP 2,500 + VAT = 2,850 (%s)' % amounts)
-        if j.live: j.check(not re.search(r'no payment is taken|لا يُخصم أي مبلغ', t), "the live wizard says 'Demo — no payment is taken' — the VIP page is created without paying")
+        if j.live: j.check(not re.search(r'no payment is taken|لا يُخصم أي مبلغ|Demo|تجريبية', t), "the live wizard says 'Demo — no payment is taken' — the VIP page is created without paying")
+        else: j.check(re.search(r'Demo — no money is charged|نسخة تجريبية', t), "the demo wizard's pay step does not say it is a demo (no money is charged)")
+        if j.ar: j.check(not re.search(r'· monthly|monthly', t), "the Arabic wizard says 'VIP · monthly' in English")
     with j.step('Pay by card on the payment page and return; until payment the page is Basic and says payment pending'):
         btn = j.find(pg, r'Pay EGP|ادفع', scope='body'); j.check(btn, 'no pay button')
         if j.live:

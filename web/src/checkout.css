@@ -11,3 +11,4 @@
 .dx-mypay{background:#fff;border-radius:16px;border:1px solid #eef0f4;margin-top:16px;padding:18px 24px}.dx-mypay-h{margin-bottom:6px}
 .dx-pr .mr-b small{display:block}.dx-pr-ref{color:#1A56DB!important;font-weight:600}.dx-pr .mr-st{margin-inline-start:6px}
 @media (max-width:480px){.dx-mypay{padding:14px 14px}.dx-pr{flex-wrap:wrap}}
+.dx-pr .mr-acts{display:flex;gap:6px;flex-wrap:wrap}.dx-demo-note{color:#92400E!important;background:#FFFBEB;border:1px dashed #FCD34D;border-radius:10px;padding:6px 10px;font-size:12px}

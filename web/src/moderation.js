@@ -14,7 +14,7 @@
             Object.keys(rv).forEach(function (slug) { (rv[slug] || []).forEach(function (r) { var m = meta[r.deal] || {}; if (m.disputed && !m.decision && !decided['r' + r.deal]) { var co = window.dxDir.bySlug(slug); out.push({ id: r.deal, company: co ? co.name : slug, from: r.from, stars: r.stars, note: r.note, dispute: '', at: '' }); } }); });
             return out; })(),
           claims: (window.dxClaims ? window.dxClaims.list() : []).filter(function (c) { return c.status === 'pending'; }).map(function (c) { return { id: c.id, company: c.company, who: c.who, role: c.role, mail: c.mail, at: c.at ? new Date(c.at).toISOString().slice(0, 10) : '', docs: [] }; }),
-          verifications: cos.filter(function (c) { return c.status === 'pending' && !decided['v' + c.slug]; }).map(function (c) { return { id: c.slug, company: c.name, registry: c.registry || '—', at: '', docs: [] }; }),
+          verifications: cos.filter(function (c) { return c.status === 'pending' && !decided['v' + c.slug]; }).map(function (c) { return { id: c.slug, company: c.name, registry: c.registry || '—', at: '', docs: [], vip: c.plan === 'vip' }; }),
           warnings: refs.filter(function (r) { return r.kind === 'warn' && r.status === 'pending' && !decided['w' + r.cand + r.text]; }).map(function (r) { return { id: r.cand + r.text, company: r.company, candidate: r.cand, category: r.category, text: r.text, docs: [] }; }),
           certs: H ? cos.slice(0, 30).reduce(function (a, c) { (H.credentials(c) || []).forEach(function (x) { if (!x.checked && !/^Member:/.test(x.name) && !decided['c' + c.slug + '|' + x.name]) a.push({ id: c.slug + '|' + x.name, company: c.name, site: x.site, name: x.name, expiry: x.expiry }); }); return a; }, []) : [],
           documents: (function () { var out = [], P = window.dxPassport; if (!P) return out;
@@ -40,7 +40,7 @@
   function docs(list) { return (list || []).map(function (d) { return '<button type="button" class="dx-mod-doc" data-doc="' + esc(d.path) + '" data-bucket="' + esc(d.bucket) + '">📄 ' + esc(d.label) + '</button>'; }).join(''); }
   function row(kind, x) {
     var body = '', acts = '';
-    if (kind === 'verifications') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>Commercial registry ' + esc(x.registry) + (x.at ? ' · sent ' + esc(x.at) : '') + '</span>' + docs(x.docs);
+    if (kind === 'verifications') { body = '<b data-noi18n>' + esc(x.company) + '</b>' + (x.vip ? '<em class="dx-mod-vip">👑 VIP · answer within 48 h</em>' : '') + '<span>Commercial registry ' + esc(x.registry) + (x.at ? ' · sent ' + esc(x.at) : '') + '</span>' + docs(x.docs);
       acts = '<button class="dx-mod-ok" data-k="verifications" data-id="' + esc(x.id) + '" data-v="approved">Approve</button><button class="dx-mod-no" data-k="verifications" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
     if (kind === 'claims') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>Claimed by ' + esc(x.who || 'a member') + (x.role ? ' · ' + esc(x.role) : '') + (x.mail ? ' · ' + esc(x.mail) : '') + (x.at ? ' · sent ' + esc(x.at) : '') + '</span>' + (x.note ? '<p>' + esc(x.note) + '</p>' : '') + docs(x.docs);
       acts = '<button class="dx-mod-ok" data-k="claims" data-id="' + esc(x.id) + '" data-v="approved">Approve</button><button class="dx-mod-no" data-k="claims" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
@@ -71,7 +71,9 @@
       '<div class="dx-mod-tabs">' + Q.map(function (q) { var n = (data[q[0]] || []).length; return '<button class="dx-mod-tab' + (q[0] === cur ? ' on' : '') + '" data-q="' + q[0] + '">' + q[1] + ' ' + q[2] + (n ? ' <i>' + n + '</i>' : '') + '</button>'; }).join('') + '</div>' +
       '<div class="dx-mod-list">' + ((data[cur] || []).length ? data[cur].map(function (x) { return row(cur, x); }).join('') : '<div class="dx-mod-empty">Nothing waiting here.</div>') + '</div></div>';
   }
-  function open(c) { data = null; paint(c); window.dxModeration.load().then(function (d) { data = d; paint(c); }).catch(function (e) { D.toast && D.toast((e && e.message) || 'Could not load the queues'); }); }
+  /* VIP is promised verification within 48 hours: VIP companies' requests come first (then the oldest first) */
+  function vipFirst(d) { if (d && d.verifications) d.verifications = d.verifications.map(function (x, i) { return [x, i]; }).sort(function (a, b) { return (b[0].vip ? 1 : 0) - (a[0].vip ? 1 : 0) || a[1] - b[1]; }).map(function (a) { return a[0]; }); return d; }
+  function open(c) { data = null; paint(c); window.dxModeration.load().then(function (d) { data = vipFirst(d); paint(c); }).catch(function (e) { D.toast && D.toast((e && e.message) || 'Could not load the queues'); }); }
   var oTab = window.renderAdminTab;
   if (typeof oTab === 'function') window.renderAdminTab = function (tab) { if (tab === 'review') { var c = document.getElementById('adminContent'); if (c) open(c); return; } return oTab.apply(this, arguments); };
   var oAdmin = window.renderAdmin;
