@@ -138,6 +138,8 @@ create or replace function public.company_reviews(p_company bigint) returns json
   left join public.companies fc on fc.id = d.from_company_id
   left join public.review_responses rr on rr.deal_id = d.id
   where d.to_company_id = p_company and d.type <> 'job' and auth.uid() is not null and coalesce(rr.decision, 'kept') <> 'removed'
+    and not exists (select 1 from public.company_members a join public.company_members b on b.user_id = a.user_id   -- the same rule as the rating:
+                    where a.company_id = d.to_company_id and a.accepted and b.company_id = d.from_company_id and b.accepted)   -- no reviews between companies sharing a member
 $$;
 revoke all on function public.company_reviews(bigint) from public, anon, authenticated, service_role;
 grant execute on function public.company_reviews(bigint) to authenticated, service_role;

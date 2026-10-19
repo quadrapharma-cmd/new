@@ -137,8 +137,13 @@ select pg_temp.no('a sales member cannot invite', $$select public.company_invite
 select pg_temp.as_user('d2222222-2222-2222-2222-222222222222');
 select pg_temp.no('an admin cannot invite an admin', $$select public.company_invite(pg_temp.id('co'), 'cp-invitee@x.test', 'CP Invitee', 'admin')$$, '42501');
 select pg_temp.no('nobody is invited as owner', $$select public.company_invite(pg_temp.id('co'), 'cp-invitee@x.test', 'CP Invitee', 'owner')$$, '22023');
-select pg_temp.ok('the admin invites a member by e-mail (an account): a pending invitation', $$public.company_invite(pg_temp.id('co'), 'CP-Invitee@X.test', 'CP Invitee', 'regulatory') = 'member'$$);
-select pg_temp.ok('an address without an account is kept as an invitation', $$public.company_invite(pg_temp.id('co'), 'new.person@cp.test', 'New Person', 'hr') = 'email'$$);
+select pg_temp.ok('the admin invites a member by e-mail (an account): a pending invitation', $$public.company_invite(pg_temp.id('co'), 'CP-Invitee@X.test', 'CP Invitee', 'regulatory') = 'invited'$$);
+select pg_temp.ok('…the same answer for an address without an account (nobody learns who has an account); it is kept as an invitation', $$public.company_invite(pg_temp.id('co'), 'new.person@cp.test', 'New Person', 'hr') = 'invited'$$);
+select pg_temp.ok('inviting the same person again does not notify them again', $$public.company_invite(pg_temp.id('co'), 'cp-invitee@x.test', 'CP Invitee', 'regulatory') = 'invited'$$);
+select pg_temp.as_server();
+select pg_temp.ok('…one invitation notice only', $$(select count(*) from public.notifications where user_id = 'd6666666-6666-6666-6666-666666666666' and type = 'company_invite') = 1
+  and exists (select 1 from public.company_invites where email = 'new.person@cp.test')$$);
+select pg_temp.as_user('d2222222-2222-2222-2222-222222222222');
 select pg_temp.ok('the admin sees both in Team', $$(select count(*) from public.company_members where company_id = pg_temp.id('co') and pending = 'invite') = 1 and (select count(*) from public.company_invites where company_id = pg_temp.id('co')) = 1$$);
 select pg_temp.as_user('d6666666-6666-6666-6666-666666666666');
 select pg_temp.ok('the invitee is notified', $$exists (select 1 from public.notifications where user_id = 'd6666666-6666-6666-6666-666666666666' and type = 'company_invite' and company_id = pg_temp.id('co'))$$);

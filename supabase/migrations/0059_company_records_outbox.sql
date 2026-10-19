@@ -31,12 +31,15 @@ create index if not exists idx_company_docs_reviewed_by on public.company_docume
 
 create or replace function public.company_documents_guard() returns trigger language plpgsql as $$
 begin
-  if auth.uid() is null or public.is_platform_admin() then return new; end if;   -- server-side work and Drugbox: unrestricted
+  if auth.uid() is null or public.is_moderator() then return new; end if;   -- server-side work and Drugbox's reviewers (document_review runs as them)
   if new.status = 'verified' and (tg_op = 'INSERT' or old.status is distinct from 'verified') then
     raise exception 'Only Drugbox can mark a document as verified' using errcode = '42501';
   end if;
   if new.status = 'rejected' and (tg_op = 'INSERT' or old.status is distinct from 'rejected') then
     raise exception 'Only Drugbox can reject a document' using errcode = '42501';
+  end if;
+  if tg_op = 'UPDATE' then                                   -- who added it and when stay as they were
+    new.created_by := old.created_by; new.created_at := old.created_at;
   end if;
   if tg_op = 'INSERT' or new.file_path is distinct from old.file_path then
     if new.file_path is not null and (new.file_path !~ ('^companydocs/' || new.company_id::text || '/[A-Za-z0-9._-]{1,140}$')
@@ -51,8 +54,8 @@ begin
         or new.expiry is distinct from old.expiry or new.file_path is distinct from old.file_path or new.company_id is distinct from old.company_id then
     new.status := case when new.file_path is not null or new.type = 'Membership' then 'review' else 'declared' end;    -- Drugbox never saw the new content
     new.review_note := null; new.reviewed_by := null; new.reviewed_at := null;
-  elsif new.review_note is distinct from old.review_note or new.reviewed_by is distinct from old.reviewed_by or new.reviewed_at is distinct from old.reviewed_at then
-    raise exception 'The review is written by Drugbox' using errcode = '42501';
+  elsif new.status is distinct from old.status or new.review_note is distinct from old.review_note or new.reviewed_by is distinct from old.reviewed_by or new.reviewed_at is distinct from old.reviewed_at then
+    raise exception 'The status and the review are set by Drugbox' using errcode = '42501';   -- a rejection is never undone by the company (change the document instead)
   end if;
   return new;
 end $$;
@@ -152,6 +155,34 @@ create or replace function public.can_write_document(p_name text) returns boolea
                    and public.is_company_member(((storage.foldername(p_name))[2])::bigint, array['owner','admin','regulatory','quality'])
     else false end
 $$;
+
+-- a stored file can be removed only by the person who uploaded it, and only while no record points at it — otherwise a deal's
+-- PO, a verified document or a checked certificate could be deleted and uploaded again under the same name with other content
+-- (the record, and Drugbox's decision on it, would then vouch for a file nobody checked). Records drop their file themselves.
+create or replace function public.document_in_use(p_name text) returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.deal_files where path = p_name)
+      or exists (select 1 from public.company_documents where file_path = p_name)
+      or exists (select 1 from public.site_certificates where file_path = p_name)
+      or exists (select 1 from public.verification_requests where p_name in (registry_path, tax_card_path, licence_path))
+      or exists (select 1 from public.job_applications where cv_path = p_name)
+      or exists (select 1 from public.products where coa_path = p_name)
+      or exists (select 1 from public.payment_orders where receipt_path = p_name)
+$$;
+revoke all on function public.document_in_use(text) from public, anon, authenticated, service_role;
+grant execute on function public.document_in_use(text) to authenticated, service_role;
+create or replace function public.can_delete_document(p_name text) returns boolean language sql stable security definer set search_path = public as $$
+  select auth.uid() is not null and public.can_write_document(p_name) and not public.document_in_use(p_name)
+     and exists (select 1 from storage.objects o where o.bucket_id = 'documents' and o.name = p_name
+                  and coalesce(to_jsonb(o) ->> 'owner_id', to_jsonb(o) ->> 'owner') = auth.uid()::text)
+$$;
+revoke all on function public.can_delete_document(text) from public, anon, authenticated, service_role;
+grant execute on function public.can_delete_document(text) to authenticated, service_role;
+alter policy "documents: delete your own" on storage.objects using (bucket_id = 'documents' and public.can_delete_document(name));
+
+-- a claim (verification_requests.claim) is the claimant's and Drugbox's: once a page is approved for one claimant, its new
+-- owner does not read the other people's claims (who they are, what they wrote, their registry document's path)
+alter policy "verification: team and Drugbox read" on public.verification_requests
+  using ((public.is_company_member(company_id) and not claim) or submitted_by = (select auth.uid()) or public.is_moderator());
 
 -- ── 3. activity log ────
 create table if not exists public.company_activity (

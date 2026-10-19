@@ -29,11 +29,12 @@ create function pg_temp.id(k text) returns bigint language sql stable as $$ sele
 -- people: buyer owner (company A), supplier owner (company B), supplier sales, supplier quality, supplier regulatory, an outsider, a moderator
 insert into auth.users (id, email) values ('e1111111-1111-1111-1111-111111111111','cr-buyer@x.test'),('e2222222-2222-2222-2222-222222222222','cr-supplier@x.test'),
   ('e3333333-3333-3333-3333-333333333333','cr-sales@x.test'),('e4444444-4444-4444-4444-444444444444','cr-quality@x.test'),('e5555555-5555-5555-5555-555555555555','cr-out@x.test'),
-  ('e6666666-6666-6666-6666-666666666666','cr-reg@x.test'),('e7777777-7777-7777-7777-777777777777','cr-mod@x.test') on conflict do nothing;
+  ('e6666666-6666-6666-6666-666666666666','cr-reg@x.test'),('e7777777-7777-7777-7777-777777777777','cr-mod@x.test'),('e8888888-8888-8888-8888-888888888888','cr-reviewer@x.test') on conflict do nothing;
 insert into public.profiles (id, name) values ('e1111111-1111-1111-1111-111111111111','CR Buyer'),('e2222222-2222-2222-2222-222222222222','CR Supplier'),
   ('e3333333-3333-3333-3333-333333333333','CR Sales'),('e4444444-4444-4444-4444-444444444444','CR Quality'),('e5555555-5555-5555-5555-555555555555','CR Outsider'),
-  ('e6666666-6666-6666-6666-666666666666','CR Regulatory'),('e7777777-7777-7777-7777-777777777777','CR Moderator') on conflict (id) do update set name = excluded.name;
+  ('e6666666-6666-6666-6666-666666666666','CR Regulatory'),('e7777777-7777-7777-7777-777777777777','CR Moderator'),('e8888888-8888-8888-8888-888888888888','CR Reviewer') on conflict (id) do update set name = excluded.name;
 update public.profiles set role = 'admin' where id = 'e7777777-7777-7777-7777-777777777777';
+update public.profiles set role = 'moderator' where id = 'e8888888-8888-8888-8888-888888888888';   -- a Drugbox reviewer who is not an admin
 
 select pg_temp.as_server();
 select pg_temp.step('a buyer company, a supplier company with sales / quality / regulatory, an outsider company; a quote deal and a rated order', $$
@@ -159,6 +160,50 @@ select pg_temp.step('the person who added it deletes it', $$delete from public.c
 select pg_temp.ok('the person who added a document may take it back', $$not exists (select 1 from public.company_documents where id = pg_temp.id('doc1'))$$);
 select pg_temp.as_server();
 select pg_temp.ok('…the file is gone from storage', $$not exists (select 1 from storage.objects where bucket_id = 'documents' and name = 'companydocs/' || pg_temp.id('b') || '/cep-1.pdf')$$);
+
+-- ══ 0059: a file behind a record cannot be swapped; Drugbox's decision is not undone; reviewers who are not admins ══
+select pg_temp.as_server();
+select pg_temp.step('a second CEP with its file (uploaded by the regulatory member), a certificate with its file, a deal file', $$
+  insert into storage.objects (bucket_id, name, owner) values ('documents', 'companydocs/' || pg_temp.id('b') || '/cep-2.pdf', 'e6666666-6666-6666-6666-666666666666'),
+    ('documents', 'verification/' || pg_temp.id('b') || '/cert-gmp.pdf', 'e4444444-4444-4444-4444-444444444444'), ('documents', 'deals/' || pg_temp.id('d1') || '/spec-2.pdf', 'e1111111-1111-1111-1111-111111111111');
+  with x as (insert into public.company_documents (company_id, type, product, number, file_path, file_name, created_by) values (pg_temp.id('b'), 'CEP', 'Ibuprofen', 'R1-CEP 2020-7', 'companydocs/' || pg_temp.id('b') || '/cep-2.pdf', 'cep2.pdf', 'e6666666-6666-6666-6666-666666666666') returning id) insert into ids select 'doc2', id::text from x;
+  update public.company_documents set status = 'review' where id = pg_temp.id('doc2');
+  with x as (insert into public.site_certificates (company_id, name, expiry, file_path) values (pg_temp.id('b'), 'WHO-GMP', current_date + 300, 'verification/' || pg_temp.id('b') || '/cert-gmp.pdf') returning id) insert into ids select 'cert', id::text from x$$);
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
+select pg_temp.ok('the buyer attaches the spec', $$public.deal_attach('CRDEAL1', 'Specification', 'deals/' || pg_temp.id('d1') || '/spec-2.pdf', 'spec.pdf') > 0$$);
+select pg_temp.as_user('e8888888-8888-8888-8888-888888888888');
+select pg_temp.ok('a Drugbox reviewer (moderator, not admin) verifies a document', $$public.document_review(pg_temp.id('doc2'), true)$$);
+select pg_temp.ok('…and checks a certificate', $$public.review_certificate(pg_temp.id('cert'), true)$$);
+select pg_temp.as_server();
+select pg_temp.ok('…both decisions are stored (verified; checked)', $$(select status from public.company_documents where id = pg_temp.id('doc2')) = 'verified'
+  and (select checked_at is not null from public.site_certificates where id = pg_temp.id('cert'))$$);
+select pg_temp.as_user('e3333333-3333-3333-3333-333333333333');
+select pg_temp.step('the supplier''s sales member tries to delete the buyer''s attached file', $$delete from storage.objects where bucket_id = 'documents' and name = 'deals/' || pg_temp.id('d1') || '/spec-2.pdf'$$);
+select pg_temp.as_user('e2222222-2222-2222-2222-222222222222');
+select pg_temp.step('the owner tries to delete the verified document''s file and the checked certificate''s file', $$delete from storage.objects where bucket_id = 'documents' and name in ('companydocs/' || pg_temp.id('b') || '/cep-2.pdf', 'verification/' || pg_temp.id('b') || '/cert-gmp.pdf')$$);
+select pg_temp.as_user('e6666666-6666-6666-6666-666666666666');
+select pg_temp.step('even the uploader tries to delete the verified document''s file', $$delete from storage.objects where bucket_id = 'documents' and name = 'companydocs/' || pg_temp.id('b') || '/cep-2.pdf'$$);
+select pg_temp.as_server();
+select pg_temp.ok('no file behind a record can be removed (so none can be swapped): deal file, verified document, checked certificate', $$
+  (select count(*) from storage.objects where bucket_id = 'documents' and name in ('deals/' || pg_temp.id('d1') || '/spec-2.pdf', 'companydocs/' || pg_temp.id('b') || '/cep-2.pdf', 'verification/' || pg_temp.id('b') || '/cert-gmp.pdf')) = 3$$);
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
+select pg_temp.no('…and a new upload under the same name is refused', $$insert into storage.objects (bucket_id, name, owner) values ('documents', 'deals/' || pg_temp.id('d1') || '/spec-2.pdf', 'e1111111-1111-1111-1111-111111111111')$$, '23505');
+select pg_temp.as_server();
+select pg_temp.step('an unattached upload of the buyer', $$insert into storage.objects (bucket_id, name, owner) values ('documents', 'deals/' || pg_temp.id('d1') || '/draft.pdf', 'e1111111-1111-1111-1111-111111111111')$$);
+select pg_temp.as_user('e3333333-3333-3333-3333-333333333333');
+select pg_temp.step('the other side tries to delete it', $$delete from storage.objects where bucket_id = 'documents' and name = 'deals/' || pg_temp.id('d1') || '/draft.pdf'$$);
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
+select pg_temp.step('the buyer deletes their own unattached upload', $$delete from storage.objects where bucket_id = 'documents' and name = 'deals/' || pg_temp.id('d1') || '/draft.pdf'$$);
+select pg_temp.as_server();
+select pg_temp.ok('only the uploader removed the unattached file', $$not exists (select 1 from storage.objects where bucket_id = 'documents' and name = 'deals/' || pg_temp.id('d1') || '/draft.pdf')$$);
+select pg_temp.step('Drugbox rejects the membership', $$update public.company_documents set status = 'rejected', review_note = 'Not on the council''s list' where id = pg_temp.id('mem')$$);
+select pg_temp.as_user('e2222222-2222-2222-2222-222222222222');
+select pg_temp.no('the company cannot undo a rejection', $$update public.company_documents set status = 'declared' where id = pg_temp.id('mem')$$, '42501');
+select pg_temp.no('…nor take a document out of Drugbox''s queue', $$update public.company_documents set status = 'declared' where id = pg_temp.id('doc2')$$, '42501');
+select pg_temp.as_user('e4444444-4444-4444-4444-444444444444');
+select pg_temp.step('the quality member tries to make the CEP theirs', $$update public.company_documents set created_by = 'e4444444-4444-4444-4444-444444444444' where id = pg_temp.id('doc2')$$);
+select pg_temp.as_server();
+select pg_temp.ok('…who added a document never changes', $$(select created_by from public.company_documents where id = pg_temp.id('doc2')) = 'e6666666-6666-6666-6666-666666666666'$$);
 
 -- ══ 0059: activity log ══
 select pg_temp.as_user('e3333333-3333-3333-3333-333333333333');

@@ -332,12 +332,12 @@ def consulting_service(j):
         pg = j.demo_signin(j.new_page()); cons = 'RegPath Consulting'; c = None
     with j.step("Factory: consultant page → request the service (scope), not a goods quotation"):
         directory(j, pg); open_card(j, pg, cons)
-        el = j.find(pg, r'Request (this )?service|Request a proposal|اطلب الخدمة|اطلب عرض', scope='#content')
+        el = j.find(pg, r'Request (this )?service|Request a proposal|اطلب الخدمة|اطلب عرضًا', scope='#content')   # not 'اطلب عرض سعر' (Request a quote)
         if not el: el = j.find(pg, L('Request a quote'), scope='#content')
         j.check(el, 'no way to request a service on the consultant page')
         el.click(); pg.wait_for_timeout(800)
         t = dlg_text(pg)
-        j.check(re.search(r'^Service|\nService|الخدمة', t) and not re.search(r'Quantity \*', t), "not built: the consultant's page has no service request — 'Request a quote' opens a goods quotation (Quantity, Deliver to)")
+        j.check(re.search(r'^Service|\nService|الخدمة|^خدمة|\nخدمة', t) and not re.search(r'Quantity \*|الكمية \*', t), "not built: the consultant's page has no service request — 'Request a quote' opens a goods quotation (Quantity, Deliver to)")
         fill_by_label(j, pg, r'Message|الرسالة|Scope', 'EDA variation for site transfer of 3 products')
         dlg_click(j, pg, L('Send request'), 'Send request'); j.settle(pg, 1000)
         title = pg.evaluate("n=>(dxDeals.all().filter(d=>d.type==='service'&&d.to&&d.to.name===n).pop()||{}).title", cons)   # the request this journey sent to the consultant

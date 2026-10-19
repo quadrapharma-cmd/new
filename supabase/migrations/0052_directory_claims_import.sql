@@ -115,6 +115,7 @@ begin
     v_site := nullif(trim(r ->> 'site'), '');
     v_key := public.company_name_key(v_name); v_akey := public.company_name_key(v_ar);
     if v_name is null or length(v_name) < 2 or length(v_name) > 200 then v_bad := 'name is missing or longer than 200 characters';
+    elsif public.company_name_key(v_name) is null then v_bad := 'the name is only a legal form ("' || v_name || '") — write the company''s name';
     elsif v_ar is not null and length(v_ar) > 200 then v_bad := 'Arabic name is longer than 200 characters';
     elsif v_src is null then v_bad := 'source is missing — every imported company names the public list it comes from';
     elsif length(v_src) > 300 then v_bad := 'source is longer than 300 characters';

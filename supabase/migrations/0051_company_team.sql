@@ -122,17 +122,26 @@ begin
   if v_user is null then
     insert into public.company_invites (company_id, email, name, role, invited_by) values (p_company, v_email, v_name, v_role, me)
     on conflict (company_id, email) do update set role = excluded.role, name = coalesce(excluded.name, company_invites.name), invited_by = excluded.invited_by, created_at = now();
-    return 'email';
+    return 'invited';                                          -- the same answer whether the address has an account or not
   end if;
   if exists (select 1 from public.company_members where company_id = p_company and user_id = v_user and (accepted or pending = 'request')) then
     raise exception 'This person is already on the team or has asked to join — see Team' using errcode = '23505';
+  end if;
+  -- one notice per invitation: asking again (or changing the role) does not notify again, and a company sends at most 30
+  -- invitation notices a day — an invitation is not a way to send people messages
+  if exists (select 1 from public.company_members where company_id = p_company and user_id = v_user and pending = 'invite') then
+    update public.company_members set role = v_role, invited_by = me where company_id = p_company and user_id = v_user;
+    return 'invited';
+  end if;
+  if (select count(*) from public.notifications where company_id = p_company and type = 'company_invite' and created_at > now() - interval '1 day') >= 30 then
+    raise exception 'This company has sent 30 invitations today — try again tomorrow' using errcode = '54000';
   end if;
   insert into public.company_members (company_id, user_id, role, accepted, show_public, pending, invited_by)
   values (p_company, v_user, v_role, false, false, 'invite', me)
   on conflict (company_id, user_id) do update set role = excluded.role, invited_by = excluded.invited_by, pending = 'invite';
   insert into public.notifications (user_id, type, from_user, company_id, data)
   values (v_user, 'company_invite', me, p_company, jsonb_build_object('company', v_co.name, 'role', v_role));
-  return 'member';
+  return 'invited';
 end $$;
 revoke all on function public.company_invite(bigint, text, text, text) from public, anon, authenticated, service_role;
 grant execute on function public.company_invite(bigint, text, text, text) to authenticated, service_role;

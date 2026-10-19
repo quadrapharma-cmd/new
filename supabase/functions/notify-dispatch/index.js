@@ -3,7 +3,8 @@
 // Provider-agnostic: EMAIL_PROVIDER = resend | postmark | sendgrid, with EMAIL_API_KEY and EMAIL_FROM — function secrets only,
 // never in the browser or in git. EMAIL_API_BASE points at another server (the local stand-in in tests).
 // Called by a scheduler (Supabase cron → POST with Authorization: Bearer <NOTIFY_DISPATCH_SECRET>); nobody else can start it.
-// An e-mail carries no more than the notice's subject and the company's name — the details stay behind sign-in.
+// An e-mail carries only Drugbox's own words for the kind of notice and the person's name — never text another member wrote
+// (a company's name is set by its owner: in an e-mail from Drugbox it could pose as a warning). The details stay behind sign-in.
 import { rpc, env } from '../_shared/db.js';
 import { safeEqual } from '../_shared/signatures.js';
 
@@ -21,12 +22,12 @@ const clean = (s, n) => String(s ?? '').replace(/[\u0000-\u001f\u007f​-‏‪-
 
 export function compose(row, appUrl) {
   const [en, ar] = SUBJECT[row.kind] || ['New on Drugbox', 'جديد على Drugbox'];
-  const co = clean(row.company, 120), name = clean(row.name, 80), link = String(appUrl || '').replace(/\/?$/, '/') + '?page=notifications';
-  const subject = 'Drugbox — ' + en + (co ? ' · ' + co : '');
-  const text = `${name ? 'Hello ' + name + ',' : 'Hello,'}\n\n${en}${co ? ' (' + co + ')' : ''}.\nOpen Drugbox to see it: ${link}\n\n${ar}${co ? ' (' + co + ')' : ''}.\nافتح Drugbox لتراه: ${link}\n\n` +
+  const name = clean(row.name, 80), link = String(appUrl || '').replace(/\/?$/, '/');
+  const subject = 'Drugbox — ' + en;
+  const text = `${name ? 'Hello ' + name + ',' : 'Hello,'}\n\n${en}.\nOpen Drugbox to see it: ${link}\n\n${ar}.\nافتح Drugbox لتراه: ${link}\n\n` +
                'You get these e-mails for requests, deals, payments and your company. Turn them off in Drugbox → Settings → Notifications.';
-  const html = `<p>${name ? 'Hello ' + esc(name) + ',' : 'Hello,'}</p><p><b>${esc(en)}</b>${co ? ' (' + esc(co) + ')' : ''}.</p><p><a href="${esc(link)}">Open Drugbox</a></p>` +
-               `<p dir="rtl" lang="ar"><b>${esc(ar)}</b>${co ? ' (' + esc(co) + ')' : ''}.<br><a href="${esc(link)}">افتح Drugbox</a></p>` +
+  const html = `<p>${name ? 'Hello ' + esc(name) + ',' : 'Hello,'}</p><p><b>${esc(en)}</b>.</p><p><a href="${esc(link)}">Open Drugbox</a></p>` +
+               `<p dir="rtl" lang="ar"><b>${esc(ar)}</b>.<br><a href="${esc(link)}">افتح Drugbox</a></p>` +
                '<p style="color:#64748B;font-size:12px">You get these e-mails for requests, deals, payments and your company. Turn them off in Drugbox → Settings → Notifications.</p>';
   return { subject, text, html };
 }
