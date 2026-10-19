@@ -745,6 +745,7 @@
   /* ===== AREA business: company page, certificates, team (B-02, B-03, B-04) ===== */
   Object.assign(D, {
     'E-mail me about requests, deals, payments and my company': 'راسلني بالبريد بخصوص الطلبات والصفقات والمدفوعات وشركتي', 'E-mails on — we will write when something needs you': 'تم تشغيل البريد — سنراسلك عندما يحتاجك أمر ما', 'E-mails off — notifications stay here': 'تم إيقاف البريد — تبقى الإشعارات هنا',
+    'Back': 'رجوع', 'tablets': 'أقراص', 'sachets': 'أكياس', 'tubes': 'أنابيب', 'vials': 'فيالات', 'bottles': 'زجاجات',
     'Add a membership': 'إضافة عضوية', 'Organisation *': 'الجهة *', 'Chamber of Pharmaceutical Industries': 'غرفة صناعة الدواء', 'Chamber of Cosmetics Industries': 'غرفة صناعة مستحضرات التجميل',
     'Export Council for Medical Industries': 'المجلس التصديري للصناعات الطبية', 'Egyptian Pharmaceutical Trading Association': 'الجمعية المصرية لتجارة الأدوية',
     'Drugbox checks the membership with the organisation before the badge shows as confirmed.': 'يتحقق Drugbox من العضوية مع الجهة قبل أن تظهر الشارة مؤكدة.', 'Being checked by Drugbox': 'قيد المراجعة من Drugbox', 'Membership number *': 'رقم العضوية *',
@@ -807,6 +808,13 @@
     [/^(.+) did not accept your request to join the team\.$/, function (m) { return 'لم تقبل ' + m[1] + ' طلبك للانضمام إلى الفريق.'; }],
     [/^Drugbox checked your (.+?)( \((.+)\))? — it now shows as checked on your page\.$/, function (m) { return 'راجع Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — تظهر الآن كمراجَعة على صفحتك.'; }],
     [/^Drugbox could not accept your (.+?)( \((.+)\))? — reason: (.+)\. Add it again with a readable document\.$/, function (m) { return 'لم يقبل Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — السبب: ' + m[4] + '. أضفها مرة أخرى بمستند مقروء.'; }],
+    [/^to (\d{4}-\d{2}(?:-\d{2})?)$/, function (m) { return 'حتى ' + m[1]; }],
+    [/^expired (\d{4}-\d{2}(?:-\d{2})?)$/, function (m) { return 'انتهت ' + m[1]; }],
+    [/^(from|to) ([^·]+)$/, function (m) { return (m[1] === 'from' ? 'من ' : 'إلى ') + m[2]; }],
+    [/^(tablets|units|kg|MT|cartons|batches|sachets|tubes|vials|bottles) \/ (year|month)$/, function (m) { return (D[m[1]] || m[1]) + ' / ' + (m[2] === 'year' ? 'سنويًا' : 'شهريًا'); }],
+    [/^MOQ ([\d,.]+) (.+)$/, function (m) { return 'الحد الأدنى للطلب ' + m[1] + ' ' + (D[m[2]] || m[2]); }],
+    [/^Your company appears in the Sponsored row of the directory(?: · VIP (monthly|yearly) · renews (.+?))?\. 3 Marketplace boosts a month are included\.$/, function (m) {
+      return 'تظهر شركتك في صف الإعلانات المموّلة في الدليل' + (m[1] ? ' · VIP ' + (m[1] === 'yearly' ? 'سنوي' : 'شهري') + ' · يتجدد ' + m[2] : '') + '. تشمل الخطة 3 تمييزات شهريًا في السوق.'; }],
     [/^(.+) · being checked by Drugbox$/, function (m) { return m[1] + ' · قيد المراجعة من Drugbox'; }],
     [/^Sent — Drugbox checks it with the (.+)$/, function (m) { return 'تم الإرسال — يتحقق Drugbox منها مع ' + (D[m[1]] || m[1]); }],
     [/^(.+) is removed from your compliance passport( and its file is deleted)?\.$/, function (m) { return 'سيُحذف ' + m[1] + ' من جواز امتثال شركتك' + (m[2] ? ' ويُحذف ملفه' : '') + '.'; }],
