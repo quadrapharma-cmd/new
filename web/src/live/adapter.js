@@ -1790,17 +1790,17 @@
   Object.assign(window.dxLive, { loadTrust: loadTrust, loadJobs: function () { return loadJobs(); }, version: 'D2b' });
 
   /* ═══════════════ D3 — groups page from the database (the approved group card is the template) ═══════════════ */
-  var GX = { tpl: null, groups: [], mine: {}, at: 0, cur: null, loading: false, snap: {}, inv: {}, req: {}, act: {} };
+  var GX = { tpl: null, groups: [], mine: {}, at: 0, cur: null, loading: false, snap: {}, inv: {}, invBy: {}, req: {}, act: {} };
   var GRAD = [['#1040a0', '#2D6BE4'], ['#0E6B4E', '#16A34A'], ['#6D28D9', '#A855F7'], ['#B45309', '#F59E0B'], ['#0E7490', '#06B6D4'], ['#BE185D', '#EC4899']];
   async function loadGroups() {
     var GCOLS = '*, creator:profiles!groups_created_by_fkey(' + PCOLS + ')';
     var a = await Promise.all([sb.from('groups').select(GCOLS).order('member_count', { ascending: false }).order('created_at', { ascending: false }).limit(60),
                                sb.from('group_members').select('group_id, role, muted').eq('user_id', ME_UUID),
-                               sb.from('group_invites').select('group_id, g:groups(' + GCOLS + ')').eq('user_id', ME_UUID).limit(50),
+                               sb.from('group_invites').select('group_id, by:profiles!group_invites_invited_by_fkey(name), g:groups(' + GCOLS + ')').eq('user_id', ME_UUID).limit(50),
                                sb.from('group_join_requests').select('group_id').eq('user_id', ME_UUID).eq('status', 'pending').limit(50)]);
     if (a[0].error) throw a[0].error; if (a[1].error) throw a[1].error;
     GX.groups = a[0].data || [];
-    GX.inv = {}; ((a[2] && a[2].data) || []).forEach(function (x) { GX.inv[x.group_id] = true; });
+    GX.inv = {}; GX.invBy = {}; ((a[2] && a[2].data) || []).forEach(function (x) { GX.inv[x.group_id] = true; GX.invBy[x.group_id] = x.by && x.by.name ? x.by.name : ''; });
     GX.req = {}; ((a[3] && a[3].data) || []).forEach(function (x) { GX.req[x.group_id] = true; });
     var inv = ((a[2] && a[2].data) || []).map(function (x) { return x.g; }).filter(function (g) { return g && !GX.groups.some(function (y) { return y.id === g.id; }); });
     GX.groups = inv.concat(GX.groups);                                   /* groups I was invited to come first, so the invitation can be taken up (F-29) */
@@ -1832,6 +1832,8 @@
     c.dataset.sector = g.sector || ''; c.dataset.country = (g.country || []).join(','); c.dataset.post = g.post_policy || 'members'; c.dataset.find = txt((g.name || '') + ' ' + (g.description || '')).toLowerCase();
     if (g.archived_at) { c.dataset.archived = '1'; c.style.opacity = '.55'; if (!c.querySelector('.priority-badge')) { var pb = document.createElement('div'); pb.className = 'priority-badge'; pb.textContent = '📦 Archived'; c.insertBefore(pb, c.firstChild); } } else delete c.dataset.archived;
     if (GX.muted && GX.muted[g.id]) c.dataset.muted = '1'; else delete c.dataset.muted;
+    var wb0 = c.querySelector('.why-banner'); if (wb0 && /✉️/.test(wb0.textContent)) wb0.remove();   /* an invitation shows who invited me, as in the demo */
+    if (GX.inv[g.id] && !GX.mine[g.id]) { var bd = c.querySelector('.gcard-body'); if (bd) bd.insertAdjacentHTML('afterbegin', '<div class="why-banner">✉️ <span>Invitation from</span> <span data-noi18n>' + esc2(GX.invBy[g.id] || 'a group admin') + '</span></div>'); }
     paintCardState(c, g);
     return c;
   }
@@ -2009,9 +2011,17 @@
       if (x.indexOf('@') >= 0 || x.length > 120) return null;                                           /* no lookup by e-mail address */
       return sb.from('profiles').select('id').ilike('name', x.replace(/[\\%_]/g, '\\$&')).limit(2);
     }));
+    var nameOf = {};
     found.forEach(function (r, i) { var d = r && !r.error ? r.data || [] : [];
-      if (d.length === 1 && d[0].id !== ME_UUID) { if (ids.indexOf(d[0].id) < 0) ids.push(d[0].id); } else if (!(d.length === 1 && d[0].id === ME_UUID)) missing.push(items[i] + (d.length > 1 ? ' (more than one member has this name)' : '')); });
+      if (d.length === 1 && d[0].id !== ME_UUID) { if (ids.indexOf(d[0].id) < 0) { ids.push(d[0].id); nameOf[d[0].id] = items[i]; } } else if (!(d.length === 1 && d[0].id === ME_UUID)) missing.push(items[i] + (d.length > 1 ? ' (more than one member has this name)' : '')); });
     if (!ids.length) return { n: 0, missing: missing };
+    /* people already invited or already in the group are told apart, not invited twice */
+    var had = await Promise.all([sb.from('group_invites').select('user_id').eq('group_id', g.id).in('user_id', ids), sb.from('group_members').select('user_id').eq('group_id', g.id).in('user_id', ids)]);
+    var inv = (had[0].data || []).map(function (x) { return x.user_id; }), mem = (had[1].data || []).map(function (x) { return x.user_id; });
+    var again = ids.filter(function (u) { return inv.indexOf(u) >= 0 && mem.indexOf(u) < 0; }).map(function (u) { return nameOf[u]; }), inside = mem.map(function (u) { return nameOf[u]; });
+    ids = ids.filter(function (u) { return inv.indexOf(u) < 0 && mem.indexOf(u) < 0; });
+    if (!ids.length) return { n: 0, missing: missing, error: again.length ? again.join(', ') + (again.length === 1 ? ' is' : ' are') + ' already invited' : inside.join(', ') + (inside.length === 1 ? ' is' : ' are') + ' already a member' };
+    if (again.length || inside.length) setTimeout(function () { window.DBK.toast((again.length ? 'Already invited: ' + again.join(', ') : '') + (again.length && inside.length ? ' · ' : '') + (inside.length ? 'Already in the group: ' + inside.join(', ') : '')); }, 2200);
     var r = await sb.from('group_invites').upsert(ids.map(function (u) { return { group_id: g.id, user_id: u, invited_by: ME_UUID }; }), { onConflict: 'group_id,user_id', ignoreDuplicates: true });
     if (r.error) return { n: 0, missing: missing, error: /row-level security|42501|permission/i.test(String(r.error.message || r.error.code)) ? 'Only the group\u2019s admins can invite people' : friendly(r.error) };
     return { n: ids.length, missing: missing };
@@ -2130,7 +2140,7 @@
     var u = uuidOf(uid); if (!u) throw new Error('This member is no longer available');
     if (op === 'subadmin') op = 'moderator';
     if (op === 'remove') { await gpWrite(sb.from('group_members').delete().eq('group_id', g.id).eq('user_id', u).select('user_id'), 'Only the group’s admins can remove members');
-      g.member_count = Math.max(0, (g.member_count || 1) - 1); }
+      g.member_count = Math.max(0, (g.member_count || 1) - 1); if (GX.cur && GX.cur.id === g.id) paintHead(g); }
     else if (op === 'admin' || op === 'member' || op === 'moderator') await gpWrite(sb.from('group_members').update({ role: op }).eq('group_id', g.id).eq('user_id', u).select('user_id'), 'Only the group’s admins can change roles');
     else throw new Error('This is not available yet');
     if (GX.cur && GX.cur.id === g.id) manageLoad(g);
@@ -3118,6 +3128,13 @@
       return;
     }
     if (d.op === 'requests') { manageLoad(g); return; }
+    if (d.op === 'declineInvite') {
+      var dr = await sb.from('group_invites').delete().eq('group_id', g.id).eq('user_id', ME_UUID).select('group_id'); if (dr.error) throw dr.error;
+      delete GX.inv[g.id]; delete GX.invBy[g.id];
+      if (g.type === 'private' && !g.listed) GX.groups = GX.groups.filter(function (x) { return x.id !== g.id; });   /* a secret group I am not in is no longer mine to see */
+      var dc = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]'); if (dc) { if (GX.groups.indexOf(g) < 0) dc.remove(); else dc.replaceWith(groupCard(g)); }
+      return;
+    }
     throw new Error('This is not available yet');
   }
   /* deal-room listings: the group's open requests and offers, with the company page behind each, my own answers */
@@ -3187,6 +3204,7 @@
   var markReadGX = window.markNotifRead;
   window.markNotifRead = function (id) {
     var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }); if (!n) return markReadGX.apply(this, arguments);
+    if (n.rawType === 'deal' && window.dxDeals && window.dxDeals.center) { var rd = markReadGX.apply(this, arguments); window.dxDeals.center('received'); return rd; }   /* a deal (a deal-room answer too) → the Deals center */
     var gid = n.groupId || (n.pid && GPOST[n.pid]) || null;
     if (!gid) return markReadGX.apply(this, arguments);
     var pid = n.pid; n.pid = null;                    /* a post in a group opens in its group, never on Home */
@@ -3195,7 +3213,7 @@
     openGroupFor(gid, { manage: joinAsk, post: pid, comments: t === 'comment', reload: t === 'group_join_approved' || t === 'group_invite' });
     return r;
   };
-  ICON.group_post = '💬'; ICON.group_removed = '🚪'; ICON.group_join_declined = '📨'; ICON.job_status = '💼'; ICON.job_alert = '🔔';
+  ICON.group_post = '💬'; ICON.group_removed = '🚪'; ICON.group_post_removed = '🧹'; ICON.group_join_declined = '📨'; ICON.job_status = '💼'; ICON.job_alert = '🔔';
   onReset(function () { GPOST = {}; GX.muted = {}; });
 
 

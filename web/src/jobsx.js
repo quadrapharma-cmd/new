@@ -54,7 +54,7 @@
   /* ── demo data (this browser) ─────────────────────────────────────────────────────────────────────────────────────── */
   function today() { return new Date().toISOString().slice(0, 10); }
   function daysAgo(n) { var d = new Date(); d.setDate(d.getDate() - n); return d.toISOString(); }
-  var SEED_APPS = [{ title: 'QC Analyst (HPLC) — API Division', company: 'Indovista Pharma', location: 'Hyderabad, India', country: 'IN', status: 'shortlisted', created_at: daysAgo(9), status_at: daysAgo(4) },
+  var SEED_APPS = [{ title: 'Junior Lab Technician — Fresh Graduate Program', company: 'Medsinia Industries', location: '10th of Ramadan, Egypt', country: 'EG', status: 'shortlisted', created_at: daysAgo(9), status_at: daysAgo(4) },
                    { title: 'GCC Registration Coordinator', company: 'Azurea Drug Store', location: 'Dubai, UAE', country: 'AE', status: 'submitted', created_at: daysAgo(3), status_at: daysAgo(3) }];
   var SEED_APPLICANTS = {
     'Senior Regulatory Affairs Specialist': [

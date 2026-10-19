@@ -183,7 +183,7 @@
   var NEW_RULES = [['Be respectful', 'Disagree with ideas, never with people.'], ['Stay on topic', 'Posts should match what the group is about.'], ['No spam', 'No unrelated ads or repeated posts.']];
 
   /* ───────────────────────── what you did (demo, this browser) ───────────────────────── */
-  function blank() { return { v: 1, posts: {}, ed: {}, req: {}, rep: {}, lst: {}, quotes: {}, made: [], ov: {}, roles: {}, gone: {}, arch: {}, del: {}, notif: {}, closedL: {}, reqs: {} }; }
+  function blank() { return { v: 1, posts: {}, ed: {}, req: {}, rep: {}, lst: {}, quotes: {}, made: [], ov: {}, roles: {}, gone: {}, arch: {}, del: {}, notif: {}, closedL: {}, reqs: {}, noinv: {} }; }
   var S = null;
   function st() {
     if (S) return S;
@@ -227,7 +227,7 @@
     g.role = member ? (g.live ? (role === 'admin' ? 'admin' : 'member') : (st().roles[key] && st().roles[key][me().id]) || mine) : null;
     var cb = card.querySelector('.gcard-btn');
     g.pending = !member && (g.live ? !!(cb && cb.dataset.gpq === 'pending') : !!st().req[key]);   /* live: the adapter paints the card from group_join_requests */
-    g.invited = !member && (g.live ? card.dataset.invited === '1' : !!(seed && seed.inv));
+    g.invited = !member && (g.live ? card.dataset.invited === '1' : !!(seed && seed.inv) && !(st().noinv || {})[g.key]);
     g.since = seed ? seed.since : made ? made.at : null;
     g.by = seed ? seed.by : made ? me().id : null;
     g.about = seed ? seed.about : g.desc;
@@ -313,6 +313,10 @@
     });
     if (p.edited) { var b = el.querySelector('.post-body'); if (b) b.insertAdjacentHTML('beforeend', '<span class="gp-edited"> · edited</span>'); }
     if (p.imgsDropped) { var pb = el.querySelector('.post-body'); if (pb) pb.insertAdjacentHTML('afterend', '<div class="gp-note">The photo was too large to keep in this browser.</div>'); }
+    el.querySelectorAll('.post-files .file-chip').forEach(function (fc, i) {   /* an attached file opens (live: its stored link) */
+      var f = (p.files || [])[i]; if (!f) return; fc.dataset.gpf = i; fc.setAttribute('role', 'button'); fc.setAttribute('tabindex', '0'); fc.style.cursor = 'pointer';
+      if (f.url) fc.dataset.url = f.url;
+    });
     el.setAttribute('data-gpp', p.id);
     return el;
   }
@@ -527,11 +531,12 @@
     if (g.priv) {
       var head = g.invited ? '✉️ You’re invited to this private group' : '🔒 This is a private group';
       var sub = g.invited ? 'Accept the invitation to see the discussions, members and listings.' : g.pending ? 'Your request was sent. An admin will review it — you’ll get a notification.' : 'Only members can see the discussions, members and listings. Ask to join and an admin will review your request.';
-      var btn = g.invited ? '<button type="button" class="gcard-btn btn-join" data-gpa="accept">✉️ Accept invitation</button>'
+      var btn = g.invited ? '<button type="button" class="gcard-btn btn-join" data-gpa="accept">✉️ Accept invitation</button> <button type="button" class="gcard-btn gp-decline" data-gpa="declineinv">✕ Decline</button>'
         : g.pending ? '<button type="button" class="gcard-btn btn-joined" data-gpa="cancel">⏳ Request sent · Cancel</button>' : '<button type="button" class="gcard-btn btn-join" data-gpa="request">🔒 Request to join</button>';
       return '<div class="gp-lock"><div class="gp-lock-ic">' + (g.invited ? '✉️' : '🔒') + '</div><b>' + head + '</b><p>' + sub + '</p>' + btn + '</div>';
     }
-    return '<div class="why-banner gp-gate"><span>👀 You’re viewing a preview. Join to post, comment and react.</span><button type="button" class="gcard-btn btn-join" data-gpa="join">+ Join Group</button></div>';
+    return '<div class="why-banner gp-gate"><span>👀 You’re viewing a preview. Join to post, comment and react.</span><button type="button" class="gcard-btn btn-join" data-gpa="join">+ Join Group</button>' +
+      (g.invited ? ' <button type="button" class="gcard-btn gp-decline" data-gpa="declineinv">✕ Decline invitation</button>' : '') + '</div>';
   }
   function loadPosts(g, force) {
     if (!CUR || CUR.g !== g) return;
@@ -692,7 +697,7 @@
   function idleState(card) {   /* the card button of a group you are not in */
     if (!/private/i.test(otxt(card.querySelector('.gcard-meta')))) return 'join';
     var k = cardKey(card), sd = BY_KEY[k];
-    return sd && sd.inv && !card.dataset.gid ? 'accept' : st().req[k] ? 'pending' : 'request';
+    return sd && sd.inv && !(st().noinv || {})[k] && !card.dataset.gid ? 'accept' : st().req[k] ? 'pending' : 'request';
   }
   function setMember(card, on, quiet) {
     var t = otxt(card.querySelector('.gcard-title')), key = cardKey(card), was = cardJoined(card);
@@ -732,6 +737,18 @@
     if (state === 'join' || state === 'accept') { setMember(card, true); refresh(); return; }
     if (state === 'request') { setRequest(card, true); refresh(); return; }
     if (state === 'pending' || state === 'cancel') { D.modal({ title: 'Cancel your request?', body: '<div>You can ask to join <b>' + esc(g.title) + '</b> again later.</div>', primary: { label: 'Cancel request', danger: true, onClick: function () { setRequest(card, false); refresh(); } }, secondary: 'Keep it' }); }
+  }
+  function declineInvite() {   /* an invitation I do not want: it goes away (the admins can invite me again later) */
+    var g = CUR && CUR.g; if (!g || !g.invited) return;
+    var done = function () {
+      var card = g.card && g.card.isConnected ? g.card : cardByKey(g.key);
+      if (card) { delete card.dataset.invited; var wb = card.querySelector('.why-banner'); if (wb && /✉️/.test(wb.textContent)) wb.remove(); paintCard(card, g.priv ? (st().req[g.key] ? 'pending' : 'request') : 'join'); }
+      D.toast('Invitation declined');
+      if (g.priv && typeof window.closeGroup === 'function') window.closeGroup(); else refresh();
+    };
+    if (!g.live) { (st().noinv = st().noinv || {})[g.key] = 1; save(); done(); return; }
+    var r = hook('groupManage', { group: pub(g), op: 'declineInvite' });
+    if (r && typeof r.then === 'function') r.then(done, function (e) { D.toast((e && e.message) || 'Could not save — try again'); }); else D.toast('Could not save — try again');
   }
   function liveJoin(g, state) {   /* live: the adapter decides; until it supports groupJoin, the card's own Join button does it */
     var r = hook('groupJoin', { group: pub(g), op: state === 'cancel' ? 'cancel' : state });
@@ -997,7 +1014,14 @@
 
   /* ───────────────────────── one click handler (capture: before the approved inline handlers) ───────────────────────── */
   function inGroup(el) { return el && el.closest && el.closest('#gpBox'); }
+  function openFile(fc) {
+    var u = fc.dataset.url || '';
+    if (/^https?:\/\//i.test(u)) { window.open(u, '_blank', 'noopener'); return; }
+    D.toast('📎 ' + otxt(fc.querySelector('.file-chip-name')) + ' — sample file: attachments open from the live app');
+  }
+  document.addEventListener('keydown', function (e) { var fc = (e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('#gpBox .file-chip[data-gpf]'); if (fc) { e.preventDefault(); openFile(fc); } }, true);
   document.addEventListener('click', function (e) {
+    var fc = e.target.closest && e.target.closest('#gpBox .file-chip[data-gpf]'); if (fc) { e.preventDefault(); e.stopPropagation(); openFile(fc); return; }
     var t = e.target; if (!t || !t.closest) return;
     var live = isLive();
 
@@ -1061,6 +1085,7 @@
     var a = t.closest('[data-gpa]');
     if (a) {
       e.preventDefault(); e.stopPropagation(); var act = a.dataset.gpa;
+      if (act === 'declineinv') { declineInvite(); return; }
       if (act === 'join' || act === 'request' || act === 'accept' || act === 'cancel') headerJoin(act);
       else if (act === 'msg') memberAct(+a.dataset.uid, 'msg');
       else if (act === 'conn') connectTo(+a.dataset.uid, a);
@@ -1156,7 +1181,7 @@
       if (!sd.card || cardByKey(sd.k) || !first || !tpl) return;
       var joined = jn.indexOf(sd.t) >= 0 ? true : lf.indexOf(sd.t) >= 0 ? false : sd.card.joined !== false;
       var c = makeCard(tpl, { k: sd.k, t: sd.t, emoji: sd.card.emoji, bg: sd.card.bg, desc: sd.card.desc, count: sd.card.count + (joined && sd.card.joined === false ? 1 : 0), faces: sd.card.faces, signal: sd.card.signal,
-        joined: joined, priv: sd.card.priv, deal: sd.card.deal, inv: joined ? null : sd.inv, countWord: sd.card.joined === false });
+        joined: joined, priv: sd.card.priv, deal: sd.card.deal, inv: joined || (st().noinv || {})[sd.k] ? null : sd.inv, countWord: sd.card.joined === false });
       (grids[sd.card.grid || 0] || first).appendChild(c);
     });
     /* groups you created */
@@ -1507,4 +1532,56 @@
     joinClick: joinClick, current: function () { return CUR ? { key: CUR.g.key, title: CUR.g.title, tab: CUR.tab, member: CUR.g.member, role: CUR.g.role, posts: (CUR.posts || []).length } : null; },
     seed: SEED, adopt: adopt
   };
+})();
+
+/* ===== AREA community: groups — Arabic for the new parts (the interface translates as it draws; what people wrote stays as written) ===== */
+(function () {
+  if (!window.dxI18nExtend) return;
+  window.dxI18nExtend({
+    'Search groups by name or topic…': 'ابحث عن جروب بالاسم أو الموضوع…', 'Be respectful: disagree with ideas, never with people': 'احترم الجميع: اختلف مع الأفكار لا مع الأشخاص',
+    '🌍 By Country': '🌍 حسب الدولة', '🌍 Groups by country': '🌍 الجروبات حسب الدولة', 'Groups by country': 'الجروبات حسب الدولة', 'All countries': 'كل الدول', 'Any country (regional)': 'أي دولة (إقليمي)',
+    'No groups found': 'لا توجد جروبات', 'Try other words — or start the group yourself.': 'جرّب كلمات أخرى — أو ابدأ الجروب بنفسك.', 'No groups': 'لا توجد جروبات', 'Be the first to start one.': 'كن أول من يبدأ واحداً.',
+    '← All groups': '→ كل الجروبات', '✓ You’re all caught up — no more posts in this group': '✓ وصلت لآخر المنشورات — لا توجد منشورات أخرى في هذا الجروب',
+    'Who can post': 'من يمكنه النشر', '👥 All members': '👥 كل الأعضاء', '📣 Admins only': '📣 المديرون فقط', 'Sector': 'القطاع', 'Countries': 'الدول', 'Status': 'الحالة',
+    '📦 Archived': '📦 مؤرشف', 'Archived': 'مؤرشف', 'Active': 'نشط', '💊 Pharma': '💊 أدوية', '💄 Cosmetics': '💄 مستحضرات تجميل', '🩺 Medical devices': '🩺 أجهزة طبية', '🥗 Supplements': '🥗 مكملات غذائية', '🧭 Other': '🧭 أخرى',
+    'Egypt': 'مصر', 'Saudi Arabia': 'السعودية', 'UAE': 'الإمارات', 'Kuwait': 'الكويت', 'Qatar': 'قطر', 'Bahrain': 'البحرين', 'Oman': 'عُمان', 'Jordan': 'الأردن', 'Lebanon': 'لبنان', 'Iraq': 'العراق',
+    'Morocco': 'المغرب', 'Algeria': 'الجزائر', 'Tunisia': 'تونس', 'Libya': 'ليبيا', 'Sudan': 'السودان', 'India': 'الهند', 'China': 'الصين',
+    '📨 Requests': '📨 الطلبات', 'Requests': 'الطلبات', 'asked to join': 'طلب الانضمام', '🔍 Search members': '🔍 ابحث في الأعضاء', 'Search members': 'ابحث في الأعضاء', 'You are the admin': 'أنت المدير',
+    '🔒 The member list is visible to members only. The admins are shown under About.': '🔒 قائمة الأعضاء ظاهرة للأعضاء فقط. المديرون ظاهرون في صفحة "حول".',
+    '🔔 Notifications': '🔔 الإشعارات', '🔕 Notifications off': '🔕 الإشعارات متوقفة', 'Notifications turned off for this group': 'تم إيقاف إشعارات هذا الجروب', 'You’ll be notified about new posts': 'سيصلك إشعار بالمنشورات الجديدة',
+    '🌍 Public — anyone can find, read and join': '🌍 عام — يمكن لأي شخص إيجاده وقراءته والانضمام', '🔒 Private — members are approved or invited': '🔒 خاص — الأعضاء بالموافقة أو الدعوة',
+    'Archive this group?': 'أرشفة هذا الجروب؟', 'Archive': 'أرشفة', 'Nobody can post, comment or join. Members can still read the history, and you can restore it from Settings.': 'لن يستطيع أحد النشر أو التعليق أو الانضمام. يظل الأعضاء قادرين على قراءة ما سبق، ويمكنك استعادته من الإعدادات.',
+    'Group archived — read only, hidden from discovery': 'تمت أرشفة الجروب — للقراءة فقط ومخفي من البحث', 'Group archived — restore it anytime from settings': 'تمت أرشفة الجروب — يمكنك استعادته في أي وقت من الإعدادات',
+    'Group restored — members can post again': 'تمت استعادة الجروب — يمكن للأعضاء النشر مجدداً', '↺ Restore group': '↺ استعادة الجروب', 'Restore': 'استعادة',
+    'This group is archived — read only. Nobody can post, comment or join.': 'هذا الجروب مؤرشف — للقراءة فقط. لا يمكن لأحد النشر أو التعليق أو الانضمام.',
+    'Only the admins post in this group.': 'المديرون فقط ينشرون في هذا الجروب.', 'Group settings saved': 'تم حفظ إعدادات الجروب', 'Group name is required': 'اسم الجروب مطلوب', 'Could not save — try again': 'تعذّر الحفظ — حاول مرة أخرى',
+    'A group with this name already exists — choose another name': 'يوجد جروب بهذا الاسم — اختر اسماً آخر', 'Topic': 'الموضوع', 'Country': 'الدولة', 'Emoji': 'الرمز', 'Group rules (one per line)': 'قواعد الجروب (سطر لكل قاعدة)',
+    'Delete this comment?': 'حذف هذا التعليق؟', 'It is removed for everyone in the group.': 'سيُحذف لكل أعضاء الجروب.', 'Comment deleted': 'تم حذف التعليق',
+    'Reported — the group admins will check it': 'تم الإبلاغ — سيراجعه مديرو الجروب', 'You already reported this post — the admins will check it': 'لقد أبلغت عن هذا المنشور من قبل — سيراجعه المديرون',
+    'Close this listing?': 'إغلاق هذا الإعلان؟', 'It leaves the Listings tab for everyone. Deals already started stay in the Deals center.': 'سيختفي من تبويب الإعلانات للجميع. الصفقات التي بدأت تبقى في مركز الصفقات.',
+    'Yes, close it': 'نعم، أغلقه', 'Listing closed': 'تم إغلاق الإعلان', 'Could not close — try again': 'تعذّر الإغلاق — حاول مرة أخرى', 'Your request': 'طلبك', 'Your offer': 'عرضك', 'Quotes': 'العروض', 'Enquiries': 'الاستفسارات',
+    'Request a quote': 'اطلب عرض سعر', 'Request quote →': 'اطلب عرض سعر ←', 'Send a quote': 'أرسل عرض سعر', 'Quote →': 'عرض سعر ←', 'Send quote': 'أرسل العرض', 'Send request': 'أرسل الطلب', 'For': 'إلى',
+    'Price *': 'السعر *', 'Lead time *': 'مدة التوريد *', 'Message': 'رسالة', 'Your request *': 'طلبك *', 'Quantity, delivery terms, documents you need': 'الكمية وشروط التسليم والمستندات المطلوبة',
+    'Certificates, validity, payment terms': 'الشهادات والصلاحية وشروط الدفع', 'e.g. 3 weeks': 'مثال: 3 أسابيع', 'e.g. $5.20/kg CIF Alexandria': 'مثال: 5.20$/كجم CIF الإسكندرية',
+    'It starts a quote request in your Deals center, sent on behalf of your company page.': 'يبدأ طلب عرض سعر في مركز الصفقات، باسم صفحة شركتك.',
+    'Quote request sent — follow it in your Deals center': 'تم إرسال طلب عرض السعر — تابعه في مركز الصفقات', 'This listing has no company page — message its author instead': 'هذا الإعلان بلا صفحة شركة — راسل صاحبه بدلاً من ذلك',
+    '📦 This group is archived — you can read its history; nobody can post, comment or join.': '📦 هذا الجروب مؤرشف — يمكنك قراءة ما سبق؛ لا يمكن لأحد النشر أو التعليق أو الانضمام.',
+    '📣 Only the admins post in this group — you can comment and react.': '📣 المديرون فقط ينشرون في هذا الجروب — يمكنك التعليق والتفاعل.', 'Invitation from': 'دعوة من', 'a group admin': 'أحد مديري الجروب',
+    '✕ Decline': '✕ رفض', '✕ Decline invitation': '✕ رفض الدعوة', 'Invitation declined': 'تم رفض الدعوة',
+    'Join to quote': 'انضم لتقديم عرض', 'Join to enquire': 'انضم للاستفسار', 'Closed': 'مغلق', 'Open': 'مفتوح', 'Joined just now': 'انضم الآن', 'New group': 'جروب جديد'
+  }, [
+    [/^📎 (.+) — sample file: attachments open from the live app$/, function (m) { return '📎 ' + m[1] + ' — ملف تجريبي: المرفقات تُفتح من التطبيق الفعلي'; }],
+    [/^Quote sent to (.+) — follow it in your Deals center$/, function (m) { return 'تم إرسال العرض إلى ' + m[1] + ' — تابعه في مركز الصفقات'; }],
+    [/^Request declined — (.+) was told politely$/, function (m) { return 'تم رفض الطلب — تم إبلاغ ' + m[1] + ' بلطف'; }],
+    [/^(.+) is now a member$/, function (m) { return m[1] + ' أصبح عضواً الآن'; }],
+    [/^(.+) (?:is|are) already invited$/, function (m) { return m[1] + ' مدعو بالفعل'; }], [/^(.+) (?:is|are) already a member$/, function (m) { return m[1] + ' عضو بالفعل'; }],
+    [/^Already invited: (.+?)(?: · Already in the group: (.+))?$/, function (m) { return 'مدعو بالفعل: ' + m[1] + (m[2] ? ' · عضو بالفعل: ' + m[2] : ''); }],
+    [/^Already in the group: (.+)$/, function (m) { return 'عضو بالفعل: ' + m[1]; }],
+    [/^Quotes \((\d+)\)$/, function (m) { return 'العروض (' + m[1] + ')'; }], [/^Enquiries \((\d+)\)$/, function (m) { return 'الاستفسارات (' + m[1] + ')'; }], [/^📨 Requests \((\d+)\)$/, function (m) { return '📨 الطلبات (' + m[1] + ')'; }],
+    [/^(\d+) new posts in "(.+)"$/, function (m) { return m[1] + ' منشورات جديدة في "' + m[2] + '"'; }], [/^posted in "(.+)"$/, function (m) { return 'نشر في "' + m[1] + '"'; }], [/^removed you from the group "(.+)"$/, function (m) { return 'أزالك من الجروب "' + m[1] + '"'; }],
+    [/^sent an offer for your request "(.+)" in the deal room "(.+)"$/, function (m) { return 'أرسل عرضاً لطلبك "' + m[1] + '" في غرفة الصفقات "' + m[2] + '"'; }],
+    [/^sent a quote request for your listing "(.+)" in the deal room "(.+)"$/, function (m) { return 'أرسل طلب عرض سعر لإعلانك "' + m[1] + '" في غرفة الصفقات "' + m[2] + '"'; }],
+    [/^removed your post in "(.+)"$/, function (m) { return 'أزال منشورك في "' + m[1] + '"'; }],
+    [/^could not accept your request to join "(.+)" this time$/, function (m) { return 'لم يتمكن من قبول طلبك للانضمام إلى "' + m[1] + '" هذه المرة'; }]
+  ]);
 })();

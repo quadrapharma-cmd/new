@@ -226,10 +226,17 @@ def read_discussion(j):
         if j.demo: j.skip("the demo's sample groups have no image or PDF post — checked in live")
         img = pg.locator('#gpBox .post img[src*="photo.png"]').first
         j.check(img.count(), 'the image of the post is not shown'); img.click(); pg.wait_for_timeout(600)
-        j.check(dlg_open(pg) or pg.locator('.lightbox:visible, .viewer:visible, [class*=lightbox]:visible').count(), 'the image does not open in a viewer')
-        close_dialogs(pg)
+        j.check(dlg_open(pg) or pg.locator('.lightbox:visible, .viewer:visible, [class*=lightbox]:visible, #lightbox.show').count(), 'the image does not open in a viewer')
+        lb = pg.locator('#lightbox.show').count()
+        if lb:   # the approved page's viewer: it must show this post's image, then close (the group stays open)
+            j.check('photo.png' in (pg.locator('#lbImg').get_attribute('src') or ''), 'the viewer does not show the post\'s image')
+            pg.locator('#lightbox .lb-close').click(); pg.wait_for_timeout(300)
+            j.check(not pg.locator('#lightbox.show').count(), 'the image viewer does not close')
+        else: close_dialogs(pg)
         f = pg.locator('#gpBox .post a[href*="spec.pdf"], #gpBox .post [data-url*="spec.pdf"]')
         j.check(f.count(), 'the PDF of the post is not shown as an attachment')
+        with pg.context.expect_page(timeout=8000) as pop: f.first.click()   # clicking it opens the file
+        j.check('spec.pdf' in pop.value.url, 'clicking the PDF does not open it (%s)' % pop.value.url); pop.value.close()
     with j.step("Click an author's name: that person's profile opens"):
         p = pg.locator('#gpBox .post .post-name').filter(has_not_text=pg.evaluate('ME.name')).first
         name = p.inner_text().strip().split('\n')[0]; p.click(); j.settle(pg, 1500)
@@ -687,7 +694,9 @@ def private_request(j):
         if dlg_open(ps_): dlg_click(j, ps_, r'Send|Request|إرسال|أرسل|طلب', 'Send request')
         j.check(j.wait_db("select status from public.group_join_requests where group_id=%d and user_id='%s'" % (gid, s['id']), 5) == 'pending', 'no request from S')
         j.reload(px_); groups_page(j, px_); open_card(j, px_, gname); manage(j, px_)
-        row = px_.locator('#groupDetail [data-uid], #groupDetail .member-row, #groupDetail .req-row').filter(has_text='Sami').first
+        rq = px_.locator('#managePanel [data-gpq-tab]')   # the journey: Manage → Requests
+        if rq.count(): rq.first.click(); px_.wait_for_timeout(500)
+        row = px_.locator('#groupDetail [data-uid]:visible, #groupDetail .member-row:visible, #groupDetail .req-row:visible').filter(has_text='Sami').first
         j.check(row.count(), 'no request row for S')
         no = row.locator('button').filter(has_text=re.compile(r'Reject|Decline|رفض', re.I)); j.check(no.count(), 'no Reject on the request')
         no.first.click(); px_.wait_for_timeout(500); confirm(j, px_, r'Reject|Decline|Yes|رفض|نعم'); j.settle(px_, 1000)

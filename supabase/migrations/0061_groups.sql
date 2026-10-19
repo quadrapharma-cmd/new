@@ -6,7 +6,8 @@
 --                     change roles and settings); muted (no notices for new posts); the last admin can never be removed or
 --                     demoted; a removed member is told
 --   3. posts          an archived group takes no posts, comments or members; "admins only" groups take posts from admins and
---                     moderators; a new post tells the members (one unread notice per member and group, counting the new posts)
+--                     moderators; a new post tells the members (one unread notice per member and group, counting the new posts);
+--                     an author whose post the group's admins removed is told
 --   4. listings       deal-room requests and offers (group_listings), answered through group_listing_respond(): a deal is created
 --                     by the deals engine (deal_create — never a direct insert); one answer per person and listing
 -- Every table, sequence and function grants its own privileges (0026). Safe to run twice.
@@ -67,8 +68,9 @@ begin
       raise exception 'A group needs at least one admin — make someone else admin first' using errcode = '42501'; end if;
     return new;
   end if;
-  -- DELETE: the last admin stays (unless the group itself is being deleted)
+  -- DELETE: the last admin stays (unless the group itself, or the admin's account, is being deleted)
   if old.role = 'admin' and exists (select 1 from public.groups g where g.id = old.group_id)
+     and exists (select 1 from public.profiles p where p.id = old.user_id)
      and not exists (select 1 from public.group_members m where m.group_id = old.group_id and m.role = 'admin' and m.user_id <> old.user_id) then
     raise exception 'A group needs at least one admin — make someone else admin first, or delete the group' using errcode = '42501'; end if;
   return old;
@@ -172,6 +174,25 @@ create policy "posts: groups that take posts" on public.posts as restrictive for
 drop policy if exists "comments: not in an archived group" on public.comments;
 create policy "comments: not in an archived group" on public.comments as restrictive for insert to authenticated
   with check (not exists (select 1 from public.posts p where p.id = comments.post_id and p.group_id is not null and not private.group_open(p.group_id)));
+
+-- the author of a post that a group admin or moderator removed is told (not when they delete it themselves, not when the group or the
+-- account goes, and not for Drugbox moderation, which sends its own notice)
+create or replace function public.notify_group_post_removed() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare gname text;
+begin
+  if old.group_id is null or auth.uid() is null or auth.uid() = old.user_id then return null; end if;
+  if not public.is_group_member(old.group_id, array['admin', 'moderator']) then return null; end if;
+  select name into gname from public.groups where id = old.group_id; if gname is null then return null; end if;
+  if not exists (select 1 from public.profiles p where p.id = old.user_id) then return null; end if;
+  insert into public.notifications (user_id, type, from_user, group_id, message, data)
+  values (old.user_id, 'group_post_removed', auth.uid(), old.group_id, 'removed your post in "' || left(gname, 120) || '"', jsonb_build_object('excerpt', left(old.body, 80)));
+  return null;
+end $$;
+revoke all on function public.notify_group_post_removed() from public, anon, authenticated, service_role;
+grant execute on function public.notify_group_post_removed() to service_role;
+drop trigger if exists trg_notify_group_post_removed on public.posts;
+create trigger trg_notify_group_post_removed after delete on public.posts for each row when (old.group_id is not null) execute function public.notify_group_post_removed();
 
 create unique index if not exists idx_notifs_group_post_unread on public.notifications (user_id, group_id) where type = 'group_post' and read = false;
 -- a new group post: one unread notice per member (not muted, not the author) and group — later posts update it ("3 new posts")
@@ -294,6 +315,11 @@ begin
   d := public.deal_create(case when l.kind = 'rfq' then 'surplus' else 'quote' end, to_slug, p_from_slug, t,
          jsonb_strip_nulls(jsonb_build_object('listing', l.id, 'group', l.group_id, 'price', nullif(left(coalesce(p_price, ''), 60), ''), 'lead', nullif(left(coalesce(p_lead, ''), 60), ''))),
          left(coalesce(p_message, ''), 600));
+  -- the deals engine told the listing's company with the bare title: say what came in and from where
+  update public.notifications n set message = left(case when l.kind = 'rfq' then 'sent an offer for your request "' else 'sent a quote request for your listing "' end
+           || t || '" in the deal room "' || coalesce((select g.name from public.groups g where g.id = l.group_id), '') || '"', 400),
+         data = coalesce(n.data, '{}'::jsonb) || jsonb_build_object('deal', d.ref, 'listing', l.id)
+   where n.id = (select max(x.id) from public.notifications x where x.type = 'deal' and x.from_user = me and x.user_id = d.assignee and x.message = t);
   insert into public.group_listing_responses (listing_id, user_id, deal_ref) values (l.id, me, d.ref);
   update public.group_listings set responses = responses + 1 where id = l.id;
   return d.ref;

@@ -76,6 +76,8 @@ def deal_room_listings(j):
     with j.step('V is notified and sees the enquiry in the Deals center'):
         if j.demo: j.skip('the supplier exists only in live')
         j.reload(pg); open_notif(j, pg, r'quote|request|enquir|طلب|عرض', 'enquiry')
+        j.wait(pg, "t=>document.body.innerText.includes(t)", 8, title)   # the notice leads to the enquiry itself in the Deals center
+        j.check(title in j.text(pg), 'the notification does not lead to the enquiry in the Deals center')
     with j.step("An outsider cannot enquire without joining (public room: reads, Join to enquire)"):
         if j.demo: j.skip('checked in live with a second account')
         po = o['page']; j.reload(po); groups_page(j, po); open_card(j, po, gname)

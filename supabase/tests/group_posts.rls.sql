@@ -157,8 +157,12 @@ insert into public.group_members (group_id, user_id, role) values (pg_temp.id('p
 select pg_temp.as_user(pg_temp.u(2));
 select pg_temp.step('a plain member tries to delete the admin''s post', $$delete from public.posts where id = pg_temp.id('p_admin')$$);
 select pg_temp.ok('…which stays', $$exists (select 1 from public.posts where id = pg_temp.id('p_admin'))$$);
-select pg_temp.step('a plain member tries to delete another member''s comment', $$delete from public.comments where body = 'GP admin comment'$$);
-select pg_temp.ok('…which stays', $$exists (select 1 from public.comments where body = 'GP admin comment')$$);
+select pg_temp.as_server();
+select pg_temp.step('the second admin comments on the admin''s post', $$insert into public.comments (post_id, user_id, body) values (pg_temp.id('p_admin'), pg_temp.u(5), 'GP comment on the admin post')$$);
+select pg_temp.as_user(pg_temp.u(2));
+-- (0061, J-COMMUNITY-05: the author of a post removes comments on their own post — so the plain member tries a post that is not theirs)
+select pg_temp.step('a plain member tries to delete another member''s comment on a post that is not theirs', $$delete from public.comments where body = 'GP comment on the admin post'$$);
+select pg_temp.ok('…which stays', $$exists (select 1 from public.comments where body = 'GP comment on the admin post')$$);
 select pg_temp.no('a plain member cannot pin', $$select public.group_pin_post(pg_temp.id('priv'), pg_temp.id('p_admin'))$$, '42501');
 select pg_temp.as_user(pg_temp.u(5));
 select pg_temp.step('the second admin pins a post of the group', $$select public.group_pin_post(pg_temp.id('priv'), pg_temp.id('p_admin'))$$);
@@ -226,8 +230,11 @@ select pg_temp.ok('u8 asks to join', $$public.group_request_join(pg_temp.id('pri
 select pg_temp.as_user(pg_temp.u(5));
 select pg_temp.ok('the second admin declines → rejected', $$public.group_decide_request(pg_temp.id('priv'), pg_temp.u(8), false) = 'rejected'$$);
 select pg_temp.as_server();
-select pg_temp.ok('…no member row, the notices are gone, nobody is told of the refusal', $$not exists (select 1 from public.group_members where group_id = pg_temp.id('priv') and user_id = pg_temp.u(8))
-  and pg_temp.notifs(pg_temp.u(1), 'group_join_request', pg_temp.id('priv')) = 0 and not exists (select 1 from public.notifications where user_id = pg_temp.u(8))$$);
+-- (0061, J-COMMUNITY-10: the person is told politely — one notice, the decline, and nothing else)
+select pg_temp.ok('…no member row, the notices are gone, the person is told politely (one notice)', $$not exists (select 1 from public.group_members where group_id = pg_temp.id('priv') and user_id = pg_temp.u(8))
+  and pg_temp.notifs(pg_temp.u(1), 'group_join_request', pg_temp.id('priv')) = 0
+  and (select count(*) from public.notifications where user_id = pg_temp.u(8)) = 1
+  and pg_temp.notifs(pg_temp.u(8), 'group_join_declined', pg_temp.id('priv')) = 1$$);
 select pg_temp.as_user(pg_temp.u(8));
 select pg_temp.ok('the person sees the answer', $$(select status from public.group_join_requests where group_id = pg_temp.id('priv')) = 'rejected'$$);
 select pg_temp.no('asking again within 30 days is refused', $$select public.group_request_join(pg_temp.id('priv'))$$, '42501');

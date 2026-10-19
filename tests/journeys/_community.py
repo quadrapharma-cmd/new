@@ -277,7 +277,8 @@ def notifs(j, pg):
 def open_notif(j, pg, pattern, what):
     """Notifications page → click the notification whose text matches pattern; returns the page it led to."""
     notifs(j, pg)
-    row = pg.locator('#content .notif-item, #content .notif-list > *').filter(has_text=re.compile(pattern, re.I))
+    row = pg.locator('#content .notif-item').filter(has_text=re.compile(pattern, re.I))   # the rows themselves, never the filter tabs ("Comments")
+    if not row.count(): row = pg.locator('#content .notif-list > *').filter(has_text=re.compile(pattern, re.I))
     j.check(row.count(), 'no notification "%s" (the list: %s)' % (what, j.text(pg)[:200].replace('\n', ' | ')))
     mark = j.toast_mark(pg); row.first.click(); j.settle(pg, 1500); j.dead_end(pg, mark, 'the notification ' + what)
     return pg.evaluate("document.body.getAttribute('data-page')")

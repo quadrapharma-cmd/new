@@ -124,3 +124,6 @@ html[dir=rtl] #gpBox :is(.gp-text,.gp-rules b,.gp-rules span){unicode-bidi:plain
 #groupDetail .mod-btn.gp-approve{background:#16a34a;color:#fff}
 #gx .gp-set-row select.field-input,#createModal .gp-set-row select.field-input{height:40px;background:#fff;width:100%}
 #tab-members input.member-search{border:1.5px solid #e2e8f0;border-radius:999px;padding:6px 12px;font:12.5px Inter,system-ui,sans-serif;min-width:160px;outline:none}
+/* declining an invitation: a quiet secondary button next to Accept */
+#gpBox .gcard-btn.gp-decline{background:#fff;color:#475569;border:1.5px solid #e2e8f0;margin-inline-start:6px}
+#gpBox .gcard-btn.gp-decline:hover{border-color:#dc2626;color:#dc2626}
