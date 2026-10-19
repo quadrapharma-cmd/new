@@ -259,7 +259,12 @@ if [[ "$(q "select count(*) from pg_extension where extname = 'pg_cron'")" == 1 
   if [[ "$(q "select count(*) from cron.job where jobname = 'drugbox-expire-vip'")" == 0 && $DRY == 0 ]]; then
     q "select cron.schedule('drugbox-expire-vip', '17 1 * * *', 'select public.expire_vip_plans()')" >/dev/null && ok "pg_cron: scheduled drugbox-expire-vip (daily 01:17 UTC)"
   else ok "pg_cron: drugbox-expire-vip is scheduled"; fi
-else info "pg_cron is not enabled: VIP plans are not expired automatically — enable it (Database → Extensions → pg_cron) and re-run this script"; fi
+  # 0055: a notice 3 days before a VIP plan ends (vip_reminders) — scheduled here too, because 0055 schedules it only when
+  # pg_cron was already enabled at the moment the migration ran
+  if [[ "$(q "select count(*) from cron.job where jobname = 'drugbox-vip-reminders'")" == 0 && $DRY == 0 ]]; then
+    q "select cron.schedule('drugbox-vip-reminders', '23 7 * * *', 'select public.vip_reminders()')" >/dev/null && ok "pg_cron: scheduled drugbox-vip-reminders (daily 07:23 UTC)"
+  else ok "pg_cron: drugbox-vip-reminders is scheduled"; fi
+else info "pg_cron is not enabled: VIP plans are not expired automatically and VIP reminders are not sent — enable it (Database → Extensions → pg_cron) and re-run this script"; fi
 
 if [[ "$(q "select to_regclass('public.payment_products') is not null")" == t ]]; then
   info "prices (payment_products — confirm before launch, +VAT):"
