@@ -205,7 +205,7 @@
 
   /* ── documents inside a deal (PO, CoA, invoice, NDA, data room, deliverables): window.dxDealFiles — this browser in the demo
      (the file stays on this device for this visit), private storage readable by the two parties in the live app ── */
-  var DOC_TYPES = '.pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx', DOC_KINDS = ['PO', 'CoA', 'Invoice', 'Specification', 'NDA', 'Other'], FILEMEM = {};
+  var DOC_TYPES = '.pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx', DOC_KINDS = ['PO', 'CoA', 'Invoice', 'Specification', 'NDA', 'CV', 'Other'], FILEMEM = {};
   if (!window.dxDealFiles) window.dxDealFiles = {
     list: function (d) { return Array.isArray(d.files) ? d.files : []; },
     attach: function (d, file, kind, side) { var x = get(d.id); if (!x) return Promise.resolve(false); var at = now(), key = d.id + '|' + at + '|' + file.name;

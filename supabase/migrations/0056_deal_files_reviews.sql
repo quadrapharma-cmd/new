@@ -1,6 +1,7 @@
 -- ═════════════════════════════════════════════════════════════════════
 -- 0056 — the paperwork and the reviews of a deal (B-12, B-17; J-BUSINESS-07, 08, 24, 26, 28, 29)
---   1. deal_files: documents inside a deal (PO, CoA, invoice, specification, NDA, data room, deliverables, questionnaire evidence).
+--   1. deal_files: documents inside a deal (PO, CoA, invoice, specification, NDA, data room, deliverables, questionnaire evidence,
+--      the CV of a job application).
 --      The file is in the private documents bucket under deals/<deal id>/…; only the two parties of the deal (the sender — the
 --      person for a job application, else the sending company's team — and the receiving company's team) can list it, upload to
 --      it or open it (signed links). deal_attach() records it, adds a "Document attached" step to the deal's history and tells
@@ -27,7 +28,7 @@ create table if not exists public.deal_files (
   deal_id     bigint not null references public.deals(id) on delete cascade,
   uploader    uuid references public.profiles(id) on delete set null,
   side        text not null check (side in ('from', 'to')),
-  kind        text not null check (kind in ('PO', 'CoA', 'Invoice', 'Specification', 'NDA', 'Data room', 'Deliverable', 'Questionnaire evidence', 'Other')),
+  kind        text not null check (kind in ('PO', 'CoA', 'Invoice', 'Specification', 'NDA', 'Data room', 'Deliverable', 'Questionnaire evidence', 'CV', 'Other')),
   name        text not null check (length(name) between 1 and 160),
   path        text not null unique check (length(path) <= 300),
   created_at  timestamptz not null default now()
@@ -59,7 +60,7 @@ begin
   end if;
   if (select count(*) from public.deal_files where deal_id = d.id) >= 50 then raise exception 'A deal holds up to 50 documents' using errcode = '54000'; end if;
   insert into public.deal_files (deal_id, uploader, side, kind, name, path)
-  values (d.id, me, v_side, case when p_kind in ('PO', 'CoA', 'Invoice', 'Specification', 'NDA', 'Data room', 'Deliverable', 'Questionnaire evidence') then p_kind else 'Other' end, v_name, p_path)
+  values (d.id, me, v_side, case when p_kind in ('PO', 'CoA', 'Invoice', 'Specification', 'NDA', 'Data room', 'Deliverable', 'Questionnaire evidence', 'CV') then p_kind else 'Other' end, v_name, p_path)
   returning id into v_id;
   insert into public.deal_events (deal_id, side, action, note, data, actor)
   values (d.id, v_side, 'file', p_kind || ': ' || v_name, jsonb_build_object('text', coalesce(nullif(p_kind, ''), 'Other') || ': ' || v_name, 'file', v_id), me);

@@ -1,9 +1,11 @@
 -- ═════════════════════════════════════════════════════════════════════
--- 0058 — following a company brings its news (J-BUSINESS-05)
+-- 0058 — following a company brings its news (J-BUSINESS-05); a company's open positions on its page (J-BUSINESS-11)
 --   A member who follows a company is told when that company publishes something new in the marketplace: a listing posted by
 --   the company (or by its owner), a surplus offer or a licensing dossier. One notification per new listing per follower
 --   (type 'company_listing', data: company, listing, kind; message: the listing's title) — never to the lister. Notices are kept short and as data (the app
 --   writes the sentence in the reader's language).
+--   company_jobs(company): the open positions the company's own team posted under its name (jobs.company = the company's
+--   name, posted by a member) — what its page's Jobs tab lists; an application from there is a job deal to the company.
 -- Safe to run twice.
 -- ═════════════════════════════════════════════════════════════════════
 
@@ -43,5 +45,14 @@ end $$;
 revoke all on function public.company_listings_notify_followers() from public, anon, authenticated, service_role;
 drop trigger if exists trg_company_listings_notify_followers on public.company_listings;
 create trigger trg_company_listings_notify_followers after insert on public.company_listings for each row execute function public.company_listings_notify_followers();
+
+create or replace function public.company_jobs(p_company bigint) returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(json_build_object('id', j.id, 'title', j.title, 'type', j.type, 'location', j.location, 'created_at', j.created_at) order by j.created_at desc), '[]'::json)
+  from public.companies c join public.jobs j on lower(btrim(j.company)) = lower(btrim(c.name))
+  where c.id = p_company and c.status <> 'suspended' and j.active and auth.uid() is not null and public.company_has_member(c.id, j.user_id)
+$$;
+create index if not exists idx_jobs_company_key on public.jobs (lower(btrim(company))) where active;
+revoke all on function public.company_jobs(bigint) from public, anon, authenticated, service_role;
+grant execute on function public.company_jobs(bigint) to authenticated, service_role;
 
 notify pgrst, 'reload schema';

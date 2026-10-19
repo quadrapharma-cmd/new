@@ -264,7 +264,8 @@
       primary: { label: 'Send application', onClick: function (b) {
         if (!D.requireFields(b)) return false;
         if (!b.querySelector('#apCv').files.length) { b.querySelector('#apCv').classList.add('dbk-err'); D.toast('Please attach your CV'); return false; }
-        window.dxDeals.create('job', co.slug, job.t, {}, b.querySelector('#apMsg').value.trim() + ' (CV: ' + b.querySelector('#apCv').files[0].name + ')');
+        var cv = b.querySelector('#apCv').files[0], jd = window.dxDeals.create('job', co.slug, job.t, {}, b.querySelector('#apMsg').value.trim() + ' (CV: ' + cv.name + ')');
+        if (jd && window.dxDealFiles) window.dxDealFiles.attach(jd, cv, 'CV', 'from').catch(function () {});   /* the CV travels with the application */
         D.toast('Application sent to ' + co.name + ' — follow it in Requests & deals');
       } } });
   }

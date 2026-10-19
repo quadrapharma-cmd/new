@@ -1447,8 +1447,13 @@
     REV.by[slug] = (r.data || []).map(function (x) { REV.ref[x.ref] = slug; return { deal: x.ref, stars: Math.max(1, Math.min(5, +x.stars || 0)), note: txt(x.note), from: txt(x.from), at: tms(x.at), reply: x.reply ? txt(x.reply) : '', disputed: !!x.disputed }; });
     REV.at[slug] = Date.now(); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
   }
+  /* a company's open positions (company_jobs, 0058): its Jobs tab, and "Apply" sends the application to the company */
+  async function loadCompanyJobs(slug) { var raw = CO.raw[slug]; if (!raw || !raw.id) return;
+    var r = await sb.rpc('company_jobs', { p_company: raw.id }); if (r.error) throw r.error; raw.jobs_live = r.data || []; var l = live(slug);
+    if (l) l.jobs = raw.jobs_live.map(function (j) { return { t: txt(j.title), type: String(j.type || 'full-time').replace(/(^|-)([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); }), loc: txt(j.location) || l.city, _id: j.id }; });
+    window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; }
   var loadTrackB = loadTrack;
-  loadTrack = async function (slug) { await loadTrackB(slug); await loadReviews(slug).catch(function (e) { console.error(e); }); };
+  loadTrack = async function (slug) { await loadTrackB(slug); await Promise.all([loadReviews(slug), loadCompanyJobs(slug)]).catch(function (e) { console.error(e); }); };
   var REVMETA = {};
   async function syncReviewMeta(v) {
     for (var ref in v) { var now = v[ref] || {}, was = REVMETA[ref] || {}, slug = REV.ref[ref]; if (!slug) continue;

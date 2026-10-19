@@ -315,7 +315,7 @@
     if (ds.hsurp) return X3().surplusOffer(X3().surplus().find(function (s) { return s.id === ds.hsurp; }));
     if (ds.hdos) return X3().dossierRequest(X3().dossiers().find(function (d) { return d.id === ds.hdos; }));
     if (ds.hgroups) return X3().groupsDialog();
-    if (ds.hjob != null && co) { var job = X().jobsOf(co)[+ds.hjob]; if (!job) return; if (job.onJobs) { window.goto('jobs'); var h = document.querySelector('#jx .mode-opt[data-mode="hunting"]'); if (h) h.click(); setTimeout(function () { var card = Array.prototype.find.call(document.querySelectorAll('#jx #huntingView .jcard'), function (c) { return c.textContent.indexOf(job.t) >= 0; }); if (card) { card.scrollIntoView({ block: 'center' }); var ab = card.querySelector('.apply-btn'); if (ab) ab.click(); } }, 60); } else X().applyDialog(co, job); return; }
+    if (ds.hjob != null && co) { var job = X().jobsOf(co)[+ds.hjob]; if (!job) return; X().applyDialog(co, job); return; }   /* the application is sent from the company page (CV + why you) */
     /* workspace */
     if (ds.wtab) { St.wsTab = ds.wtab; return rerender(); }
     if (!co) return;
