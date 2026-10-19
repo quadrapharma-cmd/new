@@ -878,6 +878,8 @@
   }
   window.toggleLang = function () { setLang(isAr() ? 'en' : 'ar'); if (window.DBK) window.DBK.toast(isAr() ? 'تم التبديل إلى العربية' : 'Switched to English'); };
   window.dxSetLang = setLang;
+  /* ===== AREA social: other layers add their own words (and patterns) to the dictionary ===== */
+  window.dxI18nAdd = function (words, pats) { Object.assign(D, words || {}); (pats || []).forEach(function (p) { PATTERNS.unshift(p); }); SEEN.clear(); REV = null; if (isAr()) walk(document.body); };
   /* a notice is shown in the interface language at once (not in English first, then translated a frame later) */
   [['DBK', 'toast'], [null, 'toast']].forEach(function (k) {
     var host = k[0] ? window[k[0]] : window, f = host && host[k[1]]; if (typeof f !== 'function' || f.__i18n) return;

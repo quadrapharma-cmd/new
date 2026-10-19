@@ -70,7 +70,7 @@
     var U = window.USERS || [], k = U.filter(function (u) { return u.id <= 1000 && u !== window.ME; }); U.length = 0; k.forEach(function (u) { U.push(u); });
     Object.keys(window.CONN_STATE || {}).forEach(function (x) { if (+x > 1000) delete window.CONN_STATE[x]; });
     /* what the interface keeps in this browser for a person (stores dx_*, kit dbx_*) goes too; only the interface preferences stay */
-    try { Object.keys(localStorage).forEach(function (x) { if (/^dbx?_/.test(x) && !/^dx_(lang|theme|tour_done|flags)$/.test(x)) localStorage.removeItem(x); }); } catch (e) {}
+    try { Object.keys(localStorage).forEach(function (x) { if (/^(dx|dbx?)_/.test(x) && !/^dx_(lang|theme|tour_done|flags)$/.test(x)) localStorage.removeItem(x);   /* dx_* too (J-SOCIAL-04: dx_deals stayed) */ }); } catch (e) {}
   });
   /* the demo's sample people, posts, comments and notifications never show in the live app (F-54) */
   function clearSeeds() {
@@ -369,6 +369,14 @@
     var s = h.indexOf('>Search appearances<'), ra = s < 0 ? -1 : h.lastIndexOf('<div', s), rz = s < 0 ? -1 : h.indexOf('</div>', s);
     return ra >= 0 && rz > s ? h.slice(0, ra) + h.slice(rz + 6) : h; };
   window.dxLive.loadFeed = loadFeed; window.dxLive.version = 'B2';
+  /* ===== AREA social: internals for web/src/live/social.js (getters: later parts of this file replace some of these functions) ===== */
+  var SOC_SIGNIN = [], SOC_HASH = location.hash;                                   /* the address as it came (an e-mail link's #access_token / #error) — supabase-js clears it */
+  var hydrateSoc = hydrateMe;
+  hydrateMe = async function (uid) { var me = await hydrateSoc(uid); SOC_SIGNIN.forEach(function (f) { try { f(me); } catch (e) { console.error(e); } }); return me; };
+  window.dxLive.k = { get me() { return ME_UUID; }, get putUser() { return putUser; }, get postFrom() { return postFrom; }, get postState() { return postState; }, get fetchPost() { return fetchPost; },
+    get loadFeed() { return loadFeed; }, get loadConnections() { return loadConnections; }, get loadNotifs() { return loadNotifs; }, get notifFrom() { return notifFrom; }, get origGoto() { return origGoto; },
+    FEED: FEED, PCOLS: PCOLS, PFULL: PFULL, POST_SEL: POST_SEL, txt: txt, safeUrl: safeUrl, prose: prose, friendly: friendly, toastErr: toastErr, onReset: onReset, ago: ago, initials: initials, colorFor: colorFor,
+    onSignIn: function (f) { SOC_SIGNIN.push(f); }, hash: SOC_HASH, sessionEnded: function () { sessionEnded(); }, resetUser: function () { resetUser(); }, get INCOMING() { return INCOMING; } };
 
   /* ═══════════════ P1 — feed actions on the database: who reacted, Saved, a post opened from a link, reports (0028) ═══════════════ */
   var SAVED = { at: 0, loading: false };
