@@ -296,7 +296,7 @@
     (d.companies || []).forEach(function (c) { out.push({ g: 'companies', e: c.logo_emoji || '🏢', t: c.name, s: [c.city, c.country].filter(Boolean).join(', '), go: function () { if (window.dxDirectory && window.dxDirectory.open && c.slug) window.dxDirectory.open(c.slug); else window.goto('companies'); } }); });
     (d.products || []).forEach(function (x) { out.push({ g: 'products', e: x.emoji || '📦', t: x.name, s: [x.seller, x.price != null ? x.price + (x.unit ? '/' + x.unit : '') : ''].filter(Boolean).join(' · '), go: function () { marketQuery(x.name); } }); });
     (d.jobs || []).forEach(function (j) { out.push({ g: 'jobs', e: '💼', t: j.title, s: [j.company, j.location].filter(Boolean).join(' · '), go: function () { window.goto('jobs'); if (window.dxJobsHunt) window.dxJobsHunt(); flashCard('#jx [data-live="j' + j.id + '"]', function () { return true; }); } }); });
-    (d.groups || []).forEach(function (g) { out.push({ g: 'groups', e: g.emoji || '👥', t: g.name, s: (g.member_count || 0) + ' members', go: function () { window.goto('groups'); flashCard('#gx .gcard', function (e) { return e.textContent.indexOf(g.name) >= 0; }); } }); });
+    (d.groups || []).forEach(function (g) { out.push({ g: 'groups', e: g.emoji || '👥', t: g.name, s: (g.member_count === 1 ? '1 member' : (g.member_count || 0) + ' members'), go: function () { window.goto('groups'); flashCard('#gx .gcard', function (e) { return e.textContent.indexOf(g.name) >= 0; }); } }); });
     (d.posts || []).forEach(function (p) { out.push({ g: 'posts', e: '📝', t: around(p.body, q), s: p.author || '', go: function () { if (window.dxOpenPost) window.dxOpenPost(p.id); } }); });
     return out;
   }
@@ -389,7 +389,7 @@
   };
   if (window.dxSafetyWrapMod) window.dxSafetyWrapMod();
   /* 📞 in a conversation: the connection's own number when they share it with connections (0046); otherwise the company phone (links.js) */
-  document.addEventListener('click', function (e) {
+  window.addEventListener('click', function (e) {                       /* window capture: before links.js's document handler */
     var btn = e.target.closest && e.target.closest('#mx .ch-action-btn'); if (!btn || btn.__socPass || !me()) return;
     var oc = btn.getAttribute('onclick') || '', label = (btn.textContent || '').trim(); if (!(/Calling/i.test(oc) || label === '📞')) return;
     var a = MXK(), id = a && L.uuidOf(a); if (!id) return;
@@ -412,6 +412,8 @@
   K.onSignIn(checkSuspended);
   if (window.dxI18nAdd) window.dxI18nAdd({ 'Drugbox reviewed your report and suspended the account.': 'راجع Drugbox بلاغك وأوقف الحساب.', 'Drugbox reviewed your report — no action was needed on the account.': 'راجع Drugbox بلاغك — لم يلزم أي إجراء على الحساب.',
     'You cannot report yourself': 'لا يمكنك الإبلاغ عن نفسك', 'This member is not available': 'هذا العضو غير متاح', 'sent you a message': 'أرسل لك رسالة' },
-    [[/^Your Drugbox account is suspended(?:: (.+?))?\. If you think this is a mistake, write to support@drugbox\.app\.$/, function (m) { return 'حسابك على Drugbox موقوف' + (m[1] ? ': ' + m[1] : '') + '. إذا كنت ترى أن هذا خطأ، راسل support@drugbox.app.'; }]]);
+    [[/^liked your comment: "([\s\S]*)"$/, function (m) { return 'أعجبه تعليقك: "' + m[1] + '"'; }],
+     [/^New match for your saved search: “([\s\S]+)”$/, function (m) { return 'نتيجة جديدة لبحثك المحفوظ: “' + m[1] + '”'; }],
+     [/^Your Drugbox account is suspended(?:: (.+?))?\. If you think this is a mistake, write to support@drugbox\.app\.$/, function (m) { return 'حسابك على Drugbox موقوف' + (m[1] ? ': ' + m[1] : '') + '. إذا كنت ترى أن هذا خطأ، راسل support@drugbox.app.'; }]]);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkSuspended(); });
 })();

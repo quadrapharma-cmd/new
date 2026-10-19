@@ -122,3 +122,11 @@ html.dx-dark .dx-pf-menu { filter: invert(1) hue-rotate(180deg); }
 .top-search.dx-mk-search { display: none !important; }
 body[data-page=market] .top-search.dx-mk-search { display: block !important; flex: none; max-width: none !important; margin: 8px 12px; }
 .top-search.dx-mk-search input { height: 42px; font-size: 14px; }
+
+/* ── a post's five actions fit a phone: they may shrink, and Send shows its icon only (its text stays, at size 0, for screen readers) ── */
+@media (max-width:480px) {
+  .post-acts .pact { min-width: 0; padding-left: 4px; padding-right: 4px; }
+  .post-acts .pact.dx-send { flex: 0 0 auto; font-size: 0; padding-left: 8px; padding-right: 8px; }
+  .post-acts .pact.dx-send::before { content: '📤'; font-size: 16px; }
+}
+.dx-mention-opt.dx-kb-active{background:#eef4ff}

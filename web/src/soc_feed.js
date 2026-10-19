@@ -58,7 +58,7 @@
     if (k >= 0) { var a = h.indexOf('>', k) + 1, e1 = h.indexOf('<span id="pb-ell-' + id + '"', a), e2 = h.indexOf('</div>', a), z = e1 >= 0 && e1 < e2 ? e1 : e2;
       if (a > 0 && z > a) h = h.slice(0, a) + linkify(h.slice(a, z), post) + h.slice(z); }
     if (![window.POSTS, window.SAVED_POSTS, window.dxTagPosts, window._profPosts].some(function (l) { return Array.isArray(l) && l.indexOf(post) >= 0; }) && find(id) !== post) return h;   /* a card drawn from another list (a group's posts, groups.js) keeps its own actions — only its text is linked */
-    if (post.edited) h = h.replace(' · 🌐', ' · <span class="dx-edited" title="Edited">edited</span> · 🌐');
+    if (post.edited) h = h.replace(/(<div style="font-size:11px;color:#9ca3af;display:flex;align-items:center;gap:5px;margin-top:1px">[^<]*)<\/div>/, '$1<span aria-hidden="true">·</span><span class="dx-edited" title="Edited">edited</span></div>');   /* after the time, so its own words stay one piece (translated) */
     if (post.pinned) h = h.replace('<div class="post-head">', '<div class="post-head dx-pinned-head">');   /* S-28: on a phone its pills go under the name */
     h = h.replace('onclick="toast(\'Edit coming soon\')">✏️ Edit</div>', 'data-ep-edit="' + id + '" onclick="dxEditPost(this.dataset.epEdit)">✏️ Edit</div>');
     h = h.replace('<button class="pact" onclick="toast(\'Reposted!\')">🔄 Repost</button>', post.reposted
@@ -211,14 +211,15 @@
   };
   function afterRepost(p) { if (inFeed()) window.goto('feed'); else repaintCard(p); }
   /* Home: reposts are cards of their own ("… reposted"), newest first among the posts */
-  var oFeed = window.renderFeed;
+  var oFeed = window.renderFeed, RPN = 0;
   window.renderFeed = function (c) {
     var r = oFeed.apply(this, arguments);
     var col = c && c.querySelector('.post') ? c.querySelector('.post').parentElement : null;
     var list = (S().reposts() || []).slice(0, 30);
     if (col) list.slice().reverse().forEach(function (rp) {
       var p = rp.post || find(rp.pid); if (!p) return; var who = rp.uid === me().id ? null : U(rp.uid);
-      var box = document.createElement('div'); box.innerHTML = window.renderPost(p); var card = box.firstElementChild; if (!card) return;
+      var rpn = (RPN = (RPN || 0) + 1), html = window.renderPost(p).replace(new RegExp('pm-' + String(p.id).replace(/\W/g, '') + '(?=[\'"\\\\])', 'g'), 'pm-' + p.id + '-rp' + rpn);   /* its own ⋯ menu (two cards of one post) */
+      var box = document.createElement('div'); box.innerHTML = html; var card = box.firstElementChild; if (!card) return;
       card.classList.add('dx-repost-card');
       card.insertAdjacentHTML('afterbegin', '<div class="dx-repost-head">🔄 ' + (who ? '<b data-noi18n data-gp="' + who.id + '" onclick="gotoProfile(this.dataset.gp)">' + esc(who.name) + '</b> <span>reposted</span>' : '<span>You reposted</span>') +
         (rp.note ? '<div class="dx-repost-note" data-noi18n>' + esc(rp.note) + '</div>' : '') + '</div>');
@@ -319,6 +320,15 @@
     }, function () {}); }, 150);
   });
   document.addEventListener('mousedown', function (e) { if (e.target.closest && e.target.closest('.dx-mention-opt')) e.preventDefault(); }, true);   /* keep the caret in the text */
+  /* the keyboard: ↓ / ↑ choose a member, Enter or Tab picks, Esc closes (the text keeps the focus) */
+  document.addEventListener('keydown', function (e) {
+    if (!e.target || e.target.id !== 'postBody') return; var box = e.target.parentElement.querySelector('.dx-mention-list'); if (!box) return;
+    var opts = [].slice.call(box.querySelectorAll('.dx-mention-opt')), i = opts.findIndex(function (o) { return o.getAttribute('aria-selected') === 'true'; });
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); i = e.key === 'ArrowDown' ? Math.min(opts.length - 1, i + 1) : Math.max(0, i - 1);
+      opts.forEach(function (o, k) { o.setAttribute('aria-selected', k === i ? 'true' : 'false'); o.classList.toggle('dx-kb-active', k === i); }); if (opts[i]) e.target.setAttribute('aria-activedescendant', opts[i].id = opts[i].id || 'dxMo' + i); }
+    else if ((e.key === 'Enter' || e.key === 'Tab') && i >= 0) { e.preventDefault(); opts[i].click(); }
+    else if (e.key === 'Escape') { e.stopPropagation(); box.remove(); }
+  }, true);
   document.addEventListener('click', function (e) {
     var o = e.target.closest && e.target.closest('.dx-mention-opt'); if (!o) return;
     var ta = $('postBody'), u = U(+o.dataset.mu), w = ta && caretWord(ta); o.closest('.dx-mention-list').remove(); if (!ta || !u || !w) return;

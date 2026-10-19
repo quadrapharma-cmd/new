@@ -32,7 +32,7 @@
     return /^[a-z][a-z0-9-]*$/.test(p) ? '#/' + p : null;
   }
   function record(p, args) {
-    if (NAV || !inApp()) return; last = { page: p, args: args || [] };
+    if (NAV || PEND || !inApp()) return; last = { page: p, args: args || [] };   /* while a pending address waits, the first page drawn does not overwrite it */
     var h = routeOf(p, last.args); if (!h) return;
     var url = location.pathname + location.search + h;
     try { if (location.hash === h) history.replaceState({ dx: 1 }, '', url); else if (history.state && history.state.dx) history.pushState({ dx: 1 }, '', url); else history.replaceState({ dx: 1 }, '', url); } catch (e) {}
@@ -45,7 +45,7 @@
     if (!r) return false;
     NAV = true;
     try {
-      if (r.page === 'post') return false;                          /* a post link is opened by the feed (feedacts) */
+      if (r.page === 'post') { if (!/^\d+$/.test(r.arg)) return false; if (page() !== 'feed') window.goto('feed'); later(function () { if (window.dxOpenPost) window.dxOpenPost(+r.arg); }, 250); return true; }
       if (r.page === 'privacy' || r.page === 'terms') { if (window.dxLegal) window.dxLegal.open(r.page); return true; }
       if (r.page === 'profile') { if (r.arg) window.gotoProfile(localOf(r.arg)); else window.goto('profile'); return true; }
       if (r.page === 'search') { window.doSearch(r.arg); return true; }
@@ -80,7 +80,7 @@
   });
   /* an address opened before signing in (a shared link, a reload) is opened once the member is in */
   var first = parse(location.hash);
-  if (first && first.page !== 'post') PEND = first;
+  if (first) PEND = first;
   if (first && (first.page === 'privacy' || first.page === 'terms')) later(function () { if (window.dxLegal) window.dxLegal.open(first.page); }, 300);
   var pendT = null;
   document.addEventListener('dx:page', function () {
@@ -90,7 +90,7 @@
       if (!inApp()) { if (Date.now() - t0 < 4000) pendT = setTimeout(wait, 60); return; }
       var r = PEND; PEND = null;
       if (r.page === 'privacy' || r.page === 'terms') return;
-      later(function () { if (!open(r)) record(page(), []); }, 80);
+      later(function () { if (open(r)) { try { history.replaceState({ dx: 1 }, '', location.pathname + location.search + '#/' + r.page + (r.arg ? '/' + encodeURIComponent(r.arg) : '')); } catch (e) {} } else record(page(), []); }, 80);
     })();
   });
   /* signing out leaves no page address behind (the next person starts at Home) */
@@ -129,9 +129,9 @@
       html += '<div class="search-section"><div class="search-section-title">' + g[1] + ' (' + xs.length + ')</div>' + xs.map(function (x) { RES.list.push(x); return rowHtml(x, RES.list.length - 1); }).join('') + '</div>';
     });
     RES.sel = -1;
-    c.innerHTML = '<div class="search-wrap"><div style="font-size:18px;font-weight:800;color:var(--cx);margin-bottom:16px">Results for "<em data-noi18n>' + esc(q) + '</em>"</div>' +
+    c.innerHTML = '<div class="search-wrap"><div style="font-size:18px;font-weight:800;color:var(--cx);margin-bottom:16px"><span>Results for</span> “<em data-noi18n>' + esc(q) + '</em>”</div>' +
       (RES.list.length ? '<div role="listbox" aria-label="Search results" id="dxSrList">' + html + '</div>'
-        : '<div style="text-align:center;padding:60px;color:#65676b"><div style="font-size:48px;margin-bottom:12px">🔍</div><div style="font-size:18px;font-weight:700">No results for "<span data-noi18n>' + esc(q) + '</span>"</div><div style="font-size:13px;margin-top:6px">Try a product, a company or a person — or fewer words.</div></div>') + '</div>';
+        : '<div style="text-align:center;padding:60px;color:#65676b"><div style="font-size:48px;margin-bottom:12px">🔍</div><div style="font-size:18px;font-weight:700"><span>No results for</span> “<span data-noi18n>' + esc(q) + '</span>”</div><div style="font-size:13px;margin-top:6px">Try a product, a company or a person — or fewer words.</div></div>') + '</div>';
   }
   function choose(i) { var x = RES.list[i]; if (!x) return; try { x.go(); } catch (e) { if (window.console) console.warn(e); } }
   function mark(i) {
@@ -263,7 +263,7 @@
     var n = (window.NOTIFS || []).find(function (x) { return x.id === id; });
     var r = oRead.apply(this, arguments); syncAlerts(); if (!n) return r;
     var t = n.type, L = window.dxLive;
-    if (n.pid && /^(like|comment|reply|mention|repost)$/.test(t)) { if (!L && window.dxOpenPost) window.dxOpenPost(n.pid, { comments: t === 'comment' || t === 'reply' }); return r; }   /* live: the adapter opens it */
+    if (n.pid && /^(like|comment|reply|mention|repost|comment_like)$/.test(t)) { if (!L && window.dxOpenPost) window.dxOpenPost(n.pid, { comments: t === 'comment' || t === 'reply' }); return r; }   /* live: the adapter opens it */
     if (!L && !n.pid && /^(like|comment)$/.test(t) && window.dxOpenPost) {   /* the sample's notices name no post: my post they are about (its words, else my latest) */
       var me = window.ME || {}, mine = (window.POSTS || []).filter(function (p) { return p.uid === me.id; }), words = String(n.text || '').replace(/<[^>]+>/g, '').toLowerCase().split(/\W+/).filter(function (w) { return w.length > 5; });
       var hasC = function (p) { return ((window.COMMENTS || {})[p.id] || []).length > 0; };
@@ -362,6 +362,7 @@
     'No saved jobs yet — press Save on a job to keep it here.': 'لا توجد وظائف محفوظة بعد — اضغط حفظ على أي وظيفة لتظهر هنا.',
     'No saved listings yet — press Save on a listing in the Marketplace.': 'لا توجد عروض محفوظة بعد — اضغط حفظ على أي عرض في السوق.',
     'Removed from saved jobs': 'أُزيلت من الوظائف المحفوظة', 'Open this job': 'افتح هذه الوظيفة', 'Open this listing': 'افتح هذا العرض', 'Removed from saved listings': 'أُزيل من العروض المحفوظة', 'View profile': 'عرض الملف',
-    'Search is not available right now — try again': 'البحث غير متاح الآن — حاول مرة أخرى'
-  }, [[/^Results for "(.+)"$/, function (m) { return 'نتائج البحث عن "' + m[1] + '"'; }], [/^No results for "(.+)"$/, function (m) { return 'لا توجد نتائج لـ "' + m[1] + '"'; }]]);
+    'Search is not available right now — try again': 'البحث غير متاح الآن — حاول مرة أخرى',
+    'Results for': 'نتائج البحث عن', 'No results for': 'لا توجد نتائج لـ'
+  });
 })();

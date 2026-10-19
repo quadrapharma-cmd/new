@@ -146,6 +146,7 @@ select pg_temp.ok('(setup) with nothing granted, the API is closed: authenticate
 \ir ../migrations/0046_phone.sql
 \ir ../migrations/0047_hardening.sql
 \ir ../migrations/0048_search_speed.sql
+\ir ../migrations/0049_comment_like_notice.sql
 select pg_temp.as_server();
 create temp table priv_after as select pg_temp.privs() as p;
 select pg_temp.ok('grants: 0026 alone restores every privilege of anon, authenticated and service_role exactly (effective rights + ACL entries)',

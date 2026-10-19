@@ -482,8 +482,9 @@
     else if (n.type === 'reply') t = '<b>' + who + '</b> replied to your comment: "' + esc2(n.message || '') + '"';            /* area social (0041) */
     else if (n.type === 'mention') t = '<b>' + who + '</b> mentioned you in a post';
     else if (n.type === 'repost') t = '<b>' + who + '</b> reposted your post';
+    else if (n.type === 'comment_like') t = '<b>' + who + '</b> liked your comment: "' + esc2(n.message || '') + '"';                  /* area social (0049) */
     else if (n.type === 'message') t = '<b>' + who + '</b> sent you a message';                                                  /* area social (0045) */
-    else if (n.type === 'saved_search') t = esc2(n.message || '');
+    else if (n.type === 'saved_search') t = n.data && n.data.title ? esc2('New match for your saved search: “' + n.data.title + '”') : esc2(n.message || '');   /* written here, in the reader's language */
     else if (n.type === 'post_removed' || n.type === 'report_closed') { t = sysText(n); if (!n.from_user) a = SYS_UID; }
     else if (n.type === 'company_message' && n.company_id) t = '<b>' + who + '</b> messaged ' + esc2(n.company && n.company.name ? n.company.name : 'your company') + ': "' + esc2(n.message || '') + '"';   /* written here, in the reader's language (0034); older rows carry their sentence */
     else t = '<b>' + who + '</b> ' + esc2(n.message || '');
@@ -582,7 +583,7 @@
   };
   window.markNotifRead = function (id) { var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }), was = n && n.read; o3.read(id); badges();
     if (ME_UUID && n && !was) sb.from('notifications').update({ read: true }).eq('id', id).then(function (r) { if (r.error) toastErr(r.error); });
-    if (n && n.pid && /^(like|comment|reply|mention|repost)$/.test(n.type) && window.dxOpenPost) window.dxOpenPost(n.pid, { comments: n.type === 'comment' || n.type === 'reply' }); };   /* a reaction or comment notification opens its post */
+    if (n && n.pid && /^(like|comment|reply|mention|repost|comment_like)$/.test(n.type) && window.dxOpenPost) window.dxOpenPost(n.pid, { comments: n.type === 'comment' || n.type === 'reply' || n.type === 'comment_like' }); };   /* a reaction or comment notification opens its post */
   if (o3.readAll) window.markAllRead = function () { o3.readAll(); badges(); if (ME_UUID) sb.from('notifications').update({ read: true }).eq('user_id', ME_UUID).eq('read', false).then(function (r) { if (r.error) toastErr(r.error); }); };
   if (o3.clear) window.clearAllNotifs = function () {            /* keeps the interface's Undo: delete only when the list is really emptied */
     var ids = NOTIF_IDS.slice(); o3.clear(); badges(); if (!ME_UUID || !ids.length) return;

@@ -210,6 +210,9 @@
   }
   function applySaved(s) {
     window.goto('market');
+    setTimeout(function () { var m = mk(); if (!m) return;   /* AREA social: a first visit draws its default filters after the 30 ms pass — the filters again */
+      m.querySelectorAll('.filters .f-opt input').forEach(function (i) { var l = txt(i.closest('.f-opt')).replace(/\d[\d,]*$/, '').trim(), want = s.f.checks.indexOf(l) >= 0; if (i.checked !== want) { i.checked = want; i.dispatchEvent(new Event('change', { bubbles: true })); } });
+      if (window.updateLiveCount) window.updateLiveCount(); }, 600);
     setTimeout(function () {
       var m = mk(); if (!m) return;
       m.querySelectorAll('.filters .f-opt input').forEach(function (i) { var l = txt(i.closest('.f-opt')).replace(/\d[\d,]*$/, '').trim(), want = s.f.checks.indexOf(l) >= 0; if (i.checked !== want) { i.checked = want; i.dispatchEvent(new Event('change', { bubbles: true })); } });

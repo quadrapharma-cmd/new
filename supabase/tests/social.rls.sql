@@ -103,6 +103,7 @@ select pg_temp.no('the same like twice is refused', $$insert into public.comment
 select pg_temp.no('a member cannot set a like count', $$update public.comments set like_count = 99 where id = pg_temp.id('cc')$$, '42501');
 select pg_temp.as_server();
 select pg_temp.ok('the comment counts one like', $$(select like_count = 1 from public.comments where id = pg_temp.id('ca'))$$);
+select pg_temp.ok('Alice is told once that Cara liked her comment (0049)', $$(select count(*) = 1 from public.notifications where user_id = 'aaaa0041-0000-0000-0000-000000000001' and from_user = 'aaaa0041-0000-0000-0000-000000000003' and type = 'comment_like' and comment_id = pg_temp.id('ca'))$$);
 
 -- ══ mentions ══════════════════════════════════════════════════════════════════════════════
 select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000001');
