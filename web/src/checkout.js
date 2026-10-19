@@ -40,6 +40,8 @@
       if (x.method === 'instapay') return Promise.resolve({ order_id: x.id, reference: x.order, amount: x.total, instapay: { address: 'drugbox@instapay', name: 'Drugbox Egypt' }, demo: true });
       return Promise.resolve({ order_id: x.id, reference: x.order, amount: x.total, paid: true, demo: true });
     },
+    cancel: function (id) { var l = demoOrders(), hit = false; l.forEach(function (x) { if (x.id === id && x.status === 'pending') { x.status = 'cancelled'; hit = true; } }); demoSave(l);
+      return hit ? Promise.resolve('cancelled') : Promise.reject(new Error('Only a payment that is still waiting can be cancelled')); },
     submitInstapay: function (id, ref) { var l = demoOrders(); l.forEach(function (x) { if (x.id === id) { x.status = 'review'; x.transfer = ref; } }); demoSave(l); return Promise.resolve(); },
     orders: function (slug) { var me = (window.ME || {}).id;
       if (slug === 'quadra-pharm' && !st('payments_seeded')) {               /* the demo's VIP company has paid for its VIP once */
@@ -102,18 +104,20 @@
       var vip = /Pay for VIP/.test(head), wiz = /review and pay/.test(head); if (!vip && !wiz) return; ov.dataset.pay = vip ? 'vip' : 'wizard';
       var tbl = ov.querySelector('table.cp-spec'), old = ov.querySelector('.pay-row'); if (old) old.remove();
       if (tbl) tbl.insertAdjacentHTML('afterend', methods('dxPayVip'));
-      var n = ov.querySelectorAll('p.cp-muted'); [].forEach.call(n, function (p) { if (/Demo/.test(p.textContent)) { if (window.dxPay.live) p.remove(); else p.textContent = 'Demo — no money is charged; the steps are the real ones.'; } }); });
+      var n = ov.querySelectorAll('p.cp-muted'); [].forEach.call(n, function (p) { if (/Demo/.test(p.textContent)) { if (window.dxPay.live) p.remove(); else p.textContent = 'Demo — no money is charged; the steps are the real ones.'; } });
+      if (wiz && !window.dxPay.live && tbl) { var pm = ov.querySelector('.dx-pay'); if (pm) pm.insertAdjacentHTML('afterend', '<p class="cp-muted dx-demo-note">Demo — no money is charged; the steps are the real ones.</p>'); } });   /* the demo says it is a demo, never the live app */
   }).observe(document.body, { childList: true });
 
   /* what the payment provider asks next: the Paymob page, a Fawry reference, the InstaPay transfer */
   function result(r) {
     if (r.checkout_url) { D.toast('Opening the secure Paymob page…'); window.location.assign(r.checkout_url); return; }
-    if (r.fawry_reference) { D.modal({ title: 'Pay at Fawry', secondary: 'Done', body: '<div class="dx-pay-ref"><small>Fawry reference number</small><b>' + esc(r.fawry_reference) + '</b><span>' + esc(egp(r.amount)) + ' · valid until ' + esc(fmt(r.expires_at, true)) + '</span></div><ol class="dx-pay-steps"><li>Go to any Fawry outlet, or open myFawry → Pay with reference.</li><li>Give the reference number and pay the amount.</li><li>It activates automatically once Fawry confirms — we notify you. You find this reference again in My payments.</li></ol>' }); refreshPay(); return; }
+    if (r.fawry_reference) { D.modal({ title: 'Pay at Fawry', secondary: 'Done', body: '<div class="dx-pay-ref"><small>Fawry reference number</small><b>' + esc(r.fawry_reference) + '</b><span>' + esc(egp(r.amount)) + ' · valid until ' + esc(fmt(r.expires_at, true)) + '</span></div><ol class="dx-pay-steps"><li>Go to any Fawry outlet, or open myFawry → Pay with reference.</li><li>Give the reference number and pay the amount.</li><li>It activates automatically once Fawry confirms — we notify you. You find this reference again in My payments.</li></ol>' +
+      (r.demo ? '<p class="dx-pay-note dx-demo-note">Demo — a sample reference number; Fawry is not contacted and nothing is charged.</p>' : '') }); refreshPay(); return; }
     if (r.instapay) { instapayDialog(r); return; }
     if (r.paid) { refreshPay(); }
   }
   function instapayDialog(r) {
-    D.modal({ title: 'Pay with InstaPay', body: '<div class="dx-pay-ref"><small>Send to</small><b>' + esc(r.instapay.address) + '</b><span>' + esc(r.instapay.name) + ' · ' + esc(egp(r.amount)) + '</span></div><p class="dx-pay-note">Write <b>' + esc(r.reference) + '</b> in the transfer note.</p>' +
+    D.modal({ title: 'Pay with InstaPay', body: '<div class="dx-pay-ref"><small>Send to</small><b>' + esc(r.instapay.address) + '</b><span>' + esc(r.instapay.name) + ' · ' + esc(egp(r.amount)) + '</span></div><p class="dx-pay-note">Write <b>' + esc(r.reference) + '</b> in the transfer note.</p>' + (r.demo ? '<p class="dx-pay-note dx-demo-note">Demo — a sample InstaPay address; send no money, nothing is charged.</p>' : '') +
       '<div class="dbk-f"><label for="dxIpRef">Transfer number *</label><input id="dxIpRef" data-req placeholder="From the InstaPay confirmation"></div><div class="dbk-f"><label for="dxIpRc">Receipt (screenshot or PDF)</label><input id="dxIpRc" type="file" accept=".png,.jpg,.jpeg,.pdf"></div>',
       primary: { label: 'Send for confirmation', onClick: function (b, close) { if (!D.requireFields(b)) return false; var f = b.querySelector('#dxIpRc').files[0], ok = b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
         window.dxPay.submitInstapay(r.order_id, b.querySelector('#dxIpRef').value.trim(), f || null).then(function () { close(); D.toast('Thank you — we confirm InstaPay transfers within one working day'); refreshPay(); }, function (e) { if (ok) ok.disabled = false; D.toast(e.message || 'Could not send'); });
@@ -150,7 +154,7 @@
     created.forEach(function (c) { if (c.slug === slug) { c.plan = 'vip'; c.billing = product === 'vip_year' ? 'year' : 'month'; } }); X.store('created_companies', created); X.render(); D.toast('Payment received — VIP is active (demo: no card was charged)'); }
 
   /* ── My payments (Market → My Listings) and the company's payment history (Workspace → Plan & verification) ── */
-  var STATUS = { pending: 'Waiting for payment', review: 'Under review', paid: 'Paid', failed: 'Did not go through', expired: 'Expired', refunded: 'Refunded' };
+  var STATUS = { pending: 'Waiting for payment', review: 'Under review', paid: 'Paid', failed: 'Did not go through', expired: 'Expired', refunded: 'Refunded', cancelled: 'Cancelled' };
   var PAY = { me: null, co: {}, at: 0, coAt: {} };
   function payRow(x, co) {
     var sub = [x.listing || x.company || '', MNAME[x.method] || x.method, fmt(x.created_at)].filter(Boolean).join(' · '), extra = '', acts = '';
@@ -158,9 +162,12 @@
     if (x.method === 'instapay' && x.status === 'review' && x.transfer) extra = '<small class="dx-pr-ref">Transfer ' + esc(x.transfer) + ' — Drugbox confirms within one working day</small>';
     if (x.status === 'paid' && x.invoice_no) acts = '<button type="button" class="dr-btn sm" data-inv="' + esc(x.id) + '">Invoice</button>';
     else if (x.method === 'instapay' && x.status === 'pending' && x.mine !== false) acts = '<button type="button" class="dr-btn sm" data-ipsend="' + esc(x.id) + '" data-ipref="' + esc(x.order) + '" data-ipamt="' + esc(x.total) + '">Send the transfer</button>';
+    else if (x.status === 'pending' && x.mine !== false && (x.method === 'card' || x.method === 'wallet'))   /* left on the Paymob page: continue (a new checkout) or cancel */
+      acts = '<button type="button" class="dr-btn sm" data-paycont="' + esc(x.id) + '">Continue payment</button><button type="button" class="dr-btn sm ghost" data-paycancel="' + esc(x.id) + '">Cancel</button>';
+    else if (x.status === 'pending' && x.mine !== false && x.method === 'fawry') acts = '<button type="button" class="dr-btn sm ghost" data-paycancel="' + esc(x.id) + '" data-fawry="1">Cancel</button>';
     else if ((x.status === 'failed' || x.status === 'expired') && x.kind !== 'vip') acts = '<button type="button" class="dr-btn sm" data-payagain="' + esc(x.kind) + '">Pay again</button>';
     else if ((x.status === 'failed' || x.status === 'expired') && x.kind === 'vip' && co) acts = '<button type="button" class="dr-btn sm" data-wvip="1">Pay again</button>';
-    return '<div class="mr-row dx-pr" data-pay="' + esc(x.id) + '"><div class="mr-b"><b>' + esc(x.product) + ' · ' + esc(egp(x.total)) + ' <span class="mr-st st-' + (x.status === 'paid' ? 'acc' : x.status === 'failed' || x.status === 'expired' ? 'dec' : 'viewed') + '">' + esc(STATUS[x.status] || x.status) + '</span></b><small>' + esc(sub) + (x.vat ? ' · incl. VAT ' + esc(egp(x.vat)) : '') + '</small>' + extra + '</div>' + (acts ? '<span class="mr-acts">' + acts + '</span>' : '') + '</div>';
+    return '<div class="mr-row dx-pr" data-pay="' + esc(x.id) + '"><div class="mr-b"><b>' + esc(x.product) + ' · ' + esc(egp(x.total)) + ' <span class="mr-st st-' + (x.status === 'paid' ? 'acc' : x.status === 'failed' || x.status === 'expired' || x.status === 'cancelled' ? 'dec' : 'viewed') + '">' + esc(STATUS[x.status] || x.status) + '</span></b><small>' + esc(sub) + (x.vat ? ' · incl. VAT ' + esc(egp(x.vat)) : '') + '</small>' + extra + '</div>' + (acts ? '<span class="mr-acts">' + acts + '</span>' : '') + '</div>';
   }
   function loadMine(force) { if (!window.dxPay.orders || (!force && Date.now() - PAY.at < 15000)) return; PAY.at = Date.now();
     window.dxPay.orders(null).then(function (l) { PAY.me = l || []; paintMyPayments(); }).catch(function () {}); }
@@ -187,23 +194,34 @@
     }
   };
   document.addEventListener('click', function (e) {
-    var t = e.target.closest && e.target.closest('[data-inv],[data-ipsend],[data-payagain]'); if (!t) return;
+    var t = e.target.closest && e.target.closest('[data-inv],[data-ipsend],[data-payagain],[data-paycont],[data-paycancel]'); if (!t) return;
     e.preventDefault(); e.stopPropagation();
     if (t.dataset.inv) { t.disabled = true; window.dxPay.invoice(isNaN(+t.dataset.inv) ? t.dataset.inv : +t.dataset.inv).then(function (v) { t.disabled = false; invoiceWindow(v); }, function (er) { t.disabled = false; D.toast((er && er.message) || 'The invoice could not be opened'); }); return; }
     if (t.dataset.ipsend) { instapayDialog({ order_id: isNaN(+t.dataset.ipsend) ? t.dataset.ipsend : +t.dataset.ipsend, reference: t.dataset.ipref, amount: +t.dataset.ipamt, instapay: window.dxPay.instapayTo ? window.dxPay.instapayTo() : { address: 'drugbox@instapay', name: 'Drugbox Egypt' } }); return; }
+    var key = function (v) { return isNaN(+v) ? v : +v; }, find = function (id) { var all = (PAY.me || []).slice(); Object.keys(PAY.co).forEach(function (k) { all = all.concat(PAY.co[k] || []); }); return all.filter(function (x) { return String(x.id) === String(id); })[0]; };
+    if (t.dataset.paycont) { var x = find(t.dataset.paycont); if (!x) return;   /* the same thing again, by the same method: the server supersedes the abandoned checkout */
+      start({ product: x.code, method: x.method, listing_id: x.listing_id || null, slug: x.slug || null, listingName: x.listing }, t); return; }
+    if (t.dataset.paycancel) { var fw = !!t.dataset.fawry;
+      D.modal({ title: 'Cancel this payment?', body: '<p>' + (fw ? 'Its Fawry reference can no longer be used. Nothing was charged.' : 'Nothing was charged. If you already paid on the payment page, do not cancel — the payment confirms itself.') + '</p>',
+        secondary: 'Keep it', primary: { label: 'Cancel payment', danger: true, onClick: function () { window.dxPay.cancel(key(t.dataset.paycancel)).then(function () { D.toast('Payment cancelled — nothing was charged'); refreshPay(); }, function (er) { D.toast((er && er.message) || 'Could not cancel'); refreshPay(); }); } } });
+      return; }
     if (t.dataset.payagain) { if (typeof window.openBoostModal === 'function') window.openBoostModal(t.dataset.payagain === 'featured' ? 'featured' : 'boost'); }
   }, true);
   /* the tax invoice: the server's numbers (order_invoice), printed or saved as PDF from the browser */
   function invoiceWindow(v) {
     var w = window.open('', '_blank'); if (!w) { D.toast('Allow pop-ups to open the invoice'); return; }
-    var row = function (a, b) { return '<tr><td>' + esc(a) + '</td><td style="text-align:right">' + esc(b) + '</td></tr>'; }, s = v.seller || {};
-    w.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Invoice ' + esc(v.invoice_no) + '</title><style>body{font:14px/1.5 Arial,sans-serif;color:#0f172a;max-width:720px;margin:32px auto;padding:0 20px}h1{font-size:22px;margin:0}table{width:100%;border-collapse:collapse;margin:18px 0}td{padding:8px;border-bottom:1px solid #e2e8f0}.t td{font-weight:700;border-top:2px solid #0f172a}small{color:#64748b}@media print{button{display:none}}</style></head><body>' +
-      '<h1>Tax invoice</h1><p><b>' + esc(v.invoice_no) + '</b> · ' + esc(fmt(v.issued_at, true)) + '<br><small>Order ' + esc(v.order) + ' · paid by ' + esc(MNAME[v.method] || v.method) + '</small></p>' +
-      '<p><b>Seller:</b> ' + esc(s.name || 'Drugbox') + (s.address ? '<br>' + esc(s.address) : '') + '<br>Tax registration no.: ' + esc(s.tax_reg_no || 'pending — added by Drugbox') + '</p>' +
-      '<p><b>Buyer:</b> ' + esc((v.company && v.company.name) || (v.buyer && v.buyer.name) || '') + (v.company && v.company.registry ? '<br>Commercial registry ' + esc(v.company.registry) : '') + (v.company && v.buyer ? '<br>Ordered by ' + esc(v.buyer.name) : '') + '</p>' +
-      '<table>' + row(v.product + (v.listing ? ' — ' + v.listing : '') + (v.days ? ' (' + v.days + ' days)' : ''), 'EGP ' + Number(v.net).toFixed(2)) + row('VAT ' + Math.round(Number(v.vat_rate || 0.14) * 100) + '%', 'EGP ' + Number(v.vat).toFixed(2)) +
-      '<tr class="t"><td>Total</td><td style="text-align:right">EGP ' + Number(v.total).toFixed(2) + '</td></tr></table>' + (v.demo ? '<p><small>Demo invoice — sample data, no money was charged.</small></p>' : '') +
-      '<button onclick="print()">Print or save as PDF</button></body></html>');
+    var A = ar(), L = function (en, a) { return A ? a : en; }, s = v.seller || {}, M = A ? { card: 'بطاقة بنكية', wallet: 'محفظة الموبايل', fawry: 'فوري', instapay: 'إنستاباي' } : MNAME;
+    var money = function (n) { var t = Number(n).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return A ? t + ' ج.م' : 'EGP ' + t; };
+    var row = function (a, b) { return '<tr><td>' + esc(a) + '</td><td class="n">' + esc(b) + '</td></tr>'; }, prod = A && window.dxT ? window.dxT(v.product || '') : v.product;
+    var days = v.days ? (A ? ' (' + v.days + (v.days >= 3 && v.days <= 10 ? ' أيام' : ' يومًا') + ')' : ' (' + v.days + ' days)') : '';
+    w.document.write('<!doctype html><html lang="' + (A ? 'ar' : 'en') + '" dir="' + (A ? 'rtl' : 'ltr') + '"><head><meta charset="utf-8"><title>' + L('Invoice ', 'فاتورة ') + esc(v.invoice_no) + '</title><style>body{font:14px/1.5 Arial,sans-serif;color:#0f172a;max-width:720px;margin:32px auto;padding:0 20px}h1{font-size:22px;margin:0}table{width:100%;border-collapse:collapse;margin:18px 0}td{padding:8px;border-bottom:1px solid #e2e8f0}td.n{text-align:' + (A ? 'left' : 'right') + ';direction:ltr;unicode-bidi:embed}.t td{font-weight:700;border-top:2px solid #0f172a}small{color:#64748b}.ltr{direction:ltr;unicode-bidi:embed}.rf{color:#b91c1c;font-weight:700}@media print{button{display:none}}</style></head><body>' +
+      '<h1>' + L('Tax invoice', 'فاتورة ضريبية') + '</h1>' + (v.refunded ? '<p class="rf">' + L('Refunded — this payment was returned to the buyer.', 'مُستردة — أُعيد هذا المبلغ إلى المشتري.') + '</p>' : '') +
+      '<p><b class="ltr">' + esc(v.invoice_no) + '</b> · ' + esc(A && window.dxFmtDate ? window.dxFmtDate(v.issued_at, true, 'ar') : fmt(v.issued_at, true)) + '<br><small>' + L('Order ', 'الطلب ') + '<span class="ltr">' + esc(v.order) + '</span>' + L(' · paid by ', ' · الدفع عن طريق ') + esc(M[v.method] || v.method) + '</small></p>' +
+      '<p><b>' + L('Seller:', 'البائع:') + '</b> ' + esc(s.name || 'Drugbox') + (s.address ? '<br>' + esc(s.address) : '') + '<br>' + L('Tax registration no.: ', 'رقم التسجيل الضريبي: ') + (s.tax_reg_no ? '<span class="ltr">' + esc(s.tax_reg_no) + '</span>' : esc(L('pending — added by Drugbox', 'قيد الإضافة — يضيفه Drugbox'))) + '</p>' +
+      '<p><b>' + L('Buyer:', 'المشتري:') + '</b> ' + esc((v.company && v.company.name) || (v.buyer && v.buyer.name) || '') + (v.company && v.company.registry ? '<br>' + L('Commercial registry ', 'السجل التجاري ') + '<span class="ltr">' + esc(v.company.registry) + '</span>' : '') + (v.company && v.buyer ? '<br>' + L('Ordered by ', 'طلبه ') + esc(v.buyer.name) : '') + '</p>' +
+      '<table>' + row(prod + (v.listing ? ' — ' + v.listing : '') + days, money(v.net)) + row(L('VAT ', 'ضريبة القيمة المضافة ') + Math.round(Number(v.vat_rate || 0.14) * 100) + '%', money(v.vat)) +
+      '<tr class="t"><td>' + L('Total', 'الإجمالي') + '</td><td class="n">' + money(v.total) + '</td></tr></table>' + (v.demo ? '<p><small>' + L('Demo invoice — sample data, no money was charged.', 'فاتورة تجريبية — بيانات توضيحية، ولم يُخصم أي مبلغ.') + '</small></p>' : '') +
+      '<button onclick="print()">' + L('Print or save as PDF', 'اطبع أو احفظ PDF') + '</button></body></html>');
     w.document.close();
   }
 })();

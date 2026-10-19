@@ -94,8 +94,11 @@
   /* ── company page plans. VIP is a paid plan, shown as its own badge; partner levels stay earned. ── */
   var PLANS = {
     free: { name: 'Basic', price: 0, maxProducts: Infinity, feats: ['Company page in the directory', 'Unlimited products and photos', 'Cover photo and full branding', 'Quote, service and job requests', 'Page views and requests analytics', 'Team seats for sales and HR'] },
-    vip: { name: 'VIP', price: 2500, year: 25000, maxProducts: Infinity, feats: ['Everything in Basic', 'VIP badge', 'Top of the directory (marked Sponsored)', 'Your own link: company.drugbox.app', 'Verification within 48 hours', '3 Marketplace boosts every month'] }
+    vip: { name: 'VIP', price: 2500, year: 25000, maxProducts: Infinity, feats: ['Everything in Basic', 'VIP badge', 'Top of the directory (marked Sponsored)', 'Verification within 48 hours', '3 Marketplace boosts every month'] }
   };
+  /* VAT on a VIP price the way the server computes the order (create_order: total = round(amount × (1 + rate), cents)). The live
+     adapter sets PLANS.vip.price / .year / .vat from payment_products; the demo keeps its sample prices. */
+  function vipVat(amount) { var r = PLANS.vip.vat == null ? 0.14 : PLANS.vip.vat; return Math.round(amount * (1 + r) * 100) / 100 - amount; }
   var REQUIRE_VIP_FOR_PAGE = false;   /* set true to make every company page VIP-only */
   function isVip(c) { return c && c.plan === 'vip'; }
   function vipBadge(c) { return isVip(c) ? '<span class="dr-vip" title="VIP company — paid plan">' + ic('crown') + 'VIP</span>' : ''; }
@@ -203,7 +206,7 @@
   window.dxOpenCompany = openCompany;
   window.dxDirectory = { list: companies, open: openCompany };
   window.dxDir = { companies: companies, bySlug: bySlug, render: function () { render(); }, S: S, open: function (s, t) { openCompany(s, t); }, rfq: function (s, p, v) { rfqDialog(s, p, v); },
-    myCompanies: function () { return myCompanies(); }, mine: function () { return mine(); }, store: store, edits: edits_, logo: logo, initials: initials, safeUrl: safeUrl, cssUrl: cssUrl, safeColor: safeColor, pimg: pimg, packshot: packshot, isVip: isVip, inbox: inbox, myReqs: myReqs,
+    myCompanies: function () { return myCompanies(); }, mine: function () { return mine(); }, store: store, edits: edits_, logo: logo, initials: initials, safeUrl: safeUrl, cssUrl: cssUrl, safeColor: safeColor, pimg: pimg, packshot: packshot, isVip: isVip, plans: PLANS, inbox: inbox, myReqs: myReqs,
     jobsOf: function (c) { return jobsOf(c); }, offersOf: function (c) { return offersOf(c); }, employer: function (c) { return employer(c); }, productDialog: function (c, p) { productDialog(c, p); }, applyDialog: function (c, j) { applyDialog(c, j); },
     editor: function (f) { openEditor(f); }, verify: function (s) { verifyDialog(s); }, upgrade: function (s) { upgradeDialog(s); }, create: function () { createCompanyDialog(); }, myCosDialog: function () { myCompaniesDialog(); }, followed: function (s) { return followed(s); }, esc: esc, ic: ic,
     reqStatus: function (r) { return reqStatus(r); }, quoteFor: function (r) { return quoteFor(r); }, contact: contact, P: P, SECTORS: SECTORS, GOVS: GOVS, CERTS: CERTS, ownsPage: function (c) { return ownsPage(c); } };
@@ -316,7 +319,7 @@
       m2.el.addEventListener('change', function (e) { if (e.target.id !== 'ccL') return; readImage(e.target.files[0], 400, function (d) { if (!d) return; W.logo = d; var pv = m2.el.querySelector('#ccLPrev'); if (pv) pv.innerHTML = '<span class="dr-logo sm has-img"><img src="' + esc(d) + '" alt=""></span>'; }); });
     }
     function step4() {
-      var p = PLANS[W.plan], amount = W.plan === 'vip' ? (W.billing === 'year' ? p.year : p.price) : 0, vat = Math.round(amount * 0.14);
+      var p = PLANS[W.plan], amount = W.plan === 'vip' ? (W.billing === 'year' ? p.year : p.price) : 0, vat = vipVat(amount);
       D.modal({ title: 'Create a company page · 3 of 3 — review' + (amount ? ' and pay' : ''),
         body: '<table class="cp-spec"><tr><td>Company</td><td>' + esc(W.name) + '</td></tr><tr><td>Activity</td><td>' + esc(W.sector) + '</td></tr><tr><td>Location</td><td>' + esc(W.city) + ', ' + esc(W.gov) + '</td></tr>' +
           '<tr><td>Verification</td><td>Optional, later — from your page (gives the Verified badge)</td></tr><tr><td>Plan</td><td><b>' + p.name + '</b>' + (amount ? ' · ' + (W.billing === 'year' ? 'yearly' : 'monthly') : '') + '</td></tr>' +
@@ -358,7 +361,7 @@
     var co = bySlug(slug); if (!co) return;
     var m = D.modal({ title: 'Upgrade ' + co.name + ' to VIP', body: planCards('vip', 'month'),
       primary: { label: 'Continue to payment', onClick: function (b) {
-        var billing = b.querySelector('input[name=plBill]:checked').value, amount = billing === 'year' ? PLANS.vip.year : PLANS.vip.price, vat = Math.round(amount * 0.14);
+        var billing = b.querySelector('input[name=plBill]:checked').value, amount = billing === 'year' ? PLANS.vip.year : PLANS.vip.price, vat = vipVat(amount);
         setTimeout(function () {
           D.modal({ title: 'Pay for VIP', body: '<table class="cp-spec" data-billing="' + (billing === 'year' ? 'year' : 'month') + '" data-slug="' + esc(slug) + '"><tr><td>' + esc(co.name) + ' · VIP ' + (billing === 'year' ? 'yearly' : 'monthly') + '</td><td>EGP ' + amount.toLocaleString('en-US') + '</td></tr><tr><td>VAT 14%</td><td>EGP ' + vat.toLocaleString('en-US') + '</td></tr><tr><td><b>Total</b></td><td><b>EGP ' + (amount + vat).toLocaleString('en-US') + '</b></td></tr></table><p class="cp-muted">Demo — no payment is taken.</p>',
             primary: { label: 'Pay EGP ' + (amount + vat).toLocaleString('en-US'), onClick: function () {

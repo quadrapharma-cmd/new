@@ -6,3 +6,4 @@
 .dx-mod-a{display:flex;gap:8px;flex:none}.dx-mod-ok,.dx-mod-no,.dx-mod-doc{padding:7px 12px;border-radius:9px;font:600 12.5px Poppins,sans-serif;cursor:pointer;border:1px solid #1A56DB}
 .dx-mod-ok{background:#1A56DB;color:#fff}.dx-mod-no{background:#fff;color:#B91C1C;border-color:#FCA5A5}.dx-mod-doc{background:#F8FAFC;color:#1A56DB;border-color:#BFD3F8;margin:6px 6px 0 0}
 .dx-mod-empty{padding:28px;text-align:center;color:#64748B;font:13px Poppins,sans-serif;background:#fff;border:1px dashed #E2E8F0;border-radius:14px}
+.dx-mod-b .dx-mod-vip{display:inline-block;font:700 11.5px Poppins,sans-serif;font-style:normal;color:#92400E;background:#FEF3C7;border:1px solid #FDE68A;border-radius:999px;padding:1px 8px;margin-top:4px}

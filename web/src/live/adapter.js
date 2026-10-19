@@ -2526,8 +2526,9 @@
     function check() { if (!ME_UUID) { if ((waited += 800) < 60000) setTimeout(check, 800); return; }   /* not signed in within a minute: stop (F-119) */
       sb.from('payment_orders').select('status').eq('id', id).single().then(function (r) { var st = r.data && r.data.status;
         if (st === 'paid') { window.toast('Payment received — it is active now'); refreshCompanies().catch(function () {}); MKT.at = 0; history.replaceState(null, '', location.pathname); if (window.dxPayRefresh) window.dxPayRefresh(); }
+        else if (st === 'cancelled') { window.toast('You cancelled this payment — nothing was charged'); history.replaceState(null, '', location.pathname); if (window.dxPayRefresh) window.dxPayRefresh(); }
         else if (st === 'failed' || st === 'expired') { window.toast('The payment failed or was declined — nothing was charged and nothing was activated. Try again from My payments'); history.replaceState(null, '', location.pathname); if (window.dxPayRefresh) window.dxPayRefresh(); }   /* 0055: a failed payment is recorded */
-        else if (++tries < 10) setTimeout(check, 2000); else window.toast('We have not received the payment confirmation yet — it will activate automatically when it arrives'); }); }
+        else if (++tries < 10) setTimeout(check, 2000); else window.toast('We have not received the payment confirmation yet — if you paid, it activates automatically; if you left the payment page, continue or cancel it in My payments'); }); }
     check(); })();
   /* Review → Payments (InstaPay transfers) */
   var modLoad = window.dxModeration.load, modDecide = window.dxModeration.decide;
@@ -3114,7 +3115,7 @@
      starts once the database has created the page. The browser never decides an amount, a status, a plan or a boost date. */
   function payFrom(x) { return { id: x.id, order: x.order, product: txt(x.product), kind: x.kind, code: x.code, method: x.method, status: x.status, total: +x.total, net: +x.net, vat: +x.vat,
     created_at: x.created_at, paid_at: x.paid_at, invoice_no: x.invoice_no, fawry_reference: x.fawry_reference, fawry_expires_at: x.fawry_expires_at, transfer: txt(x.transfer),
-    listing: txt(x.listing), company: txt(x.company), mine: x.mine !== false }; }
+    listing: txt(x.listing), company: txt(x.company), mine: x.mine !== false, listing_id: x.listing_id || null, company_id: x.company_id || null, slug: x.company_id ? CO.byId[x.company_id] || null : null }; }
   Object.assign(window.dxPay, {
     orders: async function (slug) { if (!ME_UUID) return []; var raw = slug && CO.raw[slug]; if (slug && (!raw || !raw.id)) return [];
       var r = await sb.rpc('my_payments', { p_company: raw ? raw.id : null }); if (r.error) throw new Error(friendly(r.error)); return (r.data || []).map(payFrom); },
@@ -3122,6 +3123,7 @@
     included: async function (slug) { var raw = slug && CO.raw[slug]; if (!ME_UUID || !raw || !raw.id) return 0; var r = await sb.rpc('included_boosts_left', { p_company: raw.id }); return r.error ? 0 : (r.data || 0); },
     useIncluded: async function (lid, slug) { var raw = slug && CO.raw[slug]; if (!raw || !raw.id) throw new Error('Act as your VIP company first');
       var r = await sb.rpc('use_included_boost', { p_listing: +lid, p_company: raw.id }); if (r.error) throw new Error(friendly(r.error)); MKT.at = 0; if (typeof ML !== 'undefined') ML.at = 0; return r.data || {}; },
+    cancel: async function (id) { var r = await sb.rpc('cancel_order', { p_id: +id }); if (r.error) throw new Error(friendly(r.error)); return r.data; },   /* the database refuses a paid or reviewed order */
     instapayTo: function () { try { return JSON.parse(localStorage.getItem('dx_instapay_to') || 'null') || { address: '', name: 'Drugbox' }; } catch (e) { return { address: '', name: 'Drugbox' }; } }
   });
   var payStart = window.dxPay.start;
@@ -3162,6 +3164,24 @@
   window.renderMarket = function () { var r = renderMarketPay.apply(this, arguments); if (ME_UUID && Date.now() - PROMO.at > 15000) loadMyPromo().then(decoratePromo); return r; };
   document.addEventListener('click', function (e) { if (ME_UUID && e.target.closest && e.target.closest('#mkx .master-tab[data-tab=manage]')) loadMyPromo().then(decoratePromo); }, true);
   onReset(function () { PROMO.mine = {}; PROMO.at = 0; });
+  /* the VIP windows (create wizard, Upgrade → Pay for VIP) show the price the server charges: payment_products vip_month / vip_year
+     and its VAT rate (directory.js computes the VAT as create_order does); the demo keeps its sample prices */
+  async function loadVipPrices() {
+    var P = window.dxDir && window.dxDir.plans; if (!P || !P.vip) return;
+    var r = await sb.from('payment_products').select('code,amount_egp,vat_rate').in('code', ['vip_month', 'vip_year']).eq('active', true); if (r.error) return;
+    (r.data || []).forEach(function (x) { if (x.code === 'vip_month') P.vip.price = Number(x.amount_egp); else P.vip.year = Number(x.amount_egp); P.vip.vat = Number(x.vat_rate); });
+  }
+  loadVipPrices().catch(function () {});
+  var hydrateVipP = hydrateMe;
+  hydrateMe = async function (uid) { var me = await hydrateVipP(uid); loadVipPrices().catch(function () {}); return me; };
+  /* Admin → Review → Verification requests: VIP companies first, marked "VIP · answer within 48 h" (the plan promises it) */
+  var modLoadVip = window.dxModeration.load;
+  window.dxModeration.load = async function () {
+    var d = await modLoadVip(), ids = (d.verifications || []).map(function (v) { return v.id; }); if (!ids.length) return d;
+    var r = await sb.from('verification_requests').select('id, co:companies(plan, vip_until)').in('id', ids); if (r.error) return d;
+    var vip = {}; (r.data || []).forEach(function (x) { var c = x.co; if (c && c.plan === 'vip' && (!c.vip_until || Date.parse(c.vip_until) > Date.now())) vip[x.id] = 1; });
+    d.verifications.forEach(function (v) { v.vip = !!vip[v.id]; }); return d;
+  };
   /* ===== /AREA business: payments ===== */
 
   /* ═══════════════ E3 — training: courses and enrollments from the database (the approved course card is the template) ═══════════════ */
