@@ -754,7 +754,7 @@
     'Could not answer the request': 'تعذّر الرد على الطلب', 'This company is not on Drugbox yet': 'هذه الشركة ليست على Drugbox بعد',
     'Reject this certificate?': 'هل ترفض هذه الشهادة؟', 'Reject this verification request?': 'هل ترفض طلب التوثيق هذا؟', 'It is removed from the page and the company is told why.': 'ستُحذف من الصفحة وتُبلَّغ الشركة بالسبب.',
     'The company is told why and can send new documents.': 'ستُبلَّغ الشركة بالسبب ويمكنها إرسال مستندات جديدة.', 'Reason for the company (they will see it) *': 'السبب للشركة (ستراه) *', 'The registry document is not readable': 'مستند السجل التجاري غير مقروء',
-    'Open reports': 'البلاغات المفتوحة', 'Documents': 'المستندات', 'No documents yet.': 'لا توجد مستندات بعد.', 'Attach a document': 'أرفق مستندًا', 'Download': 'تنزيل', 'Document type': 'نوع المستند',
+    'Open reports': 'البلاغات المفتوحة', 'Request a proposal': 'اطلب عرضًا', 'Documents': 'المستندات', 'No documents yet.': 'لا توجد مستندات بعد.', 'Attach a document': 'أرفق مستندًا', 'Download': 'تنزيل', 'Document type': 'نوع المستند',
     'Invoice': 'فاتورة', 'Specification': 'المواصفات', 'Data room': 'غرفة البيانات', 'Deliverable': 'المُخرَج', 'Questionnaire evidence': 'مستند الاستبيان', 'Document attached': 'تم إرفاق مستند',
     'Data room file (optional)': 'ملف غرفة البيانات (اختياري)', 'Deliverable (file)': 'المُخرَج (ملف)', 'Delivery note': 'ملاحظة التسليم', 'e.g. Final report and EDA submission receipt': 'مثلًا: التقرير النهائي وإيصال التقديم لهيئة الدواء',
     'Supporting document (SOP, certificate…)': 'مستند داعم (إجراء تشغيل قياسي، شهادة…)', 'Files up to 20 MB': 'الملفات حتى 20 ميجابايت', 'Could not attach the file': 'تعذّر إرفاق الملف',

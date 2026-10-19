@@ -340,7 +340,7 @@ def consulting_service(j):
         j.check(re.search(r'^Service|\nService|الخدمة', t) and not re.search(r'Quantity \*', t), "not built: the consultant's page has no service request — 'Request a quote' opens a goods quotation (Quantity, Deliver to)")
         fill_by_label(j, pg, r'Message|الرسالة|Scope', 'EDA variation for site transfer of 3 products')
         dlg_click(j, pg, L('Send request'), 'Send request'); j.settle(pg, 1000)
-        title = pg.evaluate("(dxDeals.all().filter(d=>d.type==='service').pop()||{}).title")
+        title = pg.evaluate("n=>(dxDeals.all().filter(d=>d.type==='service'&&d.to&&d.to.name===n).pop()||{}).title", cons)   # the request this journey sent to the consultant
         j.check(title, 'no service request was created')
     with j.step("Consultant: 'Send proposal' (EGP 85,000, 6 weeks, scope); factory: 'Accept'"):
         their_move(j, pg, c, title, 'Send proposal', {r'Fee|الأتعاب': 'EGP 85,000', r'Timeline|المدة': '6 weeks', r'Scope|النطاق': 'Gap analysis, dossier update, EDA follow-up'})

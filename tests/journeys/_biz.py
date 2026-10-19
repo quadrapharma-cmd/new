@@ -467,8 +467,10 @@ def request_quote(j, pg, sup, product=None, qty='500', unit='kg', to='Cairo, Egy
 def their_move(j, pg, other, title, label, fields=None, attach=None):
     """The other party's next step: in live, as that company in its own browser (deals centre → the deal → action);
     in the demo, 'Simulate <them>'s reply (demo)'."""
-    if j.demo:
-        open_deal(j, pg, title); t = simulate(j, pg); close_dialogs(pg); return t
+    if j.demo:   # the demo account is the other party's counterpart: its own request is under Sent (a received sample may share the title)
+        try: open_deal(j, pg, title, r'Sent|المرسلة|المُرسلة')
+        except StepFail: open_deal(j, pg, title)
+        t = simulate(j, pg); close_dialogs(pg); return t
     op = other['page']; j.reload(op); open_deal(j, op, title, r'Received|الواردة')
     t = deal_act(j, op, label, fields, attach=attach); close_dialogs(op)
     j.reload(pg)                                             # the next time this side opens the app

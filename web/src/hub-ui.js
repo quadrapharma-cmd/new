@@ -81,6 +81,8 @@
   /* ════════ company page ════════ */
   function credChips(co) { return H().credentials(co).filter(function (k) { return k.state !== 'expired'; }).slice(0, 6).map(function (k) { return '<span class="hb-cred ' + (k.checked ? 'ok' : 'unk') + '" title="' + esc(k.site + ' · ' + k.src + (k.expiry ? ' · expires ' + k.expiry : '')) + '">' + ic(k.checked ? 'seal' : 'doc') + esc(k.name) + '</span>'; }).join(''); }
   function srcLine(co, sec) { var m = H().metaOf(co, sec), st = H().stale(co, sec); return '<div class="hb-src' + (st ? ' old' : '') + '">' + (st ? ic('warning') + 'May be outdated · ' : '') + 'Source: ' + esc(m.src) + ' · updated ' + fmtDate(m.at) + '</div>'; }
+  /* a company that sells services (consultants, labs, logistics) is asked for a service, not a goods quotation */
+  function svcFirst(co) { return (co.services || []).length > 0 && (!(co.products || []).length || (co.sectors || []).some(function (x) { return /Regulatory|consult|Labs/i.test(x); })); }
   function renderCompany(c, co, S) {
     var mem = member(co), act = X().mine(), here = !!(act && act.slug === co.slug), t = H().track(co.slug), ar = H().nameAr(co), grp = H().groupOf(co), sites = H().sitesOf(co), jobs = X().jobsOf(co), offers = X().offersOf(co), revs = H().reviewsOf(co.slug);
     var listings = offers.length + (X3() ? X3().dossiers().filter(function (d) { return d.slug === co.slug; }).length + X3().surplus().filter(function (s) { return s.slug === co.slug; }).length + X3().groupDeals().filter(function (g) { return g.to.slug === co.slug || g.from.slug === co.slug; }).length : 0);
@@ -92,7 +94,7 @@
       (ar ? '<div class="hb-ar lg" lang="ar" dir="rtl">' + esc(ar) + '</div>' : '') + '<p class="cp-tagline">' + esc(co.tagline) + '</p><div class="cp-meta">' + esc(co.sectors.join(' · ')) + ' · ' + esc(co.city) + ', ' + esc(co.gov) + (grp ? ' · part of <b>' + esc(grp.name) + '</b>' : '') + '</div>' +
       '<div class="hb-track big' + (t.orders ? '' : ' none') + '">' + ic('chart') + esc(H().trackLine(t)) + '</div><div class="hb-creds">' + credChips(co) + '</div></div>' +
       '<div class="cp-cta">' + (mem ? '<button type="button" class="dr-btn' + (here ? ' p' : '') + '" data-hws="' + esc(co.slug) + '">' + ic('building') + 'Open company workspace</button>' : '') +
-        (here ? '' : '<button type="button" class="dr-btn p" data-hrfq="' + esc(co.slug) + '">Request a quote</button><button type="button" class="dr-btn" data-hmsg="1">' + ic('chat') + 'Message</button><button type="button" class="dr-btn" data-hfollow="1">' + (X().followed(co.slug) ? '✓ Following' : '+ Follow') + '</button>') +
+        (here ? '' : (svcFirst(co) ? '<button type="button" class="dr-btn p" data-hrfq="' + esc(co.slug) + '" data-hsvc="' + esc(co.services[0]) + '">Request a proposal</button>' : '<button type="button" class="dr-btn p" data-hrfq="' + esc(co.slug) + '">Request a quote</button>') + '<button type="button" class="dr-btn" data-hmsg="1">' + ic('chat') + 'Message</button><button type="button" class="dr-btn" data-hfollow="1">' + (X().followed(co.slug) ? '✓ Following' : '+ Follow') + '</button>') +
       (act && act.slug !== co.slug && X3() ? '<span class="avl-ctl"><select id="hbAvl" aria-label="Supplier status for ' + esc(act.name) + '"><option value="">Supplier status: not on list</option>' + Object.keys(X3().AVL).map(function (k) { return '<option value="' + k + '"' + (avl && avl.status === k ? ' selected' : '') + '>' + X3().AVL[k][0] + '</option>'; }).join('') + '</select><button type="button" class="dr-btn sm" data-hsq="1">' + ic('clipboard') + 'Questionnaire</button></span>' : '') +
       '<button type="button" class="dr-btn" data-hpdf="1">' + ic('doc') + 'Profile PDF</button><button type="button" class="dr-btn" data-hqr="1">' + ic('target') + 'QR</button><button type="button" class="dr-link" data-hreport="1">Report wrong information</button></div></div></header>' +
       (co.status === 'unclaimed' ? (window.dxClaims && window.dxClaims.pending(co.slug) ? '<div class="cp-banner pend">' + ic('warning') + '<span><b>Claim pending.</b> Drugbox is checking your proof and tells you when the page is yours.</span></div>'
@@ -287,7 +289,7 @@
     e.stopPropagation();
     var St = S(), co = St.open ? X().bySlug(St.open) : St.ws ? X().bySlug(St.ws) : null, ds = t.dataset;
     if (ds.hopen) return openPage(ds.hopen, ds.htab);
-    if (ds.hrfq) return X().rfq(ds.hrfq, ds.hp);
+    if (ds.hrfq) return ds.hsvc ? X().rfq(ds.hrfq, null, ds.hsvc) : X().rfq(ds.hrfq, ds.hp);
     if (ds.hadd) return addOrClaim();
     if (ds.hsec) { St.sector = ds.hsec; return rerender(); }
     if (ds.hcert) { St.certs = St.certs || []; var i = St.certs.indexOf(ds.hcert); if (i >= 0) St.certs.splice(i, 1); else St.certs.push(ds.hcert); return rerender(); }

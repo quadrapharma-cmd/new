@@ -1278,7 +1278,7 @@
     var from = r.from_company_id && fc ? { slug: sslug(fc.slug), name: fc.name } : { slug: null, name: (r.fu && r.fu.name) || 'Member', person: true, userId: aid(r.from_user) };
     var d = { id: r.ref, type: r.type, title: r.title, from: from, to: { slug: sslug(tc.slug), name: tc.name }, lines: r.lines || {}, status: r.status,
       at: tms(r.created_at), updated: tms(r.updated_at),
-      events: (r.deal_events || []).slice().sort(function (a, b) { return a.id - b.id; }).map(function (e) { return { at: tms(e.created_at), by: e.side, kind: e.action, text: (e.data && typeof e.data.text === 'string' && e.data.text) || e.note || '', data: e.data || {} }; }) };   /* the step's own summary (price per round), else its note */
+      events: (r.deal_events || []).slice().sort(function (a, b) { return a.id - b.id; }).map(function (e) { return { at: tms(e.created_at), by: e.side, kind: e.action, text: (e.data && typeof e.data.text === 'string' && e.data.text) || e.note || '', data: e.data || {}, actor: e.ap && e.ap.name ? txt(e.ap.name) : '' }; }) };   /* who of the team took the step (J-23) */   /* the step's own summary (price per round), else its note */
     if (r.offer) d.offer = r.offer; if (r.counter) d.counter = r.counter; if (r.answers) d.answers = r.answers; if (r.ontime !== null && r.ontime !== undefined) d.ontime = r.ontime;
     if (r.group_key) d.group = r.group_key; if (r.assignee) d.assignee = aid(r.assignee);
     return d;
@@ -1379,7 +1379,7 @@
     if (r.deal_members && r.deal_members.length) d.members = r.deal_members.map(function (m) { return { slug: sslug(m.co && m.co.slug), name: m.co && m.co.name, qty: +m.qty }; });
     if (r.group_of) d.groupOf = r.group_of; return d; };
   loadDeals = async function () {
-    var r = await sb.from('deals').select('*, deal_events(*), deal_members(qty, co:companies(slug,name)), fc:companies!deals_from_company_id_fkey(slug,name), tc:companies!deals_to_company_id_fkey(slug,name), fu:profiles!deals_from_user_fkey(name)')
+    var r = await sb.from('deals').select('*, deal_events(*, ap:profiles!deal_events_actor_fkey(name)), deal_members(qty, co:companies(slug,name)), fc:companies!deals_from_company_id_fkey(slug,name), tc:companies!deals_to_company_id_fkey(slug,name), fu:profiles!deals_from_user_fkey(name)')
       .order('updated_at', { ascending: false }).limit(300);
     if (r.error) throw r.error;
     var refOf = {}; (r.data || []).forEach(function (x) { refOf[x.id] = x.ref; });
