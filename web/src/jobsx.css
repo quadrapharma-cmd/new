@@ -1,0 +1,79 @@
+/* Jobs — search, filters on phones, panels (My applications · My jobs and applicants), job details, Saved jobs (jobsx.js) */
+#jx .jx-ftoggle{display:none}
+@media (max-width:900px){
+  #jx .jx-ftoggle{display:flex;align-items:center;gap:8px;margin:12px 12px 0;padding:10px 18px;border-radius:999px;border:1px solid #D5D9E1;background:#fff;font-weight:700;font-size:13px;color:#0E1320;cursor:pointer;min-height:40px}
+  #jx .filters.jx-open{display:block!important}
+}
+#jx label.f-opt{user-select:none}
+#jx .jx-searchbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#jx .jx-q{flex:1;min-width:180px;height:40px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 14px;font:13px Inter,system-ui,sans-serif;background:#fff;outline:none;color:#0f172a}
+#jx .jx-q:focus{border-color:#1a56db}
+#jx .jx-alert-btn,#jx .jx-clear{min-height:40px}
+#jx .jx-clear[hidden]{display:none}
+#jx .jx-otw{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:10px 14px;font-size:12.5px;color:#065f46}
+#jx .jx-otw[hidden]{display:none}
+#jx .jx-otw span{flex:1;min-width:180px}
+#jx .jx-none{padding:22px;text-align:center;color:#64748b;font-size:13px}
+#jx .jx-none b{display:block;color:#0f172a;font-size:14px;margin-bottom:4px}
+#jx .jx-none p{margin:0 0 10px}
+#jx .jx-more{align-self:center;padding:10px 22px;border-radius:999px;border:1px solid #D5D9E1;background:#fff;font:700 13px Inter,system-ui,sans-serif;color:#0E1320;cursor:pointer;min-height:40px}
+#jx .jx-more:hover{border-color:#1a56db;color:#1a56db}
+#jx.jx-paneled #hiringView,#jx.jx-paneled #huntingView{display:none!important}
+#jx .jx-panel[hidden]{display:none}
+#jx .jx-panel{display:flex;flex-direction:column;gap:10px}
+#jx .jx-ph{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#jx .jx-ph .sec-title span{font-size:12px;color:#64748b;font-weight:500}
+#jx .jx-back{border:1px solid #D5D9E1;background:#fff;border-radius:999px;padding:7px 14px;font:700 12.5px Inter,system-ui,sans-serif;color:#0f172a;cursor:pointer;min-height:36px}
+#jx .jx-pcard,.jx-saved{display:flex;gap:13px;align-items:flex-start;background:#fff;border:1px solid #E6E8EE;border-radius:20px;padding:14px 16px;box-shadow:var(--sh-1,0 1px 2px rgba(15,23,42,.06))}
+#jx .jx-pcard .jc-logo{width:40px;height:40px;border-radius:10px;font-size:14px}
+#jx .jx-app{margin-left:28px;border-radius:14px;background:#fbfcfe}
+[dir=rtl] #jx .jx-app{margin-left:0;margin-right:28px}
+#jx .jx-app.jx-focus{border-color:#1a56db;box-shadow:0 0 0 3px #dbeafe}
+#jx .jx-apps{display:flex;flex-direction:column;gap:8px}
+#jx .jx-apps[hidden]{display:none}
+.jx-pb{flex:1;min-width:0}
+.jx-pt{font-size:14px;font-weight:800;color:#0f172a;margin-bottom:3px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.jx-pm{font-size:12px;color:#64748b;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.jx-pa{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;max-width:52%}
+#jx .jx-who{color:#0f172a;cursor:pointer;text-decoration:none}
+#jx .jx-who:hover{color:#1a56db;text-decoration:underline}
+.jx-note{font-size:12.5px;color:#334155;background:#f8fafc;border-radius:10px;padding:7px 10px;margin-top:4px}
+.jx-since{color:#94a3b8;font-size:11.5px}
+.jx-st{display:inline-block;font:700 10.5px Inter,system-ui,sans-serif;border-radius:999px;padding:3px 9px;background:#e2e8f0;color:#334155}
+.jx-st-submitted{background:#dbeafe;color:#1d4ed8}.jx-st-viewed{background:#ede9fe;color:#6d28d9}.jx-st-shortlisted{background:#fef3c7;color:#92400e}
+.jx-st-interviewed{background:#e0f2fe;color:#075985}.jx-st-hired,.jx-st-open{background:#dcfce7;color:#15803d}.jx-st-rejected,.jx-st-no_show{background:#fee2e2;color:#991b1b}
+.jx-st-closed,.jx-st-expired,.jx-st-withdrawn{background:#f1f5f9;color:#64748b}
+#jx .jx-stages{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+#jx .jx-stage{font-size:11px;color:#475569;background:#f4f6fb;border-radius:999px;padding:3px 9px}
+#jx .jx-stage b{color:#0f172a}
+.jx-warn{color:#b91c1c!important}
+.jx-muted{color:#94a3b8}
+.jx-loading{padding:14px;color:#94a3b8;font-size:12.5px}
+#jx .jx-file{display:block;cursor:pointer}
+#jx .jx-file input{display:block;margin:8px auto 0;max-width:100%;font-size:12px}
+#jx .jx-fname{color:#0f172a;font-weight:600}
+#jx .upload-zone-sm.jx-bad{border-color:#dc2626;background:#fef2f2}
+/* the job's details (kit window) */
+.jx-closed{background:#fef2f2;color:#991b1b;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;margin-bottom:10px}
+.jx-dco{font-size:13px;color:#0f172a;margin-bottom:10px}
+.jx-dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.jx-dr{background:#f8fafc;border-radius:10px;padding:8px 10px}
+.jx-dr span{display:block;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}
+.jx-dr b{font-size:12.5px;color:#0f172a}
+.jx-dh{font:800 13px Inter,system-ui,sans-serif;color:#0f172a;margin:10px 0 4px}
+.jx-dp{font-size:12.5px;color:#334155;line-height:1.6;margin:0;white-space:pre-line}
+.jx-dl{margin:0;padding-inline-start:18px;font-size:12.5px;color:#334155;line-height:1.7}
+/* Saved page: Posts · Jobs */
+.jx-stabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.jx-stabs .cf-tag{padding:7px 15px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid #e8eaef;background:#fff;color:#475569;min-height:36px}
+.jx-stabs .cf-tag.on{background:#0f172a;color:#fff;border-color:#0f172a}
+.jx-saved{margin-bottom:10px}
+.jx-sjobs[hidden]{display:none}
+.jx-saved .jx-tool,.jx-pa .jx-tool{border:1px solid #d5d9e1;background:#fff;border-radius:999px;padding:6px 13px;font:600 12px Poppins,Inter,sans-serif;color:#0f172a;cursor:pointer;min-height:34px}
+@media (max-width:640px){
+  #jx .jx-pcard,.jx-saved{flex-wrap:wrap}
+  .jx-pa{max-width:100%;width:100%;justify-content:flex-start}
+  #jx .jx-app{margin-left:10px}
+  [dir=rtl] #jx .jx-app{margin-right:10px}
+  .jx-dgrid{grid-template-columns:1fr}
+}

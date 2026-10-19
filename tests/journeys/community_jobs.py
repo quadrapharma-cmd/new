@@ -65,6 +65,8 @@ def find_jobs(j):
         box.first.fill(''); box.first.press('Enter'); j.settle(pg, 900)
     with j.step('Filter QA/QC + Full-time + Egypt + Junior: every card matches all four and the count equals the cards; clear filters'):
         pg.locator('#content .cf-tag').filter(has_text=re.compile(r'QA/QC|الجودة')).first.click(); pg.wait_for_timeout(500)
+        tg = pg.locator('#content .jx-ftoggle:visible')
+        if tg.count(): tg.first.click(); pg.wait_for_timeout(400)          # a phone: the filters open from "⚙ Filters"
         for lab in (r'Full-time|دوام كامل', r'Egypt|مصر'):
             cb = pg.locator('#content label').filter(has_text=re.compile(lab)).locator('input[type=checkbox]')
             j.check(cb.count(), 'no "%s" filter' % lab); cb.first.check(); pg.wait_for_timeout(500)
@@ -74,6 +76,9 @@ def find_jobs(j):
         j.check(not bad, 'filtered results include jobs that do not match: %s' % ', '.join(bad[:4]))
         j.check(jobs_header_n(pg) == len(cs), 'with filters the header says %s jobs but %d are shown' % (jobs_header_n(pg), len(cs)))
         if j.live: j.check('HPLC Analyst %s' % t in ' '.join(c['title'] for c in cs) and 'QC Chemist %s' % t not in ' '.join(c['title'] for c in cs), 'the filters do not combine (the Egypt junior QC job missing or the Dubai one shown)')
+        cl = j.find(pg, r'Clear filters|امسح الفلاتر', scope='#content'); j.check(cl, 'no "Clear filters" while filters are on')
+        cl.click(); j.settle(pg, 900)
+        j.check(not pg.locator('#content input[data-jxf]:checked').count() and jobs_header_n(pg) == len(jcards(pg)) and (not j.live or jobs_header_n(pg) == total), 'Clear filters leaves filters on (header %s, cards %d)' % (jobs_header_n(pg), len(jcards(pg))))
         jobs_page(j, pg, HUNT)
     with j.step('Every matching job is reachable by paging (Load more / scroll), with no duplicates'):
         for _ in range(15):
@@ -347,6 +352,16 @@ def applicant_pipeline(j):
         b = row.locator('button, select').filter(has_text=re.compile(r'Shortlist|قائمة')); j.check(b.count(), 'not built: no Shortlist on an applicant')
         b.first.click(); j.settle(pg, 800)
         if j.live: j.check(j.wait_db("select status from public.job_applications where job_id=%d and user_id='%s'" % (jid, ppl[0]['id']), 5) == 'shortlisted', 'not shortlisted in the database')
+        row = pg.locator('#content [class*=card], #content tr, #content li').filter(has_text='Badr').first
+        b = row.locator('button').filter(has_text=re.compile(r'Reject|رفض|لم يُختر')); j.check(b.count(), 'not built: no Reject on an applicant')
+        b.first.click(); pg.wait_for_timeout(500)
+        if mopen(pg):
+            n = pg.locator('.dbk-ov textarea'); n.count() and n.first.fill('We chose a candidate with more GCC experience.')
+            mclick(j, pg, r'Save|Confirm|OK|حفظ|تأكيد', 'Confirm')
+        j.settle(pg, 800)
+        if j.live:
+            j.check(j.wait_db("select status from public.job_applications where job_id=%d and user_id='%s'" % (jid, ppl[1]['id']), 5) == 'rejected', 'B is not rejected in the database')
+            j.check(j.sql1("select employer_note from public.job_applications where job_id=%d and user_id='%s'" % (jid, ppl[1]['id'])) == 'We chose a candidate with more GCC experience.', "the rejection note is not kept")
     with j.step('Set A to Interview with a date, then Hired; C to No-show: the change shows at once with counts per stage'):
         for who, pat, st in (('Amr', r'Interview|مقابلة', 'interviewed'), ('Amr', r'Hire|Hired|تعيين', 'hired'), ('Chadi', r'No-show|لم يحضر', 'no_show')):
             row = pg.locator('#content [class*=card], #content tr, #content li').filter(has_text=who).first
@@ -382,14 +397,15 @@ def open_to_work(j):
     with j.step("I'm Job Hunting → Post My Profile: headline, desired role, experience, location, availability; Publish"):
         jobs_page(j, pg, HUNT); b = j.find(pg, r'Post My Profile|انشر ملفي', scope='#content'); j.check(b, 'no Post My Profile')
         b.click(); pg.wait_for_timeout(700); j.check(mopen(pg), 'Post My Profile opens nothing')
-        mfill(j, pg, r'Desired job title|المسمى', 'QC Chemist — HPLC & GC')
+        ttl = 'Stability QC Chemist %s' % j.tag[:4]                       # never a sample candidate's title (the demo lists "QC Chemist — HPLC & GC Specialist")
+        mfill(j, pg, r'Desired job title|المسمى', ttl)
         mfill(j, pg, r'location|الموقع', 'Alexandria, Egypt', required=False)
         mfill(j, pg, r'experience|الخبرة', '3', required=False)
         before = toast_set(pg); mclick(j, pg, r'Publish|Post|نشر', 'Publish'); j.settle(pg, 1200)
         if j.live: j.check(j.wait_db("select open_to_work from public.profiles where id='%s'" % s['id'], 5, want='t') == 't', 'not built: Post My Profile does not set open_to_work (toast only)')
     with j.step('The employer sees the seeker in Available Candidates with headline, location, experience and Contact; the count is real'):
         if j.demo:
-            jobs_page(j, pg, HIRE); j.check('QC Chemist — HPLC & GC' in j.text(pg), 'the published profile is not in Available Candidates')
+            jobs_page(j, pg, HIRE); j.check(ttl in j.text(pg), 'the published profile is not in Available Candidates')
         else:
           pe = e['page']; j.reload(pe); jobs_page(j, pe, HIRE)
           j.check(sn in j.text(pe), 'the employer does not see the seeker in Available Candidates')
@@ -399,7 +415,7 @@ def open_to_work(j):
         b.click(); j.settle(pg, 900); confirm(j, pg, r'Hide|Yes|إخفاء|نعم')
         if j.live: j.check(j.wait_db("select open_to_work from public.profiles where id='%s'" % s['id'], 5, want='f') == 'f', 'open_to_work is still true')
         jobs_page(j, pg if j.demo else e['page'], HIRE)
-        j.check(('QC Chemist — HPLC & GC' if j.demo else sn) not in j.text(pg if j.demo else e['page']), 'the hidden profile is still in Available Candidates')
+        j.check((ttl if j.demo else sn) not in j.text(pg if j.demo else e['page']), 'the hidden profile is still in Available Candidates')
 
 @journey('J-COMMUNITY-28')
 def contact_candidate(j):
