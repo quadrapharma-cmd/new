@@ -141,7 +141,8 @@ def rfq_many_suppliers(j):
         for i in range(cards.count()):
             nm = cards.nth(i).locator('.dr-name').inner_text().split('\n')[0].strip()
             if (names and nm in names) or (not names and len(picked) < 3):
-                cards.nth(i).locator('input[type=checkbox]').check(force=True); picked.append(nm); pg.wait_for_timeout(150)
+                cards.nth(i).evaluate("e=>e.scrollIntoView({block:'center'})")   # as a person would: not under the floating selection bar
+                cards.nth(i).locator('input[type=checkbox]').check(); picked.append(nm); pg.wait_for_timeout(150)
             if len(picked) == 3: break
         j.check(len(picked) == 3, 'could not select three API suppliers (%s)' % picked)
         j.data['picked'] = picked

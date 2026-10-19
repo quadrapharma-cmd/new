@@ -88,9 +88,9 @@ begin
   delete from private.directory_products d where d.company_id = any(p_ids)
      and not exists (select 1 from public.company_products p where p.company_id = d.company_id);
   insert into private.directory_products (company_id, products)
-  select p.company_id, json_agg(json_build_object('id', p.id, 'name', p.name, 'ingredient', p.active_ingredient, 'ingredient_ar', p.active_ingredient_ar,
-                 'form', p.dosage_form, 'strength', p.strength, 'role', p.role, 'category', p.category, 'pack', p.pack, 'description', p.description,
-                 'moq', p.moq, 'price', p.price, 'currency', p.currency, 'image', p.image_path) order by p.sort_order, p.id)
+  select p.company_id, json_agg(json_strip_nulls(json_build_object('id', p.id, 'name', p.name, 'ingredient', p.active_ingredient, 'ingredient_ar', p.active_ingredient_ar,
+                 'form', p.dosage_form, 'strength', p.strength, 'role', p.role, 'category', p.category, 'pack', p.pack,
+                 'moq', p.moq, 'price', p.price, 'currency', p.currency, 'image', p.image_path)) order by p.sort_order, p.id)   -- the card's fields, empty ones left out; the description comes with the company page (a directory page stays light)
     from public.company_products p where p.company_id = any(p_ids) group by p.company_id
   on conflict (company_id) do update set products = excluded.products;
 end $$;

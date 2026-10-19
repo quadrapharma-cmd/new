@@ -1005,7 +1005,8 @@
   /* layers that split a text node (emoji → icon, ✓ → seal) rebuild it from the English original and hand each piece back here, so switching to English restores it */
   window.dxI18nOrig = function (n) { return ORIG.has(n) ? ORIG.get(n) : null; };
   /* the same English word in another place: a saved post or job says "محفوظ" on its own button, "المحفوظات" is the Saved page */
-  var CTX = [['.dbk-saved', { 'Saved': 'محفوظ', '🔖 Saved': '🔖 محفوظ' }]];
+  var CTX = [['.dbk-saved', { 'Saved': 'محفوظ', '🔖 Saved': '🔖 محفوظ' }],
+             ['.cap-slots', { 'Free': 'متاح' }]];   /* a production month that is free is available ("متاح"), not free of charge ("مجاني") */
   function trAt(n, v) { var p = n.parentElement, k = v.replace(/\s+/g, ' ').trim();
     /* "<b>9</b> members": the word after a number in its own element takes the number's Arabic plural (9 أعضاء, not 9 عضو) */
     var ps = n.previousSibling, wf = WORDS[k.toLowerCase()] || WORDS[k.toLowerCase() + 's'];

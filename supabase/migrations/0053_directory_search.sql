@@ -1,7 +1,7 @@
 -- ═════════════════════════════════════════════════════════════════════
 -- 0053 — the directory search finds a misspelt company name (J-BUSINESS-01) and the page's dates and cover come with its row
---   directory_companies_page (0026) with one more way to match a search: a word of the English or Arabic name close to the
---   query (pg_trgm word similarity ≥ 0.6, "medsinya" → "Medsinia Industries"; queries of 4–40 characters, served by the trigram
+--   directory_companies_page (0026) with one more way to match a search, used only when nothing matches as written: a word of
+--   the English or Arabic name close to the query (pg_trgm word similarity ≥ 0.6, "medsinya" → "Medsinia Industries"; queries of 4–40 characters, served by the trigram
 --   indexes on name / name_ar), and two more columns in each row: updated_at (the page's freshness, B-22 — no extra request
 --   per page) and cover_url (0050's cover). Same arguments, same order, same limits.
 -- Safe to run twice.
@@ -23,13 +23,15 @@ declare
 begin
   -- the page's ids in the directory order: verified first, then (effective) VIP, then name, id. (A STABLE function: both
   -- statements see the snapshot of the call, as the single statement before did.)
-  with hits as (   -- a search: the companies whose name / Arabic name or one of whose products matches (the same test as before)
+  with exact as (   -- a search: the companies whose name / Arabic name or one of whose products matches (the same test as before)
     select c2.id from public.companies c2 where c2.name ilike '%' || v_q || '%' or c2.name_ar ilike '%' || v_q || '%'
-    union   -- a misspelt name ("medsinya" → Medsinia): a word of the name close enough (pg_trgm word similarity, on the name indexes)
-    select f.id from private.directory_fuzzy(v_q) f(id)
     union
     select p.company_id from public.company_products p
-     where p.name ilike '%' || v_q || '%' or p.active_ingredient ilike '%' || v_q || '%' or p.active_ingredient_ar ilike '%' || v_q || '%')
+     where p.name ilike '%' || v_q || '%' or p.active_ingredient ilike '%' || v_q || '%' or p.active_ingredient_ar ilike '%' || v_q || '%'),
+  hits as (        -- only when nothing matches as written: a misspelt name ("medsinya" → Medsinia), a word of the name close enough
+    select e.id from exact e                                          -- (pg_trgm word similarity, on the name indexes)
+    union all
+    select f.id from private.directory_fuzzy(v_q) f(id) where v_q is not null and not exists (select 1 from exact))
   select case when exists (select 1 from public.companies e where e.plan = 'vip' and e.status <> 'suspended' and e.vip_until <= now())
     then array(select c.id from public.companies c   -- a VIP plan has run out: it sorts as free
                where c.status <> 'suspended' and (v_q is null or c.id in (select h.id from hits h))

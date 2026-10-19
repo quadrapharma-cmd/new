@@ -2568,7 +2568,7 @@
      company_sites, site_certificates; pictures in company-media, certificate documents in documents/verification/<id>/),
      and what the page shows comes back from it. Each company's saves run one after the other (a second edit made while the
      first is still saving waits for it). Nothing the database refused is kept on screen. */
-  var CPG = { q: {}, tmp: {}, seen: {}, siteFiles: [], coFiles: [], coCerts: {}, coCertsAt: {} };
+  var CPG = { q: {}, tmp: {}, seen: {}, siteFiles: [], coFiles: [], coCerts: {}, coCertsAt: {}, prodAt: {} };
   var PACKS = ['box', 'bottle', 'blister', 'sachet', 'jar', 'tube', 'drum', 'lab'];
   var TYPEK = { 'Factory': 'factory', 'Warehouse': 'warehouse', 'Laboratory': 'lab', 'Office': 'office', 'Head office': 'head_office' };
   var CURS = [[/US\$|USD|\$/i, 'USD'], [/€|EUR/i, 'EUR'], [/SAR|ر\.?\s?س|ريال/i, 'SAR'], [/AED|د\.?\s?إ|درهم/i, 'AED'], [/£|GBP/i, 'GBP'], [/EGP|E£|ج\.?\s?م|جنيه/i, 'EGP'], [/CNY|RMB|¥/i, 'CNY'], [/INR|₹/i, 'INR']];
@@ -2734,6 +2734,17 @@
     raw.products = (r.data || []).map(prodRow); var l = live(slug); if (l) l.products = raw.products.map(prodFrom);
     window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
   }
+  /* a directory row carries each product's card fields only (0050: a page of 100 companies stays light); an opened company
+     page reads its products in full — description, pack, price — once a minute at most */
+  var pageDataCPG = pageData;
+  pageData = function (slug, ws) {
+    var r = pageDataCPG.apply(this, arguments), raw = slug && CO.raw[slug];
+    if (ME_UUID && raw && raw.id && !CO.roles[raw.id] && Date.now() - (CPG.prodAt[slug] || 0) > 60000) {
+      CPG.prodAt[slug] = Date.now();
+      reloadProducts(slug).then(function () { var S = window.dxDir && window.dxDir.S; if (S && (S.open === slug || S.ws === slug)) rerenderCompanies(); }, function (e) { console.error(e); });
+    }
+    return r;
+  };
   /* the editor's "Send for verification" (company-wide certificates) */
   async function saveCoCerts(slug, raw, pend) {
     var list = (pend || []).filter(function (x) { return x && !x._id; });
@@ -2783,7 +2794,7 @@
       if (raw && raw.id) { stampFresh(CO.alias[sl] && !mineAt(sl) ? CO.alias[sl] : sl); return true; } }
     return hookCPG ? hookCPG(k, v) : undefined;
   };
-  onReset(function () { CPG.q = {}; CPG.tmp = {}; CPG.seen = {}; CPG.siteFiles = []; CPG.coFiles = []; CPG.coCerts = {}; CPG.coCertsAt = {}; });
+  onReset(function () { CPG.q = {}; CPG.tmp = {}; CPG.seen = {}; CPG.siteFiles = []; CPG.coFiles = []; CPG.coCerts = {}; CPG.coCertsAt = {}; CPG.prodAt = {}; });
   /* Admin → Review → Site certificates: the document (signed link) and a rejection with the reason (review_certificate) */
   var modLoadB = window.dxModeration.load, modDecideB = window.dxModeration.decide;
   window.dxModeration.load = async function () {
