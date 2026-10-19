@@ -34,6 +34,7 @@ def paymob_sign(o):
 def fawry_sign(b): return hashlib.sha256((b['fawryRefNumber'] + b['merchantRefNumber'] + f"{b['paymentAmount']:.2f}" + f"{b['orderAmount']:.2f}" + b['orderStatus'] + b['paymentMethod'] + b.get('paymentRefrenceNumber', '') + FKEY).encode()).hexdigest()
 owner_t, owner = user('payowner'); other_t, other = user('payother'); adm_t, adm = user('payadmin')
 sql(f"update public.profiles set role='admin' where id='{adm}'")
+sql(f"update public.profiles set phone='+20 100 123 4567' where id='{owner}'")   # Fawry needs the payer's mobile (written the way people do)
 cid = sql(f"insert into public.companies (owner_id, name, slug, type, status, sectors) values ('{owner}','Pay Pharma {st}','pay-pharma-{st}','Manufacturer','verified','{{Manufacturer}}') returning id").split('\n')[0]
 # ── card through Paymob ──
 s, o = http('POST', '/functions/v1/payments-create', {'product': 'vip_month', 'method': 'card', 'company_id': int(cid)}, owner_t)
@@ -117,4 +118,67 @@ s2, _ = http('POST', '/rest/v1/payment_orders', {'user_id': owner, 'product_code
 T('orders cannot be written directly (no price or status tampering)', s < 500 and s2 >= 400 and sql(f"select status from public.payment_orders where id={o2['order_id']}") == 'pending'
   and sql(f"select count(*) from public.payment_orders where user_id='{owner}' and amount_cents=1") == '0', (s, s2))
 T('a member sees only their own orders', http('GET', '/rest/v1/payment_orders?select=id', None, other_t)[1] == [])
+# ── verification follow-ups (0055) ──
+def mock_log(): return json.loads(urllib.request.urlopen(MOCK + '/log').read())
+def lc(o): return sql(f"select status from public.payment_orders where id={o}")
+lid3 = sql(f"insert into public.products (user_id, name, category, type, active) values ('{owner}','Third API {st}','api','supply',true) returning id").split('\n')[0]
+olid = sql(f"insert into public.products (user_id, name, category, type, active) values ('{other}','Other API {st}','api','supply',true) returning id").split('\n')[0]
+s, x = http('POST', '/functions/v1/payments-create', {'product': 'boost', 'method': 'fawry', 'listing_id': int(olid)}, other_t)
+T('Fawry without a mobile in the profile is refused with a clear message — before any order exists', s == 400 and x.get('code') == 'mobile_required' and 'mobile' in x.get('error', '')
+  and sql(f"select count(*) from public.payment_orders where listing_id={olid}") == '0', (s, x))
+urllib.request.urlopen(urllib.request.Request(MOCK + '/control', data=json.dumps({'fawry_fail': 1}).encode(), method='POST', headers={'Content-Type': 'application/json'}))
+s, x = http('POST', '/functions/v1/payments-create', {'product': 'boost', 'method': 'fawry', 'listing_id': int(lid3)}, owner_t)
+T('Fawry refuses the charge: the buyer is told and the order is closed at once (failed, not pending)', s == 502 and sql(f"select string_agg(status, ',') from public.payment_orders where listing_id={lid3}") == 'failed', (s, x))
+s, f3 = http('POST', '/functions/v1/payments-create', {'product': 'boost', 'method': 'fawry', 'listing_id': int(lid3)}, owner_t)
+T('…the order that never got a reference blocks nothing: the retry gets a Fawry reference', s == 200 and f3.get('fawry_reference'), (s, f3))
+ch = [l for l in mock_log() if l['path'].startswith('/ECommerceWeb')][-1]['body']
+T("Fawry gets the buyer's real name, e-mail (auth record) and mobile (my_profile, normalised)", ch['customerName'] == 'payowner' and ch['customerEmail'] == f'payowner{st}@x.test' and ch['customerMobile'] == '01001234567', ch)
+s, x = http('POST', '/functions/v1/payments-create', {'product': 'boost', 'method': 'fawry', 'listing_id': int(lid3)}, owner_t)
+T('a second Fawry order is refused while the reference is payable — the message names the Fawry reference, not our order number',
+  s == 400 and '(%s)' % f3.get('fawry_reference') in x.get('error', '') and 'DBX' not in x.get('error', ''), (s, x))
+pm = [l for l in mock_log() if l['path'] == '/v1/intention/'][-1]['body']['billing_data']
+T("Paymob gets the buyer's real name, e-mail and mobile (not 'Drugbox Member / na@drugbox.app / NA')", pm['first_name'] == 'payowner' and pm['email'] == f'payowner{st}@x.test' and pm['phone_number'] == '01001234567', pm)
+# 10a: the buyer cancels a pending card order; nothing activates it afterwards
+s, oc = http('POST', '/functions/v1/payments-create', {'product': 'featured', 'method': 'card', 'listing_id': int(lid3)}, owner_t)
+s1, _ = http('POST', '/rest/v1/rpc/cancel_order', {'p_id': oc['order_id']}, other_t)
+T("another member cannot cancel someone's order", s1 >= 400 and lc(oc['order_id']) == 'pending', s1)
+s1, r1 = http('POST', '/rest/v1/rpc/cancel_order', {'p_id': oc['order_id']}, owner_t)
+T('the buyer cancels their own pending order', s1 == 200 and lc(oc['order_id']) == 'cancelled', (s1, r1))
+s1, _ = http('PATCH', f"/rest/v1/payment_orders?id=eq.{oc['order_id']}", {'status': 'pending'}, owner_t)
+T('…and cannot set it back to pending through the API', lc(oc['order_id']) == 'cancelled', s1)
+late = paymob_obj(oc['order_id'], oc['reference'], 450300)
+s1, t1 = http('POST', '/functions/v1/paymob-webhook?hmac=' + paymob_sign(late), {'type': 'TRANSACTION', 'obj': late}, raw=True)
+T('a signed callback for the cancelled order activates nothing (refund due, Drugbox told)', t1 == 'order is cancelled (refund due)' and lc(oc['order_id']) == 'cancelled'
+  and sql(f"select featured_until is null from public.products where id={lid3}") == 't' and sql(f"select count(*) from public.notifications where user_id='{adm}' and message like '%{oc['reference']} was paid after the buyer cancelled%'") == '1', t1)
+s1, _ = http('POST', '/rest/v1/rpc/cancel_order', {'p_id': oid}, owner_t)
+T('a paid order cannot be cancelled', s1 >= 400 and lc(oid) == 'paid', s1)
+# 10b / 10c: suspended company, inactive listing
+cs = sql(f"insert into public.companies (owner_id, name, slug, type, status, sectors) values ('{owner}','Pay Susp {st}','pay-susp-{st}','Manufacturer','verified','{{Manufacturer}}') returning id").split('\n')[0]
+sql(f"update public.companies set status='suspended' where id={cs}")
+s1, x1 = http('POST', '/functions/v1/payments-create', {'product': 'vip_month', 'method': 'card', 'company_id': int(cs)}, owner_t)
+s2, _ = http('POST', '/rest/v1/rpc/create_order', {'p_product': 'vip_year', 'p_method': 'instapay', 'p_company': int(cs)}, owner_t)
+T('VIP cannot be bought for a suspended company (function and direct RPC)', s1 == 400 and s2 >= 400 and sql(f"select count(*) from public.payment_orders where company_id={cs}") == '0', (s1, x1, s2))
+sql(f"update public.products set active=false where id={lid2}"); n_l2 = sql(f"select count(*) from public.payment_orders where listing_id={lid2}")
+s1, _ = http('POST', '/functions/v1/payments-create', {'product': 'boost', 'method': 'card', 'listing_id': int(lid2)}, owner_t)
+s2, _ = http('POST', '/rest/v1/rpc/create_order', {'p_product': 'featured', 'p_method': 'card', 'p_listing': int(lid2)}, owner_t)
+T('a paid boost / Featured of an inactive listing is refused', s1 == 400 and s2 >= 400 and sql(f"select count(*) from public.payment_orders where listing_id={lid2}") == n_l2, (s1, s2))
+# 10d / 10e: InstaPay — one order under review at a time, receipts only in my own folder
+s1, i3 = http('POST', '/functions/v1/payments-create', {'product': 'boost', 'method': 'instapay', 'listing_id': int(lid3)}, owner_t)
+for bad in (f'payments/{owner}/../{other}/r.png', f'payments/{owner}/sub/r.png', f'payments/{owner}/r .png', f'cv/{owner}/r.png'):
+    s2, _ = http('POST', '/rest/v1/rpc/submit_instapay', {'p_id': i3['order_id'], 'p_transfer_ref': 'IPN-424242', 'p_receipt': bad}, owner_t)
+    T('a receipt path like %s is refused' % bad.replace(owner, '<me>').replace(other, '<other>'), s2 >= 400 and lc(i3['order_id']) == 'pending', s2)
+s2, _ = http('POST', '/rest/v1/rpc/submit_instapay', {'p_id': i3['order_id'], 'p_transfer_ref': 'IPN-424242', 'p_receipt': f'payments/{owner}/r-1.png'}, owner_t)
+T('…my own payments/<me>/<file> is accepted (under review)', s2 < 300 and lc(i3['order_id']) == 'review', s2)
+s2, x2 = http('POST', '/functions/v1/payments-create', {'product': 'boost', 'method': 'instapay', 'listing_id': int(lid3)}, owner_t)
+T('a second InstaPay order for the same listing is refused while one is under review', s2 == 400 and sql(f"select count(*) from public.payment_orders where listing_id={lid3} and method='instapay'") == '1', (s2, x2))
+# 8: an issued invoice keeps what it said
+s1, inv1 = http('POST', '/rest/v1/rpc/order_invoice', {'p_id': oid}, owner_t)
+sql("update public.payment_products set vat_rate=0.15, label='VIP renamed', duration_days=31 where code='vip_month'"); sql("update public.billing_settings set legal_name='Drugbox Renamed S.A.E.' where id")
+s2, inv2 = http('POST', '/rest/v1/rpc/order_invoice', {'p_id': oid}, owner_t)
+sql("update public.payment_products set vat_rate=0.14, label='VIP — monthly', duration_days=30 where code='vip_month'"); sql("update public.billing_settings set legal_name='Drugbox' where id")
+T('an issued invoice does not change when the price list, VAT rate or seller details change later', s1 == 200 and inv1 == inv2 and inv1['product'] == 'VIP — monthly' and float(inv1['vat_rate']) == 0.14 and inv1['days'] == 30, (inv1, inv2))
+sql(f"update public.payment_orders set status='refunded' where id={oid}")
+s3, inv3 = http('POST', '/rest/v1/rpc/order_invoice', {'p_id': oid}, owner_t)
+T("a refunded order's invoice still opens, marked refunded, same number", s3 == 200 and inv3.get('refunded') is True and inv3['invoice_no'] == inv1['invoice_no'], (s3, inv3))
+sql(f"update public.payment_orders set status='paid' where id={oid}")
 done()
