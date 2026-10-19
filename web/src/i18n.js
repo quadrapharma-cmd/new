@@ -745,7 +745,7 @@
   /* ===== AREA business: company page, certificates, team (B-02, B-03, B-04) ===== */
   Object.assign(D, {
     'E-mail me about requests, deals, payments and my company': 'راسلني بالبريد بخصوص الطلبات والصفقات والمدفوعات وشركتي', 'E-mails on — we will write when something needs you': 'تم تشغيل البريد — سنراسلك عندما يحتاجك أمر ما', 'E-mails off — notifications stay here': 'تم إيقاف البريد — تبقى الإشعارات هنا',
-    'selected': 'مختارة', 'Goes to': 'يذهب إلى', 'Requesting as': 'الطلب باسم', 'Free from': 'متاح من', 'business development': 'تطوير الأعمال', 'sales': 'المبيعات',
+    'no free slot soon': 'لا مواعيد متاحة قريبًا', 'Claim this page': 'طالب بهذه الصفحة', 'selected': 'مختارة', 'Goes to': 'يذهب إلى', 'Requesting as': 'الطلب باسم', 'Free from': 'متاح من', 'business development': 'تطوير الأعمال', 'sales': 'المبيعات',
     'Back': 'رجوع', 'tablets': 'أقراص', 'sachets': 'أكياس', 'tubes': 'أنابيب', 'vials': 'فيالات', 'bottles': 'زجاجات',
     'Add a membership': 'إضافة عضوية', 'Organisation *': 'الجهة *', 'Chamber of Pharmaceutical Industries': 'غرفة صناعة الدواء', 'Chamber of Cosmetics Industries': 'غرفة صناعة مستحضرات التجميل',
     'Export Council for Medical Industries': 'المجلس التصديري للصناعات الطبية', 'Egyptian Pharmaceutical Trading Association': 'الجمعية المصرية لتجارة الأدوية',
@@ -809,6 +809,7 @@
     [/^(.+) did not accept your request to join the team\.$/, function (m) { return 'لم تقبل ' + m[1] + ' طلبك للانضمام إلى الفريق.'; }],
     [/^Drugbox checked your (.+?)( \((.+)\))? — it now shows as checked on your page\.$/, function (m) { return 'راجع Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — تظهر الآن كمراجَعة على صفحتك.'; }],
     [/^Drugbox could not accept your (.+?)( \((.+)\))? — reason: (.+)\. Add it again with a readable document\.$/, function (m) { return 'لم يقبل Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — السبب: ' + m[4] + '. أضفها مرة أخرى بمستند مقروء.'; }],
+    [/^free from (.+)$/, function (m) { return 'متاح من ' + tr(m[1]); }],
     [/^Request quotes from (\d+)$/, function (m) { return 'اطلب عروض أسعار من ' + m[1]; }],
     [/^Request a service from (.+)$/, function (m) { return 'اطلب خدمة من ' + m[1]; }],
     [/^\((.+)\) at (.+)$/, function (m) { return '(' + (D[m[1]] || m[1]) + ') في ' + m[2]; }],

@@ -137,7 +137,7 @@ def find_cmo(j):
         mine = [c for c in cards if name in c['n']]
         j.check(mine, '%s (CMO with a tablet line) is not listed under CMO / Toll + Tablets' % name)
         j.check(re.search(r'free from|متاح من|متاحة من', mine[0]['cap']), "not built: the CMO card has no capacity line 'free from <month>' (card: %s)" % mine[0]['cap'][:80])
-        card_month = re.sub(r'.*(free from|متاح من|متاحة من)\s*', '', mine[0]['cap']).strip()
+        card_month = re.search(r'(?:free from|متاح من|متاحة من)\s*([^\n·]+)', mine[0]['cap']).group(1).strip()   # the month only (the line wraps in Arabic)
     with j.step("Open the CMO's page → Sites: capabilities, minimum batch and the month calendar; the first Free month equals the card's"):
         open_card(j, pg, name); t = company_tab(j, pg, L('Sites', exact=False)[1:-1], 'Sites')
         j.check(re.search(r'Minimum batch|الحد الأدنى|أقل تشغيلة', t) and re.search(r'Capacity|الطاقة', t), 'not built: the Sites tab shows no capacity / minimum batch')
