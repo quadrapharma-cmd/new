@@ -625,15 +625,17 @@
     'A company exists once on Drugbox. Search first — if it is already here, claim it instead of creating a copy.': 'كل شركة موجودة مرة واحدة على Drugbox. ابحث أولًا — إن كانت موجودة فطالب بها بدلًا من إنشاء نسخة.',
     'Company name': 'اسم الشركة', 'Arabic or English': 'بالعربية أو الإنجليزية', 'My company is not listed — create it': 'شركتي غير مدرجة — أنشئها',
     'Company legal name *': 'الاسم القانوني للشركة *', 'Main activity *': 'النشاط الرئيسي *', 'Governorate *': 'المحافظة *', 'City / area *': 'المدينة / المنطقة *',
-    'Company phone *': 'هاتف الشركة *', 'Company email *': 'البريد الإلكتروني للشركة *', 'Next: review': 'التالي: المراجعة', 'Create my page': 'أنشئ صفحتي',
-    'Verification': 'التوثيق', 'Plan': 'الخطة', 'Optional, later — from your page (gives the Verified badge)': 'اختياري، لاحقًا — من صفحتك (يمنح شارة «موثّق»)',
+    'Company phone *': 'الهاتف للشركة *', 'Company email *': 'البريد الإلكتروني للشركة *', 'Next: review': 'التالي: المراجعة', 'Create my page': 'أنشئ صفحتي',
+    'Claim': 'طالب بها', 'Open workspace': 'افتح مساحة العمل', 'Ask to join the team': 'اطلب الانضمام للفريق',
+    'Subtotal': 'المجموع الفرعي', 'VAT 14%': 'ضريبة القيمة المضافة 14%', 'Total': 'الإجمالي', 'Bank transfer': 'تحويل بنكي', 'Demo — no payment is taken.': 'نسخة تجريبية — لا يُخصم أي مبلغ.',
+    'Verification': 'التوثيق', 'Plan': 'الخطة','Optional, later — from your page (gives the Verified badge)': 'اختياري، لاحقًا — من صفحتك (يمنح شارة «موثّق»)',
     /* Admin → Review */
     'Review': 'المراجعة', '🛡️ Review': '🛡️ المراجعة', 'Decisions here change what everyone sees — verification, published warnings, level 3.': 'القرارات هنا تغيّر ما يراه الجميع — التوثيق والتحذيرات المنشورة والمستوى 3.',
     'Verification requests': 'طلبات التوثيق', 'Warning references': 'مراجع التحذير', 'Site certificates': 'شهادات المواقع', 'Company reports': 'بلاغات الشركات',
     'Mark checked': 'علّم كمراجَعة', 'Could not save the decision': 'تعذّر حفظ القرار', 'Documents open in the live app': 'تُفتح المستندات في التطبيق الفعلي',
     'It will not be published.': 'لن يُنشر.', 'Mark this transfer as not received?': 'هل تعلّم هذا التحويل كغير مستلَم؟', 'Reject this reference?': 'هل ترفض هذه المرجعية؟',
     'The company page stays as it is.': 'تبقى صفحة الشركة كما هي.', 'The order stays unpaid.': 'يبقى الطلب غير مدفوع.', 'The registry document is not readable': 'مستند السجل غير مقروء',
-    'Admin access required': 'يلزم صلاحية الإدارة', 'Not allowed for your account — Admin is for Drugbox staff.': 'غير مسموح لحسابك — الإدارة لفريق Drugbox فقط.',
+    'Admin access required': 'يلزم صلاحية الإدارة', 'Your account is not allowed here — Admin is for Drugbox staff.': 'غير مسموح لحسابك هنا — الإدارة لفريق Drugbox فقط.',
     /* messages */
     'To *': 'إلى *', 'No conversations yet.': 'لا توجد محادثات بعد.', 'No conversations yet': 'لا توجد محادثات بعد', "Open someone's profile and press Message.": 'افتح ملف أحد الأعضاء واضغط «مراسلة».',
     'Choose a conversation': 'اختر محادثة', 'Connected! 🤝': 'تم الاتصال! 🤝',
@@ -712,6 +714,9 @@
     [/^Posted (\d+) days? ago · (Expires in (\d+) days?|No expiry)(.*)$/, function (m) { return 'نُشر منذ ' + m[1] + ' ' + unit(m[1], 'd') + ' · ' + (m[3] ? 'ينتهي خلال ' + m[3] + ' ' + unit(m[3], 'd') : 'بلا انتهاء') + (m[4] ? ' ' + m[4].trim().replace('(90-day CMO cycle)', '(دورة تصنيع لدى الغير 90 يومًا)').replace('(license sale)', '(بيع ترخيص)') : ''); }],
     [/^Expiry notice: "(.+)" expires in (\d+) days? — listings auto-expire to keep the marketplace fresh$/, function (m) { return 'تنبيه انتهاء: «' + m[1] + '» ينتهي خلال ' + m[2] + ' ' + unit(m[2], 'd') + ' — تنتهي الإعلانات تلقائيًا ليبقى السوق محدّثًا'; }],
     [/^No\. (\d+)$/, function (m) { return 'رقم ' + m[1]; }],
+    [/^(.+) · (not claimed yet|managed by its team)$/, function (m) { return m[1] + ' · ' + (m[2] === 'not claimed yet' ? 'لم يطالب بها أحد بعد' : 'يديرها فريقها'); }],   /* 'Add or claim your company' results */
+    [/^Pay EGP ([\d,]+) and create$/, function (m) { return 'ادفع ' + m[1] + ' ج.م وأنشئ الصفحة'; }],   /* the create wizard, VIP */
+    [/^(VIP|Basic|Free) · (monthly|yearly|month|year)$/, function (m) { return (D[m[1]] || m[1]) + ' · ' + ({ monthly: 'شهري', month: 'شهري', yearly: 'سنوي', year: 'سنوي' })[m[2]]; }],
     [/^(\S+) ([A-Z][A-Za-z]+) …$/, function (m) { return D[m[2]] ? m[1] + ' ' + D[m[2]] + ' …' : null; }],   /* a filter's name while its count loads */
     [/^Service by (.+)$/, function (m) { return 'خدمة من ' + m[1]; }],
     [/^messaged (.+?): (.+)$/, function (m) { return 'راسل ' + m[1] + ': ' + m[2]; }]   /* the company_message notification (0032) */

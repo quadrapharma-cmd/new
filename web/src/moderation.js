@@ -30,11 +30,11 @@
   function docs(list) { return (list || []).map(function (d) { return '<button type="button" class="dx-mod-doc" data-doc="' + esc(d.path) + '" data-bucket="' + esc(d.bucket) + '">📄 ' + esc(d.label) + '</button>'; }).join(''); }
   function row(kind, x) {
     var body = '', acts = '';
-    if (kind === 'verifications') { body = '<b>' + esc(x.company) + '</b><span>Commercial registry ' + esc(x.registry) + (x.at ? ' · sent ' + esc(x.at) : '') + '</span>' + docs(x.docs);
+    if (kind === 'verifications') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>Commercial registry ' + esc(x.registry) + (x.at ? ' · sent ' + esc(x.at) : '') + '</span>' + docs(x.docs);
       acts = '<button class="dx-mod-ok" data-k="verifications" data-id="' + esc(x.id) + '" data-v="approved">Approve</button><button class="dx-mod-no" data-k="verifications" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
-    if (kind === 'warnings') { body = '<b>' + esc(x.company) + ' → ' + esc(x.candidate) + '</b><span>' + esc(x.category) + '</span><p>' + esc(x.text) + '</p>' + docs(x.docs);
+    if (kind === 'warnings') { body = '<b data-noi18n>' + esc(x.company) + ' → ' + esc(x.candidate) + '</b><span>' + esc(x.category) + '</span><p>' + esc(x.text) + '</p>' + docs(x.docs);
       acts = '<button class="dx-mod-ok" data-k="warnings" data-id="' + esc(x.id) + '" data-v="published">Publish</button><button class="dx-mod-no" data-k="warnings" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
-    if (kind === 'certs') { body = '<b>' + esc(x.company) + '</b><span>' + esc(x.name) + ' · ' + esc(x.site || '') + (x.expiry ? ' · valid to ' + esc(x.expiry) : '') + '</span>';
+    if (kind === 'certs') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>' + esc(x.name) + ' · ' + esc(x.site || '') + (x.expiry ? ' · valid to ' + esc(x.expiry) : '') + '</span>';
       acts = '<button class="dx-mod-ok" data-k="certs" data-id="' + esc(x.id) + '" data-v="checked">Mark checked</button>'; }
     if (kind === 'reports') { body = '<b>' + esc(x.company) + ' · ' + esc(x.section) + '</b><p>' + esc(x.issue) + '</p>' + (x.correction ? '<span>Suggested: ' + esc(x.correction) + '</span>' : '');
       acts = '<button class="dx-mod-ok" data-k="reports" data-id="' + esc(x.id) + '" data-v="resolved">Resolved</button><button class="dx-mod-no" data-k="reports" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
@@ -44,7 +44,7 @@
         (x.excerpt || []).map(function (m) { return '<p>“' + esc(m) + '”</p>'; }).join('');
       acts = '<button class="dx-mod-ok" data-k="messages" data-id="' + esc(x.id) + '" data-v="actioned">Action taken</button><button class="dx-mod-no" data-k="messages" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
     if (kind === 'posts') { var RS = { spam: 'Spam or unrelated ad', counterfeit: 'Unverified or counterfeit product', misleading: 'Misleading information', abusive: 'Harassment or hate', other: 'Something else' };
-      body = '<b>' + esc(x.author) + '</b><span>Reported by ' + esc(x.reporter) + (x.n > 1 ? ' and ' + (x.n - 1) + ' more' : '') + ' · ' + esc(RS[x.reason] || x.reason) + (x.at ? ' · ' + esc(x.at) : '') + '</span>' +
+      body = '<b data-noi18n>' + esc(x.author) + '</b><span>Reported by ' + esc(x.reporter) + (x.n > 1 ? ' and ' + (x.n - 1) + ' more' : '') + ' · ' + esc(RS[x.reason] || x.reason) + (x.at ? ' · ' + esc(x.at) : '') + '</span>' +
         '<p>“' + esc(x.excerpt) + '”</p>' + (x.note ? '<span>' + esc(x.note) + '</span>' : '');
       acts = '<button class="dx-mod-no" data-k="posts" data-id="' + esc(x.id) + '" data-v="removed">Remove post</button><button class="dx-mod-ok" data-k="posts" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
     return '<div class="dx-mod-row"><div class="dx-mod-b">' + body + '</div><div class="dx-mod-a">' + acts + '</div></div>';

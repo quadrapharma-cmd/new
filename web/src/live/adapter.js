@@ -124,13 +124,15 @@
   function paintAdminEntry() { var on = isStaff(); document.querySelectorAll('#app .sb-foot [onclick="goto(\'admin\')"]').forEach(function (a) { a.style.display = on ? '' : 'none'; }); }
   var gotoA4 = window.goto;
   window.goto = function () { var r = gotoA4.apply(this, arguments); paintAdminEntry(); return r; };
-  var rAdminA4 = window.renderAdmin;
-  if (typeof rAdminA4 === 'function') window.renderAdmin = function (c) {
-    var r = rAdminA4.apply(this, arguments), box = ME_UUID && !isStaff() && c && c.firstElementChild;
-    if (box) { var d = document.createElement('div'); d.style.cssText = 'font-size:13px;margin-top:6px'; d.textContent = 'Not allowed for your account — Admin is for Drugbox staff.'; box.appendChild(d); }
-    return r;
-  };
-  paintAdminEntry(); if (window.dxCore) window.dxCore.onRender('live-admin-entry', paintAdminEntry);
+  /* the approved page's "Admin access required" (renderAdmin may be replaced when its page script loads, so this runs after
+     each render, not as a wrapper) */
+  function adminNote() {
+    var c = document.getElementById('content'); if (!c || !ME_UUID || isStaff() || document.body.getAttribute('data-page') !== 'admin') return;
+    if (c.querySelector('.dx-admin-no')) return;
+    var t = Array.prototype.find.call(c.querySelectorAll('div'), function (d) { return !d.firstElementChild && /^(Admin access required|يلزم صلاحية الإدارة)$/.test(d.textContent.trim()); }), box = t && t.parentElement; if (!box) return;
+    var d = document.createElement('div'); d.className = 'dx-admin-no'; d.style.cssText = 'font-size:13px;margin-top:6px'; d.textContent = 'Your account is not allowed here — Admin is for Drugbox staff.'; box.appendChild(d);
+  }
+  paintAdminEntry(); if (window.dxCore) window.dxCore.onRender('live-admin-entry', function () { paintAdminEntry(); adminNote(); });
   /* the session ended outside this page (signed out in another tab, refresh refused, account removed): back to the login page,
      nothing of that person stays in the page (F-52) */
   function sessionEnded() { if (!ME_UUID || LEAVING) return; resetUser(); orig.logout(); if (typeof window.toast === 'function') window.toast('Your session ended — please sign in again'); }
