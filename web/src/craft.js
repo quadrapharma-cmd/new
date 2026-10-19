@@ -76,14 +76,23 @@
   var hc = document.createElement('div'); hc.id = 'dxHover'; hc.setAttribute('role', 'dialog'); document.body.appendChild(hc);
   var hcT, hcHide, hcFor = null;
   function norm(s) { return String(s || '').toLowerCase().replace(/^(dr|eng|m)\.\s*/, '').replace(/[^a-z ]/g, '').trim(); }
-  function findUser(name) {
-    var U = window.USERS || [], n = norm(name), last = n.split(' ').pop();
+  /* the person a name belongs to: the id the element itself carries first (two members may share a name — S-03); by name only
+     when exactly one person has it, and by surname only with the sample data (never in the live app) */
+  function idOf(el) {
+    var c = el.closest('[data-gp2],[data-gcp],[data-gp],[data-mu],[data-uid],[data-person]'), v = c && (c.dataset.gp2 || c.dataset.gcp || c.dataset.gp || c.dataset.mu || c.dataset.uid || c.dataset.person);
+    var m = /^u?(\d+)$/.exec(String(v || '')); if (m) return +m[1];
+    var o = el.closest('[onclick*="gotoProfile("]'), g = o && /gotoProfile\((\d+)\)/.exec(o.getAttribute('onclick')); return g ? +g[1] : null;
+  }
+  function findUser(name, el) {
+    var U = window.USERS || [], id = el ? idOf(el) : null, n = norm(name), last = n.split(' ').pop();
+    if (id) { var byId = U.find(function (u) { return u.id === id; }); if (byId) return byId; }
+    if (window.dxLive) { var same = n ? U.filter(function (u) { return norm(u.name) === n; }) : []; return same.length === 1 ? same[0] : null; }
     return U.find(function (u) { return norm(u.name) === n || norm(u.company) === n; }) || U.find(function (u) { return last.length > 3 && norm(u.name).split(' ').pop() === last; }) || null;
   }
   function isCompany(name) { return !/^(dr|eng|prof)\.?\s/i.test(name) && /pharma|industries|biotech|\blab\b|store|ltd|group|holding|laborator|trading|medical|healthcare|chemical/i.test(name); }
   function showCard(el) {
     var name = txt(el).replace(/✓|Verified/g, '').split('·')[0].trim(); if (!name || name.length > 60) return;
-    var u = findUser(name), comp = u ? isCompany(u.name) : isCompany(name);
+    var u = findUser(name, el), comp = u ? isCompany(u.name) : isCompany(name);
     var ini = (u && u.initials) || name.replace(/^(Dr\.|Eng\.)\s*/, '').split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
     var color = (u && u.color) || '#1a56db';
     var head = u ? (u.headline || '').split('|')[0].trim() : (el.closest('.jcard,.sponsored-card,.dcard,.scard') ? txt((el.closest('.jcard,.sponsored-card,.dcard,.scard').querySelector('.seller-role,.jc-title,.sc-title,.dc-title') || {})) : '');
@@ -92,7 +101,7 @@
     hc.innerHTML = '<div class="hc-top"><div class="hc-av' + (comp ? ' dx-hex' : '') + '" style="background:' + esc(color) + '">' + esc(ini) + '</div><div class="hc-id"><div class="hc-name">' + esc(u ? u.name : name) +
       (u && u.verified ? '<span class="hc-seal" title="Verified">' + icon('seal') + '</span>' : '') + '</div>' + (head ? '<div class="hc-head">' + esc(head.slice(0, 90)) + '</div>' : '') + (place ? '<div class="hc-place">' + esc(place) + '</div>' : '') + '</div></div>' +
       stats + (u && u.hiring ? '<div class="hc-flag">Hiring now</div>' : '') + (u && u.openToWork ? '<div class="hc-flag ow">Open to work</div>' : '') +
-      '<div class="hc-acts"><button type="button" class="hc-btn p" data-act="msg">' + icon('chat') + 'Message</button>' + (u ? '<button type="button" class="hc-btn" data-act="profile">' + icon('user') + 'View profile</button>' : '') + '</div>';
+      '<div class="hc-acts">' + (u || !window.dxLive ? '<button type="button" class="hc-btn p" data-act="msg">' + icon('chat') + 'Message</button>' : '') + (u ? '<button type="button" class="hc-btn" data-act="profile">' + icon('user') + 'View profile</button>' : '') + '</div>';
     hc.dataset.uid = u ? u.id : ''; hc.dataset.name = u ? u.name : name;
     var r = el.getBoundingClientRect(), W = 300;
     var left = Math.max(8, Math.min(innerWidth - W - 8, r.left)), top = r.bottom + 8;

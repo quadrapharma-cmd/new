@@ -312,9 +312,14 @@ def message_company(j):
         box = pg.locator('#dxDock .dk-win[data-n="Lone Owner"] input:visible').first
         j.check(box.count(), 'the conversation has no message box'); box.fill('Do you make Metformin 850? %s' % j.tag); box.press('Enter'); j.settle(pg, 1500)
         j.check(j.wait_db("select count(*) from public.messages where sender_id='%s' and receiver_id='%s' and body like '%%Metformin 850? %s%%'" % (me['id'], lone['id'], j.tag), 8) == '1', 'no messages row from the buyer to the owner')
-        j.check(j.wait_db("select count(*) from public.notifications where user_id='%s' and from_user='%s' and message like '%%%s%%'" % (lone['id'], me['id'], solo['name']), 6) == '1', 'the owner gets no notification naming the company')
+        j.check(j.wait_db("select count(*) from public.notifications where user_id='%s' and from_user='%s' and type='company_message' and company_id=%s" % (lone['id'], me['id'], solo['id']), 6) == '1', 'the owner gets no notification naming the company')
         op = lone['page']; j.reload(op); j.nav(op, 'messages'); j.settle(op, 1500)
         j.check('Asking Buyer' in j.text(op), "the conversation is not in the owner's Messages")
+        # the notification reads in the owner's interface language (the sentence is written at display time, 0034)
+        j.nav(op, 'notifs'); j.settle(op, 1200); nt = j.text(op)
+        line = next((l for l in nt.split('\n') if solo['name'] in l), '')
+        j.check(line, "the owner's Notifications do not name the company: %s" % nt[:160].replace('\n', ' '))
+        j.check(re.search(r'راسل' if j.ar else r'messaged', line) and not (j.ar and 'messaged' in line), 'the company-message notification is not in the reader\'s language: %s' % line[:120])
     with j.step("A company nobody answers for (unclaimed): 'Message' says so plainly and shows the Contact tab — no window to an invented team"):
         if j.demo: j.skip('the demo companies have sample teams')
         unc = seed_company(j, None, 'Unanswered Labs %s' % j.tag, sectors=('Manufacturer',), status='unclaimed', source='public_list', gov='Cairo')

@@ -5626,9 +5626,10 @@ After 14 months of R&amp;D, formulation development, and stability testing — S
         <input class="f-input" id="suCompany" placeholder="Your pharma company"></div>
       <div class="f-field"><label class="f-label" for="suRole">Role</label>
         <select class="f-select" id="suRole">
-          <option>Regulatory Affairs</option><option>Quality Control / QA</option>
-          <option>Sales & Business Dev</option><option>Production</option>
-          <option>R&D / Formulation</option><option>CEO / Management</option><option>Other</option>
+          <option value="" selected>Choose your specialty…</option>
+          <option value="Regulatory Affairs">Regulatory Affairs</option><option value="Quality Control / QA">Quality Control / QA</option>
+          <option value="Sales &amp; Business Dev">Sales & Business Dev</option><option value="Production">Production</option>
+          <option value="R&amp;D / Formulation">R&D / Formulation</option><option value="CEO / Management">CEO / Management</option><option value="">Other</option>
         </select></div>
       <button class="f-btn dx-js-only" onclick="doSignup()">Create Account →</button>
       <div class="f-link">Already have an account? <b onclick="showLogin()">Sign in</b></div>
@@ -9995,14 +9996,23 @@ function dgPhoto(c,page){
   var hc = document.createElement('div'); hc.id = 'dxHover'; hc.setAttribute('role', 'dialog'); document.body.appendChild(hc);
   var hcT, hcHide, hcFor = null;
   function norm(s) { return String(s || '').toLowerCase().replace(/^(dr|eng|m)\.\s*/, '').replace(/[^a-z ]/g, '').trim(); }
-  function findUser(name) {
-    var U = window.USERS || [], n = norm(name), last = n.split(' ').pop();
+  /* the person a name belongs to: the id the element itself carries first (two members may share a name — S-03); by name only
+     when exactly one person has it, and by surname only with the sample data (never in the live app) */
+  function idOf(el) {
+    var c = el.closest('[data-gp2],[data-gcp],[data-gp],[data-mu],[data-uid],[data-person]'), v = c && (c.dataset.gp2 || c.dataset.gcp || c.dataset.gp || c.dataset.mu || c.dataset.uid || c.dataset.person);
+    var m = /^u?(\d+)$/.exec(String(v || '')); if (m) return +m[1];
+    var o = el.closest('[onclick*="gotoProfile("]'), g = o && /gotoProfile\((\d+)\)/.exec(o.getAttribute('onclick')); return g ? +g[1] : null;
+  }
+  function findUser(name, el) {
+    var U = window.USERS || [], id = el ? idOf(el) : null, n = norm(name), last = n.split(' ').pop();
+    if (id) { var byId = U.find(function (u) { return u.id === id; }); if (byId) return byId; }
+    if (window.dxLive) { var same = n ? U.filter(function (u) { return norm(u.name) === n; }) : []; return same.length === 1 ? same[0] : null; }
     return U.find(function (u) { return norm(u.name) === n || norm(u.company) === n; }) || U.find(function (u) { return last.length > 3 && norm(u.name).split(' ').pop() === last; }) || null;
   }
   function isCompany(name) { return !/^(dr|eng|prof)\.?\s/i.test(name) && /pharma|industries|biotech|\blab\b|store|ltd|group|holding|laborator|trading|medical|healthcare|chemical/i.test(name); }
   function showCard(el) {
     var name = txt(el).replace(/✓|Verified/g, '').split('·')[0].trim(); if (!name || name.length > 60) return;
-    var u = findUser(name), comp = u ? isCompany(u.name) : isCompany(name);
+    var u = findUser(name, el), comp = u ? isCompany(u.name) : isCompany(name);
     var ini = (u && u.initials) || name.replace(/^(Dr\.|Eng\.)\s*/, '').split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
     var color = (u && u.color) || '#1a56db';
     var head = u ? (u.headline || '').split('|')[0].trim() : (el.closest('.jcard,.sponsored-card,.dcard,.scard') ? txt((el.closest('.jcard,.sponsored-card,.dcard,.scard').querySelector('.seller-role,.jc-title,.sc-title,.dc-title') || {})) : '');
@@ -10011,7 +10021,7 @@ function dgPhoto(c,page){
     hc.innerHTML = '<div class="hc-top"><div class="hc-av' + (comp ? ' dx-hex' : '') + '" style="background:' + esc(color) + '">' + esc(ini) + '</div><div class="hc-id"><div class="hc-name">' + esc(u ? u.name : name) +
       (u && u.verified ? '<span class="hc-seal" title="Verified">' + icon('seal') + '</span>' : '') + '</div>' + (head ? '<div class="hc-head">' + esc(head.slice(0, 90)) + '</div>' : '') + (place ? '<div class="hc-place">' + esc(place) + '</div>' : '') + '</div></div>' +
       stats + (u && u.hiring ? '<div class="hc-flag">Hiring now</div>' : '') + (u && u.openToWork ? '<div class="hc-flag ow">Open to work</div>' : '') +
-      '<div class="hc-acts"><button type="button" class="hc-btn p" data-act="msg">' + icon('chat') + 'Message</button>' + (u ? '<button type="button" class="hc-btn" data-act="profile">' + icon('user') + 'View profile</button>' : '') + '</div>';
+      '<div class="hc-acts">' + (u || !window.dxLive ? '<button type="button" class="hc-btn p" data-act="msg">' + icon('chat') + 'Message</button>' : '') + (u ? '<button type="button" class="hc-btn" data-act="profile">' + icon('user') + 'View profile</button>' : '') + '</div>';
     hc.dataset.uid = u ? u.id : ''; hc.dataset.name = u ? u.name : name;
     var r = el.getBoundingClientRect(), W = 300;
     var left = Math.max(8, Math.min(innerWidth - W - 8, r.left)), top = r.bottom + 8;
@@ -13537,7 +13547,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     /* live: messaging a company from its page (B-05) */
     [/^Nobody at (.+) answers messages on Drugbox yet — (?:call, email or WhatsApp them from the Contact tab|use the phone, email or WhatsApp on its Contact tab)$/, function (m) { return 'لا أحد في ' + m[1] + ' يرد على الرسائل على Drugbox بعد — اتصل بهم أو راسلهم بالبريد أو واتساب من تبويب التواصل'; }],
     [/^You answer (.+)’s messages yourself$/, function (m) { return 'أنت من يرد على رسائل ' + m[1]; }],
-    [/^messaged (.+?): (".*")$/, function (m) { return 'راسل ' + m[1] + ': ' + m[2]; }]
+    [/^messaged (.+?): (".*")$/, function (m) { return 'راسل ' + (m[1] === 'your company' ? 'شركتك' : m[1]) + ': ' + m[2]; }]
   ];
   PATTERNS.push(
     [/^▶ Video intro · (\d+:\d+)$/, function (m) { return '▶ فيديو تعريفي · ' + m[1]; }],
@@ -13672,6 +13682,11 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     'No open requests yet.': 'لا توجد طلبات مفتوحة بعد.', 'No open jobs yet.': 'لا توجد وظائف متاحة بعد.',
     'You have no listings yet — publish one with “New Listing”.': 'ليس لديك إعلانات بعد — انشر إعلانًا من «إعلان جديد».',
     'Boosted': 'مروّج', 'Open request': 'طلب مفتوح', 'professional — graduates, specialists and industry veterans': 'متخصص — خريجون ومتخصصون وخبراء صناعة'
+  });
+  /* phase 1b: Messages, sign-up and connection texts that stayed English in the Arabic interface */
+  Object.assign(D, {
+    'No conversations yet.': 'لا توجد محادثات بعد.', 'No conversations yet': 'لا توجد محادثات بعد', "Open someone's profile and press Message.": 'افتح ملف أحد الأعضاء واضغط «رسالة».',
+    'To *': 'إلى *', 'Connected! 🤝': 'تم الاتصال! 🤝', 'Choose your specialty…': 'اختر تخصصك…'
   });
   PATTERNS.unshift(
     [/^trending — (\d+) posts? today$/, function (m) { return 'رائج — ' + m[1] + ' ' + plural(m[1], ['منشور', 'منشورات']) + ' اليوم'; }],

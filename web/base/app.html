@@ -2008,9 +2008,10 @@ body{font-family:'Poppins',system-ui,sans-serif!important;color:var(--dg-ink)}
         <input class="f-input" id="suCompany" placeholder="Your pharma company"></div>
       <div class="f-field"><label class="f-label" for="suRole">Role</label>
         <select class="f-select" id="suRole">
-          <option>Regulatory Affairs</option><option>Quality Control / QA</option>
-          <option>Sales & Business Dev</option><option>Production</option>
-          <option>R&D / Formulation</option><option>CEO / Management</option><option>Other</option>
+          <option value="" selected>Choose your specialty…</option>
+          <option value="Regulatory Affairs">Regulatory Affairs</option><option value="Quality Control / QA">Quality Control / QA</option>
+          <option value="Sales &amp; Business Dev">Sales & Business Dev</option><option value="Production">Production</option>
+          <option value="R&amp;D / Formulation">R&D / Formulation</option><option value="CEO / Management">CEO / Management</option><option value="">Other</option>
         </select></div>
       <button class="f-btn" onclick="doSignup()">Create Account →</button>
       <div class="f-link">Already have an account? <b onclick="showLogin()">Sign in</b></div>

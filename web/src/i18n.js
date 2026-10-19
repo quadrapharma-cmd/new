@@ -478,7 +478,7 @@
     /* live: messaging a company from its page (B-05) */
     [/^Nobody at (.+) answers messages on Drugbox yet — (?:call, email or WhatsApp them from the Contact tab|use the phone, email or WhatsApp on its Contact tab)$/, function (m) { return 'لا أحد في ' + m[1] + ' يرد على الرسائل على Drugbox بعد — اتصل بهم أو راسلهم بالبريد أو واتساب من تبويب التواصل'; }],
     [/^You answer (.+)’s messages yourself$/, function (m) { return 'أنت من يرد على رسائل ' + m[1]; }],
-    [/^messaged (.+?): (".*")$/, function (m) { return 'راسل ' + m[1] + ': ' + m[2]; }]
+    [/^messaged (.+?): (".*")$/, function (m) { return 'راسل ' + (m[1] === 'your company' ? 'شركتك' : m[1]) + ': ' + m[2]; }]
   ];
   PATTERNS.push(
     [/^▶ Video intro · (\d+:\d+)$/, function (m) { return '▶ فيديو تعريفي · ' + m[1]; }],
@@ -613,6 +613,11 @@
     'No open requests yet.': 'لا توجد طلبات مفتوحة بعد.', 'No open jobs yet.': 'لا توجد وظائف متاحة بعد.',
     'You have no listings yet — publish one with “New Listing”.': 'ليس لديك إعلانات بعد — انشر إعلانًا من «إعلان جديد».',
     'Boosted': 'مروّج', 'Open request': 'طلب مفتوح', 'professional — graduates, specialists and industry veterans': 'متخصص — خريجون ومتخصصون وخبراء صناعة'
+  });
+  /* phase 1b: Messages, sign-up and connection texts that stayed English in the Arabic interface */
+  Object.assign(D, {
+    'No conversations yet.': 'لا توجد محادثات بعد.', 'No conversations yet': 'لا توجد محادثات بعد', "Open someone's profile and press Message.": 'افتح ملف أحد الأعضاء واضغط «رسالة».',
+    'To *': 'إلى *', 'Connected! 🤝': 'تم الاتصال! 🤝', 'Choose your specialty…': 'اختر تخصصك…'
   });
   PATTERNS.unshift(
     [/^trending — (\d+) posts? today$/, function (m) { return 'رائج — ' + m[1] + ' ' + plural(m[1], ['منشور', 'منشورات']) + ' اليوم'; }],
