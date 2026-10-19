@@ -3517,5 +3517,27 @@
   document.addEventListener('click', function (e) { var it = ME_UUID && e.target.closest && e.target.closest('.notif-item'); if (!it) return;
     var n = (window.NOTIFS || []).find(function (x) { return String(x.id) === String(it.dataset.nid); }); if (n && n.mk) setTimeout(function () { window.goto('market'); }, 0); });
   onReset(function () { MK2.demandP = []; MK2.saved = {}; MK2.savedAt = 0; MK2.coL = {}; MK2.coAt = {}; MK2.total = 0; MK2.more = false; MK2.listAt = 0; });
+  /* the top-bar search also finds marketplace listings (market_search): the approved "📦 Products" section, with real rows */
+  var doSearchMK2 = window.doSearch;
+  if (typeof doSearchMK2 === 'function') window.doSearch = function (q) {
+    var r = doSearchMK2.apply(this, arguments); if (!ME_UUID || !q || !String(q).trim()) return r;
+    var qq = String(q).trim(), me = ME_UUID;
+    sb.rpc('market_search', { p_q: qq, p_limit: 20 }).then(function (res) {
+      if (res.error || me !== ME_UUID) return; var rows = (res.data && res.data.rows) || [];
+      var wrap = document.querySelector('#content .search-wrap'); if (!wrap || !rows.length) return;
+      wrap.querySelectorAll('.dx-mk-search').forEach(function (x) { x.remove(); });
+      [].forEach.call(wrap.querySelectorAll('.search-section'), function (s) { var t = s.querySelector('.search-section-title'); if (t && /Products/.test(window.dxOrigText ? window.dxOrigText(t) : t.textContent)) s.remove(); });
+      var none = [].find.call(wrap.children, function (x) { return /No results for/.test(x.textContent); }); if (none) none.remove();
+      return sellersOf(rows).then(function () {
+        var sec = document.createElement('div'); sec.className = 'search-section dx-mk-search';
+        sec.innerHTML = '<div class="search-section-title">📦 Products (' + rows.length + ')</div>' + rows.map(function (p, i) { return '<div class="search-user" data-mkr="' + i + '"><div style="font-size:26px;width:42px;text-align:center">' + esc2(p.emoji || '📦') + '</div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--cx)" data-noi18n></div><div style="font-size:12px;color:#65676b" data-noi18n></div></div><button class="btn-p" style="font-size:12px;padding:5px 14px;flex:none">View</button></div>'; }).join('');
+        rows.forEach(function (p, i) { var row = sec.querySelector('[data-mkr="' + i + '"]'), d = row.querySelectorAll('[data-noi18n]'); d[0].textContent = p.name; d[1].textContent = [(p.co && p.co.name) || (p.seller && p.seller.name) || '', priceText(p)].filter(Boolean).join(' · '); });
+        sec.addEventListener('click', function (e) { var row = e.target.closest('[data-mkr]'); if (!row) return; var p = rows[+row.dataset.mkr]; window.goto('market');
+          var si = document.getElementById('searchIn'); if (si) { si.value = p.name; if (window.__mkxFilter) window.__mkxFilter(p.name); if (window.dxMarket && window.dxMarket.sync) window.dxMarket.sync(); } });
+        wrap.appendChild(sec);
+      });
+    }).catch(function () {});
+    return r;
+  };
   /* ===== /AREA business: marketplace ===== */
 })();
