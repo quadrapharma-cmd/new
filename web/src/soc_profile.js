@@ -59,7 +59,7 @@
   var oProfile = window.renderProfile;
   window.renderProfile = function (c, uid) {
     var r = oProfile.apply(this, arguments), u = window._profUser || {}, cov = c && c.querySelector('.profile-cover');
-    if (cov && u.cover && /^(https?:|blob:|data:image\/)/.test(u.cover)) { cov.style.backgroundImage = 'url("' + String(u.cover).replace(/["\\]/g, '') + '")'; cov.style.backgroundSize = 'cover'; cov.style.backgroundPosition = 'center'; }
+    if (cov && u.cover && /^(https?:|blob:|data:image\/)/.test(u.cover)) { cov.style.setProperty('background-image', 'url("' + String(u.cover).replace(/["\\]/g, '') + '")', 'important'); cov.style.setProperty('background-size', 'cover', 'important'); cov.style.setProperty('background-position', 'center', 'important'); cov.classList.add('dx-has-cover'); }
     var eb = cov && [].find.call(cov.querySelectorAll('button'), function (b) { return /Cover upload coming soon/.test(b.getAttribute('onclick') || ''); });
     if (eb) { eb.setAttribute('onclick', 'dxEditCover()'); if (!c.querySelector('#dxCoverInput')) cov.insertAdjacentHTML('beforeend', '<input type="file" id="dxCoverInput" accept="image/jpeg,image/png,image/webp" style="display:none" aria-label="Choose a cover image">'); }
     var ai = c && c.querySelector('#avatarInput'); if (ai) ai.setAttribute('accept', 'image/jpeg,image/png,image/webp');
@@ -98,7 +98,7 @@
   var CARD = '<div style="background:#fff;border:1px solid #e4e6eb;border-radius:12px;padding:18px;margin:0 0 12px">';
   function own() { var u = window._profUser; return !!u && u.id === me().id; }
   function head(title, addLabel, act) { return '<div class="dx-pf-head"><h3 style="font-size:16px;font-weight:700;margin-bottom:12px">' + title + '</h3>' + (own() ? '<button type="button" class="btn-ghost dx-pf-add" data-pf="' + act + '">' + addLabel + '</button>' : '') + '</div>'; }
-  function ctl(kind, i) { return own() ? '<span class="dx-pf-ctl"><button type="button" class="dx-pf-btn" data-pf="edit-' + kind + '" data-i="' + i + '" aria-label="Edit">Edit</button><button type="button" class="dx-pf-btn" data-pf="del-' + kind + '" data-i="' + i + '" aria-label="Delete">🗑</button></span>' : ''; }
+  function ctl(kind, i) { return own() ? '<span class="dx-pf-ctl"><button type="button" class="dx-pf-btn" data-pf="edit-' + kind + '" data-i="' + i + '">Edit</button><button type="button" class="dx-pf-btn" data-pf="del-' + kind + '" data-i="' + i + '" aria-label="Delete">🗑</button></span>' : ''; }
   function tabExperience(u) {
     var h = CARD + head('Experience', '+ Add position', 'add-exp');
     expSorted(u.experience).forEach(function (o) { var x = expView(o.x);
@@ -131,7 +131,7 @@
         var e = m[row.dataset.skill] || { n: 0, mine: false, who: [] }, n = row.querySelector('.dx-pf-n'), b = row.querySelector('.dx-pf-endorse');
         if (n) { n.textContent = e.n + (e.n === 1 ? ' endorsement' : ' endorsements'); n.title = e.who.length ? 'Endorsed by ' + e.who.slice(0, 5).join(', ') : ''; }
         if (b) { b.textContent = e.mine ? '✓ Endorsed' : 'Endorse'; b.setAttribute('aria-pressed', e.mine ? 'true' : 'false'); b.dataset.on = e.mine ? '1' : ''; }
-        var w = row.querySelector('.dx-pf-who'); if (e.who.length) { if (!w) { w = document.createElement('div'); w.className = 'dx-pf-who'; row.querySelector('span').appendChild(w); } w.textContent = 'Endorsed by ' + e.who.slice(0, 3).join(', ') + (e.who.length > 3 ? ' +' + (e.who.length - 3) : ''); } else if (w) w.remove();
+        var w = row.querySelector('.dx-pf-who'); if (e.who.length) { if (!w) { w = document.createElement('span'); w.className = 'dx-pf-who'; w.setAttribute('data-noi18n', ''); row.querySelector('.dx-pf-end').insertBefore(w, n); } w.textContent = e.who.slice(0, 2).join(', ') + (e.who.length > 2 ? ' +' + (e.who.length - 2) : '') + ' ·'; } else if (w) w.remove();
       });
     }, function () {});
   }

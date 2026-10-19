@@ -258,7 +258,7 @@ def skills_and_endorsements(j):
     else: a = None; pg = j.demo_signin(j.new_page())
     SK = ('CTD dossiers', 'EDA variations', 'GMP audits')
     def counts(p):
-        return p.evaluate("""()=>{const out={};document.querySelectorAll('#content *').forEach(e=>{if(e.children.length)return;const t=e.innerText.trim();if(/^(CTD dossiers|EDA variations|GMP audits)$/.test(t)){const row=e.parentElement;const m=(row&&row.innerText.replace(t,'').match(/\\d+/));out[t]=m?+m[0]:0}});return out}""")
+        return p.evaluate("""()=>{const out={};document.querySelectorAll('#content *').forEach(e=>{if(e.children.length)return;const t=(e.innerText||'').trim();if(/^(CTD dossiers|EDA variations|GMP audits)$/.test(t)){const row=e.parentElement;const m=(row&&row.innerText.replace(t,'').match(/\\d+/));out[t]=m?+m[0]:0}});return out}""")
     with j.step('Own profile → Skills: add "CTD dossiers", "EDA variations", "GMP audits"'):
         own_profile(j, pg); tab(j, pg, r'^(Skills|المهارات)$', 'Skills')
         el = j.find(pg, r'Add (a )?skill|إضافة مهارة|أضف مهارة', scope='#content')
@@ -291,8 +291,12 @@ def skills_and_endorsements(j):
         j.check(counts(pb).get('CTD dossiers') == 1, 'the endorsement count is not 1')
         j.check(j.has_table('skill_endorsements') or j.has_table('endorsements'), 'not built: no endorsements table')
     with j.step('A is notified; B cannot endorse twice; A cannot endorse herself'):
-        j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s'" % (a['id'], b['id'])) == '1', 'A got no endorsement notification')
-        en.first.click(); pb.wait_for_timeout(800); j.check(counts(pb).get('CTD dossiers') in (0, 1), 'B endorsed twice')
+        if j.live:
+            j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s'" % (a['id'], b['id'])) == '1', 'A got no endorsement notification')
+            en.first.click(); pb.wait_for_timeout(800); j.check(counts(pb).get('CTD dossiers') in (0, 1), 'B endorsed twice')
+            j.check(j.sql1("select count(*) from public.skill_endorsements where profile_id='%s' and endorser='%s'" % (a['id'], b['id'])) in ('0', '1'), 'B endorsed twice in the database')
+            r = pg.evaluate("u=>dxLive.sb.from('skill_endorsements').insert({profile_id:u,skill:'CTD dossiers',endorser:u}).then(r=>r.error?r.error.code:'ok')", a['id'])
+            j.check(r != 'ok', 'the database lets A endorse herself')
         own_profile(j, pg); tab(j, pg, r'^(Skills|المهارات)$', 'Skills')
         j.check(not j.find(pg, r'^(Endorse|تأييد)$', scope='#content', exact=True), 'A can endorse her own skill')
 

@@ -90,7 +90,9 @@
       verified: !!p.verified, role: p.role || 'user', bio: prose(p.bio), web: safeUrl(p.website), phone: tel(p.phone), certs: txt(p.certs), avatar: safeUrl(p.avatar_url),
       location: txt(p.location), followers: p.followers_count || 0, openToWork: !!p.open_to_work, hiring: !!p.hiring, color: colorFor(p.id),
       profileViews: p.profile_views || '0', connections: '0',         /* '0', not 0: the approved sidebar shows sample numbers for a falsy value */
-      intents: (p.intents && typeof p.intents === 'object') ? p.intents : {}
+      intents: (p.intents && typeof p.intents === 'object') ? p.intents : {},
+      cover: safeUrl(p.cover_url), experience: Array.isArray(p.experience) ? p.experience : [], education: Array.isArray(p.education) ? p.education : [],   /* area social (S-06, S-14) */
+      skills: Array.isArray(p.skills) ? p.skills : [], languages: Array.isArray(p.languages) ? p.languages : []
     });
     clearSeeds();
     return window.ME;
@@ -201,7 +203,10 @@
     openToWork: !!p.open_to_work, hiring: !!p.hiring, profileViews: p.profile_views || 0, bio: prose(p.bio) };
     /* website and certifications come with a whole profile row (opening the profile), not with the people embedded in lists; a list row
        never blanks what the profile row brought (phone stays private: it is never put on another person) */
-    if ('website' in p) { u.web = safeUrl(p.website); u.certs = txt(p.certs); u.full = true; if (p.intents && typeof p.intents === 'object') u.intents = p.intents; }
+    if ('website' in p) { u.web = safeUrl(p.website); u.certs = txt(p.certs); u.full = true; if (p.intents && typeof p.intents === 'object') u.intents = p.intents;
+      /* area social (S-06, S-14): the cover and the profile lists come with a whole row; the interface writes them through esc() */
+      u.cover = safeUrl(p.cover_url); u.experience = Array.isArray(p.experience) ? p.experience : []; u.education = Array.isArray(p.education) ? p.education : [];
+      u.skills = Array.isArray(p.skills) ? p.skills : []; u.languages = Array.isArray(p.languages) ? p.languages : []; }
     return u; }
   function putUser(p) { if (!p) return; if (p.id === ME_UUID) return; var u = userFrom(p), list = window.USERS, i = list.findIndex(function (x) { return x.id === u.id; }); if (i < 0) list.push(u); else Object.assign(list[i], u); }
   /* mine: Map post id → my reaction kind; kinds: post id → {kind: n} (post_reaction_summary, 0028) */

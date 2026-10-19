@@ -225,4 +225,48 @@
   if (window.dxI18nAdd) window.dxI18nAdd({ 'mentioned you in a post': 'أشار إليك في منشور', 'reposted your post': 'أعاد نشر منشورك', 'Only the author can edit this post': 'لا يعدّل المنشور إلا كاتبه',
     'Wait a moment — the comment is still being saved': 'لحظة — التعليق ما زال يُحفظ', 'The post was not saved': 'لم يُحفظ المنشور' },
     [[/^replied to your comment: (.+)$/, function (m) { return 'ردّ على تعليقك: ' + m[1]; }]]);
+
+  /* ===== AREA social: profile — photo and cover (avatars bucket), experience / education / skills / languages, endorsements, who viewed (0042) ===== */
+  var PF = { old: {} };
+  function pubPath(u) { var m = /\/storage\/v1\/object\/public\/avatars\/(.+)$/.exec(String(u || '')); return m ? decodeURIComponent(m[1].split('?')[0]) : null; }
+  window.dxProfileSvc = {
+    live: true,
+    picture: async function (kind, blob) {
+      var path = me() + '/' + kind + '-' + Date.now().toString(36) + '.jpg';
+      var up = await sb.storage.from('avatars').upload(path, blob, { contentType: 'image/jpeg' }); if (up.error) throw new Error(friendly(up.error));
+      var url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl, col = kind === 'cover' ? 'cover_url' : 'avatar_url';
+      var cur = await sb.from('profiles').select(col).eq('id', me()).single(), was = cur.data && cur.data[col];
+      var row = {}; row[col] = url; var r = await sb.from('profiles').update(row).eq('id', me()).select('id');
+      if (r.error || !(r.data || []).length) { await sb.storage.from('avatars').remove([path]); throw new Error(friendly(r.error || 'Could not save the picture')); }
+      var old = pubPath(was); if (old && old.indexOf(me() + '/') === 0) sb.storage.from('avatars').remove([old]).then(function () {});   /* the picture it replaced */
+      return url;
+    },
+    save: async function (fields) {
+      var row = {}, map = { avatar: null, cover: null, experience: 'experience', education: 'education', skills: 'skills', languages: 'languages' };
+      Object.keys(fields).forEach(function (k) { if (map[k]) row[map[k]] = fields[k]; });
+      Object.assign(window.ME, fields); var mine = (window.USERS || []).find(function (u) { return u.id === window.ME.id; }); if (mine && mine !== window.ME) Object.assign(mine, fields);
+      if (!Object.keys(row).length) return;
+      row.updated_at = new Date().toISOString();
+      var r = await sb.from('profiles').update(row).eq('id', me()).select('id'); if (r.error) throw new Error(friendly(r.error)); if (!(r.data || []).length) throw new Error('Could not save — please try again');
+    },
+    endorsements: async function (u) {
+      var id = u.id === window.ME.id ? me() : L.uuidOf(u.id), out = {}; if (!id) return out;
+      var r = await sb.from('skill_endorsements').select('skill, endorser, who:profiles!skill_endorsements_endorser_fkey(name)').eq('profile_id', id).limit(1000);
+      if (r.error) throw new Error(friendly(r.error));
+      (u.skills || []).forEach(function (s) { out[s] = { n: 0, mine: false, who: [] }; });
+      (r.data || []).forEach(function (x) { var o = out[x.skill]; if (!o) return; o.n++; if (x.endorser === me()) o.mine = true; if (x.who) o.who.push(x.who.name); });
+      return out;
+    },
+    endorse: async function (u, skill, on) {
+      var id = L.uuidOf(u.id); if (!id || id === me()) throw new Error('You cannot endorse yourself');
+      var r = on ? await sb.from('skill_endorsements').insert({ profile_id: id, skill: skill, endorser: me() }) : await sb.from('skill_endorsements').delete().eq('profile_id', id).eq('skill', skill).eq('endorser', me());
+      if (r.error && r.error.code !== '23505') throw new Error(friendly(r.error));
+    },
+    viewers: async function () {
+      var r = await sb.rpc('my_profile_viewers', { p_limit: 50 }); if (r.error) throw new Error(friendly(r.error)); var d = r.data || {};
+      return { total: d.total || 0, private: d.private || 0, viewers: (d.viewers || []).map(function (v) { K.putUser(v); return { uid: L.aid(v.id), day: K.ago(v.day) === 'just now' ? 'today' : new Date(v.day).toLocaleDateString(document.documentElement.lang === 'ar' ? 'ar-EG' : 'en-GB', { day: 'numeric', month: 'short' }) }; }) };
+    }
+  };
+  /* the endorsement notice says what was endorsed */
+  if (window.dxI18nAdd) window.dxI18nAdd({ 'You cannot endorse yourself': 'لا يمكنك تأييد نفسك' }, [[/^endorsed you for (.+)$/, function (m) { return 'أيّدك في ' + m[1]; }]]);
 })();
