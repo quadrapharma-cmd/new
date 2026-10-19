@@ -136,7 +136,7 @@
   function refresh(force) {
     if (V.loading && !force) return Promise.resolve();
     V.loading = true;
-    return Promise.all([S().list(), S().mine()]).then(function (r) { V.list = r[0]; V.mine = r[1] || {}; V.at = Date.now(); V.loading = false; paint(); }, function (e) { V.loading = false; toast((e && e.message) || 'Courses could not be loaded'); });
+    return Promise.all([S().list(), S().mine()]).then(function (r) { V.err = false; V.list = r[0]; V.mine = r[1] || {}; V.at = Date.now(); V.loading = false; paint(); }, function (e) { V.loading = false; V.err = true; paint(); toast((e && e.message) || 'Courses could not be loaded'); });
   }
   function state(c) { var m = V.mine[c.id]; if (!m) return c.price > 0 ? 'buy' : 'enroll'; if (m.status === 'completed') return 'done';
     var d = (m.done || []).length; return m.total && d >= m.total ? 'quiz' : d ? 'continue' : 'start'; }
@@ -182,7 +182,7 @@
     if (!V.tpl) return;
     var wrap = root.parentNode; if (!wrap.querySelector('.tr-bar')) root.insertAdjacentHTML('beforebegin', bar());
     else { wrap.querySelectorAll('.tr-chips .cf-tag').forEach(function (t) { t.classList.toggle('on', t.dataset.trt === V.topic); t.setAttribute('aria-pressed', String(t.dataset.trt === V.topic)); }); }
-    if (!V.list) { root.innerHTML = '<div class="dbk-empty">' + esc(T('Loading courses…')) + '</div>'; return; }
+    if (!V.list) { root.innerHTML = '<div class="dbk-empty">' + (V.err ? esc(T('Courses could not be loaded')) + '<br><button type="button" class="btn-p" data-trretry="1">↺ Try again</button>' : esc(T('Loading courses…'))) + '</div>'; return; }
     var shown = V.list.filter(match); root.innerHTML = '';
     shown.forEach(function (c) { root.appendChild(card(c)); });
     if (!shown.length) root.innerHTML = '<div class="dbk-empty">' + esc(V.list.length ? T('No course matches — try another word or topic.') : T('No courses yet.')) +
@@ -374,6 +374,7 @@
     var t = onPage(e); if (!t) return;
     var x;
     if ((x = t.closest('[data-trt]')) && x.closest('.tr-bar')) { e.preventDefault(); V.topic = x.dataset.trt; paint(); return; }
+    if ((x = t.closest('[data-trretry]'))) { e.preventDefault(); V.err = false; paint(); refresh(true); return; }
     if ((x = t.closest('[data-trclear]'))) { e.preventDefault(); V.topic = 'all'; V.level = ''; V.q = ''; var bq = document.querySelector('#content .tr-q'), bl = document.querySelector('#content .tr-level'); if (bq) bq.value = ''; if (bl) bl.value = ''; paint(); return; }
     if ((x = t.closest('.tr-bar .tr-my'))) { e.preventDefault(); myCourses(); return; }
     if ((x = t.closest('[data-trgo]'))) { e.preventDefault(); e.stopPropagation(); var ov = x.closest('.dbk-ov'); if (ov) ov.querySelector('.dbk-x').click(); go(x.dataset.trgo); return; }

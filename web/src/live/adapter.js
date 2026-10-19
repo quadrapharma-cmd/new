@@ -3220,10 +3220,10 @@
   /* ===== AREA community: training (T-01) — window.dxTraining over 0062: courses, lessons (content through lesson_content(), files by
      signed link from the private course-media bucket), progress, the final quiz (scored by the server), certificates (the verify link
      reads the one code it names), paid courses through the payment pipeline, Admin → Training. training.js draws. ===== */
-  var TCOLS = 'id,title,description,emoji,duration,hours,level,topic,instructor,instructor_title,price_egp,enrolled_count,active,pass_mark,sort_order,created_at,lessons:course_lessons(count)';
+  var TCOLS = 'id,title,description,emoji,duration,hours,level,topic,instructor,instructor_title,price_egp,enrolled_count,active,pass_mark,sort_order,created_at,lessons:course_lessons(id)';   /* ids, not count(): the lesson content columns are not readable (0062) */
   function tCourse(x) { return { id: x.id, title: x.title, desc: x.description || '', emoji: x.emoji || '🎓', duration: x.duration || (x.hours ? (+x.hours) + ' hours' : ''), hours: x.hours != null ? +x.hours : null,
     level: x.level || 'Beginner', topic: x.topic || 'other', instructor: x.instructor || '', instructorTitle: x.instructor_title || '', price: +x.price_egp || 0, enrolled: +x.enrolled_count || 0,
-    active: !!x.active, passMark: x.pass_mark || 70, lessons: (x.lessons && x.lessons[0] && x.lessons[0].count) || 0 }; }
+    active: !!x.active, passMark: x.pass_mark || 70, lessons: (x.lessons || []).length }; }
   function tErr(r) { if (r.error) throw new Error(friendly(r.error)); return r.data; }
   async function certRead(code) {   /* signed in or not: the REST row of the one certificate the link names (x-dbx-cert, 0062) */
     var k = String(code || '').trim().toUpperCase(); if (!/^DBX-[0-9A-F]{10}$/.test(k)) return { valid: false, code: k };

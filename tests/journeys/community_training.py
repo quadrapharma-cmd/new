@@ -100,6 +100,17 @@ def seed_lessons(j, cid, n=6, video_first=True):
     for i in range(n):
         j.sql("insert into public.course_lessons (course_id, position, title, kind, minutes, body) values (%d, %d, $q$Part %d$q$, '%s', 10, $q$Notes for part %d$q$)" % (cid, i + 1, i + 1, kinds[i], i + 1))
 
+def seed_media(j, cid):
+    """Live precondition: a Drugbox admin uploads lesson 1's video and lesson 2's PDF into the course's private folder (course-media),
+    through the API as the app does, and the lessons point at them."""
+    import base64
+    a = j.person('Adel Admin'); make_admin(j, a['id']); j.reload(a['page'])
+    for pos, name, mime in ((1, 'me_intro.webm', 'video/webm'), (2, 'spec.pdf', 'application/pdf')):
+        b64 = base64.b64encode(open(os.path.join(FIX, name), 'rb').read()).decode(); path = 'courses/%d/%s' % (cid, name)
+        err = a['page'].evaluate("""([b,p,t])=>{const u=Uint8Array.from(atob(b),c=>c.charCodeAt(0));return dxLive.sb.storage.from('course-media').upload(p,new Blob([u],{type:t}),{contentType:t}).then(r=>r.error?r.error.message:'')}""", [b64, path, mime])
+        j.check(not err, 'the admin could not upload the lesson file: %s' % err)
+        j.sql("update public.course_lessons set media_path='%s' where course_id=%d and position=%d" % (path, cid, pos))
+
 def seed_quiz(j, cid):
     """Live precondition: a two-question final quiz (answers: first, second)."""
     j.sql("insert into public.course_questions (course_id, position, prompt, options, answer) values (%d, 1, 'Q one', '{right,wrong}', 0), (%d, 2, 'Q two', '{wrong,right}', 1)" % (cid, cid))
@@ -138,7 +149,7 @@ def buy_paid_course(j):
             j.check(j.sql1("select amount_cents from public.payment_orders where id=%s" % oid) == '114000', 'the order is not the server price + VAT')
             st, body = paymob_callback(j, oid); j.check(st == 200, 'the payment callback was refused (%s %s)' % (st, body[:80]))
             j.check(j.wait_db("select count(*) from public.course_enrollments where user_id='%s' and course_id=%d and order_id=%s" % (me['id'], cid, oid), 8) == '1', 'no enrollment after the payment')
-            reopen(j, pg); training(j, pg)
+            pg.goto(_dx.APP_URL.rstrip('/') + '/?payment=%s' % oid); j.reload(pg); training(j, pg)   # back from Paymob's page, as its return URL does
             j.check(re.search(r'Start|Continue|ابدأ|متابعة', course(j, pg, title).inner_text()), 'the course is still locked after payment')
             j.check(notif_rows(j, me['id'], extra=" and message ~* 'payment'") >= 1, "no 'Payment received' notification")
     with j.step('The browser cannot enrol itself in a paid course (only the server after payment)'):
@@ -150,7 +161,7 @@ def buy_paid_course(j):
 def study_lessons(j):
     """A learner studies the course content and keeps her place across sessions and devices."""
     if j.live:
-        me = j.person('Mona Fathy'); pg = me['page']; t = j.tag[:4]; title = 'Lessons Course %s' % t; cid = seed_course(j, title, 'Six lessons'); seed_lessons(j, cid, 6)
+        me = j.person('Mona Fathy'); pg = me['page']; t = j.tag[:4]; title = 'Lessons Course %s' % t; cid = seed_course(j, title, 'Six lessons'); seed_lessons(j, cid, 6); seed_media(j, cid)
         j.sql("insert into public.course_enrollments (course_id, user_id) values (%d,'%s')" % (cid, me['id'])); j.reload(pg)
     else:
         pg = j.demo_signin(j.new_page()); title = 'GMP Fundamentals'
@@ -164,7 +175,10 @@ def study_lessons(j):
         b.first.click(); j.settle(pg, 1200)
         j.check(re.search(r'Lesson 1|الدرس 1|الدرس الأول', j.text(pg) + mtext(pg)), 'Start opens no lesson')
         j.check(pg.locator('video:visible, iframe:visible').count(), 'lesson 1 has no video')
-        if j.live: j.check(pg.evaluate("(()=>{const v=document.querySelector('.dbk-ov video');return v?v.getAttribute('src'):''})()").find('/rest/v1/') < 0, 'the lesson video is not a storage link')
+        if j.live:
+            src = pg.evaluate("(()=>{const v=document.querySelector('.dbk-ov video');return v?v.getAttribute('src'):''})()")
+            j.check('/object/sign/course-media/' in src, 'the lesson video is not a signed link to the private bucket: %s' % src[:120])
+            j.check(pg.evaluate("(()=>{const v=document.querySelector('.dbk-ov video');return new Promise(r=>{if(v.readyState>=1)return r(true);v.onloadedmetadata=()=>r(true);v.onerror=()=>r(false);setTimeout(()=>r(false),8000)})})()"), 'the lesson video does not load')
     with j.step('Mark lesson 1 complete; open lesson 2 (PDF); progress shows on My courses and the card'):
         b = j.find(pg, r'Mark complete|Complete|إكمال|تم', scope='body', kinds='button'); j.check(b, 'no "Mark complete"'); b.click(); j.settle(pg, 800)
         j.check(re.search(r'1\s*/\s*6|17\s*%|16\s*%', j.text(pg) + mtext(pg)), 'progress does not update')
