@@ -66,8 +66,13 @@
       var has = false; try { has = localStorage.getItem('dx_session') === '1'; } catch (x) {}
       if (has) { $('loginEmail').value = 'haytham@drugbox.app'; $('loginPw').value = ACC['haytham@drugbox.app']; window.doLogin(); $('loginEmail').value = ''; $('loginPw').value = ''; }
       else clearMember();
-    }, 150);
+    }, 50);
   })();
+  /* demo: signing out in one tab signs out the other tabs of this browser too (the live app's session does the same) */
+  window.addEventListener('storage', function (e) {
+    if (window.dxLive || e.key !== 'dx_session' || e.newValue) return;
+    var app = $('app'); if (app && app.getClientRects().length) window.doLogout();
+  });
   function clearMember() { try { Object.keys(localStorage).forEach(function (k) { if (/^(dx|dbx)_/.test(k) && !PREF_KEYS.test(k)) localStorage.removeItem(k); }); } catch (x) {} }
   function focusPw() { var p = $('loginPw'); if (p) { p.focus(); try { p.select(); } catch (x) {} } }
   window.dxFocusPw = focusPw;
@@ -148,14 +153,7 @@
   if (box) {
     var pwf = $('loginPw') && $('loginPw').closest('.f-field');
     if (pwf) pwf.insertAdjacentHTML('afterend', '<div class="dx-forgot"><b role="button" tabindex="0" data-auth="forgot">Forgot password?</b></div>');
-    /* the sign-in pages have their own language switch (the top bar is not there before sign-in) */
-    var lb = document.createElement('button'); lb.type = 'button'; lb.className = 'dx-auth-lang'; lb.setAttribute('data-noi18n', '');
-    function paintLang() { lb.textContent = ar() ? 'English' : 'العربية'; lb.setAttribute('lang', ar() ? 'en' : 'ar'); }
-    lb.addEventListener('click', function () { if (window.dxSetLang) window.dxSetLang(ar() ? 'en' : 'ar'); paintLang(); });
-    box.insertBefore(lb, box.firstChild); paintLang();
-    var sbox = document.querySelector('#signupPage > div');
-    if (sbox) { var lb2 = lb.cloneNode(true); lb2.addEventListener('click', function () { if (window.dxSetLang) window.dxSetLang(ar() ? 'en' : 'ar'); paintLang(); lb2.textContent = lb.textContent; }); sbox.insertBefore(lb2, sbox.firstChild);
-      new MutationObserver(function () { paintLang(); lb2.textContent = lb.textContent; }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] }); }
+    /* the sign-in pages' language switch is the approved one (#authLangBtn) */
   }
   /* sign-up: what creating an account means (Terms and Privacy Policy), under the button */
   var sbtn = document.querySelector('#signupPage button.f-btn');

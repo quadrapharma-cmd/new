@@ -417,7 +417,7 @@ def repost_and_share(j):
             dlg = pg.evaluate("[...document.querySelectorAll('.modal-bg,[role=dialog]')].some(e=>e.getClientRects().length&&/repost|إعادة/i.test(e.innerText))")
             return dlg or re.search(r'reposted|أعاد نشر', j.text(pg), re.I)
         j.act(pg, act(post, REPOST), 'Repost', reposted)
-        btn = j.find(pg, r'^(Repost|Confirm|Share|إعادة النشر|تأكيد|نشر)$', scope='.modal-bg', exact=True)
+        btn = j.find(pg, r'^(Repost|Confirm|Share|إعادة النشر|إعادة نشر|تأكيد|نشر)$', scope='.modal-bg', exact=True)
         if btn: btn.click(); j.settle(pg, 900)
         j.check(re.search(r'reposted|أعاد نشر', j.text(pg), re.I), 'no "reposted" entry after confirming')
         if j.live: j.check(j.wait_db("select share_count from public.posts where id=%d" % p, 5) == '1', 'posts.share_count did not become 1')

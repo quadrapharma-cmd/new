@@ -42,6 +42,18 @@ def queries(ctx):
         ('feed_page_cursor', wrap(feed.format(where="where p.created_at <= '{t}' and (p.created_at < '{t}' or (p.created_at = '{t}' and p.id < {i}))".format(**cursor)))),
         ('feed_my_likes', wrap("select post_id from public.reactions where user_id = '%s' and post_id in (%s)" % (me, ids20))),
         ('feed_my_saved', wrap("select post_id from public.saved_posts where user_id = '%s' and post_id in (%s)" % (me, ids20))),
+        # area social (0041–0046): reposts in Home, my reposts and mentions on a page, replies + comment likes, tags, search, find people, who viewed
+        ('feed_reposts', wrap("select r.post_id, r.user_id, r.note, r.created_at, %s as who from public.reposts r order by r.created_at desc limit 20" % (author % (P, 'r.user_id')))),
+        ('feed_my_reposts', wrap("select post_id from public.reposts where user_id = '%s' and post_id in (%s)" % (me, ids20))),
+        ('feed_mentions', wrap("select m.post_id, m.user_id, (select row_to_json(a) from (select x.name from public.profiles x where x.id = m.user_id) a) as who from public.post_mentions m where m.post_id in (%s)" % ids20)),
+        ('post_comments_likes', wrap("select c.id, c.parent_id, c.like_count, exists (select 1 from public.comment_reactions k where k.comment_id = c.id and k.user_id = '%s') as mine from public.comments c where c.post_id = %s order by c.created_at, c.id limit 50" % (me, ctx['hot_post']))),
+        ('tag_page', wrap("select t.post_id, p.created_at from public.post_tags t join public.posts p on p.id = t.post_id where t.tag = 'stability' order by p.created_at desc limit 20")),
+        ('search_all', "select public.search_all('metformin', 6)"),
+        ('search_all_person', "select public.search_all('member 12', 6)"),
+        ('find_people', wrap("select %s from public.profiles x where x.id <> '%s' and x.account_type is distinct from 'deleted' and (x.name ilike '%%pharma%%' or x.company ilike '%%pharma%%' or x.headline ilike '%%pharma%%') order by x.verified desc, x.name limit 40" % (P, me))),
+        ('my_profile_viewers', "select public.my_profile_viewers(50)"),
+        ('saved_searches', wrap("select id, name, q, filters, alert, seen_at from public.saved_searches where kind = 'market' order by created_at desc limit 20")),
+        ('my_block_list', "select public.my_block_list()"),
         ('post_comments', wrap("select c.*, %s as author from public.comments c where c.post_id = %s order by c.created_at, c.id limit 50"
                                % (author % (P, 'c.user_id'), ctx['hot_post']))),
         # network

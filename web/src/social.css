@@ -2,13 +2,11 @@
 .dx-forgot{text-align:end;margin:-6px 0 12px;font-size:12.5px}
 .dx-forgot b,.dx-auth-panel .f-link b{color:var(--cp,#1a56db);cursor:pointer;font-weight:700}
 .dx-forgot b:focus-visible,.dx-auth-panel [role=button]:focus-visible{outline:2px solid var(--cp,#1a56db);outline-offset:2px;border-radius:4px}
-.auth-form-box.dx-auth-alt>*:not(.dx-auth-panel):not(.lg-form-brand):not(.dx-auth-lang){display:none!important}
+.auth-form-box.dx-auth-alt>*:not(.dx-auth-panel):not(.lg-form-brand){display:none!important}
 .dx-auth-panel .auth-sub{line-height:1.6}
 .dx-auth-panel .f-btn{margin-top:4px}
 .dx-auth-ok{display:none;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.5;margin-bottom:12px}
 .dx-auth-panel .f-error{display:none}
-.dx-auth-lang{display:block;margin:0 0 10px auto;min-height:36px;padding:6px 14px;border-radius:999px;border:1.5px solid #e4e6eb;background:#fff;color:var(--cx,#0E1320);font:600 13px/1 inherit;cursor:pointer}
-[dir=rtl] .dx-auth-lang{margin:0 auto 10px 0}
 .dx-agree{margin-top:12px;font-size:12px;line-height:1.6;color:#65676b;text-align:center}
 .dx-agree a,.dx-foot-l,.dx-set a[data-legal]{color:var(--cp,#1a56db);font-weight:600;text-decoration:none}
 .dx-agree a:hover,.dx-foot-l:hover{text-decoration:underline}
@@ -112,3 +110,14 @@ html.dx-dark .dx-pf-menu { filter: invert(1) hue-rotate(180deg); }
 .dx-np-n { font-size: 12px; color: #65676b; margin: 10px 0 4px; }
 .dx-np-msg { padding: 18px 4px; color: #65676b; font-size: 13px; }
 @media (max-width: 600px) { .dx-np-sel { flex: 1 1 45%; } }
+
+/* ── S-28: a pinned post's pills (Pinned, category, ⋯) go under the author on a phone, as in groups (groups.css) ── */
+@media (max-width:640px) {
+  #content .post-head.dx-pinned-head { flex-wrap: wrap; row-gap: 6px; }
+  #content .post-head.dx-pinned-head > div:nth-child(2) { min-width: calc(100% - 64px) !important; }
+  #content .post-head.dx-pinned-head > div:nth-child(3) { margin-inline-start: auto !important; margin-left: 0; }
+}
+
+/* ── a phone's Marketplace: the top bar's search box sits above the listings (soc_nav.js) ── */
+.top-search.dx-mk-search { display: block !important; max-width: none !important; margin: 10px 12px 4px; }
+.top-search.dx-mk-search input { height: 42px; font-size: 14px; }

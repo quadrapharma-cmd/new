@@ -410,6 +410,10 @@ def switch_language(j):
             el = j.find(pg, patt, scope='#content', exact=True)
             if el:
                 before = j.toast_mark(pg); el.click(); pg.wait_for_timeout(500)
+                dlg = pg.locator('.modal-bg.show:visible, .dbk-ov:visible')     # Repost asks first (with an optional comment): confirm it
+                if dlg.count():
+                    ok = dlg.last.locator('button').filter(has_text=re.compile(r'^\W*(Repost|إعادة نشر|أعد النشر)\W*$'))
+                    j.check(ok.count(), 'the repost dialog has no Repost button'); ok.last.click(); pg.wait_for_timeout(600)
                 eng += [t for t in j.toasts_since(pg, before) if re.search(r'[A-Za-z]{4,}', t) and not re.search(r'[؀-ۿ]', t)]
         j.check(not eng, 'English toasts in Arabic: %s' % eng)
     with j.step('Reload, and the login page after sign-out, stay Arabic'):

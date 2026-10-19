@@ -109,7 +109,7 @@ def photo_and_cover(j):
         except Exception:
             j.dead_end(pg, before, 'Edit cover'); j.fail('"Edit cover" opens no file picker')
         fc.value.set_files(cover); pg.wait_for_timeout(1200)
-        j.check(pg.evaluate("[...document.querySelectorAll('#content *')].some(e=>/url\\(\"?(blob:|data:image|https?:)/.test(getComputedStyle(e).backgroundImage)&&e.getBoundingClientRect().width>400)"), 'the cover image is not shown')
+        j.check(pg.evaluate("[...document.querySelectorAll('#content *')].some(e=>/url\\(\"?(blob:|data:image|https?:)/.test(getComputedStyle(e).backgroundImage)&&e.getBoundingClientRect().width>Math.min(400,innerWidth*0.85))"), 'the cover image is not shown')   # a phone is 390 px wide
     with j.step('A too-big image / a PDF is refused with a clear message (or resized)'):
         el = pg.locator('#content [onclick*="changeAvatar"]').first; before = j.toast_mark(pg)
         with pg.expect_file_chooser(timeout=5000) as fc: el.click()

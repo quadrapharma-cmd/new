@@ -80,7 +80,10 @@ def command_palette(j):
         pg.keyboard.press('Enter'); j.settle(pg, 900)
         j.check(page_of(pg) == 'profile' and member in j.text(pg)[:400], 'Enter on the member does not open the profile')
     with j.step('Ctrl+K while typing in a field does not insert text; Esc and an outside click close it and return focus'):
-        j.nav(pg, 'messages'); pg.click('#composeInput'); pg.keyboard.press('Control+k'); pg.wait_for_timeout(400)
+        j.nav(pg, 'messages')
+        if not pg.locator('#composeInput:visible').count() and pg.locator('.mx-thread:visible').count():   # a phone shows the list first: open a conversation
+            pg.locator('.mx-thread:visible').first.click(); pg.wait_for_timeout(500)
+        pg.click('#composeInput'); pg.keyboard.press('Control+k'); pg.wait_for_timeout(400)
         j.check(palette(pg) and pg.input_value('#composeInput') == '', 'Ctrl+K inside a text field does not open the palette (or inserts text)')
         pg.keyboard.press('Escape'); pg.wait_for_timeout(300)
         j.check(not palette(pg) and pg.evaluate("document.activeElement.id") == 'composeInput', 'Esc does not close the palette and return focus')
@@ -97,6 +100,9 @@ def saved_search_alert(j):
         s_ = pg.locator('#searchIn'); j.check(s_.is_visible(), 'no visible Marketplace search box at %dpx (the phone search palette does not apply Marketplace filters)' % j.width)
         s_.click(); s_.fill('Metformin'); pg.wait_for_timeout(500)
         box = pg.locator('#mkx .filters .f-opt').first; j.check(box.count(), 'the Marketplace has no filters')
+        if not box.is_visible():                                       # a phone keeps the filters behind "⚙ Filters"
+            tg = j.find(pg, r'Filters|الفلاتر|التصفية|عوامل التصفية', scope='#mkx'); j.check(tg, 'the filters are hidden and there is no Filters button at %dpx' % j.width)
+            tg.click(); pg.wait_for_timeout(400)
         box.click(); pg.wait_for_timeout(800)
         el = j.find(pg, r'Save (this )?search|حفظ (هذا )?البحث', scope='body'); j.check(el, 'no "Save this search" after searching with a filter')
         el.click(); pg.wait_for_timeout(500)
@@ -151,7 +157,7 @@ def one_saved_place(j):
     with j.step('Open the saved job: the job page where Apply works'):
         el = j.find(pg, r'Saved job|Job|وظيفة', scope='#content'); j.check(el, 'no saved job to open')
         job_name = 'Saved job' if j.live else el.inner_text().strip().split('\n')[0]; el.click(); j.settle(pg)
-        j.check(page_of(pg) == 'jobs' and j.find(pg, r'Apply|تقدم', scope='#content'), 'the saved job does not open the job with Apply')
+        j.check(page_of(pg) == 'jobs' and j.find(pg, r'Apply|تقدم|قدّم|قدم', scope='#content'), 'the saved job does not open the job with Apply')
     with j.step('Unsave the job; reload: consistent everywhere'):
         j.nav(pg, 'saved')
         un = pg.evaluate_handle("""n=>{const re=/^\\W*(Unsave|Saved|Remove|إلغاء الحفظ|محفوظ|إزالة)$/i,btn=e=>[...e.querySelectorAll('button,[role=button]')].find(b=>b.getClientRects().length&&re.test(b.innerText.trim()));

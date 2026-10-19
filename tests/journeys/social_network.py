@@ -61,7 +61,7 @@ def find_people(j):
             j.check(re.search(r'No members|try fewer|لا يوجد', j.text(pg)) and 'Carim' not in j.text(pg), 'a filter that matches nobody does not show a helpful empty state')
     with j.step('Search "Carim" in the top-bar search and open the result'):
         q = 'Carim' if j.live else 'Rahmani'
-        t = top_search(j, pg, q); j.check(q in t, 'the top-bar search finds no member "%s"' % q); open_result(j, pg, q)
+        t = top_search(j, pg, q); j.check(q in t, 'the top-bar search finds no member "%s"' % q); open_result(j, pg, 'Carim Audit' if j.live else q)   # other journeys have their own Carim
         j.check(('Carim Audit' if j.live else 'Faisal Rahmani') in j.text(pg)[:500], 'the result does not open the right profile')
     with j.step('Search works with Arabic names and answers within 1 s'):
         if j.demo: j.skip('Arabic member names are checked in live')

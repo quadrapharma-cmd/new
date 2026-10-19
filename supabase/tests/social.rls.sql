@@ -236,6 +236,26 @@ select pg_temp.no('Bob cannot message', $$insert into public.messages (sender_id
 select pg_temp.no('Bob cannot comment', $$insert into public.comments (post_id, user_id, body) values (pg_temp.id('pa'), 'aaaa0041-0000-0000-0000-000000000002', 'after')$$, '42501');
 select pg_temp.no('Bob cannot lift his own suspension', $$select public.lift_suspension('aaaa0041-0000-0000-0000-000000000002', 'me')$$, '42501');
 
+-- ══ a connection's phone (0046) ═══════════════════════════════════════════════════════════
+select pg_temp.as_server();
+insert into public.connections (requester, addressee, status) values ('aaaa0041-0000-0000-0000-000000000001', 'aaaa0041-0000-0000-0000-000000000003', 'accepted') on conflict do nothing;
+update public.profiles set phone = '+201001234567' where id = 'aaaa0041-0000-0000-0000-000000000003';
+select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000001');
+select pg_temp.ok('a connection''s phone stays hidden until they share it', $$public.connection_phone('aaaa0041-0000-0000-0000-000000000003') is null$$);
+select pg_temp.as_server();
+update public.member_settings set phone_connections = true where user_id = 'aaaa0041-0000-0000-0000-000000000003';
+select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000001');
+select pg_temp.ok('a connection who shares it: the phone', $$public.connection_phone('aaaa0041-0000-0000-0000-000000000003') = '+201001234567'$$);
+select pg_temp.ok('the phone column itself stays private', $$not has_column_privilege('authenticated', 'public.profiles', 'phone', 'select')$$);
+select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000002');
+select pg_temp.ok('not connected: no phone', $$public.connection_phone('aaaa0041-0000-0000-0000-000000000003') is null$$);
+select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000003');
+select pg_temp.step('Cara blocks Alice', $$insert into public.user_blocks (blocker, blocked) values ('aaaa0041-0000-0000-0000-000000000003', 'aaaa0041-0000-0000-0000-000000000001')$$);
+select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000001');
+select pg_temp.ok('connected but blocked: no phone', $$public.connection_phone('aaaa0041-0000-0000-0000-000000000003') is null$$);
+select pg_temp.as_anon();
+select pg_temp.no('a visitor cannot ask', $$select public.connection_phone('aaaa0041-0000-0000-0000-000000000003')$$, '42501');
+
 select pg_temp.as_anon();
 -- ══ report ═══════════════════════════════════════════════════════════════════════════════════
 select pg_temp.as_server();

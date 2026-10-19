@@ -304,6 +304,7 @@ fawry_staging = 'fawrystaging' in env.get('FAWRY_BASE', '')
 if prod and (test_keys or fawry_staging): bad.append('production with Paymob TEST keys or Fawry STAGING (FAWRY_BASE) — use the live values')
 if not prod and live_keys: bad.append('staging with Paymob LIVE keys — staging must use test keys (real money otherwise)')
 if not prod and env.get('FAWRY_BASE', 'https://www.atfawry.com').rstrip('/') == 'https://www.atfawry.com': bad.append('staging without FAWRY_BASE=https://atfawry.fawrystaging.com (Fawry production otherwise)')
+if not env.get('RESEND_API_KEY'): print('    note: RESEND_API_KEY is not set — notification e-mails stay queued until it is (docs/LAUNCH.md, E-mail)', file=sys.stderr)
 if bad: print('\n'.join('    - ' + b for b in bad), file=sys.stderr); sys.exit(1)
 print('    secrets file checked: ' + ', '.join(sorted(env)))
 PY
@@ -320,11 +321,12 @@ ok "secrets set"
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/supabase"; cp -r "$REPO/supabase/functions" "$WORK/supabase/functions"
 { echo 'project_id = "drugbox"'
-  for fn in payments-create:true paymob-webhook:false fawry-webhook:false; do
+  for fn in payments-create:true paymob-webhook:false fawry-webhook:false account-delete:true notify-email:true; do
     printf '\n[functions.%s]\nverify_jwt = %s\nentrypoint = "./functions/%s/index.js"\n' "${fn%%:*}" "${fn##*:}" "${fn%%:*}"
   done; } > "$WORK/supabase/config.toml"
-for fn in payments-create paymob-webhook fawry-webhook; do
-  extra=(); [[ $fn != payments-create ]] && extra=(--no-verify-jwt)
+# account-delete: the member's JWT (Settings → Delete my account); notify-email: the service-role key (the every-minute schedule, docs/LAUNCH.md)
+for fn in payments-create paymob-webhook fawry-webhook account-delete notify-email; do
+  extra=(); [[ $fn == paymob-webhook || $fn == fawry-webhook ]] && extra=(--no-verify-jwt)
   info "deploying $fn $( [[ ${#extra[@]} -gt 0 ]] && echo '(public: provider callback, signature-checked)' || echo '(user JWT required)')"
   sb functions deploy "$fn" --project-ref "$REF" --use-api --workdir "$WORK" "${extra[@]}" || die "deploy of $fn failed"
   ok "$fn deployed"

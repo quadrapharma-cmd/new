@@ -82,11 +82,20 @@
   var first = parse(location.hash);
   if (first && first.page !== 'post') PEND = first;
   if (first && (first.page === 'privacy' || first.page === 'terms')) later(function () { if (window.dxLegal) window.dxLegal.open(first.page); }, 300);
+  var pendT = null;
   document.addEventListener('dx:page', function () {
-    if (!PEND || !inApp()) return; var r = PEND; PEND = null;
-    if (r.page === 'privacy' || r.page === 'terms') return;
-    later(function () { if (!open(r)) record(page(), []); }, 80);
+    if (!PEND || pendT) return; var t0 = Date.now();
+    (function wait() {                                                   /* the first page is drawn just before the app shows */
+      pendT = null; if (!PEND) return;
+      if (!inApp()) { if (Date.now() - t0 < 4000) pendT = setTimeout(wait, 60); return; }
+      var r = PEND; PEND = null;
+      if (r.page === 'privacy' || r.page === 'terms') return;
+      later(function () { if (!open(r)) record(page(), []); }, 80);
+    })();
   });
+  /* signing out leaves no page address behind (the next person starts at Home) */
+  var oOut = window.doLogout;
+  if (oOut) window.doLogout = function () { var r = oOut.apply(this, arguments); PEND = null; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} return r; };
   window.dxRoute = { open: function (h) { return open(parse(h)); }, pending: function () { return PEND; } };
 
   /* ═════ B. one search (S-18) ═════ */
@@ -166,6 +175,14 @@
     return out;
   };
 
+  /* ═════ C2. the composer's Product and Job open the real forms (S-23) ═════ */
+  var oPostModal = window.showPostModal;
+  if (oPostModal) window.showPostModal = function (mode) {
+    if (mode === 'product') { window.goto('market'); later(function () { var t = document.querySelector('#mkx .master-tab[data-tab="create"]'); if (t) t.click(); }, 60); return; }
+    if (mode === 'job') { window.goto('jobs'); later(function () { var h = document.querySelector('#jx .mode-opt[data-mode="hiring"]'); if (h && !h.classList.contains('active')) h.click(); var b = document.querySelector('#jx .post-cta-btn'); if (b) b.click(); }, 60); return; }
+    return oPostModal.apply(this, arguments);
+  };
+
   /* ═════ D. one Saved place: posts, jobs, listings (J-SOCIAL-48) ═════ */
   window.dxSavedSvc = window.dxSavedSvc || {
     live: false,
@@ -219,6 +236,16 @@
   });
 
   /* ═════ E. a notification opens what it is about (S-20) ═════ */
+  /* the Alerts count on the phone bar follows the notifications too (it was the sample's fixed "8") */
+  function syncAlerts() {
+    var n = (window.NOTIFS || []).filter(function (x) { return !x.read; }).length;
+    function put(e) { if (!e) return; if (e.textContent !== String(n)) e.textContent = n; var d = n ? '' : 'none'; if (e.style.display !== d) e.style.display = d; }   /* writes only a change (no mutation noise) */
+    put(document.querySelector('#mb-notifs .mb-badge')); if (!window.dxLive) put(document.getElementById('nb-not'));
+  }
+  ['markAllRead', 'clearAllNotifs', 'acceptConnection', 'declineConnection'].forEach(function (f) { var o = window[f]; if (typeof o === 'function') window[f] = function () { var r = o.apply(this, arguments); syncAlerts(); setTimeout(syncAlerts, 300); return r; }; });
+  if (window.dxCore) window.dxCore.onRender('soc-alerts-count', syncAlerts);
+  setInterval(syncAlerts, 2000);
+  window.dxSyncAlerts = syncAlerts;
   /* a request accepted from its notification keeps "View profile" on that row */
   var oAccept = window.acceptConnection;
   if (oAccept) window.acceptConnection = function (uid, nid) { var n = (window.NOTIFS || []).find(function (x) { return nid != null ? x.id === nid : x.uid === uid && x.type === 'connection'; }); if (n) n.accReq = true; return oAccept.apply(this, arguments); };
@@ -234,7 +261,7 @@
   var oRead = window.markNotifRead;
   window.markNotifRead = function (id) {
     var n = (window.NOTIFS || []).find(function (x) { return x.id === id; });
-    var r = oRead.apply(this, arguments); if (!n) return r;
+    var r = oRead.apply(this, arguments); syncAlerts(); if (!n) return r;
     var t = n.type, L = window.dxLive;
     if (n.pid && /^(like|comment|reply|mention|repost)$/.test(t)) { if (!L && window.dxOpenPost) window.dxOpenPost(n.pid, { comments: t === 'comment' || t === 'reply' }); return r; }   /* live: the adapter opens it */
     if (!L && !n.pid && /^(like|comment)$/.test(t) && window.dxOpenPost) {   /* the sample's notices name no post: my post they are about (its words, else my latest) */
@@ -254,6 +281,19 @@
     }, 0);
     return r;
   };
+  /* ═════ E2. a phone's Marketplace keeps its search box (the top bar has no room for it at 480 px and less) ═════ */
+  var TS = { home: null };
+  function placeSearch() {
+    var ts = document.querySelector('.top-search'); if (!ts) return;
+    if (!TS.home) { TS.home = document.createComment('top-search'); ts.parentNode.insertBefore(TS.home, ts); }
+    var want = page() === 'market' && window.innerWidth <= 480, mk = document.getElementById('mkx');
+    if (want && mk) { if (ts.parentNode !== mk.parentNode || ts.nextSibling !== mk) { mk.parentNode.insertBefore(ts, mk); ts.classList.add('dx-mk-search'); } }
+    else if (ts.classList.contains('dx-mk-search')) { TS.home.parentNode.insertBefore(ts, TS.home.nextSibling); ts.classList.remove('dx-mk-search'); }
+  }
+  if (window.dxCore) window.dxCore.onRender('soc-market-search', placeSearch);
+  document.addEventListener('dx:page', function () { setTimeout(placeSearch, 0); });
+  window.addEventListener('resize', function () { clearTimeout(TS.t); TS.t = setTimeout(placeSearch, 150); });
+
   /* ═════ F. find people on the Network page: name, company or specialty, and country (J-SOCIAL-28) ═════ */
   var SPEC = [['', 'Any specialty'], ['regulatory', 'Regulatory affairs', /regulat|registration|dossier/i], ['quality', 'Quality (QA / QC)', /\bQA\b|\bQC\b|quality|GMP/i], ['procurement', 'Procurement & sourcing', /procure|purchas|sourcing|buyer/i],
     ['production', 'Production & manufacturing', /production|manufactur|plant|operations/i], ['sales', 'Sales & marketing', /sales|marketing|business development|commercial/i], ['rnd', 'R&D & formulation', /R&D|research|formulat/i],

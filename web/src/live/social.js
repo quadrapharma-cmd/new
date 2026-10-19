@@ -146,9 +146,12 @@
   function blockList() { if (BLK.ids && Date.now() - BLK.at < 60000) return Promise.resolve(BLK.ids);
     return sb.rpc('my_block_list').then(function (r) { BLK.ids = r.error ? [] : (r.data || []); BLK.at = Date.now(); return BLK.ids; }, function () { return []; }); }
   K.onReset(function () { BLK.ids = null; });
+  var CONNP = null;                                                     /* connections first in a picker: they are known before the list is drawn */
+  K.onReset(function () { CONNP = null; });
   function people(q) {
-    return Promise.all([sb.from('profiles').select(K.PCOLS).ilike('name', '%' + String(q).replace(/[\\%_]/g, '\\$&').slice(0, 60) + '%').neq('id', me()).neq('account_type', 'deleted').order('name').limit(12), blockList()]).then(function (a) {
-      var r = a[0], bl = a[1] || []; if (r.error) throw new Error(friendly(r.error)); r.data = (r.data || []).filter(function (x) { return bl.indexOf(x.id) < 0; }).slice(0, 8);
+    if (!CONNP) CONNP = Promise.resolve(K.loadConnections ? K.loadConnections() : null).catch(function () {});
+    return Promise.all([CONNP, sb.from('profiles').select(K.PCOLS).ilike('name', '%' + String(q).replace(/[\\%_]/g, '\\$&').slice(0, 60) + '%').neq('id', me()).neq('account_type', 'deleted').order('name').limit(12), blockList()]).then(function (a) {
+      var r = a[1], bl = a[2] || []; if (r.error) throw new Error(friendly(r.error)); r.data = (r.data || []).filter(function (x) { return bl.indexOf(x.id) < 0; }).slice(0, 8);
       (r.data || []).forEach(function (x) { K.putUser(x); }); var ids = (r.data || []).map(function (x) { return L.aid(x.id); });
       return ids.map(function (a) { return (window.USERS || []).find(function (u) { return u.id === a; }); }).filter(Boolean); });
   }
@@ -188,7 +191,8 @@
     done: function () { return !!K.FEED.done; },
     mentions: function (p, list) {
       return untilSaved(p).then(function (id) { var rows = list.map(function (m) { return { post_id: id, user_id: L.uuidOf(m.uid) }; }).filter(function (x) { return x.user_id && x.user_id !== me(); });
-        if (!rows.length) return; return sb.from('post_mentions').insert(rows).then(function (r) { if (r.error) K.toastErr(r.error); }); }, function () {});
+        if (!rows.length) return; return sb.from('post_mentions').insert(rows).then(function (r) { if (r.error) return K.toastErr(r.error);
+          if (window.dxRepaintPost) window.dxRepaintPost(id, { mentions: list.slice() }); }); }, function () {});   /* the saved post (its row came back before its mentions) keeps the links */
     }
   };
   /* comments: one request with the threads, the like counts and my likes; the approved toggle shows them */
@@ -392,6 +396,20 @@
     }
   };
   if (window.dxSafetyWrapMod) window.dxSafetyWrapMod();
+  /* 📞 in a conversation: the connection's own number when they share it with connections (0046); otherwise the company phone (links.js) */
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('#mx .ch-action-btn'); if (!btn || btn.__socPass || !me()) return;
+    var oc = btn.getAttribute('onclick') || '', label = (btn.textContent || '').trim(); if (!(/Calling/i.test(oc) || label === '📞')) return;
+    var a = MXK(), id = a && L.uuidOf(a); if (!id) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    sb.rpc('connection_phone', { p_user: id }).then(function (r) {
+      var ph = !r.error && r.data; if (!ph) { btn.__socPass = true; try { btn.click(); } finally { btn.__socPass = false; } return; }
+      var u = window.U(a), d = String(ph).replace(/[^\d+]/g, '');
+      window.DBK.modal({ title: 'Call ' + (u.name || 'contact'), secondary: 'Close', body: '<p>' + window.esc(u.name || '') + ' shares this number with connections:</p><p><a class="dr-btn p" href="tel:' + d + '">📞 ' + window.esc(ph) + '</a></p>' });
+    }, function () {});
+  }, true);
+  if (window.dxI18nAdd) window.dxI18nAdd({}, [[/^(.+) shares this number with connections:$/, function (m) { return m[1] + ' يشارك هذا الرقم مع اتصالاته:'; }]]);
+  function MXK() { var t = document.querySelector('#threadList .mx-thread.active'), m = t && /^u(\d+)$/.exec(t.dataset.person || ''); return m ? +m[1] : null; }
   /* a suspended member is told why at sign-in and signed out (the database refuses their writes anyway) */
   function suspendedNotice(st) {
     var msg = 'Your Drugbox account is suspended' + (st.reason ? ': ' + st.reason : '') + '. If you think this is a mistake, write to support@drugbox.app.';

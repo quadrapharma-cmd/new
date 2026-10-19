@@ -58,6 +58,7 @@
     if (k >= 0) { var a = h.indexOf('>', k) + 1, e1 = h.indexOf('<span id="pb-ell-' + id + '"', a), e2 = h.indexOf('</div>', a), z = e1 >= 0 && e1 < e2 ? e1 : e2;
       if (a > 0 && z > a) h = h.slice(0, a) + linkify(h.slice(a, z), post) + h.slice(z); }
     if (post.edited) h = h.replace(' · 🌐', ' · <span class="dx-edited" title="Edited">edited</span> · 🌐');
+    if (post.pinned) h = h.replace('<div class="post-head">', '<div class="post-head dx-pinned-head">');   /* S-28: on a phone its pills go under the name */
     h = h.replace('onclick="toast(\'Edit coming soon\')">✏️ Edit</div>', 'data-ep-edit="' + id + '" onclick="dxEditPost(this.dataset.epEdit)">✏️ Edit</div>');
     h = h.replace('<button class="pact" onclick="toast(\'Reposted!\')">🔄 Repost</button>', post.reposted
       ? '<button class="pact dx-reposted" aria-pressed="true" data-rpp="' + id + '" onclick="dxRepost(this.dataset.rpp)">🔄 Reposted</button>'
@@ -104,6 +105,7 @@
     if (window.dxFeedPaint) window.dxFeedPaint(p.id);                                   /* the "N comments" count */
   }
   window.dxRedrawComments = redrawComments;
+  window.dxRepaintPost = function (id, patch) { (window.POSTS || []).forEach(function (p) { if (same(p.id, id)) { if (patch) Object.assign(p, patch); repaintCard(p); } }); };
 
   /* ── replies and comment likes ── */
   var REPLY = {}, TOGGLE0 = window.toggleComments;
@@ -231,7 +233,7 @@
     c = c || $('content'); if (!c || !inFeed() && !(c.querySelector && c.querySelector('.feed-wrap'))) return;
     var first = c.querySelector('.feed-wrap .post'), col = first ? first.parentElement : null, old = c.querySelector('.dx-feed-end');
     if (!col || !S().done()) { if (old) old.remove(); return; }
-    if (!old) { old = document.createElement('div'); old.className = 'dx-feed-end'; old.setAttribute('role', 'status'); old.innerHTML = '<span>✓</span> <span>You\'re all caught up — that\'s every post so far.</span>'; }
+    if (!old) { old = document.createElement('div'); old.className = 'dx-feed-end'; old.innerHTML = '<span>✓</span> <span>You\'re all caught up — that\'s every post so far.</span>'; }
     if (col.lastElementChild !== old) col.appendChild(old);
   }
   if (window.dxCore) window.dxCore.onRender('soc-feed-end', function () { if (inFeed()) endMarker(); });
@@ -377,7 +379,7 @@
   if (window.dxCore) window.dxCore.onRender('soc-msg-links', function () { document.querySelectorAll('#messagesArea .mx-bubble, #messagesArea .bubble-body').forEach(linkBubble); });
 
   if (window.dxI18nAdd) window.dxI18nAdd({
-    'edited': 'معدّل', 'Edited': 'معدّل', 'Edit Post': 'تعديل المنشور', 'Cancel': 'إلغاء', 'Save': 'حفظ', 'Post updated': 'تم تحديث المنشور', 'Could not save the change': 'تعذّر حفظ التعديل',
+    'edited': 'تم التعديل', 'Edited': 'تم التعديل', 'Edit Post': 'تعديل المنشور', 'Cancel': 'إلغاء', 'Save': 'حفظ', 'Post updated': 'تم تحديث المنشور', 'Could not save the change': 'تعذّر حفظ التعديل',
     'Repost': 'إعادة نشر', '🔄 Repost': '🔄 إعادة نشر', '🔄 Reposted': '🔄 تمت إعادة النشر', 'Share this post with your network. Add your thoughts if you like.': 'شارك هذا المنشور مع شبكتك، وأضف رأيك إن أردت.',
     'Add your thoughts (optional)': 'أضف رأيك (اختياري)', 'Reposted to your network': 'تمت إعادة النشر لشبكتك', 'Could not repost': 'تعذّرت إعادة النشر', 'You reposted this post. Undo the repost?': 'لقد أعدت نشر هذا المنشور. هل تريد التراجع؟',
     'Undo repost': 'تراجع عن إعادة النشر', 'Repost removed': 'تم التراجع عن إعادة النشر', 'Could not undo the repost': 'تعذّر التراجع', 'You reposted': 'أعدت نشر هذا', 'reposted': 'أعاد النشر',
