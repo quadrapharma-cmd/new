@@ -866,6 +866,40 @@
     if (mm && D[mm[2].trim()]) return mm[1] + D[mm[2].trim()] + (mm[3] ? ' ' + ARROWS[mm[3].trim()] : '');
     return null;
   }
+  /* ===== AREA business: payments (B-14…B-16) ===== */
+  Object.assign(D, {
+    'My payments': 'مدفوعاتي', 'Boosts and Featured listings you paid for — references, receipts and invoices': 'الترقيات والإعلانات المميزة التي دفعت ثمنها — المراجع والإيصالات والفواتير',
+    'No payments yet.': 'لا توجد مدفوعات بعد.', 'Payment history': 'سجل المدفوعات', 'Invoice': 'فاتورة', 'Send the transfer': 'أرسل التحويل', 'Pay again': 'ادفع مرة أخرى',
+    'Waiting for payment': 'بانتظار الدفع', 'Under review': 'قيد المراجعة', 'Paid': 'مدفوع', 'Did not go through': 'لم يكتمل', 'Expired': 'منتهي', 'Refunded': 'مُسترد',
+    'Mobile wallet': 'محفظة الموبايل', 'Card': 'بطاقة', 'Fawry': 'فوري', 'InstaPay': 'إنستاباي', 'Marketplace boost': 'ترقية إعلان في السوق', 'Featured listing': 'إعلان مميز',
+    'VIP — monthly': 'VIP — شهري', 'VIP — yearly': 'VIP — سنوي', '👑 Use an included boost': '👑 استخدم ترقية مجانية من VIP', 'Use an included boost': 'استخدم ترقية مجانية من VIP',
+    'Choose the listing to promote': 'اختر الإعلان المراد ترقيته', 'Could not use an included boost': 'تعذّر استخدام الترقية المجانية', 'Act as your VIP company first': 'تصرّف باسم شركتك الـ VIP أولًا',
+    'Your page is created first; VIP starts as soon as the payment is confirmed.': 'تُنشأ صفحتك أولًا، ويبدأ VIP بمجرد تأكيد الدفع.', 'Demo — no money is charged; the steps are the real ones.': 'نسخة تجريبية — لا يُخصم أي مبلغ؛ والخطوات هي الخطوات الفعلية.',
+    'Allow pop-ups to open the invoice': 'اسمح بالنوافذ المنبثقة لفتح الفاتورة', 'The invoice could not be opened': 'تعذّر فتح الفاتورة', 'An invoice is issued once the payment is confirmed': 'تُصدر الفاتورة بعد تأكيد الدفع',
+    'The payment failed or was declined — nothing was charged and nothing was activated. Try again from My payments': 'لم يكتمل الدفع — لم يُخصم أي مبلغ ولم يُفعَّل شيء. حاول مرة أخرى من مدفوعاتي',
+    'Payment received — VIP is active (demo: no card was charged)': 'تم استلام الدفع — VIP مفعّل (نسخة تجريبية: لم تُخصم البطاقة)', 'Loading…': 'جارٍ التحميل…',
+    'Make your listing Featured': 'اجعل إعلانك مميزًا', '⭐ Make your listing Featured': '⭐ اجعل إعلانك مميزًا', 'Featured fee': 'رسوم الإعلان المميز', '⚡ BOOSTED': '⚡ معزز', '⭐ FEATURED': '⭐ مميز',
+    'Opening the secure Paymob page…': 'جارٍ فتح صفحة Paymob الآمنة…', 'Pay at Fawry': 'ادفع في فوري', 'Fawry reference number': 'رقم مرجع فوري', 'Pay with InstaPay': 'ادفع بإنستاباي', 'Send to': 'أرسل إلى',
+    'Transfer number *': 'رقم التحويل *', 'Receipt (screenshot or PDF)': 'الإيصال (صورة أو PDF)', 'Send for confirmation': 'أرسل للتأكيد', 'From the InstaPay confirmation': 'من رسالة تأكيد إنستاباي',
+    'Thank you — we confirm InstaPay transfers within one working day': 'شكرًا — نؤكد تحويلات إنستاباي خلال يوم عمل واحد', 'Pay with': 'ادفع بـ', 'Listing to promote': 'الإعلان المراد ترقيته'
+  });
+  PATTERNS.unshift(
+    [/^(\d+) of 3 included boosts left this month with VIP — no payment$/, function (m) { return 'متبقٍ ' + m[1] + ' من 3 ترقيات مجانية هذا الشهر مع VIP — بدون دفع'; }],
+    [/^Boost activated — included with VIP \((\d+) left this month\)$/, function (m) { return 'تم تفعيل الترقية — مجانًا مع VIP (متبقٍ ' + m[1] + ' هذا الشهر)'; }],
+    [/^(.+) is live — VIP starts when the payment is confirmed$/, function (m) { return 'صفحة ' + m[1] + ' منشورة — يبدأ VIP عند تأكيد الدفع'; }],
+    [/^Fawry reference (\d+)( · pay by (.+))?$/, function (m) { return 'مرجع فوري ' + m[1] + (m[3] ? ' · ادفع قبل ' + m[3] : ''); }],
+    [/^Transfer (.+) — Drugbox confirms within one working day$/, function (m) { return 'التحويل ' + m[1] + ' — يؤكده Drugbox خلال يوم عمل'; }],
+    [/^incl\. VAT (.+)$/, function (m) { return 'شامل ضريبة القيمة المضافة ' + m[1]; }],
+    [/^(Boosted|Featured) until (.+)$/, function (m) { return (m[1] === 'Boosted' ? 'معزز حتى ' : 'مميز حتى ') + m[2]; }],
+    [/^Every payment for (.+)’s plan, with its status\. Paid ones have a tax invoice \(VAT 14% included\)\.$/, function (m) { return 'كل مدفوعات خطة ' + m[1] + ' وحالتها. للمدفوع منها فاتورة ضريبية (شاملة ضريبة القيمة المضافة 14%).'; }],
+    [/^You already have a Fawry reference for this \((.+)\) — pay it or find it in My payments$/, function (m) { return 'لديك بالفعل مرجع فوري لهذا (' + m[1] + ') — ادفعه أو تجده في مدفوعاتي'; }],
+    [/^You already have an InstaPay payment waiting for this \((.+)\) — send the transfer from My payments$/, function (m) { return 'لديك بالفعل دفعة إنستاباي معلّقة لهذا (' + m[1] + ') — أرسل التحويل من مدفوعاتي'; }],
+    [/^Your Fawry reference for (.+) \((.+)\) expired — nothing was charged; start a new payment from My payments$/, function (m) { return 'انتهت صلاحية مرجع فوري لـ ' + (D[m[1]] || m[1]) + ' (' + m[2] + ') — لم يُخصم أي مبلغ؛ ابدأ دفعة جديدة من مدفوعاتي'; }],
+    [/^Your payment for (.+) \((.+)\) did not go through — nothing was activated; try again from My payments$/, function (m) { return 'لم يكتمل دفعك لـ ' + (D[m[1]] || m[1]) + ' (' + m[2] + ') — لم يُفعَّل شيء؛ حاول مرة أخرى من مدفوعاتي'; }],
+    [/^VIP for (.+) ends on (.+) — renew it from Plan & verification to keep it$/, function (m) { return 'ينتهي VIP لـ ' + m[1] + ' في ' + m[2] + ' — جدّده من الخطة والتوثيق للاحتفاظ به'; }],
+    [/^Payment received — (.+) is active$/, function (m) { return 'تم استلام الدفع — ' + (D[m[1]] || m[1]) + ' مفعّل'; }]
+  );
+  /* ===== /AREA business: payments ===== */
   PATTERNS.unshift.apply(PATTERNS, PATTERNS_EXTRA);
   window.dxT = tr;
   /* the original (English) text of an element, whatever the interface language — so logic never depends on the language shown */

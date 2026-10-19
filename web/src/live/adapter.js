@@ -2520,7 +2520,8 @@
   (function () { var m = /[?&]payment=(\d+)/.exec(location.search); if (!m) return; var id = +m[1], tries = 0, waited = 0;
     function check() { if (!ME_UUID) { if ((waited += 800) < 60000) setTimeout(check, 800); return; }   /* not signed in within a minute: stop (F-119) */
       sb.from('payment_orders').select('status').eq('id', id).single().then(function (r) { var st = r.data && r.data.status;
-        if (st === 'paid') { window.toast('Payment received — it is active now'); refreshCompanies().catch(function () {}); MKT.at = 0; history.replaceState(null, '', location.pathname); }
+        if (st === 'paid') { window.toast('Payment received — it is active now'); refreshCompanies().catch(function () {}); MKT.at = 0; history.replaceState(null, '', location.pathname); if (window.dxPayRefresh) window.dxPayRefresh(); }
+        else if (st === 'failed' || st === 'expired') { window.toast('The payment failed or was declined — nothing was charged and nothing was activated. Try again from My payments'); history.replaceState(null, '', location.pathname); if (window.dxPayRefresh) window.dxPayRefresh(); }   /* 0055: a failed payment is recorded */
         else if (++tries < 10) setTimeout(check, 2000); else window.toast('We have not received the payment confirmation yet — it will activate automatically when it arrives'); }); }
     check(); })();
   /* Review → Payments (InstaPay transfers) */
@@ -2968,6 +2969,62 @@
     return o; };
   /* ===== /AREA business: claims ===== */
 
+
+  /* ===== AREA business: payments (B-14…B-16; 0055) =====
+     My payments and the company's payment history come from my_payments(); an invoice is the server's (order_invoice); VIP's
+     included boosts are counted and used by the database (included_boosts_left / use_included_boost). The wizard's VIP payment
+     starts once the database has created the page. The browser never decides an amount, a status, a plan or a boost date. */
+  function payFrom(x) { return { id: x.id, order: x.order, product: txt(x.product), kind: x.kind, code: x.code, method: x.method, status: x.status, total: +x.total, net: +x.net, vat: +x.vat,
+    created_at: x.created_at, paid_at: x.paid_at, invoice_no: x.invoice_no, fawry_reference: x.fawry_reference, fawry_expires_at: x.fawry_expires_at, transfer: txt(x.transfer),
+    listing: txt(x.listing), company: txt(x.company), mine: x.mine !== false }; }
+  Object.assign(window.dxPay, {
+    orders: async function (slug) { if (!ME_UUID) return []; var raw = slug && CO.raw[slug]; if (slug && (!raw || !raw.id)) return [];
+      var r = await sb.rpc('my_payments', { p_company: raw ? raw.id : null }); if (r.error) throw new Error(friendly(r.error)); return (r.data || []).map(payFrom); },
+    invoice: async function (id) { var r = await sb.rpc('order_invoice', { p_id: +id }); if (r.error) throw new Error(friendly(r.error)); return r.data; },
+    included: async function (slug) { var raw = slug && CO.raw[slug]; if (!ME_UUID || !raw || !raw.id) return 0; var r = await sb.rpc('included_boosts_left', { p_company: raw.id }); return r.error ? 0 : (r.data || 0); },
+    useIncluded: async function (lid, slug) { var raw = slug && CO.raw[slug]; if (!raw || !raw.id) throw new Error('Act as your VIP company first');
+      var r = await sb.rpc('use_included_boost', { p_listing: +lid, p_company: raw.id }); if (r.error) throw new Error(friendly(r.error)); MKT.at = 0; if (typeof ML !== 'undefined') ML.at = 0; return r.data || {}; },
+    instapayTo: function () { try { return JSON.parse(localStorage.getItem('dx_instapay_to') || 'null') || { address: '', name: 'Drugbox' }; } catch (e) { return { address: '', name: 'Drugbox' }; } }
+  });
+  var payStart = window.dxPay.start;
+  window.dxPay.start = async function (o) { var r = await payStart.apply(this, arguments);
+    if (r && r.instapay) { try { localStorage.setItem('dx_instapay_to', JSON.stringify(r.instapay)); } catch (e) {} }   /* "Send the transfer" from My payments shows the same address */
+    if (window.dxPayRefresh) setTimeout(window.dxPayRefresh, 300); return r; };
+  /* a company's VIP end date (the plan tab and My companies say when it renews) */
+  var coFromPay = coFrom;
+  coFrom = function (c) { var o = coFromPay(c); if (o.plan === 'vip' && c.vip_until) { o.vipUntil = Date.parse(c.vip_until); o.billing = o.vipUntil - Date.now() > 60 * 864e5 ? 'year' : 'month'; } return o; };
+  /* the create-company wizard with VIP: the page is created (Basic), then its payment starts (B-15) */
+  var persistCreatedPay = persistCreated;
+  persistCreated = async function (list) {
+    var pend = window.__dxVipPending && Date.now() - window.__dxVipPending.at < 60000 ? window.__dxVipPending : null, before = {};
+    if (pend) { window.__dxVipPending = null; Object.keys(CO.byId).forEach(function (id) { before[id] = 1; }); }
+    await persistCreatedPay(list);
+    if (!pend) return;
+    var nu = Object.keys(CO.byId).filter(function (id) { return !before[id] && CO.roles[id] === 'owner'; }).map(function (id) { return CO.byId[id]; })[0];
+    if (nu && window.dxCheckout) window.dxCheckout.startVip(nu, pend);
+  };
+  /* BOOSTED / FEATURED on a promoted listing for everyone, and its end date in My Listings */
+  var PROMO = { mine: {}, at: 0 };
+  async function loadMyPromo() { if (!ME_UUID) return; var r = await sb.from('products').select('id, boosted_until, featured_until').eq('user_id', ME_UUID).limit(200);
+    if (r.error) return; PROMO.mine = {}; (r.data || []).forEach(function (p) { PROMO.mine[p.id] = p; }); PROMO.at = Date.now(); }
+  function untilTxt(d) { return window.dxFmtDate ? window.dxFmtDate(d, false, 'en') : new Date(d).toLocaleDateString(); }
+  function decoratePromo() {
+    var mk = document.getElementById('mkx'); if (!mk || !ME_UUID) return;
+    mk.querySelectorAll('[data-live][data-promoted]').forEach(function (c) { if (c.querySelector('.dx-promo')) return; var lt = c.querySelector('.lt'); if (!lt) return;
+      var s = document.createElement('span'); s.className = 'lt dx-promo'; s.textContent = c.dataset.promoted === 'featured' ? '⭐ FEATURED' : '⚡ BOOSTED'; lt.insertAdjacentElement('afterend', s); });
+    mk.querySelectorAll('#tab-manage [data-ml^="p"]').forEach(function (row) { var p = PROMO.mine[+row.dataset.ml.slice(1)], sub = row.children[1] && row.children[1].children[1]; if (!p || !sub) return;
+      var now = Date.now(), b = p.boosted_until && Date.parse(p.boosted_until) > now ? p.boosted_until : null, f = p.featured_until && Date.parse(p.featured_until) > now ? p.featured_until : null, w = sub.querySelector('.dx-promo-until');
+      var tx = f ? ' · Featured until ' + untilTxt(f) : b ? ' · Boosted until ' + untilTxt(b) : '';
+      if (!tx) { if (w) w.remove(); return; } if (w && w.textContent === tx) return; if (!w) { w = document.createElement('span'); w.className = 'dx-promo-until'; sub.appendChild(w); } w.textContent = tx; });
+  }
+  var PRQ = 0;
+  new MutationObserver(function () { if (PRQ || document.body.getAttribute('data-page') !== 'market') return; PRQ = requestAnimationFrame(function () { PRQ = 0; decoratePromo(); }); })
+    .observe(document.getElementById('content') || document.body, { childList: true, subtree: true });
+  var renderMarketPay = window.renderMarket;
+  window.renderMarket = function () { var r = renderMarketPay.apply(this, arguments); if (ME_UUID && Date.now() - PROMO.at > 15000) loadMyPromo().then(decoratePromo); return r; };
+  document.addEventListener('click', function (e) { if (ME_UUID && e.target.closest && e.target.closest('#mkx .master-tab[data-tab=manage]')) loadMyPromo().then(decoratePromo); }, true);
+  onReset(function () { PROMO.mine = {}; PROMO.at = 0; });
+  /* ===== /AREA business: payments ===== */
 
   /* ═══════════════ E3 — training: courses and enrollments from the database (the approved course card is the template) ═══════════════ */
   var TRN = { tpl: null, courses: [], mine: {}, at: 0, loading: false };

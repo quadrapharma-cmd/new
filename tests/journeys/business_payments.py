@@ -78,6 +78,7 @@ def boost_by_card(j):
         j.check(j.sql1("select amount_cents||'|'||status||'|'||product_code from public.payment_orders where id=%s" % oid) == '%d00|pending|boost' % BOOST_TOTAL, 'the order is not a pending boost for 1,653 EGP')
         j.data['oid'] = oid
     with j.step("Paymob confirms (signed callback); back in the app: 'Payment received — it is active now'; the listing is BOOSTED for everyone"):
+        if j.demo: j.skip('the demo takes no payment')
         oid = j.data['oid']; s_, r = paymob_callback(j, oid); j.check(s_ == 200, 'the signed callback was refused: %s %s' % (s_, r[:80]))
         ts = return_from_provider(j, pg, oid)
         j.check(any(re.search(r'Payment received|تم استلام الدفع', t) for t in ts), "no 'Payment received — it is active now' back in the app")
@@ -87,10 +88,12 @@ def boost_by_card(j):
         j.check(c.count(), 'another user does not find the boosted listing on the marketplace page (it does not rank above unboosted listings)')
         j.check(re.search(r'BOOSTED|مميز|معزز', c.inner_text()), 'another user sees the listing without the BOOSTED label')
     with j.step("My Listings shows the boost end date"):
+        if j.demo: j.skip('the demo takes no payment (its My Listings rows are the approved samples)')
         market(j, pg, 'manage'); t = pg.evaluate("(document.querySelector('#tab-manage')||{}).innerText||''")
         row = t[t.find(name):t.find(name) + 300] if name in t else ''
-        j.check(re.search(r'BOOSTED', row) and re.search(r'until|ends|\d{1,2} \w{3}|حتى', row), 'My Listings does not show the boost with its end date')
+        j.check(re.search(r'BOOSTED|Boosted|معزز|مميز', row) and re.search(r'until|ends|\d{1,2} \w{3}|حتى', row), 'My Listings does not show the boost with its end date')
     with j.step('A failed card payment: clear message, nothing activated, retry possible, no pile of pending orders'):
+        if j.demo: j.skip('the demo takes no payment')
         lid2 = seed_listing(j, me['id'], 'Second listing %s' % j.tag); j.reload(pg)
         open_boost(j, pg, 'boost'); choose_listing(j, pg, 'Second listing %s' % j.tag); pay(j, pg, 'card')
         oid2 = last_order(j, lid2); paymob_callback(j, oid2, success=False)
@@ -102,6 +105,7 @@ def boost_by_card(j):
         n = j.sql1("select count(*) from public.payment_orders where listing_id=%s and status='pending'" % lid2)
         j.check(n == '1', 'retrying leaves %s pending orders for the same listing' % n)
     with j.step('After 7 days the boost ends by itself'):
+        if j.demo: j.skip('the clock cannot be moved in the demo')
         j.sql("update public.products set boosted_until=now()-interval '1 minute' where id=%s" % lid)
         o2 = j.person('Later Buyer'); market(j, o2['page'])
         c = o2['page'].locator('#tab-browse .lcard', has_text=name).first
@@ -122,6 +126,7 @@ def featured_by_wallet(j):
         oid = last_order(j, lid); j.check(j.sql1("select method||'|'||product_code from public.payment_orders where id=%s" % oid) == 'wallet|featured', 'the order is not a wallet payment for Featured')
         j.data['oid'] = oid
     with j.step('Paymob confirms the wallet payment: the listing is Featured (Sponsored Listings) for 30 days for everyone'):
+        if j.demo: j.skip('the demo takes no payment')
         oid = j.data['oid']; env = fn_env(); s_, r = paymob_callback(j, oid, integration=int(env.get('PAYMOB_WALLET_INTEGRATION_ID', 222222)), src_type='wallet')
         j.check(s_ == 200, 'the wallet callback was refused: %s %s' % (s_, r[:80]))
         j.check(j.sql1("select (featured_until::date - now()::date) from public.products where id=%s" % lid) in ('30', '29'), 'the listing is not featured for 30 days')
@@ -201,9 +206,19 @@ def payment_history(j):
         pg = j.demo_signin(j.new_page())
     with j.step('Workspace → Plan & verification lists every payment: date, product, method, amount incl. VAT, status'):
         t = workspace(j, pg, 'Plan & verification|%s' % (ar('Plan & verification') or 'الخطة'))
-        j.check(re.search(r'Payment history|Billing|Invoices|سجل المدفوعات|الفواتير', t), 'not built: no payment history (billing) in Plan & verification or anywhere else')
+        j.check(re.search(r'Payment history|Billing|Invoices|سجل المدفوعات|الفواتير', t, re.I), 'not built: no payment history (billing) in Plan & verification or anywhere else')
     with j.step('A paid order has a downloadable invoice with VAT and the company name; pending ones can be resumed or cancelled'):
-        j.check(j.find(pg, r'Invoice|Download|فاتورة|تنزيل', scope='#content'), 'not built: no tax invoice to download')
+        b = j.find(pg, r'Invoice|Download|فاتورة|تنزيل', scope='#content'); j.check(b, 'not built: no tax invoice to download')
+        if j.live: j.check(re.search(r'Waiting for payment|بانتظار الدفع', j.text(pg)), 'the pending Fawry order is not listed as waiting for payment')
+        with pg.context.expect_page(timeout=8000) as pi: b.click()
+        inv = pi.value; inv.wait_for_load_state(); it = inv.inner_text('body'); inv.close()
+        co = me['co']['name'] if j.live else 'Quadra Pharm'
+        j.check(re.search(r'Tax invoice', it) and re.search(r'DBX-INV-\d{4}-\d{6}', it) and re.search(r'VAT 14%', it) and co in it, 'the invoice does not show its number, VAT 14%% and the company (%s)' % it[:160].replace('\n', ' '))
+        j.check(re.search(r'EGP 2,?500\.00', it) and re.search(r'EGP 350\.00', it) and re.search(r'EGP 2,?850\.00', it), 'the invoice amounts are not EGP 2,500.00 + 350.00 VAT = 2,850.00')
+        if j.live:
+            o = j.person('Not The Owner'); oid = j.sql1("select id from public.payment_orders where company_id=%s and status='paid' limit 1" % me['co']['id'])
+            r = o['page'].evaluate("i=>dxLive.sb.rpc('order_invoice',{p_id:i}).then(r=>r.error?'refused':'given')", int(oid))
+            j.check(r == 'refused', "another member can read the company's invoice")
 
 @journey('J-BUSINESS-47')
 def upgrade_to_vip(j):
@@ -259,9 +274,23 @@ def included_boosts(j):
         pg = j.demo_signin(j.new_page())
     with j.step("My Listings → '⭐ Boost' on a listing → 'Use an included boost' (3 left)"):
         market(j, pg, 'manage')
-        b = pg.locator('#tab-manage :is(button,span,a):visible', has_text=re.compile(r'Boost')).first
+        b = pg.locator('#tab-manage button:visible', has_text=re.compile(r'^\W*(Boost|ترويج|ترقية)\W*$')).first      # the row's '⭐ Boost' button (not the 'Boosted' badge)
         j.check(b.count(), "no '⭐ Boost' in My Listings"); b.click(); j.settle(pg, 1200)
         t = pg.evaluate("(document.querySelector('#boostModalOverlay')||{}).innerText||''") + dlg_text(pg)
         j.check(re.search(r'Use an included boost|included boost|استخدم', t), "not built: a VIP company is asked to pay — there is no 'Use an included boost' (VIP promises 3 a month)")
+        j.check(re.search(r'\b3 of 3\b|3 من 3|متبقٍ 3', t), "the window does not say 3 of 3 included boosts are left")
+    with j.step("'Use an included boost': the listing is boosted for 7 days without a payment; 2 are left; a fourth use this month is refused"):
+        mark = j.toast_mark(pg); pg.locator('#boostModalOverlay [data-inc]').first.click(); j.settle(pg, 1500)
+        j.check(any(re.search(r'included with VIP|مجانًا مع VIP', x) for x in j.toasts_since(pg, mark)), "no 'Boost activated — included with VIP' confirmation")
+        if j.demo: j.skip('the demo keeps the count in this browser; the database checks run in live')
+        lid = j.sql1("select id from public.products where name='VIP listing %s'" % j.tag)
+        j.check(j.wait_db("select (boosted_until::date - now()::date) from public.products where id=%s" % lid, 6) in ('7', '6'), 'the included boost did not boost the listing for 7 days')
+        j.check(j.sql1("select count(*) from public.payment_orders where listing_id=%s" % lid) == '0', 'an included boost created a payment order')
+        j.check(j.sql1("select count(*) from public.vip_boost_uses where company_id=%s" % me['co']['id']) == '1', 'the included boost was not counted')
+        open_boost(j, pg, 'boost'); t = pg.evaluate("document.querySelector('#boostModalOverlay').innerText")
+        j.check(re.search(r'\b2 of 3\b|2 من 3|متبقٍ 2', t), 'the window does not say 2 of 3 are left after one use')
+        j.sql("insert into public.vip_boost_uses (company_id, listing_id, month) select %s, %s, date_trunc('month', now())::date from generate_series(1,2)" % (me['co']['id'], lid))
+        r = pg.evaluate("([l,c])=>dxLive.sb.rpc('use_included_boost',{p_listing:l,p_company:c}).then(r=>r.error?r.error.message:'ok')", [int(lid), int(me['co']['id'])])
+        j.check(r != 'ok' and j.sql1("select count(*) from public.vip_boost_uses where company_id=%s" % me['co']['id']) == '3', 'a fourth included boost this month was allowed: %s' % r)
 
 if __name__ == '__main__': main(__file__)

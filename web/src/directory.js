@@ -320,17 +320,18 @@
         body: '<table class="cp-spec"><tr><td>Company</td><td>' + esc(W.name) + '</td></tr><tr><td>Activity</td><td>' + esc(W.sector) + '</td></tr><tr><td>Location</td><td>' + esc(W.city) + ', ' + esc(W.gov) + '</td></tr>' +
           '<tr><td>Verification</td><td>Optional, later — from your page (gives the Verified badge)</td></tr><tr><td>Plan</td><td><b>' + p.name + '</b>' + (amount ? ' · ' + (W.billing === 'year' ? 'yearly' : 'monthly') : '') + '</td></tr>' +
           (amount ? '<tr><td>Subtotal</td><td>EGP ' + amount.toLocaleString('en-US') + '</td></tr><tr><td>VAT 14%</td><td>EGP ' + vat.toLocaleString('en-US') + '</td></tr><tr><td><b>Total</b></td><td><b>EGP ' + (amount + vat).toLocaleString('en-US') + '</b></td></tr>' : '') + '</table>' +
-          (amount ? '<div class="pay-row"><label><input type="radio" name="pay" checked> Card</label><label><input type="radio" name="pay"> Fawry</label><label><input type="radio" name="pay"> Bank transfer</label></div><p class="cp-muted">Demo — no payment is taken.</p>' : ''),
+          (amount ? '<p class="cp-muted">Your page is created first; VIP starts as soon as the payment is confirmed.</p>' : ''),
         primary: { label: amount ? 'Pay EGP ' + (amount + vat).toLocaleString('en-US') + ' and create' : 'Create my page', onClick: function () {
           var me = window.ME || {}, base = slugify(W.name), slug = base, n = 2, created = store('created_companies') || [];
           while (companies(true).some(function (c) { return c.slug === slug; })) slug = base + '-' + (n++);   /* same name allowed; the link stays unique */
-          var co = { slug: slug, registry: '', plan: W.plan, licensed: false, status: 'unverified', name: W.name, nameAr: W.nameAr || '', logo: W.logo || null, owner: me.id, color: '#1a56db', sector: W.sector, sectors: [W.sector], city: W.city, gov: W.gov,
+          var co = { slug: slug, registry: '', plan: amount ? 'free' : W.plan, licensed: false, status: 'unverified', name: W.name, nameAr: W.nameAr || '', logo: W.logo || null, owner: me.id, color: '#1a56db', sector: W.sector, sectors: [W.sector], city: W.city, gov: W.gov,
             founded: new Date().getFullYear(), employees: '—', verified: false, level: '', rating: 0, reviews: 0, reply: '—', tagline: W.tagline || 'Tell buyers what you make or offer.', about: '', certs: [],
             phone: W.phone, email: W.email, whatsapp: W.phone.replace(/\D/g, ''), website: '', address: W.city + ', ' + W.gov, hours: '', services: [], products: [], jobs: [], billing: W.billing, createdAt: Date.now() };
           created.push(co); store('created_companies', created); store('acting', slug); drawSwitch(true);
           S.open = slug; S.tab = 'overview'; window.__dxKeepCompany = true; try { if (document.body.getAttribute('data-page') !== 'companies') window.goto('companies'); else render(); } finally { window.__dxKeepCompany = false; }
           setTimeout(function () { openEditor(); }, 60);
-          toast(W.name + ' is live' + (amount ? ' on VIP' : '') + ' — add your products and details');
+          toast(W.name + ' is live — ' + (amount ? 'VIP starts when the payment is confirmed' : 'add your products and details'));
+          if (amount && window.dxCheckout && !(window.dxPay && window.dxPay.live)) setTimeout(function () { window.dxCheckout.startVip(slug); }, 400);   /* the live app starts it once the database has the page (adapter) */
         } } });
     }
     step1();
@@ -358,7 +359,7 @@
       primary: { label: 'Continue to payment', onClick: function (b) {
         var billing = b.querySelector('input[name=plBill]:checked').value, amount = billing === 'year' ? PLANS.vip.year : PLANS.vip.price, vat = Math.round(amount * 0.14);
         setTimeout(function () {
-          D.modal({ title: 'Pay for VIP', body: '<table class="cp-spec" data-billing="' + (billing === 'year' ? 'year' : 'month') + '"><tr><td>' + esc(co.name) + ' · VIP ' + (billing === 'year' ? 'yearly' : 'monthly') + '</td><td>EGP ' + amount.toLocaleString('en-US') + '</td></tr><tr><td>VAT 14%</td><td>EGP ' + vat.toLocaleString('en-US') + '</td></tr><tr><td><b>Total</b></td><td><b>EGP ' + (amount + vat).toLocaleString('en-US') + '</b></td></tr></table><p class="cp-muted">Demo — no payment is taken.</p>',
+          D.modal({ title: 'Pay for VIP', body: '<table class="cp-spec" data-billing="' + (billing === 'year' ? 'year' : 'month') + '" data-slug="' + esc(slug) + '"><tr><td>' + esc(co.name) + ' · VIP ' + (billing === 'year' ? 'yearly' : 'monthly') + '</td><td>EGP ' + amount.toLocaleString('en-US') + '</td></tr><tr><td>VAT 14%</td><td>EGP ' + vat.toLocaleString('en-US') + '</td></tr><tr><td><b>Total</b></td><td><b>EGP ' + (amount + vat).toLocaleString('en-US') + '</b></td></tr></table><p class="cp-muted">Demo — no payment is taken.</p>',
             primary: { label: 'Pay EGP ' + (amount + vat).toLocaleString('en-US'), onClick: function () {
               var created = store('created_companies') || [], edits = store('company_edits') || {};
               if (created.some(function (c) { return c.slug === slug; })) { created.forEach(function (c) { if (c.slug === slug) { c.plan = 'vip'; c.billing = billing; } }); store('created_companies', created); }
@@ -376,7 +377,7 @@
     var m = D.modal({ title: 'My companies', secondary: 'Close', primary: { label: 'Create another company', onClick: function () { setTimeout(createCompanyDialog, 40); } },
       body: '<p class="cp-muted">Each company has its own page, plan, verification and inbox. “Act as” decides which company sends your requests.</p>' + list.map(function (c) {
         var acting = mine() && mine().slug === c.slug, renew = '';
-        if (isVip(c)) { var rd = addMonths(new Date(c.createdAt || Date.now()), c.billing === 'year' ? 12 : 1); renew = ' · renews ' + (window.dxFmtDate ? window.dxFmtDate(rd, false, 'en') : rd.toLocaleDateString()); }
+        if (isVip(c)) { var rd = c.vipUntil ? new Date(c.vipUntil) : addMonths(new Date(c.createdAt || Date.now()), c.billing === 'year' ? 12 : 1); renew = ' · renews ' + (window.dxFmtDate ? window.dxFmtDate(rd, false, 'en') : rd.toLocaleDateString()); }   /* the paid plan's own end date when the database has it */
         return '<div class="mr-row">' + logo(c, 'dr-logo sm') + '<div class="mr-b"><b>' + esc(c.name) + (acting ? ' <span class="mr-st st-acc">Acting as</span>' : '') + '</b><small>' + (isVip(c) ? 'VIP' + (c.billing === 'year' ? ' yearly' : ' monthly') : 'Basic') + renew + ' · ' + (c.status === 'verified' ? 'verified' : c.status === 'pending' ? 'verification in review' : 'not verified') + ' · ' + c.products.length + ' products · ' + (window.dxDeals ? window.dxDeals.openCount(c.slug) : 0) + ' open requests</small></div>' +
           '<span class="mr-acts"><button type="button" class="dr-btn sm" data-open2="' + c.slug + '">Open</button>' + (acting ? '' : '<button type="button" class="dr-btn sm" data-act2="' + c.slug + '">Act as</button>') + (isVip(c) ? '' : '<button type="button" class="dr-btn p sm" data-up2="' + c.slug + '">Upgrade</button>') + '</span></div>'; }).join('') });
     m.el.addEventListener('click', function (e) { var o = e.target.closest('[data-open2]'), u = e.target.closest('[data-up2]'), a = e.target.closest('[data-act2]');

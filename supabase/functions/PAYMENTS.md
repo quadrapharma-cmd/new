@@ -57,3 +57,23 @@ boost EGP 1,450 (7 days) and featured EGP 3,950 (30 days) — the demo's USD 29/
 `python3 tests/e2e/e4_payments_test.py` — 20 checks, signatures computed independently from the providers' formulas.
 A test Paymob callback must carry the order's stored Paymob order id (`payment_orders.provider_order`) as `obj.order.id`.
 Database checks: `supabase/tests/payments_storage.rls.sql`.
+
+## Orders, invoices and VIP boosts (migration 0055)
+- **Failed / expired:** a signed Paymob callback for a finished, unsuccessful payment and Fawry's EXPIRED / FAILED / CANCELED
+  notification call `fail_payment` (server-only): the order becomes `failed` / `expired`, nothing is activated, the buyer is
+  notified. A paid order is never turned back.
+- **Duplicates:** `create_order` refuses a second pending Fawry (or InstaPay) order for the same thing by the same method — the
+  first reference / transfer is still payable and is shown in My payments. A new card / wallet order supersedes the older pending
+  card / wallet orders for the same thing (`expired`, `provider_payload.superseded`); if a superseded order is paid anyway, its
+  callback is still honoured (the money arrived: it activates).
+- **Fawry expiry:** `payments-create` stores the reference's expiry (`fawry_expires_at`) so the buyer finds it again.
+- **Invoices:** every order keeps its VAT split (`net_cents` + `vat_cents` = `amount_cents`, from `payment_products`). When an order
+  becomes `paid` (webhook, InstaPay review, or any correction) the database gives it the next tax-invoice number
+  `DBX-INV-<year>-<000001>`. `order_invoice(order)` returns the invoice data to its buyer, the company's owners / admins and Drugbox;
+  the app prints it (Print or save as PDF). Seller details come from `billing_settings` — **set Drugbox's legal name, tax
+  registration number and address there** (Supabase → Table editor, or as a Drugbox admin). Egypt's ETA e-invoice / e-receipt
+  submission is not connected (needs Drugbox's ETA credentials).
+- **VIP included boosts:** a current VIP company has 3 Marketplace boosts per calendar month: `use_included_boost(listing, company)`
+  (owner / admin of the company, own active listing; counted under a row lock in `vip_boost_uses`), `included_boosts_left(company)`.
+- **Reminder:** `vip_reminders()` notifies the owner 3 days before VIP ends (daily with pg_cron, like `expire_vip_plans`).
+Database checks: `supabase/tests/payments_area.rls.sql` (52 checks, including tampering through the API roles).

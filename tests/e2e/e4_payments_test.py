@@ -61,9 +61,13 @@ T('Vodafone Cash / wallets go through Paymob\'s wallet integration', s == 200 an
 cheap = paymob_obj(o2['order_id'], o2['reference'], 100)
 s, t = http('POST', '/functions/v1/paymob-webhook?hmac=' + paymob_sign(cheap), {'type': 'TRANSACTION', 'obj': cheap}, raw=True)
 T('a signed callback with the wrong amount does not activate', t == 'amount mismatch' and sql(f"select status from public.payment_orders where id={o2['order_id']}") == 'pending', (s, t))
-failed = paymob_obj(o2['order_id'], o2['reference'], 2850000, success=False)
+# a declined payment (0055): the order is recorded as failed, nothing is activated, the buyer is told — on its own order (o3, a VIP
+# month by card), so o2 stays pending for the checks below
+n_pay = int(sql(f"select count(*) from public.notifications where user_id='{owner}' and type='payment'"))
+failed = paymob_obj(o3['order_id'], o3['reference'], 285000, success=False)
 s, t = http('POST', '/functions/v1/paymob-webhook?hmac=' + paymob_sign(failed), {'type': 'TRANSACTION', 'obj': failed}, raw=True)
-T('a declined payment does not activate', s == 200 and sql(f"select status from public.payment_orders where id={o2['order_id']}") == 'pending', (s, t))
+T('a declined payment does not activate (the order is failed, the buyer is told)', s == 200 and t == 'failed' and sql(f"select status from public.payment_orders where id={o3['order_id']}") == 'failed'
+  and sql(f"select vip_until from public.companies where id={cid}") == until1 and int(sql(f"select count(*) from public.notifications where user_id='{owner}' and type='payment'")) == n_pay + 1, (s, t))
 # ── Fawry reference for a listing boost ──
 lid = sql(f"insert into public.products (user_id, name, category, type, active) values ('{owner}','Boosted API {st}','api','supply',true) returning id").split('\n')[0]
 s, f = http('POST', '/functions/v1/payments-create', {'product': 'boost', 'method': 'fawry', 'listing_id': int(lid)}, owner_t)

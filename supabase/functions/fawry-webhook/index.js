@@ -6,7 +6,13 @@ export async function handler(req) {
   let b; try { b = await req.json(); } catch { return new Response('bad json', { status: 400 }); }
   const key = env('FAWRY_SECURE_KEY'); if (!key) return new Response('not configured', { status: 503 });   // fail closed: a missing key would sign with "undefined"
   if (!safeEqual(await fawryNotificationSignature(b, key), b.messageSignature)) return new Response('bad signature', { status: 401 });
-  if (String(b.orderStatus).toUpperCase() !== 'PAID') return new Response('noted (' + b.orderStatus + ')', { status: 200 });
+  const st = String(b.orderStatus).toUpperCase();
+  if (['EXPIRED', 'FAILED', 'CANCELED', 'CANCELLED'].includes(st)) {          // the reference can no longer be paid: the order ends and the buyer is told (0055)
+    const r = await rpc('fail_payment', { p_provider: 'fawry', p_order_key: String(b.merchantRefNumber ?? b.merchantRefNum ?? ''), p_provider_ref: String(b.fawryRefNumber || ''), p_status: st,
+      p_payload: { provider: 'fawry', fawryRefNumber: b.fawryRefNumber, orderStatus: st } });
+    return new Response(String(r), { status: 200 });
+  }
+  if (st !== 'PAID') return new Response('noted (' + b.orderStatus + ')', { status: 200 });
   // F-115: the signed string joins the fields with no separator, so a signature for merchantRefNumber 'DBX18' + paymentAmount
   // '2850.00' also fits 'DBX182' + '850.00'. Both amounts must be the same real number (Drugbox pays Fawry's fee: the customer
   // pays exactly the order amount), and the database pays an order only for the Fawry reference issued for it (payments-create).
