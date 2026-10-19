@@ -1549,12 +1549,16 @@
   var JX = { tpl: null, jobs: [], saved: {}, applied: {}, at: 0, cur: null };
   var LEVEL = { entry: '🌱 Entry Level', junior: '⚙️ Junior', mid: '🎯 Mid-Level', senior: '🧭 Senior Mgmt', exec: '👑 Executive' };
   function levelOf(exp) { var n = parseInt(String(exp || '').match(/\d+/) || 0, 10); return !exp ? 'mid' : n < 1 ? 'entry' : n < 3 ? 'junior' : n < 5 ? 'mid' : n < 10 ? 'senior' : 'exec'; }
-  async function loadJobs() {
+  async function loadJobs(more) {      /* one page of the jobs that match the page's search and filters (jobs_search, 0060), newest first */
+    var f = (window.dxJobsFilter && window.dxJobsFilter()) || {}, last = more && JX.jobs.length ? JX.jobs[JX.jobs.length - 1] : null, me = ME_UUID;
     var a = await Promise.all([
-      sb.from('jobs').select('*, poster:profiles!jobs_user_id_fkey(' + PCOLS + ')').eq('active', true).order('created_at', { ascending: false }).limit(60),
-      sb.from('saved_jobs').select('job_id').eq('user_id', ME_UUID), sb.from('job_applications').select('job_id').eq('user_id', ME_UUID)]);
-    if (a[0].error) throw a[0].error;
-    JX.jobs = a[0].data || []; JX.saved = {}; JX.applied = {}; (a[1].data || []).forEach(function (x) { JX.saved[x.job_id] = 1; }); (a[2].data || []).forEach(function (x) { JX.applied[x.job_id] = 1; });
+      sb.rpc('jobs_search', { p_q: f.q || '', p_category: f.category || null, p_types: f.types && f.types.length ? f.types : null, p_countries: f.countries && f.countries.length ? f.countries : null,
+                              p_level: f.level || null, p_before: last ? last.created_at : null, p_before_id: last ? last.id : null, p_limit: 50 }),
+      more ? { data: null } : sb.from('saved_jobs').select('job_id').eq('user_id', ME_UUID), more ? { data: null } : sb.from('job_applications').select('job_id').eq('user_id', ME_UUID)]);
+    if (a[0].error) throw a[0].error; if (me !== ME_UUID) return;
+    var res = a[0].data || {}, rows = res.rows || [];
+    JX.jobs = more ? JX.jobs.concat(rows.filter(function (r) { return !JX.jobs.some(function (x) { return x.id === r.id; }); })) : rows; JX.total = res.total || 0;
+    if (!more) { JX.saved = {}; JX.applied = {}; (a[1].data || []).forEach(function (x) { JX.saved[x.job_id] = 1; }); (a[2].data || []).forEach(function (x) { JX.applied[x.job_id] = 1; }); }
     JX.jobs.forEach(function (j) { putUser(j.poster); }); JX.at = Date.now();
   }
   function jobCard(j) {
@@ -1563,7 +1567,8 @@
     var logo = c.querySelector('.jc-logo'); if (logo) { logo.textContent = initials(j.company || u.name); logo.style.background = colorFor(j.company || j.user_id); }
     var t = c.querySelector('.jc-title'); if (t) { var rb = t.querySelector('.role-badge'), lb = t.querySelector('.level-badge'); t.textContent = j.title;
       if (lb) { lb.className = 'level-badge level-' + lvl; lb.textContent = LEVEL[lvl]; t.insertBefore(lb, t.firstChild); } if (rb) t.insertBefore(rb, t.firstChild); }
-    var co = c.querySelector('.jc-company'); if (co) co.innerHTML = '<span>' + esc2(j.company || u.company || '') + '</span> · <span>' + (FLAG[j.country] || '') + ' ' + esc2(j.location || '') + '</span>' + (u.verified ? ' · <span style="color:#1a56db">✓ Verified</span>' : '');
+    var co = c.querySelector('.jc-company'); if (co) co.innerHTML = '<span>' + esc2(j.company || u.company || '') + '</span> · <span>' + (FLAG[j.country] || '') + ' ' + esc2(j.location || '') + '</span>' + (j.company_verified || (!j.company_id && u.verified) ? ' · <span style="color:#1a56db">✓ Verified</span>' : '');
+    c.dataset.jxMine = j.user_id === ME_UUID || (j.company_id && CO.roles && /owner|admin/.test(CO.roles[j.company_id] || '')) ? '1' : ''; c.dataset.jxApplicants = j.applicant_count || 0;
     var tg = c.querySelector('.jc-tags'); if (tg) tg.innerHTML = '<span class="jt jt-ft">' + esc2(j.type || 'Full-time') + '</span>' + (j.tags || []).slice(0, 2).map(function (x) { return '<span class="jt" style="background:#dbeafe;color:#1d4ed8">' + esc2(x) + '</span>'; }).join('') + (j.salary ? '<span class="jt" style="background:#dcfce7;color:#15803d">' + esc2(j.salary) + '</span>' : '');
     var ds = c.querySelector('.jc-desc'); if (ds) ds.textContent = j.description || '';
     var ps = c.querySelector('.jc-posted'); if (ps) ps.textContent = ago(j.created_at);
@@ -1598,7 +1603,7 @@
     var cvIn = document.getElementById('dxCv'), cv = cvIn && cvIn.files && cvIn.files[0];
     (cv ? upDoc('documents', 'cv/' + ME_UUID + '/' + rid() + '.' + extOf(cv), cv) : Promise.resolve(null)).then(function (cvPath) { return sb.from('job_applications').insert({ job_id: id, user_id: ME_UUID, note: note.trim(), status: 'submitted', cv_path: cvPath }); }, function (e) { return { error: e }; }).then(function (r) {
       if (r.error) { window.toast(/duplicate|unique/i.test(r.error.message) ? 'You already applied to this job' : friendly(r.error)); return; }
-      if (cvIn) cvIn.value = ''; JX.applied[id] = 1; oApply(); var b = document.querySelector('#jx [data-live="j' + id + '"] .apply-btn'); if (b) { b.textContent = '✓ Applied'; b.disabled = true; } });
+      if (cvIn) cvIn.value = ''; JX.applied[id] = 1; oApply(); var jj = JX.jobs.find(function (x) { return x.id === id; }); if (jj) setTimeout(function () { window.toast('Application sent for ' + jj.title + (jj.company ? ' at ' + jj.company : '') + ' — follow it in My applications'); }, 80); var b = document.querySelector('#jx [data-live="j' + id + '"] .apply-btn'); if (b) { b.textContent = '✓ Applied'; b.disabled = true; } });
   }; window.submitApply.__live = true; }
   if (window.openPostJobModal && !window.openPostJobModal.__live) { var oOpenPost = window.openPostJobModal;
   window.openPostJobModal = function () { var r = oOpenPost.apply(this, arguments); if (!ME_UUID) return r;
@@ -1607,15 +1612,13 @@
   window.submitGeneric = function (msg) {
     var m = document.getElementById('postJobModal');
     if (!ME_UUID || !m || !m.classList.contains('show')) return oGeneric.apply(this, arguments);
-    /* the form is read by its structure (field order, option position), never by its English text — it works in Arabic too (F-21):
-       editable inputs in order = title, location, years of experience, salary min, salary max */
-    var f = [].slice.call(m.querySelectorAll('input.field-input:not([disabled])')).map(function (x) { return String(x.value || '').trim(); });
-    var pos = function (sel) { var all = [].slice.call(m.querySelectorAll(sel)); return all.indexOf(m.querySelector(sel + '.selected')); };
-    var dept = m.querySelector('select'), ta = m.querySelector('textarea'), title = f[0] || '', exp = f[2] || '', co = window.dxDir && window.dxDir.mine && window.dxDir.mine();
-    if (!title) { window.toast('Add the job title'); return; }
-    var sal = [f[3], f[4]].filter(Boolean).join(' – ');
-    var row = { user_id: ME_UUID, title: title, company: co ? co.name : (window.ME.company || ''), location: f[1] || '', country: 'EG', type: ['Full-time', 'Part-time', 'Contract', 'Remote'][pos('.radio-opt')] || 'Full-time',
-      seniority: levelOf(exp), category: dept ? (['regulatory', 'qaqc', 'production', 'sales', 'rd'][dept.selectedIndex] || 'other') : 'other', description: ta ? ta.value.trim() : '', salary: sal || null, tags: exp ? [exp + ' yrs exp'] : [], active: true };
+    /* the form is read by jobsx.js (field roles set by structure, never by the English text — F-21) */
+    var f = window.dxJobsReadPost ? window.dxJobsReadPost() : null, co = window.dxDir && window.dxDir.mine && window.dxDir.mine(), raw = co && CO.raw[co.slug];
+    if (!f || f.error) { var tt = m.querySelector('[data-jxk=title]'); if (tt) tt.classList.toggle('dbk-err', !(f && f.title)); window.toast(f ? f.error : 'Add the job title — it is required'); return; }
+    var row = { user_id: ME_UUID, title: f.title, company: co ? co.name : (window.ME.company || ''), company_id: raw && raw.id && CO.roles && /owner|admin/.test(CO.roles[raw.id] || '') ? raw.id : null,
+      location: f.location, country: f.country || 'EG', type: f.type, seniority: f.level, category: f.category, description: f.description, salary: f.salary || null, deadline: f.deadline || null,
+      requirements: f.requirements, benefits: f.benefits, tags: f.tags, remote: !!f.remote, active: true };
+    msg = 'Job posted: ' + f.title + ' — now visible in Jobs and Marketplace';
     sb.from('jobs').insert(row).then(function (r) { if (r.error) return toastErr(r.error); oGeneric(msg || 'Job posted'); JX.at = 0;
       loadJobs().then(function () { if (document.body.getAttribute('data-page') === 'jobs') paintJobs(); }); });
   }; window.submitGeneric.__live = true; }
@@ -1700,7 +1703,8 @@
     TR.refs.length = 0; (q[2].data || []).forEach(function (x) { TR.refs.push({ cand: x.ca && x.ca.name, company: x.au && (x.au.company || x.au.name), kind: x.kind, from: String(x.from_month).slice(0, 7), to: String(x.to_month).slice(0, 7),
       role: x.role_title, category: x.category || '', text: x.body, reply: x.reply || '', status: x.status, when: String(x.created_at).slice(0, 7), expires: x.expires_at ? String(x.expires_at).slice(0, 7) : '', _id: x.id }); });
     ['employer', 'candidate'].forEach(function (s) { fill(TR.lists[s].white, {}); fill(TR.lists[s].black, {}); });
-    (q[3].data || []).forEach(function (x) { var n = x.t && x.t.name; if (n) TR.lists[x.side][x.list][n] = x.list === 'black' ? { reason: x.reason, note: x.note || '', until: x.until } : { since: String(x.created_at).slice(0, 10) }; });
+    (q[3].data || []).forEach(function (x) { var n = x.t && x.t.name; if (n && !TR.party[n]) TR.party[n] = { uuid: x.target, role: x.side === 'employer' ? 'candidate' : 'employer' };   /* a blocked person is not on the page: still removable from My lists */
+      if (n) TR.lists[x.side][x.list][n] = x.list === 'black' ? { reason: x.reason, note: x.note || '', until: x.until } : { since: String(x.created_at).slice(0, 10) }; });
     var it = {}; (q[4].data || []).forEach(function (x) { var n = partyOfUuid(x.party); if (n) it[n] = true; }); fill(TR.inter, it);
     TR.snap = { lists: JSON.stringify(TR.lists), refs: TR.refs.map(function (r) { return r._id + ':' + (r.reply || ''); }).join('|') };
     TR.loaded = true;
@@ -1780,7 +1784,7 @@
   onReset(function () { fill(TR.reviews, {}); TR.refs.length = 0; TR.party = {}; TR.cands = []; TR.loaded = false; TR.snap = {}; fill(TR.inter, {});
     ['employer', 'candidate'].forEach(function (x) { fill(TR.lists[x].white, {}); fill(TR.lists[x].black, {}); }); PV = {}; DOCS.vf = {}; DOCS.ev = null; });
   var loadJobsD2a = loadJobs;
-  loadJobs = async function () { await loadJobsD2a(); await loadTrust(); };
+  loadJobs = async function (more) { await loadJobsD2a(more); if (!more) await loadTrust(); };
   var hydrateC3 = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateC3(uid); loadJobs().catch(function (e) { console.error(e); }); return me; };
   Object.assign(window.dxLive, { loadTrust: loadTrust, loadJobs: function () { return loadJobs(); }, version: 'D2b' });
@@ -2836,7 +2840,7 @@
   var paintJobsP1b = paintJobs;
   paintJobs = function () { paintJobsP1b(); paintJobNumbers(); };
   var loadJobsP1b = loadJobs;
-  loadJobs = async function () { await Promise.all([loadJobsP1b(), onPageNow('jobs') ? jobStats().catch(function (e) { console.error(e); }) : null]); };
+  loadJobs = async function (more) { await Promise.all([loadJobsP1b(more), !more && onPageNow('jobs') ? jobStats().catch(function (e) { console.error(e); }) : null]); };
   var oJobsP1b = window.renderJobs;
   window.renderJobs = function () { var r = oJobsP1b.apply(this, arguments); if (!ME_UUID) return r; paintJobNumbers();
     if (Date.now() - JS.at > 3000) jobStats().then(function () { if (onPageNow('jobs')) paintJobNumbers(); }, function (e) { console.error(e); });
@@ -2951,6 +2955,113 @@
   hydrateMe = async function (uid) { var me = await hydrateP1b(uid); TK.at = 0; tickerSoon(0); return me; };
   onReset(function () { setTicker([]); TK.at = 0; JS.s = null; JS.at = 0; PCNT = {}; PVIEW = {}; PG.faces = null; });
   window.dxLive.version = 'P1b';
+
+  /* ===== AREA community: jobs (J-01 … J-07) — the service jobsx.js draws with: search and paging (jobs_search, 0060), the job's
+     details, my applications (withdraw), my jobs and their applicants (CV through a signed link, the pipeline), Post My Profile,
+     saved jobs, job alerts; job notifications open what they are about ===== */
+  ['KW', 'QA', 'OM', 'BH', 'LB', 'MA', 'TN', 'DZ'].forEach(function (c) { if (!FLAG[c]) FLAG[c] = { KW: '🇰🇼', QA: '🇶🇦', OM: '🇴🇲', BH: '🇧🇭', LB: '🇱🇧', MA: '🇲🇦', TN: '🇹🇳', DZ: '🇩🇿' }[c]; });
+  JX.total = 0;
+  var paintJobNumbersCJ = paintJobNumbers;   /* the header counts the jobs that match the search (jobs_search), not every open job */
+  paintJobNumbers = function () { paintJobNumbersCJ(); if (window.dxJobsUI && onPageNow('jobs')) window.dxJobsUI.after(); };
+  var paintJobsCJ = paintJobs;
+  paintJobs = function () { paintJobsCJ(); if (window.dxJobsUI) window.dxJobsUI.after(); };
+  var candCardCJ = candCard;      /* the title a candidate published (Post My Profile), else the profile headline */
+  candCard = function (p) { return candCardCJ(p && p.desired_role ? Object.assign({}, p, { headline: p.desired_role }) : p); };
+  var APPL = {};                  /* job id → { local person id → application row } (the CV path is opened through a signed link) */
+  function jobView(j) {
+    if (!j) return null;
+    return { key: j.id, id: j.id, title: j.title, company: j.company, location: j.location, country: j.country, type: j.type, level: j.seniority === 'executive' ? 'exec' : j.seniority,
+      salary: j.salary, deadline: j.deadline, created_at: j.created_at, description: j.description, requirements: j.requirements || [], benefits: j.benefits || [],
+      active: !!j.active && !(j.deadline && j.deadline < new Date().toISOString().slice(0, 10)), mine: j.user_id === ME_UUID || !!(j.company_id && CO.roles && /owner|admin/.test(CO.roles[j.company_id] || '')),
+      slug: j.company_slug || (j.co && j.co.slug) || '', verified: j.company_verified != null ? !!j.company_verified : !!(j.co && j.co.status === 'verified') };
+  }
+  function must(r) { if (r.error) throw new Error(friendly(r.error)); return r.data; }
+  function changed(r) { var d = must(r); if (Array.isArray(d) && !d.length) throw new Error('This was not changed — you may not have the right to change it'); return d; }
+  function repaintJobs() { if (onPageNow('jobs')) paintJobs(); }
+  window.dxJobs = {
+    live: true, ready: function () { return !!ME_UUID; },
+    search: async function (f, more) { await loadJobs(more); repaintJobs(); },
+    total: function () { return JX.at ? JX.total : null; }, hasMore: function () { return JX.jobs.length < JX.total; },
+    applied: function (id) { return !!JX.applied[id]; }, isSaved: function (id) { return !!JX.saved[id]; },
+    toggleSave: async function (id, want) {
+      var on = want === undefined ? !JX.saved[id] : want;
+      must(await (on ? sb.from('saved_jobs').upsert({ user_id: ME_UUID, job_id: id }) : sb.from('saved_jobs').delete().eq('user_id', ME_UUID).eq('job_id', id)));
+      if (on) JX.saved[id] = 1; else delete JX.saved[id];
+      var b = document.querySelector('#jx [data-live="j' + id + '"] .save-btn'); if (b) b.textContent = on ? '✓ Saved' : '🔖 Save';
+      window.toast(on ? 'Job saved' : 'Removed from saved jobs'); return on;
+    },
+    detail: async function (id) {
+      var j = JX.jobs.find(function (x) { return x.id === +id; });
+      if (!j) { var r = await sb.from('jobs').select('*, co:companies(slug,status)').eq('id', +id).maybeSingle(); j = must(r); }
+      return jobView(j);
+    },
+    myApplications: async function () { return (must(await sb.rpc('my_applications')) || []).map(function (a) { return Object.assign({ key: a.job_id }, a); }); },
+    withdraw: async function (id) { changed(await sb.from('job_applications').delete().eq('job_id', +id).eq('user_id', ME_UUID).select('job_id')); delete JX.applied[+id]; repaintJobs(); },
+    myJobs: async function () { return (must(await sb.rpc('my_jobs')) || []).map(function (j) { return Object.assign({}, j, { level: j.seniority }); }); },
+    applicants: async function (id) {
+      var rows = must(await sb.rpc('job_applicants', { p_job: +id })) || [], m = APPL[+id] = {};
+      return rows.map(function (a) { putUser({ id: a.user_id, name: a.name, headline: a.headline, company: a.company, country: a.country, avatar_url: a.avatar_url, verified: a.verified, location: a.location });
+        var who = aid(a.user_id); m[who] = a; return Object.assign({}, a, { who: who, cv: !!a.cv_path }); });
+    },
+    setStatus: async function (id, who, status, extra) {
+      var row = { status: status }; extra = extra || {};
+      if (extra.interview_at) row.interview_at = new Date(extra.interview_at + 'T10:00:00').toISOString();
+      if (extra.note != null && extra.note !== '') row.employer_note = extra.note;
+      changed(await sb.from('job_applications').update(row).eq('job_id', +id).eq('user_id', uuidOf(+who)).select('status'));
+    },
+    openCv: async function (id, who) {
+      var a = (APPL[+id] || {})[+who]; if (!a || !a.cv_path) throw new Error('No CV was attached');
+      var w = window.open('', '_blank'); var r = await sb.storage.from('documents').createSignedUrl(a.cv_path, 300);
+      if (r.error) { if (w) w.close(); throw new Error(friendly(r.error)); } if (w) w.location = r.data.signedUrl; else window.location.assign(r.data.signedUrl);
+    },
+    message: function (id, who) { window.messageUser(+who); return Promise.resolve(); },
+    profile: function (id, who) { window.gotoProfile(+who); return Promise.resolve(); },
+    updateJob: async function (id, f) { changed(await sb.from('jobs').update(f).eq('id', +id).select('id')); JX.at = 0; },
+    setOpen: async function (id, open) { changed(await sb.from('jobs').update({ active: !!open }).eq('id', +id).select('id')); JX.at = 0; },
+    deleteJob: async function (id) { changed(await sb.from('jobs').delete().eq('id', +id).select('id')); JX.jobs = JX.jobs.filter(function (x) { return x.id !== +id; }); JX.at = 0; },
+    profileState: async function () { var d = must(await sb.rpc('my_profile')), p = Array.isArray(d) ? d[0] : d; return { open: !!(p && p.open_to_work), title: p && p.desired_role }; },
+    publishProfile: async function (f) {
+      var row = { open_to_work: true, desired_role: f.title, desired_type: f.type, remote_ok: f.type === 'Remote' || /relocat|yes/i.test(f.relocation || ''), available_since: new Date().toISOString() };
+      if (f.location) row.location = f.location; var y = parseInt(String(f.years || '').match(/\d+/) || '', 10); if (!isNaN(y)) row.years_experience = Math.min(y, 60);
+      if (f.about) row.bio = f.about;
+      if (f.cv) row.cv_path = await upDoc('documents', 'cv/' + ME_UUID + '/profile-' + rid() + '.' + extOf(f.cv), f.cv);
+      changed(await sb.from('profiles').update(row).eq('id', ME_UUID).select('id')); TR.loaded = false; JX.at = 0;
+    },
+    hideProfile: async function () { changed(await sb.from('profiles').update({ open_to_work: false }).eq('id', ME_UUID).select('id')); JX.at = 0; },
+    savedJobs: async function () {
+      var r = await sb.from('saved_jobs').select('job_id, created_at, job:jobs(*)').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(200);
+      return (must(r) || []).filter(function (x) { return x.job; }).map(function (x) { return jobView(x.job); });
+    },
+    alerts: async function () { return must(await sb.from('job_alerts').select('*').eq('user_id', ME_UUID).order('created_at', { ascending: false })) || []; },
+    saveAlert: async function (a) { return must(await sb.from('job_alerts').insert({ q: a.q || '', category: a.category, types: a.types || [], countries: a.countries || [], level: a.level }).select()); },
+    deleteAlert: async function (id) { changed(await sb.from('job_alerts').delete().eq('id', +id).select('id')); },
+    /* a company page's Jobs section: its open jobs (by the page, or by its name for jobs posted before 0060), fetched once a minute */
+    ofCompany: function (co) {
+      var raw = CO.raw[co.slug], k = co.slug, c = CJ[k];
+      if (!c || (Date.now() - c.at > 60000 && !c.loading)) { c = CJ[k] = c || { at: 0, rows: [] }; c.loading = true;
+        var q = sb.from('jobs').select('id,title,type,location,country,created_at').eq('active', true).order('created_at', { ascending: false }).limit(50);
+        (raw && raw.id ? q.or('company_id.eq.' + raw.id + ',company.eq."' + String(co.name).replace(/["\\]/g, '') + '"') : q.eq('company', co.name)).then(function (r) {
+          c.loading = false; c.at = Date.now(); if (r.error) return; var before = JSON.stringify(c.rows);
+          c.rows = (r.data || []).map(function (j) { return { t: j.title, type: j.type || 'Full-time', loc: [j.location, j.country].filter(Boolean).join(', '), onJobs: true, id: j.id }; });
+          if (JSON.stringify(c.rows) !== before) rerenderCompanies(); });
+      }
+      return c.rows;
+    }
+  };
+  var CJ = {};
+  /* job notifications open what they are about: an application → my job's applicants (that person first, marked Viewed);
+     a decision on my application → My applications; a job alert → the job */
+  var notifFromCJ = notifFrom;
+  notifFrom = function (n) { var o = notifFromCJ(n); o.jobId = n.job_id || null; o.rawType = n.type; o.fromUuid = n.from_user || null; return o; };
+  var markReadCJ = window.markNotifRead;
+  window.markNotifRead = function (id) {
+    var r = markReadCJ.apply(this, arguments), n = (window.NOTIFS || []).find(function (x) { return x.id === id; }); if (!n || !n.jobId || !window.dxJobsUI) return r;
+    if (n.rawType === 'job_application') { window.goto('jobs'); window.dxJobsUI.myJobs(n.jobId, n.fromUuid ? aid(n.fromUuid) : null); }
+    else if (n.rawType === 'job_status') { window.goto('jobs'); window.dxJobsUI.applications(); }
+    else if (n.rawType === 'job_alert') { window.goto('jobs'); window.dxJobsUI.detail(n.jobId); }
+    return r;
+  };
+  onReset(function () { JX.total = 0; APPL = {}; });
 
 
 

@@ -144,7 +144,9 @@
 
   /* ── dates and statuses in words ──────────────────────────────────────────────────────────────────────────────────── */
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  function day(s) { if (!s) return ''; var d = new Date(String(s).length === 10 ? s + 'T12:00:00' : s); return isNaN(d) ? String(s) : d.getDate() + ' ' + MON[d.getMonth()] + ' ' + d.getFullYear(); }
+  function day(s) { if (!s) return ''; var d = new Date(String(s).length === 10 ? s + 'T12:00:00' : s); if (isNaN(d)) return String(s);
+    if (document.documentElement.lang === 'ar') try { return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) {}
+    return d.getDate() + ' ' + MON[d.getMonth()] + ' ' + d.getFullYear(); }
   var ST = { submitted: 'Submitted', viewed: 'Viewed', shortlisted: 'Shortlisted', interviewed: 'Interview', hired: 'Hired', rejected: 'Rejected', no_show: 'No-show', withdrawn: 'Withdrawn' };
   function stBadge(s) { return '<span class="jx-st jx-st-' + esc(s) + '">' + esc(ST[s] || s) + '</span>'; }
 
@@ -159,7 +161,7 @@
       if (!el.classList.contains('f-opt') || !group) return;
       var lab = document.createElement('label'); lab.className = 'f-opt'; while (el.firstChild) lab.appendChild(el.firstChild);
       var cb = lab.querySelector('input'); if (cb) { cb.checked = false; cb.removeAttribute('checked'); cb.dataset.jxf = group;
-        var v = txt(lab).replace(/^\S*[^\w\s]\S*\s*/, '').trim(); cb.value = group === 'country' ? ({ 'Egypt': 'EG', 'UAE': 'AE', 'Saudi Arabia': 'SA', 'India': 'IN' }[v] || v) : v.toLowerCase(); }
+        var v = txt(lab).replace(/^[^A-Za-z]+/, '').trim(); cb.value = group === 'country' ? ({ 'Egypt': 'EG', 'UAE': 'AE', 'Saudi Arabia': 'SA', 'India': 'IN' }[v] || v) : v.toLowerCase(); }
       el.parentNode.replaceChild(lab, el);
     });
     /* phones: the filter column opens from a button (it is hidden under 900 px) */
@@ -315,14 +317,15 @@
       var list = function (h, a) { return a && a.length ? '<div class="jx-dh">' + esc(h) + '</div><ul class="jx-dl">' + a.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : ''; };
       var body = (closed ? '<div class="jx-closed">This job is closed — it no longer takes applications.</div>' : '') +
         '<div class="jx-dco"><b class="jx-dcn" data-slug="' + esc(j.slug || '') + '">' + esc(j.company || '') + '</b>' + (j.verified ? ' <span style="color:#1a56db">✓ Verified</span>' : '') + '</div>' +
-        '<div class="jx-dgrid">' + row('Location', (FLAG[j.country] || '') + ' ' + [j.location, CNAME[j.country] || j.country].filter(Boolean).join(', ')) + row('Type', j.type) + row('Level', (LEVELS[j.level] || '').replace(/^\S+\s/, '')) +
+        '<div class="jx-dgrid">' + row('Location', (FLAG[j.country] || '') + ' ' + [j.location, (CNAME[j.country] || j.country) && String(j.location || '').indexOf(CNAME[j.country] || j.country) < 0 ? CNAME[j.country] || j.country : ''].filter(Boolean).join(', ')) + row('Type', j.type) + row('Level', (LEVELS[j.level] || '').replace(/^\S+\s/, '')) +
           row('Salary', j.salary || 'Not shown') + row('Apply by', j.deadline ? day(j.deadline) : 'Open until filled') + row('Posted', j.created_at ? day(j.created_at) : j.posted) + '</div>' +
         (j.description ? '<div class="jx-dh">Description</div><p class="jx-dp">' + esc(j.description) + '</p>' : '') +
         list('Requirements', j.requirements) + list('Benefits', j.benefits) +
         (!(j.requirements || []).length ? '<div class="jx-dh">Requirements</div><p class="jx-dp jx-muted">Not listed by the employer.</p>' : '');
       var applied = live() ? window.dxJobs.applied(key) : !!dstore('jxApplied', {})[key];
       var m = D.modal({ title: j.title, body: body, secondary: 'Close',
-        primary: closed || mine ? null : { label: applied ? '✓ Applied' : 'Apply Now →', onClick: function () { if (applied) return; setTimeout(function () { openApply(key, j); }, 30); } } });
+        primary: closed ? null : mine ? { label: '👥 Applicants', onClick: function () { setTimeout(function () { openJobsPanel(key); }, 30); } }
+          : { label: applied ? '✓ Applied' : 'Apply Now →', onClick: function () { if (applied) return; setTimeout(function () { openApply(key, j); }, 30); } } });
       var ft = m.el.querySelector('.dbk-ft');
       if (ft && !mine) { var sv = document.createElement('button'); sv.type = 'button'; sv.className = 'dbk-btn s jx-dsave';
         var on = live() ? window.dxJobs.isSaved(key) : DEMO.isSaved(key); sv.textContent = on ? '✓ Saved' : '🔖 Save'; ft.insertBefore(sv, ft.firstChild);
@@ -387,9 +390,9 @@
   var STAGES = [['submitted', 'Submitted'], ['viewed', 'Viewed'], ['shortlisted', 'Shortlisted'], ['interviewed', 'Interview'], ['hired', 'Hired'], ['rejected', 'Rejected'], ['no_show', 'No-show']];
   function stagesLine(st) { st = st || {}; return STAGES.map(function (s) { return '<span class="jx-stage">' + esc(s[1]) + ' <b>' + (st[s[0]] || 0) + '</b></span>'; }).join(''); }
   function jobRow(j) {
-    var state = j.active === false ? 'Closed' : j.expired ? 'Expired' : 'Open';
+    var state = j.active === false ? 'Closed' : j.expired ? 'Expired' : 'Accepting applications';
     return '<div class="jx-pcard jx-job" data-id="' + esc(j.id) + '"><div class="jc-logo" style="background:#0f172a">' + esc(D.initials(j.company || j.title)) + '</div>' +
-      '<div class="jx-pb"><div class="jx-pt">' + esc(j.title) + ' <span class="jx-st jx-st-' + state.toLowerCase() + '">' + esc(state) + '</span></div>' +
+      '<div class="jx-pb"><div class="jx-pt">' + esc(j.title) + ' <span class="jx-st jx-st-' + (state === 'Closed' ? 'closed' : state === 'Expired' ? 'expired' : 'open') + '">' + esc(state) + '</span></div>' +
       '<div class="jx-pm">' + esc(j.company || '') + ' · ' + (FLAG[j.country] || '') + ' ' + esc(j.location || '') + (j.salary ? ' · ' + esc(j.salary) : '') + (j.deadline ? ' · Apply by ' + esc(day(j.deadline)) : '') + '</div>' +
       '<div class="jx-pm"><b class="jx-apn">' + (j.applicant_count || 0) + ' ' + (j.applicant_count === 1 ? 'applicant' : 'applicants') + '</b></div><div class="jx-stages">' + stagesLine(j.stages) + '</div></div>' +
       '<div class="jx-pa"><button type="button" class="jx-tool" data-jx="toggle">👥 Applicants (' + (j.applicant_count || 0) + ')</button><button type="button" class="jx-tool" data-jx="edit">✏️ Edit</button>' +
@@ -528,7 +531,8 @@
     var chips = [].map.call(m.querySelectorAll('.chip.selected'), txt);
     return { title: v('title'), location: v('location'), country: (m.querySelector('#jxCountry') || {}).value || placeCountry(v('location')), type: ['Full-time', 'Part-time', 'Contract', 'Remote'][pos('.radio-opt')] || 'Full-time',
       level: levelOf(exp), category: dept ? (CATS[dept.selectedIndex] || 'other') : 'other', description: ta ? ta.value.trim() : '', salary: sal || '', deadline: (m.querySelector('#jxDeadline') || {}).value || '',
-      requirements: lines('jxReq'), benefits: lines('jxBen'), tags: (exp ? [exp.replace(/\s*(years?|yrs?)\s*$/i, '') + ' yrs exp'] : []).concat(chips).slice(0, 6), remote: pos('.radio-opt') === 3, exp: exp };
+      requirements: lines('jxReq'), benefits: lines('jxBen'), tags: (exp ? [exp.replace(/\s*(years?|yrs?)\s*$/i, '') + ' yrs exp'] : []).concat(chips).slice(0, 6), remote: pos('.radio-opt') === 3, exp: exp,
+      error: !v('title') ? 'Add the job title — it is required' : ((m.querySelector('#jxDeadline') || {}).value || '9') < today() ? 'The deadline is in the past' : '' };
   }
   window.dxJobsReadPost = readPost;
   /* the approved Post buttons call submitGeneric(msg) for both forms: checked and kept here (the live app sends them to the database) */
@@ -539,9 +543,8 @@
       var pj = document.getElementById('postJobModal'), pc = document.getElementById('postCandidateModal');
       if (pj && pj.classList.contains('show')) {
         var f = readPost(), t = pj.querySelector('[data-jxk=title]');
-        if (!f.title) { if (t) t.classList.add('dbk-err'); toast('Add the job title — it is required'); return; }
-        if (t) t.classList.remove('dbk-err');
-        if (f.deadline && f.deadline < today()) { toast('The deadline is in the past'); return; }
+        if (t) t.classList.toggle('dbk-err', !f.title);
+        if (f.error) { toast(f.error); return; }
         if (live()) return o.apply(this, arguments);
         return DEMO.postJob(f).then(function () { o.call(window, 'Job posted: ' + f.title + ' — now visible in Jobs and Marketplace');
           pj.querySelectorAll('input:not([disabled]),textarea').forEach(function (x) { if (x.type !== 'date' || true) x.value = ''; }); resetPage(); });
@@ -717,6 +720,64 @@
   var oSaved = window.renderSaved;
   if (typeof oSaved === 'function') window.renderSaved = function () { var r = oSaved.apply(this, arguments); try { savedTabs(); } catch (e) { if (window.console) console.warn('saved jobs:', e); } return r; };
 
+
+  /* Arabic for everything above (the interface translates as it draws; what people wrote stays as written) */
+  if (window.dxI18nExtend) window.dxI18nExtend({
+    'Search jobs: title, company, skill…': 'ابحث في الوظائف: المسمى أو الشركة أو المهارة…', 'Search jobs': 'ابحث في الوظائف', '🔔 Save this search': '🔔 احفظ هذا البحث',
+    '✕ Clear filters': '✕ امسح الفلاتر', '⚙ Filters': '⚙ الفلاتر', '✕ Close filters': '✕ أغلق الفلاتر', '📄 My applications': '📄 طلباتي', '🔔 Job alerts': '🔔 تنبيهات الوظائف',
+    '💼 My jobs': '💼 وظائفي', '👥 Applicants': '👥 المتقدمون', '← Back to jobs': '→ العودة إلى الوظائف', 'Load more jobs': 'تحميل المزيد من الوظائف',
+    'Try other words, or clear the filters.': 'جرّب كلمات أخرى أو امسح الفلاتر.', 'View job': 'عرض الوظيفة', 'Open job': 'افتح الوظيفة', '✏️ Edit': '✏️ تعديل', 'Close job': 'إغلاق الوظيفة',
+    '↺ Reopen': '↺ إعادة فتح', '🗑 Delete': '🗑 حذف', '📄 CV': '📄 السيرة الذاتية', '💬 Message': '💬 رسالة', '⭐ Shortlist': '⭐ القائمة المختصرة', '📅 Interview': '📅 مقابلة',
+    '✅ Hire': '✅ تعيين', '✕ Reject': '✕ رفض', 'No-show': 'لم يحضر', 'Submitted': 'مقدم', 'Viewed': 'تمت مشاهدته', 'Shortlisted': 'في القائمة المختصرة', 'Interview': 'مقابلة',
+    'Hired': 'تم التعيين', 'Rejected': 'مرفوض', 'Withdrawn': 'مسحوب', 'Expired': 'منتهية', 'Accepting applications': 'تستقبل الطلبات', '⭐ Preferred': '⭐ مفضّل',
+    'Location': 'الموقع', 'Type': 'النوع', 'Level': 'المستوى', 'Salary': 'الراتب', 'Apply by': 'آخر موعد للتقديم', 'Posted': 'تاريخ النشر', 'Description': 'الوصف',
+    'Requirements': 'المتطلبات', 'Benefits': 'المزايا', 'Not shown': 'غير معلن', 'Open until filled': 'مفتوحة حتى شغلها', 'Not listed by the employer.': 'لم يذكرها صاحب العمل.',
+    'This job is closed — it no longer takes applications.': 'هذه الوظيفة مغلقة — لم تعد تستقبل طلبات.', '✓ Verified': '✓ موثّق',
+    'Application deadline': 'آخر موعد للتقديم', 'Requirements (one per line)': 'المتطلبات (سطر لكل بند)', 'Benefits (one per line)': 'المزايا (سطر لكل بند)',
+    'Job title *': 'المسمى الوظيفي *', 'Deadline': 'آخر موعد', 'Save changes': 'حفظ التغييرات', '📄 My applications ': '📄 طلباتي', '💼 My jobs and applicants': '💼 وظائفي والمتقدمون',
+    'No applications yet': 'لا توجد طلبات بعد', 'Apply to a job and follow it here.': 'قدّم على وظيفة وتابعها هنا.', 'You have not posted a job yet': 'لم تنشر أي وظيفة بعد',
+    'Post a job and the people who apply show here.': 'انشر وظيفة وسيظهر هنا من يتقدم لها.', '➕ Post a Job': '➕ انشر وظيفة', 'No applications yet.': 'لا توجد طلبات بعد.',
+    'Loading applicants…': 'جارٍ تحميل المتقدمين…', 'Interview date *': 'تاريخ المقابلة *', 'Message to the candidate (optional)': 'رسالة إلى المرشح (اختيارية)',
+    'Place, time and who they will meet': 'المكان والوقت ومن سيقابل', 'Confirm': 'تأكيد', 'Note to the candidate (optional)': 'ملاحظة إلى المرشح (اختيارية)',
+    'Close this job now (it stops taking applications)': 'أغلق الوظيفة الآن (تتوقف عن استقبال الطلبات)', 'Hide my profile': 'إخفاء ملفي', '✏️ Edit ': '✏️ تعديل',
+    '📝 Posts': '📝 المنشورات', '💼 Jobs': '💼 الوظائف', '🔖 Saved Jobs': '🔖 الوظائف المحفوظة', 'No saved jobs yet': 'لا توجد وظائف محفوظة بعد',
+    'Tap 🔖 Save on a job to find it here.': 'اضغط 🔖 حفظ على أي وظيفة لتجدها هنا.', 'We notify you when a new job matches:': 'سنبلغك عندما تُنشر وظيفة جديدة مطابقة:',
+    'At most 10 job alerts a day. Manage them under 🔔 Job alerts.': '10 تنبيهات وظائف يوميًا على الأكثر. أدِرها من 🔔 تنبيهات الوظائف.', 'Save alert': 'احفظ التنبيه',
+    'Every new job': 'كل وظيفة جديدة', 'No job alerts yet. Search or filter the jobs, then tap “🔔 Save this search”.': 'لا توجد تنبيهات بعد. ابحث أو فلتر الوظائف ثم اضغط «🔔 احفظ هذا البحث».',
+    'Withdraw your application?': 'سحب طلبك؟', 'Delete this job?': 'حذف هذه الوظيفة؟', 'Job closed — it no longer appears in search': 'تم إغلاق الوظيفة — لم تعد تظهر في البحث',
+    'Job reopened': 'أعيد فتح الوظيفة', 'Job deleted': 'تم حذف الوظيفة', 'Application withdrawn': 'تم سحب الطلب', 'Job updated — job seekers see the change': 'تم تحديث الوظيفة — يراها الباحثون عن عمل',
+    'Add the job title — it is required': 'أضف المسمى الوظيفي — هذا الحقل مطلوب', 'The deadline is in the past': 'آخر موعد في الماضي',
+    'The CV must be a PDF or Word file': 'يجب أن تكون السيرة الذاتية ملف PDF أو Word', 'The CV is too large — at most 10 MB': 'السيرة الذاتية كبيرة جدًا — 10 ميجابايت على الأكثر',
+    'You already applied to this job': 'لقد تقدمت لهذه الوظيفة بالفعل', 'Add the job title you are looking for': 'أضف المسمى الوظيفي الذي تبحث عنه',
+    'Your profile is now visible to companies': 'ملفك ظاهر الآن للشركات', 'Your profile is now visible to companies in Available Candidates': 'ملفك ظاهر الآن للشركات في المرشحين المتاحين',
+    'Your profile is hidden from companies': 'ملفك مخفي الآن عن الشركات', 'Job alert saved — we will notify you of new matching jobs': 'تم حفظ التنبيه — سنبلغك بالوظائف الجديدة المطابقة',
+    'Job alert deleted': 'تم حذف التنبيه', 'Removed from saved jobs': 'أزيلت من الوظائف المحفوظة', 'Saved — find it on your Saved page': 'تم الحفظ — تجدها في صفحة المحفوظات',
+    'Job saved': 'تم حفظ الوظيفة', 'Something went wrong — please try again': 'حدث خطأ — حاول مرة أخرى', 'This job is no longer available': 'هذه الوظيفة لم تعد متاحة',
+    'Search jobs: title, company, skill...': 'ابحث في الوظائف'
+  }, [
+    [/^since (.+)$/, function (m) { return 'منذ ' + m[1]; }], [/^applied (.+)$/i, function (m) { return 'تقدّم في ' + m[1]; }],
+    [/^Applied (\d.+)$/, function (m) { return 'تقدمت في ' + m[1]; }], [/^Apply by (.+)$/, function (m) { return 'آخر موعد ' + m[1]; }],
+    [/^👥 Applicants \((\d+)\)$/, function (m) { return '👥 المتقدمون (' + m[1] + ')'; }], [/^💼 Jobs \((\d+)\)$/, function (m) { return '💼 الوظائف (' + m[1] + ')'; }],
+    [/^(\d+) applicants?$/, function (m) { return m[1] + ' متقدم'; }], [/^📅 Interview (.+)$/, function (m) { return '📅 مقابلة ' + m[1]; }],
+    [/^✅ Your profile is visible to companies( as)?\.?$/, function (m) { return '✅ ملفك ظاهر للشركات' + (m[1] ? ' باسم' : '.'); }],
+    [/^Interview with (.+)$/, function (m) { return 'مقابلة مع ' + m[1]; }], [/^Not selected: (.+)$/, function (m) { return 'لم يتم الاختيار: ' + m[1]; }],
+    [/^Hire (.+)\?$/, function (m) { return 'تعيين ' + m[1] + '؟'; }], [/^Edit: (.+)$/, function (m) { return 'تعديل: ' + m[1]; }],
+    [/^(.+) is told politely that you went ahead with other candidates\.$/, function (m) { return 'سيتم إبلاغ ' + m[1] + ' بلطف أنك اخترت مرشحين آخرين.'; }],
+    [/^(.+) is told the good news\. You can both review each other afterwards\.$/, function (m) { return 'سيتم إبلاغ ' + m[1] + ' بالخبر السار. يمكنكما تقييم بعضكما بعد ذلك.'; }],
+    [/^(.+) — the employer no longer sees it and your CV is no longer shared\. You can apply again while the job is open\.$/, function (m) { return m[1] + ' — لن يراه صاحب العمل ولن تُشارك سيرتك الذاتية. يمكنك التقديم مرة أخرى ما دامت الوظيفة مفتوحة.'; }],
+    [/^(.+) and its applications are removed for good\.$/, function (m) { return 'ستُحذف ' + m[1] + ' وطلباتها نهائيًا.'; }],
+    [/^Application sent for (.+) at (.+) — follow it in My applications$/, function (m) { return 'تم إرسال طلبك لوظيفة ' + m[1] + ' في ' + m[2] + ' — تابعه في طلباتي'; }],
+    [/^Application sent for (.+) — follow it in My applications$/, function (m) { return 'تم إرسال طلبك لوظيفة ' + m[1] + ' — تابعه في طلباتي'; }],
+    [/^Job posted: (.+) — now visible in Jobs and Marketplace$/, function (m) { return 'تم نشر الوظيفة: ' + m[1] + ' — تظهر الآن في الوظائف والسوق'; }],
+    [/^(.+) — (shortlisted|invited to an interview|hired|not selected|marked as a no-show); they were notified$/, function (m) { return m[1] + ' — ' + ({ shortlisted: 'أضيف للقائمة المختصرة', 'invited to an interview': 'دُعي لمقابلة', hired: 'تم تعيينه', 'not selected': 'لم يتم اختياره', 'marked as a no-show': 'سُجّل أنه لم يحضر' })[m[2]] + '؛ تم إبلاغه'; }],
+    [/^Submitted (\d+)$/, function (m) { return 'مقدم ' + m[1]; }]
+  ]);
+  /* a company page's Jobs section: the demo adds the jobs posted in this browser for that page (the live app answers from the database) */
+  window.dxJobsOfCompany = function (co, out) {
+    if (live()) return window.dxJobs.ofCompany ? window.dxJobs.ofCompany(co) : null;
+    dstore('jxPosted', []).forEach(function (j) { if (j.company === co.name && j.active !== false && !out.some(function (x) { return x.t === j.title; })) out.unshift({ t: j.title, type: j.type, loc: j.location, onJobs: true }); });
+    return out;
+  };
   /* other parts (a notification, a saved job) open these */
   window.dxJobsUI = { detail: detailModal, applications: openApps, myJobs: openJobsPanel, run: run, after: after, reset: resetPage, savedTab: function (t) { SAVED_TAB = t; } };
 })();

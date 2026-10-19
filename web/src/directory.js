@@ -180,6 +180,7 @@
       out.push({ t: t, type: tags[0] || 'Full-time', loc: ((c.querySelectorAll('.jc-company span')[1] || {}).textContent || co.city).replace(/^[^A-Za-z0-9]+/, '').trim(), onJobs: true });
     });
     (co.jobs || []).forEach(function (j) { if (!seen[j.t]) { seen[j.t] = 1; out.push(j); } });
+    if (window.dxJobsOfCompany) { var h = window.dxJobsOfCompany(co, out); if (h) return h; }   /* jobsx.js / the live app: the jobs really posted for this page */
     return out;
   }
   function employer(co) { var s = window.dxEmployerStats ? window.dxEmployerStats(co.name) : null; return s && s.n ? s : null; }

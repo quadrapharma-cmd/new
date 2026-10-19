@@ -78,7 +78,7 @@ def find_jobs(j):
         if j.live: j.check('HPLC Analyst %s' % t in ' '.join(c['title'] for c in cs) and 'QC Chemist %s' % t not in ' '.join(c['title'] for c in cs), 'the filters do not combine (the Egypt junior QC job missing or the Dubai one shown)')
         cl = j.find(pg, r'Clear filters|امسح الفلاتر', scope='#content'); j.check(cl, 'no "Clear filters" while filters are on')
         cl.click(); j.settle(pg, 900)
-        j.check(not pg.locator('#content input[data-jxf]:checked').count() and jobs_header_n(pg) == len(jcards(pg)) and (not j.live or jobs_header_n(pg) == total), 'Clear filters leaves filters on (header %s, cards %d)' % (jobs_header_n(pg), len(jcards(pg))))
+        j.check(not pg.locator('#content input[data-jxf]:checked').count() and (jobs_header_n(pg) == total if j.live else jobs_header_n(pg) == len(jcards(pg))), 'Clear filters leaves filters on (header %s, cards %d)' % (jobs_header_n(pg), len(jcards(pg))))
         jobs_page(j, pg, HUNT)
     with j.step('Every matching job is reachable by paging (Load more / scroll), with no duplicates'):
         for _ in range(15):
@@ -257,6 +257,7 @@ def post_vacancy(j):
         mfill(j, pg, r'description|الوصف|responsibilities', 'Lead the QA department of a GCC plant; batch release; audits.', required=False)
         missing = [w for w, p in (('country', r'Country|الدولة'), ('deadline', r'Deadline|آخر موعد'), ('requirements', r'Requirements|المتطلبات')) if not mfield(pg, p)]
         j.check(not missing, 'not built: the Post a Job form has no %s field' % ', '.join(missing))
+        mfill(j, pg, r'Deadline|آخر موعد', '2026-12-31'); mfill(j, pg, r'Requirements|المتطلبات', 'Pharmacy degree\n7+ years in QA')
         before = toast_set(pg); mclick(j, pg, r'Post Job|Publish|نشر', 'Post Job'); j.settle(pg, 1500)
     with j.step('The job is at the top of Open Positions for a job seeker in another browser, with the company name, UAE, salary and "just now"'):
         ps = s['page'] if j.live else pg
@@ -277,7 +278,10 @@ def post_vacancy(j):
         reopen(j, pg); jobs_page(j, pg, HUNT); j.check(title in ' '.join(c['title'] for c in jcards(pg)), 'after reload the job is gone')
         if j.live:
             pg.evaluate("s=>window.dxDir&&dxDir.open?dxDir.open(s):goto('companies')", e['co']['slug']); j.settle(pg, 1500)
-            j.check(title in j.text(pg), "the job is not on the company page")
+            tab = j.find(pg, r'^\W*(Jobs|الوظائف) \(\d+\)', scope='#content'); j.check(tab, 'the company page has no Jobs tab')
+            tab.click(); j.settle(pg, 1200)
+            if title not in j.text(pg): tab = j.find(pg, r'^\W*(Jobs|الوظائف) \(\d+\)', scope='#content'); tab and tab.click(); j.settle(pg, 1200)   # the page redraws once its jobs arrive
+            j.check(title in j.text(pg), "the job is not on the company page's Jobs tab")
 
 @journey('J-COMMUNITY-24')
 def manage_vacancies(j):

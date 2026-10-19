@@ -280,6 +280,19 @@ returns boolean language sql stable security definer set search_path = public as
     else false end
 $$;
 create index if not exists idx_profiles_cv_path on public.profiles (cv_path) where cv_path is not null;
+-- open_candidates() returns profile rows with their columns named (0036): the new column is returned as NULL (never the CV path)
+create or replace function public.open_candidates(p_limit int default 40)
+returns setof public.profiles language sql stable set search_path = public as $$
+  select p.id, p.name, p.headline, p.company, p.country, p.bio, p.avatar_url, p.cover_url, p.website, null::text, p.certs, p.role,
+         p.verified, p.account_type, p.created_at, p.updated_at, p.location, p.experience, p.education, p.certifications, p.skills,
+         p.languages, p.open_to_work, p.hiring, p.profile_views, p.followers_count, p.years_experience, p.desired_role,
+         p.desired_type, p.remote_ok, p.available_since, p.intro_video, p.intents, null::text
+    from public.profiles p where p.open_to_work and p.id <> coalesce(auth.uid(), '00000000-0000-0000-0000-000000000000'::uuid)
+     and p.id <> all (coalesce((select private.blocked_parties()), '{}'::uuid[]))
+   order by p.created_at desc limit least(greatest(coalesce(p_limit, 40), 1), 100)
+$$;
+revoke all on function public.open_candidates(int) from public, anon, authenticated, service_role;
+grant execute on function public.open_candidates(int) to authenticated, service_role;
 
 -- an employer's view of a candidate's published CV path (members of a verified company only; else null)
 create or replace function public.candidate_cv(p_user uuid) returns text
