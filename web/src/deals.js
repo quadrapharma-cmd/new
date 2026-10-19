@@ -36,7 +36,7 @@
     group: { label: 'Group order', icon: 'users', steps: ['open', 'target_reached', 'confirmed'],
       acts: { target_reached: { to: ['confirm_group', 'decline'] } } }
   };
-  var LABEL = { file: 'Document attached', sent: 'Sent', quoted: 'Quote received', countered: 'Counter-offer', accepted: 'Accepted', confirmed: 'Order confirmed', shipped: 'Shipped', delivered: 'Delivered', closed: 'Closed', declined: 'Declined', cancelled: 'Cancelled',
+  var LABEL = { file: 'Document attached', expired: 'Closed — target not reached', change: 'Quantity changed', leave: 'Left the group', sent: 'Sent', quoted: 'Quote received', countered: 'Counter-offer', accepted: 'Accepted', confirmed: 'Order confirmed', shipped: 'Shipped', delivered: 'Delivered', closed: 'Closed', declined: 'Declined', cancelled: 'Cancelled',
     proposed: 'Proposal received', in_progress: 'In progress', offered: 'Offer sent', answered: 'Answered', approved: 'Approved', rejected: 'Rejected', requested: 'Requested', nda_signed: 'NDA signed', shared: 'Details shared', agreed: 'Agreed',
     applied: 'Applied', shortlisted: 'Shortlisted', interview: 'Interview', offer: 'Job offer', hired: 'Hired', open: 'Open', target_reached: 'Target reached' };
   var TONE = { declined: 'dec', cancelled: 'dec', rejected: 'dec', closed: 'acc', approved: 'acc', agreed: 'acc', hired: 'acc', delivered: 'acc', confirmed: 'acc', accepted: 'acc' };
@@ -173,6 +173,21 @@
     d.updated = now(); save(d); return d;
   }
 
+  /* a member changes its quantity (0 = leaves) while the group is open; the organiser can change but not leave */
+  function setMember(id, member, qty) {
+    var d = get(id); if (!d || d.type !== 'group' || d.status !== 'open') { toast('This buying group is closed'); return null; }
+    qty = Math.floor(+qty); if (!(qty >= 0)) { toast('Enter a quantity (0 to leave)'); return null; }
+    var ex = (d.members || []).find(function (m) { return m.slug === member.slug; }); if (!ex) { toast('Your company is not in this group'); return null; }
+    if (qty === 0 && member.slug === d.from.slug) { toast('The organiser stays in its group — withdraw the group instead'); return null; }
+    if (qty === 0) { d.members = d.members.filter(function (m) { return m !== ex; }); d.events.push({ at: now(), by: 'member', kind: 'leave', text: member.name + ' left the group' }); }
+    else { ex.qty = qty; d.events.push({ at: now(), by: 'member', kind: 'change', text: member.name + ' changed its quantity to ' + qty.toLocaleString('en-US') + ' ' + d.lines.unit }); }
+    var sum = d.members.reduce(function (a, m) { return a + m.qty; }, 0);
+    if (sum >= d.lines.target) { d.status = 'target_reached'; d.events.push({ at: now(), by: 'system', kind: 'target', text: 'Target reached (' + sum.toLocaleString('en-US') + ' ' + d.lines.unit + ') — waiting for ' + d.to.name + ' to confirm the group price' }); }
+    d.updated = now(); save(d); return d;
+  }
+  /* a group past its closing date below its target: closed, nothing ordered (the live app asks the database to close it) */
+  function groupExpired(d) { var by = d && d.lines && d.lines.by; return d && d.type === 'group' && (d.status === 'expired' || (d.status === 'open' && by && /^\d{4}-\d{2}-\d{2}$/.test(by) && by < new Date().toISOString().slice(0, 10))); }
+
   /* ── demo: perform the other side's next step, openly ── */
   var AUTO = { quote: function (d) { return { price: 'US$ ' + (2 + (d.title.length % 37) + (d.to.name.length % 5) / 10).toFixed(2) + ' per ' + (d.lines.unit || 'unit'), validity: '14 days', terms: d.lines.inc || 'CIF', lead: '3 weeks' }; },
     revise: function (d) { return { price: d.counter ? d.counter.price : 'US$ 4.90', validity: '7 days' }; }, propose: function () { return { price: 'EGP 85,000', timeline: '6 weeks', note: 'Gap analysis, compilation and EDA follow-up' }; },
@@ -298,5 +313,5 @@
 
   function openCount(slug) { return all().filter(function (d) { return (!slug || d.to.slug === slug) && ['declined', 'cancelled', 'rejected', 'closed', 'approved', 'agreed', 'hired', 'confirmed'].indexOf(d.status) < 0; }).length; }
   function waiting() { return all().filter(function (d) { var s = sideOf(d); return s && moves(d, s).length; }).length; }
-  window.dxDeals = { offerExpired: offerExpired, FLOWS: FLOWS, all: all, get: get, create: create, act: act, simulate: simulate, center: center, thread: thread, receivedHtml: receivedHtml, sideOf: sideOf, actionsFor: actionsFor, joinGroup: joinGroup, save: save, mk: mk, openCount: openCount, waiting: waiting, label: function (s) { return LABEL[s] || s; } };
+  window.dxDeals = { setMember: setMember, groupExpired: groupExpired, offerExpired: offerExpired, FLOWS: FLOWS, all: all, get: get, create: create, act: act, simulate: simulate, center: center, thread: thread, receivedHtml: receivedHtml, sideOf: sideOf, actionsFor: actionsFor, joinGroup: joinGroup, save: save, mk: mk, openCount: openCount, waiting: waiting, label: function (s) { return LABEL[s] || s; } };
 })();

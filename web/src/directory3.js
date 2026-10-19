@@ -164,17 +164,24 @@
     return have;
   }
   function total(d) { return (d.members || []).reduce(function (a, m) { return a + m.qty; }, 0); }
+  function myQty(g, a) { var m = a && (g.members || []).find(function (s) { return s.slug === a.slug; }); return m ? m.qty : 0; }
   function groupsDialog() {
     var gs = groupDeals(), a = acting(), DL = window.dxDeals;
     var dlg = D.modal({ title: 'Group buying', secondary: 'Close', primary: { label: 'Start a group', onClick: function () { later(newGroup); } },
       body: '<p class="cp-muted">Small factories combine orders to reach the supplier\u2019s minimum order and a better price. When the target is reached the supplier confirms the group price, and every member gets its own order.</p>' + gs.map(function (g) { var have = total(g), pct = Math.min(100, Math.round(have / g.lines.target * 100)), mineIn = a && (g.members || []).some(function (s) { return s.slug === a.slug; });
         return '<div class="gb-card"><div class="gb-h"><b>' + esc(g.lines.product) + '</b><span>supplier ' + esc(g.to.name) + ' · organised by ' + esc(g.from.name) + ' · closes ' + esc(g.lines.by) + '</span></div><div class="gb-bar"><i style="width:' + pct + '%"></i></div>' +
           '<div class="gb-meta"><span><b>' + have.toLocaleString('en-US') + '</b> of ' + g.lines.target.toLocaleString('en-US') + ' ' + esc(g.lines.unit) + ' · ' + (g.members || []).length + ' companies</span><span class="gb-price">' + esc(g.lines.price) + '</span></div>' +
-          (g.status === 'confirmed' ? '<span class="avl avl-ok">Supplier confirmed — orders created for every member</span>' : g.status === 'target_reached' ? '<div class="gb-join"><span class="avl avl-ev">Target reached — waiting for ' + esc(g.to.name) + '</span>' + (DL.sideOf(g) === 'to' ? '<button type="button" class="dr-btn p sm" data-gconf="' + g.id + '">Confirm group price</button>' : '<button type="button" class="dr-btn ghost sm" data-gsim="' + g.id + '">Simulate supplier confirmation (demo)</button>') + '</div>'
-            : (mineIn ? '<span class="avl avl-ok">You joined</span> ' : '') + '<div class="gb-join"><input type="number" min="1" placeholder="' + (mineIn ? 'Add more' : 'Your quantity') + ' (' + esc(g.lines.unit) + ')" data-gq="' + g.id + '"><button type="button" class="dr-btn p sm" data-gjoin="' + g.id + '">' + (mineIn ? 'Add' : 'Join') + '</button></div>') + '</div>'; }).join('') });
+          (DL.groupExpired && DL.groupExpired(g) ? '<span class="avl avl-ev">Closed on ' + esc(g.lines.by) + ' below its target — no orders were made</span>' : g.status === 'confirmed' ? '<span class="avl avl-ok">Supplier confirmed — orders created for every member</span>' : g.status === 'target_reached' ? '<div class="gb-join"><span class="avl avl-ev">Target reached — waiting for ' + esc(g.to.name) + '</span>' + (DL.sideOf(g) === 'to' ? '<button type="button" class="dr-btn p sm" data-gconf="' + g.id + '">Confirm group price</button>' : '<button type="button" class="dr-btn ghost sm" data-gsim="' + g.id + '">Simulate supplier confirmation (demo)</button>') + '</div>'
+            : (mineIn ? '<span class="avl avl-ok">You joined · ' + myQty(g, a).toLocaleString('en-US') + ' ' + esc(g.lines.unit) + '</span> ' : '') + '<div class="gb-join"><input type="number" min="1" placeholder="' + (mineIn ? 'Add more' : 'Your quantity') + ' (' + esc(g.lines.unit) + ')" data-gq="' + g.id + '"><button type="button" class="dr-btn p sm" data-gjoin="' + g.id + '">' + (mineIn ? 'Add' : 'Join') + '</button>' +
+              (mineIn ? '<button type="button" class="dr-btn sm" data-gset="' + g.id + '">Change</button>' + (g.from.slug === a.slug ? '' : '<button type="button" class="dr-btn sm dl-d" data-gleave="' + g.id + '">Leave</button>') : '') + '</div>') + '</div>'; }).join('') });
     dlg.el.querySelector('.dbk-box').classList.add('dbk-wide');
     dlg.el.addEventListener('click', function (e) {
       var c = e.target.closest('[data-gconf],[data-gsim]'); if (c) { var id = c.dataset.gconf || c.dataset.gsim; DL.act(id, 'confirm_group', {}, 'to'); dlg.close(); toast('Group price confirmed — one order created for each member'); later(groupsDialog); return; }
+      var gs2 = e.target.closest('[data-gset],[data-gleave]');
+      if (gs2) { var gid = gs2.dataset.gset || gs2.dataset.gleave, lv = !!gs2.dataset.gleave, nq = lv ? 0 : +(dlg.el.querySelector('[data-gq="' + gid + '"]').value || 0);
+        if (!lv && !(nq > 0)) { toast('Enter your new quantity'); return; }
+        var d2 = DL.setMember(gid, { slug: a.slug, name: a.name }, nq); if (!d2) return;
+        dlg.close(); toast(lv ? a.name + ' left the group' : d2.status === 'target_reached' ? 'Target reached! ' + d2.to.name + ' now confirms the group price' : a.name + ' now takes ' + nq.toLocaleString('en-US')); later(groupsDialog); return; }
       var j = e.target.closest('[data-gjoin]'); if (!j) return;
       if (!a) { toast('Act as a company to join'); return; }
       var q = +(dlg.el.querySelector('[data-gq="' + j.dataset.gjoin + '"]').value || 0); if (!(q > 0)) { toast('Enter your quantity'); return; }

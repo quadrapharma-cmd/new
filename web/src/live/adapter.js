@@ -1482,7 +1482,26 @@
     if (n.type === 'review_reply') o.text = esc2(String(d.company || 'The supplier') + ' replied to your review of ' + String(d.title || 'your order') + '.');
     if (n.type === 'review_decided') { o.uid = SYS_UID; o.text = esc2(d.outcome === 'removed' ? 'Drugbox removed a review of ' + String(d.company || 'your company') + ' after checking it.' : 'Drugbox checked a review of ' + String(d.company || 'your company') + ' — it stays up.'); }
     return o; };
-  onReset(function () { DFL.by = {}; REV = { by: {}, at: {}, ref: {} }; REVMETA = {}; });
+  /* buying groups (0057): a lower quantity or leaving goes through deal_member_set; a group past its closing date below its target
+     is closed by the database (group_close_expired) when it is shown */
+  joins = async function (d) { var before = DEALS.mem[d.id] || {}, now = {};
+    (d.members || []).forEach(function (m) { now[m.slug] = (now[m.slug] || 0) + m.qty; });
+    var slugs = Object.keys(Object.assign({}, before, now));
+    for (var i = 0; i < slugs.length; i++) { var slug = slugs[i], was = before[slug] || 0, is = now[slug] || 0; if (was === is) continue;
+      var r = is > was && was > 0 || !was ? await sb.rpc('deal_join', { p_ref: d.id, p_from_slug: slug, p_qty: is - was }) : await sb.rpc('deal_member_set', { p_ref: d.id, p_from_slug: slug, p_qty: is });
+      if (r.error) return refused(r.error); }
+    DEALS.mem[d.id] = now; };
+  var CLOSING = {};
+  var loadDealsG = loadDeals;
+  loadDeals = async function () {
+    var list = await loadDealsG(), due = list.filter(function (d) { return window.dxDeals && window.dxDeals.groupExpired && d.status === 'open' && window.dxDeals.groupExpired(d) && !CLOSING[d.id]; });
+    if (!due.length) return list;
+    due.forEach(function (d) { CLOSING[d.id] = 1; });
+    await Promise.all(due.map(function (d) { return sb.rpc('group_close_expired', { p_ref: d.id }); }));
+    return loadDealsG();
+  };
+  window.dxLive.loadDeals = loadDeals;
+  onReset(function () { DFL.by = {}; REV = { by: {}, at: {}, ref: {} }; REVMETA = {}; CLOSING = {}; });
   /* ===== /AREA business: deal documents and reviews ===== */
 
   /* ═══════════════ D1 — marketplace: supply and demand cards from the database, using the approved page's own cards as templates ═══════════════ */
