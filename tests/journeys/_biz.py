@@ -241,7 +241,12 @@ def seed_route(j, cid, kind, uid):
 
 def seed_site(j, cid, name='October plant', forms=('Tablets',), capacity='40 M tablets / month', min_batch='200,000 tablets', slots=None, gov='Giza', city='6th of October'):
     return j.sql1("insert into public.company_sites (company_id, name, type, city, governorate, dosage_forms, capacity, min_batch, free_slots) values (%s, $q$%s$q$, 'factory', '%s', '%s', '{%s}', '%s', '%s', '%s') returning id" % (
-        cid, name, city, gov, ','.join('"%s"' % f for f in forms), capacity, min_batch, json.dumps(slots or {})))
+        cid, name, city, gov, ','.join('"%s"' % f for f in forms), capacity, min_batch, json.dumps([_month(i) for i in (slots or [])])))
+
+def _month(i):
+    """Free production months are stored as 'YYYY-MM' (0050); a journey names them as 0 = this month, 1 = next month…"""
+    t = time.localtime(); m = t.tm_mon - 1 + int(i)
+    return '%04d-%02d' % (t.tm_year + m // 12, m % 12 + 1)
 
 def seed_cert(j, cid, sid, name='WHO-GMP', expiry='2027-06-30', checked=True):
     return j.sql1("insert into public.site_certificates (site_id, company_id, name, expiry, checked_at) values (%s,%s,'%s','%s',%s) returning id" % (sid, cid, name, expiry, 'now()' if checked else 'null'))

@@ -4,7 +4,7 @@
    requests, credentials with source and expiry, and a track record computed only from real deals. No levels, no restrictions. */
 (function () {
   function X() { return window.dxDir; }
-  var __A = /^(deals|created_companies|reports|dossiers|surplus_new|groups_new|follows|saved_searches|my_requests|activity_.*|inbox_.*)$/, __O = /^(company_edits|supplier_reviews|review_meta|avl_.*|groups_state|meta_.*|quoted_.*|sqq_.*)$/, __S = /^(acting|role)$/;
+  var __A = /^(deals|created_companies|reports|dossiers|surplus_new|groups_new|follows|saved_searches|my_requests|join_requests|activity_.*|inbox_.*)$/, __O = /^(company_edits|supplier_reviews|review_meta|avl_.*|groups_state|meta_.*|quoted_.*|sqq_.*)$/, __S = /^(acting|role)$/;
   function __typed(k, v) { if (v == null) return null; if (__A.test(k)) return Array.isArray(v) ? v : null; if (__O.test(k)) return (typeof v === 'object' && !Array.isArray(v)) ? v : null; if (__S.test(k)) return typeof v === 'string' ? v : null; return v; }   /* a stored value of the wrong type is ignored, never trusted */
   function store(k, v) { if (v !== undefined) window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;   /* every write invalidates the memoised company list (directory.js) */
     if (window.dxStoreHook) { var __h = window.dxStoreHook(k, v); if (__h !== undefined) return __h; } try { if (v === undefined) return __typed(k, JSON.parse(localStorage.getItem('dx_' + k) || 'null')); localStorage.setItem('dx_' + k, JSON.stringify(v)); return true; } catch (e) { quotaToast(); return false; } }
@@ -61,7 +61,7 @@
   function certState(c, co) {
     var t = new Date().toISOString().slice(0, 7), exp = c.expiry, st = 'valid';
     if (exp && exp < t) st = 'expired'; else if (exp) { var d = new Date(exp + '-01').getTime() - NOW(); if (d < 90 * DAY) st = 'soon'; }
-    return { state: st, checked: co.status === 'verified' && c.src !== 'Public industry list' && c.src !== 'Company' };
+    return { state: st, checked: !!c.checked && c.src !== 'Public industry list' && c.src !== 'Company' };   /* checked = Drugbox looked at its document (the date it did), whatever the company's own status */
   }
   function credentials(co) {
     var out = [];

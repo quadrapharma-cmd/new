@@ -742,6 +742,33 @@
     'Active Listings': 'الإعلانات النشطة', 'Total Views': 'إجمالي المشاهدات', 'Inquiries': 'الاستفسارات', 'Renew Now': 'جدّد الآن', 'Expiring soon': 'ينتهي قريبًا', 'Paused': 'متوقف مؤقتًا', 'Resume': 'استأنف',
     'views': 'مشاهدات', 'inquiries': 'استفسارات', 'not verified': 'غير موثّقة', 'License': 'ترخيص', 'Service': 'خدمة'
   });
+  /* ===== AREA business: company page, certificates, team (B-02, B-03, B-04) ===== */
+  Object.assign(D, {
+    'not yet checked': 'لم تُراجع بعد', 'not yet checked by Drugbox': 'لم يراجعها Drugbox بعد', 'Public industry list': 'قائمة صناعية عامة', 'Company-wide': 'على مستوى الشركة',
+    'Asked to join the team': 'طلب الانضمام للفريق', 'Invited — waiting for them to accept': 'تمت دعوته — بانتظار قبوله', 'Your role *': 'دورك *', 'Note for the admin': 'ملاحظة للمدير',
+    'e.g. I work in the Cairo sales office': 'مثلًا: أعمل في مكتب مبيعات القاهرة', 'Request declined': 'تم رفض الطلب', 'Invitation declined': 'تم رفض الدعوة',
+    'You joined the team — the company is in My companies': 'انضممت إلى الفريق — الشركة الآن في شركاتي', 'The page’s owner stays its owner': 'مالك الصفحة يبقى مالكها',
+    'Write the reason for the company': 'اكتب السبب للشركة', 'The certificate document is not readable': 'مستند الشهادة غير مقروء', 'Site added': 'تمت إضافة الموقع',
+    'Certificate added': 'تمت إضافة الشهادة', 'Capabilities saved': 'تم حفظ القدرات', 'Invitation sent': 'تم إرسال الدعوة', 'Company page published': 'تم نشر صفحة الشركة',
+    'Page saved': 'تم حفظ الصفحة', 'Arabic name saved': 'تم حفظ الاسم العربي', 'Thanks — marked as up to date': 'شكرًا — تم تعليمها كمحدّثة', 'Could not send the request': 'تعذّر إرسال الطلب',
+    'Could not answer the request': 'تعذّر الرد على الطلب', 'This company is not on Drugbox yet': 'هذه الشركة ليست على Drugbox بعد',
+    'an admin': 'مدير', 'management': 'الإدارة', 'sales': 'المبيعات', 'quality': 'الجودة', 'regulatory': 'التسجيل', 'a team member': 'عضو في الفريق'
+  });
+  PATTERNS.unshift(
+    [/^checked (\d{4}-\d{2}-\d{2})$/, function (m) { return 'تمت المراجعة ' + m[1]; }],
+    [/^checked by Drugbox (\d{4}-\d{2}-\d{2})$/, function (m) { return 'راجعها Drugbox في ' + m[1]; }],
+    [/^Ask to join (.+)$/, function (m) { return 'اطلب الانضمام إلى ' + m[1]; }],
+    [/^Request sent to the admin of (.+)$/, function (m) { return 'تم إرسال طلبك إلى مدير ' + m[1]; }],
+    [/^(.+) is on the team$/, function (m) { return 'انضم ' + m[1] + ' إلى الفريق'; }],
+    [/^(.+) invited you to join (.+) on Drugbox as (.+)\.$/, function (m) { return m[1] + ' دعاك للانضمام إلى ' + m[2] + ' على Drugbox (' + (D[m[3]] || m[3]) + ').'; }],
+    [/^(.+) (accepted|declined) your invitation to (.+)\.$/, function (m) { return m[1] + (m[2] === 'accepted' ? ' قبل دعوتك للانضمام إلى ' : ' رفض دعوتك للانضمام إلى ') + m[3] + '.'; }],
+    [/^(.+) asked to join (.+) as (.+) — answer in Workspace → Team\.$/, function (m) { return m[1] + ' طلب الانضمام إلى ' + m[2] + ' (' + (D[m[3]] || m[3]) + ') — رُد من مساحة العمل ← الفريق.'; }],
+    [/^You are now on the team of (.+) \((.+)\)\.$/, function (m) { return 'أنت الآن في فريق ' + m[1] + ' (' + (D[m[2]] || m[2]) + ').'; }],
+    [/^(.+) did not accept your request to join the team\.$/, function (m) { return 'لم تقبل ' + m[1] + ' طلبك للانضمام إلى الفريق.'; }],
+    [/^Drugbox checked your (.+?)( \((.+)\))? — it now shows as checked on your page\.$/, function (m) { return 'راجع Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — تظهر الآن كمراجَعة على صفحتك.'; }],
+    [/^Drugbox could not accept your (.+?)( \((.+)\))? — reason: (.+)\. Add it again with a readable document\.$/, function (m) { return 'لم يقبل Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — السبب: ' + m[4] + '. أضفها مرة أخرى بمستند مقروء.'; }]
+  );
+  /* ===== /AREA business ===== */
   PATTERNS.unshift(
     [/^Some information on this page was last updated more than 6 months ago \((.+)\)\.$/, function (m) { return 'آخر تحديث لبعض المعلومات في هذه الصفحة كان منذ أكثر من 6 أشهر (' + secs(m[1]) + ').'; }],
     [/^Please review: (.+) \(older than 6 months\)\.$/, function (m) { return 'يُرجى المراجعة: ' + secs(m[1]) + ' (أقدم من 6 أشهر).'; }],

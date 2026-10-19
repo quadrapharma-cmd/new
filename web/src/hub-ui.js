@@ -114,7 +114,7 @@
         made.map(function (m) { return '<article class="cp-prod"><div class="cp-pimg"><img src="' + X().pimg(m.owner, m.p) + '" alt=""></div><div class="cp-pb"><span class="cp-pcat">' + esc(m.p.cat) + '</span><b>' + esc(m.p.name) + '</b><span class="hb-role">Manufactured here for ' + esc(m.owner.name) + '</span><p>' + esc(m.p.desc) + '</p></div></article>'; }).join('') + '</div>' + srcLine(co, 'products');
     } else if (tab === 'sites') {
       body = '<div class="hb-sites">' + sites.map(function (s) { return '<section class="cp-sec hb-site"><h3>' + ic(s.type === 'Warehouse' ? 'box' : s.type === 'Laboratory' ? 'flask' : s.type === 'Factory' ? 'factory' : 'building') + esc(s.name) + '<small>' + esc(s.type) + ' · ' + esc(s.city) + ', ' + esc(s.gov) + '</small></h3>' +
-        '<div class="hb-creds">' + (s.certs || []).map(function (k) { var st = H().certState(k, co); return '<span class="hb-cred ' + (st.checked ? 'ok' : 'unk') + (st.state === 'expired' ? ' exp' : '') + '" title="' + esc(k.src) + '">' + ic(st.checked ? 'seal' : 'doc') + esc(k.name) + (k.expiry ? ' · ' + (st.state === 'expired' ? 'expired ' : 'to ') + esc(k.expiry) : '') + '</span>'; }).join('') + '</div>' +
+        '<div class="hb-creds">' + (s.certs || []).map(function (k) { var st = H().certState(k, co); return '<span class="hb-cred ' + (st.checked ? 'ok' : 'unk') + (st.state === 'expired' ? ' exp' : '') + '" title="' + esc(k.src) + '">' + ic(st.checked ? 'seal' : 'doc') + esc(k.name) + (k.expiry ? ' · ' + (st.state === 'expired' ? 'expired ' : 'to ') + esc(k.expiry) : '') + ' · ' + (st.checked ? 'checked ' + esc(String(k.checked).slice(0, 10)) : 'not yet checked') + '</span>'; }).join('') + '</div>' +
         (s.cap ? '<div class="cap-forms">' + s.cap.forms.map(function (f) { return '<span>' + esc(f) + '</span>'; }).join('') + '</div><div class="cp-facts"><div><small>Minimum batch</small><b>' + esc(s.cap.minBatch) + '</b></div><div><small>Capacity</small><b>' + esc(s.cap.capacity) + '</b></div></div>' +
           '<div class="cap-slots"><small>Free production slots</small><div>' + X2().MONTHS.map(function (m, i) { var f = s.cap.slots.indexOf(i) >= 0; return '<span class="cap-m' + (f ? ' free' : '') + '">' + esc(m) + '<em>' + (f ? 'Free' : 'Booked') + '</em></span>'; }).join('') + '</div></div>' : '') + '</section>'; }).join('') + '</div>' + srcLine(co, 'sites');
     } else if (tab === 'listings') {
@@ -163,7 +163,8 @@
     } else if (tab === 'team') {
       var team = H().teamOf(co), me = window.ME || {};
       body = '<section class="cp-sec"><h3>Team</h3><p class="cp-muted">Roles decide who receives each kind of request. A person appears on the public page only after they agree (personal data law 151/2020).</p>' +
-        team.map(function (m, i) { return '<div class="hb-tm"><span class="cp-pav" style="background:#1a56db">' + esc(X().initials(m.name)) + '</span><span class="hb-tmn"><b>' + esc(m.name) + (m.uid === me.id ? ' (you)' : '') + '</b><small>' + (m.consent ? 'Shown on the public page' : 'Waiting for their agreement — not shown publicly') + '</small></span>' +
+        team.map(function (m, i) { var asked = m.pending === 'request'; return '<div class="hb-tm"><span class="cp-pav" style="background:#1a56db">' + esc(X().initials(m.name)) + '</span><span class="hb-tmn"><b>' + esc(m.name) + (m.uid === me.id ? ' (you)' : '') + '</b><small>' + (asked ? 'Asked to join the team' : m.pending === 'invite' ? 'Invited — waiting for them to accept' : m.consent ? 'Shown on the public page' : 'Waiting for their agreement — not shown publicly') + '</small></span>' +
+          (asked ? '<button type="button" class="dr-btn p sm" data-wtok="' + i + '">Approve</button><button type="button" class="dr-btn sm" data-wtno="' + i + '">Decline</button>' : '') +
           '<select data-wrole="' + i + '" aria-label="Role">' + H().ROLES.map(function (r) { return '<option' + (m.role === r ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select>' + (m.uid === me.id ? '<button type="button" class="dr-btn sm" data-wconsent="' + i + '">' + (m.consent ? 'Hide me' : 'Show me') + '</button>' : '') + '<button type="button" class="hb-x" data-wtdel="' + i + '" aria-label="Remove">×</button></div>'; }).join('') +
         '<button type="button" class="dr-btn p sm" data-winvite="1">' + ic('plus') + 'Invite a colleague</button></section>' +
         '<section class="cp-sec"><h3>Who receives what</h3><table class="cp-spec">' + Object.keys(H().ROUTE).map(function (k) { var r = H().route(co.slug, k); return '<tr><td>' + esc(DL().FLOWS[k].label) + '</td><td><b>' + esc(r.name) + '</b> · ' + esc(r.role) + '</td></tr>'; }).join('') + '</table></section>';
@@ -223,9 +224,26 @@
       var cl = e.target.closest('[data-acclaim]'), ws = e.target.closest('[data-acws]'), jn = e.target.closest('[data-acjoin]');
       if (cl) { m.close(); later(function () { X2().claim(X().bySlug(cl.dataset.acclaim)); }); }
       if (ws) { m.close(); openWorkspace(ws.dataset.acws); }
-      if (jn) { var co = X().bySlug(jn.dataset.acjoin); m.close(); toast('Request sent to the admin of ' + co.name); }
+      if (jn) { var co = X().bySlug(jn.dataset.acjoin); m.close(); later(function () { joinDialog(co); }); }
       if (e.target.closest('[data-acnew]')) { m.close(); later(function () { X().create(); }); }
     });
+  }
+  /* "Ask to join the team": the role you work in; the company's owner or admins approve it (window.dxTeam: the browser in the
+     demo, the database in the live app) */
+  if (!window.dxTeam) window.dxTeam = {
+    join: function (slug, role, note) { var l = H().store('join_requests') || []; if (!l.some(function (x) { return x.slug === slug; })) l.push({ slug: slug, role: role, note: note, at: Date.now() }); H().store('join_requests', l); return Promise.resolve(true); },
+    decide: function (slug, m, ok) { var co = X().bySlug(slug), t = H().teamOf(co), i = t.findIndex(function (x) { return x.name === m.name && x.pending === 'request'; }); if (i < 0) return Promise.resolve(false);
+      if (ok) { t[i].pending = null; t[i].consent = false; } else t.splice(i, 1); H().saveTeam(slug, t); return Promise.resolve(true); }
+  };
+  function joinDialog(co) {
+    if (!co) return;
+    D.modal({ title: 'Ask to join ' + co.name, body: '<p class="cp-muted">The page\u2019s owner or admins approve your request. You appear on the public page only if you choose to.</p>' +
+      '<div class="dbk-f"><label for="jnR">Your role *</label><select id="jnR" data-req>' + H().ROLES.filter(function (r) { return r !== 'Admin'; }).map(function (r) { return '<option' + (r === 'Sales' ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select></div>' +
+      '<div class="dbk-f"><label for="jnN">Note for the admin</label><input id="jnN" maxlength="300" placeholder="e.g. I work in the Cairo sales office"></div>',
+      primary: { label: 'Send request', onClick: function (b, close) { if (!D.requireFields(b)) return false; var ok = b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
+        window.dxTeam.join(co.slug, b.querySelector('#jnR').value, b.querySelector('#jnN').value.trim()).then(function () { close(); toast('Request sent to the admin of ' + co.name); },
+          function (e) { if (ok) ok.disabled = false; toast((e && e.message) || 'Could not send the request'); });
+        return false; } } });
   }
   function reportDialog(co) {
     D.modal({ title: 'Report wrong information — ' + co.name, body: '<div class="dbk-f"><label for="rpS">Where</label><select id="rpS"><option>About</option><option>Products</option><option>Sites</option><option>Certificates</option><option>Contact</option></select></div><div class="dbk-f"><label for="rpT">What is wrong? *</label><input id="rpT" data-req></div><div class="dbk-f"><label for="rpF">Correct information (if you know it)</label><input id="rpF"></div>',
@@ -242,7 +260,7 @@
   }
   function certDialog(co, i) {
     D.modal({ title: 'Add a certificate', body: '<div class="dbk-f"><label for="wcN">Certificate *</label><select id="wcN" data-req><option value="">Choose…</option>' + CERTS.concat(['ISO 15378', 'ISO 14001', 'Halal', 'ISO 22000']).map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select></div><div class="dbk-row"><div class="dbk-f"><label for="wcE">Valid until</label><input id="wcE" type="month"></div><div class="dbk-f"><label for="wcF">Document</label><input id="wcF" type="file" accept=".pdf,.jpg,.png"></div></div>',
-      primary: { label: 'Add', onClick: function (b) { if (!D.requireFields(b)) return false; var ss = H().sitesOf(co); (ss[i].certs = ss[i].certs || []).push({ name: b.querySelector('#wcN').value, expiry: b.querySelector('#wcE').value, src: b.querySelector('#wcF').files.length ? 'Certificate document' : 'Company', checked: new Date().toISOString().slice(0, 10) }); if (!H().saveSites(co.slug, ss)) return false; rerender(); toast('Certificate added'); } } });
+      primary: { label: 'Add', onClick: function (b) { if (!D.requireFields(b)) return false; var ss = H().sitesOf(co); (ss[i].certs = ss[i].certs || []).push({ name: b.querySelector('#wcN').value, expiry: b.querySelector('#wcE').value, src: b.querySelector('#wcF').files.length ? 'Certificate document' : 'Company', checked: '' });   /* not checked until Drugbox has looked at the document */ if (!H().saveSites(co.slug, ss)) return false; rerender(); toast('Certificate added'); } } });
   }
   function capDialog(co, i) {
     var ss = H().sitesOf(co), cap = ss[i].cap || { forms: [], minBatch: '', capacity: '', slots: [] };
@@ -261,7 +279,7 @@
   /* ════════ one click handler for the hub ════════ */
   document.addEventListener('click', function (e) {
     var root = e.target.closest && e.target.closest('#dxDir.hub'); if (!root) return;
-    var t = e.target.closest('[data-hopen],[data-hrfq],[data-hadd],[data-hsec],[data-hcert],[data-hreset],[data-hmore],[data-hrule],[data-hhealth],[data-hback],[data-htab2],[data-hws],[data-hmsg],[data-hfollow],[data-hsq],[data-hpdf],[data-hqr],[data-hreport],[data-hclaim],[data-hpd],[data-hoffer],[data-hsurp],[data-hdos],[data-hgroups],[data-hjob],[data-wtab],[data-wgo],[data-wconfirm],[data-wedit],[data-war],[data-wlook],[data-wmember],[data-wcadd],[data-wcdel],[data-wslot],[data-wcap],[data-wsdel],[data-wsadd],[data-wconsent],[data-wtdel],[data-winvite],[data-wl],[data-wfix],[data-wreply],[data-wdispute],[data-wverify],[data-wvip]');
+    var t = e.target.closest('[data-hopen],[data-hrfq],[data-hadd],[data-hsec],[data-hcert],[data-hreset],[data-hmore],[data-hrule],[data-hhealth],[data-hback],[data-htab2],[data-hws],[data-hmsg],[data-hfollow],[data-hsq],[data-hpdf],[data-hqr],[data-hreport],[data-hclaim],[data-hpd],[data-hoffer],[data-hsurp],[data-hdos],[data-hgroups],[data-hjob],[data-wtab],[data-wgo],[data-wconfirm],[data-wedit],[data-war],[data-wlook],[data-wmember],[data-wcadd],[data-wcdel],[data-wslot],[data-wcap],[data-wsdel],[data-wsadd],[data-wconsent],[data-wtdel],[data-wtok],[data-wtno],[data-winvite],[data-wl],[data-wfix],[data-wreply],[data-wdispute],[data-wverify],[data-wvip]');
     if (!t) { var cardEl = e.target.closest('.hb-card'); if (cardEl && !e.target.closest('button,a,input,select,label')) openPage(cardEl.dataset.slug); return; }
     if (t.hasAttribute('data-hpick')) return;
     e.stopPropagation();
@@ -308,6 +326,9 @@
     if (ds.wsadd) return siteDialog(co);
     if (ds.wconsent != null) { var tm = H().teamOf(co); tm[+ds.wconsent].consent = !tm[+ds.wconsent].consent; H().saveTeam(co.slug, tm); toast(tm[+ds.wconsent].consent ? 'You are shown on the public page' : 'You are hidden from the public page'); return rerender(); }
     if (ds.wtdel != null) { var tm2 = H().teamOf(co); var gone = tm2.splice(+ds.wtdel, 1)[0]; H().saveTeam(co.slug, tm2); H().log(co.slug, 'Removed ' + gone.name + ' from the team'); return rerender(); }
+    if (ds.wtok != null || ds.wtno != null) { var yes = ds.wtok != null, tm3 = H().teamOf(co), who = tm3[+(yes ? ds.wtok : ds.wtno)]; if (!who) return; t.disabled = true;
+      return window.dxTeam.decide(co.slug, who, yes).then(function () { H().log(co.slug, (yes ? 'Approved ' : 'Declined ') + who.name + (yes ? ' as ' + who.role : '')); toast(yes ? who.name + ' is on the team' : 'Request declined'); rerender(); },
+        function (er) { t.disabled = false; toast((er && er.message) || 'Could not answer the request'); }); }
     if (ds.winvite) return inviteDialog(co);
     if (ds.wl) { H().store('acting', co.slug); if (ds.wl === 'surplus') return X3().postSurplus(); if (ds.wl === 'dossier') return X3().addDossier(co); return X3().newGroup(); }
     if (ds.wfix) { var rs = H().reports(); rs.forEach(function (r) { if (r.id === ds.wfix) r.status = 'fixed'; }); H().reports(rs); H().touch(co.slug, null); toast('Marked fixed'); return rerender(); }

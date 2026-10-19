@@ -2470,6 +2470,336 @@
     var r = await sb.rpc('review_instapay', { p_id: +id, p_ok: value === 'paid' }); if (r.error) throw new Error(friendly(r.error)); return true;
   };
 
+  /* ===== AREA business: company page — products, photos, sites, certificates (B-02, B-03, B-09; 0050) =====
+     What the owner saves in the page editor and in Workspace → Sites is written to the database (company_products,
+     company_sites, site_certificates; pictures in company-media, certificate documents in documents/verification/<id>/),
+     and what the page shows comes back from it. Each company's saves run one after the other (a second edit made while the
+     first is still saving waits for it). Nothing the database refused is kept on screen. */
+  var CPG = { q: {}, tmp: {}, seen: {}, siteFiles: [], coFiles: [], coCerts: {}, coCertsAt: {} };
+  var PACKS = ['box', 'bottle', 'blister', 'sachet', 'jar', 'tube', 'drum', 'lab'];
+  var TYPEK = { 'Factory': 'factory', 'Warehouse': 'warehouse', 'Laboratory': 'lab', 'Office': 'office', 'Head office': 'head_office' };
+  var CURS = [[/US\$|USD|\$/i, 'USD'], [/€|EUR/i, 'EUR'], [/SAR|ر\.?\s?س|ريال/i, 'SAR'], [/AED|د\.?\s?إ|درهم/i, 'AED'], [/£|GBP/i, 'GBP'], [/EGP|E£|ج\.?\s?م|جنيه/i, 'EGP'], [/CNY|RMB|¥/i, 'CNY'], [/INR|₹/i, 'INR']];
+  function currencyOf(price) { var s = String(price || ''); if (!/\d/.test(s)) return null; for (var i = 0; i < CURS.length; i++) if (CURS[i][0].test(s)) return CURS[i][1]; return null; }
+  function mediaUrl(path) { if (!path || !/^companies\/\d+\//.test(path)) return null; var r = sb.storage.from('company-media').getPublicUrl(path); return r && r.data ? safeUrl(r.data.publicUrl) || null : null; }
+  async function upMedia(cid, kind, dataUrl) {
+    var b = await blobOf(dataUrl), ext = b.type === 'image/png' ? 'png' : b.type === 'image/webp' ? 'webp' : 'jpg';
+    var path = 'companies/' + cid + '/' + kind + '-' + rid() + '.' + ext;
+    var r = await sb.storage.from('company-media').upload(path, b, { contentType: b.type || 'image/jpeg' }); if (r.error) throw new Error(friendly(r.error));
+    return path;
+  }
+  function serial(slug, job) { var p = (CPG.q[slug] || Promise.resolve()).then(job).catch(toastErr); CPG.q[slug] = p; return p; }
+  window.dxLive.companySaved = function (slug) { return CPG.q[slug] || Promise.resolve(); };          /* tests and the editor wait for a company's saves */
+  /* a product as the page shows it: the catalogue fields, the photo from company-media, else the drawn packshot */
+  function prodFrom(p) {
+    var line = [p.ingredient ? 'Active ingredient: ' + txt(p.ingredient) : '', txt(p.strength)].filter(Boolean).join(' · ');
+    return { id: p.id != null ? 'cp' + p.id : 'p' + String(p.name).replace(/\W+/g, '').slice(0, 10), _id: p.id, name: txt(p.name), cat: txt(p.category) || ROLE[p.role] || 'Finished dosage',
+      kind: PACKS.indexOf(p.pack) >= 0 ? p.pack : 'box', desc: txt(p.description) || line, moq: txt(p.moq), price: txt(p.price), currency: p.currency || null, img: mediaUrl(p.image) || undefined, _img: p.image || null, specs: [] };
+  }
+  function prodRow(p) { return { id: p.id, name: p.name, ingredient: p.active_ingredient, ingredient_ar: p.active_ingredient_ar, form: p.dosage_form, strength: p.strength, role: p.role,
+    category: p.category, pack: p.pack, description: p.description, moq: p.moq, price: p.price, currency: p.currency, image: p.image_path }; }
+  function coCertsOf(slug) { return CPG.coCerts[slug] || []; }
+  var coFromC1 = coFrom;
+  coFrom = function (c) {
+    var o = coFromC1(c), pr = c.profile || {}, cc = coCertsOf(c.slug);
+    o.products = (c.products || []).map(prodFrom);
+    o.logo = mediaUrl(c.logo_url) || null; o.cover = mediaUrl(pr.cover) || null;
+    if (cc.length) { o.certs = cc.filter(function (x) { return x.checked; }).map(function (x) { return txt(x.name); });
+      o.certsPending = cc.filter(function (x) { return !x.checked; }).map(function (x) { return { name: txt(x.name), _id: x.id, at: 0 }; }); }
+    return o;
+  };
+  /* a site: its capabilities and its free months ('YYYY-MM' in the database; the page counts months from now) */
+  function monthIdx(ym) { var d = new Date(), m = /^(\d{4})-(\d{2})$/.exec(String(ym)); return m ? (+m[1] - d.getFullYear()) * 12 + (+m[2] - 1) - d.getMonth() : -1; }
+  function monthOf(i) { var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + (+i)); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
+  function certSrc(t) { var chk = t.checked || t.checked_at; return (t.source === 'public_list' ? 'Public industry list' : t.doc || t.source === 'document' ? 'Certificate document' : 'Company') + (chk ? ' · checked by Drugbox ' + String(chk).slice(0, 10) : ' · not yet checked by Drugbox'); }
+  var siteFromC1 = siteFrom;
+  siteFrom = function (s) {
+    var o = siteFromC1(s), forms = s.forms || s.dosage_forms || [];
+    o._id = s.id;
+    o.certs = (s.certs || []).map(function (t) { var chk = t.checked || t.checked_at; CPG.seen['c' + t.id] = 1;
+      return { _id: t.id, name: txt(t.name), expiry: ym(t.expiry), src: certSrc(t), checked: chk ? String(chk).slice(0, 10) : '', ok: !!chk }; });
+    var slots = (Array.isArray(s.free_slots) ? s.free_slots : []).map(monthIdx).filter(function (i) { return i >= 0 && i < 6; });
+    if (forms.length) o.cap = { forms: forms.map(txt), minBatch: txt(s.min_batch), capacity: txt(s.capacity), slots: slots };
+    CPG.seen['s' + s.id] = 1;
+    return o;
+  };
+  /* company-wide certificates (no site): a "Company-wide" entry at the end of the Sites list, so they show like every other one */
+  function withCompanyCerts(slug, list) {
+    var cc = coCertsOf(slug); if (!cc.length) return list;
+    var raw = CO.raw[slug] || {};
+    return list.concat([{ id: 'co', name: 'Company-wide', type: 'Head office', city: txt(raw.city), gov: txt(raw.governorate), certs: cc.map(function (t) { var chk = t.checked; CPG.seen['c' + t.id] = 1;
+      return { _id: t.id, name: txt(t.name), expiry: ym(t.expiry), src: certSrc(t), checked: chk ? String(chk).slice(0, 10) : '', ok: !!chk }; }) }]);
+  }
+  async function loadCoCerts(slug) { var r = await sb.rpc('company_certs_public', { p_slug: slug }); if (r.error) throw r.error; CPG.coCerts[slug] = r.data || []; CPG.coCertsAt[slug] = Date.now();
+    var raw = CO.raw[slug], l = live(slug); if (raw && raw.id && l) { var f = coFrom(raw); l.certs = f.certs; l.certsPending = f.certsPending; } }
+  var loadSitesC1 = loadSites;
+  loadSites = async function (slug) {
+    await Promise.all([loadSitesC1(slug), loadCoCerts(slug)]);
+    window.dxLiveSites[slug] = withCompanyCerts(slug, window.dxLiveSites[slug] || []); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
+  };
+  /* the directory's cards: the sites of a page of companies, with their capabilities (for "Can manufacture" and the capacity line) */
+  sitesFor = function (rows) {
+    var me = ME_UUID, want = rows.filter(function (c) { return c && c.id && okSlug(c.slug) && !(CO.sitesAt[c.slug] && Date.now() - CO.sitesAt[c.slug] < 60000); }); if (!want.length) return;
+    var slugOf = {}; want.forEach(function (c) { slugOf[c.id] = c.slug; });
+    sb.from('company_sites').select('id,company_id,name,type,city,governorate,dosage_forms,min_batch,capacity,free_slots,certs:site_certificates!site_certificates_site_id_fkey(id,name,expiry,source,checked_at)')
+      .in('company_id', want.map(function (c) { return c.id; })).order('id').limit(1000).then(function (r) {
+      if (r.error || me !== ME_UUID) { if (r.error) console.error(r.error); return; }
+      var by = {}; want.forEach(function (c) { by[c.slug] = []; });
+      (r.data || []).forEach(function (s) { var sl = slugOf[s.company_id]; if (sl) by[sl].push(siteFrom(s)); });
+      window.dxLiveSites = window.dxLiveSites || {}; var now = Date.now();
+      Object.keys(by).forEach(function (sl) { window.dxLiveSites[sl] = withCompanyCerts(sl, by[sl]); CO.sitesAt[sl] = now; });
+      window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; redrawDir();
+    });
+  };
+  /* "Can manufacture" / "Free from" and the capacity line read a company's capabilities: in the live app, its sites' */
+  if (window.dxDir2 && window.dxDir2.capOf && !window.dxDir2.capOf.__live) { var capOfDemo = window.dxDir2.capOf;
+    window.dxDir2.capOf = function (co) { if (!ME_UUID || !co || !co._id) return capOfDemo.apply(this, arguments);
+      var ss = (window.dxLiveSites || {})[co.slug] || [], forms = [], slots = [], mb = '', capy = '';
+      ss.forEach(function (s) { if (!s.cap) return; s.cap.forms.forEach(function (f) { if (forms.indexOf(f) < 0) forms.push(f); }); s.cap.slots.forEach(function (i) { if (slots.indexOf(i) < 0) slots.push(i); }); mb = mb || s.cap.minBatch; capy = capy || s.cap.capacity; });
+      return forms.length ? { forms: forms, minBatch: mb, capacity: capy, slots: slots.sort(function (a, b) { return a - b; }) } : null; };
+    window.dxDir2.capOf.__live = true; }
+  /* the hub lists a live company's sites as the database has them: no sample capabilities are added to a site without any */
+  if (window.dxHubData && window.dxHubData.sitesOf && !window.dxHubData.sitesOf.__live) { var sitesOfDemo = window.dxHubData.sitesOf;
+    window.dxHubData.sitesOf = function (co) { var ls = ME_UUID && co && co._id && (window.dxLiveSites || {})[co.slug]; return ls ? JSON.parse(JSON.stringify(ls)) : sitesOfDemo.apply(this, arguments); };
+    window.dxHubData.sitesOf.__live = true; }
+  /* a certificate is "checked" when Drugbox has checked its document — the date it did (never the company's own status) */
+  if (window.dxHubData && window.dxHubData.credentials && !window.dxHubData.credentials.__live) { var credDemo = window.dxHubData.credentials;
+    window.dxHubData.credentials = function (co) { var out = credDemo.apply(this, arguments); if (!ME_UUID || !co || !co._id) return out;
+      return out.map(function (k) { if (/^Member:/.test(k.name)) return k; return Object.assign({}, k, { checked: !!k.ok }); }); };
+    window.dxHubData.credentials.__live = true; }
+  /* the files a person chose for a certificate (Workspace → Sites → Certificate; the editor's "Send for verification") */
+  document.addEventListener('click', function (e) {
+    var ok = e.target.closest && e.target.closest('.dbk-ov [data-a=ok]'), ov = ok && ok.closest('.dbk-ov');
+    if (ov && ov.querySelector('#wcF')) { var f = ov.querySelector('#wcF').files[0]; if (f) CPG.siteFiles.push({ name: ov.querySelector('#wcN').value, file: f }); }
+    if (e.target.closest && e.target.closest('#dxEditor #edCAdd')) { var cf = document.getElementById('edCFile'), cn = document.getElementById('edCName'); if (cf && cf.files[0] && cn && cn.value) CPG.coFiles.push({ name: cn.value, file: cf.files[0] }); }
+  }, true);
+  function takeFile(list, name) { var i = list.findIndex(function (x) { return x.name === name; }); return i < 0 ? null : list.splice(i, 1)[0].file; }
+  async function certFile(cid, file) { return upDoc('documents', 'verification/' + cid + '/cert-' + rid() + '.' + extOf(file), file); }
+  function expiryOf(m) { var x = /^(\d{4})-(\d{2})/.exec(String(m || '')); if (!x) return null; var d = new Date(Date.UTC(+x[1], +x[2], 0)); return d.toISOString().slice(0, 10); }   /* the month's last day */
+  /* Workspace → Sites: the list the hub saved, compared with the database (sites and their certificates) */
+  async function saveSitesLive(slug, raw, sites) {
+    var cid = raw.id, list = (sites || []).filter(function (s) { return s && s.id !== 'co'; }), coEntry = (sites || []).find(function (s) { return s && s.id === 'co'; });
+    var cur = await sb.from('company_sites').select('id,name,type,city,governorate,dosage_forms,min_batch,capacity,free_slots,certs:site_certificates!site_certificates_site_id_fkey(id,name,expiry)').eq('company_id', cid);
+    if (cur.error) throw cur.error;
+    var byId = {}; (cur.data || []).forEach(function (s) { byId[s.id] = s; });
+    var keepS = {}, keepC = {};
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i], m = /^s(\d+)$/.exec(String(s.id)), sid = m ? +m[1] : CPG.tmp[s.id] || null, cap = s.cap && s.cap.forms && s.cap.forms.length ? s.cap : null;
+      var row = { name: String(s.name || '').slice(0, 120), type: TYPEK[s.type] || 'factory', city: s.city || null, governorate: s.gov || null, dosage_forms: cap ? cap.forms : [],
+        min_batch: cap ? cap.minBatch || null : null, capacity: cap ? cap.capacity || null : null, free_slots: cap ? (cap.slots || []).map(monthOf) : [] };
+      if (sid && byId[sid]) { var o = byId[sid], diff = {};
+        Object.keys(row).forEach(function (k) { if (JSON.stringify(row[k] == null ? null : row[k]) !== JSON.stringify(o[k] == null ? null : o[k])) diff[k] = row[k]; });
+        if (Object.keys(diff).length) { var u = await sb.from('company_sites').update(diff).eq('id', sid).select('id'); if (u.error) throw u.error; if (!(u.data || []).length) throw new Error('Only the page’s owner or admins can change its sites'); } }
+      else if (!sid) { var ins = await sb.from('company_sites').insert(Object.assign({ company_id: cid }, row)).select('id').single(); if (ins.error) throw ins.error; sid = ins.data.id; CPG.tmp[s.id] = sid; byId[sid] = { id: sid, certs: [] }; }
+      else continue;                                                    /* removed meanwhile (another tab, a team mate): not made again */
+      keepS[sid] = 1;
+      await saveCerts(cid, sid, s.certs || [], (byId[sid] || {}).certs || [], keepC, CPG.siteFiles);
+    }
+    if (coEntry) await saveCerts(cid, null, coEntry.certs || [], coCertsOf(slug), keepC, CPG.coFiles);
+    else { var gone = coCertsOf(slug).filter(function (t) { return CPG.seen['c' + t.id]; }).map(function (t) { return t.id; });   /* the "Company-wide" entry was removed: its certificates go */
+      if (gone.length) { var dc = await sb.from('site_certificates').delete().in('id', gone); if (dc.error) throw dc.error; } }
+    var drop = (cur.data || []).filter(function (s) { return !keepS[s.id] && CPG.seen['s' + s.id]; }).map(function (s) { return s.id; });   /* only sites this person saw are removed */
+    if (drop.length) { var d = await sb.from('company_sites').delete().in('id', drop).select('id'); if (d.error) throw d.error; }
+  }
+  async function saveCerts(cid, sid, certs, dbCerts, keep, files) {
+    var byId = {}; (dbCerts || []).forEach(function (t) { byId[t.id] = t; });
+    for (var j = 0; j < certs.length; j++) { var k = certs[j], tid = k._id;
+      if (tid && byId[tid]) { keep[tid] = 1; var ex = expiryOf(k.expiry);   /* compared by month: the page shows months, a day set elsewhere is kept */
+        if (String(k.name) !== String(byId[tid].name) || String(k.expiry || '').slice(0, 7) !== String(byId[tid].expiry || '').slice(0, 7)) { var u = await sb.from('site_certificates').update({ name: k.name, expiry: ex }).eq('id', tid); if (u.error) throw u.error; } }
+      else if (!tid) { var file = takeFile(files, k.name), row = { site_id: sid, company_id: cid, name: String(k.name).slice(0, 80), expiry: expiryOf(k.expiry) };
+        if (file) row.file_path = await certFile(cid, file);
+        var ins = await sb.from('site_certificates').insert(row).select('id').single(); if (ins.error) throw ins.error; k._id = ins.data.id; keep[ins.data.id] = 1; }
+    }
+    var gone = (dbCerts || []).filter(function (t) { return !keep[t.id] && CPG.seen['c' + t.id]; }).map(function (t) { return t.id; });
+    if (gone.length) { var d = await sb.from('site_certificates').delete().in('id', gone); if (d.error) throw d.error; }
+  }
+  /* the editor's products: compared with the database rows the editor started from; a photo chosen is uploaded first */
+  async function saveProducts(slug, raw, list, before) {
+    var cid = raw.id, cur = await sb.from('company_products').select('*').eq('company_id', cid); if (cur.error) throw cur.error;
+    var byId = {}; (cur.data || []).forEach(function (p) { byId[p.id] = p; });
+    var known = {}; (before || []).forEach(function (p) { if (p && p._id) known[p._id] = 1; });
+    var keep = {};
+    for (var i = 0; i < (list || []).length; i++) { var p = list[i], m = /^cp(\d+)$/.exec(String(p.id)), pid = m ? +m[1] : null;
+      var row = { name: String(p.name || '').slice(0, 160), category: p.cat || null, pack: PACKS.indexOf(p.kind) >= 0 ? p.kind : null, description: p.desc || null, moq: p.moq || null,
+        price: p.price || null, currency: currencyOf(p.price), sort_order: i };
+      if (p.img && /^data:image\//.test(p.img)) row.image_path = await upMedia(cid, 'product', p.img);
+      else if (!p.img) row.image_path = null;
+      if (pid && byId[pid]) { var o = byId[pid], diff = {}; keep[pid] = 1;
+        Object.keys(row).forEach(function (k) { if ((row[k] == null ? null : row[k]) !== (o[k] == null ? null : o[k])) diff[k] = row[k]; });
+        if (Object.keys(diff).length) { var u = await sb.from('company_products').update(diff).eq('id', pid).select('id'); if (u.error) throw u.error; if (!(u.data || []).length) throw new Error('Only the page’s owner, admins or regulatory can change its products'); } }
+      else if (!pid) { var ins = await sb.from('company_products').insert(Object.assign({ company_id: cid, role: /Toll|Service/.test(p.cat) ? 'manufacturer' : /API|Excipient|Packaging/.test(p.cat) ? 'supplier' : 'manufacturer' }, row)).select('id').single();
+        if (ins.error) throw ins.error; keep[ins.data.id] = 1; }
+    }
+    var drop = Object.keys(byId).filter(function (id) { return !keep[id] && known[id]; }).map(Number);   /* only products the editor showed are removed */
+    if (drop.length) { var d = await sb.from('company_products').delete().in('id', drop); if (d.error) throw d.error; }
+    await reloadProducts(slug);
+  }
+  async function reloadProducts(slug) {
+    var raw = CO.raw[slug]; if (!raw || !raw.id) return;
+    var r = await sb.from('company_products').select('*').eq('company_id', raw.id).order('sort_order').order('id'); if (r.error) throw r.error;
+    raw.products = (r.data || []).map(prodRow); var l = live(slug); if (l) l.products = raw.products.map(prodFrom);
+    window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
+  }
+  /* the editor's "Send for verification" (company-wide certificates) */
+  async function saveCoCerts(slug, raw, pend) {
+    var list = (pend || []).filter(function (x) { return x && !x._id; });
+    for (var i = 0; i < list.length; i++) { var x = list[i], file = takeFile(CPG.coFiles, x.name), row = { site_id: null, company_id: raw.id, name: String(x.name).slice(0, 80) };
+      if (file) row.file_path = await certFile(raw.id, file);
+      var ins = await sb.from('site_certificates').insert(row); if (ins.error) throw ins.error; }
+    if (list.length) await loadSites(slug);
+  }
+  /* page edits (B-02): the page's fields as before (C1), plus the Arabic name, logo and cover, products, certificates, sites */
+  PAGE_FIELDS.nameAr = 'name_ar';
+  var persistEditsC1 = persistEdits;
+  persistEdits = async function (edits) {
+    for (var slug0 in edits) { (function (slug, e) {
+      serial(slug, async function () {
+        var raw = CO.raw[slug]; if (raw && raw.pending) { try { await raw.pending; } catch (x) {} if (CO.alias[slug] && !mineAt(slug)) slug = CO.alias[slug]; raw = CO.raw[slug]; }
+        if (!raw || !raw.id) return;
+        var l = live(slug), before = l ? (l.products || []).slice() : [], one = {}, base = {};
+        Object.keys(e).forEach(function (k) { if (['products', 'logo', 'cover', 'certsPending', 'sites', 'team', 'certs'].indexOf(k) < 0) base[k] = e[k]; });
+        if (e.sites) { window.dxLiveSites[slug] = JSON.parse(JSON.stringify(e.sites)); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; }   /* shown at once; the database's version follows */
+        one[slug] = base; await persistEditsC1(one);
+        var media = {}, prof = null;
+        if ('logo' in e && e.logo && /^data:image\//.test(e.logo)) media.logo_url = await upMedia(raw.id, 'logo', e.logo); else if ('logo' in e && !e.logo && raw.logo_url) media.logo_url = null;
+        if ('cover' in e && e.cover && /^data:image\//.test(e.cover)) { prof = Object.assign({}, raw.profile || {}); prof.cover = await upMedia(raw.id, 'cover', e.cover); }
+        else if ('cover' in e && !e.cover && (raw.profile || {}).cover) { prof = Object.assign({}, raw.profile || {}); delete prof.cover; }
+        if (prof) media.profile = prof;
+        if (Object.keys(media).length) { var r = await sb.from('companies').update(media).eq('id', raw.id).select(); if (r.error) throw r.error; if (r.data && r.data[0]) Object.assign(raw, r.data[0]); if (l) { var f = coFrom(raw); l.logo = f.logo; l.cover = f.cover; } }
+        if ('products' in e) await saveProducts(slug, raw, e.products, before);
+        if (e.certsPending && e.certsPending.length) await saveCoCerts(slug, raw, e.certsPending);
+        if (e.sites) { try { await saveSitesLive(slug, raw, e.sites); } finally { await loadSites(slug).catch(toastErr); } }
+        if (l) l.updatedAt = Date.now();
+      }).then(function () { rerenderCompanies(); });
+    })(slug0, edits[slug0] || {}); }
+  };
+  /* my own pages carry their products with ids (the editor changes those rows), whether or not the directory has loaded */
+  var loadMineC1 = loadMine;
+  loadMine = async function () {
+    await loadMineC1(); var ids = Object.keys(CO.roles).map(Number); if (!ids.length) return;
+    var r = await sb.from('company_products').select('*').in('company_id', ids).order('sort_order').order('id').limit(1000); if (r.error) throw r.error;
+    var by = {}; (r.data || []).forEach(function (p) { (by[p.company_id] = by[p.company_id] || []).push(prodRow(p)); });
+    ids.forEach(function (id) { var slug = CO.byId[id], raw = slug && CO.raw[slug]; if (!raw) return; raw.products = by[id] || []; var l = live(slug); if (l) l.products = raw.products.map(prodFrom); });
+    window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
+  };
+  onReset(function () { CPG.q = {}; CPG.tmp = {}; CPG.seen = {}; CPG.siteFiles = []; CPG.coFiles = []; CPG.coCerts = {}; CPG.coCertsAt = {}; });
+  /* Admin → Review → Site certificates: the document (signed link) and a rejection with the reason (review_certificate) */
+  var modLoadB = window.dxModeration.load, modDecideB = window.dxModeration.decide;
+  window.dxModeration.load = async function () {
+    var d = await modLoadB(), today = new Date().toISOString().slice(0, 10);
+    var r = await sb.from('site_certificates').select('id,name,expiry,file_path,st:company_sites!site_certificates_site_id_fkey(name),co:companies(name)').is('checked_at', null).or('expiry.is.null,expiry.gte.' + today).order('created_at').limit(100);
+    if (r.error) throw r.error;
+    d.certs = (r.data || []).map(function (c) { return { id: c.id, company: c.co && c.co.name, site: c.st ? c.st.name : 'Company-wide', name: c.name, expiry: c.expiry ? String(c.expiry).slice(0, 7) : '',
+      docs: c.file_path ? [{ path: c.file_path, bucket: 'documents', label: 'Certificate' }] : [] }; });
+    return d;
+  };
+  window.dxModeration.decide = async function (kind, id, value, note) {
+    if (kind !== 'certs') return modDecideB(kind, id, value, note);
+    var r = await sb.rpc('review_certificate', { p_id: +id, p_ok: value !== 'rejected', p_reason: note || null }); if (r.error) throw new Error(friendly(r.error));
+    refreshCompanies().catch(function () {}); return true;
+  };
+  /* Drugbox's decision on a certificate reaches the company's owner (0050 keeps the data; the sentence is written here) */
+  ICON.cert_checked = '📜'; ICON.cert_rejected = '📜';
+  var notifFromB = notifFrom;
+  notifFrom = function (n) {
+    var o = notifFromB(n), d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return o;
+    if (n.type === 'cert_checked') { o.text = esc2('Drugbox checked your ' + String(d.name || 'certificate') + (d.site ? ' (' + String(d.site) + ')' : '') + ' — it now shows as checked on your page.'); o.uid = SYS_UID; }
+    if (n.type === 'cert_rejected') { o.text = esc2('Drugbox could not accept your ' + String(d.name || 'certificate') + (d.site ? ' (' + String(d.site) + ')' : '') + ' — reason: ' + String(d.reason || '') + '. Add it again with a readable document.'); o.uid = SYS_UID; }
+    return o;
+  };
+  /* ===== /AREA business: company page ===== */
+
+  /* ===== AREA business: company team — invitations, join requests, roles, who receives what (B-04; 0051) =====
+     Team in the workspace is the company's company_members rows (and invitations to addresses without an account); what the
+     hub saves there is compared with them: a new person → company_invite(), a role → the row, "Show me / Hide me" → the
+     person's own row, × → the row (or the invitation). Who receives what follows the roles in the database (0051). */
+  var TEAM = { by: {}, at: {}, p: {} };
+  var ROLEUI = { owner: 'Admin', admin: 'Admin', management: 'Management', sales: 'Sales', quality: 'Quality', regulatory: 'Regulatory', hr: 'HR', member: 'Management' };
+  function roleDb(r) { return { 'Admin': 'admin', 'Management': 'management', 'Sales': 'sales', 'Quality': 'quality', 'Regulatory': 'regulatory', 'HR': 'hr' }[r] || null; }
+  function loadTeam(slug) {
+    var raw = CO.raw[slug], me = ME_UUID; if (!raw || !raw.id || !CO.roles[raw.id]) return Promise.resolve(null);
+    if (TEAM.p[slug]) return TEAM.p[slug];
+    var admin = CO.roles[raw.id] === 'owner' || CO.roles[raw.id] === 'admin';
+    return (TEAM.p[slug] = Promise.all([sb.from('company_members').select('user_id, role, accepted, show_public, pending, created_at').eq('company_id', raw.id).order('created_at').limit(500),
+                                        admin ? sb.from('company_invites').select('id, email, name, role').eq('company_id', raw.id).order('created_at').limit(100) : Promise.resolve({ data: [] })]).then(async function (q) {
+      if (q[0].error) throw q[0].error; if (me !== ME_UUID) return null;
+      var rows = q[0].data || [], ids = rows.map(function (m) { return m.user_id; }).filter(function (u) { return u !== ME_UUID; });
+      if (ids.length) { var pr = await sb.from('profiles').select(PCOLS).in('id', ids); (pr.data || []).forEach(putUser); }
+      var name = function (u) { if (u === ME_UUID) return window.ME.name; var x = (window.USERS || []).find(function (y) { return y.id === aid(u); }); return x ? x.name : 'Drugbox member'; };
+      var list = rows.map(function (m) { return { uid: aid(m.user_id), _uid: m.user_id, name: name(m.user_id), role: ROLEUI[m.role] || 'Management', _role: m.role, consent: !!(m.accepted && m.show_public), pending: m.pending || null }; });
+      (q[1].data || []).forEach(function (i) { list.push({ uid: null, _inv: i.id, name: txt(i.name) || i.email, email: i.email, role: ROLEUI[i.role] || 'Sales', consent: false, pending: 'invite' }); });
+      TEAM.by[slug] = list; TEAM.at[slug] = Date.now(); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; return list;
+    }).finally(function () { delete TEAM.p[slug]; }));
+  }
+  if (window.dxHubData && window.dxHubData.teamOf && !window.dxHubData.teamOf.__live) { var teamOfDemo = window.dxHubData.teamOf;
+    window.dxHubData.teamOf = function (co) { if (!ME_UUID || !co || !co._id) return teamOfDemo.apply(this, arguments);
+      var t = TEAM.by[co.slug]; if (t) return JSON.parse(JSON.stringify(t));
+      if (CO.roles[co._id]) loadTeam(co.slug).then(function (l) { if (l) rerenderCompanies(); }).catch(toastErr);
+      return [{ uid: window.ME.id, _uid: ME_UUID, name: window.ME.name, role: ROLEUI[CO.roles[co._id]] || 'Admin', consent: false, pending: null, _loading: true }]; };
+    window.dxHubData.teamOf.__live = true; }
+  async function saveTeamLive(slug, raw, team) {
+    var before = TEAM.by[slug] || [], seenU = {}, seenI = {}, changed = false, warn = null, left = false;
+    for (var i = 0; i < (team || []).length; i++) { var m = team[i];
+      if (m._uid) { seenU[m._uid] = 1; var o = before.find(function (x) { return x._uid === m._uid; }); if (!o) continue;
+        if (m.role !== o.role) { if (o._role === 'owner') warn = 'The page’s owner stays its owner';
+          else { var r = await sb.from('company_members').update({ role: roleDb(m.role) }).eq('company_id', raw.id).eq('user_id', m._uid).select('role'); if (r.error) throw r.error; if (!(r.data || []).length) throw new Error('Only the page’s owner or admins change roles'); changed = true; } }
+        if (m.consent !== o.consent && m._uid === ME_UUID) { var c = await sb.from('company_members').update({ show_public: !!m.consent }).eq('company_id', raw.id).eq('user_id', ME_UUID).select('show_public'); if (c.error) throw c.error; changed = true; } }
+      else if (m._inv) { seenI[m._inv] = 1; var oi = before.find(function (x) { return x._inv === m._inv; });
+        if (oi && m.role !== oi.role) { var re = await sb.rpc('company_invite', { p_company: raw.id, p_email: oi.email, p_name: oi.name, p_role: roleDb(m.role) }); if (re.error) throw re.error; changed = true; } }
+      else if (m.email) { var inv = await sb.rpc('company_invite', { p_company: raw.id, p_email: m.email, p_name: m.name, p_role: roleDb(m.role) || 'sales' }); if (inv.error) throw inv.error; changed = true; }
+    }
+    for (var j = 0; j < before.length; j++) { var b = before[j];
+      if (b._uid && !seenU[b._uid]) { var d = await sb.from('company_members').delete().eq('company_id', raw.id).eq('user_id', b._uid).select('user_id'); if (d.error) throw d.error; if (!(d.data || []).length) throw new Error('Only the page’s owner or admins can remove someone'); changed = true; if (b._uid === ME_UUID) left = true; }
+      if (b._inv && !seenI[b._inv]) { var di = await sb.from('company_invites').delete().eq('id', b._inv); if (di.error) throw di.error; changed = true; } }
+    if (warn) setTimeout(function () { window.toast(warn); }, 600);
+    if (changed) { CC.at[slug] = 0; await loadContacts(slug).catch(function () {}); if (left) { delete TEAM.by[slug]; await loadMine(); } else await loadTeam(slug); }
+  }
+  var persistEditsT = persistEdits;
+  persistEdits = async function (edits) {
+    var rest = {};
+    Object.keys(edits || {}).forEach(function (slug) { var e = edits[slug] || {}, raw = CO.raw[slug];
+      if (Array.isArray(e.team) && raw && raw.id) { serial(slug, function () { return saveTeamLive(slug, raw, e.team).catch(function (x) { toastErr(x); return loadTeam(slug); }); }).then(rerenderCompanies); }
+      var c = Object.assign({}, e); delete c.team; rest[slug] = c; });
+    return persistEditsT(rest);
+  };
+  window.dxTeam = {
+    join: async function (slug, role, note) { var raw = CO.raw[slug]; if (!raw || !raw.id) throw new Error('This company is not on Drugbox yet');
+      var r = await sb.rpc('company_join_request', { p_company: raw.id, p_role: roleDb(role) || 'management', p_note: note || null }); if (r.error) throw new Error(friendly(r.error)); return true; },
+    decide: async function (slug, m, ok) { var raw = CO.raw[slug]; if (!raw || !raw.id || !m || !m._uid) return false;
+      var r = await sb.rpc('company_join_decide', { p_company: raw.id, p_user: m._uid, p_ok: !!ok, p_role: roleDb(m.role) }); if (r.error) throw new Error(friendly(r.error));
+      CC.at[slug] = 0; await loadContacts(slug).catch(function () {}); await loadTeam(slug); return true; }
+  };
+  /* the workspace's Team is read when the workspace opens */
+  if (window.dxHub && window.dxHub.workspace && !window.dxHub.workspace.__team) { var wsT = window.dxHub.workspace;
+    window.dxHub.workspace = function (slug) { var r = wsT.apply(this, arguments); if (ME_UUID && CO.raw[slug] && !(TEAM.at[slug] && Date.now() - TEAM.at[slug] < 30000)) loadTeam(slug).then(function (l) { if (l) rerenderCompanies(); }).catch(toastErr); return r; };
+    window.dxHub.workspace.__team = true; }
+  /* invitations in the notifications: Accept / Decline (the approved connection-request buttons) */
+  ICON.company_invite = '🏢'; ICON.company_invite_answer = '🏢'; ICON.company_join_request = '🏢'; ICON.company_join_answer = '🏢';
+  var ROLEWORD = { admin: 'an admin', management: 'management', sales: 'sales', quality: 'quality', regulatory: 'regulatory', hr: 'HR', member: 'a team member' };
+  var notifFromT = notifFrom;
+  notifFrom = function (n) {
+    var o = notifFromT(n), d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return o;
+    var who = String(n.actor ? n.actor.name : 'Someone'), co = String(d.company || (n.company && n.company.name) || 'a company'), rl = ROLEWORD[d.role] || 'a team member';   /* one sentence per notice: the Arabic interface translates it whole */
+    if (n.type === 'company_invite') o.text = esc2(who + ' invited you to join ' + co + ' on Drugbox as ' + rl + '.') +
+      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn-p" style="padding:5px 14px;font-size:12px" data-cinv="' + (+n.company_id) + '" data-ok="1">Accept</button><button class="btn-ghost" style="padding:5px 14px;font-size:12px" data-cinv="' + (+n.company_id) + '" data-ok="0">Decline</button></div>';
+    if (n.type === 'company_invite_answer') o.text = esc2(who + (d.accepted ? ' accepted your invitation to ' : ' declined your invitation to ') + co + '.');
+    if (n.type === 'company_join_request') o.text = esc2(who + ' asked to join ' + co + ' as ' + rl + ' — answer in Workspace → Team.');
+    if (n.type === 'company_join_answer') o.text = esc2(d.accepted ? 'You are now on the team of ' + co + ' (' + rl + ').' : co + ' did not accept your request to join the team.');
+    return o;
+  };
+  document.addEventListener('click', function (e) {
+    var b = ME_UUID && e.target.closest && e.target.closest('[data-cinv]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation(); var yes = b.dataset.ok === '1'; b.disabled = true;
+    sb.rpc('company_invite_respond', { p_company: +b.dataset.cinv, p_accept: yes }).then(function (r) {
+      if (r.error) { b.disabled = false; return toastErr(r.error); }
+      window.toast(yes ? 'You joined the team — the company is in My companies' : 'Invitation declined');
+      return Promise.all([loadMine(), loadNotifs()]).then(function () { if (onPage('notifs')) window.renderNotifs(document.getElementById('content')); try { window.dxDir && window.dxDir.render && document.body.getAttribute('data-page') === 'companies' && window.dxDir.render(); } catch (x) {} });
+    }).catch(toastErr);
+  }, true);
+  function onPage(p) { return document.body.getAttribute('data-page') === p; }
+  onReset(function () { TEAM.by = {}; TEAM.at = {}; TEAM.p = {}; });
+  /* ===== /AREA business: company team ===== */
+
+
   /* ═══════════════ E3 — training: courses and enrollments from the database (the approved course card is the template) ═══════════════ */
   var TRN = { tpl: null, courses: [], mine: {}, at: 0, loading: false };
   async function loadTraining() {
