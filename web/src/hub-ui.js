@@ -411,4 +411,19 @@
   C.onRender('hub-market', marketListings);
   C.onRender('hub-deals-button', dealsButton);
   C.onRender('hub-home-matches', homeMatches);
+  /* Notifications: one switch for the e-mails about requests, deals, payments and your company (B-13). Demo: this browser;
+     live: notification_prefs (the adapter replaces the service). Likes, comments and follows never go by e-mail. */
+  if (!window.dxMailPref) window.dxMailPref = {
+    get: function () { try { return localStorage.getItem('dx_mailpref') !== 'off'; } catch (e) { return true; } },
+    set: function (on) { try { localStorage.setItem('dx_mailpref', on ? 'on' : 'off'); } catch (e) {} return Promise.resolve(true); }
+  };
+  function mailPref() {
+    if (document.body.getAttribute('data-page') !== 'notifs') return; var list = document.querySelector('#content .notif-list'); if (!list || list.querySelector('.dx-mailpref')) return;
+    var head = list.firstElementChild; if (!head) return;
+    head.insertAdjacentHTML('afterend', '<label class="dx-mailpref" style="display:flex;align-items:center;gap:8px;margin:-2px 0 10px;font-size:12.5px;color:#65676b;cursor:pointer"><input type="checkbox" id="dxMailPref"' + (window.dxMailPref.get() ? ' checked' : '') + '> <span>E-mail me about requests, deals, payments and my company</span></label>');
+    var sp = list.querySelector('.dx-mailpref span'); if (sp && window.dxI18nAdopt) window.dxI18nAdopt(sp.firstChild);
+  }
+  document.addEventListener('change', function (e) { if (!e.target || e.target.id !== 'dxMailPref') return; var on = e.target.checked, box = e.target;
+    window.dxMailPref.set(on).then(function (ok) { if (ok === false) { box.checked = !on; return; } D.toast && D.toast(on ? 'E-mails on — we will write when something needs you' : 'E-mails off — notifications stay here'); }); }, true);
+  C.onRender('hub-mail-pref', mailPref);
 })();

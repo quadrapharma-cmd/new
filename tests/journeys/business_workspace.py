@@ -265,6 +265,11 @@ def shared_inbox(j):
     with j.step('Workspace → Activity lists the real events (edits, deals, members) with names and dates after reload'):
         reopen(j, pg); t = workspace(j, pg, 'Activity|%s' % (ar('Activity') or 'النشاط'))
         j.check(re.search(r'quote|Quote|عرض', t) and re.search(r'\d{1,2} \w{3}|\d{4}-\d{2}-\d{2}|ago|منذ', t), 'the Activity tab does not list the quote just sent with its date')
+        if j.live:
+            j.check(j.sql1("select count(*) from public.company_activity a where a.company_id=%s and a.actor='%s' and a.text ~* 'quote'" % (me['co']['id'], me['id'])) not in ('', '0'),
+                    'the Activity entry is not in company_activity with its author (kept in this browser only)')
+            mt = mate['page']; j.reload(mt); t2 = workspace(j, mt, 'Activity|%s' % (ar('Activity') or 'النشاط'))
+            j.check('Inbox Owner' in t2 and re.search(r'quote|Quote', t2), 'the team mate does not see the same Activity log (with the author\'s name)')
 
 @journey('J-BUSINESS-24')
 def reply_to_reviews(j):

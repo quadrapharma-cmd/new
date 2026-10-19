@@ -3065,6 +3065,48 @@
   onReset(function () { PSP.docs = {}; PSP.at = {}; PSP.busy = {}; });
   /* ===== /AREA business: compliance documents ===== */
 
+  /* ===== AREA business: the team's activity log (B-19; 0059) =====
+     Workspace → Activity reads company_activity (the team only, newest first, the author's name from the database); what the
+     interface logs (page edits, deals answered, team changes) is written there as the signed-in member — never kept in this browser. */
+  var ACT = { list: {}, at: {}, busy: {} };
+  function actFrom(x) { return { at: Date.parse(x.created_at), who: txt(x.ap && x.ap.name) || 'Team', text: txt(x.text) }; }
+  async function loadActivity(slug) {
+    var raw = CO.raw[slug], me = ME_UUID; if (!raw || !raw.id) return;
+    var r = await sb.from('company_activity').select('text, created_at, ap:profiles!company_activity_actor_fkey(name)').eq('company_id', raw.id).order('created_at', { ascending: false }).limit(200);
+    if (r.error) throw r.error; if (me !== ME_UUID) return; ACT.list[slug] = (r.data || []).map(actFrom); ACT.at[slug] = Date.now();
+  }
+  var hookAct = window.dxStoreHook;
+  window.dxStoreHook = function (k, v) {
+    if (ME_UUID && /^activity_/.test(k)) {
+      var slug = k.slice(9), raw = CO.raw[slug], team = raw && raw.id && CO.roles[raw.id];
+      if (!team) return v === undefined ? [] : true;                                      /* not my team: nothing to read, nothing kept */
+      if (v === undefined) {
+        if (!ACT.busy[slug] && Date.now() - (ACT.at[slug] || 0) > 30000) { ACT.busy[slug] = 1; ACT.at[slug] = Date.now();
+          loadActivity(slug).then(function () { if (window.dxDir && window.dxDir.S && window.dxDir.S.ws === slug) rerenderCompanies(); }, function (e) { console.error(e); }).then(function () { ACT.busy[slug] = 0; }); }
+        return (ACT.list[slug] || []).slice();
+      }
+      var had = ACT.list[slug] || [], nv = Array.isArray(v) ? v : [], cut = had.length ? nv.indexOf(had[0]) : nv.length, add = nv.slice(0, cut < 0 ? 1 : cut);   /* the entries before the newest one known are new */
+      ACT.list[slug] = nv.slice(0, 200);
+      add.slice().reverse().forEach(function (x) { var t = String((x && x.text) || '').trim().slice(0, 300); if (!t) return;
+        Promise.resolve(sb.from('company_activity').insert({ company_id: raw.id, actor: ME_UUID, text: t })).then(function (r) { if (r.error) console.error(r.error); }); });
+      return true;
+    }
+    return hookAct ? hookAct(k, v) : undefined;
+  };
+  onReset(function () { ACT.list = {}; ACT.at = {}; ACT.busy = {}; });
+  /* ===== /AREA business: activity log ===== */
+
+  /* ===== AREA business: e-mail notifications switch (B-13; 0059) ===== */
+  var MP = { on: true, at: 0 };
+  window.dxMailPref = {
+    get: function () { if (ME_UUID && !MP.at) { MP.at = 1; Promise.resolve(sb.from('notification_prefs').select('email').eq('user_id', ME_UUID).maybeSingle()).then(function (r) {
+        if (r.error || !r.data) return; MP.on = r.data.email !== false; var b = document.getElementById('dxMailPref'); if (b) b.checked = MP.on; }); } return MP.on; },
+    set: async function (on) { var r = await sb.from('notification_prefs').upsert({ user_id: ME_UUID, email: !!on, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      if (r.error) { toastErr(r.error); return false; } MP.on = !!on; return true; }
+  };
+  onReset(function () { MP.on = true; MP.at = 0; });
+  /* ===== /AREA business: e-mail switch ===== */
+
 
   /* ===== AREA business: payments (B-14…B-16; 0055) =====
      My payments and the company's payment history come from my_payments(); an invoice is the server's (order_invoice); VIP's

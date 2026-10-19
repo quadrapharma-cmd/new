@@ -27,7 +27,7 @@
 #   3 every pending supabase/migrations/NNNN_*.sql in order, each in ONE transaction with ON_ERROR_STOP (and its ledger row)
 #   4 checks: schema_sweep.sql (every line "none"), the five storage buckets, realtime on messages + notifications, table/sequence
 #     grants for the API roles, jit = off for the API login role, the pg_cron job, the prices
-#   5 (unless --db-only) function secrets + the three Edge Functions, then a smoke call to each
+#   5 (unless --db-only) function secrets + the four Edge Functions, then a smoke call to each
 set -euo pipefail
 # shellcheck source=deploy/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -304,6 +304,11 @@ fawry_staging = 'fawrystaging' in env.get('FAWRY_BASE', '')
 if prod and (test_keys or fawry_staging): bad.append('production with Paymob TEST keys or Fawry STAGING (FAWRY_BASE) — use the live values')
 if not prod and live_keys: bad.append('staging with Paymob LIVE keys — staging must use test keys (real money otherwise)')
 if not prod and env.get('FAWRY_BASE', 'https://www.atfawry.com').rstrip('/') == 'https://www.atfawry.com': bad.append('staging without FAWRY_BASE=https://atfawry.fawrystaging.com (Fawry production otherwise)')
+email = [k for k in ('EMAIL_PROVIDER', 'EMAIL_API_KEY', 'EMAIL_FROM', 'NOTIFY_DISPATCH_SECRET') if not env.get(k) or 'CHANGE_ME' in env.get(k, '')]
+if email and len(email) < 4: bad.append('e-mails half set up: ' + ', '.join(email) + ' missing (set all four, or none to send no e-mails yet)')
+if env.get('EMAIL_PROVIDER') and env['EMAIL_PROVIDER'] not in ('resend', 'postmark', 'sendgrid'): bad.append('EMAIL_PROVIDER must be resend, postmark or sendgrid')
+if len(env.get('NOTIFY_DISPATCH_SECRET', 'x' * 32)) < 32: bad.append('NOTIFY_DISPATCH_SECRET must be at least 32 characters')
+if len(email) == 4: print('    note: no e-mail provider set — notify-dispatch answers 503 and notifications stay in the app until EMAIL_* are set', file=sys.stderr)
 if bad: print('\n'.join('    - ' + b for b in bad), file=sys.stderr); sys.exit(1)
 print('    secrets file checked: ' + ', '.join(sorted(env)))
 PY
@@ -320,10 +325,10 @@ ok "secrets set"
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/supabase"; cp -r "$REPO/supabase/functions" "$WORK/supabase/functions"
 { echo 'project_id = "drugbox"'
-  for fn in payments-create:true paymob-webhook:false fawry-webhook:false; do
+  for fn in payments-create:true paymob-webhook:false fawry-webhook:false notify-dispatch:false; do
     printf '\n[functions.%s]\nverify_jwt = %s\nentrypoint = "./functions/%s/index.js"\n' "${fn%%:*}" "${fn##*:}" "${fn%%:*}"
   done; } > "$WORK/supabase/config.toml"
-for fn in payments-create paymob-webhook fawry-webhook; do
+for fn in payments-create paymob-webhook fawry-webhook notify-dispatch; do
   extra=(); [[ $fn != payments-create ]] && extra=(--no-verify-jwt)
   info "deploying $fn $( [[ ${#extra[@]} -gt 0 ]] && echo '(public: provider callback, signature-checked)' || echo '(user JWT required)')"
   sb functions deploy "$fn" --project-ref "$REF" --use-api --workdir "$WORK" "${extra[@]}" || die "deploy of $fn failed"

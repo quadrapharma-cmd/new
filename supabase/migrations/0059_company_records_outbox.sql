@@ -196,13 +196,18 @@ create table if not exists public.notification_outbox (
   notification_id bigint references public.notifications(id) on delete cascade,
   user_id         uuid not null references public.profiles(id) on delete cascade,
   kind            text not null,
-  status          text not null default 'pending' check (status in ('pending', 'sent', 'failed', 'skipped')),
+  status          text not null default 'pending',
   attempts        int not null default 0,
   last_error      text check (length(last_error) <= 500),
   created_at      timestamptz not null default now(),
-  sent_at         timestamptz
+  sent_at         timestamptz,
+  claimed_at      timestamptz
 );
-create index if not exists idx_outbox_pending on public.notification_outbox (created_at) where status = 'pending';
+alter table public.notification_outbox add column if not exists claimed_at timestamptz;
+alter table public.notification_outbox drop constraint if exists notification_outbox_status_check;
+alter table public.notification_outbox add constraint notification_outbox_status_check check (status in ('pending', 'sending', 'sent', 'failed', 'skipped'));
+drop index if exists public.idx_outbox_pending;
+create index if not exists idx_outbox_pending2 on public.notification_outbox (created_at) where status in ('pending', 'sending');
 create index if not exists idx_outbox_user on public.notification_outbox (user_id);
 create index if not exists idx_outbox_notification on public.notification_outbox (notification_id);
 alter table public.notification_outbox enable row level security;
@@ -227,13 +232,17 @@ revoke all on function public.notification_to_outbox() from public, anon, authen
 drop trigger if exists trg_notification_to_outbox on public.notifications;
 create trigger trg_notification_to_outbox after insert on public.notifications for each row execute function public.notification_to_outbox();
 
--- what notify-dispatch sends (service role only): a batch of pending e-mails with the address, name and notice, claimed atomically
+-- what notify-dispatch sends (service role only): a batch of pending e-mails with the address, name and notice, claimed atomically —
+-- a claimed row is 'sending' for 10 minutes, so two runs that overlap never send the same e-mail; one a crashed run left behind
+-- is taken again after that
 create or replace function public.outbox_claim(p_limit int default 50) returns table (id bigint, email text, name text, kind text, message text, data jsonb, company text)
 language plpgsql security definer set search_path = public as $$
 begin
   return query
-  with c as (select o.id from public.notification_outbox o where o.status = 'pending' and o.attempts < 5 order by o.created_at limit least(greatest(coalesce(p_limit, 50), 1), 200) for update skip locked),
-  u as (update public.notification_outbox o set attempts = o.attempts + 1 from c where o.id = c.id returning o.id, o.notification_id, o.user_id, o.kind)
+  with c as (select o.id from public.notification_outbox o
+               where (o.status = 'pending' or (o.status = 'sending' and o.claimed_at < now() - interval '10 minutes')) and o.attempts < 5
+               order by o.created_at limit least(greatest(coalesce(p_limit, 50), 1), 200) for update skip locked),
+  u as (update public.notification_outbox o set attempts = o.attempts + 1, status = 'sending', claimed_at = now() from c where o.id = c.id returning o.id, o.notification_id, o.user_id, o.kind)
   select u.id, au.email::text, p.name, u.kind, n.message, n.data, co.name
     from u join auth.users au on au.id = u.user_id join public.profiles p on p.id = u.user_id
     left join public.notifications n on n.id = u.notification_id left join public.companies co on co.id = n.company_id;
@@ -241,8 +250,8 @@ end $$;
 revoke all on function public.outbox_claim(int) from public, anon, authenticated, service_role;
 grant execute on function public.outbox_claim(int) to service_role;
 create or replace function public.outbox_done(p_id bigint, p_ok boolean, p_error text default null) returns void language sql security definer set search_path = public as $$
-  update public.notification_outbox set status = case when p_ok then 'sent' when attempts >= 5 then 'failed' else 'pending' end,
-         sent_at = case when p_ok then now() end, last_error = case when p_ok then null else left(p_error, 500) end where id = p_id
+  update public.notification_outbox set status = case when p_ok then 'sent' when attempts >= 5 then 'failed' else 'pending' end, claimed_at = null,
+         sent_at = case when p_ok then now() end, last_error = case when p_ok then null else left(p_error, 500) end where id = p_id and status = 'sending'
 $$;
 revoke all on function public.outbox_done(bigint, boolean, text) from public, anon, authenticated, service_role;
 grant execute on function public.outbox_done(bigint, boolean, text) to service_role;

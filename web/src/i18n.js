@@ -744,6 +744,7 @@
   });
   /* ===== AREA business: company page, certificates, team (B-02, B-03, B-04) ===== */
   Object.assign(D, {
+    'E-mail me about requests, deals, payments and my company': 'راسلني بالبريد بخصوص الطلبات والصفقات والمدفوعات وشركتي', 'E-mails on — we will write when something needs you': 'تم تشغيل البريد — سنراسلك عندما يحتاجك أمر ما', 'E-mails off — notifications stay here': 'تم إيقاف البريد — تبقى الإشعارات هنا',
     'File (PDF or image, optional)': 'الملف (PDF أو صورة، اختياري)', 'Site master file': 'ملف الموقع الرئيسي (SMF)', 'Manufacturing licence': 'ترخيص التصنيع', 'Membership': 'عضوية', 'Memberships': 'العضويات',
     'Shown as self-declared until Drugbox checks the document. The file is seen only by your team and Drugbox’s reviewers.': 'يظهر كمُصرَّح به حتى يراجع Drugbox المستند. لا يرى الملف إلا فريقك ومراجعو Drugbox.',
     'Document added — Drugbox will check it': 'تمت إضافة المستند — سيراجعه Drugbox', 'Delete this document?': 'هل تحذف هذا المستند؟', 'Document deleted': 'تم حذف المستند', 'Not accepted': 'غير مقبول',
