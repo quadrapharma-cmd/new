@@ -60,6 +60,13 @@ select pg_temp.step('E posts a job for its page', $$with x as (insert into publi
 select pg_temp.ok('the job carries the page''s own name', $$(select company = 'JB Pharma' from public.jobs where id = pg_temp.id('job'))$$);
 select pg_temp.step('E posts a Dubai contract job', $$with x as (insert into public.jobs (user_id, title, company_id, location, country, type, category) values ('a1000000-0000-0000-0000-000000000001', 'JB Sales Rep', pg_temp.id('co'), 'Dubai', 'AE', 'contract', 'sales') returning id) insert into ids select 'job2', id::text from x$$);
 select pg_temp.no('a country code must be two capital letters', $$insert into public.jobs (user_id, title, country) values ('a1000000-0000-0000-0000-000000000001', 'JB Bad', 'eg')$$, '23514');
+select pg_temp.S();
+select pg_temp.no('a non-member cannot post a job in the name of a company with a page', $$insert into public.jobs (user_id, title, company) values ('a1000000-0000-0000-0000-000000000004', 'JB Fake opening', 'jb pharma')$$, '42501');
+select pg_temp.A();
+select pg_temp.step('a page admin posts for the page naming someone else as poster', $$insert into public.jobs (user_id, title, company_id) values ('a1000000-0000-0000-0000-000000000004', 'JB Impersonated', pg_temp.id('co'))$$);
+select pg_temp.ok('…the job is posted as the admin, never as the other person', $$(select user_id = 'a1000000-0000-0000-0000-000000000002' from public.jobs where title = 'JB Impersonated')$$);
+select pg_temp.as_server();
+select pg_temp.step('(cleanup) the admin''s extra job', $$delete from public.jobs where title = 'JB Impersonated'$$);
 -- 2. search
 select pg_temp.S();
 select pg_temp.ok('search: words match title + tags + requirements, any case', $$(public.jobs_search('jb hplc gmp pharmacy') ->> 'total')::int = 1$$);
@@ -67,7 +74,7 @@ select pg_temp.ok('search: the filters combine (QA/QC + full-time + Egypt + juni
 select pg_temp.ok('search: a contract job is not full-time; a UAE job is not Egypt', $$(public.jobs_search('jb', null, array['full-time'], array['AE']) ->> 'total')::int = 0$$);
 select pg_temp.ok('search: the page is ordered and limited, the total counts all', $$jsonb_array_length(public.jobs_search('jb', p_limit => 1) -> 'rows') = 1 and (public.jobs_search('jb', p_limit => 1) ->> 'total')::int = 2$$);
 select pg_temp.ok('search rows never carry search_text', $$not ((public.jobs_search('jb') -> 'rows' -> 0) ? 'search_text')$$);
-select pg_temp.ok('search: a wildcard in the words is plain text', $$(public.jobs_search('%') ->> 'total')::int = 0$$);
+select pg_temp.ok('search: a wildcard in the words is plain text', $$(public.jobs_search('jb%hplc') ->> 'total')::int = 0 and (public.jobs_search('jb_hplc') ->> 'total')::int = 0$$);
 -- 3. applying and the pipeline
 select pg_temp.step('S saves the Dubai job', $$insert into public.saved_jobs (user_id, job_id) values ('a1000000-0000-0000-0000-000000000004', pg_temp.id('job2'))$$);
 select pg_temp.step('S applies (trying to set its own status)', $$insert into public.job_applications (job_id, user_id, note, status) values (pg_temp.id('job'), 'a1000000-0000-0000-0000-000000000004', 'JB please', 'hired')$$);
@@ -109,7 +116,18 @@ select pg_temp.no('nobody applies to an expired job', $$insert into public.job_a
 select pg_temp.S();
 select pg_temp.ok('S reads the closed job it saved and the expired one it applied to', $$(select count(*) = 2 from public.jobs where id in (pg_temp.id('job'), pg_temp.id('job2')))$$);
 select pg_temp.ok('search no longer finds them', $$(public.jobs_search('jb') ->> 'total')::int = 0$$);
--- 5. withdraw: the employer no longer reads it (nor its CV)
+-- 5. a decision stays; withdraw: the employer no longer reads it (nor its CV)
+select pg_temp.as_server();
+select pg_temp.step('S applies to the Dubai job; E rejects it', $$update public.jobs set active = true where id = pg_temp.id('job2');
+  insert into public.job_applications (job_id, user_id, status) values (pg_temp.id('job2'), 'a1000000-0000-0000-0000-000000000004', 'rejected')$$);
+select pg_temp.S();
+select pg_temp.step('S tries to erase the rejection', $$delete from public.job_applications where job_id = pg_temp.id('job2')$$);
+select pg_temp.ok('a decided application cannot be withdrawn (the rejection stays)', $$(select status = 'rejected' from public.job_applications where job_id = pg_temp.id('job2'))$$);
+select pg_temp.as_server();
+select pg_temp.step('(setup) the Dubai application is a hire', $$update public.job_applications set status = 'hired' where job_id = pg_temp.id('job2')$$);
+select pg_temp.E();
+select pg_temp.no('a job with a hire on record is closed, never deleted', $$delete from public.jobs where id = pg_temp.id('job2')$$, '42501');
+select pg_temp.S();
 select pg_temp.step('S withdraws', $$delete from public.job_applications where job_id = pg_temp.id('job')$$);
 select pg_temp.E();
 select pg_temp.ok('E reads no application after the withdrawal', $$(select count(*) = 0 from public.job_applications where job_id = pg_temp.id('job'))$$);

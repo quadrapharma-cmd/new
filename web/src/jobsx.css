@@ -77,3 +77,9 @@
   [dir=rtl] #jx .jx-app{margin-right:10px}
   .jx-dgrid{grid-template-columns:1fr}
 }
+
+/* phones and touch: every control at least 40 px high */
+@media (max-width:900px),(pointer:coarse){
+  #jx .jx-tool,#jx .jx-pa .jx-tool,.jx-saved .jx-tool,#jx .jx-back,.jx-stabs .cf-tag,#jx .jx-cvbtn{min-height:40px}
+  #jx label.f-opt{min-height:40px}
+}

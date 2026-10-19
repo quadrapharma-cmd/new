@@ -1567,7 +1567,7 @@
     var logo = c.querySelector('.jc-logo'); if (logo) { logo.textContent = initials(j.company || u.name); logo.style.background = colorFor(j.company || j.user_id); }
     var t = c.querySelector('.jc-title'); if (t) { var rb = t.querySelector('.role-badge'), lb = t.querySelector('.level-badge'); t.textContent = j.title;
       if (lb) { lb.className = 'level-badge level-' + lvl; lb.textContent = LEVEL[lvl]; t.insertBefore(lb, t.firstChild); } if (rb) t.insertBefore(rb, t.firstChild); }
-    var co = c.querySelector('.jc-company'); if (co) co.innerHTML = '<span>' + esc2(j.company || u.company || '') + '</span> · <span>' + (FLAG[j.country] || '') + ' ' + esc2(j.location || '') + '</span>' + (j.company_verified || (!j.company_id && u.verified) ? ' · <span style="color:#1a56db">✓ Verified</span>' : '');
+    var co = c.querySelector('.jc-company'); if (co) co.innerHTML = '<span data-noi18n dir="auto">' + esc2(j.company || u.company || '') + '</span> · <span data-noi18n dir="auto">' + (FLAG[j.country] || '') + ' ' + esc2(j.location || '') + '</span>' + (j.company_verified || (!j.company_id && u.verified) ? ' · <span style="color:#1a56db">✓ Verified</span>' : '');
     c.dataset.jxMine = j.user_id === ME_UUID || (j.company_id && CO.roles && /owner|admin/.test(CO.roles[j.company_id] || '')) ? '1' : ''; c.dataset.jxApplicants = j.applicant_count || 0;
     var tg = c.querySelector('.jc-tags'); if (tg) tg.innerHTML = '<span class="jt jt-ft">' + esc2(j.type || 'Full-time') + '</span>' + (j.tags || []).slice(0, 2).map(function (x) { return '<span class="jt" style="background:#dbeafe;color:#1d4ed8">' + esc2(x) + '</span>'; }).join('') + (j.salary ? '<span class="jt" style="background:#dcfce7;color:#15803d">' + esc2(j.salary) + '</span>' : '');
     var ds = c.querySelector('.jc-desc'); if (ds) ds.textContent = j.description || '';
@@ -1795,7 +1795,7 @@
   async function loadGroups() {
     var GCOLS = '*, creator:profiles!groups_created_by_fkey(' + PCOLS + ')';
     var a = await Promise.all([sb.from('groups').select(GCOLS).order('member_count', { ascending: false }).order('created_at', { ascending: false }).limit(60),
-                               sb.from('group_members').select('group_id, role').eq('user_id', ME_UUID),
+                               sb.from('group_members').select('group_id, role, muted').eq('user_id', ME_UUID),
                                sb.from('group_invites').select('group_id, g:groups(' + GCOLS + ')').eq('user_id', ME_UUID).limit(50),
                                sb.from('group_join_requests').select('group_id').eq('user_id', ME_UUID).eq('status', 'pending').limit(50)]);
     if (a[0].error) throw a[0].error; if (a[1].error) throw a[1].error;
@@ -1807,7 +1807,7 @@
     var gone = (a[1].data || []).map(function (m) { return m.group_id; }).concat(Object.keys(GX.req).map(Number))
       .filter(function (id, i, l) { return l.indexOf(id) === i && !GX.groups.some(function (g) { return g.id === id; }); }).slice(0, 100);
     if (gone.length) { var mg = await sb.from('groups').select(GCOLS).in('id', gone); if (!mg.error) GX.groups = GX.groups.concat(mg.data || []); }   /* my groups (and my requests) outside the 60 biggest */
-    GX.mine = {}; (a[1].data || []).forEach(function (m) { GX.mine[m.group_id] = m.role; }); GX.at = Date.now();
+    GX.mine = {}; GX.muted = {}; (a[1].data || []).forEach(function (m) { GX.mine[m.group_id] = m.role === 'moderator' ? 'moderator' : m.role; if (m.muted) GX.muted[m.group_id] = 1; }); GX.at = Date.now();
     GX.snap = {}; GX.groups.forEach(function (g) { if (GX.mine[g.id]) GX.snap[g.name] = true; putUser(g.creator); });
     if (GX.cur) GX.cur = GX.groups.find(function (g) { return g.id === GX.cur.id; }) || GX.cur;
     /* "N new posts this week" on the cards and "N new posts today" in the header (0027 group_activity, one call for every card) */
@@ -1828,6 +1828,10 @@
     var mc = c.querySelector('.member-count'); if (mc) mc.textContent = (g.member_count || 0).toLocaleString('en') + (g.member_count === 1 ? ' member' : ' members');
     /* what the inside of the group (groups.js) shows under About: the group's own text, rules, creation date and creator */
     c.dataset.about = txt(g.description || ''); c.dataset.rules = JSON.stringify(rulesOf(g.rules)); c.dataset.since = g.created_at || ''; c.dataset.by = g.created_by ? aid(g.created_by) : '';
+    /* 0061: sector, countries, who posts, archived, my notifications — the filters and the inside read them */
+    c.dataset.sector = g.sector || ''; c.dataset.country = (g.country || []).join(','); c.dataset.post = g.post_policy || 'members'; c.dataset.find = txt((g.name || '') + ' ' + (g.description || '')).toLowerCase();
+    if (g.archived_at) { c.dataset.archived = '1'; c.style.opacity = '.55'; if (!c.querySelector('.priority-badge')) { var pb = document.createElement('div'); pb.className = 'priority-badge'; pb.textContent = '📦 Archived'; c.insertBefore(pb, c.firstChild); } } else delete c.dataset.archived;
+    if (GX.muted && GX.muted[g.id]) c.dataset.muted = '1'; else delete c.dataset.muted;
     paintCardState(c, g);
     return c;
   }
@@ -1964,13 +1968,20 @@
        text: the 2nd type option is Deal Room, the 2nd privacy option is Private (F-20, F-21) */
     var mk = e.target.closest && e.target.closest('#createModal .modal-footer .btn-create');
     if (mk) { e.preventDefault(); e.stopPropagation();
-      var M = document.getElementById('createModal'), name = ((M.querySelector('.field-input') || {}).value || '').trim(), desc = ((M.querySelector('.field-textarea, textarea') || {}).value || '').trim();
+      var M = document.getElementById('createModal'), cf = window.dxGroupsCreateForm ? window.dxGroupsCreateForm() : null, name = cf ? cf.name : ((M.querySelector('.field-input') || {}).value || '').trim(), desc = cf ? cf.desc : ((M.querySelector('.field-textarea, textarea') || {}).value || '').trim();
       if (!name) { window.toast('Add the group name'); return; }
+      if (GX.groups.some(function (x) { return String(x.name).toLowerCase() === name.toLowerCase(); })) { window.toast('A group with this name already exists — choose another name'); return; }
       var pos = function (sel) { var all = [].slice.call(M.querySelectorAll(sel)); return all.indexOf(M.querySelector(sel + '.selected')); };
       var priv = pos('.privacy-opt') === 1, deal = pos('.type-opt') === 1;
       if (mk.dataset.busy) return; mk.dataset.busy = '1';
-      sb.from('groups').insert({ name: name, description: desc, emoji: deal ? '🤝' : '👥', type: priv ? 'private' : 'public', topic: deal ? 'DEAL ROOM' : 'DISCUSS', created_by: ME_UUID, listed: !(priv && deal) }).select().single().then(function (r) { delete mk.dataset.busy;
-        if (r.error) return toastErr(r.error); window.closeCreate(); window.toast('Group created'); return loadGroups().then(paintGroups); }); return; }
+      sb.from('groups').select('id').ilike('name', name.replace(/[\\%_]/g, '\\$&')).limit(1).then(function (dup) {
+        if (!dup.error && (dup.data || []).length) { delete mk.dataset.busy; window.toast('A group with this name already exists — choose another name'); return; }
+        return sb.from('groups').insert({ name: name, description: desc, emoji: cf ? cf.emoji : deal ? '🤝' : '👥', type: priv ? 'private' : 'public', topic: deal ? 'DEAL ROOM' : 'DISCUSS', created_by: ME_UUID, listed: !priv,
+          sector: cf ? cf.sector : null, country: cf ? cf.country : [], rules: cf && cf.rules ? cf.rules : null }).select().single().then(function (r) { delete mk.dataset.busy;
+          if (r.error) return toastErr(r.error); window.closeCreate(); window.toast('Group created — invite your first members');
+          ['.field-input', '.field-textarea', '#gpCrRules'].forEach(function (s0) { M.querySelectorAll(s0).forEach(function (x) { if (x.tagName !== 'SELECT') x.value = ''; }); });
+          return loadGroups().then(function () { paintGroups(); setTimeout(function () { window.dxLive.openGroup(r.data.id); }, 50); }); });
+      }); return; }
     var del = e.target.closest && e.target.closest('#deleteConfirmBtn');
     if (del && GX.cur) { e.preventDefault(); e.stopPropagation(); var g2 = GX.cur, typed = ((document.getElementById('deleteConfirmInput') || {}).value || '').trim();
       if (typed !== g2.name && typed.toUpperCase() !== 'DELETE') { window.toast('Type the group name to confirm'); return; }
@@ -2038,8 +2049,8 @@
      latest 20 comments — the database's row rules apply to every embedded row as to the posts themselves */
   function gpQuery(g) {
     return sb.from('posts').select('*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*), my:reactions(kind, user_id), sv:saved_posts(user_id), ' +
-      'cm:comments(post_id, user_id, body, created_at, author:profiles!comments_user_id_fkey(' + PCOLS + '))')
-      .eq('group_id', g.id).eq('my.user_id', ME_UUID).eq('sv.user_id', ME_UUID)
+      'cm:comments(id, post_id, user_id, body, created_at, author:profiles!comments_user_id_fkey(' + PCOLS + ')), rp:group_post_reports(reporter)')
+      .eq('group_id', g.id).eq('my.user_id', ME_UUID).eq('sv.user_id', ME_UUID).eq('rp.reporter', ME_UUID)
       .order('created_at', { referencedTable: 'cm', ascending: false }).order('id', { referencedTable: 'cm', ascending: false }).limit(20, { referencedTable: 'cm' });
   }
   /* one page of a group's posts (keyset on created_at, id — as the Home feed, index idx_posts_group_feed); the pinned post
@@ -2058,9 +2069,9 @@
       putUser(x.author);
       if ((x.my || []).length) my[x.id] = x.my[0].kind || 'like';
       if ((x.sv || []).length) saved.add(x.id);
-      cm[x.id] = (x.cm || []).slice().reverse().map(function (c) { putUser(c.author); return { uid: aid(c.user_id), text: c.body, ts: ago(c.created_at), likes: 0 }; });
+      cm[x.id] = (x.cm || []).slice().reverse().map(function (c) { putUser(c.author); return { id: c.id, uid: aid(c.user_id), text: c.body, ts: ago(c.created_at), likes: 0 }; });
     });
-    var out = rows.map(function (x) { return gpPost(x, my, saved, cm, pin); });
+    var out = rows.map(function (x) { var p = gpPost(x, my, saved, cm, pin); if ((x.rp || []).length) p.reported = 1; return p; });
     if (full && last) { var next = { t: last.created_at, id: last.id }; out.more = function () { return gpPage(g, next); }; }
     return out;
   }
@@ -2078,7 +2089,9 @@
       }
       case 'react': return gpWrite(sb.from('reactions').upsert({ post_id: id, user_id: ME_UUID, kind: RK_OUT[d.kind] || d.kind || 'like' }, { onConflict: 'post_id,user_id' }));
       case 'unreact': return gpWrite(sb.from('reactions').delete().eq('post_id', id).eq('user_id', ME_UUID));
-      case 'comment': return gpWrite(sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: (d.comment && d.comment.text) || '' }));
+      case 'comment': { var cr = await gpWrite(sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: (d.comment && d.comment.text) || '' }).select('id').single()); if (d.comment && cr) d.comment.id = cr.id; return; }
+      case 'deleteComment': { var cid = d.comment && d.comment.id; if (!cid) throw new Error('Reload the group to delete this comment');
+        return gpWrite(sb.from('comments').delete().eq('id', cid).select('id'), 'You can delete your own comments, comments on your posts, or (as an admin) any comment in the group'); }
       case 'commentLike': throw new Error('Liking comments is not available yet');
       case 'share': {   /* "Repost to your feed" (public groups only — groups.js never offers it for a private one) */
         var who = (window.USERS || []).find(function (u) { return u.id === p.uid; }) || window.ME;
@@ -2101,7 +2114,7 @@
       case 'report': {
         var why = (String(d.reason || 'Breaks the group rules') + (d.note ? ' — ' + d.note : '')).slice(0, 500);
         var rr = await sb.from('group_post_reports').insert({ post_id: id, reporter: ME_UUID, reason: why });
-        if (rr.error && rr.error.code !== '23505') throw rr.error; return;   /* reported before: the admins already have it */
+        if (rr.error && rr.error.code !== '23505') throw rr.error; return rr.error ? 'already' : 'sent';   /* reported before: the admins already have it */
       }
     }
     throw new Error('This is not available yet');
@@ -2111,14 +2124,14 @@
     var r = await sb.from('group_members').select('user_id, role, joined_at, p:profiles!group_members_user_id_fkey(' + PCOLS + ')').eq('group_id', g.id)
       .order('role', { ascending: true }).order('joined_at', { ascending: false }).limit(50);
     if (r.error) throw r.error;
-    return (r.data || []).map(function (m) { putUser(m.p); return { uid: aid(m.user_id), role: m.role === 'admin' ? 'admin' : 'member', joined: m.user_id === g.created_by ? 'Created the group' : joinedAgo(m.joined_at), name: m.p ? txt(m.p.name) : '' }; });
+    return (r.data || []).map(function (m) { putUser(m.p); return { uid: aid(m.user_id), role: m.role === 'admin' ? 'admin' : m.role === 'moderator' ? 'moderator' : 'member', joined: m.user_id === g.created_by ? 'Created the group' : joinedAgo(m.joined_at), name: m.p ? txt(m.p.name) : '' }; });
   }
   async function gmOp(g, op, uid) {
     var u = uuidOf(uid); if (!u) throw new Error('This member is no longer available');
-    if (op === 'subadmin') throw new Error('Sub-admins are not available yet — make them an admin or keep them a member');
+    if (op === 'subadmin') op = 'moderator';
     if (op === 'remove') { await gpWrite(sb.from('group_members').delete().eq('group_id', g.id).eq('user_id', u).select('user_id'), 'Only the group’s admins can remove members');
       g.member_count = Math.max(0, (g.member_count || 1) - 1); }
-    else if (op === 'admin' || op === 'member') await gpWrite(sb.from('group_members').update({ role: op }).eq('group_id', g.id).eq('user_id', u).select('user_id'), 'Only the group’s admins can change roles');
+    else if (op === 'admin' || op === 'member' || op === 'moderator') await gpWrite(sb.from('group_members').update({ role: op }).eq('group_id', g.id).eq('user_id', u).select('user_id'), 'Only the group’s admins can change roles');
     else throw new Error('This is not available yet');
     if (GX.cur && GX.cur.id === g.id) manageLoad(g);
   }
@@ -2183,16 +2196,27 @@
     var list = tm && tm.querySelector('.member-list'), title = tm && tm.querySelector('.member-list-title');
     if (list) list.innerHTML = mem.map(function (m) {
       var u = (window.USERS || []).find(function (x) { return x.id === m.uid; }) || (m.uid === window.ME.id ? window.ME : null); if (!u) return '';
-      var self = m.uid === window.ME.id, pill = m.role === 'admin' ? '<span class="role-pill rp-admin">👑 Admin</span>' : '<span class="role-pill rp-member">Member</span>';
+      var self = m.uid === window.ME.id, pill = m.role === 'admin' ? '<span class="role-pill rp-admin">👑 Admin</span>' : m.role === 'moderator' ? '<span class="role-pill rp-subadmin">🛡️ Sub-Admin</span>' : '<span class="role-pill rp-member">Member</span>';
       var acts = self ? '<div class="gp-you">You</div>' : '<button type="button" class="action-btn" aria-label="Member options" onclick="toggleDropdown(this)">⋯</button><div class="dropdown-menu">' +
-        (m.role === 'admin' ? '<div class="dd-item" data-gpd="member" role="button" tabindex="0">👤 Demote to Member</div>' : '<div class="dd-item" data-gpd="admin" role="button" tabindex="0">👑 Promote to Admin</div>') +
+        (m.role === 'admin' ? '<div class="dd-item" data-gpd="member" role="button" tabindex="0">👤 Demote to Member</div>' : '<div class="dd-item" data-gpd="admin" role="button" tabindex="0">👑 Promote to Admin</div>' +
+          (m.role === 'moderator' ? '<div class="dd-item" data-gpd="member" role="button" tabindex="0">👤 Demote to Member</div>' : '<div class="dd-item" data-gpd="subadmin" role="button" tabindex="0">🛡️ Promote to Sub-Admin</div>')) +
         '<div class="dd-divider"></div><div class="dd-item" data-gpd="msg" role="button" tabindex="0">💬 Message</div><div class="dd-item danger" data-gpd="remove" role="button" tabindex="0">🚫 Remove from group</div></div>';
       return '<div class="member-row" data-uid="' + m.uid + '" style="position:relative"><div class="av" style="background:' + esc2(u.color || '#1a56db') + ';width:38px;height:38px;font-size:13px">' + esc2(u.initials || '?') + '</div>' +
         '<div><div class="member-name"><span data-noi18n>' + esc2(u.name) + '</span> ' + pill + '</div><div class="member-meta">' + esc2(m.joined || '') + '</div></div><div class="member-actions">' + acts + '</div></div>';
     }).join('');
     if (title) { var sp = title.querySelector('span'); if (sp) sp.textContent = 'Members (' + (g.member_count || 0).toLocaleString('en') + ')'; }
     /* join requests (private groups): above the member list, in the approved moderation-queue item */
-    if (tm && (reqs.length || g.type === 'private')) {
+    var rqTab = D.querySelector('#tab-requests .mod-queue');
+    if (rqTab) {
+      rqTab.innerHTML = reqs.length ? reqs.map(function (r) {
+        putUser(r.p); var who = r.p ? txt(r.p.name) : 'Member', hl = r.p ? String(txt(r.p.headline) || '').split('|')[0].trim() : '', co = r.p ? txt(r.p.company || '') : '';
+        return '<div class="mod-item req-row" data-req="' + aid(r.user_id) + '" data-uid="' + aid(r.user_id) + '"><div class="mod-icon">👤</div><div class="mod-content"><div class="mod-title"><b data-noi18n>' + esc2(who) + '</b> <span>asked to join</span></div>' +
+          '<div class="mod-meta">' + (hl ? '<span data-noi18n>' + esc2(hl) + '</span> · ' : '') + (co ? '<span data-noi18n>' + esc2(co) + '</span> · ' : '') + '<span>' + esc2(ago(r.created_at)) + '</span></div>' + (r.message ? '<div class="mod-reason" data-noi18n>“' + esc2(txt(r.message)) + '”</div>' : '') +
+          '<div class="mod-actions"><button type="button" class="mod-btn dismiss" data-dxreq="reject">Decline</button><button type="button" class="mod-btn gp-approve" data-dxreq="approve">Approve</button></div></div></div>';
+      }).join('') : '<div class="gp-ok">✓ No pending requests</div>';
+      var qb = D.querySelector('#managePanel .dx-rq-badge'); if (qb) { qb.textContent = reqs.length; qb.style.display = reqs.length ? '' : 'none'; }
+    }
+    if (tm && !rqTab && (reqs.length || g.type === 'private')) {
       var h = '<div class="dx-gp-reqs"><div class="member-list-title"><span>Join requests (' + reqs.length + ')</span></div><div class="mod-queue">' + (reqs.length ? reqs.map(function (r) {
         putUser(r.p); var who = r.p ? txt(r.p.name) : 'Member', hl = r.p ? String(txt(r.p.headline) || '').split('|')[0].trim() : '';
         return '<div class="mod-item" data-req="' + aid(r.user_id) + '"><div class="mod-icon">👤</div><div class="mod-content"><div class="mod-title"><b data-noi18n>' + esc2(who) + '</b> <span>asked to join</span></div>' +
@@ -2202,7 +2226,7 @@
       var anchor = title || list; if (anchor) anchor.insertAdjacentHTML('beforebegin', h); else tm.insertAdjacentHTML('afterbegin', h);
     }
     var tabs = D.querySelectorAll('#managePanel .panel-tabs .gx-ptab');
-    if (tabs[0]) { var rb = tabs[0].querySelector('.dx-req-badge'); if (!rb) { tabs[0].insertAdjacentHTML('beforeend', ' <span class="ptab-badge dx-req-badge"></span>'); rb = tabs[0].querySelector('.dx-req-badge'); } rb.textContent = reqs.length; rb.style.display = reqs.length ? '' : 'none'; }
+    if (tabs[0] && !rqTab) { var rb = tabs[0].querySelector('.dx-req-badge'); if (!rb) { tabs[0].insertAdjacentHTML('beforeend', ' <span class="ptab-badge dx-req-badge"></span>'); rb = tabs[0].querySelector('.dx-req-badge'); } rb.textContent = reqs.length; rb.style.display = reqs.length ? '' : 'none'; }
     /* reports, one item per post */
     var by = {}, order = [];
     reps.forEach(function (r) { if (!r.post) return; var x = by[r.post_id]; if (!x) { x = by[r.post_id] = { post: r.post, n: 0, why: [], at: r.created_at }; order.push(x); } x.n++; if (x.why.length < 3 && x.why.indexOf(r.reason) < 0) x.why.push(r.reason); });
@@ -2220,7 +2244,9 @@
     if (ts) {
       var nm = ts.querySelector('.field-input'), ds = ts.querySelector('.field-textarea:not(.dx-rules)'), ru = ts.querySelector('.dx-rules');
       if (!ru && ds) { var f = ds.closest('.field'); if (f) { f.insertAdjacentHTML('afterend', '<div class="field"><label class="field-label">Group rules</label><textarea class="field-textarea dx-rules" maxlength="4000" placeholder="One rule per line — e.g. Documents first: every offer shows its GMP certificate"></textarea></div>'); ru = ts.querySelector('.dx-rules'); } }
-      if (!ts.dataset.dxFilled || ts.dataset.dxFilled !== String(g.id)) { if (nm) nm.value = g.name; if (ds) ds.value = g.description || ''; if (ru) ru.value = g.rules || ''; ts.dataset.dxFilled = g.id; }
+      if (!ts.dataset.dxFilled || ts.dataset.dxFilled !== String(g.id)) { if (nm) nm.value = g.name; if (ds) ds.value = g.description || ''; if (ru) ru.value = g.rules || ''; ts.dataset.dxFilled = g.id;
+        var sv0 = function (id, v) { var e = ts.querySelector('#' + id); if (e) e.value = v; };
+        sv0('gpSetPriv', g.type === 'private' ? 'private' : 'public'); sv0('gpSetPost', g.post_policy || 'members'); sv0('gpSetSec', g.sector || 'pharma'); sv0('gpSetCountry', (g.country || [])[0] || ''); }
     }
   }
   document.addEventListener('click', function (e) {
@@ -2254,14 +2280,15 @@
       var ts = document.getElementById('tab-settings'), nm = ts.querySelector('.field-input'), ds = ts.querySelector('.field-textarea:not(.dx-rules)'), ru = ts.querySelector('.dx-rules');
       var name = nm ? nm.value.trim() : ''; if (!name) { if (nm) nm.classList.add('dbk-err'); window.toast('Group name is required'); return; } if (nm) nm.classList.remove('dbk-err');
       sv.dataset.busy = '1';
-      sb.from('groups').update({ name: name, description: ds ? ds.value.trim() : g.description, rules: ru ? (ru.value.trim() || null) : g.rules }).eq('id', g.id).select().then(function (r) { delete sv.dataset.busy;
+      var gv = function (id) { var e = ts.querySelector('#' + id); return e ? e.value : null; }, upd = { name: name, description: ds ? ds.value.trim() : g.description, rules: ru ? (ru.value.trim() || null) : g.rules };
+      if (gv('gpSetPriv')) upd.type = gv('gpSetPriv'); if (gv('gpSetPost')) upd.post_policy = gv('gpSetPost'); if (gv('gpSetSec')) upd.sector = gv('gpSetSec'); if (gv('gpSetCountry') !== null) upd.country = gv('gpSetCountry') ? [gv('gpSetCountry')] : [];
+      sb.from('groups').update(upd).eq('id', g.id).select().then(function (r) { delete sv.dataset.busy;
         if (r.error || !(r.data || []).length) return toastErr(r.error || { message: 'Only the group’s admins can change its settings' });
-        var oldName = g.name, row = r.data[0]; g.name = row.name; g.description = row.description; g.rules = row.rules; if (GX.snap[oldName]) { delete GX.snap[oldName]; GX.snap[g.name] = true; }
+        var oldName = g.name, row = r.data[0]; Object.assign(g, row); if (GX.snap[oldName]) { delete GX.snap[oldName]; GX.snap[g.name] = true; }
         var card = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]');
         if (card) { var nc = groupCard(g); card.replaceWith(nc); if (window.dxGroups && window.dxGroups.pick) window.dxGroups.pick(nc, 'about'); }
         paintHead(g); window.toast('Group settings saved'); if (window.dxGroups && window.dxGroups.refresh) window.dxGroups.refresh('about');
       }, function (e2) { delete sv.dataset.busy; toastErr(e2); }); return; }
-    if (t.closest('#groupDetail .choice-btn.archive') && g) { e.preventDefault(); e.stopPropagation(); window.toast('Archiving groups is not available yet — you can delete the group instead'); return; }
     if (t.closest('#groupDetail .btn-manage[onclick*="toggleManage"]') && g) setTimeout(function () { var mp = document.getElementById('managePanel'); if (mp && mp.style.display !== 'none') manageLoad(g); }, 0);
   }, true);
   /* groups.js asks for the inside of a group here */
@@ -2983,6 +3010,13 @@
     search: async function (f, more) { await loadJobs(more); repaintJobs(); },
     total: function () { return JX.at ? JX.total : null; }, hasMore: function () { return JX.jobs.length < JX.total; },
     applied: function (id) { return !!JX.applied[id]; }, isSaved: function (id) { return !!JX.saved[id]; },
+    setCurrent: function (id) { JX.cur = +id; },   /* the job an Apply window opened from elsewhere (details, Saved, a notice) belongs to */
+    candidateCv: async function (who) {
+      var u = uuidOf(+who), r = await sb.rpc('candidate_cv', { p_user: u }); if (r.error) throw new Error(friendly(r.error));
+      if (!r.data) throw new Error('This candidate has not shared a CV — contact them to ask for one');
+      var w = window.open('', '_blank'), s2 = await sb.storage.from('documents').createSignedUrl(r.data, 300);
+      if (s2.error) { if (w) w.close(); throw new Error(friendly(s2.error)); } if (w) w.location = s2.data.signedUrl; else window.location.assign(s2.data.signedUrl);
+    },
     toggleSave: async function (id, want) {
       var on = want === undefined ? !JX.saved[id] : want;
       must(await (on ? sb.from('saved_jobs').upsert({ user_id: ME_UUID, job_id: id }) : sb.from('saved_jobs').delete().eq('user_id', ME_UUID).eq('job_id', id)));
@@ -3016,7 +3050,7 @@
     },
     message: function (id, who) { window.messageUser(+who); return Promise.resolve(); },
     profile: function (id, who) { window.gotoProfile(+who); return Promise.resolve(); },
-    updateJob: async function (id, f) { changed(await sb.from('jobs').update(f).eq('id', +id).select('id')); JX.at = 0; },
+    updateJob: async function (id, f) { if (f.salary === '') f.salary = null; changed(await sb.from('jobs').update(f).eq('id', +id).select('id')); JX.at = 0; },
     setOpen: async function (id, open) { changed(await sb.from('jobs').update({ active: !!open }).eq('id', +id).select('id')); JX.at = 0; },
     deleteJob: async function (id) { changed(await sb.from('jobs').delete().eq('id', +id).select('id')); JX.jobs = JX.jobs.filter(function (x) { return x.id !== +id; }); JX.at = 0; },
     profileState: async function () { var d = must(await sb.rpc('my_profile')), p = Array.isArray(d) ? d[0] : d; return { open: !!(p && p.open_to_work), title: p && p.desired_role }; },
@@ -3040,7 +3074,8 @@
       var raw = CO.raw[co.slug], k = co.slug, c = CJ[k];
       if (!c || (Date.now() - c.at > 60000 && !c.loading)) { c = CJ[k] = c || { at: 0, rows: [] }; c.loading = true;
         var q = sb.from('jobs').select('id,title,type,location,country,created_at').eq('active', true).order('created_at', { ascending: false }).limit(50);
-        (raw && raw.id ? q.or('company_id.eq.' + raw.id + ',company.eq."' + String(co.name).replace(/["\\]/g, '') + '"') : q.eq('company', co.name)).then(function (r) {
+        if (!raw || !raw.id) { c.loading = false; c.at = Date.now(); return c.rows; }   /* only jobs posted for the page itself (company_id) — never a name typed by anyone */
+        q.eq('company_id', raw.id).then(function (r) {
           c.loading = false; c.at = Date.now(); if (r.error) return; var before = JSON.stringify(c.rows);
           c.rows = (r.data || []).map(function (j) { return { t: j.title, type: j.type || 'Full-time', loc: [j.location, j.country].filter(Boolean).join(', '), onJobs: true, id: j.id }; });
           if (JSON.stringify(c.rows) !== before) rerenderCompanies(); });
@@ -3062,6 +3097,106 @@
     return r;
   };
   onReset(function () { JX.total = 0; APPL = {}; });
+
+  /* ===== AREA community: groups (G-01, G-04 … G-15) — search, my notifications, archive, join requests in their own tab,
+     deal-room listings (0061 group_listings → deals through group_listing_respond), group notices that open their group ===== */
+  window.dxLiveGroupListings = true;                                    /* groups.js shows a deal room's Listings tab */
+  async function gxSearch(q) {
+    var r = await sb.rpc('groups_search', { p_q: q, p_limit: 30 }); if (r.error) throw r.error;
+    var add = (r.data || []).filter(function (g) { return !GX.groups.some(function (x) { return x.id === g.id; }); });
+    if (add.length) { GX.groups = GX.groups.concat(add); var ids = add.map(function (g) { return g.id; }); var ac = await sb.rpc('group_activity', { p_ids: ids }); if (!ac.error) (ac.data || []).forEach(function (x) { GX.act[x.group_id] = x; });
+      if (onPageNow('groups')) paintGroups(); }
+    return add.length;
+  }
+  async function gxManage(d) {
+    var g = gOf(d);
+    if (d.op === 'mute') { await gpWrite(sb.from('group_members').update({ muted: !!d.on }).eq('group_id', g.id).eq('user_id', ME_UUID).select('group_id'), 'Join the group to choose its notifications');
+      GX.muted = GX.muted || {}; if (d.on) GX.muted[g.id] = 1; else delete GX.muted[g.id]; var c = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]'); if (c) { if (d.on) c.dataset.muted = '1'; else delete c.dataset.muted; } return; }
+    if (d.op === 'archive' || d.op === 'restore') {
+      var row = await gpWrite(sb.from('groups').update({ archived_at: d.op === 'archive' ? new Date().toISOString() : null }).eq('id', g.id).select(), 'Only the group’s admins can archive it');
+      Object.assign(g, row[0]); var card = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]'); if (card) { var nc = groupCard(g); card.replaceWith(nc); if (window.dxGroups && window.dxGroups.pick) window.dxGroups.pick(nc, 'disc'); }
+      return;
+    }
+    if (d.op === 'requests') { manageLoad(g); return; }
+    throw new Error('This is not available yet');
+  }
+  /* deal-room listings: the group's open requests and offers, with the company page behind each, my own answers */
+  function lstView(x) {
+    return { id: x.id, kind: x.kind, uid: aid(x.user_id), t: x.title, d: x.details || '', price: x.price || 'On request', responses: x.responses || 0, co: x.co ? x.co.name : '', coVerified: !!(x.co && x.co.status === 'verified'),
+      where: '🕒 ' + ago(x.created_at), badge: 'OPEN', em: x.kind === 'surplus' ? '♻️' : '📦', certs: [], trust: [], moq: '', answered: (x.ans || []).length > 0 };
+  }
+  async function gxListings(g) {
+    var r = await sb.from('group_listings').select('*, co:companies(name, slug, status), u:profiles!group_listings_user_id_fkey(' + PCOLS + '), ans:group_listing_responses(user_id)')
+      .eq('group_id', g.id).eq('status', 'open').eq('ans.user_id', ME_UUID).order('created_at', { ascending: false }).limit(100);
+    if (r.error) throw r.error; (r.data || []).forEach(function (x) { putUser(x.u); });
+    return (r.data || []).map(lstView);
+  }
+  async function gxListing(d) {
+    var g = gOf(d), l = d.listing || {};
+    if (d.op === 'create') {
+      var co = window.dxDir && window.dxDir.mine && window.dxDir.mine(), raw = co && CO.raw[co.slug];
+      await gpWrite(sb.from('group_listings').insert({ group_id: g.id, user_id: ME_UUID, kind: l.kind, title: l.t, details: l.d || '', price: l.kind === 'rfq' ? null : (l.price || null), company_id: raw && raw.id ? raw.id : null }).select('id'));
+      return;
+    }
+    if (d.op === 'close') return gpWrite(sb.from('group_listings').update({ status: 'closed' }).eq('id', l.id).select('id'), 'Only the author or the group’s admins can close it');
+    if (d.op === 'respond' || d.op === 'quote') {
+      var mine = window.dxDir && window.dxDir.mine && window.dxDir.mine();
+      if (!mine || !mine.slug) throw new Error('Create or claim your company page first — quotes are sent on behalf of a company');
+      var r = await sb.rpc('group_listing_respond', { p_listing: l.id, p_from_slug: mine.slug, p_message: d.message || (d.quote && d.quote.msg) || '', p_price: d.price || (d.quote && d.quote.price) || null, p_lead: d.lead || (d.quote && d.quote.lead) || null });
+      if (r.error) throw new Error(friendly(r.error)); return r.data;
+    }
+    throw new Error('This is not available yet');
+  }
+  var hookGX = window.dxLiveHook;
+  window.dxLiveHook = function (kind, d) {
+    if (ME_UUID) {
+      if (kind === 'groupSearch') return gxSearch(d.q);
+      if (kind === 'groupManage') { try { return gxManage(d); } catch (e) { return Promise.reject(e); } }
+      if (kind === 'groupListings') { try { return gxListings(gOf(d)); } catch (e) { return Promise.reject(e); } }
+      if (kind === 'groupListing') { try { return gxListing(d); } catch (e) { return Promise.reject(e); } }
+    }
+    return hookGX ? hookGX(kind, d) : undefined;
+  };
+  /* a group (loaded if it is not on the page yet: a private group I was just let into) opened on a tab, a post or the Manage panel */
+  async function openGroupFor(gid, o) {
+    o = o || {};
+    if (!onPageNow('groups')) window.goto('groups');
+    if (!GX.groups.some(function (g) { return g.id === gid; }) || o.reload) { await loadGroups(); if (!GX.groups.some(function (g) { return g.id === gid; })) {
+      var r = await sb.from('groups').select('*, creator:profiles!groups_created_by_fkey(' + PCOLS + ')').eq('id', gid).maybeSingle(); if (r.error || !r.data) { window.toast('This group is not available any more'); return; } GX.groups.push(r.data); }
+      paintGroups(); }
+    var tries = 0;
+    (function wait() {
+      if (!document.querySelector('#gx .gcard[data-gid="' + gid + '"]')) { if (++tries < 40) return setTimeout(wait, 150); window.toast('This group is not available any more'); return; }
+      window.dxLive.openGroup(gid, o.tab || 'disc');
+      if (o.manage) setTimeout(function () { var mb = document.querySelector('#groupDetail #adminActions .btn-manage'), mp = document.getElementById('managePanel');
+        if (mb && mp && mp.style.display === 'none') mb.click(); setTimeout(function () { var t = document.querySelector('#managePanel [data-gpq-tab]'); if (t) t.click(); }, 300); }, 400);
+      if (o.post) { var n = 0; (function find() { var el = document.querySelector('#gpBox [data-gpp="' + o.post + '"]');
+        if (!el) { if (++n < 40) setTimeout(find, 200); return; } el.scrollIntoView({ block: 'center' }); if (o.comments) { var b = el.querySelector('[id^="cmt-"]'); if (b) b.style.display = 'block'; } })(); }
+    })();
+  }
+  window.dxLive.openGroupFor = openGroupFor;
+  var GPOST = {};                                    /* post id → group id, for notices about posts inside a group */
+  var loadNotifsGX = loadNotifs;
+  loadNotifs = async function () {
+    await loadNotifsGX();
+    var pids = (window.NOTIFS || []).map(function (n) { return n.pid; }).filter(function (p) { return p && !(p in GPOST); });
+    if (pids.length) { var r = await sb.from('posts').select('id, group_id').in('id', pids.slice(0, 100)); if (!r.error) { pids.forEach(function (p) { GPOST[p] = null; }); (r.data || []).forEach(function (x) { GPOST[x.id] = x.group_id; }); } }
+  };
+  var notifFromGX = notifFrom;
+  notifFrom = function (n) { var o = notifFromGX(n); o.groupId = n.group_id || null; o.rawType = o.rawType || n.type; return o; };
+  var markReadGX = window.markNotifRead;
+  window.markNotifRead = function (id) {
+    var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }); if (!n) return markReadGX.apply(this, arguments);
+    var gid = n.groupId || (n.pid && GPOST[n.pid]) || null;
+    if (!gid) return markReadGX.apply(this, arguments);
+    var pid = n.pid; n.pid = null;                    /* a post in a group opens in its group, never on Home */
+    var r = markReadGX.apply(this, arguments); n.pid = pid;
+    var t = n.rawType, joinAsk = t === 'group_join_request';
+    openGroupFor(gid, { manage: joinAsk, post: pid, comments: t === 'comment', reload: t === 'group_join_approved' || t === 'group_invite' });
+    return r;
+  };
+  ICON.group_post = '💬'; ICON.group_removed = '🚪'; ICON.group_join_declined = '📨'; ICON.job_status = '💼'; ICON.job_alert = '🔔';
+  onReset(function () { GPOST = {}; GX.muted = {}; });
 
 
 

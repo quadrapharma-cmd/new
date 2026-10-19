@@ -91,7 +91,7 @@
 
   var DEMO = {
     live: false,
-    detail: function (key) { return Promise.resolve(demoJob(key)); },
+    detail: function (key) { var j = demoJob(key); return Promise.resolve(j && Object.assign({}, j)); },
     myApplications: function () {
       var mine = dstore('jxApps', null); if (!mine) { mine = SEED_APPS.slice(); dsave('jxApps', mine); }
       return Promise.resolve(mine.map(function (a) { var j = demoJob(a.title); return Object.assign({ key: a.title, active: j ? j.active : true }, a); }));
@@ -148,6 +148,7 @@
     if (document.documentElement.lang === 'ar') try { return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) {}
     return d.getDate() + ' ' + MON[d.getMonth()] + ' ' + d.getFullYear(); }
   var ST = { submitted: 'Submitted', viewed: 'Viewed', shortlisted: 'Shortlisted', interviewed: 'Interview', hired: 'Hired', rejected: 'Rejected', no_show: 'No-show', withdrawn: 'Withdrawn' };
+  function uc(v) { return v ? '<span data-noi18n dir="auto">' + esc(v) + '</span>' : ''; }   /* what people wrote: never translated */
   function stBadge(s) { return '<span class="jx-st jx-st-' + esc(s) + '">' + esc(ST[s] || s) + '</span>'; }
 
   /* ── 1. the page: search box, filter labels, phone filters, list tools ────────────────────────────────────────────── */
@@ -225,15 +226,14 @@
       return window.dxJobs.search({ q: F.q, category: F.cat === 'all' ? null : F.cat, types: F.types, countries: F.countries, level: F.lvl === 'all' ? null : F.lvl }, !!more)
         .then(function () { if (my === running) after(); }, function (e) { toast((e && e.message) || 'Could not load the jobs'); });
     }
-    jobCards(root).forEach(function (c) { if (deleted(titleOf(c)) || (c.dataset.jxPosted && !demoJob(c.dataset.jxPosted))) { c.remove(); return; } c.dataset.jxSearch = demoMatch(c) ? '' : '0'; });
+    jobCards(root).forEach(function (c) { var k = c.dataset.jxPosted || titleOf(c), dj = demoJob(k); if (deleted(k) || (c.dataset.jxPosted && !dj)) { c.remove(); return; } c.dataset.jxSearch = demoMatch(c) && !(dj && dj.active === false) ? '' : '0'; });
     if (window.dxJxPaint) window.dxJxPaint();
     after();
   }
-  function shownJobs() { return jobCards().filter(function (c) { return c.style.display !== 'none' && c.offsetParent !== null; }); }
+  function shownJobs() { return jobCards().filter(function (c) { return c.style.display !== 'none' && c.dataset.jxSearch !== '0'; }); }
   function after() {
     var root = jx(); if (!root) return;
     var n = live() ? window.dxJobs.total() : shownJobs().length;
-    if (!live() && !shownJobs().length && document.body.getAttribute('data-page') === 'jobs') n = jobCards().filter(function (c) { return c.style.display !== 'none'; }).length;
     root.querySelectorAll('.sec-title').forEach(function (t) { var sp = t.querySelector('span'), o = window.dxOrigText ? window.dxOrigText(t) : t.textContent;
       if (sp && /^\s*Open Positions/.test(o)) { sp.textContent = (n == null ? '…' : Number(n).toLocaleString('en')) + (n === 1 ? ' job' : ' jobs'); } });
     var list = jobCards()[0] ? jobCards()[0].parentElement : root.querySelector('#huntingView .job-list');
@@ -253,7 +253,7 @@
       var m = document.createElement('button'); m.type = 'button'; m.className = 'jx-more'; m.textContent = 'Load more jobs';
       list.parentNode.insertBefore(m, list.nextSibling);
     }
-    paintOwn(); paintSaves();
+    paintOwn(); paintSaves(); paintCvButtons();
   }
   function clearFilters() {
     var root = jx(); F.q = ''; F.types = []; F.countries = []; F.cat = 'all'; F.lvl = 'all';
@@ -278,6 +278,20 @@
     jobCards().forEach(function (c) { var b = c.querySelector('.save-btn'); if (!b) return; var on = DEMO.isSaved(titleOf(c));
       b.classList.toggle('dbk-saved', on); b.textContent = on ? '🔖 Saved' : '🔖 Save'; });
   }
+  /* the CV a candidate published with Post My Profile (verified companies, through a private link that expires) */
+  function paintCvButtons() {
+    [].forEach.call(document.querySelectorAll('#jx .jcard'), function (c) {
+      if (!c.querySelector('.role-badge.need') || c.dataset.jxMe || c.querySelector('.jx-cvbtn')) return;
+      var r = c.querySelector('.jc-right'); if (r) r.insertAdjacentHTML('beforeend', '<button type="button" class="save-btn jx-cvbtn">📄 CV</button>');
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#jx .jx-cvbtn'); if (!b) return; e.preventDefault(); e.stopPropagation();
+    var c = b.closest('.jcard');
+    if (live() && c.dataset.uid) window.dxJobs.candidateCv(c.dataset.uid).catch(err);
+    else toast('Sample CVs open in the live app — a private link that expires');
+  }, true);
+
   /* demo: the jobs I posted, at the top of Open Positions (the approved first job card is the template) */
   function paintPosted() {
     if (live()) return; var root = jx(); if (!root) return;
@@ -313,16 +327,17 @@
     S().detail(key).then(function (j) {
       if (!j) { toast('This job is no longer available'); return; }
       var closed = j.active === false, mine = !!j.mine;
-      var row = function (k, v) { return v ? '<div class="jx-dr"><span>' + esc(k) + '</span><b>' + esc(v) + '</b></div>' : ''; };
-      var list = function (h, a) { return a && a.length ? '<div class="jx-dh">' + esc(h) + '</div><ul class="jx-dl">' + a.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : ''; };
+      var row = function (k, v, raw) { return v ? '<div class="jx-dr"><span>' + esc(k) + '</span><b' + (raw ? '' : ' data-noi18n dir="auto"') + '>' + (raw ? v : esc(v)) + '</b></div>' : ''; };
+      var list = function (h, a) { return a && a.length ? '<div class="jx-dh">' + esc(h) + '</div><ul class="jx-dl" data-noi18n dir="auto">' + a.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : ''; };
       var body = (closed ? '<div class="jx-closed">This job is closed — it no longer takes applications.</div>' : '') +
-        '<div class="jx-dco"><b class="jx-dcn" data-slug="' + esc(j.slug || '') + '">' + esc(j.company || '') + '</b>' + (j.verified ? ' <span style="color:#1a56db">✓ Verified</span>' : '') + '</div>' +
-        '<div class="jx-dgrid">' + row('Location', (FLAG[j.country] || '') + ' ' + [j.location, (CNAME[j.country] || j.country) && String(j.location || '').indexOf(CNAME[j.country] || j.country) < 0 ? CNAME[j.country] || j.country : ''].filter(Boolean).join(', ')) + row('Type', j.type) + row('Level', (LEVELS[j.level] || '').replace(/^\S+\s/, '')) +
-          row('Salary', j.salary || 'Not shown') + row('Apply by', j.deadline ? day(j.deadline) : 'Open until filled') + row('Posted', j.created_at ? day(j.created_at) : j.posted) + '</div>' +
-        (j.description ? '<div class="jx-dh">Description</div><p class="jx-dp">' + esc(j.description) + '</p>' : '') +
+        '<div class="jx-dco"><b class="jx-dcn" data-slug="' + esc(j.slug || '') + '" data-noi18n dir="auto">' + esc(j.company || '') + '</b>' + (j.verified ? ' <span style="color:#1a56db">✓ Verified</span>' : '') + '</div>' +
+        '<div class="jx-dgrid">' + row('Location', (FLAG[j.country] || '') + ' ' + uc(j.location) + (CNAME[j.country] && String(j.location || '').indexOf(CNAME[j.country]) < 0 ? (j.location ? ', ' : '') + '<span>' + esc(CNAME[j.country]) + '</span>' : ''), true) +
+          row('Type', '<span>' + esc(j.type || '') + '</span>', true) + row('Level', '<span>' + esc((LEVELS[j.level] || '').replace(/^\S+\s/, '')) + '</span>', true) +
+          row('Salary', j.salary ? uc(j.salary) : '<span>Not shown</span>', true) + row('Apply by', j.deadline ? esc(day(j.deadline)) : '<span>Open until filled</span>', true) + row('Posted', esc(j.created_at ? day(j.created_at) : j.posted), true) + '</div>' +
+        (j.description ? '<div class="jx-dh">Description</div><p class="jx-dp" data-noi18n dir="auto">' + esc(j.description) + '</p>' : '') +
         list('Requirements', j.requirements) + list('Benefits', j.benefits) +
         (!(j.requirements || []).length ? '<div class="jx-dh">Requirements</div><p class="jx-dp jx-muted">Not listed by the employer.</p>' : '');
-      var applied = live() ? window.dxJobs.applied(key) : !!dstore('jxApplied', {})[key];
+      var applied = live() ? window.dxJobs.applied(key) : !!dstore('jxApplied', {})[key] || (dstore('jxApps', null) || SEED_APPS).some(function (a) { return a.title === key; });
       var m = D.modal({ title: j.title, body: body, secondary: 'Close',
         primary: closed ? null : mine ? { label: '👥 Applicants', onClick: function () { setTimeout(function () { openJobsPanel(key); }, 30); } }
           : { label: applied ? '✓ Applied' : 'Apply Now →', onClick: function () { if (applied) return; setTimeout(function () { openApply(key, j); }, 30); } } });
@@ -335,7 +350,12 @@
     });
   }
   function openApply(key, j) {
-    goJobs(); setTimeout(function () { var c = cardFor(key); if (c) { var b = c.querySelector('.apply-btn'); if (b) b.click(); } else if (window.openApplyModal) window.openApplyModal(j.title, j.company); }, 80);
+    goJobs(); setTimeout(function () {
+      var c = cardFor(key), b = c && c.querySelector('.apply-btn');
+      if (b && !b.dataset.jxOwn) { b.click(); return; }
+      if (live()) window.dxJobs.setCurrent(key); else lastApply = key;
+      if (window.openApplyModal) window.openApplyModal(j.title, j.company); setTimeout(function () { cvInput('applyModal', 'dxCv'); }, 0);
+    }, 80);
   }
   function cardFor(key) { return jobCards().filter(function (c) { return (live() ? c.dataset.live === 'j' + key : (c.dataset.jxPosted || titleOf(c)) === key); })[0] || null; }
   function goJobs() { if (document.body.getAttribute('data-page') !== 'jobs' && window.goto) window.goto('jobs'); }
@@ -369,10 +389,10 @@
   function appRow(a) {
     var open = ['hired', 'rejected', 'no_show'].indexOf(a.status) < 0;
     return '<div class="jx-pcard" data-key="' + esc(a.key || a.job_id) + '"><div class="jc-logo" style="background:#1a56db">' + esc(D.initials(a.company || a.title)) + '</div>' +
-      '<div class="jx-pb"><div class="jx-pt">' + esc(a.title) + (a.active === false ? ' <span class="jx-st jx-st-closed">Closed</span>' : '') + '</div>' +
-      '<div class="jx-pm">' + esc(a.company || '') + ' · ' + (FLAG[a.country] || '') + ' ' + esc(a.location || '') + ' · Applied ' + esc(day(a.created_at)) + '</div>' +
-      '<div class="jx-pm">' + stBadge(a.status) + ' <span class="jx-since">since ' + esc(day(a.status_at || a.created_at)) + '</span>' + (a.interview_at && a.status === 'interviewed' ? ' · 📅 Interview ' + esc(day(a.interview_at)) : '') + '</div>' +
-      (a.employer_note ? '<div class="jx-note">“' + esc(a.employer_note) + '”</div>' : '') + '</div>' +
+      '<div class="jx-pb"><div class="jx-pt"><span class="jx-ptt" data-noi18n dir="auto">' + esc(a.title) + '</span>' + (a.active === false ? ' <span class="jx-st jx-st-closed">Closed</span>' : '') + '</div>' +
+      '<div class="jx-pm">' + uc(a.company) + ' · ' + (FLAG[a.country] || '') + ' ' + uc(a.location) + ' · <span>Applied</span> ' + esc(day(a.created_at)) + '</div>' +
+      '<div class="jx-pm">' + stBadge(a.status) + ' <span class="jx-since"><span>since</span> ' + esc(day(a.status_at || a.created_at)) + '</span>' + (a.interview_at && a.status === 'interviewed' ? ' · <span>📅 Interview</span> ' + esc(day(a.interview_at)) : '') + '</div>' +
+      (a.employer_note ? '<div class="jx-note" data-noi18n dir="auto">“' + esc(a.employer_note) + '”</div>' : '') + '</div>' +
       '<div class="jx-pa"><button type="button" class="jx-tool" data-jx="view">View job</button>' + (open ? '<button type="button" class="jx-tool jx-warn" data-jx="withdraw">Withdraw</button>' : '') + '</div></div>';
   }
   function openJobsPanel(focusJob, focusWho) {
@@ -392,8 +412,8 @@
   function jobRow(j) {
     var state = j.active === false ? 'Closed' : j.expired ? 'Expired' : 'Accepting applications';
     return '<div class="jx-pcard jx-job" data-id="' + esc(j.id) + '"><div class="jc-logo" style="background:#0f172a">' + esc(D.initials(j.company || j.title)) + '</div>' +
-      '<div class="jx-pb"><div class="jx-pt">' + esc(j.title) + ' <span class="jx-st jx-st-' + (state === 'Closed' ? 'closed' : state === 'Expired' ? 'expired' : 'open') + '">' + esc(state) + '</span></div>' +
-      '<div class="jx-pm">' + esc(j.company || '') + ' · ' + (FLAG[j.country] || '') + ' ' + esc(j.location || '') + (j.salary ? ' · ' + esc(j.salary) : '') + (j.deadline ? ' · Apply by ' + esc(day(j.deadline)) : '') + '</div>' +
+      '<div class="jx-pb"><div class="jx-pt"><span class="jx-ptt" data-noi18n dir="auto">' + esc(j.title) + '</span> <span class="jx-st jx-st-' + (state === 'Closed' ? 'closed' : state === 'Expired' ? 'expired' : 'open') + '">' + esc(state) + '</span></div>' +
+      '<div class="jx-pm">' + uc(j.company) + ' · ' + (FLAG[j.country] || '') + ' ' + uc(j.location) + (j.salary ? ' · ' + uc(j.salary) : '') + (j.deadline ? ' · <span>Apply by</span> ' + esc(day(j.deadline)) : '') + '</div>' +
       '<div class="jx-pm"><b class="jx-apn">' + (j.applicant_count || 0) + ' ' + (j.applicant_count === 1 ? 'applicant' : 'applicants') + '</b></div><div class="jx-stages">' + stagesLine(j.stages) + '</div></div>' +
       '<div class="jx-pa"><button type="button" class="jx-tool" data-jx="toggle">👥 Applicants (' + (j.applicant_count || 0) + ')</button><button type="button" class="jx-tool" data-jx="edit">✏️ Edit</button>' +
       (j.active === false ? '<button type="button" class="jx-tool" data-jx="reopen">↺ Reopen</button>' : '<button type="button" class="jx-tool" data-jx="close">Close job</button>') +
@@ -410,10 +430,10 @@
   function applicantRow(id, a) {
     var who = a.who != null ? a.who : a.name;
     return '<div class="jx-pcard jx-app" data-who="' + esc(who) + '" data-st="' + esc(a.status) + '">' + '<div class="jc-logo" style="background:#7A5680">' + esc(D.initials(a.name)) + '</div>' +
-      '<div class="jx-pb"><div class="jx-pt"><a class="jx-who" data-jx="profile">' + esc(a.name) + '</a>' + (a.preferred ? ' <span class="jx-b white">⭐ Preferred</span>' : '') + '</div>' +
-      '<div class="jx-pm">' + esc([a.headline, a.company, a.location].filter(Boolean).join(' · ')) + '</div>' +
-      '<div class="jx-pm">applied ' + esc(day(a.created_at)) + ' · ' + stBadge(a.status) + (a.status_at ? ' <span class="jx-since">since ' + esc(day(a.status_at)) + '</span>' : '') + (a.interview_at && a.status === 'interviewed' ? ' · 📅 ' + esc(day(a.interview_at)) : '') + '</div>' +
-      (a.note ? '<div class="jx-note">“' + esc(a.note) + '”</div>' : '') + '</div>' +
+      '<div class="jx-pb"><div class="jx-pt"><a class="jx-who" data-jx="profile" data-noi18n dir="auto">' + esc(a.name) + '</a>' + (a.preferred ? ' <span class="jx-b white">⭐ Preferred</span>' : '') + '</div>' +
+      '<div class="jx-pm">' + uc([a.headline, a.company, a.location].filter(Boolean).join(' · ')) + '</div>' +
+      '<div class="jx-pm"><span>applied</span> ' + esc(day(a.created_at)) + ' · ' + stBadge(a.status) + (a.status_at ? ' <span class="jx-since"><span>since</span> ' + esc(day(a.status_at)) + '</span>' : '') + (a.interview_at && a.status === 'interviewed' ? ' · 📅 ' + esc(day(a.interview_at)) : '') + '</div>' +
+      (a.note ? '<div class="jx-note" data-noi18n dir="auto">“' + esc(a.note) + '”</div>' : '') + '</div>' +
       '<div class="jx-pa">' + (a.cv ? '<button type="button" class="jx-tool" data-jx="cv">📄 CV</button>' : '') + '<button type="button" class="jx-tool" data-jx="msg">💬 Message</button>' +
       '<button type="button" class="jx-tool" data-jx="st" data-s="shortlisted">⭐ Shortlist</button><button type="button" class="jx-tool" data-jx="st" data-s="interviewed">📅 Interview</button>' +
       '<button type="button" class="jx-tool" data-jx="st" data-s="hired">✅ Hire</button><button type="button" class="jx-tool jx-warn" data-jx="st" data-s="rejected">✕ Reject</button>' +
@@ -454,6 +474,7 @@
         '<div class="dbk-f"><label for="jxEdDesc">Description</label><textarea id="jxEdDesc" maxlength="10000">' + esc(j.description || '') + '</textarea></div>' +
         '<div class="dbk-f"><label for="jxEdR">Requirements (one per line)</label><textarea id="jxEdR">' + esc((j.requirements || []).join('\n')) + '</textarea></div>',
         primary: { label: 'Save changes', onClick: function (b) { if (!D.requireFields(b)) return false;
+          var dl = b.querySelector('#jxEdD').value; if (dl && dl < today()) { b.querySelector('#jxEdD').classList.add('dbk-err'); toast('The deadline is in the past'); return false; }
           var lines = function (s) { return s.split('\n').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 30); };
           S().updateJob(id, { title: b.querySelector('#jxEdT').value.trim(), salary: b.querySelector('#jxEdS').value.trim(), deadline: b.querySelector('#jxEdD').value || null,
             location: b.querySelector('#jxEdL').value.trim(), description: b.querySelector('#jxEdDesc').value.trim(), requirements: lines(b.querySelector('#jxEdR').value) })
@@ -501,7 +522,8 @@
     }
   }, true);
   /* demo: jobs I applied to stay "Applied" */
-  function paintApplied() { if (live()) return; var ap = dstore('jxApplied', {});
+  function paintApplied() { if (live()) return; var ap = Object.assign({}, dstore('jxApplied', {}));
+    (dstore('jxApps', null) || SEED_APPS).forEach(function (a) { ap[a.title] = 1; });
     jobCards().forEach(function (c) { var k = c.dataset.jxPosted || titleOf(c), b = c.querySelector('.apply-btn'); if (b && ap[k] && !b.dataset.jxOwn) { b.textContent = '✓ Applied'; b.disabled = true; b.classList.add('dbk-done'); } }); }
 
   /* ── 6. Post a Job: country, deadline, requirements, benefits; the title is required ─────────────────────────────── */
@@ -618,8 +640,8 @@
     S().savedJobs().then(function (rows) {
       var jt = host.querySelector('.jx-stabs [data-st=jobs]'); if (jt) jt.textContent = '💼 Jobs (' + rows.length + ')';
       box.innerHTML = rows.length ? rows.map(function (j) {
-        return '<div class="card jx-saved" data-key="' + esc(j.key || j.id) + '"><div class="jx-pb"><div class="jx-pt">' + esc(j.title) + (j.active === false ? ' <span class="jx-st jx-st-closed">Closed</span>' : '') + '</div>' +
-          '<div class="jx-pm">' + esc(j.company || '') + ' · ' + (FLAG[j.country] || '') + ' ' + esc(j.location || '') + ' · ' + (j.deadline ? 'Apply by ' + esc(day(j.deadline)) : 'Open until filled') + '</div></div>' +
+        return '<div class="card jx-saved" data-key="' + esc(j.key || j.id) + '"><div class="jx-pb"><div class="jx-pt"><span class="jx-ptt" data-noi18n dir="auto">' + esc(j.title) + '</span>' + (j.active === false ? ' <span class="jx-st jx-st-closed">Closed</span>' : '') + '</div>' +
+          '<div class="jx-pm">' + uc(j.company) + ' · ' + (FLAG[j.country] || '') + ' ' + uc(j.location) + ' · ' + (j.deadline ? '<span>Apply by</span> ' + esc(day(j.deadline)) : '<span>Open until filled</span>') + '</div></div>' +
           '<div class="jx-pa"><button type="button" class="jx-tool" data-jx="sopen">Open</button><button type="button" class="jx-tool jx-warn" data-jx="sremove">Remove</button></div></div>';
       }).join('') : '<div class="jx-none"><b>No saved jobs yet</b><p>Tap 🔖 Save on a job to find it here.</p></div>';
     }, err);
@@ -674,7 +696,7 @@
       if (k === 'toggle') { var box = panel().querySelector('.jx-apps[data-for="' + CSS.escape(String(row.dataset.id)) + '"]'); if (box && !box.hidden && box.innerHTML) box.hidden = true; else loadApplicants(id); }
       else if (k === 'edit') editJob(id);
       else if (k === 'close' || k === 'reopen') S().setOpen(id, k === 'reopen').then(function () { toast(k === 'close' ? 'Job closed — it no longer appears in search' : 'Job reopened'); refreshJob(id); resetPage(); }, err);
-      else if (k === 'delete') D.modal({ title: 'Delete this job?', body: '<div class="dbk-note">' + esc(txt(row.querySelector('.jx-pt'))) + ' and its applications are removed for good.</div>',
+      else if (k === 'delete') D.modal({ title: 'Delete this job?', body: '<div class="dbk-note">' + esc(txt(row.querySelector('.jx-ptt'))) + ' and its applications are removed for good.</div>',
         primary: { label: 'Delete', danger: true, onClick: function () { S().deleteJob(id).then(function () { toast('Job deleted'); var a = row.nextElementSibling; if (a && a.classList.contains('jx-apps')) a.remove(); row.remove(); resetPage(); }, err); } } });
     }
     else if (row && row.classList.contains('jx-app')) {
@@ -753,8 +775,26 @@
     'Your profile is hidden from companies': 'ملفك مخفي الآن عن الشركات', 'Job alert saved — we will notify you of new matching jobs': 'تم حفظ التنبيه — سنبلغك بالوظائف الجديدة المطابقة',
     'Job alert deleted': 'تم حذف التنبيه', 'Removed from saved jobs': 'أزيلت من الوظائف المحفوظة', 'Saved — find it on your Saved page': 'تم الحفظ — تجدها في صفحة المحفوظات',
     'Job saved': 'تم حفظ الوظيفة', 'Something went wrong — please try again': 'حدث خطأ — حاول مرة أخرى', 'This job is no longer available': 'هذه الوظيفة لم تعد متاحة',
-    'Search jobs: title, company, skill...': 'ابحث في الوظائف'
+    'Search jobs: title, company, skill...': 'ابحث في الوظائف',
+    /* the same labels when a layer shows their emoji as an icon */
+    'My applications': 'طلباتي', 'Job alerts': 'تنبيهات الوظائف', 'My jobs': 'وظائفي', 'Applicants': 'المتقدمون', 'My jobs and applicants': 'وظائفي والمتقدمون', 'Saved Jobs': 'الوظائف المحفوظة',
+    'CV': 'السيرة الذاتية', 'Save this search': 'احفظ هذا البحث', 'Back to jobs': 'العودة إلى الوظائف', 'Filters': 'الفلاتر', 'Close filters': 'أغلق الفلاتر', 'Posts': 'المنشورات',
+    'PDF or Word document': 'ملف PDF أو Word', 'Applied': 'تقدمت في', 'applied': 'تقدّم في', 'since': 'منذ', 'Apply by': 'آخر موعد للتقدم', 'Shortlist': 'القائمة المختصرة', 'Hire': 'تعيين', 'Reject': 'رفض',
+    'Egypt': 'مصر', 'UAE': 'الإمارات', 'Saudi Arabia': 'السعودية', 'Kuwait': 'الكويت', 'Qatar': 'قطر', 'Bahrain': 'البحرين', 'Oman': 'عُمان', 'Jordan': 'الأردن', 'India': 'الهند', 'Lebanon': 'لبنان', 'Iraq': 'العراق',
+    'Morocco': 'المغرب', 'Algeria': 'الجزائر', 'Tunisia': 'تونس', 'Libya': 'ليبيا', 'Sudan': 'السودان', 'China': 'الصين',
+    'A preferred candidate applied — added to your shortlist': 'تقدّم مرشح مفضّل — أضيف إلى قائمتك المختصرة',
+    'This candidate has not shared a CV — contact them to ask for one': 'لم يشارك هذا المرشح سيرة ذاتية — تواصل معه لطلبها', 'Sample CVs open in the live app — a private link that expires': 'السير الذاتية التجريبية تُفتح في التطبيق الفعلي — رابط خاص ينتهي'
   }, [
+    [/^Applicants \((\d+)\)$/, function (m) { return 'المتقدمون (' + m[1] + ')'; }], [/^Jobs \((\d+)\)$/, function (m) { return 'الوظائف (' + m[1] + ')'; }],
+    /* job notices (0060) — the reader's own words, the job title as written */
+    [/^shortlisted your application for (.+)$/, function (m) { return 'أضاف طلبك للقائمة المختصرة لوظيفة ' + m[1]; }],
+    [/^invited you to an interview for (.+?)(?: on (.+))?$/, function (m) { return 'دعاك لمقابلة لوظيفة ' + m[1] + (m[2] ? ' يوم ' + m[2] : ''); }],
+    [/^hired you for (.+) — congratulations!$/, function (m) { return 'اختارك لوظيفة ' + m[1] + ' — مبروك!'; }],
+    [/^thanks you for applying to (.+) — they went ahead with other candidates this time$/, function (m) { return 'يشكرك على التقدم لوظيفة ' + m[1] + ' — تم اختيار مرشحين آخرين هذه المرة'; }],
+    [/^marked your interview for (.+) as missed$/, function (m) { return 'سجّل أنك لم تحضر مقابلة وظيفة ' + m[1]; }],
+    [/^updated your application for (.+)$/, function (m) { return 'حدّث طلبك لوظيفة ' + m[1]; }],
+    [/^New job matching your alert: (.+)$/, function (m) { return 'وظيفة جديدة تطابق تنبيهك: ' + m[1]; }],
+    [/^applied to (.+)$/, function (m) { return 'تقدّم لوظيفة ' + m[1]; }],
     [/^since (.+)$/, function (m) { return 'منذ ' + m[1]; }], [/^applied (.+)$/i, function (m) { return 'تقدّم في ' + m[1]; }],
     [/^Applied (\d.+)$/, function (m) { return 'تقدمت في ' + m[1]; }], [/^Apply by (.+)$/, function (m) { return 'آخر موعد ' + m[1]; }],
     [/^👥 Applicants \((\d+)\)$/, function (m) { return '👥 المتقدمون (' + m[1] + ')'; }], [/^💼 Jobs \((\d+)\)$/, function (m) { return '💼 الوظائف (' + m[1] + ')'; }],

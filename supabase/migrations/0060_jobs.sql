@@ -50,6 +50,12 @@ create or replace function public.jobs_company_guard() returns trigger
 language plpgsql set search_path = public as $$   -- invoker: is_server_call() must see the caller's role (is_company_member is a definer itself)
 begin
   if public.is_server_call() then return new; end if;
+  if tg_op = 'INSERT' then new.user_id := auth.uid(); end if;                       -- a job is always posted as oneself
+  -- a company with a Drugbox page: only its owner / admins post jobs in its name (through company_id)
+  if new.company_id is null and nullif(trim(new.company), '') is not null and (tg_op = 'INSERT' or new.company is distinct from old.company)
+     and exists (select 1 from public.companies c where lower(c.name) = lower(trim(new.company)) and not public.is_company_member(c.id, array['owner', 'admin'])) then
+    raise exception 'This company has a Drugbox page — only its admins post jobs in its name' using errcode = '42501';
+  end if;
   if new.company_id is not null and (tg_op = 'INSERT' or new.company_id is distinct from old.company_id) then
     if not public.is_company_member(new.company_id, array['owner', 'admin']) then
       raise exception 'You can post jobs only for a company page you manage' using errcode = '42501';
@@ -62,6 +68,12 @@ revoke all on function public.jobs_company_guard() from public, anon, authentica
 grant execute on function public.jobs_company_guard() to service_role;
 drop trigger if exists trg_jobs_company_guard on public.jobs;
 create trigger trg_jobs_company_guard before insert or update on public.jobs for each row execute function public.jobs_company_guard();
+
+-- jobs posted before 0060 under the name of a page their poster manages belong to that page
+update public.jobs j set company_id = c.id
+  from public.companies c
+ where j.company_id is null and lower(c.name) = lower(trim(j.company))
+   and (c.owner_id = j.user_id or exists (select 1 from public.company_members m where m.company_id = c.id and m.user_id = j.user_id and m.accepted and m.role in ('owner', 'admin')));
 
 -- who manages a job: its poster, or an owner / admin of the company page it is posted for
 create or replace function private.can_manage_job(p_job bigint) returns boolean
@@ -184,6 +196,24 @@ create policy "job_apps: company admins read" on public.job_applications for sel
 drop policy if exists "job_apps: company admins set the status" on public.job_applications;
 create policy "job_apps: company admins set the status" on public.job_applications for update to authenticated
   using ((select private.can_manage_job(job_id))) with check ((select private.can_manage_job(job_id)));
+
+-- a candidate withdraws an application that is still open — never a decision already taken (rejected / hired / no-show)
+drop policy if exists "job_apps: only open applications are withdrawn" on public.job_applications;
+create policy "job_apps: only open applications are withdrawn" on public.job_applications as restrictive for delete to authenticated
+  using (user_id <> (select auth.uid()) or status in ('submitted', 'viewed', 'shortlisted', 'interviewed'));
+create or replace function public.jobs_keep_hires() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if current_user not in ('postgres', 'supabase_admin') or auth.uid() is not null then
+    if exists (select 1 from public.job_applications a where a.job_id = old.id and a.status = 'hired') then
+      raise exception 'Someone was hired through this job — close it instead of deleting it, so their record stays' using errcode = '42501'; end if;
+  end if;
+  return old;
+end $$;
+revoke all on function public.jobs_keep_hires() from public, anon, authenticated, service_role;
+grant execute on function public.jobs_keep_hires() to service_role;
+drop trigger if exists trg_jobs_keep_hires on public.jobs;
+create trigger trg_jobs_keep_hires before delete on public.jobs for each row execute function public.jobs_keep_hires();
 
 -- the candidate hears of each decision (opening the application — "viewed" — is not a decision)
 create or replace function public.notify_application_status() returns trigger
