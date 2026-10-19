@@ -114,7 +114,7 @@ grant execute on function public.verify_my_password(text) to authenticated;
 alter table public.profiles drop constraint if exists profiles_account_type_check;
 alter table public.profiles add constraint profiles_account_type_check check (account_type = any (array['professional', 'company', 'admin', 'deleted']));
 drop policy if exists "profiles: everyone can read" on public.profiles;
-create policy "profiles: everyone can read" on public.profiles for select using (account_type is distinct from 'deleted');
+create policy "profiles: everyone can read" on public.profiles for select to authenticated using (account_type is distinct from 'deleted');   -- members only (0020), never the tombstone
 
 create table if not exists private.account_deletions (user_id uuid primary key, started_at timestamptz not null default now());
 create table if not exists private.deleted_accounts (user_id uuid primary key, deleted_at timestamptz not null default now());

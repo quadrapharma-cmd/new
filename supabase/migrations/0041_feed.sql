@@ -25,6 +25,7 @@ end $$;
 revoke all on function public.posts_edited_mark() from public, anon, authenticated, service_role;
 grant execute on function public.posts_edited_mark() to authenticated, service_role;
 drop trigger if exists trg_posts_edited_mark on public.posts;
+drop trigger if exists trg_posts_zz_edited_mark on public.posts;
 -- after server_columns (names fire in order): an edit by anyone but the author is undone there first, so it never counts as one
 create trigger trg_posts_zz_edited_mark before insert or update on public.posts for each row execute function public.posts_edited_mark();
 

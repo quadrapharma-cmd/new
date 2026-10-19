@@ -2,13 +2,14 @@
 -- 0045 — notifications that reach the member (area social: S-20, J-SOCIAL-41/42/44/47)
 --   1. 'message' notices      a new message tells the receiver once per conversation while it is unread (not when the
 --                             receiver muted the sender); reading the conversation marks the notice read
---      a reply to the post author's own comment is one 'reply' notice (not also 'comment')
+--      a reply to the post author's own comment is one 'reply' notice (not also 'comment'); comment likes are counted again
 --   2. saved-search notices   carry the matching item's title, so the notice opens it
 --      saved searches: the 20-per-member limit moves from the insert policy (it recursed) to a trigger
 --   3. e-mail outbox          a notice of a kind the member switched on in Settings → Notifications is queued for e-mail
 --                             (private.email_outbox); kinds switched off wait for the daily / weekly digest when one is chosen.
 --                             The notify-email function (service role, scheduled every minute) claims and sends them through
 --                             Resend; members never read or write the outbox
+--   4. explicit grants the earlier area migrations left to the defaults (anon reads of two tables, three sequences)
 -- Every table and function grants its own privileges (0026). Safe to run twice.
 -- ═════════════════════════════════════════════════════════════════════
 
@@ -17,14 +18,15 @@ create or replace function public.notify_message() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   if exists (select 1 from public.conversation_mutes m where m.owner = new.receiver_id and m.partner = new.sender_id) then return null; end if;
-  if exists (select 1 from public.notifications n where n.user_id = new.receiver_id and n.from_user = new.sender_id and n.type = 'message' and not coalesce(n.read, false)) then return null; end if;
+  if exists (select 1 from public.notifications n where n.user_id = new.receiver_id and n.from_user = new.sender_id and n.type in ('message', 'company_message') and not coalesce(n.read, false)) then return null; end if;   -- a message to a company is announced as such (0032)
   insert into public.notifications (user_id, type, from_user, message) values (new.receiver_id, 'message', new.sender_id, 'sent you a message');
   return null;
 end $$;
 revoke all on function public.notify_message() from public, anon, authenticated, service_role;
 grant execute on function public.notify_message() to service_role;
 drop trigger if exists trg_messages_notify on public.messages;
-create trigger trg_messages_notify after insert on public.messages for each row execute function public.notify_message();
+-- at the end of the transaction: company_message() writes its own notice after the message (0034)
+create constraint trigger trg_messages_notify after insert on public.messages deferrable initially deferred for each row execute function public.notify_message();
 
 create or replace function public.notify_message_read() returns trigger
 language plpgsql security definer set search_path = public as $$
@@ -55,6 +57,26 @@ begin
 end $$;
 revoke all on function public.notify_comment() from public, anon, authenticated, service_role;
 grant execute on function public.notify_comment() to authenticated, service_role;
+
+-- comment likes are counted: the reply guard kept the old count on every update, so the counter's own update was undone too.
+-- A member's update (trigger depth 1) still cannot change the count or the thread; the like counter (a nested trigger) can.
+create or replace function public.comments_reply_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare p record;
+begin
+  if tg_op = 'INSERT' then new.like_count := 0;
+  else new.parent_id := old.parent_id; if pg_trigger_depth() <= 1 then new.like_count := old.like_count; end if; end if;
+  if tg_op = 'INSERT' and new.parent_id is not null then
+    select c.post_id, c.parent_id into p from public.comments c where c.id = new.parent_id;
+    if not found or p.post_id <> new.post_id then raise exception 'You can only reply to a comment of this post' using errcode = '22023'; end if;
+    if p.parent_id is not null then new.parent_id := p.parent_id; end if;          -- one level: a reply to a reply joins its thread
+  end if;
+  return new;
+end $$;
+revoke all on function public.comments_reply_guard() from public, anon, authenticated, service_role;
+grant execute on function public.comments_reply_guard() to authenticated, service_role;
+update public.comments c set like_count = x.n from (select comment_id, count(*)::int as n from public.comment_reactions group by 1) x
+ where x.comment_id = c.id and c.like_count is distinct from x.n;                -- counts lost so far
 
 -- ── 2. saved-search notices name the item ────────────────────────────────────────────────────────────────
 create or replace function public.saved_search_matches() returns trigger
@@ -194,5 +216,17 @@ language sql security definer set search_path = public as $$
 $$;
 revoke all on function public.email_outbox_done(bigint, boolean, text) from public, anon, authenticated, service_role;
 grant execute on function public.email_outbox_done(bigint, boolean, text) to service_role;
+
+-- ── 4. privileges the earlier area migrations left to the platform's defaults (0026: every grant is explicit) ─────────────
+grant select on table public.skill_endorsements to anon;                          -- no policy for anon → an empty answer (F-26)
+grant select on table public.moderation_log to anon;
+revoke all on sequence public.saved_searches_id_seq from public, anon, authenticated, service_role;
+grant usage, select on sequence public.saved_searches_id_seq to authenticated, service_role;
+revoke all on sequence public.member_reports_id_seq from public, anon, authenticated, service_role;
+grant usage, select on sequence public.member_reports_id_seq to authenticated, service_role;
+revoke all on sequence public.moderation_log_id_seq from public, anon, authenticated, service_role;
+grant usage, select on sequence public.moderation_log_id_seq to service_role;
+revoke all on sequence private.email_outbox_id_seq from public, anon, authenticated;
+grant usage, select on sequence private.email_outbox_id_seq to service_role;
 
 notify pgrst, 'reload schema';
