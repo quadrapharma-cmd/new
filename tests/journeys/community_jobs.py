@@ -223,7 +223,7 @@ def follow_applications(j):
         j.check(el, 'not built: no "My applications"'); el.click(); j.settle(pg, 1000); txt = j.text(pg)
         if j.live: j.check(r1 in txt and re.search(r'Shortlisted|القائمة المختصرة', txt) and r2 in txt and re.search(r'Submitted|مقدم', txt), 'My applications does not show both with their status')
     with j.step('Withdraw the submitted one (confirm): marked Withdrawn; Apply is available again'):
-        row = pg.locator('#content [class*=card], #content li, #content tr').filter(has_text=r2 or 'Submitted').first
+        row = pg.locator('#content [class*=card], #content li, #content tr').filter(has_text=r2 or re.compile(r'Submitted|مقدم')).first
         w = row.locator('button').filter(has_text=re.compile(r'Withdraw|سحب')); j.check(w.count(), 'not built: no Withdraw')
         w.first.click(); pg.wait_for_timeout(500); confirm(j, pg, r'Withdraw|Yes|سحب|نعم'); j.settle(pg, 900)
         if j.live: j.check(j.wait_db("select count(*) from public.job_applications where job_id=%d and user_id='%s'" % (j2, s['id']), 5, want='0') == '0', 'the application is still there')
@@ -379,7 +379,7 @@ def applicant_pipeline(j):
             if j.live:
                 uid = ppl[0]['id'] if who == 'Amr' else ppl[2]['id']
                 j.check(j.wait_db("select status from public.job_applications where job_id=%d and user_id='%s'" % (jid, uid), 5) == st, '%s is not %s in the database' % (who, st))
-        j.check(re.search(r'Hired|تم التعيين', j.text(pg)) and re.search(r'Interview|Shortlisted|Rejected', j.text(pg)), 'no counts per stage')
+        j.check(re.search(r'Hired|تم التعيين', j.text(pg)) and re.search(r'Interview|Shortlisted|Rejected|مقابلة|القائمة المختصرة|مرفوض', j.text(pg)), 'no counts per stage')
     with j.step('Each candidate is notified of their own change only and sees it in My applications; candidates cannot change their own status'):
         if j.demo: j.skip('the candidates exist only in live')
         for p, st in ((ppl[0], 'hired'), (ppl[1], 'rejected'), (ppl[2], 'no_show')):

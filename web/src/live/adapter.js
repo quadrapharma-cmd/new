@@ -3024,7 +3024,7 @@
       var row = { open_to_work: true, desired_role: f.title, desired_type: f.type, remote_ok: f.type === 'Remote' || /relocat|yes/i.test(f.relocation || ''), available_since: new Date().toISOString() };
       if (f.location) row.location = f.location; var y = parseInt(String(f.years || '').match(/\d+/) || '', 10); if (!isNaN(y)) row.years_experience = Math.min(y, 60);
       if (f.about) row.bio = f.about;
-      if (f.cv) row.cv_path = await upDoc('documents', 'cv/' + ME_UUID + '/profile-' + rid() + '.' + extOf(f.cv), f.cv);
+      if (f.cv) { var cvp = await upDoc('documents', 'cv/' + ME_UUID + '/profile-' + rid() + '.' + extOf(f.cv), f.cv); must(await sb.from('job_seeker_cvs').upsert({ user_id: ME_UUID, cv_path: cvp, updated_at: new Date().toISOString() })); }
       changed(await sb.from('profiles').update(row).eq('id', ME_UUID).select('id')); TR.loaded = false; JX.at = 0;
     },
     hideProfile: async function () { changed(await sb.from('profiles').update({ open_to_work: false }).eq('id', ME_UUID).select('id')); JX.at = 0; },

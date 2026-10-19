@@ -8,8 +8,8 @@
 --   3. applications   the employer moves an application (viewed / shortlisted / interviewed + date / hired / rejected / no_show,
 --                     with an optional note to the candidate); the candidate is notified of each decision (not of "viewed");
 --                     the job's company admins manage it like the poster
---   4. open to work   profiles.cv_path (documents/cv/<uid>/…): readable by the person, and by members of a verified company while
---                     the person is open to work (signed links only — the column itself is never readable by other members)
+--   4. open to work   job_seeker_cvs (documents/cv/<uid>/…): readable by the person, and by members of a verified company while
+--                     the person is open to work (signed links only — the row itself is never readable by other members)
 --   5. job_alerts     a saved search; a new matching job notifies its owner once (at most 10 alerts a day per person)
 -- Every table, sequence and function grants its own privileges (0026). Safe to run twice.
 -- ═════════════════════════════════════════════════════════════════════
@@ -47,7 +47,7 @@ create index if not exists idx_jobs_open_page on public.jobs (created_at desc, i
 
 -- the page a job is posted for must be one the poster manages; the job then carries that page's name
 create or replace function public.jobs_company_guard() returns trigger
-language plpgsql security definer set search_path = public as $$
+language plpgsql set search_path = public as $$   -- invoker: is_server_call() must see the caller's role (is_company_member is a definer itself)
 begin
   if public.is_server_call() then return new; end if;
   if new.company_id is not null and (tg_op = 'INSERT' or new.company_id is distinct from old.company_id) then
@@ -119,7 +119,7 @@ returns jsonb language sql stable security invoker set search_path = public as $
        and (p_countries is null or cardinality(p_countries) = 0 or j.country = any (p_countries))
        and (p_types is null or cardinality(p_types) = 0 or lower(coalesce(j.type, '')) = any (p_types) or ('remote' = any (p_types) and j.remote))
        and (p_level is null or (case when j.seniority in ('exec', 'executive') then 'exec' when j.seniority in ('entry', 'junior', 'senior') then j.seniority else 'mid' end) = p_level)
-       and (cardinality(w.words) = 0 or not exists (select 1 from unnest(w.words) x where j.search_text not like '%' || replace(replace(x, '%', ''), '_', '') || '%'))
+       and (cardinality(w.words) = 0 or not exists (select 1 from unnest(w.words) x where j.search_text not like '%' || replace(replace(replace(x, '\', '\\'), '%', '\%'), '_', '\_') || '%'))
   ),
   pg as (
     select * from m
@@ -260,11 +260,23 @@ revoke all on function public.my_jobs() from public, anon, authenticated, servic
 grant execute on function public.my_jobs() to authenticated, service_role;
 
 -- ── 4. open to work: the CV a candidate publishes ───────────────────────────────────────────────────────
-alter table public.profiles add column if not exists cv_path text;
-do $$ begin
-  alter table public.profiles add constraint profiles_cv_path check (cv_path is null or cv_path like 'cv/' || id::text || '/%');
-exception when duplicate_object then null; end $$;
--- cv_path is not in the members' column grant (0036): other members never read it; my_profile() returns it to its owner.
+-- the CV a member publishes with "Post My Profile" lives in its own table, not as a profiles column: functions that return profile rows
+-- with their columns named (open_candidates, 0036) keep working, and nobody but its owner reads the path
+create table if not exists public.job_seeker_cvs (
+  user_id    uuid primary key default auth.uid() references public.profiles(id) on delete cascade,
+  cv_path    text not null,
+  updated_at timestamptz not null default now(),
+  constraint job_seeker_cvs_path check (cv_path like 'cv/' || user_id::text || '/%')
+);
+alter table public.job_seeker_cvs enable row level security;
+drop policy if exists "seeker cv: own" on public.job_seeker_cvs;
+create policy "seeker cv: own" on public.job_seeker_cvs for all to authenticated
+  using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+revoke all on table public.job_seeker_cvs from public, anon, authenticated, service_role;
+grant select on table public.job_seeker_cvs to anon;                           -- no policy for anon → an empty answer (F-26)
+grant select, insert, update, delete on table public.job_seeker_cvs to authenticated;
+grant select, insert, update, delete, truncate, references, trigger on table public.job_seeker_cvs to service_role;
+create index if not exists idx_job_seeker_cvs_path on public.job_seeker_cvs (cv_path);
 -- it is only ever opened through a signed link — storage asks can_read_document():
 create or replace function public.can_read_document(p_name text)
 returns boolean language sql stable security definer set search_path = public as $$
@@ -272,33 +284,18 @@ returns boolean language sql stable security definer set search_path = public as
     when 'cv' then (storage.foldername(p_name))[2] = auth.uid()::text
                    or exists (select 1 from public.job_applications a join public.jobs j on j.id = a.job_id
                                where a.cv_path = p_name and (j.user_id = auth.uid() or (j.company_id is not null and public.is_company_member(j.company_id, array['owner', 'admin']))))
-                   or (exists (select 1 from public.profiles p where p.cv_path = p_name and p.open_to_work)
+                   or (exists (select 1 from public.job_seeker_cvs v join public.profiles p on p.id = v.user_id where v.cv_path = p_name and p.open_to_work)
                        and exists (select 1 from public.companies c where c.status = 'verified' and public.is_company_member(c.id)))
     when 'verification' then (storage.foldername(p_name))[2] ~ '^\d+$'
                    and (public.is_company_member(((storage.foldername(p_name))[2])::bigint, array['owner','admin']) or public.is_moderator())
     when 'payments' then (storage.foldername(p_name))[2] = auth.uid()::text or public.is_platform_admin()
     else false end
 $$;
-create index if not exists idx_profiles_cv_path on public.profiles (cv_path) where cv_path is not null;
--- open_candidates() returns profile rows with their columns named (0036): the new column is returned as NULL (never the CV path)
-create or replace function public.open_candidates(p_limit int default 40)
-returns setof public.profiles language sql stable set search_path = public as $$
-  select p.id, p.name, p.headline, p.company, p.country, p.bio, p.avatar_url, p.cover_url, p.website, null::text, p.certs, p.role,
-         p.verified, p.account_type, p.created_at, p.updated_at, p.location, p.experience, p.education, p.certifications, p.skills,
-         p.languages, p.open_to_work, p.hiring, p.profile_views, p.followers_count, p.years_experience, p.desired_role,
-         p.desired_type, p.remote_ok, p.available_since, p.intro_video, p.intents, null::text
-    from public.profiles p where p.open_to_work and p.id <> coalesce(auth.uid(), '00000000-0000-0000-0000-000000000000'::uuid)
-     and p.id <> all (coalesce((select private.blocked_parties()), '{}'::uuid[]))
-   order by p.created_at desc limit least(greatest(coalesce(p_limit, 40), 1), 100)
-$$;
-revoke all on function public.open_candidates(int) from public, anon, authenticated, service_role;
-grant execute on function public.open_candidates(int) to authenticated, service_role;
-
 -- an employer's view of a candidate's published CV path (members of a verified company only; else null)
 create or replace function public.candidate_cv(p_user uuid) returns text
 language sql stable security definer set search_path = public as $$
-  select p.cv_path from public.profiles p
-   where p.id = p_user and p.open_to_work
+  select v.cv_path from public.job_seeker_cvs v join public.profiles p on p.id = v.user_id
+   where v.user_id = p_user and p.open_to_work
      and (p.id = auth.uid() or exists (select 1 from public.companies c where c.status = 'verified' and public.is_company_member(c.id)))
 $$;
 revoke all on function public.candidate_cv(uuid) from public, anon, authenticated, service_role;
@@ -328,12 +325,14 @@ revoke all on table public.job_alerts from public, anon, authenticated, service_
 grant select on table public.job_alerts to anon;                               -- no policy for anon → an empty answer (F-26)
 grant select, insert, delete on table public.job_alerts to authenticated;
 grant select, insert, update, delete, truncate, references, trigger on table public.job_alerts to service_role;
+revoke all on sequence public.job_alerts_id_seq from public, anon, authenticated, service_role;
+grant usage, select on sequence public.job_alerts_id_seq to authenticated, service_role;
 
 -- at most 20 saved searches each
 create or replace function public.job_alerts_limit() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  new.user_id := coalesce(auth.uid(), new.user_id); new.created_at := now();
+  new.created_at := now();                       -- user_id: the row policy refuses an alert for anyone else
   if (select count(*) from public.job_alerts where user_id = new.user_id) >= 20 then
     raise exception 'You can keep up to 20 job alerts' using errcode = '23514'; end if;
   new.q := lower(trim(new.q));
@@ -362,7 +361,7 @@ begin
      and (cardinality(a.countries) = 0 or new.country = any (a.countries))
      and (cardinality(a.types) = 0 or lower(coalesce(new.type, '')) = any (a.types) or ('remote' = any (a.types) and new.remote))
      and (a.level is null or a.level = lvl)
-     and (a.q = '' or not exists (select 1 from unnest(regexp_split_to_array(a.q, '\s+')) x where x <> '' and new.search_text not like '%' || x || '%'))
+     and (a.q = '' or not exists (select 1 from unnest(regexp_split_to_array(a.q, '\s+')) x where x <> '' and new.search_text not like '%' || replace(replace(replace(x, '\', '\\'), '%', '\%'), '_', '\_') || '%'))
      and not exists (select 1 from public.job_lists l where l.list = 'black' and (l.until is null or l.until >= current_date)
                        and ((l.owner = a.user_id and l.target = new.user_id) or (l.owner = new.user_id and l.target = a.user_id)))
      and (select count(*) from public.notifications n where n.user_id = a.user_id and n.type = 'job_alert' and n.created_at > now() - interval '1 day') < 10
