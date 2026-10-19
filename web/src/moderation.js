@@ -25,7 +25,7 @@
       link: function () { return Promise.resolve(null); }
     };
   }
-  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts']];
+  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts'], ['members', '👤', 'Reported members']];   /* AREA social: members (soc_safety.js) */
   var cur = 'verifications', data = null;
   function docs(list) { return (list || []).map(function (d) { return '<button type="button" class="dx-mod-doc" data-doc="' + esc(d.path) + '" data-bucket="' + esc(d.bucket) + '">📄 ' + esc(d.label) + '</button>'; }).join(''); }
   function row(kind, x) {
@@ -47,6 +47,11 @@
       body = '<b data-noi18n>' + esc(x.author) + '</b><span>Reported by ' + esc(x.reporter) + (x.n > 1 ? ' and ' + (x.n - 1) + ' more' : '') + ' · ' + esc(RS[x.reason] || x.reason) + (x.at ? ' · ' + esc(x.at) : '') + '</span>' +
         '<p>“' + esc(x.excerpt) + '”</p>' + (x.note ? '<span>' + esc(x.note) + '</span>' : '');
       acts = '<button class="dx-mod-no" data-k="posts" data-id="' + esc(x.id) + '" data-v="removed">Remove post</button><button class="dx-mod-ok" data-k="posts" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
+    if (kind === 'members') { var MR = { spam: 'Spam or fake offers', fake: 'Fake profile or impersonation', scam: 'Scam or fraud', abusive: 'Harassment or hate', other: 'Something else', counterfeit: 'Unverified or counterfeit product', misleading: 'Misleading information' };   /* AREA social: reported members */
+      body = '<b data-noi18n>' + esc(x.name) + '</b>' + (x.suspended ? ' <span class="dx-mod-pill">Suspended</span>' : '') + '<span>' + esc([x.headline, x.company].filter(Boolean).join(' · ')) + '</span>' +
+        '<span>' + esc(x.reports) + ' reports from ' + esc(x.reporters) + ' members · ' + (x.reasons || []).map(function (r) { return esc(MR[r] || r); }).join(', ') + ' · ' + esc(x.posts || 0) + ' posts</span>' +
+        (x.samples || []).slice(0, 3).map(function (m) { return '<p data-noi18n>“' + esc(m.text || m.note) + '”</p>'; }).join('');
+      acts = '<button class="dx-mod-no" data-k="members" data-id="' + esc(x.id) + '" data-v="suspend">Suspend</button><button class="dx-mod-ok" data-k="members" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
     return '<div class="dx-mod-row"><div class="dx-mod-b">' + body + '</div><div class="dx-mod-a">' + acts + '</div></div>';
   }
   function paint(c) {
@@ -76,9 +81,13 @@
     if (k === 'posts' && v === 'removed') {   /* the author is told why: an optional note goes with the decision */
       D.modal({ title: 'Remove this post?', body: '<p>The author is told it was removed and why. Every reporter is told the outcome.</p><div class="dbk-f"><label for="dxModNote">Note for the author (optional)</label><textarea id="dxModNote" maxlength="500"></textarea></div>',
         primary: { label: 'Remove post', danger: true, onClick: function (bx) { note = bx.querySelector('#dxModNote').value.trim(); go(); } } }); return; }
+    if (k === 'members' && v === 'suspend') {   /* AREA social: the reason is required and shown to the member; their posts can go too */
+      D.modal({ title: 'Suspend this account?', body: '<p>They can no longer post, comment, message, connect or publish listings and jobs, and are told why. Every reporter is told the outcome.</p>' +
+        '<div class="dbk-f"><label for="dxModWhy">Reason (the member sees it)</label><textarea id="dxModWhy" data-req maxlength="500"></textarea></div><label class="gp-radio"><input type="checkbox" id="dxModRm" checked> <span>Also remove their posts</span></label>',
+        primary: { label: 'Suspend account', danger: true, onClick: function (bx) { if (D.requireFields && !D.requireFields(bx)) return false; note = { reason: bx.querySelector('#dxModWhy').value.trim(), removePosts: bx.querySelector('#dxModRm').checked }; go(); } } }); return; }
     if (v === 'rejected' && k === 'verifications') { note = window.prompt('Reason for the company (they will see it):', 'The registry document is not readable'); if (note === null) return; return go(); }   /* Cancel keeps the request */
     var ask = { rejected: ['Reject this reference?', 'It will not be published.', 'Reject'], dismissed: ['Dismiss this report?', k === 'posts' ? 'The post stays up.' : 'The company page stays as it is.', 'Dismiss'], failed: ['Mark this transfer as not received?', 'The order stays unpaid.', 'Not received'] }[v];
-    if (k === 'messages' && v === 'dismissed') ask = ['Dismiss this report?', 'Nothing changes for the reported member.', 'Dismiss'];
+    if ((k === 'messages' || k === 'members') && v === 'dismissed') ask = ['Dismiss this report?', 'Nothing changes for the reported member.', 'Dismiss'];
     if (ask) { D.modal({ title: ask[0], body: '<p>' + esc(ask[1]) + '</p>', primary: { label: ask[2], danger: true, onClick: function () { go(); } } }); return; }   /* destructive decisions are confirmed first */
     go();
   });

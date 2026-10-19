@@ -173,6 +173,10 @@ http.createServer(async (req, res) => {
       else await db.query('delete from auth.users where id = $1', [id]);
       endSessions(id); return send(res, 200, {}); }
     /* tests read what was "sent" (loopback only, like everything here) */
+    /* Resend stand-in for the notify-email function (POST /__resend, Bearer key) — the mail lands in the same test mailbox */
+    if (url.pathname === '/__resend' && req.method === 'POST') { if (!bearer(req)) return send(res, 401, { message: 'Missing API key' }); const b = await readBody(req);
+      const m = /href="([^"]+)"/.exec(String(b.html || '')); (Array.isArray(b.to) ? b.to : [b.to]).forEach(t => mail(t, String(b.subject || ''), String(b.text || ''), m ? m[1].replace(/&amp;/g, '&') : null));
+      return send(res, 200, { id: 'local-' + MAIL.length }); }
     if (url.pathname === '/__mail' && req.method === 'GET') { const to = (url.searchParams.get('to') || '').toLowerCase(); return send(res, 200, MAIL.filter(m => !to || m.to === to)); }
 
     /* Edge Functions (tests): forwarded to the local function server */

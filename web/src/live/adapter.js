@@ -437,7 +437,7 @@
   var INCOMING = window.CONN_IN || (window.CONN_IN = {}), NET_AT = 0, NOTIF_AT = 0, NOTIF_IDS = [], SUGG = [], REJ = {};   /* REJ: my requests that were declined */
   function wipe(o) { Object.keys(o).forEach(function (k) { if (+k > 1000) delete o[k]; }); }
   var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼', post_removed: '🛡️', report_closed: '🛡️', follow: '👤', company_message: '💬',
-               reply: '↩️', mention: '@', repost: '🔄', endorse: '⭐', comment_like: '👍' };
+               reply: '↩️', mention: '@', repost: '🔄', endorse: '⭐', comment_like: '👍', message: '✉️', saved_search: '🔔' };
   var esc2 = function (t) { return window.esc ? window.esc(t) : String(t || ''); };
   /* every connection, 1,000 rows a request in id order (the API's row cap) — a big network is never cut short (F-50) */
   async function loadConnections() {
@@ -469,6 +469,8 @@
   var WHY = { spam: 'spam or an unrelated ad', counterfeit: 'an unverified or counterfeit product', misleading: 'misleading information', abusive: 'harassment or hate' };
   /* the sentence is written here from the data 0036 keeps, in English — the Arabic interface translates it like any notice */
   function sysText(n) { var d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return esc2(n.message || '');
+    if (n.type === 'report_closed' && d.outcome === 'member_actioned') return 'Drugbox reviewed your report and suspended the account.';                    /* area social (0044) */
+    if (n.type === 'report_closed' && d.outcome === 'member_dismissed') return 'Drugbox reviewed your report — no action was needed on the account.';
     if (n.type === 'report_closed') return d.outcome === 'removed' ? 'Drugbox reviewed your report and removed the post.' : 'Drugbox reviewed your report — the post stays up.';
     return esc2('Drugbox removed your post “' + String(d.excerpt || '') + '” — reason: ' + (WHY[d.reason] || 'it breaks the Drugbox rules') + '.' + (d.note ? ' Note: ' + String(d.note) : '')); }
   function notifFrom(n) {
@@ -480,11 +482,13 @@
     else if (n.type === 'reply') t = '<b>' + who + '</b> replied to your comment: "' + esc2(n.message || '') + '"';            /* area social (0041) */
     else if (n.type === 'mention') t = '<b>' + who + '</b> mentioned you in a post';
     else if (n.type === 'repost') t = '<b>' + who + '</b> reposted your post';
+    else if (n.type === 'message') t = '<b>' + who + '</b> sent you a message';                                                  /* area social (0045) */
+    else if (n.type === 'saved_search') t = esc2(n.message || '');
     else if (n.type === 'post_removed' || n.type === 'report_closed') { t = sysText(n); if (!n.from_user) a = SYS_UID; }
     else if (n.type === 'company_message' && n.company_id) t = '<b>' + who + '</b> messaged ' + esc2(n.company && n.company.name ? n.company.name : 'your company') + ': "' + esc2(n.message || '') + '"';   /* written here, in the reader's language (0034); older rows carry their sentence */
     else t = '<b>' + who + '</b> ' + esc2(n.message || '');
     var type = n.type === 'connection_request' ? (INCOMING[a] ? 'connection' : 'accepted') : n.type === 'connection_accepted' ? 'accepted' : n.type;
-    return { id: n.id, uid: a, icon: ICON[n.type] || '🔔', text: t, ts: ago(n.created_at), read: !!n.read, type: type, pid: n.post_id || null };
+    return { id: n.id, uid: a, icon: ICON[n.type] || '🔔', text: t, ts: ago(n.created_at), read: !!n.read, type: type, pid: n.post_id || null, data: n.data || null, job: n.job_id || null, group: n.group_id || null };   /* area social: data for S-20 */
   }
   async function loadNotifs() {
     var r = await sb.from('notifications').select('*, actor:profiles!notifications_from_user_fkey(' + PCOLS + '), company:companies(name)').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(50);

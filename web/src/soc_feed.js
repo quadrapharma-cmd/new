@@ -82,6 +82,7 @@
     o += '<div style="display:flex;gap:12px;margin-top:5px">';
     o += '<span role="button" tabindex="0" class="dx-cmt-like' + (cm.liked ? ' on' : '') + '" aria-pressed="' + (cm.liked ? 'true' : 'false') + '" style="font-size:11.5px;font-weight:700;color:' + (cm.liked ? 'var(--cp)' : '#65676b') + ';cursor:pointer" data-cl="' + esc(cm.id) + '" data-clp="' + esc(post.id) + '" onclick="dxCmtLike(this.dataset.clp,this.dataset.cl)">' + (cm.likes ? '👍 ' + cm.likes : 'Like') + '</span>';
     o += '<span role="button" tabindex="0" style="font-size:11.5px;font-weight:700;color:#65676b;cursor:pointer" data-cr="' + esc(cm.id) + '" data-crp="' + esc(post.id) + '" onclick="dxCmtReply(this.dataset.crp,this.dataset.cr)">Reply</span>';
+    if (cm.uid !== me().id && cm.id != null) o += '<span role="button" tabindex="0" class="dx-cmt-rep" style="font-size:11.5px;font-weight:700;color:#9ca3af;cursor:pointer" data-crep="' + esc(cm.id) + '" data-crepp="' + esc(post.id) + '">Report</span>';   /* S-09 (soc_safety.js) */
     o += '</div></div></div>';
     return o;
   }
@@ -149,7 +150,7 @@
     var on = !c.liked; c.liked = on; c.likes = Math.max(0, (c.likes || 0) + (on ? 1 : -1)); redrawComments(p.id);
     S().likeComment(c, on, p).then(null, function (err) { c.liked = !on; c.likes = Math.max(0, (c.likes || 0) + (on ? -1 : 1)); redrawComments(p.id); toast((err && err.message) || 'Could not save the like'); });
   };
-  document.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.dx-cmt-like,[data-cr]')) { e.preventDefault(); e.target.click(); } });
+  document.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.dx-cmt-like,[data-cr],[data-crep]')) { e.preventDefault(); e.target.click(); } });
 
   /* ── Edit my post: the approved Create Post window, filled in ── */
   window.dxEditPost = function (id) {

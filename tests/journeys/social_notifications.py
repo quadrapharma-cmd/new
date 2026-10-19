@@ -53,7 +53,22 @@ def told_promptly(j):
                              'notifications are written in English in the Arabic interface: %s' % [r['text'][:50] for r in rows if re.search(r'reacted to|commented|sent you|accepted your', r['text'])][:3])
             j.nav(pa, 'feed')
         with j.step("B replies to A's comment, mentions A, follows A and messages A — one notification each"):
-            j.notbuilt('replies, mentions and person follows do not exist (see J-SOCIAL-15, -21, -33)')
+            ca = comment_db(j, a['id'], p, 'Adel own comment ' + j.tag)
+            def as_b(js, arg):
+                r = pb.evaluate("([js,arg])=>(new Function('sb','me','arg','return '+js))(dxLive.sb,dxLive.k.me,arg).then(r=>r&&r.error?r.error.message:'ok')", [js, arg])
+                j.check(r == 'ok', 'B could not do it: %s' % r)
+            as_b("sb.from('comments').insert({post_id:arg[0],user_id:me,body:'Reply to Adel '+arg[2],parent_id:arg[1]})", [int(p), int(ca), j.tag])
+            cur = expect_one(r'^reply$', 'reply', cur)
+            as_b("sb.from('posts').insert({user_id:me,body:'Thanks @Adel '+arg[1]}).select('id').single().then(r=>r.error?r:sb.from('post_mentions').insert({post_id:r.data.id,user_id:arg[0]}))", [a['id'], j.tag])
+            cur = expect_one(r'^mention$', 'mention', cur)
+            as_b("sb.from('person_followers').insert({person_id:arg,user_id:me})", a['id'])
+            cur = expect_one(r'^follow$', 'follow', cur)
+            as_b("sb.from('messages').insert({sender_id:me,receiver_id:arg[0],body:'Hello '+arg[1]})", [a['id'], j.tag])
+            cur = expect_one(r'^message$', 'message', cur)
+            as_b("sb.from('messages').insert({sender_id:me,receiver_id:arg[0],body:'Hello again '+arg[1]})", [a['id'], j.tag])
+            pa.wait_for_timeout(1500)
+            n = j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s' and type='message'" % (a['id'], b['id']))
+            j.check(n == '1', 'a second unread message made %s message notifications (want 1 per conversation)' % n)
     with j.step('Open Notifications; filter by Connections / Reactions / Comments: only matching kinds'):
         it = notifs(j, pa); j.check(it, 'no notifications listed')
         for pat, kind in ((r'^(Connections|اتصالات|الاتصالات)$', r'connect|تواصل|اتصال'), (r'^(Reactions|تفاعلات|التفاعلات)$', r'react|liked|أعجب|تفاعل'), (r'^(Comments|تعليقات|التعليقات)$', r'comment|علّق|تعليق')):
@@ -157,16 +172,49 @@ def mark_read_and_clear(j):
 @journey('J-SOCIAL-44', applies='live')
 def notification_preferences(j):
     """A busy member chooses which notifications reach him by email."""
-    a = j.person('Dr. Akram Busy'); pg = a['page']
-    with j.step('Open Settings → Notifications'):
+    a = j.person('Dr. Akram Busy'); b = j.person('Dr. Bassem Sender'); pg = a['page']
+    p = int(post_db(j, a['id'], 'Akram post for email preferences ' + j.tag))
+    def settings():
         el = j.find(pg, r'^(Settings|الإعدادات)$', exact=True)
         if not el: pg.click('#topAv'); j.settle(pg); el = j.find(pg, r'^(Settings|Notification settings|الإعدادات)$', exact=True)
         j.check(el, 'not built: no Settings page with notification preferences')
-        el.click(); j.settle(pg)
+        el.click(); j.settle(pg, 1200)
+    with j.step('Open Settings → Notifications'):
+        settings()
         j.check(j.find(pg, r'Email|البريد', scope='#content'), 'not built: no email notification preferences')
+        j.check(pg.locator('#content [data-pref]').count() >= 4, 'the email preferences list is empty')
     with j.step('Turn email on for messages and requests, off for reactions; daily digest; saved per user'):
-        j.check(j.has_table('notification_prefs') or j.has_column('profiles', 'notify_email'), 'not built: preferences are not stored')
+        def box(k, on):
+            c = pg.locator('#content [data-pref="%s"]' % k); j.check(c.count(), 'no switch for %s' % k)
+            if c.is_checked() != on: c.click()
+        box('email_messages', True); box('email_connections', True); box('email_reactions', False)
+        pg.select_option('#setDigest', 'daily')
+        j.click(pg, r'^(Save notification settings|احفظ إعدادات الإشعارات|حفظ إعدادات الإشعارات)$', scope='#content', what='Save notification settings', exact=True)
+        row = j.wait_db("select email_messages||','||email_connections||','||email_reactions||','||digest from public.member_settings where user_id='%s'" % a['id'], 8, want='true,true,false,daily')
+        j.check(row == 'true,true,false,daily', 'the preferences are not stored for this member (database: %s)' % row)
+        j.reload(pg); settings()
+        j.check(pg.locator('#content [data-pref="email_reactions"]').count() and not pg.locator('#content [data-pref="email_reactions"]').is_checked()
+                and pg.input_value('#setDigest') == 'daily', 'after reload the preferences are not shown as saved')
     with j.step("Sign out; B sends A a message, a request and a like; A's inbox gets one email each for the message and the request"):
-        j.notbuilt('no notification emails: nothing sends them and the local stack has no mail catcher')
+        j.nav(pg, 'profile'); j.click(pg, r'^(Sign Out|Sign out|Log out|تسجيل الخروج|خروج)$', what='Sign Out', exact=True)
+        j.check(j.wait(pg, LOGIN_VISIBLE, 6), 'sign out did not show the login page')
+        pb = b['page']
+        r = pb.evaluate("""([a,p,t])=>Promise.all([
+            dxLive.sb.from('messages').insert({sender_id:dxLive.k.me,receiver_id:a,body:'Email check '+t}),
+            dxLive.sb.from('connections').insert({requester:dxLive.k.me,addressee:a,status:'pending'}),
+            dxLive.sb.from('reactions').insert({post_id:p,user_id:dxLive.k.me,kind:'like'})]).then(rs=>rs.map(r=>r.error?r.error.message:'ok').join(','))""", [a['id'], p, j.tag])
+        j.check(r == 'ok,ok,ok', 'B could not message, connect or react: %s' % r)
+        m1 = wait_mail(j, a['email'], r'message', timeout=25); m2 = wait_mail(j, a['email'], r'connect', timeout=25)
+        pg.wait_for_timeout(6000)
+        got = [m.get('subject', '') for m in mails(j, a['email'])]
+        j.check(len([x for x in got if re.search('message', x, re.I)]) == 1 and len([x for x in got if re.search('connect', x, re.I)]) == 1, 'want exactly one email for the message and one for the request, got %s' % got)
+        j.check(not [x for x in got if re.search(r'react', x, re.I)], 'an email was sent for the reaction although reactions are off: %s' % got)
+        j.check('Bassem' in m1['subject'] and m1.get('link'), 'the message email does not say who wrote or has no link: %s' % m1)
+    with j.step('The link in the message email opens the conversation with B after signing in'):
+        p2 = j.new_page(url=m1['link'])
+        if j.on_login(p2): j.signin(p2, a['email'], a['pw'])
+        j.settle(p2, 1500)
+        j.check(p2.evaluate("document.body.getAttribute('data-page')") == 'messages', 'the email link opens %s, not Messages' % p2.evaluate("document.body.getAttribute('data-page')"))
+        j.check(j.wait(p2, "()=>/Bassem/.test((document.querySelector('#content .chat-head')||{}).innerText||'')", 8), 'the email link does not open the conversation with B')
 
 if __name__ == '__main__': main(__file__)

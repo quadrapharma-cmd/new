@@ -82,3 +82,23 @@ html.dx-dark .dx-legal-ov{filter:invert(1) hue-rotate(180deg)}
 .dx-repost-note{margin-top:6px;font-size:13.5px;color:var(--cx,#0E1320);white-space:pre-line}
 .dx-tag-page{max-width:680px;margin:0 auto;padding:6px 0 30px;display:flex;flex-direction:column;gap:10px}
 .dx-tag-list{display:flex;flex-direction:column;gap:10px}
+
+/* ── search results, Saved page (soc_nav.js) ── */
+.dx-sres.dx-kb-active, .dx-sres:hover { background: #eef4ff; border-radius: 10px; }
+.dx-sres:focus-visible { outline: 2px solid var(--cp, #1a56db); outline-offset: 2px; }
+.dx-sres-e { width: 42px; height: 42px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 24px; border-radius: 10px; background: #f0f2f5; }
+.dx-saved-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid #f0f2f5; }
+.dx-saved-row:first-of-type { border-top: 0; }
+.dx-saved-open { flex: 1; min-width: 0; text-align: start; background: none; border: 0; padding: 4px 0; font: inherit; font-size: 13.5px; font-weight: 700; color: var(--cx); cursor: pointer; }
+.dx-saved-open small { display: block; font-weight: 400; font-size: 12px; color: #65676b; }
+.dx-saved-un { font-size: 12px; padding: 5px 12px; flex: none; }
+
+/* ── safety (soc_safety.js) ── */
+.dx-pf-more { min-width: 40px; font-size: 18px; line-height: 1; }
+.dx-pf-menu { position: absolute; z-index: 1200; background: #fff; border: 1px solid #e4e6eb; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.14); padding: 6px; display: flex; flex-direction: column; min-width: 170px; }
+.dx-pf-menu button { text-align: start; background: none; border: 0; padding: 9px 12px; border-radius: 8px; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--cx); cursor: pointer; }
+.dx-pf-menu button:hover, .dx-pf-menu button:focus-visible { background: #f0f2f5; }
+html.dx-dark .dx-pf-menu { filter: invert(1) hue-rotate(180deg); }
+.dx-rep-q { margin: 8px 0; padding: 8px 12px; border-inline-start: 3px solid #e4e6eb; color: #65676b; font-size: 13px; }
+.dx-mod-pill { display: inline-block; margin-inline-start: 6px; padding: 1px 8px; border-radius: 99px; background: #fee2e2; color: #b91c1c; font-size: 11px; font-weight: 700; }
+.dx-cmt-rep:hover { color: #dc2626 !important; }

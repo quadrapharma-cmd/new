@@ -73,7 +73,8 @@
     if (r.error) throw r.error; ACC.settings = Object.assign({}, DEF, r.data || {}); return ACC.settings;
   }
   async function saveSettings(o) {
-    var row = Object.assign({ user_id: me() }, o), r = await sb.from('member_settings').upsert(row, { onConflict: 'user_id' }).select('user_id');
+    var r = await sb.from('member_settings').update(o).eq('user_id', me()).select('user_id');   /* the row is made with the profile (0040); a member may not rewrite its key */
+    if (!r.error && !(r.data || []).length) r = await sb.from('member_settings').insert(Object.assign({ user_id: me() }, o)).select('user_id');
     if (r.error) throw r.error; ACC.settings = Object.assign({}, ACC.settings || DEF, o);
   }
   /* e-mails come in the interface language: the choice is kept with the settings */
@@ -141,9 +142,14 @@
     return r;
   };
   K.onReset(function () { FD.rep = []; FD.repAt = 0; FD.viewed = {}; FD.vq = []; });
+  var BLK = { ids: null, at: 0 };                                      /* people blocked either way never show in a picker (S-09) */
+  function blockList() { if (BLK.ids && Date.now() - BLK.at < 60000) return Promise.resolve(BLK.ids);
+    return sb.rpc('my_block_list').then(function (r) { BLK.ids = r.error ? [] : (r.data || []); BLK.at = Date.now(); return BLK.ids; }, function () { return []; }); }
+  K.onReset(function () { BLK.ids = null; });
   function people(q) {
-    return sb.from('profiles').select(K.PCOLS).ilike('name', '%' + String(q).replace(/[\\%_]/g, '\\$&').slice(0, 60) + '%').neq('id', me()).order('name').limit(8).then(function (r) {
-      if (r.error) throw new Error(friendly(r.error)); (r.data || []).forEach(function (x) { K.putUser(x); }); var ids = (r.data || []).map(function (x) { return L.aid(x.id); });
+    return Promise.all([sb.from('profiles').select(K.PCOLS).ilike('name', '%' + String(q).replace(/[\\%_]/g, '\\$&').slice(0, 60) + '%').neq('id', me()).neq('account_type', 'deleted').order('name').limit(12), blockList()]).then(function (a) {
+      var r = a[0], bl = a[1] || []; if (r.error) throw new Error(friendly(r.error)); r.data = (r.data || []).filter(function (x) { return bl.indexOf(x.id) < 0; }).slice(0, 8);
+      (r.data || []).forEach(function (x) { K.putUser(x); }); var ids = (r.data || []).map(function (x) { return L.aid(x.id); });
       return ids.map(function (a) { return (window.USERS || []).find(function (u) { return u.id === a; }); }).filter(Boolean); });
   }
   function untilSaved(p, ms) { return new Promise(function (ok, no) { var t0 = Date.now(); (function w() { if (typeof p.id === 'number' && p.id < 1e12) return ok(p.id); if (Date.now() - t0 > (ms || 15000)) return no(new Error('The post was not saved')); setTimeout(w, 200); })(); }); }
@@ -269,4 +275,116 @@
   };
   /* the endorsement notice says what was endorsed */
   if (window.dxI18nAdd) window.dxI18nAdd({ 'You cannot endorse yourself': 'لا يمكنك تأييد نفسك' }, [[/^endorsed you for (.+)$/, function (m) { return 'أيّدك في ' + m[1]; }]]);
+  /* ===== AREA social: search & navigation — one search (search_all, 0043), Ctrl+K results, saved searches per member, one Saved place ===== */
+  function flashCard(sel, test) {
+    var t0 = Date.now();
+    (function look() {
+      var el = [].filter.call(document.querySelectorAll(sel), function (e) { return e.getClientRects().length && test(e); })[0];
+      if (!el) { if (Date.now() - t0 < 5000) setTimeout(look, 200); return; }
+      el.scrollIntoView({ block: 'center' }); el.classList.remove('dx-post-hit'); void el.offsetWidth; el.classList.add('dx-post-hit');
+    })();
+  }
+  function marketQuery(q) { window.goto('market'); setTimeout(function () { var si = $('searchIn'); if (si) { si.value = q; si.dispatchEvent(new Event('input', { bubbles: true })); } if (window.__mkxFilter) window.__mkxFilter(q); }, 60); }
+  function around(body, q) { body = String(body || '').replace(/\s+/g, ' '); var i = body.toLowerCase().indexOf(String(q).toLowerCase().split(' ')[0]); if (i < 0 || body.length <= 90) return body.slice(0, 90); var a = Math.max(0, i - 30); return (a ? '…' : '') + body.slice(a, a + 90) + (a + 90 < body.length ? '…' : ''); }
+  async function searchAll(q) {
+    var r = await sb.rpc('search_all', { p_q: q, p_limit: 6 }); if (r.error) throw new Error(friendly(r.error)); var d = r.data || {}, out = [];
+    (d.people || []).forEach(function (p) { K.putUser(p); var a = L.aid(p.id), u = window.U(a); out.push({ g: 'people', u: u, t: p.name, s: [p.headline, p.company].filter(Boolean).join(' · '), go: function () { window.gotoProfile(a); } }); });
+    (d.companies || []).forEach(function (c) { out.push({ g: 'companies', e: c.logo_emoji || '🏢', t: c.name, s: [c.city, c.country].filter(Boolean).join(', '), go: function () { if (window.dxDirectory && window.dxDirectory.open && c.slug) window.dxDirectory.open(c.slug); else window.goto('companies'); } }); });
+    (d.products || []).forEach(function (x) { out.push({ g: 'products', e: x.emoji || '📦', t: x.name, s: [x.seller, x.price != null ? x.price + (x.unit ? '/' + x.unit : '') : ''].filter(Boolean).join(' · '), go: function () { marketQuery(x.name); } }); });
+    (d.jobs || []).forEach(function (j) { out.push({ g: 'jobs', e: '💼', t: j.title, s: [j.company, j.location].filter(Boolean).join(' · '), go: function () { window.goto('jobs'); flashCard('#jx [data-live="j' + j.id + '"]', function () { return true; }); } }); });
+    (d.groups || []).forEach(function (g) { out.push({ g: 'groups', e: g.emoji || '👥', t: g.name, s: (g.member_count || 0) + ' members', go: function () { window.goto('groups'); flashCard('#gx .gcard', function (e) { return e.textContent.indexOf(g.name) >= 0; }); } }); });
+    (d.posts || []).forEach(function (p) { out.push({ g: 'posts', e: '📝', t: around(p.body, q), s: p.author || '', go: function () { if (window.dxOpenPost) window.dxOpenPost(p.id); } }); });
+    return out;
+  }
+  window.dxSearchSvc = { live: true, find: searchAll };
+  /* Ctrl+K: the same results, fetched as you type (the palette redraws when they arrive) */
+  var CK = { q: null, items: [], t: null }, CMDG = { people: 'People & companies', companies: 'Companies', products: 'Products', jobs: 'Jobs', groups: 'Groups', posts: 'Posts' },
+      CMDI = { people: 'user', companies: 'building', products: 'box', jobs: 'briefcase', groups: 'users', posts: 'megaphone' };
+  window.dxCmdExtra = function (q) {
+    if (!me() || q.length < 2) return [];
+    if (CK.q === q) return CK.items;
+    clearTimeout(CK.t);
+    CK.t = setTimeout(function () { searchAll(q).then(function (list) { CK.q = q; CK.items = list.map(function (x) { return { g: CMDG[x.g], t: x.t, s: x.s, ic: CMDI[x.g], go: x.go }; }); if (window.dxCmdRedraw) window.dxCmdRedraw(); }, function () {}); }, 160);
+    return CK.q && q.indexOf(CK.q) === 0 ? CK.items : [];
+  };
+  K.onReset(function () { CK.q = null; CK.items = []; });
+
+  /* saved searches: the member's rows (saved_searches) in the Marketplace's own format */
+  var SS = { list: null, at: 0, busy: null };
+  function ssFrom(r) { var f = r.filters || {}; return { id: r.id, db: true, name: r.name, alert: r.alert, f: { checks: Array.isArray(f.checks) ? f.checks : [], sector: f.sector || '', q: r.q || '' }, seen: Date.parse(r.seen_at) || Date.now(), fresh: 0 }; }
+  async function loadSaved() { var r = await sb.from('saved_searches').select('id,name,q,filters,alert,seen_at').eq('kind', 'market').order('created_at', { ascending: false }).limit(20);
+    if (r.error) throw r.error; SS.list = (r.data || []).map(ssFrom); SS.at = Date.now(); if (window.dxSavedRefresh) window.dxSavedRefresh(); }
+  async function syncSaved(next) {
+    var was = SS.list || []; SS.list = next;
+    var keep = {}; next.forEach(function (s) { if (s.db) keep[s.id] = s; });
+    for (var i = 0; i < was.length; i++) if (was[i].db && !keep[was[i].id]) { var d = await sb.from('saved_searches').delete().eq('id', was[i].id); if (d.error) toast(friendly(d.error)); }
+    for (var k = 0; k < next.length; k++) {
+      var s = next[k];
+      if (!s.db) {
+        var r = await sb.from('saved_searches').insert({ user_id: me(), kind: 'market', name: String(s.name || '').slice(0, 120) || 'My search', q: String(s.f.q || '').slice(0, 80), filters: { checks: (s.f.checks || []).slice(0, 40), sector: s.f.sector || '' }, alert: s.alert || 'daily' }).select('id').single();
+        if (r.error) { toast(friendly(r.error)); SS.list = SS.list.filter(function (x) { return x !== s; }); if (window.dxSavedRefresh) window.dxSavedRefresh(); continue; }
+        s.id = r.data.id; s.db = true;
+      }
+    }
+  }
+  window.dxSavedSearchHook = function (v) {
+    if (!me()) return undefined;
+    if (v === undefined) return (SS.list || []).slice();
+    SS.busy = Promise.resolve(SS.busy).then(function () { return syncSaved(v.slice()); }).catch(function (e) { toast(friendly(e)); });
+    return true;
+  };
+  K.onSignIn(function () { loadSaved().catch(function (e) { console.error(e); }); });
+  K.onReset(function () { SS.list = null; SS.at = 0; });
+  document.addEventListener('dx:page', function (e) { if (me() && e.detail && e.detail.page === 'market' && Date.now() - SS.at > 30000) loadSaved().catch(function () {}); });
+
+  /* one Saved place: saved jobs from saved_jobs (listings are kept in this browser until the Marketplace saves them per member) */
+  var oSavedSvc = window.dxSavedSvc;
+  window.dxSavedSvc = Object.assign({}, oSavedSvc, {
+    live: true,
+    jobs: async function () {
+      var r = await sb.from('saved_jobs').select('job_id, job:jobs(id,title,company,location,active)').eq('user_id', me()).order('created_at', { ascending: false }).limit(100);
+      if (r.error) throw new Error(friendly(r.error));
+      return (r.data || []).filter(function (x) { return x.job; }).map(function (x) { return { id: x.job_id, title: x.job.title, sub: [x.job.company, x.job.location].filter(Boolean).join(' · ') + (x.job.active === false ? ' · closed' : '') }; });
+    },
+    unsaveJob: async function (j) { var r = await sb.from('saved_jobs').delete().eq('user_id', me()).eq('job_id', j.id); if (r.error) throw new Error(friendly(r.error)); },
+    openJob: function (j) { window.goto('jobs'); flashCard('#jx [data-live="j' + j.id + '"]', function () { return true; }); }
+  });
+  /* ===== AREA social: safety — report a person or comment (member_reports), block from the profile, Reported members, suspension (0044) ===== */
+  window.dxSafetySvc = {
+    live: true,
+    report: async function (uid, reason, note, comment) {
+      var id = L.uuidOf(uid); if (!id || id === me()) throw new Error('You cannot report yourself');
+      var row = { reporter: me(), reported: id, reason: reason, note: note || null }; if (comment && typeof comment.id === 'number') row.comment_id = comment.id;
+      var r = await sb.from('member_reports').insert(row); if (r.error && r.error.code === '23505') return 'already'; if (r.error) throw new Error(friendly(r.error)); return 'ok';
+    },
+    isBlocked: async function (uid) { var id = L.uuidOf(uid); if (!id) return false; var r = await sb.from('user_blocks').select('blocked').eq('blocker', me()).eq('blocked', id).limit(1); return !!(r.data || []).length; },
+    block: async function (uid, on) {
+      var id = L.uuidOf(uid); if (!id) throw new Error('This member is not available');
+      var r = on ? await sb.from('user_blocks').insert({ blocker: me(), blocked: id }) : await sb.from('user_blocks').delete().eq('blocker', me()).eq('blocked', id);
+      if (r.error && r.error.code !== '23505') throw new Error(friendly(r.error)); BLK.ids = null;
+      if (L.loadConvs) L.loadConvs().catch(function () {});
+    },
+    queue: async function () {
+      var r = await sb.rpc('reported_members', { p_limit: 100 }); if (r.error) throw new Error(friendly(r.error));
+      return (r.data || []).map(function (x) { return { id: x.id, name: x.name || 'Member', headline: x.headline || '', company: x.company || '', suspended: !!x.suspended, reports: x.reports || 0, reporters: x.reporters || 0, reasons: x.reasons || [], samples: x.samples || [], posts: x.posts || 0 }; });
+    },
+    decide: async function (id, action, o) {
+      var r = await sb.rpc('member_decide', { p_user: id, p_action: action, p_reason: (o && o.reason) || null, p_remove_posts: !!(o && o.removePosts) }); if (r.error) throw new Error(friendly(r.error));
+      if (o && o.removePosts && K.loadFeed) { K.FEED.at = 0; }
+      return true;
+    }
+  };
+  if (window.dxSafetyWrapMod) window.dxSafetyWrapMod();
+  /* a suspended member is told why at sign-in and signed out (the database refuses their writes anyway) */
+  function suspendedNotice(st) {
+    var msg = 'Your Drugbox account is suspended' + (st.reason ? ': ' + st.reason : '') + '. If you think this is a mistake, write to support@drugbox.app.';
+    var out = window.doLogout ? Promise.resolve(window.doLogout()) : sb.auth.signOut();
+    Promise.resolve(out).then(function () { setTimeout(function () { var e = $('loginErr'); if (e) { e.textContent = msg; e.style.display = 'block'; } }, 600); });
+  }
+  function checkSuspended() { if (!me()) return; sb.rpc('my_account_status').then(function (r) { if (!r.error && r.data && r.data.suspended) suspendedNotice(r.data); }, function () {}); }
+  K.onSignIn(checkSuspended);
+  if (window.dxI18nAdd) window.dxI18nAdd({ 'Drugbox reviewed your report and suspended the account.': 'راجع Drugbox بلاغك وأوقف الحساب.', 'Drugbox reviewed your report — no action was needed on the account.': 'راجع Drugbox بلاغك — لم يلزم أي إجراء على الحساب.',
+    'You cannot report yourself': 'لا يمكنك الإبلاغ عن نفسك', 'This member is not available': 'هذا العضو غير متاح', 'sent you a message': 'أرسل لك رسالة' },
+    [[/^Your Drugbox account is suspended(?:: (.+?))?\. If you think this is a mistake, write to support@drugbox\.app\.$/, function (m) { return 'حسابك على Drugbox موقوف' + (m[1] ? ': ' + m[1] : '') + '. إذا كنت ترى أن هذا خطأ، راسل support@drugbox.app.'; }]]);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkSuspended(); });
 })();
