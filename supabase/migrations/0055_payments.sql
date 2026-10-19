@@ -19,6 +19,15 @@
 --      month's uses under a row lock (two clicks at once cannot both take the last one) and boosts the listing for 7 days
 --      (payment_products 'boost' duration). included_boosts_left(company) tells the window. Uses are kept in vip_boost_uses.
 --   6. vip_reminders(): a notice 3 days before a VIP plan ends (daily with expire_vip_plans when pg_cron is enabled).
+--   7. (verification follow-ups) a payment that could not start (the provider refused or was unreachable) is closed at once by
+--      payment_start_failed (server-only, called by payments-create) — it never blocks a new payment; only a Fawry order WITH a
+--      reference that has not expired counts as "already have a reference" (and the message names that Fawry reference).
+--      The buyer may cancel their own pending, unpaid order (cancel_order → 'cancelled'); a cancelled order is never activated
+--      (a late payment for it is recorded and Drugbox is told a refund is due). VIP cannot be bought for a suspended company,
+--      a paid boost / Featured only for an active listing, and a second InstaPay order waits while one is under review.
+--      submit_instapay accepts only a receipt path payments/<buyer>/<safe file name>.
+--      Each invoice keeps what it said when it was issued (invoice_snapshot: product, days, VAT rate, seller, buyer, company):
+--      later price, VAT or seller changes never rewrite an issued invoice; a refunded order's invoice still opens (marked refunded).
 -- Money rules: amounts only from payment_products; confirm_payment / activate_order / set_order_provider_ref / fail_payment stay
 -- server-only; the browser never writes an order (no insert/update grants), a plan, a boost date, a status or an invoice number.
 -- Safe to run twice.
@@ -29,6 +38,10 @@ alter table public.payment_orders add column if not exists net_cents        inte
 alter table public.payment_orders add column if not exists vat_cents        integer;
 alter table public.payment_orders add column if not exists invoice_no       text;
 alter table public.payment_orders add column if not exists fawry_expires_at timestamptz;
+alter table public.payment_orders add column if not exists invoice_snapshot jsonb;
+-- the buyer can cancel a pending, unpaid order ('cancelled')
+alter table public.payment_orders drop constraint if exists payment_orders_status_check;
+alter table public.payment_orders add constraint payment_orders_status_check check (status in ('pending','review','paid','failed','expired','refunded','cancelled'));
 create unique index if not exists idx_payment_orders_invoice_no on public.payment_orders (invoice_no) where invoice_no is not null;
 create index if not exists idx_payment_orders_pending_target on public.payment_orders (user_id, product_code, coalesce(listing_id, 0), coalesce(company_id, 0)) where status = 'pending';
 -- orders made before this migration: the split as create_order computed the total (VAT 14 %)
@@ -82,35 +95,60 @@ begin
     select vat_rate into r from public.payment_products where code = new.product_code;
     new.net_cents := round(new.amount_cents / (1 + coalesce(r, 0.14))); new.vat_cents := new.amount_cents - new.net_cents;
   end if;
+  if tg_op = 'UPDATE' and old.invoice_no is not null then           -- an issued invoice never changes (number and contents)
+    new.invoice_no := old.invoice_no; new.invoice_snapshot := coalesce(old.invoice_snapshot, new.invoice_snapshot);
+  end if;
   if new.status = 'paid' and new.invoice_no is null then
     new.paid_at := coalesce(new.paid_at, now());
     new.invoice_no := 'DBX-INV-' || to_char(new.paid_at, 'YYYY') || '-' || lpad(nextval('public.payment_invoice_seq')::text, 6, '0');
+  end if;
+  if new.invoice_no is not null and new.invoice_snapshot is null then   -- what the invoice says, fixed when its number is assigned
+    select jsonb_build_object('product', pr.label, 'kind', pr.kind, 'days', pr.duration_days, 'vat_rate', pr.vat_rate,
+             'seller', (select jsonb_build_object('name', b.legal_name, 'tax_reg_no', b.tax_reg_no, 'address', b.address, 'email', b.email) from public.billing_settings b limit 1),
+             'buyer', (select jsonb_build_object('name', p.name) from public.profiles p where p.id = new.user_id),
+             'company', (select jsonb_build_object('name', c.name, 'registry', c.registry, 'address', coalesce(c.location, c.city)) from public.companies c where c.id = new.company_id),
+             'listing', (select l.name from public.products l where l.id = new.listing_id))
+      into new.invoice_snapshot from public.payment_products pr where pr.code = new.product_code;
   end if;
   return new;
 end $$;
 revoke all on function public.payment_orders_paid() from public, anon, authenticated, service_role;
 drop trigger if exists trg_payment_orders_paid on public.payment_orders;
 create trigger trg_payment_orders_paid before insert or update on public.payment_orders for each row execute function public.payment_orders_paid();
-update public.payment_orders set status = status where status = 'paid' and invoice_no is null;
+update public.payment_orders set status = status where (status = 'paid' and invoice_no is null) or (invoice_no is not null and invoice_snapshot is null);
 
--- ── 4. create_order: the split, no duplicate pending Fawry / InstaPay, card / wallet supersede ────
+-- ── 4. create_order: the split, no duplicate payable Fawry / InstaPay, card / wallet supersede ────
 create or replace function public.create_order(p_product text, p_method text, p_company bigint default null, p_listing bigint default null)
 returns public.payment_orders language plpgsql security definer set search_path = public as $$
 declare pr public.payment_products; o public.payment_orders; v_total int; v_net int; v_company bigint; v_listing bigint; dup public.payment_orders;
 begin
   if auth.uid() is null then raise exception 'Sign in first' using errcode = '42501'; end if;
-  if p_method not in ('card','wallet','fawry','instapay') then raise exception 'Choose a payment method' using errcode = '22023'; end if;
+  if p_method is null or p_method not in ('card','wallet','fawry','instapay') then raise exception 'Choose a payment method' using errcode = '22023'; end if;
   select * into pr from public.payment_products where code = p_product and active; if not found then raise exception 'Unknown product'; end if;
   if pr.kind = 'vip' and (p_company is null or not public.is_company_member(p_company, array['owner','admin'])) then raise exception 'Only the company''s owner or admins can upgrade it' using errcode = '42501'; end if;
+  if pr.kind = 'vip' and exists (select 1 from public.companies where id = p_company and status = 'suspended') then
+    raise exception 'This company page is suspended — VIP cannot be bought for it' using errcode = '42501';
+  end if;
   if pr.kind in ('boost','featured') and not exists (select 1 from public.products where id = p_listing and user_id = auth.uid()) then raise exception 'You can boost only your own listings' using errcode = '42501'; end if;
+  if pr.kind in ('boost','featured') and not exists (select 1 from public.products where id = p_listing and active) then
+    raise exception 'This listing is not active — publish it again before promoting it' using errcode = '42501';
+  end if;
   v_company := case when pr.kind = 'vip' then p_company end; v_listing := case when pr.kind <> 'vip' then p_listing end;
   perform pg_advisory_xact_lock(hashtext('drugbox.order.' || auth.uid()::text));   -- one order at a time per buyer (two clicks make one order)
+  -- a Fawry order that never got its reference (the provider call failed or never returned) can never be paid: closed, never blocking
+  update public.payment_orders x set status = 'failed', provider_payload = coalesce(x.provider_payload, '{}'::jsonb) || jsonb_build_object('start_failed', true)
+   where x.user_id = auth.uid() and x.product_code = pr.code and coalesce(x.listing_id, 0) = coalesce(v_listing, 0) and coalesce(x.company_id, 0) = coalesce(v_company, 0)
+     and x.status = 'pending' and x.method = 'fawry' and x.provider_ref is null;
+  -- still payable: a Fawry reference that has not expired, an InstaPay order waiting for its transfer or being checked by Drugbox
   select * into dup from public.payment_orders x
    where x.user_id = auth.uid() and x.product_code = pr.code and coalesce(x.listing_id, 0) = coalesce(v_listing, 0) and coalesce(x.company_id, 0) = coalesce(v_company, 0)
-     and x.status = 'pending' and x.method = p_method and x.method in ('fawry','instapay') and (x.method <> 'fawry' or x.fawry_expires_at is null or x.fawry_expires_at > now())
+     and x.method = p_method
+     and ((x.method = 'fawry' and x.status = 'pending' and x.provider_ref is not null and x.fawry_expires_at is not null and x.fawry_expires_at > now())
+          or (x.method = 'instapay' and x.status in ('pending','review')))
    order by x.id desc limit 1;
   if dup.id is not null then
-    raise exception '%', case when dup.method = 'fawry' then 'You already have a Fawry reference for this (' || coalesce(dup.provider_ref, dup.merchant_ref) || ') — pay it or find it in My payments'
+    raise exception '%', case when dup.method = 'fawry' then 'You already have a Fawry reference for this (' || dup.provider_ref || ') — pay it or find it in My payments'
+                              when dup.status = 'review' then 'Your InstaPay transfer for this (' || dup.merchant_ref || ') is being checked by Drugbox — wait for the confirmation in My payments'
                               else 'You already have an InstaPay payment waiting for this (' || dup.merchant_ref || ') — send the transfer from My payments' end using errcode = '23505';
   end if;
   update public.payment_orders x set status = 'expired', provider_payload = coalesce(x.provider_payload, '{}'::jsonb) || jsonb_build_object('superseded', true)
@@ -124,6 +162,48 @@ begin
 end $$;
 revoke all on function public.create_order(text, text, bigint, bigint) from public, anon, authenticated, service_role;
 grant execute on function public.create_order(text, text, bigint, bigint) to authenticated, service_role;
+
+-- ── 7. a payment that could not start: payments-create closes the order at once (server-only) ────
+create or replace function public.payment_start_failed(p_id bigint, p_detail jsonb default null) returns text language plpgsql security definer set search_path = public as $$
+declare o public.payment_orders;
+begin
+  select * into o from public.payment_orders where id = p_id for update;
+  if not found then return 'unknown order'; end if;
+  if o.status <> 'pending' then return 'order is ' || o.status; end if;      -- a paid or reviewed order is never turned back
+  update public.payment_orders set status = 'failed', provider_payload = coalesce(provider_payload, '{}'::jsonb) || jsonb_build_object('start_failed', true, 'detail', p_detail) where id = p_id;
+  return 'failed';
+end $$;
+revoke all on function public.payment_start_failed(bigint, jsonb) from public, anon, authenticated, service_role;
+grant execute on function public.payment_start_failed(bigint, jsonb) to service_role;
+
+-- ── 7. the buyer cancels their own pending, unpaid order (never a paid one, nor an InstaPay transfer Drugbox is checking) ────
+create or replace function public.cancel_order(p_id bigint) returns text language plpgsql security definer set search_path = public as $$
+declare o public.payment_orders;
+begin
+  if auth.uid() is null then raise exception 'Sign in first' using errcode = '42501'; end if;
+  select * into o from public.payment_orders where id = p_id for update;      -- the same row lock as confirm_payment: one of them wins
+  if o.id is null or o.user_id <> auth.uid() then raise exception 'This order is not yours' using errcode = '42501'; end if;
+  if o.status <> 'pending' then raise exception 'Only a payment that is still waiting can be cancelled (this one is %)', o.status using errcode = '22023'; end if;
+  update public.payment_orders set status = 'cancelled', provider_payload = coalesce(provider_payload, '{}'::jsonb) || jsonb_build_object('cancelled_by_buyer', now()) where id = p_id;
+  return 'cancelled';
+end $$;
+revoke all on function public.cancel_order(bigint) from public, anon, authenticated, service_role;
+grant execute on function public.cancel_order(bigint) to authenticated, service_role;
+
+-- InstaPay: the transfer number and a receipt the buyer uploaded to their own folder (payments/<buyer>/<file name>)
+create or replace function public.submit_instapay(p_id bigint, p_transfer_ref text, p_receipt text) returns void language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'Sign in first' using errcode = '42501'; end if;
+  if length(trim(coalesce(p_transfer_ref, ''))) not between 3 and 64 then raise exception 'Enter the transfer number from the InstaPay confirmation' using errcode = '22023'; end if;
+  if p_receipt is not null and (position('..' in p_receipt) > 0 or p_receipt !~ ('^payments/' || auth.uid()::text || '/[A-Za-z0-9][A-Za-z0-9._-]{0,120}$')) then
+    raise exception 'The receipt must be a file you uploaded' using errcode = '42501';
+  end if;
+  update public.payment_orders set status = 'review', transfer_ref = left(trim(p_transfer_ref), 64), receipt_path = p_receipt
+   where id = p_id and user_id = auth.uid() and method = 'instapay' and status = 'pending';
+  if not found then raise exception 'This order cannot take a transfer' using errcode = '42501'; end if;
+end $$;
+revoke all on function public.submit_instapay(bigint, text, text) from public, anon, authenticated, service_role;
+grant execute on function public.submit_instapay(bigint, text, text) to authenticated, service_role;
 
 -- ── 2. the Fawry reference keeps its expiry ────
 drop function if exists public.set_order_provider_ref(bigint, text, text);
@@ -151,6 +231,14 @@ begin
   if not found or p_order_key is null or p_order_key = '' then return 'unknown order'; end if;
   if p_provider = 'fawry' and (o.provider_ref is null or p_provider_ref is distinct from o.provider_ref) then return 'reference mismatch'; end if;
   if o.status = 'paid' then return 'already paid'; end if;                      -- providers retry; never activate twice
+  if o.status = 'cancelled' then                                                -- the buyer cancelled it: never activated; if money arrived, Drugbox refunds
+    if not coalesce((o.provider_payload ->> 'paid_after_cancel')::boolean, false) then
+      update public.payment_orders set provider_payload = coalesce(provider_payload, '{}'::jsonb) || coalesce(p_payload, '{}'::jsonb) || jsonb_build_object('paid_after_cancel', true) where id = o.id;
+      insert into public.notifications (user_id, type, message)
+      select p.id, 'payment', 'Order ' || o.merchant_ref || ' was paid after the buyer cancelled it — nothing was activated; refund due' from public.profiles p where p.role = 'admin';
+    end if;
+    return 'order is cancelled (refund due)';
+  end if;
   if not (o.status = 'pending' or (o.status in ('expired','failed') and o.method in ('card','wallet'))) then return 'order is ' || o.status; end if;   -- a superseded or retried card order paid late: the money arrived
   if p_amount_cents is distinct from o.amount_cents then
     update public.payment_orders set provider_payload = coalesce(provider_payload, '{}'::jsonb) || coalesce(p_payload, '{}'::jsonb) where id = o.id; return 'amount mismatch';
@@ -214,24 +302,29 @@ end $$;
 revoke all on function public.review_instapay(bigint, boolean) from public, anon, authenticated, service_role;
 grant execute on function public.review_instapay(bigint, boolean) to authenticated, service_role;
 
--- the invoice / receipt of one paid order — its buyer, the managers of its company, or Drugbox
+-- the invoice / receipt of one paid (or later refunded) order — its buyer, the managers of its company, or Drugbox. It prints what
+-- the invoice said when its number was assigned (invoice_snapshot), never today's prices, VAT rate or seller details.
 create or replace function public.order_invoice(p_id bigint) returns jsonb language plpgsql stable security definer set search_path = public as $$
-declare o public.payment_orders; pr public.payment_products; b public.billing_settings; v jsonb;
+declare o public.payment_orders; pr public.payment_products; b public.billing_settings; sn jsonb; v jsonb;
 begin
   if auth.uid() is null then raise exception 'Sign in first' using errcode = '42501'; end if;
   select * into o from public.payment_orders where id = p_id;
   if o.id is null or not (o.user_id = auth.uid() or public.is_platform_admin() or (o.company_id is not null and public.is_company_member(o.company_id, array['owner','admin']))) then
     raise exception 'This invoice is not yours' using errcode = '42501';
   end if;
-  if o.status <> 'paid' or o.invoice_no is null then raise exception 'An invoice is issued once the payment is confirmed' using errcode = '22023'; end if;
-  select * into pr from public.payment_products where code = o.product_code; select * into b from public.billing_settings limit 1;
-  select jsonb_build_object('invoice_no', o.invoice_no, 'issued_at', o.paid_at, 'order', o.merchant_ref, 'method', o.method,
-           'product', pr.label, 'days', pr.duration_days, 'net', o.net_cents / 100.0, 'vat', o.vat_cents / 100.0, 'vat_rate', pr.vat_rate, 'total', o.amount_cents / 100.0, 'currency', o.currency,
-           'seller', jsonb_build_object('name', b.legal_name, 'tax_reg_no', b.tax_reg_no, 'address', b.address, 'email', b.email),
-           'buyer', (select jsonb_build_object('name', p.name) from public.profiles p where p.id = o.user_id),
-           'company', (select jsonb_build_object('name', c.name, 'registry', c.registry, 'address', coalesce(c.location, c.city)) from public.companies c where c.id = o.company_id),
-           'listing', (select l.name from public.products l where l.id = o.listing_id))
-    into v;
+  if o.status not in ('paid','refunded') or o.invoice_no is null then raise exception 'An invoice is issued once the payment is confirmed' using errcode = '22023'; end if;
+  sn := o.invoice_snapshot;
+  if sn is null then                                                            -- (only an order paid before snapshots existed and not yet backfilled)
+    select * into pr from public.payment_products where code = o.product_code; select * into b from public.billing_settings limit 1;
+    sn := jsonb_build_object('product', pr.label, 'days', pr.duration_days, 'vat_rate', pr.vat_rate,
+            'seller', jsonb_build_object('name', b.legal_name, 'tax_reg_no', b.tax_reg_no, 'address', b.address, 'email', b.email),
+            'buyer', (select jsonb_build_object('name', p.name) from public.profiles p where p.id = o.user_id),
+            'company', (select jsonb_build_object('name', c.name, 'registry', c.registry, 'address', coalesce(c.location, c.city)) from public.companies c where c.id = o.company_id),
+            'listing', (select l.name from public.products l where l.id = o.listing_id));
+  end if;
+  v := jsonb_build_object('invoice_no', o.invoice_no, 'issued_at', o.paid_at, 'order', o.merchant_ref, 'method', o.method, 'status', o.status, 'refunded', o.status = 'refunded',
+         'product', sn->>'product', 'days', (sn->>'days')::int, 'net', o.net_cents / 100.0, 'vat', o.vat_cents / 100.0, 'vat_rate', (sn->>'vat_rate')::numeric,
+         'total', o.amount_cents / 100.0, 'currency', o.currency, 'seller', sn->'seller', 'buyer', sn->'buyer', 'company', sn->'company', 'listing', sn->>'listing');
   return v;
 end $$;
 revoke all on function public.order_invoice(bigint) from public, anon, authenticated, service_role;
@@ -249,6 +342,7 @@ create or replace function public.my_payments(p_company bigint default null) ret
            and ((p_company is null and x.user_id = auth.uid())
                 or (p_company is not null and x.company_id = p_company and public.is_company_member(p_company, array['owner','admin'])))
            and not (x.status = 'expired' and x.provider_payload ? 'superseded')
+           and not (x.status = 'failed' and x.provider_payload ? 'start_failed')   -- a payment that never started (nothing to pay, nothing to show)
          order by x.id desc limit 100) o
   join public.payment_products pr on pr.code = o.product_code
   left join public.products l on l.id = o.listing_id
