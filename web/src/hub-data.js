@@ -227,7 +227,9 @@
     return { total: cs.length, claimed: cs.filter(function (c) { return c.status !== 'unclaimed'; }).length, verified: cs.filter(function (c) { return c.status === 'verified'; }).length,
       complete: cs.filter(function (c) { return completeness(c).pct >= 80; }).length, avgComplete: Math.round(cs.reduce(function (a, c) { return a + completeness(c).pct; }, 0) / cs.length),
       responseRate: recv.length ? Math.round(answered.length / recv.length * 100) : null, dealsMonth: month.length, stale: cs.filter(function (c) { return staleSections(c).length; }),
-      active: cs.filter(isActive).length, dormant: cs.filter(isDormant).length, openReports: reports().filter(function (r) { return r.status === 'open'; }).length, disputed: disputed.length };
+      active: cs.filter(isActive).length, dormant: cs.filter(isDormant).length, openReports: reports().filter(function (r) { return r.status === 'open'; }).length, disputed: disputed.length,
+      reported: (function () { var by = {}; reports().forEach(function (r) { if (r.status !== 'open') return; var co = X().bySlug(r.slug), b = by[r.slug] || (by[r.slug] = { slug: r.slug, name: co ? co.name : r.slug, n: 0, secs: [] }); b.n++; if (b.secs.indexOf(r.section) < 0) b.secs.push(r.section); });
+        return Object.keys(by).map(function (k) { by[k].sections = by[k].secs.join(', '); return by[k]; }); })() };
   }
 
   window.dxHubData = { norm: norm, queryWords: queryWords, nameAr: nameAr, sitesOf: sitesOf, saveSites: saveSites, certState: certState, credentials: credentials, rolesOf: rolesOf, roleLabel: roleLabel, madeFor: madeFor, groupOf: groupOf,

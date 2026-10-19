@@ -754,7 +754,7 @@
     'Could not answer the request': 'تعذّر الرد على الطلب', 'This company is not on Drugbox yet': 'هذه الشركة ليست على Drugbox بعد',
     'Reject this certificate?': 'هل ترفض هذه الشهادة؟', 'Reject this verification request?': 'هل ترفض طلب التوثيق هذا؟', 'It is removed from the page and the company is told why.': 'ستُحذف من الصفحة وتُبلَّغ الشركة بالسبب.',
     'The company is told why and can send new documents.': 'ستُبلَّغ الشركة بالسبب ويمكنها إرسال مستندات جديدة.', 'Reason for the company (they will see it) *': 'السبب للشركة (ستراه) *', 'The registry document is not readable': 'مستند السجل التجاري غير مقروء',
-    'Role *': 'الدور *', 'an admin': 'مدير', 'Claims': 'المطالبات', 'Claim pending': 'المطالبة قيد المراجعة', 'Claim pending.': 'المطالبة قيد المراجعة.',
+    'Open reports': 'البلاغات المفتوحة', 'Role *': 'الدور *', 'an admin': 'مدير', 'Claims': 'المطالبات', 'Claim pending': 'المطالبة قيد المراجعة', 'Claim pending.': 'المطالبة قيد المراجعة.',
     'Drugbox is checking your proof and tells you when the page is yours.': 'يراجع Drugbox إثباتك ويُبلغك عندما تصبح الصفحة لك.', 'Commercial registry document *': 'مستند السجل التجاري *',
     'Seen only by Drugbox’s reviewers.': 'لا يراه إلا مراجعو Drugbox.', 'Send claim': 'أرسل المطالبة', 'Attach the commercial registry document': 'أرفق مستند السجل التجاري',
     'Claim sent — Drugbox checks it and tells you when the page is yours': 'تم إرسال المطالبة — يراجعها Drugbox ويُبلغك عندما تصبح الصفحة لك', 'Could not send the claim': 'تعذّر إرسال المطالبة',
@@ -763,6 +763,9 @@
   PATTERNS.unshift(
     [/^checked (\d{4}-\d{2}-\d{2})$/, function (m) { return 'تمت المراجعة ' + m[1]; }],
     [/^checked by Drugbox (\d{4}-\d{2}-\d{2})$/, function (m) { return 'راجعها Drugbox في ' + m[1]; }],
+    [/^Drugbox checked your report on (.+) — the page stays as it is\.$/, function (m) { return 'راجع Drugbox بلاغك عن ' + m[1] + ' — تبقى الصفحة كما هي.'; }],
+    [/^Drugbox checked your report on (.+) \((.+)\) — it has been corrected\.$/, function (m) { return 'راجع Drugbox بلاغك عن ' + m[1] + ' (' + (D[m[2]] || m[2]) + ') — تم التصحيح.'; }],
+    [/^(\d+) open reports?( · (.+))?$/, function (m) { return m[1] + ' ' + (m[1] === '1' ? 'بلاغ مفتوح' : 'بلاغات مفتوحة') + (m[3] ? ' · ' + m[3] : ''); }],
     [/^Claimed by (.+)$/, function (m) { return 'طالب بها ' + m[1]; }],
     [/^Your claim for (.+) is with Drugbox — you will be told when the page is yours$/, function (m) { return 'مطالبتك بـ ' + m[1] + ' لدى Drugbox — ستُبلَّغ عندما تصبح الصفحة لك'; }],
     [/^Ask to join (.+)$/, function (m) { return 'اطلب الانضمام إلى ' + m[1]; }],

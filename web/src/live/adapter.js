@@ -2847,6 +2847,29 @@
   var hydrateCl = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateCl(uid); loadMyClaims().catch(function (e) { console.error(e); }); return me; };
   onReset(function () { CLM.mine = {}; CLM.at = 0; });
+  /* Directory health (Drugbox): the whole directory from the database (directory_health, 0052) — read when Companies opens for
+     the Drugbox team; until it arrives the dialog shows what this browser has loaded */
+  var DH = { v: null, at: 0 };
+  function loadHealth() { if (!isStaff() || Date.now() - DH.at < 30000) return; DH.at = Date.now();
+    sb.rpc('directory_health').then(function (r) { if (!r.error) DH.v = r.data; }); }
+  if (window.dxHubData && window.dxHubData.health && !window.dxHubData.health.__live) { var healthDemo = window.dxHubData.health;
+    window.dxHubData.health = function () { var h = healthDemo.apply(this, arguments), v = ME_UUID && DH.v; if (!v) return h;
+      return Object.assign({}, h, { total: v.total, claimed: v.claimed, verified: v.verified, active: v.active, dormant: v.dormant, openReports: v.open_reports, dealsMonth: v.deals_month,
+        responseRate: v.requests ? Math.round(v.answered / v.requests * 100) : null,
+        stale: (v.stale || []).map(function (x) { return { slug: sslug(x.slug), name: txt(x.name), updatedAt: Date.parse(x.updated_at), createdAt: Date.parse(x.updated_at), status: 'pending' }; }).filter(function (x) { return x.slug; }),
+        reported: (v.reported || []).map(function (x) { return { slug: sslug(x.slug), name: txt(x.name), n: x.n, sections: txt(x.sections) }; }).filter(function (x) { return x.slug; }) }); };
+    window.dxHubData.health.__live = true; }
+  var gotoDH = window.goto;
+  window.goto = function (page) { var r = gotoDH.apply(this, arguments); if (page === 'companies' && ME_UUID) loadHealth(); return r; };
+  document.addEventListener('click', function (e) { if (ME_UUID && e.target.closest && e.target.closest('#dxDir [data-hhealth]')) { DH.at = 0; loadHealth(); } }, true);
+  onReset(function () { DH.v = null; DH.at = 0; });
+  /* a report of wrong information decided by Drugbox reaches its reporter (0052) */
+  ICON.report_decided = '🛡️';
+  var notifFromR = notifFrom;
+  notifFrom = function (n) { var o = notifFromR(n), d = n.data && typeof n.data === 'object' ? n.data : null;
+    if (n.type === 'report_decided' && d) { o.uid = SYS_UID; o.text = esc2(d.outcome === 'dismissed' ? 'Drugbox checked your report on ' + String(d.company || 'a company') + ' — the page stays as it is.'
+      : 'Drugbox checked your report on ' + String(d.company || 'a company') + ' (' + String(d.section || '') + ') — it has been corrected.'); }
+    return o; };
   /* ===== /AREA business: claims ===== */
 
 

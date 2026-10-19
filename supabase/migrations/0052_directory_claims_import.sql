@@ -154,4 +154,43 @@ end $$;
 revoke all on function public.admin_import_companies(jsonb, boolean) from public, anon, authenticated, service_role;
 grant execute on function public.admin_import_companies(jsonb, boolean) to authenticated, service_role;
 
+-- ── Directory health for Drugbox (J-BUSINESS-49): the whole directory, from the database ────
+create or replace function public.directory_health() returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare v jsonb;
+begin
+  if auth.uid() is null or not public.is_moderator() then raise exception 'Only the Drugbox team can see this' using errcode = '42501'; end if;
+  select jsonb_build_object(
+    'total', count(*), 'claimed', count(*) filter (where status <> 'unclaimed'), 'verified', count(*) filter (where status = 'verified'),
+    'active', count(*) filter (where updated_at > now() - interval '7 days'), 'dormant', count(*) filter (where updated_at < now() - interval '60 days'),
+    'stale_n', count(*) filter (where updated_at < now() - interval '180 days'))
+    into v from public.companies where status <> 'suspended';
+  return v || jsonb_build_object(
+    'stale', coalesce((select jsonb_agg(jsonb_build_object('slug', slug, 'name', name, 'updated_at', updated_at) order by updated_at) from
+              (select slug, name, updated_at from public.companies where status <> 'suspended' and updated_at < now() - interval '180 days' order by updated_at limit 20) x), '[]'::jsonb),
+    'reported', coalesce((select jsonb_agg(jsonb_build_object('slug', c.slug, 'name', c.name, 'n', x.n, 'sections', x.sections) order by x.last desc) from
+              (select company_id, count(*) as n, string_agg(distinct section, ', ') as sections, max(created_at) as last from public.company_reports where status = 'open' group by company_id order by max(created_at) desc limit 20) x
+              join public.companies c on c.id = x.company_id), '[]'::jsonb),
+    'open_reports', (select count(*) from public.company_reports where status = 'open'),
+    'deals_month', (select count(*) from public.deals where created_at > now() - interval '30 days'),
+    'requests', (select count(*) from public.deals where to_company_id is not null and created_at > now() - interval '90 days'),
+    'answered', (select count(*) from public.deals d where d.to_company_id is not null and d.created_at > now() - interval '90 days'
+                   and exists (select 1 from public.deal_events e where e.deal_id = d.id and e.side = 'to')));
+end $$;
+revoke all on function public.directory_health() from public, anon, authenticated, service_role;
+grant execute on function public.directory_health() to authenticated, service_role;
+
+-- ── the reporter of wrong information hears what Drugbox did (J-BUSINESS-09) ────
+create or replace function public.company_reports_decided_notify() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.status is distinct from old.status and old.status = 'open' and new.status in ('resolved', 'dismissed', 'fixed') then
+    insert into public.notifications (user_id, type, from_user, company_id, data)
+    values (new.reporter, 'report_decided', null, new.company_id,
+            jsonb_build_object('company', (select name from public.companies where id = new.company_id), 'section', new.section, 'outcome', new.status));
+  end if;
+  return null;
+end $$;
+revoke all on function public.company_reports_decided_notify() from public, anon, authenticated, service_role;
+drop trigger if exists trg_company_reports_decided_notify on public.company_reports;
+create trigger trg_company_reports_decided_notify after update of status on public.company_reports for each row execute function public.company_reports_decided_notify();
+
 notify pgrst, 'reload schema';
