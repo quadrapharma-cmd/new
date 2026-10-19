@@ -107,7 +107,7 @@ def find_supplier(j):
         card = pg.locator('#dxDir .dr-card', has_text=want).first; meta = card.locator('.dr-meta').inner_text()
         card.locator('[data-hopen]').first.click(); j.settle(pg, 1200)
         t = j.text(pg)[:800]
-        j.check(want in t, 'View page opened another page'); city = meta.split('·')[-2 if 'site' in meta.split('·')[-1] else -1].strip()
+        j.check(want in t, 'View page opened another page'); city = meta.split('·')[-2 if re.search(r'site|موقع|مواقع', meta.split('·')[-1]) else -1].strip()   # the last part is the site count
         j.check(city in t, 'the page does not show the city on the card (%s)' % city)
         ui_ok(j, pg, 'company page')
     with j.step('Back returns to the directory with the search kept; reload keeps me signed in on Companies'):
@@ -140,7 +140,7 @@ def find_cmo(j):
         card_month = re.sub(r'.*(free from|متاح من|متاحة من)\s*', '', mine[0]['cap']).strip()
     with j.step("Open the CMO's page → Sites: capabilities, minimum batch and the month calendar; the first Free month equals the card's"):
         open_card(j, pg, name); t = company_tab(j, pg, L('Sites', exact=False)[1:-1], 'Sites')
-        j.check(re.search(r'Minimum batch|الحد الأدنى', t) and re.search(r'Capacity|الطاقة', t), 'not built: the Sites tab shows no capacity / minimum batch')
+        j.check(re.search(r'Minimum batch|الحد الأدنى|أقل تشغيلة', t) and re.search(r'Capacity|الطاقة', t), 'not built: the Sites tab shows no capacity / minimum batch')
         months = re.findall(r'([A-Z][a-z]{2} \d{4}|\S+ \d{4})\n(Free|Booked|متاح|محجوز)', t)
         j.check(months, 'not built: the Sites tab shows no month calendar')
         first_free = next((m for m, s in months if s in ('Free', 'متاح')), None)
