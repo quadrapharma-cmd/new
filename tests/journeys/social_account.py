@@ -113,7 +113,7 @@ def signup_with_confirmation(j):
     with j.step('Sign up with name, a new email and a valid password'):
         j.click(pg, r'^(Create one|أنشئ حسابًا|إنشاء حساب)', scope='#loginPage', what='Create one')
         j.check(pg.is_visible('#suName'), 'the sign-up form did not open')
-        pg.fill('#suName', 'Vivian Zhou'); pg.fill('#suEmail', email); pg.fill('#suPw', PW)
+        pg.fill('#suName', 'Viviane Zhao'); pg.fill('#suEmail', email); pg.fill('#suPw', PW)
         if pg.locator('#suCompany').count(): pg.fill('#suCompany', 'Zhejiang API Co')
         pg.click('#signupPage button.f-btn.dx-js-only'); pg.wait_for_timeout(1500)
         j.check(not j.in_app(pg), 'the app opened before the email was confirmed')
@@ -142,12 +142,12 @@ def signup_with_confirmation(j):
         except Exception: pass
         j.check(pg.url.startswith(re.sub(r'/$', '', __import__('_dx').APP_URL)), 'the link did not come back to Drugbox: %s' % pg.url)
         j.check(j.wait(pg, APP_VISIBLE, 15), 'after the confirmation link the app did not open: %s' % j.text(pg, '#loginPage')[:200])
-        j.wait(pg, "window.ME&&ME.name==='Vivian Zhou'", 8)
-        j.check(pg.evaluate('ME.name') == 'Vivian Zhou', 'after confirming signed in as "%s"' % pg.evaluate('ME.name'))
+        j.wait(pg, "window.ME&&ME.name==='Viviane Zhao'", 8)
+        j.check(pg.evaluate('ME.name') == 'Viviane Zhao', 'after confirming signed in as "%s"' % pg.evaluate('ME.name'))
     with j.step('Sign out and in with the email and password: the app opens as Vivian with her profile'):
         pg.evaluate('doLogout()'); j.settle(pg)
-        j.signin(pg, email, PW); j.check(pg.evaluate('ME.name') == 'Vivian Zhou', 'signed in as "%s"' % pg.evaluate('ME.name'))
-        j.nav(pg, 'profile'); t = j.text(pg); j.check('Vivian Zhou' in t and 'Zhejiang API Co' in t, 'the profile does not show the sign-up data')
+        j.signin(pg, email, PW); j.check(pg.evaluate('ME.name') == 'Viviane Zhao', 'signed in as "%s"' % pg.evaluate('ME.name'))
+        j.nav(pg, 'profile'); t = j.text(pg); j.check('Viviane Zhao' in t and 'Zhejiang API Co' in t, 'the profile does not show the sign-up data')
         j.check(j.sql1("select count(*) from auth.users where email='%s' and email_confirmed_at is not null" % email) == '1', 'auth.users.email_confirmed_at is not set')
         j.check(j.sql1("select count(*) from public.profiles p join auth.users u on u.id=p.id where u.email='%s'" % email) == '1', 'not exactly one profiles row')
         j.check(j.sql1("select terms_version is not null from public.member_settings s join auth.users u on u.id=s.user_id where u.email='%s'" % email) == 't', 'the Terms version agreed to at sign-up is not recorded')
@@ -183,7 +183,9 @@ def signin_stays_signed_in(j):
     with j.step('Reload: the app opens directly as the same person'):
         j.reload(pg); j.check(j.in_app(pg) and pg.evaluate('ME.name') == who, 'reload did not keep the session')
     with j.step('A new browser context with the saved session opens the app as the same person'):
-        state = pg.context.storage_state(); pg2 = j.new_page(j.new_ctx(storage_state=state))
+        if j.demo:   # a file:// page has no origin Playwright can copy into a new context: the demo reopens in this browser instead
+            pg2 = j.new_page(pg.context)
+        else: state = pg.context.storage_state(); pg2 = j.new_page(j.new_ctx(storage_state=state))
         j.check(j.in_app(pg2) and pg2.evaluate('ME.name') == who, 'a new browser with the saved session shows the login page (the session is not kept)')
     with j.step('A second tab of the app is signed in too'):
         pg3 = j.new_page(pg.context)
@@ -312,6 +314,7 @@ def account_settings(j):
         try: j.wait_js(pg, "typeof endSplash==='function'", 10); pg.evaluate('endSplash()')
         except Exception: pass
         j.check(j.wait_db("select email from auth.users where id='%s'" % a['id'], 6, want=new) == new, 'opening the link did not change the email')
+        j.check(j.wait(pg, APP_VISIBLE, 15), 'the email-change link did not open Drugbox signed in')
     with j.step('Sign out and in with the new email; profile, posts and connections unchanged'):
         if j.in_app(pg): pg.evaluate('doLogout()'); j.settle(pg)
         j.signin(pg, new, 'Brand-new-2026!'); j.check(pg.evaluate('ME.name') == 'Dr. Sara Settings', 'the new email does not sign in as Sara')
@@ -348,7 +351,7 @@ def delete_account(j):
         j.check(j.wait(pg, "/not correct|غير صحيحة/.test((document.getElementById('delMsg')||{}).innerText||'')", 8), 'a wrong password is not refused: "%s"' % j.text(pg, '#delMsg'))
         j.check(j.sql1("select account_type from public.profiles where id='%s'" % c['id']) == 'professional', 'something was deleted after a wrong password')
     with j.step('Confirm with DELETE and the password: signed out with a farewell'):
-        pg.fill('#delPw', c['pw']); dlg.locator('[data-a=ok]').click()
+        pg.fill('#delPw', c['pw']); pg.wait_for_timeout(600); dlg.locator('[data-a=ok]').click()   # (the window ignores a second click within 0.5 s)
         j.check(j.wait(pg, LOGIN_VISIBLE, 15), 'after deleting, the login page does not show: "%s"' % j.text(pg, '#delMsg'))
         j.check(re.search(r'account was deleted|تم حذف حسابك', j.text(pg, '#loginPage')), 'no farewell message')
     with j.step('Database: profile anonymised, sign-in removed, content and files deleted, messages kept for B'):
@@ -363,14 +366,18 @@ def delete_account(j):
         j.check(j.sql1("select like_count from public.posts where id=%s" % bp) == '0' and j.sql1("select comment_count from public.posts where id=%s" % bp) == '0', "B's post still counts C's reaction or comment")
     with j.step('B: Home, the post comments, Network and Messages no longer show C; the old conversation says "Deleted member" without errors'):
         errs = len(j.errors)
-        j.reload(pb); j.nav(pb, 'feed'); t = j.text(pb); j.check('Carmen farewell post' not in t, "B still sees C's post")
-        j.check(j.sql1("select count(*) from public.profiles where name='Dr. Carmen Leaving'") == '0', "C's name is still in profiles")
-        j.nav(pb, 'network'); j.check('Carmen' not in j.text(pb), "B's network still shows C")
+        j.reload(pb); j.nav(pb, 'feed'); t = j.text(pb); j.check(('Carmen farewell post ' + j.tag) not in t, "B still sees C's post")
+        j.check(j.sql1("select count(*) from public.profiles where id='%s' and name like '%%Carmen%%'" % c['id']) == '0', "C's name is still in profiles")
+        r = pb.evaluate("([u,k])=>dxLive.sb.from('profiles').select('id').eq('id',u).then(r=>(r.data||[]).length)", [c['id'], 0])
+        j.check(r == 0, 'members can still read the deleted profile through the API')
+        gone = "u=>!(window.USERS||[]).some(x=>dxLive.uuidOf(x.id)===u&&!/Deleted member/.test(x.name))"
+        j.nav(pb, 'network'); pb.wait_for_timeout(1200); j.check(pb.evaluate(gone, c['id']), "B's network (connections, suggestions) still shows C")
         j.nav(pb, 'messages'); pb.wait_for_timeout(1500); t = j.text(pb)
         j.check(re.search(r'Deleted member|عضو محذوف', t), 'the old conversation does not say "Deleted member"')
-        j.check('Carmen' not in t.replace('Hi Carmen from Basil', ''), 'Messages still shows the name of the deleted member')
+        j.check('Carmen Leaving' not in t, 'Messages still shows the name of the deleted member')
         j.check(len(j.errors) == errs, 'page errors after the deletion: %s' % j.errors[errs:][:3])
     with j.step("Signing in with C's email and password fails"):
+        j.click(pg, r'Back to sign in|العودة لتسجيل الدخول', scope='#authWrap', what='Back to sign in')
         pg.fill('#loginEmail', c['email']); pg.fill('#loginPw', c['pw']); pg.click('#loginPage button.f-btn.dx-js-only'); pg.wait_for_timeout(1500)
         j.check(not j.in_app(pg), "the deleted account still signs in")
 

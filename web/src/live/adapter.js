@@ -210,18 +210,21 @@
       viewCount: r.view_count || 0, saved: saved.has(r.id), pinned: !!r.pinned, ts: ago(r.created_at), created_at: r.created_at,
       imgs: media.filter(function (m) { return m.type === 'image' && safeUrl(m.url); }).map(function (m) { return safeUrl(m.url); }),
       files: media.filter(function (m) { return m.type !== 'image' && safeUrl(m.url); }).map(function (m) { return { name: txt(m.name), size: +m.size || 0, url: safeUrl(m.url) }; }),
-      reactions: rx || (r.like_count ? { like: r.like_count } : {}) }; }
+      reactions: rx || (r.like_count ? { like: r.like_count } : {}),
+      edited: !!r.edited_at, reposted: !!(kinds && kinds.__rp && kinds.__rp.has(r.id)),                                        /* area social: S-12, S-08 */
+      mentions: (r.post_mentions || []).filter(function (m) { return m.who; }).map(function (m) { return { uid: aid(m.user_id), name: txt(m.who.name) }; }) }; }
   /* my reaction (and its kind), my saves and the reactions per kind for a set of posts — one round of three requests */
   async function postState(ids) {
     var mine = new Map(), saved = new Set(), kinds = {};
     if (!ids.length) return { mine: mine, saved: saved, kinds: kinds };
     var a = await Promise.all([sb.from('reactions').select('post_id,kind').eq('user_id', ME_UUID).in('post_id', ids), sb.from('saved_posts').select('post_id').eq('user_id', ME_UUID).in('post_id', ids),
-                               sb.rpc('post_reaction_summary', { p_ids: ids.slice(0, 100) })]);
+                               sb.rpc('post_reaction_summary', { p_ids: ids.slice(0, 100) }), sb.from('reposts').select('post_id').eq('user_id', ME_UUID).in('post_id', ids)]);
+    Object.defineProperty(kinds, '__rp', { value: new Set((a[3].data || []).map(function (x) { return x.post_id; })) });   /* my reposts (area social, S-08) */
     (a[0].data || []).forEach(function (x) { mine.set(x.post_id, x.kind || 'like'); }); (a[1].data || []).forEach(function (x) { saved.add(x.post_id); });
     (a[2].data || []).forEach(function (x) { var k = x.kind === 'love' ? 'support' : x.kind, o = kinds[x.post_id] = kinds[x.post_id] || {}; o[k] = (o[k] || 0) + x.n; });
     return { mine: mine, saved: saved, kinds: kinds };
   }
-  var POST_SEL = '*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*)';
+  var POST_SEL = '*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*), post_mentions(user_id, who:profiles(name))';
   async function fetchPage() {
     var q = sb.from('posts').select(POST_SEL).is('group_id', null).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
     /* group posts (0027) live in their group, never in the main feed — the filter is also what lets the main feed use its own index;
@@ -428,7 +431,8 @@
   /* ═══════════════ B3 — network (requests, connections, suggestions) + notifications ═══════════════ */
   var INCOMING = window.CONN_IN || (window.CONN_IN = {}), NET_AT = 0, NOTIF_AT = 0, NOTIF_IDS = [], SUGG = [], REJ = {};   /* REJ: my requests that were declined */
   function wipe(o) { Object.keys(o).forEach(function (k) { if (+k > 1000) delete o[k]; }); }
-  var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼', post_removed: '🛡️', report_closed: '🛡️', follow: '👤', company_message: '💬' };
+  var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼', post_removed: '🛡️', report_closed: '🛡️', follow: '👤', company_message: '💬',
+               reply: '↩️', mention: '@', repost: '🔄', endorse: '⭐', comment_like: '👍' };
   var esc2 = function (t) { return window.esc ? window.esc(t) : String(t || ''); };
   /* every connection, 1,000 rows a request in id order (the API's row cap) — a big network is never cut short (F-50) */
   async function loadConnections() {
@@ -468,6 +472,9 @@
     else if (n.type === 'connection_accepted') t = '<b>' + who + '</b> accepted your connection request';
     else if (n.type === 'like') t = '<b>' + who + '</b> reacted to your post';
     else if (n.type === 'comment') t = '<b>' + who + '</b> commented: "' + esc2(n.message || '') + '"';
+    else if (n.type === 'reply') t = '<b>' + who + '</b> replied to your comment: "' + esc2(n.message || '') + '"';            /* area social (0041) */
+    else if (n.type === 'mention') t = '<b>' + who + '</b> mentioned you in a post';
+    else if (n.type === 'repost') t = '<b>' + who + '</b> reposted your post';
     else if (n.type === 'post_removed' || n.type === 'report_closed') { t = sysText(n); if (!n.from_user) a = SYS_UID; }
     else if (n.type === 'company_message' && n.company_id) t = '<b>' + who + '</b> messaged ' + esc2(n.company && n.company.name ? n.company.name : 'your company') + ': "' + esc2(n.message || '') + '"';   /* written here, in the reader's language (0034); older rows carry their sentence */
     else t = '<b>' + who + '</b> ' + esc2(n.message || '');
@@ -566,7 +573,7 @@
   };
   window.markNotifRead = function (id) { var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }), was = n && n.read; o3.read(id); badges();
     if (ME_UUID && n && !was) sb.from('notifications').update({ read: true }).eq('id', id).then(function (r) { if (r.error) toastErr(r.error); });
-    if (n && n.pid && (n.type === 'like' || n.type === 'comment') && window.dxOpenPost) window.dxOpenPost(n.pid, { comments: n.type === 'comment' }); };   /* a reaction or comment notification opens its post */
+    if (n && n.pid && /^(like|comment|reply|mention|repost)$/.test(n.type) && window.dxOpenPost) window.dxOpenPost(n.pid, { comments: n.type === 'comment' || n.type === 'reply' }); };   /* a reaction or comment notification opens its post */
   if (o3.readAll) window.markAllRead = function () { o3.readAll(); badges(); if (ME_UUID) sb.from('notifications').update({ read: true }).eq('user_id', ME_UUID).eq('read', false).then(function (r) { if (r.error) toastErr(r.error); }); };
   if (o3.clear) window.clearAllNotifs = function () {            /* keeps the interface's Undo: delete only when the list is really emptied */
     var ids = NOTIF_IDS.slice(); o3.clear(); badges(); if (!ME_UUID || !ids.length) return;

@@ -115,4 +115,114 @@
   };
   if (window.dxI18nAdd) window.dxI18nAdd({ 'Sent again — check your inbox': 'أُرسل مرة أخرى — راجع بريدك', 'This email cannot be used — choose another': 'لا يمكن استخدام هذا البريد — اختر غيره',
     'Too many wrong passwords — wait 15 minutes and try again': 'محاولات خاطئة كثيرة — انتظر 15 دقيقة ثم حاول مرة أخرى', 'This account deletion was not confirmed by its member': 'لم يؤكد صاحب الحساب هذا الحذف' });
+
+  /* ===== AREA social: feed — edit, repost, send, replies and comment likes, mentions, hashtags, views (0041) ===== */
+  var FD = { rep: [], repAt: 0, loading: false, viewed: {}, vq: [], vt: null };
+  function post(id) { return window.dxSocFeed ? window.dxSocFeed.find(id) : null; }
+  async function postsFrom(rows) {
+    rows = (rows || []).filter(Boolean); rows.forEach(function (x) { K.putUser(x.author); });
+    var ps = await K.postState(rows.map(function (x) { return x.id; }));
+    return rows.map(function (x) { var p = K.postFrom(x, ps.mine, ps.saved, ps.kinds), f = (window.POSTS || []).find(function (y) { return y.id === p.id; }); return f || p; });
+  }
+  /* reposts in Home: the newest 20 (anyone's), each with its post — loaded with Home, never more than every 30 s */
+  async function loadReposts() {
+    var r = await sb.from('reposts').select('note, created_at, user_id, who:profiles!reposts_user_id_fkey(' + K.PCOLS + '), post:posts(' + K.POST_SEL + ')').order('created_at', { ascending: false }).limit(20);
+    if (r.error) throw r.error; var rows = (r.data || []).filter(function (x) { return x.post && x.who; });
+    rows.forEach(function (x) { K.putUser(x.who); });
+    var ps = await postsFrom(rows.map(function (x) { return x.post; }));
+    FD.rep = rows.map(function (x, i) { return { pid: x.post.id, post: ps[i], uid: x.user_id === me() ? window.ME.id : L.aid(x.user_id), note: x.note || '', created_at: x.created_at }; });
+    FD.repAt = Date.now();
+  }
+  var gotoFD = window.goto;
+  window.goto = function (page) {
+    var r = gotoFD.apply(this, arguments);
+    if (page === 'feed' && me() && !FD.loading && Date.now() - FD.repAt > 30000) { FD.loading = true;
+      loadReposts().then(function () { if (document.body.getAttribute('data-page') === 'feed' && FD.rep.length) K.origGoto('feed'); }, function (e) { console.error(e); }).then(function () { FD.loading = false; }); }
+    return r;
+  };
+  K.onReset(function () { FD.rep = []; FD.repAt = 0; FD.viewed = {}; FD.vq = []; });
+  function people(q) {
+    return sb.from('profiles').select(K.PCOLS).ilike('name', '%' + String(q).replace(/[\\%_]/g, '\\$&').slice(0, 60) + '%').neq('id', me()).order('name').limit(8).then(function (r) {
+      if (r.error) throw new Error(friendly(r.error)); (r.data || []).forEach(function (x) { K.putUser(x); }); var ids = (r.data || []).map(function (x) { return L.aid(x.id); });
+      return ids.map(function (a) { return (window.USERS || []).find(function (u) { return u.id === a; }); }).filter(Boolean); });
+  }
+  function untilSaved(p, ms) { return new Promise(function (ok, no) { var t0 = Date.now(); (function w() { if (typeof p.id === 'number' && p.id < 1e12) return ok(p.id); if (Date.now() - t0 > (ms || 15000)) return no(new Error('The post was not saved')); setTimeout(w, 200); })(); }); }
+  window.dxFeedSvc = {
+    live: true,
+    edit: async function (p, body, cat) {
+      var r = await sb.from('posts').update({ body: body, category: cat }).eq('id', p.id).eq('user_id', me()).select('body, category, edited_at');
+      if (r.error) throw new Error(friendly(r.error)); if (!(r.data || []).length) throw new Error('Only the author can edit this post');
+      p.body = r.data[0].body; p.cat = r.data[0].category; p.edited = !!r.data[0].edited_at; return p;
+    },
+    repost: async function (p, note) {
+      var r = await sb.from('reposts').insert({ user_id: me(), post_id: p.id, note: note || null }).select('created_at').single();
+      if (r.error && r.error.code !== '23505') throw new Error(friendly(r.error));
+      p.reposted = true; if (!r.error) p.shareCount = (p.shareCount || 0) + 1;
+      FD.rep = FD.rep.filter(function (x) { return !(x.pid === p.id && x.uid === window.ME.id); }); FD.rep.unshift({ pid: p.id, post: p, uid: window.ME.id, note: note || '', created_at: r.data ? r.data.created_at : new Date().toISOString() });
+    },
+    unrepost: async function (p) {
+      var r = await sb.from('reposts').delete().eq('user_id', me()).eq('post_id', p.id).select('post_id'); if (r.error) throw new Error(friendly(r.error));
+      p.reposted = false; if ((r.data || []).length) p.shareCount = Math.max(0, (p.shareCount || 1) - 1); FD.rep = FD.rep.filter(function (x) { return !(x.pid === p.id && x.uid === window.ME.id); });
+    },
+    reposts: function () { return FD.rep; },
+    people: people,
+    send: async function (u, text) { var to = L.uuidOf(u.id); if (!to) throw new Error('Choose a member from the list');
+      var r = await sb.from('messages').insert({ sender_id: me(), receiver_id: to, body: text }).select('id'); if (r.error) throw new Error(friendly(r.error)); },
+    comment: async function (pid, text, parent) {
+      var r = await sb.from('comments').insert({ post_id: pid, user_id: me(), body: text, parent_id: typeof parent === 'number' ? parent : null }).select('id').single();
+      if (r.error) throw new Error(friendly(r.error)); return { id: r.data.id };
+    },
+    likeComment: async function (c, on) { if (typeof c.id !== 'number') throw new Error('Wait a moment — the comment is still being saved');
+      var r = on ? await sb.from('comment_reactions').insert({ comment_id: c.id, user_id: me() }) : await sb.from('comment_reactions').delete().eq('comment_id', c.id).eq('user_id', me());
+      if (r.error && r.error.code !== '23505') throw new Error(friendly(r.error)); },
+    byTag: async function (tag) {
+      var r = await sb.from('post_tags').select('post_id, post:posts(' + K.POST_SEL + ')').eq('tag', String(tag).toLowerCase()).order('post_id', { ascending: false }).limit(40);
+      if (r.error) throw new Error(friendly(r.error)); return postsFrom((r.data || []).map(function (x) { return x.post; }));
+    },
+    done: function () { return !!K.FEED.done; },
+    mentions: function (p, list) {
+      return untilSaved(p).then(function (id) { var rows = list.map(function (m) { return { post_id: id, user_id: L.uuidOf(m.uid) }; }).filter(function (x) { return x.user_id && x.user_id !== me(); });
+        if (!rows.length) return; return sb.from('post_mentions').insert(rows).then(function (r) { if (r.error) K.toastErr(r.error); }); }, function () {});
+    }
+  };
+  /* comments: one request with the threads, the like counts and my likes; the approved toggle shows them */
+  async function loadComments(id) {
+    var r = await sb.from('comments').select('id, post_id, parent_id, body, created_at, like_count, user_id, author:profiles!comments_user_id_fkey(' + K.PCOLS + ')').eq('post_id', id).order('created_at', { ascending: true }).order('id', { ascending: true }).limit(200);
+    if (r.error) throw r.error; var rows = r.data || [], ids = rows.map(function (c) { return c.id; });
+    var mine = ids.length ? await sb.from('comment_reactions').select('comment_id').eq('user_id', me()).in('comment_id', ids) : { data: [] }, liked = {};
+    (mine.data || []).forEach(function (x) { liked[x.comment_id] = 1; });
+    rows.forEach(function (c) { K.putUser(c.author); });
+    var list = rows.map(function (c) { return { id: c.id, uid: c.user_id === me() ? window.ME.id : L.aid(c.user_id), text: c.body, ts: K.ago(c.created_at), likes: c.like_count || 0, liked: !!liked[c.id], parent: c.parent_id }; });
+    Object.defineProperty(list, '__live', { value: true });
+    var p = post(id); window.COMMENTS[id] = list;
+    if (p) { p.__cmtBase = p.__cmtBase != null ? p.__cmtBase : (p.commentCount || 0); p.commentCount = Math.max(0, p.__cmtBase - list.length); }
+    return p;
+  }
+  window.toggleComments = function (id) {
+    var T0 = window.dxSocFeed && window.dxSocFeed.toggle0, box = document.getElementById('cmt-' + id), opening = box && box.style.display === 'none';
+    var have = window.COMMENTS[id] && window.COMMENTS[id].__live;
+    if (!me() || !opening || have || typeof id !== 'number' || !T0) return T0 ? T0(id) : undefined;
+    loadComments(id).then(function (p) { if (p && window.dxRepaintPost) window.dxRepaintPost(p); T0(id); if (window.dxSocFeed) window.dxSocFeed.redraw(id); },
+      function (e) { T0(id); K.toastErr(e); });
+  };
+  window.submitComment = function (id) {
+    if (!me() || !window.dxSocFeed) return;
+    if (window.dxSocFeed.replyOf(id)) return window.dxSocFeed.submitReply(id);
+    var inp = document.getElementById('ci-' + id), text = inp ? inp.value.trim() : ''; if (!text) return;
+    window.dxSocFeed.submit(id);
+    var list = window.COMMENTS[id] || [], c = list[list.length - 1];
+    window.dxFeedSvc.comment(id, text, null).then(function (r) { if (c) { c.id = r.id; window.dxSocFeed.redraw(id); } },
+      function (e) { var i = list.indexOf(c); if (i >= 0) list.splice(i, 1); window.dxSocFeed.redraw(id); toast(e.message); if (inp) inp.value = text; });
+  };
+  /* a post seen on a page counts as one view per member (increment_post_views keeps one row per viewer) */
+  function queueViews() {
+    if (!me()) return;
+    document.querySelectorAll('#content .post[id^="post-"]').forEach(function (el) { var id = +el.id.slice(5); if (!id || id > 1e12 || FD.viewed[id]) return; FD.viewed[id] = 1; FD.vq.push(id); });
+    if (!FD.vq.length || FD.vt) return;
+    FD.vt = setTimeout(function () { var ids = FD.vq.splice(0, 200); FD.vt = null; sb.rpc('increment_post_views', { post_ids: ids }).then(function (r) { if (r.error) ids.forEach(function (i) { delete FD.viewed[i]; }); }); }, 1500);
+  }
+  if (window.dxCore) window.dxCore.onRender('live-soc-views', queueViews);
+  if (window.dxI18nAdd) window.dxI18nAdd({ 'mentioned you in a post': 'أشار إليك في منشور', 'reposted your post': 'أعاد نشر منشورك', 'Only the author can edit this post': 'لا يعدّل المنشور إلا كاتبه',
+    'Wait a moment — the comment is still being saved': 'لحظة — التعليق ما زال يُحفظ', 'The post was not saved': 'لم يُحفظ المنشور' },
+    [[/^replied to your comment: (.+)$/, function (m) { return 'ردّ على تعليقك: ' + m[1]; }]]);
 })();

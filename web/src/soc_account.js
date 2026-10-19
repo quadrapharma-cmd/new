@@ -50,8 +50,25 @@
       if (e && p && ACC[e] !== p) { var er = $('loginErr'); er.textContent = WRONG; er.style.display = 'block'; focusPw(); return; }
       if (e && p) CUR.email = e;
     }
-    return oLogin.apply(this, arguments);
+    var r = oLogin.apply(this, arguments);
+    /* the demo account stays signed in across a reload / a new tab of this browser, until Sign Out (the live app keeps a real session) */
+    if (!window.dxLive && CUR.email === 'haytham@drugbox.app' && $('app').getClientRects().length) try { localStorage.setItem('dx_session', '1'); } catch (x) {}
+    return r;
   };
+  /* demo: a remembered session opens the app as soon as the sign-in page shows; with none, the sign-in page keeps no member data
+     (the sample stores other layers create at load belong to nobody yet) */
+  (function () {
+    var tries = 0, t = setInterval(function () {
+      if (window.dxLive && window.dxLive.k && window.dxLive.k.me) return clearInterval(t);
+      var lp = $('loginPage'); if (++tries > 600) return clearInterval(t);
+      if (!lp || !lp.getClientRects().length || getComputedStyle(lp).visibility === 'hidden') return;
+      clearInterval(t); if (window.dxLive) return clearMember();         /* live: signed out, nothing of a member stays in this browser */
+      var has = false; try { has = localStorage.getItem('dx_session') === '1'; } catch (x) {}
+      if (has) { $('loginEmail').value = 'haytham@drugbox.app'; $('loginPw').value = ACC['haytham@drugbox.app']; window.doLogin(); $('loginEmail').value = ''; $('loginPw').value = ''; }
+      else clearMember();
+    }, 150);
+  })();
+  function clearMember() { try { Object.keys(localStorage).forEach(function (k) { if (/^(dx|dbx)_/.test(k) && !PREF_KEYS.test(k)) localStorage.removeItem(k); }); } catch (x) {} }
   function focusPw() { var p = $('loginPw'); if (p) { p.focus(); try { p.select(); } catch (x) {} } }
   window.dxFocusPw = focusPw;
   var oSignup = window.doSignup;
@@ -68,7 +85,7 @@
     var r = oLogout.apply(this, arguments);
     ['loginEmail', 'loginPw', 'suName', 'suEmail', 'suPw', 'suCompany'].forEach(function (id) { var f = $(id); if (f) f.value = ''; });
     var er = $('loginErr'); if (er) er.style.display = 'none'; panel(null);
-    try { Object.keys(localStorage).forEach(function (k) { if (/^(dx|dbx)_/.test(k) && !PREF_KEYS.test(k)) localStorage.removeItem(k); }); } catch (x) {}
+    clearMember(); setTimeout(clearMember, 400);
     return r;
   };
 
@@ -277,7 +294,7 @@
         if (!/^(DELETE|حذف)$/i.test(w)) { m.textContent = 'Type DELETE to confirm'; m.className = 'dx-set-msg err'; return false; }
         if (!pw) { m.textContent = 'Enter your password'; m.className = 'dx-set-msg err'; return false; }
         busy(ok, true); m.textContent = 'Deleting…'; m.className = 'dx-set-msg';
-        A().deleteAccount(pw).then(function () { close(); if (typeof window.doLogout === 'function') window.doLogout(); farewell(); },
+        A().deleteAccount(pw).then(function () { close(); return Promise.resolve(typeof window.doLogout === 'function' ? window.doLogout() : null).then(farewell, farewell); },
           function (er) { busy(ok, false); m.textContent = (er && er.message) || 'Could not delete the account'; m.className = 'dx-set-msg err'; });
         return false;
       } } });
@@ -301,12 +318,20 @@
     f.insertBefore(b, f.firstChild); paint();
   })();
 
+  /* "see more" sits inside the post text, which the translator never touches: the link follows the interface language itself */
+  if (window.dxCore) window.dxCore.onRender('soc-see-more', function () {
+    var want = ar() ? 'عرض المزيد' : 'see more';
+    document.querySelectorAll('#content a[data-ep]').forEach(function (a) { if (a.textContent !== want) a.textContent = want; });
+  });
+  new MutationObserver(function () { var want = ar() ? 'عرض المزيد' : 'see more'; document.querySelectorAll('#content a[data-ep]').forEach(function (a) { if (a.textContent !== want) a.textContent = want; }); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+
   /* Arabic for everything above (the i18n layer translates it as it appears) */
   if (window.dxI18nAdd) window.dxI18nAdd({
     'Forgot password?': 'نسيت كلمة المرور؟', 'Reset your password': 'إعادة تعيين كلمة المرور', 'Enter the email of your account. We will send you a link to choose a new password.': 'اكتب البريد الإلكتروني لحسابك وسنرسل إليه رابطًا لاختيار كلمة مرور جديدة.',
     'Send reset link →': 'أرسل رابط إعادة التعيين ←', '← Back to sign in': '→ العودة لتسجيل الدخول', 'Please enter a valid email': 'اكتب بريدًا إلكترونيًا صحيحًا',
     'If an account exists for this email, we sent it a link to choose a new password. Check your inbox and spam folder.': 'إذا كان هناك حساب بهذا البريد فقد أرسلنا إليه رابطًا لاختيار كلمة مرور جديدة. راجع صندوق الوارد والرسائل غير المرغوب فيها.',
-    'If an account exists for this email, we sent it a link to choose a new password. Check your inbox and spam folder. (Demo: no email is sent here — password reset works in the live app.)': 'إذا كان هناك حساب بهذا البريد فقد أرسلنا إليه رابطًا لاختيار كلمة مرور جديدة. راجع صندوق الوارد والرسائل غير المرغوب فيها. (العرض التجريبي: لا يُرسل بريد هنا — إعادة تعيين كلمة المرور تعمل في التطبيق الحقيقي.)',
+    'If an account exists for this email, we sent it a link to choose a new password. Check your inbox and spam folder. (Demo: no email is sent here — password reset works in the live app.)': 'إذا كان هناك حساب بهذا البريد فقد أرسلنا إليه رابطًا لاختيار كلمة مرور جديدة. راجع صندوق الوارد والرسائل غير المرغوب فيها. (العرض التجريبي: لا يُرسل بريد هنا — إعادة تعيين كلمة المرور تعمل على التطبيق الحقيقي.)',
     'Could not send the link — please try again': 'تعذّر إرسال الرابط — حاول مرة أخرى', 'Confirm your email': 'أكّد بريدك الإلكتروني', 'Your email is not confirmed yet.': 'لم يتم تأكيد بريدك الإلكتروني بعد.',
     'We sent a confirmation link to': 'أرسلنا رابط التأكيد إلى', '. Open it to activate your account, then sign in.': '. افتحه لتفعيل حسابك ثم سجّل الدخول.', 'Resend confirmation email': 'إعادة إرسال بريد التأكيد',
     'We sent the link again. It can take a minute — check your spam folder too.': 'أرسلنا الرابط مرة أخرى. قد يستغرق دقيقة — راجع الرسائل غير المرغوب فيها أيضًا.', 'Could not send the email — please try again': 'تعذّر إرسال البريد — حاول مرة أخرى',

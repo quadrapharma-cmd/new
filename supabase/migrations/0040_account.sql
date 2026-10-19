@@ -180,6 +180,32 @@ end $$;
 revoke all on function public.account_anonymise(uuid) from public, anon, authenticated, service_role;
 grant execute on function public.account_anonymise(uuid) to service_role;
 
+-- the other person keeps the conversation: it lists the partner as "Deleted member" (the tombstone is hidden from reads, so the
+-- join is a left join), and nobody can write to a deleted member
+create or replace function public.my_conversations(p_limit int default 30)
+returns table(partner uuid, name text, headline text, verified boolean, avatar_url text, last_body text, last_at timestamptz, last_from_me boolean, unread int)
+language sql stable set search_path = public as $$
+  select h.partner, coalesce(p.name, 'Deleted member'), p.headline, coalesce(p.verified, false), p.avatar_url, h.last_body, h.last_at, h.last_from_me, h.unread
+  from public.conversation_heads h left join public.profiles p on p.id = h.partner
+  where h.owner = (select auth.uid())
+  order by h.last_at desc
+  limit least(greatest(coalesce(p_limit, 30), 1), 100)
+$$;
+revoke all on function public.my_conversations(int) from public, anon, authenticated, service_role;
+grant execute on function public.my_conversations(int) to authenticated, service_role;
+create or replace function public.messages_to_deleted_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if exists (select 1 from public.profiles p where p.id = new.receiver_id and p.account_type = 'deleted') then
+    raise exception 'This member deleted their account' using errcode = '42501';
+  end if;
+  return new;
+end $$;
+revoke all on function public.messages_to_deleted_guard() from public, anon, authenticated, service_role;
+grant execute on function public.messages_to_deleted_guard() to service_role;
+drop trigger if exists trg_messages_to_deleted on public.messages;
+create trigger trg_messages_to_deleted before insert on public.messages for each row execute function public.messages_to_deleted_guard();
+
 -- ── 4. export_my_data — as the member (row-level security decides what is theirs); phone through my_profile() ─────────────
 create or replace function public.export_my_data() returns jsonb
 language plpgsql stable set search_path = public as $$

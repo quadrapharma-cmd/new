@@ -124,3 +124,10 @@ def wait_mail(j, to, subject, n=1, timeout=10):
         if len(got) >= n: return got[n - 1]
         if time.time() > end: raise StepFail('no e-mail "%s" #%d to %s (mailbox: %s)' % (subject, n, to, [m.get('subject') for m in mails(j, to)]))
         time.sleep(0.4)
+
+def click_notif(j, pg, pattern, what):
+    """Notifications page → click the notification whose text matches pattern (as a person does)."""
+    j.nav(pg, 'notifs'); j.settle(pg, 1200)
+    row = pg.locator('#content .notif-item').filter(has_text=re.compile(pattern, re.I))
+    j.check(row.count(), 'no %s notification (the list: %s)' % (what, j.text(pg)[:200].replace('\n', ' | ')))
+    mark = j.toast_mark(pg); row.first.click(); j.settle(pg, 1500); j.dead_end(pg, mark, 'the notification ' + what)
