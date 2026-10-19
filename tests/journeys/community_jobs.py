@@ -42,6 +42,19 @@ def find_jobs(j):
             sen = sum(int(x or 0) for x in pg.evaluate("[...document.querySelectorAll('#content .sen-opt[data-level] .sen-count')].map(e=>e.textContent.replace(/\\D/g,''))"))
             j.check(sen == total, 'the seniority counts add up to %d, the database has %d active jobs' % (sen, total))
             j.check('150,000' not in j.text(pg), 'the Jobs page still claims "150,000+" professionals')
+            # the reach line counts members in good grammar ("1 pharma professional"), and the candidates of the Hiring view are
+            # members open to work: not called "Verified" when they are not, no seniority they never gave, no Save that fails
+            reach = re.search(r'Reach ([\d,]+) pharma professionals?\b', j.text(pg))
+            if reach and not j.ar: j.check(not (reach.group(1) == '1' and 'professionals' in reach.group(0)), 'the reach line says "%s"' % reach.group(0))
+            jobs_page(j, pg, HIRE)
+            cands = pg.evaluate("[...document.querySelectorAll('#content .jcard[data-live^=c]')].filter(e=>e.getClientRects().length).map(c=>({lvl:!!c.querySelector('.level-badge'),save:!!c.querySelector('.save-btn')}))")
+            j.check(not [c for c in cands if c['lvl']], 'candidate cards show a seniority level the members never gave (%d of %d)' % (len([c for c in cands if c['lvl']]), len(cands)))
+            if pg.evaluate("document.querySelector('#content .jcard[data-live^=c] .save-btn')!==null"):
+                mark = j.toast_mark(pg); pg.locator('#content .jcard[data-live^=c] .save-btn').first.click(); pg.wait_for_timeout(1200)
+                j.check(not re.search(r'linked to other|not allowed|wrong|خطأ', ' '.join(j.toasts_since(pg, mark))), 'Save on a candidate card fails: %s' % j.toasts_since(pg, mark))
+            unver = int(j.sql1("select count(*) from public.profiles where open_to_work and not verified") or 0)
+            if unver and not j.ar: j.check(not re.search(r'Verified professionals actively looking', j.text(pg)), 'the candidates list is titled "Verified professionals" over %d members who are not verified' % unver)
+            jobs_page(j, pg, HUNT)
     with j.step("Search 'HPLC': matches title, company, description and tags"):
         box = pg.locator('#content input[type=search]:visible, #content input[placeholder*="earch" i]:visible, #content input[placeholder*="بحث"]:visible')
         j.check(box.count(), 'not built: no keyword search on Jobs')

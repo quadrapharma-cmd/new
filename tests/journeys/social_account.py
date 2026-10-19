@@ -34,6 +34,10 @@ def signup_new_professional(j):
     with j.step("Click 'Create one' under the sign-in form"):
         j.click(pg, r'^(Create one|أنشئ حسابًا|إنشاء حساب|أنشئ واحدًا)', scope='#loginPage', what='Create one')
         j.check(pg.is_visible('#suName'), 'the sign-up form did not open')
+        if j.live:      # S-19: the page every new member opens does not claim a member count the database does not have
+            sub = j.text(pg, '#signupPage'); n = int(j.sql1("select count(*) from public.profiles") or 0)
+            claims = [int(x.replace(',', '')) for x in re.findall(r'(\d[\d,]{2,})\s*\+?\s*(?:pharma|متخصص)', sub)]
+            j.check(not [c for c in claims if c > n], 'the sign-up page claims %s professionals; the database has %d members' % (claims, n))
     with j.step('Try a 5-character password: a specific error, no account'):
         pg.fill('#suName', 'Mona Fathy'); pg.fill('#suEmail', email); pg.fill('#suPw', 'abcde')
         if pg.locator('#suCompany').count(): pg.fill('#suCompany', 'Pharco')

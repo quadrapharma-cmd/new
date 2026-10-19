@@ -47,6 +47,11 @@ def told_promptly(j):
             post.locator('.post-acts > .pact:nth-child(2)').click(); pb.wait_for_timeout(800)
             pb.fill('#ci-%s' % p, 'Congrats ' + j.tag); pb.press('#ci-%s' % p, 'Enter')
             cur = expect_one(r'comment', 'comment', cur)
+        with j.step("A's Notifications page says each of them in the interface language (no English sentence in Arabic)"):
+            rows = notifs(j, pa); j.check(len(rows) >= 3, 'A sees %d notifications, want the request, the reaction and the comment' % len(rows))
+            if j.ar: j.check(not [r for r in rows if re.search(r'reacted to|commented|sent you|accepted your|removed your|reviewed your|messaged', r['text'])],
+                             'notifications are written in English in the Arabic interface: %s' % [r['text'][:50] for r in rows if re.search(r'reacted to|commented|sent you|accepted your', r['text'])][:3])
+            j.nav(pa, 'feed')
         with j.step("B replies to A's comment, mentions A, follows A and messages A — one notification each"):
             j.notbuilt('replies, mentions and person follows do not exist (see J-SOCIAL-15, -21, -33)')
     with j.step('Open Notifications; filter by Connections / Reactions / Comments: only matching kinds'):
@@ -54,6 +59,8 @@ def told_promptly(j):
         for pat, kind in ((r'^(Connections|اتصالات|الاتصالات)$', r'connect|تواصل|اتصال'), (r'^(Reactions|تفاعلات|التفاعلات)$', r'react|liked|أعجب|تفاعل'), (r'^(Comments|تعليقات|التعليقات)$', r'comment|علّق|تعليق')):
             rows = filt(j, pa, pat, pat)
             j.check(rows and all(re.search(kind, r['text'], re.I) for r in rows), 'the %s filter shows other kinds: %s' % (pat, [r['text'][:40] for r in rows][:3]))
+            if j.ar: j.check(not [r for r in rows if re.search(r'reacted to|commented|sent you|accepted your|removed your|reviewed your|messaged', r['text'])],
+                             'notifications are written in English in the Arabic interface: %s' % [r['text'][:50] for r in rows if re.search(r'[A-Za-z]{5,} (to|your|you)', r['text'])][:3])
     with j.step('A brand-new user starts with 0 notifications and badges hidden'):
         if j.demo: j.skip('a brand-new account exists only in live')
         pn = new['page']; j.check(alerts_badge(pn) in ('', '0'), 'a new user sees an Alerts badge "%s"' % alerts_badge(pn))

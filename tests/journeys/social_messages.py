@@ -132,10 +132,12 @@ def new_message_to_named_person(j):
             pg.locator('#nmTx:visible').first.fill(body)
             mark = j.toast_mark(pg); j.click(pg, r'^(Send|إرسال)$', scope='.dbk-ov', what='Send', exact=True); j.settle(pg, 1500)
             return ' '.join(j.toasts_since(pg, mark))
+        LBL = {}
         def options_for(name):
             to_list(j, pg); j.click(pg, r'✎|New message|رسالة جديدة', scope='#content', what='✎ New message')
             pg.locator('#nmTo:visible').first.fill(name); pg.wait_for_timeout(1500)
-            o = [x for x in pg.evaluate("(()=>{const i=document.querySelector('#nmTo');const l=i&&i.list;return l?[...l.options].map(o=>o.value):[]})()") if x.lower().startswith(name.lower())]
+            ol = pg.evaluate("(()=>{const i=document.querySelector('#nmTo');const l=i&&i.list;return l?[...l.options].map(o=>[o.value,o.label||'']):[]})()")
+            LBL.update(dict(ol)); o = [x for x, _ in ol if x.lower().startswith(name.lower())]
             pg.keyboard.press('Escape'); pg.wait_for_timeout(300)
             if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
             return o
@@ -165,6 +167,28 @@ def new_message_to_named_person(j):
             j.check(re.search(r'Several|أكثر من', said), 'typing a name two members share is not refused with a clear message (toasts: %s)' % said[:120])
             j.check(j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'a message to a name two members share was stored')
             if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+        # look-alikes a person cannot tell apart (phase 1b round 2): a name that copies the picker's "name · company" form, a twin
+        # whose name differs only by an invisible character, and exact twins (same name, company, headline)
+        hname, hco = 'Dr. Hala Dup %s' % j.tag, 'Pharco %s' % j.tag
+        h1, h2 = member(hname, hco), member(hname, hco)
+        spoof = member('%s · %s' % (hname, hco))                                       # signs up as "Dr. Hala Dup … · Pharco …"
+        zname = 'Dr. Zeina Inv %s' % j.tag; z1, z2 = member(zname), member(zname + '\u200b')
+        j.check(j.sql1("select name from public.profiles where id='%s'" % spoof).find('·') < 0, 'a member can be called "<name> · <company>" (the picker separator is kept in the name)')
+        j.check(j.sql1("select count(distinct name) from public.profiles where id in ('%s','%s')" % (z1, z2)) == '1', 'a name with an invisible character is stored as a different name')
+        j.reload(pg); j.nav(pg, 'messages')
+        opts = options_for(hname); j.note('separator spoof options', opts)
+        canon = [o for o in opts if o.lower().startswith(('%s · %s' % (hname, hco)).lower())]
+        j.check(len(canon) == 2, 'the two Pharco members are not the only options that read "%s · %s…": %s' % (hname, hco, opts))
+        for i, o in enumerate(canon):
+            body = 'Hala option %d %s' % (i, j.tag); new_message(o, body)
+            got = j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 6)
+            j.check(got in (h1, h2), 'the option "%s" went to %s — not to one of the two Pharco members (the look-alike is %s)' % (o, got or 'nobody', spoof))
+        labels = [LBL.get(o, '') for o in canon]
+        j.check(labels and all(re.search(r'Same name|نفس الاسم', l) for l in labels), 'exact twins carry only a handle — the option does not warn that they look the same: %s' % labels[:2])
+        j.check(re.search(r'Pharco', head(pg)) and not re.search(r'Last seen|آخر ظهور', head(pg)), 'after writing to a twin, the chat header does not say who it is (company): "%s"' % head(pg)[:80])
+        opts = options_for(zname); j.note('invisible twin options', opts)
+        vis = set(re.sub(r'[\u200b-\u200f\u2060\ufeff]', '', o).lower() for o in opts)
+        j.check(len(opts) == 2 and len(vis) == 2, 'two members whose names look the same are offered as options that look the same: %s' % [o.encode('unicode_escape').decode() for o in opts])
         # the profile's Message button writes to that profile's own person (the no-company twin, opened by id)
         goto_profile(j, pg, {'id': n2}); j.click(pg, r'Message|رسالة|راسل', scope='#content', what='Message')
         body = 'From the profile %s' % j.tag; send(j, pg, body)
@@ -316,8 +340,13 @@ def mute_block_report(j):
         el = j.find(pg, r'^👤$', scope='#content .chat-head', exact=True); j.check(el, 'no 👤 in the conversation header')
         j.act(pg, el, '👤 (profile)', lambda: pg.evaluate("document.body.getAttribute('data-page')") == 'profile' and cname in j.text(pg)[:400], expect="C's profile to open")
         j.nav(pg, 'messages'); open_thread(j, pg, cname)
-    with j.step('⋯ → Mute notifications: stored; the thread shows it is muted'):
-        el = menu(j, pg, r'Mute|كتم', 'Mute'); el.click(); pg.wait_for_timeout(600)
+    with j.step('⋯ → Mute notifications: stored; the thread shows it is muted (the menu opens inside the screen, every item can be reached)'):
+        el = menu(j, pg, r'Mute|كتم', 'Mute')
+        out = pg.evaluate("[...document.querySelectorAll('.ch-dd-item')].filter(e=>e.getClientRects().length).map(e=>{const r=e.getBoundingClientRect(),h=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return (r.left<0||r.right>innerWidth||!h||!(h===e||e.contains(h)))?e.innerText.trim():null}).filter(Boolean)")
+        j.check(not out, 'the conversation ⋯ menu is partly off the screen at %dpx — these items cannot be reached: %s' % (j.width, out[:6]))
+        if j.live:
+            j.check(not re.search(r'Last seen|آخر ظهور', head(pg)), 'the chat header claims a presence the live app does not have: "%s"' % head(pg)[:80])
+        el.click(); pg.wait_for_timeout(600)
         el = menu(j, pg, r'Mute|كتم', 'Mute')
         j.check(re.search(r'Unmute|إلغاء الكتم', el.inner_text()), 'Mute did not take effect (the menu does not offer Unmute)')
         pg.keyboard.press('Escape'); pg.wait_for_timeout(200)
@@ -330,6 +359,16 @@ def mute_block_report(j):
         if j.live:
             r = c['page'].evaluate("([me,to])=>dxLive.sb.from('messages').insert({sender_id:me,receiver_id:to,body:'after block'}).then(r=>r.error?'refused':'stored')", [c['id'], a['id']])
             j.check(r == 'refused', 'after Block, C can still message A (the database stored it)')
+            # C writes through the app: refused in C's language, nothing stored, and C's conversation list does not pretend it was sent
+            pc = c['page']; j.reload(pc); j.nav(pc, 'messages'); open_thread(j, pc, 'Asmaa')
+            before = [t['text'] for t in threads(pc) if 'Asmaa' in t['text']]
+            body = 'after block UI ' + j.tag; mark = j.toast_mark(pc); send(j, pc, body); pc.wait_for_timeout(800)
+            said = ' '.join(j.toasts_since(pc, mark))
+            j.check(said, 'the blocked sender is not told the message was refused')
+            if j.ar: j.check(not re.search(r'[A-Za-z]{4,}', said), 'the refusal is not in Arabic: "%s"' % said[:80])
+            j.check(j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'the blocked sender\'s message was stored')
+            after = [t['text'] for t in threads(pc) if 'Asmaa' in t['text']]
+            j.check(not any(body in t for t in after), 'the conversation list shows the refused message as sent: %s (before: %s)' % (after[:1], before[:1]))
     with j.step('⋯ → Report (reason + text): a moderation item with the reported messages'):
         el = menu(j, pg, r'Report|إبلاغ', 'Report')
         j.act(pg, el, 'Report Conversation', lambda: pg.locator('.modal-bg:visible textarea, .dbk-ov:visible textarea, [role=dialog]:visible textarea').count(), expect='a report form with a reason')

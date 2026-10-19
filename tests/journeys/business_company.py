@@ -283,8 +283,22 @@ def act_as_company(j):
         t = workspace(j, pg); m = re.search(r'(COMPANY WORKSPACE|مساحة عمل الشركة)\s*\n\s*([^\n]+)', t)
         j.check(m and m.group(2).strip() != co2, 'the workspace still shows the second company after switching back')
     with j.step("The page I just made is current and names me as its owner: no 'updated more than 6 months ago' notice; Contact says quote requests go to me (Owner)"):
-        close_dialogs(pg); directory(j, pg); open_card(j, pg, co2); t = j.text(pg)
+        close_dialogs(pg); directory(j, pg)
+        if j.live:      # a page with no site in the database says so — never an invented "<city> site · Factory"
+            sites_db = int(j.sql1("select count(*) from public.company_sites s join public.companies c on c.id=s.company_id where c.name=$q$%s$q$" % co2) or 0)
+            card = pg.evaluate("n=>{const c=[...document.querySelectorAll('#content .dr-card,#content .hb-card')].find(e=>e.innerText.indexOf(n)>=0);return c?c.innerText:''}", co2)
+            m = re.search(r'(\d+)\s*(sites?|مواقع|موقع)', card)
+            j.check(not m or int(m.group(1)) == sites_db, 'the directory card of a page with %d sites in the database says "%s"' % (sites_db, m.group(0) if m else card[:80]))
+        open_card(j, pg, co2); t = j.text(pg)
         j.check(not re.search(r'more than 6 months|older than 6 months|May be outdated|أكثر من 6 أشهر|أقدم من 6 أشهر|قد تكون قديمة', t), 'a page made minutes ago says its information is more than 6 months old')
+        who = pg.evaluate('ME.name'); ppl = pg.evaluate("[...document.querySelectorAll('#content .hb-person')].map(e=>e.innerText.replace(/\\s+/g,' '))")
+        mine_row = [x for x in ppl if who in x]
+        j.check(not mine_row or re.search(r'Owner|المالك', mine_row[0]), "the Overview's People box calls the page's owner \"%s\"" % (mine_row[0] if mine_row else ''))
+        if j.live:
+            has_tab = pg.locator('#content [role=tab], #content .cp-tab').filter(has_text=re.compile(r'^\W*(Sites|%s)\W*(\(\d+\))?$' % (ar('Sites') or 'المواقع'))).count()
+            t2 = company_tab(j, pg, 'Sites|%s' % (ar('Sites') or 'المواقع'), 'Sites') if has_tab else ''
+            if sites_db == 0: j.check(not re.search(r'(?i)\b\w+ site\b.*(Factory|Warehouse|Office|Laboratory)|موقع .*(مصنع|مستودع|مكتب)', t2.split('Add a site')[0][:600]), 'the Sites tab shows a site the company never added: %s' % t2[:160].replace('\n', ' | '))
+            directory(j, pg); open_card(j, pg, co2)
         t = company_tab(j, pg, 'Contact|%s' % ar('Contact'), 'Contact'); who = pg.evaluate('ME.name')
         j.check(re.search(re.escape(who) + r'\s*\((Owner|المالك)\)', t), "Contact does not name the page's owner (%s) as Owner: %s" % (who, (re.search(r'(Quote requests go to|طلبات عروض الأسعار تذهب إلى)[^\n]{0,80}', t) or [''])[0]))
         if j.lang == 'ar': j.check(not re.search(r'Quote requests go to|\((Admin|Owner)\)|Some information on this page', t), 'the Contact tab shows English interface text in Arabic')

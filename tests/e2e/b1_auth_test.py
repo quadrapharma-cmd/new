@@ -38,10 +38,20 @@ with sync_playwright() as p:
     T('reload keeps you signed in (opens the app after the splash)', pg.is_visible('#app') and pg.evaluate("ME.name")=='Dr. Test Person')
     other=sql(f"insert into auth.users (email, encrypted_password) values ('other{ST}@x.test', crypt('x-pass-123', gen_salt('bf'))) returning id").split('\n')[0]
     T('setup: the other person exists (a real id, not an empty string)', len(other)==36 and sql(f"select count(*) from public.profiles where id='{other}'")=='1', other)
-    r=pg.evaluate(f"dxLive.sb.from('profiles').update({{name:'HACKED'}}).eq('id','{other}').select().then(r=>({{n:(r.data||[]).length,e:r.error&&{{code:r.error.code,message:r.error.message}}}}))")
+    # (the answer names its columns: since 0036 members cannot read profiles.phone, so select=* on profiles is refused by design)
+    r=pg.evaluate(f"dxLive.sb.from('profiles').update({{name:'HACKED'}}).eq('id','{other}').select('id,name').then(r=>({{n:(r.data||[]).length,e:r.error&&{{code:r.error.code,message:r.error.message}}}}))")
     T("cannot change another person's profile (row-level security: the request is accepted, no row matches)", r['n']==0 and not r['e'] and sql(f"select name from public.profiles where id='{other}'")!='HACKED', r)
-    r=pg.evaluate("dxLive.sb.from('profiles').update({headline:'QA lead'}).eq('id',dxLive.uuidOf(ME.id)).select().then(r=>({n:(r.data||[]).length,e:r.error&&r.error.message}))")
+    r=pg.evaluate("dxLive.sb.from('profiles').update({headline:'QA lead'}).eq('id',dxLive.uuidOf(ME.id)).select('id,headline').then(r=>({n:(r.data||[]).length,e:r.error&&r.error.message}))")
     T('can change your own profile', r['n']==1 and sql(f"select headline from public.profiles where id='{me['id']}'")=='QA lead', r)
+    # 0036: a member's phone is private — another member cannot read it or list who has one; the owner reads it through my_profile()
+    sql(f"update public.profiles set phone='+20 100 555 1234' where id='{other}'")
+    r=pg.evaluate(f"dxLive.sb.from('profiles').select('name,phone').eq('id','{other}').then(r=>({{n:(r.data||[]).length,d:r.data,code:r.error&&r.error.code}}))")
+    T("another member's phone cannot be read through the API (refused, nothing returned)", r['n']==0 and r['code']=='42501', r)
+    r=pg.evaluate("dxLive.sb.from('profiles').select('id').not('phone','is',null).then(r=>({n:(r.data||[]).length,code:r.error&&r.error.code}))")
+    T('nobody can list the members who have a phone', r['n']==0 and r['code']=='42501', r)
+    pg.evaluate("dxLive.sb.from('profiles').update({phone:'+20 2 555 0000'}).eq('id',dxLive.uuidOf(ME.id)).then(()=>0)"); pg.wait_for_timeout(300)
+    r=pg.evaluate("dxLive.sb.rpc('my_profile').single().then(r=>r.data&&r.data.phone)")
+    T('your own phone comes back to you (my_profile)', r=='+20 2 555 0000', r)
     # F-01: the browser must not be able to make itself admin/verified or change server-kept columns of its own profile
     # (FAILS before migration 0020_security_core.sql — the profiles own-update policy had no column guard)
     me_id=me['id']

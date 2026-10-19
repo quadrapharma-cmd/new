@@ -613,6 +613,16 @@ def report_post(j):
         j.check(j.sql1("select count(*) from public.posts where id=%d" % p) == '0', 'Remove did not remove the post')
     with j.step('A is told the outcome; C is told the post was removed and why'):
         j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and created_at>now()-interval '5 minutes'" % c['id']) >= '1', 'C was not told the post was removed')
+        # each reads it on the Notifications page in the interface language, from Drugbox (not with their own initials as sender)
+        for who, page, want in ((c, c['page'], r'removed your post|أزال.*منشورك'), (a, pg, r'reviewed your report|راجع.*بلاغك')):
+            j.reload(page); j.nav(page, 'notifs'); j.settle(page, 900)
+            rows = page.eval_on_selector_all('#content .notif-item', 'e=>e.filter(x=>x.getClientRects().length).map(x=>({t:x.innerText,av:(x.querySelector(".notif-av")||{}).innerText||""}))')
+            hit = [r for r in rows if re.search(want, r['t'])]
+            j.check(hit, '%s does not see the Drugbox notice on the Notifications page (rows: %s)' % (who['name'], [r['t'][:50] for r in rows[:4]]))
+            if hit:
+                if j.ar: j.check(not re.search(r'Drugbox (removed|reviewed)|reason:|Note:', hit[0]['t']), 'the Drugbox notice is in English in the Arabic interface: "%s"' % hit[0]['t'][:90])
+                mine_ini = (page.evaluate('ME.initials') or '').strip().upper()
+                j.check(hit[0]['av'].strip().upper() != mine_ini, 'the Drugbox notice shows the reader\'s own initials (%s) as its sender' % hit[0]['av'])
 
 @journey('J-SOCIAL-21')
 def mention_and_hashtag(j):

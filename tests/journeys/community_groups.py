@@ -490,11 +490,11 @@ def group_members(j):
         j.check(pg.evaluate("document.body.getAttribute('data-page')") == 'profile' and look.split()[-1 if j.demo else 1] in j.text(pg)[:600], "the member row does not open that person's profile")
     with j.step('From the profile, Connect works'):
         el = j.find(pg, r'^\W*(Connect|\+ Connect|تواصل|اتصال)\W*$', scope='#content', exact=True)
-        if not el and j.find(pg, r'Pending|Connected|Message|معلق|متصل|رسالة', scope='#content'): return
+        if not el and j.find(pg, r'Pending|Connected|Message|معلق|قيد الانتظار|متصل|رسالة', scope='#content'): return
         j.check(el, 'no Connect on the member\'s profile'); el.click(); pg.wait_for_timeout(1200)
         where = pg.evaluate("document.body.getAttribute('data-page')")
         j.check(where == 'profile', "Connect on the member's profile leaves the profile (the app switches to '%s')" % where)
-        j.check(j.find(pg, r'Pending|Sent|Withdraw|معلق|تم الإرسال', scope='#content'), 'Connect does not turn to Pending')
+        j.check(j.find(pg, r'Pending|Sent|Withdraw|معلق|قيد الانتظار|تم الإرسال|سحب', scope='#content'), 'Connect does not turn to Pending')
         if j.live:
             uid = ppl[7]
             j.check(j.wait_db("select count(*) from public.connections where requester='%s' and addressee='%s'" % (me['id'], uid), 5) == '1', 'no connections row')
@@ -551,7 +551,7 @@ def join_and_leave(j):
         pg = j.demo_signin(j.new_page()); gname = 'QA/QC Professionals'
     with j.step("Click '+ Join' on the card: one toast, the button turns Joined, the count +1"):
         groups_page(j, pg); c = next((c for c in cards(pg) if c['title'] == gname), None); j.check(c, 'no card for %s' % gname)
-        n0 = num(re.search(r'([\d,]+)\s*(members|عضو)', c['text']).group(1)) if re.search(r'([\d,]+)\s*(members|عضو)', c['text']) else None
+        n0 = num(re.search(r'([\d,]+)\s*(members?|عضو|أعضاء)', c['text']).group(1)) if re.search(r'([\d,]+)\s*(members?|عضو|أعضاء)', c['text']) else None
         my0 = num(chip_text(pg, R('My Groups')))
         btn = pg.locator('#content .gcard').filter(has=pg.locator('.gcard-title', has_text=gname)).first.locator('.gcard-btn')
         before = set(pg.evaluate('window.__jt||[]')); cut = toast_cut(pg); btn.click(); j.settle(pg, 1200)
@@ -559,7 +559,7 @@ def join_and_leave(j):
         j.check(len(ts) == 1, '%d different toasts for one Join: %s' % (len(ts), ts))
         c = next(c for c in cards(pg) if c['title'] == gname)
         j.check(re.search(JOINED, c['btn']), 'the button reads "%s" after Join' % c['btn'])
-        n1 = num(re.search(r'([\d,]+)\s*(members|عضو)', c['text']).group(1)) if re.search(r'([\d,]+)\s*(members|عضو)', c['text']) else None
+        n1 = num(re.search(r'([\d,]+)\s*(members?|عضو|أعضاء)', c['text']).group(1)) if re.search(r'([\d,]+)\s*(members?|عضو|أعضاء)', c['text']) else None
         j.check(n0 is None or n1 == n0 + 1, 'the member count went %s → %s' % (n0, n1))
     with j.step('Open the group: the header says member (Leave), the composer is there; it is in My Groups and the side list'):
         open_card(j, pg, gname)

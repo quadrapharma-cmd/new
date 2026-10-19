@@ -413,6 +413,10 @@ def honest_reach_numbers(j):
         if j.live:
             pv = int(j.sql1("select coalesce(profile_views,0) from public.profiles where id='%s'" % a['id']) or 0)
             j.check(pv == 2, 'two members viewed the profile, profiles.profile_views = %d' % pv)
+            # "People also viewed" on a profile must be people who viewed it too — the live app records no co-views, so no such list
+            pb = b['page']; goto_profile(j, pb, a); pb.wait_for_timeout(1200)
+            also = pb.evaluate("(()=>{const h=[...document.querySelectorAll('#content .card > div:first-child')].find(e=>/People also viewed|شاهدوا أيضًا|شاهد أيضًا/.test(e.textContent));return h&&h.getClientRects().length?h.parentElement.innerText:''})()")
+            j.check(not also, 'the profile shows a "People also viewed" list nobody viewed: %s' % also[:120].replace('\n', ' | '))
     with j.step('Open the list of who viewed the profile'):
         el = j.find(pg, r'Who viewed|viewers|من شاهد|من زار', scope='#content'); j.check(el, 'no "who viewed your profile" list')
     with j.step('D views the profile: views increase by one'):
