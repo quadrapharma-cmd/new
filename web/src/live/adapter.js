@@ -3365,4 +3365,157 @@
 
 
 
+  /* ===== AREA business: marketplace (B-06…B-10) =====
+     The marketplace on the database (0054): the page asks market_search() for supply and requests (one call each, newest after
+     paid placement, "Show more" for the next page); a listing's company, price with its currency, claimed certificates
+     (plain tags) and Drugbox-checked ones (✓) show on its card; buyers' requests are products of type 'demand' on the
+     approved request cards, where "Quote →" sends a priced quote into the deals engine (listing_quote); "Contact →" writes
+     to the lister about that listing (listing_contact: one inquiry per buyer); Quick view counts a view; 🔖 saves the listing
+     for the member. My Listings is the market.js list, fed from my_listings(): Edit, Pause / Resume, Delete, Renew. */
+  var MK2 = { total: 0, page: 40, more: false, demandP: [], saved: {}, savedAt: 0, coL: {}, coAt: {}, loadingMore: false };
+  var CUR_SYM = { USD: 'US$', EGP: 'EGP', EUR: '€', SAR: 'SAR', AED: 'AED', GBP: '£', CNY: 'CNY', INR: 'INR' };
+  function priceText(p) { var pr = String(p.price || '').trim(); if (!pr) return 'On request';
+    if (/^[\d.,]+$/.test(pr) && CUR_SYM[p.currency]) pr = CUR_SYM[p.currency] + ' ' + pr;
+    return pr + (p.unit && pr.indexOf('/') < 0 ? '/' + p.unit : ''); }
+  function typeOfRow(r) { return r.type === 'demand' ? 'demand' : r.category === 'cmo' ? 'cmo' : r.category === 'registration' ? 'license' : r.category === 'equipment' ? 'equipment' : r.category === 'service' ? 'service' : 'supply'; }
+  async function sellersOf(rows) { var ids = []; rows.forEach(function (p) { if (p.user_id && ids.indexOf(p.user_id) < 0 && p.user_id !== ME_UUID) ids.push(p.user_id); });
+    var by = {}; if (ids.length) { var r = await sb.from('profiles').select(PCOLS).in('id', ids); (r.data || []).forEach(function (u) { by[u.id] = u; putUser(u); }); }
+    rows.forEach(function (p) { p.seller = p.user_id === ME_UUID ? { id: ME_UUID, name: window.ME.name, verified: window.ME.verified, country: 'EG' } : (by[p.user_id] || {}); }); return rows; }
+  async function searchPage(type, off) { var r = await sb.rpc('market_search', { p_type: type, p_limit: MK2.page, p_offset: off || 0 }); if (r.error) throw r.error; return r.data || { total: 0, rows: [] }; }
+  loadMarket = async function () {
+    var a = await Promise.all([searchPage('supply', 0), searchPage('demand', 0),
+      sb.from('enquiries').select('*, buyer:profiles!enquiries_user_id_fkey(' + PCOLS + ')').eq('status', 'active').eq('type', 'demand').order('created_at', { ascending: false }).limit(20)]);
+    if (a[2].error) throw a[2].error;
+    MKT.products = await sellersOf(a[0].rows || []); MK2.total = +a[0].total || 0; MK2.more = MKT.products.length < MK2.total;
+    MK2.demandP = await sellersOf(a[1].rows || []); MKT.demand = a[2].data || []; MKT.demand.forEach(function (e) { putUser(e.buyer); }); MKT.at = Date.now();
+    if (onPageNow('market')) setTimeout(paintMarketChrome, 0);
+  };
+  async function moreMarket() { if (MK2.loadingMore || !MK2.more) return; MK2.loadingMore = true;
+    try { var r = await searchPage('supply', MKT.products.length), add = await sellersOf(r.rows || []), seen = {}; MKT.products.forEach(function (p) { seen[p.id] = 1; });
+      MKT.products = MKT.products.concat(add.filter(function (p) { return !seen[p.id]; })); MK2.total = +r.total || MK2.total; MK2.more = MKT.products.length < MK2.total && add.length > 0;
+    } finally { MK2.loadingMore = false; } if (onPageNow('market')) paintMarket(); }
+  var supplyCardD1 = supplyCard;
+  supplyCard = function (p) {
+    var c = supplyCardD1(p), u = p.seller || {}, co = p.co || null, docs = p.docs || [], ver = p.certs_verified || [];
+    c.dataset.cat = typeOfRow(p) === 'supply' ? 'supply' : typeOfRow(p); c.dataset.dxcat = c.dataset.cat;
+    var tb = c.querySelector('.trust-bar'); if (tb) { tb.innerHTML = ((co && co.verified) || u.verified ? '<span class="ti g">✓ Verified seller</span>' : '') + ver.slice(0, 3).map(function (d) { return '<span class="ti b">✓ ' + esc2(d) + ' (checked)</span>'; }).join(''); tb.style.display = tb.innerHTML ? '' : 'none'; }
+    c.querySelectorAll('.cert-p').forEach(function (x) { if (ver.indexOf(x.textContent) < 0) x.title = 'Claimed by the seller — not checked by Drugbox'; });
+    var pr = c.querySelector('.price'); if (pr) pr.textContent = priceText(p);
+    var mq = c.querySelector('.moq'); if (mq) { mq.textContent = ''; if (p.moq) mq.appendChild(document.createTextNode('MOQ: ' + p.moq + ' · ')); var w = document.createElement('span'); w.setAttribute('data-noi18n', ''); w.textContent = ((FLAG[u.country] || '') + ' ' + (co ? co.name : u.name || '')).trim(); mq.appendChild(w); }
+    return c;
+  };
+  function demandProductCard(p) {
+    var c = el(MKT.tplD), u = p.seller || {}, a = aid(p.user_id), usr = window.U(a);
+    c.dataset.live = 'p' + p.id; c.dataset.uid = a; c.dataset.dxcat = 'demand';
+    var t = c.querySelector('.dc-title'); if (t) { var badge = t.querySelector('.role-badge'); t.textContent = p.name; if (badge) t.insertBefore(badge, t.firstChild); }
+    var ur = c.querySelector('.db-badge'); if (ur) ur.style.display = p.urgent ? '' : 'none';
+    var dt = c.querySelector('.dc-det'); if (dt) dt.innerHTML = esc2([p.moq, p.price ? 'target ' + priceText(p) : '', String(p.description || '').slice(0, 60)].filter(Boolean).join(' · ')) + '<br>' + (FLAG[u.country] || '') + ' ' + esc2(p.co ? p.co.name : u.country || '') + ' · ' + ago(p.created_at);
+    var by = c.querySelector('.dc-buyer'); if (by) by.innerHTML = '<div class="av" style="background:' + usr.color + ';width:17px;height:17px;font-size:7px">' + esc2(usr.initials) + '</div> ' + esc2(u.name || 'Member') + (u.verified ? ' ✓' : '');
+    return c;
+  }
+  var paintMarketD1 = paintMarket;
+  paintMarket = function () {
+    paintMarketD1();
+    var mk = document.getElementById('mkx'); if (!mk) return;
+    var dgrid = mk.querySelector('[data-live-demand]');
+    if (dgrid && MKT.tplD) { var at = dgrid.querySelector('.db-sub'); MK2.demandP.slice().reverse().forEach(function (p) { var c = demandProductCard(p); if (at) at.insertAdjacentElement('afterend', c); else dgrid.insertBefore(c, dgrid.firstChild); });
+      var em = dgrid.querySelector(':scope > .dx-mk-empty'); if (em && MK2.demandP.length) em.remove(); }
+    var grid = mk.querySelector('.supply-grid'); if (grid) {
+      var mb = mk.querySelector('.dx-mk-more'); if (MK2.more) { if (!mb) { mb = document.createElement('div'); mb.className = 'dx-mk-more'; mb.style.cssText = 'text-align:center;margin:10px 0 4px'; grid.insertAdjacentElement('afterend', mb); }
+        mb.innerHTML = '<button type="button" class="dr-link" data-mkmore="1">Show more (' + MKT.products.length.toLocaleString('en') + ' of ' + MK2.total.toLocaleString('en') + ')</button>'; } else if (mb) mb.remove(); }
+    markSaved(); if (window.dxMarket && window.dxMarket.sync) window.dxMarket.sync();
+  };
+  /* 🔖 on a live card: saved for the member (saved_listings) */
+  async function loadSaved() { var r = await sb.from('saved_listings').select('listing_id, p:products(id, name, category, type, price, unit, currency)').order('created_at', { ascending: false }).limit(200); if (r.error) throw r.error;
+    MK2.saved = {}; MK2.savedRows = r.data || []; MK2.savedRows.forEach(function (x) { MK2.saved[x.listing_id] = 1; }); MK2.savedAt = Date.now(); }
+  function markSaved() { document.querySelectorAll('#mkx [data-live^="p"] .btn-save').forEach(function (b) { var id = +b.closest('[data-live]').dataset.live.slice(1), on = !!MK2.saved[id]; b.classList.toggle('dbk-saved', on); b.title = on ? 'Saved' : 'Save'; }); }
+  window.addEventListener('click', function (e) {     /* before the page's own handlers (they work on the browser's copy of the cards) */
+    if (!ME_UUID || !e.target.closest) return;
+    var more = e.target.closest('#mkx [data-mkmore]'); if (more) { e.preventDefault(); e.stopPropagation(); moreMarket().catch(toastErr); return; }
+    var sv = e.target.closest('#mkx [data-live^="p"] .btn-save'); if (sv) { e.preventDefault(); e.stopPropagation();
+      var id = +sv.closest('[data-live]').dataset.live.slice(1), on = !!MK2.saved[id]; MK2.saved[id] = !on; markSaved();
+      (on ? sb.from('saved_listings').delete().eq('listing_id', id).eq('user_id', ME_UUID) : sb.from('saved_listings').insert({ listing_id: id, user_id: ME_UUID })).then(function (r) {
+        if (r.error && !/duplicate/i.test(r.error.message || '')) { MK2.saved[id] = on; markSaved(); return toastErr(r.error); } MK2.savedAt = 0; window.toast(on ? 'Removed from saved' : 'Saved to your list'); });
+      return; }
+    var ct = e.target.closest('#mkx [data-live^="p"] .btn-contact, #mkx [data-live^="p"] .btn-contact-gold'); if (ct) { e.preventDefault(); e.stopPropagation(); contactDialog(ct.closest('[data-live]')); return; }
+    var qv = e.target.closest('#mkx [data-live^="p"] .dx-qv'); if (qv) { var lid = +qv.closest('[data-live]').dataset.live.slice(1); sb.rpc('listing_view', { p_id: lid }).then(function () {}, function () {}); }
+  }, true);
+  function findListing(id) { return MKT.products.concat(MK2.demandP).find(function (p) { return p.id === id; }); }
+  function contactDialog(card) {
+    var id = +card.dataset.live.slice(1), p = findListing(id); if (!p) return;
+    if (p.user_id === ME_UUID) { window.toast('This is your own listing'); return; }
+    sb.rpc('listing_view', { p_id: id }).then(function () {}, function () {});
+    var who = (p.co && p.co.name) || (p.seller && p.seller.name) || 'the supplier';
+    window.DBK.modal({ title: 'Contact ' + who, body: '<div class="dbk-f"><label>About</label><input readonly data-noi18n value="' + esc2(p.name + ' · ' + priceText(p)) + '"></div>' +
+      '<div class="dbk-f"><label for="mkMsg">Message *</label><textarea id="mkMsg" data-req rows="5">' + esc2('I am interested in "' + p.name + '". Could you share the COA / specifications, your best price and the lead time?') + '</textarea></div>',
+      primary: { label: 'Send message', onClick: function (b, close) { if (!window.DBK.requireFields(b)) return false; var ok = b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
+        sb.rpc('listing_contact', { p_id: id, p_body: b.querySelector('#mkMsg').value }).then(function (r) { if (ok) ok.disabled = false; if (r.error) return toastErr(r.error); close(); window.toast('Message sent to ' + who + ' — see Messages for the reply'); });
+        return false; } } });
+  }
+  /* the service behind market.js: my listings, drafts, quotes, saved, a company's listings */
+  function actingRaw() { var a = window.dxDir && window.dxDir.mine && window.dxDir.mine(), r = a && CO.raw[a.slug]; return r && r.id && CO.roles[r.id] ? { slug: a.slug, id: r.id } : null; }
+  function unitOfForm() { var f = document.querySelector('#mkx .form-section.active'), u = '';
+    if (f) f.querySelectorAll('.field').forEach(function (fd) { var l = fd.querySelector('.field-label'), s = fd.querySelector('select'); if (!u && s && l && /^Unit/i.test(window.dxOrigText ? window.dxOrigText(l) : l.textContent)) u = s.value; });
+    return String(u).replace(/^per\s+/i, '').trim() || null; }
+  async function insertListing(d, status) {
+    var a = actingRaw(), demand = d.type === 'demand';
+    var row = { user_id: ME_UUID, type: demand ? 'demand' : 'supply', category: CAT[d.type] || 'other', name: d.title, price: d.price || null, unit: demand ? null : unitOfForm(), moq: d.moq || null,
+      description: d.desc || [d.lead, d.where].filter(Boolean).join(' · ') || '', docs: d.certs || [], lead_time: d.lead || null, status: status, company_id: a ? a.id : null };
+    var r = await sb.from('products').insert(row).select('id').single(); if (r.error) throw new Error(friendly(r.error));
+    MKT.at = 0; ML.at = 0; PG.statsAt = 0; return r.data.id;
+  }
+  function rowFromDb(x) { return { id: x.id, title: x.name, em: (window.dxMarket && window.dxMarket.EM[typeOfRow(x)]) || '📦', type: typeOfRow(x), status: x.status, boosted: !!x.boosted,
+    posted: Date.parse(x.created_at), renewed: x.renewed_at ? Date.parse(x.renewed_at) : null, exp: x.expires_at ? Date.parse(x.expires_at) : null, views: x.views || 0, inquiries: x.inquiries || 0, price: x.price || '', moq: x.moq || '' }; }
+  window.dxMarketSvc = {
+    live: true,
+    listings: async function () { var r = await sb.rpc('my_listings'); if (r.error) throw r.error; return (r.data || []).map(rowFromDb); },
+    publish: async function (d, status) { await insertListing(d, status); return true; },
+    update: async function (id, patch) { var u = {}; if ('title' in patch) u.name = patch.title; if ('price' in patch) u.price = patch.price || null; if ('moq' in patch) u.moq = patch.moq || null; if ('status' in patch) u.status = patch.status;
+      var r = await sb.from('products').update(u).eq('id', id).eq('user_id', ME_UUID).select('id'); if (r.error) throw new Error(friendly(r.error)); if (!(r.data || []).length) throw new Error('Only the listing’s owner can change it');
+      MKT.at = 0; PG.statsAt = 0; return true; },
+    remove: async function (id) { var r = await sb.from('products').delete().eq('id', id).eq('user_id', ME_UUID).select('id'); if (r.error) throw new Error(friendly(r.error)); MKT.at = 0; PG.statsAt = 0; return true; },
+    renew: async function (id) { var r = await sb.rpc('listing_renew', { p_id: id }); if (r.error) throw new Error(friendly(r.error)); MKT.at = 0; return true; },
+    quote: async function (c, q) {
+      var m = /^p(\d+)$/.exec(c.live || ''); if (!m) throw new Error('Message this buyer instead — their request was posted before quotes');
+      var a = actingRaw(); if (!a) throw new Error('Create or claim your company page first — quotes are sent by a company');
+      var r = await sb.rpc('listing_quote', { p_id: +m[1], p_from_slug: a.slug, p_price: q.price, p_qty: q.qty || null, p_lead: q.lead || null, p_note: q.note || null });
+      if (r.error) throw new Error(friendly(r.error)); loadDeals().catch(function () {}); return true; },
+    saved: async function () { if (Date.now() - MK2.savedAt > 5000) await loadSaved();
+      return (MK2.savedRows || []).filter(function (x) { return x.p; }).map(function (x) { return { title: txt(x.p.name), cat: typeOfRow(x.p), price: priceText(x.p) }; }); },
+    companyListings: function (co) {
+      if (!co || !co._id) return []; var k = co.slug;
+      if (!(MK2.coAt[k] && Date.now() - MK2.coAt[k] < 30000)) { MK2.coAt[k] = Date.now();
+        sb.from('products').select('id, name, type, category').eq('company_id', co._id).eq('active', true).order('created_at', { ascending: false }).limit(50).then(function (r) {
+          if (r.error) return; MK2.coL[k] = (r.data || []).map(function (p) { return { t: txt(p.name), type: typeOfRow(p).toUpperCase() }; }); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies(); }); }
+      return MK2.coL[k] || [];
+    }
+  };
+  /* publishing from the listing wizard: the database keeps it (a request is a 'demand' listing), then the page reads it again */
+  var hookMK2 = window.dxLiveHook;
+  window.dxLiveHook = function (kind, d) {
+    if (kind === 'listing' && ME_UUID && d && d.type !== 'job') {
+      insertListing(d, 'active').then(function () { return loadMarket(); }).then(function () { if (onPageNow('market')) { paintMarket(); if (window.dxMarket) window.dxMarket.paint(); } }).catch(toastErr);
+      return;
+    }
+    return hookMK2 ? hookMK2(kind, d) : undefined;
+  };
+  /* My Listings: drawn by market.js from my_listings() */
+  paintMyListings = function () { if (window.dxMarket) window.dxMarket.paint(); };
+  loadMyListings = async function () { ML.at = Date.now(); };
+  /* company listings (surplus) are read again when the marketplace opens (a sale reduces the quantity — 0054) */
+  var renderMarketMK2 = window.renderMarket;
+  window.renderMarket = function () { var r = renderMarketMK2.apply(this, arguments); if (!ME_UUID) return r;
+    if (!MK2.listAt || Date.now() - MK2.listAt > 15000) { MK2.listAt = Date.now(); loadListings().then(function () { var b = document.querySelector('.hb-mk'); if (b) { b.dataset.sig = ''; var i = document.createElement('i'); b.appendChild(i); i.remove(); } }).catch(function () {}); }
+    if (Date.now() - MK2.savedAt > 20000) loadSaved().then(markSaved).catch(function () {});
+    return r; };
+  /* a listing that matches My Intents (0054) */
+  ICON.listing_match = '🎯';
+  var notifFromMK2 = notifFrom;
+  notifFrom = function (n) { var o = notifFromMK2(n), d = n.data && typeof n.data === 'object' ? n.data : null;
+    if (n.type === 'listing_match' && d) { o.text = esc2((d.kind === 'demand' ? 'A buyer is looking for what you sell: ' : 'New offer matching what you need: ') + String(d.name || '') + ' — open the Marketplace'); o.mk = d.listing; }
+    return o; };
+  document.addEventListener('click', function (e) { var it = ME_UUID && e.target.closest && e.target.closest('.notif-item'); if (!it) return;
+    var n = (window.NOTIFS || []).find(function (x) { return String(x.id) === String(it.dataset.nid); }); if (n && n.mk) setTimeout(function () { window.goto('market'); }, 0); });
+  onReset(function () { MK2.demandP = []; MK2.saved = {}; MK2.savedAt = 0; MK2.coL = {}; MK2.coAt = {}; MK2.total = 0; MK2.more = false; MK2.listAt = 0; });
+  /* ===== /AREA business: marketplace ===== */
 })();

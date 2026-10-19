@@ -55,7 +55,7 @@
     companyListings: function (co) { return mine().filter(function (r) { return r.slug === co.slug && r.status === 'active'; }).map(function (r) { return { t: r.title, type: (r.type || 'supply').toUpperCase() }; }); }
   };
   function svc() { return window.dxMarketSvc || demo; }
-  window.dxMarket = { paint: function () { paintManage(); }, demoSvc: demo, EM: EM };
+  window.dxMarket = { paint: function () { paintManage(); }, sync: function () { syncDemand(); demoCounts(); }, demoSvc: demo, EM: EM };
 
   /* ── My Listings, drawn from the service ── */
   var TPL = null;

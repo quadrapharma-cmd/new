@@ -82,7 +82,8 @@ begin
     new.status := case when new.active then 'active' else 'paused' end;
   end if;
   new.active := new.status = 'active';
-  new.currency := case when p !~ '\d' then null when p ~* 'US\$|USD|\$' then 'USD' when p ~* '€|EUR' then 'EUR' when p ~* 'SAR|ريال' then 'SAR' when p ~* 'AED|درهم' then 'AED'
+  -- a bare number is in US dollars: the listing form's price field is "$5.80"
+  new.currency := case when p !~ '\d' then null when p ~* 'US\$|USD|\$' or p ~ '^\s*[0-9][0-9.,]*\s*(/.*)?$' then 'USD' when p ~* '€|EUR' then 'EUR' when p ~* 'SAR|ريال' then 'SAR' when p ~* 'AED|درهم' then 'AED'
                        when p ~* '£|GBP' then 'GBP' when p ~* 'EGP|E£|جنيه|ج\.?\s?م' then 'EGP' when p ~* 'CNY|RMB|¥' then 'CNY' when p ~* 'INR|₹' then 'INR' else null end;
   new.expires_at := case when new.category = 'registration' then null
                          else coalesce(new.renewed_at, new.created_at, now()) + case when new.category = 'cmo' then interval '90 days' else interval '30 days' end end;

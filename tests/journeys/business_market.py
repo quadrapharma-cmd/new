@@ -200,9 +200,14 @@ def post_demand(j):
         b = c.locator('button', has_text=re.compile(r'Quote|عرض')).first; j.check(b.count(), "no 'Quote →' on the demand")
         b.click(); j.settle(sp, 1000)
         j.check(dlg_open(sp) and sp.locator('.dbk-ov input:visible').count(), "not built: 'Quote →' on a demand opens no quotation (price) — no quote can reach the buyer")
+        fill_by_label(j, sp, r'price|السعر', 'US$ 20.50 per kg'); fill_by_label(j, sp, r'Lead|التوريد', '3 weeks', required=False)
+        dlg_click(j, sp, r'Send quote|أرسل', 'Send quote'); j.settle(sp, 1500)
+        j.check(j.wait_db("select status||'|'||(offer->>'price') from public.deals where type='quote' and title=$q$%s$q$" % name, 8) == 'quoted|US$ 20.50 per kg', 'the quote is not a deal (quoted, with the price) in the deals engine')
     with j.step('The buyer compares quotes, accepts one (a deal), the others are told; closing the demand removes it from Browse'):
         if j.demo: j.skip('the suppliers exist only in live')
-        c = deals_centre(j, pg); close_dialogs(pg); j.check(name in c, 'the quotes on the demand are not in the buyer\'s Requests & deals')
+        j.reload(pg); c = deals_centre(j, pg); close_dialogs(pg); j.check(name in c, 'the quotes on the demand are not in the buyer\'s Requests & deals')
+        open_deal(j, pg, name, r'Sent|المرسلة'); deal_act(j, pg, 'Accept quote'); close_dialogs(pg)
+        j.check(j.wait_db("select status from public.deals where type='quote' and title=$q$%s$q$" % name, 8) == 'accepted', 'the buyer cannot accept the quote')
 
 @journey('J-BUSINESS-38')
 def sell_surplus(j):
