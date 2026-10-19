@@ -50,7 +50,8 @@
     var ls = window.dxLiveSites && window.dxLiveSites[co.slug], v = ver(), m = __sites && __sites.get(co);
     if (m && m.v === v && m.ls === ls) return m.list;
     var e = edits()[co.slug];
-    var list = ls || (e && Array.isArray(e.sites) ? e.sites : null) || SITES[co.slug] || [{ id: 'main', name: co.city + ' site', type: siteType(co), city: co.city, gov: co.gov, certs: (co.certs || []).map(function (n) { return Cf(n, '', co.status === 'unclaimed' ? 'Public industry list' : 'Company', '2025-06-01'); }) }];
+    /* the live app: a company's real sites only (its database rows, or the owner's own unsaved edits) — never the sample default */
+    var list = (ls && ls.length ? ls : null) || (e && Array.isArray(e.sites) ? e.sites : null) || (window.dxLiveSites ? (ls || []) : null) || SITES[co.slug] || [{ id: 'main', name: co.city + ' site', type: siteType(co), city: co.city, gov: co.gov, certs: (co.certs || []).map(function (n) { return Cf(n, '', co.status === 'unclaimed' ? 'Public industry list' : 'Company', '2025-06-01'); }) }];
     var cap = window.dxDir2 ? window.dxDir2.capOf(co) : null, gave = false;
     list = list.map(function (s) { var o = JSON.parse(JSON.stringify(s)); if (!o.cap && cap && !gave && (o.type === 'Factory' || o.type === 'Laboratory')) { o.cap = cap; gave = true; } if (!Array.isArray(o.certs)) o.certs = []; return o; });
     if (__sites) __sites.set(co, { v: v, ls: ls, list: list });

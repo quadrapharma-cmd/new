@@ -99,3 +99,6 @@ html[dir=rtl] #gpBox :is(.gp-text,.gp-rules b,.gp-rules span){unicode-bidi:plain
   #gpBox .post-head>div:nth-child(2){min-width:calc(100% - 64px)!important}   /* (the approved markup sets min-width:0 inline) */
   #gpBox .post-head>div:nth-child(3){margin-left:auto!important}
 }
+/* phones: one group card per row — three in a row left the Join button outside its card (and the third card off the screen) */
+@media (max-width:560px){#gx .gx-groups-grid{grid-template-columns:minmax(0,1fr)}}
+@media (min-width:561px) and (max-width:820px){#gx .gx-groups-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

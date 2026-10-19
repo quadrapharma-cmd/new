@@ -369,7 +369,7 @@
     if (q('.group-cover-emoji')) q('.group-cover-emoji').textContent = g.emoji || '👥';
     if (q('#dt-type')) q('#dt-type').textContent = g.deal ? '🤝 Deal Room' : '💬 Discussion';
     var posts = g.canSee ? demoPosts(g) : [];
-    if (q('.group-meta-stats')) q('.group-meta-stats').innerHTML = '<div><b>' + fmtN(g.count) + '</b> members</div>' + (g.canSee ? '<div><b>' + today(posts) + '</b> new posts today</div>' : '') + '<div>' + (g.priv ? '🔒 Private' : '🌍 Public') + '</div>';
+    if (q('.group-meta-stats')) q('.group-meta-stats').innerHTML = '<div><b>' + fmtN(g.count) + '</b> ' + (g.count === 1 ? 'member' : 'members') + '</div>' + (g.canSee ? '<div><b>' + today(posts) + '</b> new posts today</div>' : '') + '<div>' + (g.priv ? '🔒 Private' : '🌍 Public') + '</div>';
     var ma = q('#memberActions'), aa = q('#adminActions');
     if (ma) ma.style.display = g.role === 'admin' ? 'none' : 'flex';
     if (aa) aa.style.display = g.role === 'admin' ? 'flex' : 'none';

@@ -18,7 +18,9 @@
 
 
   /* composer greeting: the name after a title (Dr., Eng., Prof.) or the first word — never "undefined" */
-  function greetName(n) { var p = String(n || '').trim().split(/\s+/); if (p.length > 1 && /^(dr|eng|prof|pharm|mr|mrs|ms)\.?$/i.test(p[0])) return p[1]; return p[0] || ''; }
+  function greetName(n) { var p = String(n || '').trim().split(/\s+/);   /* Arabic titles too: "د." / "م." / "أ.د." / "دكتور" / "مهندسة"… (never "بماذا تفكر يا د.؟") */
+    while (p.length > 1 && /^(dr|eng|prof|pharm|mr|mrs|ms|د|م|أ|ا|أ\.د|ا\.د|د\.م|دكتور|دكتورة|الدكتور|الدكتورة|مهندس|مهندسة|المهندس|المهندسة|صيدلي|صيدلانية|الصيدلي|الصيدلانية|أستاذ|أستاذة|الأستاذ|الأستاذة)[.\/]*$/i.test(p[0])) p.shift();
+    return p[0] || ''; }
   var oc = window.renderComposer;
   if (typeof oc === 'function') window.renderComposer = function () {
     var h = oc.apply(this, arguments), g = greetName((window.ME || {}).name);

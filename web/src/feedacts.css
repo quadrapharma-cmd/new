@@ -26,3 +26,7 @@ html[dir=rtl] .post [id^="pm-"]{right:auto!important;left:0!important}
   .pact[id^="like-"]:not(.dx-rxn-open):hover .rxn-panel{display:none}
   .pact[id^="like-"]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 }
+/* a short post (no stats, no picture — every new post): its card no longer cuts off the ⋯ menu (Copy link, Report) or a reaction
+   panel that opens below Like because the top bar covers the space above it — the card lets them out while they are open */
+.post:has([id^="pm-"][data-dx-open]),.post:has([id^="pm-"][style*="display: block"]),.post:has(.rxn-panel.dx-rxn-below){overflow:visible;position:relative;z-index:31}
+.pact .rxn-panel.dx-rxn-below{bottom:auto;top:calc(100% + 4px)}

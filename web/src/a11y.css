@@ -28,3 +28,8 @@ em{color:inherit}
 @media (max-width:1000px){.net-grid>div{max-width:100%!important}}
 .dx-jobs-empty{background:#fff;border:1px dashed #CBD5E1;border-radius:16px;padding:22px;text-align:center;color:#475569;font:14px/1.6 Poppins,sans-serif}.dx-jobs-empty b{display:block;color:#0E1320;font-size:15px}.dx-jobs-empty p{margin:4px 0 12px}
 .dx-entity{cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:text-decoration-color .15s}.dx-entity:hover,.dx-entity:focus-visible{text-decoration-color:currentColor;color:#1a56db}
+/* phones: the floating ☰ sat on top of a conversation's Send button (a tap opened the menu, the message was not sent) — on the
+   Messages page it floats higher, above the message box */
+@media (max-width:768px){body[data-page=messages] .sb-toggle{bottom:150px}}
+/* the conversation ⋯ menu in right-to-left: ⋯ sits at the left edge, so the menu opens towards the screen, not off it */
+html[dir=rtl] #mx .ch-dropdown{right:auto;left:0}

@@ -35,6 +35,9 @@
   function hexOr(c, id) { return /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : colorFor(id); }
   /* the columns of a person the interface shows (embedded rows carry these, never phone / résumé fields) */
   var PCOLS = 'id,name,headline,company,country,bio,avatar_url,role,verified,location,open_to_work,hiring,profile_views,followers_count';
+  /* a whole profile (opening someone's profile): every column members may read — phone is private (0036: column privileges, so
+     select=* is refused; the signed-in member's own row, phone included, comes from my_profile()) */
+  var PFULL = PCOLS + ',cover_url,website,certs,account_type,created_at,updated_at,experience,education,certifications,skills,languages,years_experience,desired_role,desired_type,remote_ok,available_since,intro_video,intents';
   /* errors are shown in words people understand — never raw database text (table, policy or function names) */
   var TECH = /relation|column|function|schema|syntax|constraint|violates|PGRST|null value|operator|SQLSTATE|policy|permission|privilege|JSON object|cannot coerce|does not exist/i;
   function friendly(x) {
@@ -79,8 +82,8 @@
   }
   /* the signed-in person becomes ME — same fields the interface already reads */
   async function hydrateMe(uid) {
-    var r = await sb.from('profiles').select('*').eq('id', uid).single();
-    if (r.error) throw r.error;
+    var r = await sb.rpc('my_profile').single();                      /* my own row, phone included (0036) */
+    if (r.error) throw r.error; if (r.data && r.data.id !== uid) throw new Error('Your session ended — please sign in again');
     var p = r.data; if (ME_UUID && ME_UUID !== p.id) resetUser(); ME_UUID = p.id;
     Object.assign(window.ME, {
       id: aid(p.id), name: txt(p.name), initials: initials(txt(p.name)), headline: txt(p.headline), company: txt(p.company), country: txt(p.country || 'EG'),
@@ -180,9 +183,9 @@
       var nul = function (v) { return v ? v : null; };
       var r = await sb.from('profiles').update({ name: f.name, headline: nul(f.headline), company: nul(f.company), location: nul(f.location), website: nul(f.web),
         phone: nul(f.phone), certs: nul(f.certs), bio: nul(f.bio), open_to_work: !!f.openToWork, updated_at: new Date().toISOString() })
-        .eq('id', ME_UUID).select('name,headline,company,location,website,phone,certs,bio,open_to_work').single();
+        .eq('id', ME_UUID).select('name,headline,company,location,website,certs,bio,open_to_work').single();   /* phone is never read back through the API (0036) */
       if (r.error) throw r.error;
-      var p = r.data;
+      var p = r.data; p.phone = f.phone;
       oSaveProfile({ name: txt(p.name), headline: txt(p.headline), company: txt(p.company), location: txt(p.location), web: safeUrl(p.website), phone: tel(p.phone),
         certs: txt(p.certs), bio: prose(p.bio), openToWork: !!p.open_to_work });
     } catch (e) { toastErr(e); }
@@ -443,13 +446,21 @@
     if (!ME_UUID) return demo.apply(this, arguments);
     return SUGG.map(function (a) { return window.USERS.find(function (u) { return u.id === a; }); })
       .filter(function (u) { return u && window.CONN_STATE[u.id] !== 'connected' && !INCOMING[u.id] && !(window.SUGG_HIDDEN || {})[u.id]; }); }; })(window.netSuggestions);
+  /* Drugbox's own notices (a post removed, a report decided) have no sender: they show Drugbox, never the reader's own initials */
+  var SYS_UID = -1, SYS_USER = { id: SYS_UID, name: 'Drugbox', initials: 'DB', color: '#1a56db', headline: '', company: '', verified: true };
+  var oU = window.U; if (typeof oU === 'function') window.U = function (id) { return id === SYS_UID ? SYS_USER : oU.apply(this, arguments); };
+  var WHY = { spam: 'spam or an unrelated ad', counterfeit: 'an unverified or counterfeit product', misleading: 'misleading information', abusive: 'harassment or hate' };
+  /* the sentence is written here from the data 0036 keeps, in English — the Arabic interface translates it like any notice */
+  function sysText(n) { var d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return esc2(n.message || '');
+    if (n.type === 'report_closed') return d.outcome === 'removed' ? 'Drugbox reviewed your report and removed the post.' : 'Drugbox reviewed your report — the post stays up.';
+    return esc2('Drugbox removed your post “' + String(d.excerpt || '') + '” — reason: ' + (WHY[d.reason] || 'it breaks the Drugbox rules') + '.' + (d.note ? ' Note: ' + String(d.note) : '')); }
   function notifFrom(n) {
     var who = esc2(n.actor ? n.actor.name : 'Someone'), a = aid(n.from_user), t;
     if (n.type === 'connection_request') t = '<b>' + who + '</b> sent you a connection request';
     else if (n.type === 'connection_accepted') t = '<b>' + who + '</b> accepted your connection request';
     else if (n.type === 'like') t = '<b>' + who + '</b> reacted to your post';
     else if (n.type === 'comment') t = '<b>' + who + '</b> commented: "' + esc2(n.message || '') + '"';
-    else if (n.type === 'post_removed' || n.type === 'report_closed') t = esc2(n.message || '');
+    else if (n.type === 'post_removed' || n.type === 'report_closed') { t = sysText(n); if (!n.from_user) a = SYS_UID; }
     else if (n.type === 'company_message' && n.company_id) t = '<b>' + who + '</b> messaged ' + esc2(n.company && n.company.name ? n.company.name : 'your company') + ': "' + esc2(n.message || '') + '"';   /* written here, in the reader's language (0034); older rows carry their sentence */
     else t = '<b>' + who + '</b> ' + esc2(n.message || '');
     var type = n.type === 'connection_request' ? (INCOMING[a] ? 'connection' : 'accepted') : n.type === 'connection_accepted' ? 'accepted' : n.type;
@@ -611,6 +622,10 @@
   async function openLive(el, key) {
     var a = +String(key).slice(1), partner = uuidOf(a), area = document.getElementById('messagesArea'); if (!partner || !area) return;
     MX.open = a; area.innerHTML = '<div class="msg-date-divider">Loading…</div>';
+    /* the header under the name says who this is (headline · company · city) — there is no presence in the live app, so never
+       "Last seen recently"; two members with the same name are told apart here too (S-03) */
+    var hu = nmUser(partner), st = document.querySelector('.chat-head .ch-status');
+    if (st) st.textContent = hu ? [String(hu.headline || '').split('|')[0].trim(), hu.company, hu.location].map(nmClean).filter(Boolean).join(' · ') : '';
     var r = await sb.rpc('conversation_messages', { p_partner: partner, p_limit: 50 }); if (r.error) { toastErr(r.error); return; }
     if (MX.open !== a) return;
     var u = window.U(a), rows = (r.data || []).slice().reverse();
@@ -640,10 +655,17 @@
     var partner = uuidOf(MX.open); input.value = '';
     if (atts.length) { window.pendingAttachments.length = 0; if (typeof window.renderAttachPreviews === 'function') window.renderAttachPreviews(); sendAttachments(partner, atts, text, area); if (!text) return; text = ''; return; }
     area.insertAdjacentHTML('beforeend', rowMine(text, 'Just now')); var bubble = area.lastElementChild; area.scrollTop = area.scrollHeight;
-    var th = listEl() && listEl().querySelector('.mx-thread[data-person="u' + MX.open + '"]');
-    if (th) { var pv = th.querySelector('.t-preview'); if (pv) { pv.textContent = 'You: ' + text; pv.classList.remove('unread-text'); } var tm = th.querySelector('.t-time'); if (tm) tm.textContent = 'now'; listEl().insertBefore(th, listEl().firstElementChild); }
+    var th = listEl() && listEl().querySelector('.mx-thread[data-person="u' + MX.open + '"]'), was = null;
+    if (th) { var pv = th.querySelector('.t-preview'), tm = th.querySelector('.t-time');
+      was = { pv: pv && pv.textContent, unread: pv && pv.classList.contains('unread-text'), tm: tm && tm.textContent, next: th.nextSibling };   /* put back if the database refuses */
+      if (pv) { pv.textContent = 'You: ' + text; pv.classList.remove('unread-text'); } if (tm) tm.textContent = 'now'; listEl().insertBefore(th, listEl().firstElementChild); }
     sb.from('messages').insert({ sender_id: ME_UUID, receiver_id: partner, body: text }).select().single().then(function (r) {
-      if (r.error) { if (bubble) bubble.remove(); input.value = text; toastErr(r.error); return; }
+      if (r.error) { if (bubble) bubble.remove(); input.value = text; toastErr(r.error);
+        /* refused (blocked, too long…): the conversation list says what it said before — never "You: …" for a message that was not sent */
+        if (th && was && th.isConnected) { var pv2 = th.querySelector('.t-preview'), tm2 = th.querySelector('.t-time');
+          if (pv2 && was.pv != null) { pv2.textContent = was.pv; pv2.classList.toggle('unread-text', !!was.unread); } if (tm2 && was.tm != null) tm2.textContent = was.tm;
+          if (was.next && was.next.parentNode === th.parentNode) th.parentNode.insertBefore(th, was.next); else if (!was.next) th.parentNode.appendChild(th); }
+        return; }
       markSent(bubble, r.data);
       var c = MX.convs.find(function (x) { return x.partner === partner; });
       if (c) { c.last_body = text; c.last_at = r.data.created_at; c.last_from_me = true; } else MX.convs.unshift({ partner: partner, name: window.U(MX.open).name, last_body: text, last_at: r.data.created_at, last_from_me: true, unread: 0 });
@@ -695,19 +717,29 @@
      that fits more than one member, or none, is refused and nothing is sent. Never a guess. */
   var NM = { people: {}, map: {}, t: null };
   function nmLike(x) { return String(x).replace(/[\\%_]/g, '\\$&'); }
+  /* what a person can see of a name: invisible characters (zero-width, direction marks…) count for nothing, any run of spaces is
+     one space, and the picker's own separator "·" (or a look-alike dot) inside a name or a fact reads "-" — so two names that look
+     the same ARE the same name here (and get told apart), and nobody's name or company can pass for "name · company" (0036 does
+     the same in the database) */
+  var NM_INVIS = /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u2800\u3164\uFE00-\uFE0F\uFEFF\uFFA0\uFFF9-\uFFFB]|\uDB40[\uDC00-\uDDEF]/g;
+  function nmClean(x) { return String(x == null ? '' : x).normalize('NFKC').replace(NM_INVIS, '').replace(/\s*[\u00B7\u0387\u16EB\u2022\u2027\u2219\u22C5\u2E31\u30FB\uFF65]+\s*/g, ' - ').replace(/\s+/g, ' ').trim(); }
+  function nmKey(x) { return nmClean(x).toLowerCase(); }
+  /* a typed or picked text: the separators the picker wrote stay, the rest is cleaned like a name */
+  function nmTyped(x) { return String(x == null ? '' : x).split(/\s+\u00B7\s+/).map(nmClean).join(' \u00B7 ').toLowerCase(); }
   function nmAdd(p) {
     if (!p || !p.id || p.id === ME_UUID) return; var o = NM.people[p.id] || {};
     function pick(k, ok) { return p[k] != null ? String(p[k]) : (o[ok] || ''); }
     var raw = String(p.name || o.raw || 'Member').trim();
-    NM.people[p.id] = { id: p.id, raw: raw, name: txt(raw), headline: txt(pick('headline', 'headline')).trim(), company: txt(pick('company', 'company')).trim(), city: txt(pick('location', 'city')).trim() };
+    NM.people[p.id] = { id: p.id, raw: raw, name: nmClean(txt(raw)) || 'Member', headline: nmClean(txt(pick('headline', 'headline'))), company: nmClean(txt(pick('company', 'company'))), city: nmClean(txt(pick('location', 'city'))) };
   }
   function nmUser(id) { var a = aid(id); return (window.USERS || []).find(function (u) { return u.id === a; }) || null; }   /* never U(): it falls back to me */
   function nmConn(id) { return (window.CONN_STATE || {})[aid(id)] === 'connected'; }
   function nmOptions() {
-    var ar = document.documentElement.lang === 'ar', mark = ar ? '✓ من اتصالاتك' : '✓ Your connection';
+    var ar = document.documentElement.lang === 'ar', mark = ar ? '✓ من اتصالاتك' : '✓ Your connection',
+        same = ar ? '⚠️ نفس الاسم والبيانات لعضو آخر — افتح ملفه وراسله من هناك لتتأكد' : '⚠️ Same name and details as another member — open their profile and message from there to be sure';
     function T(x) { return ar && x && window.dxT ? window.dxT(x) : x; }   /* a role from the sign-up list reads in the interface language */
     var all = Object.keys(NM.people).map(function (k) { return NM.people[k]; }), groups = {}; NM.map = {};
-    all.forEach(function (p) { p.conn = nmConn(p.id); var k = p.name.toLowerCase(); (groups[k] = groups[k] || []).push(p); });
+    all.forEach(function (p) { p.conn = nmConn(p.id); p.twin = false; var k = nmKey(p.name); (groups[k] = groups[k] || []).push(p); });
     Object.keys(groups).forEach(function (k) {
       var g = groups[k]; if (g.length === 1) { g[0].value = g[0].name; return; }
       g.forEach(function (p) { var h = T(p.headline.split('|')[0].trim());
@@ -715,12 +747,12 @@
       var max = Math.max.apply(null, g.map(function (p) { return p.facts.length; })), L = 1;
       for (; L < max; L++) { var seen = {}, dup = false; g.forEach(function (p) { var v = p.facts.slice(0, L).join(' · ').toLowerCase(); if (seen[v]) dup = true; seen[v] = 1; }); if (!dup) break; }
       var n = {}; g.forEach(function (p) { p.value = p.name + (p.facts.length ? ' · ' + p.facts.slice(0, L).join(' · ') : ''); var v = p.value.toLowerCase(); n[v] = (n[v] || 0) + 1; });
-      g.forEach(function (p) { if (n[p.value.toLowerCase()] > 1 || !p.facts.length) p.value += ' · #' + p.id.replace(/-/g, '').slice(0, 6); });   /* last resort: a short handle */
+      g.forEach(function (p) { if (n[p.value.toLowerCase()] > 1 || !p.facts.length) { p.twin = true; p.value += ' · #' + p.id.replace(/-/g, '').slice(0, 6); } });   /* last resort: a short handle — and a warning */
     });
-    all.forEach(function (p) { var v = p.value.toLowerCase(); NM.map[v] = v in NM.map && NM.map[v] !== p.id ? null : p.id; });   /* a text that fits two people sends to nobody */
+    all.forEach(function (p) { var v = nmTyped(p.value); NM.map[v] = v in NM.map && NM.map[v] !== p.id ? null : p.id; });   /* a text that fits two people sends to nobody */
     all.sort(function (a, b) { return (b.conn - a.conn) || a.name.localeCompare(b.name) || a.value.localeCompare(b.value); });
     return all.map(function (p) {
-      return { name: p.value, label: [T(p.headline.split('|')[0].trim()), p.company, p.city, p.conn ? mark : ''].filter(Boolean).join(' · ').slice(0, 120) };
+      return { name: p.value, label: (p.twin ? same + ' · ' : '') + [T(p.headline.split('|')[0].trim()), p.company, p.city, p.conn ? mark : ''].filter(Boolean).join(' · ').slice(0, 120) };
     });
   }
   function nmPaint() { var dl = document.getElementById('nmList'); if (!dl) return;
@@ -732,24 +764,24 @@
     return nmOptions();
   };
   async function nmSearch(q) {
-    var r = await sb.from('profiles').select(PCOLS).ilike('name', '%' + nmLike(q.split(' · ')[0]) + '%').neq('id', ME_UUID).order('name').limit(12);
+    var r = await sb.from('profiles').select(PCOLS).ilike('name', '%' + nmLike(nmClean(q.split(' · ')[0])) + '%').neq('id', ME_UUID).order('name').limit(12);
     if (r.error) throw r.error; (r.data || []).forEach(function (p) { putUser(p); nmAdd(p); }); return r.data || [];
   }
   document.addEventListener('input', function (e) {
     if (!ME_UUID || !e.target || e.target.id !== 'nmTo') return;
-    var q = e.target.value.trim(); clearTimeout(NM.t); if (q.length < 2 || q.length > 80 || (NM.map[q.toLowerCase()] && q.indexOf(' · ') > 0)) return;   /* a bare name is looked up even when one person with it is known: others may share it */
+    var q = e.target.value.trim(); clearTimeout(NM.t); if (q.length < 2 || q.length > 80 || (NM.map[nmTyped(q)] && q.indexOf(' · ') > 0)) return;   /* a bare name is looked up even when one person with it is known: others may share it */
     NM.t = setTimeout(function () { nmSearch(q).then(nmPaint, function (err) { console.error(err); }); }, 200);
   }, true);
   /* who receives: every member with the chosen name is fetched first, so the options are told apart with all of them known;
      the text sent must then name exactly one of them */
   async function nmResolve(to) {
-    var key = to.toLowerCase(), was = NM.map[key], p = was && NM.people[was], name = p ? p.raw : to.split(' · ')[0].trim();
+    var key = nmTyped(to), was = NM.map[key], p = was && NM.people[was], name = p ? p.raw : nmClean(to.split(' · ')[0]);
     if (!name || name.length > 200) return { err: 'No member called ' + to + ' — choose someone from the list' };
     var r = await sb.from('profiles').select(PCOLS).ilike('name', nmLike(name)).neq('id', ME_UUID).limit(50); if (r.error) throw r.error;
     (r.data || []).forEach(function (x) { putUser(x); nmAdd(x); });
     nmOptions(); var id = NM.map[key];
     if (id && (!was || id === was)) return { id: id };
-    var same = Object.keys(NM.people).filter(function (k) { return NM.people[k].name.toLowerCase() === txt(name).toLowerCase(); }).length;
+    var same = Object.keys(NM.people).filter(function (k) { return nmKey(NM.people[k].name) === nmKey(txt(name)); }).length;
     nmPaint();
     if (same > 1) return { err: 'Several members are called ' + txt(name) + ' — choose one from the list' };
     return { err: 'No member called ' + to + ' — choose someone from the list' };
@@ -972,7 +1004,7 @@
     var off = first || !s.off ? 0 : s.off; if (off && !s.more) return Promise.resolve(false);
     s.p = Promise.resolve(sb.rpc('directory_companies_page', { p_limit: DIR_PAGE, p_offset: off, p_q: key || null })).then(function (r) {
       if (r.error) throw r.error; if (me !== ME_UUID) return false;
-      var rows = r.data || []; addRows(rows, !key && !off);
+      var rows = r.data || []; addRows(rows, !key && !off); sitesFor(rows);
       if (off) { s.off = off + rows.length; s.more = rows.length === DIR_PAGE; }
       else { s.at = Date.now(); if (!s.off || rows.length < DIR_PAGE) { s.off = rows.length; s.more = rows.length === DIR_PAGE; } }
       if (!key) { CO.loaded = true; CO.at = s.at; }
@@ -1020,13 +1052,28 @@
   }
   function openedMissing() { var S = window.dxDir && window.dxDir.S; if (S && S.open && !CO.raw[S.open]) ensureCompanies([S.open]); }
   function refreshCompanies() { return Promise.all([loadMine(), CO.loaded ? loadDirPage('', true) : null]).then(redrawDir); }
+  function siteFrom(s) { return { id: 's' + s.id, name: txt(s.name), type: TYPE[s.type] || 'Factory', city: txt(s.city), gov: txt(s.gov != null ? s.gov : s.governorate),
+      certs: (s.certs || []).map(function (t) { return { name: txt(t.name), expiry: ym(t.expiry), src: t.source === 'public_list' ? 'Public industry list' : 'Certificate document', checked: (t.checked || t.checked_at) ? String(t.checked || t.checked_at).slice(0, 10) : '' }; }) }; }
+  /* a company's sites are exactly its company_sites rows: none in the database → none on the page and "0 sites" on its card — never the
+     interface's sample "<city> site · Factory" (that default is for the demo's sample companies only) */
   async function loadSites(slug) {
     var r = await sb.rpc('company_sites_public', { p_slug: slug }); if (r.error) throw r.error;
     window.dxLiveSites = window.dxLiveSites || {};
-    window.dxLiveSites[slug] = (r.data || []).map(function (s) { return { id: 's' + s.id, name: txt(s.name), type: TYPE[s.type] || 'Factory', city: txt(s.city), gov: txt(s.gov),
-      certs: (s.certs || []).map(function (t) { return { name: txt(t.name), expiry: ym(t.expiry), src: t.source === 'public_list' ? 'Public industry list' : 'Certificate document', checked: t.checked ? String(t.checked).slice(0, 10) : '' }; }) }; });
-    if (!window.dxLiveSites[slug].length) delete window.dxLiveSites[slug];
-    CO.sitesAt[slug] = Date.now();
+    window.dxLiveSites[slug] = (r.data || []).map(siteFrom);
+    CO.sitesAt[slug] = Date.now(); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
+  }
+  /* the directory cards say "N sites" and filter by certificate: the sites of a directory page come in one request with the page */
+  function sitesFor(rows) {
+    var me = ME_UUID, want = rows.filter(function (c) { return c && c.id && okSlug(c.slug) && !(CO.sitesAt[c.slug] && Date.now() - CO.sitesAt[c.slug] < 60000); }); if (!want.length) return;
+    var slugOf = {}; want.forEach(function (c) { slugOf[c.id] = c.slug; });
+    sb.from('company_sites').select('id,company_id,name,type,city,governorate,certs:site_certificates(name,expiry,source,checked_at)').in('company_id', want.map(function (c) { return c.id; })).order('id').limit(1000).then(function (r) {
+      if (r.error || me !== ME_UUID) { if (r.error) console.error(r.error); return; }
+      var by = {}; want.forEach(function (c) { by[c.slug] = []; });
+      (r.data || []).forEach(function (s) { var sl = slugOf[s.company_id]; if (sl) by[sl].push(siteFrom(s)); });
+      window.dxLiveSites = window.dxLiveSites || {}; var now = Date.now();
+      Object.keys(by).forEach(function (sl) { window.dxLiveSites[sl] = by[sl]; CO.sitesAt[sl] = now; });
+      window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; redrawDir();
+    });
   }
   /* the full track record of one company (the directory carries only its rating) — loaded when its page opens */
   async function loadTrack(slug) {
@@ -1536,7 +1583,7 @@
   }
   /* remember which job an Apply belongs to; save toggles */
   document.addEventListener('click', function (e) {
-    var card = e.target.closest && e.target.closest('#jx [data-live]'); if (!card || !ME_UUID) return;
+    var card = e.target.closest && e.target.closest('#jx [data-live^="j"]'); if (!card || !ME_UUID) return;   /* a job card — never a candidate card ("c…"): its id is a person, not a job */
     var id = +card.dataset.live.slice(1);
     if (e.target.closest('.apply-btn')) JX.cur = id;
     if (e.target.closest('.save-btn')) { e.preventDefault(); e.stopPropagation(); var on = !JX.saved[id], btn = e.target.closest('.save-btn');
@@ -1621,7 +1668,7 @@
   window.gotoProfile = function (uid) {
     var a = parseInt(uid, 10), u = uuidOf(a), self = this, args = arguments;
     if (ME_UUID && u && u !== ME_UUID && !window.USERS.some(function (x) { return x.id === a && x.full; })) {
-      sb.from('profiles').select('*').eq('id', u).single().then(function (r) { if (r.data) putUser(r.data); oGotoProfile.apply(self, args); }, function () { oGotoProfile.apply(self, args); });
+      sb.from('profiles').select(PFULL).eq('id', u).single().then(function (r) { if (r.data) putUser(r.data); oGotoProfile.apply(self, args); }, function () { oGotoProfile.apply(self, args); });
       return;
     }
     return oGotoProfile.apply(this, arguments);
@@ -1704,12 +1751,15 @@
     var c = el(TR.tplC), u = window.U(aid(p.id));
     c.dataset.cat = 'other'; c.dataset.level = 'mid'; c.dataset.live = 'c' + aid(p.id); c.dataset.uid = aid(p.id);
     var logo = c.querySelector('.jc-logo'); if (logo) { logo.textContent = u.initials; logo.style.background = u.color; }
-    var t = c.querySelector('.jc-title'); if (t) { var rb = t.querySelector('.role-badge'), lb = t.querySelector('.level-badge'); t.textContent = p.headline || 'Open to work'; if (lb) { lb.className = 'level-badge level-mid'; lb.textContent = LEVEL.mid; t.insertBefore(lb, t.firstChild); } if (rb) t.insertBefore(rb, t.firstChild); }
+    /* a member's level is not recorded: no seniority badge (it said "Mid-Level" for everyone) */
+    var t = c.querySelector('.jc-title'); if (t) { var rb = t.querySelector('.role-badge'); t.textContent = p.headline || 'Open to work'; if (rb) t.insertBefore(rb, t.firstChild); }
     var co = c.querySelector('.jc-company'); if (co) co.innerHTML = '<span>' + esc2(p.name) + '</span> · <span>' + (FLAG[p.country] || '') + ' ' + esc2(p.location || '') + '</span>' + (p.verified ? ' · <span style="color:#1a56db">✓ Verified</span>' : '');
     var tg = c.querySelector('.jc-tags'); if (tg) tg.innerHTML = '<span class="jt jt-ft">Open to work</span>';
     var ds = c.querySelector('.jc-desc'); if (ds) ds.textContent = p.bio || '';
     var ps = c.querySelector('.jc-posted'); if (ps) ps.textContent = ago(p.created_at);
     c.querySelectorAll('.jx-trust, .dx-vid-chip').forEach(function (x) { x.remove(); }); delete c.dataset.vid;
+    /* "Save" on a person saved a job with the person's number (409 from the database): saved jobs are jobs — the button is left out here */
+    var sv = c.querySelector('.save-btn'); if (sv) sv.remove();
     return c;
   }
   var paintJobsD2a = paintJobs;
@@ -2090,7 +2140,7 @@
     if (q('.group-cover-emoji')) q('.group-cover-emoji').textContent = g.emoji || '👥';
     if (q('#dt-title')) q('#dt-title').textContent = g.name;
     if (q('#dt-type')) q('#dt-type').textContent = /deal/i.test(g.topic || '') ? '🤝 Deal Room' : '💬 Discussion';
-    if (q('.group-meta-stats')) q('.group-meta-stats').innerHTML = '<div><b>' + (g.member_count || 0).toLocaleString('en') + '</b> members</div>' +
+    if (q('.group-meta-stats')) q('.group-meta-stats').innerHTML = '<div><b>' + (g.member_count || 0).toLocaleString('en') + '</b> ' + (g.member_count === 1 ? 'member' : 'members') + '</div>' +
       (see ? '<div><b>' + ((ac && ac.posts_today) || 0).toLocaleString('en') + '</b> new posts today</div>' : '') + '<div>' + (g.type === 'private' ? '🔒 Private' : '🌍 Public') + '</div>';
     if (q('#leaveConfirm .cp-desc')) q('#leaveConfirm .cp-desc').textContent = 'You’ll stop seeing posts from ' + g.name + ' and lose access to its members and listings.';
     var ma = q('#memberActions'), aa = q('#adminActions');
@@ -2440,6 +2490,7 @@
     var grid = document.querySelector('#content .training-grid'); if (!grid) return;
     var any = grid.querySelector('.tr-card'); if (any && !TRN.tpl) TRN.tpl = any.outerHTML; if (!TRN.tpl || !TRN.at) return;
     grid.innerHTML = ''; TRN.courses.forEach(function (t) { grid.appendChild(courseCard(t)); });
+    var pill = document.querySelector('#content .dg-pill-page'); if (pill && window.dgPillText) { var pt = window.dgPillText('training'); if (pill.textContent !== pt) pill.textContent = pt; }
     if (!TRN.courses.length) grid.innerHTML = '<div style="padding:18px;color:#65676b;font-size:13px">No courses yet.</div>';
   }
   document.addEventListener('click', function (e) {
@@ -2552,6 +2603,7 @@
   var oPill = window.dgPillText;
   if (oPill) window.dgPillText = function (page) {
     if (ME_UUID && page === 'market') { var f = function (n) { return PG.stats ? fmtK(n) : '…'; }; return f(stat('supply') + stat('demand')) + ' LISTINGS  /  ' + f(stat('supply')) + ' SUPPLY  /  ' + f(stat('demand')) + ' DEMAND  /  ' + f(stat('suppliers')) + ' SUPPLIERS'; }
+    if (ME_UUID && page === 'training') return (TRN.at ? TRN.courses.length : '…') + ' COURSES  /  GMP  /  REGULATORY  /  FORMULATION';   /* the courses the database has, not the demo's six */
     return oPill.apply(this, arguments);
   };
   function setNum(e, v) { if (e && e.textContent !== v) e.textContent = v; }
@@ -2776,8 +2828,10 @@
     [].forEach.call(root.querySelectorAll('.sec-title'), function (t) { var sp = t.querySelector('span'), o = origT(t); if (!sp) return;
       if (/^\s*Open Positions/.test(o)) setNum(sp, ok ? fmtN(s.open) + (s.open === 1 ? ' job' : ' jobs') : '…');
       else if (/^\s*Available Candidates/.test(o)) setNum(sp, ok ? fmtN(s.candidates) + (s.candidates === 1 ? ' profile' : ' profiles') : '…'); });
-    [].forEach.call(root.querySelectorAll('.post-cta-sub'), function (e) { setTextNode(e, /^Reach (150,000\+|[\d,]+|…) pharma professionals/, function () {
-      return 'Reach ' + (PG.members == null ? '…' : fmtN(PG.members)) + ' pharma professionals on Drugbox'; }); });
+    [].forEach.call(root.querySelectorAll('.post-cta-sub'), function (e) { setTextNode(e, /^Reach (150,000\+|[\d,]+|…) pharma professionals?/, function () {
+      return 'Reach ' + (PG.members == null ? '…' : fmtN(PG.members)) + (PG.members === 1 ? ' pharma professional on Drugbox' : ' pharma professionals on Drugbox'); }); });
+    /* the candidates are members open to work — the database does not verify them, so the list does not say "Verified" */
+    [].forEach.call(root.querySelectorAll('.sec-sub'), function (e) { if (origT(e).trim() === 'Verified professionals actively looking') setTextNode(e, /^Verified professionals actively looking$/, function () { return 'Professionals open to work'; }); });
   }
   var paintJobsP1b = paintJobs;
   paintJobs = function () { paintJobsP1b(); paintJobNumbers(); };
@@ -2845,6 +2899,15 @@
     return oGotoP1b.apply(this, arguments);
   };
   if (window.dxCore) window.dxCore.onRender('live-prof-counts', paintProfCounts);
+  /* "People also viewed" listed the first members loaded, not people who viewed this profile: the live app records no co-views yet,
+     so the box is left out rather than invented (J-SOCIAL-49) */
+  function hideAlsoViewed() {
+    if (!ME_UUID || !onPageNow('profile')) return;
+    [].forEach.call(document.querySelectorAll('#content .card > div:first-child'), function (h) {
+      var t = (window.dxOrigText ? window.dxOrigText(h) : h.textContent).trim(); if (t !== 'People also viewed') return;
+      var col = h.parentElement.parentElement; if (col && col.children.length === 1) col.style.display = 'none'; else h.parentElement.style.display = 'none'; });
+  }
+  if (window.dxCore) window.dxCore.onRender('live-prof-also', hideAlsoViewed);
   var oSideP1b = window.renderFeedSidebar;
   if (oSideP1b) window.renderFeedSidebar = function () { var h = oSideP1b.apply(this, arguments); if (!ME_UUID || typeof h !== 'string') return h;
     var s = h.indexOf('>Post impressions<'), ra = s < 0 ? -1 : h.lastIndexOf('<div', s), rz = s < 0 ? -1 : h.indexOf('</div>', s);
@@ -2879,6 +2942,8 @@
     hero.querySelectorAll('.dg-faces-row').forEach(function (r) { r.remove(); });
     var st = hero.querySelector('.lg-stats'); if (st) st.style.display = 'none';
     var tx = hero.querySelector('.dg-faces-tx'); if (tx && tx.querySelector('b')) tx.textContent = 'Join pharma professionals — from new graduates to industry veterans';
+    /* the sign-up page every new member opens claimed "12,000+ pharma professionals are waiting" (S-19): it says what Drugbox is instead */
+    var su = document.querySelector('#signupPage .auth-sub'); if (su && /\d/.test(su.textContent)) su.textContent = 'The professional network for pharma, cosmetics & medical devices.';
   })();
 
   /* sign-in fills the ticker; sign-out empties it */

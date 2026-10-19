@@ -111,6 +111,9 @@
     if (r.right > vw - m) dx = vw - m - r.right;
     if (r.left + dx < m) dx = m - r.left;
     if (dx) p.style.transform = 'translateX(' + Math.round(dx) + 'px)';
+    /* a reaction panel above a Like that sits just under the top bar (and the ticker) is covered by them: it opens below Like instead */
+    if (p.classList.contains('rxn-panel')) { p.classList.remove('dx-rxn-below'); r = p.getBoundingClientRect();
+      var h = r.top > 0 ? document.elementFromPoint(r.left + r.width / 2, r.top + 2) : null; if (!h || !p.contains(h)) p.classList.add('dx-rxn-below'); }
   }
   function fitSoon(l) { if (l) (window.requestAnimationFrame || setTimeout)(function () { fit(l); }); }
   function closeAll(except) { document.querySelectorAll('.pact.dx-rxn-open').forEach(function (o) { if (o !== except) o.classList.remove('dx-rxn-open'); }); }

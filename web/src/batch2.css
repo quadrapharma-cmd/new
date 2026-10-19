@@ -78,3 +78,5 @@ html.dx-dark #dxDock{filter:invert(1) hue-rotate(180deg)}
 .dx-chip-clear{border:none;background:none;color:#64748b;font:600 12.5px Poppins,sans-serif;cursor:pointer;text-decoration:underline}
 .dx-nores{flex-basis:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;background:#FFF7ED;border:1px solid #FED7AA;color:#9A3412;border-radius:14px;padding:10px 12px;font:600 13px Poppins,sans-serif}
 .dx-suggest{border:none;background:#ea580c;color:#fff;border-radius:999px;padding:6px 14px;font:700 12.5px Poppins,sans-serif;cursor:pointer}
+/* the chat window's Send button stays inside the window (the message box gave way to nothing and pushed it out) */
+.dk-f input{min-width:0}.dk-f button{flex:none}

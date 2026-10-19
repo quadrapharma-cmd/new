@@ -437,6 +437,36 @@
     'The author is told it was removed and why. Every reporter is told the outcome.': 'يُبلَّغ صاحب المنشور بإزالته وسببه، ويُبلَّغ كل من أبلغ بالنتيجة.',
     'Note for the author (optional)': 'ملاحظة لصاحب المنشور (اختياري)', 'Nothing waiting here.': 'لا شيء في الانتظار هنا.'
   };
+  /* phase 1b round 2: interface words the Arabic reader still saw in English (profile empty states, the Jobs tools, chat header,
+     Drugbox's own notices, the block refusal) */
+  Object.assign(D, {
+    'reacted to your post': 'تفاعل مع منشورك', "You can't message this person": 'لا يمكنك مراسلة هذا الشخص', 'You can’t message this person': 'لا يمكنك مراسلة هذا الشخص',
+    'Last seen recently': 'آخر ظهور منذ قليل', '● Online': '● متصل الآن',
+    'Drugbox reviewed your report and removed the post.': 'راجع فريق Drugbox بلاغك وأزال المنشور.', 'Drugbox reviewed your report — the post stays up.': 'راجع فريق Drugbox بلاغك — المنشور باقٍ.',
+    'Professionals open to work': 'متخصصون متاحون للعمل', 'No bio yet.': 'لا توجد نبذة بعد.', 'No experience added.': 'لم تُضف خبرات بعد.', 'Education': 'التعليم', 'EDUCATION': 'التعليم',
+    'No education added.': 'لم يُضف تعليم بعد.', 'Looking for your next role?': 'تبحث عن وظيفتك القادمة؟', 'Sorted by most recent': 'مرتبة من الأحدث',
+    'Ranked only by users’ own public reviews, with a fair average so a single 5★ can’t beat many strong reviews.': 'الترتيب حسب تقييمات المستخدمين العلنية فقط، بمتوسط عادل حتى لا يتفوق تقييم واحد بخمس نجوم على تقييمات قوية كثيرة.',
+    '🏅 Public. Written by companies the person actually worked for.': '🏅 علنية. تكتبها شركات عمل لديها الشخص فعلًا.',
+    '⚠️ Visible to': '⚠️ تظهر', 'verified employers only': 'لأصحاب العمل الموثّقين فقط',
+    '. Every warning is written by a company that employed the person, backed by evidence reviewed by Drugbox, shows the person’s reply, and expires after 2 years. Disputed warnings are hidden until resolved.':
+      '. كل تحذير تكتبه شركة وظّفت الشخص، ومعه دليل يراجعه فريق Drugbox، ويظهر معه رد الشخص، وينتهي بعد سنتين. التحذيرات المعترض عليها تُخفى حتى يُبت فيها.',
+    'Preferred candidates appear first, and their applications to your jobs go straight to your shortlist. You get an alert when they apply or become available.': 'يظهر المرشحون المفضّلون أولًا، وتذهب طلباتهم لوظائفك مباشرة إلى قائمتك المختصرة. يصلك تنبيه عندما يتقدمون أو يصبحون متاحين.',
+    'Your favourite companies’ jobs appear first, and you get an alert when they post.': 'تظهر وظائف شركاتك المفضّلة أولًا، ويصلك تنبيه عندما تنشر.',
+    'No one yet. Use ⭐ on a card.': 'لا أحد بعد. استخدم ⭐ على أي بطاقة.', 'No one blocked.': 'لم تحظر أحدًا.', 'Nothing here yet.': 'لا شيء هنا بعد.', 'No reviews yet': 'لا توجد تقييمات بعد',
+    'My lists — candidates': 'قوائمي — المرشحون', 'My lists — companies': 'قوائمي — الشركات', '🏆 Top-rated employers': '🏆 أصحاب العمل الأعلى تقييمًا', '🏆 Top-rated candidates': '🏆 المرشحون الأعلى تقييمًا',
+    '🏅 Honor list': '🏅 قائمة الشرف', '⚠️ Warning list': '⚠️ قائمة التحذير', '⭐ Whitelist': '⭐ القائمة المفضّلة', '⛔ Blacklist': '⛔ القائمة المحظورة', 'Unblock': 'إلغاء الحظر',
+    'No reply yet — the person has been notified and can reply or dispute.': 'لا رد بعد — أُبلغ الشخص ويمكنه الرد أو الاعتراض.', 'Pending review by Drugbox': 'بانتظار مراجعة Drugbox',
+    'Honorable records are published on the person’s profile and the public Honor list.': 'تُنشر السجلات المشرّفة في ملف الشخص وفي قائمة الشرف العلنية.',
+    'Full-Time': 'دوام كامل', 'full-time': 'دوام كامل', 'contract': 'عقد', 'part-time': 'دوام جزئي', 'Part-time': 'دوام جزئي', 'Halal': 'حلال', 'No company matches.': 'لا توجد شركة مطابقة.',
+    '/unit': '/للوحدة', 'No courses yet.': 'لا توجد دورات بعد.'
+  });
+  var PATTERNS_EXTRA = [
+    /* Drugbox's notice to the author of a removed post: the post's words and the moderator's note stay as written */
+    [/^Drugbox removed your post “([\s\S]*)” — reason: (spam or an unrelated ad|an unverified or counterfeit product|misleading information|harassment or hate|it breaks the Drugbox rules)\.(?: Note: ([\s\S]+))?$/, function (m) {
+      var why = { 'spam or an unrelated ad': 'رسائل مزعجة أو إعلان غير ذي صلة', 'an unverified or counterfeit product': 'منتج غير موثّق أو مغشوش', 'misleading information': 'معلومات مضللة', 'harassment or hate': 'تحرش أو كراهية', 'it breaks the Drugbox rules': 'مخالفة قواعد Drugbox' }[m[2]];
+      return 'أزال فريق Drugbox منشورك “' + m[1] + '” — السبب: ' + why + '.' + (m[3] ? ' ملاحظة: ' + m[3] : ''); }],
+    [/^MOQ: (.+)$/, function (m) { return 'الحد الأدنى للطلب: ' + m[1]; }]
+  ];
   var UNITS = { m: ['دقيقة', 'دقائق'], h: ['ساعة', 'ساعات'], d: ['يوم', 'أيام'], w: ['أسبوع', 'أسابيع'], min: ['دقيقة', 'دقائق'] };
   function unit(n, u) { var p = UNITS[u] || [u, u]; return +n >= 3 && +n <= 10 ? p[1] : p[0]; }
   /* [one, few]: Arabic uses the plural for 3–10 (and, in everyday use, 2); 1 and 11+ take the singular */
@@ -754,7 +784,7 @@
     'Join pharma professionals — from new graduates to industry veterans': 'انضم إلى متخصصي الدواء — من حديثي التخرج حتى خبراء الصناعة'
   });
   PATTERNS.unshift(
-    [/^Reach ([\d,]+|…) pharma professionals on Drugbox$/, function (m) { return 'صِل إلى ' + m[1] + ' ' + (m[1] === '…' ? 'متخصص' : plural(m[1], ['متخصص', 'متخصصين'])) + ' في الدواء على Drugbox'; }],
+    [/^Reach ([\d,]+|…) pharma professionals? on Drugbox$/, function (m) { return 'صِل إلى ' + m[1] + ' ' + (m[1] === '…' ? 'متخصص' : plural(m[1], ['متخصص', 'متخصصين'])) + ' في الدواء على Drugbox'; }],
     [/^([\d,]+) jobs?$/, function (m) { return m[1] + ' ' + plural(m[1], ['وظيفة', 'وظائف']); }],
     [/^([\d,]+) profile$/, function (m) { return m[1] + ' ملف'; }]
   );
@@ -780,12 +810,13 @@
     if (mm && D[mm[2].trim()]) return mm[1] + D[mm[2].trim()] + (mm[3] ? ' ' + ARROWS[mm[3].trim()] : '');
     return null;
   }
+  PATTERNS.unshift.apply(PATTERNS, PATTERNS_EXTRA);
   window.dxT = tr;
   /* the original (English) text of an element, whatever the interface language — so logic never depends on the language shown */
 
   /* never translate what people wrote */
-  var SKIP = 'script,style,svg,input,textarea,[contenteditable],.post-body,.post-text,.msg-text,.bubble,.mx-msg,.cmt-text,.dx-entity,.lc-title,.sp-title,.sc-title,.jc-title,.gcard-title,.gcard-desc,.dl-title,[data-noi18n]';   /* whole blocks people wrote */
-  var SKIP_SELF = '.post-name,.sugg-name,.dr-card h3,.hb-card h3,.cp-name,.dr-name,.mg-name,.profile-name,.dx-mine-name';   /* a name's own words stay; badges inside it are translated */
+  var SKIP = 'script,style,svg,input,textarea,[contenteditable],.post-body,.post-text,.msg-text,.bubble,.mx-msg,.cmt-text,.dx-entity,.lc-title,.sp-title,.sc-title,.gcard-title,.gcard-desc,.dl-title,[data-noi18n]';   /* whole blocks people wrote */
+  var SKIP_SELF = '.post-name,.sugg-name,.dr-card h3,.hb-card h3,.cp-name,.dr-name,.mg-name,.profile-name,.dx-mine-name,.jc-title';   /* .jc-title: the job title stays, its Hiring / level badges are translated */   /* a name's own words stay; badges inside it are translated */
   var ORIG = new WeakMap(), LAST = new WeakMap(), LASTA = new WeakMap(), ATTR = ['placeholder', 'title', 'aria-label'];   /* LAST = what we wrote, so our own output is never translated again */
   window.dxOrigText = function (el) { if (!el) return ''; var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), o = ''; while (w.nextNode()) { var n = w.currentNode; o += ORIG.has(n) ? ORIG.get(n) : n.nodeValue; } return o; };
   function isAr() { return document.documentElement.lang === 'ar'; }
@@ -794,6 +825,9 @@
   /* the same English word in another place: a saved post or job says "محفوظ" on its own button, "المحفوظات" is the Saved page */
   var CTX = [['.dbk-saved', { 'Saved': 'محفوظ', '🔖 Saved': '🔖 محفوظ' }]];
   function trAt(n, v) { var p = n.parentElement, k = v.replace(/\s+/g, ' ').trim();
+    /* "<b>9</b> members": the word after a number in its own element takes the number's Arabic plural (9 أعضاء, not 9 عضو) */
+    var ps = n.previousSibling, wf = WORDS[k.toLowerCase()] || WORDS[k.toLowerCase() + 's'];
+    if (wf && ps && ps.nodeType === 1) { var num = (ps.textContent || '').trim(); if (/^[\d,.]+K?$/i.test(num)) return put(v, k, plural(num, wf)); }
     for (var i = 0; p && i < CTX.length; i++) if (CTX[i][1][k] && p.closest(CTX[i][0])) return put(v, k, CTX[i][1][k]);
     return tr(v); }
   window.dxI18nAdopt = function (n) { if (!n || !isAr()) return; var v = n.nodeValue, t = trAt(n, v); if (t !== v) { ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else { ORIG.delete(n); LAST.delete(n); } };
