@@ -87,6 +87,14 @@ def find_groups(j):
         opts = pg.evaluate("""()=>{const vis=e=>e.getClientRects().length>0&&getComputedStyle(e).visibility!='hidden';
             return [...document.querySelectorAll('#content select option, .dbk-ov *, .modal-bg.show *, [role=listbox] *, [role=menu] *, #content .cf-tag')].filter(e=>(e.tagName=='OPTION'||vis(e))&&/^\\W*(Egypt|UAE|United Arab Emirates|مصر|الإمارات)\\W*$/.test((e.innerText||e.textContent||'').trim())).map(e=>e.textContent.trim())}""")
         j.check(opts, 'not built: By Country opens no country choice (no Egypt / UAE to pick)')
+        for code, word in (('EG', r'Egypt|مصر'), ('AE', r'UAE|الإمارات')):
+            if code == 'AE': chip(j, pg, r'By Country|حسب الدولة|بالدولة|Egypt|مصر', 'By Country')
+            pick = pg.locator('.dbk-ov button').filter(has_text=re.compile(r'^\W*(%s)\W*\d*\s*$' % word))
+            j.check(pick.count(), 'no %s in the country choice' % code); pick.first.click(); j.settle(pg, 700)
+            got = pg.evaluate("[...document.querySelectorAll('#content .gcard')].filter(e=>e.getClientRects().length&&getComputedStyle(e).display!='none').map(e=>e.dataset.country||'')")
+            j.check(all(code in c.split(',') for c in got), '%s lists groups not tagged with that country (%s)' % (code, got[:6]))
+            if not got: j.check(re.search(r'No groups|لا توجد', j.text(pg)) and j.find(pg, r'Create Group|أنشئ مجموعة', scope='#content'), 'an empty country shows no "no groups" state with Create Group')
+        chip(j, pg, r'^\W*(All Groups|كل المجموعات)\W*$', 'All Groups')
     with j.step('Search groups for "stability": found by its description (any case); a nonsense word shows "no results"'):
         box = pg.locator('#content input[type=search]:visible, #content input[placeholder*="earch" i]:visible, #content input[placeholder*="بحث"]:visible')
         if box.count():
@@ -94,6 +102,8 @@ def find_groups(j):
             j.check(search_hit in card_titles(pg), 'searching "stability" does not find "%s"' % search_hit)
             box.first.fill('zzqxv'); box.first.press('Enter'); j.settle(pg, 800)
             j.check(not cards(pg) and re.search(r'No (groups|results)|لا توجد|لا نتائج', j.text(pg)), 'a search with no match shows no "no results" state')
+            box.first.fill(''); box.first.press('Enter'); j.settle(pg, 800)
+            j.check(cards(pg), 'clearing the search does not bring the groups back')
         else:
             pg.locator('#searchIn').fill('stability'); pg.locator('#searchIn').press('Enter'); j.settle(pg, 1200)
             t = j.text(pg)

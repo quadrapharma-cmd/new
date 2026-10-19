@@ -183,7 +183,7 @@
   var NEW_RULES = [['Be respectful', 'Disagree with ideas, never with people.'], ['Stay on topic', 'Posts should match what the group is about.'], ['No spam', 'No unrelated ads or repeated posts.']];
 
   /* ───────────────────────── what you did (demo, this browser) ───────────────────────── */
-  function blank() { return { v: 1, posts: {}, ed: {}, req: {}, rep: {}, lst: {}, quotes: {}, made: [], ov: {}, roles: {}, gone: {}, arch: {}, del: {}, notif: {} }; }
+  function blank() { return { v: 1, posts: {}, ed: {}, req: {}, rep: {}, lst: {}, quotes: {}, made: [], ov: {}, roles: {}, gone: {}, arch: {}, del: {}, notif: {}, closedL: {}, reqs: {} }; }
   var S = null;
   function st() {
     if (S) return S;
@@ -231,14 +231,20 @@
     g.since = seed ? seed.since : made ? made.at : null;
     g.by = seed ? seed.by : made ? me().id : null;
     g.about = seed ? seed.about : g.desc;
-    g.rules = seed ? seed.rules : NEW_RULES;
+    g.rules = seed ? seed.rules : made && made.rules ? made.rules.split(/\n+/).map(function (l) { l = l.trim(); var m = /^(.{1,80}?)\s*(?:—|:|–)\s+(.+)$/.exec(l); return m ? [m[1], m[2]] : [l, '']; }).filter(function (r) { return r[0]; }) : NEW_RULES;
     g.focus = seed ? seed.focus : [];
     g.markets = seed ? seed.markets : '';
+    var ovr = !g.live && st().ov[key];
+    if (ovr) { if (ovr.d != null) g.about = ovr.d; if (ovr.rules) g.rules = ovr.rules; if (ovr.priv != null) g.priv = ovr.priv; }
+    g.muted = card.dataset.muted === '1';
     if (g.live) {   /* live: the adapter puts the group's own about, rules, creation date and creator on its card */
       var dz = card.dataset; g.about = dz.about || g.desc; g.since = dz.since || null; g.by = +dz.by || null;
       try { g.rules = dz.rules ? JSON.parse(dz.rules) : []; } catch (e) { g.rules = []; }
     }
-    g.admin = g.role === 'admin' || g.role === 'subadmin';
+    var cd = card.dataset; tagCard(card);
+    g.sector = cd.sector || inferSector(title + ' ' + g.desc); g.country = (cd.country || '').split(',').filter(Boolean);
+    g.postPolicy = cd.post === 'admins' ? 'admins' : 'members'; g.archived = cd.archived === '1';
+    g.admin = g.role === 'admin' || g.role === 'subadmin' || g.role === 'moderator';
     g.canSee = g.member || !g.priv;   /* private: only members see posts, members and listings */
     return g;
   }
@@ -300,6 +306,11 @@
         (p.uid !== me().id ? '<div class="ctx-item ctx-danger" data-gpm="remove" role="button" tabindex="0">🗑 Remove post</div>' : ''));
     }
     if (p.saved) { var sv = el.querySelector('.post-acts [data-gpm="save"]'); if (sv) sv.classList.add('dbk-saved'); }
+    el.querySelectorAll('.cmt-box .cmt').forEach(function (cm, i) {   /* my comment, any comment on my post, any comment for the group's admins */
+      var c = (p.cm || [])[i]; if (!c || (c.uid !== me().id && p.uid !== me().id && !g.admin)) return;
+      var rp = cm.querySelector('[data-gpm="reply"]'), host = rp ? rp.parentNode : (cm.querySelector('.cmt-bubble') || cm);
+      host.insertAdjacentHTML('beforeend', ' <button type="button" class="cmt-del" data-gpm="cdel" aria-label="Delete comment">Delete</button>');
+    });
     if (p.edited) { var b = el.querySelector('.post-body'); if (b) b.insertAdjacentHTML('beforeend', '<span class="gp-edited"> · edited</span>'); }
     if (p.imgsDropped) { var pb = el.querySelector('.post-body'); if (pb) pb.insertAdjacentHTML('afterend', '<div class="gp-note">The photo was too large to keep in this browser.</div>'); }
     el.setAttribute('data-gpp', p.id);
@@ -396,7 +407,7 @@
   }
 
   /* ───────────────────────── members ───────────────────────── */
-  var ROLE = { admin: ['rp-admin', '👑 Admin'], subadmin: ['rp-subadmin', '🛡️ Sub-Admin'], member: ['rp-member', 'Member'] };
+  var ROLE = { admin: ['rp-admin', '👑 Admin'], subadmin: ['rp-subadmin', '🛡️ Sub-Admin'], moderator: ['rp-subadmin', '🛡️ Sub-Admin'], member: ['rp-member', 'Member'] };
   function demoMembers(g) {
     var s = st(), rm = s.gone[g.key] || {}, ro = s.roles[g.key] || {}, rows = [];
     var base = g.seed ? g.seed.mem : [[me().id, 'admin', 'Created the group']];
@@ -404,7 +415,7 @@
     var mine = rows.find(function (r) { return r.uid === me().id; });
     if (g.member && !mine) rows.push({ uid: me().id, role: g.role || 'member', joined: 'Joined just now' });
     if (!g.member && mine) rows = rows.filter(function (r) { return r !== mine; });
-    var rank = { admin: 0, subadmin: 1, member: 2 };
+    var rank = { admin: 0, subadmin: 1, moderator: 1, member: 2 };
     return rows.filter(function (r) { return person(r.uid); }).sort(function (a, b) { return rank[a.role] - rank[b.role]; });
   }
   function connBtn(uid) {
@@ -420,7 +431,7 @@
     if (g.admin && !self && (g.role === 'admin' || m.role === 'member')) {
       acts += '<button type="button" class="action-btn" aria-label="Member options" onclick="toggleDropdown(this)">⋯</button><div class="dropdown-menu">' +
         (m.role !== 'admin' && g.role === 'admin' ? '<div class="dd-item" data-gpd="admin" role="button" tabindex="0">👑 Promote to Admin</div>' : '') +
-        (m.role === 'member' && !g.live ? '<div class="dd-item" data-gpd="subadmin" role="button" tabindex="0">🛡️ Promote to Sub-Admin</div>' : '') +   /* live: the database knows admins and members only */
+        (m.role === 'member' && g.role === 'admin' ? '<div class="dd-item" data-gpd="subadmin" role="button" tabindex="0">🛡️ Promote to Sub-Admin</div>' : '') +   /* live: role 'moderator' (0061) */
         (m.role !== 'member' ? '<div class="dd-item" data-gpd="member" role="button" tabindex="0">👤 Demote to Member</div>' : '') +
         '<div class="dd-divider"></div><div class="dd-item" data-gpd="msg" role="button" tabindex="0">💬 Message</div><div class="dd-item danger" data-gpd="remove" role="button" tabindex="0">🚫 Remove from group</div></div>';
     }
@@ -455,27 +466,29 @@
   }
 
   /* ───────────────────────── listings (deal rooms) ───────────────────────── */
-  function demoListings(g) { var mine = st().lst[g.key] || []; return mine.concat((g.seed && g.seed.list) || []); }
+  function demoListings(g) { var s = st(), shut = s.closedL || {}, mine = s.lst[g.key] || []; return mine.concat((g.seed && g.seed.list) || []).filter(function (l) { return !shut[l.id]; }).map(function (l) { return l.uid === me().id && !l.co ? Object.assign({ co: (window.dxDir && window.dxDir.mine && window.dxDir.mine() || {}).name || '', coVerified: true }, l) : l; }); }
   function avMini(u) { return '<div class="av" style="background:' + esc(u.color || '#1a56db') + ';width:17px;height:17px;font-size:7px">' + esc(u.initials || '?') + '</div>'; }
+  function coLine(l) { return l.co ? '<div class="gp-lco">🏢 <span data-noi18n>' + esc(l.co) + '</span>' + (l.coVerified ? ' <span class="gp-ver">✓ Verified</span>' : '') + '</div>' : ''; }
+  function mineActs(l) { return '<span class="gp-tag">' + (l.kind === 'rfq' ? 'Your request' : 'Your offer') + '</span><button type="button" class="qt-btn gp-lq" data-gpl="deals">' + (l.kind === 'rfq' ? 'Quotes' : 'Enquiries') + ' (' + (+l.responses || 0) + ')</button><button type="button" class="qt-btn gp-lclose" data-gpl="close">Close</button>'; }
   function rfqCard(l) {
-    var u = person(l.uid) || me(), quoted = st().quotes[l.id], mine = l.uid === me().id;
+    var u = person(l.uid) || me(), quoted = st().quotes[l.id] || l.answered, mine = l.uid === me().id, member = CUR && CUR.g && CUR.g.member;
     return '<div class="dcard" data-lid="' + esc(l.id) + '"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">' +
       '<div class="dc-title"><span class="role-badge need" style="margin-right:5px;font-size:8.5px;padding:2px 6px">🔍 Looking to Buy</span><span data-noi18n>' + esc(l.t) + '</span></div>' +
       '<span class="db-badge ' + esc(String(l.badge || 'OPEN').toLowerCase()) + '">' + esc(l.badge || 'OPEN') + '</span></div>' +
-      '<div class="dc-det"><span data-noi18n>' + esc(l.d) + '</span><br>' + esc(l.where || '🇪🇬 Egypt · just now') + '</div>' +
+      '<div class="dc-det"><span data-noi18n>' + esc(l.d) + '</span><br>' + esc(l.where || '🇪🇬 Egypt · just now') + '</div>' + coLine(l) +
       '<div class="dc-foot"><div class="dc-buyer" data-gp="' + u.id + '" role="button" tabindex="0">' + avMini(u) + ' <span data-noi18n>' + esc(u.name) + '</span>' + (u.verified ? ' ✓' : '') + '</div>' +
-      (mine ? '<span class="gp-tag">Your request</span>' : '<button type="button" class="qt-btn" data-gpl="quote"' + (quoted ? ' disabled' : '') + '>' + (quoted ? '✓ Quoted' : 'Quote →') + '</button>') + '</div></div>';
+      (mine ? mineActs(l) : !member ? '<button type="button" class="qt-btn" data-gpa="join">Join to quote</button>' : '<button type="button" class="qt-btn" data-gpl="quote"' + (quoted ? ' disabled' : '') + '>' + (quoted ? '✓ Quoted' : 'Quote →') + '</button>') + '</div></div>';
   }
   function offerCard(l) {
-    var u = person(l.uid) || me(), mine = l.uid === me().id, surplus = l.kind === 'surplus';
+    var u = person(l.uid) || me(), mine = l.uid === me().id, surplus = l.kind === 'surplus', member = CUR && CUR.g && CUR.g.member, asked = st().quotes[l.id] || l.answered;
     return '<div class="lcard" data-lid="' + esc(l.id) + '"><div class="lc-inner"><div class="lc-top"><div class="lc-em em-supply">' + esc(l.em || '📦') + '</div><div>' +
       '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px"><span class="role-badge have">' + (surplus ? '♻️ Surplus' : '📦 For Sale') + '</span><span class="lt lt-s">SUPPLY</span>' +
       (l.certs || []).map(function (c) { return '<span class="cert-p">' + esc(c) + '</span>'; }).join('') + '</div>' +
-      '<div class="lc-title" data-noi18n>' + esc(l.t) + '</div><div class="lc-desc" data-noi18n>' + esc(l.d) + '</div></div></div>' +
+      '<div class="lc-title" data-noi18n>' + esc(l.t) + '</div><div class="lc-desc" data-noi18n>' + esc(l.d) + '</div>' + coLine(l) + '</div></div>' +
       (l.trust && l.trust.length ? '<div class="trust-bar">' + l.trust.map(function (t, i) { return '<span class="ti ' + (i === 0 ? 'g' : 'b') + '">' + esc(t) + '</span>'; }).join('') + '</div>' : '') +
       '<div class="lc-foot"><div><div class="price">' + esc(l.price || 'On request') + '</div><div class="moq">' + esc(l.moq || '') + '</div></div>' +
       '<div style="display:flex;gap:5px;align-items:center"><span class="gp-seller" data-gp="' + u.id + '" role="button" tabindex="0" data-noi18n>' + esc(u.name) + '</span>' +
-      (mine ? '<span class="gp-tag">Your offer</span>' : '<button type="button" class="btn-contact" data-gpl="contact">Contact →</button>') + '</div></div></div></div>';
+      (mine ? mineActs(l) : !member ? '<button type="button" class="btn-contact" data-gpa="join">Join to enquire</button>' : '<button type="button" class="btn-contact" data-gpl="contact"' + (asked ? ' disabled' : '') + '>' + (asked ? '✓ Request sent' : 'Request quote →') + '</button>') + '</div></div></div></div>';
   }
 
   /* ───────────────────────── the inside ───────────────────────── */
@@ -533,7 +546,9 @@
     if (!g.canSee) { el.innerHTML = gate(g); return; }
     if (!CUR.posts && !CUR.loading) loadPosts(g);
     var h = gate(g);
-    if (g.member && !CUR.unsupported) h += '<div class="gp-comp">' + (typeof window.renderComposer === 'function' ? window.renderComposer() : '') + '</div>';
+    if (g.archived) h += '<div class="why-banner gp-gate gp-arch"><span>📦 This group is archived — you can read its history; nobody can post, comment or join.</span></div>';
+    else if (g.member && g.postPolicy === 'admins' && !g.admin) h += '<div class="why-banner gp-gate"><span>📣 Only the admins post in this group — you can comment and react.</span></div>';
+    if (g.member && !CUR.unsupported && !g.archived && (g.postPolicy !== 'admins' || g.admin)) h += '<div class="gp-comp">' + (typeof window.renderComposer === 'function' ? window.renderComposer() : '') + '</div>';
     if (CUR.loading && !CUR.posts) h += '<div class="gp-empty">Loading posts…</div>';
     else if (CUR.unsupported) h += '<div class="gp-empty">💬 Group discussions open here soon.</div>';
     else if (!CUR.posts.length) h += '<div class="gp-empty"><b>💬 No posts yet</b><span>' + (g.member ? 'Start the first discussion in this group.' : 'Join to start the first discussion.') + '</span></div>';
@@ -543,11 +558,17 @@
     (CUR.posts || []).forEach(function (p) { try { list.appendChild(postEl(p, g)); } catch (e) { if (window.console) console.warn('[groups] post', e); } });
     adopt(el); moreCtl(el);
   }
+  function endMark(el) {   /* after the last post: the reader knows there is nothing more to load */
+    var old = el.querySelector('.gp-end'); if (old) old.remove();
+    if (!CUR || CUR.more || !(CUR.posts || []).length) return;
+    var list = el.querySelector('.gp-posts'); if (list) list.insertAdjacentHTML('afterend', '<div class="gp-end">✓ You’re all caught up — no more posts in this group</div>');
+  }
   /* live: the next page of posts (keyset, as the Home feed) when the end of the list comes into view, or on "Show more posts" */
   var moreIO = null;
   function moreCtl(el) {
     if (moreIO) { moreIO.disconnect(); moreIO = null; }
     var old = el.querySelector('.gp-loadmore'); if (old) old.remove();
+    endMark(el);
     if (!CUR || !CUR.more) return;
     var list = el.querySelector('.gp-posts'); if (!list) return;
     list.insertAdjacentHTML('afterend', '<div class="gp-more gp-loadmore" data-gpa="more" role="button" tabindex="0">Show more posts</div>');
@@ -575,7 +596,7 @@
   function paintMembers(g, el) {
     liveMembers(g);
     var rows = g.live ? (CUR.members || null) : demoMembers(g);
-    if (!g.canSee) rows = (rows || []).filter(function (m) { return m.role === 'admin'; });
+    if (!g.canSee) { el.innerHTML = '<div class="member-list-title"><span>Members (' + fmtN(g.count) + ')</span></div><div class="gp-more">🔒 The member list is visible to members only. The admins are shown under About.</div>'; return; }
     var h = '<div class="member-list-title"><span>Members (' + fmtN(Math.max(g.count, (rows || []).length)) + ')</span>' +
       (g.canSee ? '<input type="search" class="member-search gp-msearch" placeholder="🔍 Search members" aria-label="Search members">' : '') + '</div>';
     if (!rows) h += '<div class="gp-empty">Loading members…</div>';
@@ -592,7 +613,7 @@
     liveMembers(g);
     var by = g.by && person(g.by), d = g.since ? new Date(g.since + (g.since.length === 10 ? 'T12:00:00' : '')) : null;
     var date = d && !isNaN(d) ? (window.dxFmtDate ? window.dxFmtDate(d, false, 'en') : d.toDateString()) : '';
-    var admins = (g.live ? (CUR.members || []) : demoMembers(g)).filter(function (m) { return m.role === 'admin' || m.role === 'subadmin'; });
+    var admins = (g.live ? (CUR.members || []) : demoMembers(g)).filter(function (m) { return m.role === 'admin' || m.role === 'subadmin' || m.role === 'moderator'; });
     var h = '<div class="gp-sec"><div class="field-label">About this group</div><div class="gp-text" data-noi18n>' + esc(g.about || g.desc || '') + '</div></div>' +
       '<div class="gp-facts">' +
         '<div class="gp-fact"><span class="gp-k">Type</span><span class="gp-v">' + (g.deal ? '🤝 Deal Room' : '💬 Discussion') + '</span><small>' + (g.deal ? 'Buy/sell, RFQs & quotes' : 'Knowledge sharing, Q&A') + '</small></div>' +
@@ -600,6 +621,10 @@
         '<div class="gp-fact"><span class="gp-k">Members</span><span class="gp-v">' + fmtN(g.count) + '</span></div>' +
         (date ? '<div class="gp-fact"><span class="gp-k">Created</span><span class="gp-v">' + esc(date) + '</span>' + (by ? '<small><span>by</span> <span class="gp-name" data-gp="' + by.id + '" role="button" tabindex="0" data-noi18n>' + esc(by.name) + '</span></small>' : '') + '</div>' : '') +
         (g.markets ? '<div class="gp-fact"><span class="gp-k">Markets</span><span class="gp-v" data-noi18n>' + esc(g.markets) + '</span></div>' : '') +
+        '<div class="gp-fact"><span class="gp-k">Sector</span><span class="gp-v">' + esc(SECTORS[g.sector] || SECTORS.other) + '</span></div>' +
+        (g.country.length ? '<div class="gp-fact"><span class="gp-k">Countries</span><span class="gp-v">' + g.country.map(function (c) { return esc((CFLAG[c] || '') + ' ' + (CNAME[c] || c)); }).join(' · ') + '</span></div>' : '') +
+        '<div class="gp-fact"><span class="gp-k">Who can post</span><span class="gp-v">' + (g.postPolicy === 'admins' ? '📣 Admins only' : '👥 All members') + '</span></div>' +
+        (g.archived ? '<div class="gp-fact"><span class="gp-k">Status</span><span class="gp-v">📦 Archived</span><small>Read only</small></div>' : '') +
       '</div>' +
       (g.focus && g.focus.length ? '<div class="gp-sec"><div class="field-label">Topics</div><div class="gp-tags" data-noi18n>' + g.focus.map(function (f) { return '<span class="gtag gtag-discuss">' + esc(f) + '</span>'; }).join('') + '</div></div>' : '') +
       '<div class="gp-sec"><div class="field-label">Group rules</div>' + (g.rules && g.rules.length ? '<ol class="gp-rules" data-noi18n>' + g.rules.map(function (r) { return '<li><b>' + esc(r[0]) + '</b><span>' + esc(r[1]) + '</span></li>'; }).join('') + '</ol>' : '<div class="gp-empty">No rules yet.</div>') + '</div>' +
@@ -646,11 +671,12 @@
     var g = model(card, role);
     if (!g.live) paintHeader(g);
     render(g, args.tab);
+    pushOpen(); manageExtras(g); paintNotif(notifOn(g));
     var dp = document.querySelector('#groupDetail .detail-overlay, #groupDetail'); if (dp) dp.scrollTop = 0;
   }
   function refresh(tab) {   /* the group on screen changed (joined, left, requested…): header + inside again, same tab */
     if (!CUR) return; var card = CUR.g.card; if (!card || !card.isConnected) card = cardByKey(CUR.g.key); if (!card) return;   /* live: the cards may have been drawn again meanwhile */
-    var g = model(card, CUR.g.role); if (!g.live) paintHeader(g); render(g, tab || CUR.tab);
+    var g = model(card, CUR.g.role); if (!g.live) paintHeader(g); render(g, tab || CUR.tab); manageExtras(g); paintNotif(notifOn(g));
   }
 
   /* ───────────────────────── membership (demo) ───────────────────────── */
@@ -771,16 +797,18 @@
     });
   }
   function report(p) {
+    if (p.reported || (!CUR.g.live && (st().rep[CUR.g.key] || []).some(function (r) { return r.pid === p.id && r.mine; }))) { D.toast('You already reported this post — the admins will check it'); return; }
     var g = CUR.g, REASONS = ['Spam or unrelated ad', 'Unverified or counterfeit product', 'Misleading information', 'Harassment or hate', 'Breaks the group rules'];
     D.modal({ title: 'Report this post', body: '<p class="gp-muted">The group admins review reports. The author is not told who reported.</p>' +
       REASONS.map(function (r, i) { return '<label class="gp-radio"><input type="radio" name="gpRep" value="' + i + '"' + (i ? '' : ' checked') + '> <span>' + r + '</span></label>'; }).join('') +
       '<div class="dbk-f"><label for="gpRepN">Details (optional)</label><textarea id="gpRepN" maxlength="500" placeholder="What should the admins know?"></textarea></div>',
       primary: { label: 'Send report', danger: true, onClick: function (bx) {
         var i = +(bx.querySelector('input[name=gpRep]:checked') || { value: 0 }).value, note = bx.querySelector('#gpRepN').value.trim(), a = person(p.uid);
-        var rec = { id: 'r' + Date.now(), kind: 'post', pid: p.id, who: a ? a.name : 'Member', text: '“' + String(p.body || '').slice(0, 90) + (String(p.body || '').length > 90 ? '…' : '') + '”', why: REASONS[i] + (note ? ' — ' + note : ''), n: 1, ts: 'just now' };
-        if (g.live) liveCall('groupPost', { group: pub(g), op: 'report', post: p, reason: REASONS[i], note: note });
-        else { var s = st(); (s.rep[g.key] = s.rep[g.key] || []).unshift(rec); save(); if (g.role === 'admin') paintManage(g); }
-        D.toast('Thanks — the group admins will review this post');
+        var rec = { id: 'r' + Date.now(), kind: 'post', pid: p.id, mine: 1, who: a ? a.name : 'Member', text: '“' + String(p.body || '').slice(0, 90) + (String(p.body || '').length > 90 ? '…' : '') + '”', why: REASONS[i] + (note ? ' — ' + note : ''), n: 1, ts: 'just now' };
+        p.reported = 1;
+        if (g.live) { var rr = liveCall('groupPost', { group: pub(g), op: 'report', post: p, reason: REASONS[i], note: note }, function () { p.reported = 0; });
+          if (rr && rr.then) rr.then(function (res) { D.toast(res === 'already' ? 'You already reported this post — the admins will check it' : 'Reported — the group admins will check it'); }); }
+        else { var s = st(); (s.rep[g.key] = s.rep[g.key] || []).unshift(rec); save(); if (g.role === 'admin') paintManage(g); D.toast('Reported — the group admins will check it'); }
       } } });
   }
   function editPost(p) {
@@ -812,6 +840,18 @@
     if (act === 'reply') { if (needMember(CUR.g)) return; var u = person(c.uid), i = box.querySelector('.cmt-input'); if (i) { var at = '@' + (u ? u.name.replace(/^(Dr\.|Eng\.)\s*/, '').split(' ')[0] : '') + ' '; if (i.value.indexOf(at) !== 0) i.value = at + i.value; i.focus(); } return; }
     if (needMember(CUR.g)) return;
     c.liked = !c.liked; c.likes = Math.max(0, (c.likes || 0) + (c.liked ? 1 : -1)); commit(CUR.g, p, 'commentLike', { comment: c }); repaint(p);
+  }
+
+  function commentDelete(p, el) {
+    var cmt = el.closest('.cmt'), box = el.closest('.cmt-box'); if (!cmt || !box) return;
+    var idx = Array.prototype.indexOf.call(box.querySelectorAll('.cmt'), cmt), c = (p.cm || [])[idx]; if (!c) return;
+    D.modal({ title: 'Delete this comment?', body: '<div>It is removed for everyone in the group.</div>', primary: { label: 'Delete', danger: true, onClick: function () {
+      var keep = p.cm.slice(), was = p.cmt;
+      p.cm.splice(idx, 1);
+      if (CUR.g.live) liveCall('groupPost', { group: pub(CUR.g), op: 'deleteComment', post: p, comment: c }, function () { p.cm = keep; p.cmt = was; repaint(p); });
+      else persist(CUR.g, p);
+      var nu = repaint(p), b = nu && nu.querySelector('[id^="cmt-"]'); if (b) b.style.display = 'block'; D.toast('Comment deleted');
+    } } });
   }
 
   /* composer: the Home "Create Post" window, sent to this group */
@@ -879,20 +919,49 @@
         var s = st(); (s.lst[g.key] = s.lst[g.key] || []).unshift(l); save(); paintPane('listings'); D.toast('Posted to the group');
       } } });
   }
+  /* demo: the company page behind a listing (the seller's or buyer's company in the directory) */
+  function demoCo(l) { var u = person(l.uid), X = window.dxDir, list = X && X.companies ? X.companies() : [], name = l.co || (u && u.company) || '';
+    var c = list.find(function (x) { return x.name === name; }); return c ? { slug: c.slug, name: c.name } : name ? { slug: slug(name), name: name } : null; }
+  function startDeal(l, msg, q) {   /* answering a listing starts a deal in the Deals center: a request for a quote on an offer, an offer on a request */
+    var g = CUR.g, type = l.kind === 'rfq' ? 'surplus' : 'quote';
+    if (g.live) return hook('groupListing', { group: pub(g), op: 'respond', listing: l, message: msg, price: q && q.price, lead: q && q.lead });
+    var co = demoCo(l), X = window.dxDeals; if (!co || !X) return Promise.reject(new Error('This listing has no company page — message its author instead'));
+    var d = X.create(type, co.slug, l.t, { listing: l.id, price: q && q.price, lead: q && q.lead }, msg || ''); if (!d) return Promise.reject(new Error(''));
+    if (d.to && d.to.name === co.slug) { d.to.name = co.name; X.save(d); }
+    return Promise.resolve(d.ref || d.id);
+  }
   function listingAct(l, act) {
     var g = CUR.g, u = person(l.uid);
-    if (act === 'contact') { if (needMember(g)) return; closeAnd(function () { window.messageUser ? window.messageUser(l.uid) : D.toast('Open Messages to contact the seller'); }); return; }
+    if (act === 'close') {
+      D.modal({ title: 'Close this listing?', body: '<div>It leaves the Listings tab for everyone. Deals already started stay in the Deals center.</div>', primary: { label: 'Yes, close it', danger: true, onClick: function () {
+        if (g.live) { var r = hook('groupListing', { group: pub(g), op: 'close', listing: l }); if (r && r.then) r.then(function () { CUR.listings = null; paintPane('listings'); D.toast('Listing closed'); }, function (e) { D.toast((e && e.message) || 'Could not close — try again'); }); return; }
+        var s = st(); s.lst[g.key] = (s.lst[g.key] || []).filter(function (x) { return x.id !== l.id; }); (s.closedL = s.closedL || {})[l.id] = 1; save(); paintPane('listings'); D.toast('Listing closed'); } } });
+      return;
+    }
+    if (act === 'deals') { closeAnd(function () { if (window.dxDeals && window.dxDeals.center) window.dxDeals.center('received'); else if (window.goto) window.goto('companies'); }); return; }
+    if (act === 'contact') {
+      if (needMember(g)) return;
+      D.modal({ title: 'Request a quote', body: '<p class="gp-muted"><span>For</span> <b data-noi18n>' + esc(l.t) + '</b>' + (l.co || (u && u.name) ? ' · <span data-noi18n>' + esc(l.co || u.name) + '</span>' : '') + '</p>' +
+        '<div class="dbk-f"><label for="gpEq">Your request *</label><textarea id="gpEq" data-req maxlength="600" placeholder="Quantity, delivery terms, documents you need"></textarea></div>' +
+        '<div class="gp-muted">It starts a quote request in your Deals center, sent on behalf of your company page.</div>',
+        primary: { label: 'Send request', onClick: function (bx) {
+          if (!D.requireFields(bx)) return false; var msg = bx.querySelector('#gpEq').value.trim();
+          startDeal(l, msg).then(function () { if (!g.live) { st().quotes[l.id] = { msg: msg, at: new Date().toISOString() }; save(); } else l.answered = 1; paintPane('listings'); D.toast('Quote request sent — follow it in your Deals center'); },
+            function (e) { if (e && e.message) D.toast(e.message); });
+        } } });
+      return;
+    }
     if (act === 'quote') {
       if (needMember(g)) return;
-      D.modal({ title: 'Send a quote', body: '<p class="gp-muted"><span>For</span> <b data-noi18n>' + esc(l.t) + '</b> · <span data-noi18n>' + esc(u ? u.name : '') + '</span></p>' +
+      D.modal({ title: 'Send a quote', body: '<p class="gp-muted"><span>For</span> <b data-noi18n>' + esc(l.t) + '</b> · <span data-noi18n>' + esc(l.co || (u ? u.name : '')) + '</span></p>' +
         '<div class="dbk-f"><label for="gpQp">Price *</label><input id="gpQp" data-req maxlength="60" placeholder="e.g. $5.20/kg CIF Alexandria"></div>' +
         '<div class="dbk-f"><label for="gpQl">Lead time *</label><input id="gpQl" data-req maxlength="60" placeholder="e.g. 3 weeks"></div>' +
         '<div class="dbk-f"><label for="gpQm">Message</label><textarea id="gpQm" maxlength="600" placeholder="Certificates, validity, payment terms"></textarea></div>',
         primary: { label: 'Send quote', onClick: function (bx) {
           if (!D.requireFields(bx)) return false;
           var q = { price: bx.querySelector('#gpQp').value.trim(), lead: bx.querySelector('#gpQl').value.trim(), msg: bx.querySelector('#gpQm').value.trim(), at: new Date().toISOString() };
-          if (g.live) { var r = hook('groupListing', { group: pub(g), op: 'quote', listing: l, quote: q }); if (!r || typeof r.then !== 'function') { D.toast('Quotes in groups open soon'); return; } r.then(function () { D.toast('Quote sent to ' + (u ? u.name : 'the buyer')); }, function (e) { D.toast((e && e.message) || 'Could not send — try again'); }); return; }
-          var s = st(); s.quotes[l.id] = q; save(); paintPane('listings'); D.toast('Quote sent to ' + (u ? u.name : 'the buyer'));
+          startDeal(l, q.msg, q).then(function () { if (!g.live) { st().quotes[l.id] = q; save(); } else l.answered = 1; paintPane('listings'); D.toast('Quote sent to ' + (l.co || (u ? u.name : 'the buyer')) + ' — follow it in your Deals center'); },
+            function (e) { if (e && e.message) D.toast(e.message); });
         } } });
     }
   }
@@ -1024,6 +1093,7 @@
       case 'pin': pin(p); break;
       case 'clike': commentAct(p, m, 'like'); break;
       case 'reply': commentAct(p, m, 'reply'); break;
+      case 'cdel': commentDelete(p, m); break;
     }
   }, true);
   /* the composer window's Post button, when it was opened for a group */
@@ -1047,7 +1117,7 @@
   }, true);
   document.addEventListener('input', function (e) {
     var t = e.target; if (!t.classList || !t.classList.contains('gp-msearch')) return;
-    var q = t.value.trim().toLowerCase(), list = t.closest('[data-pane]'), shown = 0;
+    var q = t.value.trim().toLowerCase(), list = t.closest('[data-pane], #tab-members'), shown = 0; if (!list) return;
     list.querySelectorAll('.member-list .member-row').forEach(function (r) { var ok = !q || r.textContent.toLowerCase().indexOf(q) >= 0; r.style.display = ok ? '' : 'none'; if (ok) shown++; });
     var nr = list.querySelector('.gp-nores'); if (nr) nr.hidden = shown > 0;
   });
@@ -1055,7 +1125,7 @@
   /* ───────────────────────── the groups page: cards that were missing, and what you changed (demo) ───────────────────────── */
   function archiveCard(card) {
     card.style.opacity = '.55';
-    var badge = card.querySelector('.priority-badge') || document.createElement('div'); badge.className = 'priority-badge'; badge.textContent = '📦 ARCHIVED';
+    var badge = card.querySelector('.priority-badge') || document.createElement('div'); badge.className = 'priority-badge'; badge.textContent = '📦 Archived';
     if (!badge.parentElement) card.insertBefore(badge, card.firstChild);
   }
   function makeCard(tpl, o) {
@@ -1092,7 +1162,7 @@
     /* groups you created */
     (s.made || []).forEach(function (m) {
       if (cardByKey(m.k) || !first || !tpl) return;
-      var c = makeCard(tpl, { k: m.k, t: m.t, emoji: m.deal ? '🤝' : '💬', bg: 'linear-gradient(135deg,#0a1f4d,#1a56db)', desc: m.d || 'New group', count: m.count || 1, countWord: 1, deal: m.deal, priv: m.priv, signal: 'You are the admin', joined: true });
+      var c = makeCard(tpl, { k: m.k, t: m.t, emoji: m.emoji || (m.deal ? '🤝' : '💬'), bg: 'linear-gradient(135deg,#0a1f4d,#1a56db)', desc: m.d || 'New group', count: m.count || 1, countWord: 1, deal: m.deal, priv: m.priv, signal: 'You are the admin', joined: true });
       first.insertBefore(c, first.firstChild);
     });
     cards().forEach(function (c) {
@@ -1133,6 +1203,8 @@
       };
       w2.__grp = 1; window.switchTab = w2;
     }
+    var cg = window.closeGroup;
+    if (typeof cg === 'function' && !cg.__grp) { var w4 = function () { var r = cg.apply(this, arguments); onClosed(); return r; }; w4.__grp = 1; window.closeGroup = w4; }
     var cd = window.checkDeleteInput;
     if (typeof cd === 'function' && !cd.__grp) {
       var w3 = function () { if (!CUR || CUR.g.live || isLive()) return cd.apply(this, arguments); var v = document.getElementById('deleteConfirmInput').value.trim(), btn = document.getElementById('deleteConfirmBtn'); var ok = v === CUR.g.title; btn.disabled = !ok; btn.style.opacity = ok ? 1 : 0.4; };
@@ -1161,9 +1233,272 @@
   }
   C.onRender('groups-inside', function () {
     var root = document.getElementById('gx'); if (!root) return;
-    wire(); initPage(root); syncMine(root);
+    wire(); initPage(root); syncMine(root); pageExtras(root);
   });
   document.addEventListener('dx:beforepage', function () { var lc = document.getElementById('leaveConfirm'); if (lc) lc.classList.remove('show'); });
+
+
+  /* ===== AREA community: groups (G-04 … G-15) — finding groups (search, sector, country, View all), the Back button, the
+     Manage panel (member search, join requests, settings, archive), per-group notifications, creating a group with its topic,
+     country and rules. Demo: what you change is kept in this browser; live: the adapter (dxLiveHook) keeps it in the database. ===== */
+  var CNAME = { EG: 'Egypt', AE: 'UAE', SA: 'Saudi Arabia', KW: 'Kuwait', QA: 'Qatar', BH: 'Bahrain', OM: 'Oman', JO: 'Jordan', LB: 'Lebanon', IQ: 'Iraq', MA: 'Morocco', DZ: 'Algeria', TN: 'Tunisia', LY: 'Libya', SD: 'Sudan', IN: 'India', CN: 'China' };
+  var CFLAG = { EG: '🇪🇬', AE: '🇦🇪', SA: '🇸🇦', KW: '🇰🇼', QA: '🇶🇦', BH: '🇧🇭', OM: '🇴🇲', JO: '🇯🇴', LB: '🇱🇧', IQ: '🇮🇶', MA: '🇲🇦', DZ: '🇩🇿', TN: '🇹🇳', LY: '🇱🇾', SD: '🇸🇩', IN: '🇮🇳', CN: '🇨🇳' };
+  var SECTORS = { pharma: '💊 Pharma', cosmetics: '💄 Cosmetics', devices: '🩺 Medical devices', supplements: '🥗 Supplements', other: '🧭 Other' };
+  var GCC = ['SA', 'AE', 'KW', 'QA', 'BH', 'OM'];
+  function inferSector(t) { t = String(t || ''); return /cosmetic|skin|beauty|تجميل/i.test(t) ? 'cosmetics' : /nutraceut|supplement|مكمل/i.test(t) ? 'supplements' : /medical device|devices|أجهزة/i.test(t) ? 'devices' : 'pharma'; }
+  function marketsTo(m) { var out = []; String(m || '').split(/·|,/).forEach(function (x) { x = x.trim(); var add = /^GCC|Gulf$/i.test(x) ? GCC : /^MENA$/i.test(x) ? ['EG', 'SA', 'AE', 'JO'] : Object.keys(CNAME).filter(function (k) { return CNAME[k].toLowerCase() === x.toLowerCase(); });
+    add.forEach(function (c) { if (out.indexOf(c) < 0) out.push(c); }); }); return out; }
+  function tagCard(card) {   /* demo: the sector and countries of a sample group or one you made (the live adapter writes them itself) */
+    if (!card || card.dataset.gid || card.dataset.tagged) return;
+    var k = cardKey(card), sd = BY_KEY[k], made = st().made.find(function (m) { return m.k === k; }), ov = st().ov[k] || {};
+    var text = otxt(card.querySelector('.gcard-title')) + ' ' + otxt(card.querySelector('.gcard-desc'));
+    card.dataset.sector = ov.sector || (made && made.sector) || (sd && sd.sector) || inferSector(text);
+    card.dataset.country = (ov.country || (made && made.country) || (sd ? marketsTo(sd.markets) : marketsTo(/egypt/i.test(text) ? 'Egypt' : ''))).join(',');
+    card.dataset.post = ov.post || (made && made.post) || 'members';
+    card.dataset.find = (text + ' ' + (ov.d || '') + ' ' + ((sd && sd.about) || '') + ' ' + ((sd && sd.focus) || []).join(' ') + ' ' + ((made && made.d) || '')).toLowerCase();
+    if (st().arch[k]) card.dataset.archived = '1'; else delete card.dataset.archived;
+    if (ov.priv != null) { var m = card.querySelector('.gcard-meta .gtag-public, .gcard-meta .gtag-private'); if (m) { m.className = 'gtag ' + (ov.priv ? 'gtag-private' : 'gtag-public'); m.textContent = ov.priv ? 'Private' : 'Public'; } }
+    card.dataset.tagged = '1';
+  }
+
+  /* ── finding groups: one filter for the chips, the search, the country and "View all" ── */
+  var GF = { chip: 'all', q: '', country: null, sec: null };
+  function chipKey(t) { return (window.dxOrigText ? window.dxOrigText(t) : t.textContent).replace(/\s+/g, ' ').trim().replace(/^[^A-Za-z]+/, '').replace(/\s*\(\d+\)$/, '').replace(/ ✕$/, '').toLowerCase(); }
+  function words(q) { return String(q || '').toLowerCase().split(/\s+/).filter(Boolean); }
+  function sections(root) { return [].filter.call(root.querySelectorAll('.main .sec-hdr'), function (h) { return h.nextElementSibling && h.nextElementSibling.querySelector('.gcard'); }); }
+  function applyFilter() {
+    var root = document.getElementById('gx'); if (!root) return;
+    var qw = words(GF.q), secs = sections(root), shown = 0;
+    secs.forEach(function (h, i) {
+      var grid = h.nextElementSibling, any = 0;
+      [].forEach.call(grid.querySelectorAll('.gcard'), function (c) {
+        tagCard(c);
+        var joined = cardJoined(c), deal = !!c.querySelector('.gtag-deal'), sector = c.dataset.sector || inferSector(c.textContent), countries = (c.dataset.country || '').split(',');
+        var text = (otxt(c.querySelector('.gcard-title')) + ' ' + otxt(c.querySelector('.gcard-desc')) + ' ' + (c.dataset.find || '')).toLowerCase();
+        var ok = GF.chip === 'my groups' ? joined : GF.chip === 'discussion' ? !deal : GF.chip === 'deal rooms' ? deal : GF.chip === 'pharma' ? sector === 'pharma' : GF.chip === 'cosmetics' ? sector === 'cosmetics' : true;
+        if (ok && GF.country) ok = countries.indexOf(GF.country) >= 0;
+        if (ok && qw.length) ok = qw.every(function (w) { return text.indexOf(w) >= 0; });
+        if (ok && c.dataset.archived === '1' && !joined) ok = false;                 /* archived: hidden from discovery */
+        if (ok && GF.sec != null && GF.sec !== i) ok = false;
+        c.style.display = ok ? '' : 'none'; if (ok) { any++; shown++; }
+      });
+      h.style.display = grid.style.display = any ? '' : 'none';
+      var all = h.querySelector('.sec-all'); if (all) { if (!all.dataset.orig) all.dataset.orig = (window.dxOrigText ? window.dxOrigText(all) : all.textContent).trim();
+        var v = GF.sec === i ? '← All groups' : all.dataset.orig; if (all.textContent !== v && (GF.sec === i || all.dataset.was)) { all.textContent = v; all.dataset.was = GF.sec === i ? '1' : ''; } }
+    });
+    var main = root.querySelector('.main'), none = root.querySelector('.gx-none');
+    if (!shown && main) {
+      if (!none) { none = document.createElement('div'); none.className = 'gx-none'; main.appendChild(none); }
+      var where = GF.country ? ' in ' + (CNAME[GF.country] || GF.country) : '';
+      none.innerHTML = '<b>' + (qw.length ? 'No groups found' : 'No groups' + where + ' yet') + '</b><p>' + (qw.length ? 'Try other words — or start the group yourself.' : 'Be the first to start one.') + '</p><button type="button" class="btn-manage" data-gxa="create">➕ Create Group</button>';
+      none.style.display = '';
+    } else if (none) none.style.display = 'none';
+  }
+  function setChipOn(t) { document.querySelectorAll('#gx .cat-filter .cf-tag').forEach(function (x) { x.classList.toggle('on', x === t); }); }
+  function countryChoice(chipEl) {
+    var have = {}; cards().forEach(function (c) { tagCard(c); (c.dataset.country || '').split(',').filter(Boolean).forEach(function (k) { have[k] = (have[k] || 0) + 1; }); });
+    var list = ['EG', 'AE', 'SA', 'KW', 'QA', 'BH', 'OM', 'JO', 'LB', 'IQ', 'MA', 'DZ', 'TN', 'LY', 'SD'];
+    var m = D.modal({ title: '🌍 Groups by country', secondary: 'Close', body: '<div class="gp-cgrid">' + list.map(function (c) {
+      return '<button type="button" class="gp-cbtn' + (GF.country === c ? ' on' : '') + '" data-c="' + c + '"><span>' + CFLAG[c] + ' ' + esc(CNAME[c]) + '</span><small>' + (have[c] || 0) + '</small></button>'; }).join('') +
+      '</div><button type="button" class="gp-cbtn gp-call" data-c="">All countries</button>' });
+    m.el.addEventListener('click', function (e) { var b = e.target.closest('[data-c]'); if (!b) return; m.close();
+      GF.country = b.dataset.c || null; GF.chip = 'all'; GF.sec = null; setChipOn(GF.country ? chipEl : document.querySelector('#gx .cat-filter .cf-tag'));
+      var w = document.createTreeWalker(chipEl, NodeFilter.SHOW_TEXT); while (w.nextNode()) { var n = w.currentNode; if (/[A-Za-z]/.test(n.nodeValue)) { n.nodeValue = GF.country ? '🌍 ' + CNAME[GF.country] + ' ✕' : '🌍 By Country'; if (window.dxI18nAdopt) window.dxI18nAdopt(n); break; } }
+      applyFilter(); });
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('#gx .cat-filter .cf-tag'); if (!t) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var k = chipKey(t);
+    if (k === 'by country' || /^(egypt|uae|saudi|kuwait|qatar|bahrain|oman|jordan|lebanon|iraq|morocco|algeria|tunisia|libya|sudan)/.test(k)) {
+      countryChoice(t); return; }
+    GF.chip = k === 'all groups' ? 'all' : k; GF.sec = null;
+    if (k === 'all groups' && GF.country) { GF.country = null; document.querySelectorAll('#gx .cat-filter .cf-tag').forEach(function (c) { var w = document.createTreeWalker(c, NodeFilter.SHOW_TEXT); while (w.nextNode()) { var n = w.currentNode, o = (window.dxI18nOrig && window.dxI18nOrig(n)) || n.nodeValue; if (/^🌍 .+ ✕$/.test(o)) { n.nodeValue = '🌍 By Country'; if (window.dxI18nAdopt) window.dxI18nAdopt(n); } } }); }
+    setChipOn(t); applyFilter();
+  }, true);
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('#gx .main .sec-all'); if (!a) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var root = document.getElementById('gx'), i = sections(root).indexOf(a.closest('.sec-hdr'));
+    GF.sec = GF.sec === i ? null : i; applyFilter(); var h = a.closest('.sec-hdr'); if (h) h.scrollIntoView({ block: 'start' });
+  }, true);
+  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('#gx [data-gxa="create"]'); if (b && window.openCreate) window.openCreate(); });
+  function searchBar(root) {
+    if (root.querySelector('.gx-searchbar')) return; var cf = root.querySelector('.cat-filter'); if (!cf) return;
+    var bar = document.createElement('div'); bar.className = 'gx-searchbar';
+    bar.innerHTML = '<input type="search" class="gx-q" placeholder="Search groups by name or topic…" aria-label="Search groups">';
+    cf.parentNode.insertBefore(bar, cf.nextSibling);
+    var q = bar.querySelector('.gx-q'), tmr = null;
+    function go() { GF.q = q.value.trim(); GF.sec = null; applyFilter();
+      if (isLive() && GF.q.length >= 2) { var r = hook('groupSearch', { q: GF.q }); if (r && r.then) r.then(function () { applyFilter(); }, function () {}); } }
+    q.addEventListener('input', function () { clearTimeout(tmr); tmr = setTimeout(go, isLive() ? 350 : 120); });
+    q.addEventListener('keydown', function (e) { if (e.key === 'Enter') { clearTimeout(tmr); go(); } });
+  }
+  window.dxGroupsFilter = applyFilter;
+  document.addEventListener('dx:page', function (e) { if (e.detail && e.detail.page === 'groups' && GF.sec != null) { GF.sec = null; applyFilter(); } });   /* a new visit shows every section again */
+
+  /* ── demo: the member numbers on the sample cards are the members the demo has (the header, Members and Manage agree) ── */
+  function demoCounts() {
+    if (isLive()) return;
+    cards().forEach(function (c) { var k = cardKey(c), sd = BY_KEY[k]; if (!sd || c.dataset.counted) return; c.dataset.counted = '1';
+      var g0 = { key: k, seed: sd, member: cardJoined(c), role: null }, n = demoMembers(g0).length;
+      var mc = c.querySelector('.member-count'); if (mc) mc.textContent = fmtN(n) + (n === 1 ? ' member' : ' members');
+      var sg = c.querySelector('.activity-signal'); if (sg && /\d[\d,]*\s+members/.test(sg.textContent)) sg.textContent = sg.textContent.replace(/\d[\d,]*\s+members/, fmtN(n) + (n === 1 ? ' member' : ' members')); });
+  }
+
+  /* ── the browser's Back button closes an open group (and stays in the app) ── */
+  var HIST = false;
+  function pushOpen() { try { if (!HIST) { history.pushState({ dxGroup: 1 }, ''); HIST = true; } } catch (e) {} }
+  window.addEventListener('popstate', function () {
+    if (!HIST) return; HIST = false;
+    var gd = document.getElementById('groupDetail'); if (gd && gd.classList.contains('show') && window.closeGroup) window.closeGroup();
+  });
+  function onClosed() { if (HIST) { HIST = false; try { if (history.state && history.state.dxGroup) history.back(); } catch (e) {} } }
+
+  /* ── Manage: member search, join requests, settings (rules, privacy, who posts, sector, countries), archive ── */
+  var SEED_REQS = { reg: [{ uid: 6, note: 'I handle cosmetic notifications at Beauty Lab and would like to learn from the RA team.', at: '2h ago' }, { uid: 4, note: '', at: '1d ago' }] };
+  function demoReqs(g) { var s = st(), done = (s.reqs[g.key] || {}); return (SEED_REQS[g.key] || []).filter(function (r) { return !done[r.uid] && person(r.uid); }); }
+  function manageExtras(g) {
+    var gd = document.getElementById('groupDetail'); if (!gd) return;
+    var tm = gd.querySelector('#tab-members');
+    var span = tm && tm.querySelector('.member-list-title .member-search:not(input)');
+    if (span) { var inp = document.createElement('input'); inp.type = 'search'; inp.className = 'member-search gp-msearch'; inp.placeholder = '🔍 Search members'; inp.setAttribute('aria-label', 'Search members'); span.replaceWith(inp); }
+    var tabs = gd.querySelector('#managePanel .panel-tabs');
+    if (tabs && !tabs.querySelector('[data-gpq-tab]')) {
+      tabs.insertAdjacentHTML('beforeend', '<div class="gx-ptab" data-gpq-tab="1" role="tab" tabindex="0">📨 Requests <span class="ptab-badge dx-rq-badge" style="display:none"></span></div>');
+      var mp = gd.querySelector('#managePanel'); mp.insertAdjacentHTML('beforeend', '<div class="panel-body" id="tab-requests" style="display:none"><div class="mod-queue"></div></div>');
+    }
+    settingsFields(g);
+    if (!g.live) paintRequests(g);
+  }
+  function paintRequests(g) {
+    var q = document.querySelector('#tab-requests .mod-queue'); if (!q) return;
+    var list = demoReqs(g);
+    q.innerHTML = list.length ? list.map(function (r) { var u = person(r.uid);
+      return '<div class="mod-item req-row" data-uid="' + r.uid + '"><div class="mod-icon">👤</div><div class="mod-content"><div class="mod-title"><b data-noi18n>' + esc(u.name) + '</b> <span>asked to join</span></div>' +
+        '<div class="mod-meta"><span data-noi18n>' + esc(headline(u)) + '</span>' + (u.company ? ' · <span data-noi18n>' + esc(u.company) + '</span>' : '') + ' · ' + esc(r.at) + '</div>' + (r.note ? '<div class="mod-reason" data-noi18n>“' + esc(r.note) + '”</div>' : '') +
+        '<div class="mod-actions"><button type="button" class="mod-btn dismiss" data-gpqr="no">Decline</button><button type="button" class="mod-btn gp-approve" data-gpqr="yes">Approve</button></div></div></div>'; }).join('') : '<div class="gp-ok">✓ No pending requests</div>';
+    var b = document.querySelector('#managePanel .dx-rq-badge'); if (b) { b.textContent = list.length; b.style.display = list.length ? '' : 'none'; }
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#tab-requests [data-gpqr]'); if (!b || !CUR || CUR.g.live) return;
+    e.preventDefault(); e.stopPropagation();
+    var row = b.closest('[data-uid]'), uid = +row.dataset.uid, yes = b.dataset.gpqr === 'yes', g = CUR.g, s = st(), u = person(uid);
+    (s.reqs[g.key] = s.reqs[g.key] || {})[uid] = yes ? 'approved' : 'declined';
+    if (yes) { var base = BY_KEY[g.key]; if (base && !base.mem.some(function (m) { return m[0] === uid; })) { base.mem.push([uid, 'member', 'Joined just now']); } }
+    save(); paintRequests(g); if (yes) { g.count++; var mc = g.card.querySelector('.member-count'); if (mc) mc.textContent = fmtN(g.count) + ' members'; paintHeader(g); }
+    D.toast(yes ? u.name + ' is now a member' : 'Request declined — ' + u.name + ' was told politely');
+  }, true);
+  document.addEventListener('click', function (e) {   /* the Requests tab: the approved switchTab knows three panels */
+    var t = e.target.closest && e.target.closest('#managePanel .panel-tabs .gx-ptab'); if (!t) return;
+    var rq = document.getElementById('tab-requests'), on = !!t.dataset.gpqTab; if (!rq) return;
+    if (on) { e.preventDefault(); e.stopImmediatePropagation(); document.querySelectorAll('#managePanel .panel-tabs .gx-ptab').forEach(function (x) { x.classList.toggle('active', x === t); });
+      ['members', 'reports', 'settings'].forEach(function (k) { var p = document.getElementById('tab-' + k); if (p) p.style.display = 'none'; }); rq.style.display = 'block';
+      if (CUR && CUR.g.live) hook('groupManage', { group: pub(CUR.g), op: 'requests' }); }
+    else rq.style.display = 'none';
+  }, true);
+  function sel(id, opts, cur) { return '<select class="field-input" id="' + id + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(cur) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
+  function countryOpts() { return [['', 'Any country (regional)']].concat(Object.keys(CNAME).map(function (c) { return [c, CFLAG[c] + ' ' + CNAME[c]]; })); }
+  function settingsFields(g) {
+    var ts = document.getElementById('tab-settings'); if (!ts) return;
+    var ds = ts.querySelector('.field-textarea:not(.dx-rules)'); if (!ds) return;
+    if (!ts.querySelector('.dx-rules')) { var f = ds.closest('.field'); f.insertAdjacentHTML('afterend', '<div class="field"><label class="field-label">Group rules</label><textarea class="field-textarea dx-rules" maxlength="4000" placeholder="One rule per line — e.g. Documents first: every offer shows its GMP certificate"></textarea></div>'); }
+    if (!ts.querySelector('#gpSetPriv')) {
+      ts.querySelector('.dx-rules').closest('.field').insertAdjacentHTML('afterend',
+        '<div class="field gp-set-row"><label class="field-label" for="gpSetPriv">Privacy</label>' + sel('gpSetPriv', [['public', '🌍 Public — anyone can find, read and join'], ['private', '🔒 Private — members are approved or invited']], 'public') + '</div>' +
+        '<div class="field gp-set-row"><label class="field-label" for="gpSetPost">Who can post</label>' + sel('gpSetPost', [['members', '👥 All members'], ['admins', '📣 Admins only']], 'members') + '</div>' +
+        '<div class="field gp-set-row"><label class="field-label" for="gpSetSec">Sector</label>' + sel('gpSetSec', Object.keys(SECTORS).map(function (k) { return [k, SECTORS[k]]; }), 'pharma') + '</div>' +
+        '<div class="field gp-set-row"><label class="field-label" for="gpSetCountry">Country</label>' + sel('gpSetCountry', countryOpts(), '') + '</div>' +
+        '<div class="gp-archived-note" hidden>📦 This group is archived. <button type="button" class="btn-manage" data-gps="restore">Restore group</button></div>');
+    }
+    if (ts.dataset.gpFor !== g.key) {
+      ts.dataset.gpFor = g.key;
+      var nm = ts.querySelector('.field-input:not(select)'); if (nm && !g.live) nm.value = g.title;
+      if (!g.live) { ds.value = g.about || g.desc || ''; ts.querySelector('.dx-rules').value = (g.rules || []).map(function (r) { return r[1] ? r[0] + ': ' + r[1] : r[0]; }).join('\n'); }
+      ts.querySelector('#gpSetPriv').value = g.priv ? 'private' : 'public'; ts.querySelector('#gpSetPost').value = g.postPolicy; ts.querySelector('#gpSetSec').value = g.sector || 'pharma'; ts.querySelector('#gpSetCountry').value = g.country[0] || '';
+    }
+    var an = ts.querySelector('.gp-archived-note'); if (an) an.hidden = !g.archived;
+  }
+  function readSettings() {
+    var ts = document.getElementById('tab-settings'), v = function (s) { var e = ts.querySelector(s); return e ? e.value : ''; };
+    var rules = v('.dx-rules').split(/\n+/).map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 20).map(function (l) { var m = /^(.{1,80}?)\s*(?:—|:|–)\s+(.+)$/.exec(l); return m ? [m[1], m[2]] : [l, '']; });
+    return { t: (ts.querySelector('.field-input:not(select)') || {}).value.trim(), d: v('.field-textarea:not(.dx-rules)').trim(), rules: rules, rulesText: v('.dx-rules').trim(),
+      priv: v('#gpSetPriv') === 'private', post: v('#gpSetPost'), sector: v('#gpSetSec'), country: v('#gpSetCountry') ? [v('#gpSetCountry')] : [] };
+  }
+  /* settings Save (demo; the live adapter saves them in the database) */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#tab-settings .btn-create'); if (!b || !CUR || CUR.g.live || isLive()) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var g = CUR.g, f = readSettings(); if (!f.t) { var nm = document.querySelector('#tab-settings .field-input'); if (nm) nm.classList.add('dbk-err'); D.toast('Group name is required'); return; }
+    var key = g.key; g.card.dataset.gk = key; delete g.card.dataset.tagged;
+    g.card.querySelector('.gcard-title').textContent = f.t; var cd = g.card.querySelector('.gcard-desc'); if (cd) cd.textContent = f.d;
+    st().ov[key] = { t: f.t, d: f.d, rules: f.rules, priv: f.priv, post: f.post, sector: f.sector, country: f.country }; save();
+    tagCard(g.card); refresh(); D.toast('Group settings saved');
+  }, true);
+  /* archive (confirm) and restore */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('#groupDetail .choice-btn.archive, #groupDetail [data-gps="restore"]'); if (!a || !CUR) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var g = CUR.g, restore = a.dataset.gps === 'restore';
+    var go = function () {
+      if (g.live) { var r = hook('groupManage', { group: pub(g), op: restore ? 'restore' : 'archive' }); if (r && r.then) r.then(function () { D.toast(restore ? 'Group restored — members can post again' : 'Group archived — read only, hidden from discovery'); if (window.dxGroups) window.dxGroups.refresh(); }, function (er) { D.toast((er && er.message) || 'Could not save — try again'); }); return; }
+      g.card.dataset.gk = g.key; if (restore) delete st().arch[g.key]; else st().arch[g.key] = 1; save(); delete g.card.dataset.tagged;
+      if (restore) { g.card.style.opacity = ''; var pb = g.card.querySelector('.priority-badge'); if (pb && /ARCHIVED/.test(pb.textContent)) pb.remove(); } else archiveCard(g.card);
+      tagCard(g.card); refresh(); applyFilter(); D.toast(restore ? 'Group restored — members can post again' : 'Group archived — read only, hidden from discovery');
+    };
+    if (restore) { go(); return; }
+    D.modal({ title: 'Archive this group?', body: '<div>Nobody can post, comment or join. Members can still read the history, and you can restore it from Settings.</div>', primary: { label: 'Archive', onClick: go } });
+  }, true);
+
+  /* ── per-group notifications: on / off for me, kept (demo: this browser; live: group_members.muted) ── */
+  function notifBtns() { return [].filter.call(document.querySelectorAll('#groupDetail .group-actionbar .btn-secondary'), function (b) { return /Notifications/.test(window.dxOrigText ? window.dxOrigText(b) : b.textContent); }); }
+  function paintNotif(on) { notifBtns().forEach(function (b) { var v = on ? '🔔 Notifications' : '🔕 Notifications off'; if (b.textContent !== v) { b.textContent = v; } b.setAttribute('aria-pressed', on ? 'false' : 'true'); }); }
+  function notifOn(g) { return g.live ? !g.muted : st().notif[g.key] !== false; }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#groupDetail .group-actionbar .btn-secondary'); if (!b || notifBtns().indexOf(b) < 0 || !CUR) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var g = CUR.g, on = !notifOn(g);
+    if (g.live) { var r = hook('groupManage', { group: pub(g), op: 'mute', on: !on }); if (r && r.then) r.then(function () { g.muted = !on; paintNotif(on); D.toast(on ? 'You’ll be notified about new posts' : 'Notifications turned off for this group'); }, function (er) { D.toast((er && er.message) || 'Could not save — try again'); }); return; }
+    st().notif[g.key] = on; save(); paintNotif(on); D.toast(on ? 'You’ll be notified about new posts' : 'Notifications turned off for this group');
+  }, true);
+
+  /* ── creating a group: topic (sector), country, rules and emoji; an empty or taken name is refused; the new group opens ── */
+  function createFields() {
+    var M = document.getElementById('createModal'); if (!M || M.querySelector('#gpCrSec')) return;
+    var pv = M.querySelector('.privacy-options'), host = pv ? pv.closest('.field') : null; if (!host) return;
+    host.style.marginBottom = '';
+    host.insertAdjacentHTML('afterend',
+      '<div class="field gp-set-row"><label class="field-label" for="gpCrSec">Topic / sector</label>' + sel('gpCrSec', Object.keys(SECTORS).map(function (k) { return [k, SECTORS[k]]; }), 'pharma') + '</div>' +
+      '<div class="field gp-set-row"><label class="field-label" for="gpCrCountry">Country</label>' + sel('gpCrCountry', countryOpts(), 'EG') + '</div>' +
+      '<div class="field gp-set-row"><label class="field-label" for="gpCrEmoji">Emoji</label>' + sel('gpCrEmoji', ['💬', '🤝', '🧪', '💊', '💄', '🏭', '📋', '🌍', '🛡️', '⚗️', '📦', '🎓'].map(function (x) { return [x, x]; }), '💬') + '</div>' +
+      '<div class="field" style="margin-bottom:0"><label class="field-label" for="gpCrRules">Group rules (one per line)</label><textarea class="field-textarea" id="gpCrRules" maxlength="4000" placeholder="Be respectful: disagree with ideas, never with people"></textarea></div>');
+  }
+  function createForm() {
+    var M = document.getElementById('createModal'), pos = function (s) { var all = [].slice.call(M.querySelectorAll(s)); return all.indexOf(M.querySelector(s + '.selected')); };
+    return { name: ((M.querySelector('.field-input:not(select)') || {}).value || '').trim(), desc: ((M.querySelector('.field-textarea:not(#gpCrRules)') || {}).value || '').trim(),
+      deal: pos('.type-opt') === 1, priv: pos('.privacy-opt') === 1, sector: (M.querySelector('#gpCrSec') || {}).value || 'pharma',
+      country: (M.querySelector('#gpCrCountry') || {}).value ? [M.querySelector('#gpCrCountry').value] : [], emoji: (M.querySelector('#gpCrEmoji') || {}).value || '💬',
+      rules: ((M.querySelector('#gpCrRules') || {}).value || '').trim() };
+  }
+  window.dxGroupsCreateForm = createForm;
+  function nameTaken(n) { n = n.toLowerCase(); return cards().some(function (c) { return otxt(c.querySelector('.gcard-title')).toLowerCase() === n; }); }
+  window.dxGroupsNameTaken = nameTaken;
+  document.addEventListener('click', function (e) {   /* demo (the live adapter checks and saves it itself) */
+    var b = e.target.closest && e.target.closest('#createModal .modal-footer .btn-create'); if (!b || isLive()) return;
+    var f = createForm();
+    if (f.name && nameTaken(f.name)) { e.preventDefault(); e.stopImmediatePropagation(); D.toast('A group with this name already exists — choose another name'); return; }
+    if (!f.name) return;   /* the approved window says "Give your group a name" */
+    setTimeout(function () {   /* after the approved window made the card: keep what was chosen, then open the new group */
+      var rec = st().made.find(function (m) { return m.t === f.name; }); if (!rec) return;
+      rec.sector = f.sector; rec.country = f.country; rec.emoji = f.emoji; rec.rules = f.rules; save();
+      var c = cardByKey(rec.k); if (!c) return; delete c.dataset.tagged; tagCard(c);
+      var cv = c.querySelector('.gcard-cover'); if (cv) cv.textContent = f.emoji;
+      var R = document.getElementById('createModal'); if (R) { R.querySelectorAll('#gpCrRules').forEach(function (x) { x.value = ''; }); }
+      syncMine(document.getElementById('gx')); open(c);
+    }, 30);
+  }, true);
+
+  function pageExtras(root) { searchBar(root); demoCounts(); createFields(); applyFilter(); }
 
   window.dxGroups = {
     open: function (name, tab) { if (document.body.getAttribute('data-page') !== 'groups' && typeof window.goto === 'function') window.goto('groups'); var r = document.getElementById('gx'); if (r) { wire(); initPage(r); } return open(name, tab); },
