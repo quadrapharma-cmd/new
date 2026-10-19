@@ -283,15 +283,13 @@
   };
   /* ═════ E2. a phone's Marketplace keeps its search box (the top bar has no room for it at 480 px and less) ═════ */
   var TS = { home: null };
-  function placeSearch() {
-    var ts = document.querySelector('.top-search'); if (!ts) return;
+  function placeSearch() {   /* moved above the page body (never inside #content: a page change rewrites it); CSS shows it on the Marketplace only */
+    var ts = document.querySelector('.top-search'), c = document.querySelector('#app > .app-body'); if (!ts || !c) return;
     if (!TS.home) { TS.home = document.createComment('top-search'); ts.parentNode.insertBefore(TS.home, ts); }
-    var want = page() === 'market' && window.innerWidth <= 480, mk = document.getElementById('mkx');
-    if (want && mk) { if (ts.parentNode !== mk.parentNode || ts.nextSibling !== mk) { mk.parentNode.insertBefore(ts, mk); ts.classList.add('dx-mk-search'); } }
+    if (window.innerWidth <= 480) { if (ts.nextSibling !== c) { c.parentNode.insertBefore(ts, c); ts.classList.add('dx-mk-search'); } }
     else if (ts.classList.contains('dx-mk-search')) { TS.home.parentNode.insertBefore(ts, TS.home.nextSibling); ts.classList.remove('dx-mk-search'); }
   }
-  if (window.dxCore) window.dxCore.onRender('soc-market-search', placeSearch);
-  document.addEventListener('dx:page', function () { setTimeout(placeSearch, 0); });
+  placeSearch();
   window.addEventListener('resize', function () { clearTimeout(TS.t); TS.t = setTimeout(placeSearch, 150); });
 
   /* ═════ F. find people on the Network page: name, company or specialty, and country (J-SOCIAL-28) ═════ */

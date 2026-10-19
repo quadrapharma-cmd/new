@@ -119,5 +119,6 @@ html.dx-dark .dx-pf-menu { filter: invert(1) hue-rotate(180deg); }
 }
 
 /* ── a phone's Marketplace: the top bar's search box sits above the listings (soc_nav.js) ── */
-.top-search.dx-mk-search { display: block !important; max-width: none !important; margin: 10px 12px 4px; }
+.top-search.dx-mk-search { display: none !important; }
+body[data-page=market] .top-search.dx-mk-search { display: block !important; flex: none; max-width: none !important; margin: 8px 12px; }
 .top-search.dx-mk-search input { height: 42px; font-size: 14px; }
