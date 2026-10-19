@@ -639,6 +639,7 @@
     'Mark checked': 'علّم كمراجَعة', 'Could not save the decision': 'تعذّر حفظ القرار', 'Documents open in the live app': 'تُفتح المستندات في التطبيق الفعلي',
     'It will not be published.': 'لن يُنشر.', 'Mark this transfer as not received?': 'هل تعلّم هذا التحويل كغير مستلَم؟', 'Reject this reference?': 'هل ترفض هذه المرجعية؟',
     'The company page stays as it is.': 'تبقى صفحة الشركة كما هي.', 'The order stays unpaid.': 'يبقى الطلب غير مدفوع.', 'The registry document is not readable': 'مستند السجل غير مقروء',
+    'admin': 'مدير', 'user': 'مستخدم',   /* the role pills on Admin → Users */
     'Admin access required': 'يلزم صلاحية الإدارة', 'Your account is not allowed here — Admin is for Drugbox staff.': 'غير مسموح لحسابك هنا — الإدارة لفريق Drugbox فقط.',
     /* messages */
     'To *': 'إلى *', 'No conversations yet.': 'لا توجد محادثات بعد.', 'No conversations yet': 'لا توجد محادثات بعد', "Open someone's profile and press Message.": 'افتح ملف أحد الأعضاء واضغط «مراسلة».',
@@ -723,7 +724,9 @@
     [/^(VIP|Basic|Free) · (monthly|yearly|month|year)$/, function (m) { return (D[m[1]] || m[1]) + ' · ' + ({ monthly: 'شهري', month: 'شهري', yearly: 'سنوي', year: 'سنوي' })[m[2]]; }],
     [/^(\S+) ([A-Z][A-Za-z]+) …$/, function (m) { return D[m[2]] ? m[1] + ' ' + D[m[2]] + ' …' : null; }],   /* a filter's name while its count loads */
     [/^Service by (.+)$/, function (m) { return 'خدمة من ' + m[1]; }],
-    [/^messaged (.+?): (.+)$/, function (m) { return 'راسل ' + m[1] + ': ' + m[2]; }]   /* the company_message notification (0032) */
+    [/^messaged (.+?): (.+)$/, function (m) { return 'راسل ' + m[1] + ': ' + m[2]; }]   /* the company_message notification (0032) */,
+    [/^Show more \((\d+) of (\d+)\)$/, function (m) { return 'اعرض المزيد (' + m[1] + ' من ' + m[2] + ')'; }],   /* the company directory */
+    [/^Commercial registry (\S+)(?: · sent (.+))?$/, function (m) { return 'السجل التجاري ' + m[1] + (m[2] ? ' · أُرسل ' + m[2] : ''); }]   /* Admin → Review, verification rows */
   );
   var SECS = { about: 'النبذة', products: 'المنتجات', sites: 'المواقع', contact: 'التواصل' };
   function secs(l) { return l.split(', ').map(function (x) { return SECS[x] || x; }).join('، '); }
