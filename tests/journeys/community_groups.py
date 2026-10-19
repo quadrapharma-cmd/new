@@ -235,8 +235,10 @@ def read_discussion(j):
         else: close_dialogs(pg)
         f = pg.locator('#gpBox .post a[href*="spec.pdf"], #gpBox .post [data-url*="spec.pdf"]')
         j.check(f.count(), 'the PDF of the post is not shown as an attachment')
-        with pg.context.expect_page(timeout=8000) as pop: f.first.click()   # clicking it opens the file
-        j.check('spec.pdf' in pop.value.url, 'clicking the PDF does not open it (%s)' % pop.value.url); pop.value.close()
+        asked = []; pg.context.on('request', lambda r: asked.append(r.url))
+        with pg.context.expect_page(timeout=8000) as pop: f.first.click()   # clicking it opens the file (the seeded link's host is not served here)
+        pop.value.wait_for_timeout(800)
+        j.check(any('spec.pdf' in u for u in asked + [pop.value.url]), 'clicking the PDF does not open it (%s)' % pop.value.url); pop.value.close()
     with j.step("Click an author's name: that person's profile opens"):
         p = pg.locator('#gpBox .post .post-name').filter(has_not_text=pg.evaluate('ME.name')).first
         name = p.inner_text().strip().split('\n')[0]; p.click(); j.settle(pg, 1500)
