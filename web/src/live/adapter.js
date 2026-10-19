@@ -964,11 +964,11 @@
   /* when the page was last written (companies.updated_at, set by the database on every save, B-22): the "older than 6 months"
      notice counts from it, else from the day the page was made — never from a sample date. The directory's rows do not carry it,
      so an opened page asks for it (loadContacts). */
-  function fresher(c) { var u = Date.parse(c.updated_at), m = new Date(c.created_at).getTime(); return u > m ? Math.min(u, Date.now()) : null; }
+  function fresher(c) { var u = Date.parse(c.updated_at); return u > 0 ? Math.min(u, Date.now()) : null; }
   function stampFresh(slug) {                  /* "Still correct" / a fix marked: the database moves the page's date to now, for everyone */
     var raw = CO.raw[slug], role = raw && raw.id && CO.roles[raw.id]; if (!raw || !raw.id || (role !== 'owner' && role !== 'admin')) return;
     Promise.resolve(sb.from('companies').update({ updated_at: new Date().toISOString() }).eq('id', raw.id).select('updated_at')).then(function (r) {
-      if (r.error) return toastErr(r.error); if (r.data && r.data[0]) { raw.updated_at = r.data[0].updated_at; var l = live(slug); if (l) l.updatedAt = fresher(raw); } });
+      if (r.error) return toastErr(r.error); if (r.data && r.data[0]) { raw.updated_at = r.data[0].updated_at; var l = live(slug); if (l) l.updatedAt = fresher(raw); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies(); } });
   }
   /* my pages and my role in each (owner / admin manage the page) — what jobs, listings, suppliers and deals need after sign-in */
   async function loadMine() {
@@ -1180,8 +1180,8 @@
   function loadContacts(slug) {
     var raw = CO.raw[slug], me = ME_UUID; if (!raw || !raw.id) return Promise.resolve(null);
     if (CC.p[slug]) return CC.p[slug];
-    var upd = Promise.resolve(sb.from('companies').select('updated_at').eq('id', raw.id)).then(function (q) {   /* the page's last save (B-22) */
-      var u = q.data && q.data[0]; if (!u || me !== ME_UUID) return; raw.updated_at = u.updated_at; var l = live(slug); if (l) l.updatedAt = fresher(raw); }, function () {});
+    var upd = Promise.resolve(sb.from('companies').select('updated_at, cover_url').eq('id', raw.id)).then(function (q) {   /* the page's last save (B-22) and its cover (not in the directory's rows) */
+      var u = q.data && q.data[0]; if (!u || me !== ME_UUID) return; raw.updated_at = u.updated_at; raw.cover_url = u.cover_url; var l = live(slug); if (l) { l.updatedAt = fresher(raw); l.cover = coFrom(raw).cover; } }, function () {});
     return (CC.p[slug] = Promise.all([sb.rpc('company_contacts', { p_company: raw.id }), upd]).then(function (rr) {
       var r = rr[0]; if (r.error) throw r.error; if (me !== ME_UUID) return null;
       var c = r.data || {}, ids = [];
@@ -2679,6 +2679,15 @@
     var by = {}; (r.data || []).forEach(function (p) { (by[p.company_id] = by[p.company_id] || []).push(prodRow(p)); });
     ids.forEach(function (id) { var slug = CO.byId[id], raw = slug && CO.raw[slug]; if (!raw) return; raw.products = by[id] || []; var l = live(slug); if (l) l.products = raw.products.map(prodFrom); });
     window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
+  };
+  /* when each section was last confirmed is the page's own date in the database (companies.updated_at), the same for every
+     browser — never a date kept in this browser: a section the team saves or confirms moves the page's date (stampFresh) */
+  var hookCPG = window.dxStoreHook;
+  window.dxStoreHook = function (k, v) {
+    if (ME_UUID && /^meta_/.test(k)) { var sl = k.slice(5), raw = CO.raw[CO.alias[sl] && !mineAt(sl) ? CO.alias[sl] : sl];
+      if (v === undefined) return raw && raw.id ? {} : undefined;
+      if (raw && raw.id) { stampFresh(CO.alias[sl] && !mineAt(sl) ? CO.alias[sl] : sl); return true; } }
+    return hookCPG ? hookCPG(k, v) : undefined;
   };
   onReset(function () { CPG.q = {}; CPG.tmp = {}; CPG.seen = {}; CPG.siteFiles = []; CPG.coFiles = []; CPG.coCerts = {}; CPG.coCertsAt = {}; });
   /* Admin → Review → Site certificates: the document (signed link) and a rejection with the reason (review_certificate) */

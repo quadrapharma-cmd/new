@@ -203,7 +203,7 @@ def keep_page_complete(j):
             if b: b.click(); j.settle(pg, 800)
         if j.live: j.check(j.wait_db("select name_ar from public.companies where id=%s" % me['co']['id'], 5) == 'فارما كاملة %s' % j.tag, 'the Arabic name is not saved')
     with j.step("'Still correct' on an outdated section clears the flag ('Thanks — marked as up to date')"):
-        if j.live: j.sql("update public.companies set updated_at=now()-interval '200 days' where id=%s" % me['co']['id']); reopen(j, pg)
+        if j.live: j.sql("set session_replication_role = replica; update public.companies set updated_at=now()-interval '200 days' where id=%s" % me['co']['id']); reopen(j, pg)   # the write trigger stamps now(): aged like a page untouched for 200 days
         directory(j, pg); open_card(j, pg, name)
         el = j.find(pg, r'Still correct|ما زالت صحيحة|لا تزال صحيحة', scope='#content')
         if j.demo and not el and not re.search(r'May be outdated|قد تكون قديمة', j.text(pg)): j.skip('the demo company has no section older than 180 days (its dates cannot be aged)')
