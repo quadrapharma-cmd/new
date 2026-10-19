@@ -2,7 +2,7 @@
 (company + Drugbox only), warning references need evidence (author + moderators only) and wait for review."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
-from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+from _dx import APP_URL as U, DB, R, T, sql, ST, NT, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
 V = FIXTURES
 st = ST; PW = 'Strong-pass-2026'
 def signup(pg, name, email):
@@ -15,7 +15,7 @@ with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); errs = []
     E, C, X, A = [b.new_context(viewport={'width': 1440, 'height': 900}).new_page() for _ in range(4)]
     for pg in (E, C, X, A): pg.on("pageerror", lambda e: errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.accept())
-    e = signup(E, 'Dr. Doc Employer', f'demp{st}@x.test'); c = signup(C, f'Dr. Doc Candidate {st}', f'dcan{st}@x.test'); x = signup(X, 'Dr. Doc Outsider', f'dout{st}@x.test'); adm = signup(A, 'Drugbox Reviewer', f'dadm{st}@x.test')
+    e = signup(E, 'Dr. Doc Employer', f'demp{st}@x.test'); c = signup(C, f'Dr. Doc Candidate {NT}', f'dcan{st}@x.test'); x = signup(X, 'Dr. Doc Outsider', f'dout{st}@x.test'); adm = signup(A, 'Drugbox Reviewer', f'dadm{st}@x.test')
     sql(f"update public.profiles set role='admin' where id='{adm}'")
     CO = f'Doc Pharma {st}'
     cid = sql(f"insert into public.companies (owner_id, name, slug, type, status, sectors) values ('{e}','{CO}','doc-pharma-{st}','Manufacturer','pending','{{Manufacturer}}') returning id").split('\n')[0]
@@ -48,11 +48,11 @@ with sync_playwright() as p:
     # warning reference: evidence required — written by a verified company (Drugbox approves the request above, server side)
     sql(f"update public.companies set status='verified' where id={cid}")
     E.evaluate("goto('jobs')"); E.wait_for_timeout(3000)
-    warn = f"(()=>{{var r=DBK.store.get('jobRefs');r.push({{cand:'Dr. Doc Candidate {st}',company:'{CO}',kind:'warn',from:'2021-01',to:'2024-12',role:'Validation',category:'Left without notice',text:'Left in the middle of a validation campaign without notice to the lab.',status:'pending'}});DBK.store.set('jobRefs',r)}})()"
+    warn = f"(()=>{{var r=DBK.store.get('jobRefs');r.push({{cand:'Dr. Doc Candidate {NT}',company:'{CO}',kind:'warn',from:'2021-01',to:'2024-12',role:'Validation',category:'Left without notice',text:'Left in the middle of a validation campaign without notice to the lab.',status:'pending'}});DBK.store.set('jobRefs',r)}})()"
     E.evaluate(warn); E.wait_for_timeout(2000)
     T('a warning without evidence is not submitted', sql(f"select count(*) from public.work_references where author='{e}' and kind='warn'") == '0')
     # the real dialog: the candidate's card → Work reference → Warning tab
-    opened = E.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#jx .jcard')].find(x=>x.textContent.indexOf('Dr. Doc Candidate {st}')>=0);var b=c&&c.querySelector('[data-a=ref]');if(!b)return false;b.click();return true}})()"); E.wait_for_timeout(500)
+    opened = E.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#jx .jcard')].find(x=>x.textContent.indexOf('Dr. Doc Candidate {NT}')>=0);var b=c&&c.querySelector('[data-a=ref]');if(!b)return false;b.click();return true}})()"); E.wait_for_timeout(500)
     E.evaluate("(()=>{var t=document.querySelector('.dbk-ov .jx-tab[data-k=warn]');if(t)t.click()})()"); E.wait_for_timeout(500)
     T('the real warning form (candidate card → Work reference → Warning) gets a required evidence field', opened and E.evaluate("!!document.querySelector('.dbk-ov #rfCat') && !!document.querySelector('.dbk-ov #rfEv')"), opened)
     E.set_input_files('#rfEv', V + '/spec.pdf'); E.wait_for_timeout(300); E.evaluate("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")

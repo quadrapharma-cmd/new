@@ -79,7 +79,7 @@ insert into r(name, ok, err) select 'stored as typed: ' || x.s, public.person_na
 -- twins by skeleton: names that look the same have the same key; names that differ do not
 insert into r(name, ok, err) select 'same skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) = public.person_name_key(x.b), public.person_name_key(x.a) || ' / ' || public.person_name_key(x.b) from (values
   ('Dr. Rana Tufice', U&'Dr. R\0430na Tufice'), ('Ilya', 'llya'), ('O''Brien', 'O’Brien'), ('هالة', 'هالَة'), ('د. هالة الشامي', 'د. هالَة الشّامي'),
-  ('Dr. Nermeen Tufece', 'DR. NERMEEN TUFECE'), ('Dr. Islam Tufice', 'Dr. lslam Tufice'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\200B'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\+01D173'),
+  ('Dr. Nermeen Tufece', 'DR. NERMEEN TUFECE'), ('Dr. Islam Tufice', 'Dr. lslam Tufice'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\200B'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\+01D173'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\FFFC'),
   ('Paul', U&'\0420aul'), ('Rana', U&'R\0430na'), ('Omar', U&'\039Fmar')) x(a, b);
 insert into r(name, ok, err) select 'different skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) <> public.person_name_key(x.b), public.person_name_key(x.a) from (values
   ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Ibrahim', 'ibrahim'), ('أبو', 'ابو'), ('Ali', 'All'), ('Hala', 'Hana')) x(a, b);

@@ -75,7 +75,8 @@ class J:
         self.live, self.demo, self.ar = self.target == 'live', self.target == 'demo', self.lang == 'ar'
         self.height = 844 if self.width <= 480 else 900
         self.n = 0; self.steps = []; self.failed = None; self.pages = []; self.ctxs = []; self.errors = []; self.shots = []; self.dialogs = []
-        self.tag = uuid.uuid4().hex[:8]; self.mails = 0
+        # letters only: the tag goes into people's names, and a name has no digits (0038) — hex digits become g…p
+        self.tag = ''.join('ghijklmnop'[int(c)] if c.isdigit() else c for c in uuid.uuid4().hex[:8]); self.mails = 0
         self.data = {}                                       # anything a journey wants in its result
 
     # ---- steps and verdicts -------------------------------------------------------------------------------------------

@@ -31,7 +31,8 @@
 //            per word; whole-name for the scripts whose letters copy Latin ones: "Dr. Rаna" with a Cyrillic а is refused)
 //  skeleton (person_name_key / nmSkel): NFD of the normalised name, every character replaced by its key, NFD again. A character's
 //    key is the fixed point of: TR39 confusable prototype (confusables.txt) of each character, then lower case, then NFD — and the
-//    Arabic short vowels and shadda (U+064B-U+0652, U+0670) are dropped (names are written with or without them). So "Rana" and
+//    Arabic short vowels and shadda (U+064B-U+0652, U+0670) are dropped (names are written with or without them), and so is U+FFFC
+//    (it draws nothing; names stored before 0038 may hold it). So "Rana" and
 //    "Rаna", "Ilya" and "llya", "O'Brien" and "O’Brien", "هالة" and "هال\u064Eة" have the same skeleton: the ✎ New message picker, the
 //    resolver and the chat header treat them as the same name and tell the members apart.
 import fs from 'node:fs';
@@ -86,7 +87,7 @@ const LET_ANY = union(...SCRIPTS.map(([k]) => LET[k])), MARK_ANY = union(...SCRI
 const OK = union(LET_ANY, MARK_ANY, single(PUNCT), [[0x20, 0x20]]);
 
 // ── the skeleton map: every code point of planes 0-1 that can stand in an NFD-normalised name and whose key is not itself ──
-const DROP = new Set([0x064B, 0x064C, 0x064D, 0x064E, 0x064F, 0x0650, 0x0651, 0x0652, 0x0670]);   // Arabic short vowels, shadda, sukun, dagger alef
+const DROP = new Set([0x064B, 0x064C, 0x064D, 0x064E, 0x064F, 0x0650, 0x0651, 0x0652, 0x0670, 0xFFFC]);   // Arabic short vowels, shadda, sukun, dagger alef; U+FFFC draws nothing (a name stored before 0038 may hold it)
 const base = (c) => (DROP.has(c) ? '' : CONF.has(c) ? CONF.get(c) : ch(c));
 const step = (s) => [...[...s.normalize('NFD')].map((x) => base(x.codePointAt(0))).join('')].map((x) => x.toLowerCase()).join('').normalize('NFD');
 function keyOf(c) { let s = ch(c); for (let i = 0; i < 16; i++) { const t = step(s); if (t === s) return s; s = t; } throw new Error('no fixed point for U+' + c.toString(16)); }

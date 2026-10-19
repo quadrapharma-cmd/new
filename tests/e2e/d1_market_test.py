@@ -2,11 +2,11 @@
 Contact/Quote reach the real person, publishing from the wizard saves the listing, and the ticker shows real listings."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
-from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+from _dx import APP_URL as U, DB, R, T, sql, ST, NT, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
 
 st = ST
-seller = sql(f"insert into auth.users (email, encrypted_password, raw_user_meta_data) values ('seller{st}@x.test', crypt('x', gen_salt('bf')), '{{\"name\":\"Dr. Real Seller {st}\"}}') returning id").split('\n')[0]
-buyer = sql(f"insert into auth.users (email, encrypted_password, raw_user_meta_data) values ('buyer{st}@x.test', crypt('x', gen_salt('bf')), '{{\"name\":\"Dr. Real Buyer {st}\"}}') returning id").split('\n')[0]
+seller = sql(f"insert into auth.users (email, encrypted_password, raw_user_meta_data) values ('seller{st}@x.test', crypt('x', gen_salt('bf')), '{{\"name\":\"Dr. Real Seller {NT}\"}}') returning id").split('\n')[0]
+buyer = sql(f"insert into auth.users (email, encrypted_password, raw_user_meta_data) values ('buyer{st}@x.test', crypt('x', gen_salt('bf')), '{{\"name\":\"Dr. Real Buyer {NT}\"}}') returning id").split('\n')[0]
 sql(f"update public.profiles set country='EG', verified=true where id='{seller}'")
 sql(f"insert into public.products (user_id, name, category, type, price, unit, moq, description, emoji, docs, active) values ('{seller}','Paracetamol DC 90% {st}','api','supply','US$ 4.20','kg','1 MT','Direct compression grade, CEP','💊','{{CEP,WHO-GMP}}',true)")
 time.sleep(0.05)   # a separate, later statement: Amoxicillin is the newer listing
@@ -23,9 +23,9 @@ with sync_playwright() as p:
     T('supply cards are the real listings, not the demo ones', pos(f'Paracetamol DC 90% {st}') >= 0 and pos(f'Amoxicillin trihydrate {st}') >= 0 and not any('Metformin HCl BP/USP' in x for x in sup), sup[:4])
     T('…newest first', 0 <= pos(f'Amoxicillin trihydrate {st}') < pos(f'Paracetamol DC 90% {st}'), sup[:6])
     card = pg.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#mkx .lcard')].find(x=>x.querySelector('.lc-title').textContent.indexOf('Paracetamol DC 90% {st}')===0);return c?{{price:c.querySelector('.price').textContent,moq:c.querySelector('.moq').textContent,certs:[...c.querySelectorAll('.cert-p')].map(x=>x.textContent),trust:c.querySelector('.trust-bar').innerText}}:null}})()")
-    T('a card shows price, MOQ, seller, certificates and the verified seller badge', card and card['price'].startswith('US$ 4.20/kg') and 'MOQ: 1 MT' in card['moq'] and f'Dr. Real Seller {st}' in card['moq'] and 'CEP' in card['certs'] and 'Verified seller' in card['trust'], card)
+    T('a card shows price, MOQ, seller, certificates and the verified seller badge', card and card['price'].startswith('US$ 4.20/kg') and 'MOQ: 1 MT' in card['moq'] and f'Dr. Real Seller {NT}' in card['moq'] and 'CEP' in card['certs'] and 'Verified seller' in card['trust'], card)
     dem = pg.evaluate("[...document.querySelectorAll('#mkx .dcard')].map(c=>c.innerText.replace(/\\s+/g,' '))")
-    T('demand cards are real buy requests with the buyer and URGENT', any(f'Need Omeprazole pellets 8.5% {st}' in x and f'Dr. Real Buyer {st}' in x and 'URGENT' in x for x in dem), dem[:2])
+    T('demand cards are real buy requests with the buyer and URGENT', any(f'Need Omeprazole pellets 8.5% {st}' in x and f'Dr. Real Buyer {NT}' in x and 'URGENT' in x for x in dem), dem[:2])
     # the "Structure" label is drawn by CSS (UI2), so the chip is looked for as an element on the real card's title
     mol = pg.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#mkx .supply-grid .lcard[data-live]')].find(x=>x.querySelector('.lc-title').textContent.indexOf('Paracetamol DC 90% {st}')===0);var b=c&&c.querySelector('.lc-title .dx-molchip');return b?b.dataset.mol:null}})()")
     T('the chemical-structure button appears on real API listings', mol == 'paracetamol', mol)
@@ -35,10 +35,10 @@ with sync_playwright() as p:
     tick = pg.evaluate("(document.getElementById('tickerInner')||{}).innerText||''")
     T('the ticker shows real listings', f'Paracetamol DC 90% {st}' in tick and 'Metformin HCl GMP $5.80/kg' not in tick, tick[:160])
     pg.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#mkx .lcard')].find(x=>x.querySelector('.lc-title').textContent.indexOf('Paracetamol DC 90% {st}')===0);c.querySelector('.btn-contact').click()}})()"); pg.wait_for_timeout(3000)
-    T('Contact opens a conversation with the real seller', pg.evaluate("document.body.getAttribute('data-page')") == 'messages' and f'Dr. Real Seller {st}' in pg.inner_text('.chat-head'))
+    T('Contact opens a conversation with the real seller', pg.evaluate("document.body.getAttribute('data-page')") == 'messages' and f'Dr. Real Seller {NT}' in pg.inner_text('.chat-head'))
     pg.evaluate("goto('market')"); pg.wait_for_timeout(1500)
     pg.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#mkx .dcard')].find(x=>x.innerText.indexOf('Need Omeprazole pellets 8.5% {st}')>=0);c.querySelector('.qt-btn').click()}})()"); pg.wait_for_timeout(3000)
-    T('Quote on a buy request opens a conversation with the real buyer', f'Dr. Real Buyer {st}' in pg.inner_text('.chat-head'))
+    T('Quote on a buy request opens a conversation with the real buyer', f'Dr. Real Buyer {NT}' in pg.inner_text('.chat-head'))
     # publish through the wizard's own hook path
     pg.evaluate("goto('market')"); pg.wait_for_timeout(1200)
     pg.evaluate(f"dxLiveHook('listing',{{type:'supply',title:'Metformin HCl EP {st}',price:'US$ 5.60',moq:'500 kg',where:'Egypt',lead:'2 weeks',desc:'Fresh batch',certs:['CEP']}})"); pg.wait_for_timeout(2500)

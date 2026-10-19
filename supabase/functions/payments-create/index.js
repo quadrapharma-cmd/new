@@ -2,6 +2,7 @@
 // Creates the order as the user (prices come from the database), then starts the payment with the provider.
 import { rpc, select, env, authUser } from '../_shared/db.js';
 import { fawryChargeSignature } from '../_shared/signatures.js';
+import { billingName } from '../_shared/billing.js';
 // CORS: only the app's own site may call this from a browser — ALLOWED_ORIGINS (comma-separated) or else the origin of APP_URL.
 // Calls without an Origin header (servers, tests) are not browser calls and are judged by the user's JWT alone.
 const origins = () => (env('ALLOWED_ORIGINS') || env('APP_URL') || '').split(',').map((u) => { try { return new URL(u.trim()).origin; } catch { return ''; } }).filter(Boolean);
@@ -26,10 +27,10 @@ export async function handler(req) {
   try {
     if (b.method === 'card' || b.method === 'wallet') {
       const base = env('PAYMOB_BASE', 'https://accept.paymob.com'), integration = Number(env(b.method === 'card' ? 'PAYMOB_CARD_INTEGRATION_ID' : 'PAYMOB_WALLET_INTEGRATION_ID'));
-      const [first, ...rest] = String(me.name || 'Drugbox Member').split(' ');
+      const bn = billingName(me.name || 'Drugbox Member');   // without the title: first_name was "Dr." (B-25)
       const r = await fetch(`${base}/v1/intention/`, { method: 'POST', headers: { Authorization: `Token ${env('PAYMOB_SECRET_KEY')}`, 'Content-Type': 'application/json' }, body: JSON.stringify({
         amount: order.amount_cents, currency: 'EGP', payment_methods: [integration], items: [{ name: label, amount: order.amount_cents, description: label, quantity: 1 }],
-        billing_data: { first_name: first, last_name: rest.join(' ') || 'NA', email: me.email || 'na@drugbox.app', phone_number: me.phone || b.phone || 'NA', apartment: 'NA', floor: 'NA', street: 'NA', building: 'NA', city: 'NA', country: 'EG', state: 'NA' },
+        billing_data: { first_name: bn.first, last_name: bn.last, email: me.email || 'na@drugbox.app', phone_number: me.phone || b.phone || 'NA', apartment: 'NA', floor: 'NA', street: 'NA', building: 'NA', city: 'NA', country: 'EG', state: 'NA' },
         special_reference: order.merchant_ref, notification_url: `${fnBase}/paymob-webhook`, redirection_url: `${env('APP_URL')}?payment=${order.id}` }) });
       // Paymob's order id (intention_order_id) is what its signed callback names: without it the payment could never be confirmed
       const j = await r.json(); if (!r.ok || !j.client_secret || !j.intention_order_id) return json({ error: 'Paymob did not start the payment', detail: j }, 502);
@@ -38,7 +39,7 @@ export async function handler(req) {
     }
     if (b.method === 'fawry') {
       const base = env('FAWRY_BASE', 'https://www.atfawry.com'), code = env('FAWRY_MERCHANT_CODE'), key = env('FAWRY_SECURE_KEY'), expiry = Date.now() + 48 * 3600 * 1000;
-      const body = { merchantCode: code, merchantRefNum: order.merchant_ref, customerName: me.name || '', customerMobile: me.phone || b.phone || '', customerEmail: me.email || '', customerProfileId: '',
+      const body = { merchantCode: code, merchantRefNum: order.merchant_ref, customerName: me.name ? billingName(me.name).full : '', customerMobile: me.phone || b.phone || '', customerEmail: me.email || '', customerProfileId: '',
         paymentMethod: 'PAYATFAWRY', amount: amount.toFixed(2), currencyCode: 'EGP', description: label, paymentExpiry: expiry,
         chargeItems: [{ itemId: order.product_code, description: label, price: amount.toFixed(2), quantity: 1 }],
         signature: await fawryChargeSignature(code, order.merchant_ref, '', 'PAYATFAWRY', amount, key) };

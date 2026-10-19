@@ -911,7 +911,7 @@ def main():
     for c in cfgs:
         if opts['mode'] == 'live':
             st = '%d%s' % (time.time(), uuid.uuid4().hex[:6])
-            accounts[c['name']] = {'email': 'crawl-%s-%s@quadra.test' % (c['name'], st), 'pw': 'Crawl-pass-2026', 'name': 'QA Crawler %s' % c['name'].upper(), 'new': True}
+            accounts[c['name']] = {'email': 'crawl-%s-%s@quadra.test' % (c['name'], st), 'pw': 'Crawl-pass-2026', 'name': 'QA Crawler %s' % ''.join('ghijklmnop'[int(x)] if x.isdigit() else x for x in c['name'].upper()), 'new': True}
         else:
             accounts[c['name']] = None
     all_records, all_skips, notes, js_errors, timing = [], [], [], [], []

@@ -4,7 +4,7 @@ reporter and cannot close it itself — F-32); documents open
 through short-lived links; nobody outside the Drugbox team can decide."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os, urllib.request
-from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+from _dx import APP_URL as U, DB, R, T, sql, ST, NT, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
 V = FIXTURES
 st = ST; PW = 'Strong-pass-2026'
 def signup(pg, name, email):
@@ -16,7 +16,7 @@ with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); errs = []
     A, O, E, C = [b.new_context(viewport={'width': 1440, 'height': 900}).new_page() for _ in range(4)]
     for pg in (A, O, E, C): pg.on("pageerror", lambda e: errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.accept())
-    adm = signup(A, 'Drugbox Reviewer', f'rev{st}@x.test'); o = signup(O, 'Dr. Pending Owner', f'pown{st}@x.test'); e = signup(E, 'Dr. Warning Author', f'wauth{st}@x.test'); c = signup(C, f'Dr. Warned {st}', f'wcan{st}@x.test')
+    adm = signup(A, 'Drugbox Reviewer', f'rev{st}@x.test'); o = signup(O, 'Dr. Pending Owner', f'pown{st}@x.test'); e = signup(E, 'Dr. Warning Author', f'wauth{st}@x.test'); c = signup(C, f'Dr. Warned {NT}', f'wcan{st}@x.test')
     sql(f"update public.profiles set role='admin' where id='{adm}'")
     cid = sql(f"insert into public.companies (owner_id, name, slug, type, status, sectors) values ('{o}','Pending Pharma {st}','pending-pharma-{st}','Manufacturer','pending','{{Manufacturer}}') returning id").split('\n')[0]
     fresh(O)
@@ -44,7 +44,7 @@ with sync_playwright() as p:
     fresh(O); O.evaluate(f"dxHub.workspace('pending-pharma-{st}')"); O.wait_for_timeout(1500)
     O.evaluate("document.querySelector('#dxDir [data-wtab=reports]').click()"); O.wait_for_timeout(600)
     wt = O.inner_text('#dxDir')
-    T('the company sees the report in its workspace, without who sent it', 'out of service' in wt and f'Dr. Warned {st}' not in wt, wt[:300])
+    T('the company sees the report in its workspace, without who sent it', 'out of service' in wt and f'Dr. Warned {NT}' not in wt, wt[:300])
     O.evaluate("document.querySelector('#dxDir [data-wfix]').click()"); O.wait_for_timeout(2500)
     T('"Mark fixed" by the company does not close it (it stays in the Drugbox queue)', sql(f"select status from public.company_reports where company_id={cid}") == 'open'
       and O.evaluate("!!document.querySelector('#dxDir [data-wfix]')"), O.inner_text('#dxDir')[:300])

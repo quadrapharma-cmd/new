@@ -2,7 +2,7 @@
 search, mute/block/report (J-SOCIAL-35 … 40). Run: python3 tests/journeys/social_messages.py --target demo|live --lang en|ar --width 1440|390"""
 import re, sys, os, time, json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _j import journey, main, PW, APP_VISIBLE, LOGIN_VISIBLE
+from _j import journey, main, PW, APP_VISIBLE, LOGIN_VISIBLE, StepFail
 from _social import *
 import _dx
 
@@ -118,6 +118,28 @@ def new_message_to_named_person(j):
         j.check(re.search(r'not (a )?member|no one|not found|choose|لا يوجد|غير موجود|اختر', msg, re.I), 'sending to an unknown name gives no clear message')
         j.check(not re.search(r'Nobody Unknownperson', head(pg)), 'a thread was opened with an unknown name')
         if j.live: j.check(j.sql1("select count(*) from public.messages where body like 'should not send %s'" % j.tag) == '0', 'a message to an unknown name was stored')
+    with j.step('Sign-up refuses a name with characters that are not letters or that mix alphabets (U+FFFC, a Cyrillic а), saying why; '
+                'real names (Arabic with harakat, accents, apostrophes, brackets) sign up fine'):
+        if j.demo: j.skip('the name rule is the database\'s and the live app\'s (the demo keeps its sample people)')
+        def ui_signup(name):
+            p2 = j.new_page(j.new_ctx()); j.open(p2); p2.click('#loginPage [onclick="showSignup()"]'); p2.wait_for_selector('#suName', state='visible', timeout=5000)
+            email = j.email('names'); p2.fill('#suName', name); p2.fill('#suEmail', email); p2.fill('#suPw', PW)
+            p2.click('#signupPage button.f-btn.dx-js-only'); p2.wait_for_timeout(1500)
+            return p2, email, j.text(p2, '#suErr')
+        for name, pat in (('Dr. Zeina Sign %s￼' % j.tag, r'remove “￼” \(U\+FFFC\)|احذف «￼» \(U\+FFFC\)'),
+                          ('Dr. Rаna Sign %s' % j.tag, r'one alphabet|أبجدية واحدة')):
+            p2, email, err = ui_signup(name)
+            j.check(re.search(pat, err), 'sign-up as %s is not refused with a clear message (said: "%s")' % (ascii(name), err[:140]))
+            j.check(j.ar == bool(re.search('[؀-ۿ]', err)), 'the refusal is not in the interface language: "%s"' % err[:100])
+            j.check(j.sql1("select count(*) from auth.users where email='%s'" % email) == '0', 'an account was created for %s' % ascii(name))
+        # through the form, as a person signs up: an Arabic name with harakat, and a name with brackets, dots and a hyphen
+        for name in ('د. نرمين أبو زيدٍ %s' % j.tag, 'Al-Hassan (Pharm.D.) %s' % j.tag):
+            me2 = j.person(name)
+            j.check(j.sql1("select name || '|' || name_needs_fix from public.profiles where id='%s'" % me2['id']) == name + '|false', 'the real name %s was not stored as typed' % name)
+        # and the others the owner listed, through the sign-up trigger
+        for name in ('د. هالة الشامي %s', 'Dr. Ahmed El-Sayed %s', "O'Brien %s", 'José Müller %s', 'Ünal %s', 'مُحَمَّد عَبْدُ اللَّه %s', 'O’Brien %s'):
+            uid = j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', jsonb_build_object('name', $q$%s$q$)) returning id" % (j.email('real'), name % j.tag))
+            j.check(j.sql1("select (name = $q$%s$q$ and not name_needs_fix)::text from public.profiles where id='%s'" % (name % j.tag, uid)) == 'true', 'the real name %s did not sign up as typed' % (name % j.tag))
     with j.step('Look-alike members (same name + same company; same name, no company, same headline): every option is different, '
                 'the connection comes first, each option sends to its own person only, and the bare shared name is refused'):
         if j.demo: j.skip('look-alike members exist only in live (the demo has one sample person per name)')
@@ -133,11 +155,11 @@ def new_message_to_named_person(j):
             mark = j.toast_mark(pg); j.click(pg, r'^(Send|إرسال)$', scope='.dbk-ov', what='Send', exact=True); j.settle(pg, 1500)
             return ' '.join(j.toasts_since(pg, mark))
         LBL = {}
-        def options_for(name):
+        def options_for(name, also=()):
             to_list(j, pg); j.click(pg, r'✎|New message|رسالة جديدة', scope='#content', what='✎ New message')
             pg.locator('#nmTo:visible').first.fill(name); pg.wait_for_timeout(1500)
             ol = pg.evaluate("(()=>{const i=document.querySelector('#nmTo');const l=i&&i.list;return l?[...l.options].map(o=>[o.value,o.label||'']):[]})()")
-            LBL.update(dict(ol)); o = [x for x, _ in ol if x.lower().startswith(name.lower())]
+            LBL.update(dict(ol)); o = [x for x, _ in ol if any(x.lower().startswith(n.lower()) for n in (name,) + tuple(also))]
             pg.keyboard.press('Escape'); pg.wait_for_timeout(300)
             if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
             return o
@@ -167,34 +189,57 @@ def new_message_to_named_person(j):
             j.check(re.search(r'Several|أكثر من', said), 'typing a name two members share is not refused with a clear message (toasts: %s)' % said[:120])
             j.check(j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'a message to a name two members share was stored')
             if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
-        # look-alikes a person cannot tell apart (phase 1b round 2): a name that copies the picker's "name · company" form, a twin
-        # whose name differs only by an invisible character, and exact twins (same name, company, headline)
+        # look-alikes a person cannot tell apart. 0038: a name is letters (one script per word), so every look-alike the verifiers
+        # used is refused at sign-up — nothing is created; names stored before 0038 that break the rule are kept but flagged, and
+        # the picker groups names by their confusable SKELETON: a Cyrillic "Rаna" or a "Zeina￼" is the same name as the real one
         hname, hco = 'Dr. Hala Dup %s' % j.tag, 'Pharco %s' % j.tag
         h1, h2 = member(hname, hco), member(hname, hco)
-        spoof = member('%s · %s' % (hname, hco))                                       # signs up as "Dr. Hala Dup … · Pharco …"
-        # the verifier's look-alike dots (p1b reverify1): U+A78F LATIN LETTER SINOLOGICAL DOT, U+2E33 RAISED DOT
-        spoofs = [spoof] + [member('%s %s %s' % (hname, d, hco)) for d in ('\ua78f', '\u2e33')]
-        zname = 'Dr. Zeina Inv %s' % j.tag; z1, z2, z3 = member(zname), member(zname + '\u200b'), member(zname + '\U0001d173')   # U+1D173: default-ignorable
-        for sp in spoofs:
-            nm = j.sql1("select name from public.profiles where id='%s'" % sp)
-            j.check(not re.search('[\u00b7\ua78f\u2e33]', nm), 'a member can be called "<name> · <company>" with a look-alike dot (stored: %s)' % nm.encode('unicode_escape').decode())
+        def refused(name):
+            try: member(name); return False
+            except StepFail as e: return bool(re.search(r'A name |Write each word|Each word of a name', str(e)))
+        bad = ['%s · %s' % (hname, hco)] + ['%s %s %s' % (hname, d, hco) for d in ('ꞏ', '⸳', '\U00011174', '\U0001f797', '\U000111d0', '∘', '▪', '￼჉')]
+        bad += ['Dr. Zeina Inv %s￼' % j.tag, 'Dr. Rаna Eva %s' % j.tag, 'Dr. Hala Dup %s 2' % j.tag]
+        for nm in bad: j.check(refused(nm), 'a member can sign up as %s' % ascii(nm))
+        j.check(j.sql1("select count(*) from public.profiles where name like $q$Dr. Hala Dup %s%%$q$" % j.tag) == '2', 'a look-alike of "%s" was stored' % hname)
+        zname = 'Dr. Zeina Inv %s' % j.tag; z1, z2, z3 = member(zname), member(zname + '​'), member(zname + '\U0001d173')   # U+1D173: default-ignorable
         j.check(j.sql1("select count(distinct name) from public.profiles where id in ('%s','%s','%s')" % (z1, z2, z3)) == '1', 'a name with an invisible character is stored as a different name')
+        # stored before 0038 (a server write keeps a name that breaks the rule, and flags it): a U+FFFC twin of Zeina, a Cyrillic twin of Rana
+        rname, rco = 'Dr. Rana Eva %s' % j.tag, 'Eva %s' % j.tag
+        r1, r2, z4 = member(rname, rco), member('Dr. Later Named %s' % j.tag, rco), member('Dr. Later Named Z %s' % j.tag)
+        j.sql("update public.profiles set name = $q$%s$q$ where id = '%s'" % (rname.replace('Rana', 'Rаna'), r2))
+        j.sql("update public.profiles set name = $q$%s$q$ where id = '%s'" % (zname + '￼', z4))
+        j.check(j.sql1("select string_agg(name_needs_fix::text, ',' order by name_needs_fix) from public.profiles where id in ('%s','%s')" % (r2, z4)) == 'true,true', 'a name stored before 0038 that breaks the rule is not flagged')
+        j.check(j.sql1("select count(distinct name_key) from public.profiles where id in ('%s','%s')" % (r1, r2)) == '1', 'the Cyrillic "Rаna" does not have the skeleton of "Rana"')
         j.reload(pg); j.nav(pg, 'messages')
-        opts = options_for(hname); j.note('separator spoof options', opts)
+        opts = options_for(hname); j.note('Hala options', opts)
         canon = [o for o in opts if o.lower().startswith(('%s · %s' % (hname, hco)).lower())]
-        j.check(len(canon) == 2, 'the two Pharco members are not the only options that read "%s · %s…": %s' % (hname, hco, opts))
+        j.check(len(canon) == 2 and len(opts) == 2, 'the two Pharco members are not the only options for "%s": %s' % (hname, opts))
         for i, o in enumerate(canon):
             body = 'Hala option %d %s' % (i, j.tag); new_message(o, body)
             got = j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 6)
-            j.check(got in (h1, h2), 'the option "%s" went to %s — not to one of the two Pharco members (the look-alike is %s)' % (o, got or 'nobody', spoof))
+            j.check(got in (h1, h2), 'the option "%s" went to %s — not to one of the two Pharco members' % (o, got or 'nobody'))
         labels = [LBL.get(o, '') for o in canon]
         j.check(labels and all(re.search(r'Same name|نفس الاسم', l) for l in labels), 'exact twins carry only a handle — the option does not warn that they look the same: %s' % labels[:2])
         j.check(re.search(r'Pharco', head(pg)) and not re.search(r'Last seen|آخر ظهور', head(pg)), 'after writing to a twin, the chat header does not say who it is (company): "%s"' % head(pg)[:80])
-        opts = options_for(zname); j.note('invisible twin options', opts)
-        # what a person sees: without the characters that draw nothing (default-ignorable, format, control)
-        vis = set(re.sub('[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u202a-\u202e\u2060-\u206f\u3164\ufe00-\ufe0f\ufeff\uffa0'
+        # the Cyrillic twin (same skeleton): two different options, the flagged one warns, the bare name is refused, the real option reaches the real member
+        opts = options_for(rname, (rname.replace('Rana', 'R\u0430na'),)); j.note('Rana options (Latin + Cyrillic)', [ascii(o) for o in opts])
+        j.check(len(opts) == 2 and len(set(opts)) == 2 and all(' · ' in o for o in opts), 'the Cyrillic look-alike of "%s" is not told apart in the picker: %s' % (rname, [ascii(o) for o in opts]))
+        odd = [o for o in opts if re.search(r'Drugbox does not allow|لا يسمح بها Drugbox', LBL.get(o, ''))]
+        j.check(len(odd) == 1 and odd[0].startswith(rname.replace('Rana', 'Rаna')), 'the flagged (Cyrillic) name carries no warning: %s' % [ascii(LBL.get(o, '')) for o in opts])
+        said = new_message(rname, 'Bare Rana %s' % j.tag)
+        j.check(re.search(r'Several|أكثر من', said) and j.sql1("select count(*) from public.messages where body=$q$Bare Rana %s$q$" % j.tag) == '0', 'typing "%s" (a Cyrillic look-alike exists) is not refused: %s' % (rname, said[:120]))
+        if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+        real = [o for o in opts if o not in odd]; body = 'Real Rana %s' % j.tag
+        if real: new_message(real[0], body)
+        j.check(real and j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 6) == r1, 'the real Rana\'s option did not reach her')
+        opts = options_for(zname); j.note('invisible twin options', [ascii(o) for o in opts])
+        # what a person sees: without the characters that draw nothing (default-ignorable, format, control, U+FFFC)
+        vis = set(re.sub('[­͏؜ᅟᅠ឴឵᠋-᠏​-‏‪-‮⁠-⁯ㅤ︀-️﻿ﾠ￼'
                              '\U0001bca0-\U0001bca3\U0001d173-\U0001d17a\U000e0000-\U000e0fff]', '', o).lower() for o in opts)
-        j.check(len(opts) == 3 and len(vis) == 3, 'three members whose names look the same are offered as options that look the same: %s' % [o.encode('unicode_escape').decode() for o in opts])
+        j.check(len(opts) == 4 and len(vis) == 4, 'four members whose names look the same are offered as options that look the same: %s' % [ascii(o) for o in opts])
+        said = new_message(zname, 'Bare Zeina %s' % j.tag)
+        j.check(re.search(r'Several|أكثر من', said) and j.sql1("select count(*) from public.messages where body=$q$Bare Zeina %s$q$" % j.tag) == '0', 'typing a name four members look like is not refused: %s' % said[:120])
+        if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
         # the profile's Message button writes to that profile's own person (the no-company twin, opened by id)
         goto_profile(j, pg, {'id': n2}); j.click(pg, r'Message|رسالة|راسل', scope='#content', what='Message')
         body = 'From the profile %s' % j.tag; send(j, pg, body)

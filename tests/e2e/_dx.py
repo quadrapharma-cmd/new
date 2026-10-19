@@ -12,6 +12,7 @@ FIXTURES = os.environ.get('DRUGBOX_FIXTURES', '/tmp/vids')
 FN_ENV = os.environ.get('DRUGBOX_FN_ENV', os.path.join(os.environ.get('RUN_DIR', '/tmp'), 'drugbox-fn.env'))
 LANG = os.environ.get('DX_LANG', 'en')
 ST = '%d%s' % (time.time(), uuid.uuid4().hex[:6])   # unique per run: suites started in the same second never share an e-mail
+NT = ''.join('ghijklmnop'[int(c)] if c.isdigit() else c for c in ST).capitalize()   # the same in letters, for people's names (a name has no digits, 0038)
 STN = int(time.time()) * 1000 + uuid.uuid4().int % 1000   # the same, where a number is needed (registry numbers)
 R = []
 

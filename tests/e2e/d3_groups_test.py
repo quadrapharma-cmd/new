@@ -3,7 +3,7 @@ opens the real group detail, leaves; security on roles, private groups and delet
 the approved "Invite" window (real group_invites rows) and the invited member joins; the creator deletes the group."""
 from playwright.sync_api import sync_playwright
 import subprocess, time, os
-from _dx import APP_URL as U, DB, R, T, sql, ST, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
+from _dx import APP_URL as U, DB, R, T, sql, ST, NT, FIXTURES, fn_env, refused, ERR, wait_for, done   # shared settings: tests/e2e/_dx.py
 
 TOASTS = "[...document.querySelectorAll('.dbk-toast, #toast')].map(t=>t.textContent).join(' | ')"   # the approved toasts (DBK and the page's own)
 st = ST; PW = 'Strong-pass-2026'; G = f'Sterile Manufacturing {st}'
@@ -15,7 +15,7 @@ with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); errs = []
     A, B = [b.new_context(viewport={'width': 1440, 'height': 900}).new_page() for _ in range(2)]
     for pg in (A, B): pg.on("pageerror", lambda e: errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.accept())
-    a = signup(A, 'Dr. Group Creator', f'gcre{st}@x.test'); BN = f'Dr. Group Member {st[-8:]}'; bb = signup(B, BN, f'gmem{st}@x.test')   # a name no other run uses: invitations find people by name
+    a = signup(A, 'Dr. Group Creator', f'gcre{st}@x.test'); BN = f'Dr. Group Member {NT[-8:].capitalize()}'; bb = signup(B, BN, f'gmem{st}@x.test')   # a name no other run uses: invitations find people by name
     A.evaluate("goto('groups')"); A.wait_for_timeout(2500)
     T('the groups page shows real groups, not the demo ones', not A.evaluate("[...document.querySelectorAll('#gx .gcard-title')].some(t=>t.textContent==='API Sourcing & Supply')"))
     A.evaluate("openCreate()"); A.wait_for_timeout(400)

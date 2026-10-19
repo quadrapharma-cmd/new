@@ -350,6 +350,14 @@
     'Created just now': 'أُنشئت الآن', 'you are the admin': 'أنت المدير',
     /* form checks (sign in, sign up, posts, listings, groups) */
     'Email is required': 'البريد الإلكتروني مطلوب', 'Password is required': 'كلمة المرور مطلوبة', 'Name is required': 'الاسم مطلوب',
+    /* the name rule (live: sign-up, Edit Profile, the database's refusal — 0038) */
+    'A name cannot contain numbers': 'لا يمكن أن يحتوي الاسم على أرقام', 'A name can be up to 120 characters': 'الاسم 120 حرفًا على الأكثر',
+    'Each word of a name needs a letter': 'كل كلمة في الاسم تحتاج حرفًا واحدًا على الأقل',
+    'An accent or vowel mark must sit on a letter (at most 3 on one letter)': 'علامة التشكيل أو النبرة يجب أن تكون على حرف (3 علامات على الأكثر للحرف الواحد)',
+    'Write each word of a name in one alphabet (Latin or Arabic; Greek or Cyrillic only for the whole name)': 'اكتب كل كلمة من الاسم بأبجدية واحدة (لاتينية أو عربية؛ واليونانية أو السيريلية للاسم كله فقط)',
+    "This name cannot be used — a name can only have letters, spaces and . - ' ’ ( ) ,": "لا يمكن استخدام هذا الاسم — الاسم يقبل الحروف والمسافات و . - ' ’ ( ) , فقط",
+    'Please update your name — it has characters Drugbox no longer allows, so other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه حروف لم يعد Drugbox يسمح بها، لذلك يرى الأعضاء الآخرون تحذيرًا بجانبه.',
+    'Update my name': 'عدّل اسمي',
     'Password must be at least 8 characters': 'كلمة المرور يجب ألا تقل عن 8 أحرف', 'Title is required': 'العنوان مطلوب', 'Title required': 'العنوان مطلوب',
     'Details are required': 'التفاصيل مطلوبة', 'Product name required': 'اسم المنتج مطلوب', 'Product name is required': 'اسم المنتج مطلوب',
     'Group name required': 'اسم المجموعة مطلوب', 'Group name is required': 'اسم المجموعة مطلوب',
@@ -473,14 +481,29 @@
      (and 103–110, 203–210…: the last two digits decide); 1, 11–99, 100–102… take the singular (20 دورة, 11 عضو, 100 عضو);
      2 takes the dual when one is given, else — as in everyday writing with a digit — the plural */
   function plural(n, forms) { var x = /K$/i.test(String(n)) ? 1000 : parseFloat(String(n).replace(/,/g, '')), m = x % 100;
-    return x === 2 ? (forms[2] || forms[1]) : x === Math.floor(x) && m >= 3 && m <= 10 ? forms[1] : forms[0]; }
+    return x === 2 ? (forms[2] || DUAL[forms[0]] || forms[1]) : x === Math.floor(x) && m >= 3 && m <= 10 ? forms[1] : forms[0]; }
+  /* 2 takes the dual (X-03): "2 يومان", "2 سنتان خبرة", "2 عضوان" — every singular a count uses here, and the layers' own (dxArPlural) */
+  var DUAL = { 'أسبوع': 'أسبوعان', 'إعادة نشر': 'إعادتا نشر', 'إعلان': 'إعلانان', 'اتصال': 'اتصالان', 'اتصال مشترك': 'اتصالان مشتركان', 'استفسار': 'استفساران',
+    'تحديث تسجيل': 'تحديثا تسجيل', 'تحذير': 'تحذيران', 'تعليق': 'تعليقان', 'جديد': 'جديدان', 'دقيقة': 'دقيقتان', 'دورة': 'دورتان', 'ساعة': 'ساعتان', 'سنة': 'سنتان',
+    'شخص': 'شخصان', 'شركة': 'شركتان', 'شهر': 'شهران', 'صفقة مكتملة': 'صفقتان مكتملتان', 'طلب': 'طلبان', 'طلب تسعير اليوم': 'طلبا تسعير اليوم',
+    'طلب جديد اليوم': 'طلبان جديدان اليوم', 'طلب مكتمل': 'طلبان مكتملان', 'طلب وارد': 'طلبان واردان', 'عرض': 'عرضان', 'عضو': 'عضوان', 'عضو آخر': 'عضوان آخران',
+    'عضو حقيقي': 'عضوان حقيقيان', 'عميل': 'عميلان', 'متخصص': 'متخصصان', 'مشاهدة': 'مشاهدتان', 'مشترٍ نشط': 'مشتريان نشطان', 'مقدّم خدمة': 'مقدّما خدمة',
+    'ملف': 'ملفان', 'منشور': 'منشوران', 'منشور جديد': 'منشوران جديدان', 'منشور جديد اليوم': 'منشوران جديدان اليوم', 'منشور جديد هذا الأسبوع': 'منشوران جديدان هذا الأسبوع',
+    'منشور سوق': 'منشورا سوق', 'منشور محفوظ': 'منشوران محفوظان', 'مورّد': 'مورّدان', 'موقع': 'موقعان', 'نتيجة': 'نتيجتان', 'نشط': 'نشطان', 'وظيفة': 'وظيفتان',
+    'وظيفة متاحة': 'وظيفتان متاحتان', 'يوم': 'يومان' };
   window.dxArPlural = plural;   /* the same rule for the layers that write Arabic counts themselves */
   var WORDS = { comments: ['تعليق', 'تعليقات'], reposts: ['إعادة نشر', 'إعادات نشر'], members: ['عضو', 'أعضاء'], posts: ['منشور', 'منشورات'], views: ['مشاهدة', 'مشاهدات'],
     connections: ['اتصال', 'اتصالات'], listings: ['إعلان', 'إعلانات'], companies: ['شركة', 'شركات'], providers: ['مقدّم خدمة', 'مقدّمي خدمة'], clients: ['عميل', 'عملاء'], inquiries: ['استفسار', 'استفسارات'],
     results: ['نتيجة', 'نتائج'], sites: ['موقع', 'مواقع'], profiles: ['ملف', 'ملفات'], warnings: ['تحذير', 'تحذيرات'],
     'open positions': ['وظيفة متاحة', 'وظائف متاحة'], 'requests received': ['طلب وارد', 'طلبات واردة'], 'new posts today': ['منشور جديد اليوم', 'منشورات جديدة اليوم'],
     'new posts this week': ['منشور جديد هذا الأسبوع', 'منشورات جديدة هذا الأسبوع'], 'deals closed': ['صفقة مكتملة', 'صفقات مكتملة'], 'new posts': ['منشور جديد', 'منشورات جديدة'],
-    'new requests today': ['طلب جديد اليوم', 'طلبات جديدة اليوم'], 'quote requests today': ['طلب تسعير اليوم', 'طلبات تسعير اليوم'], listing: ['إعلان', 'إعلانات'] };
+    'new requests today': ['طلب جديد اليوم', 'طلبات جديدة اليوم'], 'quote requests today': ['طلب تسعير اليوم', 'طلبات تسعير اليوم'], listing: ['إعلان', 'إعلانات'],
+    /* X-03: the Jobs strip and the Home card count with the same rule — and say the dual for 2 */
+    'open positions across egypt & gcc': ['وظيفة متاحة في مصر والخليج', 'وظائف متاحة في مصر والخليج', 'وظيفتان متاحتان في مصر والخليج'],
+    'jobs posted this week': ['وظيفة نُشرت هذا الأسبوع', 'وظائف نُشرت هذا الأسبوع', 'وظيفتان نُشرتا هذا الأسبوع'],
+    'candidates available now': ['مرشح متاح الآن', 'مرشحين متاحين الآن', 'مرشحان متاحان الآن'],
+    'professionals — graduates, specialists and industry veterans': ['متخصص — خريجون ومتخصصون وخبراء صناعة', 'متخصصين — خريجون ومتخصصون وخبراء صناعة', 'متخصصان — خريجون ومتخصصون وخبراء صناعة'],
+    'pharma professionals — from new graduates to industry veterans': ['متخصص في الدواء — من حديثي التخرج حتى خبراء الصناعة', 'متخصصين في الدواء — من حديثي التخرج حتى خبراء الصناعة', 'متخصصان في الدواء — من حديثي التخرج حتى خبراء الصناعة'] };
   function word(n, w) { w = w.toLowerCase().replace(/^request received$/, 'requests received').replace(/^company$/, 'companies'); var f = WORDS[w] || WORDS[w + 's']; return f ? n + ' ' + plural(n, f) : null; }
   var __cn = null;   /* company names, for the 'Open <company>' tooltip; rebuilt when the directory list changes */
   function coName(n) { var X = window.dxDir; if (!X || !X.companies) return false; var l = X.companies(); if (!__cn || __cn.l !== l) { __cn = { l: l, s: new Set() }; l.forEach(function (c) { __cn.s.add(c.name); }); } return __cn.s.has(n); }
@@ -505,6 +528,8 @@
     [/^Unread \((\d+)\)$/, function (m) { return 'غير مقروء (' + m[1] + ')'; }],   /* the Messages filter, recounted (J-SOCIAL-38) */
     [/^No member called (.+) — choose someone from the list$/, function (m) { return 'لا يوجد عضو باسم ' + m[1] + ' — اختر شخصًا من القائمة'; }],   /* ✎ New message (S-03) */
     [/^Several members are called (.+) — choose one from the list$/, function (m) { return 'أكثر من عضو باسم ' + m[1] + ' — اختر واحدًا من القائمة'; }],
+    [/^Choose (.+) from the list to be sure who receives it$/, function (m) { return 'اختر ' + m[1] + ' من القائمة لتتأكد من المستلم'; }],
+    [/^A name can only have letters, spaces and \. - ' ’ \( \) , — remove “([^]*)” \((U\+[0-9A-F]+)\)$/, function (m) { return "الاسم يقبل الحروف والمسافات و . - ' ’ ( ) , فقط — احذف «" + m[1] + '» (' + m[2] + ')'; }],
     [/^🚫 Block (.+)$/, function (m) { return '🚫 حظر ' + m[1]; }], [/^✅ Unblock (.+)$/, function (m) { return '✅ إلغاء الحظر عن ' + m[1]; }],   /* the conversation menu (J-SOCIAL-40) */
     [/^Block (.+)\?$/, function (m) { return 'حظر ' + m[1] + '؟'; }], [/^(.+) blocked$/, function (m) { return 'تم حظر ' + m[1]; }], [/^(.+) unblocked$/, function (m) { return 'تم إلغاء الحظر عن ' + m[1]; }],
     [/^Notifications muted for (.+)$/, function (m) { return 'تم كتم إشعارات ' + m[1]; }], [/^Notifications on for (.+)$/, function (m) { return 'تم تشغيل إشعارات ' + m[1]; }],
@@ -834,7 +859,7 @@
   function trAt(n, v) { var p = n.parentElement, k = v.replace(/\s+/g, ' ').trim();
     /* "<b>9</b> members": the word after a number in its own element takes the number's Arabic plural (9 أعضاء, not 9 عضو) */
     var ps = n.previousSibling, wf = WORDS[k.toLowerCase()] || WORDS[k.toLowerCase() + 's'];
-    if (wf && ps && ps.nodeType === 1) { var num = (ps.textContent || '').trim(); if (/^[\d,.]+K?$/i.test(num)) return put(v, k, plural(num, wf)); }
+    if (wf && ps && ps.nodeType === 1) { var num = (ps.textContent || '').trim(); if (/^[\d,.]+K?\+?$/i.test(num)) return put(v, k, plural(num.replace(/\+$/, ''), wf)); }
     for (var i = 0; p && i < CTX.length; i++) if (CTX[i][1][k] && p.closest(CTX[i][0])) return put(v, k, CTX[i][1][k]);
     return tr(v); }
   window.dxI18nAdopt = function (n) { if (!n || !isAr()) return; var v = n.nodeValue, t = trAt(n, v); if (t !== v) { ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else { ORIG.delete(n); LAST.delete(n); } };
@@ -869,12 +894,16 @@
     [document.body, window.__mkxNode, window.__jxNode, window.__gxNode].forEach(function (r) { if (r && r.nodeType === 1 && (r === document.body || !r.isConnected)) restoreIn(r); });
     LAST = new WeakMap(); LASTA = new WeakMap();
   }
+  /* a number that changes after its word was translated ("<b>2</b> وظيفة" counting up to 6, a live count arriving): the word after it
+     takes the new number's form (X-03) */
+  function recount(el) { var ns = el && el.nextSibling; if (!ns || ns.nodeType !== 3 || !ORIG.has(ns)) return;
+    var t = trAt(ns, ORIG.get(ns)); if (t !== ns.nodeValue) { LAST.set(ns, t); ns.nodeValue = t; } }
   /* new content (dialogs, notices, lists) is translated as it appears */
   var pending = null;
   new MutationObserver(function (muts) {
     if (!isAr()) return;
     muts.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) (pending = pending || []).push(n); else if (n.nodeType === 3 && n.parentElement) (pending = pending || []).push(n.parentElement); }); if (m.type === 'characterData' && m.target.parentElement) (pending = pending || []).push(m.target.parentElement); });
-    if (pending && !walk.__t) walk.__t = requestAnimationFrame(function () { var p = pending; pending = null; walk.__t = 0; p.forEach(function (n) { if (n.isConnected) walk(n); }); });
+    if (pending && !walk.__t) walk.__t = requestAnimationFrame(function () { var p = pending; pending = null; walk.__t = 0; p.forEach(function (n) { if (n.isConnected) { walk(n); recount(n); } }); });
   }).observe(document.body, { childList: true, subtree: true, characterData: true });
   function setLang(lang) {
     window.LANG = lang;

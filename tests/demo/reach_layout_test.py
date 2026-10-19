@@ -101,12 +101,29 @@ with sync_playwright() as p:
             pill = E("(document.querySelector('#content .dg-pill-page')||{}).innerText||''")
             T('AR: 20 courses read "20 دورة" (11 and above take the singular), not "20 دورات"', pill.startswith('20 دورة'), pill)
             rule = E("[1,2,3,10,11,20,99,100,102,103,110,111].map(n=>n+' '+dxArPlural(n,['دورة','دورات']))")
-            T('AR: the plural rule — 1 دورة, 3–10 دورات, 11+ دورة, 103–110 دورات', rule == ['1 دورة', '2 دورات', '3 دورات', '10 دورات', '11 دورة', '20 دورة', '99 دورة', '100 دورة', '102 دورة', '103 دورات', '110 دورات', '111 دورة'], rule)
+            T('AR: the plural rule — 1 دورة, 2 دورتان (the dual), 3–10 دورات, 11+ دورة, 103–110 دورات', rule == ['1 دورة', '2 دورتان', '3 دورات', '10 دورات', '11 دورة', '20 دورة', '99 دورة', '100 دورة', '102 دورة', '103 دورات', '110 دورات', '111 دورة'], rule)
             tr = E("[['5 yrs exp','x'],['15 years experience','x'],['12 SAVED POSTS','x'],['4 CONNECTIONS / 2 PENDING','x'],['24 people reacted','x'],['3 profile','x']].map(([t])=>{const d=document.createElement('span');d.textContent=t;document.getElementById('content').appendChild(d);return d})")
             pg.wait_for_timeout(700)
             got = E("[...document.getElementById('content').children].slice(-6).map(e=>e.textContent)")
             T('AR: counted words in translated sentences follow the rule (5 سنوات, 15 سنة, 12 منشور محفوظ, 4 اتصالات, 24 شخص, 3 ملفات)',
               got == ['5 سنوات خبرة', '15 سنة خبرة', '12 منشور محفوظ', '4 اتصالات / 2 معلّقة', 'تفاعل 24 شخص', '3 ملفات'], got)
+            # X-03: the counts that used a fixed form (Jobs strip, Home card) and the dual for 2 in every pattern
+            E("goto('jobs')"); pg.wait_for_timeout(900)
+            strip = E("[...document.querySelectorAll('#jx .intel-strip .intel-item')].map(e=>e.innerText.replace(/\\s+/g,' ').trim())")
+            nums = [int(__import__('re').search(r'\d+', x).group()) if __import__('re').search(r'\d+', x) else -1 for x in strip]
+            want = [['وظيفة متاحة', 'وظائف متاحة', 'وظيفتان متاحتان'], ['وظيفة نُشرت', 'وظائف نُشرت', 'وظيفتان نُشرتا'], ['مرشح متاح', 'مرشحين متاحين', 'مرشحان متاحان']]
+            form = lambda n: 2 if n == 2 else 1 if 3 <= n % 100 <= 10 else 0
+            T('AR: the Jobs strip counts with the plural rule (%s)' % ' / '.join(strip), len(strip) == 3 and all(want[i][form(nums[i])] in strip[i] for i in range(3)), strip)
+            E("(()=>{const b=document.querySelectorAll('#jx .intel-strip .intel-item b');if(b[1])b[1].textContent='2';if(b[2])b[2].textContent='7'})()"); pg.wait_for_timeout(400)
+            strip = E("[...document.querySelectorAll('#jx .intel-strip .intel-item')].map(e=>e.innerText.replace(/\\s+/g,' ').trim())")
+            T('AR: a count that changes takes its new form (2 وظيفتان نُشرتا, 7 مرشحين متاحين)', 'وظيفتان نُشرتا' in strip[1] and 'مرشحين متاحين' in strip[2], strip)
+            E("goto('feed')"); pg.wait_for_timeout(900)
+            card = E("(document.querySelector('#content .dg-faces-tx')||{}).innerText||''")
+            T('AR: the Home card counts its members with the rule (12K+ متخصص)', not card or 'متخصص —' in card, card)
+            duo = E("[['2 years experience'],['2 people reacted'],['2 mutual connections'],['⏱ 2 hours'],['valid 2 days']].map(([t])=>{const d=document.createElement('span');d.textContent=t;document.getElementById('content').appendChild(d);return d})")
+            pg.wait_for_timeout(700)
+            got = E("[...document.getElementById('content').children].slice(-5).map(e=>e.textContent)")
+            T('AR: 2 takes the dual in every pattern (سنتان، شخصان، اتصالان مشتركان، ساعتان، يومان)', got == ['2 سنتان خبرة', 'تفاعل 2 شخصان', '2 اتصالان مشتركان', '⏱ 2 ساعتان', 'صالح 2 يومان'], got)
         T('%d: no page errors' % w, not pg.errs, pg.errs); c.close()
     b.close()
 print('%d / %d' % (sum(R), len(R)))
