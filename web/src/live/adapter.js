@@ -1917,7 +1917,7 @@
      groups.js draws the inside of a group from the approved Home post card and member rows and asks for its data through
      dxLiveHook(kind, payload). A group post IS a post (posts.group_id): likes, comments, photos/files, saves and their
      notifications are the feed's own tables; who may read or write them is decided by the database (0027), never here. */
-  var RK_IN = { love: 'support' }, RK_OUT = { support: 'love', appreciation: 'like' };   /* reactions.kind: like love insightful celebrate curious */
+  var RK_IN = { love: 'support' }, RK_OUT = {};   /* reactions.kind holds the six kinds of the panel since 0028 (as on Home); older rows may say 'love' */
   function gOf(d) { var gid = d && d.group ? +d.group.gid : 0, g = GX.groups.find(function (x) { return x.id === gid; }); if (!g) throw new Error('This group is no longer available — open the Groups page again'); return g; }
   function joinedAgo(ts) {
     var d = (Date.now() - new Date(ts).getTime()) / 86400000, n, u;

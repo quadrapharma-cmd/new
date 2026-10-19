@@ -252,6 +252,80 @@ def react_to_post(j):
         # Arabic the row's centre falls on the Latin name)
         j.check(row.count(), 'B sees no reaction notification'); row.first.locator('.notif-time').click(); j.settle(pb, 1200)
         j.check(pb.locator('#post-%d' % p).count() and pb.locator('#post-%d' % p).first.is_visible(), 'clicking the notification does not open post P')
+    if j.width <= 480:
+        with j.step('On a phone (touch): a quick tap on Like likes and unlikes; pressing and holding Like opens the panel, and each of the six reactions is inside the screen and can be tapped'):
+            tp = j.new_page(j.new_ctx(touch=True)); tp._touch = True
+            if j.live: j.signin(tp, a['email'], a['pw']); home(j, tp); post = post_el(j, tp, 'Useful circular for reactions ' + j.tag)
+            else: j.demo_signin(tp); post = tp.locator('#content #post-%d' % p)
+            post.evaluate("e=>e.scrollIntoView({block:'center'})")
+            on0, _ = rx_state(post); base = like_count(post) - (1 if on0 else 0)   # live: A reacted again in the previous step
+            likebtn = act(post, LIKE).locator('[data-lp]')
+            likebtn.tap(); tp.wait_for_timeout(500)
+            j.check(rx_state(post)[0] != on0 and like_count(post) == base + (0 if on0 else 1), 'a quick tap on Like did not toggle Like')
+            j.check(not act(post, LIKE).locator('.rxn-panel').is_visible(), 'a quick tap on Like also opened the reaction panel over the post')
+            likebtn.tap(); tp.wait_for_timeout(500)
+            j.check(rx_state(post)[0] == on0 and like_count(post) == base + (1 if on0 else 0), 'a second quick tap on Like did not toggle it back')
+            if on0: likebtn.tap(); tp.wait_for_timeout(500)                 # start with no reaction: the panel's first choice adds one
+            def hold():
+                j.long_press(tp, act(post, LIKE).locator('[data-lp]'))
+                j.check(act(post, LIKE).locator('.rxn-panel').is_visible(), 'pressing and holding Like does not open the reaction panel')
+            every_reaction(j, tp, post, p, a, base, hold)
+            if j.live:
+                n = j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s' and post_id=%d" % (b['id'], a['id'], p))
+                j.check(n == '1', 'changing the reaction left %s notifications for B (want exactly 1)' % n)
+    else:
+        with j.step('With the mouse and with the keyboard: each of the six reactions is inside the screen and can be chosen'):
+            if j.live: fresh(j, pg); post = post_el(j, pg, 'Useful circular for reactions ' + j.tag)
+            else: post = pg.locator('#content #post-%d' % p)
+            post.evaluate("e=>e.scrollIntoView({block:'center'})")
+            on0, _ = rx_state(post)
+            if on0: act(post, LIKE).locator('[data-lp]').click(); pg.wait_for_timeout(500)   # start with no reaction
+            base = like_count(post)
+            def hover():
+                pg.mouse.move(1, 1); pg.wait_for_timeout(150); act(post, LIKE).hover(); pg.wait_for_timeout(400)
+                j.check(act(post, LIKE).locator('.rxn-panel').is_visible(), 'hovering Like does not open the reaction panel')
+            every_reaction(j, pg, post, p, a, base, hover)
+            pg.mouse.move(1, 1); pg.wait_for_timeout(200)
+            # keyboard: Shift+Tab from Comment lands on Like and opens the panel; Tab walks the six reactions; Enter chooses
+            act(post, COMMENT).focus(); pg.keyboard.press('Shift+Tab'); pg.wait_for_timeout(250)
+            j.check(pg.evaluate("()=>document.activeElement&&document.activeElement.id||''").startswith('like-'), 'Shift+Tab from Comment does not reach Like')
+            j.check(act(post, LIKE).locator('.rxn-panel').is_visible(), 'keyboard focus on Like does not open the reaction panel')
+            order = []
+            for _ in RX: pg.keyboard.press('Tab'); order.append(pg.evaluate("()=>(document.activeElement.dataset||{}).rk||''"))
+            j.check(order == list(RX), 'Tab from Like does not walk the six reactions (got %s)' % order)
+            pg.keyboard.press('Shift+Tab'); pg.keyboard.press('Enter'); pg.wait_for_timeout(500)   # back to Appreciation, choose it
+            on, label = rx_state(post)
+            mine = pg.evaluate("id=>{const x=(window.POSTS||[]).find(q=>q.id==id);return x?x.myKind||'':''}", p)
+            j.check(on and like_count(post) == base + 1 and mine == 'appreciation', 'Enter on Appreciation did not choose it (my reaction "%s", button "%s")' % (mine, label.strip()))
+            if j.live: j.check(j.wait_db("select kind from public.reactions where post_id=%d and user_id='%s'" % (p, a['id']), 5, want='appreciation') == 'appreciation', 'the keyboard choice (appreciation) is not stored')
+
+RX = ('like', 'support', 'celebrate', 'insightful', 'appreciation', 'curious')
+ON_SCREEN = """e=>{const r=e.getBoundingClientRect();const h=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+  return r.width>0&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight&&!!h&&(h===e||e.contains(h))}"""
+def rx_state(post):
+    l = act(post, LIKE); return (l.get_attribute('aria-pressed') == 'true' or 'liked' in (l.get_attribute('class') or ''), l.locator('[data-lp], [data-gpm="react"]').last.inner_text())
+def rx_offscreen(post):
+    """The reactions of the open panel that a person cannot reach (outside the screen or covered)."""
+    return [k for k in RX if not act(post, LIKE).locator('[data-rk="%s"]' % k).evaluate(ON_SCREEN)]
+
+def every_reaction(j, pg, post, p, a, n0, how):
+    """Choose each of the six reactions in turn from the panel (opened by `how`) — all six inside the screen, the count stays
+    n0 + 1, the Like button shows the kind chosen; live: one reactions row with that kind."""
+    for k in RX:
+        how()
+        bad = rx_offscreen(post)
+        j.check(not bad, 'at %dpx the reaction panel leaves %s outside the screen or covered' % (j.width, ', '.join(bad)))
+        it = act(post, LIKE).locator('[data-rk="%s"]' % k)
+        it.tap() if getattr(pg, '_touch', False) else it.click()
+        pg.wait_for_timeout(400)
+        on, label = rx_state(post)
+        j.check(on and like_count(post) == n0 + 1, 'choosing "%s" left the post %s with %d reactions (want %d)' % (k, 'active' if on else 'not active', like_count(post), n0 + 1))
+        mine = pg.evaluate("id=>{const x=(window.POSTS||[]).find(q=>q.id==id);return x?(x.myKind||(x.liked?'like':'')):''}", p)
+        j.check(mine == k, 'after choosing "%s" the post holds my reaction "%s" (button "%s")' % (k, mine, label.strip()))
+        if j.live:
+            want = k                                                  # reactions.kind holds the six kinds (0028)
+            got = j.wait_db("select string_agg(kind,',') from public.reactions where post_id=%d and user_id='%s'" % (p, a['id']), 5, want=want)
+            j.check(got == want, 'after choosing "%s" the database holds kind(s) "%s" (want one row "%s")' % (k, got, want))
 
 @journey('J-SOCIAL-14')
 def comment_on_post(j):

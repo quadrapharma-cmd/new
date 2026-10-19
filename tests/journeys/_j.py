@@ -111,8 +111,9 @@ class J:
     def note(self, k, v): self.data[k] = v
 
     # ---- browser ------------------------------------------------------------------------------------------------------
-    def new_ctx(self, storage_state=None, lang=None):
+    def new_ctx(self, storage_state=None, lang=None, touch=False):
         kw = {'viewport': {'width': self.width, 'height': self.height}}
+        if touch: kw.update(has_touch=True, is_mobile=True)       # a phone: taps and long presses, (hover: none)
         if storage_state: kw['storage_state'] = storage_state
         ctx = self.browser.new_context(**kw); self.ctxs.append(ctx)
         if self.demo: ctx.route(lambda u: not u.startswith(('file:', 'data:', 'blob:')), lambda r: r.abort())
@@ -123,6 +124,17 @@ class J:
         try: ctx.grant_permissions(['clipboard-read', 'clipboard-write'])
         except Exception: pass
         return ctx
+
+    def long_press(self, pg, loc, ms=700):
+        """Press and hold with a finger (a touch context): touch events at the element's centre, held for ms."""
+        loc.evaluate("e=>e.scrollIntoView({block:'center'})"); pg.wait_for_timeout(200)
+        b = loc.bounding_box(); x, y = b['x'] + b['width'] / 2, b['y'] + b['height'] / 2
+        cdp = pg.context.new_cdp_session(pg)
+        try:
+            cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': x, 'y': y}]}); pg.wait_for_timeout(ms)
+            cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+        finally: cdp.detach()
+        pg.wait_for_timeout(300)
 
     def new_page(self, ctx=None, url=None):
         ctx = ctx or self.new_ctx(); pg = ctx.new_page(); self.pages.append(pg)
