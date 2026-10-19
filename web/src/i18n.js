@@ -803,7 +803,7 @@
     [/^You are now on the team of (.+) \((.+)\)\.$/, function (m) { return 'أنت الآن في فريق ' + m[1] + ' (' + (D[m[2]] || m[2]) + ').'; }],
     [/^(.+) did not accept your request to join the team\.$/, function (m) { return 'لم تقبل ' + m[1] + ' طلبك للانضمام إلى الفريق.'; }],
     [/^Drugbox checked your (.+?)( \((.+)\))? — it now shows as checked on your page\.$/, function (m) { return 'راجع Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — تظهر الآن كمراجَعة على صفحتك.'; }],
-    [/^Drugbox could not accept your (.+?)( \((.+)\))? — reason: (.+)\. Add it again with a readable document\.$/, function (m) { return 'لم يقبل Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — السبب: ' + m[4] + '. أضفها مرة أخرى بمستند مقروء.'; }]
+    [/^Drugbox could not accept your (.+?)( \((.+)\))? — reason: (.+)\. Add it again with a readable document\.$/, function (m) { return 'لم يقبل Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — السبب: ' + m[4] + '. أضفها مرة أخرى بمستند مقروء.'; }],
     [/^(.+) is removed from your compliance passport( and its file is deleted)?\.$/, function (m) { return 'سيُحذف ' + m[1] + ' من جواز امتثال شركتك' + (m[2] ? ' ويُحذف ملفه' : '') + '.'; }],
     [/^(?:(.+) · )?added(?: by (.+?))?(?: · (\d{4}-\d{2}-\d{2}))?(?: · (.+))?$/, function (m) { return (m[1] ? m[1] + ' · ' : '') + 'أُضيف' + (m[2] ? ' بواسطة ' + m[2] : '') + (m[3] ? ' · ' + m[3] : '') + (m[4] ? ' · ' + m[4] : ''); }],
     [/^Drugbox checked your (.+) for (.+) — it now shows as verified on your compliance passport\.$/, function (m) { return 'راجع Drugbox مستند ' + m[1] + ' لـ ' + m[2] + ' — يظهر الآن موثّقًا في جواز الامتثال.'; }],
