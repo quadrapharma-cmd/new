@@ -188,7 +188,7 @@ def post_demand(j):
     """A buyer posts what he needs (RFQ / demand listing) so suppliers come to him."""
     me = lister(j, 'Demand Buyer'); pg = me['page']; name = 'Ciprofloxacin HCl %s' % j.tag
     with j.step("Create Listing → I'm Seeking: product, quantity, target price, details → publish"):
-        said = create_listing(j, pg, 'seek', [(r'Ciprofloxacin|looking', name), (r'MT/month|Quantity', '2 MT/month'), (r'accurate|price', 'US$ 21/kg'), (r'specs|details', 'CEP required')])
+        said = create_listing(j, pg, 'seek', [(r'Ciprofloxacin|looking', name), (r'MT/month|Quantity', '2 MT/month'), (r'accurate|price|بدقة|السعر', 'US$ 21/kg'), (r'specs|details|مواصفات|تفاصيل', 'CEP required')])
         j.check(any(re.search(r'live|منشور', t) for t in said), "no 'Your listing is live'")
         if j.live:
             ty = j.wait_db("select type from public.products where name=$q$%s$q$" % name, 6)
@@ -313,17 +313,17 @@ def market_intents(j):
         if j.live:   # a brand-new account has chosen nothing yet: no sample intents preset for it (B-06)
             pre = pg.evaluate("[...document.querySelectorAll('#tab-intents .it-opt.active')].length")
             j.check(pre == 0, 'a brand-new account sees %d intents already chosen (sample presets)' % pre)
-        row = pg.locator('#tab-intents .cat-intent-row', has_text=re.compile(r'APIs & Raw Materials|المواد الخام')).first
+        row = pg.locator('#tab-intents .cat-intent-row', has_text=re.compile(r'APIs & Raw Materials|المواد الخام|المواد الفعالة والخامات')).first
         j.check(row.count(), 'no APIs & Raw Materials intent'); row.locator('.it-opt.i-have').click(); pg.wait_for_timeout(200)
-        row2 = pg.locator('#tab-intents .cat-intent-row', has_text=re.compile(r'Equipment|المعدات')).first
+        row2 = pg.locator('#tab-intents .cat-intent-row', has_text=re.compile(r'Equipment|معدات')).first
         if row2.count(): row2.locator('.it-opt.i-need').click()
         mark = j.toast_mark(pg); pg.locator('#tab-intents .btn-save-intents').click(); j.settle(pg, 1000)
         j.check(j.toasts_since(pg, mark), "'Save My Intents' gives no confirmation")
     with j.step('Intents persist after reload'):
         reopen(j, pg); market(j, pg, 'intents')
-        row = pg.locator('#tab-intents .cat-intent-row', has_text=re.compile(r'APIs & Raw Materials|المواد الخام')).first
+        row = pg.locator('#tab-intents .cat-intent-row', has_text=re.compile(r'APIs & Raw Materials|المواد الخام|المواد الفعالة والخامات')).first
         j.check('active' in (row.locator('.it-opt.i-have').get_attribute('class') or ''), 'the API intent is not kept after reload')
-        row2 = pg.locator('#tab-intents .cat-intent-row', has_text=re.compile(r'Equipment|المعدات')).first
+        row2 = pg.locator('#tab-intents .cat-intent-row', has_text=re.compile(r'Equipment|معدات')).first
         j.check(not row2.count() or 'active' in (row2.locator('.it-opt.i-need').get_attribute('class') or ''), 'the Equipment intent is not kept after reload')
     with j.step('Another user posts a matching demand: the match is shown (count, notification or Home card) and equals the real matches'):
         if j.demo: j.skip('the other party exists only in live')

@@ -212,7 +212,7 @@ def upgrade_to_vip(j):
         me = live_company_person(j, 'Upgrading Owner', 'Upgrade Pharma %s' % j.tag); pg = me['page']; name = me['co']['name']
     else:
         pg = j.demo_signin(j.new_page()); name = 'Basic Upgrade %s' % j.tag
-        create_company(j, pg, name); wizard_details(j, pg, name); dlg_click(j, pg, r'Next: review', 'Next: review'); dlg_click(j, pg, r'Create my page', 'Create my page'); j.settle(pg, 1200)
+        create_company(j, pg, name); wizard_details(j, pg, name); dlg_click(j, pg, r'Next: review|التالي', 'Next: review'); dlg_click(j, pg, r'Create my page|أنشئ', 'Create my page'); j.settle(pg, 1200)
     with j.step("Workspace → Plan & verification → 'Get VIP' → VIP Monthly → 'Continue to payment': the server price EGP 2,500 + VAT = 2,850"):
         workspace(j, pg, 'Plan & verification|%s' % (ar('Plan & verification') or 'الخطة'))
         up = j.find(pg, r'^\W*(Get VIP|Upgrade|Upgrade to VIP|ترقية|احصل على VIP)\W*$', scope='#content')

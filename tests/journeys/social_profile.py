@@ -178,7 +178,7 @@ def intro_video(j):
         with pg.expect_file_chooser(timeout=5000) as fc: el.click()
         fc.value.set_files(bad); pg.wait_for_timeout(2500)
         msg = j.toasts_since(pg, before) + [j.text(pg, '.modal-bg')]
-        j.check(re.search(r'could not be read|cannot|try MP4|لا يمكن|تعذر', ' '.join(msg), re.I), 'an unreadable video gives no clear message')
+        j.check(re.search(r'could not be read|cannot|try MP4|لا يمكن|تعذّ?ر', ' '.join(msg), re.I), 'an unreadable video gives no clear message')
         j.check(not pg.locator('#content .dx-vid-play').count(), 'an unreadable video was saved')
     with j.step('B can play the video and cannot replace or remove it'):
         if j.demo: j.skip('the other party exists only in live')
