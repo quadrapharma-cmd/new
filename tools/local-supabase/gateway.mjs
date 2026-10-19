@@ -67,7 +67,9 @@ http.createServer(async (req, res) => {
       /* an address that already has an account gets the same answer as a new one that must confirm its e-mail (Supabase with
          "Confirm email" on): a user object without a session, nothing created — sign-up cannot be used to find out who is registered */
       if (ex.rowCount) return send(res, 200, { id: crypto.randomUUID(), aud: 'authenticated', role: '', email, user_metadata: {}, app_metadata: { provider: 'email', providers: ['email'] }, identities: [], created_at: new Date().toISOString() });
-      const r = await db.query("insert into auth.users (email, encrypted_password, raw_user_meta_data) values ($1, crypt($2, gen_salt('bf', 10)), $3) returning *", [email, pw, b.data || {}]);
+      /* a refusal of the sign-up trigger (handle_new_user: the name rule, 0038) is answered as Supabase answers it — the cause stays on the server */
+      let r; try { r = await db.query("insert into auth.users (email, encrypted_password, raw_user_meta_data) values ($1, crypt($2, gen_salt('bf', 10)), $3) returning *", [email, pw, b.data || {}]); }
+      catch (e) { return send(res, 500, { code: 500, error_code: 'unexpected_failure', msg: 'Database error saving new user' }); }
       return send(res, 200, session(r.rows[0]));
     }
     if (url.pathname === '/auth/v1/token' && req.method === 'POST') {

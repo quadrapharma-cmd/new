@@ -24,6 +24,7 @@ create function pg_temp.step(p_name text, q text) returns void language plpgsql 
 create function pg_temp.no(p_name text, q text, st text) returns void language plpgsql as $$ begin
   execute q; raise exception 'the statement was allowed' using errcode = 'DB001';
   exception when others then insert into r(name, ok, err) values (p_name, sqlstate = st, case when sqlstate <> st then sqlstate || ': ' || sqlerrm end); end $$;
+create function pg_temp.err_of(q text) returns text language plpgsql as $$ begin execute q; return null; exception when others then return sqlerrm; end $$;
 create function pg_temp.id(k text) returns bigint language sql stable as $$ select v::bigint from ids where ids.k = id.k $$;
 create function pg_temp.u(n int) returns uuid language sql immutable as $$ select ('f3600000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid $$;
 
@@ -50,27 +51,65 @@ select pg_temp.as_anon();
 select pg_temp.no('phone: anon cannot read it', $$select phone from public.profiles$$, '42501');
 select pg_temp.no('phone: anon cannot call my_profile()', $$select * from public.my_profile()$$, '42501');
 
--- ══ 2. names a person can tell apart ══════════════════════════════════════════════════════════
+-- ══ 2. names: an allowlist and a skeleton (0038 — every string the verifiers used is in supabase/tests/name_rule.sql) ══════════
 select pg_temp.as_user(pg_temp.u(2));
 select pg_temp.step('u2 renames herself with an invisible character and doubled spaces', $$update public.profiles set name = E'PN  Zeina​ X⁠' where id = pg_temp.u(2)$$);
 select pg_temp.ok('names: invisible characters are removed and spaces collapse', $$(select name from public.profiles where id = pg_temp.u(2)) = 'PN Zeina X'$$);
-select pg_temp.step('u2 calls herself "PN Hala X · Pharco X"', $$update public.profiles set name = 'PN Hala X · Pharco X' where id = pg_temp.u(2)$$);
-select pg_temp.ok('names: the picker separator cannot be part of a name', $$(select name from public.profiles where id = pg_temp.u(2)) = 'PN Hala X - Pharco X'$$);
-select pg_temp.step('u2 tries other dot-like separators', $$update public.profiles set name = E'PN Hala X•Pharco ∙ X' where id = pg_temp.u(2)$$);
-select pg_temp.ok('names: every dot-like separator becomes "-"', $$(select name from public.profiles where id = pg_temp.u(2)) = 'PN Hala X - Pharco - X'$$);
--- the look-alikes the p1b verifier got through 0036 (0037: one rule generated from the Unicode properties — supabase/tests/name_rule.sql)
-select pg_temp.step('u2 calls herself "PN Hala X ꞏ Pharco X" (U+A78F LATIN LETTER SINOLOGICAL DOT)', $$update public.profiles set name = U&'PN Hala X \A78F Pharco X' where id = pg_temp.u(2)$$);
-select pg_temp.ok('names: U+A78F is the picker separator too', $$(select name from public.profiles where id = pg_temp.u(2)) = 'PN Hala X - Pharco X'$$);
-select pg_temp.step('u2 renames herself "PN Zeina X" + U+1D173 (a default-ignorable character)', $$update public.profiles set name = U&'PN Zeina X\+01D173' where id = pg_temp.u(2)$$);
-select pg_temp.ok('names: U+1D173 is removed', $$(select name from public.profiles where id = pg_temp.u(2)) = 'PN Zeina X'$$);
+select pg_temp.ok('names: the key is the skeleton, the name is not flagged', $$(select name_key = public.person_name_key('PN Zeina X') and not name_needs_fix from public.profiles where id = pg_temp.u(2))$$);
+select pg_temp.no('names: the picker separator cannot be part of a name ("PN Hala X · Pharco X")', $$update public.profiles set name = 'PN Hala X · Pharco X' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: U+A78F LATIN LETTER SINOLOGICAL DOT is refused', $$update public.profiles set name = U&'PN Hala X \A78F Pharco X' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: U+11174 (draws a dot) is refused', $$update public.profiles set name = U&'PN Hala X \+011174 Pharco X' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: U+1F797 (draws a dot) is refused', $$update public.profiles set name = U&'PN Hala X \+01F797 Pharco X' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: U+111D0 (a digit that draws a dot) is refused', $$update public.profiles set name = U&'PN Hala X \+0111D0 Pharco X' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: U+FFFC (draws nothing) is refused', $$update public.profiles set name = U&'PN Zeina X\FFFC' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: ∘ and ▪ are refused', $$update public.profiles set name = 'PN Hala X ∘ Pharco ▪ X' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: a Cyrillic letter inside a Latin word is refused ("PN Rаna")', $$update public.profiles set name = U&'PN R\0430na X' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: digits are refused', $$update public.profiles set name = 'PN person 2' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: 0037''s separator " - " (a word without a letter) is refused', $$update public.profiles set name = 'PN Hala X - Pharco X' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.ok('names: a refused name leaves the old one', $$(select name from public.profiles where id = pg_temp.u(2)) = 'PN Zeina X'$$);
+select pg_temp.ok('names: the refusal says why, in the app''s words', $$(select pg_temp.err_of($q$update public.profiles set name = 'PN person 2' where id = pg_temp.u(2)$q$)) = 'A name cannot contain numbers'$$);
+select pg_temp.ok('names: and names the character', $$(select pg_temp.err_of($q$update public.profiles set name = U&'PN Zeina X\FFFC' where id = pg_temp.u(2)$q$)) like '%remove “￼” (U+FFFC)'$$);
+select pg_temp.step('u2 cannot forge her key or flag', $$update public.profiles set name_key = 'pn hala x', name_needs_fix = true where id = pg_temp.u(2)$$);
+select pg_temp.ok('names: key and flag are the database''s', $$(select name_key = public.person_name_key('PN Zeina X') and not name_needs_fix from public.profiles where id = pg_temp.u(2))$$);
+select pg_temp.step('real names are accepted (Arabic with harakat, accents, apostrophes, brackets)', $$update public.profiles set name = 'د. نرمين أبو زيدٍ' where id = pg_temp.u(2)$$);
+select pg_temp.ok('names: an Arabic name with harakat is kept as written', $$(select name from public.profiles where id = pg_temp.u(2)) = 'د. نرمين أبو زيدٍ'$$);
+select pg_temp.step('…and "Al-Hassan (Pharm.D.)", "O’Brien"', $$update public.profiles set name = 'PN Al-Hassan O’Brien (Pharm.D.)' where id = pg_temp.u(2)$$);
+select pg_temp.ok('names: brackets, dots, hyphens and apostrophes are kept', $$(select name from public.profiles where id = pg_temp.u(2)) = 'PN Al-Hassan O’Brien (Pharm.D.)'$$);
 select pg_temp.step('u2 tries a name of only invisible characters', $$update public.profiles set name = E'​‌ ' where id = pg_temp.u(2)$$);
 select pg_temp.ok('names: an empty name becomes "Member"', $$(select name from public.profiles where id = pg_temp.u(2)) = 'Member'$$);
+-- a server write (SQL, service role) of a name that breaks the rule is kept and flagged; an edit that keeps it keeps the flag
+select pg_temp.as_server();
+update public.profiles set name = 'PN person 1' where id = pg_temp.u(1);
+select pg_temp.ok('names: a server write of a name with a digit is kept and flagged', $$(select name = 'PN person 1' and name_needs_fix from public.profiles where id = pg_temp.u(1))$$);
+select pg_temp.as_user(pg_temp.u(1));
+select pg_temp.step('u1 (flagged) saves her profile with the same name', $$update public.profiles set name = 'PN person 1', headline = 'QA' where id = pg_temp.u(1)$$);
+select pg_temp.ok('names: an edit that keeps a flagged name is saved and the flag stays', $$(select headline = 'QA' and name_needs_fix from public.profiles where id = pg_temp.u(1))$$);
+select pg_temp.no('names: …but she cannot change it to another name that breaks the rule', $$update public.profiles set name = 'PN person 11' where id = pg_temp.u(1)$$, '23514');
+select pg_temp.step('u1 fixes her name', $$update public.profiles set name = 'PN Person One' where id = pg_temp.u(1)$$);
+select pg_temp.ok('names: a fixed name clears the flag', $$(select not name_needs_fix from public.profiles where id = pg_temp.u(1))$$);
+select pg_temp.ok('names: every member reads key and flag, never the phone', $$has_column_privilege('authenticated', 'public.profiles', 'name_key', 'SELECT') and has_column_privilege('authenticated', 'public.profiles', 'name_needs_fix', 'SELECT')
+  and not has_column_privilege('authenticated', 'public.profiles', 'phone', 'SELECT')$$);
+-- sign-up (handle_new_user runs for every caller): the name typed must follow the rule
 select pg_temp.as_server();
 insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(5), 'pn5@pn36.test', jsonb_build_object('name', E'PN Twin​')) on conflict do nothing;
-select pg_temp.ok('names: sign-up cleans the name too', $$(select name from public.profiles where id = pg_temp.u(5)) = 'PN Twin'$$);
-insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(6), 'pn6@pn36.test', jsonb_build_object('name', U&'PN Hala X \2E33 Pharco X')) on conflict do nothing;
-select pg_temp.ok('names: sign-up maps U+2E33 RAISED DOT to the separator', $$(select name from public.profiles where id = pg_temp.u(6)) = 'PN Hala X - Pharco X'$$);
-select pg_temp.ok('names: an Arabic name keeps its letters', $$public.clean_person_name('د. نرمين  أبو زيد') = 'د. نرمين أبو زيد'$$);
+select pg_temp.ok('sign-up: an invisible character is removed', $$(select name from public.profiles where id = pg_temp.u(5)) = 'PN Twin'$$);
+select pg_temp.no('sign-up: U+2E33 RAISED DOT is refused (nothing is created)', $$insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(6), 'pn6@pn36.test', jsonb_build_object('name', U&'PN Hala X \2E33 Pharco X'))$$, '23514');
+select pg_temp.ok('sign-up: …no account and no profile', $$not exists (select 1 from auth.users where id = pg_temp.u(6)) and not exists (select 1 from public.profiles where id = pg_temp.u(6))$$);
+select pg_temp.no('sign-up: a Cyrillic look-alike of a Latin name is refused', $$insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(6), 'pn6@pn36.test', jsonb_build_object('name', U&'PN R\0430na'))$$, '23514');
+insert into auth.users (id, email) values (pg_temp.u(7), 'pn.seven7@pn36.test') on conflict do nothing;
+select pg_temp.ok('sign-up: no name → the e-mail''s letters ("pn seven")', $$(select name = 'pn seven' and not name_needs_fix from public.profiles where id = pg_temp.u(7))$$);
+insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(8), 'pn8@pn36.test', jsonb_build_object('name', 'Мария Иванова')) on conflict do nothing;
+select pg_temp.ok('sign-up: a whole-Cyrillic name is accepted', $$(select name = 'Мария Иванова' and not name_needs_fix from public.profiles where id = pg_temp.u(8))$$);
+-- existing names (0038's own update, re-applied here): invisible characters and U+FFFC go; any other name is kept and flagged
+set session_replication_role = replica;   -- rows as 0037 left them (no name trigger)
+update public.profiles set name = U&'PN Zeina Old\FFFC', name_key = null, name_needs_fix = false where id = pg_temp.u(7);
+update public.profiles set name = 'PN Hala Old - Pharco Old', name_key = null, name_needs_fix = false where id = pg_temp.u(8);
+set session_replication_role = origin;
+\ir ../migrations/0038_names_allowlist.sql
+\o /dev/null
+select pg_temp.ok('existing names: U+FFFC is removed, the name is then allowed (not flagged)', $$(select name = 'PN Zeina Old' and not name_needs_fix and name_key = public.person_name_key('PN Zeina Old') from public.profiles where id = pg_temp.u(7))$$);
+select pg_temp.ok('existing names: a name that still breaks the rule is kept as it reads and flagged', $$(select name = 'PN Hala Old - Pharco Old' and name_needs_fix and name_key is not null from public.profiles where id = pg_temp.u(8))$$);
+select pg_temp.ok('existing names: every profile has a key', $$not exists (select 1 from public.profiles where name_key is null)$$);
 
 -- ══ 3. Drugbox notices keep their data, the app writes the sentence ═════════════════════════════
 select pg_temp.as_server();

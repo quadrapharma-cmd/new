@@ -160,9 +160,9 @@ select chr(('x' || lpad(split_part(e, '=', 1), 8, '0'))::bit(32)::int),
 '${SKEL_D}', ',')) e;
 create or replace function public.person_name_key(s text)
 returns text language sql stable parallel safe set search_path = '' as $$
-  select normalize(coalesce(string_agg(coalesce(m.sk, c.ch), '' order by c.i), ''), NFD)
-    from regexp_split_to_table(normalize(public.person_name_norm(s), NFD), '') with ordinality c(ch, i)
-    left join private.name_skeleton m on m.ch = c.ch
+  select normalize(array_to_string(array(
+    select coalesce((select m.sk from private.name_skeleton m where m.ch = c.ch), c.ch)
+      from unnest(regexp_split_to_array(normalize(public.person_name_norm(s), NFD), '')) with ordinality c(ch, i) order by c.i), ''), NFD)
 $$;
 -- <<< generated`;
 }

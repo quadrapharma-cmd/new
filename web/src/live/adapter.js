@@ -34,7 +34,7 @@
   function tel(s) { return String(s == null ? '' : s).replace(/[^0-9+\-() ]/g, '').trim(); }
   function hexOr(c, id) { return /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : colorFor(id); }
   /* the columns of a person the interface shows (embedded rows carry these, never phone / résumé fields) */
-  var PCOLS = 'id,name,headline,company,country,bio,avatar_url,role,verified,location,open_to_work,hiring,profile_views,followers_count';
+  var PCOLS = 'id,name,headline,company,country,bio,avatar_url,role,verified,location,open_to_work,hiring,profile_views,followers_count,name_needs_fix';
   /* a whole profile (opening someone's profile): every column members may read — phone is private (0036: column privileges, so
      select=* is refused; the signed-in member's own row, phone included, comes from my_profile()) */
   var PFULL = PCOLS + ',cover_url,website,certs,account_type,created_at,updated_at,experience,education,certifications,skills,languages,years_experience,desired_role,desired_type,remote_ok,available_since,intro_video,intents';
@@ -46,6 +46,10 @@
     if (/already registered/i.test(m)) return 'An account with this email already exists — sign in instead';
     if (/at least 8/i.test(m)) return 'Password must be at least 8 characters';
     if (/invalid email|unable to validate email/i.test(m)) return 'Please enter a valid email';
+    /* the name rule (0038): the database's sentence is the app's (nmMessage), translated by i18n.js; sign-up's own API only says
+       "Database error saving new user" when the sign-up trigger refuses the name */
+    if (x && typeof x === 'object' && /^name:/.test(String(x.hint || ''))) return m;
+    if (/database error saving new user/i.test(m)) return 'This name cannot be used — a name can only have letters, spaces and . - \' ’ ( ) ,';
     if (/failed to fetch|networkerror|network request failed|load failed|err_internet/i.test(m) || navigator.onLine === false) return 'Connection problem — check your internet and try again';
     if (code === 'PGRST301' || code === 'PGRST303' || st === 401 || /jwt (expired|malformed)|invalid jwt|auth session missing/i.test(m)) return 'Your session ended — please sign in again';
     if (code === '23505' || /duplicate key/i.test(m)) return 'This already exists';
@@ -90,7 +94,8 @@
       verified: !!p.verified, role: p.role || 'user', bio: prose(p.bio), web: safeUrl(p.website), phone: tel(p.phone), certs: txt(p.certs), avatar: safeUrl(p.avatar_url),
       location: txt(p.location), followers: p.followers_count || 0, openToWork: !!p.open_to_work, hiring: !!p.hiring, color: colorFor(p.id),
       profileViews: p.profile_views || '0', connections: '0',         /* '0', not 0: the approved sidebar shows sample numbers for a falsy value */
-      intents: (p.intents && typeof p.intents === 'object') ? p.intents : {}
+      intents: (p.intents && typeof p.intents === 'object') ? p.intents : {},
+      nameFix: !!p.name_needs_fix                                       /* my name breaks the name rule (0038): asked to update it */
     });
     clearSeeds();
     return window.ME;
@@ -112,6 +117,7 @@
     var name = ((document.getElementById('suName') || {}).value || '').trim(), email = ((document.getElementById('suEmail') || {}).value || '').trim(), pw = (document.getElementById('suPw') || {}).value || '';
     hide('suErr');
     if (!name) return show('suErr', 'Name is required'); if (!email) return show('suErr', 'Email is required'); if (pw.length < 8) return show('suErr', 'Password must be at least 8 characters');
+    var nn = nmNorm(name), np = nmProblem(nn); if (np) return show('suErr', nmMessage(nn, np));   /* the name rule of the database (0038), said before anything is sent */
     busy(true); SIGNING = true;
     try { var co = ((document.getElementById('suCompany') || {}).value || '').trim(), ro = document.getElementById('suRole'), sp = ro && ro.selectedIndex < ro.options.length - 1 ? ro.value.trim() : '';   /* the last choice is "Other": no specialty */
       var r = await sb.auth.signUp({ email: email, password: pw, options: { data: { name: name, company: co, specialty: sp } } }); if (r.error) return show('suErr', friendly(r.error));
@@ -178,14 +184,23 @@
   window.saveProfile = async function () {
     if (!ME_UUID || typeof window.profileForm !== 'function') return oSaveProfile.apply(this, arguments);
     if (PSAVE) return; var f = window.profileForm(); if (!f) return;
+    /* the name rule (0038), said next to the name like the approved form's own checks; a name the rule flagged may be kept while
+       the other fields are saved (the database keeps it too) */
+    var nn = nmNorm(f.name), np = nmProblem(nn);
+    if (np && !(window.ME.nameFix && nn === nmNorm(window.ME.name))) {
+      var ne = document.getElementById('ep-name'), er = document.getElementById('ep-err'), msg = nmMessage(nn, np);
+      if (ne) { ne.setAttribute('aria-invalid', 'true'); ne.setAttribute('aria-describedby', 'ep-err'); if (er) ne.parentNode.appendChild(er); ne.focus(); }
+      if (er) { er.textContent = msg; er.style.display = 'block'; } else if (typeof window.toast === 'function') window.toast(msg);
+      return;
+    }
     var btn = document.querySelector('.modal-bg [onclick^="saveProfile"]'); PSAVE = true; if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
     try {
       var nul = function (v) { return v ? v : null; };
       var r = await sb.from('profiles').update({ name: f.name, headline: nul(f.headline), company: nul(f.company), location: nul(f.location), website: nul(f.web),
         phone: nul(f.phone), certs: nul(f.certs), bio: nul(f.bio), open_to_work: !!f.openToWork, updated_at: new Date().toISOString() })
-        .eq('id', ME_UUID).select('name,headline,company,location,website,certs,bio,open_to_work').single();   /* phone is never read back through the API (0036) */
+        .eq('id', ME_UUID).select('name,headline,company,location,website,certs,bio,open_to_work,name_needs_fix').single();   /* phone is never read back through the API (0036) */
       if (r.error) throw r.error;
-      var p = r.data; p.phone = f.phone;
+      var p = r.data; p.phone = f.phone; window.ME.nameFix = !!p.name_needs_fix;
       oSaveProfile({ name: txt(p.name), headline: txt(p.headline), company: txt(p.company), location: txt(p.location), web: safeUrl(p.website), phone: tel(p.phone),
         certs: txt(p.certs), bio: prose(p.bio), openToWork: !!p.open_to_work });
     } catch (e) { toastErr(e); }
@@ -202,6 +217,7 @@
     /* website and certifications come with a whole profile row (opening the profile), not with the people embedded in lists; a list row
        never blanks what the profile row brought (phone stays private: it is never put on another person) */
     if ('website' in p) { u.web = safeUrl(p.website); u.certs = txt(p.certs); u.full = true; if (p.intents && typeof p.intents === 'object') u.intents = p.intents; }
+    if ('name_needs_fix' in p) u.nameFix = !!p.name_needs_fix;                                       /* a name that breaks the rule (0038) */
     return u; }
   function putUser(p) { if (!p) return; if (p.id === ME_UUID) return; var u = userFrom(p), list = window.USERS, i = list.findIndex(function (x) { return x.id === u.id; }); if (i < 0) list.push(u); else Object.assign(list[i], u); }
   /* mine: Map post id → my reaction kind; kinds: post id → {kind: n} (post_reaction_summary, 0028) */
@@ -604,19 +620,19 @@
   /* two conversations with members of the same name (S-03): each says what tells them apart — the company, else the headline,
      else the city, else a short handle from the id — in the list and under the name in the chat header. '' when no other
      conversation or known member shares the name. */
-  function mxFacts(id) { var u = nmUser(id); return u ? [String(u.headline || '').split('|')[0].trim(), u.company, u.location].map(nmClean).filter(Boolean) : []; }
+  function mxFacts(id) { var u = nmUser(id); return u ? [String(u.headline || '').split('|')[0].trim(), u.company, u.location].map(nmFact).filter(Boolean) : []; }
   function mxTwinFact(id) {
     var u = nmUser(id), k = u && nmKey(u.name); if (!k) return '';
-    var twins = (window.USERS || []).filter(function (x) { return x.id !== u.id && x.id !== aid(ME_UUID) && nmKey(x.name) === k; });
-    if (!twins.length) return '';
-    var mine = mxFacts(id), co = nmClean(u.company), others = twins.map(function (x) { return x.id; });
+    var twins = (window.USERS || []).filter(function (x) { return x.id !== u.id && x.id !== aid(ME_UUID) && nmKey(x.name) === k; });   /* same skeleton: looks the same */
+    if (!twins.length && !u.nameFix) return '';                                                                                       /* a name that breaks the rule is told apart even alone */
+    var mine = mxFacts(id), co = nmFact(u.company), others = twins.map(function (x) { return x.id; });
     if (co && !twins.some(function (x) { return nmKey(x.company) === nmKey(co); })) return co;
     var f = mine.find(function (v) { return !others.some(function (o) { return mxFacts(uuidOf(o)).some(function (w) { return nmKey(w) === nmKey(v); }); }); });
-    return f || '#' + String(uuidOf(u.id) || '').replace(/-/g, '').slice(0, 6);
+    return f || nmHandle(uuidOf(u.id) || '');
   }
   window.dxMxPartner = function () { return ME_UUID && MX.open ? MX.open : 0; };   /* links.js: 👤 / 📞 act on the open conversation's member, never a name look-up */
   async function loadConvs() { var q = await Promise.all([sb.rpc('my_conversations', { p_limit: 50 }), loadPrefs().catch(function (e) { console.error(e); })]), r = q[0]; if (r.error) throw r.error;
-    MX.convs = r.data || []; MX.convs.forEach(function (c) { putUser({ id: c.partner, name: c.name, headline: c.headline, verified: c.verified, avatar_url: c.avatar_url, company: c.company, location: c.location }); }); msgBadge(); return MX.convs; }
+    MX.convs = r.data || []; MX.convs.forEach(function (c) { putUser({ id: c.partner, name: c.name, headline: c.headline, verified: c.verified, avatar_url: c.avatar_url, company: c.company, location: c.location, name_needs_fix: c.name_needs_fix }); }); msgBadge(); return MX.convs; }
   /* the Messages count everywhere it shows — top bar, phone bar, sidebar (the sidebar is rebuilt from SB_NAV) — never the
      demo's fixed "5" (J-SOCIAL-38) */
   function msgBadge() { var n = MX.convs.reduce(function (t, c) { return t + (MXP.mute[c.partner] ? 0 : (c.unread || 0)); }, 0);
@@ -731,7 +747,7 @@
      city, "your connection") and, when even that is the same, a short handle from their id. Send goes to the one member whose
      option was chosen, checked against every member with that name in the database just before sending — a name (or an option)
      that fits more than one member, or none, is refused and nothing is sent. Never a guess. */
-  var NM = { people: {}, map: {}, t: null };
+  var NM = { people: {}, map: {}, ci: {}, t: null };
   function nmLike(x) { return String(x).replace(/[\\%_]/g, '\\$&'); }
   /* what a name may contain and when two names are the same name — the rule of the database (0038: person_name_norm,
      person_name_problem, person_name_message, person_name_key), generated with it from the Unicode data by tools/names/name_rule.mjs
@@ -763,71 +779,88 @@
   function nmMessage(n, p) { if (p !== 'char') return NM_MSG[p] || ''; var c = (n.match(NM_BAD) || [''])[0]; return NM_MSG.char.replace('%s', c).replace('%s', (c.codePointAt(0) || 0).toString(16).toUpperCase().padStart(4, '0')); }
   function nmSkel(x) { return Array.from(nmNorm(x).normalize('NFD'), function (c) { var k = NM_SKEL.get(c); return k == null ? c : k; }).join('').normalize('NFD'); }
 /* <<< generated */
-  function nmClean(x) { return nmNorm(x); }
   function nmKey(x) { return nmSkel(x); }
   /* a fact shown after a name in the picker (company, headline, city): whatever is not a letter, mark, number, space or plain
      punctuation reads " - ", so no fact can draw the picker's "·" or a "✓ Your connection" of its own */
   function nmFact(x) { return nmNorm(x).replace(/[^\p{L}\p{M}\p{N} .,'’()&/+#-]+/gu, ' - ').replace(/ +/g, ' ').replace(/^ | $/g, ''); }
-  /* a typed or picked text: the separators the picker wrote stay, the rest is cleaned like a name */
-  function nmTyped(x) { return String(x == null ? '' : x).split(/\s+\u00B7\s+/).map(nmClean).join(' \u00B7 ').toLowerCase(); }
+  /* a typed or picked text, compared by skeleton: the separators the picker wrote stay, every part is its skeleton */
+  function nmTyped(x) { return String(x == null ? '' : x).split(/\s+\u00B7\s+/).map(nmKey).join(' \u00B7 '); }
+  /* the same, ignoring case — only to read what someone TYPED (an option names one member; a bare name typed in lower case still
+     finds its one member when nobody else's name reads the same): "ibrahim" for "Ibrahim", whose skeleton is "lbrahirn" */
+  function nmTypedCI(x) { return nmTyped(String(x == null ? '' : x).toLowerCase()); }
+  function nmHandle(id) { return '#' + String(id).replace(/-/g, '').slice(0, 6); }
   function nmAdd(p) {
     if (!p || !p.id || p.id === ME_UUID) return; var o = NM.people[p.id] || {};
     function pick(k, ok) { return p[k] != null ? String(p[k]) : (o[ok] || ''); }
-    var raw = String(p.name || o.raw || 'Member').trim();
-    NM.people[p.id] = { id: p.id, raw: raw, name: nmClean(txt(raw)) || 'Member', headline: nmClean(txt(pick('headline', 'headline'))), company: nmClean(txt(pick('company', 'company'))), city: nmClean(txt(pick('location', 'city'))) };
+    var raw = String(p.name || o.raw || 'Member').trim(), u = nmUser(p.id);
+    NM.people[p.id] = { id: p.id, raw: raw, name: nmNorm(txt(raw)) || 'Member', headline: nmFact(txt(pick('headline', 'headline'))), company: nmFact(txt(pick('company', 'company'))), city: nmFact(txt(pick('location', 'city'))),
+      fix: 'name_needs_fix' in p ? !!p.name_needs_fix : 'fix' in p ? !!p.fix : o.fix != null ? o.fix : !!(u && u.nameFix) };   /* a name that breaks the rule (0038): never sent to by name alone */
   }
   function nmUser(id) { var a = aid(id); return (window.USERS || []).find(function (u) { return u.id === a; }) || null; }   /* never U(): it falls back to me */
   function nmConn(id) { return (window.CONN_STATE || {})[aid(id)] === 'connected'; }
   function nmOptions() {
     var ar = document.documentElement.lang === 'ar', mark = ar ? '✓ من اتصالاتك' : '✓ Your connection',
-        same = ar ? '⚠️ نفس الاسم والبيانات لعضو آخر — افتح ملفه وراسله من هناك لتتأكد' : '⚠️ Same name and details as another member — open their profile and message from there to be sure';
+        same = ar ? '⚠️ نفس الاسم والبيانات لعضو آخر — افتح ملفه وراسله من هناك لتتأكد' : '⚠️ Same name and details as another member — open their profile and message from there to be sure',
+        odd = ar ? '⚠️ هذا الاسم فيه حروف لا يسمح بها Drugbox — تأكد أنه الشخص الصحيح' : '⚠️ This name has characters Drugbox does not allow — make sure it is the right person';
     function T(x) { return ar && x && window.dxT ? window.dxT(x) : x; }   /* a role from the sign-up list reads in the interface language */
-    var all = Object.keys(NM.people).map(function (k) { return NM.people[k]; }), groups = {}; NM.map = {};
+    var all = Object.keys(NM.people).map(function (k) { return NM.people[k]; }), groups = {}; NM.map = {}; NM.ci = {};
     all.forEach(function (p) { p.conn = nmConn(p.id); p.twin = false; var k = nmKey(p.name); (groups[k] = groups[k] || []).push(p); });
+    /* members whose names have the same skeleton are one group (they look the same); a member whose name breaks the rule is
+       always told apart, even alone */
     Object.keys(groups).forEach(function (k) {
-      var g = groups[k]; if (g.length === 1) { g[0].value = g[0].name; return; }
-      g.forEach(function (p) { var h = T(p.headline.split('|')[0].trim());
-        p.facts = [p.company, h.toLowerCase() === p.company.toLowerCase() ? '' : h, p.city, p.conn ? mark : ''].filter(Boolean); });
+      var g = groups[k]; if (g.length === 1 && !g[0].fix) { g[0].value = g[0].name; return; }
+      g.forEach(function (p) { var h = nmFact(T(p.headline.split('|')[0].trim()));
+        p.facts = [p.company, nmKey(h) === nmKey(p.company) ? '' : h, p.city, p.conn ? mark : ''].filter(Boolean); });
       var max = Math.max.apply(null, g.map(function (p) { return p.facts.length; })), L = 1;
-      for (; L < max; L++) { var seen = {}, dup = false; g.forEach(function (p) { var v = p.facts.slice(0, L).join(' · ').toLowerCase(); if (seen[v]) dup = true; seen[v] = 1; }); if (!dup) break; }
-      var n = {}; g.forEach(function (p) { p.value = p.name + (p.facts.length ? ' · ' + p.facts.slice(0, L).join(' · ') : ''); var v = p.value.toLowerCase(); n[v] = (n[v] || 0) + 1; });
-      g.forEach(function (p) { if (n[p.value.toLowerCase()] > 1 || !p.facts.length) { p.twin = true; p.value += ' · #' + p.id.replace(/-/g, '').slice(0, 6); } });   /* last resort: a short handle — and a warning */
+      for (; L < max; L++) { var seen = {}, dup = false; g.forEach(function (p) { var v = nmTyped(p.facts.slice(0, L).join(' · ')); if (seen[v]) dup = true; seen[v] = 1; }); if (!dup) break; }
+      var n = {}; g.forEach(function (p) { p.value = p.name + (p.facts.length ? ' · ' + p.facts.slice(0, L).join(' · ') : ''); var v = nmTyped(p.value); n[v] = (n[v] || 0) + 1; });
+      g.forEach(function (p) { if (n[nmTyped(p.value)] > 1 || !p.facts.length || p.fix) { p.twin = true; p.value += ' · ' + nmHandle(p.id); } });   /* last resort: a short handle — and a warning */
     });
-    all.forEach(function (p) { var v = nmTyped(p.value); NM.map[v] = v in NM.map && NM.map[v] !== p.id ? null : p.id; });   /* a text that fits two people sends to nobody */
+    all.forEach(function (p) { var v = nmTyped(p.value), c = nmTypedCI(p.value);                                    /* a text that fits two people sends to nobody */
+      NM.map[v] = v in NM.map && NM.map[v] !== p.id ? null : p.id; NM.ci[c] = c in NM.ci && NM.ci[c] !== p.id ? null : p.id; });
     all.sort(function (a, b) { return (b.conn - a.conn) || a.name.localeCompare(b.name) || a.value.localeCompare(b.value); });
     return all.map(function (p) {
-      return { name: p.value, label: (p.twin ? same + ' · ' : '') + [T(p.headline.split('|')[0].trim()), p.company, p.city, p.conn ? mark : ''].filter(Boolean).join(' · ').slice(0, 120) };
+      return { name: p.value, label: (p.fix ? odd + ' · ' : p.twin ? same + ' · ' : '') + [nmFact(T(p.headline.split('|')[0].trim())), p.company, p.city, p.conn ? mark : ''].filter(Boolean).join(' · ').slice(0, 160) };
     });
   }
   function nmPaint() { var dl = document.getElementById('nmList'); if (!dl) return;
     dl.innerHTML = nmOptions().map(function (o) { return '<option value="' + esc2(o.name) + '"' + (o.label ? ' label="' + esc2(o.label) + '"' : '') + '>'; }).join(''); }
   window.dxMxPeople = function () {
     NM.people = {}; if (!ME_UUID) return [];
-    MX.convs.forEach(function (c) { var u = nmUser(c.partner) || {}; nmAdd({ id: c.partner, name: c.name || u.name, headline: c.headline || u.headline || '', company: u.company || '', location: u.location || '' }); });
-    Object.keys(window.CONN_STATE || {}).forEach(function (k) { if (window.CONN_STATE[k] !== 'connected' || !uuidOf(+k)) return; var u = nmUser(uuidOf(+k)); if (u) nmAdd({ id: uuidOf(+k), name: u.name, headline: u.headline || '', company: u.company || '', location: u.location || '' }); });
+    MX.convs.forEach(function (c) { var u = nmUser(c.partner) || {}; nmAdd({ id: c.partner, name: c.name || u.name, headline: c.headline || u.headline || '', company: u.company || '', location: u.location || '', fix: !!(c.name_needs_fix || u.nameFix) }); });
+    Object.keys(window.CONN_STATE || {}).forEach(function (k) { if (window.CONN_STATE[k] !== 'connected' || !uuidOf(+k)) return; var u = nmUser(uuidOf(+k)); if (u) nmAdd({ id: uuidOf(+k), name: u.name, headline: u.headline || '', company: u.company || '', location: u.location || '', fix: !!u.nameFix }); });
     return nmOptions();
   };
+  /* a value inside a PostgREST or=(…) filter: quoted, since a name may hold "," "(" ")" "." */
+  function pgq(v) { return '"' + String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'; }
+  /* members whose name contains what was typed, or LOOKS like it (the skeleton): a look-alike always shows next to the real one */
   async function nmSearch(q) {
-    var r = await sb.from('profiles').select(PCOLS).ilike('name', '%' + nmLike(nmClean(q.split(' · ')[0])) + '%').neq('id', ME_UUID).order('name').limit(12);
+    var w = nmNorm(q.split(' · ')[0]);
+    var r = await sb.from('profiles').select(PCOLS).or('name.ilike.' + pgq('%' + nmLike(w) + '%') + ',name_key.like.' + pgq('%' + nmLike(nmKey(w)) + '%')).neq('id', ME_UUID).order('name').limit(12);
     if (r.error) throw r.error; (r.data || []).forEach(function (p) { putUser(p); nmAdd(p); }); return r.data || [];
   }
   document.addEventListener('input', function (e) {
     if (!ME_UUID || !e.target || e.target.id !== 'nmTo') return;
-    var q = e.target.value.trim(); clearTimeout(NM.t); if (q.length < 2 || q.length > 80 || (NM.map[nmTyped(q)] && q.indexOf(' · ') > 0)) return;   /* a bare name is looked up even when one person with it is known: others may share it */
+    var q = e.target.value.trim(); clearTimeout(NM.t); if (q.length < 2 || q.length > 80 || (nmPick(nmTyped(q), nmTypedCI(q)) && q.indexOf(' · ') > 0)) return;   /* a bare name is looked up even when one person with it is known: others may share it */
     NM.t = setTimeout(function () { nmSearch(q).then(nmPaint, function (err) { console.error(err); }); }, 200);
   }, true);
-  /* who receives: every member with the chosen name is fetched first, so the options are told apart with all of them known;
-     the text sent must then name exactly one of them */
+  /* who receives: every member whose name has the chosen name's SKELETON (the same name, or one that looks the same) is fetched
+     first, so the options are told apart with all of them known; the text sent must then name exactly one of them */
+  function nmPick(key, ci) { return key in NM.map ? NM.map[key] : NM.ci[ci]; }   /* the exact option first; typed case only when no option reads so */
   async function nmResolve(to) {
-    var key = nmTyped(to), was = NM.map[key], p = was && NM.people[was], name = p ? p.raw : nmClean(to.split(' · ')[0]);
+    var key = nmTyped(to), ci = nmTypedCI(to), was = nmPick(key, ci), p = was && NM.people[was], name = p ? p.raw : nmNorm(to.split(' · ')[0]), sk = nmKey(name);
     if (!name || name.length > 200) return { err: 'No member called ' + to + ' — choose someone from the list' };
-    var r = await sb.from('profiles').select(PCOLS).ilike('name', nmLike(name)).neq('id', ME_UUID).limit(50); if (r.error) throw r.error;
-    (r.data || []).forEach(function (x) { putUser(x); nmAdd(x); });
-    nmOptions(); var id = NM.map[key];
+    var r = await sb.from('profiles').select(PCOLS + ',name_key').or('name_key.eq.' + pgq(sk) + ',name.ilike.' + pgq(nmLike(name))).neq('id', ME_UUID).limit(50); if (r.error) throw r.error;
+    var rows = r.data || [], keys = rows.map(function (x) { return x.name_key; }).filter(function (k, i, a) { return k && k !== sk && a.indexOf(k) === i; });
+    if (keys.length) {   /* a name typed in another case: also every member who looks like the ones it found */
+      var r2 = await sb.from('profiles').select(PCOLS).in('name_key', keys.slice(0, 10)).neq('id', ME_UUID).limit(50); if (r2.error) throw r2.error; rows = rows.concat(r2.data || []); }
+    rows.forEach(function (x) { putUser(x); nmAdd(x); });
+    nmOptions(); var id = nmPick(key, ci);
     if (id && (!was || id === was)) return { id: id };
-    var same = Object.keys(NM.people).filter(function (k) { return nmKey(NM.people[k].name) === nmKey(txt(name)); }).length;
+    var same = Object.keys(NM.people).filter(function (k) { return nmKey(NM.people[k].name) === sk || nmTypedCI(NM.people[k].name) === nmTypedCI(name); });
     nmPaint();
-    if (same > 1) return { err: 'Several members are called ' + txt(name) + ' — choose one from the list' };
+    if (same.length > 1) return { err: 'Several members are called ' + txt(name) + ' — choose one from the list' };
+    if (same.length === 1 && NM.people[same[0]].fix) return { err: 'Choose ' + txt(name) + ' from the list to be sure who receives it' };
     return { err: 'No member called ' + to + ' — choose someone from the list' };
   }
   window.dxMxNew = function (to, text, box, close) {
@@ -2943,6 +2976,18 @@
     return oGotoP1b.apply(this, arguments);
   };
   if (window.dxCore) window.dxCore.onRender('live-prof-counts', paintProfCounts);
+  /* my own profile, when my name breaks the name rule (0038 flagged it): ask me to update it — others see a warning next to it */
+  function nameFixNote() {
+    var c = document.getElementById('content'), info = c && c.querySelector('.profile-info'), old = c && c.querySelector('.dx-name-fix');
+    var mine = ME_UUID && window.ME.nameFix && document.body.getAttribute('data-page') === 'profile' && window._profUser && window._profUser.id === window.ME.id;
+    if (!mine) { if (old) old.remove(); return; } if (old || !info) return;
+    var d = document.createElement('div'); d.className = 'dx-name-fix'; d.setAttribute('role', 'status');
+    d.style.cssText = 'margin:10px 0 0;padding:10px 12px;border:1px solid #f59e0b;background:#fffbeb;color:#92400e;border-radius:9px;font-size:13px;line-height:1.5';
+    d.innerHTML = '<span>Please update your name — it has characters Drugbox no longer allows, so other members see a warning next to it.</span> '
+      + '<button type="button" class="btn-ghost" style="margin-top:6px" onclick="showEditProfile()">Update my name</button>';
+    info.appendChild(d);
+  }
+  if (window.dxCore) window.dxCore.onRender('live-name-fix', nameFixNote);
   /* "People also viewed" listed the first members loaded, not people who viewed this profile: the live app records no co-views yet,
      so the box is left out rather than invented (J-SOCIAL-49) */
   function hideAlsoViewed() {
