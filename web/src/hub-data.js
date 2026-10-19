@@ -144,7 +144,7 @@
   /* ── reports of wrong information, review replies and disputes ── */
   function reports(v) { if (v === undefined) return store('reports') || []; store('reports', v); }
   function addReport(slug, section, text, fix) { var l = reports(); l.unshift({ id: 'R' + NOW(), slug: slug, section: section, text: text, fix: fix, by: (window.ME || {}).name || 'User', at: NOW(), status: 'open' }); reports(l); }
-  function reviewsOf(slug) { var rv = (cached('supplier_reviews') || {})[slug] || [], meta = cached('review_meta') || {}; return rv.map(function (r) { return Object.assign({}, r, meta[r.deal] || {}); }); }
+  function reviewsOf(slug) { var rv = (cached('supplier_reviews') || {})[slug] || [], meta = cached('review_meta') || {}; return rv.map(function (r) { return Object.assign({}, r, meta[r.deal] || {}); }).filter(function (r) { return !r.hidden; }); }   /* a review Drugbox removed is not shown */
   function reviewMeta(dealId, patch) { var m = store('review_meta') || {}; m[dealId] = Object.assign({}, m[dealId] || {}, patch); store('review_meta', m); }
 
   /* ── activity log (inside the company) ── */

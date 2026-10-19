@@ -1278,7 +1278,7 @@
     var from = r.from_company_id && fc ? { slug: sslug(fc.slug), name: fc.name } : { slug: null, name: (r.fu && r.fu.name) || 'Member', person: true, userId: aid(r.from_user) };
     var d = { id: r.ref, type: r.type, title: r.title, from: from, to: { slug: sslug(tc.slug), name: tc.name }, lines: r.lines || {}, status: r.status,
       at: tms(r.created_at), updated: tms(r.updated_at),
-      events: (r.deal_events || []).slice().sort(function (a, b) { return a.id - b.id; }).map(function (e) { return { at: tms(e.created_at), by: e.side, kind: e.action, text: e.note || '', data: e.data || {} }; }) };
+      events: (r.deal_events || []).slice().sort(function (a, b) { return a.id - b.id; }).map(function (e) { return { at: tms(e.created_at), by: e.side, kind: e.action, text: (e.data && typeof e.data.text === 'string' && e.data.text) || e.note || '', data: e.data || {} }; }) };   /* the step's own summary (price per round), else its note */
     if (r.offer) d.offer = r.offer; if (r.counter) d.counter = r.counter; if (r.answers) d.answers = r.answers; if (r.ontime !== null && r.ontime !== undefined) d.ontime = r.ontime;
     if (r.group_key) d.group = r.group_key; if (r.assignee) d.assignee = aid(r.assignee);
     return d;
@@ -1409,6 +1409,81 @@
   hydrateMe = async function (uid) { var me = await hydrateC2(uid); loadListings().then(function () { return CO.mineP; }).then(function () { return loadAvl(); }).catch(function (e) { console.error(e); }); return me; };
   onReset(function () { LIST.surplus = []; LIST.dossiers = []; LIST.known = {}; LIST.avl = {}; });
   Object.assign(window.dxLive, { loadListings: loadListings, loadAvl: loadAvl, version: 'C3' });
+
+  /* ===== AREA business: deal documents and supplier reviews (B-12, B-17; 0056) =====
+     Documents inside a deal live in the private documents bucket (deals/<deal id>/…), readable by the two parties only;
+     deal_attach() records each one and adds it to the deal's history. Reviews of completed orders come from the database
+     (company_reviews); a company's reply and its request that Drugbox check a review go through review_reply / review_dispute. */
+  var DFL = { by: {} }, REV = { by: {}, at: {}, ref: {} };
+  var dealFromB = dealFrom;
+  dealFrom = function (r) { var d = dealFromB(r); d._dbid = r.id; return d; };
+  var loadDealsB = loadDeals;
+  loadDeals = async function () {
+    var list = await loadDealsB(), ids = list.map(function (d) { return d._dbid; }).filter(Boolean).slice(0, 300); DFL.by = {};
+    if (ids.length) { var f = await sb.from('deal_files').select('id, deal_id, side, kind, name, path, created_at').in('deal_id', ids).order('created_at').limit(1000);
+      if (!f.error) { var refOf = {}; list.forEach(function (d) { refOf[d._dbid] = d.id; });
+        (f.data || []).forEach(function (x) { var ref = refOf[x.deal_id]; if (ref) (DFL.by[ref] = DFL.by[ref] || []).push({ id: x.id, name: x.name, kind: x.kind, by: x.side, at: tms(x.created_at), path: x.path }); }); } }
+    return list;
+  };
+  window.dxLive.loadDeals = loadDeals;
+  function safeName(n) { var m = /\.([A-Za-z0-9]{1,8})$/.exec(n || ''), b = String(n || 'file').replace(/\.[^.]*$/, '').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'file'; return b + (m ? '.' + m[1].toLowerCase() : ''); }
+  window.dxDealFiles = {
+    list: function (d) { return DFL.by[d.id] || []; },
+    attach: async function (d, file, kind, side) {
+      await DEALS.busy;                                                   /* the deal (or the step that just created it) is in the database first */
+      if (!d._dbid) { await loadDeals(); var x = DEALS.list.find(function (y) { return y.id === d.id; }); if (x) d = x; }
+      if (!d._dbid) throw new Error('This request is still being saved — try again in a moment');
+      var path = await upDoc('documents', 'deals/' + d._dbid + '/' + rid() + '-' + safeName(file.name), file);
+      var r = await sb.rpc('deal_attach', { p_ref: d.id, p_kind: kind, p_path: path, p_name: String(file.name || 'file').slice(0, 160) }); if (r.error) throw new Error(friendly(r.error));
+      await loadDeals(); return true;
+    },
+    open: async function (d, f) { var r = await sb.storage.from('documents').createSignedUrl(f.path, 600); if (r.error || !r.data) { toastErr(r.error || { message: 'Could not open the file' }); return false; }
+      window.open(r.data.signedUrl, '_blank', 'noopener'); return true; }
+  };
+  /* reviews: loaded with the page's track record; the hub's reply / "ask Drugbox" writes go to the database */
+  async function loadReviews(slug) {
+    var raw = CO.raw[slug]; if (!raw || !raw.id) return;
+    var r = await sb.rpc('company_reviews', { p_company: raw.id }); if (r.error) throw r.error;
+    REV.by[slug] = (r.data || []).map(function (x) { REV.ref[x.ref] = slug; return { deal: x.ref, stars: Math.max(1, Math.min(5, +x.stars || 0)), note: txt(x.note), from: txt(x.from), at: tms(x.at), reply: x.reply ? txt(x.reply) : '', disputed: !!x.disputed }; });
+    REV.at[slug] = Date.now(); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
+  }
+  var loadTrackB = loadTrack;
+  loadTrack = async function (slug) { await loadTrackB(slug); await loadReviews(slug).catch(function (e) { console.error(e); }); };
+  var REVMETA = {};
+  async function syncReviewMeta(v) {
+    for (var ref in v) { var now = v[ref] || {}, was = REVMETA[ref] || {}, slug = REV.ref[ref]; if (!slug) continue;
+      var cur = (REV.by[slug] || []).find(function (x) { return x.deal === ref; }) || {};
+      if (now.reply && now.reply !== (was.reply || cur.reply)) { var r = await sb.rpc('review_reply', { p_ref: ref, p_reply: now.reply }); if (r.error) { toastErr(r.error); continue; } }
+      if (now.disputed && !was.disputed && !cur.disputed) { var q = await sb.rpc('review_dispute', { p_ref: ref, p_note: now.note || null }); if (q.error) { toastErr(q.error); continue; } }
+      REVMETA[ref] = Object.assign({}, now); await loadReviews(slug);
+    }
+    rerenderCompanies();
+  }
+  var hookRV = window.dxStoreHook;
+  window.dxStoreHook = function (k, v) {
+    if (ME_UUID && k === 'supplier_reviews') { if (v === undefined) return JSON.parse(JSON.stringify(REV.by)); return true; }   /* a rating is the deal's "rate" step (deal_act), not this list */
+    if (ME_UUID && k === 'review_meta') { if (v === undefined) return JSON.parse(JSON.stringify(REVMETA)); syncReviewMeta(v).catch(toastErr); return true; }
+    return hookRV ? hookRV(k, v) : undefined;
+  };
+  /* Admin → Review → Reviews: the reviews companies asked Drugbox to check */
+  var modLoadRV = window.dxModeration.load, modDecideRV = window.dxModeration.decide;
+  window.dxModeration.load = async function () {
+    var d = await modLoadRV(), r = await sb.rpc('review_disputes'); if (r.error) throw r.error;
+    d.reviews = (r.data || []).map(function (x) { return { id: x.ref, company: x.company, from: x.from, stars: x.stars, note: x.note, dispute: x.dispute || '', at: String(x.at).slice(0, 10) }; });
+    return d;
+  };
+  window.dxModeration.decide = async function (kind, id, value, note) {
+    if (kind !== 'reviews') return modDecideRV(kind, id, value, note);
+    var r = await sb.rpc('review_decide', { p_ref: String(id), p_keep: value === 'kept', p_note: note || null }); if (r.error) throw new Error(friendly(r.error)); return true;
+  };
+  ICON.review_reply = '⭐'; ICON.review_decided = '⭐';
+  var notifFromRV = notifFrom;
+  notifFrom = function (n) { var o = notifFromRV(n), d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return o;
+    if (n.type === 'review_reply') o.text = esc2(String(d.company || 'The supplier') + ' replied to your review of ' + String(d.title || 'your order') + '.');
+    if (n.type === 'review_decided') { o.uid = SYS_UID; o.text = esc2(d.outcome === 'removed' ? 'Drugbox removed a review of ' + String(d.company || 'your company') + ' after checking it.' : 'Drugbox checked a review of ' + String(d.company || 'your company') + ' — it stays up.'); }
+    return o; };
+  onReset(function () { DFL.by = {}; REV = { by: {}, at: {}, ref: {} }; REVMETA = {}; });
+  /* ===== /AREA business: deal documents and reviews ===== */
 
   /* ═══════════════ D1 — marketplace: supply and demand cards from the database, using the approved page's own cards as templates ═══════════════ */
   var MKT = { tplL: null, tplD: null, tplS: null, tplM: null, products: [], demand: [], at: 0 };

@@ -10,6 +10,9 @@
       load: function () {
         var cos = (window.dxDir && window.dxDir.companies()) || [], refs = (D.store.get('jobRefs', []) || []), H = window.dxHubData;
         return Promise.resolve({
+          reviews: (function () { var meta = (window.dxDir && window.dxDir.store('review_meta')) || {}, rv = (window.dxDir && window.dxDir.store('supplier_reviews')) || {}, out = [];
+            Object.keys(rv).forEach(function (slug) { (rv[slug] || []).forEach(function (r) { var m = meta[r.deal] || {}; if (m.disputed && !m.decision && !decided['r' + r.deal]) { var co = window.dxDir.bySlug(slug); out.push({ id: r.deal, company: co ? co.name : slug, from: r.from, stars: r.stars, note: r.note, dispute: '', at: '' }); } }); });
+            return out; })(),
           claims: (window.dxClaims ? window.dxClaims.list() : []).filter(function (c) { return c.status === 'pending'; }).map(function (c) { return { id: c.id, company: c.company, who: c.who, role: c.role, mail: c.mail, at: c.at ? new Date(c.at).toISOString().slice(0, 10) : '', docs: [] }; }),
           verifications: cos.filter(function (c) { return c.status === 'pending' && !decided['v' + c.slug]; }).map(function (c) { return { id: c.slug, company: c.name, registry: c.registry || '—', at: '', docs: [] }; }),
           warnings: refs.filter(function (r) { return r.kind === 'warn' && r.status === 'pending' && !decided['w' + r.cand + r.text]; }).map(function (r) { return { id: r.cand + r.text, company: r.company, candidate: r.cand, category: r.category, text: r.text, docs: [] }; }),
@@ -23,11 +26,12 @@
       decide: function (kind, id, value, note) {
         if (kind === 'posts' && window.dxPostSvc && window.dxPostSvc.decide) return window.dxPostSvc.decide(id, value, note);
         if (kind === 'claims' && window.dxClaims) return window.dxClaims.decide(id, value === 'approved', note);
+        if (kind === 'reviews' && window.dxDir) { var m = window.dxDir.store('review_meta') || {}; m[id] = Object.assign({}, m[id] || {}, { decision: value }); if (value === 'removed') m[id].hidden = true; window.dxDir.store('review_meta', m); }
         decided[kind.charAt(0) + id] = value; return Promise.resolve(true); },
       link: function () { return Promise.resolve(null); }
     };
   }
-  var Q = [['claims', '🏷️', 'Claims'], ['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts']];
+  var Q = [['claims', '🏷️', 'Claims'], ['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['reviews', '⭐', 'Reviews'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts']];
   var cur = 'verifications', data = null;
   function docs(list) { return (list || []).map(function (d) { return '<button type="button" class="dx-mod-doc" data-doc="' + esc(d.path) + '" data-bucket="' + esc(d.bucket) + '">📄 ' + esc(d.label) + '</button>'; }).join(''); }
   function row(kind, x) {
@@ -36,6 +40,8 @@
       acts = '<button class="dx-mod-ok" data-k="verifications" data-id="' + esc(x.id) + '" data-v="approved">Approve</button><button class="dx-mod-no" data-k="verifications" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
     if (kind === 'claims') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>Claimed by ' + esc(x.who || 'a member') + (x.role ? ' · ' + esc(x.role) : '') + (x.mail ? ' · ' + esc(x.mail) : '') + (x.at ? ' · sent ' + esc(x.at) : '') + '</span>' + (x.note ? '<p>' + esc(x.note) + '</p>' : '') + docs(x.docs);
       acts = '<button class="dx-mod-ok" data-k="claims" data-id="' + esc(x.id) + '" data-v="approved">Approve</button><button class="dx-mod-no" data-k="claims" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
+    if (kind === 'reviews') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>' + '★'.repeat(Math.max(1, Math.min(5, +x.stars || 1))) + ' from ' + esc(x.from || 'a buyer') + (x.at ? ' · asked ' + esc(x.at) : '') + '</span><p>' + esc(x.note || '') + '</p>' + (x.dispute ? '<span>Company: ' + esc(x.dispute) + '</span>' : '');
+      acts = '<button class="dx-mod-ok" data-k="reviews" data-id="' + esc(x.id) + '" data-v="kept">Keep review</button><button class="dx-mod-no" data-k="reviews" data-id="' + esc(x.id) + '" data-v="removed">Remove review</button>'; }
     if (kind === 'warnings') { body = '<b data-noi18n>' + esc(x.company) + ' → ' + esc(x.candidate) + '</b><span>' + esc(x.category) + '</span><p>' + esc(x.text) + '</p>' + docs(x.docs);
       acts = '<button class="dx-mod-ok" data-k="warnings" data-id="' + esc(x.id) + '" data-v="published">Publish</button><button class="dx-mod-no" data-k="warnings" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
     if (kind === 'certs') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>' + esc(x.name) + ' · ' + esc(x.site || '') + (x.expiry ? ' · valid to ' + esc(x.expiry) : '') + '</span>' + docs(x.docs);
@@ -83,6 +89,7 @@
     if (v === 'rejected' && (k === 'verifications' || k === 'certs' || k === 'claims')) {   /* the company is told why: the reason is written in the window (Cancel keeps the request) */
       D.modal({ title: k === 'certs' ? 'Reject this certificate?' : k === 'claims' ? 'Reject this claim?' : 'Reject this verification request?', body: '<p>' + (k === 'certs' ? 'It is removed from the page and the company is told why.' : k === 'claims' ? 'The page stays unclaimed and the claimant is told why.' : 'The company is told why and can send new documents.') + '</p><div class="dbk-f"><label for="dxModWhy">Reason for the company (they will see it) *</label><textarea id="dxModWhy" data-req maxlength="300">' + esc(k === 'certs' ? 'The certificate document is not readable' : 'The registry document is not readable') + '</textarea></div>',
         primary: { label: 'Reject', danger: true, onClick: function (bx) { if (!D.requireFields(bx)) return false; note = bx.querySelector('#dxModWhy').value.trim(); go(); } } }); return; }
+    if (k === 'reviews' && v === 'removed') { D.modal({ title: 'Remove this review?', body: '<p>It disappears from the company page and from its rating. Both sides are told.</p>', primary: { label: 'Remove review', danger: true, onClick: function () { go(); } } }); return; }
     var ask = { rejected: ['Reject this reference?', 'It will not be published.', 'Reject'], dismissed: ['Dismiss this report?', k === 'posts' ? 'The post stays up.' : 'The company page stays as it is.', 'Dismiss'], failed: ['Mark this transfer as not received?', 'The order stays unpaid.', 'Not received'] }[v];
     if (k === 'messages' && v === 'dismissed') ask = ['Dismiss this report?', 'Nothing changes for the reported member.', 'Dismiss'];
     if (ask) { D.modal({ title: ask[0], body: '<p>' + esc(ask[1]) + '</p>', primary: { label: ask[2], danger: true, onClick: function () { go(); } } }); return; }   /* destructive decisions are confirmed first */

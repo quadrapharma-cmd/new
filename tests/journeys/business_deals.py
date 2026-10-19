@@ -262,7 +262,7 @@ def license_dossier(j):
         else:
             title = j.sql1("select title from public.deals where to_company_id=%s order by id desc limit 1" % s['co']['id'])
             their_move(j, pg, s, title, 'Sign NDA')
-            their_move(j, pg, s, title, 'Share details', {r'Shared|مشترك|شارك': 'Data room: stability Zone IVa, registration certificate %s' % j.tag})
+            their_move(j, pg, s, title, 'Share details', {r'Shared|مشترك|شارك': 'Data room: stability Zone IVa, registration certificate %s' % j.tag}, attach=PDF)
         t = open_deal(j, pg, title, r'Sent|المرسلة')
         j.check(re.search(r'Details shared|تمت مشاركة', t), "the licensee does not see 'Details shared'")
     with j.step("Licensee: 'Agree terms' — status Agreed for both"):
@@ -346,7 +346,7 @@ def consulting_service(j):
         their_move(j, pg, c, title, 'Send proposal', {r'Fee|الأتعاب': 'EGP 85,000', r'Timeline|المدة': '6 weeks', r'Scope|النطاق': 'Gap analysis, dossier update, EDA follow-up'})
         open_deal(j, pg, title, r'Sent|المرسلة'); deal_act(j, pg, r'^\W*(Accept|Accept quote|قبول|اقبل)\W*$'); close_dialogs(pg)
     with j.step("Consultant: 'Start work' → 'Mark delivered' (attaching the deliverable)"):
-        their_move(j, pg, c, title, 'Start work'); their_move(j, pg, c, title, 'Mark delivered')
+        their_move(j, pg, c, title, 'Start work'); their_move(j, pg, c, title, 'Mark delivered', attach=PDF)   # the deliverable goes with the step
         t = open_deal(j, pg, title, r'Sent|المرسلة'); close_dialogs(pg)
         j.check(re.search(r'Delivered|تم التسليم', t), 'the factory does not see Delivered')
         j.check(re.search(r'\.pdf|Download|تنزيل', t), 'not built: the delivered service carries no deliverable attachment')

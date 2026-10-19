@@ -186,17 +186,20 @@ def open_deal(j, pg, title, tab=None):
             return dlg_text(pg)
     j.fail('the deal "%s" is not in my Requests & deals' % title)
 
-def deal_act(j, pg, label, fields=None, submit=None):
-    """In an open deal thread: click the action button (label = English action name), fill its form by label pattern and
-    submit with the form's own button (the same action name, or 'Send answers'). Returns the thread text afterwards."""
+def deal_act(j, pg, label, fields=None, submit=None, attach=None):
+    """In an open deal thread: click the action button (label = English action name), fill its form by label pattern (and
+    attach the file `attach` to the form's file field) and submit with the form's own button (the same action name, or
+    'Send answers'). Returns the thread text afterwards."""
     pat = L(label) if isinstance(label, str) and not label.startswith('^') else label
     j.check(dlg_open(pg), 'no deal is open')
     el = j.find(pg, pat, scope='body')
     if not el: j.notbuilt('no "%s" action in the deal (actions: %s)' % (label, ', '.join(pg.evaluate("(()=>{const d=%s;return d?[...d.querySelectorAll('button')].filter(b=>b.getClientRects().length).map(b=>b.innerText.trim()).filter(Boolean):[]})()" % TOP_DLG))[:200]))
     before = pg.evaluate("document.querySelectorAll('.dbk-ov').length")
     mark = j.toast_mark(pg); el.click(); pg.wait_for_timeout(700)
-    if fields:
-        for pt, val in fields.items(): fill_by_label(j, pg, pt, val)
+    if attach:
+        f = pg.locator('.dbk-ov input[type=file]'); j.check(f.count(), 'not built: the "%s" form takes no file' % label); f.last.set_input_files(attach)
+    if fields or attach:
+        for pt, val in (fields or {}).items(): fill_by_label(j, pg, pt, val)
         sub = j.find(pg, submit or pat, scope='body') or j.find(pg, L('Send answers', 'Send', 'Save'), scope='body')
         j.check(sub, 'the "%s" form has no submit button' % label)
         sub.click(); pg.wait_for_timeout(900)
@@ -461,13 +464,13 @@ def request_quote(j, pg, sup, product=None, qty='500', unit='kg', to='Cairo, Egy
     return j.toasts_since(pg, mark)
 
 
-def their_move(j, pg, other, title, label, fields=None):
+def their_move(j, pg, other, title, label, fields=None, attach=None):
     """The other party's next step: in live, as that company in its own browser (deals centre → the deal → action);
     in the demo, 'Simulate <them>'s reply (demo)'."""
     if j.demo:
         open_deal(j, pg, title); t = simulate(j, pg); close_dialogs(pg); return t
     op = other['page']; j.reload(op); open_deal(j, op, title, r'Received|الواردة')
-    t = deal_act(j, op, label, fields); close_dialogs(op)
+    t = deal_act(j, op, label, fields, attach=attach); close_dialogs(op)
     j.reload(pg)                                             # the next time this side opens the app
     return t
 
