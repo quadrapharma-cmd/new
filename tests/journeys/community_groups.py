@@ -408,6 +408,45 @@ def like_group_post(j):
             pg.wait_for_timeout(1000)
             j.check(j.sql1("select count(*) from public.reactions where post_id=%d and user_id='%s'" % (pid, b['id'])) == '1', 'not exactly one reactions row')
             j.check(j.sql1("select like_count = (select count(*) from public.reactions where post_id=%d) from public.posts where id=%d" % (pid, pid)) == 't', 'posts.like_count does not equal the rows')
+    with j.step('The six reactions of the panel (as on Home): on a phone a quick tap on Like toggles it and pressing and holding Like opens the panel; with the mouse hovering opens it; each reaction is inside the screen, can be chosen, and replaces the previous one (still one reaction)'):
+        touch = j.width <= 480
+        if touch:   # a phone: a new touch context for B (taps and long presses, no hover)
+            tp = j.new_page(j.new_ctx(touch=True))
+            if j.live: j.signin(tp, b['email'], b['pw'])
+            else: j.demo_signin(tp)
+            groups_page(j, tp); open_card(j, tp, gname)
+        else: tp = pg
+        def lk(): return pact(gpost(j, tp, q), 1)
+        def on(): return 'liked' in (lk().get_attribute('class') or '') or lk().get_attribute('aria-pressed') == 'true'
+        def main(): return lk().locator('[data-gpm=react]:not([data-rk]), [data-lp]').last
+        lk().evaluate("e=>e.scrollIntoView({block:'center'})"); tp.wait_for_timeout(200)
+        if touch:
+            was, c0 = on(), like_count(gpost(j, tp, q))
+            main().tap(); tp.wait_for_timeout(1200)
+            j.check(on() != was and like_count(gpost(j, tp, q)) == c0 + (-1 if was else 1), 'a quick tap on Like did not toggle it')
+            j.check(not lk().locator('.rxn-panel').is_visible(), 'a quick tap on Like also opened the reaction panel')
+            if not on(): main().tap(); tp.wait_for_timeout(1200)
+        elif not on(): main().click(); tp.wait_for_timeout(1200)
+        j.check(on(), 'B\'s like is gone before choosing a reaction')
+        n1 = like_count(gpost(j, tp, q))
+        for k in ('support', 'celebrate', 'insightful', 'appreciation', 'curious', 'like'):   # each replaces the one before (ends on Like)
+            if touch:
+                j.long_press(tp, main())
+                j.check(lk().locator('.rxn-panel').is_visible(), 'pressing and holding Like does not open the reaction panel')
+            else:
+                tp.mouse.move(1, 1); tp.wait_for_timeout(150); lk().hover(); tp.wait_for_timeout(400)
+                j.check(lk().locator('.rxn-panel').is_visible(), 'hovering Like does not open the reaction panel')
+            bad = [x for x in ('like', 'support', 'celebrate', 'insightful', 'appreciation', 'curious') if not lk().locator('[data-rk="%s"]' % x).evaluate(
+                """e=>{const r=e.getBoundingClientRect();const h=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+                   return r.width>0&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight&&!!h&&(h===e||e.contains(h))}""")]
+            j.check(not bad, 'at %dpx the reaction panel leaves %s outside the screen or covered' % (j.width, ', '.join(bad)))
+            it = lk().locator('[data-rk="%s"]' % k); it.tap() if touch else it.click(); tp.wait_for_timeout(1200)
+            j.check(on() and like_count(gpost(j, tp, q)) == n1, 'choosing "%s" left the post %s with %d reactions (want %d)' % (k, 'liked' if on() else 'not liked', like_count(gpost(j, tp, q)), n1))
+            if j.live:
+                got = j.wait_db("select string_agg(kind,',') from public.reactions where post_id=%d and user_id='%s'" % (pid, b['id']), 5, want=k)
+                j.check(got == k, 'after choosing "%s" the database holds kind(s) "%s" (want one row "%s")' % (k, got, k))
+        if not touch: tp.mouse.move(1, 1)
+        if j.live: j.check(j.sql1("select like_count = (select count(*) from public.reactions where post_id=%d) from public.posts where id=%d" % (pid, pid)) == 't', 'posts.like_count does not equal the rows after changing the reaction')
     with j.step('The author gets one "liked your post" notification (not one per toggle)'):
         if j.demo: j.skip('the author exists only in live')
         n = j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s' and post_id=%d" % (a['id'], b['id'], pid))

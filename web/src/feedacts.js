@@ -48,6 +48,7 @@
     if (!post || typeof h !== 'string') return h;
     var k = kindOf(post);
     h = h.replace('" id="like-' + post.id + '" role="button">', '" id="like-' + post.id + '" role="button" tabindex="0" aria-pressed="' + (k ? 'true' : 'false') + '">');
+    h = h.split('" data-rk="').join('" role="button" tabindex="0" data-rk="');   /* the six reactions: reachable with Tab from Like (the panel opens on focus) */
     if (k && k !== 'like') h = h.replace('onclick="doReact(parseInt(this.dataset.lp),\'like\')" style="display:flex;align-items:center;gap:5px">👍 Like</span>',
                                          'onclick="doReact(parseInt(this.dataset.lp),\'like\')" style="display:flex;align-items:center;gap:5px">' + ICON[k] + ' ' + LABEL[k] + '</span>');
     h = h.replace('<button class="pact" onclick="toast(\'Saved!\')">🔖 Save</button>', post.saved
@@ -94,6 +95,75 @@
     if (e.key !== 'Enter' && e.key !== ' ') return;
     var t = e.target; if (!t || !t.matches || !t.matches('.post .pact[id^="like-"]') || t.closest('#gpBox')) return;
     e.preventDefault(); var lp = t.querySelector('[data-lp]'); if (lp) lp.click();
+  });
+
+  /* ── the reaction panel on every screen (Home, Saved, a profile's Activity, a group's posts — all the same card):
+     a mouse opens it by hovering Like (as approved); a touch screen by pressing and holding Like (a quick tap still likes);
+     the keyboard by Tab onto Like and on into the six reactions (Enter / Space choose, Escape closes).
+     It always opens inside the screen: in right-to-left it grows from Like's right edge, and it is nudged in from an edge. ── */
+  function likeOf(t) { var l = t && t.closest ? t.closest('.pact[id^="like-"]') : null; return l && l.querySelector('.rxn-panel') ? l : null; }
+  function fit(l) { fitEl(l && l.querySelector('.rxn-panel')); }
+  function fitEl(p) {
+    if (!p) return;
+    p.style.transform = '';
+    var r = p.getBoundingClientRect(); if (!r.width) return;
+    var vw = document.documentElement.clientWidth || window.innerWidth, m = 8, dx = 0;
+    if (r.right > vw - m) dx = vw - m - r.right;
+    if (r.left + dx < m) dx = m - r.left;
+    if (dx) p.style.transform = 'translateX(' + Math.round(dx) + 'px)';
+  }
+  function fitSoon(l) { if (l) (window.requestAnimationFrame || setTimeout)(function () { fit(l); }); }
+  function closeAll(except) { document.querySelectorAll('.pact.dx-rxn-open').forEach(function (o) { if (o !== except) o.classList.remove('dx-rxn-open'); }); }
+  var press = null, held = null, quiet = false;
+  function menuOf(b) { return b && b.parentElement ? b.parentElement.querySelector('[id^="pm-"]') : null; }
+  document.addEventListener('pointerover', function (e) {
+    if (e.pointerType !== 'mouse') return; fitSoon(likeOf(e.target));
+    var b = e.target.closest && e.target.closest('.post [data-mpid]'), m = menuOf(b); if (m) (window.requestAnimationFrame || setTimeout)(function () { fitEl(m); });
+  }, true);
+  /* the post ⋯ menu (Save / Copy link / Report …): hovering opens it (approved); a click or a tap on ⋯ opens it too — before, a tap
+     on a phone found nothing new on the page and was taken for a click on the author (it opened their profile) — and a tap
+     anywhere else closes it */
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('.post [data-mpid]') : null, m = menuOf(b); if (!m) return;
+    e.stopPropagation(); m.style.display = 'block'; m.setAttribute('data-dx-open', ''); fitEl(m);   /* stays open until a choice or a tap elsewhere */
+  }, true);
+  function shut(m) { m.removeAttribute('data-dx-open'); m.style.display = 'none'; }
+  document.addEventListener('pointerdown', function (e) {
+    document.querySelectorAll('.post [id^="pm-"][data-dx-open]').forEach(function (m) { if (!m.parentElement.contains(e.target)) shut(m); });
+  }, true);
+  document.addEventListener('click', function (e) { var it = e.target && e.target.closest ? e.target.closest('.post [id^="pm-"][data-dx-open] .ctx-item') : null; if (it) shut(it.closest('[id^="pm-"]')); }, true);
+  document.addEventListener('focusin', function (e) {   /* keyboard focus on Like or a reaction keeps the panel open */
+    var l = likeOf(e.target); if (!l || quiet) return;
+    var kb = false; try { kb = e.target.matches(':focus-visible'); } catch (x) {}
+    if (kb || l.classList.contains('dx-rxn-open')) { closeAll(l); l.classList.add('dx-rxn-open'); fit(l); }
+  }, true);
+  document.addEventListener('focusout', function (e) { var l = likeOf(e.target); if (l && !(e.relatedTarget && l.contains(e.relatedTarget))) l.classList.remove('dx-rxn-open'); }, true);
+  document.addEventListener('pointerdown', function (e) {
+    var l = likeOf(e.target); held = null; closeAll(l);
+    if (press) { clearTimeout(press.t); press = null; }
+    if (!l || e.pointerType === 'mouse' || e.target.closest('.rxn-panel')) return;
+    press = { l: l, x: e.clientX, y: e.clientY, t: setTimeout(function () { press = null; held = l; l.classList.add('dx-rxn-open'); fit(l); }, 450) };
+  }, true);
+  document.addEventListener('pointermove', function (e) { if (press && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) > 12) { clearTimeout(press.t); press = null; } }, true);
+  ['pointerup', 'pointercancel'].forEach(function (n) { document.addEventListener(n, function () { if (press) { clearTimeout(press.t); press = null; } }, true); });
+  /* the long press opened the panel: the click that ends it is not a Like */
+  window.addEventListener('click', function (e) {
+    if (!held) return; var l = likeOf(e.target);
+    if (l === held && !e.target.closest('.rxn-panel')) { e.preventDefault(); e.stopPropagation(); }
+    held = null;
+  }, true);
+  document.addEventListener('contextmenu', function (e) { if (likeOf(e.target) && (held || press || e.pointerType === 'touch' || (window.matchMedia && matchMedia('(hover:none)').matches))) e.preventDefault(); }, true);
+  /* a reaction chosen: the panel closes (Home repaints the card; a group card may not) */
+  document.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('.rxn-panel [data-rk]')) setTimeout(function () { closeAll(null); }, 0); });
+  document.addEventListener('keydown', function (e) {
+    var t = e.target;
+    if (e.key === 'Escape') {   /* closes the panel; the keyboard goes back to Like */
+      var open = document.querySelector('.pact.dx-rxn-open'); if (!open) return;
+      if (open.contains(t) && t !== open) { quiet = true; try { open.focus(); } finally { quiet = false; } }
+      closeAll(null); return;
+    }
+    if ((e.key !== 'Enter' && e.key !== ' ') || !t || !t.matches || !t.matches('.rxn-panel [data-rk]') || t.closest('#gpBox')) return;
+    e.preventDefault(); t.click();
   });
 
   /* who reacted: a window with the kinds and the people (not a toast) */
