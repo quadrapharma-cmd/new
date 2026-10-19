@@ -15,3 +15,14 @@
 @media (prefers-reduced-motion:reduce){.post.dx-post-hit{animation:none;box-shadow:0 0 0 2px rgba(26,86,219,.35)}}
 /* the page subtitle rule (.content h1+div: mono, 13px, muted) is for a line of text under a title, not for the saved posts that follow it */
 .content .saved-list h1+div.dx-saved-posts{font-family:inherit!important;font-size:inherit!important;color:inherit!important;margin-top:0}
+/* the reaction panel (approved look): inside the screen in right-to-left (it grows from Like's right edge);
+   on a touch screen it opens by pressing and holding Like, not on every tap; Tab onto Like opens it for the keyboard (.dx-rxn-open) */
+html[dir=rtl] .pact .rxn-panel{left:auto;right:0}
+/* the post ⋯ menu in right-to-left: ⋯ sits at the left edge, so the menu opens towards the card, not off the screen */
+html[dir=rtl] .post [id^="pm-"]{right:auto!important;left:0!important}
+.post [id^="pm-"][data-dx-open]{display:block!important}
+.pact[id^="like-"].dx-rxn-open .rxn-panel{display:flex}
+@media (hover:none){
+  .pact[id^="like-"]:not(.dx-rxn-open):hover .rxn-panel{display:none}
+  .pact[id^="like-"]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+}
