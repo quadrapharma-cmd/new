@@ -201,21 +201,21 @@ returns json language sql stable set search_path = public as $$
   from public.company_sites s join public.companies c on c.id = s.company_id where c.slug = p_slug and c.status <> 'suspended'
 $$;
 
--- the page's logo and cover are company-media objects of that company (a path, never an outside URL)
+-- the page's logo and cover (logo_url, cover_url) are company-media objects of that company (a path, never an outside URL)
 create or replace function public.companies_media_guard() returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if auth.uid() is null or public.is_platform_admin() then return new; end if;
   if (tg_op = 'INSERT' or new.logo_url is distinct from old.logo_url) and not public.company_media_ok(new.id, new.logo_url) then
     raise exception 'The logo must be uploaded to this company''s page' using errcode = '42501';
   end if;
-  if (tg_op = 'INSERT' or (new.profile ->> 'cover') is distinct from (old.profile ->> 'cover')) and not public.company_media_ok(new.id, new.profile ->> 'cover') then
+  if (tg_op = 'INSERT' or new.cover_url is distinct from old.cover_url) and not public.company_media_ok(new.id, new.cover_url) then
     raise exception 'The cover photo must be uploaded to this company''s page' using errcode = '42501';
   end if;
   return new;
 end $$;
 revoke all on function public.companies_media_guard() from public, anon, authenticated, service_role;
 drop trigger if exists trg_companies_media_guard on public.companies;
-create trigger trg_companies_media_guard before insert or update of logo_url, profile on public.companies for each row execute function public.companies_media_guard();
+create trigger trg_companies_media_guard before insert or update of logo_url, cover_url on public.companies for each row execute function public.companies_media_guard();
 
 -- ── 4. free production months are 'YYYY-MM' ────
 update public.company_sites set free_slots = '[]'::jsonb

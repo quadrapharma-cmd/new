@@ -2502,7 +2502,8 @@
   coFrom = function (c) {
     var o = coFromC1(c), pr = c.profile || {}, cc = coCertsOf(c.slug);
     o.products = (c.products || []).map(prodFrom);
-    o.logo = mediaUrl(c.logo_url) || null; o.cover = mediaUrl(pr.cover) || null;
+    if (c.mine && !o.owner && CO.roles[c.id]) o.memberIds = [window.ME.id];   /* a member of the team (sales, quality…): the company is theirs to act for, not to edit */
+    o.logo = mediaUrl(c.logo_url) || null; o.cover = mediaUrl(c.cover_url) || null;
     if (cc.length) { o.certs = cc.filter(function (x) { return x.checked; }).map(function (x) { return txt(x.name); });
       o.certsPending = cc.filter(function (x) { return !x.checked; }).map(function (x) { return { name: txt(x.name), _id: x.id, at: 0 }; }); }
     return o;
@@ -2583,7 +2584,7 @@
     var byId = {}; (cur.data || []).forEach(function (s) { byId[s.id] = s; });
     var keepS = {}, keepC = {};
     for (var i = 0; i < list.length; i++) {
-      var s = list[i], m = /^s(\d+)$/.exec(String(s.id)), sid = m ? +m[1] : CPG.tmp[s.id] || null, cap = s.cap && s.cap.forms && s.cap.forms.length ? s.cap : null;
+      var s = list[i], sid = s._id || CPG.tmp[s.id] || null, cap = s.cap && s.cap.forms && s.cap.forms.length ? s.cap : null;
       var row = { name: String(s.name || '').slice(0, 120), type: TYPEK[s.type] || 'factory', city: s.city || null, governorate: s.gov || null, dosage_forms: cap ? cap.forms : [],
         min_batch: cap ? cap.minBatch || null : null, capacity: cap ? cap.capacity || null : null, free_slots: cap ? (cap.slots || []).map(monthOf) : [] };
       if (sid && byId[sid]) { var o = byId[sid], diff = {};
@@ -2652,18 +2653,16 @@
   var persistEditsC1 = persistEdits;
   persistEdits = async function (edits) {
     for (var slug0 in edits) { (function (slug, e) {
+      if (e.sites) { window.dxLiveSites = window.dxLiveSites || {}; window.dxLiveSites[slug] = JSON.parse(JSON.stringify(e.sites)); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; }   /* shown at once; the database's version follows */
       serial(slug, async function () {
         var raw = CO.raw[slug]; if (raw && raw.pending) { try { await raw.pending; } catch (x) {} if (CO.alias[slug] && !mineAt(slug)) slug = CO.alias[slug]; raw = CO.raw[slug]; }
         if (!raw || !raw.id) return;
         var l = live(slug), before = l ? (l.products || []).slice() : [], one = {}, base = {};
         Object.keys(e).forEach(function (k) { if (['products', 'logo', 'cover', 'certsPending', 'sites', 'team', 'certs'].indexOf(k) < 0) base[k] = e[k]; });
-        if (e.sites) { window.dxLiveSites[slug] = JSON.parse(JSON.stringify(e.sites)); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; }   /* shown at once; the database's version follows */
         one[slug] = base; await persistEditsC1(one);
-        var media = {}, prof = null;
+        var media = {};
         if ('logo' in e && e.logo && /^data:image\//.test(e.logo)) media.logo_url = await upMedia(raw.id, 'logo', e.logo); else if ('logo' in e && !e.logo && raw.logo_url) media.logo_url = null;
-        if ('cover' in e && e.cover && /^data:image\//.test(e.cover)) { prof = Object.assign({}, raw.profile || {}); prof.cover = await upMedia(raw.id, 'cover', e.cover); }
-        else if ('cover' in e && !e.cover && (raw.profile || {}).cover) { prof = Object.assign({}, raw.profile || {}); delete prof.cover; }
-        if (prof) media.profile = prof;
+        if ('cover' in e && e.cover && /^data:image\//.test(e.cover)) media.cover_url = await upMedia(raw.id, 'cover', e.cover); else if ('cover' in e && !e.cover && raw.cover_url) media.cover_url = null;
         if (Object.keys(media).length) { var r = await sb.from('companies').update(media).eq('id', raw.id).select(); if (r.error) throw r.error; if (r.data && r.data[0]) Object.assign(raw, r.data[0]); if (l) { var f = coFrom(raw); l.logo = f.logo; l.cover = f.cover; } }
         if ('products' in e) await saveProducts(slug, raw, e.products, before);
         if (e.certsPending && e.certsPending.length) await saveCoCerts(slug, raw, e.certsPending);

@@ -1,0 +1,1203 @@
+{
+ "configs": [
+  "demo-en-1440",
+  "live-en-1440"
+ ],
+ "journeys": [
+  {
+   "id": "J-BUSINESS-01",
+   "title": "A buyer finds the right Egyptian pharma supplier by searching and filtering the whole industry, then opens its page.",
+   "file": "business_directory.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Search in English, Arabic, by the Arabic company name and misspelt: each finds the right company, only matching ones",
+     "reason": "the misspelt search \"medsinya\" does not find Medsinia Industries (found: [])"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Search in English, Arabic, by the Arabic company name and misspelt: each finds the right company, only matching ones",
+     "reason": "the Arabic company-name search \"جيزة للأقراص\" finds [] — the database search returns 1 match(es) but the page shows none"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 2,
+   "live_reason": "the Arabic company-name search \"جيزة للأقراص\" finds [] — the database search returns 1 match(es) but the page shows none",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 2,
+   "demo_reason": "the misspelt search \"medsinya\" does not find Medsinia Industries (found: [])"
+  },
+  {
+   "id": "J-BUSINESS-02",
+   "title": "A brand owner finds a CMO that can make his dosage form and has free capacity in the month he needs.",
+   "file": "business_directory.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Choose sector 'CMO / Toll' and dosage form 'Tablets': only capable companies, each with a capacity line 'free from <month>'",
+     "reason": "Toll Masters acb5b221 (CMO with a tablet line) is not listed under CMO / Toll + Tablets"
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "Toll Masters acb5b221 (CMO with a tablet line) is not listed under CMO / Toll + Tablets"
+  },
+  {
+   "id": "J-BUSINESS-03",
+   "title": "A buyer sends one request for quotation to several suppliers at once and compares the answers side by side.",
+   "file": "business_deals.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    }
+   },
+   "demo": "PASS",
+   "live": "PASS"
+  },
+  {
+   "id": "J-BUSINESS-04",
+   "title": "Before buying, a QA specialist checks from its public page whether a supplier is real, licensed and reliable.",
+   "file": "business_directory.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 3,
+     "fail_text": "A certificate is verified only when Drugbox checked it; pending is unverified; expired is not shown as valid",
+     "reason": "the unchecked ISO 9001 certificate is shown like a checked one (no \"not yet checked\")"
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 3,
+   "live_reason": "the unchecked ISO 9001 certificate is shown like a checked one (no \"not yet checked\")"
+  },
+  {
+   "id": "J-BUSINESS-05",
+   "title": "A buyer follows a supplier so that its news, new listings and offers reach him without searching again.",
+   "file": "business_directory.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "After reload the button still says Following and the page shows the follower count",
+     "reason": "not built: the company page shows no follower count"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 3,
+     "fail_text": "After reload the button still says Following and the page shows the follower count",
+     "reason": "not built: the company page shows no follower count"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 3,
+   "live_reason": "not built: the company page shows no follower count",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 2,
+   "demo_reason": "not built: the company page shows no follower count"
+  },
+  {
+   "id": "J-BUSINESS-06",
+   "title": "A buyer talks to the right person at a company directly from its page.",
+   "file": "business_directory.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    }
+   },
+   "demo": "PASS",
+   "live": "PASS"
+  },
+  {
+   "id": "J-BUSINESS-07",
+   "title": "A QA specialist qualifies a new supplier with a standard questionnaire and adds it to the approved supplier list.",
+   "file": "business_deals.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 3,
+     "fail_text": "QA: opens the answered questionnaire → 'Approve supplier'",
+     "reason": "the deal \"Supplier qualification questionnaire\" is not in my Requests & deals"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Supplier: opens it from Received, completes the missing answers, attaches a document, 'Answer questionnaire'",
+     "reason": "not built: the questionnaire answer has no document upload"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 2,
+   "live_reason": "not built: the questionnaire answer has no document upload",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 3,
+   "demo_reason": "the deal \"Supplier qualification questionnaire\" is not in my Requests & deals"
+  },
+  {
+   "id": "J-BUSINESS-08",
+   "title": "A company licenses-in a ready registration dossier: requests details, signs the NDA, receives the data, agrees terms.",
+   "file": "business_deals.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 4,
+     "fail_text": "Shared details are visible only to the two parties; a file can be shared in the data room",
+     "reason": "not built: no file can be shared in the dossier deal (only a text note)"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 4,
+     "fail_text": "Shared details are visible only to the two parties; a file can be shared in the data room",
+     "reason": "not built: no file can be shared in the dossier deal (only a text note)"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 4,
+   "live_reason": "not built: no file can be shared in the dossier deal (only a text note)",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 4,
+   "demo_reason": "not built: no file can be shared in the dossier deal (only a text note)"
+  },
+  {
+   "id": "J-BUSINESS-09",
+   "title": "Users keep the directory correct by reporting wrong company information, and the company fixes it.",
+   "file": "business_directory.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 3,
+     "fail_text": "The reporter is notified that it was fixed",
+     "reason": "not built: the reporter gets no notification when the report is fixed"
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 3,
+   "live_reason": "not built: the reporter gets no notification when the report is fixed"
+  },
+  {
+   "id": "J-BUSINESS-10",
+   "title": "A company owner shares his company page (link, QR, card, PDF profile) so outside customers can open it.",
+   "file": "business_directory.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 4,
+     "fail_text": "The shared link opens this company page directly for a signed-out visitor",
+     "reason": "not built: the shared link https://quadra-pharm.drugbox.app cannot open the page — the app has no deep link to a company page (no /c/<slug> or ?co= route)"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 4,
+     "fail_text": "The shared link opens this company page directly for a signed-out visitor",
+     "reason": "not built: the shared link https://drugbox.app/c/shared-pharma-cc8e1996 is not an address of this app (localhost:54321) and the app has no deep link to a company page"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 4,
+   "live_reason": "not built: the shared link https://drugbox.app/c/shared-pharma-cc8e1996 is not an address of this app (localhost:54321) and the app has no deep link to a company page",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 4,
+   "demo_reason": "not built: the shared link https://quadra-pharm.drugbox.app cannot open the page — the app has no deep link to a company page (no /c/<slug> or ?co= route)"
+  },
+  {
+   "id": "J-BUSINESS-11",
+   "title": "A job seeker applies to a company's open position from its page and follows the application.",
+   "file": "business_deals.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Company page → Jobs tab → 'Apply' on a position; attach CV; send",
+     "reason": "not built: 'Apply' on the company page only opens the Jobs page — no application from the company page"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Company page → Jobs tab → 'Apply' on a position; attach CV; send",
+     "reason": "the open position \"QC Analyst 41a120a1\" is not on the Jobs tab"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "the open position \"QC Analyst 41a120a1\" is not on the Jobs tab",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "not built: 'Apply' on the company page only opens the Jobs page — no application from the company page"
+  },
+  {
+   "id": "J-BUSINESS-12",
+   "title": "A company owner puts his company on Drugbox (free Basic page) so buyers can find it.",
+   "file": "business_company.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 6,
+     "fail_text": "The wizard takes the Arabic name, tagline and logo (with a preview)",
+     "reason": "not built: the create wizard has no logo upload (fields: Company legal name *, Main activity *, Governorate *, City / area *, Company phone *, Company email *)"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "'Add or claim your company' searches first: existing matches appear as you type (English and Arabic) with 'Claim'",
+     "reason": "the Arabic name does not find the existing company"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "the Arabic name does not find the existing company",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 6,
+   "demo_reason": "not built: the create wizard has no logo upload (fields: Company legal name *, Main activity *, Governorate *, City / area *, Company phone *, Company email *)"
+  },
+  {
+   "id": "J-BUSINESS-13",
+   "title": "A company that wants visibility creates its page directly on the VIP plan and pays for it.",
+   "file": "business_company.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Create → choose VIP, Monthly → details → the last step shows the server price (EGP 2,500 + 14% VAT) and a real pay button",
+     "reason": "the live wizard says 'Demo — no payment is taken' — the VIP page is created without paying"
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "the live wizard says 'Demo — no payment is taken' — the VIP page is created without paying"
+  },
+  {
+   "id": "J-BUSINESS-14",
+   "title": "A real company takes control of its pre-listed page instead of creating a duplicate.",
+   "file": "business_company.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Provide proof (work email on the company domain and the commercial registry document) and send",
+     "reason": "not built: the claim asks for no commercial registry document — a code to an e-mail address is the only proof"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Provide proof (work email on the company domain and the commercial registry document) and send",
+     "reason": "not built: the claim asks for no commercial registry document — a code to an e-mail address is the only proof"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 2,
+   "live_reason": "not built: the claim asks for no commercial registry document — a code to an e-mail address is the only proof",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 2,
+   "demo_reason": "not built: the claim asks for no commercial registry document — a code to an e-mail address is the only proof"
+  },
+  {
+   "id": "J-BUSINESS-15",
+   "title": "An employee joins his company's existing page so he can answer its requests.",
+   "file": "business_company.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "On the company page 'Ask to join the team'; choose role Sales; send",
+     "reason": "not built: 'Ask to join the team' asks no role — it only shows the toast \"Request sent to the admin of Nile Pharma Packaging\""
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "On the company page 'Ask to join the team'; choose role Sales; send",
+     "reason": "not built: 'Ask to join the team' asks no role — it only shows the toast \"Request sent to the admin of Joinable Pharma c0d98155\""
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "not built: 'Ask to join the team' asks no role — it only shows the toast \"Request sent to the admin of Joinable Pharma c0d98155\"",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "not built: 'Ask to join the team' asks no role — it only shows the toast \"Request sent to the admin of Nile Pharma Packaging\""
+  },
+  {
+   "id": "J-BUSINESS-16",
+   "title": "A company keeps its public page complete and current so buyers trust it.",
+   "file": "business_company.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Page → 'Edit page': new tagline and about, logo, cover, colour, a product with photo → 'Save and publish'",
+     "reason": "the edit is not saved online: \"Products, logo, cover and certificate files are not saved online yet — they come with the \""
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 2,
+   "live_reason": "the edit is not saved online: \"Products, logo, cover and certificate files are not saved online yet — they come with the \""
+  },
+  {
+   "id": "J-BUSINESS-17",
+   "title": "An owner builds his team on Drugbox — invites colleagues with roles and decides who receives which requests.",
+   "file": "business_company.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Colleague 1 opens the invitation (notification) and accepts",
+     "reason": "not built: the invited colleague has no way to accept: no invitation reaches them (no notification, no e-mail, no accept path)"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Team → 'Invite a colleague' (Sales) and a second one (Quality); until accepted Team shows 'Invited'",
+     "reason": "the Team does not list the invitation as 'Invited'"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "the Team does not list the invitation as 'Invited'",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 2,
+   "demo_reason": "not built: the invited colleague has no way to accept: no invitation reaches them (no notification, no e-mail, no accept path)"
+  },
+  {
+   "id": "J-BUSINESS-18",
+   "title": "A manufacturer shows where it produces and what it can make (sites, capabilities, free capacity).",
+   "file": "business_workspace.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Workspace → Sites → 'Add a site' (name, type Factory, governorate, city)",
+     "reason": "the site is not saved: \"Site and certificate changes are sent for review in the next update\""
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "the site is not saved: \"Site and certificate changes are sent for review in the next update\""
+  },
+  {
+   "id": "J-BUSINESS-19",
+   "title": "A manufacturer proves its GMP status with certificates that Drugbox has checked.",
+   "file": "business_workspace.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Before Drugbox checks it, visitors see it as 'not yet checked' (no verified tick)",
+     "reason": "the unchecked GDP certificate is shown like a checked one (no \"not yet checked\")"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Workspace → Sites → 'Certificate' on a site: GDP, valid until, the certificate PDF; Add",
+     "reason": "the certificate is not saved: \"Site and certificate changes are sent for review in the next update\""
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "the certificate is not saved: \"Site and certificate changes are sent for review in the next update\"",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 2,
+   "demo_reason": "the unchecked GDP certificate is shown like a checked one (no \"not yet checked\")"
+  },
+  {
+   "id": "J-BUSINESS-20",
+   "title": "A company keeps its controlled documents (licences, GMP certificates, SMF) in one private place its team can use.",
+   "file": "business_workspace.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Workspace → Plan & verification → 'Add document': upload a PDF with title and type",
+     "reason": "not built: \"Add document\" stores no file — only a type and a number (no PDF upload)"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Workspace → Plan & verification → 'Add document': upload a PDF with title and type",
+     "reason": "not built: \"Add document\" stores no file — only a type and a number (no PDF upload)"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "not built: \"Add document\" stores no file — only a type and a number (no PDF upload)",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "not built: \"Add document\" stores no file — only a type and a number (no PDF upload)"
+  },
+  {
+   "id": "J-BUSINESS-21",
+   "title": "A company gets the Verified seal by sending its legal documents to Drugbox.",
+   "file": "business_workspace.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Workspace → Plan & verification → 'Get verified': registry number, registry document, tax card, licence → send",
+     "reason": "a new, unverified company (status 'pending', no documents sent) is told 'Documents received — being checked' and has no 'Get verified'"
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "a new, unverified company (status 'pending', no documents sent) is told 'Documents received — being checked' and has no 'Get verified'"
+  },
+  {
+   "id": "J-BUSINESS-22",
+   "title": "A company lists its products so buyers can request quotes for a specific product.",
+   "file": "business_workspace.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Edit page → Products: add 'Paracetamol 500 mg' (with photo) and a second product; remove one",
+     "reason": "the products are not saved online: \"Products, logo, cover and certificate files are not saved online yet — they come with the \""
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "the products are not saved online: \"Products, logo, cover and certificate files are not saved online yet — they come with the \""
+  },
+  {
+   "id": "J-BUSINESS-23",
+   "title": "A company manages all its incoming and outgoing business in one inbox shared by its team.",
+   "file": "business_workspace.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Acting on a received request drops the count; a second team member sees the same state and who acted",
+     "reason": "'waiting for you' did not drop after acting"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Acting on a received request drops the count; a second team member sees the same state and who acted",
+     "reason": "'waiting for you' did not drop after acting"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 2,
+   "live_reason": "'waiting for you' did not drop after acting",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 2,
+   "demo_reason": "'waiting for you' did not drop after acting"
+  },
+  {
+   "id": "J-BUSINESS-24",
+   "title": "A company answers reviews of its completed orders publicly and can ask Drugbox to check an unfair review.",
+   "file": "business_workspace.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Workspace → 'Reports & reviews' lists the reviews of completed orders; 'Reply' → publish",
+     "reason": "the company has completed, rated orders but Reports & reviews says \"No reviews yet\""
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "the company has completed, rated orders but Reports & reviews says \"No reviews yet\""
+  },
+  {
+   "id": "J-BUSINESS-25",
+   "title": "A person who belongs to more than one company chooses which company he is acting for.",
+   "file": "business_company.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    }
+   },
+   "demo": "PASS",
+   "live": "PASS"
+  },
+  {
+   "id": "J-BUSINESS-26",
+   "title": "Buyer and supplier take a purchase from request for quotation to delivered, closed and rated order inside Drugbox.",
+   "file": "business_deals.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 6,
+     "fail_text": "The thread shows the full history (who, what, when, price per round)",
+     "reason": "the counter-offer price is missing from the history"
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 6,
+   "live_reason": "the counter-offer price is missing from the history"
+  },
+  {
+   "id": "J-BUSINESS-27",
+   "title": "Either side can end a negotiation cleanly (decline with a reason or withdraw) and both know why.",
+   "file": "business_deals.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    }
+   },
+   "demo": "PASS",
+   "live": "PASS"
+  },
+  {
+   "id": "J-BUSINESS-28",
+   "title": "A factory hires a regulatory consultant for a service and the work is proposed, accepted, delivered and rated.",
+   "file": "business_deals.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Factory: consultant page → request the service (scope), not a goods quotation",
+     "reason": "not built: the consultant's page has no service request — 'Request a quote' opens a goods quotation (Quantity, Deliver to)"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Factory: consultant page → request the service (scope), not a goods quotation",
+     "reason": "not built: the consultant's page has no service request — 'Request a quote' opens a goods quotation (Quantity, Deliver to)"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "not built: the consultant's page has no service request — 'Request a quote' opens a goods quotation (Quantity, Deliver to)",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "not built: the consultant's page has no service request — 'Request a quote' opens a goods quotation (Quantity, Deliver to)"
+  },
+  {
+   "id": "J-BUSINESS-29",
+   "title": "Parties exchange the documents a pharma deal needs (CoA, specification, PO, invoice) inside the deal.",
+   "file": "business_deals.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Buyer attaches a PO (PDF) in the deal thread",
+     "reason": "not built: the deal thread has no way to attach a document (PO, CoA, invoice)"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Buyer attaches a PO (PDF) in the deal thread",
+     "reason": "not built: the deal thread has no way to attach a document (PO, CoA, invoice)"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 2,
+   "live_reason": "not built: the deal thread has no way to attach a document (PO, CoA, invoice)",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 2,
+   "demo_reason": "not built: the deal thread has no way to attach a document (PO, CoA, invoice)"
+  },
+  {
+   "id": "J-BUSINESS-30",
+   "title": "Deal data stays private to the two companies in it.",
+   "file": "business_deals.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "N/A",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": "journey applies to the live app only"
+    },
+    "live-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    }
+   },
+   "demo": "N/A",
+   "live": "PASS"
+  },
+  {
+   "id": "J-BUSINESS-31",
+   "title": "Small factories combine orders to reach a supplier's minimum order and a better price — starting a group.",
+   "file": "business_groupbuy.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    }
+   },
+   "demo": "PASS",
+   "live": "PASS"
+  },
+  {
+   "id": "J-BUSINESS-32",
+   "title": "A factory joins an existing buying group with its own quantity.",
+   "file": "business_groupbuy.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Change the quantity; then leave the group before the target",
+     "reason": "not built: a member can only add more — there is no way to change the quantity or leave the group"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Change the quantity; then leave the group before the target",
+     "reason": "not built: a member can only add more — there is no way to change the quantity or leave the group"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 2,
+   "live_reason": "not built: a member can only add more — there is no way to change the quantity or leave the group",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 2,
+   "demo_reason": "not built: a member can only add more — there is no way to change the quantity or leave the group"
+  },
+  {
+   "id": "J-BUSINESS-33",
+   "title": "When the target is reached the supplier confirms the group price and every member gets its own order to fulfil.",
+   "file": "business_groupbuy.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 4,
+     "fail_text": "A group that passes its closing date below target notifies the members and creates no orders",
+     "reason": "a group past its closing date below target is still open to join"
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 4,
+   "live_reason": "a group past its closing date below target is still open to join"
+  },
+  {
+   "id": "J-BUSINESS-34",
+   "title": "A buyer finds products, services and offers in the marketplace with filters that reflect real listings.",
+   "file": "business_market.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Category chips (Supply, Demand, Equipment …): each shows only that category's cards",
+     "reason": "the 'Supply' chip shows other categories: ['demand', 'supply']"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Category chips (Supply, Demand, Equipment …): each shows only that category's cards",
+     "reason": "the 'Demand' chip shows no listings at all (1 demand listings exist)"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "the 'Demand' chip shows no listings at all (1 demand listings exist)",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "the 'Supply' chip shows other categories: ['demand', 'supply']"
+  },
+  {
+   "id": "J-BUSINESS-35",
+   "title": "A buyer contacts the lister of a marketplace listing and the lister receives a usable enquiry.",
+   "file": "business_market.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 3,
+     "fail_text": "Supplier: 'Quote →' on a buyer's demand card with a price: the buyer receives the quote and can accept it",
+     "reason": "not built: 'Quote →' opens no quotation form (price) — it only opens a chat"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "The listing's inquiries count rises by one for the lister",
+     "reason": "the lister's My Listings does not show 1 inquiry on the listing"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 2,
+   "live_reason": "the lister's My Listings does not show 1 inquiry on the listing",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 3,
+   "demo_reason": "not built: 'Quote →' opens no quotation form (price) — it only opens a chat"
+  },
+  {
+   "id": "J-BUSINESS-36",
+   "title": "A supplier posts a supply listing that buyers can find and contact.",
+   "file": "business_market.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 3,
+     "fail_text": "Another user finds it in Browse under Supply with price + currency, MOQ and company; the draft is not there",
+     "reason": "the card does not show the price with its currency and the MOQ: For Sale SUPPLY WHO-GMP Metformin HCl BP/USP f05ab584 2 weeks · EXW Cairo · Egypt — Obour 🆕 New Egypt — Obour 5.80 MOQ: 500 kg Contact → Compare Quick view New"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 3,
+     "fail_text": "Another user finds it in Browse under Supply with price + currency, MOQ and company; the draft is not there",
+     "reason": "the card does not show the price with its currency and the MOQ: For Sale SUPPLY WHO-GMP Metformin HCl BP/USP bdf99e3f ✓ WHO-GMP 5.80 MOQ: 500 kg · 🇪🇬 Supplier Lister Contact → Compare Quick view"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 3,
+   "live_reason": "the card does not show the price with its currency and the MOQ: For Sale SUPPLY WHO-GMP Metformin HCl BP/USP bdf99e3f ✓ WHO-GMP 5.80 MOQ: 500 kg · 🇪🇬 Supplier Lister Contact → Compare Quick view",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 3,
+   "demo_reason": "the card does not show the price with its currency and the MOQ: For Sale SUPPLY WHO-GMP Metformin HCl BP/USP f05ab584 2 weeks · EXW Cairo · Egypt — Obour 🆕 New Egypt — Obour 5.80 MOQ: 500 kg Contact → Compare Quick view New"
+  },
+  {
+   "id": "J-BUSINESS-37",
+   "title": "A buyer posts what he needs (RFQ / demand listing) so suppliers come to him.",
+   "file": "business_market.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Create Listing → I'm Seeking: product, quantity, target price, details → publish",
+     "reason": "the demand is not stored as a demand listing (no products row at all)"
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "the demand is not stored as a demand listing (no products row at all)"
+  },
+  {
+   "id": "J-BUSINESS-38",
+   "title": "A company sells surplus or near-expiry stock quickly at a discount.",
+   "file": "business_market.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 3,
+     "fail_text": "Seller: 'Accept offer' → Confirm → Ship; buyer receives and rates; the quantity sold reduces the listing",
+     "reason": "the sold quantity (200 of 750 kg) did not reduce the listing"
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 3,
+   "live_reason": "the sold quantity (200 of 750 kg) did not reduce the listing"
+  },
+  {
+   "id": "J-BUSINESS-39",
+   "title": "A company offers a registration dossier for licensing so other companies can license it in.",
+   "file": "business_market.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    }
+   },
+   "demo": "PASS",
+   "live": "PASS"
+  },
+  {
+   "id": "J-BUSINESS-40",
+   "title": "A lister keeps his listings accurate: edits, pauses, resumes, renews and deletes them.",
+   "file": "business_market.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "'Edit' a listing (title, price) → 'Save changes': others see it after reload",
+     "reason": "the edit did not survive reload"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "'Edit' a listing (title, price) → 'Save changes': others see it after reload",
+     "reason": "no 'Edit' in My Listings"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 2,
+   "live_reason": "no 'Edit' in My Listings",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 2,
+   "demo_reason": "the edit did not survive reload"
+  },
+  {
+   "id": "J-BUSINESS-41",
+   "title": "A company tells Drugbox what it has and needs (intents) so it receives matching opportunities.",
+   "file": "business_market.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 3,
+     "fail_text": "Another user posts a matching demand: the match is shown (count, notification or Home card) and equals the real matches",
+     "reason": "not built: a matching demand reaches the user neither on Home nor as a notification"
+    }
+   },
+   "demo": "PASS",
+   "live": "FAIL",
+   "live_fail_step": 3,
+   "live_reason": "not built: a matching demand reaches the user neither on Home nor as a notification"
+  },
+  {
+   "id": "J-BUSINESS-42",
+   "title": "A lister pays by card to boost a listing so it reaches more buyers for 7 days.",
+   "file": "business_payments.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Market → 'Boost' plan card → choose my listing; the window shows the server price (EGP 1,450 + 14% VAT = 1,653)",
+     "reason": "the boost window shows [1636.0, 1436.0, 201.0, 1636.0, 1636.0] instead of the price EGP 1,450 + VAT = 1,653"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 3,
+     "fail_text": "Paymob confirms (signed callback); back in the app: 'Payment received — it is active now'; the listing is BOOSTED for everyone",
+     "reason": "another user sees the listing without the BOOSTED label"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 3,
+   "live_reason": "another user sees the listing without the BOOSTED label",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "the boost window shows [1636.0, 1436.0, 201.0, 1636.0, 1636.0] instead of the price EGP 1,450 + VAT = 1,653"
+  },
+  {
+   "id": "J-BUSINESS-43",
+   "title": "A lister pays with a mobile wallet (Vodafone Cash) to make a listing Featured for 30 days.",
+   "file": "business_payments.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "'Featured' plan card → the window is titled Featured and shows EGP 3,950 + VAT = 4,503",
+     "reason": "the Featured window is titled '⭐ Boost your listing'"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "'Featured' plan card → the window is titled Featured and shows EGP 3,950 + VAT = 4,503",
+     "reason": "the Featured window is titled '⭐ Boost your listing'"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "the Featured window is titled '⭐ Boost your listing'",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "the Featured window is titled '⭐ Boost your listing'"
+  },
+  {
+   "id": "J-BUSINESS-44",
+   "title": "A lister without a card pays cash at a Fawry outlet using a reference number; the boost activates when Fawry confirms.",
+   "file": "business_payments.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Boost window → '🏪 Fawry' → pay: the Fawry reference number and amount are shown with how to pay",
+     "reason": "no Fawry reference number is shown"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 2,
+     "fail_text": "Press 'Done'; later find the reference again (My payments / the listing)",
+     "reason": "not built: the Fawry reference cannot be found again after closing the window (no My payments)"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 2,
+   "live_reason": "not built: the Fawry reference cannot be found again after closing the window (no My payments)",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "no Fawry reference number is shown"
+  },
+  {
+   "id": "J-BUSINESS-45",
+   "title": "A lister pays by InstaPay transfer, uploads the receipt, and Drugbox confirms it so the purchase activates.",
+   "file": "business_payments.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Boost window → '⚡ InstaPay' → pay: the InstaPay address and amount are shown",
+     "reason": "no InstaPay address is shown"
+    },
+    "live-en-1440": {
+     "status": "PASS",
+     "fail_step": null,
+     "fail_text": null,
+     "reason": null
+    }
+   },
+   "demo": "FAIL",
+   "live": "PASS",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "no InstaPay address is shown"
+  },
+  {
+   "id": "J-BUSINESS-46",
+   "title": "A company sees what it has paid for, the status of each payment, and downloads a tax invoice.",
+   "file": "business_payments.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Workspace → Plan & verification lists every payment: date, product, method, amount incl. VAT, status",
+     "reason": "not built: no payment history (billing) in Plan & verification or anywhere else"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Workspace → Plan & verification lists every payment: date, product, method, amount incl. VAT, status",
+     "reason": "not built: no payment history (billing) in Plan & verification or anywhere else"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "not built: no payment history (billing) in Plan & verification or anywhere else",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "not built: no payment history (billing) in Plan & verification or anywhere else"
+  },
+  {
+   "id": "J-BUSINESS-47",
+   "title": "A company upgrades to VIP to get top placement, the VIP badge, faster verification and monthly boosts.",
+   "file": "business_payments.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 4,
+     "fail_text": "Promised benefits are delivered: 3 Marketplace boosts a month without payment, verification queue priority, the company link",
+     "reason": "not built: the VIP plan promises 3 Marketplace boosts a month, but the boost window asks VIP companies to pay"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 4,
+     "fail_text": "Promised benefits are delivered: 3 Marketplace boosts a month without payment, verification queue priority, the company link",
+     "reason": "not built: the VIP plan promises 3 Marketplace boosts a month, but the boost window asks VIP companies to pay"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 4,
+   "live_reason": "not built: the VIP plan promises 3 Marketplace boosts a month, but the boost window asks VIP companies to pay",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 4,
+   "demo_reason": "not built: the VIP plan promises 3 Marketplace boosts a month, but the boost window asks VIP companies to pay"
+  },
+  {
+   "id": "J-BUSINESS-48",
+   "title": "A VIP company uses its included monthly boosts without paying again.",
+   "file": "business_payments.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "My Listings → '⭐ Boost' on a listing → 'Use an included boost' (3 left)",
+     "reason": "not built: a VIP company is asked to pay — there is no 'Use an included boost' (VIP promises 3 a month)"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "My Listings → '⭐ Boost' on a listing → 'Use an included boost' (3 left)",
+     "reason": "not built: a VIP company is asked to pay — there is no 'Use an included boost' (VIP promises 3 a month)"
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "not built: a VIP company is asked to pay — there is no 'Use an included boost' (VIP promises 3 a month)",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "not built: a VIP company is asked to pay — there is no 'Use an included boost' (VIP promises 3 a month)"
+  },
+  {
+   "id": "J-BUSINESS-49",
+   "title": "Drugbox admins keep the directory trustworthy from one place: claims, verification requests, certificates,",
+   "file": "business_admin.py",
+   "runs": {
+    "demo-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "Admin → Review: each queue (verification, certificates, reports, payments, claims) lists exactly the pending items with who, what, when and the documents",
+     "reason": "not built: Admin → Review has no \"claims\" queue (queues: 🏢 Verification requests, ⚠️ Warning references, 📜 Site certificates 2, 🚩 Company reports, 💳 Payments, 💬 Message reports, 🚩 Reported posts)"
+    },
+    "live-en-1440": {
+     "status": "FAIL",
+     "fail_step": 1,
+     "fail_text": "(outside a step)",
+     "reason": "error: StepFail: database: SQL failed: ERROR:  new row for relation \"company_sites\" violates check constraint \"company_sites_slots_months\""
+    }
+   },
+   "demo": "FAIL",
+   "live": "FAIL",
+   "live_fail_step": 1,
+   "live_reason": "error: StepFail: database: SQL failed: ERROR:  new row for relation \"company_sites\" violates check constraint \"company_sites_slots_months\"",
+   "demo_fail_config": "demo-en-1440",
+   "demo_fail_step": 1,
+   "demo_reason": "not built: Admin → Review has no \"claims\" queue (queues: 🏢 Verification requests, ⚠️ Warning references, 📜 Site certificates 2, 🚩 Company reports, 💳 Payments, 💬 Message reports, 🚩 Reported posts)"
+  }
+ ]
+}

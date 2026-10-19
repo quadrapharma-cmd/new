@@ -71,10 +71,10 @@ select pg_temp.ok('everyone signed in reads the products', $$(select count(*) fr
 
 -- ══ 0050: logo / cover ══
 select pg_temp.as_user('d1111111-1111-1111-1111-111111111111');
-select pg_temp.step('the owner sets an uploaded logo and cover', $$update public.companies set logo_url = 'companies/' || pg_temp.id('co') || '/product-a.jpg', profile = profile || jsonb_build_object('cover', 'companies/' || pg_temp.id('co') || '/product-a.jpg') where id = pg_temp.id('co')$$);
-select pg_temp.ok('logo and cover are saved', $$(select logo_url is not null and profile ? 'cover' from public.companies where id = pg_temp.id('co'))$$);
+select pg_temp.step('the owner sets an uploaded logo and cover', $$update public.companies set logo_url = 'companies/' || pg_temp.id('co') || '/product-a.jpg', cover_url = 'companies/' || pg_temp.id('co') || '/product-a.jpg' where id = pg_temp.id('co')$$);
+select pg_temp.ok('logo and cover are saved', $$(select logo_url is not null and cover_url is not null from public.companies where id = pg_temp.id('co'))$$);
 select pg_temp.no('an outside URL as logo is refused', $$update public.companies set logo_url = 'https://tracker.example/p.gif' where id = pg_temp.id('co')$$, '42501');
-select pg_temp.no('another company''s picture as cover is refused', $$update public.companies set profile = profile || jsonb_build_object('cover', 'companies/' || pg_temp.id('other') || '/logo-b.jpg') where id = pg_temp.id('co')$$, '42501');
+select pg_temp.no('another company''s picture as cover is refused', $$update public.companies set cover_url = 'companies/' || pg_temp.id('other') || '/logo-b.jpg' where id = pg_temp.id('co')$$, '42501');
 select pg_temp.ok('company-media: the owner may upload under the company''s folder', $$public.can_write_company_media('companies/' || pg_temp.id('co') || '/x.jpg')$$);
 select pg_temp.ok('company-media: not under another company''s folder', $$not public.can_write_company_media('companies/' || pg_temp.id('other') || '/x.jpg')$$);
 select pg_temp.as_user('d3333333-3333-3333-3333-333333333333');

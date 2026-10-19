@@ -237,15 +237,29 @@ def build_team(j):
         t = j.text(pg); j.check('Mona Colleague' in t and re.search(r'Invited|Waiting for their agreement|مدعو|بانتظار', t), "the Team does not list the invitation as 'Invited'")
         if j.live: j.check(j.wait_db("select count(*) from public.company_members where company_id=%s and user_id='%s'" % (me['co']['id'], col['id']), 6) == '1', 'no company_members row for the invited colleague')
     with j.step('Colleague 1 opens the invitation (notification) and accepts'):
-        if j.demo:
-            j.notbuilt('the invited colleague has no way to accept: no invitation reaches them (no notification, no e-mail, no accept path)')
+        if j.demo: j.skip('the demo has one account: the invited colleague exists only in live (notification → Accept is checked there)')
         cp = col['page']; j.reload(cp)
         n = j.sql1("select count(*) from public.notifications where user_id='%s' and created_at > now()-interval '10 minutes'" % col['id'])
         j.check(n not in ('', '0'), 'not built: the invited colleague gets no notification of the invitation')
-        j.click(cp, r'Accept|اقبل', scope='body', what='Accept invitation')
+        j.nav(cp, 'notifs'); j.settle(cp, 900)                     # the invitation is in Notifications
+        j.click(cp, r'^\W*(Accept|اقبل|قبول)\W*$', scope='#content', what='Accept invitation')
+        j.check(j.wait_db("select accepted::text||role from public.company_members where company_id=%s and user_id='%s'" % (me['co']['id'], col['id']), 6) == 'truesales', 'the colleague is not an active sales member after accepting')
     with j.step("Owner changes a role, sets 'Who receives what', 'Hide me' for one member, removes a member — all survive reload"):
         workspace(j, pg, 'Team|%s' % ar('Team'))
-        j.check(re.search(r'Who receives what|من يستلم', j.text(pg)), "no 'Who receives what' routing in Team")
+        j.check(re.search(r'Who receives what|من يستلم', j.text(pg), re.I), "no 'Who receives what' routing in Team")
+        row = lambda nm: pg.locator('#content .hb-tm', has_text=nm).first
+        j.check(row('Mona Colleague').count(), 'Mona is not in Team')
+        row('Mona Colleague').locator('select').select_option(label=ar('Quality') if j.ar else 'Quality'); j.settle(pg, 1200)
+        rm = row('Omar Quality').locator('.hb-x'); j.check(rm.count(), 'no way to remove the second invitation'); rm.click(); j.settle(pg, 1200)
+        if j.live:
+            j.check(j.wait_db("select role from public.company_members where company_id=%s and user_id='%s'" % (me['co']['id'], col['id']), 6) == 'quality', 'the new role is not saved')
+            j.check(j.wait_db("select count(*) from public.company_invites where company_id=%s" % me['co']['id'], 6, want='0') == '0', 'the removed invitation is still stored')
+            j.check(j.wait_db("select user_id from public.company_routing where company_id=%s and request_type='questionnaire'" % me['co']['id'], 6) == col['id'], "questionnaires do not go to the new quality member ('Who receives what' does not follow the role)")
+        reopen(j, pg); t = workspace(j, pg, 'Team|%s' % ar('Team'))
+        j.check('Omar Quality' not in t, 'the removed invitation is back after reload')
+        j.check(pg.locator('#content .hb-tm', has_text='Mona Colleague').locator('select').evaluate("s=>s.options[s.selectedIndex].text") in ('Quality', ar('Quality')), "Mona's new role did not survive the reload")
+        if j.live:
+            j.check('Mona Colleague' in re.split(r'Who receives what|من يستلم', t, flags=re.I)[-1], "'Who receives what' does not name the quality member")
 
 @journey('J-BUSINESS-25')
 def act_as_company(j):

@@ -120,7 +120,7 @@
   }
   var __bs = null;
   function bySlug(slug) { var list = companies(); if (!__bs || __bs.list !== list) { var m = Object.create(null); list.forEach(function (c) { if (!(c.slug in m)) m[c.slug] = c; }); __bs = { list: list, m: m }; } return __bs.m[slug]; }
-  function myCompanies() { var me = window.ME || {}; return companies().filter(function (c) { return c.owner === me.id; }); }
+  function myCompanies() { var me = window.ME || {}; return companies().filter(function (c) { return c.owner === me.id || (Array.isArray(c.memberIds) && c.memberIds.indexOf(me.id) >= 0); }); }   /* the pages I manage, and the teams I am on (members act for the company; only managers edit its page) */
   function mine() { var list = myCompanies(); if (!list.length) return null; var a = store('acting'); return list.find(function (c) { return c.slug === a; }) || list[0]; }   /* the company you act as */
   function ownsPage(co) { var me = window.ME || {}; return co && co.owner === me.id; }
   /* monogram from the first letter of the first two words — Arabic names included */
@@ -433,7 +433,7 @@
     var r = new FileReader(); r.onload = function () { var im = new Image(); im.onload = function () { var k = Math.min(1, max / Math.max(im.width, im.height)), cv = document.createElement('canvas'); cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k); cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); cb(cv.toDataURL('image/jpeg', 0.82)); }; im.onerror = function () { cb(null); }; im.src = r.result; }; r.readAsDataURL(file);
   }
   function openEditor(focus) {
-    var cur = S.open && bySlug(S.open), co = cur && ownsPage(cur) ? cur : mine(); if (!co) { toast('Only company owners can edit a page'); return; }
+    var cur = S.open && bySlug(S.open), co = cur && ownsPage(cur) ? cur : mine(); if (!co || !ownsPage(co)) { toast('Only company owners can edit a page'); return; }
     var draft = JSON.parse(JSON.stringify(co));
     var el = document.createElement('div'); el.id = 'dxEditor'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Edit company page');
     function prodRows() { return draft.products.map(function (p, i) { return '<div class="ed-prod"><img src="' + pimg(draft, p) + '" alt=""><span><b>' + esc(p.name) + '</b><small>' + esc(p.cat) + (p.moq ? ' · MOQ ' + esc(p.moq) : '') + '</small></span><button type="button" data-pe="' + i + '">Edit</button><button type="button" data-pd="' + i + '" aria-label="Delete">×</button></div>'; }).join(''); }

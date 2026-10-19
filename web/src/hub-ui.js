@@ -96,7 +96,7 @@
       (act && act.slug !== co.slug && X3() ? '<span class="avl-ctl"><select id="hbAvl" aria-label="Supplier status for ' + esc(act.name) + '"><option value="">Supplier status: not on list</option>' + Object.keys(X3().AVL).map(function (k) { return '<option value="' + k + '"' + (avl && avl.status === k ? ' selected' : '') + '>' + X3().AVL[k][0] + '</option>'; }).join('') + '</select><button type="button" class="dr-btn sm" data-hsq="1">' + ic('clipboard') + 'Questionnaire</button></span>' : '') +
       '<button type="button" class="dr-btn" data-hpdf="1">' + ic('doc') + 'Profile PDF</button><button type="button" class="dr-btn" data-hqr="1">' + ic('target') + 'QR</button><button type="button" class="dr-link" data-hreport="1">Report wrong information</button></div></div></header>' +
       (co.status === 'unclaimed' ? '<div class="cp-banner cp-claim">' + ic('building') + '<span><b>Is this your company?</b> This page was built from public industry lists. Claim it to manage it and receive requests.</span><button type="button" class="dr-btn p sm" data-hclaim="1">Claim this page</button></div>' : '') +
-      (H().staleSections(co).length ? '<div class="cp-banner pend">' + ic('warning') + '<span>Some information on this page was last updated more than 6 months ago (' + H().staleSections(co).join(', ') + ').</span></div>' : '') +
+      (H().staleSections(co).length ? '<div class="cp-banner pend">' + ic('warning') + '<span>Some information on this page was last updated more than 6 months ago (' + H().staleSections(co).join(', ') + ').</span>' + (mem ? '<button type="button" class="dr-btn sm" data-wconfirm="1">Still correct</button>' : '') + '</div>' : '') +
       '<nav class="cp-tabs" role="tablist">' + tabs.map(function (x) { return '<button type="button" role="tab" aria-selected="' + (tab === x[0]) + '" class="cp-tab' + (tab === x[0] ? ' on' : '') + '" data-htab2="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</nav>';
     var body = '';
     if (tab === 'overview') {
@@ -238,7 +238,7 @@
   function joinDialog(co) {
     if (!co) return;
     D.modal({ title: 'Ask to join ' + co.name, body: '<p class="cp-muted">The page\u2019s owner or admins approve your request. You appear on the public page only if you choose to.</p>' +
-      '<div class="dbk-f"><label for="jnR">Your role *</label><select id="jnR" data-req>' + H().ROLES.filter(function (r) { return r !== 'Admin'; }).map(function (r) { return '<option' + (r === 'Sales' ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select></div>' +
+      '<div class="dbk-f"><label for="jnR">Role *</label><select id="jnR" data-req>' + H().ROLES.filter(function (r) { return r !== 'Admin'; }).map(function (r) { return '<option' + (r === 'Sales' ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select></div>' +
       '<div class="dbk-f"><label for="jnN">Note for the admin</label><input id="jnN" maxlength="300" placeholder="e.g. I work in the Cairo sales office"></div>',
       primary: { label: 'Send request', onClick: function (b, close) { if (!D.requireFields(b)) return false; var ok = b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
         window.dxTeam.join(co.slug, b.querySelector('#jnR').value, b.querySelector('#jnN').value.trim()).then(function () { close(); toast('Request sent to the admin of ' + co.name); },

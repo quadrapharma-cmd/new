@@ -71,7 +71,8 @@ def sites_and_capacity(j):
 def checked_certificates(j):
     """A manufacturer proves its GMP status with certificates that Drugbox has checked."""
     me, pg, name = own_company(j, 'Certified Pharma')
-    if j.live: seed_site(j, me['co']['id'], 'Badr plant'); j.reload(pg)
+    if j.live:
+        sid = seed_site(j, me['co']['id'], 'Badr plant'); j.reload(pg)
     with j.step("Workspace → Sites → 'Certificate' on a site: GDP, valid until, the certificate PDF; Add"):
         workspace(j, pg, 'Sites|%s' % ar('Sites'))
         j.click(pg, r'^\W*(\+\s*)?(Certificate|شهادة)\W*$', scope='#content', what='+ Certificate')
@@ -99,7 +100,14 @@ def checked_certificates(j):
         if j.demo: j.skip('checked in live')
         j.reload(pg); directory(j, pg); open_card(j, pg, name); t = company_tab(j, pg, 'Sites|%s' % ar('Sites'), 'Sites')
         j.check(re.search(r'checked|تمت المراجعة', t, re.I), "the page does not say the certificate was checked")
-        j.check(admin_review(j, adm['page'], 'certs') is not None and adm['page'].locator('.dx-mod-row .dx-mod-no').count() or False, 'not built: a certificate cannot be rejected with a reason (only "Mark checked")')
+        seed_cert(j, me['co']['id'], sid, 'ISO 14001', '2027-03-31', False)   # a second certificate, for the rejection
+        ap = adm['page']; admin_review(j, ap, 'certs')
+        j.check(ap.locator('.dx-mod-row', has_text=name).locator('.dx-mod-no').count(), 'not built: a certificate cannot be rejected with a reason (only "Mark checked")')
+        admin_decide(j, ap, name, False, 'The ISO 14001 scan is not readable')
+        j.check(j.wait_db("select count(*) from public.site_certificates where company_id=%s and name='ISO 14001'" % me['co']['id'], 6, want='0') == '0', 'the rejected certificate is still stored')
+        j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and type='cert_rejected' and data->>'reason' like '%%not readable%%'" % me['id']) == '1', 'the company is not told the reason of the rejection')
+        j.reload(pg); directory(j, pg); open_card(j, pg, name); t = company_tab(j, pg, 'Sites|%s' % ar('Sites'), 'Sites')
+        j.check('ISO 14001' not in t, 'the rejected certificate is still shown on the page')
 
 @journey('J-BUSINESS-20')
 def company_documents(j):

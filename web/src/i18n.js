@@ -752,7 +752,9 @@
     'Certificate added': 'تمت إضافة الشهادة', 'Capabilities saved': 'تم حفظ القدرات', 'Invitation sent': 'تم إرسال الدعوة', 'Company page published': 'تم نشر صفحة الشركة',
     'Page saved': 'تم حفظ الصفحة', 'Arabic name saved': 'تم حفظ الاسم العربي', 'Thanks — marked as up to date': 'شكرًا — تم تعليمها كمحدّثة', 'Could not send the request': 'تعذّر إرسال الطلب',
     'Could not answer the request': 'تعذّر الرد على الطلب', 'This company is not on Drugbox yet': 'هذه الشركة ليست على Drugbox بعد',
-    'an admin': 'مدير', 'management': 'الإدارة', 'sales': 'المبيعات', 'quality': 'الجودة', 'regulatory': 'التسجيل', 'a team member': 'عضو في الفريق'
+    'Reject this certificate?': 'هل ترفض هذه الشهادة؟', 'Reject this verification request?': 'هل ترفض طلب التوثيق هذا؟', 'It is removed from the page and the company is told why.': 'ستُحذف من الصفحة وتُبلَّغ الشركة بالسبب.',
+    'The company is told why and can send new documents.': 'ستُبلَّغ الشركة بالسبب ويمكنها إرسال مستندات جديدة.', 'Reason for the company (they will see it) *': 'السبب للشركة (ستراه) *', 'The registry document is not readable': 'مستند السجل التجاري غير مقروء',
+    'Role *': 'الدور *', 'an admin': 'مدير', 'management': 'الإدارة', 'sales': 'المبيعات', 'quality': 'الجودة', 'regulatory': 'التسجيل', 'a team member': 'عضو في الفريق'
   });
   PATTERNS.unshift(
     [/^checked (\d{4}-\d{2}-\d{2})$/, function (m) { return 'تمت المراجعة ' + m[1]; }],

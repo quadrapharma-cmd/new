@@ -417,7 +417,10 @@ def admin_decide(j, pg, needle, ok=True, reason='The document is not readable'):
     if not ok: pg.once('dialog', lambda d: d.accept(reason))
     btn.first.click(); pg.wait_for_timeout(700)
     if dlg_open(pg):
-        b = pg.locator('.dbk-ov button.p, .dbk-ov button.danger, .dbk-ov .dbk-p').last
+        if not ok:                                              # the reason is written in the window (a kit window, not a browser prompt)
+            f = pg.locator('.dbk-ov textarea:visible, .dbk-ov input[type=text]:visible')
+            if f.count(): f.last.fill(reason)
+        b = pg.locator('.dbk-ov [data-a=ok], .dbk-ov button.p, .dbk-ov button.danger, .dbk-ov .dbk-p').last
         if b.count(): b.click()
     j.settle(pg, 1200)
 
