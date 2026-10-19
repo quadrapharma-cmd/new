@@ -291,7 +291,7 @@
     (d.people || []).forEach(function (p) { K.putUser(p); var a = L.aid(p.id), u = window.U(a); out.push({ g: 'people', u: u, t: p.name, s: [p.headline, p.company].filter(Boolean).join(' · '), go: function () { window.gotoProfile(a); } }); });
     (d.companies || []).forEach(function (c) { out.push({ g: 'companies', e: c.logo_emoji || '🏢', t: c.name, s: [c.city, c.country].filter(Boolean).join(', '), go: function () { if (window.dxDirectory && window.dxDirectory.open && c.slug) window.dxDirectory.open(c.slug); else window.goto('companies'); } }); });
     (d.products || []).forEach(function (x) { out.push({ g: 'products', e: x.emoji || '📦', t: x.name, s: [x.seller, x.price != null ? x.price + (x.unit ? '/' + x.unit : '') : ''].filter(Boolean).join(' · '), go: function () { marketQuery(x.name); } }); });
-    (d.jobs || []).forEach(function (j) { out.push({ g: 'jobs', e: '💼', t: j.title, s: [j.company, j.location].filter(Boolean).join(' · '), go: function () { window.goto('jobs'); flashCard('#jx [data-live="j' + j.id + '"]', function () { return true; }); } }); });
+    (d.jobs || []).forEach(function (j) { out.push({ g: 'jobs', e: '💼', t: j.title, s: [j.company, j.location].filter(Boolean).join(' · '), go: function () { window.goto('jobs'); if (window.dxJobsHunt) window.dxJobsHunt(); flashCard('#jx [data-live="j' + j.id + '"]', function () { return true; }); } }); });
     (d.groups || []).forEach(function (g) { out.push({ g: 'groups', e: g.emoji || '👥', t: g.name, s: (g.member_count || 0) + ' members', go: function () { window.goto('groups'); flashCard('#gx .gcard', function (e) { return e.textContent.indexOf(g.name) >= 0; }); } }); });
     (d.posts || []).forEach(function (p) { out.push({ g: 'posts', e: '📝', t: around(p.body, q), s: p.author || '', go: function () { if (window.dxOpenPost) window.dxOpenPost(p.id); } }); });
     return out;
@@ -312,8 +312,9 @@
   /* saved searches: the member's rows (saved_searches) in the Marketplace's own format */
   var SS = { list: null, at: 0, busy: null };
   function ssFrom(r) { var f = r.filters || {}; return { id: r.id, db: true, name: r.name, alert: r.alert, f: { checks: Array.isArray(f.checks) ? f.checks : [], sector: f.sector || '', q: r.q || '' }, seen: Date.parse(r.seen_at) || Date.now(), fresh: 0 }; }
-  async function loadSaved() { var r = await sb.from('saved_searches').select('id,name,q,filters,alert,seen_at').eq('kind', 'market').order('created_at', { ascending: false }).limit(20);
-    if (r.error) throw r.error; SS.list = (r.data || []).map(ssFrom); SS.at = Date.now(); if (window.dxSavedRefresh) window.dxSavedRefresh(); }
+  async function loadSaved() { var v = SS.v; var r = await sb.from('saved_searches').select('id,name,q,filters,alert,seen_at').eq('kind', 'market').order('created_at', { ascending: false }).limit(20);
+    if (r.error) throw r.error; if (v !== SS.v) return;                                /* changed while it loaded: the newer list stays */
+    SS.list = (r.data || []).map(ssFrom); SS.at = Date.now(); if (window.dxSavedRefresh) window.dxSavedRefresh(); }
   async function syncSaved(next) {
     var was = SS.list || []; SS.list = next;
     var keep = {}; next.forEach(function (s) { if (s.db) keep[s.id] = s; });
@@ -330,7 +331,8 @@
   window.dxSavedSearchHook = function (v) {
     if (!me()) return undefined;
     if (v === undefined) return (SS.list || []).slice();
-    SS.busy = Promise.resolve(SS.busy).then(function () { return syncSaved(v.slice()); }).catch(function (e) { toast(friendly(e)); });
+    SS.v = (SS.v || 0) + 1; var was = SS.list || [], next = v.slice(); SS.list = next;
+    SS.busy = Promise.resolve(SS.busy).then(function () { SS.list = was; return syncSaved(next); }).catch(function (e) { toast(friendly(e)); });
     return true;
   };
   K.onSignIn(function () { loadSaved().catch(function (e) { console.error(e); }); });
@@ -347,8 +349,23 @@
       return (r.data || []).filter(function (x) { return x.job; }).map(function (x) { return { id: x.job_id, title: x.job.title, sub: [x.job.company, x.job.location].filter(Boolean).join(' · ') + (x.job.active === false ? ' · closed' : '') }; });
     },
     unsaveJob: async function (j) { var r = await sb.from('saved_jobs').delete().eq('user_id', me()).eq('job_id', j.id); if (r.error) throw new Error(friendly(r.error)); },
-    openJob: function (j) { window.goto('jobs'); flashCard('#jx [data-live="j' + j.id + '"]', function () { return true; }); }
+    openJob: function (j) { window.goto('jobs'); if (window.dxJobsHunt) window.dxJobsHunt(); flashCard('#jx [data-live="j' + j.id + '"]', function () { return true; }); }
   });
+  /* ===== AREA social: find people (Network page) — name / company / headline, a specialty and a country, from profiles ===== */
+  var SPEC_DB = { regulatory: ['regulat', 'registration', 'dossier'], quality: ['QA ', 'QC ', 'quality', 'GMP'], procurement: ['procure', 'purchas', 'sourcing', 'buyer'], production: ['production', 'manufactur', 'plant', 'operations'],
+    sales: ['sales', 'marketing', 'business development', 'commercial'], rnd: ['R&D', 'research', 'formulat'], supply: ['supply', 'distribut', 'logistic', 'import', 'export'], medical: ['medical', 'pharmacist', 'clinical', 'doctor', 'physician'],
+    management: ['CEO', 'founder', 'director', 'chairman', 'general manager', 'managing'] };
+  function orSafe(w) { return String(w).replace(/[,()%*\\"':.]/g, ' ').trim(); }
+  window.dxPeopleSvc = Object.assign({}, window.dxPeopleSvc, { live: true, find: async function (o) {
+    var q = sb.from('profiles').select(K.PCOLS).neq('id', me()).neq('account_type', 'deleted');
+    String(o.q || '').split(/\s+/).map(orSafe).filter(Boolean).slice(0, 5).forEach(function (w) { q = q.or('name.ilike.%' + w + '%,company.ilike.%' + w + '%,headline.ilike.%' + w + '%'); });
+    if (SPEC_DB[o.spec]) q = q.or(SPEC_DB[o.spec].map(function (k) { return 'headline.ilike.%' + orSafe(k) + '%'; }).join(','));
+    if (o.country) q = q.eq('country', String(o.country).slice(0, 2));
+    var a = await Promise.all([q.order('verified', { ascending: false }).order('name').limit(40), blockList()]), r = a[0], bl = a[1] || [];
+    if (r.error) throw new Error(friendly(r.error));
+    return (r.data || []).filter(function (x) { return bl.indexOf(x.id) < 0; }).slice(0, 30).map(function (x) { K.putUser(x); return window.U(L.aid(x.id)); });
+  } });
+
   /* ===== AREA social: safety — report a person or comment (member_reports), block from the profile, Reported members, suspension (0044) ===== */
   window.dxSafetySvc = {
     live: true,

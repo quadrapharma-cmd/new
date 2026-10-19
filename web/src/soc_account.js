@@ -175,7 +175,7 @@
       } } });
   }
 
-  /* ── Settings: a page like Saved (the side menu's footer, "Settings" on your own profile, Ctrl+K) — the side menu's list stays as approved ── */
+  /* ── Settings: a page like Saved ("Settings" on your own profile, Ctrl+K) — the side menu stays as approved ── */
   if (window.CMS && !window.CMS.icon_settings) window.CMS.icon_settings = '⚙️';
   if (window.DG_TITLES) { window.DG_TITLES.settings = 'Settings'; window.DG_TITLES.privacy = 'Privacy Policy'; window.DG_TITLES.terms = 'Terms of Use'; }
   var PAGES = { settings: renderSettings, privacy: function (c) { c.innerHTML = '<div class="dx-legal-page">' + window.dxLegal.html('privacy') + '</div>'; }, terms: function (c) { c.innerHTML = '<div class="dx-legal-page">' + window.dxLegal.html('terms') + '</div>'; } };
@@ -194,7 +194,7 @@
   (function () {
     var f = document.querySelector('#sidebar .sb-foot'); if (!f) return;
     var tn = [].find.call(f.childNodes, function (n) { return n.nodeType === 3 && /Privacy · Terms ·/.test(n.nodeValue); }); if (!tn) return;
-    var span = document.createElement('span'); span.innerHTML = '<a href="#/settings" class="dx-foot-l" onclick="event.preventDefault();goto(\'settings\')">Settings</a> · <a href="#/privacy" data-legal="privacy" class="dx-foot-l">Privacy</a> · <a href="#/terms" data-legal="terms" class="dx-foot-l">Terms</a> · ';
+    var span = document.createElement('span'); span.innerHTML = '<a href="#/privacy" data-legal="privacy" class="dx-foot-l">Privacy</a> · <a href="#/terms" data-legal="terms" class="dx-foot-l">Terms</a> · ';
     tn.nodeValue = tn.nodeValue.replace(/Privacy · Terms ·\s*/, ''); f.insertBefore(span, tn);
   })();
 

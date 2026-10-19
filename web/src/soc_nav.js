@@ -172,7 +172,7 @@
     jobs: function () { var l = D.store.get('savedJobs', null); if (l == null) l = sampleJob();   /* the sample starts with one saved job */
       return Promise.resolve((l || []).map(function (t) { return { id: t, title: jobTitle(t), sub: '' }; })); },
     unsaveJob: function (j) { var l = D.store.get('savedJobs', null); if (l == null) l = sampleJob(); D.store.set('savedJobs', (l || []).filter(function (t) { return t !== j.id; })); return Promise.resolve(); },
-    openJob: function (j) { window.goto('jobs'); flash('#jx .jcard', j.title); },
+    openJob: function (j) { window.goto('jobs'); huntMode(); flash('#jx .jcard', j.title); },
     listings: function () { return Promise.resolve((D.store.get('saved', []) || []).map(function (k) { var i = String(k).indexOf(':'); return { id: k, title: i >= 0 ? k.slice(i + 1) : k, sub: '' }; })); },
     unsaveListing: function (l) { D.store.set('saved', (D.store.get('saved', []) || []).filter(function (k) { return k !== l.id; })); return Promise.resolve(); },
     openListing: function (l) { window.goto('market'); var si = document.getElementById('searchIn'); var q = l.title.replace(/^(For Sale|Looking to Buy|Providing|Seeking)\s*/i, '').split('—')[0].trim(); if (si) si.value = q; if (window.__mkxFilter) window.__mkxFilter(q); }
@@ -183,11 +183,13 @@
   function sampleJob() { var c = jobCards()[0]; return c ? [txt(c.querySelector('.jc-title'))] : []; }
   function jobTitle(key) { var c = jobCards().filter(function (x) { return txt(x.querySelector('.jc-title')) === key; })[0]; if (!c) return key;
     var t = c.querySelector('.jc-title').cloneNode(true); t.querySelectorAll('span').forEach(function (x) { x.remove(); }); return txt(t) || key; }
+  function huntMode() { var h = document.querySelector('#jx .mode-opt[data-mode="hunting"]'); if (h && !h.classList.contains('active')) h.click(); }   /* the jobs themselves (with Apply) are the job-hunting view */
+  window.dxJobsHunt = huntMode;
   var SV = { jobs: null, listings: null, seq: 0 };
   function savedSection(kind, title, list, empty) {
     return '<div class="card dx-saved-sec" data-kind="' + kind + '" style="padding:14px;margin-top:14px"><div style="font-size:15px;font-weight:800;color:var(--cx);margin-bottom:8px">' + title + '</div>' +
       (list == null ? '<div style="color:#65676b;font-size:13px">Loading…</div>' : !list.length ? '<div style="color:#65676b;font-size:13px">' + empty + '</div>' :
-        list.map(function (x, i) { return '<div class="dx-saved-row" data-k="' + kind + '" data-i="' + i + '"><button type="button" class="dx-saved-open" data-noi18n>' + esc(x.title) + (x.sub ? '<small>' + esc(x.sub) + '</small>' : '') + '</button>' +
+        list.map(function (x, i) { return '<div class="dx-saved-row" data-k="' + kind + '" data-i="' + i + '"><button type="button" class="dx-saved-open" title="' + (kind === 'jobs' ? 'Open this job' : 'Open this listing') + '"><span data-noi18n>' + esc(x.title) + '</span>' + (x.sub ? '<small data-noi18n>' + esc(x.sub) + '</small>' : '') + '</button>' +
           '<button type="button" class="btn-ghost dx-saved-un">Unsave</button></div>'; }).join('')) + '</div>';
   }
   var oRenderSaved = window.renderSaved;
@@ -217,6 +219,18 @@
   });
 
   /* ═════ E. a notification opens what it is about (S-20) ═════ */
+  /* a request accepted from its notification keeps "View profile" on that row */
+  var oAccept = window.acceptConnection;
+  if (oAccept) window.acceptConnection = function (uid, nid) { var n = (window.NOTIFS || []).find(function (x) { return nid != null ? x.id === nid : x.uid === uid && x.type === 'connection'; }); if (n) n.accReq = true; return oAccept.apply(this, arguments); };
+  function viewProfileButtons() {
+    if (page() !== 'notifs') return;
+    document.querySelectorAll('#notifItems .notif-item').forEach(function (row) {
+      var n = (window.NOTIFS || []).find(function (x) { return 'notif-' + x.id === row.id; }); if (!n || !n.accReq || n.uid <= 0 || row.querySelector('[data-gp]')) return;
+      var host = row.querySelector('.notif-content'); if (!host) return;
+      host.insertAdjacentHTML('beforeend', '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn-ghost" style="padding:5px 14px;font-size:12px" data-gp="' + n.uid + '" onclick="event.stopPropagation();gotoProfile(this.dataset.gp)">View profile</button></div>');
+    });
+  }
+  if (window.dxCore) window.dxCore.onRender('soc-notif-profile', viewProfileButtons);
   var oRead = window.markNotifRead;
   window.markNotifRead = function (id) {
     var n = (window.NOTIFS || []).find(function (x) { return x.id === id; });
@@ -232,7 +246,7 @@
     later(function () {
       if (/^(connection|accepted|follow|endorse|connection_request|connection_accepted)$/.test(t) && n.uid > 0) window.gotoProfile(n.uid);
       else if (t === 'message' && n.uid > 0) window.messageUser ? window.messageUser(n.uid) : window.goto('messages');
-      else if (t === 'saved_search' && n.data) { if (n.data.kind === 'jobs') { window.goto('jobs'); flash('#jx .jcard', n.data.title || ''); } else { window.goto('market'); var si = document.getElementById('searchIn'); if (si) { si.value = n.data.title || ''; si.dispatchEvent(new Event('input', { bubbles: true })); } } }
+      else if (t === 'saved_search' && n.data) { if (n.data.kind === 'jobs') { window.goto('jobs'); huntMode(); flash('#jx .jcard', n.data.title || ''); } else { window.goto('market'); var si = document.getElementById('searchIn'); if (si) { si.value = n.data.title || ''; si.dispatchEvent(new Event('input', { bubbles: true })); } } }
       else if (t === 'job_application' || t === 'job') window.goto('jobs');
       else if (t === 'group_invite' || t === 'group') { window.goto('groups'); if (n.data && n.data.name) flash('#gx .gcard', n.data.name); }
       else if (t === 'deal' && window.dxDeals) window.dxDeals.center('received');
@@ -240,17 +254,68 @@
     }, 0);
     return r;
   };
-  /* every request or acceptance row offers View profile */
-  function viewProfileButtons() {
-    if (page() !== 'notifs') return;
-    document.querySelectorAll('#notifItems .notif-item').forEach(function (row) {
-      var n = (window.NOTIFS || []).find(function (x) { return 'notif-' + x.id === row.id; }); if (!n || !/^(accepted|follow|endorse)$/.test(n.type) || n.uid <= 0 || row.querySelector('[data-gp]')) return;
-      var host = row.querySelector('.notif-content'); if (!host) return;
-      host.insertAdjacentHTML('beforeend', '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn-ghost" style="padding:5px 14px;font-size:12px" data-gp="' + n.uid + '" onclick="event.stopPropagation();markNotifRead(' + n.id + ')">View profile</button></div>');
-    });
+  /* ═════ F. find people on the Network page: name, company or specialty, and country (J-SOCIAL-28) ═════ */
+  var SPEC = [['', 'Any specialty'], ['regulatory', 'Regulatory affairs', /regulat|registration|dossier/i], ['quality', 'Quality (QA / QC)', /\bQA\b|\bQC\b|quality|GMP/i], ['procurement', 'Procurement & sourcing', /procure|purchas|sourcing|buyer/i],
+    ['production', 'Production & manufacturing', /production|manufactur|plant|operations/i], ['sales', 'Sales & marketing', /sales|marketing|business development|commercial/i], ['rnd', 'R&D & formulation', /R&D|research|formulat/i],
+    ['supply', 'Supply chain & distribution', /supply|distribut|logistic|import|export/i], ['medical', 'Medical & pharmacy', /medical|pharmacist|clinical|doctor|physician/i], ['management', 'Management', /CEO|founder|director|chairman|general manager|managing/i]];
+  var COUNTRIES = [['', 'Any country'], ['EG', 'Egypt'], ['SA', 'Saudi Arabia'], ['AE', 'UAE'], ['KW', 'Kuwait'], ['QA', 'Qatar'], ['JO', 'Jordan'], ['LB', 'Lebanon'], ['MA', 'Morocco'], ['IN', 'India'], ['CN', 'China']];
+  function specOf(k) { return SPEC.filter(function (x) { return x[0] === k; })[0]; }
+  window.dxPeopleSvc = window.dxPeopleSvc || {
+    live: false, spec: specOf,
+    find: function (o) {
+      var me = window.ME || {}, words = String(o.q || '').toLowerCase().split(/\s+/).filter(Boolean), sp = specOf(o.spec);
+      return Promise.resolve((window.USERS || []).filter(function (u) {
+        if (u.id === me.id || !u.name) return false; var h = (u.name + ' ' + (u.company || '') + ' ' + (u.headline || '')).toLowerCase();
+        return words.every(function (w) { return h.indexOf(w) >= 0; }) && (!sp || !sp[2] || sp[2].test(u.headline || '')) && (!o.country || u.country === o.country);
+      }).slice(0, 30));
+    }
+  };
+  var NP = { q: '', spec: '', country: '', seq: 0, list: null, t: null };
+  function npActive() { return !!(NP.q.trim() || NP.spec || NP.country); }
+  function npBtn(u) {
+    var st = (window.CONN_STATE || {})[u.id];
+    if (st === 'connected') return '<button class="btn-ghost" style="font-size:12px;padding:5px 12px;flex:none" data-mu="' + u.id + '" onclick="messageUser(parseInt(this.dataset.mu))">Message</button>';
+    if (st === 'pending') return '<button class="btn-ghost" style="font-size:12px;padding:5px 12px;flex:none;color:#65676b" disabled>Pending</button>';
+    return '<button class="btn-o" style="font-size:12px;padding:5px 12px;flex:none" data-np-connect="' + u.id + '">Connect</button>';
   }
-  if (window.dxCore) window.dxCore.onRender('soc-notif-profile', viewProfileButtons);
+  function npPaint() {
+    var c = document.getElementById('content'), box = document.getElementById('dxNpRes'); if (!c || !box) return;
+    c.classList.toggle('dx-np-on', npActive());
+    if (!npActive()) { box.innerHTML = ''; return; }
+    if (NP.list == null) { box.innerHTML = '<div class="dx-np-msg">Searching…</div>'; return; }
+    box.innerHTML = NP.list.length ? '<div class="dx-np-n">' + NP.list.length + (NP.list.length === 1 ? ' member' : ' members') + '</div>' + NP.list.map(function (u) { return window.netRow ? window.netRow(u, npBtn(u)) : ''; }).join('')
+      : '<div class="dx-np-msg">No members match — try fewer words, another specialty or any country.</div>';
+  }
+  function npRun() {
+    clearTimeout(NP.t); if (!npActive()) { NP.list = null; npPaint(); return; }
+    NP.list = null; npPaint(); var seq = ++NP.seq;
+    NP.t = setTimeout(function () { Promise.resolve(window.dxPeopleSvc.find({ q: NP.q.trim(), spec: NP.spec, country: NP.country })).then(function (l) { if (seq !== NP.seq) return; NP.list = l || []; npPaint(); },
+      function (e) { if (seq !== NP.seq) return; NP.list = []; npPaint(); toast((e && e.message) || 'Search is not available right now — try again'); }); }, 220);
+  }
+  function npCard() {
+    if (page() !== 'network') return; var c = document.getElementById('content'), grid = c && c.querySelector('.net-grid');
+    if (!grid || grid.classList.contains('net-one') || c.querySelector('.dx-np')) return;
+    grid.insertAdjacentHTML('beforebegin', '<section class="card dx-np" aria-label="Find people"><div class="dx-np-row">' +
+      '<input type="search" id="dxNpQ" class="dx-np-q" placeholder="Search people by name, company or specialty" aria-label="Search people by name, company or specialty" autocomplete="off" maxlength="80">' +
+      '<select id="dxNpSpec" class="dx-np-sel" aria-label="Specialty">' + SPEC.map(function (x) { return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('') + '</select>' +
+      '<select id="dxNpCountry" class="dx-np-sel" aria-label="Country">' + COUNTRIES.map(function (x) { return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('') + '</select></div>' +
+      '<div id="dxNpRes" aria-live="polite"></div></section>');
+    var q = document.getElementById('dxNpQ'); q.value = NP.q; document.getElementById('dxNpSpec').value = NP.spec; document.getElementById('dxNpCountry').value = NP.country;
+    if (npActive()) { if (NP.list == null) npRun(); else npPaint(); } else c.classList.remove('dx-np-on');
+  }
+  if (window.dxCore) window.dxCore.onRender('soc-find-people', npCard);
+  document.addEventListener('input', function (e) { if (e.target && e.target.id === 'dxNpQ') { NP.q = e.target.value.slice(0, 80); npRun(); } });
+  document.addEventListener('change', function (e) { if (e.target && (e.target.id === 'dxNpSpec' || e.target.id === 'dxNpCountry')) { NP[e.target.id === 'dxNpSpec' ? 'spec' : 'country'] = e.target.value; npRun(); } });
+  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-np-connect]'); if (!b) return; window.connect(+b.dataset.npConnect); b.outerHTML = '<button class="btn-ghost" style="font-size:12px;padding:5px 12px;flex:none;color:#65676b" disabled>Pending</button>'; });
+  document.addEventListener('dx:beforepage', function (e) { if (e.detail && e.detail.page !== 'network') { var c = document.getElementById('content'); if (c) c.classList.remove('dx-np-on'); } });
 
+  if (window.dxI18nAdd) window.dxI18nAdd({
+    'Find people': 'ابحث عن أشخاص', 'Search people by name, company or specialty': 'ابحث بالاسم أو الشركة أو التخصص', 'Specialty': 'التخصص', 'Country': 'الدولة',
+    'Any specialty': 'أي تخصص', 'Regulatory affairs': 'الشؤون التنظيمية', 'Quality (QA / QC)': 'الجودة (QA / QC)', 'Procurement & sourcing': 'المشتريات والتوريد', 'Production & manufacturing': 'الإنتاج والتصنيع',
+    'Sales & marketing': 'المبيعات والتسويق', 'R&D & formulation': 'البحث والتطوير والتركيبات', 'Supply chain & distribution': 'سلسلة الإمداد والتوزيع', 'Medical & pharmacy': 'الطب والصيدلة', 'Management': 'الإدارة',
+    'Any country': 'أي دولة', 'Egypt': 'مصر', 'Saudi Arabia': 'السعودية', 'UAE': 'الإمارات', 'Kuwait': 'الكويت', 'Qatar': 'قطر', 'Jordan': 'الأردن', 'Lebanon': 'لبنان', 'Morocco': 'المغرب', 'India': 'الهند', 'China': 'الصين',
+    'No members match — try fewer words, another specialty or any country.': 'لا يوجد أعضاء مطابقون — جرّب كلمات أقل أو تخصصاً آخر أو أي دولة.', '1 member': 'عضو واحد'
+  }, [[/^(\d+) members$/, function (m) { return m[1] + ' عضواً'; }]]);
   if (window.dxI18nAdd) window.dxI18nAdd({
     'Settings': 'الإعدادات', 'Go to Settings': 'افتح الإعدادات', 'New post': 'منشور جديد', 'Write a post': 'اكتب منشوراً',
     '👥 People': '👥 أشخاص', '🏢 Companies': '🏢 شركات', '📦 Products & listings': '📦 منتجات وعروض', '💼 Jobs': '💼 وظائف', '👥 Groups': '👥 مجموعات', '📝 Posts': '📝 منشورات',
@@ -258,7 +323,7 @@
     '🔖 Saved': '🔖 المحفوظات', 'Posts': 'المنشورات', '📦 Listings': '📦 العروض', 'Unsave': 'إلغاء الحفظ', 'Loading…': 'جارٍ التحميل…',
     'No saved jobs yet — press Save on a job to keep it here.': 'لا توجد وظائف محفوظة بعد — اضغط حفظ على أي وظيفة لتظهر هنا.',
     'No saved listings yet — press Save on a listing in the Marketplace.': 'لا توجد عروض محفوظة بعد — اضغط حفظ على أي عرض في السوق.',
-    'Removed from saved jobs': 'أُزيلت من الوظائف المحفوظة', 'Removed from saved listings': 'أُزيل من العروض المحفوظة', 'View profile': 'عرض الملف',
+    'Removed from saved jobs': 'أُزيلت من الوظائف المحفوظة', 'Open this job': 'افتح هذه الوظيفة', 'Open this listing': 'افتح هذا العرض', 'Removed from saved listings': 'أُزيل من العروض المحفوظة', 'View profile': 'عرض الملف',
     'Search is not available right now — try again': 'البحث غير متاح الآن — حاول مرة أخرى'
   }, [[/^Results for "(.+)"$/, function (m) { return 'نتائج البحث عن "' + m[1] + '"'; }], [/^No results for "(.+)"$/, function (m) { return 'لا توجد نتائج لـ "' + m[1] + '"'; }]]);
 })();

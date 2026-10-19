@@ -64,7 +64,7 @@
     if (eb) { eb.setAttribute('onclick', 'dxEditCover()'); if (!c.querySelector('#dxCoverInput')) cov.insertAdjacentHTML('beforeend', '<input type="file" id="dxCoverInput" accept="image/jpeg,image/png,image/webp" style="display:none" aria-label="Choose a cover image">'); }
     var ai = c && c.querySelector('#avatarInput'); if (ai) ai.setAttribute('accept', 'image/jpeg,image/png,image/webp');
     /* Profile views (mine) opens the list of who viewed */
-    if (u.id === me().id) [].forEach.call(c.querySelectorAll('.profile-stats > div'), function (d) { var l = d.querySelector('.pstat-l'); if (l && /^Profile views$/.test((window.dxOrigText ? window.dxOrigText(l) : l.textContent).trim())) { d.setAttribute('role', 'button'); d.setAttribute('tabindex', '0'); d.setAttribute('data-dx-viewers', ''); d.style.cursor = 'pointer'; } });
+    if (u.id === me().id) [].forEach.call(c.querySelectorAll('.profile-stats > div'), function (d) { var l = d.querySelector('.pstat-l'); if (l && /^Profile views$/.test((window.dxOrigText ? window.dxOrigText(l) : l.textContent).trim())) { d.setAttribute('role', 'button'); d.setAttribute('tabindex', '0'); d.setAttribute('data-dx-viewers', ''); d.setAttribute('title', 'Who viewed your profile'); d.style.cursor = 'pointer'; } });
     return r;
   };
   /* Home's side card: my photo instead of my initials */

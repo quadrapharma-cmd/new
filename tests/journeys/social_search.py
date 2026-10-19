@@ -149,15 +149,19 @@ def one_saved_place(j):
         j.check(re.search(r'Jobs|وظائف', t) and re.search(r'Listings|Products|عروض|منتجات', t), 'not built: Saved shows posts only (no Jobs / Listings sections)')
         if j.live: j.check('Saved post one' in t and 'Saved job' in t, 'the saved items are not all listed')
     with j.step('Open the saved job: the job page where Apply works'):
-        el = j.find(pg, r'Saved job|Job|وظيفة', scope='#content'); j.check(el, 'no saved job to open'); el.click(); j.settle(pg)
+        el = j.find(pg, r'Saved job|Job|وظيفة', scope='#content'); j.check(el, 'no saved job to open')
+        job_name = 'Saved job' if j.live else el.inner_text().strip().split('\n')[0]; el.click(); j.settle(pg)
         j.check(page_of(pg) == 'jobs' and j.find(pg, r'Apply|تقدم', scope='#content'), 'the saved job does not open the job with Apply')
     with j.step('Unsave the job; reload: consistent everywhere'):
-        j.nav(pg, 'saved'); row = pg.locator('#content *').filter(has_text=re.compile('Saved job')).last
-        un = j.find(pg, r'^\W*(Unsave|Saved|Remove|إلغاء الحفظ|محفوظ|إزالة)$', scope='#content', exact=True); j.check(un, 'no Unsave on a saved item')
+        j.nav(pg, 'saved')
+        un = pg.evaluate_handle("""n=>{const re=/^\\W*(Unsave|Saved|Remove|إلغاء الحفظ|محفوظ|إزالة)$/i,btn=e=>[...e.querySelectorAll('button,[role=button]')].find(b=>b.getClientRects().length&&re.test(b.innerText.trim()));
+            let best=null;document.querySelectorAll('#content *').forEach(e=>{if(e.getClientRects().length&&(e.innerText||'').includes(n)&&btn(e)&&(!best||best.contains(e)))best=e});return best?btn(best):null}""", job_name).as_element()
+        j.check(un, 'no Unsave on the saved job')          # the job's own control — not a saved post's
         un.click(); pg.wait_for_timeout(600)
+        j.check(job_name not in j.text(pg), 'the job is still listed in Saved after Unsave')
         if j.demo: j.skip('demo keeps no data across a reload (no backend) — checked in live')
         j.check(j.wait_db("select count(*) from public.saved_jobs where user_id='%s'" % a['id'], 5, want='0') == '0', 'the saved_jobs row is still there')
-        j.reload(pg); j.nav(pg, 'saved'); j.check('Saved job' not in j.text(pg) and 'Saved post one' in j.text(pg), 'after reload Saved is inconsistent')
+        j.reload(pg); j.nav(pg, 'saved'); j.check('Saved job' not in j.text(pg) and 'Saved post one' in j.text(pg) and 'Saved post two' in j.text(pg), 'after reload Saved is inconsistent')
 
 @journey('J-SOCIAL-50')
 def back_forward_links(j):
@@ -210,7 +214,7 @@ def admin_suspends_spammer(j):
     with j.step('M: Admin → Review → Reported members: grouped reports per account'):
         j.nav(pm, 'admin'); j.click(pm, r'^(🛡️ Review|Review|المراجعة)', scope='#content', what='Review')
         j.click(pm, r'Reported members|الأعضاء المبلغ عنهم', scope='#content', what='Reported members'); pm.wait_for_timeout(600)
-        row = pm.locator('#content .dx-mod-row').filter(has_text='Spam Seller')
+        row = pm.locator('#content .dx-mod-row').filter(has_text='Spam Seller').filter(has_text=j.tag)        # earlier runs leave their own Spam Seller
         j.check(row.count() == 1, 'S is not listed once in Reported members')
         j.check(re.search(r'2 reports from 2 members|2 بلاغ|بلاغان', row.first.inner_text()), 'the row does not group the reports (%s)' % row.first.inner_text()[:120])
     with j.step('Suspend S with a reason; remove the spam posts: stored and enforced by the database'):
@@ -218,7 +222,7 @@ def admin_suspends_spammer(j):
         pm.fill('#dxModWhy', 'Mass spam ads ' + j.tag)
         j.click(pm, r'^(Suspend account|إيقاف الحساب)$', scope='body', what='Suspend account', exact=True); pm.wait_for_timeout(1200)
         j.check(j.wait_db("select reason from public.account_suspensions where user_id='%s'" % s['id'], 6) == 'Mass spam ads ' + j.tag, 'the suspension and its reason are not stored')
-        j.check(not pm.locator('#content .dx-mod-row').filter(has_text='Spam Seller').count(), 'S is still in the queue after the decision')
+        j.check(not pm.locator('#content .dx-mod-row').filter(has_text='Spam Seller').filter(has_text=j.tag).count(), 'S is still in the queue after the decision')
     with j.step('S cannot post, comment or message; S sees "account suspended"'):
         r = s['page'].evaluate("u=>dxLive.sb.from('posts').insert({user_id:u,body:'after suspension'}).then(r=>r.error?'refused':'stored')", s['id'])
         j.check(r == 'refused', 'a suspended member can still post')

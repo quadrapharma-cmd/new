@@ -54,6 +54,11 @@ def find_people(j):
     with j.step('Filter by specialty "Procurement" (and country): results narrow correctly; empty result has a helpful state'):
         f = pg.locator('#content select:visible, #content [role=combobox]:visible, #content .chip:visible, #content [class*=filter] button:visible')
         j.check(f.count(), 'not built: no specialty/country filter for people')
+        if j.live:                                                    # Eva Pharma: Carim (procurement) stays, Dalia (regulatory) goes
+            pg.select_option('#content select:visible >> nth=0', label='Procurement & sourcing'); pg.wait_for_timeout(1200); t = j.text(pg)
+            j.check('Carim' in t and 'Dalia' not in t and 'Chaker' not in t, 'the specialty filter does not narrow the results to procurement people')
+            pg.select_option('#content select:visible >> nth=1', label='Saudi Arabia'); pg.wait_for_timeout(1200)
+            j.check(re.search(r'No members|try fewer|لا يوجد', j.text(pg)) and 'Carim' not in j.text(pg), 'a filter that matches nobody does not show a helpful empty state')
     with j.step('Search "Carim" in the top-bar search and open the result'):
         q = 'Carim' if j.live else 'Rahmani'
         t = top_search(j, pg, q); j.check(q in t, 'the top-bar search finds no member "%s"' % q); open_result(j, pg, q)

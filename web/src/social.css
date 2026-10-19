@@ -102,3 +102,13 @@ html.dx-dark .dx-pf-menu { filter: invert(1) hue-rotate(180deg); }
 .dx-rep-q { margin: 8px 0; padding: 8px 12px; border-inline-start: 3px solid #e4e6eb; color: #65676b; font-size: 13px; }
 .dx-mod-pill { display: inline-block; margin-inline-start: 6px; padding: 1px 8px; border-radius: 99px; background: #fee2e2; color: #b91c1c; font-size: 11px; font-weight: 700; }
 .dx-cmt-rep:hover { color: #dc2626 !important; }
+
+/* ── find people on the Network page (soc_nav.js) ── */
+.dx-np { padding: 12px 14px; margin-bottom: 14px; }
+.dx-np-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.dx-np-q { flex: 1 1 240px; min-width: 0; min-height: 40px; padding: 8px 12px; border: 1px solid #e4e6eb; border-radius: 9px; font: inherit; font-size: 13.5px; }
+.dx-np-sel { flex: 0 1 190px; min-width: 0; min-height: 40px; padding: 6px 10px; border: 1px solid #e4e6eb; border-radius: 9px; font: inherit; font-size: 13px; background: #fff; }
+#content.dx-np-on .net-grid { display: none; }
+.dx-np-n { font-size: 12px; color: #65676b; margin: 10px 0 4px; }
+.dx-np-msg { padding: 18px 4px; color: #65676b; font-size: 13px; }
+@media (max-width: 600px) { .dx-np-sel { flex: 1 1 45%; } }
