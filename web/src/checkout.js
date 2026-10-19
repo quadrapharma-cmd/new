@@ -69,4 +69,6 @@
     if (bp) { e.preventDefault(); e.stopImmediatePropagation(); var lid = (document.getElementById('dxPayListing') || {}).value; if (!lid) { D.toast('Choose the listing to promote'); return; }
       start({ product: ctx.plan === 'featured' ? 'featured' : 'boost', method: chosen(document, 'dxPayBoost'), listing_id: +lid }, bp, function () { document.getElementById('boostModalOverlay').classList.remove('show'); }); }
   }, true);
+  /* other checkouts (a paid course) use the same methods, amounts and result windows */
+  window.dxCheckout = { methods: methods, chosen: chosen, egp: egp, start: start };
 })();

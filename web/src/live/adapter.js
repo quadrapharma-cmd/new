@@ -2535,6 +2535,7 @@
     if (!TRN.courses.length) grid.innerHTML = '<div style="padding:18px;color:#65676b;font-size:13px">No courses yet.</div>';
   }
   document.addEventListener('click', function (e) {
+    if (window.dxTrainingUI) return;                                  /* training.js (T-01) draws and acts on the cards */
     var b = e.target.closest && e.target.closest('.training-grid .tr-card[data-course] button'); if (!b || !ME_UUID) return;
     e.preventDefault(); e.stopPropagation(); var id = +b.closest('.tr-card').dataset.course, t = TRN.courses.find(function (x) { return x.id === id; });
     if (TRN.mine[id]) { window.toast('You are already enrolled in ' + t.title); return; }
@@ -2545,7 +2546,7 @@
   }, true);
   var origRenderTraining = window.renderTraining;
   window.renderTraining = function () {
-    var r = origRenderTraining.apply(this, arguments); if (!ME_UUID) return r;
+    var r = origRenderTraining.apply(this, arguments); if (!ME_UUID || window.dxTrainingUI) return r;
     paintTraining();
     if (Date.now() - TRN.at > 3000 && !TRN.loading) { TRN.loading = true; loadTraining().then(function () { TRN.loading = false; if (document.body.getAttribute('data-page') === 'training') paintTraining(); }, function (e) { TRN.loading = false; toastErr(e); }); }
     return r;
@@ -2644,7 +2645,7 @@
   var oPill = window.dgPillText;
   if (oPill) window.dgPillText = function (page) {
     if (ME_UUID && page === 'market') { var f = function (n) { return PG.stats ? fmtK(n) : '…'; }; return f(stat('supply') + stat('demand')) + ' LISTINGS  /  ' + f(stat('supply')) + ' SUPPLY  /  ' + f(stat('demand')) + ' DEMAND  /  ' + f(stat('suppliers')) + ' SUPPLIERS'; }
-    if (ME_UUID && page === 'training') return (TRN.at ? TRN.courses.length : '…') + ' COURSES  /  GMP  /  REGULATORY  /  FORMULATION';   /* the courses the database has, not the demo's six */
+    if (ME_UUID && page === 'training' && !window.dxTrainingUI) return (TRN.at ? TRN.courses.length : '…') + ' COURSES  /  GMP  /  REGULATORY  /  FORMULATION';   /* the courses the database has, not the demo's six */
     return oPill.apply(this, arguments);
   };
   function setNum(e, v) { if (e && e.textContent !== v) e.textContent = v; }
@@ -3215,6 +3216,90 @@
   };
   ICON.group_post = '💬'; ICON.group_removed = '🚪'; ICON.group_post_removed = '🧹'; ICON.group_join_declined = '📨'; ICON.job_status = '💼'; ICON.job_alert = '🔔';
   onReset(function () { GPOST = {}; GX.muted = {}; });
+
+  /* ===== AREA community: training (T-01) — window.dxTraining over 0062: courses, lessons (content through lesson_content(), files by
+     signed link from the private course-media bucket), progress, the final quiz (scored by the server), certificates (the verify link
+     reads the one code it names), paid courses through the payment pipeline, Admin → Training. training.js draws. ===== */
+  var TCOLS = 'id,title,description,emoji,duration,hours,level,topic,instructor,instructor_title,price_egp,enrolled_count,active,pass_mark,sort_order,created_at,lessons:course_lessons(count)';
+  function tCourse(x) { return { id: x.id, title: x.title, desc: x.description || '', emoji: x.emoji || '🎓', duration: x.duration || (x.hours ? (+x.hours) + ' hours' : ''), hours: x.hours != null ? +x.hours : null,
+    level: x.level || 'Beginner', topic: x.topic || 'other', instructor: x.instructor || '', instructorTitle: x.instructor_title || '', price: +x.price_egp || 0, enrolled: +x.enrolled_count || 0,
+    active: !!x.active, passMark: x.pass_mark || 70, lessons: (x.lessons && x.lessons[0] && x.lessons[0].count) || 0 }; }
+  function tErr(r) { if (r.error) throw new Error(friendly(r.error)); return r.data; }
+  async function certRead(code) {   /* signed in or not: the REST row of the one certificate the link names (x-dbx-cert, 0062) */
+    var k = String(code || '').trim().toUpperCase(); if (!/^DBX-[0-9A-F]{10}$/.test(k)) return { valid: false, code: k };
+    var s = await sb.auth.getSession(), tok = (s.data && s.data.session && s.data.session.access_token) || CFG.anonKey;
+    var r = await fetch(CFG.url + '/rest/v1/certificates?select=code,name,course_title,hours,issued_at,revoked_at&code=eq.' + encodeURIComponent(k), { headers: { apikey: CFG.anonKey, Authorization: 'Bearer ' + tok, 'x-dbx-cert': k } });
+    var rows = r.ok ? await r.json() : []; var c = rows[0];
+    return c ? { valid: !c.revoked_at, revoked: !!c.revoked_at, code: c.code, name: c.name, course: c.course_title, hours: c.hours, issued_at: c.issued_at } : { valid: false, code: k };
+  }
+  window.dxTraining = {
+    live: true, verifyReady: true,
+    ready: function () { return !!ME_UUID; },
+    list: async function () { var r = tErr(await sb.from('training_courses').select(TCOLS).order('sort_order').order('created_at').limit(200)), mine = await window.dxTraining.mine();
+      return r.map(tCourse).filter(function (c) { return c.active || mine[c.id]; }); },
+    mine: async function () {
+      var a = await Promise.all([sb.from('course_enrollments').select('course_id,status,completed_at,order_id').eq('user_id', ME_UUID).limit(500),
+                                 sb.from('lesson_progress').select('lesson_id,course_id').eq('user_id', ME_UUID).limit(5000),
+                                 sb.from('certificates').select('code,course_id').eq('user_id', ME_UUID).limit(500)]);
+      var en = tErr(a[0]), pr = tErr(a[1]), ce = tErr(a[2]), ids = en.map(function (e) { return e.course_id; }), out = {}, tot = {};
+      if (ids.length) tErr(await sb.from('course_lessons').select('id,course_id').in('course_id', ids).limit(5000)).forEach(function (l) { tot[l.course_id] = (tot[l.course_id] || 0) + 1; });
+      en.forEach(function (e) { out[e.course_id] = { status: e.status, paid: !!e.order_id, done: [], total: tot[e.course_id] || 0, cert: null, completed_at: e.completed_at }; });
+      pr.forEach(function (p) { if (out[p.course_id]) out[p.course_id].done.push(p.lesson_id); });
+      ce.forEach(function (c) { if (out[c.course_id]) out[c.course_id].cert = c.code; });
+      return out;
+    },
+    lessons: async function (id) { return tErr(await sb.from('course_lessons').select('id,position,title,kind,minutes').eq('course_id', +id).order('position').limit(200)); },
+    open: async function (lid) {
+      var r = await sb.rpc('lesson_content', { p_lesson: +lid }); var l = tErr(r), url = null;
+      if (l.media_path) { var u = await sb.storage.from('course-media').createSignedUrl(l.media_path, 3600); if (u.error) throw new Error(friendly(u.error)); url = /^https?:/.test(u.data.signedUrl) ? u.data.signedUrl : CFG.url + '/storage/v1' + u.data.signedUrl; }
+      return { id: l.id, position: l.position, title: l.title, kind: l.kind, minutes: l.minutes, body: l.body || '', url: url };
+    },
+    done: async function (lid) { var r = await sb.from('lesson_progress').insert({ lesson_id: +lid, user_id: ME_UUID, course_id: 0 }); if (r.error && r.error.code !== '23505') throw new Error(friendly(r.error)); },
+    enroll: async function (id) { var r = await sb.from('course_enrollments').insert({ course_id: +id, user_id: ME_UUID }); if (r.error && r.error.code !== '23505') throw new Error(/row-level/i.test(r.error.message) ? 'This is a paid course — buy it to enrol' : friendly(r.error)); },
+    unenroll: async function (id) { var r = tErr(await sb.from('course_enrollments').delete().eq('course_id', +id).eq('user_id', ME_UUID).select('course_id')); if (!r.length) throw new Error('A paid course stays yours'); },
+    quote: function (id) { return window.dxPay.quote('course_' + id); },
+    quiz: async function (id) { return tErr(await sb.from('course_questions').select('id,position,prompt,options').eq('course_id', +id).order('position').limit(100)); },
+    submit: async function (id, answers) { return tErr(await sb.rpc('course_submit_quiz', { p_course: +id, p_answers: answers || [] })); },
+    cert: certRead,
+    certsOf: async function (uid) { var u = uid === (window.ME && ME.id) ? ME_UUID : uuidOf(uid); if (!u) return [];
+      return tErr(await sb.from('certificates').select('code,course_title,issued_at,revoked_at').eq('user_id', u).is('revoked_at', null).order('issued_at', { ascending: false }).limit(50))
+        .map(function (c) { return { code: c.code, course: c.course_title, issued_at: c.issued_at, valid: true }; }); },
+    /* Admin → Training (RLS: Drugbox admins only) */
+    adminList: async function () { return tErr(await sb.from('training_courses').select(TCOLS).order('sort_order').order('created_at').limit(500)).map(tCourse); },
+    saveCourse: async function (o) {
+      var row = { title: o.title, description: o.desc || '', topic: o.topic, level: o.level, duration: o.duration || '', hours: o.hours, price_egp: o.price || 0, pass_mark: o.passMark || 70,
+                  instructor: o.instructor || '', instructor_title: o.instructorTitle || '', emoji: o.emoji || '🎓', active: o.active !== false };
+      var r = o.id ? await sb.from('training_courses').update(row).eq('id', +o.id).select('id') : await sb.from('training_courses').insert(row).select('id');
+      var d = tErr(r); if (!d.length) throw new Error('Only the Drugbox team manages courses'); return d[0].id;
+    },
+    setActive: async function (id, on) { var d = tErr(await sb.from('training_courses').update({ active: !!on }).eq('id', +id).select('id')); if (!d.length) throw new Error('Only the Drugbox team manages courses'); },
+    adminLessons: function (id) { return window.dxTraining.lessons(id); },
+    addLesson: async function (id, l) {
+      var cur = await window.dxTraining.lessons(id), pos = cur.reduce(function (a, x) { return Math.max(a, x.position); }, 0) + 1, path = null, kind = l.kind;
+      if (l.file) { kind = /^video\//.test(l.file.type) ? 'video' : 'pdf'; path = 'courses/' + (+id) + '/' + rid() + '.' + (kind === 'video' ? (/webm/.test(l.file.type) ? 'webm' : 'mp4') : 'pdf');
+        var u = await sb.storage.from('course-media').upload(path, l.file, { contentType: l.file.type }); if (u.error) throw new Error(friendly(u.error)); }
+      var r = await sb.from('course_lessons').insert({ course_id: +id, position: pos, title: l.title, kind: kind, minutes: l.minutes || 10, body: l.body || '', media_path: path }).select('id');
+      tErr(r);
+    },
+    removeLesson: async function (lid) { var d = tErr(await sb.from('course_lessons').delete().eq('id', +lid).select('id')); if (!d.length) throw new Error('Only the Drugbox team manages courses'); },
+    adminQuiz: async function (id) { return tErr(await sb.rpc('course_questions_admin', { p_course: +id })); },
+    addQuestion: async function (id, q) { var cur = await window.dxTraining.adminQuiz(id), pos = cur.reduce(function (a, x) { return Math.max(a, x.position); }, 0) + 1;
+      tErr(await sb.from('course_questions').insert({ course_id: +id, position: pos, prompt: q.prompt, options: q.options, answer: q.answer }).select('id')); },
+    removeQuestion: async function (qid) { var d = tErr(await sb.from('course_questions').delete().eq('id', +qid).select('id')); if (!d.length) throw new Error('Only the Drugbox team manages courses'); }
+  };
+  /* a certificate or a course payment notice leads to Training */
+  var markReadTR = window.markNotifRead;
+  window.markNotifRead = function (id) {
+    var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }), r = markReadTR.apply(this, arguments); if (!n) return r;
+    if (n.rawType === 'certificate' && n.certCode) { window.goto('training'); if (window.dxTrainingUI) setTimeout(function () { window.dxTrainingUI.cert(n.certCode); }, 300); }
+    else if (n.rawType === 'payment' && /you can start/.test(n.text || '')) window.goto('training');
+    return r;
+  };
+  var notifFromTR = notifFrom;
+  notifFrom = function (n) { var o = notifFromTR(n); if (n.type === 'certificate') o.certCode = (n.data && n.data.code) || null; o.rawType = o.rawType || n.type; return o; };
+  ICON.certificate = '🎓'; ICON.payment = ICON.payment || '💳';
+  onReset(function () { window.dispatchEvent(new Event('dx:training')); });
+  window.dispatchEvent(new Event('dx:training'));
 
 
 
