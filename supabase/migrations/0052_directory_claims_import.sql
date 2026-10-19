@@ -44,8 +44,10 @@ create or replace function public.can_write_document(p_name text) returns boolea
 $$;
 
 -- ── claims need the registry document ────
-drop function if exists public.claim_company(bigint, text);
-create or replace function public.claim_company(p_company_id bigint, p_note text default null, p_registry_path text default null)
+do $$ begin   -- the claim takes three arguments now (no defaults: a two-argument call reaches the overload below, never this one by accident)
+  if exists (select 1 from pg_proc p where p.oid = 'public.claim_company(bigint, text, text)'::regprocedure and p.pronargdefaults > 0) then drop function public.claim_company(bigint, text, text); end if;
+exception when undefined_function then null; end $$;
+create or replace function public.claim_company(p_company_id bigint, p_note text, p_registry_path text)
 returns bigint language plpgsql security definer set search_path = public as $$
 declare me uuid := auth.uid(); c public.companies; rid bigint;
 begin
@@ -70,6 +72,12 @@ begin
 end $$;
 revoke all on function public.claim_company(bigint, text, text) from public, anon, authenticated, service_role;
 grant execute on function public.claim_company(bigint, text, text) to authenticated, service_role;
+-- the two-argument claim (0021) stays callable with the same rules: without a registry document it is refused
+create or replace function public.claim_company(p_company_id bigint, p_note text default null) returns bigint language sql security definer set search_path = public as $$
+  select public.claim_company(p_company_id, p_note, null::text)
+$$;
+revoke all on function public.claim_company(bigint, text) from public, anon, authenticated, service_role;
+grant execute on function public.claim_company(bigint, text) to authenticated, service_role;
 
 -- ── admin bulk import from a public list ────
 -- a name as the directory compares it: lower case, Arabic letters unified, no punctuation, no legal-form suffixes

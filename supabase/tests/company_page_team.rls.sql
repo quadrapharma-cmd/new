@@ -115,10 +115,23 @@ select pg_temp.ok('a changed certificate needs a new check', $$(select checked_a
 
 -- ══ 0051: team ══
 select pg_temp.as_server();
-select pg_temp.ok('who receives what follows the roles: quotes → sales, questionnaires → quality, dossiers → admin', $$
+select pg_temp.ok('members written in directly route nothing: every kind goes to the owner until someone joins or a role changes', $$
+  not exists (select 1 from public.company_routing where company_id = pg_temp.id('co')) and public.deal_receiver(pg_temp.id('co'), 'quote') = 'd1111111-1111-1111-1111-111111111111'$$);
+select pg_temp.step('the sales member becomes management', $$update public.company_members set role = 'management' where company_id = pg_temp.id('co') and user_id = 'd3333333-3333-3333-3333-333333333333'$$);
+select pg_temp.ok('who receives what follows the role: quotes, services and dossiers → the new management member', $$
   (select user_id from public.company_routing where company_id = pg_temp.id('co') and request_type = 'quote') = 'd3333333-3333-3333-3333-333333333333'
-  and (select user_id from public.company_routing where company_id = pg_temp.id('co') and request_type = 'questionnaire') = 'd4444444-4444-4444-4444-444444444444'
-  and (select user_id from public.company_routing where company_id = pg_temp.id('co') and request_type = 'dossier') = 'd2222222-2222-2222-2222-222222222222'$$);
+  and (select user_id from public.company_routing where company_id = pg_temp.id('co') and request_type = 'dossier') = 'd3333333-3333-3333-3333-333333333333'
+  and (select user_id from public.company_routing where company_id = pg_temp.id('co') and request_type = 'service') = 'd3333333-3333-3333-3333-333333333333'$$);
+select pg_temp.step('the owner gives questionnaires to the admin by hand; the member goes back to sales; the quality member becomes regulatory', $$
+  insert into public.company_routing (company_id, request_type, user_id) values (pg_temp.id('co'), 'questionnaire', 'd2222222-2222-2222-2222-222222222222');
+  update public.company_members set role = 'sales' where company_id = pg_temp.id('co') and user_id = 'd3333333-3333-3333-3333-333333333333';
+  update public.company_members set role = 'regulatory' where company_id = pg_temp.id('co') and user_id = 'd4444444-4444-4444-4444-444444444444'$$);
+select pg_temp.ok('…sales keeps quotes but drops dossiers; the hand-made questionnaire route stays with the admin', $$
+  (select user_id from public.company_routing where company_id = pg_temp.id('co') and request_type = 'quote') = 'd3333333-3333-3333-3333-333333333333'
+  and (select user_id from public.company_routing where company_id = pg_temp.id('co') and request_type = 'questionnaire') = 'd2222222-2222-2222-2222-222222222222'
+  and (select user_id from public.company_routing where company_id = pg_temp.id('co') and request_type = 'dossier') = 'd4444444-4444-4444-4444-444444444444'$$);
+select pg_temp.step('the regulatory member goes back to quality', $$update public.company_members set role = 'quality' where company_id = pg_temp.id('co') and user_id = 'd4444444-4444-4444-4444-444444444444'$$);
+select pg_temp.ok('…and drops dossiers (the owner answers them again)', $$not exists (select 1 from public.company_routing where company_id = pg_temp.id('co') and request_type = 'dossier')$$);
 select pg_temp.as_user('d3333333-3333-3333-3333-333333333333');
 select pg_temp.no('a sales member cannot invite', $$select public.company_invite(pg_temp.id('co'), 'cp-invitee@x.test', 'CP Invitee', 'sales')$$, '42501');
 select pg_temp.as_user('d2222222-2222-2222-2222-222222222222');
@@ -167,7 +180,13 @@ select pg_temp.no('asking to join an unclaimed page is refused (claim it)', $$se
 select pg_temp.as_anon();
 select pg_temp.no('anon cannot invite', $$select public.company_invite(pg_temp.id('co'), 'a@b.c', 'x', 'sales')$$, '42501');
 select pg_temp.no('anon cannot ask to join', $$select public.company_join_request(pg_temp.id('co'), 'sales')$$, '42501');
-select pg_temp.no('anon cannot read invitations', $$select count(*) from public.company_invites$$, '42501');
+select pg_temp.ok('anon reads no invitation (F-26: an empty answer, never an error)', $$(select count(*) from public.company_invites) = 0$$);
+
+-- ══ 0051: a member who leaves takes no route along ══
+select pg_temp.as_server();
+select pg_temp.step('the sales member (who receives quotes) leaves the team', $$delete from public.company_members where company_id = pg_temp.id('co') and user_id = 'd3333333-3333-3333-3333-333333333333'$$);
+select pg_temp.ok('quotes go to the owner again, not to someone gone', $$not exists (select 1 from public.company_routing where company_id = pg_temp.id('co') and user_id = 'd3333333-3333-3333-3333-333333333333')
+  and public.deal_receiver(pg_temp.id('co'), 'quote') = 'd1111111-1111-1111-1111-111111111111'$$);
 
 -- ══ report ═══════════════════════════════════════════════════════════════════════════════════
 select pg_temp.as_server();

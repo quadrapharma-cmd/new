@@ -121,7 +121,7 @@ $$;
 revoke all on function public.documents_to_review(int) from public, anon, authenticated, service_role;
 grant execute on function public.documents_to_review(int) to authenticated, service_role;
 
--- documents bucket: companydocs/<company id>/… (the cases before are 0056's)
+-- documents bucket: companydocs/<company id>/… (the cases before are 0054's listings and 0056's deals)
 create or replace function public.can_read_document(p_name text) returns boolean language sql stable security definer set search_path = public as $$
   select case (storage.foldername(p_name))[1]
     when 'cv' then (storage.foldername(p_name))[2] = auth.uid()::text
@@ -132,6 +132,8 @@ create or replace function public.can_read_document(p_name text) returns boolean
     when 'payments' then (storage.foldername(p_name))[2] = auth.uid()::text or public.is_platform_admin()
     when 'claims' then (storage.foldername(p_name))[2] = auth.uid()::text or public.is_moderator()
     when 'deals' then (storage.foldername(p_name))[2] ~ '^\d{1,18}$' and public.deal_is_party(((storage.foldername(p_name))[2])::bigint)
+    when 'listings' then (storage.foldername(p_name))[2] = auth.uid()::text or public.is_moderator()
+                   or (auth.uid() is not null and exists (select 1 from public.products p where p.coa_path = p_name and p.active))
     when 'companydocs' then (storage.foldername(p_name))[2] ~ '^\d{1,18}$'
                    and (public.is_company_member(((storage.foldername(p_name))[2])::bigint) or public.is_moderator())
     else false end
@@ -145,6 +147,7 @@ create or replace function public.can_write_document(p_name text) returns boolea
     when 'payments' then (storage.foldername(p_name))[2] = auth.uid()::text
     when 'claims' then (storage.foldername(p_name))[2] = auth.uid()::text
     when 'deals' then (storage.foldername(p_name))[2] ~ '^\d{1,18}$' and public.deal_is_party(((storage.foldername(p_name))[2])::bigint)
+    when 'listings' then (storage.foldername(p_name))[2] = auth.uid()::text
     when 'companydocs' then (storage.foldername(p_name))[2] ~ '^\d{1,18}$'
                    and public.is_company_member(((storage.foldername(p_name))[2])::bigint, array['owner','admin','regulatory','quality'])
     else false end
@@ -171,6 +174,9 @@ exception when duplicate_object then null; end $$;
 revoke all on public.company_activity from public, anon, authenticated;
 grant select, insert on public.company_activity to authenticated;
 grant all on public.company_activity to service_role;
+grant select on public.company_activity to anon;   -- F-26: a signed-out query returns no rows (every policy is for signed-in members), never an error
+revoke all on sequence public.company_activity_id_seq from public, anon, authenticated, service_role;
+grant usage, select, update on sequence public.company_activity_id_seq to authenticated, service_role;
 create or replace function public.company_activity_stamp() returns trigger language plpgsql as $$
 begin new.created_at := now(); return new; end $$;
 revoke all on function public.company_activity_stamp() from public, anon, authenticated, service_role;
@@ -190,6 +196,7 @@ exception when duplicate_object then null; end $$;
 revoke all on public.notification_prefs from public, anon, authenticated;
 grant select, insert, update on public.notification_prefs to authenticated;
 grant all on public.notification_prefs to service_role;
+grant select on public.notification_prefs to anon;   -- F-26: a signed-out query returns no rows (every policy is for signed-in members), never an error
 
 create table if not exists public.notification_outbox (
   id              bigint generated always as identity primary key,
@@ -217,6 +224,9 @@ exception when duplicate_object then null; end $$;
 revoke all on public.notification_outbox from public, anon, authenticated;
 grant select on public.notification_outbox to authenticated;
 grant all on public.notification_outbox to service_role;
+grant select on public.notification_outbox to anon;   -- F-26: a signed-out query returns no rows (every policy is for signed-in members), never an error
+revoke all on sequence public.notification_outbox_id_seq from public, anon, authenticated, service_role;
+grant usage, select, update on sequence public.notification_outbox_id_seq to authenticated, service_role;
 
 -- the kinds worth an e-mail: business steps a person may be waiting for (not likes, follows or comments)
 create or replace function public.notification_to_outbox() returns trigger language plpgsql security definer set search_path = public as $$

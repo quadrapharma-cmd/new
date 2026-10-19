@@ -1,14 +1,14 @@
 -- ═════════════════════════════════════════════════════════════════════
 -- 0053 — the directory search finds a misspelt company name (J-BUSINESS-01) and the page's dates and cover come with its row
 --   directory_companies_page (0026) with one more way to match a search: a word of the English or Arabic name close to the
---   query (pg_trgm word similarity ≥ 0.6, "medsinya" → "Medsinia Industries"; queries of 4+ characters, served by the trigram
+--   query (pg_trgm word similarity ≥ 0.6, "medsinya" → "Medsinia Industries"; queries of 4–40 characters, served by the trigram
 --   indexes on name / name_ar), and two more columns in each row: updated_at (the page's freshness, B-22 — no extra request
 --   per page) and cover_url (0050's cover). Same arguments, same order, same limits.
 -- Safe to run twice.
 -- ═════════════════════════════════════════════════════════════════════
 -- pg_trgm's functions are not callable by the API roles (0026): the fuzzy match runs as its owner, in the private schema (not an RPC)
 create or replace function private.directory_fuzzy(p_q text) returns setof bigint language sql stable security definer set search_path = public as $$
-  select c.id from public.companies c where length(p_q) >= 4 and (p_q <% c.name or p_q <% c.name_ar) limit 500
+  select c.id from public.companies c where length(p_q) between 4 and 40 and (p_q <% c.name or p_q <% c.name_ar) limit 500   -- a misspelt name is short; a long query is not a name (its few trigrams would match every short name)
 $$;
 revoke all on function private.directory_fuzzy(text) from public, anon, authenticated, service_role;
 grant execute on function private.directory_fuzzy(text) to authenticated, service_role;

@@ -42,6 +42,9 @@ exception when duplicate_object then null; end $$;
 revoke all on public.deal_files from public, anon, authenticated;
 grant select on public.deal_files to authenticated;
 grant all on public.deal_files to service_role;
+grant select on public.deal_files to anon;   -- F-26: a signed-out query returns no rows (every policy is for signed-in members), never an error
+revoke all on sequence public.deal_files_id_seq from public, anon, authenticated, service_role;
+grant usage, select, update on sequence public.deal_files_id_seq to authenticated, service_role;
 
 create or replace function public.deal_attach(p_ref text, p_kind text, p_path text, p_name text)
 returns bigint language plpgsql security definer set search_path = public as $$
@@ -125,6 +128,7 @@ exception when duplicate_object then null; end $$;
 revoke all on public.review_responses from public, anon, authenticated;
 grant select on public.review_responses to authenticated;
 grant all on public.review_responses to service_role;
+grant select on public.review_responses to anon;   -- F-26: a signed-out query returns no rows (every policy is for signed-in members), never an error
 
 -- the reviews of a company, as its page shows them (a removed one is not shown; the dispute note stays with Drugbox)
 create or replace function public.company_reviews(p_company bigint) returns json language sql stable security definer set search_path = public as $$

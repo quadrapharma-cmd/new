@@ -12,9 +12,9 @@
 --   4. company_join_request(company, role, note): a signed-in person asks to join a claimed company; its owners and admins are
 --      notified. company_join_decide(company, person, ok, role): an owner / admin approves (with the role) or declines; the
 --      person is told.
---   5. Who receives what (company_routing) follows the roles: after every change to a company's team each kind of request goes
---      to the first active member with the matching role (quote → Sales, Management, Admin, owner; dossier → Regulatory,
---      Management, Admin, owner; …), as the interface's "Who receives what" shows it.
+--   5. Who receives what (company_routing) follows the team without undoing the owner's choices: a member who leaves loses
+--      their routes (the owner answers); a member who joins or whose role changes drops the kinds the new role does not take
+--      and picks up the role's kinds nobody receives yet (questionnaire → Quality / Regulatory, dossier → Regulatory, job → HR…).
 --   Every function is SECURITY DEFINER, checks the caller itself, and is granted to signed-in members only.
 -- Safe to run twice.
 -- ═════════════════════════════════════════════════════════════════════
@@ -56,6 +56,9 @@ exception when duplicate_object then null; end $$;
 revoke all on public.company_invites from public, anon, authenticated;
 grant select, delete on public.company_invites to authenticated;
 grant all on public.company_invites to service_role;
+revoke all on sequence public.company_invites_id_seq from public, anon, authenticated, service_role;
+grant usage, select, update on sequence public.company_invites_id_seq to authenticated, service_role;
+grant select on public.company_invites to anon;   -- F-26: a signed-out query returns no rows (every policy is for signed-in members), never an error
 
 -- the interface's roles (the database's names)
 create or replace function public.team_role(p text) returns text language sql immutable set search_path = public as $$
@@ -66,35 +69,35 @@ revoke all on function public.team_role(text) from public, anon, authenticated, 
 grant execute on function public.team_role(text) to authenticated, service_role;
 
 -- ── who receives what follows the roles ────
-create or replace function public.company_reroute(p_company bigint) returns void language plpgsql security definer set search_path = public as $$
-declare t record;
-begin
-  delete from public.company_routing where company_id = p_company;
-  for t in select * from (values ('quote', array['sales','management','admin','owner']), ('service', array['sales','management','admin','owner']),
-                                 ('surplus', array['sales','admin','owner']), ('group_order', array['sales','admin','owner']),
-                                 ('questionnaire', array['quality','regulatory','admin','owner']), ('dossier', array['regulatory','management','admin','owner']),
-                                 ('job', array['hr','management','admin','owner'])) v(kind, pref) loop
-    insert into public.company_routing (company_id, request_type, user_id)
-    select p_company, t.kind, m.user_id from public.company_members m
-     where m.company_id = p_company and m.accepted and m.role = any(t.pref)
-     order by array_position(t.pref, m.role), m.created_at, m.user_id limit 1;
-  end loop;
-end $$;
-revoke all on function public.company_reroute(bigint) from public, anon, authenticated, service_role;
-grant execute on function public.company_reroute(bigint) to service_role;
+-- who receives what follows the team without ever undoing the owner's own choices in "Who receives what":
+--   a member who leaves (or is no longer accepted) loses their routes — the kind falls back to the owner (deal_receiver);
+--   a member who joins (accepts an invitation, is approved) or whose role changes drops the kinds the new role does not
+--   take, and picks up the kinds of the role that nobody receives yet. A route someone already has is never moved.
+create or replace function public.team_kinds(p_role text) returns text[] language sql immutable set search_path = public as $$
+  select coalesce(array_agg(k), '{}') from (values ('quote', array['sales','management','admin','owner']), ('service', array['sales','management','admin','owner']),
+      ('surplus', array['sales','admin','owner']), ('group_order', array['sales','admin','owner']), ('questionnaire', array['quality','regulatory','admin','owner']),
+      ('dossier', array['regulatory','management','admin','owner']), ('job', array['hr','management','admin','owner'])) v(k, pref) where p_role = any(pref)
+$$;
+revoke all on function public.team_kinds(text) from public, anon, authenticated, service_role;
+grant execute on function public.team_kinds(text) to service_role;
+drop function if exists public.company_reroute(bigint);
 
 create or replace function public.company_members_reroute() returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  if tg_op = 'DELETE' then
-    if exists (select 1 from public.companies c where c.id = old.company_id) then perform public.company_reroute(old.company_id); end if;
-  elsif tg_op = 'INSERT' or new.role is distinct from old.role or new.accepted is distinct from old.accepted then
-    perform public.company_reroute(new.company_id);
+  if tg_op = 'DELETE' or (tg_op = 'UPDATE' and old.accepted and not new.accepted) then
+    delete from public.company_routing where company_id = old.company_id and user_id = old.user_id;
+  elsif tg_op = 'UPDATE' and new.accepted and (new.role is distinct from old.role or not old.accepted) then
+    delete from public.company_routing where company_id = new.company_id and user_id = new.user_id and not (request_type = any(public.team_kinds(new.role)));
+    insert into public.company_routing (company_id, request_type, user_id)
+    select new.company_id, k, new.user_id from unnest(public.team_kinds(new.role)) k
+     where new.role not in ('owner', 'admin')                -- an admin keeps answering what the owner gave them, nothing more by itself
+       and not exists (select 1 from public.company_routing r where r.company_id = new.company_id and r.request_type = k);
   end if;
   return null;
 end $$;
 revoke all on function public.company_members_reroute() from public, anon, authenticated, service_role;
 drop trigger if exists trg_company_members_reroute on public.company_members;
-create trigger trg_company_members_reroute after insert or update or delete on public.company_members for each row execute function public.company_members_reroute();
+create trigger trg_company_members_reroute after update or delete on public.company_members for each row execute function public.company_members_reroute();
 
 -- ── invite ────
 create or replace function public.company_invite(p_company bigint, p_email text, p_name text default null, p_role text default 'sales')
@@ -245,7 +248,5 @@ revoke all on function public.company_members_pending_guard() from public, anon,
 drop trigger if exists trg_company_members_pending_guard on public.company_members;
 create trigger trg_company_members_pending_guard before insert or update on public.company_members for each row execute function public.company_members_pending_guard();
 
--- routing for the teams that exist already
-do $$ begin perform public.company_reroute(c.id) from public.companies c where exists (select 1 from public.company_members m where m.company_id = c.id); end $$;
 
 notify pgrst, 'reload schema';
