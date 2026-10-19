@@ -50,7 +50,7 @@ export async function handler(req) {
       // Paymob's order id (intention_order_id) is what its signed callback names: without it the payment could never be confirmed
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j.client_secret || !j.intention_order_id) return failed(502, { error: 'Paymob did not start the payment — nothing was charged; please try again' }, { provider: 'paymob', status: r.status });
-      issued = true; await rpc('set_order_provider_ref', { p_id: order.id, p_ref: String(j.id || ''), p_order: String(j.intention_order_id) });
+      issued = true; await rpc('set_order_provider_ref', { p_id: order.id, p_ref: String(j.id || ''), p_order: String(j.intention_order_id), p_expires: null });
       return json({ order_id: order.id, reference: order.merchant_ref, amount, checkout_url: `${base}/unifiedcheckout/?publicKey=${encodeURIComponent(env('PAYMOB_PUBLIC_KEY'))}&clientSecret=${encodeURIComponent(j.client_secret)}` });
     }
     if (b.method === 'fawry') {
@@ -62,7 +62,7 @@ export async function handler(req) {
       const r = await fetch(`${base}/ECommerceWeb/Fawry/payments/charge`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j.referenceNumber) return failed(502, { error: 'Fawry did not issue a reference number — nothing was charged; please try again' }, { provider: 'fawry', statusCode: j.statusCode ?? r.status, statusDescription: j.statusDescription ?? null });
-      issued = true; await rpc('set_order_provider_ref', { p_id: order.id, p_ref: String(j.referenceNumber), p_expires: new Date(expiry).toISOString() });   // found again in My payments until it expires
+      issued = true; await rpc('set_order_provider_ref', { p_id: order.id, p_ref: String(j.referenceNumber), p_order: null, p_expires: new Date(expiry).toISOString() });   // found again in My payments until it expires
       return json({ order_id: order.id, reference: order.merchant_ref, amount, fawry_reference: j.referenceNumber, expires_at: new Date(expiry).toISOString() });
     }
     return json({ order_id: order.id, reference: order.merchant_ref, amount, instapay: { address: env('INSTAPAY_ADDRESS', ''), name: env('INSTAPAY_NAME', 'Drugbox') } });

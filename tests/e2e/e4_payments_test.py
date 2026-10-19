@@ -171,6 +171,7 @@ s2, _ = http('POST', '/rest/v1/rpc/submit_instapay', {'p_id': i3['order_id'], 'p
 T('…my own payments/<me>/<file> is accepted (under review)', s2 < 300 and lc(i3['order_id']) == 'review', s2)
 s2, x2 = http('POST', '/functions/v1/payments-create', {'product': 'boost', 'method': 'instapay', 'listing_id': int(lid3)}, owner_t)
 T('a second InstaPay order for the same listing is refused while one is under review', s2 == 400 and sql(f"select count(*) from public.payment_orders where listing_id={lid3} and method='instapay'") == '1', (s2, x2))
+http('POST', '/rest/v1/rpc/review_instapay', {'p_id': i3['order_id'], 'p_ok': False}, adm_t)   # no receipt file was uploaded for it: off the review queue
 # 8: an issued invoice keeps what it said
 s1, inv1 = http('POST', '/rest/v1/rpc/order_invoice', {'p_id': oid}, owner_t)
 sql("update public.payment_products set vat_rate=0.15, label='VIP renamed', duration_days=31 where code='vip_month'"); sql("update public.billing_settings set legal_name='Drugbox Renamed S.A.E.' where id")

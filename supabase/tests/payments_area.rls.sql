@@ -69,8 +69,15 @@ select pg_temp.step('a Fawry order whose charge never returned a reference', $$w
 select pg_temp.no('the buyer cannot close an order through payment_start_failed (server-only)', $$select public.payment_start_failed(pg_temp.id('of0'), '{}')$$, '42501');
 select pg_temp.step('a new Fawry order for the same listing', $$with x as (select (public.create_order('boost', 'fawry', null, pg_temp.id('la'))).id) insert into ids select 'of', id::text from x$$);
 select pg_temp.ok('…is allowed: an order without a reference is not "you already have a Fawry reference"', $$pg_temp.id('of') is not null and pg_temp.id('of') <> pg_temp.id('of0')$$);
-select pg_temp.ok('…and the order without a reference is closed (failed, never payable) and hidden from My payments', $$(select status = 'failed' and provider_payload ? 'start_failed' from public.payment_orders where id = pg_temp.id('of0'))
-  and not exists (select 1 from jsonb_array_elements(public.my_payments(null)) e where (e->>'id')::bigint = pg_temp.id('of0'))$$);
+select pg_temp.ok('…and the order without a reference is left alone (a reference issued a moment later still finds it)', $$(select status = 'pending' from public.payment_orders where id = pg_temp.id('of0'))$$);
+select pg_temp.as_server();
+update public.payment_orders set created_at = now() - interval '20 minutes' where id = pg_temp.id('of0');
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
+select pg_temp.ok('…after 15 minutes without a reference My payments shows it as did not go through', $$exists (select 1 from jsonb_array_elements(public.my_payments(null)) e where (e->>'id')::bigint = pg_temp.id('of0') and e->>'status' = 'failed')$$);
+select pg_temp.as_server();
+select pg_temp.ok('payment_start_failed closes it (hidden from My payments)', $$public.payment_start_failed(pg_temp.id('of0'), '{}') = 'failed'$$);
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
+select pg_temp.ok('…hidden', $$not exists (select 1 from jsonb_array_elements(public.my_payments(null)) e where (e->>'id')::bigint = pg_temp.id('of0'))$$);
 select pg_temp.as_server();
 select pg_temp.ok('payment_start_failed (payments-create, when the provider refuses) closes a pending order', $$public.payment_start_failed(pg_temp.id('of'), '{"statusCode":9999}') = 'failed'$$);
 select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');

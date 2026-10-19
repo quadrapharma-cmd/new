@@ -21,7 +21,8 @@
 --   6. vip_reminders(): a notice 3 days before a VIP plan ends (daily with expire_vip_plans when pg_cron is enabled).
 --   7. (verification follow-ups) a payment that could not start (the provider refused or was unreachable) is closed at once by
 --      payment_start_failed (server-only, called by payments-create) — it never blocks a new payment; only a Fawry order WITH a
---      reference that has not expired counts as "already have a reference" (and the message names that Fawry reference).
+--      reference that has not expired counts as "already have a reference" (and the message names that Fawry reference); one that
+--      never got its reference shows as "did not go through" in My payments after 15 minutes.
 --      The buyer may cancel their own pending, unpaid order (cancel_order → 'cancelled'); a cancelled order is never activated
 --      (a late payment for it is recorded and Drugbox is told a refund is due). VIP cannot be bought for a suspended company,
 --      a paid boost / Featured only for an active listing, and a second InstaPay order waits while one is under review.
@@ -74,6 +75,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 revoke all on public.billing_settings from public, anon, authenticated, service_role;
 grant select, update on public.billing_settings to authenticated;
+grant select on public.billing_settings to anon;                           -- anon: no policy for anon, so no rows (seller details are shown to signed-in members on invoices)
 grant all on public.billing_settings to service_role;
 
 create or replace function public.assign_invoice_no(p_id bigint) returns text language plpgsql security definer set search_path = public as $$
@@ -135,10 +137,8 @@ begin
   end if;
   v_company := case when pr.kind = 'vip' then p_company end; v_listing := case when pr.kind <> 'vip' then p_listing end;
   perform pg_advisory_xact_lock(hashtext('drugbox.order.' || auth.uid()::text));   -- one order at a time per buyer (two clicks make one order)
-  -- a Fawry order that never got its reference (the provider call failed or never returned) can never be paid: closed, never blocking
-  update public.payment_orders x set status = 'failed', provider_payload = coalesce(x.provider_payload, '{}'::jsonb) || jsonb_build_object('start_failed', true)
-   where x.user_id = auth.uid() and x.product_code = pr.code and coalesce(x.listing_id, 0) = coalesce(v_listing, 0) and coalesce(x.company_id, 0) = coalesce(v_company, 0)
-     and x.status = 'pending' and x.method = 'fawry' and x.provider_ref is null;
+  -- a Fawry order without its reference (the provider call failed, or is still running in another request) never blocks: it is
+  -- not closed here (a reference issued a moment later must still find its order); payments-create closes it if Fawry refuses
   -- still payable: a Fawry reference that has not expired, an InstaPay order waiting for its transfer or being checked by Drugbox
   select * into dup from public.payment_orders x
    where x.user_id = auth.uid() and x.product_code = pr.code and coalesce(x.listing_id, 0) = coalesce(v_listing, 0) and coalesce(x.company_id, 0) = coalesce(v_company, 0)
@@ -206,8 +206,15 @@ revoke all on function public.submit_instapay(bigint, text, text) from public, a
 grant execute on function public.submit_instapay(bigint, text, text) to authenticated, service_role;
 
 -- ── 2. the Fawry reference keeps its expiry ────
-drop function if exists public.set_order_provider_ref(bigint, text, text);
-create or replace function public.set_order_provider_ref(p_id bigint, p_ref text, p_order text default null, p_expires timestamptz default null)
+-- (4 arguments, no defaults — the 3-argument form of 0018/0023 (p_order default null) stays as an overload that delegates, so 0026's grants and any old
+--  caller keep working and no call is ambiguous; an earlier draft of this migration had defaults: dropped and made again)
+do $$ begin
+  if exists (select 1 from pg_proc where oid = to_regprocedure('public.set_order_provider_ref(bigint, text, text, timestamptz)') and pronargdefaults > 0) then
+    drop function public.set_order_provider_ref(bigint, text, text, timestamptz);
+  end if;
+
+end $$;
+create or replace function public.set_order_provider_ref(p_id bigint, p_ref text, p_order text, p_expires timestamptz)
 returns void language sql security definer set search_path = public as $$
   update public.payment_orders set provider_ref = p_ref, provider_order = coalesce(p_order, provider_order),
          fawry_expires_at = case when method = 'fawry' then coalesce(p_expires, fawry_expires_at) else fawry_expires_at end
@@ -215,6 +222,12 @@ returns void language sql security definer set search_path = public as $$
 $$;
 revoke all on function public.set_order_provider_ref(bigint, text, text, timestamptz) from public, anon, authenticated, service_role;
 grant execute on function public.set_order_provider_ref(bigint, text, text, timestamptz) to service_role;
+create or replace function public.set_order_provider_ref(p_id bigint, p_ref text, p_order text default null)   -- (id, ref) and (id, ref, order) as before
+returns void language sql security definer set search_path = public as $$
+  select public.set_order_provider_ref(p_id, p_ref, p_order, null::timestamptz)
+$$;
+revoke all on function public.set_order_provider_ref(bigint, text, text) from public, anon, authenticated, service_role;
+grant execute on function public.set_order_provider_ref(bigint, text, text) to service_role;
 
 -- ── confirm_payment: invoice number; a superseded card / wallet order is still honoured ────
 create or replace function public.confirm_payment(p_provider text, p_order_key text, p_provider_ref text, p_amount_cents integer, p_currency text, p_payload jsonb)
@@ -333,7 +346,9 @@ grant execute on function public.order_invoice(bigint) to authenticated, service
 -- My payments: my orders, and those of the companies I manage (a company's billing is shared by its owners and admins)
 create or replace function public.my_payments(p_company bigint default null) returns jsonb language sql stable security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object('id', o.id, 'order', o.merchant_ref, 'product', pr.label, 'kind', pr.kind, 'code', o.product_code, 'method', o.method,
-           'status', case when o.status = 'pending' and o.method = 'fawry' and o.fawry_expires_at <= now() then 'expired' else o.status end,
+           'status', case when o.status = 'pending' and o.method = 'fawry' and o.fawry_expires_at <= now() then 'expired'
+                          when o.status = 'pending' and o.method = 'fawry' and o.provider_ref is null and o.created_at < now() - interval '15 minutes' then 'failed'   -- never got a reference
+                          else o.status end,
            'total', o.amount_cents / 100.0, 'net', o.net_cents / 100.0, 'vat', o.vat_cents / 100.0, 'created_at', o.created_at, 'paid_at', o.paid_at, 'invoice_no', o.invoice_no,
            'fawry_reference', case when o.method = 'fawry' then o.provider_ref end, 'fawry_expires_at', o.fawry_expires_at, 'transfer', o.transfer_ref,
            'listing_id', o.listing_id, 'listing', l.name, 'company_id', o.company_id, 'company', c.name, 'mine', o.user_id = auth.uid()) order by o.id desc), '[]'::jsonb)
@@ -369,7 +384,9 @@ do $$ begin
     using (public.is_company_member(company_id, array['owner','admin']) or public.is_platform_admin());
 exception when duplicate_object then null; end $$;
 revoke all on public.vip_boost_uses from public, anon, authenticated, service_role;
-grant select on public.vip_boost_uses to authenticated;
+grant select on public.vip_boost_uses to anon, authenticated;            -- anon: no policy for anon, so no rows (the API answers [] instead of an error)
+revoke all on sequence public.vip_boost_uses_id_seq from public, anon, authenticated, service_role;
+grant usage, select, update on sequence public.vip_boost_uses_id_seq to authenticated, service_role;
 grant all on public.vip_boost_uses to service_role;
 
 create or replace function public.included_boosts_left(p_company bigint) returns int language sql stable security definer set search_path = public as $$
