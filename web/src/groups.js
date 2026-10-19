@@ -723,11 +723,12 @@
     var j = document.querySelector('#gpBox [data-gpa="join"], #gpBox [data-gpa="request"], #gpBox [data-gpa="accept"]'); if (j) { j.classList.remove('dbk-new'); void j.offsetWidth; j.classList.add('dbk-new'); }
     return true;
   }
-  function react(p, kind) {
+  function react(p, kind, main) {   /* as on Home: Like (main) or the same kind again takes the reaction back; another kind from the panel replaces it */
     var g = CUR.g; if (needMember(g)) return;
-    p.rx = p.rx || {};
-    var was = p.liked, op;
-    if (p.liked) { var k = p.rk || 'like'; p.liked = false; p.likes = Math.max(0, (p.likes || 1) - 1); if (p.rx[k]) { p.rx[k]--; if (!p.rx[k]) delete p.rx[k]; } p.rk = null; op = 'unreact'; }
+    p.rx = p.rx || {}; kind = kind || 'like';
+    var was = p.liked, op, k0 = p.rk || 'like';
+    if (p.liked && !main && kind !== k0) { if (p.rx[k0]) { p.rx[k0]--; if (!p.rx[k0]) delete p.rx[k0]; } p.rk = kind; p.rx[kind] = (p.rx[kind] || 0) + 1; op = 'react'; }
+    else if (p.liked) { var k = p.rk || 'like'; p.liked = false; p.likes = Math.max(0, (p.likes || 1) - 1); if (p.rx[k]) { p.rx[k]--; if (!p.rx[k]) delete p.rx[k]; } p.rk = null; op = 'unreact'; }
     else { p.liked = true; p.likes = (p.likes || 0) + 1; p.rk = kind || 'like'; p.rx[p.rk] = (p.rx[p.rk] || 0) + 1; op = 'react'; }
     commit(g, p, op, { kind: kind || 'like', was: was }); repaint(p);
   }
@@ -1004,11 +1005,11 @@
     var pe = t.closest('[data-gpp]'); if (!pe) return;
     var p = findPost(+pe.dataset.gpp); if (!p) return;
     var m = t.closest('[data-gpm]');
-    if (!m) { if (t.closest('.pact[id^="like-"]') && !t.closest('.rxn-panel')) { e.preventDefault(); e.stopPropagation(); react(p, 'like'); } return; }
+    if (!m) { if (t.closest('.pact[id^="like-"]') && !t.closest('.rxn-panel')) { e.preventDefault(); e.stopPropagation(); react(p, 'like', true); } return; }
     e.preventDefault(); e.stopPropagation();
     var menu = m.closest('[id^="pm-"]'); if (menu) menu.style.display = 'none';
     switch (m.dataset.gpm) {
-      case 'react': react(p, m.dataset.rk || 'like'); break;
+      case 'react': react(p, m.dataset.rk || 'like', !m.dataset.rk); break;
       case 'cmts': toggleCmts(p); break;
       case 'send': addComment(p, pe.querySelector('.cmt-input')); break;
       case 'reactors': reactors(p); break;
