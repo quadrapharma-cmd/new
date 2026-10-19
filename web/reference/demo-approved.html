@@ -12867,7 +12867,10 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
 
   /* ── Messages: 👤 opens the contact's profile; 📞 shows how to call them ── */
   function partnerName() { var h = Array.prototype.find.call(document.querySelectorAll('#mx *'), function (e) { return /ch-name|chat-name|ch-title/.test(e.className) && e.offsetWidth > 0; }); return h ? txt(h).replace(/[✓✔]/g, '').trim() : ''; }
-  function partner() { var n = partnerName(); return { name: n, user: (window.USERS || []).find(function (u) { return n && (u.name === n || n.indexOf(u.name) === 0); }) }; }
+  /* the live app knows WHICH member the open conversation is with (window.dxMxPartner, the adapter): two members can share a name */
+  function partner() { var n = partnerName(), id = window.dxMxPartner && window.dxMxPartner();
+    if (id) return { name: n, user: (window.USERS || []).find(function (u) { return u.id === id; }) || { id: id, name: n } };
+    return { name: n, user: (window.USERS || []).find(function (u) { return n && (u.name === n || n.indexOf(u.name) === 0); }) }; }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('#mx .ch-action-btn'); if (!b) return;
     var oc = b.getAttribute('onclick') || '', label = txt(b);
@@ -13594,9 +13597,13 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     [/^MOQ: (.+)$/, function (m) { return 'الحد الأدنى للطلب: ' + m[1]; }]
   ];
   var UNITS = { m: ['دقيقة', 'دقائق'], h: ['ساعة', 'ساعات'], d: ['يوم', 'أيام'], w: ['أسبوع', 'أسابيع'], min: ['دقيقة', 'دقائق'] };
-  function unit(n, u) { var p = UNITS[u] || [u, u]; return +n >= 3 && +n <= 10 ? p[1] : p[0]; }
-  /* [one, few]: Arabic uses the plural for 3–10 (and, in everyday use, 2); 1 and 11+ take the singular */
-  function plural(n, forms) { var x = /K$/i.test(String(n)) ? 1000 : parseFloat(String(n).replace(/,/g, '')); return x >= 2 && x <= 10 ? forms[1] : forms[0]; }
+  function unit(n, u) { return plural(n, UNITS[u] || [u, u]); }
+  /* the ONE rule for a noun after a number, everywhere: forms = [singular, plural, dual?]. Arabic counts 3–10 with the plural
+     (and 103–110, 203–210…: the last two digits decide); 1, 11–99, 100–102… take the singular (20 دورة, 11 عضو, 100 عضو);
+     2 takes the dual when one is given, else — as in everyday writing with a digit — the plural */
+  function plural(n, forms) { var x = /K$/i.test(String(n)) ? 1000 : parseFloat(String(n).replace(/,/g, '')), m = x % 100;
+    return x === 2 ? (forms[2] || forms[1]) : x === Math.floor(x) && m >= 3 && m <= 10 ? forms[1] : forms[0]; }
+  window.dxArPlural = plural;   /* the same rule for the layers that write Arabic counts themselves */
   var WORDS = { comments: ['تعليق', 'تعليقات'], reposts: ['إعادة نشر', 'إعادات نشر'], members: ['عضو', 'أعضاء'], posts: ['منشور', 'منشورات'], views: ['مشاهدة', 'مشاهدات'],
     connections: ['اتصال', 'اتصالات'], listings: ['إعلان', 'إعلانات'], companies: ['شركة', 'شركات'], providers: ['مقدّم خدمة', 'مقدّمي خدمة'], clients: ['عميل', 'عملاء'], inquiries: ['استفسار', 'استفسارات'],
     results: ['نتيجة', 'نتائج'], sites: ['موقع', 'مواقع'], profiles: ['ملف', 'ملفات'], warnings: ['تحذير', 'تحذيرات'],
@@ -13607,7 +13614,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   var __cn = null;   /* company names, for the 'Open <company>' tooltip; rebuilt when the directory list changes */
   function coName(n) { var X = window.dxDir; if (!X || !X.companies) return false; var l = X.companies(); if (!__cn || __cn.l !== l) { __cn = { l: l, s: new Set() }; l.forEach(function (c) { __cn.s.add(c.name); }); } return __cn.s.has(n); }
   var PATTERNS = [
-    [/^and ([\d,]+) more$/, function (m) { return 'و' + m[1] + ' آخرون'; }], [/^([\d,]+) people reacted$/, function (m) { return 'تفاعل ' + m[1] + ' شخصًا'; }],
+    [/^and ([\d,]+) more$/, function (m) { return 'و' + m[1] + ' آخرون'; }], [/^([\d,]+) people reacted$/, function (m) { return 'تفاعل ' + m[1] + ' ' + plural(m[1], ['شخص', 'أشخاص']); }],
     [/^(\d+)\s*(m|min|h|d|w) ago$/i, function (m) { return 'منذ ' + m[1] + ' ' + unit(m[1], m[2].toLowerCase()); }],
     [/^(\d+)(min|h|d) ago(.*)$/i, function (m) { return 'منذ ' + m[1] + ' ' + unit(m[1], m[2].toLowerCase()) + tr(m[3]); }],
     [/^([\d,.]+K?)\s+(comments?|reposts?|members?|posts?|views?|connections?|listings?|companies|company|providers|clients|inquiries|results|sites?|open positions|requests received|request received|new posts today|new posts this week|deals closed)$/i, function (m) { return word(m[1], m[2]); }],
@@ -13642,32 +13649,35 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     [/^The video is larger than (\d+) MB$/, function (m) { return 'الفيديو أكبر من ' + m[1] + ' ميجابايت'; }],
     [/^Level (\d) · (Registered|Licensed|Inspected)$/, function (m) { return 'المستوى ' + m[1] + ' · ' + D[m[2]]; }],
     [/^Next: (.+)\.$/, function (m) { return 'التالي: ' + (D[m[1]] || m[1]) + '.'; }],
-    [/^(\d+\+?|\d+[–-]\d+) yrs( exp)?$/, function (m) { return m[1] + ' سنوات' + (m[2] ? ' خبرة' : ''); }],
-    [/^(\d+) years? experience$/, function (m) { return m[1] + ' سنة خبرة'; }], [/^✓ (\d+) years experience$/, function (m) { return '✓ ' + m[1] + ' سنة خبرة'; }],
+    [/^(\d+\+?|\d+[–-]\d+) yrs( exp)?$/, function (m) { return m[1] + ' ' + plural(m[1].split(/[–-]/).pop(), ['سنة', 'سنوات']) + (m[2] ? ' خبرة' : ''); }],
+    [/^(\d+) years? experience$/, function (m) { return m[1] + ' ' + plural(m[1], ['سنة', 'سنوات']) + ' خبرة'; }], [/^✓ (\d+) years experience$/, function (m) { return '✓ ' + m[1] + ' ' + plural(m[1], ['سنة', 'سنوات']) + ' خبرة'; }],
     [/^(👁|📨)\s*([\d,]+) (views|inquiries)$/, function (m) { return m[1] + ' ' + m[2] + ' ' + (m[3] === 'views' ? 'مشاهدة' : 'استفسار'); }],
-    [/^~([\d,]+) (views|inquiries)( \((\d+)×\))?$/, function (m) { return '~' + m[1] + ' ' + (m[2] === 'views' ? 'مشاهدة' : 'استفسار') + (m[3] ? ' (' + m[4] + '×)' : ''); }],
+    [/^~([\d,]+) (views|inquiries)( \((\d+)×\))?$/, function (m) { return '~' + m[1] + ' ' + plural(m[1], m[2] === 'views' ? ['مشاهدة', 'مشاهدات'] : ['استفسار', 'استفسارات']) + (m[3] ? ' (' + m[4] + '×)' : ''); }],
     [/^(\d+)× avg reach$/, function (m) { return 'وصول أعلى ' + m[1] + '× من المتوسط'; }],
     [/^Matches: (.+)$/, function (m) { return 'تطابق: ' + m[1].split(' · ').map(function (x) { return D[x] || x; }).join(' · '); }],
     [/^(\d+) profiles$/, function (m) { return word(m[1], 'profiles'); }], [/^#(\d+) top-rated candidate$/, function (m) { return 'المرشح #' + m[1] + ' الأعلى تقييمًا'; }],
     [/^(\d+) warnings?$/, function (m) { return word(m[1], 'warnings'); }], [/^(\d+) new posts?$/, function (m) { return word(m[1], 'new posts'); }],
     [/^(\d+) new requests today$/, function (m) { return word(m[1], 'new requests today'); }], [/^(\d+) quote requests today$/, function (m) { return word(m[1], 'quote requests today'); }],
     [/^(\d+) unread$/, function (m) { return m[1] + ' غير مقروء'; }], [/^(\d+) UNREAD \/ (\d+) TOTAL$/, function (m) { return m[1] + ' غير مقروء / ' + m[2] + ' إجمالي'; }],
-    [/^(\d+) on record$/, function (m) { return m[1] + ' مسجلة'; }], [/^(\d+) SAVED POSTS$/, function (m) { return m[1] + ' منشور محفوظ'; }],
-    [/^(\d+) mutual connections?$/, function (m) { return +m[1] === 1 ? 'اتصال مشترك واحد' : m[1] + ' اتصالات مشتركة'; }],
-    [/^(\d+) CONNECTIONS \/ (\d+) PENDING$/, function (m) { return m[1] + ' اتصالات / ' + m[2] + ' معلّقة'; }], [/^View all (\d+) →$/, function (m) { return 'عرض الكل (' + m[1] + ') ←'; }],
-    [/^New group · ([\d,]+) members already$/, function (m) { return 'مجموعة جديدة · ' + m[1] + ' عضو بالفعل'; }], [/^💡 (\d+) of your connections are members$/, function (m) { return '💡 ' + m[1] + ' من اتصالاتك أعضاء'; }],
+    [/^(\d+) on record$/, function (m) { return m[1] + ' مسجلة'; }], [/^(\d+) SAVED POSTS$/, function (m) { return m[1] + ' ' + plural(m[1], ['منشور محفوظ', 'منشورات محفوظة']); }],
+    [/^(\d+) mutual connections?$/, function (m) { return +m[1] === 1 ? 'اتصال مشترك واحد' : m[1] + ' ' + plural(m[1], ['اتصال مشترك', 'اتصالات مشتركة']); }],
+    [/^(\d+) CONNECTIONS \/ (\d+) PENDING$/, function (m) { return m[1] + ' ' + plural(m[1], ['اتصال', 'اتصالات']) + ' / ' + m[2] + ' معلّقة'; }], [/^View all (\d+) →$/, function (m) { return 'عرض الكل (' + m[1] + ') ←'; }],
+    [/^New group · ([\d,]+) members already$/, function (m) { return 'مجموعة جديدة · ' + m[1] + ' ' + plural(m[1], ['عضو', 'أعضاء']) + ' بالفعل'; }], [/^💡 (\d+) of your connections are members$/, function (m) { return '💡 ' + m[1] + ' من اتصالاتك أعضاء'; }],
     [/^Honor ×(\d+)$/, function (m) { return 'تكريم ×' + m[1]; }], [/^Today, (.+)$/, function (m) { return 'اليوم، ' + m[1]; }],
-    [/^(\d+) new posts · (\d+) buyers active right now$/, function (m) { return m[1] + ' منشورات جديدة · ' + m[2] + ' مشترين نشطين الآن'; }],
+    [/^(\d+) new posts · (\d+) buyers active right now$/, function (m) { return m[1] + ' ' + plural(m[1], ['منشور جديد', 'منشورات جديدة']) + ' · ' + m[2] + ' ' + plural(m[2], ['مشترٍ نشط', 'مشترين نشطين']) + ' الآن'; }],
     [/^🇪🇬 (.+)$/, function (m) { var q = tr(m[1]); return q !== m[1] ? '🇪🇬 ' + q : null; }], [/^🇦🇪 (.+)$/, function (m) { var q = tr(m[1]); return q !== m[1] ? '🇦🇪 ' + q : null; }],
     [/^🇮🇳 (.+)$/, function (m) { var q = tr(m[1]); return q !== m[1] ? '🇮🇳 ' + q : null; }], [/^🇸🇦 (.+)$/, function (m) { var q = tr(m[1]); return q !== m[1] ? '🇸🇦 ' + q : null; }]
   );
   var DAYS = { SUNDAY: 'الأحد', MONDAY: 'الاثنين', TUESDAY: 'الثلاثاء', WEDNESDAY: 'الأربعاء', THURSDAY: 'الخميس', FRIDAY: 'الجمعة', SATURDAY: 'السبت' };
   var CAPS = { COURSES: 'دورات', REGULATORY: 'التسجيل', FORMULATION: 'التركيبات', 'MARKET POSTS': 'منشورات سوق', 'REGULATORY UPDATES': 'تحديثات تسجيل', LISTINGS: 'إعلان', SUPPLY: 'عرض', DEMAND: 'طلب', SUPPLIERS: 'مورّد', CONNECTIONS: 'اتصالات', PENDING: 'معلّقة', UNREAD: 'غير مقروء', TOTAL: 'إجمالي' };
+  /* after a number a counted word takes the number's form (20 دورة, 5 دورات); PENDING, UNREAD, TOTAL describe and stay */
+  var CAPS_N = { COURSES: ['دورة', 'دورات'], 'MARKET POSTS': ['منشور سوق', 'منشورات سوق'], 'REGULATORY UPDATES': ['تحديث تسجيل', 'تحديثات تسجيل'], LISTINGS: ['إعلان', 'إعلانات'],
+    SUPPLY: ['عرض', 'عروض'], DEMAND: ['طلب', 'طلبات'], SUPPLIERS: ['مورّد', 'مورّدين'], CONNECTIONS: ['اتصال', 'اتصالات'] };
   PATTERNS.push(
-    [/^[A-Za-z0-9 .,K]+( \/ [A-Za-z0-9 .,K]+)+$/, function (m) { var ok = 0, out = m[0].split(' / ').map(function (seg) { seg = seg.trim(); var U = seg.toUpperCase(); if (DAYS[U]) { ok++; return DAYS[U]; } var x = /^([\d.,]+K?) ([A-Za-z ]+)$/.exec(seg); if (x && CAPS[x[2].toUpperCase()]) { ok++; return x[1] + ' ' + CAPS[x[2].toUpperCase()]; } if (CAPS[U] && !/\d/.test(U)) { ok++; return CAPS[U]; } return seg; }).join(' / '); return ok ? out : null; }],
-    [/^trending — (\d+) posts in (\d+)h$/, function (m) { return 'رائج — ' + m[1] + ' منشورًا خلال ' + m[2] + ' ساعة'; }],
-    [/^💡 You have (\d+) active (.+) listings — buyers post here daily$/, function (m) { return '💡 لديك ' + m[1] + ' إعلانات ' + m[2] + ' نشطة — المشترون ينشرون هنا يوميًا'; }],
-    [/^⚡ Replies in <(\d+)h$/, function (m) { return '⚡ يرد خلال أقل من ' + m[1] + ' ساعة'; }],
+    [/^[A-Za-z0-9 .,K]+( \/ [A-Za-z0-9 .,K]+)+$/, function (m) { var ok = 0, out = m[0].split(' / ').map(function (seg) { seg = seg.trim(); var U = seg.toUpperCase(); if (DAYS[U]) { ok++; return DAYS[U]; } var x = /^([\d.,]+K?) ([A-Za-z ]+)$/.exec(seg); if (x && CAPS[x[2].toUpperCase()]) { ok++; var w = x[2].toUpperCase(); return x[1] + ' ' + (CAPS_N[w] ? plural(x[1], CAPS_N[w]) : CAPS[w]); } if (CAPS[U] && !/\d/.test(U)) { ok++; return CAPS[U]; } return seg; }).join(' / '); return ok ? out : null; }],
+    [/^trending — (\d+) posts in (\d+)h$/, function (m) { return 'رائج — ' + m[1] + ' ' + plural(m[1], ['منشور', 'منشورات']) + ' خلال ' + m[2] + ' ' + unit(m[2], 'h'); }],
+    [/^💡 You have (\d+) active (.+) listings — buyers post here daily$/, function (m) { return '💡 لديك ' + m[1] + ' ' + plural(m[1], ['إعلان', 'إعلانات']) + ' ' + m[2] + ' ' + plural(m[1], ['نشط', 'نشطة']) + ' — المشترون ينشرون هنا يوميًا'; }],
+    [/^⚡ Replies in <(\d+)h$/, function (m) { return '⚡ يرد خلال أقل من ' + m[1] + ' ' + unit(m[1], 'h'); }],
     [/^✅ (\d+)% response rate · avg\. (.+) reply(.*)$/, function (m) { return '✅ نسبة الرد ' + m[1] + '% · متوسط الرد ' + m[2].replace(/min$/, ' دقيقة').replace(/h$/, ' ساعة') + tr(m[3]); }],
     [/^● Online · (.+)$/, function (m) { return '● متصل · ' + m[1]; }],
     [/^reacted to your post about (.+)$/, function (m) { return 'تفاعل مع منشورك عن ' + m[1]; }], [/^💡 Matches your "(.+)" sector tag$/, function (m) { return '💡 يطابق قطاع "' + m[1] + '" في ملفك'; }]
@@ -13679,8 +13689,8 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     [/^Surplus · (.+) · batch (.+)$/, function (m) { return 'فائض · ' + m[1] + ' · تشغيلة ' + m[2]; }], [/^(.+) · to (\d{4}-\d{2}(?:-\d{2})?)$/, function (m) { return m[1] + ' · حتى ' + m[2]; }],
     [/^(\d+) waiting for you$/, function (m) { return m[1] + ' بانتظارك'; }],
     [/^·?\s*(Accept quote|Confirm order|Mark shipped|Send quote|Confirm received)$/, function (m) { return '· ' + D[m[1]]; }],
-    [/^Send quote: (.+) · valid (\d+) days$/, function (m) { return 'أرسل عرضًا: ' + m[1] + ' · صالح ' + m[2] + ' يومًا'; }],
-    [/^· valid (\d+) days \(to ([^)]+)\)(.*)$/, function (m) { return '· صالح ' + m[1] + ' يومًا (حتى ' + gbIn(m[2]) + ')' + m[3]; }]
+    [/^Send quote: (.+) · valid (\d+) days$/, function (m) { return 'أرسل عرضًا: ' + m[1] + ' · صالح ' + m[2] + ' ' + unit(m[2], 'd'); }],
+    [/^· valid (\d+) days \(to ([^)]+)\)(.*)$/, function (m) { return '· صالح ' + m[1] + ' ' + unit(m[1], 'd') + ' (حتى ' + gbIn(m[2]) + ')' + m[3]; }]
   );
   /* dates the app prints with the browser's default toLocaleString() (e.g. 10/3/2026, 1:36:27 AM) are re-written in Arabic */
   var DLOC = (function () { try { return Intl.DateTimeFormat().formatToParts(new Date(2001, 10, 22)).filter(function (p) { return /day|month|year/.test(p.type); }).map(function (p) { return p.type; }); } catch (e) { return ['month', 'day', 'year']; } })();
@@ -13912,7 +13922,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   PATTERNS.unshift(
     [/^Reach ([\d,]+|…) pharma professionals? on Drugbox$/, function (m) { return 'صِل إلى ' + m[1] + ' ' + (m[1] === '…' ? 'متخصص' : plural(m[1], ['متخصص', 'متخصصين'])) + ' في الدواء على Drugbox'; }],
     [/^([\d,]+) jobs?$/, function (m) { return m[1] + ' ' + plural(m[1], ['وظيفة', 'وظائف']); }],
-    [/^([\d,]+) profile$/, function (m) { return m[1] + ' ملف'; }]
+    [/^([\d,]+) profile$/, function (m) { return m[1] + ' ' + plural(m[1], ['ملف', 'ملفات']); }]
   );
   PATTERNS.push([/^(.+?): ([A-Z][A-Za-z -]+) — (.+)$/, function (m) { return D[m[2]] ? m[1] + ': ' + D[m[2]] + ' — ' + m[3] : null; }]);   /* last: '<company>: Send quote — <deal>' in notifications */
   var ARROWS = { '→': '←', '←': '→' };
