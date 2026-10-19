@@ -30,7 +30,7 @@ comes from. Never rewrite or restyle a page for the live app.
 - People get small local numeric ids (1001+) mapped to UUIDs (`aid()`/`uuidOf()`), because the interface writes ids
   unquoted and `parseInt`s them. `gotoProfile` fetches unseen people first (otherwise `U()` falls back to "me").
 
-## Database (supabase/migrations 0001–0035)
+## Database (supabase/migrations 0001–0036)
 - Every migration ends with `notify pgrst, 'reload schema';`.
 - After any migration run `psql -f supabase/tests/schema_sweep.sql` — every line must say "none" (six checks), including
   **RLS on with no policy** (made five features unusable in production: group members, post media, company followers…),
@@ -83,10 +83,10 @@ Done: A foundation · B auth/feed/network/notifications/messages · C companies/
 D marketplace/jobs/trust layer/groups · intro videos · E1 uploads and private documents · E2 Admin → Review ·
 E3 training · E4 payments (server + checkout).
 Code review (October 2026, `docs/CODE-REVIEW-2026-10.md`, F-01…F-178): fixed in migrations 0020 security core, 0021 trust/hub/deals,
-0022 integrity/speed, 0023 payments/moderation/storage, 0024 round-2 follow-ups, 0025 small follow-ups (group-invite notice, members-only company documents, unique slugs), 0026 launch readiness (explicit grants, cheaper directory page, race-free slugs), 0027 group posts; product build phase 1 (`docs/PRODUCT-GAPS-2026-10.md`, `docs/FEATURE-STATUS-2026-10.md`): 0028 reactions/post reports, 0029 profile, 0030 network, 0031 message mutes/blocks/reports, 0032 company contact, 0033 no sample content in live; phase 1b: 0034 message safety (company_message stores data, sign-up role values), 0035 live data (ticker, Jobs numbers, intents, profile counts); plus the adapter, local stack, build and tests — run everything with
+0022 integrity/speed, 0023 payments/moderation/storage, 0024 round-2 follow-ups, 0025 small follow-ups (group-invite notice, members-only company documents, unique slugs), 0026 launch readiness (explicit grants, cheaper directory page, race-free slugs), 0027 group posts; product build phase 1 (`docs/PRODUCT-GAPS-2026-10.md`, `docs/FEATURE-STATUS-2026-10.md`): 0028 reactions/post reports, 0029 profile, 0030 network, 0031 message mutes/blocks/reports, 0032 company contact, 0033 no sample content in live; phase 1b: 0034 message safety (company_message stores data, sign-up role values), 0035 live data (ticker, Jobs numbers, intents, profile counts), 0036 private phone (members read every profile column except phone — name the columns, `select=*` on profiles is refused; own row via `my_profile()`), names cleaned of invisible characters and the picker separator, Drugbox notices kept as data; plus the adapter, local stack, build and tests — run everything with
 `python3 tests/run_all.py` (exits non-zero on any failure); the build is deterministic and parity compares the whole file.
 
-**Next — E5 launch:** follow `docs/LAUNCH.md` (staging first): `deploy/supabase_deploy.sh` (migrations 0001–0035, sweep, buckets,
+**Next — E5 launch:** follow `docs/LAUNCH.md` (staging first): `deploy/supabase_deploy.sh` (migrations 0001–0036, sweep, buckets,
 realtime, function secrets + deploy), `deploy/vercel_deploy.sh` (preview), `tools/scale/seed_100k.sql` + `tests/load/k6_drugbox.js`
 (2,000 concurrent, decides the compute size), Sentry, `deploy/backup.sh` + restore drill, domain. Blocked here on network access to
 Supabase/Vercel and on the owner's credentials.
