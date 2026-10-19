@@ -18,6 +18,7 @@ sql(f"insert into public.companies (name, type, status, source, sectors, governo
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); pg = b.new_context(viewport={'width': 1440, 'height': 900}).new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.accept())
+    cerrs = []; pg.on("console", lambda m: cerrs.append(m.text[:160]) if m.type == 'error' and not re.search(r'fonts\.g|ERR_CERT|net::ERR', m.text) else None)
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
     pg.evaluate("showSignup()"); pg.fill('#suName', 'Dr. Company Owner'); pg.fill('#suEmail', f'owner{st}@x.test'); pg.fill('#suPw', PW); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
     me = pg.evaluate("dxLive.uuidOf(ME.id)")
@@ -28,6 +29,12 @@ with sync_playwright() as p:
     if not pg.evaluate(unc): pg.fill('#hbQ', f'Unclaimed Pharma {st}'); wait_for(lambda: pg.evaluate(unc), 10); pg.fill('#hbQ', ''); pg.wait_for_timeout(300)   # beyond the first page: found by a search
     T('an unclaimed page from the public list is listed (labelled unclaimed)', pg.evaluate(unc))
     T('the company shows as verified with its certificate', pg.evaluate(f"(()=>{{var c=dxDir.bySlug('{slug}');return c&&c.status==='verified'&&c.certs.indexOf('WHO-GMP')>=0}})()"))
+    # the directory cards say how many sites each company has, from company_sites — loaded with the page, before any company is opened;
+    # a company with no site row has none (never the sample "<city> site · Factory")
+    wait_for(lambda: pg.evaluate(f"!!(window.dxLiveSites&&dxLiveSites['{slug}'])"), 10)
+    T('directory: a company with one site in the database has exactly that site on its card (not opened yet)', pg.evaluate(f"(()=>{{var s=dxHubData.sitesOf(dxDir.bySlug('{slug}'));return s.length===1&&s[0].name==='October plant'&&s[0].certs.some(c=>c.name==='WHO-GMP')}})()"))
+    T('directory: a company with no site in the database shows 0 sites, not an invented one', pg.evaluate(f"(()=>{{var c=dxDir.companies().find(c=>c.name==='Unclaimed Pharma {st}');return !!c&&dxHubData.sitesOf(c).length===0}})()"))
+    T('no console errors from the directory page (e.g. an ambiguous embed)', not errs and not cerrs, (errs + cerrs)[:2])
     pg.fill('#hbQ', 'ميتفورمين'); pg.wait_for_timeout(1500)
     T('Arabic active-ingredient search finds the company ("Who makes")', CO in pg.inner_text('#dxDir'), pg.inner_text('#dxDir')[:200])
     pg.fill('#hbQ', ''); pg.evaluate(f"dxHub.page('{slug}','sites')"); pg.wait_for_timeout(2500)

@@ -1066,7 +1066,7 @@
   function sitesFor(rows) {
     var me = ME_UUID, want = rows.filter(function (c) { return c && c.id && okSlug(c.slug) && !(CO.sitesAt[c.slug] && Date.now() - CO.sitesAt[c.slug] < 60000); }); if (!want.length) return;
     var slugOf = {}; want.forEach(function (c) { slugOf[c.id] = c.slug; });
-    sb.from('company_sites').select('id,company_id,name,type,city,governorate,certs:site_certificates(name,expiry,source,checked_at)').in('company_id', want.map(function (c) { return c.id; })).order('id').limit(1000).then(function (r) {
+    sb.from('company_sites').select('id,company_id,name,type,city,governorate,certs:site_certificates!site_certificates_site_id_fkey(name,expiry,source,checked_at)').in('company_id', want.map(function (c) { return c.id; })).order('id').limit(1000).then(function (r) {
       if (r.error || me !== ME_UUID) { if (r.error) console.error(r.error); return; }
       var by = {}; want.forEach(function (c) { by[c.slug] = []; });
       (r.data || []).forEach(function (s) { var sl = slugOf[s.company_id]; if (sl) by[sl].push(siteFrom(s)); });
