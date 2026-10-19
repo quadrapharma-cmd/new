@@ -213,7 +213,7 @@
     D.modal({ title: 'Make an offer — ' + s.product, body: '<p class="cp-muted">' + esc(s.qty) + ' · batch ' + esc(s.batch) + (s.expiry !== '—' ? ' · expires ' + esc(s.expiry) : '') + ' · listed at ' + esc(s.price) + ' by ' + esc(co ? co.name : '') + '</p>' +
       '<div class="dbk-row"><div class="dbk-f"><label for="soQ">Quantity you want *</label><input id="soQ" data-req value="' + esc(s.qty) + '"></div><div class="dbk-f"><label for="soP">Your price *</label><input id="soP" data-req value="' + esc(s.price) + '"></div></div><div class="dbk-f"><label for="soM">Message</label><textarea id="soM" placeholder="Collection date, payment…"></textarea></div>',
       primary: { label: 'Send offer', onClick: function (b) { if (!D.requireFields(b)) return false;
-        window.dxDeals.create('surplus', s.slug, s.product + ' (surplus)', { qty: b.querySelector('#soQ').value.trim(), price: b.querySelector('#soP').value.trim(), batch: s.batch, expiry: s.expiry }, (b.querySelector('#soM').value || '').trim());
+        window.dxDeals.create('surplus', s.slug, s.product + ' (surplus)', { qty: b.querySelector('#soQ').value.trim(), price: b.querySelector('#soP').value.trim(), batch: s.batch, expiry: s.expiry, listing: s.id }, (b.querySelector('#soM').value || '').trim());
         toast('Offer sent to ' + (co ? co.name : '') + ' — they can accept, counter or decline'); } } });
   }
   function postSurplus() {
