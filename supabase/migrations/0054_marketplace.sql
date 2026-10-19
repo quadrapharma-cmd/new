@@ -48,7 +48,7 @@ update public.products set expires_at = case when category = 'registration' then
  where expires_at is null and category is distinct from 'registration';
 
 -- what the browser may and may not write
-create or replace function public.products_market_guard() returns trigger language plpgsql security definer set search_path = public as $$
+create or replace function public.products_market_guard() returns trigger language plpgsql set search_path = public as $$   -- not a definer: is_server_call() sees the caller
 begin
   if public.is_server_call() then return new; end if;
   if tg_op = 'INSERT' then
@@ -151,6 +151,7 @@ do $$ begin
   create policy "listing views: nobody reads them directly" on public.listing_views for select to authenticated using (false);
 exception when duplicate_object then null; end $$;
 revoke all on public.listing_views from public, anon, authenticated;
+grant select on public.listing_views to anon, authenticated;   -- F-26: answers with nothing (policy false), never an error
 grant all on public.listing_views to service_role;
 
 create table if not exists public.listing_inquiries (
@@ -165,7 +166,7 @@ do $$ begin
     using (user_id = (select auth.uid()) or exists (select 1 from public.products p where p.id = listing_id and p.user_id = (select auth.uid())));
 exception when duplicate_object then null; end $$;
 revoke all on public.listing_inquiries from public, anon, authenticated;
-grant select on public.listing_inquiries to authenticated;
+grant select on public.listing_inquiries to anon, authenticated;
 grant all on public.listing_inquiries to service_role;
 
 create or replace function public.listing_views_count() returns trigger language plpgsql security definer set search_path = public as $$
@@ -363,7 +364,21 @@ do $$ begin
   create policy "saved listings: remove your own" on public.saved_listings for delete to authenticated using (user_id = (select auth.uid()));
 exception when duplicate_object then null; end $$;
 revoke all on public.saved_listings from public, anon, authenticated;
+grant select on public.saved_listings to anon;
 grant select, insert, delete on public.saved_listings to authenticated;
 grant all on public.saved_listings to service_role;
+
+-- ── 10. Drugbox marks a listing's certificates checked (only those the seller claims) ────
+create or replace function public.listing_verify_certs(p_id bigint, p_certs text[]) returns text[] language plpgsql security definer set search_path = public as $$
+declare v text[];
+begin
+  if auth.uid() is null or not public.is_moderator() then raise exception 'Only the Drugbox team can do this' using errcode = '42501'; end if;
+  update public.products set certs_verified = array(select c from unnest(coalesce(p_certs, '{}')) c where c = any(coalesce(docs, '{}')))
+   where id = p_id returning certs_verified into v;
+  if not found then raise exception 'This listing does not exist' using errcode = 'P0002'; end if;
+  return v;
+end $$;
+revoke all on function public.listing_verify_certs(bigint, text[]) from public, anon, authenticated, service_role;
+grant execute on function public.listing_verify_certs(bigint, text[]) to authenticated, service_role;
 
 notify pgrst, 'reload schema';

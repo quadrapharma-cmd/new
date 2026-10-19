@@ -107,14 +107,14 @@ def browse_market(j):
         j.check(price and price.group(2) in t2, 'the landed cost does not start from the listing price %s' % (price and price.group(2)))
         close_dialogs(pg); market(j, pg); c = card(pg, want)
         sv = c.locator(':is(button,[onclick],[role=button])', has_text=re.compile(r'Save|حفظ|🔖')).first
-        if not sv.count(): sv = c.locator('[aria-label*="Save" i], [title*="Save" i]').first
+        if not sv.count(): sv = c.locator('[aria-label*="Save" i], [title*="Save" i], [aria-label*="حفظ"], [title*="حفظ"]').first
         j.check(sv.count(), "not built: the listing card has no 'Save'"); sv.click(); j.settle(pg, 700)
         reopen(j, pg); j.nav(pg, 'saved'); j.settle(pg, 1200)
         j.check(want in j.text(pg), 'the saved listing is not in Saved after reload')
     with j.step('Category counts and result counts equal the real listings (no invented numbers or sample cards in live)'):
         market(j, pg)
         counts = pg.evaluate("[...document.querySelectorAll('#tab-browse .cat-item')].map(e=>e.innerText.replace(/\\s+/g,' ').trim())")
-        sup = next((int(re.sub(r'\D', '', x) or 0) for x in counts if x.startswith('Supply') or x.startswith('توريد')), None)
+        sup = next((int(re.sub(r'\D', '', x) or 0) for x in counts if x.startswith(('Supply', 'توريد', 'عرض'))), None)
         real = len([c for c in cards(pg, '#tab-browse :is(.lcard,.sponsored-card)') if c['cat'] == 'supply']) if j.demo else int(j.sql1("select count(*) from public.products where type='supply' and active"))
         j.check(sup == real, "the Supply count says %s but there are %s supply listings" % (sup, real))
         if j.live:
@@ -310,13 +310,13 @@ def manage_listings(j):
         j.check(more.count(), "no '···' menu on a listing"); more.click(); pg.wait_for_timeout(400)
         p = pg.locator(':is(button,div,span,a):visible', has_text=re.compile(r'^\s*(⏸\s*)?Pause listing\s*$|إيقاف')).first
         j.check(p.count(), "no 'Pause listing'"); p.click(); j.settle(pg, 900)
-        reopen(j, pg); t = my_listings(j, pg); j.check(re.search(r'PAUSED|Paused|موقوف', t), 'the paused listing is not shown as Paused after reload')
+        reopen(j, pg); t = my_listings(j, pg); j.check(re.search(r'PAUSED|Paused|موقوف|متوقف', t), 'the paused listing is not shown as Paused after reload')
         if j.live: j.check(j.sql1("select count(*) from public.products where user_id='%s' and not active" % me['id']) == '1', 'the pause is not saved in the database')
     with j.step("'Renew Now' on the expiring listing extends its expiry; 'Delete listing' removes it everywhere after confirmation"):
-        r = pg.locator('#tab-manage :is(button,a,span):visible', has_text=re.compile(r'Renew Now|جدد')).first
+        r = pg.locator('#tab-manage :is(button,a,span):visible', has_text=re.compile(r'Renew Now|جدّ?د الآن')).first
         j.check(r.count(), "no 'Renew Now' on the expiring listing"); r.click(); j.settle(pg, 900)
         reopen(j, pg); t = my_listings(j, pg)
-        j.check(not re.search(r'expires in 2 days|ينتهي خلال يومين', t), 'the renewed listing still expires in 2 days after reload')
+        j.check(not re.search(r'[Ee]xpires in 2 days|ينتهي خلال (2 يوم|يومين)', t), 'the renewed listing still expires in 2 days after reload')
 
 @journey('J-BUSINESS-41')
 def market_intents(j):

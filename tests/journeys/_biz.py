@@ -368,7 +368,7 @@ def reopen(j, pg):
     snap = None
     if j.demo:
         pg.wait_for_timeout(int(os.environ.get('BIZ_RELOAD_PAUSE', '1500')))
-        snap = pg.evaluate("Object.fromEntries(Object.keys(localStorage).filter(k=>k.startsWith('dx_')).map(k=>[k,localStorage.getItem(k)]))")
+        snap = pg.evaluate("Object.fromEntries(Object.keys(localStorage).filter(k=>k.startsWith('dx_')||k.startsWith('dbx_')).map(k=>[k,localStorage.getItem(k)]))")
     for attempt in range(3):
         j.reload(pg)
         if not snap: break

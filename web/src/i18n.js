@@ -829,7 +829,7 @@
   /* ===== AREA business: marketplace (B-06…B-10) ===== */
   Object.assign(D, {
     'Draft': 'مسودة', 'Edit listing': 'تعديل الإعلان', 'Title *': 'العنوان *', 'MOQ / quantity': 'الحد الأدنى / الكمية', 'Save changes': 'احفظ التغييرات', 'Listing updated': 'تم تحديث الإعلان',
-    '✅ Publish listing': '✅ انشر الإعلان', '⭐ Boost this listing': '⭐ روّج لهذا الإعلان', '⏸ Pause listing': '⏸ أوقف الإعلان مؤقتًا', '▶ Resume listing': '▶ استأنف الإعلان',
+    '✅ Publish listing': '✅ انشر الإعلان', '⭐ Boost this listing': '⭐ روّج لهذا الإعلان', '⏸ Pause listing': '⏸ إيقاف الإعلان مؤقتًا', '▶ Resume listing': '▶ استئناف الإعلان',
     '🔁 Renew listing': '🔁 جدّد الإعلان', '🗑 Delete listing': '🗑 احذف الإعلان', 'Delete this listing?': 'هل تحذف هذا الإعلان؟', 'Delete listing': 'احذف الإعلان', 'Listing resumed': 'تم استئناف الإعلان',
     'Listing paused — hidden from buyers': 'تم إيقاف الإعلان — مخفي عن المشترين', 'Draft saved — find it in My Listings': 'حُفظت المسودة — تجدها في إعلاناتي', 'Could not save the draft': 'تعذّر حفظ المسودة',
     'Your listing is live': 'إعلانك منشور الآن', 'Expired — renew to show it again': 'انتهى — جدّده ليظهر من جديد', 'No expiry (license sale)': 'بلا انتهاء (بيع ترخيص)', 'not published': 'غير منشور',

@@ -142,6 +142,13 @@
 
   /* ── creating: the price keeps its currency; a draft and a published listing are this person's listings ── */
   function money(v, ph) { v = String(v || '').trim(); if (!/^[\d.,]+(\s*\/\s*\S+)?$/.test(v)) return v; var cur = /€/.test(ph) ? '€' : /EGP|ج\.م/.test(ph) ? 'EGP ' : /\$/.test(ph) ? 'US$ ' : ''; return cur ? cur + v : v; }
+  /* the form reads its fields by their English labels: in Arabic, a button press sees the original words for that moment
+     (the translation puts the Arabic back on the next frame, before anything is painted) */
+  window.addEventListener('click', function (e) {
+    if (!window.dxI18nOrig || !(e.target.closest && e.target.closest('button, .btn-create, .btn-draft'))) return;
+    document.querySelectorAll('#mkx .form-section .field-label').forEach(function (l) {
+      var w = document.createTreeWalker(l, NodeFilter.SHOW_TEXT); while (w.nextNode()) { var n = w.currentNode, o = window.dxI18nOrig(n); if (o != null && o !== n.nodeValue) n.nodeValue = o; } });
+  }, true);
   function priceInput(f) { var out = null; f.querySelectorAll('.field').forEach(function (fd) { var l = orig(fd.querySelector('.field-label')); if (!out && /price|budget|fee|rate/i.test(l) && !/target/i.test(l)) out = fd.querySelector('input'); }); return out; }
   function formData(f) {
     var v = function (rx) { var out = ''; f.querySelectorAll('.field').forEach(function (fd) { var l = orig(fd.querySelector('.field-label')), i = fd.querySelector('input:not([type=file]),textarea'); if (!out && i && rx.test(l)) out = i.value.trim(); }); return out; };
@@ -203,7 +210,7 @@
     if (svc().live) return; var mk = document.getElementById('mkx'); if (!mk) return;
     var n = {}; mk.querySelectorAll('#tab-browse .lcard, #tab-browse .sponsored-card, #tab-browse .dcard, #tab-browse .scard, #tab-browse .jcard').forEach(function (c) {
       var k = c.classList.contains('dcard') ? 'demand' : c.classList.contains('scard') ? 'service' : c.classList.contains('jcard') ? 'job' : (c.dataset.cat || c.dataset.dxcat || 'supply'); n[k] = (n[k] || 0) + 1; });
-    mk.querySelectorAll('.cat-grid .cat-item').forEach(function (it) { var k = it.dataset.dxcat, e = it.querySelector('.cat-count'); if (k && e) { var v = (n[k] || 0).toLocaleString('en-US'); if (e.textContent !== v) e.textContent = v; } });
+    mk.querySelectorAll('.cat-grid .cat-item').forEach(function (it) { var k = it.dataset.dxcat || CATW_IN[orig(it.querySelector('.cat-label')).toLowerCase()], e = it.querySelector('.cat-count'); if (k && e) { var v = (n[k] || 0).toLocaleString('en-US'); if (e.textContent !== v) e.textContent = v; } });
     mk.querySelectorAll('.f-count[data-cat]').forEach(function (e) { var v = (n[e.dataset.cat] || 0).toLocaleString('en-US'); if (e.textContent !== v) e.textContent = v; });
     if (window.categoryTotals) Object.keys(window.categoryTotals).forEach(function (k) { window.categoryTotals[k] = n[k] || 0; });
   }
@@ -218,6 +225,18 @@
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#mkx')) setTimeout(syncDemand, 0); });
   document.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('#mkx')) setTimeout(syncDemand, 0); });
   document.addEventListener('input', function (e) { if (e.target && e.target.id === 'searchIn') setTimeout(syncDemand, 0); });
+  /* the category tiles read their English label: in Arabic it is translated, so pick the category from the original word (runs after the tile's own handler) */
+  var CATW_IN = { supply: 'supply', demand: 'demand', 'cmo/toll': 'cmo', cmo: 'cmo', equipment: 'equipment', licenses: 'license', license: 'license', services: 'service', service: 'service', jobs: 'job', job: 'job', training: 'training' };
+  function tileFix(e) {
+    var it = e.target.closest && e.target.closest('#mkx .cat-grid .cat-item'); if (!it) return;
+    if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+    var lab = it.querySelector('.cat-label'); if (!lab || CATW_IN[txt(lab).toLowerCase()]) return;   /* English: the tile already did it */
+    var cat = CATW_IN[orig(lab).toLowerCase()]; if (!cat) return;
+    var on = it.classList.contains('on');
+    document.querySelectorAll('#mkx .cat-cb').forEach(function (cb) { cb.checked = !on || cb.dataset.cat === cat; });
+    var si = document.getElementById('searchIn'); if (window.__mkxFilter) window.__mkxFilter(si ? si.value : ''); syncDemand();
+  }
+  document.addEventListener('click', tileFix); document.addEventListener('keydown', tileFix);
 
   /* ── Saved: the marketplace listings saved with 🔖, below the saved posts ── */
   var CATW = { supply: 'Supply', demand: 'Demand', cmo: 'CMO', equipment: 'Equipment', license: 'License', service: 'Service', job: 'Job', training: 'Training' };
