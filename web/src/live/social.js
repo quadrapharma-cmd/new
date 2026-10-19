@@ -150,8 +150,8 @@
   K.onReset(function () { CONNP = null; });
   function people(q) {
     if (!CONNP) CONNP = Promise.resolve(K.loadConnections ? K.loadConnections() : null).catch(function () {});
-    return Promise.all([CONNP, sb.from('profiles').select(K.PCOLS).ilike('name', '%' + String(q).replace(/[\\%_]/g, '\\$&').slice(0, 60) + '%').neq('id', me()).neq('account_type', 'deleted').order('name').limit(12), blockList()]).then(function (a) {
-      var r = a[1], bl = a[2] || []; if (r.error) throw new Error(friendly(r.error)); r.data = (r.data || []).filter(function (x) { return bl.indexOf(x.id) < 0; }).slice(0, 8);
+    return Promise.all([CONNP, sb.rpc('find_people', { p_q: String(q).slice(0, 60), p_limit: 8 })]).then(function (a) {   /* server side: no deleted or blocked people (0048) */
+      var r = a[1]; if (r.error) throw new Error(friendly(r.error));
       (r.data || []).forEach(function (x) { K.putUser(x); }); var ids = (r.data || []).map(function (x) { return L.aid(x.id); });
       return ids.map(function (a) { return (window.USERS || []).find(function (u) { return u.id === a; }); }).filter(Boolean); });
   }
@@ -356,18 +356,10 @@
     openJob: function (j) { window.goto('jobs'); if (window.dxJobsHunt) window.dxJobsHunt(); flashCard('#jx [data-live="j' + j.id + '"]', function () { return true; }); }
   });
   /* ===== AREA social: find people (Network page) — name / company / headline, a specialty and a country, from profiles ===== */
-  var SPEC_DB = { regulatory: ['regulat', 'registration', 'dossier'], quality: ['QA ', 'QC ', 'quality', 'GMP'], procurement: ['procure', 'purchas', 'sourcing', 'buyer'], production: ['production', 'manufactur', 'plant', 'operations'],
-    sales: ['sales', 'marketing', 'business development', 'commercial'], rnd: ['R&D', 'research', 'formulat'], supply: ['supply', 'distribut', 'logistic', 'import', 'export'], medical: ['medical', 'pharmacist', 'clinical', 'doctor', 'physician'],
-    management: ['CEO', 'founder', 'director', 'chairman', 'general manager', 'managing'] };
-  function orSafe(w) { return String(w).replace(/[,()%*\\"':.]/g, ' ').trim(); }
-  window.dxPeopleSvc = Object.assign({}, window.dxPeopleSvc, { live: true, find: async function (o) {
-    var q = sb.from('profiles').select(K.PCOLS).neq('id', me()).neq('account_type', 'deleted');
-    String(o.q || '').split(/\s+/).map(orSafe).filter(Boolean).slice(0, 5).forEach(function (w) { q = q.or('name.ilike.%' + w + '%,company.ilike.%' + w + '%,headline.ilike.%' + w + '%'); });
-    if (SPEC_DB[o.spec]) q = q.or(SPEC_DB[o.spec].map(function (k) { return 'headline.ilike.%' + orSafe(k) + '%'; }).join(','));
-    if (o.country) q = q.eq('country', String(o.country).slice(0, 2));
-    var a = await Promise.all([q.order('verified', { ascending: false }).order('name').limit(40), blockList()]), r = a[0], bl = a[1] || [];
+  window.dxPeopleSvc = Object.assign({}, window.dxPeopleSvc, { live: true, find: async function (o) {   /* find_people (0048): indexed, no deleted or blocked people */
+    var r = await sb.rpc('find_people', { p_q: String(o.q || '').slice(0, 80) || null, p_spec: o.spec || null, p_country: o.country || null, p_limit: 30 });
     if (r.error) throw new Error(friendly(r.error));
-    return (r.data || []).filter(function (x) { return bl.indexOf(x.id) < 0; }).slice(0, 30).map(function (x) { K.putUser(x); return window.U(L.aid(x.id)); });
+    return (r.data || []).map(function (x) { K.putUser(x); return window.U(L.aid(x.id)); });
   } });
 
   /* ===== AREA social: safety — report a person or comment (member_reports), block from the profile, Reported members, suspension (0044) ===== */
