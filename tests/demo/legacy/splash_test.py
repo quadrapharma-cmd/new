@@ -28,7 +28,7 @@ with sync_playwright() as p:
         T(t+'splash logo visible, lite links hidden', pg.evaluate(LOGO) and not pg.is_visible('.dx-lite-skip') and not pg.is_visible('.dx-lite-tap'))
         pg.wait_for_timeout(6500)
         T(t+'splash ends by itself → login', not pg.is_visible('#splash') and pg.is_visible('#loginPage'))
-        pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3000)
+        pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3000)
         T(t+'app opens, top-bar logo visible, no errors', pg.evaluate("document.getElementById('app').offsetWidth>0") and pg.evaluate("document.getElementById('topLogo').naturalWidth>0") and not errs, errs)
         b.close()
     print(sum(R),'/',len(R))

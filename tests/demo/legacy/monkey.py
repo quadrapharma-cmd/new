@@ -9,7 +9,7 @@ with sync_playwright() as p:
     pg=ctx.new_page(); errs=collections.Counter(); ctx.on('page', lambda np: np.close())
     pg.on("pageerror",lambda e:errs.update([str(e)[:140]])); pg.on("dialog", lambda d: d.dismiss())
     pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
-    pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3200)
+    pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3200)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
     pages=['feed','market','companies','jobs','network','groups','messages','notifs','profile','training','saved']
     clicks=0; relog=0
@@ -17,7 +17,7 @@ with sync_playwright() as p:
         try:
             if pg.evaluate("document.getElementById('app').offsetWidth===0"):
                 relog+=1; pg.evaluate("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
-                if pg.locator('.lg-demo').is_visible(): pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(2500)
+                if pg.locator('.lg-demo').is_visible(): pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(2500)
                 continue
             if i % 60 == 0: pg.evaluate(f"goto('{random.choice(pages)}')"); pg.wait_for_timeout(120)
             n=pg.evaluate("""(()=>{var els=[...document.querySelectorAll('button,a[href],[onclick],label,.hb-card,.dl-row,input[type=checkbox],select')].filter(e=>{var r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&!/logout|sign ?out/i.test(e.textContent||'')&&!e.closest('#dxCoMenu [data-cs-new]')});window.__mk=els;return els.length})()""")

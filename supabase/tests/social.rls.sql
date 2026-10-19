@@ -179,8 +179,6 @@ select pg_temp.ok('Alice is told of the new match', $$(select count(*) = 1 from 
 select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000005');
 select pg_temp.step('Dina messages Alice twice', $$insert into public.messages (sender_id, receiver_id, body) values ('aaaa0041-0000-0000-0000-000000000005', 'aaaa0041-0000-0000-0000-000000000001', 'S41 hi'), ('aaaa0041-0000-0000-0000-000000000005', 'aaaa0041-0000-0000-0000-000000000001', 'S41 hi again')$$);
 select pg_temp.as_server();
-set constraints all immediate;                     -- the message notice is written at commit (after company_message's own notice)
-set constraints all deferred;
 select pg_temp.ok('Alice has one message notice', $$(select count(*) = 1 from public.notifications where user_id = 'aaaa0041-0000-0000-0000-000000000001' and from_user = 'aaaa0041-0000-0000-0000-000000000005' and type = 'message' and not read)$$);
 select pg_temp.ok('the notice is queued for e-mail (Alice''s default: messages on)', $$(select count(*) = 1 from private.email_outbox o join public.notifications n on n.id = o.notification_id where n.user_id = 'aaaa0041-0000-0000-0000-000000000001' and n.type = 'message')$$);
 select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000001');
@@ -191,7 +189,6 @@ insert into public.conversation_mutes (owner, partner) values ('aaaa0041-0000-00
 select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000005');
 select pg_temp.step('Dina writes again', $$insert into public.messages (sender_id, receiver_id, body) values ('aaaa0041-0000-0000-0000-000000000005', 'aaaa0041-0000-0000-0000-000000000001', 'S41 muted')$$);
 select pg_temp.as_server();
-set constraints all immediate; set constraints all deferred;
 select pg_temp.ok('a muted sender makes no notice', $$(select count(*) = 0 from public.notifications where user_id = 'aaaa0041-0000-0000-0000-000000000001' and from_user = 'aaaa0041-0000-0000-0000-000000000005' and type = 'message' and not read)$$);
 
 -- ══ the e-mail outbox is the server's ═════════════════════════════════════════════════════
@@ -235,6 +232,28 @@ select pg_temp.no('Bob cannot post', $$insert into public.posts (user_id, body) 
 select pg_temp.no('Bob cannot message', $$insert into public.messages (sender_id, receiver_id, body) values ('aaaa0041-0000-0000-0000-000000000002', 'aaaa0041-0000-0000-0000-000000000001', 'after')$$, '42501');
 select pg_temp.no('Bob cannot comment', $$insert into public.comments (post_id, user_id, body) values (pg_temp.id('pa'), 'aaaa0041-0000-0000-0000-000000000002', 'after')$$, '42501');
 select pg_temp.no('Bob cannot lift his own suspension', $$select public.lift_suspension('aaaa0041-0000-0000-0000-000000000002', 'me')$$, '42501');
+-- 0047: a suspension stops changes too; a deleted account writes nothing; blocks cover replies; no request to a deleted member
+select pg_temp.as_server();
+insert into public.posts (user_id, body) values ('aaaa0041-0000-0000-0000-000000000002', 'S41 bob kept post');
+select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000002');
+select pg_temp.no('suspended Bob cannot edit a post', $$update public.posts set body = 'spam' where user_id = 'aaaa0041-0000-0000-0000-000000000002'$$, '42501');
+select pg_temp.no('suspended Bob cannot change his profile', $$update public.profiles set headline = 'Buy cheap pills' where id = 'aaaa0041-0000-0000-0000-000000000002'$$, '42501');
+select pg_temp.no('suspended Bob cannot create a group', $$insert into public.groups (name, created_by, type) values ('Spam group', 'aaaa0041-0000-0000-0000-000000000002', 'public')$$, '42501');
+select pg_temp.as_server();
+update public.profiles set account_type = 'deleted' where id = 'aaaa0041-0000-0000-0000-000000000005';
+select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000005');
+select pg_temp.no('a deleted account''s old token cannot post', $$insert into public.posts (user_id, body) values ('aaaa0041-0000-0000-0000-000000000005', 'ghost')$$, '42501');
+select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000001');
+select pg_temp.no('nobody can send a request to a deleted member', $$insert into public.connections (requester, addressee, status) values ('aaaa0041-0000-0000-0000-000000000001', 'aaaa0041-0000-0000-0000-000000000005', 'pending')$$, '42501');
+select pg_temp.no('nobody can follow a deleted member', $$insert into public.person_followers (person_id, user_id) values ('aaaa0041-0000-0000-0000-000000000005', 'aaaa0041-0000-0000-0000-000000000001')$$, '42501');
+select pg_temp.no('a photo address with ".." is refused', $$update public.profiles set avatar_url = 'http://localhost:54321/storage/v1/object/public/avatars/aaaa0041-0000-0000-0000-000000000001/../aaaa0041-0000-0000-0000-000000000003/avatar.jpg' where id = 'aaaa0041-0000-0000-0000-000000000001'$$, '22023');
+select pg_temp.no('another host with the path in its query is refused', $$update public.profiles set avatar_url = 'https://evil.example/?/storage/v1/object/public/avatars/aaaa0041-0000-0000-0000-000000000001/a.jpg' where id = 'aaaa0041-0000-0000-0000-000000000001'$$, '22023');
+select pg_temp.as_server();
+insert into public.posts (user_id, body) values ('aaaa0041-0000-0000-0000-000000000004', 'S41 mod post');
+insert into public.comments (post_id, user_id, body) select id, 'aaaa0041-0000-0000-0000-000000000003', 'S41 cara on mod post' from public.posts where body = 'S41 mod post';
+insert into public.user_blocks (blocker, blocked) values ('aaaa0041-0000-0000-0000-000000000003', 'aaaa0041-0000-0000-0000-000000000004') on conflict do nothing;
+select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000004');
+select pg_temp.no('a blocked person cannot reply to the blocker''s comment', $$insert into public.comments (post_id, user_id, body, parent_id) select c.post_id, 'aaaa0041-0000-0000-0000-000000000004', 'x', c.id from public.comments c where c.body = 'S41 cara on mod post'$$, '42501');
 
 -- ══ a connection's phone (0046) ═══════════════════════════════════════════════════════════
 select pg_temp.as_server();

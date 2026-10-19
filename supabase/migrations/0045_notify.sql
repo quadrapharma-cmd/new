@@ -25,8 +25,19 @@ end $$;
 revoke all on function public.notify_message() from public, anon, authenticated, service_role;
 grant execute on function public.notify_message() to service_role;
 drop trigger if exists trg_messages_notify on public.messages;
--- at the end of the transaction: company_message() writes its own notice after the message (0034)
-create constraint trigger trg_messages_notify after insert on public.messages deferrable initially deferred for each row execute function public.notify_message();
+create trigger trg_messages_notify after insert on public.messages for each row execute function public.notify_message();
+-- company_message() (0034) writes the message, then its own "messaged <Company>" notice: that notice replaces the plain one just made
+create or replace function public.notify_company_message_dedupe() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  delete from public.notifications n where n.user_id = new.user_id and n.from_user = new.from_user and n.type = 'message'
+     and not coalesce(n.read, false) and n.created_at = now();                   -- same transaction only
+  return null;
+end $$;
+revoke all on function public.notify_company_message_dedupe() from public, anon, authenticated, service_role;
+grant execute on function public.notify_company_message_dedupe() to service_role;
+drop trigger if exists trg_notifications_company_dedupe on public.notifications;
+create trigger trg_notifications_company_dedupe after insert on public.notifications for each row when (new.type = 'company_message') execute function public.notify_company_message_dedupe();
 
 create or replace function public.notify_message_read() returns trigger
 language plpgsql security definer set search_path = public as $$

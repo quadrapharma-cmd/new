@@ -34,11 +34,11 @@ with sync_playwright() as p:
     ctx.route(lambda u: not u.startswith('file:') and not u.startswith('data:') and not u.startswith('blob:'), lambda r: r.abort())
     pg=ctx.new_page(); pops=[]; pg.on("dialog", lambda d: (pops.append(1), d.dismiss())); pg.on("filechooser", lambda f: pops.append(1)); ctx.on('page', lambda np: (pops.append(1), np.close()))
     pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
-    pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3200)
+    pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3200)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
     summary={}
     for name in PAGES:
-        if pg.evaluate("document.getElementById('app').offsetWidth===0"): pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(2500)
+        if pg.evaluate("document.getElementById('app').offsetWidth===0"): pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(2500)
         pg.evaluate(GO[name]); pg.wait_for_timeout(700)
         items=pg.evaluate(FIND); dead=[]
         pri=[x for x in items if x['side'] or x['why']!='pointer cursor' or x['tag'] not in ('BUTTON',)]
@@ -57,7 +57,7 @@ with sync_playwright() as p:
                 loc.first.click(timeout=1200, force=True); pg.wait_for_timeout(650)
                 if pg.evaluate(SIG)==a and len(pops)==n0: dead.append(it)
                 pg.keyboard.press('Escape'); pg.evaluate("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove());var m=document.getElementById('dxEditor');m&&m.remove()")
-                if pg.evaluate("document.getElementById('app').offsetWidth===0"): pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(2500)
+                if pg.evaluate("document.getElementById('app').offsetWidth===0"): pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(2500)
                 exp='companies' if name=='company' else name
                 if pg.evaluate("document.body.getAttribute('data-page')")!=exp or (name=='company' and not pg.evaluate("!!document.querySelector('#dxDir.cp')")):
                     pg.evaluate(GO[name]); pg.wait_for_timeout(350); pg.evaluate(FIND)

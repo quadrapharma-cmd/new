@@ -7,7 +7,7 @@ with sync_playwright() as p:
     t0=pg.evaluate("Date.now()") if False else None
     pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load',timeout=120000)
     print('load (4x slower CPU):', pg.evaluate("Math.round(performance.getEntriesByType('navigation')[0].loadEventEnd)"),'ms')
-    pg.evaluate('endSplash()'); pg.wait_for_timeout(800); pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(4500)
+    pg.evaluate('endSplash()'); pg.wait_for_timeout(800); pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage .f-btn')); pg.wait_for_timeout(4500)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
     pg.evaluate("""(()=>{window.__runs={};var r=dxCore.run;dxCore.run=function(n,f,a){window.__runs[n]=(window.__runs[n]||0)+1;return r(n,f,a)};})()""")
     for page in ['feed','market']:

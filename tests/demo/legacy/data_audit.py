@@ -5,7 +5,7 @@ def check(n, ok, d=''):
     if not ok: F.append(n)
 def boot(pg):
     pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
-    pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3200)
+    pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3200)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
 def tour(pg):
     bad=[]
@@ -45,7 +45,7 @@ with sync_playwright() as p:
     ctx.add_init_script("(()=>{var e=function(){throw new DOMException('insecure','SecurityError')};try{Object.defineProperty(window,'localStorage',{get:e,configurable:true})}catch(x){}})()")
     pg=ctx.new_page(); errs2=[]; pg.on("pageerror",lambda e:errs2.append(str(e)[:160])); pg.on("dialog", lambda d: d.dismiss())
     pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.wait_for_timeout(400); pg.click('#splash'); pg.wait_for_timeout(900)
-    pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3000)
+    pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3000)
     bad=tour(pg)
     check('4 storage blocked: every screen renders', not bad, bad)
     check('4 storage blocked: no script errors', not errs2, errs2[:3])

@@ -65,7 +65,7 @@ in the environment only — never on a command line (where `ps` would show them)
      webhooks `GET` → 405 from the function itself, `payments-create` browser preflight from `ALLOWED_ORIGINS` → 200 with CORS.
   - The direct database host is IPv6-only; on an IPv4-only network use the **Session pooler** (port 5432) — see `env.supabase.example`. Port 6543 is refused.
   - If the database already has the migrations (applied by hand), the script stops; record them once with `--baseline-through NNNN` (the last one applied, e.g. `0026`).
-- [ ] Supabase Auth (dashboard, manual): Site URL + redirect URLs = the staging web address; email confirmation on; **custom SMTP** (the built-in sender is for testing only — rate-limited).
+- [ ] Supabase Auth (dashboard, manual): Site URL + redirect URLs = the staging web address; email confirmation on; **Secure password change on** (a password change needs a recent sign-in — the app also asks for the current password, but only this setting enforces it on the server); **custom SMTP** (the built-in sender is for testing only — rate-limited).
 - [ ] **E-mail (Resend)** — waiting on the owner for a Resend account and a verified sending domain:
       1. Supabase Auth → SMTP settings: host `smtp.resend.com`, port 465, user `resend`, password = the Resend API key, sender e.g. `Drugbox <no-reply@drugbox.app>`
          (sign-up confirmation, password reset and e-mail change links — S-05 / S-16).

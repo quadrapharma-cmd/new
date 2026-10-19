@@ -19,6 +19,7 @@ export async function handler(req) {
   let begun;
   try { begun = await rpc('account_delete_begin', { p_password: String(b.password || ''), p_confirm: String(b.confirm || '') }, jwt); }
   catch (e) { return json({ error: e.message }, e.status === 401 ? 401 : 400); }
+  if (begun && begun.error) return json({ error: begun.error }, 400);              // a wrong password (recorded: 5 in 15 minutes lock it)
   const uid = begun && begun.user; if (!uid) return json({ error: 'Sign in first' }, 401);
   const byBucket = {};
   for (const f of begun.files || []) (byBucket[f.bucket] = byBucket[f.bucket] || []).push(f.name);
