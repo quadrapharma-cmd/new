@@ -61,7 +61,7 @@ begin
      or not exists (select 1 from storage.objects o where o.bucket_id = 'documents' and o.name = p_path and o.owner = me) then
     raise exception 'Upload the file to this deal first' using errcode = '42501';
   end if;
-  if (select count(*) from public.deal_files where deal_id = d.id) >= 50 then raise exception 'A deal holds up to 50 documents' using errcode = '54000'; end if;
+  if (select count(*) from public.deal_files where deal_id = d.id) >= 50 then raise exception 'A deal holds up to 50 documents' using errcode = 'P0001'; end if;
   insert into public.deal_files (deal_id, uploader, side, kind, name, path)
   values (d.id, me, v_side, case when p_kind in ('PO', 'CoA', 'Invoice', 'Specification', 'NDA', 'Data room', 'Deliverable', 'Questionnaire evidence', 'CV') then p_kind else 'Other' end, v_name, p_path)
   returning id into v_id;

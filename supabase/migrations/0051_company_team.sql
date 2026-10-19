@@ -115,7 +115,7 @@ begin
   -- at most 50 open invitations per company (an inbox nobody answers is not a team)
   if (select count(*) from public.company_members where company_id = p_company and pending = 'invite')
      + (select count(*) from public.company_invites where company_id = p_company) >= 50 then
-    raise exception 'This company already has 50 open invitations' using errcode = '54000';
+    raise exception 'This company already has 50 open invitations' using errcode = 'P0001';
   end if;
   select name into v_me from public.profiles where id = me;
   select u.id into v_user from auth.users u where lower(u.email) = v_email limit 1;
@@ -134,13 +134,14 @@ begin
     return 'invited';
   end if;
   if (select count(*) from public.notifications where company_id = p_company and type = 'company_invite' and created_at > now() - interval '1 day') >= 30 then
-    raise exception 'This company has sent 30 invitations today — try again tomorrow' using errcode = '54000';
+    raise exception 'This company has sent 30 invitations today — try again tomorrow' using errcode = 'P0001';
   end if;
   insert into public.company_members (company_id, user_id, role, accepted, show_public, pending, invited_by)
   values (p_company, v_user, v_role, false, false, 'invite', me)
   on conflict (company_id, user_id) do update set role = excluded.role, invited_by = excluded.invited_by, pending = 'invite';
-  insert into public.notifications (user_id, type, from_user, company_id, data)
-  values (v_user, 'company_invite', me, p_company, jsonb_build_object('company', v_co.name, 'role', v_role));
+  insert into public.notifications (user_id, type, from_user, company_id, data)          -- cancelled and sent again: still one notice a week per person
+  select v_user, 'company_invite', me, p_company, jsonb_build_object('company', v_co.name, 'role', v_role)
+   where not exists (select 1 from public.notifications n where n.user_id = v_user and n.company_id = p_company and n.type = 'company_invite' and n.created_at > now() - interval '7 days');
   return 'invited';
 end $$;
 revoke all on function public.company_invite(bigint, text, text, text) from public, anon, authenticated, service_role;
@@ -199,7 +200,7 @@ begin
   if m.user_id is not null and m.pending = 'invite' then raise exception 'This company has invited you — accept the invitation in your notifications' using errcode = '23505'; end if;
   if m.user_id is not null then return true; end if;                                   -- asked already: one request, one notice
   if (select count(*) from public.company_members where user_id = me and pending = 'request') >= 10 then
-    raise exception 'You have 10 open requests — wait for an answer first' using errcode = '54000';
+    raise exception 'You have 10 open requests — wait for an answer first' using errcode = 'P0001';
   end if;
   insert into public.company_members (company_id, user_id, role, accepted, show_public, pending, note) values (p_company, me, v_role, false, false, 'request', v_note);
   insert into public.notifications (user_id, type, from_user, company_id, data)

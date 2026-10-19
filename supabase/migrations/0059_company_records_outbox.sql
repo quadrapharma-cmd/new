@@ -31,7 +31,9 @@ create index if not exists idx_company_docs_reviewed_by on public.company_docume
 
 create or replace function public.company_documents_guard() returns trigger language plpgsql as $$
 begin
-  if auth.uid() is null or public.is_moderator() then return new; end if;   -- server-side work and Drugbox's reviewers (document_review runs as them)
+  -- server work, Drugbox's admins, and the review function (document_review runs as its owner, not as the API role): a
+  -- moderator's own direct write — say for their own company — meets the same rules as anyone's
+  if auth.uid() is null or public.is_platform_admin() or current_user not in ('authenticated', 'anon') then return new; end if;
   if new.status = 'verified' and (tg_op = 'INSERT' or old.status is distinct from 'verified') then
     raise exception 'Only Drugbox can mark a document as verified' using errcode = '42501';
   end if;

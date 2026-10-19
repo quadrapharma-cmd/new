@@ -110,7 +110,9 @@ exception when duplicate_object then null; end $$;
 
 create or replace function public.site_certificates_guard() returns trigger language plpgsql as $$
 begin
-  if auth.uid() is null or public.is_moderator() then return new; end if;   -- server work and Drugbox's reviewers (review_certificate runs as them)
+  -- server work, Drugbox's admins, and the review functions (review_certificate runs as its owner, not as the API role): a
+  -- reviewer's own direct write meets the same rules as anyone's
+  if auth.uid() is null or public.is_platform_admin() or current_user not in ('authenticated', 'anon') then return new; end if;
   if new.source = 'public_list' then new.source := 'company'; end if;
   -- the document is a private file of this company's verification folder that exists
   if new.file_path is not null and (tg_op = 'INSERT' or new.file_path is distinct from old.file_path) then

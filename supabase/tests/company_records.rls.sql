@@ -205,6 +205,29 @@ select pg_temp.step('the quality member tries to make the CEP theirs', $$update 
 select pg_temp.as_server();
 select pg_temp.ok('…who added a document never changes', $$(select created_by from public.company_documents where id = pg_temp.id('doc2')) = 'e6666666-6666-6666-6666-666666666666'$$);
 
+-- a Drugbox reviewer who also runs a company gets no shortcut for it: only the review functions act as Drugbox
+select pg_temp.as_server();
+select pg_temp.step('the reviewer owns a company of their own', $$
+  with x as (insert into public.companies (owner_id, name, slug, type, status) values ('e8888888-8888-8888-8888-888888888888', 'CR Reviewer Co', 'cr-reviewer-co', 'Distributor', 'verified') returning id) insert into ids select 'rc', id::text from x;
+  insert into storage.objects (bucket_id, name, owner) values ('documents', 'companydocs/' || pg_temp.id('rc') || '/own.pdf', 'e8888888-8888-8888-8888-888888888888')$$);
+select pg_temp.as_user('e8888888-8888-8888-8888-888888888888');
+select pg_temp.no('the reviewer cannot add their own company''s document as verified', $$insert into public.company_documents (company_id, type, number, file_path, created_by, status) values (pg_temp.id('rc'), 'GDP certificate', 'GDP-1', 'companydocs/' || pg_temp.id('rc') || '/own.pdf', 'e8888888-8888-8888-8888-888888888888', 'verified')$$, '42501');
+select pg_temp.no('…nor point their document at another company''s file (and delete it with the row)', $$insert into public.company_documents (company_id, type, number, file_path, created_by) values (pg_temp.id('rc'), 'CEP', 'CEP-X', 'companydocs/' || pg_temp.id('b') || '/cep-2.pdf', 'e8888888-8888-8888-8888-888888888888')$$, '42501');
+select pg_temp.step('the reviewer adds their own document properly', $$
+  with x as (insert into public.company_documents (company_id, type, number, file_path, created_by) values (pg_temp.id('rc'), 'GDP certificate', 'GDP-1', 'companydocs/' || pg_temp.id('rc') || '/own.pdf', 'e8888888-8888-8888-8888-888888888888') returning id) insert into ids select 'rdoc', id::text from x$$);
+select pg_temp.no('…and cannot mark it verified directly', $$update public.company_documents set status = 'verified' where id = pg_temp.id('rdoc')$$, '42501');
+
+-- an invitation cancelled and sent again does not notify again (one notice a week per person and company)
+select pg_temp.as_user('e2222222-2222-2222-2222-222222222222');
+select pg_temp.step('the supplier invites the outsider, cancels, invites again — three rounds', $$
+  select public.company_invite(pg_temp.id('b'), 'cr-out@x.test', 'CR Outsider', 'sales');
+  delete from public.company_members where company_id = pg_temp.id('b') and user_id = 'e5555555-5555-5555-5555-555555555555';
+  select public.company_invite(pg_temp.id('b'), 'cr-out@x.test', 'CR Outsider', 'sales');
+  delete from public.company_members where company_id = pg_temp.id('b') and user_id = 'e5555555-5555-5555-5555-555555555555';
+  select public.company_invite(pg_temp.id('b'), 'cr-out@x.test', 'CR Outsider', 'sales')$$);
+select pg_temp.as_server();
+select pg_temp.ok('…one invitation notice only', $$(select count(*) from public.notifications where user_id = 'e5555555-5555-5555-5555-555555555555' and type = 'company_invite' and company_id = pg_temp.id('b')) = 1$$);
+
 -- ══ 0059: activity log ══
 select pg_temp.as_user('e3333333-3333-3333-3333-333333333333');
 select pg_temp.step('a team member writes an activity entry as themselves', $$insert into public.company_activity (company_id, actor, text) values (pg_temp.id('b'), 'e3333333-3333-3333-3333-333333333333', 'CR Sent a quote')$$);

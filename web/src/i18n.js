@@ -812,7 +812,7 @@
     [/^Request quotes from (\d+)$/, function (m) { return 'اطلب عروض أسعار من ' + m[1]; }],
     [/^Request a service from (.+)$/, function (m) { return 'اطلب خدمة من ' + m[1]; }],
     [/^\((.+)\) at (.+)$/, function (m) { return '(' + (D[m[1]] || m[1]) + ') في ' + m[2]; }],
-    [/^((?:[A-Z0-9][^\s]*\s?)+) team$/, function (m) { return 'فريق ' + m[1].trim(); }],   /* "<Company> team" (a name of capitalised words), never a sentence */
+    [/^([A-Z0-9]\S*(?: [A-Z0-9]\S*){0,5}) team$/, function (m) { return 'فريق ' + m[1].trim(); }],   /* "<Company> team" (a name of capitalised words), never a sentence */
     [/^to (\d{4}-\d{2}(?:-\d{2})?)$/, function (m) { return 'حتى ' + m[1]; }],
     [/^expired (\d{4}-\d{2}(?:-\d{2})?)$/, function (m) { return 'انتهت ' + m[1]; }],
     [/^(from|to) ([^·]+)$/, function (m) { return (m[1] === 'from' ? 'من ' : 'إلى ') + m[2]; }],
