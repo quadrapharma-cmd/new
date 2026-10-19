@@ -45,11 +45,11 @@ begin
     end if;
   end if;
   if tg_op = 'INSERT' then
-    new.status := case when new.file_path is not null then 'review' else 'declared' end; new.review_note := null; new.reviewed_by := null; new.reviewed_at := null;
+    new.status := case when new.file_path is not null or new.type = 'Membership' then 'review' else 'declared' end; new.review_note := null; new.reviewed_by := null; new.reviewed_at := null;
     new.created_by := auth.uid(); new.created_at := now();
   elsif new.type is distinct from old.type or new.product is distinct from old.product or new.number is distinct from old.number
         or new.expiry is distinct from old.expiry or new.file_path is distinct from old.file_path or new.company_id is distinct from old.company_id then
-    new.status := case when new.file_path is not null then 'review' else 'declared' end;    -- Drugbox never saw the new content
+    new.status := case when new.file_path is not null or new.type = 'Membership' then 'review' else 'declared' end;    -- Drugbox never saw the new content
     new.review_note := null; new.reviewed_by := null; new.reviewed_at := null;
   elsif new.review_note is distinct from old.review_note or new.reviewed_by is distinct from old.reviewed_by or new.reviewed_at is distinct from old.reviewed_at then
     raise exception 'The review is written by Drugbox' using errcode = '42501';

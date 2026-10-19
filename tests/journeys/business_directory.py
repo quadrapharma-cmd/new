@@ -334,6 +334,16 @@ def message_company(j):
         dock = pg.evaluate("[...document.querySelectorAll('#dxDock .dk-win')].filter(e=>e.getClientRects().length).map(e=>e.innerText).join(' ')")
         j.check(not dock.strip(), 'a chat window opened to nobody: %s' % dock[:80].replace('\n', ' '))
         j.check(pg.locator('#content .cp-tab.on[data-htab2=contact]').count(), 'the Contact tab (phone, email, WhatsApp) is not shown instead')
+    with j.step("'Request a quote' names the same person in the window and in its notice (B-20)"):
+        if j.live: j.skip('the buyer here acts for no company (a quote is sent on behalf of a company) — checked in the demo')
+        close_dialogs(pg); directory(j, pg); open_card(j, pg, name)
+        j.click(pg, L('Request a quote'), scope='#content', what='Request a quote'); pg.wait_for_timeout(500)
+        j.check(dlg_open(pg), "'Request a quote' opens no window")
+        t = pg.evaluate("(document.querySelector('.dbk-ov .rq-to:last-of-type')||{}).innerText||''") or pg.evaluate("document.querySelector('.dbk-ov').innerText")
+        j.check(routed in t, 'the quote window says it goes to someone else than "Who answers" (%s): %s' % (routed, t[:120]))
+        pg.fill('#rqQty', '500'); pg.fill('#rqMsg', 'Please quote %s' % j.tag); mark = j.toast_mark(pg)
+        dlg_click(j, pg, r'Send request|أرسل الطلب', 'Send request'); j.settle(pg, 900)
+        j.check(any(routed in x for x in j.toasts_since(pg, mark)), 'the notice after sending names someone else than %s: %s' % (routed, j.toasts_since(pg, mark)))
 
 @journey('J-BUSINESS-09')
 def report_wrong_info(j):

@@ -3063,6 +3063,26 @@
       : 'Drugbox could not accept your ' + String(d.doc || 'document') + ' for ' + String(d.company || 'your company') + ' — reason: ' + String(d.reason || '') + '. Add it again with a readable file.'); }
     return o; };
   onReset(function () { PSP.docs = {}; PSP.at = {}; PSP.busy = {}; });
+  /* memberships (B-18) are documents of type 'Membership' (the organisation in product, the membership number): "Add a membership"
+     writes one, Drugbox confirms it in Admin → Review → Compliance documents, and only then does the badge show as confirmed */
+  if (window.dxDir3 && window.dxDir3.membersOf) {
+    var membersOfDemo = window.dxDir3.membersOf;
+    window.dxDir3.membersOf = function (co) {
+      if (!ME_UUID || !co || !CO.raw[co.slug] || !CO.raw[co.slug].id) return membersOfDemo.apply(this, arguments);
+      return window.dxPassport.docs(co.slug).filter(function (d) { return d.type === 'Membership' && d.status !== 'rejected'; }).map(function (d) {
+        return { name: d.product || 'Membership', short: String(d.product || '').split(' ').map(function (w) { return w[0]; }).join('').replace(/[^A-Z]/g, ''), ok: d.status === 'verified' }; });
+    };
+  }
+  var hookMem = window.dxStoreHook;
+  window.dxStoreHook = function (k, v) {
+    if (ME_UUID && k === 'company_edits' && v && typeof v === 'object') {
+      Object.keys(v).forEach(function (slug) { var e = v[slug], mp = e && e.memberPending; if (!Array.isArray(mp)) return;
+        var co = window.dxDir.bySlug(slug); delete e.memberPending;
+        mp.forEach(function (m) { if (!m || !m.name || !co) return;
+          window.dxPassport.add(co, { type: 'Membership', product: String(m.name).slice(0, 200), number: String(m.num || '').slice(0, 80), expiry: '' }, null).then(function (ok) { if (ok) rerenderCompanies(); }); }); });
+    }
+    return hookMem ? hookMem(k, v) : undefined;
+  };
   /* ===== /AREA business: compliance documents ===== */
 
   /* ===== AREA business: the team's activity log (B-19; 0059) =====

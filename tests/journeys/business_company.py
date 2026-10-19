@@ -197,11 +197,19 @@ def keep_page_complete(j):
         workspace(j, pg, 'Page|%s' % (ar('Page') or 'الصفحة'))
         pg.fill('#wAr', 'فارما كاملة %s' % j.tag); j.click(pg, L('Save'), scope='#content', what='Save'); j.settle(pg, 1000)
         j.click(pg, L('Add membership'), scope='#content', what='Add membership')
-        if dlg_open(pg):
-            fill_by_label(j, pg, r'Organisation|Organization|الجهة|المنظمة', r'CPI|.', required=False)
-            b = j.find(pg, r'^\W*(Add|Save|أضف|حفظ)\W*$', scope='body')
-            if b: b.click(); j.settle(pg, 800)
-        if j.live: j.check(j.wait_db("select name_ar from public.companies where id=%s" % me['co']['id'], 5) == 'فارما كاملة %s' % j.tag, 'the Arabic name is not saved')
+        j.check(dlg_open(pg), "'Add membership' opens no window")
+        fill_by_label(j, pg, r'Organisation|Organization|الجهة|المنظمة', r'Export Council|المجلس التصديري')
+        fill_by_label(j, pg, r'Membership number|رقم العضوية', 'EC-%s' % j.tag[:6])
+        dlg_click(j, pg, r'Send for confirmation|أرسل للتأكيد|إرسال للتأكيد', 'Send for confirmation'); j.settle(pg, 1200)
+        t = workspace(j, pg, 'Page|%s' % (ar('Page') or 'الصفحة'))
+        j.check(re.search(r'Export Council[^\n]*(being checked|قيد المراجعة)|المجلس التصديري[^\n]*قيد المراجعة', t), 'the new membership is not shown as being checked by Drugbox')
+        if j.live:
+            j.check(j.wait_db("select name_ar from public.companies where id=%s" % me['co']['id'], 5) == 'فارما كاملة %s' % j.tag, 'the Arabic name is not saved')
+            j.check(j.wait_db("select status||'|'||number from public.company_documents where company_id=%s and type='Membership'" % me['co']['id'], 6) == 'review|EC-%s' % j.tag[:6], 'the membership is not a company_documents row waiting for Drugbox')
+            adm = j.person('Drugbox Admin'); make_admin(j, adm['id']); ap = adm['page']; j.reload(ap)
+            t = admin_review(j, ap, 'documents'); j.check(name in t and 'Export Council' in t, 'the membership is not in Admin → Review → Compliance documents')
+            admin_decide(j, ap, name, True)
+            j.check(j.wait_db("select status from public.company_documents where company_id=%s and type='Membership'" % me['co']['id'], 6) == 'verified', 'the membership is not confirmed after Drugbox approves')
     with j.step("'Still correct' on an outdated section clears the flag ('Thanks — marked as up to date')"):
         if j.live: j.sql("set session_replication_role = replica; update public.companies set updated_at=now()-interval '200 days' where id=%s" % me['co']['id']); reopen(j, pg)   # the write trigger stamps now(): aged like a page untouched for 200 days
         directory(j, pg); open_card(j, pg, name)

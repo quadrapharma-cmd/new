@@ -745,6 +745,9 @@
   /* ===== AREA business: company page, certificates, team (B-02, B-03, B-04) ===== */
   Object.assign(D, {
     'E-mail me about requests, deals, payments and my company': 'راسلني بالبريد بخصوص الطلبات والصفقات والمدفوعات وشركتي', 'E-mails on — we will write when something needs you': 'تم تشغيل البريد — سنراسلك عندما يحتاجك أمر ما', 'E-mails off — notifications stay here': 'تم إيقاف البريد — تبقى الإشعارات هنا',
+    'Add a membership': 'إضافة عضوية', 'Organisation *': 'الجهة *', 'Chamber of Pharmaceutical Industries': 'غرفة صناعة الدواء', 'Chamber of Cosmetics Industries': 'غرفة صناعة مستحضرات التجميل',
+    'Export Council for Medical Industries': 'المجلس التصديري للصناعات الطبية', 'Egyptian Pharmaceutical Trading Association': 'الجمعية المصرية لتجارة الأدوية',
+    'Drugbox checks the membership with the organisation before the badge shows as confirmed.': 'يتحقق Drugbox من العضوية مع الجهة قبل أن تظهر الشارة مؤكدة.', 'Being checked by Drugbox': 'قيد المراجعة من Drugbox', 'Membership number *': 'رقم العضوية *',
     'File (PDF or image, optional)': 'الملف (PDF أو صورة، اختياري)', 'Site master file': 'ملف الموقع الرئيسي (SMF)', 'Manufacturing licence': 'ترخيص التصنيع', 'Membership': 'عضوية', 'Memberships': 'العضويات',
     'Shown as self-declared until Drugbox checks the document. The file is seen only by your team and Drugbox’s reviewers.': 'يظهر كمُصرَّح به حتى يراجع Drugbox المستند. لا يرى الملف إلا فريقك ومراجعو Drugbox.',
     'Document added — Drugbox will check it': 'تمت إضافة المستند — سيراجعه Drugbox', 'Delete this document?': 'هل تحذف هذا المستند؟', 'Document deleted': 'تم حذف المستند', 'Not accepted': 'غير مقبول',
@@ -803,7 +806,9 @@
     [/^You are now on the team of (.+) \((.+)\)\.$/, function (m) { return 'أنت الآن في فريق ' + m[1] + ' (' + (D[m[2]] || m[2]) + ').'; }],
     [/^(.+) did not accept your request to join the team\.$/, function (m) { return 'لم تقبل ' + m[1] + ' طلبك للانضمام إلى الفريق.'; }],
     [/^Drugbox checked your (.+?)( \((.+)\))? — it now shows as checked on your page\.$/, function (m) { return 'راجع Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — تظهر الآن كمراجَعة على صفحتك.'; }],
-    [/^Drugbox could not accept your (.+?)( \((.+)\))? — reason: (.+)\. Add it again with a readable document\.$/, function (m) { return 'لم يقبل Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — السبب: ' + m[4] + '. أضفها مرة أخرى بمستند مقروء.'; }]
+    [/^Drugbox could not accept your (.+?)( \((.+)\))? — reason: (.+)\. Add it again with a readable document\.$/, function (m) { return 'لم يقبل Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — السبب: ' + m[4] + '. أضفها مرة أخرى بمستند مقروء.'; }],
+    [/^(.+) · being checked by Drugbox$/, function (m) { return m[1] + ' · قيد المراجعة من Drugbox'; }],
+    [/^Sent — Drugbox checks it with the (.+)$/, function (m) { return 'تم الإرسال — يتحقق Drugbox منها مع ' + (D[m[1]] || m[1]); }],
     [/^(.+) is removed from your compliance passport( and its file is deleted)?\.$/, function (m) { return 'سيُحذف ' + m[1] + ' من جواز امتثال شركتك' + (m[2] ? ' ويُحذف ملفه' : '') + '.'; }],
     [/^(?:(.+) · )?added(?: by (.+?))?(?: · (\d{4}-\d{2}-\d{2}))?(?: · (.+))?$/, function (m) { return (m[1] ? m[1] + ' · ' : '') + 'أُضيف' + (m[2] ? ' بواسطة ' + m[2] : '') + (m[3] ? ' · ' + m[3] : '') + (m[4] ? ' · ' + m[4] : ''); }],
     [/^Drugbox checked your (.+) for (.+) — it now shows as verified on your compliance passport\.$/, function (m) { return 'راجع Drugbox مستند ' + m[1] + ' لـ ' + m[2] + ' — يظهر الآن موثّقًا في جواز الامتثال.'; }],

@@ -235,11 +235,14 @@
     var opts = (isSvc ? (co.services || []).map(function (s) { return '<option' + (s === svc ? ' selected' : '') + '>' + esc(s) + '</option>'; }) : co.products.map(function (p) { return '<option value="' + p.id + '"' + (p.id === prodId ? ' selected' : '') + '>' + esc(p.name) + '</option>'; })).join('') + '<option value="other">Something else</option>';
     var prod = !isSvc && prodId ? co.products.find(function (p) { return p.id === prodId; }) : null, me = window.ME || {};
     var act = mine();
+    var rt = window.dxHub && window.dxHub.route ? window.dxHub.route(co.slug, isSvc ? 'service' : 'quote') : null;   /* the same person the page's "Who answers" names and the deal goes to (B-20) */
+    var who = rt ? rt.name : contact(co, isSvc ? 'service' : 'rfq'), whoRole = rt ? rt.role : (isSvc ? 'business development' : 'sales');
+    var unit = (String((prod && prod.moq) || '').match(/\b(kg|MT|units|cartons|tablets|batches)\b/i) || [])[1];
     D.modal({ title: (isSvc ? 'Request a service from ' : 'Request a quote from ') + co.name,
       body: (act ? '<div class="rq-to">' + ic('building') + 'Requesting as <b>' + esc(act.name) + '</b></div>' : '') + (licensedOnly(prod) ? '<div class="rq-lic note">' + ic('warning') + 'Medicine — under Egyptian law it may be sold only to licensed pharmacies, distributors and manufacturers. The seller confirms the buyer\u2019s licence before shipping.</div>' : '') +
-        '<div class="rq-to">' + ic('user') + 'Goes to <b>' + esc(contact(co, isSvc ? 'service' : 'rfq')) + '</b> (' + (isSvc ? 'business development' : 'sales') + ') at ' + esc(co.name) + '</div>' +
+        '<div class="rq-to">' + ic('user') + 'Goes to <b>' + esc(who) + '</b> (' + esc(whoRole) + ') at ' + esc(co.name) + '</div>' +
         '<div class="dbk-f"><label for="rqWhat">' + (isSvc ? 'Service' : 'Product') + '</label><select id="rqWhat">' + opts + '</select></div>' +
-        (isSvc ? '' : '<div class="dbk-row"><div class="dbk-f"><label for="rqQty">Quantity *</label><input id="rqQty" data-req inputmode="decimal" placeholder="e.g. 500"></div><div class="dbk-f"><label for="rqUnit">Unit</label><select id="rqUnit"><option>kg</option><option>MT</option><option>units</option><option>cartons</option><option>tablets</option><option>batches</option></select></div></div>' +
+        (isSvc ? '' : '<div class="dbk-row"><div class="dbk-f"><label for="rqQty">Quantity *</label><input id="rqQty" data-req inputmode="decimal" placeholder="e.g. 500"></div><div class="dbk-f"><label for="rqUnit">Unit</label><select id="rqUnit">' + ['kg', 'MT', 'units', 'cartons', 'tablets', 'batches'].map(function (u) { return '<option' + (unit && u.toLowerCase() === unit.toLowerCase() ? ' selected' : '') + '>' + u + '</option>'; }).join('') + '</select></div></div>' +
         '<div class="dbk-row"><div class="dbk-f"><label for="rqTo">Deliver to *</label><input id="rqTo" data-req placeholder="City, country" value="Cairo, Egypt"></div><div class="dbk-f"><label for="rqInc">Delivery terms</label><select id="rqInc"><option>EXW</option><option>FOB</option><option selected>CIF</option><option>DDP</option></select></div></div>') +
         '<div class="dbk-f"><label for="rqBy">Needed by</label><input id="rqBy" type="date"></div>' +
         '<div class="dbk-f"><label for="rqMsg">Message *</label><textarea id="rqMsg" data-req placeholder="Specs, grade, certificates you need, payment terms…"></textarea></div>',
@@ -251,7 +254,6 @@
         if (b.querySelector('#rqBy').value) lines.push('Needed by: ' + b.querySelector('#rqBy').value);
         lines.push('', b.querySelector('#rqMsg').value.trim());
         var text = lines.join('\n'), me = window.ME || {};
-        var who = contact(co, isSvc ? 'service' : 'rfq');
         var __d = window.dxDeals.create(isSvc ? 'service' : 'quote', co.slug, label, isSvc ? {} : { qty: b.querySelector('#rqQty').value.trim(), unit: b.querySelector('#rqUnit').value, inc: b.querySelector('#rqInc').value, to: b.querySelector('#rqTo').value.trim(), by: b.querySelector('#rqBy').value }, b.querySelector('#rqMsg').value.trim());
         if (!__d) return false;
         D.toast('Sent to ' + who + ' at ' + co.name + ' — follow it in Requests & deals');

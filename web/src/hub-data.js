@@ -66,7 +66,7 @@
   function credentials(co) {
     var out = [];
     sitesOf(co).forEach(function (s) { (s.certs || []).forEach(function (c) { out.push(Object.assign({ site: s.name }, c, certState(c, co))); }); });
-    if (window.dxDir3) window.dxDir3.membersOf(co).forEach(function (m) { out.push({ name: 'Member: ' + (m.short || m.name), full: m.name, site: 'Company', src: m.ok ? 'Confirmed by the organisation' : 'Waiting for the organisation', expiry: '', state: m.ok ? 'valid' : 'pending', checked: !!m.ok }); });
+    if (window.dxDir3) window.dxDir3.membersOf(co).forEach(function (m) { out.push({ name: 'Member: ' + (m.short || m.name), full: m.name, site: 'Company', src: m.ok ? 'Confirmed by the organisation' : 'Being checked by Drugbox', expiry: '', state: m.ok ? 'valid' : 'pending', checked: !!m.ok }); });
     return out;
   }
 

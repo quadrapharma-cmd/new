@@ -393,7 +393,7 @@ if os.environ.get('BIZ_CAL'):                                # calibration only:
     _jm.J.check = _cal_check; _jm.J.fail = _cal_fail; _jm.J.notbuilt = _cal_nb
 
 # ---- Drugbox admin → Review ----------------------------------------------------------------------------------------------------
-QUEUES = {'verifications': r'Verification requests|طلبات التوثيق', 'certs': r'Site certificates|شهادات', 'reports': r'Company reports|بلاغات', 'payments': r'Payments|المدفوعات', 'claims': r'Claims|المطالبات|Claim'}
+QUEUES = {'verifications': r'Verification requests|طلبات التوثيق', 'certs': r'Site certificates|شهادات', 'reports': r'Company reports|بلاغات', 'payments': r'Payments|المدفوعات', 'claims': r'Claims|المطالبات|Claim', 'documents': r'Compliance documents|مستندات الامتثال'}
 def admin_review(j, pg, queue):
     """Admin → Review → the queue tab; returns the list text. A queue that does not exist fails 'not built'."""
     close_dialogs(pg)
