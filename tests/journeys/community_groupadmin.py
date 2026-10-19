@@ -69,7 +69,7 @@ def deal_room_listings(j):
         if dlg_open(ph):
             ta = ph.locator('.dbk-ov textarea, .modal-bg.show textarea')
             if ta.count(): ta.first.fill('Please quote 500 kg CIF Alexandria')
-            dlg_click(j, ph, r'Send|Request|إرسال|أرسل|طلب', 'Send enquiry'); j.settle(ph, 1200)
+            mclick(j, ph, r'Send|Request|إرسال|أرسل|طلب', 'Send enquiry')   # the dialog's own button, never one behind it; j.settle(ph, 1200)
         page = ph.evaluate("document.body.getAttribute('data-page')")
         j.check(page != 'messages', 'the enquiry only opens Messages — no deal (request / quote) is started')
         if j.live: j.check(j.wait_db("select count(*) from public.deals where title ilike '%%Metformin%%%s%%'" % t, 6) >= '1', 'no deals row for the enquiry')
@@ -120,14 +120,14 @@ def manage_members(j):
         p1 = m1['page']; j.reload(p1); groups_page(j, p1); open_card(j, p1, gname)
         j.check(p1.locator('#groupDetail .btn-manage:visible').count(), 'the promoted admin has no Manage')
     with j.step('Demote M1: back to member (now and after reload); M1 loses Manage'):
-        row_action(j, pg, member_row(pg, n1), r'Demote|تخفيض|إلغاء الإشراف', 'Demote')
+        row_action(j, pg, member_row(pg, n1), r'Demote|تخفيض|إلغاء الإشراف|إرجاع إلى عضو', 'Demote')
         reopen(j, pg); groups_page(j, pg); open_card(j, pg, gname); manage(j, pg, 'members')
         j.check(not re.search(r'Admin|مشرف عام', member_row(pg, n1).inner_text(), re.I), 'after reload M1 is still admin')
         if j.live:
             j.check(j.wait_db("select role from public.group_members where group_id=%d and user_id='%s'" % (gid, m1['id']), 5, want='member') == 'member', 'group_members.role is not member')
             j.reload(p1); groups_page(j, p1); open_card(j, p1, gname); j.check(not p1.locator('#groupDetail .btn-manage:visible').count(), 'the demoted member still has Manage')
     with j.step('Remove M2 (confirm): gone from the list, count -1'):
-        hn = gd_members_n(pg); row_action(j, pg, member_row(pg, n2), r'Remove|إزالة', 'Remove from group'); confirm(j, pg); j.settle(pg, 900)
+        hn = gd_members_n(pg); row_action(j, pg, member_row(pg, n2), r'Remove|إزالة|أزل', 'Remove from group'); confirm(j, pg); j.settle(pg, 900)
         j.check(not member_row(pg, n2).count(), 'the removed member is still listed')
         j.check(gd_members_n(pg) == hn - 1, 'the header count went %s → %s' % (hn, gd_members_n(pg)))
         if j.live: j.check(j.wait_db("select count(*) from public.group_members where group_id=%d and user_id='%s'" % (gid, m2['id']), 5, want='0') == '0', 'the group_members row is still there')
@@ -146,7 +146,7 @@ def manage_members(j):
         me_row = member_row(pg, 'Xavier'); items = []
         if me_row.count() and me_row.locator('.action-btn').count():
             me_row.locator('.action-btn').first.click(); pg.wait_for_timeout(300); items = me_row.locator('.dd-item').all_inner_texts()
-        j.check(not any(re.search(r'Demote|Remove|إزالة', i) for i in items), 'the last admin can demote / remove themself')
+        j.check(not any(re.search(r'Demote|Remove|إزالة|أزل|إرجاع إلى عضو', i) for i in items), 'the last admin can demote / remove themself')
         err = pg.evaluate("([g,u])=>dxLive.sb.from('group_members').update({role:'member'}).eq('group_id',g).eq('user_id',u).select()" + ".then(r=>r.error?{code:r.error.code,message:r.error.message}:null)", [gid, x['id']])
         j.check(err and j.sql1("select role from public.group_members where group_id=%d and user_id='%s'" % (gid, x['id'])) == 'admin', 'the database lets the last admin demote themself')
 
@@ -190,7 +190,7 @@ def group_reports(j):
         j.check(badge and badge != '0', 'no unread-reports badge')
     with j.step('X removes S: gone for every member and from the list; Z is told'):
         r = pg.locator('#tab-reports .mod-item, #tab-reports [class*=mod-]').filter(has_text=spam[:25]).first
-        b = r.locator('.mod-btn.remove, button').filter(has_text=re.compile(r'Remove|إزالة|حذف', re.I))
+        b = r.locator('.mod-btn.remove, button').filter(has_text=re.compile(r'Remove|إزالة|حذف|أزل', re.I))
         j.check(b.count(), 'no Remove on the report'); b.first.click(); pg.wait_for_timeout(500); confirm(j, pg); j.settle(pg, 1000)
         j.check(spam[:25] not in manage(j, pg, 'reports'), 'the report stays in the list')
         gd_tab(j, pg, 'disc'); j.check(not any(spam[:25] in p['text'] for p in gposts(pg)), 'the removed post is still in the Discussion')

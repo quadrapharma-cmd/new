@@ -364,7 +364,7 @@ def jcard(j, pg, needle):
     return loc.first
 
 def jobs_header_n(pg):
-    t = pg.evaluate("(()=>{const e=[...document.querySelectorAll('#content .sec-title')].find(e=>e.getClientRects().length&&/Open Positions|Available Candidates|الوظائف|المرشح/.test(e.innerText));return e?e.innerText:''})()")
+    t = pg.evaluate("(()=>{const e=[...document.querySelectorAll('#content .sec-title')].find(e=>e.getClientRects().length&&/Open Positions|Available Candidates|الوظائف|مرشح/.test(e.innerText));return e?e.innerText:''})()")
     return num(re.sub(r'^[^\d٠-٩]*', '', t)) if t else None
 
 def seed_job(j, uid, title, company='', location='Cairo', country='EG', type_='full-time', seniority='mid', category='other', desc='', tags=(), salary='', deadline=None, ago_s=0, active=True):

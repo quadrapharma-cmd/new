@@ -680,7 +680,7 @@ def private_request(j):
         hn = gd_members_n(px_)
         row = px_.locator('#groupDetail [data-uid], #groupDetail .member-row, #groupDetail .req-row').filter(has_text='Rana').first
         j.check(row.count(), 'no row for R in Requests')
-        ok = row.locator('button').filter(has_text=re.compile(r'Approve|Accept|قبول|موافقة', re.I)); j.check(ok.count(), 'no Approve on the request')
+        ok = row.locator('button').filter(has_text=re.compile(r'Approve|Accept|قبول|موافقة|وافق', re.I)); j.check(ok.count(), 'no Approve on the request')
         ok.first.click(); j.settle(px_, 1200)
         j.check(j.wait_db("select count(*) from public.group_members where group_id=%d and user_id='%s'" % (gid, r['id']), 5) == '1', 'R is not a member after approval')
         j.check(gd_members_n(px_) == hn + 1, 'the header count went %s → %s' % (hn, gd_members_n(px_)))
@@ -759,19 +759,19 @@ def invite_members(j):
     with j.step("I gets 'X invited you to join G' that opens G with Accept / Decline"):
         pi = i1['page']; j.reload(pi); open_notif(j, pi, r'invited you|دعاك|دعوة', 'invited you')
         j.check(gd_open(pi) and gd_title(pi) == gname, 'the invitation notification does not open the group')
-        j.check(re.search(r'Accept|قبول', ' '.join(gd_buttons(pi)) + j.text(pi, '#groupDetail')[:800]), 'the group shows no Accept for the invitation')
+        j.check(re.search(r'Accept|قبول|اقبل', ' '.join(gd_buttons(pi)) + j.text(pi, '#groupDetail')[:800]), 'the group shows no Accept for the invitation')
     with j.step("In I's groups list the group shows an 'Invited' label until answered"):
         groups_page(j, pi); c = next((c for c in cards(pi) if c['title'] == gname), None)
         j.check(c and re.search(r'Invited|Invitation|مدعو|دعوة', c['text']), "the invited group's card has no 'Invited' label")
     with j.step('I accepts: a member; the invitation is gone'):
-        open_card(j, pi, gname); b = j.find(pi, r'Accept|Join|قبول|انضم', scope='#groupDetail', kinds='button'); j.check(b, 'no Accept')
+        open_card(j, pi, gname); b = j.find(pi, r'Accept|Join|قبول|انضم|اقبل', scope='#groupDetail', kinds='button'); j.check(b, 'no Accept')
         b.click(); j.settle(pi, 1000)
         j.check(j.wait_db("select count(*) from public.group_members where group_id=%d and user_id='%s'" % (gid, i1['id']), 5) == '1', 'accepting does not make I a member')
         j.check(j.sql1("select count(*) from public.group_invites where group_id=%d and user_id='%s'" % (gid, i1['id'])) == '0', 'the invitation row remains after accepting')
     with j.step('Private group: invite I, I accepts directly (no request); a second invitee declines'):
         invite(pname, 'Ibrahim Invitee %s' % t); invite(pname, 'Ismail Decliner %s' % t)
         j.reload(pi); open_notif(j, pi, r'invited you.*Private|دعاك', 'private invitation')
-        b = j.find(pi, r'Accept|Join|قبول|انضم', scope='#groupDetail', kinds='button'); j.check(b, 'no Accept for the private group'); b.click(); j.settle(pi, 1000)
+        b = j.find(pi, r'Accept|Join|قبول|انضم|اقبل', scope='#groupDetail', kinds='button'); j.check(b, 'no Accept for the private group'); b.click(); j.settle(pi, 1000)
         j.check(j.wait_db("select count(*) from public.group_members where group_id=%d and user_id='%s'" % (pid, i1['id']), 5) == '1', 'I is not a member of the private group')
         p2 = i2['page']; j.reload(p2); open_notif(j, p2, r'invited you|دعاك', 'invitation')
         d = j.find(p2, r'Decline|رفض', scope='#groupDetail', kinds='button'); j.check(d, 'not built: no Decline for an invitation'); d.click(); j.settle(p2, 900)

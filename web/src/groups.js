@@ -1368,7 +1368,7 @@
     cards().forEach(function (c) { var k = cardKey(c), sd = BY_KEY[k]; if (!sd || c.dataset.counted) return; c.dataset.counted = '1';
       var g0 = { key: k, seed: sd, member: cardJoined(c), role: null }, n = demoMembers(g0).length;
       var mc = c.querySelector('.member-count'); if (mc) mc.textContent = fmtN(n) + (n === 1 ? ' member' : ' members');
-      var sg = c.querySelector('.activity-signal'); if (sg && /\d[\d,]*\s+members/.test(sg.textContent)) sg.textContent = sg.textContent.replace(/\d[\d,]*\s+members/, fmtN(n) + (n === 1 ? ' member' : ' members')); });
+      var sg = c.querySelector('.activity-signal'), so = otxt(sg); if (sg && /\d[\d,]*\s+members/.test(so)) sg.textContent = so.replace(/\d[\d,]*\s+members/, fmtN(n) + (n === 1 ? ' member' : ' members')); });   /* the English original, in either language */
   }
 
   /* ── the browser's Back button closes an open group (and stays in the app) ── */
@@ -1555,9 +1555,9 @@
     'Group restored — members can post again': 'تمت استعادة الجروب — يمكن للأعضاء النشر مجدداً', '↺ Restore group': '↺ استعادة الجروب', 'Restore': 'استعادة',
     'This group is archived — read only. Nobody can post, comment or join.': 'هذا الجروب مؤرشف — للقراءة فقط. لا يمكن لأحد النشر أو التعليق أو الانضمام.',
     'Only the admins post in this group.': 'المديرون فقط ينشرون في هذا الجروب.', 'Group settings saved': 'تم حفظ إعدادات الجروب', 'Group name is required': 'اسم الجروب مطلوب', 'Could not save — try again': 'تعذّر الحفظ — حاول مرة أخرى',
-    'A group with this name already exists — choose another name': 'يوجد جروب بهذا الاسم — اختر اسماً آخر', 'Topic': 'الموضوع', 'Country': 'الدولة', 'Emoji': 'الرمز', 'Group rules (one per line)': 'قواعد الجروب (سطر لكل قاعدة)',
+    'A group with this name already exists — choose another name': 'اسم الجروب مستخدم بالفعل — اختر اسماً آخر', 'Topic': 'الموضوع', 'Country': 'الدولة', 'Emoji': 'الرمز', 'Group rules (one per line)': 'قواعد الجروب (سطر لكل قاعدة)',
     'Delete this comment?': 'حذف هذا التعليق؟', 'It is removed for everyone in the group.': 'سيُحذف لكل أعضاء الجروب.', 'Comment deleted': 'تم حذف التعليق',
-    'Reported — the group admins will check it': 'تم الإبلاغ — سيراجعه مديرو الجروب', 'You already reported this post — the admins will check it': 'لقد أبلغت عن هذا المنشور من قبل — سيراجعه المديرون',
+    'Reported — the group admins will check it': 'تم الإبلاغ — سيراجعه مديرو الجروب', 'You already reported this post — the admins will check it': 'لقد أبلغت عن هذا المنشور بالفعل — سيراجعه المديرون',
     'Close this listing?': 'إغلاق هذا الإعلان؟', 'It leaves the Listings tab for everyone. Deals already started stay in the Deals center.': 'سيختفي من تبويب الإعلانات للجميع. الصفقات التي بدأت تبقى في مركز الصفقات.',
     'Yes, close it': 'نعم، أغلقه', 'Listing closed': 'تم إغلاق الإعلان', 'Could not close — try again': 'تعذّر الإغلاق — حاول مرة أخرى', 'Your request': 'طلبك', 'Your offer': 'عرضك', 'Quotes': 'العروض', 'Enquiries': 'الاستفسارات',
     'Request a quote': 'اطلب عرض سعر', 'Request quote →': 'اطلب عرض سعر ←', 'Send a quote': 'أرسل عرض سعر', 'Quote →': 'عرض سعر ←', 'Send quote': 'أرسل العرض', 'Send request': 'أرسل الطلب', 'For': 'إلى',
