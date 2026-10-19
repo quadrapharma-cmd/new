@@ -57,6 +57,7 @@
     var id = post.id, k = h.indexOf('id="pb-' + id + '"');
     if (k >= 0) { var a = h.indexOf('>', k) + 1, e1 = h.indexOf('<span id="pb-ell-' + id + '"', a), e2 = h.indexOf('</div>', a), z = e1 >= 0 && e1 < e2 ? e1 : e2;
       if (a > 0 && z > a) h = h.slice(0, a) + linkify(h.slice(a, z), post) + h.slice(z); }
+    if (![window.POSTS, window.SAVED_POSTS, window.dxTagPosts, window._profPosts].some(function (l) { return Array.isArray(l) && l.indexOf(post) >= 0; }) && find(id) !== post) return h;   /* a card drawn from another list (a group's posts, groups.js) keeps its own actions — only its text is linked */
     if (post.edited) h = h.replace(' · 🌐', ' · <span class="dx-edited" title="Edited">edited</span> · 🌐');
     if (post.pinned) h = h.replace('<div class="post-head">', '<div class="post-head dx-pinned-head">');   /* S-28: on a phone its pills go under the name */
     h = h.replace('onclick="toast(\'Edit coming soon\')">✏️ Edit</div>', 'data-ep-edit="' + id + '" onclick="dxEditPost(this.dataset.epEdit)">✏️ Edit</div>');
