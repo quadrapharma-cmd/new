@@ -12,4 +12,9 @@ export async function select(path, jwt) {
   const c = cfg(); const r = await fetch(`${c.url}/rest/v1/${path}`, { headers: { apikey: c.anon, Authorization: `Bearer ${jwt || c.service}` } });
   if (!r.ok) throw new Error(`select ${path} failed`); return r.json();
 }
+// the signed-in account (GoTrue /auth/v1/user): its e-mail is not in public.profiles
+export async function authUser(jwt) {
+  const c = cfg(); const r = await fetch(`${c.url}/auth/v1/user`, { headers: { apikey: c.anon, Authorization: `Bearer ${jwt}` } });
+  if (!r.ok) throw new Error('auth user failed'); return r.json();
+}
 export { env };

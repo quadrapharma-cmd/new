@@ -172,9 +172,13 @@ def new_message_to_named_person(j):
         hname, hco = 'Dr. Hala Dup %s' % j.tag, 'Pharco %s' % j.tag
         h1, h2 = member(hname, hco), member(hname, hco)
         spoof = member('%s · %s' % (hname, hco))                                       # signs up as "Dr. Hala Dup … · Pharco …"
-        zname = 'Dr. Zeina Inv %s' % j.tag; z1, z2 = member(zname), member(zname + '\u200b')
-        j.check(j.sql1("select name from public.profiles where id='%s'" % spoof).find('·') < 0, 'a member can be called "<name> · <company>" (the picker separator is kept in the name)')
-        j.check(j.sql1("select count(distinct name) from public.profiles where id in ('%s','%s')" % (z1, z2)) == '1', 'a name with an invisible character is stored as a different name')
+        # the verifier's look-alike dots (p1b reverify1): U+A78F LATIN LETTER SINOLOGICAL DOT, U+2E33 RAISED DOT
+        spoofs = [spoof] + [member('%s %s %s' % (hname, d, hco)) for d in ('\ua78f', '\u2e33')]
+        zname = 'Dr. Zeina Inv %s' % j.tag; z1, z2, z3 = member(zname), member(zname + '\u200b'), member(zname + '\U0001d173')   # U+1D173: default-ignorable
+        for sp in spoofs:
+            nm = j.sql1("select name from public.profiles where id='%s'" % sp)
+            j.check(not re.search('[\u00b7\ua78f\u2e33]', nm), 'a member can be called "<name> · <company>" with a look-alike dot (stored: %s)' % nm.encode('unicode_escape').decode())
+        j.check(j.sql1("select count(distinct name) from public.profiles where id in ('%s','%s','%s')" % (z1, z2, z3)) == '1', 'a name with an invisible character is stored as a different name')
         j.reload(pg); j.nav(pg, 'messages')
         opts = options_for(hname); j.note('separator spoof options', opts)
         canon = [o for o in opts if o.lower().startswith(('%s · %s' % (hname, hco)).lower())]
@@ -187,12 +191,35 @@ def new_message_to_named_person(j):
         j.check(labels and all(re.search(r'Same name|نفس الاسم', l) for l in labels), 'exact twins carry only a handle — the option does not warn that they look the same: %s' % labels[:2])
         j.check(re.search(r'Pharco', head(pg)) and not re.search(r'Last seen|آخر ظهور', head(pg)), 'after writing to a twin, the chat header does not say who it is (company): "%s"' % head(pg)[:80])
         opts = options_for(zname); j.note('invisible twin options', opts)
-        vis = set(re.sub(r'[\u200b-\u200f\u2060\ufeff]', '', o).lower() for o in opts)
-        j.check(len(opts) == 2 and len(vis) == 2, 'two members whose names look the same are offered as options that look the same: %s' % [o.encode('unicode_escape').decode() for o in opts])
+        # what a person sees: without the characters that draw nothing (default-ignorable, format, control)
+        vis = set(re.sub('[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u202a-\u202e\u2060-\u206f\u3164\ufe00-\ufe0f\ufeff\uffa0'
+                             '\U0001bca0-\U0001bca3\U0001d173-\U0001d17a\U000e0000-\U000e0fff]', '', o).lower() for o in opts)
+        j.check(len(opts) == 3 and len(vis) == 3, 'three members whose names look the same are offered as options that look the same: %s' % [o.encode('unicode_escape').decode() for o in opts])
         # the profile's Message button writes to that profile's own person (the no-company twin, opened by id)
         goto_profile(j, pg, {'id': n2}); j.click(pg, r'Message|رسالة|راسل', scope='#content', what='Message')
         body = 'From the profile %s' % j.tag; send(j, pg, body)
         j.check(j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 6) == n2, "the profile's Message button did not write to that profile's person")
+    with j.step('Two members with the same name and different companies write first: the list and the chat header say which is '
+                'which, and 👤 opens the one whose conversation is open (the profile view is counted on them, not the twin)'):
+        if j.demo: j.skip('members with the same name exist only in live (the demo has one sample person per name)')
+        def writer(name, company):
+            return j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email('hoda'), json.dumps({'name': name, 'company': company})))
+        oname = 'Dr. Hoda Twin %s' % j.tag; oco1, oco2 = 'Alpha Pharma %s' % j.tag, 'Beta Pharma %s' % j.tag
+        o1, o2 = writer(oname, oco1), writer(oname, oco2)
+        for o, w in ((o1, 'one'), (o2, 'two')):
+            j.sql("insert into public.messages (sender_id, receiver_id, body) values ('%s','%s','Hoda %s writes first %s')" % (o, a['id'], w, j.tag))
+        j.reload(pg); j.nav(pg, 'messages'); to_list(j, pg)
+        rows = [t['text'] for t in threads(pg) if oname in t['text']]; j.note('twin threads', rows)
+        j.check(len(rows) == 2 and any(oco1 in r for r in rows) and any(oco2 in r for r in rows), 'two conversations with members called %s do not say which company each is (list: %s)' % (oname, rows))
+        t = pg.locator('#threadList .mx-thread', has_text=oco1); j.check(t.count() == 1, 'no conversation that reads %s' % oco1); t.first.click(); j.settle(pg, 900)
+        j.check(oco1 in head(pg) and oco2 not in head(pg), "the chat header of Alpha's Dr. Hoda does not say Alpha (header: %s)" % head(pg)[:120])
+        v1, v2 = (j.sql1("select profile_views from public.profiles where id='%s'" % o) for o in (o1, o2))
+        el = j.find(pg, r'^👤$', scope='#content .chat-head', exact=True); j.check(el, 'no 👤 in the conversation header')
+        el.click(); j.settle(pg, 1500)
+        j.check(pg.evaluate("document.body.getAttribute('data-page')") == 'profile' and oco1 in j.text(pg, '#content')[:1500] and oco2 not in j.text(pg, '#content')[:1500],
+                "👤 in Alpha's Dr. Hoda conversation did not open her profile (page: %s)" % j.text(pg, '#content')[:160])
+        j.check(j.wait_db("select profile_views - %s from public.profiles where id='%s'" % (v1, o1), 6) == '1' and j.sql1("select profile_views from public.profiles where id='%s'" % o2) == v2,
+                'the profile view was not counted on the member whose conversation was open')
     with j.step("B receives it; C's thread is unchanged"):
         if j.demo: j.skip('the other party exists only in live')
         pb = b['page']; j.reload(pb); j.nav(pb, 'messages'); open_thread(j, pb, 'Aya')

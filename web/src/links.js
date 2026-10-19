@@ -40,7 +40,10 @@
 
   /* ── Messages: 👤 opens the contact's profile; 📞 shows how to call them ── */
   function partnerName() { var h = Array.prototype.find.call(document.querySelectorAll('#mx *'), function (e) { return /ch-name|chat-name|ch-title/.test(e.className) && e.offsetWidth > 0; }); return h ? txt(h).replace(/[✓✔]/g, '').trim() : ''; }
-  function partner() { var n = partnerName(); return { name: n, user: (window.USERS || []).find(function (u) { return n && (u.name === n || n.indexOf(u.name) === 0); }) }; }
+  /* the live app knows WHICH member the open conversation is with (window.dxMxPartner, the adapter): two members can share a name */
+  function partner() { var n = partnerName(), id = window.dxMxPartner && window.dxMxPartner();
+    if (id) return { name: n, user: (window.USERS || []).find(function (u) { return u.id === id; }) || { id: id, name: n } };
+    return { name: n, user: (window.USERS || []).find(function (u) { return n && (u.name === n || n.indexOf(u.name) === 0); }) }; }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('#mx .ch-action-btn'); if (!b) return;
     var oc = b.getAttribute('onclick') || '', label = txt(b);

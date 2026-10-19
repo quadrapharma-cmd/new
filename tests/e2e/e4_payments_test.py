@@ -35,10 +35,14 @@ def fawry_sign(b): return hashlib.sha256((b['fawryRefNumber'] + b['merchantRefNu
 owner_t, owner = user('payowner'); other_t, other = user('payother'); adm_t, adm = user('payadmin')
 sql(f"update public.profiles set role='admin' where id='{adm}'")
 cid = sql(f"insert into public.companies (owner_id, name, slug, type, status, sectors) values ('{owner}','Pay Pharma {st}','pay-pharma-{st}','Manufacturer','verified','{{Manufacturer}}') returning id").split('\n')[0]
+sql(f"update public.profiles set phone='+20 100 555 0199' where id='{owner}'")   # private since 0036: only my_profile() reads it
 # ── card through Paymob ──
 s, o = http('POST', '/functions/v1/payments-create', {'product': 'vip_month', 'method': 'card', 'company_id': int(cid)}, owner_t)
 T('a card payment starts Paymob\'s unified checkout', s == 200 and 'unifiedcheckout/?publicKey=egy_pk_test_local&clientSecret=egy_csk_' in o.get('checkout_url', ''), (s, o))
 log = json.loads(urllib.request.urlopen(MOCK + '/log').read())[-1]
+bd = log['body'].get('billing_data', {})
+T("Paymob gets the payer's own e-mail (the account's), phone (their private profile phone) and name — not the fallbacks",
+  bd.get('email') == f'payowner{st}@x.test' and bd.get('phone_number') == '+20 100 555 0199' and bd.get('first_name') == 'payowner', bd)
 T('Paymob is asked for the database price incl. VAT (EGP 2,850) with our reference and webhook', log['body']['amount'] == 285000 and log['body']['special_reference'] == o['reference'] and log['body']['notification_url'].endswith('/functions/v1/paymob-webhook') and log['auth_ok'], log)
 oid, ref = o['order_id'], o['reference']
 obj = paymob_obj(oid, ref, 285000)
@@ -68,6 +72,8 @@ T('a declined payment does not activate', s == 200 and sql(f"select status from 
 lid = sql(f"insert into public.products (user_id, name, category, type, active) values ('{owner}','Boosted API {st}','api','supply',true) returning id").split('\n')[0]
 s, f = http('POST', '/functions/v1/payments-create', {'product': 'boost', 'method': 'fawry', 'listing_id': int(lid)}, owner_t)
 T('Fawry issues a reference number (charge signed correctly)', s == 200 and str(f.get('fawry_reference', '')).startswith('9'), (s, f))
+fl = json.loads(urllib.request.urlopen(MOCK + '/log').read())[-1]['body']
+T("Fawry gets the payer's own e-mail and mobile", fl.get('customerEmail') == f'payowner{st}@x.test' and fl.get('customerMobile') == '+20 100 555 0199', {k: fl.get(k) for k in ('customerEmail', 'customerMobile', 'customerName')})
 nb = {'fawryRefNumber': str(f.get('fawry_reference')), 'merchantRefNumber': f.get('reference', ''), 'paymentAmount': 1653.0, 'orderAmount': 1653.0, 'orderStatus': 'PAID', 'paymentMethod': 'PAYATFAWRY', 'paymentRefrenceNumber': '123456'}
 s, t = http('POST', '/functions/v1/fawry-webhook', {**nb, 'messageSignature': '0' * 64}, raw=True)
 T('a forged Fawry notification is refused', s == 401 and sql(f"select boosted_until is null from public.products where id={lid}") == 't', (s, t))

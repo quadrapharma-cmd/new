@@ -78,10 +78,15 @@ def main():
             if bad or (tick[0] != 'none' and not re.search(r'\S', tick[1].replace('● LIVE', ''))): found['ticker on ' + page] = bad or ['an empty ticker bar']
         badges = lambda: pg.evaluate("""()=>[...document.querySelectorAll('#sbNav .nl-badge, #mbnav .mb-badge, .tnb .nbadge')].filter(e=>getComputedStyle(e).display!='none'&&e.textContent.trim()).map(e=>e.closest('[id]').id+':'+e.textContent.trim())""")
         T('a new account has no message, request or alert badges (side menu, phone bar, top bar)', not badges(), badges())
+        feet = {}
         for page in ('feed', 'network', 'messages', 'notifs', 'profile', 'saved', 'training', 'companies', 'jobs'):
             go(page); scan(page)
+            for f in pg.evaluate("[...document.querySelectorAll('footer.dg-foot > span:first-child')].map(e=>e.innerText)"): feet[page] = f
             if page == 'jobs':
                 pg.evaluate("document.querySelector('#jx .mode-opt[data-mode=hunting]').click()"); pg.wait_for_timeout(400); scan('jobs (job hunting)')
+        host = pg.evaluate('location.host')
+        T("every page's footer names the site the app is served from, not the demo's address (drugbox-v3.vercel.app)",
+          len(feet) >= 5 and all(host in f and 'vercel' not in f for f in feet.values()), feet)
         # Home: no stock faces (members' own photos only), no empty TODAY card
         go('feed')
         faces = pg.evaluate("[...document.querySelectorAll('#content .dg-faces-row img')].map(e=>e.src)")

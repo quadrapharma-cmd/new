@@ -594,15 +594,29 @@
     el.className = 'mx-thread' + (c.unread ? ' mx-unread' : ''); el.dataset.name = (c.name || '').toLowerCase(); el.dataset.tags = 'deals'; el.dataset.person = key; el.dataset.uid = a;
     el.setAttribute('onclick', "mxOpenThread(this,'" + key + "')");
     var av = el.querySelector('.av'); if (av) { av.style.background = u.color; av.childNodes[0].textContent = u.initials; var dot = av.querySelector('.online-dot'); if (dot) dot.remove(); }
-    var nm = el.querySelector('.t-name'); if (nm) nm.innerHTML = esc2(c.name || 'Member') + (c.verified ? ' <span style="color:#1a56db;font-size:10px">✓</span>' : '');
+    var nm = el.querySelector('.t-name'), tw = mxTwinFact(c.partner); if (nm) nm.innerHTML = esc2(c.name || 'Member') + (c.verified ? ' <span style="color:#1a56db;font-size:10px">✓</span>' : '') + (tw ? ' <span class="dx-mx-twin" style="color:#65676b;font-weight:400">· ' + esc2(tw) + '</span>' : '');
     var tm = el.querySelector('.t-time'); if (tm) tm.textContent = shortAgo(c.last_at);
     var pv = el.querySelector('.t-preview'); if (pv) { pv.textContent = (c.last_from_me ? 'You: ' : '') + (c.last_body || ''); pv.classList.toggle('unread-text', !!c.unread); }
     var tag = el.querySelector('.t-context-tag'); if (tag) tag.remove();
     var bd = el.querySelector('.t-badge'); if (c.unread) { if (!bd) { bd = document.createElement('div'); bd.className = 't-badge'; el.appendChild(bd); } bd.textContent = c.unread; } else if (bd) bd.remove();
     return el;
   }
+  /* two conversations with members of the same name (S-03): each says what tells them apart — the company, else the headline,
+     else the city, else a short handle from the id — in the list and under the name in the chat header. '' when no other
+     conversation or known member shares the name. */
+  function mxFacts(id) { var u = nmUser(id); return u ? [String(u.headline || '').split('|')[0].trim(), u.company, u.location].map(nmClean).filter(Boolean) : []; }
+  function mxTwinFact(id) {
+    var u = nmUser(id), k = u && nmKey(u.name); if (!k) return '';
+    var twins = (window.USERS || []).filter(function (x) { return x.id !== u.id && x.id !== aid(ME_UUID) && nmKey(x.name) === k; });
+    if (!twins.length) return '';
+    var mine = mxFacts(id), co = nmClean(u.company), others = twins.map(function (x) { return x.id; });
+    if (co && !twins.some(function (x) { return nmKey(x.company) === nmKey(co); })) return co;
+    var f = mine.find(function (v) { return !others.some(function (o) { return mxFacts(uuidOf(o)).some(function (w) { return nmKey(w) === nmKey(v); }); }); });
+    return f || '#' + String(uuidOf(u.id) || '').replace(/-/g, '').slice(0, 6);
+  }
+  window.dxMxPartner = function () { return ME_UUID && MX.open ? MX.open : 0; };   /* links.js: 👤 / 📞 act on the open conversation's member, never a name look-up */
   async function loadConvs() { var q = await Promise.all([sb.rpc('my_conversations', { p_limit: 50 }), loadPrefs().catch(function (e) { console.error(e); })]), r = q[0]; if (r.error) throw r.error;
-    MX.convs = r.data || []; MX.convs.forEach(function (c) { putUser({ id: c.partner, name: c.name, headline: c.headline, verified: c.verified, avatar_url: c.avatar_url }); }); msgBadge(); return MX.convs; }
+    MX.convs = r.data || []; MX.convs.forEach(function (c) { putUser({ id: c.partner, name: c.name, headline: c.headline, verified: c.verified, avatar_url: c.avatar_url, company: c.company, location: c.location }); }); msgBadge(); return MX.convs; }
   /* the Messages count everywhere it shows — top bar, phone bar, sidebar (the sidebar is rebuilt from SB_NAV) — never the
      demo's fixed "5" (J-SOCIAL-38) */
   function msgBadge() { var n = MX.convs.reduce(function (t, c) { return t + (MXP.mute[c.partner] ? 0 : (c.unread || 0)); }, 0);
@@ -625,7 +639,7 @@
     /* the header under the name says who this is (headline · company · city) — there is no presence in the live app, so never
        "Last seen recently"; two members with the same name are told apart here too (S-03) */
     var hu = nmUser(partner), st = document.querySelector('.chat-head .ch-status');
-    if (st) st.textContent = hu ? [String(hu.headline || '').split('|')[0].trim(), hu.company, hu.location].map(nmClean).filter(Boolean).join(' · ') : '';
+    if (st) { var tf = mxTwinFact(partner), hf = mxFacts(partner); st.textContent = hf.concat(tf && tf.charAt(0) === '#' ? [tf] : []).join(' · '); }
     var r = await sb.rpc('conversation_messages', { p_partner: partner, p_limit: 50 }); if (r.error) { toastErr(r.error); return; }
     if (MX.open !== a) return;
     var u = window.U(a), rows = (r.data || []).slice().reverse();
@@ -717,12 +731,19 @@
      that fits more than one member, or none, is refused and nothing is sent. Never a guess. */
   var NM = { people: {}, map: {}, t: null };
   function nmLike(x) { return String(x).replace(/[\\%_]/g, '\\$&'); }
-  /* what a person can see of a name: invisible characters (zero-width, direction marks…) count for nothing, any run of spaces is
-     one space, and the picker's own separator "·" (or a look-alike dot) inside a name or a fact reads "-" — so two names that look
-     the same ARE the same name here (and get told apart), and nobody's name or company can pass for "name · company" (0036 does
-     the same in the database) */
-  var NM_INVIS = /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u2800\u3164\uFE00-\uFE0F\uFEFF\uFFA0\uFFF9-\uFFFB]|\uDB40[\uDC00-\uDDEF]/g;
-  function nmClean(x) { return String(x == null ? '' : x).normalize('NFKC').replace(NM_INVIS, '').replace(/\s*[\u00B7\u0387\u16EB\u2022\u2027\u2219\u22C5\u2E31\u30FB\uFF65]+\s*/g, ' - ').replace(/\s+/g, ' ').trim(); }
+  /* what a person can see of a name — the same rule as the database's clean_person_name (0037), generated from the Unicode
+     properties by tools/names/name_rule.mjs and compared code point by code point by supabase/tests/name_rule.sql:
+     1. invisible characters (every default-ignorable, format or control character; blank-drawing ones) count for nothing
+     2. NFKC   3. any kind of space is one space   4. a combining mark with no letter before it is dropped (a free dot)
+     5. every dot or bullet look-alike — the picker's own separator "·" in any script — reads " - "   6. one space, trimmed
+     So two names that look the same ARE the same name here (and get told apart), and nobody's name or company can pass for
+     "name · company" */
+  var NM_INVIS = /[\u{0}-\u{8}\u{E}-\u{1F}\u{7F}-\u{84}\u{86}-\u{9F}\u{AD}\u{34F}\u{600}-\u{605}\u{61C}\u{6DD}\u{70F}\u{890}-\u{891}\u{8E2}\u{115F}-\u{1160}\u{17B4}-\u{17B5}\u{180B}-\u{180F}\u{200B}-\u{200F}\u{202A}-\u{202E}\u{2060}-\u{206F}\u{2800}\u{3164}\u{FE00}-\u{FE0F}\u{FEFF}\u{FFA0}\u{FFF0}-\u{FFFB}\u{110BD}\u{110CD}\u{13430}-\u{1343F}\u{1BCA0}-\u{1BCA3}\u{1D159}\u{1D173}-\u{1D17A}\u{E0000}-\u{E0FFF}]/gu;
+  var NM_SPACE = /[\u{9}-\u{D}\u{20}\u{85}\u{A0}\u{1680}\u{2000}-\u{200A}\u{2028}-\u{2029}\u{202F}\u{205F}\u{3000}]+/gu;
+  var NM_MARK = /(^| )[\u{300}-\u{34E}\u{350}-\u{36F}\u{483}-\u{489}\u{591}-\u{5BD}\u{5BF}\u{5C1}-\u{5C2}\u{5C4}-\u{5C5}\u{5C7}\u{610}-\u{61A}\u{64B}-\u{65F}\u{670}\u{6D6}-\u{6DC}\u{6DF}-\u{6E4}\u{6E7}-\u{6E8}\u{6EA}-\u{6ED}\u{711}\u{730}-\u{74A}\u{7A6}-\u{7B0}\u{7EB}-\u{7F3}\u{7FD}\u{816}-\u{819}\u{81B}-\u{823}\u{825}-\u{827}\u{829}-\u{82D}\u{859}-\u{85B}\u{897}-\u{89F}\u{8CA}-\u{8E1}\u{8E3}-\u{903}\u{93A}-\u{93C}\u{93E}-\u{94F}\u{951}-\u{957}\u{962}-\u{963}\u{981}-\u{983}\u{9BC}\u{9BE}-\u{9C4}\u{9C7}-\u{9C8}\u{9CB}-\u{9CD}\u{9D7}\u{9E2}-\u{9E3}\u{9FE}\u{A01}-\u{A03}\u{A3C}\u{A3E}-\u{A42}\u{A47}-\u{A48}\u{A4B}-\u{A4D}\u{A51}\u{A70}-\u{A71}\u{A75}\u{A81}-\u{A83}\u{ABC}\u{ABE}-\u{AC5}\u{AC7}-\u{AC9}\u{ACB}-\u{ACD}\u{AE2}-\u{AE3}\u{AFA}-\u{AFF}\u{B01}-\u{B03}\u{B3C}\u{B3E}-\u{B44}\u{B47}-\u{B48}\u{B4B}-\u{B4D}\u{B55}-\u{B57}\u{B62}-\u{B63}\u{B82}\u{BBE}-\u{BC2}\u{BC6}-\u{BC8}\u{BCA}-\u{BCD}\u{BD7}\u{C00}-\u{C04}\u{C3C}\u{C3E}-\u{C44}\u{C46}-\u{C48}\u{C4A}-\u{C4D}\u{C55}-\u{C56}\u{C62}-\u{C63}\u{C81}-\u{C83}\u{CBC}\u{CBE}-\u{CC4}\u{CC6}-\u{CC8}\u{CCA}-\u{CCD}\u{CD5}-\u{CD6}\u{CE2}-\u{CE3}\u{CF3}\u{D00}-\u{D03}\u{D3B}-\u{D3C}\u{D3E}-\u{D44}\u{D46}-\u{D48}\u{D4A}-\u{D4D}\u{D57}\u{D62}-\u{D63}\u{D81}-\u{D83}\u{DCA}\u{DCF}-\u{DD4}\u{DD6}\u{DD8}-\u{DDF}\u{DF2}-\u{DF3}\u{E31}\u{E34}-\u{E3A}\u{E47}-\u{E4E}\u{EB1}\u{EB4}-\u{EBC}\u{EC8}-\u{ECE}\u{F18}-\u{F19}\u{F35}\u{F37}\u{F39}\u{F3E}-\u{F3F}\u{F71}-\u{F84}\u{F86}-\u{F87}\u{F8D}-\u{F97}\u{F99}-\u{FBC}\u{FC6}\u{102B}-\u{103E}\u{1056}-\u{1059}\u{105E}-\u{1060}\u{1062}-\u{1064}\u{1067}-\u{106D}\u{1071}-\u{1074}\u{1082}-\u{108D}\u{108F}\u{109A}-\u{109D}\u{135D}-\u{135F}\u{1712}-\u{1715}\u{1732}-\u{1734}\u{1752}-\u{1753}\u{1772}-\u{1773}\u{17B6}-\u{17D3}\u{17DD}\u{1885}-\u{1886}\u{18A9}\u{1920}-\u{192B}\u{1930}-\u{193B}\u{1A17}-\u{1A1B}\u{1A55}-\u{1A5E}\u{1A60}-\u{1A7C}\u{1A7F}\u{1AB0}-\u{1ACE}\u{1B00}-\u{1B04}\u{1B34}-\u{1B44}\u{1B6B}-\u{1B73}\u{1B80}-\u{1B82}\u{1BA1}-\u{1BAD}\u{1BE6}-\u{1BF3}\u{1C24}-\u{1C37}\u{1CD0}-\u{1CD2}\u{1CD4}-\u{1CE8}\u{1CED}\u{1CF4}\u{1CF7}-\u{1CF9}\u{1DC0}-\u{1DFF}\u{20D0}-\u{20F0}\u{2CEF}-\u{2CF1}\u{2D7F}\u{2DE0}-\u{2DFF}\u{302A}-\u{302F}\u{3099}-\u{309A}\u{A66F}-\u{A672}\u{A674}-\u{A67D}\u{A69E}-\u{A69F}\u{A6F0}-\u{A6F1}\u{A802}\u{A806}\u{A80B}\u{A823}-\u{A827}\u{A82C}\u{A880}-\u{A881}\u{A8B4}-\u{A8C5}\u{A8E0}-\u{A8F1}\u{A8FF}\u{A926}-\u{A92D}\u{A947}-\u{A953}\u{A980}-\u{A983}\u{A9B3}-\u{A9C0}\u{A9E5}\u{AA29}-\u{AA36}\u{AA43}\u{AA4C}-\u{AA4D}\u{AA7B}-\u{AA7D}\u{AAB0}\u{AAB2}-\u{AAB4}\u{AAB7}-\u{AAB8}\u{AABE}-\u{AABF}\u{AAC1}\u{AAEB}-\u{AAEF}\u{AAF5}-\u{AAF6}\u{ABE3}-\u{ABEA}\u{ABEC}-\u{ABED}\u{FB1E}\u{FE20}-\u{FE2F}\u{101FD}\u{102E0}\u{10376}-\u{1037A}\u{10A01}-\u{10A03}\u{10A05}-\u{10A06}\u{10A0C}-\u{10A0F}\u{10A38}-\u{10A3A}\u{10A3F}\u{10AE5}-\u{10AE6}\u{10D24}-\u{10D27}\u{10D69}-\u{10D6D}\u{10EAB}-\u{10EAC}\u{10EFC}-\u{10EFF}\u{10F46}-\u{10F50}\u{10F82}-\u{10F85}\u{11000}-\u{11002}\u{11038}-\u{11046}\u{11070}\u{11073}-\u{11074}\u{1107F}-\u{11082}\u{110B0}-\u{110BA}\u{110C2}\u{11100}-\u{11102}\u{11127}-\u{11134}\u{11145}-\u{11146}\u{11173}\u{11180}-\u{11182}\u{111B3}-\u{111C0}\u{111C9}-\u{111CC}\u{111CE}-\u{111CF}\u{1122C}-\u{11237}\u{1123E}\u{11241}\u{112DF}-\u{112EA}\u{11300}-\u{11303}\u{1133B}-\u{1133C}\u{1133E}-\u{11344}\u{11347}-\u{11348}\u{1134B}-\u{1134D}\u{11357}\u{11362}-\u{11363}\u{11366}-\u{1136C}\u{11370}-\u{11374}\u{113B8}-\u{113C0}\u{113C2}\u{113C5}\u{113C7}-\u{113CA}\u{113CC}-\u{113D0}\u{113D2}\u{113E1}-\u{113E2}\u{11435}-\u{11446}\u{1145E}\u{114B0}-\u{114C3}\u{115AF}-\u{115B5}\u{115B8}-\u{115C0}\u{115DC}-\u{115DD}\u{11630}-\u{11640}\u{116AB}-\u{116B7}\u{1171D}-\u{1172B}\u{1182C}-\u{1183A}\u{11930}-\u{11935}\u{11937}-\u{11938}\u{1193B}-\u{1193E}\u{11940}\u{11942}-\u{11943}\u{119D1}-\u{119D7}\u{119DA}-\u{119E0}\u{119E4}\u{11A01}-\u{11A0A}\u{11A33}-\u{11A39}\u{11A3B}-\u{11A3E}\u{11A47}\u{11A51}-\u{11A5B}\u{11A8A}-\u{11A99}\u{11C2F}-\u{11C36}\u{11C38}-\u{11C3F}\u{11C92}-\u{11CA7}\u{11CA9}-\u{11CB6}\u{11D31}-\u{11D36}\u{11D3A}\u{11D3C}-\u{11D3D}\u{11D3F}-\u{11D45}\u{11D47}\u{11D8A}-\u{11D8E}\u{11D90}-\u{11D91}\u{11D93}-\u{11D97}\u{11EF3}-\u{11EF6}\u{11F00}-\u{11F01}\u{11F03}\u{11F34}-\u{11F3A}\u{11F3E}-\u{11F42}\u{11F5A}\u{13440}\u{13447}-\u{13455}\u{1611E}-\u{1612F}\u{16AF0}-\u{16AF4}\u{16B30}-\u{16B36}\u{16F4F}\u{16F51}-\u{16F87}\u{16F8F}-\u{16F92}\u{16FE4}\u{16FF0}-\u{16FF1}\u{1BC9D}-\u{1BC9E}\u{1CF00}-\u{1CF2D}\u{1CF30}-\u{1CF46}\u{1D165}-\u{1D169}\u{1D16D}-\u{1D172}\u{1D17B}-\u{1D182}\u{1D185}-\u{1D18B}\u{1D1AA}-\u{1D1AD}\u{1D242}-\u{1D244}\u{1DA00}-\u{1DA36}\u{1DA3B}-\u{1DA6C}\u{1DA75}\u{1DA84}\u{1DA9B}-\u{1DA9F}\u{1DAA1}-\u{1DAAF}\u{1E000}-\u{1E006}\u{1E008}-\u{1E018}\u{1E01B}-\u{1E021}\u{1E023}-\u{1E024}\u{1E026}-\u{1E02A}\u{1E08F}\u{1E130}-\u{1E136}\u{1E2AE}\u{1E2EC}-\u{1E2EF}\u{1E4EC}-\u{1E4EF}\u{1E5EE}-\u{1E5EF}\u{1E8D0}-\u{1E8D6}\u{1E944}-\u{1E94A}]+/gu;
+  var NM_ZERO = /(^| )[\u{660}\u{6F0}]+(?= |$)/gu;
+  var NM_DOT = / *[\u{B7}\u{2D1}\u{387}\u{887}\u{888}\u{971}\u{F0B}\u{F0C}\u{119E}\u{1427}\u{16EB}\u{16EC}\u{18DF}\u{2022}\u{2023}\u{2027}\u{2043}\u{204C}\u{204D}\u{2219}\u{22C5}\u{25CF}\u{25D8}\u{25E6}\u{2619}\u{26AB}\u{2765}\u{2767}\u{2981}\u{29BE}\u{29BF}\u{2B24}\u{2E30}\u{2E31}\u{2E33}\u{30FB}\u{318D}\u{A78F}\u{FE45}\u{FE46}\u{FF65}\u{10101}\u{1091F}\u{10A50}\u{10AF4}\u{11049}\u{1123A}\u{115C4}\u{11A41}\u{11A9A}\u{11C43}\u{1F784}]+ */gu;
+  function nmClean(x) { return String(x == null ? '' : x).replace(NM_INVIS, '').normalize('NFKC').replace(NM_SPACE, ' ').replace(NM_MARK, '$1').replace(NM_ZERO, '$1-').replace(NM_DOT, ' - ').replace(/ +/g, ' ').replace(/^ | $/g, ''); }
   function nmKey(x) { return nmClean(x).toLowerCase(); }
   /* a typed or picked text: the separators the picker wrote stay, the rest is cleaned like a name */
   function nmTyped(x) { return String(x == null ? '' : x).split(/\s+\u00B7\s+/).map(nmClean).join(' \u00B7 ').toLowerCase(); }
@@ -2912,6 +2933,13 @@
   if (oSideP1b) window.renderFeedSidebar = function () { var h = oSideP1b.apply(this, arguments); if (!ME_UUID || typeof h !== 'string') return h;
     var s = h.indexOf('>Post impressions<'), ra = s < 0 ? -1 : h.lastIndexOf('<div', s), rz = s < 0 ? -1 : h.indexOf('</div>', s);
     return ra >= 0 && rz > s ? h.slice(0, ra) + h.slice(rz + 6) : h; };
+  /* every page's footer names the site the app is served from, not the demo's hosting address (drugbox-v3.vercel.app) */
+  function footHost(root) { var h = location.host; if (!h) return;
+    [].forEach.call((root || document).querySelectorAll('footer.dg-foot > span:first-child'), function (sp) { var i = sp.querySelector('i'), t = i && i.nextSibling;
+      if (t && t.nodeType === 3 && t.nodeValue !== h) t.nodeValue = h; }); }
+  var oFootP1b = window.dgFooter;
+  if (oFootP1b) window.dgFooter = function (c) { var r = oFootP1b.apply(this, arguments); footHost(c); return r; };
+  footHost();
   var oNetP1b = window.renderNetwork;
   window.renderNetwork = function () { var r = oNetP1b.apply(this, arguments);
     if (ME_UUID) [].forEach.call(document.querySelectorAll('#content .net-overview-item'), function (e) { if (/Post impressions/.test(origT(e))) hideEl(e); });

@@ -1,6 +1,6 @@
 // POST { product, method: card|wallet|fawry|instapay, company_id?, listing_id? }  (Authorization: Bearer <user JWT>)
 // Creates the order as the user (prices come from the database), then starts the payment with the provider.
-import { rpc, select, env } from '../_shared/db.js';
+import { rpc, select, env, authUser } from '../_shared/db.js';
 import { fawryChargeSignature } from '../_shared/signatures.js';
 // CORS: only the app's own site may call this from a browser — ALLOWED_ORIGINS (comma-separated) or else the origin of APP_URL.
 // Calls without an Origin header (servers, tests) are not browser calls and are judged by the user's JWT alone.
@@ -17,7 +17,10 @@ export async function handler(req) {
   if (!['card', 'wallet', 'fawry', 'instapay'].includes(b.method)) return json({ error: 'Choose a payment method' }, 400);
   let order; try { order = await rpc('create_order', { p_product: b.product, p_method: b.method, p_company: b.company_id ?? null, p_listing: b.listing_id ?? null }, jwt); }
   catch (e) { return json({ error: e.message }, e.status === 401 ? 401 : 400); }
-  const [me] = await select(`profiles?select=name,email,phone&id=eq.${order.user_id}`, jwt).catch(() => [{}]);
+  // billing data: the e-mail of the signed-in account (auth), the name and the phone of their own profile (my_profile(), 0036 —
+  // profiles has no e-mail column and its phone column is readable only through my_profile())
+  const [prof, account] = await Promise.all([rpc('my_profile', {}, jwt).catch(() => null), authUser(jwt).catch(() => null)]);
+  const row = (Array.isArray(prof) ? prof[0] : prof) || {}, me = { name: row.name || '', phone: row.phone || '', email: (account && account.email) || '' };
   const [pr] = await select(`payment_products?select=label&code=eq.${order.product_code}`, jwt).catch(() => [{ label: order.product_code }]);
   const amount = order.amount_cents / 100, label = pr.label, fnBase = env('FUNCTIONS_URL', `${env('SUPABASE_URL')}/functions/v1`);
   try {
