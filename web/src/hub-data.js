@@ -205,9 +205,14 @@
       prod = norm(co.products.map(function (p) { return p.name + ' ' + (p.api || '') + ' ' + p.desc + ' ' + (p.nameAr || ''); }).join(' ') + ' ' + madeFor(co).map(function (m) { return m.p.name + ' ' + (m.p.api || ''); }).join(' '));
     var cap = sitesOf(co).map(function (s) { return s.cap ? s.cap.forms.join(' ') : ''; }).join(' ').toLowerCase();
     var score = 0;
-    for (var i = 0; i < words.length; i++) { var w = words[i]; if (norm(co.name + ' ' + nameAr(co)).indexOf(w) >= 0) score += 3; else if (prod.indexOf(w) >= 0) score += 2; else if (hay.indexOf(w) >= 0 || cap.indexOf(w) >= 0) score += 1; else return 0; }
+    for (var i = 0; i < words.length; i++) { var w = words[i]; if (norm(co.name + ' ' + nameAr(co)).indexOf(w) >= 0) score += 3; else if (prod.indexOf(w) >= 0) score += 2; else if (hay.indexOf(w) >= 0 || cap.indexOf(w) >= 0) score += 1; else if (near(w, norm(co.name + ' ' + nameAr(co)))) score += 2; else return 0; }
     return score;
   }
+  /* a misspelt word ("medsinya") still finds the name ("Medsinia"): one letter off in a word of 5–7 letters, two in a longer one */
+  function lev(a, b, max) { if (Math.abs(a.length - b.length) > max) return max + 1; var p = [], c, i, j; for (j = 0; j <= b.length; j++) p[j] = j;
+    for (i = 1; i <= a.length; i++) { c = [i]; var lo = i; for (j = 1; j <= b.length; j++) { c[j] = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); if (c[j] < lo) lo = c[j]; } if (lo > max) return max + 1; p = c; }
+    return p[b.length]; }
+  function near(w, text) { if (w.length < 5) return false; var max = w.length >= 8 ? 2 : 1; return text.split(/[^\p{L}\p{N}]+/u).some(function (x) { return x.length >= 4 && lev(w, x, max) <= max; }); }
   function rankScore(co, q) {
     var r = relevance(co, q); if (!r) return -1;
     var t = track(co.slug);

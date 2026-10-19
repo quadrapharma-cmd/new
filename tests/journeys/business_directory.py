@@ -93,13 +93,14 @@ def find_supplier(j):
         t = dlg_text(pg); j.check(re.search(r'Sponsored|مموّل|ممول|الممولة', t), 'the ordering explanation does not explain Sponsored placement')
         close_dialogs(pg); set_select(pg, '#hbSort', 'Best match|الأكثر')
     with j.step("'Show more' until every company is listed — each exactly once"):
+        t0 = j.sql1("select now()") if j.live else None             # companies other journeys create meanwhile are not counted
         for _ in range(30):
             more = pg.locator('#dxDir [data-hmore]:visible')
             if not more.count(): break
             more.first.click(); j.settle(pg, 900)
         slugs = card_slugs(pg)
         j.check(len(slugs) == len(set(slugs)), 'a company is listed twice')
-        total = int(j.sql1("select count(*) from public.companies where status<>'suspended'")) if j.live else pg.evaluate("dxDir.companies().length")
+        total = int(j.sql1("select count(*) from public.companies where status<>'suspended' and created_at < '%s'" % t0)) if j.live else pg.evaluate("dxDir.companies().length")
         j.check(len(slugs) >= total, 'only %d of %d companies can be reached with Show more' % (len(slugs), total))
     with j.step("'View page' opens that company's own page (name, sectors, city match the card)"):
         directory(j, pg); search_dir(j, pg, want.split(' %s' % j.tag)[0] if j.live else want)

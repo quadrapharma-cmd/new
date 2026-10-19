@@ -298,17 +298,21 @@
       m.el.addEventListener('change', function (e) { if (e.target.name === 'plPick' || e.target.name === 'plBill') { W.plan = m.el.querySelector('input[name=plPick]:checked').value; W.billing = m.el.querySelector('input[name=plBill]:checked').value; m.el.querySelector('.dbk-bd').innerHTML = planCards(W.plan, W.billing); } });
     }
     function step2() {
-      D.modal({ title: 'Create a company page · 2 of 3 — company details', body: '<div class="dbk-f"><label for="ccN">Company legal name *</label><input id="ccN" data-req value="' + esc(W.name || '') + '"></div>' +
+      var m2 = D.modal({ title: 'Create a company page · 2 of 3 — company details', body: '<div class="dbk-f"><label for="ccN">Company legal name *</label><input id="ccN" data-req value="' + esc(W.name || '') + '"></div>' +
         '<div class="dbk-row"><div class="dbk-f"><label for="ccS">Main activity *</label><select id="ccS" data-req><option value="">Choose…</option>' + SECTORS.slice(1).map(function (s) { return '<option' + (W.sector === s ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') + '</select></div>' +
         '<div class="dbk-f"><label for="ccG">Governorate *</label><select id="ccG" data-req><option value="">Choose…</option>' + GOVS.slice(1).map(function (g) { return '<option' + (W.gov === g ? ' selected' : '') + '>' + g + '</option>'; }).join('') + '</select></div></div>' +
         '<div class="dbk-row"><div class="dbk-f"><label for="ccC">City / area *</label><input id="ccC" data-req value="' + esc(W.city || '') + '"></div><div class="dbk-f"><label for="ccP">Company phone *</label><input id="ccP" data-req value="' + esc(W.phone || '') + '"></div></div>' +
-        '<div class="dbk-f"><label for="ccE">Company email *</label><input id="ccE" type="email" data-req value="' + esc(W.email || '') + '"></div>',
+        '<div class="dbk-f"><label for="ccE">Company email *</label><input id="ccE" type="email" data-req value="' + esc(W.email || '') + '"></div>' +
+        '<div class="dbk-row"><div class="dbk-f"><label for="ccAr">Arabic company name</label><input id="ccAr" dir="rtl" lang="ar" value="' + esc(W.nameAr || '') + '"></div><div class="dbk-f"><label for="ccT">Tagline</label><input id="ccT" maxlength="140" value="' + esc(W.tagline || '') + '" placeholder="What you make or offer"></div></div>' +
+        '<div class="dbk-f"><label for="ccL">Logo</label><div class="ed-brand"><span id="ccLPrev">' + (W.logo ? '<span class="dr-logo sm has-img"><img src="' + esc(W.logo) + '" alt=""></span>' : '') + '</span><input id="ccL" type="file" accept="image/*"></div></div>',
         primary: { label: 'Next: review', onClick: function (b) {
           if (!D.requireFields(b)) return false;
           var name = b.querySelector('#ccN').value.trim();
           W.name = name; W.sector = b.querySelector('#ccS').value; W.gov = b.querySelector('#ccG').value; W.city = b.querySelector('#ccC').value.trim(); W.phone = b.querySelector('#ccP').value.trim(); W.email = b.querySelector('#ccE').value.trim();
+          W.nameAr = b.querySelector('#ccAr').value.trim(); W.tagline = b.querySelector('#ccT').value.trim();
           setTimeout(step4, 40);
         } } });
+      m2.el.addEventListener('change', function (e) { if (e.target.id !== 'ccL') return; readImage(e.target.files[0], 400, function (d) { if (!d) return; W.logo = d; var pv = m2.el.querySelector('#ccLPrev'); if (pv) pv.innerHTML = '<span class="dr-logo sm has-img"><img src="' + esc(d) + '" alt=""></span>'; }); });
     }
     function step4() {
       var p = PLANS[W.plan], amount = W.plan === 'vip' ? (W.billing === 'year' ? p.year : p.price) : 0, vat = Math.round(amount * 0.14);
@@ -320,8 +324,8 @@
         primary: { label: amount ? 'Pay EGP ' + (amount + vat).toLocaleString('en-US') + ' and create' : 'Create my page', onClick: function () {
           var me = window.ME || {}, base = slugify(W.name), slug = base, n = 2, created = store('created_companies') || [];
           while (companies(true).some(function (c) { return c.slug === slug; })) slug = base + '-' + (n++);   /* same name allowed; the link stays unique */
-          var co = { slug: slug, registry: '', plan: W.plan, licensed: false, status: 'unverified', name: W.name, owner: me.id, color: '#1a56db', sector: W.sector, sectors: [W.sector], city: W.city, gov: W.gov,
-            founded: new Date().getFullYear(), employees: '—', verified: false, level: '', rating: 0, reviews: 0, reply: '—', tagline: 'Tell buyers what you make or offer.', about: '', certs: [],
+          var co = { slug: slug, registry: '', plan: W.plan, licensed: false, status: 'unverified', name: W.name, nameAr: W.nameAr || '', logo: W.logo || null, owner: me.id, color: '#1a56db', sector: W.sector, sectors: [W.sector], city: W.city, gov: W.gov,
+            founded: new Date().getFullYear(), employees: '—', verified: false, level: '', rating: 0, reviews: 0, reply: '—', tagline: W.tagline || 'Tell buyers what you make or offer.', about: '', certs: [],
             phone: W.phone, email: W.email, whatsapp: W.phone.replace(/\D/g, ''), website: '', address: W.city + ', ' + W.gov, hours: '', services: [], products: [], jobs: [], billing: W.billing, createdAt: Date.now() };
           created.push(co); store('created_companies', created); store('acting', slug); drawSwitch(true);
           S.open = slug; S.tab = 'overview'; window.__dxKeepCompany = true; try { if (document.body.getAttribute('data-page') !== 'companies') window.goto('companies'); else render(); } finally { window.__dxKeepCompany = false; }

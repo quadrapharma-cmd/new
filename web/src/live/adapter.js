@@ -1091,12 +1091,13 @@
         var shown = Object.assign({}, c, { owner: window.ME.id, status: 'pending', plan: 'free', licensed: false, verified: false });
         (window.dxLiveCompanies || (window.dxLiveCompanies = [])).push(shown);
         var insP = Promise.resolve(sb.from('companies').insert({ owner_id: ME_UUID, name: c.name, slug: c.slug, type: c.sector || 'Manufacturer', sectors: c.sectors || [], city: c.city || null,
-          governorate: c.gov || null, location: c.address || null, phone: c.phone || null, email: c.email || null, whatsapp: c.whatsapp || null, tagline: c.tagline || null }).select().single());   /* one request, shared (a query builder re-runs on every await) */
+          governorate: c.gov || null, location: c.address || null, phone: c.phone || null, email: c.email || null, whatsapp: c.whatsapp || null, tagline: c.tagline || null, name_ar: c.nameAr || null }).select().single());   /* one request, shared (a query builder re-runs on every await) */
         CO.raw[c.slug] = { pending: insP };                 /* edits saved meanwhile wait for it (F-55) */
         var ins = await insP;
         if (ins.error) { window.dxLiveCompanies = window.dxLiveCompanies.filter(function (x) { return x !== shown; }); delete CO.raw[c.slug]; rerenderCompanies(); toastErr(ins.error); continue; }
         var sv = okSlug(ins.data.slug) ? ins.data.slug : c.slug; if (sv !== c.slug) adoptSlug(c.slug, sv, shown);
         ins.data.mine = true; CO.raw[sv] = ins.data; CO.roles[ins.data.id] = 'owner'; shown._id = ins.data.id; CO.byId[ins.data.id] = sv;
+        if (c.logo && /^data:image\//.test(c.logo)) { var lg = {}; lg[sv] = { logo: c.logo }; persistEdits(lg); }   /* the wizard's logo: uploaded to company-media once the page exists */
       } else if (c.registry && c.status === 'pending' && known.id && !SNAP['vr_' + c.slug]) {   /* verification documents submitted */
         SNAP['vr_' + c.slug] = 1; var l = live(c.slug); if (l) { l.status = 'pending'; l.registry = c.registry; }
         var docs = {}; try { docs = await window.dxLive.verificationFiles(known.id); } catch (e) { toastErr(e); }
