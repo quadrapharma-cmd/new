@@ -2425,7 +2425,7 @@
     function check() { if (!ME_UUID) { if ((waited += 800) < 60000) setTimeout(check, 800); return; }   /* not signed in within a minute: stop (F-119) */
       sb.from('payment_orders').select('status').eq('id', id).single().then(function (r) { var st = r.data && r.data.status;
         if (st === 'paid') { window.toast('Payment received — it is active now'); refreshCompanies().catch(function () {}); MKT.at = 0; history.replaceState(null, '', location.pathname); if (window.dxPayRefresh) window.dxPayRefresh(); }
-        else if (st === 'failed' || st === 'expired') { window.toast('The payment did not go through — nothing was charged and nothing was activated. Try again from My payments'); history.replaceState(null, '', location.pathname); if (window.dxPayRefresh) window.dxPayRefresh(); }   /* 0055: a failed payment is recorded */
+        else if (st === 'failed' || st === 'expired') { window.toast('The payment failed or was declined — nothing was charged and nothing was activated. Try again from My payments'); history.replaceState(null, '', location.pathname); if (window.dxPayRefresh) window.dxPayRefresh(); }   /* 0055: a failed payment is recorded */
         else if (++tries < 10) setTimeout(check, 2000); else window.toast('We have not received the payment confirmation yet — it will activate automatically when it arrives'); }); }
     check(); })();
   /* Review → Payments (InstaPay transfers) */

@@ -10,8 +10,8 @@
 --   3. A payment that did not go through is recorded: fail_payment(provider, order key, …) (server-only, called by the signed
 --      webhooks) marks a pending card / wallet order 'failed', a Fawry reference 'expired' (Fawry's EXPIRED / FAILED
 --      notification), and tells the buyer. Nothing is activated.
---   4. create_order refuses a second pending Fawry / InstaPay order for the same thing (the first reference or transfer is still
---      payable — the buyer is sent to it), and a new card / wallet order supersedes the older pending card / wallet ones for the
+--   4. create_order refuses a second pending Fawry (or InstaPay) order for the same thing by the same method (the first reference or
+--      transfer is still payable — the buyer is sent to it; another method stays possible), and a new card / wallet order supersedes the older pending card / wallet ones for the
 --      same thing (they become 'expired', provider_payload.superseded). A late callback for a superseded order is still honoured
 --      by confirm_payment (the money arrived: it activates), so no payment is ever lost.
 --   5. VIP perks: a VIP company has 3 included Marketplace boosts per calendar month. use_included_boost(listing, company)
@@ -107,7 +107,7 @@ begin
   perform pg_advisory_xact_lock(hashtext('drugbox.order.' || auth.uid()::text));   -- one order at a time per buyer (two clicks make one order)
   select * into dup from public.payment_orders x
    where x.user_id = auth.uid() and x.product_code = pr.code and coalesce(x.listing_id, 0) = coalesce(v_listing, 0) and coalesce(x.company_id, 0) = coalesce(v_company, 0)
-     and x.status = 'pending' and x.method in ('fawry','instapay') and (x.method <> 'fawry' or x.fawry_expires_at is null or x.fawry_expires_at > now())
+     and x.status = 'pending' and x.method = p_method and x.method in ('fawry','instapay') and (x.method <> 'fawry' or x.fawry_expires_at is null or x.fawry_expires_at > now())
    order by x.id desc limit 1;
   if dup.id is not null then
     raise exception '%', case when dup.method = 'fawry' then 'You already have a Fawry reference for this (' || coalesce(dup.provider_ref, dup.merchant_ref) || ') — pay it or find it in My payments'
