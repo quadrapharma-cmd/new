@@ -245,7 +245,7 @@
   }
   function unenroll(id) {
     var c = byId(id); if (!c) return;
-    D.modal({ title: 'Leave this course?', body: '<div>' + esc(T('Your progress is kept if you enrol again.')) + '</div>', primary: { label: 'Unenroll', danger: true, onClick: function () {
+    D.modal({ title: 'Leave this course?', body: '<div>' + esc(T('Your progress is kept if you enrol again.')) + '</div>', secondary: 'Keep the course', primary: { label: 'Unenroll', danger: true, onClick: function () {
       S().unenroll(c.id).then(function () { toast('You left ' + c.title); return refresh(true); }, function (e) { toast(e.message); }); } } });
   }
 
@@ -527,7 +527,7 @@
     '🎓 Certificate of completion': '🎓 شهادة إتمام', '📚 Syllabus': '📚 المنهج', 'Final quiz': 'الاختبار النهائي', 'pass mark': 'درجة النجاح', 'Pass mark': 'درجة النجاح', 'questions': 'أسئلة',
     '📝 Take the final quiz': '📝 ادخل الاختبار النهائي', 'The lessons of this course are being prepared.': 'دروس هذه الدورة قيد الإعداد.', 'Loading courses…': 'جارٍ تحميل الدورات…',
     'No course matches — try another word or topic.': 'لا توجد دورة مطابقة — جرّب كلمة أو موضوعاً آخر.', 'No courses yet.': 'لا توجد دورات بعد.', '✕ Clear filters': '✕ امسح الفلاتر',
-    'Leave this course?': 'إلغاء التسجيل في هذه الدورة؟', 'Your progress is kept if you enrol again.': 'يُحفظ تقدّمك إن سجّلت مرة أخرى.',
+    'Leave this course?': 'إلغاء التسجيل في هذه الدورة؟', 'Keep the course': 'الإبقاء على الدورة', 'Your progress is kept if you enrol again.': 'يُحفظ تقدّمك إن سجّلت مرة أخرى.',
     'Buy course': 'شراء الدورة', 'Course fee': 'رسوم الدورة', 'VAT (14%)': 'ضريبة القيمة المضافة (14%)', 'Total': 'الإجمالي',
     'The course opens as soon as the payment is confirmed — you will get a notification.': 'تُفتح الدورة فور تأكيد الدفع — سيصلك إشعار.',
     'Lesson': 'الدرس', 'of': 'من', '← Previous': 'السابق →', 'Next lesson →': 'الدرس التالي ←', '✓ Mark complete': '✓ تم الإنجاز', 'Close': 'إغلاق',
@@ -561,7 +561,7 @@
     'Give 2 to 6 answers, one per line': 'اكتب من 2 إلى 6 إجابات، سطر لكل إجابة', 'The right answer must be one of the answers': 'الإجابة الصحيحة يجب أن تكون إحدى الإجابات',
     'No questions yet — without a quiz, finishing the lessons completes the course.': 'لا توجد أسئلة بعد — بدون اختبار، إنهاء الدروس يكمل الدورة.', 'Only the Drugbox team manages courses': 'فريق Drugbox فقط يدير الدورات'
   }, [
-    [/^👥 ([\d,]+) enrolled$/, function (m) { return '👥 ' + m[1] + ' مسجّل'; }], [/^([\d,]+) enrolled$/, function (m) { return m[1] + ' مسجّل'; }],
+    [/^👥 ([\d,]+) enrolled$/, function (m) { return '👥 ' + m[1] + ' متدرب'; }], [/^([\d,]+) enrolled$/, function (m) { return m[1] + ' مسجلاً'; }],   /* the card says learners, not "enrolled" (that is your own state) */
     [/^(\d+) \/ (\d+) lessons · (\d+)%(.*)$/, function (m) { return m[1] + ' / ' + m[2] + ' دروس · ' + m[3] + '%' + (m[4] ? m[4].replace('Completed', 'مكتملة') : ''); }],
     [/^📚 My courses \((\d+)\)$/, function (m) { return '📚 دوراتي (' + m[1] + ')'; }],
     [/^Lesson (\d+): (.+)$/, function (m) { return 'الدرس ' + m[1] + ': ' + m[2]; }], [/^Lesson (\d+)$/, function (m) { return 'الدرس ' + m[1]; }],

@@ -238,6 +238,7 @@ def certificate(j):
         if j.live: j.check(j.sql1("select count(*) from public.certificates where code='%s' and user_id='%s'" % (code, me['id'])) == '1', 'no certificates row')
     with j.step('Signed out, the verify link confirms the certificate'):
         ctx = pg.context.browser.new_context() if j.live else None   # live: a fresh browser, signed out; demo: the same browser (the demo keeps certificates here)
+        if j.demo: flush(j, pg)                                        # the certificate this page stored is committed before another page reads it
         po = (ctx or pg.context).new_page(); po.goto(link); po.wait_for_timeout(3000)
         v = po.locator('.dbk-ov').last.inner_text() if po.locator('.dbk-ov').count() else ''
         j.check(re.search(r'Valid|صحيحة', v) and pg.evaluate('ME.name') in v and code in v, 'the verify link does not confirm the certificate: %s' % v[:160])
@@ -255,7 +256,7 @@ def publish_courses(j):
         close_dialogs(pg); a_ = pg.locator("#app [onclick=\"goto('admin')\"]"); j.check(a_.count(), 'no Admin entry for a Drugbox admin')
         if not a_.first.is_visible() and pg.locator('#sbToggle:visible').count(): pg.click('#sbToggle'); pg.wait_for_timeout(400)
         a_.first.click(); j.settle(pg, 1200)
-        el = j.find(pg, r'Training|Courses|التدريب|الدورات', scope='#content'); j.check(el, 'not built: Admin has no Training / Courses section (courses are added with SQL only)')
+        el = j.find(pg, r'Training|Courses|التدريب|الدورات|تدريب', scope='#content'); j.check(el, 'not built: Admin has no Training / Courses section (courses are added with SQL only)')
         el.click(); j.settle(pg, 900)
         b = j.find(pg, r'Add course|New course|إضافة دورة', scope='body'); j.check(b, 'not built: no "Add course" in Admin'); b.click(); pg.wait_for_timeout(700)
         mfill(j, pg, r'Title|العنوان', title); mfill(j, pg, r'Description|الوصف', 'Signal detection and ICSRs'); mfill(j, pg, r'Level|المستوى', 'Beginner')
