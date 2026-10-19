@@ -744,6 +744,13 @@
   });
   /* ===== AREA business: company page, certificates, team (B-02, B-03, B-04) ===== */
   Object.assign(D, {
+    'File (PDF or image, optional)': 'الملف (PDF أو صورة، اختياري)', 'Site master file': 'ملف الموقع الرئيسي (SMF)', 'Manufacturing licence': 'ترخيص التصنيع', 'Membership': 'عضوية', 'Memberships': 'العضويات',
+    'Shown as self-declared until Drugbox checks the document. The file is seen only by your team and Drugbox’s reviewers.': 'يظهر كمُصرَّح به حتى يراجع Drugbox المستند. لا يرى الملف إلا فريقك ومراجعو Drugbox.',
+    'Document added — Drugbox will check it': 'تمت إضافة المستند — سيراجعه Drugbox', 'Delete this document?': 'هل تحذف هذا المستند؟', 'Document deleted': 'تم حذف المستند', 'Not accepted': 'غير مقبول',
+    'The file is larger than 10 MB': 'الملف أكبر من 10 ميجابايت', 'In this demo the file stays on the computer it was added from': 'في هذا العرض يبقى الملف على الجهاز الذي أُضيف منه',
+    'Compliance documents': 'مستندات الامتثال', 'Mark verified': 'وثّقه', 'Reject this document?': 'هل ترفض هذا المستند؟', 'The document file is not readable': 'ملف المستند غير مقروء',
+    'It shows as not accepted on the company’s passport and the person who added it is told why.': 'سيظهر كغير مقبول في جواز امتثال الشركة ويُبلَّغ من أضافه بالسبب.',
+    'This document was already decided': 'تم البت في هذا المستند بالفعل', 'Only the company’s owners and admins, or the person who added it, can delete this document': 'لا يحذف هذا المستند إلا مالكو الشركة ومديروها أو من أضافه',
     'not yet checked': 'لم تُراجع بعد', 'not yet checked by Drugbox': 'لم يراجعها Drugbox بعد', 'Public industry list': 'قائمة صناعية عامة', 'Company-wide': 'على مستوى الشركة',
     'Asked to join the team': 'طلب الانضمام للفريق', 'Invited — waiting for them to accept': 'تمت دعوته — بانتظار قبوله', 'Your role *': 'دورك *', 'Note for the admin': 'ملاحظة للمدير',
     'e.g. I work in the Cairo sales office': 'مثلًا: أعمل في مكتب مبيعات القاهرة', 'Request declined': 'تم رفض الطلب', 'Invitation declined': 'تم رفض الدعوة',
@@ -796,6 +803,10 @@
     [/^(.+) did not accept your request to join the team\.$/, function (m) { return 'لم تقبل ' + m[1] + ' طلبك للانضمام إلى الفريق.'; }],
     [/^Drugbox checked your (.+?)( \((.+)\))? — it now shows as checked on your page\.$/, function (m) { return 'راجع Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — تظهر الآن كمراجَعة على صفحتك.'; }],
     [/^Drugbox could not accept your (.+?)( \((.+)\))? — reason: (.+)\. Add it again with a readable document\.$/, function (m) { return 'لم يقبل Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — السبب: ' + m[4] + '. أضفها مرة أخرى بمستند مقروء.'; }]
+    [/^(.+) is removed from your compliance passport( and its file is deleted)?\.$/, function (m) { return 'سيُحذف ' + m[1] + ' من جواز امتثال شركتك' + (m[2] ? ' ويُحذف ملفه' : '') + '.'; }],
+    [/^(?:(.+) · )?added(?: by (.+?))?(?: · (\d{4}-\d{2}-\d{2}))?(?: · (.+))?$/, function (m) { return (m[1] ? m[1] + ' · ' : '') + 'أُضيف' + (m[2] ? ' بواسطة ' + m[2] : '') + (m[3] ? ' · ' + m[3] : '') + (m[4] ? ' · ' + m[4] : ''); }],
+    [/^Drugbox checked your (.+) for (.+) — it now shows as verified on your compliance passport\.$/, function (m) { return 'راجع Drugbox مستند ' + m[1] + ' لـ ' + m[2] + ' — يظهر الآن موثّقًا في جواز الامتثال.'; }],
+    [/^Drugbox could not accept your (.+) for (.+) — reason: (.+)\. Add it again with a readable file\.$/, function (m) { return 'لم يقبل Drugbox مستند ' + m[1] + ' لـ ' + m[2] + ' — السبب: ' + m[3] + '. أضفه مرة أخرى بملف مقروء.'; }],
   );
   /* ===== /AREA business ===== */
   PATTERNS.unshift(

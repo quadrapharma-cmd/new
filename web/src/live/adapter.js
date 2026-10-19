@@ -2949,6 +2949,23 @@
   var hydrateCl = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateCl(uid); loadMyClaims().catch(function (e) { console.error(e); }); return me; };
   onReset(function () { CLM.mine = {}; CLM.at = 0; });
+  /* a page the database keeps as 'pending' while nothing was sent yet (a new page, or a request Drugbox turned down) is "Not verified
+     yet" with "Get verified" for its team — "Documents received" only while a request waits for Drugbox */
+  var VRQ = {};
+  var loadMineV = loadMine;
+  loadMine = async function () {
+    await loadMineV.apply(this, arguments);
+    var me = ME_UUID, ids = Object.keys(CO.roles).map(Number); if (!ids.length) return;
+    var r = await sb.from('verification_requests').select('company_id').in('company_id', ids).eq('claim', false).eq('status', 'pending').limit(200);
+    if (r.error || me !== ME_UUID) return;
+    ids.forEach(function (id) { VRQ[id] = false; }); (r.data || []).forEach(function (x) { VRQ[x.company_id] = true; });
+    var list = window.dxLiveCompanies || [];
+    ids.forEach(function (id) { var sl = CO.byId[id], c = sl && CO.raw[sl], i = c ? list.findIndex(function (x) { return x.slug === sl; }) : -1; if (i >= 0) list[i] = coFrom(c); });
+    window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies();
+  };
+  var coFromV = coFrom;
+  coFrom = function (c) { var o = coFromV(c); if (o.status === 'pending' && c && c.id && VRQ[c.id] === false && !SNAP['vr_' + c.slug]) o.status = 'unverified'; return o; };
+  onReset(function () { VRQ = {}; });
   /* Directory health (Drugbox): the whole directory from the database (directory_health, 0052) — read when Companies opens for
      the Drugbox team; until it arrives the dialog shows what this browser has loaded */
   var DH = { v: null, at: 0 };
@@ -2973,6 +2990,80 @@
       : 'Drugbox checked your report on ' + String(d.company || 'a company') + ' (' + String(d.section || '') + ') — it has been corrected.'); }
     return o; };
   /* ===== /AREA business: claims ===== */
+
+  /* ===== AREA business: compliance documents (B-11, B-18; 0059) =====
+     Workspace → Plan & verification → Add document writes company_documents, with the file in the private documents bucket under
+     companydocs/<company id>/…; the team sees the file, who added it and when (company_document_files), everyone else only the
+     passport line (type, number, status). Delete removes the row and the file. Drugbox checks documents in Admin → Review →
+     Compliance documents (document_review) and the person who added it is told. */
+  var PSP = { docs: {}, at: {}, busy: {} };
+  function pspFrom(d) { return { id: d.id, type: txt(d.type), product: txt(d.product), number: txt(d.number), expiry: d.expiry ? String(d.expiry).slice(0, 7) : '', status: d.status,
+    file: txt(d.file_name), path: d.file_path || null, by: txt(d.created_by_name), at: d.created_at ? Date.parse(d.created_at) : 0, note: txt(d.review_note) }; }
+  async function loadPassport(slug) {
+    var raw = CO.raw[slug], me = ME_UUID; if (!raw || !raw.id || !me) return;
+    var team = !!CO.roles[raw.id] || isStaff();
+    var r = team ? await sb.rpc('company_document_files', { p_company: raw.id })
+                 : await sb.from('company_documents').select('id,type,product,number,expiry,status,created_at').eq('company_id', raw.id).order('created_at', { ascending: false }).limit(100);
+    if (r.error) throw r.error; if (me !== ME_UUID) return;
+    PSP.docs[slug] = (r.data || []).map(pspFrom); PSP.at[slug] = Date.now();
+  }
+  function passportAgain(slug) { PSP.at[slug] = 0; return loadPassport(slug).then(function () { if (window.dxTiers && window.dxTiers.redraw) window.dxTiers.redraw(); }); }
+  window.dxPassport = {
+    docs: function (slug) {
+      if (ME_UUID && CO.raw[slug] && CO.raw[slug].id && !PSP.busy[slug] && Date.now() - (PSP.at[slug] || 0) > 60000) {
+        PSP.busy[slug] = 1; PSP.at[slug] = Date.now();
+        loadPassport(slug).then(function () { if (window.dxTiers && window.dxTiers.redraw) window.dxTiers.redraw(); }, function (e) { console.error(e); }).then(function () { PSP.busy[slug] = 0; });
+      }
+      return (PSP.docs[slug] || []).slice();
+    },
+    add: async function (co, d, file) {
+      try {
+        var raw = co && CO.raw[co.slug]; if (!raw || !raw.id) throw new Error('This company is not on Drugbox yet');
+        var path = file ? await upDoc('documents', 'companydocs/' + raw.id + '/' + rid() + '.' + extOf(file), file) : null;
+        var r = await sb.from('company_documents').insert({ company_id: raw.id, type: d.type, product: d.product || null, number: d.number, expiry: /^\d{4}-\d{2}$/.test(d.expiry || '') ? d.expiry + '-01' : null,
+          file_path: path, file_name: file ? String(file.name).slice(0, 160) : null, created_by: ME_UUID });
+        if (r.error) { if (path) sb.storage.from('documents').remove([path]).catch(function () {}); throw new Error(friendly(r.error)); }
+        await passportAgain(co.slug); return true;
+      } catch (e) { toastErr(e); return false; }
+    },
+    remove: async function (co, id) {
+      try {
+        var d = (PSP.docs[co.slug] || []).find(function (x) { return String(x.id) === String(id); });
+        var r = await sb.from('company_documents').delete().eq('id', +id).select('id'); if (r.error) throw new Error(friendly(r.error));
+        if (!(r.data || []).length) throw new Error('Only the company’s owners and admins, or the person who added it, can delete this document');
+        if (d && d.path) await sb.storage.from('documents').remove([d.path]);   /* the database removes it too (0059); this covers a storage that keeps it */
+        await passportAgain(co.slug); return true;
+      } catch (e) { toastErr(e); return false; }
+    },
+    open: async function (co, d) {
+      if (!d.path) return false; var r = await sb.storage.from('documents').createSignedUrl(d.path, 600);
+      if (r.error || !r.data) { toastErr(r.error || { message: 'Could not open the file' }); return false; }
+      window.open(r.data.signedUrl, '_blank', 'noopener'); return true;
+    },
+    decide: async function (id, ok, note) {
+      var r = await sb.rpc('document_review', { p_id: +id, p_ok: !!ok, p_reason: note || null }); if (r.error) throw new Error(friendly(r.error));
+      if (!r.data) throw new Error('This document was already decided'); PSP.at = {}; return true;
+    }
+  };
+  var modLoadPd = window.dxModeration.load, modDecidePd = window.dxModeration.decide;
+  window.dxModeration.load = async function () {
+    var d = await modLoadPd(), r = await sb.rpc('documents_to_review', { p_limit: 100 }); if (r.error) throw r.error;
+    d.documents = (r.data || []).map(function (x) { return { id: x.id, company: txt(x.company), type: txt(x.type), product: txt(x.product), number: txt(x.number), expiry: x.expiry ? String(x.expiry).slice(0, 7) : '',
+      who: txt(x.created_by_name), at: String(x.created_at).slice(0, 10), docs: x.file_path ? [{ path: x.file_path, bucket: 'documents', label: txt(x.file_name) || 'Document' }] : [] }; });
+    return d;
+  };
+  window.dxModeration.decide = async function (kind, id, value, note) {
+    if (kind === 'documents') return window.dxPassport.decide(id, value === 'verified', note);
+    return modDecidePd(kind, id, value, note);
+  };
+  ICON.document_reviewed = '📁';
+  var notifFromPd = notifFrom;
+  notifFrom = function (n) { var o = notifFromPd(n), d = n.data && typeof n.data === 'object' ? n.data : null;
+    if (n.type === 'document_reviewed' && d) { o.uid = SYS_UID; o.text = esc2(d.outcome === 'verified' ? 'Drugbox checked your ' + String(d.doc || 'document') + ' for ' + String(d.company || 'your company') + ' — it now shows as verified on your compliance passport.'
+      : 'Drugbox could not accept your ' + String(d.doc || 'document') + ' for ' + String(d.company || 'your company') + ' — reason: ' + String(d.reason || '') + '. Add it again with a readable file.'); }
+    return o; };
+  onReset(function () { PSP.docs = {}; PSP.at = {}; PSP.busy = {}; });
+  /* ===== /AREA business: compliance documents ===== */
 
 
   /* ===== AREA business: payments (B-14…B-16; 0055) =====

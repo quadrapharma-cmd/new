@@ -46,6 +46,7 @@ begin
   end if;
   if tg_op = 'INSERT' then
     new.status := case when new.file_path is not null then 'review' else 'declared' end; new.review_note := null; new.reviewed_by := null; new.reviewed_at := null;
+    new.created_by := auth.uid(); new.created_at := now();
   elsif new.type is distinct from old.type or new.product is distinct from old.product or new.number is distinct from old.number
         or new.expiry is distinct from old.expiry or new.file_path is distinct from old.file_path or new.company_id is distinct from old.company_id then
     new.status := case when new.file_path is not null then 'review' else 'declared' end;    -- Drugbox never saw the new content
@@ -56,6 +57,11 @@ begin
   return new;
 end $$;
 revoke all on function public.company_documents_guard() from public, anon, authenticated, service_role;
+
+-- the person who added a document may take it back; owners and admins may remove any
+alter policy "documents: owners/admins delete" on public.company_documents
+  using (public.is_company_member(company_id, array['owner','admin'])
+         or (created_by = (select auth.uid()) and public.is_company_member(company_id, array['regulatory','quality'])));
 
 -- the file goes with the row; Drugbox's decision reaches the person who added it
 create or replace function public.company_documents_after() returns trigger language plpgsql security definer set search_path = public as $$
@@ -87,6 +93,33 @@ begin
 end $$;
 revoke all on function public.document_review(bigint, boolean, text) from public, anon, authenticated, service_role;
 grant execute on function public.document_review(bigint, boolean, text) to authenticated, service_role;
+
+-- the file side of a document (its name, path, Drugbox's note, who added it) is for the company's team and Drugbox's reviewers only;
+-- the columns stay ungranted, so everyone else reads the passport (type, number, status) and nothing more
+create or replace function public.company_document_files(p_company bigint)
+returns table (id bigint, type text, product text, number text, expiry text, status text, file_name text, file_path text, review_note text,
+               created_by uuid, created_by_name text, created_at timestamptz)
+language sql stable security definer set search_path = public as $$
+  select d.id, d.type, d.product, d.number, d.expiry::text, d.status, d.file_name, d.file_path, d.review_note, d.created_by, p.name, d.created_at
+    from public.company_documents d left join public.profiles p on p.id = d.created_by
+   where d.company_id = p_company and auth.uid() is not null and (public.is_company_member(p_company) or public.is_moderator())
+   order by d.created_at desc
+$$;
+revoke all on function public.company_document_files(bigint) from public, anon, authenticated, service_role;
+grant execute on function public.company_document_files(bigint) to authenticated, service_role;
+
+-- Admin → Review → Documents: what waits for Drugbox, oldest first
+create or replace function public.documents_to_review(p_limit int default 100)
+returns table (id bigint, company_id bigint, company text, slug text, type text, product text, number text, expiry text, file_name text, file_path text,
+               created_by_name text, created_at timestamptz)
+language sql stable security definer set search_path = public as $$
+  select d.id, d.company_id, c.name, c.slug, d.type, d.product, d.number, d.expiry::text, d.file_name, d.file_path, p.name, d.created_at
+    from public.company_documents d join public.companies c on c.id = d.company_id left join public.profiles p on p.id = d.created_by
+   where d.status = 'review' and public.is_moderator()
+   order by d.created_at limit least(greatest(coalesce(p_limit, 100), 1), 500)
+$$;
+revoke all on function public.documents_to_review(int) from public, anon, authenticated, service_role;
+grant execute on function public.documents_to_review(int) to authenticated, service_role;
 
 -- documents bucket: companydocs/<company id>/… (the cases before are 0056's)
 create or replace function public.can_read_document(p_name text) returns boolean language sql stable security definer set search_path = public as $$
