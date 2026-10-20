@@ -5,7 +5,7 @@
 const TITLES = new Set(['dr', 'doctor', 'prof', 'professor', 'eng', 'engr', 'engineer', 'pharm', 'pharmacist', 'chem', 'mr', 'mrs', 'ms', 'miss', 'mx', 'sir', 'dame',
   'rev', 'capt', 'col', 'gen', 'hon', 'assoc', 'asst', 'sheikh', 'sh',
   'د', 'دكتور', 'دكتورة', 'الدكتور', 'الدكتورة', 'أد', 'اد', 'أ', 'ا', 'م', 'مهندس', 'مهندسة', 'المهندس', 'المهندسة', 'ص', 'صيدلي', 'صيدلانية', 'الصيدلي',
-  'الصيدلانية', 'أستاذ', 'أستاذة', 'الأستاذ', 'الأستاذة', 'السيد', 'السيدة', 'الشيخ', 'ش']);
+  'الصيدلانية', 'أستاذ', 'أستاذة', 'الأستاذ', 'الأستاذة', 'الشيخ', 'ش']);   // not السيد / السيدة: El-Sayed is a common Egyptian first name
 const DEGREES = new Set(['phd', 'pharmd', 'md', 'msc', 'bsc', 'mba', 'bpharm', 'mpharm', 'rph']);
 const bare = (w) => w.toLowerCase().replace(/[.’',()]/g, '');
 export function billingName(name) {

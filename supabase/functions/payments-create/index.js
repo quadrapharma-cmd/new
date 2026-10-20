@@ -49,6 +49,6 @@ export async function handler(req) {
       return json({ order_id: order.id, reference: order.merchant_ref, amount, fawry_reference: j.referenceNumber, expires_at: new Date(expiry).toISOString() });
     }
     return json({ order_id: order.id, reference: order.merchant_ref, amount, instapay: { address: env('INSTAPAY_ADDRESS', ''), name: env('INSTAPAY_NAME', 'Drugbox') } });
-  } catch (e) { return json({ error: 'The payment provider could not be reached — try again' }, 502); }
+  } catch (e) { console.error('payments-create:', e && e.message || e); return json({ error: 'The payment provider could not be reached — try again' }, 502); }
 }
 if (import.meta.main) Deno.serve(handler);

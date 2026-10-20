@@ -120,7 +120,7 @@ T('orders cannot be written directly (no price or status tampering)', s < 500 an
   and sql(f"select count(*) from public.payment_orders where user_id='{owner}' and amount_cents=1") == '0', (s, s2))
 T('a member sees only their own orders', http('GET', '/rest/v1/payment_orders?select=id', None, other_t)[1] == [])
 # ── B-25: the billing name is the person's name, without the title (Paymob's first_name was "Dr." / "د.") ──
-for typed, first, last in (('Dr. Mona El-Sayed (Pharm.D.)', 'Mona', 'El-Sayed'), ('د. منى السيد', 'منى', 'السيد'), ('Eng. Tarek Fawzy', 'Tarek', 'Fawzy')):
+for typed, first, last in (('Dr. Mona El-Sayed (Pharm.D.)', 'Mona', 'El-Sayed'), ('د. منى السيد', 'منى', 'السيد'), ('السيد محمد علي', 'السيد', 'محمد علي'), ('Eng. Tarek Fawzy', 'Tarek', 'Fawzy')):
     sql(f"update public.profiles set name = $q${typed}$q$ where id='{owner}'")
     s, _ = http('POST', '/functions/v1/payments-create', {'product': 'vip_month', 'method': 'card', 'company_id': int(cid)}, owner_t)
     bd = json.loads(urllib.request.urlopen(MOCK + '/log').read())[-1]['body'].get('billing_data', {})
