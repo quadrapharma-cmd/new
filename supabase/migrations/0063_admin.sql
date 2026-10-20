@@ -109,7 +109,7 @@ begin
                                  || coalesce(' · ' || r.category, ''), new_status);
     if not private.undoing() then   /* the author is told the outcome; a candidate is told a warning about them was not published */
       insert into public.notifications (user_id, type, from_user, message)
-      values (r.author, 'reference', r.candidate, case when new_status = 'published'
+      values (r.author, 'reference', null, case when new_status = 'published'
                 then 'Drugbox published your ' || case when r.kind = 'warn' then 'warning' else 'work' end || ' reference about ' || coalesce((select name from public.profiles where id = r.candidate), 'the candidate')
                 else 'Drugbox did not publish your ' || case when r.kind = 'warn' then 'warning' else 'work' end || ' reference about ' || coalesce((select name from public.profiles where id = r.candidate), 'the candidate') end);
       if new_status = 'rejected' and r.kind = 'warn' then

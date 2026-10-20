@@ -1710,19 +1710,27 @@
       (rv[n] = rv[n] || []).push({ by: x.author || 'Anonymous', anon: x.anonymous ? 1 : 0, when: String(x.created_at).slice(0, 7), c: [x.c1, x.c2, x.c3, x.c4], text: x.body, mine: !!x.mine, _id: x.id }); }); });
     fill(TR.reviews, rv);
     TR.refs.length = 0; (q[2].data || []).forEach(function (x) { TR.refs.push({ cand: x.ca && x.ca.name, company: x.au && (x.au.company || x.au.name), kind: x.kind, from: String(x.from_month).slice(0, 7), to: String(x.to_month).slice(0, 7),
-      role: x.role_title, category: x.category || '', text: x.body, reply: x.reply || '', status: x.status, when: String(x.created_at).slice(0, 7), expires: x.expires_at ? String(x.expires_at).slice(0, 7) : '', _id: x.id }); });
+      role: x.role_title, category: x.category || '', text: x.body, reply: x.reply || '', status: x.status, when: String(x.created_at).slice(0, 7), expires: x.expires_at ? String(x.expires_at).slice(0, 7) : '', _id: x.id,
+      mine: x.author === ME_UUID, aboutMe: x.candidate === ME_UUID, disputed: !!x.disputed_at }); });   /* AREA community (J-COMMUNITY-31 … 33): withdraw my own, reply to / dispute the ones about me */
     ['employer', 'candidate'].forEach(function (s) { fill(TR.lists[s].white, {}); fill(TR.lists[s].black, {}); });
     (q[3].data || []).forEach(function (x) { var n = x.t && x.t.name; if (n && !TR.party[n]) TR.party[n] = { uuid: x.target, role: x.side === 'employer' ? 'candidate' : 'employer' };   /* a blocked person is not on the page: still removable from My lists */
       if (n) TR.lists[x.side][x.list][n] = x.list === 'black' ? { reason: x.reason, note: x.note || '', until: x.until } : { since: String(x.created_at).slice(0, 10) }; });
     var it = {}; (q[4].data || []).forEach(function (x) { var n = partyOfUuid(x.party); if (n) it[n] = true; }); fill(TR.inter, it);
-    TR.snap = { lists: JSON.stringify(TR.lists), refs: TR.refs.map(function (r) { return r._id + ':' + (r.reply || ''); }).join('|') };
+    TR.snap = { lists: JSON.stringify(TR.lists), refs: TR.refs.map(function (r) { return r._id + ':' + (r.reply || ''); }).join('|'),
+                mineRefs: TR.refs.filter(function (r) { return r.mine; }).map(function (r) { return r._id; }), mineRevs: {} };
+    Object.keys(rv).forEach(function (n) { rv[n].forEach(function (r) { if (r.mine && r._id > 0) TR.snap.mineRevs[n] = r._id; }); });
     TR.loaded = true;
   }
   async function syncReviews(v) {
     for (var n in v) { var mine = (v[n] || []).filter(function (r) { return r.mine && !r._id; })[0], p = TR.party[n]; if (!mine || !p) continue;
-      var r = await sb.from('job_reviews').upsert({ reviewer: ME_UUID, reviewee: p.uuid, reviewee_role: p.role, c1: mine.c[0], c2: mine.c[1], c3: mine.c[2], c4: mine.c[3], body: mine.text, anonymous: !!mine.anon }, { onConflict: 'reviewer,reviewee,reviewee_role' });
+      var r = await sb.from('job_reviews').upsert({ reviewer: ME_UUID, reviewee: p.uuid, reviewee_role: p.role, c1: mine.c[0], c2: mine.c[1], c3: mine.c[2], c4: mine.c[3], body: mine.text, anonymous: !!mine.anon }, { onConflict: 'reviewer,reviewee,reviewee_role' }).select('id').single();
       if (r.error) { window.toast(/row-level|interaction/i.test(r.error.message) ? 'You can review only people or companies you have really dealt with (an application or a conversation)' : friendly(r.error)); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; }
-      mine._id = -1; }
+      mine._id = -1; if (r.data && r.data.id) (TR.snap.mineRevs = TR.snap.mineRevs || {})[n] = r.data.id; }
+    /* AREA community (J-COMMUNITY-30): my review deleted in the rating window → deleted here; the averages are read again */
+    var gone = Object.keys(TR.snap.mineRevs || {}).filter(function (n) { return !(v[n] || []).some(function (r) { return r.mine; }); });
+    for (var g = 0; g < gone.length; g++) { var d = await sb.from('job_reviews').delete().eq('id', TR.snap.mineRevs[gone[g]]).eq('reviewer', ME_UUID).select('id');
+      if (d.error || !(d.data || []).length) toastErr(d.error || { message: 'The review could not be deleted' }); delete TR.snap.mineRevs[gone[g]]; }
+    if (gone.length) { await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); }
   }
   async function syncRefs(list) {
     for (var i = 0; i < list.length; i++) { var x = list[i], p = TR.party[x.cand];
@@ -1732,14 +1740,22 @@
           if (!DOCS.ev) { window.toast('Attach the evidence document — a warning is never sent without it. Nothing was submitted.'); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; }
           var ev; try { ev = await upDoc('reference-evidence', ME_UUID + '/' + rid() + '.' + extOf(DOCS.ev), DOCS.ev); } catch (e) { toastErr(e); await loadTrust(); return; }
           DOCS.ev = null;
-          var w = await sb.from('work_references').insert({ author: ME_UUID, candidate: p.uuid, kind: 'warn', role_title: x.role, from_month: x.from + '-01', to_month: x.to + '-01', category: x.category, body: x.text, evidence_path: ev });
+          var w = await sb.from('work_references').insert({ author: ME_UUID, candidate: p.uuid, kind: 'warn', role_title: x.role, from_month: x.from + '-01', to_month: x.to + '-01', category: x.category, body: x.text, evidence_path: ev }).select('id').single();
           if (w.error) { toastErr(w.error); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; }
+          x._id = w.data.id; x.mine = true; (TR.snap.mineRefs = TR.snap.mineRefs || []).push(x._id);
           continue;
         }
-        var r = await sb.from('work_references').insert({ author: ME_UUID, candidate: p.uuid, kind: 'honor', role_title: x.role, from_month: x.from + '-01', to_month: x.to + '-01', body: x.text, status: 'published' });
-        if (r.error) { toastErr(r.error); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; } }
-      else if (x._id > 0 && x.reply && TR.snap.refs.indexOf(x._id + ':' + x.reply) < 0) { var rr = await sb.rpc('reply_to_reference', { ref_id: x._id, reply_text: x.reply, dispute: false }); if (rr.error) toastErr(rr.error); }
+        var r = await sb.from('work_references').insert({ author: ME_UUID, candidate: p.uuid, kind: 'honor', role_title: x.role, from_month: x.from + '-01', to_month: x.to + '-01', body: x.text, status: 'published' }).select('id').single();
+        if (r.error) { toastErr(r.error); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; }
+        x._id = r.data.id; x.mine = true; (TR.snap.mineRefs = TR.snap.mineRefs || []).push(x._id); }   /* withdrawable at once (J-COMMUNITY-31) */
+      else if (x._id > 0 && x.reply && (x._dispute || TR.snap.refs.indexOf(x._id + ':' + x.reply) < 0)) { var dsp = !!x._dispute; x._dispute = false;
+        var rr = await sb.rpc('reply_to_reference', { ref_id: x._id, reply_text: x.reply, dispute: dsp }); if (rr.error) { toastErr(rr.error); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; } }
     }
+    /* AREA community (J-COMMUNITY-31): a reference I withdrew in the Honor / Warning list is deleted (the database lets only its author) */
+    var kept = list.map(function (r) { return r._id; }), wd = (TR.snap.mineRefs || []).filter(function (id) { return kept.indexOf(id) < 0; });
+    for (var w2 = 0; w2 < wd.length; w2++) { var dl = await sb.from('work_references').delete().eq('id', wd[w2]).eq('author', ME_UUID).select('id');
+      if (dl.error || !(dl.data || []).length) { toastErr(dl.error || { message: 'The reference could not be withdrawn' }); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; } }
+    TR.snap.mineRefs = list.filter(function (r) { return r.mine; }).map(function (r) { return r._id; });
     TR.snap.refs = list.map(function (r) { return r._id + ':' + (r.reply || ''); }).join('|');
   }
   async function syncLists(v) {
@@ -1751,6 +1767,8 @@
       for (var m in was) if (!now[m] && !(v[s][l === 'white' ? 'black' : 'white'] || {})[m]) { var q = TR.party[m]; if (q) await sb.from('job_lists').delete().eq('owner', ME_UUID).eq('target', q.uuid).eq('side', s); } }
     TR.snap.lists = JSON.stringify(v);
   }
+  /* ===== AREA community: trust — the records about me read again on demand (a notification opens them) ===== */
+  window.dxLiveTrust.refresh = function () { return loadTrust().then(function () { if (window.dxJxPaint) window.dxJxPaint(); }); };
   window.dxKitHook = function (op, k, v) {
     if (!ME_UUID) return undefined;
     if (op === 'get') { if (k === 'jobReviews') return TR.reviews; if (k === 'jobRefs') return TR.refs; if (k === 'jobLists') return TR.lists; if (k === 'jobInteractions') return TR.inter; return undefined; }
@@ -3125,6 +3143,20 @@
     else if (n.rawType === 'job_alert') { window.goto('jobs'); window.dxJobsUI.detail(n.jobId); }
     return r;
   };
+  /* ===== AREA community: trust — a notice about a work reference about me opens those records, with Reply / Dispute (J-COMMUNITY-31 … 33) ===== */
+  var markReadRF = window.markNotifRead;
+  window.markNotifRead = function (id) {
+    var r = markReadRF.apply(this, arguments), n = (window.NOTIFS || []).find(function (x) { return x.id === id; });
+    if (n && n.rawType === 'review' && ME_UUID) { window.goto('jobs'); return r; }   /* a review of me: the Jobs page, where the ★ rating lists it */
+    if (n && (n.rawType === 'reference' || n.rawType === 'work_reference') && window.dxTrustUI && ME_UUID) {
+      window.goto('jobs'); if (/^Drugbox (published|did not publish) your/.test(n.text || '')) return r;   /* the author's outcome notice: the Jobs page */
+      window.dxLiveTrust.refresh().then(function () { window.dxTrustUI.aboutMe(); }, toastErr); }
+    return r;
+  };
+  ICON.review = ICON.review || '⭐'; ICON.reference = ICON.reference || '📜'; ICON.work_reference = ICON.work_reference || '📜';
+  /* a notice without a sender comes from Drugbox: it reads as Drugbox's own sentence, not "Someone …" */
+  var notifFromRF = notifFrom;
+  notifFrom = function (n) { var o = notifFromRF(n); if (!n.from_user && n.type !== 'post_removed' && n.type !== 'report_closed') { o.text = esc2(n.message || ''); o.uid = SYS_UID; } return o; };
   onReset(function () { JX.total = 0; APPL = {}; });
 
   /* ===== AREA community: groups (G-01, G-04 … G-15) — search, my notifications, archive, join requests in their own tab,
