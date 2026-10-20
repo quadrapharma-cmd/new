@@ -91,11 +91,19 @@ select pg_temp.act(6);
 select pg_temp.no('a member cannot moderate', $$select public.moderate_reference(pg_temp.id('wr'), 'rejected')$$, '42501');
 select pg_temp.act(3);
 select pg_temp.step('M publishes it', $$select public.moderate_reference(pg_temp.id('wr'), 'published')$$);
+select pg_temp.as_server();
+select pg_temp.ok('… the author is told it was published', $$(select count(*) from public.notifications where user_id = pg_temp.u(4) and message like 'Drugbox published your warning reference about %') = 1$$);
 select pg_temp.act(1);
 select pg_temp.no('A1 cannot reject it afterwards', $$select public.moderate_reference(pg_temp.id('wr'), 'rejected')$$, 'DX409');
 select pg_temp.ok('… still published by M, logged', $$(select status = 'published' and decided_by = pg_temp.u(3) from public.work_references where id = pg_temp.id('wr')) and pg_temp.acts('reference', pg_temp.id('wr')::text) = 1$$);
 select pg_temp.step('A1 undoes it', $$select public.admin_undo((select id from public.admin_actions where kind = 'reference' and item_id = pg_temp.id('wr')::text))$$);
 select pg_temp.ok('… pending again, nobody''s decision', $$(select status = 'pending' and decided_by is null from public.work_references where id = pg_temp.id('wr'))$$);
+select pg_temp.act(3);
+select pg_temp.step('M rejects it', $$select public.moderate_reference(pg_temp.id('wr'), 'rejected')$$);
+select pg_temp.as_server();
+select pg_temp.ok('… the author and the candidate are told it was not published; the undo told nobody', $$(select count(*) from public.notifications where user_id = pg_temp.u(4) and message like 'Drugbox did not publish your warning reference about %') = 1
+  and (select count(*) from public.notifications where user_id = pg_temp.u(6) and message = 'Drugbox reviewed a warning reference about you and did not publish it') = 1
+  and (select count(*) from public.notifications where user_id = pg_temp.u(4) and message like 'Drugbox %') = 2$$);
 
 -- 4. site certificates
 select pg_temp.act(4);
