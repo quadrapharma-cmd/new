@@ -117,7 +117,10 @@ select pg_temp.no('O cannot check its own certificate', $$select public.cert_dec
 select pg_temp.act(3);
 select pg_temp.ok('M checks one', $$public.cert_decide(pg_temp.id('c1'), true) = 'checked'$$);
 select pg_temp.ok('… checked_at and checked_by are set; the owner is told; logged', $$(select checked_at is not null and checked_by = pg_temp.u(3) from public.site_certificates where id = pg_temp.id('c1'))
-  and pg_temp.told(4, 'checked your certificate "AD WHO-GMP"') = 1 and pg_temp.acts('certificate', pg_temp.id('c1')::text) = 1$$);
+  and pg_temp.told(4, '^Drugbox checked your certificate "AD WHO-GMP"') = 1 and pg_temp.acts('certificate', pg_temp.id('c1')::text) = 1$$);
+select pg_temp.as_server();
+select pg_temp.ok('… the notice comes from Drugbox, the moderator stays unnamed', $$(select from_user is null from public.notifications where user_id = pg_temp.u(4) and message ~ 'checked your certificate "AD WHO-GMP"')$$);
+select pg_temp.act(3);
 select pg_temp.act(1);
 select pg_temp.no('A1 cannot reject it afterwards', $$select public.cert_decide(pg_temp.id('c1'), false, 'second look')$$, 'DX409');
 select pg_temp.no('a rejection needs a reason', $$select public.cert_decide(pg_temp.id('c2'), false, '')$$, '22023');
@@ -141,6 +144,9 @@ select pg_temp.ok('… decided by M; R is told; logged', $$(select decided_by = 
   and pg_temp.told(5, 'corrected') = 1 and pg_temp.acts('report', pg_temp.id('rp')::text) = 1$$);
 select pg_temp.act(1);
 select pg_temp.no('A1 cannot dismiss it afterwards', $$update public.company_reports set status = 'dismissed' where id = pg_temp.id('rp')$$, 'DX409');
+select pg_temp.no('… nor reopen it by hand (only undo reopens)', $$update public.company_reports set status = 'open' where id = pg_temp.id('rp')$$, 'DX409');
+select pg_temp.step('A1 tries to write itself in as the decider', $$update public.company_reports set decided_by = pg_temp.u(1) where id = pg_temp.id('rp')$$);
+select pg_temp.ok('… still decided by M', $$(select decided_by = pg_temp.u(3) from public.company_reports where id = pg_temp.id('rp'))$$);
 select pg_temp.step('A1 undoes it', $$select public.admin_undo((select id from public.admin_actions where kind = 'report' and item_id = pg_temp.id('rp')::text))$$);
 select pg_temp.ok('… open again', $$(select status = 'open' and decided_by is null from public.company_reports where id = pg_temp.id('rp'))$$);
 
@@ -167,6 +173,9 @@ select pg_temp.act(7);
 select pg_temp.no('F cannot post', $$insert into public.posts (user_id, body) values (pg_temp.u(7), 'AD spam')$$, '42501');
 select pg_temp.no('F cannot message', $$insert into public.messages (sender_id, receiver_id, body) values (pg_temp.u(7), pg_temp.u(6), 'AD hi')$$, '42501');
 select pg_temp.no('F cannot ask to connect', $$insert into public.connections (requester, addressee) values (pg_temp.u(7), pg_temp.u(6))$$, '42501');
+select pg_temp.no('F cannot create a company page', $$insert into public.companies (name, slug, owner_id) values ('AD Suspended Co', 'ad-suspended-co', pg_temp.u(7))$$, '42501');
+select pg_temp.no('F cannot create a group', $$insert into public.groups (name, created_by) values ('AD Suspended Group', pg_temp.u(7))$$, '42501');
+select pg_temp.no('F cannot message a company page (company_message runs on the server)', $$select public.company_message(pg_temp.id('co'), 'AD hello')$$, '42501');
 select pg_temp.ok('F reads why', $$(select reason like 'Fake profile%' from public.account_suspensions where user_id = pg_temp.u(7))$$);
 select pg_temp.act(6);
 select pg_temp.ok('another member does not read it', $$not exists (select 1 from public.account_suspensions)$$);
@@ -175,6 +184,15 @@ select pg_temp.step('A1 restores F', $$select public.admin_unsuspend(pg_temp.u(7
 select pg_temp.act(7);
 select pg_temp.step('F posts again', $$insert into public.posts (user_id, body) values (pg_temp.u(7), 'AD back again')$$);
 select pg_temp.ok('… the post is there; F was told', $$exists (select 1 from public.posts where body = 'AD back again') and pg_temp.told(7, 'active again') = 1$$);
+select pg_temp.act(1);
+select pg_temp.step('A1 suspends F a second time', $$select public.admin_suspend(pg_temp.u(7), 'AD second suspension')$$);
+select pg_temp.act(3);
+select pg_temp.no('a moderator cannot lift a suspension through undo', $$select public.admin_undo((select max(id) from public.admin_actions where kind = 'suspension' and item_id = pg_temp.u(7)::text))$$, '42501');
+select pg_temp.act(1);
+select pg_temp.no('the first, older suspension cannot be undone (it would lift the current one)', $$select public.admin_undo((select min(id) from public.admin_actions where kind = 'suspension' and item_id = pg_temp.u(7)::text))$$, '22023');
+select pg_temp.ok('… F is still suspended', $$(select count(*) = 1 from public.account_suspensions where user_id = pg_temp.u(7))$$);
+select pg_temp.step('A1 undoes the latest', $$select public.admin_undo((select max(id) from public.admin_actions where kind = 'suspension' and item_id = pg_temp.u(7)::text))$$);
+select pg_temp.ok('… F is free again', $$(select count(*) = 0 from public.account_suspensions where user_id = pg_temp.u(7))$$);
 
 -- 8. roles and the profile badge
 select pg_temp.act(3);
@@ -184,7 +202,11 @@ select pg_temp.act(1);
 select pg_temp.no('an admin cannot drop its own role', $$select public.admin_set_role(pg_temp.u(1), 'user')$$, '22023');
 select pg_temp.step('A1 makes U a moderator and gives the badge', $$select public.admin_set_role(pg_temp.u(6), 'moderator'); select public.admin_verify_profile(pg_temp.u(6), true)$$);
 select pg_temp.ok('… U is a verified moderator, told about the badge', $$(select role = 'moderator' and verified from public.profiles where id = pg_temp.u(6)) and pg_temp.told(6, 'verified your profile') = 1$$);
-select pg_temp.step('A1 undoes the role', $$select public.admin_undo((select id from public.admin_actions where kind = 'role' and item_id = pg_temp.u(6)::text))$$);
+select pg_temp.step('A1 then makes U an admin', $$select public.admin_set_role(pg_temp.u(6), 'admin')$$);
+select pg_temp.no('the older role change cannot be undone first', $$select public.admin_undo((select min(id) from public.admin_actions where kind = 'role' and item_id = pg_temp.u(6)::text))$$, '22023');
+select pg_temp.step('A1 undoes the latest', $$select public.admin_undo((select max(id) from public.admin_actions where kind = 'role' and item_id = pg_temp.u(6)::text))$$);
+select pg_temp.ok('… U is a moderator again', $$(select role = 'moderator' from public.profiles where id = pg_temp.u(6))$$);
+select pg_temp.step('A1 undoes the first', $$select public.admin_undo((select min(id) from public.admin_actions where kind = 'role' and item_id = pg_temp.u(6)::text))$$);
 select pg_temp.ok('… U is a member again', $$(select role = 'user' from public.profiles where id = pg_temp.u(6))$$);
 
 -- 9. the team's lists
@@ -199,15 +221,20 @@ select pg_temp.ok('… nor read the decision log', $$not exists (select 1 from p
 select pg_temp.as_server();
 insert into ids select 'post', id::text from public.posts where body = 'AD back again';
 insert into public.post_media (post_id, url, type, name) select v::bigint, 'https://x.test/ad.png', 'image', 'ad.png' from ids where k = 'post';
+insert into public.post_reports (post_id, reporter, reason) select v::bigint, pg_temp.u(5), 'spam' from ids where k = 'post';
 select pg_temp.act(5);
 select pg_temp.no('a member cannot remove someone else''s post this way', $$select public.admin_delete_post(pg_temp.id('post'), 'spam')$$, '42501');
 select pg_temp.act(3);
 select pg_temp.no('a removal needs a reason', $$select public.admin_delete_post(pg_temp.id('post'), '')$$, '22023');
 select pg_temp.step('M removes the post', $$insert into ids select 'rm', public.admin_delete_post(pg_temp.id('post'), 'Advertising outside the marketplace')::text$$);
 select pg_temp.ok('… it is gone; the author is told why', $$not exists (select 1 from public.posts where id = pg_temp.id('post')) and pg_temp.told(7, 'removed your post: Advertising') = 1$$);
+select pg_temp.as_server();
+select pg_temp.ok('… the reason is in the notice data the live app shows', $$(select data ->> 'note' = 'Advertising outside the marketplace' from public.notifications where user_id = pg_temp.u(7) and type = 'post_removed')$$);
+select pg_temp.ok('… its open report is closed as removed and the reporter told', $$not exists (select 1 from public.post_reports where reporter = pg_temp.u(5) and status = 'open') and pg_temp.told(5, 'removed the post') >= 1$$);
+select pg_temp.act(3);
 select pg_temp.step('M restores it', $$select public.admin_restore_post(pg_temp.id('rm'))$$);
-select pg_temp.ok('… the same post with its picture is back; the author is told', $$exists (select 1 from public.posts where id = pg_temp.id('post') and body = 'AD back again')
-  and exists (select 1 from public.post_media where post_id = pg_temp.id('post')) and pg_temp.told(7, 'restored your post') = 1$$);
+select pg_temp.ok('… the same post is back without its deleted files, and the author is told so', $$exists (select 1 from public.posts where id = pg_temp.id('post') and body = 'AD back again')
+  and not exists (select 1 from public.post_media where post_id = pg_temp.id('post')) and pg_temp.told(7, 'restored your post — .*attached files could not be brought back') = 1$$);
 select pg_temp.no('it cannot be restored twice', $$select public.admin_restore_post(pg_temp.id('rm'))$$, 'DX409');
 select pg_temp.as_anon();
 select pg_temp.ok('anon reads no decision and no suspension', $$(select count(*) = 0 from public.admin_actions) and (select count(*) = 0 from public.account_suspensions)$$);

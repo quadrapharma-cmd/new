@@ -132,7 +132,7 @@
     'Say what really happened and what proof you have. Drugbox reads your side before deciding; the warning stays hidden from employers while it is disputed.': 'اذكر ما حدث فعلاً وما لديك من إثبات. تقرأ Drugbox روايتك قبل أن تقرر، ويبقى التحذير مخفياً عن جهات العمل طوال الاعتراض.',
     'Your reply * (shown next to the record)': 'ردّك * (يظهر بجانب السجل)', 'Send reply': 'أرسل الرد', 'Please write your reply': 'اكتب ردّك من فضلك',
     'Disputed — Drugbox reviews your side before anything is published': 'تم الاعتراض — تراجع Drugbox روايتك قبل نشر أي شيء', 'Reply saved — it shows next to the record': 'تم حفظ الرد — يظهر بجانب السجل', 'This record was withdrawn': 'سُحب هذا السجل',
-    '📋 About you': '📋 عنك', 'A verified applicant reviewed your company on Drugbox Jobs': 'قيّم متقدم موثّق شركتك على وظائف Drugbox',
+    '📋 About you': '📋 عنك', 'Your company got an anonymous review on Drugbox Jobs': 'حصلت شركتك على تقييم مجهول على وظائف Drugbox',
     'reviewed your company on Drugbox Jobs': 'قيّم شركتك على وظائف Drugbox', 'reviewed you on Drugbox Jobs': 'قيّمك على وظائف Drugbox'
   });
 })();

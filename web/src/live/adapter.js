@@ -453,6 +453,7 @@
   /* the sentence is written here from the data 0036 keeps, in English — the Arabic interface translates it like any notice */
   function sysText(n) { var d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return esc2(n.message || '');
     if (n.type === 'report_closed') return d.outcome === 'removed' ? 'Drugbox reviewed your report and removed the post.' : 'Drugbox reviewed your report — the post stays up.';
+    if (!d.reason && d.note) return esc2('Drugbox removed your post “' + String(d.excerpt || '') + '” — reason: ' + String(d.note));   /* removed from Admin → Posts: the team's own words (AREA community) */
     return esc2('Drugbox removed your post “' + String(d.excerpt || '') + '” — reason: ' + (WHY[d.reason] || 'it breaks the Drugbox rules') + '.' + (d.note ? ' Note: ' + String(d.note) : '')); }
   function notifFrom(n) {
     var who = esc2(n.actor ? n.actor.name : 'Someone'), a = aid(n.from_user), t;
@@ -3156,7 +3157,8 @@
   ICON.review = ICON.review || '⭐'; ICON.reference = ICON.reference || '📜'; ICON.work_reference = ICON.work_reference || '📜';
   /* a notice without a sender comes from Drugbox: it reads as Drugbox's own sentence, not "Someone …" */
   var notifFromRF = notifFrom;
-  notifFrom = function (n) { var o = notifFromRF(n); if (!n.from_user && n.type !== 'post_removed' && n.type !== 'report_closed') { o.text = esc2(n.message || ''); o.uid = SYS_UID; } return o; };
+  var SYS_T = { review: 1, certificate: 1, payment: 1, reference: 1, work_reference: 1, verification: 1, certificate_review: 1, account: 1, post_restored: 1, company_report: 1 };   /* not a like or a request whose sender's account was deleted */
+  notifFrom = function (n) { var o = notifFromRF(n); if (!n.from_user && n.type !== 'post_removed' && n.type !== 'report_closed' && (SYS_T[n.type] || /^(Drugbox|Your )/.test(n.message || ''))) { o.text = esc2(n.message || ''); o.uid = SYS_UID; } return o; };
   onReset(function () { JX.total = 0; APPL = {}; });
 
   /* ===== AREA community: groups (G-01, G-04 … G-15) — search, my notifications, archive, join requests in their own tab,
@@ -3398,10 +3400,10 @@
   hydrateMe = async function (uid) {
     var me = await hydrateADM(uid);
     sb.from('account_suspensions').select('reason').eq('user_id', uid).maybeSingle().then(function (r) { if (r.data && r.data.reason && window.dxAdminSuspended) window.dxAdminSuspended(r.data.reason); }, function () {});
+    sb.from('settings').select('key,value').in('key', ['site_name', 'site_tagline']).then(function (r) {   /* after sign-in: the signed-out app makes no REST call (0024) */
+      var C2 = window.CMS; if (r.error || !C2) return; (r.data || []).forEach(function (x) { if (x.value) C2[x.key] = x.value; }); if ((r.data || []).length && window.applyCMS) window.applyCMS(); }, function () {});
     return me;
   };
-  sb.from('settings').select('key,value').in('key', ['site_name', 'site_tagline']).then(function (r) {
-    var C2 = window.CMS; if (r.error || !C2) return; (r.data || []).forEach(function (x) { if (x.value) C2[x.key] = x.value; }); if ((r.data || []).length && window.applyCMS) window.applyCMS(); }, function () {});
   ICON.post_removed = ICON.post_removed || '🧹'; ICON.post_restored = '↺'; ICON.account = '👤'; ICON.certificate_review = '📜'; ICON.report_closed = ICON.report_closed || '🚩';
 
 

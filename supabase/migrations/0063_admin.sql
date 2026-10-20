@@ -145,6 +145,9 @@ grant execute on function public.site_certificates_guard() to authenticated, ser
 create or replace function public.site_certificates_recheck() returns trigger language plpgsql set search_path = public as $$
 begin
   if auth.uid() is null or public.is_moderator() then return new; end if;
+  if tg_op = 'UPDATE' and new.name is not distinct from old.name and new.expiry is not distinct from old.expiry and new.site_id is not distinct from old.site_id then
+    new.checked_by := old.checked_by; new.rejected_at := old.rejected_at; new.reject_note := old.reject_note; return new;   /* nothing to check again */
+  end if;
   new.checked_by := null; new.rejected_at := null; new.reject_note := null;
   return new;
 end $$;
@@ -169,10 +172,10 @@ begin
          rejected_at = case when p_ok then null else now() end, reject_note = case when p_ok then null else left(trim(p_note), 500) end
    where id = p_id;
   select name into cname from public.companies where id = c.company_id;
-  msg := case when p_ok then 'checked your certificate "' || left(c.name, 120) || '" — it shows as verified on ' || coalesce(cname, 'your company page')
-              else 'could not accept your certificate "' || left(c.name, 120) || '": ' || left(trim(p_note), 300) end;
+  msg := case when p_ok then 'Drugbox checked your certificate "' || left(c.name, 120) || '" — it shows as verified on ' || coalesce(cname, 'your company page')
+              else 'Drugbox could not accept your certificate "' || left(c.name, 120) || '": ' || left(trim(p_note), 300) end;
   insert into public.notifications (user_id, type, from_user, company_id, message)
-  select distinct m.uid, 'certificate_review', auth.uid(), c.company_id, msg
+  select distinct m.uid, 'certificate_review', null::uuid, c.company_id, msg   -- from Drugbox: the moderator stays unnamed
     from (select owner_id as uid from public.companies where id = c.company_id
           union select user_id from public.company_members where company_id = c.company_id and role in ('owner', 'admin') and accepted) m
    where m.uid is not null;
@@ -192,8 +195,12 @@ begin
     if old.status <> 'open' and new.status <> 'open' and not private.undoing() then
       raise exception 'Already decided by % (%)', private.who(old.decided_by), old.status using errcode = 'DX409';
     end if;
+    if new.status = 'open' and old.status <> 'open' and not private.undoing() then
+      raise exception 'Already decided by % (%) — undo it from Admin → Review → Decided', private.who(old.decided_by), old.status using errcode = 'DX409';
+    end if;
     if new.status = 'open' then new.decided_by := null; new.decided_at := null;
     elsif auth.uid() is not null then new.decided_by := auth.uid(); new.decided_at := now(); end if;
+  elsif auth.uid() is not null then new.decided_by := old.decided_by; new.decided_at := old.decided_at;   -- never set from the browser
   end if;
   return new;
 end $$;
@@ -277,6 +284,24 @@ do $$ declare t text; begin
   foreach t in array array['posts', 'comments', 'messages', 'connections', 'products', 'jobs'] loop
     execute format('drop policy if exists "a suspended account does not write" on public.%I', t);
     execute format('create policy "a suspended account does not write" on public.%I as restrictive for insert to authenticated with check ((select private.not_suspended()))', t);
+  end loop;
+end $$;
+-- the same rule inside the server functions that write for the member (company_message, deal_create, group listings…), which
+-- RLS does not see, and on everything else a member creates: a suspended account creates nothing
+create or replace function private.refuse_suspended() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is not null and exists (select 1 from public.account_suspensions s where s.user_id = auth.uid()) then
+    raise exception 'This account is suspended — it cannot post, message or list anything' using errcode = '42501';
+  end if;
+  return new;
+end $$;
+revoke all on function private.refuse_suspended() from public, anon, authenticated, service_role;
+grant execute on function private.refuse_suspended() to authenticated, service_role;
+do $$ declare t text; begin
+  foreach t in array array['posts', 'comments', 'messages', 'connections', 'products', 'jobs', 'companies', 'groups', 'company_listings', 'group_listings',
+                           'job_reviews', 'work_references', 'enquiries', 'deals', 'company_reports', 'post_reports'] loop
+    execute format('drop trigger if exists trg_%s_not_suspended on public.%I', t, t);
+    execute format('create trigger trg_%s_not_suspended before insert on public.%I for each row execute function private.refuse_suspended()', t, t);
   end loop;
 end $$;
 
@@ -369,7 +394,8 @@ end $$;
 revoke all on function public.admin_posts(text, int, int) from public, anon, authenticated, service_role;
 grant execute on function public.admin_posts(text, int, int) to authenticated, service_role;
 
--- a post Drugbox removes: the author is told why; the post (with its pictures and files) is kept in the log, so it can be restored
+-- a post Drugbox removes: the author is told why; the post's text is kept in the log, so it can be restored. Its pictures and files
+-- are deleted with it (0023, F-41: a removed post's public links must stop working), so a restored post comes back without them.
 create or replace function public.admin_delete_post(p_post bigint, p_reason text) returns bigint
 language plpgsql security definer set search_path = public as $$
 declare p public.posts; snap jsonb; aid bigint;
@@ -380,9 +406,14 @@ begin
   if p.id is null then raise exception 'This post is already gone' using errcode = 'P0002'; end if;
   snap := jsonb_build_object('post', to_jsonb(p), 'media', coalesce((select jsonb_agg(to_jsonb(m)) from public.post_media m where m.post_id = p.id), '[]'::jsonb));
   aid := private.log_decision('post', p.id::text, coalesce((select name from public.profiles where id = p.user_id), 'Member') || ' · ' || left(p.body, 120), 'removed', p_reason, snap);
+  -- its open reports are closed by the same decision and the reporters told (they are not left open on a deleted post)
+  with done as (update public.post_reports set status = 'removed', decided_by = auth.uid(), decided_at = now(), decision_note = left(trim(p_reason), 500)
+                 where post_id = p.id and status = 'open' returning reporter)
+  insert into public.notifications (user_id, type, from_user, message)
+  select distinct reporter, 'report_closed', null::uuid, 'Drugbox reviewed your report and removed the post.' from done;
   delete from public.posts where id = p.id;
   insert into public.notifications (user_id, type, message, data)
-  values (p.user_id, 'post_removed', 'Drugbox removed your post: ' || left(trim(p_reason), 300), jsonb_build_object('excerpt', left(p.body, 80)));
+  values (p.user_id, 'post_removed', 'Drugbox removed your post: ' || left(trim(p_reason), 300), jsonb_build_object('excerpt', left(p.body, 80), 'note', left(trim(p_reason), 300)));   -- the live app shows data.note as the reason
   return aid;
 end $$;
 revoke all on function public.admin_delete_post(bigint, text) from public, anon, authenticated, service_role;
@@ -402,10 +433,8 @@ begin
   insert into public.posts (id, user_id, body, category, group_id, created_at)
   values ((p ->> 'id')::bigint, (p ->> 'user_id')::uuid, p ->> 'body', p ->> 'category', (p ->> 'group_id')::bigint, (p ->> 'created_at')::timestamptz)
   on conflict (id) do nothing;
-  insert into public.post_media (post_id, url, type, name, size)
-  select (m ->> 'post_id')::bigint, m ->> 'url', m ->> 'type', m ->> 'name', (m ->> 'size')::bigint from jsonb_array_elements(coalesce(a.data -> 'media', '[]'::jsonb)) m;
   update public.admin_actions set undone_at = now(), undone_by = auth.uid() where id = a.id;
-  insert into public.notifications (user_id, type, message) values ((p ->> 'user_id')::uuid, 'post_restored', 'Drugbox restored your post — its likes and comments could not be brought back');
+  insert into public.notifications (user_id, type, message) values ((p ->> 'user_id')::uuid, 'post_restored', 'Drugbox restored your post — its likes, comments and attached files could not be brought back');
   return (p ->> 'id')::bigint;
 end $$;
 revoke all on function public.admin_restore_post(bigint) from public, anon, authenticated, service_role;
@@ -421,15 +450,21 @@ begin
   if a.id is null then raise exception 'Decision not found' using errcode = 'P0002'; end if;
   if a.undone_at is not null then raise exception 'Already undone by %', private.who(a.undone_by) using errcode = 'DX409'; end if;
   if a.kind in ('payment', 'claim') then raise exception 'A % decision cannot be undone here', a.kind using errcode = '22023'; end if;
+  -- only the latest decision about the same thing is undone (an older one would undo a newer decision)
+  if exists (select 1 from public.admin_actions b where b.kind = a.kind and b.item_id = a.item_id and b.id > a.id and b.undone_at is null) then
+    raise exception 'A newer decision was made about this — undo that one instead' using errcode = '22023';
+  end if;
   if a.kind = 'post' then
     if a.decision = 'removed' then return 'restore'; end if;             -- the interface calls admin_restore_post
     update public.post_reports set status = 'open', decided_by = null, decided_at = null, decision_note = null where post_id = a.item_id::bigint and status = a.decision;
     get diagnostics n = row_count;
   elsif a.kind = 'suspension' then
+    if not public.is_platform_admin() then raise exception 'Only a Drugbox admin lifts a suspension' using errcode = '42501'; end if;
     if a.decision = 'suspended' then delete from public.account_suspensions where user_id = a.item_id::uuid; get diagnostics n = row_count;
     else raise exception 'Suspend the account again from Users' using errcode = '22023'; end if;
   elsif a.kind = 'role' then
     if not public.is_platform_admin() then raise exception 'Only a Drugbox admin changes roles' using errcode = '42501'; end if;
+    if a.item_id::uuid = auth.uid() then raise exception 'Another Drugbox admin changes your own role' using errcode = '42501'; end if;
     update public.profiles set role = coalesce(a.data ->> 'from', 'user') where id = a.item_id::uuid; get diagnostics n = row_count;
   elsif a.kind = 'badge' then
     if not public.is_platform_admin() then raise exception 'Only a Drugbox admin gives the profile badge' using errcode = '42501'; end if;
