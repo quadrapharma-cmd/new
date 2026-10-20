@@ -257,7 +257,8 @@ def payment_history(j):
     """A company sees what it has paid for, the status of each payment, and downloads a tax invoice."""
     if j.live:
         me = live_company_person(j, 'Paying Company Owner', 'Paying Pharma %s' % j.tag); pg = me['page']
-        j.sql("insert into public.payment_orders (user_id, product_code, company_id, method, amount_cents, currency, status, paid_at) values ('%s','vip_month',%s,'card',285000,'EGP','paid',now()), ('%s','vip_month',%s,'fawry',285000,'EGP','pending',null)" % (me['id'], me['co']['id'], me['id'], me['co']['id']))
+        j.sql("insert into public.payment_orders (user_id, product_code, company_id, method, amount_cents, currency, status, paid_at) values ('%s','vip_month',%s,'card',285000,'EGP','paid',now()), ('%s','vip_month',%s,'fawry',285000,'EGP','pending',null), ('%s','vip_month',%s,'card',285000,'EGP','pending',null)" % (me['id'], me['co']['id'], me['id'], me['co']['id'], me['id'], me['co']['id']))
+        j.sql("update public.payment_orders set provider_ref='7700%s', fawry_expires_at=now()+interval '40 hours' where company_id=%s and method='fawry'" % (j.tag[:4], me['co']['id']))   # a live Fawry reference
         # the price list, VAT rate and seller change after the invoice was issued: the invoice must not change
         j.sql("update public.billing_settings set legal_name='Drugbox Renamed %s' where id" % j.tag)
         j.reload(pg)
@@ -277,9 +278,12 @@ def payment_history(j):
         if j.ar: j.check(idir == 'rtl' and re.search(r'فاتورة ضريبية', it) and not re.search(r'Tax invoice|Seller|Buyer|Total', it), 'the invoice is not in Arabic, right to left, in the Arabic interface (%s, %s)' % (idir, it[:120].replace('\n', ' ')))
         else: j.check(idir in ('ltr', ''), 'the English invoice is not left to right')
         if j.live: j.sql("update public.billing_settings set legal_name='Drugbox' where id"); j.check('Drugbox Renamed' not in it, 'the issued invoice shows seller details changed after it was issued')
-    with j.step("A payment still waiting can be cancelled from the history ('Cancel'); it then shows Cancelled"):
+    with j.step("A card payment left unfinished can be cancelled from the history ('Cancel'); a live Fawry reference cannot (it simply expires)"):
         if j.demo: j.skip('the demo company has no waiting payment (its VIP was paid)')
-        oidp = j.sql1("select id from public.payment_orders where company_id=%s and status='pending' limit 1" % me['co']['id'])
+        fw = j.sql1("select id from public.payment_orders where company_id=%s and method='fawry' and status='pending' limit 1" % me['co']['id'])
+        j.check(not pg.locator('.dx-pr [data-paycancel="%s"]' % fw).count() and re.search(r'simply expires|ينتهي ببساطة', pg.locator('.dx-pr[data-pay="%s"]' % fw).inner_text()), 'the live Fawry reference offers Cancel instead of saying it simply expires')
+        r = pg.evaluate("i=>dxLive.sb.rpc('cancel_order',{p_id:i}).then(r=>r.error?'refused':'given')", int(fw)); j.check(r == 'refused', 'a live Fawry reference could be cancelled through the API (Fawry would still take the money)')
+        oidp = j.sql1("select id from public.payment_orders where company_id=%s and status='pending' and method='card' limit 1" % me['co']['id'])
         cb = pg.locator('.dx-pr [data-paycancel="%s"]' % oidp); j.check(cb.count(), "the waiting payment has no 'Cancel'")
         cb.first.click(); pg.wait_for_timeout(600); dlg_click(j, pg, r'Cancel payment|ألغِ الدفع', 'Cancel payment'); j.settle(pg, 1500)
         j.check(j.wait_db("select status from public.payment_orders where id=%s" % oidp, 6, want='cancelled') == 'cancelled', 'Cancel did not cancel the waiting payment')
