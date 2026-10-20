@@ -945,7 +945,7 @@
   /* ═══════════════ C1 — companies: directory, company pages, my companies, create, page edits, verification ═══════════════
      The demo's store() and company list have data hooks (inert in the demo); here they read and write the database.
      Right after sign-in only my own pages load; the directory loads, a page at a time, when the Companies page opens (F-05). */
-  var CO = { byId: {}, raw: {}, alias: {}, reopen: null, loaded: false, at: 0, loading: null, roles: {}, mine: false, mineP: null, sitesAt: {}, track: {}, trackAt: {}, seq: {} };
+  var CO = { byId: {}, raw: {}, alias: {}, reopen: null, loaded: false, at: 0, loading: null, roles: {}, vr: {}, mine: false, mineP: null, sitesAt: {}, track: {}, trackAt: {}, seq: {} };
   var TYPE = { factory: 'Factory', warehouse: 'Warehouse', lab: 'Laboratory', office: 'Office', head_office: 'Head office' };
   var ROLE = { registration_holder: 'Registration holder', manufacturer: 'Manufacturer', supplier: 'Supplier' };
   function ym(d) { return d ? String(d).slice(0, 7) : ''; }
@@ -959,7 +959,8 @@
       address: txt(pr.address || c.location), hours: txt(c.hours), services: (pr.services || []).map(txt), jobs: [], team: [], logo: safeUrl(c.logo_url) || null, cover: safeUrl(pr.cover) || null,
       products: (c.products || []).map(function (p) { return { id: 'p' + String(p.name).replace(/\W+/g, '').slice(0, 10), name: txt(p.name), cat: ROLE[p.role] || 'Finished dosage', kind: txt(p.form),
         desc: [p.ingredient ? 'Active ingredient: ' + txt(p.ingredient) : '', txt(p.strength)].filter(Boolean).join(' · '), moq: '', price: '', specs: [] }; }),
-      createdAt: new Date(c.created_at).getTime(), updatedAt: fresher(c), _id: c.id, _tier: c.tier };
+      createdAt: new Date(c.created_at).getTime(), updatedAt: fresher(c), _id: c.id, _tier: c.tier,
+      vr: CO.vr[c.id] ? CO.vr[c.id].s : undefined, vrNote: CO.vr[c.id] ? CO.vr[c.id].note : '' };   /* AREA community (J-COMMUNITY-41): the latest own verification request */
   }
   /* when the page was last written (companies.updated_at, set by the database on every save, B-22): the "older than 6 months"
      notice counts from it, else from the day the page was made — never from a sample date. The directory's rows do not carry it,
@@ -985,7 +986,7 @@
        rejection the owner reads Drugbox's note and sends again */
     var vr = await sb.from('verification_requests').select('company_id,status,note,claim,created_at').in('company_id', ids).eq('claim', false).order('created_at', { ascending: false }).limit(200);
     if (!vr.error && me === ME_UUID) { var last = {}; (vr.data || []).forEach(function (v) { if (!(v.company_id in last)) last[v.company_id] = v; });
-      list.forEach(function (co) { var raw = CO.raw[co.slug]; if (!raw || !CO.roles[raw.id]) return; var v = last[raw.id]; co.vr = v ? v.status : 'none'; co.vrNote = v && v.status === 'rejected' ? v.note || '' : ''; }); }
+      list.forEach(function (co) { var raw = CO.raw[co.slug]; if (!raw || !CO.roles[raw.id]) return; var v = last[raw.id]; co.vr = v ? v.status : 'none'; co.vrNote = v && v.status === 'rejected' ? v.note || '' : ''; CO.vr[raw.id] = { s: co.vr, note: co.vrNote }; }); }
     window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
   }
   /* the directory, 100 companies a request in the directory's order (F-05): the first page when Companies or the Marketplace
@@ -1103,7 +1104,7 @@
         var sv = okSlug(ins.data.slug) ? ins.data.slug : c.slug; if (sv !== c.slug) adoptSlug(c.slug, sv, shown);
         ins.data.mine = true; CO.raw[sv] = ins.data; CO.roles[ins.data.id] = 'owner'; shown._id = ins.data.id; CO.byId[ins.data.id] = sv;
       } else if (c.registry && c.status === 'pending' && known.id && !SNAP['vr_' + c.slug]) {   /* verification documents submitted */
-        SNAP['vr_' + c.slug] = 1; var l = live(c.slug); if (l) { l.status = 'pending'; l.registry = c.registry; l.vr = 'pending'; l.vrNote = ''; }
+        SNAP['vr_' + c.slug] = 1; var l = live(c.slug); if (l) { l.status = 'pending'; l.registry = c.registry; l.vr = 'pending'; l.vrNote = ''; } if (CO.raw[c.slug]) CO.vr[CO.raw[c.slug].id] = { s: 'pending', note: '' };
         var docs = {}; try { docs = await window.dxLive.verificationFiles(known.id); } catch (e) { toastErr(e); }
         var vr = await sb.from('verification_requests').insert(Object.assign({ company_id: known.id, submitted_by: ME_UUID, registry: String(c.registry) }, docs));
         if (vr.error) toastErr(vr.error);
@@ -1242,6 +1243,9 @@
       if (!freshSeq('')) loadDirPage('', true).catch(toastErr);                                   /* page 1, or nothing within 2 minutes */
       var k = curKey(); if (page === 'companies' && k && !freshSeq(k)) loadDirPage(k, true).catch(toastErr);
       if (page === 'companies') openedMissing();
+      /* AREA community (J-COMMUNITY-41): an own page waiting on Drugbox's check is read again on each visit (at most every 3 s), so the badge shows once verified */
+      if (page === 'companies' && Date.now() - (CO.pendAt || 0) > 3000 && Object.keys(CO.raw).some(function (sl) { var c = CO.raw[sl]; return c && CO.roles[c.id] && c.status === 'pending'; })) {
+        CO.pendAt = Date.now(); loadMine().then(redrawDir).catch(function () {}); }
       if (page === 'market' && typeof LIST !== 'undefined' && LIST) ensureCompanies(LIST.surplus.concat(LIST.dossiers).map(function (x) { return x.slug; })).catch(function () {});
     }
     return r;
@@ -1279,7 +1283,7 @@
         return false; } } });
   };
   var hydrateB4 = hydrateMe;
-  hydrateMe = async function (uid) { var me = await hydrateB4(uid); window.dxLiveCompanies = []; CO.seq = {}; CO.loaded = false; CO.mineP = loadMine().then(wrapHub).catch(function (e) { console.error(e); }); return me; };
+  hydrateMe = async function (uid) { var me = await hydrateB4(uid); window.dxLiveCompanies = []; CO.seq = {}; CO.vr = {}; CO.loaded = false; CO.mineP = loadMine().then(wrapHub).catch(function (e) { console.error(e); }); return me; };
   onReset(function () { CO.byId = {}; CO.raw = {}; CO.loaded = false; CO.at = 0; CO.roles = {}; CO.mine = false; CO.mineP = null; CO.sitesAt = {}; CO.track = {}; CO.trackAt = {}; CO.seq = {}; CO.alias = {}; CO.reopen = null; COFETCH = {}; CONONE = {}; SNAP = {}; window.dxLiveCompanies = []; window.dxLiveSites = {}; });
   Object.assign(window.dxLive, { loadDirectory: loadDirectory, loadSites: loadSites, version: 'C1' });
 
@@ -2382,7 +2386,7 @@
     var l = live(DOCS.vslug); if (l) { l.status = 'pending'; l.registry = rn; }
     window.dxLive.verificationFiles(raw.id).then(function (docs) {
       return sb.from('verification_requests').insert(Object.assign({ company_id: raw.id, submitted_by: ME_UUID, registry: rn }, docs));
-    }).then(function (r) { if (r && r.error) { toastErr(r.error); return; } SNAP['vr_' + DOCS.vslug] = 1; var lv = live(DOCS.vslug); if (lv) { lv.vr = 'pending'; lv.vrNote = ''; } rerenderCompanies(); }, toastErr);
+    }).then(function (r) { if (r && r.error) { toastErr(r.error); return; } SNAP['vr_' + DOCS.vslug] = 1; var lv = live(DOCS.vslug); if (lv) { lv.vr = 'pending'; lv.vrNote = ''; } if (CO.raw[DOCS.vslug]) CO.vr[CO.raw[DOCS.vslug].id] = { s: 'pending', note: '' }; rerenderCompanies(); }, toastErr);
   }, true);
 
   /* ═══════════════ E2 — Admin → Review on the database; company reports ═══════════════ */

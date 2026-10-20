@@ -135,7 +135,12 @@ def wrong_info_report(j):
         dlg_click(j, pg, L('Send report'), 'Send report'); j.settle(pg, 1000)
     with j.step('R sees the report in own reports with status Open'):
         el = j.find(pg, r'My reports|بلاغاتي', scope='#app'); j.check(el, 'not built: the reporter has no "My reports"')
-        el.click(); j.settle(pg, 900); j.check(issue in j.text(pg) and re.search(r'Open|مفتوح', j.text(pg)), 'my reports do not list it as Open')
+        el.click(); j.settle(pg, 900)
+        # the list opens in the approved dialog: the row that names this issue says Open
+        row = pg.evaluate("""t=>{const root=[...document.querySelectorAll('.dbk-ov')].pop()||document.querySelector('#content');
+          const els=[...root.querySelectorAll('*')].filter(e=>(e.innerText||'').includes(t)).sort((a,b)=>a.innerText.length-b.innerText.length);
+          const r=els.find(e=>/Open|مفتوح/.test(e.innerText));return r?r.innerText:(els.length?'(no status) '+els[0].innerText:'')}""", issue)
+        j.check(issue in row and re.search(r'Open|مفتوح', row) and len(row) < 400, 'my reports do not list it as Open: %s' % row[:120])
     with j.step("O sees it without R's identity; Mark fixed tells O that Drugbox closes it"):
         if j.demo: j.skip('the owner side is checked in live')
         po = o['page']; t2 = workspace(j, po, 'Reports & reviews|%s' % (ar('Reports & reviews') or 'التقارير'))
@@ -156,8 +161,9 @@ def moderate_warnings(j):
         e = j.person('Ehab Employer'); s = j.person('Sami Candidate'); d = j.person('Dina Disputer'); v = j.person('Vera Verified')
         j.sql("update public.profiles set verified=true where id='%s'" % v['id'])
         co = employment(j, e['id'], s['id']); employment(j, e['id'], d['id'], co)
-        w = seed_ref(j, e['id'], s['id'], 'warn', body=WARN, category='Left without notice')
-        dd = seed_ref(j, e['id'], d['id'], 'warn', 'disputed', WARN.replace('two', 'three'), 'Breach of confidentiality', reply='I never had access to that data.')
+        t = j.tag[:4]; wbody = WARN + ' Case %s.' % t   # this run's own rows (a shared database keeps older runs' Sami and Dina)
+        w = seed_ref(j, e['id'], s['id'], 'warn', body=wbody, category='Left without notice')
+        dd = seed_ref(j, e['id'], d['id'], 'warn', 'disputed', WARN.replace('two', 'three') + ' Case %s.' % t, 'Breach of confidentiality', reply='I never had access to that data.')
         a = admin_person(j); ap = a['page']
     else:
         ap = j.demo_signin(j.new_page())
@@ -180,9 +186,9 @@ def moderate_warnings(j):
     with j.step('Publish W; Reject D: both decisions stored (decided_by / decided_at)'):
         if j.demo:
             decide(j, ap, 'Youssef', True); j.check('Youssef' not in admin_review(j, ap, 'Warning references|التحذير'), 'the published warning stays in the queue'); return
-        decide(j, ap, 'Sami', True); decide(j, ap, 'Dina', False, 'Not supported by the evidence')
+        decide(j, ap, wbody[-10:], True); decide(j, ap, 'three batches were delayed by a week. Case %s.' % t, False, 'Not supported by the evidence')
         j.check(j.wait_db("select status||'|'||(decided_by is not null) from public.work_references where id=%s" % w, 6) == 'published|true', 'W is not published with decided_by')
-        j.check(j.sql1("select status from public.work_references where id=%s" % dd) == 'rejected', 'D is not rejected')
+        j.check(j.wait_db("select status from public.work_references where id=%s" % dd, 6) == 'rejected', 'D is not rejected')
     with j.step('Author and candidate are notified; a verified employer sees W with "Evidence verified" and the expiry'):
         if j.demo: j.skip('checked in live')
         j.check(notif_rows(j, e['id'], extra=" and created_at > now() - interval '10 minutes'") >= 1 and notif_rows(j, s['id']) >= 1, 'author or candidate not notified')

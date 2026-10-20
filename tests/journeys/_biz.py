@@ -412,7 +412,7 @@ def admin_decide(j, pg, needle, ok=True, reason='The document is not readable'):
     if not ok: pg.once('dialog', lambda d: d.accept(reason))
     btn.first.click(); pg.wait_for_timeout(700)
     if dlg_open(pg):
-        b = pg.locator('.dbk-ov button.p, .dbk-ov button.danger, .dbk-ov .dbk-p').last
+        b = pg.locator('.dbk-ov button.p, .dbk-ov button.danger, .dbk-ov button.d[data-a=ok], .dbk-ov .dbk-p').last
         if b.count(): b.click()
     j.settle(pg, 1200)
 

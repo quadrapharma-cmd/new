@@ -230,7 +230,8 @@
   /* ── demo: notifications stay read after a reload (the live app keeps them in the database) ─────────────────────── */
   if (!window.DRUGBOX_CONFIG && !window.dxLive) {   /* the demo build only (the live build carries its configuration) */
     var readIds = function () { return dget('notifRead', []); };
-    var apply = function () { var r = readIds(), all = dget('notifAllRead', false); (window.NOTIFS || []).forEach(function (n) { if (all || r.indexOf(n.id) >= 0) n.read = true; }); if (window.updateBadges) window.updateBadges(); };
+    var apply = function () { var r = readIds(), all = dget('notifAllRead', false); (window.NOTIFS || []).forEach(function (n) { if (all || r.indexOf(n.id) >= 0) n.read = true; }); if (window.updateBadges) window.updateBadges();
+      if (all && !(window.NOTIFS || []).some(function (n) { return !n.read; })) ['nb-not'].forEach(function (id) { var b = document.getElementById(id); if (b) { b.style.display = 'none'; b.textContent = ''; } });   /* hidden as markAllRead leaves it, and no count left behind */ };
     var oRead = window.markNotifRead, oAll = window.markAllRead;
     if (typeof oRead === 'function') window.markNotifRead = function (id) { var r = readIds(); if (r.indexOf(id) < 0) { r.push(id); dset('notifRead', r.slice(-500)); } return oRead.apply(this, arguments); };
     if (typeof oAll === 'function') window.markAllRead = function () { dset('notifAllRead', true); var r = oAll.apply(this, arguments); if (window.updateBadges) window.updateBadges(); return r; };
@@ -278,6 +279,9 @@
 [/^Waiting for confirmation — order (DBX\d+)\. We confirm InstaPay transfers within one working day$/, function (m) { return 'بانتظار التأكيد — الطلب ' + m[1] + '. نؤكد تحويلات إنستاباي خلال يوم عمل واحد'; }],
     [/^Your claim for (.+) is already under review — Drugbox tells you when it is checked\.$/, function (m) { return 'مطالبتك بصفحة ' + m[1] + ' قيد المراجعة بالفعل — ستبلغك Drugbox عند فحصها.'; }],
     [/^Your claim for (.+) is already under review$/, function (m) { return 'مطالبتك بصفحة ' + m[1] + ' قيد المراجعة بالفعل'; }],
+    [/^Drugbox published your (warning|work) reference about (.+)$/, function (m) { return 'نشرت Drugbox ' + (m[1] === 'warning' ? 'تحذيرك' : 'مرجعيتك') + ' عن ' + m[2]; }],
+    [/^Drugbox did not publish your (warning|work) reference about (.+)$/, function (m) { return 'لم تنشر Drugbox ' + (m[1] === 'warning' ? 'تحذيرك' : 'مرجعيتك') + ' عن ' + m[2]; }],
+    [/^Drugbox reviewed a warning reference about you and did not publish it$/, function () { return 'راجعت Drugbox تحذيراً كُتب عنك ولم تنشره'; }],
     [/^Verification needs another look: (.+)$/, function (m) { return 'التوثيق يحتاج مراجعة أخرى: ' + m[1]; }],
         [/^🚩 My reports \((\d+)\)$/, function (m) { return '🚩 بلاغاتي (' + m[1] + ')'; }],
     [/^\((\d[\d,]*)\)$/, function (m) { return '(' + m[1] + ')'; }]

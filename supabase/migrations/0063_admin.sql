@@ -107,6 +107,16 @@ begin
   if new_status in ('published', 'rejected') then
     perform private.log_decision('reference', ref_id::text, coalesce((select name from public.profiles where id = r.author), 'Employer') || ' → ' || coalesce((select name from public.profiles where id = r.candidate), 'candidate')
                                  || coalesce(' · ' || r.category, ''), new_status);
+    if not private.undoing() then   /* the author is told the outcome; a candidate is told a warning about them was not published */
+      insert into public.notifications (user_id, type, from_user, message)
+      values (r.author, 'reference', r.candidate, case when new_status = 'published'
+                then 'Drugbox published your ' || case when r.kind = 'warn' then 'warning' else 'work' end || ' reference about ' || coalesce((select name from public.profiles where id = r.candidate), 'the candidate')
+                else 'Drugbox did not publish your ' || case when r.kind = 'warn' then 'warning' else 'work' end || ' reference about ' || coalesce((select name from public.profiles where id = r.candidate), 'the candidate') end);
+      if new_status = 'rejected' and r.kind = 'warn' then
+        insert into public.notifications (user_id, type, from_user, message)
+        values (r.candidate, 'reference', null, 'Drugbox reviewed a warning reference about you and did not publish it');
+      end if;
+    end if;
   end if;
 end $$;
 revoke all on function public.moderate_reference(bigint, text) from public, anon, authenticated, service_role;
