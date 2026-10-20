@@ -1,6 +1,6 @@
 # Unicode security data (UTS #39), version 16.0.0 — vendored
 
-Used by `tools/names/name_rule.mjs` to generate the name rule of migration 0038 and of the live app (`web/src/live/adapter.js`).
+Used by `tools/names/name_rule.mjs` to generate the name rule of migrations 0038 and 0039 (its second version) and of the live app (`web/src/live/adapter.js`).
 Do not edit these files; to move to a newer Unicode version, vendor the new files into a new folder and write a new migration.
 
 | File | Version | Date in the file | SHA-256 |
