@@ -91,6 +91,9 @@ declare v_reason text := nullif(left(trim(coalesce(p_reason, '')), 300), '');
 begin
   if auth.uid() is null or not public.is_moderator() then raise exception 'Only the Drugbox team can do this' using errcode = '42501'; end if;
   if not p_ok and v_reason is null then raise exception 'Write the reason for the company' using errcode = '22023'; end if;
+  if exists (select 1 from public.company_documents d where d.id = p_id and public.is_company_member(d.company_id)) then
+    raise exception 'You belong to this company — another Drugbox reviewer decides' using errcode = '42501';   -- nobody reviews their own company
+  end if;
   update public.company_documents set status = case when p_ok then 'verified' else 'rejected' end, review_note = case when p_ok then null else v_reason end,
          reviewed_by = auth.uid(), reviewed_at = now()
    where id = p_id and status in ('review', 'declared');

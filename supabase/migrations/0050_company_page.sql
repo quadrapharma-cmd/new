@@ -137,6 +137,7 @@ begin
   if auth.uid() is null or not public.is_moderator() then raise exception 'Only the Drugbox team can do this' using errcode = '42501'; end if;
   select * into c from public.site_certificates where id = p_id for update;
   if c.id is null then raise exception 'This certificate does not exist any more' using errcode = 'P0002'; end if;
+  if public.is_company_member(c.company_id) then raise exception 'You belong to this company — another Drugbox reviewer decides' using errcode = '42501'; end if;
   select owner_id into v_owner from public.companies where id = c.company_id;
   select name into v_site from public.company_sites where id = c.site_id;
   if p_ok then

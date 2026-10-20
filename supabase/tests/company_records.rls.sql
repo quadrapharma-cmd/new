@@ -216,6 +216,7 @@ select pg_temp.no('…nor point their document at another company''s file (and d
 select pg_temp.step('the reviewer adds their own document properly', $$
   with x as (insert into public.company_documents (company_id, type, number, file_path, created_by) values (pg_temp.id('rc'), 'GDP certificate', 'GDP-1', 'companydocs/' || pg_temp.id('rc') || '/own.pdf', 'e8888888-8888-8888-8888-888888888888') returning id) insert into ids select 'rdoc', id::text from x$$);
 select pg_temp.no('…and cannot mark it verified directly', $$update public.company_documents set status = 'verified' where id = pg_temp.id('rdoc')$$, '42501');
+select pg_temp.no('…nor through the review function (nobody reviews their own company)', $$select public.document_review(pg_temp.id('rdoc'), true)$$, '42501');
 
 -- an invitation cancelled and sent again does not notify again (one notice a week per person and company)
 select pg_temp.as_user('e2222222-2222-2222-2222-222222222222');
