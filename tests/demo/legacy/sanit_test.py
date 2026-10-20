@@ -30,7 +30,7 @@ with sync_playwright() as p:
         pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.wait_for_timeout(6800)
         t=f'[{eng} · browser] '
         T(t+'splash ends → login with ONE Sign In', (not pg.is_visible('#splash')) and signins(pg)==1, signins(pg))
-        pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3000)
+        (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3000)
         T(t+'full app opens, no lite pages, no errors', pg.evaluate("document.getElementById('app').offsetWidth>0") and not pg.evaluate("!!document.getElementById('dxLite')") and not errs, errs)
         b.close()
     print(sum(R),'/',len(R))

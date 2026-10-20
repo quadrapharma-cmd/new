@@ -285,8 +285,11 @@ def skills_and_endorsements(j):
     with j.step('B endorses "CTD dossiers": the count is 1 and shows who endorsed'):
         if j.demo: j.skip('the other party exists only in live')
         pb = b['page']; goto_profile(j, pb, a); tab(j, pb, r'^(Skills|المهارات)$', 'Skills')
-        row = pb.locator('#content').get_by_text('CTD dossiers', exact=True).locator('xpath=..')
-        en = row.locator('button, [onclick]').filter(has_text=re.compile(r'Endorse|\+|تأييد|أؤيد'))
+        cell = pb.locator('#content .dx-cell:visible').filter(has_text='CTD dossiers')    # the approved honeycomb: a cell endorses its skill
+        if cell.count(): en = cell
+        else:
+            row = pb.locator('#content').get_by_text('CTD dossiers', exact=True).locator('xpath=..')
+            en = row.locator('button, [onclick]').filter(has_text=re.compile(r'Endorse|\+|تأييد|أؤيد'))
         j.check(en.count(), 'no Endorse on B\'s view of the skill'); en.first.click(); pb.wait_for_timeout(800)
         j.check(counts(pb).get('CTD dossiers') == 1, 'the endorsement count is not 1')
         j.check(j.has_table('skill_endorsements') or j.has_table('endorsements'), 'not built: no endorsements table')

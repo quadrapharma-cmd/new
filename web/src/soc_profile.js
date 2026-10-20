@@ -112,7 +112,10 @@
     return h + '</div>';
   }
   function tabSkills(u) {
-    var h = CARD + head('Skills', '+ Add skill', 'add-skill') + '<div class="dx-pf-skills" data-u="' + u.id + '">';
+    /* someone else's skills: the approved honeycomb (batch2.js) is built from these rows and its cells press their Endorse; my own
+       skills stay a list (no honeycomb: the marker below) with Remove — nobody endorses themselves */
+    var h = own() ? CARD + head('Skills', '+ Add skill', 'add-skill').replace('</h3>', '</h3><div class="dx-comb" hidden></div>') + '<div class="dx-pf-skills" data-u="' + u.id + '">'
+      : CARD + '<div class="dx-pf-skills" data-u="' + u.id + '"><h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Skills</h3>';
     (u.skills || []).forEach(function (s, i) {
       h += '<div class="dx-pf-skill" data-skill="' + esc(s) + '" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f2f5"><span style="font-size:13.5px;font-weight:600;color:var(--cx)" data-noi18n>' + esc(s) + '</span>' +
         '<span class="dx-pf-end" style="font-size:11.5px;color:#65676b;display:flex;align-items:center;gap:6px"><span class="dx-pf-n">…</span>' +
@@ -131,8 +134,12 @@
         var e = m[row.dataset.skill] || { n: 0, mine: false, who: [] }, n = row.querySelector('.dx-pf-n'), b = row.querySelector('.dx-pf-endorse');
         if (n) { n.textContent = e.n + (e.n === 1 ? ' endorsement' : ' endorsements'); n.title = e.who.length ? 'Endorsed by ' + e.who.slice(0, 5).join(', ') : ''; }
         if (b) { b.textContent = e.mine ? '✓ Endorsed' : 'Endorse'; b.setAttribute('aria-pressed', e.mine ? 'true' : 'false'); b.dataset.on = e.mine ? '1' : ''; }
-        var w = row.querySelector('.dx-pf-who'); if (e.who.length) { if (!w) { w = document.createElement('span'); w.className = 'dx-pf-who'; w.setAttribute('data-noi18n', ''); row.querySelector('.dx-pf-end').insertBefore(w, n); } w.textContent = e.who.slice(0, 2).join(', ') + (e.who.length > 2 ? ' +' + (e.who.length - 2) : '') + ' ·'; } else if (w) w.remove();
+        var w = row.querySelector('.dx-pf-who'); if (e.who.length) { if (!w) { w = document.createElement('span'); w.className = 'dx-pf-who'; w.setAttribute('data-noi18n', ''); row.querySelector('.dx-pf-end').appendChild(w); } w.textContent = e.who.slice(0, 2).join(', ') + (e.who.length > 2 ? ' +' + (e.who.length - 2) : '') + ' ·'; } else if (w) w.remove();
       });
+      setTimeout(function () {   /* the honeycomb shows what I already endorsed */
+        var rows = [].slice.call(document.querySelectorAll('.dx-pf-skills[data-u="' + u.id + '"] .dx-pf-skill'));
+        document.querySelectorAll('.dx-pf-skills[data-u="' + u.id + '"] .dx-comb .dx-cell').forEach(function (c) { var r = rows[+c.dataset.i], e = r && m[r.dataset.skill]; if (e && e.mine) c.classList.add('done'); });
+      }, 120);
     }, function () {});
   }
   function langCard(u) {

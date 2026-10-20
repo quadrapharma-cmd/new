@@ -5,7 +5,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(args=["--no-sandbox"]); pg=b.new_page(viewport={'width':1440,'height':900}); errs=[]
     pg.on("pageerror",lambda e:errs.append(str(e)[:200]))
     pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='networkidle',timeout=60000); pg.evaluate('endSplash()'); pg.wait_for_timeout(900)
-    pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage .f-btn')); pg.wait_for_timeout(2200)
+    (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage .f-btn')); pg.wait_for_timeout(2200)
     pg.evaluate("goto('market')"); pg.wait_for_timeout(800)
     M='#mkx '
     T('page title + pill', pg.is_visible('text=MARKETPLACE') and '1.2K LISTINGS' in pg.inner_text('.dg-pill-page'))

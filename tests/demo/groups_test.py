@@ -42,7 +42,7 @@ with sync_playwright() as p:
         if AR: W(120); [untr.add(x) for x in E(UNTR)]
     def login():
         pg.goto('file://' + F, wait_until='load'); E('endSplash()'); W(700)
-        pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); W(2800)
+        (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); W(2800)
         if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
         E("goto('groups')"); W(700)
     def card(title): return f"[...document.querySelectorAll('#gx .gcard')].find(c=>dxOrigText(c.querySelector('.gcard-title')).trim()==={title!r})"

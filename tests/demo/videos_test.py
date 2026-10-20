@@ -9,7 +9,7 @@ with sync_playwright() as p:
     pg = ctx.new_page(); errs = []; pg.on("pageerror", lambda e: errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.accept())
     def login():
         pg.goto('file://' + F, wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
-        pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(2800)
+        (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(2800)
         if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
     def toast(): return pg.evaluate("(document.querySelector('.dbk-toast')||{}).textContent||''")
     login(); E = pg.evaluate

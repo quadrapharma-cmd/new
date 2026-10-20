@@ -5,7 +5,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(args=["--no-sandbox"]); pg=b.new_page(viewport={'width':1440,'height':900}); errs=[]
     pg.on("pageerror",lambda e:errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.dismiss())
     pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
-    pg.locator('.lg-demo').is_visible() and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3200)
+    (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3200)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
     E=pg.evaluate
     E("localStorage.setItem('dx_acting',JSON.stringify('quadra-pharm'))")
