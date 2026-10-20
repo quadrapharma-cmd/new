@@ -1,7 +1,8 @@
--- One rule for names in the database and in the app (S-03, 0038): for EVERY code point of planes 0 and 1, in four places (inside a
--- Latin word, alone between spaces, at the start, inside an Arabic word), the database's person_name_norm, person_name_problem and
--- person_name_key must give what the live app's nmNorm, nmProblem and nmSkel give (web/src/live/adapter.js, generated with the
--- migration by tools/names/name_rule.mjs). The app's side comes from node tools/names/name_rule.mjs --expect, which first checks that
+-- One rule for names in the database and in the app (S-03, 0038 and its second version 0039): for EVERY code point of planes 0 and
+-- 1, in four places (inside a Latin word, alone between spaces, at the start, inside an Arabic word), the database's
+-- person_name_norm, person_name_problem and person_name_key must give what the live app's nmNorm, nmProblem and nmSkel give, and
+-- person_name_message what nmMessage says (inside a word and alone; web/src/live/adapter.js, generated with the migration by
+-- tools/names/name_rule.mjs). The app's side comes from node tools/names/name_rule.mjs --expect, which first checks that
 -- both generated regions are current and that the app's code follows the rule's definition (every number refused; every symbol,
 -- private-use, unassigned, punctuation and restricted letter refused; the verifiers' look-alikes refused; twins share a skeleton),
 -- and fails the load otherwise. A code point whose NFKC or NFD differs between Node and PostgreSQL (one knows a newer Unicode) is
@@ -13,12 +14,13 @@ set client_min_messages = warning;
 \o /dev/null
 begin;
 create temp table r (n serial, name text, ok boolean, err text);
-create temp table app (cp int, place text, norm text, problem text, skel text, nf text, nd text);
+create temp table app (cp int, place text, norm text, problem text, skel text, nf text, nd text, msg text);
 \set ON_ERROR_STOP on
 \copy app from program 'node tools/names/name_rule.mjs --expect'
 \set ON_ERROR_STOP off
 create temp table got as
   select a.*, d.s, public.person_name_norm(d.s) as db_norm, public.person_name_problem(public.person_name_norm(d.s)) as db_problem, public.person_name_key(d.s) as db_skel,
+         case when a.problem <> '' and a.place in ('w', 's') then public.person_name_message(d.s, a.problem) else '' end as db_msg,
          normalize(chr(a.cp), NFKC) is distinct from a.nf or normalize(chr(a.cp), NFD) is distinct from a.nd as skew
     from app a cross join lateral (select case a.place when 'w' then 'Ab' || chr(a.cp) || 'ab' when 's' then 'Ab ' || chr(a.cp) || ' ab'
                                                      when 'b' then chr(a.cp) || 'ab' else 'بب' || chr(a.cp) || 'بب' end as s) d;
@@ -32,6 +34,9 @@ insert into r(name, ok, err) select 'database = app: allowed or why not, for eve
 insert into r(name, ok, err) select 'database = app: the skeleton, for every code point', count(*) = 0,
        count(*) || ' differ, e.g. ' || string_agg(format('U+%s/%s db=%s app=%s', upper(to_hex(cp)), place, db_skel, skel), '; ') filter (where rn <= 6)
   from (select *, row_number() over () rn from got where not skew and db_skel <> skel) d;
+insert into r(name, ok, err) select 'database = app: the message (the character as typed, the word), for every code point refused', count(*) = 0,
+       count(*) || ' differ, e.g. ' || string_agg(format('U+%s/%s db=%s app=%s', upper(to_hex(cp)), place, db_msg, msg), '; ') filter (where rn <= 6)
+  from (select *, row_number() over () rn from got where not skew and db_msg is distinct from msg) d;
 insert into r(name, ok, err) select 'few code points normalise differently in Node and PostgreSQL (newer Unicode)', count(distinct cp) < 400, count(distinct cp)::text from got where skew;
 insert into r(name, ok, err) select 'the picker separator "·" (and every dot look-alike tried) cannot be part of an allowed name', count(*) = 0, string_agg(s, ' | ')
   from (select s from got where place in ('w', 's', 'r') and cp in (183, 903, 5867, 8226, 8231, 8729, 8901, 11825, 11827, 12539, 42895, 65381, 70004, 70096, 128919, 8728, 9642, 65532, 65533)
@@ -41,7 +46,7 @@ insert into r(name, ok, err) select 'the picker separator "·" (and every dot lo
 insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_problem(public.person_name_norm(x.s)) = x.want,
        coalesce(public.person_name_problem(public.person_name_norm(x.s)), 'null') || ' / ' || public.person_name_norm(x.s) from (values
   ('"Dr. Hala X · Pharco X" (the picker''s own separator)', 'Dr. Hala Tufice · Pharco Tufice', 'char'),
-  ('U+A78F LATIN LETTER SINOLOGICAL DOT', U&'Dr. Hala Tufice \A78F Pharco Tufice', 'char'),
+  ('U+A78F LATIN LETTER SINOLOGICAL DOT (a restricted letter)', U&'Dr. Hala Tufice \A78F Pharco Tufice', 'letter'),
   ('U+2E33 RAISED DOT', U&'Dr. Hala Tufice \2E33 Pharco Tufice', 'char'),
   ('U+11174 MAHAJANI ABBREVIATION SIGN', U&'Dr. Hala Tufice \+011174 Pharco Tufice', 'char'),
   ('U+1F797 MEDIUM SMALL WHITE CIRCLE', U&'Dr. Hala Tufice \+01F797 Pharco Tufice', 'char'),
@@ -53,14 +58,33 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('U+FFFD REPLACEMENT CHARACTER', U&'Dr. Zeina Tufice\FFFD', 'char'),
   ('Cyrillic а in "Dr. Rаna"', U&'Dr. R\0430na Tufice', 'script'),
   ('Greek ο in a Latin word', U&'Dr. N\03BFur Tufice', 'script'),
-  ('a Latin word next to a Cyrillic word', U&'Dr. \0418\0432\0430\043D', 'script'),
   ('"Dr. Hala X - Pharco X" (0037''s separator: a word without a letter)', 'Dr. Hala Tufice - Pharco Tufice', 'word'),
   ('a digit ("Dr. Rana 2")', 'Dr. Rana 2', 'digit'),
   ('an Arabic-Indic zero standing alone', 'د. هالة ٠ فاركو', 'digit'),
-  ('U+02D1 MODIFIER LETTER HALF TRIANGULAR COLON (Common script)', U&'Dr. Hala \02D1 Pharco', 'char'),
-  ('U+01C3 click letter ǃ (Restricted)', U&'Dr. Hala\01C3', 'char'),
+  ('U+02D1 MODIFIER LETTER HALF TRIANGULAR COLON (Common script)', U&'Dr. Hala \02D1 Pharco', 'letter'),
+  ('U+01C3 click letter ǃ (Restricted)', U&'Dr. Hala\01C3', 'letter'),
   ('a combining mark with no letter', U&'Dr. Hala \0307 Pharco', 'word'),
   ('four marks on one letter', U&'Dr. Hab\0301\0301\0301\0301', 'mark'),
+  -- 0039 (verifier rounds atk-bypass-r1 / atk-unicode-r1 / atk-legit-r1)
+  ('the same mark twice on one letter ("é́", it can draw over itself)', U&'Dr. Hal\00E9\0301 Tufice', 'mark'),
+  ('the same mark twice, decomposed', U&'Dr. Hale\0301\0301 Tufice', 'mark'),
+  ('a shadda twice on one Arabic letter', U&'د. هالة الشا\0651\0651مي', 'mark'),
+  ('two different marks are fine ("ệ")', U&'Dr. Ne\0323\0302 Tufice', ''),
+  ('a whole word in Chinese', '张伟 (Zhang Wei)', 'letter'),
+  ('Hebrew', 'דוד כהן', 'letter'),
+  ('Armenian', 'Արամ Խաչատրյան', 'letter'),
+  ('the em dash (not a hyphen look-alike in TR39)', 'Anne—Marie Tufice', 'char'),
+  ('a quotation mark', 'Ahmed "Mido" Ali', 'char'),
+  ('the Catalan middle dot (it is the picker separator)', 'Gal·la Puig', 'char'),
+  ('a fullwidth dollar is named as typed', U&'Ahmed \FE69x', 'char'),
+  ('a space before a dot ("د . أحمد")', 'د . أحمد علي', 'word'),
+  ('a space before a comma', 'Ahmed Ali , PhD', 'word'),
+  ('a hyphen standing alone', 'Hala Ali - Pharco', 'word'),
+  ('a slash standing alone', 'د / هيثم', 'word'),
+  ('a Cyrillic word that reads as a Latin one, next to Latin words ("Dr. Рара")', U&'Dr. \0420\0430\0440\0430 Tufice', 'latin'),
+  ('"Dr. Ѕаӏіһ": every letter reads as Latin (TR39 maps ӏ to i, so its skeleton is not "salih" — refused for what it is)', U&'Dr. \0405\0430\04CF\0456\04BB', 'latin'),
+  ('a whole name that reads as Latin ("Ѕаӏіһ Ѕаӏіһ")', U&'\0405\0430\04CF\0456\04BB \0405\0430\04CF\0456\04BB', 'latin'),
+  ('a Greek name that reads as Latin ("Αννα")', 'Αννα', 'latin'),
   ('invisible U+200B is removed: allowed', U&'Dr. Zeina Tufice\200B', ''),
   ('invisible U+1D173 is removed: allowed', U&'Dr. Zeina Tufice\+01D173', ''),
   ('invisible U+1BCA0 is removed: allowed', U&'Dr. Zeina\+01BCA0 Tufice', ''),
@@ -73,14 +97,39 @@ insert into r(name, ok, err) select 'real name allowed: ' || x.s, public.person_
        public.person_name_problem(public.person_name_norm(x.s)) from (values
   ('د. هالة الشامي'), ('Dr. Ahmed El-Sayed'), ('O''Brien'), ('O’Brien'), ('José Müller'), ('Ünal'), ('د. نرمين أبو زيدٍ'), ('مُحَمَّد عَبْدُ اللَّه'),
   ('Al-Hassan (Pharm.D.)'), ('Smith, John'), ('Мария Иванова'), ('Νίκος Παπαδόπουλος'), ('Dr. Ahmed محمد'), ('Eng. Omar Khaled'), ('هـالة'), ('Zoë'), ('Çelik Şahin'),
-  ('Nguyễn Văn An'), ('Łukasz Wójcik'), ('Søren Ærø'), ('Dr. Nermeen Abou-Zeid')) x(s);
+  ('Nguyễn Văn An'), ('Łukasz Wójcik'), ('Søren Ærø'), ('Dr. Nermeen Abou-Zeid'),
+  -- refused by 0038, allowed by 0039 (atk-legit-r1: Egyptian titles with "/", Latin titles on Greek/Cyrillic names, pasted
+  -- hyphens and apostrophes, the Arabic comma)
+  ('د/ هيثم دويدار'), ('م/ محمود عبد الرحمن'), ('ك/ أحمد سامي'), ('أ.د/ محمد السيد'), ('الدكتور/ أحمد'), ('Dr/ Ahmed'), ('Ph/ Mohamed Hassan'), ('Pharm/ Ahmed'),
+  ('Dr. Νίκος Παπαδόπουλος'), ('Dr. Мария Иванова'), ('Мария Иванова (Maria Ivanova)'), ('Вера Иванова'), ('Μαρία Κωνσταντίνου'), ('Νίκος Παπαδόπουλος (Nikos Papadopoulos)'), ('Dr. Иван'),
+  (U&'Anne\2011Marie Dubois'), (U&'Dr. Ahmed El\2013Sayed'), (U&'Ahmed El\2212Sayed'), ('د. أحمد علي، صيدلي'), (U&'\041C\0430\0440\02BC\044F\043D\0430 \0413\0440\0438\0433\043E\0440\02BC\0454\0432\0430'),
+  ('O‘Brien Kelly'), ('O´Brien Kelly'), ('O`Brien'), ('ʻAbd al-ʻAziz'), ('Mary-Jane O''Neil-Smith'), ('Ahmed Ali, M.B.B.Ch., Ph.D.'), ('مصطفىٰ كامل'), ('ريم السيد (صيدلانية)'),
+  ('Ahmed Ali (أحمد علي)'), ('پرویز گلشیری'), ('Ἀλέξανδρος Παπάς'), ('Đặng Thị Ngọc Hân')) x(s);
 insert into r(name, ok, err) select 'stored as typed: ' || x.s, public.person_name_norm(x.s) = x.want, public.person_name_norm(x.s) from (values
-  ('هـالة', 'هالة'), (U&'\FF24\FF52. Hala', 'Dr. Hala'), ('  José   Müller ', 'José Müller'), (U&'Jose\0301', 'José')) x(s, want);
+  ('هـالة', 'هالة'), (U&'\FF24\FF52. Hala', 'Dr. Hala'), ('  José   Müller ', 'José Müller'), (U&'Jose\0301', 'José'),
+  -- 0039: look-alikes of the punctuation a name holds are written as it; the apostrophe is stored as ’ (as the app shows it)
+  ('O''Brien', 'O’Brien'), (U&'Anne\2011Marie', 'Anne-Marie'), (U&'El\2013Sayed', 'El-Sayed'), ('O´Brien', 'O’Brien'), ('O‘Brien', 'O’Brien'),
+  (U&'\041C\0430\0440\02BC\044F\043D\0430', 'Мар’яна'), (U&'\FD3E\0635\064A\062F\0644\064A\FD3F', '(صيدلي)'), (U&'Ahmed\FF0FAli', 'Ahmed/Ali')) x(s, want);
+-- the refusal names what the person typed (not what normalising made of it), the word to fix, and the accepted alphabets
+insert into r(name, ok, err) select 'message: ' || x.s, public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) = x.want,
+       public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) from (values
+  (U&'Ahmed \FE69x', 'A name can only have letters, spaces and . - '' ( ) , / ، — remove “﹩” (U+FE69)'),
+  ('Anne—Marie', 'A name can only have letters, spaces and . - '' ( ) , / ، — remove “—” (U+2014)'),
+  ('张伟 (Zhang Wei)', 'Write a name in Latin, Arabic, Greek or Cyrillic letters — “张” (U+5F20) is not one of them'),
+  ('د . أحمد علي', '“.” is not a word — join it to the word next to it (remove the space)'),
+  (U&'Dr. R\0430na', U&'Write each word of a name in one alphabet — “R\0430na” mixes alphabets'),
+  (U&'Dr. \0405\0430\04CF\0456\04BB', U&'“\0405\0430\04CF\0456\04BB” can be read as a Latin word — write the name in Latin letters'),
+  (U&'Dr. Zeina X\FFFC', 'A name can only have letters, spaces and . - '' ( ) , / ، — remove “￼” (U+FFFC)'),
+  ('Dr. Rana 2', 'A name cannot contain numbers')) x(s, want);
 -- twins by skeleton: names that look the same have the same key; names that differ do not
 insert into r(name, ok, err) select 'same skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) = public.person_name_key(x.b), public.person_name_key(x.a) || ' / ' || public.person_name_key(x.b) from (values
   ('Dr. Rana Tufice', U&'Dr. R\0430na Tufice'), ('Ilya', 'llya'), ('O''Brien', 'O’Brien'), ('هالة', 'هالَة'), ('د. هالة الشامي', 'د. هالَة الشّامي'),
   ('Dr. Nermeen Tufece', 'DR. NERMEEN TUFECE'), ('Dr. Islam Tufice', 'Dr. lslam Tufice'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\200B'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\+01D173'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\FFFC'),
-  ('Paul', U&'\0420aul'), ('Rana', U&'R\0430na'), ('Omar', U&'\039Fmar')) x(a, b);
+  ('Paul', U&'\0420aul'), ('Rana', U&'R\0430na'), ('Omar', U&'\039Fmar'),
+  -- 0039: a whole word in another alphabet that copies a Latin word; Arabic letters that draw the same before another letter
+  -- (TR39 maps them: a qaf with one dot / feh, Farsi yeh / yeh / alef maksura, keheh / kaf, heh goal / heh, teh marbuta goal)
+  ('Dr. Papa Tufice', U&'Dr. \0420\0430\0440\0430 Tufice'), ('فاطمة', 'ڧاطمة'), ('علي', 'على'), ('علي', 'علی'),
+  ('كريم', 'کریم'), ('هالة', 'ہالۃ'), ('Anne-Marie', U&'Anne\2011Marie'), ('O’Brien', 'O´Brien')) x(a, b);
 insert into r(name, ok, err) select 'different skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) <> public.person_name_key(x.b), public.person_name_key(x.a) from (values
   ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Ibrahim', 'ibrahim'), ('أبو', 'ابو'), ('Ali', 'All'), ('Hala', 'Hana')) x(a, b);
 \o
