@@ -352,10 +352,8 @@
     'Email is required': 'البريد الإلكتروني مطلوب', 'Password is required': 'كلمة المرور مطلوبة', 'Name is required': 'الاسم مطلوب',
     /* the name rule (live: sign-up, Edit Profile, the database's refusal — 0038) */
     'A name cannot contain numbers': 'لا يمكن أن يحتوي الاسم على أرقام', 'A name can be up to 120 characters': 'الاسم 120 حرفًا على الأكثر',
-    'Each word of a name needs a letter': 'كل كلمة في الاسم تحتاج حرفًا واحدًا على الأقل',
-    'An accent or vowel mark must sit on a letter (at most 3 on one letter)': 'علامة التشكيل أو النبرة يجب أن تكون على حرف (3 علامات على الأكثر للحرف الواحد)',
-    'Write each word of a name in one alphabet (Latin or Arabic; Greek or Cyrillic only for the whole name)': 'اكتب كل كلمة من الاسم بأبجدية واحدة (لاتينية أو عربية؛ واليونانية أو السيريلية للاسم كله فقط)',
-    "This name cannot be used — a name can only have letters, spaces and . - ' ’ ( ) ,": "لا يمكن استخدام هذا الاسم — الاسم يقبل الحروف والمسافات و . - ' ’ ( ) , فقط",
+    'An accent or vowel mark must sit on a letter, once (at most 3 marks on one letter)': 'علامة التشكيل أو النبرة يجب أن تكون على حرف، مرة واحدة (3 علامات على الأكثر للحرف الواحد)',
+    "This name cannot be used — a name can only have letters, spaces and . - ' ( ) , / ،": "لا يمكن استخدام هذا الاسم — الاسم يقبل الحروف والمسافات و . - ' ( ) , / ، فقط",
     'Please update your name — it has characters Drugbox no longer allows, so other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه حروف لم يعد Drugbox يسمح بها، لذلك يرى الأعضاء الآخرون تحذيرًا بجانبه.',
     'Update my name': 'عدّل اسمي',
     'Password must be at least 8 characters': 'كلمة المرور يجب ألا تقل عن 8 أحرف', 'Title is required': 'العنوان مطلوب', 'Title required': 'العنوان مطلوب',
@@ -529,7 +527,11 @@
     [/^No member called (.+) — choose someone from the list$/, function (m) { return 'لا يوجد عضو باسم ' + m[1] + ' — اختر شخصًا من القائمة'; }],   /* ✎ New message (S-03) */
     [/^Several members are called (.+) — choose one from the list$/, function (m) { return 'أكثر من عضو باسم ' + m[1] + ' — اختر واحدًا من القائمة'; }],
     [/^Choose (.+) from the list to be sure who receives it$/, function (m) { return 'اختر ' + m[1] + ' من القائمة لتتأكد من المستلم'; }],
-    [/^A name can only have letters, spaces and \. - ' ’ \( \) , — remove “([^]*)” \((U\+[0-9A-F]+)\)$/, function (m) { return "الاسم يقبل الحروف والمسافات و . - ' ’ ( ) , فقط — احذف «" + m[1] + '» (' + m[2] + ')'; }],
+    [/^A name can only have letters, spaces and \. - ' \( \) , \/ ، — remove “([^]*)” \((U\+[0-9A-F]+)\)$/, function (m) { return "الاسم يقبل الحروف والمسافات و . - ' ( ) , / ، فقط — احذف «" + m[1] + '» (' + m[2] + ')'; }],
+    [/^Write a name in Latin, Arabic, Greek or Cyrillic letters — “([^]*)” \((U\+[0-9A-F]+)\) is not one of them$/, function (m) { return 'اكتب الاسم بحروف عربية أو لاتينية أو يونانية أو سيريلية — «' + m[1] + '» (' + m[2] + ') ليس منها'; }],
+    [/^“([^]*)” is not a word — join it to the word next to it \(remove the space\)$/, function (m) { return '«' + m[1] + '» ليست كلمة — ألصقها بالكلمة المجاورة (احذف المسافة)'; }],
+    [/^Write each word of a name in one alphabet — “([^]*)” mixes alphabets$/, function (m) { return 'اكتب كل كلمة من الاسم بأبجدية واحدة — «' + m[1] + '» تخلط بين أبجديات'; }],
+    [/^“([^]*)” can be read as a Latin word — write the name in Latin letters$/, function (m) { return '«' + m[1] + '» يمكن أن تُقرأ ككلمة لاتينية — اكتب الاسم بالحروف اللاتينية'; }],
     [/^🚫 Block (.+)$/, function (m) { return '🚫 حظر ' + m[1]; }], [/^✅ Unblock (.+)$/, function (m) { return '✅ إلغاء الحظر عن ' + m[1]; }],   /* the conversation menu (J-SOCIAL-40) */
     [/^Block (.+)\?$/, function (m) { return 'حظر ' + m[1] + '؟'; }], [/^(.+) blocked$/, function (m) { return 'تم حظر ' + m[1]; }], [/^(.+) unblocked$/, function (m) { return 'تم إلغاء الحظر عن ' + m[1]; }],
     [/^Notifications muted for (.+)$/, function (m) { return 'تم كتم إشعارات ' + m[1]; }], [/^Notifications on for (.+)$/, function (m) { return 'تم تشغيل إشعارات ' + m[1]; }],

@@ -81,6 +81,25 @@ def edit_own_profile(j):
         j.check(vals['ep-headline'] in t and 'صيدلانية' in t, "B does not see A's headline/bio")
         a_web = pb.locator('#content a[href*="pharco.example.org"]'); j.check(a_web.count() and 'noopener' in (a_web.first.get_attribute('rel') or ''), 'the website is not a safe link for B')
         j.check(re.search(r'Open to work|متاح للعمل', t), 'B sees no Open-to-work marker')
+    with j.step('A member whose name the name rule flagged (kept from before the rule: \'Dr. Flag "Mido"\') is told on her profile what to '
+                'change, saves her headline without renaming, and fixing the name lifts the flag (S-03)'):
+        if j.demo: j.skip('the name rule is the database\'s and the live app\'s')
+        c = j.person('Dr. Flag Keeper'); pc = c['page']; flagged = 'Dr. Flag "Mido" %s' % j.tag
+        j.sql("update public.profiles set name = $q$%s$q$ where id = '%s'" % (flagged, c['id']))      # a server write: kept and flagged
+        j.check(j.sql1("select name_needs_fix from public.profiles where id='%s'" % c['id']) == 't', 'precondition: the name is not flagged')
+        relogin(j, pc, c); own_profile(j, pc)
+        why = j.text(pc, '#content .dx-name-fix')
+        j.check(re.search(r'remove “"” \(U\+0022\)|احذف «"» \(U\+0022\)', why), 'the profile does not say which character to change: "%s"' % why[:160])
+        j.click(pc, r'Edit Profile|عدّل الملف|تعديل الملف', scope='#content .profile-info', what='Edit Profile')
+        j.check(re.search(r'U\+0022', j.text(pc, '.modal-bg #ep-err')), 'Edit Profile does not say under the name what to change')
+        pc.fill('#ep-headline', 'Flag headline %s' % j.tag); j.click(pc, r'Save Changes|Save|حفظ', scope='.modal-bg', what='Save Changes'); pc.wait_for_timeout(1200)
+        row = j.sql1("select concat_ws('|', name, headline, name_needs_fix) from public.profiles where id='%s'" % c['id'])
+        j.check(row == '%s|Flag headline %s|t' % (flagged, j.tag), 'saving the headline of a flagged member did not keep her name and save the headline: %s' % row[:160])
+        if pc.locator('.modal-bg #ep-name').count(): j.click(pc, r'^(Cancel|إلغاء|×)$', scope='.modal-bg', what='Cancel', exact=True)
+        j.click(pc, r'Edit Profile|عدّل الملف|تعديل الملف', scope='#content .profile-info', what='Edit Profile')
+        pc.fill('#ep-name', 'Dr. Flag Mido %s' % j.tag); j.click(pc, r'Save Changes|Save|حفظ', scope='.modal-bg', what='Save Changes'); pc.wait_for_timeout(1200)
+        j.check(j.sql1("select concat_ws('|', name, name_needs_fix) from public.profiles where id='%s'" % c['id']) == 'Dr. Flag Mido %s|f' % j.tag, 'fixing the name did not lift the flag')
+        own_profile(j, pc); j.check(not pc.locator('#content .dx-name-fix').count(), 'the "please update your name" notice stays after the name was fixed')
 
 @journey('J-SOCIAL-23')
 def photo_and_cover(j):

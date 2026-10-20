@@ -34,7 +34,7 @@
   function tel(s) { return String(s == null ? '' : s).replace(/[^0-9+\-() ]/g, '').trim(); }
   function hexOr(c, id) { return /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : colorFor(id); }
   /* the columns of a person the interface shows (embedded rows carry these, never phone / résumé fields) */
-  var PCOLS = 'id,name,headline,company,country,bio,avatar_url,role,verified,location,open_to_work,hiring,profile_views,followers_count,name_needs_fix';
+  var PCOLS = 'id,name,headline,company,country,bio,avatar_url,role,verified,location,open_to_work,hiring,profile_views,followers_count,name_needs_fix,name_key';
   /* a whole profile (opening someone's profile): every column members may read — phone is private (0036: column privileges, so
      select=* is refused; the signed-in member's own row, phone included, comes from my_profile()) */
   var PFULL = PCOLS + ',cover_url,website,certs,account_type,created_at,updated_at,experience,education,certifications,skills,languages,years_experience,desired_role,desired_type,remote_ok,available_since,intro_video,intents';
@@ -49,7 +49,7 @@
     /* the name rule (0038): the database's sentence is the app's (nmMessage), translated by i18n.js; sign-up's own API only says
        "Database error saving new user" when the sign-up trigger refuses the name */
     if (x && typeof x === 'object' && /^name:/.test(String(x.hint || ''))) return m;
-    if (/database error saving new user/i.test(m)) return 'This name cannot be used — a name can only have letters, spaces and . - \' ’ ( ) ,';
+    if (/database error saving new user/i.test(m)) return 'This name cannot be used — a name can only have letters, spaces and . - \' ( ) , / ،';
     if (/failed to fetch|networkerror|network request failed|load failed|err_internet/i.test(m) || navigator.onLine === false) return 'Connection problem — check your internet and try again';
     if (code === 'PGRST301' || code === 'PGRST303' || st === 401 || /jwt (expired|malformed)|invalid jwt|auth session missing/i.test(m)) return 'Your session ended — please sign in again';
     if (code === '23505' || /duplicate key/i.test(m)) return 'This already exists';
@@ -95,7 +95,8 @@
       location: txt(p.location), followers: p.followers_count || 0, openToWork: !!p.open_to_work, hiring: !!p.hiring, color: colorFor(p.id),
       profileViews: p.profile_views || '0', connections: '0',         /* '0', not 0: the approved sidebar shows sample numbers for a falsy value */
       intents: (p.intents && typeof p.intents === 'object') ? p.intents : {},
-      nameFix: !!p.name_needs_fix                                       /* my name breaks the name rule (0038): asked to update it */
+      nameFix: !!p.name_needs_fix,                                      /* my name breaks the name rule (0038/0039): asked to update it */
+      nameWhy: p.name_needs_fix ? nmMessage(p.name, nmProblem(nmNorm(p.name)) || 'char') : ''   /* …and told what to change */
     });
     clearSeeds();
     return window.ME;
@@ -117,7 +118,7 @@
     var name = ((document.getElementById('suName') || {}).value || '').trim(), email = ((document.getElementById('suEmail') || {}).value || '').trim(), pw = (document.getElementById('suPw') || {}).value || '';
     hide('suErr');
     if (!name) return show('suErr', 'Name is required'); if (!email) return show('suErr', 'Email is required'); if (pw.length < 8) return show('suErr', 'Password must be at least 8 characters');
-    var nn = nmNorm(name), np = nmProblem(nn); if (np) return show('suErr', nmMessage(nn, np));   /* the name rule of the database (0038), said before anything is sent */
+    var np = nmProblem(nmNorm(name)); if (np) return show('suErr', nmMessage(name, np));   /* the name rule of the database (0039), said before anything is sent — naming what was typed */
     busy(true); SIGNING = true;
     try { var co = ((document.getElementById('suCompany') || {}).value || '').trim(), ro = document.getElementById('suRole'), sp = ro && ro.selectedIndex < ro.options.length - 1 ? ro.value.trim() : '';   /* the last choice is "Other": no specialty */
       var r = await sb.auth.signUp({ email: email, password: pw, options: { data: { name: name, company: co, specialty: sp } } }); if (r.error) return show('suErr', friendly(r.error));
@@ -184,11 +185,12 @@
   window.saveProfile = async function () {
     if (!ME_UUID || typeof window.profileForm !== 'function') return oSaveProfile.apply(this, arguments);
     if (PSAVE) return; var f = window.profileForm(); if (!f) return;
-    /* the name rule (0038), said next to the name like the approved form's own checks; a name the rule flagged may be kept while
-       the other fields are saved (the database keeps it too) */
-    var nn = nmNorm(f.name), np = nmProblem(nn);
-    if (np && !(window.ME.nameFix && nn === nmNorm(window.ME.name))) {
-      var ne = document.getElementById('ep-name'), er = document.getElementById('ep-err'), msg = nmMessage(nn, np);
+    /* the name rule (0039), said next to the name like the approved form's own checks. The name is sent only when it was changed:
+       the field shows it as the app shows names (" < > ` \ ' drawn as look-alikes), so an unchanged name is never written back —
+       a member whose name the rule flagged saves the other fields and keeps it (the database keeps it too) */
+    var nameChanged = nmNorm(f.name) !== nmNorm(window.ME.name), np = nameChanged ? nmProblem(nmNorm(f.name)) : '';
+    if (np) {
+      var ne = document.getElementById('ep-name'), er = document.getElementById('ep-err'), msg = nmMessage(f.name, np);
       if (ne) { ne.setAttribute('aria-invalid', 'true'); ne.setAttribute('aria-describedby', 'ep-err'); if (er) ne.parentNode.appendChild(er); ne.focus(); }
       if (er) { er.textContent = msg; er.style.display = 'block'; } else if (typeof window.toast === 'function') window.toast(msg);
       return;
@@ -196,11 +198,13 @@
     var btn = document.querySelector('.modal-bg [onclick^="saveProfile"]'); PSAVE = true; if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
     try {
       var nul = function (v) { return v ? v : null; };
-      var r = await sb.from('profiles').update({ name: f.name, headline: nul(f.headline), company: nul(f.company), location: nul(f.location), website: nul(f.web),
-        phone: nul(f.phone), certs: nul(f.certs), bio: nul(f.bio), open_to_work: !!f.openToWork, updated_at: new Date().toISOString() })
+      var row = { headline: nul(f.headline), company: nul(f.company), location: nul(f.location), website: nul(f.web),
+        phone: nul(f.phone), certs: nul(f.certs), bio: nul(f.bio), open_to_work: !!f.openToWork, updated_at: new Date().toISOString() };
+      if (nameChanged) row.name = f.name;
+      var r = await sb.from('profiles').update(row)
         .eq('id', ME_UUID).select('name,headline,company,location,website,certs,bio,open_to_work,name_needs_fix').single();   /* phone is never read back through the API (0036) */
       if (r.error) throw r.error;
-      var p = r.data; p.phone = f.phone; window.ME.nameFix = !!p.name_needs_fix;
+      var p = r.data; p.phone = f.phone; window.ME.nameFix = !!p.name_needs_fix; window.ME.nameWhy = p.name_needs_fix ? nmMessage(p.name, nmProblem(nmNorm(p.name)) || 'char') : '';
       oSaveProfile({ name: txt(p.name), headline: txt(p.headline), company: txt(p.company), location: txt(p.location), web: safeUrl(p.website), phone: tel(p.phone),
         certs: txt(p.certs), bio: prose(p.bio), openToWork: !!p.open_to_work });
     } catch (e) { toastErr(e); }
@@ -218,6 +222,7 @@
        never blanks what the profile row brought (phone stays private: it is never put on another person) */
     if ('website' in p) { u.web = safeUrl(p.website); u.certs = txt(p.certs); u.full = true; if (p.intents && typeof p.intents === 'object') u.intents = p.intents; }
     if ('name_needs_fix' in p) u.nameFix = !!p.name_needs_fix;                                       /* a name that breaks the rule (0038) */
+    if (p.name_key) u.nameKey = p.name_key;                                                          /* its skeleton, as the database has it */
     return u; }
   function putUser(p) { if (!p) return; if (p.id === ME_UUID) return; var u = userFrom(p), list = window.USERS, i = list.findIndex(function (x) { return x.id === u.id; }); if (i < 0) list.push(u); else Object.assign(list[i], u); }
   /* mine: Map post id → my reaction kind; kinds: post id → {kind: n} (post_reaction_summary, 0028) */
@@ -589,7 +594,7 @@
   /* ═══════════════ B4 — messages + live updates ═══════════════
      The approved messages page is fixed markup; its own first thread row is the template for real conversations,
      and bubbles use the page's own markup. Demo filler (seeded messages, simulated replies) never runs in the live app. */
-  var MX = { tpl: null, convs: [], open: null, lastMsg: 0, lastNotif: 0, timer: null, rt: false, to: null };
+  var MX = { tpl: null, convs: [], open: null, lastMsg: 0, lastNotif: 0, timer: null, rt: false, to: null, twinN: {}, twinAsked: {} };
   var MXP = { mute: {}, block: {}, at: 0 };                              /* my muted and blocked partners (uuid → 1); muted ones are not counted */
   function shortAgo(ts) { var s = (Date.now() - new Date(ts).getTime()) / 1000; if (s < 60) return 'now'; if (s < 3600) return Math.floor(s / 60) + 'm'; if (s < 86400) return Math.floor(s / 3600) + 'h'; return Math.floor(s / 86400) + 'd'; }
   function rowTheirs(u, text, time, att) { return '<div class="msg-row mx-theirs"><div class="av" style="background:' + u.color + ';width:28px;height:28px;font-size:10px;flex-shrink:0">' + esc2(u.initials) + '</div><div><div class="mx-bubble mx-theirs">' + attHtml(att) + esc2(text) + '</div><div class="mx-bubble-time">' + time + '</div></div></div>'; }
@@ -621,18 +626,33 @@
      else the city, else a short handle from the id — in the list and under the name in the chat header. '' when no other
      conversation or known member shares the name. */
   function mxFacts(id) { var u = nmUser(id); return u ? [String(u.headline || '').split('|')[0].trim(), u.company, u.location].map(nmFact).filter(Boolean) : []; }
+  function ukey(x) { return x.nameKey || nmKey(x.name); }                    /* the database's skeleton when known (the shown name is escaped) */
   function mxTwinFact(id) {
-    var u = nmUser(id), k = u && nmKey(u.name); if (!k) return '';
-    var twins = (window.USERS || []).filter(function (x) { return x.id !== u.id && x.id !== aid(ME_UUID) && nmKey(x.name) === k; });   /* same skeleton: looks the same */
-    if (!twins.length && !u.nameFix) return '';                                                                                       /* a name that breaks the rule is told apart even alone */
-    var mine = mxFacts(id), co = nmFact(u.company), others = twins.map(function (x) { return x.id; });
-    if (co && !twins.some(function (x) { return nmKey(x.company) === nmKey(co); })) return co;
-    var f = mine.find(function (v) { return !others.some(function (o) { return mxFacts(uuidOf(o)).some(function (w) { return nmKey(w) === nmKey(v); }); }); });
-    return f || nmHandle(uuidOf(u.id) || '');
+    var u = nmUser(id), k = u && ukey(u); if (!k) return '';
+    var twins = (window.USERS || []).filter(function (x) { return x.id !== u.id && x.id !== aid(ME_UUID) && ukey(x) === k; });   /* same skeleton: looks the same */
+    var srv = MX.twinN[uuidOf(u.id)] || 0;                  /* how many other members share it — the database counts them all, loaded here or not (0039) */
+    if (!twins.length && !srv && !u.nameFix) return '';                                                                              /* a name that breaks the rule is told apart even alone */
+    var mine = mxFacts(id), co = nmFact(u.company), others = twins.map(function (x) { return x.id; }), f;
+    if (co && !twins.some(function (x) { return nmKey(x.company) === nmKey(co); })) f = co;
+    else f = mine.find(function (v) { return !others.some(function (o) { return mxFacts(uuidOf(o)).some(function (w) { return nmKey(w) === nmKey(v); }); }); });
+    if (!f) return nmHandle(uuidOf(u.id) || '');
+    return srv > twins.length ? f + ' · ' + nmHandle(uuidOf(u.id) || '') : f;   /* some look-alikes are not known here: the handle as well */
   }
   window.dxMxPartner = function () { return ME_UUID && MX.open ? MX.open : 0; };   /* links.js: 👤 / 📞 act on the open conversation's member, never a name look-up */
   async function loadConvs() { var q = await Promise.all([sb.rpc('my_conversations', { p_limit: 50 }), loadPrefs().catch(function (e) { console.error(e); })]), r = q[0]; if (r.error) throw r.error;
-    MX.convs = r.data || []; MX.convs.forEach(function (c) { putUser({ id: c.partner, name: c.name, headline: c.headline, verified: c.verified, avatar_url: c.avatar_url, company: c.company, location: c.location, name_needs_fix: c.name_needs_fix }); }); msgBadge(); return MX.convs; }
+    MX.convs = r.data || []; MX.convs.forEach(function (c) { MX.twinN[c.partner] = c.name_twins || 0; putUser({ id: c.partner, name: c.name, headline: c.headline, verified: c.verified, avatar_url: c.avatar_url, company: c.company, location: c.location, name_needs_fix: c.name_needs_fix, name_key: c.name_key }); });
+    await loadTwins(); msgBadge(); return MX.convs; }
+  /* S-03: a partner whose name others share (name_twins, 0039) is told apart from all of them — also from members this browser has
+     never loaded (someone named like a well-known member writing first): those members are fetched once, for their facts */
+  async function loadTwins() {
+    var me = aid(ME_UUID), keys = MX.convs.filter(function (c) {
+      if (!c.name_twins || !c.name_key || MX.twinAsked[c.name_key] === c.name_twins) return false;
+      var known = (window.USERS || []).filter(function (x) { return ukey(x) === c.name_key && x.id !== aid(c.partner) && x.id !== me; }).length;
+      return known < c.name_twins; }).map(function (c) { MX.twinAsked[c.name_key] = c.name_twins; return c.name_key; });
+    if (!keys.length) return;
+    try { var t = await sb.from('profiles').select(PCOLS).in('name_key', keys.slice(0, 20)).neq('id', ME_UUID).limit(200); if (t.error) throw t.error; (t.data || []).forEach(putUser); }
+    catch (e) { console.error(e); }
+  }
   /* the Messages count everywhere it shows — top bar, phone bar, sidebar (the sidebar is rebuilt from SB_NAV) — never the
      demo's fixed "5" (J-SOCIAL-38) */
   function msgBadge() { var n = MX.convs.reduce(function (t, c) { return t + (MXP.mute[c.partner] ? 0 : (c.unread || 0)); }, 0);
@@ -655,7 +675,7 @@
     /* the header under the name says who this is (headline · company · city) — there is no presence in the live app, so never
        "Last seen recently"; two members with the same name are told apart here too (S-03) */
     var hu = nmUser(partner), st = document.querySelector('.chat-head .ch-status');
-    if (st) { var tf = mxTwinFact(partner), hf = mxFacts(partner); st.textContent = hf.concat(tf && tf.charAt(0) === '#' ? [tf] : []).join(' · '); }
+    if (st) { var tf = mxTwinFact(partner), hf = mxFacts(partner); st.textContent = hf.concat(String(tf).split(' · ').filter(function (x) { return x.charAt(0) === '#'; })).join(' · '); }
     var hn = document.querySelector('.chat-head .ch-name'), hc = MX.convs.find(function (x) { return x.partner === partner; });   /* the name only: the list's "· company" is said on the line below */
     if (hn && hu) hn.innerHTML = esc2(hu.name) + ((hc ? hc.verified : hu.verified) ? ' <span style="color:#1a56db;font-size:11px">✓</span>' : '');
     var r = await sb.rpc('conversation_messages', { p_partner: partner, p_limit: 50 }); if (r.error) { toastErr(r.error); return; }
@@ -809,7 +829,7 @@
     if (!p || !p.id || p.id === ME_UUID) return; var o = NM.people[p.id] || {};
     function pick(k, ok) { return p[k] != null ? String(p[k]) : (o[ok] || ''); }
     var raw = String(p.name || o.raw || 'Member').trim(), u = nmUser(p.id);
-    NM.people[p.id] = { id: p.id, raw: raw, name: nmNorm(txt(raw)) || 'Member', headline: nmFact(txt(pick('headline', 'headline'))), company: nmFact(txt(pick('company', 'company'))), city: nmFact(txt(pick('location', 'city'))),
+    NM.people[p.id] = { id: p.id, raw: raw, key: p.name_key || (p.name ? nmKey(raw) : o.key || nmKey(raw)), name: nmNorm(txt(raw)) || 'Member', headline: nmFact(txt(pick('headline', 'headline'))), company: nmFact(txt(pick('company', 'company'))), city: nmFact(txt(pick('location', 'city'))),
       fix: 'name_needs_fix' in p ? !!p.name_needs_fix : 'fix' in p ? !!p.fix : o.fix != null ? o.fix : !!(u && u.nameFix) };   /* a name that breaks the rule (0038): never sent to by name alone */
   }
   function nmUser(id) { var a = aid(id); return (window.USERS || []).find(function (u) { return u.id === a; }) || null; }   /* never U(): it falls back to me */
@@ -820,7 +840,7 @@
         odd = ar ? '⚠️ هذا الاسم فيه حروف لا يسمح بها Drugbox — تأكد أنه الشخص الصحيح' : '⚠️ This name has characters Drugbox does not allow — make sure it is the right person';
     function T(x) { return ar && x && window.dxT ? window.dxT(x) : x; }   /* a role from the sign-up list reads in the interface language */
     var all = Object.keys(NM.people).map(function (k) { return NM.people[k]; }), groups = {}; NM.map = {}; NM.ci = {};
-    all.forEach(function (p) { p.conn = nmConn(p.id); p.twin = false; var k = nmKey(p.name); (groups[k] = groups[k] || []).push(p); });
+    all.forEach(function (p) { p.conn = nmConn(p.id); p.twin = false; var k = p.key || nmKey(p.name); (groups[k] = groups[k] || []).push(p); });
     /* members whose names have the same skeleton are one group (they look the same); a member whose name breaks the rule is
        always told apart, even alone */
     Object.keys(groups).forEach(function (k) {
@@ -866,14 +886,14 @@
   async function nmResolve(to) {
     var key = nmTyped(to), ci = nmTypedCI(to), was = nmPick(key, ci), p = was && NM.people[was], name = p ? p.raw : nmNorm(to.split(' · ')[0]), sk = nmKey(name);
     if (!name || name.length > 200) return { err: 'No member called ' + to + ' — choose someone from the list' };
-    var r = await sb.from('profiles').select(PCOLS + ',name_key').or('name_key.eq.' + pgq(sk) + ',name.ilike.' + pgq(nmLike(name))).neq('id', ME_UUID).limit(50); if (r.error) throw r.error;
+    var r = await sb.from('profiles').select(PCOLS).or('name_key.eq.' + pgq(sk) + ',name.ilike.' + pgq(nmLike(name))).neq('id', ME_UUID).limit(50); if (r.error) throw r.error;
     var rows = r.data || [], keys = rows.map(function (x) { return x.name_key; }).filter(function (k, i, a) { return k && k !== sk && a.indexOf(k) === i; });
     if (keys.length) {   /* a name typed in another case: also every member who looks like the ones it found */
       var r2 = await sb.from('profiles').select(PCOLS).in('name_key', keys.slice(0, 10)).neq('id', ME_UUID).limit(50); if (r2.error) throw r2.error; rows = rows.concat(r2.data || []); }
     rows.forEach(function (x) { putUser(x); nmAdd(x); });
     nmOptions(); var id = nmPick(key, ci);
     if (id && (!was || id === was)) return { id: id };
-    var same = Object.keys(NM.people).filter(function (k) { return nmKey(NM.people[k].name) === sk || nmTypedCI(NM.people[k].name) === nmTypedCI(name); });
+    var same = Object.keys(NM.people).filter(function (k) { return (NM.people[k].key || nmKey(NM.people[k].name)) === sk || nmTypedCI(NM.people[k].name) === nmTypedCI(name); });
     nmPaint();
     if (same.length > 1) return { err: 'Several members are called ' + txt(name) + ' — choose one from the list' };
     if (same.length === 1 && NM.people[same[0]].fix) return { err: 'Choose ' + txt(name) + ' from the list to be sure who receives it' };
@@ -1002,7 +1022,7 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden && ME_UUID) { MX.idle = 0; tick().catch(function () {}); } });
   var hydrateB3 = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateB3(uid); startLive().catch(function (e) { console.error(e); }); return me; };
-  onReset(function () { clearTimeout(MX.timer); try { sb.removeAllChannels && sb.removeAllChannels(); } catch (e) {} MX.convs = []; MX.open = null; MX.to = null; MX.lastMsg = 0; MX.lastNotif = 0; MX.rt = false; MX.idle = 0; SHOWN = {}; msgBadge(); });
+  onReset(function () { clearTimeout(MX.timer); try { sb.removeAllChannels && sb.removeAllChannels(); } catch (e) {} MX.convs = []; MX.open = null; MX.to = null; MX.lastMsg = 0; MX.lastNotif = 0; MX.rt = false; MX.idle = 0; MX.twinN = {}; MX.twinAsked = {}; SHOWN = {}; msgBadge(); });
   /* messages written outside the Messages page — the chat dock and the listing / job buttons — are real messages (F-22).
      The person is the one whose card opened the window (the last click outside a window or the dock), or the one real member
      with the name the interface shows; never a guess between two people with the same name. */
@@ -3008,10 +3028,21 @@
     var d = document.createElement('div'); d.className = 'dx-name-fix'; d.setAttribute('role', 'status');
     d.style.cssText = 'margin:10px 0 0;padding:10px 12px;border:1px solid #f59e0b;background:#fffbeb;color:#92400e;border-radius:9px;font-size:13px;line-height:1.5';
     d.innerHTML = '<span>Please update your name — it has characters Drugbox no longer allows, so other members see a warning next to it.</span> '
+      + (window.ME.nameWhy ? '<span class="dx-name-why" style="display:block;margin-top:4px;font-weight:600">' + esc2(window.ME.nameWhy) + '</span>' : '')   /* what to change (0039) */
       + '<button type="button" class="btn-ghost" style="margin-top:6px" onclick="showEditProfile()">Update my name</button>';
     info.appendChild(d);
   }
   if (window.dxCore) window.dxCore.onRender('live-name-fix', nameFixNote);
+  /* Edit Profile opened by a member whose name the rule flagged: what to change is said under the name at once, as a refusal is */
+  var oShowEdit = window.showEditProfile;
+  if (typeof oShowEdit === 'function') window.showEditProfile = function () {
+    var r = oShowEdit.apply(this, arguments);
+    if (ME_UUID && window.ME.nameFix && window.ME.nameWhy) {
+      var ne = document.getElementById('ep-name'), er = document.getElementById('ep-err');
+      if (ne && er) { ne.setAttribute('aria-describedby', 'ep-err'); ne.parentNode.appendChild(er); er.textContent = window.ME.nameWhy; er.style.display = 'block'; }
+    }
+    return r;
+  };
   /* "People also viewed" listed the first members loaded, not people who viewed this profile: the live app records no co-views yet,
      so the box is left out rather than invented (J-SOCIAL-49) */
   function hideAlsoViewed() {
