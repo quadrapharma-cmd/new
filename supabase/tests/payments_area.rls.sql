@@ -244,6 +244,15 @@ select pg_temp.step('Drugbox finds no transfer and rejects it', $$select public.
 select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
 select pg_temp.ok('a rejected transfer stays in My payments (as did not go through)', $$exists (select 1 from jsonb_array_elements(public.my_payments(null)) e where (e->>'id')::bigint = pg_temp.id('oi9') and e->>'status' = 'failed')$$);
 
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
+select pg_temp.step('a Fawry order whose answer from Fawry was lost (no reference on record)', $$with x as (select (public.create_order('boost', 'fawry', null, pg_temp.id('le'))).id) insert into ids select 'of7', id::text from x$$);
+select pg_temp.as_server();
+select pg_temp.ok('a signed Fawry notice for it is still not paid (F-115)', $$public.confirm_payment('fawry', (select merchant_ref from public.payment_orders where id = pg_temp.id('of7')), 'FR-LOST-7', 165300, 'EGP', '{}') = 'reference mismatch'
+  and (select status = 'pending' and provider_ref is null from public.payment_orders where id = pg_temp.id('of7'))$$);
+select pg_temp.ok('…but Drugbox is told once, to reconcile and refund', $$(select count(*) from public.notifications where user_id = 'e4444444-4444-4444-4444-444444444444' and message like 'Fawry payment received for ' || (select merchant_ref from public.payment_orders where id = pg_temp.id('of7')) || ' %') = 1$$);
+select pg_temp.step('Fawry sends it again', $$select public.confirm_payment('fawry', (select merchant_ref from public.payment_orders where id = pg_temp.id('of7')), 'FR-LOST-7', 165300, 'EGP', '{}')$$);
+select pg_temp.ok('…still once', $$(select count(*) from public.notifications where message like 'Fawry payment received for ' || (select merchant_ref from public.payment_orders where id = pg_temp.id('of7')) || ' %' and user_id = 'e4444444-4444-4444-4444-444444444444') = 1$$);
+
 -- ══ report ═══════════════════════════════════════════════════════════════════════════════════
 select pg_temp.as_server();
 select :'LAST_ERROR_SQLSTATE' = '00000' as clean, :'LAST_ERROR_MESSAGE' as lastmsg \gset

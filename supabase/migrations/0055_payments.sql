@@ -248,6 +248,13 @@ begin
     return 'unknown provider';
   end if;
   if not found or p_order_key is null or p_order_key = '' then return 'unknown order'; end if;
+  if p_provider = 'fawry' and o.provider_ref is null and coalesce(p_provider_ref, '') <> ''
+     and not exists (select 1 from public.notifications n where n.type = 'payment' and n.message like 'Fawry payment received for ' || o.merchant_ref || ' %') then
+    -- a signed Fawry payment for one of our orders that never recorded its reference (Fawry's answer was lost): never paid or
+    -- activated from here (F-115), and the order stays untouched — but Drugbox is told, so the money is reconciled and refunded
+    insert into public.notifications (user_id, type, message)
+    select p.id, 'payment', 'Fawry payment received for ' || o.merchant_ref || ' (reference ' || left(p_provider_ref, 40) || ') without a reference on record — reconcile in Fawry and refund' from public.profiles p where p.role = 'admin';
+  end if;
   if p_provider = 'fawry' and (o.provider_ref is null or p_provider_ref is distinct from o.provider_ref) then return 'reference mismatch'; end if;
   if o.status = 'paid' then return 'already paid'; end if;                      -- providers retry; never activate twice
   if o.status = 'cancelled' then                                                -- the buyer cancelled it: never activated; if money arrived, Drugbox refunds

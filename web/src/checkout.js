@@ -89,7 +89,7 @@
   function boostMethods(plan) {
     var ov = document.getElementById('boostModalOverlay'), btn = document.getElementById('bmPayBtn'); if (!btn || ov.querySelector('.dx-pay')) return;
     btn.insertAdjacentHTML('beforebegin', (window.dxPay.live ? '<label class="dx-pay-l">Listing to promote<select id="dxPayListing"><option value="">Loading your listings…</option></select></label>' : '') + methods('dxPayBoost'));
-    if (window.dxPay.live) window.dxPay.listings().then(function (l) { var s = document.getElementById('dxPayListing'); if (s) s.innerHTML = l.length ? l.map(function (x) { return '<option value="' + x.id + '">' + esc(x.name) + '</option>'; }).join('') : '<option value="">Post a listing first</option>'; });
+    if (window.dxPay.live) window.dxPay.listings().then(function (l) { var s = document.getElementById('dxPayListing'); if (s) s.innerHTML = l.length ? l.map(function (x) { return '<option value="' + x.id + '">' + esc(x.name) + '</option>'; }).join('') : '<option value="">No active listing to promote — publish or renew one first</option>'; });
     /* VIP: 3 included boosts a month — offered before paying (B-16) */
     var slug = acting(); if (plan === 'featured' || !slug || !window.dxPay.included) return;
     window.dxPay.included(slug).then(function (n) {
