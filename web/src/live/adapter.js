@@ -2454,6 +2454,13 @@
     return hookRep ? hookRep(k, v) : undefined;
   };
   onReset(function () { REP.list = []; });
+  /* AREA community (J-COMMUNITY-43): the workspace's Reports tab reads the reports again (at most every 3 s), so a report sent
+     while the owner's page was open shows without a reload */
+  document.addEventListener('click', function (e) {
+    if (!ME_UUID || !e.target.closest || !e.target.closest('[data-wtab="reports"]') || Date.now() - (REP.at || 0) < 3000) return; REP.at = Date.now();
+    var was = REP.list.map(function (r) { return r._id + r.status; }).join();
+    loadReports().then(function () { if (REP.list.map(function (r) { return r._id + r.status; }).join() !== was) { window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies(); } }).catch(function () {});
+  }, true);
   var hydrateRep = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateRep(uid); loadReports().catch(function (e) { console.error(e); }); return me; };
 

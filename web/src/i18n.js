@@ -830,14 +830,17 @@
     if (wf && ps && ps.nodeType === 1) { var num = (ps.textContent || '').trim(); if (/^[\d,.]+K?$/i.test(num)) return put(v, k, plural(num, wf)); }
     for (var i = 0; p && i < CTX.length; i++) if (CTX[i][1][k] && p.closest(CTX[i][0])) return put(v, k, CTX[i][1][k]);
     return tr(v); }
-  window.dxI18nAdopt = function (n) { if (!n || !isAr()) return; var v = n.nodeValue, t = trAt(n, v); if (t !== v) { ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else { ORIG.delete(n); LAST.delete(n); } };
+  /* ===== AREA community: i18n — an <option> without a value keeps its English value when its label is translated (the app and
+     the database read the value: "Report wrong information" sent Arabic section names that the database refuses) ===== */
+  function keepVal(n, v) { var p = n.parentElement; if (p && p.tagName === 'OPTION' && !p.hasAttribute('value')) p.setAttribute('value', v.trim()); }
+  window.dxI18nAdopt = function (n) { if (!n || !isAr()) return; var v = n.nodeValue, t = trAt(n, v); if (t !== v) { keepVal(n, v); ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else { ORIG.delete(n); LAST.delete(n); } };
   window.dxI18nAttrs = function (el) { if (el && isAr()) walk(el); };   /* attributes a layer set after the page was translated (tooltips) */
   function walk(root) {
     if (!root || !isAr()) return;
     var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { var p = n.parentElement; return !p || p.closest(SKIP) || p.matches(SKIP_SELF) || !/[A-Za-z]/.test(n.nodeValue) ? 2 : 1; } });
     var list = []; while (w.nextNode()) list.push(w.currentNode);
     list.forEach(function (n) { var v = n.nodeValue; if (LAST.get(n) === v) return;   /* already our translation */
-      var t = trAt(n, v); if (t !== v) { ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else if (ORIG.has(n)) { ORIG.delete(n); LAST.delete(n); } });   /* a new value from the app becomes the new original */
+      var t = trAt(n, v); if (t !== v) { keepVal(n, v); ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else if (ORIG.has(n)) { ORIG.delete(n); LAST.delete(n); } });   /* a new value from the app becomes the new original */
     var withAttr = root.querySelectorAll ? Array.prototype.slice.call(root.querySelectorAll('[placeholder],[title],[aria-label]')) : []; if (root.matches && root.matches('[placeholder],[title],[aria-label]')) withAttr.push(root);
     withAttr.forEach(function (el) {
       if (el.closest('[data-noi18n]')) return;

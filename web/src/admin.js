@@ -256,7 +256,7 @@
     'Reason *': 'السبب *', 'e.g. Fake profile — impersonates a company employee': 'مثال: حساب مزيّف — ينتحل صفة موظف في شركة', 'Remove this post?': 'حذف هذا المنشور؟',
     'It disappears for everyone. The author is told the reason. You can restore it below.': 'سيختفي عند الجميع. يُبلَّغ الكاتب بالسبب. ويمكنك استعادته من الأسفل.', 'Remove post': 'حذف المنشور',
     'Post removed — its author is told': 'تم حذف المنشور — وأُبلغ كاتبه', 'Post restored': 'تمت استعادة المنشور', 'Badge removed': 'أُزيلت الشارة', 'Enter ticker text': 'اكتب نص الشريط',
-    '⛔ Your account is suspended': '⛔ حسابك موقوف', 'Drugbox suspended this account. You can still read, but you cannot post, comment, message, connect or list anything.': 'أوقفت Drugbox هذا الحساب. يمكنك القراءة، لكن لا يمكنك النشر أو التعليق أو المراسلة أو التواصل أو نشر أي إعلان.',
+    '⛔ Your account is suspended': '⛔ حسابك موقوف', 'Your account is suspended': 'حسابك موقوف', 'Drugbox suspended this account. You can still read, but you cannot post, comment, message, connect or list anything.': 'أوقفت Drugbox هذا الحساب. يمكنك القراءة، لكن لا يمكنك النشر أو التعليق أو المراسلة أو التواصل أو نشر أي إعلان.',
     'If you think this is a mistake, write to support@drugbox.app.': 'إذا كنت ترى أن هذا خطأ، راسل support@drugbox.app.',
     '🚩 My reports': '🚩 بلاغاتي', 'Your claim is under review — Drugbox checks it and tells you within 2 working days': 'مطالبتك قيد المراجعة — تتحقق منها Drugbox وتبلغك خلال يومي عمل', 'Suggested:': 'المقترح:', '🟡 Open': '🟡 مفتوح', '✅ Corrected': '✅ تم التصحيح', '⚪ Checked — no change': '⚪ تم الفحص — بلا تغيير', 'You have not reported anything yet.': 'لم تبلّغ عن شيء بعد.',
     /* Review (0063) */

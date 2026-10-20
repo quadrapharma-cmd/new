@@ -208,7 +208,7 @@ def check_certificates(j):
         c1 = seed_cert(j, o['co']['id'], sid, 'WHO-GMP %s' % t, checked=False); c2 = seed_cert(j, o['co']['id'], sid, 'ISO 9001 %s' % t, checked=False)
         a = admin_person(j); ap = a['page']; n1, n2, name = 'WHO-GMP %s' % t, 'ISO 9001 %s' % t, o['co']['name']
     else:
-        ap = j.demo_signin(j.new_page()); n1, n2, name = 'ISO 22000', 'Halal', 'Sinai Herbal Extracts'
+        ap = j.demo_signin(j.new_page()); n1, n2, name = 'ISO 22000', 'حلال' if j.ar else 'Halal', 'Sinai Herbal Extracts'   # the sample certificate's approved Arabic name
     with j.step('Admin → Review → Site certificates: unchecked, unexpired certificates with company, site, name, expiry; the badge count matches'):
         txt = admin_review(j, ap, 'certs'); j.check(n1 in txt and n2 in txt and name in txt, 'the certificates are not in the queue')
         badge = num(ap.evaluate("((document.querySelectorAll('.dx-mod-tab')[2]||{}).innerText||'')"))
@@ -326,10 +326,10 @@ def decision_notifications(j):
         txt = notifs(j, pg)
         if j.live:
             j.check(notif_rows(j, u['id']) == 2, '%d notifications for 2 decisions' % notif_rows(j, u['id']))
-            j.check(re.search(r'approved|قبول', txt) and re.search(r'invited|دعا', txt), 'the decision notifications are not human sentences: %s' % txt[:200])
+            j.check(re.search(r'approved|قبول|وافق', txt) and re.search(r'invited|دعا', txt), 'the decision notifications are not human sentences: %s' % txt[:200])
     with j.step('Click each: it opens the group decided on (not just the notification list)'):
         if j.demo: j.skip('the decisions exist only in live')
-        for pat, g in ((r'approved|قبول', 'Decision Group %s' % t), (r'invited|دعا', 'Invited Group %s' % t)):
+        for pat, g in ((r'approved|قبول|وافق', 'Decision Group %s' % t), (r'invited|دعا', 'Invited Group %s' % t)):
             open_notif(j, pg, pat, pat.split('|')[0])
             j.check(gd_open(pg) and gd_title(pg) == g, "the '%s' notification does not open the group (page %s)" % (pat.split('|')[0], pg.evaluate("document.body.getAttribute('data-page')")))
     with j.step('Mark all read; reload: the badge is 0 and stays read'):
