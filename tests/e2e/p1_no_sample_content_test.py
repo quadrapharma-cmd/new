@@ -87,6 +87,7 @@ def main():
         host = pg.evaluate('location.host')
         T("every page's footer names the site the app is served from, not the demo's address (drugbox-v3.vercel.app)",
           len(feet) >= 5 and all(host in f and 'vercel' not in f for f in feet.values()), feet)
+        T('the Company Directory page ends with the footer, as the approved page does (B-24)', 'companies' in feet, sorted(feet))
         # Home: no stock faces (members' own photos only), no empty TODAY card
         go('feed')
         faces = pg.evaluate("[...document.querySelectorAll('#content .dg-faces-row img')].map(e=>e.src)")

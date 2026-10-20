@@ -48,7 +48,7 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('U+111D0 SHARADA DIGIT ZERO', U&'Dr. Hala Tufice \+0111D0 Pharco Tufice', 'digit'),
   ('U+2218 RING OPERATOR ∘', 'Dr. Hala Tufice ∘ Pharco Tufice', 'char'),
   ('U+25AA BLACK SMALL SQUARE ▪', 'Dr. Hala Tufice ▪ Pharco Tufice', 'char'),
-  ('U+FFFC + U+10C9 ("￼ႉ")', U&'Dr. Hala Tufice \FFFC\10C9 Pharco Tufice', 'char'),
+  ('U+FFFC + U+1089 MYANMAR SIGN SHAN TONE-5 ("￼ႉ")', U&'Dr. Hala Tufice \FFFC\1089 Pharco Tufice', 'char'),
   ('U+FFFC OBJECT REPLACEMENT at the end ("Dr. Zeina X￼")', U&'Dr. Zeina Tufice\FFFC', 'char'),
   ('U+FFFD REPLACEMENT CHARACTER', U&'Dr. Zeina Tufice\FFFD', 'char'),
   ('Cyrillic а in "Dr. Rаna"', U&'Dr. R\0430na Tufice', 'script'),

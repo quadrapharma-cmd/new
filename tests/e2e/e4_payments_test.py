@@ -120,12 +120,12 @@ T('orders cannot be written directly (no price or status tampering)', s < 500 an
   and sql(f"select count(*) from public.payment_orders where user_id='{owner}' and amount_cents=1") == '0', (s, s2))
 T('a member sees only their own orders', http('GET', '/rest/v1/payment_orders?select=id', None, other_t)[1] == [])
 # ── B-25: the billing name is the person's name, without the title (Paymob's first_name was "Dr." / "د.") ──
-for typed, first, last in (('Dr. Mona El-Sayed (Pharm.D.)', 'Mona', 'El-Sayed'), ('د. منى السيد', 'منى', 'السيد'), ('Eng. Omar Khaled', 'Omar', 'Khaled')):
+for typed, first, last in (('Dr. Mona El-Sayed (Pharm.D.)', 'Mona', 'El-Sayed'), ('د. منى السيد', 'منى', 'السيد'), ('Eng. Tarek Fawzy', 'Tarek', 'Fawzy')):
     sql(f"update public.profiles set name = $q${typed}$q$ where id='{owner}'")
     s, _ = http('POST', '/functions/v1/payments-create', {'product': 'vip_month', 'method': 'card', 'company_id': int(cid)}, owner_t)
     bd = json.loads(urllib.request.urlopen(MOCK + '/log').read())[-1]['body'].get('billing_data', {})
     T(f'Paymob billing for "{typed}": first name {first}, last name {last} (no title)', s == 200 and bd.get('first_name') == first and bd.get('last_name') == last, (s, bd.get('first_name'), bd.get('last_name')))
 s, _ = http('POST', '/functions/v1/payments-create', {'product': 'boost', 'method': 'fawry', 'listing_id': int(lid)}, owner_t)
 fl = json.loads(urllib.request.urlopen(MOCK + '/log').read())[-1]['body']
-T('Fawry gets the customer name without the title ("Omar Khaled")', s == 200 and fl.get('customerName') == 'Omar Khaled', (s, fl.get('customerName')))
+T('Fawry gets the customer name without the title ("Tarek Fawzy")', s == 200 and fl.get('customerName') == 'Tarek Fawzy', (s, fl.get('customerName')))
 done()
