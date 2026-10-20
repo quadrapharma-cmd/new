@@ -164,7 +164,7 @@
     else if (x.method === 'instapay' && x.status === 'pending' && x.mine !== false) acts = '<button type="button" class="dr-btn sm" data-ipsend="' + esc(x.id) + '" data-ipref="' + esc(x.order) + '" data-ipamt="' + esc(x.total) + '">Send the transfer</button>';
     else if (x.status === 'pending' && x.mine !== false && (x.method === 'card' || x.method === 'wallet'))   /* left on the Paymob page: continue (a new checkout) or cancel */
       acts = '<button type="button" class="dr-btn sm" data-paycont="' + esc(x.id) + '">Continue payment</button><button type="button" class="dr-btn sm ghost" data-paycancel="' + esc(x.id) + '">Cancel</button>';
-    else if (x.status === 'pending' && x.mine !== false && x.method === 'fawry') acts = '<button type="button" class="dr-btn sm ghost" data-paycancel="' + esc(x.id) + '" data-fawry="1">Cancel</button>';
+    else if (x.status === 'pending' && x.method === 'fawry' && x.fawry_reference) extra += '<small class="dx-pr-ref">Not paid by then, it simply expires — nothing is charged</small>';   /* Fawry keeps a reference payable until it expires: nothing to cancel from here */
     else if ((x.status === 'failed' || x.status === 'expired') && x.kind !== 'vip') acts = '<button type="button" class="dr-btn sm" data-payagain="' + esc(x.kind) + '">Pay again</button>';
     else if ((x.status === 'failed' || x.status === 'expired') && x.kind === 'vip' && co) acts = '<button type="button" class="dr-btn sm" data-wvip="1">Pay again</button>';
     return '<div class="mr-row dx-pr" data-pay="' + esc(x.id) + '"><div class="mr-b"><b>' + esc(x.product) + ' · ' + esc(egp(x.total)) + ' <span class="mr-st st-' + (x.status === 'paid' ? 'acc' : x.status === 'failed' || x.status === 'expired' || x.status === 'cancelled' ? 'dec' : 'viewed') + '">' + esc(STATUS[x.status] || x.status) + '</span></b><small>' + esc(sub) + (x.vat ? ' · incl. VAT ' + esc(egp(x.vat)) : '') + '</small>' + extra + '</div>' + (acts ? '<span class="mr-acts">' + acts + '</span>' : '') + '</div>';
@@ -197,12 +197,12 @@
     var t = e.target.closest && e.target.closest('[data-inv],[data-ipsend],[data-payagain],[data-paycont],[data-paycancel]'); if (!t) return;
     e.preventDefault(); e.stopPropagation();
     if (t.dataset.inv) { t.disabled = true; window.dxPay.invoice(isNaN(+t.dataset.inv) ? t.dataset.inv : +t.dataset.inv).then(function (v) { t.disabled = false; invoiceWindow(v); }, function (er) { t.disabled = false; D.toast((er && er.message) || 'The invoice could not be opened'); }); return; }
-    if (t.dataset.ipsend) { instapayDialog({ order_id: isNaN(+t.dataset.ipsend) ? t.dataset.ipsend : +t.dataset.ipsend, reference: t.dataset.ipref, amount: +t.dataset.ipamt, instapay: window.dxPay.instapayTo ? window.dxPay.instapayTo() : { address: 'drugbox@instapay', name: 'Drugbox Egypt' } }); return; }
+    if (t.dataset.ipsend) { instapayDialog({ order_id: isNaN(+t.dataset.ipsend) ? t.dataset.ipsend : +t.dataset.ipsend, reference: t.dataset.ipref, amount: +t.dataset.ipamt, instapay: window.dxPay.instapayTo ? window.dxPay.instapayTo() : { address: 'drugbox@instapay', name: 'Drugbox Egypt' }, demo: !window.dxPay.instapayTo }); return; }   /* the demo's sample address carries its demo note */
     var key = function (v) { return isNaN(+v) ? v : +v; }, find = function (id) { var all = (PAY.me || []).slice(); Object.keys(PAY.co).forEach(function (k) { all = all.concat(PAY.co[k] || []); }); return all.filter(function (x) { return String(x.id) === String(id); })[0]; };
     if (t.dataset.paycont) { var x = find(t.dataset.paycont); if (!x) return;   /* the same thing again, by the same method: the server supersedes the abandoned checkout */
       start({ product: x.code, method: x.method, listing_id: x.listing_id || null, slug: x.slug || null, listingName: x.listing }, t); return; }
-    if (t.dataset.paycancel) { var fw = !!t.dataset.fawry;
-      D.modal({ title: 'Cancel this payment?', body: '<p>' + (fw ? 'Its Fawry reference can no longer be used. Nothing was charged.' : 'Nothing was charged. If you already paid on the payment page, do not cancel — the payment confirms itself.') + '</p>',
+    if (t.dataset.paycancel) {
+      D.modal({ title: 'Cancel this payment?', body: '<p>Nothing was charged. If you already paid on the payment page, do not cancel — the payment confirms itself.</p>',
         secondary: 'Keep it', primary: { label: 'Cancel payment', danger: true, onClick: function () { window.dxPay.cancel(key(t.dataset.paycancel)).then(function () { D.toast('Payment cancelled — nothing was charged'); refreshPay(); }, function (er) { D.toast((er && er.message) || 'Could not cancel'); refreshPay(); }); } } });
       return; }
     if (t.dataset.payagain) { if (typeof window.openBoostModal === 'function') window.openBoostModal(t.dataset.payagain === 'featured' ? 'featured' : 'boost'); }

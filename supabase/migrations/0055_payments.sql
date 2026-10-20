@@ -132,7 +132,7 @@ begin
     raise exception 'This company page is suspended — VIP cannot be bought for it' using errcode = '42501';
   end if;
   if pr.kind in ('boost','featured') and not exists (select 1 from public.products where id = p_listing and user_id = auth.uid()) then raise exception 'You can boost only your own listings' using errcode = '42501'; end if;
-  if pr.kind in ('boost','featured') and not exists (select 1 from public.products where id = p_listing and active) then
+  if pr.kind in ('boost','featured') and not exists (select 1 from public.products where id = p_listing and active and (to_jsonb(products) ->> 'expires_at' is null or (to_jsonb(products) ->> 'expires_at')::timestamptz > now())) then
     raise exception 'This listing is not active — publish it again before promoting it' using errcode = '42501';
   end if;
   v_company := case when pr.kind = 'vip' then p_company end; v_listing := case when pr.kind <> 'vip' then p_listing end;
@@ -144,10 +144,12 @@ begin
    where x.user_id = auth.uid() and x.product_code = pr.code and coalesce(x.listing_id, 0) = coalesce(v_listing, 0) and coalesce(x.company_id, 0) = coalesce(v_company, 0)
      and x.method = p_method
      and ((x.method = 'fawry' and x.status = 'pending' and x.provider_ref is not null and x.fawry_expires_at is not null and x.fawry_expires_at > now())
+          or (x.method = 'fawry' and x.status = 'pending' and x.provider_ref is null and x.created_at > now() - interval '2 minutes')   -- being issued right now (a second click, a second tab)
           or (x.method = 'instapay' and x.status in ('pending','review')))
    order by x.id desc limit 1;
   if dup.id is not null then
-    raise exception '%', case when dup.method = 'fawry' then 'You already have a Fawry reference for this (' || dup.provider_ref || ') — pay it or find it in My payments'
+    raise exception '%', case when dup.method = 'fawry' and dup.provider_ref is null then 'A Fawry reference for this is being issued — wait a moment and look in My payments'
+                              when dup.method = 'fawry' then 'You already have a Fawry reference for this (' || dup.provider_ref || ') — pay it or find it in My payments'
                               when dup.status = 'review' then 'Your InstaPay transfer for this (' || dup.merchant_ref || ') is being checked by Drugbox — wait for the confirmation in My payments'
                               else 'You already have an InstaPay payment waiting for this (' || dup.merchant_ref || ') — send the transfer from My payments' end using errcode = '23505';
   end if;
@@ -184,6 +186,10 @@ begin
   select * into o from public.payment_orders where id = p_id for update;      -- the same row lock as confirm_payment: one of them wins
   if o.id is null or o.user_id <> auth.uid() then raise exception 'This order is not yours' using errcode = '42501'; end if;
   if o.status <> 'pending' then raise exception 'Only a payment that is still waiting can be cancelled (this one is %)', o.status using errcode = '22023'; end if;
+  if o.method = 'fawry' and o.provider_ref is not null and coalesce(o.fawry_expires_at, now() + interval '1 day') > now() then   -- Fawry keeps a reference payable until it expires: it cannot be withdrawn from here
+    raise exception 'A Fawry reference cannot be withdrawn — it stays payable at Fawry until %, and expires by itself; nothing is charged unless you pay it (if you do, it activates)',
+      to_char(o.fawry_expires_at at time zone 'Africa/Cairo', 'DD Mon YYYY HH24:MI') using errcode = '22023';
+  end if;
   update public.payment_orders set status = 'cancelled', provider_payload = coalesce(provider_payload, '{}'::jsonb) || jsonb_build_object('cancelled_by_buyer', now()) where id = p_id;
   return 'cancelled';
 end $$;
@@ -249,6 +255,8 @@ begin
       update public.payment_orders set provider_payload = coalesce(provider_payload, '{}'::jsonb) || coalesce(p_payload, '{}'::jsonb) || jsonb_build_object('paid_after_cancel', true) where id = o.id;
       insert into public.notifications (user_id, type, message)
       select p.id, 'payment', 'Order ' || o.merchant_ref || ' was paid after the buyer cancelled it — nothing was activated; refund due' from public.profiles p where p.role = 'admin';
+      insert into public.notifications (user_id, type, message)
+      values (o.user_id, 'payment', 'Your payment for order ' || o.merchant_ref || ' arrived after you cancelled it — nothing was activated; Drugbox will refund it');
     end if;
     return 'order is cancelled (refund due)';
   end if;
@@ -356,8 +364,8 @@ create or replace function public.my_payments(p_company bigint default null) ret
          where auth.uid() is not null
            and ((p_company is null and x.user_id = auth.uid())
                 or (p_company is not null and x.company_id = p_company and public.is_company_member(p_company, array['owner','admin'])))
-           and not (x.status = 'expired' and x.provider_payload ? 'superseded')
-           and not (x.status = 'failed' and x.provider_payload ? 'start_failed')   -- a payment that never started (nothing to pay, nothing to show)
+           and not (x.status = 'expired' and coalesce(x.provider_payload ? 'superseded', false))
+           and not (x.status = 'failed' and coalesce(x.provider_payload ? 'start_failed', false))   -- (a rejected transfer has no payload: it stays listed)   -- a payment that never started (nothing to pay, nothing to show)
          order by x.id desc limit 100) o
   join public.payment_products pr on pr.code = o.product_code
   left join public.products l on l.id = o.listing_id
@@ -401,7 +409,8 @@ create or replace function public.use_included_boost(p_listing bigint, p_company
 declare me uuid := auth.uid(); c public.companies; n int; v_days int; v_until timestamptz;
 begin
   if me is null then raise exception 'Sign in first' using errcode = '42501'; end if;
-  if not exists (select 1 from public.products where id = p_listing and user_id = me and active) then raise exception 'You can boost only your own active listings' using errcode = '42501'; end if;
+  if not exists (select 1 from public.products where id = p_listing and user_id = me and active and (to_jsonb(products) ->> 'expires_at' is null or (to_jsonb(products) ->> 'expires_at')::timestamptz > now())) then
+    raise exception 'You can boost only your own active listings (renew an expired one first)' using errcode = '42501'; end if;
   if not public.is_company_member(p_company, array['owner','admin']) then raise exception 'Only the company''s owner or admins can use its boosts' using errcode = '42501'; end if;
   select * into c from public.companies where id = p_company for update;              -- one use at a time per company: the count below cannot race
   if c.id is null or c.status = 'suspended' or c.plan <> 'vip' or (c.vip_until is not null and c.vip_until <= now()) then

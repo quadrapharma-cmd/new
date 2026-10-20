@@ -67,6 +67,11 @@ select pg_temp.ok('the older card order is superseded: one pending card order pe
 -- a Fawry charge that failed: the order never got a reference — it must never block a new payment (verification finding 1)
 select pg_temp.step('a Fawry order whose charge never returned a reference', $$with x as (select (public.create_order('boost', 'fawry', null, pg_temp.id('la'))).id) insert into ids select 'of0', id::text from x$$);
 select pg_temp.no('the buyer cannot close an order through payment_start_failed (server-only)', $$select public.payment_start_failed(pg_temp.id('of0'), '{}')$$, '42501');
+select pg_temp.no('a second Fawry order while the first is being issued (its first 2 minutes) is refused — parallel requests make one reference', $$select public.create_order('boost', 'fawry', null, pg_temp.id('la'))$$, '23505');
+select pg_temp.ok('…saying so', $$pg_temp.err($q$select public.create_order('boost', 'fawry', null, pg_temp.id('la'))$q$) like 'A Fawry reference for this is being issued%'$$);
+select pg_temp.as_server();
+update public.payment_orders set created_at = now() - interval '3 minutes' where id = pg_temp.id('of0');
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
 select pg_temp.step('a new Fawry order for the same listing', $$with x as (select (public.create_order('boost', 'fawry', null, pg_temp.id('la'))).id) insert into ids select 'of', id::text from x$$);
 select pg_temp.ok('…is allowed: an order without a reference is not "you already have a Fawry reference"', $$pg_temp.id('of') is not null and pg_temp.id('of') <> pg_temp.id('of0')$$);
 select pg_temp.ok('…and the order without a reference is left alone (a reference issued a moment later still finds it)', $$(select status = 'pending' from public.payment_orders where id = pg_temp.id('of0'))$$);
@@ -211,6 +216,33 @@ select pg_temp.no('anon cannot order', $$select public.create_order('boost', 'ca
 select pg_temp.no('anon cannot read invoices', $$select public.order_invoice(1)$$, '42501');
 select pg_temp.no('anon cannot read my payments', $$select public.my_payments(null)$$, '42501');
 select pg_temp.no('anon cannot use boosts', $$select public.use_included_boost(1, 1)$$, '42501');
+
+-- ══ re-verification round 2: Fawry references cannot be withdrawn, lost answers, expired listings, rejected transfers stay listed ══
+select pg_temp.as_server();
+select pg_temp.step('three more listings of the owner: one fresh, one fresh for InstaPay, one expired', $$
+  with x as (insert into public.products (user_id, name, category, type) values ('e1111111-1111-1111-1111-111111111111', 'PP listing C', 'api', 'supply') returning id) insert into ids select 'lc', id::text from x;
+  with x as (insert into public.products (user_id, name, category, type) values ('e1111111-1111-1111-1111-111111111111', 'PP listing E', 'api', 'supply') returning id) insert into ids select 'le', id::text from x;
+  with x as (insert into public.products (user_id, name, category, type) values ('e1111111-1111-1111-1111-111111111111', 'PP listing D', 'api', 'supply') returning id) insert into ids select 'ld', id::text from x;
+  set local session_replication_role = replica; update public.products set expires_at = now() - interval '1 day' where id = pg_temp.id('ld'); set local session_replication_role = origin$$);   -- 0054's trigger would renew it
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
+select pg_temp.step('a Fawry order whose reference Fawry issued', $$with x as (select (public.create_order('boost', 'fawry', null, pg_temp.id('lc'))).id) insert into ids select 'of5', id::text from x$$);
+select pg_temp.as_server();
+select public.set_order_provider_ref(pg_temp.id('of5'), 'FR-LIVE-' || pg_temp.id('of5'), null, now() + interval '48 hours');
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
+select pg_temp.no('a live Fawry reference cannot be "cancelled" (Fawry keeps it payable until it expires)', $$select public.cancel_order(pg_temp.id('of5'))$$, '22023');
+select pg_temp.ok('…the order stays pending with its reference', $$(select status from public.payment_orders where id = pg_temp.id('of5')) = 'pending'$$);
+select pg_temp.as_server();
+select pg_temp.step('the reference expires', $$update public.payment_orders set fawry_expires_at = now() - interval '1 minute', created_at = now() - interval '1 hour' where id = pg_temp.id('of5')$$);
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
+select pg_temp.no('a paid boost for an expired listing is refused (it is not in the marketplace)', $$select public.create_order('boost', 'card', null, pg_temp.id('ld'))$$, '42501');
+select pg_temp.no('…nor an included VIP boost', $$select public.use_included_boost(pg_temp.id('ld'), pg_temp.id('vip'))$$, '42501');
+select pg_temp.step('an InstaPay transfer for listing E, sent', $$with x as (select (public.create_order('boost', 'instapay', null, pg_temp.id('le'))).id) insert into ids select 'oi9', id::text from x;
+  select public.submit_instapay(pg_temp.id('oi9'), 'IPX-998877', null)$$);
+select pg_temp.as_user('e4444444-4444-4444-4444-444444444444');
+select pg_temp.step('Drugbox finds no transfer and rejects it', $$select public.review_instapay(pg_temp.id('oi9'), false)$$);
+select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
+select pg_temp.ok('a rejected transfer stays in My payments (as did not go through)', $$exists (select 1 from jsonb_array_elements(public.my_payments(null)) e where (e->>'id')::bigint = pg_temp.id('oi9') and e->>'status' = 'failed')$$);
 
 -- ══ report ═══════════════════════════════════════════════════════════════════════════════════
 select pg_temp.as_server();

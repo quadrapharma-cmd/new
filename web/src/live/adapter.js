@@ -2511,7 +2511,7 @@
       var path = null; if (file) { path = 'payments/' + ME_UUID + '/' + rid() + '.' + extOf(file); await upDoc('documents', path, file); }
       var r = await sb.rpc('submit_instapay', { p_id: orderId, p_transfer_ref: ref, p_receipt: path }); if (r.error) throw new Error(friendly(r.error));
     },
-    listings: async function () { var r = await sb.from('products').select('id,name').eq('user_id', ME_UUID).eq('active', true).order('created_at', { ascending: false }).limit(50); return r.data || []; },
+    listings: async function () { var r = await sb.from('products').select('id,name').eq('user_id', ME_UUID).eq('active', true).or('expires_at.is.null,expires_at.gt.' + new Date().toISOString()).order('created_at', { ascending: false }).limit(50);   /* an expired listing is renewed before it is promoted */ return r.data || []; },
     /* the Boost / Featured window shows the price the server charges (payment_products, same rounding as create_order) —
        never USD × a third-party exchange rate (F-07). Code: 'boost' | 'featured' (any payment_products code). */
     quote: async function (code) {
