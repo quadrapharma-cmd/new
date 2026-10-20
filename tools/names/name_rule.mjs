@@ -26,6 +26,8 @@
 //    digit   a number of any script (\p{N}: 0-9, ٠-٩, ۰-۹, ①, Ⅻ…)
 //   *letter  a letter (\p{L}) that is not a letter of the Latin, Arabic, Greek or Cyrillic script whose TR39 Identifier_Status is
 //            Allowed (张, א, Ա, ǃ, ꞏ, ʼ standing alone…) — the message says which alphabets are accepted
+//            *Arabic letters come from the Arabic and Arabic Supplement blocks only (not Arabic Extended-A/B: African noon and qaf
+//            draw as ن and ف before another letter while TR39 gives them the skeleton of their dotless final forms)
 //    char    anything else that is not: an allowed letter, a combining MARK (\p{M}) with Identifier_Status Allowed, the space, or one
 //            of . - ’ ( ) , *and / (titles: "د/", "Ph/") *and the Arabic comma ، (an Arabic keyboard's comma) — so no symbol, no
 //            other punctuation (the picker's separator "·" and every look-alike of it), no private use, no unassigned code point,
@@ -81,12 +83,17 @@ const INVIS = ranges((c) => c !== 0 && !isSpace(c) && (DI(c) || CF(c) || CC(c) |
 const DIGIT = ranges(has(/^\p{N}$/u));
 const PUNCT = [0x28, 0x29, 0x2C, 0x2D, 0x2E, 0x2F, 0x060C, 0x2019];   // ( ) , - . / ، ’   (the apostrophe ' is stored as ’)
 const SCRIPTS = [['Latn', 'Latin'], ['Arab', 'Arabic'], ['Grek', 'Greek'], ['Cyrl', 'Cyrillic']];
+// Arabic letters: the Arabic block and Arabic Supplement (Blocks.txt: 0600..06FF, 0750..077F — Arabic, Persian, Urdu, Kurdish,
+// Pashto, Sindhi…; presentation forms reach them through NFKC). Arabic Extended-A/B (0870..08FF) hold letters for African and other
+// languages whose dots show only before another letter (African noon ࢽ draws as ن, African qaf ࢼ as ف, but TR39 maps them to their
+// dotless final forms), so they are not accepted (atk-bypass-r1)
+const ARABIC_BLOCKS = (c) => (c >= 0x0600 && c <= 0x06FF) || (c >= 0x0750 && c <= 0x077F);
 const stable = (c) => ch(c).normalize('NFKC') === ch(c);
 const LET = {}, MARK = {};
 for (const [k, sc] of SCRIPTS) {
   const inSc = has(new RegExp(`^\\p{Script=${sc}}$`, 'u')), inScx = has(new RegExp(`^\\p{Script_Extensions=${sc}}$`, 'u'));
   const inherited = has(/^\p{Script_Extensions=Inherited}$/u);
-  LET[k] = ranges((c) => ALLOWED.has(c) && /^\p{L}$/u.test(ch(c)) && inSc(c) && stable(c));
+  LET[k] = ranges((c) => ALLOWED.has(c) && /^\p{L}$/u.test(ch(c)) && inSc(c) && stable(c) && (k !== 'Arab' || ARABIC_BLOCKS(c)));
   MARK[k] = ranges((c) => ALLOWED.has(c) && /^\p{M}$/u.test(ch(c)) && (inScx(c) || inherited(c)) && stable(c));
 }
 const union = (...rss) => { const s = new Set(); for (const rs of rss) for (const [a, b] of rs) for (let c = a; c <= b; c++) s.add(c); return ranges((c) => s.has(c)); };
@@ -292,7 +299,7 @@ if (process.argv.includes('--write')) {
     ['Al-Hassan (Pharm.D.)', ''], ['Smith, John', ''], ['Мария Иванова', ''], ['Νίκος Παπαδόπουλος', ''], ['هـالة', ''], ['Dr. Zeina X​', ''], ['Dr. Zeina X\u{1D173}', ''],
     ['د/ هيثم دويدار', ''], ['Ph/ Mohamed Hassan', ''], ['أ.د/ محمد', ''], ['Dr. Мария Иванова', ''], ['Мария Иванова (Maria Ivanova)', ''], ['Dr. Νίκος Παπαδόπουλος', ''],
     ['Anne‑Marie Dubois', ''], ['Dr. Ahmed El–Sayed', ''], ['د. أحمد علي، صيدلي', ''], ['Марʼяна Григорʼєва', ''], ['O‘Brien Kelly', ''], ['O´Brien Kelly', ''], ['O`Brien', ''],
-    ['Pharm. Иван', ''], ['Ivan Ιωάννης', ''], ['Вера Иванова', ''], ['Dr. \u0405\u0430\u04CF\u0456\u04BB', 'latin'], ['\u0405\u0430\u04CF\u0456\u04BB \u0405\u0430\u04CF\u0456\u04BB', 'latin'], ['Dr. Рара X', 'latin'], ['Μαρία', 'latin'],
+    ['\u08BDبيل', 'letter'], ['ع\u08BCت', 'letter'], ['Pharm. Иван', ''], ['Ivan Ιωάννης', ''], ['Вера Иванова', ''], ['Dr. \u0405\u0430\u04CF\u0456\u04BB', 'latin'], ['\u0405\u0430\u04CF\u0456\u04BB \u0405\u0430\u04CF\u0456\u04BB', 'latin'], ['Dr. Рара X', 'latin'], ['Μαρία', 'latin'],
     ['Dr. Rana 2', 'digit'], ['Ali ١', 'digit'], ['Dr. Hala X · Pharco X', 'char'], ['Dr. Hala X ꞏ Pharco X', 'letter'], ['Dr. Hala X ⸳ Pharco X', 'char'], ['Dr. Hala X \u{11174} Pharco X', 'char'],
     ['Dr. Hala X \u{1F797} Pharco X', 'char'], ['Dr. Hala X \u{111D0} Pharco X', 'digit'], ['Dr. Hala X ∘ Pharco X', 'char'], ['Dr. Hala X ▪ Pharco X', 'char'], ['Dr. Zeina X￼', 'char'],
     ['Dr. Hala X ￼ႉ Pharco X', 'char'], ['Dr. Hala X - Pharco X', 'word'], ['د . أحمد علي', 'word'], ['Ahmed Ali , PhD', 'word'], ['Dr. Rаna X', 'script'], ['张伟 (Zhang Wei)', 'letter'],

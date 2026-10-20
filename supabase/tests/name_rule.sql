@@ -70,6 +70,8 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('the same mark twice, decomposed', U&'Dr. Hale\0301\0301 Tufice', 'mark'),
   ('a shadda twice on one Arabic letter', U&'د. هالة الشا\0651\0651مي', 'mark'),
   ('two different marks are fine ("ệ")', U&'Dr. Ne\0323\0302 Tufice', ''),
+  ('African noon ࢽ (draws as ن before a letter; TR39 gives it the skeleton of ى): not an Arabic-block letter', U&'\08BD\0628\064A\0644', 'letter'),
+  ('African qaf ࢼ (draws as ف before a letter; TR39: ڡ)', U&'\0639\08BC\062A', 'letter'),
   ('a whole word in Chinese', '张伟 (Zhang Wei)', 'letter'),
   ('Hebrew', 'דוד כהן', 'letter'),
   ('Armenian', 'Արամ Խաչատրյան', 'letter'),
