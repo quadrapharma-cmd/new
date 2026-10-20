@@ -249,7 +249,7 @@ begin
   end if;
   if not found or p_order_key is null or p_order_key = '' then return 'unknown order'; end if;
   if p_provider = 'fawry' and o.provider_ref is null and coalesce(p_provider_ref, '') <> ''
-     and not exists (select 1 from public.notifications n where n.type = 'payment' and n.message like 'Fawry payment received for ' || o.merchant_ref || ' %') then
+     and not exists (select 1 from public.notifications n where n.type = 'payment' and n.message like 'Fawry payment received for ' || o.merchant_ref || ' (reference ' || left(p_provider_ref, 40) || ')%') then   -- once per reference
     -- a signed Fawry payment for one of our orders that never recorded its reference (Fawry's answer was lost): never paid or
     -- activated from here (F-115), and the order stays untouched — but Drugbox is told, so the money is reconciled and refunded
     insert into public.notifications (user_id, type, message)

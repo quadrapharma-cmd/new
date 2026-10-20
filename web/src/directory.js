@@ -115,7 +115,7 @@
     var live = window.dxLiveCompanies, v = ver(), seeds = window.dxDirSeeds;
     if (__cc && __cc.v === v && __cc.live === live && __cc.n === (live ? live.length : -1) && __cc.seeds === seeds) return __cc.list;
     var edits = edits_(), created = store('created_companies') || [], rv = store('supplier_reviews') || {};
-    var list = (live || SEED.concat(seeds || [], created)).map(function (s) { var e = edits[s.slug], c = e ? Object.assign({}, s, e) : s, r = rv[c.slug];
+    var list = (live || SEED.concat(seeds || [], created)).map(function (s) { var e = edits[s.slug], c = e ? Object.assign({}, s, e) : s, r = live ? null : rv[c.slug];   /* live: the database's rating already counts every review */
       if (r && r.length) { var sum = r.reduce(function (a, x) { return a + x.stars; }, 0); c = Object.assign({}, c, { rating: ((c.rating || 0) * (c.reviews || 0) + sum) / ((c.reviews || 0) + r.length), reviews: (c.reviews || 0) + r.length }); }
       return c; });   /* pages are public from creation; unverified ones are labelled */
     __cc = { v: v, live: live, n: live ? live.length : -1, seeds: seeds, list: list };

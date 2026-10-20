@@ -213,6 +213,7 @@
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('#mkx .dcard .qt-btn'); if (!b) return;
+    var lv = b.closest('.dcard').getAttribute('data-live'); if (lv && !/^p\d+$/.test(lv)) return;   /* a buy request posted before listings (live, not a listing) takes a message, as before */
     e.preventDefault(); e.stopImmediatePropagation();
     var dc = b.closest('.dcard'), buyer = txt(dc.querySelector('.dc-buyer')).replace(/✓/g, '').trim(), me = (window.ME && window.ME.name) || '';
     if (dc.getAttribute('data-mine') === '1' || (me && buyer && (buyer.indexOf(me) >= 0 || buyer.indexOf(me.split(' ').slice(0, 2).join(' ')) >= 0))) { D.toast('This is your own request — suppliers will quote you here'); return; }   /* as the approved page answers */

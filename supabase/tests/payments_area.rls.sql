@@ -251,7 +251,9 @@ select pg_temp.ok('a signed Fawry notice for it is still not paid (F-115)', $$pu
   and (select status = 'pending' and provider_ref is null from public.payment_orders where id = pg_temp.id('of7'))$$);
 select pg_temp.ok('…but Drugbox is told once, to reconcile and refund', $$(select count(*) from public.notifications where user_id = 'e4444444-4444-4444-4444-444444444444' and message like 'Fawry payment received for ' || (select merchant_ref from public.payment_orders where id = pg_temp.id('of7')) || ' %') = 1$$);
 select pg_temp.step('Fawry sends it again', $$select public.confirm_payment('fawry', (select merchant_ref from public.payment_orders where id = pg_temp.id('of7')), 'FR-LOST-7', 165300, 'EGP', '{}')$$);
-select pg_temp.ok('…still once', $$(select count(*) from public.notifications where message like 'Fawry payment received for ' || (select merchant_ref from public.payment_orders where id = pg_temp.id('of7')) || ' %' and user_id = 'e4444444-4444-4444-4444-444444444444') = 1$$);
+select pg_temp.step('a second, different reference arrives for the same order', $$select public.confirm_payment('fawry', (select merchant_ref from public.payment_orders where id = pg_temp.id('of7')), 'FR-LOST-8', 165300, 'EGP', '{}')$$);
+select pg_temp.ok('…Drugbox is told about that one too (once per reference)', $$(select count(*) from public.notifications where message like 'Fawry payment received for ' || (select merchant_ref from public.payment_orders where id = pg_temp.id('of7')) || ' (reference FR-LOST-8)%' and user_id = 'e4444444-4444-4444-4444-444444444444') = 1$$);
+select pg_temp.ok('…the first reference is still told once', $$(select count(*) from public.notifications where message like 'Fawry payment received for ' || (select merchant_ref from public.payment_orders where id = pg_temp.id('of7')) || ' (reference FR-LOST-7)%' and user_id = 'e4444444-4444-4444-4444-444444444444') = 1$$);
 
 -- ══ report ═══════════════════════════════════════════════════════════════════════════════════
 select pg_temp.as_server();
