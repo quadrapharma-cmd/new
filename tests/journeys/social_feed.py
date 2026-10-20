@@ -645,20 +645,20 @@ def report_post(j):
 def mention_and_hashtag(j):
     """A member mentions a colleague and uses a hashtag so the right people and topic followers find it."""
     if j.live:
-        a, b = setup_live_pair(j, 'Dr. Amira Mentioner', 'Dr. Alia Mourad'); pg = a['page']; fresh(j, pg)
+        a, b = setup_live_pair(j, 'Dr. Amira Mentioner', 'Dr. Alia Nasser'); pg = a['page']; fresh(j, pg)
     else: pg = j.demo_signin(j.new_page())
     with j.step('In the composer type "Thanks @Ali": people suggestions appear'):
         j.click(pg, r"What.s on your mind|تفكر|ماذا يدور|ما الذي يدور", what="What's on your mind")
         pg.click('#postBody'); pg.keyboard.type('Thanks @Ali'); pg.wait_for_timeout(1000)
         sug = pg.locator('.modal-bg [role=option]:visible, .modal-bg [class*=mention]:visible, .modal-bg [class*=suggest]:visible').filter(has_text='Alia')
         j.check(sug.count(), 'not built: typing @ in the composer shows no people suggestions')
-    with j.step('Pick Dr. Alia Mourad; add #GMP; post'):
+    with j.step('Pick Dr. Alia Nasser; add #GMP; post'):
         sug.first.click(); pg.keyboard.type(' for the audit #GMP ' + j.tag)
         pg.locator('.modal-bg [onclick^="submitPost"]').last.click(); j.settle(pg, 1200)
         post = post_el(j, pg, j.tag)
     with j.step("The mention links to B's profile; #GMP links to a list of posts with that tag"):
         m = post.locator('a, [onclick]').filter(has_text='Alia'); j.check(m.count(), 'the mention is not a link')
-        m.first.click(); j.settle(pg); j.check('Alia Mourad' in j.text(pg)[:400], "the mention does not open Alia's profile")
+        m.first.click(); j.settle(pg); j.check('Alia Nasser' in j.text(pg)[:400], "the mention does not open Alia's profile")
         j.nav(pg, 'feed'); post = post_el(j, pg, j.tag)
         h = post.locator('a, [onclick]').filter(has_text='#GMP'); j.check(h.count(), '#GMP is not a link')
         h.first.click(); j.settle(pg); j.check(j.tag in j.text(pg) and re.search(r'#GMP', j.text(pg)[:300]), '#GMP does not open a list of posts with that tag')
