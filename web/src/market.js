@@ -191,18 +191,32 @@
   function quoteDialog(card) {
     var t = card.querySelector('.dc-title'), tc = t ? t.cloneNode(true) : null; if (tc) tc.querySelectorAll('.role-badge').forEach(function (x) { x.remove(); });
     var c = { title: tc ? txt(tc) : 'Request', buyer: txt(card.querySelector('.dc-buyer')).replace(/✓/g, '').trim(), live: card.getAttribute('data-live') };
-    D.modal({ title: 'Send a quote — ' + c.title, body: '<p class="cp-muted">Your quote goes to ' + esc(c.buyer || 'the buyer') + ' in Requests & deals, where they can accept it, counter or decline.</p>' +
-      '<div class="dbk-row"><div class="dbk-f"><label for="qtP">Your price *</label><input id="qtP" data-req placeholder="e.g. US$ 21 per kg"></div><div class="dbk-f"><label for="qtQ">Quantity</label><input id="qtQ" placeholder="e.g. 2 MT"></div></div>' +
-      '<div class="dbk-row"><div class="dbk-f"><label for="qtL">Lead time</label><input id="qtL" placeholder="e.g. 3 weeks"></div><div class="dbk-f"><label for="qtN">Note</label><input id="qtN" maxlength="500" placeholder="e.g. CEP and CoA available"></div></div>',
+    var btn = card.querySelector('.qt-btn');
+    D.modal({ title: 'Submit a quote',   /* the approved page's own form (offerModal); what it sends is a priced quote in Requests & deals */
+      body: '<div class="dbk-note">To <b>' + esc(c.buyer || 'the buyer') + '</b> for “' + esc(c.title) + '”</div>' +
+        '<div class="dbk-row"><div class="dbk-f"><label>Your price *</label><input id="oPrice" data-req placeholder="e.g. $42/kg"></div>' +
+        '<div class="dbk-f"><label>Quantity you can supply *</label><input id="oQty" data-req placeholder="e.g. 2 MT/month"></div></div>' +
+        '<div class="dbk-row"><div class="dbk-f"><label>Lead time</label><input id="oLead" placeholder="e.g. 4–6 weeks"></div>' +
+        '<div class="dbk-f"><label>Incoterms</label><select id="oInco"><option>FOB</option><option>CIF</option><option>CFR</option><option>EXW</option><option>DDP</option></select></div></div>' +
+        '<div class="dbk-row"><div class="dbk-f"><label>Documents</label><input id="oDocs" placeholder="COA, CEP, DMF, WHO-GMP"></div>' +
+        '<div class="dbk-f"><label>Offer valid until</label><input id="oVal" type="date"></div></div>' +
+        '<div class="dbk-f"><label>Notes</label><textarea id="oNote" maxlength="500" placeholder="Payment terms, samples, packaging…"></textarea></div>' +
+        '<p class="cp-muted">It goes to Requests & deals, where they can accept it, counter or decline.</p>',
       primary: { label: 'Send quote', onClick: function (box, close) { if (!D.requireFields(box)) return false; var ok = box.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
-        var q = { price: money(box.querySelector('#qtP').value.trim(), '$'), qty: box.querySelector('#qtQ').value.trim(), lead: box.querySelector('#qtL').value.trim(), note: box.querySelector('#qtN').value.trim() };
-        svc().quote(c, q).then(function () { close(); D.toast('Quote sent to ' + (c.buyer || 'the buyer') + ' — follow it in Requests & deals'); },
+        var v = function (id) { var x = box.querySelector('#' + id); return x ? x.value.trim() : ''; };
+        var note = ['Incoterms: ' + v('oInco'), v('oDocs') ? 'Documents: ' + v('oDocs') : '', v('oVal') ? 'Valid until: ' + v('oVal') : '', v('oNote')].filter(Boolean).join(' · ').slice(0, 500);
+        var q = { price: money(v('oPrice'), '$'), qty: v('oQty'), lead: v('oLead'), note: note };
+        svc().quote(c, q).then(function () { close(); if (btn) { btn.classList.add('dbk-done'); btn.textContent = '✓ Quoted'; }
+          D.toast('Quote sent to ' + (c.buyer || 'the buyer') + ' — follow it in Requests & deals'); },
           function (er) { if (ok) ok.disabled = false; D.toast((er && er.message) || 'Could not send the quote'); });
         return false; } } });
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('#mkx .dcard .qt-btn'); if (!b) return;
-    e.preventDefault(); e.stopImmediatePropagation(); quoteDialog(b.closest('.dcard'));
+    e.preventDefault(); e.stopImmediatePropagation();
+    var dc = b.closest('.dcard'), buyer = txt(dc.querySelector('.dc-buyer')).replace(/✓/g, '').trim(), me = (window.ME && window.ME.name) || '';
+    if (dc.getAttribute('data-mine') === '1' || (me && buyer && (buyer.indexOf(me) >= 0 || buyer.indexOf(me.split(' ').slice(0, 2).join(' ')) >= 0))) { D.toast('This is your own request — suppliers will quote you here'); return; }   /* as the approved page answers */
+    quoteDialog(dc);
   }, true);
 
   /* ── the demo's category numbers count the listings on its page (the live app's come from the database) ── */

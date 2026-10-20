@@ -50,7 +50,12 @@ with sync_playwright() as p:
     # claim an unclaimed page through add-or-claim
     pg.evaluate("goto('companies')"); pg.wait_for_timeout(300); pg.click('#dxDir [data-hadd]'); pg.wait_for_timeout(200); pg.fill('#acQ','Suez'); pg.wait_for_timeout(300)
     pg.click('.dbk-ov [data-acclaim=suez-pharma-packaging]'); pg.wait_for_timeout(300)
+    # claims carry the commercial registry document and wait for Drugbox (B-01): no instant ownership by a code any more
     pg.fill('#clRole','Owner'); pg.fill('#clPhone','0100'); pg.fill('#clMail','a@suez.example'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(300)
-    code=pg.evaluate("document.querySelector('.cl-demo b').textContent"); pg.fill('#clCode',code); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(400)
-    T('claim → I manage it and land in its workspace', pg.evaluate("dxDir.bySlug('suez-pharma-packaging').owner")==pg.evaluate("ME.id") and pg.locator('#dxDir.ws').count()==1 and 'Suez Pharma Packaging' in pg.inner_text('#dxDir .ws-h'))
+    T('a claim without the registry document is refused', pg.locator('.dbk-ov #clDoc').count()==1 and pg.evaluate("dxDir.bySlug('suez-pharma-packaging').owner")!=pg.evaluate("ME.id"))
+    pg.wait_for_timeout(600)   # the dialog ignores a second click within half a second (double-click guard)
+    pg.set_input_files('#clDoc',files=[pdf('registry.pdf')]); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(400)
+    T('claim sent → waits for Drugbox (not mine yet)', pg.evaluate("dxClaims.pending('suez-pharma-packaging')") and pg.evaluate("dxDir.bySlug('suez-pharma-packaging').owner")!=pg.evaluate("ME.id"))
+    pg.evaluate("(()=>{const c=dxClaims.list().find(x=>x.slug==='suez-pharma-packaging');return dxClaims.decide(c.id,true)})()"); pg.wait_for_timeout(300)
+    T('Drugbox approves → I manage it', pg.evaluate("dxDir.bySlug('suez-pharma-packaging').owner")==pg.evaluate("ME.id"))
     print('\nJS errors:',errs or 'none','| feature warnings:',warns or 'none'); print(sum(R),'/',len(R)); b.close()

@@ -209,7 +209,7 @@ def post_demand(j):
         b = c.locator('button', has_text=re.compile(r'Quote|عرض')).first; j.check(b.count(), "no 'Quote →' on the demand")
         b.click(); j.settle(sp, 1000)
         j.check(dlg_open(sp) and sp.locator('.dbk-ov input:visible').count(), "not built: 'Quote →' on a demand opens no quotation (price) — no quote can reach the buyer")
-        fill_by_label(j, sp, r'price|السعر', 'US$ 20.50 per kg'); fill_by_label(j, sp, r'Lead|التوريد', '3 weeks', required=False)
+        fill_by_label(j, sp, r'price|السعر', 'US$ 20.50 per kg'); fill_by_label(j, sp, r'Quantity|الكمية', '2 MT/month'); fill_by_label(j, sp, r'Lead|التوريد', '3 weeks', required=False)
         dlg_click(j, sp, r'Send quote|أرسل', 'Send quote'); j.settle(sp, 1500)
         j.check(j.wait_db("select status||'|'||(offer->>'price') from public.deals where type='quote' and title=$q$%s$q$" % name, 8) == 'quoted|US$ 20.50 per kg', 'the quote is not a deal (quoted, with the price) in the deals engine')
     with j.step('The buyer compares quotes, accepts one (a deal), the others are told; closing the demand removes it from Browse'):
