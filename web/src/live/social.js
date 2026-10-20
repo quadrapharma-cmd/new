@@ -29,7 +29,7 @@
     ACC.signup = null; var r = await aSignup.apply(this, arguments);
     var s = ACC.signup, er = $('suErr');
     if (s && s.waiting && er) {
-      er.innerHTML = '<span>We sent a confirmation link to</span> <b data-noi18n></b><span>. Open it to activate your account, then sign in.</span> <button type="button" class="dx-su-resend">Resend confirmation email</button>';
+      er.innerHTML = '<span>Check your email.</span> <span>We sent a confirmation link to</span> <b data-noi18n></b><span>. Open it to activate your account, then sign in.</span> <button type="button" class="dx-su-resend">Resend confirmation email</button>';
       er.querySelector('b').textContent = s.email; er.classList.add('dx-auth-info'); er.style.display = 'block';
     } else if (er) er.classList.remove('dx-auth-info');
     return r;

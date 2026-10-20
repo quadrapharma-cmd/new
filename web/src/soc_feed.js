@@ -286,10 +286,11 @@
       if (window._postImgs.length >= 10) { bad.push(f.name + ' — at most 10 photos'); return; }
       window._postImgs.push(URL.createObjectURL(f));
     });
-    input.value = ''; drawImgs(); if (bad.length) toast(bad[0]);
+    if (!input.closest('[data-gpk]')) input.value = '';   /* (a group's composer reads the chosen files from its input: groups.js) */
+    drawImgs(); if (bad.length) toast(bad[0]);
   };
   window.previewPostFile = function (input) {
-    var f = input.files && input.files[0]; input.value = ''; if (!f) return;
+    var f = input.files && input.files[0]; if (!input.closest('[data-gpk]')) input.value = ''; if (!f) return;
     if (!FILE_OK.test(f.name)) { toast(f.name + ' — not accepted (PDF, Word, Excel or ZIP)'); return; }
     if (f.size > MAX_FILE) { toast(f.name + ' — too big (max 20 MB)'); return; }
     if (!Array.isArray(window._postFiles)) window._postFiles = [];
