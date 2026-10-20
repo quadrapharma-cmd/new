@@ -58,7 +58,7 @@ select pg_temp.step('A1 approves', $$update public.verification_requests set sta
 select pg_temp.ok('… the company is verified; the decision is logged with A1', $$(select status = 'verified' from public.companies where id = pg_temp.id('co'))
   and (select actor = pg_temp.u(1) and decision = 'approved' from public.admin_actions where kind = 'verification' and item_id = pg_temp.id('vr')::text)$$);
 select pg_temp.act(2);
-select pg_temp.no('A2 cannot reject what A1 approved', $$update public.verification_requests set status = 'rejected', note = 'second opinion' where id = pg_temp.id('vr')$$, '55000');
+select pg_temp.no('A2 cannot reject what A1 approved', $$update public.verification_requests set status = 'rejected', note = 'second opinion' where id = pg_temp.id('vr')$$, 'DX409');
 select pg_temp.ok('… still approved', $$(select status = 'approved' from public.verification_requests where id = pg_temp.id('vr'))$$);
 select pg_temp.act(3);
 select pg_temp.no('a moderator cannot take a verification back', $$select public.admin_undo((select id from public.admin_actions where kind = 'verification' and item_id = pg_temp.id('vr')::text))$$, '42501');
@@ -66,7 +66,7 @@ select pg_temp.act(2);
 select pg_temp.step('A2 undoes the approval', $$select public.admin_undo((select id from public.admin_actions where kind = 'verification' and item_id = pg_temp.id('vr')::text))$$);
 select pg_temp.ok('… the request is pending, the company too, O is told', $$(select status = 'pending' from public.verification_requests where id = pg_temp.id('vr'))
   and (select status = 'pending' from public.companies where id = pg_temp.id('co')) and pg_temp.told(4, 'reviewed again') = 1$$);
-select pg_temp.no('the same decision cannot be undone twice', $$select public.admin_undo((select id from public.admin_actions where kind = 'verification' and item_id = pg_temp.id('vr')::text))$$, '55000');
+select pg_temp.no('the same decision cannot be undone twice', $$select public.admin_undo((select id from public.admin_actions where kind = 'verification' and item_id = pg_temp.id('vr')::text))$$, 'DX409');
 select pg_temp.step('A2 now rejects with a note', $$update public.verification_requests set status = 'rejected', note = 'Tax card expired' where id = pg_temp.id('vr')$$);
 select pg_temp.ok('… O is told the note; two decisions are logged', $$pg_temp.told(4, 'Tax card expired') = 1
   and (select count(*) = 2 from public.admin_actions where kind = 'verification' and item_id = pg_temp.id('vr')::text)$$);
@@ -92,7 +92,7 @@ select pg_temp.no('a member cannot moderate', $$select public.moderate_reference
 select pg_temp.act(3);
 select pg_temp.step('M publishes it', $$select public.moderate_reference(pg_temp.id('wr'), 'published')$$);
 select pg_temp.act(1);
-select pg_temp.no('A1 cannot reject it afterwards', $$select public.moderate_reference(pg_temp.id('wr'), 'rejected')$$, '55000');
+select pg_temp.no('A1 cannot reject it afterwards', $$select public.moderate_reference(pg_temp.id('wr'), 'rejected')$$, 'DX409');
 select pg_temp.ok('… still published by M, logged', $$(select status = 'published' and decided_by = pg_temp.u(3) from public.work_references where id = pg_temp.id('wr')) and pg_temp.acts('reference', pg_temp.id('wr')::text) = 1$$);
 select pg_temp.step('A1 undoes it', $$select public.admin_undo((select id from public.admin_actions where kind = 'reference' and item_id = pg_temp.id('wr')::text))$$);
 select pg_temp.ok('… pending again, nobody''s decision', $$(select status = 'pending' and decided_by is null from public.work_references where id = pg_temp.id('wr'))$$);
@@ -111,7 +111,7 @@ select pg_temp.ok('M checks one', $$public.cert_decide(pg_temp.id('c1'), true) =
 select pg_temp.ok('… checked_at and checked_by are set; the owner is told; logged', $$(select checked_at is not null and checked_by = pg_temp.u(3) from public.site_certificates where id = pg_temp.id('c1'))
   and pg_temp.told(4, 'checked your certificate "AD WHO-GMP"') = 1 and pg_temp.acts('certificate', pg_temp.id('c1')::text) = 1$$);
 select pg_temp.act(1);
-select pg_temp.no('A1 cannot reject it afterwards', $$select public.cert_decide(pg_temp.id('c1'), false, 'second look')$$, '55000');
+select pg_temp.no('A1 cannot reject it afterwards', $$select public.cert_decide(pg_temp.id('c1'), false, 'second look')$$, 'DX409');
 select pg_temp.no('a rejection needs a reason', $$select public.cert_decide(pg_temp.id('c2'), false, '')$$, '22023');
 select pg_temp.ok('A1 rejects the other with a reason', $$public.cert_decide(pg_temp.id('c2'), false, 'The scan is unreadable') = 'rejected'$$);
 select pg_temp.ok('… the owner sees the reason', $$pg_temp.told(4, 'unreadable') = 1$$);
@@ -132,7 +132,7 @@ select pg_temp.step('M resolves it', $$update public.company_reports set status 
 select pg_temp.ok('… decided by M; R is told; logged', $$(select decided_by = pg_temp.u(3) and decided_at is not null from public.company_reports where id = pg_temp.id('rp'))
   and pg_temp.told(5, 'corrected') = 1 and pg_temp.acts('report', pg_temp.id('rp')::text) = 1$$);
 select pg_temp.act(1);
-select pg_temp.no('A1 cannot dismiss it afterwards', $$update public.company_reports set status = 'dismissed' where id = pg_temp.id('rp')$$, '55000');
+select pg_temp.no('A1 cannot dismiss it afterwards', $$update public.company_reports set status = 'dismissed' where id = pg_temp.id('rp')$$, 'DX409');
 select pg_temp.step('A1 undoes it', $$select public.admin_undo((select id from public.admin_actions where kind = 'report' and item_id = pg_temp.id('rp')::text))$$);
 select pg_temp.ok('… open again', $$(select status = 'open' and decided_by is null from public.company_reports where id = pg_temp.id('rp'))$$);
 
@@ -200,7 +200,7 @@ select pg_temp.ok('… it is gone; the author is told why', $$not exists (select
 select pg_temp.step('M restores it', $$select public.admin_restore_post(pg_temp.id('rm'))$$);
 select pg_temp.ok('… the same post with its picture is back; the author is told', $$exists (select 1 from public.posts where id = pg_temp.id('post') and body = 'AD back again')
   and exists (select 1 from public.post_media where post_id = pg_temp.id('post')) and pg_temp.told(7, 'restored your post') = 1$$);
-select pg_temp.no('it cannot be restored twice', $$select public.admin_restore_post(pg_temp.id('rm'))$$, '55000');
+select pg_temp.no('it cannot be restored twice', $$select public.admin_restore_post(pg_temp.id('rm'))$$, 'DX409');
 select pg_temp.as_anon();
 select pg_temp.ok('anon reads no decision and no suspension', $$(select count(*) = 0 from public.admin_actions) and (select count(*) = 0 from public.account_suspensions)$$);
 select pg_temp.no('anon cannot undo', $$select public.admin_undo(1)$$, '42501');

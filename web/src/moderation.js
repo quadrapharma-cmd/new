@@ -10,8 +10,8 @@
       load: function () {
         var cos = (window.dxDir && window.dxDir.companies()) || [], refs = (D.store.get('jobRefs', []) || []), H = window.dxHubData;
         return Promise.resolve({
-          verifications: cos.filter(function (c) { return c.status === 'pending' && !decided['v' + c.slug]; }).map(function (c) { return { id: c.slug, company: c.name, registry: c.registry || '—', at: '', docs: [] }; }),
-          warnings: refs.filter(function (r) { return r.kind === 'warn' && r.status === 'pending' && !decided['w' + r.cand + r.text]; }).map(function (r) { return { id: r.cand + r.text, company: r.company, candidate: r.cand, category: r.category, text: r.text, docs: [] }; }),
+          verifications: cos.filter(function (c) { return c.status === 'pending' && !decided['v' + c.slug]; }).map(function (c) { return { id: c.slug, company: c.name, registry: c.registry || '—', at: '', docs: ['Commercial registry', 'Tax card', 'Licence'].map(function (l) { return { path: 'demo', bucket: 'demo', label: l }; }) }; }).concat(window.dxDemoClaims ? window.dxDemoClaims.list().filter(function (c) { return !decided['v' + 'claim:' + c.slug]; }).map(function (c) { return { id: 'claim:' + c.slug, company: c.company, claim: true, by: c.by, note: c.role ? c.role + ' · ' + c.email : c.email, docs: [] }; }) : []),
+          warnings: refs.filter(function (r) { return r.kind === 'warn' && r.status === 'pending' && !decided['w' + r.cand + r.text]; }).map(function (r) { return { id: r.cand + r.text, company: r.company, candidate: r.cand, category: r.category, text: r.text, reply: r.reply || '', disputed: r.status === 'disputed', docs: [{ path: 'demo', bucket: 'demo', label: r.evidence || r.file || 'Evidence' }] }; }),
           certs: H ? cos.slice(0, 30).reduce(function (a, c) { (H.credentials(c) || []).forEach(function (x) { if (!x.checked && !/^Member:/.test(x.name) && !decided['c' + c.slug + '|' + x.name]) a.push({ id: c.slug + '|' + x.name, company: c.name, site: x.site, name: x.name, expiry: x.expiry }); }); return a; }, []) : [],
           payments: [],
           messages: (D.store.get('mxReports', []) || []).filter(function (r) { return !decided['m' + r.id]; }).map(function (r) { return { id: r.id, reporter: (window.ME && window.ME.name) || 'You', who: r.who, reason: r.reason, details: r.details, at: r.at, excerpt: r.excerpt ? [r.excerpt] : [] }; }),
@@ -19,23 +19,37 @@
           posts: window.dxPostSvc && window.dxPostSvc.queue ? window.dxPostSvc.queue() : []
         });
       },
-      decide: function (kind, id, value, note) {
-        if (kind === 'posts' && window.dxPostSvc && window.dxPostSvc.decide) return window.dxPostSvc.decide(id, value, note);
-        decided[kind.charAt(0) + id] = value; return Promise.resolve(true); },
+      decide: function (kind, id, value, note, label) {
+        if (decided[kind.charAt(0) + id]) return Promise.reject(new Error('Already decided by ' + decided[kind.charAt(0) + id].by));
+        var rec = { id: kind.charAt(0) + id, kind: kind, label: label || String(id), decision: value, note: note || '', by: (window.ME && window.ME.name) || 'You', at: new Date().toISOString() };
+        if (kind === 'posts' && window.dxPostSvc && window.dxPostSvc.decide) return window.dxPostSvc.decide(id, value, note).then(function (r) { decided[rec.id] = rec; return r; });
+        if (kind === 'verifications' && /^claim:/.test(id) && window.dxDemoClaims) window.dxDemoClaims.decide(id.slice(6), value === 'approved');
+        else if (kind === 'verifications' && window.dxDemoReview) { window.dxDemoReview.verify(id, value === 'approved', note); rec.id = 'v' + id + '@' + Date.now(); }   /* the page itself changes; a new request comes back to the queue */
+        decided[rec.id] = rec; return Promise.resolve(true); },
+      decided: function () { return Promise.resolve(Object.keys(decided).map(function (k) { var r = decided[k]; return { id: k, kind: r.kind, label: r.label, decision: r.decision, note: r.note, by: r.by, at: r.at,
+        undo: !(r.kind === 'payments' || (r.kind === 'posts' && r.decision === 'removed')) }; }).reverse()); },
+      undo: function (id) { delete decided[id]; return Promise.resolve('reopened'); },
       link: function () { return Promise.resolve(null); }
     };
   }
-  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts']];
-  var cur = 'verifications', data = null;
+  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '📝', 'Content reports'], ['decided', '🗂', 'Decided']];
+  var cur = 'verifications', data = null, find = '';
   function docs(list) { return (list || []).map(function (d) { return '<button type="button" class="dx-mod-doc" data-doc="' + esc(d.path) + '" data-bucket="' + esc(d.bucket) + '">📄 ' + esc(d.label) + '</button>'; }).join(''); }
   function row(kind, x) {
     var body = '', acts = '';
-    if (kind === 'verifications') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>Commercial registry ' + esc(x.registry) + (x.at ? ' · sent ' + esc(x.at) : '') + '</span>' + docs(x.docs);
+    if (kind === 'verifications') { body = '<b data-noi18n>' + esc(x.company) + '</b>' + (x.claim ? '<span class="dx-mod-claim">🙋 <span>Claim by</span> <span data-noi18n>' + esc(x.by || 'a member') + '</span></span>' + (x.note ? '<p data-noi18n>“' + esc(x.note) + '”</p>' : '')
+        : '<span>Commercial registry ' + esc(x.registry) + (x.at ? ' · sent ' + esc(x.at) : '') + '</span>') + docs(x.docs);
       acts = '<button class="dx-mod-ok" data-k="verifications" data-id="' + esc(x.id) + '" data-v="approved">Approve</button><button class="dx-mod-no" data-k="verifications" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
-    if (kind === 'warnings') { body = '<b data-noi18n>' + esc(x.company) + ' → ' + esc(x.candidate) + '</b><span>' + esc(x.category) + '</span><p>' + esc(x.text) + '</p>' + docs(x.docs);
+    if (kind === 'warnings') { body = '<b data-noi18n>' + esc(x.company) + ' → ' + esc(x.candidate) + '</b><span>' + esc(x.category) + (x.disputed ? ' · ⚖️ Disputed' : '') + '</span><p data-noi18n>' + esc(x.text) + '</p>' +
+        (x.reply ? '<p class="dx-mod-reply"><span>The candidate replied:</span> <span data-noi18n>“' + esc(x.reply) + '”</span></p>' : '') + docs(x.docs);
       acts = '<button class="dx-mod-ok" data-k="warnings" data-id="' + esc(x.id) + '" data-v="published">Publish</button><button class="dx-mod-no" data-k="warnings" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
     if (kind === 'certs') { body = '<b data-noi18n>' + esc(x.company) + '</b><span>' + esc(x.name) + ' · ' + esc(x.site || '') + (x.expiry ? ' · valid to ' + esc(x.expiry) : '') + '</span>';
-      acts = '<button class="dx-mod-ok" data-k="certs" data-id="' + esc(x.id) + '" data-v="checked">Mark checked</button>'; }
+      acts = '<button class="dx-mod-ok" data-k="certs" data-id="' + esc(x.id) + '" data-v="checked">Mark checked</button><button class="dx-mod-no" data-k="certs" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
+    if (kind === 'decided') { var DV = { approved: '✅ Approved', rejected: '❌ Rejected', published: '📣 Published', checked: '✅ Checked', resolved: '✅ Resolved', dismissed: '🗑 Dismissed', paid: '💳 Paid', failed: '❌ Not received',
+        removed: '🗑 Removed', actioned: '✅ Action taken', suspended: '⛔ Suspended', restored: '↺ Restored', verified: '✓ Verified', unverified: 'Badge removed', admin: 'Made admin', moderator: 'Made moderator', user: 'Made member' };
+      body = '<b data-noi18n>' + esc(x.label) + '</b><span><span>' + esc(DV[x.decision] || x.decision) + '</span> · <span>by</span> <span data-noi18n>' + esc(x.by || '') + '</span> · <span data-noi18n>' + esc(String(x.at || '').replace('T', ' ').slice(0, 16)) + '</span>' +
+        (x.undone ? ' · <span>undone</span>' : '') + '</span>' + (x.note ? '<p data-noi18n>' + esc(x.note) + '</p>' : '');
+      acts = x.undone ? '' : x.restore ? '<button class="dx-mod-undo" data-id="' + esc(x.id) + '" data-restore="1">↺ Restore post</button>' : x.undo ? '<button class="dx-mod-undo" data-id="' + esc(x.id) + '">↺ Undo</button>' : ''; }
     if (kind === 'reports') { body = '<b>' + esc(x.company) + ' · ' + esc(x.section) + '</b><p>' + esc(x.issue) + '</p>' + (x.correction ? '<span>Suggested: ' + esc(x.correction) + '</span>' : '');
       acts = '<button class="dx-mod-ok" data-k="reports" data-id="' + esc(x.id) + '" data-v="resolved">Resolved</button><button class="dx-mod-no" data-k="reports" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
     if (kind === 'payments') { body = '<b>' + esc(x.who) + ' · ' + esc(x.product) + '</b><span>InstaPay transfer ' + esc(x.transfer) + ' · EGP ' + esc(x.amount) + ' · note ' + esc(x.reference) + '</span>' + docs(x.docs);
@@ -46,16 +60,26 @@
     if (kind === 'posts') { var RS = { spam: 'Spam or unrelated ad', counterfeit: 'Unverified or counterfeit product', misleading: 'Misleading information', abusive: 'Harassment or hate', other: 'Something else' };
       body = '<b data-noi18n>' + esc(x.author) + '</b><span>Reported by ' + esc(x.reporter) + (x.n > 1 ? ' and ' + (x.n - 1) + ' more' : '') + ' · ' + esc(RS[x.reason] || x.reason) + (x.at ? ' · ' + esc(x.at) : '') + '</span>' +
         '<p>“' + esc(x.excerpt) + '”</p>' + (x.note ? '<span>' + esc(x.note) + '</span>' : '');
-      acts = '<button class="dx-mod-no" data-k="posts" data-id="' + esc(x.id) + '" data-v="removed">Remove post</button><button class="dx-mod-ok" data-k="posts" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
+      acts = '<button class="dx-mod-ok dx-mod-danger" data-k="posts" data-id="' + esc(x.id) + '" data-v="removed">Remove post</button><button class="dx-mod-no" data-k="posts" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }   /* upholding the report is the main step */
     return '<div class="dx-mod-row"><div class="dx-mod-b">' + body + '</div><div class="dx-mod-a">' + acts + '</div></div>';
   }
   function paint(c) {
     if (!data) { c.innerHTML = '<div class="dx-mod"><div class="dx-mod-empty">Loading the review queues…</div></div>'; return; }
     c.innerHTML = '<div class="dx-mod"><div class="dx-mod-h"><h2>Review</h2><span>Decisions here change what everyone sees — verification, published warnings, level 3.</span></div>' +
-      '<div class="dx-mod-tabs">' + Q.map(function (q) { var n = (data[q[0]] || []).length; return '<button class="dx-mod-tab' + (q[0] === cur ? ' on' : '') + '" data-q="' + q[0] + '">' + q[1] + ' ' + q[2] + (n ? ' <i>' + n + '</i>' : '') + '</button>'; }).join('') + '</div>' +
-      '<div class="dx-mod-list">' + ((data[cur] || []).length ? data[cur].map(function (x) { return row(cur, x); }).join('') : '<div class="dx-mod-empty">Nothing waiting here.</div>') + '</div></div>';
+      '<div class="dx-mod-tabs">' + Q.map(function (q) { var n = q[0] === 'decided' ? 0 : (data[q[0]] || []).length; return '<button class="dx-mod-tab' + (q[0] === cur ? ' on' : '') + '" data-q="' + q[0] + '">' + q[1] + ' ' + q[2] + (n ? ' <i>' + n + '</i>' : '') + '</button>'; }).join('') + '</div>' +
+      '<div class="dx-mod-find"><input type="search" id="dxModFind" placeholder="Search this queue…" aria-label="Search this queue" value="' + esc(find) + '"></div>' +
+      '<div class="dx-mod-list">' + list() + '</div></div>';
   }
-  function open(c) { data = null; paint(c); window.dxModeration.load().then(function (d) { data = d; paint(c); }).catch(function (e) { D.toast && D.toast((e && e.message) || 'Could not load the queues'); }); }
+  function list() {
+    var rows = (data[cur] || []).filter(function (x) { if (!find) return true; var t = JSON.stringify(x).toLowerCase(); return find.toLowerCase().split(/\s+/).every(function (w) { return t.indexOf(w) >= 0; }); });
+    return rows.length ? rows.map(function (x) { return row(cur, x); }).join('') : '<div class="dx-mod-empty">' + (find ? 'Nothing matches this search.' : cur === 'decided' ? 'No decisions yet.' : 'Nothing waiting here.') + '</div>';
+  }
+  function load() {
+    return window.dxModeration.load().then(function (d) {
+      return (window.dxModeration.decided ? window.dxModeration.decided() : Promise.resolve([])).then(function (h) { d.decided = h || []; return d; }, function () { d.decided = []; return d; });
+    });
+  }
+  function open(c) { data = null; paint(c); load().then(function (d) { data = d; paint(c); }).catch(function (e) { D.toast && D.toast((e && e.message) || 'Could not load the queues'); }); }
   var oTab = window.renderAdminTab;
   if (typeof oTab === 'function') window.renderAdminTab = function (tab) { if (tab === 'review') { var c = document.getElementById('adminContent'); if (c) open(c); return; } return oTab.apply(this, arguments); };
   var oAdmin = window.renderAdmin;
@@ -65,21 +89,31 @@
     return r;
   };
   document.addEventListener('click', function (e) {
-    var t = e.target.closest && e.target.closest('.dx-mod-tab, .dx-mod-ok, .dx-mod-no, .dx-mod-doc'); if (!t) return; e.preventDefault();
+    var t = e.target.closest && e.target.closest('.dx-mod-tab, .dx-mod-ok, .dx-mod-no, .dx-mod-doc, .dx-mod-undo'); if (!t) return; e.preventDefault();
     var c = document.getElementById('adminContent');
+    if (t.classList.contains('dx-mod-undo')) { t.disabled = true;
+      var p = t.dataset.restore ? window.dxModeration.restore(t.dataset.id) : window.dxModeration.undo(t.dataset.id);
+      p.then(function () { D.toast && D.toast(t.dataset.restore ? 'Post restored — its author is told' : 'Decision undone — the item is back in its queue'); return load().then(function (d) { data = d; paint(c); }); },
+        function (err) { t.disabled = false; D.toast && D.toast((err && err.message) || 'Could not undo'); }); return; }
     if (t.classList.contains('dx-mod-tab')) { cur = t.dataset.q; paint(c); return; }
     if (t.classList.contains('dx-mod-doc')) { window.dxModeration.link(t.dataset.doc, t.dataset.bucket).then(function (u) { if (u) window.open(u, '_blank', 'noopener'); else D.toast && D.toast('Documents open in the live app'); }); return; }
     var k = t.dataset.k, id = t.dataset.id, v = t.dataset.v, note = '';
     function go() { t.disabled = true;
-      window.dxModeration.decide(k, id, v, note).then(function () { data[k] = (data[k] || []).filter(function (x) { return String(x.id) !== String(id); }); paint(c); D.toast && D.toast('Done'); },
-        function (err) { t.disabled = false; D.toast && D.toast((err && err.message) || 'Could not save the decision'); }); }
+      var item = (data[k] || []).filter(function (x) { return String(x.id) === String(id); })[0] || {}, label = item.company || item.name || item.who || item.author || item.issue || '';
+      window.dxModeration.decide(k, id, v, note, label + (item.name && item.company ? ' · ' + item.name : '')).then(function () { data[k] = (data[k] || []).filter(function (x) { return String(x.id) !== String(id); }); paint(c); D.toast && D.toast('Done');
+          load().then(function (d) { data = d; paint(c); }, function () {}); },
+        function (err) { D.toast && D.toast((err && err.message) || 'Could not save the decision');   /* decided meanwhile (another moderator): the queue is read again */
+          load().then(function (d) { data = d; paint(c); }, function () { t.disabled = false; }); }); }
     if (k === 'posts' && v === 'removed') {   /* the author is told why: an optional note goes with the decision */
       D.modal({ title: 'Remove this post?', body: '<p>The author is told it was removed and why. Every reporter is told the outcome.</p><div class="dbk-f"><label for="dxModNote">Note for the author (optional)</label><textarea id="dxModNote" maxlength="500"></textarea></div>',
-        primary: { label: 'Remove post', danger: true, onClick: function (bx) { note = bx.querySelector('#dxModNote').value.trim(); go(); } } }); return; }
+        primary: { label: 'Remove post', onClick: function (bx) { note = bx.querySelector('#dxModNote').value.trim(); go(); } } }); return; }
+    if (v === 'rejected' && k === 'certs') { note = window.prompt('Reason for the company (they will see it and can upload a new scan):', 'The scan is not readable'); if (note === null) return; note = note.trim();   /* the company sees why */
+      if (note.length < 3) { D.toast && D.toast('Say why the certificate is rejected'); return; } return go(); }
     if (v === 'rejected' && k === 'verifications') { note = window.prompt('Reason for the company (they will see it):', 'The registry document is not readable'); if (note === null) return; return go(); }   /* Cancel keeps the request */
     var ask = { rejected: ['Reject this reference?', 'It will not be published.', 'Reject'], dismissed: ['Dismiss this report?', k === 'posts' ? 'The post stays up.' : 'The company page stays as it is.', 'Dismiss'], failed: ['Mark this transfer as not received?', 'The order stays unpaid.', 'Not received'] }[v];
     if (k === 'messages' && v === 'dismissed') ask = ['Dismiss this report?', 'Nothing changes for the reported member.', 'Dismiss'];
     if (ask) { D.modal({ title: ask[0], body: '<p>' + esc(ask[1]) + '</p>', primary: { label: ask[2], danger: true, onClick: function () { go(); } } }); return; }   /* destructive decisions are confirmed first */
     go();
   });
+  document.addEventListener('input', function (e) { if (e.target && e.target.id === 'dxModFind') { find = e.target.value.trim(); var l = document.querySelector('.dx-mod-list'); if (l) l.innerHTML = list(); } }, true);
 })();

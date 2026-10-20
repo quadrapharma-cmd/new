@@ -48,6 +48,24 @@ $$;
 revoke all on function public.groups_search(text, int) from public, anon, authenticated, service_role;
 grant execute on function public.groups_search(text, int) to authenticated, service_role;
 
+-- the creator manages the group as one of its admins, not for ever: 0013's "own manage" (ALL for the creator) would let a demoted
+-- creator or one who left rename, archive or delete it. Creating stays the creator's; deleting needs the creator to still be an admin.
+drop policy if exists "groups: own manage" on public.groups;
+drop policy if exists "groups: create your own" on public.groups;
+create policy "groups: create your own" on public.groups for insert to authenticated with check (created_by = (select auth.uid()));
+drop policy if exists "groups: the creator, still an admin, deletes" on public.groups;
+create policy "groups: the creator, still an admin, deletes" on public.groups for delete to authenticated
+  using (created_by = (select auth.uid()) and public.is_group_member(id, array['admin']));
+-- an archived public group is read by its members only (posts and listings follow readable_group_ids)
+create or replace function public.readable_group_ids() returns setof bigint
+language sql stable security definer set search_path = public as $$
+  select g.id from public.groups g where g.type = 'public' and g.archived_at is null
+  union
+  select m.group_id from public.group_members m where m.user_id = auth.uid()
+$$;
+revoke all on function public.readable_group_ids() from public, anon, authenticated, service_role;
+grant execute on function public.readable_group_ids() to authenticated, service_role;
+
 -- ── 2. members: the Sub-Admin role, mute, the last admin ────────────────────────────────────────────────
 alter table public.group_members add column if not exists muted boolean not null default false;
 alter table public.group_members drop constraint if exists group_members_role_check;
@@ -63,12 +81,14 @@ begin
       raise exception 'Only the group''s admins change roles' using errcode = '42501'; end if;
     if new.muted is distinct from old.muted and not public.is_server_call() and auth.uid() is distinct from old.user_id then
       raise exception 'Only the member chooses their notifications' using errcode = '42501'; end if;
+    if old.role = 'admin' and new.role <> 'admin' then perform 1 from public.groups where id = old.group_id for update; end if;   -- two admins stepping down at once wait for each other
     if old.role = 'admin' and new.role <> 'admin'
        and not exists (select 1 from public.group_members m where m.group_id = old.group_id and m.role = 'admin' and m.user_id <> old.user_id) then
       raise exception 'A group needs at least one admin — make someone else admin first' using errcode = '42501'; end if;
     return new;
   end if;
   -- DELETE: the last admin stays (unless the group itself, or the admin's account, is being deleted)
+  if old.role = 'admin' then perform 1 from public.groups where id = old.group_id for update; end if;
   if old.role = 'admin' and exists (select 1 from public.groups g where g.id = old.group_id)
      and exists (select 1 from public.profiles p where p.id = old.user_id)
      and not exists (select 1 from public.group_members m where m.group_id = old.group_id and m.role = 'admin' and m.user_id <> old.user_id) then
@@ -271,6 +291,8 @@ begin
   new.responses := old.responses; new.created_at := old.created_at; new.updated_at := now();
   if (new.title, new.details, new.price, new.company_id) is distinct from (old.title, old.details, old.price, old.company_id) and auth.uid() <> old.user_id then
     raise exception 'Only the author edits a listing' using errcode = '42501'; end if;
+  if new.company_id is distinct from old.company_id and new.company_id is not null and not public.is_company_member(new.company_id) then   -- (verifier B2)
+    raise exception 'You can list only for a company page you belong to' using errcode = '42501'; end if;
   return new;
 end $$;
 revoke all on function public.group_listings_guard() from public, anon, authenticated, service_role;

@@ -32,6 +32,7 @@
     }).catch(function (e) { D.toast((e && e.message) || 'The price could not be loaded — please try again'); });
   }
   if (!window.dxPay) window.dxPay = { live: false };
+  if (!window.dxPay.live && !window.dxPay.submitInstapay) window.dxPay.submitInstapay = function () { return Promise.resolve(); };   /* the demo keeps nothing: the transfer is shown as sent */
   var ctx = { slug: null, plan: 'boost' };
   if (window.dxDir && window.dxDir.upgrade) { var oUp = window.dxDir.upgrade; window.dxDir.upgrade = function (s) { ctx.slug = s; return oUp.apply(this, arguments); }; }
   function wrapBoost() {                       /* the marketplace page defines openBoostModal when it renders, so wrap it after each render */
@@ -55,12 +56,18 @@
     if (r.instapay) { D.modal({ title: 'Pay with InstaPay', body: '<div class="dx-pay-ref"><small>Send to</small><b>' + esc(r.instapay.address) + '</b><span>' + esc(r.instapay.name) + ' · ' + esc(egp(r.amount)) + '</span></div><p class="dx-pay-note">Write <b>' + esc(r.reference) + '</b> in the transfer note.</p>' +
         '<div class="dbk-f"><label for="dxIpRef">Transfer number *</label><input id="dxIpRef" data-req placeholder="From the InstaPay confirmation"></div><div class="dbk-f"><label for="dxIpRc">Receipt (screenshot or PDF)</label><input id="dxIpRc" type="file" accept=".png,.jpg,.jpeg,.pdf"></div>',
         primary: { label: 'Send for confirmation', onClick: function (b, close) { if (!D.requireFields(b)) return false; var f = b.querySelector('#dxIpRc').files[0], ok = b.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
-          window.dxPay.submitInstapay(r.order_id, b.querySelector('#dxIpRef').value.trim(), f || null).then(function () { close(); D.toast('Thank you — we confirm InstaPay transfers within one working day'); }, function (e) { if (ok) ok.disabled = false; D.toast(e.message || 'Could not send'); });
+          window.dxPay.submitInstapay(r.order_id, b.querySelector('#dxIpRef').value.trim(), f || null).then(function () { close(); D.toast('Waiting for confirmation — order ' + r.reference + '. We confirm InstaPay transfers within one working day'); }, function (e) { if (ok) ok.disabled = false; D.toast(e.message || 'Could not send'); });
           return false; } } }); }
   }
   function start(o, btn, done) { btn.disabled = true; window.dxPay.start(o).then(function (r) { btn.disabled = false; if (done) done(); result(r, o.method); }, function (e) { btn.disabled = false; D.toast((e && e.message) || 'The payment could not start'); }); }
   document.addEventListener('click', function (e) {
-    if (!window.dxPay.live) return;
+    if (!window.dxPay.live) {   /* the demo: InstaPay shows the same steps (address, amount, transfer number, receipt) without a provider */
+      var db = e.target.closest && e.target.closest('#bmPayBtn');
+      if (db && chosen(document, 'dxPayBoost') === 'instapay') { e.preventDefault(); e.stopImmediatePropagation();
+        var amt = Number(String((document.getElementById('bmEgpAmount') || {}).textContent || '').replace(/[^\d.]/g, '')) || 0;
+        document.getElementById('boostModalOverlay').classList.remove('show');
+        result({ instapay: { address: 'drugbox@instapay', name: 'Drugbox (demo)' }, amount: amt, reference: 'DBX' + (1000 + Math.floor(Math.random() * 9000)), order_id: 0 }, 'instapay'); }
+      return; }
     var vip = e.target.closest && e.target.closest('.dbk-ov[data-pay] [data-a=ok]'), ov = vip && vip.closest('.dbk-ov');   /* the window's pay button, whatever language its label is in */
     if (vip) { e.preventDefault(); e.stopImmediatePropagation();
       var tbl = ov.querySelector('table.cp-spec'), yearly = tbl ? tbl.dataset.billing === 'year' : /yearly/.test(ov.innerText);

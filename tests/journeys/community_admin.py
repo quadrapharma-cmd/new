@@ -284,12 +284,23 @@ def content_reports(j):
         j.check(re.search(r'Content|Posts|Reports|بلاغات المحتوى|المنشورات', tabs.replace('Company reports', '')), 'not built: Admin → Review has no queue for reported posts / people (queues: %s)' % tabs)
     with j.step('Remove P (deleted for everyone, Z told the reason) and suspend F; F cannot post and sees why'):
         q = body or ''
-        row = ap.locator('.dx-mod-row', has_text=q[:20]).first; j.check(row.count(), 'the reported post is not in the queue')
-        decide(j, ap, q[:20], True)
+        tab = ap.locator('.dx-mod-tab').filter(has_text=re.compile(r'Content|Posts|بلاغات المحتوى|المنشورات')); j.check(tab.count(), 'no content-reports queue'); tab.first.click(); ap.wait_for_timeout(600)
+        row = ap.locator('.dx-mod-row', has_text=q).first; j.check(row.count(), 'the reported post is not in the queue')
+        decide(j, ap, q, True)
         if j.live:
             j.check(j.wait_db("select count(*) from public.posts where id=%s" % p, 5, want='0') == '0', 'the reported post is still in the database')
             j.check(notif_rows(j, z, extra=" and created_at > now() - interval '10 minutes'") >= 1, 'Z is not told why the post was removed')
-            j.check(j.has_column('profiles', 'suspended') or j.has_column('profiles', 'suspended_until') or j.has_column('profiles', 'status'), 'not built: profiles cannot be suspended')
+            # suspend F through Admin → Users (account_suspensions, 0063), then F cannot post and is told why
+            close_dialogs(ap); ap.evaluate("switchAdminTab('users')"); j.settle(ap, 1200)
+            ap.locator('#adminContent .adm-q').fill('Fake Profile %s' % t); j.settle(ap, 1500)
+            row = ap.locator('#adminContent tr', has_text='Fake Profile %s' % t).first; j.check(row.count(), 'F is not found in Admin → Users')
+            row.locator('.adm-sus-btn').click(); ap.wait_for_timeout(500)
+            mfill(j, ap, r'Reason|السبب', 'Fake profile — impersonates a QA manager'); mclick(j, ap, r'^\W*(Suspend|إيقاف)\W*$', 'Suspend'); j.settle(ap, 1200)
+            j.check(j.wait_db("select reason from public.account_suspensions where user_id='%s'" % f['id'], 6) == 'Fake profile — impersonates a QA manager', 'F is not suspended in the database')
+            fp = f['page']; j.reload(fp); fp.wait_for_timeout(1500)
+            j.check(re.search(r'suspended|موقوف', mtext(fp)) and 'impersonates' in mtext(fp), 'F is not told why the account is suspended')
+            err = fp.evaluate("()=>dxLive.sb.from('posts').insert({user_id:dxLive.uuidOf(ME.id),body:'still posting'})" + _dx.ERR)
+            j.check(err and j.sql1("select count(*) from public.posts where user_id='%s' and body='still posting'" % f['id']) == '0', 'the suspended account can still post')
 
 @journey('J-COMMUNITY-48')
 def decision_notifications(j):
@@ -316,6 +327,8 @@ def decision_notifications(j):
             open_notif(j, pg, pat, pat.split('|')[0])
             j.check(gd_open(pg) and gd_title(pg) == g, "the '%s' notification does not open the group (page %s)" % (pat.split('|')[0], pg.evaluate("document.body.getAttribute('data-page')")))
     with j.step('Mark all read; reload: the badge is 0 and stays read'):
+        if j.live:   # the approved page offers "Mark all read" while something is unread: one more decision notice arrives first
+            j.sql("insert into public.notifications (user_id, type, message) values ('%s', 'account', 'Drugbox verified your profile ✓')" % u['id']); j.reload(pg)
         notifs(j, pg); b = j.find(pg, r'Mark all read|تعليم الكل كمقروء|تحديد الكل كمقروء|قراءة الكل', scope='#content'); j.check(b, 'no Mark all read'); b.click(); j.settle(pg, 900)
         reopen(j, pg); n = pg.evaluate("((document.querySelector('#tnb-notifs [class*=badge], #snl-notifs [class*=badge]')||{}).innerText||'0').trim()")
         j.check(n in ('', '0'), 'after reload the unread badge shows %s' % n)

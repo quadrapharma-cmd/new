@@ -65,7 +65,7 @@ grant execute on function private.undoing() to authenticated, service_role;
 create or replace function public.verification_requests_once() returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if new.status is distinct from old.status and old.status <> 'pending' and not private.undoing() then
-    raise exception 'Already decided by % (%)', private.who(old.reviewed_by), old.status using errcode = '55000';
+    raise exception 'Already decided by % (%)', private.who(old.reviewed_by), old.status using errcode = 'DX409';
   end if;
   return new;
 end $$;
@@ -97,7 +97,7 @@ begin
   select * into r from public.work_references where id = ref_id for update;
   if r.id is null then raise exception 'Reference not found' using errcode = 'P0002'; end if;
   if r.status in ('published', 'rejected') and new_status <> r.status and not private.undoing() then
-    raise exception 'Already decided by % (%)', private.who(r.decided_by), r.status using errcode = '55000';
+    raise exception 'Already decided by % (%)', private.who(r.decided_by), r.status using errcode = 'DX409';
   end if;
   if r.status = new_status then return; end if;
   update public.work_references set status = new_status,
@@ -152,7 +152,7 @@ begin
   select * into c from public.site_certificates where id = p_id for update;
   if c.id is null then raise exception 'This certificate is no longer available' using errcode = 'P0002'; end if;
   if (c.checked_at is not null or c.rejected_at is not null) and not private.undoing() then
-    raise exception 'Already decided by % (%)', private.who(c.checked_by), case when c.checked_at is not null then 'checked' else 'rejected' end using errcode = '55000';
+    raise exception 'Already decided by % (%)', private.who(c.checked_by), case when c.checked_at is not null then 'checked' else 'rejected' end using errcode = 'DX409';
   end if;
   if not p_ok and length(trim(coalesce(p_note, ''))) < 3 then raise exception 'Say why the certificate is rejected — the company sees it' using errcode = '22023'; end if;
   update public.site_certificates set checked_at = case when p_ok then now() end, checked_by = auth.uid(),
@@ -180,7 +180,7 @@ create or replace function public.company_reports_decided() returns trigger lang
 begin
   if new.status is distinct from old.status then
     if old.status <> 'open' and new.status <> 'open' and not private.undoing() then
-      raise exception 'Already decided by % (%)', private.who(old.decided_by), old.status using errcode = '55000';
+      raise exception 'Already decided by % (%)', private.who(old.decided_by), old.status using errcode = 'DX409';
     end if;
     if new.status = 'open' then new.decided_by := null; new.decided_at := null;
     elsif auth.uid() is not null then new.decided_by := auth.uid(); new.decided_at := now(); end if;
@@ -277,7 +277,7 @@ begin
   if p_user = auth.uid() then raise exception 'You cannot suspend your own account' using errcode = '22023'; end if;
   if exists (select 1 from public.profiles where id = p_user and role = 'admin') then raise exception 'An admin account cannot be suspended — change its role first' using errcode = '22023'; end if;
   if length(trim(coalesce(p_reason, ''))) < 3 then raise exception 'Give the reason — the member sees it' using errcode = '22023'; end if;
-  if exists (select 1 from public.account_suspensions where user_id = p_user) then raise exception 'This account is already suspended' using errcode = '55000'; end if;
+  if exists (select 1 from public.account_suspensions where user_id = p_user) then raise exception 'This account is already suspended' using errcode = 'DX409'; end if;
   insert into public.account_suspensions (user_id, reason, by_user) values (p_user, left(trim(p_reason), 500), auth.uid());
   perform private.log_decision('suspension', p_user::text, coalesce((select name from public.profiles where id = p_user), 'Member'), 'suspended', p_reason);
 end $$;
@@ -385,7 +385,7 @@ begin
   if not public.is_moderator() then raise exception 'Drugbox team only' using errcode = '42501'; end if;
   select * into a from public.admin_actions where id = p_action for update;
   if a.id is null or a.kind <> 'post' or a.decision <> 'removed' or a.data is null then raise exception 'There is no removed post to restore here' using errcode = 'P0002'; end if;
-  if a.undone_at is not null then raise exception 'Already restored by %', private.who(a.undone_by) using errcode = '55000'; end if;
+  if a.undone_at is not null then raise exception 'Already restored by %', private.who(a.undone_by) using errcode = 'DX409'; end if;
   p := a.data -> 'post';
   if not exists (select 1 from public.profiles where id = (p ->> 'user_id')::uuid) then raise exception 'The author''s account no longer exists' using errcode = 'P0002'; end if;
   if (p ->> 'group_id') is not null and not exists (select 1 from public.groups where id = (p ->> 'group_id')::bigint) then raise exception 'The post''s group no longer exists' using errcode = 'P0002'; end if;
@@ -409,7 +409,7 @@ begin
   if not public.is_moderator() then raise exception 'Drugbox team only' using errcode = '42501'; end if;
   select * into a from public.admin_actions where id = p_action for update;
   if a.id is null then raise exception 'Decision not found' using errcode = 'P0002'; end if;
-  if a.undone_at is not null then raise exception 'Already undone by %', private.who(a.undone_by) using errcode = '55000'; end if;
+  if a.undone_at is not null then raise exception 'Already undone by %', private.who(a.undone_by) using errcode = 'DX409'; end if;
   if a.kind in ('payment', 'claim') then raise exception 'A % decision cannot be undone here', a.kind using errcode = '22023'; end if;
   if a.kind = 'post' then
     if a.decision = 'removed' then return 'restore'; end if;             -- the interface calls admin_restore_post

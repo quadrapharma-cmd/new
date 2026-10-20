@@ -125,6 +125,11 @@ select pg_temp.ok('a made-up header shows nothing', $$not exists (select 1 from 
 select pg_temp.ask('');
 select pg_temp.A();
 select pg_temp.step('Drugbox revokes the certificate', $$update public.certificates set revoked_at = now() where code = (select v from ids where k = 'cert')$$);
+select pg_temp.L();
+select pg_temp.step('the learner leaves, enrols again and passes again', $$delete from public.course_enrollments where course_id = pg_temp.id('f');
+  insert into public.course_enrollments (course_id, user_id) values (pg_temp.id('f'), pg_temp.L_id())$$);
+select pg_temp.ok('… the withdrawn certificate stays withdrawn', $$(select (public.course_submit_quiz(pg_temp.id('f'), '{0,1}')) ->> 'passed' = 'true')
+  and (select revoked_at is not null from public.certificates where code = (select v from ids where k = 'cert'))$$);
 select pg_temp.as_anon(); select pg_temp.ask((select v from ids where k = 'cert'));
 select pg_temp.ok('… the verify link shows it revoked', $$(select revoked_at is not null from public.certificates where code = (select v from ids where k = 'cert'))$$);
 select pg_temp.ask('');
@@ -132,9 +137,15 @@ select pg_temp.ask('');
 -- 5. attempts per hour
 select pg_temp.A();
 select pg_temp.step('a course with a one-question quiz', $$with x as (insert into public.training_courses (title) values ('TR Quiz Only') returning id) insert into ids select 'q', id::text from x;
-  insert into public.course_questions (course_id, position, prompt, options, answer) select v::bigint, 1, 'TR Pick B', '{A,B}', 1 from ids where k = 'q'$$);
+  insert into public.course_questions (course_id, position, prompt, options, answer) select v::bigint, 1, 'TR Pick B', '{A,B}', 1 from ids where k = 'q';
+  insert into public.course_lessons (course_id, position, title) select v::bigint, 1, 'TR Only lesson' from ids where k = 'q'$$);
+select pg_temp.step('… and an empty course', $$with x as (insert into public.training_courses (title) values ('TR Empty') returning id) insert into ids select 'e', id::text from x$$);
 select pg_temp.L();
-select pg_temp.step('the learner enrols', $$insert into public.course_enrollments (course_id, user_id) values (pg_temp.id('q'), pg_temp.L_id())$$);
+select pg_temp.step('the learner enrols and does the lesson', $$insert into public.course_enrollments (course_id, user_id) values (pg_temp.id('q'), pg_temp.L_id());
+  insert into public.lesson_progress (lesson_id, course_id) select id, course_id from public.course_lessons where course_id = pg_temp.id('q')$$);
+select pg_temp.step('the learner enrols in the empty course', $$insert into public.course_enrollments (course_id, user_id) values (pg_temp.id('e'), pg_temp.L_id())$$);
+select pg_temp.no('a course with no lessons cannot be completed (no certificate for nothing)', $$select public.course_submit_quiz(pg_temp.id('e'), '{}')$$, '22023');
+select pg_temp.no('the learner cannot enrol with a completion date', $$insert into public.course_enrollments (course_id, user_id, completed_at) values (pg_temp.id('p'), pg_temp.L_id(), now())$$, '42501');
 select pg_temp.step('five wrong attempts', $$select public.course_submit_quiz(pg_temp.id('q'), '{0}') from generate_series(1, 5)$$);
 select pg_temp.no('a sixth attempt within the hour is refused', $$select public.course_submit_quiz(pg_temp.id('q'), '{1}')$$, '54000');
 
@@ -157,6 +168,11 @@ select pg_temp.ok('the learner opens the paid lesson now', $$(select (public.les
 select pg_temp.step('the learner tries to drop the paid course', $$delete from public.course_enrollments where course_id = pg_temp.id('p')$$);
 select pg_temp.ok('… it stays', $$exists (select 1 from public.course_enrollments where course_id = pg_temp.id('p'))$$);
 select pg_temp.no('it cannot be bought twice', $$select public.create_order('course_' || pg_temp.id('p'), 'card')$$, '23505');
+select pg_temp.as_server();
+select pg_temp.step('a second order paid for the same course (ordered before the first was paid)', $$with x as (insert into public.payment_orders (user_id, product_code, course_id, method, amount_cents, provider_order) values (pg_temp.L_id(), 'course_' || pg_temp.id('p'), pg_temp.id('p'), 'card', 114000, 'TRPO2') returning id) insert into ids select 'o2', id::text from x$$);
+select pg_temp.ok('… is paid but not activated: the buyer and Drugbox are told a refund is due', $$public.confirm_payment('paymob', 'TRPO2', 'tx2', 114000, 'EGP', '{}') like 'paid, not activated%'$$);
+select pg_temp.ok('… the buyer reads it', $$exists (select 1 from public.notifications where user_id = pg_temp.L_id() and message like '%already enrolled — the Drugbox team will refund you')$$);
+select pg_temp.L();
 select pg_temp.O();
 select pg_temp.no('an outsider cannot pay with a made-up product', $$select public.create_order('course_999999999', 'card')$$, 'P0001');
 

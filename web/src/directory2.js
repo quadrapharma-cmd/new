@@ -185,8 +185,19 @@
   }, true);
 
   /* ── claim an unclaimed page (opened from the hub's claim banner) ── */
+  /* AREA community (J-COMMUNITY-42): a claim waits for Drugbox's review (Admin → Review in the demo too); the page becomes yours when it is approved */
+  function claims() { return X().store('claims') || {}; }
+  function approveClaim(slug, ok) {
+    var c = claims()[slug], co = X().bySlug(slug); if (!c) return false;
+    var all = claims(); delete all[slug]; X().store('claims', all);
+    if (ok && co) { var edits = X().store('company_edits') || {}; edits[slug] = Object.assign({}, edits[slug] || {}, { owner: c.uid, status: 'unverified', claimed: true, claimedAt: Date.now(), email: c.email, about: co.about.indexOf('public industry sources') >= 0 ? '' : co.about });
+      X().store('company_edits', edits); if (window.dxHub) window.dxHub.log(slug, 'Claimed the company page'); }
+    return true;
+  }
+  window.dxDemoClaims = { list: function () { var a = claims(); return Object.keys(a).map(function (k) { return Object.assign({ slug: k, company: (X().bySlug(k) || {}).name || k }, a[k]); }); }, decide: approveClaim };
   function claimDialog(co) {
     var me = window.ME || {}, code = String(1000 + Math.floor(Math.random() * 9000));
+    if (claims()[co.slug]) { D.modal({ title: 'Claim ' + co.name, secondary: 'Close', body: '<p>' + esc('Your claim for ' + co.name + ' is already under review') + ' — Drugbox tells you when it is checked.</p>' }); return; }
     D.modal({ title: 'Claim ' + co.name, body: '<p class="cp-muted">Prove you work at ' + esc(co.name) + ' and the page becomes yours to manage. Nothing is published until you edit it.</p>' +
       '<div class="dbk-row"><div class="dbk-f"><label for="clRole">Your role *</label><input id="clRole" data-req placeholder="e.g. Business Development Manager"></div><div class="dbk-f"><label for="clPhone">Mobile *</label><input id="clPhone" data-req inputmode="tel"></div></div>' +
       '<div class="dbk-f"><label for="clMail">Work email *</label><input id="clMail" data-req type="email" placeholder="you@company.com"></div>',
@@ -197,8 +208,8 @@
           D.modal({ title: 'Enter the code', body: '<p class="cp-muted">We sent a 4-digit code to ' + esc(mail) + '. <span class="cl-demo">Demo code: <b>' + code + '</b></span></p><div class="dbk-f"><label for="clCode">Code *</label><input id="clCode" data-req inputmode="numeric" maxlength="4"></div>',
             primary: { label: 'Claim page', onClick: function (b2) {
               if (b2.querySelector('#clCode').value.trim() !== code) { b2.querySelector('#clCode').classList.add('dbk-err'); toast('Wrong code'); return false; }
-              var edits = X().store('company_edits') || {}; edits[co.slug] = Object.assign({}, edits[co.slug] || {}, { owner: me.id, status: 'unverified', claimed: true, claimedAt: Date.now(), email: mail, phone: b2 ? co.phone : co.phone, about: co.about.indexOf('public industry sources') >= 0 ? '' : co.about });
-              X().store('company_edits', edits); X().store('acting', co.slug); if (window.dxHub) { window.dxHub.log(co.slug, 'Claimed the company page'); window.dxHub.workspace(co.slug); } else X().render(); toast('You now manage ' + co.name + ' — complete the page and get verified');
+              var all = claims(); all[co.slug] = { uid: me.id, by: me.name || 'You', role: b.querySelector('#clRole').value.trim(), email: mail, at: new Date().toISOString() }; X().store('claims', all);
+              X().render(); toast('Your claim is under review — Drugbox checks it and tells you within 2 working days');
             } } });
         }, 40);
       } } });

@@ -122,6 +122,7 @@ select pg_temp.A(); select pg_temp.step('A opens posting again', $$update public
 select pg_temp.step('A archives the group', $$update public.groups set archived_at = now() where id = pg_temp.id('g')$$);
 select pg_temp.D();
 select pg_temp.ok('an outsider no longer sees the archived group', $$not exists (select 1 from public.groups where id = pg_temp.id('g'))$$);
+select pg_temp.ok('… nor its posts', $$not exists (select 1 from public.posts where group_id = pg_temp.id('g'))$$);
 select pg_temp.ok('search leaves it out', $$not exists (select 1 from public.groups_search('GR Pharma') where id = pg_temp.id('g'))$$);
 select pg_temp.no('an outsider cannot join it', $$insert into public.group_members (group_id, user_id) values (pg_temp.id('g'), 'a2000000-0000-0000-0000-000000000004')$$, '42501');
 select pg_temp.C();
@@ -133,6 +134,18 @@ select pg_temp.no('even its admin cannot post while it is archived', $$insert in
 select pg_temp.step('A restores it', $$update public.groups set archived_at = null where id = pg_temp.id('g')$$);
 select pg_temp.D();
 select pg_temp.ok('the outsider sees it again', $$exists (select 1 from public.groups where id = pg_temp.id('g'))$$);
+
+-- the creator manages only while an admin
+select pg_temp.as_server();
+select pg_temp.step('M becomes an admin, A steps down to member', $$update public.group_members set role = 'admin' where group_id = pg_temp.id('g') and user_id = 'a2000000-0000-0000-0000-000000000002';
+  update public.group_members set role = 'member' where group_id = pg_temp.id('g') and user_id = 'a2000000-0000-0000-0000-000000000001'$$);
+select pg_temp.A();
+select pg_temp.step('the demoted creator tries to rename and archive', $$update public.groups set name = 'GR Taken over', archived_at = now() where id = pg_temp.id('g')$$);
+select pg_temp.step('… and to delete it', $$delete from public.groups where id = pg_temp.id('g')$$);
+select pg_temp.as_server();
+select pg_temp.ok('… nothing changed and the group is still there', $$(select name = 'GR Pharma Talk' and archived_at is null from public.groups where id = pg_temp.id('g'))$$);
+select pg_temp.step('A is an admin again, M a moderator', $$update public.group_members set role = 'admin' where group_id = pg_temp.id('g') and user_id = 'a2000000-0000-0000-0000-000000000001';
+  update public.group_members set role = 'moderator' where group_id = pg_temp.id('g') and user_id = 'a2000000-0000-0000-0000-000000000002'$$);
 
 -- 8. removing a member tells them; leaving does not
 select pg_temp.A();
@@ -181,6 +194,8 @@ select pg_temp.step('C joins the deal room', $$insert into public.group_members 
 select pg_temp.no('C cannot post for a company it does not belong to', $$insert into public.group_listings (group_id, company_id, kind, title) values (pg_temp.id('dr'), pg_temp.id('cob'), 'sale', 'GR fake sale')$$, '42501');
 select pg_temp.step('C tries to edit A''s listing', $$update public.group_listings set title = 'GR changed', responses = 50 where id = pg_temp.id('l')$$);
 select pg_temp.ok('… nothing changed', $$(select title = 'GR Paracetamol API 500 kg' and responses = 0 from public.group_listings where id = pg_temp.id('l'))$$);
+select pg_temp.step('C lists without a company, then tries to put A''s company on it', $$with x as (insert into public.group_listings (group_id, kind, title) values (pg_temp.id('dr'), 'sale', 'GR plain sale') returning id) insert into ids select 'l2', id::text from x$$);
+select pg_temp.no('… refused (a listing speaks only for a company you belong to)', $$update public.group_listings set company_id = pg_temp.id('cob') where id = pg_temp.id('l2')$$, '42501');
 select pg_temp.no('C cannot write an answer row by hand', $$insert into public.group_listing_responses (listing_id, user_id) values (pg_temp.id('l'), 'a2000000-0000-0000-0000-000000000003')$$, '42501');
 select pg_temp.no('C cannot answer for a company it does not belong to', $$select public.group_listing_respond(pg_temp.id('l'), 'gr-buyer', 'as A')$$, '42501');
 select pg_temp.step('C answers with an offer from its company', $$insert into ids select 'ref', public.group_listing_respond(pg_temp.id('l'), 'gr-seller', 'GR we can supply', 'USD 4.1/kg', '3 weeks')$$);

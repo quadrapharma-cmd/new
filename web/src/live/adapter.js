@@ -981,6 +981,11 @@
     var list = window.dxLiveCompanies || (window.dxLiveCompanies = []);
     (r.data || []).forEach(function (c) { if (!okSlug(c.slug)) return; var old = CO.raw[c.slug]; c.mine = true; if (old && old.id) ['track', 'certs', 'products', 'tier'].forEach(function (k) { if (k in old) c[k] = old[k]; });
       CO.raw[c.slug] = c; CO.byId[c.id] = c.slug; var co = coFrom(c), i = list.findIndex(function (x) { return x.slug === c.slug; }); if (i < 0) list.push(co); else list[i] = co; });
+    /* AREA community (J-COMMUNITY-41): a page that is not verified shows "under review" only while a request really is; after a
+       rejection the owner reads Drugbox's note and sends again */
+    var vr = await sb.from('verification_requests').select('company_id,status,note,claim,created_at').in('company_id', ids).eq('claim', false).order('created_at', { ascending: false }).limit(200);
+    if (!vr.error && me === ME_UUID) { var last = {}; (vr.data || []).forEach(function (v) { if (!(v.company_id in last)) last[v.company_id] = v; });
+      list.forEach(function (co) { var raw = CO.raw[co.slug]; if (!raw || !CO.roles[raw.id]) return; var v = last[raw.id]; co.vr = v ? v.status : 'none'; co.vrNote = v && v.status === 'rejected' ? v.note || '' : ''; }); }
     window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
   }
   /* the directory, 100 companies a request in the directory's order (F-05): the first page when Companies or the Marketplace
@@ -1098,7 +1103,7 @@
         var sv = okSlug(ins.data.slug) ? ins.data.slug : c.slug; if (sv !== c.slug) adoptSlug(c.slug, sv, shown);
         ins.data.mine = true; CO.raw[sv] = ins.data; CO.roles[ins.data.id] = 'owner'; shown._id = ins.data.id; CO.byId[ins.data.id] = sv;
       } else if (c.registry && c.status === 'pending' && known.id && !SNAP['vr_' + c.slug]) {   /* verification documents submitted */
-        SNAP['vr_' + c.slug] = 1; var l = live(c.slug); if (l) { l.status = 'pending'; l.registry = c.registry; }
+        SNAP['vr_' + c.slug] = 1; var l = live(c.slug); if (l) { l.status = 'pending'; l.registry = c.registry; l.vr = 'pending'; l.vrNote = ''; }
         var docs = {}; try { docs = await window.dxLive.verificationFiles(known.id); } catch (e) { toastErr(e); }
         var vr = await sb.from('verification_requests').insert(Object.assign({ company_id: known.id, submitted_by: ME_UUID, registry: String(c.registry) }, docs));
         if (vr.error) toastErr(vr.error);
@@ -1797,9 +1802,11 @@
     var a = await Promise.all([sb.from('groups').select(GCOLS).order('member_count', { ascending: false }).order('created_at', { ascending: false }).limit(60),
                                sb.from('group_members').select('group_id, role, muted').eq('user_id', ME_UUID),
                                sb.from('group_invites').select('group_id, by:profiles!group_invites_invited_by_fkey(name), g:groups(' + GCOLS + ')').eq('user_id', ME_UUID).limit(50),
-                               sb.from('group_join_requests').select('group_id').eq('user_id', ME_UUID).eq('status', 'pending').limit(50)]);
+                               sb.from('group_join_requests').select('group_id').eq('user_id', ME_UUID).eq('status', 'pending').limit(50),
+                               sb.from('groups').select(GCOLS).is('archived_at', null).order('created_at', { ascending: false }).limit(30)]);   /* AREA community: new groups are found too, not only the 60 biggest */
     if (a[0].error) throw a[0].error; if (a[1].error) throw a[1].error;
     GX.groups = a[0].data || [];
+    ((a[4] && a[4].data) || []).forEach(function (g) { if (!GX.groups.some(function (y) { return y.id === g.id; })) GX.groups.push(g); });
     GX.inv = {}; GX.invBy = {}; ((a[2] && a[2].data) || []).forEach(function (x) { GX.inv[x.group_id] = true; GX.invBy[x.group_id] = x.by && x.by.name ? x.by.name : ''; });
     GX.req = {}; ((a[3] && a[3].data) || []).forEach(function (x) { GX.req[x.group_id] = true; });
     var inv = ((a[2] && a[2].data) || []).map(function (x) { return x.g; }).filter(function (g) { return g && !GX.groups.some(function (y) { return y.id === g.id; }); });
@@ -2375,7 +2382,7 @@
     var l = live(DOCS.vslug); if (l) { l.status = 'pending'; l.registry = rn; }
     window.dxLive.verificationFiles(raw.id).then(function (docs) {
       return sb.from('verification_requests').insert(Object.assign({ company_id: raw.id, submitted_by: ME_UUID, registry: rn }, docs));
-    }).then(function (r) { if (r && r.error) { toastErr(r.error); return; } SNAP['vr_' + DOCS.vslug] = 1; rerenderCompanies(); }, toastErr);
+    }).then(function (r) { if (r && r.error) { toastErr(r.error); return; } SNAP['vr_' + DOCS.vslug] = 1; var lv = live(DOCS.vslug); if (lv) { lv.vr = 'pending'; lv.vrNote = ''; } rerenderCompanies(); }, toastErr);
   }, true);
 
   /* ═══════════════ E2 — Admin → Review on the database; company reports ═══════════════ */
@@ -2383,16 +2390,16 @@
     load: async function () {
       var today = new Date().toISOString().slice(0, 10);
       var q = await Promise.all([
-        sb.from('verification_requests').select('*, co:companies(name,slug)').eq('status', 'pending').order('created_at').limit(100),
-        sb.from('work_references').select('*, au:profiles!work_references_author_fkey(name,company), ca:profiles!work_references_candidate_fkey(name)').eq('kind', 'warn').eq('status', 'pending').order('created_at').limit(100),
-        sb.from('site_certificates').select('*, st:company_sites!site_certificates_site_id_fkey(name), co:companies(name)').is('checked_at', null).or('expiry.is.null,expiry.gte.' + today).order('created_at').limit(100),
+        sb.from('verification_requests').select('*, co:companies(name,slug), by:profiles!verification_requests_submitted_by_fkey(name)').eq('status', 'pending').order('created_at').limit(200),
+        sb.from('work_references').select('*, au:profiles!work_references_author_fkey(name,company), ca:profiles!work_references_candidate_fkey(name)').eq('kind', 'warn').in('status', ['pending', 'disputed']).order('created_at').limit(200),
+        sb.from('site_certificates').select('*, st:company_sites!site_certificates_site_id_fkey(name), co:companies(name)').is('checked_at', null).is('rejected_at', null).or('expiry.is.null,expiry.gte.' + today).order('created_at').limit(200),
         sb.from('company_reports').select('*, co:companies(name)').eq('status', 'open').order('created_at').limit(100)]);
       for (var i = 0; i < q.length; i++) if (q[i].error) throw q[i].error;
       var d = function (path, bucket, label) { return path ? [{ path: path, bucket: bucket, label: label }] : []; };
       return {
-        verifications: q[0].data.map(function (v) { return { id: v.id, company: v.co && v.co.name, registry: v.registry, at: String(v.created_at).slice(0, 10),
+        verifications: q[0].data.map(function (v) { return { id: v.id, company: v.co && v.co.name, registry: v.registry, at: String(v.created_at).slice(0, 10), claim: !!v.claim, by: (v.by && v.by.name) || '', note: v.note || '',
           docs: d(v.registry_path, 'documents', 'Commercial registry').concat(d(v.tax_card_path, 'documents', 'Tax card'), d(v.licence_path, 'documents', 'Licence')) }; }),
-        warnings: q[1].data.map(function (w) { return { id: w.id, company: (w.au && (w.au.company || w.au.name)) || '', candidate: w.ca && w.ca.name, category: w.category, text: w.body, docs: d(w.evidence_path, 'reference-evidence', 'Evidence') }; }),
+        warnings: q[1].data.map(function (w) { return { id: w.id, company: (w.au && (w.au.company || w.au.name)) || '', candidate: w.ca && w.ca.name, category: w.category, text: w.body, disputed: w.status === 'disputed', reply: w.reply || '', docs: d(w.evidence_path, 'reference-evidence', 'Evidence') }; }),
         certs: q[2].data.map(function (c) { return { id: c.id, company: c.co && c.co.name, site: c.st && c.st.name, name: c.name, expiry: c.expiry ? String(c.expiry).slice(0, 7) : '' }; }),
         reports: q[3].data.map(function (r) { return { id: r.id, company: r.co && r.co.name, section: r.section, issue: r.issue, correction: r.correction }; })
       };
@@ -2400,7 +2407,7 @@
     decide: async function (kind, id, value, note) {
       var r = kind === 'verifications' ? await sb.from('verification_requests').update({ status: value, note: note || null }).eq('id', id).select()
         : kind === 'warnings' ? await sb.rpc('moderate_reference', { ref_id: +id, new_status: value })
-        : kind === 'certs' ? await sb.from('site_certificates').update({ checked_at: new Date().toISOString() }).eq('id', id).select()
+        : kind === 'certs' ? await sb.rpc('cert_decide', { p_id: +id, p_ok: value === 'checked', p_note: note || null })   /* 0063: once; the company is told */
         : await sb.from('company_reports').update({ status: value }).eq('id', id).select();
       if (r.error) throw new Error(friendly(r.error));
       if (r.data && Array.isArray(r.data) && !r.data.length) throw new Error('Only the Drugbox team can do this');
@@ -3235,8 +3242,7 @@
   window.dxTraining = {
     live: true, verifyReady: true,
     ready: function () { return !!ME_UUID; },
-    list: async function () { var r = tErr(await sb.from('training_courses').select(TCOLS).order('sort_order').order('created_at').limit(200)), mine = await window.dxTraining.mine();
-      return r.map(tCourse).filter(function (c) { return c.active || mine[c.id]; }); },
+    list: async function () { return tErr(await sb.from('training_courses').select(TCOLS).order('sort_order').order('created_at').limit(200)).map(tCourse); },   /* training.js keeps the active ones and mine */
     mine: async function () {
       var a = await Promise.all([sb.from('course_enrollments').select('course_id,status,completed_at,order_id').eq('user_id', ME_UUID).limit(500),
                                  sb.from('lesson_progress').select('lesson_id,course_id').eq('user_id', ME_UUID).limit(5000),
@@ -3279,6 +3285,7 @@
       if (l.file) { kind = /^video\//.test(l.file.type) ? 'video' : 'pdf'; path = 'courses/' + (+id) + '/' + rid() + '.' + (kind === 'video' ? (/webm/.test(l.file.type) ? 'webm' : 'mp4') : 'pdf');
         var u = await sb.storage.from('course-media').upload(path, l.file, { contentType: l.file.type }); if (u.error) throw new Error(friendly(u.error)); }
       var r = await sb.from('course_lessons').insert({ course_id: +id, position: pos, title: l.title, kind: kind, minutes: l.minutes || 10, body: l.body || '', media_path: path }).select('id');
+      if (r.error && path) sb.storage.from('course-media').remove([path]).catch(function () {});   /* no file left behind */
       tErr(r);
     },
     removeLesson: async function (lid) { var d = tErr(await sb.from('course_lessons').delete().eq('id', +lid).select('id')); if (!d.length) throw new Error('Only the Drugbox team manages courses'); },
@@ -3300,6 +3307,59 @@
   ICON.certificate = '🎓'; ICON.payment = ICON.payment || '💳';
   onReset(function () { window.dispatchEvent(new Event('dx:training')); });
   window.dispatchEvent(new Event('dx:training'));
+
+  /* ===== AREA community: admin (A-01, A-02, A-03) — window.dxAdmin over 0063 (Users, Posts, Dashboard, Ticker, Sponsors,
+     Settings), the decision log with undo in Admin → Review, the suspended member told why, the site settings for everyone ===== */
+  function aErr(r) { if (r.error) throw new Error(friendly(r.error)); return r.data; }
+  window.dxAdmin = {
+    live: true,
+    ready: function () { return !!ME_UUID; },
+    users: async function (q, off) { var d = aErr(await sb.rpc('admin_users', { p_q: q || null, p_limit: 50, p_offset: off || 0 }));
+      return { total: d.length ? +d[0].total : 0, rows: d.map(function (u) { return { id: u.id, name: u.name || 'Member', headline: u.headline || '', company: u.company || '', role: u.role, verified: !!u.verified,
+        suspended: !!u.suspended, reason: u.suspended_reason || '', posts: +u.posts || 0, me: u.id === ME_UUID }; }) }; },
+    setRole: async function (id, role) { aErr(await sb.rpc('admin_set_role', { p_user: id, p_role: role })); },
+    verify: async function (id, on) { aErr(await sb.rpc('admin_verify_profile', { p_user: id, p_on: !!on })); },
+    suspend: async function (id, reason) { aErr(await sb.rpc('admin_suspend', { p_user: id, p_reason: reason })); },
+    unsuspend: async function (id) { aErr(await sb.rpc('admin_unsuspend', { p_user: id })); },
+    posts: async function (q, off) { var d = aErr(await sb.rpc('admin_posts', { p_q: q || null, p_limit: 50, p_offset: off || 0 }));
+      return { total: d.length ? +d[0].total : 0, rows: d.map(function (p) { return { id: p.id, author: p.author || 'Member', body: p.body || '', likes: p.like_count || 0, comments: p.comment_count || 0, at: p.created_at }; }) }; },
+    removePost: async function (id, reason) { aErr(await sb.rpc('admin_delete_post', { p_post: +id, p_reason: reason })); },
+    removed: async function () { var d = aErr(await sb.from('admin_actions').select('id,label,note,created_at,data,undone_at').eq('kind', 'post').eq('decision', 'removed').is('undone_at', null).not('data', 'is', null).order('created_at', { ascending: false }).limit(50));
+      return d.map(function (a) { var p = (a.data && a.data.post) || {}; return { id: a.id, author: String(a.label || '').split(' · ')[0], body: p.body || '', reason: a.note || '', at: a.created_at }; }); },
+    restore: async function (id) { aErr(await sb.rpc('admin_restore_post', { p_action: +id })); },
+    stats: async function () {
+      var c = function (t) { return sb.from(t).select('id', { count: 'exact', head: true }); };
+      var q = await Promise.all([c('profiles'), c('posts'), c('enquiries'), c('companies'), sb.rpc('admin_users', { p_q: null, p_limit: 5, p_offset: 0 })]);
+      return { users: q[0].count || 0, posts: q[1].count || 0, enquiries: q[2].count || 0, companies: q[3].count || 0, latest: (q[4].data || []).map(function (u) { return { name: u.name, company: u.company || '', role: u.role }; }) };
+    },
+    ticker: async function () { return aErr(await sb.from('ticker_items').select('id,label,text,active,sort_order').order('sort_order').order('id').limit(100)); },
+    addTicker: async function (label, text) { aErr(await sb.from('ticker_items').insert({ label: label, text: text, active: true, sort_order: 100 }).select('id')); TK.at = 0; tickerSoon(0); },
+    delTicker: async function (id) { var d = aErr(await sb.from('ticker_items').delete().eq('id', id).select('id')); if (!d.length) throw new Error('Only the Drugbox team can do this'); TK.at = 0; tickerSoon(0); },
+    showTicker: async function (id, on) { var d = aErr(await sb.from('ticker_items').update({ active: !!on }).eq('id', id).select('id')); if (!d.length) throw new Error('Only the Drugbox team can do this'); TK.at = 0; tickerSoon(0); },
+    sponsors: async function () { return aErr(await sb.from('sponsored_suppliers').select('id,name,description,logo_emoji,color,active').order('sort_order').order('id').limit(100)); },
+    addSponsor: async function (o) { aErr(await sb.from('sponsored_suppliers').insert({ name: o.name, description: o.description || '', logo_emoji: o.logo_emoji || '🏭', color: o.color || '#dbeafe', active: true, sort_order: 100 }).select('id')); },
+    delSponsor: async function (id) { var d = aErr(await sb.from('sponsored_suppliers').delete().eq('id', id).select('id')); if (!d.length) throw new Error('Only the Drugbox team can do this'); },
+    saveSettings: async function (o) { var rows = Object.keys(o).map(function (k) { return { key: k, value: o[k], type: 'text' }; });
+      var d = aErr(await sb.from('settings').upsert(rows, { onConflict: 'key' }).select('key')); if (!d.length) throw new Error('Only the Drugbox team can do this'); }
+  };
+  /* Admin → Review: the decisions (who, when, outcome) with undo, and the restore of a removed post */
+  window.dxModeration.decided = async function () {
+    var d = aErr(await sb.from('admin_actions').select('id,kind,label,decision,note,created_at,undone_at,data,actor:profiles!admin_actions_actor_fkey(name)').order('created_at', { ascending: false }).limit(200));
+    return d.map(function (a) { return { id: a.id, kind: a.kind, label: a.label, decision: a.decision, note: a.note || '', by: (a.actor && a.actor.name) || '', at: a.created_at, undone: !!a.undone_at,
+      restore: a.kind === 'post' && a.decision === 'removed' && !!a.data, undo: !(a.kind === 'payment' || a.kind === 'claim' || (a.kind === 'post' && a.decision === 'removed') || (a.kind === 'suspension' && a.decision !== 'suspended')) }; });
+  };
+  window.dxModeration.undo = async function (id) { var r = aErr(await sb.rpc('admin_undo', { p_action: +id })); if (r === 'restore') await window.dxAdmin.restore(id); refreshCompanies().catch(function () {}); return r; };
+  window.dxModeration.restore = function (id) { return window.dxAdmin.restore(id); };
+  /* a suspended member is told why when they come in; the site name and tagline Drugbox set apply for everyone */
+  var hydrateADM = hydrateMe;
+  hydrateMe = async function (uid) {
+    var me = await hydrateADM(uid);
+    sb.from('account_suspensions').select('reason').eq('user_id', uid).maybeSingle().then(function (r) { if (r.data && r.data.reason && window.dxAdminSuspended) window.dxAdminSuspended(r.data.reason); }, function () {});
+    return me;
+  };
+  sb.from('settings').select('key,value').in('key', ['site_name', 'site_tagline']).then(function (r) {
+    var C2 = window.CMS; if (r.error || !C2) return; (r.data || []).forEach(function (x) { if (x.value) C2[x.key] = x.value; }); if ((r.data || []).length && window.applyCMS) window.applyCMS(); }, function () {});
+  ICON.post_removed = ICON.post_removed || '🧹'; ICON.post_restored = '↺'; ICON.account = '👤'; ICON.certificate_review = '📜'; ICON.report_closed = ICON.report_closed || '🚩';
 
 
 

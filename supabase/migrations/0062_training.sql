@@ -280,7 +280,10 @@ begin
   end if;
   select count(*) into lessons_ from public.course_lessons where course_id = p_course;
   select count(*) into done_ from public.lesson_progress p join public.course_lessons l on l.id = p.lesson_id where p.user_id = me and l.course_id = p_course;
+  if lessons_ = 0 then raise exception 'This course has no lessons yet — it cannot be completed' using errcode = '22023'; end if;   -- (verifier B1)
   if done_ < lessons_ then raise exception 'Finish all the lessons first (% of % done)', done_, lessons_ using errcode = '22023'; end if;
+  select count(*) into recent from public.course_quiz_attempts where user_id = me and course_id = p_course and created_at > now() - interval '1 hour';
+  perform pg_advisory_xact_lock(hashtextextended(me::text || ':' || p_course::text, 7));   -- parallel calls wait: the limit holds
   select count(*) into recent from public.course_quiz_attempts where user_id = me and course_id = p_course and created_at > now() - interval '1 hour';
   if recent >= 5 then raise exception 'Five attempts in an hour — review the lessons and try again later' using errcode = '54000'; end if;
   select count(*) into total from public.course_questions where course_id = p_course;
@@ -299,7 +302,8 @@ begin
     cert := 'DBX-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10));
     insert into public.certificates (code, user_id, course_id, name, course_title, hours)
     select cert, me, c.id, coalesce(nullif(trim(p.name), ''), 'Drugbox member'), c.title, c.hours from public.profiles p where p.id = me
-    on conflict (user_id, course_id) do update set revoked_at = null returning code into cert;
+    on conflict (user_id, course_id) do nothing;                                -- a certificate Drugbox withdrew stays withdrawn
+    select code into cert from public.certificates where user_id = me and course_id = p_course;
     insert into public.notifications (user_id, type, message, data)
     values (me, 'certificate', 'Your certificate for "' || left(c.title, 120) || '" is ready', jsonb_build_object('code', cert, 'course', c.id));
   end if;
@@ -313,7 +317,7 @@ alter table public.course_enrollments add column if not exists order_id bigint r
 create index if not exists idx_course_enrollments_order on public.course_enrollments (order_id) where order_id is not null;
 drop policy if exists "enrollments: enroll yourself" on public.course_enrollments;
 create policy "enrollments: enroll yourself" on public.course_enrollments for insert
-  with check (user_id = (select auth.uid()) and status = 'enrolled' and order_id is null
+  with check (user_id = (select auth.uid()) and status = 'enrolled' and order_id is null and completed_at is null
               and exists (select 1 from public.training_courses c where c.id = course_id and c.active and c.price_egp = 0));
 drop policy if exists "enrollments: a paid course stays yours" on public.course_enrollments;
 create policy "enrollments: a paid course stays yours" on public.course_enrollments as restrictive for delete to authenticated
@@ -398,8 +402,9 @@ begin
     select title into ctitle from public.training_courses where id = o.course_id;
     if ctitle is not null then
       insert into public.course_enrollments (course_id, user_id, status, order_id) values (o.course_id, o.user_id, 'enrolled', o.id)
-      on conflict (course_id, user_id) do update set order_id = coalesce(public.course_enrollments.order_id, excluded.order_id);
-      n := 1;
+      on conflict (course_id, user_id) do nothing;
+      get diagnostics n = row_count;                                           -- already enrolled (paid twice): refund due, below
+      if n = 0 then what := 'course (you were already enrolled)'; end if;
     end if;
   else
     what := 'listing';
@@ -410,8 +415,8 @@ begin
   if n = 0 then
     update public.payment_orders set provider_payload = coalesce(provider_payload, '{}'::jsonb) || jsonb_build_object('not_activated', what) where id = o.id;
     insert into public.notifications (user_id, type, message)
-    values (o.user_id, 'payment', 'Payment received for ' || pr.label || ' (' || o.merchant_ref || '), but the ' || what
-                                  || ' is no longer available — the Drugbox team will refund you');
+    values (o.user_id, 'payment', 'Payment received for ' || pr.label || ' (' || o.merchant_ref || '), but '
+                                  || case when what like 'course (%' then 'you were already enrolled' else 'the ' || what || ' is no longer available' end || ' — the Drugbox team will refund you');
     insert into public.notifications (user_id, type, message)
     select p.id, 'payment', 'Order ' || o.merchant_ref || ' was paid but not activated (the ' || what || ' is gone) — refund due'
       from public.profiles p where p.role = 'admin';

@@ -136,7 +136,7 @@
   function refresh(force) {
     if (V.loading && !force) return Promise.resolve();
     V.loading = true;
-    return Promise.all([S().list(), S().mine()]).then(function (r) { V.err = false; V.list = r[0]; V.mine = r[1] || {}; V.at = Date.now(); V.loading = false; paint(); }, function (e) { V.loading = false; V.err = true; paint(); toast((e && e.message) || 'Courses could not be loaded'); });
+    return Promise.all([S().list(), S().mine()]).then(function (r) { V.err = false; V.list = (r[0] || []).filter(function (c) { return c.active !== false || (r[1] || {})[c.id]; }); V.mine = r[1] || {}; V.at = Date.now(); V.loading = false; paint(); }, function (e) { V.loading = false; V.err = true; paint(); toast((e && e.message) || 'Courses could not be loaded'); });
   }
   function state(c) { var m = V.mine[c.id]; if (!m) return c.price > 0 ? 'buy' : 'enroll'; if (m.status === 'completed') return 'done';
     var d = (m.done || []).length; return m.total && d >= m.total ? 'quiz' : d ? 'continue' : 'start'; }
@@ -355,7 +355,7 @@
     }, function () { toast('The certificate could not be checked — try again'); });
   }
   (function () { var m = /[?&]cert=([A-Za-z0-9-]{4,40})/.exec(location.search); if (!m) return; var tries = 0;
-    (function wait() { if (!document.body || (window.dxLive && !window.dxTraining && ++tries < 40)) return setTimeout(wait, 250); setTimeout(function () { verify(m[1]); }, 900); })(); })();
+    (function wait() { if (!document.body || ((window.dxLive || window.DRUGBOX_CONFIG) && !window.dxTraining && ++tries < 40)) return setTimeout(wait, 250); setTimeout(function () { verify(m[1]); }, 900); })(); })();
 
   /* ── My courses ─────────────────────────────────────────────────────────────────────────────────────────────────── */
   function myCourses() {
