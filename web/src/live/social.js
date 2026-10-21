@@ -348,9 +348,12 @@
   window.dxSavedSvc = Object.assign({}, oSavedSvc, {
     live: true,
     jobs: async function () {
-      var r = await sb.from('saved_jobs').select('job_id, job:jobs(id,title,company,location,active)').eq('user_id', me()).order('created_at', { ascending: false }).limit(100);
+      var r = await sb.from('saved_jobs').select('job_id, job:jobs(id,title,company,location,active,deadline,closed_at)').eq('user_id', me()).order('created_at', { ascending: false }).limit(100);
       if (r.error) throw new Error(friendly(r.error));
-      return (r.data || []).filter(function (x) { return x.job; }).map(function (x) { return { id: x.job_id, title: x.job.title, sub: [x.job.company, x.job.location].filter(Boolean).join(' · ') + (x.job.active === false ? ' · closed' : '') }; });
+      /* merge: the deadline and the translatable Closed mark (a job its employer closed, or past its deadline) */
+      var today = new Date().toISOString().slice(0, 10);
+      return (r.data || []).filter(function (x) { return x.job; }).map(function (x) { var jb = x.job; return { id: x.job_id, title: jb.title,
+        closed: jb.active === false || !!jb.closed_at || (!!jb.deadline && String(jb.deadline).slice(0, 10) < today), sub: [jb.company, jb.location, jb.deadline ? String(jb.deadline).slice(0, 10) : ''].filter(Boolean).join(' · ') }; });
     },
     unsaveJob: async function (j) { var r = await sb.from('saved_jobs').delete().eq('user_id', me()).eq('job_id', j.id); if (r.error) throw new Error(friendly(r.error)); },
     openJob: function (j) { window.goto('jobs'); if (window.dxJobsHunt) window.dxJobsHunt(); flashCard('#jx [data-live="j' + j.id + '"]', function () { return true; }); }

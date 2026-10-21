@@ -230,7 +230,7 @@
   function savedSection(kind, title, list, empty) {
     return '<div class="card dx-saved-sec" data-kind="' + kind + '" style="padding:14px;margin-top:14px"><div style="font-size:15px;font-weight:800;color:var(--cx);margin-bottom:8px">' + title + '</div>' +
       (list == null ? '<div style="color:#65676b;font-size:13px">Loading…</div>' : !list.length ? '<div style="color:#65676b;font-size:13px">' + empty + '</div>' :
-        list.map(function (x, i) { return '<div class="dx-saved-row" data-k="' + kind + '" data-i="' + i + '"><button type="button" class="dx-saved-open" title="' + (kind === 'jobs' ? 'Open this job' : 'Open this listing') + '"><span data-noi18n>' + esc(x.title) + '</span>' + (x.sub ? '<small data-noi18n>' + esc(x.sub) + '</small>' : '') + '</button>' +
+        list.map(function (x, i) { return '<div class="dx-saved-row" data-k="' + kind + '" data-i="' + i + '"><button type="button" class="dx-saved-open" title="' + (kind === 'jobs' ? 'Open this job' : 'Open this listing') + '"><span data-noi18n>' + esc(x.title) + '</span>' + (x.closed ? ' <span class="dx-saved-closed">Closed</span>' : '') + (x.sub ? '<small data-noi18n>' + esc(x.sub) + '</small>' : '') + '</button>' +
           '<button type="button" class="btn-ghost dx-saved-un">Unsave</button></div>'; }).join('')) + '</div>';
   }
   var oRenderSaved = window.renderSaved;

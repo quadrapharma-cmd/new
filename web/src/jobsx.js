@@ -753,9 +753,17 @@
   };
   C.onRender('jobs-x', function () { if (document.body.getAttribute('data-page') === 'jobs') { tools(); } });
 
-  /* the Saved page gets its Jobs tab */
-  var oSaved = window.renderSaved;
-  if (typeof oSaved === 'function') window.renderSaved = function () { var r = oSaved.apply(this, arguments); try { savedTabs(); } catch (e) { if (window.console) console.warn('saved jobs:', e); } return r; };
+  /* ===== AREA merge: one Saved place (social's Posts / Jobs / Listings sections, J-SOCIAL-48) — no second Jobs tab here; the
+     Jobs rows carry this layer's details (company, place, deadline) and its Closed mark ===== */
+  var SVJ = window.dxSavedSvc;
+  if (SVJ && !SVJ.__jx) {
+    var oSvJobs = SVJ.jobs, oSvUn = SVJ.unsaveJob;
+    window.dxSavedSvc = Object.assign({}, SVJ, { __jx: true,
+      jobs: function () { if (live() || D.store.get('savedJobs', null) == null) return oSvJobs.apply(this, arguments);   /* the sample's first saved job stays as social shows it */
+        return DEMO.savedJobs().then(function (rows) { return rows.map(function (j) { return { id: j.key, title: j.title, closed: j.active === false,
+          sub: [j.company, j.location, j.deadline ? day(j.deadline) : ''].filter(Boolean).join(' · ') }; }); }); },
+      unsaveJob: function (j) { return live() || D.store.get('savedJobs', null) == null ? oSvUn.apply(this, arguments) : DEMO.unsave(j.id); } });
+  }
 
 
   /* Arabic for everything above (the interface translates as it draws; what people wrote stays as written) */

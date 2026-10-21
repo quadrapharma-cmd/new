@@ -126,9 +126,10 @@ def save_jobs(j):
         if tab: tab.click(); j.settle(pg, 800); txt = j.text(pg)
         j.check(ta in txt and tb in txt, 'not built: the Saved page does not list saved jobs (only posts)')
     with j.step('Unsave one from Saved: gone from Saved and from Jobs'):
-        row = pg.locator('#content [class*=card], #content li, #content .saved-item').filter(has_text=tb).first
-        u = row.locator('button, [onclick]').filter(has_text=re.compile(r'Unsave|Remove|Saved|إزالة|إلغاء الحفظ'))
-        j.check(u.count(), 'no Unsave on the saved job'); u.first.click(); j.settle(pg, 900)
+        # the row of THIS job (the smallest element that names it and has its own Unsave) — one list shows both saved jobs
+        u = pg.evaluate_handle("""n=>{const re=/^\\W*(Unsave|Remove|Saved|إزالة|إلغاء الحفظ)$/i,btn=e=>[...e.querySelectorAll('button,[onclick]')].find(b=>b.getClientRects().length&&re.test(b.innerText.trim()));
+            let best=null;document.querySelectorAll('#content *').forEach(e=>{if(e.getClientRects().length&&(e.innerText||'').includes(n)&&btn(e)&&(!best||best.contains(e)))best=e});return best?btn(best):null}""", tb).as_element()
+        j.check(u, 'no Unsave on the saved job'); u.click(); j.settle(pg, 900)
         j.check(tb not in j.text(pg), 'the unsaved job is still on the Saved page')
         jobs_page(j, pg, HUNT); j.check(not re.search(SAVED, save_btn(tb).inner_text()), 'Jobs still shows the unsaved job as Saved')
         if j.live: j.check(j.wait_db("select count(*) from public.saved_jobs where user_id='%s'" % s['id'], 5, want='1') == '1', 'saved_jobs row not removed')
