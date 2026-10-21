@@ -172,6 +172,7 @@ update public.profiles set name_key = null, name_needs_fix = false where id in (
 update public.profiles set name_key = 'stale', name_needs_fix = true where id = pg_temp.u(9);    -- flagged by 0038 ("/" was refused)
 update public.profiles set name_key = null, name_needs_fix = false where id in (pg_temp.u(10), pg_temp.u(11));
 set session_replication_role = origin;
+drop function if exists public.open_candidates(int);   -- 0065 made it RETURNS TABLE; 0038 re-creates its "setof profiles" form, 0065 its own again below
 \ir ../migrations/0038_names_allowlist.sql
 \ir ../migrations/0039_names_rule_2.sql
 \o /dev/null
@@ -182,6 +183,10 @@ select pg_temp.ok('existing names (0039_names_rule_2): "Άννα Βίσση" was
 select pg_temp.ok('existing names (third version): an Arabic name with a sukun over an undotted letter was kept as written', $$(select name = 'PN حْالد قديم' from public.profiles where id = pg_temp.u(18))$$);
 \o
 \ir ../migrations/0039_names_rule_4.sql
+\o /dev/null
+drop function if exists public.open_candidates(int);
+\ir ../migrations/0065_merge.sql
+\o
 \o /dev/null
 select pg_temp.ok('existing names (fourth version): the sukun is removed, «PN حالد قديم», not flagged, keyed', $$(select name = 'PN حالد قديم' and not name_needs_fix and name_key = public.person_name_key('PN حالد قديم') from public.profiles where id = pg_temp.u(18))$$);
 select pg_temp.ok('existing names (fourth version): a spaced slash is joined, «د/ سامي قديم»', $$(select name = 'د/ سامي قديم' and not name_needs_fix from public.profiles where id = pg_temp.u(19))$$);
@@ -205,11 +210,17 @@ select pg_temp.ok('existing names: every profile has a key', $$not exists (selec
 -- member is normalised the same way (the mark over an undotted letter removed; an accent that draws like another keyed as its twin),
 -- and the stored name_key is the database's skeleton of what was typed (supabase/tests/name_rule.sql shows it is the app's).
 select pg_temp.as_server();
-select pg_temp.ok('write paths: the functions that INSERT or UPDATE profiles are the four known ones', $$(select array_agg(p.proname::text order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+-- (merge: the areas added account_anonymise — social, a deleted account's tombstone —, admin_set_role / admin_verify_profile /
+--  admin_undo — community, role and badge —, and company_invite — business, a name typed for someone else, kept in company_invites)
+select pg_temp.ok('write paths: the functions that INSERT or UPDATE profiles are the eight known ones', $$(select array_agg(p.proname::text order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname in ('public', 'private', 'auth') and p.prosrc ~* '(insert\s+into\s+(public\.)?profiles|update\s+(public\.)?profiles\s+(as\s+\w+\s+)?set)')
-  = array['handle_new_user', 'increment_profile_view', 'person_followers_count', 'profiles_followers_count']$$);
-select pg_temp.ok('write paths: of them only handle_new_user writes a name (the others count views and followers)', $$not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-   where n.nspname in ('public', 'private', 'auth') and p.proname <> 'handle_new_user' and p.prosrc ~* 'profiles' and p.prosrc ~* '(set|,)\s*name\s*=|profiles\s*\([^)]*\mname\M')$$);
+  = array['account_anonymise', 'admin_set_role', 'admin_undo', 'admin_verify_profile', 'handle_new_user', 'increment_profile_view', 'person_followers_count', 'profiles_followers_count']$$);
+select pg_temp.ok('write paths: besides handle_new_user only account_anonymise and company_invite write a name (the others count views and followers, or set a role or the badge)', $$(select coalesce(array_agg(p.proname::text order by p.proname), '{}') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname in ('public', 'private', 'auth') and p.proname <> 'handle_new_user' and p.prosrc ~* 'profiles' and p.prosrc ~* '(set|,)\s*name\s*=|profiles\s*\([^)]*\mname\M') = array['account_anonymise', 'company_invite']$$);
+select pg_temp.ok('write paths: account_anonymise writes the constant «Deleted member», which the rule allows as it is (profiles trigger)', $$(select prosrc ~ 'name = ''Deleted member''' from pg_proc where proname = 'account_anonymise')
+   and public.person_name_problem(public.person_name_norm('Deleted member')) = '' and public.person_name_norm('Deleted member') = 'Deleted member'$$);
+select pg_temp.ok('write paths: company_invite''s name goes through the rule (trigger on company_invites, 0065)', $$exists (select 1 from pg_trigger where tgrelid = 'public.company_invites'::regclass and tgname = 'trg_company_invites_name_rule')
+   and exists (select 1 from pg_trigger where tgrelid = 'public.certificates'::regclass and tgname = 'trg_certificates_name_rule')$$);
 select pg_temp.ok('write paths: the only trigger on auth.users runs on INSERT (a later metadata change never reaches the name)', $$(select array_agg(tgname::text) from pg_trigger
    where tgrelid = 'auth.users'::regclass and not tgisinternal) = array['on_auth_user_created'] and (select tgtype & 16 = 0 and tgtype & 4 = 4 from pg_trigger where tgname = 'on_auth_user_created')$$);
 select pg_temp.ok('write paths: anon and members cannot INSERT a profile', $$not has_table_privilege('anon', 'public.profiles', 'INSERT') and not has_table_privilege('authenticated', 'public.profiles', 'INSERT')$$);

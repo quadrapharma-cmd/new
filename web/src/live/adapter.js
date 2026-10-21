@@ -514,7 +514,7 @@
     return { id: n.id, uid: a, icon: ICON[n.type] || '🔔', text: t, ts: ago(n.created_at), read: !!n.read, type: type, pid: n.post_id || null, data: n.data || null, job: n.job_id || null, group: n.group_id || null };   /* area social: data for S-20 */
   }
   async function loadNotifs() {
-    var r = await sb.from('notifications').select('*, actor:profiles!notifications_from_user_fkey(' + PCOLS + '), company:companies(name)').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(50);
+    var r = await sb.from('notifications').select('*, actor:profiles!notifications_from_user_fkey(' + PCOLS + '), company:companies(name,slug)').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(50);
     if (r.error) throw r.error; (r.data || []).forEach(function (n) { putUser(n.actor); });
     var list = window.NOTIFS; list.length = 0; (r.data || []).forEach(function (n) { list.push(notifFrom(n)); }); NOTIF_IDS = list.map(function (n) { return n.id; });
     NOTIF_AT = Date.now(); badges();
@@ -2341,8 +2341,8 @@
      latest 20 comments — the database's row rules apply to every embedded row as to the posts themselves */
   function gpQuery(g) {
     return sb.from('posts').select('*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*), my:reactions(kind, user_id), sv:saved_posts(user_id), ' +
-      'cm:comments(id, post_id, user_id, body, created_at, author:profiles!comments_user_id_fkey(' + PCOLS + ')), rp:group_post_reports(reporter)')
-      .eq('group_id', g.id).eq('my.user_id', ME_UUID).eq('sv.user_id', ME_UUID).eq('rp.reporter', ME_UUID)
+      'cm:comments(id, post_id, user_id, body, created_at, like_count, cl:comment_reactions(user_id), author:profiles!comments_user_id_fkey(' + PCOLS + ')), rp:group_post_reports(reporter)')
+      .eq('group_id', g.id).eq('my.user_id', ME_UUID).eq('sv.user_id', ME_UUID).eq('rp.reporter', ME_UUID).eq('cm.cl.user_id', ME_UUID)   /* merge (G-15): a comment's likes and mine, social's comment_reactions */
       .order('created_at', { referencedTable: 'cm', ascending: false }).order('id', { referencedTable: 'cm', ascending: false }).limit(20, { referencedTable: 'cm' });
   }
   /* one page of a group's posts (keyset on created_at, id — as the Home feed, index idx_posts_group_feed); the pinned post
@@ -2361,7 +2361,7 @@
       putUser(x.author);
       if ((x.my || []).length) my[x.id] = x.my[0].kind || 'like';
       if ((x.sv || []).length) saved.add(x.id);
-      cm[x.id] = (x.cm || []).slice().reverse().map(function (c) { putUser(c.author); return { id: c.id, uid: aid(c.user_id), text: c.body, ts: ago(c.created_at), likes: 0 }; });
+      cm[x.id] = (x.cm || []).slice().reverse().map(function (c) { putUser(c.author); return { id: c.id, uid: aid(c.user_id), text: c.body, ts: ago(c.created_at), likes: c.like_count || 0, liked: !!(c.cl || []).length }; });
     });
     var out = rows.map(function (x) { var p = gpPost(x, my, saved, cm, pin); if ((x.rp || []).length) p.reported = 1; return p; });
     if (full && last) { var next = { t: last.created_at, id: last.id }; out.more = function () { return gpPage(g, next); }; }
@@ -2384,7 +2384,10 @@
       case 'comment': { var cr = await gpWrite(sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: (d.comment && d.comment.text) || '' }).select('id').single()); if (d.comment && cr) d.comment.id = cr.id; return; }
       case 'deleteComment': { var cid = d.comment && d.comment.id; if (!cid) throw new Error('Reload the group to delete this comment');
         return gpWrite(sb.from('comments').delete().eq('id', cid).select('id'), 'You can delete your own comments, comments on your posts, or (as an admin) any comment in the group'); }
-      case 'commentLike': throw new Error('Liking comments is not available yet');
+      case 'commentLike': {   /* merge (G-15): the group comment Like is social's comment like — one counter trigger, the author is told (0049) */
+        var lc = d.comment || {}; if (typeof lc.id !== 'number') throw new Error('Wait a moment — the comment is still being saved');
+        var lr = lc.liked ? await sb.from('comment_reactions').insert({ comment_id: lc.id, user_id: ME_UUID }) : await sb.from('comment_reactions').delete().eq('comment_id', lc.id).eq('user_id', ME_UUID);
+        if (lr.error && String(lr.error.code) !== '23505') throw lr.error; return; }
       case 'share': {   /* "Repost to your feed" (public groups only — groups.js never offers it for a private one) */
         var who = (window.USERS || []).find(function (u) { return u.id === p.uid; }) || window.ME;
         var body = ('Shared from ' + g.name + ' — ' + (who ? who.name : 'a member') + ':\n\n' + (p.body || '')).slice(0, 5000);
@@ -4328,7 +4331,7 @@
   window.dxModeration.decided = async function () {
     var d = aErr(await sb.from('admin_actions').select('id,kind,label,decision,note,created_at,undone_at,data,actor:profiles!admin_actions_actor_fkey(name)').order('created_at', { ascending: false }).limit(200));
     return d.map(function (a) { return { id: a.id, kind: a.kind, label: a.label, decision: a.decision, note: a.note || '', by: (a.actor && a.actor.name) || '', at: a.created_at, undone: !!a.undone_at,
-      restore: a.kind === 'post' && a.decision === 'removed' && !!a.data, undo: !(a.kind === 'payment' || a.kind === 'claim' || (a.kind === 'post' && a.decision === 'removed') || (a.kind === 'suspension' && a.decision !== 'suspended')) }; });
+      restore: a.kind === 'post' && a.decision === 'removed' && !!a.data, undo: !(a.kind === 'payment' || a.kind === 'claim' || (a.kind === 'post' && a.decision === 'removed') || (a.kind === 'suspension' && a.decision !== 'suspended') || (a.kind === 'certificate' && a.data && a.data.removed)) }; });   /* merge: a rejected certificate was removed with its file (review_certificate) */
   };
   window.dxModeration.undo = async function (id) { var r = aErr(await sb.rpc('admin_undo', { p_action: +id })); if (r === 'restore') await window.dxAdmin.restore(id); refreshCompanies().catch(function () {}); return r; };
   window.dxModeration.restore = function (id) { return window.dxAdmin.restore(id); };
@@ -4535,4 +4538,27 @@
     return r;
   };
   /* ===== /AREA business: marketplace ===== */
+
+  /* ===== AREA merge: a business notice opens what it is about through the same click (S-20): the team, the page, the
+     certificates, the reports, the plan of the company it names; a restored post opens on Home ===== */
+  var notifFromMG = notifFrom;
+  notifFrom = function (n) { var o = notifFromMG(n); o.coSlug = (n.company && n.company.slug) || (n.company_id && CO.byId[n.company_id]) || null; o.rawType = o.rawType || n.type; return o; };
+  var MG_WS = { company_join_request: 'team', company_invite_answer: 'team', cert_checked: 'sites', cert_rejected: 'sites', certificate_review: 'sites', document_reviewed: 'page',
+                report_decided: 'reports', review_decided: 'reports', verification: 'plan' };
+  var MG_PAGE = { company_join_answer: 'overview', company_invite: 'overview', company_listing: 'listings', review_reply: 'reviews' };
+  var markReadMG = window.markNotifRead;
+  window.markNotifRead = function (id) {
+    var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }), r = markReadMG.apply(this, arguments); if (!n || !ME_UUID) return r;
+    var t = n.rawType || n.type, slug = n.coSlug;
+    if (slug && (t in MG_WS || t in MG_PAGE)) {
+      setTimeout(function () {
+        if (document.body.getAttribute('data-page') !== 'companies') window.goto('companies');
+        var mine = CO.roles && CO.raw[slug] && CO.roles[CO.raw[slug].id];
+        if (t in MG_WS && mine && window.dxHub) window.dxHub.workspace(slug, MG_WS[t]);
+        else if (window.dxOpenCompany) window.dxOpenCompany(slug, MG_PAGE[t] || 'overview');
+      }, 0);
+    } else if (t === 'post_restored' && n.pid && window.dxOpenPost) setTimeout(function () { window.goto('feed'); window.dxOpenPost(n.pid); }, 0);
+    return r;
+  };
+  /* ===== /AREA merge ===== */
 })();

@@ -277,7 +277,7 @@
   }
   function pub(g) { return { key: g.key, gid: g.gid, title: g.title, deal: g.deal, priv: g.priv, role: g.role, member: g.member }; }
   function postHtml(p) {
-    var cmts = (p.cm || []).map(function (c) { return { uid: c.uid, text: c.text, ts: c.ts, likes: c.likes || 0 }; });
+    var cmts = (p.cm || []).map(function (c) { return { uid: c.uid, text: c.text, ts: c.ts, likes: c.likes || 0, liked: !!c.liked }; });
     var had = Object.prototype.hasOwnProperty.call(window.COMMENTS || {}, p.id), keep = had ? window.COMMENTS[p.id] : null, html = '';
     if (window.COMMENTS) window.COMMENTS[p.id] = cmts;   /* renderPost reads a post's comments from COMMENTS: lent for this one call */
     try {

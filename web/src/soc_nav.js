@@ -29,6 +29,7 @@
     if (p === 'profile') { var me = window.ME || {}; return args[0] != null && +args[0] !== me.id ? '#/profile/' + idOf(args[0]) : '#/profile'; }
     if (p === 'tag' && args[0]) return '#/tag/' + encodeURIComponent(String(args[0]).replace(/^#/, '').toLowerCase());
     if (p === 'search' && args[0]) return '#/search/' + encodeURIComponent(args[0]);
+    if (p === 'companies' && args[0]) return '#/companies/' + encodeURIComponent(args[0]);   /* AREA merge: a company page (J-BUSINESS-01) */
     return /^[a-z][a-z0-9-]*$/.test(p) ? '#/' + p : null;
   }
   function record(p, args) {
@@ -51,6 +52,12 @@
       if (r.page === 'search') { window.doSearch(r.arg); return true; }
       if (r.page === 'messages') { window.goto('messages'); if (r.arg) openThread(r.arg); return true; }
       if (r.page === 'tag') { window.goto('tag', r.arg); return true; }
+      if (r.page === 'companies' && window.dxDir) {   /* AREA merge: #/companies/<slug> opens that page; #/companies the directory (Back from a page) */
+        if (page() !== 'companies') window.goto('companies');
+        var DS = window.dxDir.S || {}; CO.last = r.arg || null;
+        if (r.arg) { if (DS.open !== r.arg && window.dxOpenCompany) window.dxOpenCompany(r.arg); }
+        else if (DS.open || DS.view === 'workspace') { DS.open = null; DS.view = null; window.dxDir.render(); }
+        return true; }
       if (document.getElementById('tnb-' + r.page) || (window.dxSocialPages && window.dxSocialPages[r.page]) || /^(feed|network|messages|notifs|saved|market|companies|groups|jobs|training|admin|settings)$/.test(r.page)) { window.goto(r.page); return true; }
       return false;
     } finally { NAV = false; }
@@ -63,8 +70,18 @@
       if (Date.now() - t0 < 6000 && page() === 'messages') setTimeout(look, 200);
     })();
   }
+  /* ===== AREA merge: the company page the directory shows is part of the address (Back returns to the directory) ===== */
+  var CO = { last: null };
+  function coSync() {
+    if (NAV || page() !== 'companies' || !window.dxDir) return;
+    var DS = window.dxDir.S || {}, co = DS.view === 'workspace' ? null : (DS.open || null);
+    if (co === CO.last) return; CO.last = co; record('companies', co ? [co] : []);
+  }
+  if (window.dxDir && typeof window.dxDir.render === 'function') { var oDirR = window.dxDir.render; window.dxDir.render = function () { var r = oDirR.apply(this, arguments); later(coSync); return r; }; }
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#dxDir')) later(coSync, 30); });
+  /* ===== /AREA merge ===== */
   var gotoNav = window.goto;
-  window.goto = function (p) { var args = [].slice.call(arguments, 1), r = gotoNav.apply(this, arguments); record(p, args); return r; };
+  window.goto = function (p) { var args = [].slice.call(arguments, 1), r = gotoNav.apply(this, arguments); record(p, args); if (p === 'companies') { CO.last = null; later(coSync); } return r; };
   var gpNav = window.gotoProfile;
   if (gpNav) window.gotoProfile = function (uid) { var r = gpNav.apply(this, arguments); record('profile', [uid]); return r; };
   var oSearch0 = window.doSearch;
@@ -270,6 +287,7 @@
       var pick = mine.filter(function (p) { return words.some(function (w) { return String(p.body || '').toLowerCase().indexOf(w) >= 0; }); })[0] || (t === 'comment' ? mine.filter(hasC)[0] : null) || mine[0];
       if (pick) window.dxOpenPost(pick.id, { comments: t === 'comment' }); return r;
     }
+    if (L && /^(job_application|job|job_status|job_alert|group_invite|group|deal)$/.test(t)) return r;   /* AREA merge: the live adapter opens these (the job's applicants, the group, the Deals center) */
     later(function () {
       if (/^(connection|accepted|follow|endorse|connection_request|connection_accepted)$/.test(t) && n.uid > 0) window.gotoProfile(n.uid);
       else if (t === 'message' && n.uid > 0) window.messageUser ? window.messageUser(n.uid) : window.goto('messages');

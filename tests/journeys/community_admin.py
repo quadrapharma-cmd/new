@@ -89,7 +89,10 @@ def claim_page(j):
         row.click(); pg.wait_for_timeout(800)
         pg.fill('.dbk-ov #clRole', 'Regulatory Manager'); pg.fill('.dbk-ov #clPhone', '+20 100 777 8899'); pg.fill('.dbk-ov #clMail', 'ra@nilepharma.com')
         note = pg.locator('.dbk-ov textarea'); note.count() and note.first.fill('I am the regulatory manager there')
-        before = toast_set(pg); dlg_click(j, pg, r'Send request|Send code|Send|أرسل', 'Send'); j.settle(pg, 1200)
+        # the commercial registry document (claim_company refuses a claim without it, business 0052)
+        doc = pg.locator('.dbk-ov #clDoc'); j.check(doc.count(), 'the claim window does not ask for the commercial registry document')
+        doc.set_input_files(files=[{'name': 'registry.pdf', 'mimeType': 'application/pdf', 'buffer': b'%PDF-1.4\n% registry of Nile Pharma\n%%EOF\n'}])
+        before = toast_set(pg); dlg_click(j, pg, r'Send claim|Send request|Send code|Send|أرسل', 'Send'); j.settle(pg, 1200)
         if dlg_open(pg) and pg.locator('.dbk-ov #clCode').count():                     # the demo proves the work e-mail with a code
             code = re.search(r'code:?\s*(\d{4,6})', dlg_text(pg)); j.check(code, 'the code step shows no way to get the code')
             pg.fill('.dbk-ov #clCode', code.group(1)); dlg_click(j, pg, r'Claim page|Claim|طالب', 'Claim page'); j.settle(pg, 1200)
@@ -103,14 +106,15 @@ def claim_page(j):
             before = toast_set(pg)
             if dlg_open(pg) and pg.locator('.dbk-ov #clRole').count():
                 pg.fill('.dbk-ov #clRole', 'Regulatory Manager'); pg.fill('.dbk-ov #clPhone', '+20 100 777 8899'); pg.fill('.dbk-ov #clMail', 'ra@nilepharma.com')
-                dlg_click(j, pg, r'Send request|Send code|Send|أرسل', 'Send'); j.settle(pg, 1000)
+                if pg.locator('.dbk-ov #clDoc').count(): pg.locator('.dbk-ov #clDoc').set_input_files(files=[{'name': 'registry.pdf', 'mimeType': 'application/pdf', 'buffer': b'%PDF-1.4\n%%EOF\n'}])
+                dlg_click(j, pg, r'Send claim|Send request|Send code|Send|أرسل', 'Send'); j.settle(pg, 1000)
                 if dlg_open(pg) and pg.locator('.dbk-ov #clCode').count():
                     code = re.search(r'code:?\s*(\d{4,6})', dlg_text(pg)); pg.fill('.dbk-ov #clCode', code.group(1) if code else '0000'); dlg_click(j, pg, r'Claim page|Claim|طالب', 'Claim page')
             j.check(re.search(r'already|سبق|قيد المراجعة', ' '.join(new_toasts(pg, before)) + dlg_text(pg), re.I), 'a second claim is not refused (%s)' % ' '.join(new_toasts(pg, before))[:100])
         if j.live: j.check(j.sql1("select count(*) from public.verification_requests where company_id=%s" % co['id']) == '1', 'a second claim row was stored')
     with j.step("Admin → Review: the claim is marked as a claim with C's name and note; approve"):
         if j.demo: j.skip('the claim decision is checked in live')
-        a = admin_person(j); ap = a['page']; txt = admin_review(j, ap, 'verifications')
+        a = admin_person(j); ap = a['page']; txt = admin_review(j, ap, 'claims')   # Admin → Review → Claims (business B-01)
         row = ap.locator('.dx-mod-row', has_text=name).first; j.check(row.count(), 'the claim is not in the queue')
         j.check(re.search(r'Claim|مطالبة', row.inner_text()) and 'Claire' in row.inner_text(), "the row is not marked as a claim with C's name")
         decide(j, ap, name, True)
@@ -284,11 +288,29 @@ def content_reports(j):
         if dlg_open(pg):
             r = pg.locator('.dbk-ov input[type=radio], .dbk-ov label').first; r.count() and r.click()
             dlg_click(j, pg, r'Report|Send|Submit|إبلاغ|إرسال|أرسل', 'Send report')
+    with j.step("M reports the fake profile F from F's profile (⋯ → Report, 'Fake profile'): stored once (social S-09)"):
+        # demo: a sample member stands in for F; live: F's own account
+        floc = pg.evaluate("u=>dxLive.aid(u)", f['id']) if j.live else 6
+        fname = ('Fake Profile %s' % t) if j.live else pg.evaluate("id=>U(id).name", floc)
+        close_dialogs(pg); pg.evaluate("id=>gotoProfile(id)", floc); j.settle(pg, 1500)
+        j.click(pg, r'^(⋯|More: report or block|المزيد: إبلاغ أو حظر)', scope='#content', what='⋯ (more)')
+        j.click(pg, r'^\W*(Report|إبلاغ)$', scope='body', what='Report', exact=True)
+        pg.check('.dbk-ov input[name=dxMRep][value=fake], .modal-bg input[name=dxMRep][value=fake]')
+        pg.fill('#dxMRepN', 'Impersonates a QA manager ' + t)
+        j.click(pg, r'^(Report|إبلاغ)$', scope='body', what='Report (confirm)', exact=True); pg.wait_for_timeout(800)
+        j.check(any(re.search(r'Thanks|شكراً', x) for x in j.toasts(pg)), 'no confirmation after reporting F')
+        if j.live: j.check(j.wait_db("select count(*) from public.member_reports where reported='%s' and reporter='%s' and reason='fake' and status='open'" % (f['id'], m['id']), 6) == '1', 'the report of F is not stored')
     with j.step('Admin → Review has a content-reports queue with reason, reporter, content and count'):
         ap = admin_person(j)['page'] if j.live else pg
         close_dialogs(ap); admin_review(j, ap, 'verifications')
         tabs = ' | '.join(ap.evaluate("[...document.querySelectorAll('.dx-mod-tab')].map(t=>t.innerText.trim())"))
         j.check(re.search(r'Content|Posts|Reported posts|Reports|بلاغات المحتوى|منشورات', tabs.replace('Company reports', '')), 'not built: Admin → Review has no queue for reported posts / people (queues: %s)' % tabs)
+        # the people queue (social S-09): F with the reason, how many reports and from how many members
+        tab = ap.locator('.dx-mod-tab').filter(has_text=re.compile(r'Reported members|الأعضاء المبلغ عنهم')); j.check(tab.count(), 'no Reported members queue (queues: %s)' % tabs)
+        tab.first.click(); ap.wait_for_timeout(800)
+        frow = ap.locator('.dx-mod-row').filter(has_text=fname)
+        j.check(frow.count() == 1, 'F is not listed once in Reported members')
+        j.check(re.search(r'Fake profile|حساب مزيف', frow.first.inner_text()) and re.search(r'1 reports? from 1 members?|بلاغ', frow.first.inner_text()), 'the F row lacks the reason or the count (%s)' % frow.first.inner_text()[:160])
     with j.step('Remove P (deleted for everyone, Z told the reason) and suspend F; F cannot post and sees why'):
         q = body or ''
         tab = ap.locator('.dx-mod-tab').filter(has_text=re.compile(r'Content|Posts|Reported posts|بلاغات المحتوى|منشورات')); j.check(tab.count(), 'no content-reports queue'); tab.first.click(); ap.wait_for_timeout(600)
@@ -308,6 +330,12 @@ def content_reports(j):
             j.check(re.search(r'suspended|موقوف', mtext(fp)) and 'impersonates' in mtext(fp), 'F is not told why the account is suspended')
             err = fp.evaluate("()=>dxLive.sb.from('posts').insert({user_id:dxLive.uuidOf(ME.id),body:'still posting'})" + _dx.ERR)
             j.check(err and j.sql1("select count(*) from public.posts where user_id='%s' and body='still posting'" % f['id']) == '0', 'the suspended account can still post')
+            # merge: one suspension for the whole app — F's open report is closed (M told) and F is out of search
+            j.check(j.wait_db("select count(*) from public.member_reports where reported='%s' and status='open'" % f['id'], 6, want='0') == '0', "F's open report stays in Reported members after the suspension")
+            found = pg.evaluate("q=>dxLive.sb.rpc('search_all',{p_q:q}).then(r=>r.error?'error':(r.data.people||[]).length)", 'Fake Profile %s' % t)
+            j.check(found == 0, 'the suspended F still appears in search (%s)' % found)
+            err = fp.evaluate("u=>dxLive.sb.from('messages').insert({sender_id:dxLive.uuidOf(ME.id),receiver_id:u,body:'still messaging'})" + _dx.ERR, m['id'])
+            j.check(err and j.sql1("select count(*) from public.messages where sender_id='%s' and body='still messaging'" % f['id']) == '0', 'the suspended account can still message')
 
 @journey('J-COMMUNITY-48')
 def decision_notifications(j):

@@ -369,6 +369,30 @@ def answer_in_group(j):
         pre = ri.input_value(); ri.press('End'); ri.type('Thanks, agreed ' + t); ri.press('Enter'); pg.wait_for_timeout(900)
         j.check(('Thanks, agreed ' + t) in box.inner_text(), 'the reply does not show')
         j.check(pre.strip().startswith('@') or box.locator('.cmt .cmt').count(), 'the reply is not linked to the comment (no @name, not nested)')
+    with j.step('B likes a comment (G-15): the count goes up by one; live: one comment_reactions row and the comment author is told (comment_like)'):
+        cneedle = ('Earlier answer %s' % t) if j.live else 'Same for cosmetic notifications?'
+        cm = box.locator('.cmt', has_text=cneedle).first
+        j.check(cm.count(), 'the comment "%s" is not under the post' % cneedle)
+        lk = cm.locator('[data-gpm=clike]').first
+        j.check(lk.count(), 'not built: no Like on a group comment')
+        cnt = lambda: int(re.sub(r'\D', '', lk.inner_text()) or 0)
+        n0 = cnt(); lk.click(); pg.wait_for_timeout(900)
+        cm = box.locator('.cmt', has_text=cneedle).first; lk = cm.locator('[data-gpm=clike]').first
+        j.check(cnt() == n0 + 1, 'the comment like count %d → %d' % (n0, cnt()))
+        if j.live:
+            j.check(j.wait_db("select count(*) from public.comment_reactions where comment_id=%s and user_id='%s'" % (c0, b['id']), 5) == '1', 'no comment_reactions row')
+            j.check(j.wait_db("select like_count from public.comments where id=%s" % c0, 5) == '1', 'the comment like_count is not 1 (one counter trigger)')
+            j.check(j.wait_db("select count(*) from public.notifications where user_id='%s' and from_user='%s' and type='comment_like'" % (x, b['id']), 5) == '1', 'the comment author got no comment_like notification')
+            reopen(j, pg); groups_page(j, pg); open_card(j, pg, gname)
+            post = gpost(j, pg, q); pact(post, 2).click(); pg.wait_for_timeout(1000)
+            pid, inp, box = comment_box(pg, post)
+            cm = box.locator('.cmt', has_text=cneedle).first; lk = cm.locator('[data-gpm=clike]').first
+            j.check(cnt() == n0 + 1, 'after reload the comment like is gone (%d)' % cnt())
+        lk.click(); pg.wait_for_timeout(900)
+        cm = box.locator('.cmt', has_text=cneedle).first; lk = cm.locator('[data-gpm=clike]').first
+        j.check(cnt() == n0, 'unliking the comment does not take the count back (%d)' % cnt())
+        if j.live:
+            j.check(j.wait_db("select count(*) from public.comment_reactions where comment_id=%s and user_id='%s'" % (c0, b['id']), 5, want='0') == '0', 'the comment_reactions row stays after unlike')
     if j.live:
         with j.step('Live: a comments row on the post; the author gets one notification with post_id'):
             j.check(j.wait_db("select count(*) from public.comments where post_id=%d and user_id='%s' and body like 'Zone IVb%%'" % (pid0, b['id']), 5) == '1', 'no comments row')

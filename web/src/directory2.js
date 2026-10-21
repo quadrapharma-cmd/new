@@ -202,7 +202,7 @@
   };
   function claimDialog(co) {
     if (!co) return;
-    if (window.dxClaims.pending(co.slug)) { toast('Your claim for ' + co.name + ' is with Drugbox — you will be told when the page is yours'); return; }
+    if (window.dxClaims.pending(co.slug)) { toast('Your claim for ' + co.name + ' is already under review — Drugbox tells you when the page is yours'); return; }
     D.modal({ title: 'Claim ' + co.name, body: '<p class="cp-muted">Prove you work at ' + esc(co.name) + ' and the page becomes yours to manage. Drugbox checks every claim before handing a page over.</p>' +
       '<div class="dbk-row"><div class="dbk-f"><label for="clRole">Your role *</label><input id="clRole" data-req placeholder="e.g. Business Development Manager"></div><div class="dbk-f"><label for="clPhone">Mobile *</label><input id="clPhone" data-req inputmode="tel"></div></div>' +
       '<div class="dbk-f"><label for="clMail">Work email *</label><input id="clMail" data-req type="email" placeholder="you@company.com"></div>' +

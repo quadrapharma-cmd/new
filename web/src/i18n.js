@@ -839,7 +839,7 @@
     [/^Drugbox removed a review of (.+) after checking it\.$/, function (m) { return 'حذف Drugbox تقييمًا لـ ' + m[1] + ' بعد مراجعته.'; }],
     [/^Drugbox checked a review of (.+) — it stays up\.$/, function (m) { return 'راجع Drugbox تقييمًا لـ ' + m[1] + ' — سيبقى منشورًا.'; }],
     [/^Claimed by (.+)$/, function (m) { return 'طالب بها ' + m[1]; }],
-    [/^Your claim for (.+) is with Drugbox — you will be told when the page is yours$/, function (m) { return 'مطالبتك بـ ' + m[1] + ' لدى Drugbox — ستُبلَّغ عندما تصبح الصفحة لك'; }],
+    [/^Your claim for (.+) is already under review — Drugbox tells you when the page is yours$/, function (m) { return 'مطالبتك بـ ' + m[1] + ' قيد المراجعة بالفعل — يُبلغك Drugbox عندما تصبح الصفحة لك'; }],
     [/^Ask to join (.+)$/, function (m) { return 'اطلب الانضمام إلى ' + m[1]; }],
     [/^Request sent to the admin of (.+)$/, function (m) { return 'تم إرسال طلبك إلى مدير ' + m[1]; }],
     [/^(.+) is on the team$/, function (m) { return 'انضم ' + m[1] + ' إلى الفريق'; }],
