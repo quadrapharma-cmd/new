@@ -308,7 +308,7 @@ def manage_listings(j):
     with j.step("'···' → 'Pause listing': hidden from Browse, 'Paused' to me; 'Resume' shows it again"):
         more = pg.locator('#tab-manage :is(button,span,div):visible', has_text=re.compile(r'^\s*···\s*$')).first
         j.check(more.count(), "no '···' menu on a listing"); more.click(); pg.wait_for_timeout(400)
-        p = pg.locator(':is(button,div,span,a):visible', has_text=re.compile(r'^\s*(⏸\s*)?Pause listing\s*$|إيقاف')).first
+        p = pg.locator(':is(button,div,span,a):visible', has_text=re.compile(r'^\s*(⏸\s*)?(Pause listing|إيقاف الإعلان مؤقتًا)\s*$')).first   # anchored in Arabic too (an unanchored «إيقاف» matched a whole panel)
         j.check(p.count(), "no 'Pause listing'"); p.click(); j.settle(pg, 900)
         reopen(j, pg); t = my_listings(j, pg); j.check(re.search(r'PAUSED|Paused|موقوف|متوقف', t), 'the paused listing is not shown as Paused after reload')
         if j.live: j.check(j.sql1("select count(*) from public.products where user_id='%s' and not active" % me['id']) == '1', 'the pause is not saved in the database')

@@ -203,7 +203,7 @@ def judge_supplier(j):
         if j.live:
             j.check('ISO 9001' in t, 'the pending ISO 9001 certificate is not shown at all')
             iso = chip_info(pg, 'ISO 9001')
-            j.check(re.search(r'not yet checked|unverified|pending|self-declared|not checked|لم يتم|غير موثق|قيد', iso, re.I), 'the unchecked ISO 9001 certificate is shown like a checked one (no "not yet checked")')
+            j.check(re.search(r'not yet checked|unverified|pending|self-declared|not checked|لم يتم|لم تُراجع|غير موثق|قيد', iso, re.I), 'the unchecked ISO 9001 certificate is shown like a checked one (no "not yet checked")')
             j.check(re.search(r'GDP[^\n]*(Expired|expired|منتهي)', t) or 'GDP' not in t, 'the expired GDP certificate is shown as valid')
         else:
             j.check(re.search(r'Expired|منتهية', j.text(pg)) or True, '')

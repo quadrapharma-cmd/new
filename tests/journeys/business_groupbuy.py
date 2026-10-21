@@ -101,7 +101,7 @@ def join_buying_group(j):
         said = join_group(j, pg, product, 700)
         j.check(any(re.search(r'joined|انضم', t) for t in said), 'no confirmation of joining')
         groups_dialog(j, pg); t = group_card(pg, product)
-        if j.live: j.check('1,200' in t and '2 companies' in t, "progress is not '1,200 of 2,000' with 2 companies: %s" % t[:120])
+        if j.live: j.check('1,200' in t and re.search(r'2 companies|شركتان|2 شرك', t), "progress is not '1,200 of 2,000' with 2 companies: %s" % t[:120])   # Arabic: the dual «شركتان»
         else: j.check('1,200' in t, 'progress did not grow by 700: %s' % t[:120])
     with j.step('Change the quantity; then leave the group before the target'):
         card = pg.locator('.dbk-ov .gb-card', has_text=product).first
