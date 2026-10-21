@@ -1,8 +1,8 @@
 // The one rule for a person's display name (S-03): what a name may contain (an ALLOWLIST) and when two names are "the same name"
-// (a confusable SKELETON, Unicode TR39). The database (supabase/migrations/0039_names_rule_3.sql — 0038 and 0039_names_rule_2.sql
-// hold the first two versions and are never edited) and the live app (web/src/live/adapter.js) both carry the code this script
-// prints between their "generated" markers — never edit it by hand:
-//   node tools/names/name_rule.mjs --write    rewrite both generated regions (only before 0039_names_rule_3 is applied anywhere:
+// (a confusable SKELETON, Unicode TR39). The database (supabase/migrations/0039_names_rule_4.sql — 0038, 0039_names_rule_2.sql and
+// 0039_names_rule_3.sql hold the first three versions and are never edited) and the live app (web/src/live/adapter.js) both carry
+// the code this script prints between their "generated" markers — never edit it by hand:
+//   node tools/names/name_rule.mjs --write    rewrite both generated regions (only before 0039_names_rule_4 is applied anywhere:
 //                                             an applied migration is never edited — a new rule goes into a new migration)
 //   node tools/names/name_rule.mjs --check    exit 1 when a region differs from what this script generates
 //   node tools/names/name_rule.mjs --expect   --check, then what the ADAPTER's generated code makes of every code point of planes 0-1
@@ -17,7 +17,12 @@
 // THE RULE (second version, 0039_names_rule_2 — what changed from 0038 is marked *; the THIRD version, 0039_names_rule_3, is marked
 // *(third version) where it is defined below: a mark only when NFKC joins it to its letter or the skeleton drops it — reason
 // 'accent' —, letters from each alphabet's everyday blocks, pixel twins, every dash a hyphen, one alphabet per RUN of letters,
-// and no 'latin' reason)
+// and no 'latin' reason; the FOURTH version, 0039_names_rule_4, is marked *(fourth version): names are stored WITHOUT Arabic
+// diacritics — every Arabic vowel mark, tanween, shadda, sukun, superscript alef, Quranic annotation mark (and the small waw / yeh
+// of Quranic spelling) is removed, so no mark can stand in for a letter's dot («حْالد» drew as «خالد», atk-unicode-r3) —, a slash
+// after a space is joined to the word before it («د / محمد» → «د/ محمد»), ʿ is written ’ like ʾ, a spaced hyphen is refused with a
+// suggestion in parentheses (reason 'dash'), a letter of the four alphabets that the rule does not take yet has its own reason
+// ('unsupported'), and every name or character a message quotes is isolated (U+2068 … U+2069) so an Arabic sentence keeps its order)
 //  normalise (person_name_norm / nmNorm): remove every invisible character (Default_Ignorable_Code_Point, format Cf, control Cc —
 //    tab and line breaks excepted —, U+2800, U+1D159) and the Arabic tatweel U+0640 (it only stretches a joining line: "هـالة" reads
 //    "هالة"); *write every look-alike of the punctuation a name may hold as that punctuation (PUNCT_LIKE: a punctuation mark, a
@@ -56,7 +61,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const DATA = path.join(ROOT, 'tools/names/unicode-16.0.0');
-const MIGRATION = path.join(ROOT, 'supabase/migrations/0039_names_rule_3.sql');
+const MIGRATION = path.join(ROOT, 'supabase/migrations/0039_names_rule_4.sql');
 const ADAPTER = path.join(ROOT, 'web/src/live/adapter.js');
 if (process.versions.unicode !== '16.0') { console.error(`Node carries Unicode ${process.versions.unicode}; the vendored data is 16.0 — use Node 22`); process.exit(2); }
 
@@ -106,19 +111,35 @@ const stable = (c) => ch(c).normalize('NFKC') === ch(c);
 // (e + U+0335, i/ı/j + U+0307, Τ + U+0304, two marks in either order) can draw on a stroke the letter already has and look like
 // nothing, so it is refused (atk-unicode-r2, atk-bypass-r2; TR39 §5.4)
 const DROP = new Set([0x064B, 0x064C, 0x064D, 0x064E, 0x064F, 0x0650, 0x0651, 0x0652, 0x0670, 0xFFFC]);   // Arabic short vowels, shadda, sukun, dagger alef; U+FFFC draws nothing (a name stored before 0038 may hold it)
+// *(fourth version) names are stored WITHOUT Arabic diacritics: after NFKC, every combining mark of the Arabic script is removed —
+// Script=Arabic, or an Inherited mark of the Arabic block whose Script_Extensions has Arabic: the vowel marks, tanween, shadda, sukun,
+// superscript alef, the Quranic annotation marks of the Arabic blocks (U+0610-061A, 0656-065F, 06D6-06ED, 0897-08FF, 10EFC-10EFF) —
+// except the madda and hamza marks U+0653-0655, which NFKC joins to their letter (آ أ إ ؤ ئ ۀ ۂ ۓ) and which are refused where it
+// cannot ('accent'); so are the small waw and small yeh of Quranic spelling (U+06E5, U+06E6, letters drawn as marks). A mark drawn
+// above a letter without a dot drew like that letter's dot — «حْالد» (ح + sukun) like «خالد», «رْياد» like «زياد» — while the skeleton
+// dropped it (atk-unicode-r3); a name that cannot hold the mark cannot be drawn that way. Names are written with or without them,
+// and the skeleton always dropped them: no member's skeleton moves.
+const ARAB_STRIP = ranges((c) => { const s = ch(c); return c === 0x06E5 || c === 0x06E6 || (/^\p{M}$/u.test(s) && !(c >= 0x0653 && c <= 0x0655)
+  && (/^\p{Script=Arabic}$/u.test(s) || (/^\p{Script_Extensions=Arabic}$/u.test(s) && c >= 0x0600 && c <= 0x06FF))); });
+const isStrip = inR(ARAB_STRIP);
 const LET = {}, MARK = {};
 for (const [k, sc] of SCRIPTS) {
   const inSc = has(new RegExp(`^\\p{Script=${sc}}$`, 'u')), inScx = has(new RegExp(`^\\p{Script_Extensions=${sc}}$`, 'u'));
   const inherited = has(/^\p{Script_Extensions=Inherited}$/u);
-  LET[k] = ranges((c) => ALLOWED.has(c) && /^\p{L}$/u.test(ch(c)) && inSc(c) && stable(c) && inR(BLOCKS[k])(c));
-  MARK[k] = ranges((c) => ALLOWED.has(c) && /^\p{M}$/u.test(ch(c)) && (inScx(c) || inherited(c)) && stable(c) && DROP.has(c));
+  LET[k] = ranges((c) => ALLOWED.has(c) && /^\p{L}$/u.test(ch(c)) && inSc(c) && stable(c) && inR(BLOCKS[k])(c) && !isStrip(c));
+  MARK[k] = ranges((c) => ALLOWED.has(c) && /^\p{M}$/u.test(ch(c)) && (inScx(c) || inherited(c)) && stable(c) && DROP.has(c) && !isStrip(c));   // *(fourth version) none left
 }
 const union = (...rss) => { const s = new Set(); for (const rs of rss) for (const [a, b] of rs) for (let c = a; c <= b; c++) s.add(c); return ranges((c) => s.has(c)); };
 const single = (l) => l.slice().sort((a, b) => a - b).map((c) => [c, c]);
 const LET_ANY = union(...SCRIPTS.map(([k]) => LET[k])), MARK_ANY = union(...SCRIPTS.map(([k]) => MARK[k]));
 const OK = union(LET_ANY, MARK_ANY, single(PUNCT), [[0x20, 0x20]]);
 const isOK = inR(OK), isLetAny = inR(LET_ANY);
-const OTHER_LET = ranges((c) => /^\p{L}$/u.test(ch(c)) && !isLetAny(c));                 // a letter of another alphabet, or a restricted one
+// *(fourth version) a letter of another alphabet ('letter') is told apart from a letter of the four alphabets the rule does not take
+// (yet): Hausa Ɗ Ƙ Ɓ, Akan Ɔ Ɛ, letters outside the everyday blocks, restricted letters ('unsupported' — "not supported yet", not
+// "not one of the alphabets", atk-legit-r3)
+const IN_SCRIPT4 = SCRIPTS.map(([, sc]) => new RegExp(`^\\p{Script=${sc}}$`, 'u')), inScript4 = (c) => IN_SCRIPT4.some((re) => re.test(ch(c)));
+const OTHER_LET = ranges((c) => /^\p{L}$/u.test(ch(c)) && !isLetAny(c) && !inScript4(c));   // a letter of another alphabet (or of none: ˑ)
+const UNSUP_LET = ranges((c) => /^\p{L}$/u.test(ch(c)) && !isLetAny(c) && inScript4(c));    // a letter of the four alphabets not taken (yet)
 const MARK_ALL = ranges(has(/^\p{M}$/u));                                                  // any mark (NFD can split an allowed letter)
 const MARK_BAD = ranges((c) => /^\p{M}$/u.test(ch(c)) && !inR(MARK_ANY)(c));                 // a mark that may not stand apart from its letter
 
@@ -126,13 +147,16 @@ const MARK_BAD = ranges((c) => /^\p{M}$/u.test(ch(c)) && !inR(MARK_ANY)(c));    
 function proto(s) { for (let i = 0; i < 16; i++) { const t = [...s.normalize('NFD')].map((x) => CONF.get(x.codePointAt(0)) ?? x).join('').normalize('NFD'); if (t === s) return s; s = t; } return s; }
 const LIKE_OF = [['.', '.'], ['-', '-'], ["'", '’'], ['(', '('], [')', ')'], [',', ','], ['/', '/']];   // prototype of → written as
 const LIKE_KIND = (s) => /^[\p{Pd}\p{Ps}\p{Pe}\p{Pi}\p{Pf}\p{Po}\p{Sk}]$/u.test(s) || (/^\p{Lm}$/u.test(s) && /^\p{Script=Common}$/u.test(s)) || (/^\p{Sm}$/u.test(s) && /^\p{Dash}$/u.test(s));
+// *(fourth version) ʿ U+02BF (the ayn of transliteration, "Saʿīd") is written ’ like ʾ U+02BE (TR39 gives it the prototype of the
+// Armenian ՙ, not of the apostrophe; atk-legit-r3)
+const LIKE_EXTRA = new Map([[0x02BF, '’']]);
 const LIKE = [];   // [code point, written as]
 for (let c = 1; c <= PLANES01; c++) {
   if (isSur(c) || isOK(c) || isSpace(c) || inR(INVIS)(c)) continue; const s = ch(c);
   if (!LIKE_KIND(s)) continue;
   // *(0039, third version) every dash (\p{Pd}: — ― ⸺ 〜 …) is a hyphen in a name: "Jean—Paul" is stored "Jean-Paul" (atk-legit-r2)
   const dash = /^\p{Pd}$/u.test(s) || /^\p{Pd}$/u.test(s.normalize('NFKC'));
-  const p = proto(s), q = proto(s.normalize('NFKC')), hit = dash ? ['-', '-'] : LIKE_OF.find(([t]) => proto(t) === p || proto(t) === q);
+  const p = proto(s), q = proto(s.normalize('NFKC')), hit = LIKE_EXTRA.has(c) ? ['', LIKE_EXTRA.get(c)] : dash ? ['-', '-'] : LIKE_OF.find(([t]) => proto(t) === p || proto(t) === q);
   if (hit) LIKE.push([c, hit[1]]);
 }
 const LIKE_MAP = new Map(LIKE.map(([c, t]) => [c, t]));
@@ -177,16 +201,23 @@ const ACCENT_AT = union([[0x20, 0x20]], MARK_ALL);   // the letter an accent sit
 const sqlScriptOf = (w, ind) => `case\n${SCRIPTS.map(([k]) => `${ind}  when ${w} ~ (${sqlWord(LET[k], MARK[k])}) then '${k}'`).join('\n')}\n${ind}end`;
 const SQL_REPEAT = `'([' || ${U(sqlClass(MARK_ALL))} || '])[' || ${U(sqlClass(MARK_ALL))} || ']*\\1'`;
 const HEAD = 'generated by tools/names/name_rule.mjs from Unicode 16.0.0 (UTS #39 data: tools/names/unicode-16.0.0) — do not edit by hand';
+// *(fourth version) every name, word or character a message quotes is isolated (FIRST STRONG ISOLATE … POP DIRECTIONAL ISOLATE):
+// an Arabic sentence that quotes a Latin, Greek or Cyrillic character, or a Latin one that quotes an Arabic word, keeps its order
+// (atk-legit-r3: the Arabic messages came out scrambled). The app's Arabic sentences (web/src/i18n.js) keep the isolates.
+const FSI = '\u2068', PDI = '\u2069', QT = `“${FSI}%s${PDI}”`, CPT = `(${FSI}U+%s${PDI})`;
 const MSG = {
   empty: 'Name is required', long: `A name can be up to ${MAXLEN} characters`, digit: 'A name cannot contain numbers',
-  letter: 'Write a name in Latin, Arabic, Greek or Cyrillic letters — “%s” (U+%s) is not one of them',
-  char: 'A name can only have letters, spaces and . - \' ( ) , / ، — remove “%s” (U+%s)',
-  word: '“%s” is not a word — join it to the word next to it (remove the space)',
+  letter: `Write a name in Latin, Arabic, Greek or Cyrillic letters — ${QT} ${CPT} is not one of them`,
+  unsupported: `The letter ${QT} ${CPT} is not supported in names yet`,
+  char: `A name can only have letters, spaces and . - ' ( ) , / ، — remove ${QT} ${CPT}`,
+  word: `${QT} is not a word — join it to the word next to it (remove the space)`,
+  dash: `Put what follows the name in parentheses — write ${QT}`,
   mark: 'An accent or vowel mark must sit on a letter, once (at most 3 marks on one letter)',
-  script: 'Write each word of a name in one alphabet — “%s” mixes alphabets',
-  accent: 'Remove the mark added to “%s” (U+%s) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ',
+  script: `Write each word of a name in one alphabet — ${QT} mixes alphabets`,
+  accent: `Remove the mark added to ${QT} ${CPT} — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ`,
 };
-const sqlStr = (s) => "'" + s.replace(/'/g, "''") + "'";
+const isoEsc = (s, f) => s.replace(/[\u2068\u2069]/g, (c) => f(c.codePointAt(0).toString(16).toUpperCase()));
+const sqlStr = (s) => (/[\u2068\u2069]/.test(s) ? "U&'" + isoEsc(s.replace(/'/g, "''"), (h) => '\\' + h) : "'" + s.replace(/'/g, "''")) + "'";
 const sqlHex = (c) => `upper(lpad(to_hex(ascii(${c})), greatest(4, length(to_hex(ascii(${c})))), '0'))`;
 const sqlFirstChar = (cls) => `(select coalesce((select x.c from regexp_split_to_table(coalesce(n, ''), '') with ordinality x(c, i)
                                       where public.person_name_norm(x.c) ~ ${cls} order by x.i limit 1),
@@ -194,22 +225,24 @@ const sqlFirstChar = (cls) => `(select coalesce((select x.c from regexp_split_to
 
 function sqlRegion() {
   const LIKE_F = U(sqlChars(LIKE.map(([c]) => c))), LIKE_T = U(sqlChars(LIKE.map(([, t]) => t.codePointAt(0))));
-  const INV = `'[' || ${U(sqlClass(INVIS))} || ']'`;
+  const INV = `'[' || ${U(sqlClass(INVIS))} || ']'`, INV_STRIP = `'[' || ${U(sqlClass(union(INVIS, ARAB_STRIP)))} || ']'`;
   return `-- >>> ${HEAD}
 -- The name as a person reads it: invisible characters and the tatweel removed, look-alikes of . - ' ( ) , / written as them (the
--- apostrophe as ’), NFKC, one space between words, none at the ends.
+-- apostrophe as ’), NFKC, the Arabic diacritics removed (vowel marks, tanween, shadda, sukun, superscript alef, Quranic marks), NFKC
+-- again, one space between words, none before a slash ("د / محمد" → "د/ محمد") or at the ends.
 create or replace function public.person_name_norm(s text)
 returns text language sql immutable parallel safe as $$
-  select btrim(regexp_replace(translate(regexp_replace(normalize(translate(regexp_replace(coalesce(s, ''),
+  select btrim(replace(regexp_replace(normalize(translate(regexp_replace(normalize(translate(regexp_replace(coalesce(s, ''),
     ${INV}, '', 'g'),
     ${LIKE_F},
     ${LIKE_T}), NFKC),
-    ${INV}, '', 'g'),
+    ${INV_STRIP}, '', 'g'),
     ${LIKE_F},
-    ${LIKE_T}),
-    '[' || ${U(sqlClass(SPACE))} || ']+', ' ', 'g'), ' ')
+    ${LIKE_T}), NFKC),
+    '[' || ${U(sqlClass(SPACE))} || ']+', ' ', 'g'), ' /', '/'), ' ')
 $$;
--- '' when a (normalised) name is allowed, else the first reason: empty, long, digit, letter, char, accent, word, mark, script
+-- '' when a (normalised) name is allowed, else the first reason: empty, long, digit, letter, unsupported, char, accent, dash, word,
+-- mark, script
 create or replace function public.person_name_problem(n text)
 returns text language sql immutable parallel safe as $$
   select case
@@ -217,8 +250,10 @@ returns text language sql immutable parallel safe as $$
     when char_length(n) > ${MAXLEN} then 'long'
     when n ~ ('[' || ${U(sqlClass(DIGIT))} || ']') then 'digit'
     when n ~ ('[' || ${U(sqlClass(OTHER_LET))} || ']') then 'letter'
+    when n ~ ('[' || ${U(sqlClass(UNSUP_LET))} || ']') then 'unsupported'
     when n ~ ('[^' || ${U(sqlClass(OK_OR_ACCENT))} || ']') then 'char'
     when n ~ ('[' || ${U(sqlClass(MARK_BAD))} || ']') then 'accent'
+    when strpos(n, ' - ') > 0 then 'dash'
     else (select case
       when bool_or(w !~ ('[' || ${U(sqlClass(LET_ANY))} || ']')) then 'word'
       when bool_or(w !~ (${sqlWord(LET_ANY, MARK_ANY)})) then 'mark'
@@ -237,8 +272,12 @@ returns text language sql immutable parallel safe as $$
 ${['empty', 'long', 'digit', 'mark'].map((k) => `    when '${k}' then ${sqlStr(MSG[k])}`).join('\n')}
     when 'letter' then (select format(${sqlStr(MSG.letter)}, c, ${sqlHex('c')})
                           from ${sqlFirstChar(`('[' || ${U(sqlClass(OTHER_LET))} || ']')`)} z)
+    when 'unsupported' then (select format(${sqlStr(MSG.unsupported)}, c, ${sqlHex('c')})
+                          from ${sqlFirstChar(`('[' || ${U(sqlClass(UNSUP_LET))} || ']')`)} z)
     when 'char' then (select format(${sqlStr(MSG.char)}, c, ${sqlHex('c')})
                         from ${sqlFirstChar(`('[^' || ${U(sqlClass(OK_OR_ACCENT))} || ']')`)} z)
+    when 'dash' then (select format(${sqlStr(MSG.dash)}, left(m, strpos(m, ' - ') - 1) || ' (' || substr(m, strpos(m, ' - ') + 3) || ')')
+                        from (select public.person_name_norm(n) as m) z)
     when 'word' then (select format(${sqlStr(MSG.word)}, w) from unnest(string_to_array(public.person_name_norm(n), ' ')) with ordinality u(w, i)
                        where w !~ ('[' || ${U(sqlClass(LET_ANY))} || ']') order by i limit 1)
     when 'script' then (select format(${sqlStr(MSG.script)}, w) from regexp_split_to_table(public.person_name_norm(n), ${`'[' || ${U(sqlClass(RUN_SEP))} || ']+'`}) with ordinality u(w, i)
@@ -268,11 +307,13 @@ $$;
 function jsRegion() {
   return `/* >>> ${HEAD} */
   var NM_INVIS = /[${jsClass(INVIS)}]/gu;
+  var NM_STRIP = /[${jsClass(union(INVIS, ARAB_STRIP))}]/gu;
   var NM_SPACE = /[${jsClass(SPACE)}]+/gu;
   var NM_LIKE = /[${jsClass(single(LIKE.map(([c]) => c)))}]/gu;
   var NM_LIKE_TO = new Map(${JSON.stringify(LIKE.map(([c, t]) => [ch(c), t]))});
   var NM_DIGIT = /[${jsClass(DIGIT)}]/u;
   var NM_OTHER = /[${jsClass(OTHER_LET)}]/u;
+  var NM_UNSUP = /[${jsClass(UNSUP_LET)}]/u;
   var NM_BAD = /[^${jsClass(OK_OR_ACCENT)}]/u;
   var NM_LET = /[${jsClass(LET_ANY)}]/u;
   var NM_WORD = ${jsWord(LET_ANY, MARK_ANY)};
@@ -281,23 +322,25 @@ function jsRegion() {
   var NM_ACCENT_AT = /(?:[^${jsClass(ACCENT_AT)}])?[${jsClass(MARK_BAD)}]/u;
   var NM_RUN = /[${jsClass(RUN_SEP)}]+/u;
   var NM_SCRIPTS = [${SCRIPTS.map(([k]) => `['${k}', ${jsWord(LET[k], MARK[k])}]`).join(', ')}];
-  var NM_MSG = ${JSON.stringify(MSG)};
+  var NM_MSG = ${isoEsc(JSON.stringify(MSG), (h) => '\\u' + h)};
   var NM_SKEL = (function (d) { var m = new Map(); d.split(',').forEach(function (e) { var p = e.split('='); m.set(String.fromCodePoint(parseInt(p[0], 16)), p[1] ? p[1].split('.').map(function (h) { return String.fromCodePoint(parseInt(h, 16)); }).join('') : ''); }); return m; })(
     '${SKEL_D}');
   function nmLikeTo(c) { return NM_LIKE_TO.get(c); }
-  function nmNorm(x) { return String(x == null ? '' : x).replace(NM_INVIS, '').replace(NM_LIKE, nmLikeTo).normalize('NFKC').replace(NM_INVIS, '').replace(NM_LIKE, nmLikeTo).replace(NM_SPACE, ' ').replace(/^ | $/g, ''); }
+  function nmNorm(x) { return String(x == null ? '' : x).replace(NM_INVIS, '').replace(NM_LIKE, nmLikeTo).normalize('NFKC').replace(NM_STRIP, '').replace(NM_LIKE, nmLikeTo).normalize('NFKC').replace(NM_SPACE, ' ').replace(/ \\//g, '/').replace(/^ | $/g, ''); }
   function nmScript(w) { var f = NM_SCRIPTS.find(function (p) { return p[1].test(w); }); return f ? f[0] : null; }
   function nmProblem(n) {
-    if (!n) return 'empty'; if (Array.from(n).length > ${MAXLEN}) return 'long'; if (NM_DIGIT.test(n)) return 'digit'; if (NM_OTHER.test(n)) return 'letter'; if (NM_BAD.test(n)) return 'char'; if (NM_ACCENT.test(n)) return 'accent';
+    if (!n) return 'empty'; if (Array.from(n).length > ${MAXLEN}) return 'long'; if (NM_DIGIT.test(n)) return 'digit'; if (NM_OTHER.test(n)) return 'letter'; if (NM_UNSUP.test(n)) return 'unsupported'; if (NM_BAD.test(n)) return 'char'; if (NM_ACCENT.test(n)) return 'accent';
+    if (n.indexOf(' - ') >= 0) return 'dash';
     var w = n.split(' '); if (w.some(function (x) { return !NM_LET.test(x); })) return 'word';
     if (w.some(function (x) { return !NM_WORD.test(x) || NM_REPEAT.test(x.normalize('NFD')); })) return 'mark';
     return n.split(NM_RUN).some(function (x) { return x !== '' && !nmScript(x); }) ? 'script' : '';
   }
   function nmMessage(s, p) {
     var m = NM_MSG[p] || '', n = nmNorm(s), put = function (v) { return m.replace('%s', function () { return v; }); };
-    if (p === 'letter' || p === 'char') { var re = p === 'letter' ? NM_OTHER : NM_BAD, c = Array.from(String(s == null ? '' : s)).find(function (x) { return re.test(nmNorm(x)); }) || (n.match(re) || [''])[0];
+    if (p === 'letter' || p === 'unsupported' || p === 'char') { var re = p === 'letter' ? NM_OTHER : p === 'unsupported' ? NM_UNSUP : NM_BAD, c = Array.from(String(s == null ? '' : s)).find(function (x) { return re.test(nmNorm(x)); }) || (n.match(re) || [''])[0];
       m = put(c); return put((c.codePointAt(0) || 0).toString(16).toUpperCase().padStart(4, '0')); }
     if (p === 'word') return put(n.split(' ').find(function (x) { return !NM_LET.test(x); }) || '');
+    if (p === 'dash') { var i = n.indexOf(' - '); return put(n.slice(0, i) + ' (' + n.slice(i + 3) + ')'); }
     if (p === 'script') return put(n.split(NM_RUN).find(function (x) { return x !== '' && !nmScript(x); }) || '');
     if (p === 'accent') { var a = (n.match(NM_ACCENT_AT) || [''])[0]; m = put(a); return put((Array.from(a).pop() || '').codePointAt(0).toString(16).toUpperCase().padStart(4, '0')); }
     return m;
@@ -332,39 +375,55 @@ if (process.argv.includes('--write')) {
     ['Al-Hassan (Pharm.D.)', ''], ['Smith, John', ''], ['Мария Иванова', ''], ['Νίκος Παπαδόπουλος', ''], ['هـالة', ''], ['Dr. Zeina X​', ''], ['Dr. Zeina X\u{1D173}', ''],
     ['د/ هيثم دويدار', ''], ['Ph/ Mohamed Hassan', ''], ['أ.د/ محمد', ''], ['Dr. Мария Иванова', ''], ['Мария Иванова (Maria Ivanova)', ''], ['Dr. Νίκος Παπαδόπουλος', ''],
     ['Anne‑Marie Dubois', ''], ['Dr. Ahmed El–Sayed', ''], ['د. أحمد علي، صيدلي', ''], ['Марʼяна Григорʼєва', ''], ['O‘Brien Kelly', ''], ['O´Brien Kelly', ''], ['O`Brien', ''],
-    ['\u08BDبيل', 'letter'], ['ع\u08BCت', 'letter'], ['Pharm. Иван', ''], ['Ivan Ιωάννης', ''], ['Вера Иванова', ''], ['Dr. \u0405\u0430\u04CF\u0456\u04BB', ''], ['\u0405\u0430\u04CF\u0456\u04BB \u0405\u0430\u04CF\u0456\u04BB', ''], ['Dr. Рара X', ''],
+    ['\u08BDبيل', 'unsupported'], ['ع\u08BCت', 'unsupported'], ['Pharm. Иван', ''], ['Ivan Ιωάννης', ''], ['Вера Иванова', ''], ['Dr. \u0405\u0430\u04CF\u0456\u04BB', ''], ['\u0405\u0430\u04CF\u0456\u04BB \u0405\u0430\u04CF\u0456\u04BB', ''], ['Dr. Рара X', ''],
     // third version: real Greek and Cyrillic names (atk-legit-r2), titles glued to a name, every dash
     ['Μαρία', ''], ['Νίκη', ''], ['Ειρήνη', ''], ['Μαρίνα Μάρκου', ''], ['Άννα Βίσση', ''], ['Dr. Νίκη Βίσση', ''], ['ΑΝΝΑ ΚΑΡΑΤΖΑ', ''], ['Вера Кох', ''], ['ОКСАНА КОРОТКОВА', ''], ['АННА АХМАТОВА', ''],
     ['Dr.أحمد علي', ''], ['د.Ahmed', ''], ['Jean—Paul', ''], ['Ἀλέξανδρος', ''], ['Mo’men Abd El-Raouf', ''], ['مُحَمَّد عَبْدُ الرَّحْمٰن', ''], ['İsmail Ñúñez', ''], ['Nguyễn Thị Ánh', ''], ['Məmmədov', ''],
     // third version: a mark NFKC cannot join to its letter (atk-unicode-r2, atk-bypass-r2), letters outside the everyday blocks
     ['Ahme\u0335d', 'accent'], ['Sali\u0307h', 'accent'], ['Sal\u0131\u0307h', 'accent'], ['j\u0307ana', 'accent'], ['\u03A4\u0304\u0391\u03A3\u039F\u03A3', 'accent'], ['\u0396\u0304\u03B7\u03BD\u03C9', 'accent'],
     ['N\u0335ada', 'accent'], ['\u039D\u0335', 'accent'], ['W\u0335ael', 'accent'], ['o\u0335\u0338', 'accent'], ['o\u0338\u0335', 'accent'], ['\u0173\u0308\u0304', 'accent'], ['Ade\u1ECD\u0301la', 'accent'],
-    ['\uA78DEXOB', 'letter'], ['Ahmed \u{1DF00}', 'letter'], ['Ahmed X\u{1E08F}', 'accent'], ['ب\u0654ب', 'accent'], ['\u0427\u0415\u0425\u041E\u0412', ''],
-    ['Dr. Rana 2', 'digit'], ['Ali ١', 'digit'], ['Dr. Hala X · Pharco X', 'char'], ['Dr. Hala X ꞏ Pharco X', 'letter'], ['Dr. Hala X ⸳ Pharco X', 'char'], ['Dr. Hala X \u{11174} Pharco X', 'char'],
+    ['\uA78DEXOB', 'unsupported'], ['Ahmed \u{1DF00}', 'unsupported'], ['Ahmed X\u{1E08F}', 'accent'], ['ب\u0654ب', 'accent'], ['\u0427\u0415\u0425\u041E\u0412', ''],
+    ['Dr. Rana 2', 'digit'], ['Ali ١', 'digit'], ['Dr. Hala X · Pharco X', 'char'], ['Dr. Hala X ꞏ Pharco X', 'unsupported'], ['Dr. Hala X ⸳ Pharco X', 'char'], ['Dr. Hala X \u{11174} Pharco X', 'char'],
     ['Dr. Hala X \u{1F797} Pharco X', 'char'], ['Dr. Hala X \u{111D0} Pharco X', 'digit'], ['Dr. Hala X ∘ Pharco X', 'char'], ['Dr. Hala X ▪ Pharco X', 'char'], ['Dr. Zeina X￼', 'char'],
-    ['Dr. Hala X ￼ႉ Pharco X', 'char'], ['Dr. Hala X - Pharco X', 'word'], ['د . أحمد علي', 'word'], ['Ahmed Ali , PhD', 'word'], ['Dr. Rаna X', 'script'], ['张伟 (Zhang Wei)', 'letter'],
-    ['Ab́́́́', 'accent'], ['Ab́́', 'accent'], ['é́', 'accent'], ['دّّ', 'mark'], ['دَُِّ', 'mark'], ['Ab ́', 'accent'], ['Ab ́b', 'accent'], ['ب َ', 'word'], ['Ahmed "Mido" Ali', 'char'], ['Gal·la', 'char'],
-    ['', 'empty'], ['A'.repeat(121), 'long']])
+    ['Dr. Hala X ￼ႉ Pharco X', 'char'], ['Dr. Hala X - Pharco X', 'dash'], ['د . أحمد علي', 'word'], ['Ahmed Ali , PhD', 'word'], ['Dr. Rаna X', 'script'], ['张伟 (Zhang Wei)', 'letter'],
+    ['Ab́́́́', 'accent'], ['Ab́́', 'accent'], ['é́', 'accent'], ['Ab ́', 'accent'], ['Ab ́b', 'accent'], ['Ahmed "Mido" Ali', 'char'], ['Gal·la', 'char'],
+    ['', 'empty'], ['A'.repeat(121), 'long'],
+    // fourth version: Arabic diacritics are removed (so a name made of them alone is empty), a spaced slash joins the word before it,
+    // ʿ is ’, a spaced hyphen has its own reason, letters of the four alphabets the rule does not take say so (atk-unicode-r3, atk-legit-r3)
+    ['دّّ', ''], ['دَُِّ', ''], ['ب َ', ''], ['َ', 'empty'], ['حْالد', ''], ['د / محمد علي', ''], ['ا.د / سامي فهمي', ''], ['د/ سامي / صيدلي', ''], ['Saʿīd Ḥasan', ''],
+    ['Ahmed Ali - MBA', 'dash'], ['Hala Ali – Head of QA', 'dash'], ['Ɗanjuma Ƙasim', 'unsupported'], ['Ɔpɔku Mensah', 'unsupported'], ['Ɛfua', 'unsupported'],
+    ['Ọláfẹ́mi Adébáyọ̀', 'accent'], ['إِنَّهُۥ', ''], ['ب\u0654\u064Eب', 'accent']])
     expect('allowlist ' + JSON.stringify(s), P(s), p);
-  for (const [s, n] of [["O'Brien", 'O’Brien'], ['Anne‑Marie', 'Anne-Marie'], ['El–Sayed', 'El-Sayed'], ['O´Brien', 'O’Brien'], ['﴾صيدلي﴿', '(صيدلي)'], ['هـالة', 'هالة'], ['Mª', 'Ma'], ['Jean—Paul', 'Jean-Paul'], ['Jean〰Paul', 'Jean-Paul'], ['Dr.أحمد', 'Dr.أحمد'], ['Jose\u0301', 'José']])
+  for (const [s, n] of [["O'Brien", 'O’Brien'], ['Anne‑Marie', 'Anne-Marie'], ['El–Sayed', 'El-Sayed'], ['O´Brien', 'O’Brien'], ['﴾صيدلي﴿', '(صيدلي)'], ['هـالة', 'هالة'], ['Mª', 'Ma'], ['Jean—Paul', 'Jean-Paul'], ['Jean〰Paul', 'Jean-Paul'], ['Dr.أحمد', 'Dr.أحمد'], ['Jose\u0301', 'José'],
+    ['حْالد', 'حالد'], ['رْياد', 'رياد'], ['دْكي', 'دكي'], ['عْادة', 'عادة'], ['حسںْ', 'حسں'], ['مُحَمَّد عَبْدُ الرَّحْمٰن', 'محمد عبد الرحمن'], ['د. نرمين أبو زيدٍ', 'د. نرمين أبو زيد'], ['إِنَّهُۥ', 'إنه'],
+    ['ا\u064E\u0654', 'أ'], ['ا\u06D6\u0654', 'أ'], ['ب َ ب', 'ب ب'], ['ﹰ', ''], ['د / محمد علي', 'د/ محمد علي'], ['ا.د / سامي فهمي', 'ا.د/ سامي فهمي'], ['د/ سامي / صيدلي', 'د/ سامي/ صيدلي'],
+    ['Ahmed Ali / Pharco', 'Ahmed Ali/ Pharco'], ['Saʿīd Ḥasan', 'Sa’īd Ḥasan'], ['Fāʾiza', 'Fā’iza']])
     expect('normalised ' + JSON.stringify(s), F.nmNorm(s), n);
-  for (const [s, m] of [['د/ هيثم X1', 'A name cannot contain numbers'], ['Anne★Marie', 'A name can only have letters, spaces and . - \' ( ) , / ، — remove “★” (U+2605)'],
-    ['张伟', 'Write a name in Latin, Arabic, Greek or Cyrillic letters — “张” (U+5F20) is not one of them'], ['د . أحمد', '“.” is not a word — join it to the word next to it (remove the space)'],
-    ['Dr. Rаna', 'Write each word of a name in one alphabet — “Rаna” mixes alphabets'], ['Ahme\u0335d', 'Remove the mark added to “e\u0335” (U+0335) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'],
-    ['Sal\u0131\u0307h', 'Remove the mark added to “\u0131\u0307” (U+0307) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'],
-    ['Ahmed X\u{1E08F}', 'Remove the mark added to “X\u{1E08F}” (U+1E08F) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'],
-    ['Dr.Rаna', 'Write each word of a name in one alphabet — “Rаna” mixes alphabets'], ['Ahmed \uFE69x', 'A name can only have letters, spaces and . - \' ( ) , / ، — remove “\uFE69” (U+FE69)']])
+  const iq = (x) => '“\u2068' + x + '\u2069”', icp = (h) => '(\u2068U+' + h + '\u2069)';
+  for (const [s, m] of [['د/ هيثم X1', 'A name cannot contain numbers'], ['Anne★Marie', `A name can only have letters, spaces and . - ' ( ) , / ، — remove ${iq('★')} ${icp('2605')}`],
+    ['张伟', `Write a name in Latin, Arabic, Greek or Cyrillic letters — ${iq('张')} ${icp('5F20')} is not one of them`], ['د . أحمد', `${iq('.')} is not a word — join it to the word next to it (remove the space)`],
+    ['Dr. Rаna', `Write each word of a name in one alphabet — ${iq('Rаna')} mixes alphabets`], ['Ahme\u0335d', `Remove the mark added to ${iq('e\u0335')} ${icp('0335')} — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ`],
+    ['Sal\u0131\u0307h', `Remove the mark added to ${iq('\u0131\u0307')} ${icp('0307')} — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ`],
+    ['Ahmed X\u{1E08F}', `Remove the mark added to ${iq('X\u{1E08F}')} ${icp('1E08F')} — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ`],
+    ['Dr.Rаna', `Write each word of a name in one alphabet — ${iq('Rаna')} mixes alphabets`], ['Ahmed \uFE69x', `A name can only have letters, spaces and . - ' ( ) , / ، — remove ${iq('\uFE69')} ${icp('FE69')}`],
+    ['Ahmed Ali - MBA', `Put what follows the name in parentheses — write ${iq('Ahmed Ali (MBA)')}`], ['Hala Ali – Head of QA', `Put what follows the name in parentheses — write ${iq('Hala Ali (Head of QA)')}`],
+    ['Ɗanjuma Ƙasim', `The letter ${iq('Ɗ')} ${icp('018A')} is not supported in names yet`], ['Ɔpɔku', `The letter ${iq('Ɔ')} ${icp('0186')} is not supported in names yet`]])
     expect('message ' + JSON.stringify(s), F.nmMessage(s, P(s)), m);
-  for (const [a, b] of [['Dr. Rana X', 'Dr. Rаna X'], ['Ilya', 'llya'], ["O'Brien", 'O’Brien'], ['هالة', 'هالَة'], ['Dr. Nermeen X', 'DR. NERMEEN X'], ['Dr. Zeina X', 'Dr. Zeina X​'],
+  for (const [a, b] of [['حالد', 'حْالد'], ['خالد', 'خالد'], ['Dr. Rana X', 'Dr. Rаna X'], ['Ilya', 'llya'], ["O'Brien", 'O’Brien'], ['هالة', 'هالَة'], ['Dr. Nermeen X', 'DR. NERMEEN X'], ['Dr. Zeina X', 'Dr. Zeina X​'],
     ['Dr. Papa X', 'Dr. Рара X'], ['Dr. Salih', 'Dr. \u0405\u0430\u04CF\u0456\u04BB'], ['Salih', '\u0405\u0430\u04C0\u0456\u04BB'], ['ЧЕХОВ', 'ЧЕХОВ'], ['زڒ', 'زۯ'], ['فاطمة', 'ڧاطمة'], ['علي', 'على'], ['علي', 'علی'], ['كريم', 'کریم'], ['هالة', 'ہالۃ'], ['Anne-Marie', 'Anne‑Marie']])
     expect('same skeleton ' + a + ' / ' + b, F.nmSkel(a) === F.nmSkel(b), true);
   expect('different skeleton', F.nmSkel('Dr. Zeina X') === F.nmSkel('Dr. Zeina Y'), false);
+  // *(fourth version) a name with a mark over an undotted letter is STORED without it: what others see is «حالد», not a «خالد» look-alike
+  for (const [a, b] of [['حْالد', 'خالد'], ['رْياد', 'زياد'], ['دْكي', 'ذكي'], ['عْادة', 'غادة'], ['حسںْ', 'حسن']]) {
+    expect('stored without the mark ' + a, /[\u064B-\u0652\u0670]/u.test(F.nmNorm(a)), false); expect('a different name ' + a + ' / ' + b, F.nmNorm(a) === F.nmNorm(b), false); }
   for (let c = 1; c <= PLANES01; c++) {   // the classes as defined: a letter of the four scripts, Allowed, alone in a Latin/Arabic word
     if (isSur(c)) continue; const s = ch(c);
     if (/^\p{N}$/u.test(s) && stable(c)) expect('number U+' + hx(c), P('Ab' + s + 'ab'), 'digit');
     if (PUNCT.includes(c) || isSpace(c) || inR(INVIS)(c)) continue;
     if (LIKE_MAP.has(c)) { expect('look-alike U+' + hx(c), F.nmNorm('Ab' + s + 'ab'), 'Ab' + LIKE_MAP.get(c) + 'ab'); continue; }
-    if (stable(c) && /^\p{L}$/u.test(s) && !ALLOWED.has(c)) expect('restricted letter U+' + hx(c), P('Ab' + s + 'ab'), /^\p{N}$/u.test(s) ? 'digit' : 'letter');
+    if (stable(c) && /^\p{L}$/u.test(s) && !ALLOWED.has(c) && !isStrip(c)) expect('restricted letter U+' + hx(c), P('Ab' + s + 'ab'), /^\p{N}$/u.test(s) ? 'digit' : inScript4(c) ? 'unsupported' : 'letter');
+    if (isStrip(c)) expect('an Arabic mark is removed U+' + hx(c), F.nmNorm('بب' + s + 'بب'), 'بببب');
+    for (const f of [(x) => 'Ab' + x + 'ab', (x) => 'بب' + x + 'بب', (x) => 'Ab ' + x + ' ab']) { const n1 = F.nmNorm(f(s)); expect('normalising twice changes nothing U+' + hx(c), F.nmNorm(n1), n1); }
     if (stable(c) && /^[\p{S}\p{Co}\p{Cn}\p{Zl}\p{Zp}]$/u.test(s) && !DI(c)) expect('symbol / private / unassigned U+' + hx(c), P('Ab' + s + 'ab'), 'char');
     if (stable(c) && /^\p{P}$/u.test(s)) expect('punctuation U+' + hx(c), P('Ab' + s + 'ab'), 'char');
   }
