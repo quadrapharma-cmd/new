@@ -87,7 +87,7 @@ html[dir=rtl] #gpBox :is(.gp-text,.gp-rules b,.gp-rules span){unicode-bidi:plain
 @media (max-width:640px){
   #gpBox .gp-disc{padding:12px 10px 18px}
   #gpBox .panel-body{padding:16px 14px}
-  #gpBox .gp-offers{grid-template-columns:1fr}
+  #gpBox .gp-offers{grid-template-columns:minmax(0,1fr)}
   #gpBox input.gp-msearch{width:100%}
   #gx .member-row{flex-wrap:wrap}
   #gx .member-row .member-actions{width:100%;justify-content:flex-start;padding-inline-start:49px}

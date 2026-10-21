@@ -491,7 +491,7 @@
       '<div class="lc-title" data-noi18n>' + esc(l.t) + '</div><div class="lc-desc" data-noi18n>' + esc(l.d) + '</div>' + coLine(l) + '</div></div>' +
       (l.trust && l.trust.length ? '<div class="trust-bar">' + l.trust.map(function (t, i) { return '<span class="ti ' + (i === 0 ? 'g' : 'b') + '">' + esc(t) + '</span>'; }).join('') + '</div>' : '') +
       '<div class="lc-foot"><div><div class="price">' + esc(l.price || 'On request') + '</div><div class="moq">' + esc(l.moq || '') + '</div></div>' +
-      '<div style="display:flex;gap:5px;align-items:center"><span class="gp-seller" data-gp="' + u.id + '" role="button" tabindex="0" data-noi18n>' + esc(u.name) + '</span>' +
+      '<div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px;align-items:center"><span class="gp-seller" data-gp="' + u.id + '" role="button" tabindex="0" data-noi18n>' + esc(u.name) + '</span>' +
       (mine ? mineActs(l) : !member ? '<button type="button" class="btn-contact" data-gpa="join">Join to enquire</button>' : '<button type="button" class="btn-contact" data-gpl="contact"' + (asked ? ' disabled' : '') + '>' + (asked ? '✓ Request sent' : 'Request quote →') + '</button>') + '</div></div></div></div>';
   }
 
@@ -601,7 +601,7 @@
   function paintMembers(g, el) {
     liveMembers(g);
     var rows = g.live ? (CUR.members || null) : demoMembers(g);
-    if (!g.canSee) { el.innerHTML = '<div class="member-list-title"><span>Members (' + fmtN(g.count) + ')</span></div><div class="gp-more">🔒 The member list is visible to members only. The admins are shown under About.</div>'; return; }
+    if (!g.canSee) rows = rows && rows.filter(function (m) { return m.role === 'admin'; });   /* not a member: the admins only, as the approved page shows */
     var h = '<div class="member-list-title"><span>Members (' + fmtN(Math.max(g.count, (rows || []).length)) + ')</span>' +
       (g.canSee ? '<input type="search" class="member-search gp-msearch" placeholder="🔍 Search members" aria-label="Search members">' : '') + '</div>';
     if (!rows) h += '<div class="gp-empty">Loading members…</div>';

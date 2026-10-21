@@ -52,5 +52,8 @@ with sync_playwright() as p:
     pg.click('.dbk-ov [data-acclaim=suez-pharma-packaging]'); pg.wait_for_timeout(300)
     pg.fill('#clRole','Owner'); pg.fill('#clPhone','0100'); pg.fill('#clMail','a@suez.example'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(300)
     code=pg.evaluate("document.querySelector('.cl-demo b').textContent"); pg.fill('#clCode',code); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(400)
-    T('claim → I manage it and land in its workspace', pg.evaluate("dxDir.bySlug('suez-pharma-packaging').owner")==pg.evaluate("ME.id") and pg.locator('#dxDir.ws').count()==1 and 'Suez Pharma Packaging' in pg.inner_text('#dxDir .ws-h'))
+    # a claim is checked by Drugbox first (A-03): it waits in Admin → Review, and once approved the page is mine to manage
+    T('claim → under review, not mine yet', pg.evaluate("dxDemoClaims.list().some(c=>c.slug==='suez-pharma-packaging')") and pg.evaluate("dxDir.bySlug('suez-pharma-packaging').owner")!=pg.evaluate("ME.id"))
+    pg.evaluate("dxDemoClaims.decide('suez-pharma-packaging', true)"); pg.evaluate("dxHub.workspace('suez-pharma-packaging')"); pg.wait_for_timeout(400)
+    T('claim approved → I manage it and land in its workspace', pg.evaluate("dxDir.bySlug('suez-pharma-packaging').owner")==pg.evaluate("ME.id") and pg.locator('#dxDir.ws').count()==1 and 'Suez Pharma Packaging' in pg.inner_text('#dxDir .ws-h'))
     print('\nJS errors:',errs or 'none','| feature warnings:',warns or 'none'); print(sum(R),'/',len(R)); b.close()
