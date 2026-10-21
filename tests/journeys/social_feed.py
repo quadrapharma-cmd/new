@@ -354,7 +354,7 @@ def comment_on_post(j):
     with j.step("B gets a 'commented' notification; clicking it opens P with the comment visible"):
         if j.demo: j.skip('the other party exists only in live')
         pb = b['page']; j.reload(pb); j.nav(pb, 'notifs'); j.settle(pb, 1200)
-        row = pb.locator('#content .notif-item, #content .notif, #content .n-item').filter(has_text=re.compile('commented', re.I))   # (a notification row — not the "Comments" filter)
+        row = pb.locator('#content .notif-item, #content .notif, #content .n-item').filter(has_text=re.compile('commented|علّق|علق', re.I))   # (a notification row — not the "Comments" filter; Arabic «علّق»)
         j.check(row.count(), 'B has no comment notification')
         row.first.click(); j.settle(pb, 1200)
         j.check(pb.locator('#post-%d' % p).count() and text in j.text(pb), 'clicking the notification does not open post P with the comment')
@@ -385,7 +385,7 @@ def reply_to_comment(j):
         j.check(pg.evaluate("t=>{const e=[...document.querySelectorAll('.cmt')].find(x=>x.innerText.includes(t));return !!e&&/Replying to|ردًا على/.test(e.innerText)}", 'clause 4 ' + j.tag), 'the reply does not say whom it is replying to')
     with j.step('Like comment K: stored and counted (not a toast)'):
         cm = pg.locator('#cmt-%d .cmt' % p).filter(has_not=pg.locator('.cmt-form')).first
-        lk = cm.locator('[onclick]').filter(has_text=re.compile(r'👍|Like|أعجب')).first
+        lk = cm.locator('[onclick]').filter(has_text=re.compile(r'👍|Like|أعجب|إعجاب')).first   # the approved Arabic Like is «إعجاب»
         n0 = num(lk.inner_text()) if lk.count() else 0
         j.act(pg, lk if lk.count() else None, 'Like on a comment', lambda: num(lk.inner_text()) == n0 + 1)
         if j.live: j.check(j.has_table('comment_reactions') or j.has_table('comment_likes'), 'not built: no table for comment likes')

@@ -108,7 +108,13 @@
     'Could not send the report — try again': 'تعذر إرسال البلاغ — حاول مرة أخرى', '🚩 Report': '🚩 إبلاغ', '⛔ Block': '⛔ حظر', '✓ Unblock': '✓ إلغاء الحظر', 'Block': 'حظر', 'Unblocked': 'تم إلغاء الحظر',
     'More: report or block': 'المزيد: إبلاغ أو حظر', 'Blocked — you can unblock in Settings': 'تم الحظر — يمكنك إلغاؤه من الإعدادات', 'Could not block — try again': 'تعذر الحظر — حاول مرة أخرى', 'Could not unblock — try again': 'تعذر إلغاء الحظر — حاول مرة أخرى',
     'They will not be able to message you, send you a connection request, follow you, comment on or react to your posts, or mention you. They are not told.': 'لن يستطيع مراسلتك أو إرسال طلب تواصل أو متابعتك أو التعليق أو التفاعل مع منشوراتك أو الإشارة إليك. ولن يُبلَّغ بذلك.',
-    'Drugbox reviews every report.': 'يراجع Drugbox كل بلاغ.', 'The author is not told who reported.': 'لا يُبلَّغ الكاتب بمن أبلغ عنه.'
-  }, [[/^Report (.+)$/, function (m) { return 'الإبلاغ عن ' + m[1]; }], [/^Block (.+)\?$/, function (m) { return 'حظر ' + m[1] + '؟'; }],
+    'Drugbox reviews every report.': 'يراجع Drugbox كل بلاغ.', 'The author is not told who reported.': 'لا يُبلَّغ الكاتب بمن أبلغ عنه.',
+    /* merge: Admin → Review → Reported members in Arabic (S-27) */
+    'Reported members': 'الأعضاء المبلغ عنهم', '👤 Reported members': '👤 الأعضاء المبلغ عنهم', 'Suspended': 'موقوف', 'Suspend this account?': 'إيقاف هذا الحساب؟', 'Suspend account': 'إيقاف الحساب',
+    'They can no longer post, comment, message, connect or publish listings and jobs, and are told why. Every reporter is told the outcome.': 'لن يستطيع بعد الآن النشر أو التعليق أو المراسلة أو التواصل أو نشر العروض والوظائف، ويُبلَّغ بالسبب. ويُبلَّغ كل من أبلغ بالنتيجة.',
+    'Reason (the member sees it)': 'السبب (يراه العضو)', 'Also remove their posts': 'احذف منشوراته أيضًا', 'Nothing changes for the reported member.': 'لا يتغير شيء للعضو المُبلَّغ عنه.'
+  }, [[/^(\d+) reports? from (\d+) members? · (.*) · (\d+) posts?$/, function (m) {
+        var P = window.dxArPlural || function (n, f) { return f[1]; }, T = window.dxT || function (x) { return x; };
+        return m[1] + ' ' + P(+m[1], ['بلاغ', 'بلاغات']) + ' من ' + m[2] + ' ' + P(+m[2], ['عضو', 'أعضاء']) + ' · ' + m[3].split(', ').map(function (r) { return T(r); }).join('، ') + ' · ' + m[4] + ' ' + P(+m[4], ['منشور', 'منشورات']); }],[/^Report (.+)$/, function (m) { return 'الإبلاغ عن ' + m[1]; }], [/^Block (.+)\?$/, function (m) { return 'حظر ' + m[1] + '؟'; }],
       [/^Drugbox reviews every report\. (.+) is not told who reported\.$/, function (m) { return 'يراجع Drugbox كل بلاغ. ' + (m[1] === 'The author' ? 'لا يُبلَّغ الكاتب' : 'لا يُبلَّغ ' + m[1]) + ' بمن أبلغ عنه.'; }]]);
 })();

@@ -4418,7 +4418,7 @@
     markSaved(); if (window.dxMarket && window.dxMarket.sync) window.dxMarket.sync();
   };
   /* 🔖 on a live card: saved for the member (saved_listings) */
-  async function loadSaved() { var r = await sb.from('saved_listings').select('listing_id, p:products(id, name, category, type, price, unit, currency)').order('created_at', { ascending: false }).limit(200); if (r.error) throw r.error;
+  async function loadSavedListings() { var r = await sb.from('saved_listings').select('listing_id, p:products(id, name, category, type, price, unit, currency)').order('created_at', { ascending: false }).limit(200); if (r.error) throw r.error;
     MK2.saved = {}; MK2.savedRows = r.data || []; MK2.savedRows.forEach(function (x) { MK2.saved[x.listing_id] = 1; }); MK2.savedAt = Date.now(); }
   function markSaved() { document.querySelectorAll('#mkx [data-live^="p"] .btn-save').forEach(function (b) { var id = +b.closest('[data-live]').dataset.live.slice(1), on = !!MK2.saved[id]; b.classList.toggle('dbk-saved', on); b.title = on ? 'Saved' : 'Save'; }); }
   window.addEventListener('click', function (e) {     /* before the page's own handlers (they work on the browser's copy of the cards) */
@@ -4478,7 +4478,7 @@
       var a = actingRaw(); if (!a) throw new Error('Create or claim your company page first — quotes are sent by a company');
       var r = await sb.rpc('listing_quote', { p_id: +m[1], p_from_slug: a.slug, p_price: q.price, p_qty: q.qty || null, p_lead: q.lead || null, p_note: q.note || null });
       if (r.error) throw new Error(friendly(r.error)); loadDeals().catch(function () {}); return true; },
-    saved: async function () { if (Date.now() - MK2.savedAt > 5000) await loadSaved();
+    saved: async function () { if (Date.now() - MK2.savedAt > 5000) await loadSavedListings();
       return (MK2.savedRows || []).filter(function (x) { return x.p; }).map(function (x) { return { title: txt(x.p.name), cat: typeOfRow(x.p), price: priceText(x.p) }; }); },
     companyListings: function (co) {
       if (!co || !co._id) return []; var k = co.slug;
@@ -4504,7 +4504,7 @@
   var renderMarketMK2 = window.renderMarket;
   window.renderMarket = function () { var r = renderMarketMK2.apply(this, arguments); if (!ME_UUID) return r;
     if (!MK2.listAt || Date.now() - MK2.listAt > 15000) { MK2.listAt = Date.now(); loadListings().then(function () { var b = document.querySelector('.hb-mk'); if (b) { b.dataset.sig = ''; var i = document.createElement('i'); b.appendChild(i); i.remove(); } }).catch(function () {}); }
-    if (Date.now() - MK2.savedAt > 20000) loadSaved().then(markSaved).catch(function () {});
+    if (Date.now() - MK2.savedAt > 20000) loadSavedListings().then(markSaved).catch(function () {});
     return r; };
   /* a listing that matches My Intents (0054) */
   ICON.listing_match = '🎯';
@@ -4562,7 +4562,7 @@
   };
   /* the one Saved place (social, J-SOCIAL-48) lists the member's saved listings from saved_listings (business, 0054) */
   if (window.dxSavedSvc) window.dxSavedSvc = Object.assign({}, window.dxSavedSvc, {
-    listings: async function () { await loadSaved();
+    listings: async function () { await loadSavedListings();
       return (MK2.savedRows || []).filter(function (x) { return x.p; }).map(function (x) { return { id: x.listing_id, title: txt(x.p.name), sub: priceText(x.p) }; }); },
     unsaveListing: async function (l) { var r = await sb.from('saved_listings').delete().eq('listing_id', +l.id).eq('user_id', ME_UUID); if (r.error) throw new Error(friendly(r.error)); MK2.savedAt = 0; delete MK2.saved[+l.id]; },
     openListing: function (l) { window.goto('market'); var si = document.getElementById('searchIn'); if (si) { si.value = l.title; if (window.__mkxFilter) window.__mkxFilter(l.title); } }

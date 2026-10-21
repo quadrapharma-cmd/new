@@ -218,7 +218,7 @@ def admin_suspends_spammer(j):
         no = r1['page'].evaluate("()=>dxLive.sb.rpc('reported_members').then(r=>r.error?'refused':'allowed')")
         j.check(no == 'refused', 'a member who is not on the Drugbox team can read the reported-members queue')
     with j.step('M: Admin → Review → Reported members: grouped reports per account'):
-        j.nav(pm, 'admin'); j.click(pm, r'^(🛡️ Review|Review|المراجعة)', scope='#content', what='Review')
+        j.nav(pm, 'admin'); j.click(pm, r'^(🛡️ Review|Review|🛡️ المراجعة|المراجعة)', scope='#content', what='Review')
         j.click(pm, r'Reported members|الأعضاء المبلغ عنهم', scope='#content', what='Reported members'); pm.wait_for_timeout(600)
         row = pm.locator('#content .dx-mod-row').filter(has_text='Spam Seller').filter(has_text=j.tag)        # earlier runs leave their own Spam Seller
         j.check(row.count() == 1, 'S is not listed once in Reported members')
