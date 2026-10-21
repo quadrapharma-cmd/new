@@ -1257,6 +1257,14 @@
     if (!ME_UUID || !e.target || e.target.id !== 'hbQ') return; clearTimeout(DIRQ);
     DIRQ = setTimeout(function () { var k = curKey(); if (k && !freshSeq(k)) loadDirPage(k, true).catch(toastErr); }, 350);
   }, true);
+  /* AREA community (J-COMMUNITY-42): "Add or claim your company" asks the database too, so a page beyond the loaded ones is found
+     (the list in the window is drawn again once the answer is here) */
+  var ACQ = null;
+  document.addEventListener('input', function (e) {
+    if (!ME_UUID || !e.target || e.target.id !== 'acQ' || e.__dxAgain) return; clearTimeout(ACQ); var inp = e.target;
+    ACQ = setTimeout(function () { var k = dirKey(inp.value); if (!k || freshSeq(k)) return;
+      loadDirPage(k, true).then(function () { if (!inp.isConnected) return; var ev = new Event('input', { bubbles: true }); ev.__dxAgain = true; inp.dispatchEvent(ev); }).catch(toastErr); }, 350);
+  }, true);
   /* "Show more" draws the next 60 companies already here and fetches the next page, so the list never runs dry */
   document.addEventListener('click', function (e) {
     if (!ME_UUID || !e.target.closest || !e.target.closest('#dxDir.hub [data-hmore]')) return;
@@ -2008,7 +2016,7 @@
       if (mk.dataset.busy) return; mk.dataset.busy = '1';
       sb.from('groups').select('id').ilike('name', name.replace(/[\\%_]/g, '\\$&')).limit(1).then(function (dup) {
         if (!dup.error && (dup.data || []).length) { delete mk.dataset.busy; window.toast('A group with this name already exists — choose another name'); return; }
-        return sb.from('groups').insert({ name: name, description: desc, emoji: cf ? cf.emoji : deal ? '🤝' : '👥', type: priv ? 'private' : 'public', topic: deal ? 'DEAL ROOM' : 'DISCUSS', created_by: ME_UUID, listed: !(priv && deal),
+        return sb.from('groups').insert({ name: name, description: desc, emoji: cf ? cf.emoji : deal ? '🤝' : '👥', type: priv ? 'private' : 'public', topic: deal ? 'DEAL ROOM' : 'DISCUSS', created_by: ME_UUID, listed: !priv,   /* J-COMMUNITY-12: a private group is hidden — reached by invitation */
           sector: cf ? cf.sector : null, country: cf ? cf.country : [], rules: cf && cf.rules ? cf.rules : null }).select().single().then(function (r) { delete mk.dataset.busy;
           if (r.error) return toastErr(r.error); window.closeCreate(); window.toast('Group created — invite your first members');
           ['.field-input', '.field-textarea', '#gpCrRules'].forEach(function (s0) { M.querySelectorAll(s0).forEach(function (x) { if (x.tagName !== 'SELECT') x.value = ''; }); });

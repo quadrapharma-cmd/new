@@ -162,7 +162,8 @@ with sync_playwright() as p:
     A.evaluate("(()=>{var b=[...document.querySelectorAll('#createModal button')].find(x=>/create/i.test(x.textContent)&&!/cancel/i.test(x.textContent));b&&b.click()})()")
     wait_for(lambda: sql(f"select count(*) from public.groups where name='{GV}'") == '1', 10)
     vid = sql(f"select id from public.groups where name='{GV}'")
-    T('a private group made in the window can be found and asked to join (private, listed)', sql(f"select type||'|'||listed from public.groups where id={vid}") == 'private|true')
+    T('a private group made in the window is hidden from the list (private, unlisted — J-COMMUNITY-12)', sql(f"select type||'|'||listed from public.groups where id={vid}") == 'private|false')
+    sql(f"update public.groups set listed=true where id={vid}")   # setup for the request flow below: a listed private group (as the seeded ones)
     groups_page(A, vid); open_group(A, vid)
     secret = f'PSUR due dates moved for our portfolio {st}'
     compose(A, secret)

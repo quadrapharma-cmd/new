@@ -72,7 +72,8 @@ def verify_company(j):
             j.check(j.wait_db("select status from public.companies where id=%s" % cid, 6) == 'verified', 'the company is not verified')
             j.check(j.sql1("select reviewed_by is not null and reviewed_at is not null from public.verification_requests where company_id=%s order by id desc limit 1" % cid) == 't', 'reviewed_by / reviewed_at not stored')
             j.check(notif_rows(j, o['id'], extra=" and message ~* 'verified'") >= 1, "no 'Your company is verified' notification")
-        directory(j, pg); j.check(pg.locator('#dxDir .dr-card', has_text=name).locator('.dr-seal').count(), 'no Verified badge on the directory card')
+        directory(j, pg); pg.fill('#hbQ', name); j.wait(pg, "n=>[...document.querySelectorAll('#dxDir .dr-card')].some(c=>c.innerText.includes(n))", 10, name)   # a directory of hundreds: found the way a person does
+        j.check(pg.locator('#dxDir .dr-card', has_text=name).locator('.dr-seal').count(), 'no Verified badge on the directory card')
 
 @journey('J-COMMUNITY-42')
 def claim_page(j):

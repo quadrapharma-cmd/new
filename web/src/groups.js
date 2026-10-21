@@ -604,7 +604,7 @@
   function paintMembers(g, el) {
     liveMembers(g);
     var rows = g.live ? (CUR.members || null) : demoMembers(g);
-    if (!g.canSee) rows = rows && rows.filter(function (m) { return m.role === 'admin'; });   /* not a member: the admins only, as the approved page shows */
+    if (!g.canSee) { el.innerHTML = '<div class="member-list-title"><span>Members (' + fmtN(g.count) + ')</span></div><div class="gp-more">🔒 The member list is visible to members only. The admins are shown under About.</div>'; return; }   /* J-COMMUNITY-03: no member list for outsiders */
     var h = '<div class="member-list-title"><span>Members (' + fmtN(Math.max(g.count, (rows || []).length)) + ')</span>' +
       (g.canSee ? '<input type="search" class="member-search gp-msearch" placeholder="🔍 Search members" aria-label="Search members">' : '') + '</div>';
     if (!rows) h += '<div class="gp-empty">Loading members…</div>';

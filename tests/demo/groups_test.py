@@ -185,8 +185,10 @@ with sync_playwright() as p:
     T('private group: no posts, a lock with "Request to join"', E("!!document.querySelector('#gpBox .gp-lock [data-gpa=request]') && !document.querySelector('#gpBox .gp-posts .post')"))
     sweep()
     tab('members'); sweep()
-    T('private group: only the admins are listed, the full list is for members', E("(()=>{const r=[...document.querySelectorAll('#gpBox [data-pane=members] .member-row')];return r.length>=1&&r.every(x=>x.querySelector('.rp-admin'))&&!!document.querySelector('#gpBox [data-pane=members] .gp-more')})()"))
+    # J-COMMUNITY-03: an outsider sees no member list; the admins are shown under About
+    T('private group: no member list, the admins are shown under About', E("(()=>{const r=document.querySelectorAll('#gpBox [data-pane=members] .member-row');return r.length===0&&!!document.querySelector('#gpBox [data-pane=members] .gp-more')})()"))
     tab('about')
+    T('private group: About lists the admins', E("(()=>{const r=[...document.querySelectorAll('#gpBox [data-pane=about] .member-row')];return r.length>=1&&r.every(x=>x.querySelector('.rp-admin,.rp-subadmin'))})()"))
     T('private group: About is visible (rules and privacy)', E("document.querySelectorAll('#gpBox [data-pane=about] .gp-rules li').length>=3 && /Private/.test(dxOrigText(document.querySelector('#gpBox [data-pane=about]')))"))
     tab('disc')
     C("#gpBox [data-gpa=request]"); W(400)
