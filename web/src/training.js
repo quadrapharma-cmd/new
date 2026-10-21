@@ -516,6 +516,8 @@
 
 /* ===== AREA community: training — Arabic (the interface translates as it draws; course titles and lessons stay as Drugbox wrote them) ===== */
 (function () {
+  /* the shared Arabic count rule (2 ساعتان, 3–10 ساعات, 11+ ساعة); a fraction keeps the plural */
+  function hrs(n) { return window.dxArPlural && /^\d+$/.test(n) ? window.dxArPlural(+n, ['ساعة', 'ساعات']) : 'ساعات'; }
   if (!window.dxI18nExtend) return;
   window.dxI18nExtend({
     'All courses': 'كل الدورات', 'GMP': 'GMP', 'Regulatory': 'التسجيل', 'Formulation': 'التركيبات', 'Quality': 'الجودة', 'Market access': 'دخول الأسواق', 'General': 'عام',
@@ -572,6 +574,6 @@
     [/^Payment received — you can start "(.+)" now$/, function (m) { return 'تم استلام الدفع — يمكنك بدء "' + m[1] + '" الآن'; }],
     [/^Your certificate for "(.+)" is ready$/, function (m) { return 'شهادتك لدورة "' + m[1] + '" جاهزة'; }],
     [/^Finish all the lessons first \((\d+) of (\d+) done\)$/, function (m) { return 'أنهِ كل الدروس أولاً (' + m[1] + ' من ' + m[2] + ')'; }],
-    [/^(\d+) hours$/, function (m) { return m[1] + ' ساعات'; }], [/^⏱ (\d+(?:\.\d)?) hours$/, function (m) { return '⏱ ' + m[1] + ' ساعات'; }]
+    [/^(\d+) hours$/, function (m) { return m[1] + ' ' + hrs(m[1]); }], [/^⏱ (\d+(?:\.\d)?) hours$/, function (m) { return '⏱ ' + m[1] + ' ' + hrs(m[1]); }]
   ]);
 })();

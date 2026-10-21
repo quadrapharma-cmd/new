@@ -97,8 +97,10 @@ with sync_playwright() as p:
             pill = E("(document.querySelector('#content .dg-pill-page')||{}).innerText||''"); n = E('TRAINING.length')
             T('AR: the Training pill counts courses with the Arabic form for %d (%s)' % (n, 'دورة' if n > 10 or n < 3 else 'دورات'),
               pill.startswith('%d %s' % (n, 'دورات' if 3 <= n % 100 <= 10 else 'دورة')), pill)
-            E("(()=>{while(TRAINING.length<20)TRAINING.push(Object.assign({},TRAINING[0]));goto('feed');goto('training')})()"); pg.wait_for_timeout(900)   # as many courses as the live app has (20)
-            pill = E("(document.querySelector('#content .dg-pill-page')||{}).innerText||''")
+            # as many courses as the live app has (20): the Training layer (community) writes the pill from its own course list, so the
+            # pill's English text for 20 courses is put on the page and translated as the pill is (merge: TRAINING no longer feeds it)
+            E("(()=>{const d=document.createElement('div');d.className='dg-pill-page dx-test-pill';d.textContent='20 COURSES  /  GMP  /  REGULATORY  /  FORMULATION';document.getElementById('content').appendChild(d)})()"); pg.wait_for_timeout(900)
+            pill = E("(document.querySelector('#content .dx-test-pill')||{}).innerText||''"); E("document.querySelectorAll('.dx-test-pill').forEach(e=>e.remove())")
             T('AR: 20 courses read "20 دورة" (11 and above take the singular), not "20 دورات"', pill.startswith('20 دورة'), pill)
             rule = E("[1,2,3,10,11,20,99,100,102,103,110,111].map(n=>n+' '+dxArPlural(n,['دورة','دورات']))")
             T('AR: the plural rule — 1 دورة, 2 دورتان (the dual), 3–10 دورات, 11+ دورة, 103–110 دورات', rule == ['1 دورة', '2 دورتان', '3 دورات', '10 دورات', '11 دورة', '20 دورة', '99 دورة', '100 دورة', '102 دورة', '103 دورات', '110 دورات', '111 دورة'], rule)

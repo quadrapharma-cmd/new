@@ -4560,5 +4560,12 @@
     } else if (t === 'post_restored' && n.pid && window.dxOpenPost) setTimeout(function () { window.goto('feed'); window.dxOpenPost(n.pid); }, 0);
     return r;
   };
+  /* the one Saved place (social, J-SOCIAL-48) lists the member's saved listings from saved_listings (business, 0054) */
+  if (window.dxSavedSvc) window.dxSavedSvc = Object.assign({}, window.dxSavedSvc, {
+    listings: async function () { await loadSaved();
+      return (MK2.savedRows || []).filter(function (x) { return x.p; }).map(function (x) { return { id: x.listing_id, title: txt(x.p.name), sub: priceText(x.p) }; }); },
+    unsaveListing: async function (l) { var r = await sb.from('saved_listings').delete().eq('listing_id', +l.id).eq('user_id', ME_UUID); if (r.error) throw new Error(friendly(r.error)); MK2.savedAt = 0; delete MK2.saved[+l.id]; },
+    openListing: function (l) { window.goto('market'); var si = document.getElementById('searchIn'); if (si) { si.value = l.title; if (window.__mkxFilter) window.__mkxFilter(l.title); } }
+  });
   /* ===== /AREA merge ===== */
 })();

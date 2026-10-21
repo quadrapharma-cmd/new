@@ -257,7 +257,7 @@
   var CATW = { supply: 'Supply', demand: 'Demand', cmo: 'CMO', equipment: 'Equipment', license: 'License', service: 'Service', job: 'Job', training: 'Training' };
   function paintSaved(c, list) {
     var host = c.querySelector('.saved-list') || c.firstElementChild || c; c.querySelectorAll('.dx-saved-listings').forEach(function (x) { x.remove(); });
-    if (!list.length) return;
+    if (!list.length || c.querySelector('.dx-saved-sec[data-kind="listings"]')) return;   /* AREA merge: the one Saved place (social) lists them already */
     var box = document.createElement('div'); box.className = 'dx-saved-listings'; box.style.marginTop = '18px';
     box.innerHTML = '<h2 style="font-size:17px;font-weight:800;color:var(--cx);margin:0 0 10px">🛒 Saved listings</h2>' + list.map(function (x, i) {
       return '<div class="mr-row" style="background:#fff;border:1px solid #eef0f4;border-radius:12px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px"><div class="mr-b" style="flex:1;min-width:0"><b data-noi18n></b><small>' + esc(CATW[x.cat] || 'Listing') + (x.price ? ' · <span data-noi18n></span>' : '') + '</small></div>' +
