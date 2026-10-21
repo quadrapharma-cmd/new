@@ -527,6 +527,7 @@
   function paintPane(tab) {
     var g = CUR && CUR.g, el = pane(tab); if (!g || !el) return;
     if (tab === 'disc') paintDisc(g, el); else if (tab === 'members') paintMembers(g, el); else if (tab === 'about') paintAbout(g, el); else if (tab === 'listings') paintListings(g, el);
+    if (window.dxI18nAttrs) window.dxI18nAttrs(el);   /* every pane reads in Arabic at once */
   }
   function gate(g) {
     if (g.member) return '';
