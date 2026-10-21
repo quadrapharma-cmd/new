@@ -14,14 +14,14 @@ with sync_playwright() as p:
     pg=ctx.new_page(); pg.on("dialog", lambda d: (newpages.append(1), d.dismiss()))
     ctx.on('page', lambda np: (newpages.append(1), np.close()))
     pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(800)
-    pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3200)
+    (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3200)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
     pg.evaluate("localStorage.setItem('dx_tour_done','1')")
     report={}
     def relog():
         if pg.evaluate("document.getElementById('app').offsetWidth===0"):
             pg.evaluate("document.querySelectorAll('.dbk-ov').forEach(o=>o.remove())")
-            if pg.locator('.lg-demo').is_visible(): pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(2500)
+            if pg.locator('.lg-demo').is_visible(): (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(2500)
     for name in PAGES:
         relog(); pg.evaluate(GO[name]); pg.wait_for_timeout(600)
         items=pg.evaluate("""(()=>{var seen=new Set(),out=[];document.querySelectorAll('#content a[href],#content button,#content [onclick],#content [role=button],#content .hb-card,#content label.chip,#content [data-tab],.topbar a,.topbar button,#sidebar a,#sidebar button,#sidebar [onclick]').forEach((e,i)=>{

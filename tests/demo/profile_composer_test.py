@@ -7,7 +7,7 @@ with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); ctx = b.new_context(viewport={'width': 1440, 'height': 900}); ctx.add_init_script("try{localStorage.setItem('dx_lang','%s')}catch(e){}" % LANG)
     pg = ctx.new_page(); errs = []; pg.on("pageerror", lambda e: errs.append(str(e)[:150]))
     pg.goto('file://' + F, wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
-    pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(2800)
+    (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(2800)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
     E = pg.evaluate
     E("goto('profile')"); pg.wait_for_timeout(1000)
@@ -19,10 +19,14 @@ with sync_playwright() as p:
     pg.fill('#postBody', 'Posted straight from my profile'); E("submitPost()"); pg.wait_for_timeout(900)
     T('after posting you stay on your profile', E("document.body.getAttribute('data-page')") == 'profile')
     T('the new post appears at the top of your posts', E("document.querySelectorAll('#profileTabContent .post').length") == n0 + 1 and 'Posted straight from my profile' in E("document.querySelector('#profileTabContent .post').innerText"))
-    for i, t in [(0, 'img'), (1, 'file'), (3, 'job')]:
+    for i, t in [(0, 'img'), (1, 'file')]:
         E(f"document.querySelectorAll('#profileTabContent .comp-act')[{i}].click()"); pg.wait_for_timeout(300)
         ok = E("!!document.querySelector('.modal-bg')"); E("document.querySelectorAll('.modal-bg').forEach(m=>m.remove())")
         T(f'the {t} shortcut opens the post window', ok)
+    # S-23 (area social): the Job shortcut opens the real "Post a Job" form on Jobs (it used to open an empty post window)
+    E("document.querySelectorAll('#profileTabContent .comp-act')[3].click()"); pg.wait_for_timeout(700)
+    T('the job shortcut opens the Post a Job form', E("document.body.getAttribute('data-page')") == 'jobs' and E("[...document.querySelectorAll('#jx .modal-overlay.show')].some(m=>/Post a Job|وظيفة/.test(m.innerText))"))
+    E("document.querySelectorAll('#jx .modal-overlay.show').forEach(m=>m.classList.remove('show'))"); E("goto('profile')"); pg.wait_for_timeout(700)
     other = E("USERS.find(u=>u.id!==ME.id&&POSTS.some(p=>p.uid===u.id)).id")
     E(f"gotoProfile({other})"); pg.wait_for_timeout(900)
     T("no composer on someone else's profile", not E("!!document.querySelector('#profileTabContent .dx-pp-comp')") and E("document.querySelectorAll('#profileTabContent .post').length") >= 1)

@@ -40,7 +40,7 @@ with sync_playwright() as p:
         b=(p.webkit.launch() if eng=='webkit' else p.chromium.launch(args=["--no-sandbox"])); ctx=b.new_context(**dev); pg=ctx.new_page(); errs=[]; pg.on("pageerror",lambda e:errs.append(str(e)[:150]))
         pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.wait_for_timeout(300)
         lite=pg.evaluate("!!document.getElementById('dxLite')"); link=pg.is_visible('.dx-lite-enter')
-        pg.click('#splash'); pg.wait_for_timeout(900); pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3000)
+        pg.click('#splash'); pg.wait_for_timeout(900); (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3000)
         T(f'[{eng} · browser] full app, lite copy not in the page', (not lite) and (not link) and pg.evaluate("document.getElementById('app').offsetWidth>0") and not errs, (lite, link, errs))
         b.close()
     print(sum(R),'/',len(R))

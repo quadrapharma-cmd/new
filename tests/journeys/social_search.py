@@ -80,7 +80,10 @@ def command_palette(j):
         pg.keyboard.press('Enter'); j.settle(pg, 900)
         j.check(page_of(pg) == 'profile' and member in j.text(pg)[:400], 'Enter on the member does not open the profile')
     with j.step('Ctrl+K while typing in a field does not insert text; Esc and an outside click close it and return focus'):
-        j.nav(pg, 'messages'); pg.click('#composeInput'); pg.keyboard.press('Control+k'); pg.wait_for_timeout(400)
+        j.nav(pg, 'messages')
+        if not pg.locator('#composeInput:visible').count() and pg.locator('.mx-thread:visible').count():   # a phone shows the list first: open a conversation
+            pg.locator('.mx-thread:visible').first.click(); pg.wait_for_timeout(500)
+        pg.click('#composeInput'); pg.keyboard.press('Control+k'); pg.wait_for_timeout(400)
         j.check(palette(pg) and pg.input_value('#composeInput') == '', 'Ctrl+K inside a text field does not open the palette (or inserts text)')
         pg.keyboard.press('Escape'); pg.wait_for_timeout(300)
         j.check(not palette(pg) and pg.evaluate("document.activeElement.id") == 'composeInput', 'Esc does not close the palette and return focus')
@@ -97,6 +100,9 @@ def saved_search_alert(j):
         s_ = pg.locator('#searchIn'); j.check(s_.is_visible(), 'no visible Marketplace search box at %dpx (the phone search palette does not apply Marketplace filters)' % j.width)
         s_.click(); s_.fill('Metformin'); pg.wait_for_timeout(500)
         box = pg.locator('#mkx .filters .f-opt').first; j.check(box.count(), 'the Marketplace has no filters')
+        if not box.is_visible():                                       # a phone keeps the filters behind "⚙ Filters"
+            tg = j.find(pg, r'Filters|الفلاتر|التصفية|عوامل التصفية', scope='#mkx'); j.check(tg, 'the filters are hidden and there is no Filters button at %dpx' % j.width)
+            tg.click(); pg.wait_for_timeout(400)
         box.click(); pg.wait_for_timeout(800)
         el = j.find(pg, r'Save (this )?search|حفظ (هذا )?البحث', scope='body'); j.check(el, 'no "Save this search" after searching with a filter')
         el.click(); pg.wait_for_timeout(500)
@@ -149,15 +155,19 @@ def one_saved_place(j):
         j.check(re.search(r'Jobs|وظائف', t) and re.search(r'Listings|Products|عروض|منتجات', t), 'not built: Saved shows posts only (no Jobs / Listings sections)')
         if j.live: j.check('Saved post one' in t and 'Saved job' in t, 'the saved items are not all listed')
     with j.step('Open the saved job: the job page where Apply works'):
-        el = j.find(pg, r'Saved job|Job|وظيفة', scope='#content'); j.check(el, 'no saved job to open'); el.click(); j.settle(pg)
-        j.check(page_of(pg) == 'jobs' and j.find(pg, r'Apply|تقدم', scope='#content'), 'the saved job does not open the job with Apply')
+        el = j.find(pg, r'Saved job|Job|وظيفة', scope='#content'); j.check(el, 'no saved job to open')
+        job_name = 'Saved job' if j.live else el.inner_text().strip().split('\n')[0]; el.click(); j.settle(pg)
+        j.check(page_of(pg) == 'jobs' and j.find(pg, r'Apply|تقدم|قدّم|قدم', scope='#content'), 'the saved job does not open the job with Apply')
     with j.step('Unsave the job; reload: consistent everywhere'):
-        j.nav(pg, 'saved'); row = pg.locator('#content *').filter(has_text=re.compile('Saved job')).last
-        un = j.find(pg, r'^\W*(Unsave|Saved|Remove|إلغاء الحفظ|محفوظ|إزالة)$', scope='#content', exact=True); j.check(un, 'no Unsave on a saved item')
+        j.nav(pg, 'saved')
+        un = pg.evaluate_handle("""n=>{const re=/^\\W*(Unsave|Saved|Remove|إلغاء الحفظ|محفوظ|إزالة)$/i,btn=e=>[...e.querySelectorAll('button,[role=button]')].find(b=>b.getClientRects().length&&re.test(b.innerText.trim()));
+            let best=null;document.querySelectorAll('#content *').forEach(e=>{if(e.getClientRects().length&&(e.innerText||'').includes(n)&&btn(e)&&(!best||best.contains(e)))best=e});return best?btn(best):null}""", job_name).as_element()
+        j.check(un, 'no Unsave on the saved job')          # the job's own control — not a saved post's
         un.click(); pg.wait_for_timeout(600)
+        j.check(job_name not in j.text(pg), 'the job is still listed in Saved after Unsave')
         if j.demo: j.skip('demo keeps no data across a reload (no backend) — checked in live')
         j.check(j.wait_db("select count(*) from public.saved_jobs where user_id='%s'" % a['id'], 5, want='0') == '0', 'the saved_jobs row is still there')
-        j.reload(pg); j.nav(pg, 'saved'); j.check('Saved job' not in j.text(pg) and 'Saved post one' in j.text(pg), 'after reload Saved is inconsistent')
+        j.reload(pg); j.nav(pg, 'saved'); j.check('Saved job' not in j.text(pg) and 'Saved post one' in j.text(pg) and 'Saved post two' in j.text(pg), 'after reload Saved is inconsistent')
 
 @journey('J-SOCIAL-50')
 def back_forward_links(j):
@@ -193,21 +203,44 @@ def admin_suspends_spammer(j):
     for i in range(3): post_db(j, s['id'], 'CHEAP API buy now %d %s' % (i, j.tag))
     for r in (r1, r2): j.sql("insert into public.messages (sender_id, receiver_id, body) values ('%s','%s','Buy cheap now %s')" % (s['id'], r['id'], j.tag))
     make_admin(j, m['id']); pm = m['page']; j.reload(pm)
-    with j.step('Members report S (a post and a message)'):
-        j.check(j.has_table('post_reports') or j.has_table('member_reports') or j.has_table('reports'), 'not built: members cannot report a post or a person (no reports table) — see J-SOCIAL-20/-40')
-    with j.step('M: Admin → Review → reported members: grouped reports per account; non-admins cannot open it'):
-        j.nav(pm, 'admin'); j.click(pm, r'^(Review|المراجعة)', scope='#content', what='Review')
-        j.check(j.find(pm, r'Members|Accounts|Reported members|الأعضاء', scope='#content'), 'not built: no reported-members queue in Admin → Review')
+    with j.step("Members report S from S's profile (⋯ → Report, with a reason): stored once per reporter"):
+        for r, reason in ((r1, 'spam'), (r2, 'scam')):
+            pr = r['page']; goto_profile(j, pr, s)
+            j.click(pr, r'^(⋯|More: report or block|المزيد: إبلاغ أو حظر)', scope='#content', what='⋯ (more)')
+            j.click(pr, r'^\W*(Report|إبلاغ)$', scope='body', what='Report', exact=True)
+            pr.check('.dbk-ov input[name=dxMRep][value=%s], .modal-bg input[name=dxMRep][value=%s]' % (reason, reason))
+            pr.fill('#dxMRepN', 'Sends the same ad to everyone ' + j.tag)
+            j.click(pr, r'^(Report|إبلاغ)$', scope='body', what='Report (confirm)', exact=True); pr.wait_for_timeout(800)
+            j.check(any(re.search(r'Thanks|شكراً', t) for t in j.toasts(pr)), 'no confirmation after reporting')
+        j.check(j.wait_db("select count(distinct reporter) from public.member_reports where reported='%s' and status='open'" % s['id'], 6, want='2') == '2', 'the two reports are not stored')
+        dup = r1['page'].evaluate("u=>dxLive.sb.from('member_reports').insert({reporter:dxLive.k.me,reported:u,reason:'spam'}).then(r=>r.error?'refused':'stored')", s['id'])
+        j.check(dup == 'refused', 'the same member can report the same person twice while it is open')
+        no = r1['page'].evaluate("()=>dxLive.sb.rpc('reported_members').then(r=>r.error?'refused':'allowed')")
+        j.check(no == 'refused', 'a member who is not on the Drugbox team can read the reported-members queue')
+    with j.step('M: Admin → Review → Reported members: grouped reports per account'):
+        j.nav(pm, 'admin'); j.click(pm, r'^(🛡️ Review|Review|المراجعة)', scope='#content', what='Review')
+        j.click(pm, r'Reported members|الأعضاء المبلغ عنهم', scope='#content', what='Reported members'); pm.wait_for_timeout(600)
+        row = pm.locator('#content .dx-mod-row').filter(has_text='Spam Seller').filter(has_text=j.tag)        # earlier runs leave their own Spam Seller
+        j.check(row.count() == 1, 'S is not listed once in Reported members')
+        j.check(re.search(r'2 reports from 2 members|2 بلاغ|بلاغان', row.first.inner_text()), 'the row does not group the reports (%s)' % row.first.inner_text()[:120])
     with j.step('Suspend S with a reason; remove the spam posts: stored and enforced by the database'):
-        j.check(j.has_column('profiles', 'suspended') or j.has_column('profiles', 'status') or j.has_column('profiles', 'banned'), 'not built: no suspension flag on profiles')
-        j.click(pm, r'Suspend|إيقاف', scope='#content', what='Suspend')
+        row.first.locator('button').filter(has_text=re.compile(r'^(Suspend|إيقاف)$')).click(); pm.wait_for_timeout(400)
+        pm.fill('#dxModWhy', 'Mass spam ads ' + j.tag)
+        j.click(pm, r'^(Suspend account|إيقاف الحساب)$', scope='body', what='Suspend account', exact=True); pm.wait_for_timeout(1200)
+        j.check(j.wait_db("select reason from public.account_suspensions where user_id='%s'" % s['id'], 6) == 'Mass spam ads ' + j.tag, 'the suspension and its reason are not stored')
+        j.check(not pm.locator('#content .dx-mod-row').filter(has_text='Spam Seller').filter(has_text=j.tag).count(), 'S is still in the queue after the decision')
     with j.step('S cannot post, comment or message; S sees "account suspended"'):
         r = s['page'].evaluate("u=>dxLive.sb.from('posts').insert({user_id:u,body:'after suspension'}).then(r=>r.error?'refused':'stored')", s['id'])
         j.check(r == 'refused', 'a suspended member can still post')
-        j.reload(s['page']); j.check(re.search(r'suspended|موقوف', j.text(s['page'], 'body'), re.I), 'S is not told the account is suspended')
+        r = s['page'].evaluate("u=>dxLive.sb.from('messages').insert({sender_id:dxLive.k.me,receiver_id:u,body:'after suspension'}).then(r=>r.error?'refused':'stored')", r1['id'])
+        j.check(r == 'refused', 'a suspended member can still message')
+        j.reload(s['page']); s['page'].wait_for_timeout(1500)
+        j.check(re.search(r'suspended|موقوف', j.text(s['page'], 'body'), re.I), 'S is not told the account is suspended')
     with j.step("S's removed posts disappear for everyone; reporters are told; the action is logged"):
         j.check(j.sql1("select count(*) from public.posts where user_id='%s'" % s['id']) == '0', "S's spam posts remain")
         j.check(j.sql1("select count(*) from public.notifications where user_id in ('%s','%s') and created_at>now()-interval '10 minutes' and from_user is null" % (r1['id'], r2['id'])) >= '2', 'the reporters were not told')
-        j.check(j.has_table('admin_actions') or j.has_table('moderation_log') or j.has_table('audit_log'), 'not built: admin actions are not logged')
+        j.check(j.sql1("select count(*) from public.moderation_log where target_user='%s' and action='suspend' and admin='%s'" % (s['id'], m['id'])) == '1', 'the suspension is not logged with the admin')
+        j.nav(r1['page'], 'notifs'); j.settle(r1['page'], 1200)
+        j.check(re.search(r'suspended the account|أوقف الحساب', j.text(r1['page'])), 'the reporter does not read the outcome')
 
 if __name__ == '__main__': main(__file__)

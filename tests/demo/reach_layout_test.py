@@ -20,7 +20,7 @@ def page(b, w, touch=False):
     pg.goto('file://' + F, wait_until='load'); pg.wait_for_timeout(800)
     try: pg.evaluate('endSplash()')
     except Exception: pass
-    pg.wait_for_timeout(400); pg.click('.lg-demo'); pg.click('#loginPage button.f-btn.dx-js-only'); pg.wait_for_timeout(2200)
+    pg.wait_for_timeout(400); (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn.dx-js-only')); pg.wait_for_timeout(2200)
     return c, pg
 
 def short_posts(pg):   # every new post: no stats row, no picture, one line

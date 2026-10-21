@@ -39,6 +39,8 @@ def asset(src, name, sub='js', ext='js', data=None):   # content-hashed file nam
     open(f'{OUT}/{sub}/{fn}', 'wb').write(data); return f'{sub}/{fn}'
 lib = asset(ROOT + '/src/vendor/supabase-2.45.4.min.js', 'supabase')
 ada = asset(ROOT + '/src/live/adapter.js', 'adapter')
+# area layers of the live app (web/src/live/<name>.js besides the adapter): loaded right after it, in name order
+xtra = [(os.path.basename(f)[:-3], asset(f, os.path.basename(f)[:-3])) for f in sorted(glob.glob(ROOT + '/src/live/*.js')) if os.path.basename(f) != 'adapter.js']
 H = open(DEMO, encoding='utf-8').read()
 # the splash video is most of the demo's weight: online it is a separate, cacheable file (same bytes, same markup otherwise)
 m = re.search(r'<source src="data:video/mp4;base64,([A-Za-z0-9+/=]+)"', H)
@@ -72,7 +74,8 @@ if 'three' in moved:   # the loader: fetch the file once, start the globe when i
 cfg = json.dumps({'url': url, 'anonKey': key, 'realtime': os.environ.get('DRUGBOX_REALTIME', '1') != '0'}).replace('<', '\\u003c')   # never ends the <script>
 live = ('<style data-dx="live">.lg-demo{display:none!important}[data-sim]{display:none!important}</style>\n'
         '<script data-dx="live-config">window.DRUGBOX_CONFIG=' + cfg + ';</script>\n'
-        f'<script data-dx="supabase-js" src="{lib}"></script>\n<script data-dx="live-adapter" src="{ada}"></script>\n')
+        f'<script data-dx="supabase-js" src="{lib}"></script>\n<script data-dx="live-adapter" src="{ada}"></script>\n'
+        + ''.join(f'<script data-dx="live-{n}" src="{a}"></script>\n' for n, a in xtra))
 z = H.rfind('</body>'); H = H[:z] + live + H[z:]
 if sentry:   # first script after the charset: it must be there before anything can throw (the loader queues errors until the SDK arrives)
     cm = re.search(r'<meta charset="[^"]*">', H)
@@ -101,5 +104,5 @@ if sentry:
 vj.pop('$comment', None)   # the template's note is for people; the published file carries only what Vercel reads
 assert 'YOUR-PROJECT' not in json.dumps(vj), 'deploy/vercel.json: a YOUR-PROJECT placeholder was not replaced'
 open(OUT + '/vercel.json', 'w', encoding='utf-8').write(json.dumps(vj, indent=2, ensure_ascii=False) + '\n')
-print('live build →', OUT, '| index.html %.2f MB' % (len(H.encode('utf-8')) / 1e6), '| scripts:', lib, ada, '+ %d page scripts as files' % len(moved),
+print('live build →', OUT, '| index.html %.2f MB' % (len(H.encode('utf-8')) / 1e6), '| scripts:', lib, ada, ' '.join(a for _, a in xtra), '+ %d page scripts as files' % len(moved),
       '| media:', 'splash' if m else 'none', '| removed old files: %d' % len(stale), '| lite copy → no-script notice' if lite else '', '| sentry loader' if sentry else '')

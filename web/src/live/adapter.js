@@ -74,7 +74,7 @@
     var U = window.USERS || [], k = U.filter(function (u) { return u.id <= 1000 && u !== window.ME; }); U.length = 0; k.forEach(function (u) { U.push(u); });
     Object.keys(window.CONN_STATE || {}).forEach(function (x) { if (+x > 1000) delete window.CONN_STATE[x]; });
     /* what the interface keeps in this browser for a person (stores dx_*, kit dbx_*) goes too; only the interface preferences stay */
-    try { Object.keys(localStorage).forEach(function (x) { if (/^dbx?_/.test(x) && !/^dx_(lang|theme|tour_done|flags)$/.test(x)) localStorage.removeItem(x); }); } catch (e) {}
+    try { Object.keys(localStorage).forEach(function (x) { if (/^(dx|dbx?)_/.test(x) && !/^dx_(lang|theme|tour_done|flags)$/.test(x)) localStorage.removeItem(x);   /* dx_* too (J-SOCIAL-04: dx_deals stayed) */ }); } catch (e) {}
   });
   /* the demo's sample people, posts, comments and notifications never show in the live app (F-54) */
   function clearSeeds() {
@@ -96,7 +96,9 @@
       profileViews: p.profile_views || '0', connections: '0',         /* '0', not 0: the approved sidebar shows sample numbers for a falsy value */
       intents: (p.intents && typeof p.intents === 'object') ? p.intents : {},
       nameFix: !!p.name_needs_fix,                                      /* my name breaks the name rule (0038/0039): asked to update it */
-      nameWhy: p.name_needs_fix ? nmMessage(p.name, nmProblem(nmNorm(p.name)) || 'char') : ''   /* …and told what to change */
+      nameWhy: p.name_needs_fix ? nmMessage(p.name, nmProblem(nmNorm(p.name)) || 'char') : '',  /* …and told what to change */
+      cover: safeUrl(p.cover_url), experience: Array.isArray(p.experience) ? p.experience : [], education: Array.isArray(p.education) ? p.education : [],   /* area social (S-06, S-14) */
+      skills: Array.isArray(p.skills) ? p.skills : [], languages: Array.isArray(p.languages) ? p.languages : []
     });
     clearSeeds();
     return window.ME;
@@ -220,7 +222,10 @@
     openToWork: !!p.open_to_work, hiring: !!p.hiring, profileViews: p.profile_views || 0, bio: prose(p.bio) };
     /* website and certifications come with a whole profile row (opening the profile), not with the people embedded in lists; a list row
        never blanks what the profile row brought (phone stays private: it is never put on another person) */
-    if ('website' in p) { u.web = safeUrl(p.website); u.certs = txt(p.certs); u.full = true; if (p.intents && typeof p.intents === 'object') u.intents = p.intents; }
+    if ('website' in p) { u.web = safeUrl(p.website); u.certs = txt(p.certs); u.full = true; if (p.intents && typeof p.intents === 'object') u.intents = p.intents;
+      /* area social (S-06, S-14): the cover and the profile lists come with a whole row; the interface writes them through esc() */
+      u.cover = safeUrl(p.cover_url); u.experience = Array.isArray(p.experience) ? p.experience : []; u.education = Array.isArray(p.education) ? p.education : [];
+      u.skills = Array.isArray(p.skills) ? p.skills : []; u.languages = Array.isArray(p.languages) ? p.languages : []; }
     if ('name_needs_fix' in p) u.nameFix = !!p.name_needs_fix;                                       /* a name that breaks the rule (0038) */
     if (p.name_key) u.nameKey = p.name_key;                                                          /* its skeleton, as the database has it */
     return u; }
@@ -231,18 +236,21 @@
       viewCount: r.view_count || 0, saved: saved.has(r.id), pinned: !!r.pinned, ts: ago(r.created_at), created_at: r.created_at,
       imgs: media.filter(function (m) { return m.type === 'image' && safeUrl(m.url); }).map(function (m) { return safeUrl(m.url); }),
       files: media.filter(function (m) { return m.type !== 'image' && safeUrl(m.url); }).map(function (m) { return { name: txt(m.name), size: +m.size || 0, url: safeUrl(m.url) }; }),
-      reactions: rx || (r.like_count ? { like: r.like_count } : {}) }; }
+      reactions: rx || (r.like_count ? { like: r.like_count } : {}),
+      edited: !!r.edited_at, reposted: !!(kinds && kinds.__rp && kinds.__rp.has(r.id)),                                        /* area social: S-12, S-08 */
+      mentions: (r.post_mentions || []).filter(function (m) { return m.who; }).map(function (m) { return { uid: aid(m.user_id), name: txt(m.who.name) }; }) }; }
   /* my reaction (and its kind), my saves and the reactions per kind for a set of posts — one round of three requests */
   async function postState(ids) {
     var mine = new Map(), saved = new Set(), kinds = {};
     if (!ids.length) return { mine: mine, saved: saved, kinds: kinds };
     var a = await Promise.all([sb.from('reactions').select('post_id,kind').eq('user_id', ME_UUID).in('post_id', ids), sb.from('saved_posts').select('post_id').eq('user_id', ME_UUID).in('post_id', ids),
-                               sb.rpc('post_reaction_summary', { p_ids: ids.slice(0, 100) })]);
+                               sb.rpc('post_reaction_summary', { p_ids: ids.slice(0, 100) }), sb.from('reposts').select('post_id').eq('user_id', ME_UUID).in('post_id', ids)]);
+    Object.defineProperty(kinds, '__rp', { value: new Set((a[3].data || []).map(function (x) { return x.post_id; })) });   /* my reposts (area social, S-08) */
     (a[0].data || []).forEach(function (x) { mine.set(x.post_id, x.kind || 'like'); }); (a[1].data || []).forEach(function (x) { saved.add(x.post_id); });
     (a[2].data || []).forEach(function (x) { var k = x.kind === 'love' ? 'support' : x.kind, o = kinds[x.post_id] = kinds[x.post_id] || {}; o[k] = (o[k] || 0) + x.n; });
     return { mine: mine, saved: saved, kinds: kinds };
   }
-  var POST_SEL = '*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*)';
+  var POST_SEL = '*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*), post_mentions(user_id, who:profiles(name))';
   async function fetchPage() {
     var q = sb.from('posts').select(POST_SEL).is('group_id', null).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
     /* group posts (0027) live in their group, never in the main feed — the filter is also what lets the main feed use its own index;
@@ -390,6 +398,14 @@
     var s = h.indexOf('>Search appearances<'), ra = s < 0 ? -1 : h.lastIndexOf('<div', s), rz = s < 0 ? -1 : h.indexOf('</div>', s);
     return ra >= 0 && rz > s ? h.slice(0, ra) + h.slice(rz + 6) : h; };
   window.dxLive.loadFeed = loadFeed; window.dxLive.version = 'B2';
+  /* ===== AREA social: internals for web/src/live/social.js (getters: later parts of this file replace some of these functions) ===== */
+  var SOC_SIGNIN = [], SOC_HASH = location.hash;                                   /* the address as it came (an e-mail link's #access_token / #error) — supabase-js clears it */
+  var hydrateSoc = hydrateMe;
+  hydrateMe = async function (uid) { var me = await hydrateSoc(uid); SOC_SIGNIN.forEach(function (f) { try { f(me); } catch (e) { console.error(e); } }); return me; };
+  window.dxLive.k = { get me() { return ME_UUID; }, get putUser() { return putUser; }, get postFrom() { return postFrom; }, get postState() { return postState; }, get fetchPost() { return fetchPost; },
+    get loadFeed() { return loadFeed; }, get loadConnections() { return loadConnections; }, get loadNotifs() { return loadNotifs; }, get notifFrom() { return notifFrom; }, get origGoto() { return origGoto; },
+    FEED: FEED, PCOLS: PCOLS, PFULL: PFULL, POST_SEL: POST_SEL, txt: txt, safeUrl: safeUrl, prose: prose, friendly: friendly, toastErr: toastErr, onReset: onReset, ago: ago, initials: initials, colorFor: colorFor,
+    onSignIn: function (f) { SOC_SIGNIN.push(f); }, hash: SOC_HASH, sessionEnded: function () { sessionEnded(); }, resetUser: function () { resetUser(); }, get INCOMING() { return INCOMING; } };
 
   /* ═══════════════ P1 — feed actions on the database: who reacted, Saved, a post opened from a link, reports (0028) ═══════════════ */
   var SAVED = { at: 0, loading: false };
@@ -441,7 +457,8 @@
   /* ═══════════════ B3 — network (requests, connections, suggestions) + notifications ═══════════════ */
   var INCOMING = window.CONN_IN || (window.CONN_IN = {}), NET_AT = 0, NOTIF_AT = 0, NOTIF_IDS = [], SUGG = [], REJ = {};   /* REJ: my requests that were declined */
   function wipe(o) { Object.keys(o).forEach(function (k) { if (+k > 1000) delete o[k]; }); }
-  var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼', post_removed: '🛡️', report_closed: '🛡️', follow: '👤', company_message: '💬' };
+  var ICON = { connection_request: '🤝', connection_accepted: '✅', like: '👍', comment: '💬', job_application: '💼', post_removed: '🛡️', report_closed: '🛡️', follow: '👤', company_message: '💬',
+               reply: '↩️', mention: '@', repost: '🔄', endorse: '⭐', comment_like: '👍', message: '✉️', saved_search: '🔔' };
   var esc2 = function (t) { return window.esc ? window.esc(t) : String(t || ''); };
   /* every connection, 1,000 rows a request in id order (the API's row cap) — a big network is never cut short (F-50) */
   async function loadConnections() {
@@ -473,6 +490,8 @@
   var WHY = { spam: 'spam or an unrelated ad', counterfeit: 'an unverified or counterfeit product', misleading: 'misleading information', abusive: 'harassment or hate' };
   /* the sentence is written here from the data 0036 keeps, in English — the Arabic interface translates it like any notice */
   function sysText(n) { var d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return esc2(n.message || '');
+    if (n.type === 'report_closed' && d.outcome === 'member_actioned') return 'Drugbox reviewed your report and suspended the account.';                    /* area social (0044) */
+    if (n.type === 'report_closed' && d.outcome === 'member_dismissed') return 'Drugbox reviewed your report — no action was needed on the account.';
     if (n.type === 'report_closed') return d.outcome === 'removed' ? 'Drugbox reviewed your report and removed the post.' : 'Drugbox reviewed your report — the post stays up.';
     return esc2('Drugbox removed your post “' + String(d.excerpt || '') + '” — reason: ' + (WHY[d.reason] || 'it breaks the Drugbox rules') + '.' + (d.note ? ' Note: ' + String(d.note) : '')); }
   function notifFrom(n) {
@@ -481,11 +500,17 @@
     else if (n.type === 'connection_accepted') t = '<b>' + who + '</b> accepted your connection request';
     else if (n.type === 'like') t = '<b>' + who + '</b> reacted to your post';
     else if (n.type === 'comment') t = '<b>' + who + '</b> commented: "' + esc2(n.message || '') + '"';
+    else if (n.type === 'reply') t = '<b>' + who + '</b> replied to your comment: "' + esc2(n.message || '') + '"';            /* area social (0041) */
+    else if (n.type === 'mention') t = '<b>' + who + '</b> mentioned you in a post';
+    else if (n.type === 'repost') t = '<b>' + who + '</b> reposted your post';
+    else if (n.type === 'comment_like') t = '<b>' + who + '</b> liked your comment: "' + esc2(n.message || '') + '"';                  /* area social (0049) */
+    else if (n.type === 'message') t = '<b>' + who + '</b> sent you a message';                                                  /* area social (0045) */
+    else if (n.type === 'saved_search') t = n.data && n.data.title ? esc2('New match for your saved search: “' + n.data.title + '”') : esc2(n.message || '');   /* written here, in the reader's language */
     else if (n.type === 'post_removed' || n.type === 'report_closed') { t = sysText(n); if (!n.from_user) a = SYS_UID; }
     else if (n.type === 'company_message' && n.company_id) t = '<b>' + who + '</b> messaged ' + esc2(n.company && n.company.name ? n.company.name : 'your company') + ': "' + esc2(n.message || '') + '"';   /* written here, in the reader's language (0034); older rows carry their sentence */
     else t = '<b>' + who + '</b> ' + esc2(n.message || '');
     var type = n.type === 'connection_request' ? (INCOMING[a] ? 'connection' : 'accepted') : n.type === 'connection_accepted' ? 'accepted' : n.type;
-    return { id: n.id, uid: a, icon: ICON[n.type] || '🔔', text: t, ts: ago(n.created_at), read: !!n.read, type: type, pid: n.post_id || null };
+    return { id: n.id, uid: a, icon: ICON[n.type] || '🔔', text: t, ts: ago(n.created_at), read: !!n.read, type: type, pid: n.post_id || null, data: n.data || null, job: n.job_id || null, group: n.group_id || null };   /* area social: data for S-20 */
   }
   async function loadNotifs() {
     var r = await sb.from('notifications').select('*, actor:profiles!notifications_from_user_fkey(' + PCOLS + '), company:companies(name)').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(50);
@@ -579,7 +604,7 @@
   };
   window.markNotifRead = function (id) { var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }), was = n && n.read; o3.read(id); badges();
     if (ME_UUID && n && !was) sb.from('notifications').update({ read: true }).eq('id', id).then(function (r) { if (r.error) toastErr(r.error); });
-    if (n && n.pid && (n.type === 'like' || n.type === 'comment') && window.dxOpenPost) window.dxOpenPost(n.pid, { comments: n.type === 'comment' }); };   /* a reaction or comment notification opens its post */
+    if (n && n.pid && /^(like|comment|reply|mention|repost|comment_like)$/.test(n.type) && window.dxOpenPost) window.dxOpenPost(n.pid, { comments: n.type === 'comment' || n.type === 'reply' || n.type === 'comment_like' }); };   /* a reaction or comment notification opens its post */
   if (o3.readAll) window.markAllRead = function () { o3.readAll(); badges(); if (ME_UUID) sb.from('notifications').update({ read: true }).eq('user_id', ME_UUID).eq('read', false).then(function (r) { if (r.error) toastErr(r.error); }); };
   if (o3.clear) window.clearAllNotifs = function () {            /* keeps the interface's Undo: delete only when the list is really emptied */
     var ids = NOTIF_IDS.slice(); o3.clear(); badges(); if (!ME_UUID || !ids.length) return;

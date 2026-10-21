@@ -5,7 +5,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(args=["--no-sandbox"]); pg=b.new_page(viewport={'width':1440,'height':900}); errs=[]
     pg.on("pageerror",lambda e:errs.append(str(e)[:200]))
     pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='networkidle',timeout=60000); pg.evaluate('endSplash()'); pg.wait_for_timeout(900)
-    pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(2200)
+    (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage .f-btn')); pg.wait_for_timeout(2200)
     # ── JOBS
     pg.evaluate("goto('jobs')"); pg.wait_for_timeout(600)
     pg.locator('#jx .mode-opt',has_text='Job Hunting').click(); pg.wait_for_timeout(200)

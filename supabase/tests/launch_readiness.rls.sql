@@ -146,6 +146,16 @@ alter table public.profiles drop column if exists name_key, drop column if exist
 \ir ../migrations/0039_names_rule_2.sql
 \ir ../migrations/0039_names_rule_3.sql
 \ir ../migrations/0039_names_rule_4.sql
+\ir ../migrations/0040_account.sql
+\ir ../migrations/0041_feed.sql
+\ir ../migrations/0042_profile.sql
+\ir ../migrations/0043_search.sql
+\ir ../migrations/0044_moderation.sql
+\ir ../migrations/0045_notify.sql
+\ir ../migrations/0046_phone.sql
+\ir ../migrations/0047_hardening.sql
+\ir ../migrations/0048_search_speed.sql
+\ir ../migrations/0049_comment_like_notice.sql
 select pg_temp.as_server();
 create temp table priv_after as select pg_temp.privs() as p;
 select pg_temp.ok('grants: 0026 alone restores every privilege of anon, authenticated and service_role exactly (effective rights + ACL entries)',

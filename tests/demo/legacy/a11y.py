@@ -9,7 +9,7 @@ with sync_playwright() as p:
     agg=collections.defaultdict(lambda: {'impact':'','screens':set(),'nodes':0,'help':'','sample':''})
     for name, js in SCREENS:
         if name=='home':
-            pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(3200)
+            (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(3200)
             if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
         if js: pg.evaluate(js); pg.wait_for_timeout(600)
         pg.add_script_tag(content=AXE)

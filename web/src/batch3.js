@@ -8,7 +8,8 @@
   function ic(n) { return window.dxIcon ? window.dxIcon(n) : ''; }
   var __A = /^(deals|created_companies|reports|dossiers|surplus_new|groups_new|follows|saved_searches|my_requests|activity_.*|inbox_.*)$/, __O = /^(company_edits|supplier_reviews|review_meta|avl_.*|groups_state|meta_.*|quoted_.*|sqq_.*)$/, __S = /^(acting|role)$/;
   function __typed(k, v) { if (v == null) return null; if (__A.test(k)) return Array.isArray(v) ? v : null; if (__O.test(k)) return (typeof v === 'object' && !Array.isArray(v)) ? v : null; if (__S.test(k)) return typeof v === 'string' ? v : null; return v; }   /* a stored value of the wrong type is ignored, never trusted */
-  function store(k, v) { try { if (v === undefined) return __typed(k, JSON.parse(localStorage.getItem('dx_' + k) || 'null')); localStorage.setItem('dx_' + k, JSON.stringify(v)); } catch (e) { return null; } }
+  function store(k, v) { /* AREA social: saved searches kept per member in the live app */ if (k === 'saved_searches' && window.dxSavedSearchHook) { var __h = window.dxSavedSearchHook(v); if (__h !== undefined) return v === undefined ? __h : undefined; }
+    try { if (v === undefined) return __typed(k, JSON.parse(localStorage.getItem('dx_' + k) || 'null')); localStorage.setItem('dx_' + k, JSON.stringify(v)); } catch (e) { return null; } }
   function page() { return document.body.getAttribute('data-page') || 'feed'; }
 
   /* ── what we know about the user's interests (demo; production reads profile + My Intents) ── */
@@ -132,6 +133,7 @@
     (window.dxDirectory ? window.dxDirectory.list() : []).forEach(function (c) { idx.push({ g: 'Companies', t: c.name, s: c.sectors.join(' · ') + ' · ' + c.city, ic: 'building', go: function () { window.dxDirectory.open(c.slug); } }); c.products.forEach(function (p) { idx.push({ g: 'Products', t: p.name, s: c.name + ' · ' + p.cat, ic: 'box', go: function () { window.dxDirectory.open(c.slug, 'products'); } }); }); });
     (window.POSTS || []).slice(0, 60).forEach(function (p) { var u = (window.USERS || []).find(function (x) { return x.id === p.uid; }); idx.push({ g: 'Posts', t: String(p.text || p.body || '').replace(/\s+/g, ' ').slice(0, 80), s: u ? u.name : '', ic: 'megaphone', go: function () { window.goto('feed'); setTimeout(function () { window.dgJump && window.dgJump(p.id); }, 60); } }); });
     (saved() || []).forEach(function (s) { idx.push({ g: 'Saved searches', t: s.name, s: 'Saved search · alerts ' + s.alert, ic: 'bookmark', go: function () { applySaved(s); } }); });
+    if (window.dxCmdFilter) idx = window.dxCmdFilter(idx) || idx;   /* AREA social: the live app's own entries */
     var seen = {}; idx = idx.filter(function (x) { var k = x.g + '|' + x.t; if (seen[k]) return false; seen[k] = 1; return true; });
     return idx;
   }
@@ -143,6 +145,7 @@
   function norm(s) { return String(s || '').toLowerCase(); }
   function search(q) {
     var all = buildIndex(); q = norm(q).trim();
+    if (q && window.dxCmdExtra) all = all.concat(window.dxCmdExtra(q) || []);   /* AREA social: results from the database (live) */
     if (!q) return all.filter(function (x) { return x.g === 'Pages' || x.g === 'Actions' || x.g === 'Saved searches'; }).slice(0, 14);
     var words = q.split(/\s+/);
     return all.map(function (x) { var h = norm(x.t + ' ' + x.s), sc = 0; for (var i = 0; i < words.length; i++) { var k = h.indexOf(words[i]); if (k < 0) return null; sc += k === 0 ? 3 : norm(x.t).indexOf(words[i]) >= 0 ? 2 : 1; } return { x: x, sc: sc }; })
@@ -162,6 +165,8 @@
   function closeCmd(back) { cmd.className = ''; var f = cmdFrom; cmdFrom = null; if (back && f && f !== document.body && f.isConnected && f.focus) try { f.focus({ preventScroll: true }); } catch (e) {} }
   function choose(i) { var x = shown[i]; if (!x) return; closeCmd(); try { x.go(); } catch (e) { if (window.console) console.warn(e); } }
   window.dxOpenSearch = openCmd;
+  window.dxCmdRedraw = function () { if (cmd.className === 'on') drawRes(); };   /* AREA social: async results arrived */
+  window.dxCmdSearch = search;
   cin.addEventListener('input', function () { sel = 0; drawRes(); });
   cin.addEventListener('keydown', function (e) {
     if (e.key === 'ArrowDown') { sel = Math.min(shown.length - 1, sel + 1); drawRes(); e.preventDefault(); }
@@ -205,6 +210,9 @@
   }
   function applySaved(s) {
     window.goto('market');
+    setTimeout(function () { var m = mk(); if (!m) return;   /* AREA social: a first visit draws its default filters after the 30 ms pass — the filters again */
+      m.querySelectorAll('.filters .f-opt input').forEach(function (i) { var l = txt(i.closest('.f-opt')).replace(/\d[\d,]*$/, '').trim(), want = s.f.checks.indexOf(l) >= 0; if (i.checked !== want) { i.checked = want; i.dispatchEvent(new Event('change', { bubbles: true })); } });
+      if (window.updateLiveCount) window.updateLiveCount(); }, 600);
     setTimeout(function () {
       var m = mk(); if (!m) return;
       m.querySelectorAll('.filters .f-opt input').forEach(function (i) { var l = txt(i.closest('.f-opt')).replace(/\d[\d,]*$/, '').trim(), want = s.f.checks.indexOf(l) >= 0; if (i.checked !== want) { i.checked = want; i.dispatchEvent(new Event('change', { bubbles: true })); } });
@@ -245,6 +253,7 @@
       if (x) { var all = saved(), gone = all.find(function (y) { return String(y.id) === x.dataset.x; }); saved(all.filter(function (y) { return y !== gone; })); savedBar(true); if (window.dxUndo && gone) window.dxUndo('Saved search deleted', function () { var l = saved(); l.unshift(gone); saved(l); savedBar(true); }); }
     };
   }
+  window.dxSavedRefresh = function () { savedBar(true); };   /* AREA social: saved searches loaded from the database */
   function saveButton() {
     var m = mk(); if (!m) return; var chips = m.querySelector('.dx-chips');
     if (chips && chips.style.display !== 'none' && chips.innerHTML && !chips.querySelector('.dx-save-search')) {

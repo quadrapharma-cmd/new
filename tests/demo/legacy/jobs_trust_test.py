@@ -5,7 +5,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(args=["--no-sandbox"]); pg=b.new_page(viewport={'width':1440,'height':900}); errs=[]
     pg.on("pageerror",lambda e:errs.append(str(e)[:200]))
     pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='networkidle',timeout=60000); pg.evaluate('endSplash()'); pg.wait_for_timeout(900)
-    pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(2200)
+    (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage .f-btn')); pg.wait_for_timeout(2200)
     pg.evaluate("goto('jobs')"); pg.wait_for_timeout(700)
     J='#jx '
     T("I'm Hiring shows candidates", pg.locator(J+'#hiringView .role-badge.need').count()==4 and pg.locator(J+'#hiringView #jobList').count()==0)
@@ -67,6 +67,6 @@ with sync_playwright() as p:
     T('Top-rated candidates leaderboard', 'Sara Mansour' in pg.inner_text('.dbk-ov')); pg.keyboard.press('Escape')
     pg.locator(J+'.cf-tag',has_text='QA/QC').click(); pg.wait_for_timeout(200)
     T('category filter applies to candidates too', pg.locator(J+'#hiringView .jcard:visible').count()==1)
-    pg.reload(); pg.wait_for_timeout(600); pg.evaluate('endSplash()'); pg.wait_for_timeout(600); pg.click('.lg-demo'); pg.click('#loginPage .f-btn'); pg.wait_for_timeout(2000); pg.evaluate("goto('jobs')"); pg.wait_for_timeout(600)
+    pg.reload(); pg.wait_for_timeout(600); pg.evaluate('endSplash()'); pg.wait_for_timeout(600); (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage .f-btn')); pg.wait_for_timeout(2000); pg.evaluate("goto('jobs')"); pg.wait_for_timeout(600)
     T('lists, reviews and references persist', not pg.locator(J+'#hiringView .jcard',has_text='Karim').first.is_visible() and 'Honor ×2' in pg.locator(J+'#hiringView .jcard',has_text='Youssef').first.inner_text())
     print('\nJS errors:',errs or 'none'); print(sum(o for _,o in R),'/',len(R)); b.close()

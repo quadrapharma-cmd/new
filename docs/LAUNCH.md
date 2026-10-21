@@ -60,12 +60,21 @@ in the environment only — never on a command line (where `ps` would show them)
   4. checks: `supabase/tests/schema_sweep.sql` (every line must end in "none"), the five buckets (`videos`, `post-media` public; `message-media`, `documents`,
      `reference-evidence` private), `messages` + `notifications` in the realtime publication, **API grants** (see below), `jit = off` for the API login role
      (migration 0022's note — done by the script; if the platform refuses `authenticator` it sets anon/authenticated/service_role instead), the pg_cron job;
-  5. sets the function secrets (`supabase secrets set --env-file`) and deploys `payments-create` (user JWT required), `paymob-webhook` and `fawry-webhook`
+  5. sets the function secrets (`supabase secrets set --env-file`) and deploys `payments-create`, `account-delete` (user JWT required), `notify-email` (service key: the schedule), `paymob-webhook` and `fawry-webhook`
      (`--no-verify-jwt`: Paymob/Fawry call them without a Supabase token; they verify the provider's signature), then calls each one:
      webhooks `GET` → 405 from the function itself, `payments-create` browser preflight from `ALLOWED_ORIGINS` → 200 with CORS.
   - The direct database host is IPv6-only; on an IPv4-only network use the **Session pooler** (port 5432) — see `env.supabase.example`. Port 6543 is refused.
   - If the database already has the migrations (applied by hand), the script stops; record them once with `--baseline-through NNNN` (the last one applied, e.g. `0026`).
-- [ ] Supabase Auth (dashboard, manual): Site URL + redirect URLs = the staging web address; email confirmation on; **custom SMTP** (the built-in sender is for testing only — rate-limited).
+- [ ] Supabase Auth (dashboard, manual): Site URL + redirect URLs = the staging web address; email confirmation on; **Secure password change on** (a password change needs a recent sign-in — the app also asks for the current password, but only this setting enforces it on the server); **custom SMTP** (the built-in sender is for testing only — rate-limited).
+- [ ] **E-mail (Resend)** — waiting on the owner for a Resend account and a verified sending domain:
+      1. Supabase Auth → SMTP settings: host `smtp.resend.com`, port 465, user `resend`, password = the Resend API key, sender e.g. `Drugbox <no-reply@drugbox.app>`
+         (sign-up confirmation, password reset and e-mail change links — S-05 / S-16).
+      2. Function secrets (in the same env file as the payment secrets): `RESEND_API_KEY`, `MAIL_FROM` (e.g. `Drugbox <notify@drugbox.app>`); `APP_URL` is already there.
+         Without `RESEND_API_KEY` the deploy prints a note and notification e-mails stay queued (`private.email_outbox`) until it is set.
+      3. Schedule `notify-email` every minute (pg_cron + pg_net, the service key kept in Vault — never in a table or in git):
+         `select vault.create_secret('<service role key>', 'drugbox_service_key');`
+         `select cron.schedule('drugbox-notify-email', '* * * * *', $$ select net.http_post(url := 'https://<ref>.supabase.co/functions/v1/notify-email', headers := jsonb_build_object('Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'drugbox_service_key'))) $$);`
+         Members choose what comes by e-mail in Settings → Notifications (member_settings; 0040/0045).
 - [ ] pg_cron (Database → Extensions) on, then re-run the deploy: it schedules `drugbox-expire-vip` (daily 01:17 UTC) — otherwise VIP plans never expire.
 - [ ] Web: `cp deploy/env.web.example deploy/.env.web`, fill in (staging URL + **anon** key; Vercel token + ids), then `deploy/vercel_deploy.sh`
       (`--dry-run` builds and checks without calling Vercel). Output goes to `deploy/.out/preview/` (never `web/dist`). It refuses a non-anon key, a key of another

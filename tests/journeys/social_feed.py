@@ -167,7 +167,7 @@ def post_photos_and_pdf(j):
         pg.fill('#postBody', 'New batch photos and spec sheet ' + j.tag); pg.locator('.modal-bg [onclick^="submitPost"]').last.click(); j.settle(pg, 2500)
         top = post_el(j, pg, 'New batch photos and spec sheet ' + j.tag)
         j.check(top.locator('img').count() >= 2, 'the post does not show both images')
-        j.check(re.search(r'spec\.pdf', top.inner_text()) and re.search(r'\d+\s?(KB|MB|kB|ك)', top.inner_text()), 'the post does not show the PDF name and size')
+        j.check(re.search(r'spec\.pdf', top.inner_text()) and re.search(r'\d+\s?(B|KB|MB|kB|بايت|ك)\b', top.inner_text()), 'the post does not show the PDF name and size')
     if j.live:
         with j.step('Live: post_media rows for 2 images + 1 file and objects in the post-media bucket'):
             p = j.wait_db("select id from public.posts where user_id='%s' and body like 'New batch photos%%'" % a['id'], 6)
@@ -175,7 +175,7 @@ def post_photos_and_pdf(j):
         with j.step('B opens Home: the images open in a lightbox (Esc closes) and the PDF downloads identical in size'):
             pb = b['page']; fresh(j, pb); post = post_el(j, pb, 'New batch photos and spec sheet ' + j.tag)
             post.locator('img').first.click(); pb.wait_for_timeout(600)
-            lb = pb.evaluate("[...document.querySelectorAll('.dx-lightbox,.lightbox,[class*=lightbox],[role=dialog]')].some(e=>e.getClientRects().length&&e.querySelector('img'))")
+            lb = pb.evaluate("[...document.querySelectorAll('#lightbox.show,.dx-lightbox,.lightbox,[class*=lightbox],[role=dialog]')].some(e=>e.getClientRects().length&&e.querySelector('img'))")
             j.check(lb, 'clicking an image does not open it larger')
             pb.keyboard.press('Escape'); pb.wait_for_timeout(300)
             a_pdf = post.locator('a:has-text("spec.pdf")'); j.check(a_pdf.count(), 'the PDF is not a link')
@@ -354,7 +354,7 @@ def comment_on_post(j):
     with j.step("B gets a 'commented' notification; clicking it opens P with the comment visible"):
         if j.demo: j.skip('the other party exists only in live')
         pb = b['page']; j.reload(pb); j.nav(pb, 'notifs'); j.settle(pb, 1200)
-        row = pb.locator('#content [onclick], #content .notif, #content .n-item').filter(has_text=re.compile('comment', re.I))
+        row = pb.locator('#content .notif-item, #content .notif, #content .n-item').filter(has_text=re.compile('commented', re.I))   # (a notification row — not the "Comments" filter)
         j.check(row.count(), 'B has no comment notification')
         row.first.click(); j.settle(pb, 1200)
         j.check(pb.locator('#post-%d' % p).count() and text in j.text(pb), 'clicking the notification does not open post P with the comment')
@@ -382,6 +382,7 @@ def reply_to_comment(j):
     with j.step('Type a reply and send: it appears indented under K with "Replying to" context'):
         pg.keyboard.type('Yes — see clause 4 ' + j.tag); pg.keyboard.press('Enter'); pg.wait_for_timeout(900)
         j.check(pg.evaluate("t=>{const e=[...document.querySelectorAll('.cmt')].find(x=>x.innerText.includes(t));return !!e&&!!e.parentElement.closest('.cmt,.cmt-replies,[class*=reply]')}", 'clause 4 ' + j.tag), 'the reply is not nested under the comment')
+        j.check(pg.evaluate("t=>{const e=[...document.querySelectorAll('.cmt')].find(x=>x.innerText.includes(t));return !!e&&/Replying to|ردًا على/.test(e.innerText)}", 'clause 4 ' + j.tag), 'the reply does not say whom it is replying to')
     with j.step('Like comment K: stored and counted (not a toast)'):
         cm = pg.locator('#cmt-%d .cmt' % p).filter(has_not=pg.locator('.cmt-form')).first
         lk = cm.locator('[onclick]').filter(has_text=re.compile(r'👍|Like|أعجب')).first
@@ -398,6 +399,9 @@ def reply_to_comment(j):
     with j.step('C gets "A replied to your comment" that opens P at the thread'):
         if j.demo: j.skip('the other party exists only in live')
         j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s' and post_id=%d" % (c['id'], a['id'], p)) >= '1', 'C got no reply notification')
+        pc = c['page']; j.reload(pc); click_notif(j, pc, r'replied|ردّ على تعليقك', 'reply')
+        j.check(pc.locator('#post-%d' % p).count() and ('clause 4 ' + j.tag) in pc.locator('#cmt-%d' % p).first.inner_text(), 'the reply notification does not open P at the thread')
+        j.check(j.sql1("select count(*) from public.comment_reactions cr join public.comments k on k.id=cr.comment_id where k.post_id=%d and cr.user_id='%s'" % (p, a['id'])) == '1', 'the like on K is not stored')
 
 @journey('J-SOCIAL-16')
 def repost_and_share(j):
@@ -413,7 +417,7 @@ def repost_and_share(j):
             dlg = pg.evaluate("[...document.querySelectorAll('.modal-bg,[role=dialog]')].some(e=>e.getClientRects().length&&/repost|إعادة/i.test(e.innerText))")
             return dlg or re.search(r'reposted|أعاد نشر', j.text(pg), re.I)
         j.act(pg, act(post, REPOST), 'Repost', reposted)
-        btn = j.find(pg, r'^(Repost|Confirm|Share|إعادة النشر|تأكيد|نشر)$', scope='.modal-bg', exact=True)
+        btn = j.find(pg, r'^(Repost|Confirm|Share|إعادة النشر|إعادة نشر|تأكيد|نشر)$', scope='.modal-bg', exact=True)
         if btn: btn.click(); j.settle(pg, 900)
         j.check(re.search(r'reposted|أعاد نشر', j.text(pg), re.I), 'no "reposted" entry after confirming')
         if j.live: j.check(j.wait_db("select share_count from public.posts where id=%d" % p, 5) == '1', 'posts.share_count did not become 1')
@@ -440,8 +444,21 @@ def repost_and_share(j):
         j.check(pg.locator('.modal-bg input:visible').count(), 'Send has no recipient picker')
         if j.live:
             pg.locator('.modal-bg input:visible').first.fill('Bassant'); pg.wait_for_timeout(800)
-            j.click(pg, 'Bassant', scope='.modal-bg', what='recipient Bassant'); j.click(pg, r'^(Send|إرسال)$', scope='.modal-bg', what='Send', exact=True)
+            # earlier runs left other members with this name: the picker marks (and lists first) the one A is connected to
+            opt = pg.locator('.modal-bg [role=option]').filter(has_text='Bassant').filter(has_text=re.compile(r'Your connection|من اتصالاتك'))
+            j.check(opt.count(), 'the recipient picker does not tell A\'s connection Bassant apart from other members with that name')
+            opt.first.click(); pg.wait_for_timeout(300); j.click(pg, r'^(Send|إرسال)$', scope='.modal-bg', what='Send', exact=True)
             j.check(j.wait_db("select count(*) from public.messages where sender_id='%s' and receiver_id='%s' and body like '%%%d%%'" % (a['id'], b['id'], p), 6) == '1', 'no message to B with the post link')
+    with j.step("B: Home shows \"A reposted\" with the original post; the message's link opens P"):
+        if j.demo: j.skip('the other party exists only in live')
+        pb = b['page']; fresh(j, pb)
+        card = pb.locator('#content .post.dx-repost-card, #content .post').filter(has_text=re.compile(r'reposted|أعاد النشر')).filter(has_text='Great post to share ' + j.tag)
+        j.check(card.count() and 'Akram' in card.first.inner_text(), 'B does not see "A reposted" with the post in Home')
+        j.nav(pb, 'messages'); pb.wait_for_timeout(1500)
+        th = pb.locator('#threadList .mx-thread').filter(has_text='Akram'); j.check(th.count(), "B has no conversation with A's shared post"); th.first.click(); pb.wait_for_timeout(1500)
+        ln = pb.locator('#messagesArea a[href*="post/%d"]' % p); j.check(ln.count(), 'the shared post is not a link in the message')
+        ln.last.click(); j.settle(pb, 1500)
+        j.check(pb.locator('#post-%d' % p).count() and pb.locator('#post-%d' % p).first.is_visible(), 'the link in the message does not open P')
     with j.step('C is notified that A reposted'):
         if j.demo: j.skip('the other party exists only in live')
         j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s' and post_id=%d" % (c['id'], a['id'], p)) == '1', 'C got no repost notification')
@@ -628,25 +645,34 @@ def report_post(j):
 def mention_and_hashtag(j):
     """A member mentions a colleague and uses a hashtag so the right people and topic followers find it."""
     if j.live:
-        a, b = setup_live_pair(j, 'Dr. Amira Mentioner', 'Dr. Alia Mourad'); pg = a['page']; fresh(j, pg)
+        a, b = setup_live_pair(j, 'Dr. Amira Mentioner', 'Dr. Alia Nasser'); pg = a['page']; fresh(j, pg)
     else: pg = j.demo_signin(j.new_page())
     with j.step('In the composer type "Thanks @Ali": people suggestions appear'):
         j.click(pg, r"What.s on your mind|تفكر|ماذا يدور|ما الذي يدور", what="What's on your mind")
         pg.click('#postBody'); pg.keyboard.type('Thanks @Ali'); pg.wait_for_timeout(1000)
-        sug = pg.locator('.modal-bg [role=option]:visible, .modal-bg [class*=mention]:visible, .modal-bg [class*=suggest]:visible').filter(has_text='Alia')
+        sug = pg.locator('.modal-bg [role=option]:visible').filter(has_text='Alia')      # a suggestion itself (its list also names Alia)
+        if not sug.count(): sug = pg.locator('.modal-bg [class*=mention]:visible, .modal-bg [class*=suggest]:visible').filter(has_text='Alia')
         j.check(sug.count(), 'not built: typing @ in the composer shows no people suggestions')
-    with j.step('Pick Dr. Alia Mourad; add #GMP; post'):
+    with j.step('Pick Dr. Alia Nasser; add #GMP; post'):
         sug.first.click(); pg.keyboard.type(' for the audit #GMP ' + j.tag)
         pg.locator('.modal-bg [onclick^="submitPost"]').last.click(); j.settle(pg, 1200)
         post = post_el(j, pg, j.tag)
     with j.step("The mention links to B's profile; #GMP links to a list of posts with that tag"):
         m = post.locator('a, [onclick]').filter(has_text='Alia'); j.check(m.count(), 'the mention is not a link')
-        m.first.click(); j.settle(pg); j.check('Alia Mourad' in j.text(pg)[:400], "the mention does not open Alia's profile")
+        m.first.click(); j.settle(pg); j.check(('Alia Nasser' if j.live else 'Alia Mourad') in j.text(pg)[:400], "the mention does not open Alia's profile")
         j.nav(pg, 'feed'); post = post_el(j, pg, j.tag)
         h = post.locator('a, [onclick]').filter(has_text='#GMP'); j.check(h.count(), '#GMP is not a link')
         h.first.click(); j.settle(pg); j.check(j.tag in j.text(pg) and re.search(r'#GMP', j.text(pg)[:300]), '#GMP does not open a list of posts with that tag')
     with j.step('B gets "A mentioned you in a post" that opens the post (survives reload)'):
         if j.demo: j.skip('the other party exists only in live')
-        j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s'" % (b['id'], a['id'])) == '1', 'B got no mention notification')
+        j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s' and type='mention'" % (b['id'], a['id'])) == '1', 'B got no mention notification')
+        j.check(j.sql1("select count(*) from public.post_mentions m join public.posts p on p.id=m.post_id where m.user_id='%s' and p.body like '%%%s%%'" % (b['id'], j.tag)) == '1', 'the mention is not stored')
+        pb = b['page']; j.reload(pb); click_notif(j, pb, r'mentioned you|أشار إليك', 'mention')
+        j.check(pb.locator('#content .post').filter(has_text=j.tag).count(), 'the mention notification does not open the post')
+    with j.step('After a reload the tag page still lists the post and the mention is still a link'):
+        if j.demo: j.skip('the demo keeps no data across a reload — checked in live')
+        fresh(j, pg); post = post_el(j, pg, j.tag)
+        j.check(post.locator('a.dx-mention').filter(has_text='Alia').count(), 'after reload the mention is no longer a link')
+        post.locator('a').filter(has_text='#GMP').first.click(); j.settle(pg); j.check(j.tag in j.text(pg), 'after reload #GMP does not list the post')
 
 if __name__ == '__main__': main(__file__)

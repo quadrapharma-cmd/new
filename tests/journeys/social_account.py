@@ -109,13 +109,48 @@ def signup_new_professional(j):
 def signup_with_confirmation(j):
     """A new user whose email must be confirmed is guided through confirmation and can then sign in."""
     pg = j.new_page()
+    email = 'vivian.%s@confirm.test' % j.tag          # the local stack asks this domain to confirm its e-mail ("Confirm email" on)
     with j.step('Sign up with name, a new email and a valid password'):
         j.click(pg, r'^(Create one|أنشئ حسابًا|إنشاء حساب)', scope='#loginPage', what='Create one')
         j.check(pg.is_visible('#suName'), 'the sign-up form did not open')
-    with j.step('The confirmation flow has a "Resend confirmation email" action and a mail catcher to read it'):
-        has_resend = j.find(pg, r'Resend|إعادة إرسال', scope='#authWrap') or pg.evaluate("/resend/i.test(document.getElementById('authWrap').innerHTML)")
-        if not has_resend: j.notbuilt('no "Resend confirmation email" on the login/sign-up pages; the local stack has no email-confirmation mode or mail catcher to follow the link')
-        j.notbuilt('the local auth stand-in (tools/local-supabase/gateway.mjs) has no "Confirm email" mode or outbox to read the confirmation link')
+        pg.fill('#suName', 'Viviane Zhao'); pg.fill('#suEmail', email); pg.fill('#suPw', PW)
+        if pg.locator('#suCompany').count(): pg.fill('#suCompany', 'Zhejiang API Co')
+        pg.click('#signupPage button.f-btn.dx-js-only'); pg.wait_for_timeout(1500)
+        j.check(not j.in_app(pg), 'the app opened before the email was confirmed')
+    with j.step('A clear screen says a confirmation email went to the address, with a Resend button'):
+        t = j.text(pg, '#signupPage')
+        j.check(email in t, 'the message after sign-up does not name the address the link went to: "%s"' % t[:200])
+        j.check(re.search(r'confirm|تأكيد', t, re.I) and not re.search(r'error|AuthApi|\{', t), 'no clear confirmation message after sign-up: "%s"' % t[:200])
+        j.check(j.find(pg, r'Resend|إعادة إرسال', scope='#signupPage'), 'no "Resend confirmation email" after sign-up')
+        wait_mail(j, email, r'Confirm your signup', 1)
+        j.check(j.sql1("select count(*) from auth.users where email='%s' and email_confirmed_at is null" % email) == '1', 'auth.users has no unconfirmed row for the new address')
+    with j.step('Sign in before confirming: "not confirmed" with Resend (not "invalid credentials")'):
+        pg.click('#signupPage [onclick="showLogin()"]'); pg.wait_for_timeout(300)
+        pg.fill('#loginEmail', email); pg.fill('#loginPw', PW); pg.click('#loginPage button.f-btn.dx-js-only'); pg.wait_for_timeout(1500)
+        t = j.text(pg, '#loginPage')
+        j.check(not j.in_app(pg), 'an unconfirmed account signed in')
+        j.check(re.search(r'not confirmed|لم يتم تأكيد', t, re.I), 'signing in before confirming does not say the email is not confirmed: "%s"' % t[:200])
+        j.check(not re.search(r'incorrect|invalid|غير صحيحة', t, re.I), 'signing in before confirming says the password is wrong')
+    with j.step('Resend: a second email arrives'):
+        j.click(pg, r'Resend|إعادة إرسال', scope='#loginPage', what='Resend confirmation email')
+        wait_mail(j, email, r'Confirm your signup', 2)
+    with j.step('Open the link of the last email in the same browser: back on Drugbox, signed in as Vivian'):
+        link = wait_mail(j, email, r'Confirm your signup', 2)['link']
+        j.check(link, 'the confirmation email has no link')
+        pg.goto(link, wait_until='load'); j.settle(pg, 1500)
+        try: j.wait_js(pg, "typeof endSplash==='function'", 10); pg.evaluate('endSplash()')
+        except Exception: pass
+        j.check(pg.url.startswith(re.sub(r'/$', '', __import__('_dx').APP_URL)), 'the link did not come back to Drugbox: %s' % pg.url)
+        j.check(j.wait(pg, APP_VISIBLE, 15), 'after the confirmation link the app did not open: %s' % j.text(pg, '#loginPage')[:200])
+        j.wait(pg, "window.ME&&ME.name==='Viviane Zhao'", 8)
+        j.check(pg.evaluate('ME.name') == 'Viviane Zhao', 'after confirming signed in as "%s"' % pg.evaluate('ME.name'))
+    with j.step('Sign out and in with the email and password: the app opens as Vivian with her profile'):
+        pg.evaluate('doLogout()'); j.settle(pg)
+        j.signin(pg, email, PW); j.check(pg.evaluate('ME.name') == 'Viviane Zhao', 'signed in as "%s"' % pg.evaluate('ME.name'))
+        j.nav(pg, 'profile'); t = j.text(pg); j.check('Viviane Zhao' in t and 'Zhejiang API Co' in t, 'the profile does not show the sign-up data')
+        j.check(j.sql1("select count(*) from auth.users where email='%s' and email_confirmed_at is not null" % email) == '1', 'auth.users.email_confirmed_at is not set')
+        j.check(j.sql1("select count(*) from public.profiles p join auth.users u on u.id=p.id where u.email='%s'" % email) == '1', 'not exactly one profiles row')
+        j.check(j.sql1("select terms_version is not null from public.member_settings s join auth.users u on u.id=s.user_id where u.email='%s'" % email) == 't', 'the Terms version agreed to at sign-up is not recorded')
 
 @journey('J-SOCIAL-03')
 def signin_stays_signed_in(j):
@@ -148,7 +183,9 @@ def signin_stays_signed_in(j):
     with j.step('Reload: the app opens directly as the same person'):
         j.reload(pg); j.check(j.in_app(pg) and pg.evaluate('ME.name') == who, 'reload did not keep the session')
     with j.step('A new browser context with the saved session opens the app as the same person'):
-        state = pg.context.storage_state(); pg2 = j.new_page(j.new_ctx(storage_state=state))
+        if j.demo:   # a file:// page has no origin Playwright can copy into a new context: the demo reopens in this browser instead
+            pg2 = j.new_page(pg.context)
+        else: state = pg.context.storage_state(); pg2 = j.new_page(j.new_ctx(storage_state=state))
         j.check(j.in_app(pg2) and pg2.evaluate('ME.name') == who, 'a new browser with the saved session shows the login page (the session is not kept)')
     with j.step('A second tab of the app is signed in too'):
         pg3 = j.new_page(pg.context)
@@ -190,43 +227,159 @@ def signout_shared_pc(j):
 @journey('J-SOCIAL-05')
 def forgot_password(j):
     """A member who forgot his password resets it himself by email."""
+    if j.live:
+        with j.step('Precondition: account A exists, also signed in on a second device'):
+            a = j.person('Dr. Hany Forgot'); pa = a['page']
+            other = j.new_page(j.new_ctx()); j.signin(other, a['email'], a['pw'])
+            pa.evaluate('doLogout()'); pa.context.close(); j.pages.remove(pa)
     pg = j.new_page()
-    with j.step('On the login page click "Forgot password?"'):
-        j.click(pg, r'Forgot|نسيت|استعادة كلمة', scope='#authWrap', what='Forgot password?')
-    with j.step('Enter the account email and submit → neutral confirmation'):
+    with j.step('On the login page click "Forgot password?" (shown in English, Arabic, at this width)'):
+        j.click(pg, r'^(Forgot password\?|نسيت كلمة المرور؟)$', scope='#authWrap', what='Forgot password?', exact=True)
         inp = pg.locator('#authWrap input[type=email]:visible').first
         j.check(inp.count(), 'no email field on the forgot-password screen')
-        if j.demo:
-            j.check(re.search(r'live app|التطبيق', j.text(pg, '#authWrap')), 'the demo does not explain that reset works in the live app')
-            return
-        j.notbuilt('no mail catcher in the local stack to read the reset email')
+        j.check(pg.evaluate("document.documentElement.scrollWidth<=innerWidth+1"), 'the forgot-password screen scrolls sideways')
+    with j.step('Enter the account email and submit → a neutral confirmation; an unknown email gets the same answer'):
+        mine = a['email'] if j.live else 'haytham@drugbox.app'
+        inp.fill(mine); j.click(pg, r'Send reset link|أرسل رابط', scope='#authWrap', what='Send reset link')
+        j.check(j.wait(pg, "(document.getElementById('fpOk')||{}).innerText", 6), 'no confirmation after asking for a reset link')
+        said = j.text(pg, '#fpOk').strip()
+        j.check(re.search(r'If an account exists|إذا كان هناك حساب', said), 'the answer is not neutral: "%s"' % said[:120])
+        if j.demo: j.check(re.search(r'live app|التطبيق الحقيقي', said), 'the demo does not explain that reset works in the live app')
+        inp.fill('nobody.%s@journey.test' % j.tag); j.click(pg, r'Send reset link|أرسل رابط', scope='#authWrap', what='Send reset link'); pg.wait_for_timeout(1200)
+        j.check(j.text(pg, '#fpOk').strip() == said, 'an unknown email gets a different answer: "%s"' % j.text(pg, '#fpOk')[:120])
+        if j.demo: return
+        j.check(not mails(j, 'nobody.%s@journey.test' % j.tag), 'an email went to an address that has no account')
+    with j.step('Open the reset link from the email: Drugbox asks for a new password'):
+        link = wait_mail(j, a['email'], r'Reset your password')['link']; j.check(link, 'the reset email has no link')
+        pg.goto(link, wait_until='load'); j.settle(pg, 1500)
+        try: j.wait_js(pg, "typeof endSplash==='function'", 10); pg.evaluate('endSplash()')
+        except Exception: pass
+        j.check(j.wait(pg, "!!document.getElementById('npPw1')", 15), 'the reset link did not open a "choose a new password" screen')
+    with j.step('Two different passwords, then a short one: each refused with a clear message'):
+        pg.fill('#npPw1', 'New-pass-2026!'); pg.fill('#npPw2', 'Other-pass-2026!'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(500)
+        j.check(re.search(r'do not match|غير متطابقتين', j.text(pg, '#npMsg')), 'different passwords are not refused: "%s"' % j.text(pg, '#npMsg'))
+        pg.fill('#npPw1', 'short'); pg.fill('#npPw2', 'short'); pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(500)
+        j.check(re.search(r'at least 8|8 أحرف', j.text(pg, '#npMsg')), 'a short password is not refused: "%s"' % j.text(pg, '#npMsg'))
+    with j.step('Save the new password: saved, and the other device is signed out'):
+        pg.fill('#npPw1', 'New-pass-2026!'); pg.fill('#npPw2', 'New-pass-2026!'); pg.click('.dbk-ov [data-a=ok]')
+        j.check(j.wait(pg, "!document.getElementById('npPw1')", 8), 'the new password was not saved: "%s"' % j.text(pg, '#npMsg'))
+        j.reload(other)
+        j.check(j.wait(other, LOGIN_VISIBLE, 10), 'the other device is still signed in after the password was reset')
+    with j.step('Sign in with the OLD password: refused; with the NEW one: the app opens'):
+        pg.evaluate('doLogout()'); j.settle(pg)
+        pg.fill('#loginEmail', a['email']); pg.fill('#loginPw', a['pw']); pg.click('#loginPage button.f-btn.dx-js-only'); pg.wait_for_timeout(1500)
+        j.check(not j.in_app(pg), 'the old password still signs in')
+        j.signin(pg, a['email'], 'New-pass-2026!'); j.check(pg.evaluate('ME.name') == 'Dr. Hany Forgot', 'the new password did not sign in as A')
+
+def open_settings(j, pg):
+    """Settings in two clicks from any page: the avatar (own profile), then Settings."""
+    el = j.find(pg, r'^(Settings|الإعدادات)$', exact=True)
+    if not el:
+        pg.click('#topAv'); j.settle(pg)
+        el = j.find(pg, r'^(Settings|الإعدادات)$', exact=True)
+    j.check(el, 'not built: no Settings entry (top bar avatar → profile, or the side menu)')
+    el.click(); j.settle(pg)
+    j.check(pg.evaluate("document.body.getAttribute('data-page')") == 'settings', 'Settings did not open the Settings page')
+    j.check(pg.evaluate("document.documentElement.scrollWidth<=innerWidth+1"), 'the Settings page scrolls sideways at %dpx' % j.width)
 
 @journey('J-SOCIAL-06', applies='live')
 def account_settings(j):
     """A member changes her password and login email from a settings page."""
     a = j.person('Dr. Sara Settings'); pg = a['page']
+    post_db(j, a['id'], 'Settings check post ' + j.tag)
     with j.step('Open account settings from the avatar / sidebar (two clicks from any page)'):
-        el = j.find(pg, r'^(Settings|Account|Account settings|الإعدادات|الحساب)$', exact=True)
-        if not el:
-            pg.click('#topAv'); j.settle(pg)
-            el = j.find(pg, r'^(Settings|Account|Account settings|Security|الإعدادات|الحساب|الأمان)$', exact=True)
-        j.check(el, 'not built: no Settings / Account page (no entry in the top bar, avatar or sidebar)')
-        el.click(); j.settle(pg)
-    with j.step('Change password: current, new, confirm; save'):
-        j.check(pg.locator('#content input[type=password]').count() >= 2, 'not built: no change-password form')
+        j.nav(pg, 'network'); open_settings(j, pg)
+        if j.ar: j.check(re.search(r'الحساب|كلمة المرور', j.text(pg)) and not re.search(r'\bChange password\b|\bCurrent password\b', j.text(pg)), 'the Settings page is not in Arabic')
+    with j.step('Change password: a wrong current password is refused; the right one changes it'):
+        pg.fill('#setPwCur', 'Not-my-pass-1'); pg.fill('#setPwNew', 'Brand-new-2026!'); pg.fill('#setPwNew2', 'Brand-new-2026!')
+        j.click(pg, r'^(Change password|تغيير كلمة المرور)$', scope='#content', exact=True, what='Change password')
+        j.check(j.wait(pg, "/not correct|غير صحيحة/.test((document.getElementById('setPwMsg')||{}).innerText||'')", 6), 'a wrong current password was not refused: "%s"' % j.text(pg, '#setPwMsg'))
+        pg.fill('#setPwCur', a['pw']); pg.fill('#setPwNew', 'Brand-new-2026!'); pg.fill('#setPwNew2', 'Brand-new-2026!')
+        j.click(pg, r'^(Change password|تغيير كلمة المرور)$', scope='#content', exact=True, what='Change password')
+        j.check(j.wait(pg, "/changed|تم تغيير/.test((document.getElementById('setPwMsg')||{}).innerText||'')", 8), 'the password change was not confirmed: "%s"' % j.text(pg, '#setPwMsg'))
+        wait_mail(j, a['email'], r'password was changed')
+    with j.step('Sign out and in with the new password (the old one no longer works)'):
+        pg.evaluate('doLogout()'); j.settle(pg)
+        pg.fill('#loginEmail', a['email']); pg.fill('#loginPw', a['pw']); pg.click('#loginPage button.f-btn.dx-js-only'); pg.wait_for_timeout(1500)
+        j.check(not j.in_app(pg), 'the old password still signs in')
+        j.signin(pg, a['email'], 'Brand-new-2026!')
+    new = 'sara.new.%s@journey.test' % j.tag
+    with j.step('Change the sign-in email: only after the link sent to the new address; the old address is told'):
+        open_settings(j, pg); pg.fill('#setNewEmail', new)
+        j.click(pg, r'^(Change email|تغيير البريد الإلكتروني)$', scope='#content', exact=True, what='Change email')
+        j.check(j.wait(pg, "/confirmation link|رابط تأكيد/.test((document.getElementById('setEmailMsg')||{}).innerText||'')", 8), 'no message about the confirmation link: "%s"' % j.text(pg, '#setEmailMsg'))
+        link = wait_mail(j, new, r'Confirm email change')['link']; wait_mail(j, a['email'], r'Email change requested')
+        j.check(j.sql1("select email from auth.users where id='%s'" % a['id']) == a['email'], 'the email changed before the new address was confirmed')
+        pg.goto(link, wait_until='load'); j.settle(pg, 1500)
+        try: j.wait_js(pg, "typeof endSplash==='function'", 10); pg.evaluate('endSplash()')
+        except Exception: pass
+        j.check(j.wait_db("select email from auth.users where id='%s'" % a['id'], 6, want=new) == new, 'opening the link did not change the email')
+        j.check(j.wait(pg, APP_VISIBLE, 15), 'the email-change link did not open Drugbox signed in')
+    with j.step('Sign out and in with the new email; profile, posts and connections unchanged'):
+        if j.in_app(pg): pg.evaluate('doLogout()'); j.settle(pg)
+        j.signin(pg, new, 'Brand-new-2026!'); j.check(pg.evaluate('ME.name') == 'Dr. Sara Settings', 'the new email does not sign in as Sara')
+        j.check(j.sql1("select count(*) from public.posts where user_id='%s'" % a['id']) == '1', 'the posts changed with the email')
+        j.nav(pg, 'profile'); j.check('Dr. Sara Settings' in j.text(pg), 'the profile changed with the email')
 
 @journey('J-SOCIAL-07', applies='live')
 def delete_account(j):
     """A member who leaves the network deletes her account and personal data."""
     c = j.person('Dr. Carmen Leaving'); pg = c['page']
-    with j.step('Open Settings → Delete account'):
-        el = j.find(pg, r'^(Settings|Account|الإعدادات|الحساب)$', exact=True)
-        if not el:
-            pg.click('#topAv'); j.settle(pg)
-            el = j.find(pg, r'Delete (my )?account|حذف الحساب') or j.find(pg, r'^(Settings|Account|الإعدادات|الحساب)$', exact=True)
-        j.check(el, 'not built: no Settings page and no "Delete account" anywhere')
-        el.click(); j.settle(pg)
-        j.check(j.find(pg, r'Delete (my )?account|حذف الحساب'), 'not built: no "Delete account" in Settings')
+    b = j.person('Dr. Basil Stays'); pb = b['page']
+    with j.step('Precondition: C has a post (with a photo), a comment and a reaction on B\'s post, a connection and messages with B'):
+        connect_db(j, c['id'], b['id'])
+        cp = post_db(j, c['id'], 'Carmen farewell post ' + j.tag)
+        bp = post_db(j, b['id'], 'Basil post for comments ' + j.tag)
+        comment_db(j, c['id'], bp, 'Carmen comment ' + j.tag)
+        j.sql("insert into public.reactions (post_id, user_id, kind) values (%s, '%s', 'like')" % (bp, c['id']))
+        j.sql("insert into public.messages (sender_id, receiver_id, body) values ('%s','%s','Hi Basil from Carmen %s'),('%s','%s','Hi Carmen from Basil %s')" % (c['id'], b['id'], j.tag, b['id'], c['id'], j.tag))
+        # a file of C's in storage (post photo), uploaded as C through the Storage API
+        tok = pg.evaluate("dxLive.sb.auth.getSession().then(r=>r.data.session.access_token)")
+        up = pg.evaluate("""async ([u,k,t,p])=>{const r=await fetch(u+'/storage/v1/object/post-media/posts/'+p+'/'+'x-'+Date.now()+'.png',{method:'POST',headers:{apikey:k,Authorization:'Bearer '+t,'content-type':'image/png'},body:new Blob([new Uint8Array([137,80,78,71])])});return r.status}""",
+                         [pg.evaluate('DRUGBOX_CONFIG.url'), pg.evaluate('DRUGBOX_CONFIG.anonKey'), tok, c['id']])
+        j.check(up == 200, 'precondition: could not upload a file as C (%s)' % up)
+        j.check(j.sql1("select count(*) from storage.objects where owner='%s'" % c['id']) == '1', 'precondition: C has no file')
+    with j.step('Open Settings → Delete account: the consequences are explained'):
+        open_settings(j, pg)
+        j.click(pg, r'^(Delete my account|احذف حسابي)$', scope='#content', exact=True, what='Delete my account')
+        dlg = pg.locator('.dbk-ov:visible'); j.check(dlg.count(), 'Delete account opens no confirmation window')
+        t = dlg.inner_text(); j.check(re.search(r'posts|منشورات', t) and re.search(r'Messages|الرسائل', t) and re.search(r'Payment|الدفع', t), 'the window does not explain what is deleted and kept: "%s"' % t[:200])
+    with j.step('The wrong word or a wrong password is refused; nothing is deleted'):
+        pg.fill('#delWord', 'please'); pg.fill('#delPw', c['pw']); dlg.locator('[data-a=ok]').click(); pg.wait_for_timeout(500)
+        j.check(re.search(r'DELETE', j.text(pg, '#delMsg')), 'the wrong confirmation word is not refused')
+        pg.fill('#delWord', 'DELETE'); pg.fill('#delPw', 'Wrong-pass-0'); dlg.locator('[data-a=ok]').click()
+        j.check(j.wait(pg, "/not correct|غير صحيحة/.test((document.getElementById('delMsg')||{}).innerText||'')", 8), 'a wrong password is not refused: "%s"' % j.text(pg, '#delMsg'))
+        j.check(j.sql1("select account_type from public.profiles where id='%s'" % c['id']) == 'professional', 'something was deleted after a wrong password')
+    with j.step('Confirm with DELETE and the password: signed out with a farewell'):
+        pg.fill('#delPw', c['pw']); pg.wait_for_timeout(600); dlg.locator('[data-a=ok]').click()   # (the window ignores a second click within 0.5 s)
+        j.check(j.wait(pg, LOGIN_VISIBLE, 15), 'after deleting, the login page does not show: "%s"' % j.text(pg, '#delMsg'))
+        j.check(re.search(r'account was deleted|تم حذف حسابك', j.text(pg, '#loginPage')), 'no farewell message')
+    with j.step('Database: profile anonymised, sign-in removed, content and files deleted, messages kept for B'):
+        row = j.sql1("select name||'|'||account_type||'|'||coalesce(headline,'')||coalesce(avatar_url,'')||coalesce(bio,'') from public.profiles where id='%s'" % c['id'])
+        j.check(row == 'Deleted member|deleted|', 'the profile is not an anonymous tombstone: %s' % row)
+        j.check(j.sql1("select count(*) from auth.users where email='%s'" % c['email']) == '0', 'the sign-in email still exists in auth.users')
+        for q, what in (("select count(*) from public.posts where user_id='%s'", 'posts'), ("select count(*) from public.comments where user_id='%s'", 'comments'),
+                        ("select count(*) from public.reactions where user_id='%s'", 'reactions'), ("select count(*) from public.connections where requester='%s' or addressee='%s'", 'connections'),
+                        ("select count(*) from storage.objects where owner='%s' or name like '%%%s%%'", 'files')):
+            n = j.sql1(q % ((c['id'],) * q.count('%s'))); j.check(n == '0', '%s %s of the deleted member remain' % (n, what))
+        j.check(j.sql1("select count(*) from public.messages where sender_id='%s' or receiver_id='%s'" % (c['id'], c['id'])) == '2', 'the conversation with B was not kept for B')
+        j.check(j.sql1("select like_count from public.posts where id=%s" % bp) == '0' and j.sql1("select comment_count from public.posts where id=%s" % bp) == '0', "B's post still counts C's reaction or comment")
+    with j.step('B: Home, the post comments, Network and Messages no longer show C; the old conversation says "Deleted member" without errors'):
+        errs = len(j.errors)
+        j.reload(pb); j.nav(pb, 'feed'); t = j.text(pb); j.check(('Carmen farewell post ' + j.tag) not in t, "B still sees C's post")
+        j.check(j.sql1("select count(*) from public.profiles where id='%s' and name like '%%Carmen%%'" % c['id']) == '0', "C's name is still in profiles")
+        r = pb.evaluate("([u,k])=>dxLive.sb.from('profiles').select('id').eq('id',u).then(r=>(r.data||[]).length)", [c['id'], 0])
+        j.check(r == 0, 'members can still read the deleted profile through the API')
+        gone = "u=>!(window.USERS||[]).some(x=>dxLive.uuidOf(x.id)===u&&!/Deleted member/.test(x.name))"
+        j.nav(pb, 'network'); pb.wait_for_timeout(1200); j.check(pb.evaluate(gone, c['id']), "B's network (connections, suggestions) still shows C")
+        j.nav(pb, 'messages'); pb.wait_for_timeout(1500); t = j.text(pb)
+        j.check(re.search(r'Deleted member|عضو محذوف', t), 'the old conversation does not say "Deleted member"')
+        j.check('Carmen Leaving' not in t, 'Messages still shows the name of the deleted member')
+        j.check(len(j.errors) == errs, 'page errors after the deletion: %s' % j.errors[errs:][:3])
+    with j.step("Signing in with C's email and password fails"):
+        j.click(pg, r'Back to sign in|العودة لتسجيل الدخول', scope='#authWrap', what='Back to sign in')
+        pg.fill('#loginEmail', c['email']); pg.fill('#loginPw', c['pw']); pg.click('#loginPage button.f-btn.dx-js-only'); pg.wait_for_timeout(1500)
+        j.check(not j.in_app(pg), "the deleted account still signs in")
 
 @journey('J-SOCIAL-08')
 def switch_language(j):
@@ -257,6 +410,10 @@ def switch_language(j):
             el = j.find(pg, patt, scope='#content', exact=True)
             if el:
                 before = j.toast_mark(pg); el.click(); pg.wait_for_timeout(500)
+                dlg = pg.locator('.modal-bg.show:visible, .dbk-ov:visible')     # Repost asks first (with an optional comment): confirm it
+                if dlg.count():
+                    ok = dlg.last.locator('button').filter(has_text=re.compile(r'^\W*(Repost|إعادة نشر|أعد النشر)\W*$'))
+                    j.check(ok.count(), 'the repost dialog has no Repost button'); ok.last.click(); pg.wait_for_timeout(600)
                 eng += [t for t in j.toasts_since(pg, before) if re.search(r'[A-Za-z]{4,}', t) and not re.search(r'[؀-ۿ]', t)]
         j.check(not eng, 'English toasts in Arabic: %s' % eng)
     with j.step('Reload, and the login page after sign-out, stay Arabic'):

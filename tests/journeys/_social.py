@@ -106,3 +106,28 @@ def open_result(j, pg, needle):
     el = j.find(pg, re.escape(needle), scope='#content', kinds='[onclick],a,button,[role=option],li,[data-gp],[class*=result],[class*=card]')
     j.check(el, 'the search results do not include "%s"' % needle)
     el.click(); j.settle(pg, 1200)
+
+# ---- e-mail (live: the local stack keeps what Supabase would send; GET /__mail?to=) ------------------------------------
+def mails(j, to):
+    import json as _json, urllib.request, urllib.parse
+    import _dx
+    base = _dx.APP_URL.rstrip('/')
+    try:
+        with urllib.request.urlopen(base + '/__mail?to=' + urllib.parse.quote(to.lower()), timeout=5) as r: return _json.loads(r.read().decode())
+    except Exception as e: raise StepFail('the local mailbox cannot be read (%s)' % e)
+
+def wait_mail(j, to, subject, n=1, timeout=10):
+    """The n-th mail (1 = first) to `to` whose subject matches; fails the step when it does not arrive."""
+    end = time.time() + timeout
+    while True:
+        got = [m for m in mails(j, to) if re.search(subject, m.get('subject', ''), re.I)]
+        if len(got) >= n: return got[n - 1]
+        if time.time() > end: raise StepFail('no e-mail "%s" #%d to %s (mailbox: %s)' % (subject, n, to, [m.get('subject') for m in mails(j, to)]))
+        time.sleep(0.4)
+
+def click_notif(j, pg, pattern, what):
+    """Notifications page → click the notification whose text matches pattern (as a person does)."""
+    j.nav(pg, 'notifs'); j.settle(pg, 1200)
+    row = pg.locator('#content .notif-item').filter(has_text=re.compile(pattern, re.I))
+    j.check(row.count(), 'no %s notification (the list: %s)' % (what, j.text(pg)[:200].replace('\n', ' | ')))
+    mark = j.toast_mark(pg); row.first.click(); j.settle(pg, 1500); j.dead_end(pg, mark, 'the notification ' + what)

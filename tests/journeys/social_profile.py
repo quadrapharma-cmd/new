@@ -128,7 +128,7 @@ def photo_and_cover(j):
         except Exception:
             j.dead_end(pg, before, 'Edit cover'); j.fail('"Edit cover" opens no file picker')
         fc.value.set_files(cover); pg.wait_for_timeout(1200)
-        j.check(pg.evaluate("[...document.querySelectorAll('#content *')].some(e=>/url\\(\"?(blob:|data:image|https?:)/.test(getComputedStyle(e).backgroundImage)&&e.getBoundingClientRect().width>400)"), 'the cover image is not shown')
+        j.check(pg.evaluate("[...document.querySelectorAll('#content *')].some(e=>/url\\(\"?(blob:|data:image|https?:)/.test(getComputedStyle(e).backgroundImage)&&e.getBoundingClientRect().width>Math.min(400,innerWidth*0.85))"), 'the cover image is not shown')   # a phone is 390 px wide
     with j.step('A too-big image / a PDF is refused with a clear message (or resized)'):
         el = pg.locator('#content [onclick*="changeAvatar"]').first; before = j.toast_mark(pg)
         with pg.expect_file_chooser(timeout=5000) as fc: el.click()
@@ -277,7 +277,7 @@ def skills_and_endorsements(j):
     else: a = None; pg = j.demo_signin(j.new_page())
     SK = ('CTD dossiers', 'EDA variations', 'GMP audits')
     def counts(p):
-        return p.evaluate("""()=>{const out={};document.querySelectorAll('#content *').forEach(e=>{if(e.children.length)return;const t=e.innerText.trim();if(/^(CTD dossiers|EDA variations|GMP audits)$/.test(t)){const row=e.parentElement;const m=(row&&row.innerText.replace(t,'').match(/\\d+/));out[t]=m?+m[0]:0}});return out}""")
+        return p.evaluate("""()=>{const out={};document.querySelectorAll('#content *').forEach(e=>{if(e.children.length)return;const t=(e.innerText||'').trim();if(/^(CTD dossiers|EDA variations|GMP audits)$/.test(t)){const row=e.parentElement;const m=(row&&row.innerText.replace(t,'').match(/\\d+/));out[t]=m?+m[0]:0}});return out}""")
     with j.step('Own profile → Skills: add "CTD dossiers", "EDA variations", "GMP audits"'):
         own_profile(j, pg); tab(j, pg, r'^(Skills|المهارات)$', 'Skills')
         el = j.find(pg, r'Add (a )?skill|إضافة مهارة|أضف مهارة', scope='#content')
@@ -304,14 +304,21 @@ def skills_and_endorsements(j):
     with j.step('B endorses "CTD dossiers": the count is 1 and shows who endorsed'):
         if j.demo: j.skip('the other party exists only in live')
         pb = b['page']; goto_profile(j, pb, a); tab(j, pb, r'^(Skills|المهارات)$', 'Skills')
-        row = pb.locator('#content').get_by_text('CTD dossiers', exact=True).locator('xpath=..')
-        en = row.locator('button, [onclick]').filter(has_text=re.compile(r'Endorse|\+|تأييد|أؤيد'))
+        cell = pb.locator('#content .dx-cell:visible').filter(has_text='CTD dossiers')    # the approved honeycomb: a cell endorses its skill
+        if cell.count(): en = cell
+        else:
+            row = pb.locator('#content').get_by_text('CTD dossiers', exact=True).locator('xpath=..')
+            en = row.locator('button, [onclick]').filter(has_text=re.compile(r'Endorse|\+|تأييد|أؤيد'))
         j.check(en.count(), 'no Endorse on B\'s view of the skill'); en.first.click(); pb.wait_for_timeout(800)
         j.check(counts(pb).get('CTD dossiers') == 1, 'the endorsement count is not 1')
         j.check(j.has_table('skill_endorsements') or j.has_table('endorsements'), 'not built: no endorsements table')
     with j.step('A is notified; B cannot endorse twice; A cannot endorse herself'):
-        j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s'" % (a['id'], b['id'])) == '1', 'A got no endorsement notification')
-        en.first.click(); pb.wait_for_timeout(800); j.check(counts(pb).get('CTD dossiers') in (0, 1), 'B endorsed twice')
+        if j.live:
+            j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and from_user='%s'" % (a['id'], b['id'])) == '1', 'A got no endorsement notification')
+            en.first.click(); pb.wait_for_timeout(800); j.check(counts(pb).get('CTD dossiers') in (0, 1), 'B endorsed twice')
+            j.check(j.sql1("select count(*) from public.skill_endorsements where profile_id='%s' and endorser='%s'" % (a['id'], b['id'])) in ('0', '1'), 'B endorsed twice in the database')
+            r = pg.evaluate("u=>dxLive.sb.from('skill_endorsements').insert({profile_id:u,skill:'CTD dossiers',endorser:u}).then(r=>r.error?r.error.code:'ok')", a['id'])
+            j.check(r != 'ok', 'the database lets A endorse herself')
         own_profile(j, pg); tab(j, pg, r'^(Skills|المهارات)$', 'Skills')
         j.check(not j.find(pg, r'^(Endorse|تأييد)$', scope='#content', exact=True), 'A can endorse her own skill')
 

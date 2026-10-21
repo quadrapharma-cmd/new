@@ -9,7 +9,7 @@ with sync_playwright() as p:
     ctx.route(lambda u: not u.startswith('file:') and not u.startswith('data:') and not u.startswith('blob:'), lambda r: r.abort())
     pg=ctx.new_page(); errs=[]; pg.on("pageerror",lambda e:errs.append(str(e)[:150])); pops=[]; ctx.on('page', lambda np: (pops.append(np.url), np.close()))
     pg.goto('file://'+__import__('os').environ.get('DEMO_FILE','/tmp/drugbox_brand.html'),wait_until='load'); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
-    pg.click('.lg-demo'); pg.click('#loginPage button.f-btn'); pg.wait_for_timeout(2800)
+    (pg.wait_for_function("()=>!!(document.getElementById('app').getClientRects().length||document.querySelector('.lg-demo').getClientRects().length)", timeout=15000) and pg.locator('.lg-demo').is_visible()) and (pg.click('.lg-demo') or pg.click('#loginPage button.f-btn')); pg.wait_for_timeout(2800)
     if pg.locator('.tour-skip').count(): pg.click('.tour-skip')
     E=pg.evaluate; E("localStorage.setItem('dx_acting',JSON.stringify('quadra-pharm'))")
     T('nothing is drawn before use (no share card on Home)', E("goto('feed')||document.querySelectorAll('.dx-sh').length")==0)
