@@ -81,7 +81,19 @@ edited on this branch after their first commit (before any deploy, so no ledger 
 
 ## 6. Suite numbers (final head)
 
-FINAL_SUITES
+| Suite | Result |
+|---|---|
+| SQL (`run_all.py sql`) — each suite on its own fresh database | 21/21 suites (admin 72/72, trust 19/19, groups 68/68, training 68/68, jobs 51/51 …) |
+| `schema_sweep.sql` | 6/6 "none" |
+| `tools/migration_check.py` | pass |
+| Demo + legacy + stress (`run_all.py demo legacy stress`) | 31/31; page switching 13.3 ms vs 11.7 ms base (within the limit) |
+| e2e (`run_all.py e2e`, fresh database) | 23/23 suites |
+| Build twice | identical, sha256 854929e062058fa6; `demo-approved.html` refreshed → PARITY OK |
+| Dead-end crawler, demo | 0 JavaScript errors; 1,710 clicks; 50 dead ends listed (report) |
+| Dead-end crawler, live | 0 JavaScript errors; 24 dead ends listed (report) |
+| A-02 live check (`tests/journeys/checks/a02_live.py`) | pass |
+
+Crawler dead ends are heuristics, reported, not fixed here; in this area they are mostly intended behaviour (a demo CV says it opens in the live app, "Write a review" explains it needs a real interaction first, the admin dashboard's number tiles, the job cards' body). Full lists: the crawl.md reports of each run.
 
 ## 7. Open problems and items waiting
 
