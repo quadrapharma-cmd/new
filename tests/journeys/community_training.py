@@ -241,6 +241,9 @@ def certificate(j):
         if j.demo: flush(j, pg)                                        # the certificate this page stored is committed before another page reads it
         po = (ctx or pg.context).new_page(); po.goto(link); po.wait_for_timeout(3000)
         v = po.locator('.dbk-ov').last.inner_text() if po.locator('.dbk-ov').count() else ''
+        if j.demo and not re.search(r'Valid|صحيحة', v):   # Chromium can show a second file:// page the storage before the first page's last write lands (see reopen): once more, later
+            j.note('verify_reloaded', True); po.wait_for_timeout(1500); po.reload(); po.wait_for_timeout(3000)
+            v = po.locator('.dbk-ov').last.inner_text() if po.locator('.dbk-ov').count() else ''
         j.check(re.search(r'Valid|صحيحة', v) and pg.evaluate('ME.name') in v and code in v, 'the verify link does not confirm the certificate: %s' % v[:160])
         po.close()
         if ctx: ctx.close()

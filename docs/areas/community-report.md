@@ -28,7 +28,17 @@ All numbers below are from runs on this branch's head (fresh local database, `re
 
 ## 2. Journeys
 
-FINAL_JOURNEYS
+**J-COMMUNITY-01…50, final run** (fresh database, every configuration the brief asks for: demo EN 1440, AR 1440, EN 390, AR 390;
+live EN 1440, AR 1440): **282 PASS · 16 N/A · 2 FAIL**, and both failures pass on re-run:
+- J-27 live — "N profiles" counted while parallel journeys were adding open-to-work profiles (a count race between runs, not the app); passes alone.
+- J-39 demo AR 390 — Chromium showed the second file:// page the storage before the first page's last write landed (the harness issue `reopen` already handles); the journey now looks once more after a moment (recorded as `data.verify_reloaded`); 4/4 passes.
+N/A = steps that exist only in live (J-33, J-49, J-50 in the demo).
+The earlier full run on the same code before the last fixes: 284 PASS · 16 N/A · 0 FAIL.
+
+**All 150 journeys, report only** (demo EN 1440, AR 1440, EN 390 + live EN 1440, this branch alone): community 46/50 before the
+last fixes (all four fixed since — J-03, J-12, J-41, J-42), social 18/51, business 9/49. The social and business failures are the
+other areas' features, which are not on this branch (they merge at the coordinator). One social failure was mine — J-SOCIAL-20
+looked for the approved Review tab "🚩 Reported posts", which I had renamed; the name is restored and J-SOCIAL-20 passes (demo + live).
 
 Journey changes (aligned or strengthened — none weakened):
 - **Training J-37…J-40**: rewritten to the real flow — seeded lessons and quiz as the precondition, a Drugbox admin uploads the lesson media to the private bucket and the signed link plays, a real payment with the gateway callback and the return through `?payment=`, fail-then-pass quiz, signed-out certificate verify, admin adds a lesson and a question, edit and deactivate. Arabic accepts the approved 'تدريب'.
@@ -41,7 +51,7 @@ Journey changes (aligned or strengthened — none weakened):
 Two independent verifier subagents (strongest model) reviewed the work:
 - Groups/training round: 4 blocking findings (empty-course certificate, listing company switch, a demoted creator keeping control, group discovery) — all fixed; minor findings fixed or listed below.
 - Admin/trust round: SQL side solid (22/22 suites on its own databases; normal members / anon reach no admin RPC, log or suspension; an anonymous review never reveals its writer). 4 blocking findings — a restored post's broken pictures, the moderator's reason not shown live, a moderator lifting an admin's suspension through undo, undo from stale log rows — **all fixed** (admin.rls.sql 72/72). Of its 15 minor findings, fixed: suspension coverage (a suspended account creates nothing, also through server functions), company-report reopen and `decided_by` forging, certificate no-op edits, certificate notice naming the moderator, orphaned post reports, admin undoing their own role, anonymous-review notice wording and later anonymisation, settings read before sign-in, senderless notices from deleted accounts. The remaining ones are listed under open problems.
-- Verdict after the fixes: VERDICT
+- Verdict after the fixes: the verifier's blocking findings are all fixed and covered by new checks in admin.rls.sql / trust.rls.sql; the verifier has not re-reviewed after the fixes.
 
 ## 4. Migrations
 
@@ -63,7 +73,7 @@ edited on this branch after their first commit (before any deploy, so no ledger 
 - Groups: search and sector/country filters, View all, Manage → Requests tab, settings (rules, privacy, who posts, sector, country), archive/restore, invitation Decline, deal-room listings with quotes / Close, file chips, lightbox, the private group's members tab lists its admins.
 - Training: filters and search, course window, lessons, quiz, certificate (QR, verify link, print to PDF), My courses, certificates on the profile, Admin → Training.
 - Admin: Users and Posts pages, live Dashboard numbers, Ticker / Sponsors (Add form, demo too) / Settings live, My reports, the suspension notice.
-- Review: tab "Reported posts 🚩" renamed "📝 Content reports"; new "🗂 Decided" tab with Undo / Restore; search box; claim marker; the candidate's reply on warnings; certificate Reject (asks the reason with the browser's prompt); "Remove post" is the main (red) button.
+- Review: new "🗂 Decided" tab with Undo / Restore; search box; claim marker; the candidate's reply on warnings; certificate Reject (asks the reason with the browser's prompt); "Remove post" is the main (red) button.
 - Directory: a claim waits for Drugbox's review in the demo too (was immediate); "Get verified" vs "Documents received — being checked" follows the real request.
 - Trust: "Delete my review" in the rating window, "Withdraw" on my references in the Honor / Warning list, "📋 About you" (records about me with Reply / Dispute; shown only when something is written about me).
 - Checkout: the demo shows the InstaPay path with its order number.
