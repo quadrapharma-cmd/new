@@ -13649,18 +13649,23 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     [/^You joined (.+)$/, function (m) { return 'انضممت إلى ' + m[1]; }], [/^You left (.+)$/, function (m) { return 'غادرت ' + m[1]; }],
     [/^Invites sent to (\d+) (person|people)$/, function (m) { var n = +m[1]; return n === 1 ? 'تم إرسال الدعوة إلى شخص واحد' : n === 2 ? 'تم إرسال الدعوات إلى شخصين' : 'تم إرسال الدعوات إلى ' + n + ' ' + (n <= 10 ? 'أشخاص' : 'شخصًا'); }],   /* groups (N-9) */
     [/^invited you to join the private group "(.+)"$/, function (m) { return 'دعاك للانضمام إلى المجموعة الخاصة "' + m[1] + '"'; }],   /* live notification (N-8) */
-    [/^Welcome to Drugbox, (.+)!$/, function (m) { return 'أهلًا بك في Drugbox يا ' + m[1] + '!'; }],   /* the sign-up toast, demo and live (N-13) */
+    [/^Welcome to Drugbox, (.+)!$/, function (m) { return 'أهلًا بك في Drugbox يا \u2068' + m[1] + '\u2069!'; }],   /* the sign-up toast, demo and live (N-13); the name isolated */
+    [/^Welcome back, (.+)!$/, function (m) { return 'أهلًا بعودتك يا \u2068' + m[1] + '\u2069!'; }],   /* the sign-in toast, live (S-03 fix 4): any member's name, isolated */
     [/^Not found on Drugbox: (.+)$/, function (m) { return 'غير موجود على Drugbox: ' + m[1]; }],
     [/^No Drugbox member found for (.+) — use the name on their Drugbox profile$/, function (m) { return 'لا يوجد عضو في Drugbox باسم ' + m[1] + ' — استخدم الاسم المكتوب في ملفه على Drugbox'; }],
     [/^Unread \((\d+)\)$/, function (m) { return 'غير مقروء (' + m[1] + ')'; }],   /* the Messages filter, recounted (J-SOCIAL-38) */
     [/^No member called (.+) — choose someone from the list$/, function (m) { return 'لا يوجد عضو باسم ' + m[1] + ' — اختر شخصًا من القائمة'; }],   /* ✎ New message (S-03) */
     [/^Several members are called (.+) — choose one from the list$/, function (m) { return 'أكثر من عضو باسم ' + m[1] + ' — اختر واحدًا من القائمة'; }],
     [/^Choose (.+) from the list to be sure who receives it$/, function (m) { return 'اختر ' + m[1] + ' من القائمة لتتأكد من المستلم'; }],
-    [/^A name can only have letters, spaces and \. - ' \( \) , \/ ، — remove “([^]*)” \((U\+[0-9A-F]+)\)$/, function (m) { return "الاسم يقبل الحروف والمسافات و \u2066. - ' ( ) , /\u2069 ، فقط — احذف «" + m[1] + '» (' + m[2] + ')'; }],
-    [/^Write a name in Latin, Arabic, Greek or Cyrillic letters — “([^]*)” \((U\+[0-9A-F]+)\) is not one of them$/, function (m) { return 'اكتب الاسم بحروف عربية أو لاتينية أو يونانية أو سيريلية — «' + m[1] + '» (' + m[2] + ') ليس منها'; }],
-    [/^“([^]*)” is not a word — join it to the word next to it \(remove the space\)$/, function (m) { return '«' + m[1] + '» ليست كلمة — ألصقها بالكلمة المجاورة (احذف المسافة)'; }],
-    [/^Write each word of a name in one alphabet — “([^]*)” mixes alphabets$/, function (m) { return 'اكتب كل كلمة من الاسم بأبجدية واحدة — «' + m[1] + '» تخلط بين أبجديات'; }],
-    [/^Remove the mark added to “([^]*)” \((U\+[0-9A-F]+)\) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ$/, function (m) { return 'احذف العلامة المضافة إلى «' + m[1] + '» (' + m[2] + ') — يقبل Drugbox الحرف ذا العلامة مكتوبًا كحرف واحد، مثل \u2066é، ü، ñ\u2069'; }],
+    /* the name rule's refusals (live: sign-up, Edit Profile, the database — 0039_names_rule_4): what they quote is isolated (U+2068 …
+       U+2069), kept in the Arabic sentence so a Latin, Greek or Cyrillic character or name keeps its place */
+    [/^A name can only have letters, spaces and \. - ' \( \) , \/ ، — remove “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\)$/, function (m) { return "الاسم يقبل الحروف والمسافات و \u2066. - ' ( ) , /\u2069 ، فقط — احذف «\u2068" + m[1] + '\u2069» (\u2068' + m[2] + '\u2069)'; }],
+    [/^Write a name in Latin, Arabic, Greek or Cyrillic letters — “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) is not one of them$/, function (m) { return 'اكتب الاسم بحروف عربية أو لاتينية أو يونانية أو سيريلية — «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) ليس منها'; }],
+    [/^The letter “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) is not supported in names yet$/, function (m) { return 'الحرف «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) غير مدعوم في الأسماء بعد'; }],
+    [/^“\u2068([^]*)\u2069” is not a word — join it to the word next to it \(remove the space\)$/, function (m) { return '«\u2068' + m[1] + '\u2069» ليست كلمة — ألصقها بالكلمة المجاورة (احذف المسافة)'; }],
+    [/^Put what follows the name in parentheses — write “\u2068([^]*)\u2069”$/, function (m) { return 'ضع ما يلي الاسم بين قوسين — اكتب «\u2068' + m[1] + '\u2069»'; }],
+    [/^Write each word of a name in one alphabet — “\u2068([^]*)\u2069” mixes alphabets$/, function (m) { return 'اكتب كل كلمة من الاسم بأبجدية واحدة — «\u2068' + m[1] + '\u2069» تخلط بين أبجديات'; }],
+    [/^Remove the mark added to “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ$/, function (m) { return 'احذف العلامة المضافة إلى «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) — يقبل Drugbox الحرف ذا العلامة مكتوبًا كحرف واحد، مثل \u2066é، ü، ñ\u2069'; }],
     [/^🚫 Block (.+)$/, function (m) { return '🚫 حظر ' + m[1]; }], [/^✅ Unblock (.+)$/, function (m) { return '✅ إلغاء الحظر عن ' + m[1]; }],   /* the conversation menu (J-SOCIAL-40) */
     [/^Block (.+)\?$/, function (m) { return 'حظر ' + m[1] + '؟'; }], [/^(.+) blocked$/, function (m) { return 'تم حظر ' + m[1]; }], [/^(.+) unblocked$/, function (m) { return 'تم إلغاء الحظر عن ' + m[1]; }],
     [/^Notifications muted for (.+)$/, function (m) { return 'تم كتم إشعارات ' + m[1]; }], [/^Notifications on for (.+)$/, function (m) { return 'تم تشغيل إشعارات ' + m[1]; }],
