@@ -308,7 +308,7 @@ def skills_and_endorsements(j):
         if cell.count(): en = cell
         else:
             row = pb.locator('#content').get_by_text('CTD dossiers', exact=True).locator('xpath=..')
-            en = row.locator('button, [onclick]').filter(has_text=re.compile(r'Endorse|\+|تأييد|أؤيد'))
+            en = row.locator('button, [onclick]').filter(has_text=re.compile(r'Endorse|\+|تأييد|أؤيد|أيّدت'))   # Arabic: «أؤيد», once endorsed «✓ أيّدت»
         j.check(en.count(), 'no Endorse on B\'s view of the skill'); en.first.click(); pb.wait_for_timeout(800)
         j.check(counts(pb).get('CTD dossiers') == 1, 'the endorsement count is not 1')
         j.check(j.has_table('skill_endorsements') or j.has_table('endorsements'), 'not built: no endorsements table')

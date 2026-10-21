@@ -236,7 +236,7 @@
   var oRenderSaved = window.renderSaved;
   window.renderSaved = function (c) {
     var r = oRenderSaved.apply(this, arguments); if (!c) return r;
-    var h = c.querySelector('h1'); if (h && /Saved Posts/.test(h.textContent)) { h.textContent = '🔖 Saved'; h.insertAdjacentHTML('afterend', '<div style="font-size:15px;font-weight:800;color:var(--cx);margin:4px 0 8px">Posts</div>'); }
+    var h = c.querySelector('h1'); if (h && /Saved Posts/.test(h.textContent)) { h.textContent = document.documentElement.lang === 'ar' ? '🔖 المحفوظات' : '🔖 Saved'; h.setAttribute('data-noi18n', '');   /* merge: «🔖 Saved» stays the button state «🔖 محفوظ» everywhere else */ h.insertAdjacentHTML('afterend', '<div style="font-size:15px;font-weight:800;color:var(--cx);margin:4px 0 8px">Posts</div>'); }
     var host = c.querySelector('.saved-list') || c;
     host.insertAdjacentHTML('beforeend', savedSection('jobs', '💼 Jobs', SV.jobs, 'No saved jobs yet — press Save on a job to keep it here.') + savedSection('listings', '📦 Listings', SV.listings, 'No saved listings yet — press Save on a listing in the Marketplace.'));
     var seq = ++SV.seq, S = window.dxSavedSvc;
@@ -383,7 +383,7 @@
     'Settings': 'الإعدادات', 'Go to Settings': 'افتح الإعدادات', 'New post': 'منشور جديد', 'Write a post': 'اكتب منشوراً',
     '👥 People': '👥 أشخاص', '🏢 Companies': '🏢 شركات', '📦 Products & listings': '📦 منتجات وعروض', '💼 Jobs': '💼 وظائف', '👥 Groups': '👥 مجموعات', '📝 Posts': '📝 منشورات',
     'Searching…': 'جارٍ البحث…', 'Try a product, a company or a person — or fewer words.': 'جرّب منتجاً أو شركة أو شخصاً — أو كلمات أقل.',
-    '🔖 Saved': '🔖 المحفوظات', 'Posts': 'المنشورات', '📦 Listings': '📦 العروض', 'Unsave': 'إلغاء الحفظ', 'Loading…': 'جارٍ التحميل…',
+    'Posts': 'المنشورات', '📦 Listings': '📦 العروض', 'Unsave': 'إلغاء الحفظ', 'Loading…': 'جارٍ التحميل…',
     'No saved jobs yet — press Save on a job to keep it here.': 'لا توجد وظائف محفوظة بعد — اضغط حفظ على أي وظيفة لتظهر هنا.',
     'No saved listings yet — press Save on a listing in the Marketplace.': 'لا توجد عروض محفوظة بعد — اضغط حفظ على أي عرض في السوق.',
     'Removed from saved jobs': 'أُزيلت من الوظائف المحفوظة', 'Open this job': 'افتح هذه الوظيفة', 'Open this listing': 'افتح هذا العرض', 'Removed from saved listings': 'أُزيل من العروض المحفوظة', 'View profile': 'عرض الملف',

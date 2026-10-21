@@ -103,7 +103,7 @@
 
   if (window.dxI18nAdd) window.dxI18nAdd({
     'Report this comment': 'الإبلاغ عن هذا التعليق', 'Spam or fake offers': 'رسائل مزعجة أو عروض وهمية', 'Fake profile or impersonation': 'حساب مزيف أو انتحال شخصية', 'Scam or fraud': 'احتيال أو نصب',
-    'Harassment or hate': 'تحرش أو كراهية', 'Something else': 'سبب آخر', 'Details (optional)': 'تفاصيل (اختياري)', 'What should Drugbox know?': 'ما الذي يجب أن يعرفه Drugbox؟', 'Report': 'إبلاغ',
+    'Harassment or hate': 'تحرش أو كراهية', 'Details (optional)': 'تفاصيل (اختياري)', 'What should Drugbox know?': 'ما الذي يجب أن يعرفه Drugbox؟', 'Report': 'إبلاغ',
     'Thanks — Drugbox will review this report': 'شكراً — سيراجع Drugbox هذا البلاغ', 'You already reported this — Drugbox is reviewing it': 'سبق أن أبلغت عن هذا — Drugbox يراجعه',
     'Could not send the report — try again': 'تعذر إرسال البلاغ — حاول مرة أخرى', '🚩 Report': '🚩 إبلاغ', '⛔ Block': '⛔ حظر', '✓ Unblock': '✓ إلغاء الحظر', 'Block': 'حظر', 'Unblocked': 'تم إلغاء الحظر',
     'More: report or block': 'المزيد: إبلاغ أو حظر', 'Blocked — you can unblock in Settings': 'تم الحظر — يمكنك إلغاؤه من الإعدادات', 'Could not block — try again': 'تعذر الحظر — حاول مرة أخرى', 'Could not unblock — try again': 'تعذر إلغاء الحظر — حاول مرة أخرى',
