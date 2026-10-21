@@ -1,0 +1,7 @@
+# Letters the name rule allows that draw alike (the same pixels, or within 2.5% of a common letter) while their TR39 skeletons
+# differ: tools/names/render_scan.py --write, Chromium canvas, fonts: 14px "DejaVu Sans", 15px "DejaVu Sans", 32px "DejaVu Sans", 15px "FreeSans", 15px "FreeSerif", 15px "Liberation Sans", 15px sans-serif, 15px Poppins, 600 15px Poppins.
+# tools/names/name_rule.mjs gives each pair one skeleton (the skeleton of the more common letter). Generated, never edited by hand.
+006C ; 04CF # l / ӏ — LATIN SMALL LETTER L / CYRILLIC SMALL LETTER PALOCHKA
+04C0 ; 04CF # Ӏ / ӏ — CYRILLIC LETTER PALOCHKA / CYRILLIC SMALL LETTER PALOCHKA
+0692 ; 06EF # ڒ / ۯ — ARABIC LETTER REH WITH SMALL V / ARABIC LETTER REH WITH INVERTED V
+0776 ; 077B # ݶ / ݻ — ARABIC LETTER FARSI YEH WITH EXTENDED ARABIC-INDIC DIGIT THREE ABOVE / ARABIC LETTER YEH BARREE WITH EXTENDED ARABIC-INDIC DIGIT THREE ABOVE

@@ -109,8 +109,29 @@ select pg_temp.step('a title written the Egyptian way, "د/ …"', $$update publ
 select pg_temp.ok('names: "د/ هيثم دويدار" is kept as written', $$(select name = 'د/ هيثم دويدار' and not name_needs_fix from public.profiles where id = pg_temp.u(2))$$);
 select pg_temp.step('a Latin title on a Cyrillic name, a pasted non-breaking hyphen and an apostrophe', $$update public.profiles set name = U&'Dr. \041C\0430\0440\0438\044F Anne\2011Marie O''Brien' where id = pg_temp.u(2)$$);
 select pg_temp.ok('names: the hyphen look-alike is stored as "-" and the apostrophe as ’', $$(select name = 'Dr. Мария Anne-Marie O’Brien' and not name_needs_fix from public.profiles where id = pg_temp.u(2))$$);
-select pg_temp.no('names: a Cyrillic word that reads as Latin next to a Latin title is refused ("Dr. Ѕаӏіһ")', $$update public.profiles set name = U&'Dr. \0405\0430\04CF\0456\04BB' where id = pg_temp.u(2)$$, '23514');
 select pg_temp.no('names: the same mark twice on one letter is refused', $$update public.profiles set name = U&'PN Hale\0301\0301' where id = pg_temp.u(2)$$, '23514');
+-- the third version (0039_names_rule_3): a Cyrillic word that reads as Latin is that Latin name's twin (ӏ U+04CF has the skeleton of l)
+select pg_temp.step('"Dr. Ѕаӏіһ" (Cyrillic letters that read "Dr. Salih")', $$update public.profiles set name = U&'Dr. \0405\0430\04CF\0456\04BB' where id = pg_temp.u(2)$$);
+select pg_temp.ok('names: "Dr. Ѕаӏіһ" is allowed with the skeleton of "Dr. Salih" (a twin, told apart)', $$(select name_key = public.person_name_key('Dr. Salih') and not name_needs_fix from public.profiles where id = pg_temp.u(2))$$);
+select pg_temp.step('a Greek name that reads as Latin, "Άννα Βίσση"', $$update public.profiles set name = 'Άννα Βίσση' where id = pg_temp.u(2)$$);
+select pg_temp.ok('names: "Άννα Βίσση" is kept as written, not flagged', $$(select name = 'Άννα Βίσση' and not name_needs_fix from public.profiles where id = pg_temp.u(2))$$);
+select pg_temp.step('an em dash and a title glued to an Arabic name', $$update public.profiles set name = 'Dr.أحمد Jean—Paul' where id = pg_temp.u(2)$$);
+select pg_temp.ok('names: the em dash is stored as a hyphen', $$(select name = 'Dr.أحمد Jean-Paul' and not name_needs_fix from public.profiles where id = pg_temp.u(2))$$);
+select pg_temp.no('names: e + U+0335 overlay ("PN Ahme̵d") is refused', $$update public.profiles set name = U&'PN Ahme\0335d' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.ok('names: …saying which letter and mark', $$(select pg_temp.err_of($q$update public.profiles set name = U&'PN Ahme\0335d' where id = pg_temp.u(2)$q$)) like U&'Remove the mark added to “e\0335” (U+0335)%'$$);
+select pg_temp.no('names: a dotless ı + dot above ("PN Alı̇") is refused', $$update public.profiles set name = U&'PN Al\0131\0307' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: i + dot above ("PN Sali̇h") is refused', $$update public.profiles set name = U&'PN Sali\0307h' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: a Greek capital with a macron ("Τ̄ΑΣΟΣ") is refused', $$update public.profiles set name = U&'\03A4\0304\0391\03A3\039F\03A3' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: Ɥ U+A78D (draws as Cyrillic Ч) is refused', $$update public.profiles set name = U&'\A78DEXOB' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.no('names: a Latin Extended-G letter (no font draws it) is refused', $$update public.profiles set name = U&'PN Ahmed \+01DF00' where id = pg_temp.u(2)$$, '23514');
+select pg_temp.as_server();
+select pg_temp.no('sign-up: "Ahme̵d" is refused (nothing is created)', $$insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(14), 'pn14@pn36.test', jsonb_build_object('name', U&'PN Ahme\0335d'))$$, '23514');
+select pg_temp.ok('sign-up: …no profile either', $$not exists (select 1 from public.profiles where id = pg_temp.u(14))$$);
+insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(14), 'pn14@pn36.test', jsonb_build_object('name', 'ОКСАНА КОРОТКОВА')) on conflict do nothing;
+select pg_temp.ok('sign-up: an all-caps Cyrillic name is accepted', $$(select name = 'ОКСАНА КОРОТКОВА' and not name_needs_fix from public.profiles where id = pg_temp.u(14))$$);
+select pg_temp.as_anon();
+select pg_temp.no('anon cannot write a name', $$update public.profiles set name = 'PN anon' where id = pg_temp.u(2)$$, '42501');
+select pg_temp.as_user(pg_temp.u(2));
 select pg_temp.ok('names: the refusal names the character typed (U+FE69, not the "$" it becomes)', $$(select pg_temp.err_of($q$update public.profiles set name = U&'PN Ahmed \FE69x' where id = pg_temp.u(2)$q$)) like '%remove “﹩” (U+FE69)'$$);
 select pg_temp.ok('names: …the word that is only punctuation', $$(select pg_temp.err_of($q$update public.profiles set name = 'د . أحمد' where id = pg_temp.u(2)$q$)) = '“.” is not a word — join it to the word next to it (remove the space)'$$);
 select pg_temp.ok('names: …and the alphabets accepted', $$(select pg_temp.err_of($q$update public.profiles set name = '张伟' where id = pg_temp.u(2)$q$)) like 'Write a name in Latin, Arabic, Greek or Cyrillic letters — “张” (U+5F20)%'$$);
@@ -123,22 +144,38 @@ select pg_temp.as_user(pg_temp.u(4));
 select pg_temp.ok('my_conversations: name_twins counts the other members with the partner''s skeleton', $$(select name_twins = 1 and name_key = public.person_name_key('PN Famous Person') and name_needs_fix from public.my_conversations(30) where partner = pg_temp.u(13))$$);
 select pg_temp.as_user(pg_temp.u(12));
 select pg_temp.ok('my_conversations: a member sees no conversation she is not in', $$not exists (select 1 from public.my_conversations(30) where partner = pg_temp.u(13))$$);
+-- a flagged member cannot lift her own flag, nor give herself another key, by keeping her name (the trigger computes both)
+select pg_temp.as_user(pg_temp.u(13));
+select pg_temp.step('u13 (flagged) writes name_needs_fix = false and a key of her own', $$update public.profiles set name_needs_fix = false, name_key = 'pn someone else' where id = pg_temp.u(13)$$);
+select pg_temp.ok('names: the flag and the key stay what the rule says', $$(select name_needs_fix and name_key = public.person_name_key('PN Famous Person') from public.profiles where id = pg_temp.u(13))$$);
 select pg_temp.as_server();
 -- existing names (0038's own update, then 0039's, re-applied here): invisible characters and U+FFFC go; a name the new rule allows
 -- once normalised is stored normalised and not flagged; any other name is kept and flagged
 insert into auth.users (id, email) select pg_temp.u(g), 'pn' || g || '@pn36.test' from generate_series(9, 11) g on conflict do nothing;
+insert into auth.users (id, email) select pg_temp.u(g), 'pn' || g || '@pn36.test' from generate_series(15, 17) g on conflict do nothing;
 set session_replication_role = replica;   -- rows as 0037 left them (no name trigger)
 update public.profiles set name = U&'PN Zeina Old\FFFC', name_key = null, name_needs_fix = false where id = pg_temp.u(7);
 update public.profiles set name = 'PN Hala Old - Pharco Old', name_key = null, name_needs_fix = false where id = pg_temp.u(8);
 update public.profiles set name = 'د/ هيثم قديم' where id = pg_temp.u(9);
 update public.profiles set name = U&'PN Anne\2011Old O''Brien' where id = pg_temp.u(10);
 update public.profiles set name = U&'PN Hale\0301\0301 Old' where id = pg_temp.u(11);
+update public.profiles set name = 'Άννα Βίσση' where id = pg_temp.u(15);               -- flagged by 0039_names_rule_2 ('latin'), allowed by the third version
+update public.profiles set name = U&'PN Ahme\0335d Old' where id = pg_temp.u(16);      -- allowed by 0039_names_rule_2, refused by the third version
+update public.profiles set name = 'PN Jean—Paul Old' where id = pg_temp.u(17);         -- an em dash: refused by 0039_names_rule_2, a hyphen in the third
+update public.profiles set name_key = null, name_needs_fix = false where id in (pg_temp.u(15), pg_temp.u(16), pg_temp.u(17));
 update public.profiles set name_key = 'stale', name_needs_fix = true where id = pg_temp.u(9);    -- flagged by 0038 ("/" was refused)
 update public.profiles set name_key = null, name_needs_fix = false where id in (pg_temp.u(10), pg_temp.u(11));
 set session_replication_role = origin;
 \ir ../migrations/0038_names_allowlist.sql
 \ir ../migrations/0039_names_rule_2.sql
 \o /dev/null
+select pg_temp.ok('existing names (0039_names_rule_2): "Άννα Βίσση" was flagged for reading as Latin', $$(select name_needs_fix from public.profiles where id = pg_temp.u(15))$$);
+\o
+\ir ../migrations/0039_names_rule_3.sql
+\o /dev/null
+select pg_temp.ok('existing names (third version): "Άννα Βίσση" is kept and no longer flagged', $$(select name = 'Άννα Βίσση' and not name_needs_fix and name_key = public.person_name_key('Άννα Βίσση') from public.profiles where id = pg_temp.u(15))$$);
+select pg_temp.ok('existing names (third version): a mark NFKC cannot join is KEPT (never stripped into another name) and flagged', $$(select name = U&'PN Ahme\0335d Old' and name_needs_fix and name_key = public.person_name_key(U&'PN Ahme\0335d Old') from public.profiles where id = pg_temp.u(16))$$);
+select pg_temp.ok('existing names (third version): an em dash is written as a hyphen, not flagged', $$(select name = 'PN Jean-Paul Old' and not name_needs_fix from public.profiles where id = pg_temp.u(17))$$);
 select pg_temp.ok('existing names (0039): a name 0038 flagged that the new rule allows is no longer flagged', $$(select name = 'د/ هيثم قديم' and not name_needs_fix and name_key = public.person_name_key('د/ هيثم قديم') from public.profiles where id = pg_temp.u(9))$$);
 select pg_temp.ok('existing names (0039): look-alike hyphens and apostrophes are written - and ’ (reads the same)', $$(select name = 'PN Anne-Old O’Brien' and not name_needs_fix from public.profiles where id = pg_temp.u(10))$$);
 select pg_temp.ok('existing names (0039): a mark repeated on a letter is kept and flagged', $$(select name = normalize(U&'PN Hale\0301\0301 Old', NFC) and name_needs_fix from public.profiles where id = pg_temp.u(11))$$);

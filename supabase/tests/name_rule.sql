@@ -1,4 +1,5 @@
--- One rule for names in the database and in the app (S-03, 0038 and its second version 0039): for EVERY code point of planes 0 and
+-- One rule for names in the database and in the app (S-03, 0038, its second version 0039_names_rule_2 and its third version
+-- 0039_names_rule_3): for EVERY code point of planes 0 and
 -- 1, in four places (inside a Latin word, alone between spaces, at the start, inside an Arabic word), the database's
 -- person_name_norm, person_name_problem and person_name_key must give what the live app's nmNorm, nmProblem and nmSkel give, and
 -- person_name_message what nmMessage says (inside a word and alone; web/src/live/adapter.js, generated with the migration by
@@ -63,11 +64,12 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('an Arabic-Indic zero standing alone', 'د. هالة ٠ فاركو', 'digit'),
   ('U+02D1 MODIFIER LETTER HALF TRIANGULAR COLON (Common script)', U&'Dr. Hala \02D1 Pharco', 'letter'),
   ('U+01C3 click letter ǃ (Restricted)', U&'Dr. Hala\01C3', 'letter'),
-  ('a combining mark with no letter', U&'Dr. Hala \0307 Pharco', 'word'),
-  ('four marks on one letter', U&'Dr. Hab\0301\0301\0301\0301', 'mark'),
+  ('a combining mark with no letter (third version: a mark NFKC cannot join to a letter)', U&'Dr. Hala \0307 Pharco', 'accent'),
+  ('four marks on one letter', U&'Dr. Hab\0301\0301\0301\0301', 'accent'),
+  ('four vowel marks on one Arabic letter', U&'د. هالة الشا\064E\064F\0650\0652مي', 'mark'),
   -- 0039 (verifier rounds atk-bypass-r1 / atk-unicode-r1 / atk-legit-r1)
-  ('the same mark twice on one letter ("é́", it can draw over itself)', U&'Dr. Hal\00E9\0301 Tufice', 'mark'),
-  ('the same mark twice, decomposed', U&'Dr. Hale\0301\0301 Tufice', 'mark'),
+  ('the same mark twice on one letter ("é́", it can draw over itself)', U&'Dr. Hal\00E9\0301 Tufice', 'accent'),
+  ('the same mark twice, decomposed', U&'Dr. Hale\0301\0301 Tufice', 'accent'),
   ('a shadda twice on one Arabic letter', U&'د. هالة الشا\0651\0651مي', 'mark'),
   ('two different marks are fine ("ệ")', U&'Dr. Ne\0323\0302 Tufice', ''),
   ('African noon ࢽ (draws as ن before a letter; TR39 gives it the skeleton of ى): not an Arabic-block letter', U&'\08BD\0628\064A\0644', 'letter'),
@@ -75,7 +77,7 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('a whole word in Chinese', '张伟 (Zhang Wei)', 'letter'),
   ('Hebrew', 'דוד כהן', 'letter'),
   ('Armenian', 'Արամ Խաչատրյան', 'letter'),
-  ('the em dash (not a hyphen look-alike in TR39)', 'Anne—Marie Tufice', 'char'),
+  ('the em dash is a hyphen in a name (third version: every \p{Pd})', 'Anne—Marie Tufice', ''),
   ('a quotation mark', 'Ahmed "Mido" Ali', 'char'),
   ('the Catalan middle dot (it is the picker separator)', 'Gal·la Puig', 'char'),
   ('a fullwidth dollar is named as typed', U&'Ahmed \FE69x', 'char'),
@@ -83,10 +85,39 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('a space before a comma', 'Ahmed Ali , PhD', 'word'),
   ('a hyphen standing alone', 'Hala Ali - Pharco', 'word'),
   ('a slash standing alone', 'د / هيثم', 'word'),
-  ('a Cyrillic word that reads as a Latin one, next to Latin words ("Dr. Рара")', U&'Dr. \0420\0430\0440\0430 Tufice', 'latin'),
-  ('"Dr. Ѕаӏіһ": every letter reads as Latin (TR39 maps ӏ to i, so its skeleton is not "salih" — refused for what it is)', U&'Dr. \0405\0430\04CF\0456\04BB', 'latin'),
-  ('a whole name that reads as Latin ("Ѕаӏіһ Ѕаӏіһ")', U&'\0405\0430\04CF\0456\04BB \0405\0430\04CF\0456\04BB', 'latin'),
-  ('a Greek name that reads as Latin ("Αννα")', 'Αννα', 'latin'),
+  -- third version: a whole Greek or Cyrillic word that reads as a Latin one is allowed — it has the Latin word's skeleton (ӏ U+04CF too:
+  -- tools/names/pixel-twins.txt), so it is that name's twin (atk-legit-r2: «Μαρία», «Άννα Βίσση», «Вера Кох» were refused by 0039_names_rule_2)
+  ('a Cyrillic word that reads as a Latin one, next to Latin words ("Dr. Рара")', U&'Dr. \0420\0430\0440\0430 Tufice', ''),
+  ('"Dr. Ѕаӏіһ" (its skeleton is "dr. salih")', U&'Dr. \0405\0430\04CF\0456\04BB', ''),
+  ('a Greek name that reads as Latin ("Αννα")', 'Αννα', ''),
+  -- third version (atk-unicode-r2, atk-bypass-r2): a mark NFKC cannot join to its letter is refused — it can draw on a stroke the
+  -- letter already has, or on a dot it already has, and look like nothing while the skeleton differs
+  ('e + U+0335 short stroke overlay ("Ahme̵d")', U&'Ahme\0335d Tufice', 'accent'),
+  ('N + U+0335 ("N̵ada")', U&'N\0335ada Tufice', 'accent'),
+  ('W + U+0335 ("W̵ael")', U&'W\0335ael Tufice', 'accent'),
+  ('Greek Ν + U+0335', U&'\039D\0335\03B9\03BA\03B7', 'accent'),
+  ('Greek capital Τ + macron ("Τ̄ΑΣΟΣ")', U&'\03A4\0304\0391\03A3\039F\03A3', 'accent'),
+  ('Greek capital Ζ + macron', U&'\0396\0304\03B7\03BD\03C9', 'accent'),
+  ('Greek capital Π + macron', U&'\03A0\0304\03B1\03CD\03BB\03BF\03C2', 'accent'),
+  ('Greek capital Ε + macron', U&'\0395\0304\03BB\03AD\03BD\03B7', 'accent'),
+  ('Greek capital Ρ + macron', U&'\03A1\0304\03AD\03B1', 'accent'),
+  ('Greek capital Ζ + perispomeni', U&'\0396\0342\03B7\03BD\03C9', 'accent'),
+  ('Greek capital Μ + acute', U&'\039C\0301\03B1\03C1\03AF\03B1', 'accent'),
+  ('i + U+0307 dot above ("Sali̇h", TR39 §5.4)', U&'Sali\0307h Tufice', 'accent'),
+  ('dotless ı + U+0307 dot above ("Salı̇h")', U&'Mohamed Al\0131\0307', 'accent'),
+  ('j + U+0307', U&'j\0307ana Tufice', 'accent'),
+  ('two overlay marks, one order', U&'Ho\0335\0338da', 'accent'),
+  ('two overlay marks, the other order', U&'Ho\0338\0335da', 'accent'),
+  ('ų + diaeresis + macron', U&'R\0173\0308\0304ta', 'accent'),
+  ('a Yoruba tone mark on a letter with a dot below (no single character: refused, said plainly)', U&'Ade\1ECD\0301la', 'accent'),
+  ('a hamza mark on a letter it does not join ("ب" + U+0654)', U&'ب\0654ب', 'accent'),
+  ('Cyrillic Ext-D combining letter U+1E08F (no font draws it)', U&'Ahmed X\+01E08F', 'accent'),
+  ('Latin capital turned H U+A78D (Latin Extended-D: Cyrillic Ч to the pixel)', U&'\A78DEXOB', 'letter'),
+  ('Latin Extended-G U+1DF00 (no font draws it)', U&'Ahmed \+01DF00', 'letter'),
+  ('Latin Extended-G U+1DF1E', U&'Ahmed X\+01DF1E', 'letter'),
+  ('Latin Extended-E ꭦ', U&'Ahmed X\AB66', 'letter'),
+  ('Cyrillic Extended-B ꙿ', U&'Ahmed X\A67F', 'letter'),
+  ('ʿ U+02BF (ayn of transliteration) is not a letter of the four alphabets', 'Saʿīd Ḥasan', 'letter'),
   ('invisible U+200B is removed: allowed', U&'Dr. Zeina Tufice\200B', ''),
   ('invisible U+1D173 is removed: allowed', U&'Dr. Zeina Tufice\+01D173', ''),
   ('invisible U+1BCA0 is removed: allowed', U&'Dr. Zeina\+01BCA0 Tufice', ''),
@@ -106,7 +137,12 @@ insert into r(name, ok, err) select 'real name allowed: ' || x.s, public.person_
   ('Dr. Νίκος Παπαδόπουλος'), ('Dr. Мария Иванова'), ('Мария Иванова (Maria Ivanova)'), ('Вера Иванова'), ('Μαρία Κωνσταντίνου'), ('Νίκος Παπαδόπουλος (Nikos Papadopoulos)'), ('Dr. Иван'),
   (U&'Anne\2011Marie Dubois'), (U&'Dr. Ahmed El\2013Sayed'), (U&'Ahmed El\2212Sayed'), ('د. أحمد علي، صيدلي'), (U&'\041C\0430\0440\02BC\044F\043D\0430 \0413\0440\0438\0433\043E\0440\02BC\0454\0432\0430'),
   ('O‘Brien Kelly'), ('O´Brien Kelly'), ('O`Brien'), ('ʻAbd al-ʻAziz'), ('Mary-Jane O''Neil-Smith'), ('Ahmed Ali, M.B.B.Ch., Ph.D.'), ('مصطفىٰ كامل'), ('ريم السيد (صيدلانية)'),
-  ('Ahmed Ali (أحمد علي)'), ('پرویز گلشیری'), ('Ἀλέξανδρος Παπάς'), ('Đặng Thị Ngọc Hân')) x(s);
+  ('Ahmed Ali (أحمد علي)'), ('پرویز گلشیری'), ('Ἀλέξανδρος Παπάς'), ('Đặng Thị Ngọc Hân'),
+  -- refused by 0039_names_rule_2, allowed by the third version (atk-legit-r2): Greek and Cyrillic names that read as Latin, a title
+  -- glued to a name in another alphabet, the em dash
+  ('Μαρία'), ('Νίκη'), ('Ειρήνη'), ('Μαρίνα Μάρκου'), ('Άννα Βίσση'), ('Dr. Νίκη Βίσση'), ('ΑΝΝΑ ΚΑΡΑΤΖΑ'), ('Вера Кох'), ('ОКСАНА КОРОТКОВА'), ('АННА АХМАТОВА'),
+  ('ЧЕХОВ'), ('Dr.أحمد علي'), ('د.Ahmed Ali'), ('Jean—Paul Sartre'), ('Mo''men Abd El-Raouf'), ('Mª José García'), ('Ahmed ‘Mido’ Ali'), ('Fāʾiza Ḥusayn'),
+  ('İsmail Ñúñez'), ('Məmmədov Əli'), ('Nguyễn Thị Ánh'), ('مُحَمَّد عَبْدُ الرَّحْمٰن'), ('الدكتورة/ هالة السعيد'), ('Ґанна Ґонта')) x(s);
 insert into r(name, ok, err) select 'stored as typed: ' || x.s, public.person_name_norm(x.s) = x.want, public.person_name_norm(x.s) from (values
   ('هـالة', 'هالة'), (U&'\FF24\FF52. Hala', 'Dr. Hala'), ('  José   Müller ', 'José Müller'), (U&'Jose\0301', 'José'),
   -- 0039: look-alikes of the punctuation a name holds are written as it; the apostrophe is stored as ’ (as the app shows it)
@@ -116,11 +152,14 @@ insert into r(name, ok, err) select 'stored as typed: ' || x.s, public.person_na
 insert into r(name, ok, err) select 'message: ' || x.s, public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) = x.want,
        public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) from (values
   (U&'Ahmed \FE69x', 'A name can only have letters, spaces and . - '' ( ) , / ، — remove “﹩” (U+FE69)'),
-  ('Anne—Marie', 'A name can only have letters, spaces and . - '' ( ) , / ، — remove “—” (U+2014)'),
+  ('Anne★Marie', 'A name can only have letters, spaces and . - '' ( ) , / ، — remove “★” (U+2605)'),
   ('张伟 (Zhang Wei)', 'Write a name in Latin, Arabic, Greek or Cyrillic letters — “张” (U+5F20) is not one of them'),
   ('د . أحمد علي', '“.” is not a word — join it to the word next to it (remove the space)'),
   (U&'Dr. R\0430na', U&'Write each word of a name in one alphabet — “R\0430na” mixes alphabets'),
-  (U&'Dr. \0405\0430\04CF\0456\04BB', U&'“\0405\0430\04CF\0456\04BB” can be read as a Latin word — write the name in Latin letters'),
+  (U&'Ahme\0335d', U&'Remove the mark added to “e\0335” (U+0335) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'),
+  (U&'Mohamed Al\0131\0307', U&'Remove the mark added to “\0131\0307” (U+0307) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'),
+  (U&'Ahmed X\+01E08F', U&'Remove the mark added to “X\+01E08F” (U+1E08F) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'),
+  (U&'Dr.R\0430na', U&'Write each word of a name in one alphabet — “R\0430na” mixes alphabets'),
   (U&'Dr. Zeina X\FFFC', 'A name can only have letters, spaces and . - '' ( ) , / ، — remove “￼” (U+FFFC)'),
   ('Dr. Rana 2', 'A name cannot contain numbers')) x(s, want);
 -- twins by skeleton: names that look the same have the same key; names that differ do not
@@ -131,7 +170,11 @@ insert into r(name, ok, err) select 'same skeleton: ' || x.a || ' / ' || x.b, pu
   -- 0039: a whole word in another alphabet that copies a Latin word; Arabic letters that draw the same before another letter
   -- (TR39 maps them: a qaf with one dot / feh, Farsi yeh / yeh / alef maksura, keheh / kaf, heh goal / heh, teh marbuta goal)
   ('Dr. Papa Tufice', U&'Dr. \0420\0430\0440\0430 Tufice'), ('فاطمة', 'ڧاطمة'), ('علي', 'على'), ('علي', 'علی'),
-  ('كريم', 'کریم'), ('هالة', 'ہالۃ'), ('Anne-Marie', U&'Anne\2011Marie'), ('O’Brien', 'O´Brien')) x(a, b);
+  ('كريم', 'کریم'), ('هالة', 'ہالۃ'), ('Anne-Marie', U&'Anne\2011Marie'), ('O’Brien', 'O´Brien'),
+  -- third version: letters that draw alike while TR39 keys them apart (tools/names/pixel-twins.txt), a whole Cyrillic name that
+  -- reads as Latin, the em dash
+  ('Dr. Salih', U&'Dr. \0405\0430\04CF\0456\04BB'), ('Salih', U&'\0405\0430\04C0\0456\04BB'), ('Ahmed Ali', U&'Ahmed A\04CFi'), ('زڒ', 'زۯ'), ('ݶا', 'ݻا'),
+  ('Jean-Paul', 'Jean—Paul'), ('Mapía', 'Μαρία')) x(a, b);
 insert into r(name, ok, err) select 'different skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) <> public.person_name_key(x.b), public.person_name_key(x.a) from (values
   ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Ibrahim', 'ibrahim'), ('أبو', 'ابو'), ('Ali', 'All'), ('Hala', 'Hana')) x(a, b);
 \o
