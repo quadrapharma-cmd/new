@@ -183,7 +183,8 @@ with sync_playwright() as p:
     ar.evaluate('doLogout()'); ar.wait_for_timeout(800); sql(f"update public.profiles set name = {q(f'(MBA) Ali {NT}')} where id = '{uid}'")
     T('banner: precondition — a server write keeps «(MBA) Ali» and flags it', row(f'np-uia{ST}@np.test').split('|')[1] == f'(MBA) Ali {NT}' and row(f'np-uia{ST}@np.test').split('|')[3] == 'true')
     for page, lang, want in [(ar, 'ar', 'انقل الجزء الذي بين القوسين'), (pg, 'en', 'move the part in brackets after the name')]:
-        if page is pg: pg.reload(wait_until='load'); pg.wait_for_timeout(500); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
+        if page is pg:   # the Arabic page shares this origin's storage: back to English first
+            pg.evaluate("try{localStorage.setItem('dx_lang','en')}catch(e){}"); pg.reload(wait_until='load'); pg.wait_for_timeout(500); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
         page.evaluate('showLogin()'); page.fill('#loginEmail', f'np-uia{ST}@np.test'); page.fill('#loginPw', PW); page.click('#loginPage button.f-btn')
         wait_for(lambda: page.is_visible('#app'), 15); page.wait_for_timeout(1200); page.evaluate('gotoProfile(ME.id)'); page.wait_for_timeout(1500)
         ban = page.evaluate("(() => { const d = document.querySelector('.dx-name-fix'); return d ? d.innerText : ''; })()")

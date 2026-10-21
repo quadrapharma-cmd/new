@@ -309,10 +309,10 @@ def new_message_to_named_person(j):
         rows = [t['text'] for t in threads(pg) if j.tag in t['text'] and ('الد' in t['text'])]; j.note('Arabic look-alike threads', rows)
         j.check(rows and all('\u0652' not in r for r in rows) and any(('حالد %s' % j.tag) in r for r in rows) and not any(kname in r for r in rows),
                 'A\'s list shows the look-alike as «خالد» or with the mark: %s' % rows)
-        j.check(any('·' in r.split('\n')[0] for r in rows if ('حالد %s' % j.tag) in r), 'the look-alike\'s conversation does not say which «حالد» it is (twins: nothing after the name in the list): %s' % rows)
+        j.check(any(re.search('·\\s*[\u2066\u2068]', r) for r in rows if ('حالد %s' % j.tag) in r), 'the look-alike\'s conversation does not say which «حالد» it is (twins: nothing after the name in the list): %s' % rows)
         opts = options_for(kname, ('حالد %s' % j.tag,)); j.note('Khalid options', opts)
         j.check(len(opts) == 2 and len(set(opts)) == 2 and all(' · ' in o for o in opts), 'the twins «خالد» / «حالد» are not two different options: %s' % opts)
-        j.check(all(re.search(r'Same name|نفس الاسم', LBL.get(o, '')) for o in opts), 'the options do not warn that «خالد» and «حالد» look the same: %s' % [LBL.get(o, '') for o in opts])
+        j.check(any(re.search(r'Same name|نفس الاسم', LBL.get(o, '')) for o in opts if not o.startswith(kname)), 'the look-alike\'s option (no company: a #handle) does not warn «Same name»: %s' % [LBL.get(o, '') for o in opts])
         for typed in (kname, fake):
             body = 'Bare Khalid %s %s' % (len(typed), j.tag); said = new_message(typed, body)
             j.check(re.search(r'Several|أكثر من', said) and j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'typing «%s» (its twin exists) is not refused: %s' % (typed, said[:120]))
