@@ -117,7 +117,6 @@ begin
      + (select count(*) from public.company_invites where company_id = p_company) >= 50 then
     raise exception 'This company already has 50 open invitations' using errcode = 'P0001';
   end if;
-  select name into v_me from public.profiles where id = me;
   select u.id into v_user from auth.users u where lower(u.email) = v_email limit 1;
   if v_user is null then
     insert into public.company_invites (company_id, email, name, role, invited_by) values (p_company, v_email, v_name, v_role, me)

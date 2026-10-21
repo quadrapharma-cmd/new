@@ -9,7 +9,8 @@
   function toast(m) { (window.toast || D.toast)(m); }
   function txt(el) { return el ? el.textContent.replace(/\s+/g, ' ').trim() : ''; }
   function page() { return document.body.getAttribute('data-page') || ''; }
-  function inApp() { var a = document.getElementById('app'); return !!a && a.getClientRects().length > 0; }
+  function inApp() { var a = document.getElementById('app'); if (!a) return false; var d = a.style.display;   /* the app is shown with an inline display: no layout is forced */
+    return d === 'flex' || d === 'block' ? true : d === 'none' ? false : a.getClientRects().length > 0; }
   function later(fn, ms) { setTimeout(fn, ms || 0); }
   function flash(sel, text) {             /* scroll to the card that names text and mark it (the jobs, groups and listings pages) */
     var t0 = Date.now();
@@ -36,6 +37,12 @@
     if (NAV || PEND || !inApp()) return; last = { page: p, args: args || [] };   /* while a pending address waits, the first page drawn does not overwrite it */
     var h = routeOf(p, last.args); if (!h) return;
     var url = location.pathname + location.search + h;
+    /* the address is written just after the page is drawn (one history write per switch, outside the switch itself — speed) */
+    HW.url = url; HW.h = h; if (!HW.t) HW.t = setTimeout(writeAddress, 0);
+  }
+  var HW = { t: 0, url: '', h: '' };
+  function writeAddress() {
+    HW.t = 0; var h = HW.h, url = HW.url; if (!h) return;
     try { if (location.hash === h) history.replaceState({ dx: 1 }, '', url); else if (history.state && history.state.dx) history.pushState({ dx: 1 }, '', url); else history.replaceState({ dx: 1 }, '', url); } catch (e) {}
   }
   function parse(h) {
@@ -112,7 +119,7 @@
   });
   /* signing out leaves no page address behind (the next person starts at Home) */
   var oOut = window.doLogout;
-  if (oOut) window.doLogout = function () { var r = oOut.apply(this, arguments); PEND = null; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} return r; };
+  if (oOut) window.doLogout = function () { var r = oOut.apply(this, arguments); PEND = null; clearTimeout(HW.t); HW.t = 0; HW.h = ''; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} return r; };
   window.dxRoute = { open: function (h) { return open(parse(h)); }, pending: function () { return PEND; } };
 
   /* ═════ B. one search (S-18) ═════ */

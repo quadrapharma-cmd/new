@@ -278,7 +278,9 @@ select pg_temp.no('a visitor cannot ask', $$select public.connection_phone('aaaa
 
 -- ══ find_people (0048) ═════════════════════════════════════════════════════════════════════
 select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000001');
-select pg_temp.ok('find_people finds members by name and never me', $$(select count(*) >= 2 and count(*) filter (where id = 'aaaa0041-0000-0000-0000-000000000001') = 0 from public.find_people('S41', null, null, 30))$$);
+-- (merge: suspended accounts are not found any more (0065, J-COMMUNITY-47) — Bob, suspended above, is left out)
+select pg_temp.ok('find_people finds members by name and never me, nor the suspended Bob', $$(select count(*) >= 1 and count(*) filter (where id = 'aaaa0041-0000-0000-0000-000000000001') = 0
+  and count(*) filter (where id = 'aaaa0041-0000-0000-0000-000000000002') = 0 from public.find_people('S41', null, null, 30))$$);
 select pg_temp.ok('find_people leaves out deleted members', $$(select count(*) = 0 from public.find_people('S41 Dina', null, null, 30))$$);
 select pg_temp.ok('find_people leaves out people blocked either way (Cara blocked Alice)', $$(select count(*) = 0 from public.find_people('S41 Cara', null, null, 30))$$);
 select pg_temp.ok('find_people with nothing to look for returns nothing', $$(select count(*) = 0 from public.find_people(null, null, null, 30))$$);
