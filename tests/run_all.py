@@ -13,8 +13,10 @@ Groups:
          leftover overlays and its median switch time is at most 25% (+1 ms) slower than the base's — not in the default run
   demo-full  legacy + stress (one command for the long demo checks) — not in the default run
   e2e    tests/e2e/*_test.py against the running local stack (tools/local-supabase/start.sh, and start-payments.sh for e4*)
-  render tools/names/render_scan.py: no two allowed letters draw alike with different skeletons (14-16 px, the app's font and the
-         system fonts), and the same scan on the third rule (git e972163) finds «حْ» / «خ» — not in the default run
+  render tools/names/render_scan.py: no two allowed letters, letter sequences or whole names draw alike with different skeletons
+         (14-16 px, weights 400-700, the app's font stacks and the system fonts, both directions), and the same scan finds «حْ» / «خ»
+         on the third rule (git e972163), bold «ث» / «ئ» and «(MBA) Ahmed Ali» / «Ahmed Ali (MBA)» on the fourth (0fbc662) — not in the
+         default run
   migrations  tools/migration_check.py (every migration re-runnable, puts back each policy it creates) — not in the default run
          while older migrations still group several policies in one block
   journeys  user journeys (tests/journeys/run_{social,business,community}.py): every journey on the demo (DEMO_FILE) in
@@ -139,11 +141,12 @@ def migrations():
     code, out, s = run([sys.executable, ROOT + '/tools/migration_check.py'])
     record('migr', 'tools/migration_check.py', code == 0, s, out[-3000:])
 
-def render():   # the name rule's render check (S-03): every allowed letter against every other, and the proof it sees a look-alike
-    code, out, secs = run([sys.executable, 'tools/names/render_scan.py'], timeout=3600)
-    record('render', 'render_scan.py (fourth rule: 0 pairs)', code == 0, secs, out[-800:] if code else '')
-    code, out, secs = run([sys.executable, 'tools/names/render_scan.py', '--rule', 'e972163', '--must-find', 'حْ/خ'], timeout=3600)
-    record('render', 'render_scan.py --rule e972163 finds حْ/خ', code == 0, secs, out[-800:] if code else '')
+def render():   # the name rule's render check (S-03): letters, sequences and whole names, and the proofs that it sees look-alikes
+    code, out, secs = run([sys.executable, 'tools/names/render_scan.py'], timeout=7200)
+    record('render', 'render_scan.py (fifth rule: 0 pairs — letters, sequences, whole names; font stacks × weights)', code == 0, secs, out[-800:] if code else '')
+    for rev, part, pair, quick in (('e972163', 'letters', 'حْ/خ', False), ('0fbc662', 'letters', 'ث/ئ', False), ('0fbc662', 'names', '(MBA) Ahmed Ali/Ahmed Ali (MBA)', True)):
+        code, out, secs = run([sys.executable, 'tools/names/render_scan.py', '--rule', rev, '--part', part, '--must-find', pair] + (['--quick'] if quick else []), timeout=3600)
+        record('render', 'render_scan.py --rule %s --part %s finds %s' % (rev, part, pair), code == 0, secs, out[-800:] if code else '')
 
 REPORT_ONLY = '--report-only' in sys.argv   # journeys / crawl: report findings without failing the run
 

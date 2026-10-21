@@ -138,17 +138,23 @@ def new_message_to_named_person(j):
                           ('Dr. Sal\u0131\u0307h Sign %s' % j.tag, r'Remove the mark added to “\u0131\u0307” \(U\+0307\)|احذف العلامة المضافة إلى «\u0131\u0307» \(U\+0307\)'),
                           ('\ua78dEXOB Sign %s' % j.tag, r'The letter “\ua78d”|الحرف «\ua78d»'),
                           ('张伟 Sign %s' % j.tag, r'Latin, Arabic, Greek or Cyrillic letters — “张”|بحروف عربية أو لاتينية أو يونانية أو سيريلية — «张»'),
-                          ('د . أحمد %s' % j.tag, r'“\.” is not a word|«\.» ليست كلمة')):
+                          ('د . أحمد %s' % j.tag, r'“\.” is not a word|«\.» ليست كلمة'),
+                          # fifth version (v-spoof-r1): a bracket the bidi algorithm reorders — «(MBA) Ahmed» drew as «Ahmed (MBA)» in Arabic
+                          ('(MBA) Ahmed Sign %s' % j.tag, r'after the name — write “Ahmed Sign %s \(MBA\)”|بعد الاسم — اكتب «Ahmed Sign %s \(MBA\)»' % (j.tag, j.tag)),
+                          ('Ali %s (علي) محمد' % j.tag, r'after the name — write “Ali %s محمد \(علي\)”|بعد الاسم — اكتب «Ali %s محمد \(علي\)»' % (j.tag, j.tag)),
+                          ('Hala Sign %s – Head of QA – Pharco' % j.tag, r'write “Hala Sign %s \(Head of QA, Pharco\)”|اكتب «Hala Sign %s \(Head of QA, Pharco\)»' % (j.tag, j.tag))):
             p2, email, err0 = ui_signup(name); err = re.sub('[\u2068\u2069]', '', err0)
             j.check(re.search(pat, err), 'sign-up as %s is not refused with a clear message (said: "%s")' % (ascii(name), err[:140]))
             j.check(re.search('[“«]\u2068[^\u2069]+\u2069[”»]', err0), 'the refusal of %s does not isolate what it quotes (U+2068 … U+2069): %s' % (ascii(name), ascii(err0[:120])))
-            j.check(j.ar == bool(re.search('[ء-ي]', err.replace(name, ''))), 'the refusal is not in the interface language: "%s"' % err[:100])   # Arabic words (the English one lists the comma ،)
+            j.check(j.ar == bool(re.search('[ء-ي]', re.sub('[“«][^”»]*[”»]', '', err.replace(name, '')))), 'the refusal is not in the interface language: "%s"' % err[:100])   # Arabic words outside what it quotes (the English one lists the comma ،)
             j.check(j.sql1("select count(*) from auth.users where email='%s'" % email) == '0', 'an account was created for %s' % ascii(name))
         # through the form, as a person signs up: an Arabic name with harakat, and a name with brackets, dots and a hyphen
         for name, stored in (('د. نرمين أبو زيدٍ %s' % j.tag, 'د. نرمين أبو زيد %s' % j.tag), ('Al-Hassan (Pharm.D.) %s' % j.tag, None), ('د/ هيثم دويدار %s' % j.tag, None),
                              ('ا.د / سامي فهمي %s' % j.tag, 'ا.د/ سامي فهمي %s' % j.tag), ('Saʿīd Ḥasan %s' % j.tag, 'Sa’īd Ḥasan %s' % j.tag),
                              ('Dr. Мария Иванова %s' % j.tag, None), ('Anne\u2011Marie O\'Brien %s' % j.tag, 'Anne-Marie O’Brien %s' % j.tag),
-                             ('Άννα Βίσση %s' % j.tag, None), ('ОКСАНА КОРОТКОВА %s' % j.tag, None), ('Dr.أحمد Jean—Paul %s' % j.tag, 'Dr.أحمد Jean-Paul %s' % j.tag)):
+                             ('Άννα Βίσση %s' % j.tag, None), ('ОКСАНА КОРОТКОВА %s' % j.tag, None), ('Dr.أحمد Jean—Paul %s' % j.tag, 'Dr.أحمد Jean-Paul %s' % j.tag),
+                             # fifth version: the bracket after the name, the Maghrebi ڭ, a Persian zero-width non-joiner (kept as a space)
+                             ('Ahmed Ali (MBA) %s' % j.tag, None), ('ڭمال العلوي %s' % j.tag, None), ('علی\u200cرضا %s' % j.tag, 'علی رضا %s' % j.tag)):
             me2 = j.person(name)
             j.check(j.sql1("select name || '|' || name_needs_fix from public.profiles where id='%s'" % me2['id']) == (stored or name) + '|false', 'the real name %s was not stored as typed' % name)
         # and the others the owner listed, through the sign-up trigger
@@ -310,6 +316,28 @@ def new_message_to_named_person(j):
         got = j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
         j.check(got == f['id'], '«حْالد» typed with the mark was stored for %s, not for the member «حالد» %s' % (got, f['id']))
         if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+    with j.step('Bold look-alikes (v-spoof-r1): «ئروت» draws like «ثروت» in the bold list and header — the two names share a skeleton, '
+                'so the picker tells the two members (same company) apart, warns "Same name", refuses the bare name, and each option '
+                'reaches its own member (receiver checked in the database)'):
+        if j.demo: j.skip('the name rule is the database\'s and the live app\'s (the demo keeps its sample people)')
+        tname, tfake, tco = 'ثروت عادل %s' % j.tag, 'ئروت عادل %s' % j.tag, 'Pharco Bold %s' % j.tag
+        t1 = j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email('tharwat'), json.dumps({'name': tname, 'company': tco})))
+        t2 = j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email('tharwat'), json.dumps({'name': tfake, 'company': tco})))
+        j.check(j.sql1("select count(distinct name_key) || '|' || bool_or(name_needs_fix) from public.profiles where id in ('%s','%s')" % (t1, t2)) == '1|false',
+                '«ئروت» and «ثروت» do not share a skeleton (or one is flagged)')
+        j.reload(pg); j.nav(pg, 'messages')
+        opts = options_for(tname, (tfake,)); j.note('Tharwat options', opts)
+        j.check(len(opts) == 2 and len(set(opts)) == 2 and all(' · ' in o for o in opts), 'the bold look-alikes are not told apart in the picker: %s' % opts)
+        j.check(all(re.search(r'Same name|نفس الاسم', LBL.get(o, '')) for o in opts), 'the options do not warn that the two names look the same: %s' % [LBL.get(o, '') for o in opts])
+        said = new_message(tname, 'Bare Tharwat %s' % j.tag)
+        j.check(re.search(r'Several|أكثر من', said) and j.sql1("select count(*) from public.messages where body=$q$Bare Tharwat %s$q$" % j.tag) == '0', 'typing «%s» (a bold look-alike exists) is not refused: %s' % (tname, said[:120]))
+        if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+        got = []
+        for i, o in enumerate(opts):
+            body = 'Tharwat option %d %s' % (i, j.tag); new_message(o, body)
+            got.append(j.wait_db("select string_agg(receiver_id::text, ',') from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8))
+            if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+        j.check(sorted(got) == sorted([t1, t2]), 'the two Tharwat options did not reach the two members, one each: %s' % got)
     with j.step('Two members with the same name and different companies write first: the list and the chat header say which is '
                 'which, and 👤 opens the one whose conversation is open (the profile view is counted on them, not the twin)'):
         if j.demo: j.skip('members with the same name exist only in live (the demo has one sample person per name)')
