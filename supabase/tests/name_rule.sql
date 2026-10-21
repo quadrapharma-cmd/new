@@ -1,5 +1,5 @@
--- One rule for names in the database and in the app (S-03, 0038, its second version 0039_names_rule_2 and its third version
--- 0039_names_rule_3): for EVERY code point of planes 0 and
+-- One rule for names in the database and in the app (S-03, 0038, its second version 0039_names_rule_2, its third version
+-- 0039_names_rule_3 and its fourth version 0039_names_rule_4): for EVERY code point of planes 0 and
 -- 1, in four places (inside a Latin word, alone between spaces, at the start, inside an Arabic word), the database's
 -- person_name_norm, person_name_problem and person_name_key must give what the live app's nmNorm, nmProblem and nmSkel give, and
 -- person_name_message what nmMessage says (inside a word and alone; web/src/live/adapter.js, generated with the migration by
@@ -7,7 +7,9 @@
 -- both generated regions are current and that the app's code follows the rule's definition (every number refused; every symbol,
 -- private-use, unassigned, punctuation and restricted letter refused; the verifiers' look-alikes refused; twins share a skeleton),
 -- and fails the load otherwise. A code point whose NFKC or NFD differs between Node and PostgreSQL (one knows a newer Unicode) is
--- not compared; there must be few of them. Then the strings every verifier used, and the real names that must keep working.
+-- not compared; there must be few of them. Then EVERY string the verifiers used in rounds 1-3 (supabase/tests/name_rule_strings.txt,
+-- through node tools/names/name_rule.mjs --strings): the database gives what the app gives, and no allowed name keeps a combining
+-- mark; then the verifiers' attacks one by one with the reason expected, and the real names that must keep working.
 -- Run from the repository root (the program path is relative), on a fresh database (stub + migrations):
 --   psql -f supabase/tests/name_rule.sql
 \set QUIET on
@@ -39,6 +41,21 @@ insert into r(name, ok, err) select 'database = app: the message (the character 
        count(*) || ' differ, e.g. ' || string_agg(format('U+%s/%s db=%s app=%s', upper(to_hex(cp)), place, db_msg, msg), '; ') filter (where rn <= 6)
   from (select *, row_number() over () rn from got where not skew and db_msg is distinct from msg) d;
 insert into r(name, ok, err) select 'few code points normalise differently in Node and PostgreSQL (newer Unicode)', count(distinct cp) < 400, count(distinct cp)::text from got where skew;
+-- every string the verifiers used in rounds 1-3 (fourth version): the database = the app, and an allowed name holds no combining mark
+create temp table vs (s text, norm text, problem text, skel text, msg text, hasmark boolean);
+\set ON_ERROR_STOP on
+\copy vs from program 'node tools/names/name_rule.mjs --strings supabase/tests/name_rule_strings.txt'
+\set ON_ERROR_STOP off
+create temp table vgot as select v.*, public.person_name_norm(v.s) as db_norm, public.person_name_problem(public.person_name_norm(v.s)) as db_problem,
+       public.person_name_key(v.s) as db_skel, case when v.problem <> '' then public.person_name_message(v.s, v.problem) else '' end as db_msg from vs v;
+insert into r(name, ok, err) select 'the verifiers'' strings of rounds 1-3 were loaded', count(*) >= 2000, count(*)::text from vs;
+insert into r(name, ok, err) select 'database = app for every string the verifiers used (normalised name, reason, skeleton, message)', count(*) = 0,
+       count(*) || ' differ, e.g. ' || string_agg(format('%s: db=%s/%s app=%s/%s', s, db_norm, db_problem, norm, problem), '; ') filter (where rn <= 6)
+  from (select *, row_number() over () rn from vgot where db_norm <> norm or db_problem <> problem or db_skel <> skel or db_msg is distinct from msg) d;
+insert into r(name, ok, err) select 'no allowed name keeps a combining mark (accents are one character, Arabic diacritics are removed)', count(*) = 0, string_agg(s, ' | ')
+  from vgot where problem = '' and hasmark;
+insert into r(name, ok, err) select 'no allowed name keeps an Arabic diacritic (vowel mark, tanween, shadda, sukun, superscript alef, Quranic mark)', count(*) = 0, string_agg(s, ' | ')
+  from vgot where db_problem = '' and db_norm ~ ('[' || U&'!0610-!061A!064B-!0652!0656-!065F!0670!06D6-!06DC!06DF-!06E8!06EA-!06ED!0897-!089F!08CA-!08E1!08E3-!08FF' uescape '!' || ']');
 insert into r(name, ok, err) select 'the picker separator "·" (and every dot look-alike tried) cannot be part of an allowed name', count(*) = 0, string_agg(s, ' | ')
   from (select s from got where place in ('w', 's', 'r') and cp in (183, 903, 5867, 8226, 8231, 8729, 8901, 11825, 11827, 12539, 42895, 65381, 70004, 70096, 128919, 8728, 9642, 65532, 65533)
           and problem = '') d;
@@ -47,7 +64,7 @@ insert into r(name, ok, err) select 'the picker separator "·" (and every dot lo
 insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_problem(public.person_name_norm(x.s)) = x.want,
        coalesce(public.person_name_problem(public.person_name_norm(x.s)), 'null') || ' / ' || public.person_name_norm(x.s) from (values
   ('"Dr. Hala X · Pharco X" (the picker''s own separator)', 'Dr. Hala Tufice · Pharco Tufice', 'char'),
-  ('U+A78F LATIN LETTER SINOLOGICAL DOT (a restricted letter)', U&'Dr. Hala Tufice \A78F Pharco Tufice', 'letter'),
+  ('U+A78F LATIN LETTER SINOLOGICAL DOT (a restricted letter)', U&'Dr. Hala Tufice \A78F Pharco Tufice', 'unsupported'),
   ('U+2E33 RAISED DOT', U&'Dr. Hala Tufice \2E33 Pharco Tufice', 'char'),
   ('U+11174 MAHAJANI ABBREVIATION SIGN', U&'Dr. Hala Tufice \+011174 Pharco Tufice', 'char'),
   ('U+1F797 MEDIUM SMALL WHITE CIRCLE', U&'Dr. Hala Tufice \+01F797 Pharco Tufice', 'char'),
@@ -59,21 +76,21 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('U+FFFD REPLACEMENT CHARACTER', U&'Dr. Zeina Tufice\FFFD', 'char'),
   ('Cyrillic а in "Dr. Rаna"', U&'Dr. R\0430na Tufice', 'script'),
   ('Greek ο in a Latin word', U&'Dr. N\03BFur Tufice', 'script'),
-  ('"Dr. Hala X - Pharco X" (0037''s separator: a word without a letter)', 'Dr. Hala Tufice - Pharco Tufice', 'word'),
+  ('"Dr. Hala X - Pharco X" (0037''s separator: a spaced hyphen, fourth version: its own reason)', 'Dr. Hala Tufice - Pharco Tufice', 'dash'),
   ('a digit ("Dr. Rana 2")', 'Dr. Rana 2', 'digit'),
   ('an Arabic-Indic zero standing alone', 'د. هالة ٠ فاركو', 'digit'),
   ('U+02D1 MODIFIER LETTER HALF TRIANGULAR COLON (Common script)', U&'Dr. Hala \02D1 Pharco', 'letter'),
-  ('U+01C3 click letter ǃ (Restricted)', U&'Dr. Hala\01C3', 'letter'),
+  ('U+01C3 click letter ǃ (Restricted)', U&'Dr. Hala\01C3', 'unsupported'),
   ('a combining mark with no letter (third version: a mark NFKC cannot join to a letter)', U&'Dr. Hala \0307 Pharco', 'accent'),
   ('four marks on one letter', U&'Dr. Hab\0301\0301\0301\0301', 'accent'),
-  ('four vowel marks on one Arabic letter', U&'د. هالة الشا\064E\064F\0650\0652مي', 'mark'),
+  ('four vowel marks on one Arabic letter (fourth version: removed)', U&'د. هالة الشا\064E\064F\0650\0652مي', ''),
   -- 0039 (verifier rounds atk-bypass-r1 / atk-unicode-r1 / atk-legit-r1)
   ('the same mark twice on one letter ("é́", it can draw over itself)', U&'Dr. Hal\00E9\0301 Tufice', 'accent'),
   ('the same mark twice, decomposed', U&'Dr. Hale\0301\0301 Tufice', 'accent'),
-  ('a shadda twice on one Arabic letter', U&'د. هالة الشا\0651\0651مي', 'mark'),
+  ('a shadda twice on one Arabic letter (fourth version: removed)', U&'د. هالة الشا\0651\0651مي', ''),
   ('two different marks are fine ("ệ")', U&'Dr. Ne\0323\0302 Tufice', ''),
-  ('African noon ࢽ (draws as ن before a letter; TR39 gives it the skeleton of ى): not an Arabic-block letter', U&'\08BD\0628\064A\0644', 'letter'),
-  ('African qaf ࢼ (draws as ف before a letter; TR39: ڡ)', U&'\0639\08BC\062A', 'letter'),
+  ('African noon ࢽ (draws as ن before a letter; TR39 gives it the skeleton of ى): not an Arabic-block letter', U&'\08BD\0628\064A\0644', 'unsupported'),
+  ('African qaf ࢼ (draws as ف before a letter; TR39: ڡ)', U&'\0639\08BC\062A', 'unsupported'),
   ('a whole word in Chinese', '张伟 (Zhang Wei)', 'letter'),
   ('Hebrew', 'דוד כהן', 'letter'),
   ('Armenian', 'Արամ Խաչատրյան', 'letter'),
@@ -83,8 +100,9 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('a fullwidth dollar is named as typed', U&'Ahmed \FE69x', 'char'),
   ('a space before a dot ("د . أحمد")', 'د . أحمد علي', 'word'),
   ('a space before a comma', 'Ahmed Ali , PhD', 'word'),
-  ('a hyphen standing alone', 'Hala Ali - Pharco', 'word'),
-  ('a slash standing alone', 'د / هيثم', 'word'),
+  ('a hyphen standing alone (fourth version: its own reason, the message suggests parentheses)', 'Hala Ali - Pharco', 'dash'),
+  ('a slash standing alone (fourth version: joined to the word before it)', 'د / هيثم', ''),
+  ('a slash standing alone at the start', '/ هيثم', 'word'),
   -- third version: a whole Greek or Cyrillic word that reads as a Latin one is allowed — it has the Latin word's skeleton (ӏ U+04CF too:
   -- tools/names/pixel-twins.txt), so it is that name's twin (atk-legit-r2: «Μαρία», «Άννα Βίσση», «Вера Кох» were refused by 0039_names_rule_2)
   ('a Cyrillic word that reads as a Latin one, next to Latin words ("Dr. Рара")', U&'Dr. \0420\0430\0440\0430 Tufice', ''),
@@ -112,12 +130,19 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('a Yoruba tone mark on a letter with a dot below (no single character: refused, said plainly)', U&'Ade\1ECD\0301la', 'accent'),
   ('a hamza mark on a letter it does not join ("ب" + U+0654)', U&'ب\0654ب', 'accent'),
   ('Cyrillic Ext-D combining letter U+1E08F (no font draws it)', U&'Ahmed X\+01E08F', 'accent'),
-  ('Latin capital turned H U+A78D (Latin Extended-D: Cyrillic Ч to the pixel)', U&'\A78DEXOB', 'letter'),
-  ('Latin Extended-G U+1DF00 (no font draws it)', U&'Ahmed \+01DF00', 'letter'),
-  ('Latin Extended-G U+1DF1E', U&'Ahmed X\+01DF1E', 'letter'),
-  ('Latin Extended-E ꭦ', U&'Ahmed X\AB66', 'letter'),
-  ('Cyrillic Extended-B ꙿ', U&'Ahmed X\A67F', 'letter'),
-  ('ʿ U+02BF (ayn of transliteration) is not a letter of the four alphabets', 'Saʿīd Ḥasan', 'letter'),
+  ('Latin capital turned H U+A78D (Latin Extended-D: Cyrillic Ч to the pixel)', U&'\A78DEXOB', 'unsupported'),
+  ('Latin Extended-G U+1DF00 (no font draws it)', U&'Ahmed \+01DF00', 'unsupported'),
+  ('Latin Extended-G U+1DF1E', U&'Ahmed X\+01DF1E', 'unsupported'),
+  ('Latin Extended-E ꭦ', U&'Ahmed X\AB66', 'unsupported'),
+  ('Cyrillic Extended-B ꙿ', U&'Ahmed X\A67F', 'unsupported'),
+  ('ʿ U+02BF (ayn of transliteration) is written ’ like ʾ (fourth version)', 'Saʿīd Ḥasan', ''),
+  -- fourth version (atk-unicode-r3): a mark above an undotted Arabic letter drew as its dot — the mark is removed, never stored
+  ('ح + sukun ("حْالد" drew as "خالد")', 'حْالد', ''), ('ر + sukun ("رْياد" / "زياد")', 'رْياد', ''), ('د + sukun ("دْكي" / "ذكي")', 'دْكي', ''),
+  ('ع + sukun ("عْادة" / "غادة")', 'عْادة', ''), ('dotless noon + sukun ("حسںْ" / "حسن")', 'حسںْ', ''),
+  ('Quranic small high marks and small waw ("إِنَّهُۥ")', 'إِنَّهُۥ', ''), ('a hamza mark on a letter it does not join, after a vowel mark', U&'ب\064E\0654ب', 'accent'),
+  -- fourth version (atk-legit-r3): letters of the four alphabets not taken yet say so; tone marks on Yoruba letters stay refused
+  ('Hausa Ɗ Ƙ', 'Ɗanjuma Ƙasim', 'unsupported'), ('Akan Ɔ', 'Ɔpɔku Mensah', 'unsupported'), ('Akan Ɛ', 'Ɛfua Sutherland', 'unsupported'),
+  ('Yoruba tone marks', 'Ọláfẹ́mi Adébáyọ̀', 'accent'), ('a spaced en dash', 'Hala Ali – Head of QA', 'dash'),
   ('invisible U+200B is removed: allowed', U&'Dr. Zeina Tufice\200B', ''),
   ('invisible U+1D173 is removed: allowed', U&'Dr. Zeina Tufice\+01D173', ''),
   ('invisible U+1BCA0 is removed: allowed', U&'Dr. Zeina\+01BCA0 Tufice', ''),
@@ -147,21 +172,32 @@ insert into r(name, ok, err) select 'stored as typed: ' || x.s, public.person_na
   ('هـالة', 'هالة'), (U&'\FF24\FF52. Hala', 'Dr. Hala'), ('  José   Müller ', 'José Müller'), (U&'Jose\0301', 'José'),
   -- 0039: look-alikes of the punctuation a name holds are written as it; the apostrophe is stored as ’ (as the app shows it)
   ('O''Brien', 'O’Brien'), (U&'Anne\2011Marie', 'Anne-Marie'), (U&'El\2013Sayed', 'El-Sayed'), ('O´Brien', 'O’Brien'), ('O‘Brien', 'O’Brien'),
-  (U&'\041C\0430\0440\02BC\044F\043D\0430', 'Мар’яна'), (U&'\FD3E\0635\064A\062F\0644\064A\FD3F', '(صيدلي)'), (U&'Ahmed\FF0FAli', 'Ahmed/Ali')) x(s, want);
+  (U&'\041C\0430\0440\02BC\044F\043D\0430', 'Мар’яна'), (U&'\FD3E\0635\064A\062F\0644\064A\FD3F', '(صيدلي)'), (U&'Ahmed\FF0FAli', 'Ahmed/Ali'),
+  -- fourth version: Arabic diacritics removed (a mark over an undotted letter can no longer draw as its dot), a spaced slash joined to
+  -- the word before it, ʿ written ’, a hamza that NFKC can join once a Quranic mark between them is gone
+  ('حْالد', 'حالد'), ('رْياد', 'رياد'), ('دْكي', 'دكي'), ('عْادة', 'عادة'), ('حسںْ', 'حسں'), ('مُحَمَّد عَبْدُ الرَّحْمٰن', 'محمد عبد الرحمن'), ('د. نرمين أبو زيدٍ', 'د. نرمين أبو زيد'),
+  ('إِنَّهُۥ', 'إنه'), (U&'\0627\06D6\0654', 'أ'), ('ب َ ب', 'ب ب'), ('د / محمد علي', 'د/ محمد علي'), ('ا.د / سامي فهمي', 'ا.د/ سامي فهمي'), ('د/ سامي / صيدلي', 'د/ سامي/ صيدلي'),
+  ('Saʿīd Ḥasan', 'Sa’īd Ḥasan'), ('ʿAbd al-ʿAzīz', '’Abd al-’Azīz')) x(s, want);
 -- the refusal names what the person typed (not what normalising made of it), the word to fix, and the accepted alphabets
 insert into r(name, ok, err) select 'message: ' || x.s, public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) = x.want,
        public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) from (values
-  (U&'Ahmed \FE69x', 'A name can only have letters, spaces and . - '' ( ) , / ، — remove “﹩” (U+FE69)'),
-  ('Anne★Marie', 'A name can only have letters, spaces and . - '' ( ) , / ، — remove “★” (U+2605)'),
-  ('张伟 (Zhang Wei)', 'Write a name in Latin, Arabic, Greek or Cyrillic letters — “张” (U+5F20) is not one of them'),
-  ('د . أحمد علي', '“.” is not a word — join it to the word next to it (remove the space)'),
-  (U&'Dr. R\0430na', U&'Write each word of a name in one alphabet — “R\0430na” mixes alphabets'),
-  (U&'Ahme\0335d', U&'Remove the mark added to “e\0335” (U+0335) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'),
-  (U&'Mohamed Al\0131\0307', U&'Remove the mark added to “\0131\0307” (U+0307) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'),
-  (U&'Ahmed X\+01E08F', U&'Remove the mark added to “X\+01E08F” (U+1E08F) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'),
-  (U&'Dr.R\0430na', U&'Write each word of a name in one alphabet — “R\0430na” mixes alphabets'),
-  (U&'Dr. Zeina X\FFFC', 'A name can only have letters, spaces and . - '' ( ) , / ، — remove “￼” (U+FFFC)'),
-  ('Dr. Rana 2', 'A name cannot contain numbers')) x(s, want);
+  -- fourth version: what a message quotes is isolated (U+2068 … U+2069) so the Arabic sentence keeps its order (atk-legit-r3)
+  (U&'Ahmed \FE69x', U&'A name can only have letters, spaces and . - '' ( ) , / ، — remove “\2068﹩\2069” (\2068U+FE69\2069)'),
+  ('Anne★Marie', U&'A name can only have letters, spaces and . - '' ( ) , / ، — remove “\2068★\2069” (\2068U+2605\2069)'),
+  ('张伟 (Zhang Wei)', U&'Write a name in Latin, Arabic, Greek or Cyrillic letters — “\2068张\2069” (\2068U+5F20\2069) is not one of them'),
+  ('د . أحمد علي', U&'“\2068.\2069” is not a word — join it to the word next to it (remove the space)'),
+  (U&'Dr. R\0430na', U&'Write each word of a name in one alphabet — “\2068R\0430na\2069” mixes alphabets'),
+  (U&'Ahme\0335d', U&'Remove the mark added to “\2068e\0335\2069” (\2068U+0335\2069) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'),
+  (U&'Mohamed Al\0131\0307', U&'Remove the mark added to “\2068\0131\0307\2069” (\2068U+0307\2069) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'),
+  (U&'Ahmed X\+01E08F', U&'Remove the mark added to “\2068X\+01E08F\2069” (\2068U+1E08F\2069) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ'),
+  (U&'Dr.R\0430na', U&'Write each word of a name in one alphabet — “\2068R\0430na\2069” mixes alphabets'),
+  (U&'Dr. Zeina X\FFFC', U&'A name can only have letters, spaces and . - '' ( ) , / ، — remove “\2068\FFFC\2069” (\2068U+FFFC\2069)'),
+  ('Dr. Rana 2', 'A name cannot contain numbers'),
+  ('Ahmed Ali - MBA', U&'Put what follows the name in parentheses — write “\2068Ahmed Ali (MBA)\2069”'),
+  ('Hala Ali – Head of QA', U&'Put what follows the name in parentheses — write “\2068Hala Ali (Head of QA)\2069”'),
+  ('Ɗanjuma Ƙasim', U&'The letter “\2068Ɗ\2069” (\2068U+018A\2069) is not supported in names yet'),
+  ('Ɔpɔku Mensah', U&'The letter “\2068Ɔ\2069” (\2068U+0186\2069) is not supported in names yet'),
+  (U&'\A78DEXOB', U&'The letter “\2068\A78D\2069” (\2068U+A78D\2069) is not supported in names yet')) x(s, want);
 -- twins by skeleton: names that look the same have the same key; names that differ do not
 insert into r(name, ok, err) select 'same skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) = public.person_name_key(x.b), public.person_name_key(x.a) || ' / ' || public.person_name_key(x.b) from (values
   ('Dr. Rana Tufice', U&'Dr. R\0430na Tufice'), ('Ilya', 'llya'), ('O''Brien', 'O’Brien'), ('هالة', 'هالَة'), ('د. هالة الشامي', 'د. هالَة الشّامي'),
@@ -174,9 +210,17 @@ insert into r(name, ok, err) select 'same skeleton: ' || x.a || ' / ' || x.b, pu
   -- third version: letters that draw alike while TR39 keys them apart (tools/names/pixel-twins.txt), a whole Cyrillic name that
   -- reads as Latin, the em dash
   ('Dr. Salih', U&'Dr. \0405\0430\04CF\0456\04BB'), ('Salih', U&'\0405\0430\04C0\0456\04BB'), ('Ahmed Ali', U&'Ahmed A\04CFi'), ('زڒ', 'زۯ'), ('ݶا', 'ݻا'),
-  ('Jean-Paul', 'Jean—Paul'), ('Mapía', 'Μαρία')) x(a, b);
+  ('Jean-Paul', 'Jean—Paul'), ('Mapía', 'Μαρία'),
+  -- fourth version: a name typed with Arabic diacritics is the same name as without them (and is stored without them)
+  ('حالد', 'حْالد'), ('محمد عبد الرحمن', 'مُحَمَّد عَبْدُ الرَّحْمٰن'), ('د/ محمد علي', 'د / محمد علي'), ('Sa’īd', 'Saʿīd'), ('Sa’īd', 'Saʾīd')) x(a, b);
 insert into r(name, ok, err) select 'different skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) <> public.person_name_key(x.b), public.person_name_key(x.a) from (values
-  ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Ibrahim', 'ibrahim'), ('أبو', 'ابو'), ('Ali', 'All'), ('Hala', 'Hana')) x(a, b);
+  ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Ibrahim', 'ibrahim'), ('أبو', 'ابو'), ('Ali', 'All'), ('Hala', 'Hana'),
+  -- fourth version: the undotted name and the dotted one stay different names — and the undotted one is now DRAWN undotted
+  ('حْالد', 'خالد'), ('رْياد', 'زياد'), ('دْكي', 'ذكي'), ('عْادة', 'غادة'), ('حسںْ', 'حسن')) x(a, b);
+insert into r(name, ok, err) select 'stored without the mark that drew as a dot: ' || x.a || ' → ' || public.person_name_norm(x.a) || ', not ' || x.b,
+       public.person_name_norm(x.a) <> x.b and public.person_name_norm(x.a) !~ ('[' || U&'!064B-!0652!0670' uescape '!' || ']') and strpos(public.person_name_norm(x.a), x.u) > 0,
+       public.person_name_norm(x.a) from (values
+  ('حْالد', 'خالد', 'ح'), ('رْياد', 'زياد', 'ر'), ('دْكي', 'ذكي', 'د'), ('عْادة', 'غادة', 'ع'), ('حسںْ', 'حسن', 'ں')) x(a, b, u);
 \o
 \pset tuples_only on
 select (case when ok then 'PASS  ' else 'FAIL  ' end) || name || coalesce('   [' || err || ']', '') from r order by n;

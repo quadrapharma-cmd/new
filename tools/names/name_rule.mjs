@@ -444,4 +444,20 @@ if (process.argv.includes('--write')) {
     if (out.length >= 40000) { process.stdout.write(out.join('\n') + '\n'); out.length = 0; }
   }
   process.stdout.write(out.join('\n') + (out.length ? '\n' : ''));
-} else console.log('usage: node tools/names/name_rule.mjs --write | --check | --expect | --list-like');
+} else if (process.argv.includes('--strings')) {
+  // *(fourth version) what the ADAPTER's generated code makes of each string of a file (one per line, backslash-escaped, '#' starts a
+  // comment): TSV string, normalised name, problem, skeleton, message, and whether the normalised name still holds a combining mark
+  // (an allowed one never does: accented letters are one character, Arabic diacritics are removed) — supabase/tests/name_rule.sql
+  // compares the database with it for every string the verifiers used (supabase/tests/name_rule_strings.txt)
+  const file = process.argv[process.argv.indexOf('--strings') + 1];
+  const body = R[1].old.split('\n').slice(1, -1).join('\n');
+  const F = new Function(body + '\nreturn { nmNorm: nmNorm, nmProblem: nmProblem, nmSkel: nmSkel, nmMessage: nmMessage };')();
+  const esc = (t) => t.replace(/\\/g, '\\\\').replace(/\t/g, '\\t').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+  const unesc = (t) => t.replace(/\\(.)/g, (m, x) => (x === 't' ? '\t' : x === 'n' ? '\n' : x === 'r' ? '\r' : x));
+  const out = [];
+  for (const l of fs.readFileSync(path.resolve(ROOT, file), 'utf8').split('\n')) {
+    if (l === '' || l.startsWith('#')) continue; const raw = unesc(l), n = F.nmNorm(raw), p = F.nmProblem(n);
+    out.push([esc(raw), esc(n), p, esc(F.nmSkel(raw)), esc(p ? F.nmMessage(raw, p) : ''), /\p{M}/u.test(n) ? 't' : 'f'].join('\t'));
+  }
+  process.stdout.write(out.join('\n') + (out.length ? '\n' : ''));
+} else console.log('usage: node tools/names/name_rule.mjs --write | --check | --expect | --strings FILE | --list-like');

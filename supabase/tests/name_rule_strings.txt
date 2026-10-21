@@ -1,0 +1,2291 @@
+# Every name string the S-03 verifiers typed or generated in rounds 1-3 (October 2026), one per line, backslash-escaped (\\ \t \n);
+# a line starting with "#" is a comment. Sources (scratch folders of the verifier rounds): atk-legit-r1..r3 names.txt, names2.txt,
+# ui_names.txt, more.txt, seed_names.txt and rule_names*.txt (real names, typed at sign-up and in Edit Profile, EN/AR, 390/1440);
+# atk-unicode-r2 scan1/scan2 (letters and letter + mark units that drew alike); atk-unicode-r3 (a mark over an undotted Arabic
+# letter: «حْالد» / «خالد» …). supabase/tests/name_rule.sql checks that the database gives what the live app gives for each one
+# (node tools/names/name_rule.mjs --strings), and that no allowed name keeps a combining mark.
+د. هيثم دويدار
+Dr. Haytham Dweedar
+د/ هيثم دويدار
+د/هيثم دويدار
+Dr/ Ahmed Ali
+Ph/ Mohamed Hassan
+ك/ أحمد سامي
+م/ محمود عبد الرحمن
+أ.د. محمد السيد
+أ. د. نادية عبد الحميد
+ا.د/ سامية فهمي
+Prof. Dr. Ahmed El-Sayed
+Pharm. Nour El-Din
+Eng. Karim Abdel-Aziz
+Dr. Mona Al-Shamy
+Dr. Ahmed El‑Sayed
+Dr. Ahmed El–Sayed
+Dr. Ahmed El‐Sayed
+Dr. Ahmed El—Sayed
+Mohamed Abd El-Rahman
+Abdul-Rahman Al-Saud
+O'Brien
+O’Brien
+O‘Brien
+O´Brien
+O`Brien
+D'Souza
+ʿAbd al-ʿAzīz
+ʻAbd al-Raḥmān
+Мар'яна Григор'єва
+Марʼяна Григорʼєва
+José María Núñez
+Mª José García
+Ünal Yılmaz
+Çağrı Öztürk
+İbrahim Şahin
+Ñúñez Peña
+François Lefèvre
+Zoë Brontë
+Søren Kierkegaard
+Łukasz Żółkiewski
+Đặng Thị Ngọc Hân
+Nguyễn Văn Ánh
+Ọ̀ṣun Adébáyọ̀
+Björk Guðmundsdóttir
+Þórunn Ásgeirsdóttir
+Ştefan Ţurcanu
+Ștefan Țurcanu
+Gal·la Puig
+Paral·lel Marcel·lí
+Νίκος Παπαδόπουλος
+Dr. Νίκος Παπαδόπουλος
+Νίκος Παπαδόπουλος (Nikos Papadopoulos)
+Μαρία-Ελένη Οικονόμου
+Мария Иванова
+Dr. Мария Иванова
+Д-р Мария Иванова
+Мария Иванова (Maria Ivanova)
+Олександр Ковальчук
+Đorđe Petrović
+Ђорђе Петровић
+Ахмед Аль-Саид
+مُحَمَّد عَبْدُ الرَّحْمٰن
+مُحَمَّدٌ
+عَبْدُ اللّٰهِ
+مصطفىٰ كامل
+موسىٰ صبري
+يحيىٰ حقي
+عبد الله
+عبدالله
+عبـد الله
+هـالة
+ﷲ عبد
+ﻻمية
+لمياء
+آمال
+إيمان
+أسامة
+ٱلسيد
+ئ ء ؤ
+فاطمة الزهراء
+ريم السيد (صيدلانية)
+د. ريم السيد - فاركو
+د . أحمد علي
+Ahmed Ali , PhD
+Ahmed Ali, PhD
+Ahmed Ali (PhD)
+Ahmed ( PhD )
+Hala Ali - Pharco
+Smith & Jones
+Ahmed/Ali
+MOHAMED AHMED ABDEL-FATTAH
+Mohamed Ahmed Abdel Fattah Hassan Ibrahim El-Sayed Mahmoud Abdel-Rahman Mostafa Kamal Hassan Ali Abdel-Aziz Ibrahim Mahmoud
+Dr. John Smith Jr.
+John Smith III
+John Smith 3rd
+Henry Ⅷ
+Mohamed Ali M.Sc.
+Ahmed Ali, M.B.B.Ch., Ph.D.
+Pharm.D. Sara Adel
+Sara Adel, PharmD
+Dr.Sara Adel
+St. John
+Mary-Jane O'Neil-Smith
+Jean-Luc Picard
+Ibn Sina
+Bin Laden
+Ben-Gurion
+ابن سينا
+بن علي
+أبو بكر
+أبوبكر
+علي بن أبي طالب
+عبد الرحمن (أبو أحمد)
+محمد،أحمد
+محمد، أحمد
+پرویز گلشیری
+کاوه
+ژاله
+چنگیز
+عائشة ے
+نازیہ
+ہاشم
+بھٹو
+ڕێبوار
+شێرکۆ
+ڤيان
+ڨرادة
+ڭرين
+گلنار
+Τζωρτζ
+ΑΝΔΡΈΑΣ
+Ἀλέξανδρος
+Ахмед Мухаммед
+ʻOkina Test
+Kaʻiulani
+N'Golo Kanté
+Anne‑Marie
+Mohamed  Ali
+Ahmed Ali.
+.Ahmed
+Al Ahmad
+El Sayed
+Dr. Ahmed El Sayed (Pharco)
+Dr. Ahmed El Sayed (Pharco Pharmaceuticals)
+Dr. Ahmed El Sayed [Pharco]
+Dr. Ahmed El Sayed ! 
+"Ahmed" Ali
+Ahmed "Mido" Ali
+Ahmed ‘Mido’ Ali
+Ahmed «Mido» Ali
+Ahmed (Mido) Ali
+Ali_Ahmed
+ali.ahmed
+Dr. Hana Ibrahim, R.Ph.
+Dr Hana Ibrahim
+DR. HANA IBRAHIM
+dr. hana ibrahim
+ﺃﺣﻤﺪ
+ＡＨＭＥＤ
+Ａhmed
+Ahmed Ali
+Ahmed Ali
+أ.م.د. خالد
+أ.م.د/ خالد
+المهندس/ أحمد
+الدكتور/ أحمد
+الدكتور أحمد
+الصيدلي أحمد
+د.محمد
+Dr.Mohamed
+Dr: Mohamed
+Dr- Mohamed
+د- محمد
+د : محمد
+Pharm/ Ahmed
+Chemist/ Ahmed
+Ph. Ahmed
+Ph.Ahmed
+Ph/Ahmed
+Doaa El-Sayed
+Shaimaa
+Ola`a
+Alaa'
+Esraa
+Asmaa Ahmed
+Hagar
+Aya
+Ahmed Ali (أحمد علي)
+أحمد علي (Ahmed Ali)
+张伟
+张伟 (Zhang Wei)
+राजेश कुमार
+Rajesh Kumar
+Արամ Խաչատրյան
+Aram Khachaturian
+שרה כהן
+Kyōko Tanaka
+Ōtani
+Đức
+Æsir Ærø
+Œdipe
+Straße
+ǅ
+Ĳsbrand
+Maße
+Fräulein
+Jürgen Müller-Lüdenscheidt
+Anne‑Marie Dubois
+O'Brien Kelly
+O’Brien Kelly
+O‘Brien Kelly
+O´Brien Kelly
+عبـد الله الشامي
+د. أحمد علي، صيدلي
+Ἀλέξανδρος Παπάς
+د.هيثم دويدار
+أ.د/ محمد السيد
+م. محمود عبد الرحمن
+ص/ منى عادل
+ص. منى عادل
+أ/ إيمان فؤاد
+الدكتور/ أحمد زويل
+الدكتورة/ هالة السعيد
+الصيدلي/ محمد علي
+المهندس/ كريم عبد العزيز
+اللواء/ محمد إبراهيم
+الحاج/ سيد عبد الله
+دكتورة نادية الجندي
+د. مُحَمَّد عَبْدُ الرَّحْمٰن
+مُصْطَفَى كَامِل
+عَبْدُ ٱللَّهِ
+عبد الله بن عمر
+عبدالله بن عبدالعزيز آل سعود
+أبو بكر الصديق
+آية الله
+إسراء عبد الفتاح
+مؤمن عبد الرؤوف
+هبة الله رؤوف
+سارة السيد (صيدلانية)
+ريم السيد (رئيس قسم الجودة)
+محمد أحمد محمود عبد الرحمن السيد الشرقاوي
+نُور الهُدَى
+عُلا
+يُسْرا
+رَحْمَة
+شَيْمَاء
+إِيمَان
+مَيّ
+مَيِّ
+ضُحَى
+هُدًى
+سعيدةٌ
+ياسمين صبري
+عمرو دياب
+بيشوي ميلاد
+كيرلس رمسيس
+مينا عاطف
+جرجس صبحي
+ماري منيب
+ڤيڤيان
+ڤاليري
+جيهان
+ﭼاسر
+چنار
+گل محمد
+پرويز
+کریم
+یاسمین
+ابو المجد
+ابوالمجد
+عبد الحميد كشك
+عزّة
+حمّودة
+Dr Haytham Dweedar
+Dr/ Haytham Dweedar
+Dr.Haytham Dweedar
+PharmD. Mona Fathy
+Pharm.D. Mona Fathy
+Chem. Ahmed Samy
+Mohamed Abdel Rahman
+Abdulrahman Al Saud
+Mostafa El Sayed
+Mostafa ElSayed
+Mo'men Abd El-Raouf
+Ma'moun Hassan
+Sa'eed Ali
+Ra'fat El-Haggar
+Shaima'a Ahmed
+Esraa O'Neil
+AHMED ALI
+heba fathy
+Ahmed M. Ali
+A. R. Rahman
+Ahmed Ali Jr.
+Ahmed Ali (Mido)
+Bishoy Milad
+Kirollos Ramses
+María José Ñúñez-Ortiz y Pérez
+Jean-François d'Alembert
+Anne-Sophie Le Pen
+Zoë Saldaña
+Chloé Lefèvre
+François Hollande
+Björn Borg
+Åsa Lindström
+Øystein Ødegaard
+Hans-Jürgen Groß
+Strauß
+Łukasz Żurawski
+Wojciech Szczęsny
+Żaneta Ślęzak
+Jiří Dvořák
+Ştefan Răzvan
+Ștefan Țiriac
+İsmail Yılmaz
+Ünal Gürsoy
+Gülşen Çağlar
+Ağababa Öztürk
+Ngũgĩ wa Thiong'o
+Nguyễn Thị Minh Khai
+Erdős Pál
+Ġużeppi Ħabib
+Þóra Guðmundsdóttir
+Seán Ó Briain
+Siân Lloyd
+Pieter van 't Hoff
+McDonald
+MacArthur
+de la Cruz
+van der Berg
+Ludwig van Beethoven
+Martin Luther King Jr.
+J.R.R. Tolkien
+Chimamanda Ngozi Adichie
+Ọláfẹ́mi Adébáyọ̀
+Kwame Nkrumah
+Ærøskøbing Hansen
+Œdipe Martin
+Ahmed Ali-Hassan-Mahmoud
+Ilya Ivanov
+Lily Ivy
+Illia Ilyin
+Γιώργος Παπαδόπουλος
+Αλέξης Τσίπρας
+Μαρία Κάλλας
+Μαρία
+Μαρία Παπαδοπούλου
+Ὀδυσσεύς Ἐλύτης
+Ελένη Καραΐνδρου
+Άννα Βίσση
+Άννα Καράτζα
+ΑΝΝΑ ΚΑΡΑΤΖΑ
+ΝΙΚΟΣ ΠΑΠΑΔΟΠΟΥΛΟΣ
+Κώστας Μητσοτάκης
+Γιάννης Αντετοκούνμπο
+Χρήστος Ζαχαρίου
+Τάκης Κακής
+Ευαγγελία Βαρβάκη
+Ιωάννα Κατσαρού
+Σοφία Ροτάρου
+Δρ. Νίκος Ιωάννου
+Ivan Ιωάννης
+Сергей Иванов
+Анна Ахматова
+Анна Каренина
+Вера Иванова
+Ева Браун
+Оксана Короткова
+ОКСАНА КОРОТКОВА
+Роман Абрамович
+Олег Кононенко
+Сергей Королёв
+Ёлкин Семён
+Юлія Тимошенко
+Ђорђе Балашевић
+Љубица Њемчевић
+Ѓорѓи Иванов
+Христо Стоичков
+Нұрсұлтан Назарбаев
+Аляксандр Лукашэнка
+Тарас Шевченко
+Арсен Аваков
+Ахмед Закаев
+Рамзан Кадыров
+Сасha Grey
+Hawaiʻi Kealoha
+Saʿīd Ḥasan
+Fāʾiza Ḥusayn
+Ґанна Ґонта
+Ahmed  Ali
+Ahmed Ali–Hassan
+Ahmed Ali – Pharco
+Al‑Sayed Mohamed
+Mohamed (Mo) Salah
+Ahmed M Ali
+نوش‌آفرین
+ڕۆژ کەریم
+عمران خان
+حسن بختیار
+إسماعيل
+Ἰωάννης Χρυσόστομος
+Trần Hưng Đạo
+Ő Ödön
+Ėglė Ķirsons
+Ģirts Ļaviņš
+Əliyev Əhməd
+İlham Əliyev
+Chukwuemeka Ụzọ
+Lǚ Bù
+DeShawn McKinsey
+'Abd al-Rahman
+St-Pierre Jean
+Ahmed Ali (Al-Ahram)
+ŀ Test
+ﻻمار
+Dr. أحمد علي
+Dr.أحمد
+د. Ahmed Ali
+د.Ahmed
+أحمد/Ahmed
+Ahmed/أحمد
+Ahmed Ali (أحمد)
+Ахмед (أحمد)
+Νίκος (Νικόλαος)
+Dr. Νίκη Βίσση
+José (Pepe) Martínez
+Maria-José
+Jean‐Paul
+Jean—Paul
+Jean ‑ Paul
+Brontë
+Naïve Noël
+Hélène Ségara
+Dž Džemal
+ǅemal
+Ǆemal
+ǈubica
+Ĳsselmonde
+IJsbrand
+ﬁona
+Ｈａｙｔｈａｍ
+Haytham ２
+ريم ٢
+ⅫMan
+Ma'ruf Amin
+Ka'b ibn Malik
+Mu'awiya
+Ahmed Ali.,
+Dr. (Mrs.) Hala
+(Dr.) Hala Ali
+Hala Ali (Mrs)
+Hala (Al) Ali
+Hala Al Ali – Head of QA
+د. أحمد ـ صيدلي
+م.أحمد
+ص.د/ أحمد
+د/م أحمد
+Ahmed O'Neil‑Smith
+Ahmed O‘Neil
+Ahmed O`Neil
+Ahmed O´Neil
+Ahmed Oʹ
+Mr. & Mrs. Ali
+Ahmed Ali ✓
+Ahmed Ali ★
+Ahmed 🙂
+Ahmed Ali *
+Ahmed_Ali
+ahmed.ali
+Ahmed@Ali
+Ahmed Ali #1
+Fr. Boutros Ghali
+Sr. Maria
+HE Sheikh Mohammed
+H.E. Sheikh Mohammed
+Sheikha Moza bint Nasser
+Hind bint Abdulaziz
+عليٌّ
+عَلِيّْ
+Ẓāhir
+Ṭāhā Ḥusayn
+Ṣalāḥ al-Dīn
+Ġāzī
+Ḏū
+Šarīf
+Ḫālid
+Ḍiyāʾ
+Мар’яна Григор’єва
+Вера Кох
+Jean—Paul Sartre
+Hala Ali – Head of QA
+Dr.أحمد علي
+د.م/ أحمد علي
+أ.م.د/ خالد يوسف
+م.م/ سارة
+ش/ محمد
+أ/ محمد
+السيد/ محمد علي
+السيدة/ منى
+Dr. Ahmed Ali - Pharco
+د. أحمد علي (فاركو)
+د. أحمد علي - فاركو
+أحمد «ميدو» علي
+أحمد "ميدو" علي
+Ahmed 'Mido' Ali
+عبدﷲ محمد
+Mohamed Salah (Mo)
+Ahmed A. Ali
+Ahmed A Ali
+ⲙⲁⲣⲕⲟⲥ
+Ahmed Ali, R.Ph
+Ahmed Ali, RPh.
+Dr. Ahmed Ali (Ph.D.)
+Pharm. Ahmed / Ali
+Ahmed Ali — Pharmacist
+Ahmed Ali | Pharmacist
+АННА АХМАТОВА
+Μαρίνα Μάρκου
+Νίκη
+محمّّد علي
+مُحَمَّّد
+O`Brien Kelly
+Dr. Ахмед
+Ахмед Хасанов
+ΑΡΗΣ ΚΑΚΟΣ
+د. أحمد علي، دكتوراه، ماجستير
+لؤي الأسعد
+رؤى
+ضياء الدين
+عائشة
+ئيلاف
+يحيى
+ليلى
+موسى
+مى
+شادي
+فايزة أحمد
+ظافر
+غادة عبد الرازق
+د. محمد الإسناوي
+أحمد محمد - صيدلي
+أ/أحمد
+د.م/ عمرو
+عبدالرحمن بن ناصر آل ثاني
+نوال السعداوي
+محمد بن راشد
+الشيخ/ زايد
+علی‌رضا محمدی
+محمدحسین
+شهلا کاظمی
+ڈاکٹر عبدالقدیر
+ٹیپو سلطان
+ہارون رشید
+سەلاحەدین
+ڕێباز
+PharmD. Mona Fawzy
+Ph. Mohamed Hassan
+Chem. Ahmed Sami
+Mr. John Smith
+Mrs. Jane O'Neil
+Ms. Ann-Marie D'Souza
+Mo’men Abd El-Raouf
+Ahmed Ali (Pharco)
+Ahmed Ali (QA)
+Al-Sayed Mohamed
+El-Shazly Ahmed
+Abdel Rahman El Sharkawy
+Abd-Allah Al-Saud
+Mohamed Abdel-Ghaffar El-Masry
+د.Ahmed Ali
+Sameh S. Ali
+J. R. R. Tolkien
+Mary-Kate O'Connor-Smith
+D'Angelo Russell
+José María Aznar
+ŞÜKRÜ ÇAĞLAR
+Çağla Şıkel
+Ægir Þórðarson
+Guðrún Ósvífursdóttir
+Łukasz Żółć
+Jiří Čapek
+Dóra Szőke
+Đorđe Đoković
+Chinụ̄a Achebe
+Ɗanjuma Ƙasim
+Ahmet Ərdoğan
+Əliyev Heydər
+Muḥammad ibn Mūsā al-Khwārizmī
+Eßer Groß
+GROẞMANN
+Kateřina Šťastná
+Ąžuolas Žemaitis
+Pēteris Vītols
+Glória Tânia
+Ana Lúcia d'Ávila
+Νίκος Καζαντζάκης
+ΔΗΜΗΤΡΗΣ ΠΑΠΑΔΟΠΟΥΛΟΣ
+Δρ. Μαρία Κάλλας
+Їжак Ґалицький
+Сергей Сергеевич Ёлкин
+Әлия Нұрғалиева
+Зураб Церетели
+Ольга Іванівна
+Ре́зник Дми́трий
+Abdul-Rahman Al-Sa'di
+Dr. med. Hans-Jürgen Müller
+Dipl.-Ing. Klaus Weiß
+Univ.-Prof. Dr. Maria Schmidt
+Ahmed Ali (Jr.)
+Ahmed Ali III
+Ahmed Ali 2nd
+A.Ali
+(Ahmed) Ali
+Ahmed Ali (Pharm.D)
+Ahmed Ali - MBA
+Ahmed Ali / Pharco
+Ahmed Ali/Pharco
+د. أحمد علي (استشاري)
+عبدالله ٱلشامي
+أحمد عليّ
+Zhāng Wěi
+Ɔpɔku Mensah
+Ħamrun Żebbuġ
+Ŋgozi
+Ѓорѓи Ќосе
+Ѝван
+Ἰωάννης
+Dr. Ἰωάννης Ἀντωνίου
+ Ahmed Ali 
+AHMED EL-SAYED
+ahmed ali
+Ahmed ali
+محمد ﷺ
+د.م. عمرو
+أ.د.م/ سامي
+ا.د / سامي
+د/ سامي / صيدلي
+Sameh (د. سامح)
+سامح (Dr. Sameh)
+Dr. سامح علي
+د. Sameh Ali
+Hиколай
+Ahmed‐Ali
+Ahmed‑Ali
+St. John Smith
+Mc'Donald
+O’Neill
+Al‑Sayed
+Al Sayed
+El‑Sayed
+Ahmed Ali,
+Ali, Ahmed
+Ahmed “Mido” Ali
+مُحمّد
+ٱلرَّحْمَٰن
+عبدُالرحمٰن
+إبراهيم
+اٍبراهيم
+آمنة
+ءامنة
+ئيلاف يحيى
+د / محمد علي
+ا.د / سامي فهمي
+Ч
+Ɥ
+Z
+Ζ̄
+Ζ
+П
+Π̄
+Π
+T
+Τ̄
+Т
+Τ
+E
+Ε̄
+Е
+Ε
+ğ
+ğ̣
+Σ
+Σ̄
+ş
+ş̣
+Γ
+Γ̄
+ê
+ê̵
+l
+ӏ
+ë
+ë̵
+ё
+ё̵
+è
+è̵
+é
+é̵
+ñ
+ñ̇
+э
+э̵
+ظ
+ط
+e
+e̵
+е
+е̵
+ق
+ڨ
+ض
+ص
+é̇
+ػ
+ݢ
+Ξ
+Ξ̄
+я
+я̵
+ف
+ڣ
+â
+â̇
+P
+Ρ̄
+Р
+Ρ
+M
+Μ́
+М
+Μ
+Ζ͂
+ğ̇
+غ
+ع
+خ
+ح
+ڂ
+ó
+ó̇
+j
+j̇
+û
+û̇
+ج
+ڤ
+ك
+ڬ
+W
+Ẇ
+ü
+ü̇
+ğ̦
+ڧ
+á
+á̇
+è̇
+ل
+ڶ
+B
+Β̀
+В
+Β
+Ζ̈
+Ы
+Ы̵
+ğ̹
+Π͂
+Ẉ
+ث
+ت
+Π̈
+Ṁ
+ê̇
+Ẃ
+û̀
+Й
+Й́
+ô
+ô̇
+Ε̈
+Μ̄
+Ẁ
+Щ
+Щ̹
+Ṃ
+N
+N̵
+Ν
+Ν̵
+ب
+ٻ
+M̀
+Ḿ
+н
+н̵
+Ṅ
+ز
+ر
+Ш
+Ш̹
+Β̄
+Щ̵
+ن
+ڹ
+Ю
+Ю̹
+ٺ
+ٿ
+Ḃ
+Ж
+Ж̹
+Ṇ
+Μ̆
+ğ̤
+Щ̦
+W̹
+Σ̈
+Ԝ̹
+Μ̀
+Q
+Ԛ̹
+Θ
+Θ̀
+ö
+ö̇
+ë̇
+W̵
+Ԛ̀
+Ԝ̵
+Ǹ
+Ń
+Ρ͂
+Μ͂
+D
+Ḋ
+Ḅ
+Ш̵
+Q̇
+Π̀
+د
+ڊ
+Β͂
+M̹
+Μ̹
+М̹
+B̀
+B́
+И
+Ѝ
+Ш̦
+Β́
+Й̄
+Π́
+Ю̵
+Μͅ
+Ḍ
+Q̣
+Ж̵
+Ю̦
+Д
+Д̹
+Й̹
+i
+i̇
+ı̇
+ф
+ф̹
+Ж̦
+Ы̹
+ч
+ч̵
+R
+Ṙ
+M̵
+W̦
+Μ̵
+М̵
+ظ̹
+ش
+ش̹
+à
+à̇
+Β̆
+ݢَ
+Μ̈
+Ԝ̦
+Ф
+Ф̹
+H
+Ḣ
+Н
+Η
+ş̦
+Ф̵
+D̀
+ğ̀
+ݢِ
+ط̹
+J
+J̧
+Ј̧
+D́
+Q̀
+Q́
+A
+Ȧ
+А
+Α
+m
+ṁ
+ṃ
+Ṃ̇
+O
+Ȯ
+О
+Ο
+ؿ
+ݑ
+ğ̄
+ي
+پ
+ڽ
+G
+Ġ
+Ю̛
+Ṛ
+ݣ
+Ω
+ῼ
+й
+й́
+Ζ̀
+Й̈
+w
+ẉ
+ض̹
+ẇ
+Τ̈
+Φ
+Φ̹
+ڝ
+M̦
+Ḿ̇
+Ḥ
+س
+س̹
+Μ̦
+М̦
+K
+K̇
+Κ
+ş̹
+Φ̵
+Й̀
+Д̵
+N̹
+Ԛ̦
+Ạ
+R̀
+ğ̈
+Π̆
+ݢٰ
+Ọ
+Ν̹
+ص̹
+Ŕ
+ğ̨
+Ζ́
+И̹
+Ζ̆
+Д̦
+Ψ
+Ψ̵
+ğ̮
+Φͅ
+Й̦
+Й̵
+Щ̀
+ى
+ں
+ې
+Ω̆
+ф̦
+Ż
+ğ̱
+Щ́
+Ы̦
+Β̹
+Νͅ
+В̹
+Я
+Я̵
+в
+в̵
+ظ̦
+Ǵ
+ڗ
+B̹
+H̀
+H́
+Β̈
+g
+g̣
+Ω͂
+G̀
+ġ
+Ρ̀
+щ
+щ̹
+ش̦
+Á
+G̣
+Ω̹
+Ф̦
+Ψ̹
+ڃ
+Ḳ
+À
+ط̦
+Ė
+Ó
+U
+U̇
+ذ
+ڌ
+Ò
+Βͅ
+Ẓ
+A̵
+Α̵
+А̵
+B̵
+Β̵
+Ω̄
+В̵
+Θ́
+Ц
+Ц̹
+K̀
+Ψ̈
+β
+β̹
+Ņ
+Θ̹
+Ḱ
+ệ
+Ψͅ
+ų̈̄
+ų̄̈
+Ч̀
+Ɥ̀
+Ч́
+Ɥ́
+Ч̂
+Ɥ̂
+Ч̄
+Ɥ̄
+Ч̆
+Ɥ̆
+Ч̋
+Ɥ̋
+Ч̏
+Ɥ̏
+Ч̑
+Ɥ̑
+Ч̔
+Ɥ̔
+Ч̛
+Ɥ̛
+Ч̦
+Ɥ̦
+Ч̧
+Ɥ̧
+Ч̨
+Ɥ̨
+Ч̵
+Ɥ̵
+Ч̸
+Ɥ̸
+Ч̹
+Ɥ̹
+Ԧ𞂏
+ԧ𞂏
+Ԩ𞂏
+ԩ𞂏
+Ԯ𞂏
+ԯ𞂏
+ꙿ𞂏
+𝼀̀
+𝼁̀
+𝼂̀
+𝼃̀
+𝼄̀
+𝼅̀
+𝼆̀
+𝼇̀
+𝼈̀
+𝼉̀
+𝼊̀
+𝼋̀
+𝼌̀
+𝼍̀
+𝼎̀
+𝼏̀
+𝼐̀
+𝼑̀
+𝼒̀
+𝼓̀
+𝼔̀
+𝼕̀
+𝼖̀
+𝼗̀
+𝼘̀
+𝼙̀
+𝼚̀
+𝼛̀
+𝼜̀
+𝼝̀
+𝼞̀
+𝼥̀
+𝼦̀
+𝼧̀
+𝼨̀
+𝼩̀
+𝼪̀
+𝼀́
+𝼁́
+𝼂́
+𝼃́
+𝼄́
+𝼅́
+𝼆́
+𝼇́
+𝼈́
+𝼉́
+𝼊́
+𝼋́
+𝼌́
+𝼍́
+𝼎́
+𝼏́
+𝼐́
+𝼑́
+𝼒́
+𝼓́
+𝼔́
+𝼕́
+𝼖́
+𝼗́
+𝼘́
+𝼙́
+𝼚́
+𝼛́
+𝼜́
+𝼝́
+𝼞́
+𝼥́
+𝼦́
+𝼧́
+𝼨́
+𝼩́
+𝼪́
+𝼀̂
+𝼁̂
+𝼂̂
+𝼃̂
+𝼄̂
+𝼅̂
+𝼆̂
+𝼇̂
+𝼈̂
+𝼉̂
+𝼊̂
+𝼋̂
+𝼌̂
+𝼍̂
+𝼎̂
+𝼏̂
+𝼐̂
+𝼑̂
+𝼒̂
+𝼓̂
+𝼔̂
+𝼕̂
+𝼖̂
+𝼗̂
+𝼘̂
+𝼙̂
+𝼚̂
+𝼛̂
+𝼜̂
+𝼝̂
+𝼞̂
+𝼥̂
+𝼦̂
+𝼧̂
+𝼨̂
+𝼩̂
+𝼪̂
+𝼀̃
+𝼁̃
+𝼂̃
+𝼃̃
+𝼄̃
+𝼅̃
+𝼆̃
+𝼇̃
+𝼈̃
+𝼉̃
+𝼊̃
+𝼋̃
+𝼌̃
+𝼍̃
+𝼎̃
+𝼏̃
+𝼐̃
+𝼑̃
+𝼒̃
+𝼓̃
+𝼔̃
+𝼕̃
+𝼖̃
+𝼗̃
+𝼘̃
+𝼙̃
+𝼚̃
+𝼛̃
+𝼜̃
+𝼝̃
+𝼞̃
+𝼥̃
+𝼦̃
+𝼧̃
+𝼨̃
+𝼩̃
+𝼪̃
+𝼀̄
+𝼁̄
+𝼂̄
+𝼃̄
+𝼄̄
+𝼅̄
+𝼆̄
+𝼇̄
+𝼈̄
+𝼉̄
+𝼊̄
+𝼋̄
+𝼌̄
+𝼍̄
+𝼎̄
+𝼏̄
+𝼐̄
+𝼑̄
+𝼒̄
+𝼓̄
+𝼔̄
+𝼕̄
+𝼖̄
+𝼗̄
+𝼘̄
+𝼙̄
+𝼚̄
+𝼛̄
+𝼜̄
+𝼝̄
+𝼞̄
+𝼥̄
+𝼦̄
+𝼧̄
+𝼨̄
+𝼩̄
+𝼪̄
+𝼀̆
+𝼁̆
+𝼂̆
+𝼃̆
+𝼄̆
+𝼅̆
+𝼆̆
+𝼇̆
+𝼈̆
+𝼉̆
+𝼊̆
+𝼋̆
+𝼌̆
+𝼍̆
+𝼎̆
+𝼏̆
+𝼐̆
+𝼑̆
+𝼒̆
+𝼓̆
+𝼔̆
+𝼕̆
+𝼖̆
+𝼗̆
+𝼘̆
+𝼙̆
+𝼚̆
+𝼛̆
+𝼜̆
+𝼝̆
+𝼞̆
+𝼥̆
+𝼦̆
+𝼧̆
+𝼨̆
+𝼩̆
+𝼪̆
+𝼀̇
+𝼁̇
+𝼂̇
+𝼃̇
+𝼄̇
+𝼅̇
+𝼆̇
+𝼇̇
+𝼈̇
+𝼉̇
+𝼊̇
+𝼋̇
+𝼌̇
+𝼍̇
+𝼎̇
+𝼏̇
+𝼐̇
+𝼑̇
+𝼒̇
+𝼓̇
+𝼔̇
+𝼕̇
+𝼖̇
+𝼗̇
+𝼘̇
+𝼙̇
+𝼚̇
+𝼛̇
+𝼜̇
+𝼝̇
+𝼞̇
+𝼥̇
+𝼦̇
+𝼧̇
+𝼨̇
+𝼩̇
+𝼪̇
+𝼀̈
+𝼁̈
+𝼂̈
+𝼃̈
+𝼄̈
+𝼅̈
+𝼆̈
+𝼇̈
+𝼈̈
+𝼉̈
+𝼊̈
+𝼋̈
+𝼌̈
+𝼍̈
+𝼎̈
+𝼏̈
+𝼐̈
+𝼑̈
+𝼒̈
+𝼓̈
+𝼔̈
+𝼕̈
+𝼖̈
+𝼗̈
+𝼘̈
+𝼙̈
+𝼚̈
+𝼛̈
+𝼜̈
+𝼝̈
+𝼞̈
+𝼥̈
+𝼦̈
+𝼧̈
+𝼨̈
+𝼩̈
+𝼪̈
+𝼀̉
+𝼁̉
+𝼂̉
+𝼃̉
+𝼄̉
+𝼅̉
+𝼆̉
+𝼇̉
+𝼈̉
+𝼉̉
+𝼊̉
+𝼋̉
+𝼌̉
+𝼍̉
+𝼎̉
+𝼏̉
+𝼐̉
+𝼑̉
+𝼒̉
+𝼓̉
+𝼔̉
+𝼕̉
+𝼖̉
+𝼗̉
+𝼘̉
+𝼙̉
+𝼚̉
+𝼛̉
+𝼜̉
+𝼝̉
+𝼞̉
+𝼥̉
+𝼦̉
+𝼧̉
+𝼨̉
+𝼩̉
+𝼪̉
+𝼀̊
+𝼁̊
+𝼂̊
+𝼃̊
+𝼄̊
+𝼅̊
+𝼆̊
+𝼇̊
+𝼈̊
+𝼉̊
+𝼊̊
+𝼋̊
+𝼌̊
+𝼍̊
+𝼎̊
+𝼏̊
+𝼐̊
+𝼑̊
+𝼒̊
+𝼓̊
+𝼔̊
+𝼕̊
+𝼖̊
+𝼗̊
+𝼘̊
+𝼙̊
+𝼚̊
+𝼛̊
+𝼜̊
+𝼝̊
+𝼞̊
+𝼥̊
+𝼦̊
+𝼧̊
+𝼨̊
+𝼩̊
+𝼪̊
+𝼀̋
+𝼁̋
+𝼂̋
+𝼃̋
+𝼄̋
+𝼅̋
+𝼆̋
+𝼇̋
+𝼈̋
+𝼉̋
+𝼊̋
+𝼋̋
+𝼌̋
+𝼍̋
+𝼎̋
+𝼏̋
+𝼐̋
+𝼑̋
+𝼒̋
+𝼓̋
+𝼔̋
+𝼕̋
+𝼖̋
+𝼗̋
+𝼘̋
+𝼙̋
+𝼚̋
+𝼛̋
+𝼜̋
+𝼝̋
+𝼞̋
+𝼥̋
+𝼦̋
+𝼧̋
+𝼨̋
+𝼩̋
+𝼪̋
+𝼀̌
+𝼁̌
+𝼂̌
+𝼃̌
+𝼄̌
+𝼅̌
+𝼆̌
+𝼇̌
+𝼈̌
+𝼉̌
+𝼊̌
+𝼋̌
+𝼌̌
+𝼍̌
+𝼎̌
+𝼏̌
+𝼐̌
+𝼑̌
+𝼒̌
+𝼓̌
+𝼔̌
+𝼕̌
+𝼖̌
+𝼗̌
+𝼘̌
+𝼙̌
+𝼚̌
+𝼛̌
+𝼜̌
+𝼝̌
+𝼞̌
+𝼥̌
+𝼦̌
+𝼧̌
+𝼨̌
+𝼩̌
+𝼪̌
+𝼀̏
+𝼁̏
+𝼂̏
+𝼃̏
+𝼄̏
+𝼅̏
+𝼆̏
+𝼇̏
+𝼈̏
+𝼉̏
+𝼊̏
+𝼋̏
+𝼌̏
+𝼍̏
+𝼎̏
+𝼏̏
+𝼐̏
+𝼑̏
+𝼒̏
+𝼓̏
+𝼔̏
+𝼕̏
+𝼖̏
+𝼗̏
+𝼘̏
+𝼙̏
+𝼚̏
+𝼛̏
+𝼜̏
+𝼝̏
+𝼞̏
+𝼥̏
+𝼦̏
+𝼧̏
+𝼨̏
+𝼩̏
+𝼪̏
+𝼀̐
+𝼁̐
+𝼂̐
+𝼃̐
+𝼄̐
+𝼅̐
+𝼆̐
+𝼇̐
+𝼈̐
+𝼉̐
+𝼊̐
+𝼋̐
+𝼌̐
+𝼍̐
+𝼎̐
+𝼏̐
+𝼐̐
+𝼑̐
+𝼒̐
+𝼓̐
+𝼔̐
+𝼕̐
+𝼖̐
+𝼗̐
+𝼘̐
+𝼙̐
+𝼚̐
+𝼛̐
+𝼜̐
+𝼝̐
+𝼞̐
+𝼥̐
+𝼦̐
+𝼧̐
+𝼨̐
+𝼩̐
+𝼪̐
+𝼀̑
+𝼁̑
+𝼂̑
+𝼃̑
+𝼄̑
+𝼅̑
+𝼆̑
+𝼇̑
+𝼈̑
+𝼉̑
+𝼊̑
+𝼋̑
+𝼌̑
+𝼍̑
+𝼎̑
+𝼏̑
+𝼐̑
+𝼑̑
+𝼒̑
+𝼓̑
+𝼔̑
+𝼕̑
+𝼖̑
+𝼗̑
+𝼘̑
+𝼙̑
+𝼚̑
+𝼛̑
+𝼜̑
+𝼝̑
+𝼞̑
+𝼥̑
+𝼦̑
+𝼧̑
+𝼨̑
+𝼩̑
+𝼪̑
+𝼀̓
+𝼁̓
+𝼂̓
+𝼃̓
+𝼄̓
+𝼅̓
+𝼆̓
+𝼇̓
+𝼈̓
+𝼉̓
+𝼊̓
+𝼋̓
+𝼌̓
+𝼍̓
+𝼎̓
+𝼏̓
+𝼐̓
+𝼑̓
+𝼒̓
+𝼓̓
+𝼔̓
+𝼕̓
+𝼖̓
+𝼗̓
+𝼘̓
+𝼙̓
+𝼚̓
+𝼛̓
+𝼜̓
+𝼝̓
+𝼞̓
+𝼥̓
+𝼦̓
+𝼧̓
+𝼨̓
+𝼩̓
+𝼪̓
+𝼀̔
+𝼁̔
+𝼂̔
+𝼃̔
+𝼄̔
+𝼅̔
+𝼆̔
+𝼇̔
+𝼈̔
+𝼉̔
+𝼊̔
+𝼋̔
+𝼌̔
+𝼍̔
+𝼎̔
+𝼏̔
+𝼐̔
+𝼑̔
+𝼒̔
+𝼓̔
+𝼔̔
+𝼕̔
+𝼖̔
+𝼗̔
+𝼘̔
+𝼙̔
+𝼚̔
+𝼛̔
+𝼜̔
+𝼝̔
+𝼞̔
+𝼥̔
+𝼦̔
+𝼧̔
+𝼨̔
+𝼩̔
+𝼪̔
+𝼀̛
+𝼁̛
+𝼂̛
+𝼃̛
+𝼄̛
+𝼅̛
+𝼆̛
+𝼇̛
+𝼈̛
+𝼉̛
+𝼊̛
+𝼋̛
+𝼌̛
+𝼍̛
+𝼎̛
+𝼏̛
+𝼐̛
+𝼑̛
+𝼒̛
+𝼓̛
+𝼔̛
+𝼕̛
+𝼖̛
+𝼗̛
+𝼘̛
+𝼙̛
+𝼚̛
+𝼛̛
+𝼜̛
+𝼝̛
+𝼞̛
+𝼥̛
+𝼦̛
+𝼧̛
+𝼨̛
+𝼩̛
+𝼪̛
+𝼀̣
+𝼁̣
+𝼂̣
+𝼃̣
+𝼄̣
+𝼅̣
+𝼆̣
+𝼇̣
+𝼈̣
+𝼉̣
+𝼊̣
+𝼋̣
+𝼌̣
+𝼍̣
+𝼎̣
+𝼏̣
+𝼐̣
+𝼑̣
+𝼒̣
+𝼓̣
+𝼔̣
+𝼕̣
+𝼖̣
+𝼗̣
+𝼘̣
+𝼙̣
+𝼚̣
+𝼛̣
+𝼜̣
+𝼝̣
+𝼞̣
+𝼥̣
+𝼦̣
+𝼧̣
+𝼨̣
+𝼩̣
+𝼪̣
+𝼀̤
+𝼁̤
+𝼂̤
+𝼃̤
+𝼄̤
+𝼅̤
+𝼆̤
+𝼇̤
+𝼈̤
+𝼉̤
+𝼊̤
+𝼋̤
+𝼌̤
+𝼍̤
+𝼎̤
+𝼏̤
+𝼐̤
+𝼑̤
+𝼒̤
+𝼓̤
+𝼔̤
+𝼕̤
+𝼖̤
+𝼗̤
+𝼘̤
+𝼙̤
+𝼚̤
+𝼛̤
+𝼜̤
+𝼝̤
+𝼞̤
+𝼥̤
+𝼦̤
+𝼧̤
+𝼨̤
+𝼩̤
+𝼪̤
+𝼀̥
+𝼁̥
+𝼂̥
+𝼃̥
+𝼄̥
+𝼅̥
+𝼆̥
+𝼇̥
+𝼈̥
+𝼉̥
+𝼊̥
+𝼋̥
+𝼌̥
+𝼍̥
+𝼎̥
+𝼏̥
+𝼐̥
+𝼑̥
+𝼒̥
+𝼓̥
+𝼔̥
+𝼕̥
+𝼖̥
+𝼗̥
+𝼘̥
+𝼙̥
+𝼚̥
+𝼛̥
+𝼜̥
+𝼝̥
+𝼞̥
+𝼥̥
+𝼦̥
+𝼧̥
+𝼨̥
+𝼩̥
+𝼪̥
+𝼀̦
+𝼁̦
+𝼂̦
+𝼃̦
+𝼄̦
+𝼅̦
+𝼆̦
+𝼇̦
+𝼈̦
+𝼉̦
+𝼊̦
+𝼋̦
+𝼌̦
+𝼍̦
+𝼎̦
+𝼏̦
+𝼐̦
+𝼑̦
+𝼒̦
+𝼓̦
+𝼔̦
+𝼕̦
+𝼖̦
+𝼗̦
+𝼘̦
+𝼙̦
+𝼚̦
+𝼛̦
+𝼜̦
+𝼝̦
+𝼞̦
+𝼥̦
+𝼦̦
+𝼧̦
+𝼨̦
+𝼩̦
+𝼪̦
+𝼀̧
+𝼁̧
+𝼂̧
+𝼃̧
+𝼄̧
+𝼅̧
+𝼆̧
+𝼇̧
+𝼈̧
+𝼉̧
+𝼊̧
+𝼋̧
+𝼌̧
+𝼍̧
+𝼎̧
+𝼏̧
+𝼐̧
+𝼑̧
+𝼒̧
+𝼓̧
+𝼔̧
+𝼕̧
+𝼖̧
+𝼗̧
+𝼘̧
+𝼙̧
+𝼚̧
+𝼛̧
+𝼜̧
+𝼝̧
+𝼞̧
+𝼥̧
+𝼦̧
+𝼧̧
+𝼨̧
+𝼩̧
+𝼪̧
+𝼀̨
+𝼁̨
+𝼂̨
+𝼃̨
+𝼄̨
+𝼅̨
+𝼆̨
+𝼇̨
+𝼈̨
+𝼉̨
+𝼊̨
+𝼋̨
+𝼌̨
+𝼍̨
+𝼎̨
+𝼏̨
+𝼐̨
+𝼑̨
+𝼒̨
+𝼓̨
+𝼔̨
+𝼕̨
+𝼖̨
+𝼗̨
+𝼘̨
+𝼙̨
+𝼚̨
+𝼛̨
+𝼜̨
+𝼝̨
+𝼞̨
+𝼥̨
+𝼦̨
+𝼧̨
+𝼨̨
+𝼩̨
+𝼪̨
+𝼀̭
+𝼁̭
+𝼂̭
+𝼃̭
+𝼄̭
+𝼅̭
+𝼆̭
+𝼇̭
+𝼈̭
+𝼉̭
+𝼊̭
+𝼋̭
+𝼌̭
+𝼍̭
+𝼎̭
+𝼏̭
+𝼐̭
+𝼑̭
+𝼒̭
+𝼓̭
+𝼔̭
+𝼕̭
+𝼖̭
+𝼗̭
+𝼘̭
+𝼙̭
+𝼚̭
+𝼛̭
+𝼜̭
+𝼝̭
+𝼞̭
+𝼥̭
+𝼦̭
+𝼧̭
+𝼨̭
+𝼩̭
+𝼪̭
+𝼀̮
+𝼁̮
+𝼂̮
+𝼃̮
+𝼄̮
+𝼅̮
+𝼆̮
+𝼇̮
+𝼈̮
+𝼉̮
+𝼊̮
+𝼋̮
+𝼌̮
+𝼍̮
+𝼎̮
+𝼏̮
+𝼐̮
+𝼑̮
+𝼒̮
+𝼓̮
+𝼔̮
+𝼕̮
+𝼖̮
+𝼗̮
+𝼘̮
+𝼙̮
+𝼚̮
+𝼛̮
+𝼜̮
+𝼝̮
+𝼞̮
+𝼥̮
+𝼦̮
+𝼧̮
+𝼨̮
+𝼩̮
+𝼪̮
+𝼀̰
+𝼁̰
+𝼂̰
+𝼃̰
+𝼄̰
+𝼅̰
+𝼆̰
+𝼇̰
+𝼈̰
+𝼉̰
+𝼊̰
+𝼋̰
+𝼌̰
+𝼍̰
+𝼎̰
+𝼏̰
+𝼐̰
+𝼑̰
+𝼒̰
+𝼓̰
+𝼔̰
+𝼕̰
+𝼖̰
+𝼗̰
+𝼘̰
+𝼙̰
+𝼚̰
+𝼛̰
+𝼜̰
+𝼝̰
+𝼞̰
+𝼥̰
+𝼦̰
+𝼧̰
+𝼨̰
+𝼩̰
+𝼪̰
+𝼀̱
+𝼁̱
+𝼂̱
+𝼃̱
+𝼄̱
+𝼅̱
+𝼆̱
+𝼇̱
+𝼈̱
+𝼉̱
+𝼊̱
+𝼋̱
+𝼌̱
+𝼍̱
+𝼎̱
+𝼏̱
+𝼐̱
+𝼑̱
+𝼒̱
+𝼓̱
+𝼔̱
+𝼕̱
+𝼖̱
+𝼗̱
+𝼘̱
+𝼙̱
+𝼚̱
+𝼛̱
+𝼜̱
+𝼝̱
+𝼞̱
+𝼥̱
+𝼦̱
+𝼧̱
+𝼨̱
+𝼩̱
+𝼪̱
+𝼀̵
+𝼁̵
+𝼂̵
+𝼃̵
+𝼄̵
+𝼅̵
+𝼆̵
+𝼇̵
+𝼈̵
+𝼉̵
+𝼊̵
+𝼋̵
+𝼌̵
+𝼍̵
+𝼎̵
+𝼏̵
+𝼐̵
+𝼑̵
+𝼒̵
+𝼓̵
+𝼔̵
+𝼕̵
+𝼖̵
+𝼗̵
+𝼘̵
+𝼙̵
+𝼚̵
+𝼛̵
+𝼜̵
+𝼝̵
+𝼞̵
+𝼥̵
+𝼦̵
+𝼧̵
+𝼨̵
+𝼩̵
+𝼪̵
+𝼀̸
+𝼁̸
+𝼂̸
+𝼃̸
+𝼄̸
+𝼅̸
+𝼆̸
+𝼇̸
+𝼈̸
+𝼉̸
+𝼊̸
+𝼋̸
+𝼌̸
+𝼍̸
+𝼎̸
+𝼏̸
+𝼐̸
+𝼑̸
+𝼒̸
+𝼓̸
+𝼔̸
+𝼕̸
+𝼖̸
+𝼗̸
+𝼘̸
+𝼙̸
+𝼚̸
+𝼛̸
+𝼜̸
+𝼝̸
+𝼞̸
+𝼥̸
+𝼦̸
+𝼧̸
+𝼨̸
+𝼩̸
+𝼪̸
+𝼀̹
+𝼁̹
+𝼂̹
+𝼃̹
+𝼄̹
+𝼅̹
+𝼆̹
+𝼇̹
+𝼈̹
+𝼉̹
+𝼊̹
+𝼋̹
+𝼌̹
+𝼍̹
+𝼎̹
+𝼏̹
+𝼐̹
+𝼑̹
+𝼒̹
+𝼓̹
+𝼔̹
+𝼕̹
+𝼖̹
+𝼗̹
+𝼘̹
+𝼙̹
+𝼚̹
+𝼛̹
+𝼜̹
+𝼝̹
+𝼞̹
+𝼥̹
+𝼦̹
+𝼧̹
+𝼨̹
+𝼩̹
+𝼪̹
+𝼀̈́
+𝼁̈́
+𝼂̈́
+𝼃̈́
+𝼄̈́
+𝼅̈́
+𝼆̈́
+𝼇̈́
+𝼈̈́
+𝼉̈́
+𝼊̈́
+𝼋̈́
+𝼌̈́
+𝼍̈́
+𝼎̈́
+𝼏̈́
+𝼐̈́
+𝼑̈́
+𝼒̈́
+𝼓̈́
+𝼔̈́
+𝼕̈́
+𝼖̈́
+𝼗̈́
+𝼘̈́
+𝼙̈́
+𝼚̈́
+𝼛̈́
+𝼜̈́
+𝼝̈́
+𝼞̈́
+𝼥̈́
+𝼦̈́
+𝼧̈́
+𝼨̈́
+𝼩̈́
+𝼪̈́
+حْالد
+خالد
+رْياد
+زياد
+دْكي
+ذكي
+عْادة
+غادة
+حسںْ
+حسن
