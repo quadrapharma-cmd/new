@@ -1,18 +1,23 @@
 // The one rule for a person's display name (S-03): what a name may contain (an ALLOWLIST) and when two names are "the same name"
-// (a confusable SKELETON, Unicode TR39). The database (supabase/migrations/0039_names_rule_2.sql — 0038 holds the first version
-// and is never edited) and the live app (web/src/live/adapter.js) both carry the code this script prints between their
-// "generated" markers — never edit it by hand:
-//   node tools/names/name_rule.mjs --write    rewrite both generated regions (only before 0039 is applied anywhere: an applied
-//                                             migration is never edited — a new rule goes into a new migration)
+// (a confusable SKELETON, Unicode TR39). The database (supabase/migrations/0039_names_rule_3.sql — 0038 and 0039_names_rule_2.sql
+// hold the first two versions and are never edited) and the live app (web/src/live/adapter.js) both carry the code this script
+// prints between their "generated" markers — never edit it by hand:
+//   node tools/names/name_rule.mjs --write    rewrite both generated regions (only before 0039_names_rule_3 is applied anywhere:
+//                                             an applied migration is never edited — a new rule goes into a new migration)
 //   node tools/names/name_rule.mjs --check    exit 1 when a region differs from what this script generates
 //   node tools/names/name_rule.mjs --expect   --check, then what the ADAPTER's generated code makes of every code point of planes 0-1
 //                                             in four places (TSV: code point, place, normalised name, problem, skeleton, NFKC, NFD,
 //                                             message); supabase/tests/name_rule.sql loads it and compares the database's functions with it
-// Data: Node's own Unicode tables (General_Category, Script, Script_Extensions, Default_Ignorable_Code_Point, Dash, NFKC/NFD) and
-// the UTS #39 security data vendored in tools/names/unicode-16.0.0 (IdentifierStatus.txt, confusables.txt — see its README). Node 22
-// carries Unicode 16.0, the same version as the vendored data; this script refuses to run on another one.
+// Data: Node's own Unicode tables (General_Category, Script, Script_Extensions, Default_Ignorable_Code_Point, Dash, NFKC/NFD),
+// the UTS #39 security data vendored in tools/names/unicode-16.0.0 (IdentifierStatus.txt, confusables.txt — see its README), and
+// tools/names/pixel-twins.txt (letters that draw alike while TR39 keys them apart — written by tools/names/render_scan.py --write,
+// which must exit 0 after any change to the rule). Node 22 carries Unicode 16.0, the same version as the vendored data; this
+// script refuses to run on another one.
 //
-// THE RULE (0039; 0038 was the first version — what changed is marked *)
+// THE RULE (second version, 0039_names_rule_2 — what changed from 0038 is marked *; the THIRD version, 0039_names_rule_3, is marked
+// *(third version) where it is defined below: a mark only when NFKC joins it to its letter or the skeleton drops it — reason
+// 'accent' —, letters from each alphabet's everyday blocks, pixel twins, every dash a hyphen, one alphabet per RUN of letters,
+// and no 'latin' reason)
 //  normalise (person_name_norm / nmNorm): remove every invisible character (Default_Ignorable_Code_Point, format Cf, control Cc —
 //    tab and line breaks excepted —, U+2800, U+1D159) and the Arabic tatweel U+0640 (it only stretches a joining line: "هـالة" reads
 //    "هالة"); *write every look-alike of the punctuation a name may hold as that punctuation (PUNCT_LIKE: a punctuation mark, a

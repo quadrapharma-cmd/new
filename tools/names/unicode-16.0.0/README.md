@@ -1,6 +1,8 @@
 # Unicode security data (UTS #39), version 16.0.0 — vendored
 
-Used by `tools/names/name_rule.mjs` to generate the name rule of migrations 0038 and 0039 (its second version) and of the live app (`web/src/live/adapter.js`).
+Used by `tools/names/name_rule.mjs` to generate the name rule of migrations 0038, 0039_names_rule_2 and 0039_names_rule_3 (its second
+and third versions) and of the live app (`web/src/live/adapter.js`). `tools/names/pixel-twins.txt` (next to this folder, not Unicode
+data) adds the letters that draw alike in the fonts `tools/names/render_scan.py` lists while TR39 keys them apart.
 Do not edit these files; to move to a newer Unicode version, vendor the new files into a new folder and write a new migration.
 
 | File | Version | Date in the file | SHA-256 |
