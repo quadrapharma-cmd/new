@@ -1,5 +1,5 @@
 -- One rule for names in the database and in the app (S-03, 0038, its second version 0039_names_rule_2, its third version
--- 0039_names_rule_3 and its fourth version 0039_names_rule_4): for EVERY code point of planes 0 and
+-- 0039_names_rule_3, its fourth version 0039_names_rule_4 and its fifth 0039_names_rule_5): for EVERY code point of planes 0 and
 -- 1, in four places (inside a Latin word, alone between spaces, at the start, inside an Arabic word), the database's
 -- person_name_norm, person_name_problem and person_name_key must give what the live app's nmNorm, nmProblem and nmSkel give, and
 -- person_name_message what nmMessage says (inside a word and alone; web/src/live/adapter.js, generated with the migration by
@@ -7,7 +7,7 @@
 -- both generated regions are current and that the app's code follows the rule's definition (every number refused; every symbol,
 -- private-use, unassigned, punctuation and restricted letter refused; the verifiers' look-alikes refused; twins share a skeleton),
 -- and fails the load otherwise. A code point whose NFKC or NFD differs between Node and PostgreSQL (one knows a newer Unicode) is
--- not compared; there must be few of them. Then EVERY string the verifiers used in rounds 1-3 (supabase/tests/name_rule_strings.txt,
+-- not compared; there must be few of them. Then EVERY string the verifiers used in rounds 1-4 (supabase/tests/name_rule_strings.txt,
 -- through node tools/names/name_rule.mjs --strings): the database gives what the app gives, and no allowed name keeps a combining
 -- mark; then the verifiers' attacks one by one with the reason expected, and the real names that must keep working.
 -- Run from the repository root (the program path is relative), on a fresh database (stub + migrations):
@@ -41,14 +41,14 @@ insert into r(name, ok, err) select 'database = app: the message (the character 
        count(*) || ' differ, e.g. ' || string_agg(format('U+%s/%s db=%s app=%s', upper(to_hex(cp)), place, db_msg, msg), '; ') filter (where rn <= 6)
   from (select *, row_number() over () rn from got where not skew and db_msg is distinct from msg) d;
 insert into r(name, ok, err) select 'few code points normalise differently in Node and PostgreSQL (newer Unicode)', count(distinct cp) < 400, count(distinct cp)::text from got where skew;
--- every string the verifiers used in rounds 1-3 (fourth version): the database = the app, and an allowed name holds no combining mark
+-- every string the verifiers used in rounds 1-4 (fifth version; round 4 added 10,000+ whole-name variants and the bold-weight letters): the database = the app, and an allowed name holds no combining mark
 create temp table vs (s text, norm text, problem text, skel text, msg text, hasmark boolean);
 \set ON_ERROR_STOP on
 \copy vs from program 'node tools/names/name_rule.mjs --strings supabase/tests/name_rule_strings.txt'
 \set ON_ERROR_STOP off
 create temp table vgot as select v.*, public.person_name_norm(v.s) as db_norm, public.person_name_problem(public.person_name_norm(v.s)) as db_problem,
        public.person_name_key(v.s) as db_skel, case when v.problem <> '' then public.person_name_message(v.s, v.problem) else '' end as db_msg from vs v;
-insert into r(name, ok, err) select 'the verifiers'' strings of rounds 1-3 were loaded', count(*) >= 2000, count(*)::text from vs;
+insert into r(name, ok, err) select 'the verifiers'' strings of rounds 1-4 were loaded', count(*) >= 12000, count(*)::text from vs;
 insert into r(name, ok, err) select 'database = app for every string the verifiers used (normalised name, reason, skeleton, message)', count(*) = 0,
        count(*) || ' differ, e.g. ' || string_agg(format('%s: db=%s/%s app=%s/%s', s, db_norm, db_problem, norm, problem), '; ') filter (where rn <= 6)
   from (select *, row_number() over () rn from vgot where db_norm <> norm or db_problem <> problem or db_skel <> skel or db_msg is distinct from msg) d;
@@ -148,6 +148,20 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('ݕ (Arabic Supplement)', U&'\0628\0755\0644', 'unsupported'), ('ڂ (hah with two dots above)', U&'\0682\0627\0644\062F', 'unsupported'),
   ('ې (Uyghur yeh)', U&'\06D0\0627\0645', 'unsupported'), ('ؠ (Kashmiri yeh)', U&'\0639\0644\0620', 'unsupported'),
   ('Persian, Urdu, Kurdish and Maghrebi letters are taken', 'پرویز گلشیری ڈاکٹر عبدالقدیر ڤيڨا ڕۆژ ڵێ ئەو ڧاطمة', ''),
+  -- fifth version (v-real-r1): the Maghrebi gaf ڭ and feh ڢ are taken; Pashto, Sindhi and Uyghur letters stay 'unsupported'
+  ('Maghrebi gaf ڭ ("ڭمال العلوي")', 'ڭمال العلوي', ''), ('Maghrebi feh ڢ', 'ڢاطمة الزهراء', ''),
+  ('Pashto ځ', 'ځلمی خلیلزاد', 'unsupported'), ('Pashto ښ', 'ښکلا احمدي', 'unsupported'), ('Uyghur ۇ', 'ئۇيغۇر ئەخمەت', 'unsupported'), ('Sindhi ڄ', 'ڄام ڻانو', 'unsupported'),
+  ('a Persian name with a zero-width non-joiner ("علی رضا" typed with U+200C)', U&'\0639\0644\06CC\200C\0631\0636\0627 \0645\062D\0645\062F\06CC\200C\0646\0698\0627\062F', ''),
+  -- fifth version (v-spoof-r1): brackets the bidi algorithm can reorder. "(MBA) Ahmed Ali" drew EXACTLY as "Ahmed Ali (MBA)" in the
+  -- Arabic interface, "(صيدلي) أحمد علي" as "أحمد علي (صيدلي)" in the English one, "Ali (علي) محمد" as "Ali محمد (علي)", "منى (Ali)
+  -- Mona" as "منى Mona (Ali)" (tools/names/render_scan.py --part names): refused — one pair, after a letter, around letters of one
+  -- direction, between letters of one direction
+  ('a bracket before the first letter ("(MBA) Ahmed Ali")', '(MBA) Ahmed Ali', 'bracket'), ('the same in Arabic ("(صيدلي) أحمد علي")', '(صيدلي) أحمد علي', 'bracket'),
+  ('an Arabic word in brackets between a Latin and an Arabic word', 'Ali (علي) محمد', 'bracket'), ('a Latin word in brackets between an Arabic and a Latin word', 'منى (Ali) Mona', 'bracket'),
+  ('a bracket not closed', 'Ahmed Ali (MBA', 'bracket'), ('a bracket closed but not opened', 'Ahmed) Ali', 'bracket'), ('two pairs of brackets', 'Hala Ali (Head of QA) (Pharco)', 'bracket'),
+  ('brackets around letters of both directions', 'Ali (Head, فاركو)', 'bracket'), ('a name in brackets only', '(Ahmed)', 'bracket'),
+  ('the bracketed part after the name is fine', 'Ahmed Ali (MBA)', ''), ('…in Arabic', 'أحمد علي (صيدلي)', ''), ('…an Arabic name after a Latin one', 'Ali محمد (علي)', ''),
+  ('a nickname in the middle, one direction', 'Ahmed (Mido) Ali', ''), ('a transliteration in brackets', 'Ziad (زياد)', ''), ('an Arabic nickname between Latin words', 'Mona (منى) Ali', ''),
   ('invisible U+200B is removed: allowed', U&'Dr. Zeina Tufice\200B', ''),
   ('invisible U+1D173 is removed: allowed', U&'Dr. Zeina Tufice\+01D173', ''),
   ('invisible U+1BCA0 is removed: allowed', U&'Dr. Zeina\+01BCA0 Tufice', ''),
@@ -182,7 +196,11 @@ insert into r(name, ok, err) select 'stored as typed: ' || x.s, public.person_na
   -- the word before it, ʿ written ’, a hamza that NFKC can join once a Quranic mark between them is gone
   ('حْالد', 'حالد'), ('رْياد', 'رياد'), ('دْكي', 'دكي'), ('عْادة', 'عادة'), ('حسںْ', 'حسں'), ('مُحَمَّد عَبْدُ الرَّحْمٰن', 'محمد عبد الرحمن'), ('د. نرمين أبو زيدٍ', 'د. نرمين أبو زيد'),
   ('إِنَّهُۥ', 'إنه'), (U&'\0627\06D6\0654', 'أ'), ('ب َ ب', 'ب ب'), ('د / محمد علي', 'د/ محمد علي'), ('ا.د / سامي فهمي', 'ا.د/ سامي فهمي'), ('د/ سامي / صيدلي', 'د/ سامي/ صيدلي'),
-  ('Saʿīd Ḥasan', 'Sa’īd Ḥasan'), ('ʿAbd al-ʿAzīz', '’Abd al-’Azīz')) x(s, want);
+  ('Saʿīd Ḥasan', 'Sa’īd Ḥasan'), ('ʿAbd al-ʿAzīz', '’Abd al-’Azīz'),
+  -- fifth version: a zero-width non-joiner after an Arabic letter that joins the next is a space (the letters keep their shapes);
+  -- after one that never joins (د) it changes nothing and is removed
+  (U&'\0639\0644\06CC\200C\0631\0636\0627 \0645\062D\0645\062F\06CC\200C\0646\0698\0627\062F', 'علی رضا محمدی نژاد'), (U&'\0639\0628\062F\200C\0627\0644\0644\0647', 'عبدالله'),
+  (U&'Ah\200Cmed', 'Ahmed')) x(s, want);
 -- the refusal names what the person typed (not what normalising made of it), the word to fix, and the accepted alphabets
 insert into r(name, ok, err) select 'message: ' || x.s, public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) = x.want,
        public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) from (values
@@ -202,7 +220,21 @@ insert into r(name, ok, err) select 'message: ' || x.s, public.person_name_messa
   ('Hala Ali – Head of QA', U&'Put what follows the name in parentheses — write “\2068Hala Ali (Head of QA)\2069”'),
   ('Ɗanjuma Ƙasim', U&'The letter “\2068Ɗ\2069” (\2068U+018A\2069) is not supported in names yet'),
   ('Ɔpɔku Mensah', U&'The letter “\2068Ɔ\2069” (\2068U+0186\2069) is not supported in names yet'),
-  (U&'\A78DEXOB', U&'The letter “\2068\A78D\2069” (\2068U+A78D\2069) is not supported in names yet')) x(s, want);
+  (U&'\A78DEXOB', U&'The letter “\2068\A78D\2069” (\2068U+A78D\2069) is not supported in names yet'),
+  -- fifth version: a suggestion the rule accepts when there are several dashes (v-real-r1), the bracket moved after the name
+  ('Hala Ali – Head of QA – Pharco', U&'Put what follows the name in parentheses — write “\2068Hala Ali (Head of QA, Pharco)\2069”'),
+  ('(MBA) Ahmed Ali', U&'Put the part in brackets after the name — write “\2068Ahmed Ali (MBA)\2069”'),
+  ('(صيدلي) أحمد علي', U&'Put the part in brackets after the name — write “\2068أحمد علي (صيدلي)\2069”'),
+  ('Ali (علي) محمد', U&'Put the part in brackets after the name — write “\2068Ali محمد (علي)\2069”'),
+  ('Hala Ali (Head of QA) (Pharco)', U&'Put the part in brackets after the name — write “\2068Hala Ali (Head of QA, Pharco)\2069”'),
+  ('Ahmed Ali (MBA', U&'Put the part in brackets after the name — write “\2068Ahmed Ali (MBA)\2069”'),
+  ('Ali (Head, فاركو)', U&'What is in brackets is written in one direction — Arabic letters, or Latin, Greek and Cyrillic ones — “\2068(Head, فاركو)\2069” mixes them')) x(s, want);
+-- fifth version: every suggestion a message gives ('dash', 'bracket') is a name the rule accepts, for every string the verifiers used
+-- (a name refused for its brackets may also break a rule checked after them — 'mark', 'script' —, which the suggestion keeps)
+insert into r(name, ok, err) select 'every suggested name is accepted (''dash'' and ''bracket'', ' || count(*) || ' strings)', count(*) filter (where sp not in ('', 'mark', 'script')) = 0,
+       string_agg(s || ' → ' || sug || ' (' || sp || ')', ' | ') filter (where sp not in ('', 'mark', 'script'))
+  from (select s, sug, public.person_name_problem(public.person_name_norm(sug)) as sp
+          from (select s, substring(msg from U&'“\2068(.*)\2069”$') as sug from vgot where problem in ('dash', 'bracket') and msg !~ '^What is in brackets') a) b;
 -- twins by skeleton: names that look the same have the same key; names that differ do not
 insert into r(name, ok, err) select 'same skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) = public.person_name_key(x.b), public.person_name_key(x.a) || ' / ' || public.person_name_key(x.b) from (values
   ('Dr. Rana Tufice', U&'Dr. R\0430na Tufice'), ('Ilya', 'llya'), ('O''Brien', 'O’Brien'), ('هالة', 'هالَة'), ('د. هالة الشامي', 'د. هالَة الشّامي'),
@@ -222,13 +254,23 @@ insert into r(name, ok, err) select 'same skeleton: ' || x.a || ' / ' || x.b, pu
   -- place (é / è, Ŝ / Š, ἀ / ἁ, ş / ș / ę), two stacked accents and one (Ẵ / Ǎ), an accent above i or j in place of its dot (í / i),
   -- ئ / ت before a letter, г / ґ, ӏ / l / ا
   ('José Tufice', 'Josè Tufice'), ('Šara', 'Ŝara'), ('Hélène', 'Hêlène'), ('Müller', 'Mûller'), ('ἀλέξανδρος', 'ἁλέξανδρος'), ('Ştefan', 'Ștefan'),
-  ('Ẵnh', 'Ǎnh'), ('Alí Tufice', 'Ali Tufice'), ('Ĵan', 'Jan'), ('تامر', 'ئامر'), ('Анна ганна', 'Анна ґанна'), ('Ahmed Ali', U&'Ahmed A\0627i')) x(a, b);
+  ('Ẵnh', 'Ǎnh'), ('Alí Tufice', 'Ali Tufice'), ('Ĵan', 'Jan'), ('تامر', 'ئامر'), ('Анна ганна', 'Анна ґанна'), ('Ahmed Ali', U&'Ahmed A\0627i'),
+  -- fifth version: what the scan found with the app's font stacks at every weight (v-spoof-r1): bold initial ث / ئ (so ت / ث / ئ are one
+  -- skeleton), double acute / circumflex + acute / inverted breve, the marks below (ring, dot, macron, circumflex, tilde, breve), ģ / ġ
+  -- (g draws its cedilla above), и / н, к / ԟ, г / ғ, d / đ
+  ('ثروت عادل', 'ئروت عادل'), ('ثامر', 'تامر'), ('Szőke Anna', 'Szổke Anna'), ('Szűcs', 'Szȗcs'), ('ḁla', 'ạla'), ('Ḏina', 'Ḓina'), ('Ṯariq', 'Ṱariq'), ('Ṯariq', 'Ţariq'),
+  ('Ġorġ', 'Ģorģ'), ('Ģirts', 'Ǵirts'), ('Анна иванова', 'Анна нванова'), ('Mađar', 'Madar'), ('Ӱлан', 'Ӳлан'),
+  -- fifth version: a zero-width non-joiner is a space; a letter of another alphabet is U+FFFD (the database and the app decompose the
+  -- letters Unicode 16 added differently)
+  (U&'\0639\0644\06CC\200C\0631\0636\0627', 'علی رضا'), (U&'\+0105C9abc', U&'\+011383abc'), (U&'\+016D68 Ahmed', U&'\+0105E4 Ahmed')) x(a, b);
 insert into r(name, ok, err) select 'different skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) <> public.person_name_key(x.b), public.person_name_key(x.a) from (values
   ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Ibrahim', 'ibrahim'), ('أبو', 'ابو'), ('Ali', 'All'), ('Hala', 'Hana'),
   -- fourth version: the undotted name and the dotted one stay different names — and the undotted one is now DRAWN undotted
   ('حْالد', 'خالد'), ('رْياد', 'زياد'), ('دْكي', 'ذكي'), ('عْادة', 'غادة'), ('حسںْ', 'حسن'),
   -- …and a mark present or not, a dot more or less, stay different names
-  ('José', 'Jose'), ('Müller', 'Muller'), ('Ştefan', 'Stefan'), ('Alena', 'Alёna'), ('ثامر', 'تامر'), ('ح', 'خ'), ('ر', 'ز'), ('ص', 'ض'), ('ب', 'ن')) x(a, b);
+  ('José', 'Jose'), ('Müller', 'Muller'), ('Ştefan', 'Stefan'), ('Alena', 'Alёna'), ('تامر', 'بامر'), ('ح', 'خ'), ('ر', 'ز'), ('ص', 'ض'), ('ب', 'ن'),
+  -- fifth version: the words in another order are another name (the brackets that drew them alike are refused)
+  ('Ahmed Ali (MBA)', 'Ahmed (MBA) Ali'), ('أحمد علي (صيدلي)', 'أحمد (صيدلي) علي'), ('Ali محمد (علي)', 'Ali (علي) محمد')) x(a, b);
 insert into r(name, ok, err) select 'stored without the mark that drew as a dot: ' || x.a || ' → ' || public.person_name_norm(x.a) || ', not ' || x.b,
        public.person_name_norm(x.a) <> x.b and public.person_name_norm(x.a) !~ ('[' || U&'!064B-!0652!0670' uescape '!' || ']') and strpos(public.person_name_norm(x.a), x.u) > 0,
        public.person_name_norm(x.a) from (values

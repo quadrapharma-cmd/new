@@ -1,48 +1,94 @@
 """Render check for the name rule (S-03): do two names that LOOK the same always get the same skeleton?
-Every letter the live app's rule allows (Latin, Arabic, Greek, Cyrillic), alone and with every mark the rule still lets stand after
-it (a mark NFKC joins to the letter gives another letter; under the fourth version no mark stands on its own), is drawn on a canvas
-and compared with EVERY allowed letter — every script against every script, Arabic against Arabic included, the Arabic letters in
-their four joining positions — in the app's own font (Poppins, embedded in web/base/app.html, regular and semibold; it has no Arabic,
-so Arabic falls back like in the app) and the system fonts a browser falls back to here, at 14, 15 and 16 px.
-  A letter is drawn with a font only when that font has it (a letter the font lacks is drawn by the fallback font, which is scanned
-  on its own). The difference of two drawings: each is aligned on its ink (centre of its box) and blurred (Gaussian, sigma 1 px — the
-  eye does not see where within a pixel a small mark sits), and the summed difference of every pixel is divided by what ONE Arabic dot
-  adds in the same font and size (the median of ح/خ, ر/ز, د/ذ, ع/غ, ص/ض, ط/ظ, ٮ/ب, ں/ن). Letters a reader tells apart by a dot are
-  about 1.0 (the lowest, ص / ض at 16 px, 0.78); a sukun where a dot would be is 0.53 («حْ» / «خ», 15 px FreeSerif — atk-unicode-r3:
-  «حْالد» drew as «خالد»). A pair below THRESHOLD (default 0.6) whose skeletons differ fails the scan.
+Everything is drawn on a Chromium canvas the way the app draws a name — with the app's own FONT STACKS (English `Poppins, sans-serif`;
+Arabic `Poppins, "Segoe UI", …, sans-serif` from web/src/i18n.css; the datalist popup's `system-ui, sans-serif`), so a letter Poppins
+lacks is drawn by the fallback font next to a letter Poppins has — at weights 400, 500, 600 and 700 (the thread list and the chat header
+draw names in bold) and 14, 15 and 16 px; and with each system font on its own (DejaVu Sans, FreeSans, FreeSerif, Liberation Sans) at
+400 and 700, for the machines whose fallback differs. Three parts:
+  letters    every letter the live app's rule allows (Latin, Arabic, Greek, Cyrillic), alone and with every mark the rule still lets
+             stand after it (none under the fourth and fifth versions), against EVERY allowed letter — every script against every
+             script, Arabic against Arabic, the Arabic letters in their four joining positions
+  sequences  every Arabic bigram and every trigram of the tooth-shaped letters (ب ت ث ن ي ى ی ں ئ پ) in the four positions, against
+             every Arabic letter and bigram; bigrams of the basic Latin, Cyrillic and Greek letters against every letter and bigram
+  names      whole names: real EN/AR names and every variant the rule allows of them — punctuation swapped, added or removed, spaces,
+             word orders, brackets moved — drawn in the interface's direction (English left-to-right, Arabic right-to-left, the popup
+             both ways), alone and inside a sentence (an Arabic or a Latin word before and / or after it): a name whose script runs
+             against the interface direction is reordered by the bidi algorithm («(MBA) Ahmed Ali» drew exactly as «Ahmed Ali (MBA)»
+             in Arabic, «Ali (علي) محمد» as «Ali محمد (علي)» in English — v-spoof-r1)
+The difference of two drawings: each is aligned on its ink (centre of its box) and blurred (Gaussian, sigma 1 px — the eye does not see
+where within a pixel a small mark sits), and the summed difference of every pixel is divided by ONE ARABIC DOT: the median of ح/خ, ر/ز,
+د/ذ, ع/غ, ص/ض, ط/ظ, ٮ/ب, ں/ن drawn in the SAME font string, weight and size (a dot drawn bold is a bold dot: 274 at 400, 742 at 600
+for 15 px here — the scan used to measure 400 only; a font without Arabic measures it in the font its stack falls back to). Letters a reader tells apart by a dot are about 1.0; a sukun
+where a dot would be is 0.53 («حْ» / «خ», atk-unicode-r3); bold initial ئ / ث 0.35 (v-spoof-r1). A pair below THRESHOLD (default 0.6)
+whose skeletons differ fails the scan. A letter no installed font has (drawn as the empty box) is not compared, and counted.
 Reads the generated rule of web/src/live/adapter.js (run `node tools/names/name_rule.mjs --write` first), or with --rule REV the
-adapter of a git revision (`--rule e972163` is the third version, 0039_names_rule_3).
+adapter of a git revision (`--rule e972163` is the third version, 0039_names_rule_3; `--rule 0fbc662` the fourth, 0039_names_rule_4).
   python3 tools/names/render_scan.py [OUT.json] [THRESHOLD]   Playwright 1.56 Chromium; exit 1 when a pair is found
+  --part letters|sequences|names|all   (default all)
   --rule REV            scan the rule of that git revision instead of the working tree
-  --must-find U/T       exit 0 only when the pair U / T (e.g. حْ/خ) is among the pairs found, 1 otherwise — the proof that the scan
-                        sees a look-alike: python3 tools/names/render_scan.py --rule e972163 --must-find حْ/خ
-  --sizes 14,15,16      --fonts-quick (DejaVu Sans and FreeSerif only, the fonts that draw Arabic here)
-  --write               add the pairs found (single letters) to tools/names/pixel-twins.txt — the generator gives each pair one
-                        skeleton; only for letters that truly draw alike, never for a letter + mark
+  --must-find U/T       exit 0 only when the pair U / T is among the pairs found, 1 otherwise — the proof that the scan sees a
+                        look-alike: --rule e972163 --part letters --must-find حْ/خ ; --rule 0fbc662 --part letters --must-find ث/ئ ;
+                        --rule 0fbc662 --part names --must-find "(MBA) Ahmed Ali/Ahmed Ali (MBA)"
+  --sizes 14,15,16  --weights 400,500,600,700   --quick (letters: the stacks only; sequences and names: 400 and 700 at 15 px)
+  --write               add the pairs found (letters part) to tools/names/pixel-twins.txt — the generator gives each pair one
+                        skeleton: two letters, two marks (two letters that differ only in a mark at the same place: é / è), or a
+                        letter with a mark (two letters that differ in marks drawn at the same place by that letter only: ģ / ġ)
 History: 0039 (second version) — African noon ࢽ / ن and qaf ࢼ / ف before a letter; third version — e + U+0335, Τ + U+0304, i/ı/j +
-U+0307, Ч / Ɥ U+A78D, the empty boxes of Latin Extended-G, ӏ U+04CF / l; fourth version — this scan compares every pair (it skipped
-Arabic-Arabic pairs and compared drawings by a hash, so it could not see «حْ» / «خ»); Arabic diacritics are removed from names."""
-import json, os, re, subprocess, sys, time
+U+0307, Ч / Ɥ U+A78D, the empty boxes of Latin Extended-G, ӏ U+04CF / l; fourth version — every pair compared (it skipped Arabic-Arabic
+pairs and compared by a hash, so it could not see «حْ» / «خ»), Arabic diacritics removed; fifth version — the app's font stacks at
+every weight (it scanned Poppins alone, 117 letters, and the fallback fonts at 400 only, so bold ئ / ث and ő / ổ passed), sequences,
+whole names in both directions (bracket order)."""
+import itertools, json, os, re, subprocess, sys, time, unicodedata
 from playwright.sync_api import sync_playwright
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.abspath(os.path.join(HERE, '../..'))
-ARGS = [x for x in sys.argv[1:] if not x.startswith('--')]
+VALUED = ('--rule', '--must-find', '--sizes', '--weights', '--part')
 def opt(name, default=None):
     return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
-REV = opt('--rule'); MUST = opt('--must-find'); SIZES = [int(x) for x in opt('--sizes', '14,15,16').split(',')]
-for v in (REV, MUST, opt('--sizes')):
-    if v in ARGS: ARGS.remove(v)
+ARGS = [x for i, x in enumerate(sys.argv[1:], 1) if not x.startswith('--') and sys.argv[i - 1] not in VALUED]
+REV = opt('--rule'); MUST = opt('--must-find'); PART = opt('--part', 'all'); QUICK = '--quick' in sys.argv
+SIZES = [int(x) for x in opt('--sizes', '14,15,16').split(',')]
+WEIGHTS = [int(x) for x in opt('--weights', '400,500,600,700').split(',')]
 OUT = ARGS[0] if ARGS else None
 THR = float(ARGS[1]) if len(ARGS) > 1 else 0.6
 src = subprocess.run(['git', 'show', REV + ':web/src/live/adapter.js'], cwd=ROOT, capture_output=True, text=True, check=True).stdout if REV \
     else open(os.path.join(ROOT, 'web/src/live/adapter.js'), encoding='utf8').read()
 a = src.index('/* >>> generated'); b = src.index('/* <<< generated */'); gen = src[src.index('\n', a) + 1:b]
 TWINS = os.path.join(HERE, 'pixel-twins.txt')
-FAMILIES = ['"DejaVu Sans"', '"FreeSerif"'] if '--fonts-quick' in sys.argv else \
-    ['Poppins', '600 Poppins', '"DejaVu Sans"', '"FreeSans"', '"FreeSerif"', '"Liberation Sans"', 'sans-serif']
-FONTS = [(f.split(' ')[0] + ' ' + str(s) + 'px ' + f.split(' ', 1)[1]) if f.startswith('600 ') else (str(s) + 'px ' + f) for f in FAMILIES for s in SIZES]
+css = open(os.path.join(ROOT, 'web/src/i18n.css'), encoding='utf8').read()
+AR_STACK = re.search(r'html\[lang=ar\] body[^{]*\{font-family:([^}]*)\}', css).group(1)
+STACKS = [('EN', 'Poppins, sans-serif', 'ltr'), ('AR', AR_STACK, 'rtl'), ('UI', 'system-ui, sans-serif', None)]
+SINGLE = ['"DejaVu Sans"', '"FreeSans"', '"FreeSerif"', '"Liberation Sans"']
 FACES = ''.join(re.findall(r"@font-face\{font-family:'Poppins'[^}]*\}", open(os.path.join(ROOT, 'web/base/app.html'), encoding='utf8').read()))
 
-SETUP = r"""([gen]) => {
+# ── whole names: real names and their variants (punctuation swapped / added / removed, word orders, brackets moved) ──
+BASE = ['Ahmed Ali', 'Dr. Ahmed Ali', "O'Brien", 'Al-Hassan', 'Ahmed Ali (MBA)', 'Mona El-Sayed', 'Ph/ Ahmed', 'Sara A. Ali', 'Ali, Ahmed',
+        'Szőke Anna', 'Saʿīd Ḥasan', 'Νίκος (Nikos)', 'Мария Иванова', 'Dr. Мария Иванова',
+        'عبدالله أحمد', 'عبد الله أحمد', 'أبوبكر محمد', 'د/ محمد علي', 'د. هالة الشامي', 'محمد (علي)', 'محمد، علي', 'عبدالرحمن',
+        'Ahmed محمد', 'محمد Ahmed', 'ثروت عادل', 'هالة', 'زياد', 'خالد', 'Ziad (زياد)', 'أحمد علي (صيدلي)', 'محمد علي (أبو أحمد)',
+        'Ahmed Ali (Pharm.D.)', 'هالة الشامي (Pharm.D.)', 'Dr. محمد علي', 'د. Ahmed Ali', 'محمد علي Ali', 'Mona (منى) Ali', 'علی رضا']
+PUN = ['.', ',', '’', '-', '/', '،', '(', ')', ' ']
+WRAPS = [('ب ', ' ب'), ('b ', ' b'), ('', ' ب'), ('', ' b'), ('ب ', ''), ('b ', '')]
+def variants(s):
+    out = {s}
+    for i, c in enumerate(s):
+        if c in PUN:
+            for r in PUN + ['']: out.add(s[:i] + r + s[i + 1:])
+    for i in range(len(s) + 1):
+        for r in PUN: out.add(s[:i] + r + s[i:])
+    w = s.split(' ')
+    if len(w) <= 5:
+        for perm in itertools.permutations(w): out.add(' '.join(perm))
+    t = s.replace('(', '').replace(')', '')
+    for i in range(len(t) + 1):
+        for j in range(i, len(t) + 1): out.add(t[:i] + '(' + t[i:j] + ')' + t[j:]); out.add(t[:i] + ')' + t[i:j] + '(' + t[j:])
+    tw = t.split(' ')
+    for k in range(len(tw)):   # one word in brackets, then every order of the words
+        ws = tw[:k] + ['(' + tw[k] + ')'] + tw[k + 1:]
+        if len(ws) <= 5:
+            for perm in itertools.permutations(ws): out.add(' '.join(perm))
+    return out
+NAMES = sorted(set().union(*[variants(x) for x in BASE]))
+
+SETUP = r"""([gen, part, names]) => {
  const F = new Function(gen + '\nreturn {nmNorm,nmProblem,nmSkel};')();
  const ok = (s) => F.nmProblem(F.nmNorm(s)) === '';
  const L = [], M = [];
@@ -51,98 +97,149 @@ SETUP = r"""([gen]) => {
    if (/^\p{M}$/u.test(s)) M.push(s); }
  const units = new Set(L);
  for (const l of L) for (const m of M) { const n = F.nmNorm(l + m); if (n !== l && ok(n)) units.add(n); }
- const U = [...units], LS = new Set(L);
- window.__S = { U, T: L, sk: new Map(U.map((u) => [u, F.nmSkel(u)])), isLetter: (u) => LS.has(u) };
- return { letters: L.length, units: U.length, withMark: U.filter((u) => !LS.has(u)).length };
+ const LS = new Set(L), ar = (s) => /\p{Script=Arabic}/u.test(s);
+ const bi = (A) => { const r = []; for (const x of A) for (const y of A) r.push(x + y); return r; };
+ let U = [...units], T = L, single = true;
+ if (part === 'sequences') {
+   const arab = L.filter(ar), tooth = [...'بتثنيىیںئپ'].filter((s) => LS.has(s));
+   const lat = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'], cyr = L.filter((s) => s >= 'Ѐ' && s <= 'џ'), grk = L.filter((s) => s >= 'Ά' && s <= 'ώ');
+   const tri = []; for (const x of tooth) for (const y of tooth) for (const z of tooth) tri.push(x + y + z);
+   const seq = bi(arab).concat(tri, bi(lat), bi(cyr), bi(grk));
+   U = seq; T = L.concat(seq); single = false;
+ } else if (part === 'names') { U = names; T = names; }
+ const nn = (s) => F.nmNorm(s);
+ U = [...new Set(U.map(nn).filter((s) => s && F.nmProblem(s) === ''))]; T = [...new Set(T.map(nn).filter((s) => s && F.nmProblem(s) === ''))];
+ window.__S = { U, T, single, sk: new Map(U.concat(T).map((u) => [u, F.nmSkel(u)])), isLetter: (u) => LS.has(u) };
+ return { letters: L.length, units: U.length, targets: T.length, withMark: part === 'letters' ? U.filter((u) => !LS.has(u)).length : 0 };
 }"""
 
-SCAN = r"""([font, thr]) => {
- const { U, T, sk, isLetter } = window.__S;
- const W = 48, H = 48, BASE = 32, SIG = 1, R = 3;
+# one drawing context: the font string (a stack or one font), the font string the dot unit is drawn with (the same)
+SCAN = r"""([font, arf, dirs, part, thr, check]) => {
+ const { U, T, single, sk, isLetter } = window.__S;
+ const W = part === 'names' ? 400 : part === 'sequences' ? 112 : 64, H = 48, BASE = 32, SIG = 1, R = 3;
  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d', { willReadFrequently: true });
  const ar = (s) => /\p{Script=Arabic}/u.test(s);
  const shape = (u, pos) => pos === 'init' ? u + 'ـ' : pos === 'medi' ? 'ـ' + u + 'ـ' : pos === 'fina' ? 'ـ' + u : u;
  const K = []; { let s = 0; for (let i = -R; i <= R; i++) { const v = Math.exp(-i * i / (2 * SIG * SIG)); K.push(v); s += v; } for (let i = 0; i < K.length; i++) K[i] /= s; }
- const tmp = new Float32Array(W * H), SIZE = /(\d+)px/.exec(font)[1] + 'px';
- function hash(u, f) {   // does the font draw u itself? (with a fallback that draws everything, Unifont, a letter the font lacks looks like Unifont's)
-   x.clearRect(0, 0, W, H); x.font = f; x.fillStyle = '#000'; x.direction = ar(u) ? 'rtl' : 'ltr'; x.textAlign = 'center'; x.fillText(u, W / 2, BASE);
-   const d = x.getImageData(0, 0, W, H).data; let h = 0; for (let i = 3; i < d.length; i += 4) h = (Math.imul(h, 31) + d[i]) | 0; return h; }
- const has = (u) => hash(u, font + ', Unifont') !== hash(u, SIZE + ' Unifont');
- function draw(u, pos) {
-   x.clearRect(0, 0, W, H); x.font = font; x.fillStyle = '#000'; x.direction = ar(u) ? 'rtl' : 'ltr'; x.textAlign = 'center'; x.fillText(shape(u, pos), W / 2, BASE);
-   const d = x.getImageData(0, 0, W, H).data; let x0 = W, x1 = -1, ink = 0;
+ const tmp = new Float32Array(W * H), t2 = new Float32Array(W * H), SIZE = /(\d+)px/.exec(font)[1] + 'px';
+ function raw(t, f, dir) { x.clearRect(0, 0, W, H); x.font = f; x.fillStyle = '#000'; x.direction = dir; x.textAlign = 'center'; x.fillText(t, W / 2, BASE); return x.getImageData(0, 0, W, H).data; }
+ function hash(d) { let h = 0; for (let i = 3; i < d.length; i += 4) h = (Math.imul(h, 31) + d[i]) | 0; return h; }
+ // a font drawn on its own: does it have the letter? (with Unifont behind it, a letter the font lacks looks like Unifont's)
+ const has = (u, dir) => hash(raw(u, font + ', Unifont', dir)) !== hash(raw(u, SIZE + ' Unifont', dir));
+ const TOFU = new Set(['͸', '', '\u{1FFFD}', 'ࡰ͸'].map((t) => hash(raw(t, font, 'ltr'))));
+ function draw(t, f, dir) {
+   const d = raw(t, f, dir); let x0 = W, x1 = -1, ink = 0;
    for (let i = 0; i < W * H; i++) { const v = d[i * 4 + 3]; if (v) { ink += v; const c = i % W; if (c < x0) x0 = c; if (c > x1) x1 = c; } }
-   if (!ink) return null;
+   if (!ink || x0 === 0 || x1 === W - 1) return null;
    const sh = Math.round(W / 2 - (x0 + x1 + 1) / 2), a = new Float32Array(W * H);
    for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { const c2 = c - sh; tmp[y * W + c] = c2 >= 0 && c2 < W ? d[(y * W + c2) * 4 + 3] : 0; }
-   const t2 = new Float32Array(W * H);
    for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { let v = 0; for (let k = -R; k <= R; k++) { const X = c + k; if (X >= 0 && X < W) v += tmp[y * W + X] * K[k + R]; } t2[y * W + c] = v; }
    for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { let v = 0; for (let k = -R; k <= R; k++) { const Y = y + k; if (Y >= 0 && Y < H) v += t2[Y * W + c] * K[k + R]; } a[y * W + c] = v; }
-   const b8 = new Float32Array(36); let sum = 0;
-   for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { const v = a[y * W + c]; b8[(y >> 3) * 6 + (c >> 3)] += v; sum += v; }
-   return { a, b8, sum };
+   const NB = (W >> 3) * (H >> 3), b8 = new Float32Array(NB); let sum = 0;
+   for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { const v = a[y * W + c]; b8[(y >> 3) * (W >> 3) + (c >> 3)] += v; sum += v; }
+   return { a, b8, sum, h: hash(d) };
  }
- function l1(p, q, lim) {   // the summed pixel difference, or lim as soon as it reaches lim (ink and block sums bound it from below)
+ function l1(p, q, lim) {   // the summed pixel difference, or lim as soon as it reaches lim
    if (Math.abs(p.sum - q.sum) >= lim) return lim;
-   let s = 0; for (let i = 0; i < 36; i++) s += Math.abs(p.b8[i] - q.b8[i]); if (s >= lim) return lim;
+   let s = 0; for (let i = 0; i < p.b8.length; i++) s += Math.abs(p.b8[i] - q.b8[i]); if (s >= lim) return lim;
    s = 0; for (let i = 0; i < W * H; i++) { s += Math.abs(p.a[i] - q.a[i]); if (s >= lim) return lim; } return s;
  }
  const REF = [['ح', 'خ'], ['ر', 'ز'], ['د', 'ذ'], ['ع', 'غ'], ['ص', 'ض'], ['ط', 'ظ'], ['ٮ', 'ب'], ['ں', 'ن']];
- const dot = REF.map(([p0, q0]) => l1(draw(p0, 'isol'), draw(q0, 'isol'), 1e12)).sort((p, q) => p - q)[REF.length >> 1];
- const lim = thr * dot, near = []; let pairs = 0, drawn = 0;
- for (const pos of ['isol', 'init', 'medi', 'fina']) {
-   const us = pos === 'isol' ? U : U.filter(ar), ts = pos === 'isol' ? T : T.filter(ar), bm = new Map();
-   for (const u of us) { if (!has(u)) continue; const r = draw(u, pos); if (r) bm.set(u, r); }
-   if (pos === 'isol') drawn = bm.size;
-   for (const u of us) { const p = bm.get(u); if (!p) continue; const ku = sk.get(u), lu = isLetter(u);
-     for (const t of ts) { if (t === u || (lu && t < u)) continue; const q = bm.get(t); if (!q || sk.get(t) === ku) continue; pairs++;
-       const m = l1(p, q, lim); if (m < lim) near.push([font, pos, u, t, +(m / dot).toFixed(3), [...u].map((c) => c.codePointAt(0).toString(16).toUpperCase()).join(' '), [...t].map((c) => c.codePointAt(0).toString(16).toUpperCase()).join(' '), ku, sk.get(t)]); } }
+ const dot = REF.map(([p0, q0]) => l1(draw(p0, arf, 'rtl'), draw(q0, arf, 'rtl'), 1e12)).sort((p, q) => p - q)[REF.length >> 1];
+ const lim = thr * dot, near = []; let pairs = 0, drawn = 0, tofu = 0, lacks = 0;
+ const runs = part === 'names' ? dirs.map((d) => ['name', d]) : ['isol', 'init', 'medi', 'fina'].map((p) => [p, null]);
+ for (const [pos, nd] of runs) { const [ndir, pre, post] = nd || [null, '', ''];
+   const isol = pos === 'isol' || pos === 'name';
+   const us = isol ? U : U.filter(ar), ts = isol ? T : T.filter(ar), bm = new Map();
+   for (const u of new Set(us.concat(ts))) {
+     const dir = ndir || (ar(u) ? 'rtl' : 'ltr');
+     if (check && !has(u, dir)) { if (isol) lacks++; continue; }
+     const r = draw(part === 'names' ? pre + u + post : shape(u, pos), font, dir); if (!r) continue;
+     if (TOFU.has(r.h)) { if (isol) tofu++; continue; }
+     bm.set(u, r);
+   }
+   if (isol) drawn = Math.max(drawn, bm.size);
+   const tl = ts.map((t) => [t, bm.get(t)]).filter((e) => e[1]).sort((p, q) => p[1].sum - q[1].sum), sums = tl.map((e) => e[1].sum);
+   for (const u of us) { const p = bm.get(u); if (!p) continue; const ku = sk.get(u), lu = single && (part === 'names' || isLetter(u));
+     let lo = 0, hi = sums.length; while (lo < hi) { const m = (lo + hi) >> 1; if (sums[m] <= p.sum - lim) lo = m + 1; else hi = m; }
+     for (let j = lo; j < tl.length && tl[j][1].sum < p.sum + lim; j++) { const [t, q] = tl[j];
+       if (t === u || (lu && t < u) || sk.get(t) === ku) continue; pairs++;
+       const m = l1(p, q, lim); if (m < lim) near.push([font, pos + (ndir ? ':' + ndir + (pre || post ? ':' + pre + '…' + post : '') : ''), u, t, +(m / dot).toFixed(3),
+         [...u].map((c) => c.codePointAt(0).toString(16).toUpperCase()).join(' '), [...t].map((c) => c.codePointAt(0).toString(16).toUpperCase()).join(' '), ku, sk.get(t)]); } }
  }
- return { font, dot: +dot.toFixed(1), drawn, pairs, near };
+ return { font, dot: +dot.toFixed(1), drawn, tofu, lacks, pairs, near };
 }"""
 
-t0 = time.time()
+def contexts(part):
+    """(font string, Arabic stack for the unit, directions for names, check that the font has the letter)"""
+    ws = [400, 700] if (QUICK and part != 'letters') else WEIGHTS
+    ss = [15] if (QUICK and part != 'letters') else SIZES
+    out = []
+    for w in ws:
+        for s in ss:
+            for name, st, d in STACKS:
+                out.append(('%d %dpx %s' % (w, s, st), '%d %dpx %s' % (w, s, st), [[x, '', ''] for x in ([d] if d else ['ltr', 'rtl'])], False))
+            if part == 'names' and w == ws[0] and s == ss[len(ss) // 2]:   # inside a sentence (a notification, a toast): words before / after
+                st = STACKS[1][1]; out.append(('%d %dpx %s' % (w, s, st), '%d %dpx %s' % (w, s, st), [[x, a_, b_] for x in ('ltr', 'rtl') for a_, b_ in WRAPS], False))
+            if part == 'letters' and not QUICK and w in (400, 700):
+                for f in SINGLE: out.append(('%d %dpx %s' % (w, s, f), '%d %dpx %s' % (w, s, f), ['ltr'], True))
+    return out
+
+t0 = time.time(); parts = ['letters', 'sequences', 'names'] if PART == 'all' else [PART]; near = []; report = {}
 with sync_playwright() as p:
     br = p.chromium.launch(args=['--no-sandbox']); pg = br.new_page(); pg.set_content('<style>' + FACES + '</style><p style="font-family:Poppins">x</p>')
-    pg.evaluate("Promise.all(['400 15px Poppins', '600 15px Poppins'].map((f) => document.fonts.load(f)))")
-    assert pg.evaluate("document.fonts.check('600 15px Poppins')"), 'Poppins did not load'
-    info = pg.evaluate(SETUP, [gen])
-    print('rule', REV or 'working tree', '— letters', info['letters'], 'units', info['units'], '(with a mark:', str(info['withMark']) + ')', 'threshold', THR, flush=True)
-    runs = []
-    for f in FONTS:
-        r = pg.evaluate(SCAN, [f, THR]); runs.append(r)
-        print('  %-26s letters drawn %5d  dot %7.1f  pairs %9d  near %d' % (f, r['drawn'], r['dot'], r['pairs'], len(r['near'])), flush=True)
+    pg.evaluate("Promise.all(['400','500','600','700'].map((w) => document.fonts.load(w + ' 15px Poppins')))")
+    assert pg.evaluate("document.fonts.check('700 15px Poppins')"), 'Poppins did not load'
+    for part in parts:
+        info = pg.evaluate(SETUP, [gen, part, NAMES if part == 'names' else []])
+        print('rule', REV or 'working tree', '— part', part, info, 'threshold', THR, flush=True)
+        runs = []
+        for f, arf, dirs, check in contexts(part):
+            r = pg.evaluate(SCAN, [f, arf, dirs, part, THR, check]); r['part'] = part; runs.append(r)
+            print('  %-5s %-44s drawn %5d (no glyph %d%s)  dot %6.1f  pairs %9d  near %d  [%.0fs]' % (part[:5], f[:44], r['drawn'], r['tofu'],
+                  (', font lacks %d' % r['lacks']) if check else '', r['dot'], r['pairs'], len(r['near']), time.time() - t0), flush=True)
+            for n in r['near']: near.append(n + [part])
+        report[part] = {'info': info, 'runs': [{k: v for k, v in r.items() if k != 'near'} for r in runs]}
     br.close()
-near = sorted([n for r in runs for n in r['near']], key=lambda n: n[4])
-if OUT: json.dump({'rule': REV or 'working tree', 'threshold': THR, 'info': info, 'runs': [{k: v for k, v in r.items() if k != 'near'} for r in runs], 'near': near}, open(OUT, 'w'), ensure_ascii=False, indent=1)
+near.sort(key=lambda n: n[4])
+if OUT: json.dump({'rule': REV or 'working tree', 'threshold': THR, 'parts': report, 'near': near}, open(OUT, 'w'), ensure_ascii=False, indent=1)
 distinct = {}
 for n in near: distinct.setdefault(tuple(sorted((n[2], n[3]))), n)
-print('pairs below %.2f of a dot with different skeletons: %d (%d distinct)  [%.0fs]' % (THR, len(near), len(distinct), time.time() - t0))
+print('pairs below %.2f of an Arabic dot with different skeletons: %d (%d distinct)  [%.0fs]' % (THR, len(near), len(distinct), time.time() - t0))
 for n in sorted(distinct.values(), key=lambda n: n[4])[:80]: print('NEAR ', n)
-if '--write' in sys.argv:   # add the pairs found to tools/names/pixel-twins.txt (the generator gives each group one skeleton)
-    import unicodedata
-    pairs = set()
+if '--write' in sys.argv:   # add the pairs found (letters) to tools/names/pixel-twins.txt (the generator gives each group one skeleton)
+    pairs = set(); ctx = set()
     if os.path.exists(TWINS):
         for l in open(TWINS, encoding='utf8'):
-            m = re.match(r'^([0-9A-F]+) ; ([0-9A-F]+)', l)
+            m = re.match(r'^([0-9A-F]+) ; ([0-9A-F]+)\s', l)
             if m: pairs.add((int(m[1], 16), int(m[2], 16)))
+            m = re.match(r'^([0-9A-F]+) ([0-9A-F]+) ; ([0-9A-F]+) ([0-9A-F]+)\s', l)
+            if m: ctx.add(tuple(int(m[i], 16) for i in range(1, 5)))
     unwritten = []
     for (a_, b_), n in distinct.items():
+        if n[-1] != 'letters': unwritten.append(n); continue
         ka, kb = n[7], n[8]
-        diff = [(x, y) for x, y in zip(ka, kb) if x != y] if len(ka) == len(kb) else None
-        if diff and all(unicodedata.category(x).startswith('M') and unicodedata.category(y).startswith('M') for x, y in diff):
-            for x, y in diff: pairs.add(tuple(sorted((ord(x), ord(y)))))          # two letters that differ only in a mark: the marks
+        diff = [(i, x, y) for i, (x, y) in enumerate(zip(ka, kb)) if x != y] if len(ka) == len(kb) else None
+        ccc = lambda c: unicodedata.combining(c) if unicodedata.combining(c) < 200 or unicodedata.combining(c) >= 230 else 220   # attached below ~ below
+        arabic = any('ARABIC' in unicodedata.name(c, '') for c in a_ + b_)   # Arabic: the two letters (a hamza is not three dots everywhere)
+        if len(a_) == 1 and len(b_) == 1 and arabic: pairs.add(tuple(sorted((ord(a_), ord(b_)))))
+        elif diff and all(unicodedata.category(x).startswith('M') and unicodedata.category(y).startswith('M') for _, x, y in diff):
+            for i, x, y in diff:
+                if ccc(x) == ccc(y): pairs.add(tuple(sorted((ord(x), ord(y)))))       # the same place: the marks
+                else: pa, pb = (ord(ka[i - 1]), ord(x)), (ord(kb[i - 1]), ord(y)); ctx.add(min(pa, pb) + max(pa, pb))   # one letter draws them at one place
         elif len(a_) == 1 and len(b_) == 1: pairs.add(tuple(sorted((ord(a_), ord(b_)))))   # two letters
         else: unwritten.append(n)
     for n in unwritten: print('NOT WRITTEN (not two letters, nor two letters that differ only in a mark):', n)
     with open(TWINS, 'w', encoding='utf8') as f:
         f.write('# Letters (and marks) the name rule allows that draw alike while their skeletons differ: tools/names/render_scan.py --write\n'
-                '# (blurred drawings within %.2f of an Arabic dot of each other), Chromium canvas, fonts: %s. Two letters that differ\n'
-                '# only in a mark give the pair of marks (é / è: U+0300 / U+0301).\n'
-                '# tools/names/name_rule.mjs gives each group one skeleton. Generated, never edited by hand.\n'
-                % (THR, ', '.join(FAMILIES) + ' at ' + '/'.join(map(str, SIZES)) + ' px'))
-        for a_, b_ in sorted(pairs): f.write('%04X ; %04X # %s / %s — %s / %s\n' % (a_, b_, chr(a_), chr(b_), unicodedata.name(chr(a_), '?'), unicodedata.name(chr(b_), '?')))
-    print('written', TWINS, len(pairs), 'pairs')
+                '# (blurred drawings within %.2f of an Arabic dot of each other), Chromium canvas, the app\'s font stacks (EN, AR, system-ui) at\n'
+                '# weights 400-700 and the system fonts on their own, 14-16 px. Two letters that differ only in a mark at the same place give the\n'
+                '# pair of marks (é / è: U+0300 / U+0301); a letter that draws two marks at one place gives the pair of letter + mark (ģ / ġ).\n'
+                '# tools/names/name_rule.mjs gives each group one skeleton. Generated, never edited by hand.\n' % THR)
+        nm = lambda c: unicodedata.name(chr(c), '?')
+        for a_, b_ in sorted(pairs): f.write('%04X ; %04X # %s / %s — %s / %s\n' % (a_, b_, chr(a_), chr(b_), nm(a_), nm(b_)))
+        for a1, m1, a2, m2 in sorted(ctx): f.write('%04X %04X ; %04X %04X # %s / %s — %s + %s / %s + %s\n' % (a1, m1, a2, m2, chr(a1) + chr(m1), chr(a2) + chr(m2), nm(a1), nm(m1), nm(a2), nm(m2)))
+    print('written', TWINS, len(pairs), 'pairs', len(ctx), 'letter + mark pairs')
 if MUST:
     u_, t_ = MUST.split('/')
     hit = [n for n in near if {n[2], n[3]} == {u_, t_}]

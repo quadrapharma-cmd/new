@@ -528,13 +528,15 @@
     [/^No member called (.+) — choose someone from the list$/, function (m) { return 'لا يوجد عضو باسم ' + m[1] + ' — اختر شخصًا من القائمة'; }],   /* ✎ New message (S-03) */
     [/^Several members are called (.+) — choose one from the list$/, function (m) { return 'أكثر من عضو باسم ' + m[1] + ' — اختر واحدًا من القائمة'; }],
     [/^Choose (.+) from the list to be sure who receives it$/, function (m) { return 'اختر ' + m[1] + ' من القائمة لتتأكد من المستلم'; }],
-    /* the name rule's refusals (live: sign-up, Edit Profile, the database — 0039_names_rule_4): what they quote is isolated (U+2068 …
+    /* the name rule's refusals (live: sign-up, Edit Profile, the database — 0039_names_rule_4 and _5): what they quote is isolated (U+2068 …
        U+2069), kept in the Arabic sentence so a Latin, Greek or Cyrillic character or name keeps its place */
     [/^A name can only have letters, spaces and \. - ' \( \) , \/ ، — remove “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\)$/, function (m) { return "الاسم يقبل الحروف والمسافات و \u2066. - ' ( ) , /\u2069 ، فقط — احذف «\u2068" + m[1] + '\u2069» (\u2068' + m[2] + '\u2069)'; }],
     [/^Write a name in Latin, Arabic, Greek or Cyrillic letters — “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) is not one of them$/, function (m) { return 'اكتب الاسم بحروف عربية أو لاتينية أو يونانية أو سيريلية — «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) ليس منها'; }],
     [/^The letter “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) is not supported in names yet$/, function (m) { return 'الحرف «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) غير مدعوم في الأسماء بعد'; }],
     [/^“\u2068([^]*)\u2069” is not a word — join it to the word next to it \(remove the space\)$/, function (m) { return '«\u2068' + m[1] + '\u2069» ليست كلمة — ألصقها بالكلمة المجاورة (احذف المسافة)'; }],
     [/^Put what follows the name in parentheses — write “\u2068([^]*)\u2069”$/, function (m) { return 'ضع ما يلي الاسم بين قوسين — اكتب «\u2068' + m[1] + '\u2069»'; }],
+    [/^Put the part in brackets after the name — write “\u2068([^]*)\u2069”$/, function (m) { return 'ضع الجزء الذي بين القوسين بعد الاسم — اكتب «\u2068' + m[1] + '\u2069»'; }],   /* fifth version (0039_names_rule_5) */
+    [/^What is in brackets is written in one direction — Arabic letters, or Latin, Greek and Cyrillic ones — “\u2068([^]*)\u2069” mixes them$/, function (m) { return 'ما بين القوسين يُكتب باتجاه واحد — حروف عربية، أو حروف لاتينية ويونانية وسيريلية — «\u2068' + m[1] + '\u2069» يخلط بينها'; }],
     [/^Write each word of a name in one alphabet — “\u2068([^]*)\u2069” mixes alphabets$/, function (m) { return 'اكتب كل كلمة من الاسم بأبجدية واحدة — «\u2068' + m[1] + '\u2069» تخلط بين أبجديات'; }],
     [/^Remove the mark added to “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ$/, function (m) { return 'احذف العلامة المضافة إلى «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) — يقبل Drugbox الحرف ذا العلامة مكتوبًا كحرف واحد، مثل \u2066é، ü، ñ\u2069'; }],
     [/^🚫 Block (.+)$/, function (m) { return '🚫 حظر ' + m[1]; }], [/^✅ Unblock (.+)$/, function (m) { return '✅ إلغاء الحظر عن ' + m[1]; }],   /* the conversation menu (J-SOCIAL-40) */
