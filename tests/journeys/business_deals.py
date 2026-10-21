@@ -95,7 +95,7 @@ def decline_and_withdraw(j):
         reopen(j, sp); open_deal(j, sp, t1, r'Received|الواردة'); bs = dlg_buttons(sp); close_dialogs(sp)
         j.check(not [x for x in bs if re.search(r'^(Send quote|Revise quote|Decline|أرسل عرضًا|عدّل العرض|رفض)$', x)], 'a declined deal still offers actions: %s' % bs)
         reopen(j, pg); t = open_deal(j, pg, t2, r'Sent|المرسلة'); bs = dlg_buttons(pg); close_dialogs(pg)
-        j.check(re.search(r'Cancelled|Withdrawn|ملغ|سُحب', t), 'the withdrawn request does not show as withdrawn')
+        j.check(re.search(r'Cancelled|Withdrawn|ملغ|سُحب|أُلغي|ألغي', t), 'the withdrawn request does not show as withdrawn')
         j.check(not [x for x in bs if re.search(r'^(Withdraw|Accept quote|Counter-offer|اسحب الطلب|اقبل العرض)$', x)], 'a withdrawn deal still offers actions: %s' % bs)
         if j.live:
             j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and type='deal'" % b['id']) not in ('', '0'), 'the buyer was not notified of the decline')

@@ -375,10 +375,10 @@ def reopen(j, pg):
     for attempt in range(3):
         j.reload(pg)
         if not snap: break
-        lost = pg.evaluate("s=>Object.keys(s).filter(k=>localStorage.getItem(k)===null)", snap)
+        lost = pg.evaluate("s=>Object.keys(s).filter(k=>localStorage.getItem(k)!==s[k])", snap)   # gone, or back to an older value (the last write lost)
         if not lost: break
         j.data.setdefault('storage_restored', []).extend(lost)
-        pg.evaluate("s=>{for(const k in s)if(localStorage.getItem(k)===null)localStorage.setItem(k,s[k])}", snap)
+        pg.evaluate("s=>{for(const k in s)if(localStorage.getItem(k)!==s[k])localStorage.setItem(k,s[k])}", snap)
         pg.wait_for_timeout(1500)
     if j.demo and j.on_login(pg): j.demo_signin(pg)
     return pg
