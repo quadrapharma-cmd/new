@@ -143,6 +143,11 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   -- fourth version (atk-legit-r3): letters of the four alphabets not taken yet say so; tone marks on Yoruba letters stay refused
   ('Hausa Ɗ Ƙ', 'Ɗanjuma Ƙasim', 'unsupported'), ('Akan Ɔ', 'Ɔpɔku Mensah', 'unsupported'), ('Akan Ɛ', 'Ɛfua Sutherland', 'unsupported'),
   ('Yoruba tone marks', 'Ọláfẹ́mi Adébáyọ̀', 'accent'), ('a spaced en dash', 'Hala Ali – Head of QA', 'dash'),
+  -- fourth version (render_scan.py): Arabic letters of the languages Drugbox serves (Arabic, Persian, Urdu, Kurdish, Maghrebi) only —
+  -- the others draw like a common letter with a small mark for its dot (ݕ / ي, ڂ / خ, ې / ب, ݵ / ݺ)
+  ('ݕ (Arabic Supplement)', U&'\0628\0755\0644', 'unsupported'), ('ڂ (hah with two dots above)', U&'\0682\0627\0644\062F', 'unsupported'),
+  ('ې (Uyghur yeh)', U&'\06D0\0627\0645', 'unsupported'), ('ؠ (Kashmiri yeh)', U&'\0639\0644\0620', 'unsupported'),
+  ('Persian, Urdu, Kurdish and Maghrebi letters are taken', 'پرویز گلشیری ڈاکٹر عبدالقدیر ڤيڨا ڕۆژ ڵێ ئەو ڧاطمة', ''),
   ('invisible U+200B is removed: allowed', U&'Dr. Zeina Tufice\200B', ''),
   ('invisible U+1D173 is removed: allowed', U&'Dr. Zeina Tufice\+01D173', ''),
   ('invisible U+1BCA0 is removed: allowed', U&'Dr. Zeina\+01BCA0 Tufice', ''),
@@ -209,14 +214,21 @@ insert into r(name, ok, err) select 'same skeleton: ' || x.a || ' / ' || x.b, pu
   ('كريم', 'کریم'), ('هالة', 'ہالۃ'), ('Anne-Marie', U&'Anne\2011Marie'), ('O’Brien', 'O´Brien'),
   -- third version: letters that draw alike while TR39 keys them apart (tools/names/pixel-twins.txt), a whole Cyrillic name that
   -- reads as Latin, the em dash
-  ('Dr. Salih', U&'Dr. \0405\0430\04CF\0456\04BB'), ('Salih', U&'\0405\0430\04C0\0456\04BB'), ('Ahmed Ali', U&'Ahmed A\04CFi'), ('زڒ', 'زۯ'), ('ݶا', 'ݻا'),
+  ('Dr. Salih', U&'Dr. \0405\0430\04CF\0456\04BB'), ('Salih', U&'\0405\0430\04C0\0456\04BB'), ('Ahmed Ali', U&'Ahmed A\04CFi'),
   ('Jean-Paul', 'Jean—Paul'), ('Mapía', 'Μαρία'),
   -- fourth version: a name typed with Arabic diacritics is the same name as without them (and is stored without them)
-  ('حالد', 'حْالد'), ('محمد عبد الرحمن', 'مُحَمَّد عَبْدُ الرَّحْمٰن'), ('د/ محمد علي', 'د / محمد علي'), ('Sa’īd', 'Saʿīd'), ('Sa’īd', 'Saʾīd')) x(a, b);
+  ('حالد', 'حْالد'), ('محمد عبد الرحمن', 'مُحَمَّد عَبْدُ الرَّحْمٰن'), ('د/ محمد علي', 'د / محمد علي'), ('Sa’īd', 'Saʿīd'), ('Sa’īd', 'Saʾīd'),
+  -- fourth version: what tools/names/render_scan.py found drawn alike (every letter against every letter, 14-16 px): accents at the same
+  -- place (é / è, Ŝ / Š, ἀ / ἁ, ş / ș / ę), two stacked accents and one (Ẵ / Ǎ), an accent above i or j in place of its dot (í / i),
+  -- ئ / ت before a letter, г / ґ, ӏ / l / ا
+  ('José Tufice', 'Josè Tufice'), ('Šara', 'Ŝara'), ('Hélène', 'Hêlène'), ('Müller', 'Mûller'), ('ἀλέξανδρος', 'ἁλέξανδρος'), ('Ştefan', 'Ștefan'),
+  ('Ẵnh', 'Ǎnh'), ('Alí Tufice', 'Ali Tufice'), ('Ĵan', 'Jan'), ('تامر', 'ئامر'), ('Анна ганна', 'Анна ґанна'), ('Ahmed Ali', U&'Ahmed A\0627i')) x(a, b);
 insert into r(name, ok, err) select 'different skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) <> public.person_name_key(x.b), public.person_name_key(x.a) from (values
   ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Ibrahim', 'ibrahim'), ('أبو', 'ابو'), ('Ali', 'All'), ('Hala', 'Hana'),
   -- fourth version: the undotted name and the dotted one stay different names — and the undotted one is now DRAWN undotted
-  ('حْالد', 'خالد'), ('رْياد', 'زياد'), ('دْكي', 'ذكي'), ('عْادة', 'غادة'), ('حسںْ', 'حسن')) x(a, b);
+  ('حْالد', 'خالد'), ('رْياد', 'زياد'), ('دْكي', 'ذكي'), ('عْادة', 'غادة'), ('حسںْ', 'حسن'),
+  -- …and a mark present or not, a dot more or less, stay different names
+  ('José', 'Jose'), ('Müller', 'Muller'), ('Ştefan', 'Stefan'), ('Alena', 'Alёna'), ('ثامر', 'تامر'), ('ح', 'خ'), ('ر', 'ز'), ('ص', 'ض'), ('ب', 'ن')) x(a, b);
 insert into r(name, ok, err) select 'stored without the mark that drew as a dot: ' || x.a || ' → ' || public.person_name_norm(x.a) || ', not ' || x.b,
        public.person_name_norm(x.a) <> x.b and public.person_name_norm(x.a) !~ ('[' || U&'!064B-!0652!0670' uescape '!' || ']') and strpos(public.person_name_norm(x.a), x.u) > 0,
        public.person_name_norm(x.a) from (values

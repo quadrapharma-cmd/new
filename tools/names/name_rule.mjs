@@ -49,7 +49,8 @@
 //            TR39 "single script" per word. *Words of different scripts may stand side by side ("Dr. Мария Иванова",
 //            "Мария Иванова (Maria Ivanova)"): a whole word in another alphabet that copies a Latin word ("Рара" for "Papa") has the
 //            same SKELETON, so it is the same name below — that, not the script, is what keeps it from passing as someone else
-//  skeleton (person_name_key / nmSkel): NFD of the normalised name, every character replaced by its key, NFD again. A character's
+//  skeleton (person_name_key / nmSkel): NFD of the normalised name, every character replaced by its key, NFD again *(fourth version)
+//    then one of a run of the same mark kept and the first mark above after i or j dropped (it takes the place of the dot). A character's
 //    key is the fixed point of: TR39 confusable prototype (confusables.txt) of each character, then lower case, then NFD — and the
 //    Arabic short vowels and shadda (U+064B-U+0652, U+0670) are dropped (names are written with or without them), and so is U+FFFC
 //    (it draws nothing; names stored before 0038 may hold it). So "Rana" and "Rаna", "Ilya" and "llya", "O'Brien" and "O’Brien",
@@ -102,6 +103,11 @@ const SCRIPTS = [['Latn', 'Latin'], ['Arab', 'Arabic'], ['Grek', 'Greek'], ['Cyr
 //   of transliteration) — not Latin Extended-C…G, whose letters draw like letters of other alphabets (Ɥ U+A78D is Cyrillic Ч to the
 //   pixel) or as an empty box in every installed font (U+1DF00…) (atk-unicode-r2); Greek: Greek and Coptic, Greek Extended;
 //   Cyrillic: Cyrillic, Cyrillic Supplement (not Extended-A…D)
+// *(fourth version) Arabic letters are the letters of Arabic, Persian, Urdu, Kurdish (Sorani) and Maghrebi Arabic only — the letters
+// of other languages written in the Arabic script (Arabic Supplement, Pashto, Sindhi, Uyghur, Kashmiri, Saraiki…) differ from a
+// common letter by a small mark that draws like a dot at 14-16 px (ݕ / ي, ڂ / خ, ې / ب, ݵ / ݺ: tools/names/render_scan.py), so they are
+// 'unsupported' (not supported yet), like Hausa Ɗ
+const ARAB_OK = new Set([...'ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيٱٹپچڈڑژڕڤڧڨکگڵںھۀہۂۃۆیێےۓە'].map((x) => x.codePointAt(0)));
 const BLOCKS = { Latn: [[0x0000, 0x024F], [0x0250, 0x02AF], [0x1E00, 0x1EFF]], Arab: [[0x0600, 0x06FF], [0x0750, 0x077F]],
   Grek: [[0x0370, 0x03FF], [0x1F00, 0x1FFF]], Cyrl: [[0x0400, 0x052F]] };
 const stable = (c) => ch(c).normalize('NFKC') === ch(c);
@@ -126,7 +132,7 @@ const LET = {}, MARK = {};
 for (const [k, sc] of SCRIPTS) {
   const inSc = has(new RegExp(`^\\p{Script=${sc}}$`, 'u')), inScx = has(new RegExp(`^\\p{Script_Extensions=${sc}}$`, 'u'));
   const inherited = has(/^\p{Script_Extensions=Inherited}$/u);
-  LET[k] = ranges((c) => ALLOWED.has(c) && /^\p{L}$/u.test(ch(c)) && inSc(c) && stable(c) && inR(BLOCKS[k])(c) && !isStrip(c));
+  LET[k] = ranges((c) => ALLOWED.has(c) && /^\p{L}$/u.test(ch(c)) && inSc(c) && stable(c) && inR(BLOCKS[k])(c) && !isStrip(c) && (k !== 'Arab' || ARAB_OK.has(c)));
   MARK[k] = ranges((c) => ALLOWED.has(c) && /^\p{M}$/u.test(ch(c)) && (inScx(c) || inherited(c)) && stable(c) && DROP.has(c) && !isStrip(c));   // *(fourth version) none left
 }
 const union = (...rss) => { const s = new Set(); for (const rs of rss) for (const [a, b] of rs) for (let c = a; c <= b; c++) s.add(c); return ranges((c) => s.has(c)); };
@@ -166,7 +172,12 @@ const LIKE_MAP = new Map(LIKE.map(([c, t]) => [c, t]));
 // tools/names/render_scan.py --write from the fonts it lists: ӏ U+04CF is l to the pixel in three fonts but TR39 maps it to i;
 // ڒ / ۯ; ݶ / ݻ): each group gets the skeleton of its most common letter (basic Latin, the Arabic alphabet, basic Greek and Cyrillic;
 // else the lowest code point) — the letter alone is remapped, never its whole class
+// *(fourth version) the pairs may be MARKS too (an accent that draws like another at the same place: é / è, Ŝ / Š, ἀ / ἁ, written by
+// render_scan.py when two letters differ only in a mark): a group of marks gets the lowest one. A group of letters gets a letter that
+// cannot be remapped itself (one NFD splits, ئ = ي + hamza: its skeleton comes from its parts), else the most common one, else the
+// lowest code point
 const COMMON = (c) => (c >= 0x41 && c <= 0x7A) || (c >= 0x0621 && c <= 0x064A) || (c >= 0x0391 && c <= 0x03C9) || (c >= 0x0410 && c <= 0x044F);
+const SPLITS = (c) => ch(c).normalize('NFD') !== ch(c);
 const PIXEL = new Map();
 {
   const up = new Map(), find = (x) => { while (up.has(x) && up.get(x) !== x) x = up.get(x); return x; };
@@ -175,7 +186,11 @@ const PIXEL = new Map();
     for (const x of [a, b]) if (!up.has(x)) up.set(x, x); if (a !== b) up.set(Math.max(a, b), Math.min(a, b));
   }
   const groups = new Map(); for (const x of up.keys()) { const r = find(x); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(x); }
-  for (const g of groups.values()) { g.sort((a, b) => (COMMON(b) - COMMON(a)) || a - b); for (const x of g.slice(1)) PIXEL.set(x, g[0]); }
+  for (const g of groups.values()) {
+    g.sort((a, b) => (SPLITS(b) - SPLITS(a)) || (COMMON(b) - COMMON(a)) || a - b);
+    if (g.filter(SPLITS).length > 1) throw new Error('tools/names/pixel-twins.txt: a group holds two letters that NFD splits: ' + g.filter(SPLITS).map((x) => 'U+' + x.toString(16)).join(' '));
+    for (const x of g.slice(1)) PIXEL.set(x, g[0]);
+  }
 }
 const base0 = (c) => (DROP.has(c) ? '' : CONF.has(c) ? CONF.get(c) : ch(c));
 const base = (c) => (PIXEL.has(c) ? keyOf0(PIXEL.get(c)) : base0(c));
@@ -184,6 +199,14 @@ const step = (s) => [...[...s.normalize('NFD')].map((x) => base(x.codePointAt(0)
 function keyOf(c) { let s = ch(c); for (let i = 0; i < 16; i++) { const t = step(s); if (t === s) return s; s = t; } throw new Error('no fixed point for U+' + c.toString(16)); }
 const SKEL = [];
 for (let c = 1; c <= PLANES01; c++) { if (isSur(c)) continue; const s = ch(c); if (s.normalize('NFD') !== s || !stable(c)) continue; const k = keyOf(c); if (k !== s) SKEL.push([c, k]); }
+// *(fourth version) marks that draw alike map to one mark (pixel-twins.txt), and two of the same mark stacked on a letter draw like one
+// at 14-16 px (Ẵ — breve and tilde — like Ǎ, ǘ like ü): the skeleton keeps one of a run of the same mark.
+// *(fourth version) an accent above i or j takes the place of its dot (í is drawn ı + ◌́, and looks like i at 14-16 px): the skeleton
+// drops the first mark above that follows i or j (after the marks below it) — "Alí" / "Ali", "ĵ" / "j" (render_scan.py). The
+// canonical combining class is read from NFD's own reordering: a mark ABOVE sorts after a dot below (220) and before U+0315 (232)
+const reorders = (a, b) => ('a' + a + b).normalize('NFD') !== 'a' + a + b;
+const MARK_ABOVE = ranges((c) => /^\p{M}$/u.test(ch(c)) && reorders(ch(c), '\u0323') && reorders('\u0315', ch(c)), PLANES01);
+const MARK_BEFORE_ABOVE = ranges((c) => /^\p{M}$/u.test(ch(c)) && reorders('\u0301', ch(c)), PLANES01);   // a mark NFD puts before one above
 const hx = (c) => c.toString(16).toUpperCase();
 const SKEL_D = SKEL.map(([c, k]) => hx(c) + '=' + [...k].map((x) => hx(x.codePointAt(0))).join('.')).join(',');
 
@@ -297,9 +320,11 @@ select chr(('x' || lpad(split_part(e, '=', 1), 8, '0'))::bit(32)::int),
 '${SKEL_D}', ',')) e;
 create or replace function public.person_name_key(s text)
 returns text language sql stable parallel safe set search_path = '' as $$
-  select normalize(array_to_string(array(
+  select regexp_replace(regexp_replace(normalize(array_to_string(array(
     select coalesce((select m.sk from private.name_skeleton m where m.ch = c.ch), c.ch)
-      from unnest(regexp_split_to_array(normalize(public.person_name_norm(s), NFD), '')) with ordinality c(ch, i) order by c.i), ''), NFD)
+      from unnest(regexp_split_to_array(normalize(public.person_name_norm(s), NFD), '')) with ordinality c(ch, i) order by c.i), ''), NFD),
+    '([' || ${U(sqlClass(MARK_ALL))} || '])\\1+', '\\1', 'g'),
+    '([ij])([' || ${U(sqlClass(MARK_BEFORE_ABOVE))} || ']*)[' || ${U(sqlClass(MARK_ABOVE))} || ']', '\\1\\2', 'g')
 $$;
 -- <<< generated`;
 }
@@ -323,6 +348,8 @@ function jsRegion() {
   var NM_RUN = /[${jsClass(RUN_SEP)}]+/u;
   var NM_SCRIPTS = [${SCRIPTS.map(([k]) => `['${k}', ${jsWord(LET[k], MARK[k])}]`).join(', ')}];
   var NM_MSG = ${isoEsc(JSON.stringify(MSG), (h) => '\\u' + h)};
+  var NM_RUN_MARK = /([${jsClass(MARK_ALL)}])\\1+/gu;
+  var NM_SOFT = /([ij])([${jsClass(MARK_BEFORE_ABOVE)}]*)[${jsClass(MARK_ABOVE)}]/gu;
   var NM_SKEL = (function (d) { var m = new Map(); d.split(',').forEach(function (e) { var p = e.split('='); m.set(String.fromCodePoint(parseInt(p[0], 16)), p[1] ? p[1].split('.').map(function (h) { return String.fromCodePoint(parseInt(h, 16)); }).join('') : ''); }); return m; })(
     '${SKEL_D}');
   function nmLikeTo(c) { return NM_LIKE_TO.get(c); }
@@ -345,7 +372,7 @@ function jsRegion() {
     if (p === 'accent') { var a = (n.match(NM_ACCENT_AT) || [''])[0]; m = put(a); return put((Array.from(a).pop() || '').codePointAt(0).toString(16).toUpperCase().padStart(4, '0')); }
     return m;
   }
-  function nmSkel(x) { return Array.from(nmNorm(x).normalize('NFD'), function (c) { var k = NM_SKEL.get(c); return k == null ? c : k; }).join('').normalize('NFD'); }
+  function nmSkel(x) { return Array.from(nmNorm(x).normalize('NFD'), function (c) { var k = NM_SKEL.get(c); return k == null ? c : k; }).join('').normalize('NFD').replace(NM_RUN_MARK, '$1').replace(NM_SOFT, '$1$2'); }
 /* <<< generated */`;
 }
 
