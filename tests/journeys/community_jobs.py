@@ -279,6 +279,8 @@ def post_vacancy(j):
         reopen(j, pg); jobs_page(j, pg, HUNT); j.check(title in ' '.join(c['title'] for c in jcards(pg)), 'after reload the job is gone')
         if j.live:
             pg.evaluate("s=>window.dxDir&&dxDir.open?dxDir.open(s):goto('companies')", e['co']['slug']); j.settle(pg, 1500)
+            tl = pg.locator('#content [role=tab], #content .cp-tab, #content button').filter(has_text=re.compile(r'^\W*(Jobs|الوظائف) \(\d+\)'))
+            if tl.count(): tl.first.scroll_into_view_if_needed()      # on a phone the tab bar scrolls sideways (in Arabic the Jobs tab starts off-screen)
             tab = j.find(pg, r'^\W*(Jobs|الوظائف) \(\d+\)', scope='#content'); j.check(tab, 'the company page has no Jobs tab')
             tab.click(); j.settle(pg, 1200)
             if title not in j.text(pg): tab = j.find(pg, r'^\W*(Jobs|الوظائف) \(\d+\)', scope='#content'); tab and tab.click(); j.settle(pg, 1200)   # the page redraws once its jobs arrive

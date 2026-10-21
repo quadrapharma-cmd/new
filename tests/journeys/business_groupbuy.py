@@ -115,7 +115,7 @@ def join_buying_group(j):
             card = pg.locator('.dbk-ov .gb-card', has_text=product).first
             card.locator('button', has_text=re.compile(r'^\s*(Leave|غادر|مغادرة)\s*$')).first.click(); j.settle(pg, 1500)
             groups_dialog(j, pg); t = group_card(pg, product)
-            j.check('500' in t and '1 compan' in t, 'leaving did not remove the member from the group: %s' % t[:120])
+            j.check('500' in t and re.search(r'\b1 compan|1 شركة', t), 'leaving did not remove the member from the group: %s' % t[:120])   # Arabic: «1 شركة»
             j.check(j.wait_db("select count(*) from public.deal_members m join public.deals d on d.id=m.deal_id where d.title like '%%%s%%'" % j.tag, 6) == '1', 'the member is still stored after leaving')
         close_dialogs(pg)
     with j.step("Join with 1,500 so the target is reached: 'Target reached'; the supplier and members are notified"):

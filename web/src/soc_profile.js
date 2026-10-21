@@ -193,7 +193,7 @@
   function expForm(i) {
     var l = (me().experience || []).slice(), x = i == null ? {} : l[i] || {};
     form(i == null ? 'Add position' : 'Edit position', [
-      { id: 'pfTitle', key: 'title', label: 'Title *', value: x.title, max: 120 }, { id: 'pfCo', key: 'company', label: 'Company *', value: x.company, max: 120 },
+      { id: 'pfTitle', key: 'title', label: 'Job title *', value: x.title, max: 120 }, { id: 'pfCo', key: 'company', label: 'Company *', value: x.company, max: 120 },
       { id: 'pfStart', key: 'start', label: 'Start (month) *', type: 'month', value: x.start, ph: 'YYYY-MM' }, { id: 'pfEnd', key: 'end', label: 'End (month) — empty if you work here now', type: 'month', value: x.end, ph: 'YYYY-MM' },
       { id: 'pfDesc', key: 'desc', label: 'Description', type: 'area', value: x.desc }], function (v) {
         if (!v.title || !v.company) return 'Title and company are required';
@@ -273,7 +273,7 @@
     'Choose a cover image': 'اختر صورة الغلاف', 'Experience': 'الخبرة', 'Education': 'التعليم', 'Skills': 'المهارات', 'Languages': 'اللغات', '+ Add position': '+ أضف خبرة', '+ Add education': '+ أضف تعليمًا', '+ Add skill': '+ أضف مهارة', '+ Add language': '+ أضف لغة',
     'Edit': 'تعديل', 'Delete': 'حذف', 'Present': 'حتى الآن', 'No experience added.': 'لم تُضف خبرات.', 'No education added.': 'لم يُضف تعليم.', 'No skills added.': 'لم تُضف مهارات.', 'No languages added.': 'لم تُضف لغات.',
     'Endorse': 'أؤيد', '✓ Endorsed': '✓ أيّدت', 'endorsement': 'تأييد', 'endorsements': 'تأييدات', 'Add position': 'أضف خبرة', 'Edit position': 'تعديل الخبرة', 'Add education': 'أضف تعليمًا', 'Edit education': 'تعديل التعليم',
-    'Title *': 'المسمى *', 'Company *': 'الشركة *', 'Start (month) *': 'البداية (الشهر) *', 'End (month) — empty if you work here now': 'النهاية (الشهر) — اتركها فارغة إن كنت تعمل هنا الآن', 'Description': 'الوصف',
+    'Job title *': 'المسمى الوظيفي *', 'Company *': 'الشركة *', 'Start (month) *': 'البداية (الشهر) *', 'End (month) — empty if you work here now': 'النهاية (الشهر) — اتركها فارغة إن كنت تعمل هنا الآن', 'Description': 'الوصف',
     'School *': 'الجهة التعليمية *', 'Degree': 'الدرجة', 'From (year)': 'من (سنة)', 'To (year)': 'إلى (سنة)', 'Add skills': 'أضف مهارات', 'Skill (press Enter after each)': 'المهارة (اضغط Enter بعد كل واحدة)',
     'Add language': 'أضف لغة', 'Language (and level)': 'اللغة (والمستوى)', 'Title and company are required': 'المسمى والشركة مطلوبان', 'Choose the start month': 'اختر شهر البداية', 'Choose the end month, or leave it empty': 'اختر شهر النهاية أو اتركه فارغًا',
     'The end cannot be before the start': 'لا يمكن أن تسبق النهاية البداية', 'Dates cannot be in the future': 'لا يمكن أن تكون التواريخ في المستقبل', 'The school is required': 'الجهة التعليمية مطلوبة', 'Years are 4 digits, e.g. 2019': 'السنة 4 أرقام، مثل 2019',

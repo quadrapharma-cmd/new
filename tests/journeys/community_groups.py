@@ -501,7 +501,7 @@ def group_members(j):
     t = j.tag[:4]
     if j.live:
         me = j.person('Mona Fathy'); pg = me['page']
-        names = ['Dr. Member%02d %s' % (i, t) for i in range(12)]
+        names = ['Dr. Member%s %s' % (w, t) for w in ('Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel', 'India', 'Juliet', 'Kilo', 'Lima')]   # a name has no digits (0038)
         ppl = [seed_user(j, n, 'Pharmacist', 'Co%02d' % i) for i, n in enumerate(names)]
         gname = 'Members Group %s' % t; gid = seed_group(j, gname, ppl[0]); add_member(j, gid, ppl[1], 'admin')
         for p in ppl[2:]: add_member(j, gid, p)

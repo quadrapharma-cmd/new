@@ -16,7 +16,7 @@
 .sk-av{width:48px;height:52px;border-radius:0;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
 .sk-l1{width:40%;height:14px}.sk-l2{width:85%;height:12px}.sk-l3{width:65%;height:12px}
 @keyframes dxShimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
-#content.dx-enter>*{animation:dxFade .16s ease-out both}
+#content.dx-enter>*{animation:dxFade .16s ease-out backwards}   /* backwards, not both: a finished fade leaves no stacking context, so a page dialog (z-index 500) stays above the footer drawn after it */
 @keyframes dxFade{from{opacity:.35}to{opacity:1}}
 @keyframes dxEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 #dxOk{position:fixed;left:50%;bottom:86px;width:64px;height:72px;margin-left:-32px;z-index:3100;pointer-events:none;display:none}
@@ -93,3 +93,5 @@
 /* dark mode for the craft overlays */
 html.dx-dark #dxHover,html.dx-dark #dxSkel,html.dx-dark #dxTour .tour-tip{filter:invert(1) hue-rotate(180deg)}
 html.dx-dark #dxHover .hc-av{filter:invert(1) hue-rotate(180deg)}
+/* phone menu: its foot (Privacy, Terms, Sign out, Admin) scrolls clear of the bottom bar (56 px), which otherwise covers it */
+@media (max-width:768px){.sidebar{padding-bottom:calc(56px + env(safe-area-inset-bottom,0px))}}

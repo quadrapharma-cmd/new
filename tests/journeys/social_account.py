@@ -386,8 +386,11 @@ def switch_language(j):
     """A member switches the whole interface between English and Arabic and it stays in the chosen language."""
     a = j.person('Dr. Lina Lang') if j.live else None
     pg = a['page'] if a else j.demo_signin(j.new_page(j.new_ctx(lang='en')))
-    if pg.evaluate("document.documentElement.lang") == 'ar':
-        pg.click('#langBtn'); j.settle(pg)
+    if pg.evaluate("document.documentElement.lang") == 'ar':           # an Arabic run starts from English: the visible switch (on a phone it is in the menu)
+        el = pg.locator('#langBtn') if pg.is_visible('#langBtn') else None
+        if not el and pg.locator('#sbToggle:visible').count(): pg.click('#sbToggle'); pg.wait_for_timeout(400); el = j.find(pg, r'^\W*English\W*$', scope='body')
+        if el: el.click(); j.settle(pg)
+        else: pg.evaluate("localStorage.setItem('dx_lang','en')"); j.reload(pg)
     with j.step('Click the language button (العربية) → html lang=ar dir=rtl'):
         el = pg.locator('#langBtn') if pg.is_visible('#langBtn') else j.find(pg, 'العربية', scope='body')
         if not el and pg.locator('#sbToggle:visible').count(): pg.click('#sbToggle'); pg.wait_for_timeout(400); el = j.find(pg, 'العربية', scope='body')

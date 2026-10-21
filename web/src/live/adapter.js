@@ -1473,7 +1473,11 @@
   async function actRemote(d, evs) {
     for (var i = 0; i < evs.length; i++) { var e = evs[i];
       var r = await sb.rpc('deal_act', { p_ref: d.id, p_action: e.kind, p_data: Object.assign({}, e.data || {}, { text: e.text || '' }), p_side: e.by });
-      if (r.error) return refused(r.error); }
+      if (r.error) return refused(r.error);
+      /* a rating changes the rated page's reviews and track record: its page reads them again when next opened (they are kept a minute) */
+      if (e.kind === 'rate') [d.to, d.from].forEach(function (c) { if (c && c.slug) CO.trackAt[c.slug] = 0; }); }
+    /* a surplus sale received takes its quantity off the listing (0054): the listings are read again now, not after 15 s */
+    if (d.type === 'surplus' && typeof MK2 !== 'undefined' && MK2) { MK2.listAt = Date.now(); loadListings().then(function () { var b = document.querySelector('.hb-mk'); if (b) b.dataset.sig = ''; }).catch(function () {}); }
   }
   function syncDeals(list) {
     DEALS.list = list; var jobs = [];
@@ -4068,7 +4072,10 @@
           c.rows = (r.data || []).map(function (j) { return { t: j.title, type: j.type || 'Full-time', loc: [j.location, j.country].filter(Boolean).join(', '), onJobs: true, id: j.id }; });
           if (JSON.stringify(c.rows) !== before) rerenderCompanies(); });
       }
-      return c.rows;
+      /* merge: plus the positions company_jobs() (0058, business) returns — posted under the page's name by a member of its team, the
+         database checks the membership — so a job posted before the page's company_id existed still shows (J-BUSINESS-11) */
+      var more = (co.jobs || []).filter(function (j) { return j && j._id && !c.rows.some(function (x) { return x.id === j._id || x.t === j.t; }); });
+      return more.length ? c.rows.concat(more.map(function (j) { return { t: j.t, type: j.type, loc: j.loc, onJobs: true, id: j._id }; })) : c.rows;
     }
   };
   var CJ = {};

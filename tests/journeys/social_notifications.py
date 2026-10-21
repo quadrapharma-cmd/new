@@ -166,8 +166,11 @@ def mark_read_and_clear(j):
         j.check(j.sql1("select count(*) from public.notifications where user_id='%s'" % a['id']) == '0', 'notification rows still exist after Clear all')
         j.reload(pg); j.check(not notifs(j, pg), 'after reload cleared notifications are back')
     with j.step('A new notification after clearing appears with badge 1'):
+        # without Realtime (the local stack) the app polls: 20 s, slowing to 60 s while nothing arrives — so up to a minute
         j.sql("insert into public.notifications (user_id, type, from_user, message) values ('%s','system','%s','Fresh one %s')" % (a['id'], b['id'], j.tag))
-        j.check(j.wait(pg, "(()=>{const e=[...document.querySelectorAll('#tnb-notifs [class*=badge],#mb-notifs [class*=badge]')].find(e=>e.getClientRects().length);return e&&e.getClientRects().length&&e.innerText.trim()==='1'})()", 30), 'the badge does not show 1 for the new notification')
+        j.check(j.wait(pg, "(()=>{const e=[...document.querySelectorAll('#tnb-notifs [class*=badge],#mb-notifs [class*=badge]')].find(e=>e.getClientRects().length);return e&&e.getClientRects().length&&e.innerText.trim()==='1'})()", 65), 'the badge does not show 1 for the new notification (badges: %s; unread rows: %s)' % (
+            pg.evaluate("[...document.querySelectorAll('#tnb-notifs [class*=badge],#mb-notifs [class*=badge]')].map(e=>e.getClientRects().length+':'+e.innerText.trim())"),
+            j.sql1("select string_agg(type||':'||coalesce(message,''),' | ') from public.notifications where user_id='%s' and not read" % a['id'])))
 
 @journey('J-SOCIAL-44', applies='live')
 def notification_preferences(j):

@@ -257,8 +257,7 @@ def publish_courses(j):
     u = j.person('Mona Learner')
     with j.step('Admin → Training / Courses: Add course (title, description, level, duration, price, instructor, lessons)'):
         close_dialogs(pg); a_ = pg.locator("#app [onclick=\"goto('admin')\"]"); j.check(a_.count(), 'no Admin entry for a Drugbox admin')
-        if not a_.first.is_visible() and pg.locator('#sbToggle:visible').count(): pg.click('#sbToggle'); pg.wait_for_timeout(400)
-        a_.first.click(); j.settle(pg, 1200)
+        j.nav(pg, 'admin'); j.settle(pg, 1200)                       # the visible entry (on a phone: in the menu, at its foot)
         el = j.find(pg, r'Training|Courses|التدريب|الدورات|تدريب', scope='#content'); j.check(el, 'not built: Admin has no Training / Courses section (courses are added with SQL only)')
         el.click(); j.settle(pg, 900)
         b = j.find(pg, r'Add course|New course|إضافة دورة', scope='body'); j.check(b, 'not built: no "Add course" in Admin'); b.click(); pg.wait_for_timeout(700)

@@ -454,7 +454,7 @@ def request_quote(j, pg, sup, product=None, qty='500', unit='kg', to='Cairo, Egy
     directory(j, pg); open_card(j, pg, sup)
     j.click(pg, L('Request a quote'), scope='#content', what='Request a quote')
     j.check(dlg_open(pg), 'Request a quote opened no form')
-    if product: fill_by_label(j, pg, r'^(Product|منتج|المنتج)', re.escape(product))
+    if product: fill_by_label(j, pg, r'^(Product|منتج|المنتج)', re.escape(product) + ('|' + re.escape(ar(product)) if ar(product) else ''))   # «Something else» reads «شيء آخر» in Arabic
     fill_by_label(j, pg, r'Quantity|الكمية', qty); fill_by_label(j, pg, r'^Unit|الوحدة', unit, required=False)
     fill_by_label(j, pg, r'Deliver to|التسليم إلى|التوصيل', to, required=False); fill_by_label(j, pg, r'Delivery terms|شروط', inc, required=False)
     by = pg.locator('#rqBy')

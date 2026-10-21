@@ -292,7 +292,13 @@ class J:
         el = self.find(pg, pattern, scope, **kw)
         if not el: self.notbuilt('no visible control "%s"%s' % (what or pattern, '' if scope == '#app' else ' in ' + scope))
         mark = self.toast_mark(pg)
-        el.scroll_into_view_if_needed(); el.click(); pg.wait_for_timeout(settle)
+        for i in range(3):
+            try: el.scroll_into_view_if_needed(); el.click(); break
+            except Exception as e:                 # live data arrived and the page was drawn again between finding and clicking: click the new one
+                if 'not attached' not in str(e) or i == 2: raise
+                pg.wait_for_timeout(300); el = self.find(pg, pattern, scope, **kw)
+                if not el: self.notbuilt('no visible control "%s"%s' % (what or pattern, '' if scope == '#app' else ' in ' + scope))
+        pg.wait_for_timeout(settle)
         self.dead_end(pg, mark, what or pattern)
         return el
 
@@ -303,7 +309,7 @@ class J:
             if DEAD_END.search(t): self.fail('dead end: "%s" only shows the toast "%s"' % (what, t[:80]))
         return new
 
-    def nav(self, pg, page):
+    def nav(self, pg, page, _try=0):
         """Go to a page the way a person does: the visible top-bar / sidebar / bottom-bar entry for it."""
         el = pg.evaluate_handle("""p=>{const vis=e=>{const r=e.getBoundingClientRect();return r.width>1&&r.height>1&&getComputedStyle(e).visibility!='hidden'&&r.bottom>0&&r.top<innerHeight+2&&r.right>0&&r.left<innerWidth};
             return [...document.querySelectorAll('#app [onclick]')].find(e=>vis(e)&&new RegExp("goto\\\\(['\\"]"+p+"['\\"]\\\\)").test(e.getAttribute('onclick')))||null}""", page).as_element()
@@ -311,8 +317,15 @@ class J:
             pg.click('#sbToggle'); pg.wait_for_timeout(400)
             el = pg.evaluate_handle("""p=>{const vis=e=>{const r=e.getBoundingClientRect();return r.width>1&&r.height>1&&getComputedStyle(e).visibility!='hidden'&&r.bottom>0&&r.top<innerHeight+2&&r.right>0&&r.left<innerWidth};
                 return [...document.querySelectorAll('#app [onclick]')].find(e=>vis(e)&&new RegExp("goto\\\\(['\\"]"+p+"['\\"]\\\\)").test(e.getAttribute('onclick')))||null}""", page).as_element()
+        if not el and pg.locator('#sbToggle:visible').count():          # the open menu scrolls: an entry at its foot (Admin) is scrolled to, as a person does
+            el = pg.evaluate_handle("""p=>{const e=[...document.querySelectorAll('#app [onclick]')].find(e=>{const r=e.getBoundingClientRect();return r.width>1&&r.height>1&&getComputedStyle(e).visibility!='hidden'&&new RegExp("goto\\\\(['\\"]"+p+"['\\"]\\\\)").test(e.getAttribute('onclick'))});
+                if(e)e.scrollIntoView({block:'center'});return e||null}""", page).as_element()
         if not el: self.notbuilt('no visible navigation entry to "%s" at %dpx' % (page, self.width))
-        el.click(); self.settle(pg); return pg
+        try: el.click()
+        except Exception as e:                     # the menu was drawn again between finding and clicking (goto() rebuilds it): click the new entry
+            if 'not attached' not in str(e) or _try >= 2: raise
+            pg.wait_for_timeout(300); return self.nav(pg, page, _try + 1)
+        self.settle(pg); return pg
 
     def reload(self, pg):
         pg.reload(wait_until='load')

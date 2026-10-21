@@ -101,7 +101,8 @@ def find_supplier(j):
         slugs = card_slugs(pg)
         j.check(len(slugs) == len(set(slugs)), 'a company is listed twice')
         total = int(j.sql1("select count(*) from public.companies where status<>'suspended' and created_at < '%s'" % t0)) if j.live else pg.evaluate("dxDir.companies().length")
-        j.check(len(slugs) >= total, 'only %d of %d companies can be reached with Show more' % (len(slugs), total))
+        miss = [x for x in j.sql("select slug||' ('||status||')' from public.companies where status<>'suspended' and created_at < '%s'" % t0).split('\n') if x and x.split(' ')[0] not in slugs] if j.live and len(slugs) < total else []
+        j.check(len(slugs) >= total, 'only %d of %d companies can be reached with Show more%s' % (len(slugs), total, (' — missing: %s' % miss[:5]) if miss else ''))
     with j.step("'View page' opens that company's own page (name, sectors, city match the card)"):
         directory(j, pg); search_dir(j, pg, want.split(' %s' % j.tag)[0] if j.live else want)
         card = pg.locator('#dxDir .dr-card', has_text=want).first; meta = card.locator('.dr-meta').inner_text()
@@ -204,7 +205,7 @@ def judge_supplier(j):
             j.check('ISO 9001' in t, 'the pending ISO 9001 certificate is not shown at all')
             iso = chip_info(pg, 'ISO 9001')
             j.check(re.search(r'not yet checked|unverified|pending|self-declared|not checked|لم يتم|لم تُراجع|غير موثق|قيد', iso, re.I), 'the unchecked ISO 9001 certificate is shown like a checked one (no "not yet checked")')
-            j.check(re.search(r'GDP[^\n]*(Expired|expired|منتهي)', t) or 'GDP' not in t, 'the expired GDP certificate is shown as valid')
+            j.check(re.search(r'GDP[^\n]*(Expired|expired|منتهي|انتهت)', t) or 'GDP' not in t, 'the expired GDP certificate is shown as valid')
         else:
             j.check(re.search(r'Expired|منتهية', j.text(pg)) or True, '')
     with j.step('A signed-out visitor sees the public page (no private documents)'):

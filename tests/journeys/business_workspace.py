@@ -277,7 +277,7 @@ def reply_to_reviews(j):
     if j.live:
         sup = live_company_person(j, 'Dr. Reviewed Supplier', 'Reviewed API %s' % j.tag, sectors=('API & excipients',)); pg = sup['page']; name = sup['co']['name']
         for i, (stars, note) in enumerate(((5, 'Great CEP pack %s' % j.tag), (1, 'Late and rude %s' % j.tag))):
-            bu = seed_company(j, j.person('Buyer %d' % i)['id'], 'Reviewing Buyer %d %s' % (i, j.tag))
+            bu = seed_company(j, j.person('Buyer %s' % 'ABCDEFGHIJ'[i])['id'], 'Reviewing Buyer %d %s' % (i, j.tag))
             d = j.sql1("insert into public.deals (ref, type, title, from_company_id, to_company_id, status, lines) values ('R%d%s','quote','Order %d %s',%s,%s,'closed','{}') returning id" % (i, j.tag, i, j.tag, bu['id'], sup['co']['id']))
             j.sql("insert into public.deal_events (deal_id, side, action, data, note) values (%s,'from','rate','{\"stars\":%d}',$q$%s$q$)" % (d, stars, note))
         j.reload(pg); good, bad = 'Great CEP pack %s' % j.tag, 'Late and rude %s' % j.tag

@@ -59,7 +59,9 @@ def global_search(j):
 def command_palette(j):
     """A power user jumps anywhere and runs common actions with Ctrl+K."""
     if j.live:
-        a = j.person('Dr. Akram Keys'); b = j.person('Dr. Bassem Findme'); pg = a['page']; j.reload(pg); member = 'Findme'
+        a = j.person('Dr. Akram Keys'); b = j.person('Dr. Bassem Findme'); member = 'Findme'
+        j.sql("insert into public.messages (sender_id, receiver_id, body) values ('%s','%s','Hello Akram %s')" % (b['id'], a['id'], j.tag))   # a conversation to type in (a phone opens one from the list)
+        pg = a['page']; j.reload(pg)
     else:
         pg = j.demo_signin(j.new_page()); member = 'Rahmani'
     with j.step('Ctrl+K opens the palette with focus in the input, showing Pages and Actions'):

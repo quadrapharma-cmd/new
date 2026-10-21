@@ -100,7 +100,7 @@ def decline_and_withdraw(j):
         if j.live:
             j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and type='deal'" % b['id']) not in ('', '0'), 'the buyer was not notified of the decline')
             j.reload(sp); t = open_deal(j, sp, t2, r'Received|الواردة'); close_dialogs(sp)
-            j.check(re.search(r'Cancelled|Withdrawn|ملغ|سُحب', t), 'the supplier does not see request 2 as withdrawn')
+            j.check(re.search(r'Cancelled|Withdrawn|ملغ|سُحب|أُلغي|ألغي', t), 'the supplier does not see request 2 as withdrawn')   # «أُلغي» as the buyer's check above
     with j.step("'Waiting for you' counts drop; a later step on a closed deal is refused by the database"):
         deals_centre(j, sp, r'Received|الواردة'); row = deal_row_text(sp, t1); close_dialogs(sp)
         j.check(row and not re.search(r'Your move|دورك', row), 'the declined request still says Your move (%s)' % row.replace('\n', ' ')[:100])
@@ -312,7 +312,7 @@ def apply_to_company_job(j):
             for _ in range(3): simulate(j, pg); close_dialogs(pg); open_deal(j, pg, title, r'Sent|المرسلة')
             close_dialogs(pg)
         else:
-            their_move(j, pg, hr, title, 'Shortlist'); their_move(j, pg, hr, title, 'Invite to interview', {r'Interview date|موعد': '2026-11-02'})
+            their_move(j, pg, hr, title, 'Shortlist'); their_move(j, pg, hr, title, 'Invite to interview', {r'Interview date|موعد|تاريخ المقابلة': '2026-11-02'})
             their_move(j, pg, hr, title, 'Make offer', {r'Salary|الراتب': 'EGP 28,000 / month'})
             j.check(int(j.sql1("select count(*) from public.notifications where user_id='%s' and type='deal'" % me['id']) or 0) >= 3, 'the seeker was not notified at each step')
     with j.step("Seeker: 'Accept job offer' — Hired; reload keeps it"):

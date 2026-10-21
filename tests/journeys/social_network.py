@@ -55,7 +55,7 @@ def find_people(j):
         f = pg.locator('#content select:visible, #content [role=combobox]:visible, #content .chip:visible, #content [class*=filter] button:visible')
         j.check(f.count(), 'not built: no specialty/country filter for people')
         if j.live:                                                    # Eva Pharma: Carim (procurement) stays, Dalia (regulatory) goes
-            pg.select_option('#content select:visible >> nth=0', value='procurement')   # by value: the label is Arabic in Arabic; pg.wait_for_timeout(1200); t = j.text(pg)
+            pg.select_option('#content select:visible >> nth=0', value='procurement'); pg.wait_for_timeout(1200); t = j.text(pg)   # by value: the label is Arabic in Arabic
             j.check('Carim' in t and 'Dalia' not in t and 'Chaker' not in t, 'the specialty filter does not narrow the results to procurement people')
             pg.select_option('#content select:visible >> nth=1', value='SA'); pg.wait_for_timeout(1200)
             j.check(re.search(r'No members|try fewer|لا يوجد', j.text(pg)) and 'Carim' not in j.text(pg), 'a filter that matches nobody does not show a helpful empty state')
@@ -233,7 +233,7 @@ def follow_person(j):
 def suggestions(j):
     """A member gets relevant "People you may know" suggestions and grows her network from them."""
     if j.live:
-        a = j.person('Dr. Asmaa Grow'); b = j.person('Dr. Bassem Bridge'); c = j.person('Dr. Camelia Mutual'); d = j.person('Dr. Dawood Random'); e = j.person('Dr. Ehab Already')
+        T = ' ' + j.tag; a = j.person('Dr. Asmaa Grow' + T); b = j.person('Dr. Bassem Bridge' + T); c = j.person('Dr. Camelia Mutual' + T); d = j.person('Dr. Dawood Random' + T); e = j.person('Dr. Ehab Already' + T)
         for p, co, hl in ((a, 'Eva Pharma', 'Regulatory Affairs'), (c, 'Eva Pharma', 'Regulatory Affairs'), (d, 'Other Co', 'Sales')):
             j.sql("update public.profiles set company='%s', headline='%s' where id='%s'" % (co, hl, p['id']))
         connect_db(j, a['id'], b['id']); connect_db(j, b['id'], c['id']); connect_db(j, e['id'], a['id'])
@@ -248,25 +248,25 @@ def suggestions(j):
             .map(b=>{let c=b.parentElement;while(c&&c.innerText.trim().split('\\n').filter(x=>x.trim().length>3).length<2)c=c.parentElement;return c?c.innerText.trim().split('\\n').map(x=>x.trim()).filter(x=>x.length>3)[0]:''})""")
         sug = '\n'.join(names); j.note('suggested', names[:20])
         if j.live:
-            j.check('Camelia' in sug, 'C (mutual connection, same company) is not suggested')
-            j.check('Ehab Already' not in sug, 'E (already connected) is suggested')
-            j.check('Asmaa Grow' not in sug, 'she is suggested to herself')
-            j.check('Dawood' not in sug or sug.index('Camelia') < sug.index('Dawood'), 'D is ranked above C')
-            pos = next(i for i, n in enumerate(names) if 'Camelia' in n)
+            j.check(c['name'].split('Dr. ')[-1] in sug, 'C (mutual connection, same company) is not suggested')
+            j.check(e['name'].split('Dr. ')[-1] not in sug, 'E (already connected) is suggested')
+            j.check(a['name'].split('Dr. ')[-1] not in sug, 'she is suggested to herself')
+            j.check(d['name'].split('Dr. ')[-1] not in sug or sug.index(c['name'].split('Dr. ')[-1]) < sug.index(d['name'].split('Dr. ')[-1]), 'D is ranked above C')
+            pos = next(i for i, n in enumerate(names) if c['name'].split('Dr. ')[-1] in n)
             j.check(pos == 0, 'C (a mutual connection at the same company) is suggestion #%d, after %d unrelated members' % (pos + 1, pos))
             demo = re.findall(r'Regulatory Affairs Egypt & GCC|API Sourcing & Supply|GCC & Africa Market Access|Faisal Rahmani|Omar Khaled', t)
             j.check(not demo, 'live Network shows demo people/groups: %s' % sorted(set(demo)))
     with j.step('Each card shows why the person is suggested (mutual connections, same company)'):
         j.check(re.search(r'mutual|same company|works at|مشترك|نفس الشركة', sec, re.I), 'suggestion cards give no reason')
     with j.step('Dismiss one suggestion; Connect to another from its card'):
-        name = 'Dawood' if j.live else 'Sara'
+        name = d['name'].split('Dr. ')[-1] if j.live else 'Sara'
         click_in(j, pg, card_of(pg, name), r'^(×|✕|Dismiss|Hide|إخفاء|تجاهل)$', 'Dismiss suggestion')
         j.check(name not in (section(pg, r'People you may know|أشخاص قد تعرفهم') or ''), 'the dismissed suggestion is still shown')
-        cn = 'Camelia' if j.live else 'Omar'
+        cn = c['name'].split('Dr. ')[-1] if j.live else 'Omar'
         click_in(j, pg, card_of(pg, cn), CONNECT, 'Connect on a suggestion')
         if j.live: j.check(j.wait_db("select count(*) from public.connections where requester='%s' and addressee='%s' and status='pending'" % (a['id'], c['id']), 5) == '1', 'Connect from the card stored no request')
     with j.step('Reload: the dismissed suggestion does not return'):
         if j.demo: j.skip('demo keeps no data across a reload (no backend) — checked in live')
-        j.reload(pg); network(j, pg); j.check('Dawood' not in (section(pg, r'People you may know|أشخاص قد تعرفهم') or ''), 'the dismissed suggestion is back after reload')
+        j.reload(pg); network(j, pg); j.check(name not in (section(pg, r'People you may know|أشخاص قد تعرفهم') or ''), 'the dismissed suggestion is back after reload')
 
 if __name__ == '__main__': main(__file__)

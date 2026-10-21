@@ -228,13 +228,16 @@
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.dbk-ov [data-a=ok]')) setTimeout(paintMyReports, 900); }, true);
 
   /* ── demo: notifications stay read after a reload (the live app keeps them in the database) ─────────────────────── */
-  if (!window.DRUGBOX_CONFIG && !window.dxLive) {   /* the demo build only (the live build carries its configuration) */
+  /* asked at each call, not once: in the live build this layer can load before the live configuration and adapter, and a
+     browser-kept "all read" would then hide every new notification after a reload (J-SOCIAL-43) */
+  var demoOnly = function () { return !window.DRUGBOX_CONFIG && !window.dxLive; };
+  if (demoOnly()) {   /* the demo build only (the live build carries its configuration) */
     var readIds = function () { return dget('notifRead', []); };
-    var apply = function () { var r = readIds(), all = dget('notifAllRead', false); (window.NOTIFS || []).forEach(function (n) { if (all || r.indexOf(n.id) >= 0) n.read = true; }); if (window.updateBadges) window.updateBadges();
+    var apply = function () { if (!demoOnly()) return; var r = readIds(), all = dget('notifAllRead', false); (window.NOTIFS || []).forEach(function (n) { if (all || r.indexOf(n.id) >= 0) n.read = true; }); if (window.updateBadges) window.updateBadges();
       if (all && !(window.NOTIFS || []).some(function (n) { return !n.read; })) ['nb-not'].forEach(function (id) { var b = document.getElementById(id); if (b) { b.style.display = 'none'; b.textContent = ''; } });   /* hidden as markAllRead leaves it, and no count left behind */ };
     var oRead = window.markNotifRead, oAll = window.markAllRead;
-    if (typeof oRead === 'function') window.markNotifRead = function (id) { var r = readIds(); if (r.indexOf(id) < 0) { r.push(id); dset('notifRead', r.slice(-500)); } return oRead.apply(this, arguments); };
-    if (typeof oAll === 'function') window.markAllRead = function () { dset('notifAllRead', true); var r = oAll.apply(this, arguments); if (window.updateBadges) window.updateBadges(); return r; };
+    if (typeof oRead === 'function') window.markNotifRead = function (id) { var r = readIds(); if (demoOnly() && r.indexOf(id) < 0) { r.push(id); dset('notifRead', r.slice(-500)); } return oRead.apply(this, arguments); };
+    if (typeof oAll === 'function') window.markAllRead = function () { if (demoOnly()) dset('notifAllRead', true); var r = oAll.apply(this, arguments); if (window.updateBadges) window.updateBadges(); return r; };
     apply(); setTimeout(apply, 0); C.onRender('admin-notif-read', apply);
   }
 })();
