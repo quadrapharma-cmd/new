@@ -745,7 +745,7 @@
   /* ===== AREA business: company page, certificates, team (B-02, B-03, B-04) ===== */
   Object.assign(D, {
     'E-mail me about requests, deals, payments and my company': 'راسلني بالبريد بخصوص الطلبات والصفقات والمدفوعات وشركتي', 'E-mails on — we will write when something needs you': 'تم تشغيل البريد — سنراسلك عندما يحتاجك أمر ما', 'E-mails off — notifications stay here': 'تم إيقاف البريد — تبقى الإشعارات هنا',
-    'no free slot soon': 'لا مواعيد متاحة قريبًا', 'Claim this page': 'طالب بهذه الصفحة', 'selected': 'مختارة', 'Goes to': 'يذهب إلى', 'Requesting as': 'الطلب باسم', 'Free from': 'متاح من', 'business development': 'تطوير الأعمال', 'sales': 'المبيعات',
+    'no free slot soon': 'لا مواعيد متاحة قريبًا', 'Claim this page': 'طالب بهذه الصفحة', 'selected': 'مختارة', 'Goes to': 'يذهب إلى', 'Free from': 'متاح من', 'business development': 'تطوير الأعمال', 'sales': 'المبيعات',
     'Not paid by then, it simply expires — nothing is charged': 'إن لم يُدفع حتى ذلك الحين ينتهي ببساطة — دون أي خصم',
     'No active listing to promote — publish or renew one first': 'لا يوجد إعلان نشط للترويج — انشر إعلانًا أو جدّده أولًا',
     'Back': 'رجوع', 'tablets': 'أقراص', 'sachets': 'أكياس', 'tubes': 'أنابيب', 'vials': 'فيالات', 'bottles': 'زجاجات',

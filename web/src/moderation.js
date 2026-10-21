@@ -35,7 +35,7 @@
       link: function () { return Promise.resolve(null); }
     };
   }
-  var Q = [['claims', '🏷️', 'Claims'], ['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['documents', '📁', 'Compliance documents'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['reviews', '⭐', 'Reviews'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts']];
+  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts'], ['claims', '🏷️', 'Claims'], ['documents', '📁', 'Compliance documents'], ['reviews', '⭐', 'Reviews']];   /* the approved queues first, in their order; the newer ones after them */
   var cur = 'verifications', data = null;
   function docs(list) { return (list || []).map(function (d) { return '<button type="button" class="dx-mod-doc" data-doc="' + esc(d.path) + '" data-bucket="' + esc(d.bucket) + '">📄 ' + esc(d.label) + '</button>'; }).join(''); }
   function row(kind, x) {

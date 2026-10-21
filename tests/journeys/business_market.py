@@ -156,7 +156,7 @@ def contact_lister(j):
             dem = seed_listing(j, me['id'], 'Ciprofloxacin wanted %s' % j.tag, 'demand'); sp = s['page']; j.reload(sp); market(j, sp)
             c = card(sp, 'Ciprofloxacin wanted %s' % j.tag)
         else:
-            sp = pg; market(j, sp); c = sp.locator('#tab-browse .dcard').first
+            sp = pg; market(j, sp); c = sp.locator('#tab-browse .dcard').filter(has_not_text=re.compile(r'Dr\. Haytham')).first   # not my own request (the approved page answers "This is your own request")
         j.check(c.count(), 'no demand card to quote on')
         b = c.locator('button', has_text=re.compile(r'Quote|عرض سعر')).first; j.check(b.count(), "no 'Quote →' on the demand card")
         b.click(); j.settle(sp, 1000)

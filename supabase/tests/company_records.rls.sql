@@ -229,6 +229,17 @@ select pg_temp.step('the supplier invites the outsider, cancels, invites again �
 select pg_temp.as_server();
 select pg_temp.ok('…one invitation notice only', $$(select count(*) from public.notifications where user_id = 'e5555555-5555-5555-5555-555555555555' and type = 'company_invite' and company_id = pg_temp.id('b')) = 1$$);
 
+-- a verification request is decided once (two reviewers on old screens never overwrite each other)
+select pg_temp.as_server();
+select pg_temp.step('a pending verification request of the outside company', $$
+  with x as (insert into public.verification_requests (company_id, submitted_by, registry, status) values (pg_temp.id('o'), 'e5555555-5555-5555-5555-555555555555', '99887766', 'pending') returning id) insert into ids select 'vr', id::text from x$$);
+select pg_temp.as_user('e7777777-7777-7777-7777-777777777777');
+select pg_temp.step('admin one approves', $$update public.verification_requests set status = 'approved' where id = pg_temp.id('vr')$$);
+select pg_temp.as_user('e8888888-8888-8888-8888-888888888888');
+select pg_temp.no('a second reviewer''s late rejection is refused (already decided)', $$update public.verification_requests set status = 'rejected', note = 'second opinion' where id = pg_temp.id('vr')$$, 'P0001');
+select pg_temp.as_server();
+select pg_temp.ok('…the approval stands', $$(select status from public.verification_requests where id = pg_temp.id('vr')) = 'approved'$$);
+
 -- ══ 0059: activity log ══
 select pg_temp.as_user('e3333333-3333-3333-3333-333333333333');
 select pg_temp.step('a team member writes an activity entry as themselves', $$insert into public.company_activity (company_id, actor, text) values (pg_temp.id('b'), 'e3333333-3333-3333-3333-333333333333', 'CR Sent a quote')$$);

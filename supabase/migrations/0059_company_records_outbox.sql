@@ -189,6 +189,19 @@ alter policy "documents: delete your own" on storage.objects using (bucket_id = 
 alter policy "verification: team and Drugbox read" on public.verification_requests
   using ((public.is_company_member(company_id) and not claim) or submitted_by = (select auth.uid()) or public.is_moderator());
 
+-- a verification request or claim is decided once: a second reviewer acting on an old screen is told who decided it, and
+-- nothing changes (a late rejection never overwrites an approval, nor the other way round)
+create or replace function public.verification_requests_once() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is not null and old.status <> 'pending' and new.status is distinct from old.status then
+    raise exception 'Already decided by % — refresh the queue', coalesce((select name from public.profiles where id = old.reviewed_by), 'another Drugbox reviewer') using errcode = 'P0001';
+  end if;
+  return new;
+end $$;
+revoke all on function public.verification_requests_once() from public, anon, authenticated, service_role;
+drop trigger if exists trg_verification_requests_once on public.verification_requests;
+create trigger trg_verification_requests_once before update on public.verification_requests for each row execute function public.verification_requests_once();
+
 -- ── 3. activity log ────
 create table if not exists public.company_activity (
   id          bigint generated always as identity primary key,
