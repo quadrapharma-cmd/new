@@ -260,7 +260,7 @@
     'If you think this is a mistake, write to support@drugbox.app.': 'إذا كنت ترى أن هذا خطأ، راسل support@drugbox.app.',
     '🚩 My reports': '🚩 بلاغاتي', 'Your claim is under review — Drugbox checks it and tells you within 2 working days': 'مطالبتك قيد المراجعة — تتحقق منها Drugbox وتبلغك خلال يومي عمل', 'Suggested:': 'المقترح:', '🟡 Open': '🟡 مفتوح', '✅ Corrected': '✅ تم التصحيح', '⚪ Checked — no change': '⚪ تم الفحص — بلا تغيير', 'You have not reported anything yet.': 'لم تبلّغ عن شيء بعد.',
     /* Review (0063) */
-    '📝 Content reports': '📝 بلاغات المحتوى', 'Content reports': 'بلاغات المحتوى', '🗂 Decided': '🗂 تم البت', 'Decided': 'تم البت', 'Search this queue…': 'ابحث في هذه القائمة…', 'Search this queue': 'ابحث في هذه القائمة',
+    '🗂 Decided': '🗂 تم البت', 'Decided': 'تم البت', 'Search this queue…': 'ابحث في هذه القائمة…', 'Search this queue': 'ابحث في هذه القائمة',
     'Claim by': 'مطالبة من', 'The candidate replied:': 'ردّ المرشح:', ' · ⚖️ Disputed': ' · ⚖️ معترض عليه', '↺ Undo': '↺ تراجع', '↺ Restore post': '↺ استعادة المنشور', 'by': 'بواسطة', 'undone': 'تم التراجع',
     'Nothing matches this search.': 'لا يوجد ما يطابق البحث.', 'No decisions yet.': 'لا توجد قرارات بعد.', 'Reject this certificate?': 'رفض هذه الشهادة؟',
     'The company sees the reason and can upload a new scan.': 'سترى الشركة السبب ويمكنها رفع نسخة جديدة.', 'Decision undone — the item is back in its queue': 'تم التراجع عن القرار — عاد العنصر إلى قائمته',

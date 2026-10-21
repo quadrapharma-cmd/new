@@ -288,10 +288,10 @@ def content_reports(j):
         ap = admin_person(j)['page'] if j.live else pg
         close_dialogs(ap); admin_review(j, ap, 'verifications')
         tabs = ' | '.join(ap.evaluate("[...document.querySelectorAll('.dx-mod-tab')].map(t=>t.innerText.trim())"))
-        j.check(re.search(r'Content|Posts|Reports|بلاغات المحتوى|المنشورات', tabs.replace('Company reports', '')), 'not built: Admin → Review has no queue for reported posts / people (queues: %s)' % tabs)
+        j.check(re.search(r'Content|Posts|Reported posts|Reports|بلاغات المحتوى|منشورات', tabs.replace('Company reports', '')), 'not built: Admin → Review has no queue for reported posts / people (queues: %s)' % tabs)
     with j.step('Remove P (deleted for everyone, Z told the reason) and suspend F; F cannot post and sees why'):
         q = body or ''
-        tab = ap.locator('.dx-mod-tab').filter(has_text=re.compile(r'Content|Posts|بلاغات المحتوى|المنشورات')); j.check(tab.count(), 'no content-reports queue'); tab.first.click(); ap.wait_for_timeout(600)
+        tab = ap.locator('.dx-mod-tab').filter(has_text=re.compile(r'Content|Posts|Reported posts|بلاغات المحتوى|منشورات')); j.check(tab.count(), 'no content-reports queue'); tab.first.click(); ap.wait_for_timeout(600)
         row = ap.locator('.dx-mod-row', has_text=q).first; j.check(row.count(), 'the reported post is not in the queue')
         decide(j, ap, q, True)
         if j.live:
