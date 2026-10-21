@@ -138,13 +138,14 @@ select pg_temp.ok('(setup) with nothing granted, the API is closed: authenticate
 \ir ../migrations/0035_livedata.sql
 -- 0036 and 0037 were written for profiles without 0038's two columns (their open_candidates() "returns setof profiles" lists every
 -- column), so they are re-applied on that table; 0038 then adds the columns back with their grant, keys and flags, and 0039 (the
--- second version of the name rule) follows it
+-- second version of the name rule), 0039_names_rule_3 and 0039_names_rule_4 follow it
 alter table public.profiles drop column if exists name_key, drop column if exists name_needs_fix;
 \ir ../migrations/0036_privacy_names.sql
 \ir ../migrations/0037_names_twins.sql
 \ir ../migrations/0038_names_allowlist.sql
 \ir ../migrations/0039_names_rule_2.sql
 \ir ../migrations/0039_names_rule_3.sql
+\ir ../migrations/0039_names_rule_4.sql
 select pg_temp.as_server();
 create temp table priv_after as select pg_temp.privs() as p;
 select pg_temp.ok('grants: 0026 alone restores every privilege of anon, authenticated and service_role exactly (effective rights + ACL entries)',
