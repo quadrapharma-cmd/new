@@ -1,7 +1,7 @@
 # Area report — business and payments
 
 Branch `claude/area-business` · migrations 0050–0059 · journeys J-BUSINESS-01…49 · progress log: `docs/areas/business-progress.md`.
-Final numbers (suites, 150 journeys, crawler, speed) are in the last section, filled in after the final sweep.
+Final numbers (suites, 150 journeys, crawler, speed) are in the last section.
 
 ## Gap items (PRODUCT-GAPS 3.2)
 
@@ -35,7 +35,7 @@ See the final section for the full run. Known, not from this area: **J-01 step 7
 
 ## Independent verification (own model)
 - **Payments** (money rules): round 1 FAIL (10 functional findings, money integrity held) → fixed; round 2 FAIL (4 new majors: a live Fawry
-  reference offered as cancellable, rejected InstaPay hidden, promotions for expired listings, parity) → fixed; round 3: _see final section_.
+  reference offered as cancellable, rejected InstaPay hidden, promotions for expired listings, parity) → fixed; round 3 FAIL (Fawry reference lost → fixed by alerting Drugbox, F-115 kept) → **round 4 PASS** at 3dda8bd (95/95, 76/76, 68/68 SQL; e2e 48/48, 15/15; Fawry / payment-history journeys demo + live, EN + AR); its edge case (a second, different unmatched Fawry reference) fixed after: one alert per reference.
 - **Business scope** (privacy / permissions / integrity): round 1 FAIL (CRITICAL file swap behind records, moderators blocked, decisions undoable,
   invitation e-mail abuse, Arabic role/filter) → fixed; round 2 FAIL (Arabic freeze from an i18n pattern, moderator shortcut too wide) → fixed;
   **round 3 PASS**; its last optional point (a reviewer reviewing their own company) closed.
@@ -72,5 +72,44 @@ None is applied to staging/production yet, so they were corrected in place; once
   Supabase allows it; otherwise move to the Storage API); company-media is public (logos, product photos).
 - J-01 "Back" (router, social area).
 
-## Final sweep
-_(filled in after the final run)_
+## Final sweep (2026-10-21)
+
+**Build:** `web/build/build.py` twice → same sha256 `b9e233b34a0ab7bd…`; `web/reference/demo-approved.html` refreshed → `parity_check` PARITY OK.
+`tools/migration_check.py`: OK (46 migrations). `schema_sweep.sql`: six × none.
+
+**SQL suites** (fresh database from the stub + all migrations): company_contact 22/22, company_hub 35/35, company_page_team 67/67,
+company_records 95/95, deals 23/23, followups 68/68, group_posts 120/120, integrity_perf 56/56, launch_readiness 32/32,
+listings_groups 23/23, marketplace 34/34, messages_safety 25/25, network_followups 34/34, payments_area 96/96, payments_storage 76/76,
+privacy_names 21/21, security_core 96/96, small_followups 33/33, trust_hub_deals 145/145.
+
+**e2e (live):** all green, among them e4 payments 48/48, e4b checkout 15/15, e5 notify 23/23, c2 deals 16/16, d1 market 18/18, p1 36/36
+(d3b and groups AR were flaky once in the full run and pass on their own).
+**Demo suites:** tests/demo and legacy all green (legacy 30/30 suites after the approved quote form came back; mkx / p_mkx / b_p_mkx 22/22, hub_c 14/14).
+
+**Journeys — business (49), after the fixes** (the full 150-run at 1b62280, then the fixed ones re-run on the setups where they had failed):
+
+| Setup | Pass | Fail | N/A |
+|---|---|---|---|
+| Demo EN 1440 | 47 | 1 (J-01) | 1 |
+| Demo AR 1440 | 47 | 1 (J-01) | 1 |
+| Demo EN 390 | 47 | 1 (J-01) | 1 |
+| Live EN 1440 | 46 | 3 (J-01, J-02, J-04) | 0 |
+
+J-01 step 7 = "Back leaves the app" (router, social area); J-02 / J-04 live = signed-out public company pages (owner's decision).
+J-03 and J-31 at 390 were flaky in the full run; 7 of 7 runs pass after the reload helper fix.
+
+**Journeys — the other areas** (report only, same run): social 51 — demo EN 23 pass / AR 23 / 390 22 / live 20; community 50 — demo 9 / 9 / 9,
+live 8. Most of their failures are features of those areas not built yet. Crossing my code: J-COMMUNITY-42 claims a company without the
+commercial registry document that `claim_company` now requires (the journey needs the file step — for the coordinator), J-COMMUNITY-45
+(Admin → Review tab order) and 49 (decided once) fixed here.
+
+**Dead-end crawler:** demo 1707 clicks, **0 JS errors**, 61 new dead ends (mostly other areas); in market / companies / admin the approved
+reference had 15, now 12, all 12 already present in the approved demo (admin tiles, Add Sponsor, Active toast, sample / sponsored cards,
+AR contact-gold). Live 1197 clicks, **0 JS errors**, 32 new dead ends: market / companies ones are the expected guards for a member with no
+company ("Create or claim your company page first", "Act as a company to make an offer") and a thin Quick view on a fixture listing with
+no description; the rest are feed / jobs / profile / training (other areas).
+
+**Speed:** 100k seed — every hot query < 50 ms; the area's queries 0.1–1.3 ms; `market_search` ≈ 40 ms (the heaviest, watch it in the
+k6 run); directory page of 100 < 300 KB. Page switching: `stress.py` vs `stress_base.py` PASS (median switch 10.1 ms vs 9.8 ms base).
+
+**Open (see above):** owner keys and decisions, J-01 router, J-02/J-04 signed-out pages, J-COMMUNITY-42 claim step, market_search at scale.
