@@ -119,9 +119,11 @@ def new_message_to_named_person(j):
         j.check(not re.search(r'Nobody Unknownperson', head(pg)), 'a thread was opened with an unknown name')
         if j.live: j.check(j.sql1("select count(*) from public.messages where body like 'should not send %s'" % j.tag) == '0', 'a message to an unknown name was stored')
     with j.step('Sign-up refuses a name with characters that are not letters or that mix alphabets (U+FFFC, a Cyrillic а, a mark that '
-                'cannot join its letter — e + U+0335, ı + U+0307 —, Ɥ U+A78D, Chinese letters, a dot standing alone), saying what to change; '
-                'real names (Arabic with harakat, titles written "د/" or glued "Dr.أحمد", a Latin title on a Cyrillic name, Greek and '
-                'all-caps Cyrillic names that read as Latin, pasted hyphens, an em dash, accents, apostrophes, brackets) sign up fine'):
+                'cannot join its letter — e + U+0335, ı + U+0307 —, Ɥ U+A78D and Hausa Ɗ "not supported yet", Chinese letters, a dot '
+                'standing alone, a spaced hyphen with the parentheses suggested), saying what to change with the quoted letter isolated '
+                '(U+2068 … U+2069); real names (Arabic with harakat — stored without them —, titles written "د/", "د / " or glued "Dr.أحمد", '
+                'a Latin title on a Cyrillic name, Greek and all-caps Cyrillic names that read as Latin, pasted hyphens, an em dash, ʿ, '
+                'accents, apostrophes, brackets) sign up fine'):
         if j.demo: j.skip('the name rule is the database\'s and the live app\'s (the demo keeps its sample people)')
         def ui_signup(name):
             p2 = j.new_page(j.new_ctx()); j.open(p2); p2.click('#loginPage [onclick="showSignup()"]'); p2.wait_for_selector('#suName', state='visible', timeout=5000)
@@ -129,18 +131,22 @@ def new_message_to_named_person(j):
             p2.click('#signupPage button.f-btn.dx-js-only'); p2.wait_for_timeout(1500)
             return p2, email, j.text(p2, '#suErr')
         for name, pat in (('Dr. Zeina Sign %s￼' % j.tag, r'remove “￼” \(U\+FFFC\)|احذف «￼» \(U\+FFFC\)'),
+                          ('Ɗanjuma Sign %s' % j.tag, r'The letter “Ɗ” \(U\+018A\) is not supported in names yet|الحرف «Ɗ» \(U\+018A\) غير مدعوم في الأسماء بعد'),
+                          ('Ahmed Sign %s - MBA' % j.tag, r'parentheses — write “Ahmed Sign %s \(MBA\)”|بين قوسين — اكتب «Ahmed Sign %s \(MBA\)»' % (j.tag, j.tag)),
                           ('Dr. Rаna Sign %s' % j.tag, r'one alphabet — “Rаna”|بأبجدية واحدة — «Rаna»'),
                           ('Dr. Ahme\u0335d Sign %s' % j.tag, r'Remove the mark added to “e\u0335” \(U\+0335\)|احذف العلامة المضافة إلى «e\u0335» \(U\+0335\)'),
                           ('Dr. Sal\u0131\u0307h Sign %s' % j.tag, r'Remove the mark added to “\u0131\u0307” \(U\+0307\)|احذف العلامة المضافة إلى «\u0131\u0307» \(U\+0307\)'),
-                          ('\ua78dEXOB Sign %s' % j.tag, r'Latin, Arabic, Greek or Cyrillic letters — “\ua78d”|بحروف عربية أو لاتينية أو يونانية أو سيريلية — «\ua78d»'),
+                          ('\ua78dEXOB Sign %s' % j.tag, r'The letter “\ua78d”|الحرف «\ua78d»'),
                           ('张伟 Sign %s' % j.tag, r'Latin, Arabic, Greek or Cyrillic letters — “张”|بحروف عربية أو لاتينية أو يونانية أو سيريلية — «张»'),
                           ('د . أحمد %s' % j.tag, r'“\.” is not a word|«\.» ليست كلمة')):
-            p2, email, err = ui_signup(name)
+            p2, email, err0 = ui_signup(name); err = re.sub('[\u2068\u2069]', '', err0)
             j.check(re.search(pat, err), 'sign-up as %s is not refused with a clear message (said: "%s")' % (ascii(name), err[:140]))
+            j.check(re.search('[“«]\u2068[^\u2069]+\u2069[”»]', err0), 'the refusal of %s does not isolate what it quotes (U+2068 … U+2069): %s' % (ascii(name), ascii(err0[:120])))
             j.check(j.ar == bool(re.search('[ء-ي]', err.replace(name, ''))), 'the refusal is not in the interface language: "%s"' % err[:100])   # Arabic words (the English one lists the comma ،)
             j.check(j.sql1("select count(*) from auth.users where email='%s'" % email) == '0', 'an account was created for %s' % ascii(name))
         # through the form, as a person signs up: an Arabic name with harakat, and a name with brackets, dots and a hyphen
-        for name, stored in (('د. نرمين أبو زيدٍ %s' % j.tag, None), ('Al-Hassan (Pharm.D.) %s' % j.tag, None), ('د/ هيثم دويدار %s' % j.tag, None),
+        for name, stored in (('د. نرمين أبو زيدٍ %s' % j.tag, 'د. نرمين أبو زيد %s' % j.tag), ('Al-Hassan (Pharm.D.) %s' % j.tag, None), ('د/ هيثم دويدار %s' % j.tag, None),
+                             ('ا.د / سامي فهمي %s' % j.tag, 'ا.د/ سامي فهمي %s' % j.tag), ('Saʿīd Ḥasan %s' % j.tag, 'Sa’īd Ḥasan %s' % j.tag),
                              ('Dr. Мария Иванова %s' % j.tag, None), ('Anne\u2011Marie O\'Brien %s' % j.tag, 'Anne-Marie O’Brien %s' % j.tag),
                              ('Άννα Βίσση %s' % j.tag, None), ('ОКСАНА КОРОТКОВА %s' % j.tag, None), ('Dr.أحمد Jean—Paul %s' % j.tag, 'Dr.أحمد Jean-Paul %s' % j.tag)):
             me2 = j.person(name)
@@ -151,6 +157,7 @@ def new_message_to_named_person(j):
                      'د.Ahmed %s', 'Nguyễn Thị Ánh %s', 'İsmail Ñúñez %s', 'Al-Hassan (Pharm.D.) %s'):
             uid = j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', jsonb_build_object('name', $q$%s$q$)) returning id" % (j.email('real'), name % j.tag))
             want = (name % j.tag).replace("'", '’')            # the apostrophe is stored as ’, the way the app shows it (0039)
+            want = re.sub('[\u064b-\u0652\u0670]', '', want)   # Arabic diacritics are not stored (0039_names_rule_4)
             j.check(j.sql1("select (name = $q$%s$q$ and not name_needs_fix)::text from public.profiles where id='%s'" % (want, uid)) == 'true', 'the real name %s did not sign up as typed' % (name % j.tag))
     with j.step('Look-alike members (same name + same company; same name, no company, same headline): every option is different, '
                 'the connection comes first, each option sends to its own person only, and the bare shared name is refused'):
@@ -208,7 +215,7 @@ def new_message_to_named_person(j):
         h1, h2 = member(hname, hco), member(hname, hco)
         def refused(name):
             try: member(name); return False
-            except StepFail as e: return bool(re.search(r'A name |Write each word|Write a name|is not a word|Remove the mark|accent or vowel', str(e)))
+            except StepFail as e: return bool(re.search(r'A name |Write each word|Write a name|is not a word|Remove the mark|accent or vowel|The letter|Put what follows', str(e)))
         bad = ['%s · %s' % (hname, hco)] + ['%s %s %s' % (hname, d, hco) for d in ('ꞏ', '⸳', '\U00011174', '\U0001f797', '\U000111d0', '∘', '▪', '￼჉')]
         bad += ['Dr. Zeina Inv %s￼' % j.tag, 'Dr. Rаna Eva %s' % j.tag, 'Dr. Hala Dup %s 2' % j.tag]
         # marks NFKC cannot join to their letter (they draw on a stroke or a dot the letter already has), letters no font draws
@@ -276,6 +283,33 @@ def new_message_to_named_person(j):
         goto_profile(j, pg, {'id': n2}); j.click(pg, r'Message|رسالة|راسل', scope='#content', what='Message')
         body = 'From the profile %s' % j.tag; send(j, pg, body)
         j.check(j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 6) == n2, "the profile's Message button did not write to that profile's person")
+    with j.step('An Arabic look-alike: a vowel mark over a letter without a dot draws as its dot («حْالد» looks like «خالد»). The '
+                'mark is removed when the name is stored, so the member is «حالد» — drawn without a dot, not «خالد»\'s twin —; his '
+                'message shows that name in the list, ✎ to «خالد» reaches the real Khalid, and «حْالد» typed with the mark reaches him'):
+        if j.demo: j.skip('the name rule is the database\'s and the live app\'s (the demo keeps its sample people)')
+        kname, fake, kco = 'خالد %s' % j.tag, 'حْالد %s' % j.tag, 'Khalid Pharma %s' % j.tag
+        k = j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email('khalid'), json.dumps({'name': kname, 'company': kco})))
+        f = j.person(fake)                                       # the look-alike signs up through the form, as a person does
+        stored = j.sql1("select name || '|' || (name_key <> (select name_key from public.profiles where id = '%s'))::text from public.profiles where id = '%s'" % (k, f['id']))
+        j.check(stored == 'حالد %s|true' % j.tag, 'the look-alike was not stored as «حالد» with its own skeleton: %s' % stored)
+        j.check('\u0652' not in f['page'].evaluate('ME.name'), 'the look-alike\'s own app still shows the sukun: %s' % ascii(f['page'].evaluate('ME.name')))
+        goto_profile(j, f['page'], {'id': a['id']}); j.click(f['page'], r'Message|رسالة|راسل', scope='#content', what='Message')
+        send(j, f['page'], 'Khalid here, send the price list %s' % j.tag)
+        j.check(j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$Khalid here, send the price list %s$q$" % (f['id'], j.tag), 8) == a['id'], 'the look-alike\'s message was not stored for A')
+        j.reload(pg); j.nav(pg, 'messages'); to_list(j, pg)
+        rows = [t['text'] for t in threads(pg) if j.tag in t['text'] and ('الد' in t['text'])]; j.note('Arabic look-alike threads', rows)
+        j.check(rows and all('\u0652' not in r for r in rows) and any(('حالد %s' % j.tag) in r for r in rows) and not any(kname in r for r in rows),
+                'A\'s list shows the look-alike as «خالد» or with the mark: %s' % rows)
+        opts = options_for(kname); j.note('Khalid options', opts)
+        j.check(opts and all(o.startswith(kname) for o in opts), 'the picker offers someone else for «خالد»: %s' % opts)
+        body = 'To the real Khalid %s' % j.tag; new_message(opts[0] if opts else kname, body)
+        got = j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
+        j.check(got == k, 'the message to «خالد» was stored for %s, not the real Khalid %s (look-alike: %s)' % (got, k, f['id']))
+        if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+        body = 'Typed with the sukun %s' % j.tag; new_message(fake, body)
+        got = j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
+        j.check(got == f['id'], '«حْالد» typed with the mark was stored for %s, not for the member «حالد» %s' % (got, f['id']))
+        if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
     with j.step('Two members with the same name and different companies write first: the list and the chat header say which is '
                 'which, and 👤 opens the one whose conversation is open (the profile view is counted on them, not the twin)'):
         if j.demo: j.skip('members with the same name exist only in live (the demo has one sample person per name)')
