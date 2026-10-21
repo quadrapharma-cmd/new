@@ -97,7 +97,7 @@ def claim_page(j):
             code = re.search(r'code:?\s*(\d{4,6})', dlg_text(pg)); j.check(code, 'the code step shows no way to get the code')
             pg.fill('.dbk-ov #clCode', code.group(1)); dlg_click(j, pg, r'Claim page|Claim|طالب', 'Claim page'); j.settle(pg, 1200)
         said = ' '.join(new_toasts(pg, before))
-        j.check(re.search(r'under review|pending|Drugbox checks|قيد المراجعة|تراجع', said + ' ' + j.text(pg)[:2000], re.I), "C is not told 'Your claim is under review' (%s)" % said[:100])
+        j.check(re.search(r'under review|pending|Drugbox checks|قيد المراجعة|تراجع|يراجعها Drugbox', said + ' ' + j.text(pg)[:2000], re.I), "C is not told 'Your claim is under review' (%s)" % said[:100])
         if j.live: j.check(j.wait_db("select count(*) from public.verification_requests where company_id=%s and claim" % co['id'], 6) == '1', 'no claim verification_requests row')
     with j.step("C claims again: refused ('already under review')"):
         add_or_claim(j, pg, name); row = j.find(pg, r'^\W*(Claim|طالب بها|طالب)\W*$', scope='body')
@@ -227,7 +227,8 @@ def check_certificates(j):
     with j.step('Reject the other with a note: the owner sees the reason'):
         row = ap.locator('.dx-mod-row', has_text=n2).first; j.check(row.locator('.dx-mod-no').count(), 'not built: a certificate cannot be rejected (only "Mark checked")')
         decide(j, ap, n2, False, 'The scan is unreadable')
-        if j.live: j.check(notif_rows(j, o['id'], extra=" and message ~* 'unreadable'") >= 1, 'the owner does not see the reason')
+        # the reason is in the notice: its sentence (cert_decide) or its data, which the app writes as the sentence (review_certificate, the queue's path)
+        if j.live: j.check(notif_rows(j, o['id'], extra=" and (message ~* 'unreadable' or data->>'reason' ~* 'unreadable')") >= 1, 'the owner does not see the reason')
 
 @journey('J-COMMUNITY-46')
 def instapay_confirm(j):
