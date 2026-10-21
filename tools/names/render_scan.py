@@ -8,7 +8,9 @@ draw names in bold) and 14, 15 and 16 px; and with each system font on its own (
              stand after it (none under the fourth and fifth versions), against EVERY allowed letter — every script against every
              script, Arabic against Arabic, the Arabic letters in their four joining positions
   sequences  every Arabic bigram and every trigram of the tooth-shaped letters (ب ت ث ن ي ى ی ں ئ پ) in the four positions, against
-             every Arabic letter and bigram; bigrams of the basic Latin, Cyrillic and Greek letters against every letter and bigram
+             every Arabic letter and bigram; bigrams of the basic Latin, Cyrillic and Greek letters against every letter and bigram —
+             two sequences one letter apart are left to the letters part, which compares those letters in every joining position (a
+             dot next to another letter measures a little under one dot at 16 px: «ہط» / «ہظ» 0.59, v-spoof-r1's 'measurement noise')
   names      whole names: real EN/AR names and every variant the rule allows of them — punctuation swapped, added or removed, spaces,
              word orders, brackets moved — drawn in the interface's direction (English left-to-right, Arabic right-to-left, the popup
              both ways), alone and inside a sentence (an Arabic or a Latin word before and / or after it): a name whose script runs
@@ -144,6 +146,7 @@ SCAN = r"""([font, arf, dirs, part, thr, check]) => {
    let s = 0; for (let i = 0; i < p.b8.length; i++) s += Math.abs(p.b8[i] - q.b8[i]); if (s >= lim) return lim;
    s = 0; for (let i = 0; i < W * H; i++) { s += Math.abs(p.a[i] - q.a[i]); if (s >= lim) return lim; } return s;
  }
+ const oneLetter = (p, q) => { const a = [...p], b = [...q]; return a.length === b.length && a.filter((c, i) => c !== b[i]).length === 1; };
  const REF = [['ح', 'خ'], ['ر', 'ز'], ['د', 'ذ'], ['ع', 'غ'], ['ص', 'ض'], ['ط', 'ظ'], ['ٮ', 'ب'], ['ں', 'ن']];
  const dot = REF.map(([p0, q0]) => l1(draw(p0, arf, 'rtl'), draw(q0, arf, 'rtl'), 1e12)).sort((p, q) => p - q)[REF.length >> 1];
  const lim = thr * dot, near = []; let pairs = 0, drawn = 0, tofu = 0, lacks = 0;
@@ -163,7 +166,9 @@ SCAN = r"""([font, arf, dirs, part, thr, check]) => {
    for (const u of us) { const p = bm.get(u); if (!p) continue; const ku = sk.get(u), lu = single && (part === 'names' || isLetter(u));
      let lo = 0, hi = sums.length; while (lo < hi) { const m = (lo + hi) >> 1; if (sums[m] <= p.sum - lim) lo = m + 1; else hi = m; }
      for (let j = lo; j < tl.length && tl[j][1].sum < p.sum + lim; j++) { const [t, q] = tl[j];
-       if (t === u || (lu && t < u) || sk.get(t) === ku) continue; pairs++;
+       if (t === u || (lu && t < u) || sk.get(t) === ku) continue;
+       if (part === 'sequences' && oneLetter(u, t)) continue;   // one letter apart: the letters part compares them in every joining position
+       pairs++;
        const m = l1(p, q, lim); if (m < lim) near.push([font, pos + (ndir ? ':' + ndir + (pre || post ? ':' + pre + '…' + post : '') : ''), u, t, +(m / dot).toFixed(3),
          [...u].map((c) => c.codePointAt(0).toString(16).toUpperCase()).join(' '), [...t].map((c) => c.codePointAt(0).toString(16).toUpperCase()).join(' '), ku, sk.get(t)]); } }
  }
