@@ -37,10 +37,30 @@ Progress log: `docs/areas/social-progress.md`.
 - **J-SOCIAL-09** demo (appearance kept after reload): intermittent — the headless browser sometimes gives a file:// page an empty
   localStorage on reload; reproduced on the **approved reference build** too (2 of 5 runs), so it is the test harness, not the app.
 - **J-SOCIAL-49** demo: sample reach numbers in the demo — "J-SOCIAL-49 sample numbers" is outside this area (brief).
-- **J-SOCIAL-01 / 10 / 21** live failed only in the 4-way parallel run (other journeys' members/posts in the same database: a member
-  named like a sample person, new posts between two reads). J-21's colleague was renamed; on a fresh database all three pass.
+- **J-SOCIAL-01 / 10** live fail only in a parallel run (other journeys' posts arrive between two reads / a member named like a sample
+  person); they pass alone. **J-SOCIAL-21** was fixed (the people picker now puts connections first, server-side).
+- **J-SOCIAL-03 / 08** demo: the same headless file:// storage-on-reload flakiness as J-09 (pass when rerun).
 
-SUITES_PLACEHOLDER
+## Suite numbers (fresh local stack, final code)
+- **SQL** (each on its own fresh database, stub + 0001–0049): 17 / 17 suites — account 32/32, company_contact 22/22, company_hub 35/35, deals 23/23,
+  followups 68/68, group_posts 120/120, integrity_perf 56/56, launch_readiness 30/30, listings_groups 23/23, messages_safety 25/25,
+  network_followups 34/34, payments_storage 76/76, privacy_names 21/21, security_core 96/96, small_followups 33/33, **social 98/98**,
+  trust_hub_deals 143/143. **Schema sweep** 6 × "none". **migration_check** OK (46 migrations).
+- **Demo** (tests/demo, EN + AR) and **legacy** (tests/demo/legacy): 30 / 30 after the fixes in this branch (groups_test is intermittent on its
+  reload step — 3/3 on a rerun, same on the approved build; see the harness note).
+- **Speed A/B** (legacy stress vs the approved reference, 5 rounds): median page switch 10.7 ms vs base 9.4 ms — PASS (limit +25 %).
+- **100k scale** (tools/scale/seed_100k.sql + timings.py, member1 heavy + member50000): every query under its limit; the new ones
+  search_all 6 ms, search_all("member 12") 2–3 ms, find_people 2–3 ms, mention picker 7 ms, feed reposts/mentions/likes < 1 ms,
+  who-viewed < 1 ms. (Before 0048 search_all took 200–700 ms — fixed.)
+- **e2e** (live stack): 21 / 23 — the two failures are phase-1b texts that depend on how many members the database holds, not this
+  area: p1 "Reach 1 pharma professional**s**" (singular with exactly one member on a fresh database) / "4 profiles" (a real candidate count
+  equal to the sample number); b0 console 404s and b1, d3b were fixed and pass (b0 7/7, b1 28/28, d3b 61/61).
+- **Journeys, all 150** (report-only, demo EN/AR 1440 + EN 390, live EN 1440): social 46/51 in that run (J-21 since fixed: 47), business 7/49,
+  community 6/50 — business/community belong to the other areas.
+- **Dead-end crawler** demo (EN/AR × 1440/390, 1,893 clicks): **0 JavaScript errors**; 49 dead ends reported (report-only; nearly all
+  approved sample cards/counts outside this area — e.g. Network sample avatars, Marketplace "same template" cards, Requests & deals chips).
+  LIVE_CRAWL_PLACEHOLDER
+
 
 ## Independent verification
 Two verifiers with a fresh context (not the builder): security/privacy/permissions (strongest model) and functional (EN/AR, 1440/390 touch,
