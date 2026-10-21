@@ -360,21 +360,51 @@ drop trigger if exists trg_training_course_product on public.training_courses;
 create trigger trg_training_course_product after insert or update of price_egp, title, active on public.training_courses
   for each row execute function public.training_course_product();
 
+-- (merge: business's 0055 rules — method check, suspended company, active listing, one payable order, superseded card orders,
+--  net/VAT split — with this area's paid course)
 create or replace function public.create_order(p_product text, p_method text, p_company bigint default null, p_listing bigint default null)
 returns public.payment_orders language plpgsql security definer set search_path = public as $$
-declare pr public.payment_products; o public.payment_orders;
+declare pr public.payment_products; o public.payment_orders; v_total int; v_net int; v_company bigint; v_listing bigint; dup public.payment_orders;
 begin
   if auth.uid() is null then raise exception 'Sign in first' using errcode = '42501'; end if;
+  if p_method is null or p_method not in ('card','wallet','fawry','instapay') then raise exception 'Choose a payment method' using errcode = '22023'; end if;
   select * into pr from public.payment_products where code = p_product and active; if not found then raise exception 'Unknown product'; end if;
   if pr.kind = 'vip' and (p_company is null or not public.is_company_member(p_company, array['owner','admin'])) then raise exception 'Only the company''s owner or admins can upgrade it' using errcode = '42501'; end if;
+  if pr.kind = 'vip' and exists (select 1 from public.companies where id = p_company and status = 'suspended') then
+    raise exception 'This company page is suspended — VIP cannot be bought for it' using errcode = '42501';
+  end if;
   if pr.kind in ('boost','featured') and not exists (select 1 from public.products where id = p_listing and user_id = auth.uid()) then raise exception 'You can boost only your own listings' using errcode = '42501'; end if;
-  if pr.kind = 'course' then
+  if pr.kind in ('boost','featured') and not exists (select 1 from public.products where id = p_listing and active and (to_jsonb(products) ->> 'expires_at' is null or (to_jsonb(products) ->> 'expires_at')::timestamptz > now())) then
+    raise exception 'This listing is not active — publish it again before promoting it' using errcode = '42501';
+  end if;
+  if pr.kind = 'course' then                                                   -- a paid course (0062)
     if not exists (select 1 from public.training_courses c where c.id = pr.course_id and c.active and c.price_egp > 0) then raise exception 'This course is not on sale at the moment' using errcode = 'P0002'; end if;
     if exists (select 1 from public.course_enrollments e where e.course_id = pr.course_id and e.user_id = auth.uid()) then raise exception 'You are already enrolled in this course' using errcode = '23505'; end if;
   end if;
-  insert into public.payment_orders (user_id, product_code, company_id, listing_id, course_id, method, amount_cents)
-  values (auth.uid(), pr.code, case when pr.kind = 'vip' then p_company end, case when pr.kind in ('boost','featured') then p_listing end,
-          case when pr.kind = 'course' then pr.course_id end, p_method, round(pr.amount_egp * (1 + pr.vat_rate) * 100))
+  v_company := case when pr.kind = 'vip' then p_company end; v_listing := case when pr.kind in ('boost','featured') then p_listing end;
+  perform pg_advisory_xact_lock(hashtext('drugbox.order.' || auth.uid()::text));   -- one order at a time per buyer (two clicks make one order)
+  -- a Fawry order without its reference (the provider call failed, or is still running in another request) never blocks: it is
+  -- not closed here (a reference issued a moment later must still find its order); payments-create closes it if Fawry refuses
+  -- still payable: a Fawry reference that has not expired, an InstaPay order waiting for its transfer or being checked by Drugbox
+  select * into dup from public.payment_orders x
+   where x.user_id = auth.uid() and x.product_code = pr.code and coalesce(x.listing_id, 0) = coalesce(v_listing, 0) and coalesce(x.company_id, 0) = coalesce(v_company, 0)
+     and x.method = p_method
+     and ((x.method = 'fawry' and x.status = 'pending' and x.provider_ref is not null and x.fawry_expires_at is not null and x.fawry_expires_at > now())
+          or (x.method = 'fawry' and x.status = 'pending' and x.provider_ref is null and x.created_at > now() - interval '2 minutes')   -- being issued right now (a second click, a second tab)
+          or (x.method = 'instapay' and x.status in ('pending','review')))
+   order by x.id desc limit 1;
+  if dup.id is not null then
+    raise exception '%', case when dup.method = 'fawry' and dup.provider_ref is null then 'A Fawry reference for this is being issued — wait a moment and look in My payments'
+                              when dup.method = 'fawry' then 'You already have a Fawry reference for this (' || dup.provider_ref || ') — pay it or find it in My payments'
+                              when dup.status = 'review' then 'Your InstaPay transfer for this (' || dup.merchant_ref || ') is being checked by Drugbox — wait for the confirmation in My payments'
+                              else 'You already have an InstaPay payment waiting for this (' || dup.merchant_ref || ') — send the transfer from My payments' end using errcode = '23505';
+  end if;
+  update public.payment_orders x set status = 'expired', provider_payload = coalesce(x.provider_payload, '{}'::jsonb) || jsonb_build_object('superseded', true)
+   where x.user_id = auth.uid() and x.product_code = pr.code and coalesce(x.listing_id, 0) = coalesce(v_listing, 0) and coalesce(x.company_id, 0) = coalesce(v_company, 0)
+     and x.status = 'pending' and x.method in ('card','wallet');
+  v_total := round(pr.amount_egp * (1 + pr.vat_rate) * 100); v_net := round(pr.amount_egp * 100);
+  insert into public.payment_orders (user_id, product_code, company_id, listing_id, course_id, method, amount_cents, net_cents, vat_cents)
+  values (auth.uid(), pr.code, v_company, v_listing, case when pr.kind = 'course' then pr.course_id end, p_method, v_total, v_net, v_total - v_net)
   returning * into o;
   return o;
 end $$;

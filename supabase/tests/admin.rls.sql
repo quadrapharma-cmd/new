@@ -76,7 +76,10 @@ select pg_temp.as_server();
 select pg_temp.step('an unclaimed page with a claim', $$with c as (insert into public.companies (name, type, slug, status, source) values ('AD Unclaimed','Distributor','ad-unclaimed','unclaimed','public_list') returning id)
   insert into ids select 'uc', id::text from c$$);
 select pg_temp.act(5);
-select pg_temp.step('… R claims it', $$insert into ids select 'cl', public.claim_company(pg_temp.id('uc'), 'I work there')::text$$);
+-- (merge: claim_company needs the commercial registry document since business 0052 — R uploads it to their claims/ folder first)
+select pg_temp.no('… R cannot claim it without the registry document', $$select public.claim_company(pg_temp.id('uc'), 'I work there')$$, '22023');
+select pg_temp.step('… R uploads the commercial registry document', $$insert into storage.objects (bucket_id, name, owner) values ('documents', 'claims/' || pg_temp.u(5) || '/registry.pdf', pg_temp.u(5))$$);
+select pg_temp.step('… R claims it', $$insert into ids select 'cl', public.claim_company(pg_temp.id('uc'), 'I work there', 'claims/' || pg_temp.u(5) || '/registry.pdf')::text$$);
 select pg_temp.act(1);
 select pg_temp.step('A1 approves the claim', $$update public.verification_requests set status = 'approved' where id = pg_temp.id('cl')$$);
 select pg_temp.ok('… R owns the page; logged as a claim', $$(select owner_id = pg_temp.u(5) from public.companies where id = pg_temp.id('uc')) and pg_temp.acts('claim', pg_temp.id('cl')::text) = 1$$);

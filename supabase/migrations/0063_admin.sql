@@ -131,12 +131,25 @@ do $$ begin
   alter table public.site_certificates add constraint site_certificates_reject_len check (length(coalesce(reject_note, '')) <= 500);
 exception when duplicate_object then null; end $$;
 -- 0011's guard let only Drugbox admins set checked_at; moderators check certificates too (through cert_decide)
+-- (merge: business's guard from 0050 — the document must be this company's uploaded file; a reviewer's own direct write meets the
+--  same rules as anyone's; the review functions run as their owner)
 create or replace function public.site_certificates_guard() returns trigger language plpgsql set search_path = public as $$
 begin
-  if auth.uid() is null or public.is_moderator() then return new; end if;
+  -- server work, Drugbox's admins, and the review functions (review_certificate runs as its owner, not as the API role): a
+  -- reviewer's own direct write meets the same rules as anyone's
+  if auth.uid() is null or public.is_platform_admin() or current_user not in ('authenticated', 'anon') then return new; end if;
   if new.source = 'public_list' then new.source := 'company'; end if;
+  -- the document is a private file of this company's verification folder that exists
+  if new.file_path is not null and (tg_op = 'INSERT' or new.file_path is distinct from old.file_path) then
+    if new.file_path !~ ('^verification/' || new.company_id::text || '/[A-Za-z0-9._-]{1,120}$')
+       or not exists (select 1 from storage.objects o where o.bucket_id = 'documents' and o.name = new.file_path) then
+      raise exception 'The certificate document must be uploaded for this company' using errcode = '42501';
+    end if;
+  end if;
+  if new.file_path is not null then new.source := 'document'; elsif new.source = 'document' then new.source := 'company'; end if;
   if tg_op = 'INSERT' then new.checked_at := null;
-  elsif new.name is distinct from old.name or new.expiry is distinct from old.expiry or new.checked_at is distinct from old.checked_at then new.checked_at := null; end if;
+  elsif new.name is distinct from old.name or new.expiry is distinct from old.expiry or new.file_path is distinct from old.file_path
+        or new.checked_at is distinct from old.checked_at then new.checked_at := null; end if;
   return new;
 end $$;
 revoke all on function public.site_certificates_guard() from public, anon, authenticated, service_role;
@@ -259,14 +272,15 @@ drop trigger if exists trg_post_reports_log on public.post_reports;
 create trigger trg_post_reports_log after update on public.post_reports for each row execute function public.post_reports_log();
 
 -- ── 5. accounts: suspension, role, the profile badge ──────────────────────────────────────────────────
+-- (merge: the table is social's, 0044 — one suspension for the whole app, read by both areas' guards)
 create table if not exists public.account_suspensions (
-  user_id    uuid primary key references public.profiles(id) on delete cascade,
-  reason     text not null,
-  by_user    uuid references public.profiles(id) on delete set null,
-  created_at timestamptz not null default now(),
-  constraint account_suspensions_reason check (length(trim(reason)) between 3 and 500)
+  user_id      uuid primary key references public.profiles(id) on delete cascade,
+  reason       text not null,
+  suspended_by uuid references public.profiles(id) on delete set null,
+  suspended_at timestamptz not null default now(),
+  constraint account_suspensions_reason_len check (length(reason) between 1 and 500)
 );
-create index if not exists idx_account_suspensions_by on public.account_suspensions (by_user);
+create index if not exists idx_account_suspensions_by on public.account_suspensions (suspended_by) where suspended_by is not null;
 alter table public.account_suspensions enable row level security;
 drop policy if exists "suspensions: the member and Drugbox read" on public.account_suspensions;
 create policy "suspensions: the member and Drugbox read" on public.account_suspensions for select to authenticated
@@ -288,8 +302,12 @@ do $$ declare t text; begin
 end $$;
 -- the same rule inside the server functions that write for the member (company_message, deal_create, group listings…), which
 -- RLS does not see, and on everything else a member creates: a suspended account creates nothing
+-- (merge: the same triggers as social's writer_not_suspended, 0047 — a deleted account's old token writes nothing either)
 create or replace function private.refuse_suspended() returns trigger language plpgsql security definer set search_path = public as $$
 begin
+  if auth.uid() is not null and exists (select 1 from public.profiles p where p.id = auth.uid() and p.account_type = 'deleted') then
+    raise exception 'This account was deleted' using errcode = '42501';
+  end if;
   if auth.uid() is not null and exists (select 1 from public.account_suspensions s where s.user_id = auth.uid()) then
     raise exception 'This account is suspended — it cannot post, message or list anything' using errcode = '42501';
   end if;
@@ -313,7 +331,7 @@ begin
   if exists (select 1 from public.profiles where id = p_user and role = 'admin') then raise exception 'An admin account cannot be suspended — change its role first' using errcode = '22023'; end if;
   if length(trim(coalesce(p_reason, ''))) < 3 then raise exception 'Give the reason — the member sees it' using errcode = '22023'; end if;
   if exists (select 1 from public.account_suspensions where user_id = p_user) then raise exception 'This account is already suspended' using errcode = 'DX409'; end if;
-  insert into public.account_suspensions (user_id, reason, by_user) values (p_user, left(trim(p_reason), 500), auth.uid());
+  insert into public.account_suspensions (user_id, reason, suspended_by) values (p_user, left(trim(p_reason), 500), auth.uid());
   perform private.log_decision('suspension', p_user::text, coalesce((select name from public.profiles where id = p_user), 'Member'), 'suspended', p_reason);
 end $$;
 revoke all on function public.admin_suspend(uuid, text) from public, anon, authenticated, service_role;

@@ -236,7 +236,7 @@ select pg_temp.step('a pending verification request of the outside company', $$
 select pg_temp.as_user('e7777777-7777-7777-7777-777777777777');
 select pg_temp.step('admin one approves', $$update public.verification_requests set status = 'approved' where id = pg_temp.id('vr')$$);
 select pg_temp.as_user('e8888888-8888-8888-8888-888888888888');
-select pg_temp.no('a second reviewer''s late rejection is refused (already decided)', $$update public.verification_requests set status = 'rejected', note = 'second opinion' where id = pg_temp.id('vr')$$, 'P0001');
+select pg_temp.no('a second reviewer''s late rejection is refused (already decided)', $$update public.verification_requests set status = 'rejected', note = 'second opinion' where id = pg_temp.id('vr')$$, 'DX409');   -- merge: one decide-once code for every Drugbox decision (0063)
 select pg_temp.as_server();
 select pg_temp.ok('…the approval stands', $$(select status from public.verification_requests where id = pg_temp.id('vr')) = 'approved'$$);
 

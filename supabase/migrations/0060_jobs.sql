@@ -308,6 +308,7 @@ grant select, insert, update, delete on table public.job_seeker_cvs to authentic
 grant select, insert, update, delete, truncate, references, trigger on table public.job_seeker_cvs to service_role;
 create index if not exists idx_job_seeker_cvs_path on public.job_seeker_cvs (cv_path);
 -- it is only ever opened through a signed link — storage asks can_read_document():
+-- (merge: business's folders from 0059 — claims, deals, listings, companydocs, a quality member's cert- files — kept; the cv rule is this area's)
 create or replace function public.can_read_document(p_name text)
 returns boolean language sql stable security definer set search_path = public as $$
   select case (storage.foldername(p_name))[1]
@@ -317,8 +318,15 @@ returns boolean language sql stable security definer set search_path = public as
                    or (exists (select 1 from public.job_seeker_cvs v join public.profiles p on p.id = v.user_id where v.cv_path = p_name and p.open_to_work)
                        and exists (select 1 from public.companies c where c.status = 'verified' and public.is_company_member(c.id)))
     when 'verification' then (storage.foldername(p_name))[2] ~ '^\d+$'
-                   and (public.is_company_member(((storage.foldername(p_name))[2])::bigint, array['owner','admin']) or public.is_moderator())
+                   and (public.is_company_member(((storage.foldername(p_name))[2])::bigint, array['owner','admin']) or public.is_moderator()
+                        or (storage.filename(p_name) like 'cert-%' and public.is_company_member(((storage.foldername(p_name))[2])::bigint, array['quality'])))
     when 'payments' then (storage.foldername(p_name))[2] = auth.uid()::text or public.is_platform_admin()
+    when 'claims' then (storage.foldername(p_name))[2] = auth.uid()::text or public.is_moderator()
+    when 'deals' then (storage.foldername(p_name))[2] ~ '^\d{1,18}$' and public.deal_is_party(((storage.foldername(p_name))[2])::bigint)
+    when 'listings' then (storage.foldername(p_name))[2] = auth.uid()::text or public.is_moderator()
+                   or (auth.uid() is not null and exists (select 1 from public.products p where p.coa_path = p_name and p.active))
+    when 'companydocs' then (storage.foldername(p_name))[2] ~ '^\d{1,18}$'
+                   and (public.is_company_member(((storage.foldername(p_name))[2])::bigint) or public.is_moderator())
     else false end
 $$;
 -- an employer's view of a candidate's published CV path (members of a verified company only; else null)

@@ -182,10 +182,16 @@ grant execute on function public.account_anonymise(uuid) to service_role;
 
 -- the other person keeps the conversation: it lists the partner as "Deleted member" (the tombstone is hidden from reads, so the
 -- join is a left join), and nobody can write to a deleted member
-create or replace function public.my_conversations(p_limit int default 30)
-returns table(partner uuid, name text, headline text, verified boolean, avatar_url text, last_body text, last_at timestamptz, last_from_me boolean, unread int)
-language sql stable set search_path = public as $$
-  select h.partner, coalesce(p.name, 'Deleted member'), p.headline, coalesce(p.verified, false), p.avatar_url, h.last_body, h.last_at, h.last_from_me, h.unread
+-- (merge: the same columns as 0039_names_rule_2 — company, city and the name-rule fields — so it applies on top of the name rule)
+drop function if exists public.my_conversations(int);
+create function public.my_conversations(p_limit int default 30)
+returns table (partner uuid, name text, headline text, verified boolean, avatar_url text,
+               last_body text, last_at timestamptz, last_from_me boolean, unread int, company text, location text, name_needs_fix boolean,
+               name_key text, name_twins int)
+language sql stable security invoker set search_path = public as $$
+  select h.partner, coalesce(p.name, 'Deleted member'), p.headline, coalesce(p.verified, false), p.avatar_url, h.last_body, h.last_at, h.last_from_me, h.unread,
+         p.company, p.location, coalesce(p.name_needs_fix, false), p.name_key,
+         case when p.name_key is null then 0 else (select count(*)::int from public.profiles t where t.name_key = p.name_key and t.id <> p.id and t.id <> h.owner) end
   from public.conversation_heads h left join public.profiles p on p.id = h.partner
   where h.owner = (select auth.uid())
   order by h.last_at desc
