@@ -65,8 +65,10 @@
       { name: 'Sara Mansour', headline: 'Regulatory Affairs Specialist', company: 'Freelance', location: 'Cairo, Egypt', note: 'Interested in the regional strategy side of the role.', cv: true, status: 'submitted', created_at: daysAgo(5) }]
   };
   var DEMO_STAGES = ['submitted', 'viewed', 'shortlisted', 'interviewed', 'hired', 'rejected', 'no_show'];
-  function dstore(k, d) { return D.store.get(k, d); }
-  function dsave(k, v) { D.store.set(k, v); }
+  /* one visit of the Jobs page reads each stored list once (resetPage): the same value for every card, without parsing it again */
+  var SNAP = null;
+  function dstore(k, d) { if (!SNAP) return D.store.get(k, d); if (!(k in SNAP)) SNAP[k] = D.store.get(k, d); return SNAP[k]; }
+  function dsave(k, v) { D.store.set(k, v); if (SNAP) delete SNAP[k]; }
   function staticJobs() {   /* the approved page's job cards, read once from its markup (also when the Jobs page was never opened) */
     if (staticJobs.v) return staticJobs.v;
     var out = [], tpl = document.createElement('template'); tpl.innerHTML = window.JX_HTML || '';
@@ -212,6 +214,7 @@
   /* ── 2. filtering: the demo filters the cards on the page; the live app asks the database (one call per page) ──────── */
   function words(s) { return String(s || '').toLowerCase().split(/\s+/).filter(Boolean); }
   function demoMatch(card) {
+    if (!F.q && !F.types.length && !F.countries.length) return true;   /* no filter: every card matches (nothing to read from it) */
     var j = fromCard(card), hay = [j.title, j.company, j.location, j.description, (j.tags || []).join(' '), (j.requirements || []).join(' '), txt(card.querySelector('.jc-tags'))].join(' ').toLowerCase();
     if (words(F.q).some(function (w) { return hay.indexOf(w) < 0; })) return false;
     if (F.types.length && !(F.types.indexOf(cardType(card)) >= 0 || (F.types.indexOf('remote') >= 0 && cardRemote(card)))) return false;
@@ -227,8 +230,15 @@
         .then(function () { if (my === running) after(); }, function (e) { toast((e && e.message) || 'Could not load the jobs'); });
     }
     jobCards(root).forEach(function (c) { var k = c.dataset.jxPosted || titleOf(c), dj = demoJob(k); if (deleted(k) || (c.dataset.jxPosted && !dj)) { c.remove(); return; } c.dataset.jxSearch = demoMatch(c) && !(dj && dj.active === false) ? '' : '0'; });
-    if (window.dxJxPaint) window.dxJxPaint();
+    if (window.dxJxPaint && trustChanged(root)) window.dxJxPaint();   /* the trust marks are drawn again only when they could differ (speed) */
     after();
+  }
+  /* the trust layer's marks depend on the stored reviews, references, lists and interactions and on cards drawn since */
+  var TRUST_SIG = null;
+  function trustChanged(root) {
+    var sig; try { sig = ['jobReviews', 'jobRefs', 'jobLists', 'jobInteractions'].map(function (k) { return localStorage.getItem('dbx_' + k) || ''; }).join('\u0001'); } catch (e) { return true; }
+    var bare = [].some.call(root.querySelectorAll('#jx .jcard'), function (c) { return !c.querySelector('.jx-trust'); });
+    if (!bare && sig === TRUST_SIG) return false; TRUST_SIG = sig; return true;
   }
   function shownJobs() { return jobCards().filter(function (c) { return c.style.display !== 'none' && c.dataset.jxSearch !== '0'; }); }
   function after() {
@@ -732,7 +742,7 @@
   /* switching I'm Hiring / I'm Job Hunting closes a panel */
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#jx .mode-opt') && P.kind) showPanel(false); }, true);
 
-  function resetPage() { paintPosted(); paintDemoState(); paintMyCandidate(); paintApplied(); run(); }
+  function resetPage() { var own = !SNAP; if (own) SNAP = {}; try { paintPosted(); paintDemoState(); paintMyCandidate(); paintApplied(); run(); } finally { if (own) SNAP = null; } }
 
   /* the page renders once and is kept: everything above is (re)applied on each visit */
   var oRender = window.renderJobs;
