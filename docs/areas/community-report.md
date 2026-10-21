@@ -83,7 +83,7 @@ edited on this branch after their first commit (before any deploy, so no ledger 
 
 | Suite | Result |
 |---|---|
-| SQL (`run_all.py sql`) — each suite on its own fresh database | 21/21 suites (admin 72/72, trust 19/19, groups 68/68, training 68/68, jobs 51/51 …) |
+| SQL (`run_all.py sql`) — each suite on its own fresh database | 20/20 suites (admin 72/72, trust 19/19, groups 68/68, training 68/68, jobs 51/51 …) |
 | `schema_sweep.sql` | 6/6 "none" |
 | `tools/migration_check.py` | pass |
 | Demo + legacy + stress (`run_all.py demo legacy stress`) | 31/31; page switching 13.3 ms vs 11.7 ms base (within the limit) |
