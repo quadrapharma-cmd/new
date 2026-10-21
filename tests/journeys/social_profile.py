@@ -88,8 +88,9 @@ def edit_own_profile(j):
         j.sql("update public.profiles set name = $q$%s$q$ where id = '%s'" % (flagged, c['id']))      # a server write: kept and flagged
         j.check(j.sql1("select name_needs_fix from public.profiles where id='%s'" % c['id']) == 't', 'precondition: the name is not flagged')
         relogin(j, pc, c); own_profile(j, pc)
-        why = j.text(pc, '#content .dx-name-fix')
+        why0 = j.text(pc, '#content .dx-name-fix'); why = re.sub('[\u2068\u2069]', '', why0)   # what a message quotes is isolated (0039_names_rule_4)
         j.check(re.search(r'remove “"” \(U\+0022\)|احذف «"» \(U\+0022\)', why), 'the profile does not say which character to change: "%s"' % why[:160])
+        j.check('\u2068"\u2069' in why0, 'the profile\'s message does not isolate the character it quotes: %s' % ascii(why0[-60:]))
         j.click(pc, r'Edit Profile|عدّل الملف|تعديل الملف', scope='#content .profile-info', what='Edit Profile')
         j.check(re.search(r'U\+0022', j.text(pc, '.modal-bg #ep-err')), 'Edit Profile does not say under the name what to change')
         pc.fill('#ep-headline', 'Flag headline %s' % j.tag); j.click(pc, r'Save Changes|Save|حفظ', scope='.modal-bg', what='Save Changes'); pc.wait_for_timeout(1200)
