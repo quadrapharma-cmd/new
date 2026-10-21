@@ -13,6 +13,8 @@ Groups:
          leftover overlays and its median switch time is at most 25% (+1 ms) slower than the base's — not in the default run
   demo-full  legacy + stress (one command for the long demo checks) — not in the default run
   e2e    tests/e2e/*_test.py against the running local stack (tools/local-supabase/start.sh, and start-payments.sh for e4*)
+  render tools/names/render_scan.py: no two allowed letters draw alike with different skeletons (14-16 px, the app's font and the
+         system fonts), and the same scan on the third rule (git e972163) finds «حْ» / «خ» — not in the default run
   migrations  tools/migration_check.py (every migration re-runnable, puts back each policy it creates) — not in the default run
          while older migrations still group several policies in one block
   journeys  user journeys (tests/journeys/run_{social,business,community}.py): every journey on the demo (DEMO_FILE) in
@@ -137,6 +139,12 @@ def migrations():
     code, out, s = run([sys.executable, ROOT + '/tools/migration_check.py'])
     record('migr', 'tools/migration_check.py', code == 0, s, out[-3000:])
 
+def render():   # the name rule's render check (S-03): every allowed letter against every other, and the proof it sees a look-alike
+    code, out, secs = run([sys.executable, 'tools/names/render_scan.py'], timeout=3600)
+    record('render', 'render_scan.py (fourth rule: 0 pairs)', code == 0, secs, out[-800:] if code else '')
+    code, out, secs = run([sys.executable, 'tools/names/render_scan.py', '--rule', 'e972163', '--must-find', 'حْ/خ'], timeout=3600)
+    record('render', 'render_scan.py --rule e972163 finds حْ/خ', code == 0, secs, out[-800:] if code else '')
+
 REPORT_ONLY = '--report-only' in sys.argv   # journeys / crawl: report findings without failing the run
 
 def journeys():
@@ -171,7 +179,7 @@ def crawl():
     print('      ' + (last[-1].strip() if last else out[-400:]) + f' — {rep}/crawl.md')
     record('crawl', 'tools/qa/deadend_crawler.py' + (' (report)' if REPORT_ONLY and code == 1 else ''), code == 0 or (REPORT_ONLY and code == 1), s, out[-1500:])
 
-GROUPS = {'sql': sql_suites, 'sweep': sweep, 'demo': demo, 'legacy': legacy, 'stress': stress, 'demo-full': demo_full, 'e2e': e2e, 'migrations': migrations, 'journeys': journeys, 'crawl': crawl}
+GROUPS = {'sql': sql_suites, 'sweep': sweep, 'demo': demo, 'legacy': legacy, 'stress': stress, 'demo-full': demo_full, 'e2e': e2e, 'migrations': migrations, 'journeys': journeys, 'crawl': crawl, 'render': render}
 want = [a for a in sys.argv[1:] if a != '--report-only'] or ['sql', 'sweep', 'demo', 'e2e']
 for g in want:
     if g not in GROUPS: raise SystemExit(f'unknown group {g!r} — use: ' + ' '.join(GROUPS))
