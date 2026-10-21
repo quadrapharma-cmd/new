@@ -1,0 +1,114 @@
+/* Training — filters, card states, the course window, lessons, quiz, certificate, My courses, Admin → Training (training.js) */
+.tr-bar{display:flex;flex-direction:column;gap:10px;margin:0 0 14px}
+.tr-bar .tr-chips{display:flex;gap:8px;flex-wrap:wrap;padding:0;margin:0;border:0}
+.tr-bar .tr-chips .cf-tag{padding:7px 15px;border-radius:8px;font:600 12.5px Inter,system-ui,sans-serif;cursor:pointer;border:1.5px solid #e8eaef;background:#fff;white-space:nowrap;transition:.15s;color:#475569;min-height:36px}
+.tr-bar .tr-chips .cf-tag.on{background:#0f172a;color:#fff;border-color:#0f172a}
+.tr-bar .tr-chips .cf-tag:hover:not(.on){border-color:#1a56db;color:#1a56db}
+.tr-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tr-tools .tr-q{flex:1;min-width:180px;height:40px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 14px;font:13px Inter,system-ui,sans-serif;background:#fff;color:#0f172a;outline:none}
+.tr-tools .tr-q:focus{border-color:#1a56db}
+.tr-tools .tr-level{height:40px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 10px;font:13px Inter,system-ui,sans-serif;background:#fff;color:#0f172a}
+.tr-tools .tr-my{height:40px;padding:0 16px;white-space:nowrap}
+.tr-card .tr-title[role=button]{cursor:pointer}
+.tr-card .tr-title[role=button]:hover{color:#1a56db;text-decoration:underline}
+.tr-meta .tr-price{font-weight:700;color:#15803d}
+.tr-meta .tr-price.paid{color:#b45309}
+.tr-info{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:#64748b;margin:-4px 0 10px}
+.tr-state{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12px;color:#334155;margin:0 0 6px}
+.tr-state b{color:#15803d}
+.tr-prog{height:6px;border-radius:999px;background:#e2e8f0;overflow:hidden;margin:0 0 10px}
+.tr-prog i{display:block;height:100%;background:#16a34a;border-radius:999px}
+.tr-card .tr-go{width:100%;padding:8px}
+.tr-card .tr-go.tr-in{background:#1a56db}
+.tr-card .tr-go.tr-done{background:#16a34a}
+.tr-leave{display:block;margin:8px auto 0;border:0;background:none;color:#64748b;font:600 12px Inter,system-ui,sans-serif;text-decoration:underline;cursor:pointer;min-height:32px;padding:4px 10px}
+.tr-leave:hover{color:#dc2626}
+.tr-muted{color:#64748b;font-size:12.5px}
+/* the course window */
+.tr-d-top{display:flex;gap:12px;align-items:center;margin-bottom:10px}
+.tr-d-ic{font-size:34px;line-height:1}
+.tr-d-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.tr-d-tags span{background:#f0f7ff;color:#1a56db;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:700}
+.tr-d-by{font-size:12.5px;color:#334155}
+.tr-d-desc{font-size:13px;color:#334155;line-height:1.6;margin:0 0 12px}
+.tr-d-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.tr-d-grid div{background:#f8fafc;border-radius:10px;padding:8px 10px}
+.tr-d-grid span{display:block;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:2px}
+.tr-d-grid b{font-size:12.5px;color:#0f172a}
+.tr-d-h{font:800 13px Inter,system-ui,sans-serif;color:#0f172a;margin:12px 0 6px}
+.tr-les-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.tr-les{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e6e8ee;border-radius:12px;padding:8px 12px;font-size:12.5px;min-height:40px}
+.tr-les[role=button]{cursor:pointer}
+.tr-les[role=button]:hover{border-color:#1a56db}
+.tr-les-n{width:24px;height:24px;border-radius:50%;background:#f1f5f9;color:#334155;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11.5px;flex:none}
+.tr-les.ok .tr-les-n{background:#dcfce7;color:#15803d}
+.tr-les-t{flex:1;min-width:0;color:#0f172a}
+.tr-les-m{color:#64748b;white-space:nowrap;font-size:11.5px}
+.tr-les .tr-leave{margin:0}
+.tr-d-quiz{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;background:#fffbeb;border-radius:12px;font-size:12.5px;color:#92400e}
+.tr-d-more{text-align:center}
+/* a lesson */
+.tr-l-head{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:#64748b;margin-bottom:10px}
+.tr-l-prog{margin-inline-start:auto;font-weight:700;color:#15803d}
+.tr-video{width:100%;max-height:52vh;border-radius:12px;background:#0f172a;display:block}
+.tr-l-body{font-size:13px;color:#334155;line-height:1.7;margin-top:12px;white-space:normal}
+.tr-l-nav{display:flex;justify-content:space-between;gap:8px;margin-top:14px}
+.tr-pdf{padding:10px 16px}
+/* the quiz */
+.tr-q{border:1px solid #e6e8ee;border-radius:12px;padding:10px 12px;margin:0 0 10px}
+.tr-q legend{font-size:13px;color:#0f172a;padding:0 4px}
+.tr-q label{display:flex;gap:8px;align-items:center;font-size:12.5px;color:#334155;padding:6px 0;min-height:36px;cursor:pointer}
+.tr-res{text-align:center;padding:6px 0}
+.tr-res b{display:block;font:800 34px Inter,system-ui,sans-serif;color:#b91c1c}
+.tr-res.ok b{color:#15803d}
+/* the certificate */
+.tr-cert{border:3px double #c7a14a;border-radius:14px;padding:20px 18px;text-align:center;background:linear-gradient(180deg,#fffdf7,#fff);margin-bottom:12px}
+.tr-cert-k{font:800 11px Inter,system-ui,sans-serif;letter-spacing:.18em;color:#b45309}
+.tr-cert-t{font:800 20px Poppins,Inter,sans-serif;color:#0a1f4d;margin:4px 0 10px}
+.tr-cert-l{font-size:11.5px;color:#64748b}
+.tr-cert-n{font:800 22px Poppins,Inter,sans-serif;color:#0f172a;margin:4px 0}
+.tr-cert-c{font:700 15px Inter,system-ui,sans-serif;color:#1a56db;margin:4px 0}
+.tr-cert-m{font-size:12px;color:#334155;margin:4px 0 10px}
+.tr-cert-f{display:flex;justify-content:center;align-items:center;gap:14px}
+.tr-cert-qr svg{width:84px;height:84px;display:block}
+.tr-cert-id{font:700 13px ui-monospace,Menlo,monospace;color:#0f172a}
+.tr-cert-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.tr-cert-print{max-width:900px;margin:30px auto;padding:46px 30px}
+/* the checkout */
+.tr-co-t{font-size:14px;margin-bottom:8px}
+.tr-co-tbl{width:100%;font-size:13px;margin-bottom:8px}
+.tr-co-tbl td{padding:5px 2px}
+.tr-co-tbl td:last-child{text-align:end}
+/* My courses */
+.tr-my-row{display:flex;gap:12px;align-items:center;border:1px solid #e6e8ee;border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.tr-my-ic{font-size:26px}
+.tr-my-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;font-size:12px;color:#64748b}
+.tr-my-b b{font-size:13.5px;color:#0f172a}
+.tr-my-b .tr-prog{margin:2px 0 0}
+.tr-my-row .btn-p{padding:8px 14px;white-space:nowrap}
+/* a profile's certificates */
+.tr-pcerts{padding:14px 16px;margin-top:12px}
+.tr-pc-h{font:800 14px Inter,system-ui,sans-serif;color:#0f172a;margin-bottom:8px}
+.tr-pc-row{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-top:1px solid #f1f5f9;cursor:pointer;font-size:12px;color:#64748b}
+.tr-pc-row b{font-size:13px;color:#0f172a}
+.tr-pc-row:hover b{color:#1a56db}
+/* Admin → Training */
+.tr-adm{padding:20px}
+.tr-adm-h{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.tr-adm-h h2{font:800 20px Inter,system-ui,sans-serif;color:#0f172a;margin:0}
+.tr-adm-tbl{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border-radius:12px;overflow:hidden}
+.tr-adm-tbl th{text-align:start;font-size:11px;color:#64748b;padding:8px;border-bottom:1px solid #e2e8f0}
+.tr-adm-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.tr-adm-acts{display:flex;gap:4px;flex-wrap:wrap}
+.tr-live{color:#15803d;font-weight:700}
+.tr-off{color:#94a3b8;font-weight:700}
+@media (max-width:640px){
+  .tr-d-grid{grid-template-columns:1fr 1fr}
+  .tr-tools .tr-q{min-width:100%}
+  .tr-adm-tbl thead{display:none}
+  .tr-adm-tbl tr{display:block;border-bottom:1px solid #e2e8f0;padding:6px 0}
+  .tr-adm-tbl td{display:inline-block;border:0;padding:4px 6px}
+}
+@media (max-width:900px),(pointer:coarse){
+  .tr-bar .tr-chips .cf-tag,.tr-leave,.tr-les,.tr-q label,.tr-tools .tr-q,.tr-tools .tr-level,.tr-tools .tr-my{min-height:40px}
+}

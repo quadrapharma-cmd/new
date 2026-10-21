@@ -23,7 +23,7 @@ with sync_playwright() as p:
     m = '#postJobModal '
     E.fill(m + 'input[placeholder^="e.g. Senior"]', f'QA Validation Specialist {st}'); E.fill(m + 'input[placeholder="Giza, Egypt"]', '10th of Ramadan, Egypt'); E.fill(m + 'input[placeholder="3-5 years"]', '6')
     opts = E.evaluate(f"[...document.querySelectorAll('{m}select option')].map(o=>o.textContent)"); qa = next((o for o in opts if 'QA' in o or 'Quality' in o), None)
-    if qa: E.select_option(m + 'select', label=qa)
+    if qa: E.locator(m + 'select').filter(has=E.locator('option', has_text=qa)).first.select_option(label=qa)   # the category select (J-02 added employment type and country)
     E.fill(m + 'input[placeholder^="Min"]', '30,000 EGP'); E.fill(m + 'textarea', 'Process and cleaning validation for a WHO-GMP solid dosage plant.')
     E.evaluate("(()=>{var b=[...document.querySelectorAll('#postJobModal button')].find(x=>/post/i.test(x.textContent));b&&b.click()})()"); E.wait_for_timeout(2500)
     row = sql(f"select company||'|'||category||'|'||seniority||'|'||coalesce(salary,'') from public.jobs where title='QA Validation Specialist {st}'")

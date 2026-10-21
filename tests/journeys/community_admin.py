@@ -72,7 +72,8 @@ def verify_company(j):
             j.check(j.wait_db("select status from public.companies where id=%s" % cid, 6) == 'verified', 'the company is not verified')
             j.check(j.sql1("select reviewed_by is not null and reviewed_at is not null from public.verification_requests where company_id=%s order by id desc limit 1" % cid) == 't', 'reviewed_by / reviewed_at not stored')
             j.check(notif_rows(j, o['id'], extra=" and message ~* 'verified'") >= 1, "no 'Your company is verified' notification")
-        directory(j, pg); j.check(pg.locator('#dxDir .dr-card', has_text=name).locator('.dr-seal').count(), 'no Verified badge on the directory card')
+        directory(j, pg); pg.fill('#hbQ', name); j.wait(pg, "n=>[...document.querySelectorAll('#dxDir .dr-card')].some(c=>c.innerText.includes(n))", 10, name)   # a directory of hundreds: found the way a person does
+        j.check(pg.locator('#dxDir .dr-card', has_text=name).locator('.dr-seal').count(), 'no Verified badge on the directory card')
 
 @journey('J-COMMUNITY-42')
 def claim_page(j):
@@ -135,7 +136,12 @@ def wrong_info_report(j):
         dlg_click(j, pg, L('Send report'), 'Send report'); j.settle(pg, 1000)
     with j.step('R sees the report in own reports with status Open'):
         el = j.find(pg, r'My reports|بلاغاتي', scope='#app'); j.check(el, 'not built: the reporter has no "My reports"')
-        el.click(); j.settle(pg, 900); j.check(issue in j.text(pg) and re.search(r'Open|مفتوح', j.text(pg)), 'my reports do not list it as Open')
+        el.click(); j.settle(pg, 900)
+        # the list opens in the approved dialog: the row that names this issue says Open
+        row = pg.evaluate("""t=>{const root=[...document.querySelectorAll('.dbk-ov')].pop()||document.querySelector('#content');
+          const els=[...root.querySelectorAll('*')].filter(e=>(e.innerText||'').includes(t)).sort((a,b)=>a.innerText.length-b.innerText.length);
+          const r=els.find(e=>/Open|مفتوح/.test(e.innerText));return r?r.innerText:(els.length?'(no status) '+els[0].innerText:'')}""", issue)
+        j.check(issue in row and re.search(r'Open|مفتوح', row) and len(row) < 400, 'my reports do not list it as Open: %s' % row[:120])
     with j.step("O sees it without R's identity; Mark fixed tells O that Drugbox closes it"):
         if j.demo: j.skip('the owner side is checked in live')
         po = o['page']; t2 = workspace(j, po, 'Reports & reviews|%s' % (ar('Reports & reviews') or 'التقارير'))
@@ -156,8 +162,9 @@ def moderate_warnings(j):
         e = j.person('Ehab Employer'); s = j.person('Sami Candidate'); d = j.person('Dina Disputer'); v = j.person('Vera Verified')
         j.sql("update public.profiles set verified=true where id='%s'" % v['id'])
         co = employment(j, e['id'], s['id']); employment(j, e['id'], d['id'], co)
-        w = seed_ref(j, e['id'], s['id'], 'warn', body=WARN, category='Left without notice')
-        dd = seed_ref(j, e['id'], d['id'], 'warn', 'disputed', WARN.replace('two', 'three'), 'Breach of confidentiality', reply='I never had access to that data.')
+        t = j.tag[:4]; wbody = WARN + ' Case %s.' % t   # this run's own rows (a shared database keeps older runs' Sami and Dina)
+        w = seed_ref(j, e['id'], s['id'], 'warn', body=wbody, category='Left without notice')
+        dd = seed_ref(j, e['id'], d['id'], 'warn', 'disputed', WARN.replace('two', 'three') + ' Case %s.' % t, 'Breach of confidentiality', reply='I never had access to that data.')
         a = admin_person(j); ap = a['page']
     else:
         ap = j.demo_signin(j.new_page())
@@ -180,9 +187,9 @@ def moderate_warnings(j):
     with j.step('Publish W; Reject D: both decisions stored (decided_by / decided_at)'):
         if j.demo:
             decide(j, ap, 'Youssef', True); j.check('Youssef' not in admin_review(j, ap, 'Warning references|التحذير'), 'the published warning stays in the queue'); return
-        decide(j, ap, 'Sami', True); decide(j, ap, 'Dina', False, 'Not supported by the evidence')
+        decide(j, ap, wbody[-10:], True); decide(j, ap, 'three batches were delayed by a week. Case %s.' % t, False, 'Not supported by the evidence')
         j.check(j.wait_db("select status||'|'||(decided_by is not null) from public.work_references where id=%s" % w, 6) == 'published|true', 'W is not published with decided_by')
-        j.check(j.sql1("select status from public.work_references where id=%s" % dd) == 'rejected', 'D is not rejected')
+        j.check(j.wait_db("select status from public.work_references where id=%s" % dd, 6) == 'rejected', 'D is not rejected')
     with j.step('Author and candidate are notified; a verified employer sees W with "Evidence verified" and the expiry'):
         if j.demo: j.skip('checked in live')
         j.check(notif_rows(j, e['id'], extra=" and created_at > now() - interval '10 minutes'") >= 1 and notif_rows(j, s['id']) >= 1, 'author or candidate not notified')
@@ -202,7 +209,7 @@ def check_certificates(j):
         c1 = seed_cert(j, o['co']['id'], sid, 'WHO-GMP %s' % t, checked=False); c2 = seed_cert(j, o['co']['id'], sid, 'ISO 9001 %s' % t, checked=False)
         a = admin_person(j); ap = a['page']; n1, n2, name = 'WHO-GMP %s' % t, 'ISO 9001 %s' % t, o['co']['name']
     else:
-        ap = j.demo_signin(j.new_page()); n1, n2, name = 'ISO 22000', 'Halal', 'Sinai Herbal Extracts'
+        ap = j.demo_signin(j.new_page()); n1, n2, name = 'ISO 22000', 'حلال' if j.ar else 'Halal', 'Sinai Herbal Extracts'   # the sample certificate's approved Arabic name
     with j.step('Admin → Review → Site certificates: unchecked, unexpired certificates with company, site, name, expiry; the badge count matches'):
         txt = admin_review(j, ap, 'certs'); j.check(n1 in txt and n2 in txt and name in txt, 'the certificates are not in the queue')
         badge = num(ap.evaluate("((document.querySelectorAll('.dx-mod-tab')[2]||{}).innerText||'')"))
@@ -281,15 +288,26 @@ def content_reports(j):
         ap = admin_person(j)['page'] if j.live else pg
         close_dialogs(ap); admin_review(j, ap, 'verifications')
         tabs = ' | '.join(ap.evaluate("[...document.querySelectorAll('.dx-mod-tab')].map(t=>t.innerText.trim())"))
-        j.check(re.search(r'Content|Posts|Reports|بلاغات المحتوى|المنشورات', tabs.replace('Company reports', '')), 'not built: Admin → Review has no queue for reported posts / people (queues: %s)' % tabs)
+        j.check(re.search(r'Content|Posts|Reported posts|Reports|بلاغات المحتوى|منشورات', tabs.replace('Company reports', '')), 'not built: Admin → Review has no queue for reported posts / people (queues: %s)' % tabs)
     with j.step('Remove P (deleted for everyone, Z told the reason) and suspend F; F cannot post and sees why'):
         q = body or ''
-        row = ap.locator('.dx-mod-row', has_text=q[:20]).first; j.check(row.count(), 'the reported post is not in the queue')
-        decide(j, ap, q[:20], True)
+        tab = ap.locator('.dx-mod-tab').filter(has_text=re.compile(r'Content|Posts|Reported posts|بلاغات المحتوى|منشورات')); j.check(tab.count(), 'no content-reports queue'); tab.first.click(); ap.wait_for_timeout(600)
+        row = ap.locator('.dx-mod-row', has_text=q).first; j.check(row.count(), 'the reported post is not in the queue')
+        decide(j, ap, q, True)
         if j.live:
             j.check(j.wait_db("select count(*) from public.posts where id=%s" % p, 5, want='0') == '0', 'the reported post is still in the database')
             j.check(notif_rows(j, z, extra=" and created_at > now() - interval '10 minutes'") >= 1, 'Z is not told why the post was removed')
-            j.check(j.has_column('profiles', 'suspended') or j.has_column('profiles', 'suspended_until') or j.has_column('profiles', 'status'), 'not built: profiles cannot be suspended')
+            # suspend F through Admin → Users (account_suspensions, 0063), then F cannot post and is told why
+            close_dialogs(ap); ap.evaluate("switchAdminTab('users')"); j.settle(ap, 1200)
+            ap.locator('#adminContent .adm-q').fill('Fake Profile %s' % t); j.settle(ap, 1500)
+            row = ap.locator('#adminContent tr', has_text='Fake Profile %s' % t).first; j.check(row.count(), 'F is not found in Admin → Users')
+            row.locator('.adm-sus-btn').click(); ap.wait_for_timeout(500)
+            mfill(j, ap, r'Reason|السبب', 'Fake profile — impersonates a QA manager'); mclick(j, ap, r'^\W*(Suspend|إيقاف)\W*$', 'Suspend'); j.settle(ap, 1200)
+            j.check(j.wait_db("select reason from public.account_suspensions where user_id='%s'" % f['id'], 6) == 'Fake profile — impersonates a QA manager', 'F is not suspended in the database')
+            fp = f['page']; j.reload(fp); fp.wait_for_timeout(1500)
+            j.check(re.search(r'suspended|موقوف', mtext(fp)) and 'impersonates' in mtext(fp), 'F is not told why the account is suspended')
+            err = fp.evaluate("()=>dxLive.sb.from('posts').insert({user_id:dxLive.uuidOf(ME.id),body:'still posting'})" + _dx.ERR)
+            j.check(err and j.sql1("select count(*) from public.posts where user_id='%s' and body='still posting'" % f['id']) == '0', 'the suspended account can still post')
 
 @journey('J-COMMUNITY-48')
 def decision_notifications(j):
@@ -309,13 +327,15 @@ def decision_notifications(j):
         txt = notifs(j, pg)
         if j.live:
             j.check(notif_rows(j, u['id']) == 2, '%d notifications for 2 decisions' % notif_rows(j, u['id']))
-            j.check(re.search(r'approved|قبول', txt) and re.search(r'invited|دعا', txt), 'the decision notifications are not human sentences: %s' % txt[:200])
+            j.check(re.search(r'approved|قبول|وافق', txt) and re.search(r'invited|دعا', txt), 'the decision notifications are not human sentences: %s' % txt[:200])
     with j.step('Click each: it opens the group decided on (not just the notification list)'):
         if j.demo: j.skip('the decisions exist only in live')
-        for pat, g in ((r'approved|قبول', 'Decision Group %s' % t), (r'invited|دعا', 'Invited Group %s' % t)):
+        for pat, g in ((r'approved|قبول|وافق', 'Decision Group %s' % t), (r'invited|دعا', 'Invited Group %s' % t)):
             open_notif(j, pg, pat, pat.split('|')[0])
             j.check(gd_open(pg) and gd_title(pg) == g, "the '%s' notification does not open the group (page %s)" % (pat.split('|')[0], pg.evaluate("document.body.getAttribute('data-page')")))
     with j.step('Mark all read; reload: the badge is 0 and stays read'):
+        if j.live:   # the approved page offers "Mark all read" while something is unread: one more decision notice arrives first
+            j.sql("insert into public.notifications (user_id, type, message) values ('%s', 'account', 'Drugbox verified your profile ✓')" % u['id']); j.reload(pg)
         notifs(j, pg); b = j.find(pg, r'Mark all read|تعليم الكل كمقروء|تحديد الكل كمقروء|قراءة الكل', scope='#content'); j.check(b, 'no Mark all read'); b.click(); j.settle(pg, 900)
         reopen(j, pg); n = pg.evaluate("((document.querySelector('#tnb-notifs [class*=badge], #snl-notifs [class*=badge]')||{}).innerText||'0').trim()")
         j.check(n in ('', '0'), 'after reload the unread badge shows %s' % n)

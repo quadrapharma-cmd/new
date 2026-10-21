@@ -13,7 +13,7 @@ with sync_playwright() as p:
     pg.locator('#jx .cf-tag',has_text='QA/QC').click(); pg.wait_for_timeout(200)
     T('jobs: category filter', 0<pg.locator('#jx #jobList .jcard:visible').count()<n)
     pg.locator('#jx .cf-tag',has_text='All Jobs').click()
-    pg.locator('#jx .apply-btn:visible').first.click(); pg.wait_for_timeout(200)
+    pg.locator('#jx .apply-btn:visible:not([data-jx-own])').first.click()   # a job of another company: on my own company's jobs the button opens the applicants (J-01); pg.wait_for_timeout(200)
     T('jobs: Apply opens the approved apply form', pg.locator('#jx .jx-modal:visible, #jx [id*=pply]:visible').count()>0)
     pg.keyboard.press('Escape'); pg.evaluate("closeApplyModal && closeApplyModal()"); pg.wait_for_timeout(100)
     pg.locator('#jx .save-btn:visible').first.click(); pg.wait_for_timeout(100)

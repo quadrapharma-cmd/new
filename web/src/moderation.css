@@ -7,3 +7,10 @@
 .dx-mod-ok{background:#1A56DB;color:#fff}.dx-mod-no{background:#fff;color:#B91C1C;border-color:#FCA5A5}.dx-mod-doc{background:#F8FAFC;color:#1A56DB;border-color:#BFD3F8;margin:6px 6px 0 0}
 .dx-mod-empty{padding:28px;text-align:center;color:#64748B;font:13px Poppins,sans-serif;background:#fff;border:1px dashed #E2E8F0;border-radius:14px}
 .dx-mod-b .dx-mod-vip{display:inline-block;font:700 11.5px Poppins,sans-serif;font-style:normal;color:#92400E;background:#FEF3C7;border:1px solid #FDE68A;border-radius:999px;padding:1px 8px;margin-top:4px}
+/* 0063: search, claims, disputes, the Decided tab */
+.dx-mod-find{margin:0 0 12px}.dx-mod-find input{width:100%;max-width:420px;height:40px;border:1.5px solid #E2E8F0;border-radius:10px;padding:0 14px;font:13px Inter,system-ui,sans-serif;background:#fff;color:#0F172A}
+.dx-mod-claim{display:inline-block;background:#FEF3C7;color:#92400E;border-radius:999px;padding:2px 10px;font-weight:700;font-size:12px;margin:4px 0}
+.dx-mod-reply{background:#F1F5F9;border-radius:10px;padding:8px 10px;color:#334155}
+.dx-mod-undo{padding:8px 14px;border-radius:10px;border:1px solid #CBD5E1;background:#fff;font:600 12.5px Poppins,sans-serif;color:#0F172A;cursor:pointer;min-height:36px}
+.dx-mod-undo:hover{border-color:#1A56DB;color:#1A56DB}
+.dx-mod-ok.dx-mod-danger{background:#DC2626;border-color:#DC2626;color:#fff}

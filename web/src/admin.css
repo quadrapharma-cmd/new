@@ -1,0 +1,11 @@
+/* Admin — Users, Posts, Ticker, Sponsors (admin.js), in the approved admin look */
+.adm-find{margin:0 0 12px}.adm-find input{width:100%;max-width:440px;height:40px;border:1.5px solid #e5e7eb;border-radius:10px;padding:0 14px;font:13px Inter,system-ui,sans-serif;background:#fff;color:#111827}
+.adm-link{font:700 12px Inter,system-ui,sans-serif;color:var(--cp,#1a56db);border:none;background:none;cursor:pointer;padding:4px 2px;min-height:32px}
+.adm-link.adm-danger{color:#dc2626}
+.adm-role{font-size:12px;border:1px solid #e5e7eb;border-radius:6px;padding:3px 8px;outline:none;cursor:pointer;min-height:32px;background:#fff}
+.adm-sus{color:#b91c1c;font-weight:700;font-size:12.5px}.adm-ok{color:#16a34a;font-weight:700;font-size:12.5px}.adm-muted{color:#6b7280;font-size:12.5px}
+.adm-more-w{text-align:center;margin-top:12px}
+.adm-rm-row{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
+.adm-rm-row p{margin:4px 0;color:#374151}
+.adm-reason{background:#fef2f2;border-radius:10px;padding:8px 10px;color:#7f1d1d}
+@media (max-width:900px),(pointer:coarse){.adm-link,.adm-role{min-height:40px}}

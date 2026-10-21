@@ -58,4 +58,6 @@ with sync_playwright() as p:
     T('claim sent → waits for Drugbox (not mine yet)', pg.evaluate("dxClaims.pending('suez-pharma-packaging')") and pg.evaluate("dxDir.bySlug('suez-pharma-packaging').owner")!=pg.evaluate("ME.id"))
     pg.evaluate("(()=>{const c=dxClaims.list().find(x=>x.slug==='suez-pharma-packaging');return dxClaims.decide(c.id,true)})()"); pg.wait_for_timeout(300)
     T('Drugbox approves → I manage it', pg.evaluate("dxDir.bySlug('suez-pharma-packaging').owner")==pg.evaluate("ME.id"))
+    pg.evaluate("dxHub.workspace('suez-pharma-packaging')"); pg.wait_for_timeout(400)
+    T('…and land in its workspace', pg.locator('#dxDir.ws').count()==1 and 'Suez Pharma Packaging' in pg.inner_text('#dxDir .ws-h'))
     print('\nJS errors:',errs or 'none','| feature warnings:',warns or 'none'); print(sum(R),'/',len(R)); b.close()

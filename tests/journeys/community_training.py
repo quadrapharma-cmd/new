@@ -94,38 +94,74 @@ def enrol_free(j):
             err = pg.evaluate("([c,u])=>dxLive.sb.from('course_enrollments').insert({course_id:c,user_id:u})" + _dx.ERR, [cid, other])
             j.check(err and j.sql1("select count(*) from public.course_enrollments where user_id='%s'" % other) == '0', 'a user enrolled someone else')
 
+def seed_lessons(j, cid, n=6, video_first=True):
+    """Live precondition: the course's lessons (0062) — lesson 1 a video, lesson 2 a PDF, the rest text."""
+    kinds = ['video', 'pdf'] + ['text'] * (n - 2) if video_first else ['text'] * n
+    for i in range(n):
+        j.sql("insert into public.course_lessons (course_id, position, title, kind, minutes, body) values (%d, %d, $q$Part %d$q$, '%s', 10, $q$Notes for part %d$q$)" % (cid, i + 1, i + 1, kinds[i], i + 1))
+
+def seed_media(j, cid):
+    """Live precondition: a Drugbox admin uploads lesson 1's video and lesson 2's PDF into the course's private folder (course-media),
+    through the API as the app does, and the lessons point at them."""
+    import base64
+    a = j.person('Adel Admin'); make_admin(j, a['id']); j.reload(a['page'])
+    for pos, name, mime in ((1, 'me_intro.webm', 'video/webm'), (2, 'spec.pdf', 'application/pdf')):
+        b64 = base64.b64encode(open(os.path.join(FIX, name), 'rb').read()).decode(); path = 'courses/%d/%s' % (cid, name)
+        err = a['page'].evaluate("""([b,p,t])=>{const u=Uint8Array.from(atob(b),c=>c.charCodeAt(0));return dxLive.sb.storage.from('course-media').upload(p,new Blob([u],{type:t}),{contentType:t}).then(r=>r.error?r.error.message:'')}""", [b64, path, mime])
+        j.check(not err, 'the admin could not upload the lesson file: %s' % err)
+        j.sql("update public.course_lessons set media_path='%s' where course_id=%d and position=%d" % (path, cid, pos))
+
+def seed_quiz(j, cid):
+    """Live precondition: a two-question final quiz (answers: first, second)."""
+    j.sql("insert into public.course_questions (course_id, position, prompt, options, answer) values (%d, 1, 'Q one', '{right,wrong}', 0), (%d, 2, 'Q two', '{wrong,right}', 1)" % (cid, cid))
+
+def lesson_win(pg):
+    return pg.locator('.dbk-ov').last
+
 @journey('J-COMMUNITY-37')
 def buy_paid_course(j):
     """A professional pays for a paid course and gets access only after payment is confirmed."""
-    if j.live: me = j.person('Mona Fathy'); pg = me['page']
-    else: pg = j.demo_signin(j.new_page())
+    if j.live:
+        me = j.person('Mona Fathy'); pg = me['page']; t = j.tag[:4]; title = 'Paid PV Course %s' % t
+        cid = seed_course(j, title, 'Pharmacovigilance in practice'); j.sql("update public.training_courses set price_egp = 1000 where id = %d" % cid); seed_lessons(j, cid, 2)
+        j.reload(pg); want = '1,140'
+    else:
+        pg = j.demo_signin(j.new_page()); title = 'GCC Market Access'; want = '1,710'
     with j.step('Find a paid course (price in EGP) and click Buy / Enroll: checkout shows the server price + 14% VAT'):
         training(j, pg); paid = [c for c in courses(pg) if re.search(r'EGP|ج\.م|\$', c['text'])]
-        if j.live: j.check(j.has_column('training_courses', 'price') or j.sql1("select count(*) from public.payment_products where kind ~ 'course'") != '0', 'not built: courses have no price (no price column, no course payment product)')
+        if j.live: j.check(j.has_column('training_courses', 'price') or j.has_column('training_courses', 'price_egp') or j.sql1("select count(*) from public.payment_products where kind ~ 'course'") != '0', 'not built: courses have no price (no price column, no course payment product)')
         j.check(paid, 'not built: no paid course on Training (every course is free / has no price)')
-        c = course(j, pg, paid[0]['title']); c.locator('button').first.click(); j.settle(pg, 1200)
+        j.check(any(c['title'] == title for c in paid), 'the paid course "%s" does not show its price' % title)
+        c = course(j, pg, title); c.locator('button').first.click(); j.settle(pg, 1200)
         j.check(mopen(pg) and money(mtext(pg)), 'Buy opens no checkout with an amount')
+        j.check(want in mtext(pg), 'the checkout total is not the server price + 14%% VAT (%s): %s' % (want, mtext(pg)[:200]))
     with j.step('Before payment the content is locked; after the card payment is confirmed the course unlocks and the user is notified'):
-        title = paid[0]['title']; mclose(pg); training(j, pg)
+        mclose(pg); training(j, pg)
         j.check(not re.search(r'Start|Continue|ابدأ|متابعة', course(j, pg, title).inner_text()), 'the paid course content is open before payment')
-        if j.demo: j.skip('the payment confirmation (callback) exists only in live')
-        oid = j.wait_db("select id from public.payment_orders where user_id='%s' order by id desc limit 1" % me['id'], 5)
-        j.check(oid, 'no payment_orders row for the course')
-        st, body = paymob_callback(j, oid); j.check(st == 200, 'the payment callback was refused (%s %s)' % (st, body[:80]))
-        j.check(j.wait_db("select count(*) from public.course_enrollments where user_id='%s'" % me['id'], 8) == '1', 'no enrollment after the payment')
-        j.reload(pg); training(j, pg); j.check(re.search(r'Start|Continue|Enrolled|ابدأ|مسجل', course(j, pg, title).inner_text()), 'the course is still locked after payment')
-        j.check(notif_rows(j, me['id'], extra=" and message ~* 'payment'") >= 1, "no 'Payment received' notification")
+        if j.live: j.check(j.sql1("select count(*) from public.course_enrollments where course_id=%d" % cid) == '0', 'enrolled before paying')
+        course(j, pg, title).locator('button').first.click(); j.settle(pg, 1000)
+        mclick(j, pg, r'Pay|ادفع', 'Pay')
+        if j.demo:
+            training(j, pg); j.check(re.search(r'Start|ابدأ', course(j, pg, title).inner_text()), 'the demo payment does not open the course')
+        else:
+            oid = j.wait_db("select id from public.payment_orders where user_id='%s' and course_id=%d order by id desc limit 1" % (me['id'], cid), 8)
+            j.check(oid, 'no payment_orders row for the course')
+            j.check(j.sql1("select amount_cents from public.payment_orders where id=%s" % oid) == '114000', 'the order is not the server price + VAT')
+            st, body = paymob_callback(j, oid); j.check(st == 200, 'the payment callback was refused (%s %s)' % (st, body[:80]))
+            j.check(j.wait_db("select count(*) from public.course_enrollments where user_id='%s' and course_id=%d and order_id=%s" % (me['id'], cid, oid), 8) == '1', 'no enrollment after the payment')
+            pg.goto(_dx.APP_URL.rstrip('/') + '/?payment=%s' % oid); j.reload(pg); training(j, pg)   # back from Paymob's page, as its return URL does
+            j.check(re.search(r'Start|Continue|ابدأ|متابعة', course(j, pg, title).inner_text()), 'the course is still locked after payment')
+            j.check(notif_rows(j, me['id'], extra=" and message ~* 'payment'") >= 1, "no 'Payment received' notification")
     with j.step('The browser cannot enrol itself in a paid course (only the server after payment)'):
         if j.demo: j.skip('checked in live')
-        cid = j.sql1("select id from public.training_courses where title=$q$%s$q$" % title)
-        other = j.person('Free Rider'); err = other['page'].evaluate("c=>dxLive.sb.from('course_enrollments').insert({course_id:c,user_id:dxLive.uuidOf(ME.id)})" + _dx.ERR, int(cid))
+        other = j.person('Free Rider'); err = other['page'].evaluate("c=>dxLive.sb.from('course_enrollments').insert({course_id:c,user_id:dxLive.uuidOf(ME.id)})" + _dx.ERR, cid)
         j.check(err and j.sql1("select count(*) from public.course_enrollments where user_id='%s'" % other['id']) == '0', 'the browser enrolled itself in a paid course')
 
 @journey('J-COMMUNITY-38')
 def study_lessons(j):
     """A learner studies the course content and keeps her place across sessions and devices."""
     if j.live:
-        me = j.person('Mona Fathy'); pg = me['page']; t = j.tag[:4]; title = 'Lessons Course %s' % t; cid = seed_course(j, title, 'Six lessons')
+        me = j.person('Mona Fathy'); pg = me['page']; t = j.tag[:4]; title = 'Lessons Course %s' % t; cid = seed_course(j, title, 'Six lessons'); seed_lessons(j, cid, 6); seed_media(j, cid)
         j.sql("insert into public.course_enrollments (course_id, user_id) values (%d,'%s')" % (cid, me['id'])); j.reload(pg)
     else:
         pg = j.demo_signin(j.new_page()); title = 'GMP Fundamentals'
@@ -139,34 +175,80 @@ def study_lessons(j):
         b.first.click(); j.settle(pg, 1200)
         j.check(re.search(r'Lesson 1|الدرس 1|الدرس الأول', j.text(pg) + mtext(pg)), 'Start opens no lesson')
         j.check(pg.locator('video:visible, iframe:visible').count(), 'lesson 1 has no video')
+        if j.live:
+            src = pg.evaluate("(()=>{const v=document.querySelector('.dbk-ov video');return v?v.getAttribute('src'):''})()")
+            j.check('/object/sign/course-media/' in src, 'the lesson video is not a signed link to the private bucket: %s' % src[:120])
+            j.check(pg.evaluate("(()=>{const v=document.querySelector('.dbk-ov video');return new Promise(r=>{if(v.readyState>=1)return r(true);v.onloadedmetadata=()=>r(true);v.onerror=()=>r(false);setTimeout(()=>r(false),8000)})})()"), 'the lesson video does not load')
     with j.step('Mark lesson 1 complete; open lesson 2 (PDF); progress shows on My courses and the card'):
         b = j.find(pg, r'Mark complete|Complete|إكمال|تم', scope='body', kinds='button'); j.check(b, 'no "Mark complete"'); b.click(); j.settle(pg, 800)
         j.check(re.search(r'1\s*/\s*6|17\s*%|16\s*%', j.text(pg) + mtext(pg)), 'progress does not update')
+        if j.live: j.check(j.wait_db("select count(*) from public.lesson_progress where user_id='%s' and course_id=%d" % (me['id'], cid), 5) == '1', 'no lesson_progress row')
+        n = j.find(pg, r'Next lesson|الدرس التالي', scope='body', kinds='button'); j.check(n, 'no Next lesson'); n.click(); j.settle(pg, 900)
+        j.check(re.search(r'Lesson 2|الدرس 2', mtext(pg)), 'Next does not open lesson 2')
+        pdf = j.find(pg, r'PDF', scope='body', kinds='button'); j.check(pdf, 'lesson 2 has no PDF')
+        with pg.context.expect_page(timeout=8000) as pop: pdf.click()
+        j.check(pop.value, 'the lesson PDF does not open'); pop.value.close()
+        mclose(pg); mclose(pg); training(j, pg); j.check(re.search(r'1\s*/\s*6', course(j, pg, title).inner_text()), 'the card does not show 1 / 6')
     with j.step('Sign in on another device: Continue resumes at lesson 2'):
         if j.demo: j.skip('the other device exists only in live')
         p2 = j.new_page(); j.signin(p2, me['email'], me['pw']); training(j, p2)
         course(j, p2, title).locator('button').filter(has_text=re.compile(r'Continue|متابعة')).first.click(); j.settle(p2, 1200)
         j.check(re.search(r'Lesson 2|الدرس 2', j.text(p2) + mtext(p2)), 'Continue does not resume at lesson 2 on another device')
+    with j.step('Someone not enrolled cannot open the lessons (no direct link)'):
+        if j.demo: j.skip('checked in live')
+        o = j.person('Omar Outsider'); lid = int(j.sql1("select id from public.course_lessons where course_id=%d and position=1" % cid))
+        err = o['page'].evaluate("l=>dxLive.sb.rpc('lesson_content',{p_lesson:l})" + _dx.ERR, lid); j.check(err, 'an outsider opened a lesson')
+        err = o['page'].evaluate("c=>dxLive.sb.from('course_lessons').select('body').eq('course_id',c)" + _dx.ERR, cid); j.check(err, 'an outsider read lesson bodies')
 
 @journey('J-COMMUNITY-39')
 def certificate(j):
     """A learner who completes a course gets a verifiable certificate she can show employers."""
     if j.live:
-        me = j.person('Mona Fathy'); pg = me['page']; t = j.tag[:4]; title = 'Certificate Course %s' % t; cid = seed_course(j, title)
+        me = j.person('Mona Fathy'); pg = me['page']; t = j.tag[:4]; title = 'Certificate Course %s' % t; cid = seed_course(j, title); seed_lessons(j, cid, 2, video_first=False); seed_quiz(j, cid)
         j.sql("insert into public.course_enrollments (course_id, user_id) values (%d,'%s')" % (cid, me['id'])); j.reload(pg)
+        right, wrong = (0, 1), (1, 1)
     else:
-        pg = j.demo_signin(j.new_page()); title = 'ICH Guidelines'
-    with j.step('Take the final quiz: failing does not complete the course; passing marks it Completed'):
-        training(j, pg); open_course(j, pg, title)
+        pg = j.demo_signin(j.new_page()); title = 'ICH Guidelines'; right, wrong = (0, 0, 0), (1, 1, 1)
+        training(j, pg); course(j, pg, title).locator('button').first.click(); j.settle(pg, 600)
+    with j.step('Finish the lessons, then take the final quiz: failing does not complete the course; passing marks it Completed'):
+        training(j, pg)
+        for _ in range(8):
+            b = course(j, pg, title).locator('button').filter(has_text=re.compile(r'Start|Continue|ابدأ|متابعة'))
+            if not b.count(): break
+            b.first.click(); j.settle(pg, 700); mclick(j, pg, r'Mark complete|تم الإنجاز', 'Mark complete'); mclose(pg); training(j, pg)
+        open_course(j, pg, title)
         q = j.find(pg, r'Quiz|Final test|Exam|اختبار', scope='body'); j.check(q, 'not built: no final quiz')
         q.click(); j.settle(pg, 900)
+        def answer(picks):
+            for i, k in enumerate(picks): pg.locator('.dbk-ov input[name=trq%d]' % i).nth(k).check()
+            mclick(j, pg, r'Submit|أرسل', 'Submit answers'); j.settle(pg, 900)
+        answer(wrong); j.check(re.search(r'Not passed|لم تنجح', mtext(pg)), 'a failed quiz is not reported as failed')
+        if j.live: j.check(j.sql1("select status from public.course_enrollments where course_id=%d and user_id='%s'" % (cid, me['id'])) == 'enrolled', 'failing completed the course')
+        mclick(j, pg, r'Try again|حاول', 'Try again'); answer(right)
+        j.check(re.search(r'Passed|ناجح', mtext(pg)), 'passing is not reported')
+        if j.live: j.check(j.sql1("select status from public.course_enrollments where course_id=%d and user_id='%s'" % (cid, me['id'])) == 'completed', 'course_enrollments is not completed')
     with j.step('Open the certificate: name, course, date, hours and a unique ID; a public verify link; PDF download'):
         c = j.find(pg, r'Certificate|شهادة', scope='body'); j.check(c, 'not built: no certificate')
         c.click(); j.settle(pg, 900); txt = j.text(pg) + mtext(pg)
         j.check(pg.evaluate('ME.name') in txt and title in txt and re.search(r'ID|رقم', txt), 'the certificate lacks the name, the course or an ID')
+        code = re.search(r'DBX-[0-9A-F]{10}', txt); j.check(code, 'the certificate has no unique ID'); code = code.group(0)
+        link = pg.locator('.dbk-ov #trVerify').input_value(); j.check(code in link, 'no verify link with the ID')
+        with pg.context.expect_page(timeout=8000) as pop: j.find(pg, r'Download PDF|تنزيل', scope='body', kinds='button').click()
+        j.check(code in pop.value.content(), 'the PDF view does not show the certificate'); pop.value.close()
+        if j.live: j.check(j.sql1("select count(*) from public.certificates where code='%s' and user_id='%s'" % (code, me['id'])) == '1', 'no certificates row')
+    with j.step('Signed out, the verify link confirms the certificate'):
+        ctx = pg.context.browser.new_context() if j.live else None   # live: a fresh browser, signed out; demo: the same browser (the demo keeps certificates here)
+        if j.demo: flush(j, pg)                                        # the certificate this page stored is committed before another page reads it
+        po = (ctx or pg.context).new_page(); po.goto(link); po.wait_for_timeout(3000)
+        v = po.locator('.dbk-ov').last.inner_text() if po.locator('.dbk-ov').count() else ''
+        if j.demo and not re.search(r'Valid|صحيحة', v):   # Chromium can show a second file:// page the storage before the first page's last write lands (see reopen): once more, later
+            j.note('verify_reloaded', True); po.wait_for_timeout(1500); po.reload(); po.wait_for_timeout(3000)
+            v = po.locator('.dbk-ov').last.inner_text() if po.locator('.dbk-ov').count() else ''
+        j.check(re.search(r'Valid|صحيحة', v) and pg.evaluate('ME.name') in v and code in v, 'the verify link does not confirm the certificate: %s' % v[:160])
+        po.close()
+        if ctx: ctx.close()
     with j.step('The certificate appears on her profile'):
-        j.nav(pg, 'profile'); j.settle(pg, 1000); j.check(title in j.text(pg), 'the certificate is not on the profile')
-        if j.live: j.check(j.sql1("select status from public.course_enrollments where course_id=%d" % cid) == 'completed', 'course_enrollments is not completed')
+        mclose(pg); j.nav(pg, 'profile'); j.settle(pg, 1500); j.check(title in j.text(pg), 'the certificate is not on the profile')
 
 @journey('J-COMMUNITY-40', applies='live')
 def publish_courses(j):
@@ -177,16 +259,40 @@ def publish_courses(j):
         close_dialogs(pg); a_ = pg.locator("#app [onclick=\"goto('admin')\"]"); j.check(a_.count(), 'no Admin entry for a Drugbox admin')
         if not a_.first.is_visible() and pg.locator('#sbToggle:visible').count(): pg.click('#sbToggle'); pg.wait_for_timeout(400)
         a_.first.click(); j.settle(pg, 1200)
-        el = j.find(pg, r'Training|Courses|التدريب|الدورات', scope='#content'); j.check(el, 'not built: Admin has no Training / Courses section (courses are added with SQL only)')
+        el = j.find(pg, r'Training|Courses|التدريب|الدورات|تدريب', scope='#content'); j.check(el, 'not built: Admin has no Training / Courses section (courses are added with SQL only)')
         el.click(); j.settle(pg, 900)
         b = j.find(pg, r'Add course|New course|إضافة دورة', scope='body'); j.check(b, 'not built: no "Add course" in Admin'); b.click(); pg.wait_for_timeout(700)
         mfill(j, pg, r'Title|العنوان', title); mfill(j, pg, r'Description|الوصف', 'Signal detection and ICSRs'); mfill(j, pg, r'Level|المستوى', 'Beginner')
+        mfill(j, pg, r'^Duration|^المدة', '3 hours'); mfill(j, pg, r'Price|السعر', '0'); mfill(j, pg, r'^Instructor$|^المحاضر$', 'Dr. Adel PV')
         mclick(j, pg, r'Publish|Save|Create|نشر|حفظ', 'Publish')
         j.check(j.wait_db("select count(*) from public.training_courses where title=$q$%s$q$ and active" % title, 5) == '1', 'no training_courses row')
+        cid = int(j.sql1("select id from public.training_courses where title=$q$%s$q$" % title))
+        row = pg.locator('#adminContent tr').filter(has_text=title); j.check(row.count(), 'the new course is not listed in Admin → Training')
+        row.locator('[data-trles]').click(); pg.wait_for_timeout(700)
+        mfill(j, pg, r'Lesson title|عنوان الدرس', 'What is an ICSR'); mfill(j, pg, r'^Text$|^النص$', 'An individual case safety report is…')
+        mclick(j, pg, r'Add lesson|إضافة الدرس', 'Add lesson')
+        j.check(j.wait_db("select count(*) from public.course_lessons where course_id=%d" % cid, 5) == '1', 'no course_lessons row')
+        mclose(pg); row = pg.locator('#adminContent tr').filter(has_text=title); row.locator('[data-trqz]').click(); pg.wait_for_timeout(700)
+        mfill(j, pg, r'^Question|^السؤال', 'ICSR stands for?'); mfill(j, pg, r'Answers|الإجابات', 'Individual case safety report\nInternal cost summary'); mfill(j, pg, r'right answer|الإجابة الصحيحة', '1')
+        mclick(j, pg, r'Add question|إضافة السؤال', 'Add question')
+        j.check(j.wait_db("select answer from public.course_questions where course_id=%d" % cid, 5) == '0', 'no course_questions row with its answer')
+        mclose(pg)
     with j.step('A user sees the new course; edits show after reload; a deactivated course leaves the catalog'):
         pu = u['page']; j.reload(pu); training(j, pu); course(j, pu, title)
+        row = pg.locator('#adminContent tr').filter(has_text=title); row.locator('[data-tredit]').click(); pg.wait_for_timeout(700)
+        mfill(j, pg, r'Description|الوصف', 'Signal detection, ICSRs and PSURs'); mclick(j, pg, r'Save|حفظ', 'Save')
+        j.check(j.wait_db("select description from public.training_courses where id=%d" % cid, 5) == 'Signal detection, ICSRs and PSURs', 'the edit is not saved')
+        j.reload(pu); training(j, pu); j.check('PSURs' in course(j, pu, title).inner_text(), 'the edit does not show after reload')
+        j.sql("insert into public.course_enrollments (course_id, user_id) values (%d, '%s')" % (cid, u['id']))
+        row = pg.locator('#adminContent tr').filter(has_text=title); row.locator('[data-tract]').click(); j.settle(pg, 900)
+        j.check(j.wait_db("select active from public.training_courses where id=%d" % cid, 5, want='f') == 'f', 'the course is not deactivated')
+        other = j.person('Nadia Newcomer'); j.reload(other['page']); training(j, other['page'])
+        j.check(title not in j.text(other['page']), 'the deactivated course is still in the catalog')
+        j.reload(pu); training(j, pu); course(j, pu, title)   # its learner keeps it
     with j.step('A non-admin cannot manage courses (RLS)'):
         err = u['page'].evaluate("t=>dxLive.sb.from('training_courses').insert({title:t+' x'})" + _dx.ERR, title)
         j.check(err and j.sql1("select count(*) from public.training_courses where title=$q$%s x$q$" % title) == '0', 'a non-admin created a course')
+        err = u['page'].evaluate("c=>dxLive.sb.from('course_lessons').insert({course_id:c,position:9,title:'x lesson'})" + _dx.ERR, cid)
+        j.check(err, 'a non-admin added a lesson')
 
 if __name__ == '__main__': main(__file__)

@@ -107,54 +107,7 @@
   }, true);
 
 
-  /* ── Jobs: employment-type and country boxes were not connected to any filter; they now filter, on top of category and level ── */
-  var COUNTRY = [['Egypt', /egypt|cairo|giza|alex|6th of october|10th of ramadan|sharqia|obour|sadat|mansoura|tanta|القاهرة|مصر/i], ['UAE', /uae|dubai|abu dhabi|sharjah|emirates/i],
-                 ['Saudi Arabia', /saudi|ksa|riyadh|jeddah|dammam/i], ['India', /india|mumbai|hyderabad|delhi|bangalore|ahmedabad/i]];
-  function jobFilterState() {
-    var box = document.querySelector('#jx .filters'); if (!box) return null;
-    var types = [], countries = [], inCountry = false;
-    Array.prototype.forEach.call(box.children, function (el) {
-      if (el.classList.contains('f-hdr')) inCountry = /country/i.test(txt(el));
-      if (!el.classList.contains('f-opt')) return;
-      var cb = el.querySelector('input'); if (!cb || !cb.checked) return;
-      var label = txt(el).replace(/^[^\w]+/, '');
-      (inCountry ? countries : types).push(label);
-    });
-    return { types: types, countries: countries };
-  }
-  function cardCountry(card) { var t = txt(card); for (var i = 0; i < COUNTRY.length; i++) if (COUNTRY[i][1].test(t)) return COUNTRY[i][0]; return null; }
-  function applyExtraJobFilters() {
-    var st = jobFilterState(); if (!st) return;
-    var cards = Array.prototype.slice.call(document.querySelectorAll('#jx .jcard'));
-    cards.forEach(function (card) { if (card.dataset.dxjh) { card.style.display = card.dataset.dxjh === '-' ? '' : card.dataset.dxjh; delete card.dataset.dxjh; } });   /* undo only what this filter hid */
-    var pool = cards.filter(function (card) { return card.style.display !== 'none' && card.offsetParent !== null || (card.style.display !== 'none' && getComputedStyle(card).display !== 'none'); });
-    var vis = pool.filter(function (card) { return card.offsetParent !== null; }), shown = 0, list = vis.length ? vis[0].parentElement : (pool.length ? pool[0].parentElement : null);   /* the list the user actually sees */
-    pool.forEach(function (card) {
-      var t = txt(card), remote = /remote/i.test(t);
-      var typeOk = st.types.some(function (ty) { return ty === 'Remote' ? remote : t.indexOf(ty) >= 0; });
-      var c = cardCountry(card), countryOk = !c || st.countries.indexOf(c) >= 0;
-      if (typeOk && countryOk) { if (vis.indexOf(card) >= 0) shown++; return; }   /* count only jobs on screen, not the hidden duplicate list */
-      card.dataset.dxjh = card.style.display || '-'; card.style.display = 'none';
-    });
-    document.querySelectorAll('#jx .dx-jobs-empty').forEach(function (e) { e.remove(); });
-    if (!shown && list) {
-      var empty = document.createElement('div'); empty.className = 'dx-jobs-empty';
-      empty.innerHTML = '<b>No jobs match these filters</b><p>Tick more employment types or countries.</p><button type="button" class="dr-btn p">Clear filters</button>';
-      list.appendChild(empty);
-      empty.querySelector('button').addEventListener('click', function () { document.querySelectorAll('#jx .filters .f-opt input').forEach(function (cb) { cb.checked = true; }); if (typeof window.applyJobFilters === 'function') window.applyJobFilters(); else applyExtraJobFilters(); });
-    }
-  }
-  function wrapJobFilters() {   /* the jobs page code loads when the page is first opened, so connect then */
-    if (typeof window.applyJobFilters !== 'function' || window.applyJobFilters.__dx) return;
-    var _ajf = window.applyJobFilters;
-    window.applyJobFilters = function () { var r = _ajf.apply(this, arguments); try { applyExtraJobFilters(); } catch (e) { if (window.console) console.warn('job filters:', e && e.message); } return r; };
-    window.applyJobFilters.__dx = true;
-  }
-  document.addEventListener('change', function (e) {
-    if (!(e.target.closest && e.target.closest('#jx .filters'))) return;
-    wrapJobFilters(); if (typeof window.applyJobFilters === 'function') window.applyJobFilters(); else applyExtraJobFilters();
-  });
-  C.onRender('jobs-filters', function () { wrapJobFilters(); });
+  /* (Jobs: the employment-type and country filters are in jobsx.js, with the keyword search and paging) */
 
 
   /* ── Side-column group shortcuts (every page): open that group ── */

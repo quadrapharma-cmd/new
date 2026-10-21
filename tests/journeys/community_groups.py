@@ -87,6 +87,14 @@ def find_groups(j):
         opts = pg.evaluate("""()=>{const vis=e=>e.getClientRects().length>0&&getComputedStyle(e).visibility!='hidden';
             return [...document.querySelectorAll('#content select option, .dbk-ov *, .modal-bg.show *, [role=listbox] *, [role=menu] *, #content .cf-tag')].filter(e=>(e.tagName=='OPTION'||vis(e))&&/^\\W*(Egypt|UAE|United Arab Emirates|مصر|الإمارات)\\W*$/.test((e.innerText||e.textContent||'').trim())).map(e=>e.textContent.trim())}""")
         j.check(opts, 'not built: By Country opens no country choice (no Egypt / UAE to pick)')
+        for code, word in (('EG', r'Egypt|مصر'), ('AE', r'UAE|الإمارات')):
+            if code == 'AE': chip(j, pg, r'By Country|حسب الدولة|بالدولة|Egypt|مصر', 'By Country')
+            pick = pg.locator('.dbk-ov button').filter(has_text=re.compile(r'^\W*(%s)\W*\d*\s*$' % word))
+            j.check(pick.count(), 'no %s in the country choice' % code); pick.first.click(); j.settle(pg, 700)
+            got = pg.evaluate("[...document.querySelectorAll('#content .gcard')].filter(e=>e.getClientRects().length&&getComputedStyle(e).display!='none').map(e=>e.dataset.country||'')")
+            j.check(all(code in c.split(',') for c in got), '%s lists groups not tagged with that country (%s)' % (code, got[:6]))
+            if not got: j.check(re.search(r'No groups|لا توجد', j.text(pg)) and j.find(pg, r'Create Group|أنشئ مجموعة', scope='#content'), 'an empty country shows no "no groups" state with Create Group')
+        chip(j, pg, r'^\W*(All Groups|كل المجموعات)\W*$', 'All Groups')
     with j.step('Search groups for "stability": found by its description (any case); a nonsense word shows "no results"'):
         box = pg.locator('#content input[type=search]:visible, #content input[placeholder*="earch" i]:visible, #content input[placeholder*="بحث"]:visible')
         if box.count():
@@ -94,6 +102,8 @@ def find_groups(j):
             j.check(search_hit in card_titles(pg), 'searching "stability" does not find "%s"' % search_hit)
             box.first.fill('zzqxv'); box.first.press('Enter'); j.settle(pg, 800)
             j.check(not cards(pg) and re.search(r'No (groups|results)|لا توجد|لا نتائج', j.text(pg)), 'a search with no match shows no "no results" state')
+            box.first.fill(''); box.first.press('Enter'); j.settle(pg, 800)
+            j.check(cards(pg), 'clearing the search does not bring the groups back')
         else:
             pg.locator('#searchIn').fill('stability'); pg.locator('#searchIn').press('Enter'); j.settle(pg, 1200)
             t = j.text(pg)
@@ -216,10 +226,19 @@ def read_discussion(j):
         if j.demo: j.skip("the demo's sample groups have no image or PDF post — checked in live")
         img = pg.locator('#gpBox .post img[src*="photo.png"]').first
         j.check(img.count(), 'the image of the post is not shown'); img.click(); pg.wait_for_timeout(600)
-        j.check(dlg_open(pg) or pg.locator('.lightbox:visible, .viewer:visible, [class*=lightbox]:visible').count(), 'the image does not open in a viewer')
-        close_dialogs(pg)
+        j.check(dlg_open(pg) or pg.locator('.lightbox:visible, .viewer:visible, [class*=lightbox]:visible, #lightbox.show').count(), 'the image does not open in a viewer')
+        lb = pg.locator('#lightbox.show').count()
+        if lb:   # the approved page's viewer: it must show this post's image, then close (the group stays open)
+            j.check('photo.png' in (pg.locator('#lbImg').get_attribute('src') or ''), 'the viewer does not show the post\'s image')
+            pg.locator('#lightbox .lb-close').click(); pg.wait_for_timeout(300)
+            j.check(not pg.locator('#lightbox.show').count(), 'the image viewer does not close')
+        else: close_dialogs(pg)
         f = pg.locator('#gpBox .post a[href*="spec.pdf"], #gpBox .post [data-url*="spec.pdf"]')
         j.check(f.count(), 'the PDF of the post is not shown as an attachment')
+        asked = []; pg.context.on('request', lambda r: asked.append(r.url))
+        with pg.context.expect_page(timeout=8000) as pop: f.first.click()   # clicking it opens the file (the seeded link's host is not served here)
+        pop.value.wait_for_timeout(800)
+        j.check(any('spec.pdf' in u for u in asked + [pop.value.url]), 'clicking the PDF does not open it (%s)' % pop.value.url); pop.value.close()
     with j.step("Click an author's name: that person's profile opens"):
         p = pg.locator('#gpBox .post .post-name').filter(has_not_text=pg.evaluate('ME.name')).first
         name = p.inner_text().strip().split('\n')[0]; p.click(); j.settle(pg, 1500)
@@ -661,7 +680,7 @@ def private_request(j):
         hn = gd_members_n(px_)
         row = px_.locator('#groupDetail [data-uid], #groupDetail .member-row, #groupDetail .req-row').filter(has_text='Rana').first
         j.check(row.count(), 'no row for R in Requests')
-        ok = row.locator('button').filter(has_text=re.compile(r'Approve|Accept|قبول|موافقة', re.I)); j.check(ok.count(), 'no Approve on the request')
+        ok = row.locator('button').filter(has_text=re.compile(r'Approve|Accept|قبول|موافقة|وافق', re.I)); j.check(ok.count(), 'no Approve on the request')
         ok.first.click(); j.settle(px_, 1200)
         j.check(j.wait_db("select count(*) from public.group_members where group_id=%d and user_id='%s'" % (gid, r['id']), 5) == '1', 'R is not a member after approval')
         j.check(gd_members_n(px_) == hn + 1, 'the header count went %s → %s' % (hn, gd_members_n(px_)))
@@ -677,7 +696,9 @@ def private_request(j):
         if dlg_open(ps_): dlg_click(j, ps_, r'Send|Request|إرسال|أرسل|طلب', 'Send request')
         j.check(j.wait_db("select status from public.group_join_requests where group_id=%d and user_id='%s'" % (gid, s['id']), 5) == 'pending', 'no request from S')
         j.reload(px_); groups_page(j, px_); open_card(j, px_, gname); manage(j, px_)
-        row = px_.locator('#groupDetail [data-uid], #groupDetail .member-row, #groupDetail .req-row').filter(has_text='Sami').first
+        rq = px_.locator('#managePanel [data-gpq-tab]')   # the journey: Manage → Requests
+        if rq.count(): rq.first.click(); px_.wait_for_timeout(500)
+        row = px_.locator('#groupDetail [data-uid]:visible, #groupDetail .member-row:visible, #groupDetail .req-row:visible').filter(has_text='Sami').first
         j.check(row.count(), 'no request row for S')
         no = row.locator('button').filter(has_text=re.compile(r'Reject|Decline|رفض', re.I)); j.check(no.count(), 'no Reject on the request')
         no.first.click(); px_.wait_for_timeout(500); confirm(j, px_, r'Reject|Decline|Yes|رفض|نعم'); j.settle(px_, 1000)
@@ -738,19 +759,19 @@ def invite_members(j):
     with j.step("I gets 'X invited you to join G' that opens G with Accept / Decline"):
         pi = i1['page']; j.reload(pi); open_notif(j, pi, r'invited you|دعاك|دعوة', 'invited you')
         j.check(gd_open(pi) and gd_title(pi) == gname, 'the invitation notification does not open the group')
-        j.check(re.search(r'Accept|قبول', ' '.join(gd_buttons(pi)) + j.text(pi, '#groupDetail')[:800]), 'the group shows no Accept for the invitation')
+        j.check(re.search(r'Accept|قبول|اقبل', ' '.join(gd_buttons(pi)) + j.text(pi, '#groupDetail')[:800]), 'the group shows no Accept for the invitation')
     with j.step("In I's groups list the group shows an 'Invited' label until answered"):
         groups_page(j, pi); c = next((c for c in cards(pi) if c['title'] == gname), None)
         j.check(c and re.search(r'Invited|Invitation|مدعو|دعوة', c['text']), "the invited group's card has no 'Invited' label")
     with j.step('I accepts: a member; the invitation is gone'):
-        open_card(j, pi, gname); b = j.find(pi, r'Accept|Join|قبول|انضم', scope='#groupDetail', kinds='button'); j.check(b, 'no Accept')
+        open_card(j, pi, gname); b = j.find(pi, r'Accept|Join|قبول|انضم|اقبل', scope='#groupDetail', kinds='button'); j.check(b, 'no Accept')
         b.click(); j.settle(pi, 1000)
         j.check(j.wait_db("select count(*) from public.group_members where group_id=%d and user_id='%s'" % (gid, i1['id']), 5) == '1', 'accepting does not make I a member')
         j.check(j.sql1("select count(*) from public.group_invites where group_id=%d and user_id='%s'" % (gid, i1['id'])) == '0', 'the invitation row remains after accepting')
     with j.step('Private group: invite I, I accepts directly (no request); a second invitee declines'):
         invite(pname, 'Ibrahim Invitee %s' % t); invite(pname, 'Ismail Decliner %s' % t)
         j.reload(pi); open_notif(j, pi, r'invited you.*Private|دعاك', 'private invitation')
-        b = j.find(pi, r'Accept|Join|قبول|انضم', scope='#groupDetail', kinds='button'); j.check(b, 'no Accept for the private group'); b.click(); j.settle(pi, 1000)
+        b = j.find(pi, r'Accept|Join|قبول|انضم|اقبل', scope='#groupDetail', kinds='button'); j.check(b, 'no Accept for the private group'); b.click(); j.settle(pi, 1000)
         j.check(j.wait_db("select count(*) from public.group_members where group_id=%d and user_id='%s'" % (pid, i1['id']), 5) == '1', 'I is not a member of the private group')
         p2 = i2['page']; j.reload(p2); open_notif(j, p2, r'invited you|دعاك', 'invitation')
         d = j.find(p2, r'Decline|رفض', scope='#groupDetail', kinds='button'); j.check(d, 'not built: no Decline for an invitation'); d.click(); j.settle(p2, 900)

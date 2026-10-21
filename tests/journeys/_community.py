@@ -277,7 +277,8 @@ def notifs(j, pg):
 def open_notif(j, pg, pattern, what):
     """Notifications page → click the notification whose text matches pattern; returns the page it led to."""
     notifs(j, pg)
-    row = pg.locator('#content .notif-item, #content .notif-list > *').filter(has_text=re.compile(pattern, re.I))
+    row = pg.locator('#content .notif-item').filter(has_text=re.compile(pattern, re.I))   # the rows themselves, never the filter tabs ("Comments")
+    if not row.count(): row = pg.locator('#content .notif-list > *').filter(has_text=re.compile(pattern, re.I))
     j.check(row.count(), 'no notification "%s" (the list: %s)' % (what, j.text(pg)[:200].replace('\n', ' | ')))
     mark = j.toast_mark(pg); row.first.click(); j.settle(pg, 1500); j.dead_end(pg, mark, 'the notification ' + what)
     return pg.evaluate("document.body.getAttribute('data-page')")
@@ -363,7 +364,7 @@ def jcard(j, pg, needle):
     return loc.first
 
 def jobs_header_n(pg):
-    t = pg.evaluate("(()=>{const e=[...document.querySelectorAll('#content .sec-title')].find(e=>e.getClientRects().length&&/Open Positions|Available Candidates|الوظائف|المرشح/.test(e.innerText));return e?e.innerText:''})()")
+    t = pg.evaluate("(()=>{const e=[...document.querySelectorAll('#content .sec-title')].find(e=>e.getClientRects().length&&/Open Positions|Available Candidates|الوظائف|مرشح/.test(e.innerText));return e?e.innerText:''})()")
     return num(re.sub(r'^[^\d٠-٩]*', '', t)) if t else None
 
 def seed_job(j, uid, title, company='', location='Cairo', country='EG', type_='full-time', seniority='mid', category='other', desc='', tags=(), salary='', deadline=None, ago_s=0, active=True):

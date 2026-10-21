@@ -5,7 +5,7 @@ inside of a group it creates), the Marketplace and My Listings, and the visible 
   - no element whose whole text is a sample name (sample data always matches exactly — names other suites create carry a tag);
   - none of the sample numbers and promises ("1.2K", "150,000+", "8×", "12K+", "top 12%", "27 unread", "412 real members"…);
   - the side menu / phone badges equal the real counts (0 for a new account), "Your shortcuts" and the Groups side list hold
-    only real groups, the deal room has no Listings tab (G-01 — not kept in the database yet), and the market counts equal the
+    only real groups, the deal room's Listings tab lists only real listings (G-01, 0061), and the market counts equal the
     database's.
 Phase 1b (S-19, J-05, B-06, J-SOCIAL-49): the top ticker never shows the demo's items (hidden while there is nothing real, then the
 newest real listing); the sign-in page shows no invented totals and Home no stock faces and no empty TODAY card; the Jobs numbers
@@ -120,7 +120,7 @@ def main():
         T('every group card on the Groups page is a group from the database', demo_cards == 0, demo_cards)
         chip = pg.evaluate("([...document.querySelectorAll('#gx .cf-tag')].find(e=>/My Groups/.test(e.textContent))||{}).textContent||''")
         T('"My Groups (N)" counts my real groups (0)', re.search(r'\(0\)', chip), chip)
-        # a deal room I create: shortcuts, side list and My Groups follow; no Listings tab while listings are not in the database
+        # a deal room I create: shortcuts, side list and My Groups follow; its Listings are the database's (none yet)
         name = f'Purge Deal Room {ST[-6:]}'
         gid = int(sql(f"insert into public.groups (name, description, type, topic, created_by, listed) values ('{name}', 'test', 'public', 'DEAL ROOM', '{me}', true) returning id").split()[0])
         pg.reload(wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); wait_for(lambda: pg.evaluate("window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2500)
@@ -131,7 +131,12 @@ def main():
         head = pg.evaluate("[(document.getElementById('dt-title')||{}).textContent, (document.getElementById('dt-type')||{}).textContent]")
         T('a shortcut opens its own group (name and type)', opened and head[0] == name and 'Deal' in head[1], head)
         tabs = pg.evaluate("[...document.querySelectorAll('#gpBox .gp-tabs .gx-ptab')].map(e=>e.dataset.gpt)")
-        T('the deal room shows no Listings tab in the live app (G-01: not in the database yet)', 'listings' not in tabs and 'disc' in tabs, tabs)
+        # G-01 keeps deal-room listings in the database (0061): the tab is there, and a new deal room lists nothing invented
+        T('the deal room has its Listings tab (G-01, kept in the database)', 'listings' in tabs and 'disc' in tabs, tabs)
+        pg.evaluate("document.querySelector('#gpBox [data-gpt=listings]').click()"); pg.wait_for_timeout(1800)
+        lt = pg.evaluate("(document.querySelector('#gpBox [data-pane=listings]')||{}).innerText||''")
+        T('… and a new deal room shows no sample listing', 'No requests or offers yet' in lt and not pg.evaluate("document.querySelectorAll('#gpBox [data-pane=listings] .dcard, #gpBox [data-pane=listings] .lcard').length"), lt[:160])
+        pg.evaluate("document.querySelector('#gpBox [data-gpt=disc]').click()"); pg.wait_for_timeout(300)
         pg.evaluate("document.querySelector('#groupDetail .btn-manage') && document.querySelector('#groupDetail .btn-manage').click()"); pg.wait_for_timeout(1500)
         scan('group manage')
         mt = pg.evaluate("(document.getElementById('tab-members')||{}).innerText||''")

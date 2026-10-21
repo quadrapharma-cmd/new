@@ -493,6 +493,7 @@
     if (n.type === 'report_closed' && d.outcome === 'member_actioned') return 'Drugbox reviewed your report and suspended the account.';                    /* area social (0044) */
     if (n.type === 'report_closed' && d.outcome === 'member_dismissed') return 'Drugbox reviewed your report — no action was needed on the account.';
     if (n.type === 'report_closed') return d.outcome === 'removed' ? 'Drugbox reviewed your report and removed the post.' : 'Drugbox reviewed your report — the post stays up.';
+    if (!d.reason && d.note) return esc2('Drugbox removed your post “' + String(d.excerpt || '') + '” — reason: ' + String(d.note));   /* removed from Admin → Posts: the team's own words (AREA community) */
     return esc2('Drugbox removed your post “' + String(d.excerpt || '') + '” — reason: ' + (WHY[d.reason] || 'it breaks the Drugbox rules') + '.' + (d.note ? ' Note: ' + String(d.note) : '')); }
   function notifFrom(n) {
     var who = esc2(n.actor ? n.actor.name : 'Someone'), a = aid(n.from_user), t;
@@ -1091,7 +1092,7 @@
   /* ═══════════════ C1 — companies: directory, company pages, my companies, create, page edits, verification ═══════════════
      The demo's store() and company list have data hooks (inert in the demo); here they read and write the database.
      Right after sign-in only my own pages load; the directory loads, a page at a time, when the Companies page opens (F-05). */
-  var CO = { byId: {}, raw: {}, alias: {}, reopen: null, loaded: false, at: 0, loading: null, roles: {}, mine: false, mineP: null, sitesAt: {}, track: {}, trackAt: {}, seq: {} };
+  var CO = { byId: {}, raw: {}, alias: {}, reopen: null, loaded: false, at: 0, loading: null, roles: {}, vr: {}, mine: false, mineP: null, sitesAt: {}, track: {}, trackAt: {}, seq: {} };
   var TYPE = { factory: 'Factory', warehouse: 'Warehouse', lab: 'Laboratory', office: 'Office', head_office: 'Head office' };
   var ROLE = { registration_holder: 'Registration holder', manufacturer: 'Manufacturer', supplier: 'Supplier' };
   function ym(d) { return d ? String(d).slice(0, 7) : ''; }
@@ -1105,7 +1106,8 @@
       address: txt(pr.address || c.location), hours: txt(c.hours), services: (pr.services || []).map(txt), jobs: [], team: [], logo: safeUrl(c.logo_url) || null, cover: safeUrl(pr.cover) || null,
       products: (c.products || []).map(function (p) { return { id: 'p' + String(p.name).replace(/\W+/g, '').slice(0, 10), name: txt(p.name), cat: ROLE[p.role] || 'Finished dosage', kind: txt(p.form),
         desc: [p.ingredient ? 'Active ingredient: ' + txt(p.ingredient) : '', txt(p.strength)].filter(Boolean).join(' · '), moq: '', price: '', specs: [] }; }),
-      createdAt: new Date(c.created_at).getTime(), updatedAt: fresher(c), _id: c.id, _tier: c.tier };
+      createdAt: new Date(c.created_at).getTime(), updatedAt: fresher(c), _id: c.id, _tier: c.tier,
+      vr: CO.vr[c.id] ? CO.vr[c.id].s : undefined, vrNote: CO.vr[c.id] ? CO.vr[c.id].note : '' };   /* AREA community (J-COMMUNITY-41): the latest own verification request */
   }
   /* when the page was last written (companies.updated_at, set by the database on every save, B-22): the "older than 6 months"
      notice counts from it, else from the day the page was made — never from a sample date. The directory's rows do not carry it,
@@ -1127,6 +1129,11 @@
     var list = window.dxLiveCompanies || (window.dxLiveCompanies = []);
     (r.data || []).forEach(function (c) { if (!okSlug(c.slug)) return; var old = CO.raw[c.slug]; c.mine = true; if (old && old.id) ['track', 'certs', 'products', 'tier'].forEach(function (k) { if (k in old) c[k] = old[k]; });
       CO.raw[c.slug] = c; CO.byId[c.id] = c.slug; var co = coFrom(c), i = list.findIndex(function (x) { return x.slug === c.slug; }); if (i < 0) list.push(co); else list[i] = co; });
+    /* AREA community (J-COMMUNITY-41): a page that is not verified shows "under review" only while a request really is; after a
+       rejection the owner reads Drugbox's note and sends again */
+    var vr = await sb.from('verification_requests').select('company_id,status,note,claim,created_at').in('company_id', ids).eq('claim', false).order('created_at', { ascending: false }).limit(200);
+    if (!vr.error && me === ME_UUID) { var last = {}; (vr.data || []).forEach(function (v) { if (!(v.company_id in last)) last[v.company_id] = v; });
+      list.forEach(function (co) { var raw = CO.raw[co.slug]; if (!raw || !CO.roles[raw.id]) return; var v = last[raw.id]; co.vr = v ? v.status : 'none'; co.vrNote = v && v.status === 'rejected' ? v.note || '' : ''; CO.vr[raw.id] = { s: co.vr, note: co.vrNote }; }); }
     window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
   }
   /* the directory, 100 companies a request in the directory's order (F-05): the first page when Companies or the Marketplace
@@ -1253,7 +1260,7 @@
         ins.data.mine = true; CO.raw[sv] = ins.data; CO.roles[ins.data.id] = 'owner'; shown._id = ins.data.id; CO.byId[ins.data.id] = sv;
         if (c.logo && /^data:image\//.test(c.logo)) { var lg = {}; lg[sv] = { logo: c.logo }; persistEdits(lg); }   /* the wizard's logo: uploaded to company-media once the page exists */
       } else if (c.registry && c.status === 'pending' && known.id && !SNAP['vr_' + c.slug]) {   /* verification documents submitted */
-        SNAP['vr_' + c.slug] = 1; var l = live(c.slug); if (l) { l.status = 'pending'; l.registry = c.registry; }
+        SNAP['vr_' + c.slug] = 1; var l = live(c.slug); if (l) { l.status = 'pending'; l.registry = c.registry; l.vr = 'pending'; l.vrNote = ''; } if (CO.raw[c.slug]) CO.vr[CO.raw[c.slug].id] = { s: 'pending', note: '' };
         var docs = {}; try { docs = await window.dxLive.verificationFiles(known.id); } catch (e) { toastErr(e); }
         var vr = await sb.from('verification_requests').insert(Object.assign({ company_id: known.id, submitted_by: ME_UUID, registry: String(c.registry) }, docs));
         if (vr.error) toastErr(vr.error);
@@ -1392,6 +1399,9 @@
       if (!freshSeq('')) loadDirPage('', true).catch(toastErr);                                   /* page 1, or nothing within 2 minutes */
       var k = curKey(); if (page === 'companies' && k && !freshSeq(k)) loadDirPage(k, true).catch(toastErr);
       if (page === 'companies') openedMissing();
+      /* AREA community (J-COMMUNITY-41): an own page waiting on Drugbox's check is read again on each visit (at most every 3 s), so the badge shows once verified */
+      if (page === 'companies' && Date.now() - (CO.pendAt || 0) > 3000 && Object.keys(CO.raw).some(function (sl) { var c = CO.raw[sl]; return c && CO.roles[c.id] && c.status === 'pending'; })) {
+        CO.pendAt = Date.now(); loadMine().then(redrawDir).catch(function () {}); }
       if (page === 'market' && typeof LIST !== 'undefined' && LIST) ensureCompanies(LIST.surplus.concat(LIST.dossiers).map(function (x) { return x.slug; })).catch(function () {});
     }
     return r;
@@ -1401,6 +1411,14 @@
   document.addEventListener('input', function (e) {
     if (!ME_UUID || !e.target || e.target.id !== 'hbQ') return; clearTimeout(DIRQ);
     DIRQ = setTimeout(function () { var k = curKey(); if (k && !freshSeq(k)) loadDirPage(k, true).catch(toastErr); }, 350);
+  }, true);
+  /* AREA community (J-COMMUNITY-42): "Add or claim your company" asks the database too, so a page beyond the loaded ones is found
+     (the list in the window is drawn again once the answer is here) */
+  var ACQ = null;
+  document.addEventListener('input', function (e) {
+    if (!ME_UUID || !e.target || e.target.id !== 'acQ' || e.__dxAgain) return; clearTimeout(ACQ); var inp = e.target;
+    ACQ = setTimeout(function () { var k = dirKey(inp.value); if (!k || freshSeq(k)) return;
+      loadDirPage(k, true).then(function () { if (!inp.isConnected) return; var ev = new Event('input', { bubbles: true }); ev.__dxAgain = true; inp.dispatchEvent(ev); }).catch(toastErr); }, 350);
   }, true);
   /* "Show more" draws the next 60 companies already here and fetches the next page, so the list never runs dry */
   document.addEventListener('click', function (e) {
@@ -1418,7 +1436,7 @@
   /* "Claim this page": a claim request reviewed by Drugbox (claim_company, with the registry document — 0052), never an edit made in
      the browser (F-42) — window.dxClaims below (AREA business) */
   var hydrateB4 = hydrateMe;
-  hydrateMe = async function (uid) { var me = await hydrateB4(uid); window.dxLiveCompanies = []; CO.seq = {}; CO.loaded = false; CO.mineP = loadMine().then(wrapHub).catch(function (e) { console.error(e); }); return me; };
+  hydrateMe = async function (uid) { var me = await hydrateB4(uid); window.dxLiveCompanies = []; CO.seq = {}; CO.vr = {}; CO.loaded = false; CO.mineP = loadMine().then(wrapHub).catch(function (e) { console.error(e); }); return me; };
   onReset(function () { CO.byId = {}; CO.raw = {}; CO.loaded = false; CO.at = 0; CO.roles = {}; CO.mine = false; CO.mineP = null; CO.sitesAt = {}; CO.track = {}; CO.trackAt = {}; CO.seq = {}; CO.alias = {}; CO.reopen = null; COFETCH = {}; CONONE = {}; SNAP = {}; window.dxLiveCompanies = []; window.dxLiveSites = {}; });
   Object.assign(window.dxLive, { loadDirectory: loadDirectory, loadSites: loadSites, version: 'C1' });
 
@@ -1793,12 +1811,16 @@
   var JX = { tpl: null, jobs: [], saved: {}, applied: {}, at: 0, cur: null };
   var LEVEL = { entry: '🌱 Entry Level', junior: '⚙️ Junior', mid: '🎯 Mid-Level', senior: '🧭 Senior Mgmt', exec: '👑 Executive' };
   function levelOf(exp) { var n = parseInt(String(exp || '').match(/\d+/) || 0, 10); return !exp ? 'mid' : n < 1 ? 'entry' : n < 3 ? 'junior' : n < 5 ? 'mid' : n < 10 ? 'senior' : 'exec'; }
-  async function loadJobs() {
+  async function loadJobs(more) {      /* one page of the jobs that match the page's search and filters (jobs_search, 0060), newest first */
+    var f = (window.dxJobsFilter && window.dxJobsFilter()) || {}, last = more && JX.jobs.length ? JX.jobs[JX.jobs.length - 1] : null, me = ME_UUID;
     var a = await Promise.all([
-      sb.from('jobs').select('*, poster:profiles!jobs_user_id_fkey(' + PCOLS + ')').eq('active', true).order('created_at', { ascending: false }).limit(60),
-      sb.from('saved_jobs').select('job_id').eq('user_id', ME_UUID), sb.from('job_applications').select('job_id').eq('user_id', ME_UUID)]);
-    if (a[0].error) throw a[0].error;
-    JX.jobs = a[0].data || []; JX.saved = {}; JX.applied = {}; (a[1].data || []).forEach(function (x) { JX.saved[x.job_id] = 1; }); (a[2].data || []).forEach(function (x) { JX.applied[x.job_id] = 1; });
+      sb.rpc('jobs_search', { p_q: f.q || '', p_category: f.category || null, p_types: f.types && f.types.length ? f.types : null, p_countries: f.countries && f.countries.length ? f.countries : null,
+                              p_level: f.level || null, p_before: last ? last.created_at : null, p_before_id: last ? last.id : null, p_limit: 50 }),
+      more ? { data: null } : sb.from('saved_jobs').select('job_id').eq('user_id', ME_UUID), more ? { data: null } : sb.from('job_applications').select('job_id').eq('user_id', ME_UUID)]);
+    if (a[0].error) throw a[0].error; if (me !== ME_UUID) return;
+    var res = a[0].data || {}, rows = res.rows || [];
+    JX.jobs = more ? JX.jobs.concat(rows.filter(function (r) { return !JX.jobs.some(function (x) { return x.id === r.id; }); })) : rows; JX.total = res.total || 0;
+    if (!more) { JX.saved = {}; JX.applied = {}; (a[1].data || []).forEach(function (x) { JX.saved[x.job_id] = 1; }); (a[2].data || []).forEach(function (x) { JX.applied[x.job_id] = 1; }); }
     JX.jobs.forEach(function (j) { putUser(j.poster); }); JX.at = Date.now();
   }
   function jobCard(j) {
@@ -1807,7 +1829,8 @@
     var logo = c.querySelector('.jc-logo'); if (logo) { logo.textContent = initials(j.company || u.name); logo.style.background = colorFor(j.company || j.user_id); }
     var t = c.querySelector('.jc-title'); if (t) { var rb = t.querySelector('.role-badge'), lb = t.querySelector('.level-badge'); t.textContent = j.title;
       if (lb) { lb.className = 'level-badge level-' + lvl; lb.textContent = LEVEL[lvl]; t.insertBefore(lb, t.firstChild); } if (rb) t.insertBefore(rb, t.firstChild); }
-    var co = c.querySelector('.jc-company'); if (co) co.innerHTML = '<span>' + esc2(j.company || u.company || '') + '</span> · <span>' + (FLAG[j.country] || '') + ' ' + esc2(j.location || '') + '</span>' + (u.verified ? ' · <span style="color:#1a56db">✓ Verified</span>' : '');
+    var co = c.querySelector('.jc-company'); if (co) co.innerHTML = '<span data-noi18n dir="auto">' + esc2(j.company || u.company || '') + '</span> · <span data-noi18n dir="auto">' + (FLAG[j.country] || '') + ' ' + esc2(j.location || '') + '</span>' + (j.company_verified || (!j.company_id && u.verified) ? ' · <span style="color:#1a56db">✓ Verified</span>' : '');
+    c.dataset.jxMine = j.user_id === ME_UUID || (j.company_id && CO.roles && /owner|admin/.test(CO.roles[j.company_id] || '')) ? '1' : ''; c.dataset.jxApplicants = j.applicant_count || 0;
     var tg = c.querySelector('.jc-tags'); if (tg) tg.innerHTML = '<span class="jt jt-ft">' + esc2(j.type || 'Full-time') + '</span>' + (j.tags || []).slice(0, 2).map(function (x) { return '<span class="jt" style="background:#dbeafe;color:#1d4ed8">' + esc2(x) + '</span>'; }).join('') + (j.salary ? '<span class="jt" style="background:#dcfce7;color:#15803d">' + esc2(j.salary) + '</span>' : '');
     var ds = c.querySelector('.jc-desc'); if (ds) ds.textContent = j.description || '';
     var ps = c.querySelector('.jc-posted'); if (ps) ps.textContent = ago(j.created_at);
@@ -1842,7 +1865,7 @@
     var cvIn = document.getElementById('dxCv'), cv = cvIn && cvIn.files && cvIn.files[0];
     (cv ? upDoc('documents', 'cv/' + ME_UUID + '/' + rid() + '.' + extOf(cv), cv) : Promise.resolve(null)).then(function (cvPath) { return sb.from('job_applications').insert({ job_id: id, user_id: ME_UUID, note: note.trim(), status: 'submitted', cv_path: cvPath }); }, function (e) { return { error: e }; }).then(function (r) {
       if (r.error) { window.toast(/duplicate|unique/i.test(r.error.message) ? 'You already applied to this job' : friendly(r.error)); return; }
-      if (cvIn) cvIn.value = ''; JX.applied[id] = 1; oApply(); var b = document.querySelector('#jx [data-live="j' + id + '"] .apply-btn'); if (b) { b.textContent = '✓ Applied'; b.disabled = true; } });
+      if (cvIn) cvIn.value = ''; JX.applied[id] = 1; oApply(); var jj = JX.jobs.find(function (x) { return x.id === id; }); if (jj) setTimeout(function () { window.toast('Application sent for ' + jj.title + (jj.company ? ' at ' + jj.company : '') + ' — follow it in My applications'); }, 80); var b = document.querySelector('#jx [data-live="j' + id + '"] .apply-btn'); if (b) { b.textContent = '✓ Applied'; b.disabled = true; } });
   }; window.submitApply.__live = true; }
   if (window.openPostJobModal && !window.openPostJobModal.__live) { var oOpenPost = window.openPostJobModal;
   window.openPostJobModal = function () { var r = oOpenPost.apply(this, arguments); if (!ME_UUID) return r;
@@ -1851,15 +1874,13 @@
   window.submitGeneric = function (msg) {
     var m = document.getElementById('postJobModal');
     if (!ME_UUID || !m || !m.classList.contains('show')) return oGeneric.apply(this, arguments);
-    /* the form is read by its structure (field order, option position), never by its English text — it works in Arabic too (F-21):
-       editable inputs in order = title, location, years of experience, salary min, salary max */
-    var f = [].slice.call(m.querySelectorAll('input.field-input:not([disabled])')).map(function (x) { return String(x.value || '').trim(); });
-    var pos = function (sel) { var all = [].slice.call(m.querySelectorAll(sel)); return all.indexOf(m.querySelector(sel + '.selected')); };
-    var dept = m.querySelector('select'), ta = m.querySelector('textarea'), title = f[0] || '', exp = f[2] || '', co = window.dxDir && window.dxDir.mine && window.dxDir.mine();
-    if (!title) { window.toast('Add the job title'); return; }
-    var sal = [f[3], f[4]].filter(Boolean).join(' – ');
-    var row = { user_id: ME_UUID, title: title, company: co ? co.name : (window.ME.company || ''), location: f[1] || '', country: 'EG', type: ['Full-time', 'Part-time', 'Contract', 'Remote'][pos('.radio-opt')] || 'Full-time',
-      seniority: levelOf(exp), category: dept ? (['regulatory', 'qaqc', 'production', 'sales', 'rd'][dept.selectedIndex] || 'other') : 'other', description: ta ? ta.value.trim() : '', salary: sal || null, tags: exp ? [exp + ' yrs exp'] : [], active: true };
+    /* the form is read by jobsx.js (field roles set by structure, never by the English text — F-21) */
+    var f = window.dxJobsReadPost ? window.dxJobsReadPost() : null, co = window.dxDir && window.dxDir.mine && window.dxDir.mine(), raw = co && CO.raw[co.slug];
+    if (!f || f.error) { var tt = m.querySelector('[data-jxk=title]'); if (tt) tt.classList.toggle('dbk-err', !(f && f.title)); window.toast(f ? f.error : 'Add the job title — it is required'); return; }
+    var row = { user_id: ME_UUID, title: f.title, company: co ? co.name : (window.ME.company || ''), company_id: raw && raw.id && CO.roles && /owner|admin/.test(CO.roles[raw.id] || '') ? raw.id : null,
+      location: f.location, country: f.country || 'EG', type: f.type, seniority: f.level, category: f.category, description: f.description, salary: f.salary || null, deadline: f.deadline || null,
+      requirements: f.requirements, benefits: f.benefits, tags: f.tags, remote: !!f.remote, active: true };
+    msg = 'Job posted: ' + f.title + ' — now visible in Jobs and Marketplace';
     sb.from('jobs').insert(row).then(function (r) { if (r.error) return toastErr(r.error); oGeneric(msg || 'Job posted'); JX.at = 0;
       loadJobs().then(function () { if (document.body.getAttribute('data-page') === 'jobs') paintJobs(); }); });
   }; window.submitGeneric.__live = true; }
@@ -1942,18 +1963,27 @@
       (rv[n] = rv[n] || []).push({ by: x.author || 'Anonymous', anon: x.anonymous ? 1 : 0, when: String(x.created_at).slice(0, 7), c: [x.c1, x.c2, x.c3, x.c4], text: x.body, mine: !!x.mine, _id: x.id }); }); });
     fill(TR.reviews, rv);
     TR.refs.length = 0; (q[2].data || []).forEach(function (x) { TR.refs.push({ cand: x.ca && x.ca.name, company: x.au && (x.au.company || x.au.name), kind: x.kind, from: String(x.from_month).slice(0, 7), to: String(x.to_month).slice(0, 7),
-      role: x.role_title, category: x.category || '', text: x.body, reply: x.reply || '', status: x.status, when: String(x.created_at).slice(0, 7), expires: x.expires_at ? String(x.expires_at).slice(0, 7) : '', _id: x.id }); });
+      role: x.role_title, category: x.category || '', text: x.body, reply: x.reply || '', status: x.status, when: String(x.created_at).slice(0, 7), expires: x.expires_at ? String(x.expires_at).slice(0, 7) : '', _id: x.id,
+      mine: x.author === ME_UUID, aboutMe: x.candidate === ME_UUID, disputed: !!x.disputed_at }); });   /* AREA community (J-COMMUNITY-31 … 33): withdraw my own, reply to / dispute the ones about me */
     ['employer', 'candidate'].forEach(function (s) { fill(TR.lists[s].white, {}); fill(TR.lists[s].black, {}); });
-    (q[3].data || []).forEach(function (x) { var n = x.t && x.t.name; if (n) TR.lists[x.side][x.list][n] = x.list === 'black' ? { reason: x.reason, note: x.note || '', until: x.until } : { since: String(x.created_at).slice(0, 10) }; });
+    (q[3].data || []).forEach(function (x) { var n = x.t && x.t.name; if (n && !TR.party[n]) TR.party[n] = { uuid: x.target, role: x.side === 'employer' ? 'candidate' : 'employer' };   /* a blocked person is not on the page: still removable from My lists */
+      if (n) TR.lists[x.side][x.list][n] = x.list === 'black' ? { reason: x.reason, note: x.note || '', until: x.until } : { since: String(x.created_at).slice(0, 10) }; });
     var it = {}; (q[4].data || []).forEach(function (x) { var n = partyOfUuid(x.party); if (n) it[n] = true; }); fill(TR.inter, it);
-    TR.snap = { lists: JSON.stringify(TR.lists), refs: TR.refs.map(function (r) { return r._id + ':' + (r.reply || ''); }).join('|') };
+    TR.snap = { lists: JSON.stringify(TR.lists), refs: TR.refs.map(function (r) { return r._id + ':' + (r.reply || ''); }).join('|'),
+                mineRefs: TR.refs.filter(function (r) { return r.mine; }).map(function (r) { return r._id; }), mineRevs: {} };
+    Object.keys(rv).forEach(function (n) { rv[n].forEach(function (r) { if (r.mine && r._id > 0) TR.snap.mineRevs[n] = r._id; }); });
     TR.loaded = true;
   }
   async function syncReviews(v) {
     for (var n in v) { var mine = (v[n] || []).filter(function (r) { return r.mine && !r._id; })[0], p = TR.party[n]; if (!mine || !p) continue;
-      var r = await sb.from('job_reviews').upsert({ reviewer: ME_UUID, reviewee: p.uuid, reviewee_role: p.role, c1: mine.c[0], c2: mine.c[1], c3: mine.c[2], c4: mine.c[3], body: mine.text, anonymous: !!mine.anon }, { onConflict: 'reviewer,reviewee,reviewee_role' });
+      var r = await sb.from('job_reviews').upsert({ reviewer: ME_UUID, reviewee: p.uuid, reviewee_role: p.role, c1: mine.c[0], c2: mine.c[1], c3: mine.c[2], c4: mine.c[3], body: mine.text, anonymous: !!mine.anon }, { onConflict: 'reviewer,reviewee,reviewee_role' }).select('id').single();
       if (r.error) { window.toast(/row-level|interaction/i.test(r.error.message) ? 'You can review only people or companies you have really dealt with (an application or a conversation)' : friendly(r.error)); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; }
-      mine._id = -1; }
+      mine._id = -1; if (r.data && r.data.id) (TR.snap.mineRevs = TR.snap.mineRevs || {})[n] = r.data.id; }
+    /* AREA community (J-COMMUNITY-30): my review deleted in the rating window → deleted here; the averages are read again */
+    var gone = Object.keys(TR.snap.mineRevs || {}).filter(function (n) { return !(v[n] || []).some(function (r) { return r.mine; }); });
+    for (var g = 0; g < gone.length; g++) { var d = await sb.from('job_reviews').delete().eq('id', TR.snap.mineRevs[gone[g]]).eq('reviewer', ME_UUID).select('id');
+      if (d.error || !(d.data || []).length) toastErr(d.error || { message: 'The review could not be deleted' }); delete TR.snap.mineRevs[gone[g]]; }
+    if (gone.length) { await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); }
   }
   async function syncRefs(list) {
     for (var i = 0; i < list.length; i++) { var x = list[i], p = TR.party[x.cand];
@@ -1963,14 +1993,22 @@
           if (!DOCS.ev) { window.toast('Attach the evidence document — a warning is never sent without it. Nothing was submitted.'); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; }
           var ev; try { ev = await upDoc('reference-evidence', ME_UUID + '/' + rid() + '.' + extOf(DOCS.ev), DOCS.ev); } catch (e) { toastErr(e); await loadTrust(); return; }
           DOCS.ev = null;
-          var w = await sb.from('work_references').insert({ author: ME_UUID, candidate: p.uuid, kind: 'warn', role_title: x.role, from_month: x.from + '-01', to_month: x.to + '-01', category: x.category, body: x.text, evidence_path: ev });
+          var w = await sb.from('work_references').insert({ author: ME_UUID, candidate: p.uuid, kind: 'warn', role_title: x.role, from_month: x.from + '-01', to_month: x.to + '-01', category: x.category, body: x.text, evidence_path: ev }).select('id').single();
           if (w.error) { toastErr(w.error); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; }
+          x._id = w.data.id; x.mine = true; (TR.snap.mineRefs = TR.snap.mineRefs || []).push(x._id);
           continue;
         }
-        var r = await sb.from('work_references').insert({ author: ME_UUID, candidate: p.uuid, kind: 'honor', role_title: x.role, from_month: x.from + '-01', to_month: x.to + '-01', body: x.text, status: 'published' });
-        if (r.error) { toastErr(r.error); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; } }
-      else if (x._id > 0 && x.reply && TR.snap.refs.indexOf(x._id + ':' + x.reply) < 0) { var rr = await sb.rpc('reply_to_reference', { ref_id: x._id, reply_text: x.reply, dispute: false }); if (rr.error) toastErr(rr.error); }
+        var r = await sb.from('work_references').insert({ author: ME_UUID, candidate: p.uuid, kind: 'honor', role_title: x.role, from_month: x.from + '-01', to_month: x.to + '-01', body: x.text, status: 'published' }).select('id').single();
+        if (r.error) { toastErr(r.error); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; }
+        x._id = r.data.id; x.mine = true; (TR.snap.mineRefs = TR.snap.mineRefs || []).push(x._id); }   /* withdrawable at once (J-COMMUNITY-31) */
+      else if (x._id > 0 && x.reply && (x._dispute || TR.snap.refs.indexOf(x._id + ':' + x.reply) < 0)) { var dsp = !!x._dispute; x._dispute = false;
+        var rr = await sb.rpc('reply_to_reference', { ref_id: x._id, reply_text: x.reply, dispute: dsp }); if (rr.error) { toastErr(rr.error); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; } }
     }
+    /* AREA community (J-COMMUNITY-31): a reference I withdrew in the Honor / Warning list is deleted (the database lets only its author) */
+    var kept = list.map(function (r) { return r._id; }), wd = (TR.snap.mineRefs || []).filter(function (id) { return kept.indexOf(id) < 0; });
+    for (var w2 = 0; w2 < wd.length; w2++) { var dl = await sb.from('work_references').delete().eq('id', wd[w2]).eq('author', ME_UUID).select('id');
+      if (dl.error || !(dl.data || []).length) { toastErr(dl.error || { message: 'The reference could not be withdrawn' }); await loadTrust(); if (window.dxJxPaint) window.dxJxPaint(); return; } }
+    TR.snap.mineRefs = list.filter(function (r) { return r.mine; }).map(function (r) { return r._id; });
     TR.snap.refs = list.map(function (r) { return r._id + ':' + (r.reply || ''); }).join('|');
   }
   async function syncLists(v) {
@@ -1982,6 +2020,8 @@
       for (var m in was) if (!now[m] && !(v[s][l === 'white' ? 'black' : 'white'] || {})[m]) { var q = TR.party[m]; if (q) await sb.from('job_lists').delete().eq('owner', ME_UUID).eq('target', q.uuid).eq('side', s); } }
     TR.snap.lists = JSON.stringify(v);
   }
+  /* ===== AREA community: trust — the records about me read again on demand (a notification opens them) ===== */
+  window.dxLiveTrust.refresh = function () { return loadTrust().then(function () { if (window.dxJxPaint) window.dxJxPaint(); }); };
   window.dxKitHook = function (op, k, v) {
     if (!ME_UUID) return undefined;
     if (op === 'get') { if (k === 'jobReviews') return TR.reviews; if (k === 'jobRefs') return TR.refs; if (k === 'jobLists') return TR.lists; if (k === 'jobInteractions') return TR.inter; return undefined; }
@@ -2024,30 +2064,32 @@
   onReset(function () { fill(TR.reviews, {}); TR.refs.length = 0; TR.party = {}; TR.cands = []; TR.loaded = false; TR.snap = {}; fill(TR.inter, {});
     ['employer', 'candidate'].forEach(function (x) { fill(TR.lists[x].white, {}); fill(TR.lists[x].black, {}); }); PV = {}; DOCS.vf = {}; DOCS.ev = null; });
   var loadJobsD2a = loadJobs;
-  loadJobs = async function () { await loadJobsD2a(); await loadTrust(); };
+  loadJobs = async function (more) { await loadJobsD2a(more); if (!more) await loadTrust(); };
   var hydrateC3 = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateC3(uid); loadJobs().catch(function (e) { console.error(e); }); return me; };
   Object.assign(window.dxLive, { loadTrust: loadTrust, loadJobs: function () { return loadJobs(); }, version: 'D2b' });
 
   /* ═══════════════ D3 — groups page from the database (the approved group card is the template) ═══════════════ */
-  var GX = { tpl: null, groups: [], mine: {}, at: 0, cur: null, loading: false, snap: {}, inv: {}, req: {}, act: {} };
+  var GX = { tpl: null, groups: [], mine: {}, at: 0, cur: null, loading: false, snap: {}, inv: {}, invBy: {}, req: {}, act: {} };
   var GRAD = [['#1040a0', '#2D6BE4'], ['#0E6B4E', '#16A34A'], ['#6D28D9', '#A855F7'], ['#B45309', '#F59E0B'], ['#0E7490', '#06B6D4'], ['#BE185D', '#EC4899']];
   async function loadGroups() {
     var GCOLS = '*, creator:profiles!groups_created_by_fkey(' + PCOLS + ')';
     var a = await Promise.all([sb.from('groups').select(GCOLS).order('member_count', { ascending: false }).order('created_at', { ascending: false }).limit(60),
-                               sb.from('group_members').select('group_id, role').eq('user_id', ME_UUID),
-                               sb.from('group_invites').select('group_id, g:groups(' + GCOLS + ')').eq('user_id', ME_UUID).limit(50),
-                               sb.from('group_join_requests').select('group_id').eq('user_id', ME_UUID).eq('status', 'pending').limit(50)]);
+                               sb.from('group_members').select('group_id, role, muted').eq('user_id', ME_UUID),
+                               sb.from('group_invites').select('group_id, by:profiles!group_invites_invited_by_fkey(name), g:groups(' + GCOLS + ')').eq('user_id', ME_UUID).limit(50),
+                               sb.from('group_join_requests').select('group_id').eq('user_id', ME_UUID).eq('status', 'pending').limit(50),
+                               sb.from('groups').select(GCOLS).is('archived_at', null).order('created_at', { ascending: false }).limit(30)]);   /* AREA community: new groups are found too, not only the 60 biggest */
     if (a[0].error) throw a[0].error; if (a[1].error) throw a[1].error;
     GX.groups = a[0].data || [];
-    GX.inv = {}; ((a[2] && a[2].data) || []).forEach(function (x) { GX.inv[x.group_id] = true; });
+    ((a[4] && a[4].data) || []).forEach(function (g) { if (!GX.groups.some(function (y) { return y.id === g.id; })) GX.groups.push(g); });
+    GX.inv = {}; GX.invBy = {}; ((a[2] && a[2].data) || []).forEach(function (x) { GX.inv[x.group_id] = true; GX.invBy[x.group_id] = x.by && x.by.name ? x.by.name : ''; });
     GX.req = {}; ((a[3] && a[3].data) || []).forEach(function (x) { GX.req[x.group_id] = true; });
     var inv = ((a[2] && a[2].data) || []).map(function (x) { return x.g; }).filter(function (g) { return g && !GX.groups.some(function (y) { return y.id === g.id; }); });
     GX.groups = inv.concat(GX.groups);                                   /* groups I was invited to come first, so the invitation can be taken up (F-29) */
     var gone = (a[1].data || []).map(function (m) { return m.group_id; }).concat(Object.keys(GX.req).map(Number))
       .filter(function (id, i, l) { return l.indexOf(id) === i && !GX.groups.some(function (g) { return g.id === id; }); }).slice(0, 100);
     if (gone.length) { var mg = await sb.from('groups').select(GCOLS).in('id', gone); if (!mg.error) GX.groups = GX.groups.concat(mg.data || []); }   /* my groups (and my requests) outside the 60 biggest */
-    GX.mine = {}; (a[1].data || []).forEach(function (m) { GX.mine[m.group_id] = m.role; }); GX.at = Date.now();
+    GX.mine = {}; GX.muted = {}; (a[1].data || []).forEach(function (m) { GX.mine[m.group_id] = m.role === 'moderator' ? 'moderator' : m.role; if (m.muted) GX.muted[m.group_id] = 1; }); GX.at = Date.now();
     GX.snap = {}; GX.groups.forEach(function (g) { if (GX.mine[g.id]) GX.snap[g.name] = true; putUser(g.creator); });
     if (GX.cur) GX.cur = GX.groups.find(function (g) { return g.id === GX.cur.id; }) || GX.cur;
     /* "N new posts this week" on the cards and "N new posts today" in the header (0027 group_activity, one call for every card) */
@@ -2068,6 +2110,12 @@
     var mc = c.querySelector('.member-count'); if (mc) mc.textContent = (g.member_count || 0).toLocaleString('en') + (g.member_count === 1 ? ' member' : ' members');
     /* what the inside of the group (groups.js) shows under About: the group's own text, rules, creation date and creator */
     c.dataset.about = txt(g.description || ''); c.dataset.rules = JSON.stringify(rulesOf(g.rules)); c.dataset.since = g.created_at || ''; c.dataset.by = g.created_by ? aid(g.created_by) : '';
+    /* 0061: sector, countries, who posts, archived, my notifications — the filters and the inside read them */
+    c.dataset.sector = g.sector || ''; c.dataset.country = (g.country || []).join(','); c.dataset.post = g.post_policy || 'members'; c.dataset.find = txt((g.name || '') + ' ' + (g.description || '')).toLowerCase();
+    if (g.archived_at) { c.dataset.archived = '1'; c.style.opacity = '.55'; if (!c.querySelector('.priority-badge')) { var pb = document.createElement('div'); pb.className = 'priority-badge'; pb.textContent = '📦 Archived'; c.insertBefore(pb, c.firstChild); } } else delete c.dataset.archived;
+    if (GX.muted && GX.muted[g.id]) c.dataset.muted = '1'; else delete c.dataset.muted;
+    var wb0 = c.querySelector('.why-banner'); if (wb0 && /✉️/.test(wb0.textContent)) wb0.remove();   /* an invitation shows who invited me, as in the demo */
+    if (GX.inv[g.id] && !GX.mine[g.id]) { var bd = c.querySelector('.gcard-body'); if (bd) bd.insertAdjacentHTML('afterbegin', '<div class="why-banner">✉️ <span>Invitation from</span> <span data-noi18n>' + esc2(GX.invBy[g.id] || 'a group admin') + '</span></div>'); }
     paintCardState(c, g);
     return c;
   }
@@ -2204,13 +2252,20 @@
        text: the 2nd type option is Deal Room, the 2nd privacy option is Private (F-20, F-21) */
     var mk = e.target.closest && e.target.closest('#createModal .modal-footer .btn-create');
     if (mk) { e.preventDefault(); e.stopPropagation();
-      var M = document.getElementById('createModal'), name = ((M.querySelector('.field-input') || {}).value || '').trim(), desc = ((M.querySelector('.field-textarea, textarea') || {}).value || '').trim();
+      var M = document.getElementById('createModal'), cf = window.dxGroupsCreateForm ? window.dxGroupsCreateForm() : null, name = cf ? cf.name : ((M.querySelector('.field-input') || {}).value || '').trim(), desc = cf ? cf.desc : ((M.querySelector('.field-textarea, textarea') || {}).value || '').trim();
       if (!name) { window.toast('Add the group name'); return; }
+      if (GX.groups.some(function (x) { return String(x.name).toLowerCase() === name.toLowerCase(); })) { window.toast('A group with this name already exists — choose another name'); return; }
       var pos = function (sel) { var all = [].slice.call(M.querySelectorAll(sel)); return all.indexOf(M.querySelector(sel + '.selected')); };
       var priv = pos('.privacy-opt') === 1, deal = pos('.type-opt') === 1;
       if (mk.dataset.busy) return; mk.dataset.busy = '1';
-      sb.from('groups').insert({ name: name, description: desc, emoji: deal ? '🤝' : '👥', type: priv ? 'private' : 'public', topic: deal ? 'DEAL ROOM' : 'DISCUSS', created_by: ME_UUID, listed: !(priv && deal) }).select().single().then(function (r) { delete mk.dataset.busy;
-        if (r.error) return toastErr(r.error); window.closeCreate(); window.toast('Group created'); return loadGroups().then(paintGroups); }); return; }
+      sb.from('groups').select('id').ilike('name', name.replace(/[\\%_]/g, '\\$&')).limit(1).then(function (dup) {
+        if (!dup.error && (dup.data || []).length) { delete mk.dataset.busy; window.toast('A group with this name already exists — choose another name'); return; }
+        return sb.from('groups').insert({ name: name, description: desc, emoji: cf ? cf.emoji : deal ? '🤝' : '👥', type: priv ? 'private' : 'public', topic: deal ? 'DEAL ROOM' : 'DISCUSS', created_by: ME_UUID, listed: !priv,   /* J-COMMUNITY-12: a private group is hidden — reached by invitation */
+          sector: cf ? cf.sector : null, country: cf ? cf.country : [], rules: cf && cf.rules ? cf.rules : null }).select().single().then(function (r) { delete mk.dataset.busy;
+          if (r.error) return toastErr(r.error); window.closeCreate(); window.toast('Group created — invite your first members');
+          ['.field-input', '.field-textarea', '#gpCrRules'].forEach(function (s0) { M.querySelectorAll(s0).forEach(function (x) { if (x.tagName !== 'SELECT') x.value = ''; }); });
+          return loadGroups().then(function () { paintGroups(); setTimeout(function () { window.dxLive.openGroup(r.data.id); }, 50); }); });
+      }); return; }
     var del = e.target.closest && e.target.closest('#deleteConfirmBtn');
     if (del && GX.cur) { e.preventDefault(); e.stopPropagation(); var g2 = GX.cur, typed = ((document.getElementById('deleteConfirmInput') || {}).value || '').trim();
       if (typed !== g2.name && typed.toUpperCase() !== 'DELETE') { window.toast('Type the group name to confirm'); return; }
@@ -2238,9 +2293,17 @@
       if (x.indexOf('@') >= 0 || x.length > 120) return null;                                           /* no lookup by e-mail address */
       return sb.from('profiles').select('id').ilike('name', x.replace(/[\\%_]/g, '\\$&')).limit(2);
     }));
+    var nameOf = {};
     found.forEach(function (r, i) { var d = r && !r.error ? r.data || [] : [];
-      if (d.length === 1 && d[0].id !== ME_UUID) { if (ids.indexOf(d[0].id) < 0) ids.push(d[0].id); } else if (!(d.length === 1 && d[0].id === ME_UUID)) missing.push(items[i] + (d.length > 1 ? ' (more than one member has this name)' : '')); });
+      if (d.length === 1 && d[0].id !== ME_UUID) { if (ids.indexOf(d[0].id) < 0) { ids.push(d[0].id); nameOf[d[0].id] = items[i]; } } else if (!(d.length === 1 && d[0].id === ME_UUID)) missing.push(items[i] + (d.length > 1 ? ' (more than one member has this name)' : '')); });
     if (!ids.length) return { n: 0, missing: missing };
+    /* people already invited or already in the group are told apart, not invited twice */
+    var had = await Promise.all([sb.from('group_invites').select('user_id').eq('group_id', g.id).in('user_id', ids), sb.from('group_members').select('user_id').eq('group_id', g.id).in('user_id', ids)]);
+    var inv = (had[0].data || []).map(function (x) { return x.user_id; }), mem = (had[1].data || []).map(function (x) { return x.user_id; });
+    var again = ids.filter(function (u) { return inv.indexOf(u) >= 0 && mem.indexOf(u) < 0; }).map(function (u) { return nameOf[u]; }), inside = mem.map(function (u) { return nameOf[u]; });
+    ids = ids.filter(function (u) { return inv.indexOf(u) < 0 && mem.indexOf(u) < 0; });
+    if (!ids.length) return { n: 0, missing: missing, error: again.length ? again.join(', ') + (again.length === 1 ? ' is' : ' are') + ' already invited' : inside.join(', ') + (inside.length === 1 ? ' is' : ' are') + ' already a member' };
+    if (again.length || inside.length) setTimeout(function () { window.DBK.toast((again.length ? 'Already invited: ' + again.join(', ') : '') + (again.length && inside.length ? ' · ' : '') + (inside.length ? 'Already in the group: ' + inside.join(', ') : '')); }, 2200);
     var r = await sb.from('group_invites').upsert(ids.map(function (u) { return { group_id: g.id, user_id: u, invited_by: ME_UUID }; }), { onConflict: 'group_id,user_id', ignoreDuplicates: true });
     if (r.error) return { n: 0, missing: missing, error: /row-level security|42501|permission/i.test(String(r.error.message || r.error.code)) ? 'Only the group\u2019s admins can invite people' : friendly(r.error) };
     return { n: ids.length, missing: missing };
@@ -2278,8 +2341,8 @@
      latest 20 comments — the database's row rules apply to every embedded row as to the posts themselves */
   function gpQuery(g) {
     return sb.from('posts').select('*, author:profiles!posts_user_id_fkey(' + PCOLS + '), post_media(*), my:reactions(kind, user_id), sv:saved_posts(user_id), ' +
-      'cm:comments(post_id, user_id, body, created_at, author:profiles!comments_user_id_fkey(' + PCOLS + '))')
-      .eq('group_id', g.id).eq('my.user_id', ME_UUID).eq('sv.user_id', ME_UUID)
+      'cm:comments(id, post_id, user_id, body, created_at, author:profiles!comments_user_id_fkey(' + PCOLS + ')), rp:group_post_reports(reporter)')
+      .eq('group_id', g.id).eq('my.user_id', ME_UUID).eq('sv.user_id', ME_UUID).eq('rp.reporter', ME_UUID)
       .order('created_at', { referencedTable: 'cm', ascending: false }).order('id', { referencedTable: 'cm', ascending: false }).limit(20, { referencedTable: 'cm' });
   }
   /* one page of a group's posts (keyset on created_at, id — as the Home feed, index idx_posts_group_feed); the pinned post
@@ -2298,9 +2361,9 @@
       putUser(x.author);
       if ((x.my || []).length) my[x.id] = x.my[0].kind || 'like';
       if ((x.sv || []).length) saved.add(x.id);
-      cm[x.id] = (x.cm || []).slice().reverse().map(function (c) { putUser(c.author); return { uid: aid(c.user_id), text: c.body, ts: ago(c.created_at), likes: 0 }; });
+      cm[x.id] = (x.cm || []).slice().reverse().map(function (c) { putUser(c.author); return { id: c.id, uid: aid(c.user_id), text: c.body, ts: ago(c.created_at), likes: 0 }; });
     });
-    var out = rows.map(function (x) { return gpPost(x, my, saved, cm, pin); });
+    var out = rows.map(function (x) { var p = gpPost(x, my, saved, cm, pin); if ((x.rp || []).length) p.reported = 1; return p; });
     if (full && last) { var next = { t: last.created_at, id: last.id }; out.more = function () { return gpPage(g, next); }; }
     return out;
   }
@@ -2318,7 +2381,9 @@
       }
       case 'react': return gpWrite(sb.from('reactions').upsert({ post_id: id, user_id: ME_UUID, kind: RK_OUT[d.kind] || d.kind || 'like' }, { onConflict: 'post_id,user_id' }));
       case 'unreact': return gpWrite(sb.from('reactions').delete().eq('post_id', id).eq('user_id', ME_UUID));
-      case 'comment': return gpWrite(sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: (d.comment && d.comment.text) || '' }));
+      case 'comment': { var cr = await gpWrite(sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: (d.comment && d.comment.text) || '' }).select('id').single()); if (d.comment && cr) d.comment.id = cr.id; return; }
+      case 'deleteComment': { var cid = d.comment && d.comment.id; if (!cid) throw new Error('Reload the group to delete this comment');
+        return gpWrite(sb.from('comments').delete().eq('id', cid).select('id'), 'You can delete your own comments, comments on your posts, or (as an admin) any comment in the group'); }
       case 'commentLike': throw new Error('Liking comments is not available yet');
       case 'share': {   /* "Repost to your feed" (public groups only — groups.js never offers it for a private one) */
         var who = (window.USERS || []).find(function (u) { return u.id === p.uid; }) || window.ME;
@@ -2341,7 +2406,7 @@
       case 'report': {
         var why = (String(d.reason || 'Breaks the group rules') + (d.note ? ' — ' + d.note : '')).slice(0, 500);
         var rr = await sb.from('group_post_reports').insert({ post_id: id, reporter: ME_UUID, reason: why });
-        if (rr.error && rr.error.code !== '23505') throw rr.error; return;   /* reported before: the admins already have it */
+        if (rr.error && rr.error.code !== '23505') throw rr.error; return rr.error ? 'already' : 'sent';   /* reported before: the admins already have it */
       }
     }
     throw new Error('This is not available yet');
@@ -2351,14 +2416,14 @@
     var r = await sb.from('group_members').select('user_id, role, joined_at, p:profiles!group_members_user_id_fkey(' + PCOLS + ')').eq('group_id', g.id)
       .order('role', { ascending: true }).order('joined_at', { ascending: false }).limit(50);
     if (r.error) throw r.error;
-    return (r.data || []).map(function (m) { putUser(m.p); return { uid: aid(m.user_id), role: m.role === 'admin' ? 'admin' : 'member', joined: m.user_id === g.created_by ? 'Created the group' : joinedAgo(m.joined_at), name: m.p ? txt(m.p.name) : '' }; });
+    return (r.data || []).map(function (m) { putUser(m.p); return { uid: aid(m.user_id), role: m.role === 'admin' ? 'admin' : m.role === 'moderator' ? 'moderator' : 'member', joined: m.user_id === g.created_by ? 'Created the group' : joinedAgo(m.joined_at), name: m.p ? txt(m.p.name) : '' }; });
   }
   async function gmOp(g, op, uid) {
     var u = uuidOf(uid); if (!u) throw new Error('This member is no longer available');
-    if (op === 'subadmin') throw new Error('Sub-admins are not available yet — make them an admin or keep them a member');
+    if (op === 'subadmin') op = 'moderator';
     if (op === 'remove') { await gpWrite(sb.from('group_members').delete().eq('group_id', g.id).eq('user_id', u).select('user_id'), 'Only the group’s admins can remove members');
-      g.member_count = Math.max(0, (g.member_count || 1) - 1); }
-    else if (op === 'admin' || op === 'member') await gpWrite(sb.from('group_members').update({ role: op }).eq('group_id', g.id).eq('user_id', u).select('user_id'), 'Only the group’s admins can change roles');
+      g.member_count = Math.max(0, (g.member_count || 1) - 1); if (GX.cur && GX.cur.id === g.id) paintHead(g); }
+    else if (op === 'admin' || op === 'member' || op === 'moderator') await gpWrite(sb.from('group_members').update({ role: op }).eq('group_id', g.id).eq('user_id', u).select('user_id'), 'Only the group’s admins can change roles');
     else throw new Error('This is not available yet');
     if (GX.cur && GX.cur.id === g.id) manageLoad(g);
   }
@@ -2423,16 +2488,27 @@
     var list = tm && tm.querySelector('.member-list'), title = tm && tm.querySelector('.member-list-title');
     if (list) list.innerHTML = mem.map(function (m) {
       var u = (window.USERS || []).find(function (x) { return x.id === m.uid; }) || (m.uid === window.ME.id ? window.ME : null); if (!u) return '';
-      var self = m.uid === window.ME.id, pill = m.role === 'admin' ? '<span class="role-pill rp-admin">👑 Admin</span>' : '<span class="role-pill rp-member">Member</span>';
+      var self = m.uid === window.ME.id, pill = m.role === 'admin' ? '<span class="role-pill rp-admin">👑 Admin</span>' : m.role === 'moderator' ? '<span class="role-pill rp-subadmin">🛡️ Sub-Admin</span>' : '<span class="role-pill rp-member">Member</span>';
       var acts = self ? '<div class="gp-you">You</div>' : '<button type="button" class="action-btn" aria-label="Member options" onclick="toggleDropdown(this)">⋯</button><div class="dropdown-menu">' +
-        (m.role === 'admin' ? '<div class="dd-item" data-gpd="member" role="button" tabindex="0">👤 Demote to Member</div>' : '<div class="dd-item" data-gpd="admin" role="button" tabindex="0">👑 Promote to Admin</div>') +
+        (m.role === 'admin' ? '<div class="dd-item" data-gpd="member" role="button" tabindex="0">👤 Demote to Member</div>' : '<div class="dd-item" data-gpd="admin" role="button" tabindex="0">👑 Promote to Admin</div>' +
+          (m.role === 'moderator' ? '<div class="dd-item" data-gpd="member" role="button" tabindex="0">👤 Demote to Member</div>' : '<div class="dd-item" data-gpd="subadmin" role="button" tabindex="0">🛡️ Promote to Sub-Admin</div>')) +
         '<div class="dd-divider"></div><div class="dd-item" data-gpd="msg" role="button" tabindex="0">💬 Message</div><div class="dd-item danger" data-gpd="remove" role="button" tabindex="0">🚫 Remove from group</div></div>';
       return '<div class="member-row" data-uid="' + m.uid + '" style="position:relative"><div class="av" style="background:' + esc2(u.color || '#1a56db') + ';width:38px;height:38px;font-size:13px">' + esc2(u.initials || '?') + '</div>' +
         '<div><div class="member-name"><span data-noi18n>' + esc2(u.name) + '</span> ' + pill + '</div><div class="member-meta">' + esc2(m.joined || '') + '</div></div><div class="member-actions">' + acts + '</div></div>';
     }).join('');
     if (title) { var sp = title.querySelector('span'); if (sp) sp.textContent = 'Members (' + (g.member_count || 0).toLocaleString('en') + ')'; }
     /* join requests (private groups): above the member list, in the approved moderation-queue item */
-    if (tm && (reqs.length || g.type === 'private')) {
+    var rqTab = D.querySelector('#tab-requests .mod-queue');
+    if (rqTab) {
+      rqTab.innerHTML = reqs.length ? reqs.map(function (r) {
+        putUser(r.p); var who = r.p ? txt(r.p.name) : 'Member', hl = r.p ? String(txt(r.p.headline) || '').split('|')[0].trim() : '', co = r.p ? txt(r.p.company || '') : '';
+        return '<div class="mod-item req-row" data-req="' + aid(r.user_id) + '" data-uid="' + aid(r.user_id) + '"><div class="mod-icon">👤</div><div class="mod-content"><div class="mod-title"><b data-noi18n>' + esc2(who) + '</b> <span>asked to join</span></div>' +
+          '<div class="mod-meta">' + (hl ? '<span data-noi18n>' + esc2(hl) + '</span> · ' : '') + (co ? '<span data-noi18n>' + esc2(co) + '</span> · ' : '') + '<span>' + esc2(ago(r.created_at)) + '</span></div>' + (r.message ? '<div class="mod-reason" data-noi18n>“' + esc2(txt(r.message)) + '”</div>' : '') +
+          '<div class="mod-actions"><button type="button" class="mod-btn dismiss" data-dxreq="reject">Decline</button><button type="button" class="mod-btn gp-approve" data-dxreq="approve">Approve</button></div></div></div>';
+      }).join('') : '<div class="gp-ok">✓ No pending requests</div>';
+      var qb = D.querySelector('#managePanel .dx-rq-badge'); if (qb) { qb.textContent = reqs.length; qb.style.display = reqs.length ? '' : 'none'; }
+    }
+    if (tm && !rqTab && (reqs.length || g.type === 'private')) {
       var h = '<div class="dx-gp-reqs"><div class="member-list-title"><span>Join requests (' + reqs.length + ')</span></div><div class="mod-queue">' + (reqs.length ? reqs.map(function (r) {
         putUser(r.p); var who = r.p ? txt(r.p.name) : 'Member', hl = r.p ? String(txt(r.p.headline) || '').split('|')[0].trim() : '';
         return '<div class="mod-item" data-req="' + aid(r.user_id) + '"><div class="mod-icon">👤</div><div class="mod-content"><div class="mod-title"><b data-noi18n>' + esc2(who) + '</b> <span>asked to join</span></div>' +
@@ -2442,7 +2518,7 @@
       var anchor = title || list; if (anchor) anchor.insertAdjacentHTML('beforebegin', h); else tm.insertAdjacentHTML('afterbegin', h);
     }
     var tabs = D.querySelectorAll('#managePanel .panel-tabs .gx-ptab');
-    if (tabs[0]) { var rb = tabs[0].querySelector('.dx-req-badge'); if (!rb) { tabs[0].insertAdjacentHTML('beforeend', ' <span class="ptab-badge dx-req-badge"></span>'); rb = tabs[0].querySelector('.dx-req-badge'); } rb.textContent = reqs.length; rb.style.display = reqs.length ? '' : 'none'; }
+    if (tabs[0] && !rqTab) { var rb = tabs[0].querySelector('.dx-req-badge'); if (!rb) { tabs[0].insertAdjacentHTML('beforeend', ' <span class="ptab-badge dx-req-badge"></span>'); rb = tabs[0].querySelector('.dx-req-badge'); } rb.textContent = reqs.length; rb.style.display = reqs.length ? '' : 'none'; }
     /* reports, one item per post */
     var by = {}, order = [];
     reps.forEach(function (r) { if (!r.post) return; var x = by[r.post_id]; if (!x) { x = by[r.post_id] = { post: r.post, n: 0, why: [], at: r.created_at }; order.push(x); } x.n++; if (x.why.length < 3 && x.why.indexOf(r.reason) < 0) x.why.push(r.reason); });
@@ -2460,7 +2536,9 @@
     if (ts) {
       var nm = ts.querySelector('.field-input'), ds = ts.querySelector('.field-textarea:not(.dx-rules)'), ru = ts.querySelector('.dx-rules');
       if (!ru && ds) { var f = ds.closest('.field'); if (f) { f.insertAdjacentHTML('afterend', '<div class="field"><label class="field-label">Group rules</label><textarea class="field-textarea dx-rules" maxlength="4000" placeholder="One rule per line — e.g. Documents first: every offer shows its GMP certificate"></textarea></div>'); ru = ts.querySelector('.dx-rules'); } }
-      if (!ts.dataset.dxFilled || ts.dataset.dxFilled !== String(g.id)) { if (nm) nm.value = g.name; if (ds) ds.value = g.description || ''; if (ru) ru.value = g.rules || ''; ts.dataset.dxFilled = g.id; }
+      if (!ts.dataset.dxFilled || ts.dataset.dxFilled !== String(g.id)) { if (nm) nm.value = g.name; if (ds) ds.value = g.description || ''; if (ru) ru.value = g.rules || ''; ts.dataset.dxFilled = g.id;
+        var sv0 = function (id, v) { var e = ts.querySelector('#' + id); if (e) e.value = v; };
+        sv0('gpSetPriv', g.type === 'private' ? 'private' : 'public'); sv0('gpSetPost', g.post_policy || 'members'); sv0('gpSetSec', g.sector || 'pharma'); sv0('gpSetCountry', (g.country || [])[0] || ''); }
     }
   }
   document.addEventListener('click', function (e) {
@@ -2494,14 +2572,15 @@
       var ts = document.getElementById('tab-settings'), nm = ts.querySelector('.field-input'), ds = ts.querySelector('.field-textarea:not(.dx-rules)'), ru = ts.querySelector('.dx-rules');
       var name = nm ? nm.value.trim() : ''; if (!name) { if (nm) nm.classList.add('dbk-err'); window.toast('Group name is required'); return; } if (nm) nm.classList.remove('dbk-err');
       sv.dataset.busy = '1';
-      sb.from('groups').update({ name: name, description: ds ? ds.value.trim() : g.description, rules: ru ? (ru.value.trim() || null) : g.rules }).eq('id', g.id).select().then(function (r) { delete sv.dataset.busy;
+      var gv = function (id) { var e = ts.querySelector('#' + id); return e ? e.value : null; }, upd = { name: name, description: ds ? ds.value.trim() : g.description, rules: ru ? (ru.value.trim() || null) : g.rules };
+      if (gv('gpSetPriv')) upd.type = gv('gpSetPriv'); if (gv('gpSetPost')) upd.post_policy = gv('gpSetPost'); if (gv('gpSetSec')) upd.sector = gv('gpSetSec'); if (gv('gpSetCountry') !== null) upd.country = gv('gpSetCountry') ? [gv('gpSetCountry')] : [];
+      sb.from('groups').update(upd).eq('id', g.id).select().then(function (r) { delete sv.dataset.busy;
         if (r.error || !(r.data || []).length) return toastErr(r.error || { message: 'Only the group’s admins can change its settings' });
-        var oldName = g.name, row = r.data[0]; g.name = row.name; g.description = row.description; g.rules = row.rules; if (GX.snap[oldName]) { delete GX.snap[oldName]; GX.snap[g.name] = true; }
+        var oldName = g.name, row = r.data[0]; Object.assign(g, row); if (GX.snap[oldName]) { delete GX.snap[oldName]; GX.snap[g.name] = true; }
         var card = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]');
         if (card) { var nc = groupCard(g); card.replaceWith(nc); if (window.dxGroups && window.dxGroups.pick) window.dxGroups.pick(nc, 'about'); }
         paintHead(g); window.toast('Group settings saved'); if (window.dxGroups && window.dxGroups.refresh) window.dxGroups.refresh('about');
       }, function (e2) { delete sv.dataset.busy; toastErr(e2); }); return; }
-    if (t.closest('#groupDetail .choice-btn.archive') && g) { e.preventDefault(); e.stopPropagation(); window.toast('Archiving groups is not available yet — you can delete the group instead'); return; }
     if (t.closest('#groupDetail .btn-manage[onclick*="toggleManage"]') && g) setTimeout(function () { var mp = document.getElementById('managePanel'); if (mp && mp.style.display !== 'none') manageLoad(g); }, 0);
   }, true);
   /* groups.js asks for the inside of a group here */
@@ -2579,7 +2658,7 @@
     var l = live(DOCS.vslug); if (l) { l.status = 'pending'; l.registry = rn; }
     window.dxLive.verificationFiles(raw.id).then(function (docs) {
       return sb.from('verification_requests').insert(Object.assign({ company_id: raw.id, submitted_by: ME_UUID, registry: rn }, docs));
-    }).then(function (r) { if (r && r.error) { toastErr(r.error); return; } SNAP['vr_' + DOCS.vslug] = 1; rerenderCompanies(); }, toastErr);
+    }).then(function (r) { if (r && r.error) { toastErr(r.error); return; } SNAP['vr_' + DOCS.vslug] = 1; var lv = live(DOCS.vslug); if (lv) { lv.vr = 'pending'; lv.vrNote = ''; } if (CO.raw[DOCS.vslug]) CO.vr[CO.raw[DOCS.vslug].id] = { s: 'pending', note: '' }; rerenderCompanies(); }, toastErr);
   }, true);
 
   /* ═══════════════ E2 — Admin → Review on the database; company reports ═══════════════ */
@@ -2587,16 +2666,16 @@
     load: async function () {
       var today = new Date().toISOString().slice(0, 10);
       var q = await Promise.all([
-        sb.from('verification_requests').select('*, co:companies(name,slug)').eq('status', 'pending').order('created_at').limit(100),
-        sb.from('work_references').select('*, au:profiles!work_references_author_fkey(name,company), ca:profiles!work_references_candidate_fkey(name)').eq('kind', 'warn').eq('status', 'pending').order('created_at').limit(100),
-        sb.from('site_certificates').select('*, st:company_sites!site_certificates_site_id_fkey(name), co:companies(name)').is('checked_at', null).or('expiry.is.null,expiry.gte.' + today).order('created_at').limit(100),
+        sb.from('verification_requests').select('*, co:companies(name,slug), by:profiles!verification_requests_submitted_by_fkey(name)').eq('status', 'pending').order('created_at').limit(200),
+        sb.from('work_references').select('*, au:profiles!work_references_author_fkey(name,company), ca:profiles!work_references_candidate_fkey(name)').eq('kind', 'warn').in('status', ['pending', 'disputed']).order('created_at').limit(200),
+        sb.from('site_certificates').select('*, st:company_sites!site_certificates_site_id_fkey(name), co:companies(name)').is('checked_at', null).is('rejected_at', null).or('expiry.is.null,expiry.gte.' + today).order('created_at').limit(200),
         sb.from('company_reports').select('*, co:companies(name)').eq('status', 'open').order('created_at').limit(100)]);
       for (var i = 0; i < q.length; i++) if (q[i].error) throw q[i].error;
       var d = function (path, bucket, label) { return path ? [{ path: path, bucket: bucket, label: label }] : []; };
       return {
-        verifications: q[0].data.map(function (v) { return { id: v.id, company: v.co && v.co.name, registry: v.registry, at: String(v.created_at).slice(0, 10),
+        verifications: q[0].data.map(function (v) { return { id: v.id, company: v.co && v.co.name, registry: v.registry, at: String(v.created_at).slice(0, 10), claim: !!v.claim, by: (v.by && v.by.name) || '', note: v.note || '',
           docs: d(v.registry_path, 'documents', 'Commercial registry').concat(d(v.tax_card_path, 'documents', 'Tax card'), d(v.licence_path, 'documents', 'Licence')) }; }),
-        warnings: q[1].data.map(function (w) { return { id: w.id, company: (w.au && (w.au.company || w.au.name)) || '', candidate: w.ca && w.ca.name, category: w.category, text: w.body, docs: d(w.evidence_path, 'reference-evidence', 'Evidence') }; }),
+        warnings: q[1].data.map(function (w) { return { id: w.id, company: (w.au && (w.au.company || w.au.name)) || '', candidate: w.ca && w.ca.name, category: w.category, text: w.body, disputed: w.status === 'disputed', reply: w.reply || '', docs: d(w.evidence_path, 'reference-evidence', 'Evidence') }; }),
         certs: q[2].data.map(function (c) { return { id: c.id, company: c.co && c.co.name, site: c.st && c.st.name, name: c.name, expiry: c.expiry ? String(c.expiry).slice(0, 7) : '' }; }),
         reports: q[3].data.map(function (r) { return { id: r.id, company: r.co && r.co.name, section: r.section, issue: r.issue, correction: r.correction }; })
       };
@@ -2604,7 +2683,7 @@
     decide: async function (kind, id, value, note) {
       var r = kind === 'verifications' ? await sb.from('verification_requests').update({ status: value, note: note || null }).eq('id', id).select()
         : kind === 'warnings' ? await sb.rpc('moderate_reference', { ref_id: +id, new_status: value })
-        : kind === 'certs' ? await sb.from('site_certificates').update({ checked_at: new Date().toISOString() }).eq('id', id).select()
+        : kind === 'certs' ? await sb.rpc('cert_decide', { p_id: +id, p_ok: value === 'checked', p_note: note || null })   /* 0063: once; the company is told */
         : await sb.from('company_reports').update({ status: value }).eq('id', id).select();
       if (r.error) throw new Error(friendly(r.error));
       if (r.data && Array.isArray(r.data) && !r.data.length) throw new Error('Only the Drugbox team can do this');
@@ -2647,6 +2726,13 @@
     return hookRep ? hookRep(k, v) : undefined;
   };
   onReset(function () { REP.list = []; });
+  /* AREA community (J-COMMUNITY-43): the workspace's Reports tab reads the reports again (at most every 3 s), so a report sent
+     while the owner's page was open shows without a reload */
+  document.addEventListener('click', function (e) {
+    if (!ME_UUID || !e.target.closest || !e.target.closest('[data-wtab="reports"]') || Date.now() - (REP.at || 0) < 3000) return; REP.at = Date.now();
+    var was = REP.list.map(function (r) { return r._id + r.status; }).join();
+    loadReports().then(function () { if (REP.list.map(function (r) { return r._id + r.status; }).join() !== was) { window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies(); } }).catch(function () {});
+  }, true);
   var hydrateRep = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateRep(uid); loadReports().catch(function (e) { console.error(e); }); return me; };
 
@@ -3393,6 +3479,7 @@
     if (!TRN.courses.length) grid.innerHTML = '<div style="padding:18px;color:#65676b;font-size:13px">No courses yet.</div>';
   }
   document.addEventListener('click', function (e) {
+    if (window.dxTrainingUI) return;                                  /* training.js (T-01) draws and acts on the cards */
     var b = e.target.closest && e.target.closest('.training-grid .tr-card[data-course] button'); if (!b || !ME_UUID) return;
     e.preventDefault(); e.stopPropagation(); var id = +b.closest('.tr-card').dataset.course, t = TRN.courses.find(function (x) { return x.id === id; });
     if (TRN.mine[id]) { window.toast('You are already enrolled in ' + t.title); return; }
@@ -3403,7 +3490,7 @@
   }, true);
   var origRenderTraining = window.renderTraining;
   window.renderTraining = function () {
-    var r = origRenderTraining.apply(this, arguments); if (!ME_UUID) return r;
+    var r = origRenderTraining.apply(this, arguments); if (!ME_UUID || window.dxTrainingUI) return r;
     paintTraining();
     if (Date.now() - TRN.at > 3000 && !TRN.loading) { TRN.loading = true; loadTraining().then(function () { TRN.loading = false; if (document.body.getAttribute('data-page') === 'training') paintTraining(); }, function (e) { TRN.loading = false; toastErr(e); }); }
     return r;
@@ -3502,7 +3589,7 @@
   var oPill = window.dgPillText;
   if (oPill) window.dgPillText = function (page) {
     if (ME_UUID && page === 'market') { var f = function (n) { return PG.stats ? fmtK(n) : '…'; }; return f(stat('supply') + stat('demand')) + ' LISTINGS  /  ' + f(stat('supply')) + ' SUPPLY  /  ' + f(stat('demand')) + ' DEMAND  /  ' + f(stat('suppliers')) + ' SUPPLIERS'; }
-    if (ME_UUID && page === 'training') return (TRN.at ? TRN.courses.length : '…') + ' COURSES  /  GMP  /  REGULATORY  /  FORMULATION';   /* the courses the database has, not the demo's six */
+    if (ME_UUID && page === 'training' && !window.dxTrainingUI) return (TRN.at ? TRN.courses.length : '…') + ' COURSES  /  GMP  /  REGULATORY  /  FORMULATION';   /* the courses the database has, not the demo's six */
     return oPill.apply(this, arguments);
   };
   function setNum(e, v) { if (e && e.textContent !== v) e.textContent = v; }
@@ -3735,7 +3822,7 @@
   var paintJobsP1b = paintJobs;
   paintJobs = function () { paintJobsP1b(); paintJobNumbers(); };
   var loadJobsP1b = loadJobs;
-  loadJobs = async function () { await Promise.all([loadJobsP1b(), onPageNow('jobs') ? jobStats().catch(function (e) { console.error(e); }) : null]); };
+  loadJobs = async function (more) { await Promise.all([loadJobsP1b(more), !more && onPageNow('jobs') ? jobStats().catch(function (e) { console.error(e); }) : null]); };
   var oJobsP1b = window.renderJobs;
   window.renderJobs = function () { var r = oJobsP1b.apply(this, arguments); if (!ME_UUID) return r; paintJobNumbers();
     if (Date.now() - JS.at > 3000) jobStats().then(function () { if (onPageNow('jobs')) paintJobNumbers(); }, function (e) { console.error(e); });
@@ -3880,6 +3967,381 @@
   hydrateMe = async function (uid) { var me = await hydrateP1b(uid); TK.at = 0; tickerSoon(0); return me; };
   onReset(function () { setTicker([]); TK.at = 0; JS.s = null; JS.at = 0; PCNT = {}; PVIEW = {}; PG.faces = null; });
   window.dxLive.version = 'P1b';
+
+  /* ===== AREA community: jobs (J-01 … J-07) — the service jobsx.js draws with: search and paging (jobs_search, 0060), the job's
+     details, my applications (withdraw), my jobs and their applicants (CV through a signed link, the pipeline), Post My Profile,
+     saved jobs, job alerts; job notifications open what they are about ===== */
+  ['KW', 'QA', 'OM', 'BH', 'LB', 'MA', 'TN', 'DZ'].forEach(function (c) { if (!FLAG[c]) FLAG[c] = { KW: '🇰🇼', QA: '🇶🇦', OM: '🇴🇲', BH: '🇧🇭', LB: '🇱🇧', MA: '🇲🇦', TN: '🇹🇳', DZ: '🇩🇿' }[c]; });
+  JX.total = 0;
+  var paintJobNumbersCJ = paintJobNumbers;   /* the header counts the jobs that match the search (jobs_search), not every open job */
+  paintJobNumbers = function () { paintJobNumbersCJ(); if (window.dxJobsUI && onPageNow('jobs')) window.dxJobsUI.after(); };
+  var paintJobsCJ = paintJobs;
+  paintJobs = function () { paintJobsCJ(); if (window.dxJobsUI) window.dxJobsUI.after(); };
+  var candCardCJ = candCard;      /* the title a candidate published (Post My Profile), else the profile headline */
+  candCard = function (p) { return candCardCJ(p && p.desired_role ? Object.assign({}, p, { headline: p.desired_role }) : p); };
+  var APPL = {};                  /* job id → { local person id → application row } (the CV path is opened through a signed link) */
+  function jobView(j) {
+    if (!j) return null;
+    return { key: j.id, id: j.id, title: j.title, company: j.company, location: j.location, country: j.country, type: j.type, level: j.seniority === 'executive' ? 'exec' : j.seniority,
+      salary: j.salary, deadline: j.deadline, created_at: j.created_at, description: j.description, requirements: j.requirements || [], benefits: j.benefits || [],
+      active: !!j.active && !(j.deadline && j.deadline < new Date().toISOString().slice(0, 10)), mine: j.user_id === ME_UUID || !!(j.company_id && CO.roles && /owner|admin/.test(CO.roles[j.company_id] || '')),
+      slug: j.company_slug || (j.co && j.co.slug) || '', verified: j.company_verified != null ? !!j.company_verified : !!(j.co && j.co.status === 'verified') };
+  }
+  function must(r) { if (r.error) throw new Error(friendly(r.error)); return r.data; }
+  function changed(r) { var d = must(r); if (Array.isArray(d) && !d.length) throw new Error('This was not changed — you may not have the right to change it'); return d; }
+  function repaintJobs() { if (onPageNow('jobs')) paintJobs(); }
+  window.dxJobs = {
+    live: true, ready: function () { return !!ME_UUID; },
+    search: async function (f, more) { await loadJobs(more); repaintJobs(); },
+    total: function () { return JX.at ? JX.total : null; }, hasMore: function () { return JX.jobs.length < JX.total; },
+    applied: function (id) { return !!JX.applied[id]; }, isSaved: function (id) { return !!JX.saved[id]; },
+    setCurrent: function (id) { JX.cur = +id; },   /* the job an Apply window opened from elsewhere (details, Saved, a notice) belongs to */
+    candidateCv: async function (who) {
+      var u = uuidOf(+who), r = await sb.rpc('candidate_cv', { p_user: u }); if (r.error) throw new Error(friendly(r.error));
+      if (!r.data) throw new Error('This candidate has not shared a CV — contact them to ask for one');
+      var w = window.open('', '_blank'), s2 = await sb.storage.from('documents').createSignedUrl(r.data, 300);
+      if (s2.error) { if (w) w.close(); throw new Error(friendly(s2.error)); } if (w) w.location = s2.data.signedUrl; else window.location.assign(s2.data.signedUrl);
+    },
+    toggleSave: async function (id, want) {
+      var on = want === undefined ? !JX.saved[id] : want;
+      must(await (on ? sb.from('saved_jobs').upsert({ user_id: ME_UUID, job_id: id }) : sb.from('saved_jobs').delete().eq('user_id', ME_UUID).eq('job_id', id)));
+      if (on) JX.saved[id] = 1; else delete JX.saved[id];
+      var b = document.querySelector('#jx [data-live="j' + id + '"] .save-btn'); if (b) b.textContent = on ? '✓ Saved' : '🔖 Save';
+      window.toast(on ? 'Job saved' : 'Removed from saved jobs'); return on;
+    },
+    detail: async function (id) {
+      var j = JX.jobs.find(function (x) { return x.id === +id; });
+      if (!j) { var r = await sb.from('jobs').select('*, co:companies(slug,status)').eq('id', +id).maybeSingle(); j = must(r); }
+      return jobView(j);
+    },
+    myApplications: async function () { return (must(await sb.rpc('my_applications')) || []).map(function (a) { return Object.assign({ key: a.job_id }, a); }); },
+    withdraw: async function (id) { changed(await sb.from('job_applications').delete().eq('job_id', +id).eq('user_id', ME_UUID).select('job_id')); delete JX.applied[+id]; repaintJobs(); },
+    myJobs: async function () { return (must(await sb.rpc('my_jobs')) || []).map(function (j) { return Object.assign({}, j, { level: j.seniority }); }); },
+    applicants: async function (id) {
+      var rows = must(await sb.rpc('job_applicants', { p_job: +id })) || [], m = APPL[+id] = {};
+      return rows.map(function (a) { putUser({ id: a.user_id, name: a.name, headline: a.headline, company: a.company, country: a.country, avatar_url: a.avatar_url, verified: a.verified, location: a.location });
+        var who = aid(a.user_id); m[who] = a; return Object.assign({}, a, { who: who, cv: !!a.cv_path }); });
+    },
+    setStatus: async function (id, who, status, extra) {
+      var row = { status: status }; extra = extra || {};
+      if (extra.interview_at) row.interview_at = new Date(extra.interview_at + 'T10:00:00').toISOString();
+      if (extra.note != null && extra.note !== '') row.employer_note = extra.note;
+      changed(await sb.from('job_applications').update(row).eq('job_id', +id).eq('user_id', uuidOf(+who)).select('status'));
+    },
+    openCv: async function (id, who) {
+      var a = (APPL[+id] || {})[+who]; if (!a || !a.cv_path) throw new Error('No CV was attached');
+      var w = window.open('', '_blank'); var r = await sb.storage.from('documents').createSignedUrl(a.cv_path, 300);
+      if (r.error) { if (w) w.close(); throw new Error(friendly(r.error)); } if (w) w.location = r.data.signedUrl; else window.location.assign(r.data.signedUrl);
+    },
+    message: function (id, who) { window.messageUser(+who); return Promise.resolve(); },
+    profile: function (id, who) { window.gotoProfile(+who); return Promise.resolve(); },
+    updateJob: async function (id, f) { if (f.salary === '') f.salary = null; changed(await sb.from('jobs').update(f).eq('id', +id).select('id')); JX.at = 0; },
+    setOpen: async function (id, open) { changed(await sb.from('jobs').update({ active: !!open }).eq('id', +id).select('id')); JX.at = 0; },
+    deleteJob: async function (id) { changed(await sb.from('jobs').delete().eq('id', +id).select('id')); JX.jobs = JX.jobs.filter(function (x) { return x.id !== +id; }); JX.at = 0; },
+    profileState: async function () { var d = must(await sb.rpc('my_profile')), p = Array.isArray(d) ? d[0] : d; return { open: !!(p && p.open_to_work), title: p && p.desired_role }; },
+    publishProfile: async function (f) {
+      var row = { open_to_work: true, desired_role: f.title, desired_type: f.type, remote_ok: f.type === 'Remote' || /relocat|yes/i.test(f.relocation || ''), available_since: new Date().toISOString() };
+      if (f.location) row.location = f.location; var y = parseInt(String(f.years || '').match(/\d+/) || '', 10); if (!isNaN(y)) row.years_experience = Math.min(y, 60);
+      if (f.about) row.bio = f.about;
+      if (f.cv) { var cvp = await upDoc('documents', 'cv/' + ME_UUID + '/profile-' + rid() + '.' + extOf(f.cv), f.cv); must(await sb.from('job_seeker_cvs').upsert({ user_id: ME_UUID, cv_path: cvp, updated_at: new Date().toISOString() })); }
+      changed(await sb.from('profiles').update(row).eq('id', ME_UUID).select('id')); TR.loaded = false; JX.at = 0;
+    },
+    hideProfile: async function () { changed(await sb.from('profiles').update({ open_to_work: false }).eq('id', ME_UUID).select('id')); JX.at = 0; },
+    savedJobs: async function () {
+      var r = await sb.from('saved_jobs').select('job_id, created_at, job:jobs(*)').eq('user_id', ME_UUID).order('created_at', { ascending: false }).limit(200);
+      return (must(r) || []).filter(function (x) { return x.job; }).map(function (x) { return jobView(x.job); });
+    },
+    alerts: async function () { return must(await sb.from('job_alerts').select('*').eq('user_id', ME_UUID).order('created_at', { ascending: false })) || []; },
+    saveAlert: async function (a) { return must(await sb.from('job_alerts').insert({ q: a.q || '', category: a.category, types: a.types || [], countries: a.countries || [], level: a.level }).select()); },
+    deleteAlert: async function (id) { changed(await sb.from('job_alerts').delete().eq('id', +id).select('id')); },
+    /* a company page's Jobs section: its open jobs (by the page, or by its name for jobs posted before 0060), fetched once a minute */
+    ofCompany: function (co) {
+      var raw = CO.raw[co.slug], k = co.slug, c = CJ[k];
+      if (!c || (Date.now() - c.at > 60000 && !c.loading)) { c = CJ[k] = c || { at: 0, rows: [] }; c.loading = true;
+        var q = sb.from('jobs').select('id,title,type,location,country,created_at').eq('active', true).order('created_at', { ascending: false }).limit(50);
+        if (!raw || !raw.id) { c.loading = false; c.at = Date.now(); return c.rows; }   /* only jobs posted for the page itself (company_id) — never a name typed by anyone */
+        q.eq('company_id', raw.id).then(function (r) {
+          c.loading = false; c.at = Date.now(); if (r.error) return; var before = JSON.stringify(c.rows);
+          c.rows = (r.data || []).map(function (j) { return { t: j.title, type: j.type || 'Full-time', loc: [j.location, j.country].filter(Boolean).join(', '), onJobs: true, id: j.id }; });
+          if (JSON.stringify(c.rows) !== before) rerenderCompanies(); });
+      }
+      return c.rows;
+    }
+  };
+  var CJ = {};
+  /* job notifications open what they are about: an application → my job's applicants (that person first, marked Viewed);
+     a decision on my application → My applications; a job alert → the job */
+  var notifFromCJ = notifFrom;
+  notifFrom = function (n) { var o = notifFromCJ(n); o.jobId = n.job_id || null; o.rawType = n.type; o.fromUuid = n.from_user || null; return o; };
+  var markReadCJ = window.markNotifRead;
+  window.markNotifRead = function (id) {
+    var r = markReadCJ.apply(this, arguments), n = (window.NOTIFS || []).find(function (x) { return x.id === id; }); if (!n || !n.jobId || !window.dxJobsUI) return r;
+    if (n.rawType === 'job_application') { window.goto('jobs'); window.dxJobsUI.myJobs(n.jobId, n.fromUuid ? aid(n.fromUuid) : null); }
+    else if (n.rawType === 'job_status') { window.goto('jobs'); window.dxJobsUI.applications(); }
+    else if (n.rawType === 'job_alert') { window.goto('jobs'); window.dxJobsUI.detail(n.jobId); }
+    return r;
+  };
+  /* ===== AREA community: trust — a notice about a work reference about me opens those records, with Reply / Dispute (J-COMMUNITY-31 … 33) ===== */
+  var markReadRF = window.markNotifRead;
+  window.markNotifRead = function (id) {
+    var r = markReadRF.apply(this, arguments), n = (window.NOTIFS || []).find(function (x) { return x.id === id; });
+    if (n && n.rawType === 'review' && ME_UUID) { window.goto('jobs'); return r; }   /* a review of me: the Jobs page, where the ★ rating lists it */
+    if (n && (n.rawType === 'reference' || n.rawType === 'work_reference') && window.dxTrustUI && ME_UUID) {
+      window.goto('jobs'); if (/^Drugbox (published|did not publish) your/.test(n.text || '')) return r;   /* the author's outcome notice: the Jobs page */
+      window.dxLiveTrust.refresh().then(function () { window.dxTrustUI.aboutMe(); }, toastErr); }
+    return r;
+  };
+  ICON.review = ICON.review || '⭐'; ICON.reference = ICON.reference || '📜'; ICON.work_reference = ICON.work_reference || '📜';
+  /* a notice without a sender comes from Drugbox: it reads as Drugbox's own sentence, not "Someone …" */
+  var notifFromRF = notifFrom;
+  var SYS_T = { review: 1, certificate: 1, payment: 1, reference: 1, work_reference: 1, verification: 1, certificate_review: 1, account: 1, post_restored: 1, company_report: 1 };   /* not a like or a request whose sender's account was deleted */
+  notifFrom = function (n) { var o = notifFromRF(n); if (!n.from_user && n.type !== 'post_removed' && n.type !== 'report_closed' && (SYS_T[n.type] || /^(Drugbox|Your )/.test(n.message || ''))) { o.text = esc2(n.message || ''); o.uid = SYS_UID; } return o; };
+  onReset(function () { JX.total = 0; APPL = {}; });
+
+  /* ===== AREA community: groups (G-01, G-04 … G-15) — search, my notifications, archive, join requests in their own tab,
+     deal-room listings (0061 group_listings → deals through group_listing_respond), group notices that open their group ===== */
+  window.dxLiveGroupListings = true;                                    /* groups.js shows a deal room's Listings tab */
+  async function gxSearch(q) {
+    var r = await sb.rpc('groups_search', { p_q: q, p_limit: 30 }); if (r.error) throw r.error;
+    var add = (r.data || []).filter(function (g) { return !GX.groups.some(function (x) { return x.id === g.id; }); });
+    if (add.length) { GX.groups = GX.groups.concat(add); var ids = add.map(function (g) { return g.id; }); var ac = await sb.rpc('group_activity', { p_ids: ids }); if (!ac.error) (ac.data || []).forEach(function (x) { GX.act[x.group_id] = x; });
+      if (onPageNow('groups')) paintGroups(); }
+    return add.length;
+  }
+  async function gxManage(d) {
+    var g = gOf(d);
+    if (d.op === 'mute') { await gpWrite(sb.from('group_members').update({ muted: !!d.on }).eq('group_id', g.id).eq('user_id', ME_UUID).select('group_id'), 'Join the group to choose its notifications');
+      GX.muted = GX.muted || {}; if (d.on) GX.muted[g.id] = 1; else delete GX.muted[g.id]; var c = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]'); if (c) { if (d.on) c.dataset.muted = '1'; else delete c.dataset.muted; } return; }
+    if (d.op === 'archive' || d.op === 'restore') {
+      var row = await gpWrite(sb.from('groups').update({ archived_at: d.op === 'archive' ? new Date().toISOString() : null }).eq('id', g.id).select(), 'Only the group’s admins can archive it');
+      Object.assign(g, row[0]); var card = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]'); if (card) { var nc = groupCard(g); card.replaceWith(nc); if (window.dxGroups && window.dxGroups.pick) window.dxGroups.pick(nc, 'disc'); }
+      return;
+    }
+    if (d.op === 'requests') { manageLoad(g); return; }
+    if (d.op === 'declineInvite') {
+      var dr = await sb.from('group_invites').delete().eq('group_id', g.id).eq('user_id', ME_UUID).select('group_id'); if (dr.error) throw dr.error;
+      delete GX.inv[g.id]; delete GX.invBy[g.id];
+      if (g.type === 'private' && !g.listed) GX.groups = GX.groups.filter(function (x) { return x.id !== g.id; });   /* a secret group I am not in is no longer mine to see */
+      var dc = document.querySelector('#gx .gcard[data-gid="' + g.id + '"]'); if (dc) { if (GX.groups.indexOf(g) < 0) dc.remove(); else dc.replaceWith(groupCard(g)); }
+      return;
+    }
+    throw new Error('This is not available yet');
+  }
+  /* deal-room listings: the group's open requests and offers, with the company page behind each, my own answers */
+  function lstView(x) {
+    return { id: x.id, kind: x.kind, uid: aid(x.user_id), t: x.title, d: x.details || '', price: x.price || 'On request', responses: x.responses || 0, co: x.co ? x.co.name : '', coVerified: !!(x.co && x.co.status === 'verified'),
+      where: '🕒 ' + ago(x.created_at), badge: 'OPEN', em: x.kind === 'surplus' ? '♻️' : '📦', certs: [], trust: [], moq: '', answered: (x.ans || []).length > 0 };
+  }
+  async function gxListings(g) {
+    var r = await sb.from('group_listings').select('*, co:companies(name, slug, status), u:profiles!group_listings_user_id_fkey(' + PCOLS + '), ans:group_listing_responses(user_id)')
+      .eq('group_id', g.id).eq('status', 'open').eq('ans.user_id', ME_UUID).order('created_at', { ascending: false }).limit(100);
+    if (r.error) throw r.error; (r.data || []).forEach(function (x) { putUser(x.u); });
+    return (r.data || []).map(lstView);
+  }
+  async function gxListing(d) {
+    var g = gOf(d), l = d.listing || {};
+    if (d.op === 'create') {
+      var co = window.dxDir && window.dxDir.mine && window.dxDir.mine(), raw = co && CO.raw[co.slug];
+      await gpWrite(sb.from('group_listings').insert({ group_id: g.id, user_id: ME_UUID, kind: l.kind, title: l.t, details: l.d || '', price: l.kind === 'rfq' ? null : (l.price || null), company_id: raw && raw.id ? raw.id : null }).select('id'));
+      return;
+    }
+    if (d.op === 'close') return gpWrite(sb.from('group_listings').update({ status: 'closed' }).eq('id', l.id).select('id'), 'Only the author or the group’s admins can close it');
+    if (d.op === 'respond' || d.op === 'quote') {
+      var mine = window.dxDir && window.dxDir.mine && window.dxDir.mine();
+      if (!mine || !mine.slug) throw new Error('Create or claim your company page first — quotes are sent on behalf of a company');
+      var r = await sb.rpc('group_listing_respond', { p_listing: l.id, p_from_slug: mine.slug, p_message: d.message || (d.quote && d.quote.msg) || '', p_price: d.price || (d.quote && d.quote.price) || null, p_lead: d.lead || (d.quote && d.quote.lead) || null });
+      if (r.error) throw new Error(friendly(r.error)); return r.data;
+    }
+    throw new Error('This is not available yet');
+  }
+  var hookGX = window.dxLiveHook;
+  window.dxLiveHook = function (kind, d) {
+    if (ME_UUID) {
+      if (kind === 'groupSearch') return gxSearch(d.q);
+      if (kind === 'groupManage') { try { return gxManage(d); } catch (e) { return Promise.reject(e); } }
+      if (kind === 'groupListings') { try { return gxListings(gOf(d)); } catch (e) { return Promise.reject(e); } }
+      if (kind === 'groupListing') { try { return gxListing(d); } catch (e) { return Promise.reject(e); } }
+    }
+    return hookGX ? hookGX(kind, d) : undefined;
+  };
+  /* a group (loaded if it is not on the page yet: a private group I was just let into) opened on a tab, a post or the Manage panel */
+  async function openGroupFor(gid, o) {
+    o = o || {};
+    if (!onPageNow('groups')) window.goto('groups');
+    if (!GX.groups.some(function (g) { return g.id === gid; }) || o.reload) { await loadGroups(); if (!GX.groups.some(function (g) { return g.id === gid; })) {
+      var r = await sb.from('groups').select('*, creator:profiles!groups_created_by_fkey(' + PCOLS + ')').eq('id', gid).maybeSingle(); if (r.error || !r.data) { window.toast('This group is not available any more'); return; } GX.groups.push(r.data); }
+      paintGroups(); }
+    var tries = 0;
+    (function wait() {
+      if (!document.querySelector('#gx .gcard[data-gid="' + gid + '"]')) { if (++tries < 40) return setTimeout(wait, 150); window.toast('This group is not available any more'); return; }
+      window.dxLive.openGroup(gid, o.tab || 'disc');
+      if (o.manage) setTimeout(function () { var mb = document.querySelector('#groupDetail #adminActions .btn-manage'), mp = document.getElementById('managePanel');
+        if (mb && mp && mp.style.display === 'none') mb.click(); setTimeout(function () { var t = document.querySelector('#managePanel [data-gpq-tab]'); if (t) t.click(); }, 300); }, 400);
+      if (o.post) { var n = 0; (function find() { var el = document.querySelector('#gpBox [data-gpp="' + o.post + '"]');
+        if (!el) { if (++n < 40) setTimeout(find, 200); return; } el.scrollIntoView({ block: 'center' }); if (o.comments) { var b = el.querySelector('[id^="cmt-"]'); if (b) b.style.display = 'block'; } })(); }
+    })();
+  }
+  window.dxLive.openGroupFor = openGroupFor;
+  var GPOST = {};                                    /* post id → group id, for notices about posts inside a group */
+  var loadNotifsGX = loadNotifs;
+  loadNotifs = async function () {
+    await loadNotifsGX();
+    var pids = (window.NOTIFS || []).map(function (n) { return n.pid; }).filter(function (p) { return p && !(p in GPOST); });
+    if (pids.length) { var r = await sb.from('posts').select('id, group_id').in('id', pids.slice(0, 100)); if (!r.error) { pids.forEach(function (p) { GPOST[p] = null; }); (r.data || []).forEach(function (x) { GPOST[x.id] = x.group_id; }); } }
+  };
+  var notifFromGX = notifFrom;
+  notifFrom = function (n) { var o = notifFromGX(n); o.groupId = n.group_id || null; o.rawType = o.rawType || n.type; return o; };
+  var markReadGX = window.markNotifRead;
+  window.markNotifRead = function (id) {
+    var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }); if (!n) return markReadGX.apply(this, arguments);
+    if (n.rawType === 'deal' && window.dxDeals && window.dxDeals.center) { var rd = markReadGX.apply(this, arguments); window.dxDeals.center('received'); return rd; }   /* a deal (a deal-room answer too) → the Deals center */
+    var gid = n.groupId || (n.pid && GPOST[n.pid]) || null;
+    if (!gid) return markReadGX.apply(this, arguments);
+    var pid = n.pid; n.pid = null;                    /* a post in a group opens in its group, never on Home */
+    var r = markReadGX.apply(this, arguments); n.pid = pid;
+    var t = n.rawType, joinAsk = t === 'group_join_request';
+    openGroupFor(gid, { manage: joinAsk, post: pid, comments: t === 'comment', reload: t === 'group_join_approved' || t === 'group_invite' });
+    return r;
+  };
+  ICON.group_post = '💬'; ICON.group_removed = '🚪'; ICON.group_post_removed = '🧹'; ICON.group_join_declined = '📨'; ICON.job_status = '💼'; ICON.job_alert = '🔔';
+  onReset(function () { GPOST = {}; GX.muted = {}; });
+
+  /* ===== AREA community: training (T-01) — window.dxTraining over 0062: courses, lessons (content through lesson_content(), files by
+     signed link from the private course-media bucket), progress, the final quiz (scored by the server), certificates (the verify link
+     reads the one code it names), paid courses through the payment pipeline, Admin → Training. training.js draws. ===== */
+  var TCOLS = 'id,title,description,emoji,duration,hours,level,topic,instructor,instructor_title,price_egp,enrolled_count,active,pass_mark,sort_order,created_at,lessons:course_lessons(id)';   /* ids, not count(): the lesson content columns are not readable (0062) */
+  function tCourse(x) { return { id: x.id, title: x.title, desc: x.description || '', emoji: x.emoji || '🎓', duration: x.duration || (x.hours ? (+x.hours) + ' hours' : ''), hours: x.hours != null ? +x.hours : null,
+    level: x.level || 'Beginner', topic: x.topic || 'other', instructor: x.instructor || '', instructorTitle: x.instructor_title || '', price: +x.price_egp || 0, enrolled: +x.enrolled_count || 0,
+    active: !!x.active, passMark: x.pass_mark || 70, lessons: (x.lessons || []).length }; }
+  function tErr(r) { if (r.error) throw new Error(friendly(r.error)); return r.data; }
+  async function certRead(code) {   /* signed in or not: the REST row of the one certificate the link names (x-dbx-cert, 0062) */
+    var k = String(code || '').trim().toUpperCase(); if (!/^DBX-[0-9A-F]{10}$/.test(k)) return { valid: false, code: k };
+    var s = await sb.auth.getSession(), tok = (s.data && s.data.session && s.data.session.access_token) || CFG.anonKey;
+    var r = await fetch(CFG.url + '/rest/v1/certificates?select=code,name,course_title,hours,issued_at,revoked_at&code=eq.' + encodeURIComponent(k), { headers: { apikey: CFG.anonKey, Authorization: 'Bearer ' + tok, 'x-dbx-cert': k } });
+    var rows = r.ok ? await r.json() : []; var c = rows[0];
+    return c ? { valid: !c.revoked_at, revoked: !!c.revoked_at, code: c.code, name: c.name, course: c.course_title, hours: c.hours, issued_at: c.issued_at } : { valid: false, code: k };
+  }
+  window.dxTraining = {
+    live: true, verifyReady: true,
+    ready: function () { return !!ME_UUID; },
+    list: async function () { return tErr(await sb.from('training_courses').select(TCOLS).order('sort_order').order('created_at').limit(200)).map(tCourse); },   /* training.js keeps the active ones and mine */
+    mine: async function () {
+      var a = await Promise.all([sb.from('course_enrollments').select('course_id,status,completed_at,order_id').eq('user_id', ME_UUID).limit(500),
+                                 sb.from('lesson_progress').select('lesson_id,course_id').eq('user_id', ME_UUID).limit(5000),
+                                 sb.from('certificates').select('code,course_id').eq('user_id', ME_UUID).limit(500)]);
+      var en = tErr(a[0]), pr = tErr(a[1]), ce = tErr(a[2]), ids = en.map(function (e) { return e.course_id; }), out = {}, tot = {};
+      if (ids.length) tErr(await sb.from('course_lessons').select('id,course_id').in('course_id', ids).limit(5000)).forEach(function (l) { tot[l.course_id] = (tot[l.course_id] || 0) + 1; });
+      en.forEach(function (e) { out[e.course_id] = { status: e.status, paid: !!e.order_id, done: [], total: tot[e.course_id] || 0, cert: null, completed_at: e.completed_at }; });
+      pr.forEach(function (p) { if (out[p.course_id]) out[p.course_id].done.push(p.lesson_id); });
+      ce.forEach(function (c) { if (out[c.course_id]) out[c.course_id].cert = c.code; });
+      return out;
+    },
+    lessons: async function (id) { return tErr(await sb.from('course_lessons').select('id,position,title,kind,minutes').eq('course_id', +id).order('position').limit(200)); },
+    open: async function (lid) {
+      var r = await sb.rpc('lesson_content', { p_lesson: +lid }); var l = tErr(r), url = null;
+      if (l.media_path) { var u = await sb.storage.from('course-media').createSignedUrl(l.media_path, 3600); if (u.error) throw new Error(friendly(u.error)); url = /^https?:/.test(u.data.signedUrl) ? u.data.signedUrl : CFG.url + '/storage/v1' + u.data.signedUrl; }
+      return { id: l.id, position: l.position, title: l.title, kind: l.kind, minutes: l.minutes, body: l.body || '', url: url };
+    },
+    done: async function (lid) { var r = await sb.from('lesson_progress').insert({ lesson_id: +lid, user_id: ME_UUID, course_id: 0 }); if (r.error && r.error.code !== '23505') throw new Error(friendly(r.error)); },
+    enroll: async function (id) { var r = await sb.from('course_enrollments').insert({ course_id: +id, user_id: ME_UUID }); if (r.error && r.error.code !== '23505') throw new Error(/row-level/i.test(r.error.message) ? 'This is a paid course — buy it to enrol' : friendly(r.error)); },
+    unenroll: async function (id) { var r = tErr(await sb.from('course_enrollments').delete().eq('course_id', +id).eq('user_id', ME_UUID).select('course_id')); if (!r.length) throw new Error('A paid course stays yours'); },
+    quote: function (id) { return window.dxPay.quote('course_' + id); },
+    quiz: async function (id) { return tErr(await sb.from('course_questions').select('id,position,prompt,options').eq('course_id', +id).order('position').limit(100)); },
+    submit: async function (id, answers) { return tErr(await sb.rpc('course_submit_quiz', { p_course: +id, p_answers: answers || [] })); },
+    cert: certRead,
+    certsOf: async function (uid) { var u = uid === (window.ME && ME.id) ? ME_UUID : uuidOf(uid); if (!u) return [];
+      return tErr(await sb.from('certificates').select('code,course_title,issued_at,revoked_at').eq('user_id', u).is('revoked_at', null).order('issued_at', { ascending: false }).limit(50))
+        .map(function (c) { return { code: c.code, course: c.course_title, issued_at: c.issued_at, valid: true }; }); },
+    /* Admin → Training (RLS: Drugbox admins only) */
+    adminList: async function () { return tErr(await sb.from('training_courses').select(TCOLS).order('sort_order').order('created_at').limit(500)).map(tCourse); },
+    saveCourse: async function (o) {
+      var row = { title: o.title, description: o.desc || '', topic: o.topic, level: o.level, duration: o.duration || '', hours: o.hours, price_egp: o.price || 0, pass_mark: o.passMark || 70,
+                  instructor: o.instructor || '', instructor_title: o.instructorTitle || '', emoji: o.emoji || '🎓', active: o.active !== false };
+      var r = o.id ? await sb.from('training_courses').update(row).eq('id', +o.id).select('id') : await sb.from('training_courses').insert(row).select('id');
+      var d = tErr(r); if (!d.length) throw new Error('Only the Drugbox team manages courses'); return d[0].id;
+    },
+    setActive: async function (id, on) { var d = tErr(await sb.from('training_courses').update({ active: !!on }).eq('id', +id).select('id')); if (!d.length) throw new Error('Only the Drugbox team manages courses'); },
+    adminLessons: function (id) { return window.dxTraining.lessons(id); },
+    addLesson: async function (id, l) {
+      var cur = await window.dxTraining.lessons(id), pos = cur.reduce(function (a, x) { return Math.max(a, x.position); }, 0) + 1, path = null, kind = l.kind;
+      if (l.file) { kind = /^video\//.test(l.file.type) ? 'video' : 'pdf'; path = 'courses/' + (+id) + '/' + rid() + '.' + (kind === 'video' ? (/webm/.test(l.file.type) ? 'webm' : 'mp4') : 'pdf');
+        var u = await sb.storage.from('course-media').upload(path, l.file, { contentType: l.file.type }); if (u.error) throw new Error(friendly(u.error)); }
+      var r = await sb.from('course_lessons').insert({ course_id: +id, position: pos, title: l.title, kind: kind, minutes: l.minutes || 10, body: l.body || '', media_path: path }).select('id');
+      if (r.error && path) sb.storage.from('course-media').remove([path]).catch(function () {});   /* no file left behind */
+      tErr(r);
+    },
+    removeLesson: async function (lid) { var d = tErr(await sb.from('course_lessons').delete().eq('id', +lid).select('id')); if (!d.length) throw new Error('Only the Drugbox team manages courses'); },
+    adminQuiz: async function (id) { return tErr(await sb.rpc('course_questions_admin', { p_course: +id })); },
+    addQuestion: async function (id, q) { var cur = await window.dxTraining.adminQuiz(id), pos = cur.reduce(function (a, x) { return Math.max(a, x.position); }, 0) + 1;
+      tErr(await sb.from('course_questions').insert({ course_id: +id, position: pos, prompt: q.prompt, options: q.options, answer: q.answer }).select('id')); },
+    removeQuestion: async function (qid) { var d = tErr(await sb.from('course_questions').delete().eq('id', +qid).select('id')); if (!d.length) throw new Error('Only the Drugbox team manages courses'); }
+  };
+  /* a certificate or a course payment notice leads to Training */
+  var markReadTR = window.markNotifRead;
+  window.markNotifRead = function (id) {
+    var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }), r = markReadTR.apply(this, arguments); if (!n) return r;
+    if (n.rawType === 'certificate' && n.certCode) { window.goto('training'); if (window.dxTrainingUI) setTimeout(function () { window.dxTrainingUI.cert(n.certCode); }, 300); }
+    else if (n.rawType === 'payment' && /you can start/.test(n.text || '')) window.goto('training');
+    return r;
+  };
+  var notifFromTR = notifFrom;
+  notifFrom = function (n) { var o = notifFromTR(n); if (n.type === 'certificate') o.certCode = (n.data && n.data.code) || null; o.rawType = o.rawType || n.type; return o; };
+  ICON.certificate = '🎓'; ICON.payment = ICON.payment || '💳';
+  onReset(function () { window.dispatchEvent(new Event('dx:training')); });
+  window.dispatchEvent(new Event('dx:training'));
+
+  /* ===== AREA community: admin (A-01, A-02, A-03) — window.dxAdmin over 0063 (Users, Posts, Dashboard, Ticker, Sponsors,
+     Settings), the decision log with undo in Admin → Review, the suspended member told why, the site settings for everyone ===== */
+  function aErr(r) { if (r.error) throw new Error(friendly(r.error)); return r.data; }
+  window.dxAdmin = {
+    live: true,
+    ready: function () { return !!ME_UUID; },
+    users: async function (q, off) { var d = aErr(await sb.rpc('admin_users', { p_q: q || null, p_limit: 50, p_offset: off || 0 }));
+      return { total: d.length ? +d[0].total : 0, rows: d.map(function (u) { return { id: u.id, name: u.name || 'Member', headline: u.headline || '', company: u.company || '', role: u.role, verified: !!u.verified,
+        suspended: !!u.suspended, reason: u.suspended_reason || '', posts: +u.posts || 0, me: u.id === ME_UUID }; }) }; },
+    setRole: async function (id, role) { aErr(await sb.rpc('admin_set_role', { p_user: id, p_role: role })); },
+    verify: async function (id, on) { aErr(await sb.rpc('admin_verify_profile', { p_user: id, p_on: !!on })); },
+    suspend: async function (id, reason) { aErr(await sb.rpc('admin_suspend', { p_user: id, p_reason: reason })); },
+    unsuspend: async function (id) { aErr(await sb.rpc('admin_unsuspend', { p_user: id })); },
+    posts: async function (q, off) { var d = aErr(await sb.rpc('admin_posts', { p_q: q || null, p_limit: 50, p_offset: off || 0 }));
+      return { total: d.length ? +d[0].total : 0, rows: d.map(function (p) { return { id: p.id, author: p.author || 'Member', body: p.body || '', likes: p.like_count || 0, comments: p.comment_count || 0, at: p.created_at }; }) }; },
+    removePost: async function (id, reason) { aErr(await sb.rpc('admin_delete_post', { p_post: +id, p_reason: reason })); },
+    removed: async function () { var d = aErr(await sb.from('admin_actions').select('id,label,note,created_at,data,undone_at').eq('kind', 'post').eq('decision', 'removed').is('undone_at', null).not('data', 'is', null).order('created_at', { ascending: false }).limit(50));
+      return d.map(function (a) { var p = (a.data && a.data.post) || {}; return { id: a.id, author: String(a.label || '').split(' · ')[0], body: p.body || '', reason: a.note || '', at: a.created_at }; }); },
+    restore: async function (id) { aErr(await sb.rpc('admin_restore_post', { p_action: +id })); },
+    stats: async function () {
+      var c = function (t) { return sb.from(t).select('id', { count: 'exact', head: true }); };
+      var q = await Promise.all([c('profiles'), c('posts'), c('enquiries'), c('companies'), sb.rpc('admin_users', { p_q: null, p_limit: 5, p_offset: 0 })]);
+      return { users: q[0].count || 0, posts: q[1].count || 0, enquiries: q[2].count || 0, companies: q[3].count || 0, latest: (q[4].data || []).map(function (u) { return { name: u.name, company: u.company || '', role: u.role }; }) };
+    },
+    ticker: async function () { return aErr(await sb.from('ticker_items').select('id,label,text,active,sort_order').order('sort_order').order('id').limit(100)); },
+    addTicker: async function (label, text) { aErr(await sb.from('ticker_items').insert({ label: label, text: text, active: true, sort_order: 100 }).select('id')); TK.at = 0; tickerSoon(0); },
+    delTicker: async function (id) { var d = aErr(await sb.from('ticker_items').delete().eq('id', id).select('id')); if (!d.length) throw new Error('Only the Drugbox team can do this'); TK.at = 0; tickerSoon(0); },
+    showTicker: async function (id, on) { var d = aErr(await sb.from('ticker_items').update({ active: !!on }).eq('id', id).select('id')); if (!d.length) throw new Error('Only the Drugbox team can do this'); TK.at = 0; tickerSoon(0); },
+    sponsors: async function () { return aErr(await sb.from('sponsored_suppliers').select('id,name,description,logo_emoji,color,active').order('sort_order').order('id').limit(100)); },
+    addSponsor: async function (o) { aErr(await sb.from('sponsored_suppliers').insert({ name: o.name, description: o.description || '', logo_emoji: o.logo_emoji || '🏭', color: o.color || '#dbeafe', active: true, sort_order: 100 }).select('id')); },
+    delSponsor: async function (id) { var d = aErr(await sb.from('sponsored_suppliers').delete().eq('id', id).select('id')); if (!d.length) throw new Error('Only the Drugbox team can do this'); },
+    saveSettings: async function (o) { var rows = Object.keys(o).map(function (k) { return { key: k, value: o[k], type: 'text' }; });
+      var d = aErr(await sb.from('settings').upsert(rows, { onConflict: 'key' }).select('key')); if (!d.length) throw new Error('Only the Drugbox team can do this'); }
+  };
+  /* Admin → Review: the decisions (who, when, outcome) with undo, and the restore of a removed post */
+  window.dxModeration.decided = async function () {
+    var d = aErr(await sb.from('admin_actions').select('id,kind,label,decision,note,created_at,undone_at,data,actor:profiles!admin_actions_actor_fkey(name)').order('created_at', { ascending: false }).limit(200));
+    return d.map(function (a) { return { id: a.id, kind: a.kind, label: a.label, decision: a.decision, note: a.note || '', by: (a.actor && a.actor.name) || '', at: a.created_at, undone: !!a.undone_at,
+      restore: a.kind === 'post' && a.decision === 'removed' && !!a.data, undo: !(a.kind === 'payment' || a.kind === 'claim' || (a.kind === 'post' && a.decision === 'removed') || (a.kind === 'suspension' && a.decision !== 'suspended')) }; });
+  };
+  window.dxModeration.undo = async function (id) { var r = aErr(await sb.rpc('admin_undo', { p_action: +id })); if (r === 'restore') await window.dxAdmin.restore(id); refreshCompanies().catch(function () {}); return r; };
+  window.dxModeration.restore = function (id) { return window.dxAdmin.restore(id); };
+  /* a suspended member is told why when they come in; the site name and tagline Drugbox set apply for everyone */
+  var hydrateADM = hydrateMe;
+  hydrateMe = async function (uid) {
+    var me = await hydrateADM(uid);
+    sb.from('account_suspensions').select('reason').eq('user_id', uid).maybeSingle().then(function (r) { if (r.data && r.data.reason && window.dxAdminSuspended) window.dxAdminSuspended(r.data.reason); }, function () {});
+    sb.from('settings').select('key,value').in('key', ['site_name', 'site_tagline']).then(function (r) {   /* after sign-in: the signed-out app makes no REST call (0024) */
+      var C2 = window.CMS; if (r.error || !C2) return; (r.data || []).forEach(function (x) { if (x.value) C2[x.key] = x.value; }); if ((r.data || []).length && window.applyCMS) window.applyCMS(); }, function () {});
+    return me;
+  };
+  ICON.post_removed = ICON.post_removed || '🧹'; ICON.post_restored = '↺'; ICON.account = '👤'; ICON.certificate_review = '📜'; ICON.report_closed = ICON.report_closed || '🚩';
 
 
 

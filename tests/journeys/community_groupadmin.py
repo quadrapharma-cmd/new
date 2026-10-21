@@ -61,7 +61,7 @@ def deal_room_listings(j):
         if j.live:
             ph = h['page']; j.reload(ph); groups_page(j, ph); open_card(j, ph, gname); gd_tab(j, ph, 'listings')
         else:
-            ph = pg; title = 'Neomycin Sulfate EP'
+            ph = pg; mine_title, title = title, 'Neomycin Sulfate EP'
         card = ph.locator('#gpBox [data-pane=listings] .lcard, #gpBox [data-pane=listings] [class*=card]').filter(has_text=title).first
         j.check(card.count(), 'the listing is not in the buyer\'s Listings tab')
         q = card.locator('button').filter(has_text=re.compile(r'Contact|Quote|Enquir|Request|تواصل|عرض سعر|استفسار', re.I))
@@ -69,13 +69,15 @@ def deal_room_listings(j):
         if dlg_open(ph):
             ta = ph.locator('.dbk-ov textarea, .modal-bg.show textarea')
             if ta.count(): ta.first.fill('Please quote 500 kg CIF Alexandria')
-            dlg_click(j, ph, r'Send|Request|إرسال|أرسل|طلب', 'Send enquiry'); j.settle(ph, 1200)
+            mclick(j, ph, r'Send|Request|إرسال|أرسل|طلب', 'Send enquiry')   # the dialog's own button, never one behind it; j.settle(ph, 1200)
         page = ph.evaluate("document.body.getAttribute('data-page')")
         j.check(page != 'messages', 'the enquiry only opens Messages — no deal (request / quote) is started')
         if j.live: j.check(j.wait_db("select count(*) from public.deals where title ilike '%%Metformin%%%s%%'" % t, 6) >= '1', 'no deals row for the enquiry')
     with j.step('V is notified and sees the enquiry in the Deals center'):
         if j.demo: j.skip('the supplier exists only in live')
         j.reload(pg); open_notif(j, pg, r'quote|request|enquir|طلب|عرض', 'enquiry')
+        j.wait(pg, "t=>document.body.innerText.includes(t)", 8, title)   # the notice leads to the enquiry itself in the Deals center
+        j.check(title in j.text(pg), 'the notification does not lead to the enquiry in the Deals center')
     with j.step("An outsider cannot enquire without joining (public room: reads, Join to enquire)"):
         if j.demo: j.skip('checked in live with a second account')
         po = o['page']; j.reload(po); groups_page(j, po); open_card(j, po, gname)
@@ -83,7 +85,8 @@ def deal_room_listings(j):
         j.check(not re.search(r'Contact|Quote|تواصل', txt) or re.search(r'Join to|انضم', txt), 'an outsider can enquire without joining')
     with j.step('V closes the listing: it leaves the tab'):
         groups_page(j, pg); open_card(j, pg, gname); gd_tab(j, pg, 'listings')
-        card = pg.locator('#gpBox [data-pane=listings] .lcard, #gpBox [data-pane=listings] [class*=card]').filter(has_text=title.split(' %s' % t)[0] if j.demo else title).first
+        if j.demo: title = mine_title                                    # the listing V posted in step 1
+        card = pg.locator('#gpBox [data-pane=listings] .lcard, #gpBox [data-pane=listings] [class*=card]').filter(has_text=title).first
         c = card.locator('button, [data-gpa]').filter(has_text=re.compile(r'Close|Remove|Delete|إغلاق|حذف', re.I))
         j.check(c.count(), 'not built: no Close on my own listing'); c.first.click(); pg.wait_for_timeout(500); confirm(j, pg); j.settle(pg, 900)
         j.check(title not in gd_pane(pg, 'listings'), 'the closed listing is still listed')
@@ -108,23 +111,23 @@ def manage_members(j):
         j.check(s.count(), 'not built: no member search in Manage (only a "Search members" label)')
     with j.step('Promote M1 to admin: the role badge changes now and after reload'):
         row_action(j, pg, member_row(pg, n1), r'Promote|ترقية', 'Promote')
-        j.check(re.search(r'Admin|مشرف|مدير', member_row(pg, n1).inner_text()), 'the role badge did not change')
+        j.check(re.search(r'Admin|مشرف|مدير', member_row(pg, n1).inner_text(), re.I) and not re.search(r'Sub-Admin|^\W*Member', member_row(pg, n1).inner_text(), re.I | re.M), 'the role badge did not change')   # the pill is shown in capitals
         if j.live: j.check(j.wait_db("select role from public.group_members where group_id=%d and user_id='%s'" % (gid, m1['id']), 5, want='admin') == 'admin', 'group_members.role is not admin')
         reopen(j, pg); groups_page(j, pg); open_card(j, pg, gname); manage(j, pg, 'members')
-        j.check(re.search(r'Admin|مشرف|مدير', member_row(pg, n1).inner_text()) and not re.search(r'^\W*Member', member_row(pg, n1).inner_text()), 'after reload M1 is not admin')
+        j.check(re.search(r'Admin|مشرف|مدير', member_row(pg, n1).inner_text(), re.I) and not re.search(r'^\W*Member', member_row(pg, n1).inner_text(), re.I | re.M), 'after reload M1 is not admin')
     with j.step('M1 sees Manage while admin'):
         if j.demo: j.skip('M1 exists only in live')
         p1 = m1['page']; j.reload(p1); groups_page(j, p1); open_card(j, p1, gname)
         j.check(p1.locator('#groupDetail .btn-manage:visible').count(), 'the promoted admin has no Manage')
     with j.step('Demote M1: back to member (now and after reload); M1 loses Manage'):
-        row_action(j, pg, member_row(pg, n1), r'Demote|تخفيض|إلغاء الإشراف', 'Demote')
+        row_action(j, pg, member_row(pg, n1), r'Demote|تخفيض|إلغاء الإشراف|إرجاع إلى عضو', 'Demote')
         reopen(j, pg); groups_page(j, pg); open_card(j, pg, gname); manage(j, pg, 'members')
-        j.check(not re.search(r'Admin|مشرف عام', member_row(pg, n1).inner_text()), 'after reload M1 is still admin')
+        j.check(not re.search(r'Admin|مشرف عام', member_row(pg, n1).inner_text(), re.I), 'after reload M1 is still admin')
         if j.live:
             j.check(j.wait_db("select role from public.group_members where group_id=%d and user_id='%s'" % (gid, m1['id']), 5, want='member') == 'member', 'group_members.role is not member')
             j.reload(p1); groups_page(j, p1); open_card(j, p1, gname); j.check(not p1.locator('#groupDetail .btn-manage:visible').count(), 'the demoted member still has Manage')
     with j.step('Remove M2 (confirm): gone from the list, count -1'):
-        hn = gd_members_n(pg); row_action(j, pg, member_row(pg, n2), r'Remove|إزالة', 'Remove from group'); confirm(j, pg); j.settle(pg, 900)
+        hn = gd_members_n(pg); row_action(j, pg, member_row(pg, n2), r'Remove|إزالة|أزل', 'Remove from group'); confirm(j, pg); j.settle(pg, 900)
         j.check(not member_row(pg, n2).count(), 'the removed member is still listed')
         j.check(gd_members_n(pg) == hn - 1, 'the header count went %s → %s' % (hn, gd_members_n(pg)))
         if j.live: j.check(j.wait_db("select count(*) from public.group_members where group_id=%d and user_id='%s'" % (gid, m2['id']), 5, want='0') == '0', 'the group_members row is still there')
@@ -143,7 +146,7 @@ def manage_members(j):
         me_row = member_row(pg, 'Xavier'); items = []
         if me_row.count() and me_row.locator('.action-btn').count():
             me_row.locator('.action-btn').first.click(); pg.wait_for_timeout(300); items = me_row.locator('.dd-item').all_inner_texts()
-        j.check(not any(re.search(r'Demote|Remove|إزالة', i) for i in items), 'the last admin can demote / remove themself')
+        j.check(not any(re.search(r'Demote|Remove|إزالة|أزل|إرجاع إلى عضو', i) for i in items), 'the last admin can demote / remove themself')
         err = pg.evaluate("([g,u])=>dxLive.sb.from('group_members').update({role:'member'}).eq('group_id',g).eq('user_id',u).select()" + ".then(r=>r.error?{code:r.error.code,message:r.error.message}:null)", [gid, x['id']])
         j.check(err and j.sql1("select role from public.group_members where group_id=%d and user_id='%s'" % (gid, x['id'])) == 'admin', 'the database lets the last admin demote themself')
 
@@ -187,7 +190,7 @@ def group_reports(j):
         j.check(badge and badge != '0', 'no unread-reports badge')
     with j.step('X removes S: gone for every member and from the list; Z is told'):
         r = pg.locator('#tab-reports .mod-item, #tab-reports [class*=mod-]').filter(has_text=spam[:25]).first
-        b = r.locator('.mod-btn.remove, button').filter(has_text=re.compile(r'Remove|إزالة|حذف', re.I))
+        b = r.locator('.mod-btn.remove, button').filter(has_text=re.compile(r'Remove|إزالة|حذف|أزل', re.I))
         j.check(b.count(), 'no Remove on the report'); b.first.click(); pg.wait_for_timeout(500); confirm(j, pg); j.settle(pg, 1000)
         j.check(spam[:25] not in manage(j, pg, 'reports'), 'the report stays in the list')
         gd_tab(j, pg, 'disc'); j.check(not any(spam[:25] in p['text'] for p in gposts(pg)), 'the removed post is still in the Discussion')
@@ -236,7 +239,7 @@ def group_settings(j):
         mark = j.toast_mark(pg); b.click(); pg.wait_for_timeout(600); confirm(j, pg, r'Archive|Yes|Confirm|أرشفة|نعم|تأكيد'); j.settle(pg, 1000); j.dead_end(pg, mark, 'Archive')
         if j.live: j.check(j.has_column('groups', 'archived') or j.has_column('groups', 'archived_at') or j.has_column('groups', 'status'), 'not built: groups has no archived state in the database')
         groups_page(j, pg); c = next((c for c in cards(pg) if c['title'] == gname), None)
-        j.check(c and re.search(r'Archived|مؤرشف', c['text']), 'the archived group is not marked Archived')
+        j.check(c and re.search(r'Archived|مؤرشف', c['text'], re.I), 'the archived group is not marked Archived')
         open_card(j, pg, gname); j.check(not has_composer(pg), 'an archived group still has a composer')
     with j.step('Delete a test group after a strong confirmation: gone for everyone'):
         if j.live:

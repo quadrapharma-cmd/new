@@ -183,6 +183,7 @@
       out.push({ t: t, type: tags[0] || 'Full-time', loc: ((c.querySelectorAll('.jc-company span')[1] || {}).textContent || co.city).replace(/^[^A-Za-z0-9]+/, '').trim(), onJobs: true });
     });
     (co.jobs || []).forEach(function (j) { if (!seen[j.t]) { seen[j.t] = 1; out.push(j); } });
+    if (window.dxJobsOfCompany) { var h = window.dxJobsOfCompany(co, out); if (h) return h; }   /* jobsx.js / the live app: the jobs really posted for this page */
     return out;
   }
   function employer(co) { var s = window.dxEmployerStats ? window.dxEmployerStats(co.name) : null; return s && s.n ? s : null; }
@@ -205,6 +206,13 @@
   }
   window.dxOpenCompany = openCompany;
   window.dxDirectory = { list: companies, open: openCompany };
+  /* AREA community (J-COMMUNITY-41): Drugbox's decision in the demo's Admin → Review changes the page as it does in the live app */
+  window.dxDemoReview = { verify: function (slug, ok, note) {
+    var vf = ok ? { status: 'verified', vr: 'approved', vrNote: '' } : { status: 'unverified', vr: 'rejected', vrNote: note || 'please check your documents' };
+    var created = store('created_companies') || [];
+    if (created.some(function (c) { return c.slug === slug; })) { created.forEach(function (c) { if (c.slug === slug) Object.assign(c, vf); }); store('created_companies', created); }
+    else { var edits = store('company_edits') || {}; edits[slug] = Object.assign({}, edits[slug] || {}, vf); store('company_edits', edits); }
+    render(); return true; } };
   window.dxDir = { companies: companies, bySlug: bySlug, render: function () { render(); }, S: S, open: function (s, t) { openCompany(s, t); }, rfq: function (s, p, v) { rfqDialog(s, p, v); },
     myCompanies: function () { return myCompanies(); }, mine: function () { return mine(); }, store: store, edits: edits_, logo: logo, initials: initials, safeUrl: safeUrl, cssUrl: cssUrl, safeColor: safeColor, pimg: pimg, packshot: packshot, isVip: isVip, plans: PLANS, inbox: inbox, myReqs: myReqs,
     jobsOf: function (c) { return jobsOf(c); }, offersOf: function (c) { return offersOf(c); }, employer: function (c) { return employer(c); }, productDialog: function (c, p) { productDialog(c, p); }, applyDialog: function (c, j) { applyDialog(c, j); },
@@ -353,7 +361,7 @@
         var rn = b.querySelector('#vfRN').value.replace(/\D/g, '');
         if (rn.length < 4) { b.querySelector('#vfRN').classList.add('dbk-err'); toast('Enter the commercial registry number'); return false; }
         if (!b.querySelector('#vfR').files.length || !b.querySelector('#vfT').files.length) { toast('Registry document and tax card are required'); return false; }
-        var created = store('created_companies') || [], vf = { status: 'pending', registry: rn, licencePending: !!b.querySelector('#vfL').files.length };
+        var created = store('created_companies') || [], vf = { status: 'pending', registry: rn, licencePending: !!b.querySelector('#vfL').files.length, vr: 'pending', vrNote: '' };
         if (created.some(function (c) { return c.slug === co.slug; })) { created.forEach(function (c) { if (c.slug === co.slug) Object.assign(c, vf); }); store('created_companies', created); }
         else { var edits = store('company_edits') || {}; edits[co.slug] = Object.assign({}, edits[co.slug] || {}, vf); store('company_edits', edits); }   /* a claimed page lives in company_edits */
         render(); toast('Documents sent — we will verify ' + co.name);

@@ -148,7 +148,8 @@
       start({ product: prod, method: meth, listing_id: +lid2 }, bp, function () { document.getElementById('boostModalOverlay').classList.remove('show'); }); }
   }, true);
   /* the wizard has created the page: its VIP payment starts now (the page stays Basic until the payment is confirmed) */
-  window.dxCheckout = { result: result, startVip: function (slug, pend) { var p = pend || window.__dxVipPending; window.__dxVipPending = null; if (!p || !slug) return;
+  /* other checkouts (a paid course, AREA community) use the same methods, amounts and result windows */
+  window.dxCheckout = { methods: methods, chosen: chosen, egp: egp, start: start, result: result, startVip: function (slug, pend) { var p = pend || window.__dxVipPending; window.__dxVipPending = null; if (!p || !slug) return;
     window.dxPay.start({ product: p.product, method: p.method, slug: slug }).then(function (r) { if (!window.dxPay.live && r.paid) activateDemoVip(slug, p.product); result(r); }, function (e) { D.toast((e && e.message) || 'The payment could not start'); }); } };
   function activateDemoVip(slug, product) { var X = window.dxDir; if (!X) return; var created = X.store('created_companies') || [];
     created.forEach(function (c) { if (c.slug === slug) { c.plan = 'vip'; c.billing = product === 'vip_year' ? 'year' : 'month'; } }); X.store('created_companies', created); X.render(); D.toast('Payment received — VIP is active (demo: no card was charged)'); }
