@@ -230,7 +230,9 @@
         .then(function () { if (my === running) after(); }, function (e) { toast((e && e.message) || 'Could not load the jobs'); });
     }
     jobCards(root).forEach(function (c) { var k = c.dataset.jxPosted || titleOf(c), dj = demoJob(k); if (deleted(k) || (c.dataset.jxPosted && !dj)) { c.remove(); return; } c.dataset.jxSearch = demoMatch(c) && !(dj && dj.active === false) ? '' : '0'; });
-    if (window.dxJxPaint && trustChanged(root)) window.dxJxPaint();   /* the trust marks are drawn again only when they could differ (speed) */
+    /* the trust layer also applies the search's visibility: a search always repaints; a plain revisit (resetPage) repaints only when
+       the trust data or the cards changed (speed) */
+    if (window.dxJxPaint && (!SNAP || trustChanged(root))) window.dxJxPaint();
     after();
   }
   /* the trust layer's marks depend on the stored reviews, references, lists and interactions and on cards drawn since */

@@ -293,7 +293,8 @@ def content_reports(j):
         floc = pg.evaluate("u=>dxLive.aid(u)", f['id']) if j.live else 6
         fname = ('Fake Profile %s' % t) if j.live else pg.evaluate("id=>U(id).name", floc)
         close_dialogs(pg); pg.evaluate("id=>gotoProfile(id)", floc); j.settle(pg, 1500)
-        j.click(pg, r'^(⋯|More: report or block|المزيد: إبلاغ أو حظر)', scope='#content', what='⋯ (more)')
+        more = pg.locator('#content .dx-pf-more:visible').first        # the profile's own ⋯ (a post on the profile has another ⋯)
+        j.check(more.count(), "no ⋯ (report or block) on F's profile"); more.click(); pg.wait_for_timeout(400)
         j.click(pg, r'^\W*(Report|إبلاغ)$', scope='body', what='Report', exact=True)
         pg.check('.dbk-ov input[name=dxMRep][value=fake], .modal-bg input[name=dxMRep][value=fake]')
         pg.fill('#dxMRepN', 'Impersonates a QA manager ' + t)
