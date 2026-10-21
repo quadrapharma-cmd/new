@@ -173,6 +173,11 @@ const ZW_BEFORE = ranges((c) => inR(LET.Arab)(c) && !ARAB_NOJOIN.has(c)), ZW_MAR
 // "not one of the alphabets", atk-legit-r3)
 const IN_SCRIPT4 = SCRIPTS.map(([, sc]) => new RegExp(`^\\p{Script=${sc}}$`, 'u')), inScript4 = (c) => IN_SCRIPT4.some((re) => re.test(ch(c)));
 const OTHER_LET = ranges((c) => /^\p{L}$/u.test(ch(c)) && !isLetAny(c) && !inScript4(c));   // a letter of another alphabet (or of none: ˑ)
+// *(sixth version) a mark of another alphabet (Script neither one of the four nor Inherited / Common) is U+FFFD in the skeleton like
+// such a letter: a letter's key may now end with a mark (the tooth letters' ى + hamza), and PostgreSQL 16 does not know the combining
+// class of the marks Unicode 16 added (𑏎 U+113CE), so NFD would order them differently after it
+const OTHER_MARK = ranges((c) => /^\p{M}$/u.test(ch(c)) && !inScript4(c) && !/^[\p{Script=Inherited}\p{Script=Common}]$/u.test(ch(c)));
+const OTHER_SKEL = union(OTHER_LET, OTHER_MARK);
 const UNSUP_LET = ranges((c) => /^\p{L}$/u.test(ch(c)) && !isLetAny(c) && inScript4(c));    // a letter of the four alphabets not taken (yet)
 const MARK_ALL = ranges(has(/^\p{M}$/u));                                                  // any mark (NFD can split an allowed letter)
 const MARK_BAD = ranges((c) => /^\p{M}$/u.test(ch(c)) && !inR(MARK_ANY)(c));                 // a mark that may not stand apart from its letter
@@ -209,16 +214,22 @@ const SPLITS = (c) => ch(c).normalize('NFD') !== ch(c);
 const PIXEL = new Map();
 // *(fifth version) a pair of a letter + mark (ģ / ġ: g draws its cedilla above, where ġ has its dot): written in skeleton space
 // ("0067 0323 ; 0067 0300" — the keys of the two letters), each group's other sequences become its lowest; applied to the skeleton last
-const CTX = [];
+// *(sixth version) a side may be shorter: "0068 0300 ; 0068" — a letter whose mark draws within a dot of nothing (bold Ḣ / H) loses it
+// in the skeleton. The shortest (then lowest) sequence of a group is kept; the replacements run longest first, one after the other,
+// in the same order in the database (nested replace) and the app (split / join): the same text out of both. The list runs CTX_PASSES
+// times — a letter with two marks that each draw within a dot of nothing («ạ̀») loses one per pass
+const CTX = [], CTX_PASSES = 3;
 {
   const up = new Map(), find = (x) => { while (up.has(x) && up.get(x) !== x) x = up.get(x); return x; };
+  const less = (a, b) => [...a].length < [...b].length || ([...a].length === [...b].length && a < b);
+  const seq = (t) => t.trim().split(' ').map((h) => ch(parseInt(h, 16))).join('');
   for (const l of fs.readFileSync(path.join(ROOT, 'tools/names/pixel-twins.txt'), 'utf8').split('\n')) {
-    const m = /^([0-9A-F]+) ([0-9A-F]+) ; ([0-9A-F]+) ([0-9A-F]+)\s/.exec(l); if (!m) continue;
-    const a = find(ch(parseInt(m[1], 16)) + ch(parseInt(m[2], 16))), b = find(ch(parseInt(m[3], 16)) + ch(parseInt(m[4], 16)));
-    for (const x of [a, b]) if (!up.has(x)) up.set(x, x); if (a !== b) up.set(a < b ? b : a, a < b ? a : b);
+    const m = /^([0-9A-F]+(?: [0-9A-F]+)*) ; ([0-9A-F]+(?: [0-9A-F]+)*)\s/.exec(l); if (!m || (!m[1].includes(' ') && !m[2].includes(' '))) continue;
+    const a = find(seq(m[1])), b = find(seq(m[2]));
+    for (const x of [a, b]) if (!up.has(x)) up.set(x, x); if (a !== b) up.set(less(a, b) ? b : a, less(a, b) ? a : b);
   }
   for (const x of up.keys()) if (find(x) !== x) CTX.push([x, find(x)]);
-  CTX.sort((p, q) => (p[0] < q[0] ? -1 : 1));
+  CTX.sort((p, q) => ([...q[0]].length - [...p[0]].length) || (p[0] < q[0] ? -1 : p[0] > q[0] ? 1 : 0));
 }
 {
   const up = new Map(), find = (x) => { while (up.has(x) && up.get(x) !== x) x = up.get(x); return x; };
@@ -243,7 +254,9 @@ const fold = (x) => x.toUpperCase().toLowerCase();
 const base0 = (c) => (TURKIC.has(c) ? TURKIC.get(c) : DROP.has(c) ? '' : CONF.has(c) ? CONF.get(c) : ch(c));
 const base = (c) => (PIXEL.has(c) ? keyOf0(PIXEL.get(c)) : base0(c));
 function keyOf0(c) { let s = ch(c); for (let i = 0; i < 16; i++) { const t = [...[...s.normalize('NFD')].map((x) => base0(x.codePointAt(0))).join('')].map(fold).join('').normalize('NFD'); if (t === s) return s; s = t; } throw new Error('no fixed point for U+' + c.toString(16)); }
-const step = (s) => [...[...s.normalize('NFD')].map((x) => base(x.codePointAt(0))).join('')].map(fold).join('').normalize('NFD');
+// *(sixth version) a run of the same mark is one mark in a key too, as in the skeleton (a group whose key holds a mark — ئ = ى + hamza —
+// may hold the letter that mark sits on: ي is ئ's key, ى + hamza, and ى is in the group)
+const step = (s) => [...[...s.normalize('NFD')].map((x) => base(x.codePointAt(0))).join('')].map(fold).join('').normalize('NFD').replace(/(\p{M})\1+/gu, '$1');
 function keyOf(c) { let s = ch(c); for (let i = 0; i < 16; i++) { const t = step(s); if (t === s) return s; s = t; } throw new Error('no fixed point for U+' + c.toString(16)); }
 const SKEL = [];
 for (let c = 1; c <= PLANES01; c++) { if (isSur(c)) continue; const s = ch(c); if (s.normalize('NFD') !== s || !stable(c)) continue; const k = keyOf(c); if (k !== s) SKEL.push([c, k]); }
@@ -304,7 +317,7 @@ const sqlBr = { lead: `('^[^' || ${U(sqlClass(LET_ANY))} || ']*[(]')`,
   mix: `('[(][^()]*(?:[' || ${U(sqlClass(LET.Arab))} || '][^()]*[' || ${U(sqlClass(LTR_LET))} || ']|[' || ${U(sqlClass(LTR_LET))} || '][^()]*[' || ${U(sqlClass(LET.Arab))} || '])[^()]*[)]')`,
   side: `('[' || ${U(sqlClass(LET.Arab))} || '][^' || ${U(sqlClass(LET_ANY))} || ']*[(][^()]*[)][^' || ${U(sqlClass(LET_ANY))} || ']*[' || ${U(sqlClass(LTR_LET))} || ']|[' || ${U(sqlClass(LTR_LET))} || '][^' || ${U(sqlClass(LET_ANY))} || ']*[(][^()]*[)][^' || ${U(sqlClass(LET_ANY))} || ']*[' || ${U(sqlClass(LET.Arab))} || ']')` };
 // *(fifth version) the letter + mark pairs, last: nested replace() in SQL, one regular expression in the app
-const sqlCtx = () => CTX.map(([f, t]) => `, ${U(sqlChars([...f].map((x) => x.codePointAt(0))))}, ${U(sqlChars([...t].map((x) => x.codePointAt(0))))})`).join('');
+const sqlCtx = () => CTX.map(([f, t]) => `, ${U(sqlChars([...f].map((x) => x.codePointAt(0))))}, ${U(sqlChars([...t].map((x) => x.codePointAt(0))))})`).join('').repeat(CTX_PASSES);
 function sqlRegion() {
   const LIKE_F = U(sqlChars(LIKE.map(([c]) => c))), LIKE_T = U(sqlChars(LIKE.map(([, t]) => t.codePointAt(0))));
   const INV = `'[' || ${U(sqlClass(INVIS))} || ']'`, INV_STRIP = `'[' || ${U(sqlClass(union(INVIS, ARAB_STRIP)))} || ']'`;
@@ -409,10 +422,10 @@ select chr(('x' || lpad(split_part(e, '=', 1), 8, '0'))::bit(32)::int),
 '${SKEL_D}', ',')) e;
 create or replace function public.person_name_key(s text)
 returns text language sql stable parallel safe set search_path = '' as $$
-  select ${'replace('.repeat(CTX.length)}regexp_replace(regexp_replace(normalize(replace(array_to_string(array(
+  select ${'replace('.repeat(CTX.length * CTX_PASSES)}regexp_replace(regexp_replace(normalize(replace(array_to_string(array(
     select coalesce((select m.sk from private.name_skeleton m where m.ch = c.ch), c.ch)
       from unnest(regexp_split_to_array(normalize(translate(regexp_replace(public.person_name_norm(s),
-        '[' || ${U(sqlClass(OTHER_LET))} || '][' || ${U(sqlClass(MARK_ALL))} || ']*', ${U('!FFFD')}, 'g'), ${U('!0130')}, 'i'), NFD), '')) with ordinality c(ch, i) order by c.i), ''), ' ', ''), NFD),
+        '[' || ${U(sqlClass(OTHER_SKEL))} || '][' || ${U(sqlClass(MARK_ALL))} || ']*', ${U('!FFFD')}, 'g'), ${U('!0130')}, 'i'), NFD), '')) with ordinality c(ch, i) order by c.i), ''), ' ', ''), NFD),
     '([' || ${U(sqlClass(MARK_ALL))} || '])\\1+', '\\1', 'g'),
     '([' || ${U(sqlChars(SOFT.map((k) => k.codePointAt(0))))} || '])([' || ${U(sqlClass(MARK_BEFORE_ABOVE))} || ']*)[' || ${U(sqlClass(MARK_ABOVE))} || ']', '\\1\\2', 'g')${sqlCtx()}
 $$;
@@ -444,9 +457,9 @@ function jsRegion() {
   var NM_MSG = ${isoEsc(JSON.stringify(MSG), (h) => '\\u' + h)};
   var NM_RUN_MARK = /([${jsClass(MARK_ALL)}])\\1+/gu;
   var NM_SOFT = /([${jsClass(single(SOFT.map((k) => k.codePointAt(0))))}])([${jsClass(MARK_BEFORE_ABOVE)}]*)[${jsClass(MARK_ABOVE)}]/gu;
-  var NM_OTHER_RUN = /[${jsClass(OTHER_LET)}][${jsClass(MARK_ALL)}]*/gu;
-  var NM_CTX = new Map(${JSON.stringify(CTX)});
-  var NM_CTX_RE = ${CTX.length ? `/${CTX.map(([f]) => [...f].map((x) => '\\u{' + hx(x.codePointAt(0)) + '}').join('')).join('|')}/gu` : '/(?!)/gu'};
+  var NM_OTHER_RUN = /[${jsClass(OTHER_SKEL)}][${jsClass(MARK_ALL)}]*/gu;
+  var NM_CTX = ${JSON.stringify(CTX)};
+  function nmCtx(s) { for (var p = 0; p < ${CTX_PASSES}; p++) for (var i = 0; i < NM_CTX.length; i++) s = s.split(NM_CTX[i][0]).join(NM_CTX[i][1]); return s; }
   var NM_SKEL = (function (d) { var m = new Map(); d.split(',').forEach(function (e) { var p = e.split('='); m.set(String.fromCodePoint(parseInt(p[0], 16)), p[1] ? p[1].split('.').map(function (h) { return String.fromCodePoint(parseInt(h, 16)); }).join('') : ''); }); return m; })(
     '${SKEL_D}');
   function nmLikeTo(c) { return NM_LIKE_TO.get(c); }
@@ -478,7 +491,7 @@ function jsRegion() {
     if (p === 'accent') { var a = (n.match(NM_ACCENT_AT) || [''])[0]; m = put(a); return put((Array.from(a).pop() || '').codePointAt(0).toString(16).toUpperCase().padStart(4, '0')); }
     return m;
   }
-  function nmSkel(x) { return Array.from(nmNorm(x).replace(NM_OTHER_RUN, '\\uFFFD').replace(/\\u0130/g, 'i').normalize('NFD'), function (c) { var k = NM_SKEL.get(c); return k == null ? c : k; }).join('').replace(/ /g, '').normalize('NFD').replace(NM_RUN_MARK, '$1').replace(NM_SOFT, '$1$2').replace(NM_CTX_RE, function (m) { return NM_CTX.get(m); }); }
+  function nmSkel(x) { return nmCtx(Array.from(nmNorm(x).replace(NM_OTHER_RUN, '\\uFFFD').replace(/\\u0130/g, 'i').normalize('NFD'), function (c) { var k = NM_SKEL.get(c); return k == null ? c : k; }).join('').replace(/ /g, '').normalize('NFD').replace(NM_RUN_MARK, '$1').replace(NM_SOFT, '$1$2')); }
 /* <<< generated */`;
 }
 

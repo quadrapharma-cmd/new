@@ -2321,15 +2321,20 @@ function buildTicker(){var items=TICKER_ITEMS.concat(TICKER_ITEMS);var inner=doc
 function endSplash(){var s=document.getElementById('splash');if(!s||s.classList.contains('hide'))return;s.classList.add('hide');setTimeout(function(){s.style.display='none';document.getElementById('authWrap').style.display='block';document.getElementById('loginPage').style.display='grid';},700);}
 
 // ── AUTH ────────────────────────────────────────────────
-/* the name a greeting uses (v-real-r1): the first name after any title (Dr. د/ ا.د/ Prof. Eng. م. Pharm. …, glued or not), with
-   the word that completes it (عبد الله, Abd El-Raouf, أبو بكر) — never a title, a father's name or «الله» alone; one word: the whole name */
-function dxGreetName(n){var w=String(n||'').replace(/^\s+|\s+$/g,'').split(/\s+/),T=/^(?:dr|prof|eng|pharm|pharmd|ph|d|mr|mrs|ms|miss|dipl|dipl\.-ing|د|م|ص|ك|أ|ا|د\.ص|ا\.د|أ\.د|ك\.د|م\.د)$/i,i=0;
- var title=function(x){var t=x.replace(/[.\/]+$/,'');return T.test(t)||(/[.\/]$/.test(x)&&t.length<=5);};
- while(i<w.length-1&&title(w[i]))i++;
+/* the name a greeting uses (v-real-r1, S-03 fix 6): the first name after any title or honorific (Dr. د/ ا.د/ Prof. Eng. م. Pharm.,
+   الحاج الشيخ المهندس الدكتور الأستاذ Hajj Sheikh…, glued or not) and a leading article (El, Al, ال), with the word that completes
+   it (عبد الله, عبد الرحمن, Abd El-Raouf, أبو بكر, ابن سينا, van der Berg) — never a title, a father's name, «الله» alone or a
+   trailing comma; one word: the whole name. The name is said as written, in its own script, in either interface */
+function dxGreetName(n){var s=String(n||'').replace(/^\s+|\s+$/g,''),w=s.split(/\s+/),i=0,
+ T=/^(?:dr|prof|eng|engr|pharm|pharmd|ph|d|mr|mrs|ms|miss|dipl|dipl\.-ing|hajj|haj|hadj|hajja|hajjah|sheikh|shaikh|sheikha|shaikha|د|م|ص|ك|أ|ا|د\.ص|ا\.د|أ\.د|ك\.د|م\.د|الحاج|الحاجة|الحاجه|الشيخ|الشيخة|المهندس|المهندسة|الدكتور|الدكتورة|الأستاذ|الاستاذ|الأستاذة|الاستاذة)$/i,
+ A=/^(?:el|al|ال)$/i,P=/[.,،;:!?]+$/;
+ var title=function(x){var t=x.replace(/[.\/,،]+$/,'');return T.test(t)||(/[.\/]$/.test(x)&&t.length<=5);};
+ while(i<w.length-1&&(title(w[i])||A.test(w[i])))i++;
  var g=/^(.*[.\/])([^.\/]+)$/.exec(w[i]);if(g&&title(g[1]))w[i]=g[2];
- if(title(w[i])&&i===w.length-1)return w.join(' ');
- var c=/^(?:عبد|عبدال|abd|abdel|abdul|abdal|abu|abou|abo|abul|أبو|ابو)$/i;if(i<w.length-1&&c.test(w[i])){var j=i+1;if(j<w.length-1&&/^(?:el|al|ال)$/i.test(w[j]))j++;return w.slice(i,j+1).join(' ');}
- return w[i]||String(n||'');}
+ if(title(w[i])&&i===w.length-1)return s;
+ var c=/^(?:عبد|عبدال|abd|abdel|abdul|abdal|abu|abou|abo|abul|أبو|ابو|ابن|بن|ibn|bin|van|von|de|da|di|du|del|della|der|den|le|la)$/i,j=i;
+ if(i<w.length-1&&c.test(w[i])){j=i+1;while(j<w.length-1&&/^(?:el|al|ال|der|den|de|la|le|van|von)$/i.test(w[j]))j++;}
+ var r=w.slice(i,j+1).join(' '),t=r.replace(P,'');return t||r||s;}
 function doLogin(){var email=document.getElementById('loginEmail').value.trim();var pw=document.getElementById('loginPw').value;var err=document.getElementById('loginErr');err.style.display='none';if(!email){err.textContent='Email is required';err.style.display='block';return;}if(!pw){err.textContent='Password is required';err.style.display='block';return;}document.getElementById('authWrap').style.display='none';document.getElementById('app').style.display='flex';goto('feed');updateTopUser();toast('Welcome back, '+dxGreetName(ME.name)+'!');}
 
 function doSignup(){var name=document.getElementById('suName').value.trim();var email=document.getElementById('suEmail').value.trim();var pw=document.getElementById('suPw').value;var err=document.getElementById('suErr');err.style.display='none';if(!name){err.textContent='Name is required';err.style.display='block';return;}if(!email){err.textContent='Email is required';err.style.display='block';return;}if(pw.length<8){err.textContent='Password must be at least 8 characters';err.style.display='block';return;}if(email.toLowerCase()==='haytham@drugbox.app'){err.textContent='An account with this email already exists — sign in instead';err.style.display='block';return;}var co=document.getElementById('suCompany'),ro=document.getElementById('suRole');if(ME.id===1){ME.id=USERS.reduce(function(m,u){return u.id<1000&&u.id>m?u.id:m;},1)+1;ME.color='#0E8C66';USERS.push(ME);}signupEnter(name,co?co.value.trim():'',ro&&ro.selectedIndex<ro.options.length-1?ro.value.trim():'');}

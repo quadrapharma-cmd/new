@@ -143,8 +143,11 @@ def migrations():
 
 def render():   # the name rule's render check (S-03): letters, sequences and whole names, and the proofs that it sees look-alikes
     code, out, secs = run([sys.executable, 'tools/names/render_scan.py'], timeout=7200)
-    record('render', 'render_scan.py (fifth rule: 0 pairs — letters, sequences, whole names; font stacks × weights)', code == 0, secs, out[-800:] if code else '')
-    for rev, part, pair, quick in (('e972163', 'letters', 'حْ/خ', False), ('0fbc662', 'letters', 'ث/ئ', False), ('0fbc662', 'names', '(MBA) Ahmed Ali/Ahmed Ali (MBA)', True)):
+    record('render', 'render_scan.py (sixth rule: 0 pairs within one Arabic dot — letters, sequences, whole names; font stacks and system fonts × weights)', code == 0, secs, out[-800:] if code else '')
+    # the proofs that the scan sees a look-alike: on the third, fourth and fifth rules (91ca446 is the fifth: round 5's «Alİ» / «Ali» and
+    # «عبد الله» / «عبدالله», a space after a letter that never joins — seen with every gap drawn one column wide)
+    for rev, part, pair, quick in (('e972163', 'letters', 'حْ/خ', False), ('0fbc662', 'letters', 'ث/ئ', False), ('0fbc662', 'names', '(MBA) Ahmed Ali/Ahmed Ali (MBA)', True),
+                                   ('91ca446', 'letters', 'İ/i', False), ('91ca446', 'names', 'عبد الله أحمد/عبدالله أحمد', True), ('91ca446', 'names', 'Alİ Kaya/Ali Kaya', True)):
         code, out, secs = run([sys.executable, 'tools/names/render_scan.py', '--rule', rev, '--part', part, '--must-find', pair] + (['--quick'] if quick else []), timeout=3600)
         record('render', 'render_scan.py --rule %s --part %s finds %s' % (rev, part, pair), code == 0, secs, out[-800:] if code else '')
 

@@ -1,5 +1,5 @@
 -- One rule for names in the database and in the app (S-03, 0038, its second version 0039_names_rule_2, its third version
--- 0039_names_rule_3, its fourth version 0039_names_rule_4 and its fifth 0039_names_rule_5): for EVERY code point of planes 0 and
+-- 0039_names_rule_3, its fourth version 0039_names_rule_4, its fifth 0039_names_rule_5 and its sixth 0039_names_rule_6): for EVERY code point of planes 0 and
 -- 1, in four places (inside a Latin word, alone between spaces, at the start, inside an Arabic word), the database's
 -- person_name_norm, person_name_problem and person_name_key must give what the live app's nmNorm, nmProblem and nmSkel give, and
 -- person_name_message what nmMessage says (inside a word and alone; web/src/live/adapter.js, generated with the migration by
@@ -162,6 +162,11 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('brackets around letters of both directions', 'Ali (Head, فاركو)', 'bracket'), ('a name in brackets only', '(Ahmed)', 'bracket'),
   ('the bracketed part after the name is fine', 'Ahmed Ali (MBA)', ''), ('…in Arabic', 'أحمد علي (صيدلي)', ''), ('…an Arabic name after a Latin one', 'Ali محمد (علي)', ''),
   ('a nickname in the middle, one direction', 'Ahmed (Mido) Ali', ''), ('a transliteration in brackets', 'Ziad (زياد)', ''), ('an Arabic nickname between Latin words', 'Mona (منى) Ali', ''),
+  -- sixth version (round 5): a space just inside a bracket is tidied away, not refused; the round-5 look-alikes are ALLOWED (they are
+  -- twins of the real names — same skeleton —, never refused for looking alike)
+  ('a space inside the brackets ("Ahmed Ali ( MBA )")', 'Ahmed Ali ( MBA )', ''), ('…in Arabic', 'أحمد علي ( صيدلي )', ''), ('…a nickname in the middle', 'Ahmed ( Mido ) Ali', ''),
+  ('…still a bracket before the first letter', '( MBA ) Ahmed Ali', 'bracket'), ('…empty brackets are no word', 'Ahmed Ali ( )', 'word'),
+  ('the Turkish capital İ for i ("Alİ Kaya")', 'Alİ Kaya', ''), ('the dotless ı for i', 'Alı Kaya', ''), ('a space after a letter that never joins ("عبد الله أحمد")', 'عبد الله أحمد', ''),
   ('invisible U+200B is removed: allowed', U&'Dr. Zeina Tufice\200B', ''),
   ('invisible U+1D173 is removed: allowed', U&'Dr. Zeina Tufice\+01D173', ''),
   ('invisible U+1BCA0 is removed: allowed', U&'Dr. Zeina\+01BCA0 Tufice', ''),
@@ -200,7 +205,10 @@ insert into r(name, ok, err) select 'stored as typed: ' || x.s, public.person_na
   -- fifth version: a zero-width non-joiner after an Arabic letter that joins the next is a space (the letters keep their shapes);
   -- after one that never joins (د) it changes nothing and is removed
   (U&'\0639\0644\06CC\200C\0631\0636\0627 \0645\062D\0645\062F\06CC\200C\0646\0698\0627\062F', 'علی رضا محمدی نژاد'), (U&'\0639\0628\062F\200C\0627\0644\0644\0647', 'عبدالله'),
-  (U&'Ah\200Cmed', 'Ahmed')) x(s, want);
+  (U&'Ah\200Cmed', 'Ahmed'),
+  -- sixth version: a space just inside a bracket is tidied away (it was refused as a word: "(" alone)
+  ('Ahmed Ali ( MBA )', 'Ahmed Ali (MBA)'), ('Ahmed Ali (MBA )', 'Ahmed Ali (MBA)'), ('أحمد علي ( صيدلي )', 'أحمد علي (صيدلي)'), ('Ahmed ( Mido ) Ali', 'Ahmed (Mido) Ali'),
+  ('Alİ Kaya', 'Alİ Kaya'), ('عبد الله أحمد', 'عبد الله أحمد')) x(s, want);
 -- the refusal names what the person typed (not what normalising made of it), the word to fix, and the accepted alphabets
 insert into r(name, ok, err) select 'message: ' || x.s, public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) = x.want,
        public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) from (values
@@ -262,13 +270,24 @@ insert into r(name, ok, err) select 'same skeleton: ' || x.a || ' / ' || x.b, pu
   ('Ġorġ', 'Ģorģ'), ('Ģirts', 'Ǵirts'), ('Анна иванова', 'Анна нванова'), ('Mađar', 'Madar'), ('Ӱлан', 'Ӳлан'),
   -- fifth version: a zero-width non-joiner is a space; a letter of another alphabet is U+FFFD (the database and the app decompose the
   -- letters Unicode 16 added differently)
-  (U&'\0639\0644\06CC\200C\0631\0636\0627', 'علی رضا'), (U&'\+0105C9abc', U&'\+011383abc'), (U&'\+016D68 Ahmed', U&'\+0105E4 Ahmed')) x(a, b);
+  (U&'\0639\0644\06CC\200C\0631\0636\0627', 'علی رضا'), (U&'\+0105C9abc', U&'\+011383abc'), (U&'\+016D68 Ahmed', U&'\+0105E4 Ahmed'),
+  -- sixth version (round 5; the skeleton OVER-merges — twins cost a line of context, a look-alike with its own skeleton can be sent the
+  -- message): the Turkish İ and ı are i and every key is case folded; spaces are ignored («عبد الله» = «عبدالله»); every pair
+  -- tools/names/render_scan.py draws within ONE Arabic dot shares a skeleton (i / l / İ / î / Ī, the dotted and undotted Arabic letters
+  -- that measure under a dot in some font and weight, an accent that draws within a dot of nothing on a bold capital); the first mark
+  -- above every letter that shares i's key is dropped (أ / ا)
+  ('Alİ Kaya', 'Ali Kaya'), ('Alı Kaya', 'Ali Kaya'), ('ALİ KAYA', 'Ali Kaya'), ('İsmail Öztürk', 'Ismail Ozturk'), ('Alî', 'AlĪ'), ('Ali', 'All'), ('Ibrahim', 'ibrahim'), ('ILYA', 'ilya'),
+  ('عبد الله أحمد', 'عبدالله أحمد'), ('أبو بكر', 'أبوبكر'), ('نور الدين', 'نورالدين'), ('عبد الرحمن محمد', 'عبدالرحمن محمد'), ('ابن سينا', 'ابنسينا'), ('Ali Kaya', 'AliKaya'),
+  (U&'\0639\0644\06CC\200C\0631\0636\0627', 'علیرضا'), ('Straße', 'Strasse'), ('Ahmed Ali ( MBA )', 'Ahmed Ali (MBA)'),
+  ('أبو', 'ابو'), ('أحمد علي', 'احمد علي'), ('آمال', 'أمال'), ('حْالد', 'خالد'), ('رْياد', 'زياد'), ('دْكي', 'ذكي'), ('عْادة', 'غادة'), ('حسںْ', 'حسن'),
+  ('تامر', 'بامر'), ('ح', 'خ'), ('ر', 'ز'), ('ص', 'ض'), ('ب', 'ن'), ('ي', 'ى'), ('ه', 'ة'), ('ف', 'ق'), ('هبة', 'هنة'),
+  ('José', 'Jose'), ('Müller', 'Muller'), ('Ştefan', 'Stefan'), ('Alena', 'Alёna'), ('Ḣana', 'Hana'), ('Ḥana', 'Hana'), ('Ńada', 'Nada')) x(a, b);
 insert into r(name, ok, err) select 'different skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) <> public.person_name_key(x.b), public.person_name_key(x.a) from (values
-  ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Ibrahim', 'ibrahim'), ('أبو', 'ابو'), ('Ali', 'All'), ('Hala', 'Hana'),
-  -- fourth version: the undotted name and the dotted one stay different names — and the undotted one is now DRAWN undotted
-  ('حْالد', 'خالد'), ('رْياد', 'زياد'), ('دْكي', 'ذكي'), ('عْادة', 'غادة'), ('حسںْ', 'حسن'),
-  -- …and a mark present or not, a dot more or less, stay different names
-  ('José', 'Jose'), ('Müller', 'Muller'), ('Ştefan', 'Stefan'), ('Alena', 'Alёna'), ('تامر', 'بامر'), ('ح', 'خ'), ('ر', 'ز'), ('ص', 'ض'), ('ب', 'ن'),
+  ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Hala', 'Hana'),
+  -- sixth version: the pairs below were different names until the fifth version (the undotted «حالد» and «خالد», «José» and «Jose»…);
+  -- they draw within a dot of each other in some font and weight, so they are twins now (above). These stay different names:
+  ('Hadia', 'Nadia'), ('Mona', 'Nona'), ('Omar', 'Amar'), ('Nour', 'Noor'), ('Dr. Ahmed Ali', 'Dr. Ahmad Ali'), ('Ali Kaya', 'Ali Kaye'), ('Mohamed', 'Mohammed'),
+  ('سمير', 'شمير'), ('حسن', 'حسين'), ('محمد', 'احمد'), ('أحمد', 'إحمد'), ('س', 'ش'), ('ا', 'ل'), ('د', 'ر'), ('ع', 'ف'),
   -- fifth version: the words in another order are another name (the brackets that drew them alike are refused)
   ('Ahmed Ali (MBA)', 'Ahmed (MBA) Ali'), ('أحمد علي (صيدلي)', 'أحمد (صيدلي) علي'), ('Ali محمد (علي)', 'Ali (علي) محمد')) x(a, b);
 insert into r(name, ok, err) select 'stored without the mark that drew as a dot: ' || x.a || ' → ' || public.person_name_norm(x.a) || ', not ' || x.b,

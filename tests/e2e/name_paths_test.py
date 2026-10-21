@@ -1,5 +1,5 @@
 """Every way a person's name can be written, against the running live stack (S-03, fourth and fifth versions of the name rule,
-0039_names_rule_4 and 0039_names_rule_5).
+0039_names_rule_4, 0039_names_rule_5 and 0039_names_rule_6).
 The ways a name reaches profiles.name (supabase/tests/privacy_names.rls.sql checks the same list in the catalog, so a new one fails
 there): the sign-up trigger handle_new_user (the sign-up API's metadata), a member's own UPDATE (Edit Profile = PATCH /rest/v1/profiles),
 anon (refused), INSERT / upsert of a profile (refused), another member's row (row security), a later change of the auth metadata (never
@@ -10,7 +10,11 @@ accent that draws like another is keyed as its twin: «Josè» / «José»), and
 Arabic with the quoted letter isolated (U+2068 … U+2069), and the sign-in toast is in Arabic with the name isolated. Fifth version
 (v-spoof-r1, v-real-r1): a bracket the bidi algorithm reorders is refused on every path («(MBA) Ali» drew as «Ali (MBA)» in Arabic),
 bold look-alikes are keyed as twins («ئروت» / «ثروت», «Szổke» / «Szőke»), a zero-width non-joiner between Arabic letters is a space,
-and the sign-in toast greets the first name (never a title, «الله» alone or a father's name).
+and the sign-in toast greets the first name (never a title, «الله» alone or a father's name). Sixth version (round 5): the skeleton
+over-merges — «Alİ Kaya» (Turkish İ) is «Ali Kaya»'s twin, «عبد الله أحمد» is «عبدالله أحمد»'s (spaces are ignored), «حالد» is «خالد»'s
+(one dot apart) — on every path, keyed as the app keys them; a space inside a bracket is tidied («Ali ( MBA )» → «Ali (MBA)»); a member
+whose name breaks the rule only by the place of its brackets is told to move them (its own banner text, EN and AR); the greeting
+skips honorifics and a leading article and says a Latin name in Latin in the Arabic interface.
   python3 tests/e2e/name_paths_test.py        (tools/local-supabase/start.sh; settings in tests/e2e/_dx.py)"""
 import json
 from playwright.sync_api import sync_playwright
@@ -24,8 +28,10 @@ def make(email, name):   # a member made on the server (the person a look-alike 
     return sql(f"insert into auth.users (email, encrypted_password, raw_user_meta_data) values ({q(email)}, crypt('x-pass-123', gen_salt('bf')), jsonb_build_object('name', {q(name)})) returning id").split('\n')[0]
 
 KHALID, JOSE, THARWAT, SZOKE = f'خالد {NT}', f'José {NT}', f'ثروت {NT}', f'Szőke {NT}'
+ALI, ABDALLAH = f'Ali Kaya {NT}', f'عبدالله أحمد {NT}'
 k_id, j_id = make(f'np-k{ST}@np.test', KHALID), make(f'np-j{ST}@np.test', JOSE)
 t_id, s_id = make(f'np-t{ST}@np.test', THARWAT), make(f'np-s{ST}@np.test', SZOKE)
+a_id, d_id = make(f'np-a{ST}@np.test', ALI), make(f'np-d{ST}@np.test', ABDALLAH)
 T('setup: the members a look-alike would copy exist', sql(f"select count(*) from public.profiles where id in ('{k_id}', '{j_id}')") == '2')
 
 # the catalog: no function other than the sign-up trigger writes a name, none stores a profile's name elsewhere, nothing copies metadata later
@@ -70,14 +76,21 @@ with sync_playwright() as p:
                       (f'Ali {NT} (علي) محمد', 'an Arabic word in brackets between a Latin and an Arabic word (drew as «Ali محمد (علي)»)')]:
         e = f'np-bad{len(R)}{ST}@np.test'; r = signup(e, name)
         T(f'sign-up API: {why} is refused, nothing is created', r is not None and sql(f"select count(*) from auth.users where email = {q(e)}") == '0', r)
-    LA = {f'حْالد {NT}': f'np-lak{ST}@np.test', f'Josè {NT}': f'np-laj{ST}@np.test', f'ئروت {NT}': f'np-lat{ST}@np.test', f'Szổke {NT}': f'np-las{ST}@np.test'}
+    LA = {f'حْالد {NT}': f'np-lak{ST}@np.test', f'Josè {NT}': f'np-laj{ST}@np.test', f'ئروت {NT}': f'np-lat{ST}@np.test', f'Szổke {NT}': f'np-las{ST}@np.test',
+          f'Alİ Kaya {NT}': f'np-lai{ST}@np.test', f'عبد الله أحمد {NT}': f'np-lad{ST}@np.test'}
     for name, look, why in [(f'حْالد {NT}', KHALID, 'ح + sukun (looks like «خالد»)'), (f'Josè {NT}', JOSE, 'è (looks like «José»)'),
-                            (f'ئروت {NT}', THARWAT, 'ئ (bold, looks like «ثروت»)'), (f'Szổke {NT}', SZOKE, 'ổ (bold, looks like «Szőke»)')]:
+                            (f'ئروت {NT}', THARWAT, 'ئ (bold, looks like «ثروت»)'), (f'Szổke {NT}', SZOKE, 'ổ (bold, looks like «Szőke»)'),
+                            (f'Alİ Kaya {NT}', ALI, 'the Turkish İ for i (bold, looks like «Ali Kaya», round 5)'), (f'عبد الله أحمد {NT}', ABDALLAH, 'a space after د (looks like «عبدالله أحمد», round 5)')]:
         e = LA[name]; r = signup(e, name); rw = row(e).split('|')
         T(f'sign-up API: {why} is stored as the rule writes it, keyed as the app keys it', r is None and len(rw) == 4 and rw[1] == app_norm(nm, name) and rw[2] == app_skel(nm, name)
           and rw[3] == 'false', [r, rw, app_norm(nm, name)])
     rw = row(f'np-lak{ST}@np.test').split('|')
-    T('sign-up API: «حْالد» is stored «حالد» (no mark left to draw as the dot) and is NOT «خالد»\'s twin', rw[1] == f'حالد {NT}' and rw[2] != row(f'np-k{ST}@np.test').split('|')[2], rw)
+    T('sign-up API: «حْالد» is stored «حالد» (no mark left to draw as the dot) — and is «خالد»\'s twin (sixth version: one dot apart)', rw[1] == f'حالد {NT}' and rw[2] == row(f'np-k{ST}@np.test').split('|')[2], rw)
+    for e2, e1, what in [('lai', 'a', '«Alİ Kaya» has «Ali Kaya»\'s skeleton (İ is i — sixth version)'), ('lad', 'd', '«عبد الله أحمد» has «عبدالله أحمد»\'s skeleton (the skeleton ignores spaces — sixth version)')]:
+        r2, r1 = row(f'np-{e2}{ST}@np.test').split('|'), row(f'np-{e1}{ST}@np.test').split('|')
+        T('sign-up API: ' + what + ', both stored as typed', r2[2] == r1[2] and r2[1] != r1[1] and r2[3] == r1[3] == 'false', [r1, r2])
+    e = f'np-br{ST}@np.test'; r = signup(e, f'Ali {NT} ( MBA )')
+    T('sign-up API: «Ali ( MBA )» is stored «Ali (MBA)» (sixth version: the spaces inside the brackets tidied; it was refused)', r is None and row(e).split('|')[1] == f'Ali {NT} (MBA)' and row(e).split('|')[3] == 'false', [r, row(e)])
     T('sign-up API: «Josè» has «José»\'s skeleton (a twin, told apart in every list)', row(f'np-laj{ST}@np.test').split('|')[2] == row(f'np-j{ST}@np.test').split('|')[2])
     T('sign-up API: «ئروت» has «ثروت»\'s skeleton (bold initial ئ / ث, fifth version)', row(f'np-lat{ST}@np.test').split('|')[2] == row(f'np-t{ST}@np.test').split('|')[2])
     T('sign-up API: «Szổke» has «Szőke»\'s skeleton (bold ő / ổ, fifth version)', row(f'np-las{ST}@np.test').split('|')[2] == row(f'np-s{ST}@np.test').split('|')[2])
@@ -127,14 +140,17 @@ with sync_playwright() as p:
     T('member: a bracket before the name is refused (23514), suggesting it after the name', r['e'] and r['e']['code'] == '23514' and r['e']['message'] == f'Put the part in brackets after the name — write “{FSI}أحمد {NT} (صيدلي){PDI}”', r)
     r = patch(ar, uid, {'name': f'منى (Ali) {NT}'})
     T('member: a Latin word in brackets between an Arabic and a Latin word is refused (drew as «منى … (Ali)» in Arabic)', r['e'] and r['e']['code'] == '23514', r)
-    for name in [f'عْادة {NT}', f'رْياد {NT}', f'Saʿīd {NT}', f'Hêlène {NT}', f'مُحَمَّد {NT}', f'ا.د / Sami {NT}', f'ئروت {NT}', f'Szổke {NT}', f'علی\u200cرضا {NT}', f'Ali {NT} محمد (علي)']:
+    for name in [f'عْادة {NT}', f'رْياد {NT}', f'Saʿīd {NT}', f'Hêlène {NT}', f'مُحَمَّد {NT}', f'ا.د / Sami {NT}', f'ئروت {NT}', f'Szổke {NT}', f'علی\u200cرضا {NT}', f'Ali {NT} محمد (علي)',
+                 f'Alİ Kaya {NT}', f'أبو بكر {NT}', f'Ahmed ( Mido ) {NT}']:   # sixth version: İ, a space after a letter that never joins, spaces inside brackets
         r = patch(ar, uid, {'name': name}); rw = row(f'np-uia{ST}@np.test').split('|')
         T(f'member: «{name}» stored as the rule writes it and keyed as the app keys it', not r['e'] and rw[1] == app_norm(nm, name) and rw[2] == app_skel(nm, name) and rw[3] == 'false', [r, rw, app_norm(nm, name)])
     T('member: the Arabic diacritics are gone from what was stored («مُحَمَّد» → «محمد»)', row(f'np-uia{ST}@np.test').split('|')[1] != f'مُحَمَّد {NT}' and app_norm(nm, f'مُحَمَّد {NT}') == f'محمد {NT}')
     T('member: a zero-width non-joiner between Arabic letters is a space («علی‌رضا» → «علی رضا»)', app_norm(nm, f'علی\u200cرضا {NT}') == f'علی رضا {NT}')
-    r = patch(ar, uid, {'name': f'حْالد {NT}', 'name_key': row(f'np-k{ST}@np.test').split('|')[2], 'name_needs_fix': True})
+    T('member: spaces inside brackets are tidied («Ahmed ( Mido )» → «Ahmed (Mido)», sixth version)', app_norm(nm, f'Ahmed ( Mido ) {NT}') == f'Ahmed (Mido) {NT}')
+    T('member: «أبو بكر» and «أبوبكر» are one name to the app (no spaces in the skeleton)', app_skel(nm, f'أبو بكر {NT}') == app_skel(nm, f'أبوبكر {NT}'))
+    r = patch(ar, uid, {'name': f'حْالد {NT}', 'name_key': row(f'np-j{ST}@np.test').split('|')[2], 'name_needs_fix': True})
     rw = row(f'np-uia{ST}@np.test').split('|')
-    T("member: a forged key (khalid's) and flag are ignored — the database keys «حْالد» itself", not r['e'] and rw[2] == app_skel(nm, f'حْالد {NT}') and rw[2] != row(f'np-k{ST}@np.test').split('|')[2] and rw[3] == 'false', [r, rw])
+    T("member: a forged key (José's) and flag are ignored — the database keys «حْالد» itself", not r['e'] and rw[2] == app_skel(nm, f'حْالد {NT}') and rw[2] != row(f'np-j{ST}@np.test').split('|')[2] and rw[3] == 'false', [r, rw])
     r = patch(ar, k_id, {'name': f'حْالد {NT}'})
     T("member: another member's row is not touched (row security)", not r['e'] and r['d'] == [] and row(f'np-k{ST}@np.test').split('|')[1] == KHALID, r)
     r = ar.evaluate("(id) => dxLive.sb.from('profiles').insert({ id: id, name: 'NP extra' })" + ERR, sql("select gen_random_uuid()"))
@@ -154,12 +170,25 @@ with sync_playwright() as p:
     toasts = ar.evaluate('window.__toasts')
     T('sign-in toast (AR): «أهلًا بعودتك يا …!» with the name isolated', any(f'أهلًا بعودتك يا {FSI}Sami{PDI}!' in t for t in toasts), toasts[-5:])
     # the greeting uses the first name — after the title, with the word that completes it (v-real-r1: «عبد الله» was greeted «يا الله»)
-    for stored, greet in [(f'عبد الله {NT}', 'عبد الله'), (f'د/ محمد أحمد {NT}', 'محمد'), (f'Ἀλέξανδρος', 'Ἀλέξανδρος')]:
+    for stored, greet in [(f'عبد الله {NT}', 'عبد الله'), (f'د/ محمد أحمد {NT}', 'محمد'), (f'Ἀλέξανδρος', 'Ἀλέξανδρος'),
+                          (f'الحاج أحمد {NT}', 'أحمد'), (f'El Sayed Mohamed {NT}', 'Sayed'), (f'Ali, Mohamed {NT}', 'Ali'), (f'Haytham {NT}', 'Haytham')]:   # sixth version
         ar.evaluate('doLogout()'); ar.wait_for_timeout(800); sql(f"update public.profiles set name = {q(stored)} where id = '{uid}'")
         ar.evaluate('showLogin()'); ar.fill('#loginEmail', f'np-uia{ST}@np.test'); ar.fill('#loginPw', PW); ar.evaluate('window.__toasts = []')
         ar.click('#loginPage button.f-btn'); wait_for(lambda: ar.is_visible('#app'), 15); ar.wait_for_timeout(1500)
         toasts = ar.evaluate('window.__toasts')
         T(f'sign-in toast (AR): «{stored}» is greeted «{greet}»', any(f'أهلًا بعودتك يا {FSI}{greet}{PDI}!' in t for t in toasts) and not any('undefined' in t for t in toasts), toasts[-3:])
+
+    # ── 4b. a member whose name breaks the rule only by the place of its brackets (stored before the fifth version): the banner says
+    #        to move them, in English and Arabic (round 5: it said «characters Drugbox no longer allows») ──
+    ar.evaluate('doLogout()'); ar.wait_for_timeout(800); sql(f"update public.profiles set name = {q(f'(MBA) Ali {NT}')} where id = '{uid}'")
+    T('banner: precondition — a server write keeps «(MBA) Ali» and flags it', row(f'np-uia{ST}@np.test').split('|')[1] == f'(MBA) Ali {NT}' and row(f'np-uia{ST}@np.test').split('|')[3] == 'true')
+    for page, lang, want in [(ar, 'ar', 'انقل الجزء الذي بين القوسين'), (pg, 'en', 'move the part in brackets after the name')]:
+        if page is pg: pg.reload(wait_until='load'); pg.wait_for_timeout(500); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
+        page.evaluate('showLogin()'); page.fill('#loginEmail', f'np-uia{ST}@np.test'); page.fill('#loginPw', PW); page.click('#loginPage button.f-btn')
+        wait_for(lambda: page.is_visible('#app'), 15); page.wait_for_timeout(1200); page.evaluate('gotoProfile(ME.id)'); page.wait_for_timeout(1500)
+        ban = page.evaluate("(() => { const d = document.querySelector('.dx-name-fix'); return d ? d.innerText : ''; })()")
+        T(f'banner ({lang}): a bracket-order name is asked to move the part in brackets — not told it has characters Drugbox does not allow', want in ban and 'Drugbox' not in ban.split('\n')[0], repr(ban))
+        page.evaluate('doLogout()'); page.wait_for_timeout(800)
 
     # ── 5. anon ──
     ar.evaluate('doLogout()'); ar.wait_for_timeout(800)

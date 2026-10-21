@@ -3,7 +3,7 @@ Everything is drawn on a Chromium canvas the way the app draws a name — with t
 Arabic `Poppins, "Segoe UI", …, sans-serif` from web/src/i18n.css; the datalist popup's `system-ui, sans-serif`), so a letter Poppins
 lacks is drawn by the fallback font next to a letter Poppins has — at weights 400, 500, 600 and 700 (the thread list and the chat header
 draw names in bold) and 14, 15 and 16 px; and with each system font on its own (DejaVu Sans, FreeSans, FreeSerif, Liberation Sans) at
-400 and 700, for the machines whose fallback differs. Three parts:
+every weight too (sixth version: they were drawn at 400 and 700), for the machines whose fallback differs. Three parts:
   letters    every letter the live app's rule allows (Latin, Arabic, Greek, Cyrillic), alone and with every mark the rule still lets
              stand after it (none under the fourth and fifth versions), against EVERY allowed letter — every script against every
              script, Arabic against Arabic, the Arabic letters in their four joining positions
@@ -20,25 +20,36 @@ The difference of two drawings: each is aligned on its ink (centre of its box) a
 where within a pixel a small mark sits), and the summed difference of every pixel is divided by ONE ARABIC DOT: the median of ح/خ, ر/ز,
 د/ذ, ع/غ, ص/ض, ط/ظ, ٮ/ب, ں/ن drawn in the SAME font string, weight and size (a dot drawn bold is a bold dot: 274 at 400, 742 at 600
 for 15 px here — the scan used to measure 400 only; a font without Arabic measures it in the font its stack falls back to). Letters a reader tells apart by a dot are about 1.0; a sukun
-where a dot would be is 0.53 («حْ» / «خ», atk-unicode-r3); bold initial ئ / ث 0.35 (v-spoof-r1). A pair below THRESHOLD (default 0.6)
-whose skeletons differ fails the scan. A letter no installed font has (drawn as the empty box) is not compared, and counted.
+where a dot would be is 0.53 («حْ» / «خ», atk-unicode-r3); bold initial ئ / ث 0.35 (v-spoof-r1); bold «İ» / «i» 0.62 (round 5). A pair
+below THRESHOLD (default 1.0 — sixth version, it was 0.6: the skeleton over-merges, so whatever draws within ONE dot of another letter in
+some font and weight is its twin; one-dot pairs that measure under the median — ح / خ, ب / ن in some fonts — are twins too) whose
+skeletons differ fails the scan. A letter no installed font has (drawn as the empty box) is not compared, and counted.
+Sequences and whole names are also compared with every empty gap between two inked columns drawn one column wide (sixth version): a
+space, or the wider gap after a letter that never joins the next one, does not change what the eye reads — «عبد الله» / «عبدالله» measured
+~40 dots apart when the two drawings were only aligned on their centres (round 5). A pair counts when either measure is below THRESHOLD.
 Reads the generated rule of web/src/live/adapter.js (run `node tools/names/name_rule.mjs --write` first), or with --rule REV the
-adapter of a git revision (`--rule e972163` is the third version, 0039_names_rule_3; `--rule 0fbc662` the fourth, 0039_names_rule_4).
+adapter of a git revision (`--rule e972163` is the third version, 0039_names_rule_3; `--rule 0fbc662` the fourth, 0039_names_rule_4;
+`--rule 91ca446` the fifth, 0039_names_rule_5).
   python3 tools/names/render_scan.py [OUT.json] [THRESHOLD]   Playwright 1.56 Chromium; exit 1 when a pair is found
   --part letters|sequences|names|all   (default all)
   --rule REV            scan the rule of that git revision instead of the working tree
   --must-find U/T       exit 0 only when the pair U / T is among the pairs found, 1 otherwise — the proof that the scan sees a
                         look-alike: --rule e972163 --part letters --must-find حْ/خ ; --rule 0fbc662 --part letters --must-find ث/ئ ;
-                        --rule 0fbc662 --part names --must-find "(MBA) Ahmed Ali/Ahmed Ali (MBA)"
+                        --rule 0fbc662 --part names --must-find "(MBA) Ahmed Ali/Ahmed Ali (MBA)" ; --rule 91ca446 --part letters
+                        --must-find İ/i ; --rule 91ca446 --part names --quick --must-find "عبد الله أحمد/عبدالله أحمد"
   --sizes 14,15,16  --weights 400,500,600,700   --quick (letters: the stacks only; sequences and names: 400 and 700 at 15 px)
   --write               add the pairs found (letters part) to tools/names/pixel-twins.txt — the generator gives each pair one
                         skeleton: two letters, two marks (two letters that differ only in a mark at the same place: é / è), or a
-                        letter with a mark (two letters that differ in marks drawn at the same place by that letter only: ģ / ġ)
+                        letter with a mark (two letters that differ in marks drawn at the same place by that letter only: ģ / ġ);
+                        sixth version: a letter + mark and the letter (a mark that draws within a dot of nothing: bold Ḣ / H), and
+                        the skeletons of an accented letter and another letter (once no new pair of letters is written). Run it
+                        until the letters part finds nothing (each run regenerates nothing: node tools/names/name_rule.mjs --write)
 History: 0039 (second version) — African noon ࢽ / ن and qaf ࢼ / ف before a letter; third version — e + U+0335, Τ + U+0304, i/ı/j +
 U+0307, Ч / Ɥ U+A78D, the empty boxes of Latin Extended-G, ӏ U+04CF / l; fourth version — every pair compared (it skipped Arabic-Arabic
 pairs and compared by a hash, so it could not see «حْ» / «خ»), Arabic diacritics removed; fifth version — the app's font stacks at
 every weight (it scanned Poppins alone, 117 letters, and the fallback fonts at 400 only, so bold ئ / ث and ő / ổ passed), sequences,
-whole names in both directions (bracket order)."""
+whole names in both directions (bracket order); sixth version — one Arabic dot (bold İ / i at 0.62 passed 0.6), the system fonts at every
+weight, two-letter sequences in the system fonts, gaps drawn one column wide (a space after a letter that never joins)."""
 import itertools, json, os, re, subprocess, sys, time, unicodedata
 from playwright.sync_api import sync_playwright
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.abspath(os.path.join(HERE, '../..'))
@@ -226,14 +237,25 @@ for n in near: distinct.setdefault(tuple(sorted((n[2], n[3]))), n)
 print('pairs below %.2f of an Arabic dot with different skeletons: %d (%d distinct)  [%.0fs]' % (THR, len(near), len(distinct), time.time() - t0))
 for n in sorted(distinct.values(), key=lambda n: n[4])[:80]: print('NEAR ', n)
 if '--write' in sys.argv:   # add the pairs found (letters) to tools/names/pixel-twins.txt (the generator gives each group one skeleton)
-    pairs = set(); ctx = set()
+    pairs = set(); ctx = set()   # ctx: (sequence, sequence) of code points in skeleton space
     if os.path.exists(TWINS):
         for l in open(TWINS, encoding='utf8'):
-            m = re.match(r'^([0-9A-F]+) ; ([0-9A-F]+)\s', l)
-            if m: pairs.add((int(m[1], 16), int(m[2], 16)))
-            m = re.match(r'^([0-9A-F]+) ([0-9A-F]+) ; ([0-9A-F]+) ([0-9A-F]+)\s', l)
-            if m: ctx.add(tuple(int(m[i], 16) for i in range(1, 5)))
-    unwritten = []
+            m = re.match(r'^([0-9A-F]+(?: [0-9A-F]+)*) ; ([0-9A-F]+(?: [0-9A-F]+)*)\s', l)
+            if not m: continue
+            x, y = tuple(int(h, 16) for h in m[1].split()), tuple(int(h, 16) for h in m[2].split())
+            if len(x) == 1 and len(y) == 1: pairs.add((x[0], y[0]))
+            else: ctx.add((x, y))
+    isM = lambda c: unicodedata.category(c).startswith('M')
+    def dropped(L, S):   # S is L with some marks left out: [(kept char before, the marks left out)], else None
+        out, i, j = [], 0, 0
+        while i < len(L):
+            if j < len(S) and L[i] == S[j]: i += 1; j += 1; continue
+            if not isM(L[i]) or i == 0: return None
+            k = i
+            while i < len(L) and isM(L[i]) and not (j < len(S) and L[i] == S[j]): i += 1
+            out.append((L[k - 1], L[k:i]))
+        return out if j == len(S) and out else None
+    unwritten, later, before = [], [], len(pairs)
     for (a_, b_), n in distinct.items():
         if n[-1] != 'letters': unwritten.append(n); continue
         ka, kb = n[7], n[8]
@@ -241,24 +263,37 @@ if '--write' in sys.argv:   # add the pairs found (letters) to tools/names/pixel
         ccc = lambda c: unicodedata.combining(c) if unicodedata.combining(c) < 200 or unicodedata.combining(c) >= 230 else 220   # attached below ~ below
         arabic = any('ARABIC' in unicodedata.name(c, '') for c in a_ + b_)   # Arabic: the two letters (a hamza is not three dots everywhere)
         split = lambda x: unicodedata.normalize('NFD', x) != x
-        if len(a_) == 1 and len(b_) == 1 and arabic and not (split(a_) and split(b_)): pairs.add(tuple(sorted((ord(a_), ord(b_)))))   # (sixth version) آ / أ: their marks
-        elif diff and all(unicodedata.category(x).startswith('M') and unicodedata.category(y).startswith('M') for _, x, y in diff):
+        drop = dropped(ka, kb) if len(ka) > len(kb) else dropped(kb, ka) if len(kb) > len(ka) else None
+        if len(a_) == 1 and len(b_) == 1 and arabic and not (split(a_) and split(b_)): pairs.add(tuple(sorted((ord(a_), ord(b_)))))   # *(sixth version) آ / أ: their marks
+        elif diff and all(isM(x) and isM(y) for _, x, y in diff):
             for i, x, y in diff:
                 if ccc(x) == ccc(y): pairs.add(tuple(sorted((ord(x), ord(y)))))       # the same place: the marks
-                else: pa, pb = (ord(ka[i - 1]), ord(x)), (ord(kb[i - 1]), ord(y)); ctx.add(min(pa, pb) + max(pa, pb))   # one letter draws them at one place
-        elif len(a_) == 1 and len(b_) == 1: pairs.add(tuple(sorted((ord(a_), ord(b_)))))   # two letters
+                else: pa, pb = (ord(ka[i - 1]), ord(x)), (ord(kb[i - 1]), ord(y)); ctx.add((min(pa, pb), max(pa, pb)))   # one letter draws them at one place
+        elif drop:   # *(sixth version) one is the other with a mark that draws within a dot of nothing (bold Ḣ / H): that letter loses it
+            for k, ms in drop: ctx.add((tuple(ord(c) for c in k + ms), (ord(k),)))
+        elif len(a_) == 1 and len(b_) == 1 and not split(a_) and not split(b_): pairs.add(tuple(sorted((ord(a_), ord(b_)))))   # two letters
+        elif len(a_) == 1 and len(b_) == 1: later.append(n)   # *(sixth version) an accented letter and another letter: their skeletons
         else: unwritten.append(n)
-    for n in unwritten: print('NOT WRITTEN (not two letters, nor two letters that differ only in a mark):', n)
+    # *(sixth version) the skeletons of an accented letter (NFD splits it: it has no key of its own) and another letter, as a sequence
+    # pair — only once a scan writes no new pair of letters: a new pair of letters (i / l) changes those skeletons, and often makes the
+    # pair the same name (Ì / İ once i and l share a key)
+    for n in later:
+        if len(pairs) > before: print('LATER (written once no pair of letters is new):', n)
+        else: ctx.add((tuple(map(ord, n[7])), tuple(map(ord, n[8]))))
+    for n in unwritten: print('NOT WRITTEN (not two letters, nor two letters that differ only in marks):', n)
     with open(TWINS, 'w', encoding='utf8') as f:
         f.write('# Letters (and marks) the name rule allows that draw alike while their skeletons differ: tools/names/render_scan.py --write\n'
-                '# (blurred drawings within %.2f of an Arabic dot of each other), Chromium canvas, the app\'s font stacks (EN, AR, system-ui) at\n'
-                '# weights 400-700 and the system fonts on their own, 14-16 px. Two letters that differ only in a mark at the same place give the\n'
-                '# pair of marks (é / è: U+0300 / U+0301); a letter that draws two marks at one place gives the pair of letter + mark (ģ / ġ).\n'
-                '# tools/names/name_rule.mjs gives each group one skeleton. Generated, never edited by hand.\n' % THR)
+                '# (blurred drawings within %.2f of an Arabic dot of each other), Chromium canvas, the app\'s font stacks (EN, AR, system-ui) and\n'
+                '# the system fonts on their own at weights 400-700, 14-16 px. Two letters that differ only in a mark at the same place give the\n'
+                '# pair of marks (é / è: U+0300 / U+0301); a letter that draws two marks at one place gives the pair of letter + mark (ģ / ġ);\n'
+                '# a letter whose mark draws within a dot of nothing gives letter + mark ; letter (bold Ḣ / H — sixth version). Sequences are in\n'
+                '# skeleton space. tools/names/name_rule.mjs gives each group one skeleton. Generated, never edited by hand.\n' % THR)
         nm = lambda c: unicodedata.name(chr(c), '?')
         for a_, b_ in sorted(pairs): f.write('%04X ; %04X # %s / %s — %s / %s\n' % (a_, b_, chr(a_), chr(b_), nm(a_), nm(b_)))
-        for a1, m1, a2, m2 in sorted(ctx): f.write('%04X %04X ; %04X %04X # %s / %s — %s + %s / %s + %s\n' % (a1, m1, a2, m2, chr(a1) + chr(m1), chr(a2) + chr(m2), nm(a1), nm(m1), nm(a2), nm(m2)))
-    print('written', TWINS, len(pairs), 'pairs', len(ctx), 'letter + mark pairs')
+        sq = lambda t: ' '.join('%04X' % c for c in t)
+        for x, y in sorted(ctx, key=lambda p: (len(p[0]), len(p[1]), p)):
+            f.write('%s ; %s # %s / %s — %s / %s\n' % (sq(x), sq(y), ''.join(map(chr, x)), ''.join(map(chr, y)), ' + '.join(map(nm, x)), ' + '.join(map(nm, y))))
+    print('written', TWINS, len(pairs), 'pairs', len(ctx), 'sequence pairs')
 if MUST:
     u_, t_ = MUST.split('/')
     hit = [n for n in near if {n[2], n[3]} == {u_, t_}]

@@ -175,16 +175,18 @@ def new_message_to_named_person(j):
             return j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email('twin'), json.dumps(meta)))
         def new_message(to_value, body):
             to_list(j, pg); j.click(pg, r'✎|New message|رسالة جديدة', scope='#content', what='✎ New message')
-            box = pg.locator('#nmTo:visible').first; box.fill(to_value); pg.wait_for_timeout(1200)
+            box = pg.locator('#nmTo:visible').first; box.fill(RAW.get(to_value, to_value)); pg.wait_for_timeout(1200)   # the option as the picker offers it
             pg.locator('#nmTx:visible').first.fill(body)
             mark = j.toast_mark(pg); j.click(pg, r'^(Send|إرسال)$', scope='.dbk-ov', what='Send', exact=True); j.settle(pg, 1500)
             return ' '.join(j.toasts_since(pg, mark))
-        LBL = {}
-        def options_for(name, also=()):
+        LBL, RAW = {}, {}
+        ISO = re.compile('[\u2066-\u2069]')
+        def options_for(name, also=()):   # the options as a person reads them (S-03 fix 6: each fact and #handle is isolated, U+2066/2068 … U+2069)
             to_list(j, pg); j.click(pg, r'✎|New message|رسالة جديدة', scope='#content', what='✎ New message')
             pg.locator('#nmTo:visible').first.fill(name); pg.wait_for_timeout(1500)
             ol = pg.evaluate("(()=>{const i=document.querySelector('#nmTo');const l=i&&i.list;return l?[...l.options].map(o=>[o.value,o.label||'']):[]})()")
-            LBL.update(dict(ol)); o = [x for x, _ in ol if any(x.lower().startswith(n.lower()) for n in (name,) + tuple(also))]
+            for v, l in ol: RAW[ISO.sub('', v)] = v; LBL[ISO.sub('', v)] = ISO.sub('', l)
+            ol = [(ISO.sub('', v), l) for v, l in ol]; o = [x for x, _ in ol if any(x.lower().startswith(n.lower()) for n in (name,) + tuple(also))]
             pg.keyboard.press('Escape'); pg.wait_for_timeout(300)
             if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
             return o
@@ -290,14 +292,15 @@ def new_message_to_named_person(j):
         body = 'From the profile %s' % j.tag; send(j, pg, body)
         j.check(j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 6) == n2, "the profile's Message button did not write to that profile's person")
     with j.step('An Arabic look-alike: a vowel mark over a letter without a dot draws as its dot («حْالد» looks like «خالد»). The '
-                'mark is removed when the name is stored, so the member is «حالد» — drawn without a dot, not «خالد»\'s twin —; his '
-                'message shows that name in the list, ✎ to «خالد» reaches the real Khalid, and «حْالد» typed with the mark reaches him'):
+                'mark is removed when the name is stored, so the member is «حالد» — and, since the sixth version, «خالد»\'s TWIN (one '
+                'dot apart: the skeleton over-merges): his message shows «حالد» in the list, ✎ offers both told apart and warns «Same name», '
+                'the bare «خالد» (or «حْالد» typed with the mark) is refused, and each option reaches its own member'):
         if j.demo: j.skip('the name rule is the database\'s and the live app\'s (the demo keeps its sample people)')
         kname, fake, kco = 'خالد %s' % j.tag, 'حْالد %s' % j.tag, 'Khalid Pharma %s' % j.tag
         k = j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email('khalid'), json.dumps({'name': kname, 'company': kco})))
         f = j.person(fake)                                       # the look-alike signs up through the form, as a person does
-        stored = j.sql1("select name || '|' || (name_key <> (select name_key from public.profiles where id = '%s'))::text from public.profiles where id = '%s'" % (k, f['id']))
-        j.check(stored == 'حالد %s|true' % j.tag, 'the look-alike was not stored as «حالد» with its own skeleton: %s' % stored)
+        stored = j.sql1("select name || '|' || (name_key = (select name_key from public.profiles where id = '%s'))::text from public.profiles where id = '%s'" % (k, f['id']))
+        j.check(stored == 'حالد %s|true' % j.tag, 'the look-alike was not stored as «حالد» with «خالد»\'s skeleton (twins): %s' % stored)
         j.check('\u0652' not in f['page'].evaluate('ME.name'), 'the look-alike\'s own app still shows the sukun: %s' % ascii(f['page'].evaluate('ME.name')))
         goto_profile(j, f['page'], {'id': a['id']}); j.click(f['page'], r'Message|رسالة|راسل', scope='#content', what='Message')
         send(j, f['page'], 'Khalid here, send the price list %s' % j.tag)
@@ -306,16 +309,56 @@ def new_message_to_named_person(j):
         rows = [t['text'] for t in threads(pg) if j.tag in t['text'] and ('الد' in t['text'])]; j.note('Arabic look-alike threads', rows)
         j.check(rows and all('\u0652' not in r for r in rows) and any(('حالد %s' % j.tag) in r for r in rows) and not any(kname in r for r in rows),
                 'A\'s list shows the look-alike as «خالد» or with the mark: %s' % rows)
-        opts = options_for(kname); j.note('Khalid options', opts)
-        j.check(opts and all(o.startswith(kname) for o in opts), 'the picker offers someone else for «خالد»: %s' % opts)
-        body = 'To the real Khalid %s' % j.tag; new_message(opts[0] if opts else kname, body)
+        j.check(any('·' in r.split('\n')[0] for r in rows if ('حالد %s' % j.tag) in r), 'the look-alike\'s conversation does not say which «حالد» it is (twins: nothing after the name in the list): %s' % rows)
+        opts = options_for(kname, ('حالد %s' % j.tag,)); j.note('Khalid options', opts)
+        j.check(len(opts) == 2 and len(set(opts)) == 2 and all(' · ' in o for o in opts), 'the twins «خالد» / «حالد» are not two different options: %s' % opts)
+        j.check(all(re.search(r'Same name|نفس الاسم', LBL.get(o, '')) for o in opts), 'the options do not warn that «خالد» and «حالد» look the same: %s' % [LBL.get(o, '') for o in opts])
+        for typed in (kname, fake):
+            body = 'Bare Khalid %s %s' % (len(typed), j.tag); said = new_message(typed, body)
+            j.check(re.search(r'Several|أكثر من', said) and j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'typing «%s» (its twin exists) is not refused: %s' % (typed, said[:120]))
+            if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+        real = [o for o in opts if o.startswith(kname)]; body = 'To the real Khalid %s' % j.tag
+        j.check(len(real) == 1 and kco in real[0], 'the real Khalid\'s option does not carry his company: %s' % opts)
+        if real: new_message(real[0], body)
         got = j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
-        j.check(got == k, 'the message to «خالد» was stored for %s, not the real Khalid %s (look-alike: %s)' % (got, k, f['id']))
+        j.check(got == k, 'the option for «خالد» was stored for %s, not the real Khalid %s (look-alike: %s)' % (got, k, f['id']))
         if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
-        body = 'Typed with the sukun %s' % j.tag; new_message(fake, body)
+        other = [o for o in opts if o not in real]; body = 'To the look-alike %s' % j.tag
+        if other: new_message(other[0], body)
         got = j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
-        j.check(got == f['id'], '«حْالد» typed with the mark was stored for %s, not for the member «حالد» %s' % (got, f['id']))
+        j.check(got == f['id'], 'the option for «حالد» was stored for %s, not for the member «حالد» %s' % (got, f['id']))
         if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+    with j.step('Round 5 (sixth version: the skeleton over-merges): «عبد الله أحمد» / «عبدالله أحمد» (a space after د) and «Alİ Kaya» / '
+                '«Ali Kaya» (the Turkish İ), each pair at the same company — twins: the picker offers two options with the company and '
+                'a #handle (each isolated), warns «Same name», refuses the bare name, each option reaches its own member '
+                '(messages.receiver_id), and the chat header isolates the #handle'):
+        if j.demo: j.skip('the name rule is the database\'s and the live app\'s (the demo keeps its sample people)')
+        def mk(name, co, tag):
+            return j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email(tag), json.dumps({'name': name, 'company': co})))
+        for real_n, fake_n, co, tag in (('عبدالله أحمد %s' % j.tag, 'عبد الله أحمد %s' % j.tag, 'Abdallah Pharma %s' % j.tag, 'abdallah'),
+                                        ('Ali Kaya %s' % j.tag, 'Alİ Kaya %s' % j.tag, 'Kaya Ilac %s' % j.tag, 'kaya')):
+            r1, r2 = mk(real_n, co, tag), mk(fake_n, co, tag)
+            j.check(j.sql1("select count(distinct name_key) || '|' || bool_or(name_needs_fix) || '|' || count(distinct name) from public.profiles where id in ('%s','%s')" % (r1, r2)) == '1|false|2',
+                    '«%s» and «%s» are not twins stored as typed (one skeleton, neither flagged)' % (fake_n, real_n))
+            j.reload(pg); j.nav(pg, 'messages')
+            opts = options_for(real_n, (fake_n,)); j.note('round-5 options ' + tag, opts)
+            j.check(len(opts) == 2 and len(set(opts)) == 2 and all(co in o and '#' in o for o in opts), 'the twins «%s» / «%s» are not two options with the company and a #handle: %s' % (real_n, fake_n, opts))
+            j.check(all(re.search(r'Same name|نفس الاسم', LBL.get(o, '')) for o in opts), 'the options do not warn that the two names look the same: %s' % [LBL.get(o, '') for o in opts])
+            raw = [RAW.get(o, o) for o in opts]
+            j.check(all(('\u2068' + co + '\u2069') in v and re.search('\u2066#[0-9a-f]{6}\u2069', v) for v in raw), 'the company and the #handle are not isolated in the option values: %s' % [ascii(v) for v in raw])
+            for typed in (real_n, fake_n):
+                body = 'Bare %s %d %s' % (tag, len(typed), j.tag); said = new_message(typed, body)
+                j.check(re.search(r'Several|أكثر من', said) and j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'typing «%s» (its twin exists) is not refused: %s' % (typed, said[:120]))
+                if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+            got = {}
+            for i, o in enumerate(opts):
+                body = 'Round5 %s option %d %s' % (tag, i, j.tag); new_message(o, body)
+                got[o] = j.wait_db("select string_agg(receiver_id::text, ',') from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
+                if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+            j.check(sorted(got.values()) == sorted([r1, r2]), 'the two options did not reach the two members, one each: %s' % got)
+            j.check(all(got[o] == (r1 if o.startswith(real_n) else r2) for o in opts), 'an option reached the other twin: %s' % got)
+            hd = head(pg); j.note('round-5 header ' + tag, ascii(hd))
+            j.check(re.search('\u2066#[0-9a-f]{6}\u2069', hd) and co in hd, 'the chat header does not say the company and an isolated #handle: %s' % ascii(hd[:160]))
     with j.step('Bold look-alikes (v-spoof-r1): «ئروت» draws like «ثروت» in the bold list and header — the two names share a skeleton, '
                 'so the picker tells the two members (same company) apart, warns "Same name", refuses the bare name, and each option '
                 'reaches its own member (receiver checked in the database)'):

@@ -12993,3 +12993,66 @@ Ali (Head, فاركو)
 a(.)b
 Gal·la
 Ọláfẹ́mi
+# Round 5 (after 0039_names_rule_5) and the sixth version: the Turkish İ / ı for i, a space after a letter that never joins the next,
+# the bold i / l / î / Ī near pairs, a space inside brackets, full case folding (ß), the greeting and banner names.
+Alİ Kaya
+Ali Kaya
+AliKaya
+ALİ KAYA
+Alı Kaya
+ALI KAYA
+Ali̇ Kaya
+İsmail Öztürk
+Ismail Ozturk
+ılgaz
+Alî
+AlĪ
+All Kaya
+Ilya
+ILYA
+ilya
+عبد الله أحمد
+عبدالله أحمد
+عبد الله
+عبدالله
+أبو بكر
+أبوبكر
+أبو بكر محمد
+نور الدين
+نورالدين
+عبد الرحمن
+عبدالرحمن
+عبد الرحمن محمد
+عبدالرحمن محمد
+ابن سينا
+ابنسينا
+أحمد علي
+احمد علي
+إحمد
+آمال
+أمال
+Ahmed Ali ( MBA )
+Ahmed Ali (MBA )
+Ahmed Ali ( MBA)
+أحمد علي ( صيدلي )
+Ahmed ( Mido ) Ali
+( MBA ) Ahmed Ali
+Ahmed Ali ( )
+Straße
+Strasse
+STRASSE
+Σοφία
+ΣΟΦΊΑ
+El Sayed Mohamed
+Ali, Mohamed
+العلي، محمد
+الحاج أحمد علي
+ثروت عادل
+ئروت عادل
+خالد
+حالد
+Ḣana
+Hana
+Ḥana
+Ńada
+Nada
