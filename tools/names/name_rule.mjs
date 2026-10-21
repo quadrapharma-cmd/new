@@ -1,8 +1,8 @@
 // The one rule for a person's display name (S-03): what a name may contain (an ALLOWLIST) and when two names are "the same name"
-// (a confusable SKELETON, Unicode TR39). The database (supabase/migrations/0039_names_rule_5.sql — 0038, 0039_names_rule_2.sql,
-// 0039_names_rule_3.sql and 0039_names_rule_4.sql hold the first four versions and are never edited) and the live app (web/src/live/adapter.js) both carry
+// (a confusable SKELETON, Unicode TR39). The database (supabase/migrations/0039_names_rule_6.sql — 0038, 0039_names_rule_2.sql …
+// 0039_names_rule_5.sql hold the first five versions and are never edited) and the live app (web/src/live/adapter.js) both carry
 // the code this script prints between their "generated" markers — never edit it by hand:
-//   node tools/names/name_rule.mjs --write    rewrite both generated regions (only before 0039_names_rule_5 is applied anywhere:
+//   node tools/names/name_rule.mjs --write    rewrite both generated regions (only before 0039_names_rule_6 is applied anywhere:
 //                                             an applied migration is never edited — a new rule goes into a new migration)
 //   node tools/names/name_rule.mjs --check    exit 1 when a region differs from what this script generates
 //   node tools/names/name_rule.mjs --expect   --check, then what the ADAPTER's generated code makes of every code point of planes 0-1
@@ -27,14 +27,22 @@
 // ('bracket': "(MBA) Ahmed Ali" drew exactly as "Ahmed Ali (MBA)" in the Arabic interface, "Ali (علي) محمد" as "Ali محمد (علي)" in
 // the English one, v-spoof-r1 — see BRACKETS below) —, the pixel twins of a scan of the app's font stacks at every weight (bold ث / ئ), the Maghrebi ڭ ڢ, a zero-width
 // non-joiner between Arabic letters written as a space, a 'dash' suggestion for several dashes, and U+FFFD for a letter of another
-// alphabet in the skeleton)
+// alphabet in the skeleton); the SIXTH version, 0039_names_rule_6, is marked *(sixth version). Its principle (the coordinator's,
+// after verifier round 5): the skeleton OVER-merges. Two members whose names share a skeleton are twins — the picker and the chat
+// header add their company, city or #handle and a bare name is refused — which costs the sender one more line of context and never
+// blocks anyone; two names that look alike with different skeletons let a message reach the wrong person. So: the Turkish İ and ı
+// are i before the confusable mapping and every key is case FOLDED (Unicode full case folding, not lower case) — «Alİ Kaya» drew
+// like «Ali Kaya» in bold Poppins (0.62 of a dot) —; the skeleton IGNORES SPACES — «عبد الله أحمد» / «عبدالله أحمد», «أبو بكر» /
+// «أبوبكر»: a space after a letter that never joins the next one only widens a gap —; the pixel twins are what render_scan.py
+// finds below ONE Arabic dot (it was 0.6) at every weight the app uses in its fonts and the system fonts; and a space just inside
+// a bracket is tidied away («Ahmed Ali ( MBA )» → «Ahmed Ali (MBA)»)
 //  normalise (person_name_norm / nmNorm): remove every invisible character (Default_Ignorable_Code_Point, format Cf, control Cc —
 //    tab and line breaks excepted —, U+2800, U+1D159) and the Arabic tatweel U+0640 (it only stretches a joining line: "هـالة" reads
 //    "هالة"); *write every look-alike of the punctuation a name may hold as that punctuation (PUNCT_LIKE: a punctuation mark, a
 //    modifier symbol, a Common-script modifier letter or a dash whose TR39 confusable prototype is the prototype of . - ' ( ) , / —
 //    so the non-breaking hyphen and the en dash become "-", ‘ ʼ ´ ` and ' become ’, ﴾ ﴿ become ( ) — the apostrophe is always
 //    stored as ’, the way the app shows it); NFKC; both steps again (NFKC can produce a tatweel, U+FE71, or a look-alike); every
-//    kind of space or line break is one space, no space at either end.
+//    kind of space or line break is one space, no space at either end *(sixth version) nor just inside a bracket.
 //  allowed (person_name_problem / nmProblem: '' when allowed, else the first reason, in this order):
 //    empty   nothing left
 //    long    more than 120 characters
@@ -67,7 +75,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const DATA = path.join(ROOT, 'tools/names/unicode-16.0.0');
-const MIGRATION = path.join(ROOT, 'supabase/migrations/0039_names_rule_5.sql');
+const MIGRATION = path.join(ROOT, 'supabase/migrations/0039_names_rule_6.sql');
 const ADAPTER = path.join(ROOT, 'web/src/live/adapter.js');
 if (process.versions.unicode !== '16.0') { console.error(`Node carries Unicode ${process.versions.unicode}; the vendored data is 16.0 — use Node 22`); process.exit(2); }
 
@@ -225,10 +233,17 @@ const CTX = [];
     for (const x of g.slice(1)) PIXEL.set(x, g[0]);
   }
 }
-const base0 = (c) => (DROP.has(c) ? '' : CONF.has(c) ? CONF.get(c) : ch(c));
+// *(sixth version) every key is CASE FOLDED — Unicode full case folding (upper case, then lower case: «ß» is «ss», «ς» is «σ»), where
+// earlier versions lower-cased — and the Turkish İ (U+0130, NFD: I + dot above) and ı are plain i BEFORE the confusable mapping
+// (TURKIC: the skeleton writes İ as i before it decomposes the name; ı is i). Folding every letter before the mapping would join
+// letters that do not look alike: the confusable prototype of a capital is often another letter than its small letter's (Greek Η is
+// H, η is n; Cyrillic Т is T, т is ᴛ — «ТАНА» copies «TAHA» only in capitals), so each letter is mapped as it is written, then folded
+const TURKIC = new Map([[0x0130, 'i'], [0x0131, 'i']]);
+const fold = (x) => x.toUpperCase().toLowerCase();
+const base0 = (c) => (TURKIC.has(c) ? TURKIC.get(c) : DROP.has(c) ? '' : CONF.has(c) ? CONF.get(c) : ch(c));
 const base = (c) => (PIXEL.has(c) ? keyOf0(PIXEL.get(c)) : base0(c));
-function keyOf0(c) { let s = ch(c); for (let i = 0; i < 16; i++) { const t = [...[...s.normalize('NFD')].map((x) => base0(x.codePointAt(0))).join('')].map((x) => x.toLowerCase()).join('').normalize('NFD'); if (t === s) return s; s = t; } throw new Error('no fixed point for U+' + c.toString(16)); }
-const step = (s) => [...[...s.normalize('NFD')].map((x) => base(x.codePointAt(0))).join('')].map((x) => x.toLowerCase()).join('').normalize('NFD');
+function keyOf0(c) { let s = ch(c); for (let i = 0; i < 16; i++) { const t = [...[...s.normalize('NFD')].map((x) => base0(x.codePointAt(0))).join('')].map(fold).join('').normalize('NFD'); if (t === s) return s; s = t; } throw new Error('no fixed point for U+' + c.toString(16)); }
+const step = (s) => [...[...s.normalize('NFD')].map((x) => base(x.codePointAt(0))).join('')].map(fold).join('').normalize('NFD');
 function keyOf(c) { let s = ch(c); for (let i = 0; i < 16; i++) { const t = step(s); if (t === s) return s; s = t; } throw new Error('no fixed point for U+' + c.toString(16)); }
 const SKEL = [];
 for (let c = 1; c <= PLANES01; c++) { if (isSur(c)) continue; const s = ch(c); if (s.normalize('NFD') !== s || !stable(c)) continue; const k = keyOf(c); if (k !== s) SKEL.push([c, k]); }
@@ -240,6 +255,10 @@ for (let c = 1; c <= PLANES01; c++) { if (isSur(c)) continue; const s = ch(c); i
 const reorders = (a, b) => ('a' + a + b).normalize('NFD') !== 'a' + a + b;
 const MARK_ABOVE = ranges((c) => /^\p{M}$/u.test(ch(c)) && reorders(ch(c), '\u0323') && reorders('\u0315', ch(c)), PLANES01);
 const MARK_BEFORE_ABOVE = ranges((c) => /^\p{M}$/u.test(ch(c)) && reorders('\u0301', ch(c)), PLANES01);   // a mark NFD puts before one above
+// *(sixth version) "i or j" in skeleton space is the KEY of i and of j (i, l and every letter that draws like them share one key once
+// render_scan.py finds i / l below a dot: the dropped mark is then the first mark above any of them — «Ĺ» like «L», «أ» like «ا»)
+const SOFT = [keyOf(0x69), keyOf(0x6A)];
+if (SOFT.some((k) => [...k].length !== 1)) throw new Error('the key of i or j is not one character: ' + SOFT.join(' '));
 const hx = (c) => c.toString(16).toUpperCase();
 const SKEL_D = SKEL.map(([c, k]) => hx(c) + '=' + [...k].map((x) => hx(x.codePointAt(0))).join('.')).join(',');
 
@@ -294,10 +313,11 @@ function sqlRegion() {
 -- The name as a person reads it: a zero-width non-joiner between Arabic letters written as a space (fifth version), invisible
 -- characters and the tatweel removed, look-alikes of . - ' ( ) , / written as them (the
 -- apostrophe as ’), NFKC, the Arabic diacritics removed (vowel marks, tanween, shadda, sukun, superscript alef, Quranic marks), NFKC
--- again, one space between words, none before a slash ("د / محمد" → "د/ محمد") or at the ends.
+-- again, one space between words, none before a slash ("د / محمد" → "د/ محمد"), just inside a bracket ("( MBA )" → "(MBA)", sixth
+-- version) or at the ends.
 create or replace function public.person_name_norm(s text)
 returns text language sql immutable parallel safe as $$
-  select btrim(replace(regexp_replace(normalize(translate(regexp_replace(normalize(translate(regexp_replace(regexp_replace(coalesce(s, ''),
+  select btrim(replace(replace(replace(regexp_replace(normalize(translate(regexp_replace(normalize(translate(regexp_replace(regexp_replace(coalesce(s, ''),
     ${ZW}, '\\1\\2 ', 'g'),
     ${INV}, '', 'g'),
     ${LIKE_F},
@@ -305,7 +325,7 @@ returns text language sql immutable parallel safe as $$
     ${INV_STRIP}, '', 'g'),
     ${LIKE_F},
     ${LIKE_T}), NFKC),
-    '[' || ${U(sqlClass(SPACE))} || ']+', ' ', 'g'), ' /', '/'), ' ')
+    '[' || ${U(sqlClass(SPACE))} || ']+', ' ', 'g'), ' /', '/'), '( ', '('), ' )', ')'), ' ')
 $$;
 -- '' when a (normalised) name is allowed, else the first reason: empty, long, digit, letter, unsupported, char, accent, dash, word,
 -- bracket (fifth version: one pair of brackets, after a letter, around letters of one direction, between letters of one direction),
@@ -376,8 +396,9 @@ ${['empty', 'long', 'digit', 'mark'].map((k) => `    when '${k}' then ${sqlStr(M
                           from (select substring(public.person_name_norm(n) from ('(?:[^' || ${U(sqlClass(ACCENT_AT))} || '])?[' || ${U(sqlClass(MARK_BAD))} || ']')) as c) z)
   end
 $$;
--- the skeleton: TR39 confusable prototypes, lower case and no Arabic short vowels, per character of the NFD name; a letter of another
--- alphabet (refused: 'letter') is written U+FFFD with its marks (fifth version: PostgreSQL and the app decompose new letters differently)
+-- the skeleton: TR39 confusable prototypes, case folded and no Arabic short vowels, per character of the NFD name (the Turkish İ written
+-- i first — sixth version); a letter of another alphabet (refused: 'letter') is written U+FFFD with its marks (fifth version:
+-- PostgreSQL and the app decompose new letters differently); no spaces (sixth version: «عبد الله» and «عبدالله» are one name)
 create table if not exists private.name_skeleton (ch text primary key, sk text not null);
 delete from private.name_skeleton;
 insert into private.name_skeleton (ch, sk)
@@ -388,12 +409,12 @@ select chr(('x' || lpad(split_part(e, '=', 1), 8, '0'))::bit(32)::int),
 '${SKEL_D}', ',')) e;
 create or replace function public.person_name_key(s text)
 returns text language sql stable parallel safe set search_path = '' as $$
-  select ${'replace('.repeat(CTX.length)}regexp_replace(regexp_replace(normalize(array_to_string(array(
+  select ${'replace('.repeat(CTX.length)}regexp_replace(regexp_replace(normalize(replace(array_to_string(array(
     select coalesce((select m.sk from private.name_skeleton m where m.ch = c.ch), c.ch)
-      from unnest(regexp_split_to_array(normalize(regexp_replace(public.person_name_norm(s),
-        '[' || ${U(sqlClass(OTHER_LET))} || '][' || ${U(sqlClass(MARK_ALL))} || ']*', ${U('!FFFD')}, 'g'), NFD), '')) with ordinality c(ch, i) order by c.i), ''), NFD),
+      from unnest(regexp_split_to_array(normalize(translate(regexp_replace(public.person_name_norm(s),
+        '[' || ${U(sqlClass(OTHER_LET))} || '][' || ${U(sqlClass(MARK_ALL))} || ']*', ${U('!FFFD')}, 'g'), ${U('!0130')}, 'i'), NFD), '')) with ordinality c(ch, i) order by c.i), ''), ' ', ''), NFD),
     '([' || ${U(sqlClass(MARK_ALL))} || '])\\1+', '\\1', 'g'),
-    '([ij])([' || ${U(sqlClass(MARK_BEFORE_ABOVE))} || ']*)[' || ${U(sqlClass(MARK_ABOVE))} || ']', '\\1\\2', 'g')${sqlCtx()}
+    '([' || ${U(sqlChars(SOFT.map((k) => k.codePointAt(0))))} || '])([' || ${U(sqlClass(MARK_BEFORE_ABOVE))} || ']*)[' || ${U(sqlClass(MARK_ABOVE))} || ']', '\\1\\2', 'g')${sqlCtx()}
 $$;
 -- <<< generated`;
 }
@@ -422,14 +443,14 @@ function jsRegion() {
   var NM_SCRIPTS = [${SCRIPTS.map(([k]) => `['${k}', ${jsWord(LET[k], MARK[k])}]`).join(', ')}];
   var NM_MSG = ${isoEsc(JSON.stringify(MSG), (h) => '\\u' + h)};
   var NM_RUN_MARK = /([${jsClass(MARK_ALL)}])\\1+/gu;
-  var NM_SOFT = /([ij])([${jsClass(MARK_BEFORE_ABOVE)}]*)[${jsClass(MARK_ABOVE)}]/gu;
+  var NM_SOFT = /([${jsClass(single(SOFT.map((k) => k.codePointAt(0))))}])([${jsClass(MARK_BEFORE_ABOVE)}]*)[${jsClass(MARK_ABOVE)}]/gu;
   var NM_OTHER_RUN = /[${jsClass(OTHER_LET)}][${jsClass(MARK_ALL)}]*/gu;
   var NM_CTX = new Map(${JSON.stringify(CTX)});
   var NM_CTX_RE = ${CTX.length ? `/${CTX.map(([f]) => [...f].map((x) => '\\u{' + hx(x.codePointAt(0)) + '}').join('')).join('|')}/gu` : '/(?!)/gu'};
   var NM_SKEL = (function (d) { var m = new Map(); d.split(',').forEach(function (e) { var p = e.split('='); m.set(String.fromCodePoint(parseInt(p[0], 16)), p[1] ? p[1].split('.').map(function (h) { return String.fromCodePoint(parseInt(h, 16)); }).join('') : ''); }); return m; })(
     '${SKEL_D}');
   function nmLikeTo(c) { return NM_LIKE_TO.get(c); }
-  function nmNorm(x) { return String(x == null ? '' : x).replace(NM_ZWNJ, '$1$2 ').replace(NM_INVIS, '').replace(NM_LIKE, nmLikeTo).normalize('NFKC').replace(NM_STRIP, '').replace(NM_LIKE, nmLikeTo).normalize('NFKC').replace(NM_SPACE, ' ').replace(/ \\//g, '/').replace(/^ | $/g, ''); }
+  function nmNorm(x) { return String(x == null ? '' : x).replace(NM_ZWNJ, '$1$2 ').replace(NM_INVIS, '').replace(NM_LIKE, nmLikeTo).normalize('NFKC').replace(NM_STRIP, '').replace(NM_LIKE, nmLikeTo).normalize('NFKC').replace(NM_SPACE, ' ').replace(/ \\//g, '/').replace(/\\( /g, '(').replace(/ \\)/g, ')').replace(/^ | $/g, ''); }
   function nmWords(x) { return nmNorm(x).split(' ').filter(function (w) { return NM_LET.test(w); }).join(' '); }
   function nmBrFix(m) {
     var g = [], re = /[(]([^()]*)(?:[)]|$)/gu, x; while ((x = re.exec(m))) { var t = nmWords(x[1]); if (t) g.push(t); }
@@ -457,7 +478,7 @@ function jsRegion() {
     if (p === 'accent') { var a = (n.match(NM_ACCENT_AT) || [''])[0]; m = put(a); return put((Array.from(a).pop() || '').codePointAt(0).toString(16).toUpperCase().padStart(4, '0')); }
     return m;
   }
-  function nmSkel(x) { return Array.from(nmNorm(x).replace(NM_OTHER_RUN, '\\uFFFD').normalize('NFD'), function (c) { var k = NM_SKEL.get(c); return k == null ? c : k; }).join('').normalize('NFD').replace(NM_RUN_MARK, '$1').replace(NM_SOFT, '$1$2').replace(NM_CTX_RE, function (m) { return NM_CTX.get(m); }); }
+  function nmSkel(x) { return Array.from(nmNorm(x).replace(NM_OTHER_RUN, '\\uFFFD').replace(/\\u0130/g, 'i').normalize('NFD'), function (c) { var k = NM_SKEL.get(c); return k == null ? c : k; }).join('').replace(/ /g, '').normalize('NFD').replace(NM_RUN_MARK, '$1').replace(NM_SOFT, '$1$2').replace(NM_CTX_RE, function (m) { return NM_CTX.get(m); }); }
 /* <<< generated */`;
 }
 

@@ -50,7 +50,7 @@ REV = opt('--rule'); MUST = opt('--must-find'); PART = opt('--part', 'all'); QUI
 SIZES = [int(x) for x in opt('--sizes', '14,15,16').split(',')]
 WEIGHTS = [int(x) for x in opt('--weights', '400,500,600,700').split(',')]
 OUT = ARGS[0] if ARGS else None
-THR = float(ARGS[1]) if len(ARGS) > 1 else 0.6
+THR = float(ARGS[1]) if len(ARGS) > 1 else 1.0
 src = subprocess.run(['git', 'show', REV + ':web/src/live/adapter.js'], cwd=ROOT, capture_output=True, text=True, check=True).stdout if REV \
     else open(os.path.join(ROOT, 'web/src/live/adapter.js'), encoding='utf8').read()
 a = src.index('/* >>> generated'); b = src.index('/* <<< generated */'); gen = src[src.index('\n', a) + 1:b]
@@ -62,7 +62,7 @@ SINGLE = ['"DejaVu Sans"', '"FreeSans"', '"FreeSerif"', '"Liberation Sans"']
 FACES = ''.join(re.findall(r"@font-face\{font-family:'Poppins'[^}]*\}", open(os.path.join(ROOT, 'web/base/app.html'), encoding='utf8').read()))
 
 # ── whole names: real names and their variants (punctuation swapped / added / removed, word orders, brackets moved) ──
-BASE = ['Ahmed Ali', 'Dr. Ahmed Ali', "O'Brien", 'Al-Hassan', 'Ahmed Ali (MBA)', 'Mona El-Sayed', 'Ph/ Ahmed', 'Sara A. Ali', 'Ali, Ahmed',
+BASE = ['Alİ Kaya', 'Ali Kaya', 'أبو بكر', 'نور الدين', 'نورالدين', 'Ahmed Ali', 'Dr. Ahmed Ali', "O'Brien", 'Al-Hassan', 'Ahmed Ali (MBA)', 'Mona El-Sayed', 'Ph/ Ahmed', 'Sara A. Ali', 'Ali, Ahmed',
         'Szőke Anna', 'Saʿīd Ḥasan', 'Νίκος (Nikos)', 'Мария Иванова', 'Dr. Мария Иванова',
         'عبدالله أحمد', 'عبد الله أحمد', 'أبوبكر محمد', 'د/ محمد علي', 'د. هالة الشامي', 'محمد (علي)', 'محمد، علي', 'عبدالرحمن',
         'Ahmed محمد', 'محمد Ahmed', 'ثروت عادل', 'هالة', 'زياد', 'خالد', 'Ziad (زياد)', 'أحمد علي (صيدلي)', 'محمد علي (أبو أحمد)',
@@ -116,7 +116,7 @@ SETUP = r"""([gen, part, names]) => {
 }"""
 
 # one drawing context: the font string (a stack or one font), the font string the dot unit is drawn with (the same)
-SCAN = r"""([font, arf, dirs, part, thr, check]) => {
+SCAN = r"""([font, arf, dirs, part, thr, check, gap]) => {
  const { U, T, single, sk, isLetter } = window.__S;
  const W = part === 'names' ? 400 : part === 'sequences' ? 112 : 64, H = 48, BASE = 32, SIG = 1, R = 3;
  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d', { willReadFrequently: true });
@@ -133,13 +133,24 @@ SCAN = r"""([font, arf, dirs, part, thr, check]) => {
    const d = raw(t, f, dir); let x0 = W, x1 = -1, ink = 0;
    for (let i = 0; i < W * H; i++) { const v = d[i * 4 + 3]; if (v) { ink += v; const c = i % W; if (c < x0) x0 = c; if (c > x1) x1 = c; } }
    if (!ink || x0 === 0 || x1 === W - 1) return null;
+   const r = prep((y, c) => d[(y * W + c) * 4 + 3], x0, x1); r.h = hash(d);
+   if (gap) {   // *(sixth version) the same drawing with every empty gap between two inked columns one column wide: a space, or a wider gap
+                // after a letter that never joins the next one («عبد الله» / «عبدالله»), does not change what the eye reads as the name
+     const cols = []; let blank = false;
+     for (let c = x0; c <= x1; c++) { let v = 0; for (let y = 0; y < H; y++) v += d[(y * W + c) * 4 + 3];
+       if (v) { cols.push(c); blank = false; } else if (!blank) { cols.push(-1); blank = true; } }
+     r.g = prep((y, c) => (c < cols.length && cols[c] >= 0 ? d[(y * W + cols[c]) * 4 + 3] : 0), 0, cols.length - 1);
+   }
+   return r;
+ }
+ function prep(get, x0, x1) {   // aligned on the ink's centre, blurred, with 8x8 block sums for a quick lower bound
    const sh = Math.round(W / 2 - (x0 + x1 + 1) / 2), a = new Float32Array(W * H);
-   for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { const c2 = c - sh; tmp[y * W + c] = c2 >= 0 && c2 < W ? d[(y * W + c2) * 4 + 3] : 0; }
+   for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { const c2 = c - sh; tmp[y * W + c] = c2 >= 0 && c2 < W ? get(y, c2) : 0; }
    for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { let v = 0; for (let k = -R; k <= R; k++) { const X = c + k; if (X >= 0 && X < W) v += tmp[y * W + X] * K[k + R]; } t2[y * W + c] = v; }
    for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { let v = 0; for (let k = -R; k <= R; k++) { const Y = y + k; if (Y >= 0 && Y < H) v += t2[Y * W + c] * K[k + R]; } a[y * W + c] = v; }
    const NB = (W >> 3) * (H >> 3), b8 = new Float32Array(NB); let sum = 0;
    for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { const v = a[y * W + c]; b8[(y >> 3) * (W >> 3) + (c >> 3)] += v; sum += v; }
-   return { a, b8, sum, h: hash(d) };
+   return { a, b8, sum };
  }
  function l1(p, q, lim) {   // the summed pixel difference, or lim as soon as it reaches lim
    if (Math.abs(p.sum - q.sum) >= lim) return lim;
@@ -169,7 +180,7 @@ SCAN = r"""([font, arf, dirs, part, thr, check]) => {
        if (t === u || (lu && t < u) || sk.get(t) === ku) continue;
        if (part === 'sequences' && oneLetter(u, t)) continue;   // one letter apart: the letters part compares them in every joining position
        pairs++;
-       const m = l1(p, q, lim); if (m < lim) near.push([font, pos + (ndir ? ':' + ndir + (pre || post ? ':' + pre + '…' + post : '') : ''), u, t, +(m / dot).toFixed(3),
+       const m = gap ? Math.min(l1(p, q, lim), l1(p.g, q.g, lim)) : l1(p, q, lim); if (m < lim) near.push([font, pos + (ndir ? ':' + ndir + (pre || post ? ':' + pre + '…' + post : '') : ''), u, t, +(m / dot).toFixed(3),
          [...u].map((c) => c.codePointAt(0).toString(16).toUpperCase()).join(' '), [...t].map((c) => c.codePointAt(0).toString(16).toUpperCase()).join(' '), ku, sk.get(t)]); } }
  }
  return { font, dot: +dot.toFixed(1), drawn, tofu, lacks, pairs, near };
@@ -186,7 +197,9 @@ def contexts(part):
                 out.append(('%d %dpx %s' % (w, s, st), '%d %dpx %s' % (w, s, st), [[x, '', ''] for x in ([d] if d else ['ltr', 'rtl'])], False))
             if part == 'names' and w == ws[0] and s == ss[len(ss) // 2]:   # inside a sentence (a notification, a toast): words before / after
                 st = STACKS[1][1]; out.append(('%d %dpx %s' % (w, s, st), '%d %dpx %s' % (w, s, st), [[x, a_, b_] for x in ('ltr', 'rtl') for a_, b_ in WRAPS], False))
-            if part == 'letters' and not QUICK and w in (400, 700):
+            if part == 'letters' and not QUICK:   # *(sixth version) the system fonts at every weight too (they were drawn at 400 and 700)
+                for f in SINGLE: out.append(('%d %dpx %s' % (w, s, f), '%d %dpx %s' % (w, s, f), ['ltr'], True))
+            if part == 'sequences' and not QUICK and s == ss[len(ss) // 2]:   # *(sixth version) two-letter sequences in the system fonts too
                 for f in SINGLE: out.append(('%d %dpx %s' % (w, s, f), '%d %dpx %s' % (w, s, f), ['ltr'], True))
     return out
 
@@ -200,7 +213,7 @@ with sync_playwright() as p:
         print('rule', REV or 'working tree', '— part', part, info, 'threshold', THR, flush=True)
         runs = []
         for f, arf, dirs, check in contexts(part):
-            r = pg.evaluate(SCAN, [f, arf, dirs, part, THR, check]); r['part'] = part; runs.append(r)
+            r = pg.evaluate(SCAN, [f, arf, dirs, part, THR, check, part != 'letters']); r['part'] = part; runs.append(r)
             print('  %-5s %-44s drawn %5d (no glyph %d%s)  dot %6.1f  pairs %9d  near %d  [%.0fs]' % (part[:5], f[:44], r['drawn'], r['tofu'],
                   (', font lacks %d' % r['lacks']) if check else '', r['dot'], r['pairs'], len(r['near']), time.time() - t0), flush=True)
             for n in r['near']: near.append(n + [part])
@@ -227,7 +240,8 @@ if '--write' in sys.argv:   # add the pairs found (letters) to tools/names/pixel
         diff = [(i, x, y) for i, (x, y) in enumerate(zip(ka, kb)) if x != y] if len(ka) == len(kb) else None
         ccc = lambda c: unicodedata.combining(c) if unicodedata.combining(c) < 200 or unicodedata.combining(c) >= 230 else 220   # attached below ~ below
         arabic = any('ARABIC' in unicodedata.name(c, '') for c in a_ + b_)   # Arabic: the two letters (a hamza is not three dots everywhere)
-        if len(a_) == 1 and len(b_) == 1 and arabic: pairs.add(tuple(sorted((ord(a_), ord(b_)))))
+        split = lambda x: unicodedata.normalize('NFD', x) != x
+        if len(a_) == 1 and len(b_) == 1 and arabic and not (split(a_) and split(b_)): pairs.add(tuple(sorted((ord(a_), ord(b_)))))   # (sixth version) آ / أ: their marks
         elif diff and all(unicodedata.category(x).startswith('M') and unicodedata.category(y).startswith('M') for _, x, y in diff):
             for i, x, y in diff:
                 if ccc(x) == ccc(y): pairs.add(tuple(sorted((ord(x), ord(y)))))       # the same place: the marks
