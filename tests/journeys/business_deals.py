@@ -95,7 +95,7 @@ def decline_and_withdraw(j):
         reopen(j, sp); open_deal(j, sp, t1, r'Received|الواردة'); bs = dlg_buttons(sp); close_dialogs(sp)
         j.check(not [x for x in bs if re.search(r'^(Send quote|Revise quote|Decline|أرسل عرضًا|عدّل العرض|رفض)$', x)], 'a declined deal still offers actions: %s' % bs)
         reopen(j, pg); t = open_deal(j, pg, t2, r'Sent|المرسلة'); bs = dlg_buttons(pg); close_dialogs(pg)
-        j.check(re.search(r'Cancelled|Withdrawn|ملغ|سُحب', t), 'the withdrawn request does not show as withdrawn')
+        j.check(re.search(r'Cancelled|Withdrawn|ملغ|سُحب|أُلغي|ألغي', t), 'the withdrawn request does not show as withdrawn')
         j.check(not [x for x in bs if re.search(r'^(Withdraw|Accept quote|Counter-offer|اسحب الطلب|اقبل العرض)$', x)], 'a withdrawn deal still offers actions: %s' % bs)
         if j.live:
             j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and type='deal'" % b['id']) not in ('', '0'), 'the buyer was not notified of the decline')
@@ -141,7 +141,8 @@ def rfq_many_suppliers(j):
         for i in range(cards.count()):
             nm = cards.nth(i).locator('.dr-name').inner_text().split('\n')[0].strip()
             if (names and nm in names) or (not names and len(picked) < 3):
-                cards.nth(i).locator('input[type=checkbox]').check(force=True); picked.append(nm); pg.wait_for_timeout(150)
+                cards.nth(i).evaluate("e=>e.scrollIntoView({block:'center'})")   # as a person would: not under the floating selection bar
+                cards.nth(i).locator('input[type=checkbox]').check(); picked.append(nm); pg.wait_for_timeout(150)
             if len(picked) == 3: break
         j.check(len(picked) == 3, 'could not select three API suppliers (%s)' % picked)
         j.data['picked'] = picked
@@ -262,7 +263,7 @@ def license_dossier(j):
         else:
             title = j.sql1("select title from public.deals where to_company_id=%s order by id desc limit 1" % s['co']['id'])
             their_move(j, pg, s, title, 'Sign NDA')
-            their_move(j, pg, s, title, 'Share details', {r'Shared|مشترك|شارك': 'Data room: stability Zone IVa, registration certificate %s' % j.tag})
+            their_move(j, pg, s, title, 'Share details', {r'Shared|مشترك|شارك': 'Data room: stability Zone IVa, registration certificate %s' % j.tag}, attach=PDF)
         t = open_deal(j, pg, title, r'Sent|المرسلة')
         j.check(re.search(r'Details shared|تمت مشاركة', t), "the licensee does not see 'Details shared'")
     with j.step("Licensee: 'Agree terms' — status Agreed for both"):
@@ -332,21 +333,21 @@ def consulting_service(j):
         pg = j.demo_signin(j.new_page()); cons = 'RegPath Consulting'; c = None
     with j.step("Factory: consultant page → request the service (scope), not a goods quotation"):
         directory(j, pg); open_card(j, pg, cons)
-        el = j.find(pg, r'Request (this )?service|Request a proposal|اطلب الخدمة|اطلب عرض', scope='#content')
+        el = j.find(pg, r'Request (this )?service|Request a proposal|اطلب الخدمة|اطلب عرضًا', scope='#content')   # not 'اطلب عرض سعر' (Request a quote)
         if not el: el = j.find(pg, L('Request a quote'), scope='#content')
         j.check(el, 'no way to request a service on the consultant page')
         el.click(); pg.wait_for_timeout(800)
         t = dlg_text(pg)
-        j.check(re.search(r'^Service|\nService|الخدمة', t) and not re.search(r'Quantity \*', t), "not built: the consultant's page has no service request — 'Request a quote' opens a goods quotation (Quantity, Deliver to)")
+        j.check(re.search(r'^Service|\nService|الخدمة|^خدمة|\nخدمة', t) and not re.search(r'Quantity \*|الكمية \*', t), "not built: the consultant's page has no service request — 'Request a quote' opens a goods quotation (Quantity, Deliver to)")
         fill_by_label(j, pg, r'Message|الرسالة|Scope', 'EDA variation for site transfer of 3 products')
         dlg_click(j, pg, L('Send request'), 'Send request'); j.settle(pg, 1000)
-        title = pg.evaluate("(dxDeals.all().filter(d=>d.type==='service').pop()||{}).title")
+        title = pg.evaluate("n=>(dxDeals.all().filter(d=>d.type==='service'&&d.to&&d.to.name===n).pop()||{}).title", cons)   # the request this journey sent to the consultant
         j.check(title, 'no service request was created')
     with j.step("Consultant: 'Send proposal' (EGP 85,000, 6 weeks, scope); factory: 'Accept'"):
         their_move(j, pg, c, title, 'Send proposal', {r'Fee|الأتعاب': 'EGP 85,000', r'Timeline|المدة': '6 weeks', r'Scope|النطاق': 'Gap analysis, dossier update, EDA follow-up'})
         open_deal(j, pg, title, r'Sent|المرسلة'); deal_act(j, pg, r'^\W*(Accept|Accept quote|قبول|اقبل)\W*$'); close_dialogs(pg)
     with j.step("Consultant: 'Start work' → 'Mark delivered' (attaching the deliverable)"):
-        their_move(j, pg, c, title, 'Start work'); their_move(j, pg, c, title, 'Mark delivered')
+        their_move(j, pg, c, title, 'Start work'); their_move(j, pg, c, title, 'Mark delivered', attach=PDF)   # the deliverable goes with the step
         t = open_deal(j, pg, title, r'Sent|المرسلة'); close_dialogs(pg)
         j.check(re.search(r'Delivered|تم التسليم', t), 'the factory does not see Delivered')
         j.check(re.search(r'\.pdf|Download|تنزيل', t), 'not built: the delivered service carries no deliverable attachment')

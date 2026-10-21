@@ -4,7 +4,7 @@
    requests, credentials with source and expiry, and a track record computed only from real deals. No levels, no restrictions. */
 (function () {
   function X() { return window.dxDir; }
-  var __A = /^(deals|created_companies|reports|dossiers|surplus_new|groups_new|follows|saved_searches|my_requests|activity_.*|inbox_.*)$/, __O = /^(company_edits|supplier_reviews|review_meta|avl_.*|groups_state|meta_.*|quoted_.*|sqq_.*)$/, __S = /^(acting|role)$/;
+  var __A = /^(deals|created_companies|reports|dossiers|surplus_new|groups_new|follows|saved_searches|my_requests|join_requests|activity_.*|inbox_.*)$/, __O = /^(company_edits|supplier_reviews|review_meta|avl_.*|groups_state|meta_.*|quoted_.*|sqq_.*)$/, __S = /^(acting|role)$/;
   function __typed(k, v) { if (v == null) return null; if (__A.test(k)) return Array.isArray(v) ? v : null; if (__O.test(k)) return (typeof v === 'object' && !Array.isArray(v)) ? v : null; if (__S.test(k)) return typeof v === 'string' ? v : null; return v; }   /* a stored value of the wrong type is ignored, never trusted */
   function store(k, v) { if (v !== undefined) window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;   /* every write invalidates the memoised company list (directory.js) */
     if (window.dxStoreHook) { var __h = window.dxStoreHook(k, v); if (__h !== undefined) return __h; } try { if (v === undefined) return __typed(k, JSON.parse(localStorage.getItem('dx_' + k) || 'null')); localStorage.setItem('dx_' + k, JSON.stringify(v)); return true; } catch (e) { quotaToast(); return false; } }
@@ -61,12 +61,12 @@
   function certState(c, co) {
     var t = new Date().toISOString().slice(0, 7), exp = c.expiry, st = 'valid';
     if (exp && exp < t) st = 'expired'; else if (exp) { var d = new Date(exp + '-01').getTime() - NOW(); if (d < 90 * DAY) st = 'soon'; }
-    return { state: st, checked: co.status === 'verified' && c.src !== 'Public industry list' && c.src !== 'Company' };
+    return { state: st, checked: !!c.checked && c.src !== 'Public industry list' && c.src !== 'Company' };   /* checked = Drugbox looked at its document (the date it did), whatever the company's own status */
   }
   function credentials(co) {
     var out = [];
     sitesOf(co).forEach(function (s) { (s.certs || []).forEach(function (c) { out.push(Object.assign({ site: s.name }, c, certState(c, co))); }); });
-    if (window.dxDir3) window.dxDir3.membersOf(co).forEach(function (m) { out.push({ name: 'Member: ' + (m.short || m.name), full: m.name, site: 'Company', src: m.ok ? 'Confirmed by the organisation' : 'Waiting for the organisation', expiry: '', state: m.ok ? 'valid' : 'pending', checked: !!m.ok }); });
+    if (window.dxDir3) window.dxDir3.membersOf(co).forEach(function (m) { out.push({ name: 'Member: ' + (m.short || m.name), full: m.name, site: 'Company', src: m.ok ? 'Confirmed by the organisation' : 'Being checked by Drugbox', expiry: '', state: m.ok ? 'valid' : 'pending', checked: !!m.ok }); });
     return out;
   }
 
@@ -144,7 +144,7 @@
   /* ── reports of wrong information, review replies and disputes ── */
   function reports(v) { if (v === undefined) return store('reports') || []; store('reports', v); }
   function addReport(slug, section, text, fix) { var l = reports(); l.unshift({ id: 'R' + NOW(), slug: slug, section: section, text: text, fix: fix, by: (window.ME || {}).name || 'User', at: NOW(), status: 'open' }); reports(l); }
-  function reviewsOf(slug) { var rv = (cached('supplier_reviews') || {})[slug] || [], meta = cached('review_meta') || {}; return rv.map(function (r) { return Object.assign({}, r, meta[r.deal] || {}); }); }
+  function reviewsOf(slug) { var rv = (cached('supplier_reviews') || {})[slug] || [], meta = cached('review_meta') || {}; return rv.map(function (r) { return Object.assign({}, r, meta[r.deal] || {}); }).filter(function (r) { return !r.hidden; }); }   /* a review Drugbox removed is not shown */
   function reviewMeta(dealId, patch) { var m = store('review_meta') || {}; m[dealId] = Object.assign({}, m[dealId] || {}, patch); store('review_meta', m); }
 
   /* ── activity log (inside the company) ── */
@@ -205,9 +205,14 @@
       prod = norm(co.products.map(function (p) { return p.name + ' ' + (p.api || '') + ' ' + p.desc + ' ' + (p.nameAr || ''); }).join(' ') + ' ' + madeFor(co).map(function (m) { return m.p.name + ' ' + (m.p.api || ''); }).join(' '));
     var cap = sitesOf(co).map(function (s) { return s.cap ? s.cap.forms.join(' ') : ''; }).join(' ').toLowerCase();
     var score = 0;
-    for (var i = 0; i < words.length; i++) { var w = words[i]; if (norm(co.name + ' ' + nameAr(co)).indexOf(w) >= 0) score += 3; else if (prod.indexOf(w) >= 0) score += 2; else if (hay.indexOf(w) >= 0 || cap.indexOf(w) >= 0) score += 1; else return 0; }
+    for (var i = 0; i < words.length; i++) { var w = words[i]; if (norm(co.name + ' ' + nameAr(co)).indexOf(w) >= 0) score += 3; else if (prod.indexOf(w) >= 0) score += 2; else if (hay.indexOf(w) >= 0 || cap.indexOf(w) >= 0) score += 1; else if (near(w, norm(co.name + ' ' + nameAr(co)))) score += 2; else return 0; }
     return score;
   }
+  /* a misspelt word ("medsinya") still finds the name ("Medsinia"): one letter off in a word of 5–7 letters, two in a longer one */
+  function lev(a, b, max) { if (Math.abs(a.length - b.length) > max) return max + 1; var p = [], c, i, j; for (j = 0; j <= b.length; j++) p[j] = j;
+    for (i = 1; i <= a.length; i++) { c = [i]; var lo = i; for (j = 1; j <= b.length; j++) { c[j] = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); if (c[j] < lo) lo = c[j]; } if (lo > max) return max + 1; p = c; }
+    return p[b.length]; }
+  function near(w, text) { if (w.length < 5) return false; var max = w.length >= 8 ? 2 : 1; return text.split(/[^\p{L}\p{N}]+/u).some(function (x) { return x.length >= 4 && lev(w, x, max) <= max; }); }
   function rankScore(co, q) {
     var r = relevance(co, q); if (!r) return -1;
     var t = track(co.slug);
@@ -222,7 +227,9 @@
     return { total: cs.length, claimed: cs.filter(function (c) { return c.status !== 'unclaimed'; }).length, verified: cs.filter(function (c) { return c.status === 'verified'; }).length,
       complete: cs.filter(function (c) { return completeness(c).pct >= 80; }).length, avgComplete: Math.round(cs.reduce(function (a, c) { return a + completeness(c).pct; }, 0) / cs.length),
       responseRate: recv.length ? Math.round(answered.length / recv.length * 100) : null, dealsMonth: month.length, stale: cs.filter(function (c) { return staleSections(c).length; }),
-      active: cs.filter(isActive).length, dormant: cs.filter(isDormant).length, openReports: reports().filter(function (r) { return r.status === 'open'; }).length, disputed: disputed.length };
+      active: cs.filter(isActive).length, dormant: cs.filter(isDormant).length, openReports: reports().filter(function (r) { return r.status === 'open'; }).length, disputed: disputed.length,
+      reported: (function () { var by = {}; reports().forEach(function (r) { if (r.status !== 'open') return; var co = X().bySlug(r.slug), b = by[r.slug] || (by[r.slug] = { slug: r.slug, name: co ? co.name : r.slug, n: 0, secs: [] }); b.n++; if (b.secs.indexOf(r.section) < 0) b.secs.push(r.section); });
+        return Object.keys(by).map(function (k) { by[k].sections = by[k].secs.join(', '); return by[k]; }); })() };
   }
 
   window.dxHubData = { norm: norm, queryWords: queryWords, nameAr: nameAr, sitesOf: sitesOf, saveSites: saveSites, certState: certState, credentials: credentials, rolesOf: rolesOf, roleLabel: roleLabel, madeFor: madeFor, groupOf: groupOf,

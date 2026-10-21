@@ -36,7 +36,7 @@
     group: { label: 'Group order', icon: 'users', steps: ['open', 'target_reached', 'confirmed'],
       acts: { target_reached: { to: ['confirm_group', 'decline'] } } }
   };
-  var LABEL = { sent: 'Sent', quoted: 'Quote received', countered: 'Counter-offer', accepted: 'Accepted', confirmed: 'Order confirmed', shipped: 'Shipped', delivered: 'Delivered', closed: 'Closed', declined: 'Declined', cancelled: 'Cancelled',
+  var LABEL = { file: 'Document attached', expired: 'Closed — target not reached', change: 'Quantity changed', leave: 'Left the group', sent: 'Sent', quoted: 'Quote received', countered: 'Counter-offer', accepted: 'Accepted', confirmed: 'Order confirmed', shipped: 'Shipped', delivered: 'Delivered', closed: 'Closed', declined: 'Declined', cancelled: 'Cancelled',
     proposed: 'Proposal received', in_progress: 'In progress', offered: 'Offer sent', answered: 'Answered', approved: 'Approved', rejected: 'Rejected', requested: 'Requested', nda_signed: 'NDA signed', shared: 'Details shared', agreed: 'Agreed',
     applied: 'Applied', shortlisted: 'Shortlisted', interview: 'Interview', offer: 'Job offer', hired: 'Hired', open: 'Open', target_reached: 'Target reached' };
   var TONE = { declined: 'dec', cancelled: 'dec', rejected: 'dec', closed: 'acc', approved: 'acc', agreed: 'acc', hired: 'acc', delivered: 'acc', confirmed: 'acc', accepted: 'acc' };
@@ -58,7 +58,8 @@
     rate: [['stars', 'Rating (1–5) *', '5', 1], ['note', 'Comment', '']],
     offer: [['price', 'Salary offer *', 'e.g. EGP 28,000 / month', 1]],
     interview: [['when', 'Interview date *', '', 1]],
-    share: [['note', 'Shared (e.g. dossier summary, stability data room link) *', '', 1]],
+    share: [['note', 'Shared (e.g. dossier summary, stability data room link) *', '', 1], ['file', 'Data room file (optional)', '', 0, 'file']],
+    deliver: [['note', 'Delivery note', 'e.g. Final report and EDA submission receipt'], ['file', 'Deliverable (file)', '', 0, 'file']],
     decline: [['note', 'Reason (shared with the other side)', '']]
   };
 
@@ -97,6 +98,8 @@
   }
   function other(d, side) { return side === 'to' ? d.from : d.to; }
   function actionsFor(d, side) { var f = FLOWS[d.type], a = f.acts[d.status]; return a && side && a[side] ? a[side] : []; }
+  /* "Your move": a step the other side waits for — withdrawing or revising one's own offer is possible, not awaited */
+  function moves(d, side) { return actionsFor(d, side).filter(function (a) { return a !== 'cancel' && a !== 'revise'; }); }
   function counterOwned(d, side) { var o = other(d, side), mine = myCos(); return o.slug && mine.indexOf(o.slug) >= 0; }
 
   /* ── create ── */
@@ -170,6 +173,21 @@
     d.updated = now(); save(d); return d;
   }
 
+  /* a member changes its quantity (0 = leaves) while the group is open; the organiser can change but not leave */
+  function setMember(id, member, qty) {
+    var d = get(id); if (!d || d.type !== 'group' || d.status !== 'open') { toast('This buying group is closed'); return null; }
+    qty = Math.floor(+qty); if (!(qty >= 0)) { toast('Enter a quantity (0 to leave)'); return null; }
+    var ex = (d.members || []).find(function (m) { return m.slug === member.slug; }); if (!ex) { toast('Your company is not in this group'); return null; }
+    if (qty === 0 && member.slug === d.from.slug) { toast('The organiser stays in its group — withdraw the group instead'); return null; }
+    if (qty === 0) { d.members = d.members.filter(function (m) { return m !== ex; }); d.events.push({ at: now(), by: 'member', kind: 'leave', text: member.name + ' left the group' }); }
+    else { ex.qty = qty; d.events.push({ at: now(), by: 'member', kind: 'change', text: member.name + ' changed its quantity to ' + qty.toLocaleString('en-US') + ' ' + d.lines.unit }); }
+    var sum = d.members.reduce(function (a, m) { return a + m.qty; }, 0);
+    if (sum >= d.lines.target) { d.status = 'target_reached'; d.events.push({ at: now(), by: 'system', kind: 'target', text: 'Target reached (' + sum.toLocaleString('en-US') + ' ' + d.lines.unit + ') — waiting for ' + d.to.name + ' to confirm the group price' }); }
+    d.updated = now(); save(d); return d;
+  }
+  /* a group past its closing date below its target: closed, nothing ordered (the live app asks the database to close it) */
+  function groupExpired(d) { var by = d && d.lines && d.lines.by; return d && d.type === 'group' && (d.status === 'expired' || (d.status === 'open' && by && /^\d{4}-\d{2}-\d{2}$/.test(by) && by < new Date().toISOString().slice(0, 10))); }
+
   /* ── demo: perform the other side's next step, openly ── */
   var AUTO = { quote: function (d) { return { price: 'US$ ' + (2 + (d.title.length % 37) + (d.to.name.length % 5) / 10).toFixed(2) + ' per ' + (d.lines.unit || 'unit'), validity: '14 days', terms: d.lines.inc || 'CIF', lead: '3 weeks' }; },
     revise: function (d) { return { price: d.counter ? d.counter.price : 'US$ 4.90', validity: '7 days' }; }, propose: function () { return { price: 'EGP 85,000', timeline: '6 weeks', note: 'Gap analysis, compilation and EDA follow-up' }; },
@@ -182,6 +200,27 @@
     var theirs = mine === 'to' ? 'from' : 'to', opts = actionsFor(d, theirs).filter(function (a) { return ['cancel', 'decline', 'reject', 'revise'].indexOf(a) < 0; });
     if (!opts.length) { toast('Nothing for them to do right now'); return; }
     var a = opts[0]; act(id, a, AUTO[a] ? AUTO[a](d) : {}, theirs); toast((theirs === 'to' ? d.to.name : d.from.name) + ': ' + ACT[a][0] + ' (simulated)');
+    if (a === 'deliver' || a === 'share') { try { window.dxDealFiles.attach(get(id), new File(['Drugbox demo — sample ' + (a === 'deliver' ? 'deliverable' : 'data room index') + ' for ' + d.title], (a === 'deliver' ? 'Deliverable' : 'Data room index') + '.pdf', { type: 'application/pdf' }), a === 'deliver' ? 'Deliverable' : 'Data room', theirs); } catch (e) {} }   /* the simulated side sends its file too */
+  }
+
+  /* ── documents inside a deal (PO, CoA, invoice, NDA, data room, deliverables): window.dxDealFiles — this browser in the demo
+     (the file stays on this device for this visit), private storage readable by the two parties in the live app ── */
+  var DOC_TYPES = '.pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx', DOC_KINDS = ['PO', 'CoA', 'Invoice', 'Specification', 'NDA', 'CV', 'Other'], FILEMEM = {};
+  if (!window.dxDealFiles) window.dxDealFiles = {
+    list: function (d) { return Array.isArray(d.files) ? d.files : []; },
+    attach: function (d, file, kind, side) { var x = get(d.id); if (!x) return Promise.resolve(false); var at = now(), key = d.id + '|' + at + '|' + file.name;
+      try { FILEMEM[key] = URL.createObjectURL(file); } catch (e) {}
+      (x.files = Array.isArray(x.files) ? x.files : []).push({ key: key, name: file.name, kind: kind, by: side, at: at });
+      x.events.push({ at: at, by: side, kind: 'file', text: kind + ': ' + file.name }); x.updated = at; save(x); return Promise.resolve(true); },
+    open: function (d, f) { var u = FILEMEM[f.key]; if (u) { window.open(u, '_blank', 'noopener'); return Promise.resolve(true); } toast('This file was attached in another visit — documents open from the live app'); return Promise.resolve(false); }
+  };
+  function attachFile(id, file, kind, side) { var d = get(id); if (!d || !file) return Promise.resolve(false);
+    if (file.size > 20 * 1048576) { toast('Files up to 20 MB'); return Promise.resolve(false); }
+    return window.dxDealFiles.attach(d, file, kind, side).then(function (ok) { if (ok) toast(file.name + ' attached'); return ok; }, function (e) { toast((e && e.message) || 'Could not attach the file'); return false; }); }
+  function docsHtml(d, side) {
+    var fs = window.dxDealFiles.list(d), who = function (b) { return b === 'from' ? d.from.name : b === 'to' ? d.to.name : ''; };
+    return '<h4 class="sq-h">Documents</h4>' + (fs.length ? fs.map(function (f, i) { return '<div class="mr-row"><div class="mr-b"><b data-noi18n>' + esc(f.name) + '</b><small>' + esc(f.kind) + ' · ' + esc(who(f.by)) + ' · ' + when(f.at) + '</small></div><button type="button" class="dr-btn sm" data-dfopen="' + i + '">Download</button></div>'; }).join('') : '<p class="cp-muted">No documents yet.</p>') +
+      (side ? '<div class="dl-attach"><select data-dfkind aria-label="Document type">' + DOC_KINDS.map(function (k) { return '<option>' + k + '</option>'; }).join('') + '</select><label class="dr-btn sm">' + ic('plus') + 'Attach a document<input type="file" data-dfile hidden accept="' + DOC_TYPES + '"></label></div>' : '');
   }
 
   /* ── views ── */
@@ -189,7 +228,7 @@
   function row(d, side) {
     var f = FLOWS[d.type], o = other(d, side), acts = actionsFor(d, side);
     return '<button type="button" class="dl-row" data-deal="' + d.id + '"><span class="dl-ic">' + ic(f.icon) + '</span><span class="dl-b"><b>' + esc(d.title) + '</b><small>' + esc(f.label) + ' · ' + (myCos().length > 1 ? (side === 'to' ? esc(o.name) + ' → ' + esc(d.to.name) : esc(d.from.name) + ' → ' + esc(o.name)) : (side === 'to' ? 'from ' : 'to ') + esc(o.name)) + (d.group ? ' · 1 of a multi-company request' : '') + ' · ' + when(d.updated) + '</small></span>' + pill(d.status) +
-      (acts.length ? '<span class="dl-todo">Your move</span>' : '') + '</button>';
+      (moves(d, side).length ? '<span class="dl-todo">Your move</span>' : '') + '</button>';
   }
   function center(tab, typeFilter, coFilter) {
     var a = X().mine(); tab = tab || 'sent';
@@ -197,7 +236,7 @@
     var list = all().filter(function (d) { var s = sideOf(d); return tab === 'sent' ? s === 'from' : s === 'to'; }).filter(function (d) { return !typeFilter || d.type === typeFilter; })
       .filter(function (d) { return !coFilter || (tab === 'sent' ? d.from.slug : d.to.slug) === coFilter; }).sort(function (x, y) { return y.updated - x.updated; });
     var sent = all().filter(function (d) { return sideOf(d) === 'from'; }).length, recv = all().filter(function (d) { return sideOf(d) === 'to'; }).length;
-    var todo = all().filter(function (d) { var s = sideOf(d); return s && actionsFor(d, s).length; }).length;
+    var todo = all().filter(function (d) { var s = sideOf(d); return s && moves(d, s).length; }).length;
     var m = D.modal({ title: 'Requests & deals' + (a ? ' — ' + a.name : ''), secondary: 'Close',
       body: '<div class="dl-tabs"><button type="button" class="dr-chip' + (tab === 'sent' ? ' on' : '') + '" data-dtab="sent">Sent (' + sent + ')</button><button type="button" class="dr-chip' + (tab === 'received' ? ' on' : '') + '" data-dtab="received">Received (' + recv + ')</button>' + (todo ? '<span class="dl-todo">' + todo + ' waiting for you</span>' : '') + '</div>' +
         (cos.length > 1 ? '<div class="dl-types"><span class="cp-muted">Company:</span><button type="button" class="dr-chip sm' + (!coFilter ? ' on' : '') + '" data-dco="">All my companies</button>' + cos.map(function (c) { return '<button type="button" class="dr-chip sm' + (coFilter === c.slug ? ' on' : '') + '" data-dco="' + c.slug + '">' + esc(c.name) + '</button>'; }).join('') + '</div>' : '') +
@@ -227,35 +266,42 @@
         (d.counter && d.status === 'countered' ? '<div class="dl-offer ctr">' + ic('trend') + 'Counter-offer: <b>' + esc(d.counter.price) + '</b>' + (d.counter.note ? ' — ' + esc(d.counter.note) : '') + '</div>' : '') +
         (d.type === 'group' ? '<div class="dl-members">' + (d.members || []).map(function (mb) { return '<span>' + esc(mb.name) + ' · ' + esc(Number(mb.qty || 0).toLocaleString('en-US')) + '</span>'; }).join('') + '</div>' : '') +
         (Array.isArray(d.answers) && (d.status === 'answered' || d.status === 'approved' || d.status === 'rejected') ? '<div class="dl-ans">' + d.answers.filter(function (s) { return Array.isArray(s) && Array.isArray(s[1]); }).map(function (s) { return '<h4 class="sq-h">' + esc(s[0]) + '</h4>' + s[1].map(function (x) { return '<div class="sq-row"><span>' + esc(x.q) + '</span><b>' + esc(x.a || '—') + '</b><small>' + esc(x.src || '') + '</small></div>'; }).join(''); }).join('') + '</div>' : '') +
-        '<h4 class="sq-h">Timeline</h4><ul class="dl-tl">' + (Array.isArray(d.events) ? d.events : []).slice().reverse().map(function (ev) { var who = ev.by === 'from' ? d.from.name : ev.by === 'to' ? d.to.name : ev.by === 'member' ? 'Member' : 'Drugbox'; return '<li><b>' + esc(who) + '</b> · ' + esc(LABEL[ev.kind] || (ACT[ev.kind] ? ACT[ev.kind][0] : ev.kind)) + '<small>' + when(ev.at, true) + '</small>' + (ev.text && ev.text !== (LABEL[ev.kind] || '') ? '<p>' + esc(ev.text) + '</p>' : '') + '</li>'; }).join('') + '</ul>' +
+        docsHtml(d, side) +
+        '<h4 class="sq-h">Timeline</h4><ul class="dl-tl">' + (Array.isArray(d.events) ? d.events : []).slice().reverse().map(function (ev) { var who = ev.by === 'from' ? d.from.name : ev.by === 'to' ? d.to.name : ev.by === 'member' ? 'Member' : 'Drugbox'; return '<li><b>' + esc(who) + '</b>' + (ev.actor ? ' <small class="dl-asg" data-noi18n>' + esc(ev.actor) + '</small>' : '') + ' · ' + esc(LABEL[ev.kind] || (ACT[ev.kind] ? ACT[ev.kind][0] : ev.kind)) + '<small>' + when(ev.at, true) + '</small>' + (ev.text && ev.text !== (LABEL[ev.kind] || '') ? '<p>' + esc(ev.text) + '</p>' : '') + '</li>'; }).join('') + '</ul>' +
         '<div class="dl-acts">' + acts.map(function (a) { return '<button type="button" class="dr-btn ' + (ACT[a][1] === 'p' ? 'p' : '') + (ACT[a][1] === 'd' ? ' dl-d' : '') + '" data-act="' + a + '">' + esc(ACT[a][0]) + '</button>'; }).join('') +
         (sim ? '<button type="button" class="dr-btn ghost dl-sim" data-sim="1">' + ic('spark') + 'Simulate ' + esc(o.name) + '\u2019s reply (demo)</button>' : '') +
         (d.group ? '<button type="button" class="dr-btn" data-cmpq="1">' + ic('clipboard') + 'Compare all quotes</button>' : '') + (o.name && !o.person ? '<button type="button" class="dr-btn" data-chat="1">' + ic('chat') + 'Message</button>' : '') + (!acts.length && !sim ? '<span class="cp-muted">' + (['closed', 'declined', 'cancelled', 'rejected', 'approved', 'agreed', 'hired', 'confirmed'].indexOf(d.status) >= 0 && FLOWS[d.type].steps.indexOf(d.status) === FLOWS[d.type].steps.length - 1 || ['declined', 'cancelled', 'rejected'].indexOf(d.status) >= 0 ? 'This deal is finished.' : 'Waiting for ' + esc(o.name) + '.') + '</span>' : '') + '</div>' });
     m.el.querySelector('.dbk-box').classList.add('dbk-wide');
     var sec = m.el.querySelector('[data-a=cancel]'); if (sec && back) sec.onclick = function () { later(back); };
+    m.el.addEventListener('change', function (e) { var fi = e.target.closest && e.target.closest('[data-dfile]'); if (!fi || !fi.files || !fi.files[0]) return;
+      var kind = (m.el.querySelector('[data-dfkind]') || {}).value || 'Other'; fi.disabled = true;
+      attachFile(d.id, fi.files[0], kind, side).then(function () { m.close(); later(function () { thread(d.id, back); }); }); });
     m.el.addEventListener('click', function (e) {
       var b = e.target.closest('[data-act]'); if (b) { m.close(); later(function () { runAction(d, b.dataset.act, side, back); }); return; }
       if (e.target.closest('[data-sim]')) { m.close(); simulate(d.id); later(function () { thread(d.id, back); }); return; }
       if (e.target.closest('[data-cmpq]')) { m.close(); later(function () { window.dxCompareQuotes && window.dxCompareQuotes(d.group); }); return; }
       if (e.target.closest('[data-chat]')) { m.close(); if (window.dxOpenChat) window.dxOpenChat(o.name); }
+      var fo = e.target.closest('[data-dfopen]'); if (fo) { var ff = window.dxDealFiles.list(d)[+fo.dataset.dfopen]; if (ff) window.dxDealFiles.open(d, ff); }
     });
   }
   function runAction(d, a, side, back) {
     if (a === 'answer') return answerForm(d, back);
     var form = FORMS[a];
     if (!form) { act(d.id, a, {}, side); toast(ACT[a][0] + ' — done'); if (window.dxDir) X().render(); return later(function () { thread(d.id, back); }); }
-    D.modal({ title: ACT[a][0] + ' — ' + d.title, body: form.map(function (fl) { return '<div class="dbk-f"><label for="af_' + fl[0] + '">' + esc(fl[1]) + '</label>' + (fl[0] === 'stars' ? '<select id="af_stars"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>' : fl[0] === 'ontime' ? '<select id="af_ontime"><option value="yes">Yes, on time</option><option value="no">No, late</option></select>' : fl[0] === 'when' ? '<input id="af_when" type="date"' + (fl[3] ? ' data-req' : '') + '>' : '<input id="af_' + fl[0] + '" placeholder="' + esc(fl[2]) + '"' + (fl[3] ? ' data-req' : '') + (fl[0] === 'validity' || fl[0] === 'terms' ? ' value="' + esc(fl[0] === 'terms' ? (d.lines.inc || fl[2]) : fl[2]) + '"' : '') + '>') + '</div>'; }).join(''),
+    D.modal({ title: ACT[a][0] + ' — ' + d.title, body: form.map(function (fl) { return '<div class="dbk-f"><label for="af_' + fl[0] + '">' + esc(fl[1]) + '</label>' + (fl[0] === 'stars' ? '<select id="af_stars"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>' : fl[0] === 'ontime' ? '<select id="af_ontime"><option value="yes">Yes, on time</option><option value="no">No, late</option></select>' : fl[0] === 'when' ? '<input id="af_when" type="date"' + (fl[3] ? ' data-req' : '') + '>' : fl[4] === 'file' ? '<input id="af_' + fl[0] + '" type="file" accept="' + DOC_TYPES + '">' : '<input id="af_' + fl[0] + '" placeholder="' + esc(fl[2]) + '"' + (fl[3] ? ' data-req' : '') + (fl[0] === 'validity' || fl[0] === 'terms' ? ' value="' + esc(fl[0] === 'terms' ? (d.lines.inc || fl[2]) : fl[2]) + '"' : '') + '>') + '</div>'; }).join(''),
       primary: { label: ACT[a][0], onClick: function (b) {
-        if (!D.requireFields(b)) return false; var data = {}; form.forEach(function (fl) { var el = b.querySelector('#af_' + fl[0]); if (el) data[fl[0]] = el.value.trim(); });
-        act(d.id, a, data, side); toast(ACT[a][0] + ' — sent to ' + other(d, side).name); if (window.dxDir) X().render(); later(function () { thread(d.id, back); });
+        if (!D.requireFields(b)) return false; var data = {}, fin = b.querySelector('#af_file'), file = fin && fin.files && fin.files[0]; form.forEach(function (fl) { var el = b.querySelector('#af_' + fl[0]); if (el && fl[4] !== 'file') data[fl[0]] = el.value.trim(); });
+        if (!act(d.id, a, data, side)) return; if (file) attachFile(d.id, file, a === 'deliver' ? 'Deliverable' : a === 'share' ? 'Data room' : 'Other', side); toast(ACT[a][0] + ' — sent to ' + other(d, side).name); if (window.dxDir) X().render(); later(function () { thread(d.id, back); });
       } } });
   }
   function answerForm(d, back) {
     var ans = (Array.isArray(d.answers) ? d.answers : []).filter(function (s) { return Array.isArray(s) && Array.isArray(s[1]); }), idx = 0;
-    D.modal({ title: 'Answer questionnaire from ' + d.from.name, body: '<p class="cp-muted">Answers from your company page are pre-filled. Check them and complete the rest.</p>' + ans.map(function (s) { return '<h4 class="sq-h">' + esc(s[0]) + '</h4>' + s[1].map(function (x) { var i = idx++; return '<div class="dbk-f"><label for="qa_' + i + '">' + esc(x.q) + (x.a ? ' <small class="cp-muted">(from ' + esc(x.src) + ')</small>' : ' *') + '</label><input id="qa_' + i + '" value="' + esc(x.a) + '"' + (x.a ? '' : ' data-req') + '></div>'; }).join(''); }).join(''),
+    D.modal({ title: 'Answer questionnaire from ' + d.from.name, body: '<p class="cp-muted">Answers from your company page are pre-filled. Check them and complete the rest.</p>' + ans.map(function (s) { return '<h4 class="sq-h">' + esc(s[0]) + '</h4>' + s[1].map(function (x) { var i = idx++; return '<div class="dbk-f"><label for="qa_' + i + '">' + esc(x.q) + (x.a ? ' <small class="cp-muted">(from ' + esc(x.src) + ')</small>' : ' *') + '</label><input id="qa_' + i + '" value="' + esc(x.a) + '"' + (x.a ? '' : ' data-req') + '></div>'; }).join(''); }).join('') +
+        '<div class="dbk-f"><label for="qa_file">Supporting document (SOP, certificate…)</label><input id="qa_file" type="file" accept="' + DOC_TYPES + '"></div>',
       primary: { label: 'Send answers', onClick: function (b) {
         if (!D.requireFields(b)) return false; var i = 0; ans.forEach(function (s) { s[1].forEach(function (x) { var v = b.querySelector('#qa_' + (i++)).value.trim(); if (v !== x.a) { x.a = v; x.src = 'Supplier'; } }); });
-        act(d.id, 'answer', { answers: ans }, 'to'); toast('Answers sent to ' + d.from.name); if (window.dxDir) X().render(); later(function () { thread(d.id, back); });
+        var qf = b.querySelector('#qa_file'), qfile = qf && qf.files && qf.files[0];
+        act(d.id, 'answer', { answers: ans }, 'to'); if (qfile) attachFile(d.id, qfile, 'Questionnaire evidence', 'to'); toast('Answers sent to ' + d.from.name); if (window.dxDir) X().render(); later(function () { thread(d.id, back); });
       } } });
   }
   /* inline list for a company page (Requests tab) */
@@ -266,6 +312,6 @@
   document.addEventListener('click', function (e) { var r = e.target.closest && e.target.closest('#dxDir [data-deal]'); if (r) { e.stopPropagation(); thread(r.dataset.deal); } }, true);
 
   function openCount(slug) { return all().filter(function (d) { return (!slug || d.to.slug === slug) && ['declined', 'cancelled', 'rejected', 'closed', 'approved', 'agreed', 'hired', 'confirmed'].indexOf(d.status) < 0; }).length; }
-  function waiting() { return all().filter(function (d) { var s = sideOf(d); return s && actionsFor(d, s).length; }).length; }
-  window.dxDeals = { offerExpired: offerExpired, FLOWS: FLOWS, all: all, get: get, create: create, act: act, simulate: simulate, center: center, thread: thread, receivedHtml: receivedHtml, sideOf: sideOf, actionsFor: actionsFor, joinGroup: joinGroup, save: save, mk: mk, openCount: openCount, waiting: waiting, label: function (s) { return LABEL[s] || s; } };
+  function waiting() { return all().filter(function (d) { var s = sideOf(d); return s && moves(d, s).length; }).length; }
+  window.dxDeals = { setMember: setMember, groupExpired: groupExpired, offerExpired: offerExpired, FLOWS: FLOWS, all: all, get: get, create: create, act: act, simulate: simulate, center: center, thread: thread, receivedHtml: receivedHtml, sideOf: sideOf, actionsFor: actionsFor, joinGroup: joinGroup, save: save, mk: mk, openCount: openCount, waiting: waiting, label: function (s) { return LABEL[s] || s; } };
 })();

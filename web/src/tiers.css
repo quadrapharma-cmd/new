@@ -25,3 +25,4 @@
 .dx-lad-a{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;font:13px Poppins,sans-serif;color:#334155;flex-wrap:wrap}
 html.dark .dx-pass,html.dark .dx-ladder{background:#111827;border-color:#1F2937}html.dark .dx-pass-t,html.dark .dx-pass-r b,html.dark .dx-lad-s b{color:#E5E7EB}
 @media (max-width:640px){.dx-lad{grid-template-columns:1fr}.dx-pass-r{flex-wrap:wrap}}
+@media (max-width:560px){.dx-pass-r{flex-wrap:wrap}.dx-pass-s{flex-wrap:wrap}}

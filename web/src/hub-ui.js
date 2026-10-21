@@ -64,9 +64,9 @@
       '<select id="hbSort" aria-label="Order"><option value="best"' + (!S.sort || S.sort === 'best' ? ' selected' : '') + '>Best match</option><option value="name"' + (S.sort === 'name' ? ' selected' : '') + '>Name A–Z</option><option value="newest"' + (S.sort === 'newest' ? ' selected' : '') + '>Newest</option></select>' +
       '<button type="button" class="dr-link" data-hrule="1">How results are ordered</button></div>' +
       '<div class="dr-chips">' + ACTIVITIES.map(function (a) { return '<button type="button" class="dr-chip' + ((S.sector || 'All') === a ? ' on' : '') + '" data-hsec="' + esc(a) + '">' + esc(a) + '</button>'; }).join('') + '</div>' +
-      '<div class="hb-filters"><label>Can manufacture <select id="hbForm"><option value="">Any</option>' + forms.map(function (f) { return '<option' + (S.form === f ? ' selected' : '') + '>' + f + '</option>'; }).join('') + '</select></label>' +
+      '<div class="hb-filters"><label>Can manufacture <select id="hbForm"><option value="">Any</option>' + forms.map(function (f) { return '<option value="' + esc(f) + '"' + (S.form === f ? ' selected' : '') + '>' + f + '</option>'; }).join('') + '</select></label>' +
       (S.form ? '<label>Free from <select id="hbFrom">' + months.map(function (m, i) { return '<option value="' + i + '"' + ((S.from || 0) === i ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select></label>' : '') +
-      '<label>Governorate <select id="hbGov">' + GOVS.map(function (g) { return '<option' + ((S.gov || 'All governorates') === g ? ' selected' : '') + '>' + g + '</option>'; }).join('') + '</select></label>' +
+      '<label>Governorate <select id="hbGov">' + GOVS.map(function (g) { return '<option value="' + esc(g) + '"' + ((S.gov || 'All governorates') === g ? ' selected' : '') + '>' + g + '</option>'; }).join('') + '</select></label>' +
       '<label class="dr-ver"><input type="checkbox" id="hbVer"' + (S.verified ? ' checked' : '') + '> Verified</label><label class="dr-ver"><input type="checkbox" id="hbAct"' + (S.activeOnly ? ' checked' : '') + '> Active this week</label></div>' +
       '<div class="dr-chips dr-certs"><span>Certified:</span>' + CERTS.map(function (x) { return '<button type="button" class="dr-chip sm' + ((S.certs || []).indexOf(x) >= 0 ? ' on' : '') + '" data-hcert="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
       whoMakes(S.q) +
@@ -81,6 +81,10 @@
   /* ════════ company page ════════ */
   function credChips(co) { return H().credentials(co).filter(function (k) { return k.state !== 'expired'; }).slice(0, 6).map(function (k) { return '<span class="hb-cred ' + (k.checked ? 'ok' : 'unk') + '" title="' + esc(k.site + ' · ' + k.src + (k.expiry ? ' · expires ' + k.expiry : '')) + '">' + ic(k.checked ? 'seal' : 'doc') + esc(k.name) + '</span>'; }).join(''); }
   function srcLine(co, sec) { var m = H().metaOf(co, sec), st = H().stale(co, sec); return '<div class="hb-src' + (st ? ' old' : '') + '">' + (st ? ic('warning') + 'May be outdated · ' : '') + 'Source: ' + esc(m.src) + ' · updated ' + fmtDate(m.at) + '</div>'; }
+  /* a company that sells services (consultants, labs, logistics) is asked for a service, not a goods quotation */
+  function svcFirst(co) { return (co.services || []).length > 0 && (!(co.products || []).length || (co.sectors || []).some(function (x) { return /Regulatory|consult|Labs/i.test(x); })); }
+  /* how many follow the page: the database's count in the live app; in the demo the sample count plus this browser's follow */
+  function followersLine(co) { var n = (+co.followers || 0) + (!co._id && X().followed(co.slug) ? 1 : 0); return n.toLocaleString('en-US') + ' follower' + (n === 1 ? '' : 's'); }
   function renderCompany(c, co, S) {
     var mem = member(co), act = X().mine(), here = !!(act && act.slug === co.slug), t = H().track(co.slug), ar = H().nameAr(co), grp = H().groupOf(co), sites = H().sitesOf(co), jobs = X().jobsOf(co), offers = X().offersOf(co), revs = H().reviewsOf(co.slug);
     var listings = offers.length + (X3() ? X3().dossiers().filter(function (d) { return d.slug === co.slug; }).length + X3().surplus().filter(function (s) { return s.slug === co.slug; }).length + X3().groupDeals().filter(function (g) { return g.to.slug === co.slug || g.from.slug === co.slug; }).length : 0);
@@ -89,14 +93,15 @@
     var head = '<button type="button" class="cp-back" data-hback="1">' + ic('compass') + 'All companies</button>' +
       '<header class="cp-hero"><div class="cp-cover" style="' + cover(co) + '"></div><div class="cp-id">' + X().logo(co, 'cp-logo') +
       '<div class="cp-idt"><h1 class="cp-name">' + esc(co.name) + (co.status === 'verified' ? '<span class="dr-seal" title="Verified: registry and tax card checked">' + ic('seal') + '</span>' : '') + (X().isVip(co) ? '<span class="dr-vip">' + ic('crown') + 'Sponsored</span>' : '') + (H().isActive(co) ? '<span class="hb-active">Active</span>' : '') + '</h1>' +
-      (ar ? '<div class="hb-ar lg" lang="ar" dir="rtl">' + esc(ar) + '</div>' : '') + '<p class="cp-tagline">' + esc(co.tagline) + '</p><div class="cp-meta">' + esc(co.sectors.join(' · ')) + ' · ' + esc(co.city) + ', ' + esc(co.gov) + (grp ? ' · part of <b>' + esc(grp.name) + '</b>' : '') + '</div>' +
+      (ar ? '<div class="hb-ar lg" lang="ar" dir="rtl">' + esc(ar) + '</div>' : '') + '<p class="cp-tagline">' + esc(co.tagline) + '</p><div class="cp-meta">' + esc(co.sectors.join(' · ')) + ' · ' + esc(co.city) + ', ' + esc(co.gov) + (grp ? ' · part of <b>' + esc(grp.name) + '</b>' : '') + ' · ' + followersLine(co) + '</div>' +
       '<div class="hb-track big' + (t.orders ? '' : ' none') + '">' + ic('chart') + esc(H().trackLine(t)) + '</div><div class="hb-creds">' + credChips(co) + '</div></div>' +
       '<div class="cp-cta">' + (mem ? '<button type="button" class="dr-btn' + (here ? ' p' : '') + '" data-hws="' + esc(co.slug) + '">' + ic('building') + 'Open company workspace</button>' : '') +
-        (here ? '' : '<button type="button" class="dr-btn p" data-hrfq="' + esc(co.slug) + '">Request a quote</button><button type="button" class="dr-btn" data-hmsg="1">' + ic('chat') + 'Message</button><button type="button" class="dr-btn" data-hfollow="1">' + (X().followed(co.slug) ? '✓ Following' : '+ Follow') + '</button>') +
+        (here ? '' : (svcFirst(co) ? '<button type="button" class="dr-btn p" data-hrfq="' + esc(co.slug) + '" data-hsvc="' + esc(co.services[0]) + '">Request a proposal</button>' : '<button type="button" class="dr-btn p" data-hrfq="' + esc(co.slug) + '">Request a quote</button>') + '<button type="button" class="dr-btn" data-hmsg="1">' + ic('chat') + 'Message</button><button type="button" class="dr-btn" data-hfollow="1">' + (X().followed(co.slug) ? '✓ Following' : '+ Follow') + '</button>') +
       (act && act.slug !== co.slug && X3() ? '<span class="avl-ctl"><select id="hbAvl" aria-label="Supplier status for ' + esc(act.name) + '"><option value="">Supplier status: not on list</option>' + Object.keys(X3().AVL).map(function (k) { return '<option value="' + k + '"' + (avl && avl.status === k ? ' selected' : '') + '>' + X3().AVL[k][0] + '</option>'; }).join('') + '</select><button type="button" class="dr-btn sm" data-hsq="1">' + ic('clipboard') + 'Questionnaire</button></span>' : '') +
       '<button type="button" class="dr-btn" data-hpdf="1">' + ic('doc') + 'Profile PDF</button><button type="button" class="dr-btn" data-hqr="1">' + ic('target') + 'QR</button><button type="button" class="dr-link" data-hreport="1">Report wrong information</button></div></div></header>' +
-      (co.status === 'unclaimed' ? '<div class="cp-banner cp-claim">' + ic('building') + '<span><b>Is this your company?</b> This page was built from public industry lists. Claim it to manage it and receive requests.</span><button type="button" class="dr-btn p sm" data-hclaim="1">Claim this page</button></div>' : '') +
-      (H().staleSections(co).length ? '<div class="cp-banner pend">' + ic('warning') + '<span>Some information on this page was last updated more than 6 months ago (' + H().staleSections(co).join(', ') + ').</span></div>' : '') +
+      (co.status === 'unclaimed' ? (window.dxClaims && window.dxClaims.pending(co.slug) ? '<div class="cp-banner pend">' + ic('warning') + '<span><b>Claim pending.</b> Drugbox is checking your proof and tells you when the page is yours.</span></div>'
+        : '<div class="cp-banner cp-claim">' + ic('building') + '<span><b>Is this your company?</b> This page was built from public industry lists. Claim it to manage it and receive requests.</span><button type="button" class="dr-btn p sm" data-hclaim="1">Claim this page</button></div>') : '') +
+      (H().staleSections(co).length ? '<div class="cp-banner pend">' + ic('warning') + '<span>Some information on this page was last updated more than 6 months ago (' + H().staleSections(co).join(', ') + ').</span>' + (mem ? '<button type="button" class="dr-btn sm" data-wconfirm="1">Still correct</button>' : '') + '</div>' : '') +
       '<nav class="cp-tabs" role="tablist">' + tabs.map(function (x) { return '<button type="button" role="tab" aria-selected="' + (tab === x[0]) + '" class="cp-tab' + (tab === x[0] ? ' on' : '') + '" data-htab2="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</nav>';
     var body = '';
     if (tab === 'overview') {
@@ -114,7 +119,7 @@
         made.map(function (m) { return '<article class="cp-prod"><div class="cp-pimg"><img src="' + X().pimg(m.owner, m.p) + '" alt=""></div><div class="cp-pb"><span class="cp-pcat">' + esc(m.p.cat) + '</span><b>' + esc(m.p.name) + '</b><span class="hb-role">Manufactured here for ' + esc(m.owner.name) + '</span><p>' + esc(m.p.desc) + '</p></div></article>'; }).join('') + '</div>' + srcLine(co, 'products');
     } else if (tab === 'sites') {
       body = '<div class="hb-sites">' + sites.map(function (s) { return '<section class="cp-sec hb-site"><h3>' + ic(s.type === 'Warehouse' ? 'box' : s.type === 'Laboratory' ? 'flask' : s.type === 'Factory' ? 'factory' : 'building') + esc(s.name) + '<small>' + esc(s.type) + ' · ' + esc(s.city) + ', ' + esc(s.gov) + '</small></h3>' +
-        '<div class="hb-creds">' + (s.certs || []).map(function (k) { var st = H().certState(k, co); return '<span class="hb-cred ' + (st.checked ? 'ok' : 'unk') + (st.state === 'expired' ? ' exp' : '') + '" title="' + esc(k.src) + '">' + ic(st.checked ? 'seal' : 'doc') + esc(k.name) + (k.expiry ? ' · ' + (st.state === 'expired' ? 'expired ' : 'to ') + esc(k.expiry) : '') + '</span>'; }).join('') + '</div>' +
+        '<div class="hb-creds">' + (s.certs || []).map(function (k) { var st = H().certState(k, co); return '<span class="hb-cred ' + (st.checked ? 'ok' : 'unk') + (st.state === 'expired' ? ' exp' : '') + '" title="' + esc(k.src) + '">' + ic(st.checked ? 'seal' : 'doc') + esc(k.name) + (k.expiry ? ' · ' + (st.state === 'expired' ? 'expired ' : 'to ') + esc(k.expiry) : '') + ' · ' + (st.checked ? 'checked ' + esc(String(k.checked).slice(0, 10)) : 'not yet checked') + '</span>'; }).join('') + '</div>' +
         (s.cap ? '<div class="cap-forms">' + s.cap.forms.map(function (f) { return '<span>' + esc(f) + '</span>'; }).join('') + '</div><div class="cp-facts"><div><small>Minimum batch</small><b>' + esc(s.cap.minBatch) + '</b></div><div><small>Capacity</small><b>' + esc(s.cap.capacity) + '</b></div></div>' +
           '<div class="cap-slots"><small>Free production slots</small><div>' + X2().MONTHS.map(function (m, i) { var f = s.cap.slots.indexOf(i) >= 0; return '<span class="cap-m' + (f ? ' free' : '') + '">' + esc(m) + '<em>' + (f ? 'Free' : 'Booked') + '</em></span>'; }).join('') + '</div></div>' : '') + '</section>'; }).join('') + '</div>' + srcLine(co, 'sites');
     } else if (tab === 'listings') {
@@ -153,7 +158,7 @@
       body = '<section class="cp-sec"><h3>Public page</h3><p class="cp-muted">Logo, cover, about, products, services and contact.</p><button type="button" class="dr-btn p" data-wedit="1">' + ic('pen') + 'Edit page</button> <button type="button" class="dr-btn" data-hopen="' + esc(co.slug) + '">View as visitors see it</button></section>' +
         '<section class="cp-sec"><h3>Arabic name</h3><div class="dbk-row"><div class="dbk-f"><input id="wAr" lang="ar" dir="rtl" value="' + esc(H().nameAr(co)) + '" placeholder="اسم الشركة بالعربي"></div><button type="button" class="dr-btn" data-war="1">Save</button></div></section>' +
         '<section class="cp-sec"><h3>What we are looking for</h3><div class="cap-forms">' + (look.map(function (l) { return '<span class="lk">' + esc(l) + '</span>'; }).join('') || '<span class="cp-muted">Nothing yet</span>') + '</div><button type="button" class="dr-btn sm" data-wlook="1">' + ic('pen') + 'Edit</button></section>' +
-        '<section class="cp-sec"><h3>Memberships</h3>' + (X3() ? X3().membersOf(co).map(function (m) { return '<span class="mb-badge' + (m.ok ? '' : ' pend') + '">' + ic('seal') + esc(m.name) + (m.ok ? '' : ' · waiting for the organisation') + '</span>'; }).join(' ') : '') + ' <button type="button" class="dr-btn sm" data-wmember="1">' + ic('plus') + 'Add membership</button></section>';
+        '<section class="cp-sec"><h3>Memberships</h3>' + (X3() ? X3().membersOf(co).map(function (m) { return '<span class="mb-badge' + (m.ok ? '' : ' pend') + '">' + ic('seal') + esc(m.name) + (m.ok ? '' : ' · being checked by Drugbox') + '</span>'; }).join(' ') : '') + ' <button type="button" class="dr-btn sm" data-wmember="1">' + ic('plus') + 'Add membership</button></section>';
     } else if (tab === 'sites') {
       body = H().sitesOf(co).map(function (s, i) { return '<section class="cp-sec hb-site"><h3>' + esc(s.name) + '<small>' + esc(s.type) + ' · ' + esc(s.city) + ', ' + esc(s.gov) + '</small></h3>' +
         '<div class="hb-creds">' + (s.certs || []).map(function (k, j) { var st = H().certState(k, co); return '<span class="hb-cred ' + (st.checked ? 'ok' : 'unk') + (st.state === 'expired' ? ' exp' : '') + '">' + esc(k.name) + (k.expiry ? ' · ' + esc(k.expiry) : '') + ' <button type="button" class="hb-x" data-wcdel="' + i + ':' + j + '" aria-label="Remove">×</button></span>'; }).join('') + '<button type="button" class="dr-btn sm" data-wcadd="' + i + '">' + ic('plus') + 'Certificate</button></div>' +
@@ -163,8 +168,9 @@
     } else if (tab === 'team') {
       var team = H().teamOf(co), me = window.ME || {};
       body = '<section class="cp-sec"><h3>Team</h3><p class="cp-muted">Roles decide who receives each kind of request. A person appears on the public page only after they agree (personal data law 151/2020).</p>' +
-        team.map(function (m, i) { return '<div class="hb-tm"><span class="cp-pav" style="background:#1a56db">' + esc(X().initials(m.name)) + '</span><span class="hb-tmn"><b>' + esc(m.name) + (m.uid === me.id ? ' (you)' : '') + '</b><small>' + (m.consent ? 'Shown on the public page' : 'Waiting for their agreement — not shown publicly') + '</small></span>' +
-          '<select data-wrole="' + i + '" aria-label="Role">' + H().ROLES.map(function (r) { return '<option' + (m.role === r ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select>' + (m.uid === me.id ? '<button type="button" class="dr-btn sm" data-wconsent="' + i + '">' + (m.consent ? 'Hide me' : 'Show me') + '</button>' : '') + '<button type="button" class="hb-x" data-wtdel="' + i + '" aria-label="Remove">×</button></div>'; }).join('') +
+        team.map(function (m, i) { var asked = m.pending === 'request'; return '<div class="hb-tm"><span class="cp-pav" style="background:#1a56db">' + esc(X().initials(m.name)) + '</span><span class="hb-tmn"><b>' + esc(m.name) + (m.uid === me.id ? ' (you)' : '') + '</b><small>' + (asked ? 'Asked to join the team' : m.pending === 'invite' ? 'Invited — waiting for them to accept' : m.consent ? 'Shown on the public page' : 'Waiting for their agreement — not shown publicly') + '</small></span>' +
+          (asked ? '<button type="button" class="dr-btn p sm" data-wtok="' + i + '">Approve</button><button type="button" class="dr-btn sm" data-wtno="' + i + '">Decline</button>' : '') +
+          '<select data-wrole="' + i + '" aria-label="Role">' + H().ROLES.map(function (r) { return '<option value="' + esc(r) + '"' + (m.role === r ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select>' + (m.uid === me.id ? '<button type="button" class="dr-btn sm" data-wconsent="' + i + '">' + (m.consent ? 'Hide me' : 'Show me') + '</button>' : '') + '<button type="button" class="hb-x" data-wtdel="' + i + '" aria-label="Remove">×</button></div>'; }).join('') +
         '<button type="button" class="dr-btn p sm" data-winvite="1">' + ic('plus') + 'Invite a colleague</button></section>' +
         '<section class="cp-sec"><h3>Who receives what</h3><table class="cp-spec">' + Object.keys(H().ROUTE).map(function (k) { var r = H().route(co.slug, k); return '<tr><td>' + esc(DL().FLOWS[k].label) + '</td><td><b>' + esc(r.name) + '</b> · ' + esc(r.role) + '</td></tr>'; }).join('') + '</table></section>';
     } else if (tab === 'deals') {
@@ -189,7 +195,8 @@
       body = '<section class="cp-sec"><h3>Activity log</h3><p class="cp-muted">Who in your team did what.</p><ul class="dl-tl">' + (a.length ? a.map(function (x) { return '<li><b>' + esc(x.who) + '</b> · ' + esc(x.text) + '<small>' + (window.dxFmtDate ? window.dxFmtDate(x.at, true, 'en') : new Date(x.at).toLocaleString()) + '</small></li>'; }).join('') : '<li>No activity yet.</li>') + '</ul></section>';
     } else if (tab === 'plan') {
       body = '<div class="cp-two"><section class="cp-sec"><h3>Verification — free, always</h3><p>' + (co.status === 'verified' ? '✓ Verified: commercial registry and tax card checked.' : co.status === 'pending' ? 'Documents received — being checked.' : 'Not verified yet.') + '</p>' + (co.status === 'verified' || co.status === 'pending' ? '' : '<button type="button" class="dr-btn p" data-wverify="1">Get verified</button>') + '<p class="cp-muted">Verification and your track record can never be bought.</p></section>' +
-        '<section class="cp-sec"><h3>Sponsored placement (VIP)</h3><p>' + (X().isVip(co) ? 'Your company appears in the Sponsored row of the directory.' : 'Appear in the Sponsored row of the directory, with your own link and Marketplace boosts. It never changes search order or trust.') + '</p>' + (X().isVip(co) ? '' : '<button type="button" class="dr-btn p" data-wvip="1">' + ic('crown') + 'Get VIP</button>') + '</section></div>';
+        '<section class="cp-sec"><h3>Sponsored placement (VIP)</h3><p>' + (X().isVip(co) ? 'Your company appears in the Sponsored row of the directory' + (co.vipUntil ? ' · VIP ' + (co.billing === 'year' ? 'yearly' : 'monthly') + ' · renews ' + esc(window.dxFmtDate ? window.dxFmtDate(co.vipUntil, false, 'en') : new Date(co.vipUntil).toLocaleDateString()) : '') + '. 3 Marketplace boosts a month are included.' : 'Appear in the Sponsored row of the directory, with your own link and Marketplace boosts. It never changes search order or trust.') + '</p>' + (X().isVip(co) ? '' : '<button type="button" class="dr-btn p" data-wvip="1">' + ic('crown') + 'Get VIP</button>') + '</section></div>' +
+        (window.dxBilling ? window.dxBilling.html(co) : '');
     }
     var mine = X().myCompanies();
     c.innerHTML = '<div id="dxDir" class="hub ws"><div class="ws-head">' + X().logo(co, 'dr-logo sm') + '<div><span class="dr-k">COMPANY WORKSPACE</span><h1 class="ws-h">' + esc(co.name) + '</h1></div>' +
@@ -216,16 +223,33 @@
     var inp = m.el.querySelector('#acQ'), res = m.el.querySelector('#acRes');
     function run() { var q = inp.value.trim(); if (q.length < 2) { res.innerHTML = ''; return; }
       var hits = X().companies().filter(function (co) { return H().relevance(co, q) > 0 && H().norm(co.name + ' ' + H().nameAr(co)).indexOf(H().norm(q).split(' ')[0]) >= 0; }).slice(0, 6);
-      res.innerHTML = hits.map(function (co) { return '<div class="mr-row">' + X().logo(co, 'dr-logo sm') + '<div class="mr-b"><b>' + esc(co.name) + '</b><small>' + esc(co.city) + ' · ' + (co.status === 'unclaimed' ? 'not claimed yet' : 'managed by its team') + '</small></div>' + (co.status === 'unclaimed' ? '<button type="button" class="dr-btn p sm" data-acclaim="' + esc(co.slug) + '">Claim</button>' : member(co) ? '<button type="button" class="dr-btn sm" data-acws="' + esc(co.slug) + '">Open workspace</button>' : '<button type="button" class="dr-btn sm" data-acjoin="' + esc(co.slug) + '">Ask to join the team</button>') + '</div>'; }).join('') +
+      res.innerHTML = hits.map(function (co) { return '<div class="mr-row">' + X().logo(co, 'dr-logo sm') + '<div class="mr-b"><b>' + esc(co.name) + '</b><small>' + esc(co.city) + ' · ' + (co.status === 'unclaimed' ? 'not claimed yet' : 'managed by its team') + '</small></div>' + (co.status === 'unclaimed' ? (window.dxClaims && window.dxClaims.pending(co.slug) ? '<span class="mr-st st-viewed">Claim pending</span>' : '<button type="button" class="dr-btn p sm" data-acclaim="' + esc(co.slug) + '">Claim</button>') : member(co) ? '<button type="button" class="dr-btn sm" data-acws="' + esc(co.slug) + '">Open workspace</button>' : '<button type="button" class="dr-btn sm" data-acjoin="' + esc(co.slug) + '">Ask to join the team</button>') + '</div>'; }).join('') +
         '<div class="fd-act"><button type="button" class="dr-btn" data-acnew="1">' + ic('plus') + 'My company is not listed — create it</button></div>'; }
     inp.addEventListener('input', run); setTimeout(function () { inp.focus(); }, 30);
     m.el.addEventListener('click', function (e) {
       var cl = e.target.closest('[data-acclaim]'), ws = e.target.closest('[data-acws]'), jn = e.target.closest('[data-acjoin]');
       if (cl) { m.close(); later(function () { X2().claim(X().bySlug(cl.dataset.acclaim)); }); }
       if (ws) { m.close(); openWorkspace(ws.dataset.acws); }
-      if (jn) { var co = X().bySlug(jn.dataset.acjoin); m.close(); toast('Request sent to the admin of ' + co.name); }
+      if (jn) { var co = X().bySlug(jn.dataset.acjoin); m.close(); later(function () { joinDialog(co); }); }
       if (e.target.closest('[data-acnew]')) { m.close(); later(function () { X().create(); }); }
     });
+  }
+  /* "Ask to join the team": the role you work in; the company's owner or admins approve it (window.dxTeam: the browser in the
+     demo, the database in the live app) */
+  if (!window.dxTeam) window.dxTeam = {
+    join: function (slug, role, note) { var l = H().store('join_requests') || []; if (!l.some(function (x) { return x.slug === slug; })) l.push({ slug: slug, role: role, note: note, at: Date.now() }); H().store('join_requests', l); return Promise.resolve(true); },
+    decide: function (slug, m, ok) { var co = X().bySlug(slug), t = H().teamOf(co), i = t.findIndex(function (x) { return x.name === m.name && x.pending === 'request'; }); if (i < 0) return Promise.resolve(false);
+      if (ok) { t[i].pending = null; t[i].consent = false; } else t.splice(i, 1); H().saveTeam(slug, t); return Promise.resolve(true); }
+  };
+  function joinDialog(co) {
+    if (!co) return;
+    D.modal({ title: 'Ask to join ' + co.name, body: '<p class="cp-muted">The page\u2019s owner or admins approve your request. You appear on the public page only if you choose to.</p>' +
+      '<div class="dbk-f"><label for="jnR">Role *</label><select id="jnR" data-req>' + H().ROLES.filter(function (r) { return r !== 'Admin'; }).map(function (r) { return '<option value="' + esc(r) + '"' + (r === 'Sales' ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select></div>' +
+      '<div class="dbk-f"><label for="jnN">Note for the admin</label><input id="jnN" maxlength="300" placeholder="e.g. I work in the Cairo sales office"></div>',
+      primary: { label: 'Send request', onClick: function (b, close) { if (!D.requireFields(b)) return false; var ok = b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
+        window.dxTeam.join(co.slug, b.querySelector('#jnR').value, b.querySelector('#jnN').value.trim()).then(function () { close(); toast('Request sent to the admin of ' + co.name); },
+          function (e) { if (ok) ok.disabled = false; toast((e && e.message) || 'Could not send the request'); });
+        return false; } } });
   }
   function reportDialog(co) {
     D.modal({ title: 'Report wrong information — ' + co.name, body: '<div class="dbk-f"><label for="rpS">Where</label><select id="rpS"><option>About</option><option>Products</option><option>Sites</option><option>Certificates</option><option>Contact</option></select></div><div class="dbk-f"><label for="rpT">What is wrong? *</label><input id="rpT" data-req></div><div class="dbk-f"><label for="rpF">Correct information (if you know it)</label><input id="rpF"></div>',
@@ -236,13 +260,14 @@
     var m = D.modal({ title: 'Directory health', secondary: 'Close', body: '<div class="cp-stats hb-health"><div><small>Companies</small><b>' + h.total + '</b></div><div><small>Claimed</small><b>' + pct(h.claimed) + '</b></div><div><small>Verified</small><b>' + pct(h.verified) + '</b></div><div><small>Pages ≥80% complete</small><b>' + pct(h.complete) + '</b></div>' +
       '<div><small>Average completeness</small><b>' + h.avgComplete + '%</b></div><div><small>Requests answered</small><b>' + (h.responseRate != null ? h.responseRate + '%' : '—') + '</b></div><div><small>Deals · last 30 days</small><b>' + h.dealsMonth + '</b></div><div><small>Active this week</small><b>' + h.active + '</b></div>' +
       '<div><small>Dormant (60+ days)</small><b>' + h.dormant + '</b></div><div><small>Pages with outdated info</small><b>' + h.stale.length + '</b></div><div><small>Open reports</small><b>' + h.openReports + '</b></div><div><small>Reviews under check</small><b>' + h.disputed + '</b></div></div>' +
-      (h.stale.length ? '<h4 class="sq-h">Outdated pages</h4>' + h.stale.slice(0, 8).map(function (co) { return '<div class="mr-row"><div class="mr-b"><b>' + esc(co.name) + '</b><small>' + esc(H().staleSections(co).join(', ')) + '</small></div><button type="button" class="dr-btn sm" data-hopen="' + esc(co.slug) + '">Open</button></div>'; }).join('') : '') });
+      (h.stale.length ? '<h4 class="sq-h">Outdated pages</h4>' + h.stale.slice(0, 8).map(function (co) { return '<div class="mr-row"><div class="mr-b"><b>' + esc(co.name) + '</b><small>' + esc(H().staleSections(co).join(', ')) + '</small></div><button type="button" class="dr-btn sm" data-hopen="' + esc(co.slug) + '">Open</button></div>'; }).join('') : '') +
+      ((h.reported || []).length ? '<h4 class="sq-h">Open reports</h4>' + h.reported.slice(0, 8).map(function (r) { return '<div class="mr-row"><div class="mr-b"><b>' + esc(r.name) + '</b><small>' + esc(r.n + ' open report' + (r.n === 1 ? '' : 's') + ' · ' + r.sections) + '</small></div><button type="button" class="dr-btn sm" data-hopen="' + esc(r.slug) + '">Open</button></div>'; }).join('') : '') });
     m.el.querySelector('.dbk-box').classList.add('dbk-wide');
     m.el.addEventListener('click', function (e) { var o = e.target.closest('[data-hopen]'); if (o) { m.close(); openPage(o.dataset.hopen); } });
   }
   function certDialog(co, i) {
     D.modal({ title: 'Add a certificate', body: '<div class="dbk-f"><label for="wcN">Certificate *</label><select id="wcN" data-req><option value="">Choose…</option>' + CERTS.concat(['ISO 15378', 'ISO 14001', 'Halal', 'ISO 22000']).map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select></div><div class="dbk-row"><div class="dbk-f"><label for="wcE">Valid until</label><input id="wcE" type="month"></div><div class="dbk-f"><label for="wcF">Document</label><input id="wcF" type="file" accept=".pdf,.jpg,.png"></div></div>',
-      primary: { label: 'Add', onClick: function (b) { if (!D.requireFields(b)) return false; var ss = H().sitesOf(co); (ss[i].certs = ss[i].certs || []).push({ name: b.querySelector('#wcN').value, expiry: b.querySelector('#wcE').value, src: b.querySelector('#wcF').files.length ? 'Certificate document' : 'Company', checked: new Date().toISOString().slice(0, 10) }); if (!H().saveSites(co.slug, ss)) return false; rerender(); toast('Certificate added'); } } });
+      primary: { label: 'Add', onClick: function (b) { if (!D.requireFields(b)) return false; var ss = H().sitesOf(co); (ss[i].certs = ss[i].certs || []).push({ name: b.querySelector('#wcN').value, expiry: b.querySelector('#wcE').value, src: b.querySelector('#wcF').files.length ? 'Certificate document' : 'Company', checked: '' });   /* not checked until Drugbox has looked at the document */ if (!H().saveSites(co.slug, ss)) return false; rerender(); toast('Certificate added'); } } });
   }
   function capDialog(co, i) {
     var ss = H().sitesOf(co), cap = ss[i].cap || { forms: [], minBatch: '', capacity: '', slots: [] };
@@ -254,20 +279,20 @@
       primary: { label: 'Add site', onClick: function (b) { if (!D.requireFields(b)) return false; var ss = H().sitesOf(co); ss.push({ id: 's' + Date.now(), name: b.querySelector('#wsN').value.trim(), type: b.querySelector('#wsT').value, city: b.querySelector('#wsC').value.trim(), gov: b.querySelector('#wsG').value, certs: [] }); if (!H().saveSites(co.slug, ss)) return false; rerender(); toast('Site added'); } } });
   }
   function inviteDialog(co) {
-    D.modal({ title: 'Invite a colleague', body: '<div class="dbk-f"><label for="wiN">Name *</label><input id="wiN" data-req></div><div class="dbk-row"><div class="dbk-f"><label for="wiE">Work email *</label><input id="wiE" type="email" data-req></div><div class="dbk-f"><label for="wiR">Role</label><select id="wiR">' + H().ROLES.map(function (r) { return '<option' + (r === 'Sales' ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select></div></div><p class="cp-muted">They appear on the public page only after they accept.</p>',
+    D.modal({ title: 'Invite a colleague', body: '<div class="dbk-f"><label for="wiN">Name *</label><input id="wiN" data-req></div><div class="dbk-row"><div class="dbk-f"><label for="wiE">Work email *</label><input id="wiE" type="email" data-req></div><div class="dbk-f"><label for="wiR">Role</label><select id="wiR">' + H().ROLES.map(function (r) { return '<option value="' + esc(r) + '"' + (r === 'Sales' ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select></div></div><p class="cp-muted">They appear on the public page only after they accept.</p>',
       primary: { label: 'Send invitation', onClick: function (b) { if (!D.requireFields(b)) return false; var t = H().teamOf(co); t.push({ uid: null, name: b.querySelector('#wiN').value.trim(), email: b.querySelector('#wiE').value.trim(), role: b.querySelector('#wiR').value, consent: false }); if (!H().saveTeam(co.slug, t)) return false; H().log(co.slug, 'Invited ' + b.querySelector('#wiN').value.trim() + ' as ' + b.querySelector('#wiR').value); rerender(); toast('Invitation sent'); } } });
   }
 
   /* ════════ one click handler for the hub ════════ */
   document.addEventListener('click', function (e) {
     var root = e.target.closest && e.target.closest('#dxDir.hub'); if (!root) return;
-    var t = e.target.closest('[data-hopen],[data-hrfq],[data-hadd],[data-hsec],[data-hcert],[data-hreset],[data-hmore],[data-hrule],[data-hhealth],[data-hback],[data-htab2],[data-hws],[data-hmsg],[data-hfollow],[data-hsq],[data-hpdf],[data-hqr],[data-hreport],[data-hclaim],[data-hpd],[data-hoffer],[data-hsurp],[data-hdos],[data-hgroups],[data-hjob],[data-wtab],[data-wgo],[data-wconfirm],[data-wedit],[data-war],[data-wlook],[data-wmember],[data-wcadd],[data-wcdel],[data-wslot],[data-wcap],[data-wsdel],[data-wsadd],[data-wconsent],[data-wtdel],[data-winvite],[data-wl],[data-wfix],[data-wreply],[data-wdispute],[data-wverify],[data-wvip]');
+    var t = e.target.closest('[data-hopen],[data-hrfq],[data-hadd],[data-hsec],[data-hcert],[data-hreset],[data-hmore],[data-hrule],[data-hhealth],[data-hback],[data-htab2],[data-hws],[data-hmsg],[data-hfollow],[data-hsq],[data-hpdf],[data-hqr],[data-hreport],[data-hclaim],[data-hpd],[data-hoffer],[data-hsurp],[data-hdos],[data-hgroups],[data-hjob],[data-wtab],[data-wgo],[data-wconfirm],[data-wedit],[data-war],[data-wlook],[data-wmember],[data-wcadd],[data-wcdel],[data-wslot],[data-wcap],[data-wsdel],[data-wsadd],[data-wconsent],[data-wtdel],[data-wtok],[data-wtno],[data-winvite],[data-wl],[data-wfix],[data-wreply],[data-wdispute],[data-wverify],[data-wvip]');
     if (!t) { var cardEl = e.target.closest('.hb-card'); if (cardEl && !e.target.closest('button,a,input,select,label')) openPage(cardEl.dataset.slug); return; }
     if (t.hasAttribute('data-hpick')) return;
     e.stopPropagation();
     var St = S(), co = St.open ? X().bySlug(St.open) : St.ws ? X().bySlug(St.ws) : null, ds = t.dataset;
     if (ds.hopen) return openPage(ds.hopen, ds.htab);
-    if (ds.hrfq) return X().rfq(ds.hrfq, ds.hp);
+    if (ds.hrfq) return ds.hsvc ? X().rfq(ds.hrfq, null, ds.hsvc) : X().rfq(ds.hrfq, ds.hp);
     if (ds.hadd) return addOrClaim();
     if (ds.hsec) { St.sector = ds.hsec; return rerender(); }
     if (ds.hcert) { St.certs = St.certs || []; var i = St.certs.indexOf(ds.hcert); if (i >= 0) St.certs.splice(i, 1); else St.certs.push(ds.hcert); return rerender(); }
@@ -290,7 +315,7 @@
     if (ds.hsurp) return X3().surplusOffer(X3().surplus().find(function (s) { return s.id === ds.hsurp; }));
     if (ds.hdos) return X3().dossierRequest(X3().dossiers().find(function (d) { return d.id === ds.hdos; }));
     if (ds.hgroups) return X3().groupsDialog();
-    if (ds.hjob != null && co) { var job = X().jobsOf(co)[+ds.hjob]; if (!job) return; if (job.onJobs) { window.goto('jobs'); var h = document.querySelector('#jx .mode-opt[data-mode="hunting"]'); if (h) h.click(); setTimeout(function () { var card = Array.prototype.find.call(document.querySelectorAll('#jx #huntingView .jcard'), function (c) { return c.textContent.indexOf(job.t) >= 0; }); if (card) { card.scrollIntoView({ block: 'center' }); var ab = card.querySelector('.apply-btn'); if (ab) ab.click(); } }, 60); } else X().applyDialog(co, job); return; }
+    if (ds.hjob != null && co) { var job = X().jobsOf(co)[+ds.hjob]; if (!job) return; X().applyDialog(co, job); return; }   /* the application is sent from the company page (CV + why you) */
     /* workspace */
     if (ds.wtab) { St.wsTab = ds.wtab; return rerender(); }
     if (!co) return;
@@ -308,6 +333,9 @@
     if (ds.wsadd) return siteDialog(co);
     if (ds.wconsent != null) { var tm = H().teamOf(co); tm[+ds.wconsent].consent = !tm[+ds.wconsent].consent; H().saveTeam(co.slug, tm); toast(tm[+ds.wconsent].consent ? 'You are shown on the public page' : 'You are hidden from the public page'); return rerender(); }
     if (ds.wtdel != null) { var tm2 = H().teamOf(co); var gone = tm2.splice(+ds.wtdel, 1)[0]; H().saveTeam(co.slug, tm2); H().log(co.slug, 'Removed ' + gone.name + ' from the team'); return rerender(); }
+    if (ds.wtok != null || ds.wtno != null) { var yes = ds.wtok != null, tm3 = H().teamOf(co), who = tm3[+(yes ? ds.wtok : ds.wtno)]; if (!who) return; t.disabled = true;
+      return window.dxTeam.decide(co.slug, who, yes).then(function () { H().log(co.slug, (yes ? 'Approved ' : 'Declined ') + who.name + (yes ? ' as ' + who.role : '')); toast(yes ? who.name + ' is on the team' : 'Request declined'); rerender(); },
+        function (er) { t.disabled = false; toast((er && er.message) || 'Could not answer the request'); }); }
     if (ds.winvite) return inviteDialog(co);
     if (ds.wl) { H().store('acting', co.slug); if (ds.wl === 'surplus') return X3().postSurplus(); if (ds.wl === 'dossier') return X3().addDossier(co); return X3().newGroup(); }
     if (ds.wfix) { var rs = H().reports(); rs.forEach(function (r) { if (r.id === ds.wfix) r.status = 'fixed'; }); H().reports(rs); H().touch(co.slug, null); toast('Marked fixed'); return rerender(); }
@@ -383,4 +411,19 @@
   C.onRender('hub-market', marketListings);
   C.onRender('hub-deals-button', dealsButton);
   C.onRender('hub-home-matches', homeMatches);
+  /* Notifications: one switch for the e-mails about requests, deals, payments and your company (B-13). Demo: this browser;
+     live: notification_prefs (the adapter replaces the service). Likes, comments and follows never go by e-mail. */
+  if (!window.dxMailPref) window.dxMailPref = {
+    get: function () { try { return localStorage.getItem('dx_mailpref') !== 'off'; } catch (e) { return true; } },
+    set: function (on) { try { localStorage.setItem('dx_mailpref', on ? 'on' : 'off'); } catch (e) {} return Promise.resolve(true); }
+  };
+  function mailPref() {
+    if (document.body.getAttribute('data-page') !== 'notifs') return; var list = document.querySelector('#content .notif-list'); if (!list || list.querySelector('.dx-mailpref')) return;
+    var head = list.firstElementChild; if (!head) return;
+    head.insertAdjacentHTML('afterend', '<label class="dx-mailpref" style="display:flex;align-items:center;gap:8px;margin:-2px 0 10px;font-size:12.5px;color:#65676b;cursor:pointer"><input type="checkbox" id="dxMailPref"' + (window.dxMailPref.get() ? ' checked' : '') + '> <span>E-mail me about requests, deals, payments and my company</span></label>');
+    var sp = list.querySelector('.dx-mailpref span'); if (sp && window.dxI18nAdopt) window.dxI18nAdopt(sp.firstChild);
+  }
+  document.addEventListener('change', function (e) { if (!e.target || e.target.id !== 'dxMailPref') return; var on = e.target.checked, box = e.target;
+    window.dxMailPref.set(on).then(function (ok) { if (ok === false) { box.checked = !on; return; } D.toast && D.toast(on ? 'E-mails on — we will write when something needs you' : 'E-mails off — notifications stay here'); }); }, true);
+  C.onRender('hub-mail-pref', mailPref);
 })();

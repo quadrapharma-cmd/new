@@ -15,13 +15,13 @@ SECRET=$(sed -n 's/^jwt-secret = "\(.*\)"$/\1/p' "$CONF")
 key() { node -e "const c=require('crypto');const b=x=>Buffer.from(JSON.stringify(x)).toString('base64url');const h=b({alg:'HS256',typ:'JWT'}),p=b({role:'$1',iss:'local',iat:1700000000,exp:2000000000});console.log(h+'.'+p+'.'+c.createHmac('sha256',process.argv[1]).update(h+'.'+p).digest('base64url'))" "$SECRET"; }
 export SUPABASE_URL=${SUPABASE_URL:-http://127.0.0.1:$GW} FUNCTIONS_URL=${FUNCTIONS_URL:-http://localhost:$GW/functions/v1} APP_URL=${APP_URL:-http://localhost:$GW/}
 export RESEND_URL=${RESEND_URL:-http://127.0.0.1:$GW/__resend} RESEND_API_KEY=${RESEND_API_KEY:-local-test-key} MAIL_FROM=${MAIL_FROM:-Drugbox <notify@drugbox.test>} LOCAL_CRON_SECONDS=${LOCAL_CRON_SECONDS:-3}
-export PAYMOB_BASE=${PAYMOB_BASE:-http://127.0.0.1:$MP} FAWRY_BASE=${FAWRY_BASE:-http://127.0.0.1:$MP}
+export PAYMOB_BASE=${PAYMOB_BASE:-http://127.0.0.1:$MP} FAWRY_BASE=${FAWRY_BASE:-http://127.0.0.1:$MP} EMAIL_API_BASE=${EMAIL_API_BASE:-http://127.0.0.1:$MP}
 export SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-$(key anon)} SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-$(key service_role)}
 for v in PAYMOB_SECRET_KEY PAYMOB_HMAC_SECRET PAYMOB_CARD_INTEGRATION_ID PAYMOB_WALLET_INTEGRATION_ID FAWRY_MERCHANT_CODE FAWRY_SECURE_KEY; do
   [ -n "${!v:-}" ] || { echo "$v is missing in $ENV_FILE"; exit 1; }; done
 python3 - "$RUN/drugbox-fn.env" <<'PY'
 import os, re, sys   # KEY="value" lines a shell can source again; the tests read them too
-keep = re.compile(r'(SUPABASE_|FUNCTIONS_URL|APP_URL|ALLOWED_ORIGINS|PAYMOB_|FAWRY_|INSTAPAY_|RESEND_|MAIL_FROM|LOCAL_CRON)')
+keep = re.compile(r'(SUPABASE_|FUNCTIONS_URL|APP_URL|ALLOWED_ORIGINS|PAYMOB_|FAWRY_|INSTAPAY_|RESEND_|MAIL_FROM|LOCAL_CRON|EMAIL_|NOTIFY_)')
 with open(sys.argv[1], 'w') as f:
     for k, v in sorted(os.environ.items()):
         if keep.match(k): f.write('%s="%s"\n' % (k, re.sub(r'(["\\$`])', r'\\\1', v)))

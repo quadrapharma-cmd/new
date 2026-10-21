@@ -24,7 +24,7 @@ def fill_ph(j, pg, ph_re, val, root='#tab-create'):
     if not el: j.notbuilt('no field "%s" in the listing form' % ph_re)
     el.fill(val); return el
 
-def create_listing(j, pg, side, fields, certs=(), draft=False):
+def create_listing(j, pg, side, fields, certs=(), draft=False, coa=None):
     """Market → Create Listing → I'm Offering / I'm Seeking → fill by placeholder → Preview → Publish (or Save as Draft)."""
     market(j, pg, 'create')
     if not pg.locator('#bigOfferBtn:visible').count():
@@ -35,6 +35,12 @@ def create_listing(j, pg, side, fields, certs=(), draft=False):
     for c in certs:
         el = pg.locator('#tab-create :is(div,span,label,button):visible', has_text=re.compile(r'^\W*%s\W*$' % re.escape(c))).first
         if el.count(): el.click()
+    if coa:   # the form's "COA / Spec sheet" takes a real file
+        z = pg.locator('#tab-create .form-section.active .upload-zone-sm:visible').first
+        j.check(z.count(), 'no COA upload in the listing form')
+        with pg.expect_file_chooser() as fc: z.click()
+        fc.value.set_files(coa); pg.wait_for_timeout(400)
+        j.check(re.search(r'attached|مرفق', z.inner_text()), 'the COA file is not shown as attached')
     mark = j.toast_mark(pg)
     if draft:
         b = pg.locator('#tab-create button:visible', has_text=re.compile(r'Save as Draft|حفظ كمسودة')); j.check(b.count(), "no 'Save as Draft'"); b.first.click(); j.settle(pg, 900)
@@ -101,14 +107,14 @@ def browse_market(j):
         j.check(price and price.group(2) in t2, 'the landed cost does not start from the listing price %s' % (price and price.group(2)))
         close_dialogs(pg); market(j, pg); c = card(pg, want)
         sv = c.locator(':is(button,[onclick],[role=button])', has_text=re.compile(r'Save|حفظ|🔖')).first
-        if not sv.count(): sv = c.locator('[aria-label*="Save" i], [title*="Save" i]').first
+        if not sv.count(): sv = c.locator('[aria-label*="Save" i], [title*="Save" i], [aria-label*="حفظ"], [title*="حفظ"]').first
         j.check(sv.count(), "not built: the listing card has no 'Save'"); sv.click(); j.settle(pg, 700)
         reopen(j, pg); j.nav(pg, 'saved'); j.settle(pg, 1200)
         j.check(want in j.text(pg), 'the saved listing is not in Saved after reload')
     with j.step('Category counts and result counts equal the real listings (no invented numbers or sample cards in live)'):
         market(j, pg)
         counts = pg.evaluate("[...document.querySelectorAll('#tab-browse .cat-item')].map(e=>e.innerText.replace(/\\s+/g,' ').trim())")
-        sup = next((int(re.sub(r'\\D', '', x) or 0) for x in counts if x.startswith('Supply') or x.startswith('توريد')), None)
+        sup = next((int(re.sub(r'\D', '', x) or 0) for x in counts if x.startswith(('Supply', 'توريد', 'عرض'))), None)
         real = len([c for c in cards(pg, '#tab-browse :is(.lcard,.sponsored-card)') if c['cat'] == 'supply']) if j.demo else int(j.sql1("select count(*) from public.products where type='supply' and active"))
         j.check(sup == real, "the Supply count says %s but there are %s supply listings" % (sup, real))
         if j.live:
@@ -150,7 +156,7 @@ def contact_lister(j):
             dem = seed_listing(j, me['id'], 'Ciprofloxacin wanted %s' % j.tag, 'demand'); sp = s['page']; j.reload(sp); market(j, sp)
             c = card(sp, 'Ciprofloxacin wanted %s' % j.tag)
         else:
-            sp = pg; market(j, sp); c = sp.locator('#tab-browse .dcard').first
+            sp = pg; market(j, sp); c = sp.locator('#tab-browse .dcard').filter(has_not_text=re.compile(r'Dr\. Haytham')).first   # not my own request (the approved page answers "This is your own request")
         j.check(c.count(), 'no demand card to quote on')
         b = c.locator('button', has_text=re.compile(r'Quote|عرض سعر')).first; j.check(b.count(), "no 'Quote →' on the demand card")
         b.click(); j.settle(sp, 1000)
@@ -161,9 +167,12 @@ def post_supply_listing(j):
     """A supplier posts a supply listing that buyers can find and contact."""
     me = lister(j); pg = me['page']; name = 'Metformin HCl BP/USP %s' % j.tag
     with j.step("Create Listing → I'm Offering: product, grade, price $5.80 per kg, MOQ 500 kg, origin, terms, WHO-GMP → Preview → Publish"):
-        said = create_listing(j, pg, 'offer', [(r'Metformin|product', name), (r'\$|price', '5.80'), (r'500 kg|MOQ', '500 kg'), (r'China|origin|Origin', 'Egypt — Obour'), (r'weeks|terms', '2 weeks · EXW Cairo')], certs=('WHO-GMP',))
+        said = create_listing(j, pg, 'offer', [(r'Metformin|product', name), (r'\$|price', '5.80'), (r'500 kg|MOQ', '500 kg'), (r'China|origin|Origin', 'Egypt — Obour'), (r'weeks|terms', '2 weeks · EXW Cairo')], certs=('WHO-GMP',), coa=PDF)
         j.check(any(re.search(r'live|منشور|نُشر', t) for t in said), "no 'Your listing is live'")
-        if j.live: j.check(j.wait_db("select count(*) from public.products where name=$q$%s$q$ and type='supply'" % name, 6) == '1', 'no products row for the listing')
+        if j.live:
+            j.check(j.wait_db("select count(*) from public.products where name=$q$%s$q$ and type='supply'" % name, 6) == '1', 'no products row for the listing')
+            j.check(j.wait_db("select (coa_path like 'listings/%%')::text||currency||coalesce(company_id::text,'') from public.products where name=$q$%s$q$" % name, 8) == 'trueUSD%s' % me['co']['id'],
+                    'the listing is not stored with its COA (private), currency and company')
     with j.step("'Save as Draft' a second listing: it is only in My Listings (Draft)"):
         create_listing(j, pg, 'offer', [(r'Metformin|product', 'Draft lactose %s' % j.tag), (r'\$|price', '1.20'), (r'500 kg|MOQ', '1 MT')], draft=True)
         t = my_listings(j, pg)
@@ -200,9 +209,14 @@ def post_demand(j):
         b = c.locator('button', has_text=re.compile(r'Quote|عرض')).first; j.check(b.count(), "no 'Quote →' on the demand")
         b.click(); j.settle(sp, 1000)
         j.check(dlg_open(sp) and sp.locator('.dbk-ov input:visible').count(), "not built: 'Quote →' on a demand opens no quotation (price) — no quote can reach the buyer")
+        fill_by_label(j, sp, r'price|السعر', 'US$ 20.50 per kg'); fill_by_label(j, sp, r'Quantity|الكمية', '2 MT/month'); fill_by_label(j, sp, r'Lead|التوريد', '3 weeks', required=False)
+        dlg_click(j, sp, r'Send quote|أرسل', 'Send quote'); j.settle(sp, 1500)
+        j.check(j.wait_db("select status||'|'||(offer->>'price') from public.deals where type='quote' and title=$q$%s$q$" % name, 8) == 'quoted|US$ 20.50 per kg', 'the quote is not a deal (quoted, with the price) in the deals engine')
     with j.step('The buyer compares quotes, accepts one (a deal), the others are told; closing the demand removes it from Browse'):
         if j.demo: j.skip('the suppliers exist only in live')
-        c = deals_centre(j, pg); close_dialogs(pg); j.check(name in c, 'the quotes on the demand are not in the buyer\'s Requests & deals')
+        j.reload(pg); c = deals_centre(j, pg); close_dialogs(pg); j.check(name in c, 'the quotes on the demand are not in the buyer\'s Requests & deals')
+        open_deal(j, pg, name, r'Sent|المرسلة'); deal_act(j, pg, 'Accept quote'); close_dialogs(pg)
+        j.check(j.wait_db("select status from public.deals where type='quote' and title=$q$%s$q$" % name, 8) == 'accepted', 'the buyer cannot accept the quote')
 
 @journey('J-BUSINESS-38')
 def sell_surplus(j):
@@ -296,13 +310,13 @@ def manage_listings(j):
         j.check(more.count(), "no '···' menu on a listing"); more.click(); pg.wait_for_timeout(400)
         p = pg.locator(':is(button,div,span,a):visible', has_text=re.compile(r'^\s*(⏸\s*)?Pause listing\s*$|إيقاف')).first
         j.check(p.count(), "no 'Pause listing'"); p.click(); j.settle(pg, 900)
-        reopen(j, pg); t = my_listings(j, pg); j.check(re.search(r'PAUSED|Paused|موقوف', t), 'the paused listing is not shown as Paused after reload')
+        reopen(j, pg); t = my_listings(j, pg); j.check(re.search(r'PAUSED|Paused|موقوف|متوقف', t), 'the paused listing is not shown as Paused after reload')
         if j.live: j.check(j.sql1("select count(*) from public.products where user_id='%s' and not active" % me['id']) == '1', 'the pause is not saved in the database')
     with j.step("'Renew Now' on the expiring listing extends its expiry; 'Delete listing' removes it everywhere after confirmation"):
-        r = pg.locator('#tab-manage :is(button,a,span):visible', has_text=re.compile(r'Renew Now|جدد')).first
+        r = pg.locator('#tab-manage :is(button,a,span):visible', has_text=re.compile(r'Renew Now|جدّ?د الآن')).first
         j.check(r.count(), "no 'Renew Now' on the expiring listing"); r.click(); j.settle(pg, 900)
         reopen(j, pg); t = my_listings(j, pg)
-        j.check(not re.search(r'expires in 2 days|ينتهي خلال يومين', t), 'the renewed listing still expires in 2 days after reload')
+        j.check(not re.search(r'[Ee]xpires in 2 days|ينتهي خلال (2 يوم|يومين)', t), 'the renewed listing still expires in 2 days after reload')
 
 @journey('J-BUSINESS-41')
 def market_intents(j):

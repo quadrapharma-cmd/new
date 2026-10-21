@@ -7,7 +7,20 @@
   function load() { try { var v = JSON.parse(localStorage.getItem('dx_passport') || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch (e) { return {}; } }
   function save(v) { try { localStorage.setItem('dx_passport', JSON.stringify(v)); } catch (e) {} }
   var SEED = { 'cairo-api-trading': [{ type: 'CEP', product: 'Metformin HCl', number: 'R1-CEP 2019-341-Rev 02', expiry: '', status: 'declared' }, { type: 'DMF (US)', product: 'Metformin HCl', number: 'Type II · 2x,xxx', expiry: '', status: 'declared' }] };
-  function docsOf(slug) { var s = load(); return (s[slug] || SEED[slug] || []).slice(); }
+  /* a company's compliance documents: the passport rows everyone signed in sees, and — for its own team — the file, who added it and when.
+     Demo: this browser; live: company_documents + the private documents bucket (the adapter replaces the service). */
+  if (!window.dxPassport) window.dxPassport = {
+    docs: function (slug) { var s = load(); return (s[slug] || SEED[slug] || []).slice(); },
+    add: function (co, d, file) { var s = load(), list = s[co.slug] || (SEED[co.slug] || []).slice(), me = window.ME || {};
+      var id = 'pd' + Date.now(); list.push({ id: id, type: d.type, product: d.product, number: d.number, expiry: d.expiry, status: file ? 'review' : 'declared', file: file ? file.name : '', by: me.name || '', at: Date.now() });
+      if (file && window.URL && URL.createObjectURL) FILES[id] = URL.createObjectURL(file);
+      s[co.slug] = list; save(s); return Promise.resolve(true); },
+    remove: function (co, id) { var s = load(), list = (s[co.slug] || (SEED[co.slug] || []).slice()).filter(function (d) { return d.id !== id; }); s[co.slug] = list; save(s); return Promise.resolve(true); },
+    decide: function (id, ok, note) { var s = load(), hit = false; Object.keys(s).forEach(function (k) { (s[k] || []).forEach(function (d) { if (d.id === id) { d.status = ok ? 'verified' : 'rejected'; d.note = ok ? '' : note || ''; hit = true; } }); }); save(s); return Promise.resolve(hit); },
+    open: function (co, d) { var u = FILES[d.id]; if (u) window.open(u, '_blank', 'noopener'); else D.toast && D.toast('In this demo the file stays on the computer it was added from'); return Promise.resolve(true); }
+  };
+  var FILES = {};
+  function docsOf(slug) { return window.dxPassport.docs(slug) || []; }
   var GMP = /GMP|ISO 17025|GDP|ISO 15378|ISO 22716/i;
   var TIER = [['Not verified', '#94A3B8'], ['Registered', '#1A56DB'], ['Licensed', '#7C3AED'], ['Inspected', '#10B981']];
   var MEMO = {};
@@ -22,7 +35,7 @@
     return insp ? 3 : 2;
   }
   function badge(t, small) { var x = TIER[t]; return '<span class="dx-tier' + (small ? ' sm' : '') + '" style="--tc:' + x[1] + '" title="Verification level ' + t + ' of 3: ' + x[0] + '"><i class="' + (t >= 1 ? 'on' : '') + '"></i><i class="' + (t >= 2 ? 'on' : '') + '"></i><i class="' + (t >= 3 ? 'on' : '') + '"></i>' + (t ? 'Level ' + t + ' · ' : '') + x[0] + '</span>'; }
-  var ST = { verified: ['Verified', '#10B981'], declared: ['Self-declared', '#1A56DB'], review: ['Under review', '#F59E0B'], soon: ['Expires soon', '#F59E0B'], expired: ['Expired', '#EF4444'], missing: ['Not provided', '#94A3B8'] };
+  var ST = { verified: ['Verified', '#10B981'], declared: ['Self-declared', '#1A56DB'], review: ['Under review', '#F59E0B'], soon: ['Expires soon', '#F59E0B'], rejected: ['Not accepted', '#EF4444'], expired: ['Expired', '#EF4444'], missing: ['Not provided', '#94A3B8'] };
   function items(co) {
     var out = [], ver = co.status === 'verified';
     out.push({ g: 'Company', n: 'Commercial registry', v: co.registry ? 'No. ' + co.registry : '', s: co.registry ? (ver ? 'verified' : 'declared') : 'missing' });
@@ -32,7 +45,7 @@
       out.push({ g: 'Sites', n: c.name, v: c.site + (c.expiry ? ' · valid to ' + c.expiry : ''), s: c.state === 'expired' ? 'expired' : c.state === 'soon' ? 'soon' : c.checked ? 'verified' : 'declared' });
     });
     var docs = docsOf(co.slug), sect = (co.sectors || []).join(' ');
-    docs.forEach(function (d) { out.push({ g: 'Product documents', n: d.type + (d.product ? ' — ' + d.product : ''), v: d.number + (d.expiry ? ' · valid to ' + d.expiry : ''), s: d.status || 'declared' }); });
+    docs.forEach(function (d) { out.push({ g: d.type === 'Membership' ? 'Memberships' : 'Product documents', n: d.type === 'Membership' ? (d.product || 'Membership') : d.type + (d.product ? ' — ' + d.product : ''), v: d.number + (d.expiry ? ' · valid to ' + d.expiry : ''), s: d.status === 'rejected' ? 'rejected' : d.status || 'declared', doc: d }); });
     if (/API/.test(sect)) ['CEP', 'DMF (US)', 'ASMF (EU)'].forEach(function (t) { if (!docs.some(function (d) { return d.type === t; })) out.push({ g: 'Product documents', n: t, v: '', s: 'missing', req: t }); });
     if (/Distribution/.test(sect) && !(co.certs || []).some(function (c) { return /GDP/.test(c); })) out.push({ g: 'Sites', n: 'GDP', v: '', s: 'missing', req: 'GDP certificate' });
     return out;
@@ -44,7 +57,12 @@
     Object.keys(groups).forEach(function (g) {
       h += '<div class="dx-pass-g">' + g + '</div>';
       groups[g].forEach(function (r) { var s = ST[r.s] || ST.declared;
-        h += '<div class="dx-pass-r"><div><b>' + esc(r.n) + '</b>' + (r.v ? '<span>' + esc(r.v) + '</span>' : '') + '</div><div class="dx-pass-s"><em style="--sc:' + s[1] + '">' + s[0] + '</em>' +
+        var dd = own && r.doc && r.doc.id ? r.doc : null;   /* the file side is the team's only */
+        h += '<div class="dx-pass-r"><div><b>' + esc(r.n) + '</b>' + (r.v ? '<span>' + esc(r.v) + '</span>' : '') +
+             (dd ? '<span class="dx-pass-f">' + (dd.file ? esc(dd.file) + ' · ' : '') + 'added' + (dd.by ? ' by ' + esc(dd.by) : '') + (dd.at ? ' · ' + new Date(dd.at).toISOString().slice(0, 10) : '') + (dd.note ? ' · ' + esc(dd.note) : '') + '</span>' : '') +
+             '</div><div class="dx-pass-s"><em style="--sc:' + s[1] + '">' + s[0] + '</em>' +
+             (dd && dd.file ? '<button type="button" class="dx-pass-req" data-pdo="' + esc(dd.id) + '">Open</button>' : '') +
+             (dd ? '<button type="button" class="dx-pass-req" data-pdx="' + esc(dd.id) + '">Delete</button>' : '') +
              (r.req && !own ? '<button type="button" class="dx-pass-req" data-req="' + esc(r.req) + '" data-slug="' + esc(co.slug) + '">Request</button>' : '') + '</div></div>'; });
     });
     h += '<p class="dx-pass-n">Levels: 1 Registered — registry & tax card checked · 2 Licensed — EDA / industrial licence · 3 Inspected — a site with a valid GMP-type certificate. Self-declared documents are shown as provided by the company.</p></section>';
@@ -74,21 +92,30 @@
   function addDoc() {
     var mine = window.dxDir.mine && window.dxDir.mine(); if (!mine) return;
     var m = D.modal({ title: 'Add a compliance document', secondary: 'Cancel', body:
-      '<div class="dx-lc-f"><label>Document<select id="pdT"><option>CEP</option><option>DMF (US)</option><option>ASMF (EU)</option><option>WHO PQ</option><option>GDP certificate</option><option>ISO 9001</option><option>Stability data (Zone IVb)</option></select></label>' +
-      '<label>Product / site<input id="pdP" type="text" placeholder="e.g. Metformin HCl"></label><label>Number / reference<input id="pdN" type="text" placeholder="e.g. R1-CEP 20XX-XXX"></label><label>Valid to (optional)<input id="pdE" type="month"></label></div>' +
-      '<p class="dx-lc-note">Shown as self-declared until Drugbox checks the document.</p>',
+      '<div class="dx-lc-f"><label>Document<select id="pdT"><option>CEP</option><option>DMF (US)</option><option>ASMF (EU)</option><option>WHO PQ</option><option>GDP certificate</option><option>ISO 9001</option><option>Stability data (Zone IVb)</option><option>Site master file</option><option>Manufacturing licence</option></select></label>' +
+      '<label>Product / site<input id="pdP" type="text" placeholder="e.g. Metformin HCl"></label><label>Number / reference<input id="pdN" type="text" placeholder="e.g. R1-CEP 20XX-XXX"></label><label>Valid to (optional)<input id="pdE" type="month"></label><label>File (PDF or image, optional)<input id="pdF" type="file" accept=".pdf,.jpg,.jpeg,.png"></label></div>' +
+      '<p class="dx-lc-note">Shown as self-declared until Drugbox checks the document. The file is seen only by your team and Drugbox’s reviewers.</p>',
       primary: { label: 'Save', onClick: function (el) { var g = function (id) { var x = el.querySelector('#' + id); return x ? x.value.trim() : ''; }; if (!g('pdN')) { var n = el.querySelector('#pdN'); if (n) { n.focus(); n.style.borderColor = '#EF4444'; } return false; }
-        var s = load(); var list = s[mine.slug] || docsOf(mine.slug); list.push({ type: g('pdT'), product: g('pdP'), number: g('pdN'), expiry: g('pdE'), status: 'declared' }); s[mine.slug] = list; save(s);
-        setTimeout(function () { document.querySelectorAll('.dx-ladder,.dx-pass').forEach(function (x) { x.remove(); }); decorate(); }, 0); D.toast && D.toast('Document added — shown as self-declared'); } } });
+        var fi = el.querySelector('#pdF'), file = fi && fi.files && fi.files[0];
+        if (file && file.size > 10 * 1024 * 1024) { D.toast && D.toast('The file is larger than 10 MB'); return false; }
+        window.dxPassport.add(mine, { type: g('pdT'), product: g('pdP'), number: g('pdN'), expiry: g('pdE') }, file).then(function (ok) {
+          if (!ok) return; redraw(); D.toast && D.toast(file ? 'Document added — Drugbox will check it' : 'Document added — shown as self-declared'); }); } } });
     return m;
   }
+  function redraw() { setTimeout(function () { document.querySelectorAll('.dx-ladder,.dx-pass').forEach(function (x) { x.remove(); }); decorate(); }, 0); }
+  function ownDoc(id) { var mine = window.dxDir.mine && window.dxDir.mine(); if (!mine) return null; var d = docsOf(mine.slug).find(function (x) { return String(x.id) === String(id); }); return d ? { co: mine, d: d } : null; }
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('.dx-add-doc'); if (a) { e.preventDefault(); addDoc(); return; }
+    var o = e.target.closest && e.target.closest('[data-pdo]'); if (o) { e.preventDefault(); e.stopPropagation(); var x = ownDoc(o.dataset.pdo); if (x) window.dxPassport.open(x.co, x.d); return; }
+    var dl = e.target.closest && e.target.closest('[data-pdx]'); if (dl) { e.preventDefault(); e.stopPropagation(); var y = ownDoc(dl.dataset.pdx); if (!y) return;
+      D.modal({ title: 'Delete this document?', body: '<div>' + esc(y.d.type + (y.d.product ? ' — ' + y.d.product : '')) + ' is removed from your compliance passport' + (y.d.file ? ' and its file is deleted' : '') + '.</div>', secondary: 'Cancel',
+        primary: { label: 'Delete', danger: true, onClick: function () { window.dxPassport.remove(y.co, y.d.id).then(function (ok) { if (ok) { redraw(); D.toast && D.toast('Document deleted'); } }); } } });
+      return; }
     var r = e.target.closest && e.target.closest('.dx-pass-req'); if (!r) return; e.preventDefault(); e.stopPropagation();
     var co = window.dxDir.bySlug(r.dataset.slug); if (!co || !window.dxDeals) return;
     var d = window.dxDeals.create('dossier', co.slug, 'Document request — ' + r.dataset.req, { doc: r.dataset.req }, 'Please share your ' + r.dataset.req + ' for our supplier qualification.');
     if (d) { r.textContent = 'Requested'; r.disabled = true; D.toast && D.toast('Request sent to ' + co.name + ' — follow it in Requests & deals'); }
   }, true);
   C.onRender('tiers', idle(decorate));
-  window.dxTiers = { tierOf: tierOf, items: items, addDoc: addDoc };
+  window.dxTiers = { tierOf: tierOf, items: items, addDoc: addDoc, redraw: redraw };
 })();

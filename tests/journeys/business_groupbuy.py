@@ -106,6 +106,18 @@ def join_buying_group(j):
     with j.step('Change the quantity; then leave the group before the target'):
         card = pg.locator('.dbk-ov .gb-card', has_text=product).first
         j.check(card.locator('button', has_text=re.compile(r'Leave|Change|Edit|غادر|غيّر|عدّل')).count(), "not built: a member can only add more — there is no way to change the quantity or leave the group")
+        nq, want = ('300', '800') if j.live else ('600', '600')   # live: the member (organiser 500 + 300); demo: the demo account is the organiser itself
+        card.locator('input[type=number]').fill(nq); card.locator('button', has_text=re.compile(r'^\s*(Change|غيّر|تغيير)\s*$')).first.click(); j.settle(pg, 1500)
+        groups_dialog(j, pg); t = group_card(pg, product)
+        j.check(want in t, 'changing the quantity to %s did not change the progress (%s expected): %s' % (nq, want, t[:120]))
+        if j.live:
+            j.check(j.wait_db("select m.qty::int::text from public.deal_members m join public.deals d on d.id=m.deal_id where d.title like '%%%s%%' and m.company_id=%s" % (j.tag, mem['co']['id']), 6) == '300', 'the new quantity is not stored')
+            card = pg.locator('.dbk-ov .gb-card', has_text=product).first
+            card.locator('button', has_text=re.compile(r'^\s*(Leave|غادر|مغادرة)\s*$')).first.click(); j.settle(pg, 1500)
+            groups_dialog(j, pg); t = group_card(pg, product)
+            j.check('500' in t and '1 compan' in t, 'leaving did not remove the member from the group: %s' % t[:120])
+            j.check(j.wait_db("select count(*) from public.deal_members m join public.deals d on d.id=m.deal_id where d.title like '%%%s%%'" % j.tag, 6) == '1', 'the member is still stored after leaving')
+        close_dialogs(pg)
     with j.step("Join with 1,500 so the target is reached: 'Target reached'; the supplier and members are notified"):
         said = join_group(j, pg, product, 1500)
         j.check(any(re.search(r'Target reached|اكتمل الهدف', t) for t in said), "reaching the target does not say 'Target reached'")

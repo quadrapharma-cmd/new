@@ -27,7 +27,7 @@
 #   3 every pending supabase/migrations/NNNN_*.sql in order, each in ONE transaction with ON_ERROR_STOP (and its ledger row)
 #   4 checks: schema_sweep.sql (every line "none"), the five storage buckets, realtime on messages + notifications, table/sequence
 #     grants for the API roles, jit = off for the API login role, the pg_cron job, the prices
-#   5 (unless --db-only) function secrets + the three Edge Functions, then a smoke call to each
+#   5 (unless --db-only) function secrets + the four Edge Functions, then a smoke call to each
 set -euo pipefail
 # shellcheck source=deploy/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -259,7 +259,12 @@ if [[ "$(q "select count(*) from pg_extension where extname = 'pg_cron'")" == 1 
   if [[ "$(q "select count(*) from cron.job where jobname = 'drugbox-expire-vip'")" == 0 && $DRY == 0 ]]; then
     q "select cron.schedule('drugbox-expire-vip', '17 1 * * *', 'select public.expire_vip_plans()')" >/dev/null && ok "pg_cron: scheduled drugbox-expire-vip (daily 01:17 UTC)"
   else ok "pg_cron: drugbox-expire-vip is scheduled"; fi
-else info "pg_cron is not enabled: VIP plans are not expired automatically — enable it (Database → Extensions → pg_cron) and re-run this script"; fi
+  # 0055: a notice 3 days before a VIP plan ends (vip_reminders) — scheduled here too, because 0055 schedules it only when
+  # pg_cron was already enabled at the moment the migration ran
+  if [[ "$(q "select count(*) from cron.job where jobname = 'drugbox-vip-reminders'")" == 0 && $DRY == 0 ]]; then
+    q "select cron.schedule('drugbox-vip-reminders', '23 7 * * *', 'select public.vip_reminders()')" >/dev/null && ok "pg_cron: scheduled drugbox-vip-reminders (daily 07:23 UTC)"
+  else ok "pg_cron: drugbox-vip-reminders is scheduled"; fi
+else info "pg_cron is not enabled: VIP plans are not expired automatically and VIP reminders are not sent — enable it (Database → Extensions → pg_cron) and re-run this script"; fi
 
 if [[ "$(q "select to_regclass('public.payment_products') is not null")" == t ]]; then
   info "prices (payment_products — confirm before launch, +VAT):"
@@ -305,6 +310,11 @@ if prod and (test_keys or fawry_staging): bad.append('production with Paymob TES
 if not prod and live_keys: bad.append('staging with Paymob LIVE keys — staging must use test keys (real money otherwise)')
 if not prod and env.get('FAWRY_BASE', 'https://www.atfawry.com').rstrip('/') == 'https://www.atfawry.com': bad.append('staging without FAWRY_BASE=https://atfawry.fawrystaging.com (Fawry production otherwise)')
 if not env.get('RESEND_API_KEY'): print('    note: RESEND_API_KEY is not set — notification e-mails stay queued until it is (docs/LAUNCH.md, E-mail)', file=sys.stderr)
+email = [k for k in ('EMAIL_PROVIDER', 'EMAIL_API_KEY', 'EMAIL_FROM', 'NOTIFY_DISPATCH_SECRET') if not env.get(k) or 'CHANGE_ME' in env.get(k, '')]
+if email and len(email) < 4: bad.append('e-mails half set up: ' + ', '.join(email) + ' missing (set all four, or none to send no e-mails yet)')
+if env.get('EMAIL_PROVIDER') and env['EMAIL_PROVIDER'] not in ('resend', 'postmark', 'sendgrid'): bad.append('EMAIL_PROVIDER must be resend, postmark or sendgrid')
+if len(env.get('NOTIFY_DISPATCH_SECRET', 'x' * 32)) < 32: bad.append('NOTIFY_DISPATCH_SECRET must be at least 32 characters')
+if len(email) == 4: print('    note: no e-mail provider set — notify-dispatch answers 503 and notifications stay in the app until EMAIL_* are set', file=sys.stderr)
 if bad: print('\n'.join('    - ' + b for b in bad), file=sys.stderr); sys.exit(1)
 print('    secrets file checked: ' + ', '.join(sorted(env)))
 PY
@@ -321,12 +331,13 @@ ok "secrets set"
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/supabase"; cp -r "$REPO/supabase/functions" "$WORK/supabase/functions"
 { echo 'project_id = "drugbox"'
-  for fn in payments-create:true paymob-webhook:false fawry-webhook:false account-delete:true notify-email:true; do
+  for fn in payments-create:true paymob-webhook:false fawry-webhook:false account-delete:true notify-email:true notify-dispatch:false; do
     printf '\n[functions.%s]\nverify_jwt = %s\nentrypoint = "./functions/%s/index.js"\n' "${fn%%:*}" "${fn##*:}" "${fn%%:*}"
   done; } > "$WORK/supabase/config.toml"
 # account-delete: the member's JWT (Settings → Delete my account); notify-email: the service-role key (the every-minute schedule, docs/LAUNCH.md)
-for fn in payments-create paymob-webhook fawry-webhook account-delete notify-email; do
-  extra=(); [[ $fn == paymob-webhook || $fn == fawry-webhook ]] && extra=(--no-verify-jwt)
+# notify-dispatch: called by the scheduler with NOTIFY_DISPATCH_SECRET (no Supabase JWT) — it checks the secret itself
+for fn in payments-create paymob-webhook fawry-webhook account-delete notify-email notify-dispatch; do
+  extra=(); [[ $fn == paymob-webhook || $fn == fawry-webhook || $fn == notify-dispatch ]] && extra=(--no-verify-jwt)
   info "deploying $fn $( [[ ${#extra[@]} -gt 0 ]] && echo '(public: provider callback, signature-checked)' || echo '(user JWT required)')"
   sb functions deploy "$fn" --project-ref "$REF" --use-api --workdir "$WORK" "${extra[@]}" || die "deploy of $fn failed"
   ok "$fn deployed"

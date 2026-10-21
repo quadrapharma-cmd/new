@@ -233,8 +233,8 @@ analyze public.companies; analyze public.company_members; analyze public.company
 -- the page (keys, timings) — granted back inside this rolled-back transaction
 grant execute on function public.directory_companies(int) to authenticated;
 select pg_temp.as_user(pg_temp.u(1)::text);
-select pg_temp.ok('a page has the same keys as a directory_companies() row', $$(select array_agg(k order by k) from json_object_keys((public.directory_companies_page(1)) -> 0) k)
-  = (select array_agg(k order by k) from json_object_keys((public.directory_companies(1)) -> 0) k)$$);
+select pg_temp.ok('a page has the same keys as a directory_companies() row, plus the page''s updated_at and cover_url (0053)', $$(select array_agg(k order by k) from json_object_keys((public.directory_companies_page(1)) -> 0) k)
+  = (select array_agg(k order by k) from (select json_object_keys((public.directory_companies(1)) -> 0) k union all values ('updated_at'), ('cover_url')) x)$$);
 select pg_temp.ok('pages 1 and 2 do not overlap and follow one order (verified, VIP, name)', $$(with a as (select (e ->> 'id')::bigint id, n from json_array_elements(public.directory_companies_page(100, 0)) with ordinality t(e, n)),
        b as (select (e ->> 'id')::bigint id, n + 100 as n from json_array_elements(public.directory_companies_page(100, 100)) with ordinality t(e, n)),
        ab as (select * from a union all select * from b),

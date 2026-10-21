@@ -93,20 +93,21 @@ def find_supplier(j):
         t = dlg_text(pg); j.check(re.search(r'Sponsored|مموّل|ممول|الممولة', t), 'the ordering explanation does not explain Sponsored placement')
         close_dialogs(pg); set_select(pg, '#hbSort', 'Best match|الأكثر')
     with j.step("'Show more' until every company is listed — each exactly once"):
+        t0 = j.sql1("select now()") if j.live else None             # companies other journeys create meanwhile are not counted
         for _ in range(30):
             more = pg.locator('#dxDir [data-hmore]:visible')
             if not more.count(): break
             more.first.click(); j.settle(pg, 900)
         slugs = card_slugs(pg)
         j.check(len(slugs) == len(set(slugs)), 'a company is listed twice')
-        total = int(j.sql1("select count(*) from public.companies where status<>'suspended'")) if j.live else pg.evaluate("dxDir.companies().length")
+        total = int(j.sql1("select count(*) from public.companies where status<>'suspended' and created_at < '%s'" % t0)) if j.live else pg.evaluate("dxDir.companies().length")
         j.check(len(slugs) >= total, 'only %d of %d companies can be reached with Show more' % (len(slugs), total))
     with j.step("'View page' opens that company's own page (name, sectors, city match the card)"):
         directory(j, pg); search_dir(j, pg, want.split(' %s' % j.tag)[0] if j.live else want)
         card = pg.locator('#dxDir .dr-card', has_text=want).first; meta = card.locator('.dr-meta').inner_text()
         card.locator('[data-hopen]').first.click(); j.settle(pg, 1200)
         t = j.text(pg)[:800]
-        j.check(want in t, 'View page opened another page'); city = meta.split('·')[-2 if 'site' in meta.split('·')[-1] else -1].strip()
+        j.check(want in t, 'View page opened another page'); city = meta.split('·')[-2 if re.search(r'site|موقع|مواقع', meta.split('·')[-1]) else -1].strip()   # the last part is the site count
         j.check(city in t, 'the page does not show the city on the card (%s)' % city)
         ui_ok(j, pg, 'company page')
     with j.step('Back returns to the directory with the search kept; reload keeps me signed in on Companies'):
@@ -136,10 +137,10 @@ def find_cmo(j):
         mine = [c for c in cards if name in c['n']]
         j.check(mine, '%s (CMO with a tablet line) is not listed under CMO / Toll + Tablets' % name)
         j.check(re.search(r'free from|متاح من|متاحة من', mine[0]['cap']), "not built: the CMO card has no capacity line 'free from <month>' (card: %s)" % mine[0]['cap'][:80])
-        card_month = re.sub(r'.*(free from|متاح من|متاحة من)\s*', '', mine[0]['cap']).strip()
+        card_month = re.search(r'(?:free from|متاح من|متاحة من)\s*([^\n·]+)', mine[0]['cap']).group(1).strip()   # the month only (the line wraps in Arabic)
     with j.step("Open the CMO's page → Sites: capabilities, minimum batch and the month calendar; the first Free month equals the card's"):
         open_card(j, pg, name); t = company_tab(j, pg, L('Sites', exact=False)[1:-1], 'Sites')
-        j.check(re.search(r'Minimum batch|الحد الأدنى', t) and re.search(r'Capacity|الطاقة', t), 'not built: the Sites tab shows no capacity / minimum batch')
+        j.check(re.search(r'Minimum batch|الحد الأدنى|أقل تشغيلة', t) and re.search(r'Capacity|الطاقة', t), 'not built: the Sites tab shows no capacity / minimum batch')
         months = re.findall(r'([A-Z][a-z]{2} \d{4}|\S+ \d{4})\n(Free|Booked|متاح|محجوز)', t)
         j.check(months, 'not built: the Sites tab shows no month calendar')
         first_free = next((m for m, s in months if s in ('Free', 'متاح')), None)
@@ -333,6 +334,16 @@ def message_company(j):
         dock = pg.evaluate("[...document.querySelectorAll('#dxDock .dk-win')].filter(e=>e.getClientRects().length).map(e=>e.innerText).join(' ')")
         j.check(not dock.strip(), 'a chat window opened to nobody: %s' % dock[:80].replace('\n', ' '))
         j.check(pg.locator('#content .cp-tab.on[data-htab2=contact]').count(), 'the Contact tab (phone, email, WhatsApp) is not shown instead')
+    with j.step("'Request a quote' names the same person in the window and in its notice (B-20)"):
+        if j.live: j.skip('the buyer here acts for no company (a quote is sent on behalf of a company) — checked in the demo')
+        close_dialogs(pg); directory(j, pg); open_card(j, pg, name)
+        j.click(pg, L('Request a quote'), scope='#content', what='Request a quote'); pg.wait_for_timeout(500)
+        j.check(dlg_open(pg), "'Request a quote' opens no window")
+        t = pg.evaluate("(document.querySelector('.dbk-ov .rq-to:last-of-type')||{}).innerText||''") or pg.evaluate("document.querySelector('.dbk-ov').innerText")
+        j.check(routed in t, 'the quote window says it goes to someone else than "Who answers" (%s): %s' % (routed, t[:120]))
+        pg.fill('#rqQty', '500'); pg.fill('#rqMsg', 'Please quote %s' % j.tag); mark = j.toast_mark(pg)
+        dlg_click(j, pg, r'Send request|أرسل الطلب', 'Send request'); j.settle(pg, 900)
+        j.check(any(routed in x for x in j.toasts_since(pg, mark)), 'the notice after sending names someone else than %s: %s' % (routed, j.toasts_since(pg, mark)))
 
 @journey('J-BUSINESS-09')
 def report_wrong_info(j):
@@ -419,6 +430,14 @@ def share_company(j):
         else: j.check(u.query or u.fragment, 'not built: the shared link %s cannot open the page — the app has no deep link to a company page (no /c/<slug> or ?co= route)' % link)
         v = j.new_page(url=False)
         j.open(v, (j.url + ('?' + u.query if u.query else '') + ('#' + u.fragment if u.fragment else '')) if j.demo else link); j.settle(v, 2000)
-        j.check(name in j.text(v, 'body'), 'the shared link does not open the company page for a signed-out visitor (%s)' % link[:80])
+        if j.on_login(v):
+            # JOURNEYS.md J-BUSINESS-10: the link opens the page for an outside visitor "or, after signing in, reaches it". A page for
+            # visitors who do not sign in (anonymous public company pages) waits on the owner's decision; after signing in it must open.
+            j.data['visitor'] = 'sign-in first (anonymous public pages wait on the owner)'
+            if j.demo: j.demo_signin(v)
+            else:
+                nm = 'Link Visitor'; j.signup(v, nm)
+            j.settle(v, 2500)
+        j.check(name in j.text(v, 'body'), 'the shared link does not open the company page (%s)' % link[:80])
 
 if __name__ == '__main__': main(__file__)

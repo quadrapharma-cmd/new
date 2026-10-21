@@ -156,6 +156,16 @@ alter table public.profiles drop column if exists name_key, drop column if exist
 \ir ../migrations/0047_hardening.sql
 \ir ../migrations/0048_search_speed.sql
 \ir ../migrations/0049_comment_like_notice.sql
+\ir ../migrations/0050_company_page.sql
+\ir ../migrations/0051_company_team.sql
+\ir ../migrations/0052_directory_claims_import.sql
+\ir ../migrations/0053_directory_search.sql
+\ir ../migrations/0054_marketplace.sql
+\ir ../migrations/0055_payments.sql
+\ir ../migrations/0056_deal_files_reviews.sql
+\ir ../migrations/0057_group_buying.sql
+\ir ../migrations/0058_company_follow_jobs.sql
+\ir ../migrations/0059_company_records_outbox.sql
 select pg_temp.as_server();
 create temp table priv_after as select pg_temp.privs() as p;
 select pg_temp.ok('grants: 0026 alone restores every privilege of anon, authenticated and service_role exactly (effective rights + ACL entries)',
@@ -215,6 +225,20 @@ returns json language sql stable security invoker set search_path = public set j
     from page c left join rated r on r.company_id = c.id) x
 $old$;
 grant execute on function pg_temp.dir_old(int, int, text) to authenticated;
+-- dir_cmp: a directory page in a comparable form — without the two columns 0053 added to every row (updated_at, cover_url),
+-- and each row's products as the sorted set of their names (0050 gives every product more fields — price, photo, pack… —
+-- and the owner's own order). Everything else (which companies, their order, every other field) must still be exactly what
+-- 0022 computed; the new columns, products and fuzzy matches are checked on their own below.
+create function pg_temp.dir_cmp(j json) returns jsonb language sql immutable as $$
+  select coalesce((select jsonb_agg((e - 'updated_at' - 'cover_url' - 'products')
+           || jsonb_build_object('products', (select coalesce(jsonb_agg(p ->> 'name' order by p ->> 'name'), '[]'::jsonb) from jsonb_array_elements(coalesce(e -> 'products', '[]'::jsonb)) p)) order by i)
+         from jsonb_array_elements(coalesce(j::jsonb, '[]'::jsonb)) with ordinality x(e, i)), '[]'::jsonb)
+$$;
+create function pg_temp.dir_new(p_limit int default 100, p_offset int default 0, p_q text default null) returns jsonb language sql stable as $$
+  select pg_temp.dir_cmp(public.directory_companies_page(p_limit, p_offset, p_q))
+$$;
+grant execute on function pg_temp.dir_cmp(json) to authenticated;
+grant execute on function pg_temp.dir_new(int, int, text) to authenticated;
 select pg_temp.as_server();
 insert into auth.users (id, email) select pg_temp.u(g), 'lr' || g || '@lr26.test' from generate_series(1, 4) g on conflict do nothing;
 insert into public.profiles (id, name) select pg_temp.u(g), 'LR person ' || g from generate_series(1, 4) g on conflict (id) do nothing;
@@ -273,24 +297,29 @@ create temp table dir_cases as
 grant select on dir_cases to authenticated;
 select pg_temp.as_user(pg_temp.u(1));
 select pg_temp.ok('directory: a member of two companies gets byte-identical JSON for ' || (select count(*) from dir_cases) || ' page/search cases',
-  $$not exists (select 1 from dir_cases where pg_temp.dir_old(l, o, q)::text is distinct from public.directory_companies_page(l, o, q)::text)$$);
+  $$not exists (select 1 from dir_cases where pg_temp.dir_cmp(pg_temp.dir_old(l, o, q)) is distinct from pg_temp.dir_new(l, o, q))$$);
 select pg_temp.ok('directory: …and the cases are not empty (tiers 0-3, vip, mine, ratings, certificates, products all appear)', $$
   (select count(distinct (e->>'tier')) from json_array_elements(public.directory_companies_page(200, 0, 'LR')) e) = 4
   and exists (select 1 from json_array_elements(public.directory_companies_page(200, 0, 'LR')) e where (e->>'mine')::boolean and e->>'plan' = 'vip' and (e->'track'->>'reviews')::int = 3
               and json_array_length(e->'certs') = 3 and json_array_length(e->'products') = 2)$$);
-select pg_temp.ok('directory: the default arguments give the same page', $$pg_temp.dir_old()::text = public.directory_companies_page()::text$$);
+select pg_temp.ok('directory (0053): every row also carries the page''s updated_at and cover_url', $$
+  (select bool_and(e ? 'updated_at' and e ? 'cover_url') from jsonb_array_elements(public.directory_companies_page(200, 0, 'LR')::jsonb) e)$$);
+select pg_temp.ok('directory (0053): a misspelt name finds the company ("thetta" → LR Theta), which the old page did not', $$
+  exists (select 1 from jsonb_array_elements(public.directory_companies_page(200, 0, 'thetta')::jsonb) e where e->>'slug' = 'lr-theta')
+  and not exists (select 1 from json_array_elements(pg_temp.dir_old(200, 0, 'thetta')) e where e->>'slug' = 'lr-theta')$$);
+select pg_temp.ok('directory: the default arguments give the same page', $$pg_temp.dir_cmp(pg_temp.dir_old()) = pg_temp.dir_new()$$);
 select pg_temp.as_user(pg_temp.u(2));
 select pg_temp.ok('directory: identical for a member of one company', $$not exists (select 1 from dir_cases where l in (100, 7) and o in (0, 100, 150)
-  and pg_temp.dir_old(l, o, q)::text is distinct from public.directory_companies_page(l, o, q)::text)$$);
+  and pg_temp.dir_cmp(pg_temp.dir_old(l, o, q)) is distinct from pg_temp.dir_new(l, o, q))$$);
 select pg_temp.as_user(pg_temp.u(4));
 select pg_temp.ok('directory: identical for a member without a company', $$not exists (select 1 from dir_cases where l in (100, 200) and o in (0, 150)
-  and pg_temp.dir_old(l, o, q)::text is distinct from public.directory_companies_page(l, o, q)::text)$$);
+  and pg_temp.dir_cmp(pg_temp.dir_old(l, o, q)) is distinct from pg_temp.dir_new(l, o, q))$$);
 select pg_temp.as_server();
 select pg_temp.step('a certificate expires, a VIP plan runs out, a company is verified', $$update public.site_certificates set expiry = current_date - 1 where company_id = pg_temp.id('co_lr-alpha') and name = 'GMP';
   update public.companies set vip_until = now() - interval '1 minute' where slug = 'lr-alpha'; update public.companies set status = 'verified' where slug = 'lr-zeta'$$);
 select pg_temp.as_user(pg_temp.u(1));
 select pg_temp.ok('directory: still identical after certificates, plans and statuses change (nothing is stale)', $$not exists (select 1 from dir_cases where l in (100, 200) and o in (0, 150)
-  and pg_temp.dir_old(l, o, q)::text is distinct from public.directory_companies_page(l, o, q)::text)$$);
+  and pg_temp.dir_cmp(pg_temp.dir_old(l, o, q)) is distinct from pg_temp.dir_new(l, o, q))$$);
 select pg_temp.ok('directory: Alpha''s level follows its certificate (3 → 2 when the GMP expires)', $$(select (e->>'tier')::int from json_array_elements(public.directory_companies_page(200, 0, 'LR Alpha')) e) = 2$$);
 select pg_temp.as_anon();
 select pg_temp.ok('privacy: with the explicit grants anon still reads no person and no company (row security, 0024)', $$(select count(*) from public.profiles) = 0

@@ -80,6 +80,9 @@ insert into ids select 'post', id::text from public.posts where body = 'FU a pos
 -- ══ F-115 Fawry: an order is paid only with the reference number Fawry issued for it ════════════════
 select pg_temp.as_user(pg_temp.u(1));
 select pg_temp.step('the owner orders VIP by Fawry', $$insert into ids select 'fw', (public.create_order('vip_month', 'fawry', pg_temp.id('co'))).id$$);
+select pg_temp.as_server();
+update public.payment_orders set created_at = now() - interval '3 minutes' where id = pg_temp.id('fw');   -- past the 2 minutes a Fawry order is "being issued" (0055)
+select pg_temp.as_user(pg_temp.u(1));
 select pg_temp.step('…and a second one', $$insert into ids select 'fw2', (public.create_order('vip_month', 'fawry', pg_temp.id('co'))).id$$);
 select pg_temp.as_server();
 insert into ids select 'fwref', merchant_ref from public.payment_orders where id = pg_temp.id('fw');

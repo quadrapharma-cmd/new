@@ -94,6 +94,18 @@ def queries(ctx):
         ('listings_active', wrap("select l.*, (select row_to_json(c) from (select slug from public.companies where id = l.company_id) c) as co "
                                  "from public.company_listings l where l.active order by l.created_at desc limit 500")),
         ('groups_list', wrap("select * from public.groups order by member_count desc, created_at desc limit 60")),
+        # area business (0050–0059): a misspelt directory search (fuzzy only when nothing matches), an opened page's products,
+        # its documents / activity / reviews / jobs, My payments, the marketplace search
+        ('directory_search_misspelt', "select public.directory_companies_page(100, 0, 'metformn')"),
+        ('company_products_page', wrap("select * from public.company_products where company_id = %s order by sort_order, id" % company)),
+        ('company_document_files', "select json_agg(d) from public.company_document_files(%s) d" % company),
+        ('company_activity', wrap("select a.text, a.created_at, (select row_to_json(x) from (select name from public.profiles where id = a.actor) x) as ap from public.company_activity a "
+                                  "where a.company_id = %s order by a.created_at desc limit 200" % company)),
+        ('company_reviews', "select public.company_reviews(%s)" % company),
+        ('company_jobs', "select public.company_jobs(%s)" % company),
+        ('my_payments', "select public.my_payments(null)"),
+        ('market_search', "select public.market_search(null, 'supply', null, 40, 0)"),
+        ('market_search_q', "select public.market_search('metformin', null, null, 40, 0)"),
         # phase 1b (0035): the ticker at sign-in, the Jobs numbers, a profile's connections, My Network's numbers, Home faces
         ('ticker_feed', "select public.ticker_feed()"),
         ('jobs_stats', "select public.jobs_stats()"),

@@ -34,3 +34,4 @@ em.dr-pend{font-style:normal}
 .wm-row img{width:48px;height:48px;border-radius:10px;object-fit:cover;background:#F6F8FC}
 .wm-b{flex:1;min-width:160px;display:flex;flex-direction:column}.wm-b small{color:#64748b;font-size:12px}
 @media (max-width:700px){.fd-form{grid-template-columns:1fr 1fr}.wm-h span{display:none}}
+html:has(#dxRfqTray.on){scroll-padding-bottom:110px}   /* a card scrolled into view (keyboard, "Select") is never hidden under the tray */

@@ -76,7 +76,9 @@ def create_vip_company(j):
         dlg_click(j, pg, r'Next: review|التالي', 'Next: review')
         t = dlg_text(pg); amounts = money(t)
         j.check(2500 in amounts and 2850 in amounts, 'the VIP price shown is not EGP 2,500 + VAT = 2,850 (%s)' % amounts)
-        if j.live: j.check(not re.search(r'no payment is taken|لا يُخصم أي مبلغ', t), "the live wizard says 'Demo — no payment is taken' — the VIP page is created without paying")
+        if j.live: j.check(not re.search(r'no payment is taken|لا يُخصم أي مبلغ|Demo|تجريبية', t), "the live wizard says 'Demo — no payment is taken' — the VIP page is created without paying")
+        else: j.check(re.search(r'Demo — no money is charged|نسخة تجريبية', t), "the demo wizard's pay step does not say it is a demo (no money is charged)")
+        if j.ar: j.check(not re.search(r'· monthly|monthly', t), "the Arabic wizard says 'VIP · monthly' in English")
     with j.step('Pay by card on the payment page and return; until payment the page is Basic and says payment pending'):
         btn = j.find(pg, r'Pay EGP|ادفع', scope='body'); j.check(btn, 'no pay button')
         if j.live:
@@ -197,13 +199,21 @@ def keep_page_complete(j):
         workspace(j, pg, 'Page|%s' % (ar('Page') or 'الصفحة'))
         pg.fill('#wAr', 'فارما كاملة %s' % j.tag); j.click(pg, L('Save'), scope='#content', what='Save'); j.settle(pg, 1000)
         j.click(pg, L('Add membership'), scope='#content', what='Add membership')
-        if dlg_open(pg):
-            fill_by_label(j, pg, r'Organisation|Organization|الجهة|المنظمة', r'CPI|.', required=False)
-            b = j.find(pg, r'^\W*(Add|Save|أضف|حفظ)\W*$', scope='body')
-            if b: b.click(); j.settle(pg, 800)
-        if j.live: j.check(j.wait_db("select name_ar from public.companies where id=%s" % me['co']['id'], 5) == 'فارما كاملة %s' % j.tag, 'the Arabic name is not saved')
+        j.check(dlg_open(pg), "'Add membership' opens no window")
+        fill_by_label(j, pg, r'Organisation|Organization|الجهة|المنظمة', r'Export Council|المجلس التصديري')
+        fill_by_label(j, pg, r'Membership number|رقم العضوية', 'EC-%s' % j.tag[:6])
+        dlg_click(j, pg, r'Send for confirmation|أرسل للتأكيد|إرسال للتأكيد', 'Send for confirmation'); j.settle(pg, 1200)
+        t = workspace(j, pg, 'Page|%s' % (ar('Page') or 'الصفحة'))
+        j.check(re.search(r'Export Council[^\n]*(being checked|قيد المراجعة)|المجلس التصديري[^\n]*قيد المراجعة', t), 'the new membership is not shown as being checked by Drugbox')
+        if j.live:
+            j.check(j.wait_db("select name_ar from public.companies where id=%s" % me['co']['id'], 5) == 'فارما كاملة %s' % j.tag, 'the Arabic name is not saved')
+            j.check(j.wait_db("select status||'|'||number from public.company_documents where company_id=%s and type='Membership'" % me['co']['id'], 6) == 'review|EC-%s' % j.tag[:6], 'the membership is not a company_documents row waiting for Drugbox')
+            adm = j.person('Drugbox Admin'); make_admin(j, adm['id']); ap = adm['page']; j.reload(ap)
+            t = admin_review(j, ap, 'documents'); j.check(name in t and 'Export Council' in t, 'the membership is not in Admin → Review → Compliance documents')
+            admin_decide(j, ap, name, True)
+            j.check(j.wait_db("select status from public.company_documents where company_id=%s and type='Membership'" % me['co']['id'], 6) == 'verified', 'the membership is not confirmed after Drugbox approves')
     with j.step("'Still correct' on an outdated section clears the flag ('Thanks — marked as up to date')"):
-        if j.live: j.sql("update public.companies set updated_at=now()-interval '200 days' where id=%s" % me['co']['id']); reopen(j, pg)
+        if j.live: j.sql("set session_replication_role = replica; update public.companies set updated_at=now()-interval '200 days' where id=%s" % me['co']['id']); reopen(j, pg)   # the write trigger stamps now(): aged like a page untouched for 200 days
         directory(j, pg); open_card(j, pg, name)
         el = j.find(pg, r'Still correct|ما زالت صحيحة|لا تزال صحيحة', scope='#content')
         if j.demo and not el and not re.search(r'May be outdated|قد تكون قديمة', j.text(pg)): j.skip('the demo company has no section older than 180 days (its dates cannot be aged)')
@@ -237,15 +247,29 @@ def build_team(j):
         t = j.text(pg); j.check('Mona Colleague' in t and re.search(r'Invited|Waiting for their agreement|مدعو|بانتظار', t), "the Team does not list the invitation as 'Invited'")
         if j.live: j.check(j.wait_db("select count(*) from public.company_members where company_id=%s and user_id='%s'" % (me['co']['id'], col['id']), 6) == '1', 'no company_members row for the invited colleague')
     with j.step('Colleague 1 opens the invitation (notification) and accepts'):
-        if j.demo:
-            j.notbuilt('the invited colleague has no way to accept: no invitation reaches them (no notification, no e-mail, no accept path)')
+        if j.demo: j.skip('the demo has one account: the invited colleague exists only in live (notification → Accept is checked there)')
         cp = col['page']; j.reload(cp)
         n = j.sql1("select count(*) from public.notifications where user_id='%s' and created_at > now()-interval '10 minutes'" % col['id'])
         j.check(n not in ('', '0'), 'not built: the invited colleague gets no notification of the invitation')
-        j.click(cp, r'Accept|اقبل', scope='body', what='Accept invitation')
+        j.nav(cp, 'notifs'); j.settle(cp, 900)                     # the invitation is in Notifications
+        j.click(cp, r'^\W*(Accept|اقبل|قبول)\W*$', scope='#content', what='Accept invitation')
+        j.check(j.wait_db("select accepted::text||role from public.company_members where company_id=%s and user_id='%s'" % (me['co']['id'], col['id']), 6) == 'truesales', 'the colleague is not an active sales member after accepting')
     with j.step("Owner changes a role, sets 'Who receives what', 'Hide me' for one member, removes a member — all survive reload"):
         workspace(j, pg, 'Team|%s' % ar('Team'))
-        j.check(re.search(r'Who receives what|من يستلم', j.text(pg)), "no 'Who receives what' routing in Team")
+        j.check(re.search(r'Who receives what|من يستلم', j.text(pg), re.I), "no 'Who receives what' routing in Team")
+        row = lambda nm: pg.locator('#content .hb-tm', has_text=nm).first
+        j.check(row('Mona Colleague').count(), 'Mona is not in Team')
+        row('Mona Colleague').locator('select').select_option(label=ar('Quality') if j.ar else 'Quality'); j.settle(pg, 1200)
+        rm = row('Omar Quality').locator('.hb-x'); j.check(rm.count(), 'no way to remove the second invitation'); rm.click(); j.settle(pg, 1200)
+        if j.live:
+            j.check(j.wait_db("select role from public.company_members where company_id=%s and user_id='%s'" % (me['co']['id'], col['id']), 6) == 'quality', 'the new role is not saved')
+            j.check(j.wait_db("select count(*) from public.company_invites where company_id=%s" % me['co']['id'], 6, want='0') == '0', 'the removed invitation is still stored')
+            j.check(j.wait_db("select user_id from public.company_routing where company_id=%s and request_type='questionnaire'" % me['co']['id'], 6) == col['id'], "questionnaires do not go to the new quality member ('Who receives what' does not follow the role)")
+        reopen(j, pg); t = workspace(j, pg, 'Team|%s' % ar('Team'))
+        j.check('Omar Quality' not in t, 'the removed invitation is back after reload')
+        j.check(pg.locator('#content .hb-tm', has_text='Mona Colleague').locator('select').evaluate("s=>s.options[s.selectedIndex].text") in ('Quality', ar('Quality')), "Mona's new role did not survive the reload")
+        if j.live:
+            j.check('Mona Colleague' in re.split(r'Who receives what|من يستلم', t, flags=re.I)[-1], "'Who receives what' does not name the quality member")
 
 @journey('J-BUSINESS-25')
 def act_as_company(j):

@@ -186,17 +186,20 @@ def open_deal(j, pg, title, tab=None):
             return dlg_text(pg)
     j.fail('the deal "%s" is not in my Requests & deals' % title)
 
-def deal_act(j, pg, label, fields=None, submit=None):
-    """In an open deal thread: click the action button (label = English action name), fill its form by label pattern and
-    submit with the form's own button (the same action name, or 'Send answers'). Returns the thread text afterwards."""
+def deal_act(j, pg, label, fields=None, submit=None, attach=None):
+    """In an open deal thread: click the action button (label = English action name), fill its form by label pattern (and
+    attach the file `attach` to the form's file field) and submit with the form's own button (the same action name, or
+    'Send answers'). Returns the thread text afterwards."""
     pat = L(label) if isinstance(label, str) and not label.startswith('^') else label
     j.check(dlg_open(pg), 'no deal is open')
     el = j.find(pg, pat, scope='body')
     if not el: j.notbuilt('no "%s" action in the deal (actions: %s)' % (label, ', '.join(pg.evaluate("(()=>{const d=%s;return d?[...d.querySelectorAll('button')].filter(b=>b.getClientRects().length).map(b=>b.innerText.trim()).filter(Boolean):[]})()" % TOP_DLG))[:200]))
     before = pg.evaluate("document.querySelectorAll('.dbk-ov').length")
     mark = j.toast_mark(pg); el.click(); pg.wait_for_timeout(700)
-    if fields:
-        for pt, val in fields.items(): fill_by_label(j, pg, pt, val)
+    if attach:
+        f = pg.locator('.dbk-ov input[type=file]'); j.check(f.count(), 'not built: the "%s" form takes no file' % label); f.last.set_input_files(attach)
+    if fields or attach:
+        for pt, val in (fields or {}).items(): fill_by_label(j, pg, pt, val)
         sub = j.find(pg, submit or pat, scope='body') or j.find(pg, L('Send answers', 'Send', 'Save'), scope='body')
         j.check(sub, 'the "%s" form has no submit button' % label)
         sub.click(); pg.wait_for_timeout(900)
@@ -241,7 +244,12 @@ def seed_route(j, cid, kind, uid):
 
 def seed_site(j, cid, name='October plant', forms=('Tablets',), capacity='40 M tablets / month', min_batch='200,000 tablets', slots=None, gov='Giza', city='6th of October'):
     return j.sql1("insert into public.company_sites (company_id, name, type, city, governorate, dosage_forms, capacity, min_batch, free_slots) values (%s, $q$%s$q$, 'factory', '%s', '%s', '{%s}', '%s', '%s', '%s') returning id" % (
-        cid, name, city, gov, ','.join('"%s"' % f for f in forms), capacity, min_batch, json.dumps(slots or {})))
+        cid, name, city, gov, ','.join('"%s"' % f for f in forms), capacity, min_batch, json.dumps([_month(i) for i in (slots or [])])))
+
+def _month(i):
+    """Free production months are stored as 'YYYY-MM' (0050); a journey names them as 0 = this month, 1 = next month…"""
+    t = time.localtime(); m = t.tm_mon - 1 + int(i)
+    return '%04d-%02d' % (t.tm_year + m // 12, m % 12 + 1)
 
 def seed_cert(j, cid, sid, name='WHO-GMP', expiry='2027-06-30', checked=True):
     return j.sql1("insert into public.site_certificates (site_id, company_id, name, expiry, checked_at) values (%s,%s,'%s','%s',%s) returning id" % (sid, cid, name, expiry, 'now()' if checked else 'null'))
@@ -363,14 +371,14 @@ def reopen(j, pg):
     snap = None
     if j.demo:
         pg.wait_for_timeout(int(os.environ.get('BIZ_RELOAD_PAUSE', '1500')))
-        snap = pg.evaluate("Object.fromEntries(Object.keys(localStorage).filter(k=>k.startsWith('dx_')).map(k=>[k,localStorage.getItem(k)]))")
+        snap = pg.evaluate("Object.fromEntries(Object.keys(localStorage).filter(k=>k.startsWith('dx_')||k.startsWith('dbx_')).map(k=>[k,localStorage.getItem(k)]))")
     for attempt in range(3):
         j.reload(pg)
         if not snap: break
-        lost = pg.evaluate("s=>Object.keys(s).filter(k=>localStorage.getItem(k)===null)", snap)
+        lost = pg.evaluate("s=>Object.keys(s).filter(k=>localStorage.getItem(k)!==s[k])", snap)   # gone, or back to an older value (the last write lost)
         if not lost: break
         j.data.setdefault('storage_restored', []).extend(lost)
-        pg.evaluate("s=>{for(const k in s)if(localStorage.getItem(k)===null)localStorage.setItem(k,s[k])}", snap)
+        pg.evaluate("s=>{for(const k in s)if(localStorage.getItem(k)!==s[k])localStorage.setItem(k,s[k])}", snap)
         pg.wait_for_timeout(1500)
     if j.demo and j.on_login(pg): j.demo_signin(pg)
     return pg
@@ -385,7 +393,7 @@ if os.environ.get('BIZ_CAL'):                                # calibration only:
     _jm.J.check = _cal_check; _jm.J.fail = _cal_fail; _jm.J.notbuilt = _cal_nb
 
 # ---- Drugbox admin → Review ----------------------------------------------------------------------------------------------------
-QUEUES = {'verifications': r'Verification requests|طلبات التوثيق', 'certs': r'Site certificates|شهادات', 'reports': r'Company reports|بلاغات', 'payments': r'Payments|المدفوعات', 'claims': r'Claims|المطالبات|Claim'}
+QUEUES = {'verifications': r'Verification requests|طلبات التوثيق', 'certs': r'Site certificates|شهادات', 'reports': r'Company reports|بلاغات', 'payments': r'Payments|المدفوعات', 'claims': r'Claims|المطالبات|Claim', 'documents': r'Compliance documents|مستندات الامتثال'}
 def admin_review(j, pg, queue):
     """Admin → Review → the queue tab; returns the list text. A queue that does not exist fails 'not built'."""
     close_dialogs(pg)
@@ -412,7 +420,10 @@ def admin_decide(j, pg, needle, ok=True, reason='The document is not readable'):
     if not ok: pg.once('dialog', lambda d: d.accept(reason))
     btn.first.click(); pg.wait_for_timeout(700)
     if dlg_open(pg):
-        b = pg.locator('.dbk-ov button.p, .dbk-ov button.danger, .dbk-ov .dbk-p').last
+        if not ok:                                              # the reason is written in the window (a kit window, not a browser prompt)
+            f = pg.locator('.dbk-ov textarea:visible, .dbk-ov input[type=text]:visible')
+            if f.count(): f.last.fill(reason)
+        b = pg.locator('.dbk-ov [data-a=ok], .dbk-ov button.p, .dbk-ov button.danger, .dbk-ov .dbk-p').last
         if b.count(): b.click()
     j.settle(pg, 1200)
 
@@ -453,13 +464,15 @@ def request_quote(j, pg, sup, product=None, qty='500', unit='kg', to='Cairo, Egy
     return j.toasts_since(pg, mark)
 
 
-def their_move(j, pg, other, title, label, fields=None):
+def their_move(j, pg, other, title, label, fields=None, attach=None):
     """The other party's next step: in live, as that company in its own browser (deals centre → the deal → action);
     in the demo, 'Simulate <them>'s reply (demo)'."""
-    if j.demo:
-        open_deal(j, pg, title); t = simulate(j, pg); close_dialogs(pg); return t
+    if j.demo:   # the demo account is the other party's counterpart: its own request is under Sent (a received sample may share the title)
+        try: open_deal(j, pg, title, r'Sent|المرسلة|المُرسلة')
+        except StepFail: open_deal(j, pg, title)
+        t = simulate(j, pg); close_dialogs(pg); return t
     op = other['page']; j.reload(op); open_deal(j, op, title, r'Received|الواردة')
-    t = deal_act(j, op, label, fields); close_dialogs(op)
+    t = deal_act(j, op, label, fields, attach=attach); close_dialogs(op)
     j.reload(pg)                                             # the next time this side opens the app
     return t
 

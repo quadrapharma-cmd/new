@@ -57,6 +57,19 @@ def last_order(j, lid=None, cid=None):
     w = ('listing_id=%s' % lid) if lid else ('company_id=%s' % cid)
     return j.sql1("select id from public.payment_orders where %s order by id desc limit 1" % w)
 
+def set_mobile(j, uid, phone='+20 100 555 0101'):
+    j.sql("update public.profiles set phone='%s' where id='%s'" % (phone, uid))
+
+def mock_control(**kw):
+    env = fn_env(); return post(env.get('PAYMOB_BASE', 'http://127.0.0.1:54500') + '/control', kw)
+
+def mypay_row(pg, needle):
+    """The text of the My payments / payment history row that mentions needle ('' when none)."""
+    return pg.evaluate("n=>{const r=[...document.querySelectorAll('.dx-pr')].find(e=>e.innerText.includes(n));return r?r.innerText:''}", needle)
+
+def no_english_dates(t):
+    return not re.search(r'\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b', t or '')
+
 def return_from_provider(j, pg, oid):
     j.open(pg, _dx.APP_URL + '?payment=%s' % oid); j.settle(pg, 2500)
     return pg.evaluate("window.__jt||[]")
@@ -78,6 +91,7 @@ def boost_by_card(j):
         j.check(j.sql1("select amount_cents||'|'||status||'|'||product_code from public.payment_orders where id=%s" % oid) == '%d00|pending|boost' % BOOST_TOTAL, 'the order is not a pending boost for 1,653 EGP')
         j.data['oid'] = oid
     with j.step("Paymob confirms (signed callback); back in the app: 'Payment received — it is active now'; the listing is BOOSTED for everyone"):
+        if j.demo: j.skip('the demo takes no payment')
         oid = j.data['oid']; s_, r = paymob_callback(j, oid); j.check(s_ == 200, 'the signed callback was refused: %s %s' % (s_, r[:80]))
         ts = return_from_provider(j, pg, oid)
         j.check(any(re.search(r'Payment received|تم استلام الدفع', t) for t in ts), "no 'Payment received — it is active now' back in the app")
@@ -87,10 +101,12 @@ def boost_by_card(j):
         j.check(c.count(), 'another user does not find the boosted listing on the marketplace page (it does not rank above unboosted listings)')
         j.check(re.search(r'BOOSTED|مميز|معزز', c.inner_text()), 'another user sees the listing without the BOOSTED label')
     with j.step("My Listings shows the boost end date"):
+        if j.demo: j.skip('the demo takes no payment (its My Listings rows are the approved samples)')
         market(j, pg, 'manage'); t = pg.evaluate("(document.querySelector('#tab-manage')||{}).innerText||''")
         row = t[t.find(name):t.find(name) + 300] if name in t else ''
-        j.check(re.search(r'BOOSTED', row) and re.search(r'until|ends|\d{1,2} \w{3}|حتى', row), 'My Listings does not show the boost with its end date')
+        j.check(re.search(r'BOOSTED|Boosted|معزز|مميز', row) and re.search(r'until|ends|\d{1,2} \w{3}|حتى', row), 'My Listings does not show the boost with its end date')
     with j.step('A failed card payment: clear message, nothing activated, retry possible, no pile of pending orders'):
+        if j.demo: j.skip('the demo takes no payment')
         lid2 = seed_listing(j, me['id'], 'Second listing %s' % j.tag); j.reload(pg)
         open_boost(j, pg, 'boost'); choose_listing(j, pg, 'Second listing %s' % j.tag); pay(j, pg, 'card')
         oid2 = last_order(j, lid2); paymob_callback(j, oid2, success=False)
@@ -101,7 +117,27 @@ def boost_by_card(j):
         open_boost(j, pg, 'boost'); choose_listing(j, pg, 'Second listing %s' % j.tag); pay(j, pg, 'card')
         n = j.sql1("select count(*) from public.payment_orders where listing_id=%s and status='pending'" % lid2)
         j.check(n == '1', 'retrying leaves %s pending orders for the same listing' % n)
+    with j.step("Left the Paymob page without paying: My payments shows it 'Waiting for payment' with 'Continue payment' and 'Cancel'; Continue reopens the checkout; Cancel ends it and a late callback activates nothing"):
+        if j.demo: j.skip('the demo takes no card payment (its card path completes at once)')
+        oid3 = last_order(j, lid2); j.open(pg, _dx.APP_URL); j.settle(pg, 1500)
+        market(j, pg, 'manage'); j.settle(pg, 1500); row = mypay_row(pg, 'Second listing %s' % j.tag)
+        j.check(re.search(r'Waiting for payment|بانتظار الدفع', row), 'the abandoned card payment is not listed as waiting for payment (%s)' % row[:120])
+        j.check(re.search(r'Continue payment|أكمل الدفع', row) and re.search(r'Cancel|إلغاء', row), "the waiting card payment has no 'Continue payment' / 'Cancel' (%s)" % row[:160])
+        pg.locator('.dx-pr', has_text='Second listing %s' % j.tag).first.locator('[data-paycont]').click(); j.settle(pg, 3000)
+        j.check('unifiedcheckout' in pg.url, "'Continue payment' does not reopen the Paymob checkout (%s)" % pg.url[:80])
+        oid4 = last_order(j, lid2); j.check(oid4 != oid3 and j.sql1("select status from public.payment_orders where id=%s" % oid3) == 'expired', 'Continue did not start a new checkout that replaces the abandoned one')
+        j.open(pg, _dx.APP_URL); j.settle(pg, 1500); market(j, pg, 'manage'); j.settle(pg, 1500)
+        pg.locator('.dx-pr', has_text='Second listing %s' % j.tag).first.locator('[data-paycancel]').click(); pg.wait_for_timeout(600)
+        mark = j.toast_mark(pg); dlg_click(j, pg, r'Cancel payment|ألغِ الدفع', 'Cancel payment'); j.settle(pg, 1500)
+        j.check(j.wait_db("select status from public.payment_orders where id=%s" % oid4, 6, want='cancelled') == 'cancelled', 'Cancel did not cancel the order in the database')
+        j.check(any(re.search(r'cancelled|أُلغيت', t) for t in j.toasts_since(pg, mark)), "no 'Payment cancelled — nothing was charged'")
+        j.check(re.search(r'Cancelled|أُلغي', mypay_row(pg, 'Second listing %s' % j.tag)), 'My payments does not show the payment as Cancelled')
+        s_, r = paymob_callback(j, oid4)
+        j.check(r.strip() == 'order is cancelled (refund due)' and j.sql1("select boosted_until is null from public.products where id=%s" % lid2) == 't', 'a callback after the buyer cancelled activated the boost (%s)' % r[:60])
+        ts = return_from_provider(j, pg, oid4)
+        j.check(any(re.search(r'You cancelled this payment|ألغيت هذه الدفعة', t) for t in ts) and not any(re.search(r'activate automatically|سيتفعّل تلقائيًا', t) for t in ts), 'the return page does not say the buyer cancelled (or still promises it activates)')
     with j.step('After 7 days the boost ends by itself'):
+        if j.demo: j.skip('the clock cannot be moved in the demo')
         j.sql("update public.products set boosted_until=now()-interval '1 minute' where id=%s" % lid)
         o2 = j.person('Later Buyer'); market(j, o2['page'])
         c = o2['page'].locator('#tab-browse .lcard', has_text=name).first
@@ -122,6 +158,7 @@ def featured_by_wallet(j):
         oid = last_order(j, lid); j.check(j.sql1("select method||'|'||product_code from public.payment_orders where id=%s" % oid) == 'wallet|featured', 'the order is not a wallet payment for Featured')
         j.data['oid'] = oid
     with j.step('Paymob confirms the wallet payment: the listing is Featured (Sponsored Listings) for 30 days for everyone'):
+        if j.demo: j.skip('the demo takes no payment')
         oid = j.data['oid']; env = fn_env(); s_, r = paymob_callback(j, oid, integration=int(env.get('PAYMOB_WALLET_INTEGRATION_ID', 222222)), src_type='wallet')
         j.check(s_ == 200, 'the wallet callback was refused: %s %s' % (s_, r[:80]))
         j.check(j.sql1("select (featured_until::date - now()::date) from public.products where id=%s" % lid) in ('30', '29'), 'the listing is not featured for 30 days')
@@ -133,10 +170,25 @@ def featured_by_wallet(j):
 def pay_at_fawry(j):
     """A lister without a card pays cash at a Fawry outlet using a reference number; the boost activates when Fawry confirms."""
     me, lid, name = lister(j, 'Fawry Lister'); pg = me['page']
+    with j.step("Without a mobile number in the profile, Fawry asks for it first (nothing is ordered)"):
+        if j.demo: j.skip('the demo account has its sample mobile; the server rule is checked in live')
+        open_boost(j, pg, 'boost'); choose_listing(j, pg, name); said = ' '.join(pay(j, pg, 'fawry'))
+        j.check(re.search(r'mobile|موبايل', said), "no clear 'add your mobile number to pay at Fawry' (%s)" % said[:100])
+        j.check(j.sql1("select count(*) from public.payment_orders where listing_id=%s" % lid) == '0', 'an order was created although Fawry cannot issue a reference without a mobile')
+        close_dialogs(pg); set_mobile(j, me['id'])
+    with j.step("Fawry is down for a moment: a clear message, the failed attempt is closed and blocks nothing"):
+        if j.demo: j.skip('the demo does not contact Fawry')
+        mock_control(fawry_fail=1); open_boost(j, pg, 'boost'); choose_listing(j, pg, name); said = ' '.join(pay(j, pg, 'fawry'))
+        j.check(re.search(r'did not issue|try again|حاول مرة أخرى', said), 'no clear message when Fawry refuses (%s)' % said[:100])
+        j.check(j.sql1("select string_agg(status, ',') from public.payment_orders where listing_id=%s" % lid) == 'failed', 'the attempt Fawry refused is not closed (still pending, would block the next try)')
+        close_dialogs(pg)
     with j.step("Boost window → '🏪 Fawry' → pay: the Fawry reference number and amount are shown with how to pay"):
         open_boost(j, pg, 'boost')
         if j.live: choose_listing(j, pg, name)
         pay(j, pg, 'fawry'); t = dlg_text(pg)
+        if j.demo: j.check(re.search(r'Demo|تجريبية', t), 'the demo Fawry reference is not marked as a demo (it looks like a real reference)')
+        else: j.check(not re.search(r'Demo|تجريبية', t), 'the live Fawry window says Demo')
+        if j.ar: j.check(no_english_dates(t) and not re.search(r'[A-Za-z]{4,}', re.sub(r'Fawry|myFawry|EGP|VIP|Drugbox|InstaPay', '', t)), 'the Arabic Fawry window has English text or dates: %s' % t[:200])
         j.check(re.search(r'Fawry reference|رقم مرجع فوري', t) and re.search(r'\d{6,}', t), 'no Fawry reference number is shown')
         j.check(BOOST_TOTAL in money(t), 'the Fawry window does not show the amount EGP 1,653 (%s)' % money(t))
         j.data['ref'] = re.search(r'(\d{6,})', t).group(1)
@@ -144,6 +196,10 @@ def pay_at_fawry(j):
         dlg_click(j, pg, r'^\W*(Done|تم|إغلاق|Close)\W*$', 'Done')
         reopen(j, pg); t = j.text(pg) + market(j, pg, 'manage').evaluate("(document.querySelector('#tab-manage')||{}).innerText||''")
         j.check(j.data['ref'] in t, 'not built: the Fawry reference cannot be found again after closing the window (no My payments)')
+        if j.ar: row = mypay_row(pg, j.data['ref']); j.check(row and no_english_dates(row), 'the Arabic My payments row shows its due date in English: %s' % row[:160])
+        if j.live:
+            r = pg.evaluate("()=>dxPay.start({product:'boost',method:'fawry',listing_id:%s}).then(()=>'started',e=>e.message)" % lid)
+            j.check(j.data['ref'] in r and 'DBX' not in r, "a second Fawry payment is not refused with the real Fawry reference (%s)" % r[:120])
     with j.step("Fawry's signed PAID notification activates the boost and the user is notified; a wrong signature changes nothing"):
         if j.demo: j.skip('the demo takes no payment')
         oid = last_order(j, lid)
@@ -168,6 +224,9 @@ def pay_by_instapay(j):
         if j.live: choose_listing(j, pg, name)
         pay(j, pg, 'instapay'); t = dlg_text(pg)
         j.check(re.search(r'@instapay|InstaPay address|عنوان', t), 'no InstaPay address is shown')
+        if j.demo: j.check(re.search(r'Demo|تجريبية', t), 'the demo InstaPay address is not marked as a demo')
+        else: j.check(not re.search(r'Demo|تجريبية', t), 'the live InstaPay window says Demo')
+        if j.ar: j.check(not re.search(r'transfer note|Write', t) and re.search(r'ملاحظة التحويل', t), 'the Arabic InstaPay window says "Write … in the transfer note." in English')
         j.check(BOOST_TOTAL in money(t), 'the InstaPay window does not show EGP 1,653 (%s)' % money(t))
     with j.step("Enter the transfer number and attach the receipt; send: 'we confirm InstaPay transfers within one working day'; the order is Under review"):
         ref = pg.locator('.dbk-ov #dxIpRef, .dbk-ov input[type=text]:visible').first; j.check(ref.count(), 'no transfer number field'); ref.fill('IPN-%s' % j.tag)
@@ -176,6 +235,9 @@ def pay_by_instapay(j):
         said = ' '.join(j.toasts_since(pg, mark)) + dlg_text(pg)
         j.check(re.search(r'one working day|يوم عمل', said), "no 'we confirm InstaPay transfers within one working day'")
         if j.live: j.check(j.sql1("select status||'|'||(receipt_path like 'payments/%s/%%')::text from public.payment_orders where listing_id=%s order by id desc limit 1" % (me['id'], lid)) == 'review|true', 'the order is not under review with the receipt stored')
+        if j.live:
+            r = pg.evaluate("()=>dxPay.start({product:'boost',method:'instapay',listing_id:%s}).then(()=>'started',e=>e.message)" % lid)
+            j.check(r != 'started' and j.sql1("select count(*) from public.payment_orders where listing_id=%s and method='instapay'" % lid) == '1', 'a second InstaPay order was made while the first is under review (%s)' % r[:80])
     with j.step('Drugbox admin: Admin → Review → Payments shows name, product, amount, transfer number and the receipt; Confirm → the boost activates and the lister is notified'):
         if j.demo: j.skip('Admin decisions are checked in live')
         adm = j.person('Drugbox Finance'); make_admin(j, adm['id']); ap = adm['page']; j.reload(ap)
@@ -195,20 +257,54 @@ def payment_history(j):
     """A company sees what it has paid for, the status of each payment, and downloads a tax invoice."""
     if j.live:
         me = live_company_person(j, 'Paying Company Owner', 'Paying Pharma %s' % j.tag); pg = me['page']
-        j.sql("insert into public.payment_orders (user_id, product_code, company_id, method, amount_cents, currency, status, paid_at) values ('%s','vip_month',%s,'card',285000,'EGP','paid',now()), ('%s','vip_month',%s,'fawry',285000,'EGP','pending',null)" % (me['id'], me['co']['id'], me['id'], me['co']['id']))
+        j.sql("insert into public.payment_orders (user_id, product_code, company_id, method, amount_cents, currency, status, paid_at) values ('%s','vip_month',%s,'card',285000,'EGP','paid',now()), ('%s','vip_month',%s,'fawry',285000,'EGP','pending',null), ('%s','vip_month',%s,'card',285000,'EGP','pending',null)" % (me['id'], me['co']['id'], me['id'], me['co']['id'], me['id'], me['co']['id']))
+        j.sql("update public.payment_orders set provider_ref='7700%s', fawry_expires_at=now()+interval '40 hours' where company_id=%s and method='fawry'" % (j.tag[:4], me['co']['id']))   # a live Fawry reference
+        # the price list, VAT rate and seller change after the invoice was issued: the invoice must not change
+        j.sql("update public.billing_settings set legal_name='Drugbox Renamed %s' where id" % j.tag)
         j.reload(pg)
     else:
         pg = j.demo_signin(j.new_page())
     with j.step('Workspace → Plan & verification lists every payment: date, product, method, amount incl. VAT, status'):
         t = workspace(j, pg, 'Plan & verification|%s' % (ar('Plan & verification') or 'الخطة'))
-        j.check(re.search(r'Payment history|Billing|Invoices|سجل المدفوعات|الفواتير', t), 'not built: no payment history (billing) in Plan & verification or anywhere else')
+        j.check(re.search(r'Payment history|Billing|Invoices|سجل المدفوعات|الفواتير', t, re.I), 'not built: no payment history (billing) in Plan & verification or anywhere else')
     with j.step('A paid order has a downloadable invoice with VAT and the company name; pending ones can be resumed or cancelled'):
-        j.check(j.find(pg, r'Invoice|Download|فاتورة|تنزيل', scope='#content'), 'not built: no tax invoice to download')
+        b = j.find(pg, r'Invoice|Download|فاتورة|تنزيل', scope='#content'); j.check(b, 'not built: no tax invoice to download')
+        if j.live: j.check(re.search(r'Waiting for payment|بانتظار الدفع', j.text(pg)), 'the pending Fawry order is not listed as waiting for payment')
+        with pg.context.expect_page(timeout=8000) as pi: b.click()
+        inv = pi.value; inv.wait_for_load_state(); it = inv.inner_text('body'); idir = inv.evaluate("document.documentElement.dir"); inv.close()
+        co = me['co']['name'] if j.live else 'Quadra Pharm'
+        j.check(re.search(r'Tax invoice|فاتورة ضريبية', it) and re.search(r'DBX-INV-\d{4}-\d{6}', it) and re.search(r'VAT 14%|ضريبة القيمة المضافة 14%', it) and co in it, 'the invoice does not show its number, VAT 14%% and the company (%s)' % it[:160].replace('\n', ' '))
+        j.check(2500 in money(it) and 350 in money(it) and 2850 in money(it), 'the invoice amounts are not 2,500.00 + 350.00 VAT = 2,850.00 (%s)' % money(it))
+        if j.ar: j.check(idir == 'rtl' and re.search(r'فاتورة ضريبية', it) and not re.search(r'Tax invoice|Seller|Buyer|Total', it), 'the invoice is not in Arabic, right to left, in the Arabic interface (%s, %s)' % (idir, it[:120].replace('\n', ' ')))
+        else: j.check(idir in ('ltr', ''), 'the English invoice is not left to right')
+        if j.live: j.sql("update public.billing_settings set legal_name='Drugbox' where id"); j.check('Drugbox Renamed' not in it, 'the issued invoice shows seller details changed after it was issued')
+    with j.step("A card payment left unfinished can be cancelled from the history ('Cancel'); a live Fawry reference cannot (it simply expires)"):
+        if j.demo: j.skip('the demo company has no waiting payment (its VIP was paid)')
+        fw = j.sql1("select id from public.payment_orders where company_id=%s and method='fawry' and status='pending' limit 1" % me['co']['id'])
+        j.check(not pg.locator('.dx-pr [data-paycancel="%s"]' % fw).count() and re.search(r'simply expires|ينتهي ببساطة', pg.locator('.dx-pr[data-pay="%s"]' % fw).inner_text()), 'the live Fawry reference offers Cancel instead of saying it simply expires')
+        r = pg.evaluate("i=>dxLive.sb.rpc('cancel_order',{p_id:i}).then(r=>r.error?'refused':'given')", int(fw)); j.check(r == 'refused', 'a live Fawry reference could be cancelled through the API (Fawry would still take the money)')
+        oidp = j.sql1("select id from public.payment_orders where company_id=%s and status='pending' and method='card' limit 1" % me['co']['id'])
+        cb = pg.locator('.dx-pr [data-paycancel="%s"]' % oidp); j.check(cb.count(), "the waiting payment has no 'Cancel'")
+        cb.first.click(); pg.wait_for_timeout(600); dlg_click(j, pg, r'Cancel payment|ألغِ الدفع', 'Cancel payment'); j.settle(pg, 1500)
+        j.check(j.wait_db("select status from public.payment_orders where id=%s" % oidp, 6, want='cancelled') == 'cancelled', 'Cancel did not cancel the waiting payment')
+        r = pg.evaluate("i=>dxLive.sb.rpc('cancel_order',{p_id:i}).then(r=>r.error?'refused':'given')", int(j.sql1("select id from public.payment_orders where company_id=%s and status='paid' limit 1" % me['co']['id'])))
+        j.check(r == 'refused', 'a paid order could be cancelled through the API')
+        j.sql("update public.billing_settings set legal_name='Drugbox' where id")
+        if j.live:
+            o = j.person('Not The Owner'); oid = j.sql1("select id from public.payment_orders where company_id=%s and status='paid' limit 1" % me['co']['id'])
+            r = o['page'].evaluate("i=>dxLive.sb.rpc('order_invoice',{p_id:i}).then(r=>r.error?'refused':'given')", int(oid))
+            j.check(r == 'refused', "another member can read the company's invoice")
 
 @journey('J-BUSINESS-47')
 def upgrade_to_vip(j):
     """A company upgrades to VIP to get top placement, the VIP badge, faster verification and monthly boosts."""
+    try: _upgrade_to_vip(j)
+    finally:
+        if j.live: j.sql("update public.payment_products set amount_egp=2500 where code='vip_month'")   # the price this journey changed
+
+def _upgrade_to_vip(j):
     if j.live:
+        j.sql("update public.payment_products set amount_egp=2600 where code='vip_month'")    # a price set by Drugbox that the page itself does not know
         me = live_company_person(j, 'Upgrading Owner', 'Upgrade Pharma %s' % j.tag); pg = me['page']; name = me['co']['name']
     else:
         pg = j.demo_signin(j.new_page()); name = 'Basic Upgrade %s' % j.tag
@@ -220,8 +316,13 @@ def upgrade_to_vip(j):
         up.click(); pg.wait_for_timeout(700)
         m = pg.locator('.dbk-ov input[name=plBill][value=month]')
         if m.count(): m.first.check()
+        pt = dlg_text(pg); j.check(not re.search(r'company\.drugbox\.app', pt), 'the VIP plan still promises a company.drugbox.app link that does not exist')
+        if j.live: j.check(2600 in money(pt), 'the VIP plan card does not show the server price EGP 2,600 (%s)' % money(pt))
         dlg_click(j, pg, r'Continue to payment|متابعة الدفع', 'Continue to payment')
-        t = dlg_text(pg); j.check(2850 in money(t), 'the VIP payment shows %s instead of EGP 2,500 + VAT = 2,850' % money(t))
+        t = dlg_text(pg)
+        if j.live:
+            j.check(2600 in money(t) and 364 in money(t) and 2964 in money(t), 'the live VIP payment shows %s instead of the server price EGP 2,600 + VAT 364 = 2,964' % money(t))
+        else: j.check(2850 in money(t), 'the VIP payment shows %s instead of EGP 2,500 + VAT = 2,850' % money(t))
     with j.step('Pay by card (Paymob page, signed callback): VIP starts only when the payment is confirmed'):
         if j.demo:
             dlg_click(j, pg, r'^\W*Pay EGP|ادفع', 'Pay'); j.settle(pg, 1200)
@@ -230,7 +331,9 @@ def upgrade_to_vip(j):
             press_pay(j, pg)
             j.check(j.sql1("select plan from public.companies where id=%s" % me['co']['id']) == 'free', 'the company is VIP before paying')
             oid = last_order(j, cid=me['co']['id'])
-            if not oid: j.fail("'Pay EGP 2,850' starts no payment: %s" % ('; '.join(pg.evaluate("(window.__jt||[]).slice(-3)")) or 'nothing happens'))
+            j.sql("update public.payment_products set amount_egp=2500 where code='vip_month'")
+            if not oid: j.fail("'Pay EGP 2,964' starts no payment: %s" % ('; '.join(pg.evaluate("(window.__jt||[]).slice(-3)")) or 'nothing happens'))
+            j.check(j.sql1("select amount_cents from public.payment_orders where id=%s" % oid) == '296400', 'the order does not charge the price the window showed (EGP 2,964)')
             s_, r = paymob_callback(j, oid); j.check(s_ == 200, 'the callback was refused')
             return_from_provider(j, pg, oid)
             j.check(j.sql1("select plan from public.companies where id=%s" % me['co']['id']) == 'vip', 'the company is not VIP after payment')
@@ -244,6 +347,14 @@ def upgrade_to_vip(j):
         market(j, pg);
         open_boost(j, pg, 'boost'); t = pg.evaluate("document.querySelector('#boostModalOverlay').innerText")
         j.check(re.search(r'included boost|boosts left|مجانية|متبقية', t, re.I), 'not built: the VIP plan promises 3 Marketplace boosts a month, but the boost window asks VIP companies to pay')
+        if j.live:          # verification within 48 hours: VIP requests come first in Drugbox's queue, marked
+            other = seed_company(j, None, 'Older Free Co %s' % j.tag, status='unclaimed')
+            j.sql("insert into public.verification_requests (company_id, submitted_by, registry, status, created_at) values (%s,'%s','4411%s','pending',now()-interval '3 days')" % (other['id'], me['id'], j.tag[-4:]))
+            j.sql("insert into public.verification_requests (company_id, submitted_by, registry, status) values (%s,'%s','5522%s','pending')" % (me['co']['id'], me['id'], j.tag[-4:]))
+            adm = j.person('Drugbox Verifier'); make_admin(j, adm['id']); j.reload(adm['page'])
+            q = admin_review(j, adm['page'], 'verifications')
+            j.check(name in q and other['name'] in q and q.find(name) < q.find(other['name']), 'the VIP company is not listed before an older free company in Verification requests')
+            j.check(re.search(re.escape(name) + r'[\s\S]{0,40}(VIP · answer within 48 h|الرد خلال 48 ساعة)', q), "the VIP request is not marked 'VIP · answer within 48 h'")
     with j.step('At the end date VIP expires to Basic automatically (with a reminder before)'):
         if j.demo: j.skip('the clock cannot be moved in the demo')
         j.sql("update public.companies set vip_until=now()-interval '1 minute' where id=%s" % me['co']['id']); j.sql("select public.expire_vip_plans()")
@@ -259,9 +370,23 @@ def included_boosts(j):
         pg = j.demo_signin(j.new_page())
     with j.step("My Listings → '⭐ Boost' on a listing → 'Use an included boost' (3 left)"):
         market(j, pg, 'manage')
-        b = pg.locator('#tab-manage :is(button,span,a):visible', has_text=re.compile(r'Boost')).first
+        b = pg.locator('#tab-manage button:visible', has_text=re.compile(r'^\W*(Boost|ترويج|ترقية)\W*$')).first      # the row's '⭐ Boost' button (not the 'Boosted' badge)
         j.check(b.count(), "no '⭐ Boost' in My Listings"); b.click(); j.settle(pg, 1200)
         t = pg.evaluate("(document.querySelector('#boostModalOverlay')||{}).innerText||''") + dlg_text(pg)
         j.check(re.search(r'Use an included boost|included boost|استخدم', t), "not built: a VIP company is asked to pay — there is no 'Use an included boost' (VIP promises 3 a month)")
+        j.check(re.search(r'\b3 of 3\b|3 من 3|متبقٍ 3', t), "the window does not say 3 of 3 included boosts are left")
+    with j.step("'Use an included boost': the listing is boosted for 7 days without a payment; 2 are left; a fourth use this month is refused"):
+        mark = j.toast_mark(pg); pg.locator('#boostModalOverlay [data-inc]').first.click(); j.settle(pg, 1500)
+        j.check(any(re.search(r'included with VIP|مجانًا مع VIP', x) for x in j.toasts_since(pg, mark)), "no 'Boost activated — included with VIP' confirmation")
+        if j.demo: j.skip('the demo keeps the count in this browser; the database checks run in live')
+        lid = j.sql1("select id from public.products where name='VIP listing %s'" % j.tag)
+        j.check(j.wait_db("select (boosted_until::date - now()::date) from public.products where id=%s" % lid, 6) in ('7', '6'), 'the included boost did not boost the listing for 7 days')
+        j.check(j.sql1("select count(*) from public.payment_orders where listing_id=%s" % lid) == '0', 'an included boost created a payment order')
+        j.check(j.sql1("select count(*) from public.vip_boost_uses where company_id=%s" % me['co']['id']) == '1', 'the included boost was not counted')
+        open_boost(j, pg, 'boost'); t = pg.evaluate("document.querySelector('#boostModalOverlay').innerText")
+        j.check(re.search(r'\b2 of 3\b|2 من 3|متبقٍ 2', t), 'the window does not say 2 of 3 are left after one use')
+        j.sql("insert into public.vip_boost_uses (company_id, listing_id, month) select %s, %s, date_trunc('month', now())::date from generate_series(1,2)" % (me['co']['id'], lid))
+        r = pg.evaluate("([l,c])=>dxLive.sb.rpc('use_included_boost',{p_listing:l,p_company:c}).then(r=>r.error?r.error.message:'ok')", [int(lid), int(me['co']['id'])])
+        j.check(r != 'ok' and j.sql1("select count(*) from public.vip_boost_uses where company_id=%s" % me['co']['id']) == '3', 'a fourth included boost this month was allowed: %s' % r)
 
 if __name__ == '__main__': main(__file__)

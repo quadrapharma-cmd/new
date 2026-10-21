@@ -35,7 +35,12 @@ with sync_playwright() as p:
     tick = pg.evaluate("(document.getElementById('tickerInner')||{}).innerText||''")
     T('the ticker shows real listings', f'Paracetamol DC 90% {st}' in tick and 'Metformin HCl GMP $5.80/kg' not in tick, tick[:160])
     pg.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#mkx .lcard')].find(x=>x.querySelector('.lc-title').textContent.indexOf('Paracetamol DC 90% {st}')===0);c.querySelector('.btn-contact').click()}})()"); pg.wait_for_timeout(3000)
-    T('Contact opens a conversation with the real seller', pg.evaluate("document.body.getAttribute('data-page')") == 'messages' and f'Dr. Real Seller {NT}' in pg.inner_text('.chat-head'))
+    # Contact writes to the lister about this listing (0054 listing_contact: a message to the seller + one inquiry per buyer)
+    T('Contact opens a message to the real seller about the listing', pg.locator('.dbk-ov #mkMsg').count() == 1 and f'Dr. Real Seller {NT}' in pg.inner_text('.dbk-ov')
+      and f'Paracetamol DC 90% {st}' in pg.evaluate("[...document.querySelectorAll('.dbk-ov input')].map(i=>i.value).join('|')"))
+    pg.click('.dbk-ov [data-a=ok]'); pg.wait_for_timeout(2000)
+    T('…the message reaches the seller, and the listing counts the inquiry', sql(f"select count(*) from public.messages m join auth.users u on u.id=m.sender_id where u.email='visitor{st}@x.test' and m.receiver_id='{seller}' and m.body like '%Paracetamol DC 90% {st}%'") == '1'
+      and sql(f"select count(*) from public.listing_inquiries i join public.products p on p.id=i.listing_id where p.name='Paracetamol DC 90% {st}'") == '1')
     pg.evaluate("goto('market')"); pg.wait_for_timeout(1500)
     pg.evaluate(f"(()=>{{var c=[...document.querySelectorAll('#mkx .dcard')].find(x=>x.innerText.indexOf('Need Omeprazole pellets 8.5% {st}')>=0);c.querySelector('.qt-btn').click()}})()"); pg.wait_for_timeout(3000)
     T('Quote on a buy request opens a conversation with the real buyer', f'Dr. Real Buyer {NT}' in pg.inner_text('.chat-head'))
@@ -45,7 +50,7 @@ with sync_playwright() as p:
     T('publishing a supply listing saves it under my account', sql(f"select type||'|'||category||'|'||price from public.products where name='Metformin HCl EP {st}'") == 'supply|api|US$ 5.60')
     T('…and it appears in the supply grid', f'Metformin HCl EP {st}' in pg.evaluate("[...document.querySelectorAll('#mkx .supply-grid .lc-title')].map(e=>e.textContent).join('|')"))
     pg.evaluate(f"dxLiveHook('listing',{{type:'demand',title:'Looking for Sitagliptin {st}',desc:'1 MT, DMF required',moq:'1 MT',where:'Egypt',certs:[]}})"); pg.wait_for_timeout(2500)
-    T('publishing a buy request saves it as a demand enquiry', sql(f"select type||'|'||status from public.enquiries where title='Looking for Sitagliptin {st}'") == 'demand|active')
+    T('publishing a buy request saves it as a demand listing (0054: buy requests are marketplace listings)', sql(f"select type||'|'||status from public.products where name='Looking for Sitagliptin {st}'") == 'demand|active')
     # F-03: boost / featured are paid products — the owner of a listing cannot switch them on through the API
     # (FAILS before migration 0020_security_core.sql — the products own-manage policy let the owner write boosted_until)
     r = pg.evaluate(f"dxLive.sb.from('products').update({{boosted_until:'2099-01-01T00:00:00Z',featured_until:'2099-01-01T00:00:00Z'}}).eq('name','Metformin HCl EP {st}')" + ERR)

@@ -45,10 +45,13 @@ select pg_temp.ok('a new company starts "pending" (verification comes from Drugb
 -- owner adds a member (consent starts off)
 select pg_temp.step('the owner adds a member, already "consenting"', $$insert into public.company_members (company_id, user_id, role, accepted, show_public) values (pg_temp.id('co'), '22222222-2222-2222-2222-222222222222', 'sales', true, true)$$);
 select pg_temp.ok('added member: consent off until they agree', $$(select not accepted and not show_public from public.company_members where company_id = pg_temp.id('co') and user_id = '22222222-2222-2222-2222-222222222222')$$);
+select pg_temp.as_server();
+select pg_temp.step('the owner''s CEP file is in the private documents bucket (0059: a document''s file lives under companydocs/<company>/)', $$insert into storage.objects (bucket_id, name, owner) values ('documents', 'companydocs/' || pg_temp.id('co') || '/cep.pdf', '11111111-1111-1111-1111-111111111111')$$);
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
 select pg_temp.step('the owner adds a site, a certificate and a document', $$
   with x as (insert into public.company_sites (company_id, name, type) values (pg_temp.id('co'), 'CH Giza plant', 'factory') returning id) insert into ids select 'site', id::text from x;
   insert into public.site_certificates (site_id, company_id, name, expiry) values (pg_temp.id('site'), pg_temp.id('co'), 'WHO-GMP', '2027-04-01');
-  insert into public.company_documents (company_id, type, product, number, created_by, file_path) values (pg_temp.id('co'), 'CEP', 'Metformin HCl', 'CH-CEP 2019-1', '11111111-1111-1111-1111-111111111111', 'private/cep.pdf')$$);
+  insert into public.company_documents (company_id, type, product, number, created_by, file_path) values (pg_temp.id('co'), 'CEP', 'Metformin HCl', 'CH-CEP 2019-1', '11111111-1111-1111-1111-111111111111', 'companydocs/' || pg_temp.id('co') || '/cep.pdf')$$);
 
 -- member: not a member before accepting; can give consent, cannot promote themself
 select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
@@ -107,7 +110,7 @@ select pg_temp.ok('level returns to 2 until Drugbox re-checks', $$public.company
 select pg_temp.step('the owner tries to mark the certificate checked', $$update public.site_certificates set checked_at = now() where company_id = pg_temp.id('co') and name = 'WHO-GMP'$$);
 select pg_temp.ok('owner cannot mark a certificate checked', $$(select checked_at is null from public.site_certificates where company_id = pg_temp.id('co') and name = 'WHO-GMP')$$);
 select pg_temp.step('the owner rewrites the verified document', $$update public.company_documents set number = 'CH-CEP 2019-9', product = 'Other' where company_id = pg_temp.id('co') and number = 'CH-CEP 2019-1'$$);
-select pg_temp.ok('owner edit to a verified document clears the verification (F-14)', $$(select status = 'declared' from public.company_documents_public where company_id = pg_temp.id('co') and number = 'CH-CEP 2019-9')$$);
+select pg_temp.ok('owner edit to a verified document clears the verification (F-14) — a document with its file goes back to Drugbox (review, 0059)', $$(select status = 'review' from public.company_documents_public where company_id = pg_temp.id('co') and number = 'CH-CEP 2019-9')$$);
 
 -- search by active ingredient in Arabic
 select pg_temp.as_server();

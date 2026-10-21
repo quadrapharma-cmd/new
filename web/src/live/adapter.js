@@ -1110,11 +1110,11 @@
   /* when the page was last written (companies.updated_at, set by the database on every save, B-22): the "older than 6 months"
      notice counts from it, else from the day the page was made — never from a sample date. The directory's rows do not carry it,
      so an opened page asks for it (loadContacts). */
-  function fresher(c) { var u = Date.parse(c.updated_at), m = new Date(c.created_at).getTime(); return u > m ? Math.min(u, Date.now()) : null; }
+  function fresher(c) { var u = Date.parse(c.updated_at); return u > 0 ? Math.min(u, Date.now()) : null; }
   function stampFresh(slug) {                  /* "Still correct" / a fix marked: the database moves the page's date to now, for everyone */
     var raw = CO.raw[slug], role = raw && raw.id && CO.roles[raw.id]; if (!raw || !raw.id || (role !== 'owner' && role !== 'admin')) return;
     Promise.resolve(sb.from('companies').update({ updated_at: new Date().toISOString() }).eq('id', raw.id).select('updated_at')).then(function (r) {
-      if (r.error) return toastErr(r.error); if (r.data && r.data[0]) { raw.updated_at = r.data[0].updated_at; var l = live(slug); if (l) l.updatedAt = fresher(raw); } });
+      if (r.error) return toastErr(r.error); if (r.data && r.data[0]) { raw.updated_at = r.data[0].updated_at; var l = live(slug); if (l) l.updatedAt = fresher(raw); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies(); } });
   }
   /* my pages and my role in each (owner / admin manage the page) — what jobs, listings, suppliers and deals need after sign-in */
   async function loadMine() {
@@ -1245,12 +1245,13 @@
         var shown = Object.assign({}, c, { owner: window.ME.id, status: 'pending', plan: 'free', licensed: false, verified: false });
         (window.dxLiveCompanies || (window.dxLiveCompanies = [])).push(shown);
         var insP = Promise.resolve(sb.from('companies').insert({ owner_id: ME_UUID, name: c.name, slug: c.slug, type: c.sector || 'Manufacturer', sectors: c.sectors || [], city: c.city || null,
-          governorate: c.gov || null, location: c.address || null, phone: c.phone || null, email: c.email || null, whatsapp: c.whatsapp || null, tagline: c.tagline || null }).select().single());   /* one request, shared (a query builder re-runs on every await) */
+          governorate: c.gov || null, location: c.address || null, phone: c.phone || null, email: c.email || null, whatsapp: c.whatsapp || null, tagline: c.tagline || null, name_ar: c.nameAr || null }).select().single());   /* one request, shared (a query builder re-runs on every await) */
         CO.raw[c.slug] = { pending: insP };                 /* edits saved meanwhile wait for it (F-55) */
         var ins = await insP;
         if (ins.error) { window.dxLiveCompanies = window.dxLiveCompanies.filter(function (x) { return x !== shown; }); delete CO.raw[c.slug]; rerenderCompanies(); toastErr(ins.error); continue; }
         var sv = okSlug(ins.data.slug) ? ins.data.slug : c.slug; if (sv !== c.slug) adoptSlug(c.slug, sv, shown);
         ins.data.mine = true; CO.raw[sv] = ins.data; CO.roles[ins.data.id] = 'owner'; shown._id = ins.data.id; CO.byId[ins.data.id] = sv;
+        if (c.logo && /^data:image\//.test(c.logo)) { var lg = {}; lg[sv] = { logo: c.logo }; persistEdits(lg); }   /* the wizard's logo: uploaded to company-media once the page exists */
       } else if (c.registry && c.status === 'pending' && known.id && !SNAP['vr_' + c.slug]) {   /* verification documents submitted */
         SNAP['vr_' + c.slug] = 1; var l = live(c.slug); if (l) { l.status = 'pending'; l.registry = c.registry; }
         var docs = {}; try { docs = await window.dxLive.verificationFiles(known.id); } catch (e) { toastErr(e); }
@@ -1334,8 +1335,8 @@
   function loadContacts(slug) {
     var raw = CO.raw[slug], me = ME_UUID; if (!raw || !raw.id) return Promise.resolve(null);
     if (CC.p[slug]) return CC.p[slug];
-    var upd = Promise.resolve(sb.from('companies').select('updated_at').eq('id', raw.id)).then(function (q) {   /* the page's last save (B-22) */
-      var u = q.data && q.data[0]; if (!u || me !== ME_UUID) return; raw.updated_at = u.updated_at; var l = live(slug); if (l) l.updatedAt = fresher(raw); }, function () {});
+    var upd = Promise.resolve(sb.from('companies').select('updated_at, cover_url').eq('id', raw.id)).then(function (q) {   /* the page's last save (B-22) and its cover (not in the directory's rows) */
+      var u = q.data && q.data[0]; if (!u || me !== ME_UUID) return; raw.updated_at = u.updated_at; raw.cover_url = u.cover_url; var l = live(slug); if (l) { l.updatedAt = fresher(raw); l.cover = coFrom(raw).cover; } }, function () {});
     return (CC.p[slug] = Promise.all([sb.rpc('company_contacts', { p_company: raw.id }), upd]).then(function (rr) {
       var r = rr[0]; if (r.error) throw r.error; if (me !== ME_UUID) return null;
       var c = r.data || {}, ids = [];
@@ -1414,19 +1415,8 @@
     if (el.scrollTop + el.clientHeight < el.scrollHeight - 400) return;
     var k = curKey(), s = CO.seq[k]; if (s && s.off && s.more && !s.p) loadDirPage(k).catch(toastErr);
   }, true);
-  /* "Claim this page": a claim request reviewed by Drugbox (claim_company), never an edit made in the browser (F-42) */
-  if (window.dxDir2 && window.dxDir2.claim) window.dxDir2.claim = function (co) {
-    var raw = co && CO.raw[co.slug]; if (!raw || !raw.id) return;
-    window.DBK.modal({ title: 'Claim ' + co.name, body: '<p class="cp-muted">Prove you work at ' + esc2(co.name) + ' and the page becomes yours to manage. Drugbox checks every claim before handing a page over.</p>' +
-      '<div class="dbk-row"><div class="dbk-f"><label for="clRole">Your role *</label><input id="clRole" data-req placeholder="e.g. Business Development Manager"></div><div class="dbk-f"><label for="clPhone">Mobile *</label><input id="clPhone" data-req inputmode="tel"></div></div>' +
-      '<div class="dbk-f"><label for="clMail">Work email *</label><input id="clMail" data-req type="email" placeholder="you@company.com"></div>',
-      primary: { label: 'Send request', onClick: function (b, close) {
-        if (!window.DBK.requireFields(b)) return false; var ok = b.querySelector('[data-a=ok]') || b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
-        var note = 'Role: ' + b.querySelector('#clRole').value.trim() + ' · Mobile: ' + b.querySelector('#clPhone').value.trim() + ' · Work email: ' + b.querySelector('#clMail').value.trim();
-        sb.rpc('claim_company', { p_company_id: raw.id, p_note: note }).then(function (r) { if (ok) ok.disabled = false;
-          if (r.error) return toastErr(r.error); close(); window.toast('Claim sent — Drugbox checks it and tells you when the page is yours'); });
-        return false; } } });
-  };
+  /* "Claim this page": a claim request reviewed by Drugbox (claim_company, with the registry document — 0052), never an edit made in
+     the browser (F-42) — window.dxClaims below (AREA business) */
   var hydrateB4 = hydrateMe;
   hydrateMe = async function (uid) { var me = await hydrateB4(uid); window.dxLiveCompanies = []; CO.seq = {}; CO.loaded = false; CO.mineP = loadMine().then(wrapHub).catch(function (e) { console.error(e); }); return me; };
   onReset(function () { CO.byId = {}; CO.raw = {}; CO.loaded = false; CO.at = 0; CO.roles = {}; CO.mine = false; CO.mineP = null; CO.sitesAt = {}; CO.track = {}; CO.trackAt = {}; CO.seq = {}; CO.alias = {}; CO.reopen = null; COFETCH = {}; CONONE = {}; SNAP = {}; window.dxLiveCompanies = []; window.dxLiveSites = {}; });
@@ -1442,7 +1432,7 @@
     var from = r.from_company_id && fc ? { slug: sslug(fc.slug), name: fc.name } : { slug: null, name: (r.fu && r.fu.name) || 'Member', person: true, userId: aid(r.from_user) };
     var d = { id: r.ref, type: r.type, title: r.title, from: from, to: { slug: sslug(tc.slug), name: tc.name }, lines: r.lines || {}, status: r.status,
       at: tms(r.created_at), updated: tms(r.updated_at),
-      events: (r.deal_events || []).slice().sort(function (a, b) { return a.id - b.id; }).map(function (e) { return { at: tms(e.created_at), by: e.side, kind: e.action, text: e.note || '', data: e.data || {} }; }) };
+      events: (r.deal_events || []).slice().sort(function (a, b) { return a.id - b.id; }).map(function (e) { return { at: tms(e.created_at), by: e.side, kind: e.action, text: (e.data && typeof e.data.text === 'string' && e.data.text) || e.note || '', data: e.data || {}, actor: e.ap && e.ap.name ? txt(e.ap.name) : '' }; }) };   /* who of the team took the step (J-23) */   /* the step's own summary (price per round), else its note */
     if (r.offer) d.offer = r.offer; if (r.counter) d.counter = r.counter; if (r.answers) d.answers = r.answers; if (r.ontime !== null && r.ontime !== undefined) d.ontime = r.ontime;
     if (r.group_key) d.group = r.group_key; if (r.assignee) d.assignee = aid(r.assignee);
     return d;
@@ -1543,7 +1533,7 @@
     if (r.deal_members && r.deal_members.length) d.members = r.deal_members.map(function (m) { return { slug: sslug(m.co && m.co.slug), name: m.co && m.co.name, qty: +m.qty }; });
     if (r.group_of) d.groupOf = r.group_of; return d; };
   loadDeals = async function () {
-    var r = await sb.from('deals').select('*, deal_events(*), deal_members(qty, co:companies(slug,name)), fc:companies!deals_from_company_id_fkey(slug,name), tc:companies!deals_to_company_id_fkey(slug,name), fu:profiles!deals_from_user_fkey(name)')
+    var r = await sb.from('deals').select('*, deal_events(*, ap:profiles!deal_events_actor_fkey(name)), deal_members(qty, co:companies(slug,name)), fc:companies!deals_from_company_id_fkey(slug,name), tc:companies!deals_to_company_id_fkey(slug,name), fu:profiles!deals_from_user_fkey(name)')
       .order('updated_at', { ascending: false }).limit(300);
     if (r.error) throw r.error;
     var refOf = {}; (r.data || []).forEach(function (x) { refOf[x.id] = x.ref; });
@@ -1573,6 +1563,106 @@
   hydrateMe = async function (uid) { var me = await hydrateC2(uid); loadListings().then(function () { return CO.mineP; }).then(function () { return loadAvl(); }).catch(function (e) { console.error(e); }); return me; };
   onReset(function () { LIST.surplus = []; LIST.dossiers = []; LIST.known = {}; LIST.avl = {}; });
   Object.assign(window.dxLive, { loadListings: loadListings, loadAvl: loadAvl, version: 'C3' });
+
+  /* ===== AREA business: deal documents and supplier reviews (B-12, B-17; 0056) =====
+     Documents inside a deal live in the private documents bucket (deals/<deal id>/…), readable by the two parties only;
+     deal_attach() records each one and adds it to the deal's history. Reviews of completed orders come from the database
+     (company_reviews); a company's reply and its request that Drugbox check a review go through review_reply / review_dispute. */
+  var DFL = { by: {} }, REV = { by: {}, at: {}, ref: {} };
+  var dealFromB = dealFrom;
+  dealFrom = function (r) { var d = dealFromB(r); d._dbid = r.id; return d; };
+  var loadDealsB = loadDeals;
+  loadDeals = async function () {
+    var list = await loadDealsB(), ids = list.map(function (d) { return d._dbid; }).filter(Boolean).slice(0, 300); DFL.by = {};
+    if (ids.length) { var f = await sb.from('deal_files').select('id, deal_id, side, kind, name, path, created_at').in('deal_id', ids).order('created_at').limit(1000);
+      if (!f.error) { var refOf = {}; list.forEach(function (d) { refOf[d._dbid] = d.id; });
+        (f.data || []).forEach(function (x) { var ref = refOf[x.deal_id]; if (ref) (DFL.by[ref] = DFL.by[ref] || []).push({ id: x.id, name: x.name, kind: x.kind, by: x.side, at: tms(x.created_at), path: x.path }); }); } }
+    return list;
+  };
+  window.dxLive.loadDeals = loadDeals;
+  function safeName(n) { var m = /\.([A-Za-z0-9]{1,8})$/.exec(n || ''), b = String(n || 'file').replace(/\.[^.]*$/, '').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'file'; return b + (m ? '.' + m[1].toLowerCase() : ''); }
+  window.dxDealFiles = {
+    list: function (d) { return DFL.by[d.id] || []; },
+    attach: async function (d, file, kind, side) {
+      await DEALS.busy;                                                   /* the deal (or the step that just created it) is in the database first */
+      if (!d._dbid) { await loadDeals(); var x = DEALS.list.find(function (y) { return y.id === d.id; }); if (x) d = x; }
+      if (!d._dbid) throw new Error('This request is still being saved — try again in a moment');
+      var path = await upDoc('documents', 'deals/' + d._dbid + '/' + rid() + '-' + safeName(file.name), file);
+      var r = await sb.rpc('deal_attach', { p_ref: d.id, p_kind: kind, p_path: path, p_name: String(file.name || 'file').slice(0, 160) }); if (r.error) throw new Error(friendly(r.error));
+      await loadDeals(); return true;
+    },
+    open: async function (d, f) { var r = await sb.storage.from('documents').createSignedUrl(f.path, 600); if (r.error || !r.data) { toastErr(r.error || { message: 'Could not open the file' }); return false; }
+      window.open(r.data.signedUrl, '_blank', 'noopener'); return true; }
+  };
+  /* reviews: loaded with the page's track record; the hub's reply / "ask Drugbox" writes go to the database */
+  async function loadReviews(slug) {
+    var raw = CO.raw[slug]; if (!raw || !raw.id) return;
+    var r = await sb.rpc('company_reviews', { p_company: raw.id }); if (r.error) throw r.error;
+    REV.by[slug] = (r.data || []).map(function (x) { REV.ref[x.ref] = slug; return { deal: x.ref, stars: Math.max(1, Math.min(5, +x.stars || 0)), note: txt(x.note), from: txt(x.from), at: tms(x.at), reply: x.reply ? txt(x.reply) : '', disputed: !!x.disputed }; });
+    REV.at[slug] = Date.now(); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
+  }
+  /* a company's open positions (company_jobs, 0058): its Jobs tab, and "Apply" sends the application to the company */
+  async function loadCompanyJobs(slug) { var raw = CO.raw[slug]; if (!raw || !raw.id) return;
+    var r = await sb.rpc('company_jobs', { p_company: raw.id }); if (r.error) throw r.error; raw.jobs_live = r.data || []; var l = live(slug);
+    if (l) l.jobs = raw.jobs_live.map(function (j) { return { t: txt(j.title), type: String(j.type || 'full-time').replace(/(^|-)([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); }), loc: txt(j.location) || l.city, _id: j.id }; });
+    window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; }
+  var loadTrackB = loadTrack;
+  loadTrack = async function (slug) { await loadTrackB(slug); await Promise.all([loadReviews(slug), loadCompanyJobs(slug)]).catch(function (e) { console.error(e); }); };
+  var REVMETA = {};
+  async function syncReviewMeta(v) {
+    for (var ref in v) { var now = v[ref] || {}, was = REVMETA[ref] || {}, slug = REV.ref[ref]; if (!slug) continue;
+      var cur = (REV.by[slug] || []).find(function (x) { return x.deal === ref; }) || {};
+      if (now.reply && now.reply !== (was.reply || cur.reply)) { var r = await sb.rpc('review_reply', { p_ref: ref, p_reply: now.reply }); if (r.error) { toastErr(r.error); continue; } }
+      if (now.disputed && !was.disputed && !cur.disputed) { var q = await sb.rpc('review_dispute', { p_ref: ref, p_note: now.note || null }); if (q.error) { toastErr(q.error); continue; } }
+      REVMETA[ref] = Object.assign({}, now); await loadReviews(slug);
+    }
+    rerenderCompanies();
+  }
+  var hookRV = window.dxStoreHook;
+  window.dxStoreHook = function (k, v) {
+    if (ME_UUID && k === 'supplier_reviews') { if (v === undefined) return JSON.parse(JSON.stringify(REV.by)); return true; }   /* a rating is the deal's "rate" step (deal_act), not this list */
+    if (ME_UUID && k === 'review_meta') { if (v === undefined) return JSON.parse(JSON.stringify(REVMETA)); syncReviewMeta(v).catch(toastErr); return true; }
+    return hookRV ? hookRV(k, v) : undefined;
+  };
+  /* Admin → Review → Reviews: the reviews companies asked Drugbox to check */
+  var modLoadRV = window.dxModeration.load, modDecideRV = window.dxModeration.decide;
+  window.dxModeration.load = async function () {
+    var d = await modLoadRV(), r = await sb.rpc('review_disputes'); if (r.error) throw r.error;
+    d.reviews = (r.data || []).map(function (x) { return { id: x.ref, company: x.company, from: x.from, stars: x.stars, note: x.note, dispute: x.dispute || '', at: String(x.at).slice(0, 10) }; });
+    return d;
+  };
+  window.dxModeration.decide = async function (kind, id, value, note) {
+    if (kind !== 'reviews') return modDecideRV(kind, id, value, note);
+    var r = await sb.rpc('review_decide', { p_ref: String(id), p_keep: value === 'kept', p_note: note || null }); if (r.error) throw new Error(friendly(r.error)); return true;
+  };
+  ICON.review_reply = '⭐'; ICON.review_decided = '⭐'; ICON.company_listing = '🏢';
+  var notifFromRV = notifFrom;
+  notifFrom = function (n) { var o = notifFromRV(n), d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return o;
+    if (n.type === 'review_reply') o.text = esc2(String(d.company || 'The supplier') + ' replied to your review of ' + String(d.title || 'your order') + '.');
+    if (n.type === 'company_listing') o.text = esc2(String(d.company || 'A company you follow') + ' posted ' + (d.kind === 'surplus' ? 'surplus stock' : d.kind === 'dossier' ? 'a licensing dossier' : d.kind === 'demand' ? 'a request' : 'a new listing') + ': ' + String(d.listing || '') + '.');
+    if (n.type === 'review_decided') { o.uid = SYS_UID; o.text = esc2(d.outcome === 'removed' ? 'Drugbox removed a review of ' + String(d.company || 'your company') + ' after checking it.' : 'Drugbox checked a review of ' + String(d.company || 'your company') + ' — it stays up.'); }
+    return o; };
+  /* buying groups (0057): a lower quantity or leaving goes through deal_member_set; a group past its closing date below its target
+     is closed by the database (group_close_expired) when it is shown */
+  joins = async function (d) { var before = DEALS.mem[d.id] || {}, now = {};
+    (d.members || []).forEach(function (m) { now[m.slug] = (now[m.slug] || 0) + m.qty; });
+    var slugs = Object.keys(Object.assign({}, before, now));
+    for (var i = 0; i < slugs.length; i++) { var slug = slugs[i], was = before[slug] || 0, is = now[slug] || 0; if (was === is) continue;
+      var r = is > was && was > 0 || !was ? await sb.rpc('deal_join', { p_ref: d.id, p_from_slug: slug, p_qty: is - was }) : await sb.rpc('deal_member_set', { p_ref: d.id, p_from_slug: slug, p_qty: is });
+      if (r.error) return refused(r.error); }
+    DEALS.mem[d.id] = now; };
+  var CLOSING = {};
+  var loadDealsG = loadDeals;
+  loadDeals = async function () {
+    var list = await loadDealsG(), due = list.filter(function (d) { return window.dxDeals && window.dxDeals.groupExpired && d.status === 'open' && window.dxDeals.groupExpired(d) && !CLOSING[d.id]; });
+    if (!due.length) return list;
+    due.forEach(function (d) { CLOSING[d.id] = 1; });
+    await Promise.all(due.map(function (d) { return sb.rpc('group_close_expired', { p_ref: d.id }); }));
+    return loadDealsG();
+  };
+  window.dxLive.loadDeals = loadDeals;
+  onReset(function () { DFL.by = {}; REV = { by: {}, at: {}, ref: {} }; REVMETA = {}; CLOSING = {}; });
+  /* ===== /AREA business: deal documents and reviews ===== */
 
   /* ═══════════════ D1 — marketplace: supply and demand cards from the database, using the approved page's own cards as templates ═══════════════ */
   var MKT = { tplL: null, tplD: null, tplS: null, tplM: null, products: [], demand: [], at: 0 };
@@ -2446,9 +2536,10 @@
     FOL.list = (r.data || []).map(function (x) { return CO.byId[x.company_id] || sslug(x.co && x.co.slug); }).filter(Boolean); FOL.loaded = true; }
   async function syncFollows(v) {
     var now = (v || []).slice(), before = FOL.list.slice(); FOL.list = now;
-    for (var i = 0; i < now.length; i++) if (before.indexOf(now[i]) < 0) { var raw = CO.raw[now[i]]; if (raw && raw.id) { var r = await sb.from('company_followers').insert({ company_id: raw.id, user_id: ME_UUID }); if (r.error) { toastErr(r.error); return loadFollows(); } } }
-    for (var j = 0; j < before.length; j++) if (now.indexOf(before[j]) < 0) { var raw2 = CO.raw[before[j]]; if (raw2 && raw2.id) await sb.from('company_followers').delete().eq('company_id', raw2.id).eq('user_id', ME_UUID); }
+    for (var i = 0; i < now.length; i++) if (before.indexOf(now[i]) < 0) { var raw = CO.raw[now[i]]; if (raw && raw.id) { var r = await sb.from('company_followers').insert({ company_id: raw.id, user_id: ME_UUID }); if (r.error) { toastErr(r.error); return loadFollows(); } countFollow(now[i], 1); } }
+    for (var j = 0; j < before.length; j++) if (now.indexOf(before[j]) < 0) { var raw2 = CO.raw[before[j]]; if (raw2 && raw2.id) { var d2 = await sb.from('company_followers').delete().eq('company_id', raw2.id).eq('user_id', ME_UUID).select('company_id'); if (!d2.error && (d2.data || []).length) countFollow(before[j], -1); } }
   }
+  function countFollow(slug, n) { var raw = CO.raw[slug], l = live(slug); if (raw) raw.follower_count = Math.max(0, (raw.follower_count || 0) + n); if (l) l.followers = Math.max(0, (l.followers || 0) + n); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies(); }   /* the page's count follows (the database's counter does the same) */
   var hookFol = window.dxStoreHook;
   window.dxStoreHook = function (k, v) {
     if (ME_UUID && k === 'follows') { if (v === undefined) return FOL.list.slice(); syncFollows(v).catch(toastErr); return true; }
@@ -2574,7 +2665,7 @@
       var path = null; if (file) { path = 'payments/' + ME_UUID + '/' + rid() + '.' + extOf(file); await upDoc('documents', path, file); }
       var r = await sb.rpc('submit_instapay', { p_id: orderId, p_transfer_ref: ref, p_receipt: path }); if (r.error) throw new Error(friendly(r.error));
     },
-    listings: async function () { var r = await sb.from('products').select('id,name').eq('user_id', ME_UUID).eq('active', true).order('created_at', { ascending: false }).limit(50); return r.data || []; },
+    listings: async function () { var r = await sb.from('products').select('id,name').eq('user_id', ME_UUID).eq('active', true).or('expires_at.is.null,expires_at.gt.' + new Date().toISOString()).order('created_at', { ascending: false }).limit(50);   /* an expired listing is renewed before it is promoted */ return r.data || []; },
     /* the Boost / Featured window shows the price the server charges (payment_products, same rounding as create_order) —
        never USD × a third-party exchange rate (F-07). Code: 'boost' | 'featured' (any payment_products code). */
     quote: async function (code) {
@@ -2588,8 +2679,10 @@
   (function () { var m = /[?&]payment=(\d+)/.exec(location.search); if (!m) return; var id = +m[1], tries = 0, waited = 0;
     function check() { if (!ME_UUID) { if ((waited += 800) < 60000) setTimeout(check, 800); return; }   /* not signed in within a minute: stop (F-119) */
       sb.from('payment_orders').select('status').eq('id', id).single().then(function (r) { var st = r.data && r.data.status;
-        if (st === 'paid') { window.toast('Payment received — it is active now'); refreshCompanies().catch(function () {}); MKT.at = 0; history.replaceState(null, '', location.pathname); }
-        else if (++tries < 10) setTimeout(check, 2000); else window.toast('We have not received the payment confirmation yet — it will activate automatically when it arrives'); }); }
+        if (st === 'paid') { window.toast('Payment received — it is active now'); refreshCompanies().catch(function () {}); MKT.at = 0; history.replaceState(null, '', location.pathname); if (window.dxPayRefresh) window.dxPayRefresh(); }
+        else if (st === 'cancelled') { window.toast('You cancelled this payment — nothing was charged'); history.replaceState(null, '', location.pathname); if (window.dxPayRefresh) window.dxPayRefresh(); }
+        else if (st === 'failed' || st === 'expired') { window.toast('The payment failed or was declined — nothing was charged and nothing was activated. Try again from My payments'); history.replaceState(null, '', location.pathname); if (window.dxPayRefresh) window.dxPayRefresh(); }   /* 0055: a failed payment is recorded */
+        else if (++tries < 10) setTimeout(check, 2000); else window.toast('We have not received the payment confirmation yet — if you paid, it activates automatically; if you left the payment page, continue or cancel it in My payments'); }); }
     check(); })();
   /* Review → Payments (InstaPay transfers) */
   var modLoad = window.dxModeration.load, modDecide = window.dxModeration.decide;
@@ -2623,6 +2716,658 @@
     if (kind !== 'payments') return modDecide(kind, id, value, note);
     var r = await sb.rpc('review_instapay', { p_id: +id, p_ok: value === 'paid' }); if (r.error) throw new Error(friendly(r.error)); return true;
   };
+
+  /* ===== AREA business: company page — products, photos, sites, certificates (B-02, B-03, B-09; 0050) =====
+     What the owner saves in the page editor and in Workspace → Sites is written to the database (company_products,
+     company_sites, site_certificates; pictures in company-media, certificate documents in documents/verification/<id>/),
+     and what the page shows comes back from it. Each company's saves run one after the other (a second edit made while the
+     first is still saving waits for it). Nothing the database refused is kept on screen. */
+  var CPG = { q: {}, tmp: {}, seen: {}, siteFiles: [], coFiles: [], coCerts: {}, coCertsAt: {}, prodAt: {} };
+  var PACKS = ['box', 'bottle', 'blister', 'sachet', 'jar', 'tube', 'drum', 'lab'];
+  var TYPEK = { 'Factory': 'factory', 'Warehouse': 'warehouse', 'Laboratory': 'lab', 'Office': 'office', 'Head office': 'head_office' };
+  var CURS = [[/US\$|USD|\$/i, 'USD'], [/€|EUR/i, 'EUR'], [/SAR|ر\.?\s?س|ريال/i, 'SAR'], [/AED|د\.?\s?إ|درهم/i, 'AED'], [/£|GBP/i, 'GBP'], [/EGP|E£|ج\.?\s?م|جنيه/i, 'EGP'], [/CNY|RMB|¥/i, 'CNY'], [/INR|₹/i, 'INR']];
+  function currencyOf(price) { var s = String(price || ''); if (!/\d/.test(s)) return null; for (var i = 0; i < CURS.length; i++) if (CURS[i][0].test(s)) return CURS[i][1]; return null; }
+  function mediaUrl(path) { if (!path || !/^companies\/\d+\//.test(path)) return null; var r = sb.storage.from('company-media').getPublicUrl(path); return r && r.data ? safeUrl(r.data.publicUrl) || null : null; }
+  async function upMedia(cid, kind, dataUrl) {
+    var b = await blobOf(dataUrl), ext = b.type === 'image/png' ? 'png' : b.type === 'image/webp' ? 'webp' : 'jpg';
+    var path = 'companies/' + cid + '/' + kind + '-' + rid() + '.' + ext;
+    var r = await sb.storage.from('company-media').upload(path, b, { contentType: b.type || 'image/jpeg' }); if (r.error) throw new Error(friendly(r.error));
+    return path;
+  }
+  function serial(slug, job) { var p = (CPG.q[slug] || Promise.resolve()).then(job).catch(toastErr); CPG.q[slug] = p; return p; }
+  window.dxLive.companySaved = function (slug) { return CPG.q[slug] || Promise.resolve(); };          /* tests and the editor wait for a company's saves */
+  /* a product as the page shows it: the catalogue fields, the photo from company-media, else the drawn packshot */
+  function prodFrom(p) {
+    var line = [p.ingredient ? 'Active ingredient: ' + txt(p.ingredient) : '', txt(p.strength)].filter(Boolean).join(' · ');
+    return { id: p.id != null ? 'cp' + p.id : 'p' + String(p.name).replace(/\W+/g, '').slice(0, 10), _id: p.id, name: txt(p.name), cat: txt(p.category) || ROLE[p.role] || 'Finished dosage',
+      kind: PACKS.indexOf(p.pack) >= 0 ? p.pack : 'box', desc: txt(p.description) || line, moq: txt(p.moq), price: txt(p.price), currency: p.currency || null, img: mediaUrl(p.image) || undefined, _img: p.image || null, specs: [] };
+  }
+  function prodRow(p) { return { id: p.id, name: p.name, ingredient: p.active_ingredient, ingredient_ar: p.active_ingredient_ar, form: p.dosage_form, strength: p.strength, role: p.role,
+    category: p.category, pack: p.pack, description: p.description, moq: p.moq, price: p.price, currency: p.currency, image: p.image_path }; }
+  function coCertsOf(slug) { return CPG.coCerts[slug] || []; }
+  var coFromC1 = coFrom;
+  coFrom = function (c) {
+    var o = coFromC1(c), pr = c.profile || {}, cc = coCertsOf(c.slug);
+    o.products = (c.products || []).map(prodFrom);
+    if (c.mine && !o.owner && CO.roles[c.id]) o.memberIds = [window.ME.id];
+    o.nameAr = txt(c.name_ar); o.followers = +c.follower_count || 0;                                                     /* the Arabic name is searched and shown (hub-data nameAr) */   /* a member of the team (sales, quality…): the company is theirs to act for, not to edit */
+    o.logo = mediaUrl(c.logo_url) || null; o.cover = mediaUrl(c.cover_url) || null;
+    if (cc.length) { o.certs = cc.filter(function (x) { return x.checked; }).map(function (x) { return txt(x.name); });
+      o.certsPending = cc.filter(function (x) { return !x.checked; }).map(function (x) { return { name: txt(x.name), _id: x.id, at: 0 }; }); }
+    return o;
+  };
+  /* a site: its capabilities and its free months ('YYYY-MM' in the database; the page counts months from now) */
+  function monthIdx(ym) { var d = new Date(), m = /^(\d{4})-(\d{2})$/.exec(String(ym)); return m ? (+m[1] - d.getFullYear()) * 12 + (+m[2] - 1) - d.getMonth() : -1; }
+  function monthOf(i) { var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + (+i)); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
+  function certSrc(t) { var chk = t.checked || t.checked_at; return (t.source === 'public_list' ? 'Public industry list' : t.doc || t.source === 'document' ? 'Certificate document' : 'Company') + (chk ? ' · checked by Drugbox ' + String(chk).slice(0, 10) : ' · not yet checked by Drugbox'); }
+  var siteFromC1 = siteFrom;
+  siteFrom = function (s) {
+    var o = siteFromC1(s), forms = s.forms || s.dosage_forms || [];
+    o._id = s.id;
+    o.certs = (s.certs || []).map(function (t) { var chk = t.checked || t.checked_at; CPG.seen['c' + t.id] = 1;
+      return { _id: t.id, name: txt(t.name), expiry: ym(t.expiry), src: certSrc(t), checked: chk ? String(chk).slice(0, 10) : '', ok: !!chk }; });
+    var slots = (Array.isArray(s.free_slots) ? s.free_slots : []).map(monthIdx).filter(function (i) { return i >= 0 && i < 6; });
+    if (forms.length) o.cap = { forms: forms.map(txt), minBatch: txt(s.min_batch), capacity: txt(s.capacity), slots: slots };
+    CPG.seen['s' + s.id] = 1;
+    return o;
+  };
+  /* company-wide certificates (no site): a "Company-wide" entry at the end of the Sites list, so they show like every other one */
+  function withCompanyCerts(slug, list) {
+    var cc = coCertsOf(slug); if (!cc.length) return list;
+    var raw = CO.raw[slug] || {};
+    return list.concat([{ id: 'co', name: 'Company-wide', type: 'Head office', city: txt(raw.city), gov: txt(raw.governorate), certs: cc.map(function (t) { var chk = t.checked; CPG.seen['c' + t.id] = 1;
+      return { _id: t.id, name: txt(t.name), expiry: ym(t.expiry), src: certSrc(t), checked: chk ? String(chk).slice(0, 10) : '', ok: !!chk }; }) }]);
+  }
+  async function loadCoCerts(slug) { var r = await sb.rpc('company_certs_public', { p_slug: slug }); if (r.error) throw r.error; CPG.coCerts[slug] = r.data || []; CPG.coCertsAt[slug] = Date.now();
+    var raw = CO.raw[slug], l = live(slug); if (raw && raw.id && l) { var f = coFrom(raw); l.certs = f.certs; l.certsPending = f.certsPending; } }
+  var loadSitesC1 = loadSites;
+  loadSites = async function (slug) {
+    await Promise.all([loadSitesC1(slug), loadCoCerts(slug)]);
+    window.dxLiveSites[slug] = withCompanyCerts(slug, window.dxLiveSites[slug] || []); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
+  };
+  /* the directory's cards: the sites of a page of companies, with their capabilities (for "Can manufacture" and the capacity line) */
+  sitesFor = function (rows) {
+    var me = ME_UUID, want = rows.filter(function (c) { return c && c.id && okSlug(c.slug) && !(CO.sitesAt[c.slug] && Date.now() - CO.sitesAt[c.slug] < 60000); }); if (!want.length) return;
+    var slugOf = {}; want.forEach(function (c) { slugOf[c.id] = c.slug; });
+    sb.from('company_sites').select('id,company_id,name,type,city,governorate,dosage_forms,min_batch,capacity,free_slots,certs:site_certificates!site_certificates_site_id_fkey(id,name,expiry,source,checked_at)')
+      .in('company_id', want.map(function (c) { return c.id; })).order('id').limit(1000).then(function (r) {
+      if (r.error || me !== ME_UUID) { if (r.error) console.error(r.error); return; }
+      var by = {}; want.forEach(function (c) { by[c.slug] = []; });
+      (r.data || []).forEach(function (s) { var sl = slugOf[s.company_id]; if (sl) by[sl].push(siteFrom(s)); });
+      window.dxLiveSites = window.dxLiveSites || {}; var now = Date.now();
+      Object.keys(by).forEach(function (sl) { window.dxLiveSites[sl] = withCompanyCerts(sl, by[sl]); CO.sitesAt[sl] = now; });
+      window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; redrawDir();
+    });
+  };
+  /* "Can manufacture" / "Free from" and the capacity line read a company's capabilities: in the live app, its sites' */
+  if (window.dxDir2 && window.dxDir2.capOf && !window.dxDir2.capOf.__live) { var capOfDemo = window.dxDir2.capOf;
+    window.dxDir2.capOf = function (co) { if (!ME_UUID || !co || !co._id) return capOfDemo.apply(this, arguments);
+      var ss = (window.dxLiveSites || {})[co.slug] || [], forms = [], slots = [], mb = '', capy = '';
+      ss.forEach(function (s) { if (!s.cap) return; s.cap.forms.forEach(function (f) { if (forms.indexOf(f) < 0) forms.push(f); }); s.cap.slots.forEach(function (i) { if (slots.indexOf(i) < 0) slots.push(i); }); mb = mb || s.cap.minBatch; capy = capy || s.cap.capacity; });
+      return forms.length ? { forms: forms, minBatch: mb, capacity: capy, slots: slots.sort(function (a, b) { return a - b; }) } : null; };
+    window.dxDir2.capOf.__live = true; }
+  /* the hub lists a live company's sites as the database has them: no sample capabilities are added to a site without any */
+  if (window.dxHubData && window.dxHubData.sitesOf && !window.dxHubData.sitesOf.__live) { var sitesOfDemo = window.dxHubData.sitesOf;
+    window.dxHubData.sitesOf = function (co) { var ls = ME_UUID && co && co._id && (window.dxLiveSites || {})[co.slug]; return ls ? JSON.parse(JSON.stringify(ls)) : sitesOfDemo.apply(this, arguments); };
+    window.dxHubData.sitesOf.__live = true; }
+  /* a certificate is "checked" when Drugbox has checked its document — the date it did (never the company's own status) */
+  if (window.dxHubData && window.dxHubData.credentials && !window.dxHubData.credentials.__live) { var credDemo = window.dxHubData.credentials;
+    window.dxHubData.credentials = function (co) { var out = credDemo.apply(this, arguments); if (!ME_UUID || !co || !co._id) return out;
+      return out.map(function (k) { if (/^Member:/.test(k.name)) return k; return Object.assign({}, k, { checked: !!k.ok }); }); };
+    window.dxHubData.credentials.__live = true; }
+  /* the files a person chose for a certificate (Workspace → Sites → Certificate; the editor's "Send for verification") */
+  document.addEventListener('click', function (e) {
+    var ok = e.target.closest && e.target.closest('.dbk-ov [data-a=ok]'), ov = ok && ok.closest('.dbk-ov');
+    if (ov && ov.querySelector('#wcF')) { var f = ov.querySelector('#wcF').files[0]; if (f) CPG.siteFiles.push({ name: ov.querySelector('#wcN').value, file: f }); }
+    if (e.target.closest && e.target.closest('#dxEditor #edCAdd')) { var cf = document.getElementById('edCFile'), cn = document.getElementById('edCName'); if (cf && cf.files[0] && cn && cn.value) CPG.coFiles.push({ name: cn.value, file: cf.files[0] }); }
+  }, true);
+  function takeFile(list, name) { var i = list.findIndex(function (x) { return x.name === name; }); return i < 0 ? null : list.splice(i, 1)[0].file; }
+  async function certFile(cid, file) { return upDoc('documents', 'verification/' + cid + '/cert-' + rid() + '.' + extOf(file), file); }
+  function expiryOf(m) { var x = /^(\d{4})-(\d{2})/.exec(String(m || '')); if (!x) return null; var d = new Date(Date.UTC(+x[1], +x[2], 0)); return d.toISOString().slice(0, 10); }   /* the month's last day */
+  /* Workspace → Sites: the list the hub saved, compared with the database (sites and their certificates) */
+  async function saveSitesLive(slug, raw, sites) {
+    var cid = raw.id, list = (sites || []).filter(function (s) { return s && s.id !== 'co'; }), coEntry = (sites || []).find(function (s) { return s && s.id === 'co'; });
+    var cur = await sb.from('company_sites').select('id,name,type,city,governorate,dosage_forms,min_batch,capacity,free_slots,certs:site_certificates!site_certificates_site_id_fkey(id,name,expiry)').eq('company_id', cid);
+    if (cur.error) throw cur.error;
+    var byId = {}; (cur.data || []).forEach(function (s) { byId[s.id] = s; });
+    var keepS = {}, keepC = {};
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i], sid = s._id || CPG.tmp[s.id] || null, cap = s.cap && s.cap.forms && s.cap.forms.length ? s.cap : null;
+      var row = { name: String(s.name || '').slice(0, 120), type: TYPEK[s.type] || 'factory', city: s.city || null, governorate: s.gov || null, dosage_forms: cap ? cap.forms : [],
+        min_batch: cap ? cap.minBatch || null : null, capacity: cap ? cap.capacity || null : null, free_slots: cap ? (cap.slots || []).map(monthOf) : [] };
+      if (sid && byId[sid]) { var o = byId[sid], diff = {};
+        Object.keys(row).forEach(function (k) { if (JSON.stringify(row[k] == null ? null : row[k]) !== JSON.stringify(o[k] == null ? null : o[k])) diff[k] = row[k]; });
+        if (Object.keys(diff).length) { var u = await sb.from('company_sites').update(diff).eq('id', sid).select('id'); if (u.error) throw u.error; if (!(u.data || []).length) throw new Error('Only the page’s owner or admins can change its sites'); } }
+      else if (!sid) { var ins = await sb.from('company_sites').insert(Object.assign({ company_id: cid }, row)).select('id').single(); if (ins.error) throw ins.error; sid = ins.data.id; CPG.tmp[s.id] = sid; byId[sid] = { id: sid, certs: [] }; }
+      else continue;                                                    /* removed meanwhile (another tab, a team mate): not made again */
+      keepS[sid] = 1;
+      await saveCerts(cid, sid, s.certs || [], (byId[sid] || {}).certs || [], keepC, CPG.siteFiles);
+    }
+    if (coEntry) await saveCerts(cid, null, coEntry.certs || [], coCertsOf(slug), keepC, CPG.coFiles);
+    else { var gone = coCertsOf(slug).filter(function (t) { return CPG.seen['c' + t.id]; }).map(function (t) { return t.id; });   /* the "Company-wide" entry was removed: its certificates go */
+      if (gone.length) { var dc = await sb.from('site_certificates').delete().in('id', gone); if (dc.error) throw dc.error; } }
+    var drop = (cur.data || []).filter(function (s) { return !keepS[s.id] && CPG.seen['s' + s.id]; }).map(function (s) { return s.id; });   /* only sites this person saw are removed */
+    if (drop.length) { var d = await sb.from('company_sites').delete().in('id', drop).select('id'); if (d.error) throw d.error; }
+  }
+  async function saveCerts(cid, sid, certs, dbCerts, keep, files) {
+    var byId = {}; (dbCerts || []).forEach(function (t) { byId[t.id] = t; });
+    for (var j = 0; j < certs.length; j++) { var k = certs[j], tid = k._id;
+      if (tid && byId[tid]) { keep[tid] = 1; var ex = expiryOf(k.expiry);   /* compared by month: the page shows months, a day set elsewhere is kept */
+        if (String(k.name) !== String(byId[tid].name) || String(k.expiry || '').slice(0, 7) !== String(byId[tid].expiry || '').slice(0, 7)) { var u = await sb.from('site_certificates').update({ name: k.name, expiry: ex }).eq('id', tid); if (u.error) throw u.error; } }
+      else if (!tid) { var file = takeFile(files, k.name), row = { site_id: sid, company_id: cid, name: String(k.name).slice(0, 80), expiry: expiryOf(k.expiry) };
+        if (file) row.file_path = await certFile(cid, file);
+        var ins = await sb.from('site_certificates').insert(row).select('id').single(); if (ins.error) throw ins.error; k._id = ins.data.id; keep[ins.data.id] = 1; }
+    }
+    var gone = (dbCerts || []).filter(function (t) { return !keep[t.id] && CPG.seen['c' + t.id]; }).map(function (t) { return t.id; });
+    if (gone.length) { var d = await sb.from('site_certificates').delete().in('id', gone); if (d.error) throw d.error; }
+  }
+  /* the editor's products: compared with the database rows the editor started from; a photo chosen is uploaded first */
+  async function saveProducts(slug, raw, list, before) {
+    var cid = raw.id, cur = await sb.from('company_products').select('*').eq('company_id', cid); if (cur.error) throw cur.error;
+    var byId = {}; (cur.data || []).forEach(function (p) { byId[p.id] = p; });
+    var known = {}; (before || []).forEach(function (p) { if (p && p._id) known[p._id] = 1; });
+    var keep = {};
+    for (var i = 0; i < (list || []).length; i++) { var p = list[i], m = /^cp(\d+)$/.exec(String(p.id)), pid = m ? +m[1] : null;
+      var row = { name: String(p.name || '').slice(0, 160), category: p.cat || null, pack: PACKS.indexOf(p.kind) >= 0 ? p.kind : null, description: p.desc || null, moq: p.moq || null,
+        price: p.price || null, currency: currencyOf(p.price), sort_order: i };
+      if (p.img && /^data:image\//.test(p.img)) row.image_path = await upMedia(cid, 'product', p.img);
+      else if (!p.img) row.image_path = null;
+      if (pid && byId[pid]) { var o = byId[pid], diff = {}; keep[pid] = 1;
+        Object.keys(row).forEach(function (k) { if ((row[k] == null ? null : row[k]) !== (o[k] == null ? null : o[k])) diff[k] = row[k]; });
+        if (Object.keys(diff).length) { var u = await sb.from('company_products').update(diff).eq('id', pid).select('id'); if (u.error) throw u.error; if (!(u.data || []).length) throw new Error('Only the page’s owner, admins or regulatory can change its products'); } }
+      else if (!pid) { var ins = await sb.from('company_products').insert(Object.assign({ company_id: cid, role: /Toll|Service/.test(p.cat) ? 'manufacturer' : /API|Excipient|Packaging/.test(p.cat) ? 'supplier' : 'manufacturer' }, row)).select('id').single();
+        if (ins.error) throw ins.error; keep[ins.data.id] = 1; }
+    }
+    var drop = Object.keys(byId).filter(function (id) { return !keep[id] && known[id]; }).map(Number);   /* only products the editor showed are removed */
+    if (drop.length) { var d = await sb.from('company_products').delete().in('id', drop); if (d.error) throw d.error; }
+    await reloadProducts(slug);
+  }
+  async function reloadProducts(slug) {
+    var raw = CO.raw[slug]; if (!raw || !raw.id) return;
+    var r = await sb.from('company_products').select('*').eq('company_id', raw.id).order('sort_order').order('id'); if (r.error) throw r.error;
+    raw.products = (r.data || []).map(prodRow); var l = live(slug); if (l) l.products = raw.products.map(prodFrom);
+    window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
+  }
+  /* a directory row carries each product's card fields only (0050: a page of 100 companies stays light); an opened company
+     page reads its products in full — description, pack, price — once a minute at most */
+  var pageDataCPG = pageData;
+  pageData = function (slug, ws) {
+    var r = pageDataCPG.apply(this, arguments), raw = slug && CO.raw[slug];
+    if (ME_UUID && raw && raw.id && !CO.roles[raw.id] && Date.now() - (CPG.prodAt[slug] || 0) > 60000) {
+      CPG.prodAt[slug] = Date.now();
+      reloadProducts(slug).then(function () { var S = window.dxDir && window.dxDir.S; if (S && (S.open === slug || S.ws === slug)) rerenderCompanies(); }, function (e) { console.error(e); });
+    }
+    return r;
+  };
+  /* the editor's "Send for verification" (company-wide certificates) */
+  async function saveCoCerts(slug, raw, pend) {
+    var list = (pend || []).filter(function (x) { return x && !x._id; });
+    for (var i = 0; i < list.length; i++) { var x = list[i], file = takeFile(CPG.coFiles, x.name), row = { site_id: null, company_id: raw.id, name: String(x.name).slice(0, 80) };
+      if (file) row.file_path = await certFile(raw.id, file);
+      var ins = await sb.from('site_certificates').insert(row); if (ins.error) throw ins.error; }
+    if (list.length) await loadSites(slug);
+  }
+  /* page edits (B-02): the page's fields as before (C1), plus the Arabic name, logo and cover, products, certificates, sites */
+  PAGE_FIELDS.nameAr = 'name_ar';
+  var persistEditsC1 = persistEdits;
+  persistEdits = async function (edits) {
+    for (var slug0 in edits) { (function (slug, e) {
+      if (e.sites) { window.dxLiveSites = window.dxLiveSites || {}; window.dxLiveSites[slug] = JSON.parse(JSON.stringify(e.sites)); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; }   /* shown at once; the database's version follows */
+      serial(slug, async function () {
+        var raw = CO.raw[slug]; if (raw && raw.pending) { try { await raw.pending; } catch (x) {} if (CO.alias[slug] && !mineAt(slug)) slug = CO.alias[slug]; raw = CO.raw[slug]; }
+        if (!raw || !raw.id) return;
+        var l = live(slug), before = l ? (l.products || []).slice() : [], one = {}, base = {};
+        Object.keys(e).forEach(function (k) { if (['products', 'logo', 'cover', 'certsPending', 'sites', 'team', 'certs'].indexOf(k) < 0) base[k] = e[k]; });
+        one[slug] = base; await persistEditsC1(one);
+        var media = {};
+        if ('logo' in e && e.logo && /^data:image\//.test(e.logo)) media.logo_url = await upMedia(raw.id, 'logo', e.logo); else if ('logo' in e && !e.logo && raw.logo_url) media.logo_url = null;
+        if ('cover' in e && e.cover && /^data:image\//.test(e.cover)) media.cover_url = await upMedia(raw.id, 'cover', e.cover); else if ('cover' in e && !e.cover && raw.cover_url) media.cover_url = null;
+        if (Object.keys(media).length) { var r = await sb.from('companies').update(media).eq('id', raw.id).select(); if (r.error) throw r.error; if (r.data && r.data[0]) Object.assign(raw, r.data[0]); if (l) { var f = coFrom(raw); l.logo = f.logo; l.cover = f.cover; } }
+        if ('products' in e) await saveProducts(slug, raw, e.products, before);
+        if (e.certsPending && e.certsPending.length) await saveCoCerts(slug, raw, e.certsPending);
+        if (e.sites) { try { await saveSitesLive(slug, raw, e.sites); } finally { await loadSites(slug).catch(toastErr); } }
+        if (l) l.updatedAt = Date.now();
+      }).then(function () { rerenderCompanies(); });
+    })(slug0, edits[slug0] || {}); }
+  };
+  /* my own pages carry their products with ids (the editor changes those rows), whether or not the directory has loaded */
+  var loadMineC1 = loadMine;
+  loadMine = async function () {
+    await loadMineC1(); var ids = Object.keys(CO.roles).map(Number); if (!ids.length) return;
+    var r = await sb.from('company_products').select('*').in('company_id', ids).order('sort_order').order('id').limit(1000); if (r.error) throw r.error;
+    var by = {}; (r.data || []).forEach(function (p) { (by[p.company_id] = by[p.company_id] || []).push(prodRow(p)); });
+    ids.forEach(function (id) { var slug = CO.byId[id], raw = slug && CO.raw[slug]; if (!raw) return; raw.products = by[id] || []; var l = live(slug); if (l) l.products = raw.products.map(prodFrom); });
+    window.__dxStoreVer = (window.__dxStoreVer || 0) + 1;
+  };
+  /* when each section was last confirmed is the page's own date in the database (companies.updated_at), the same for every
+     browser — never a date kept in this browser: a section the team saves or confirms moves the page's date (stampFresh) */
+  var hookCPG = window.dxStoreHook;
+  window.dxStoreHook = function (k, v) {
+    if (ME_UUID && /^meta_/.test(k)) { var sl = k.slice(5), raw = CO.raw[CO.alias[sl] && !mineAt(sl) ? CO.alias[sl] : sl];
+      if (v === undefined) return raw && raw.id ? {} : undefined;
+      if (raw && raw.id) { stampFresh(CO.alias[sl] && !mineAt(sl) ? CO.alias[sl] : sl); return true; } }
+    return hookCPG ? hookCPG(k, v) : undefined;
+  };
+  onReset(function () { CPG.q = {}; CPG.tmp = {}; CPG.seen = {}; CPG.siteFiles = []; CPG.coFiles = []; CPG.coCerts = {}; CPG.coCertsAt = {}; CPG.prodAt = {}; });
+  /* Admin → Review → Site certificates: the document (signed link) and a rejection with the reason (review_certificate) */
+  var modLoadB = window.dxModeration.load, modDecideB = window.dxModeration.decide;
+  window.dxModeration.load = async function () {
+    var d = await modLoadB(), today = new Date().toISOString().slice(0, 10);
+    var r = await sb.from('site_certificates').select('id,name,expiry,file_path,st:company_sites!site_certificates_site_id_fkey(name),co:companies(name)').is('checked_at', null).or('expiry.is.null,expiry.gte.' + today).order('created_at').limit(100);
+    if (r.error) throw r.error;
+    d.certs = (r.data || []).map(function (c) { return { id: c.id, company: c.co && c.co.name, site: c.st ? c.st.name : 'Company-wide', name: c.name, expiry: c.expiry ? String(c.expiry).slice(0, 7) : '',
+      docs: c.file_path ? [{ path: c.file_path, bucket: 'documents', label: 'Certificate' }] : [] }; });
+    return d;
+  };
+  window.dxModeration.decide = async function (kind, id, value, note) {
+    if (kind !== 'certs') return modDecideB(kind, id, value, note);
+    var r = await sb.rpc('review_certificate', { p_id: +id, p_ok: value !== 'rejected', p_reason: note || null }); if (r.error) throw new Error(friendly(r.error));
+    refreshCompanies().catch(function () {}); return true;
+  };
+  /* Drugbox's decision on a certificate reaches the company's owner (0050 keeps the data; the sentence is written here) */
+  ICON.cert_checked = '📜'; ICON.cert_rejected = '📜';
+  var notifFromB = notifFrom;
+  notifFrom = function (n) {
+    var o = notifFromB(n), d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return o;
+    if (n.type === 'cert_checked') { o.text = esc2('Drugbox checked your ' + String(d.name || 'certificate') + (d.site ? ' (' + String(d.site) + ')' : '') + ' — it now shows as checked on your page.'); o.uid = SYS_UID; }
+    if (n.type === 'cert_rejected') { o.text = esc2('Drugbox could not accept your ' + String(d.name || 'certificate') + (d.site ? ' (' + String(d.site) + ')' : '') + ' — reason: ' + String(d.reason || '') + '. Add it again with a readable document.'); o.uid = SYS_UID; }
+    return o;
+  };
+  /* ===== /AREA business: company page ===== */
+
+  /* ===== AREA business: company team — invitations, join requests, roles, who receives what (B-04; 0051) =====
+     Team in the workspace is the company's company_members rows (and invitations to addresses without an account); what the
+     hub saves there is compared with them: a new person → company_invite(), a role → the row, "Show me / Hide me" → the
+     person's own row, × → the row (or the invitation). Who receives what follows the roles in the database (0051). */
+  var TEAM = { by: {}, at: {}, p: {} };
+  var ROLEUI = { owner: 'Admin', admin: 'Admin', management: 'Management', sales: 'Sales', quality: 'Quality', regulatory: 'Regulatory', hr: 'HR', member: 'Management' };
+  function roleDb(r) { return { 'Admin': 'admin', 'Management': 'management', 'Sales': 'sales', 'Quality': 'quality', 'Regulatory': 'regulatory', 'HR': 'hr' }[r] || null; }
+  function loadTeam(slug) {
+    var raw = CO.raw[slug], me = ME_UUID; if (!raw || !raw.id || !CO.roles[raw.id]) return Promise.resolve(null);
+    if (TEAM.p[slug]) return TEAM.p[slug];
+    var admin = CO.roles[raw.id] === 'owner' || CO.roles[raw.id] === 'admin';
+    return (TEAM.p[slug] = Promise.all([sb.from('company_members').select('user_id, role, accepted, show_public, pending, created_at').eq('company_id', raw.id).order('created_at').limit(500),
+                                        admin ? sb.from('company_invites').select('id, email, name, role').eq('company_id', raw.id).order('created_at').limit(100) : Promise.resolve({ data: [] })]).then(async function (q) {
+      if (q[0].error) throw q[0].error; if (me !== ME_UUID) return null;
+      var rows = q[0].data || [], ids = rows.map(function (m) { return m.user_id; }).filter(function (u) { return u !== ME_UUID; });
+      if (ids.length) { var pr = await sb.from('profiles').select(PCOLS).in('id', ids); (pr.data || []).forEach(putUser); }
+      var name = function (u) { if (u === ME_UUID) return window.ME.name; var x = (window.USERS || []).find(function (y) { return y.id === aid(u); }); return x ? x.name : 'Drugbox member'; };
+      var list = rows.map(function (m) { return { uid: aid(m.user_id), _uid: m.user_id, name: name(m.user_id), role: ROLEUI[m.role] || 'Management', _role: m.role, consent: !!(m.accepted && m.show_public), pending: m.pending || null }; });
+      (q[1].data || []).forEach(function (i) { list.push({ uid: null, _inv: i.id, name: txt(i.name) || i.email, email: i.email, role: ROLEUI[i.role] || 'Sales', consent: false, pending: 'invite' }); });
+      TEAM.by[slug] = list; TEAM.at[slug] = Date.now(); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; return list;
+    }).finally(function () { delete TEAM.p[slug]; }));
+  }
+  if (window.dxHubData && window.dxHubData.teamOf && !window.dxHubData.teamOf.__live) { var teamOfDemo = window.dxHubData.teamOf;
+    window.dxHubData.teamOf = function (co) { if (!ME_UUID || !co || !co._id) return teamOfDemo.apply(this, arguments);
+      var t = TEAM.by[co.slug]; if (t) return JSON.parse(JSON.stringify(t));
+      if (CO.roles[co._id]) loadTeam(co.slug).then(function (l) { if (l) rerenderCompanies(); }).catch(toastErr);
+      return [{ uid: window.ME.id, _uid: ME_UUID, name: window.ME.name, role: ROLEUI[CO.roles[co._id]] || 'Admin', consent: false, pending: null, _loading: true }]; };
+    window.dxHubData.teamOf.__live = true; }
+  async function saveTeamLive(slug, raw, team) {
+    var before = TEAM.by[slug] || [], seenU = {}, seenI = {}, changed = false, warn = null, left = false;
+    for (var i = 0; i < (team || []).length; i++) { var m = team[i];
+      if (m._uid) { seenU[m._uid] = 1; var o = before.find(function (x) { return x._uid === m._uid; }); if (!o) continue;
+        if (m.role !== o.role) { if (o._role === 'owner') warn = 'The page’s owner stays its owner';
+          else { var r = await sb.from('company_members').update({ role: roleDb(m.role) }).eq('company_id', raw.id).eq('user_id', m._uid).select('role'); if (r.error) throw r.error; if (!(r.data || []).length) throw new Error('Only the page’s owner or admins change roles'); changed = true; } }
+        if (m.consent !== o.consent && m._uid === ME_UUID) { var c = await sb.from('company_members').update({ show_public: !!m.consent }).eq('company_id', raw.id).eq('user_id', ME_UUID).select('show_public'); if (c.error) throw c.error; changed = true; } }
+      else if (m._inv) { seenI[m._inv] = 1; var oi = before.find(function (x) { return x._inv === m._inv; });
+        if (oi && m.role !== oi.role) { var re = await sb.rpc('company_invite', { p_company: raw.id, p_email: oi.email, p_name: oi.name, p_role: roleDb(m.role) }); if (re.error) throw re.error; changed = true; } }
+      else if (m.email) { var inv = await sb.rpc('company_invite', { p_company: raw.id, p_email: m.email, p_name: m.name, p_role: roleDb(m.role) || 'sales' }); if (inv.error) throw inv.error; changed = true; }
+    }
+    for (var j = 0; j < before.length; j++) { var b = before[j];
+      if (b._uid && !seenU[b._uid]) { var d = await sb.from('company_members').delete().eq('company_id', raw.id).eq('user_id', b._uid).select('user_id'); if (d.error) throw d.error; if (!(d.data || []).length) throw new Error('Only the page’s owner or admins can remove someone'); changed = true; if (b._uid === ME_UUID) left = true; }
+      if (b._inv && !seenI[b._inv]) { var di = await sb.from('company_invites').delete().eq('id', b._inv); if (di.error) throw di.error; changed = true; } }
+    if (warn) setTimeout(function () { window.toast(warn); }, 600);
+    if (changed) { CC.at[slug] = 0; await loadContacts(slug).catch(function () {}); if (left) { delete TEAM.by[slug]; await loadMine(); } else await loadTeam(slug); }
+  }
+  var persistEditsT = persistEdits;
+  persistEdits = async function (edits) {
+    var rest = {};
+    Object.keys(edits || {}).forEach(function (slug) { var e = edits[slug] || {}, raw = CO.raw[slug];
+      if (Array.isArray(e.team) && raw && raw.id) { serial(slug, function () { return saveTeamLive(slug, raw, e.team).catch(function (x) { toastErr(x); return loadTeam(slug); }); }).then(rerenderCompanies); }
+      var c = Object.assign({}, e); delete c.team; rest[slug] = c; });
+    return persistEditsT(rest);
+  };
+  window.dxTeam = {
+    join: async function (slug, role, note) { var raw = CO.raw[slug]; if (!raw || !raw.id) throw new Error('This company is not on Drugbox yet');
+      var r = await sb.rpc('company_join_request', { p_company: raw.id, p_role: roleDb(role) || 'management', p_note: note || null }); if (r.error) throw new Error(friendly(r.error)); return true; },
+    decide: async function (slug, m, ok) { var raw = CO.raw[slug]; if (!raw || !raw.id || !m || !m._uid) return false;
+      var r = await sb.rpc('company_join_decide', { p_company: raw.id, p_user: m._uid, p_ok: !!ok, p_role: roleDb(m.role) }); if (r.error) throw new Error(friendly(r.error));
+      CC.at[slug] = 0; await loadContacts(slug).catch(function () {}); await loadTeam(slug); return true; }
+  };
+  /* the workspace's Team is read when the workspace opens */
+  if (window.dxHub && window.dxHub.workspace && !window.dxHub.workspace.__team) { var wsT = window.dxHub.workspace;
+    window.dxHub.workspace = function (slug) { var r = wsT.apply(this, arguments); if (ME_UUID && CO.raw[slug] && !(TEAM.at[slug] && Date.now() - TEAM.at[slug] < 30000)) loadTeam(slug).then(function (l) { if (l) rerenderCompanies(); }).catch(toastErr); return r; };
+    window.dxHub.workspace.__team = true; }
+  /* invitations in the notifications: Accept / Decline (the approved connection-request buttons) */
+  ICON.company_invite = '🏢'; ICON.company_invite_answer = '🏢'; ICON.company_join_request = '🏢'; ICON.company_join_answer = '🏢';
+  var ROLEWORD = { admin: 'an admin', management: 'management', sales: 'sales', quality: 'quality', regulatory: 'regulatory', hr: 'HR', member: 'a team member' };
+  var notifFromT = notifFrom;
+  notifFrom = function (n) {
+    var o = notifFromT(n), d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return o;
+    var who = String(n.actor ? n.actor.name : 'Someone'), co = String(d.company || (n.company && n.company.name) || 'a company'), rl = ROLEWORD[d.role] || 'a team member';   /* one sentence per notice: the Arabic interface translates it whole */
+    if (n.type === 'company_invite') o.text = esc2(who + ' invited you to join ' + co + ' on Drugbox as ' + rl + '.') +
+      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn-p" style="padding:5px 14px;font-size:12px" data-cinv="' + (+n.company_id) + '" data-ok="1">Accept</button><button class="btn-ghost" style="padding:5px 14px;font-size:12px" data-cinv="' + (+n.company_id) + '" data-ok="0">Decline</button></div>';
+    if (n.type === 'company_invite_answer') o.text = esc2(who + (d.accepted ? ' accepted your invitation to ' : ' declined your invitation to ') + co + '.');
+    if (n.type === 'company_join_request') o.text = esc2(who + ' asked to join ' + co + ' as ' + rl + ' — answer in Workspace → Team.');
+    if (n.type === 'company_join_answer') o.text = esc2(d.accepted ? 'You are now on the team of ' + co + ' (' + rl + ').' : co + ' did not accept your request to join the team.');
+    return o;
+  };
+  document.addEventListener('click', function (e) {
+    var b = ME_UUID && e.target.closest && e.target.closest('[data-cinv]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation(); var yes = b.dataset.ok === '1'; b.disabled = true;
+    sb.rpc('company_invite_respond', { p_company: +b.dataset.cinv, p_accept: yes }).then(function (r) {
+      if (r.error) { b.disabled = false; return toastErr(r.error); }
+      window.toast(yes ? 'You joined the team — the company is in My companies' : 'Invitation declined');
+      return Promise.all([loadMine(), loadNotifs()]).then(function () { if (onPage('notifs')) window.renderNotifs(document.getElementById('content')); try { window.dxDir && window.dxDir.render && document.body.getAttribute('data-page') === 'companies' && window.dxDir.render(); } catch (x) {} });
+    }).catch(toastErr);
+  }, true);
+  function onPage(p) { return document.body.getAttribute('data-page') === p; }
+  onReset(function () { TEAM.by = {}; TEAM.at = {}; TEAM.p = {}; });
+  /* ===== /AREA business: company team ===== */
+
+  /* ===== AREA business: claims and the directory's search in "Add or claim" (B-01; 0052) =====
+     A claim carries the commercial registry document (documents/claims/<me>/…) and waits in Admin → Review → Claims; the
+     claimant sees "Claim pending" until Drugbox decides. "Add or claim" searches the whole directory in the database (English
+     or Arabic name), not only the companies already loaded. */
+  var CLM = { mine: {}, at: 0 };
+  async function loadMyClaims() {
+    var r = await sb.from('verification_requests').select('company_id, co:companies(slug)').eq('submitted_by', ME_UUID).eq('claim', true).eq('status', 'pending').limit(50);
+    if (r.error) throw r.error; CLM.mine = {}; (r.data || []).forEach(function (x) { var s = sslug(x.co && x.co.slug); if (s) CLM.mine[s] = 1; }); CLM.at = Date.now();
+  }
+  window.dxClaims = {
+    list: function () { return []; },
+    pending: function (slug) { return !!CLM.mine[slug]; },
+    send: async function (co, d) {
+      var raw = co && CO.raw[co.slug]; if (!raw || !raw.id) throw new Error('This company is not on Drugbox yet');
+      var path = await upDoc('documents', 'claims/' + ME_UUID + '/registry-' + rid() + '.' + extOf(d.file), d.file);
+      var r = await sb.rpc('claim_company', { p_company_id: raw.id, p_note: 'Role: ' + d.role + ' · Mobile: ' + d.phone + ' · Work email: ' + d.mail, p_registry_path: path });
+      if (r.error) throw new Error(friendly(r.error)); CLM.mine[co.slug] = 1; return true;
+    },
+    decide: async function (id, ok, note) {
+      var r = await sb.from('verification_requests').update({ status: ok ? 'approved' : 'rejected', note: ok ? null : (note || null) }).eq('id', +id).eq('claim', true).select('id');
+      if (r.error) throw new Error(friendly(r.error)); if (!(r.data || []).length) throw new Error('Only the Drugbox team can do this'); refreshCompanies().catch(function () {}); return true;
+    }
+  };
+  var modLoadCl = window.dxModeration.load, modDecideCl = window.dxModeration.decide;
+  window.dxModeration.load = async function () {
+    var d = await modLoadCl();
+    var q = await Promise.all([sb.from('verification_requests').select('*, co:companies(name,slug)').eq('status', 'pending').eq('claim', false).order('created_at').limit(100),
+      sb.from('verification_requests').select('*, co:companies(name,slug), by:profiles!verification_requests_submitted_by_fkey(name)').eq('status', 'pending').eq('claim', true).order('created_at').limit(100)]);
+    if (q[0].error) throw q[0].error; if (q[1].error) throw q[1].error;
+    var doc = function (path, label) { return path ? [{ path: path, bucket: 'documents', label: label }] : []; };
+    d.verifications = q[0].data.map(function (v) { return { id: v.id, company: v.co && v.co.name, registry: v.registry, at: String(v.created_at).slice(0, 10),
+      docs: doc(v.registry_path, 'Commercial registry').concat(doc(v.tax_card_path, 'Tax card'), doc(v.licence_path, 'Licence')) }; });
+    d.claims = q[1].data.map(function (v) { return { id: v.id, company: v.co && v.co.name, who: v.by && v.by.name, note: v.note || '', at: String(v.created_at).slice(0, 10), docs: doc(v.registry_path, 'Commercial registry') }; });
+    return d;
+  };
+  window.dxModeration.decide = async function (kind, id, value, note) {
+    if (kind === 'claims') return window.dxClaims.decide(id, value === 'approved', note);
+    return modDecideCl(kind, id, value, note);
+  };
+  /* "Add or claim": the database finds the company by its English or Arabic name; the window's list is drawn again */
+  var ACQ = null;
+  document.addEventListener('input', function (e) {
+    if (!ME_UUID || !e.target || e.target.id !== 'acQ' || e.isTrusted === false && e.detail === 'dx') return; clearTimeout(ACQ);
+    var inp = e.target; ACQ = setTimeout(function () { var k = dirKey(inp.value); if (!k) return;
+      (freshSeq(k) ? Promise.resolve() : loadDirPage(k, true)).then(function () { if (inp.isConnected) { var ev = new CustomEvent('input', { bubbles: true, detail: 'dx' }); inp.dispatchEvent(ev); } }).catch(toastErr); }, 300);
+  }, true);
+  var hydrateCl = hydrateMe;
+  hydrateMe = async function (uid) { var me = await hydrateCl(uid); loadMyClaims().catch(function (e) { console.error(e); }); return me; };
+  onReset(function () { CLM.mine = {}; CLM.at = 0; });
+  /* a page the database keeps as 'pending' while nothing was sent yet (a new page, or a request Drugbox turned down) is "Not verified
+     yet" with "Get verified" for its team — "Documents received" only while a request waits for Drugbox */
+  var VRQ = {};
+  var loadMineV = loadMine;
+  loadMine = async function () {
+    await loadMineV.apply(this, arguments);
+    var me = ME_UUID, ids = Object.keys(CO.roles).map(Number); if (!ids.length) return;
+    var r = await sb.from('verification_requests').select('company_id').in('company_id', ids).eq('claim', false).eq('status', 'pending').limit(200);
+    if (r.error || me !== ME_UUID) return;
+    ids.forEach(function (id) { VRQ[id] = false; }); (r.data || []).forEach(function (x) { VRQ[x.company_id] = true; });
+    var list = window.dxLiveCompanies || [];
+    ids.forEach(function (id) { var sl = CO.byId[id], c = sl && CO.raw[sl], i = c ? list.findIndex(function (x) { return x.slug === sl; }) : -1; if (i >= 0) list[i] = coFrom(c); });
+    window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies();
+  };
+  var coFromV = coFrom;
+  coFrom = function (c) { var o = coFromV(c); if (o.status === 'pending' && c && c.id && VRQ[c.id] === false && !SNAP['vr_' + c.slug]) o.status = 'unverified'; return o; };
+  onReset(function () { VRQ = {}; });
+  /* Directory health (Drugbox): the whole directory from the database (directory_health, 0052) — read when Companies opens for
+     the Drugbox team; until it arrives the dialog shows what this browser has loaded */
+  var DH = { v: null, at: 0 };
+  function loadHealth() { if (!isStaff() || Date.now() - DH.at < 30000) return; DH.at = Date.now();
+    sb.rpc('directory_health').then(function (r) { if (!r.error) DH.v = r.data; }); }
+  if (window.dxHubData && window.dxHubData.health && !window.dxHubData.health.__live) { var healthDemo = window.dxHubData.health;
+    window.dxHubData.health = function () { var h = healthDemo.apply(this, arguments), v = ME_UUID && DH.v; if (!v) return h;
+      return Object.assign({}, h, { total: v.total, claimed: v.claimed, verified: v.verified, active: v.active, dormant: v.dormant, openReports: v.open_reports, dealsMonth: v.deals_month,
+        responseRate: v.requests ? Math.round(v.answered / v.requests * 100) : null,
+        stale: (v.stale || []).map(function (x) { return { slug: sslug(x.slug), name: txt(x.name), updatedAt: Date.parse(x.updated_at), createdAt: Date.parse(x.updated_at), status: 'pending' }; }).filter(function (x) { return x.slug; }),
+        reported: (v.reported || []).map(function (x) { return { slug: sslug(x.slug), name: txt(x.name), n: x.n, sections: txt(x.sections) }; }).filter(function (x) { return x.slug; }) }); };
+    window.dxHubData.health.__live = true; }
+  var gotoDH = window.goto;
+  window.goto = function (page) { var r = gotoDH.apply(this, arguments); if (page === 'companies' && ME_UUID) loadHealth(); return r; };
+  document.addEventListener('click', function (e) { if (ME_UUID && e.target.closest && e.target.closest('#dxDir [data-hhealth]')) { DH.at = 0; loadHealth(); } }, true);
+  onReset(function () { DH.v = null; DH.at = 0; });
+  /* a report of wrong information decided by Drugbox reaches its reporter (0052) */
+  ICON.report_decided = '🛡️';
+  var notifFromR = notifFrom;
+  notifFrom = function (n) { var o = notifFromR(n), d = n.data && typeof n.data === 'object' ? n.data : null;
+    if (n.type === 'report_decided' && d) { o.uid = SYS_UID; o.text = esc2(d.outcome === 'dismissed' ? 'Drugbox checked your report on ' + String(d.company || 'a company') + ' — the page stays as it is.'
+      : 'Drugbox checked your report on ' + String(d.company || 'a company') + ' (' + String(d.section || '') + ') — it has been corrected.'); }
+    return o; };
+  /* ===== /AREA business: claims ===== */
+
+  /* ===== AREA business: compliance documents (B-11, B-18; 0059) =====
+     Workspace → Plan & verification → Add document writes company_documents, with the file in the private documents bucket under
+     companydocs/<company id>/…; the team sees the file, who added it and when (company_document_files), everyone else only the
+     passport line (type, number, status). Delete removes the row and the file. Drugbox checks documents in Admin → Review →
+     Compliance documents (document_review) and the person who added it is told. */
+  var PSP = { docs: {}, at: {}, busy: {} };
+  function pspFrom(d) { return { id: d.id, type: txt(d.type), product: txt(d.product), number: txt(d.number), expiry: d.expiry ? String(d.expiry).slice(0, 7) : '', status: d.status,
+    file: txt(d.file_name), path: d.file_path || null, by: txt(d.created_by_name), at: d.created_at ? Date.parse(d.created_at) : 0, note: txt(d.review_note) }; }
+  async function loadPassport(slug) {
+    var raw = CO.raw[slug], me = ME_UUID; if (!raw || !raw.id || !me) return;
+    var team = !!CO.roles[raw.id] || isStaff();
+    var r = team ? await sb.rpc('company_document_files', { p_company: raw.id })
+                 : await sb.from('company_documents').select('id,type,product,number,expiry,status,created_at').eq('company_id', raw.id).order('created_at', { ascending: false }).limit(100);
+    if (r.error) throw r.error; if (me !== ME_UUID) return;
+    PSP.docs[slug] = (r.data || []).map(pspFrom); PSP.at[slug] = Date.now();
+  }
+  function passportAgain(slug) { PSP.at[slug] = 0; return loadPassport(slug).then(function () { if (window.dxTiers && window.dxTiers.redraw) window.dxTiers.redraw(); }); }
+  window.dxPassport = {
+    docs: function (slug) {
+      if (ME_UUID && CO.raw[slug] && CO.raw[slug].id && !PSP.busy[slug] && Date.now() - (PSP.at[slug] || 0) > 60000) {
+        PSP.busy[slug] = 1; PSP.at[slug] = Date.now();
+        loadPassport(slug).then(function () { if (window.dxTiers && window.dxTiers.redraw) window.dxTiers.redraw(); }, function (e) { console.error(e); }).then(function () { PSP.busy[slug] = 0; });
+      }
+      return (PSP.docs[slug] || []).slice();
+    },
+    add: async function (co, d, file) {
+      try {
+        var raw = co && CO.raw[co.slug]; if (!raw || !raw.id) throw new Error('This company is not on Drugbox yet');
+        var path = file ? await upDoc('documents', 'companydocs/' + raw.id + '/' + rid() + '.' + extOf(file), file) : null;
+        var r = await sb.from('company_documents').insert({ company_id: raw.id, type: d.type, product: d.product || null, number: d.number, expiry: /^\d{4}-\d{2}$/.test(d.expiry || '') ? d.expiry + '-01' : null,
+          file_path: path, file_name: file ? String(file.name).slice(0, 160) : null, created_by: ME_UUID });
+        if (r.error) { if (path) sb.storage.from('documents').remove([path]).catch(function () {}); throw new Error(friendly(r.error)); }
+        await passportAgain(co.slug); return true;
+      } catch (e) { toastErr(e); return false; }
+    },
+    remove: async function (co, id) {
+      try {
+        var d = (PSP.docs[co.slug] || []).find(function (x) { return String(x.id) === String(id); });
+        var r = await sb.from('company_documents').delete().eq('id', +id).select('id'); if (r.error) throw new Error(friendly(r.error));
+        if (!(r.data || []).length) throw new Error('Only the company’s owners and admins, or the person who added it, can delete this document');
+        if (d && d.path) await sb.storage.from('documents').remove([d.path]);   /* the database removes it too (0059); this covers a storage that keeps it */
+        await passportAgain(co.slug); return true;
+      } catch (e) { toastErr(e); return false; }
+    },
+    open: async function (co, d) {
+      if (!d.path) return false; var r = await sb.storage.from('documents').createSignedUrl(d.path, 600);
+      if (r.error || !r.data) { toastErr(r.error || { message: 'Could not open the file' }); return false; }
+      window.open(r.data.signedUrl, '_blank', 'noopener'); return true;
+    },
+    decide: async function (id, ok, note) {
+      var r = await sb.rpc('document_review', { p_id: +id, p_ok: !!ok, p_reason: note || null }); if (r.error) throw new Error(friendly(r.error));
+      if (!r.data) throw new Error('This document was already decided'); PSP.at = {}; return true;
+    }
+  };
+  var modLoadPd = window.dxModeration.load, modDecidePd = window.dxModeration.decide;
+  window.dxModeration.load = async function () {
+    var d = await modLoadPd(), r = await sb.rpc('documents_to_review', { p_limit: 100 }); if (r.error) throw r.error;
+    d.documents = (r.data || []).map(function (x) { return { id: x.id, company: txt(x.company), type: txt(x.type), product: txt(x.product), number: txt(x.number), expiry: x.expiry ? String(x.expiry).slice(0, 7) : '',
+      who: txt(x.created_by_name), at: String(x.created_at).slice(0, 10), docs: x.file_path ? [{ path: x.file_path, bucket: 'documents', label: txt(x.file_name) || 'Document' }] : [] }; });
+    return d;
+  };
+  window.dxModeration.decide = async function (kind, id, value, note) {
+    if (kind === 'documents') return window.dxPassport.decide(id, value === 'verified', note);
+    return modDecidePd(kind, id, value, note);
+  };
+  ICON.document_reviewed = '📁';
+  var notifFromPd = notifFrom;
+  notifFrom = function (n) { var o = notifFromPd(n), d = n.data && typeof n.data === 'object' ? n.data : null;
+    if (n.type === 'document_reviewed' && d) { o.uid = SYS_UID; o.text = esc2(d.outcome === 'verified' ? 'Drugbox checked your ' + String(d.doc || 'document') + ' for ' + String(d.company || 'your company') + ' — it now shows as verified on your compliance passport.'
+      : 'Drugbox could not accept your ' + String(d.doc || 'document') + ' for ' + String(d.company || 'your company') + ' — reason: ' + String(d.reason || '') + '. Add it again with a readable file.'); }
+    return o; };
+  onReset(function () { PSP.docs = {}; PSP.at = {}; PSP.busy = {}; });
+  /* memberships (B-18) are documents of type 'Membership' (the organisation in product, the membership number): "Add a membership"
+     writes one, Drugbox confirms it in Admin → Review → Compliance documents, and only then does the badge show as confirmed */
+  if (window.dxDir3 && window.dxDir3.membersOf) {
+    var membersOfDemo = window.dxDir3.membersOf;
+    window.dxDir3.membersOf = function (co) {
+      if (!ME_UUID || !co || !CO.raw[co.slug] || !CO.raw[co.slug].id) return membersOfDemo.apply(this, arguments);
+      return window.dxPassport.docs(co.slug).filter(function (d) { return d.type === 'Membership' && d.status !== 'rejected'; }).map(function (d) {
+        return { name: d.product || 'Membership', short: String(d.product || '').split(' ').map(function (w) { return w[0]; }).join('').replace(/[^A-Z]/g, ''), ok: d.status === 'verified' }; });
+    };
+  }
+  var hookMem = window.dxStoreHook;
+  window.dxStoreHook = function (k, v) {
+    if (ME_UUID && k === 'company_edits' && v && typeof v === 'object') {
+      Object.keys(v).forEach(function (slug) { var e = v[slug], mp = e && e.memberPending; if (!Array.isArray(mp)) return;
+        var co = window.dxDir.bySlug(slug); delete e.memberPending;
+        mp.forEach(function (m) { if (!m || !m.name || !co) return;
+          window.dxPassport.add(co, { type: 'Membership', product: String(m.name).slice(0, 200), number: String(m.num || '').slice(0, 80), expiry: '' }, null).then(function (ok) { if (ok) rerenderCompanies(); }); }); });
+    }
+    return hookMem ? hookMem(k, v) : undefined;
+  };
+  /* ===== /AREA business: compliance documents ===== */
+
+  /* ===== AREA business: the team's activity log (B-19; 0059) =====
+     Workspace → Activity reads company_activity (the team only, newest first, the author's name from the database); what the
+     interface logs (page edits, deals answered, team changes) is written there as the signed-in member — never kept in this browser. */
+  var ACT = { list: {}, at: {}, busy: {} };
+  function actFrom(x) { return { at: Date.parse(x.created_at), who: txt(x.ap && x.ap.name) || 'Team', text: txt(x.text) }; }
+  async function loadActivity(slug) {
+    var raw = CO.raw[slug], me = ME_UUID; if (!raw || !raw.id) return;
+    var r = await sb.from('company_activity').select('text, created_at, ap:profiles!company_activity_actor_fkey(name)').eq('company_id', raw.id).order('created_at', { ascending: false }).limit(200);
+    if (r.error) throw r.error; if (me !== ME_UUID) return; ACT.list[slug] = (r.data || []).map(actFrom); ACT.at[slug] = Date.now();
+  }
+  var hookAct = window.dxStoreHook;
+  window.dxStoreHook = function (k, v) {
+    if (ME_UUID && /^activity_/.test(k)) {
+      var slug = k.slice(9), raw = CO.raw[slug], team = raw && raw.id && CO.roles[raw.id];
+      if (!team) return v === undefined ? [] : true;                                      /* not my team: nothing to read, nothing kept */
+      if (v === undefined) {
+        if (!ACT.busy[slug] && Date.now() - (ACT.at[slug] || 0) > 30000) { ACT.busy[slug] = 1; ACT.at[slug] = Date.now();
+          loadActivity(slug).then(function () { if (window.dxDir && window.dxDir.S && window.dxDir.S.ws === slug) rerenderCompanies(); }, function (e) { console.error(e); }).then(function () { ACT.busy[slug] = 0; }); }
+        return (ACT.list[slug] || []).slice();
+      }
+      var had = ACT.list[slug] || [], nv = Array.isArray(v) ? v : [], cut = had.length ? nv.indexOf(had[0]) : nv.length, add = nv.slice(0, cut < 0 ? 1 : cut);   /* the entries before the newest one known are new */
+      ACT.list[slug] = nv.slice(0, 200);
+      add.slice().reverse().forEach(function (x) { var t = String((x && x.text) || '').trim().slice(0, 300); if (!t) return;
+        Promise.resolve(sb.from('company_activity').insert({ company_id: raw.id, actor: ME_UUID, text: t })).then(function (r) { if (r.error) console.error(r.error); }); });
+      return true;
+    }
+    return hookAct ? hookAct(k, v) : undefined;
+  };
+  onReset(function () { ACT.list = {}; ACT.at = {}; ACT.busy = {}; });
+  /* ===== /AREA business: activity log ===== */
+
+  /* ===== AREA business: e-mail notifications switch (B-13; 0059) ===== */
+  var MP = { on: true, at: 0 };
+  window.dxMailPref = {
+    get: function () { if (ME_UUID && !MP.at) { MP.at = 1; Promise.resolve(sb.from('notification_prefs').select('email').eq('user_id', ME_UUID).maybeSingle()).then(function (r) {
+        if (r.error || !r.data) return; MP.on = r.data.email !== false; var b = document.getElementById('dxMailPref'); if (b) b.checked = MP.on; }); } return MP.on; },
+    set: async function (on) { var r = await sb.from('notification_prefs').upsert({ user_id: ME_UUID, email: !!on, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      if (r.error) { toastErr(r.error); return false; } MP.on = !!on; return true; }
+  };
+  onReset(function () { MP.on = true; MP.at = 0; });
+  /* ===== /AREA business: e-mail switch ===== */
+
+
+  /* ===== AREA business: payments (B-14…B-16; 0055) =====
+     My payments and the company's payment history come from my_payments(); an invoice is the server's (order_invoice); VIP's
+     included boosts are counted and used by the database (included_boosts_left / use_included_boost). The wizard's VIP payment
+     starts once the database has created the page. The browser never decides an amount, a status, a plan or a boost date. */
+  function payFrom(x) { return { id: x.id, order: x.order, product: txt(x.product), kind: x.kind, code: x.code, method: x.method, status: x.status, total: +x.total, net: +x.net, vat: +x.vat,
+    created_at: x.created_at, paid_at: x.paid_at, invoice_no: x.invoice_no, fawry_reference: x.fawry_reference, fawry_expires_at: x.fawry_expires_at, transfer: txt(x.transfer),
+    listing: txt(x.listing), company: txt(x.company), mine: x.mine !== false, listing_id: x.listing_id || null, company_id: x.company_id || null, slug: x.company_id ? CO.byId[x.company_id] || null : null }; }
+  Object.assign(window.dxPay, {
+    orders: async function (slug) { if (!ME_UUID) return []; var raw = slug && CO.raw[slug]; if (slug && (!raw || !raw.id)) return [];
+      var r = await sb.rpc('my_payments', { p_company: raw ? raw.id : null }); if (r.error) throw new Error(friendly(r.error)); return (r.data || []).map(payFrom); },
+    invoice: async function (id) { var r = await sb.rpc('order_invoice', { p_id: +id }); if (r.error) throw new Error(friendly(r.error)); return r.data; },
+    included: async function (slug) { var raw = slug && CO.raw[slug]; if (!ME_UUID || !raw || !raw.id) return 0; var r = await sb.rpc('included_boosts_left', { p_company: raw.id }); return r.error ? 0 : (r.data || 0); },
+    useIncluded: async function (lid, slug) { var raw = slug && CO.raw[slug]; if (!raw || !raw.id) throw new Error('Act as your VIP company first');
+      var r = await sb.rpc('use_included_boost', { p_listing: +lid, p_company: raw.id }); if (r.error) throw new Error(friendly(r.error)); MKT.at = 0; if (typeof ML !== 'undefined') ML.at = 0; return r.data || {}; },
+    cancel: async function (id) { var r = await sb.rpc('cancel_order', { p_id: +id }); if (r.error) throw new Error(friendly(r.error)); return r.data; },   /* the database refuses a paid or reviewed order */
+    instapayTo: function () { try { return JSON.parse(localStorage.getItem('dx_instapay_to') || 'null') || { address: '', name: 'Drugbox' }; } catch (e) { return { address: '', name: 'Drugbox' }; } }
+  });
+  var payStart = window.dxPay.start;
+  window.dxPay.start = async function (o) { var r = await payStart.apply(this, arguments);
+    if (r && r.instapay) { try { localStorage.setItem('dx_instapay_to', JSON.stringify(r.instapay)); } catch (e) {} }   /* "Send the transfer" from My payments shows the same address */
+    if (window.dxPayRefresh) setTimeout(window.dxPayRefresh, 300); return r; };
+  /* a company's VIP end date (the plan tab and My companies say when it renews) */
+  var coFromPay = coFrom;
+  coFrom = function (c) { var o = coFromPay(c); if (o.plan === 'vip' && c.vip_until) { o.vipUntil = Date.parse(c.vip_until); o.billing = o.vipUntil - Date.now() > 60 * 864e5 ? 'year' : 'month'; } return o; };
+  /* the create-company wizard with VIP: the page is created (Basic), then its payment starts (B-15) */
+  var persistCreatedPay = persistCreated;
+  persistCreated = async function (list) {
+    var pend = window.__dxVipPending && Date.now() - window.__dxVipPending.at < 60000 ? window.__dxVipPending : null, before = {};
+    if (pend) { window.__dxVipPending = null; Object.keys(CO.byId).forEach(function (id) { before[id] = 1; }); }
+    await persistCreatedPay(list);
+    if (!pend) return;
+    var nu = Object.keys(CO.byId).filter(function (id) { return !before[id] && CO.roles[id] === 'owner'; }).map(function (id) { return CO.byId[id]; })[0];
+    if (nu && window.dxCheckout) window.dxCheckout.startVip(nu, pend);
+  };
+  /* BOOSTED / FEATURED on a promoted listing for everyone, and its end date in My Listings */
+  var PROMO = { mine: {}, at: 0 };
+  async function loadMyPromo() { if (!ME_UUID) return; var r = await sb.from('products').select('id, boosted_until, featured_until').eq('user_id', ME_UUID).limit(200);
+    if (r.error) return; PROMO.mine = {}; (r.data || []).forEach(function (p) { PROMO.mine[p.id] = p; }); PROMO.at = Date.now(); }
+  function untilTxt(d) { return window.dxFmtDate ? window.dxFmtDate(d, false, 'en') : new Date(d).toLocaleDateString(); }
+  function decoratePromo() {
+    var mk = document.getElementById('mkx'); if (!mk || !ME_UUID) return;
+    mk.querySelectorAll('[data-live][data-promoted]').forEach(function (c) { if (c.querySelector('.dx-promo')) return; var lt = c.querySelector('.lt'); if (!lt) return;
+      var s = document.createElement('span'); s.className = 'lt dx-promo'; s.textContent = c.dataset.promoted === 'featured' ? '⭐ FEATURED' : '⚡ BOOSTED'; lt.insertAdjacentElement('afterend', s); });
+    mk.querySelectorAll('#tab-manage [data-ml^="p"]').forEach(function (row) { var p = PROMO.mine[+row.dataset.ml.slice(1)], sub = row.children[1] && row.children[1].children[1]; if (!p || !sub) return;
+      var now = Date.now(), b = p.boosted_until && Date.parse(p.boosted_until) > now ? p.boosted_until : null, f = p.featured_until && Date.parse(p.featured_until) > now ? p.featured_until : null, w = sub.querySelector('.dx-promo-until');
+      var tx = f ? ' · Featured until ' + untilTxt(f) : b ? ' · Boosted until ' + untilTxt(b) : '';
+      if (!tx) { if (w) w.remove(); return; } if (w && w.textContent === tx) return; if (!w) { w = document.createElement('span'); w.className = 'dx-promo-until'; sub.appendChild(w); } w.textContent = tx; });
+  }
+  var PRQ = 0;
+  new MutationObserver(function () { if (PRQ || document.body.getAttribute('data-page') !== 'market') return; PRQ = requestAnimationFrame(function () { PRQ = 0; decoratePromo(); }); })
+    .observe(document.getElementById('content') || document.body, { childList: true, subtree: true });
+  var renderMarketPay = window.renderMarket;
+  window.renderMarket = function () { var r = renderMarketPay.apply(this, arguments); if (ME_UUID && Date.now() - PROMO.at > 15000) loadMyPromo().then(decoratePromo); return r; };
+  document.addEventListener('click', function (e) { if (ME_UUID && e.target.closest && e.target.closest('#mkx .master-tab[data-tab=manage]')) loadMyPromo().then(decoratePromo); }, true);
+  onReset(function () { PROMO.mine = {}; PROMO.at = 0; });
+  /* the VIP windows (create wizard, Upgrade → Pay for VIP) show the price the server charges: payment_products vip_month / vip_year
+     and its VAT rate (directory.js computes the VAT as create_order does); the demo keeps its sample prices */
+  async function loadVipPrices() {
+    var P = window.dxDir && window.dxDir.plans; if (!P || !P.vip) return;
+    var r = await sb.from('payment_products').select('code,amount_egp,vat_rate').in('code', ['vip_month', 'vip_year']).eq('active', true); if (r.error) return;
+    (r.data || []).forEach(function (x) { if (x.code === 'vip_month') P.vip.price = Number(x.amount_egp); else P.vip.year = Number(x.amount_egp); P.vip.vat = Number(x.vat_rate); });
+  }
+  loadVipPrices().catch(function () {});
+  var hydrateVipP = hydrateMe;
+  hydrateMe = async function (uid) { var me = await hydrateVipP(uid); loadVipPrices().catch(function () {}); return me; };
+  /* Admin → Review → Verification requests: VIP companies first, marked "VIP · answer within 48 h" (the plan promises it) */
+  var modLoadVip = window.dxModeration.load;
+  window.dxModeration.load = async function () {
+    var d = await modLoadVip(), ids = (d.verifications || []).map(function (v) { return v.id; }); if (!ids.length) return d;
+    var r = await sb.from('verification_requests').select('id, co:companies(plan, vip_until)').in('id', ids); if (r.error) return d;
+    var vip = {}; (r.data || []).forEach(function (x) { var c = x.co; if (c && c.plan === 'vip' && (!c.vip_until || Date.parse(c.vip_until) > Date.now())) vip[x.id] = 1; });
+    d.verifications.forEach(function (v) { v.vip = !!vip[v.id]; }); return d;
+  };
+  /* ===== /AREA business: payments ===== */
 
   /* ═══════════════ E3 — training: courses and enrollments from the database (the approved course card is the template) ═══════════════ */
   var TRN = { tpl: null, courses: [], mine: {}, at: 0, loading: false };
@@ -3146,4 +3891,186 @@
 
 
 
+  /* ===== AREA business: marketplace (B-06…B-10) =====
+     The marketplace on the database (0054): the page asks market_search() for supply and requests (one call each, newest after
+     paid placement, "Show more" for the next page); a listing's company, price with its currency, claimed certificates
+     (plain tags) and Drugbox-checked ones (✓) show on its card; buyers' requests are products of type 'demand' on the
+     approved request cards, where "Quote →" sends a priced quote into the deals engine (listing_quote); "Contact →" writes
+     to the lister about that listing (listing_contact: one inquiry per buyer); Quick view counts a view; 🔖 saves the listing
+     for the member. My Listings is the market.js list, fed from my_listings(): Edit, Pause / Resume, Delete, Renew. */
+  var MK2 = { total: 0, page: 40, more: false, demandP: [], saved: {}, savedAt: 0, coL: {}, coAt: {}, loadingMore: false };
+  var CUR_SYM = { USD: 'US$', EGP: 'EGP', EUR: '€', SAR: 'SAR', AED: 'AED', GBP: '£', CNY: 'CNY', INR: 'INR' };
+  function priceText(p) { var pr = String(p.price || '').trim(); if (!pr) return 'On request';
+    if (/^[\d.,]+$/.test(pr) && CUR_SYM[p.currency]) pr = CUR_SYM[p.currency] + ' ' + pr;
+    return pr + (p.unit && pr.indexOf('/') < 0 ? '/' + p.unit : ''); }
+  function typeOfRow(r) { return r.type === 'demand' ? 'demand' : r.category === 'cmo' ? 'cmo' : r.category === 'registration' ? 'license' : r.category === 'equipment' ? 'equipment' : r.category === 'service' ? 'service' : 'supply'; }
+  async function sellersOf(rows) { var ids = []; rows.forEach(function (p) { if (p.user_id && ids.indexOf(p.user_id) < 0 && p.user_id !== ME_UUID) ids.push(p.user_id); });
+    var by = {}; if (ids.length) { var r = await sb.from('profiles').select(PCOLS).in('id', ids); (r.data || []).forEach(function (u) { by[u.id] = u; putUser(u); }); }
+    rows.forEach(function (p) { p.seller = p.user_id === ME_UUID ? { id: ME_UUID, name: window.ME.name, verified: window.ME.verified, country: 'EG' } : (by[p.user_id] || {}); }); return rows; }
+  async function searchPage(type, off) { var r = await sb.rpc('market_search', { p_type: type, p_limit: MK2.page, p_offset: off || 0 }); if (r.error) throw r.error; return r.data || { total: 0, rows: [] }; }
+  loadMarket = async function () {
+    var a = await Promise.all([searchPage('supply', 0), searchPage('demand', 0),
+      sb.from('enquiries').select('*, buyer:profiles!enquiries_user_id_fkey(' + PCOLS + ')').eq('status', 'active').eq('type', 'demand').order('created_at', { ascending: false }).limit(20)]);
+    if (a[2].error) throw a[2].error;
+    MKT.products = await sellersOf(a[0].rows || []); MK2.total = +a[0].total || 0; MK2.more = MKT.products.length < MK2.total;
+    MK2.demandP = await sellersOf(a[1].rows || []); MKT.demand = a[2].data || []; MKT.demand.forEach(function (e) { putUser(e.buyer); }); MKT.at = Date.now();
+    if (onPageNow('market')) setTimeout(paintMarketChrome, 0);
+  };
+  async function moreMarket() { if (MK2.loadingMore || !MK2.more) return; MK2.loadingMore = true;
+    try { var r = await searchPage('supply', MKT.products.length), add = await sellersOf(r.rows || []), seen = {}; MKT.products.forEach(function (p) { seen[p.id] = 1; });
+      MKT.products = MKT.products.concat(add.filter(function (p) { return !seen[p.id]; })); MK2.total = +r.total || MK2.total; MK2.more = MKT.products.length < MK2.total && add.length > 0;
+    } finally { MK2.loadingMore = false; } if (onPageNow('market')) paintMarket(); }
+  var supplyCardD1 = supplyCard;
+  supplyCard = function (p) {
+    var c = supplyCardD1(p), u = p.seller || {}, co = p.co || null, docs = p.docs || [], ver = p.certs_verified || [];
+    c.dataset.cat = typeOfRow(p) === 'supply' ? 'supply' : typeOfRow(p); c.dataset.dxcat = c.dataset.cat;
+    var tb = c.querySelector('.trust-bar'); if (tb) { tb.innerHTML = ((co && co.verified) || u.verified ? '<span class="ti g">✓ Verified seller</span>' : '') + ver.slice(0, 3).map(function (d) { return '<span class="ti b">✓ ' + esc2(d) + ' (checked)</span>'; }).join('') +
+      (p.has_coa ? '<span class="ti o" data-coa="' + (+p.id) + '" role="button" tabindex="0" style="cursor:pointer">📄 COA</span>' : ''); tb.style.display = tb.innerHTML ? '' : 'none'; }
+    c.querySelectorAll('.cert-p').forEach(function (x) { if (ver.indexOf(x.textContent) < 0) x.title = 'Claimed by the seller — not checked by Drugbox'; });
+    var pr = c.querySelector('.price'); if (pr) pr.textContent = priceText(p);
+    var mq = c.querySelector('.moq'); if (mq) { mq.textContent = ''; if (p.moq) mq.appendChild(document.createTextNode('MOQ: ' + p.moq + ' · ')); var w = document.createElement('span'); w.setAttribute('data-noi18n', ''); w.textContent = ((FLAG[u.country] || '') + ' ' + (co ? co.name : u.name || '')).trim(); mq.appendChild(w); }
+    return c;
+  };
+  function demandProductCard(p) {
+    var c = el(MKT.tplD), u = p.seller || {}, a = aid(p.user_id), usr = window.U(a);
+    c.dataset.live = 'p' + p.id; c.dataset.uid = a; c.dataset.dxcat = 'demand';
+    var t = c.querySelector('.dc-title'); if (t) { var badge = t.querySelector('.role-badge'); t.textContent = p.name; if (badge) t.insertBefore(badge, t.firstChild); }
+    var ur = c.querySelector('.db-badge'); if (ur) ur.style.display = p.urgent ? '' : 'none';
+    var dt = c.querySelector('.dc-det'); if (dt) dt.innerHTML = esc2([p.moq, p.price ? 'target ' + priceText(p) : '', String(p.description || '').slice(0, 60)].filter(Boolean).join(' · ')) + '<br>' + (FLAG[u.country] || '') + ' ' + esc2(p.co ? p.co.name : u.country || '') + ' · ' + ago(p.created_at);
+    var by = c.querySelector('.dc-buyer'); if (by) by.innerHTML = '<div class="av" style="background:' + usr.color + ';width:17px;height:17px;font-size:7px">' + esc2(usr.initials) + '</div> ' + esc2(u.name || 'Member') + (u.verified ? ' ✓' : '');
+    return c;
+  }
+  var paintMarketD1 = paintMarket;
+  paintMarket = function () {
+    paintMarketD1();
+    var mk = document.getElementById('mkx'); if (!mk) return;
+    var dgrid = mk.querySelector('[data-live-demand]');
+    if (dgrid && MKT.tplD) { var at = dgrid.querySelector('.db-sub'); MK2.demandP.slice().reverse().forEach(function (p) { var c = demandProductCard(p); if (at) at.insertAdjacentElement('afterend', c); else dgrid.insertBefore(c, dgrid.firstChild); });
+      var em = dgrid.querySelector(':scope > .dx-mk-empty'); if (em && MK2.demandP.length) em.remove(); }
+    var grid = mk.querySelector('.supply-grid'); if (grid) {
+      var mb = mk.querySelector('.dx-mk-more'); if (MK2.more) { if (!mb) { mb = document.createElement('div'); mb.className = 'dx-mk-more'; mb.style.cssText = 'text-align:center;margin:10px 0 4px'; grid.insertAdjacentElement('afterend', mb); }
+        mb.innerHTML = '<button type="button" class="dr-link" data-mkmore="1">Show more (' + MKT.products.length.toLocaleString('en') + ' of ' + MK2.total.toLocaleString('en') + ')</button>'; } else if (mb) mb.remove(); }
+    markSaved(); if (window.dxMarket && window.dxMarket.sync) window.dxMarket.sync();
+  };
+  /* 🔖 on a live card: saved for the member (saved_listings) */
+  async function loadSaved() { var r = await sb.from('saved_listings').select('listing_id, p:products(id, name, category, type, price, unit, currency)').order('created_at', { ascending: false }).limit(200); if (r.error) throw r.error;
+    MK2.saved = {}; MK2.savedRows = r.data || []; MK2.savedRows.forEach(function (x) { MK2.saved[x.listing_id] = 1; }); MK2.savedAt = Date.now(); }
+  function markSaved() { document.querySelectorAll('#mkx [data-live^="p"] .btn-save').forEach(function (b) { var id = +b.closest('[data-live]').dataset.live.slice(1), on = !!MK2.saved[id]; b.classList.toggle('dbk-saved', on); b.title = on ? 'Saved' : 'Save'; }); }
+  window.addEventListener('click', function (e) {     /* before the page's own handlers (they work on the browser's copy of the cards) */
+    if (!ME_UUID || !e.target.closest) return;
+    var more = e.target.closest('#mkx [data-mkmore]'); if (more) { e.preventDefault(); e.stopPropagation(); moreMarket().catch(toastErr); return; }
+    var sv = e.target.closest('#mkx [data-live^="p"] .btn-save'); if (sv) { e.preventDefault(); e.stopPropagation();
+      var id = +sv.closest('[data-live]').dataset.live.slice(1), on = !!MK2.saved[id]; MK2.saved[id] = !on; markSaved();
+      (on ? sb.from('saved_listings').delete().eq('listing_id', id).eq('user_id', ME_UUID) : sb.from('saved_listings').insert({ listing_id: id, user_id: ME_UUID })).then(function (r) {
+        if (r.error && !/duplicate/i.test(r.error.message || '')) { MK2.saved[id] = on; markSaved(); return toastErr(r.error); } MK2.savedAt = 0; window.toast(on ? 'Removed from saved' : 'Saved to your list'); });
+      return; }
+    var ct = e.target.closest('#mkx [data-live^="p"] .btn-contact, #mkx [data-live^="p"] .btn-contact-gold'); if (ct) { e.preventDefault(); e.stopPropagation(); contactDialog(ct.closest('[data-live]')); return; }
+    var cb = e.target.closest('#mkx [data-coa]'); if (cb) { e.preventDefault(); e.stopPropagation();
+      sb.from('products').select('coa_path').eq('id', +cb.dataset.coa).single().then(function (r) { var pth = r.data && r.data.coa_path; if (!pth) return window.toast('No certificate of analysis on this listing');
+        return sb.storage.from('documents').createSignedUrl(pth, 600).then(function (s) { if (s.error || !s.data) return window.toast('The certificate could not be opened'); window.open(s.data.signedUrl, '_blank', 'noopener'); }); }); return; }
+    var qv = e.target.closest('#mkx [data-live^="p"] .dx-qv'); if (qv) { var lid = +qv.closest('[data-live]').dataset.live.slice(1); sb.rpc('listing_view', { p_id: lid }).then(function () {}, function () {}); }
+  }, true);
+  function findListing(id) { return MKT.products.concat(MK2.demandP).find(function (p) { return p.id === id; }); }
+  function contactDialog(card) {
+    var id = +card.dataset.live.slice(1), p = findListing(id); if (!p) return;
+    if (p.user_id === ME_UUID) { window.toast('This is your own listing'); return; }
+    sb.rpc('listing_view', { p_id: id }).then(function () {}, function () {});
+    var who = (p.co && p.co.name) || (p.seller && p.seller.name) || 'the supplier';
+    window.DBK.modal({ title: 'Write to ' + who, body: '<div class="dbk-f"><label>About</label><input readonly data-noi18n value="' + esc2(p.name + ' · ' + priceText(p)) + '"></div>' +
+      '<div class="dbk-f"><label for="mkMsg">Message *</label><textarea id="mkMsg" data-req rows="5">' + esc2('I am interested in "' + p.name + '". Could you share the COA / specifications, your best price and the lead time?') + '</textarea></div>',
+      primary: { label: 'Send message', onClick: function (b, close) { if (!window.DBK.requireFields(b)) return false; var ok = b.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
+        sb.rpc('listing_contact', { p_id: id, p_body: b.querySelector('#mkMsg').value }).then(function (r) { if (ok) ok.disabled = false; if (r.error) return toastErr(r.error); close(); window.toast('Message sent to ' + who + ' — see Messages for the reply'); });
+        return false; } } });
+  }
+  /* the service behind market.js: my listings, drafts, quotes, saved, a company's listings */
+  function actingRaw() { var a = window.dxDir && window.dxDir.mine && window.dxDir.mine(), r = a && CO.raw[a.slug]; return r && r.id && CO.roles[r.id] ? { slug: a.slug, id: r.id } : null; }
+  function unitOfForm() { var f = document.querySelector('#mkx .form-section.active'), u = '';
+    if (f) f.querySelectorAll('.field').forEach(function (fd) { var l = fd.querySelector('.field-label'), s = fd.querySelector('select'); if (!u && s && l && /^Unit/i.test(window.dxOrigText ? window.dxOrigText(l) : l.textContent)) u = s.value; });
+    return String(u).replace(/^per\s+/i, '').trim() || null; }
+  async function insertListing(d, status) {
+    var a = actingRaw(), demand = d.type === 'demand';
+    var row = { user_id: ME_UUID, type: demand ? 'demand' : 'supply', category: CAT[d.type] || 'other', name: d.title, price: d.price || null, unit: demand ? null : unitOfForm(), moq: d.moq || null,
+      description: d.desc || [d.lead, d.where].filter(Boolean).join(' · ') || '', docs: d.certs || [], lead_time: d.lead || null, status: status, company_id: a ? a.id : null };
+    var r = await sb.from('products').insert(row).select('id').single(); if (r.error) throw new Error(friendly(r.error));
+    var fid = 'form-' + d.type, coa = window.dxMarket && window.dxMarket.coaOf && window.dxMarket.coaOf(fid);   /* the COA: private storage, linked to the listing */
+    if (coa) { try { var path = await upDoc('documents', 'listings/' + ME_UUID + '/coa-' + rid() + '.' + extOf(coa), coa);
+      var u = await sb.from('products').update({ coa_path: path }).eq('id', r.data.id); if (u.error) throw u.error; window.dxMarket.coaDone(fid); } catch (e) { toastErr(e); } }
+    MKT.at = 0; ML.at = 0; PG.statsAt = 0; return r.data.id;
+  }
+  function rowFromDb(x) { return { id: x.id, title: x.name, em: (window.dxMarket && window.dxMarket.EM[typeOfRow(x)]) || '📦', type: typeOfRow(x), status: x.status, boosted: !!x.boosted,
+    posted: Date.parse(x.created_at), renewed: x.renewed_at ? Date.parse(x.renewed_at) : null, exp: x.expires_at ? Date.parse(x.expires_at) : null, views: x.views || 0, inquiries: x.inquiries || 0, price: x.price || '', moq: x.moq || '' }; }
+  window.dxMarketSvc = {
+    live: true,
+    listings: async function () { var r = await sb.rpc('my_listings'); if (r.error) throw r.error; return (r.data || []).map(rowFromDb); },
+    publish: async function (d, status) { await insertListing(d, status); return true; },
+    update: async function (id, patch) { var u = {}; if ('title' in patch) u.name = patch.title; if ('price' in patch) u.price = patch.price || null; if ('moq' in patch) u.moq = patch.moq || null; if ('status' in patch) u.status = patch.status;
+      var r = await sb.from('products').update(u).eq('id', id).eq('user_id', ME_UUID).select('id'); if (r.error) throw new Error(friendly(r.error)); if (!(r.data || []).length) throw new Error('Only the listing’s owner can change it');
+      MKT.at = 0; PG.statsAt = 0; return true; },
+    remove: async function (id) { var r = await sb.from('products').delete().eq('id', id).eq('user_id', ME_UUID).select('id'); if (r.error) throw new Error(friendly(r.error)); MKT.at = 0; PG.statsAt = 0; return true; },
+    renew: async function (id) { var r = await sb.rpc('listing_renew', { p_id: id }); if (r.error) throw new Error(friendly(r.error)); MKT.at = 0; return true; },
+    quote: async function (c, q) {
+      var m = /^p(\d+)$/.exec(c.live || ''); if (!m) throw new Error('Message this buyer instead — their request was posted before quotes');
+      var a = actingRaw(); if (!a) throw new Error('Create or claim your company page first — quotes are sent by a company');
+      var r = await sb.rpc('listing_quote', { p_id: +m[1], p_from_slug: a.slug, p_price: q.price, p_qty: q.qty || null, p_lead: q.lead || null, p_note: q.note || null });
+      if (r.error) throw new Error(friendly(r.error)); loadDeals().catch(function () {}); return true; },
+    saved: async function () { if (Date.now() - MK2.savedAt > 5000) await loadSaved();
+      return (MK2.savedRows || []).filter(function (x) { return x.p; }).map(function (x) { return { title: txt(x.p.name), cat: typeOfRow(x.p), price: priceText(x.p) }; }); },
+    companyListings: function (co) {
+      if (!co || !co._id) return []; var k = co.slug;
+      if (!(MK2.coAt[k] && Date.now() - MK2.coAt[k] < 30000)) { MK2.coAt[k] = Date.now();
+        sb.from('products').select('id, name, type, category').eq('company_id', co._id).eq('active', true).order('created_at', { ascending: false }).limit(50).then(function (r) {
+          if (r.error) return; MK2.coL[k] = (r.data || []).map(function (p) { return { t: txt(p.name), type: typeOfRow(p).toUpperCase() }; }); window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; rerenderCompanies(); }); }
+      return MK2.coL[k] || [];
+    }
+  };
+  /* publishing from the listing wizard: the database keeps it (a request is a 'demand' listing), then the page reads it again */
+  var hookMK2 = window.dxLiveHook;
+  window.dxLiveHook = function (kind, d) {
+    if (kind === 'listing' && ME_UUID && d && d.type !== 'job') {
+      insertListing(d, 'active').then(function () { return loadMarket(); }).then(function () { if (onPageNow('market')) { paintMarket(); if (window.dxMarket) window.dxMarket.paint(); } }).catch(toastErr);
+      return;
+    }
+    return hookMK2 ? hookMK2(kind, d) : undefined;
+  };
+  /* My Listings: drawn by market.js from my_listings() */
+  paintMyListings = function () { if (window.dxMarket) window.dxMarket.paint(); };
+  loadMyListings = async function () { ML.at = Date.now(); };
+  /* company listings (surplus) are read again when the marketplace opens (a sale reduces the quantity — 0054) */
+  var renderMarketMK2 = window.renderMarket;
+  window.renderMarket = function () { var r = renderMarketMK2.apply(this, arguments); if (!ME_UUID) return r;
+    if (!MK2.listAt || Date.now() - MK2.listAt > 15000) { MK2.listAt = Date.now(); loadListings().then(function () { var b = document.querySelector('.hb-mk'); if (b) { b.dataset.sig = ''; var i = document.createElement('i'); b.appendChild(i); i.remove(); } }).catch(function () {}); }
+    if (Date.now() - MK2.savedAt > 20000) loadSaved().then(markSaved).catch(function () {});
+    return r; };
+  /* a listing that matches My Intents (0054) */
+  ICON.listing_match = '🎯';
+  var notifFromMK2 = notifFrom;
+  notifFrom = function (n) { var o = notifFromMK2(n), d = n.data && typeof n.data === 'object' ? n.data : null;
+    if (n.type === 'listing_match' && d) { o.text = esc2((d.kind === 'demand' ? 'A buyer is looking for what you sell: ' : 'New offer matching what you need: ') + String(d.name || '') + ' — open the Marketplace'); o.mk = d.listing; }
+    return o; };
+  document.addEventListener('click', function (e) { var it = ME_UUID && e.target.closest && e.target.closest('.notif-item'); if (!it) return;
+    var n = (window.NOTIFS || []).find(function (x) { return String(x.id) === String(it.dataset.nid); }); if (n && n.mk) setTimeout(function () { window.goto('market'); }, 0); });
+  onReset(function () { MK2.demandP = []; MK2.saved = {}; MK2.savedAt = 0; MK2.coL = {}; MK2.coAt = {}; MK2.total = 0; MK2.more = false; MK2.listAt = 0; });
+  /* the top-bar search also finds marketplace listings (market_search): the approved "📦 Products" section, with real rows */
+  var doSearchMK2 = window.doSearch;
+  if (typeof doSearchMK2 === 'function') window.doSearch = function (q) {
+    var r = doSearchMK2.apply(this, arguments); if (!ME_UUID || !q || !String(q).trim()) return r;
+    var qq = String(q).trim(), me = ME_UUID;
+    sb.rpc('market_search', { p_q: qq, p_limit: 20 }).then(function (res) {
+      if (res.error || me !== ME_UUID) return; var rows = (res.data && res.data.rows) || [];
+      var wrap = document.querySelector('#content .search-wrap'); if (!wrap || !rows.length) return;
+      wrap.querySelectorAll('.dx-mk-search').forEach(function (x) { x.remove(); });
+      [].forEach.call(wrap.querySelectorAll('.search-section'), function (s) { var t = s.querySelector('.search-section-title'); if (t && /Products/.test(window.dxOrigText ? window.dxOrigText(t) : t.textContent)) s.remove(); });
+      var none = [].find.call(wrap.children, function (x) { return /No results for/.test(x.textContent); }); if (none) none.remove();
+      return sellersOf(rows).then(function () {
+        var sec = document.createElement('div'); sec.className = 'search-section dx-mk-search';
+        sec.innerHTML = '<div class="search-section-title">📦 Products (' + rows.length + ')</div>' + rows.map(function (p, i) { return '<div class="search-user" data-mkr="' + i + '"><div style="font-size:26px;width:42px;text-align:center">' + esc2(p.emoji || '📦') + '</div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--cx)" data-noi18n></div><div style="font-size:12px;color:#65676b" data-noi18n></div></div><button class="btn-p" style="font-size:12px;padding:5px 14px;flex:none">View</button></div>'; }).join('');
+        rows.forEach(function (p, i) { var row = sec.querySelector('[data-mkr="' + i + '"]'), d = row.querySelectorAll('[data-noi18n]'); d[0].textContent = p.name; d[1].textContent = [(p.co && p.co.name) || (p.seller && p.seller.name) || '', priceText(p)].filter(Boolean).join(' · '); });
+        sec.addEventListener('click', function (e) { var row = e.target.closest('[data-mkr]'); if (!row) return; var p = rows[+row.dataset.mkr]; window.goto('market');
+          var si = document.getElementById('searchIn'); if (si) { si.value = p.name; if (window.__mkxFilter) window.__mkxFilter(p.name); if (window.dxMarket && window.dxMarket.sync) window.dxMarket.sync(); } });
+        wrap.appendChild(sec);
+      });
+    }).catch(function () {});
+    return r;
+  };
+  /* ===== /AREA business: marketplace ===== */
 })();

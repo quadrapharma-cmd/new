@@ -781,6 +781,95 @@
     'Active Listings': 'الإعلانات النشطة', 'Total Views': 'إجمالي المشاهدات', 'Inquiries': 'الاستفسارات', 'Renew Now': 'جدّد الآن', 'Expiring soon': 'ينتهي قريبًا', 'Paused': 'متوقف مؤقتًا', 'Resume': 'استأنف',
     'views': 'مشاهدات', 'inquiries': 'استفسارات', 'not verified': 'غير موثّقة', 'License': 'ترخيص', 'Service': 'خدمة'
   });
+  /* ===== AREA business: company page, certificates, team (B-02, B-03, B-04) ===== */
+  Object.assign(D, {
+    'E-mail me about requests, deals, payments and my company': 'راسلني بالبريد بخصوص الطلبات والصفقات والمدفوعات وشركتي', 'E-mails on — we will write when something needs you': 'تم تشغيل البريد — سنراسلك عندما يحتاجك أمر ما', 'E-mails off — notifications stay here': 'تم إيقاف البريد — تبقى الإشعارات هنا',
+    'no free slot soon': 'لا مواعيد متاحة قريبًا', 'Claim this page': 'طالب بهذه الصفحة', 'selected': 'مختارة', 'Goes to': 'يذهب إلى', 'Free from': 'متاح من', 'business development': 'تطوير الأعمال', 'sales': 'المبيعات',
+    'Not paid by then, it simply expires — nothing is charged': 'إن لم يُدفع حتى ذلك الحين ينتهي ببساطة — دون أي خصم',
+    'No active listing to promote — publish or renew one first': 'لا يوجد إعلان نشط للترويج — انشر إعلانًا أو جدّده أولًا',
+    'Back': 'رجوع', 'tablets': 'أقراص', 'sachets': 'أكياس', 'tubes': 'أنابيب', 'vials': 'فيالات', 'bottles': 'زجاجات',
+    'Add a membership': 'إضافة عضوية', 'Organisation *': 'الجهة *', 'Chamber of Pharmaceutical Industries': 'غرفة صناعة الدواء', 'Chamber of Cosmetics Industries': 'غرفة صناعة مستحضرات التجميل',
+    'Export Council for Medical Industries': 'المجلس التصديري للصناعات الطبية', 'Egyptian Pharmaceutical Trading Association': 'الجمعية المصرية لتجارة الأدوية',
+    'Drugbox checks the membership with the organisation before the badge shows as confirmed.': 'يتحقق Drugbox من العضوية مع الجهة قبل أن تظهر الشارة مؤكدة.', 'Being checked by Drugbox': 'قيد المراجعة من Drugbox', 'Membership number *': 'رقم العضوية *',
+    'File (PDF or image, optional)': 'الملف (PDF أو صورة، اختياري)', 'Site master file': 'ملف الموقع الرئيسي (SMF)', 'Manufacturing licence': 'ترخيص التصنيع', 'Membership': 'عضوية', 'Memberships': 'العضويات',
+    'Shown as self-declared until Drugbox checks the document. The file is seen only by your team and Drugbox’s reviewers.': 'يظهر كمُصرَّح به حتى يراجع Drugbox المستند. لا يرى الملف إلا فريقك ومراجعو Drugbox.',
+    'Document added — Drugbox will check it': 'تمت إضافة المستند — سيراجعه Drugbox', 'Delete this document?': 'هل تحذف هذا المستند؟', 'Document deleted': 'تم حذف المستند', 'Not accepted': 'غير مقبول',
+    'The file is larger than 10 MB': 'الملف أكبر من 10 ميجابايت', 'In this demo the file stays on the computer it was added from': 'في هذا العرض يبقى الملف على الجهاز الذي أُضيف منه',
+    'Compliance documents': 'مستندات الامتثال', 'Mark verified': 'وثّقه', 'Reject this document?': 'هل ترفض هذا المستند؟', 'The document file is not readable': 'ملف المستند غير مقروء',
+    'It shows as not accepted on the company’s passport and the person who added it is told why.': 'سيظهر كغير مقبول في جواز امتثال الشركة ويُبلَّغ من أضافه بالسبب.',
+    'This document was already decided': 'تم البت في هذا المستند بالفعل', 'Only the company’s owners and admins, or the person who added it, can delete this document': 'لا يحذف هذا المستند إلا مالكو الشركة ومديروها أو من أضافه',
+    'not yet checked': 'لم تُراجع بعد', 'not yet checked by Drugbox': 'لم يراجعها Drugbox بعد', 'Public industry list': 'قائمة صناعية عامة', 'Company-wide': 'على مستوى الشركة',
+    'Asked to join the team': 'طلب الانضمام للفريق', 'Invited — waiting for them to accept': 'تمت دعوته — بانتظار قبوله', 'Your role *': 'دورك *', 'Note for the admin': 'ملاحظة للمدير',
+    'e.g. I work in the Cairo sales office': 'مثلًا: أعمل في مكتب مبيعات القاهرة', 'Request declined': 'تم رفض الطلب', 'Invitation declined': 'تم رفض الدعوة',
+    'You joined the team — the company is in My companies': 'انضممت إلى الفريق — الشركة الآن في شركاتي', 'The page’s owner stays its owner': 'مالك الصفحة يبقى مالكها',
+    'Write the reason for the company': 'اكتب السبب للشركة', 'The certificate document is not readable': 'مستند الشهادة غير مقروء', 'Site added': 'تمت إضافة الموقع',
+    'Certificate added': 'تمت إضافة الشهادة', 'Capabilities saved': 'تم حفظ القدرات', 'Invitation sent': 'تم إرسال الدعوة', 'Company page published': 'تم نشر صفحة الشركة',
+    'Page saved': 'تم حفظ الصفحة', 'Arabic name saved': 'تم حفظ الاسم العربي', 'Thanks — marked as up to date': 'شكرًا — تم تعليمها كمحدّثة', 'Could not send the request': 'تعذّر إرسال الطلب',
+    'Could not answer the request': 'تعذّر الرد على الطلب', 'This company is not on Drugbox yet': 'هذه الشركة ليست على Drugbox بعد',
+    'Reject this certificate?': 'هل ترفض هذه الشهادة؟', 'Reject this verification request?': 'هل ترفض طلب التوثيق هذا؟', 'It is removed from the page and the company is told why.': 'ستُحذف من الصفحة وتُبلَّغ الشركة بالسبب.',
+    'The company is told why and can send new documents.': 'ستُبلَّغ الشركة بالسبب ويمكنها إرسال مستندات جديدة.', 'Reason for the company (they will see it) *': 'السبب للشركة (ستراه) *', 'The registry document is not readable': 'مستند السجل التجاري غير مقروء',
+    'Open reports': 'البلاغات المفتوحة', 'Change': 'غيّر', 'Leave': 'غادر', 'Enter your new quantity': 'أدخل الكمية الجديدة', 'Closed — target not reached': 'أُغلقت — لم يكتمل الهدف',
+    'Quantity changed': 'تغيّرت الكمية', 'Left the group': 'غادر المجموعة', 'The organiser stays in its group — withdraw the group instead': 'يبقى المنظِّم في مجموعته — اسحب المجموعة بدلًا من ذلك', 'Enter a quantity (0 to leave)': 'أدخل كمية (0 للمغادرة)', 'Request a proposal': 'اطلب عرضًا', 'Documents': 'المستندات', 'No documents yet.': 'لا توجد مستندات بعد.', 'Attach a document': 'أرفق مستندًا', 'Download': 'تنزيل', 'Document type': 'نوع المستند',
+    'Invoice': 'فاتورة', 'Specification': 'المواصفات', 'Data room': 'غرفة البيانات', 'Deliverable': 'المُخرَج', 'Questionnaire evidence': 'مستند الاستبيان', 'Document attached': 'تم إرفاق مستند',
+    'Data room file (optional)': 'ملف غرفة البيانات (اختياري)', 'Deliverable (file)': 'المُخرَج (ملف)', 'Delivery note': 'ملاحظة التسليم', 'e.g. Final report and EDA submission receipt': 'مثلًا: التقرير النهائي وإيصال التقديم لهيئة الدواء',
+    'Supporting document (SOP, certificate…)': 'مستند داعم (إجراء تشغيل قياسي، شهادة…)', 'Files up to 20 MB': 'الملفات حتى 20 ميجابايت', 'Could not attach the file': 'تعذّر إرفاق الملف',
+    'This file was attached in another visit — documents open from the live app': 'أُرفق هذا الملف في زيارة سابقة — تُفتح المستندات من التطبيق الفعلي', 'Reviews': 'التقييمات', 'Keep review': 'أبقِ التقييم', 'Remove review': 'احذف التقييم',
+    'Remove this review?': 'هل تحذف هذا التقييم؟', 'It disappears from the company page and from its rating. Both sides are told.': 'سيختفي من صفحة الشركة ومن تقييمها، ويُبلَّغ الطرفان.',
+    'This request is still being saved — try again in a moment': 'ما زال الطلب قيد الحفظ — حاول بعد لحظة', 'Role *': 'الدور *', 'an admin': 'مدير', 'Claims': 'المطالبات', 'Claim pending': 'المطالبة قيد المراجعة', 'Claim pending.': 'المطالبة قيد المراجعة.',
+    'Drugbox is checking your proof and tells you when the page is yours.': 'يراجع Drugbox إثباتك ويُبلغك عندما تصبح الصفحة لك.', 'Commercial registry document *': 'مستند السجل التجاري *',
+    'Seen only by Drugbox’s reviewers.': 'لا يراه إلا مراجعو Drugbox.', 'Send claim': 'أرسل المطالبة', 'Attach the commercial registry document': 'أرفق مستند السجل التجاري',
+    'Claim sent — Drugbox checks it and tells you when the page is yours': 'تم إرسال المطالبة — يراجعها Drugbox ويُبلغك عندما تصبح الصفحة لك', 'Could not send the claim': 'تعذّر إرسال المطالبة',
+    'Reject this claim?': 'هل ترفض هذه المطالبة؟', 'The page stays unclaimed and the claimant is told why.': 'تبقى الصفحة بلا مالك ويُبلَّغ صاحب المطالبة بالسبب.', 'management': 'الإدارة', 'sales': 'المبيعات', 'quality': 'الجودة', 'regulatory': 'التسجيل', 'a team member': 'عضو في الفريق'
+  });
+  PATTERNS.unshift(
+    [/^checked (\d{4}-\d{2}-\d{2})$/, function (m) { return 'تمت المراجعة ' + m[1]; }],
+    [/^checked by Drugbox (\d{4}-\d{2}-\d{2})$/, function (m) { return 'راجعها Drugbox في ' + m[1]; }],
+    [/^Drugbox checked your report on (.+) — the page stays as it is\.$/, function (m) { return 'راجع Drugbox بلاغك عن ' + m[1] + ' — تبقى الصفحة كما هي.'; }],
+    [/^Drugbox checked your report on (.+) \((.+)\) — it has been corrected\.$/, function (m) { return 'راجع Drugbox بلاغك عن ' + m[1] + ' (' + (D[m[2]] || m[2]) + ') — تم التصحيح.'; }],
+    [/^(\d+) open reports?( · (.+))?$/, function (m) { return m[1] + ' ' + (m[1] === '1' ? 'بلاغ مفتوح' : 'بلاغات مفتوحة') + (m[3] ? ' · ' + m[3] : ''); }],
+    [/^Closed on (\S+) below its target — no orders were made$/, function (m) { return 'أُغلقت في ' + m[1] + ' دون الهدف — لم تُنشأ طلبات'; }],
+    [/^You joined · ([\d,]+) (.+)$/, function (m) { return 'انضممت · ' + m[1] + ' ' + m[2]; }],
+    [/^(.+) left the group$/, function (m) { return 'غادرت ' + m[1] + ' المجموعة'; }],
+    [/^(.+) now takes ([\d,]+)$/, function (m) { return 'حصة ' + m[1] + ' الآن ' + m[2]; }],
+    [/^([\d,]+) followers?$/, function (m) { return m[1] + ' ' + (m[1] === '1' ? 'متابع' : plural(m[1], ['متابع', 'متابعين'])); }],
+    [/^(.+) posted (surplus stock|a licensing dossier|a request|a new listing): (.*)\.$/, function (m) { return 'نشرت ' + m[1] + ' ' + { 'surplus stock': 'مخزونًا فائضًا', 'a licensing dossier': 'ملف تسجيل للترخيص', 'a request': 'طلبًا', 'a new listing': 'إعلانًا جديدًا' }[m[2]] + ': ' + m[3] + '.'; }],
+    [/^(.+) attached$/, function (m) { return 'تم إرفاق ' + m[1]; }],
+    [/^(PO|CoA|Invoice|Specification|NDA|Data room|Deliverable|Questionnaire evidence|Other): (.+)$/, function (m) { return (D[m[1]] || m[1]) + ': ' + m[2]; }],
+    [/^(.+) replied to your review of (.+)\.$/, function (m) { return 'ردّت ' + m[1] + ' على تقييمك لـ ' + m[2] + '.'; }],
+    [/^Drugbox removed a review of (.+) after checking it\.$/, function (m) { return 'حذف Drugbox تقييمًا لـ ' + m[1] + ' بعد مراجعته.'; }],
+    [/^Drugbox checked a review of (.+) — it stays up\.$/, function (m) { return 'راجع Drugbox تقييمًا لـ ' + m[1] + ' — سيبقى منشورًا.'; }],
+    [/^Claimed by (.+)$/, function (m) { return 'طالب بها ' + m[1]; }],
+    [/^Your claim for (.+) is with Drugbox — you will be told when the page is yours$/, function (m) { return 'مطالبتك بـ ' + m[1] + ' لدى Drugbox — ستُبلَّغ عندما تصبح الصفحة لك'; }],
+    [/^Ask to join (.+)$/, function (m) { return 'اطلب الانضمام إلى ' + m[1]; }],
+    [/^Request sent to the admin of (.+)$/, function (m) { return 'تم إرسال طلبك إلى مدير ' + m[1]; }],
+    [/^(.+) is on the team$/, function (m) { return 'انضم ' + m[1] + ' إلى الفريق'; }],
+    [/^(.+) invited you to join (.+) on Drugbox as (.+)\.$/, function (m) { return m[1] + ' دعاك للانضمام إلى ' + m[2] + ' على Drugbox (' + (D[m[3]] || m[3]) + ').'; }],
+    [/^(.+) (accepted|declined) your invitation to (.+)\.$/, function (m) { return m[1] + (m[2] === 'accepted' ? ' قبل دعوتك للانضمام إلى ' : ' رفض دعوتك للانضمام إلى ') + m[3] + '.'; }],
+    [/^(.+) asked to join (.+) as (.+) — answer in Workspace → Team\.$/, function (m) { return m[1] + ' طلب الانضمام إلى ' + m[2] + ' (' + (D[m[3]] || m[3]) + ') — رُد من مساحة العمل ← الفريق.'; }],
+    [/^You are now on the team of (.+) \((.+)\)\.$/, function (m) { return 'أنت الآن في فريق ' + m[1] + ' (' + (D[m[2]] || m[2]) + ').'; }],
+    [/^(.+) did not accept your request to join the team\.$/, function (m) { return 'لم تقبل ' + m[1] + ' طلبك للانضمام إلى الفريق.'; }],
+    [/^Drugbox checked your (.+?)( \((.+)\))? — it now shows as checked on your page\.$/, function (m) { return 'راجع Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — تظهر الآن كمراجَعة على صفحتك.'; }],
+    [/^Drugbox could not accept your (.+?)( \((.+)\))? — reason: (.+)\. Add it again with a readable document\.$/, function (m) { return 'لم يقبل Drugbox شهادة ' + m[1] + (m[3] ? ' (' + m[3] + ')' : '') + ' — السبب: ' + m[4] + '. أضفها مرة أخرى بمستند مقروء.'; }],
+    [/^free from (.+)$/, function (m) { return 'متاح من ' + tr(m[1]); }],
+    [/^Request quotes from (\d+)$/, function (m) { return 'اطلب عروض أسعار من ' + m[1]; }],
+    [/^Request a service from (.+)$/, function (m) { return 'اطلب خدمة من ' + m[1]; }],
+    [/^\((.+)\) at (.+)$/, function (m) { return '(' + (D[m[1]] || m[1]) + ') في ' + m[2]; }],
+    [/^([A-Z0-9]\S*(?: [A-Z0-9]\S*){0,5}) team$/, function (m) { return 'فريق ' + m[1].trim(); }],   /* "<Company> team" (a name of capitalised words), never a sentence */
+    [/^to (\d{4}-\d{2}(?:-\d{2})?)$/, function (m) { return 'حتى ' + m[1]; }],
+    [/^expired (\d{4}-\d{2}(?:-\d{2})?)$/, function (m) { return 'انتهت ' + m[1]; }],
+    [/^(from|to) ([^·]+)$/, function (m) { return (m[1] === 'from' ? 'من ' : 'إلى ') + m[2]; }],
+    [/^(tablets|units|kg|MT|cartons|batches|sachets|tubes|vials|bottles) \/ (year|month)$/, function (m) { return (D[m[1]] || m[1]) + ' / ' + (m[2] === 'year' ? 'سنويًا' : 'شهريًا'); }],
+    [/^MOQ ([\d,.]+) (.+)$/, function (m) { return 'الحد الأدنى للطلب ' + m[1] + ' ' + (D[m[2]] || m[2]); }],
+    [/^Your company appears in the Sponsored row of the directory(?: · VIP (monthly|yearly) · renews (.+?))?\. 3 Marketplace boosts a month are included\.$/, function (m) {
+      return 'تظهر شركتك في صف الإعلانات المموّلة في الدليل' + (m[1] ? ' · VIP ' + (m[1] === 'yearly' ? 'سنوي' : 'شهري') + ' · يتجدد ' + m[2] : '') + '. تشمل الخطة 3 تمييزات شهريًا في السوق.'; }],
+    [/^(.+) · being checked by Drugbox$/, function (m) { return m[1] + ' · قيد المراجعة من Drugbox'; }],
+    [/^Sent — Drugbox checks it with the (.+)$/, function (m) { return 'تم الإرسال — يتحقق Drugbox منها مع ' + (D[m[1]] || m[1]); }],
+    [/^(.+) is removed from your compliance passport( and its file is deleted)?\.$/, function (m) { return 'سيُحذف ' + m[1] + ' من جواز امتثال شركتك' + (m[2] ? ' ويُحذف ملفه' : '') + '.'; }],
+    [/^(?:(.+) · )?added(?: by (.+?))?(?: · (\d{4}-\d{2}-\d{2}))?(?: · (.+))?$/, function (m) { return (m[1] ? m[1] + ' · ' : '') + 'أُضيف' + (m[2] ? ' بواسطة ' + m[2] : '') + (m[3] ? ' · ' + m[3] : '') + (m[4] ? ' · ' + m[4] : ''); }],
+    [/^Drugbox checked your (.+) for (.+) — it now shows as verified on your compliance passport\.$/, function (m) { return 'راجع Drugbox مستند ' + m[1] + ' لـ ' + m[2] + ' — يظهر الآن موثّقًا في جواز الامتثال.'; }],
+    [/^Drugbox could not accept your (.+) for (.+) — reason: (.+)\. Add it again with a readable file\.$/, function (m) { return 'لم يقبل Drugbox مستند ' + m[1] + ' لـ ' + m[2] + ' — السبب: ' + m[3] + '. أضفه مرة أخرى بملف مقروء.'; }],
+  );
+  /* ===== /AREA business ===== */
   PATTERNS.unshift(
     [/^Some information on this page was last updated more than 6 months ago \((.+)\)\.$/, function (m) { return 'آخر تحديث لبعض المعلومات في هذه الصفحة كان منذ أكثر من 6 أشهر (' + secs(m[1]) + ').'; }],
     [/^Please review: (.+) \(older than 6 months\)\.$/, function (m) { return 'يُرجى المراجعة: ' + secs(m[1]) + ' (أقدم من 6 أشهر).'; }],
@@ -827,6 +916,43 @@
     [/^([\d,]+) jobs?$/, function (m) { return m[1] + ' ' + plural(m[1], ['وظيفة', 'وظائف']); }],
     [/^([\d,]+) profile$/, function (m) { return m[1] + ' ' + plural(m[1], ['ملف', 'ملفات']); }]
   );
+  /* ===== AREA business: marketplace (B-06…B-10) ===== */
+  Object.assign(D, {
+    'Draft': 'مسودة', 'Edit listing': 'تعديل الإعلان', 'Title *': 'العنوان *', 'MOQ / quantity': 'الحد الأدنى / الكمية', 'Save changes': 'احفظ التغييرات', 'Listing updated': 'تم تحديث الإعلان',
+    '✅ Publish listing': '✅ انشر الإعلان', '⭐ Boost this listing': '⭐ روّج لهذا الإعلان', '⏸ Pause listing': '⏸ إيقاف الإعلان مؤقتًا', '▶ Resume listing': '▶ استئناف الإعلان',
+    '🔁 Renew listing': '🔁 جدّد الإعلان', '🗑 Delete listing': '🗑 احذف الإعلان', 'Delete this listing?': 'هل تحذف هذا الإعلان؟', 'Delete listing': 'احذف الإعلان', 'Listing resumed': 'تم استئناف الإعلان',
+    'Listing paused — hidden from buyers': 'تم إيقاف الإعلان — مخفي عن المشترين', 'Draft saved — find it in My Listings': 'حُفظت المسودة — تجدها في إعلاناتي', 'Could not save the draft': 'تعذّر حفظ المسودة',
+    'Your listing is live': 'إعلانك منشور الآن', 'Expired — renew to show it again': 'انتهى — جدّده ليظهر من جديد', 'No expiry (license sale)': 'بلا انتهاء (بيع ترخيص)', 'not published': 'غير منشور',
+    'You have no listings yet — publish one with “New Listing”.': 'لا توجد لديك إعلانات بعد — انشر إعلانًا من «إعلان جديد».', 'Could not load your listings': 'تعذّر تحميل إعلاناتك', 'Could not save': 'تعذّر الحفظ',
+    'Your price *': 'سعرك *', 'Lead time': 'مدة التوريد', 'Note': 'ملاحظة', 'e.g. US$ 21 per kg': 'مثلًا: 21 دولار للكيلو', 'e.g. 2 MT': 'مثلًا: 2 طن', 'e.g. 3 weeks': 'مثلًا: 3 أسابيع',
+    'e.g. CEP and CoA available': 'مثلًا: CEP وشهادة التحليل متوفرتان', 'Could not send the quote': 'تعذّر إرسال عرض السعر', '🛒 Saved listings': '🛒 الإعلانات المحفوظة',
+    'Message *': 'الرسالة *', 'Send message': 'أرسل الرسالة', 'This is your own listing': 'هذا إعلانك', 'Saved to your list': 'تم الحفظ في قائمتك', 'Removed from saved': 'تمت الإزالة من المحفوظات',
+    'View': 'عرض', 'Claimed by the seller — not checked by Drugbox': 'يدّعيها البائع — لم يراجعها Drugbox', 'Create or claim your company page first — quotes are sent by a company': 'أنشئ صفحة شركتك أو طالب بها أولًا — عروض الأسعار تُرسل باسم شركة',
+    'Message this buyer instead — their request was posted before quotes': 'راسل هذا المشتري بدلًا من ذلك — نُشر طلبه قبل إتاحة عروض الأسعار', 'Create or claim your company page first': 'أنشئ صفحة شركتك أو طالب بها أولًا',
+    'Enter your price': 'أدخل سعرك', 'The file is larger than 10 MB': 'الملف أكبر من 10 ميجابايت', '📄 COA': '📄 شهادة التحليل', 'No certificate of analysis on this listing': 'لا توجد شهادة تحليل لهذا الإعلان',
+    'The certificate could not be opened': 'تعذّر فتح الشهادة', 'Only the listing’s owner can change it': 'صاحب الإعلان فقط يمكنه تعديله', 'view': 'مشاهدة', 'inquiry': 'استفسار', 'License': 'ترخيص', 'Listing': 'إعلان'
+  });
+  PATTERNS.unshift(
+    [/^Posted just now · (Expires in (\d+) days?|No expiry \(license sale\))$/, function (m) { return 'نُشر الآن · ' + (m[2] ? 'ينتهي خلال ' + m[2] + ' ' + unit(m[2], 'd') : 'بلا انتهاء (بيع ترخيص)'); }],
+    [/^(Posted|Renewed) (\d+) days? ago · (Expires in (\d+) days?|Expired — renew to show it again|No expiry \(license sale\))$/, function (m) { return (m[1] === 'Posted' ? 'نُشر منذ ' : 'جُدّد منذ ') + m[2] + ' ' + unit(m[2], 'd') + ' · ' + (m[4] ? 'ينتهي خلال ' + m[4] + ' ' + unit(m[4], 'd') : /Expired/.test(m[3]) ? 'انتهى — جدّده ليظهر من جديد' : 'بلا انتهاء (بيع ترخيص)'); }],
+    [/^Renewed just now · Expires in (\d+) days?$/, function (m) { return 'جُدّد الآن · ينتهي خلال ' + m[1] + ' ' + unit(m[1], 'd'); }],
+    [/^Saved (just now|(\d+) days? ago) · not published$/, function (m) { return 'حُفظ ' + (m[2] ? 'منذ ' + m[2] + ' ' + unit(m[2], 'd') : 'الآن') + ' · غير منشور'; }],
+    [/^Renewed — it shows for another (\d+) days$/, function (m) { return 'تم التجديد — يظهر ' + m[1] + ' يومًا أخرى'; }],
+    [/^Send a quote — (.+)$/, function (m) { return 'أرسل عرض سعر — ' + m[1]; }],
+    [/^Your quote goes to (.+) in Requests & deals, where they can accept it, counter or decline\.$/, function (m) { return 'يصل عرضك إلى ' + m[1] + ' في الطلبات والصفقات، حيث يمكنه قبوله أو تقديم عرض مضاد أو رفضه.'; }],
+    [/^Quote sent to (.+) — follow it in Requests & deals$/, function (m) { return 'تم إرسال عرض السعر إلى ' + m[1] + ' — تابعه في الطلبات والصفقات'; }],
+    [/^Show more \(([\d,]+) of ([\d,]+)\)$/, function (m) { return 'عرض المزيد (' + m[1] + ' من ' + m[2] + ')'; }],
+    [/^Message sent to (.+) — see Messages for the reply$/, function (m) { return 'تم إرسال الرسالة إلى ' + m[1] + ' — تابع الرد في الرسائل'; }],
+    [/^Write to (.+)$/, function (m) { return 'راسل ' + m[1]; }],
+    [/^“(.+)” is removed from the Marketplace and from your company page\.$/, function (m) { return 'سيُحذف «' + m[1] + '» من السوق ومن صفحة شركتك.'; }],
+    [/^📦 Products \((\d+)\)$/, function (m) { return '📦 المنتجات (' + m[1] + ')'; }],
+    [/^✓ (.+) \(checked\)$/, function (m) { return '✓ ' + m[1] + ' (تمت المراجعة)'; }],
+    [/^A buyer is looking for what you sell: (.+) — open the Marketplace$/, function (m) { return 'مشترٍ يبحث عمّا تبيعه: ' + m[1] + ' — افتح السوق'; }],
+    [/^New offer matching what you need: (.+) — open the Marketplace$/, function (m) { return 'عرض جديد يطابق ما تحتاجه: ' + m[1] + ' — افتح السوق'; }],
+    [/^📄 (.+) · attached$/, function (m) { return '📄 ' + m[1] + ' · مرفق'; }],
+    [/^target (.+)$/, function (m) { return 'السعر المستهدف ' + m[1]; }]
+  );
+  /* ===== /AREA business: marketplace ===== */
   PATTERNS.push([/^(.+?): ([A-Z][A-Za-z -]+) — (.+)$/, function (m) { return D[m[2]] ? m[1] + ': ' + D[m[2]] + ' — ' + m[3] : null; }]);   /* last: '<company>: Send quote — <deal>' in notifications */
   var ARROWS = { '→': '←', '←': '→' };
   function put(raw, t, r) {   /* keep the original's surrounding spaces even when its inner spacing differs */
@@ -849,6 +975,64 @@
     if (mm && D[mm[2].trim()]) return mm[1] + D[mm[2].trim()] + (mm[3] ? ' ' + ARROWS[mm[3].trim()] : '');
     return null;
   }
+  /* ===== AREA business: payments (B-14…B-16) ===== */
+  Object.assign(D, {
+    'My payments': 'مدفوعاتي', 'Boosts and Featured listings you paid for — references, receipts and invoices': 'الترقيات والإعلانات المميزة التي دفعت ثمنها — المراجع والإيصالات والفواتير',
+    'No payments yet.': 'لا توجد مدفوعات بعد.', 'Payment history': 'سجل المدفوعات', 'Invoice': 'فاتورة', 'Send the transfer': 'أرسل التحويل', 'Pay again': 'ادفع مرة أخرى',
+    'Waiting for payment': 'بانتظار الدفع', 'Under review': 'قيد المراجعة', 'Paid': 'مدفوع', 'Did not go through': 'لم يكتمل', 'Expired': 'منتهي', 'Refunded': 'مُسترد',
+    'Mobile wallet': 'محفظة الموبايل', 'Card': 'بطاقة', 'Fawry': 'فوري', 'InstaPay': 'إنستاباي', 'Marketplace boost': 'ترقية إعلان في السوق', 'Featured listing': 'إعلان مميز',
+    'VIP — monthly': 'VIP — شهري', 'VIP — yearly': 'VIP — سنوي', '👑 Use an included boost': '👑 استخدم ترقية مجانية من VIP', 'Use an included boost': 'استخدم ترقية مجانية من VIP',
+    'Choose the listing to promote': 'اختر الإعلان المراد ترقيته', 'Could not use an included boost': 'تعذّر استخدام الترقية المجانية', 'Act as your VIP company first': 'تصرّف باسم شركتك الـ VIP أولًا',
+    'Your page is created first; VIP starts as soon as the payment is confirmed.': 'تُنشأ صفحتك أولًا، ويبدأ VIP بمجرد تأكيد الدفع.', 'Demo — no money is charged; the steps are the real ones.': 'نسخة تجريبية — لا يُخصم أي مبلغ؛ والخطوات هي الخطوات الفعلية.',
+    'Allow pop-ups to open the invoice': 'اسمح بالنوافذ المنبثقة لفتح الفاتورة', 'The invoice could not be opened': 'تعذّر فتح الفاتورة', 'An invoice is issued once the payment is confirmed': 'تُصدر الفاتورة بعد تأكيد الدفع',
+    'The payment failed or was declined — nothing was charged and nothing was activated. Try again from My payments': 'لم يكتمل الدفع — لم يُخصم أي مبلغ ولم يُفعَّل شيء. حاول مرة أخرى من مدفوعاتي',
+    'Payment received — VIP is active (demo: no card was charged)': 'تم استلام الدفع — VIP مفعّل (نسخة تجريبية: لم تُخصم البطاقة)', 'Loading…': 'جارٍ التحميل…',
+    'Make your listing Featured': 'اجعل إعلانك مميزًا', '⭐ Make your listing Featured': '⭐ اجعل إعلانك مميزًا', 'Featured fee': 'رسوم الإعلان المميز', '⚡ BOOSTED': '⚡ معزز', '⭐ FEATURED': '⭐ مميز',
+    'Opening the secure Paymob page…': 'جارٍ فتح صفحة Paymob الآمنة…', 'Pay at Fawry': 'ادفع في فوري', 'Fawry reference number': 'رقم مرجع فوري', 'Pay with InstaPay': 'ادفع بإنستاباي', 'Send to': 'أرسل إلى',
+    'Transfer number *': 'رقم التحويل *', 'Receipt (screenshot or PDF)': 'الإيصال (صورة أو PDF)', 'Send for confirmation': 'أرسل للتأكيد', 'From the InstaPay confirmation': 'من رسالة تأكيد إنستاباي',
+    'Thank you — we confirm InstaPay transfers within one working day': 'شكرًا — نؤكد تحويلات إنستاباي خلال يوم عمل واحد', 'Pay with': 'ادفع بـ', 'Listing to promote': 'الإعلان المراد ترقيته',
+    /* verification follow-ups (October 2026) */
+    'Write': 'اكتب', 'in the transfer note.': 'في ملاحظة التحويل.', '· monthly': '· شهري', '· yearly': '· سنوي',
+    'It activates automatically once Fawry confirms — we notify you. You find this reference again in My payments.': 'يتفعّل تلقائيًا بمجرد تأكيد فوري — وسنخطرك. وتجد هذا الرقم المرجعي مرة أخرى في مدفوعاتي.',
+    'Demo — a sample reference number; Fawry is not contacted and nothing is charged.': 'نسخة تجريبية — رقم مرجعي توضيحي؛ لا يتم التواصل مع فوري ولا يُخصم أي مبلغ.',
+    'Demo — a sample InstaPay address; send no money, nothing is charged.': 'نسخة تجريبية — عنوان إنستاباي توضيحي؛ لا ترسل أي أموال، ولا يُخصم أي مبلغ.',
+    'Cancelled': 'أُلغي', 'Continue payment': 'أكمل الدفع', 'Cancel this payment?': 'إلغاء هذه الدفعة؟', 'Keep it': 'أبقِها', 'Cancel payment': 'ألغِ الدفع',
+    'Its Fawry reference can no longer be used. Nothing was charged.': 'لن يمكن استخدام رقم فوري المرجعي بعد ذلك. لم يُخصم أي مبلغ.',
+    'Nothing was charged. If you already paid on the payment page, do not cancel — the payment confirms itself.': 'لم يُخصم أي مبلغ. إذا كنت قد دفعت بالفعل في صفحة الدفع فلا تُلغِ — يتأكد الدفع تلقائيًا.',
+    'Payment cancelled — nothing was charged': 'أُلغيت الدفعة — لم يُخصم أي مبلغ', 'Could not cancel': 'تعذّر الإلغاء', 'You cancelled this payment — nothing was charged': 'ألغيت هذه الدفعة — لم يُخصم أي مبلغ',
+    'Only a payment that is still waiting can be cancelled': 'لا يمكن إلغاء إلا دفعة لا تزال بانتظار الدفع',
+    'Add your mobile number (01…) to your profile to pay at Fawry — Fawry sends the reference to it': 'أضف رقم موبايلك (01…) إلى ملفك الشخصي للدفع في فوري — يرسل فوري الرقم المرجعي إليه',
+    'Fawry did not issue a reference number — nothing was charged; please try again': 'لم يُصدر فوري رقمًا مرجعيًا — لم يُخصم أي مبلغ؛ حاول مرة أخرى',
+    'Paymob did not start the payment — nothing was charged; please try again': 'لم تبدأ Paymob عملية الدفع — لم يُخصم أي مبلغ؛ حاول مرة أخرى',
+    'The payment provider could not be reached — nothing was charged; please try again': 'تعذّر الوصول إلى مزوّد الدفع — لم يُخصم أي مبلغ؛ حاول مرة أخرى',
+    'The payment started but could not be recorded yet — look in My payments in a minute': 'بدأ الدفع لكن لم يُسجَّل بعد — راجع مدفوعاتي بعد دقيقة',
+    'This company page is suspended — VIP cannot be bought for it': 'صفحة هذه الشركة موقوفة — لا يمكن شراء VIP لها',
+    'This listing is not active — publish it again before promoting it': 'هذا الإعلان غير نشط — انشره مرة أخرى قبل ترقيته',
+    'The receipt must be a file you uploaded': 'يجب أن يكون الإيصال ملفًا رفعته أنت', 'Enter the transfer number from the InstaPay confirmation': 'أدخل رقم التحويل من رسالة تأكيد إنستاباي',
+    'We have not received the payment confirmation yet — if you paid, it activates automatically; if you left the payment page, continue or cancel it in My payments': 'لم يصلنا تأكيد الدفع بعد — إذا كنت دفعت فسيتفعّل تلقائيًا؛ وإذا غادرت صفحة الدفع فأكمله أو ألغه من مدفوعاتي',
+    '👑 VIP · answer within 48 h': '👑 VIP · الرد خلال 48 ساعة', 'VIP · answer within 48 h': 'VIP · الرد خلال 48 ساعة'
+  });
+  PATTERNS.unshift(
+    [/^(\d+) of 3 included boosts left this month with VIP — no payment$/, function (m) { return 'متبقٍ ' + m[1] + ' من 3 ترقيات مجانية هذا الشهر مع VIP — بدون دفع'; }],
+    [/^Boost activated — included with VIP \((\d+) left this month\)$/, function (m) { return 'تم تفعيل الترقية — مجانًا مع VIP (متبقٍ ' + m[1] + ' هذا الشهر)'; }],
+    [/^(.+) is live — VIP starts when the payment is confirmed$/, function (m) { return 'صفحة ' + m[1] + ' منشورة — يبدأ VIP عند تأكيد الدفع'; }],
+    [/^Fawry reference (\d+)( · pay by (.+))?$/, function (m) { return 'مرجع فوري ' + m[1] + (m[3] ? ' · ادفع قبل ' + gbIn(m[3]) : ''); }],
+    [/^valid until (.+)$/, function (m) { return 'صالح حتى ' + gbIn(m[1]); }],
+    [/^Your InstaPay transfer for this \((.+)\) is being checked by Drugbox — wait for the confirmation in My payments$/, function (m) { return 'تحويل إنستاباي لهذا (' + m[1] + ') قيد المراجعة من Drugbox — انتظر التأكيد في مدفوعاتي'; }],
+    [/^Only a payment that is still waiting can be cancelled \(this one is (.+)\)$/, function () { return 'لا يمكن إلغاء إلا دفعة لا تزال بانتظار الدفع'; }],
+    [/^Order (DBX\d+) was paid after the buyer cancelled it — nothing was activated; refund due$/, function (m) { return 'دُفع الطلب ' + m[1] + ' بعد أن ألغاه المشتري — لم يُفعَّل شيء؛ يلزم رد المبلغ'; }],
+    [/^Transfer (.+) — Drugbox confirms within one working day$/, function (m) { return 'التحويل ' + m[1] + ' — يؤكده Drugbox خلال يوم عمل'; }],
+    [/^incl\. VAT (.+)$/, function (m) { return 'شامل ضريبة القيمة المضافة ' + m[1]; }],
+    [/^(Boosted|Featured) until (.+)$/, function (m) { return (m[1] === 'Boosted' ? 'معزز حتى ' : 'مميز حتى ') + m[2]; }],
+    [/^Every payment for (.+)’s plan, with its status\. Paid ones have a tax invoice \(VAT 14% included\)\.$/, function (m) { return 'كل مدفوعات خطة ' + m[1] + ' وحالتها. للمدفوع منها فاتورة ضريبية (شاملة ضريبة القيمة المضافة 14%).'; }],
+    [/^You already have a Fawry reference for this \((.+)\) — pay it or find it in My payments$/, function (m) { return 'لديك بالفعل مرجع فوري لهذا (' + m[1] + ') — ادفعه أو تجده في مدفوعاتي'; }],
+    [/^You already have an InstaPay payment waiting for this \((.+)\) — send the transfer from My payments$/, function (m) { return 'لديك بالفعل دفعة إنستاباي معلّقة لهذا (' + m[1] + ') — أرسل التحويل من مدفوعاتي'; }],
+    [/^Your Fawry reference for (.+) \((.+)\) expired — nothing was charged; start a new payment from My payments$/, function (m) { return 'انتهت صلاحية مرجع فوري لـ ' + (D[m[1]] || m[1]) + ' (' + m[2] + ') — لم يُخصم أي مبلغ؛ ابدأ دفعة جديدة من مدفوعاتي'; }],
+    [/^Your payment for (.+) \((.+)\) did not go through — nothing was activated; try again from My payments$/, function (m) { return 'لم يكتمل دفعك لـ ' + (D[m[1]] || m[1]) + ' (' + m[2] + ') — لم يُفعَّل شيء؛ حاول مرة أخرى من مدفوعاتي'; }],
+    [/^VIP for (.+) ends on (.+) — renew it from Plan & verification to keep it$/, function (m) { return 'ينتهي VIP لـ ' + m[1] + ' في ' + m[2] + ' — جدّده من الخطة والتوثيق للاحتفاظ به'; }],
+    [/^Payment received — (.+) is active$/, function (m) { return 'تم استلام الدفع — ' + (D[m[1]] || m[1]) + ' مفعّل'; }]
+  );
+  /* ===== /AREA business: payments ===== */
   PATTERNS.unshift.apply(PATTERNS, PATTERNS_EXTRA);
   window.dxT = tr;
   /* the original (English) text of an element, whatever the interface language — so logic never depends on the language shown */
@@ -862,21 +1046,25 @@
   /* layers that split a text node (emoji → icon, ✓ → seal) rebuild it from the English original and hand each piece back here, so switching to English restores it */
   window.dxI18nOrig = function (n) { return ORIG.has(n) ? ORIG.get(n) : null; };
   /* the same English word in another place: a saved post or job says "محفوظ" on its own button, "المحفوظات" is the Saved page */
-  var CTX = [['.dbk-saved', { 'Saved': 'محفوظ', '🔖 Saved': '🔖 محفوظ' }]];
+  var CTX = [['.dbk-saved', { 'Saved': 'محفوظ', '🔖 Saved': '🔖 محفوظ' }],
+             ['.cap-slots', { 'Free': 'متاح' }]];   /* a production month that is free is available ("متاح"), not free of charge ("مجاني") */
   function trAt(n, v) { var p = n.parentElement, k = v.replace(/\s+/g, ' ').trim();
     /* "<b>9</b> members": the word after a number in its own element takes the number's Arabic plural (9 أعضاء, not 9 عضو) */
     var ps = n.previousSibling, wf = WORDS[k.toLowerCase()] || WORDS[k.toLowerCase() + 's'];
     if (wf && ps && ps.nodeType === 1) { var num = (ps.textContent || '').trim(); if (/^[\d,.]+K?\+?$/i.test(num)) return put(v, k, plural(num.replace(/\+$/, ''), wf)); }
     for (var i = 0; p && i < CTX.length; i++) if (CTX[i][1][k] && p.closest(CTX[i][0])) return put(v, k, CTX[i][1][k]);
     return tr(v); }
-  window.dxI18nAdopt = function (n) { if (!n || !isAr()) return; var v = n.nodeValue, t = trAt(n, v); if (t !== v) { ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else { ORIG.delete(n); LAST.delete(n); } };
+  window.dxI18nAdopt = function (n) { if (!n || !isAr()) return; var v = n.nodeValue, t = trAt(n, v); if (t !== v) { keepValue(n, v); ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else { ORIG.delete(n); LAST.delete(n); } };
   window.dxI18nAttrs = function (el) { if (el && isAr()) walk(el); };   /* attributes a layer set after the page was translated (tooltips) */
+  /* an <option> without a value submits its text: pin the English text as its value before translating it, so a choice made in
+     Arabic is the same choice (a role, a governorate, a document type) the app and the database expect */
+  function keepValue(n, v) { var o = n.parentElement; if (o && o.tagName === 'OPTION' && !o.hasAttribute('value')) o.setAttribute('value', v.trim()); }
   function walk(root) {
     if (!root || !isAr()) return;
     var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { var p = n.parentElement; return !p || p.closest(SKIP) || p.matches(SKIP_SELF) || !/[A-Za-z]/.test(n.nodeValue) ? 2 : 1; } });
     var list = []; while (w.nextNode()) list.push(w.currentNode);
     list.forEach(function (n) { var v = n.nodeValue; if (LAST.get(n) === v) return;   /* already our translation */
-      var t = trAt(n, v); if (t !== v) { ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else if (ORIG.has(n)) { ORIG.delete(n); LAST.delete(n); } });   /* a new value from the app becomes the new original */
+      var t = trAt(n, v); if (t !== v) { keepValue(n, v); ORIG.set(n, v); LAST.set(n, t); n.nodeValue = t; } else if (ORIG.has(n)) { ORIG.delete(n); LAST.delete(n); } });   /* a new value from the app becomes the new original */
     var withAttr = root.querySelectorAll ? Array.prototype.slice.call(root.querySelectorAll('[placeholder],[title],[aria-label]')) : []; if (root.matches && root.matches('[placeholder],[title],[aria-label]')) withAttr.push(root);
     withAttr.forEach(function (el) {
       if (el.closest('[data-noi18n]')) return;

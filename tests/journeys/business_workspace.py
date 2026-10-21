@@ -71,7 +71,8 @@ def sites_and_capacity(j):
 def checked_certificates(j):
     """A manufacturer proves its GMP status with certificates that Drugbox has checked."""
     me, pg, name = own_company(j, 'Certified Pharma')
-    if j.live: seed_site(j, me['co']['id'], 'Badr plant'); j.reload(pg)
+    if j.live:
+        sid = seed_site(j, me['co']['id'], 'Badr plant'); j.reload(pg)
     with j.step("Workspace → Sites → 'Certificate' on a site: GDP, valid until, the certificate PDF; Add"):
         workspace(j, pg, 'Sites|%s' % ar('Sites'))
         j.click(pg, r'^\W*(\+\s*)?(Certificate|شهادة)\W*$', scope='#content', what='+ Certificate')
@@ -99,28 +100,63 @@ def checked_certificates(j):
         if j.demo: j.skip('checked in live')
         j.reload(pg); directory(j, pg); open_card(j, pg, name); t = company_tab(j, pg, 'Sites|%s' % ar('Sites'), 'Sites')
         j.check(re.search(r'checked|تمت المراجعة', t, re.I), "the page does not say the certificate was checked")
-        j.check(admin_review(j, adm['page'], 'certs') is not None and adm['page'].locator('.dx-mod-row .dx-mod-no').count() or False, 'not built: a certificate cannot be rejected with a reason (only "Mark checked")')
+        seed_cert(j, me['co']['id'], sid, 'ISO 14001', '2027-03-31', False)   # a second certificate, for the rejection
+        ap = adm['page']; admin_review(j, ap, 'certs')
+        j.check(ap.locator('.dx-mod-row', has_text=name).locator('.dx-mod-no').count(), 'not built: a certificate cannot be rejected with a reason (only "Mark checked")')
+        admin_decide(j, ap, name, False, 'The ISO 14001 scan is not readable')
+        j.check(j.wait_db("select count(*) from public.site_certificates where company_id=%s and name='ISO 14001'" % me['co']['id'], 6, want='0') == '0', 'the rejected certificate is still stored')
+        j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and type='cert_rejected' and data->>'reason' like '%%not readable%%'" % me['id']) == '1', 'the company is not told the reason of the rejection')
+        j.reload(pg); directory(j, pg); open_card(j, pg, name); t = company_tab(j, pg, 'Sites|%s' % ar('Sites'), 'Sites')
+        j.check('ISO 14001' not in t, 'the rejected certificate is still shown on the page')
+
+def until(pg, fn, secs=6):
+    end = time.time() + secs
+    while True:
+        if fn(): return True
+        if time.time() > end: return False
+        pg.wait_for_timeout(250)
 
 @journey('J-BUSINESS-20')
 def company_documents(j):
     """A company keeps its controlled documents (licences, GMP certificates, SMF) in one private place its team can use."""
     me, pg, name = own_company(j, 'Documented Pharma')
+    num = 'R1-CEP 2019-%s' % j.tag[:4]
     with j.step("Workspace → Plan & verification → 'Add document': upload a PDF with title and type"):
         workspace(j, pg, 'Plan & verification|%s' % (ar('Plan & verification') or 'الخطة'))
         j.click(pg, L('Add document'), scope='#content', what='Add document')
         fill_by_label(j, pg, r'^Document|المستند', r'CEP|.')
-        fill_by_label(j, pg, r'Number|reference|الرقم', 'R1-CEP 2019-123', required=False)
+        fill_by_label(j, pg, r'Number|reference|الرقم', num, required=False)
         f = pg.locator('.dbk-ov input[type=file]')
         j.check(f.count(), 'not built: "Add document" stores no file — only a type and a number (no PDF upload)')
         f.first.set_input_files(PDF); dlg_click(j, pg, L('Save'), 'Save'); j.settle(pg, 1200)
-        if j.live: j.check(j.wait_db("select count(*) from public.company_documents where company_id=%s and file_path is not null" % me['co']['id'], 6) == '1', 'no company_documents row with a file')
+        row = pg.locator('#content .dx-pass-r', has_text='spec.pdf')
+        j.check(until(pg, lambda: row.count(), 6), 'the document (spec.pdf) is not listed in the compliance passport after saving')
+        if j.live:
+            j.check(j.wait_db("select count(*) from public.company_documents where company_id=%s and file_path like 'companydocs/%s/%%' and file_name='spec.pdf' and status='review' and created_by='%s'" % (me['co']['id'], me['co']['id'], me['id']), 6) == '1',
+                    'no company_documents row with the file, its name, status review and who added it')
+            path = j.sql1("select file_path from public.company_documents where company_id=%s" % me['co']['id'])
+            j.check(j.sql1("select count(*) from storage.objects where bucket_id='documents' and name='%s'" % path) == '1', 'the file is not in the private documents bucket')
     with j.step('A second member opens it; an outsider gets nothing (no listing, signed link refused)'):
         if j.demo: j.skip('other members exist only in live')
         m2 = j.person('Second Member'); seed_member(j, me['co']['id'], m2['id'], 'quality'); j.reload(m2['page'])
-        t = workspace(j, m2['page'], 'Plan & verification|%s' % (ar('Plan & verification') or 'الخطة')); j.check('spec.pdf' in t or 'CEP' in t, 'the second member does not see the document')
+        t = workspace(j, m2['page'], 'Plan & verification|%s' % (ar('Plan & verification') or 'الخطة')); j.check('spec.pdf' in t, 'the second member does not see the document file')
+        ok = m2['page'].evaluate("p=>dxLive.sb.storage.from('documents').createSignedUrl(p,60).then(r=>!r.error&&!!r.data)", path)
+        j.check(ok, 'the second member cannot open the document (signed link refused)')
+        out = j.person('Outsider')
+        r = out['page'].evaluate("""([c,p])=>Promise.all([dxLive.sb.rpc('company_document_files',{p_company:c}), dxLive.sb.from('company_documents').select('file_path,file_name').eq('company_id',c),
+            dxLive.sb.storage.from('documents').createSignedUrl(p,60)]).then(q=>[(q[0].data||[]).length, !q[1].error, !q[2].error&&!!(q[2].data&&q[2].data.signedUrl)])""", [int(me['co']['id']), path])
+        j.check(r[0] == 0, 'an outsider lists the company\'s document files'); j.check(not r[1], 'an outsider reads the file path / name columns')
+        j.check(not r[2], 'an outsider gets a signed link to the document')
     with j.step('Delete the document after confirmation: gone from the list and storage'):
-        if j.demo: j.skip('checked in live')
-        j.click(pg, r'Delete|Remove|احذف', scope='#content', what='Delete document')
+        row = pg.locator('#content .dx-pass-r', has_text='spec.pdf')
+        j.check(row.count(), 'the document row is gone before deleting it')
+        row.locator('button', has_text=re.compile(r'^\s*(Delete|احذف|حذف)\s*$')).first.click(); pg.wait_for_timeout(500)
+        j.check(dlg_open(pg), 'Delete does not ask for confirmation')
+        dlg_click(j, pg, r'^\s*(Delete|احذف|حذف)\s*$', 'Delete'); j.settle(pg, 1200)
+        j.check(until(pg, lambda: not pg.locator('#content .dx-pass-r', has_text='spec.pdf').count(), 6), 'the document is still listed after deleting it')
+        if j.live:
+            j.check(j.wait_db("select count(*) from public.company_documents where company_id=%s" % me['co']['id'], 6) == '0', 'the company_documents row is still there')
+            j.check(j.sql1("select count(*) from storage.objects where bucket_id='documents' and name='%s'" % path) == '0', 'the file is still in storage')
 
 @journey('J-BUSINESS-21')
 def get_verified(j):
@@ -229,6 +265,11 @@ def shared_inbox(j):
     with j.step('Workspace → Activity lists the real events (edits, deals, members) with names and dates after reload'):
         reopen(j, pg); t = workspace(j, pg, 'Activity|%s' % (ar('Activity') or 'النشاط'))
         j.check(re.search(r'quote|Quote|عرض', t) and re.search(r'\d{1,2} \w{3}|\d{4}-\d{2}-\d{2}|ago|منذ', t), 'the Activity tab does not list the quote just sent with its date')
+        if j.live:
+            j.check(j.sql1("select count(*) from public.company_activity a where a.company_id=%s and a.actor='%s' and a.text ~* 'quote'" % (me['co']['id'], me['id'])) not in ('', '0'),
+                    'the Activity entry is not in company_activity with its author (kept in this browser only)')
+            mt = mate['page']; j.reload(mt); t2 = workspace(j, mt, 'Activity|%s' % (ar('Activity') or 'النشاط'))
+            j.check('Inbox Owner' in t2 and re.search(r'quote|Quote', t2), 'the team mate does not see the same Activity log (with the author\'s name)')
 
 @journey('J-BUSINESS-24')
 def reply_to_reviews(j):

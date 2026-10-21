@@ -143,7 +143,10 @@ def main():
         T('"My Groups (1)" after creating one', re.search(r'\(1\)', chip), chip)
         # the marketplace
         go('market', 4500); scan('market')
-        db = dict(zip(('supply', 'demand', 'jobs'), sql("select (select count(*) from public.products where active and type='supply'), (select count(*) from public.enquiries where status='active' and type='demand'), (select count(*) from public.jobs where active)").split('|')))
+        # 0054: a buy request is a marketplace listing (products, type demand) or an older enquiry; expired listings are not counted
+        db = dict(zip(('supply', 'demand', 'jobs'), sql("select (select count(*) from public.products where active and type='supply' and (expires_at is null or expires_at > now())), "
+                                                        "(select count(*) from public.products where active and type='demand' and (expires_at is null or expires_at > now())) + (select count(*) from public.enquiries where status='active' and type='demand'), "
+                                                        "(select count(*) from public.jobs where active)").split('|')))
         hero = pg.evaluate("[...document.querySelectorAll('#mkx .hero-stats .hstat-n')].map(e=>e.textContent.replace(/,/g,''))")
         T('the market hero counts listings and jobs from the database', hero and hero[0] == str(int(db['supply']) + int(db['demand'])) and hero[2] == db['jobs'], (hero, db))
         cats = pg.evaluate("[...document.querySelectorAll('#mkx .cat-grid .cat-count')].map(e=>e.textContent.replace(/,/g,''))")
