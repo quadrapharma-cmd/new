@@ -1,5 +1,7 @@
 # Area social & account — report (branch `claude/area-social`)
 
+Demo build: `web/dist/drugbox.html` sha256 `cf838e99…` (built twice, identical); `web/reference/demo-approved.html` refreshed → PARITY OK.
+
 Migrations **0040–0049** (this area only). Live code: `web/src/live/social.js` (+ a delimited "AREA social" block in `adapter.js`).
 Demo layers: `web/src/soc_legal.js`, `soc_account.js`, `soc_feed.js`, `soc_profile.js`, `soc_nav.js`, `soc_safety.js`, `social.css`.
 Progress log: `docs/areas/social-progress.md`.
@@ -59,7 +61,7 @@ Progress log: `docs/areas/social-progress.md`.
   community 6/50 — business/community belong to the other areas.
 - **Dead-end crawler** demo (EN/AR × 1440/390, 1,893 clicks): **0 JavaScript errors**; 49 dead ends reported (report-only; nearly all
   approved sample cards/counts outside this area — e.g. Network sample avatars, Marketplace "same template" cards, Requests & deals chips).
-  LIVE_CRAWL_PLACEHOLDER
+- **Dead-end crawler** live (EN/AR × 1440/390, 1,316 clicks, a fresh signed-up account): **0 JavaScript errors**; 33 dead ends reported (report-only).
 
 
 ## Independent verification
