@@ -28,7 +28,7 @@ with sync_playwright() as p:
     T('enrolling is stored', sql(f"select status from public.course_enrollments where course_id={cid} and user_id='{m}'") == 'enrolled')
     T('the enrolled count moves by exactly one', int(sql(f"select enrolled_count from public.training_courses where id={cid}")) == int(before) + 1)
     M.reload(wait_until='load'); M.wait_for_timeout(400); M.evaluate('endSplash()'); M.wait_for_timeout(4000); M.evaluate("goto('training')"); M.wait_for_timeout(2500)
-    T('after a reload the course still shows "Enrolled"', '✅ Enrolled' in M.evaluate(f"document.querySelector('.tr-card[data-course=\"{cid}\"] button').textContent"))
+    T('after a reload the course still shows "Enrolled"', '✅ Enrolled' in M.evaluate(f"document.querySelector('.tr-card[data-course=\"{cid}\"]').textContent"))   # T-01: the card says Enrolled; its button continues the lessons
     r = M.evaluate(f"dxLive.sb.from('course_enrollments').insert({{course_id:{cid},user_id:'{adm}'}})" + ERR)
     T('cannot enroll someone else', r and refused(r) and sql(f"select count(*) from public.course_enrollments where course_id={cid} and user_id='{adm}'") == '0', r)
     r = M.evaluate(f"dxLive.sb.from('training_courses').insert({{title:'My own course {st}',level:'Beginner'}})" + ERR)

@@ -340,6 +340,7 @@
   function reEsc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
   function adopt(root) {
     if (!root || !root.querySelectorAll) return;
+    if (window.dxI18nAttrs) window.dxI18nAttrs(root);   /* what was just drawn reads in Arabic at once (the translator otherwise waits a frame) */
     var fresh = false, all = [root].concat(Array.prototype.slice.call(root.querySelectorAll('[class]')));
     all.forEach(function (e) { var c = typeof e.className === 'string' ? e.className : (e.getAttribute && e.getAttribute('class')) || ''; c.split(/\s+/).forEach(function (k) { if (k && !ADOPTED[k]) { ADOPTED[k] = 1; fresh = true; } }); });
     if (!fresh) return;
@@ -513,6 +514,7 @@
     b.innerHTML = '<div class="panel-tabs gp-tabs" role="tablist" aria-label="Group sections">' + tabs.map(function (t) {
       var on = t[0] === CUR.tab; return '<div class="gx-ptab' + (on ? ' active' : '') + '" role="tab" tabindex="0" aria-selected="' + on + '" data-gpt="' + t[0] + '">' + t[1] + '</div>'; }).join('') + '</div>' +
       tabs.map(function (t) { return '<div class="gp-pane' + (t[0] === 'disc' ? ' gp-disc' : ' panel-body') + (t[0] === 'listings' ? ' gp-mk' : '') + '" data-pane="' + t[0] + '"' + (t[0] === CUR.tab ? '' : ' hidden') + '></div>'; }).join('');
+    if (window.dxI18nAttrs) window.dxI18nAttrs(b.querySelector('.gp-tabs'));   /* Arabic at once, not on the next frame */
     paintPane(CUR.tab);
   }
   function pane(name) { return document.querySelector('#gpBox [data-pane="' + name + '"]'); }

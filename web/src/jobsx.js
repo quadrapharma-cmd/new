@@ -373,6 +373,11 @@
     if (!p) { p = document.createElement('div'); p.id = 'jxPanel'; p.className = 'jx-panel'; p.hidden = true; var main = root.querySelector('.main'); if (!main) return null; main.insertBefore(p, main.firstChild); }
     return p;
   }
+  /* Escape leaves a panel (My jobs, Applicants, My applications, Job alerts) for the jobs, like ← Back — unless a window is open over it */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || document.querySelector('.dbk-ov, .modal-overlay.show')) return;
+    var p = document.getElementById('jxPanel'); if (p && !p.hidden) { var b = p.querySelector('.jx-back'); if (b) b.click(); }
+  });
   function showPanel(on) {
     var root = jx(), p = panel(); if (!root || !p) return;
     p.hidden = !on; root.classList.toggle('jx-paneled', !!on);

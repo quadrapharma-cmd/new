@@ -63,7 +63,7 @@
             : '<span class="adm-ok">Active</span> <button type="button" class="adm-link adm-danger adm-sus-btn">Suspend</button>') + '</td></tr>'; }).join('') + '</tbody></table>'
         : '<div class="dbk-empty">' + (UV.q ? 'No member matches this search.' : 'No members yet.') + '</div>';
       c.querySelector('.adm-more-w').innerHTML = UV.rows.length < UV.total ? '<button type="button" class="btn-ghost adm-more" data-what="users">Load more</button>' : '';
-      if (window.dxI18nAdopt) window.dxI18nAdopt(c);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(c);
     }, function (e) { toast(e.message); });
   }
   function userRow(el) { var tr = el.closest('tr[data-auid]'); return tr ? UV.rows.filter(function (u) { return u.id === tr.dataset.auid; })[0] : null; }
@@ -86,7 +86,7 @@
         : '<div class="dbk-empty">' + (PV.q ? 'No post matches this search.' : 'No posts yet.') + '</div>';
       c.querySelector('.adm-more-w').innerHTML = PV.rows.length < PV.total ? '<button type="button" class="btn-ghost adm-more" data-what="posts">Load more</button>' : '';
       removedList(c);
-      if (window.dxI18nAdopt) window.dxI18nAdopt(c);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(c);
     }, function (e) { toast(e.message); });
   }
   function removedList(c) {
@@ -94,7 +94,7 @@
       b.innerHTML = list.length ? list.map(function (r) { return '<div class="adm-rm-row"><div><b data-noi18n>' + esc(r.author) + '</b> <span class="adm-muted" data-noi18n>' + esc(day(r.at)) + '</span><p data-noi18n>' + esc((r.body || '').slice(0, 160)) + '</p>' +
         '<span class="adm-muted"><span>Reason:</span> <span data-noi18n>' + esc(r.reason || '') + '</span></span></div><button type="button" class="btn-ghost adm-restore" data-rid="' + esc(r.id) + '">↺ Restore</button></div>'; }).join('')
         : '<div class="adm-muted">No removed posts.</div>';
-      if (window.dxI18nAdopt) window.dxI18nAdopt(b); }, function () {});
+      if (window.dxI18nAttrs) window.dxI18nAttrs(b); }, function () {});
   }
 
   /* ── Dashboard: real numbers ─────────────────────────────────────────────────────────────────────────────────────── */
@@ -120,7 +120,7 @@
       b.innerHTML = l.length ? l.map(function (t) { return '<div class="admin-ticker-item" data-tkid="' + t.id + '"' + (t.active ? '' : ' style="opacity:.55"') + '><span class="ticker-label-badge">' + esc(t.label) + '</span><span style="flex:1;font-size:13.5px" data-noi18n>' + esc(t.text) + '</span>' +
         '<button type="button" class="adm-link adm-tk-on" data-on="' + (t.active ? 0 : 1) + '">' + (t.active ? 'Hide' : 'Show') + '</button> <button type="button" style="border:none;background:#fee2e2;color:#dc2626;padding:4px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700" class="adm-tk-del">Delete</button></div>'; }).join('')
         : '<div class="adm-muted">No items yet — the ticker shows the newest listings and jobs.</div>';
-      if (window.dxI18nAdopt) window.dxI18nAdopt(c); }, function (e) { toast(e.message); });
+      if (window.dxI18nAttrs) window.dxI18nAttrs(c); }, function (e) { toast(e.message); });
     return true;
   }
   function sponsorsPage(c) {
@@ -132,7 +132,7 @@
           '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#111827" data-noi18n>' + esc(s.name) + '</div><div style="font-size:12.5px;color:#6b7280" data-noi18n>' + esc(s.description || '') + '</div></div>' +
           '<button class="btn-ghost adm-sp-del" type="button" style="font-size:12px;padding:5px 12px;color:#dc2626;border-color:#fca5a5">Remove</button></div>'; }).join('') : '<div class="adm-muted">No sponsors yet.</div>') +
         '<div style="margin-top:16px"><button class="btn-p adm-sp-add" type="button">+ Add Sponsor</button></div></div>';
-      if (window.dxI18nAdopt) window.dxI18nAdopt(c);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(c);
     }, function (e) { toast(e.message); });
     return true;
   }
@@ -222,7 +222,7 @@
     var ST = { open: '🟡 Open', resolved: '✅ Corrected', dismissed: '⚪ Checked — no change' };
     var rows = myReports().map(function (r) { return '<div class="adm-rm-row"><div><b data-noi18n>' + esc(coName(r.slug)) + '</b> · <span>' + esc(r.section || '') + '</span><p data-noi18n>' + esc(r.text || '') + '</p>' +
       (r.fix ? '<span class="adm-muted"><span>Suggested:</span> <span data-noi18n>' + esc(r.fix) + '</span></span>' : '') + '</div><span class="adm-st">' + esc(ST[r.status] || r.status) + '</span></div>'; }).join('');
-    var m = D.modal({ title: '🚩 My reports', secondary: 'Close', body: rows || '<div class="dbk-empty">You have not reported anything yet.</div>' }); if (window.dxI18nAdopt) window.dxI18nAdopt(m.el);
+    var m = D.modal({ title: '🚩 My reports', secondary: 'Close', body: rows || '<div class="dbk-empty">You have not reported anything yet.</div>' }); if (window.dxI18nAttrs) window.dxI18nAttrs(m.el);
   }, true);
   C.onRender('admin-my-reports', function () { setTimeout(paintMyReports, 0); });
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.dbk-ov [data-a=ok]')) setTimeout(paintMyReports, 900); }, true);

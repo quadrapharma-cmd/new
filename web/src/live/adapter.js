@@ -2008,7 +2008,7 @@
       if (mk.dataset.busy) return; mk.dataset.busy = '1';
       sb.from('groups').select('id').ilike('name', name.replace(/[\\%_]/g, '\\$&')).limit(1).then(function (dup) {
         if (!dup.error && (dup.data || []).length) { delete mk.dataset.busy; window.toast('A group with this name already exists — choose another name'); return; }
-        return sb.from('groups').insert({ name: name, description: desc, emoji: cf ? cf.emoji : deal ? '🤝' : '👥', type: priv ? 'private' : 'public', topic: deal ? 'DEAL ROOM' : 'DISCUSS', created_by: ME_UUID, listed: !priv,
+        return sb.from('groups').insert({ name: name, description: desc, emoji: cf ? cf.emoji : deal ? '🤝' : '👥', type: priv ? 'private' : 'public', topic: deal ? 'DEAL ROOM' : 'DISCUSS', created_by: ME_UUID, listed: !(priv && deal),
           sector: cf ? cf.sector : null, country: cf ? cf.country : [], rules: cf && cf.rules ? cf.rules : null }).select().single().then(function (r) { delete mk.dataset.busy;
           if (r.error) return toastErr(r.error); window.closeCreate(); window.toast('Group created — invite your first members');
           ['.field-input', '.field-textarea', '#gpCrRules'].forEach(function (s0) { M.querySelectorAll(s0).forEach(function (x) { if (x.tagName !== 'SELECT') x.value = ''; }); });

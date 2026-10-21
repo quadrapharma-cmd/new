@@ -189,7 +189,7 @@
       (V.list.length ? '<br><button type="button" class="btn-p" data-trclear="1">✕ Clear filters</button>' : '') + '</div>';
     var my = wrap.querySelector('.tr-my'); if (my) { var n = Object.keys(V.mine).length; my.textContent = '📚 My courses' + (n ? ' (' + n + ')' : ''); }
     var pill = document.querySelector('#content .dg-pill-page'); if (pill && window.dgPillText) { var pt = window.dgPillText('training'); if (pill.textContent !== pt) pill.textContent = pt; }
-    if (window.dxI18nAdopt) window.dxI18nAdopt(wrap);
+    if (window.dxI18nAttrs) window.dxI18nAttrs(wrap);
   }
   var oPill = window.dgPillText;
   window.dgPillText = function (page) {
@@ -230,7 +230,7 @@
         (m && !m.paid && st !== 'done' ? '<div class="tr-d-more"><button type="button" class="tr-leave" data-trleave="' + c.id + '">Unenroll</button></div>' : '') + '</div>';
       var md = D.modal({ title: c.title, body: body, secondary: 'Close', primary: { label: BTN[st], onClick: function (bx, close) { close(); go(c.id); return false; } } });
       var hd = md.el.querySelector('.dbk-hd b'); if (hd) hd.setAttribute('data-noi18n', '');
-      if (window.dxI18nAdopt) window.dxI18nAdopt(md.el);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(md.el);
     }, function (e) { toast(e.message); });
   }
   /* the card's / window's main step */
@@ -261,7 +261,7 @@
           if (!live()) { S().pay(c.id).then(function () { close(); toast('Payment received — you can start ' + c.title + ' now'); refresh(true); }); return false; }
           window.dxCheckout.start({ product: 'course_' + c.id, method: method }, ok, function () { close(); });
           return false; } } });
-      if (window.dxI18nAdopt) window.dxI18nAdopt(md.el);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(md.el);
     }, function (e) { toast((e && e.message) || 'The price could not be loaded — please try again'); });
   }
 
@@ -285,7 +285,7 @@
           refresh(true);
         }, function (e) { toast(e.message); }); return false; } } });
       md.el.dataset.trLesson = lid; md.el.dataset.trCourse = cid; md.el.__ls = ls;
-      if (window.dxI18nAdopt) window.dxI18nAdopt(md.el);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(md.el);
     }, function (e) { toast(e.message); });
   }
 
@@ -301,7 +301,7 @@
         var ans = qs.map(function (q, i) { var r = bx.querySelector('input[name=trq' + i + ']:checked'); return r ? +r.value : -1; });
         if (ans.indexOf(-1) >= 0) { toast('Answer every question'); return false; }
         close(); submit(cid, ans); return false; } } });
-      if (window.dxI18nAdopt) window.dxI18nAdopt(md.el);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(md.el);
     }, function (e) { toast(e.message); });
   }
   function submit(cid, ans) {
@@ -309,10 +309,10 @@
     S().submit(cid, ans).then(function (r) {
       refresh(true);
       if (r.passed) { var md = D.modal({ title: '✅ Passed', body: '<div class="tr-res ok"><b>' + (r.score != null ? r.score + '%' : '') + '</b><p>' + esc(T('You completed the course. Your certificate is ready.')) + '</p></div>',
-        secondary: 'Close', primary: { label: '🎓 View certificate', onClick: function (bx, close) { close(); certificate(r.code); return false; } } }); if (window.dxI18nAdopt) window.dxI18nAdopt(md.el); return; }
+        secondary: 'Close', primary: { label: '🎓 View certificate', onClick: function (bx, close) { close(); certificate(r.code); return false; } } }); if (window.dxI18nAttrs) window.dxI18nAttrs(md.el); return; }
       var mf = D.modal({ title: '❌ Not passed yet', body: '<div class="tr-res"><b>' + r.score + '%</b><p><span>' + esc(T('You need')) + '</span> ' + r.pass_mark + '% · ' + r.correct + ' / ' + r.total + ' <span>' + esc(T('correct')) + '</span></p><p class="tr-muted">' +
         esc(T('Review the lessons and try again — the course is not completed until you pass.')) + '</p></div>', secondary: 'Close', primary: { label: '↺ Try again', onClick: function (bx, close) { close(); quiz(cid); return false; } } });
-      if (window.dxI18nAdopt) window.dxI18nAdopt(mf.el);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(mf.el);
     }, function (e) { toast(e.message); });
   }
 
@@ -332,7 +332,7 @@
       var link = verifyUrl(c.code);
       var md = D.modal({ title: '🎓 Certificate', body: certHtml(c) + '<div class="dbk-f"><label for="trVerify">Verify link (anyone can open it)</label><input id="trVerify" readonly value="' + esc(link) + '" data-noi18n></div>' +
         '<div class="tr-cert-acts"><button type="button" class="dbk-btn s" data-trcopy="' + esc(link) + '">🔗 Copy link</button><button type="button" class="dbk-btn s" data-trprint="' + esc(c.code) + '">⬇ Download PDF</button></div>', secondary: 'Close' });
-      md.el.__cert = c; if (window.dxI18nAdopt) window.dxI18nAdopt(md.el);
+      md.el.__cert = c; if (window.dxI18nAttrs) window.dxI18nAttrs(md.el);
     });
   }
   function printCert(c) {   /* the browser's own "Save as PDF" keeps Arabic names right */
@@ -351,7 +351,7 @@
       var md = D.modal({ title: ok ? '✅ Valid certificate' : (c && c.revoked ? '⚠️ Certificate withdrawn' : '❌ Certificate not found'), secondary: 'Close',
         body: ok ? certHtml(c) + '<p class="tr-muted">' + esc(T('Issued by Drugbox Training. This page checks the certificate against Drugbox\'s records.')) + '</p>'
           : '<p>' + esc(T('No valid Drugbox certificate has this ID:')) + ' <b data-noi18n>' + esc(String(code).slice(0, 40)) + '</b></p>' });
-      if (window.dxI18nAdopt) window.dxI18nAdopt(md.el);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(md.el);
     }, function () { toast('The certificate could not be checked — try again'); });
   }
   (function () { var m = /[?&]cert=([A-Za-z0-9-]{4,40})/.exec(location.search); if (!m) return; var tries = 0;
@@ -365,7 +365,7 @@
         (st === 'done' ? ' · 🎓 Completed' + (m.completed_at ? ' ' + esc(day(m.completed_at)) : '') : '') + '</span><div class="tr-prog"><i style="width:' + pct(m) + '%"></i></div></div>' +
         '<button type="button" class="btn-p" data-trgo="' + c.id + '">' + BTN[st] + '</button></div>'; }).join('');
     var md = D.modal({ title: '📚 My courses', secondary: 'Close', body: rows || '<div class="dbk-empty">' + esc(T('You are not enrolled in a course yet — pick one from Training.')) + '</div>' });
-    if (window.dxI18nAdopt) window.dxI18nAdopt(md.el);
+    if (window.dxI18nAttrs) window.dxI18nAttrs(md.el);
   }
 
   /* ── clicks ─────────────────────────────────────────────────────────────────────────────────────────────────────── */
@@ -403,7 +403,7 @@
       list = (list || []).filter(function (x) { return x && x.valid !== false; }); if (!list.length || !box.isConnected) return;
       box.innerHTML = '<div class="tr-pc-h">🎓 <span>Certificates</span></div>' + list.map(function (x) {
         return '<div class="tr-pc-row" role="button" tabindex="0" data-trcert="' + esc(x.code) + '"><b data-noi18n>' + esc(x.course) + '</b><span><span>Drugbox Training</span> · <span data-noi18n>' + esc(day(x.issued_at)) + '</span> · <span data-noi18n>' + esc(x.code) + '</span></span></div>'; }).join('');
-      box.hidden = false; if (window.dxI18nAdopt) window.dxI18nAdopt(box);
+      box.hidden = false; if (window.dxI18nAttrs) window.dxI18nAttrs(box);
     });
   }
   document.addEventListener('click', function (e) { var x = e.target.closest && e.target.closest('[data-trcert]'); if (x) { e.preventDefault(); certificate(x.dataset.trcert); } }, true);
@@ -433,7 +433,7 @@
           '<td class="tr-adm-acts"><button type="button" class="dbk-btn s" data-tredit="' + x.id + '">✏️ Edit</button><button type="button" class="dbk-btn s" data-trles="' + x.id + '">📚 Lessons</button>' +
           '<button type="button" class="dbk-btn s" data-trqz="' + x.id + '">📝 Quiz</button><button type="button" class="dbk-btn s" data-tract="' + x.id + '" data-on="' + (x.active ? 0 : 1) + '">' + (x.active ? 'Hide' : 'Publish') + '</button></td></tr>'; }).join('') + '</tbody></table>'
         : '<div class="dbk-empty">' + esc(T('No courses yet.')) + '</div>';
-      c.__list = list; if (window.dxI18nAdopt) window.dxI18nAdopt(c);
+      c.__list = list; if (window.dxI18nAttrs) window.dxI18nAttrs(c);
     }, function (e) { toast(e.message); });
   }
   function courseForm(x) {
@@ -458,7 +458,7 @@
         if (o.title.length < 3) { toast('The title needs at least 3 characters'); return false; }
         S().saveCourse(o).then(function () { close(); toast(x.id ? 'Course saved' : 'Course published'); refresh(true); var c = document.getElementById('adminContent'); if (c) adminTraining(c); }, function (e) { toast(e.message); });
         return false; } } });
-    if (window.dxI18nAdopt) window.dxI18nAdopt(md.el);
+    if (window.dxI18nAttrs) window.dxI18nAttrs(md.el);
   }
   function lessonsAdmin(id) {
     S().adminLessons(id).then(function (ls) {
@@ -477,7 +477,7 @@
           S().addLesson(id, { title: t, kind: k, minutes: Math.max(1, +bx.querySelector('#trLm').value || 10), body: bx.querySelector('#trLb').value, file: f || null })
             .then(function () { close(); toast('Lesson added'); lessonsAdmin(id); refresh(true); }, function (e) { toast(e.message); });
           return false; } } });
-      if (window.dxI18nAdopt) window.dxI18nAdopt(md.el);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(md.el);
     }, function (e) { toast(e.message); });
   }
   function quizAdmin(id) {
@@ -492,7 +492,7 @@
           if (p.length < 3) { toast('Write the question'); return false; } if (o.length < 2 || o.length > 6) { toast('Give 2 to 6 answers, one per line'); return false; } if (a < 0 || a >= o.length) { toast('The right answer must be one of the answers'); return false; }
           S().addQuestion(id, { prompt: p, options: o, answer: a }).then(function () { close(); toast('Question added'); quizAdmin(id); }, function (e) { toast(e.message); });
           return false; } } });
-      if (window.dxI18nAdopt) window.dxI18nAdopt(md.el);
+      if (window.dxI18nAttrs) window.dxI18nAttrs(md.el);
     }, function (e) { toast(e.message); });
   }
   document.addEventListener('click', function (e) {
