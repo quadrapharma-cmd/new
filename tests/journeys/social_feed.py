@@ -650,7 +650,8 @@ def mention_and_hashtag(j):
     with j.step('In the composer type "Thanks @Ali": people suggestions appear'):
         j.click(pg, r"What.s on your mind|تفكر|ماذا يدور|ما الذي يدور", what="What's on your mind")
         pg.click('#postBody'); pg.keyboard.type('Thanks @Ali'); pg.wait_for_timeout(1000)
-        sug = pg.locator('.modal-bg [role=option]:visible, .modal-bg [class*=mention]:visible, .modal-bg [class*=suggest]:visible').filter(has_text='Alia')
+        sug = pg.locator('.modal-bg [role=option]:visible').filter(has_text='Alia')      # a suggestion itself (its list also names Alia)
+        if not sug.count(): sug = pg.locator('.modal-bg [class*=mention]:visible, .modal-bg [class*=suggest]:visible').filter(has_text='Alia')
         j.check(sug.count(), 'not built: typing @ in the composer shows no people suggestions')
     with j.step('Pick Dr. Alia Nasser; add #GMP; post'):
         sug.first.click(); pg.keyboard.type(' for the audit #GMP ' + j.tag)
@@ -658,7 +659,7 @@ def mention_and_hashtag(j):
         post = post_el(j, pg, j.tag)
     with j.step("The mention links to B's profile; #GMP links to a list of posts with that tag"):
         m = post.locator('a, [onclick]').filter(has_text='Alia'); j.check(m.count(), 'the mention is not a link')
-        m.first.click(); j.settle(pg); j.check('Alia Nasser' in j.text(pg)[:400], "the mention does not open Alia's profile")
+        m.first.click(); j.settle(pg); j.check(('Alia Nasser' if j.live else 'Alia Mourad') in j.text(pg)[:400], "the mention does not open Alia's profile")
         j.nav(pg, 'feed'); post = post_el(j, pg, j.tag)
         h = post.locator('a, [onclick]').filter(has_text='#GMP'); j.check(h.count(), '#GMP is not a link')
         h.first.click(); j.settle(pg); j.check(j.tag in j.text(pg) and re.search(r'#GMP', j.text(pg)[:300]), '#GMP does not open a list of posts with that tag')

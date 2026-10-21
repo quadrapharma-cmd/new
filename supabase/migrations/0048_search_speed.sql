@@ -75,8 +75,11 @@ begin
     || (select coalesce(string_agg(format(' and (p.name ilike %1$L or p.company ilike %1$L or p.headline ilike %1$L)', w), ''), '') from unnest(words) w)
     || case when sp is null then '' else ' and p.headline ilike any ($3)' end
     || case when nullif(p_country, '') is null then '' else ' and p.country = $4' end
-    || ' limit 400) x order by x.verified desc nulls last, x.name limit $5'   -- the first 400 matches, then ordered: a common word stays fast
-    using me, bl, sp, upper(left(coalesce(p_country, ''), 2)), n;
+    || ' limit 400) x order by (x.id = any ($6)) desc,'
+    || ' x.verified desc nulls last, x.name limit $5'   -- my connections first (a picker names the colleague I mean)   -- the first 400 matches, then ordered: a common word stays fast
+    using me, bl, sp, upper(left(coalesce(p_country, ''), 2)), n,
+          array(select case when c.requester = me then c.addressee else c.requester end from public.connections c
+                 where c.status = 'accepted' and (c.requester = me or c.addressee = me) limit 5000);
 end $$;
 revoke all on function public.find_people(text, text, text, int) from public, anon, authenticated, service_role;
 grant execute on function public.find_people(text, text, text, int) to authenticated;
