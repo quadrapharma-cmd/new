@@ -1,0 +1,3030 @@
+{
+ "meta": {
+  "date": "2026-10-26",
+  "tag": "n100",
+  "target": "http://localhost:54321",
+  "target_kind": "local",
+  "seed": "drugbox-sim-1",
+  "accounts": 100,
+  "speed": 360.0,
+  "wall_s": 233.10501742362976,
+  "concurrency": 12,
+  "rps": 150,
+  "head": "4d58b04",
+  "bootstrap": {
+   "signed_up": 100,
+   "signed_in": 0,
+   "failed": [],
+   "name_problems": []
+  },
+  "lag_p50": 0.0,
+  "lag_p95": 0.7,
+  "lag_max": 1.32,
+  "db_slow": [],
+  "bucket_wait_s": 39.6
+ },
+ "totals": {
+  "skip": 406,
+  "ok": 1995,
+  "not_built": 39
+ },
+ "actions": {
+  "account.settings": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 1,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-02",
+    "J-SOCIAL-05",
+    "J-SOCIAL-06",
+    "J-SOCIAL-07"
+   ]
+  },
+  "admin.certs": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 5.3,
+   "p95_ms": 5.3,
+   "req_p50_ms": 4.9,
+   "req_p95_ms": 4.9,
+   "area": "admin",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-45",
+    "J-BUSINESS-19"
+   ]
+  },
+  "admin.company_reports": {
+   "attempted": 2,
+   "ok": 2,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 3,
+   "sim_error": 0,
+   "p50_ms": 9.4,
+   "p95_ms": 9.7,
+   "req_p50_ms": 4.6,
+   "req_p95_ms": 4.9,
+   "area": "admin",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-49",
+    "J-COMMUNITY-43"
+   ]
+  },
+  "admin.directory": {
+   "attempted": 3,
+   "ok": 3,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 2,
+   "sim_error": 0,
+   "p50_ms": 18.6,
+   "p95_ms": 83.8,
+   "req_p50_ms": 2.6,
+   "req_p95_ms": 12.7,
+   "area": "admin",
+   "path": "server",
+   "journeys": [
+    "J-BUSINESS-14"
+   ]
+  },
+  "admin.instapay": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 3,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "admin",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-45",
+    "J-COMMUNITY-46"
+   ]
+  },
+  "admin.messages": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 3,
+   "sim_error": 0,
+   "p50_ms": 7.1,
+   "p95_ms": 7.1,
+   "req_p50_ms": 3.4,
+   "req_p95_ms": 4.0,
+   "area": "admin",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-47",
+    "J-SOCIAL-40"
+   ]
+  },
+  "admin.only_staff": {
+   "attempted": 3,
+   "ok": 3,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 7.2,
+   "p95_ms": 9.6,
+   "req_p50_ms": 3.2,
+   "req_p95_ms": 5.2,
+   "area": "admin",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-50"
+   ]
+  },
+  "admin.post_reports": {
+   "attempted": 2,
+   "ok": 2,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 14.8,
+   "p95_ms": 15.2,
+   "req_p50_ms": 4.4,
+   "req_p95_ms": 6.1,
+   "area": "admin",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-20",
+    "J-COMMUNITY-47",
+    "J-COMMUNITY-48",
+    "J-COMMUNITY-49"
+   ]
+  },
+  "admin.suspend_person": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 2,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-51"
+   ]
+  },
+  "admin.verifications": {
+   "attempted": 3,
+   "ok": 3,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 16.9,
+   "p95_ms": 18.2,
+   "req_p50_ms": 3.0,
+   "req_p95_ms": 5.2,
+   "area": "admin",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-49",
+    "J-COMMUNITY-41",
+    "J-COMMUNITY-42",
+    "J-BUSINESS-14",
+    "J-BUSINESS-21"
+   ]
+  },
+  "admin.warnings": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 6.8,
+   "p95_ms": 6.8,
+   "req_p50_ms": 3.2,
+   "req_p95_ms": 4.5,
+   "area": "admin",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-44",
+    "J-COMMUNITY-33"
+   ]
+  },
+  "co.cert": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 10.1,
+   "p95_ms": 10.1,
+   "req_p50_ms": 4.5,
+   "req_p95_ms": 5.0,
+   "area": "business",
+   "path": "api",
+   "journeys": [
+    "J-BUSINESS-19"
+   ]
+  },
+  "co.claim": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 5.1,
+   "p95_ms": 5.1,
+   "req_p50_ms": 4.0,
+   "req_p95_ms": 4.0,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-14",
+    "J-COMMUNITY-42"
+   ]
+  },
+  "co.create": {
+   "attempted": 17,
+   "ok": 17,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 85.8,
+   "p95_ms": 261.3,
+   "req_p50_ms": 4.0,
+   "req_p95_ms": 6.1,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-12"
+   ]
+  },
+  "co.document": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 7.6,
+   "p95_ms": 7.6,
+   "req_p50_ms": 3.3,
+   "req_p95_ms": 3.8,
+   "area": "business",
+   "path": "api",
+   "journeys": [
+    "J-BUSINESS-20"
+   ]
+  },
+  "co.follow": {
+   "attempted": 15,
+   "ok": 15,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 6.4,
+   "p95_ms": 19.3,
+   "req_p50_ms": 4.4,
+   "req_p95_ms": 7.2,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-05"
+   ]
+  },
+  "co.invite": {
+   "attempted": 29,
+   "ok": 29,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 40,
+   "sim_error": 0,
+   "p50_ms": 18.6,
+   "p95_ms": 86.0,
+   "req_p50_ms": 3.9,
+   "req_p95_ms": 4.5,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-15",
+    "J-BUSINESS-17"
+   ]
+  },
+  "co.join": {
+   "attempted": 14,
+   "ok": 14,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 73,
+   "sim_error": 0,
+   "p50_ms": 13.5,
+   "p95_ms": 63.1,
+   "req_p50_ms": 4.2,
+   "req_p95_ms": 5.2,
+   "area": "business",
+   "path": "api",
+   "journeys": [
+    "J-BUSINESS-15"
+   ]
+  },
+  "co.message": {
+   "attempted": 14,
+   "ok": 14,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 12.8,
+   "p95_ms": 60.2,
+   "req_p50_ms": 5.3,
+   "req_p95_ms": 6.7,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-06",
+    "J-BUSINESS-35"
+   ]
+  },
+  "co.product": {
+   "attempted": 17,
+   "ok": 17,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 3,
+   "sim_error": 0,
+   "p50_ms": 8.1,
+   "p95_ms": 86.5,
+   "req_p50_ms": 3.9,
+   "req_p95_ms": 5.2,
+   "area": "business",
+   "path": "api",
+   "journeys": [
+    "J-BUSINESS-22"
+   ]
+  },
+  "co.rating_reply": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 2,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-24"
+   ]
+  },
+  "co.report": {
+   "attempted": 2,
+   "ok": 2,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 6.5,
+   "p95_ms": 6.7,
+   "req_p50_ms": 5.2,
+   "req_p95_ms": 5.3,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-09",
+    "J-COMMUNITY-43"
+   ]
+  },
+  "co.routing": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 8.1,
+   "p95_ms": 8.1,
+   "req_p50_ms": 6.5,
+   "req_p95_ms": 6.5,
+   "area": "business",
+   "path": "api",
+   "journeys": [
+    "J-BUSINESS-17"
+   ]
+  },
+  "co.site": {
+   "attempted": 17,
+   "ok": 17,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 4,
+   "sim_error": 0,
+   "p50_ms": 33.2,
+   "p95_ms": 82.0,
+   "req_p50_ms": 3.5,
+   "req_p95_ms": 4.4,
+   "area": "business",
+   "path": "api",
+   "journeys": [
+    "J-BUSINESS-18",
+    "J-BUSINESS-02"
+   ]
+  },
+  "co.update": {
+   "attempted": 17,
+   "ok": 17,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 2,
+   "sim_error": 0,
+   "p50_ms": 37.8,
+   "p95_ms": 153.9,
+   "req_p50_ms": 4.3,
+   "req_p95_ms": 5.7,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-16"
+   ]
+  },
+  "co.verify": {
+   "attempted": 17,
+   "ok": 17,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 131.9,
+   "p95_ms": 245.1,
+   "req_p50_ms": 3.5,
+   "req_p95_ms": 7.5,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-21",
+    "J-COMMUNITY-41"
+   ]
+  },
+  "co.view": {
+   "attempted": 38,
+   "ok": 38,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 18.6,
+   "p95_ms": 58.4,
+   "req_p50_ms": 3.0,
+   "req_p95_ms": 4.1,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-04",
+    "J-BUSINESS-06",
+    "J-BUSINESS-11"
+   ]
+  },
+  "comment.like": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 14,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-14",
+    "J-COMMUNITY-05"
+   ]
+  },
+  "deal.dossier": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 3,
+   "sim_error": 0,
+   "p50_ms": 6.3,
+   "p95_ms": 6.3,
+   "req_p50_ms": 5.4,
+   "req_p95_ms": 5.4,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-08",
+    "J-BUSINESS-39"
+   ]
+  },
+  "deal.files": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 1,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-29"
+   ]
+  },
+  "deal.group": {
+   "attempted": 3,
+   "ok": 3,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 3,
+   "sim_error": 0,
+   "p50_ms": 9.8,
+   "p95_ms": 11.0,
+   "req_p50_ms": 7.5,
+   "req_p95_ms": 8.0,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-31",
+    "J-BUSINESS-32",
+    "J-BUSINESS-33"
+   ]
+  },
+  "deal.inbox": {
+   "attempted": 7,
+   "ok": 7,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 5.9,
+   "p95_ms": 56.1,
+   "req_p50_ms": 4.8,
+   "req_p95_ms": 5.7,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-23",
+    "J-BUSINESS-25"
+   ]
+  },
+  "deal.privacy": {
+   "attempted": 5,
+   "ok": 5,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 8.9,
+   "p95_ms": 37.7,
+   "req_p50_ms": 3.5,
+   "req_p95_ms": 4.3,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-30"
+   ]
+  },
+  "deal.progress": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 13,
+   "sim_error": 0,
+   "p50_ms": 7.0,
+   "p95_ms": 7.0,
+   "req_p50_ms": 5.6,
+   "req_p95_ms": 5.6,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-26",
+    "J-BUSINESS-27",
+    "J-BUSINESS-23",
+    "J-BUSINESS-30",
+    "J-BUSINESS-33",
+    "J-COMMUNITY-26"
+   ]
+  },
+  "deal.questionnaire": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 5,
+   "sim_error": 0,
+   "p50_ms": 5.6,
+   "p95_ms": 5.6,
+   "req_p50_ms": 4.4,
+   "req_p95_ms": 4.4,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-07"
+   ]
+  },
+  "deal.rfq": {
+   "attempted": 8,
+   "ok": 8,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 10,
+   "sim_error": 0,
+   "p50_ms": 8.9,
+   "p95_ms": 20.2,
+   "req_p50_ms": 5.8,
+   "req_p95_ms": 7.8,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-03",
+    "J-BUSINESS-26",
+    "J-BUSINESS-23"
+   ]
+  },
+  "deal.service": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 9.1,
+   "p95_ms": 9.1,
+   "req_p50_ms": 6.9,
+   "req_p95_ms": 6.9,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-28"
+   ]
+  },
+  "deal.surplus": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 2,
+   "sim_error": 0,
+   "p50_ms": 5.3,
+   "p95_ms": 5.3,
+   "req_p50_ms": 4.2,
+   "req_p95_ms": 4.2,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-38"
+   ]
+  },
+  "dir.search": {
+   "attempted": 30,
+   "ok": 30,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 4.8,
+   "p95_ms": 82.4,
+   "req_p50_ms": 3.5,
+   "req_p95_ms": 6.6,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-01",
+    "J-BUSINESS-02",
+    "J-SOCIAL-45"
+   ]
+  },
+  "feed.read": {
+   "attempted": 86,
+   "ok": 86,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 21.9,
+   "p95_ms": 163.3,
+   "req_p50_ms": 3.3,
+   "req_p95_ms": 6.3,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-10",
+    "J-SOCIAL-49"
+   ]
+  },
+  "group.admin": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 13,
+   "sim_error": 0,
+   "p50_ms": 4.8,
+   "p95_ms": 4.8,
+   "req_p50_ms": 4.0,
+   "req_p95_ms": 4.0,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-10",
+    "J-COMMUNITY-14",
+    "J-COMMUNITY-16",
+    "J-COMMUNITY-17"
+   ]
+  },
+  "group.browse": {
+   "attempted": 36,
+   "ok": 36,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 30.6,
+   "p95_ms": 86.8,
+   "req_p50_ms": 3.5,
+   "req_p95_ms": 8.2,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-01",
+    "J-COMMUNITY-02",
+    "J-COMMUNITY-03",
+    "J-COMMUNITY-07",
+    "J-COMMUNITY-08"
+   ]
+  },
+  "group.comment": {
+   "attempted": 17,
+   "ok": 17,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 6.0,
+   "p95_ms": 161.3,
+   "req_p50_ms": 5.0,
+   "req_p95_ms": 6.8,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-05",
+    "J-COMMUNITY-06"
+   ]
+  },
+  "group.create": {
+   "attempted": 5,
+   "ok": 5,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 28.3,
+   "p95_ms": 46.1,
+   "req_p50_ms": 4.6,
+   "req_p95_ms": 5.7,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-12",
+    "J-COMMUNITY-13"
+   ]
+  },
+  "group.invite": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 19,
+   "sim_error": 0,
+   "p50_ms": 5.4,
+   "p95_ms": 5.4,
+   "req_p50_ms": 4.7,
+   "req_p95_ms": 4.7,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-11"
+   ]
+  },
+  "group.join": {
+   "attempted": 114,
+   "ok": 114,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 9,
+   "sim_error": 0,
+   "p50_ms": 8.7,
+   "p95_ms": 145.6,
+   "req_p50_ms": 3.9,
+   "req_p95_ms": 5.4,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-09",
+    "J-COMMUNITY-10"
+   ]
+  },
+  "group.leave": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 6.1,
+   "p95_ms": 6.1,
+   "req_p50_ms": 5.1,
+   "req_p95_ms": 5.1,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-09"
+   ]
+  },
+  "group.post": {
+   "attempted": 22,
+   "ok": 22,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 4,
+   "sim_error": 0,
+   "p50_ms": 6.5,
+   "p95_ms": 9.4,
+   "req_p50_ms": 4.7,
+   "req_p95_ms": 6.2,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-04",
+    "J-COMMUNITY-13"
+   ]
+  },
+  "group.report": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 4.7,
+   "p95_ms": 4.7,
+   "req_p50_ms": 4.0,
+   "req_p95_ms": 4.0,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-15"
+   ]
+  },
+  "group.reports_review": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 33,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-15"
+   ]
+  },
+  "job.alerts": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 1,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-20"
+   ]
+  },
+  "job.apply": {
+   "attempted": 17,
+   "ok": 17,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 17.4,
+   "p95_ms": 23.7,
+   "req_p50_ms": 3.9,
+   "req_p95_ms": 6.3,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-21"
+   ]
+  },
+  "job.apply_company": {
+   "attempted": 5,
+   "ok": 5,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 6.8,
+   "p95_ms": 7.6,
+   "req_p50_ms": 5.1,
+   "req_p95_ms": 5.9,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-11"
+   ]
+  },
+  "job.manage": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 4,
+   "sim_error": 0,
+   "p50_ms": 11.8,
+   "p95_ms": 11.8,
+   "req_p50_ms": 5.3,
+   "req_p95_ms": 5.7,
+   "area": "community",
+   "path": "api",
+   "journeys": [
+    "J-COMMUNITY-24",
+    "J-COMMUNITY-25",
+    "J-COMMUNITY-26"
+   ]
+  },
+  "job.post": {
+   "attempted": 18,
+   "ok": 18,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 7.2,
+   "p95_ms": 47.4,
+   "req_p50_ms": 4.1,
+   "req_p95_ms": 5.0,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-23"
+   ]
+  },
+  "job.save": {
+   "attempted": 12,
+   "ok": 12,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 5.2,
+   "p95_ms": 7.1,
+   "req_p50_ms": 4.3,
+   "req_p95_ms": 5.8,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-20"
+   ]
+  },
+  "job.search": {
+   "attempted": 29,
+   "ok": 29,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 17.0,
+   "p95_ms": 19.2,
+   "req_p50_ms": 2.9,
+   "req_p95_ms": 5.7,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-19"
+   ]
+  },
+  "job.withdraw": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 4,
+   "sim_error": 0,
+   "p50_ms": 3.6,
+   "p95_ms": 3.6,
+   "req_p50_ms": 3.0,
+   "req_p95_ms": 3.0,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-22"
+   ]
+  },
+  "market.browse": {
+   "attempted": 31,
+   "ok": 31,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 19.3,
+   "p95_ms": 126.0,
+   "req_p50_ms": 3.0,
+   "req_p95_ms": 4.9,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-34"
+   ]
+  },
+  "market.demand": {
+   "attempted": 13,
+   "ok": 13,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 6.0,
+   "p95_ms": 37.3,
+   "req_p50_ms": 4.8,
+   "req_p95_ms": 6.1,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-37"
+   ]
+  },
+  "market.intents": {
+   "attempted": 15,
+   "ok": 15,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 5.3,
+   "p95_ms": 35.4,
+   "req_p50_ms": 4.5,
+   "req_p95_ms": 7.8,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-41"
+   ]
+  },
+  "market.manage": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 9,
+   "sim_error": 0,
+   "p50_ms": 6.3,
+   "p95_ms": 6.3,
+   "req_p50_ms": 3.0,
+   "req_p95_ms": 3.4,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-40"
+   ]
+  },
+  "market.supply": {
+   "attempted": 35,
+   "ok": 35,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 5.3,
+   "p95_ms": 35.8,
+   "req_p50_ms": 4.3,
+   "req_p95_ms": 5.7,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-36"
+   ]
+  },
+  "msg.attach": {
+   "attempted": 9,
+   "ok": 9,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 15.0,
+   "p95_ms": 21.1,
+   "req_p50_ms": 3.5,
+   "req_p95_ms": 7.4,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-37"
+   ]
+  },
+  "msg.block": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 6.8,
+   "p95_ms": 6.8,
+   "req_p50_ms": 3.3,
+   "req_p95_ms": 3.3,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-40"
+   ]
+  },
+  "msg.mute": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 5.2,
+   "p95_ms": 5.2,
+   "req_p50_ms": 3.8,
+   "req_p95_ms": 3.8,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-40"
+   ]
+  },
+  "msg.read": {
+   "attempted": 10,
+   "ok": 10,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 52,
+   "sim_error": 0,
+   "p50_ms": 12.4,
+   "p95_ms": 47.0,
+   "req_p50_ms": 3.1,
+   "req_p95_ms": 4.6,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-38",
+    "J-SOCIAL-39"
+   ]
+  },
+  "msg.report": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 5.4,
+   "p95_ms": 5.4,
+   "req_p50_ms": 4.5,
+   "req_p95_ms": 4.5,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-40"
+   ]
+  },
+  "msg.send": {
+   "attempted": 80,
+   "ok": 80,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 11.9,
+   "p95_ms": 23.9,
+   "req_p50_ms": 3.4,
+   "req_p95_ms": 5.3,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-35",
+    "J-SOCIAL-36",
+    "J-COMMUNITY-28",
+    "J-BUSINESS-35"
+   ]
+  },
+  "net.accept": {
+   "attempted": 34,
+   "ok": 34,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 17,
+   "sim_error": 0,
+   "p50_ms": 13.6,
+   "p95_ms": 19.7,
+   "req_p50_ms": 4.0,
+   "req_p95_ms": 5.7,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-30",
+    "J-SOCIAL-42"
+   ]
+  },
+  "net.connect": {
+   "attempted": 230,
+   "ok": 230,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 35.9,
+   "p95_ms": 273.0,
+   "req_p50_ms": 3.9,
+   "req_p95_ms": 7.9,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-29",
+    "J-SOCIAL-34"
+   ]
+  },
+  "net.decline": {
+   "attempted": 3,
+   "ok": 3,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 9.8,
+   "p95_ms": 11.2,
+   "req_p50_ms": 3.6,
+   "req_p95_ms": 4.7,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-31"
+   ]
+  },
+  "net.dismiss": {
+   "attempted": 10,
+   "ok": 10,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 12.2,
+   "p95_ms": 20.6,
+   "req_p50_ms": 3.8,
+   "req_p95_ms": 5.4,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-34"
+   ]
+  },
+  "net.follow": {
+   "attempted": 17,
+   "ok": 17,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 5.7,
+   "p95_ms": 8.6,
+   "req_p50_ms": 4.6,
+   "req_p95_ms": 6.1,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-33"
+   ]
+  },
+  "net.remove": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 4.6,
+   "p95_ms": 4.6,
+   "req_p50_ms": 4.0,
+   "req_p95_ms": 4.0,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-32"
+   ]
+  },
+  "net.withdraw": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 2,
+   "sim_error": 0,
+   "p50_ms": 4.4,
+   "p95_ms": 4.4,
+   "req_p50_ms": 3.8,
+   "req_p95_ms": 3.8,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-29"
+   ]
+  },
+  "notif.prefs": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 1,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-44"
+   ]
+  },
+  "notif.read": {
+   "attempted": 34,
+   "ok": 34,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 12,
+   "sim_error": 0,
+   "p50_ms": 9.0,
+   "p95_ms": 21.2,
+   "req_p50_ms": 4.1,
+   "req_p95_ms": 5.7,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-41",
+    "J-SOCIAL-42",
+    "J-SOCIAL-43",
+    "J-COMMUNITY-18",
+    "J-COMMUNITY-48"
+   ]
+  },
+  "pay.boost": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 22.7,
+   "p95_ms": 22.7,
+   "req_p50_ms": 10.5,
+   "req_p95_ms": 14.5,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-42",
+    "J-BUSINESS-44"
+   ]
+  },
+  "pay.featured": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 9,
+   "sim_error": 0,
+   "p50_ms": 19.3,
+   "p95_ms": 19.3,
+   "req_p50_ms": 9.1,
+   "req_p95_ms": 12.1,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-43",
+    "J-BUSINESS-45"
+   ]
+  },
+  "pay.history": {
+   "attempted": 4,
+   "ok": 4,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 6.8,
+   "p95_ms": 7.6,
+   "req_p50_ms": 2.9,
+   "req_p95_ms": 4.6,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-46"
+   ]
+  },
+  "pay.vip": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 32.0,
+   "p95_ms": 32.0,
+   "req_p50_ms": 14.3,
+   "req_p95_ms": 21.1,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-13",
+    "J-BUSINESS-47"
+   ]
+  },
+  "pay.vip_boosts": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 1,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "business",
+   "path": "app",
+   "journeys": [
+    "J-BUSINESS-48"
+   ]
+  },
+  "people.search": {
+   "attempted": 24,
+   "ok": 24,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 9.1,
+   "p95_ms": 12.2,
+   "req_p50_ms": 3.5,
+   "req_p95_ms": 5.0,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-28",
+    "J-SOCIAL-45"
+   ]
+  },
+  "post.comment": {
+   "attempted": 62,
+   "ok": 62,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 10.1,
+   "p95_ms": 16.7,
+   "req_p50_ms": 4.4,
+   "req_p95_ms": 6.3,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-14"
+   ]
+  },
+  "post.delete": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 14.5,
+   "p95_ms": 14.5,
+   "req_p50_ms": 11.4,
+   "req_p95_ms": 11.4,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-19"
+   ]
+  },
+  "post.edit": {
+   "attempted": 6,
+   "ok": 6,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 5.6,
+   "p95_ms": 6.3,
+   "req_p50_ms": 4.8,
+   "req_p95_ms": 5.2,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-18"
+   ]
+  },
+  "post.image": {
+   "attempted": 23,
+   "ok": 23,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 16.8,
+   "p95_ms": 20.0,
+   "req_p50_ms": 3.3,
+   "req_p95_ms": 5.3,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-12"
+   ]
+  },
+  "post.react": {
+   "attempted": 78,
+   "ok": 78,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 2,
+   "sim_error": 0,
+   "p50_ms": 6.1,
+   "p95_ms": 9.8,
+   "req_p50_ms": 4.9,
+   "req_p95_ms": 7.6,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-13",
+    "J-COMMUNITY-06"
+   ]
+  },
+  "post.reply": {
+   "attempted": 27,
+   "ok": 27,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 1,
+   "sim_error": 0,
+   "p50_ms": 6.4,
+   "p95_ms": 10.5,
+   "req_p50_ms": 5.6,
+   "req_p95_ms": 6.7,
+   "area": "social",
+   "path": "api",
+   "journeys": [
+    "J-SOCIAL-15",
+    "J-COMMUNITY-05"
+   ]
+  },
+  "post.report": {
+   "attempted": 2,
+   "ok": 2,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 5.7,
+   "p95_ms": 6.3,
+   "req_p50_ms": 4.6,
+   "req_p95_ms": 5.1,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-20"
+   ]
+  },
+  "post.repost": {
+   "attempted": 13,
+   "ok": 13,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 8.9,
+   "p95_ms": 20.4,
+   "req_p50_ms": 3.8,
+   "req_p95_ms": 7.0,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-16"
+   ]
+  },
+  "post.save": {
+   "attempted": 14,
+   "ok": 14,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 8.6,
+   "p95_ms": 39.8,
+   "req_p50_ms": 3.5,
+   "req_p95_ms": 5.8,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-17",
+    "J-SOCIAL-48"
+   ]
+  },
+  "post.text": {
+   "attempted": 139,
+   "ok": 139,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 13.3,
+   "p95_ms": 147.2,
+   "req_p50_ms": 3.8,
+   "req_p95_ms": 5.4,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-11",
+    "J-SOCIAL-21"
+   ]
+  },
+  "post.unreact": {
+   "attempted": 7,
+   "ok": 7,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 6,
+   "sim_error": 0,
+   "p50_ms": 6.3,
+   "p95_ms": 7.6,
+   "req_p50_ms": 5.2,
+   "req_p95_ms": 6.7,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-13"
+   ]
+  },
+  "profile.edit": {
+   "attempted": 111,
+   "ok": 111,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 18.5,
+   "p95_ms": 41.5,
+   "req_p50_ms": 5.9,
+   "req_p95_ms": 14.3,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-22",
+    "J-COMMUNITY-27"
+   ]
+  },
+  "profile.experience": {
+   "attempted": 108,
+   "ok": 108,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 6.7,
+   "p95_ms": 88.3,
+   "req_p50_ms": 4.1,
+   "req_p95_ms": 9.4,
+   "area": "social",
+   "path": "api",
+   "journeys": [
+    "J-SOCIAL-25",
+    "J-SOCIAL-26"
+   ]
+  },
+  "profile.photo": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 2,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-23"
+   ]
+  },
+  "profile.rename": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 11.8,
+   "p95_ms": 11.8,
+   "req_p50_ms": 9.0,
+   "req_p95_ms": 9.0,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-22"
+   ]
+  },
+  "profile.video": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 12.3,
+   "p95_ms": 12.3,
+   "req_p50_ms": 3.9,
+   "req_p95_ms": 4.0,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-24"
+   ]
+  },
+  "profile.visit": {
+   "attempted": 30,
+   "ok": 30,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 17.5,
+   "p95_ms": 20.8,
+   "req_p50_ms": 3.3,
+   "req_p95_ms": 4.8,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-27"
+   ]
+  },
+  "search.saved": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 4,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-47"
+   ]
+  },
+  "ticker.read": {
+   "attempted": 12,
+   "ok": 12,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 13.3,
+   "p95_ms": 16.8,
+   "req_p50_ms": 3.2,
+   "req_p95_ms": 5.6,
+   "area": "social",
+   "path": "app",
+   "journeys": [
+    "J-SOCIAL-49"
+   ]
+  },
+  "training.admin": {
+   "attempted": 3,
+   "ok": 3,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 7.0,
+   "p95_ms": 43.9,
+   "req_p50_ms": 3.7,
+   "req_p95_ms": 4.0,
+   "area": "community",
+   "path": "api",
+   "journeys": [
+    "J-COMMUNITY-40"
+   ]
+  },
+  "training.enroll": {
+   "attempted": 142,
+   "ok": 142,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 35.9,
+   "p95_ms": 199.0,
+   "req_p50_ms": 3.0,
+   "req_p95_ms": 4.5,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-35",
+    "J-COMMUNITY-36"
+   ]
+  },
+  "training.progress": {
+   "attempted": 0,
+   "ok": 0,
+   "fail": 0,
+   "not_built": 10,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": null,
+   "p95_ms": null,
+   "req_p50_ms": null,
+   "req_p95_ms": null,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-37",
+    "J-COMMUNITY-38",
+    "J-COMMUNITY-39"
+   ]
+  },
+  "trust.honor": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 2,
+   "sim_error": 0,
+   "p50_ms": 7.1,
+   "p95_ms": 7.1,
+   "req_p50_ms": 6.2,
+   "req_p95_ms": 6.2,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-31"
+   ]
+  },
+  "trust.list": {
+   "attempted": 4,
+   "ok": 4,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 5.5,
+   "p95_ms": 7.2,
+   "req_p50_ms": 4.5,
+   "req_p95_ms": 5.1,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-29"
+   ]
+  },
+  "trust.read": {
+   "attempted": 7,
+   "ok": 7,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 0,
+   "sim_error": 0,
+   "p50_ms": 18.6,
+   "p95_ms": 24.7,
+   "req_p50_ms": 3.3,
+   "req_p95_ms": 6.1,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-34",
+    "J-COMMUNITY-29"
+   ]
+  },
+  "trust.reply": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 13,
+   "sim_error": 0,
+   "p50_ms": 4.1,
+   "p95_ms": 4.1,
+   "req_p50_ms": 3.7,
+   "req_p95_ms": 3.7,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-33"
+   ]
+  },
+  "trust.review": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 3,
+   "sim_error": 0,
+   "p50_ms": 11.6,
+   "p95_ms": 11.6,
+   "req_p50_ms": 4.7,
+   "req_p95_ms": 5.4,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-30"
+   ]
+  },
+  "trust.warn": {
+   "attempted": 1,
+   "ok": 1,
+   "fail": 0,
+   "not_built": 0,
+   "limited": 0,
+   "skip": 10,
+   "sim_error": 0,
+   "p50_ms": 9.4,
+   "p95_ms": 9.4,
+   "req_p50_ms": 4.3,
+   "req_p95_ms": 5.6,
+   "area": "community",
+   "path": "app",
+   "journeys": [
+    "J-COMMUNITY-32"
+   ]
+  }
+ },
+ "failures": [],
+ "db_before": {
+  "at": "2026-10-24T22:20:20",
+  "tables": {
+   "approved_suppliers": 0,
+   "comments": 0,
+   "companies": 0,
+   "company_documents": 0,
+   "company_followers": 0,
+   "company_listings": 0,
+   "company_members": 0,
+   "company_products": 0,
+   "company_reports": 0,
+   "company_routing": 0,
+   "company_sites": 0,
+   "connections": 0,
+   "conversation_heads": 0,
+   "conversation_mutes": 0,
+   "course_enrollments": 0,
+   "deal_events": 0,
+   "deal_members": 0,
+   "deals": 0,
+   "enquiries": 0,
+   "group_invites": 0,
+   "group_join_requests": 0,
+   "group_members": 0,
+   "group_post_reports": 0,
+   "groups": 0,
+   "job_applications": 0,
+   "job_lists": 0,
+   "job_reviews": 0,
+   "jobs": 0,
+   "message_reports": 0,
+   "messages": 0,
+   "notifications": 0,
+   "payment_orders": 0,
+   "payment_products": 4,
+   "people_dismissed": 0,
+   "person_followers": 0,
+   "post_media": 0,
+   "post_reports": 0,
+   "post_view_log": 0,
+   "posts": 0,
+   "products": 0,
+   "profile_view_log": 0,
+   "profiles": 0,
+   "reactions": 0,
+   "saved_jobs": 0,
+   "saved_posts": 0,
+   "settings": 24,
+   "site_certificates": 0,
+   "sponsored_suppliers": 0,
+   "ticker_items": 8,
+   "training_courses": 6,
+   "user_blocks": 0,
+   "verification_requests": 0,
+   "work_references": 0
+  },
+  "exact": {
+   "profiles": 0,
+   "posts": 0,
+   "comments": 0,
+   "reactions": 0,
+   "messages": 0,
+   "connections": 0,
+   "notifications": 0,
+   "companies": 0,
+   "deals": 0,
+   "deal_events": 0,
+   "jobs": 0,
+   "job_applications": 0,
+   "groups": 0,
+   "group_members": 0,
+   "products": 0,
+   "enquiries": 0,
+   "payment_orders": 0,
+   "course_enrollments": 0,
+   "company_listings": 0
+  },
+  "db_bytes": 14631439,
+  "storage_objects": 0
+ },
+ "db_after": {
+  "at": "2026-10-24T22:25:19",
+  "tables": {
+   "approved_suppliers": 0,
+   "comments": 102,
+   "companies": 20,
+   "company_documents": 1,
+   "company_followers": 15,
+   "company_listings": 2,
+   "company_members": 46,
+   "company_products": 17,
+   "company_reports": 2,
+   "company_routing": 1,
+   "company_sites": 17,
+   "connections": 229,
+   "conversation_heads": 136,
+   "conversation_mutes": 1,
+   "course_enrollments": 145,
+   "deal_events": 23,
+   "deal_members": 2,
+   "deals": 20,
+   "enquiries": 13,
+   "group_invites": 1,
+   "group_join_requests": 0,
+   "group_members": 118,
+   "group_post_reports": 1,
+   "groups": 5,
+   "job_applications": 16,
+   "job_lists": 4,
+   "job_reviews": 1,
+   "jobs": 18,
+   "message_reports": 1,
+   "messages": 104,
+   "notifications": 521,
+   "payment_orders": 3,
+   "payment_products": 4,
+   "people_dismissed": 10,
+   "person_followers": 17,
+   "post_media": 32,
+   "post_reports": 2,
+   "post_view_log": 1528,
+   "posts": 197,
+   "products": 35,
+   "profile_view_log": 29,
+   "profiles": 101,
+   "reactions": 76,
+   "saved_jobs": 13,
+   "saved_posts": 14,
+   "settings": 24,
+   "site_certificates": 1,
+   "sponsored_suppliers": 0,
+   "ticker_items": 8,
+   "training_courses": 9,
+   "user_blocks": 1,
+   "verification_requests": 18,
+   "work_references": 2
+  },
+  "exact": {
+   "profiles": 101,
+   "posts": 197,
+   "comments": 102,
+   "reactions": 76,
+   "messages": 104,
+   "connections": 229,
+   "notifications": 521,
+   "companies": 20,
+   "deals": 20,
+   "deal_events": 23,
+   "jobs": 18,
+   "job_applications": 16,
+   "groups": 5,
+   "group_members": 118,
+   "products": 35,
+   "enquiries": 13,
+   "payment_orders": 3,
+   "course_enrollments": 145,
+   "company_listings": 2
+  },
+  "db_bytes": 18643991,
+  "storage_objects": 109
+ },
+ "slow_queries": {
+  "member": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+  "exit": 0,
+  "text": "\n── fe2c7d84-fd27-496c-a30e-5a6f92a1099f (fe2c7d84-fd27-496c-a30e-5a6f92a1099f) — median / worst of 5 runs, database time incl. planning, RLS on\nquery                     median ms  worst ms   rows  buffers   limit  \nfeed_page                      0.81      0.93     20       95      50\nfeed_page_cursor               0.87      0.97     20       95      50\nfeed_my_likes                  0.16      0.21      0        2      50\nfeed_my_saved                  0.07      0.11      1        1      50\npost_comments                  0.17      0.21      0        1      50\nconnections_page               0.31      0.45     14       64      50\nsuggest_people                 1.03      1.37     12       63      50\nmy_network_stats               0.33      0.45      1       11      50\nnotifications_list             0.25      0.33     14       36      50\nnotifications_poll             0.12      0.15      2        4      50\nnotifications_unread           0.11      0.15     13        8      50\nmy_conversations               0.28      0.38      1       18      50\nconversation_messages          0.10      0.13      3        2      50\nnew_messages_poll              0.06      0.10      0        1      50\nmy_last_message_id             0.09      0.13      1        1      50\ndirectory_page                 0.63      0.71      1       36      50\ndirectory_page_deep            0.60      0.67      1       36      50\ndirectory_search               0.48      0.55      1       21      50\ncompany_track_record           0.58      0.70      1       25      50\ndeals_list                     1.28      1.35      3       48      50\njobs_list                      0.45      0.50     18       41      50\nopen_candidates                0.48      0.62     21       25      50\nget_reviews_many               0.18      0.24      1        4      50\nmy_interactions                2.00      2.12      0       99      50\nmarket_products                0.40      0.47     34       71      50\nlistings_active                0.10      0.15      2        7      50\ngroups_list                    0.29      0.32      4        3      50\nticker_feed                    0.57      0.75      1       13      50\njobs_stats                     0.57      0.64      1       24      50\nprofile_counts                 0.10      0.13      1        3      50\nhome_faces                     0.03      0.05      0        1      50\n\nOK: every hot query is within its limit\n",
+  "json": [
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "feed_page",
+    "median_ms": 0.813,
+    "worst_ms": 0.932,
+    "rows": 20,
+    "buffers": 95,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "feed_page_cursor",
+    "median_ms": 0.866,
+    "worst_ms": 0.973,
+    "rows": 20,
+    "buffers": 95,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "feed_my_likes",
+    "median_ms": 0.16,
+    "worst_ms": 0.212,
+    "rows": 0,
+    "buffers": 2,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "feed_my_saved",
+    "median_ms": 0.07,
+    "worst_ms": 0.106,
+    "rows": 1,
+    "buffers": 1,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "post_comments",
+    "median_ms": 0.174,
+    "worst_ms": 0.206,
+    "rows": 0,
+    "buffers": 1,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "connections_page",
+    "median_ms": 0.312,
+    "worst_ms": 0.455,
+    "rows": 14,
+    "buffers": 64,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "suggest_people",
+    "median_ms": 1.033,
+    "worst_ms": 1.374,
+    "rows": 12,
+    "buffers": 63,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "my_network_stats",
+    "median_ms": 0.327,
+    "worst_ms": 0.452,
+    "rows": 1,
+    "buffers": 11,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "notifications_list",
+    "median_ms": 0.254,
+    "worst_ms": 0.326,
+    "rows": 14,
+    "buffers": 36,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "notifications_poll",
+    "median_ms": 0.124,
+    "worst_ms": 0.153,
+    "rows": 2,
+    "buffers": 4,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "notifications_unread",
+    "median_ms": 0.11,
+    "worst_ms": 0.146,
+    "rows": 13,
+    "buffers": 8,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "my_conversations",
+    "median_ms": 0.284,
+    "worst_ms": 0.383,
+    "rows": 1,
+    "buffers": 18,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "conversation_messages",
+    "median_ms": 0.095,
+    "worst_ms": 0.129,
+    "rows": 3,
+    "buffers": 2,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "new_messages_poll",
+    "median_ms": 0.058,
+    "worst_ms": 0.097,
+    "rows": 0,
+    "buffers": 1,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "my_last_message_id",
+    "median_ms": 0.094,
+    "worst_ms": 0.126,
+    "rows": 1,
+    "buffers": 1,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "directory_page",
+    "median_ms": 0.632,
+    "worst_ms": 0.708,
+    "rows": 1,
+    "buffers": 36,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "directory_page_deep",
+    "median_ms": 0.601,
+    "worst_ms": 0.672,
+    "rows": 1,
+    "buffers": 36,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "directory_search",
+    "median_ms": 0.482,
+    "worst_ms": 0.551,
+    "rows": 1,
+    "buffers": 21,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "company_track_record",
+    "median_ms": 0.579,
+    "worst_ms": 0.699,
+    "rows": 1,
+    "buffers": 25,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "deals_list",
+    "median_ms": 1.278,
+    "worst_ms": 1.353,
+    "rows": 3,
+    "buffers": 48,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "jobs_list",
+    "median_ms": 0.45,
+    "worst_ms": 0.5,
+    "rows": 18,
+    "buffers": 41,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "open_candidates",
+    "median_ms": 0.48,
+    "worst_ms": 0.616,
+    "rows": 21,
+    "buffers": 25,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "get_reviews_many",
+    "median_ms": 0.185,
+    "worst_ms": 0.237,
+    "rows": 1,
+    "buffers": 4,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "my_interactions",
+    "median_ms": 1.998,
+    "worst_ms": 2.122,
+    "rows": 0,
+    "buffers": 99,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "market_products",
+    "median_ms": 0.405,
+    "worst_ms": 0.472,
+    "rows": 34,
+    "buffers": 71,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "listings_active",
+    "median_ms": 0.104,
+    "worst_ms": 0.148,
+    "rows": 2,
+    "buffers": 7,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "groups_list",
+    "median_ms": 0.292,
+    "worst_ms": 0.318,
+    "rows": 4,
+    "buffers": 3,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "ticker_feed",
+    "median_ms": 0.565,
+    "worst_ms": 0.752,
+    "rows": 1,
+    "buffers": 13,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "jobs_stats",
+    "median_ms": 0.569,
+    "worst_ms": 0.637,
+    "rows": 1,
+    "buffers": 24,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "profile_counts",
+    "median_ms": 0.103,
+    "worst_ms": 0.132,
+    "rows": 1,
+    "buffers": 3,
+    "limit_ms": 50.0
+   },
+   {
+    "who": "fe2c7d84-fd27-496c-a30e-5a6f92a1099f",
+    "query": "home_faces",
+    "median_ms": 0.033,
+    "worst_ms": 0.054,
+    "rows": 0,
+    "buffers": 1,
+    "limit_ms": 50.0
+   }
+  ]
+ },
+ "ui": {
+  "total": 24,
+  "ok": 21,
+  "fail": 2,
+  "skip": 1,
+  "js_errors": 0,
+  "configs": [
+   "ar-1440",
+   "ar-390",
+   "en-1440",
+   "en-390"
+  ],
+  "wall_s": 64.4,
+  "failures": [
+   {
+    "action": "ui.logout",
+    "config": "en-1440",
+    "actor": "adel-hassanein.0050@sim.drugbox.test",
+    "detail": "step 2 (ui.logout): the login fields are not empty after Sign Out",
+    "shots": [
+     "/home/user/new/tools/sim/state/local-drugbox_live/ui/shots/SIM-ui.logout-8.live-en-1440.p0.png"
+    ]
+   },
+   {
+    "action": "ui.logout",
+    "config": "ar-390",
+    "actor": "member.0094@sim.drugbox.test",
+    "detail": "step 2 (ui.logout): the login fields are not empty after Sign Out",
+    "shots": [
+     "/home/user/new/tools/sim/state/local-drugbox_live/ui/shots/SIM-ui.logout-11.live-ar-390.p0.png"
+    ]
+   }
+  ],
+  "by_action": {
+   "ui.enroll": {
+    "ok": 3,
+    "fail": 0,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 6712
+   },
+   "ui.react": {
+    "ok": 2,
+    "fail": 0,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 6300
+   },
+   "ui.logout": {
+    "ok": 0,
+    "fail": 2,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 4607
+   },
+   "ui.pages": {
+    "ok": 4,
+    "fail": 0,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 19830
+   },
+   "ui.job_save": {
+    "ok": 1,
+    "fail": 0,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 8117
+   },
+   "ui.market": {
+    "ok": 1,
+    "fail": 0,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 5329
+   },
+   "ui.theme": {
+    "ok": 1,
+    "fail": 0,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 6972
+   },
+   "ui.network": {
+    "ok": 4,
+    "fail": 0,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 6833
+   },
+   "ui.post": {
+    "ok": 2,
+    "fail": 0,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 7066
+   },
+   "ui.cmdk": {
+    "ok": 0,
+    "fail": 0,
+    "skip": 1,
+    "not_built": 0,
+    "p50_ms": 3171
+   },
+   "ui.message": {
+    "ok": 1,
+    "fail": 0,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 7866
+   },
+   "ui.companies": {
+    "ok": 1,
+    "fail": 0,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 5897
+   },
+   "ui.comment": {
+    "ok": 1,
+    "fail": 0,
+    "skip": 0,
+    "not_built": 0,
+    "p50_ms": 6632
+   }
+  },
+  "records": [
+   {
+    "action": "ui.enroll",
+    "journeys": [
+     "J-COMMUNITY-36"
+    ],
+    "config": "en-1440",
+    "actor": "member.0024@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 7027,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.react",
+    "journeys": [
+     "J-SOCIAL-13"
+    ],
+    "config": "en-1440",
+    "actor": "member.0070@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 6300,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.logout",
+    "journeys": [
+     "J-SOCIAL-03",
+     "J-SOCIAL-04"
+    ],
+    "config": "en-1440",
+    "actor": "adel-hassanein.0050@sim.drugbox.test",
+    "status": "fail",
+    "detail": "step 2 (ui.logout): the login fields are not empty after Sign Out",
+    "ms": 4483,
+    "errors": [],
+    "shots": [
+     "/home/user/new/tools/sim/state/local-drugbox_live/ui/shots/SIM-ui.logout-8.live-en-1440.p0.png"
+    ]
+   },
+   {
+    "action": "ui.pages",
+    "journeys": [
+     "J-SOCIAL-08",
+     "J-SOCIAL-10"
+    ],
+    "config": "en-1440",
+    "actor": "faisal-al-otaibi.0045@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 16152,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.job_save",
+    "journeys": [
+     "J-COMMUNITY-20"
+    ],
+    "config": "en-1440",
+    "actor": "rami-khoury.0012@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 8117,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.market",
+    "journeys": [
+     "J-BUSINESS-34"
+    ],
+    "config": "en-1440",
+    "actor": "khaled-mina-el-desouky.0049@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 5329,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.theme",
+    "journeys": [
+     "J-SOCIAL-09"
+    ],
+    "config": "ar-1440",
+    "actor": "lina-haddad.0015@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 6972,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.network",
+    "journeys": [
+     "J-SOCIAL-29",
+     "J-SOCIAL-30"
+    ],
+    "config": "ar-1440",
+    "actor": "tamer-osman.0062@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 6777,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.network",
+    "journeys": [
+     "J-SOCIAL-29",
+     "J-SOCIAL-30"
+    ],
+    "config": "ar-1440",
+    "actor": "shaimaa-maged-abdelmalak.0093@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 6833,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.network",
+    "journeys": [
+     "J-SOCIAL-29",
+     "J-SOCIAL-30"
+    ],
+    "config": "ar-1440",
+    "actor": "member.0097@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 6473,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.react",
+    "journeys": [
+     "J-SOCIAL-13"
+    ],
+    "config": "ar-1440",
+    "actor": "member.0030@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 6060,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.pages",
+    "journeys": [
+     "J-SOCIAL-08",
+     "J-SOCIAL-10"
+    ],
+    "config": "ar-1440",
+    "actor": "member.0023@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 16155,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.post",
+    "journeys": [
+     "J-SOCIAL-11"
+    ],
+    "config": "en-390",
+    "actor": "hassan-el-banna.0077@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 7066,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.network",
+    "journeys": [
+     "J-SOCIAL-29",
+     "J-SOCIAL-30"
+    ],
+    "config": "en-390",
+    "actor": "member.0071@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 7067,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.cmdk",
+    "journeys": [
+     "J-SOCIAL-46"
+    ],
+    "config": "en-390",
+    "actor": "mahmoud-sabry.0053@sim.drugbox.test",
+    "status": "skip",
+    "detail": "no keyboard on a phone",
+    "ms": 3171,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.enroll",
+    "journeys": [
+     "J-COMMUNITY-36"
+    ],
+    "config": "en-390",
+    "actor": "bishoy-el-kady.0052@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 6692,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.pages",
+    "journeys": [
+     "J-SOCIAL-08",
+     "J-SOCIAL-10"
+    ],
+    "config": "en-390",
+    "actor": "bassem-ibrahim-abdelmalak.0018@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 20036,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.pages",
+    "journeys": [
+     "J-SOCIAL-08",
+     "J-SOCIAL-10"
+    ],
+    "config": "en-390",
+    "actor": "member.0036@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 19830,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.message",
+    "journeys": [
+     "J-SOCIAL-36",
+     "J-SOCIAL-38"
+    ],
+    "config": "ar-390",
+    "actor": "nora-ayman-hamdy.0054@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 7866,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.companies",
+    "journeys": [
+     "J-BUSINESS-01",
+     "J-BUSINESS-04"
+    ],
+    "config": "ar-390",
+    "actor": "member.0036@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 5897,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.logout",
+    "journeys": [
+     "J-SOCIAL-03",
+     "J-SOCIAL-04"
+    ],
+    "config": "ar-390",
+    "actor": "member.0094@sim.drugbox.test",
+    "status": "fail",
+    "detail": "step 2 (ui.logout): the login fields are not empty after Sign Out",
+    "ms": 4607,
+    "errors": [],
+    "shots": [
+     "/home/user/new/tools/sim/state/local-drugbox_live/ui/shots/SIM-ui.logout-11.live-ar-390.p0.png"
+    ]
+   },
+   {
+    "action": "ui.comment",
+    "journeys": [
+     "J-SOCIAL-14"
+    ],
+    "config": "ar-390",
+    "actor": "bassem-hussein-ezzat.0079@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 6632,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.enroll",
+    "journeys": [
+     "J-COMMUNITY-36"
+    ],
+    "config": "ar-390",
+    "actor": "member.0076@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 6712,
+    "errors": [],
+    "shots": []
+   },
+   {
+    "action": "ui.post",
+    "journeys": [
+     "J-SOCIAL-11"
+    ],
+    "config": "ar-390",
+    "actor": "member.0078@sim.drugbox.test",
+    "status": "ok",
+    "detail": "",
+    "ms": 6630,
+    "errors": [],
+    "shots": []
+   }
+  ]
+ }
+}
