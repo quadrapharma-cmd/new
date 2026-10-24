@@ -86,6 +86,10 @@ def queries(ctx):
                             "from public.deals d order by d.updated_at desc limit 300")),
         # jobs + trust layer
         ('jobs_list', wrap("select j.*, %s as poster from public.jobs j where j.active order by j.created_at desc limit 60" % (author % (P, 'j.user_id')))),
+        # the Jobs page's search (0060, the live app's first page and a keyword / filter search, 50 a page)
+        ('jobs_search', "select public.jobs_search('', null, null, null, null, null, null, 50)"),
+        ('jobs_search_q', "select public.jobs_search('regulatory affairs', null, null, null, null, null, null, 50)"),
+        ('jobs_search_filter', "select public.jobs_search('', 'qaqc', array['full-time'], array['EG'], null, null, null, 50)"),
         ('open_candidates', "select json_agg(c) from public.open_candidates(40) c"),
         ('get_reviews_many', "select json_agg(r) from public.get_reviews_many(array[%s]::uuid[], 'employer') r" % review_ids),
         ('my_interactions', "select json_agg(i) from public.my_interactions() i"),

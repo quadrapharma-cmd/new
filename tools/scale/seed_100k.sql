@@ -467,6 +467,9 @@ from generate_series(1, (:scale_users * 3) / 10) i on conflict do nothing;
 update public.jobs j set applicant_count = a.k
 from (select job_id, count(*) k from public.job_applications where job_id between :jobs + 1 and :jobs + :jobs_n group by 1) a
 where j.id = a.job_id;
+-- what the keyword search reads (0060's trigger, off while seeding): without it every job matched every keyword
+update public.jobs set search_text = lower(concat_ws(' ', title, company, location, description, array_to_string(tags, ' '), array_to_string(requirements, ' ')))
+ where id between :jobs + 1 and :jobs + :jobs_n;
 alter table public.jobs enable trigger user;
 alter table public.job_applications enable trigger user;
 commit;
