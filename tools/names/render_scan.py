@@ -38,7 +38,7 @@ adapter of a git revision (`--rule e972163` is the third version, 0039_names_rul
                         --rule 0fbc662 --part names --must-find "(MBA) Ahmed Ali/Ahmed Ali (MBA)" ; --rule 91ca446 --part letters
                         --must-find İ/i ; --rule 91ca446 --part names --quick --must-find "عبد الله أحمد/عبدالله أحمد"
   --sizes 14,15,16  --weights 400,500,600,700   --quick (letters: the stacks only; sequences and names: 400 and 700 at 15 px)
-  --write               add the pairs found (letters part) to tools/names/pixel-twins.txt — the generator gives each pair one
+  --write               add the pairs found (letters and beside parts) to tools/names/pixel-twins.txt — the generator gives each pair one
                         skeleton: two letters, two marks (two letters that differ only in a mark at the same place: é / è), or a
                         letter with a mark (two letters that differ in marks drawn at the same place by that letter only: ģ / ġ);
                         sixth version: a letter + mark and the letter (a mark that draws within a dot of nothing: bold Ḣ / H), and
@@ -120,6 +120,8 @@ SETUP = r"""([gen, part, names]) => {
    const seq = bi(arab).concat(tri, bi(lat), bi(cyr), bi(grk));
    U = seq; T = L.concat(seq); single = false;
  } else if (part === 'names') { U = names; T = names; }
+ else if (part === 'beside') { U = L.filter((s) => s.normalize('NFD') !== s && [...s.normalize('NFD')].length > 1); T = []; }
+ window.__F = F;
  const nn = (s) => F.nmNorm(s);
  U = [...new Set(U.map(nn).filter((s) => s && F.nmProblem(s) === ''))]; T = [...new Set(T.map(nn).filter((s) => s && F.nmProblem(s) === ''))];
  window.__S = { U, T, single, sk: new Map(U.concat(T).map((u) => [u, F.nmSkel(u)])), isLetter: (u) => LS.has(u) };
@@ -197,8 +199,53 @@ SCAN = r"""([font, arf, dirs, part, thr, check, gap]) => {
  return { font, dot: +dot.toFixed(1), drawn, tofu, lacks, pairs, near };
 }"""
 
+# *(seventh version) a mark drawn BESIDE its letter, not above or below it: Slovak and Czech ď ľ ť Ľ draw the caron as an apostrophe
+# after the letter, Greek capitals carry the tonos and the breathings at their upper left (Ά, Ἀ) — the eye reads letter + ’ (or ’ +
+# letter): «Paľo Kováč» drew as «Pal’o Kováč» in the bold thread list (v-spoof6-r1) while the blurred difference above put them ~4 dots
+# apart (an apostrophe is not the caron's shape, and sits a gap further). So the GEOMETRY is measured: every allowed letter that NFD
+# splits (a letter + marks) is drawn with its base letter at 48 px in each font on its own (Poppins and the system fonts, every
+# weight; a font that lacks either is skipped), the base is aligned on the letter (the shift that covers most of its ink), and the ink
+# the letter adds (outside the base's ink, grown by 2 px) is measured: when at least BESIDE_MIN of it lies within the rows the base
+# letter itself covers — beside it, not above or below it — the letter must have the skeleton of its base letter with an apostrophe
+# on that side (the skeleton drops the apostrophe: «Pal’o» = «Palo» = «Paľo»)
+BESIDE_MIN = 0.5
+BESIDE = r"""([font, check, minf]) => {
+ const { U, sk } = window.__S;
+ const W = 160, H = 96, BASE = 70;
+ const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d', { willReadFrequently: true });
+ function rawd(t, f) { x.clearRect(0, 0, W, H); x.font = f; x.fillStyle = '#000'; x.direction = 'ltr'; x.textAlign = 'left'; x.fillText(t, 50, BASE); return x.getImageData(0, 0, W, H).data; }
+ function alpha(t, f) { const d = rawd(t, f), a = new Uint8Array(W * H); for (let i = 0; i < W * H; i++) a[i] = d[i * 4 + 3]; return a; }
+ const hash = (a) => { let h = 0; for (let i = 0; i < a.length; i++) h = (Math.imul(h, 31) + a[i]) | 0; return h; };
+ const SIZE = /(\d+)px/.exec(font)[1] + 'px';
+ const has = (u) => hash(alpha(u, font + ', Unifont')) !== hash(alpha(u, SIZE + ' Unifont'));
+ const near = []; let drawn = 0, lacks = 0, pairs = 0;
+ for (const u of U) {
+   const b = [...u.normalize('NFD')][0];
+   if (check && (!has(u) || !has(b))) { lacks++; continue; }
+   const A = alpha(u, font), B0 = alpha(b, font); drawn++;
+   let best = -1, bs = 0;
+   for (let s = -40; s <= 40; s++) { let v = 0; for (let y = 0; y < H; y++) for (let c = Math.max(0, s); c < Math.min(W, W + s); c++) { const q = B0[y * W + c - s]; if (q) v += Math.min(A[y * W + c], q); } if (v > best) { best = v; bs = s; } }
+   const B = new Uint8Array(W * H); let y0 = H, y1 = -1, c0 = W, c1 = -1, bsum = 0;
+   for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { const c2 = c - bs; const v = c2 >= 0 && c2 < W ? B0[y * W + c2] : 0; B[y * W + c] = v; if (v > 64) { if (y < y0) y0 = y; if (y > y1) y1 = y; if (c < c0) c0 = c; if (c > c1) c1 = c; } bsum += v; }
+   if (y1 < 0) continue;
+   const near2 = (y, c) => { for (let dy = -2; dy <= 2; dy++) for (let dc = -2; dc <= 2; dc++) { const Y = y + dy, C = c + dc; if (Y >= 0 && Y < H && C >= 0 && C < W && B[Y * W + C] > 32) return true; } return false; };
+   let e = 0, inr = 0, cx = 0;
+   for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { const v = A[y * W + c]; if (v > 64 && !near2(y, c)) { e += v; cx += v * c; if (y >= y0 && y <= y1) inr += v; } }
+   if (e < bsum * 0.01) continue;   // the mark draws as nothing here (the letters part compares such letters)
+   const f = inr / e; if (f < minf) continue;
+   pairs++;
+   const left = cx / e < (c0 + c1) / 2, t = left ? '’' + b : b + '’';
+   const ku = sk.get(u), kt = window.__F.nmSkel(t);
+   if (ku !== kt) near.push([font, 'beside:' + (left ? 'left' : 'right'), u, t, +f.toFixed(3), [...u].map((c) => c.codePointAt(0).toString(16).toUpperCase()).join(' '),
+     [...t].map((c) => c.codePointAt(0).toString(16).toUpperCase()).join(' '), ku, kt, window.__F.nmSkel(b)]);
+ }
+ return { font, dot: 0, drawn, tofu: 0, lacks, pairs, near };
+}"""
+
 def contexts(part):
     """(font string, Arabic stack for the unit, directions for names, check that the font has the letter)"""
+    if part == 'beside':   # *(seventh version) the geometry: each font on its own, every weight, 48 px
+        return [('%d 48px %s' % (w, f), None, None, True) for w in WEIGHTS for f in ['Poppins'] + SINGLE]
     ws = [400, 700] if (QUICK and part != 'letters') else WEIGHTS
     ss = [15] if (QUICK and part != 'letters') else SIZES
     out = []
@@ -214,7 +261,7 @@ def contexts(part):
                 for f in SINGLE: out.append(('%d %dpx %s' % (w, s, f), '%d %dpx %s' % (w, s, f), ['ltr'], True))
     return out
 
-t0 = time.time(); parts = ['letters', 'sequences', 'names'] if PART == 'all' else [PART]; near = []; report = {}
+t0 = time.time(); parts = ['letters', 'sequences', 'names', 'beside'] if PART == 'all' else [PART]; near = []; report = {}
 with sync_playwright() as p:
     br = p.chromium.launch(args=['--no-sandbox']); pg = br.new_page(); pg.set_content('<style>' + FACES + '</style><p style="font-family:Poppins">x</p>')
     pg.evaluate("Promise.all(['400','500','600','700'].map((w) => document.fonts.load(w + ' 15px Poppins')))")
@@ -224,7 +271,7 @@ with sync_playwright() as p:
         print('rule', REV or 'working tree', '— part', part, info, 'threshold', THR, flush=True)
         runs = []
         for f, arf, dirs, check in contexts(part):
-            r = pg.evaluate(SCAN, [f, arf, dirs, part, THR, check, part != 'letters']); r['part'] = part; runs.append(r)
+            r = pg.evaluate(BESIDE, [f, check, BESIDE_MIN]) if part == 'beside' else pg.evaluate(SCAN, [f, arf, dirs, part, THR, check, part != 'letters']); r['part'] = part; runs.append(r)
             print('  %-5s %-44s drawn %5d (no glyph %d%s)  dot %6.1f  pairs %9d  near %d  [%.0fs]' % (part[:5], f[:44], r['drawn'], r['tofu'],
                   (', font lacks %d' % r['lacks']) if check else '', r['dot'], r['pairs'], len(r['near']), time.time() - t0), flush=True)
             for n in r['near']: near.append(n + [part])
@@ -257,6 +304,9 @@ if '--write' in sys.argv:   # add the pairs found (letters) to tools/names/pixel
         return out if j == len(S) and out else None
     unwritten, later, before = [], [], len(pairs)
     for (a_, b_), n in distinct.items():
+        if n[-1] == 'beside':   # *(seventh version) a mark drawn beside the letter: the letter's skeleton is its base letter's
+            if n[7] != n[9]: ctx.add((tuple(map(ord, n[7])), tuple(map(ord, n[9]))))
+            continue
         if n[-1] != 'letters': unwritten.append(n); continue
         ka, kb = n[7], n[8]
         diff = [(i, x, y) for i, (x, y) in enumerate(zip(ka, kb)) if x != y] if len(ka) == len(kb) else None
@@ -286,7 +336,9 @@ if '--write' in sys.argv:   # add the pairs found (letters) to tools/names/pixel
                 '# (blurred drawings within %.2f of an Arabic dot of each other), Chromium canvas, the app\'s font stacks (EN, AR, system-ui) and\n'
                 '# the system fonts on their own at weights 400-700, 14-16 px. Two letters that differ only in a mark at the same place give the\n'
                 '# pair of marks (é / è: U+0300 / U+0301); a letter that draws two marks at one place gives the pair of letter + mark (ģ / ġ);\n'
-                '# a letter whose mark draws within a dot of nothing gives letter + mark ; letter (bold Ḣ / H — sixth version). Sequences are in\n'
+                '# a letter whose mark draws within a dot of nothing gives letter + mark ; letter (bold Ḣ / H — sixth version), and so does a\n'
+                '# letter whose mark is drawn BESIDE it, within the rows the letter covers (part \'beside\', 48 px: ľ ď ť, Ά — seventh version;\n'
+                '# the skeleton drops the apostrophe it reads as). Sequences are in\n'
                 '# skeleton space. tools/names/name_rule.mjs gives each group one skeleton. Generated, never edited by hand.\n' % THR)
         nm = lambda c: unicodedata.name(chr(c), '?')
         for a_, b_ in sorted(pairs): f.write('%04X ; %04X # %s / %s — %s / %s\n' % (a_, b_, chr(a_), chr(b_), nm(a_), nm(b_)))

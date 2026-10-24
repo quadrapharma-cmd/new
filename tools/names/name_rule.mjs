@@ -1,8 +1,8 @@
 // The one rule for a person's display name (S-03): what a name may contain (an ALLOWLIST) and when two names are "the same name"
-// (a confusable SKELETON, Unicode TR39). The database (supabase/migrations/0039_names_rule_6.sql — 0038, 0039_names_rule_2.sql …
-// 0039_names_rule_5.sql hold the first five versions and are never edited) and the live app (web/src/live/adapter.js) both carry
+// (a confusable SKELETON, Unicode TR39). The database (supabase/migrations/0039_names_rule_7.sql — 0038, 0039_names_rule_2.sql …
+// 0039_names_rule_6.sql hold the first six versions and are never edited) and the live app (web/src/live/adapter.js) both carry
 // the code this script prints between their "generated" markers — never edit it by hand:
-//   node tools/names/name_rule.mjs --write    rewrite both generated regions (only before 0039_names_rule_6 is applied anywhere:
+//   node tools/names/name_rule.mjs --write    rewrite both generated regions (only before 0039_names_rule_7 is applied anywhere:
 //                                             an applied migration is never edited — a new rule goes into a new migration)
 //   node tools/names/name_rule.mjs --check    exit 1 when a region differs from what this script generates
 //   node tools/names/name_rule.mjs --expect   --check, then what the ADAPTER's generated code makes of every code point of planes 0-1
@@ -35,7 +35,12 @@
 // like «Ali Kaya» in bold Poppins (0.62 of a dot) —; the skeleton IGNORES SPACES — «عبد الله أحمد» / «عبدالله أحمد», «أبو بكر» /
 // «أبوبكر»: a space after a letter that never joins the next one only widens a gap —; the pixel twins are what render_scan.py
 // finds below ONE Arabic dot (it was 0.6) at every weight the app uses in its fonts and the system fonts; and a space just inside
-// a bracket is tidied away («Ahmed Ali ( MBA )» → «Ahmed Ali (MBA)»)
+// a bracket is tidied away («Ahmed Ali ( MBA )» → «Ahmed Ali (MBA)»); the SEVENTH version, 0039_names_rule_7, is marked *(seventh
+// version): a mark that the fonts draw BESIDE its letter reads as an apostrophe next to it — Slovak / Czech ď ľ ť Ľ draw the caron as
+// ’ after the letter («Paľo Kováč» was «Pal’o Kováč» to the pixel in the bold thread list), Greek capitals carry the tonos and the
+// breathings at their upper left («Άννα» / «’Αννα»), Vietnamese ơ ư carry the horn at their right (v-spoof6-r1) —, so the skeleton
+// DROPS THE APOSTROPHE («Pal’o» = «Palo», «O’Brien» = «OBrien») and every letter render_scan.py (part 'beside') measures with a mark
+// beside it has the skeleton of its base letter (pixel-twins.txt: «ľ» = «l», «Ά» = «Α») — twins, never refused, nobody renamed
 //  normalise (person_name_norm / nmNorm): remove every invisible character (Default_Ignorable_Code_Point, format Cf, control Cc —
 //    tab and line breaks excepted —, U+2800, U+1D159) and the Arabic tatweel U+0640 (it only stretches a joining line: "هـالة" reads
 //    "هالة"); *write every look-alike of the punctuation a name may hold as that punctuation (PUNCT_LIKE: a punctuation mark, a
@@ -75,7 +80,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const DATA = path.join(ROOT, 'tools/names/unicode-16.0.0');
-const MIGRATION = path.join(ROOT, 'supabase/migrations/0039_names_rule_6.sql');
+const MIGRATION = path.join(ROOT, 'supabase/migrations/0039_names_rule_7.sql');
 const ADAPTER = path.join(ROOT, 'web/src/live/adapter.js');
 if (process.versions.unicode !== '16.0') { console.error(`Node carries Unicode ${process.versions.unicode}; the vendored data is 16.0 — use Node 22`); process.exit(2); }
 
@@ -250,8 +255,11 @@ const CTX = [], CTX_PASSES = 3;
 // letters that do not look alike: the confusable prototype of a capital is often another letter than its small letter's (Greek Η is
 // H, η is n; Cyrillic Т is T, т is ᴛ — «ТАНА» copies «TAHA» only in capitals), so each letter is mapped as it is written, then folded
 const TURKIC = new Map([[0x0130, 'i'], [0x0131, 'i']]);
+// *(seventh version) the apostrophe — stored as ’, its TR39 prototype ' — is dropped from the skeleton: a mark drawn beside a letter
+// (ľ ď ť, Ά Ἀ, ơ) reads as one, so «Pal’o» / «Paľo» / «Palo» are one name (with the 'beside' pairs of pixel-twins.txt)
+const APOS = new Set([0x27, 0x2019]);
 const fold = (x) => x.toUpperCase().toLowerCase();
-const base0 = (c) => (TURKIC.has(c) ? TURKIC.get(c) : DROP.has(c) ? '' : CONF.has(c) ? CONF.get(c) : ch(c));
+const base0 = (c) => (TURKIC.has(c) ? TURKIC.get(c) : DROP.has(c) || APOS.has(c) ? '' : CONF.has(c) ? CONF.get(c) : ch(c));
 const base = (c) => (PIXEL.has(c) ? keyOf0(PIXEL.get(c)) : base0(c));
 function keyOf0(c) { let s = ch(c); for (let i = 0; i < 16; i++) { const t = [...[...s.normalize('NFD')].map((x) => base0(x.codePointAt(0))).join('')].map(fold).join('').normalize('NFD'); if (t === s) return s; s = t; } throw new Error('no fixed point for U+' + c.toString(16)); }
 // *(sixth version) a run of the same mark is one mark in a key too, as in the skeleton (a group whose key holds a mark — ئ = ى + hamza —
