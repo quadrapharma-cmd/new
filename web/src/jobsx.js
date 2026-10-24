@@ -14,6 +14,9 @@
   function T(s) { return window.dxT ? window.dxT(s) : s; }
   function toast(m) { D.toast(m); }
   function jx() { return document.getElementById('jx'); }
+  /* a revisit writes only what changed: an unchanged word written again replaces its text node, which dirties the page's layout
+     and wakes the render bus (speed of page switching) */
+  function put(el, s) { if ((window.dxOrigText ? window.dxOrigText(el) : el.textContent) !== s) el.textContent = s; }
 
   /* ── the job a card shows ─────────────────────────────────────────────────────────────────────────────────────────── */
   var FLAG = { EG: '🇪🇬', AE: '🇦🇪', SA: '🇸🇦', KW: '🇰🇼', QA: '🇶🇦', JO: '🇯🇴', OM: '🇴🇲', BH: '🇧🇭', IN: '🇮🇳', CN: '🇨🇳', LB: '🇱🇧', MA: '🇲🇦', TN: '🇹🇳', DZ: '🇩🇿', IQ: '🇮🇶' };
@@ -32,7 +35,10 @@
     var s = ''; t.childNodes.forEach(function (n) { if (n.nodeType === 3) s += n.nodeValue; }); return s.replace(/\s+/g, ' ').trim();
   }
   function isJob(card) { return !!(card && card.querySelector('.role-badge.have')); }
-  function jobCards(root) { return [].filter.call((root || document).querySelectorAll('#jx .jcard'), isJob); }
+  function jobCards(root) {   /* during one repaint (resetPage) the cards are read once; a card removed since drops out */
+    if (SNAP && SNAP.__cards) return SNAP.__cards.filter(function (c) { return c.isConnected; });
+    var a = [].filter.call((root || document).querySelectorAll('#jx .jcard'), isJob); if (SNAP) SNAP.__cards = a; return a;
+  }
   function cardCountry(card) { var co = card.querySelector('.jc-company'), t = co ? co.textContent : '';
     for (var f in BYFLAG) if (t.indexOf(f) >= 0) return BYFLAG[f]; return placeCountry(t); }
   function cardType(card) { var t = card.querySelector('.jt'), s = t ? txt(t).toLowerCase() : ''; return /part/.test(s) ? 'part-time' : /contract/.test(s) ? 'contract' : /remote/.test(s) ? 'remote' : 'full-time'; }
@@ -229,7 +235,7 @@
       return window.dxJobs.search({ q: F.q, category: F.cat === 'all' ? null : F.cat, types: F.types, countries: F.countries, level: F.lvl === 'all' ? null : F.lvl }, !!more)
         .then(function () { if (my === running) after(); }, function (e) { toast((e && e.message) || 'Could not load the jobs'); });
     }
-    jobCards(root).forEach(function (c) { var k = c.dataset.jxPosted || titleOf(c), dj = demoJob(k); if (deleted(k) || (c.dataset.jxPosted && !dj)) { c.remove(); return; } c.dataset.jxSearch = demoMatch(c) && !(dj && dj.active === false) ? '' : '0'; });
+    jobCards(root).forEach(function (c) { var k = c.dataset.jxPosted || titleOf(c), dj = demoJob(k); if (deleted(k) || (c.dataset.jxPosted && !dj)) { c.remove(); return; } var v = demoMatch(c) && !(dj && dj.active === false) ? '' : '0'; if (c.dataset.jxSearch !== v) c.dataset.jxSearch = v; });
     /* the trust layer also applies the search's visibility: a search always repaints; a plain revisit (resetPage) repaints only when
        the trust data or the cards changed (speed) */
     if (window.dxJxPaint && (!SNAP || trustChanged(root))) window.dxJxPaint();
@@ -247,13 +253,13 @@
     var root = jx(); if (!root) return;
     var n = live() ? window.dxJobs.total() : shownJobs().length;
     root.querySelectorAll('.sec-title').forEach(function (t) { var sp = t.querySelector('span'), o = window.dxOrigText ? window.dxOrigText(t) : t.textContent;
-      if (sp && /^\s*Open Positions/.test(o)) { sp.textContent = (n == null ? '…' : Number(n).toLocaleString('en')) + (n === 1 ? ' job' : ' jobs'); } });
+      if (sp && /^\s*Open Positions/.test(o)) { put(sp, (n == null ? '…' : Number(n).toLocaleString('en')) + (n === 1 ? ' job' : ' jobs')); } });
     var list = jobCards()[0] ? jobCards()[0].parentElement : root.querySelector('#huntingView .job-list');
     root.querySelectorAll('.jx-none, .dx-jobs-empty').forEach(function (e) { e.remove(); });
     var filtered = F.q || F.types.length || F.countries.length || F.cat !== 'all' || F.lvl !== 'all';
     root.querySelectorAll('.jx-clear').forEach(function (b) { b.hidden = !filtered; });
     if (!live()) root.querySelectorAll('.sec-title').forEach(function (t) { var sp = t.querySelector('span'), o = window.dxOrigText ? window.dxOrigText(t) : t.textContent;
-      if (sp && /^\s*Available Candidates/.test(o)) { var k = [].filter.call(root.querySelectorAll('.jcard'), function (c) { return c.querySelector('.role-badge.need') && c.style.display !== 'none'; }).length; sp.textContent = k + (k === 1 ? ' profile' : ' profiles'); } });
+      if (sp && /^\s*Available Candidates/.test(o)) { var k = [].filter.call(root.querySelectorAll('.jcard'), function (c) { return c.querySelector('.role-badge.need') && c.style.display !== 'none'; }).length; put(sp, k + (k === 1 ? ' profile' : ' profiles')); } });
     if (list && !n && filtered) {
       var e = document.createElement('div'); e.className = 'jx-none';
       e.innerHTML = '<b>No jobs match these filters</b><p>Try other words, or clear the filters.</p><button type="button" class="jx-tool" data-jx="clear">Clear filters</button>';
@@ -281,14 +287,15 @@
     jobCards().forEach(function (c) {
       var mine = live() ? c.dataset.jxMine === '1' : demoMine(c), b = c.querySelector('.apply-btn'); if (!b || !mine) return;
       var n = live() ? +(c.dataset.jxApplicants || 0) : demoApplicants(titleOf(c)).length;
-      b.textContent = '👥 Applicants (' + n + ')'; b.removeAttribute('onclick'); b.dataset.jxOwn = live() ? c.dataset.live.slice(1) : titleOf(c); b.disabled = false;
+      var own = live() ? c.dataset.live.slice(1) : titleOf(c);
+      put(b, '👥 Applicants (' + n + ')'); if (b.hasAttribute('onclick')) b.removeAttribute('onclick'); if (b.dataset.jxOwn !== own) b.dataset.jxOwn = own; if (b.disabled) b.disabled = false;
     });
   }
   /* Save buttons follow the saved list wherever it changed (the Saved page, another tab) */
   function paintSaves() {
     if (live()) return;
     jobCards().forEach(function (c) { var b = c.querySelector('.save-btn'); if (!b) return; var on = DEMO.isSaved(titleOf(c));
-      b.classList.toggle('dbk-saved', on); b.textContent = on ? '🔖 Saved' : '🔖 Save'; });
+      b.classList.toggle('dbk-saved', on); put(b, on ? '🔖 Saved' : '🔖 Save'); });
   }
   /* the CV a candidate published with Post My Profile (verified companies, through a private link that expires) */
   function paintCvButtons() {
@@ -321,7 +328,7 @@
       c.querySelector('.jc-desc').textContent = j.description || '';
       c.querySelector('.jc-posted').textContent = ago(j.created_at);
       var ap = c.querySelector('.apply-btn'); ap.setAttribute('onclick', 'openApplyModal(' + JSON.stringify(j.title) + ',' + JSON.stringify(j.company) + ')'); ap.className = 'apply-btn'; ap.textContent = 'Apply Now →';
-      list.insertBefore(c, list.firstChild);
+      list.insertBefore(c, list.firstChild); if (SNAP) delete SNAP.__cards;
     });
   }
   function ago(s) { var m = Math.max(0, (Date.now() - new Date(s).getTime()) / 60000); return m < 1 ? 'just now' : m < 60 ? Math.floor(m) + 'm ago' : m < 1440 ? Math.floor(m / 60) + 'h ago' : Math.floor(m / 1440) + 'd ago'; }
@@ -330,8 +337,8 @@
     if (live()) return;
     jobCards().forEach(function (c) { var k = c.dataset.jxPosted || titleOf(c), j = demoJob(k);
       if (!j || deleted(k)) { c.remove(); return; }
-      if (j.active === false) c.dataset.jxSearch = '0';
-      var sal = c.querySelector('.jx-sal'); if (j.salary && dstore('jxEdits', {})[k] && dstore('jxEdits', {})[k].salary) { if (!sal) { sal = document.createElement('span'); sal.className = 'jt jx-sal'; sal.style.cssText = 'background:#dcfce7;color:#15803d'; c.querySelector('.jc-tags').appendChild(sal); } sal.textContent = j.salary; } });
+      if (j.active === false && c.dataset.jxSearch !== '0') c.dataset.jxSearch = '0';
+      var sal = c.querySelector('.jx-sal'); if (j.salary && dstore('jxEdits', {})[k] && dstore('jxEdits', {})[k].salary) { if (!sal) { sal = document.createElement('span'); sal.className = 'jt jx-sal'; sal.style.cssText = 'background:#dcfce7;color:#15803d'; c.querySelector('.jc-tags').appendChild(sal); } put(sal, j.salary); } });
   }
 
   /* ── 3. the job's details ─────────────────────────────────────────────────────────────────────────────────────────── */
@@ -541,7 +548,7 @@
   /* demo: jobs I applied to stay "Applied" */
   function paintApplied() { if (live()) return; var ap = Object.assign({}, dstore('jxApplied', {}));
     (dstore('jxApps', null) || SEED_APPS).forEach(function (a) { ap[a.title] = 1; });
-    jobCards().forEach(function (c) { var k = c.dataset.jxPosted || titleOf(c), b = c.querySelector('.apply-btn'); if (b && ap[k] && !b.dataset.jxOwn) { b.textContent = '✓ Applied'; b.disabled = true; b.classList.add('dbk-done'); } }); }
+    jobCards().forEach(function (c) { var k = c.dataset.jxPosted || titleOf(c), b = c.querySelector('.apply-btn'); if (b && ap[k] && !b.dataset.jxOwn) { put(b, '✓ Applied'); if (!b.disabled) b.disabled = true; b.classList.add('dbk-done'); } }); }
 
   /* ── 6. Post a Job: country, deadline, requirements, benefits; the title is required ─────────────────────────────── */
   var COUNTRY_OPTS = ['EG', 'AE', 'SA', 'KW', 'QA', 'JO', 'OM', 'BH', 'IN'];

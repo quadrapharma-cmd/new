@@ -67,6 +67,7 @@ with sync_playwright() as p:
     T('sign-up API: «Josè» has «José»\'s skeleton (a twin, told apart in every list)', row(f'np-laj{ST}@np.test').split('|')[2] == row(f'np-j{ST}@np.test').split('|')[2])
     e = f'np-sl{ST}@np.test'; r = signup(e, f'د / Sami {NT}')
     T('sign-up API: «د / Sami» is stored «د/ Sami» (the slash joined to the title)', r is None and row(e).split('|')[1] == f'د/ Sami {NT}', [r, row(e)])
+    pg.wait_for_function("() => window.dxLive && window.dxLive.sb", timeout=30000)   # a sign-up that signs in can reload the app (seen under load)
     pg.evaluate("dxLive.sb.auth.signOut().then(() => 0)"); pg.wait_for_timeout(300)
 
     # ── 2. the sign-up form: the refusal names the letter, isolated, in English and Arabic ──

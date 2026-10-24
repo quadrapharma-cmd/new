@@ -95,6 +95,9 @@
   function drawTray() {
     var on = picks.length && document.getElementById('dxDir') && !X().S.open && !X().S.view;
     tray.className = on ? 'on' : '';
+    /* the page keeps room for the tray (scroll-padding); a class on <html>, not html:has(#dxRfqTray.on), which re-styled the
+       whole document whenever any element's class "on" changed (page-switch speed) */
+    if (document.documentElement.classList.contains('dx-rfq-on') !== !!on) document.documentElement.classList.toggle('dx-rfq-on', !!on);
     tray.innerHTML = on ? '<span>' + ic('send') + '<b>' + picks.length + '</b> selected</span><button type="button" class="tr-go">Request quotes from ' + picks.length + '</button><button type="button" class="tr-x">Clear</button>' : '';
   }
   tray.addEventListener('click', function (e) {
