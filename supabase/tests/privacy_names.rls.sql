@@ -155,7 +155,7 @@ insert into auth.users (id, email) select pg_temp.u(g), 'pn' || g || '@pn36.test
 insert into auth.users (id, email) select pg_temp.u(g), 'pn' || g || '@pn36.test' from generate_series(15, 19) g on conflict do nothing;
 insert into auth.users (id, email) select pg_temp.u(g), 'pn' || g || '@pn36.test' from generate_series(27, 30) g on conflict do nothing;
 insert into auth.users (id, email) select pg_temp.u(g), 'pn' || g || '@pn36.test' from generate_series(35, 39) g on conflict do nothing;
-insert into auth.users (id, email) select pg_temp.u(g), 'pn' || g || '@pn36.test' from generate_series(40, 42) g on conflict do nothing;
+insert into auth.users (id, email) select pg_temp.u(g), 'pn' || g || '@pn36.test' from generate_series(50, 52) g on conflict do nothing;
 set session_replication_role = replica;   -- rows as 0037 left them (no name trigger)
 update public.profiles set name = U&'PN Zeina Old\FFFC', name_key = null, name_needs_fix = false where id = pg_temp.u(7);
 update public.profiles set name = 'PN Hala Old - Pharco Old', name_key = null, name_needs_fix = false where id = pg_temp.u(8);
@@ -180,9 +180,9 @@ update public.profiles set name = 'PN Alİ Old', name_key = null, name_needs_fix
 update public.profiles set name = 'PN Ali Old', name_key = null, name_needs_fix = false where id = pg_temp.u(39);
 -- seventh version (round 6): a mark drawn beside its letter (Slovak ľ: the caron is drawn as ’ after the letter) and the apostrophe it
 -- reads as — keyed apart until the seventh version
-update public.profiles set name = 'PN Paľo Old', name_key = null, name_needs_fix = false where id = pg_temp.u(40);
-update public.profiles set name = 'PN Pal’o Old', name_key = null, name_needs_fix = false where id = pg_temp.u(41);
-update public.profiles set name = 'Άννα Παλιά', name_key = null, name_needs_fix = false where id = pg_temp.u(42);
+update public.profiles set name = 'PN Paľo Old', name_key = null, name_needs_fix = false where id = pg_temp.u(50);
+update public.profiles set name = 'PN Pal’o Old', name_key = null, name_needs_fix = false where id = pg_temp.u(51);
+update public.profiles set name = 'Άννα Παλιά', name_key = null, name_needs_fix = false where id = pg_temp.u(52);
 update public.profiles set name_key = null, name_needs_fix = false where id in (pg_temp.u(18), pg_temp.u(19), pg_temp.u(27));
 update public.profiles set name_key = null, name_needs_fix = false where id in (pg_temp.u(15), pg_temp.u(16), pg_temp.u(17));
 update public.profiles set name_key = 'stale', name_needs_fix = true where id = pg_temp.u(9);    -- flagged by 0038 ("/" was refused)
@@ -211,12 +211,12 @@ select pg_temp.ok('existing names (sixth version): «عبد الله قديم» 
   and string_agg(name, '|' order by id) = 'عبد الله قديم|عبدالله قديم' from public.profiles where id in (pg_temp.u(36), pg_temp.u(37)))$$);
 select pg_temp.ok('existing names (sixth version): «PN Alİ Old» and «PN Ali Old» are twins, kept as written, not flagged', $$(select count(distinct name_key) = 1 and bool_and(not name_needs_fix)
   and string_agg(name, '|' order by id) = 'PN Alİ Old|PN Ali Old' from public.profiles where id in (pg_temp.u(38), pg_temp.u(39)))$$);
-select pg_temp.ok('existing names (sixth version): «PN Paľo Old» and «PN Pal’o Old» had two skeletons', $$(select count(distinct name_key) = 2 from public.profiles where id in (pg_temp.u(40), pg_temp.u(41)))$$);
+select pg_temp.ok('existing names (sixth version): «PN Paľo Old» and «PN Pal’o Old» had two skeletons', $$(select count(distinct name_key) = 2 from public.profiles where id in (pg_temp.u(50), pg_temp.u(51)))$$);
 \ir ../migrations/0039_names_rule_7.sql
 select pg_temp.ok('existing names (seventh version): «PN Paľo Old» and «PN Pal’o Old» are twins (one skeleton), kept as written, not flagged', $$(select count(distinct name_key) = 1 and bool_and(not name_needs_fix)
-  and string_agg(name, '|' order by id) = 'PN Paľo Old|PN Pal’o Old' and min(name_key) = public.person_name_key('PN Palo Old') from public.profiles where id in (pg_temp.u(40), pg_temp.u(41)))$$);
+  and string_agg(name, '|' order by id) = 'PN Paľo Old|PN Pal’o Old' and min(name_key) = public.person_name_key('PN Palo Old') from public.profiles where id in (pg_temp.u(50), pg_temp.u(51)))$$);
 select pg_temp.ok('existing names (seventh version): «Άννα Παλιά» is keyed like «’Αννα Παλιά» (the tonos at the capital''s upper left), kept, not flagged', $$(select name = 'Άννα Παλιά' and not name_needs_fix
-  and name_key = public.person_name_key('’Αννα Παλιά') from public.profiles where id = pg_temp.u(42))$$);
+  and name_key = public.person_name_key('’Αννα Παλιά') from public.profiles where id = pg_temp.u(52))$$);
 select pg_temp.ok('existing names (fifth version): a name starting with a bracket is kept and flagged («(MBA) PN Old», bidi)', $$(select name = '(MBA) PN Old' and name_needs_fix and name_key = public.person_name_key('(MBA) PN Old') from public.profiles where id = pg_temp.u(29))$$);
 select pg_temp.ok('existing names (fifth version): «ثروت قديم» is keyed again — the twin of «ئروت قديم» (bold ث / ئ)', $$(select name = 'ثروت قديم' and not name_needs_fix and name_key = public.person_name_key('ئروت قديم') from public.profiles where id = pg_temp.u(30))$$);
 select pg_temp.ok('existing names (fourth version): the sukun is removed, «PN حالد قديم», not flagged, keyed', $$(select name = 'PN حالد قديم' and not name_needs_fix and name_key = public.person_name_key('PN حالد قديم') from public.profiles where id = pg_temp.u(18))$$);
