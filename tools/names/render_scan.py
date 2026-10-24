@@ -136,7 +136,7 @@ SCAN = r"""([font, arf, dirs, part, thr, check, gap]) => {
  const ar = (s) => /\p{Script=Arabic}/u.test(s);
  const shape = (u, pos) => pos === 'init' ? u + 'ـ' : pos === 'medi' ? 'ـ' + u + 'ـ' : pos === 'fina' ? 'ـ' + u : u;
  const K = []; { let s = 0; for (let i = -R; i <= R; i++) { const v = Math.exp(-i * i / (2 * SIG * SIG)); K.push(v); s += v; } for (let i = 0; i < K.length; i++) K[i] /= s; }
- const tmp = new Float32Array(W * H), t2 = new Float32Array(W * H), SIZE = /(\d+)px/.exec(font)[1] + 'px';
+ const tmp = new Float32Array(W * H), t2 = new Float32Array(W * H), SIZE = /^\d+ \d+px/.exec(font)[0];   // *(seventh version) with the weight: Unifont is drawn bold at 600-700 too
  function raw(t, f, dir) { x.clearRect(0, 0, W, H); x.font = f; x.fillStyle = '#000'; x.direction = dir; x.textAlign = 'center'; x.fillText(t, W / 2, BASE); return x.getImageData(0, 0, W, H).data; }
  function hash(d) { let h = 0; for (let i = 3; i < d.length; i += 4) h = (Math.imul(h, 31) + d[i]) | 0; return h; }
  // a font drawn on its own: does it have the letter? (with Unifont behind it, a letter the font lacks looks like Unifont's)
@@ -216,8 +216,8 @@ BESIDE = r"""([font, check, minf]) => {
  function rawd(t, f) { x.clearRect(0, 0, W, H); x.font = f; x.fillStyle = '#000'; x.direction = 'ltr'; x.textAlign = 'left'; x.fillText(t, 50, BASE); return x.getImageData(0, 0, W, H).data; }
  function alpha(t, f) { const d = rawd(t, f), a = new Uint8Array(W * H); for (let i = 0; i < W * H; i++) a[i] = d[i * 4 + 3]; return a; }
  const hash = (a) => { let h = 0; for (let i = 0; i < a.length; i++) h = (Math.imul(h, 31) + a[i]) | 0; return h; };
- const SIZE = /(\d+)px/.exec(font)[1] + 'px';
- const has = (u) => hash(alpha(u, font + ', Unifont')) !== hash(alpha(u, SIZE + ' Unifont'));
+ const PRE = /^\d+ \d+px/.exec(font)[0];   // weight and size: Unifont is drawn at the same weight (synthetic bold at 600-700)
+ const has = (u) => hash(alpha(u, font + ', Unifont')) !== hash(alpha(u, PRE + ' Unifont'));
  const near = []; let drawn = 0, lacks = 0, pairs = 0;
  for (const u of U) {
    const b = [...u.normalize('NFD')][0];
@@ -281,7 +281,7 @@ near.sort(key=lambda n: n[4])
 if OUT: json.dump({'rule': REV or 'working tree', 'threshold': THR, 'parts': report, 'near': near}, open(OUT, 'w'), ensure_ascii=False, indent=1)
 distinct = {}
 for n in near: distinct.setdefault(tuple(sorted((n[2], n[3]))), n)
-print('pairs below %.2f of an Arabic dot with different skeletons: %d (%d distinct)  [%.0fs]' % (THR, len(near), len(distinct), time.time() - t0))
+print('pairs below %.2f of an Arabic dot (or a mark drawn beside its letter) with different skeletons: %d (%d distinct)  [%.0fs]' % (THR, len(near), len(distinct), time.time() - t0))
 for n in sorted(distinct.values(), key=lambda n: n[4])[:80]: print('NEAR ', n)
 if '--write' in sys.argv:   # add the pairs found (letters) to tools/names/pixel-twins.txt (the generator gives each group one skeleton)
     pairs = set(); ctx = set()   # ctx: (sequence, sequence) of code points in skeleton space
