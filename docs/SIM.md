@@ -117,6 +117,25 @@ files). Everything else they made goes with the account through the foreign keys
 
 ## Results and findings
 
+Proof runs on a fresh local stack (2026-10-24, head of `claude/sim-activity`; seed `drugbox-sim-1`):
+
+| run | accounts | events | attempted | ok | failed | not built | wall | action p50 / p95 | request p50 / p95 | lag p95 | UI driver |
+|---|---:|---:|---:|---:|---:|---:|---|---|---|---|---|
+| `report-2026-10-26-n100` (Mon, first day) | 100 + admin | 2,440 | 1,995 | 1,995 | **0** | 39 | 233 s (speed 360) | 13.4 / 146 ms | 3.7 / 7.1 ms | 0.7 s | 21 ok, 2 failed (SIM-01), 1 skipped |
+| `report-2026-10-27-n1000` (Tue, 900 new members' first day) | 1000 + admin | 21,386 | 18,118 | 18,118 | **0** | 328 | 600 s (speed 144) | 54 / 546 ms¹ | 3.5 / 5.4 ms | 13.8 s¹ | 21 ok, 3 skipped |
+| `report-2026-10-28-n1000-day2` (Wed, `--rps 600`) | 1000 + admin | 13,304 | 10,862 | 10,862 | **0** | 364 | 600 s (speed 144) | 9.9 / 59.8 ms | 3.5 / 5.9 ms | 0.1 s | 22 ok, 2 failed (SIM-01) |
+
+¹ the simulator's own limiter (`--rps 150`) was the bottleneck at the first 1000-account day's peak (2,149 thread-seconds of
+waiting); with `--rps 600` the next day's actions took p95 60 ms and started on time. The stack itself stayed fast:
+single requests p95 ≤ 6 ms, no database statement over 100 ms in the PostgreSQL log during the run (log_min_duration_statement
+= 100), and `tools/scale/timings.py` as the busiest sim member (RLS on) at 1000 members: every hot query within its limit,
+the slowest `my_interactions` 2.3 ms, `directory_page` 1.6 ms, `deals_list` 1.6 ms, `connections_page` 1.0 ms. Database
+18.8 → 32.6 → 39.1 MB. Every database error logged during the 1000 run was one of the simulator's deliberate negative probes
+(`select=*` on profiles, a direct join of a private group, a second application, a forged verification, non-staff decisions,
+a review without interaction, a message across a block), each refused as it should be. 96–99 actions were verified per day;
+127 of 150 journeys were exercised with a verified result; the other journeys' features have no live backend yet (`not built`,
+as in FEATURE-STATUS) or had no target that day.
+
 - Reports: `docs/sim/report-<date>-<tag>.md` / `.json`.
 - App bugs found by the simulator, with reproductions: `docs/sim/bugs.md` (app code is not changed on the simulator branch).
 - Progress log of this work: `docs/sim/progress.md`.

@@ -148,15 +148,20 @@ def write_report(a, sim, t, db, day, path, wall, before, after, slow, ui, st=Non
 
 
 def cmd_daemon(a):
-    """Run day after day until stopped (Ctrl-C). At speed 1 a day takes a day; the day's report is written at its end."""
-    a.first_day = False
+    """Run day after day until stopped (Ctrl-C). --speed 1: real time on the Cairo clock, one report per day at its end, then
+    the next Cairo day. Faster: the simulated days follow each other (from --date or today), each with its report."""
+    from zoneinfo import ZoneInfo
+    cairo = ZoneInfo('Africa/Cairo')
+    day = datetime.date.fromisoformat(a.date) if a.date else datetime.datetime.now(cairo).date()
     while True:
+        if a.speed == 1: day = datetime.datetime.now(cairo).date()
+        a.date = day.isoformat(); a.first_day = False
         cmd_run(a, days=1)
-        if a.speed == 1:   # wait for the next Cairo midnight
-            from zoneinfo import ZoneInfo
-            now = datetime.datetime.now(ZoneInfo('Africa/Cairo')); nxt = (now + datetime.timedelta(days=1)).replace(hour=0, minute=1, second=0)
+        if a.speed == 1:
+            now = datetime.datetime.now(cairo); nxt = datetime.datetime.combine(now.date() + datetime.timedelta(days=1), datetime.time(0, 1), cairo)
             time.sleep(max(60, (nxt - now).total_seconds()))
-        a.date = None
+        else:
+            day += datetime.timedelta(days=1)
 
 
 def cmd_ui(a):

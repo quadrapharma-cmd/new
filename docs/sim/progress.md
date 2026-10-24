@@ -9,3 +9,7 @@ Crash log for this work: what is done, what is next. Newest at the bottom.
 - App bug SIM-01 (docs/sim/bugs.md): Sign Out leaves e-mail + password in the login form (all configs).
 - Fresh stack, 100 accounts, 2026-10-26 (speed 360): 1995 attempted, 1995 ok, 0 failed; UI 21/24 ok (2 = SIM-01). Report docs/sim/report-2026-10-26-n100.md.
 - Next: 1000 accounts on the same stack, 2026-10-27 (speed 144, concurrency 16), then the coordinator message.
+- 1000 accounts on the same stack, 2026-10-27 (speed 144, concurrency 16, rps 150): 18118 attempted, 18118 ok, 0 failed; UI 21 ok / 3 skipped; timings OK. The simulator's limiter was the peak bottleneck (lag p95 13.8 s) → wait accounted apart in the report.
+- 1000 accounts, day 2, 2026-10-28 (rps 600): 10862/10862 ok, action p95 59.8 ms, request p95 5.9 ms, lag p95 0.1 s; UI 22 ok, 2 failed (SIM-01).
+- Daemon checked (11 compressed days in a row, 0 failures); `--speed 1` follows the Cairo clock. Registry keeps accounts of larger runs.
+- DONE. Results in docs/SIM.md → Results; app bugs in docs/sim/bugs.md (SIM-01).

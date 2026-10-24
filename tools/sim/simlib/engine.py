@@ -57,7 +57,8 @@ class Sim:
     def save_registry(self, people, companies):
         reg = {'seed': self.args.seed, 'target': self.target['url'], 'domain': safety.SIM_DOMAIN, 'updated': datetime.datetime.now(CAIRO).isoformat(),
                'admin': {k: self.admin.p.get(k) for k in ('email', 'password', 'uid', 'name')} if self.admin else None,
-               'people': [{k: p.get(k) for k in ('i', 'email', 'password', 'uid', 'name', 'kind', 'company', 'company_role', 'lang')} for p in people],
+               'people': [{k: p.get(k) for k in ('i', 'email', 'password', 'uid', 'name', 'kind', 'company', 'company_role', 'lang')} for p in people] +
+                         [q for q in self.load_registry().get('people', []) if q['email'] not in {p['email'] for p in people}],   # a smaller run keeps the others
                'companies': [{k: c.get(k) for k in ('i', 'name', 'slug', 'db_slug', 'id', 'type', 'owner')} for c in companies]}
         tmp = self.reg_path + '.tmp'
         with open(tmp, 'w') as f: json.dump(reg, f, ensure_ascii=False, indent=1)
@@ -185,19 +186,25 @@ class Sim:
             with pl:   # one person does one thing at a time
                 rr = random.Random('%s:%s:%d' % (self.args.seed, date, ev))
                 rec = catalog.run(self, acc, name, rr)
-            rec.update(ev=ev, sim_t=round(t, 1), lag_s=round(time.time() - (t_start + (t - events[0][0]) / speed if speed else time.time()), 2))
+            planned = (midnight + t) if realtime else (t_start + (t - events[0][0]) / speed if speed else time.time())
+            rec.update(ev=ev, sim_t=round(t, 1), lag_s=round(time.time() - planned, 2))
             with lock:
                 out.write(json.dumps(rec, ensure_ascii=False, default=str) + '\n'); out.flush()
                 counts[rec['status']] = counts.get(rec['status'], 0) + 1; counts['_last'] = rec['status']
         sem = threading.BoundedSemaphore(self.args.concurrency * 2)
         last_log = time.time()
+        # real time (speed 1) on today's date follows the Cairo clock: an event is due at its time of day; one more than 15 minutes
+        # in the past when the daemon starts is skipped (not burst). Otherwise the day starts now, compressed by speed.
+        realtime = speed == 1 and date == datetime.datetime.now(CAIRO).date()
+        midnight = datetime.datetime.combine(date, datetime.time(0), CAIRO).timestamp()
         with ThreadPoolExecutor(self.args.concurrency) as ex:
             t0 = events[0][0] if events else 0
             for ev, (t, uid, name) in enumerate(events):
                 if self.stopped: break
                 if ev in done: continue
+                if realtime and midnight + t < time.time() - 900: continue
                 if speed:
-                    due = t_start + (t - t0) / speed; d = due - time.time()
+                    due = (midnight + t) if realtime else t_start + (t - t0) / speed; d = due - time.time()
                     if d > 0: time.sleep(min(d, 30))
                 sem.acquire()
                 f = ex.submit(work, ev, t, uid, name); f.add_done_callback(lambda _f: sem.release())
