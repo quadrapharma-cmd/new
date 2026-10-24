@@ -1,7 +1,7 @@
 # Unicode security data (UTS #39), version 16.0.0 — vendored
 
 Used by `tools/names/name_rule.mjs` to generate the name rule of migrations 0038, 0039_names_rule_2, 0039_names_rule_3,
-0039_names_rule_4, 0039_names_rule_5 and 0039_names_rule_6 (its second to sixth versions) and of the live app (`web/src/live/adapter.js`). `tools/names/pixel-twins.txt`
+0039_names_rule_4, 0039_names_rule_5, 0039_names_rule_6 and 0039_names_rule_7 (its second to seventh versions) and of the live app (`web/src/live/adapter.js`). `tools/names/pixel-twins.txt`
 (next to this folder, not Unicode data) adds the letters — and, since the fourth version, the marks, and since the fifth a letter + mark
 (ģ / ġ) — that draw alike in the app's font stacks and the system fonts at weights 400-700 (`tools/names/render_scan.py`) while TR39
 keys them apart.

@@ -143,12 +143,15 @@ def migrations():
 
 def render():   # the name rule's render check (S-03): letters, sequences and whole names, and the proofs that it sees look-alikes
     code, out, secs = run([sys.executable, 'tools/names/render_scan.py'], timeout=7200)
-    record('render', 'render_scan.py (sixth rule: 0 pairs within one Arabic dot — letters, sequences, whole names; font stacks and system fonts × weights)', code == 0, secs, out[-800:] if code else '')
-    # the proofs that the scan sees a look-alike: on the third, fourth and fifth rules (91ca446 is the fifth: round 5's «Alİ» / «Ali» and
+    record('render', 'render_scan.py (seventh rule: 0 pairs within one Arabic dot — letters, sequences, whole names; font stacks and system fonts × weights — and no mark drawn beside its letter keyed apart from it)', code == 0, secs, out[-800:] if code else '')
+    # the proofs that the scan sees a look-alike: on the third, fourth, fifth and sixth rules (91ca446 is the fifth: round 5's «Alİ» / «Ali» and
     # «عبد الله» / «عبدالله», a space after a letter that never joins — seen with every gap drawn one column wide)
     for rev, part, pair, quick in (('e972163', 'letters', 'حْ/خ', False), ('0fbc662', 'letters', 'ث/ئ', False), ('0fbc662', 'names', '(MBA) Ahmed Ali/Ahmed Ali (MBA)', True),
                                    ('91ca446', 'letters', 'İ/i', False), ('91ca446', 'names', 'عبد الله أحمد/عبدالله أحمد', True),
-                                   ('91ca446', 'names', 'Alİ Kaya/Ali Kaya', ['--weights', '600', '--sizes', '15'])):   # semi-bold, where it measured 0.62
+                                   ('91ca446', 'names', 'Alİ Kaya/Ali Kaya', ['--weights', '600', '--sizes', '15']),   # semi-bold, where it measured 0.62
+                                   # 881d71a is the sixth rule: round 6's ľ / l’ (the caron drawn as an apostrophe) and Ά / ’Α (the tonos at the
+                                   # capital's upper left) — a mark drawn BESIDE its letter, part 'beside'
+                                   ('881d71a', 'beside', 'ľ/l’', False), ('881d71a', 'beside', 'Ά/’Α', False)):
         extra = quick if isinstance(quick, list) else ['--quick'] if quick else []
         code, out, secs = run([sys.executable, 'tools/names/render_scan.py', '--rule', rev, '--part', part, '--must-find', pair] + extra, timeout=3600)
         record('render', 'render_scan.py --rule %s --part %s finds %s' % (rev, part, pair), code == 0, secs, out[-800:] if code else '')

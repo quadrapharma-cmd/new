@@ -329,14 +329,20 @@ def new_message_to_named_person(j):
         j.check(got == f['id'], 'the option for «حالد» was stored for %s, not for the member «حالد» %s' % (got, f['id']))
         if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
     with j.step('Round 5 (sixth version: the skeleton over-merges): «عبد الله أحمد» / «عبدالله أحمد» (a space after د) and «Alİ Kaya» / '
-                '«Ali Kaya» (the Turkish İ), each pair at the same company — twins: the picker offers two options with the company and '
+                '«Ali Kaya» (the Turkish İ); round 6 (seventh version): «Paľo Kováč» / «Pal’o Kováč» and «Άννα Νίκου» / «’Αννα Νίκου» (a mark '
+                'drawn beside its letter reads as an apostrophe), each pair at the same company — twins: the picker offers two options with the company and '
                 'a #handle (each isolated), warns «Same name», refuses the bare name, each option reaches its own member '
                 '(messages.receiver_id), and the chat header isolates the #handle'):
         if j.demo: j.skip('the name rule is the database\'s and the live app\'s (the demo keeps its sample people)')
         def mk(name, co, tag):
             return j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email(tag), json.dumps({'name': name, 'company': co})))
         for real_n, fake_n, co, tag in (('عبدالله أحمد %s' % j.tag, 'عبد الله أحمد %s' % j.tag, 'Abdallah Pharma %s' % j.tag, 'abdallah'),
-                                        ('Ali Kaya %s' % j.tag, 'Alİ Kaya %s' % j.tag, 'Kaya Ilac %s' % j.tag, 'kaya')):
+                                        ('Ali Kaya %s' % j.tag, 'Alİ Kaya %s' % j.tag, 'Kaya Ilac %s' % j.tag, 'kaya'),
+                                        # round 6 (seventh version): a mark drawn beside its letter reads as an apostrophe — the caron of ľ is
+                                        # drawn as ’ after the l, the tonos of Ά at the capital's upper left (v-spoof6-r1: the look-alike was
+                                        # offered first, with the same label and no ⚠️, and the message reached it)
+                                        ('Paľo Kováč %s' % j.tag, 'Pal’o Kováč %s' % j.tag, 'Amoun %s' % j.tag, 'palo'),
+                                        ('Άννα Νίκου %s' % j.tag, '’Αννα Νίκου %s' % j.tag, 'Nikou Pharma %s' % j.tag, 'anna')):
             r1, r2 = mk(real_n, co, tag), mk(fake_n, co, tag)
             j.check(j.sql1("select count(distinct name_key) || '|' || bool_or(name_needs_fix) || '|' || count(distinct name) from public.profiles where id in ('%s','%s')" % (r1, r2)) == '1|false|2',
                     '«%s» and «%s» are not twins stored as typed (one skeleton, neither flagged)' % (fake_n, real_n))

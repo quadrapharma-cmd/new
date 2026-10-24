@@ -3,7 +3,7 @@ Everything is drawn on a Chromium canvas the way the app draws a name — with t
 Arabic `Poppins, "Segoe UI", …, sans-serif` from web/src/i18n.css; the datalist popup's `system-ui, sans-serif`), so a letter Poppins
 lacks is drawn by the fallback font next to a letter Poppins has — at weights 400, 500, 600 and 700 (the thread list and the chat header
 draw names in bold) and 14, 15 and 16 px; and with each system font on its own (DejaVu Sans, FreeSans, FreeSerif, Liberation Sans) at
-every weight too (sixth version: they were drawn at 400 and 700), for the machines whose fallback differs. Three parts:
+every weight too (sixth version: they were drawn at 400 and 700), for the machines whose fallback differs. Four parts:
   letters    every letter the live app's rule allows (Latin, Arabic, Greek, Cyrillic), alone and with every mark the rule still lets
              stand after it (none under the fourth and fifth versions), against EVERY allowed letter — every script against every
              script, Arabic against Arabic, the Arabic letters in their four joining positions
@@ -16,6 +16,10 @@ every weight too (sixth version: they were drawn at 400 and 700), for the machin
              both ways), alone and inside a sentence (an Arabic or a Latin word before and / or after it): a name whose script runs
              against the interface direction is reordered by the bidi algorithm («(MBA) Ahmed Ali» drew exactly as «Ahmed Ali (MBA)»
              in Arabic, «Ali (علي) محمد» as «Ali محمد (علي)» in English — v-spoof-r1)
+  beside     *(seventh version) every allowed letter with a mark, drawn with its base letter at 48 px in Poppins and each system font
+             at every weight: a mark whose ink lies within the rows the letter covers is drawn BESIDE it (Slovak ľ ď ť, Greek Ά Ἀ,
+             Vietnamese ơ) and reads as an apostrophe — the letter must have the skeleton of its base letter + ’ (the blurred
+             difference cannot see it: «Paľo» / «Pal’o» measured ~4 dots apart, v-spoof6-r1); see BESIDE below
 The difference of two drawings: each is aligned on its ink (centre of its box) and blurred (Gaussian, sigma 1 px — the eye does not see
 where within a pixel a small mark sits), and the summed difference of every pixel is divided by ONE ARABIC DOT: the median of ح/خ, ر/ز,
 د/ذ, ع/غ, ص/ض, ط/ظ, ٮ/ب, ں/ن drawn in the SAME font string, weight and size (a dot drawn bold is a bold dot: 274 at 400, 742 at 600
@@ -29,14 +33,15 @@ space, or the wider gap after a letter that never joins the next one, does not c
 ~40 dots apart when the two drawings were only aligned on their centres (round 5). A pair counts when either measure is below THRESHOLD.
 Reads the generated rule of web/src/live/adapter.js (run `node tools/names/name_rule.mjs --write` first), or with --rule REV the
 adapter of a git revision (`--rule e972163` is the third version, 0039_names_rule_3; `--rule 0fbc662` the fourth, 0039_names_rule_4;
-`--rule 91ca446` the fifth, 0039_names_rule_5).
+`--rule 91ca446` the fifth, 0039_names_rule_5; `--rule 881d71a` the sixth, 0039_names_rule_6).
   python3 tools/names/render_scan.py [OUT.json] [THRESHOLD]   Playwright 1.56 Chromium; exit 1 when a pair is found
-  --part letters|sequences|names|all   (default all)
+  --part letters|sequences|names|beside|all   (default all)
   --rule REV            scan the rule of that git revision instead of the working tree
   --must-find U/T       exit 0 only when the pair U / T is among the pairs found, 1 otherwise — the proof that the scan sees a
                         look-alike: --rule e972163 --part letters --must-find حْ/خ ; --rule 0fbc662 --part letters --must-find ث/ئ ;
                         --rule 0fbc662 --part names --must-find "(MBA) Ahmed Ali/Ahmed Ali (MBA)" ; --rule 91ca446 --part letters
-                        --must-find İ/i ; --rule 91ca446 --part names --quick --must-find "عبد الله أحمد/عبدالله أحمد"
+                        --must-find İ/i ; --rule 91ca446 --part names --quick --must-find "عبد الله أحمد/عبدالله أحمد" ;
+                        --rule 881d71a --part beside --must-find ľ/l’ (and Ά/’Α)
   --sizes 14,15,16  --weights 400,500,600,700   --quick (letters: the stacks only; sequences and names: 400 and 700 at 15 px)
   --write               add the pairs found (letters and beside parts) to tools/names/pixel-twins.txt — the generator gives each pair one
                         skeleton: two letters, two marks (two letters that differ only in a mark at the same place: é / è), or a
@@ -49,7 +54,9 @@ U+0307, Ч / Ɥ U+A78D, the empty boxes of Latin Extended-G, ӏ U+04CF / l; fou
 pairs and compared by a hash, so it could not see «حْ» / «خ»), Arabic diacritics removed; fifth version — the app's font stacks at
 every weight (it scanned Poppins alone, 117 letters, and the fallback fonts at 400 only, so bold ئ / ث and ő / ổ passed), sequences,
 whole names in both directions (bracket order); sixth version — one Arabic dot (bold İ / i at 0.62 passed 0.6), the system fonts at every
-weight, two-letter sequences in the system fonts, gaps drawn one column wide (a space after a letter that never joins)."""
+weight, two-letter sequences in the system fonts, gaps drawn one column wide (a space after a letter that never joins); seventh version —
+a mark drawn beside its letter (ľ / l’, Ά / ’Α: part 'beside'), and a font drawn at 600-700 is checked against Unifont at the same
+weight (it was compared with Unifont at 400, so a system font at 700 seemed to have every letter)."""
 import itertools, json, os, re, subprocess, sys, time, unicodedata
 from playwright.sync_api import sync_playwright
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.abspath(os.path.join(HERE, '../..'))
@@ -77,7 +84,8 @@ BASE = ['Alİ Kaya', 'Ali Kaya', 'أبو بكر', 'نور الدين', 'نورا
         'Szőke Anna', 'Saʿīd Ḥasan', 'Νίκος (Nikos)', 'Мария Иванова', 'Dr. Мария Иванова',
         'عبدالله أحمد', 'عبد الله أحمد', 'أبوبكر محمد', 'د/ محمد علي', 'د. هالة الشامي', 'محمد (علي)', 'محمد، علي', 'عبدالرحمن',
         'Ahmed محمد', 'محمد Ahmed', 'ثروت عادل', 'هالة', 'زياد', 'خالد', 'Ziad (زياد)', 'أحمد علي (صيدلي)', 'محمد علي (أبو أحمد)',
-        'Ahmed Ali (Pharm.D.)', 'هالة الشامي (Pharm.D.)', 'Dr. محمد علي', 'د. Ahmed Ali', 'محمد علي Ali', 'Mona (منى) Ali', 'علی رضا']
+        'Ahmed Ali (Pharm.D.)', 'هالة الشامي (Pharm.D.)', 'Dr. محمد علي', 'د. Ahmed Ali', 'محمد علي Ali', 'Mona (منى) Ali', 'علی رضا',
+        'Paľo Kováč', 'Άννα Νίκου']   # *(seventh version) round 6
 PUN = ['.', ',', '’', '-', '/', '،', '(', ')', ' ']
 WRAPS = [('ب ', ' ب'), ('b ', ' b'), ('', ' ب'), ('', ' b'), ('ب ', ''), ('b ', '')]
 def variants(s):
