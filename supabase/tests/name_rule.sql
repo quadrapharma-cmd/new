@@ -1,5 +1,5 @@
 -- One rule for names in the database and in the app (S-03, 0038, its second version 0039_names_rule_2, its third version
--- 0039_names_rule_3, its fourth version 0039_names_rule_4, its fifth 0039_names_rule_5 and its sixth 0039_names_rule_6): for EVERY code point of planes 0 and
+-- 0039_names_rule_3, its fourth version 0039_names_rule_4, its fifth 0039_names_rule_5, its sixth 0039_names_rule_6 and its seventh 0039_names_rule_7): for EVERY code point of planes 0 and
 -- 1, in four places (inside a Latin word, alone between spaces, at the start, inside an Arabic word), the database's
 -- person_name_norm, person_name_problem and person_name_key must give what the live app's nmNorm, nmProblem and nmSkel give, and
 -- person_name_message what nmMessage says (inside a word and alone; web/src/live/adapter.js, generated with the migration by
@@ -167,6 +167,9 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('a space inside the brackets ("Ahmed Ali ( MBA )")', 'Ahmed Ali ( MBA )', ''), ('…in Arabic', 'أحمد علي ( صيدلي )', ''), ('…a nickname in the middle', 'Ahmed ( Mido ) Ali', ''),
   ('…still a bracket before the first letter', '( MBA ) Ahmed Ali', 'bracket'), ('…empty brackets are no word', 'Ahmed Ali ( )', 'word'),
   ('the Turkish capital İ for i ("Alİ Kaya")', 'Alİ Kaya', ''), ('the dotless ı for i', 'Alı Kaya', ''), ('a space after a letter that never joins ("عبد الله أحمد")', 'عبد الله أحمد', ''),
+  -- seventh version (round 6, v-spoof6-r1): a mark drawn beside its letter and the apostrophe it reads as — both spellings ALLOWED (twins)
+  ('Slovak ľ ("Paľo Kováč")', 'Paľo Kováč', ''), ('…its look-alike l + ’ ("Pal’o Kováč")', 'Pal’o Kováč', ''), ('Czech ť ("Šťastný")', 'Šťastný', ''), ('…"Št’astný"', 'Št’astný', ''),
+  ('Greek capital with tonos ("Άννα Νίκου")', 'Άννα Νίκου', ''), ('…"’Αννα Νίκου"', '’Αννα Νίκου', ''), ('"Marie ďAlessandro"', 'Marie ďAlessandro', ''), ('Vietnamese ơ ư ("Phương Hồ")', 'Phương Hồ', ''),
   ('invisible U+200B is removed: allowed', U&'Dr. Zeina Tufice\200B', ''),
   ('invisible U+1D173 is removed: allowed', U&'Dr. Zeina Tufice\+01D173', ''),
   ('invisible U+1BCA0 is removed: allowed', U&'Dr. Zeina\+01BCA0 Tufice', ''),
@@ -281,11 +284,19 @@ insert into r(name, ok, err) select 'same skeleton: ' || x.a || ' / ' || x.b, pu
   (U&'\0639\0644\06CC\200C\0631\0636\0627', 'علیرضا'), ('Straße', 'Strasse'), ('Ahmed Ali ( MBA )', 'Ahmed Ali (MBA)'),
   ('أبو', 'ابو'), ('أحمد علي', 'احمد علي'), ('آمال', 'أمال'), ('حْالد', 'خالد'), ('رْياد', 'زياد'), ('دْكي', 'ذكي'), ('عْادة', 'غادة'), ('حسںْ', 'حسن'),
   ('تامر', 'بامر'), ('ح', 'خ'), ('ر', 'ز'), ('ص', 'ض'), ('ب', 'ن'), ('ي', 'ى'), ('ه', 'ة'), ('ف', 'ق'), ('هبة', 'هنة'),
-  ('José', 'Jose'), ('Müller', 'Muller'), ('Ştefan', 'Stefan'), ('Alena', 'Alёna'), ('Ḣana', 'Hana'), ('Ḥana', 'Hana'), ('Ńada', 'Nada')) x(a, b);
+  ('José', 'Jose'), ('Müller', 'Muller'), ('Ştefan', 'Stefan'), ('Alena', 'Alёna'), ('Ḣana', 'Hana'), ('Ḥana', 'Hana'), ('Ńada', 'Nada'),
+  -- seventh version (round 6, v-spoof6-r1): the skeleton drops the apostrophe, and a letter whose mark the fonts draw BESIDE it (within
+  -- the rows the letter covers: tools/names/render_scan.py --part beside) has its base letter's skeleton — Slovak / Czech ľ ť ď Ľ (the
+  -- caron drawn as ’ after the letter), Greek capitals with the tonos or a breathing at their upper left, Vietnamese ơ ư (the horn)
+  ('Paľo Kováč', 'Pal’o Kováč'), ('Paľo Kováč', 'Palo Kováč'), ('Peter Kráľ', 'Peter Král’'), ('Šťastný', 'Št’astný'), ('Ľudmila', 'L’udmila'), ('Marie d’Alessandro', 'Marie ďAlessandro'),
+  ('ďurica', 'd’urica'), ('Άννα Νίκου', '’Αννα Νίκου'), ('Όλγα', '’Ολγα'), ('Ἀλέξανδρος', '’Αλέξανδρος'), ('Ή', '’Η'), ('Ώ', '’Ω'), ('Phương', 'Phu’o’ng'), ('Ơn', 'O’n'),
+  ('O’Brien', 'OBrien'), ('Mo’men', 'Momen'), ('d’Alessandro', 'dAlessandro')) x(a, b);
 insert into r(name, ok, err) select 'different skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) <> public.person_name_key(x.b), public.person_name_key(x.a) from (values
   ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Hala', 'Hana'),
   -- sixth version: the pairs below were different names until the fifth version (the undotted «حالد» and «خالد», «José» and «Jose»…);
   -- they draw within a dot of each other in some font and weight, so they are twins now (above). These stay different names:
+  -- seventh version: an apostrophe is no letter — these stay different names
+  ('Paľo Kováč', 'Pavo Kováč'), ('O’Brien', 'O’Brian'), ('Άννα', 'Άνα'),
   ('Hadia', 'Nadia'), ('Mona', 'Nona'), ('Omar', 'Amar'), ('Nour', 'Noor'), ('Dr. Ahmed Ali', 'Dr. Ahmad Ali'), ('Ali Kaya', 'Ali Kaye'), ('Mohamed', 'Mohammed'),
   ('سمير', 'شمير'), ('حسن', 'حسين'), ('محمد', 'احمد'), ('أحمد', 'إحمد'), ('س', 'ش'), ('ا', 'ل'), ('د', 'ر'), ('ع', 'ف'),
   -- fifth version: the words in another order are another name (the brackets that drew them alike are refused)

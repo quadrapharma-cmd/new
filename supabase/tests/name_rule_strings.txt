@@ -13056,3 +13056,25 @@ Hana
 Ḥana
 Ńada
 Nada
+# round 6 (v-spoof6-r1, seventh version): a mark drawn beside its letter and the apostrophe it reads as
+Paľo Kováč
+Pal’o Kováč
+Pal'o Kováč
+Peter Kráľ
+Peter Král’
+Šťastný
+Št’astný
+Άννα Νίκου
+’Αννα Νίκου
+Όλγα
+’Ολγα
+Marie d’Alessandro
+Marie ďAlessandro
+ďurica
+d’urica
+Ľudmila
+L’udmila
+Phương Hồ
+Phu’o’ng Hồ
+Paľo Kováč, Amoun
+Paľo ( Kováč )

@@ -1,5 +1,5 @@
 """Every way a person's name can be written, against the running live stack (S-03, fourth and fifth versions of the name rule,
-0039_names_rule_4, 0039_names_rule_5 and 0039_names_rule_6).
+0039_names_rule_4, 0039_names_rule_5, 0039_names_rule_6 and 0039_names_rule_7).
 The ways a name reaches profiles.name (supabase/tests/privacy_names.rls.sql checks the same list in the catalog, so a new one fails
 there): the sign-up trigger handle_new_user (the sign-up API's metadata), a member's own UPDATE (Edit Profile = PATCH /rest/v1/profiles),
 anon (refused), INSERT / upsert of a profile (refused), another member's row (row security), a later change of the auth metadata (never
@@ -14,7 +14,9 @@ and the sign-in toast greets the first name (never a title, «الله» alone o
 over-merges — «Alİ Kaya» (Turkish İ) is «Ali Kaya»'s twin, «عبد الله أحمد» is «عبدالله أحمد»'s (spaces are ignored), «حالد» is «خالد»'s
 (one dot apart) — on every path, keyed as the app keys them; a space inside a bracket is tidied («Ali ( MBA )» → «Ali (MBA)»); a member
 whose name breaks the rule only by the place of its brackets is told to move them (its own banner text, EN and AR); the greeting
-skips honorifics and a leading article and says a Latin name in Latin in the Arabic interface.
+skips honorifics and a leading article and says a Latin name in Latin in the Arabic interface. Seventh version (round 6): a mark drawn
+beside its letter reads as an apostrophe — «Pal’o Kováč» is «Paľo Kováč»'s twin (the skeleton drops the apostrophe; ľ has l's skeleton),
+«’Αννα» is «Άννα»'s — on every path, keyed as the app keys them, both allowed and stored as typed.
   python3 tests/e2e/name_paths_test.py        (tools/local-supabase/start.sh; settings in tests/e2e/_dx.py)"""
 import json
 from playwright.sync_api import sync_playwright
@@ -29,9 +31,11 @@ def make(email, name):   # a member made on the server (the person a look-alike 
 
 KHALID, JOSE, THARWAT, SZOKE = f'خالد {NT}', f'José {NT}', f'ثروت {NT}', f'Szőke {NT}'
 ALI, ABDALLAH = f'Ali Kaya {NT}', f'عبدالله أحمد {NT}'
+PALO, ANNA = f'Paľo Kováč {NT}', f'Άννα Νίκου {NT}'   # seventh version: the real members a mark-beside look-alike would copy
 k_id, j_id = make(f'np-k{ST}@np.test', KHALID), make(f'np-j{ST}@np.test', JOSE)
 t_id, s_id = make(f'np-t{ST}@np.test', THARWAT), make(f'np-s{ST}@np.test', SZOKE)
 a_id, d_id = make(f'np-a{ST}@np.test', ALI), make(f'np-d{ST}@np.test', ABDALLAH)
+p_id, n_id = make(f'np-p{ST}@np.test', PALO), make(f'np-n{ST}@np.test', ANNA)
 T('setup: the members a look-alike would copy exist', sql(f"select count(*) from public.profiles where id in ('{k_id}', '{j_id}')") == '2')
 
 # the catalog: no function other than the sign-up trigger writes a name, none stores a profile's name elsewhere, nothing copies metadata later
@@ -77,16 +81,18 @@ with sync_playwright() as p:
         e = f'np-bad{len(R)}{ST}@np.test'; r = signup(e, name)
         T(f'sign-up API: {why} is refused, nothing is created', r is not None and sql(f"select count(*) from auth.users where email = {q(e)}") == '0', r)
     LA = {f'حْالد {NT}': f'np-lak{ST}@np.test', f'Josè {NT}': f'np-laj{ST}@np.test', f'ئروت {NT}': f'np-lat{ST}@np.test', f'Szổke {NT}': f'np-las{ST}@np.test',
-          f'Alİ Kaya {NT}': f'np-lai{ST}@np.test', f'عبد الله أحمد {NT}': f'np-lad{ST}@np.test'}
+          f'Alİ Kaya {NT}': f'np-lai{ST}@np.test', f'عبد الله أحمد {NT}': f'np-lad{ST}@np.test', f'Pal’o Kováč {NT}': f'np-lap{ST}@np.test', f'’Αννα Νίκου {NT}': f'np-lan{ST}@np.test'}
     for name, look, why in [(f'حْالد {NT}', KHALID, 'ح + sukun (looks like «خالد»)'), (f'Josè {NT}', JOSE, 'è (looks like «José»)'),
                             (f'ئروت {NT}', THARWAT, 'ئ (bold, looks like «ثروت»)'), (f'Szổke {NT}', SZOKE, 'ổ (bold, looks like «Szőke»)'),
-                            (f'Alİ Kaya {NT}', ALI, 'the Turkish İ for i (bold, looks like «Ali Kaya», round 5)'), (f'عبد الله أحمد {NT}', ABDALLAH, 'a space after د (looks like «عبدالله أحمد», round 5)')]:
+                            (f'Alİ Kaya {NT}', ALI, 'the Turkish İ for i (bold, looks like «Ali Kaya», round 5)'), (f'عبد الله أحمد {NT}', ABDALLAH, 'a space after د (looks like «عبدالله أحمد», round 5)'),
+                            (f'Pal’o Kováč {NT}', PALO, 'l + ’ (looks like «Paľo Kováč»: the caron of ľ is drawn as ’, round 6)'), (f'’Αννα Νίκου {NT}', ANNA, '’ + Α (looks like «Άννα Νίκου»: the tonos at the capital\'s upper left, round 6)')]:
         e = LA[name]; r = signup(e, name); rw = row(e).split('|')
         T(f'sign-up API: {why} is stored as the rule writes it, keyed as the app keys it', r is None and len(rw) == 4 and rw[1] == app_norm(nm, name) and rw[2] == app_skel(nm, name)
           and rw[3] == 'false', [r, rw, app_norm(nm, name)])
     rw = row(f'np-lak{ST}@np.test').split('|')
     T('sign-up API: «حْالد» is stored «حالد» (no mark left to draw as the dot) — and is «خالد»\'s twin (sixth version: one dot apart)', rw[1] == f'حالد {NT}' and rw[2] == row(f'np-k{ST}@np.test').split('|')[2], rw)
-    for e2, e1, what in [('lai', 'a', '«Alİ Kaya» has «Ali Kaya»\'s skeleton (İ is i — sixth version)'), ('lad', 'd', '«عبد الله أحمد» has «عبدالله أحمد»\'s skeleton (the skeleton ignores spaces — sixth version)')]:
+    for e2, e1, what in [('lai', 'a', '«Alİ Kaya» has «Ali Kaya»\'s skeleton (İ is i — sixth version)'), ('lad', 'd', '«عبد الله أحمد» has «عبدالله أحمد»\'s skeleton (the skeleton ignores spaces — sixth version)'),
+                         ('lap', 'p', '«Pal’o Kováč» has «Paľo Kováč»\'s skeleton (no apostrophe in the skeleton, ľ is l — seventh version)'), ('lan', 'n', '«’Αννα Νίκου» has «Άννα Νίκου»\'s skeleton (seventh version)')]:
         r2, r1 = row(f'np-{e2}{ST}@np.test').split('|'), row(f'np-{e1}{ST}@np.test').split('|')
         T('sign-up API: ' + what + ', both stored as typed', r2[2] == r1[2] and r2[1] != r1[1] and r2[3] == r1[3] == 'false', [r1, r2])
     e = f'np-br{ST}@np.test'; r = signup(e, f'Ali {NT} ( MBA )')
@@ -141,13 +147,17 @@ with sync_playwright() as p:
     r = patch(ar, uid, {'name': f'منى (Ali) {NT}'})
     T('member: a Latin word in brackets between an Arabic and a Latin word is refused (drew as «منى … (Ali)» in Arabic)', r['e'] and r['e']['code'] == '23514', r)
     for name in [f'عْادة {NT}', f'رْياد {NT}', f'Saʿīd {NT}', f'Hêlène {NT}', f'مُحَمَّد {NT}', f'ا.د / Sami {NT}', f'ئروت {NT}', f'Szổke {NT}', f'علی\u200cرضا {NT}', f'Ali {NT} محمد (علي)',
-                 f'Alİ Kaya {NT}', f'أبو بكر {NT}', f'Ahmed ( Mido ) {NT}']:   # sixth version: İ, a space after a letter that never joins, spaces inside brackets
+                 f'Alİ Kaya {NT}', f'أبو بكر {NT}', f'Ahmed ( Mido ) {NT}',   # sixth version: İ, a space after a letter that never joins, spaces inside brackets
+                 f'Pal’o Kováč {NT}', f'Šťastný {NT}', f'Marie ďAlessandro {NT}', f'’Ολγα {NT}', f'Phương {NT}']:   # seventh version: a mark drawn beside its letter, the apostrophe
         r = patch(ar, uid, {'name': name}); rw = row(f'np-uia{ST}@np.test').split('|')
         T(f'member: «{name}» stored as the rule writes it and keyed as the app keys it', not r['e'] and rw[1] == app_norm(nm, name) and rw[2] == app_skel(nm, name) and rw[3] == 'false', [r, rw, app_norm(nm, name)])
     T('member: the Arabic diacritics are gone from what was stored («مُحَمَّد» → «محمد»)', row(f'np-uia{ST}@np.test').split('|')[1] != f'مُحَمَّد {NT}' and app_norm(nm, f'مُحَمَّد {NT}') == f'محمد {NT}')
     T('member: a zero-width non-joiner between Arabic letters is a space («علی‌رضا» → «علی رضا»)', app_norm(nm, f'علی\u200cرضا {NT}') == f'علی رضا {NT}')
     T('member: spaces inside brackets are tidied («Ahmed ( Mido )» → «Ahmed (Mido)», sixth version)', app_norm(nm, f'Ahmed ( Mido ) {NT}') == f'Ahmed (Mido) {NT}')
     T('member: «أبو بكر» and «أبوبكر» are one name to the app (no spaces in the skeleton)', app_skel(nm, f'أبو بكر {NT}') == app_skel(nm, f'أبوبكر {NT}'))
+    for a_, b_ in [(f'Paľo Kováč {NT}', f'Pal’o Kováč {NT}'), (f'Šťastný {NT}', f'Št’astný {NT}'), (f'Marie ďAlessandro {NT}', f'Marie d’Alessandro {NT}'), (f'Όλγα {NT}', f'’Ολγα {NT}'), (f'Phương {NT}', f'Phu’o’ng {NT}')]:
+        T(f'member: «{a_}» and «{b_}» are one name to the app and the database (seventh version: a mark drawn beside its letter)', app_skel(nm, a_) == app_skel(nm, b_)
+          == sql(f"select public.person_name_key({q(a_)})") == sql(f"select public.person_name_key({q(b_)})"), [app_skel(nm, a_), app_skel(nm, b_)])
     r = patch(ar, uid, {'name': f'حْالد {NT}', 'name_key': row(f'np-j{ST}@np.test').split('|')[2], 'name_needs_fix': True})
     rw = row(f'np-uia{ST}@np.test').split('|')
     T("member: a forged key (José's) and flag are ignored — the database keys «حْالد» itself", not r['e'] and rw[2] == app_skel(nm, f'حْالد {NT}') and rw[2] != row(f'np-j{ST}@np.test').split('|')[2] and rw[3] == 'false', [r, rw])
