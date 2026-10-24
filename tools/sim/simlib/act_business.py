@@ -295,9 +295,13 @@ def deal_group(x):
     g = x.pick("select ref, to_company_id from public.deals where type='group' and status='open' and to_company_id<>%s and coalesce((lines->>'by')::date, current_date) >= current_date order by id desc limit 20", (frm[0],))
     if g and x.r.random() < 0.7:   # join an open buying group
         qty = x.r.randint(5, 60); x.target = g[0]
-        before = x.db.val("select coalesce(sum(qty),0) from public.deal_members m join public.deals d on d.id=m.deal_id where d.ref=%s", (g[0],))
-        x.ok(x.acc.rpc('deal_join', {'p_ref': g[0], 'p_from_slug': frm[1], 'p_qty': qty}), 'join the buying group')
-        x.expect("select coalesce(sum(qty),0) from public.deal_members m join public.deals d on d.id=m.deal_id where d.ref=%s", (g[0],), lambda v: float(v) == float(before) + qty, 'the group total grew by my quantity')
+        q = "select coalesce((select qty from public.deal_members m join public.deals d on d.id=m.deal_id where d.ref=%s and m.company_id=%s), 0)"
+        before = x.db.val(q, (g[0], frm[0]))
+        r = x.acc.rpc('deal_join', {'p_ref': g[0], 'p_from_slug': frm[1], 'p_qty': qty})
+        if not r.ok and 'closed' in (r.text or ''): raise Skip('the group closed meanwhile (target reached)')
+        x.ok(r, 'join the buying group')
+        x.expect(q, (g[0], frm[0]), lambda v: float(v) == float(before) + qty, "my company's quantity in the group grew by %d" % qty)
+        x.expect("select status not in ('open','target_reached') or (status = 'target_reached') = (select sum(qty) >= (lines->>'target')::numeric from public.deal_members where deal_id=deals.id) from public.deals where ref=%s", (g[0],), True, 'target_reached exactly when the total reaches the target')
         return
     to = x.need(sim_company(x, exclude=[frm[0]], types=['Supplier', 'Manufacturer', 'Distributor']))
     api = x.r.choice(APIS)
@@ -493,7 +497,7 @@ def pay_boost(x):
 
 @action('pay.featured', 'business', ['J-BUSINESS-43', 'J-BUSINESS-45'], dict(trade=0.4), rare=True)
 def pay_featured(x):
-    lid = x.need(my_listing(x), 'no listing to feature'); m = x.r.choice(['wallet', 'wallet', 'instapay'])
+    lid = x.need(my_listing(x), 'no listing to feature'); m = x.r.choice(['wallet', 'instapay'])
     oid = pay(x, 'featured', m, listing_id=lid)
     if m != 'instapay': x.expect("select featured_until > now() + interval '29 days' from public.products where id=%s", (lid,), True, 'featured for 30 days')
 

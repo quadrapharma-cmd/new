@@ -197,10 +197,9 @@ def job_apply(x):
     if x.r.random() < 0.7:
         cv = 'cv/%s/%s.pdf' % (x.me, x.r.getrandbits(48))
         x.ok(x.acc.upload('documents', cv, fixture('spec.pdf') or b'%PDF-1.4\n%%EOF\n', 'application/pdf'), 'upload my CV')
-    before = x.db.val("select applicant_count from public.jobs where id=%s", (jid,)) or 0
     x.ok(x.acc.insert('job_applications', {'job_id': jid, 'user_id': x.me, 'note': 'I have %d years in %s. (simulated)' % (x.p.get('years', 1), x.p.get('headline')), 'status': 'submitted', 'cv_path': cv}, select=None), 'apply')
     x.expect("select status from public.job_applications where job_id=%s and user_id=%s", (jid, x.me), 'submitted', 'the application is stored')
-    x.dbwait("select applicant_count from public.jobs where id=%s", (jid,), lambda v: (v or 0) == before + 1, 'applicant_count +1')
+    x.dbwait("select applicant_count = (select count(*) from public.job_applications where job_id=%s) from public.jobs where id=%s", (jid, jid), True, 'applicant_count equals applications')
     dup = x.acc.insert('job_applications', {'job_id': jid, 'user_id': x.me, 'note': 'again', 'status': 'submitted'}, select=None)
     if dup.ok: raise Fail('the same person could apply twice to one job')
     if cv:   # the poster can read the CV through a signed link; another member cannot
@@ -278,11 +277,16 @@ def trust_review(x):
     x.ok(x.acc.insert('job_reviews', {'reviewer': x.me, 'reviewee': who, 'reviewee_role': role, 'c1': c([3, 4, 5]), 'c2': c([2, 3, 4, 5]), 'c3': c([3, 4, 5]), 'c4': c([3, 4, 5]),
                                       'body': body, 'anonymous': role == 'employer' and x.r.random() < 0.5}, select=None, upsert='reviewer,reviewee,reviewee_role'), 'review')
     x.expect("select count(*) from public.job_reviews where reviewer=%s and reviewee=%s and reviewee_role=%s", (x.me, who, role), 1, 'the review is stored')
-    stranger = x.other(lambda q: q.get('uid') != who)
-    r = x.acc.insert('job_reviews', {'reviewer': x.me, 'reviewee': stranger, 'reviewee_role': 'candidate', 'c1': 1, 'c2': 1, 'c3': 1, 'c4': 1, 'body': 'A review without any interaction should be refused.'}, select=None)
-    if r.ok and x.db.val("select count(*) from public.job_reviews where reviewer=%s and reviewee=%s and reviewee_role='candidate'", (x.me, stranger)) and \
-       not x.db.val("select exists(select 1 from public.job_applications a join public.jobs j on j.id=a.job_id where (a.user_id=%s and j.user_id=%s))", (stranger, x.me)):
-        raise Fail('a review of someone I never interacted with was accepted')
+    # a review of someone I never dealt with (no application, job deal, connection or message either way) must be refused
+    st = x.pick("select p.id from public.profiles p join auth.users u on u.id=p.id where u.email like '%%@sim.drugbox.test' and p.id<>%s "
+                "and not exists (select 1 from public.connections c where (c.requester=p.id and c.addressee=%s) or (c.requester=%s and c.addressee=p.id)) "
+                "and not exists (select 1 from public.messages m where (m.sender_id=p.id and m.receiver_id=%s) or (m.sender_id=%s and m.receiver_id=p.id)) "
+                "and not exists (select 1 from public.job_applications a join public.jobs j on j.id=a.job_id where (a.user_id=p.id and j.user_id=%s) or (a.user_id=%s and j.user_id=p.id)) "
+                "and not exists (select 1 from public.deals d where d.type='job' and (d.from_user=p.id or d.from_user=%s)) limit 30", (x.me,) * 8)
+    if st:
+        r = x.acc.insert('job_reviews', {'reviewer': x.me, 'reviewee': st[0], 'reviewee_role': 'candidate', 'c1': 1, 'c2': 1, 'c3': 1, 'c4': 1, 'body': 'A review without any interaction should be refused.'}, select=None)
+        if r.ok or x.db.val("select count(*) from public.job_reviews where reviewer=%s and reviewee=%s", (x.me, st[0])):
+            raise Fail('a review of someone I never interacted with was accepted (%s)' % st[0])
 
 
 @action('trust.list', 'community', ['J-COMMUNITY-29'], dict(hire=1))
@@ -295,25 +299,26 @@ def trust_list(x):
 
 
 def ref_author(x):
-    """References are written by an owner, admin or HR member of a verified company (the app's rule)."""
-    if not x.db.val("select exists(select 1 from public.companies c left join public.company_members m on m.company_id=c.id and m.user_id=%s and m.accepted and m.role in ('admin','hr') "
-                    "where c.status='verified' and (c.owner_id=%s or m.user_id is not null))", (x.me, x.me)):
-        raise Skip('not an owner, admin or HR of a verified company')
+    """References: the author is an accepted owner/admin/HR member of a VERIFIED company, about someone who lists that company
+    in their work experience (the app's rule, work_references guard). Returns a candidate uid."""
+    cos = [r[0] for r in x.db.q("select c.name from public.company_members m join public.companies c on c.id=m.company_id where m.user_id=%s and m.accepted "
+                                "and m.role in ('owner','admin','hr') and c.status='verified'", (x.me,))]
+    if not cos: raise Skip('not an owner, admin or HR of a verified company')
+    row = x.pick("select p.id from public.profiles p, jsonb_array_elements(coalesce(p.experience,'[]'::jsonb)) e where p.id<>%s and e->>'company' = any(%s)", (x.me, cos))
+    return x.need(row, 'nobody lists my company in their experience')[0]
 
 
 @action('trust.honor', 'community', ['J-COMMUNITY-31'], dict(hire=0.6), who='company')
 def trust_honor(x):
-    ref_author(x)
-    u = x.need(x.other(lambda q: q.get('kind') != 'owner')); x.target = 'person %s' % u
-    d = x.ok(x.acc.insert('work_references', {'author': x.me, 'candidate': u, 'kind': 'honor', 'role_title': x.w.people[u].get('headline', 'Pharmacist'), 'from_month': '2022-01-01', 'to_month': '2024-06-01',
+    u = ref_author(x); x.target = 'person %s' % u
+    d = x.ok(x.acc.insert('work_references', {'author': x.me, 'candidate': u, 'kind': 'honor', 'role_title': (x.w.people.get(u) or {}).get('headline', 'Pharmacist'), 'from_month': '2022-01-01', 'to_month': '2024-06-01',
                                               'body': 'Reliable and careful colleague; led our stability programme and passed two inspections without findings. (simulated)', 'status': 'published'}), 'write an honour reference')
     x.expect("select count(*) from public.work_references where author=%s and candidate=%s and kind='honor'", (x.me, u), lambda v: v >= 1, 'the reference is stored')
 
 
 @action('trust.warn', 'community', ['J-COMMUNITY-32'], dict(hire=0.2), who='company', rare=True)
 def trust_warn(x):
-    ref_author(x)
-    u = x.need(x.other(lambda q: q.get('kind') != 'owner')); x.target = 'person %s' % u
+    u = ref_author(x); x.target = 'person %s' % u
     ev = '%s/%s.pdf' % (x.me, x.r.getrandbits(40))
     x.ok(x.acc.upload('reference-evidence', ev, fixture('spec.pdf') or b'%PDF-1.4\n%%EOF\n', 'application/pdf'), 'upload the evidence')
     x.ok(x.acc.insert('work_references', {'author': x.me, 'candidate': u, 'kind': 'warn', 'role_title': 'QC Analyst', 'from_month': '2023-01-01', 'to_month': '2024-01-01', 'category': 'Left without notice',
@@ -336,10 +341,9 @@ def training_enroll(x):
     x.ok(x.acc.get('training_courses', 'select=*&active=eq.true&order=sort_order,created_at&limit=100'), 'the courses')
     c = x.need(x.pick("select id from public.training_courses c where active and not exists (select 1 from public.course_enrollments e where e.course_id=c.id and e.user_id=%s)", (x.me,)), 'enrolled in every course')
     x.target = 'course %s' % c[0]
-    before = x.db.val("select enrolled_count from public.training_courses where id=%s", (c[0],)) or 0
     x.ok(x.acc.insert('course_enrollments', {'course_id': c[0], 'user_id': x.me}, select=None), 'enroll')
     x.expect("select status from public.course_enrollments where course_id=%s and user_id=%s", (c[0], x.me), 'enrolled', 'enrolled')
-    x.dbwait("select enrolled_count from public.training_courses where id=%s", (c[0],), lambda v: (v or 0) == before + 1, 'enrolled_count +1')
+    x.dbwait("select enrolled_count = (select count(*) from public.course_enrollments where course_id=%s) from public.training_courses where id=%s", (c[0], c[0]), True, 'enrolled_count equals enrollments')
 
 
 @action('training.progress', 'community', ['J-COMMUNITY-37', 'J-COMMUNITY-38', 'J-COMMUNITY-39'], dict(learn=1))

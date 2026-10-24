@@ -20,6 +20,16 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 
 
+# the order of the end-of-day sweep: what makes a target comes before what needs it
+SWEEP = ['co.create', 'co.invite', 'co.join', 'co.update', 'co.verify', 'admin.directory', 'co.claim', 'admin.verifications', 'co.site', 'co.cert', 'admin.certs',
+         'co.document', 'co.routing', 'co.product', 'market.supply', 'market.demand', 'market.manage', 'pay.boost', 'pay.featured', 'pay.vip', 'admin.instapay',
+         'job.post', 'job.apply', 'job.apply_company', 'job.manage', 'job.withdraw', 'trust.review', 'trust.honor', 'trust.warn', 'trust.reply', 'admin.warnings',
+         'group.create', 'group.join', 'group.post', 'group.comment', 'group.invite', 'group.admin', 'group.report', 'group.reports_review', 'group.leave',
+         'deal.rfq', 'deal.service', 'deal.questionnaire', 'deal.dossier', 'deal.surplus', 'deal.group', 'deal.progress', 'deal.inbox', 'deal.privacy',
+         'post.text', 'post.comment', 'post.reply', 'post.react', 'post.unreact', 'post.report', 'admin.post_reports', 'co.report', 'admin.company_reports',
+         'net.connect', 'net.accept', 'net.decline', 'net.withdraw', 'net.remove', 'msg.send', 'msg.read', 'msg.report', 'admin.messages']
+
+
 class World:
     def __init__(self): self.people = {}   # uid → persona
 
@@ -92,7 +102,7 @@ class Sim:
             return p, acc, 'up'
         with ThreadPoolExecutor(self.args.concurrency) as ex:
             for i, (p, acc, how) in enumerate(ex.map(one, todo)):
-                if how == 'up': stats['signed_up'] += 1
+                if how == 'up': stats['signed_up'] += 1; p['new'] = True   # a new member: the day starts with their set-up
                 elif how == 'in': stats['signed_in'] += 1
                 else: stats['failed'].append({'email': p['email'], 'name': p['name'], 'why': how}); continue
                 self.accs[acc.uid] = acc
@@ -132,13 +142,13 @@ class Sim:
                 else: t = r.uniform(h0 * 3600, h1 * 3600)
                 events.append((t, p['uid'], r.choices(names, ws)[0]))
         # first day: everybody sets up (profile, a few connections, a group); owners create their company, invite their team, hire
-        if first_day:
-            for p in people:
+        for p in people:
+            if first_day or p.get('new'):
                 h0 = p['hours'][0] * 3600; seq = []
                 if p.get('kind') == 'admin': seq = ['admin.directory', 'admin.directory', 'admin.directory', 'training.admin']
                 else:
                     seq = ['profile.edit', 'profile.experience', 'net.connect', 'net.connect', 'post.text']
-                    if p.get('company_role') == 'owner': seq += ['co.create', 'co.update', 'co.invite', 'co.invite', 'co.invite', 'co.site', 'co.product', 'job.post', 'market.supply', 'co.invite']
+                    if p.get('company_role') == 'owner': seq += ['co.create', 'co.update', 'co.invite', 'co.invite', 'co.invite', 'co.verify', 'co.site', 'co.product', 'job.post', 'market.supply', 'co.invite']
                     elif p.get('company'): seq += ['co.join']
                     if p['arch'].get('group', 0) >= 3 and r.random() < 0.3: seq += ['group.create']
                     seq += ['group.join', 'training.enroll']
@@ -178,7 +188,7 @@ class Sim:
             rec.update(ev=ev, sim_t=round(t, 1), lag_s=round(time.time() - (t_start + (t - events[0][0]) / speed if speed else time.time()), 2))
             with lock:
                 out.write(json.dumps(rec, ensure_ascii=False, default=str) + '\n'); out.flush()
-                counts[rec['status']] = counts.get(rec['status'], 0) + 1
+                counts[rec['status']] = counts.get(rec['status'], 0) + 1; counts['_last'] = rec['status']
         sem = threading.BoundedSemaphore(self.args.concurrency * 2)
         last_log = time.time()
         with ThreadPoolExecutor(self.args.concurrency) as ex:
@@ -193,7 +203,27 @@ class Sim:
                 f = ex.submit(work, ev, t, uid, name); f.add_done_callback(lambda _f: sem.release())
                 if time.time() - last_log > 15:
                     last_log = time.time(); self.log('  %s %d/%d %s' % (_clock(t), ev + 1, len(events), json.dumps(counts)))
+        # the sweep: an action nobody could do today (no target yet when it came up) is tried again at the end of the day by
+        # up to 25 people who may do it, producers before consumers (a certificate before Drugbox checks it, …), one at a time
+        if not self.stopped:
+            seen = {}
+            with open(path) as f:
+                for l in f:
+                    try: rr_ = json.loads(l); seen.setdefault(rr_['action'], set()).add(rr_['status'])
+                    except Exception: pass
+            people = [p for p in self.people if p.get('uid')] + [self.admin.p]
+            names = SWEEP + [n for n in sorted(catalog.ACTIONS) if n not in SWEEP]
+            rs = random.Random('%s:%s:sweep' % (self.args.seed, date)); k = 0
+            for n in names:
+                if seen.get(n, set()) - {'skip'}: continue
+                elig = [p for p in people if catalog.ACTIONS[n].weight(p) > 0]; rs.shuffle(elig)
+                for p in elig[:25]:
+                    ev = 10_000_000 + k; k += 1
+                    if ev in done: continue
+                    work(ev, events[-1][0] if events else 0, p['uid'], n)
+                    if counts.get('_last') != 'skip': break
         out.close()
+        counts.pop('_last', None)
         self.log('day %s finished in %.0f s: %s' % (date, time.time() - t_start, json.dumps(counts)))
         return path, len(events), time.time() - t_start
 

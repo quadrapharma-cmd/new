@@ -197,7 +197,8 @@ def profile_rename(x):
 @action('profile.experience', 'social', ['J-SOCIAL-25', 'J-SOCIAL-26'], dict(social=0.5, seek=1), path='api')
 def profile_experience(x):
     p = x.p
-    row = {'experience': p.get('experience') or [], 'education': p.get('education') or [], 'skills': p.get('skills') or [],
+    exp = [dict(e, company=e.get('company') or p.get('company_name')) for e in (p.get('experience') or [])]   # the employer by its page name
+    row = {'experience': exp, 'education': p.get('education') or [], 'skills': p.get('skills') or [],
            'years_experience': p.get('years', 0), 'languages': ['Arabic', 'English']}
     x.rows(x.acc.update('profiles', 'id=eq.%s' % x.me, row, select='id'), 'save experience, education and skills')
     x.expect("select cardinality(skills) from public.profiles where id=%s", (x.me,), len(row['skills']), 'the skills are stored')

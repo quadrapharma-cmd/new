@@ -1,0 +1,50 @@
+# Drugbox activity simulator — the daily synthetic-activity soak test on STAGING (docs/SIM.md).
+#
+# DISABLED until a staging project exists. It never runs against production: tools/sim/simlib/safety.py refuses any target
+# that is not an allow-listed staging project carrying the staging marker, and the job below does not even start unless the
+# repository variable DRUGBOX_SIM_STAGING_ENABLED is 'true'.
+#
+# To enable (docs/SIM.md → "Staging"): create the staging project, upload the marker file, set the secrets and variables
+# listed in `env:` below, set DRUGBOX_SIM_STAGING_ENABLED=true, then uncomment the `schedule:` block.
+name: sim-staging
+on:
+  workflow_dispatch:
+    inputs:
+      accounts: { description: 'simulated accounts', default: '100' }
+      ui: { description: 'UI-driver actions', default: '24' }
+  # schedule:
+  #   - cron: '17 1 * * *'        # every day at 03:17 Cairo time (01:17 UTC in winter)
+permissions:
+  contents: read
+concurrency: { group: sim-staging, cancel-in-progress: false }
+jobs:
+  simulate:
+    if: vars.DRUGBOX_SIM_STAGING_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DRUGBOX_SIM_TARGET: staging
+      APP_URL: ${{ vars.DRUGBOX_SIM_STAGING_URL }}                       # https://<ref>.supabase.co
+      DRUGBOX_SIM_STAGING_REF: ${{ vars.DRUGBOX_SIM_STAGING_REF }}
+      DRUGBOX_SIM_ALLOWED_HOSTS: ${{ vars.DRUGBOX_SIM_STAGING_REF }}.supabase.co
+      DRUGBOX_PRODUCTION_REF: ${{ vars.DRUGBOX_PRODUCTION_REF }}         # refused even if everything else were wrong
+      DRUGBOX_SIM_ANON_KEY: ${{ secrets.DRUGBOX_SIM_STAGING_ANON_KEY }}
+      STAGING_DB_URL: ${{ secrets.DRUGBOX_SIM_STAGING_DB_URL }}
+      DRUGBOX_SIM_SEED: ${{ secrets.DRUGBOX_SIM_SEED }}                  # the passwords are derived from it: keep it secret
+      DRUGBOX_FIXTURES: /tmp/vids
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install requests psycopg2-binary pillow playwright==1.56.0 && python -m playwright install --with-deps chromium
+      - run: sudo apt-get install -y postgresql-client ffmpeg && python3 tests/fixtures/make_fixtures.py
+      - run: python3 tools/sim/sim.py check
+      - run: python3 tools/sim/sim.py run --accounts "${{ inputs.accounts || '100' }}" --speed 0 --concurrency 8 --rps 40 --tag staging --timings --ui "${{ inputs.ui || '24' }}" --browsers 2
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-report
+          path: |
+            docs/sim/report-*
+            tools/sim/state/*/ui/shots/
+          retention-days: 30

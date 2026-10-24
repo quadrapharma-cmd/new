@@ -11,11 +11,12 @@ UI_ACTIONS = {  # name: (journeys, weight)
     'ui.pages': (['J-SOCIAL-08', 'J-SOCIAL-10'], 2), 'ui.back': (['J-SOCIAL-50'], 0.5), 'ui.post': (['J-SOCIAL-11'], 2), 'ui.react': (['J-SOCIAL-13'], 2),
     'ui.comment': (['J-SOCIAL-14'], 1.5), 'ui.message': (['J-SOCIAL-36', 'J-SOCIAL-38'], 1.5), 'ui.enroll': (['J-COMMUNITY-36'], 1),
     'ui.group_join': (['J-COMMUNITY-09'], 1), 'ui.job_save': (['J-COMMUNITY-20'], 1), 'ui.market': (['J-BUSINESS-34'], 1),
-    'ui.companies': (['J-BUSINESS-01', 'J-BUSINESS-04'], 1), 'ui.network': (['J-SOCIAL-29', 'J-SOCIAL-30'], 1)}
+    'ui.companies': (['J-BUSINESS-01', 'J-BUSINESS-04'], 1), 'ui.network': (['J-SOCIAL-29', 'J-SOCIAL-30'], 1),
+    'ui.logout': (['J-SOCIAL-03', 'J-SOCIAL-04'], 0.7), 'ui.theme': (['J-SOCIAL-09'], 0.5), 'ui.cmdk': (['J-SOCIAL-46'], 0.5), 'ui.share': (['J-BUSINESS-10'], 0.5)}
 
 
-def plan(people, n, configs, seed):
-    r = random.Random('%s:ui' % seed); names = list(UI_ACTIONS); w = [UI_ACTIONS[k][1] for k in names]
+def plan(people, n, configs, seed, only=None):
+    r = random.Random('%s:ui' % seed); names = [k for k in UI_ACTIONS if not only or k in only]; w = [UI_ACTIONS[k][1] for k in names]
     out = []
     for i in range(n):
         cfg = configs[i % len(configs)]
@@ -27,9 +28,9 @@ def plan(people, n, configs, seed):
     return out
 
 
-def run(sim, db, n, browsers, configs, seed, log=print):
+def run(sim, db, n, browsers, configs, seed, log=print, only=None):
     people = [p for p in sim.people if p.get('uid')]
-    jobs = plan(people, n, configs, seed)
+    jobs = plan(people, n, configs, seed, only)
     out = os.path.join(sim.state, 'ui'); os.makedirs(out, exist_ok=True)
     groups = {}
     for j in jobs: groups.setdefault(j['config'], []).append(j)
@@ -202,8 +203,9 @@ def ui_group_join(j, pg, who):
 
 
 def ui_job_save(j, pg, who):
-    j.nav(pg, 'jobs'); j.settle(pg, 1400)
-    b = pg.locator('#content .jcard:not([data-live^=c]) .save-btn:visible')
+    import _community
+    _community.jobs_page(j, pg, 'hunt'); j.settle(pg, 900)
+    b = pg.locator('#content .jcard:visible .save-btn')
     if not b.count(): j.skip('no job card with Save')
     n0 = j.sql1("select count(*) from public.saved_jobs where user_id='%s'" % who['uid'])
     b.first.click(); pg.wait_for_timeout(1200)
@@ -240,5 +242,46 @@ def ui_network(j, pg, who):
     j.check(j.wait_db("select count(*) from public.connections where requester='%s'" % who['uid'], 6, want=str(int(n0) + 1)) == str(int(n0) + 1), 'Connect stored no request')
 
 
-ACT = {'ui.pages': ui_pages, 'ui.back': ui_back, 'ui.post': ui_post, 'ui.react': ui_react, 'ui.comment': ui_comment, 'ui.message': ui_message, 'ui.enroll': ui_enroll,
+def ui_logout(j, pg, who):
+    import _j
+    j.nav(pg, 'profile')
+    j.click(pg, r'^(Sign Out|Sign out|Log out|تسجيل الخروج|خروج)$', what='Sign Out', exact=True)
+    j.check(j.wait(pg, _j.LOGIN_VISIBLE, 6), 'Sign Out did not show the login page')
+    j.check(pg.input_value('#loginEmail') == '' and pg.input_value('#loginPw') == '', 'the login fields are not empty after Sign Out')
+    j.reload(pg); j.check(not j.in_app(pg), 'a reload after Sign Out shows the app again')
+    j.signin(pg, who['email'], who['password']); j.check(j.in_app(pg), 'signing in again does not open the app')
+
+
+def ui_theme(j, pg, who):
+    btn = pg.locator('#dxThemeBtn')
+    el = btn if (btn.count() and btn.is_visible()) else j.find(pg, r'Theme|Appearance|المظهر')
+    if not el: j.notbuilt('no visible Appearance button at %dpx' % j.width)
+    el.click(); j.settle(pg, 400)
+    j.click(pg, r'^(Dark|داكن|ليلي)$', scope='body', what='Dark', exact=True)
+    dark = pg.evaluate("document.documentElement.dataset.theme||document.body.dataset.theme||document.documentElement.className+' '+document.body.className")
+    j.check(re.search('dark', dark), 'Dark did not switch the theme (%s)' % dark)
+    j.reload(pg)
+    dark2 = pg.evaluate("document.documentElement.dataset.theme||document.body.dataset.theme||document.documentElement.className+' '+document.body.className")
+    j.check(re.search('dark', dark2), 'the Dark choice is not remembered after a reload')
+
+
+def ui_cmdk(j, pg, who):
+    if j.width <= 480: j.skip('no keyboard on a phone')
+    _home(j, pg); pg.keyboard.press('Control+k'); pg.wait_for_timeout(500)
+    j.check(pg.evaluate("(()=>{const a=document.activeElement;const d=a&&a.closest('[role=dialog]');return !!(d&&d.getClientRects().length)})()"), 'Ctrl+K opened no palette')
+    pg.keyboard.type('mess'); pg.wait_for_timeout(300); pg.keyboard.press('Enter'); j.settle(pg)
+    j.check(pg.evaluate("document.body.getAttribute('data-page')") == 'messages', 'Ctrl+K "mess" Enter did not open Messages')
+
+
+def ui_share(j, pg, who):
+    import _biz
+    name = j.sql1("select name from public.companies where owner_id is not null and slug like 'sim-%' order by random() limit 1")
+    if not name: j.skip('no companies yet')
+    _biz.directory(j, pg); _biz.open_card(j, pg, name)
+    j.click(pg, _biz.L('Share card'), scope='#content', what='Share card'); pg.wait_for_timeout(800)
+    t = _biz.dlg_text(pg) + ' ' + pg.evaluate("(()=>{const d=%s;return d?[...d.querySelectorAll('input,textarea,a')].map(e=>e.value||e.getAttribute('href')||'').join(' '):''})()" % _biz.TOP_DLG)
+    j.check(re.search(r'https?://', t), 'the share card gives no link')
+
+
+ACT = {'ui.logout': ui_logout, 'ui.theme': ui_theme, 'ui.cmdk': ui_cmdk, 'ui.share': ui_share, 'ui.pages': ui_pages, 'ui.back': ui_back, 'ui.post': ui_post, 'ui.react': ui_react, 'ui.comment': ui_comment, 'ui.message': ui_message, 'ui.enroll': ui_enroll,
        'ui.group_join': ui_group_join, 'ui.job_save': ui_job_save, 'ui.market': ui_market, 'ui.companies': ui_companies, 'ui.network': ui_network}

@@ -163,7 +163,8 @@ def cmd_ui(a):
     sim, t, db = build_sim(a)
     st = sim.bootstrap(a.accounts)
     from simlib import ui as uidrv
-    res = uidrv.run(sim, db, a.sample, a.browsers, configs=a.ui_configs.split(','), seed='%s:%s' % (a.seed, a.date or datetime.date.today()), log=log)
+    res = uidrv.run(sim, db, a.sample, a.browsers, configs=a.ui_configs.split(','), seed='%s:%s' % (a.seed, a.date or datetime.date.today()), log=log,
+                    only=a.ui_actions.split(',') if a.ui_actions else None)
     print(json.dumps({k: v for k, v in res.items() if k != 'records'}, indent=1, ensure_ascii=False)[:4000])
 
 
@@ -176,6 +177,19 @@ def cmd_report(a):
     write_report(a, sim, t, db, datetime.date.fromisoformat(a.day), path, 0, snap, snap, None, None)
 
 
+def cmd_catalog(a):
+    """The action catalog as a Markdown table (docs/SIM.md), and which journeys it covers."""
+    from simlib import catalog, engine  # noqa: F401  (engine imports every action module)
+    from simlib.ui import UI_ACTIONS
+    print('| action | area | path | who | journeys |'); print('|---|---|---|---|---|')
+    for n, x in sorted(catalog.ACTIONS.items(), key=lambda kv: (kv[1].area, kv[0])):
+        print('| `%s` | %s | %s | %s%s | %s |' % (n, x.area, x.path, x.who, ' (rare)' if x.rare else '', ' '.join(j.replace('J-', '') for j in x.journeys)))
+    for n, (js, w) in sorted(UI_ACTIONS.items()): print('| `%s` | ui | ui | any | %s |' % (n, ' '.join(j.replace('J-', '') for j in js)))
+    allj = {'J-%s-%02d' % (a_, i) for a_, k in (('SOCIAL', 51), ('BUSINESS', 49), ('COMMUNITY', 50)) for i in range(1, k + 1)}
+    cov = {j for x in catalog.ACTIONS.values() for j in x.journeys} | {j for js, w in UI_ACTIONS.values() for j in js} | {'J-SOCIAL-01'}   # sign-up: the bootstrap
+    print('\n%d of %d journeys have an action; without one: %s' % (len(cov & allj), len(allj), ', '.join(sorted(allj - cov)) or 'none'))
+
+
 def cmd_cleanup(a):
     """Delete every simulated account (e-mail at sim.drugbox.test) and everything it made; the imported test pages too."""
     t, db = connect()
@@ -184,10 +198,16 @@ def cmd_cleanup(a):
     log('%d simulated accounts' % len(ids))
     if not ids: return
     files = db.q("select bucket_id, name from storage.objects where owner = any(%s::uuid[])", (ids,))
-    # the server-side clean-up of an account: rows that point at the person go with it (foreign keys), then the pages they own
-    db.q("delete from public.companies where owner_id = any(%s::uuid[]) or slug like 'sim-dir-%%'", (ids,))
-    db.q("delete from public.training_courses where title like '%%(simulated)'")
-    db.q("delete from storage.objects where owner = any(%s::uuid[])", (ids,))
+    # the server-side clean-up, in one transaction: the deals of the simulated companies and people (a business record that
+    # keeps its companies), the pages they own or that were imported for them, their files, then the accounts — every other
+    # row that points at a person goes with the account through its foreign key
+    db.q("""with co as (select id from public.companies where owner_id = any(%(ids)s::uuid[]) or slug like 'sim-%%'),
+              dl as (delete from public.deals where from_user = any(%(ids)s::uuid[]) or from_company_id in (select id from co) or to_company_id in (select id from co) returning id),
+              cs as (delete from public.companies where id in (select id from co) returning id),
+              tc as (delete from public.training_courses where title like '%%(simulated)' returning id),
+              gr as (delete from public.groups where created_by = any(%(ids)s::uuid[]) returning id),
+              so as (delete from storage.objects where owner = any(%(ids)s::uuid[]) returning 1)
+         select (select count(*) from dl), (select count(*) from cs), (select count(*) from tc), (select count(*) from gr), (select count(*) from so)""", {'ids': ids})
     db.q("delete from auth.users where id = any(%s::uuid[])", (ids,))
     store = os.environ.get('STORE_DIR', '/tmp/drugbox-storage')
     gone = 0
@@ -204,7 +224,7 @@ def cmd_cleanup(a):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest='cmd', required=True)
-    for name in ('check', 'run', 'daemon', 'ui', 'report', 'cleanup'):
+    for name in ('check', 'run', 'daemon', 'ui', 'report', 'cleanup', 'catalog'):
         p = sub.add_parser(name)
         p.add_argument('--seed', default=os.environ.get('DRUGBOX_SIM_SEED', 'drugbox-sim-1'))
         p.add_argument('--accounts', type=int, default=100)
@@ -218,12 +238,13 @@ def main():
         p.add_argument('--out', default=None); p.add_argument('--timings', action='store_true')
         p.add_argument('--ui', type=int, default=0, help='UI-driver actions after the API day'); p.add_argument('--sample', type=int, default=16)
         p.add_argument('--browsers', type=int, default=4); p.add_argument('--ui-configs', default='en-1440,ar-1440,en-390,ar-390')
+        p.add_argument('--ui-actions', default='', help='only these UI actions (comma-separated), e.g. ui.logout')
         p.add_argument('--day', default=datetime.date.today().isoformat())
     a = ap.parse_args()
     a.browsers = max(1, min(4, a.browsers))   # never more than 4 browsers
     a.concurrency = max(1, min(64, a.concurrency))
     try:
-        {'check': cmd_check, 'run': cmd_run, 'daemon': cmd_daemon, 'ui': cmd_ui, 'report': cmd_report, 'cleanup': cmd_cleanup}[a.cmd](a)
+        {'check': cmd_check, 'run': cmd_run, 'daemon': cmd_daemon, 'ui': cmd_ui, 'report': cmd_report, 'cleanup': cmd_cleanup, 'catalog': cmd_catalog}[a.cmd](a)
     except safety.Refused as e:
         print(e.code, file=sys.stderr); sys.exit(3)
 

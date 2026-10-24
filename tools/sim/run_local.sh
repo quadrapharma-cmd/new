@@ -14,6 +14,7 @@ if [ "$FRESH" = 1 ]; then
   rm -rf "$ROOT/tools/sim/state/local-${DB_NAME:-drugbox_live}"           # a fresh database: the old registry is void
 fi
 pg_isready -q -h "${PGHOST:-/tmp}" -p "${PGPORT:-5433}" || { echo "PostgreSQL is not running: tools/sim/run_local.sh --fresh"; exit 1; }
-curl -sf -o /dev/null http://127.0.0.1:${FN_PORT:-54400}/ || DENO=${DENO:-/opt/drugbox-tools/deno-npm/node_modules/.bin/deno} bash "$ROOT/tools/local-supabase/start-payments.sh"
+# after start.sh the stack has a new JWT secret: the payment functions must be restarted with it (else "Invalid API key")
+[ "$FRESH" = 0 ] && curl -sf -o /dev/null http://127.0.0.1:${FN_PORT:-54400}/ || DENO=${DENO:-/opt/drugbox-tools/deno-npm/node_modules/.bin/deno} bash "$ROOT/tools/local-supabase/start-payments.sh"
 [ -f "${DRUGBOX_FIXTURES:-/tmp/vids}/photo.png" ] || python3 "$ROOT/tests/fixtures/make_fixtures.py"
 exec python3 "$ROOT/tools/sim/sim.py" run "$@"
