@@ -84,9 +84,10 @@ def write(recs, meta, before, after, out_md, out_json, slow=None, ui=None):
     L.append('**Totals:** %d events · %d attempted · **%d ok** · **%d failed** · %d simulator errors · %d not built (known gaps) · %d hit an app flood limit · %d skipped (nothing to do).' %
              (len(recs), att, ok, tot.get('fail', 0), tot.get('sim_error', 0), tot.get('not_built', 0), tot.get('limited', 0), tot.get('skip', 0)))
     allms = [r['ms'] for r in recs if r['status'] in ('ok', 'fail')]
+    netms = [r.get('net_ms', r['ms']) for r in recs if r['status'] in ('ok', 'fail')]
     allreq = [m for r in recs if r['status'] in ('ok', 'fail') for m in (r.get('req_ms') or [])]
-    L.append('Latency: an action (all its requests + database checks) p50 %s ms / p95 %s ms; a single request p50 %s ms / p95 %s ms (%d requests).' %
-             (pct(allms, 50), pct(allms, 95), pct(allreq, 50), pct(allreq, 95), len(allreq)))
+    L.append('Latency: an action (all its requests + database checks) p50 %s ms / p95 %s ms — of which the simulator\'s own rate limit (--rps) is excluded: p50 %s ms / p95 %s ms; '
+             'a single request p50 %s ms / p95 %s ms (%d requests).' % (pct(allms, 50), pct(allms, 95), pct(netms, 50), pct(netms, 95), pct(allreq, 50), pct(allreq, 95), len(allreq)))
     if meta.get('lag_p95') is not None: L.append('Schedule lag (how late actions started vs. their planned time): p50 %s s, p95 %s s, max %s s.' % (meta['lag_p50'], meta['lag_p95'], meta['lag_max']))
     L.append('')
     L.append('## Failures (%d distinct, %d events)' % (len(fails), sum(f['count'] for f in fails.values())))

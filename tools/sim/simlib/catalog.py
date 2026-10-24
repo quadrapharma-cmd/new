@@ -118,7 +118,8 @@ def run(sim, acc, name, r):
     except Fail as e: status, detail = 'fail', str(e)
     except Exception as e: status, detail = 'sim_error', '%s: %s | %s' % (type(e).__name__, e, traceback.format_exc(limit=3)[-600:])
     ms = (time.perf_counter() - t0) * 1000
-    rec = {'action': name, 'area': a.area, 'journeys': a.journeys, 'path': a.path, 'status': status, 'detail': detail[:900], 'ms': round(ms, 1),
+    wait = sum(getattr(c, 'wait_ms', 0) for c in acc.calls)
+    rec = {'action': name, 'area': a.area, 'journeys': a.journeys, 'path': a.path, 'status': status, 'detail': detail[:900], 'ms': round(ms, 1), 'net_ms': round(ms - wait, 1), 'wait_ms': round(wait, 1),
            'req_ms': [round(c.ms, 1) for c in acc.calls], 'actor': acc.email, 'target': x.target, 't': time.time()}
     if status in ('fail', 'sim_error'):
         rec['repro'] = {'actor': acc.email, 'uid': acc.uid, 'requests': [c.repro() for c in acc.calls][-6:], 'checks': x.checks[-4:]}

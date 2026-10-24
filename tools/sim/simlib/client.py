@@ -24,20 +24,23 @@ class Bucket:
         self.waited = 0.0
 
     def take(self):
-        if self.rate <= 0: return
+        """Wait for a token; returns the seconds waited (the simulator's own politeness, not the app's latency)."""
+        if self.rate <= 0: return 0.0
+        w = 0.0
         while True:
             with self.lock:
                 now = time.monotonic(); self.tokens = min(self.burst, self.tokens + (now - self.t) * self.rate); self.t = now
-                if self.tokens >= 1: self.tokens -= 1; return
+                if self.tokens >= 1: self.tokens -= 1; return w
                 need = (1 - self.tokens) / self.rate
-            self.waited += need; time.sleep(need)
+            self.waited += need; w += need; time.sleep(need)
 
 
 class Resp:
-    __slots__ = ('status', 'data', 'text', 'ms', 'method', 'path', 'body', 'headers')
+    __slots__ = ('status', 'data', 'text', 'ms', 'method', 'path', 'body', 'headers', 'wait_ms')
 
     def __init__(self, status, data, text, ms, method, path, body, headers=None):
         self.status, self.data, self.text, self.ms, self.method, self.path, self.body, self.headers = status, data, text, ms, method, path, body, headers or {}
+        self.wait_ms = 0.0
 
     @property
     def ok(self): return 200 <= self.status < 300
@@ -57,7 +60,7 @@ class Client:
         self.base = base.rstrip('/'); self.anon = anon; self.bucket = bucket; self.timeout = timeout
 
     def call(self, method, path, body=None, token=None, headers=None, raw=None, ctype='application/json'):
-        self.bucket.take()
+        waited = self.bucket.take()
         h = {'apikey': self.anon, 'Authorization': 'Bearer ' + (token or self.anon)}
         if ctype: h['Content-Type'] = ctype
         if headers: h.update(headers)
@@ -68,7 +71,8 @@ class Client:
             ms = (time.perf_counter() - t0) * 1000; text = r.text
             try: d = r.json() if text and text[:1] in '[{"' else (text or None)
             except ValueError: d = text
-            return Resp(r.status_code, d, text, ms, method, path, body if raw is None else '<%d bytes>' % len(raw), dict(r.headers))
+            out = Resp(r.status_code, d, text, ms, method, path, body if raw is None else '<%d bytes>' % len(raw), dict(r.headers)); out.wait_ms = waited * 1000
+            return out
         except requests.RequestException as e:
             ms = (time.perf_counter() - t0) * 1000
             return Resp(599, None, 'network: %s' % str(e)[:200], ms, method, path, body)
