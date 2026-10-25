@@ -57,3 +57,23 @@ Branch `claude/w-trade` (from `claude/integ` f7dc703) · migrations 0071–0075 
 - The governorate "map" is a tap-grid grouped by region, not a drawn map of Egypt.
 - Group composers (Groups) keep their own deal-room listings (0061); the templates are on Create Listing.
 - A deal between two companies is needed for the deals-engine paths (quote request, file / agency / toll deals); members without a company page reach the lister by message (as before).
+
+## Independent verification (subagent, own model)
+- Round 1 (at 967c806) — FAIL:
+  - F1: an unverified company could go live through pause/resume or a company change.
+  - F2: the private box opened through a forged self-agreed file deal.
+  - F3: an agency deal could be agreed by one side only.
+  - F4: an Arabic unit search found nothing on the page.
+  - M1: the paste parser had problems. M2: a list's title counted as a match root. M3: no cap on sales recorded between the same pair.
+  - All fixed in efc35f8.
+- Round 2 (at efc35f8) — FAIL:
+  - F1 was still open through `update active=true`.
+  - F2b (new): a deal's `lines.listing_id` written by the browser could be mislabelled.
+  - Fixed in 52723c6: the company check now runs after the status/active mapping, and a new server-only `listing_deals` table records which deal belongs to which listing. The private box and the counterparts read only that table.
+- Round 3 (at 52723c6) — **PASS**:
+  - Every route to going live as an unverified company is refused.
+  - `listing_deals` cannot be written by members, and mislabelled or self-agreed deals open nothing.
+  - F3 and M3 still hold.
+  - On the browser, «٥٠٠ مجم» finds the card and the parser fixes work.
+  - Its three minor points are fixed in 267cb66: «٥٠٠مجم» without a space is found, «اتصل على 0122 …» is never an item, and a lone × is dropped from a name.
+- **Owner decision (V5):** when Drugbox removes a company's verification, the company's open listings stay public. They then show `verified:false` and no badge. The alternative is to pause them automatically. That is a policy choice and was left as is.
