@@ -173,6 +173,7 @@
       s = s.replace(/^[\s\-–—•*·▪●○◦►▶✅✔☑🔹🔸🔻➖➡️👈👉📌⭐🌟🔥💊]+/u, '').replace(/^\s*\d{1,3}\s*[-).]\s+/, '').trim();
       if (!/[A-Za-zء-ي]/.test(s) || s.length < 2) return;
       var n = TT.norm(s); if (/^(متوفر|مطلوب|عندي|available|wanted|السلام عليكم|صباح الخير|مساء الخير|للتواصل|للاستفسار)( |$)/.test(n) && s.length < 25) return;
+      if (/(?:\+?20|^|[^\d])01[0125](?:[\s\-.]?\d){8}(?!\d)/.test(s) || /(?:^|\s)(?:اتصل|اتصلوا|كلمني|كلمنا|رقمي|call|tel|phone|mobile)(?:\s|$|:)/i.test(s)) return;   /* «اتصل على 0122 345 6789» */
       if (/\d{8,}|\+\d{6,}|للتواصل|للاستفسار|واتساب|واتس|تليفون|موبايل|whats ?app|call me|contact/i.test(s.replace(/[\s\-]/g, function (c) { return c === '-' ? '' : c; }))) return;   /* a phone or contact line is never an item */
       var l = {}, rest = s, m;
       if ((m = /(?:\b(?:exp|ex|expiry)\b|انتهاء|تاريخ|صلاحي[هة])?\s*[:\-]?\s*\b(20[2-4]\d)\s*[\/\-.]\s*(0?[1-9]|1[0-2])\b/i.exec(rest))) { l.expiry = m[1] + '-' + ('0' + m[2]).slice(-2); rest = rest.replace(m[0], ' '); }   /* 2027-03 */
@@ -192,7 +193,7 @@
       if (/مفتوح|opened/i.test(rest)) { l.pack_state = 'opened'; rest = rest.replace(/مفتوح[هة]?|opened/ig, ' '); }
       else if (/تالف|damaged/i.test(rest)) { l.pack_state = 'damaged'; rest = rest.replace(/تالف[هة]?|damaged/ig, ' '); }
       var fw = rest.split(/\s+/).filter(function (w) { return TT.kind(TT.tokens(w)[0]) === 'form'; })[0]; if (fw) l.form = TT.tokens(fw)[0];
-      rest = rest.replace(/\b(متوفر|متاح|available)\b/ig, ' ').replace(/[|،,:;\-–—_*•]+/g, ' ').replace(/\s+/g, ' ').trim();
+      rest = rest.replace(/\b(متوفر|متاح|available)\b/ig, ' ').replace(/(^|\s)[×xX*](?=\s|$)/g, ' ').replace(/[|،,:;\-–—_*•]+/g, ' ').replace(/\s+/g, ' ').trim();
       if (!/[A-Za-zء-ي]/.test(rest)) return;
       if (/[ء-ي]/.test(rest) && !/[A-Za-z]/.test(rest)) { l.name_ar = rest.slice(0, 160); l.name = rest.slice(0, 160); } else l.name = rest.slice(0, 160);
       if (!l.unit && l.qty) l.unit = 'box';
@@ -416,8 +417,10 @@
     var text = [L.title, L.desc, summary(L), (L.lines || []).map(function (l) { return [l.name, l.name_ar, l.strength, l.form].join(' '); }).join(' ')].join(' ');
     var w = TT.tokens(text), extra = [], seen = {};
     w.forEach(function (c) { var m = /^([0-9.]+)(mg|mcg|g|ml|iu)$/.exec(c), k = m ? m[2] : c;   /* 500mg → the variants of mg too */
-      (TT.terms.find(function (r) { return r[1] === k; }) || [0, 0, []])[2].concat(m ? [m[1]] : []).forEach(function (v) { if (!seen[v]) { seen[v] = 1; extra.push(v); } }); });
-    var nums = (text.match(/\d+/g) || []).map(function (n) { return n.replace(/\d/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'[d]; }); });
+      var vs = (TT.terms.find(function (r) { return r[1] === k; }) || [0, 0, []])[2];
+      vs.concat(m ? [m[1]] : []).concat(m ? vs.concat([k]).reduce(function (a, v) { return a.concat([m[1] + v, ar(m[1]) + v]); }, []) : []).forEach(function (v) { if (!seen[v]) { seen[v] = 1; extra.push(v); } }); });   /* ٥٠٠مجم written without a space */
+    function ar(n) { return n.replace(/\d/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'[d]; }); }
+    var nums = (text.match(/\d+/g) || []).map(ar);
     return TT.searchText(text) + ' ' + extra.join(' ') + ' ' + nums.join(' ') + ' ' + (KIND[L.kind] ? KIND[L.kind].chip : '');
   }
   function decorate(card, L) {
