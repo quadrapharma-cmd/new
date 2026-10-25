@@ -224,7 +224,7 @@ end $$;
 -- 3 months of VIP for a company page the founder runs (owner or admin) — once, within a year of joining
 create or replace function public.founder_apply_vip(p_company bigint) returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare me uuid := auth.uid(); f public.founder_members; c public.companies; until timestamptz;
+declare me uuid := auth.uid(); f public.founder_members; c public.companies; until timestamptz; sub text; claims text;
 begin
   if me is null then raise exception 'Sign in first' using errcode = '42501'; end if;
   select * into f from public.founder_members where user_id = me for update;
@@ -238,7 +238,12 @@ begin
     raise exception 'Give the VIP months to a company page you run (owner or admin)' using errcode = '42501'; end if;
   until := greatest(case when c.plan = 'vip' then coalesce(c.vip_until, now()) else now() end, now()) + interval '3 months';
   if c.plan = 'vip' and c.vip_until is null then until := null; end if;          -- a VIP granted by Drugbox without an end stays without an end
+  -- companies_guard (0006) refuses a plan change made in a member's session (it runs only while auth.uid() is set): this one
+  -- update is made as the server, the member's identity put back right after (all checks above were made as the member)
+  sub := current_setting('request.jwt.claim.sub', true); claims := current_setting('request.jwt.claims', true);
+  perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
   update public.companies set plan = 'vip', vip_until = until where id = c.id;
+  perform set_config('request.jwt.claim.sub', coalesce(sub, ''), true); perform set_config('request.jwt.claims', coalesce(claims, ''), true);
   update public.founder_members set vip_company_id = c.id, vip_applied_at = now() where user_id = me;
   return jsonb_build_object('company', c.id, 'vip_until', until);
 end $$;

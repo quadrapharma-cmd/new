@@ -84,7 +84,9 @@ select pg_temp.no('a revoked invitation cannot be used', $$select public.founder
 select pg_temp.no('F cannot give VIP months before joining', $$select public.founder_apply_vip(pg_temp.id('cf'))$$, '42501');
 select pg_temp.ok('a made-up code is refused (and counted)', $$(select public.founder_redeem('DBX-AAAA-AAAA-AAAA-AAAA-AAAA') ->> 'error' = 'invalid')$$);
 select pg_temp.no('… a company F does not run', $$select public.founder_redeem(lower(replace(pg_temp.code('a'), '-', ' ')), pg_temp.id('co'))$$, '42501');
-select pg_temp.ok('… F is not a founder yet (the whole join was undone)', $$not exists (select 1 from public.founder_members where user_id = auth.uid()) and (select used_by is null from public.founder_invites where code_hint = right(replace(pg_temp.code('a'), '-', ''), 4))$$);
+select pg_temp.as_server();
+select pg_temp.ok('… F is not a founder yet (the whole join was undone)', $$not exists (select 1 from public.founder_members where user_id = 'b2000000-0000-0000-0000-000000000002') and (select used_by is null from public.founder_invites where code_hint = right(replace(pg_temp.code('a'), '-', ''), 4))$$);
+select pg_temp.F();
 select pg_temp.step('F joins, giving the 3 VIP months to their own company', $$select public.founder_redeem(lower(replace(pg_temp.code('a'), '-', ' ')), pg_temp.id('cf'))$$);
 select pg_temp.ok('F is a founding member (agency)', $$(select segment = 'agency' from public.founder_members where user_id = auth.uid())$$);
 select pg_temp.ok('F''s company is VIP for about 3 months', $$(select plan = 'vip' and vip_until between now() + interval '88 days' and now() + interval '93 days' from public.companies where id = pg_temp.id('cf'))$$);
@@ -136,6 +138,7 @@ select pg_temp.ok('Drugbox sees the notes of the requests', $$(select asked = 2 
 select pg_temp.no('a session in the past is refused', $$select public.expert_session_save(null, 'file_purchase', 'GM Buying a file safely', null, null, 'GM Dr. Expert', null, '2020-01-01 20:00', 60, 2, null)$$, '22023');
 select pg_temp.no('a meeting link must be https', $$select public.expert_session_save(null, 'file_purchase', 'GM Buying a file safely', null, null, 'GM Dr. Expert', null, '2030-01-01 20:00', 60, 2, 'javascript:alert(1)')$$, '22023');
 select pg_temp.step('Drugbox schedules a session in 2 days at 20:00 Cairo, 2 seats, the expert is member O', $$insert into ids values ('s', public.expert_session_save(null, 'file_purchase', 'GM Buying a file safely', 'GM شراء ملف بأمان', 'GM about', 'GM Dr. Expert', 'GM 20 years', to_char((now() at time zone 'Africa/Cairo')::date + 2, 'YYYY-MM-DD') || ' 20:00', 60, 2, 'https://meet.example.test/gm-room', 'b2000000-0000-0000-0000-000000000004')::text)$$);
+select pg_temp.as_server();
 select pg_temp.ok('the members who asked are told', $$(select count(*) = 2 from public.notifications where type = 'expert_session' and (data ->> 'session')::bigint = pg_temp.id('s'))$$);
 select pg_temp.F();
 select pg_temp.no('F does not read the meeting link from the table', $$select join_url from public.expert_sessions$$, '42501');
@@ -156,6 +159,7 @@ select pg_temp.O();
 select pg_temp.no('a third member finds it full', $$insert into public.expert_registrations (session_id) values (pg_temp.id('s'))$$, '23514');
 select pg_temp.ok('the expert (O) reads the link any time', $$(select public.expert_session_link(pg_temp.id('s')) = 'https://meet.example.test/gm-room')$$);
 select pg_temp.step('the expert answers F', $$select public.expert_answer((select id from public.expert_questions where body like 'GM Who pays%'), 'GM The buyer, unless the contract says otherwise.')$$);
+select pg_temp.as_server();
 select pg_temp.ok('F is told', $$(select count(*) = 1 from public.notifications where user_id = 'b2000000-0000-0000-0000-000000000002' and type = 'expert_answer')$$);
 select pg_temp.as_server();
 select pg_temp.step('reminders now: none due', $$select 1$$);
