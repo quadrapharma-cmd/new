@@ -107,9 +107,13 @@ Every table, sequence and function grants its own privileges; every table has RL
 - **Directory import:** the owner's official lists (CSV) — tested with a realistic sample written here.
 - **Founders:** the quotas are a first proposal from the study minus the Rx segment — confirm.
 - **Courses:** content, instructors and prices (they stay free).
-- **SEO for crawlers:** title / description / Open Graph are set in the page when a company opens; crawlers that do not run
-  JavaScript (some link previews) see the site's defaults — a server-rendered `/c/<slug>` (a Vercel function reading
-  `public_company_meta`) is the next step if the owner wants link previews per company.
+- **SEO:** `/c/<slug>` is served by a small function (`deploy/share/company.js` → `api/company.js` in the live build, rewrite in
+  `deploy/vercel.json`; the local gateway serves it the same way) with the title, description, canonical and Open Graph tags, then
+  opens the app; live share links use it. **Check on the Vercel preview** that the function deploys (it could not be run on Vercel
+  from here). A sitemap of all company pages is not built (waiting on the owner: whether every unclaimed page should be indexed).
+- **Speed (100k seed, `tools/scale/timings.py`):** the new queries are 0.04–20 ms (Home filter 0.4 ms after a partial index;
+  market_search_thera 7 ms; public_directory_page 12–20 ms). One existing query, `jobs_search_q` (Jobs area), measured 70 ms for
+  member1 in one run while other tests ran on the machine (its own area reported 35 ms) — not changed here.
 - Merge notes: `market_search_thera` mirrors `market_search` (w-trade may change it); `notify_group_post` (0061) was re-created
   with the Drugbox sender; `private.can_post_in_group` (0061) now refuses official channels; the schema sweep and
   `security_core.rls.sql` F-27 name the six `public_*` functions; `launch_readiness.rls.sql` re-applies 0100–0104;
