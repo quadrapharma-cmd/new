@@ -1038,7 +1038,7 @@
   /* the original (English) text of an element, whatever the interface language — so logic never depends on the language shown */
 
   /* never translate what people wrote */
-  var SKIP = 'script,style,svg,input,textarea,[contenteditable],.post-body,.post-text,.msg-text,.bubble,.mx-msg,.cmt-text,.dx-entity,.lc-title,.sp-title,.sc-title,.gcard-title,.gcard-desc,.dl-title,[data-noi18n]';   /* whole blocks people wrote */
+  var SKIP = 'script,style,svg,input,textarea,[contenteditable],.post-body,.post-text,.msg-text,.bubble,.mx-msg,.cmt-text,.dx-entity,.lc-title,.sp-title,.sc-title,.gcard:not([data-official="1"]) .gcard-title,.gcard:not([data-official="1"]) .gcard-desc,.dl-title,[data-noi18n]';   /* whole blocks people wrote */
   var SKIP_SELF = '.post-name,.sugg-name,.dr-card h3,.hb-card h3,.cp-name,.dr-name,.mg-name,.profile-name,.dx-mine-name,.jc-title';   /* .jc-title: the job title stays, its Hiring / level badges are translated */   /* a name's own words stay; badges inside it are translated */
   var ORIG = new WeakMap(), LAST = new WeakMap(), LASTA = new WeakMap(), ATTR = ['placeholder', 'title', 'aria-label'];   /* LAST = what we wrote, so our own output is never translated again */
   window.dxOrigText = function (el) { if (!el) return ''; var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), o = ''; while (w.nextNode()) { var n = w.currentNode; o += ORIG.has(n) ? ORIG.get(n) : n.nodeValue; } return o; };

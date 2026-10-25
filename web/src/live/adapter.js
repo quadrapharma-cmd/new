@@ -4586,10 +4586,10 @@
         no phone, e-mail, team, contacts or anything private; contacting needs sign-in (growth.js asks) */
   var groupCardGW = groupCard;
   groupCard = function (g) { var c = groupCardGW.apply(this, arguments); if (g && g.official) { c.dataset.official = '1'; c.dataset.post = 'admins'; } else delete c.dataset.official; return c; };
-  var postFromGW = postFrom;   /* a Drugbox post opened anywhere else (Saved, a link) reads as Drugbox too */
-  postFrom = function (r) { var p = postFromGW.apply(this, arguments); if (r && r.as_drugbox) { p.drugbox = true; p.thera = r.thera || []; window.__gwDbx = true; } return p; };
+  var postFromGW = postFrom;   /* a Drugbox post opened anywhere else (Saved, a link) reads as Drugbox too — it has no member author (0105) */
+  postFrom = function (r) { var p = postFromGW.apply(this, arguments); if (r && r.as_drugbox) { p.drugbox = true; p.uid = SYS_UID; p.thera = r.thera || []; window.__gwDbx = true; } return p; };
   var gpPostGW = gpPost;
-  gpPost = function (r) { var p = gpPostGW.apply(this, arguments); if (r && r.as_drugbox) { p.drugbox = true; p.own = false; } p.thera = (r && r.thera) || []; return p; };
+  gpPost = function (r) { var p = gpPostGW.apply(this, arguments); if (r && r.as_drugbox) { p.drugbox = true; p.own = false; p.uid = SYS_UID; } p.thera = (r && r.thera) || []; return p; };
   var notifFromGW = notifFrom;
   notifFrom = function (n) {
     var o = notifFromGW(n), d = n.data && typeof n.data === 'object' ? n.data : {};

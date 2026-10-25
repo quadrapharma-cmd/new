@@ -541,7 +541,7 @@
         : g.pending ? '<button type="button" class="gcard-btn btn-joined" data-gpa="cancel">⏳ Request sent · Cancel</button>' : '<button type="button" class="gcard-btn btn-join" data-gpa="request">🔒 Request to join</button>';
       return '<div class="gp-lock"><div class="gp-lock-ic">' + (g.invited ? '✉️' : '🔒') + '</div><b>' + head + '</b><p>' + sub + '</p>' + btn + '</div>';
     }
-    if (g.official) return '<div class="why-banner gp-gate"><span>👀 Join this Drugbox channel to get its posts and to comment and react.</span><button type="button" class="gcard-btn btn-join" data-gpa="join">+ Join Group</button></div>';   /* AREA w-growth: nobody posts in a channel but Drugbox */
+    if (g.official) return '<div class="why-banner gp-gate"><span>👀 Join this Drugbox channel to be told of its new posts.</span><button type="button" class="gcard-btn btn-join" data-gpa="join">+ Join Group</button></div>';   /* AREA w-growth: nobody posts in a channel but Drugbox */
     return '<div class="why-banner gp-gate"><span>👀 You’re viewing a preview. Join to post, comment and react.</span><button type="button" class="gcard-btn btn-join" data-gpa="join">+ Join Group</button>' +
       (g.invited ? ' <button type="button" class="gcard-btn gp-decline" data-gpa="declineinv">✕ Decline invitation</button>' : '') + '</div>';
   }
@@ -559,7 +559,7 @@
     if (!CUR.posts && !CUR.loading) loadPosts(g);
     var h = gate(g);
     if (g.archived) h += '<div class="why-banner gp-gate gp-arch"><span>📦 This group is archived — you can read its history; nobody can post, comment or join.</span></div>';
-    else if (g.official) h += '<div class="why-banner gp-gate dx-off-gate"><span>✓ Official Drugbox channel — only Drugbox posts here; you can comment and react.</span></div>';   /* AREA w-growth */
+    else if (g.official && g.member) h += '<div class="why-banner gp-gate dx-off-gate"><span>✓ Official Drugbox channel — only Drugbox posts here; you can comment and react.</span></div>';   /* AREA w-growth */
     else if (g.member && g.postPolicy === 'admins' && !g.admin) h += '<div class="why-banner gp-gate"><span>📣 Only the admins post in this group — you can comment and react.</span></div>';
     if (g.member && !CUR.unsupported && !g.archived && !g.official && (g.postPolicy !== 'admins' || g.admin)) h += '<div class="gp-comp">' + (typeof window.renderComposer === 'function' ? window.renderComposer() : '') + '</div>';
     if (CUR.loading && !CUR.posts) h += '<div class="gp-empty">Loading posts…</div>';

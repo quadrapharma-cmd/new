@@ -36,12 +36,12 @@
   var THERA = [['biologics', 'Biologics', '🧬'], ['veterinary', 'Veterinary', '🐄'], ['agriculture', 'Agriculture', '🌾'], ['glp1', 'GLP-1', '💉'],
                ['oncology', 'Oncology', '🎗️'], ['growth_hormone', 'Growth hormone', '📏'], ['fertility', 'Fertility', '👶'], ['insulin', 'Insulin', '🩸']];
   var TERMS = { biologics: ['biologic', 'biologics', 'biological', 'biosimilar', 'biosimilars', 'monoclonal', 'mab', 'بيولوجي', 'بيولوجية', 'بايولوجي', 'بيوسيميلر'],
-    veterinary: ['veterinary', 'vet', 'poultry', 'livestock', 'بيطري', 'بيطرية', 'دواجن', 'ماشية'],
+    veterinary: ['veterinary', 'vet', 'poultry', 'livestock', 'بيطري', 'بيطرية', 'دواجن', 'الماشية', 'للماشية'],
     agriculture: ['agriculture', 'agricultural', 'agro', 'pesticide', 'pesticides', 'fertilizer', 'fertilizers', 'زراعي', 'زراعية', 'مبيد', 'مبيدات', 'أسمدة', 'سماد'],
     glp1: ['glp-1', 'glp1', 'semaglutide', 'liraglutide', 'tirzepatide', 'dulaglutide', 'سيماجلوتايد', 'سيماجلوتيد', 'ليراجلوتايد'],
-    oncology: ['oncology', 'oncologic', 'cancer', 'chemotherapy', 'cytotoxic', 'أورام', 'اورام', 'الأورام', 'سرطان', 'كيماوي'],
+    oncology: ['oncology', 'oncologic', 'cancer', 'chemotherapy', 'cytotoxic', 'أورام', 'اورام', 'الأورام', 'سرطان', 'علاج كيماوي'],
     growth_hormone: ['growth hormone', 'somatropin', 'هرمون النمو', 'هرمون نمو', 'سوماتروبين'],
-    fertility: ['fertility', 'ivf', 'gonadotropin', 'gonadotrophin', 'hmg', 'fsh', 'خصوبة', 'الخصوبة', 'حقن مجهري', 'تأخر الإنجاب'],
+    fertility: ['fertility', 'ivf', 'gonadotropin', 'gonadotrophin', 'menotropin', 'fsh', 'خصوبة', 'الخصوبة', 'حقن مجهري', 'تأخر الإنجاب'],
     insulin: ['insulin', 'insulins', 'انسولين', 'إنسولين', 'الانسولين', 'الإنسولين'] };
   function theraOf(text) {
     var t = String(text || ''), low = t.toLowerCase(), out = [];
@@ -202,7 +202,7 @@
     Promise.all([CH().list(), CH().templates()]).then(function (r) {
       CHS.rows = r[0] || []; CHS.tpl = r[1] || [];
       var box = c.querySelector('.dx-ch-list'); if (!box) return;
-      box.innerHTML = CHS.rows.length ? '<div style="overflow-x:auto"><table class="admin-table dx-ch-tbl"><thead><tr><th>Status</th><th>Channel</th><th>When (Cairo)</th><th>Post</th><th></th></tr></thead><tbody>' + CHS.rows.map(function (x) {
+      box.innerHTML = CHS.rows.length ? '<div style="overflow-x:auto"><table class="admin-table dx-ch-tbl"><thead><tr><th>Status</th><th>Channel</th><th>When (Cairo)</th><th>Post text</th><th></th></tr></thead><tbody>' + CHS.rows.map(function (x) {
         var st = STATUS[x.status] || [x.status, ''], open = x.status === 'draft' || x.status === 'scheduled';
         return '<tr data-chid="' + x.id + '"><td><span class="dx-st ' + st[1] + '">' + esc(st[0]) + '</span></td><td style="white-space:nowrap">' + esc(chName(x.channel_key)) + '</td>' +
           '<td style="white-space:nowrap" data-noi18n>' + esc(x.status === 'published' ? (x.published_local || cairoAt(x.published_at) || x.publish_local || '—') : (x.publish_local || '—')) + '</td>' +
@@ -535,7 +535,7 @@
       return Promise.resolve(demoSessions().map(function (s) { var qs = s.q.concat(mine.filter(function (q) { return q.session === s.id; }));
         return { id: s.id, topic: s.topic, title: s.title, title_ar: s.title_ar, about: s.about, expert_name: s.expert_name, expert_line: s.expert_line, starts_local: s.local, minutes: s.minutes, seats: s.seats,
           registered_count: s.registered + (reg[s.id] ? 1 : 0), status: s.status, registered: !!reg[s.id], questions: qs.length, has_link: !!s.link }; })
-        .sort(function (a, b) { var up = function (x) { return x.status === 'scheduled' ? 0 : 1; }; return up(a) - up(b) || (up(a) ? String(b.starts_local).localeCompare(a.starts_local) : String(a.starts_local).localeCompare(b.starts_local)); })); },
+        .sort(function (a, b) { var up = function (x) { return upcoming(x) ? 0 : 1; }; return up(a) - up(b) || (up(a) ? String(b.starts_local).localeCompare(a.starts_local) : String(a.starts_local).localeCompare(b.starts_local)); })); },
     questions: function (id, opts) { var s = demoSessions().filter(function (x) { return x.id === id; })[0], mine = sget('gwXQ', []), ans = sget('gwXAns', {});
       var hid = sget('gwXHid', {}), all = (s ? s.q : []).concat(mine.filter(function (q) { return q.session === id; }).map(function (q) { return Object.assign({}, q, { answer: ans[q.id] || q.answer || null }); }));
       return Promise.resolve(all.map(function (q) { return Object.assign({}, q, { hidden: !!hid[q.id] }); }).filter(function (q) { return opts === 'admin' || !q.hidden || q.mine; })); },
@@ -566,13 +566,17 @@
   function X() { return live() ? window.dxGrowth.experts : DEMO_X; }
   var XV = { open: false };
   function title(s) { return ar() && s.title_ar ? s.title_ar : s.title; }
+  /* a session past its end is not upcoming, even before Drugbox marks it done (the database says so live: expert_sessions_list.ended) */
+  function endLocal(s) { var d = new Date(String(s.starts_local || '').replace(' ', 'T') + ':00Z'); if (isNaN(d)) return ''; return new Date(d.getTime() + (+s.minutes || 60) * 60000).toISOString().slice(0, 16).replace('T', ' '); }
+  function ended(s) { return s.ended != null ? !!s.ended : (!!s.starts_local && endLocal(s) <= GW.cairoNow()); }
+  function upcoming(s) { return s.status === 'scheduled' && !ended(s); }
   function sessHtml(s, admin) {
     var started = s.started != null ? s.started : (s.starts_local && s.starts_local <= GW.cairoNow());
-    var up = s.status === 'scheduled', left = Math.max(0, s.seats - s.registered_count);
+    var up = upcoming(s), left = Math.max(0, s.seats - s.registered_count);
     return '<div class="dx-xp-s" data-xsid="' + s.id + '"><div class="dx-xp-t" role="heading" aria-level="3" data-noi18n>' + esc(title(s)) + '</div>' +
       '<div class="dx-xp-meta"><span>🎤 <span data-noi18n>' + esc(s.expert_name) + '</span>' + (s.expert_line ? ' — <span data-noi18n>' + esc(s.expert_line) + '</span>' : '') + '</span>' +
       '<span>🗓 <span data-noi18n>' + esc(s.starts_local) + '</span> <span>(Cairo)</span> · <span data-noi18n>' + s.minutes + '</span> <span>min</span></span><span>🏷 ' + esc(topicLabel(s.topic)) + '</span>' +
-      (up ? '<span>👥 <span data-noi18n>' + s.registered_count + '</span> <span>registered</span> · <span data-noi18n>' + left + '</span> <span>seats left</span></span>' : '<span>' + (s.status === 'done' ? '✓ Took place' : '✕ Cancelled') + '</span>') + '</div>' +
+      (up ? '<span>👥 <span data-noi18n>' + s.registered_count + '</span> <span>registered</span> · <span data-noi18n>' + left + '</span> <span>seats left</span></span>' : '<span>' + (s.status === 'done' ? '✓ Took place' : s.status === 'cancelled' ? '✕ Cancelled' : 'Ended') + '</span>') + '</div>' +
       (s.about ? '<div style="font-size:13px;color:#374151" data-noi18n>' + esc(s.about) + '</div>' : '') +
       (admin ? '' : '<div class="dx-xp-acts">' + (up ? (s.registered ? '<span class="dx-st dx-st-pub">✓ Registered</span><button type="button" class="dbk-btn p dx-xp-join">▶ Join the session</button>' + (started ? '' : '<button type="button" class="dbk-btn s dx-xp-unreg">Cancel registration</button>')
         : started ? '<span class="dx-st dx-st-sched">● Happening now</span>' : left > 0 ? '<button type="button" class="dbk-btn p dx-xp-reg">Register</button>' : '<span class="dx-st dx-st-off">Full</span>') : '') +
@@ -588,7 +592,7 @@
       '<div class="dx-xp-sec">Past sessions — questions and answers</div><div class="dx-xp-past"></div>';
     i18n(box);
     Promise.all([X().sessions(), X().demand()]).then(function (r) {
-      var up = r[0].filter(function (s) { return s.status === 'scheduled'; }), past = r[0].filter(function (s) { return s.status !== 'scheduled'; });
+      var up = r[0].filter(upcoming), past = r[0].filter(function (s) { return !upcoming(s); });
       box.querySelector('.dx-xp-up').innerHTML = up.length ? up.map(function (s) { return sessHtml(s); }).join('') : '<div class="dbk-empty">No session is scheduled yet — ask for a topic below.</div>';
       box.querySelector('.dx-xp-past').innerHTML = past.length ? past.map(function (s) { return sessHtml(s); }).join('') : '<div class="adm-muted">No past sessions yet.</div>';
       box.querySelector('.dx-xp-topics').innerHTML = r[1].map(function (d) { return '<div class="dx-xp-topic" data-xtopic="' + esc(d.topic) + '"><b>' + esc(topicLabel(d.topic)) + '</b><small><span data-noi18n>' + d.asked + '</span> <span>asked</span></small>' +
@@ -747,7 +751,7 @@
   GW.importPage = function (c) {
     if (!c) return;
     c.innerHTML = '<div class="admin-page-hdr"><div class="admin-page-title">📥 Directory import</div><div class="admin-page-sub">Load companies from an official PUBLIC list (CSV) as unclaimed pages, marked as such; each row names its source. Duplicates (same registry number or name, English or Arabic) are skipped. Check first, then import</div></div>' +
-      '<div class="admin-section" style="margin:0 28px"><div class="dbk-f"><label for="impF">CSV file (UTF-8) — columns: ' + COLS.join(', ') + ' (name, sectors and source are required)</label><input id="impF" type="file" accept=".csv,text/csv"></div>' +
+      '<div class="admin-section" style="margin:0 28px"><div class="dbk-f"><label for="impF"><span>CSV file (UTF-8) — columns:</span> <span data-noi18n>' + COLS.join(', ') + '</span> <span>(name, sectors and source are required)</span></label><input id="impF" type="file" accept=".csv,text/csv"></div>' +
       '<div class="dx-xp-acts"><button type="button" class="dbk-btn s dx-imp-sample">⬇ Sample CSV</button><button type="button" class="dbk-btn p dx-imp-check" disabled>Check (nothing is written)</button><button type="button" class="dbk-btn p dx-imp-go" disabled>Import</button></div>' +
       '<div class="dx-imp-out"></div></div>';
     IV.rows = null; i18n(c);
@@ -1004,7 +1008,17 @@
     'Your profile says': 'يذكر ملفك الشخصي', '— the sign-up form used to choose it for everyone. Please confirm it or pick yours, so the right people, jobs and groups find you.': '— كان نموذج التسجيل يختاره للجميع. أكّده أو اختر تخصصك ليصل إليك الأشخاص والوظائف والمجموعات المناسبة.',
     'Write your specialty': 'اكتب تخصصك', '💬 Questions and answers': '💬 الأسئلة والإجابات', '💬 Questions': '💬 الأسئلة', '● Happening now': '● منعقدة الآن', 'Show more': 'عرض المزيد',
     'Hide (breaks the rules)': 'إخفاء (مخالف للقواعد)', 'Show again': 'إظهار مجددًا', 'Question hidden from members': 'أُخفي السؤال عن الأعضاء', 'Question shown again': 'أُظهر السؤال مجددًا',
-    '👀 Join this Drugbox channel to get its posts and to comment and react.': '👀 انضم إلى قناة Drugbox هذه لتصلك منشوراتها ولتعلّق وتتفاعل.',
+    '👀 Join this Drugbox channel to be told of its new posts.': '👀 انضم إلى قناة Drugbox هذه ليصلك إشعار بمنشوراتها الجديدة.',
+    /* the channels' own names and descriptions (groups.name_ar / description_ar of 0100 — the demo's text and the database's) */
+    'Drugbox News': 'Drugbox أخبار', 'Drugbox Jobs': 'Drugbox وظائف', 'Drugbox Regulatory': 'Drugbox تسجيل ورقابة', 'Drugbox Market': 'Drugbox السوق',
+    'Official Drugbox channel: industry news, Drugbox updates and the weekly practical guide.': 'قناة Drugbox الرسمية: أخبار الصناعة وتحديثات Drugbox والدليل العملي الأسبوعي.',
+    'Official Drugbox channel: the week’s jobs and hiring news across the industry.': 'قناة Drugbox الرسمية: وظائف الأسبوع وأخبار التوظيف في الصناعة.',
+    "Official Drugbox channel: the week's jobs and hiring news across the industry.": 'قناة Drugbox الرسمية: وظائف الأسبوع وأخبار التوظيف في الصناعة.',
+    'Official Drugbox channel: the weekly regulatory bulletin (EDA, NFSA) and how to read a registration-file ad.': 'قناة Drugbox الرسمية: النشرة التنظيمية الأسبوعية (هيئة الدواء، هيئة سلامة الغذاء) وكيفية قراءة إعلان ملف تسجيل.',
+    'Official Drugbox channel: «Wanted today» every evening, the week’s shortages and the agency market — business to business only.': 'قناة Drugbox الرسمية: «مطلوب النهارده» كل مساء ونواقص الأسبوع وسوق الوكالات — تجارة بين الشركات فقط.',
+    "Official Drugbox channel: «Wanted today» every evening, the week's shortages and the agency market — business to business only.": 'قناة Drugbox الرسمية: «مطلوب النهارده» كل مساء ونواقص الأسبوع وسوق الوكالات — تجارة بين الشركات فقط.',
+    'Post text': 'نص المنشور', 'Ended': 'انتهت',
+    'CSV file (UTF-8) — columns:': 'ملف CSV (‏UTF-8) — الأعمدة:', '(name, sectors and source are required)': '(الاسم والقطاعات والمصدر مطلوبة)',
     'source is missing — every imported company names the public list it comes from': 'المصدر مفقود — كل شركة مستوردة تذكر القائمة العامة التي جاءت منها', 'sectors are missing': 'القطاعات مفقودة',
     'name is missing or longer than 200 characters': 'الاسم مفقود أو أطول من 200 حرف', 'duplicate of an earlier row in this file': 'مكرر لصف سابق في هذا الملف', 'e-mail is not valid': 'البريد الإلكتروني غير صالح',
     'phone is not valid': 'رقم الهاتف غير صالح', 'website is not valid': 'الموقع الإلكتروني غير صالح', 'address fields are too long': 'حقول العنوان أطول من المسموح', 'Arabic name is longer than 200 characters': 'الاسم العربي أطول من 200 حرف', 'Thanks — your specialty is confirmed': 'شكرًا — تم تأكيد تخصصك', 'Your specialty is saved': 'تم حفظ تخصصك'

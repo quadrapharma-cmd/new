@@ -35,6 +35,7 @@ insert into auth.users (id, email) values ('b1000000-0000-0000-0000-000000000001
 insert into public.profiles (id, name) values ('b1000000-0000-0000-0000-000000000001','GW Admin'),('b1000000-0000-0000-0000-000000000002','GW Member'),
   ('b1000000-0000-0000-0000-000000000003','GW Groupadmin'),('b1000000-0000-0000-0000-000000000004','GW Outsider') on conflict (id) do update set name = excluded.name;
 update public.profiles set role = 'admin' where id = 'b1000000-0000-0000-0000-000000000001';
+
 create function pg_temp.A() returns void language sql as $$ select pg_temp.as_user('b1000000-0000-0000-0000-000000000001') $$;
 create function pg_temp.M() returns void language sql as $$ select pg_temp.as_user('b1000000-0000-0000-0000-000000000002') $$;
 create function pg_temp.G() returns void language sql as $$ select pg_temp.as_user('b1000000-0000-0000-0000-000000000003') $$;
@@ -162,6 +163,26 @@ select pg_temp.step('… and to delete it', $$delete from public.posts where id 
 select pg_temp.as_server();
 select pg_temp.ok('the Drugbox post is untouched', $$(select category = 'market' and as_drugbox from public.posts where id = pg_temp.id('np'))$$);
 update public.profiles set role = 'admin' where id = 'b1000000-0000-0000-0000-000000000001';
+
+-- 6. verifier round 2 (0105): a Drugbox post has no member author; restore keeps its tags; the dictionary
+select pg_temp.as_server();
+select pg_temp.ok('a channel post has no member as author; Drugbox keeps who published it', $$(select p.user_id is null and s.published_by = 'b1000000-0000-0000-0000-000000000001' from public.channel_schedule s join public.posts p on p.id = s.post_id where s.id = pg_temp.id('d'))$$);
+select pg_temp.ok('the admin got no "removed / restored your post" notice for it', $$not exists (select 1 from public.notifications where user_id = 'b1000000-0000-0000-0000-000000000001' and type in ('post_removed', 'post_restored'))$$);
+select pg_temp.M();
+select pg_temp.ok('a member reading the post (with the author embed) learns no admin', $$(select user_id is null from public.posts where id = pg_temp.id('np')) and not exists (select 1 from public.posts p join public.profiles a on a.id = p.user_id where p.as_drugbox)$$);
+select pg_temp.no('a member cannot write an authorless post', $$insert into public.posts (user_id, body) values (null, 'GW nobody')$$, '42501');
+select pg_temp.A();
+insert into ids select 'dp', post_id::text from public.channel_schedule where id = pg_temp.id('d');
+select pg_temp.step('Drugbox removes the tagged post (fertility picked, insulin from the text)', $$insert into ids select 'act2', public.admin_delete_post(pg_temp.id('dp'), 'GW test removal 2')::text$$);
+select pg_temp.step('… and restores it', $$select public.admin_restore_post(pg_temp.id('act2'))$$);
+select pg_temp.ok('… with the tags it had and still Drugbox''s', $$(select as_drugbox and user_id is null and thera = '{fertility,insulin}' from public.posts where id = pg_temp.id('dp'))$$);
+select pg_temp.M();
+select pg_temp.step('M comments on the restored post', $$insert into public.comments (post_id, user_id, body) values (pg_temp.id('dp'), auth.uid(), 'GW still here')$$);
+select pg_temp.as_server();
+select pg_temp.ok('«الأمور ماشية» is not veterinary; «أدوية للماشية» is', $$private.thera_of('الأمور ماشية الحمد لله') = '{}' and private.thera_of('أدوية للماشية') = '{veterinary}' and private.thera_of('تحصينات الماشية') = '{veterinary}'$$);
+select pg_temp.step('the publishing admin deletes their account', $$insert into private.account_deletions (user_id) values ('b1000000-0000-0000-0000-000000000001'); select public.account_anonymise('b1000000-0000-0000-0000-000000000001')$$);
+select pg_temp.ok('… the Drugbox posts stay, with their comments', $$(select count(*) = 2 from public.posts where as_drugbox) and exists (select 1 from public.comments where post_id = pg_temp.id('dp'))$$);
+select pg_temp.ok('… and the plan''s record of the publisher is cleared, not the post', $$not exists (select 1 from public.channel_schedule where published_by is not null) and (select status = 'published' from public.channel_schedule where id = pg_temp.id('n'))$$);
 
 -- ══ report ═══════════════════════════════════════════════════════════════════════════════════
 select pg_temp.as_server();
