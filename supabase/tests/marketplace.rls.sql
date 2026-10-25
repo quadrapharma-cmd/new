@@ -40,6 +40,11 @@ select pg_temp.step('two companies', $$
   with x as (insert into public.companies (owner_id, name, type) values ('e2222222-2222-2222-2222-222222222222', 'MK Buyer Co', 'Manufacturer') returning id) insert into ids select 'bco', id::text from x;
   insert into storage.objects (bucket_id, name, owner) values ('documents', 'listings/e1111111-1111-1111-1111-111111111111/coa-a.pdf', 'e1111111-1111-1111-1111-111111111111')$$);
 
+select pg_temp.as_server();
+-- w-trust (0090): a trade offer needs the poster's trade profile (and a company's offer, the company's Drugbox badge)
+insert into public.trade_profiles (user_id, role, governorate, sells) select id, 'supplier', 'Cairo', 'APIs' from public.profiles where id in ('e1111111-1111-1111-1111-111111111111', 'e2222222-2222-2222-2222-222222222222') on conflict (user_id) do nothing;
+update public.companies set status = 'verified' where owner_id in ('e1111111-1111-1111-1111-111111111111', 'e2222222-2222-2222-2222-222222222222');
+
 -- ══ a listing ══
 select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
 select pg_temp.step('the seller lists for his company with a COA, trying to set counters, verified certificates and a renewal date', $$

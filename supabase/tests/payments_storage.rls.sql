@@ -53,6 +53,10 @@ update public.profiles set role = 'admin' where id = '0c000000-0000-0000-0000-00
 select pg_temp.as_user(:O);
 select pg_temp.step('the owner creates a company', $$with x as (insert into public.companies (name, type, slug) values ('PS Pharma','Manufacturer','ps-pharma') returning id) insert into ids select 'co', id from x$$);
 select pg_temp.step('the owner creates a second company', $$with x as (insert into public.companies (name, type, slug) values ('PS Gone Labs','Manufacturer','ps-gone-labs') returning id) insert into ids select 'co2', id from x$$);
+select pg_temp.as_server();
+-- w-trust (0090): a trade offer needs the poster's trade profile (and a company's offer, the company's Drugbox badge)
+insert into public.trade_profiles (user_id, role, governorate, sells) values (:O, 'manufacturer', 'Cairo', 'Finished products') on conflict (user_id) do nothing;
+select pg_temp.as_user(:O);
 select pg_temp.step('the owner posts two listings', $$with x as (insert into public.products (user_id, name, category, type, active)
   values ('0a000000-0000-0000-0000-00000000000a','PS Listing one','api','supply',true),('0a000000-0000-0000-0000-00000000000a','PS Listing two','api','supply',true) returning id) insert into ids select 'l' || row_number() over (order by id), id from x$$);
 

@@ -26,7 +26,7 @@ alter table public.member_verifications enable row level security;
 drop policy if exists "verifications: members read" on public.member_verifications;
 create policy "verifications: members read" on public.member_verifications for select to authenticated using (true);
 revoke all on table public.member_verifications from public, anon, authenticated, service_role;
-grant select (user_id, phone_verified_at) on table public.member_verifications to authenticated;   -- never the hash
+grant select (user_id, phone_verified_at) on table public.member_verifications to anon, authenticated;   -- never the hash; anon: no policy → empty (F-26)
 grant select, insert, update, delete, truncate, references, trigger on table public.member_verifications to service_role;
 
 create table if not exists private.phone_codes (
