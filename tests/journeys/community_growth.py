@@ -60,6 +60,17 @@ def official_channels(j):
     with j.step('React to the Drugbox post (members comment and react)'):
         like = post.locator('.post-acts .pact').first; like.click(); j.settle(pg, 900)
         if j.live: j.check(j.wait_db("select count(*) from public.reactions where post_id=%s and user_id='%s'" % (pid, me['id']), 6) == '1', 'the reaction was not stored')
+    with j.step('Repost the Drugbox post to the feed: it is credited to Drugbox, not to the member who reposts'):
+        sh = post.locator('[data-gpm="share"]').first
+        j.check(sh.count(), 'not built: the Drugbox post has no Share action')
+        sh.dispatch_event('click'); j.settle(pg, 700)
+        opt = pg.locator('.dbk-modal [data-so="feed"], [data-so="feed"]').first
+        j.check(opt.count(), 'not built: no "Repost to your feed" option for a public channel'); opt.click(); j.settle(pg, 1200)
+        if j.live:
+            b = j.wait_db("select body from public.posts where user_id='%s' and group_id is null and body like 'Shared from%%' order by id desc limit 1" % me['id'], 6)
+        else:
+            b = pg.evaluate("(window.POSTS||[])[0] ? window.POSTS[0].body : ''")
+        j.check(b and '— Drugbox:' in b and (me['name'] if j.live else 'zz-none') not in b.split(':')[0], 'the repost is not credited to Drugbox (%s)' % (b or '')[:90])
     with j.step('Nobody posts into a channel but Drugbox — the server refuses a member who tries through the API'):
         if j.demo: j.skip('the server rule is checked in live')
         err = pg.evaluate("async()=>{const r=await dxLive.sb.from('posts').insert({user_id:dxLive.uuidOf(ME.id),body:'fake drugbox',group_id:%s});return r.error?(r.error.code||r.error.message):'allowed'}" % j.sql1("select id from public.groups where channel_key='market'"))
