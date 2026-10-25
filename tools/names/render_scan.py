@@ -3,7 +3,7 @@ Everything is drawn on a Chromium canvas the way the app draws a name — with t
 Arabic `Poppins, "Segoe UI", …, sans-serif` from web/src/i18n.css; the datalist popup's `system-ui, sans-serif`), so a letter Poppins
 lacks is drawn by the fallback font next to a letter Poppins has — at weights 400, 500, 600 and 700 (the thread list and the chat header
 draw names in bold) and 14, 15 and 16 px; and with each system font on its own (DejaVu Sans, FreeSans, FreeSerif, Liberation Sans) at
-every weight too (sixth version: they were drawn at 400 and 700), for the machines whose fallback differs. Four parts:
+every weight too (sixth version: they were drawn at 400 and 700), for the machines whose fallback differs. Five parts:
   letters    every letter the live app's rule allows (Latin, Arabic, Greek, Cyrillic), alone and with every mark the rule still lets
              stand after it (none under the fourth and fifth versions), against EVERY allowed letter — every script against every
              script, Arabic against Arabic, the Arabic letters in their four joining positions
@@ -20,6 +20,11 @@ every weight too (sixth version: they were drawn at 400 and 700), for the machin
              at every weight: a mark whose ink lies within the rows the letter covers is drawn BESIDE it (Slovak ľ ď ť, Greek Ά Ἀ,
              Vietnamese ơ) and reads as an apostrophe — the letter must have the skeleton of its base letter + ’ (the blurred
              difference cannot see it: «Paľo» / «Pal’o» measured ~4 dots apart, v-spoof6-r1); see BESIDE below
+  final      *(eighth version) every allowed Arabic letter in its initial and medial forms against the dotless letters Unicode encodes
+             (ٮ ڡ ٯ), the app's stacks and each system font at every weight and size: a letter within FINAL_THR (0.5) of a dot of one
+             of them has no dot when it joins (ى ں: 0; the next, ڧ, 0.83) and may only END a word — a run of them reads as another
+             letter («ىىى» = «سـ», v-spoof6-r2); --write puts them in tools/names/final-only.txt (reason 'final'); the scan fails
+             while the rule takes such a letter before another letter; see FINAL below
 The difference of two drawings: each is aligned on its ink (centre of its box) and blurred (Gaussian, sigma 1 px — the eye does not see
 where within a pixel a small mark sits), and the summed difference of every pixel is divided by ONE ARABIC DOT: the median of ح/خ, ر/ز,
 د/ذ, ع/غ, ص/ض, ط/ظ, ٮ/ب, ں/ن drawn in the SAME font string, weight and size (a dot drawn bold is a bold dot: 274 at 400, 742 at 600
@@ -33,15 +38,16 @@ space, or the wider gap after a letter that never joins the next one, does not c
 ~40 dots apart when the two drawings were only aligned on their centres (round 5). A pair counts when either measure is below THRESHOLD.
 Reads the generated rule of web/src/live/adapter.js (run `node tools/names/name_rule.mjs --write` first), or with --rule REV the
 adapter of a git revision (`--rule e972163` is the third version, 0039_names_rule_3; `--rule 0fbc662` the fourth, 0039_names_rule_4;
-`--rule 91ca446` the fifth, 0039_names_rule_5; `--rule 881d71a` the sixth, 0039_names_rule_6).
+`--rule 91ca446` the fifth, 0039_names_rule_5; `--rule 881d71a` the sixth, 0039_names_rule_6; `--rule f7d1fc0` the seventh, 0039_names_rule_7).
   python3 tools/names/render_scan.py [OUT.json] [THRESHOLD]   Playwright 1.56 Chromium; exit 1 when a pair is found
-  --part letters|sequences|names|beside|all   (default all)
+  --part letters|sequences|names|beside|final|all   (default all)
   --rule REV            scan the rule of that git revision instead of the working tree
   --must-find U/T       exit 0 only when the pair U / T is among the pairs found, 1 otherwise — the proof that the scan sees a
                         look-alike: --rule e972163 --part letters --must-find حْ/خ ; --rule 0fbc662 --part letters --must-find ث/ئ ;
                         --rule 0fbc662 --part names --must-find "(MBA) Ahmed Ali/Ahmed Ali (MBA)" ; --rule 91ca446 --part letters
                         --must-find İ/i ; --rule 91ca446 --part names --quick --must-find "عبد الله أحمد/عبدالله أحمد" ;
-                        --rule 881d71a --part beside --must-find ľ/l’ (and Ά/’Α)
+                        --rule 881d71a --part beside --must-find ľ/l’ (and Ά/’Α) ; --rule f7d1fc0 --part final --must-find ى/ٮ
+                        (and ں/ٮ: the seventh rule took them inside a word)
   --sizes 14,15,16  --weights 400,500,600,700   --quick (letters: the stacks only; sequences and names: 400 and 700 at 15 px)
   --write               add the pairs found (letters and beside parts) to tools/names/pixel-twins.txt — the generator gives each pair one
                         skeleton: two letters, two marks (two letters that differ only in a mark at the same place: é / è), or a
@@ -56,11 +62,12 @@ every weight (it scanned Poppins alone, 117 letters, and the fallback fonts at 4
 whole names in both directions (bracket order); sixth version — one Arabic dot (bold İ / i at 0.62 passed 0.6), the system fonts at every
 weight, two-letter sequences in the system fonts, gaps drawn one column wide (a space after a letter that never joins); seventh version —
 a mark drawn beside its letter (ľ / l’, Ά / ’Α: part 'beside'), and a font drawn at 600-700 is checked against Unifont at the same
-weight (it was compared with Unifont at 400, so a system font at 700 seemed to have every letter)."""
+weight (it was compared with Unifont at 400, so a system font at 700 seemed to have every letter); eighth version — a letter that has
+no dot when it joins the next one (ى ں: «ىىى» drew as «سـ», which the blur put 4-10 dots apart — it counts no teeth): part 'final'."""
 import itertools, json, os, re, subprocess, sys, time, unicodedata
 from playwright.sync_api import sync_playwright
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.abspath(os.path.join(HERE, '../..'))
-VALUED = ('--rule', '--must-find', '--sizes', '--weights', '--part')
+VALUED = ('--rule', '--must-find', '--sizes', '--weights', '--part', '--final-thr')
 def opt(name, default=None):
     return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
 ARGS = [x for i, x in enumerate(sys.argv[1:], 1) if not x.startswith('--') and sys.argv[i - 1] not in VALUED]
@@ -109,7 +116,7 @@ def variants(s):
     return out
 NAMES = sorted(set().union(*[variants(x) for x in BASE]))
 
-SETUP = r"""([gen, part, names]) => {
+SETUP = r"""([gen, part, names, FINAL_REFS]) => {
  const F = new Function(gen + '\nreturn {nmNorm,nmProblem,nmSkel};')();
  const ok = (s) => F.nmProblem(F.nmNorm(s)) === '';
  const L = [], M = [];
@@ -129,9 +136,11 @@ SETUP = r"""([gen, part, names]) => {
    U = seq; T = L.concat(seq); single = false;
  } else if (part === 'names') { U = names; T = names; }
  else if (part === 'beside') { U = L.filter((s) => s.normalize('NFD') !== s && [...s.normalize('NFD')].length > 1); T = []; }
+ else if (part === 'final') { U = L.filter(ar); T = []; single = false; }   // *(eighth version) every allowed Arabic letter against the dotless letters (FINAL_REFS)
  window.__F = F;
  const nn = (s) => F.nmNorm(s);
  U = [...new Set(U.map(nn).filter((s) => s && F.nmProblem(s) === ''))]; T = [...new Set(T.map(nn).filter((s) => s && F.nmProblem(s) === ''))];
+ if (part === 'final') T = FINAL_REFS;   // not letters a name may hold: drawn as references only
  window.__S = { U, T, single, sk: new Map(U.concat(T).map((u) => [u, F.nmSkel(u)])), isLetter: (u) => LS.has(u) };
  return { letters: L.length, units: U.length, targets: T.length, withMark: part === 'letters' ? U.filter((u) => !LS.has(u)).length : 0 };
 }"""
@@ -182,9 +191,9 @@ SCAN = r"""([font, arf, dirs, part, thr, check, gap]) => {
  const REF = [['ح', 'خ'], ['ر', 'ز'], ['د', 'ذ'], ['ع', 'غ'], ['ص', 'ض'], ['ط', 'ظ'], ['ٮ', 'ب'], ['ں', 'ن']];
  const dot = REF.map(([p0, q0]) => l1(draw(p0, arf, 'rtl'), draw(q0, arf, 'rtl'), 1e12)).sort((p, q) => p - q)[REF.length >> 1];
  const lim = thr * dot, near = []; let pairs = 0, drawn = 0, tofu = 0, lacks = 0;
- const runs = part === 'names' ? dirs.map((d) => ['name', d]) : ['isol', 'init', 'medi', 'fina'].map((p) => [p, null]);
+ const runs = part === 'names' ? dirs.map((d) => ['name', d]) : (part === 'final' ? ['init', 'medi'] : ['isol', 'init', 'medi', 'fina']).map((p) => [p, null]);
  for (const [pos, nd] of runs) { const [ndir, pre, post] = nd || [null, '', ''];
-   const isol = pos === 'isol' || pos === 'name';
+   const isol = pos === 'isol' || pos === 'name' || (part === 'final' && pos === 'init');
    const us = isol ? U : U.filter(ar), ts = isol ? T : T.filter(ar), bm = new Map();
    for (const u of new Set(us.concat(ts))) {
      const dir = ndir || (ar(u) ? 'rtl' : 'ltr');
@@ -198,7 +207,7 @@ SCAN = r"""([font, arf, dirs, part, thr, check, gap]) => {
    for (const u of us) { const p = bm.get(u); if (!p) continue; const ku = sk.get(u), lu = single && (part === 'names' || isLetter(u));
      let lo = 0, hi = sums.length; while (lo < hi) { const m = (lo + hi) >> 1; if (sums[m] <= p.sum - lim) lo = m + 1; else hi = m; }
      for (let j = lo; j < tl.length && tl[j][1].sum < p.sum + lim; j++) { const [t, q] = tl[j];
-       if (t === u || (lu && t < u) || sk.get(t) === ku) continue;
+       if (t === u || (lu && t < u) || (part !== 'final' && sk.get(t) === ku)) continue;   // final: a reference is no name, its skeleton says nothing
        if (part === 'sequences' && oneLetter(u, t)) continue;   // one letter apart: the letters part compares them in every joining position
        pairs++;
        const m = gap ? Math.min(l1(p, q, lim), l1(p.g, q.g, lim)) : l1(p, q, lim); if (m < lim) near.push([font, pos + (ndir ? ':' + ndir + (pre || post ? ':' + pre + '…' + post : '') : ''), u, t, +(m / dot).toFixed(3),
@@ -217,6 +226,21 @@ SCAN = r"""([font, arf, dirs, part, thr, check, gap]) => {
 # letter itself covers — beside it, not above or below it — the letter must have the skeleton of its base letter with an apostrophe
 # on that side (the skeleton drops the apostrophe: «Pal’o» = «Palo» = «Paľo»)
 BESIDE_MIN = 0.5
+
+# *(eighth version) a letter whose dots exist only in its isolated / final form: the alef maksura ى and the noon ghunna ں have no dot
+# at all, and joined to the next letter (initial, medial) they draw as a bare tooth — the dotless beh ٮ —, so a run of them reads as
+# another letter: «ىىى» as «سـ», «ىثى» as «شـ» («بىىىام علي» / «بسام علي», «هىثىام علي» / «هشام علي», v-spoof6-r2; the parts above put
+# them 4-10 dots apart — the eye counts teeth, the blur measures their height). Every allowed Arabic letter is drawn in its initial and
+# medial forms (the app's three stacks and each system font, every weight and size) against the dotless letters Unicode encodes
+# (FINAL_REFS: beh ٮ, feh ڡ, qaf ٯ — letters a name never holds, drawn as references): a letter within FINAL_THR of an Arabic dot of
+# one of them has no dot of its own there, and may only be the LAST letter of a word (tools/names/final-only.txt, written by --write,
+# read by tools/names/name_rule.mjs: reason 'final'). The scan fails while the rule still takes such a letter before another letter
+FINAL_REFS = ['\u066E', '\u06A1', '\u066F']
+FINAL_THR = float(opt('--final-thr', '0.5'))   # --final-thr: to see how far the nearest letters are (never with --write)
+FINAL_OK = r"""(us) => { const F = window.__F, o = {};
+ for (const u of us) o[u] = [u + 'ب', 'ب' + u + 'ب', u + 'ا'].filter((x) => F.nmProblem(F.nmNorm(x)) === '').join(' ');
+ return o; }"""
+FINALS = os.path.join(HERE, 'final-only.txt')
 BESIDE = r"""([font, check, minf]) => {
  const { U, sk } = window.__S;
  const W = 160, H = 96, BASE = 70;
@@ -252,6 +276,9 @@ BESIDE = r"""([font, check, minf]) => {
 
 def contexts(part):
     """(font string, Arabic stack for the unit, directions for names, check that the font has the letter)"""
+    if part == 'final':    # *(eighth version) the app's three stacks and each system font on its own, every weight and size
+        return [('%d %dpx %s' % (w, s, st), '%d %dpx %s' % (w, s, st), ['rtl'], ck) for w in WEIGHTS for s in SIZES
+                for st, ck in [(x[1], False) for x in STACKS] + [(f, True) for f in SINGLE]]
     if part == 'beside':   # *(seventh version) the geometry: each font on its own, every weight, 48 px
         return [('%d 48px %s' % (w, f), None, None, True) for w in WEIGHTS for f in ['Poppins'] + SINGLE]
     ws = [400, 700] if (QUICK and part != 'letters') else WEIGHTS
@@ -269,17 +296,21 @@ def contexts(part):
                 for f in SINGLE: out.append(('%d %dpx %s' % (w, s, f), '%d %dpx %s' % (w, s, f), ['ltr'], True))
     return out
 
-t0 = time.time(); parts = ['letters', 'sequences', 'names', 'beside'] if PART == 'all' else [PART]; near = []; report = {}
+t0 = time.time(); parts = ['letters', 'sequences', 'names', 'beside', 'final'] if PART == 'all' else [PART]; near = []; report = {}; finals = {}
 with sync_playwright() as p:
     br = p.chromium.launch(args=['--no-sandbox']); pg = br.new_page(); pg.set_content('<style>' + FACES + '</style><p style="font-family:Poppins">x</p>')
     pg.evaluate("Promise.all(['400','500','600','700'].map((w) => document.fonts.load(w + ' 15px Poppins')))")
     assert pg.evaluate("document.fonts.check('700 15px Poppins')"), 'Poppins did not load'
     for part in parts:
-        info = pg.evaluate(SETUP, [gen, part, NAMES if part == 'names' else []])
+        info = pg.evaluate(SETUP, [gen, part, NAMES if part == 'names' else [], FINAL_REFS])
         print('rule', REV or 'working tree', '— part', part, info, 'threshold', THR, flush=True)
         runs = []
         for f, arf, dirs, check in contexts(part):
-            r = pg.evaluate(BESIDE, [f, check, BESIDE_MIN]) if part == 'beside' else pg.evaluate(SCAN, [f, arf, dirs, part, THR, check, part != 'letters']); r['part'] = part; runs.append(r)
+            r = pg.evaluate(BESIDE, [f, check, BESIDE_MIN]) if part == 'beside' else pg.evaluate(SCAN, [f, arf, dirs, part, FINAL_THR if part == 'final' else THR, check, part not in ('letters', 'final')]); r['part'] = part; runs.append(r)
+            if part == 'final':   # *(eighth version) a letter drawn as a dotless letter when joined: a failure only while the rule takes it inside a word
+                for n in r['near']: finals.setdefault(n[2], []).append(n)
+                acc = pg.evaluate(FINAL_OK, sorted({n[2] for n in r['near']}))
+                r['near'] = [n + [acc[n[2]]] for n in r['near'] if acc[n[2]]]
             print('  %-5s %-44s drawn %5d (no glyph %d%s)  dot %6.1f  pairs %9d  near %d  [%.0fs]' % (part[:5], f[:44], r['drawn'], r['tofu'],
                   (', font lacks %d' % r['lacks']) if check else '', r['dot'], r['pairs'], len(r['near']), time.time() - t0), flush=True)
             for n in r['near']: near.append(n + [part])
@@ -291,7 +322,17 @@ distinct = {}
 for n in near: distinct.setdefault(tuple(sorted((n[2], n[3]))), n)
 print('pairs below %.2f of an Arabic dot (or a mark drawn beside its letter) with different skeletons: %d (%d distinct)  [%.0fs]' % (THR, len(near), len(distinct), time.time() - t0))
 for n in sorted(distinct.values(), key=lambda n: n[4])[:80]: print('NEAR ', n)
-if '--write' in sys.argv:   # add the pairs found (letters) to tools/names/pixel-twins.txt (the generator gives each group one skeleton)
+if '--write' in sys.argv and 'final' in parts:   # *(eighth version) the letters drawn as a dotless letter when joined
+    with open(FINALS, 'w', encoding='utf8') as f:
+        f.write('# Arabic letters the name rule allows only as the LAST letter of a word (reason \'final\'): joined to the next letter they draw\n'
+                '# as a dotless letter (beh ٮ, feh ڡ, qaf ٯ) within %.2f of an Arabic dot — Chromium canvas, the app\'s font stacks and the system\n'
+                '# fonts, weights %s, %s px, initial and medial forms. Written by tools/names/render_scan.py --part final --write; read by\n'
+                '# tools/names/name_rule.mjs. Generated, never edited by hand.\n' % (FINAL_THR, '-'.join(map(str, (WEIGHTS[0], WEIGHTS[-1]))), '-'.join(map(str, (SIZES[0], SIZES[-1])))))
+        for u in sorted(finals, key=ord):
+            best = min(finals[u], key=lambda n: n[4])
+            f.write('%04X # %s — %s: %s of a dot from %s (%s) %s, %d drawings\n' % (ord(u), u, unicodedata.name(u, '?'), best[4], best[3], unicodedata.name(best[3], '?'), best[1] + ' ' + best[0], len(finals[u])))
+    print('written', FINALS, len(finals), 'letters:', ' '.join(sorted(finals, key=ord)))
+if '--write' in sys.argv and set(parts) & {'letters', 'beside'}:   # add the pairs found (letters) to tools/names/pixel-twins.txt (the generator gives each group one skeleton)
     pairs = set(); ctx = set()   # ctx: (sequence, sequence) of code points in skeleton space
     if os.path.exists(TWINS):
         for l in open(TWINS, encoding='utf8'):

@@ -142,7 +142,9 @@ def new_message_to_named_person(j):
                           # fifth version (v-spoof-r1): a bracket the bidi algorithm reorders — «(MBA) Ahmed» drew as «Ahmed (MBA)» in Arabic
                           ('(MBA) Ahmed Sign %s' % j.tag, r'after the name — write “Ahmed Sign %s \(MBA\)”|بعد الاسم — اكتب «Ahmed Sign %s \(MBA\)»' % (j.tag, j.tag)),
                           ('Ali %s (علي) محمد' % j.tag, r'after the name — write “Ali %s محمد \(علي\)”|بعد الاسم — اكتب «Ali %s محمد \(علي\)»' % (j.tag, j.tag)),
-                          ('Hala Sign %s – Head of QA – Pharco' % j.tag, r'write “Hala Sign %s \(Head of QA, Pharco\)”|اكتب «Hala Sign %s \(Head of QA, Pharco\)»' % (j.tag, j.tag))):
+                          ('Hala Sign %s – Head of QA – Pharco' % j.tag, r'write “Hala Sign %s \(Head of QA, Pharco\)”|اكتب «Hala Sign %s \(Head of QA, Pharco\)»' % (j.tag, j.tag)),
+                          # eighth version (round 7, v-spoof6-r2): ى inside a word draws as a bare tooth — «بىىىام علي» read «بسام علي»
+                          ('بىىىام علي %s' % j.tag, r'“ى” \(U\+0649\) can only be the last letter of a word — inside “بىىىام”|«ى» \(U\+0649\) لا يأتي إلا آخر حرف في الكلمة — في وسط «بىىىام»')):
             p2, email, err0 = ui_signup(name); err = re.sub('[\u2068\u2069]', '', err0)
             j.check(re.search(pat, err), 'sign-up as %s is not refused with a clear message (said: "%s")' % (ascii(name), err[:140]))
             j.check(re.search('[“«]\u2068[^\u2069]+\u2069[”»]', err0), 'the refusal of %s does not isolate what it quotes (U+2068 … U+2069): %s' % (ascii(name), ascii(err0[:120])))
@@ -421,6 +423,45 @@ def new_message_to_named_person(j):
         j.check(len(rows) == 1 and hd in rows[0], 'the conversation with a member whose name another member has does not say which one it is (no %s; list: %s)' % (hd, rows))
         t = pg.locator('#threadList .mx-thread', has_text=fname); t.first.click(); j.settle(pg, 900)
         j.check(hd in head(pg), 'the chat header does not tell the impostor apart from the real %s (header: %s)' % (fname, head(pg)[:120]))
+    with j.step('Members who are NOT A\'s connections are always said in full (S-03 fix 8): a twin pair with the same company and city — each '
+                'option reads company · city · member since · #handle, each fact isolated, and reaches its own member; after sending, the '
+                'chat header says the same; a member nobody else\'s name looks like is said in full too, and the bare name still reaches them'):
+        if j.demo: j.skip('members with the same name exist only in live (the demo has one sample person per name)')
+        wname, wco, wcity = 'بسام علي %s' % j.tag, 'Pharco Teeth %s' % j.tag, 'الإسكندرية'
+        w1, w2 = member(wname, wco), member(wname, wco)
+        j.sql("update public.profiles set location = '%s' where id in ('%s','%s')" % (wcity, w1, w2))
+        j.check(j.sql1("select count(*) from public.connections where (requester in ('%s','%s') or addressee in ('%s','%s')) and (requester = '%s' or addressee = '%s')" % (w1, w2, w1, w2, a['id'], a['id'])) == '0',
+                'precondition: neither «%s» is A\'s connection' % wname)
+        j.reload(pg); j.nav(pg, 'messages')
+        opts = options_for(wname); j.note('non-connection twin options', opts)
+        since = r'Member since [A-Z][a-z]{2} \d{4}|عضو منذ [ء-ي]+ \d{4}'
+        j.check(len(opts) == 2 and len(set(opts)) == 2 and all(wco in o and wcity in o and re.search(since, o) and re.search(r'#[0-9a-f]{6}', o) for o in opts),
+                'the two «%s» (not connections) are not said as company · city · member since · #handle: %s' % (wname, opts))
+        raw = [RAW.get(o, o) for o in opts]
+        j.check(all(('\u2068' + wco + '\u2069') in v and ('\u2068' + wcity + '\u2069') in v and re.search('\u2068(?:' + since + ')\u2069', v) and re.search('\u2066#[0-9a-f]{6}\u2069', v) for v in raw),
+                'the facts are not isolated in the option values: %s' % [ascii(v) for v in raw])
+        j.check(all(re.search(r'Same name|نفس الاسم', LBL.get(o, '')) for o in opts), 'the twins do not warn «Same name»: %s' % [LBL.get(o, '') for o in opts])
+        said = new_message(wname, 'Bare Bassam %s' % j.tag)
+        j.check(re.search(r'Several|أكثر من', said) and j.sql1("select count(*) from public.messages where body=$q$Bare Bassam %s$q$" % j.tag) == '0', 'typing «%s» (two members) is not refused: %s' % (wname, said[:120]))
+        if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+        got = {}
+        for i, o in enumerate(opts):
+            body = 'Teeth option %d %s' % (i, j.tag); new_message(o, body)
+            got[o] = j.wait_db("select string_agg(receiver_id::text, ',') from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
+            want = w1 if ('#' + w1.replace('-', '')[:6]) in o else w2 if ('#' + w2.replace('-', '')[:6]) in o else None
+            j.check(got[o] == want, 'the option «%s» was stored for %s, not for the member whose #handle it shows (%s)' % (o, got[o], want))
+            hd = head(pg); j.note('non-connection header %d' % i, ascii(hd))
+            j.check(wco in hd and wcity in hd and re.search(since, hd) and ('#' + (want or '').replace('-', '')[:6]) in hd,
+                    'the chat header of a non-connection does not say company · city · member since · #handle: %s' % ascii(hd[:200]))
+            if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
+        j.check(sorted(got.values()) == sorted([w1, w2]), 'the two options did not reach the two members, one each: %s' % got)
+        uname, uco = 'Dr. Unique Single %s' % j.tag, 'Solo Pharma %s' % j.tag
+        u1 = member(uname, uco)
+        opts = options_for(uname); j.note('non-connection single option', opts)
+        j.check(len(opts) == 1 and uco in opts[0] and re.search(since, opts[0]) and re.search(r'#[0-9a-f]{6}', opts[0]), 'a member who is not a connection (no look-alike) is not said in full: %s' % opts)
+        body = 'Bare unique %s' % j.tag; new_message(uname, body)
+        j.check(j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8) == u1, 'the bare name of a member nobody else looks like did not reach them')
+        if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
     with j.step("B receives it; C's thread is unchanged"):
         if j.demo: j.skip('the other party exists only in live')
         pb = b['page']; j.reload(pb); j.nav(pb, 'messages'); open_thread(j, pb, 'Aya')

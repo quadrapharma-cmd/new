@@ -13078,3 +13078,408 @@ Phương Hồ
 Phu’o’ng Hồ
 Paľo Kováč, Amoun
 Paľo ( Kováč )
+# round 7 (v-spoof6-r2, v-real6-r2, eighth version): ى / ں inside a word drawn as teeth («ىىى» = «سـ», «ىثى» = «شـ»), the Cyrillic
+# Љ / ЛЬ and vv / w pairs (minor), the 756 + 151 real names and the sign-up / Edit Profile names of the real-names round, and the
+# eighth version's cases ('final', names ending in ى, a hyphen with a space on one side, a zero-width space, the greeting names)
+سمير حسن
+ىىىمير حسن
+بسام علي
+بىىىام علي
+Љубомир Петровић
+ЛЬубомир Петровић
+هشام علي
+هىثىام علي
+حىىىن محمود
+ᾼκατερίνη
+Αικατερίνη
+ῌρα
+Ηιρα
+Љубомир
+ЛЬубомир
+Његош
+НЬегош
+Ԙков
+ЯЕков
+Ҵоков
+ТЦоков
+Paľo
+Palo
+سمير
+ىىىمير
+ںںںمير
+حىىىن
+بسام
+بىىىام
+سعيد
+ىىىعيد
+خسن
+شمير
+محمد
+مجمد
+شريف
+ىثىريف
+بشير
+بىثىير
+عشري
+عىثىري
+Љиљана
+Edvvard
+Edward
+Khalecl
+Khaled
+محمد علي (أبو حمزة)
+Mohamed Hassan (Pharm.D)
+Mohamed Hassan (PharmD, MBA)
+د. منى زكي (صيدلانية)
+Sara Ahmed (née Hassan)
+Sara Ahmed (Hassan)
+Mona Zaki (منى زكي)
+منى زكي (Mona Zaki)
+Dr. Hala El-Shamy (PhD)
+Ahmed (Mido) Ali (MBA)
+أحمد (ميدو) علي
+عمرو (Amr) دياب
+Amr (عمرو) Diab
+Mohamed Salah (مو صلاح)
+Mohamed Ali [MBA]
+Ahmed Ali (C.Pharm)
+Ahmed Ali (R.Ph.)
+Ahmed Ali (ex-Pfizer)
+Ahmed Ali (Eva Pharma)
+محمد أحمد (فاركو)
+Ahmed Ali（MBA）
+عبدالله محمد
+ابو بكر سالم
+Abd El-Raouf Hassan
+Abdel Rahman Hassan
+Abdul Aziz Saleh
+Abu Bakr Salem
+Abou El-Ela Ahmed
+Al Sayed Mohamed
+السيد محمد
+Mohamed
+هيثم
+أ.د. سامي فهمي
+Ph/ Mohamed Aly
+د.ص/ منى
+Mrs. Mona Zaki
+Sheikh Zayed Ali
+Hajj Ahmed Ali
+الشيخ محمد علي
+Dr. Ahmed
+Dr.
+د.
+J. R. Smith
+محمد‌علی رضایی
+می‌نا احمدی
+فاطمه زهرا
+عائشہ خان
+ثامر حسن
+تامر حسن
+ثناء محمد
+تهاني محمد
+ثريا أحمد
+بثينة علي
+هيثم علي
+ميثاء سالم
+كوثر محمود
+عثمان أحمد
+Нина Иванова
+Инна Кузнецова
+Константин Гончаров
+Игорь Гришин
+Ғалым Жақсылықов
+Dorđe Doković
+Győző Kovács
+Gülşen Öztürk
+Ģirts Valdis
+Ġorġ Borg
+ڢاطمة الزهراء
+يوسف ڤيلالي
+Ahmed Ali — PhD
+محمد علي.
+İbrahim Yıldız
+Işıl Özdemir
+Çağrı Gökçe
+Ayşe Yılmaz
+Ayse Yilmaz
+Şükrü Saraçoğlu
+Ömer Faruk Aydın
+Gülşen Bayraktar
+İsmail Kılıç
+Ilgın Akın
+Aslı İnandık
+Ali KAYA
+Dr. İlker Başbuğ
+Prof. Dr. Işık Ünal
+Łukasz Wałęsa
+Paweł Kowalski
+Řehoř Šťastný
+Ólafur Ragnar Grímsson
+Hans Groß
+Françoise Lætitia Dupont
+José Peña Muñoz
+Jose Pena Munoz
+Åse Ødegård
+Ştefan Ţiriac
+Ħarry Ġużeppi Żammit
+Seán Ó Súilleabháin
+Siobhán O'Neill
+Mário João Conceição
+Anaïs Nin
+Müller
+Muller
+Bjørn Ågren
+Dvořák
+Lara Croft-Smith
+Mary-Kate O’Connor
+Ilia Petrova
+Lila Petrova
+Ian Smith
+Lan Smith
+Ali Hassan
+All Hassan
+Leila Ahmed
+Ieila Ahmed
+Ελένη Καραμανλή
+Σωκράτης Νικολάου
+Μαρια
+Олександр Шевченко
+Їжак Ґонта
+Єва Ліщенко
+Љиљана Њежић
+Џон Ћосић
+Prof. Γιάννης Ρίτσος
+أبو بكر سالم
+أبوبكر سالم
+نور الدين علي
+نورالدين علي
+عز الدين حسن
+عزالدين حسن
+سيف الدين قطز
+عبد العزيز السعيد
+عبدالعزيز السعيد
+عبد الفتاح السيسي
+أم كلثوم
+ابن خلدون
+محمد على
+هاله
+أحمد
+احمد
+ايمان
+بسمة علي
+نسمة علي
+حنان محمد
+جنان محمد
+خالد سعيد
+حسن علي
+حسين علي
+زياد أحمد
+رياض أحمد
+فادي جرجس
+هادي جرجس
+شادي جرجس
+نبيل فاروق
+يسرا
+بشرى
+فاتن حمامة
+فاتن حمامه
+عزة فهمي
+عادل إمام
+د / هيثم دويدار
+ص. منى زكي
+Haytham Dweedar, PharmD
+Haytham Dweedar, Ph.D.
+Elsayed Mohamed
+ElSayed Mohamed
+Al-Masri Ahmed
+Ahmed Al-Masri
+Ahmed El Shazly
+Ahmed Elshazly
+Abou El Ela Ahmed
+Abu-Zeid Hassan
+Abdel-Fattah Hassan
+Abd El-Fattah Hassan
+Abdel Fattah Hassan
+Abdelfattah Hassan
+Mohamed Ben Ali
+الشيخ محمد
+الحاج أحمد
+Ahmed Ali
+Mo­hamed Ali
+Al–Masri Ahmed
+Al—Masri Ahmed
+Al‑Masri Ahmed
+Ahmed​Ali
+‎Ahmed Ali‎
+Ahmed Ali\t
+محمـــد علي
+محمد علي،
+“Ahmed Ali”
+«محمد علي»
+Ahmed Ali…
+Palo Kovac
+Ľubomír Štúr
+Ľudmila Ďurišová
+Ďuro Hriadel
+Dušan Ďurica
+Tomáš Ťapák
+Marie d'Alessandro
+Marie dAlessandro
+Αννα Νίκου
+Όλγα Παππά
+Ήρα Ηλιού
+Ίων Δραγούμης
+Ώρα Ύδρα
+Έλενα Ύπατου
+Ἀθανάσιος Ὀδυσσεύς
+Ἑλένη Ὠραία
+Ευθύμιος Ήλιος
+Phương Nguyễn
+Phuong Nguyen
+Lương Văn Tâm
+Trần Thị Hương
+Nguyễn Tấn Dũng
+Đặng Thùy Trâm
+Ưng Hoàng Phúc
+Dương Thị Lê
+Lê Thị Hường
+Bùi Thị Cúc
+Mạc Đĩnh Chi
+OBrien
+Sinéad O'Connor
+D’Angelo Russell
+Dell'Acqua Marco
+Ja'far Al-Sadiq
+Ja’far Al-Sadiq
+Jafar Al-Sadiq
+Ma‘moun Hassan
+Mamoun Hassan
+Sa'ad Zaghloul
+Saad Zaghloul
+Ra'ouf Abbas
+Mu'tasim Billah
+Shu‘aib Mansour
+Ka'ahumanu
+Tamer Hosny
+Mohamed Salah
+Mostafa Kamel
+Youssef El-Sherif
+Nadia Abou Seif
+Abdel Aziz El-Sayed
+Hend Sabry
+Rania Al-Mashat
+Shereen Abd El Wahab
+Mahmoud Abd El-Moneim Riad
+Yasmine Sabri
+Kareem Abdel-Aziz
+Muhammad Zeeshan Ul Haq
+Syed Ali Raza
+Anwar Al-Ghazali
+María José Álvarez
+Niccolò Machiavelli
+Zoé Lefèvre
+Åsa Lindqvist
+Szűcs Árpád
+Žarko Petrović
+Ëndrra Hoxha
+João Pedro Conceição
+Mihály Csíkszentmihályi
+Béla Bartók
+Zoltán Kodály
+Gyöngyi Őri
+Ægir Þórsson
+Hólmfríður Sigurðardóttir
+Lazăr Mircea Țepeș
+Ștefania Ținca
+Dr. Ayşe Özçelik
+Prof. Dr. İlhan Mimaroğlu
+Iğdır Şahin
+Işık Uğur
+گلناز احمدی
+ژاله کاظمی
+چاووش محمدی
+ضياء الدين رؤوف
+شيماء عبد المنعم
+مؤمن سيد
+سماء المصري
+رؤوف عباس
+يسري نصر الله
+عبد الله بن عبد العزيز
+أبو القاسم الشابي
+أم كلثوم إبراهيم
+أم سلمة محمد
+آل سعود محمد
+مصطفى كامل
+هدى شعراوي
+د. نادية عبد الفتاح
+د.نادية عبد الفتاح
+د/نادية عبد الفتاح
+دكتور محمد نبيل
+دكتورة سمر خليل
+م. أحمد شفيق
+ص. هبة يوسف
+أ/ سمير غانم
+أ. منى سليم
+الأستاذ حسن عامر
+الدكتور خالد الفيل
+Dr. Ahmed El-Sayed, PhD
+Ahmed Hassan, MSc
+Ahmed Hassan (MBA)
+Ahmed Hassan PharmD
+Hala El Shamy BPharm
+Ahmed Hassan – MBA
+Ahmed Hassan - MBA
+Ahmed Hassan -MBA
+Ahmed Hassan- MBA
+أحمد حسن (ماجستير)
+أحمد حسن - صيدلي
+أحمد حسن ، دكتوراه
+李明
+محمد ٣
+Ahmed 2
+Paľo Kováč
+Pal’o Kováč​
+‏Άννα Νίκου‏
+Ph/ Mona Zaki
+Dr. Mohamed Ali
+Ahmed–Ali Hassan
+Abdel‑Rahman Hassan
+Maʼmoun Hassan
+Saʿd Ali
+محمد‌ علي
+Ahmed​Ali Hassan
+Ahmed Ali 
+ﻣﻪﺤﻮﺪ ﻋﻠﻲ
+Pal’o Kováč
+Ahmed Ali（ MBA ）
+Ahmed  Ali
+Mo­hamed​ Ali
+‫محمد علي‬
+بںںںام علي
+ںںںمير حسن
+ىا
+ىب
+بى
+مصطفى
+هدى
+منى
+عيسى
+موسى عيسى
+منى زكي
+مصطفىكامل
+حسں
+حسںین
+وائل رائد
+فائزة
+رئيس
+Abdel- Rahman
+El- Sayed
+El -Sayed
+Ahmed - MBA
+A- B- C
+عبد​الله
+Umm Kulthum
+Bint Ahmed
+’Abd al-Rahman
+ʻAli

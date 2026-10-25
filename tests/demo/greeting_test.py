@@ -3,7 +3,9 @@ that completes it — never a title, a father's name, «الله» alone or "und
 «عبد الله» «يا الله» and a one-word name "undefined"). Since S-03 fix 6 (v-real-r2): honorifics and a leading article are skipped
 («الحاج أحمد» → «أحمد», «El Sayed Mohamed» → «Sayed»), a particle stays with its word («ابن سينا», «van der Berg»), a trailing comma
 is dropped («Ali, Mohamed» → «Ali», «العلي، محمد» → «العلي»), and a Latin name is greeted in Latin in the Arabic interface too — the
-demo account is greeted «Haytham» in both («أهلًا بعودتك يا Haytham!»), no longer translated to «هيثم».
+demo account is greeted «Haytham» in both («أهلًا بعودتك يا Haytham!»), no longer translated to «هيثم». S-03 fix 8 (v-real6-r2): a kunya or
+family prefix stays with its word («أم كلثوم», «آل سعود», «بنت الشاطئ», «Umm Kulthum», «Ben Ali»), «Abdel- Rahman» is «Abdel-Rahman», a
+zero-width space is a space, and a leading ’ / ʿ is not said («’Abd al-Rahman» → «Abd al-Rahman»); the sign-up avatar skips it too.
   python3 tests/demo/greeting_test.py [en|ar]   (DEMO_FILE, default /tmp/drugbox_brand.html)"""
 from playwright.sync_api import sync_playwright
 import os, sys
@@ -17,7 +19,13 @@ CASES = [('Dr. Haytham Dweedar', 'Haytham'), ('عبد الله السيد', 'ع�
          ('El Sayed Mohamed', 'Sayed'), ('Al Sayed Ali', 'Sayed'), ('Ali, Mohamed', 'Ali'), ('العلي، محمد', 'العلي'), ('الحاج أحمد علي', 'أحمد'),
          ('الحاجة فاطمة محمود', 'فاطمة'), ('الشيخ محمد', 'محمد'), ('المهندس محمود سامي', 'محمود'), ('الدكتور أحمد', 'أحمد'), ('الأستاذ الدكتور سامي فهمي', 'سامي'),
          ('Sheikh Zayed', 'Zayed'), ('Hajj Ali Hassan', 'Ali'), ('ابن سينا', 'ابن سينا'), ('van der Berg', 'van der Berg'), ('Abu Bakr Salem', 'Abu Bakr'),
-         ('أ. منى', 'منى'), ('م. أحمد علي', 'أحمد'), ('Al', 'Al'), ('Haytham', 'Haytham')]
+         ('أ. منى', 'منى'), ('م. أحمد علي', 'أحمد'), ('Al', 'Al'), ('Haytham', 'Haytham'),
+         # S-03 fix 8 (v-real6-r2): a kunya or family prefix stays with its word, a space beside a hyphen is no word break, a zero-width
+         # space is one, a leading ’ ʿ is not said
+         ('أم كلثوم إبراهيم', 'أم كلثوم'), ('ام كلثوم', 'ام كلثوم'), ('آل سعود', 'آل سعود'), ('بنت الشاطئ', 'بنت الشاطئ'), ('Umm Kulthum', 'Umm Kulthum'),
+         ('Om Kalthoum Ibrahim', 'Om Kalthoum'), ('Ben Ali Mohamed', 'Ben Ali'), ('Bint Ahmed Ali', 'Bint Ahmed'), ('Dr. Umm El Kheir Ali', 'Umm El Kheir'),
+         ('Abdel- Rahman Ali', 'Abdel-Rahman'), ('El- Sayed Ali', 'El-Sayed'), ('Ahmed Hassan -MBA', 'Ahmed'), ('Ahmed\u200bAli', 'Ahmed'),
+         ('’Abd al-Rahman Ali', 'Abd al-Rahman'), ('ʿAbd al-ʿAziz', 'Abd al-ʿAziz'), ('’Αννα Νίκου', 'Αννα'), ('ʻAli Hassan', 'Ali'), ('’', '’')]
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); ctx = b.new_context(viewport={'width': 1440, 'height': 900}); ctx.add_init_script("try{localStorage.setItem('dx_lang','%s')}catch(e){}" % LANG)
     pg = ctx.new_page(); errs = []; pg.on("pageerror", lambda e: errs.append(str(e)[:150]))
@@ -38,6 +46,8 @@ with sync_playwright() as p:
     toasts = E('window.__toasts')
     want = 'أهلًا بك في Drugbox يا ⁨عبد الله⁩!' if LANG == 'ar' else 'Welcome to Drugbox, عبد الله!'
     T('sign-up toast: «د/ عبد الله السيد» is greeted «عبد الله» (not the title, not «الله»)', any(want in t for t in toasts), toasts[-3:])
+    E("signupEnter('’Abd al-Rahman Ali', 'Pharco', 'Pharmacist')"); pg.wait_for_timeout(500)
+    T('sign-up avatar: «’Abd al-Rahman Ali» has the letters «AA» (a leading ’ is skipped)', E('ME.initials') == 'AA', E('ME.initials'))
     T('no errors in the page', not errs, errs)
     print(LANG, sum(R), '/', len(R)); b.close()
 sys.exit(0 if R and all(R) else 1)

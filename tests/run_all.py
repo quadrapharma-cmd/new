@@ -15,8 +15,8 @@ Groups:
   e2e    tests/e2e/*_test.py against the running local stack (tools/local-supabase/start.sh, and start-payments.sh for e4*)
   render tools/names/render_scan.py: no two allowed letters, letter sequences or whole names draw alike with different skeletons
          (14-16 px, weights 400-700, the app's font stacks and the system fonts, both directions), and the same scan finds «حْ» / «خ»
-         on the third rule (git e972163), bold «ث» / «ئ» and «(MBA) Ahmed Ali» / «Ahmed Ali (MBA)» on the fourth (0fbc662) — not in the
-         default run
+         on the third rule (git e972163), bold «ث» / «ئ» and «(MBA) Ahmed Ali» / «Ahmed Ali (MBA)» on the fourth (0fbc662), …, and ى / ں
+         taken inside a word on the seventh (f7d1fc0, part 'final') — not in the default run
   migrations  tools/migration_check.py (every migration re-runnable, puts back each policy it creates) — not in the default run
          while older migrations still group several policies in one block
   journeys  user journeys (tests/journeys/run_{social,business,community}.py): every journey on the demo (DEMO_FILE) in
@@ -143,7 +143,7 @@ def migrations():
 
 def render():   # the name rule's render check (S-03): letters, sequences and whole names, and the proofs that it sees look-alikes
     code, out, secs = run([sys.executable, 'tools/names/render_scan.py'], timeout=7200)
-    record('render', 'render_scan.py (seventh rule: 0 pairs within one Arabic dot — letters, sequences, whole names; font stacks and system fonts × weights — and no mark drawn beside its letter keyed apart from it)', code == 0, secs, out[-800:] if code else '')
+    record('render', 'render_scan.py (eighth rule: 0 pairs within one Arabic dot — letters, sequences, whole names; font stacks and system fonts × weights —, no mark drawn beside its letter keyed apart from it, and no letter without a dot when joined taken inside a word)', code == 0, secs, out[-800:] if code else '')
     # the proofs that the scan sees a look-alike: on the third, fourth, fifth and sixth rules (91ca446 is the fifth: round 5's «Alİ» / «Ali» and
     # «عبد الله» / «عبدالله», a space after a letter that never joins — seen with every gap drawn one column wide)
     for rev, part, pair, quick in (('e972163', 'letters', 'حْ/خ', False), ('0fbc662', 'letters', 'ث/ئ', False), ('0fbc662', 'names', '(MBA) Ahmed Ali/Ahmed Ali (MBA)', True),
@@ -151,7 +151,9 @@ def render():   # the name rule's render check (S-03): letters, sequences and wh
                                    ('91ca446', 'names', 'Alİ Kaya/Ali Kaya', ['--weights', '600', '--sizes', '15']),   # semi-bold, where it measured 0.62
                                    # 881d71a is the sixth rule: round 6's ľ / l’ (the caron drawn as an apostrophe) and Ά / ’Α (the tonos at the
                                    # capital's upper left) — a mark drawn BESIDE its letter, part 'beside'
-                                   ('881d71a', 'beside', 'ľ/l’', False), ('881d71a', 'beside', 'Ά/’Α', False)):
+                                   ('881d71a', 'beside', 'ľ/l’', False), ('881d71a', 'beside', 'Ά/’Α', False),
+                                   # f7d1fc0 is the seventh rule: round 7's ى / ں inside a word (a bare tooth when joined: «ىىى» read «سـ»), part 'final'
+                                   ('f7d1fc0', 'final', 'ى/ٮ', False), ('f7d1fc0', 'final', 'ں/ٮ', False)):
         extra = quick if isinstance(quick, list) else ['--quick'] if quick else []
         code, out, secs = run([sys.executable, 'tools/names/render_scan.py', '--rule', rev, '--part', part, '--must-find', pair] + extra, timeout=3600)
         record('render', 'render_scan.py --rule %s --part %s finds %s' % (rev, part, pair), code == 0, secs, out[-800:] if code else '')
