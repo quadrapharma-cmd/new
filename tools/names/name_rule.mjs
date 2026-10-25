@@ -310,13 +310,15 @@ for (const [c, k] of SKEL) if (/\p{M}/u.test(k)) throw new Error('a key still ho
 const hx = (c) => c.toString(16).toUpperCase();
 const SKEL_D = SKEL.map(([c, k]) => hx(c) + '=' + [...k].map((x) => hx(x.codePointAt(0))).join('.')).join(',');
 
-// *(ninth version) TITLE: a title at the start of a name — a word of the greeting's own list (dxGreetName's T in web/base/app.html,
+// *(ninth version) TITLE: a title at the start of a name — a word of the greeting's own list (DX_TITLE in web/base/app.html,
 // the approved demo: read from there, so the skeleton, the avatar initials and the greeting skip the same words), with or without
-// its dot or slash, or any word of up to 5 letters ending in . or / (Ph., أ.د/, «د/محمد» glued) — repeated («Prof. Dr.»), and only
-// while a letter follows: a name is never keyed empty. Dropped from the skeleton and the sound key; skipped by the avatar initials
-const TITLES = (() => { const m = /\bT=\/\^\(\?:([^)]*)\)\$\/i,/.exec(fs.readFileSync(APP, 'utf8')); if (!m) throw new Error('web/base/app.html: no title list T in dxGreetName'); return m[1].split('|'); })();
+// its dot or slash, or any word of up to 5 letters ending in . or / and then a SPACE (Ph. Ahmed, أ.د/ محمد; glued only from the list:
+// «د/محمد», «Dr.Ahmed») — repeated («Prof. Dr.»), and only while a letter follows: a name is never keyed empty. (s03-user2, v-user1: a
+// short word glued by a dot was read as a title — «ziad.kald» keyed «kald», «Ahmed.Ali» «ali» — so a typed @username without its @
+// found a member called «Kald») Dropped from the skeleton and the sound key; skipped by the avatar initials
+const TITLES = (() => { const m = /\bDX_TITLE=\/\^\(\?:([^)]*)\)\$\/i;/.exec(fs.readFileSync(APP, 'utf8')); if (!m) throw new Error('web/base/app.html: no title list DX_TITLE'); return m[1].split('|'); })();
 const anyCase = (w) => w.replace(/\\.|[A-Za-z]/g, (x) => (x.length === 2 ? x : `[${x.toLowerCase()}${x.toUpperCase()}]`));
-const TITLE_HEAD = `^(?:(?:${TITLES.map(anyCase).join('|')})(?:[./]*[,،]? |[./]+)|[^ ./,،]{1,5}(?:[./]+[^ ./,،]{1,5})*[./]+(?:[,،]? )?)+`;
+const TITLE_HEAD = `^(?:(?:${TITLES.map(anyCase).join('|')})(?:[./]*[,،]? |[./]+)|[^ ./,،]{1,5}(?:[./]+[^ ./,،]{1,5})*[./]+[,،]? )+`;
 // *(ninth version) THE SOUND KEY (profiles.name_sound — search only: it only ADDS members to what the ✎ picker offers; it is never a
 // skeleton, never decides twins, never resolves a name). People type an Arabic name in Latin letters in many ways — Mohamed /
 // Mohammed / Muhammad / Mohamad, Abdel / Abd El / Abdul / Abd Al, El / Al, Youssef / Yousef / Yusuf, Hussein / Hussain, Mostafa /
@@ -344,6 +346,17 @@ for (let c = 1; c <= PLANES01; c++) {
   if (t !== s) SOUND.push([c, t]);
 }
 for (const [c, t] of SOUND) if (/[^a-zH ]/.test(t) && inR(LET.Arab)(c)) throw new Error('the sound of U+' + hx(c) + ' is not plain Latin: ' + t);
+// *(s03-user2, v-real1) the sound key also holds the sound of EACH WORD — «whole|word|word|» — so a first name typed alone finds its
+// people however short its sound is: «Abdullah» sounds «bd» and «Umar» «mr», too short to look for INSIDE a sound key (every «Abd…»,
+// every «…mr…»), so the picker found nobody; now «bd» is looked for as a WORD of the key («ʿAbd Allah Hassan»: «bdhsn|bd|hsn|»). A
+// word is a particle and the word after it (SOUND_JOIN: Abd, Abdel, Abu, El, Al, Ibn, Bin, Bint, Umm… and عبد ابو ابن بن بنت ام آل, in
+// their sounds: «Abd El Rahman» is one word, «bdrhmn», like «Abdulrahman»); a word with no sound left («Aya») is left out
+const SOUND_M = new Map(SOUND.map(([c, t]) => [ch(c), t]));
+const soundOf = (w) => [...w.normalize('NFD')].map((x) => SOUND_M.get(x) ?? x).join('');
+const SOUND_JOIN = [...new Set(['abd', 'abdel', 'abdul', 'abdal', 'abu', 'abou', 'abo', 'el', 'al', 'ibn', 'bin', 'ben', 'bint', 'om', 'umm', 'um', 'oum',
+  ...['عبد', 'ابو', 'أبو', 'ابن', 'بن', 'بنت', 'ام', 'أم', 'آل'].map(soundOf)])];
+for (const w of SOUND_JOIN) if (!/^[a-zH]+$/.test(w)) throw new Error('a particle of the sound key is not plain Latin: ' + w);
+const sqlRules = (x) => `${'regexp_replace('.repeat(SOUND_RULES.length)}${x}${SOUND_RULES.map(([a, b]) => `, ${sqlStr(a)}, ${sqlStr(b.replace(/\$(\d)/g, '\\$1'))}, 'g')`).join('')}`;
 const SOUND_D = SOUND.map(([c, t]) => hx(c) + '=' + [...t].map((x) => hx(x.codePointAt(0))).join('.')).join(',');
 
 // ── printing the classes ──
@@ -518,12 +531,22 @@ select chr(('x' || lpad(split_part(e, '=', 1), 8, '0'))::bit(32)::int),
   from unnest(string_to_array(
 '${SOUND_D}', ',')) e;
 create or replace function public.person_name_sound(s text)
-returns text language sql stable parallel safe set search_path = '' as $$
-  select ${'regexp_replace('.repeat(SOUND_RULES.length)}array_to_string(array(
+returns text language plpgsql stable parallel safe set search_path = '' as $$
+declare x text; w text; toks text[] := '{}'; open boolean := false; r text := ''; t text;
+begin
+  x := array_to_string(array(
     select coalesce((select m.s from private.name_sound_map m where m.ch = c.ch), c.ch)
       from unnest(regexp_split_to_array(normalize(regexp_replace(regexp_replace(public.person_name_norm(s), ${sqlTitle()}, ''),
-        '[' || ${U(sqlClass(OTHER_SKEL))} || '][' || ${U(sqlClass(MARK_ALL))} || ']*', ${U('!FFFD')}, 'g'), NFD), '')) with ordinality c(ch, i) order by c.i), '')${SOUND_RULES.map(([a, b]) => `, ${sqlStr(a)}, ${sqlStr(b.replace(/\$(\d)/g, '\\$1'))}, 'g')`).join('')}
-$$;
+        '[' || ${U(sqlClass(OTHER_SKEL))} || '][' || ${U(sqlClass(MARK_ALL))} || ']*', ${U('!FFFD')}, 'g'), NFD), '')) with ordinality c(ch, i) order by c.i), '');
+  foreach w in array regexp_split_to_array(x, ' +') loop
+    if w = '' then continue; end if;
+    if open then toks[cardinality(toks)] := toks[cardinality(toks)] || w; else toks := toks || w; end if;
+    open := w = any (array[${SOUND_JOIN.map((j) => `'${j}'`).join(', ')}]::text[]);
+  end loop;
+  foreach w in array toks loop t := ${sqlRules('w')}; if t <> '' then r := r || t || '|'; end if; end loop;
+  t := ${sqlRules('x')};
+  return case when r = '' then t else t || '|' || r end;
+end $$;
 -- <<< generated`;
 }
 
@@ -590,7 +613,11 @@ function jsRegion() {
   function nmSkel(x) { return Array.from(nmNorm(x).replace(NM_TITLE, '').replace(NM_OTHER_RUN, '\\uFFFD').replace(/\\u0130/g, 'i').normalize('NFD'), function (c) { var k = NM_SKEL.get(c); return k == null ? c : k; }).join('').replace(/ /g, '').normalize('NFD'); }
   var NM_SOUND = (function (d) { var m = new Map(); d.split(',').forEach(function (e) { var p = e.split('='); m.set(String.fromCodePoint(parseInt(p[0], 16)), p[1] ? p[1].split('.').map(function (h) { return String.fromCodePoint(parseInt(h, 16)); }).join('') : ''); }); return m; })(
     '${SOUND_D}');
-  function nmSound(x) { return NM_SOUND_RULES.reduce(function (s, r) { return s.replace(r[0], r[1]); }, Array.from(nmNorm(x).replace(NM_TITLE, '').replace(NM_OTHER_RUN, '\\uFFFD').normalize('NFD'), function (c) { var k = NM_SOUND.get(c); return k == null ? c : k; }).join('')); }
+  var NM_SOUND_JOIN = ${JSON.stringify(SOUND_JOIN)};
+  function nmSoundRules(x) { return NM_SOUND_RULES.reduce(function (s, r) { return s.replace(r[0], r[1]); }, x); }
+  function nmSound(x) { var m = Array.from(nmNorm(x).replace(NM_TITLE, '').replace(NM_OTHER_RUN, '\\uFFFD').normalize('NFD'), function (c) { var k = NM_SOUND.get(c); return k == null ? c : k; }).join(''), toks = [], open = false;
+    m.split(/ +/).forEach(function (w) { if (!w) return; if (open) toks[toks.length - 1] += w; else toks.push(w); open = NM_SOUND_JOIN.indexOf(w) >= 0; });
+    var t = toks.map(nmSoundRules).filter(Boolean), whole = nmSoundRules(m); return t.length ? whole + '|' + t.join('|') + '|' : whole; }
 /* <<< generated */`;
 }
 
@@ -703,7 +730,11 @@ if (process.argv.includes('--write')) {
     ['El Sayed', 'Al Sayed', 'Elsayed', 'El-Sayed', 'السيد'], ['Fatma', 'Fatmah', 'فاطمة', 'فاطمه'], ['Abdallah', 'Abdullah', 'Abd Allah', 'عبدالله'], ['Ibrahim', 'Ebrahim', 'إبراهيم', 'ابراهيم'],
     ['Khaled', 'Khalid', 'خالد'], ['Hesham', 'Hisham', 'هشام'], ['Dr. Mohamed Ali', 'Mohamed Ali']])
     for (const x of g.slice(1)) expect('same sound ' + g[0] + ' / ' + x, F.nmSound(x), F.nmSound(g[0]));
-  expect('sound of Mohamed Ali', F.nmSound('Mohamed Ali'), 'mhmdl');
+  expect('sound of Mohamed Ali', F.nmSound('Mohamed Ali'), 'mhmdl|mhmd|l|');
+  // s03-user2 (v-real1): a first name alone is a WORD of the sound key, however short its sound
+  for (const [a, b] of [['Abdullah', 'ʿAbd Allah Hassan'], ['Abdulla', 'عبد الله ڭنون'], ['Umar', 'عمر خالد'], ['Umar', 'Omar Khaled'], ['Abdullah', 'Abdallah'], ['Ali', 'Mohamed Aly']])
+    expect('a word of the sound ' + a + ' / ' + b, F.nmSound(b).split('|').slice(1).includes(F.nmSound(a).split('|')[0]), true);
+  expect('a name with no sound left', F.nmSound('Aya'), '');
   expect('a letter of another alphabet is U+FFFD in the skeleton', F.nmSkel('\u{105C9}abc'), '\uFFFDabc');
   // *(fourth version) a name with a mark over an undotted letter is STORED without it: what others see is «حالد», not a «خالد» look-alike
   for (const [a, b] of [['حْالد', 'خالد'], ['رْياد', 'زياد'], ['دْكي', 'ذكي'], ['عْادة', 'غادة'], ['حسںْ', 'حسن']]) {

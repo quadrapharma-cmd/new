@@ -106,11 +106,19 @@ select pg_temp.ok('…stored with its key; the old one is held for the member fo
 select pg_temp.no('refused: a character that is not a-z 0-9 .', $q$select public.set_username('ahmed_ali')$q$, '23514', 'remove');
 select pg_temp.no('refused: too short', $q$select public.set_username('ali')$q$, '23514', 'at least 5');
 select pg_temp.no('refused: a reserved word (drugbox.support)', $q$select public.set_username('drugbox.support')$q$, '23514', 'kept for Drugbox');
-select pg_temp.no('refused: a look-alike of a taken username (ahrned.ali.2 = ahmed.ali.2)', $q$select public.set_username('ahrned.ali.2')$q$, 'P0001', 'is taken');
+select pg_temp.no('refused: a look-alike of a taken username (ahrned.ali.2 = ahmed.ali.2), said as a look-alike (v-real1)', $q$select public.set_username('ahrned.ali.2')$q$, 'P0001', 'reads like a username a member has');
+select pg_temp.no('refused: the same username without its dots is «taken» (ahmedali.2 = ahmed.ali.2)', $q$select public.set_username('ahmedali.2')$q$, 'P0001', 'is taken');
+-- s03-user2 (v-user1): the reserved words read on the KEY — the look-alike digits 0 / 1 and words joined without a dot are Drugbox's too
+select pg_temp.no('refused: ' || x, format('select public.set_username(%L)', x), '23514', 'kept for Drugbox')
+  from unnest(array['adm1n.eg', 'supp0rt.eg', 'm0derator.eg', '0fficial.eg', 'officia1.eg', 'moderat0r.1', 'supp0rt2', 'supportteam', 'adminteam', 'theadmin',
+                    'paymentseg', 'officialaccount', 'admins', 'officials', 'ad.min.eg', 'staff2', 'he1p.desk']) x;
+select pg_temp.ok('allowed: names that hold a reserved word inside another (stafford.ali, hamad.mino, steam.eg, joeroot)', $q$
+  public.username_problem('stafford.ali') = '' and public.username_problem('hamad.mino') = '' and public.username_problem('steam.eg') = '' and public.username_problem('joeroot') = ''$q$);
 select pg_temp.as_user(pg_temp.u(4));
 select pg_temp.no('refused: a username another member gave up (held for them for 30 days)', $q$select public.set_username('ahmed.ali')$q$, 'P0001', 'kept for them for 30 days');
 select pg_temp.ok('username_available says the same: held / taken / reserved / free', $q$
   public.username_available('ahmed.ali')->>'reason' = 'held' and public.username_available('Ahmed.Ali.2')->>'reason' = 'taken'
+  and public.username_available('ahmed.a1i.2')->>'reason' = 'alike'
   and public.username_available('admin2')->>'reason' = 'reserved' and (public.username_available('ali.free.now')->>'ok')::boolean$q$);
 select pg_temp.as_user(pg_temp.u(1));
 select pg_temp.ok('the member who gave it up can take it back…', $q$public.set_username('ahmed.ali') = 'ahmed.ali'$q$);
@@ -119,6 +127,8 @@ select pg_temp.ok('changing only dots or capitals is allowed…', $q$public.set_
 select pg_temp.ok('…keeps the key and holds nothing', $q$not exists (select 1 from public.username_holds where profile_id = pg_temp.u(1) and username_key = public.username_key('ahmed.ali'))$q$);
 select pg_temp.ok('three more changes are allowed today (5 in all)…', $q$public.set_username('ahmed.one') = 'ahmed.one' and public.set_username('ahmed.two') = 'ahmed.two'$q$);
 select pg_temp.no('…the sixth in a day is refused', $q$select public.set_username('ahmed.three')$q$, 'P0001', 'too often');
+select pg_temp.ok('…and username_available says so before Save (v-real1), while the member''s own username stays «available»', $q$
+  public.username_available('ahmed.three')->>'reason' = 'rate' and (public.username_available('ahmed.two')->>'ok')::boolean$q$);
 select pg_temp.as_server();
 update public.username_holds set held_until = now() - interval '1 second' where profile_id = pg_temp.u(1);
 select pg_temp.as_user(pg_temp.u(5));

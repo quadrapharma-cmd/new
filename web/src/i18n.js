@@ -543,6 +543,7 @@
     [/^Unread \((\d+)\)$/, function (m) { return 'غير مقروء (' + m[1] + ')'; }],   /* the Messages filter, recounted (J-SOCIAL-38) */
     [/^No member called (.+) — choose someone from the list$/, function (m) { return 'لا يوجد عضو باسم ' + m[1] + ' — اختر شخصًا من القائمة'; }],   /* ✎ New message (S-03) */
     [/^Several members are called (.+) — choose one from the list$/, function (m) { return 'أكثر من عضو باسم ' + m[1] + ' — اختر واحدًا من القائمة'; }],
+    [/^(.+) fits more than one member \(a username and a name\) — choose one from the list, or type @([a-z0-9.]+)$/, function (m) { return '«' + m[1] + '» يطابق أكثر من عضو (اسم مستخدم واسم) — اختر واحدًا من القائمة أو اكتب ⁦@' + m[2] + '⁩'; }],
     [/^Choose (.+) from the list to be sure who receives it$/, function (m) { return 'اختر ' + m[1] + ' من القائمة لتتأكد من المستلم'; }],
     /* the name rule's refusals (live: sign-up, Edit Profile, the database — 0039_names_rule_4 and _5): what they quote is isolated (U+2068 …
        U+2069), kept in the Arabic sentence so a Latin, Greek or Cyrillic character or name keeps its place */
@@ -558,8 +559,10 @@
     [/^A username can only have small letters a-z, numbers 0-9 and dots — remove “⁦([^]*)⁩”$/, function (m) { return 'اسم المستخدم يقبل الحروف الصغيرة ⁦a-z⁩ والأرقام ⁦0-9⁩ والنقطة فقط — احذف «⁦' + m[1] + '⁩»'; }],
     [/^“⁦([^]*)⁩” is kept for Drugbox — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» محجوز لـ Drugbox — اختر اسم مستخدم آخر'; }],
     [/^“⁦([^]*)⁩” is taken — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» مستخدم بالفعل — اختر اسم مستخدم آخر'; }],
+    [/^“⁦([^]*)⁩” reads like a username a member has \(capitals, dots and look-alikes such as 0 \/ o and 1 \/ l do not count\) — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» يُقرأ مثل اسم مستخدم لعضو آخر (لا تُحسب الحروف الكبيرة والنقاط والمتشابهات مثل ⁦0 / o⁩ و⁦1 / l⁩) — اختر اسم مستخدم آخر'; }],
     [/^“⁦([^]*)⁩” was just given up by a member and is kept for them for 30 days — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» تخلّى عنه عضو منذ قليل وهو محفوظ له 30 يومًا — اختر اسم مستخدم آخر'; }],
     [/^✓ @([a-z0-9.]+) is available$/, function (m) { return '✓ ⁦@' + m[1] + '⁩ متاح'; }],
+    [/^Use “\u2068([^]*)\u2069”$/, function (m) { return 'استخدم «\u2068' + m[1] + '\u2069»'; }],   /* the one-click name fix (s03-user2) */
     [/^No member has the username @(.+)$/, function (m) { return 'لا يوجد عضو باسم المستخدم ⁦@' + m[1] + '⁩'; }],
     [/^Write each word of a name in one alphabet — “\u2068([^]*)\u2069” mixes alphabets$/, function (m) { return 'اكتب كل كلمة من الاسم بأبجدية واحدة — «\u2068' + m[1] + '\u2069» تخلط بين أبجديات'; }],
     [/^Remove the mark added to “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ$/, function (m) { return 'احذف العلامة المضافة إلى «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) — يقبل Drugbox الحرف ذا العلامة مكتوبًا كحرف واحد، مثل \u2066é، ü، ñ\u2069'; }],

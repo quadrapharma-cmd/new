@@ -27,7 +27,12 @@ CASES = [('Dr. Haytham Dweedar', 'Haytham'), ('عبد الله السيد', 'ع�
          ('أم كلثوم إبراهيم', 'أم كلثوم'), ('ام كلثوم', 'ام كلثوم'), ('آل سعود', 'آل سعود'), ('بنت الشاطئ', 'بنت الشاطئ'), ('Umm Kulthum', 'Umm Kulthum'),
          ('Om Kalthoum Ibrahim', 'Om Kalthoum'), ('Ben Ali Mohamed', 'Ben Ali'), ('Bint Ahmed Ali', 'Bint Ahmed'), ('Dr. Umm El Kheir Ali', 'Umm El Kheir'),
          ('Abdel- Rahman Ali', 'Abdel-Rahman'), ('El- Sayed Ali', 'El-Sayed'), ('Ahmed Hassan -MBA', 'Ahmed'), ('Ahmed\u200bAli', 'Ahmed'),
-         ('’Abd al-Rahman Ali', 'Abd al-Rahman'), ('ʿAbd al-ʿAziz', 'Abd al-ʿAziz'), ('’Αννα Νίκου', 'Αννα'), ('ʻAli Hassan', 'Ali'), ('’', '’')]
+         ('’Abd al-Rahman Ali', 'Abd al-Rahman'), ('ʿAbd al-ʿAziz', 'Abd al-ʿAziz'), ('’Αννα Νίκου', 'Αννα'), ('ʻAli Hassan', 'Ali'), ('’', '’'),
+         # s03-user2 (v-real1): «Sir» is a title; a word glued by a dot is a title only from the list («Ahmed.Ali» is not «Ali»)
+         ('Sir Elton John', 'Elton'), ('Dame Judi Dench', 'Judi'), ('Ahmed.Ali', 'Ahmed.Ali')]
+# s03-user2 (v-real1): the avatar initials skip titles, the part in brackets, what follows a comma and the article ال / El
+INITIALS = [('Dr Mohamed Salah', 'MS'), ('Dr. Mohamed Salah', 'MS'), ('د. هالة الشامي', 'هش'), ('د محمد صلاح', 'مص'), ('Dr. Мария', 'М'), ('Dr. Hala (MBA)', 'H'),
+            ('نور الدين علي', 'ند'), ('Ahmed El Sayed', 'AS'), ('Ahmed Ali, MBA', 'AA'), ('Dr.Ahmed Ali', 'AA'), ('’Abd al-Rahman Ali', 'AA'), ('Haytham', 'H')]
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"]); ctx = b.new_context(viewport={'width': 1440, 'height': 900}); ctx.add_init_script("try{localStorage.setItem('dx_lang','%s')}catch(e){}" % LANG)
     pg = ctx.new_page(); errs = []; pg.on("pageerror", lambda e: errs.append(str(e)[:150]))
@@ -50,6 +55,12 @@ with sync_playwright() as p:
     T('sign-up toast: «د/ عبد الله السيد» is greeted «عبد الله» (not the title, not «الله»)', any(want in t for t in toasts), toasts[-3:])
     E("signupEnter('’Abd al-Rahman Ali', 'Pharco', 'Pharmacist')"); pg.wait_for_timeout(500)
     T('sign-up avatar: «’Abd al-Rahman Ali» has the letters «AA» (a leading ’ is skipped)', E('ME.initials') == 'AA', E('ME.initials'))
+    for name, want in INITIALS:
+        got = E('(n) => dxInitials(n)', name)
+        T(f'initials of «{name}» are «{want}»', got == want, got)
+    E("signupEnter('Dr Mohamed Salah', 'Pharco', 'Pharmacist')"); pg.wait_for_timeout(400)
+    T('sign-up avatar: «Dr Mohamed Salah» has «MS» right after sign-up (v-real1: «DM» until the next sign-in)', E('ME.initials') == 'MS', E('ME.initials'))
+    T('a member who signs up in the demo gets a username of their own, not the sample owner\'s (v-real1)', E("dxDemoUsername('Mohamed Salah')") == 'mohamed.salah' and E("dxDemoUsername('Dr. Haytham Dweedar')") != 'haytham.dweedar', [E("dxDemoUsername('Mohamed Salah')"), E("dxDemoUsername('Dr. Haytham Dweedar')")])
     T('no errors in the page', not errs, errs)
     print(LANG, sum(R), '/', len(R)); b.close()
 sys.exit(0 if R and all(R) else 1)

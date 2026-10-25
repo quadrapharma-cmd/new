@@ -82,7 +82,9 @@ with sync_playwright() as p:
     st, r = http('POST', '/rest/v1/rpc/set_username', {'p_username': '@' + new.upper()}, KEY, ta)
     T('set_username: capitals and a leading @ → written small, stored with its key', st == 200 and r == new and sql(f"select username || '|' || (username_key = public.username_key(username)) from public.profiles where id = '{A}'") == new + '|true', [st, r])
     T('…the old username is held for its member for 30 days', sql(f"select count(*) from public.username_holds where profile_id = '{A}' and username = {q(ua)} and held_until > now() + interval '29 days'") == '1')
-    for typed, code, pat in (('ahmed_ali', 23514, 'remove'), ('ali', 23514, 'at least 5'), ('drugbox.support', 23514, 'kept for Drugbox'), (new.replace('o', '0', 1), None, 'is taken')):
+    for typed, code, pat in (('ahmed_ali', 23514, 'remove'), ('ali', 23514, 'at least 5'), ('drugbox.support', 23514, 'kept for Drugbox'), (new.replace('o', '0', 1), None, 'reads like a username a member has'),
+                            # s03-user2 (v-user1): the look-alike digits and words joined without a dot are Drugbox's too
+                            ('adm1n.eg', 23514, 'kept for Drugbox'), ('supp0rt2', 23514, 'kept for Drugbox'), ('moderat0r.1', 23514, 'kept for Drugbox'), ('supportteam', 23514, 'kept for Drugbox')):
         st, r = http('POST', '/rest/v1/rpc/set_username', {'p_username': typed}, KEY, tb)
         T(f'set_username «{typed}»: refused, the reason in words', st >= 400 and isinstance(r, dict) and re.search(pat, r.get('message', '')) is not None and str(r.get('hint', '')).startswith('username:'), [st, r])
     st, r = http('POST', '/rest/v1/rpc/set_username', {'p_username': ua}, KEY, tb)
@@ -119,5 +121,59 @@ with sync_playwright() as p:
     pg.evaluate('showEditProfile()'); pg.wait_for_timeout(400); pg.fill('#ep-user', ub); pg.click('.modal-bg [onclick^="saveProfile"]'); pg.wait_for_timeout(1500)
     T('Save Changes with a taken username: refused next to the field, nothing changed', 'is taken' in pg.inner_text('#ep-err') and sql(f"select username from public.profiles where id = '{A}'") == mine, pg.inner_text('#ep-err'))
     T('no JavaScript errors', not errs, errs)
+
+    # ── 5. s03-user2: the verifiers' repros (v-user1, v-real1) ──
+    # a username made from a name with a degree after it is the person's, not the degree's
+    for i, (nm, want) in enumerate(((f'Dr. Hany {NT}, PhD', 'hany.' + NT.lower()), (f'{NT} Ali Jr.', NT.lower() + '.ali'), (f'Mona.{NT}', 'mona.' + NT.lower()))):
+        st, body = http('POST', '/auth/v1/signup', {'email': f'un-d{i}-{ST}@un.test', 'password': PW, 'data': {'name': nm}}, KEY)
+        got = sql(f"select p.username from public.profiles p join auth.users u on u.id = p.id where u.email = 'un-d{i}-{ST}@un.test'")
+        T(f'«{nm}» gets @{want[:30]} (not the degree, the generation or a dot read as a title)', st == 200 and got == want[:30], [st, got])
+    # search by a short sound: a first name whose consonants are two letters is looked for as a WORD of the sound key
+    st, s3 = http('POST', '/auth/v1/signup', {'email': f'un-s-{ST}@un.test', 'password': PW, 'data': {'name': f'Uzaq {NT}'}}, KEY); S3 = s3['user']['id']
+    st, s4 = http('POST', '/auth/v1/signup', {'email': f'un-w-{ST}@un.test', 'password': PW, 'data': {'name': f'Dr. Writer {NT}'}}, KEY); W = s4['user']['id']
+    for o in (A, B, S3):   # W writes to A and B first (their conversations are W's starting list)
+        sql(f"insert into public.messages (sender_id, receiver_id, body) values ('{W}', '{o}', 'hello {ST}')") if o != S3 else None
+    w = b.new_context(viewport={'width': 1440, 'height': 900}); wp = w.new_page(); werrs = []; wp.on('pageerror', lambda e: werrs.append(str(e)[:150]))
+    wp.goto(U, wait_until='load'); wp.wait_for_timeout(500); wp.evaluate('endSplash()'); wp.wait_for_timeout(700)
+    wp.fill('#loginEmail', f'un-w-{ST}@un.test'); wp.fill('#loginPw', PW); wp.click('#loginPage button.f-btn'); wait_for(lambda: wp.is_visible('#app'), 15); wp.wait_for_timeout(1200)
+    wp.evaluate("goto('messages')"); wp.wait_for_timeout(1500)
+    def opts(typed):
+        if not wp.locator('#nmTo:visible').count(): wp.click('.tp-new'); wp.wait_for_timeout(400)
+        wp.fill('#nmTo', typed); wp.wait_for_timeout(1500)
+        return wp.evaluate("[...document.querySelectorAll('#nmList option')].map(o => [o.value.replace(/[\u2066-\u2069]/g, ''), o.label || ''])")
+    o0 = opts('Ozak')
+    T('«Ozak» finds «Uzaq …» (a two-letter sound, looked for as a word — v-real1: «Abdullah», «Umar» found nobody)', any(v.startswith(f'Uzaq {NT}') for v, _ in o0), o0[:5])
+    T('…and offers only members the text fits: not my conversations with A and B (v-real1: every loaded person, «≈ typed»)', o0 and not any(('Rpc Owner' in v or 'Rpc Other' in v) for v, _ in o0), [v for v, _ in o0][:6])
+    o1 = opts(ua.replace('.', ''))
+    T('a username typed without its dots is offered with its member (labelled ≈, so the browser does not hide it)', any(('@' + ua) in v for v, l in o1) and any('≈' in l for v, l in o1 if ('@' + ua) in v), o1[:3])
+    # a username typed WITHOUT its @ reaches its member — never a member whose name is the last part (v-user1: «ziad.kald» → «Kald»)
+    st, z = http('POST', '/auth/v1/signup', {'email': f'un-z-{ST}@un.test', 'password': PW, 'data': {'name': f'Ziad {NT}'}}, KEY); Z = z['user']['id']
+    st, k = http('POST', '/auth/v1/signup', {'email': f'un-k-{ST}@un.test', 'password': PW, 'data': {'name': NT}}, KEY); K = k['user']['id']
+    zu = sql(f"select username from public.profiles where id = '{Z}'")
+    opts(zu); wp.fill('#nmTx', 'bare ' + ST); wp.click('.dbk-ov [data-a=ok]'); wp.wait_for_timeout(2500)
+    T(f'«{zu}» typed without @ is sent to Ziad (not to «{NT}»)', sql(f"select string_agg(receiver_id::text, ',') from public.messages where sender_id = '{W}' and body = 'bare {ST}'") == Z,
+      sql(f"select string_agg(receiver_id::text, ',') from public.messages where sender_id = '{W}' and body = 'bare {ST}'"))
+    # the chat header at 390 px: one line each, ⋯ on the screen, however long the company and the city
+    sql(f"update public.profiles set company = 'Global Pharma Distribution Holding International Limited Company {NT}', location = '6th of October City, Giza Governorate' where id = '{Z}'")
+    wp.set_viewport_size({'width': 390, 'height': 844}); wp.reload(); wp.wait_for_timeout(1000); wp.evaluate('endSplash()'); wait_for(lambda: wp.is_visible('#app'), 15); wp.wait_for_timeout(1500)
+    wp.evaluate("goto('messages')"); wp.wait_for_timeout(2000)
+    wp.evaluate(f"(() => {{ const t = [...document.querySelectorAll('.mx-thread')].find(x => x.innerText.includes('Ziad {NT}')); if (t) t.click(); }})()"); wp.wait_for_timeout(2000)
+    hd = wp.evaluate("(() => { const h = document.querySelector('.chat-head'); if (!h) return null; const r = h.getBoundingClientRect(), bs = [...h.querySelectorAll('.ch-action-btn')].map(x => x.getBoundingClientRect()).filter(x => x.width);"
+                     " return { h: r.height, left: Math.min(...bs.map(x => x.left)), right: Math.max(...bs.map(x => x.right)), st: (h.querySelector('.ch-status') || {}).textContent || '' }; })()")
+    T('the chat header at 390 px stays one name line and one facts line (≤ 80 px), its buttons on the screen, the @username first (v-real1: 172 px, ⋯ off by 2 px)',
+      hd and hd['h'] <= 80 and hd['left'] >= 0 and hd['right'] <= 390 and hd['st'].replace('\u2066', '').startswith('@' + zu),
+      hd or wp.evaluate("[document.body.getAttribute('data-page'), [...document.querySelectorAll('.mx-thread')].map(x => x.innerText.slice(0, 40))]"))
+    # sign-up: a refused name comes with its fix as ONE CLICK, and the avatar skips the title right after sign-up
+    sp = b.new_context(viewport={'width': 1440, 'height': 900}).new_page(); sp.goto(U, wait_until='load'); sp.wait_for_timeout(500); sp.evaluate('endSplash()'); sp.wait_for_timeout(700)
+    sp.click('#loginPage [onclick="showSignup()"]'); sp.wait_for_selector('#suName', state='visible')
+    sp.fill('#suName', f'Dr Mohamed {NT} -MBA'); sp.fill('#suEmail', f'un-u-{ST}@un.test'); sp.fill('#suPw', PW); sp.click('#signupPage button.f-btn.dx-js-only'); sp.wait_for_timeout(1200)
+    fix = sp.locator('#suErr button.dx-namefix')
+    T('a name refused for a spaced hyphen offers its fix as a button (v-real1: text only)', fix.count() == 1 and f'Dr Mohamed {NT} (MBA)' in fix.inner_text(), sp.inner_text('#suErr'))
+    if fix.count(): fix.click(); sp.wait_for_timeout(200)
+    T('…one click writes it into the name field', sp.input_value('#suName') == f'Dr Mohamed {NT} (MBA)', sp.input_value('#suName'))
+    sp.click('#signupPage button.f-btn.dx-js-only'); wait_for(lambda: sp.is_visible('#app'), 15); sp.wait_for_timeout(1500)
+    T('right after sign-up the avatar says «M' + NT[0] + '» — the title and the part in brackets skipped (v-real1: «DM» until the next sign-in)',
+      sp.evaluate('ME.initials') == 'M' + NT[0] and sp.inner_text('#topAv').strip() == 'M' + NT[0], [sp.evaluate('ME.initials'), sp.inner_text('#topAv')])
+    T('no JavaScript errors (the second member\'s pages)', not werrs, werrs)
     b.close()
 done()

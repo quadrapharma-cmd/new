@@ -19,16 +19,19 @@
 //              1 / l / I and m / rn; tools/names/username-twins.txt adds the owner's i / l, vv / w, cl / d and what
 //              tools/names/render_scan.py --part usernames finds in the app's fonts. So «ahmed.ali» = «ahmedali» = «ahrned.ali» =
 //              «ahmed.a1i»: one of them can be taken, never two — two usernames can never draw alike.
-//  reserved    a username whose key is one of RESERVED_WHOLE, or one of whose dot-separated parts (digits left out) is one of
-//              RESERVED_PART («drugbox.support», «admin2», «help.desk»), or that holds the key of «drugbox» anywhere, is Drugbox's.
+//  reserved    read on the KEY (0 is o, 1 is i), dots not counting: a word of RESERVED_ANY anywhere in a part or at either end
+//              («theadmin», «adm1n.eg», «supp0rt2», «drugbox.eg»), a word of RESERVED_PART as a whole part («help.desk», «staff2»), a
+//              word of RESERVED_WHOLE as the whole username («jobs», «jobs2») — see username_reserved.
 //  made from a name (usBase — sign-up, and every member who had none when 0070 ran): the name as the name rule writes it, its titles
 //              left out (the name rule's own list: «Dr.», «د.», «Eng.» …), the part in brackets left out; the words, a particle joined
 //              to the word after it (عبد، أبو، بن، ابن، بنت، أم، آل; Abd, Abdel, Abu, El, Al, Ibn, Bin, Ben, Bint, Om, Umm…); each word in
 //              Latin letters — a Latin word without its accents (José → jose, ø → o, ß → ss: the Unicode root collation), a Greek or
 //              Cyrillic word romanised (GREEK, CYRILLIC below), an Arabic word as Egyptians write it: tools/names/translit-ar.txt
 //              («محمد» → mohamed, «عبد الرحمن» → abdelrahman, «ال…» → el…), else letter by letter (LETTERS below); the first and
-//              the last word, joined by a dot («محمد أحمد علي» → mohamed.ali), at most 30 characters; «member» when nothing is left
-//              or the result is reserved. The database then takes the first free one of base, base.2, base.3 … (a short base gets
+//              the last word, joined by a dot («محمد أحمد علي» → mohamed.ali), at most 30 characters — degrees and generations after
+//              the name left out («Ahmed Ali, MBA», «Mohamed Ali Jr.», «…، ماجستير»: CRED), «Kaya, Ali» read as «Ali Kaya», a word of
+//              RESERVED_ANY or a rude word left out; when first.last is Drugbox's, firstlast, then the first, then the last word
+//              («Joe Root» → joeroot); «member» when nothing is left. The database then takes the first free one of base, base.2, base.3 … (a short base gets
 //              a number at once: «ali» → ali.1), race-free (0070: username_assign).
 import fs from 'node:fs';
 import path from 'node:path';
@@ -83,17 +86,33 @@ const KEY1 = [...KEY].filter(([, t]) => t.length === 1), KEYN = [...KEY].filter(
 const keyOf = (u) => [...String(u).toLowerCase().replace(/\./g, '')].map((x) => KEY.get(x) ?? x).join('');
 
 // ── reserved ──
-const RESERVED_PART = ['drugbox', 'admin', 'administrator', 'support', 'help', 'helpdesk', 'official', 'moderator', 'moderators', 'staff', 'team',
-  'security', 'payments', 'payment', 'billing', 'verify', 'verified', 'verification', 'system', 'root', 'noreply', 'abuse', 'trust', 'safety'];
+// *(s03-user2, v-user1) the rule reads the KEY: «adm1n.eg», «supp0rt2», «moderat0r.1» draw as «admin.eg», «support2», «moderator.1»
+// (the key writes 0 as o and 1 as i before anything is compared — digits were dropped first, so the look-alike digits got through), and
+// dots do not count («supportteam» is «support.team»):
+//  RESERVED_ANY    a word Drugbox's staff and money speak with: reserved ANYWHERE in a dot-separated part («theadmin», «adminteam»,
+//                  «paymentseg», «officials») and at either end of the username without its dots («ad.min.eg», «x.sup.port»)
+//  RESERVED_PART   a word that may sit inside another («Stafford», «steam») but is reserved as a whole part, digits at its ends left out
+//                  («help.desk», «staff2», «team.1»)
+//  RESERVED_WHOLE  a page or channel name: reserved as the whole username (digits at its ends left out: «jobs2»)
+const RESERVED_ANY = ['drugbox', 'admin', 'moderator', 'official', 'support', 'payment', 'verif', 'noreply', 'helpdesk', 'security', 'billing'];
+const RESERVED_PART = ['help', 'staff', 'team', 'system', 'root', 'abuse', 'trust', 'safety', 'mod', 'mods', 'ceo'];
 const RESERVED_WHOLE = ['about', 'account', 'accounts', 'alerts', 'anonymous', 'api', 'careers', 'channel', 'channels', 'companies', 'contact', 'deals',
   'directory', 'email', 'events', 'everyone', 'feed', 'groups', 'info', 'insights', 'jobs', 'legal', 'login', 'logout', 'mail', 'market', 'marketplace',
   'members', 'messages', 'network', 'news', 'notifications', 'null', 'postmaster', 'privacy', 'profile', 'register', 'sales', 'settings', 'signin',
-  'signup', 'terms', 'training', 'undefined', 'updates', 'username', 'usernames', 'webmaster', 'academy', 'drugboxnews', 'drugboxjobs', 'drugboxacademy',
-  'drugboxmarket', 'drugboxdeals', 'drugboxinsights', 'drugboxteam', 'drugboxofficial', 'drugboxsupport', 'member'];
-const RES_PART_K = [...new Set(RESERVED_PART.map(keyOf))], RES_WHOLE_K = [...new Set([...RESERVED_WHOLE, ...RESERVED_PART].map(keyOf))], RES_BRAND_K = keyOf('drugbox');
+  'signup', 'terms', 'training', 'undefined', 'updates', 'username', 'usernames', 'webmaster', 'academy', 'member'];
+const RES_ANY_K = [...new Set(RESERVED_ANY.map(keyOf))], RES_PART_K = [...new Set([...RESERVED_PART, ...RESERVED_ANY].map(keyOf))],
+  RES_WHOLE_K = [...new Set([...RESERVED_WHOLE, ...RESERVED_PART, ...RESERVED_ANY].map(keyOf))];
 // «member» is whole-reserved only as the BARE fallback is numbered: usBase never returns a reserved word but «member», and username_assign
 // numbers it (member.2 …) — so the bare «member» stays free of a person who chose it
 RES_WHOLE_K.splice(RES_WHOLE_K.indexOf(keyOf('member')), 1);
+// words a username made from a name leaves out (never refused when a member chooses them — a name is not a username): rude words a
+// transliteration can spell by chance («شيت» was written «shit»)
+const RUDE = ['shit', 'fuck', 'fck', 'dick', 'cock', 'cunt', 'piss', 'slut', 'whore', 'bitch', 'bastard', 'porn', 'sex', 'nazi', 'ass', 'arse', 'fag', 'rape'];
+// the words after a name that are not a name: degrees, credentials and generations («Dr. Ahmed Mahmoud, PhD» → ahmed.mahmoud, not
+// ahmed.phd — v-real1); compared without dots in small letters (Ph.D. = PhD), the Arabic ones after the typing fold
+const CRED_LAT = ['phd', 'dphil', 'md', 'mba', 'emba', 'dba', 'msc', 'mres', 'mphil', 'bsc', 'bpharm', 'mpharm', 'pharmd', 'rph', 'mph', 'dds', 'dmd', 'dvm',
+  'mrcp', 'frcp', 'frcs', 'mrcs', 'facp', 'cpa', 'cfa', 'pmp', 'cphq', 'jr', 'sr', 'ii', 'iii', 'iv'];
+const CRED_AR_W = ['ماجستير', 'دكتوراه', 'دكتوراة', 'بكالوريوس', 'دبلوم', 'ليسانس'];
 
 // ── made from a name: the tables ──
 // Latin, Greek, Cyrillic: each letter of the everyday blocks (the name rule's: Basic Latin … Latin Extended Additional, Greek and Coptic,
@@ -141,8 +160,9 @@ for (const l of fs.readFileSync(path.join(ROOT, 'tools/names/translit-ar.txt'), 
 for (const k of TABLE.keys()) for (const x of k) if (!(x in LETTERS)) throw new Error('tools/names/translit-ar.txt: a letter LETTERS does not know: ' + x + ' in ' + k);
 const PART_LAT = ['abd', 'abdel', 'abdul', 'abdal', 'abu', 'abou', 'abo', 'el', 'al', 'ibn', 'bin', 'ben', 'bint', 'om', 'umm', 'um', 'oum'];
 const PART_AR = ['عبد', 'ابو', 'ابن', 'بن', 'بنت', 'ام', 'ال', 'ال'].map(arFold);
-// the name rule's titles (dxGreetName's T in the approved demo — the same list the name rule reads)
-const TITLES = (() => { const m = /\bT=\/\^\(\?:([^)]*)\)\$\/i,/.exec(fs.readFileSync(APP, 'utf8')); if (!m) throw new Error('web/base/app.html: no title list T in dxGreetName'); return m[1].split('|'); })();
+const CRED_AR = [...new Set(CRED_AR_W.map(arFold))];
+// the name rule's titles (DX_TITLE in the approved demo — the list the greeting, the initials and the name rule read)
+const TITLES = (() => { const m = /\bDX_TITLE=\/\^\(\?:([^)]*)\)\$\/i;/.exec(fs.readFileSync(APP, 'utf8')); if (!m) throw new Error('web/base/app.html: no title list DX_TITLE'); return m[1].split('|'); })();
 
 // ── printing ──
 const HEAD = 'generated by tools/names/username_rule.mjs (confusables.txt 16.0.0, tools/names/username-twins.txt, tools/names/translit-ar.txt) — do not edit by hand';
@@ -155,6 +175,7 @@ const MSG = {
   letter: 'A username needs at least one letter',
   reserved: '“⁦%s⁩” is kept for Drugbox — choose another username',
   taken: '“⁦%s⁩” is taken — choose another username',
+  alike: '“⁦%s⁩” reads like a username a member has (capitals, dots and look-alikes such as 0 / o and 1 / l do not count) — choose another username',
   held: '“⁦%s⁩” was just given up by a member and is kept for them for 30 days — choose another username',
   rate: 'You changed your username too often today — try again tomorrow',
   slow: 'Too many tries — wait a minute and try again',
@@ -164,9 +185,10 @@ const sqlStr = (s) => (/[^\x20-\x7e]/.test(s) ? "U&'" + [...s.replace(/'/g, "''"
 const low = (x) => `translate(${x}, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')`;
 const sqlRe = (re) => re.replace(/\$(\d)/g, '\\$1');
 const anyCase = (w) => w.replace(/\\.|[A-Za-z]/g, (x) => (x.length === 2 ? x : `[${x.toLowerCase()}${x.toUpperCase()}]`));
-const TITLE_HEAD = `^(?:(?:${TITLES.map(anyCase).join('|')})(?:[./]*[,،]? |[./]+)|[^ ./,،]{1,5}(?:[./]+[^ ./,،]{1,5})*[./]+(?:[,،]? )?)+`;
+const TITLE_HEAD = `^(?:(?:${TITLES.map(anyCase).join('|')})(?:[./]*[,،]? |[./]+)|[^ ./,،]{1,5}(?:[./]+[^ ./,،]{1,5})*[./]+[,،]? )+`;
 // «a letter follows» (a title alone is a name): a normalised name holds letters, spaces and . - ’ ( ) , / ، only
 const AFTER = `(?=.*[^ .\\-’(),/،])`;
+const sqlArr = (l) => `array[${l.map((k) => `'${k}'`).join(', ')}]::text[]`;
 const ROWS = (m) => [...m].map(([k, v]) => k + '=' + v).join('\u0001');
 
 function sqlRegion() {
@@ -178,6 +200,23 @@ create or replace function public.username_key(u text)
 returns text language sql immutable parallel safe as $$
   select ${'replace('.repeat(KEYN.length)}translate(replace(translate(coalesce(u, ''), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '.', ''), '${fold1.map(([a]) => a).join('')}', '${fold1.map(([, b]) => b).join('')}')${KEYN.map(([a, b]) => `, '${a}', '${b}')`).join('')}
 $$;
+-- is a (well-formed) username Drugbox's? the KEY is compared (0 is o, 1 is i: «adm1n.eg» is «admin.eg»), dots do not count:
+--   a word of RESERVED_ANY anywhere in a dot-separated part or at either end of the username without its dots, a word of RESERVED_PART as
+--   a whole part, a word of RESERVED_WHOLE as the whole username — a part or the whole also without the digits at its ends («staff2»)
+create or replace function public.username_reserved(u text)
+returns boolean language sql immutable parallel safe as $$
+  select exists (
+    select 1 from (select translate(coalesce(u, ''), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz') as l) z,
+                  lateral (select public.username_key(replace(z.l, '.', '')) as k,
+                                  public.username_key(regexp_replace(replace(z.l, '.', ''), '^[0-9]+|[0-9]+$', '', 'g')) as ks) y
+     where y.k = any (${sqlArr(RES_WHOLE_K)}) or y.ks = any (${sqlArr(RES_WHOLE_K)})
+        or exists (select 1 from unnest(${sqlArr(RES_ANY_K)}) a(x)
+                    where starts_with(y.k, a.x) or starts_with(y.ks, a.x) or right(y.k, char_length(a.x)) = a.x or right(y.ks, char_length(a.x)) = a.x)
+        or exists (select 1 from unnest(string_to_array(z.l, '.')) p(w),
+                          lateral (select public.username_key(p.w) as kw, public.username_key(regexp_replace(p.w, '^[0-9]+|[0-9]+$', '', 'g')) as kws) q
+                    where q.kw = any (${sqlArr(RES_PART_K)}) or q.kws = any (${sqlArr(RES_PART_K)})
+                       or exists (select 1 from unnest(${sqlArr(RES_ANY_K)}) a(x) where strpos(q.kw, a.x) > 0)))
+$$;
 -- '' when a username may be used, else the first reason: empty, char, short, long, dot, letter, reserved (capitals are written small first)
 create or replace function public.username_problem(u text)
 returns text language sql immutable parallel safe as $$
@@ -188,10 +227,7 @@ returns text language sql immutable parallel safe as $$
     when char_length(u) > ${MAX} then 'long'
     when u ~ '^[.]|[.]$|[.][.]' then 'dot'
     when translate(u, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz') !~ '[a-z]' then 'letter'
-    when public.username_key(u) in (${RES_WHOLE_K.map((k) => `'${k}'`).join(', ')})
-      or strpos(public.username_key(u), '${RES_BRAND_K}') > 0
-      or exists (select 1 from unnest(string_to_array(translate(u, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '.')) p(w)
-                  where public.username_key(regexp_replace(p.w, '[0-9]', '', 'g')) in (${RES_PART_K.map((k) => `'${k}'`).join(', ')})) then 'reserved'
+    when public.username_reserved(u) then 'reserved'
     else '' end
 $$;
 -- the sentence for a reason (the app says the same — web/src/username.js — and translates it); u is the username as typed
@@ -237,10 +273,21 @@ end $$;
 -- the username a name gives (before the database numbers it): see tools/names/username_rule.mjs
 create or replace function public.username_base(name text)
 returns text language plpgsql stable parallel safe set search_path = '' as $$
-declare n text; w text; words text[] := '{}'; toks text[] := '{}'; tok text; open boolean := false; s text; r text; i int;
+declare n text; w text; words text[] := '{}'; toks text[] := '{}'; tok text; open boolean := false; s text; r text; i int; m text[];
 begin
   n := regexp_replace(public.person_name_norm(name), ${sqlStr(TITLE_HEAD + AFTER)}, '');
-  n := regexp_replace(regexp_replace(n, '[(][^()]*(?:[)]|$)', ' ', 'g'), '[()]', ' ', 'g');
+  n := btrim(regexp_replace(regexp_replace(regexp_replace(n, '[(][^()]*(?:[)]|$)', ' ', 'g'), '[()]', ' ', 'g'), ' +', ' ', 'g'));
+  -- degrees, credentials and generations after the name are not a name («Ahmed Ali, MBA», «Mohamed Ali Jr.»); then a name written
+  -- «surname, given names» is read in its order («Kaya, Ali» → ali.kaya)
+  loop
+    m := regexp_match(n, ${sqlStr('^(.*[^ ,،])[ ,،]+([^ ,،]+)[ ,،]*$')});
+    exit when m is null or not (replace(translate(m[2], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '.', '') = any (${sqlArr(CRED_LAT)})
+                               or translate(m[2], ${sqlStr(AR_FOLD_FROM)}, ${sqlStr(AR_FOLD_TO)}) = any (array[${CRED_AR.map(sqlStr).join(', ')}]::text[]));
+    n := m[1];
+  end loop;
+  m := regexp_match(n, ${sqlStr('^([^,،]*[^ ,،]) ?[,،] ?([^ ,،].*)$')});
+  if m is not null then n := regexp_replace(m[2], ${sqlStr('[,،]')}, ' ', 'g') || ' ' || m[1]; end if;
+  n := regexp_replace(n, ${sqlStr('[οόΟΌ][υύΥΎ]')}, 'ou', 'g');
   foreach w in array regexp_split_to_array(n, '[ .,،/]+') loop
     w := replace(replace(replace(w, '-', ''), '’', ''), '''', '');
     if w = '' then continue; end if;
@@ -259,15 +306,18 @@ begin
         into s from unnest(regexp_split_to_array(translate(replace(tok, ' ', ''), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '')) with ordinality c(x, o);
     end if;
     s := regexp_replace(coalesce(s, ''), '[^a-z0-9]', '', 'g');
-    -- a word Drugbox keeps (moderator, support, drugbox…) is left out: «Dr. Maha Moderator» → maha
-    if s <> '' and public.username_key(regexp_replace(s, '[0-9]', '', 'g')) <> all (array[${RES_PART_K.map((k) => `'${k}'`).join(', ')}])
-       and strpos(public.username_key(s), '${RES_BRAND_K}') = 0 then words := words || s; end if;
+    -- a word Drugbox's staff speak with (moderator, support, drugbox…) or a rude word is left out: «Dr. Maha Moderator» → maha
+    if s <> '' and s <> all (${sqlArr(RUDE)}) and not exists (select 1 from unnest(${sqlArr(RES_ANY_K)}) a(x) where strpos(public.username_key(s), a.x) > 0)
+      then words := words || s; end if;
   end loop;
   if cardinality(words) = 0 then return 'member'; end if;
-  r := case when cardinality(words) = 1 then words[1] else words[1] || '.' || words[cardinality(words)] end;
-  r := rtrim(left(r, ${MAX}), '.');
-  if r !~ '[a-z]' or public.username_problem(r) = 'reserved' then return 'member'; end if;
-  return r;
+  -- the first and the last word; when that is Drugbox's («Joe Root»: root.…), the two joined, then one of them
+  foreach r in array case when cardinality(words) = 1 then array[words[1]]
+                          else array[words[1] || '.' || words[cardinality(words)], words[1] || words[cardinality(words)], words[1], words[cardinality(words)]] end loop
+    r := rtrim(left(r, ${MAX}), '.');
+    if r ~ '[a-z]' and not public.username_reserved(r) and not public.username_reserved(public.username_candidate(r, 2)) then return r; end if;
+  end loop;
+  return 'member';
 end $$;
 -- <<< generated`;
 }
@@ -277,19 +327,24 @@ function layerRegion() {
   return `/* >>> ${HEAD} */
   var US_MIN = ${MIN}, US_MAX = ${MAX};
   var US_K1 = ${JSON.stringify(Object.fromEntries(KEY1))};
-  var US_RES_WHOLE = ${JSON.stringify(RES_WHOLE_K)}, US_RES_PART = ${JSON.stringify(RES_PART_K)}, US_RES_BRAND = '${RES_BRAND_K}';
+  var US_RES_WHOLE = ${JSON.stringify(RES_WHOLE_K)}, US_RES_PART = ${JSON.stringify(RES_PART_K)}, US_RES_ANY = ${JSON.stringify(RES_ANY_K)}, US_RUDE = ${JSON.stringify(RUDE)};
   var US_MSG = ${JSON.stringify(MSG).replace(/[⁦⁩]/g, (c) => '\\u' + hx(c.codePointAt(0)))};
   ${jsKey()}
   function usProblem(u) {
     u = String(u == null ? '' : u); var l = u.replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }), n = Array.from(u).length;
     if (!u) return 'empty'; if (/[^a-z0-9.]/.test(l)) return 'char'; if (n < US_MIN) return 'short'; if (n > US_MAX) return 'long';
     if (/^[.]|[.]$|[.][.]/.test(u)) return 'dot'; if (!/[a-z]/.test(l)) return 'letter';
-    var k = usKey(u);
-    if (US_RES_WHOLE.indexOf(k) >= 0 || k.indexOf(US_RES_BRAND) >= 0 || l.split('.').some(function (w) { return US_RES_PART.indexOf(usKey(w.replace(/[0-9]/g, ''))) >= 0; })) return 'reserved';
-    return '';
+    return usReserved(u) ? 'reserved' : '';
+  }
+  function usEnds(x) { return x.replace(/^[0-9]+|[0-9]+$/g, ''); }
+  function usReserved(u) {
+    var l = String(u == null ? '' : u).replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }), k = usKey(l), ks = usKey(usEnds(l.replace(/\\./g, '')));
+    return US_RES_WHOLE.indexOf(k) >= 0 || US_RES_WHOLE.indexOf(ks) >= 0
+      || US_RES_ANY.some(function (a) { return [k, ks].some(function (x) { return x.slice(0, a.length) === a || (x.length >= a.length && x.slice(x.length - a.length) === a); }); })
+      || l.split('.').some(function (w) { var kw = usKey(w); return US_RES_PART.indexOf(kw) >= 0 || US_RES_PART.indexOf(usKey(usEnds(w))) >= 0 || US_RES_ANY.some(function (a) { return kw.indexOf(a) >= 0; }); });
   }
   function usMessage(u, p) { var m = US_MSG[p] || '', l = String(u == null ? '' : u).replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }); return m.replace('%s', function () { return p === 'char' ? (l.match(/[^a-z0-9.]/u) || [''])[0] : l; }); }
-  function usReservedWord(w) { var k = usKey(w); return US_RES_PART.indexOf(usKey(w.replace(/[0-9]/g, ''))) >= 0 || k.indexOf(US_RES_BRAND) >= 0; }
+  function usReservedWord(w) { var k = usKey(w); return US_RUDE.indexOf(w) >= 0 || US_RES_ANY.some(function (a) { return k.indexOf(a) >= 0; }); }
   function usCandidate(b, n) { var d = String(Math.max(n, 1)); if (n <= 1 && b.length >= US_MIN) return b.slice(0, US_MAX); if (b.length + 1 + d.length < US_MIN) d = d.padStart(US_MIN - 1 - b.length, '0');
     return b.slice(0, US_MAX - 1 - d.length).replace(/[.]+$/, '') + '.' + d; }
 /* <<< generated */`;
@@ -303,6 +358,8 @@ function adapterRegion() {
   var US_AR_PRE = [${AR_PRE.map(([a, b]) => `[/${a}/u, ${JSON.stringify(b)}]`).join(', ')}], US_AR_POST = [${AR_POST.map(([a, b]) => `[/${a}/gu, ${JSON.stringify(b)}]`).join(', ')}];
   var US_PART_LAT = ${JSON.stringify(PART_LAT)}, US_PART_AR = ${JSON.stringify([...new Set(PART_AR)])};
   var US_TITLE = new RegExp(${JSON.stringify(TITLE_HEAD + AFTER)}, 'u');
+  var US_CRED_LAT = ${JSON.stringify(CRED_LAT)}, US_CRED_AR = ${JSON.stringify(CRED_AR)};
+  var US_CRED_END = /^(.*[^ ,،])[ ,،]+([^ ,،]+)[ ,،]*$/u, US_INVERTED = /^([^,،]*[^ ,،]) ?[,،] ?([^ ,،].*)$/u;
   function usArFold(w) { return Array.from(w, function (x) { var f = US_AR_FOLD[x]; return f == null ? x : f; }).join(''); }
   function usArWord(w) {
     var k = usArFold(w), t; if (!k) return '';
@@ -316,7 +373,10 @@ function adapterRegion() {
     return x.replace(/[^a-z]/g, '');
   }
   function usBase(name) {
-    var n = nmNorm(name).replace(US_TITLE, '').replace(/[(][^()]*(?:[)]|$)/gu, ' ').replace(/[()]/g, ' '), toks = [], open = false;
+    var n = nmNorm(name).replace(US_TITLE, '').replace(/[(][^()]*(?:[)]|$)/gu, ' ').replace(/[()]/g, ' ').replace(/ +/g, ' ').replace(/^ | $/g, ''), toks = [], open = false, m;
+    while ((m = US_CRED_END.exec(n)) && (US_CRED_LAT.indexOf(m[2].replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }).replace(/\\./g, '')) >= 0 || US_CRED_AR.indexOf(usArFold(m[2])) >= 0)) n = m[1];
+    if ((m = US_INVERTED.exec(n))) n = m[2].replace(/[,،]/g, ' ') + ' ' + m[1];
+    n = n.replace(/[οόΟΌ][υύΥΎ]/gu, 'ou');
     n.split(/[ .,،/]+/).forEach(function (w) { w = w.replace(/[-’']/g, ''); if (!w) return;
       if (open) toks[toks.length - 1] += ' ' + w; else toks.push(w);
       open = US_PART_LAT.indexOf(w.replace(/[A-Z]/g, function (c) { return c.toLowerCase(); })) >= 0 || US_PART_AR.indexOf(usArFold(w)) >= 0; });
@@ -325,8 +385,9 @@ function adapterRegion() {
       else s = Array.from(tok.replace(/ /g, '').replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }), function (c) { return /[a-z]/.test(c) ? c : US_ASCII.has(c) ? US_ASCII.get(c) : /[\\u0600-\\u06FF\\u0750-\\u077F]/.test(c) ? usArWord(c) : ''; }).join('');
       return s.replace(/[^a-z0-9]/g, ''); }).filter(function (s) { return s && !window.dxUsername.reservedWord(s); });   /* «Dr. Maha Moderator» → maha */
     if (!words.length) return 'member';
-    var r = (words.length === 1 ? words[0] : words[0] + '.' + words[words.length - 1]).slice(0, ${MAX}).replace(/[.]+$/, '');
-    return !/[a-z]/.test(r) || window.dxUsername.problem(r) === 'reserved' ? 'member' : r;
+    var f = words[0], z = words[words.length - 1], R = window.dxUsername;
+    return (words.length === 1 ? [f] : [f + '.' + z, f + z, f, z]).map(function (r) { return r.slice(0, ${MAX}).replace(/[.]+$/, ''); })
+      .find(function (r) { return /[a-z]/.test(r) && !R.reserved(r) && !R.reserved(R.candidate(r, 2)); }) || 'member';
   }
 /* <<< generated username */`;
 }
@@ -349,7 +410,7 @@ function app() {
     return s.slice(s.indexOf('\n', a) + 1, b); })();
   const body = (r) => r.old.split('\n').slice(1, -1).join('\n');
   // the layer in its own scope (as web/src/username.js is), the adapter's region next to the name rule's (as in the adapter)
-  return new Function(`var window = { dxUsername: null };\n(function () {\n${body(R[1])}\nwindow.dxUsername = { key: usKey, problem: usProblem, message: usMessage, candidate: usCandidate, reservedWord: usReservedWord };\n})();\n${nameRegion}\n${body(R[2])}\nvar L = window.dxUsername; return { key: L.key, problem: L.problem, message: L.message, candidate: L.candidate, base: usBase };`)();
+  return new Function(`var window = { dxUsername: null };\n(function () {\n${body(R[1])}\nwindow.dxUsername = { key: usKey, problem: usProblem, message: usMessage, candidate: usCandidate, reservedWord: usReservedWord, reserved: usReserved };\n})();\n${nameRegion}\n${body(R[2])}\nvar L = window.dxUsername; return { key: L.key, problem: L.problem, message: L.message, candidate: L.candidate, base: usBase };`)();
 }
 const lines = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n').filter((l) => l && !l.startsWith('#'));
 const esc = (t) => String(t).replace(/\\/g, '\\\\').replace(/\t/g, '\\t').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
@@ -368,14 +429,26 @@ if (process.argv.includes('--write')) {
   for (const [u, p] of [['', 'empty'], ['ahmed', ''], ['ahmed.ali', ''], ['Ahmed.Ali', ''], ['ali', 'short'], ['a'.repeat(31), 'long'], ['a'.repeat(30), ''], ['.ahmed', 'dot'], ['ahmed.', 'dot'], ['ahmed..ali', 'dot'],
     ['12345', 'letter'], ['ahmed_ali', 'char'], ['ahmed ali', 'char'], ['أحمد.علي', 'char'], ['ahmed@ali', 'char'], ['drugbox', 'reserved'], ['drug.box', 'reserved'], ['drugb0x.eg', 'reserved'],
     ['ahmed.drugbox', 'reserved'], ['admin', 'reserved'], ['admin2', 'reserved'], ['ahmed.support', 'reserved'], ['help.desk', 'reserved'], ['support', 'reserved'], ['news', 'short'], ['newss', ''],
+    // v-user1: the look-alike digits and dots-do-not-count
+    ['adm1n', 'reserved'], ['adm1n.eg', 'reserved'], ['supp0rt.eg', 'reserved'], ['m0derator.eg', 'reserved'], ['0fficial.eg', 'reserved'], ['officia1.eg', 'reserved'],
+    ['moderat0r.1', 'reserved'], ['supp0rt2', 'reserved'], ['supportteam', 'reserved'], ['adminteam', 'reserved'], ['theadmin', 'reserved'], ['paymentseg', 'reserved'],
+    ['officialaccount', 'reserved'], ['admins', 'reserved'], ['officials', 'reserved'], ['ad.min.eg', 'reserved'], ['staff2', 'reserved'], ['st4ff.eg', ''], ['he1p.desk', 'reserved'],
+    ['jobs2', 'reserved'], ['stafford.ali', ''], ['john.stafford', ''], ['hamad.mino', ''], ['joeroot', ''], ['steam.eg', ''], ['root.1', 'reserved'],
     ['payments', 'reserved'], ['jobs.eg', ''], ['marketplace', 'reserved'], ['adrnin', 'reserved'], ['member', ''], ['member.2', ''], ['ali.1', ''], ['om.01', '']]) expect('problem ' + JSON.stringify(u), F.problem(u), p);
   for (const [b, n, c] of [['ahmed.ali', 1, 'ahmed.ali'], ['ahmed.ali', 2, 'ahmed.ali.2'], ['ali', 1, 'ali.1'], ['ali', 7, 'ali.7'], ['om', 1, 'om.01'], ['om', 12, 'om.12'], ['a', 1, 'a.001'], ['a'.repeat(30), 2, 'a'.repeat(28) + '.2']])
     expect('candidate ' + b + ' ' + n, F.candidate(b, n), c);
   for (const [nm, b] of [['محمد أحمد', 'mohamed.ahmed'], ['عبد الرحمن', 'abdelrahman'], ['José Ali', 'jose.ali'], ['Dr. Haytham Dweedar', 'haytham.dweedar'], ['د. محمد أحمد علي', 'mohamed.ali'],
     ['عبد الله السيد', 'abdallah.elsayed'], ['عبدالرحمن محمد', 'abdelrahman.mohamed'], ['أبو بكر الصديق', 'abobakr.elseddik'], ['Abd El Rahman Ali', 'abdelrahman.ali'], ['El Sayed Mohamed', 'elsayed.mohamed'],
-    ['Ahmed Ali (MBA)', 'ahmed.ali'], ['Søren Łukasz', 'soren.lukasz'], ['Strauß', 'strauss'], ['Мария Иванова', 'mariya.ivanova'], ['Νίκος Παπαδόπουλος', 'nikos.papadopoylos'], ['إبراهيم حسن', 'ibrahim.hassan'],
+    ['Ahmed Ali (MBA)', 'ahmed.ali'], ['Søren Łukasz', 'soren.lukasz'], ['Strauß', 'strauss'], ['Мария Иванова', 'mariya.ivanova'], ['إبراهيم حسن', 'ibrahim.hassan'],
     ['ابراهيم حسن', 'ibrahim.hassan'], ['فاطمه الزهراء', 'fatma.elzahraa'], ['Mo’men Abd El-Raouf', 'momen.abdelraouf'], ['Admin Support', 'member'], ['Drugbox', 'member'], ['Dr. Maha Moderator', 'maha'], ['Drugbox Finance', 'finance'], ['Ahmed Admin Ali', 'ahmed.ali'], ['هيثم دويدار', 'haytham.dweedar'],
-    ['Om Kalthoum Ibrahim', 'omkalthoum.ibrahim'], ['Ali', 'ali'], ['مي', 'mai'], ['حسن شحاتة', 'hassan.shehata'], ['Dr. Ahmed El-Sayed', 'ahmed.elsayed'], ['Eng. Omar Khaled', 'omar.khaled']])
+    ['Om Kalthoum Ibrahim', 'omkalthoum.ibrahim'], ['Ali', 'ali'],
+    // v-real1: degrees, generations, «surname, given», a dot for a space, reserved surnames, rude transliterations
+    ['Dr. Ahmed Mahmoud, PhD', 'ahmed.mahmoud'], ['Ahmed Ali, MBA', 'ahmed.ali'], ['Dr. Mohamed Ali Khalil, MSc', 'mohamed.khalil'], ['Pharm. Nada Samir, B.Pharm', 'nada.samir'],
+    ['د. محمد علي خليل، ماجستير', 'mohamed.khalil'], ['Mohamed Ali Jr.', 'mohamed.ali'], ['John Smith Jr', 'john.smith'], ['Elizabeth Windsor II', 'elizabeth.windsor'],
+    ['Charles III', 'charles'], ['Ahmed Ali Sr.', 'ahmed.ali'], ['Ahmed.Ali', 'ahmed.ali'], ['Ziad.Kald', 'ziad.kald'], ['Kaya, Ali', 'ali.kaya'], ['Ahmed Ali, Ph.D.', 'ahmed.ali'],
+    ['Joe Root', 'joe.root'.replace('.', '')], ['Mary Trust', 'marytrust'], ['أحمد شيت', 'ahmed.sheet'], ['مرتضى منصور', 'mortada.mansour'], ['فؤاد المهندس', 'fouad.elmohandes'],
+    ['أحمد زويل', 'ahmed.zewail'], ['نجيب محفوظ', 'naguib.mahfouz'], ['هدى شعراوي', 'hoda.shaarawy'], ['نيرمين علي', 'nermin.ali'], ['مارتن لوثر', 'martin.luther'],
+    ['Νίκος Παπαδόπουλος', 'nikos.papadopoulos'], ['مي', 'mai'], ['حسن شحاتة', 'hassan.shehata'], ['Dr. Ahmed El-Sayed', 'ahmed.elsayed'], ['Eng. Omar Khaled', 'omar.khaled']])
     expect('made from ' + nm, F.base(nm), b);
   for (const nm of lines('tests/names/username_names.txt')) { const b = F.base(nm); expect('a base is a username or short ' + nm, ['', 'short'].includes(F.problem(b)) && /^[a-z0-9.]+$/.test(b), true); }
   if (fails.length) { console.error('the generated username rule does not follow its definition:\n' + fails.join('\n')); process.exit(1); }

@@ -484,3 +484,14 @@
 زيد ; zeid
 كلثوم ; kalthoum
 صديق ; seddik
+# ── v-real1 (s03-user2): names the letter fallback wrote oddly («maratada», «elmahanadas», «zoil», «niramin») or rudely («شيت») ──
+مرتضى ; mortada
+مهندس ; mohandes
+زويل ; zewail
+محفوظ ; mahfouz
+شعراوي ; shaarawy
+نيرمين ; nermin
+مارتن ; martin
+لوثر ; luther
+شيت ; sheet
+پور ; pour

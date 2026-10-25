@@ -2327,14 +2327,30 @@ function endSplash(){var s=document.getElementById('splash');if(!s||s.classList.
    trailing comma; one word: the whole name. The name is said as written, in its own script, in either interface. S-03 fix 8 (v-real6-r2):
    a kunya or family prefix stays with its word (أم كلثوم, آل سعود, بنت الشاطئ, Umm Kulthum, Ben Ali, Bint …), a space beside a hyphen
    is not a word break («Abdel- Rahman» → «Abdel-Rahman»), a zero-width space is one, and a leading ’ ʿ is not said («’Abd» → «Abd») */
+/* the titles a name may start with: skipped by the greeting, the avatar initials and the name rule's search key and username
+   (tools/names/name_rule.mjs and username_rule.mjs read this list from here) */
+var DX_TITLE=/^(?:dr|prof|eng|engr|pharm|pharmd|ph|d|mr|mrs|ms|miss|dipl|dipl\.-ing|sir|dame|hajj|haj|hadj|hajja|hajjah|sheikh|shaikh|sheikha|shaikha|د|م|ص|ك|أ|ا|د\.ص|ا\.د|أ\.د|ك\.د|م\.د|الحاج|الحاجة|الحاجه|الشيخ|الشيخة|المهندس|المهندسة|الدكتور|الدكتورة|الأستاذ|الاستاذ|الأستاذة|الاستاذة)$/i;
+/* avatar initials (s03-user2, v-real1): the first letters of the first two words after any title («Dr Mohamed Salah» → MS, not DM),
+   without the part in brackets or after a comma, an article standing alone (El, Al) or starting a word (ال: «نور الدين» → ند) left out */
+function dxInitials(n){var s=String(n||'').replace(/\([^()]*\)?/g,' ').split(/[,،]/)[0].replace(/^\s+|\s+$/g,''),w=s.split(/\s+/).filter(Boolean),i=0,
+ tl=function(x){var t=x.replace(/[.\/,،]+$/,'');return DX_TITLE.test(t)||(/[.\/]$/.test(x)&&t.length<=5);};
+ while(i<w.length-1&&tl(w[i]))i++;w=w.slice(i);var g=w.length?/^(.*[.\/])([^.\/]+)$/.exec(w[0]):null;if(g&&DX_TITLE.test(g[1].replace(/[.\/]+$/,'')))w[0]=g[2];
+ if(w.length>2&&/^(?:el|al|ال)$/i.test(w[1]))w.splice(1,1);
+ var r=w.slice(0,2).map(function(x){x=x.replace(/^[^\p{L}]+/u,'');if(/^ال./.test(x)&&Array.from(x).length>3)x=x.slice(2);return Array.from(x)[0]||'';}).join('').toUpperCase();
+ return r||String(n||'?').trim().charAt(0)||'?';}
+/* a username for a member who signs up in the demo (the live app's comes from the database: 0070 username_base): the Latin words of
+   the name after its titles, first.last, numbered when a sample member has it */
+function dxDemoUsername(n){var R=window.dxUsername,w=String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().split(/[\s.,،\/()-]+/).filter(function(x){return x&&!DX_TITLE.test(x);}).map(function(x){return x.replace(/[^a-z0-9]/g,'');}).filter(Boolean),
+ b=w.length?(w.length>1?w[0]+'.'+w[w.length-1]:w[0]):'member';if(!R)return b;
+ for(var i=1;i<1000;i++){var c=R.candidate(b,i);if(R.problem(c)===''&&!USERS.some(function(u){return u!==ME&&u.username&&R.key(u.username)===R.key(c);}))return c;}return b;}
 function dxGreetName(n){var s=String(n||'').replace(/\u200B/g,' ').replace(/^\s+|\s+$/g,'').replace(/([^\s-])-\s+(?=[^\s-])/g,'$1-').replace(/([^\s-])\s+-(?=[^\s-])/g,'$1-'),
  inv=/^([^\s,،]+)\s*[,،]\s*(\S.*)$/.exec(s);if(inv&&/[^\s.,،]/.test(inv[2]))s=inv[2];var
  w=s.split(/\s+/).map(function(x){return x.replace(/^[’'ʿʻ‘`ʾ]+(?=.)/,'');}),i=0,
- T=/^(?:dr|prof|eng|engr|pharm|pharmd|ph|d|mr|mrs|ms|miss|dipl|dipl\.-ing|hajj|haj|hadj|hajja|hajjah|sheikh|shaikh|sheikha|shaikha|د|م|ص|ك|أ|ا|د\.ص|ا\.د|أ\.د|ك\.د|م\.د|الحاج|الحاجة|الحاجه|الشيخ|الشيخة|المهندس|المهندسة|الدكتور|الدكتورة|الأستاذ|الاستاذ|الأستاذة|الاستاذة)$/i,
+ T=DX_TITLE,
  A=/^(?:el|al|ال)$/i,P=/[.,،;:!?]+$/;
  var title=function(x){var t=x.replace(/[.\/,،]+$/,'');return T.test(t)||(/[.\/]$/.test(x)&&t.length<=5);};
  while(i<w.length-1&&title(w[i]))i++;
- var g=/^(.*[.\/])([^.\/]+)$/.exec(w[i]);if(g&&title(g[1]))w[i]=g[2];
+ var g=/^(.*[.\/])([^.\/]+)$/.exec(w[i]);if(g&&T.test(g[1].replace(/[.\/,،]+$/,'')))w[i]=g[2];   /* glued: only a title of the list («Dr.Ahmed», «د/محمد» — never «Ahmed.Ali») */
  if(title(w[i])&&i===w.length-1)return s;
  var c=/^(?:عبد|عبدال|abd|abdel|abdul|abdal|abu|abou|abo|abul|أبو|ابو|ابن|بن|ibn|bin|ben|أم|ام|آل|بنت|ابنة|umm|um|om|oum|bint|bent|van|von|de|da|di|du|del|della|der|den|le|la)$/i,j=i;
  if(i<w.length-1&&c.test(w[i])){j=i+1;while(j<w.length-1&&/^(?:el|al|ال|der|den|de|la|le|van|von)$/i.test(w[j]))j++;}
@@ -2342,8 +2358,8 @@ function dxGreetName(n){var s=String(n||'').replace(/\u200B/g,' ').replace(/^\s+
  var r=w.slice(i,j+1).join(' '),t=r.replace(P,'');return t||r||s;}
 function doLogin(){var email=document.getElementById('loginEmail').value.trim();var pw=document.getElementById('loginPw').value;var err=document.getElementById('loginErr');err.style.display='none';if(!email){err.textContent='Email is required';err.style.display='block';return;}if(!pw){err.textContent='Password is required';err.style.display='block';return;}document.getElementById('authWrap').style.display='none';document.getElementById('app').style.display='flex';goto('feed');updateTopUser();toast('Welcome back, '+dxGreetName(ME.name)+'!');}
 
-function doSignup(){var name=document.getElementById('suName').value.trim();var email=document.getElementById('suEmail').value.trim();var pw=document.getElementById('suPw').value;var err=document.getElementById('suErr');err.style.display='none';if(!name){err.textContent='Name is required';err.style.display='block';return;}if(!email){err.textContent='Email is required';err.style.display='block';return;}if(pw.length<8){err.textContent='Password must be at least 8 characters';err.style.display='block';return;}if(email.toLowerCase()==='haytham@drugbox.app'){err.textContent='An account with this email already exists — sign in instead';err.style.display='block';return;}var co=document.getElementById('suCompany'),ro=document.getElementById('suRole');if(ME.id===1){ME.id=USERS.reduce(function(m,u){return u.id<1000&&u.id>m?u.id:m;},1)+1;ME.color='#0E8C66';USERS.push(ME);}signupEnter(name,co?co.value.trim():'',ro&&ro.selectedIndex<ro.options.length-1?ro.value.trim():'');}
-function signupEnter(name,company,specialty){Object.assign(ME,{name:name,initials:name.split(' ').map(function(w){return w.replace(/^[’'ʿʻ‘`ʾ(]+(?=.)/,'').charAt(0);}).slice(0,2).join('').toUpperCase(),company:company,headline:specialty,verified:false,role:'user',bio:'',web:'',phone:'',certs:'',location:'',avatar:null,openToWork:false,hiring:false,experience:[],education:[],skills:[],languages:[],connections:'0',followers:0,profileViews:'0'});var mine=USERS.find(function(u){return u.id===ME.id;});if(mine&&mine!==ME)Object.assign(mine,ME);document.getElementById('authWrap').style.display='none';document.getElementById('app').style.display='flex';goto('feed');updateTopUser();toast('Welcome to Drugbox, '+dxGreetName(name)+'!');}
+function doSignup(){var name=document.getElementById('suName').value.trim();var email=document.getElementById('suEmail').value.trim();var pw=document.getElementById('suPw').value;var err=document.getElementById('suErr');err.style.display='none';if(!name){err.textContent='Name is required';err.style.display='block';return;}if(!email){err.textContent='Email is required';err.style.display='block';return;}if(pw.length<8){err.textContent='Password must be at least 8 characters';err.style.display='block';return;}if(email.toLowerCase()==='haytham@drugbox.app'){err.textContent='An account with this email already exists — sign in instead';err.style.display='block';return;}var co=document.getElementById('suCompany'),ro=document.getElementById('suRole');if(ME.id===1){ME.id=USERS.reduce(function(m,u){return u.id<1000&&u.id>m?u.id:m;},1)+1;ME.color='#0E8C66';USERS.push(ME);}ME.username=dxDemoUsername(name);signupEnter(name,co?co.value.trim():'',ro&&ro.selectedIndex<ro.options.length-1?ro.value.trim():'');}
+function signupEnter(name,company,specialty){Object.assign(ME,{name:name,initials:dxInitials(name),company:company,headline:specialty,verified:false,role:'user',bio:'',web:'',phone:'',certs:'',location:'',avatar:null,openToWork:false,hiring:false,experience:[],education:[],skills:[],languages:[],connections:'0',followers:0,profileViews:'0'});var mine=USERS.find(function(u){return u.id===ME.id;});if(mine&&mine!==ME)Object.assign(mine,ME);document.getElementById('authWrap').style.display='none';document.getElementById('app').style.display='flex';goto('feed');updateTopUser();toast('Welcome to Drugbox, '+dxGreetName(name)+'!');}
 
 /* Enter in a sign-in field: ignored while the button is busy (the live app disables it during the request) or the key repeats */
 function authEnter(e,fn){if(e.key!=='Enter'||e.repeat)return;var p=e.target.closest('#loginPage,#signupPage'),b=p&&p.querySelector('button.f-btn');if(b&&b.disabled)return;fn();}
@@ -3242,7 +3258,7 @@ function profileForm(){
 function saveProfile(f){
   f=f&&f.name?f:profileForm();if(!f)return;
   ['name','headline','company','location','web','phone','certs','bio','openToWork'].forEach(function(k){ME[k]=f[k];});if(f.username)ME.username=f.username;
-  ME.initials=ME.name.split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
+  ME.initials=dxInitials(ME.name);
   var mine=USERS.find(function(u){return u.id===ME.id;});if(mine&&mine!==ME)Object.assign(mine,ME);
   document.querySelector('.modal-bg').remove();
   updateTopUser();
@@ -5579,8 +5595,11 @@ window.mxComplete = function (root) {
         if (at) hit = people.filter(function (p) { return p.user && R.key(p.user.username) === R.key(at); })[0];
         else {
           hit = people.filter(function (p) { return p.name.toLowerCase() === lc; })[0];
-          if (!hit) { var same = people.filter(function (p) { return p.person.toLowerCase() === lc; });
-            if (same.length > 1) { toEl.classList.add('dbk-err'); D.toast('Several members are called ' + to + ' — choose one from the list'); return false; }
+          if (!hit) { var same = people.filter(function (p) { return p.person.toLowerCase() === lc; }),
+              /* a bare text that can be a username is read as one too: it reaches a member only when everyone it fits is that member */
+              byU = R && /^[A-Za-z0-9.]{5,30}$/.test(to) ? people.filter(function (p) { return p.user && p.user.username && R.key(p.user.username) === R.key(to); }) : [];
+            byU.forEach(function (p) { if (same.indexOf(p) < 0 && !same.some(function (x) { return x.user && x.user === p.user; })) same.push(p); });
+            if (same.length > 1) { toEl.classList.add('dbk-err'); D.toast(byU.length && same.some(function (x) { return x.user !== byU[0].user; }) ? to + ' fits more than one member (a username and a name) — choose one from the list, or type @' + R.typed('@' + to) : 'Several members are called ' + to + ' — choose one from the list'); return false; }
             hit = same[0]; }
         }
         if (!hit) { toEl.classList.add('dbk-err'); D.toast('No member called ' + to + ' — choose someone from the list'); return false; }

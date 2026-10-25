@@ -194,6 +194,9 @@ def new_message_to_named_person(j):
             cancel()
             body = 'By username ' + j.tag; new_message('@omar.khaled', body)
             j.check('Omar' in head(pg) and any(body in m for m in mine(pg)), 'typing @omar.khaled did not send to Eng. Omar Khaled (header: %s)' % head(pg)[:60])
+            # s03-user2 (v-user1): a username typed WITHOUT its @ is read as a username too — and reaches its member only
+            body = 'Bare username ' + j.tag; new_message('omar.khaled', body)
+            j.check('Omar' in head(pg) and any(body in m for m in mine(pg)), 'typing omar.khaled (no @) did not send to Eng. Omar Khaled (header: %s)' % head(pg)[:60])
             said = new_message('@nobody.here', 'To nobody ' + j.tag)
             j.check(re.search(r'No member|لا يوجد', said), 'typing an @username nobody has is not refused with a clear message: %s' % said[:100]); cancel()
             pg.evaluate('gotoProfile(%d)' % demo_person(pg, 'Omar')); j.settle(pg, 700)
@@ -219,6 +222,8 @@ def new_message_to_named_person(j):
             raw = [v for v, _ in ol if ISO.sub('', v).startswith(tname)]
             j.check(all(('⁦@%s⁩' % u) in ''.join(raw) for u in (u1, u2)) and all(('⁨' + tco + '⁩') in v for v in raw), 'the @username (left to right) and the company are not isolated in the options: %s' % [ascii(v) for v in raw])
             j.check(not any(re.search(r'Same name|نفس الاسم|⚠', l) for _, l in ol), 'an option still warns «Same name» (names may be alike now): %s' % [l for _, l in ol][:3])
+            # s03-user2 (v-real1): only the members the text fits are offered — not every person loaded so far, each «≈ typed»
+            j.check(ol and all(ISO.sub('', v).startswith(tname) for v, _ in ol), 'the picker offers members the typed name does not fit: %s' % [ISO.sub('', v) for v, _ in ol if not ISO.sub('', v).startswith(tname)][:4])
             for v in raw:                        # each option reaches its own member
                 body = 'Twin option %s %s' % (ISO.sub('', v).split('@')[1].split(' ')[0], j.tag); new_message(v, body)
                 got = j.wait_db("select string_agg(receiver_id::text, ',') from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
@@ -235,6 +240,15 @@ def new_message_to_named_person(j):
             j.check(re.search(r'Several|أكثر من', said) and j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'typing a name two members share is not refused: %s' % said[:120]); cancel()
             body = 'Wrong pair %s' % j.tag; said = new_message('Dr. Someone Else %s · @%s' % (j.tag, u1), body)   # another name before an @username
             j.check(j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'a name that is not the member\'s, with their @username, was sent'); cancel()
+            # s03-user2 (v-user1): a username typed without its @ is read as a username too — «ziad.<tag>» reaches Ziad, never a member
+            # whose name is the last part; a text that is one member's username and another's name reaches nobody
+            zname = 'Ziad %s' % j.tag; zid = member(zname); zu = uname(zid); kid = member(j.tag)   # «<Tag>»: a one-word name
+            body = 'Bare username %s' % j.tag; said = new_message(zu, body)
+            got = j.wait_db("select string_agg(receiver_id::text, ',') from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
+            j.check(got == zid, 'typing «%s» (Ziad\'s username, no @) sent to %s, not to Ziad %s (the one-word «%s» is %s; toasts: %s)' % (zu, got or 'nobody', zid, j.tag, kid, said[:80])); cancel()
+            mix = 'mx' + j.tag.lower()[:12]; xa = member('Sara Mix %s' % j.tag); j.sql("update public.profiles set username = '%s' where id = '%s'" % (mix, xa)); xb = member('Mx' + j.tag[:12].lower())
+            body = 'Mixed fit %s' % j.tag; said = new_message(mix, body)
+            j.check(j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0' and re.search(r'more than one|أكثر من', said), 'a text that is one member\'s username and another\'s name was sent, or not explained: %s' % said[:140]); cancel()
             # a member nobody else is called: the bare name still reaches them
             sname, sco = 'Dr. Unique Single %s' % j.tag, 'Solo Pharma %s' % j.tag; s1 = member(sname, sco)
             body = 'Bare unique %s' % j.tag; new_message(sname, body)
