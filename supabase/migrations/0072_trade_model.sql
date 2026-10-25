@@ -372,7 +372,7 @@ begin
      or new.kind is distinct from old.kind or new.search_text is null then
     new := public.trade_compute(new);
   end if;
-  going_live := new.status = 'active' and (tg_op = 'INSERT' or old.status in ('draft', 'closed'));
+  going_live := new.status = 'active' and (tg_op = 'INSERT' or old.status in ('draft', 'closed') or old.published_at is null);   -- never published (a draft paused, then resumed): the checks still apply
   if going_live then
     miss := public.trade_missing(new.kind, new.attrs, new.id, new.name);
     if miss is not null then raise exception 'Add % before publishing', miss using errcode = '22023'; end if;

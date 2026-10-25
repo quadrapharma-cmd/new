@@ -120,7 +120,7 @@ revoke all on function public.trade_saved_search_run(bigint) from public, anon, 
 create or replace function public.products_trade_live() returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if new.status <> 'active' then return null; end if;
-  if tg_op = 'UPDATE' and old.status not in ('draft') then return null; end if;      -- a resumed or renewed listing: not again
+  if tg_op = 'UPDATE' and old.status not in ('draft') and old.published_at is not null then return null; end if;      -- a resumed or renewed listing: not again (one never published: now)
   update public.products set published_at = coalesce(published_at, now()) where id = new.id and published_at is null;
   perform public.trade_match_run(new.id);
   perform public.trade_saved_search_run(new.id);

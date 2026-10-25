@@ -63,6 +63,8 @@ select pg_temp.ok('unknown fields are dropped, known ones kept in their type', $
 select pg_temp.no('publishing a stock listing without items is refused', $$update public.products set status = 'active' where id = pg_temp.id('p1')$$, '22023');
 select pg_temp.no('an item without a quantity cannot be published either', $$
   insert into public.listing_lines (listing_id, name) values (pg_temp.id('p1'), 'TX empty'); update public.products set status = 'active' where id = pg_temp.id('p1')$$, '22023');
+select pg_temp.no('…nor through paused (draft → paused → active)', $$update public.products set status = 'paused' where id = pg_temp.id('p1'); update public.products set status = 'active' where id = pg_temp.id('p1')$$, '22023');
+select pg_temp.step('back to draft', $$update public.products set status = 'draft' where id = pg_temp.id('p1')$$);
 select pg_temp.step('remove it again', $$delete from public.listing_lines where listing_id = pg_temp.id('p1')$$);
 select pg_temp.no('an item''s key is the database''s (no column grant)', $$insert into public.listing_lines (listing_id, name, qty, unit, item_key) values (pg_temp.id('p1'), 'TX x', 1, 'box', 'forged')$$, '42501');
 select pg_temp.no('an unknown unit is refused', $$insert into public.listing_lines (listing_id, name, qty, unit) values (pg_temp.id('p1'), 'TX x', 1, 'barrel')$$, '23514');
