@@ -4577,4 +4577,89 @@
     openListing: function (l) { window.goto('market'); var si = document.getElementById('searchIn'); if (si) { si.value = l.title; if (window.__mkxFilter) window.__mkxFilter(l.title); } }
   });
   /* ===== /AREA merge ===== */
+  /* ===== AREA w-growth: official channels, therapeutic filters, signed-out company pages — the internals web/src/live/growth.js needs =====
+     1. a channel card says it is official (groups.official, 0100) and its posts read as Drugbox (posts.as_drugbox) — groups.js draws them;
+        a channel's notice names no member ("Drugbox posted in …"); the expert-session notices (0102) open Ask an expert
+     2. the therapeutic filter: Home asks for the posts about an area (posts.thera, the GIN index), the Marketplace market_search_thera()
+        (market_search's twin with one more condition — keep the two in step)
+     3. a signed-out visitor (the owner's decision 1): the directory and company pages through the public_* functions of 0103 (anon) —
+        no phone, e-mail, team, contacts or anything private; contacting needs sign-in (growth.js asks) */
+  var groupCardGW = groupCard;
+  groupCard = function (g) { var c = groupCardGW.apply(this, arguments); if (g && g.official) { c.dataset.official = '1'; c.dataset.post = 'admins'; } else delete c.dataset.official; return c; };
+  var gpPostGW = gpPost;
+  gpPost = function (r) { var p = gpPostGW.apply(this, arguments); if (r && r.as_drugbox) { p.drugbox = true; p.own = false; } p.thera = (r && r.thera) || []; return p; };
+  var notifFromGW = notifFrom;
+  notifFrom = function (n) {
+    var o = notifFromGW(n), d = n.data && typeof n.data === 'object' ? n.data : {};
+    if (n.type === 'group_post' && d.drugbox) { o.text = '<b>Drugbox</b> ' + esc2(n.message || ''); o.uid = SYS_UID; o.icon = '📣'; }
+    if (/^expert_(session|reminder|answer)$/.test(n.type)) { o.text = esc2(n.message || ''); o.uid = SYS_UID; o.icon = '🎤'; o.rawType = n.type; }
+    return o;
+  };
+  var markReadGW = window.markNotifRead;
+  window.markNotifRead = function (id) {
+    var n = (window.NOTIFS || []).find(function (x) { return x.id === id; }), r = markReadGW.apply(this, arguments);
+    if (n && /^expert_/.test(n.rawType || '')) { window.goto('training'); setTimeout(function () { if (window.dxGrowthUI && window.dxGrowthUI.openExperts) window.dxGrowthUI.openExperts(true); }, 400); }
+    return r;
+  };
+  /* Home: the posts about one area (newest first, a page at a time — the same card and state as the feed) */
+  async function feedThera(tag) {
+    var r = await sb.from('posts').select(POST_SEL).is('group_id', null).contains('thera', [tag]).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
+    if (r.error) throw r.error; var rows = r.data || [], ps = await postState(rows.map(function (x) { return x.id; }));
+    rows.forEach(function (x) { putUser(x.author); });
+    var list = rows.map(function (x) { return postFrom(x, ps.mine, ps.saved, ps.kinds); });
+    list.forEach(function (p) { if (!window.POSTS.some(function (x) { return x.id === p.id; })) window.POSTS.push(p); });
+    return list;
+  }
+  /* Marketplace: with an area chosen, the supply and requests come from market_search_thera (paging and counts as before) */
+  var MKTH = { tag: '' }, searchPageGW = searchPage;
+  searchPage = async function (type, off) {
+    if (!MKTH.tag) return searchPageGW.apply(this, arguments);
+    var r = await sb.rpc('market_search_thera', { p_tag: MKTH.tag, p_type: type, p_limit: MK2.page, p_offset: off || 0 }); if (r.error) throw r.error; return r.data || { total: 0, rows: [] };
+  };
+  async function marketThera(tag) { MKTH.tag = tag || ''; await loadMarket(); if (onPageNow('market')) paintMarket(); }
+  /* the visitor: public_* instead of the members' calls, the directory loaded without a session */
+  var GUEST = { on: false, out: null }, rpcGW = sb.rpc.bind(sb);
+  var PUB = { directory_companies_page: 'public_directory_page', company_sites_public: 'public_company_sites', company_certs_public: 'public_company_certs' };
+  sb.rpc = function (name, args, o) { if (GUEST.on && !ME_UUID && PUB[name]) name = PUB[name]; return rpcGW(name, args, o); };
+  sb.auth.getSession().then(function (r) { GUEST.out = !(r.data && r.data.session); });
+  sb.auth.onAuthStateChange(function (ev, s) { GUEST.out = !s; if (s && GUEST.on && window.dxGrowthUI) window.dxGrowthUI.leaveGuest(false); });
+  var sitesForGW = sitesFor;
+  sitesFor = function (rows) {
+    if (ME_UUID || !GUEST.on) return sitesForGW.apply(this, arguments);
+    var want = rows.filter(function (c) { return c && c.id && okSlug(c.slug); }); if (!want.length) return;
+    var slugOf = {}; want.forEach(function (c) { slugOf[c.id] = c.slug; });
+    rpcGW('public_sites_for', { p_ids: want.map(function (c) { return c.id; }) }).then(function (r) {
+      if (r.error || ME_UUID) return; var by = {}; want.forEach(function (c) { by[c.slug] = []; });
+      (r.data || []).forEach(function (x) { var sl = slugOf[x.company_id]; if (sl) by[sl].push(siteFrom(x)); });
+      window.dxLiveSites = window.dxLiveSites || {}; var now = Date.now(); Object.keys(by).forEach(function (sl) { window.dxLiveSites[sl] = by[sl]; CO.sitesAt[sl] = now; });
+      window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; redrawDir();
+    });
+  };
+  var pageDataGW = pageData;
+  pageData = function (slug, ws) {
+    if (ME_UUID || !GUEST.on) return pageDataGW.apply(this, arguments);
+    if (!slug || ws) return;
+    var raw = CO.raw[slug], need = !raw || !raw.id || !raw.__pub;
+    Promise.resolve(need ? rpcGW('public_company', { p_slug: slug }) : null).then(function (r) {
+      if (r && !r.error && r.data) { var row = r.data, prods = row.products || []; row.__pub = 1; row.products = prods.map(function (p) { return { name: p.name, ingredient: p.active_ingredient, ingredient_ar: p.active_ingredient_ar, form: p.dosage_form, strength: p.strength, role: p.role }; });
+        addRows([row], false); var rw = CO.raw[slug]; if (rw) { rw.__pub = 1; rw.products = prods.map(prodRow); var l = live(slug); if (l) l.products = rw.products.map(prodFrom); } }
+      return loadSites(slug);
+    }).then(function () { CO.track[slug] = CO.track[slug] || {}; window.__dxStoreVer = (window.__dxStoreVer || 0) + 1; var S = window.dxDir && window.dxDir.S; if (S && S.open === slug) rerenderCompanies(); }).catch(toastErr);
+  };
+  function guest(on) {
+    GUEST.on = !!on; if (!on) return;
+    loadDirPage('', true).catch(toastErr);
+  }
+  document.addEventListener('input', function (e) {   /* a visitor's search asks the database too */
+    if (ME_UUID || !GUEST.on || !e.target || e.target.id !== 'hbQ') return; clearTimeout(DIRQ);
+    DIRQ = setTimeout(function () { var k = curKey(); if (k && !freshSeq(k)) loadDirPage(k, true).catch(toastErr); }, 350);
+  }, true);
+  document.addEventListener('click', function (e) {
+    if (ME_UUID || !GUEST.on || !e.target.closest || !e.target.closest('#dxDir.hub [data-hmore]')) return;
+    var k = curKey(), s = CO.seq[k]; if (s && s.off && s.more) loadDirPage(k).catch(toastErr);
+  }, true);
+  var openedMissingGW = openedMissing;
+  openedMissing = function () { if (ME_UUID || !GUEST.on) return openedMissingGW.apply(this, arguments); var S = window.dxDir && window.dxDir.S; if (S && S.open && !CO.raw[S.open]) pageData(S.open, false); };
+  window.dxLive.gw = { feedThera: feedThera, marketThera: marketThera, guest: guest, signedOut: function () { return GUEST.out === true; }, get me() { return ME_UUID; } };
+  /* ===== /AREA w-growth ===== */
 })();

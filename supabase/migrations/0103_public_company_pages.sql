@@ -62,6 +62,7 @@ grant execute on function public.public_company_certs(text) to anon, authenticat
 create or replace function public.public_sites_for(p_ids bigint[]) returns jsonb
 language sql stable security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'company_id', s.company_id, 'name', s.name, 'type', s.type, 'city', s.city, 'governorate', s.governorate,
+           'dosage_forms', s.dosage_forms, 'min_batch', s.min_batch, 'capacity', s.capacity, 'free_slots', s.free_slots,
            'certs', (select coalesce(jsonb_agg(jsonb_build_object('name', t.name, 'expiry', t.expiry, 'source', t.source, 'checked_at', t.checked_at) order by t.name), '[]'::jsonb)
                      from public.site_certificates t where t.site_id = s.id and t.company_id = s.company_id)) order by s.id), '[]'::jsonb)
     from public.company_sites s join public.companies c on c.id = s.company_id
