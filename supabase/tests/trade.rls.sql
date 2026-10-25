@@ -96,6 +96,9 @@ select pg_temp.step('…its owner posts as himself', $$insert into public.produc
 select pg_temp.no('verifier F1-A: a draft as the unverified company, paused then resumed, is refused', $$
   insert into public.products (user_id, name, kind, status, company_id, attrs) values ('f4444444-4444-4444-4444-444444444444', 'TX F1 toll', 'toll', 'draft', pg_temp.id('uco'), '{"forms":["tab"],"min_batch":"1","lead_time":"1","gmp":"no"}');
   update public.products set status = 'paused' where name = 'TX F1 toll'; update public.products set status = 'active' where name = 'TX F1 toll'$$, '42501');
+select pg_temp.no('verifier round 2 V1: a draft as the unverified company made live by setting only `active` is refused', $$
+  insert into public.products (user_id, name, kind, status, company_id, attrs) values ('f4444444-4444-4444-4444-444444444444', 'TX V1 toll', 'toll', 'draft', pg_temp.id('uco'), '{"forms":["tab"],"min_batch":"1","lead_time":"1","gmp":"no"}');
+  update public.products set active = true where name = 'TX V1 toll'$$, '42501');
 select pg_temp.no('verifier F1-B: published as himself, paused, moved to the unverified company, resumed — refused', $$
   update public.products set status = 'paused' where name = 'TX unverified offer'; update public.products set company_id = pg_temp.id('uco') where name = 'TX unverified offer';
   update public.products set status = 'active' where name = 'TX unverified offer'$$, '42501');
@@ -266,6 +269,21 @@ select pg_temp.no('…the private box stays closed to him', $$select public.list
 select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
 select pg_temp.ok('…and he is not offered as a buyer of the file', $$not (public.listing_counterparts(pg_temp.id('file')) @> '[{"id":"f3333333-3333-3333-3333-333333333333"}]'::jsonb)$$);
 
+-- verifier round 2 F2b: a file request whose lines name ANOTHER listing of the same company does not open that listing's box
+select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
+select pg_temp.step('a second file of the seller''s company, with its own private number', $$
+  with x as (insert into public.products (user_id, name, kind, company_id, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX Valuable file', 'file_sale', pg_temp.id('sco'),
+    '{"authority":"eda","reg_type":"human","stage":"final"}') returning id) insert into ids select 'file2', id::text from x;
+  insert into public.listing_private (listing_id, notif_no) values (pg_temp.id('file2'), 'TX-SECRET-2')$$);
+select pg_temp.as_user('f2222222-2222-2222-2222-222222222222');
+select pg_temp.step('the buyer sends a hand-made file request titled like the first file but naming the second', $$
+  insert into ids select 'mref', (public.deal_create('dossier', pg_temp.txt('sslug'), pg_temp.txt('bslug'), 'TX Paracetamol file', jsonb_build_object('product', 'TX Paracetamol file', 'listing_id', pg_temp.id('file2')))).ref$$);
+select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
+select pg_temp.step('the seller''s team signs and shares, believing it is the first file', $$select public.deal_act(pg_temp.txt('mref'), 'sign_nda'); select public.deal_act(pg_temp.txt('mref'), 'share', '{"note":"x"}')$$);
+select pg_temp.as_user('f2222222-2222-2222-2222-222222222222');
+select pg_temp.step('the buyer agrees', $$select public.deal_act(pg_temp.txt('mref'), 'agree', '{"checklist":{"notif_seen":true,"stage_understood":true,"price_increase_checked":true,"transfer_needs_approval":true,"docs_reviewed":true}}')$$);
+select pg_temp.no('…the second file''s box stays closed (only a deal the database opened for that listing counts)', $$select public.listing_private_get(pg_temp.id('file2'))$$, '42501');
+
 -- ══ «اتفقنا» on a file deal needs the checklist ══
 select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
 select pg_temp.step('the owner signs the NDA and shares', $$select public.deal_act(pg_temp.txt('dref'), 'sign_nda'); select public.deal_act(pg_temp.txt('dref'), 'share', '{"note":"TX data room"}')$$);
@@ -316,7 +334,7 @@ select pg_temp.ok('…both spellings reach it', $$public.trade_key('Centrum') = 
 -- ══ signed out ══
 select pg_temp.as_anon();
 select pg_temp.no('anon cannot search the marketplace', $$select public.market_search('بنادول')$$, '42501');
-select pg_temp.ok('anon reads no items, matches, outcomes, private boxes or profiles', $$(select count(*) from public.listing_lines) + (select count(*) from public.trade_matches) + (select count(*) from public.trade_outcomes)
+select pg_temp.ok('anon reads no items, matches, outcomes, private boxes or profiles', $$(select count(*) from public.listing_lines) + (select count(*) from public.trade_matches) + (select count(*) from public.trade_outcomes) + (select count(*) from public.listing_deals)
   + (select count(*) from public.listing_private) + (select count(*) from public.distributor_profiles) + (select count(*) from public.trade_terms) = 0$$);
 select pg_temp.no('anon cannot ask a price', $$select public.listing_price_ask(1)$$, '42501');
 select pg_temp.no('anon cannot reach the review queue', $$select public.listing_docs_queue()$$, '42501');

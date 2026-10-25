@@ -372,6 +372,12 @@ begin
      or new.kind is distinct from old.kind or new.search_text is null then
     new := public.trade_compute(new);
   end if;
+  -- the owner's rule, checked once status and active are settled (a browser that sets only `active` reaches here too)
+  if not public.is_server_call() and new.company_id is not null and new.status in ('active', 'reserved')
+     and (tg_op = 'INSERT' or new.company_id is distinct from old.company_id or old.status not in ('active', 'reserved'))
+     and not exists (select 1 from public.companies c where c.id = new.company_id and c.status = 'verified') then
+    raise exception 'Your company page needs the Drugbox verification badge before it posts offers as the company — post as yourself, or ask for verification' using errcode = '42501';
+  end if;
   going_live := new.status = 'active' and (tg_op = 'INSERT' or old.status in ('draft', 'closed') or old.published_at is null);   -- never published (a draft paused, then resumed): the checks still apply
   if going_live then
     miss := public.trade_missing(new.kind, new.attrs, new.id, new.name);

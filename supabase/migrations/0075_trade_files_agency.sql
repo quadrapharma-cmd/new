@@ -96,9 +96,10 @@ begin
   owner_ := p.user_id = me;
   if not (owner_ or public.is_moderator()
           or exists (select 1 from public.listing_private_shares s where s.listing_id = p.id and s.user_id = me)
-          or exists (select 1 from public.deals d where d.lines ->> 'listing_id' = p.id::text and d.type = 'dossier' and d.status = 'agreed'   -- agreed WITH the listing's company
-                      and p.company_id is not null and d.to_company_id = p.company_id and d.from_company_id is not null and d.from_company_id <> p.company_id
-                      and public.is_company_member(d.from_company_id) and not public.is_company_member(p.company_id))) then
+          or exists (select 1 from public.listing_deals ld join public.deals d on d.id = ld.deal_id   -- a file deal the database opened for THIS listing, agreed with its company
+                      where ld.listing_id = p.id and d.type = 'dossier' and d.status = 'agreed'
+                        and p.company_id is not null and d.to_company_id = p.company_id and d.from_company_id is not null and d.from_company_id <> p.company_id
+                        and public.is_company_member(d.from_company_id) and not public.is_company_member(p.company_id))) then
     raise exception 'The owner has not shared these details with you' using errcode = '42501';
   end if;
   select * into b from public.listing_private where listing_id = p.id;
@@ -244,6 +245,7 @@ begin
           jsonb_build_object('product', p.name, 'listing_id', p.id, 'kind', p.kind, 'note', coalesce(note, '')), first,
           case when v_to = v_me.id then me else public.deal_receiver(v_to, t) end)
   returning * into d;
+  insert into public.listing_deals (deal_id, listing_id) values (d.id, p.id) on conflict do nothing;
   insert into public.deal_events (deal_id, side, action, note, actor) values (d.id, case when v_from = v_me.id then 'from' else 'to' end, case when v_from = v_me.id then first else 'answer_listing' end,
     coalesce(note, 'Answered the Marketplace listing: ' || p.name), me);
   insert into public.listing_inquiries (listing_id, user_id) values (p.id, me) on conflict do nothing;

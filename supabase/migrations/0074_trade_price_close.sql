@@ -19,6 +19,21 @@
 -- deals that name a listing (quotes on a request, price asks, recorded sales) are found by it
 create index if not exists idx_deals_listing on public.deals ((lines ->> 'listing_id')) where (lines ->> 'listing_id') is not null;
 
+-- the deals the database itself opened for a listing (a price request, a quote on a request, an answer to a structured listing,
+-- a recorded sale): the private box and the list of counterparts rely on these rows, never on a deal's lines written by a browser
+create table if not exists public.listing_deals (
+  deal_id    bigint primary key references public.deals(id) on delete cascade,
+  listing_id bigint not null references public.products(id) on delete cascade,
+  created_at timestamptz not null default now());
+create index if not exists idx_listing_deals_listing on public.listing_deals (listing_id);
+alter table public.listing_deals enable row level security;
+do $$ begin
+  create policy "listing deals: read through the functions only" on public.listing_deals for select to authenticated using (false);
+exception when duplicate_object then null; end $$;
+revoke all on public.listing_deals from public, anon, authenticated;
+grant select on public.listing_deals to anon, authenticated;   -- answers with nothing (policy false), never an error
+grant all on public.listing_deals to service_role;
+
 -- ── 1. ask the price ────
 create or replace function public.listing_price_ask(p_id bigint, p_line bigint default null, p_qty text default null, p_note text default null, p_from_slug text default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
@@ -56,6 +71,7 @@ begin
       d := public.deal_create('quote', v_to.slug, v_from.slug, left('Price request: ' || item, 200),
              jsonb_build_object('product', item, 'qty', coalesce(qty, ''), 'listing_id', p.id, 'line', l.id, 'price_ask', true),
              coalesce(note, 'Price request from the Marketplace'));
+      insert into public.listing_deals (deal_id, listing_id) values (d.id, p.id) on conflict do nothing;
       return jsonb_build_object('kind', 'deal', 'ref', d.ref);
     end if;
   end if;
@@ -99,6 +115,7 @@ begin
           jsonb_build_object('product', p.name, 'qty', coalesce(nullif(trim(p_qty), ''), p.moq, ''), 'listing_id', p.id),
           'quoted', jsonb_build_object('price', v_price, 'validity', '14 days', 'lead', coalesce(left(trim(p_lead), 60), ''), 'note', coalesce(left(trim(p_note), 500), '')), now(), me)
   returning * into d;
+  insert into public.listing_deals (deal_id, listing_id) values (d.id, p.id) on conflict do nothing;
   insert into public.deal_events (deal_id, side, action, note, actor) values (d.id, 'from', 'sent', 'Request posted in the Marketplace: ' || p.name, p.user_id);
   insert into public.deal_events (deal_id, side, action, note, actor, data)
   values (d.id, 'to', 'quote', 'Send quote: ' || v_price || coalesce(' · lead time ' || nullif(trim(p_lead), ''), '') || coalesce(' — ' || nullif(trim(p_note), ''), ''), me,
@@ -146,9 +163,8 @@ create or replace function public.listing_counterparts(p_id bigint) returns json
   with p as (select * from public.products where id = p_id and user_id = auth.uid()),
   ids as (
     select i.user_id as uid from public.listing_inquiries i, p where i.listing_id = p.id
-    union select coalesce(d.assignee, d.from_user) from public.deals d, p where d.lines ->> 'listing_id' = p.id::text and d.from_user = p.user_id      -- suppliers who quoted on my request
-    union select d.from_user from public.deals d, p where d.lines ->> 'listing_id' = p.id::text and d.from_user <> p.user_id
-                                                     and p.company_id is not null and d.to_company_id = p.company_id)                       -- buyers who asked the listing's company
+    union select coalesce(d.assignee, d.from_user) from public.listing_deals ld join public.deals d on d.id = ld.deal_id, p where ld.listing_id = p.id and d.from_user = p.user_id   -- suppliers who quoted on my request
+    union select d.from_user from public.listing_deals ld join public.deals d on d.id = ld.deal_id, p where ld.listing_id = p.id and d.from_user <> p.user_id)       -- members who asked or answered through a company
   select coalesce(jsonb_agg(jsonb_build_object('id', pr.id, 'name', pr.name, 'company', pr.company) order by pr.name), '[]')
     from ids join public.profiles pr on pr.id = ids.uid, p
    where ids.uid is not null and ids.uid <> p.user_id and pr.account_type is distinct from 'deleted'
@@ -233,6 +249,7 @@ begin
               jsonb_build_object('price', 'agreed in the Marketplace', 'validity', 'agreed', 'terms', ''), now(),
               case when o.listing_type = 'supply' then o.poster else me end, true)
       returning * into d;
+      insert into public.listing_deals (deal_id, listing_id) values (d.id, o.listing_id) on conflict do nothing;
       insert into public.deal_events (deal_id, side, action, note, actor) values
         (d.id, 'from', 'sent', 'Marketplace sale recorded: ' || o.listing_name, case when o.listing_type = 'supply' then me else o.poster end),
         (d.id, 'to', 'deliver', 'Sold through the Marketplace (confirmed by both sides)', case when o.listing_type = 'supply' then o.poster else me end);
