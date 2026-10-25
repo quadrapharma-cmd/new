@@ -26,3 +26,10 @@ Design: `docs/areas/w-trade-design.md`. Report (at the end): `docs/areas/w-trade
   not executable by the caller) — fixed the same hour.
 - Journeys J-BUSINESS-W01…W18 (business_trade.py): demo EN 1440 12/12, demo EN 390 12/12; live EN 1440 each passes on its own.
 - e2e: tests/e2e/w1_trade_text_test.py (gen_terms --check + norm parity) 2/2.
+
+## 25 Oct — finish
+- Independent verifier round 3: PASS (52723c6). Its three minor points were fixed in 267cb66.
+- Legacy suites: the mkx suites now pass 22/22 (sample trade cards now come after the approved cards) and deals passes 27/27.
+- The owner asked to remove every barrier at the start ("delete all"): migration 0076 (e57042d). After it, SQL 30/30 suites (trade.rls 111/111) and migration_check OK. Journeys W01, W05, W07 and W18 pass on demo and live.
+- Trade matrix after 0076: 11 of 12 pass on all five configs. W07 failed once in the matrix on live with no toast on the second post. It passes when run alone on every config, so this is likely load, not yet proven. The full sweep re-runs it.
+- The container restarted mid-sweep. The stack was restarted with stack.sh. The full journey sweep, 150 + W, and the crawler are re-running to /tmp/jfinal2.
