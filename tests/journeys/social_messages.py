@@ -198,50 +198,50 @@ def new_message_to_named_person(j):
             pg.evaluate('gotoProfile(%d)' % demo_person(pg, 'Omar')); j.settle(pg, 700)
             un = pg.evaluate("(()=>{const e=document.querySelector('#content .profile-username');return e?[e.innerText,getComputedStyle(e.querySelector('bdi')).direction]:null})()")
             j.check(un and un[0].strip() == '@omar.khaled' and un[1] == 'ltr', 'the profile does not say @omar.khaled under the name, left to right: %s' % un)
-            return
-        def member(name, company=None, city=None):   # a precondition: a member made by the sign-up trigger (handle_new_user)
-            meta = {'name': name}
-            if company: meta['company'] = company
-            uid = j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email('twin'), json.dumps(meta)))
-            if city: j.sql("update public.profiles set location = $q$%s$q$ where id = '%s'" % (city, uid))
-            return uid
-        uname = lambda uid: j.sql1("select username from public.profiles where id = '%s'" % uid)
-        # the identical twins: the same name AND company AND city — only their @username tells them apart
-        tname, tco, tcity = 'Dr. Lina Same %s' % j.tag, 'Twin Pharma %s' % j.tag, 'الإسكندرية'
-        t1, t2 = member(tname, tco, tcity), member(tname, tco, tcity)
-        u1, u2 = uname(t1), uname(t2); j.note('twin usernames', [u1, u2])
-        j.check(u1 and u2 and u1 != u2 and j.sql1("select count(distinct username_key) from public.profiles where id in ('%s','%s')" % (t1, t2)) == '2', 'the two members called %s do not have two usernames: %s' % (tname, [u1, u2]))
-        j.reload(pg); j.nav(pg, 'messages')
-        ol = picker(tname); vals = [ISO.sub('', v) for v, _ in ol if ISO.sub('', v).startswith(tname)]; j.note('twin options', vals); cancel()
-        want = sorted('%s · @%s · %s · %s' % (tname, u, tco, tcity) for u in (u1, u2))
-        j.check(sorted(vals) == want, 'the picker does not offer the two twins as «name · @username · company · city»: %s (want %s)' % (vals, want))
-        raw = [v for v, _ in ol if ISO.sub('', v).startswith(tname)]
-        j.check(all(('⁦@%s⁩' % u) in ''.join(raw) for u in (u1, u2)) and all(('⁨' + tco + '⁩') in v for v in raw), 'the @username (left to right) and the company are not isolated in the options: %s' % [ascii(v) for v in raw])
-        j.check(not any(re.search(r'Same name|نفس الاسم|⚠', l) for _, l in ol), 'an option still warns «Same name» (names may be alike now): %s' % [l for _, l in ol][:3])
-        for v in raw:                        # each option reaches its own member
-            body = 'Twin option %s %s' % (ISO.sub('', v).split('@')[1].split(' ')[0], j.tag); new_message(v, body)
-            got = j.wait_db("select string_agg(receiver_id::text, ',') from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
-            exp = t1 if ('@' + u1 + '⁩') in v else t2
-            j.check(got == exp, 'the option «%s» was stored for %s, not for the member whose @username it shows (%s)' % (ISO.sub('', v), got or 'nobody', exp))
-            hd = head(pg); j.note('twin header', ascii(hd))
-            j.check(('⁦@%s⁩' % uname(exp)) in hd and tco in hd and not re.search(r'Member since|عضو منذ|#[0-9a-f]{6}', hd), 'the chat header does not say the @username (isolated) and the company — or still says member since / #handle: %s' % ascii(hd[:160]))
-            cancel()
-        for typed, exp in (('@' + u2, t2), ('@' + u1.upper(), t1)):   # typing an exact @username (any case) sends to that member
-            body = 'Typed %s %s' % (typed, j.tag); said = new_message(typed, body)
-            got = j.wait_db("select string_agg(receiver_id::text, ',') from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
-            j.check(got == exp, 'typing «%s» sent to %s, not to %s (toasts: %s)' % (typed, got or 'nobody', exp, said[:80])); cancel()
-        body = 'Bare twin %s' % j.tag; said = new_message(tname, body)   # the bare shared name: nobody, pick one
-        j.check(re.search(r'Several|أكثر من', said) and j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'typing a name two members share is not refused: %s' % said[:120]); cancel()
-        body = 'Wrong pair %s' % j.tag; said = new_message('Dr. Someone Else %s · @%s' % (j.tag, u1), body)   # another name before an @username
-        j.check(j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'a name that is not the member\'s, with their @username, was sent'); cancel()
-        # a member nobody else is called: the bare name still reaches them
-        sname, sco = 'Dr. Unique Single %s' % j.tag, 'Solo Pharma %s' % j.tag; s1 = member(sname, sco)
-        body = 'Bare unique %s' % j.tag; new_message(sname, body)
-        j.check(j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8) == s1, 'the bare name of the one member called %s did not reach them' % sname); cancel()
-        # free-text facts can never draw an @username or the separator
-        fname = 'Dr. Fake Facts %s' % j.tag; f1 = member(fname, 'Pharco @%s · ✓' % u1, 'Cairo ＠%s' % u2)
-        ol = picker(fname); vals = [ISO.sub('', v) for v, _ in ol if ISO.sub('', v).startswith(fname)]; cancel(); j.note('fact options', vals)
-        j.check(len(vals) == 1 and vals[0].count('@') == 1 and vals[0].count(' · ') == 3 and '＠' not in vals[0], 'a company or city draws an @username or a separator in the option: %s' % vals)
+        else:
+            def member(name, company=None, city=None):   # a precondition: a member made by the sign-up trigger (handle_new_user)
+                meta = {'name': name}
+                if company: meta['company'] = company
+                uid = j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email('twin'), json.dumps(meta)))
+                if city: j.sql("update public.profiles set location = $q$%s$q$ where id = '%s'" % (city, uid))
+                return uid
+            uname = lambda uid: j.sql1("select username from public.profiles where id = '%s'" % uid)
+            # the identical twins: the same name AND company AND city — only their @username tells them apart
+            tname, tco, tcity = 'Dr. Lina Same %s' % j.tag, 'Twin Pharma %s' % j.tag, 'الإسكندرية'
+            t1, t2 = member(tname, tco, tcity), member(tname, tco, tcity)
+            u1, u2 = uname(t1), uname(t2); j.note('twin usernames', [u1, u2])
+            j.check(u1 and u2 and u1 != u2 and j.sql1("select count(distinct username_key) from public.profiles where id in ('%s','%s')" % (t1, t2)) == '2', 'the two members called %s do not have two usernames: %s' % (tname, [u1, u2]))
+            j.reload(pg); j.nav(pg, 'messages')
+            ol = picker(tname); vals = [ISO.sub('', v) for v, _ in ol if ISO.sub('', v).startswith(tname)]; j.note('twin options', vals); cancel()
+            want = sorted('%s · @%s · %s · %s' % (tname, u, tco, tcity) for u in (u1, u2))
+            j.check(sorted(vals) == want, 'the picker does not offer the two twins as «name · @username · company · city»: %s (want %s)' % (vals, want))
+            raw = [v for v, _ in ol if ISO.sub('', v).startswith(tname)]
+            j.check(all(('⁦@%s⁩' % u) in ''.join(raw) for u in (u1, u2)) and all(('⁨' + tco + '⁩') in v for v in raw), 'the @username (left to right) and the company are not isolated in the options: %s' % [ascii(v) for v in raw])
+            j.check(not any(re.search(r'Same name|نفس الاسم|⚠', l) for _, l in ol), 'an option still warns «Same name» (names may be alike now): %s' % [l for _, l in ol][:3])
+            for v in raw:                        # each option reaches its own member
+                body = 'Twin option %s %s' % (ISO.sub('', v).split('@')[1].split(' ')[0], j.tag); new_message(v, body)
+                got = j.wait_db("select string_agg(receiver_id::text, ',') from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
+                exp = t1 if ('@' + u1 + '⁩') in v else t2
+                j.check(got == exp, 'the option «%s» was stored for %s, not for the member whose @username it shows (%s)' % (ISO.sub('', v), got or 'nobody', exp))
+                hd = head(pg); j.note('twin header', ascii(hd))
+                j.check(('⁦@%s⁩' % uname(exp)) in hd and tco in hd and not re.search(r'Member since|عضو منذ|#[0-9a-f]{6}', hd), 'the chat header does not say the @username (isolated) and the company — or still says member since / #handle: %s' % ascii(hd[:160]))
+                cancel()
+            for typed, exp in (('@' + u2, t2), ('@' + u1.upper(), t1)):   # typing an exact @username (any case) sends to that member
+                body = 'Typed %s %s' % (typed, j.tag); said = new_message(typed, body)
+                got = j.wait_db("select string_agg(receiver_id::text, ',') from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8)
+                j.check(got == exp, 'typing «%s» sent to %s, not to %s (toasts: %s)' % (typed, got or 'nobody', exp, said[:80])); cancel()
+            body = 'Bare twin %s' % j.tag; said = new_message(tname, body)   # the bare shared name: nobody, pick one
+            j.check(re.search(r'Several|أكثر من', said) and j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'typing a name two members share is not refused: %s' % said[:120]); cancel()
+            body = 'Wrong pair %s' % j.tag; said = new_message('Dr. Someone Else %s · @%s' % (j.tag, u1), body)   # another name before an @username
+            j.check(j.sql1("select count(*) from public.messages where body=$q$%s$q$" % body) == '0', 'a name that is not the member\'s, with their @username, was sent'); cancel()
+            # a member nobody else is called: the bare name still reaches them
+            sname, sco = 'Dr. Unique Single %s' % j.tag, 'Solo Pharma %s' % j.tag; s1 = member(sname, sco)
+            body = 'Bare unique %s' % j.tag; new_message(sname, body)
+            j.check(j.wait_db("select receiver_id from public.messages where sender_id='%s' and body=$q$%s$q$" % (a['id'], body), 8) == s1, 'the bare name of the one member called %s did not reach them' % sname); cancel()
+            # free-text facts can never draw an @username or the separator
+            fname = 'Dr. Fake Facts %s' % j.tag; f1 = member(fname, 'Pharco @%s · ✓' % u1, 'Cairo ＠%s' % u2)
+            ol = picker(fname); vals = [ISO.sub('', v) for v, _ in ol if ISO.sub('', v).startswith(fname)]; cancel(); j.note('fact options', vals)
+            j.check(len(vals) == 1 and vals[0].count('@') == 1 and vals[0].count(' · ') == 3 and '＠' not in vals[0], 'a company or city draws an @username or a separator in the option: %s' % vals)
     with j.step('A username change shows everywhere: the twin changes it in Edit Profile (the field says whether it is free and why not — a '
                 'look-alike of a taken one is taken, a reserved word is refused, EN/AR), and A\'s picker, chat header and the profile say the new one; '
                 'the old one is held for its member (nobody else can take it for 30 days)'):
@@ -253,28 +253,50 @@ def new_message_to_named_person(j):
             f.fill('haytham.q' + j.tag.lower()[:6]); mep.wait_for_timeout(200)
             j.click(mep, r'^(Save Changes|حفظ التغييرات)$', scope='.modal-bg', what='Save Changes', exact=True); j.settle(mep, 600)
             j.check(('@haytham.q' + j.tag.lower()[:6]) in j.text(mep, '#content .profile-username'), 'the new username is not under the name on the profile: %s' % j.text(mep, '#content .profile-username'))
-            return
-        p2 = j.person('Dr. Mona Change %s' % j.tag); m2 = p2['id']; old = uname(m2); pp = p2['page']
-        goto_profile(j, pp, {'id': m2})
-        j.check(('@' + old) in j.text(pp, '#content .profile-username'), 'my profile does not say my @username under my name: %s' % j.text(pp, '#content .profile-username'))
-        j.click(pp, r'Edit Profile|تعديل الملف|عدّل الملف', scope='#content', what='Edit Profile')
-        f = pp.locator('#ep-user'); j.check(f.count(), 'Edit Profile has no Username field')
-        for typed, pat in (('@' + u1.replace('m', 'rn', 1) if 'm' in u1 else '@' + u1.replace('l', '1', 1), r'taken|مستخدم بالفعل'), ('drugbox.team', r'kept for Drugbox|محجوز لـ Drugbox'), ('ab', r'at least 5|5 أحرف')):
-            f.fill(typed); pp.wait_for_timeout(1300)
-            j.check(re.search(pat, j.text(pp, '#ep-user-st')), 'typing «%s» in Username does not say why it cannot be used: %s' % (typed, j.text(pp, '#ep-user-st')))
-        new = 'mona.new.' + j.tag.lower()[:8]
-        f.fill(new); pp.wait_for_timeout(1300)
-        j.check(re.search(r'available|متاح', j.text(pp, '#ep-user-st')), 'a free username is not said to be available: %s' % j.text(pp, '#ep-user-st'))
-        j.click(pp, r'^(Save Changes|حفظ التغييرات)$', scope='.modal-bg', what='Save Changes', exact=True); j.settle(pp, 1200)
-        j.check(uname(m2) == new and ('@' + new) in j.text(pp, '#content .profile-username'), 'the new username was not saved and shown (db %s, profile %s)' % (uname(m2), j.text(pp, '#content .profile-username')))
-        j.check(j.sql1("select count(*) from public.username_holds where profile_id = '%s' and username = '%s' and held_until > now() + interval '29 days'" % (m2, old)) == '1', 'the old username is not held for its member for 30 days')
-        j.sql("insert into public.messages (sender_id, receiver_id, body) values ('%s','%s','Changed my username %s')" % (m2, a['id'], j.tag))
-        j.reload(pg); j.nav(pg, 'messages'); open_thread(j, pg, 'Dr. Mona Change %s' % j.tag)
-        j.check(('@' + new) in head(pg) and ('@' + old) not in head(pg), 'A\'s chat header does not say the new username: %s' % ascii(head(pg)[:120]))
-        ol = picker('@' + new[:9]); vals = [ISO.sub('', v) for v, _ in ol]; cancel()
-        j.check(any(('@' + new) in v for v in vals) and not any(('@' + old + ' ') in v for v in vals), 'A\'s picker does not offer the new username: %s' % vals[:4])
-        goto_profile(j, pg, {'id': m2})
-        j.check(('@' + new) in j.text(pg, '#content .profile-username'), 'the profile A opens does not say the new username: %s' % j.text(pg, '#content .profile-username'))
+        else:
+            p2 = j.person('Dr. Mona Change %s' % j.tag); m2 = p2['id']; old = uname(m2); pp = p2['page']
+            goto_profile(j, pp, {'id': m2})
+            j.check(('@' + old) in j.text(pp, '#content .profile-username'), 'my profile does not say my @username under my name: %s' % j.text(pp, '#content .profile-username'))
+            j.click(pp, r'Edit Profile|تعديل الملف|عدّل الملف', scope='#content', what='Edit Profile')
+            f = pp.locator('#ep-user'); j.check(f.count(), 'Edit Profile has no Username field')
+            for typed, pat in (('@' + u1.replace('m', 'rn', 1) if 'm' in u1 else '@' + u1.replace('l', '1', 1), r'taken|مستخدم بالفعل'), ('drugbox.team', r'kept for Drugbox|محجوز لـ Drugbox'), ('ab', r'at least 5|5 أحرف')):
+                f.fill(typed); pp.wait_for_timeout(1300)
+                j.check(re.search(pat, j.text(pp, '#ep-user-st')), 'typing «%s» in Username does not say why it cannot be used: %s' % (typed, j.text(pp, '#ep-user-st')))
+            new = 'mona.new.' + j.tag.lower()[:8]
+            f.fill(new); pp.wait_for_timeout(1300)
+            j.check(re.search(r'available|متاح', j.text(pp, '#ep-user-st')), 'a free username is not said to be available: %s' % j.text(pp, '#ep-user-st'))
+            j.click(pp, r'^(Save Changes|حفظ التغييرات)$', scope='.modal-bg', what='Save Changes', exact=True); j.settle(pp, 1200)
+            j.check(uname(m2) == new and ('@' + new) in j.text(pp, '#content .profile-username'), 'the new username was not saved and shown (db %s, profile %s)' % (uname(m2), j.text(pp, '#content .profile-username')))
+            j.check(j.sql1("select count(*) from public.username_holds where profile_id = '%s' and username = '%s' and held_until > now() + interval '29 days'" % (m2, old)) == '1', 'the old username is not held for its member for 30 days')
+            j.sql("insert into public.messages (sender_id, receiver_id, body) values ('%s','%s','Changed my username %s')" % (m2, a['id'], j.tag))
+            j.reload(pg); j.nav(pg, 'messages'); open_thread(j, pg, 'Dr. Mona Change %s' % j.tag)
+            j.check(('@' + new) in head(pg) and ('@' + old) not in head(pg), 'A\'s chat header does not say the new username: %s' % ascii(head(pg)[:120]))
+            ol = picker('@' + new[:9]); vals = [ISO.sub('', v) for v, _ in ol]; cancel()
+            j.check(any(('@' + new) in v for v in vals) and not any(('@' + old + ' ') in v for v in vals), 'A\'s picker does not offer the new username: %s' % vals[:4])
+            goto_profile(j, pg, {'id': m2})
+            j.check(('@' + new) in j.text(pg, '#content .profile-username'), 'the profile A opens does not say the new username: %s' % j.text(pg, '#content .profile-username'))
+    with j.step('Two members with the same name write first: the list shows each conversation, the chat header says each one\'s '
+                '@username, and 👤 opens the one whose conversation is open (the profile view is counted on them, not the other)'):
+        if j.demo: j.skip('members with the same name exist only in live (the demo has one sample person per name)')
+        def writer(name, company):
+            return j.sql1("insert into auth.users (email, raw_user_meta_data) values ('%s', $m$%s$m$::jsonb) returning id" % (j.email('hoda'), json.dumps({'name': name, 'company': company})))
+        oname, oco = 'Dr. Hoda Twin %s' % j.tag, 'Alpha Pharma %s' % j.tag
+        o1, o2 = writer(oname, oco), writer(oname, oco)
+        n1, n2 = (j.sql1("select username from public.profiles where id='%s'" % o) for o in (o1, o2))
+        for o, w in ((o1, 'one'), (o2, 'two')):
+            j.sql("insert into public.messages (sender_id, receiver_id, body) values ('%s','%s','Hoda %s writes first %s')" % (o, a['id'], w, j.tag))
+        j.reload(pg); j.nav(pg, 'messages'); to_list(j, pg)
+        rows = [t for t in threads(pg) if oname in t['text']]; j.note('same-name threads', [t['text'] for t in rows])
+        j.check(len(rows) == 2, 'the two conversations with members called %s are not both in the list: %s' % (oname, [t['text'] for t in rows]))
+        t = pg.locator('#threadList .mx-thread', has_text='Hoda one writes first'); j.check(t.count() == 1, 'no conversation that reads «Hoda one writes first»'); t.first.click(); j.settle(pg, 900)
+        j.check(('@' + n1) in head(pg) and ('@' + n2) not in head(pg), "the chat header of the first Dr. Hoda does not say her @username %s: %s" % (n1, ascii(head(pg)[:120])))
+        v1, v2 = (j.sql1("select profile_views from public.profiles where id='%s'" % o) for o in (o1, o2))
+        el = j.find(pg, r'^👤$', scope='#content .chat-head', exact=True); j.check(el, 'no 👤 in the conversation header')
+        el.click(); j.settle(pg, 1500)
+        j.check(pg.evaluate("document.body.getAttribute('data-page')") == 'profile' and ('@' + n1) in j.text(pg, '#content .profile-username'),
+                "👤 in the first Dr. Hoda's conversation did not open her profile (says %s)" % j.text(pg, '#content .profile-username'))
+        j.check(j.wait_db("select profile_views - %s from public.profiles where id='%s'" % (v1, o1), 6) == '1' and j.sql1("select profile_views from public.profiles where id='%s'" % o2) == v2,
+                'the profile view was not counted on the member whose conversation was open')
     with j.step("B receives it; C's thread is unchanged"):
         if j.demo: j.skip('the other party exists only in live')
         pb = b['page']; j.reload(pb); j.nav(pb, 'messages'); open_thread(j, pb, 'Aya')
