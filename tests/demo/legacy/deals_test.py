@@ -104,6 +104,8 @@ with sync_playwright() as p:
     dz=pg.evaluate(f"{DL}.all()[0]"); pg.evaluate(f"{DL}.thread('{dz['id']}')"); pg.wait_for_timeout(250); pg.click('.dbk-ov .dl-sim'); pg.wait_for_timeout(300); pg.click('.dbk-ov .dl-sim'); pg.wait_for_timeout(300)
     T('dossier: NDA signed → details shared', pg.evaluate(f"{DL}.get('{dz['id']}').status")=='shared')
     pg.click('.dbk-ov [data-act=agree]'); pg.wait_for_timeout(300)
+    if pg.locator('.dbk-ov [data-ck]').count():   # W-18: the checklist before agreeing a file deal
+        pg.locator('.dbk-ov [data-ck]').evaluate_all("xs=>xs.forEach(x=>x.checked=true)"); pg.locator('.dbk-ov [data-a=ok]').last.click(); pg.wait_for_timeout(300)
     T('…→ terms agreed', pg.evaluate(f"{DL}.get('{dz['id']}').status")=='agreed')
     pg.keyboard.press('Escape')
     # ── deals centre

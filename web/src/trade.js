@@ -486,8 +486,9 @@
     mk.querySelectorAll('[data-trade-id]').forEach(function (x) { x.remove(); });
     svc().rows().then(function (rows) {
       rows.slice().reverse().forEach(function (L) { var c = demoCard(L); if (!c) return; var K = KIND[L.kind];
-        if (K.side === 'demand' && dgrid) { var at = dgrid.querySelector('.db-sub'); if (at) at.insertAdjacentElement('afterend', c); else dgrid.insertBefore(c, dgrid.firstChild); }
-        else if (grid) grid.insertBefore(c, grid.firstChild); });
+        var g = K.side === 'demand' && dgrid ? dgrid : grid; if (!g) return;   /* the member's own trade cards on top; sample cards after the approved cards, so the approved order stays */
+        var ap = L.mine ? [] : g.querySelectorAll(':scope > :is(.lcard, .dcard, .scard, .sponsored-card):not([data-trade-id])'), at = ap.length ? ap[ap.length - 1] : g.querySelector(':scope > .db-sub');
+        if (at) at.insertAdjacentElement('afterend', c); else g.insertBefore(c, g.firstChild); });
       if (window.updateLiveCount) try { window.updateLiveCount(); } catch (e) {}
       if (window.dxMarket && window.dxMarket.sync) window.dxMarket.sync();
     });
