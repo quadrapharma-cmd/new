@@ -274,7 +274,7 @@ def new_message_to_named_person(j):
             j.check(('@' + old) in j.text(pp, '#content .profile-username'), 'my profile does not say my @username under my name: %s' % j.text(pp, '#content .profile-username'))
             j.click(pp, r'Edit Profile|تعديل الملف|عدّل الملف', scope='#content', what='Edit Profile')
             f = pp.locator('#ep-user'); j.check(f.count(), 'Edit Profile has no Username field')
-            for typed, pat in (('@' + u1.replace('m', 'rn', 1) if 'm' in u1 else '@' + u1.replace('l', '1', 1), r'taken|مستخدم بالفعل'), ('drugbox.team', r'kept for Drugbox|محجوز لـ Drugbox'), ('ab', r'at least 5|5 أحرف')):
+            for typed, pat in (('@' + u1.replace('m', 'rn', 1) if 'm' in u1 else '@' + u1.replace('l', '1', 1), r'reads like a username|يُقرأ مثل اسم مستخدم'), ('drugbox.team', r'kept for Drugbox|محجوز لـ Drugbox'), ('ab', r'at least 5|5 أحرف')):
                 f.fill(typed); pp.wait_for_timeout(1300)
                 j.check(re.search(pat, j.text(pp, '#ep-user-st')), 'typing «%s» in Username does not say why it cannot be used: %s' % (typed, j.text(pp, '#ep-user-st')))
             new = 'mona.new.' + j.tag.lower()[:8]
