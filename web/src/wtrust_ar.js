@@ -135,3 +135,23 @@
     [/^(.+) — (verified company|needs the Drugbox badge)$/, function (m) { return m[1] + ' — ' + (m[2] === 'verified company' ? 'شركة موثّقة' : 'محتاجة شارة Drugbox'); }]
   ]);
 })();
+/* ===== AREA w-trust: the live app's error sentences (adapter friendly(), sign-in / Resend / Forgot password) in Arabic too ===== */
+(function () {
+  if (!window.dxI18nExtend) return;
+  window.dxI18nExtend({
+    'Too many requests — please wait a moment and try again': 'طلبات كثيرة — انتظر دقيقة وحاول مرة أخرى',
+    'Connection problem — check your internet and try again': 'مشكلة في الاتصال — تأكد من الإنترنت وحاول مرة أخرى',
+    'Something went wrong — please try again': 'حصلت مشكلة — حاول مرة أخرى',
+    'This already exists': 'ده موجود بالفعل',
+    'This text is too long — please shorten it': 'النص طويل — اختصره من فضلك',
+    'Some of the values are not accepted — please check and try again': 'بعض القيم غير مقبولة — راجعها وحاول مرة أخرى',
+    'This is linked to other records and cannot be changed': 'ده مرتبط بسجلات تانية ومينفعش يتغيّر',
+    'Please check the values you entered': 'راجع القيم اللي كتبتها',
+    'Not found — or you are not allowed to change it': 'غير موجود — أو مش مسموح لك تغيّره',
+    'You are not allowed to do this': 'مش مسموح لك تعمل ده',
+    'This file type or size is not accepted': 'نوع الملف أو حجمه غير مقبول',
+    'Check your email to confirm your account, then sign in': 'افحص بريدك الإلكتروني لتأكيد حسابك، ثم سجّل الدخول',
+    'Could not send the email — please try again': 'تعذّر إرسال البريد — حاول مرة أخرى',
+    'Sent again — check your inbox': 'اتبعت تاني — افحص بريدك'
+  });
+})();

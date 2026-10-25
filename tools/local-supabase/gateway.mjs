@@ -20,6 +20,14 @@ const refresh = new Map(), sessions = new Map(), REUSE_MS = 10000;
 const MAIL = [], SITE = process.env.SITE_URL || `http://localhost:${PORT}/`;
 const CONFIRM = (process.env.CONFIRM_DOMAINS || 'confirm.test').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
 const needsConfirm = e => CONFIRM.some(d => e.endsWith('@' + d) || e.endsWith('.' + d));
+/* w-trust (launch review): Supabase sends at most one sign-up / reset / resend e-mail per address per minute (429 over_email_send_rate_limit,
+   "For security purposes, you can only request this after N seconds.") — the same answer whether the address is registered or not */
+const EMAIL_EVERY = +(process.env.AUTH_EMAIL_INTERVAL_SECONDS || 60) * 1000, LAST_AUTH_MAIL = new Map();
+function emailThrottled(res, email) {
+  const last = LAST_AUTH_MAIL.get(email) || 0, wait = Math.ceil((last + EMAIL_EVERY - Date.now()) / 1000);
+  if (wait > 0) { authErr(res, 429, `For security purposes, you can only request this after ${wait} seconds.`, { error_code: 'over_email_send_rate_limit' }); return true; }
+  LAST_AUTH_MAIL.set(email, Date.now()); return false;
+}
 const OTP = new Map(), OTP_MS = 3600 * 1000;                     // token → { uid, type, email, exp }
 function otp(uid, type, email) { for (const [k, v] of OTP) if ((v.uid === uid && v.type === type) || v.exp < Date.now()) OTP.delete(k);   // one live link per kind
   const t = crypto.randomBytes(20).toString('hex'); OTP.set(t, { uid, type, email, exp: Date.now() + OTP_MS }); return t; }
@@ -88,6 +96,7 @@ http.createServer(async (req, res) => {
       let r; try { r = await db.query("insert into auth.users (email, encrypted_password, raw_user_meta_data, email_confirmed_at) values ($1, crypt($2, gen_salt('bf', 10)), $3, " + (confirm ? 'null' : 'now()') + ") returning *", [email, pw, b.data || {}]); }
       catch (e) { return send(res, 500, { code: 500, error_code: 'unexpected_failure', msg: 'Database error saving new user' }); }
       if (confirm) { const u = r.rows[0], t = otp(u.id, 'signup', email);
+        LAST_AUTH_MAIL.set(email, Date.now());   /* the sign-up e-mail counts toward the minute too */
         mail(email, 'Confirm your signup', 'Follow this link to confirm your email: ' + verifyLink(t, 'signup', url.searchParams.get('redirect_to') || b.redirect_to), verifyLink(t, 'signup', url.searchParams.get('redirect_to') || b.redirect_to));
         return send(res, 200, userJson(u, { confirmation_sent_at: new Date().toISOString() })); }
       return send(res, 200, session(r.rows[0]));
@@ -140,6 +149,7 @@ http.createServer(async (req, res) => {
     if (url.pathname === '/auth/v1/recover' && req.method === 'POST') {
       const b = await readBody(req), email = String(b.email || '').trim().toLowerCase();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return authErr(res, 400, 'Unable to validate email address: invalid format', { error_code: 'validation_failed' });
+      if (emailThrottled(res, email)) return;   /* w-trust (launch review): one auth e-mail a minute per address, as Supabase — the same for a registered address or not */
       const r = await db.query('select * from auth.users where email=$1', [email]);
       if (r.rowCount) { const t = otp(r.rows[0].id, 'recovery', email), link = verifyLink(t, 'recovery', url.searchParams.get('redirect_to') || b.redirect_to);
         mail(email, 'Reset your password', 'Follow this link to reset the password for your user: ' + link, link); }
@@ -147,6 +157,7 @@ http.createServer(async (req, res) => {
     }
     if (url.pathname === '/auth/v1/resend' && req.method === 'POST') {
       const b = await readBody(req), email = String(b.email || '').trim().toLowerCase();
+      if (emailThrottled(res, email)) return;
       if (b.type === 'signup') { const r = await db.query('select * from auth.users where email=$1 and email_confirmed_at is null', [email]);
         if (r.rowCount) { const t = otp(r.rows[0].id, 'signup', email), link = verifyLink(t, 'signup', url.searchParams.get('redirect_to') || (b.options || {}).emailRedirectTo);
           mail(email, 'Confirm your signup', 'Follow this link to confirm your email: ' + link, link); } }

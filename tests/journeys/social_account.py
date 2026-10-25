@@ -115,7 +115,7 @@ def signup_with_confirmation(j):
         j.check(pg.is_visible('#suName'), 'the sign-up form did not open')
         pg.fill('#suName', 'Viviane Zhao'); pg.fill('#suEmail', email); pg.fill('#suPw', PW)
         if pg.locator('#suCompany').count(): pg.fill('#suCompany', 'Zhejiang API Co')
-        pg.click('#signupPage button.f-btn.dx-js-only'); pg.wait_for_timeout(1500)
+        pg.click('#signupPage button.f-btn.dx-js-only'); sent = time.time(); pg.wait_for_timeout(1500)
         j.check(not j.in_app(pg), 'the app opened before the email was confirmed')
     with j.step('A clear screen says a confirmation email went to the address, with a Resend button'):
         t = j.text(pg, '#signupPage')
@@ -131,7 +131,12 @@ def signup_with_confirmation(j):
         j.check(not j.in_app(pg), 'an unconfirmed account signed in')
         j.check(re.search(r'not confirmed|لم يتم تأكيد', t, re.I), 'signing in before confirming does not say the email is not confirmed: "%s"' % t[:200])
         j.check(not re.search(r'incorrect|invalid|غير صحيحة', t, re.I), 'signing in before confirming says the password is wrong')
-    with j.step('Resend: a second email arrives'):
+    with j.step('Resend at once: "wait a moment" (one e-mail a minute per address, as Supabase); after the minute a second email arrives'):
+        j.click(pg, r'Resend|إعادة إرسال', scope='#loginPage', what='Resend confirmation email'); pg.wait_for_timeout(1200)
+        t = j.text(pg, '#cfErr')
+        j.check(re.search(r'wait a moment|انتظر دقيقة', t) and not re.search(r'seconds|AuthApi|\{', t), 'Resend within the minute does not say to wait: "%s"' % t[:160])
+        j.check(len([m for m in mails(j, email) if re.search(r'Confirm your signup', m.get('subject', ''))]) == 1, 'Resend within the minute sent another e-mail')
+        pg.wait_for_timeout(int(max(0, sent + 61 - time.time()) * 1000))
         j.click(pg, r'Resend|إعادة إرسال', scope='#loginPage', what='Resend confirmation email')
         wait_mail(j, email, r'Confirm your signup', 2)
     with j.step('Open the link of the last email in the same browser: back on Drugbox, signed in as Vivian'):
