@@ -1,0 +1,158 @@
+# Trade words for search and matching (W-06): one line per canonical word — kind <TAB> canonical <TAB> variants separated by |
+# The database (0071 seed, generated) and the browser (web/src/trade_terms.js) are both written from this file by
+#   python3 tools/trade/gen_terms.py        (--check: exit 1 when either generated copy is out of date)
+# Variants are written as people write them; both sides normalise them the same way (trade_norm / dxTrade.norm):
+# lower case, أإآٱ→ا ة→ه ى→ي ؤ→و ئ→ي, no harakat or tatweel, Arabic-Indic digits → 0-9.
+# Kinds: form (dosage form) · unit (pack / quantity unit) · strength (a unit joined to the number before it: 500 mg → 500mg)
+#        market (trade words: never part of an item's key) · drug (a medicine name in Arabic and English) · cat (agency categories)
+# Not here on purpose (owner's item W-06): Franco-Arabic spellings, and «باتش» (a patch far more often than a batch in this trade).
+# Drugbox moderators add words in the database with trade_term_add(); add them here too so the demo and new builds know them.
+form	tab	tab|tabs|tablet|tablets|قرص|اقراص|أقراص|حبوب|حبه|حباية|كومبريم
+form	cap	cap|caps|capsule|capsules|كبسول|كبسوله|كبسولة|كبسولات
+form	syrup	syrup|syp|شراب|سيرب|سيروب
+form	susp	susp|suspension|معلق
+form	amp	amp|amps|ampoule|ampoules|ampule|inj|injection|injections|امبول|أمبول|امبولات|حقن|حقنه|حقنة
+form	vial	vial|vials|فيال|فيالات|فايل
+form	supp	supp|supps|suppository|suppositories|لبوس|لبوسات|اقماع
+form	cream	cream|creams|كريم|كريمات
+form	oint	oint|ointment|مرهم|مراهم
+form	gel	gel|جل|جيل
+form	drops	drops|drop|نقط|نقاط|قطره|قطرة|قطرات
+form	spray	spray|بخاخ|سبراي|اسبراي
+form	inhaler	inhaler|موسع|بخاخه
+form	sachet	sachet|sachets|ساشيه|اكياس|أكياس|كيس
+form	eff	eff|effervescent|فوار|فوارة
+form	patch	patch|patches|لزقه|لزقة|لزقات|لصقه|لصقة
+form	lotion	lotion|لوشن
+form	powder	powder|بودره|بودرة|مسحوق
+form	solution	solution|soln|محلول
+form	shampoo	shampoo|شامبو
+form	lozenge	lozenge|lozenges|استحلاب|اقراص استحلاب
+unit	box	box|boxes|bx|علبه|علبة|علب
+unit	strip	strip|strips|شريط|شرايط|شرائط
+unit	carton	carton|cartons|ctn|كرتونه|كرتونة|كراتين
+unit	pack	pack|packs|عبوه|عبوة|عبوات
+unit	piece	piece|pieces|pcs|pc|unit|units|قطعه|قطعة|حته|وحده|وحدة
+unit	bottle	bottle|bottles|زجاجه|زجاجة|ازازه|ازازة
+unit	tube	tube|tubes|انبوبه|انبوبة|تيوب
+unit	drum	drum|drums|برميل|براميل
+unit	bag	bag|bags|شيكاره|شيكارة|شكاير
+unit	kg	kg|kgs|kilo|كيلو|كجم|كيلوجرام
+unit	ton	ton|tons|mt|طن|اطنان
+strength	mg	mg|مجم|ملجم|مللجم|مليجرام|ملي جرام|ملغ|مج
+strength	mcg	mcg|ug|ميكروجرام|مكجم|ميكرو
+strength	g	g|gm|gram|جم|جرام|غرام
+strength	ml	ml|مل|ملل|مللي|ملي
+strength	iu	iu|وحده دوليه|وحدة دولية
+market	available	available|avail|متوفر|متوافر|متاح|موجود|عندي
+market	wanted	wanted|needed|required|مطلوب|مطلوبه|مطلوبة|محتاج|محتاجين
+market	exp	exp|expiry|expire|تاريخ|انتهاء|صلاحيه|صلاحية
+market	discount	discount|off|خصم|خصومات
+market	price	price|سعر|بسعر|السعر
+market	toll	toll|تول|تشغيل
+market	agency	agency|agent|توكيل|وكاله|وكالة
+market	distributor	distributor|distribution|موزع|موزعين|توزيع
+market	file	file|files|dossier|ملف|ملفات
+market	registration	registration|reg|تسجيل|مسجل
+market	credit	credit|اجل|آجل
+market	cash	cash|كاش|نقدي|نقدا
+market	imported	imported|import|مستورد|استيراد
+market	local	local|محلي|محليه|محلية
+market	cold	cold|fridge|ثلاجه|ثلاجة|تلاجه|تلاجة
+market	urgent	urgent|asap|مستعجل|ضروري|عاجل
+market	stock	stock|مخزون|ستوك|بضاعه|بضاعة
+market	company	company|co|شركه|شركة|شركات
+market	factory	factory|plant|مصنع|فابريكه|فابريكة
+market	list	list|قايمه|قايمة|قائمه|قائمة|ليسته|ليستة
+market	offer	offer|offers|عرض|عروض|اعلان|إعلان
+market	new	new|جديد|جديده|جديدة
+market	forte	forte|فورت|فورتي
+market	plus	plus|بلس
+market	and	and|with|for|of|in|the|و|مع|من|الى|على|عن|في|ب|ال
+drug	paracetamol	paracetamol|acetaminophen|باراسيتامول|براسيتامول|باراسيتامل
+drug	panadol	panadol|بنادول|بانادول
+drug	extra	extra|اكسترا|إكسترا|اكسترة
+drug	augmentin	augmentin|اوجمنتين|أوجمنتين|اوجمنتن
+drug	amoxicillin	amoxicillin|amoxycillin|اموكسيسيلين|أموكسيسيلين|اموكسيسلين
+drug	brufen	brufen|بروفين
+drug	ibuprofen	ibuprofen|ايبوبروفين|إيبوبروفين
+drug	cataflam	cataflam|كتافلام|كاتافلام
+drug	voltaren	voltaren|فولتارين|فولتارين
+drug	diclofenac	diclofenac|ديكلوفيناك
+drug	metformin	metformin|ميتفورمين
+drug	glucophage	glucophage|جلوكوفاج
+drug	concor	concor|كونكور
+drug	bisoprolol	bisoprolol|بيسوبرولول
+drug	amlodipine	amlodipine|املوديبين|أملوديبين
+drug	norvasc	norvasc|نورفاسك
+drug	atorvastatin	atorvastatin|اتورفاستاتين|أتورفاستاتين
+drug	lipitor	lipitor|ليبيتور
+drug	rosuvastatin	rosuvastatin|روزوفاستاتين
+drug	crestor	crestor|كريستور
+drug	omeprazole	omeprazole|اوميبرازول|أوميبرازول
+drug	esomeprazole	esomeprazole|ايزوميبرازول|إيزوميبرازول
+drug	nexium	nexium|نيكسيوم
+drug	pantoprazole	pantoprazole|بانتوبرازول
+drug	controloc	controloc|كونترولوك
+drug	ciprofloxacin	ciprofloxacin|سيبروفلوكساسين
+drug	ciprobay	ciprobay|سيبروباي
+drug	levofloxacin	levofloxacin|ليفوفلوكساسين
+drug	tavanic	tavanic|تافانيك
+drug	azithromycin	azithromycin|ازيثرومايسين|أزيثرومايسين|ازيثروميسين
+drug	zithromax	zithromax|زيثروماكس
+drug	ceftriaxone	ceftriaxone|سيفترياكسون
+drug	cefixime	cefixime|سيفيكسيم
+drug	cephalexin	cephalexin|cefalexin|سيفالكسين
+drug	metronidazole	metronidazole|ميترونيدازول
+drug	flagyl	flagyl|فلاجيل
+drug	fluconazole	fluconazole|فلوكونازول
+drug	loratadine	loratadine|لوراتادين
+drug	claritine	claritine|claritin|كلاريتين
+drug	cetirizine	cetirizine|سيتريزين
+drug	zyrtec	zyrtec|زيرتك
+drug	salbutamol	salbutamol|سالبيوتامول|سالبوتامول
+drug	ventolin	ventolin|فنتولين
+drug	montelukast	montelukast|مونتيلوكاست
+drug	singulair	singulair|سينجولير
+drug	losartan	losartan|لوسارتان
+drug	valsartan	valsartan|فالسارتان
+drug	diovan	diovan|ديوفان
+drug	captopril	captopril|كابتوبريل
+drug	furosemide	furosemide|فيوروسيميد|فوروسيميد
+drug	lasix	lasix|لازكس|لازيكس
+drug	clopidogrel	clopidogrel|كلوبيدوجريل
+drug	plavix	plavix|بلافكس
+drug	aspirin	aspirin|اسبرين|أسبرين
+drug	aspocid	aspocid|اسبوسيد
+drug	prednisolone	prednisolone|بريدنيزولون
+drug	dexamethasone	dexamethasone|ديكساميثازون
+drug	domperidone	domperidone|دومبيريدون
+drug	motilium	motilium|موتيليوم
+drug	buscopan	buscopan|بسكوبان|بوسكوبان
+drug	duspatalin	duspatalin|دسباتالين|دوسباتالين
+drug	gliclazide	gliclazide|جليكلازيد
+drug	diamicron	diamicron|دياميكرون
+drug	glimepiride	glimepiride|جليميبرايد
+drug	amaryl	amaryl|اماريل|أماريل
+drug	sitagliptin	sitagliptin|سيتاجليبتين
+drug	januvia	januvia|جانوفيا
+drug	famotidine	famotidine|فاموتيدين
+drug	antodine	antodine|انتودين|أنتودين
+drug	levothyroxine	levothyroxine|ليفوثيروكسين
+drug	eltroxin	eltroxin|التروكسين|إلتروكسين
+drug	insulin	insulin|انسولين|إنسولين
+drug	sildenafil	sildenafil|سيلدينافيل
+drug	ketofan	ketofan|كيتوفان
+drug	vitamin	vitamin|vit|فيتامين|فيتامينات
+drug	calcium	calcium|كالسيوم
+drug	zinc	zinc|زنك
+drug	iron	iron|ferrous|حديد
+drug	omega	omega|اوميجا|أوميجا
+cat	medicines	medicines|medicine|drugs|ادويه|أدوية|ادوية|دوا|دواء
+cat	supplements	supplements|supplement|nutraceuticals|مكملات|مكمل غذائي
+cat	cosmetics	cosmetics|cosmetic|derma|مستحضرات تجميل|تجميل|كوزمتكس
+cat	devices	devices|device|medical devices|مستلزمات|اجهزه طبيه|أجهزة طبية
+cat	veterinary	veterinary|vet|بيطري|ادويه بيطريه
+cat	herbal	herbal|herbs|اعشاب|أعشاب
+cat	baby	baby|babycare|اطفال|أطفال|رعايه اطفال
+cat	hospital	hospital|tenders|مستشفيات|مناقصات
