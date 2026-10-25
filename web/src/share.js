@@ -7,7 +7,8 @@
   function orig(el) { return el ? (window.dxOrigText ? window.dxOrigText(el) : el.textContent).replace(/\s+/g, ' ').trim() : ''; }
   /* a company's own address in this app (?co=<slug>): it opens the page — straight away when signed in, after signing in otherwise.
      (A company subdomain for VIP waits for the domain.) */
-  function pageUrl(co) { var base = location.protocol === 'file:' ? 'https://drugbox.app/' : String(location.href).split('#')[0].split('?')[0]; return base + '?co=' + encodeURIComponent(co.slug); }   /* the offline demo file has no web address: the app's own */
+  function pageUrl(co) { var base = location.protocol === 'file:' ? 'https://drugbox.app/' : String(location.href).split('#')[0].split('?')[0];
+    return location.protocol === 'file:' ? base + '?co=' + encodeURIComponent(co.slug) : base + 'c/' + encodeURIComponent(co.slug); }   /* AREA w-growth: the live address /c/<slug> carries the page's title and preview (deploy/share/company.js) */   /* the offline demo file has no web address: the app's own */
   var SHARE_IC = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" stroke="currentColor" stroke-width="2"/></svg>';
   /* ── the card image ── */
   var logoImg = null; function logo() { if (logoImg) return logoImg; try { if (typeof LOGO_ICON !== 'undefined') { logoImg = new Image(); logoImg.src = LOGO_ICON; } } catch (e) {} return logoImg; }

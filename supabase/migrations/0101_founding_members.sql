@@ -1,7 +1,7 @@
 -- ═════════════════════════════════════════════════════════════════════
 -- 0101 — Founding members (AREA w-growth: W-42, the owner's growth plan instead of fake members)
 --   Invite-only early access. A Drugbox admin makes an invitation for one segment of the trade; the code is long and random
---   (120 bits), shown ONCE to the admin and stored only as its SHA-256; it works once, until it expires or is revoked.
+--   (100 bits), shown ONCE to the admin and stored only as its SHA-256; it works once, until it expires or is revoked.
 --   Joining is the invitee's own choice: they open the link, sign in or sign up, and press Join (founder_redeem) — nobody is
 --   made a founder by anyone else. A founder gets the founder badge (founder_members, public) and 3 months of VIP for a
 --   company page they run (founder_apply_vip — once, within a year of joining; VIP is a company plan, 0018/0023).
@@ -47,8 +47,8 @@ create table if not exists public.founder_invites (
   created_at  timestamptz not null default now(),
   expires_at  timestamptz not null,
   revoked_at  timestamptz,
-  used_by     uuid unique references public.profiles(id) on delete set null,
-  used_at     timestamptz
+  used_by     uuid unique references public.profiles(id) on delete set null,   -- who used it (gone when the account is deleted)
+  used_at     timestamptz                                                        -- used, for good: an invitation never works twice
 );
 create index if not exists idx_founder_invites_segment on public.founder_invites (segment);
 create index if not exists idx_founder_invites_created_by on public.founder_invites (created_by) where created_by is not null;
@@ -99,7 +99,7 @@ grant execute on function private.founder_code_norm(text) to service_role;
 -- invitations still counting against a segment: used, or still usable (not revoked, not expired)
 create or replace function private.founder_taken(p_segment text) returns int language sql stable security definer set search_path = public as $$
   select count(*)::int from public.founder_invites i
-   where i.segment = p_segment and (i.used_by is not null or (i.revoked_at is null and i.expires_at > now()))
+   where i.segment = p_segment and (i.used_at is not null or (i.revoked_at is null and i.expires_at > now()))
 $$;
 revoke all on function private.founder_taken(text) from public, anon, authenticated, service_role;
 grant execute on function private.founder_taken(text) to service_role;
@@ -127,10 +127,10 @@ grant execute on function public.founder_invite_create(text, text, int) to authe
 
 create or replace function public.founder_invite_revoke(p_id bigint) returns void
 language plpgsql security definer set search_path = public as $$
-declare u uuid; r timestamptz;
+declare u timestamptz; r timestamptz;
 begin
   if not public.is_platform_admin() then raise exception 'Only a Drugbox admin revokes invitations' using errcode = '42501'; end if;
-  select used_by, revoked_at into u, r from public.founder_invites where id = p_id for update;
+  select used_at, revoked_at into u, r from public.founder_invites where id = p_id for update;
   if not found then raise exception 'This invitation is gone' using errcode = 'P0002'; end if;
   if u is not null then raise exception 'This invitation was already used' using errcode = '55000'; end if;
   if r is null then update public.founder_invites set revoked_at = now() where id = p_id; end if;
@@ -154,7 +154,7 @@ create or replace function public.founder_overview() returns table (key text, la
 language sql stable security definer set search_path = public as $$
   select s.key, s.label_en, s.label_ar, s.quota,
          (select count(*)::int from public.founder_members m where m.segment = s.key),
-         (select count(*)::int from public.founder_invites i where i.segment = s.key and i.used_by is null and i.revoked_at is null and i.expires_at > now()),
+         (select count(*)::int from public.founder_invites i where i.segment = s.key and i.used_at is null and i.revoked_at is null and i.expires_at > now()),
          s.sort
     from public.founder_segments s
    where public.is_platform_admin()
@@ -169,7 +169,7 @@ returns table (id bigint, code_hint text, segment text, note text, created_at ti
 language sql stable security definer set search_path = public as $$
   select i.id, i.code_hint, i.segment, i.note, i.created_at, i.expires_at, i.revoked_at, i.used_at,
          (select p.name from public.profiles p where p.id = i.used_by),
-         case when i.used_by is not null then 'used' when i.revoked_at is not null then 'revoked' when i.expires_at <= now() then 'expired' else 'open' end
+         case when i.used_at is not null then 'used' when i.revoked_at is not null then 'revoked' when i.expires_at <= now() then 'expired' else 'open' end
     from public.founder_invites i
    where public.is_platform_admin()
    order by i.created_at desc, i.id desc
@@ -189,7 +189,7 @@ begin
   select * into i from public.founder_invites where code_hash = digest(private.founder_code_norm(regexp_replace(coalesce(p_code, ''), '^\s*DBX[-\s]*', '', 'i')), 'sha256');
   if not found then insert into private.founder_attempts (user_id) values (me); return jsonb_build_object('state', 'unknown'); end if;
   select * into s from public.founder_segments where key = i.segment;
-  return jsonb_build_object('state', case when i.used_by = me then 'mine' when i.used_by is not null then 'used' when i.revoked_at is not null then 'revoked'
+  return jsonb_build_object('state', case when i.used_by = me then 'mine' when i.used_at is not null then 'used' when i.revoked_at is not null then 'revoked'
                                           when i.expires_at <= now() then 'expired' when exists (select 1 from public.founder_members m where m.user_id = me) then 'already' else 'open' end,
                             'segment', s.key, 'label_en', s.label_en, 'label_ar', s.label_ar, 'expires_at', i.expires_at);
 end $$;
@@ -210,7 +210,7 @@ begin
   if not found then                       -- recorded, so not raised (an error would roll the record of the try back)
     insert into private.founder_attempts (user_id) values (me); return jsonb_build_object('error', 'invalid'); end if;
   if i.used_by = me then raise exception 'You are already a founding member' using errcode = '55000'; end if;
-  if i.used_by is not null then raise exception 'This invitation was already used' using errcode = '55000'; end if;
+  if i.used_at is not null then raise exception 'This invitation was already used' using errcode = '55000'; end if;
   if i.revoked_at is not null then raise exception 'This invitation was withdrawn by Drugbox' using errcode = '55000'; end if;
   if i.expires_at <= now() then raise exception 'This invitation has expired — ask Drugbox for a new one' using errcode = '55000'; end if;
   if exists (select 1 from public.founder_members m where m.user_id = me) then raise exception 'You are already a founding member' using errcode = '55000'; end if;

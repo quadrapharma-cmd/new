@@ -222,6 +222,23 @@ select pg_temp.ok('O (another headline) is never asked', $$not public.specialty_
 select pg_temp.as_anon();
 select pg_temp.no('anon is not asked', $$select public.specialty_prompt_due()$$, '42501');
 
+-- ══ 5. verifier round 1 ══════════════════════════════════════════════════════════════════════
+select pg_temp.as_server();
+select pg_temp.ok('a visitor gets no address, location or website', $$not (public.public_company('gm-founder-pharma') ?| array['location', 'website', 'source']) and coalesce(public.public_company('gm-founder-pharma') -> 'profile' ->> 'address', '') = ''$$);
+select pg_temp.A();
+select pg_temp.step('Drugbox schedules a session with no expert member, in 3 days', $$insert into ids values ('s2', public.expert_session_save(null, 'pricing', 'GM Pricing session', null, null, 'GM Dr. Price', null, to_char((now() at time zone 'Africa/Cairo')::date + 3, 'YYYY-MM-DD') || ' 20:00', 60, 10, 'https://meet.example.test/gm-pricing')::text)$$);
+select pg_temp.no('… its time cannot be moved into the past', $$select public.expert_session_save(pg_temp.id('s2'), 'pricing', 'GM Pricing session', null, null, 'GM Dr. Price', null, '2020-01-01 10:00', 60, 10, null)$$, '22023');
+select pg_temp.X();
+select pg_temp.no('an unregistered member does not get its link (no expert member set)', $$select public.expert_session_link(pg_temp.id('s2'))$$, '42501');
+select pg_temp.F();
+select pg_temp.step('the asker tries to delete their answered question', $$delete from public.expert_questions where body like 'GM Who pays%'$$);
+select pg_temp.as_server();
+select pg_temp.ok('… it is still there (the kept Q&A)', $$(select count(*) = 1 from public.expert_questions where body like 'GM Who pays%')$$);
+select pg_temp.as_server();
+select pg_temp.step('the founder X deletes the account', $$delete from public.founder_members where user_id = 'b2000000-0000-0000-0000-000000000003'; update public.founder_invites set used_by = null where used_by = 'b2000000-0000-0000-0000-000000000003'$$);
+select pg_temp.O();
+select pg_temp.no('the invitation X used never works again', $$select public.founder_redeem(pg_temp.code('b'))$$, '55000');
+
 -- ══ report ═══════════════════════════════════════════════════════════════════════════════════
 select pg_temp.as_server();
 select :'LAST_ERROR_SQLSTATE' = '00000' as clean, :'LAST_ERROR_MESSAGE' as lastmsg \gset

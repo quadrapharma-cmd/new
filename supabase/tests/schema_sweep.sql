@@ -22,7 +22,7 @@ select 'Security-definer functions anon can call: ' || coalesce(string_agg(p.oid
  where n.nspname = 'public' and p.prosecdef and p.prorettype <> 'trigger'::regtype and has_function_privilege('anon', p.oid, 'execute')
    and not exists (select 1 from pg_policies q where coalesce(q.qual, '') || ' ' || coalesce(q.with_check, '') ~ ('\m' || p.proname || '\('))
    -- AREA w-growth (0103, the owner's decision 1): the signed-out company pages — read-only, they return the public fields only
-   -- (no phone / e-mail / registry / team / documents; tested in growth_public.rls.sql). Named one by one: a new one must be added here on purpose.
+   -- (no phone / e-mail / registry / team / documents; tested in growth_members.rls.sql). Named one by one: a new one must be added here on purpose.
    and p.oid::regprocedure::text not in ('public_directory_page(integer,integer,text)', 'public_company(text)', 'public_company_sites(text)',
                                          'public_company_certs(text)', 'public_sites_for(bigint[])', 'public_company_meta(text)');
 -- 6) every storage bucket has at least one policy on storage.objects that names it (else uploads/reads fail silently)

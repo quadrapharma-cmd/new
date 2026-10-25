@@ -1,6 +1,12 @@
 {
   "$comment": "Single source of truth for the hosting headers (CSP, frame, cache). web/build/live.py writes it to <live out>/vercel.json with https://YOUR-PROJECT.supabase.co / wss://YOUR-PROJECT.supabase.co replaced by DRUGBOX_SUPABASE_URL, and — only when DRUGBOX_SENTRY_LOADER is set — the Sentry loader/CDN hosts added to script-src and https://*.sentry.io to connect-src. deploy/vercel_deploy.sh deploys that folder. The page scripts are content-hashed same-origin files in js/ (script-src 'self'); a few small scripts and the approved page's onclick handlers stay inline, so script-src also needs 'unsafe-inline' (no 'unsafe-eval': the app never evaluates strings). index.html is no-cache (always the newest build); js/ and media/ never change under a name, so they are immutable. The local gateway (tools/local-supabase/gateway.mjs) sends the same policy for localhost.",
   "cleanUrls": false,
+  "rewrites": [
+    {
+      "source": "/c/:slug",
+      "destination": "/api/company?slug=:slug"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

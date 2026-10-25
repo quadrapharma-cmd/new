@@ -206,9 +206,10 @@ begin
   select * into old from public.expert_sessions where id = p_id for update;
   if not found then raise exception 'This session is gone' using errcode = 'P0002'; end if;
   if old.status <> 'scheduled' then raise exception 'This session is %', old.status using errcode = '55000'; end if;
+  if at is distinct from old.starts_at and at <= now() then raise exception 'Pick a time in the future' using errcode = '22023'; end if;
   if p_seats is not null and p_seats < old.registered_count then raise exception '% members are already registered — the seats cannot be fewer', old.registered_count using errcode = '23514'; end if;
   update public.expert_sessions set topic = p_topic, title = trim(p_title), title_ar = nullif(trim(coalesce(p_title_ar, '')), ''), about = nullif(trim(coalesce(p_about, '')), ''),
-         expert_name = trim(p_expert_name), expert_line = nullif(trim(coalesce(p_expert_line, '')), ''), expert_user = p_expert_user,
+         expert_name = trim(p_expert_name), expert_line = nullif(trim(coalesce(p_expert_line, '')), ''), expert_user = coalesce(p_expert_user, expert_user),
          starts_at = at, minutes = coalesce(p_minutes, minutes), seats = coalesce(p_seats, seats), join_url = nullif(trim(coalesce(p_join_url, '')), ''), updated_at = now()
    where id = p_id;
   if at is distinct from old.starts_at then              -- a new time: the registered are told and reminded again
@@ -249,7 +250,7 @@ begin
   if me is null then raise exception 'Sign in first' using errcode = '42501'; end if;
   select * into s from public.expert_sessions where id = p_id;
   if not found then raise exception 'This session is gone' using errcode = 'P0002'; end if;
-  if not (public.is_platform_admin() or s.expert_user = me) then
+  if not (public.is_platform_admin() or coalesce(s.expert_user = me, false)) then   -- no expert member: only the registered
     if not exists (select 1 from public.expert_registrations g where g.session_id = p_id and g.user_id = me) then raise exception 'Register for the session to get its link' using errcode = '42501'; end if;
     if s.status <> 'scheduled' then raise exception 'This session is %', s.status using errcode = '55000'; end if;
     if now() < s.starts_at - interval '1 hour' then raise exception 'The link opens an hour before the session' using errcode = '55000'; end if;
@@ -287,7 +288,7 @@ create policy "expert questions: the registered ask" on public.expert_questions 
                             and now() < s.starts_at + make_interval(mins => s.minutes)));
 drop policy if exists "expert questions: the asker or Drugbox removes" on public.expert_questions;
 create policy "expert questions: the asker or Drugbox removes" on public.expert_questions for delete to authenticated
-  using (user_id = (select auth.uid()) or public.is_platform_admin());
+  using ((user_id = (select auth.uid()) and answer is null) or public.is_platform_admin());   -- an answered question stays (the kept Q&A)
 drop policy if exists "a suspended account does not write" on public.expert_questions;
 create policy "a suspended account does not write" on public.expert_questions as restrictive for insert to authenticated with check ((select private.not_suspended()));
 revoke all on table public.expert_questions from public, anon, authenticated, service_role;
@@ -339,15 +340,16 @@ revoke all on function public.expert_question_hide(bigint, boolean) from public,
 grant execute on function public.expert_question_hide(bigint, boolean) to authenticated, service_role;
 
 -- the Training page: sessions (upcoming first, then past with their Q&A), with my registration
+drop function if exists public.expert_sessions_list(int);   -- its row shape changed while unreleased: replaced, not altered
 create or replace function public.expert_sessions_list(p_limit int default 30)
 returns table (id bigint, topic text, title text, title_ar text, about text, expert_name text, expert_line text, starts_at timestamptz, starts_local text,
-               minutes int, seats int, registered_count int, status text, registered boolean, questions int, has_link boolean)
+               minutes int, seats int, registered_count int, status text, registered boolean, questions int, has_link boolean, started boolean)
 language sql stable security definer set search_path = public as $$
   select s.id, s.topic, s.title, s.title_ar, s.about, s.expert_name, s.expert_line, s.starts_at, to_char(s.starts_at at time zone 'Africa/Cairo', 'YYYY-MM-DD HH24:MI'),
          s.minutes, s.seats, s.registered_count, s.status,
          exists (select 1 from public.expert_registrations g where g.session_id = s.id and g.user_id = auth.uid()),
          (select count(*)::int from public.expert_questions q where q.session_id = s.id and (not q.hidden or q.user_id = auth.uid())),
-         s.join_url is not null
+         s.join_url is not null, s.starts_at <= now()
     from public.expert_sessions s
    where auth.uid() is not null and (s.status <> 'cancelled' or s.starts_at > now() - interval '7 days')
    order by (s.status = 'scheduled' and s.starts_at + make_interval(mins => s.minutes) > now()) desc,

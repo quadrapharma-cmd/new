@@ -14,7 +14,7 @@
     ready: function () { return !!me(); },
     guest: function (on) { if (G().guest) G().guest(on); },
     signedOut: function () { return G().signedOut ? G().signedOut() : false; },
-    feedThera: function (tag) { return G().feedThera(tag); },
+    feedThera: function (tag, cursor) { return G().feedThera(tag, cursor); },
     marketThera: function (tag) { return G().marketThera(tag).catch(function (e) { window.DBK.toast(e.message || 'Could not load the listings'); }); },
 
     channels: {
@@ -47,9 +47,10 @@
     experts: {
       sessions: async function () { return ok(await sb.rpc('expert_sessions_list', { p_limit: 60 })) || []; },
       questions: async function (id) {
-        var r = ok(await sb.from('expert_questions').select('id, body, answer, created_at, user_id, who:profiles!expert_questions_user_id_fkey(name)').eq('session_id', +id).order('created_at').limit(200));
-        return (r || []).map(function (q) { return { id: q.id, body: q.body, answer: q.answer, who: q.who ? q.who.name : 'Member', mine: q.user_id === me() }; });
+        var r = ok(await sb.from('expert_questions').select('id, body, answer, hidden, created_at, user_id, who:profiles!expert_questions_user_id_fkey(name)').eq('session_id', +id).order('created_at').limit(200));
+        return (r || []).map(function (q) { return { id: q.id, body: q.body, answer: q.answer, hidden: !!q.hidden, who: q.who ? q.who.name : 'Member', mine: q.user_id === me() }; });
       },
+      hide: async function (qid, on) { ok(await sb.rpc('expert_question_hide', { p_question: +qid, p_hidden: !!on })); },
       demand: async function () { return ok(await sb.rpc('expert_topic_demand')) || []; },
       request: async function (topic, note) { ok(await sb.from('expert_requests').insert({ topic: topic, note: note || null })); },
       withdraw: async function (topic) { ok(await sb.from('expert_requests').delete().eq('topic', topic).eq('user_id', me())); },

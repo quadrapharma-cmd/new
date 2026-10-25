@@ -208,6 +208,16 @@ def visitor_company_page(j):
     with j.step('A shared link #/companies/<slug> opens the page directly for a visitor'):
         w = j.new_page(url=False); j.open(w, j.url + '#/companies/' + slug); j.settle(w, 3000)
         j.check(j.in_app(w) and name in j.text(w)[:1500], 'the shared link does not open the company page for a visitor')
+    with j.step('The crawlable address /c/<slug> carries the title, description and Open Graph without JavaScript, then opens the page'):
+        if j.demo: j.skip('the offline demo has no server address')
+        import urllib.request
+        html = urllib.request.urlopen(_dx.APP_URL.rstrip('/') + '/c/' + slug, timeout=10).read().decode('utf-8')
+        j.check(('<title>%s' % name) in html and ('og:title" content="%s' % name) in html and 'Sterile injectables for Egypt' in html, 'the /c/ page has no title / Open Graph for the company')
+        j.check('5555' not in html and 'sales@visible' not in html, 'the /c/ page carries contact details')
+        c2 = j.new_page(url=False); c2.goto(_dx.APP_URL.rstrip('/') + '/c/' + slug, wait_until='load'); j.settle(c2, 3500)
+        try: c2.evaluate('endSplash()')
+        except Exception: pass
+        j.check(j.wait(c2, "document.getElementById('app').getClientRects().length>0 && (document.getElementById('content')||{}).innerText.indexOf(%r)>=0" % name, 15), 'opening /c/<slug> does not reach the company page')
     with j.step('Signing in from the visitor bar opens the app as the member'):
         if j.demo: j.skip('the demo signs in only its sample account')
         j.click(w, T(j, r'^\W*Sign in\W*$', r'^\W*تسجيل الدخول\W*$'), scope='body', what='Sign in'); j.settle(w, 800)

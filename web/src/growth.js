@@ -29,6 +29,8 @@
     return p.year + '-' + p.month + '-' + p.day + ' ' + (p.hour === '24' ? '00' : p.hour) + ':' + p.minute;
   }
   GW.cairoNow = cairoNow;
+  function cairoAt(iso) { return iso ? cairoNow(new Date(iso).getTime() - Date.now()) : ''; }
+  GW.cairoAt = cairoAt;
 
   /* ═════════════ 2. therapeutic areas (the same list and dictionary as private.thera_terms, 0100) ═════════════ */
   var THERA = [['biologics', 'Biologics', '🧬'], ['veterinary', 'Veterinary', '🐄'], ['agriculture', 'Agriculture', '🌾'], ['glp1', 'GLP-1', '💉'],
@@ -117,6 +119,8 @@
     else if (page === 'feed') feedBar();
     else if (page === 'market') { marketBar(); if (GW.marketThera && document.querySelector('#tab-browse :is(.lcard,.dcard,.scard,.jcard,.sponsored-card):not([style*="display: none"])')) applyMarketQuiet(); }
     else if (page === 'admin') adminNav();
+    if (window.__gwDbx) document.querySelectorAll('#content .post[id^="post-"]:not(.dx-dbx-post)').forEach(function (el) {
+      var id = +el.id.slice(5), p = (window.POSTS || []).concat(window.SAVED_POSTS || []).filter(function (x) { return x.id === id && x.drugbox; })[0]; if (p) window.dxPostDecor(el, p); });
   });
 
   /* demo runner: a scheduled post is published when its Cairo time comes (the live app: the server's growth_tick) */
@@ -201,7 +205,7 @@
       box.innerHTML = CHS.rows.length ? '<div style="overflow-x:auto"><table class="admin-table dx-ch-tbl"><thead><tr><th>Status</th><th>Channel</th><th>When (Cairo)</th><th>Post</th><th></th></tr></thead><tbody>' + CHS.rows.map(function (x) {
         var st = STATUS[x.status] || [x.status, ''], open = x.status === 'draft' || x.status === 'scheduled';
         return '<tr data-chid="' + x.id + '"><td><span class="dx-st ' + st[1] + '">' + esc(st[0]) + '</span></td><td style="white-space:nowrap">' + esc(chName(x.channel_key)) + '</td>' +
-          '<td style="white-space:nowrap" data-noi18n>' + esc(x.publish_local || (x.status === 'published' && x.published_at ? String(x.published_at).slice(0, 16).replace('T', ' ') : '—')) + '</td>' +
+          '<td style="white-space:nowrap" data-noi18n>' + esc(x.status === 'published' ? (x.published_local || cairoAt(x.published_at) || x.publish_local || '—') : (x.publish_local || '—')) + '</td>' +
           '<td style="max-width:340px"><div class="dx-ch-ex" data-noi18n>' + esc(String(x.body || '').slice(0, 140)) + '</div>' + (x.error ? '<div class="adm-muted" data-noi18n>' + esc(x.error) + '</div>' : '') + '</td>' +
           '<td style="white-space:nowrap">' + (open ? '<button type="button" class="adm-link dx-ch-edit">Edit</button> · <button type="button" class="adm-link dx-ch-pub">Publish now</button> · <button type="button" class="adm-link adm-danger dx-ch-cancel">Cancel</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>'
         : '<div class="dbk-empty">Nothing planned yet — start from a template below.</div>';
@@ -298,9 +302,14 @@
     if (live() && window.dxGrowth.feedThera) {   /* live: the server finds every post about the area, not only the ones on screen */
       posts.forEach(function (p) { p.style.display = 'none'; });
       bar.insertAdjacentHTML('afterend', '<div class="dx-th-list"><div class="adm-muted">Loading…</div></div>');
-      window.dxGrowth.feedThera(FEEDTH).then(function (list) { var box = document.querySelector('#content .dx-th-list'); if (!box) return;
-        box.innerHTML = list.length ? list.map(function (p) { return window.renderPost(p); }).join('') : '<div class="dbk-empty dx-th-empty">No posts about ' + esc(theraLabel(FEEDTH)) + ' yet.</div>'; i18n(box); },
-        function (e) { toast(errMsg(e)); });
+      var tag = FEEDTH;
+      function page(cursor) { return window.dxGrowth.feedThera(tag, cursor).then(function (list) { var box = document.querySelector('#content .dx-th-list'); if (!box || FEEDTH !== tag) return;
+        var old2 = box.querySelector('.dx-th-more'); if (old2) old2.remove(); if (!cursor) box.innerHTML = '';
+        if (!cursor && !list.length) { box.innerHTML = '<div class="dbk-empty dx-th-empty">No posts about ' + esc(theraLabel(tag)) + ' yet.</div>'; i18n(box); return; }
+        box.insertAdjacentHTML('beforeend', list.map(function (p) { return window.renderPost(p); }).join(''));
+        if (list.more) { box.insertAdjacentHTML('beforeend', '<button type="button" class="btn-ghost dx-th-more" style="align-self:center">Show more</button>'); box.querySelector('.dx-th-more').onclick = function () { this.disabled = true; page(list.more); }; }
+        i18n(box); }, function (e) { toast(errMsg(e)); }); }
+      page(null);
       return;
     }
     var n = 0;
@@ -471,7 +480,7 @@
       var why = { used: 'This invitation was already used.', revoked: 'This invitation was withdrawn by Drugbox.', expired: 'This invitation has expired — ask Drugbox for a new one.', already: 'You are already a founding member.', mine: 'You are already a founding member.' }[p.state];
       if (why) { dropCode(); OFFERING = false; var w = D.modal({ title: '🏅 Founding members', body: '<p>' + esc(why) + '</p>', secondary: 'Close' }); i18n(w.el); return; }
       return F().myCompanies().then(function (cos) {
-        var m = D.modal({ title: '🏅 You are invited to be a founding member', secondary: 'Not now', body:
+        var m = D.modal({ title: ar() ? '🏅 أنت مدعو لتكون عضوًا مؤسسًا' : '🏅 You are invited to be a founding member', secondary: 'Not now', body:
           '<p><span>Drugbox invites you to join its founding members as:</span> <b>' + esc(segLabel(p.segment)) + '</b>.</p>' +
           '<p>Founders get the founder badge on their profile and 3 months of VIP for a company page they run. Joining is your choice — nothing changes unless you press Join.</p>' +
           (cos.length ? '<div class="dbk-f"><label for="fnCo">Give the 3 VIP months to</label><select id="fnCo"><option value="">Later — I will choose a company page</option>' + cos.map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>'; }).join('') + '</select></div>'
@@ -481,7 +490,9 @@
             F().redeem(code, co || null).then(function (r) { if (r && r.error) { if (ok) ok.disabled = false; return toast('This invitation code is not valid'); }
               dropCode(); close(); toast(co ? 'Welcome, founding member! Your company page is VIP for 3 months' : 'Welcome, founding member!'); BADGE = {}; if (page() === 'profile') paintBadge(true); },
               function (er) { if (ok) ok.disabled = false; toast(errMsg(er)); }); return false; } } });
-        m.el.querySelector('[data-a=cancel]').addEventListener('click', dropCode); i18n(m.el); OFFERING = false;
+        m.el.querySelector('[data-a=cancel]').addEventListener('click', dropCode); i18n(m.el);
+        /* one invitation window at a time: the next page change does not open a second one while this one is open */
+        new MutationObserver(function (x, mo) { if (!m.el.isConnected) { mo.disconnect(); OFFERING = false; } }).observe(document.body, { childList: true });
       });
     }).catch(function (e) { OFFERING = false; toast(errMsg(e)); });
   }
@@ -525,8 +536,9 @@
         return { id: s.id, topic: s.topic, title: s.title, title_ar: s.title_ar, about: s.about, expert_name: s.expert_name, expert_line: s.expert_line, starts_local: s.local, minutes: s.minutes, seats: s.seats,
           registered_count: s.registered + (reg[s.id] ? 1 : 0), status: s.status, registered: !!reg[s.id], questions: qs.length, has_link: !!s.link }; })
         .sort(function (a, b) { var up = function (x) { return x.status === 'scheduled' ? 0 : 1; }; return up(a) - up(b) || (up(a) ? String(b.starts_local).localeCompare(a.starts_local) : String(a.starts_local).localeCompare(b.starts_local)); })); },
-    questions: function (id) { var s = demoSessions().filter(function (x) { return x.id === id; })[0], mine = sget('gwXQ', []), ans = sget('gwXAns', {});
-      return Promise.resolve((s ? s.q : []).concat(mine.filter(function (q) { return q.session === id; }).map(function (q) { return Object.assign({}, q, { answer: ans[q.id] || q.answer || null }); }))); },
+    questions: function (id, opts) { var s = demoSessions().filter(function (x) { return x.id === id; })[0], mine = sget('gwXQ', []), ans = sget('gwXAns', {});
+      var hid = sget('gwXHid', {}), all = (s ? s.q : []).concat(mine.filter(function (q) { return q.session === id; }).map(function (q) { return Object.assign({}, q, { answer: ans[q.id] || q.answer || null }); }));
+      return Promise.resolve(all.map(function (q) { return Object.assign({}, q, { hidden: !!hid[q.id] }); }).filter(function (q) { return opts === 'admin' || !q.hidden || q.mine; })); },
     demand: function () { var r = sget('gwXReqs', {}); return Promise.resolve(TOPICS.map(function (t, i) { return { topic: t[0], asked: [4, 2, 6, 3, 5, 1, 2, 3, 2, 0][i] + (r[t[0]] ? 1 : 0), mine: !!r[t[0]] }; })); },
     request: function (topic, note) { if (topic === 'other' && String(note || '').trim().length < 5) return Promise.reject(new Error('Say which topic (a few words)')); var r = sget('gwXReqs', {}); if (r[topic]) return Promise.reject(new Error('You already asked for this topic'));
       r[topic] = note || true; sset('gwXReqs', r); return Promise.resolve(); },
@@ -547,6 +559,7 @@
       Object.assign(x, { topic: o.topic, title: o.title, title_ar: o.title_ar, about: o.about, expert_name: o.expert_name, expert_line: o.expert_line, local: o.local, minutes: +o.minutes || 60, seats: +o.seats || 100, link: o.link || '' });
       sset('gwXS', s); return Promise.resolve(x.id); },
     status: function (id, st) { var s = demoSessions(), x = s.filter(function (y) { return y.id === id; })[0]; if (!x || x.status !== 'scheduled') return Promise.reject(new Error('This session is already ' + (x ? x.status : 'gone'))); x.status = st; sset('gwXS', s); return Promise.resolve(); },
+    hide: function (qid, on) { var h = sget('gwXHid', {}); if (on) h[qid] = 1; else delete h[qid]; sset('gwXHid', h); return Promise.resolve(); },
     answer: function (qid, text) { if (!String(text || '').trim()) return Promise.reject(new Error('Write the answer')); var a = sget('gwXAns', {}); a[qid] = text.trim(); sset('gwXAns', a); return Promise.resolve(); },
     full: function (id) { var s = demoSessions().filter(function (x) { return x.id === id; })[0]; return Promise.resolve(s ? { id: s.id, topic: s.topic, title: s.title, title_ar: s.title_ar, about: s.about, expert_name: s.expert_name, expert_line: s.expert_line, starts_local: s.local, minutes: s.minutes, seats: s.seats, join_url: s.link } : null); }
   };
@@ -554,15 +567,16 @@
   var XV = { open: false };
   function title(s) { return ar() && s.title_ar ? s.title_ar : s.title; }
   function sessHtml(s, admin) {
+    var started = s.started != null ? s.started : (s.starts_local && s.starts_local <= GW.cairoNow());
     var up = s.status === 'scheduled', left = Math.max(0, s.seats - s.registered_count);
     return '<div class="dx-xp-s" data-xsid="' + s.id + '"><div class="dx-xp-t" role="heading" aria-level="3" data-noi18n>' + esc(title(s)) + '</div>' +
       '<div class="dx-xp-meta"><span>🎤 <span data-noi18n>' + esc(s.expert_name) + '</span>' + (s.expert_line ? ' — <span data-noi18n>' + esc(s.expert_line) + '</span>' : '') + '</span>' +
       '<span>🗓 <span data-noi18n>' + esc(s.starts_local) + '</span> <span>(Cairo)</span> · <span data-noi18n>' + s.minutes + '</span> <span>min</span></span><span>🏷 ' + esc(topicLabel(s.topic)) + '</span>' +
       (up ? '<span>👥 <span data-noi18n>' + s.registered_count + '</span> <span>registered</span> · <span data-noi18n>' + left + '</span> <span>seats left</span></span>' : '<span>' + (s.status === 'done' ? '✓ Took place' : '✕ Cancelled') + '</span>') + '</div>' +
       (s.about ? '<div style="font-size:13px;color:#374151" data-noi18n>' + esc(s.about) + '</div>' : '') +
-      (admin ? '' : '<div class="dx-xp-acts">' + (up ? (s.registered ? '<span class="dx-st dx-st-pub">✓ Registered</span><button type="button" class="dbk-btn p dx-xp-join">▶ Join the session</button><button type="button" class="dbk-btn s dx-xp-unreg">Cancel registration</button>'
-        : left > 0 ? '<button type="button" class="dbk-btn p dx-xp-reg">Register</button>' : '<span class="dx-st dx-st-off">Full</span>') : '') +
-        '<button type="button" class="dbk-btn s dx-xp-qa">💬 Questions and answers (<span data-noi18n>' + (s.questions || 0) + '</span>)</button></div>') +
+      (admin ? '' : '<div class="dx-xp-acts">' + (up ? (s.registered ? '<span class="dx-st dx-st-pub">✓ Registered</span><button type="button" class="dbk-btn p dx-xp-join">▶ Join the session</button>' + (started ? '' : '<button type="button" class="dbk-btn s dx-xp-unreg">Cancel registration</button>')
+        : started ? '<span class="dx-st dx-st-sched">● Happening now</span>' : left > 0 ? '<button type="button" class="dbk-btn p dx-xp-reg">Register</button>' : '<span class="dx-st dx-st-off">Full</span>') : '') +
+        '<button type="button" class="dbk-btn s dx-xp-qa"><span>💬 Questions and answers</span> (<span data-noi18n>' + (s.questions || 0) + '</span>)</button></div>') +
       '<div class="dx-xp-qbox" hidden></div></div>';
   }
   function expertView(root) {
@@ -640,7 +654,7 @@
         return '<tr><td>' + esc(topicLabel(x.topic)) + '</td><td data-noi18n>' + x.asked + '</td><td style="font-size:12.5px" data-noi18n>' + (x.notes || []).map(function (n) { return esc((n.name ? n.name + ': ' : '') + n.note); }).join('<br>') + '</td></tr>'; }).join('') + '</tbody></table></div>';
       c.querySelector('.dx-xa-list').innerHTML = XA.list.length ? XA.list.map(function (s) {
         return sessHtml(s, true).replace('<div class="dx-xp-qbox" hidden></div>', '<div class="dx-xp-acts">' + (s.status === 'scheduled' ? '<button type="button" class="dbk-btn s dx-xa-edit">Edit</button><button type="button" class="dbk-btn s dx-xa-done">Mark done</button><button type="button" class="dbk-btn d dx-xa-cancel">Cancel session</button>' : '') +
-          '<button type="button" class="dbk-btn s dx-xa-qs">💬 Questions (<span data-noi18n>' + (s.questions || 0) + '</span>)</button></div><div class="dx-xp-qbox" hidden></div>'); }).join('') : '<div class="dbk-empty">No sessions yet.</div>';
+          '<button type="button" class="dbk-btn s dx-xa-qs"><span>💬 Questions</span> (<span data-noi18n>' + (s.questions || 0) + '</span>)</button></div><div class="dx-xp-qbox" hidden></div>'); }).join('') : '<div class="dbk-empty">No sessions yet.</div>';
       i18n(c);
     }, function (e) { toast(errMsg(e)); });
   };
@@ -662,7 +676,7 @@
     i18n(m.el);
   }
   document.addEventListener('click', function (e) {
-    var t = e.target.closest && e.target.closest('.dx-xa-new, .dx-xa-edit, .dx-xa-done, .dx-xa-cancel, .dx-xa-qs, .dx-xa-ans'); if (!t) return; e.preventDefault();
+    var t = e.target.closest && e.target.closest('.dx-xa-new, .dx-xa-edit, .dx-xa-done, .dx-xa-cancel, .dx-xa-qs, .dx-xa-ans, .dx-xa-hide'); if (!t) return; e.preventDefault();
     if (t.classList.contains('dx-xa-new')) return xaForm(null);
     var card = t.closest('[data-xsid]'), id = +card.dataset.xsid;
     if (t.classList.contains('dx-xa-edit')) return X().full(id).then(function (s) { if (s) xaForm(s); }, function (er) { toast(errMsg(er)); });
@@ -670,8 +684,11 @@
       return D.modal({ title: st === 'done' ? 'Mark this session as done?' : 'Cancel this session?', body: '<p>' + (st === 'done' ? 'Its questions and answers stay readable to every member.' : 'The registered members are told.') + '</p>', secondary: 'Back',
         primary: { label: st === 'done' ? 'Mark done' : 'Cancel session', danger: st !== 'done', onClick: function (bx, close) { X().status(id, st).then(function () { close(); toast(st === 'done' ? 'Session marked done' : 'Session cancelled — the registered are told'); GW.expertsAdmin(content()); }, function (er) { toast(errMsg(er)); }); return false; } } }); }
     if (t.classList.contains('dx-xa-qs')) { var qb = card.querySelector('.dx-xp-qbox'); qb.hidden = !qb.hidden; if (qb.hidden) return;
-      return X().questions(id).then(function (qs) { qb.innerHTML = qs.length ? qs.map(function (q) { return '<div class="dx-xp-q" data-qid="' + q.id + '"><p><b data-noi18n>' + esc(q.who || q.name || '') + '</b>: <span data-noi18n>' + esc(q.body) + '</span></p>' +
-        (q.answer ? '<div class="dx-xp-a"><b>Answer:</b> <span data-noi18n>' + esc(q.answer) + '</span></div>' : '<div class="dbk-f"><label for="xaA' + q.id + '">Answer</label><textarea id="xaA' + q.id + '" rows="2" maxlength="4000"></textarea></div><button type="button" class="dbk-btn p dx-xa-ans">Send answer</button>') + '</div>'; }).join('') : '<div class="adm-muted">No questions yet.</div>'; i18n(qb); }, function (er) { toast(errMsg(er)); }); }
+      return X().questions(id, 'admin').then(function (qs) { qb.innerHTML = qs.length ? qs.map(function (q) { return '<div class="dx-xp-q" data-qid="' + q.id + '"' + (q.hidden ? ' style="opacity:.55"' : '') + '><p><b data-noi18n>' + esc(q.who || q.name || '') + '</b>: <span data-noi18n>' + esc(q.body) + '</span></p>' +
+        (q.answer ? '<div class="dx-xp-a"><b>Answer:</b> <span data-noi18n>' + esc(q.answer) + '</span></div>' : '<div class="dbk-f"><label for="xaA' + q.id + '">Answer</label><textarea id="xaA' + q.id + '" rows="2" maxlength="4000"></textarea></div><button type="button" class="dbk-btn p dx-xa-ans">Send answer</button>') +
+        ' <button type="button" class="dbk-btn s dx-xa-hide" data-on="' + (q.hidden ? 0 : 1) + '">' + (q.hidden ? 'Show again' : 'Hide (breaks the rules)') + '</button></div>'; }).join('') : '<div class="adm-muted">No questions yet.</div>'; i18n(qb); }, function (er) { toast(errMsg(er)); }); }
+    if (t.classList.contains('dx-xa-hide')) { var qh = t.closest('[data-qid]'); t.disabled = true;
+      return X().hide(+qh.dataset.qid, t.dataset.on === '1').then(function () { toast(t.dataset.on === '1' ? 'Question hidden from members' : 'Question shown again'); var q3 = card.querySelector('.dx-xp-qbox'); q3.hidden = true; card.querySelector('.dx-xa-qs').click(); }, function (er) { t.disabled = false; toast(errMsg(er)); }); }
     if (t.classList.contains('dx-xa-ans')) { var qd = t.closest('[data-qid]'), qid = +qd.dataset.qid; t.disabled = true;
       return X().answer(qid, qd.querySelector('textarea').value).then(function () { toast('Answer sent — the member is told'); var q2 = card.querySelector('.dx-xp-qbox'); q2.hidden = true; card.querySelector('.dx-xa-qs').click(); }, function (er) { t.disabled = false; toast(errMsg(er)); }); }
   });
@@ -739,7 +756,7 @@
     var box = document.querySelector('#adminContent .dx-imp-out'); if (!box) return;
     box.innerHTML = '<div class="dx-imp-sum"><span class="dx-imp-ok"><span>' + esc(r.dry_run ? 'Would add' : 'Added') + '</span>: <span data-noi18n>' + r.created + '</span></span><span class="dx-imp-dup"><span>Duplicates</span>: <span data-noi18n>' + r.duplicates + '</span></span><span class="dx-imp-bad"><span>Invalid</span>: <span data-noi18n>' + r.invalid + '</span></span></div>' +
       '<div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Row</th><th>Company</th><th>Result</th></tr></thead><tbody>' + (r.results || []).map(function (x) {
-        return '<tr><td data-noi18n>' + x.row + '</td><td data-noi18n>' + esc(x.name || '') + '</td><td>' + (x.status === 'invalid' ? '<span class="dx-imp-bad">Invalid</span>: <span data-noi18n>' + esc(x.reason || '') + '</span>'
+        return '<tr><td data-noi18n>' + x.row + '</td><td data-noi18n>' + esc(x.name || '') + '</td><td>' + (x.status === 'invalid' ? '<span class="dx-imp-bad">Invalid</span>: <span>' + esc(x.reason || '') + '</span>'
           : x.status === 'duplicate' ? '<span class="dx-imp-dup">Already in the directory</span>' + (x.of ? ' (<span data-noi18n>' + esc(x.of) + '</span>)' : '') : '<span class="dx-imp-ok">' + esc(x.status === 'created' ? 'Created — unclaimed' : 'Would be created — unclaimed') + '</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>';
     i18n(box);
   }
@@ -771,7 +788,8 @@
     function m(sel, attr, key, val) { var el = document.head.querySelector(sel); if (!el) { el = document.createElement('meta'); el.setAttribute(attr, key); document.head.appendChild(el); } el.setAttribute('content', val); }
     m('meta[name="description"]', 'name', 'description', d); m('meta[property="og:title"]', 'property', 'og:title', t); m('meta[property="og:description"]', 'property', 'og:description', d);
     m('meta[property="og:type"]', 'property', 'og:type', 'website'); if (img) m('meta[property="og:image"]', 'property', 'og:image', img);
-    var can = document.head.querySelector('link[rel=canonical]'); if (!can) { can = document.createElement('link'); can.rel = 'canonical'; document.head.appendChild(can); } can.href = location.href.split('?')[0];
+    var can = document.head.querySelector('link[rel=canonical]'); if (!can) { can = document.createElement('link'); can.rel = 'canonical'; document.head.appendChild(can); }
+    var sl = GW.__meta, root = location.href.split('#')[0].split('?')[0]; can.href = sl && location.protocol !== 'file:' ? root + 'c/' + encodeURIComponent(sl) : root;   /* the crawlable address (deploy/share/company.js) */
   }
   GW.setMeta = setMeta;
   var DEF_TITLE = document.title;
@@ -984,8 +1002,15 @@
     /* the specialty question */
     'Is this still your specialty?': 'هل هذا تخصصك فعلًا؟', 'Ask me later': 'اسألني لاحقًا', 'Your specialty': 'تخصصك', 'Other…': 'آخر…', 'Your specialty, in your words': 'تخصصك بكلماتك',
     'Your profile says': 'يذكر ملفك الشخصي', '— the sign-up form used to choose it for everyone. Please confirm it or pick yours, so the right people, jobs and groups find you.': '— كان نموذج التسجيل يختاره للجميع. أكّده أو اختر تخصصك ليصل إليك الأشخاص والوظائف والمجموعات المناسبة.',
-    'Write your specialty': 'اكتب تخصصك', 'Thanks — your specialty is confirmed': 'شكرًا — تم تأكيد تخصصك', 'Your specialty is saved': 'تم حفظ تخصصك'
+    'Write your specialty': 'اكتب تخصصك', '💬 Questions and answers': '💬 الأسئلة والإجابات', '💬 Questions': '💬 الأسئلة', '● Happening now': '● منعقدة الآن', 'Show more': 'عرض المزيد',
+    'Hide (breaks the rules)': 'إخفاء (مخالف للقواعد)', 'Show again': 'إظهار مجددًا', 'Question hidden from members': 'أُخفي السؤال عن الأعضاء', 'Question shown again': 'أُظهر السؤال مجددًا',
+    '👀 Join this Drugbox channel to get its posts and to comment and react.': '👀 انضم إلى قناة Drugbox هذه لتصلك منشوراتها ولتعلّق وتتفاعل.',
+    'source is missing — every imported company names the public list it comes from': 'المصدر مفقود — كل شركة مستوردة تذكر القائمة العامة التي جاءت منها', 'sectors are missing': 'القطاعات مفقودة',
+    'name is missing or longer than 200 characters': 'الاسم مفقود أو أطول من 200 حرف', 'duplicate of an earlier row in this file': 'مكرر لصف سابق في هذا الملف', 'e-mail is not valid': 'البريد الإلكتروني غير صالح',
+    'phone is not valid': 'رقم الهاتف غير صالح', 'website is not valid': 'الموقع الإلكتروني غير صالح', 'address fields are too long': 'حقول العنوان أطول من المسموح', 'Arabic name is longer than 200 characters': 'الاسم العربي أطول من 200 حرف', 'Thanks — your specialty is confirmed': 'شكرًا — تم تأكيد تخصصك', 'Your specialty is saved': 'تم حفظ تخصصك'
   }, [
+    [/^unknown sector: (.+)$/, function (m) { return 'قطاع غير معروف: ' + m[1]; }], [/^the name is only a legal form \("(.+)"\) — write the company’s name$/, function (m) { return 'الاسم شكل قانوني فقط ("' + m[1] + '") — اكتب اسم الشركة'; }],
+    [/^the name is only a legal form \("(.+)"\) — write the company's name$/, function (m) { return 'الاسم شكل قانوني فقط ("' + m[1] + '") — اكتب اسم الشركة'; }],
     [/^Published in (.+)$/, function (m) { return 'نُشر في ' + m[1]; }], [/^Scheduled for (.+) \(Cairo\)$/, function (m) { return 'تمت الجدولة في ' + m[1] + ' (القاهرة)'; }],
     [/^No posts about (.+) yet\.$/, function (m) { return 'لا توجد منشورات عن ' + m[1] + ' بعد.'; }], [/^No listings about (.+) yet — try another area\.$/, function (m) { return 'لا توجد إعلانات عن ' + m[1] + ' بعد — جرّب مجموعة أخرى.'; }],
     [/^Request: (.+)$/, function (m) { return 'طلب: ' + m[1]; }], [/^Quota — (.+)$/, function (m) { return 'الحصة — ' + m[1]; }], [/^This segment is full \((\d+) of (\d+)\)$/, function (m) { return 'اكتملت هذه الشريحة (' + m[1] + ' من ' + m[2] + ')'; }],

@@ -142,6 +142,27 @@ select pg_temp.no('an unknown area is refused', $$select public.market_search_th
 select pg_temp.as_anon();
 select pg_temp.no('anon cannot search the market by area', $$select public.market_search_thera('insulin')$$, '42501');
 
+-- 5. verifier round 1: a Drugbox post stays Drugbox's (restore, former admin, notices); dictionary false positives
+select pg_temp.as_server();
+select pg_temp.ok('"HMG-CoA" (statins) is not fertility; كيماويات (chemicals) is not oncology', $$private.thera_of('HMG-CoA reductase inhibitors API') = '{}' and private.thera_of('مورد كيماويات صناعية') = '{}' and private.thera_of('علاج كيماوي للأورام') = '{oncology}'$$);
+insert into ids select 'np', post_id::text from public.channel_schedule where id = pg_temp.id('n');
+select pg_temp.M();
+select pg_temp.step('M likes and comments on the Drugbox post', $$insert into public.reactions (post_id, user_id, kind) values (pg_temp.id('np'), auth.uid(), 'like'); insert into public.comments (post_id, user_id, body) values (pg_temp.id('np'), auth.uid(), 'GW thanks')$$);
+select pg_temp.as_server();
+select pg_temp.ok('the publishing admin gets no personal notice about the Drugbox post', $$not exists (select 1 from public.notifications where user_id = 'b1000000-0000-0000-0000-000000000001' and post_id = pg_temp.id('np'))$$);
+select pg_temp.A();
+select pg_temp.step('Drugbox removes the channel post', $$insert into ids select 'act', public.admin_delete_post(pg_temp.id('np'), 'GW test removal')::text$$);
+select pg_temp.step('… and restores it', $$select public.admin_restore_post(pg_temp.id('act'))$$);
+select pg_temp.ok('the restored post is still a Drugbox post', $$(select as_drugbox from public.posts where id = pg_temp.id('np'))$$);
+select pg_temp.as_server();
+select pg_temp.step('the admin stops being a Drugbox admin', $$update public.profiles set role = 'user' where id = 'b1000000-0000-0000-0000-000000000001'$$);
+select pg_temp.A();
+select pg_temp.step('the former admin tries to change the Drugbox post', $$update public.posts set category = 'general' where id = pg_temp.id('np')$$);
+select pg_temp.step('… and to delete it', $$delete from public.posts where id = pg_temp.id('np')$$);
+select pg_temp.as_server();
+select pg_temp.ok('the Drugbox post is untouched', $$(select category = 'market' and as_drugbox from public.posts where id = pg_temp.id('np'))$$);
+update public.profiles set role = 'admin' where id = 'b1000000-0000-0000-0000-000000000001';
+
 -- ══ report ═══════════════════════════════════════════════════════════════════════════════════
 select pg_temp.as_server();
 select :'LAST_ERROR_SQLSTATE' = '00000' as clean, :'LAST_ERROR_MESSAGE' as lastmsg \gset

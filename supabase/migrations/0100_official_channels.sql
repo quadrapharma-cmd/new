@@ -97,6 +97,14 @@ exception when duplicate_object then null; end $$;
 create index if not exists idx_posts_thera on public.posts using gin (thera) where group_id is null;
 create index if not exists idx_posts_drugbox on public.posts (group_id, created_at desc) where as_drugbox;
 
+-- a Drugbox post is Drugbox's: its publishing admin keeps no own-post rights over it once no longer a Drugbox admin
+drop policy if exists "posts: a Drugbox post is changed by Drugbox admins only" on public.posts;
+create policy "posts: a Drugbox post is changed by Drugbox admins only" on public.posts as restrictive for update to authenticated
+  using (not as_drugbox or public.is_platform_admin()) with check (not as_drugbox or public.is_platform_admin());
+drop policy if exists "posts: a Drugbox post is removed by Drugbox admins only" on public.posts;
+create policy "posts: a Drugbox post is removed by Drugbox admins only" on public.posts as restrictive for delete to authenticated
+  using (not as_drugbox or public.is_platform_admin());
+
 -- nobody posts into an official channel from the browser (members, group admins, Drugbox admins alike): only the publisher does
 create or replace function private.can_post_in_group(p_group bigint) returns boolean
 language sql stable security definer set search_path = public as $$
@@ -114,6 +122,7 @@ create table if not exists private.thera_terms (
 );
 revoke all on table private.thera_terms from public, anon, authenticated, service_role;
 grant select, insert, update, delete on table private.thera_terms to service_role;
+delete from private.thera_terms where (tag, term) in (('fertility', 'hmg'), ('oncology', 'كيماوي'));   -- matched HMG-CoA (statins) and كيماويات (chemicals)
 insert into private.thera_terms (tag, term) values
   ('biologics', 'biologic'), ('biologics', 'biologics'), ('biologics', 'biological'), ('biologics', 'biosimilar'), ('biologics', 'biosimilars'),
   ('biologics', 'monoclonal'), ('biologics', 'mab'), ('biologics', 'بيولوجي'), ('biologics', 'بيولوجية'), ('biologics', 'بايولوجي'), ('biologics', 'بيوسيميلر'),
@@ -125,9 +134,9 @@ insert into private.thera_terms (tag, term) values
   ('glp1', 'glp-1'), ('glp1', 'glp1'), ('glp1', 'semaglutide'), ('glp1', 'liraglutide'), ('glp1', 'tirzepatide'), ('glp1', 'dulaglutide'),
   ('glp1', 'سيماجلوتايد'), ('glp1', 'سيماجلوتيد'), ('glp1', 'ليراجلوتايد'),
   ('oncology', 'oncology'), ('oncology', 'oncologic'), ('oncology', 'cancer'), ('oncology', 'chemotherapy'), ('oncology', 'cytotoxic'), ('oncology', 'أورام'),
-  ('oncology', 'اورام'), ('oncology', 'الأورام'), ('oncology', 'سرطان'), ('oncology', 'كيماوي'),
+  ('oncology', 'اورام'), ('oncology', 'الأورام'), ('oncology', 'سرطان'), ('oncology', 'علاج كيماوي'),
   ('growth_hormone', 'growth hormone'), ('growth_hormone', 'somatropin'), ('growth_hormone', 'هرمون النمو'), ('growth_hormone', 'هرمون نمو'), ('growth_hormone', 'سوماتروبين'),
-  ('fertility', 'fertility'), ('fertility', 'ivf'), ('fertility', 'gonadotropin'), ('fertility', 'gonadotrophin'), ('fertility', 'hmg'), ('fertility', 'fsh'),
+  ('fertility', 'fertility'), ('fertility', 'ivf'), ('fertility', 'gonadotropin'), ('fertility', 'gonadotrophin'), ('fertility', 'menotropin'), ('fertility', 'fsh'),
   ('fertility', 'خصوبة'), ('fertility', 'الخصوبة'), ('fertility', 'حقن مجهري'), ('fertility', 'تأخر الإنجاب'),
   ('insulin', 'insulin'), ('insulin', 'insulins'), ('insulin', 'انسولين'), ('insulin', 'إنسولين'), ('insulin', 'الانسولين'), ('insulin', 'الإنسولين')
 on conflict do nothing;
@@ -151,6 +160,7 @@ language plpgsql set search_path = public as $$
 declare picked text[] := '{}';
 begin
   if public.is_server_call() then
+    if new.group_id is not null and exists (select 1 from public.groups g where g.id = new.group_id and g.official) then new.as_drugbox := true; end if;   -- a restore too
     if tg_op = 'UPDATE' and new.body is not distinct from old.body and new.thera is not distinct from old.thera then return new; end if;
     picked := coalesce(new.thera, '{}');                                          -- the publisher passes the tags it was given
   else
@@ -205,6 +215,19 @@ begin
 end $$;
 revoke all on function public.notify_group_post() from public, anon, authenticated, service_role;
 grant execute on function public.notify_group_post() to service_role;
+
+create or replace function public.notifications_drugbox_owner() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.post_id is not null and exists (select 1 from public.posts p where p.id = new.post_id and p.as_drugbox and p.user_id = new.user_id) then
+    return null;                                    -- likes, comments, removals of a Drugbox post are not the publisher's personal news
+  end if;
+  return new;
+end $$;
+revoke all on function public.notifications_drugbox_owner() from public, anon, authenticated, service_role;
+grant execute on function public.notifications_drugbox_owner() to service_role;
+drop trigger if exists trg_notifications_drugbox_owner on public.notifications;
+create trigger trg_notifications_drugbox_owner before insert on public.notifications for each row when (new.post_id is not null) execute function public.notifications_drugbox_owner();
 
 -- the four channels (Drugbox's own pages, no fake members: they start with no member and no post)
 insert into public.groups (name, name_ar, description, description_ar, emoji, type, topic, official, channel_key, post_policy, sector, listed)
@@ -403,13 +426,15 @@ revoke all on function public.channel_publish_now(bigint) from public, anon, aut
 grant execute on function public.channel_publish_now(bigint) to authenticated, service_role;
 
 -- Admin → Channels: the plan, newest first, with the Cairo time to show
+drop function if exists public.channel_schedule_list(int);   -- its row shape changed while unreleased: replaced, not altered
 create or replace function public.channel_schedule_list(p_limit int default 100)
 returns table (id bigint, channel_key text, channel_name text, template_key text, body text, thera text[], status text, publish_local text,
-               publish_at timestamptz, post_id bigint, error text, created_by_name text, updated_at timestamptz, published_at timestamptz)
+               publish_at timestamptz, post_id bigint, error text, created_by_name text, updated_at timestamptz, published_at timestamptz, published_local text)
 language sql stable security definer set search_path = public as $$
   select s.id, g.channel_key, g.name, s.template_key, s.body, s.thera, s.status,
          to_char(s.publish_at at time zone 'Africa/Cairo', 'YYYY-MM-DD HH24:MI'), s.publish_at, s.post_id, s.error,
-         (select p.name from public.profiles p where p.id = s.created_by), s.updated_at, s.published_at
+         (select p.name from public.profiles p where p.id = s.created_by), s.updated_at, s.published_at,
+         to_char(s.published_at at time zone 'Africa/Cairo', 'YYYY-MM-DD HH24:MI')
     from public.channel_schedule s join public.groups g on g.id = s.group_id
    where public.is_platform_admin()
    order by (s.status in ('draft', 'scheduled')) desc, coalesce(s.publish_at, s.created_at) asc, s.id desc

@@ -12,8 +12,9 @@
 
 -- the contact and private fields a visitor never gets
 create or replace function private.public_company_strip(c jsonb) returns jsonb language sql immutable as $$
-  select (c - array['phone', 'email', 'whatsapp', 'registry', 'hours', 'owner_id', 'source_ref', 'vip_until', 'vip_reminded_at', 'mine', 'tax_verified'])
-         || jsonb_build_object('mine', false)
+  select (c - array['phone', 'email', 'whatsapp', 'registry', 'hours', 'owner_id', 'source_ref', 'vip_until', 'vip_reminded_at', 'mine', 'tax_verified',
+                    'location', 'website', 'profile', 'source'])
+         || jsonb_build_object('mine', false, 'profile', jsonb_strip_nulls(jsonb_build_object('services', c -> 'profile' -> 'services')))   -- what it offers, never its address
 $$;
 revoke all on function private.public_company_strip(jsonb) from public, anon, authenticated, service_role;
 grant execute on function private.public_company_strip(jsonb) to service_role;

@@ -541,6 +541,7 @@
         : g.pending ? '<button type="button" class="gcard-btn btn-joined" data-gpa="cancel">⏳ Request sent · Cancel</button>' : '<button type="button" class="gcard-btn btn-join" data-gpa="request">🔒 Request to join</button>';
       return '<div class="gp-lock"><div class="gp-lock-ic">' + (g.invited ? '✉️' : '🔒') + '</div><b>' + head + '</b><p>' + sub + '</p>' + btn + '</div>';
     }
+    if (g.official) return '<div class="why-banner gp-gate"><span>👀 Join this Drugbox channel to get its posts and to comment and react.</span><button type="button" class="gcard-btn btn-join" data-gpa="join">+ Join Group</button></div>';   /* AREA w-growth: nobody posts in a channel but Drugbox */
     return '<div class="why-banner gp-gate"><span>👀 You’re viewing a preview. Join to post, comment and react.</span><button type="button" class="gcard-btn btn-join" data-gpa="join">+ Join Group</button>' +
       (g.invited ? ' <button type="button" class="gcard-btn gp-decline" data-gpa="declineinv">✕ Decline invitation</button>' : '') + '</div>';
   }

@@ -4586,6 +4586,8 @@
         no phone, e-mail, team, contacts or anything private; contacting needs sign-in (growth.js asks) */
   var groupCardGW = groupCard;
   groupCard = function (g) { var c = groupCardGW.apply(this, arguments); if (g && g.official) { c.dataset.official = '1'; c.dataset.post = 'admins'; } else delete c.dataset.official; return c; };
+  var postFromGW = postFrom;   /* a Drugbox post opened anywhere else (Saved, a link) reads as Drugbox too */
+  postFrom = function (r) { var p = postFromGW.apply(this, arguments); if (r && r.as_drugbox) { p.drugbox = true; p.thera = r.thera || []; window.__gwDbx = true; } return p; };
   var gpPostGW = gpPost;
   gpPost = function (r) { var p = gpPostGW.apply(this, arguments); if (r && r.as_drugbox) { p.drugbox = true; p.own = false; } p.thera = (r && r.thera) || []; return p; };
   var notifFromGW = notifFrom;
@@ -4602,12 +4604,15 @@
     return r;
   };
   /* Home: the posts about one area (newest first, a page at a time — the same card and state as the feed) */
-  async function feedThera(tag) {
-    var r = await sb.from('posts').select(POST_SEL).is('group_id', null).contains('thera', [tag]).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
+  async function feedThera(tag, cursor) {   /* cursor: the last post shown ({t, id}) — the next page by (created_at, id) as the feed pages */
+    var q = sb.from('posts').select(POST_SEL).is('group_id', null).contains('thera', [tag]).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
+    if (cursor) q = q.lte('created_at', cursor.t).or('created_at.lt.' + cursor.t + ',and(created_at.eq.' + cursor.t + ',id.lt.' + cursor.id + ')');
+    var r = await q;
     if (r.error) throw r.error; var rows = r.data || [], ps = await postState(rows.map(function (x) { return x.id; }));
     rows.forEach(function (x) { putUser(x.author); });
     var list = rows.map(function (x) { return postFrom(x, ps.mine, ps.saved, ps.kinds); });
     list.forEach(function (p) { if (!window.POSTS.some(function (x) { return x.id === p.id; })) window.POSTS.push(p); });
+    list.more = rows.length === PAGE ? { t: rows[rows.length - 1].created_at, id: rows[rows.length - 1].id } : null;
     return list;
   }
   /* Marketplace: with an area chosen, the supply and requests come from market_search_thera (paging and counts as before) */

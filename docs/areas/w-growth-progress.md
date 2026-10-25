@@ -24,3 +24,8 @@ Baseline at f7dc703: parity vs web/reference/demo-approved.html already FAILS (t
 - J-BUSINESS-02/04/10 visitor steps pass live (sign-in page → "Browse the company directory"); the journey takes that way in instead of failing "not built".
 - tools/scale/timings.py: feed_thera, market_search_thera, channel_posts, expert_sessions_list, expert_topic_demand, founder_badge, public_directory_page.
 - SQL: 31/31 suites (+ growth_channels 63, growth_members 96) after: explicit FK actions, anon empty reads, 0100–0104 in launch_readiness, the visitor functions named in security_core F-27, specialty_answer no longer writes profiles (the member's own row update does).
+- Verifier round 1: 1 critical (meeting link leaked when no expert member: NULL in expert_session_link), 6 major (restored channel post lost as_drugbox;
+  channel posts leaked as the admin (Saved, notices, former admin's own-post rights); a founder invitation reopened after the founder's account was
+  deleted; visitors got address/location/website; SEO meta JS-only; founder dialog twice), 9 minor — all fixed, regression checks added
+  (growth_channels 67/67, growth_members 101/101 on a fresh DB). SEO: /c/<slug> server page (deploy/share/company.js → live api/company.js,
+  vercel.json rewrite, gateway route); live share links use /c/<slug>.
