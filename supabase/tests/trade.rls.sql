@@ -72,12 +72,16 @@ select pg_temp.step('two items', $$insert into public.listing_lines (listing_id,
 select pg_temp.ok('the items carry their keys; the listing''s search text and roots follow them', $$(select l.item_key = 'extra panadol 500mg tab' and p.search_text like '% panadol %' and p.search_text like '% بنادول %' and 'extra panadol' = any(p.roots)
   from public.listing_lines l join public.products p on p.id = l.listing_id where l.listing_id = pg_temp.id('p1') and l.pos = 0)$$);
 select pg_temp.step('publish', $$update public.products set status = 'active' where id = pg_temp.id('p1')$$);
+select pg_temp.no('replacing the items with one without a quantity is refused (published stock)', $$select public.listing_lines_replace(pg_temp.id('p1'), '[{"name":"TX x","unit":"box"}]')$$, '22023');
+select pg_temp.ok('the owner replaces the items in one go (and the refusal above left them untouched)', $$(select count(*) = 2 from public.listing_lines where listing_id = pg_temp.id('p1'))
+  and public.listing_lines_replace(pg_temp.id('p1'), '[{"name":"Panadol Extra","name_ar":"بنادول اكسترا","strength":"500 mg","form":"tab","qty":95,"unit":"box","expiry":"2027-03-01","source":"company","origin_country":"EG","pack_state":"intact"},{"name":"TX insulin pen","strength":"100 iu","form":"vial","qty":25,"unit":"pack","expiry":"2026-12-01","source":"importer","origin_country":"DE","pack_state":"intact","cold":true}]') = 2$$);
+select pg_temp.ok('…the new quantity is stored', $$(select qty = 95 from public.listing_lines where listing_id = pg_temp.id('p1') and pos = 0)$$);
 select pg_temp.ok('published: active, published_at set by the database, 30 days', $$(select active and published_at is not null and expires_at between now() + interval '29 days' and now() + interval '31 days' from public.products where id = pg_temp.id('p1'))$$);
 select pg_temp.no('the same offer again is refused as a duplicate (renew that one)', $$
   with x as (insert into public.products (user_id, name, kind, status, company_id) values ('f1111111-1111-1111-1111-111111111111', 'TX weekly stock', 'stock', 'draft', pg_temp.id('sco')) returning id)
   insert into ids select 'dup', id::text from x;
   insert into public.listing_lines (listing_id, pos, name, name_ar, strength, form, qty, unit, expiry, source, origin_country, pack_state, cold) values
-  (pg_temp.id('dup'), 0, 'Panadol Extra', 'بنادول اكسترا', '500 mg', 'tab', 120, 'box', '2027-03-01', 'company', 'EG', 'intact', false),
+  (pg_temp.id('dup'), 0, 'Panadol Extra', 'بنادول اكسترا', '500 mg', 'tab', 95, 'box', '2027-03-01', 'company', 'EG', 'intact', false),
   (pg_temp.id('dup'), 1, 'TX insulin pen', null, '100 iu', 'vial', 25, 'pack', '2026-12-01', 'importer', 'DE', 'intact', true);
   update public.products set status = 'active' where id = pg_temp.id('dup')$$, '23505');
 select pg_temp.no('the seller cannot mark it reserved by a plain update', $$update public.products set status = 'reserved' where id = pg_temp.id('p1')$$, '42501');

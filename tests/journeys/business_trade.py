@@ -2,7 +2,7 @@
 matching «عندي / محتاج», registration files, toll capacity, synonyms search, renew / duplicates / feature, reserved / sold with
 rating, the ten templates, «الزق قايمتك», agency both ways, the file's trust (documents seen, private box, checklist).
 Run: python3 tests/journeys/business_trade.py --target demo|live --lang en|ar --width 1440|390 --out DIR [--only J-BUSINESS-W01]"""
-import re, sys, os, json
+import re, sys, os, json, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _j import journey, main, PW
 from _biz import *
@@ -73,6 +73,9 @@ def publish(j, pg, f, publish_click=True):
     pg.evaluate("window.__jt&&window.__jt.push('\u00a7')")   # the toast log skips a repeat of its last line: the same words again are a new notice
     mark = j.toast_mark(pg)
     b = pg.locator(f + ' .btn-create:visible'); j.check(b.count(), "no 'Preview Listing'"); b.first.scroll_into_view_if_needed(); b.first.click(); pg.wait_for_timeout(700)
+    for _ in range(20):                                            # the preview window, or the form's refusal (a toast)
+        if dlg_open(pg) or [t for t in j.toasts_since(pg, mark) if t != '\u00a7']: break
+        pg.wait_for_timeout(250)
     if not (dlg_open(pg) and publish_click): pg.wait_for_timeout(300); return [t for t in j.toasts_since(pg, mark) if t != '\u00a7']
     dlg_click(j, pg, r'Publish listing|انشر', 'Publish listing')
     for _ in range(60):
@@ -142,8 +145,9 @@ def stock_lines(j):
         market(j, pg, 'manage'); row = pg.locator('#tab-manage [data-ml]', has_text=title).first; j.check(row.count(), 'the listing is not in My Listings')
         row.locator('[data-ml-a=edit]').click(); pg.wait_for_timeout(500)
         dlg_click(j, pg, r'Edit items|عدّل الأصناف'); pg.wait_for_timeout(900)
-        q = pg.locator('#dxItemsF .dx-line [data-l=qty]'); j.check(q.count() == 2, 'the items editor does not list the two items (%d)' % q.count()); q.first.fill('95')
-        dlg_click(j, pg, r'Save changes|احفظ التغييرات|حفظ'); j.settle(pg, 2000)
+        qq = pg.locator('#dxItemsF .dx-line [data-l=qty]'); j.check(qq.count() == 2, 'the items editor does not list the two items (%d)' % qq.count()); qq.first.fill('95')
+        mk = j.toast_mark(pg); dlg_click(j, pg, r'Save changes|احفظ التغييرات|حفظ'); j.settle(pg, 2000)
+        if os.environ.get('TX_DEBUG'): print('DEBUG save', j.toasts_since(pg, mk), flush=True)
         if j.live: j.check(j.wait_db("select l.qty::int from public.listing_lines l join public.products p on p.id=l.listing_id where p.name=%s and l.pos=0" % q_(title), 8) == '95', 'the new quantity is not stored')
         c = find_card(j, pg, title); j.check('95' in c.inner_text(), 'the card does not show the new quantity')
 

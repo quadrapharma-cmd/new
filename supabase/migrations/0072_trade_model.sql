@@ -244,9 +244,10 @@ begin
     raise exception 'Only the listing''s owner can change it' using errcode = '42501'; end if;
   delete from public.listing_lines where listing_id = p_id;
   insert into public.listing_lines (listing_id, pos, name, name_ar, strength, form, qty, unit, expiry, source, origin_country, pack_state, cold, price, discount_pct)
-  select p_id, (o - 1)::int, x.name, x.name_ar, x.strength, x.form, x.qty, x.unit, x.expiry, x.source, x.origin_country, x.pack_state, coalesce(x.cold, false), x.price, x.discount_pct
-    from jsonb_to_recordset(p_lines) with ordinality as x(name text, name_ar text, strength text, form text, qty numeric, unit text, expiry date, source text, origin_country text,
-                                                          pack_state text, cold boolean, price numeric, discount_pct numeric, o bigint);
+  select p_id, (e.o - 1)::int, e.v ->> 'name', e.v ->> 'name_ar', e.v ->> 'strength', e.v ->> 'form', (e.v ->> 'qty')::numeric, e.v ->> 'unit', (e.v ->> 'expiry')::date,
+         e.v ->> 'source', e.v ->> 'origin_country', e.v ->> 'pack_state', coalesce((e.v ->> 'cold')::boolean, false), (e.v ->> 'price')::numeric, (e.v ->> 'discount_pct')::numeric
+    from jsonb_array_elements(p_lines) with ordinality as e(v, o)
+   limit 300;
   get diagnostics n = row_count;
   if exists (select 1 from public.products where id = p_id and kind = 'stock' and status = 'active')
      and exists (select 1 from public.listing_lines where listing_id = p_id and (coalesce(qty, 0) <= 0 or unit is null)) then
