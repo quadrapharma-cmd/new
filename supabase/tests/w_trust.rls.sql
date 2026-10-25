@@ -437,9 +437,10 @@ select pg_temp.no('B (not invited) gets "not found" for the private group', $$se
 select pg_temp.act(6); select pg_temp.step('one account asks three codes for a number', $$select public.phone_verify_start('01211112222'); select public.phone_verify_start('01211112222'); select public.phone_verify_start('01211112222')$$);
 select pg_temp.nohint('… a fourth from that account waits (3 an hour)', $$select public.phone_verify_start('01211112222')$$, 'DX442');
 select pg_temp.act(5); select pg_temp.ok('… the number''s owner can still ask for a code (N8: one account does not lock a number out)', $$(public.phone_verify_start('01211112222') ->> 'sent')::boolean$$);
-select pg_temp.act(7); select pg_temp.step('another account asks two more', $$select public.phone_verify_start('01211112222'); select public.phone_verify_start('01211112222')$$);
-select pg_temp.act(10);
-select pg_temp.nohint('a number gets at most 6 codes a day across accounts', $$select public.phone_verify_start('01211112222')$$, 'DX442');
+select pg_temp.as_server(); select pg_temp.step('an hour later', $$update private.phone_code_log set sent_at = sent_at - interval '2 hours'$$);
+select pg_temp.act(6);
+select pg_temp.nohint('one account sends a number at most 3 codes a day (F4)', $$select public.phone_verify_start('01211112222')$$, 'DX442');
+select pg_temp.act(7); select pg_temp.ok('… and the number''s owner is not locked out', $$(public.phone_verify_start('01211112222') ->> 'sent')::boolean$$);
 -- F11 files in use
 select pg_temp.as_server();
 select pg_temp.ok('a broker''s authorisation and a report''s evidence are files in use', $$public.document_in_use('listings/' || pg_temp.u(1) || '/auth.pdf') and public.document_in_use((select evidence[1] from public.trader_reports order by id limit 1))$$);
@@ -510,6 +511,52 @@ select pg_temp.nohint('K does not rejoin the public group by himself (N9)', $$in
 select pg_temp.as_server(); select pg_temp.ok('… the removal stays', $$exists (select 1 from private.group_removals where group_id = pg_temp.id('g') and user_id = pg_temp.u(10))$$);
 -- N11 Arabic-Indic digits
 select pg_temp.ok('٥٠٠ and ٢٠٠ are different posts', $$private.dup_key('مطلوب أموكسيسيلين ٥٠٠ كجم') <> private.dup_key('مطلوب أموكسيسيلين ٢٠٠ كجم') and private.dup_key('Lactose 200 kg ') = private.dup_key('lactose, 200 kg.')$$);
+
+-- ══ 6e. the verifier's third round (0098) ══
+select pg_temp.as_server();
+select pg_temp.ok('rules v4: compliant and ordinary statements pass', $$(select bool_and(cardinality(private.review_topics(x)) = 0) from unnest(array[
+  'We do not sell to pharmacies', 'We never sell to pharmacies or patients', 'No sales to pharmacies, distributors only', 'not for sale to the public',
+  'Sale to the public is not allowed on Drugbox', 'لا نبيع للصيادلة', 'لا نبيع للصيدليات — للموزعين فقط', 'مش بنبيع للصيدليات', 'لا يوجد توصيل للصيدليات',
+  'Pharmacists are welcome to join our free GMP webinar', 'Hospital pharmacists welcome to the tender briefing', 'We moved from WhatsApp groups to Drugbox',
+  'WhatsApp channels are not allowed here', 'جروب الواتس مقفول، كلمونا هنا', 'هضيفك للجروب بتاع الموزعين هنا على Drugbox', 'Import for clients is regulated by EDA decree 2024',
+  'fake COA detection training for QC labs', 'how to spot forged documents in registration files', 'No fake COAs here', 'Email: t.me@pharmaco.com',
+  'جدول اول الشحنات: يناير', 'علبة واحدة عينة للتسجيل', 'Codeine-free cough syrup formula for licensing', 'EGP 1,450 per kg, 1 x 25 kg', 'ahmed.t@me.com']) x)$$);
+select pg_temp.ok('rules v4: the misses of round 3 are caught', $$(select bool_and(private.review_topics(x[1]) @> array[x[2]]) from (values
+  (array['trаmadol', 'controlled']), (array['tramadοl', 'controlled']), (array['tr@madol', 'controlled']), (array['lyric@', 'controlled']), (array['tramadool', 'controlled']),
+  (array['pregabalen', 'controlled']), (array['kaptagon', 'controlled']), (array['xanaks', 'controlled']), (array['codiene', 'controlled']), (array['كودين', 'controlled']),
+  (array['كبتجون', 'controlled']), (array['chat.whаtsapp.com/x', 'invite']), (array['chat whatsapp com/AbC', 'invite']), (array['chat%2Ewhatsapp%2Ecom/AbC', 'invite']),
+  (array['tinyurl.com/pharmagrp', 'invite']), (array['تليجرام @pharmaeg', 'invite']), (array['كلمني واتس وهبعتلك لينك الجروب', 'invite']), (array['ادخل الجروب ع الواتس', 'invite']),
+  (array['we sell to retail pharmacies', 'retail']), (array['we supply pharmacies with Augmentin', 'retail']), (array['available for pharmacies at public price', 'retail']),
+  (array['بنبيع للمرضى', 'retail']), (array['we import on your licence', 'import']), (array['بنستورد على رخصتك', 'import']), (array['شهادة تحليل مضروبة', 'sham']),
+  (array['We don''t sell to the public but we deliver to pharmacies', 'retail'])) v(x))$$);
+-- F1 a member with an active company offer leaves the company
+select pg_temp.as_server(); select pg_temp.step('J joins V''s company again', $$insert into public.company_members (company_id, user_id, role, accepted) values (pg_temp.id('coV'), pg_temp.u(9), 'admin', true)$$);
+select pg_temp.act(9);
+select pg_temp.step('J posts as the company', $$with p as (insert into public.products (user_id, name, type, category, company_id, posted_as) values (pg_temp.u(9), 'WT Sorbitol 70%', 'supply', 'api', pg_temp.id('coV'), 'company') returning id) insert into ids select 'pw2', id::text from p$$);
+select pg_temp.step('J leaves the company himself (F1)', $$delete from public.company_members where company_id = pg_temp.id('coV') and user_id = pg_temp.u(9)$$);
+select pg_temp.as_server(); select pg_temp.ok('… J is out and the offer is paused', $$not exists (select 1 from public.company_members where company_id = pg_temp.id('coV') and user_id = pg_temp.u(9)) and (select status from public.products where id = pg_temp.id('pw2')) = 'paused'$$);
+-- F2 he cannot take it as his own nor delete it
+select pg_temp.act(9);
+select pg_temp.nohint('J cannot turn it into his own individual offer (F2)', $$update public.products set posted_as = 'individual', company_id = null where id = pg_temp.id('pw2')$$, 'DX419');
+select pg_temp.nohint('… nor delete it', $$delete from public.products where id = pg_temp.id('pw2')$$, 'DX419');
+-- F3 an admin of two companies moves a member's offer
+select pg_temp.as_server(); select pg_temp.step('a second verified company of V; J back in V''s company, posting as it', $$with c as (insert into public.companies (owner_id, name, slug, status) values (pg_temp.u(4), 'WT Second Verified', 'wt-second', 'verified') returning id) insert into ids select 'coV2', id::text from c;
+  insert into public.company_members (company_id, user_id, role, accepted) values (pg_temp.id('coV'), pg_temp.u(9), 'sales', true)$$);
+select pg_temp.act(9); select pg_temp.step('J posts as V''s company', $$with p as (insert into public.products (user_id, name, type, category, company_id, posted_as) values (pg_temp.u(9), 'WT Xylitol', 'supply', 'api', pg_temp.id('coV'), 'company') returning id) insert into ids select 'pw3', id::text from p$$);
+select pg_temp.act(4);
+select pg_temp.nohint('V (admin of both) cannot move J''s offer to the other company (F3)', $$update public.products set company_id = pg_temp.id('coV2') where id = pg_temp.id('pw3')$$, 'DX438');
+select pg_temp.step('… but manages it (pause)', $$update public.products set status = 'paused' where id = pg_temp.id('pw3')$$);
+-- F10 broker fields only on a broker offer
+select pg_temp.as_server();
+select pg_temp.ok('a company offer keeps no broker fields', $$(select broker_for is null and broker_commission is null from public.products where id = pg_temp.id('pw3'))$$);
+-- F9 a published item edited
+select pg_temp.act(4);
+select pg_temp.step('V edits the price of the offer Drugbox published (it was held for "we deliver to pharmacies")', $$update public.products set price = 'USD 4.10' where id = pg_temp.id('phc')$$);
+select pg_temp.as_server(); select pg_temp.ok('… not held again for the same reason (F9)', $$not (select review_hold from public.products where id = pg_temp.id('phc'))$$);
+-- F7 group names
+select pg_temp.act(8);
+select pg_temp.step('ordinary names that mention Drugbox are fine', $$update public.groups set description = 'Drugbox users in Alexandria — sales team networking. Drugbox QA team leaders welcome.' where id = pg_temp.id('g')$$);
+select pg_temp.nohint('"Official Drug box group" is still refused', $$update public.groups set name = 'Official Drug box group' where id = pg_temp.id('g')$$, 'DX437');
 
 -- ══ 7. anon ══
 select pg_temp.as_anon();

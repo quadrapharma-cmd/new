@@ -211,7 +211,10 @@
     'Your account is suspended': 'حسابك موقوف',
     'Your company has already quoted on this request — revise it in Requests & deals': 'شركتك بعتت عرض سعر على الطلب ده قبل كده — عدّله من الطلبات والصفقات',
     'Your company is suspended and cannot send quotes': 'شركتك موقوفة ومش ممكن تبعت عروض أسعار',
-    'Drugbox withdrew the partner badge': 'Drugbox سحب شارة الجروب الشريك'
+    'Drugbox withdrew the partner badge': 'Drugbox سحب شارة الجروب الشريك',
+    'Waiting for Drugbox review': 'قيد مراجعة Drugbox',
+    'Your company listing is waiting for Drugbox review — you are told when it is checked. Only your company’s team sees it until then.': 'إعلان شركتك قيد مراجعة Drugbox — هنبلّغك لما يتراجع. فريق شركتك بس اللي شايفه لحد كده.',
+    'Only the person who posted an offer moves it to another company or changes who posts it': 'اللي نشر العرض بس هو اللي ينقله لشركة تانية أو يغيّر مين ناشره'
   });
   window.dxI18nExtend({}, [
     [/^Already decided by (.+) \((.+)\)$/, function (m) { return 'اتقرر بالفعل — ' + m[1] + ' (' + m[2] + ')'; }],

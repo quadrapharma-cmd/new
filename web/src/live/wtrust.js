@@ -80,7 +80,8 @@
   window.dxTradeAfter = function (data) {
     if (window.dxTrustUI && window.dxTrustUI.listed) window.dxTrustUI.listed(!!(data && data.review_hold));   /* "Your listing is live" only when it is */
     if (!data || !data.review_hold) return;
-    setTimeout(function () { toast('Your offer is waiting for Drugbox review — you are told when it is checked. Only you can see it until then.'); if (window.dxTrustUI) window.dxTrustUI.heldChanged(); }, 900);
+    var lot = arguments[1] && arguments[1].lot;
+    setTimeout(function () { toast(lot ? 'Your company listing is waiting for Drugbox review — you are told when it is checked. Only your company’s team sees it until then.' : 'Your offer is waiting for Drugbox review — you are told when it is checked. Only you can see it until then.'); if (window.dxTrustUI) window.dxTrustUI.heldChanged(); }, 900);
   };
   window.dxPostSaved = function (row) {
     if (window.dxTrustUI && window.dxTrustUI.posted) window.dxTrustUI.posted(row);   /* "Post published! ✅" only when it is */

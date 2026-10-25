@@ -156,11 +156,14 @@
   /* "Post published! ✅" only when it is: a held post (demo: known at once; live: once the database answered, UI.posted from
      dxPostSaved) or a group post waiting for its admins says that instead (F10) */
   var PUB = { feed: false, held: false, wait: 0, skip: 0 }, oWToast = window.toast;
-  function pubSkip(m) { if (m !== 'Post published! ✅') return false;
+  function pubSkip(m) { if (m === 'Comment posted!' && live()) return true;   /* live: said once the database took it (UI.commented) — a refused comment is never "posted" */
+    if (m !== 'Post published! ✅') return false;
     if (PUB.feed) { if (PUB.held) return true; if (live()) { PUB.wait = Date.now(); return true; } }
     if (Date.now() - PUB.skip < 3000) { PUB.skip = 0; return true; }
     return false; }
   if (typeof oWToast === 'function') window.toast = function (m) { if (pubSkip(m)) return; return oWToast.apply(this, arguments); };
+  UI.commented = function () { oWToast.call(window, 'Comment posted!'); };
+  UI.heldLot = function (name) { return /^⏳/.test(String(name || '')) ? name : '⏳ ' + T('Waiting for Drugbox review') + ' — ' + name; };
   UI.posted = function (row) { var held = !!(row && (row.review_hold || row.group_pending)), w = PUB.wait; PUB.wait = 0;
     if (w && Date.now() - w < 30000) { if (!held) oWToast.call(window, 'Post published! ✅'); } else if (held) PUB.skip = Date.now(); };
   var oSubmit = window.submitPost;

@@ -361,7 +361,8 @@
     var inp = document.getElementById('ci-' + id), text = inp ? inp.value.trim() : ''; if (!text) return;
     o2.submitComment(id);
     sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: text }).then(function (r) {
-      if (r.error) { var c = window.COMMENTS[id]; if (c) c.pop(); var box = document.getElementById('cmt-' + id), last = box && box.querySelector('.cmt-box .cmt:last-child'); if (last) last.remove(); toastErr(r.error); } });
+      if (r.error) { var c = window.COMMENTS[id]; if (c) c.pop(); var box = document.getElementById('cmt-' + id), last = box && box.querySelector('.cmt-box .cmt:last-child'); if (last) last.remove(); toastErr(r.error); }
+      else if (window.dxTrustUI && window.dxTrustUI.commented) window.dxTrustUI.commented(); });   /* AREA w-trust: "Comment posted!" once it is */
   };
   window.toggleComments = function (id) {
     var box = document.getElementById('cmt-' + id), opening = box && box.style.display === 'none';
@@ -1509,11 +1510,12 @@
   /* ═══════════════ C3 — company listings (surplus, dossiers), group buying, approved suppliers ═══════════════ */
   var LIST = { surplus: [], dossiers: [], known: {}, avl: {} };
   function listingFrom(r) { var slug = CO.byId[r.company_id] || sslug(r.co && r.co.slug);
+    if (r.review_hold && window.dxTrustUI && window.dxTrustUI.heldLot) r = Object.assign({}, r, { product: window.dxTrustUI.heldLot(r.product) });   /* AREA w-trust: the team sees it waits */
     return r.kind === 'surplus' ? { id: r.ref, slug: slug, product: r.product, qty: r.qty || '', batch: r.batch || '—', expiry: r.expiry || '—', price: r.price || '', off: r.off || 0 }
       : { id: r.ref, slug: slug, product: r.product, status: r.reg_status || '', deal: r.deal_kind || '', markets: r.markets || 'Egypt' }; }
   async function loadListings() {
     window.dxLiveListings = true;                     /* set first: the demo's sample listings never show, even when this load fails (F-54) */
-    var r = await sb.from('company_listings').select('*, co:companies(slug)').eq('active', true).order('created_at', { ascending: false }).limit(500); if (r.error) throw r.error;
+    var r = await sb.from('company_listings').select('*, co:companies(slug)').or('active.eq.true,review_hold.eq.true').order('created_at', { ascending: false }).limit(500); if (r.error) throw r.error;   /* AREA w-trust: + the team's held lots (0095) */
     LIST.surplus = []; LIST.dossiers = []; (r.data || []).forEach(function (x) { LIST.known[x.ref] = 1; (x.kind === 'surplus' ? LIST.surplus : LIST.dossiers).push(listingFrom(x)); });
   }
   async function persistListings(kind, list) {
@@ -1522,7 +1524,8 @@
       var row = kind === 'surplus' ? { ref: it.id, company_id: raw.id, kind: 'surplus', product: it.product, qty: it.qty, batch: it.batch, expiry: it.expiry, price: it.price, off: it.off || 0, created_by: ME_UUID }
         : { ref: it.id, company_id: raw.id, kind: 'dossier', product: it.product, reg_status: it.status, deal_kind: it.deal, markets: it.markets, created_by: ME_UUID };
       var r = await sb.from('company_listings').insert(row).select('review_hold'); if (r.error) { delete LIST.known[it.id]; toastErr(r.error); await loadListings().catch(function () {}); return; }
-      if (window.dxTradeAfter) window.dxTradeAfter(r.data && r.data[0]); }   /* AREA w-trust: a held lot / dossier (0095) says so */
+      if (window.dxTradeAfter) window.dxTradeAfter(r.data && r.data[0], { lot: true });   /* AREA w-trust: a held lot / dossier (0095) says so */
+      if (r.data && r.data[0] && r.data[0].review_hold && window.dxTrustUI && window.dxTrustUI.heldLot) it.product = window.dxTrustUI.heldLot(it.product); }
     if (kind === 'surplus') LIST.surplus = list; else LIST.dossiers = list;
   }
   async function loadAvl() {
@@ -2391,7 +2394,7 @@
       }
       case 'react': return gpWrite(sb.from('reactions').upsert({ post_id: id, user_id: ME_UUID, kind: RK_OUT[d.kind] || d.kind || 'like' }, { onConflict: 'post_id,user_id' }));
       case 'unreact': return gpWrite(sb.from('reactions').delete().eq('post_id', id).eq('user_id', ME_UUID));
-      case 'comment': { var cr = await gpWrite(sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: (d.comment && d.comment.text) || '' }).select('id').single()); if (d.comment && cr) d.comment.id = cr.id; return; }
+      case 'comment': { var cr = await gpWrite(sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: (d.comment && d.comment.text) || '' }).select('id').single()); if (window.dxTrustUI && window.dxTrustUI.commented) window.dxTrustUI.commented();   /* AREA w-trust */ if (d.comment && cr) d.comment.id = cr.id; return; }
       case 'deleteComment': { var cid = d.comment && d.comment.id; if (!cid) throw new Error('Reload the group to delete this comment');
         return gpWrite(sb.from('comments').delete().eq('id', cid).select('id'), 'You can delete your own comments, comments on your posts, or (as an admin) any comment in the group'); }
       case 'commentLike': {   /* merge (G-15): the group comment Like is social's comment like — one counter trigger, the author is told (0049) */
