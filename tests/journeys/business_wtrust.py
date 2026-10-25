@@ -137,16 +137,16 @@ def verified_company_or_individual(j):
         ok = [x for x in o if co_ok in x['t']]; bad = [x for x in o if co_new in x['t']]
         j.check(ok and not ok[0]['off'], 'the verified company cannot be chosen: %s' % o)
         j.check(bad and bad[0]['off'] and re.search(r'needs the Drugbox badge|محتاجة شارة Drugbox', bad[0]['t']), 'the unverified page is not marked "needs the Drugbox badge" (or can be chosen): %s' % bad)
-    if j.live:
-        with j.step('The browser cannot post as the unverified company through the API either'):
-            cid = j.sql1("select id from public.companies where name=$q$%s$q$" % co_new)
-            r = pg.evaluate("([u,c])=>dxLive.sb.from('products').insert({user_id:u,name:'Sneaky offer',type:'supply',category:'api',company_id:+c,posted_as:'company'}).select('id').then(r=>r.error?r.error.message:'saved')", [a['id'], cid])
-            j.check(r != 'saved' and re.search(r'verification badge', r), 'the API took an offer as an unverified company: %s' % r)
     with j.step('Publish as the verified company → its card says "✓ Verified company"'):
         choose_as(j, pg, [x['v'] for x in o if co_ok in x['t']][0])
         preview_publish(j, pg, profile={'company': co_ok})
         c = browse_card(j, pg, n1); j.check(re.search(r'Verified company|شركة موثّقة', chip(c)), 'the card of a verified company\'s offer says "%s"' % chip(c))
         if j.live: j.check(j.wait_db("select posted_as||'|'||company_id from public.products where name=$q$%s$q$" % n1, 10) == 'company|%s' % ver['id'], 'the offer is not saved as the verified company')
+    if j.live:
+        with j.step('The browser cannot post as the unverified company through the API either'):
+            cid = j.sql1("select id from public.companies where name=$q$%s$q$" % co_new)
+            r = pg.evaluate("([u,c])=>dxLive.sb.from('products').insert({user_id:u,name:'Sneaky offer',type:'supply',category:'api',company_id:+c,posted_as:'company'}).select('id').then(r=>r.error?r.error.message:'saved')", [a['id'], cid])
+            j.check(r != 'saved' and re.search(r'verification badge', r), 'the API took an offer as an unverified company: %s' % r)
     with j.step('Publish another as myself → its card says "👤 Individual"'):
         offer_form(j, pg, n2, '2.10'); choose_as(j, pg, 'individual'); preview_publish(j, pg)
         c = browse_card(j, pg, n2); j.check(re.search(r'Individual|فرد', chip(c)), 'the card of a member\'s own offer says "%s"' % chip(c))
