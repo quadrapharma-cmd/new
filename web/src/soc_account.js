@@ -93,6 +93,16 @@
     clearMember(); setTimeout(clearMember, 400);
     return r;
   };
+  /* ===== AREA w-trust: SIM-01 — the sign-in and sign-up fields keep nothing once the app opens or closes ===== */
+  /* whatever opened or closed the app (the form, Enter, a remembered session, a session ended in another tab, account
+     deletion), the e-mail and password typed on this computer are gone: watched on the app's own visibility */
+  (function () {
+    var app = $('app'), was = null; if (!app || !window.MutationObserver) return;
+    function clearAuth() { ['loginEmail', 'loginPw', 'suName', 'suEmail', 'suPw', 'suCompany', 'fpEmail'].forEach(function (id) { var f = $(id); if (f) f.value = ''; }); }
+    function look() { var on = app.getClientRects().length > 0; if (was !== null && on !== was) clearAuth(); was = on; }
+    new MutationObserver(look).observe(app, { attributes: true, attributeFilter: ['style', 'class'] }); look();
+  })();
+  /* ===== end AREA w-trust: SIM-01 ===== */
 
   /* ── the sign-in box shows one of: the sign-in form (approved), "Forgot password?", "Check your e-mail", a farewell ── */
   var box = document.querySelector('#loginPage .auth-form-box');

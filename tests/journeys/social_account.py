@@ -201,13 +201,30 @@ def signout_shared_pc(j):
         post_db(j, a['id'], 'Private-ish update from Aya ' + j.tag)
         j.reload(pg)
     else:
-        pg = j.new_page(); j.demo_signin(pg)
+        pg = j.new_page()
+    AUTH_FIELDS = "['loginEmail','loginPw','suName','suEmail','suPw','suCompany'].filter(i=>{const e=document.getElementById(i);return e&&e.value!==''})"
+    with j.step('Sign in through the login form (typing the e-mail and password) → the app opens and the form keeps nothing (SIM-01)'):
+        if j.live:
+            j.check(not pg.evaluate(AUTH_FIELDS), 'the sign-up fields still hold what was typed after the account opened: %s' % pg.evaluate(AUTH_FIELDS))
+            pg.evaluate('doLogout()'); j.check(j.wait(pg, LOGIN_VISIBLE, 6), 'sign out did not show the login page')
+            email, pw = a['email'], a['pw']
+        else: email, pw = 'haytham@drugbox.app', 'password123'
+        pg.click('#loginEmail'); pg.keyboard.type(email); pg.click('#loginPw'); pg.keyboard.type(pw)
+        pg.click('#loginPage button.f-btn.dx-js-only')
+        j.check(j.wait(pg, "(()=>{const e=document.getElementById('app');return !!e&&e.getClientRects().length>0})()", 15), 'sign-in through the form did not open the app (%s)' % j.text(pg, '#loginErr')[:120])
+        j.settle(pg, 900); j.skip_tour(pg)
+        left = pg.evaluate(AUTH_FIELDS); j.check(not left, 'signed in, but the login form still holds what was typed: %s' % left)
     tab2 = j.new_page(pg.context)
     with j.step('Open Profile and click Sign Out → login page with empty fields'):
         j.nav(pg, 'profile')
         j.click(pg, r'^(Sign Out|Sign out|Log out|تسجيل الخروج|خروج)$', what='Sign Out', exact=True)
         j.check(j.wait(pg, LOGIN_VISIBLE, 6), 'sign out did not show the login page')
-        j.check(pg.input_value('#loginEmail') == '' and pg.input_value('#loginPw') == '', 'the login fields are not empty after sign out')
+        pg.wait_for_timeout(600)
+        j.check(pg.input_value('#loginEmail') == '' and pg.input_value('#loginPw') == '', 'the login fields are not empty after sign out (e-mail "%s", password %s)' % (pg.input_value('#loginEmail'), 'kept' if pg.input_value('#loginPw') else 'empty'))
+        left = pg.evaluate(AUTH_FIELDS); j.check(not left, 'after sign out these sign-in/sign-up fields still hold text: %s' % left)
+        pg.evaluate('showSignup()'); pg.wait_for_timeout(300)
+        j.check(not pg.evaluate(AUTH_FIELDS), 'the sign-up form shows what was typed before sign out')
+        pg.evaluate('showLogin()')
     with j.step('Browser Back and reload show no page of the app'):
         pg.go_back(); pg.wait_for_timeout(800)
         if pg.url.startswith('about:'): j.open(pg)            # Back left the app (no routing — J-SOCIAL-50): the next person opens it again
