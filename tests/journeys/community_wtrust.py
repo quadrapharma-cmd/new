@@ -231,7 +231,7 @@ def held_for_review(j):
             j.check(j.wait_db("select count(*) from public.products where name=$q$%s$q$" % off, 8, want='0'), 'Remove did not remove the offer')
             n = j.wait_db("select data->>'note' from public.notifications where user_id='%s' and type='auto_review_decided' and data->>'outcome'='removed'" % a['id'], 8)
             j.check(n and 'Controlled substances' in n, 'the member is not told why the offer was removed: %s' % n)
-            pg.reload(); j.settle(pg, 2000); j.nav(pg, 'notifs'); j.settle(pg, 1500)
+            j.reload(pg); notifs(j, pg)
             j.check(re.search(r'Drugbox removed your offer|Drugbox حذف عرضك', j.text(pg)), 'the notification does not say the offer was removed: %s' % j.text(pg)[:200])
 
 @journey('J-COMMUNITY-W19')

@@ -356,11 +356,18 @@
 
   /* ══════════ 4. Messages: a new account is pointed out (W-20) ══════════ */
   var NEWACC = {};
+  /* the person of the open conversation: the live thread carries their id; the demo's, their name */
+  function openUid() {
+    if (window.dxMxOpenUid) { var x = window.dxMxOpenUid(); if (x) return x; }
+    var a = document.querySelector('#content .mx-thread.active'); if (a && a.dataset.uid) return +a.dataset.uid;
+    var n = document.querySelector('#content .chat-head .ch-name'), nm = n ? (window.dxOrigText ? window.dxOrigText(n) : n.textContent).trim().toLowerCase() : '';
+    var u = nm && (window.USERS || []).filter(function (x) { return String(x.name || '').toLowerCase() === nm; })[0]; return u ? u.id : null;
+  }
   function paintNewAccount() {
-    if (page() !== 'messages' || !window.dxMxOpenUid) return; var uid = window.dxMxOpenUid(); if (!uid || uid === me().id) return;
+    if (page() !== 'messages') return; var uid = openUid(); if (!uid || uid === me().id) return;
     var head = document.querySelector('#mx .chat-head, .chat-head'); if (!head) return;
     var box = head.parentNode.querySelector('.wt-newacc'); if (box && +box.dataset.uid === uid) return; if (box) box.remove();
-    var go = function (c) { if (!c || !c.new_account || window.dxMxOpenUid() !== uid || head.parentNode.querySelector('.wt-newacc')) return; var d = Math.max(0, Math.floor((Date.now() - Date.parse(c.member_since)) / 864e5));
+    var go = function (c) { if (!c || !c.new_account || openUid() !== uid || head.parentNode.querySelector('.wt-newacc')) return; var d = Math.max(0, Math.floor((Date.now() - Date.parse(c.member_since)) / 864e5));
       head.insertAdjacentHTML('afterend', '<div class="wt-newacc" data-uid="' + uid + '" role="note">🆕 <span>' + (d === 0 ? 'New account — joined today.' : d === 1 ? 'New account — joined yesterday.' : 'New account — joined ' + d + ' days ago.') + '</span> <span>Check who you trade with before you pay or ship.</span></div>');
       if (window.dxI18nAttrs) window.dxI18nAttrs(head.parentNode); };
     if (NEWACC[uid] !== undefined) return go(NEWACC[uid]);
