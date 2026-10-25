@@ -1,0 +1,9 @@
+# Usernames that DRAW alike while confusables.txt keys them apart (tools/names/username_rule.mjs): «letters ; letters», each side
+# a-z 0-9, one side a single character. The fold writes the single character as the other side, so the two can never both be taken
+# («ahmed» and «ahrned» are one username). confusables.txt gives 0 / o, 1 / l, I / l and m / rn for ASCII; the lines below are the
+# owner's (25 Oct: «0/o, 1/l/i, rn/m, vv/w, cl/d») and what tools/names/render_scan.py --part usernames --write finds in the app's
+# fonts (Poppins, system-ui; 12-16 px; 400-700). The scan fails while it finds a pair the fold keys apart.
+# owner, 25 Oct
+l ; i
+vv ; w
+cl ; d
