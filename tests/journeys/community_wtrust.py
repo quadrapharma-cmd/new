@@ -92,6 +92,7 @@ def group_admin_tools(j):
         said = gpost_try(j, pm, 'Available: lactose monohydrate 200 kg, CoA attached %s' % t, 'market')
         if j.live:
             j.check(re.search(r'group’s admins|مديري الجروب', said), 'the member is not told the post waits for the admins (toasts: %s)' % said)
+            j.check(not re.search(r'Post published|تم نشر المنشور', said), 'a post waiting for the admins says "Post published" (toasts: %s)' % said)
             j.check(j.wait_db("select group_pending from public.posts where group_id=%s and body like '%%lactose monohydrate%%'" % gid, 8) == 't', 'the post is not waiting for the admins')
         else: j.check(not re.search(r'not allowed|refused|ممنوع', said), 'the categorised post was refused: %s' % said)
     if j.live:
@@ -198,6 +199,7 @@ def held_for_review(j):
         j.nav(pg, 'feed'); mark = j.toast_mark(pg); feed_compose(j, pg, body); j.settle(pg, 2500)
         said = ' '.join(j.toasts_since(pg, mark))
         j.check(re.search(r'waiting for Drugbox review|قيد مراجعة Drugbox', said), 'the member is not told the post waits for review (toasts: %s)' % said[:200])
+        j.check(not re.search(r'Post published|تم نشر المنشور', said), 'a held post says "Post published" (toasts: %s)' % said[:200])
         j.wait(pg, "n=>[...document.querySelectorAll('#content .post')].some(p=>p.innerText.includes(n)&&p.querySelector('.wt-held'))", 8, t)
         j.check(pg.locator('#content .post', has_text=t).first.locator('.wt-held').count(), 'the held post does not say it waits for review')
         if j.live:

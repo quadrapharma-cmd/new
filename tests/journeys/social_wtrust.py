@@ -53,6 +53,9 @@ def verified_private_phone(j):
             r = pb.evaluate("u=>Promise.all([dxLive.sb.from('profiles').select('phone').eq('id',u),dxLive.sb.from('member_verifications').select('phone_hash').eq('user_id',u),dxLive.sb.rpc('trade_card',{p_user:u})]).then(a=>[a[0].error?'refused':JSON.stringify(a[0].data),a[1].error?'refused':JSON.stringify(a[1].data),JSON.stringify(a[2].data)])", a['id'])
             j.check(r[0] == 'refused' and r[1] == 'refused' and num[1:] not in r[2], 'the number or its hash can be read through the API: %s' % r)
             r = pb.evaluate("p=>dxLive.sb.rpc('phone_verify_start',{p_phone:p}).then(x=>x.error?x.error.message:'sent')", shown)
+            j.check(r == 'sent', 'asking a code for a number tells whether it is on Drugbox (it may only be said to whoever gets the code): %s' % r)
+            code = j.wait_db("select substring(body from 'code: (\\d{6})') from private.sms_outbox where phone='+20%s' order by id desc limit 1" % num[1:], 8)
+            r = pb.evaluate("c=>dxLive.sb.rpc('phone_verify_confirm',{p_code:c}).then(x=>x.error?x.error.message:'verified')", code)
             j.check(re.search(r'already verified on another', r), 'another account can verify the same number: %s' % r)
         with j.step('In a conversation with a new account, a notice says so'):
             pb.evaluate("u=>messageUser(dxLive.aid(u))", a['id']); j.settle(pb, 2500)

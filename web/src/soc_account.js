@@ -102,8 +102,10 @@
     function look() { var on = app.getClientRects().length > 0; if (was !== null && on !== was) clearAuth(); was = on; }
     new MutationObserver(look).observe(app, { attributes: true, attributeFilter: ['style', 'class'] }); look();
     /* a sign-up (or sign-in) that waits for the e-mail confirmation never opens the app: the "check your e-mail" screen empties the form too */
-    var wrap = $('authWrap'), pending = false;
-    function waiting() { pending = false; if (wrap.querySelector('.dx-auth-panel [data-auth="resend"], #suErr.dx-auth-info')) clearAuth(); }
+    var wrap = $('authWrap'), pending = false, shown = false;
+    function waiting() { pending = false;
+      var on = [].some.call(wrap.querySelectorAll('.dx-auth-panel [data-auth="resend"], #suErr.dx-auth-info'), function (e) { return e.getClientRects().length > 0; });
+      if (on && !shown) clearAuth(); shown = on; }   /* once, when the "check your e-mail" screen appears */
     if (wrap) new MutationObserver(function () { if (!pending) { pending = true; setTimeout(waiting, 0); } }).observe(wrap, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
   })();
   /* ===== end AREA w-trust: SIM-01 ===== */

@@ -75,6 +75,8 @@
       return { company_id: null, posted_as: 'broker', broker_for: o.broker_for, broker_commission: +o.commission, broker_auth_path: path }; }
     return { company_id: null, posted_as: 'individual' };
   };
+  var oLiveHook = window.dxLiveHook;   /* a listing being published: its "Your listing is live" waits for the database (wtrust2 LISTED) */
+  window.dxLiveHook = function (kind) { if (kind === 'listing' && window.dxTrustUI && window.dxTrustUI.listing) window.dxTrustUI.listing(); return oLiveHook ? oLiveHook.apply(this, arguments) : undefined; };
   window.dxTradeAfter = function (data) {
     if (window.dxTrustUI && window.dxTrustUI.listed) window.dxTrustUI.listed(!!(data && data.review_hold));   /* "Your listing is live" only when it is */
     if (!data || !data.review_hold) return;

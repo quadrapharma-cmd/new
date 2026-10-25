@@ -144,6 +144,7 @@
     if (pubSkip(m)) return;
     return oToast.apply(this, arguments);
   };
+  UI.listing = function () { LISTED.at = Date.now(); LISTED.held = false; };   /* live: the adapter's own dxLiveHook replaces the one above */
   UI.listed = function (held) { var w = LISTED.wait; LISTED.wait = 0; if (!held && w && Date.now() - w < 30000) oToast.call(D, 'Your listing is live'); };
   function notifyHeld(t, text) {
     if (live() || !window.NOTIFS) return;
