@@ -115,7 +115,7 @@
     var page = document.body.getAttribute('data-page');
     if (page === 'groups') { if (document.querySelector('#gx .gcard[data-official="1"]:not(:has(.dx-off-badge))')) badgeCards(); }
     else if (page === 'feed') feedBar();
-    else if (page === 'market') marketBar();
+    else if (page === 'market') { marketBar(); if (GW.marketThera && document.querySelector('#tab-browse :is(.lcard,.dcard,.scard,.jcard,.sponsored-card):not([style*="display: none"])')) applyMarketQuiet(); }
     else if (page === 'admin') adminNav();
   });
 
@@ -330,13 +330,17 @@
   }
   function cardText(el) { return el.innerText || ''; }
   function applyMarket() {
-    if (live() && window.dxGrowth.marketThera) { window.dxGrowth.marketThera(GW.marketThera); return; }   /* live: the adapter asks the server (market_search_thera) */
-    var cards = document.querySelectorAll('#mkx .main .listing-card, #mkx .main .sponsored-card, #mkx .main .lcard, #mkx .main [data-lid]'), n = 0;
-    cards.forEach(function (el) { var on = !GW.marketThera || theraOf(cardText(el)).indexOf(GW.marketThera) >= 0; el.style.display = on ? '' : 'none'; if (on) n++; });
+    if (live() && window.dxGrowth.marketThera && GW.__mkAsked !== GW.marketThera) {   /* live: the server answers first (market_search_thera); then the cards on screen are checked */
+      GW.__mkAsked = GW.marketThera; window.dxGrowth.marketThera(GW.marketThera).then(function () { setTimeout(applyMarket, 0); }); return; }
+    var cards = document.querySelectorAll('#tab-browse :is(.lcard,.dcard,.scard,.jcard,.sponsored-card)'), n = 0;
+    cards.forEach(function (el) {   /* a listing from the database was chosen by the server (its whole text); any other card by the words it shows */
+      var on = !GW.marketThera || (live() && /^p\d+$/.test(el.dataset.live || '')) || theraOf(cardText(el)).indexOf(GW.marketThera) >= 0;
+      el.style.display = on ? '' : 'none'; if (on) n++; });
     var old = document.querySelector('#mkx .dx-th-empty'); if (old) old.remove();
-    if (GW.marketThera && !n) { var m = document.querySelector('#mkx .main'); if (m) { m.insertAdjacentHTML('afterbegin', '<div class="dbk-empty dx-th-empty">No listings about ' + esc(theraLabel(GW.marketThera)) + ' yet — try another area.</div>'); i18n(m.firstElementChild); } }
+    if (GW.marketThera && !n) { var m = document.querySelector('#tab-browse .main') || document.querySelector('#mkx .main'); if (m) { m.insertAdjacentHTML('afterbegin', '<div class="dbk-empty dx-th-empty">No listings about ' + esc(theraLabel(GW.marketThera)) + ' yet — try another area.</div>'); i18n(m.firstElementChild); } }
   }
   GW.applyMarket = applyMarket;
+  function applyMarketQuiet() { if (live() && GW.__mkAsked !== GW.marketThera) return; var any = [].some.call(document.querySelectorAll('#tab-browse :is(.lcard,.dcard,.scard,.jcard,.sponsored-card)'), function (el) { return el.style.display !== 'none' && !(live() && /^p\d+$/.test(el.dataset.live || '')) && theraOf(cardText(el)).indexOf(GW.marketThera) < 0; }); if (any) applyMarket(); }
 })();
 
 /* ═════════════════════════ AREA w-growth, part 2: founders, Ask an expert, directory import, visitors, courses in Arabic, the specialty question ═════════════════════════ */
@@ -358,9 +362,9 @@
   function copy(text) { try { if (navigator.clipboard) return navigator.clipboard.writeText(text).then(function () { toast('Copied'); }, function () { toast('Select the text and copy it'); }); } catch (e) {} toast('Select the text and copy it'); }
 
   /* ═════════════ 3. founding members (W-42) ═════════════ */
-  var SEG = [['manufacturer', 'Manufacturers', 'مصانع', 8], ['toll_brand', 'Toll manufacturers / brand owners', 'تصنيع لدى الغير / أصحاب براند', 10], ['agency', 'Agencies', 'وكالات', 15],
-             ['distributor', 'Distributors / warehouses', 'موزّعين / مخازن', 15], ['file_owner', 'Registration-file owners', 'أصحاب ملفات تسجيل', 5], ['api', 'API / excipient suppliers', 'موردي خامات', 5],
-             ['packaging', 'Packaging suppliers', 'موردي عبوات وتغليف', 10], ['regulatory', 'Regulatory consultants', 'استشاريين تسجيل', 5]];
+  var SEG = [['manufacturer', 'Manufacturers', 'المصانع', 8], ['toll_brand', 'Toll manufacturers / brand owners', 'التصنيع لدى الغير / أصحاب البراند', 10], ['agency', 'Agencies', 'الوكالات', 15],
+             ['distributor', 'Distributors / warehouses', 'الموزعون / المخازن', 15], ['file_owner', 'Registration-file owners', 'أصحاب ملفات التسجيل', 5], ['api', 'API / excipient suppliers', 'موردو الخامات', 5],
+             ['packaging', 'Packaging suppliers', 'موردو العبوات والتغليف', 10], ['regulatory', 'Regulatory consultants', 'استشاريو التسجيل', 5]];
   function segLabel(k, rows) { var r = (rows || []).filter(function (x) { return x.key === k; })[0]; if (r) return ar() ? r.label_ar : r.label_en; var s = SEG.filter(function (x) { return x[0] === k; })[0]; return s ? (ar() ? s[2] : s[1]) : k; }
   function newCode() { var a = '0123456789ABCDEFGHJKMNPQRSTVWXYZ', b = new Uint8Array(20), out = ''; (window.crypto || {}).getRandomValues ? crypto.getRandomValues(b) : b.forEach(function (_, i) { b[i] = Math.floor(Math.random() * 256); });
     for (var i = 0; i < 20; i++) out += a[b[i] % 32]; return 'DBX-' + out.match(/.{4}/g).join('-'); }
@@ -503,9 +507,9 @@
       i18n(m.el); }); });
 
   /* ═════════════ 4. Ask an expert (W-43) — on the Training page ═════════════ */
-  var TOPICS = [['file_purchase', 'Buying a registration file safely', 'شراء ملف تسجيل بأمان'], ['nfsa', 'NFSA notification (supplements, food)', 'إخطار هيئة سلامة الغذاء'], ['agency_contract', 'Agency and distribution contracts', 'عقد الوكالة والتوزيع'],
+  var TOPICS = [['file_purchase', 'Buying a registration file safely', 'شراء ملف تسجيل بأمان'], ['nfsa', 'NFSA notification (supplements, food)', 'إخطار هيئة سلامة الغذاء (المكملات والأغذية)'], ['agency_contract', 'Agency and distribution contracts', 'عقود الوكالة والتوزيع'],
     ['toll_card', 'The toll-manufacturing card', 'كارت التصنيع لدى الغير'], ['pricing', 'Pricing and price increases', 'التسعير وزيادة الأسعار'], ['importer', 'Importing and the importer’s file', 'الاستيراد وملف المستورد'],
-    ['cold_chain', 'Cold chain', 'سلسلة التبريد'], ['labs_tracking', 'Authority labs and track & trace', 'معامل الهيئة والتتبع'], ['choose_factory', 'Choosing a factory', 'اختيار مصنع'], ['other', 'Another topic', 'موضوع تاني']];
+    ['cold_chain', 'Cold chain', 'سلسلة التبريد'], ['labs_tracking', 'Authority labs and track & trace', 'معامل الهيئة والتتبع'], ['choose_factory', 'Choosing a factory', 'اختيار مصنع'], ['other', 'Another topic', 'موضوع آخر']];
   function topicLabel(k) { var t = TOPICS.filter(function (x) { return x[0] === k; })[0]; return t ? (ar() ? t[2] : t[1]) : k; }
   function addDays(n, hm) { var d = GW.cairoNow(n * 86400000).slice(0, 10); return d + ' ' + hm; }
   function demoSessions() {
@@ -733,7 +737,7 @@
   };
   function impResult(r) {
     var box = document.querySelector('#adminContent .dx-imp-out'); if (!box) return;
-    box.innerHTML = '<div class="dx-imp-sum"><span class="dx-imp-ok">' + esc(r.dry_run ? 'Would add' : 'Added') + ': <span data-noi18n>' + r.created + '</span></span><span class="dx-imp-dup">Duplicates: <span data-noi18n>' + r.duplicates + '</span></span><span class="dx-imp-bad">Invalid: <span data-noi18n>' + r.invalid + '</span></span></div>' +
+    box.innerHTML = '<div class="dx-imp-sum"><span class="dx-imp-ok"><span>' + esc(r.dry_run ? 'Would add' : 'Added') + '</span>: <span data-noi18n>' + r.created + '</span></span><span class="dx-imp-dup"><span>Duplicates</span>: <span data-noi18n>' + r.duplicates + '</span></span><span class="dx-imp-bad"><span>Invalid</span>: <span data-noi18n>' + r.invalid + '</span></span></div>' +
       '<div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Row</th><th>Company</th><th>Result</th></tr></thead><tbody>' + (r.results || []).map(function (x) {
         return '<tr><td data-noi18n>' + x.row + '</td><td data-noi18n>' + esc(x.name || '') + '</td><td>' + (x.status === 'invalid' ? '<span class="dx-imp-bad">Invalid</span>: <span data-noi18n>' + esc(x.reason || '') + '</span>'
           : x.status === 'duplicate' ? '<span class="dx-imp-dup">Already in the directory</span>' + (x.of ? ' (<span data-noi18n>' + esc(x.of) + '</span>)' : '') : '<span class="dx-imp-ok">' + esc(x.status === 'created' ? 'Created — unclaimed' : 'Would be created — unclaimed') + '</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>';
@@ -780,7 +784,7 @@
   function guestBar() {
     if (document.querySelector('.dx-guest-bar')) return;
     var b = document.createElement('div'); b.className = 'dx-guest-bar'; b.setAttribute('role', 'region'); b.setAttribute('aria-label', 'Visitor');
-    b.innerHTML = '<span>👋 You are browsing as a visitor — sign in to contact companies, follow them or ask for a quote.</span><span><button type="button" class="dbk-btn s dx-guest-in">Sign in</button> <button type="button" class="dbk-btn p dx-guest-join">Join Drugbox</button></span>';
+    b.innerHTML = '<span>👋 You are browsing as a visitor — sign in to contact companies, follow them or ask for a quote.</span><span><button type="button" class="dbk-btn s dx-guest-dir" onclick="goto(\'companies\')">🏭 All companies</button> <button type="button" class="dbk-btn s dx-guest-in">Sign in</button> <button type="button" class="dbk-btn p dx-guest-join">Join Drugbox</button></span>';
     var app = document.getElementById('app'); app.insertBefore(b, app.firstChild); i18n(b);
   }
   function enterGuest(slug) {
@@ -796,7 +800,7 @@
     window.DX_GUEST = false; document.documentElement.classList.remove('dx-guest'); var b = document.querySelector('.dx-guest-bar'); if (b) b.remove();
     if (GW.__me) { window.ME = GW.__me; GW.__me = null; }
     if (window.dxGrowth && window.dxGrowth.guest) window.dxGrowth.guest(false);
-    var app = document.getElementById('app'); if (app) app.style.display = 'none'; var aw = document.getElementById('authWrap'); if (aw) aw.style.display = '';
+    var app = document.getElementById('app'); if (app) app.style.display = 'none'; var aw = document.getElementById('authWrap'); if (aw) aw.style.display = 'block';
     if (signup && window.showSignup) window.showSignup(); else if (window.showLogin) window.showLogin();
     GW.__meta = null; setMeta(DEF_TITLE, 'Drugbox — the B2B network of the pharmaceutical industry in Egypt and the Arab region.', '');
   }
@@ -806,14 +810,16 @@
   window.goto = function (p) { if (window.DX_GUEST && !GUEST_OK.test(p)) { signInFirst(); return; } return gotoG.apply(this, arguments); };
   var gpG = window.gotoProfile; if (gpG) window.gotoProfile = function () { if (window.DX_GUEST) return signInFirst(); return gpG.apply(this, arguments); };
   /* a visitor may read: the directory's search, filters, cards, "View page", the page's tabs, "All companies", "Show more" — anything else asks to sign in */
-  var READ = /^(view page|عرض الصفحة|all companies|كل الشركات|جميع الشركات|show more|عرض المزيد|overview|products|sites|listings|jobs|reviews|contact|team|نظرة عامة|المنتجات|المواقع|الإعلانات|الوظائف|التقييمات|التواصل|الفريق|←.*|.*→ ?all|clear|امسح.*)/i;
-  document.addEventListener('click', function (e) {
+  var READ = /^(view page|عرض الصفحة|all companies|كل الشركات|جميع الشركات|show more|عرض المزيد|overview|products|sites|listings|jobs|reviews|نظرة عامة|المنتجات|المواقع|الإعلانات|الوظائف|التقييمات|←.*|.*→ ?all|clear|امسح.*)/i;
+  window.addEventListener('click', function (e) {   /* on window, capturing: before any page handler (the message dock, the follow button) sees the click */
     if (!window.DX_GUEST) return;
     var t = e.target.closest && e.target.closest('button, a, [onclick], [role=button], [role=tab], .ctx-item'); if (!t || !document.getElementById('app').contains(t)) return;
-    if (t.closest('.dx-guest-bar')) { e.preventDefault(); e.stopImmediatePropagation(); return leaveGuest(t.classList.contains('dx-guest-join')); }
+    if (t.closest('.dx-guest-bar')) { if (t.classList.contains('dx-guest-dir')) { var DS = window.dxDir && window.dxDir.S; if (DS && DS.open) { DS.open = null; setTimeout(function () { window.dxDir.render(); }, 0); } return; }
+      e.preventDefault(); e.stopImmediatePropagation(); return leaveGuest(t.classList.contains('dx-guest-join')); }
     var inDir = t.closest('#dxDir'), label = ((t.getAttribute('aria-label') || '') + ' ' + (t.innerText || '')).replace(/\s+/g, ' ').trim();
     var oc = t.getAttribute('onclick') || '';
     if (/goto\('companies'\)/.test(oc)) return;
+    if (/^\W*(contact|team|التواصل|تواصل|الفريق)\b/i.test(label)) { e.preventDefault(); e.stopImmediatePropagation(); return signInFirst(); }   /* contacting needs sign-in (the owner's decision 1) */
     if (inDir && (t.matches('[data-hopen], [data-htab], [data-hmore], [role=tab], .hb-tab, .dr-chip, .dr-fchip, select, input') || READ.test(label) || /^\s*$/.test(label))) return;
     if (inDir && t.closest('.dr-bar, .hb-filters, .dr-filters, .hb-tabs, .cp-tabs')) return;
     e.preventDefault(); e.stopImmediatePropagation(); signInFirst();

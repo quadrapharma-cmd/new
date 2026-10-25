@@ -29,15 +29,15 @@ grant select on table public.expert_topics to anon, authenticated;
 grant select, insert, update, delete, truncate, references, trigger on table public.expert_topics to service_role;
 insert into public.expert_topics (key, title_en, title_ar, sort) values
   ('file_purchase',  'Buying a registration file safely',        'شراء ملف تسجيل بأمان',              1),
-  ('nfsa',           'NFSA notification (supplements, food)',    'إخطار هيئة سلامة الغذاء',           2),
-  ('agency_contract','Agency and distribution contracts',        'عقد الوكالة والتوزيع',               3),
+  ('nfsa',           'NFSA notification (supplements, food)',    'إخطار هيئة سلامة الغذاء (المكملات والأغذية)',           2),
+  ('agency_contract','Agency and distribution contracts',        'عقود الوكالة والتوزيع',               3),
   ('toll_card',      'The toll-manufacturing card',              'كارت التصنيع لدى الغير',            4),
   ('pricing',        'Pricing and price increases',              'التسعير وزيادة الأسعار',             5),
   ('importer',       'Importing and the importer''s file',       'الاستيراد وملف المستورد',            6),
   ('cold_chain',     'Cold chain',                               'سلسلة التبريد',                     7),
   ('labs_tracking',  'Authority labs and track & trace',         'معامل الهيئة والتتبع',               8),
   ('choose_factory', 'Choosing a factory',                       'اختيار مصنع',                       9),
-  ('other',          'Another topic',                            'موضوع تاني',                        10)
+  ('other',          'Another topic',                            'موضوع آخر',                        10)
 on conflict (key) do nothing;
 
 -- ── 2. requests ─────────────────────────────────────────────────────────────────────────────────────────

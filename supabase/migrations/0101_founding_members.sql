@@ -27,14 +27,14 @@ revoke all on table public.founder_segments from public, anon, authenticated, se
 grant select on table public.founder_segments to anon, authenticated;              -- anon: no policy → empty (F-26)
 grant select, insert, update, delete, truncate, references, trigger on table public.founder_segments to service_role;
 insert into public.founder_segments (key, label_en, label_ar, quota, sort) values
-  ('manufacturer',   'Manufacturers',                      'مصانع',                          8, 1),
-  ('toll_brand',     'Toll manufacturers / brand owners',  'تصنيع لدى الغير / أصحاب براند',   10, 2),
-  ('agency',         'Agencies',                           'وكالات',                         15, 3),
-  ('distributor',    'Distributors / warehouses',          'موزّعين / مخازن',                 15, 4),
-  ('file_owner',     'Registration-file owners',           'أصحاب ملفات تسجيل',              5, 5),
-  ('api',            'API / excipient suppliers',          'موردي خامات',                    5, 6),
-  ('packaging',      'Packaging suppliers',                'موردي عبوات وتغليف',             10, 7),
-  ('regulatory',     'Regulatory consultants',             'استشاريين تسجيل',                5, 8)
+  ('manufacturer',   'Manufacturers',                      'المصانع',                        8, 1),
+  ('toll_brand',     'Toll manufacturers / brand owners',  'التصنيع لدى الغير / أصحاب البراند', 10, 2),
+  ('agency',         'Agencies',                           'الوكالات',                       15, 3),
+  ('distributor',    'Distributors / warehouses',          'الموزعون / المخازن',             15, 4),
+  ('file_owner',     'Registration-file owners',           'أصحاب ملفات التسجيل',            5, 5),
+  ('api',            'API / excipient suppliers',          'موردو الخامات',                  5, 6),
+  ('packaging',      'Packaging suppliers',                'موردو العبوات والتغليف',         10, 7),
+  ('regulatory',     'Regulatory consultants',             'استشاريو التسجيل',               5, 8)
 on conflict (key) do nothing;
 
 create table if not exists public.founder_invites (

@@ -5,33 +5,13 @@ from _j import journey, main
 from _community import (groups_page, open_card, gd_open, gd_close, gd_pane, gposts, has_composer, notifs, close_dialogs, mopen, mtext, mclick,
                         make_admin, add_member, reopen, tour_off)
 from _biz import ui_ok, dlg_open, dlg_click, fill_by_label
+from _growth import staff, admin_tab, cairo_slot
 
-def T(j, en, ar_): return ar_ if j.ar else en
+from _growth import T
 CH_AR = {}   # a channel's name is a name (Drugbox News …) — it reads the same in Arabic
 
-def staff(j, name='Drugbox Staff'):
-    """Live: a Drugbox admin (an account made through the UI, given the admin role — that role is Drugbox's to give)."""
-    p = j.person(name); make_admin(j, p['id']); j.reload(p['page']); return p
 
-def admin_tab(j, pg, key, label):
-    close_dialogs(pg)
-    if gd_open(pg): gd_close(pg)
-    if pg.evaluate("document.body.getAttribute('data-page')") != 'admin':   # the Admin entry sits at the foot of the side menu (as admin_review opens it)
-        a = pg.locator("#app [onclick=\"goto('admin')\"]")
-        j.check(a.count(), 'not built: no Admin entry for a Drugbox admin')
-        if not a.first.is_visible() and pg.locator('#sbToggle:visible').count(): pg.click('#sbToggle'); pg.wait_for_timeout(400)
-        a.first.scroll_into_view_if_needed()
-        try: a.first.click(timeout=5000)
-        except Exception: a.first.evaluate('e=>e.click()')
-        j.settle(pg, 900)
-    el = pg.locator('.admin-nav [data-gwadm="%s"]' % key)
-    j.check(el.count(), 'not built: Admin has no "%s" tab' % label)
-    el.first.scroll_into_view_if_needed(); el.first.click(); j.settle(pg, 900)
-    return pg
 
-def cairo_slot(j, pg, minutes):
-    """The Cairo wall time minutes from now, as the page computes it ('YYYY-MM-DD HH:MM')."""
-    return pg.evaluate("m=>dxGrowthUI.cairoNow(m*60000)", minutes)
 
 def seed_channel_post(j, admin_id, channel, body, thera='{}'):
     """Live precondition: Drugbox published a post in a channel (the publisher the scheduler uses, as the server)."""
