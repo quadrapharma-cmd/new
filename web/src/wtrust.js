@@ -21,7 +21,7 @@
   function ar() { return document.documentElement.lang === 'ar'; }
   function toast(m) { (window.toast || D.toast)(m); }
   function live() { return !!window.dxLive; }
-  function T(s) { return window.dxT ? window.dxT(s) : s; }
+  function T(s) { return window.dxT && document.documentElement.lang === 'ar' ? window.dxT(s) : s; }   /* dxT always answers in Arabic */
 
   var ROLES = [['manufacturer', 'Manufacturer'], ['toll_manufacturer', 'Toll manufacturer'], ['file_owner', 'Registration-file / brand owner'], ['importer_exporter', 'Importer / exporter'],
     ['distributor', 'Distributor / agent / warehouse'], ['supplier', 'API / excipient / packaging / equipment supplier'], ['service_provider', 'Service provider'], ['consultant', 'Consultant / broker']];

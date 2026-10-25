@@ -221,7 +221,7 @@
     var inp = document.getElementById('ci-' + id), text = inp ? inp.value.trim() : ''; if (!text) return;
     window.dxSocFeed.submit(id);
     var list = window.COMMENTS[id] || [], c = list[list.length - 1];
-    window.dxFeedSvc.comment(id, text, null).then(function (r) { if (c) { c.id = r.id; window.dxSocFeed.redraw(id); } },
+    window.dxFeedSvc.comment(id, text, null).then(function (r) { if (c) { c.id = r.id; window.dxSocFeed.redraw(id); } if (window.dxTrustUI && window.dxTrustUI.commented) window.dxTrustUI.commented(); },   /* AREA w-trust: "Comment posted!" once it is */
       function (e) { var i = list.indexOf(c); if (i >= 0) list.splice(i, 1); window.dxSocFeed.redraw(id); toast(e.message); if (inp) inp.value = text; });
   };
   /* a post seen on a page counts as one view per member (increment_post_views keeps one row per viewer) */

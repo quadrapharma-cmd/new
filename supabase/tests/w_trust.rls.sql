@@ -520,7 +520,7 @@ select pg_temp.ok('rules v4: compliant and ordinary statements pass', $$(select 
   'Pharmacists are welcome to join our free GMP webinar', 'Hospital pharmacists welcome to the tender briefing', 'We moved from WhatsApp groups to Drugbox',
   'WhatsApp channels are not allowed here', 'جروب الواتس مقفول، كلمونا هنا', 'هضيفك للجروب بتاع الموزعين هنا على Drugbox', 'Import for clients is regulated by EDA decree 2024',
   'fake COA detection training for QC labs', 'how to spot forged documents in registration files', 'No fake COAs here', 'Email: t.me@pharmaco.com',
-  'جدول اول الشحنات: يناير', 'علبة واحدة عينة للتسجيل', 'Codeine-free cough syrup formula for licensing', 'EGP 1,450 per kg, 1 x 25 kg', 'ahmed.t@me.com']) x)$$);
+  'جدول اول الشحنات: يناير', 'علبة واحدة عينة للتسجيل', 'EGP 1,450 per kg, 1 x 25 kg', 'ahmed.t@me.com']) x)$$);
 select pg_temp.ok('rules v4: the misses of round 3 are caught', $$(select bool_and(private.review_topics(x[1]) @> array[x[2]]) from (values
   (array['trаmadol', 'controlled']), (array['tramadοl', 'controlled']), (array['tr@madol', 'controlled']), (array['lyric@', 'controlled']), (array['tramadool', 'controlled']),
   (array['pregabalen', 'controlled']), (array['kaptagon', 'controlled']), (array['xanaks', 'controlled']), (array['codiene', 'controlled']), (array['كودين', 'controlled']),
@@ -557,6 +557,42 @@ select pg_temp.as_server(); select pg_temp.ok('… not held again for the same r
 select pg_temp.act(8);
 select pg_temp.step('ordinary names that mention Drugbox are fine', $$update public.groups set description = 'Drugbox users in Alexandria — sales team networking. Drugbox QA team leaders welcome.' where id = pg_temp.id('g')$$);
 select pg_temp.nohint('"Official Drug box group" is still refused', $$update public.groups set name = 'Official Drug box group' where id = pg_temp.id('g')$$, 'DX437');
+
+-- ══ 6f. the verifier's fourth round (0099) ══
+select pg_temp.as_server();
+select pg_temp.ok('rules v5: a negation does not hide an offer (M3) and "-free" does not either (M2)', $$(select bool_and(cardinality(private.review_topics(x)) > 0) from unnest(array[
+  'We do not sell to pharmacies only — the public too, call us', 'We don''t sell to pharmacies only; patients can order by phone too', 'Do not sell to pharmacies? We do. Call 0100',
+  'No sale to pharmacies? Wrong — call us for the price list', 'Not for sale to the public? We make an exception, DM', 'Not for retail sale — except for our pharmacy friends, DM',
+  'Sales to pharmacies are not allowed... unless you message me', 'ممنوع البيع للصيدليات؟ لا خالص، كلمنا', 'ما نبيع للصيدليات بس، ونوصل لحد البيت',
+  'Fake COA check: guaranteed to pass any inspection', 'Avoid fake COA hassle: our COAs are made to order with any date', 'Report forged invoices? We print invoices with any date you want',
+  'Tramadol free delivery to all governorates', 'Lyrica free shipping', 'captagon free', 'Codeine-free cough syrup formula for licensing']) x)$$);
+select pg_temp.ok('rules v5: the round-4 misses are caught', $$(select bool_and(cardinality(private.review_topics(x)) > 0) from unnest(array[
+  'tramadoӏ', 'trɑmɑdol', 'Tʀᴀᴍᴀᴅᴏʟ', 'tramadols', 'tramadoll', 'tramadole', 'ترامادولات', 't.ly/abc', 'linktr.ee/pharma', 'signal.group/#abc', 'tg @pharmadeals', 'join my whatsapp community',
+  'we handle import for clients', 'import on your behalf', 'we can import it in your name', 'استيراد لحسابك', 'نستورد لحساب الغير', 'COA with any date you need', 'شهادة تحليل بأي تاريخ', 'فواتير بأي تاريخ',
+  'بنوصل لحد الصيدلية']) x)$$);
+select pg_temp.ok('rules v5: plain compliant statements still pass', $$(select bool_and(cardinality(private.review_topics(x)) = 0) from unnest(array[
+  'No sales to pharmacies, distributors only', 'البيع للجمهور ممنوع', 'Training: how to spot fake COAs and forged invoices', 'We do not sell to pharmacies']) x)$$);
+-- B2 a published item rewritten
+select pg_temp.act(4);
+select pg_temp.step('V rewrites the published offer into new words', $$update public.products set name = 'WT Tramadol 225 mg tablets — any quantity, cash', description = 'Also Captagon, Xanax' where id = pg_temp.id('phc')$$);
+select pg_temp.as_server(); select pg_temp.ok('… held again (B2)', $$(select review_hold from public.products where id = pg_temp.id('phc'))$$);
+-- M4 a group's name and rules
+select pg_temp.act(8);
+select pg_temp.nohint('a group named for a controlled substance is refused (M4)', $$insert into public.groups (name, type, created_by) values ('Tramadol 225 traders', 'public', pg_temp.u(8))$$, 'DX439');
+select pg_temp.nohint('… and rules that send members to an outside group', $$update public.groups set rules = '["Join our real group: chat.whatsapp.com/AbCdEf"]'::jsonb where id = pg_temp.id('g')$$, 'DX439');
+-- M1 strangers do not lock a number out
+select pg_temp.act(1); select pg_temp.step('four other accounts send codes to one number', $$select public.phone_verify_start('01277778888'); select public.phone_verify_start('01277778888')$$);
+select pg_temp.act(3); select pg_temp.step('… second', $$select public.phone_verify_start('01277778888'); select public.phone_verify_start('01277778888')$$);
+select pg_temp.act(8); select pg_temp.step('… third', $$select public.phone_verify_start('01277778888'); select public.phone_verify_start('01277778888')$$);
+select pg_temp.act(9); select pg_temp.step('… fourth', $$select public.phone_verify_start('01277778888'); select public.phone_verify_start('01277778888')$$);
+select pg_temp.act(10); select pg_temp.ok('the owner still gets a code (M1)', $$(public.phone_verify_start('01277778888') ->> 'sent')::boolean$$);
+-- B1 an owner deletes a company with offers
+select pg_temp.as_server(); select pg_temp.step('W (u10) owns a verified company with a member''s company offer', $$with c as (insert into public.companies (owner_id, name, slug, status) values (pg_temp.u(10), 'WT Delete Me Co', 'wt-delete-me', 'verified') returning id) insert into ids select 'coD', id::text from c;
+  insert into public.company_members (company_id, user_id, role, accepted) values (pg_temp.id('coD'), pg_temp.u(2), 'sales', true) on conflict do nothing;
+  insert into public.trade_profiles (user_id, role, governorate, sells) values (pg_temp.u(2), 'distributor', 'Giza', 'APIs') on conflict do nothing$$);
+select pg_temp.act(2); select pg_temp.step('B posts as that company', $$with p as (insert into public.products (user_id, name, type, category, company_id, posted_as) values (pg_temp.u(2), 'WT Glycerin USP', 'supply', 'api', pg_temp.id('coD'), 'company') returning id) insert into ids select 'pdel', id::text from p$$);
+select pg_temp.act(10); select pg_temp.step('W deletes the company (B1)', $$delete from public.companies where id = pg_temp.id('coD')$$);
+select pg_temp.as_server(); select pg_temp.ok('… gone; B''s offer is B''s own now, paused', $$not exists (select 1 from public.companies where id = pg_temp.id('coD')) and (select posted_as = 'individual' and company_id is null and status = 'paused' from public.products where id = pg_temp.id('pdel'))$$);
 
 -- ══ 7. anon ══
 select pg_temp.as_anon();

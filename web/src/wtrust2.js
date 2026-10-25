@@ -9,7 +9,7 @@
   function toast(m) { (window.toast || D.toast)(m); }
   function S() { return window.dxTrust; }
   function live() { return !!window.dxLive; }
-  function T(s) { return window.dxT ? window.dxT(s) : s; }
+  function T(s) { return window.dxT && document.documentElement.lang === 'ar' ? window.dxT(s) : s; }   /* dxT always answers in Arabic */
   function page() { return document.body.getAttribute('data-page') || ''; }
 
   /* ══════════ 1. who stands behind an offer (W-16, W-25) ══════════ */
