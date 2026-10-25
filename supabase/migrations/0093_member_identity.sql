@@ -6,8 +6,8 @@
 --      phone_hash (sha-256 of the normalised number) stays private: one number verifies one account, so a second account
 --      cannot borrow the number of a known trader.
 --   2. phone_verify_start(phone): normalises the number (+20 1x xxxx xxxx for Egypt, else +<7–15 digits>), keeps a 6-digit
---      code for 10 minutes (only its hash), puts the SMS in private.sms_outbox for the SMS provider (the provider and its
---      account are the owner's decision — LAUNCH), at most 3 codes an hour and 6 a day.
+--      code for 10 minutes (only its hash), puts the SMS in private.sms_outbox, at most 3 codes an hour and 6 a day. The function
+--      sms-dispatch sends it (sms_claim / sms_done, service role) through the provider the owner chooses (LAUNCH: SMS_* secrets).
 --      phone_verify_confirm(code): 5 tries; the number becomes the profile's (private) phone and verified.
 --      Changing the phone in Edit Profile to another number removes the verification (the trigger below).
 --   3. trade_card (0092) says phone_verified; 'member since' and 'new account' (under 30 days) were already on it.
@@ -50,8 +50,29 @@ create table if not exists private.sms_outbox (
   sent_at    timestamptz
 );
 create index if not exists idx_sms_outbox_unsent on private.sms_outbox (created_at) where sent_at is null;
+alter table private.sms_outbox add column if not exists attempts   int not null default 0;
+alter table private.sms_outbox add column if not exists claimed_at timestamptz;
+alter table private.sms_outbox add column if not exists last_error text;
 revoke all on table private.phone_codes, private.phone_code_log, private.sms_outbox from public, anon, authenticated;
 grant select, insert, update, delete on table private.phone_codes, private.phone_code_log, private.sms_outbox to service_role;
+
+-- the SMS sender (supabase/functions/sms-dispatch, service role only): a batch of unsent codes, each claimed for 2 minutes; a code older
+-- than its 10 minutes is never sent; at most 3 tries
+create or replace function public.sms_claim(p_limit int default 50) returns table (id bigint, phone text, body text)
+language sql security definer set search_path = public as $$
+  update private.sms_outbox o set claimed_at = now(), attempts = o.attempts + 1
+   where o.id in (select x.id from private.sms_outbox x where x.sent_at is null and x.attempts < 3 and x.created_at > now() - interval '10 minutes'
+                    and (x.claimed_at is null or x.claimed_at < now() - interval '2 minutes') order by x.created_at limit least(greatest(coalesce(p_limit, 50), 1), 200) for update skip locked)
+  returning o.id, o.phone, o.body
+$$;
+create or replace function public.sms_done(p_id bigint, p_ok boolean, p_error text default null) returns void
+language sql security definer set search_path = public as $$
+  update private.sms_outbox set sent_at = case when p_ok then now() end, claimed_at = case when p_ok then claimed_at end, last_error = case when p_ok then null else left(p_error, 300) end where id = p_id
+$$;
+revoke all on function public.sms_claim(int) from public, anon, authenticated, service_role;
+revoke all on function public.sms_done(bigint, boolean, text) from public, anon, authenticated, service_role;
+grant execute on function public.sms_claim(int) to service_role;
+grant execute on function public.sms_done(bigint, boolean, text) to service_role;
 
 -- '+201001234567' for an Egyptian mobile (01…, 201…, +201…, 00201…), '+<digits>' for another country; null when it is not a number
 create or replace function private.phone_norm(p text) returns text language sql immutable set search_path = public as $$

@@ -115,6 +115,14 @@ def queries(ctx):
         ('jobs_stats', "select public.jobs_stats()"),
         ('profile_counts', "select public.profile_counts('%s')" % me),
         ('home_faces', wrap("select id, avatar_url from public.profiles where avatar_url is not null order by created_at desc limit 6")),
+        # area w-trust (0090–0094): a profile's trade card, the offer labels of a market page, my held / waiting items, a group's posts
+        # under the held / pending read rules, the trader reports of a profile
+        ('trade_card', "select public.trade_card('%s')" % partner),
+        ('offer_labels', wrap("select id, posted_as, broker_for, broker_commission, review_hold from public.products where id in (select id from public.products where active order by created_at desc limit 40)")),
+        ('my_held', wrap("select kind, item_id, topics from public.content_holds where user_id = '%s' and status = 'held' limit 100" % me)),
+        ('my_group_pending', wrap("select id from public.posts where user_id = '%s' and group_pending limit 100" % me)),
+        ('group_posts_page', wrap(feed.format(where="where p.group_id = (select g.id from public.groups g order by g.member_count desc limit 1)"))),
+        ('my_trader_reports', "select public.my_trader_reports()"),
     ]
     return q
 

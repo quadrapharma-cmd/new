@@ -4157,7 +4157,7 @@
     var g = gOf(d), l = d.listing || {};
     if (d.op === 'create') {
       var co = window.dxDir && window.dxDir.mine && window.dxDir.mine(), raw = co && CO.raw[co.slug];
-      await gpWrite(sb.from('group_listings').insert({ group_id: g.id, user_id: ME_UUID, kind: l.kind, title: l.t, details: l.d || '', price: l.kind === 'rfq' ? null : (l.price || null), company_id: raw && raw.id ? raw.id : null }).select('id'));
+      await gpWrite(sb.from('group_listings').insert({ group_id: g.id, user_id: ME_UUID, kind: l.kind, title: l.t, details: l.d || '', price: l.kind === 'rfq' ? null : (l.price || null), company_id: raw && raw.id && raw.status === 'verified' ? raw.id : null }).select('id'));   /* AREA w-trust (W-16): only a verified company page posts as the company; otherwise the member, as themselves */
       return;
     }
     if (d.op === 'close') return gpWrite(sb.from('group_listings').update({ status: 'closed' }).eq('id', l.id).select('id'), 'Only the author or the group’s admins can close it');

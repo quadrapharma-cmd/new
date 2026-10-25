@@ -315,6 +315,11 @@ if email and len(email) < 4: bad.append('e-mails half set up: ' + ', '.join(emai
 if env.get('EMAIL_PROVIDER') and env['EMAIL_PROVIDER'] not in ('resend', 'postmark', 'sendgrid'): bad.append('EMAIL_PROVIDER must be resend, postmark or sendgrid')
 if len(env.get('NOTIFY_DISPATCH_SECRET', 'x' * 32)) < 32: bad.append('NOTIFY_DISPATCH_SECRET must be at least 32 characters')
 if len(email) == 4: print('    note: no e-mail provider set — notify-dispatch answers 503 and notifications stay in the app until EMAIL_* are set', file=sys.stderr)
+sms = [k for k in ('SMS_PROVIDER', 'SMS_ACCOUNT', 'SMS_TOKEN', 'SMS_FROM', 'SMS_DISPATCH_SECRET') if not env.get(k) or 'CHANGE_ME' in env.get(k, '')]
+if sms and len(sms) < 5: bad.append('SMS half set up: ' + ', '.join(sms) + ' missing (set all five, or none for no phone verification yet)')
+if env.get('SMS_PROVIDER') and env['SMS_PROVIDER'] not in ('twilio', 'vonage'): bad.append('SMS_PROVIDER must be twilio or vonage')
+if len(env.get('SMS_DISPATCH_SECRET', 'x' * 32)) < 32: bad.append('SMS_DISPATCH_SECRET must be at least 32 characters')
+if len(sms) == 5: print('    note: no SMS provider set — sms-dispatch answers 503 and phone verification codes are not delivered until SMS_* are set (w-trust, LAUNCH)', file=sys.stderr)
 if bad: print('\n'.join('    - ' + b for b in bad), file=sys.stderr); sys.exit(1)
 print('    secrets file checked: ' + ', '.join(sorted(env)))
 PY
@@ -331,13 +336,14 @@ ok "secrets set"
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/supabase"; cp -r "$REPO/supabase/functions" "$WORK/supabase/functions"
 { echo 'project_id = "drugbox"'
-  for fn in payments-create:true paymob-webhook:false fawry-webhook:false account-delete:true notify-email:true notify-dispatch:false; do
+  for fn in payments-create:true paymob-webhook:false fawry-webhook:false account-delete:true notify-email:true notify-dispatch:false sms-dispatch:false; do
     printf '\n[functions.%s]\nverify_jwt = %s\nentrypoint = "./functions/%s/index.js"\n' "${fn%%:*}" "${fn##*:}" "${fn%%:*}"
   done; } > "$WORK/supabase/config.toml"
 # account-delete: the member's JWT (Settings → Delete my account); notify-email: the service-role key (the every-minute schedule, docs/LAUNCH.md)
 # notify-dispatch: called by the scheduler with NOTIFY_DISPATCH_SECRET (no Supabase JWT) — it checks the secret itself
-for fn in payments-create paymob-webhook fawry-webhook account-delete notify-email notify-dispatch; do
-  extra=(); [[ $fn == paymob-webhook || $fn == fawry-webhook || $fn == notify-dispatch ]] && extra=(--no-verify-jwt)
+# sms-dispatch (w-trust): called every minute by the scheduler with SMS_DISPATCH_SECRET — it checks the secret itself
+for fn in payments-create paymob-webhook fawry-webhook account-delete notify-email notify-dispatch sms-dispatch; do
+  extra=(); [[ $fn == paymob-webhook || $fn == fawry-webhook || $fn == notify-dispatch || $fn == sms-dispatch ]] && extra=(--no-verify-jwt)
   info "deploying $fn $( [[ ${#extra[@]} -gt 0 ]] && echo '(public: provider callback, signature-checked)' || echo '(user JWT required)')"
   sb functions deploy "$fn" --project-ref "$REF" --use-api --workdir "$WORK" "${extra[@]}" || die "deploy of $fn failed"
   ok "$fn deployed"

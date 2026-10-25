@@ -60,7 +60,9 @@
     pending: async function (g) { var l = err(await sb.rpc('group_pending_posts', { p_group: gidOf(g) })) || []; return l.map(function (p) { return { id: p.id, body: p.body, author: p.author, at: p.created_at }; }); },
     publish: async function (g, id, yes) { return err(await sb.rpc('group_publish_post', { p_post: +id, p_publish: !!yes })); },
     partnerAsk: async function (g, note) { err(await sb.rpc('group_partner_request', { p_group: gidOf(g), p_note: note })); PARTNER[gidOf(g)] = { status: 'pending' }; },
-    partnerOf: function (g) { return PARTNER[gidOf(g)] || null; }
+    partnerOf: function (g) { return PARTNER[gidOf(g)] || null; },
+    openAuth: async function (id) { var r = err(await sb.from('products').select('broker_auth_path').eq('id', +id).maybeSingle()); if (!r || !r.broker_auth_path) return null;
+      var u = await sb.storage.from('documents').createSignedUrl(r.broker_auth_path, 300); return u.error ? null : u.data.signedUrl; }
   };
   window.dxTrust = svc;
 
@@ -90,12 +92,22 @@
     cards.forEach(function (c) { var id = +c.dataset.live.slice(1); if (INFO[id]) { if (c.dataset.wtAs !== INFO[id].as) window.dxTrustUI.badge(c, INFO[id]); } else if (!ASKING[id]) need.push(id); });
     if (!need.length) return; need.forEach(function (id) { ASKING[id] = 1; });
     sb.from('products').select('id, posted_as, broker_for, broker_commission, review_hold').in('id', need.slice(0, 200)).then(function (r) {
-      need.forEach(function (id) { delete ASKING[id]; }); (r.data || []).forEach(function (x) { INFO[x.id] = { as: x.posted_as || 'individual', broker_for: x.broker_for, commission: x.broker_commission, held: x.review_hold }; });
+      need.forEach(function (id) { delete ASKING[id]; }); (r.data || []).forEach(function (x) { INFO[x.id] = { as: x.posted_as || 'individual', broker_for: x.broker_for, commission: x.broker_commission, held: x.review_hold, id: x.posted_as === 'broker' ? x.id : null }; });
       paintCards();
     });
   }
-  var MO = new MutationObserver(function () { if (MO.t) return; MO.t = setTimeout(function () { MO.t = 0; if (document.querySelector('#mkx [data-live^="p"]')) paintCards(); }, 120); });
-  (function watch() { var c = document.getElementById('content'); if (c) MO.observe(c, { childList: true, subtree: true }); else setTimeout(watch, 300); })();
+  /* deal-room listings (group_listings) */
+  var LINFO = {}, LASK = {};
+  function paintRoom() {
+    var cards = [].slice.call(document.querySelectorAll('#gpBox [data-lid]')), need = [];
+    cards.forEach(function (c) { var id = +c.dataset.lid; if (!id) return; if (LINFO[id]) { if (c.dataset.wtAs !== LINFO[id].as) window.dxTrustUI.badge(c, LINFO[id]); } else if (!LASK[id]) need.push(id); });
+    if (!need.length) return; need.forEach(function (id) { LASK[id] = 1; });
+    sb.from('group_listings').select('id, posted_as, broker_for, broker_commission').in('id', need.slice(0, 100)).then(function (r) {
+      need.forEach(function (id) { delete LASK[id]; }); (r.data || []).forEach(function (x) { LINFO[x.id] = { as: x.posted_as || 'individual', broker_for: x.broker_for, commission: x.broker_commission }; }); paintRoom(); });
+  }
+  W.onReset(function () { LINFO = {}; });
+  var MO = new MutationObserver(function () { if (MO.t) return; MO.t = setTimeout(function () { MO.t = 0; if (document.querySelector('#mkx [data-live^="p"]')) paintCards(); if (document.querySelector('#gpBox [data-lid]')) paintRoom(); }, 120); });
+  (function watch() { var c = document.getElementById('content'), g = document.getElementById('groupDetail'); if (c) MO.observe(c, { childList: true, subtree: true }); if (g) MO.observe(g, { childList: true, subtree: true }); if (!c || !g) setTimeout(watch, 300); })();
 
   /* ===== AREA w-trust: a group's card carries its admin tools and the partner badge (0094) ===== */
   window.dxGroupCardHook = function (c, g) {

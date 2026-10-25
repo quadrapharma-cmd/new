@@ -75,7 +75,7 @@
     if (!i) return '';
     if (i.as === 'company') return '<span class="ti g wt-as-chip" data-wt-as="company">✓ Verified company</span>';
     if (i.as === 'broker') return '<span class="ti o wt-as-chip" data-wt-as="broker" title="' + esc(T('Offered by a broker for the owner')) + '">🤝 Broker' + (i.commission != null && i.commission !== '' ? ' · ' + esc(String(+i.commission)) + '% commission' : '') + '</span>' +
-      (i.broker_for ? '<span class="ti wt-as-for" data-noi18n>' + esc(i.broker_for) + '</span>' : '');
+      (i.broker_for ? '<span class="ti wt-as-for" data-noi18n>' + esc(i.broker_for) + '</span>' : '') + (i.id ? '<span class="ti b wt-as-auth" role="button" tabindex="0" data-wtauth="' + esc(i.id) + '">📄 Authorisation</span>' : '');
     if (i.as === 'drugbox') return '<span class="ti b wt-as-chip" data-wt-as="drugbox">Drugbox</span>';
     return '<span class="ti wt-as-chip" data-wt-as="individual">👤 Individual</span>';
   }
@@ -89,6 +89,11 @@
   }
   function heldOnCard(card) { if (card.querySelector('.wt-held')) return; var host = card.querySelector('.lc-inner') || card; host.insertAdjacentHTML('afterbegin', '<div class="wt-held">⏳ Waiting for Drugbox review — only you can see it</div>'); }
   window.dxTrustUI.badge = badge;
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-wtauth]'); if (!b) return; e.preventDefault(); e.stopPropagation();
+    if (!S().openAuth) { toast('Documents open in the live app'); return; }
+    S().openAuth(b.dataset.wtauth).then(function (u) { if (u) window.open(u, '_blank', 'noopener'); else toast('The authorisation is not available'); }, function (er) { toast((er && er.message) || 'Could not open the document'); });
+  }, true);
   /* the demo's sample cards: sample data says who posts them */
   function demoCards() {
     var n = 0; [].forEach.call(document.querySelectorAll('#mkx .supply-grid .lcard, #mkx .dcard, #mkx .lcard'), function (c) {
@@ -193,8 +198,15 @@
   function rulesDialog(title, rules, go) {
     D.modal({ title: 'The group’s rules', body: '<p><span>Before you join</span> <b data-noi18n>' + esc(title) + '</b><span>, read its rules:</span></p>' +
       '<ol class="wt-rules">' + (rules.length ? rules.map(function (r) { return '<li data-noi18n><b>' + esc(r[0]) + '</b>' + (r[1] ? ' — ' + esc(r[1]) : '') + '</li>'; }).join('') : '<li>Respect the members and keep to the group’s topic.</li>') + '</ol>' +
-      '<label class="gp-radio"><input type="checkbox" id="wtRulesOk"> <span>I have read the rules and accept them</span></label>',
+      '<label class="gp-radio"><input type="checkbox" id="wtRulesOk"> <span>I have read the rules and accept them</span></label><div class="wt-joincard"></div>',
       primary: { label: 'Accept and join', onClick: function (bx) { var c = bx.querySelector('#wtRulesOk'); if (!c.checked) { c.parentNode.classList.add('dbk-err'); toast('Tick “I accept” to join'); return false; } go(); } } });
+  }
+  /* the joiner's own trade card in the join window: the group sees who joins (W-10) */
+  function joinCard() {
+    S().myProfile().then(function (p) { var box = document.querySelector('.dbk-ov .wt-joincard'); if (!box) return;
+      box.innerHTML = p ? '<div class="dbk-note">🏷 <span>The group sees your trade card:</span> <span>' + esc(UI.roleName(p.role)) + '</span>' + (p.company ? ' · <span data-noi18n>' + esc(p.company) + '</span>' : '') + ' · <span>' + esc(p.governorate) + '</span></div>'
+        : '<div class="dbk-note">🏷 <span>Add your trade profile so the group knows who you are.</span> <button type="button" class="wt-link" data-wt="edit">+ Add</button></div>';
+      if (window.dxI18nAttrs) window.dxI18nAttrs(box); }, function () {});
   }
   var JB = false;
   window.addEventListener('click', function (e) {
@@ -208,11 +220,23 @@
     e.preventDefault(); e.stopImmediatePropagation();
     var title = g ? g.title : (card && card.querySelector('.gcard-title') || {}).textContent || '';
     var seed = !live() && window.dxGroups && window.dxGroups.seed && [].concat(window.dxGroups.seed).filter(function (x) { return x && x.k === key; })[0];
+    setTimeout(joinCard, 50);
     rulesDialog(title, g ? rulesOf(g, card) : rulesOf(seed ? { rules: seed.rules } : null, card), function () {
       S().acceptRules(g || { key: key, card: card }).then(function () { JB = true; try { b.click(); } finally { JB = false; } }, function (er) { toast((er && er.message) || 'Could not join — try again'); });
     });
   }, true);
 
+  /* a deal-room listing is a trade offer: the trade profile first; its card says who posts it (W-10, W-16) */
+  var LB = false;
+  window.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#gpBox [data-gpa="newlisting"]'); if (!b || LB) return;
+    e.preventDefault(); e.stopImmediatePropagation(); UI.needTradeProfile(function () { LB = true; try { b.click(); } finally { LB = false; } });
+  }, true);
+  function roomCards() {
+    if (live()) return;   /* live: web/src/live/wtrust.js reads each listing's posted_as */
+    [].forEach.call(document.querySelectorAll('#gpBox [data-lid]'), function (c) { if (c.dataset.wtAs) return; var co = c.querySelector('.gp-lco'); badge(c, { as: co && co.querySelector('.gp-ver') ? 'company' : 'individual' }); });
+  }
+  window.dxTrustUI.roomCards = roomCards;
   /* the demo keeps the group's posting rules the way the database does in the live app (0094) */
   function demoGroupPosts(key) { var s = D.store.get('groupData', {}) || {}; return ((s.posts || {})[key] || []).filter(function (p) { return !p.del; }); }
   window.addEventListener('click', function (e) {
@@ -322,12 +346,13 @@
       if (!p) { D.modal({ title: 'Invite link', body: '<p>This invite link is not valid — check that you copied all of it.</p>', secondary: 'Close' }); return; }
       if (!p.ok) { D.modal({ title: 'Invite link', body: '<p>This invite link no longer works — ask the group’s admin for a new one.</p>', secondary: 'Close' }); return; }
       if (p.member) { openGroup(p); return; }
+      setTimeout(joinCard, 50);
       var rules = (p.rules || []).map(function (x) { return Array.isArray(x) ? x : [String(x), '']; });
       D.modal({ title: 'Join a group', body: '<div class="wt-join-h"><span class="wt-join-em">' + esc(p.emoji || '👥') + '</span><div><b data-noi18n>' + esc(p.name) + '</b>' + (p.partner ? ' <span class="wt-chip wt-ok">🤝 Drugbox partner group</span>' : '') +
           '<div class="wt-muted">' + esc((p.member_count || 0) + (p.member_count === 1 ? ' member' : ' members')) + '</div></div></div>' + (p.description ? '<p data-noi18n>' + esc(p.description) + '</p>' : '') +
           (rules.length ? '<div class="wt-muted">The group’s rules</div><ol class="wt-rules">' + rules.map(function (r) { return '<li data-noi18n><b>' + esc(r[0]) + '</b>' + (r[1] ? ' — ' + esc(r[1]) : '') + '</li>'; }).join('') + '</ol>' : '') +
           (p.rules_required ? '<label class="gp-radio"><input type="checkbox" id="wtRulesOk"> <span>I have read the rules and accept them</span></label>' : '') +
-          '<div class="dbk-note">You join by yourself. Drugbox never adds people or imports contacts.</div>',
+          '<div class="dbk-note">You join by yourself. Drugbox never adds people or imports contacts.</div><div class="wt-joincard"></div>',
         primary: { label: 'Join group', onClick: function (bx, close) {
           var c = bx.querySelector('#wtRulesOk'); if (c && !c.checked) { toast('Tick “I accept” to join'); return false; }
           S().joinByLink(tok, !!c).then(function () { close(); toast('You joined ' + p.name); openGroup(p); }, function (er) { toast((er && er.message) || 'Could not join — try again'); }); return false; } } });
@@ -464,7 +489,7 @@
   var MO = new MutationObserver(function () {
     if (MO.busy) return; MO.busy = true;
     requestAnimationFrame(function () { MO.busy = false; var p = page();
-      if (p === 'groups') { paintTools(); manageTabs(); paintRequestCards(); paintPartner(); markHeld(); }
+      if (p === 'groups') { paintTools(); manageTabs(); paintRequestCards(); paintPartner(); markHeld(); roomCards(); }
       if (p === 'messages') paintNewAccount();
       if (p === 'market') { addAsFields(); if (!live()) demoCards(); }
     });

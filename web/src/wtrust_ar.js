@@ -49,6 +49,8 @@
     'Whose product or file is it?': 'المنتج أو الملف لمين؟', 'The owner company or person': 'الشركة أو الشخص المالك', 'Your commission (%)': 'عمولتك (%)', 'e.g. 2.5': 'مثال: 2.5', 'The owner’s authorisation': 'تفويض صاحب المنتج / الملف',
     'Buyers can open it — it shows you are allowed to offer it.': 'المشترين يقدروا يفتحوه — بيثبت إنك مفوَّض تعرضه.', 'A broker names whose product or file this is': 'الوسيط يكتب المنتج أو الملف لمين',
     'State the commission as a percentage (0–50)': 'اكتب العمولة كنسبة (0–50)', 'A broker attaches the owner’s authorisation': 'الوسيط يرفق تفويض صاحب الملف', 'The file can be up to 10 MB': 'الملف حتى 10 ميجا',
+    '📄 Authorisation': '📄 التفويض', 'The authorisation is not available': 'التفويض غير متاح', 'Could not open the document': 'تعذّر فتح المستند', 'Documents open in the live app': 'المستندات تُفتح من التطبيق الفعلي',
+    'The group sees your trade card:': 'الجروب بيشوف كارتك التجاري:', 'Add your trade profile so the group knows who you are.': 'أضف ملفك التجاري علشان الجروب يعرف إنت مين.',
     '✓ Verified company': 'شركة موثّقة ✓', '👤 Individual': '👤 فرد', '🤝 Broker': '🤝 وسيط', 'Offered by a broker for the owner': 'معروض عن طريق وسيط لحساب المالك', 'Choose a company page you belong to': 'اختر صفحة شركة أنت عضو فيها',
     '⏳ Waiting for Drugbox review — only you can see it': '⏳ قيد مراجعة Drugbox — أنت بس اللي شايفه', '⏳ Waiting for Drugbox review': '⏳ قيد مراجعة Drugbox',
     'Add your trade profile first (role, company, governorate, what you buy or sell) — it is shown with your offers': 'أضف ملفك التجاري الأول (الدور والشركة والمحافظة وبتبيع أو بتشتري إيه) — بيظهر مع عروضك',
