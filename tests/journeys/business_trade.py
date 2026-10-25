@@ -1,6 +1,6 @@
 """Business journeys — structured trade offers (W-trade: J-BUSINESS-W01 … W18): stock lines, price modes and «اسأل عن السعر»,
 matching «عندي / محتاج», registration files, toll capacity, synonyms search, renew / duplicates / feature, reserved / sold with
-rating, the ten templates, «الزق قايمتك», agency both ways, the file's trust (documents seen, private box, checklist).
+rating, the ten templates, «الزق قايمتك», agency both ways, the file's trust (documents seen, private box).
 Run: python3 tests/journeys/business_trade.py --target demo|live --lang en|ar --width 1440|390 --out DIR [--only J-BUSINESS-W01]"""
 import re, sys, os, json, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -270,18 +270,13 @@ def file_listing(j):
 
 @journey('J-BUSINESS-W05')
 def toll_capacity(j):
-    """A factory offers toll capacity with the required fields (forms, minimum batch, lead time, GMP with its date) — the form refuses it without them."""
+    """A factory offers toll capacity with its fields (forms, minimum batch, lead time, GMP with its date); since the owner's 0076 nothing but the name is required."""
     me = me_and(j, 'Toll Plant', sector='CMO / Toll'); pg = me['page']; title = 'Tablet line capacity %s' % j.tag
-    with j.step('Create Listing → CMO with only a name: refused, naming the missing fields'):
+    with j.step("Create Listing → CMO: forms, packs, minimum batch, lead time, GMP 'Yes' with its issuer and date, free months — it publishes"):
         f = trade_form(j, pg, 'toll'); approved(pg, f, 'Contract Manufacturing — Tablets & Capsules', title)
         pg.evaluate("f=>document.querySelectorAll(f+' .chip.selected').forEach(c=>c.classList.remove('selected'))", f)   # the approved sample chips (Tablets, Capsules) are not this plant's choice
-        said = publish(j, pg, f, publish_click=False)
-        j.check(not dlg_open(pg), 'the preview opened without the required toll fields')
-        j.check(any(re.search(r'Dosage forms|Minimum batch|Lead time|الأشكال|أقل تشغيلة|مدة التسليم', t) for t in said), 'the refusal does not name the missing fields: %s' % said)
-    with j.step("GMP 'Yes' without who issued it and its date is refused too; with them it publishes"):
         tx_chips(pg, f, 'forms', 'tab', 'cap'); tx_chips(pg, f, 'packs', 'blister'); tx_fill(pg, f, 'min_batch', '150,000 tablets'); tx_fill(pg, f, 'lead_time', '6 weeks')
-        tx_radio(pg, f, 'gmp', 'yes'); said = publish(j, pg, f, publish_click=False)
-        j.check(not dlg_open(pg) and any(re.search(r'GMP', t) for t in said), 'GMP without issuer and date was accepted')
+        tx_radio(pg, f, 'gmp', 'yes')
         tx_fill(pg, f, 'gmp_by', 'EDA'); tx_fill(pg, f, 'gmp_date', '2025-04'); tx_radio(pg, f, 'reg_contract', 'yes'); tx_radio(pg, f, 'licensed', 'yes')
         mo = pg.locator(f + ' [data-tx=free_months] .chip[data-v]').nth(2); mo.click(); fm = mo.get_attribute('data-v')
         said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the capacity was not published (%s)' % said)
@@ -294,10 +289,10 @@ def toll_capacity(j):
         c = find_card(j, op, title); t = c.inner_text()
         j.check(re.search(r'Tablets|أقراص', t) and '150,000' in t and re.search(r'6 weeks', t) and 'EDA' in t and fm in t, 'the card does not show the toll fields: %s' % t[:240])
         j.check(c.get_attribute('data-cat') == 'cmo', 'the capacity is not under CMO')
-    with j.step('The database refuses a toll listing without GMP even when the page is bypassed'):
+    with j.step('No barrier at the start (0076): a toll listing with only its name is accepted by the database'):
         if j.demo: j.skip('the database rule (live)')
-        err = as_member(j, me['id'], "insert into public.products (user_id, name, kind, attrs, status) values ('%s', 'Bypass toll', 'toll', '{\"forms\":[\"tab\"],\"min_batch\":\"1\",\"lead_time\":\"1\"}', 'active')" % me['id'])
-        j.check(err != 'ok' and re.search(r'GMP', err), 'a toll listing without GMP was accepted by the database: %s' % err[:200])
+        err = as_member(j, me['id'], "insert into public.products (user_id, name, kind, attrs, status) values ('%s', 'Bypass toll %s', 'toll', '{}', 'active')" % (me['id'], j.tag))
+        j.check(err == 'ok', 'a toll listing with only its name was refused: %s' % err[:200])
 
 @journey('J-BUSINESS-W06')
 def synonyms_search(j):
@@ -324,31 +319,20 @@ def synonyms_search(j):
 
 @journey('J-BUSINESS-W07')
 def renew_and_duplicates(j):
-    """Posting the same offer again is refused — 'Renew that one' instead; renewing is free once a week (it moves the listing up); sooner, «ميّز إعلانك» opens the paid Boost with that listing."""
+    """No barrier at the start (the owner, 0076): the same offer may be posted again, and «Renew» works any time — it moves the listing up; «ميّز إعلانك» stays the paid way to the top."""
     me = me_and(j, 'Repeat Poster'); pg = me['page']; title = 'Daily list %s' % j.tag
     def post():
         f = trade_form(j, pg, 'stock'); title_field(pg, f, title); line_fill(pg, f, 0, {'name': 'Brufen 400 mg', 'qty': 70, 'unit': 'box', 'expiry': '2027-05'}); return publish(j, pg, f)
     with j.step('Publish a stock list'):
         said = post(); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the list was not published')
-    with j.step("Publish the exact same list again: refused — 'You already posted this offer' with 'Renew that one'"):
-        post(); j.wait(pg, "!!document.querySelector('.dbk-ov')", 8)
-        j.check(re.search(r'already posted|منشور قبل', dlg_text(pg)), 'the duplicate was not refused: %s' % dlg_text(pg)[:160])
-        if j.live: j.check(j.wait_db("select count(*) from public.products where name=%s" % q(title), 6) == '1', 'the duplicate is stored (two rows)')
-    with j.step("'Renew that one' just after posting: free renewal once a week — the window offers '⭐ Feature this listing', which opens the Boost window with this listing chosen"):
-        dlg_click(j, pg, r'Renew that one|جدّد القديم'); j.wait(pg, "!!document.querySelector('.dbk-ov')", 8)
-        j.check(re.search(r'once every 7 days|this week|الأسبوع', dlg_text(pg)), 'the weekly limit is not explained: %s' % dlg_text(pg)[:200])
-        dlg_click(j, pg, r'Feature this listing|ميّز إعلانك'); j.wait(pg, "document.getElementById('boostModalOverlay').classList.contains('show')", 8)
-        if j.live:
-            j.wait(pg, "!!document.getElementById('dxPayListing')&&document.getElementById('dxPayListing').options.length>0", 8)
-            j.check(pg.evaluate("document.getElementById('dxPayListing').value") == lid(j, title), 'the Boost window does not choose this listing')
-        pg.evaluate("document.getElementById('boostModalOverlay').classList.remove('show')")
-    with j.step('A week later the free renewal works and moves it to the top'):
-        if j.demo: j.skip('the demo cannot move the clock (live checks the database)')
-        j.sql("update public.products set created_at=now()-interval '8 days', bumped_at=null, renewed_at=null where name=%s" % q(title))
+    with j.step('Publish the exact same list again: it is published too (no duplicate refusal)'):
+        said = post(); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the second post was not published: %s' % said)
+        if j.live: j.check(j.wait_db("select count(*) from public.products where name=%s and status='active'" % q(title), 6) == '2', 'the second post is not stored')
+    with j.step('My Listings → ··· → Renew just after posting: renewed and moved to the top (no weekly limit)'):
         t = market(j, pg, 'manage'); row = pg.locator('#tab-manage [data-ml]', has_text=title).first; row.locator('[data-ml-a=more]').click(); pg.wait_for_timeout(400)
         mark = j.toast_mark(pg); dlg_click(j, pg, r'Renew listing|جدد الإعلان|تجديد'); j.settle(pg, 1500)
         j.check(any(re.search(r'Renewed|اتجدّد', t) for t in j.toasts_since(pg, mark)), 'the renewal is not confirmed')
-        j.check(j.wait_db("select (bumped_at > now()-interval '1 minute')::text from public.products where name=%s" % q(title), 6) == 'true', 'the renewal is not stored')
+        if j.live: j.check(j.wait_db("select count(*) from public.products where name=%s and bumped_at > now()-interval '1 minute'" % q(title), 6) == '1', 'the renewal is not stored')
 
 @journey('J-BUSINESS-W09')
 def reserved_sold(j):
@@ -483,7 +467,7 @@ def agency_both_ways(j):
 
 @journey('J-BUSINESS-W18')
 def file_trust(j):
-    """Trust around a registration file: the documents go to Drugbox, who marks them seen («مستندات اتشافت» on the card, with the disclaimer); «اتفقنا» on a file deal needs the checklist."""
+    """Trust around a registration file: the documents go to Drugbox, who marks them seen («مستندات اتشافت» on the card, with the disclaimer); «اتفقنا» on a file deal is one click (the checklist was removed by the owner, 0076)."""
     me = me_and(j, 'Doc Owner', sector='Manufacturer'); pg = me['page']; title = 'Ibuprofen file docs %s' % j.tag
     with j.step('License form with the registration documents (2 files) → Publish: the documents wait for Drugbox'):
         f = trade_form(j, pg, 'file_sale'); approved(pg, f, 'e.g. EDA Cosmetic Registration — Anti-Acne Lotion', title)
@@ -504,16 +488,13 @@ def file_trust(j):
         j.check(re.search(r'Documents seen by Drugbox|مستندات اتشافت', c.inner_text()), 'the card does not show «Documents seen by Drugbox»')
         j.check(re.search(r'approval|موافقة', c.locator('.dx-docs-seen').get_attribute('title') or ''), 'the badge has no disclaimer')
         j.check(j.sql1("select count(*) from public.notifications where user_id='%s' and type='document_reviewed' and data->>'listing' is not null" % me['id']) == '1', 'the owner is not told')
-    with j.step("A file deal: «اتفقنا» (Agree terms) refuses until every checklist box is ticked; then it is agreed with the checklist kept"):
+    with j.step("A file deal: «اتفقنا» (Agree terms) agrees at once — no checklist window"):
         if j.demo: j.skip('the file deal has two companies (live)')
         b = other(j, 'Checklist Buyer', co=True, sector='Manufacturer'); bp = b['page']
         c = find_card(j, bp, title); c.locator('[data-tx-c=respond]').click(); bp.wait_for_timeout(400); dlg_click(j, bp, r'^\W*(Send|إرسال|ابعت)\W*$', 'Send'); j.settle(bp, 1500)
         j.reload(pg); open_deal(j, pg, title); deal_act(j, pg, 'Sign NDA'); open_deal(j, pg, title); deal_act(j, pg, 'Share details', {r'Shared|مشترك|شارك': 'Data room: registration certificate %s' % j.tag})
-        j.reload(bp); txt = open_deal(j, bp, title); j.check(re.search(r'Agree terms|وافق على الشروط', txt), 'the buyer cannot agree after the details were shared: %s' % txt[:400]); j.click(bp, r'Agree terms|وافق على الشروط', scope='body'); bp.wait_for_timeout(500)
-        j.check(re.search(r'Before you agree|قبل الموافقة', dlg_text(bp)), 'no checklist before agreeing')
-        mark = j.toast_mark(bp); dlg_click(j, bp, r'Agree terms|وافق على الشروط'); bp.wait_for_timeout(500)
-        j.check(dlg_open(bp) and any(re.search(r'Tick every box|علّم على كل', t) for t in j.toasts_since(bp, mark)), 'agreeing without the checklist was not refused')
-        bp.locator('.dbk-ov [data-ck]').evaluate_all("l=>l.forEach(c=>{if(!c.checked)c.click()})"); dlg_click(j, bp, r'Agree terms|وافق على الشروط'); j.settle(bp, 1800)
-        j.check(j.wait_db("select d.status||(e.data->'checklist'->>'transfer_needs_approval') from public.deals d join public.deal_events e on e.deal_id=d.id and e.action='agree' where d.lines->>'listing_id'=(select id::text from public.products where name=%s)" % q(title), 8) == 'agreedtrue', 'the agreement and its checklist are not stored')
+        j.reload(bp); txt = open_deal(j, bp, title); j.check(re.search(r'Agree terms|وافق على الشروط', txt), 'the buyer cannot agree after the details were shared: %s' % txt[:400]); j.click(bp, r'Agree terms|وافق على الشروط', scope='body'); j.settle(bp, 1800)
+        j.check(not bp.locator('.dbk-ov [data-ck]').count(), 'a checklist window still opens before agreeing')
+        j.check(j.wait_db("select d.status from public.deals d where d.lines->>'listing_id'=(select id::text from public.products where name=%s)" % q(title), 8) == 'agreed', 'the agreement is not stored')
 
 if __name__ == '__main__': main()

@@ -1,4 +1,4 @@
--- Structured trade offers (0071–0075, W-trade): what the browser cannot forge on a listing and its items, the kind's required
+-- Structured trade offers (0071–0076, W-trade): what the browser cannot forge on a listing and its items, the kind's required
 -- fields, the company verification rule, duplicates and the weekly renewal, matching and its notices, price requests, reserved /
 -- sold with ratings, the private box and documents seen by Drugbox, the checklist before agreeing, the agency deal, the
 -- distributor profile, the trade dictionary. Runs as the real API roles with a JWT, in one transaction that is rolled back;
@@ -25,6 +25,9 @@ create function pg_temp.step(p_name text, q text) returns void language plpgsql 
 create function pg_temp.no(p_name text, q text, st text) returns void language plpgsql as $$ begin
   execute q; raise exception 'the statement was allowed' using errcode = 'DB001';
   exception when others then insert into r(name, ok, err) values (p_name, sqlstate = st, case when sqlstate <> st then sqlstate || ': ' || sqlerrm end); end $$;
+create function pg_temp.allowed(p_name text, q text) returns void language plpgsql as $$ begin   -- runs it, then undoes it: the checks after it see the same data
+  execute q; raise exception 'undo' using errcode = 'DB002';
+  exception when others then insert into r(name, ok, err) values (p_name, sqlstate = 'DB002', case when sqlstate <> 'DB002' then sqlstate || ': ' || sqlerrm end); end $$;
 create function pg_temp.n(q text) returns int language plpgsql as $$ declare k int; begin execute q; get diagnostics k = row_count; return k; end $$;
 create function pg_temp.id(k text) returns bigint language sql stable as $$ select v::bigint from ids where ids.k = id.k $$;
 create function pg_temp.txt(k text) returns text language sql stable as $$ select v from ids where ids.k = txt.k $$;
@@ -60,10 +63,10 @@ select pg_temp.ok('the server''s columns are the server''s (keys, search text, r
   and closed_reason is null and docs_checked_at is null from public.products where id = pg_temp.id('p1'))$$);
 select pg_temp.ok('the kind decides the side and the category', $$(select type = 'supply' and category = 'finished' from public.products where id = pg_temp.id('p1'))$$);
 select pg_temp.ok('unknown fields are dropped, known ones kept in their type', $$(select attrs = '{"gov":"giza","credit_days":60,"urgent":true,"currency":"EGP"}'::jsonb from public.products where id = pg_temp.id('p1'))$$);
-select pg_temp.no('publishing a stock listing without items is refused', $$update public.products set status = 'active' where id = pg_temp.id('p1')$$, '22023');
-select pg_temp.no('an item without a quantity cannot be published either', $$
-  insert into public.listing_lines (listing_id, name) values (pg_temp.id('p1'), 'TX empty'); update public.products set status = 'active' where id = pg_temp.id('p1')$$, '22023');
-select pg_temp.no('…nor through paused (draft → paused → active)', $$update public.products set status = 'paused' where id = pg_temp.id('p1'); update public.products set status = 'active' where id = pg_temp.id('p1')$$, '22023');
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: publishing a stock listing without items is refused', $$update public.products set status = 'active' where id = pg_temp.id('p1')$$);
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: an item without a quantity cannot be published either', $$
+  insert into public.listing_lines (listing_id, name) values (pg_temp.id('p1'), 'TX empty'); update public.products set status = 'active' where id = pg_temp.id('p1')$$);
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: …nor through paused (draft → paused → active)', $$update public.products set status = 'paused' where id = pg_temp.id('p1'); update public.products set status = 'active' where id = pg_temp.id('p1')$$);
 select pg_temp.step('back to draft', $$update public.products set status = 'draft' where id = pg_temp.id('p1')$$);
 select pg_temp.step('remove it again', $$delete from public.listing_lines where listing_id = pg_temp.id('p1')$$);
 select pg_temp.no('an item''s key is the database''s (no column grant)', $$insert into public.listing_lines (listing_id, name, qty, unit, item_key) values (pg_temp.id('p1'), 'TX x', 1, 'box', 'forged')$$, '42501');
@@ -74,44 +77,44 @@ select pg_temp.step('two items', $$insert into public.listing_lines (listing_id,
 select pg_temp.ok('the items carry their keys; the listing''s search text and roots follow them', $$(select l.item_key = 'extra panadol 500mg tab' and p.search_text like '% panadol %' and p.search_text like '% بنادول %' and 'extra panadol' = any(p.roots)
   from public.listing_lines l join public.products p on p.id = l.listing_id where l.listing_id = pg_temp.id('p1') and l.pos = 0)$$);
 select pg_temp.step('publish', $$update public.products set status = 'active' where id = pg_temp.id('p1')$$);
-select pg_temp.no('replacing the items with one without a quantity is refused (published stock)', $$select public.listing_lines_replace(pg_temp.id('p1'), '[{"name":"TX x","unit":"box"}]')$$, '22023');
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: replacing the items with one without a quantity is refused (published stock)', $$select public.listing_lines_replace(pg_temp.id('p1'), '[{"name":"TX x","unit":"box"}]')$$);
 select pg_temp.ok('the owner replaces the items in one go (and the refusal above left them untouched)', $$(select count(*) = 2 from public.listing_lines where listing_id = pg_temp.id('p1'))
   and public.listing_lines_replace(pg_temp.id('p1'), '[{"name":"Panadol Extra","name_ar":"بنادول اكسترا","strength":"500 mg","form":"tab","qty":95,"unit":"box","expiry":"2027-03-01","source":"company","origin_country":"EG","pack_state":"intact"},{"name":"TX insulin pen","strength":"100 iu","form":"vial","qty":25,"unit":"pack","expiry":"2026-12-01","source":"importer","origin_country":"DE","pack_state":"intact","cold":true}]') = 2$$);
 select pg_temp.ok('…the new quantity is stored', $$(select qty = 95 from public.listing_lines where listing_id = pg_temp.id('p1') and pos = 0)$$);
 select pg_temp.ok('published: active, published_at set by the database, 30 days', $$(select active and published_at is not null and expires_at between now() + interval '29 days' and now() + interval '31 days' from public.products where id = pg_temp.id('p1'))$$);
-select pg_temp.no('the same offer again is refused as a duplicate (renew that one)', $$
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: the same offer again is refused as a duplicate (renew that one)', $$
   with x as (insert into public.products (user_id, name, kind, status, company_id) values ('f1111111-1111-1111-1111-111111111111', 'TX weekly stock', 'stock', 'draft', pg_temp.id('sco')) returning id)
   insert into ids select 'dup', id::text from x;
   insert into public.listing_lines (listing_id, pos, name, name_ar, strength, form, qty, unit, expiry, source, origin_country, pack_state, cold) values
   (pg_temp.id('dup'), 0, 'Panadol Extra', 'بنادول اكسترا', '500 mg', 'tab', 95, 'box', '2027-03-01', 'company', 'EG', 'intact', false),
   (pg_temp.id('dup'), 1, 'TX insulin pen', null, '100 iu', 'vial', 25, 'pack', '2026-12-01', 'importer', 'DE', 'intact', true);
-  update public.products set status = 'active' where id = pg_temp.id('dup')$$, '23505');
+  update public.products set status = 'active' where id = pg_temp.id('dup')$$);
 select pg_temp.no('the seller cannot mark it reserved by a plain update', $$update public.products set status = 'reserved' where id = pg_temp.id('p1')$$, '42501');
 select pg_temp.no('…nor change its kind once published', $$update public.products set kind = 'wanted' where id = pg_temp.id('p1')$$, '42501');
 
 -- ══ the company rule (owner): a company page posts as the company only when verified ══
 select pg_temp.as_user('f4444444-4444-4444-4444-444444444444');
-select pg_temp.no('an unverified company cannot post an offer as the company', $$insert into public.products (user_id, name, company_id, price) values ('f4444444-4444-4444-4444-444444444444', 'TX unverified offer', pg_temp.id('uco'), '5')$$, '42501');
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: an unverified company cannot post an offer as the company', $$insert into public.products (user_id, name, company_id, price) values ('f4444444-4444-4444-4444-444444444444', 'TX unverified offer', pg_temp.id('uco'), '5')$$);
 select pg_temp.step('…its owner posts as himself', $$insert into public.products (user_id, name, price) values ('f4444444-4444-4444-4444-444444444444', 'TX unverified offer', '5')$$);
-select pg_temp.no('verifier F1-A: a draft as the unverified company, paused then resumed, is refused', $$
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: verifier F1-A: a draft as the unverified company, paused then resumed, is refused', $$
   insert into public.products (user_id, name, kind, status, company_id, attrs) values ('f4444444-4444-4444-4444-444444444444', 'TX F1 toll', 'toll', 'draft', pg_temp.id('uco'), '{"forms":["tab"],"min_batch":"1","lead_time":"1","gmp":"no"}');
-  update public.products set status = 'paused' where name = 'TX F1 toll'; update public.products set status = 'active' where name = 'TX F1 toll'$$, '42501');
-select pg_temp.no('verifier round 2 V1: a draft as the unverified company made live by setting only `active` is refused', $$
+  update public.products set status = 'paused' where name = 'TX F1 toll'; update public.products set status = 'active' where name = 'TX F1 toll'$$);
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: verifier round 2 V1: a draft as the unverified company made live by setting only `active` is refused', $$
   insert into public.products (user_id, name, kind, status, company_id, attrs) values ('f4444444-4444-4444-4444-444444444444', 'TX V1 toll', 'toll', 'draft', pg_temp.id('uco'), '{"forms":["tab"],"min_batch":"1","lead_time":"1","gmp":"no"}');
-  update public.products set active = true where name = 'TX V1 toll'$$, '42501');
-select pg_temp.no('verifier F1-B: published as himself, paused, moved to the unverified company, resumed — refused', $$
+  update public.products set active = true where name = 'TX V1 toll'$$);
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: verifier F1-B: published as himself, paused, moved to the unverified company, resumed — refused', $$
   update public.products set status = 'paused' where name = 'TX unverified offer'; update public.products set company_id = pg_temp.id('uco') where name = 'TX unverified offer';
-  update public.products set status = 'active' where name = 'TX unverified offer'$$, '42501');
-select pg_temp.no('…and cannot move his own listing to the company afterwards', $$update public.products set company_id = pg_temp.id('uco') where name = 'TX unverified offer'$$, '42501');
+  update public.products set status = 'active' where name = 'TX unverified offer'$$);
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: …and cannot move his own listing to the company afterwards', $$update public.products set company_id = pg_temp.id('uco') where name = 'TX unverified offer'$$);
 
 -- ══ the kind's required fields ══
 select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
-select pg_temp.no('toll capacity without GMP is refused', $$insert into public.products (user_id, name, kind, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX toll', 'toll', '{"forms":["tab"],"min_batch":"1","lead_time":"1"}')$$, '22023');
-select pg_temp.no('…GMP yes without its date and issuer is refused', $$insert into public.products (user_id, name, kind, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX toll', 'toll', '{"forms":["tab"],"min_batch":"1","lead_time":"1","gmp":"yes"}')$$, '22023');
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: toll capacity without GMP is refused', $$insert into public.products (user_id, name, kind, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX toll', 'toll', '{"forms":["tab"],"min_batch":"1","lead_time":"1"}')$$);
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: …GMP yes without its date and issuer is refused', $$insert into public.products (user_id, name, kind, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX toll', 'toll', '{"forms":["tab"],"min_batch":"1","lead_time":"1","gmp":"yes"}')$$);
 select pg_temp.step('…complete, it publishes (90 days, CMO)', $$with x as (insert into public.products (user_id, name, kind, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX toll', 'toll',
   '{"forms":["tab","cap","zz"],"min_batch":"150,000","lead_time":"6 weeks","gmp":"yes","gmp_by":"EDA","gmp_date":"2025-04","free_months":["2026-12","2026-13"]}') returning id) insert into ids select 'toll', id::text from x$$);
 select pg_temp.ok('…unknown forms and impossible months are dropped', $$(select attrs -> 'forms' = '["tab","cap"]'::jsonb and attrs -> 'free_months' = '["2026-12"]'::jsonb and category = 'cmo' and expires_at > now() + interval '89 days' from public.products where id = pg_temp.id('toll'))$$);
-select pg_temp.no('a registration file without its stage is refused', $$insert into public.products (user_id, name, kind, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX file', 'file_sale', '{"authority":"eda","reg_type":"human"}')$$, '22023');
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: a registration file without its stage is refused', $$insert into public.products (user_id, name, kind, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX file', 'file_sale', '{"authority":"eda","reg_type":"human"}')$$);
 select pg_temp.step('a registration file with its fields and a private notification number', $$
   with x as (insert into public.products (user_id, name, kind, company_id, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX Paracetamol file', 'file_sale', pg_temp.id('sco'),
     '{"authority":"eda","reg_type":"human","stage":"notification","public_price":34,"price_increase":"submitted"}') returning id) insert into ids select 'file', id::text from x;
@@ -148,14 +151,14 @@ select pg_temp.ok('an outsider sees no matches of others', $$(select count(*) = 
 
 -- ══ renewing: free once a week ══
 select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
-select pg_temp.no('renewing just after publishing is refused (the date of the next free renewal)', $$select public.listing_renew(pg_temp.id('p1'))$$, '42501');
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: renewing just after publishing is refused (the date of the next free renewal)', $$select public.listing_renew(pg_temp.id('p1'))$$);
 select pg_temp.as_user('f3333333-3333-3333-3333-333333333333');
 select pg_temp.no('another member cannot renew it', $$select public.listing_renew(pg_temp.id('p1'))$$, '42501');
 select pg_temp.as_server(); select pg_temp.step('a week later', $$update public.products set created_at = now() - interval '8 days' where id = pg_temp.id('p1')$$);
 select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
 select pg_temp.step('the seller renews', $$select public.listing_renew(pg_temp.id('p1'))$$);
 select pg_temp.ok('…it moved up (bumped_at) and runs 30 days from now', $$(select bumped_at > now() - interval '1 minute' and expires_at > now() + interval '29 days' from public.products where id = pg_temp.id('p1'))$$);
-select pg_temp.no('…and not again the same week', $$select public.listing_renew(pg_temp.id('p1'))$$, '42501');
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: …and not again the same week', $$select public.listing_renew(pg_temp.id('p1'))$$);
 
 -- ══ asking the price ══
 select pg_temp.as_user('f3333333-3333-3333-3333-333333333333');
@@ -288,14 +291,14 @@ select pg_temp.no('…the second file''s box stays closed (only a deal the datab
 select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
 select pg_temp.step('the owner signs the NDA and shares', $$select public.deal_act(pg_temp.txt('dref'), 'sign_nda'); select public.deal_act(pg_temp.txt('dref'), 'share', '{"note":"TX data room"}')$$);
 select pg_temp.as_user('f2222222-2222-2222-2222-222222222222');
-select pg_temp.no('agreeing without the checklist is refused', $$select public.deal_act(pg_temp.txt('dref'), 'agree')$$, '22023');
-select pg_temp.no('…with one box missing too', $$select public.deal_act(pg_temp.txt('dref'), 'agree', '{"checklist":{"notif_seen":true,"stage_understood":true,"price_increase_checked":true,"transfer_needs_approval":true}}')$$, '22023');
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: agreeing without the checklist is refused', $$select public.deal_act(pg_temp.txt('dref'), 'agree')$$);
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: …with one box missing too', $$select public.deal_act(pg_temp.txt('dref'), 'agree', '{"checklist":{"notif_seen":true,"stage_understood":true,"price_increase_checked":true,"transfer_needs_approval":true}}')$$);
 select pg_temp.step('…with every box it is agreed', $$select public.deal_act(pg_temp.txt('dref'), 'agree', '{"checklist":{"notif_seen":true,"stage_understood":true,"price_increase_checked":true,"transfer_needs_approval":true,"docs_reviewed":true}}')$$);
 select pg_temp.ok('…agreed, the checklist kept with the event', $$(select d.status = 'agreed' and (e.data -> 'checklist' ->> 'docs_reviewed') = 'true' from public.deals d join public.deal_events e on e.deal_id = d.id and e.action = 'agree' where d.ref = pg_temp.txt('dref'))$$);
 
 -- ══ agency both ways ══
 select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
-select pg_temp.no('an agency without governorates is refused', $$insert into public.products (user_id, name, kind, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX agency', 'agency', '{"cats":["supplements"]}')$$, '22023');
+select pg_temp.allowed('0076 (owner: no barriers) now allowed — was: an agency without governorates is refused', $$insert into public.products (user_id, name, kind, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX agency', 'agency', '{"cats":["supplements"]}')$$);
 select pg_temp.step('an agency for supplements in Asyut and Sohag', $$with x as (insert into public.products (user_id, name, kind, company_id, attrs) values ('f1111111-1111-1111-1111-111111111111', 'TX vitamins agency', 'agency', pg_temp.id('sco'),
   '{"cats":["supplements"],"govs":["asyut","sohag","nowhere"],"exclusive":true,"bonus_pct":7}') returning id) insert into ids select 'ag', id::text from x$$);
 select pg_temp.ok('…an unknown governorate is dropped', $$(select attrs -> 'govs' = '["asyut","sohag"]'::jsonb from public.products where id = pg_temp.id('ag'))$$);

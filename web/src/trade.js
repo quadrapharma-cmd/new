@@ -62,7 +62,7 @@
   function months(n) { var out = [], d = new Date(); d.setDate(1); for (var i = 0; i < n; i++) { out.push(d.toISOString().slice(0, 7)); d.setMonth(d.getMonth() + 1); } return out; }
 
   /* ── field builders: the approved form markup (.field / .field-label / .field-input / .chip-row / .radio-row) ── */
-  function req(r) { return r ? ' <span class="req">*</span>' : ''; }
+  function req(r) { return ''; }   /* the owner (0076): only the name is needed — the trade fields are all optional */
   function F(key, label, inner, r, hint) { return '<div class="field" data-tx="' + key + '"><label class="field-label">' + esc(label) + req(r) + '</label>' + inner + (hint ? '<div class="field-hint">' + esc(hint) + '</div>' : '') + '</div>'; }
   function fText(key, label, ph, r, hint, type) { return F(key, label, '<input class="field-input" ' + (type ? 'type="' + type + '" ' : '') + 'placeholder="' + esc(ph || '') + '" maxlength="120">', r, hint); }
   function fSel(key, label, list, r, blank) { return F(key, label, '<select class="field-select">' + opts(list, blank === undefined ? '—' : blank) + '</select>', r); }
@@ -85,7 +85,7 @@
       'Ask for price: buyers send a price request tied to this listing') +
       row2(fText('credit_days', 'Credit terms (days) — آجل', 'e.g. 60 (empty = cash)', false, '', 'number'), F('urgent', 'Urgent', '<div class="chip-row"><div class="chip" data-v="1" role="button" tabindex="0">⏱ Urgent</div></div>'));
   }
-  function postAs() { return '<div class="field dx-postas" data-tx="_as"><label class="field-label">Post as</label><select class="field-select"></select><div class="field-hint">A company page posts offers as the company only with the Drugbox verification badge</div></div>'; }
+  function postAs() { return '<div class="field dx-postas" data-tx="_as"><label class="field-label">Post as</label><select class="field-select"></select><div class="field-hint">The ✓ shows on your offers once Drugbox verifies your company page</div></div>'; }
   function privBox(hint) { return '<div class="dx-priv"><div class="field-label">🔒 Private box — only you, Drugbox and the members you share it with</div>' +
     row2(fText('priv.notif_no', 'Notification number (رقم الإخطار)', 'e.g. 12345/2024'), fText('priv.reg_no', 'Registration / licence number', '')) + (hint ? '<div class="field-hint">' + esc(hint) + '</div>' : '') + '</div>'; }
   function docsZone(label) { return '<div class="field dx-docs-f"><label class="field-label">' + esc(label) + '</label><div class="upload-zone-sm dx-docs" role="button" tabindex="0"><b>Upload</b> documents for Drugbox to check (PDF / photo, up to 6)</div><div class="field-hint">Private: Drugbox checks them and the card shows “Documents seen by Drugbox”</div></div>'; }
@@ -95,7 +95,7 @@
   var EXTRA = {
     'form-supply': function () {
       return '<div class="dx-tx" data-tx-extra="supply">' +
-        '<div class="dx-stock"><div class="field"><label class="field-label">Items <span class="req">*</span></label><div class="dx-lines"></div>' +
+        '<div class="dx-stock"><div class="field"><label class="field-label">Items</label><div class="dx-lines"></div>' +
         '<div class="dx-lines-a"><button type="button" class="dx-tbtn s" data-tx-a="addline">＋ Add another item</button><button type="button" class="dx-tbtn s" data-tx-a="paste">📋 Paste your list</button></div>' +
         '<div class="field-hint">Name (Arabic and English), strength, quantity + unit, expiry, source, pack, fridge — one line per item</div></div></div>' +
         common(true) + priceBlock(true) + postAs() + '</div>';
@@ -146,7 +146,7 @@
       '<div class="row2"><input class="field-input" data-l="name" placeholder="Name (English or Arabic) *" maxlength="160" value="' + esc(l.name || '') + '"><input class="field-input" data-l="name_ar" placeholder="الاسم بالعربي" maxlength="160" dir="auto" value="' + esc(l.name_ar || '') + '"></div>' +
       '<div class="row3"><input class="field-input" data-l="strength" placeholder="Strength (500 mg)" maxlength="40" value="' + esc(l.strength || '') + '"><select class="field-select" data-l="form">' + opts(FORMS_, 'Dosage form') + '</select>' +
       '<input class="field-input" data-l="expiry" type="month" title="Expiry" aria-label="Expiry" value="' + esc(l.expiry || '') + '"></div>' +
-      '<div class="row3"><input class="field-input" data-l="qty" type="number" min="1" step="any" placeholder="Quantity *" value="' + esc(l.qty || '') + '"><select class="field-select" data-l="unit">' + opts(UNITS) + '</select>' +
+      '<div class="row3"><input class="field-input" data-l="qty" type="number" min="1" step="any" placeholder="Quantity" value="' + esc(l.qty || '') + '"><select class="field-select" data-l="unit">' + opts(UNITS) + '</select>' +
       '<input class="field-input" data-l="price" type="number" min="0" step="any" placeholder="Price (optional)" value="' + esc(l.price || '') + '"></div>' +
       '<div class="row3"><select class="field-select" data-l="source">' + opts(SOURCES, 'Source') + '</select><select class="field-select" data-l="origin_country">' + opts(COUNTRIES, 'Country') + '</select>' +
       '<select class="field-select" data-l="pack_state">' + opts(PACKST, 'Pack condition') + '</select></div>' +
@@ -263,14 +263,9 @@
     return { kind: kind, title: title, attrs: a, priv: r.priv, lines: lines, price_mode: pm === 'amount' ? null : pm,
       discount_pct: pm === 'discount' && disc && disc.value ? +disc.value : null, price: pm === 'ask' ? '' : ap, moq: amoq, as: as && as.value ? as.value : '', desc: desc.trim(), docs: (DOCS[form.id] || []).slice() };
   }
-  function missing(form, g) {
+  function missing(form, g) {   /* the owner (0076): a listing needs only its name; an empty discount reads as «اطلب سعر» */
     var miss = [];
-    form.querySelectorAll('[data-tx]').forEach(function (fd) { if (!fd.querySelector(':scope > .field-label .req')) return; var k = fd.dataset.tx;
-      if (k === '_mode' || k === '_title') return;
-      var has = k in g.attrs || (k === 'forms' && g.attrs.forms && g.attrs.forms.length); if (!has) miss.push(orig(fd.querySelector('.field-label')).replace('*', '').trim()); });
-    if (g.kind === 'stock') { if (!g.lines.length) miss.push('Items'); else if (g.lines.some(function (l) { return !(l.qty > 0); })) miss.push('Quantity of every item'); }
-    if (g.kind === 'toll' && g.attrs.gmp === 'yes' && (!g.attrs.gmp_by || !g.attrs.gmp_date)) miss.push('GMP issued by and date');
-    if (g.price_mode === 'discount' && !(g.discount_pct > 0 && g.discount_pct <= 95)) miss.push('Discount %');
+    if (g.price_mode === 'discount' && !(g.discount_pct > 0 && g.discount_pct <= 95)) { g.price_mode = 'ask'; g.discount_pct = null; }
     if (!g.title) miss.push('Name');
     return miss;
   }
@@ -323,9 +318,7 @@
     rows: function () { return Promise.resolve(all().filter(function (x) { return x.status === 'active' || x.status === 'reserved'; })); },
     publish: function (g, status) {
       var l = all(), fp = TT.norm(g.kind + '|' + g.title + '|' + g.desc + '|' + JSON.stringify(g.lines.map(function (x) { return [TT.key(x.name), x.qty, x.expiry]; })));
-      var dup = l.find(function (x) { return x.uid === ME_ID && x.fp === fp && (x.status === 'active' || x.status === 'reserved'); });
-      if (dup) { var e = new Error('DUPLICATE'); e.dup = dup.id; return Promise.reject(e); }
-      var a = window.dxDir && window.dxDir.mine && window.dxDir.mine(), co = g.as && a && a.slug === g.as && a.status === 'verified' ? { name: a.name, slug: a.slug, verified: true } : null;
+      var a = window.dxDir && window.dxDir.mine && window.dxDir.mine(), co = g.as && a && a.slug === g.as ? { name: a.name, slug: a.slug, verified: a.status === 'verified' } : null;
       var L = { id: 'M' + Date.now(), kind: g.kind, uid: ME_ID, mine: true, title: g.title, desc: g.desc, price: g.price || '', moq: g.moq || '', co: co, status: status === 'draft' ? 'draft' : 'active', at: Date.now(), attrs: g.attrs, lines: g.lines, price_mode: g.price_mode,
         discount_pct: g.discount_pct, priv: g.priv, docs: g.docs && g.docs.length ? 'waiting' : null, docNames: (g.docs || []).map(function (f) { return f.name; }), fp: fp };
       l.unshift(L);
@@ -516,8 +509,8 @@
   function paintPostAs() {
     var a = window.dxDir && window.dxDir.mine && window.dxDir.mine(), me = (window.ME && window.ME.name) || 'Me';
     document.querySelectorAll('#mkx [data-tx="_as"] select').forEach(function (s) {
-      var cur = s.value; s.innerHTML = '<option value="">' + esc(me) + ' (myself)</option>' + (a ? '<option value="' + esc(a.slug) + '"' + (a.status === 'verified' ? '' : ' disabled') + '>' + esc(a.name) + (a.status === 'verified' ? ' ✓' : ' — needs verification') + '</option>' : '');
-      s.value = cur && s.querySelector('option[value="' + cur + '"]:not([disabled])') ? cur : (a && a.status === 'verified' ? a.slug : ''); });
+      var cur = s.value; s.innerHTML = '<option value="">' + esc(me) + ' (myself)</option>' + (a ? '<option value="' + esc(a.slug) + '"' + '' + '>' + esc(a.name) + (a.status === 'verified' ? ' ✓' : '') + '</option>' : '');
+      s.value = cur && s.querySelector('option[value="' + cur + '"]') ? cur : (a ? a.slug : ''); });
   }
   function markSupplyMode(f) {   /* stock lines for finished products; the approved raw-material fields for materials */
     if (!f) return; var mode = kindOf(f);
@@ -689,10 +682,9 @@
     D.modal({ title: 'Renewed this week already', body: '<p>A listing is renewed free once every 7 days — the next free renewal is on <b data-noi18n>' + esc(when) + '</b>. To reach the top now, feature it (Boost or Featured).</p>', secondary: 'Close',
       primary: { label: '⭐ Feature this listing', onClick: function () { window.__dxBoostListing = id; if (typeof window.openBoostModal === 'function') window.openBoostModal('boost'); } } });
   }
-  /* the demo's renewal follows the same once-a-week rule as the database (market.js's demo service is wrapped) */
+  /* the demo's renewal moves the listing up, as the database does (market.js's demo service is wrapped; no weekly limit since 0076) */
   if (window.dxMarket && window.dxMarket.demoSvc) { var dR = window.dxMarket.demoSvc.renew; window.dxMarket.demoSvc.renew = function (id) {
-    var l = D.store.get('mkMine', []) || [], r = l.find(function (x) { return x.id === id; }), last = r ? (r.bumped || r.renewed || r.posted) : 0;
-    if (last && Date.now() - last < 7 * DAY && !(r.exp && r.exp <= Date.now())) { var e = new Error('RENEW_LIMIT:' + new Date(last + 7 * DAY).toISOString().slice(0, 10)); return Promise.reject(e); }
+    var l = D.store.get('mkMine', []) || [], r = l.find(function (x) { return x.id === id; });
     return dR.apply(this, arguments).then(function (x) { var l2 = D.store.get('mkMine', []) || [], r2 = l2.find(function (y) { return y.id === id; }); if (r2) { r2.bumped = Date.now(); D.store.set('mkMine', l2); } return x; }); }; }
   /* the boost window opened from a listing: that listing is chosen (checkout.js fills the list) */
   new MutationObserver(function () { var s = document.getElementById('dxPayListing'); if (s && window.__dxBoostListing && s.options.length > 1) { if (s.querySelector('option[value="' + window.__dxBoostListing + '"]')) s.value = String(window.__dxBoostListing); window.__dxBoostListing = null; } })
@@ -721,7 +713,7 @@
     svc().items(id).then(function (lines) {
       var m = D.modal({ title: title, body: '<div class="dx-tx" id="dxItemsF"><div class="dx-lines"></div><div class="dx-lines-a"><button type="button" class="dx-tbtn s" data-tx-a="addline">＋ Add another item</button></div></div>',
         primary: { label: 'Save changes', onClick: function (b) { var ls = readLines(b.querySelector('#dxItemsF'));
-          if (!ls.length || ls.some(function (l) { return !(l.qty > 0); })) { toast('Please fill: Quantity of every item'); return false; }
+          
           svc().saveLines(id, ls).then(function () { toast('Items saved'); paintDemo(); if (window.dxMarket) window.dxMarket.paint(); }, function (er) { toast((er && er.message) || 'Could not save'); }); } } });
       var f = m.el.querySelector('#dxItemsF'); lines.forEach(function (l) { addLine(f, l); }); if (!lines.length) addLine(f);
       f.addEventListener('click', function (e) { var a = e.target.closest('[data-tx-a]'); if (!a) return; e.preventDefault(); if (a.dataset.txA === 'addline') addLine(f); if (a.dataset.txA === 'delline') { var ln = a.closest('.dx-line'); if (f.querySelectorAll('.dx-line').length > 1) ln.remove(); } });
@@ -770,13 +762,7 @@
   var DL = window.dxDeals;
   if (DL && DL.FLOWS && !DL.FLOWS.agency) DL.FLOWS.agency = { label: 'Agency request', icon: 'users', steps: ['requested', 'talks', 'agreed'],
     acts: { requested: { to: ['talk', 'decline'], from: ['cancel'] }, talks: { to: ['agree', 'decline'], from: ['cancel', 'decline'] } } };
-  var CHECK = [['notif_seen', 'I saw the notification number and its validity'], ['stage_understood', 'I understand the file’s stage and what is still missing'], ['price_increase_checked', 'I checked whether a price increase is submitted or approved'],
-    ['transfer_needs_approval', 'I know the transfer needs the authority’s approval'], ['docs_reviewed', 'I reviewed the documents shared in this deal']];
-  window.dxTradeChecklist = function (d, go) {
-    D.modal({ title: 'Before you agree — ' + d.title, body: '<p class="dbk-note dx-disc-note">' + esc(DISCLAIMER) + '</p>' + CHECK.map(function (c) { return '<label class="dx-chk dx-chk-l"><input type="checkbox" data-ck="' + c[0] + '"> ' + esc(c[1]) + '</label>'; }).join(''),
-      primary: { label: 'Agree terms', onClick: function (b) { var ck = {}, all_ = true; b.querySelectorAll('[data-ck]').forEach(function (x) { ck[x.dataset.ck] = x.checked; if (!x.checked) all_ = false; });
-        if (!all_) { toast('Tick every box before agreeing'); return false; } go({ checklist: ck, note: 'Checklist done' }); } } });
-  };
+  /* the checklist before «اتفقنا» on a file deal was removed by the owner (0076): the disclaimer stays on the card and in File details */
 
   /* ── Admin → Review → Trade documents (demo; the live adapter answers from the database) ── */
   if (window.dxModeration && !window.dxModeration.__trade) {
@@ -859,7 +845,7 @@
     'Name (English or Arabic) *': 'الاسم (إنجليزي أو عربي) *', 'Strength (500 mg)': 'التركيز (500 مجم)', 'Dosage form': 'الشكل الصيدلي', 'Expiry': 'التاريخ', 'Quantity *': 'الكمية *', 'Price (optional)': 'السعر (اختياري)', 'Source': 'المصدر', 'Pack condition': 'حالة العلبة',
     '❄️ Fridge item': '❄️ ثلاجة', 'Discount %': 'خصم %', 'Remove item': 'شيل الصنف', 'Governorate': 'المحافظة', 'Delivery': 'التسليم', 'Pick-up from the seller': 'استلام من البايع', 'Delivered to the buyer': 'توصيل للمشتري', 'Shipping': 'شحن', 'By agreement': 'بالاتفاق',
     'Price': 'السعر', 'Ask for price': 'اسأل عن السعر', 'Discount % off the public price': 'خصم % من سعر الجمهور', 'Ask for price: buyers send a price request tied to this listing': 'اطلب سعر: المشتري يبعت طلب سعر مربوط بالإعلان',
-    'Credit terms (days) — آجل': 'آجل (أيام)', 'e.g. 60 (empty = cash)': 'مثلاً 60 (فاضي = كاش)', 'Urgent': 'مستعجل', '⏱ Urgent': '⏱ مستعجل', 'Post as': 'انشر باسم', 'A company page posts offers as the company only with the Drugbox verification badge': 'صفحة الشركة تنشر عروض باسم الشركة بس لما تاخد شارة توثيق Drugbox',
+    'Credit terms (days) — آجل': 'آجل (أيام)', 'e.g. 60 (empty = cash)': 'مثلاً 60 (فاضي = كاش)', 'Urgent': 'مستعجل', '⏱ Urgent': '⏱ مستعجل', 'Post as': 'انشر باسم', 'The ✓ shows on your offers once Drugbox verifies your company page': 'علامة ✓ بتظهر على عروضك لما Drugbox توثّق صفحة شركتك', 'Quantity': 'الكمية', 'A company page posts offers as the company only with the Drugbox verification badge': 'صفحة الشركة تنشر عروض باسم الشركة بس لما تاخد شارة توثيق Drugbox',
     'Company': 'الشركة', 'Factory': 'فابريكة', 'Authority (tender)': 'هيئة (مناقصة)', 'Importer': 'مستورد', 'Sealed / intact': 'سليمة', 'Opened carton': 'كرتونة مفتوحة', 'Damaged pack': 'علبة تالفة', 'Repacked': 'معاد تغليفها',
     'Strength': 'التركيز', 'Needed by': 'مطلوب قبل', 'Dosage forms you make': 'الأشكال اللي بتصنّعها', 'Pack types': 'أنواع العبوات', 'Minimum batch': 'أقل تشغيلة', 'Lead time': 'مدة التسليم', 'Free months': 'الشهور الفاضية', 'Licensed by the authority': 'مرخّص من الهيئة',
     'Contract manufacturing for registration': 'عقد تصنيع للتسجيل', 'GMP': 'GMP', 'No GMP': 'لا يوجد GMP', 'GMP issued by': 'الـ GMP صادرة من', 'GMP date': 'تاريخ الـ GMP', 'Yes': 'أيوه', 'No': 'لأ',

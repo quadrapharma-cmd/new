@@ -35,7 +35,7 @@ update public.profiles set role = 'admin' where id = 'e5555555-5555-5555-5555-55
 update public.profiles set intents = '{"api": "i-have"}' where id = 'e4444444-4444-4444-4444-444444444444';
 
 select pg_temp.as_server();
--- W-trade (0072): a company posts offers as the company once Drugbox verified it — both companies are verified
+-- both companies are verified (since 0076 a company may also post unverified; the cards show ✓ only for verified ones)
 select pg_temp.step('two companies', $$
   with x as (insert into public.companies (owner_id, name, type, status) values ('e1111111-1111-1111-1111-111111111111', 'MK Seller Co', 'Distributor', 'verified') returning id, slug) insert into ids select 'sco', id::text from x;
   with x as (insert into public.companies (owner_id, name, type, status) values ('e2222222-2222-2222-2222-222222222222', 'MK Buyer Co', 'Manufacturer', 'verified') returning id) insert into ids select 'bco', id::text from x;
@@ -106,10 +106,7 @@ select pg_temp.step('Drugbox marks WHO-GMP checked (and tries a certificate the 
 select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
 select pg_temp.step('the owner edits the listing (title)', $$update public.products set name = 'MK Metformin HCl' where id = pg_temp.id('p1')$$);
 select pg_temp.ok('the checked certificate stays (the owner cannot set or clear it)', $$(select certs_verified = '{WHO-GMP}' and name = 'MK Metformin HCl' from public.products where id = pg_temp.id('p1'))$$);
-select pg_temp.no('W-07 (0073): renewing the week it was posted is refused (free once every 7 days)', $$select public.listing_renew(pg_temp.id('p1'))$$, '42501');
-select pg_temp.as_server(); select pg_temp.step('a week later', $$update public.products set created_at = now() - interval '8 days' where id = pg_temp.id('p1')$$);
-select pg_temp.as_user('e1111111-1111-1111-1111-111111111111');
-select pg_temp.step('the owner renews', $$select public.listing_renew(pg_temp.id('p1'))$$);
+select pg_temp.step('W-07 (0076, owner: no barriers): the owner renews the day it was posted — no weekly limit', $$select public.listing_renew(pg_temp.id('p1'))$$);
 select pg_temp.ok('renewed now', $$(select renewed_at > now() - interval '1 minute' from public.products where id = pg_temp.id('p1'))$$);
 select pg_temp.no('the owner cannot mark his own certificates checked', $$select public.listing_verify_certs(pg_temp.id('p1'), '{WHO-GMP}')$$, '42501');
 select pg_temp.as_anon();
