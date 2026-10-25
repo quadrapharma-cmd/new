@@ -27,6 +27,8 @@ button.wt-chip{cursor:pointer;font-family:inherit}
 .wt-as-hint{font-size:11.5px;color:#64748b;margin-top:4px}
 .wt-broker{margin-top:8px;padding:10px;border:1px dashed #e4e6eb;border-radius:10px}
 .wt-as-chip{white-space:nowrap}
+.wt-as-for{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wt-tb{min-width:0;max-width:100%}
 .wt-as-for{background:#f8fafc;color:#334155}
 .wt-tb{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .wt-tools .wt-tool{display:flex;align-items:flex-start;gap:8px;margin:8px 0;font-size:13px}

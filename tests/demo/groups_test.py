@@ -150,7 +150,13 @@ with sync_playwright() as p:
     pg.fill('#gpQp', '$5.30/kg CIF Alexandria'); pg.fill('#gpQl', '3 weeks')
     confirm(); W(400)
     T('Quote: sending a quote marks the request as quoted', E(f"document.querySelector('#gpBox [data-lid=\"{lid}\"] [data-gpl=quote]').disabled"))
-    C("#gpBox [data-gpa=newlisting]"); W(300); sweep()
+    C("#gpBox [data-gpa=newlisting]"); W(300)
+    # w-trust (W-10): a member's first trade offer asks for the trade profile first — filled as a member would
+    if E("!!document.querySelector('.dbk-ov') && /trade profile|ملفك التجاري/.test(document.querySelector('.dbk-ov').innerText)"):
+        C(".dbk-ov [data-a=ok]"); W(300); pg.select_option('#wtRole', 'distributor'); pg.select_option('#wtGov', 'Giza'); pg.fill('#wtSells', 'Excipients')
+        C(".dbk-ov [data-a=ok]"); W(600)
+    T('Listings: the first trade offer asks for the trade profile, then the offer form opens', E("!!document.getElementById('gpLk')"))
+    sweep()
     E("document.getElementById('gpLk').value='surplus'"); pg.fill('#gpLt', 'Lactose monohydrate 200 mesh — 1.2 MT'); pg.fill('#gpLd', 'Sealed bags, expiry 08/2027, CoA available'); pg.fill('#gpLp', '$1.90/kg')
     confirm(); W(400)
     T('Listings: posting a surplus offer adds it to the group', E("document.querySelector('#gpBox [data-pane=listings]').textContent.includes('Lactose monohydrate 200 mesh')"))

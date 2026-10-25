@@ -81,7 +81,9 @@
   }
   function badge(card, i) {
     if (!card || !i) return; var tb = card.querySelector('.trust-bar');
-    if (!tb) { var host = card.querySelector('.dc-meta, .dc-foot, .lc-inner, .sc-provider'); if (!host) return; host.insertAdjacentHTML('beforeend', '<div class="trust-bar wt-tb"></div>'); tb = card.querySelector('.trust-bar'); }
+    if (!tb) {   /* a card without the approved trust bar: the chips go in a row of their own under the description (never inside the footer row) */
+      var after = card.querySelector('.dc-det, .lc-desc, .sc-provider'); if (!after) return;
+      after.insertAdjacentHTML('afterend', '<div class="trust-bar wt-tb"></div>'); tb = card.querySelector('.trust-bar'); }
     [].forEach.call(tb.querySelectorAll('.wt-as-chip, .wt-as-for'), function (x) { x.remove(); });
     tb.insertAdjacentHTML('afterbegin', chipHtml(i)); tb.style.display = '';
     card.dataset.wtAs = i.as;
