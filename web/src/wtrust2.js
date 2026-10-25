@@ -25,16 +25,16 @@
   function asField(type) {
     return '<div class="field wt-as-field" data-wt-form="' + type + '"><label class="field-label">Posting as <span class="req">*</span></label><select class="field-input wt-as" aria-label="Posting as">' + asOptions() + '</select>' +
       '<div class="field-hint wt-as-hint">A company page posts trade offers as the company only with the Drugbox verification badge. Your offer card says who posts it.</div>' +
-      '<div class="wt-broker" hidden><div class="field"><label class="field-label">Whose product or file is it? <span class="req">*</span></label><input class="field-input wt-bfor" maxlength="120" placeholder="The owner company or person"></div>' +
-      '<div class="field"><label class="field-label">Your commission (%) <span class="req">*</span></label><input class="field-input wt-bcom" inputmode="decimal" maxlength="5" placeholder="e.g. 2.5"></div>' +
-      '<div class="field"><label class="field-label">The owner’s authorisation <span class="req">*</span></label><input type="file" class="wt-bauth" accept="application/pdf,image/jpeg,image/png,image/webp"><div class="field-hint">Buyers can open it — it shows you are allowed to offer it.</div></div></div></div>';
+      '<div class="wt-broker" hidden><div class="field"><label class="field-label">Whose product or file is it? <span class="wt-req">*</span></label><input class="field-input wt-bfor" maxlength="120" placeholder="The owner company or person"></div>' +
+      '<div class="field"><label class="field-label">Your commission (%) <span class="wt-req">*</span></label><input class="field-input wt-bcom" inputmode="decimal" maxlength="5" placeholder="e.g. 2.5"></div>' +
+      '<div class="field"><label class="field-label">The owner’s authorisation <span class="wt-req">*</span></label><input type="file" class="wt-bauth" accept="application/pdf,image/jpeg,image/png,image/webp"><div class="field-hint">Buyers can open it — it shows you are allowed to offer it.</div></div></div></div>';
   }
   function addAsFields() {
     TRADE_FORMS.forEach(function (t) {
       var f = $('form-' + t); if (!f) return; var cur = f.querySelector('.wt-as-field');
       if (cur) { var s = cur.querySelector('.wt-as'), v = s.value; s.innerHTML = asOptions(); if ([].some.call(s.options, function (o) { return o.value === v && !o.disabled; })) s.value = v; return; }
-      var btn = f.querySelector('.btn-create'), host = btn && (btn.closest('.form-actions') || btn.parentElement); if (!host) return;
-      host.insertAdjacentHTML('beforebegin', asField(t));
+      var all = [].filter.call(f.querySelectorAll('.field'), function (x) { return !x.closest('.wt-as-field'); }), last = all[all.length - 1];   /* after the form's last field, inside its padding */
+      if (last) last.insertAdjacentHTML('afterend', asField(t)); else { var btn = f.querySelector('.btn-create'), host = btn && btn.parentElement; if (!host) return; host.insertAdjacentHTML('beforebegin', asField(t)); }
       if (window.dxI18nAttrs) window.dxI18nAttrs(f);
     });
   }
@@ -207,7 +207,7 @@
     if (!tools.rules_required || S().accepted(g || { key: key, card: card })) return;
     e.preventDefault(); e.stopImmediatePropagation();
     var title = g ? g.title : (card && card.querySelector('.gcard-title') || {}).textContent || '';
-    var seed = !live() && window.dxGroups && window.dxGroups.seed && window.dxGroups.seed[key];
+    var seed = !live() && window.dxGroups && window.dxGroups.seed && [].concat(window.dxGroups.seed).filter(function (x) { return x && x.k === key; })[0];
     rulesDialog(title, g ? rulesOf(g, card) : rulesOf(seed ? { rules: seed.rules } : null, card), function () {
       S().acceptRules(g || { key: key, card: card }).then(function () { JB = true; try { b.click(); } finally { JB = false; } }, function (er) { toast((er && er.message) || 'Could not join — try again'); });
     });

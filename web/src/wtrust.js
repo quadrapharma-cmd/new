@@ -103,7 +103,16 @@
       l.unshift(x); dset('wtLinks', all); return wait(x); },
     stopLink: function (g, id) { var all = dget('wtLinks', {}); (all[g.key] || []).forEach(function (x) { if (x.id === id) x.revoked_at = new Date().toISOString(); }); dset('wtLinks', all); return wait(true); },
     preview: function (token) { var all = dget('wtLinks', {}), hit = null; Object.keys(all).forEach(function (k) { (all[k] || []).forEach(function (x) { if (x.token === token) hit = { key: k, x: x }; }); });
-      return wait(hit ? { key: hit.key, name: hit.x.group, ok: !hit.x.revoked_at && (!hit.x.expires_at || Date.parse(hit.x.expires_at) > Date.now()) && (!hit.x.max_uses || hit.x.uses < hit.x.max_uses) } : null); },
+      if (!hit) return wait(null);
+      var sd = [].concat((window.dxGroups && window.dxGroups.seed) || []).filter(function (x) { return x && x.k === hit.key; })[0], card = document.querySelector('#gx .gcard[data-gk="' + hit.key + '"]'), b = card && card.querySelector('.gcard-btn');
+      return wait({ key: hit.key, name: hit.x.group, rules: sd ? sd.rules : [], rules_required: !!demo.tools({ key: hit.key }).rules_required, member: !!(b && b.classList.contains('btn-joined') && !b.dataset.gpq),
+        ok: !hit.x.revoked_at && (!hit.x.expires_at || Date.parse(hit.x.expires_at) > Date.now()) && (!hit.x.max_uses || hit.x.uses < hit.x.max_uses) }); },
+    joinByLink: function (token, ok) { var all = dget('wtLinks', {}), hit = null; Object.keys(all).forEach(function (k) { (all[k] || []).forEach(function (x) { if (x.token === token) hit = { key: k, x: x }; }); });
+      if (!hit || hit.x.revoked_at) return Promise.reject(new Error('This invite link no longer works — ask the group\'s admin for a new one'));
+      if (demo.tools({ key: hit.key }).rules_required && !ok) return Promise.reject(new Error('Read and accept the group\'s rules first'));
+      hit.x.uses = (hit.x.uses || 0) + 1; dset('wtLinks', all); var card = document.querySelector('#gx .gcard[data-gk="' + hit.key + '"]');
+      if (card && window.dxGroups && window.dxGroups.joinClick) { var b = card.querySelector('.gcard-btn'); if (b && !b.classList.contains('btn-joined')) window.dxGroups.joinClick(b); }
+      return wait('member'); },
     pending: function (g) { return wait((dget('wtGroupPending', {})[g.key] || []).filter(function (p) { return !p.done; })); },
     publish: function (g, id, yes) { var all = dget('wtGroupPending', {}); (all[g.key] || []).forEach(function (p) { if (String(p.id) === String(id)) p.done = yes ? 'published' : 'declined'; }); dset('wtGroupPending', all); return wait(yes ? 'published' : 'declined'); },
     partnerAsk: function (g, note) { var all = dget('wtPartner', {}); all[g.key] = { note: note, status: 'pending', name: g.title, at: new Date().toISOString() }; dset('wtPartner', all); return wait(true); },

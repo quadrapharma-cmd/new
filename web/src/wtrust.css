@@ -23,6 +23,7 @@ button.wt-chip{cursor:pointer;font-family:inherit}
 .wt-held-s{display:inline-block;padding:2px 8px;margin-top:4px;font-size:11px}
 .post>.wt-held{margin:10px 12px 0}
 .wt-as-field select.wt-as{width:100%}
+.wt-req{color:#dc2626;margin-inline-start:2px}
 .wt-as-hint{font-size:11.5px;color:#64748b;margin-top:4px}
 .wt-broker{margin-top:8px;padding:10px;border:1px dashed #e4e6eb;border-radius:10px}
 .wt-as-chip{white-space:nowrap}
