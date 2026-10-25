@@ -147,7 +147,8 @@ create or replace function public.listing_counterparts(p_id bigint) returns json
   ids as (
     select i.user_id as uid from public.listing_inquiries i, p where i.listing_id = p.id
     union select coalesce(d.assignee, d.from_user) from public.deals d, p where d.lines ->> 'listing_id' = p.id::text and d.from_user = p.user_id      -- suppliers who quoted on my request
-    union select d.from_user from public.deals d, p where d.lines ->> 'listing_id' = p.id::text and d.from_user <> p.user_id)                         -- buyers who asked through a company
+    union select d.from_user from public.deals d, p where d.lines ->> 'listing_id' = p.id::text and d.from_user <> p.user_id
+                                                     and p.company_id is not null and d.to_company_id = p.company_id)                       -- buyers who asked the listing's company
   select coalesce(jsonb_agg(jsonb_build_object('id', pr.id, 'name', pr.name, 'company', pr.company) order by pr.name), '[]')
     from ids join public.profiles pr on pr.id = ids.uid, p
    where ids.uid is not null and ids.uid <> p.user_id and pr.account_type is distinct from 'deleted'
@@ -175,6 +176,11 @@ begin
     if p.status not in ('active', 'reserved', 'paused') then raise exception 'This listing is not open' using errcode = '22023'; end if;
     if p_counterpart is not null and not exists (select 1 from jsonb_array_elements(public.listing_counterparts(p.id)) x where x ->> 'id' = p_counterpart::text) then
       raise exception 'Choose someone who wrote to you, asked the price or quoted on this listing' using errcode = '22023';
+    end if;
+    -- the same two members can record at most 3 sales in 30 days (a pair cannot inflate each other's trade record)
+    if p_counterpart is not null and (select count(*) from public.trade_outcomes x where x.created_at > now() - interval '30 days'
+          and ((x.poster = me and x.counterpart = p_counterpart) or (x.poster = p_counterpart and x.counterpart = me))) >= 3 then
+      raise exception 'You recorded three sales with this member in the last 30 days — mark it sold without naming them' using errcode = '42501';
     end if;
     update public.products set status = 'closed', closed_reason = 'sold' where id = p.id;
     insert into public.trade_outcomes (listing_id, listing_name, listing_type, poster, counterpart, status, note)

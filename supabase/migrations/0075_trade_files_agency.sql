@@ -96,8 +96,9 @@ begin
   owner_ := p.user_id = me;
   if not (owner_ or public.is_moderator()
           or exists (select 1 from public.listing_private_shares s where s.listing_id = p.id and s.user_id = me)
-          or exists (select 1 from public.deals d where d.lines ->> 'listing_id' = p.id::text and d.type = 'dossier' and d.status = 'agreed'
-                      and d.from_company_id is not null and public.is_company_member(d.from_company_id))) then
+          or exists (select 1 from public.deals d where d.lines ->> 'listing_id' = p.id::text and d.type = 'dossier' and d.status = 'agreed'   -- agreed WITH the listing's company
+                      and p.company_id is not null and d.to_company_id = p.company_id and d.from_company_id is not null and d.from_company_id <> p.company_id
+                      and public.is_company_member(d.from_company_id) and not public.is_company_member(p.company_id))) then
     raise exception 'The owner has not shared these details with you' using errcode = '42501';
   end if;
   select * into b from public.listing_private where listing_id = p.id;
@@ -234,8 +235,8 @@ begin
   if (select count(*) from public.deals x where x.from_user = me and x.created_at > now() - interval '1 hour') >= 30 then
     raise exception 'Too many requests in one hour — please try again later' using errcode = '42501'; end if;
   -- who asks (from) and who answers (to): the one who wants the file / the capacity / the products asks;
-  -- for an agency, the distributor asks the owner of the products
-  if p.kind in ('file_sale', 'toll', 'agency') then v_from := v_me.id; v_from_user := me; v_to := v_them.id;
+  -- for an agency either way, the one who answers asks and the listing's owner decides
+  if p.kind in ('file_sale', 'toll', 'agency', 'distributor') then v_from := v_me.id; v_from_user := me; v_to := v_them.id;   -- the listing's owner decides (an agency is agreed by the side that posted)
   else v_from := v_them.id; v_from_user := p.user_id; v_to := v_me.id; end if;
   first := public.deal_flow() -> t ->> 'first';
   insert into public.deals (type, title, from_company_id, from_user, to_company_id, lines, status, assignee)

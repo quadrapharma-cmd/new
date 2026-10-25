@@ -311,7 +311,7 @@ def synonyms_search(j):
         if j.live:   # 45 newer listings so it is beyond the first page the browser holds
             j.sql("insert into public.products (user_id, name, category, type, price, active) select '%s', 'Filler %s '||g, 'api', 'supply', '1', true from generate_series(1,45) g" % (me['id'], j.tag))
     o = other(j, 'Search Buyer'); op = o['page'] if o else pg
-    for qy, why in (('جلوكوفاج', 'the Arabic name finds the English item'), ('٨٥٠', 'Arabic-Indic digits find 850'), ('اقراص جلوكوفاج', '«اقراص» finds tablets'), ('concor', 'the English name finds the Arabic item')):
+    for qy, why in (('جلوكوفاج', 'the Arabic name finds the English item'), ('٨٥٠', 'Arabic-Indic digits find 850'), ('٨٥٠ مجم', 'a strength with its Arabic unit finds 850 mg'), ('اقراص جلوكوفاج', '«اقراص» finds tablets'), ('concor', 'the English name finds the Arabic item')):
         with j.step("Search «%s»: %s" % (qy, why)):
             market(j, op); si = op.locator('#searchIn'); si.fill(''); si.type(qy, delay=20); j.settle(op, 1800)
             j.wait(op, "t=>[...document.querySelectorAll('#tab-browse [data-trade-id]')].some(c=>c.innerText.includes(t)&&c.offsetParent)", 10, title)

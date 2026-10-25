@@ -93,6 +93,12 @@ select pg_temp.no('…nor change its kind once published', $$update public.produ
 select pg_temp.as_user('f4444444-4444-4444-4444-444444444444');
 select pg_temp.no('an unverified company cannot post an offer as the company', $$insert into public.products (user_id, name, company_id, price) values ('f4444444-4444-4444-4444-444444444444', 'TX unverified offer', pg_temp.id('uco'), '5')$$, '42501');
 select pg_temp.step('…its owner posts as himself', $$insert into public.products (user_id, name, price) values ('f4444444-4444-4444-4444-444444444444', 'TX unverified offer', '5')$$);
+select pg_temp.no('verifier F1-A: a draft as the unverified company, paused then resumed, is refused', $$
+  insert into public.products (user_id, name, kind, status, company_id, attrs) values ('f4444444-4444-4444-4444-444444444444', 'TX F1 toll', 'toll', 'draft', pg_temp.id('uco'), '{"forms":["tab"],"min_batch":"1","lead_time":"1","gmp":"no"}');
+  update public.products set status = 'paused' where name = 'TX F1 toll'; update public.products set status = 'active' where name = 'TX F1 toll'$$, '42501');
+select pg_temp.no('verifier F1-B: published as himself, paused, moved to the unverified company, resumed — refused', $$
+  update public.products set status = 'paused' where name = 'TX unverified offer'; update public.products set company_id = pg_temp.id('uco') where name = 'TX unverified offer';
+  update public.products set status = 'active' where name = 'TX unverified offer'$$, '42501');
 select pg_temp.no('…and cannot move his own listing to the company afterwards', $$update public.products set company_id = pg_temp.id('uco') where name = 'TX unverified offer'$$, '42501');
 
 -- ══ the kind's required fields ══
@@ -198,6 +204,16 @@ select pg_temp.step('the seller rates back', $$select public.trade_outcome_rate(
 select pg_temp.no('…once', $$select public.trade_outcome_rate(pg_temp.id('oc1'), 3)$$, '22023');
 select pg_temp.ok('the seller''s trade record: one confirmed sale, 4 stars', $$(select (public.trade_record('f1111111-1111-1111-1111-111111111111') ->> 'confirmed')::int = 1 and (public.trade_record('f1111111-1111-1111-1111-111111111111') ->> 'stars')::numeric = 4)$$);
 
+-- verifier M3: one pair cannot pile up sales to inflate their records (at most 3 in 30 days)
+select pg_temp.as_server();
+select pg_temp.step('three sales between the seller and the outsider already this month', $$insert into public.trade_outcomes (listing_name, listing_type, poster, counterpart, status)
+  select 'TX pair ' || g, 'supply', 'f1111111-1111-1111-1111-111111111111', 'f3333333-3333-3333-3333-333333333333', 'confirmed' from generate_series(1, 2) g$$);
+select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
+select pg_temp.step('a fresh listing the outsider asks about', $$with x as (insert into public.products (user_id, name, price) values ('f1111111-1111-1111-1111-111111111111', 'TX pair listing', '3') returning id) insert into ids select 'pp', id::text from x$$);
+select pg_temp.as_user('f3333333-3333-3333-3333-333333333333'); select pg_temp.step('…asked', $$select public.listing_price_ask(pg_temp.id('pp'))$$);
+select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
+select pg_temp.no('…a fourth sale to the same member within 30 days is refused', $$select public.listing_close(pg_temp.id('pp'), 'sold', 'f3333333-3333-3333-3333-333333333333')$$, '42501');
+
 -- a sale between two companies counts in the deals engine
 select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
 select pg_temp.step('a second listing, asked by the buyer''s company', $$with x as (insert into public.products (user_id, name, company_id, price) values ('f1111111-1111-1111-1111-111111111111', 'TX amoxicillin lot', pg_temp.id('sco'), '9') returning id) insert into ids select 'p2', id::text from x$$);
@@ -236,6 +252,20 @@ select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
 select pg_temp.step('new documents: Drugbox looks again', $$select public.listing_docs_submit(pg_temp.id('file'), array['listings/f1111111-1111-1111-1111-111111111111/doc-a.pdf'])$$);
 select pg_temp.ok('…the badge is gone until then', $$(select docs_checked_at is null from public.products where id = pg_temp.id('file'))$$);
 
+-- verifier F2: a member with two companies of his own cannot open the box with a forged, self-agreed file deal naming the listing
+select pg_temp.as_server();
+select pg_temp.step('the outsider owns two company pages', $$
+  with x as (insert into public.companies (owner_id, name, type) values ('f3333333-3333-3333-3333-333333333333', 'TX Atk One', 'Distributor') returning slug) insert into ids select 'a1', slug from x;
+  with x as (insert into public.companies (owner_id, name, type) values ('f3333333-3333-3333-3333-333333333333', 'TX Atk Two', 'Distributor') returning slug) insert into ids select 'a2', slug from x$$);
+select pg_temp.as_user('f3333333-3333-3333-3333-333333333333');
+select pg_temp.step('…forges a file deal between them naming the file and agrees it', $$
+  insert into ids select 'fref', (public.deal_create('dossier', pg_temp.txt('a2'), pg_temp.txt('a1'), 'TX forged', jsonb_build_object('listing_id', pg_temp.id('file')))).ref;
+  select public.deal_act(pg_temp.txt('fref'), 'sign_nda', '{}', 'to'); select public.deal_act(pg_temp.txt('fref'), 'share', '{"note":"x"}', 'to');
+  select public.deal_act(pg_temp.txt('fref'), 'agree', '{"checklist":{"notif_seen":true,"stage_understood":true,"price_increase_checked":true,"transfer_needs_approval":true,"docs_reviewed":true}}', 'from')$$);
+select pg_temp.no('…the private box stays closed to him', $$select public.listing_private_get(pg_temp.id('file'))$$, '42501');
+select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
+select pg_temp.ok('…and he is not offered as a buyer of the file', $$not (public.listing_counterparts(pg_temp.id('file')) @> '[{"id":"f3333333-3333-3333-3333-333333333333"}]'::jsonb)$$);
+
 -- ══ «اتفقنا» on a file deal needs the checklist ══
 select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
 select pg_temp.step('the owner signs the NDA and shares', $$select public.deal_act(pg_temp.txt('dref'), 'sign_nda'); select public.deal_act(pg_temp.txt('dref'), 'share', '{"note":"TX data room"}')$$);
@@ -269,6 +299,12 @@ select pg_temp.as_user('f3333333-3333-3333-3333-333333333333');
 select pg_temp.ok('members read it', $$exists (select 1 from public.distributor_profiles where company_id = pg_temp.id('bco') and updated_by = 'f2222222-2222-2222-2222-222222222222')$$);
 select pg_temp.no('another member cannot write a company''s profile', $$insert into public.distributor_profiles (company_id, govs) values (pg_temp.id('sco'), '{cairo}')$$, '42501');
 select pg_temp.ok('…nor change it (no row reached)', $$pg_temp.n('update public.distributor_profiles set warehouses = 99 where company_id = ' || pg_temp.id('bco')) = 0$$);
+
+-- verifier F3: answering a distributor's listing, the one who answers cannot agree the agency alone
+select pg_temp.as_user('f1111111-1111-1111-1111-111111111111');
+select pg_temp.step('the seller answers the distributor''s listing', $$insert into ids select 'dref2', (public.listing_respond(pg_temp.id('dist'), pg_temp.txt('sslug'), 'TX our products') ->> 'ref')$$);
+select pg_temp.ok('…the seller asks (from), the distributor decides (to)', $$(select from_company_id = pg_temp.id('sco') and to_company_id = pg_temp.id('bco') from public.deals where ref = pg_temp.txt('dref2'))$$);
+select pg_temp.no('…the seller cannot open the talks himself', $$select public.deal_act(pg_temp.txt('dref2'), 'talk')$$, '42501');
 
 -- ══ the dictionary ══
 select pg_temp.no('a member cannot add trade words', $$select public.trade_term_add('ملتي', 'multi')$$, '42501');

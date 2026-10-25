@@ -145,6 +145,9 @@ begin
   if p.id is null then raise exception 'Only the listing''s owner can renew it' using errcode = '42501'; end if;
   if p.status = 'draft' then raise exception 'Publish the draft first' using errcode = '22023'; end if;
   if p.closed_reason = 'sold' then raise exception 'A sold listing is not renewed — post a new one' using errcode = '22023'; end if;
+  if p.status = 'closed' and p.company_id is not null and not exists (select 1 from public.companies c where c.id = p.company_id and c.status = 'verified') then
+    raise exception 'Your company page needs the Drugbox verification badge before it posts offers as the company — post as yourself, or ask for verification' using errcode = '42501';
+  end if;
   last_ := coalesce(p.bumped_at, p.renewed_at, p.created_at);
   if last_ > now() - interval '7 days' then
     raise exception 'RENEW_LIMIT:% — a listing is renewed free once every 7 days; feature it to reach the top now', to_char(last_ + interval '7 days', 'YYYY-MM-DD') using errcode = '42501';

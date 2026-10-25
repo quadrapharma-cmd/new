@@ -173,15 +173,18 @@
       s = s.replace(/^[\s\-–—•*·▪●○◦►▶✅✔☑🔹🔸🔻➖➡️👈👉📌⭐🌟🔥💊]+/u, '').replace(/^\s*\d{1,3}\s*[-).]\s+/, '').trim();
       if (!/[A-Za-zء-ي]/.test(s) || s.length < 2) return;
       var n = TT.norm(s); if (/^(متوفر|مطلوب|عندي|available|wanted|السلام عليكم|صباح الخير|مساء الخير|للتواصل|للاستفسار)( |$)/.test(n) && s.length < 25) return;
+      if (/\d{8,}|\+\d{6,}|للتواصل|للاستفسار|واتساب|واتس|تليفون|موبايل|whats ?app|call me|contact/i.test(s.replace(/[\s\-]/g, function (c) { return c === '-' ? '' : c; }))) return;   /* a phone or contact line is never an item */
       var l = {}, rest = s, m;
-      if ((m = /(?:\b(?:exp|ex|expiry)\b|انتهاء|تاريخ|صلاحي[هة])?\s*[:\-]?\s*\b(0?[1-9]|1[0-2])\s*[\/\-.]\s*(20\d{2}|\d{2})\b/i.exec(rest))) {
+      if ((m = /(?:\b(?:exp|ex|expiry)\b|انتهاء|تاريخ|صلاحي[هة])?\s*[:\-]?\s*\b(20[2-4]\d)\s*[\/\-.]\s*(0?[1-9]|1[0-2])\b/i.exec(rest))) { l.expiry = m[1] + '-' + ('0' + m[2]).slice(-2); rest = rest.replace(m[0], ' '); }   /* 2027-03 */
+      else if ((m = /(?:\b(?:exp|ex|expiry)\b|انتهاء|تاريخ|صلاحي[هة])?\s*[:\-]?\s*\b(0?[1-9]|1[0-2])\s*[\/\-.]\s*(20\d{2}|\d{2})\b(?!\s*(?:علب|box|carton|كرتون|strip|شريط))/i.exec(rest))) {
         var y = m[2].length === 2 ? 2000 + +m[2] : +m[2]; if (y >= 2020 && y <= 2045) { l.expiry = y + '-' + ('0' + m[1]).slice(-2); rest = rest.replace(m[0], ' '); } }
       if ((m = /(?:خصم|discount|off)\s*[:\-]?\s*(\d{1,2}(?:\.\d+)?)\s*%?|(\d{1,2}(?:\.\d+)?)\s*%\s*(?:خصم|off|discount)?/i.exec(rest))) { var dp = +(m[1] || m[2]); if (dp > 0 && dp <= 95) l.discount_pct = dp; rest = rest.replace(m[0], ' '); }
       if ((m = /(?:بسعر|سعر|price)\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(?:ج\.?م?|جنيه|egp|le|l\.e)?/i.exec(rest))) { l.price = +m[1]; rest = rest.replace(m[0], ' '); }
       if ((m = /(\d+(?:\.\d+)?)\s*(mg|mcg|g|gm|ml|iu|مجم|ملجم|مللجم|ميكروجرام|جم|جرام|مل|ملل)(?![A-Za-zء-ي])/i.exec(rest))) { l.strength = m[1] + ' ' + m[2]; rest = rest.replace(m[0], ' '); }
-      var qtyRx = /(\d+(?:[.,]\d+)?)\s*(علب[هة]?|علب|box(?:es)?|شريط|شرايط|strips?|كرتون[هة]|كراتين|cartons?|عبو[هة]|عبوات|packs?|pcs|قطع[هة]|زجاج[هة]|bottles?|كيلو|kg|طن|tons?|امبول|أمبول|amps?|فيال|vials?|انبوب[هة]|tubes?)/i;
-      if ((m = qtyRx.exec(rest))) { l.qty = +m[1].replace(',', '.'); var tk = TT.tokens(m[2])[0]; l.unit = UNIT_W[tk] || (/كيلو|kg/i.test(m[2]) ? 'kg' : 'box'); rest = rest.replace(m[0], ' '); }
-      else if ((m = /(?:عدد|كمي[هة]|qty|quantity|×|x)\s*[:\-]?\s*(\d+(?:[.,]\d+)?)/i.exec(rest))) { l.qty = +m[1].replace(',', '.'); l.unit = 'box'; rest = rest.replace(m[0], ' '); }
+      if ((m = /\b(\d+)\s*\/\s*(\d+)\s*(?=(علب|box|كرتون|carton|شريط|strip))/i.exec(rest)) && +m[2] > 0) { var fr = +m[1] / +m[2]; rest = rest.replace(m[1] + '/' + m[2], String(Math.round(fr * 100) / 100)).replace(m[0], String(Math.round(fr * 100) / 100) + ' '); }   /* 1/2 carton */
+      var qtyRx = /(\d+(?:[.,]\d+)?)\s*(قلم|اقلام|أقلام|pens?|caps?|capsules?|tabs?|علب[هة]?|علب|box(?:es)?|شريط|شرايط|strips?|كرتون[هة]|كراتين|cartons?|عبو[هة]|عبوات|packs?|pcs|قطع[هة]|زجاج[هة]|bottles?|كيلو|kg|طن|tons?|امبول|أمبول|amps?|فيال|vials?|انبوب[هة]|tubes?)/i;
+      if ((m = qtyRx.exec(rest))) { l.qty = +m[1].replace(',', '.'); var tk = TT.tokens(m[2])[0]; l.unit = UNIT_W[tk] || (/كيلو|kg/i.test(m[2]) ? 'kg' : /قلم|اقلام|أقلام|pen|caps?|capsule|tab/i.test(m[2]) ? 'piece' : 'box'); rest = rest.replace(m[0], ' '); }
+      else if ((m = /(?:عدد|كمي[هة]|qty|quantity|×|(?:^|\s)x)\s*[:\-]?\s*(\d+(?:[.,]\d+)?)(?![\d.]*\s*(?:mg|mcg|ml|g|iu|مجم|ملجم|جم|مل)\b)/i.exec(rest))) { l.qty = +m[1].replace(',', '.'); l.unit = 'box'; rest = rest.replace(m[0], ' '); }   /* "x 200", never the x inside a name (Zithromax) */
       if (/ثلاج[هة]|تلاج[هة]|fridge|\bcold\b/i.test(rest)) { l.cold = true; rest = rest.replace(/ثلاج[هة]|تلاج[هة]|fridge|\bcold\b/ig, ' '); }
       if (/مستورد|imported/i.test(rest)) { l.source = 'importer'; rest = rest.replace(/مستورد|imported/ig, ' '); }
       else if (/هيئ[هة]|مناقص[هة]/i.test(rest)) { l.source = 'authority'; rest = rest.replace(/هيئ[هة]|مناقص[هة]/ig, ' '); }
@@ -299,7 +302,7 @@
   function rootsOf(L) {
     var r = [];
     (L.lines || []).forEach(function (l) { var x = TT.root((l.name || '') + ' ' + (l.name_ar || '')); if (x) r.push(x); });
-    var t = TT.root(L.title + ' ' + (L.desc || '')); if (t) r.push(t);
+    var t = TT.root(L.title + ' ' + (L.desc || '')); if (t && !r.length) r.push(t);   /* a list's title ("Stock list Oct") is not an item */
     if (L.kind === 'toll' || L.kind === 'toll_wanted') (L.attrs.forms || []).forEach(function (f) { r.push('form:' + f); });
     if (L.kind === 'agency' || L.kind === 'distributor') (L.attrs.cats || []).forEach(function (f) { r.push('cat:' + f); });
     return r;
@@ -412,7 +415,8 @@
   function searchWords(L) {   /* the card's canonical words, their variants and Arabic-Indic numbers: the approved search finds them in the card's text */
     var text = [L.title, L.desc, summary(L), (L.lines || []).map(function (l) { return [l.name, l.name_ar, l.strength, l.form].join(' '); }).join(' ')].join(' ');
     var w = TT.tokens(text), extra = [], seen = {};
-    w.forEach(function (c) { (TT.terms.find(function (r) { return r[1] === c; }) || [0, 0, []])[2].forEach(function (v) { if (!seen[v]) { seen[v] = 1; extra.push(v); } }); });
+    w.forEach(function (c) { var m = /^([0-9.]+)(mg|mcg|g|ml|iu)$/.exec(c), k = m ? m[2] : c;   /* 500mg → the variants of mg too */
+      (TT.terms.find(function (r) { return r[1] === k; }) || [0, 0, []])[2].concat(m ? [m[1]] : []).forEach(function (v) { if (!seen[v]) { seen[v] = 1; extra.push(v); } }); });
     var nums = (text.match(/\d+/g) || []).map(function (n) { return n.replace(/\d/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'[d]; }); });
     return TT.searchText(text) + ' ' + extra.join(' ') + ' ' + nums.join(' ') + ' ' + (KIND[L.kind] ? KIND[L.kind].chip : '');
   }

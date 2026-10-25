@@ -279,7 +279,7 @@ begin
   if p.kind in ('toll', 'toll_wanted') then extra := array(select 'form:' || x from jsonb_array_elements_text(coalesce(p.attrs -> 'forms', '[]')) x); end if;
   if p.kind in ('agency', 'distributor') then extra := array(select 'cat:' || x from jsonb_array_elements_text(coalesce(p.attrs -> 'cats', '[]')) x); end if;
   p.item_key := nullif(public.trade_key(t), '');
-  p.roots := (select coalesce(array_agg(distinct r), '{}') from unnest(lines_roots || case when public.trade_root(t) <> '' then array[public.trade_root(t)] else '{}'::text[] end || extra) r)[1:400];
+  p.roots := (select coalesce(array_agg(distinct r), '{}') from unnest(lines_roots || case when public.trade_root(t) <> '' and cardinality(lines_roots) = 0 then array[public.trade_root(t)] else '{}'::text[] end || extra) r)[1:400];   -- a list's title ("Stock list Oct") is not an item
   p.root_words := (select coalesce(array_agg(distinct w), '{}') from unnest(p.roots) r, unnest(string_to_array(r, ' ')) w where w <> '')[1:1200];
   p.search_text := left(public.trade_search_text(t) || lines_txt, 60000);
   p.fingerprint := md5(coalesce(p.kind, p.category, '') || '|' || coalesce(p.type, '') || '|' || public.trade_norm(p.name) || '|' || public.trade_norm(coalesce(p.description, '')) || '|' || lines_fp);
@@ -328,7 +328,7 @@ begin
     if old.status = 'closed' and new.status <> 'closed' then raise exception 'Renew a closed listing to show it again' using errcode = '42501'; end if;
   end if;
   -- the owner's rule: a company page posts trade offers as the company only with Drugbox's verification badge
-  if new.company_id is not null and new.status in ('active', 'reserved') and (tg_op = 'INSERT' or new.company_id is distinct from old.company_id or old.status not in ('active', 'reserved', 'paused')) then
+  if new.company_id is not null and new.status in ('active', 'reserved') and (tg_op = 'INSERT' or new.company_id is distinct from old.company_id or old.status not in ('active', 'reserved')) then   -- a resumed listing too (paused → active): verification is checked again
     select * into v_co from public.companies where id = new.company_id;
     if v_co.status is distinct from 'verified' then
       raise exception 'Your company page needs the Drugbox verification badge before it posts offers as the company — post as yourself, or ask for verification' using errcode = '42501';
