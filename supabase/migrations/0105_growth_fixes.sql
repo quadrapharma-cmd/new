@@ -145,7 +145,7 @@ $$;
 revoke all on function private.public_company_strip(jsonb) from public, anon, authenticated, service_role;
 grant execute on function private.public_company_strip(jsonb) to service_role;
 
--- the Regulatory channel's Arabic description in the interface's register (it is shown now: the Arabic interface reads name_ar / description_ar)
+-- the Regulatory channel's Arabic description in the interface's register (the same text growth.js's dictionary shows for it)
 update public.groups set description_ar = 'قناة Drugbox الرسمية: النشرة التنظيمية الأسبوعية (هيئة الدواء، هيئة سلامة الغذاء) وكيفية قراءة إعلان ملف تسجيل.'
  where official and channel_key = 'regulatory' and description_ar like '%وإزاي تقرا%';
 

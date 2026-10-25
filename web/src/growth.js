@@ -39,7 +39,7 @@
     veterinary: ['veterinary', 'vet', 'poultry', 'livestock', 'بيطري', 'بيطرية', 'دواجن', 'الماشية', 'للماشية'],
     agriculture: ['agriculture', 'agricultural', 'agro', 'pesticide', 'pesticides', 'fertilizer', 'fertilizers', 'زراعي', 'زراعية', 'مبيد', 'مبيدات', 'أسمدة', 'سماد'],
     glp1: ['glp-1', 'glp1', 'semaglutide', 'liraglutide', 'tirzepatide', 'dulaglutide', 'سيماجلوتايد', 'سيماجلوتيد', 'ليراجلوتايد'],
-    oncology: ['oncology', 'oncologic', 'cancer', 'chemotherapy', 'cytotoxic', 'أورام', 'اورام', 'الأورام', 'سرطان', 'علاج كيماوي'],
+    oncology: ['oncology', 'oncologic', 'cancer', 'chemotherapy', 'cytotoxic', 'أورام', 'اورام', 'الأورام', 'سرطان', 'علاج كيماوي', 'العلاج الكيماوي'],
     growth_hormone: ['growth hormone', 'somatropin', 'هرمون النمو', 'هرمون نمو', 'سوماتروبين'],
     fertility: ['fertility', 'ivf', 'gonadotropin', 'gonadotrophin', 'menotropin', 'fsh', 'خصوبة', 'الخصوبة', 'حقن مجهري', 'تأخر الإنجاب'],
     insulin: ['insulin', 'insulins', 'انسولين', 'إنسولين', 'الانسولين', 'الإنسولين'] };
@@ -1017,7 +1017,7 @@
     'Official Drugbox channel: the weekly regulatory bulletin (EDA, NFSA) and how to read a registration-file ad.': 'قناة Drugbox الرسمية: النشرة التنظيمية الأسبوعية (هيئة الدواء، هيئة سلامة الغذاء) وكيفية قراءة إعلان ملف تسجيل.',
     'Official Drugbox channel: «Wanted today» every evening, the week’s shortages and the agency market — business to business only.': 'قناة Drugbox الرسمية: «مطلوب النهارده» كل مساء ونواقص الأسبوع وسوق الوكالات — تجارة بين الشركات فقط.',
     "Official Drugbox channel: «Wanted today» every evening, the week's shortages and the agency market — business to business only.": 'قناة Drugbox الرسمية: «مطلوب النهارده» كل مساء ونواقص الأسبوع وسوق الوكالات — تجارة بين الشركات فقط.',
-    'Post text': 'نص المنشور', 'Ended': 'انتهت',
+    'Post text': 'نص المنشور', 'posted in the channel': 'نشر في القناة', 'new Drugbox posts in the channel': 'منشورات جديدة من Drugbox في القناة', 'Ended': 'انتهت',
     'CSV file (UTF-8) — columns:': 'ملف CSV (‏UTF-8) — الأعمدة:', '(name, sectors and source are required)': '(الاسم والقطاعات والمصدر مطلوبة)',
     'source is missing — every imported company names the public list it comes from': 'المصدر مفقود — كل شركة مستوردة تذكر القائمة العامة التي جاءت منها', 'sectors are missing': 'القطاعات مفقودة',
     'name is missing or longer than 200 characters': 'الاسم مفقود أو أطول من 200 حرف', 'duplicate of an earlier row in this file': 'مكرر لصف سابق في هذا الملف', 'e-mail is not valid': 'البريد الإلكتروني غير صالح',

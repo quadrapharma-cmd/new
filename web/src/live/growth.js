@@ -59,8 +59,10 @@
       link: async function (id) { return ok(await sb.rpc('expert_session_link', { p_id: +id })); },
       ask: async function (id, body) { body = String(body || '').trim(); if (body.length < 5) throw new Error('Write your question (at least 5 characters)'); ok(await sb.from('expert_questions').insert({ session_id: +id, body: body })); },
       adminRequests: async function () { return ok(await sb.rpc('expert_requests_admin')) || []; },
-      save: async function (o) { return ok(await sb.rpc('expert_session_save', { p_id: o.id || null, p_topic: o.topic, p_title: o.title, p_title_ar: o.title_ar || null, p_about: o.about || null,
-        p_expert_name: o.expert_name, p_expert_line: o.expert_line || null, p_local: o.local, p_minutes: +o.minutes || 60, p_seats: +o.seats || 100, p_join_url: o.link || null, p_expert_user: null })); },
+      save: async function (o) {   /* the expert member (set through the API) is kept on an edit: the save names it each time (0105) */
+        var eu = null; if (o.id) { var cur = ok(await sb.from('expert_sessions').select('expert_user').eq('id', +o.id).limit(1)); eu = (cur && cur[0] && cur[0].expert_user) || null; }
+        return ok(await sb.rpc('expert_session_save', { p_id: o.id || null, p_topic: o.topic, p_title: o.title, p_title_ar: o.title_ar || null, p_about: o.about || null,
+        p_expert_name: o.expert_name, p_expert_line: o.expert_line || null, p_local: o.local, p_minutes: +o.minutes || 60, p_seats: +o.seats || 100, p_join_url: o.link || null, p_expert_user: eu })); },
       status: async function (id, st) { ok(await sb.rpc('expert_session_set_status', { p_id: +id, p_status: st })); },
       answer: async function (qid, text) { ok(await sb.rpc('expert_answer', { p_question: +qid, p_answer: text })); },
       full: async function (id) {

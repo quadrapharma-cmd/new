@@ -2395,7 +2395,7 @@
         var lr = lc.liked ? await sb.from('comment_reactions').insert({ comment_id: lc.id, user_id: ME_UUID }) : await sb.from('comment_reactions').delete().eq('comment_id', lc.id).eq('user_id', ME_UUID);
         if (lr.error && String(lr.error.code) !== '23505') throw lr.error; return; }
       case 'share': {   /* "Repost to your feed" (public groups only — groups.js never offers it for a private one) */
-        var who = (window.USERS || []).find(function (u) { return u.id === p.uid; }) || window.ME;
+        var who = p.drugbox ? { name: 'Drugbox' } : (window.USERS || []).find(function (u) { return u.id === p.uid; }) || window.ME;   /* AREA w-growth: a Drugbox post is Drugbox's, not the reposter's */
         var body = ('Shared from ' + g.name + ' — ' + (who ? who.name : 'a member') + ':\n\n' + (p.body || '')).slice(0, 5000);
         await gpWrite(sb.from('posts').insert({ user_id: ME_UUID, body: body, category: p.cat || 'general' }));
         sb.rpc('increment_post_share', { p_id: id }).then(function () {}, function () {});
@@ -4593,7 +4593,9 @@
   var notifFromGW = notifFrom;
   notifFrom = function (n) {
     var o = notifFromGW(n), d = n.data && typeof n.data === 'object' ? n.data : {};
-    if (n.type === 'group_post' && d.drugbox) { o.text = '<b>Drugbox</b> ' + esc2(n.message || ''); o.uid = SYS_UID; o.icon = '📣'; }
+    if (n.type === 'group_post' && d.drugbox) {   /* "Drugbox posted in Drugbox Market" / "3 new Drugbox posts in …" — words the interface translates, the channel's name too */
+      var gn = (/"(.*)"\s*$/.exec(n.message || '') || [])[1] || '', k = +d.n || 1;
+      o.text = (k > 1 ? '<b data-noi18n>' + k + '</b> <span>new Drugbox posts in the channel</span> ' : '<b>Drugbox</b> <span>posted in the channel</span> ') + '<b>' + esc2(gn) + '</b>'; o.uid = SYS_UID; o.icon = '📣'; }
     if (/^expert_(session|reminder|answer)$/.test(n.type)) { o.text = esc2(n.message || ''); o.uid = SYS_UID; o.icon = '🎤'; o.rawType = n.type; }
     return o;
   };

@@ -627,7 +627,7 @@
     var by = g.by && person(g.by), d = g.since ? new Date(g.since + (g.since.length === 10 ? 'T12:00:00' : '')) : null;
     var date = d && !isNaN(d) ? (window.dxFmtDate ? window.dxFmtDate(d, false, 'en') : d.toDateString()) : '';
     var admins = (g.live ? (CUR.members || []) : demoMembers(g)).filter(function (m) { return m.role === 'admin' || m.role === 'subadmin' || m.role === 'moderator'; });
-    var h = '<div class="gp-sec"><div class="field-label">About this group</div><div class="gp-text" data-noi18n>' + esc(g.about || g.desc || '') + '</div></div>' +
+    var h = '<div class="gp-sec"><div class="field-label">About this group</div><div class="gp-text"' + (g.official ? '' : ' data-noi18n') + '>' + esc(g.about || g.desc || '') + '</div></div>' +
       '<div class="gp-facts">' +
         '<div class="gp-fact"><span class="gp-k">Type</span><span class="gp-v">' + (g.deal ? '🤝 Deal Room' : '💬 Discussion') + '</span><small>' + (g.deal ? 'Buy/sell, RFQs & quotes' : 'Knowledge sharing, Q&A') + '</small></div>' +
         '<div class="gp-fact"><span class="gp-k">Privacy</span><span class="gp-v">' + (g.priv ? '🔒 Private' : '🌍 Public') + '</span><small>' + (g.priv ? 'Members must be approved or invited' : 'Anyone can find, view, and join') + '</small></div>' +
@@ -815,7 +815,7 @@
       var o = e.target.closest && e.target.closest('[data-so]'); if (!o) return;
       m.close();
       if (o.dataset.so === 'link') { copyLink(p); return; }
-      var a = person(p.uid) || me();
+      var a = p.drugbox ? { name: 'Drugbox' } : (person(p.uid) || me());   /* AREA w-growth: a Drugbox post is credited to Drugbox */
       p.sh = (p.sh || 0) + 1; commit(g, p, 'share', {}); repaint(p);
       if (!live && Array.isArray(window.POSTS)) window.POSTS.unshift({ id: Date.now(), uid: me().id, cat: p.cat || 'general', body: 'Shared from ' + g.title + ' — ' + a.name + ':\n\n' + (p.body || ''), likeCount: 0, liked: false, commentCount: 0, shareCount: 0, saved: false, pinned: false, ts: 'just now', imgs: (p.imgs || []).slice(), files: (p.files || []).slice(), reactions: {} });
       D.toast('Reposted to your feed');

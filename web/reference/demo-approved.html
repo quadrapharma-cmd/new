@@ -16678,7 +16678,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     var by = g.by && person(g.by), d = g.since ? new Date(g.since + (g.since.length === 10 ? 'T12:00:00' : '')) : null;
     var date = d && !isNaN(d) ? (window.dxFmtDate ? window.dxFmtDate(d, false, 'en') : d.toDateString()) : '';
     var admins = (g.live ? (CUR.members || []) : demoMembers(g)).filter(function (m) { return m.role === 'admin' || m.role === 'subadmin' || m.role === 'moderator'; });
-    var h = '<div class="gp-sec"><div class="field-label">About this group</div><div class="gp-text" data-noi18n>' + esc(g.about || g.desc || '') + '</div></div>' +
+    var h = '<div class="gp-sec"><div class="field-label">About this group</div><div class="gp-text"' + (g.official ? '' : ' data-noi18n') + '>' + esc(g.about || g.desc || '') + '</div></div>' +
       '<div class="gp-facts">' +
         '<div class="gp-fact"><span class="gp-k">Type</span><span class="gp-v">' + (g.deal ? '🤝 Deal Room' : '💬 Discussion') + '</span><small>' + (g.deal ? 'Buy/sell, RFQs & quotes' : 'Knowledge sharing, Q&A') + '</small></div>' +
         '<div class="gp-fact"><span class="gp-k">Privacy</span><span class="gp-v">' + (g.priv ? '🔒 Private' : '🌍 Public') + '</span><small>' + (g.priv ? 'Members must be approved or invited' : 'Anyone can find, view, and join') + '</small></div>' +
@@ -16866,7 +16866,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       var o = e.target.closest && e.target.closest('[data-so]'); if (!o) return;
       m.close();
       if (o.dataset.so === 'link') { copyLink(p); return; }
-      var a = person(p.uid) || me();
+      var a = p.drugbox ? { name: 'Drugbox' } : (person(p.uid) || me());   /* AREA w-growth: a Drugbox post is credited to Drugbox */
       p.sh = (p.sh || 0) + 1; commit(g, p, 'share', {}); repaint(p);
       if (!live && Array.isArray(window.POSTS)) window.POSTS.unshift({ id: Date.now(), uid: me().id, cat: p.cat || 'general', body: 'Shared from ' + g.title + ' — ' + a.name + ':\n\n' + (p.body || ''), likeCount: 0, liked: false, commentCount: 0, shareCount: 0, saved: false, pinned: false, ts: 'just now', imgs: (p.imgs || []).slice(), files: (p.files || []).slice(), reactions: {} });
       D.toast('Reposted to your feed');
@@ -21564,7 +21564,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     veterinary: ['veterinary', 'vet', 'poultry', 'livestock', 'بيطري', 'بيطرية', 'دواجن', 'الماشية', 'للماشية'],
     agriculture: ['agriculture', 'agricultural', 'agro', 'pesticide', 'pesticides', 'fertilizer', 'fertilizers', 'زراعي', 'زراعية', 'مبيد', 'مبيدات', 'أسمدة', 'سماد'],
     glp1: ['glp-1', 'glp1', 'semaglutide', 'liraglutide', 'tirzepatide', 'dulaglutide', 'سيماجلوتايد', 'سيماجلوتيد', 'ليراجلوتايد'],
-    oncology: ['oncology', 'oncologic', 'cancer', 'chemotherapy', 'cytotoxic', 'أورام', 'اورام', 'الأورام', 'سرطان', 'علاج كيماوي'],
+    oncology: ['oncology', 'oncologic', 'cancer', 'chemotherapy', 'cytotoxic', 'أورام', 'اورام', 'الأورام', 'سرطان', 'علاج كيماوي', 'العلاج الكيماوي'],
     growth_hormone: ['growth hormone', 'somatropin', 'هرمون النمو', 'هرمون نمو', 'سوماتروبين'],
     fertility: ['fertility', 'ivf', 'gonadotropin', 'gonadotrophin', 'menotropin', 'fsh', 'خصوبة', 'الخصوبة', 'حقن مجهري', 'تأخر الإنجاب'],
     insulin: ['insulin', 'insulins', 'انسولين', 'إنسولين', 'الانسولين', 'الإنسولين'] };
@@ -22542,7 +22542,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     'Official Drugbox channel: the weekly regulatory bulletin (EDA, NFSA) and how to read a registration-file ad.': 'قناة Drugbox الرسمية: النشرة التنظيمية الأسبوعية (هيئة الدواء، هيئة سلامة الغذاء) وكيفية قراءة إعلان ملف تسجيل.',
     'Official Drugbox channel: «Wanted today» every evening, the week’s shortages and the agency market — business to business only.': 'قناة Drugbox الرسمية: «مطلوب النهارده» كل مساء ونواقص الأسبوع وسوق الوكالات — تجارة بين الشركات فقط.',
     "Official Drugbox channel: «Wanted today» every evening, the week's shortages and the agency market — business to business only.": 'قناة Drugbox الرسمية: «مطلوب النهارده» كل مساء ونواقص الأسبوع وسوق الوكالات — تجارة بين الشركات فقط.',
-    'Post text': 'نص المنشور', 'Ended': 'انتهت',
+    'Post text': 'نص المنشور', 'posted in the channel': 'نشر في القناة', 'new Drugbox posts in the channel': 'منشورات جديدة من Drugbox في القناة', 'Ended': 'انتهت',
     'CSV file (UTF-8) — columns:': 'ملف CSV (‏UTF-8) — الأعمدة:', '(name, sectors and source are required)': '(الاسم والقطاعات والمصدر مطلوبة)',
     'source is missing — every imported company names the public list it comes from': 'المصدر مفقود — كل شركة مستوردة تذكر القائمة العامة التي جاءت منها', 'sectors are missing': 'القطاعات مفقودة',
     'name is missing or longer than 200 characters': 'الاسم مفقود أو أطول من 200 حرف', 'duplicate of an earlier row in this file': 'مكرر لصف سابق في هذا الملف', 'e-mail is not valid': 'البريد الإلكتروني غير صالح',
