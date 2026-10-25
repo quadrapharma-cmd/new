@@ -533,6 +533,27 @@ from generate_series(1, greatest(:scale_users / 10, 1)) i;
 alter table public.products enable trigger user;
 alter table public.enquiries enable trigger user;
 commit;
+-- W-trade (0071–0075): a third of the finished-product offers are «متوفر» stock lists of 3 items (Arabic and English names),
+-- every listing gets its keys and search text as the database computes them on publication
+begin;
+alter table public.products disable trigger user;
+update public.products set kind = 'stock', attrs = jsonb_build_object('gov', (array['cairo','giza','alex','dakahlia','asyut'])[1 + id % 5], 'credit_days', 30 + id % 60)
+ where type = 'supply' and category = 'finished' and id % 3 = 0;
+update public.products set kind = 'wanted' where type = 'demand' and category = 'finished' and id % 3 = 0;
+alter table public.listing_lines disable trigger user;
+insert into public.listing_lines (listing_id, pos, name, name_ar, strength, form, qty, unit, expiry, source, origin_country, pack_state, cold, item_key, root, search_text)
+select p.id, g, (array['Panadol Extra','Concor','Augmentin','Glucophage','Brufen','Cataflam','Nexium'])[1 + (p.id + g) % 7],
+       (array['بنادول اكسترا','كونكور','اوجمنتين','جلوكوفاج','بروفين','كتافلام','نيكسيوم'])[1 + (p.id + g) % 7], (array['500 mg','5 mg','1 g','850 mg','400 mg','50 mg','40 mg'])[1 + (p.id + g) % 7],
+       'tab', 10 + (p.id * g) % 200, 'box', date '2026-01-01' + ((p.id + g) % 30) * interval '1 month', 'company', 'EG', 'intact', g = 2, null, null, null
+  from public.products p cross join generate_series(0, 2) g where p.kind = 'stock';
+update public.listing_lines l set item_key = public.trade_key(l.name || ' ' || coalesce(l.strength, '') || ' ' || l.form), root = public.trade_root(l.name || ' ' || coalesce(l.name_ar, '')),
+       search_text = public.trade_search_text(l.name || ' ' || coalesce(l.name_ar, '') || ' ' || coalesce(l.strength, '') || ' ' || l.form);
+alter table public.listing_lines enable trigger user;
+update public.products p set search_text = (c.r).search_text, item_key = (c.r).item_key, roots = (c.r).roots, root_words = (c.r).root_words, fingerprint = (c.r).fingerprint,
+       published_at = p.created_at
+  from (select x.id as pid, public.trade_compute(x) as r from public.products x) c where c.pid = p.id;
+alter table public.products enable trigger user;
+commit;
 call scale.done('8 market');
 
 -- ═════ 9. deals: 20k with 60k events and group members ═════
@@ -648,7 +669,7 @@ analyze public.profiles; analyze public.companies; analyze public.company_member
 analyze public.site_certificates; analyze public.company_followers; analyze public.connections; analyze public.posts; analyze public.post_media;
 analyze public.reactions; analyze public.comments; analyze public.saved_posts; analyze public.messages; analyze public.conversation_heads;
 analyze public.jobs; analyze public.job_applications; analyze public.saved_jobs; analyze public.notifications; analyze public.company_listings;
-analyze public.products; analyze public.enquiries; analyze public.deals; analyze public.deal_events; analyze public.deal_members;
+analyze public.products; analyze public.listing_lines; analyze public.enquiries; analyze public.deals; analyze public.deal_events; analyze public.deal_members;
 analyze public.groups; analyze public.group_members; analyze public.job_reviews; analyze public.work_references; analyze public.job_lists;
 set client_min_messages = notice;
 call scale.done('12 analyze');

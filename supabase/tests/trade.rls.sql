@@ -112,6 +112,7 @@ select pg_temp.ok('the private box is not readable directly', $$not exists (sele
 select pg_temp.no('…nor through its function before it is shared', $$select public.listing_private_get(pg_temp.id('file'))$$, '42501');
 select pg_temp.no('another member cannot add items to someone''s listing', $$insert into public.listing_lines (listing_id, name, qty, unit) values (pg_temp.id('p1'), 'TX intruder', 1, 'box')$$, '42501');
 select pg_temp.ok('…nor change or remove them (no row reached)', $$pg_temp.n('update public.listing_lines set qty = 1 where listing_id = ' || pg_temp.id('p1')) + pg_temp.n('delete from public.listing_lines where listing_id = ' || pg_temp.id('p1')) = 0$$);
+select pg_temp.no('…nor replace them through the function', $$select public.listing_lines_replace(pg_temp.id('p1'), '[{"name":"TX swap","qty":1,"unit":"box"}]')$$, '42501');
 select pg_temp.ok('Arabic search finds the English item (canonical words)', $$(select (public.market_search('بانادول') -> 'rows') @> jsonb_build_array(jsonb_build_object('id', pg_temp.id('p1'))))$$);
 select pg_temp.ok('…and «أقراص ٥٠٠» finds tablets 500 mg', $$(select (public.market_search('أقراص ٥٠٠') -> 'rows') @> jsonb_build_array(jsonb_build_object('id', pg_temp.id('p1'))))$$);
 select pg_temp.ok('the saved search «بنادول» was alerted when the listing was published', $$true$$);

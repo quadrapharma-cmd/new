@@ -272,7 +272,7 @@ create or replace function public.my_trade_outcomes() returns jsonb language sql
            'mine', o.poster = auth.uid(), 'other', (select jsonb_build_object('id', pr.id, 'name', pr.name) from public.profiles pr where pr.id = case when o.poster = auth.uid() then o.counterpart else o.poster end),
            'stars_given', case when o.poster = auth.uid() then o.poster_stars else o.counterpart_stars end,
            'stars_got', case when o.poster = auth.uid() then o.counterpart_stars else o.poster_stars end, 'at', o.created_at) order by o.created_at desc), '[]')
-  from (select * from public.trade_outcomes where poster = auth.uid() or counterpart = auth.uid() order by created_at desc limit 100) o
+  from (select * from public.trade_outcomes where poster = (select auth.uid()) or counterpart = (select auth.uid()) order by created_at desc limit 100) o
 $$;
 revoke all on function public.my_trade_outcomes() from public, anon, authenticated, service_role;
 grant execute on function public.my_trade_outcomes() to authenticated, service_role;

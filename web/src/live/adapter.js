@@ -4632,6 +4632,11 @@
     outcomes: function () { return txRpc('my_trade_outcomes', {}).then(function (l) { return (l || []).map(function (o) { return Object.assign({}, o, { other: o.other ? { id: o.other.id, name: o.other.name } : null }); }); }); },
     confirm: function (id, yes, stars, note) { var a = actingRaw(); return txRpc('trade_outcome_confirm', { p_id: +id, p_yes: !!yes, p_stars: stars || null, p_note: note || null, p_from_slug: a ? a.slug : null }); },
     rate: function (id, stars, note) { return txRpc('trade_outcome_rate', { p_id: +id, p_stars: stars, p_note: note || null }); },
+    saveLines: async function (id, lines) {   /* one transaction (listing_lines_replace): the database recomputes the listing's keys and fingerprint */
+      var ls = lines.map(function (l) { var o = {}; ['name', 'name_ar', 'strength', 'form', 'qty', 'unit', 'source', 'origin_country', 'pack_state', 'cold', 'price', 'discount_pct'].forEach(function (k) { if (l[k] !== undefined && l[k] !== '') o[k] = l[k]; });
+        if (l.expiry) o.expiry = String(l.expiry).slice(0, 7) + '-01'; return o; });
+      await txRpc('listing_lines_replace', { p_id: +id, p_lines: ls });
+      MKT.at = 0; await loadMarket().catch(function () {}); if (onPageNow('market')) paintMarket(); return true; },
     privateGet: function (id) { return txRpc('listing_private_get', { p_id: +id }); },
     privateShare: function (id, who) { return txRpc('listing_private_share', { p_id: +id, p_user: who.uuid || uuidOf(who.id) }); },
     docsReview: function (id, ok, note) { return txRpc('listing_docs_review', { p_id: +id, p_ok: !!ok, p_note: note || null }); },

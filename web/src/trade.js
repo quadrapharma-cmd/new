@@ -365,6 +365,8 @@
     docsQueue: function () { return all().filter(function (x) { return x.docs === 'waiting'; }).map(function (x) { return { id: x.id, name: x.title, kind: x.kind, owner: { name: window.ME ? window.ME.name : 'You' }, mine: x.uid === ME_ID, docs: (x.docNames || []).map(function (n) { return { label: n, path: 'demo', bucket: 'documents' }; }), notif_no: x.priv && x.priv.notif_no }; }); },
     docsReview: function (id, ok, note) { var l = all(), L = l.find(function (x) { return String(x.id) === String(id); }); if (!L) return Promise.reject(new Error('Nothing waits for a check on this listing'));
       L.docs = ok ? 'seen' : 'rejected'; L.docsAt = ok ? Date.now() : null; L.docsNote = note || ''; keep(l); return Promise.resolve(true); },
+    saveLines: function (id, lines) { var l = all(), L = l.find(function (x) { return String(x.id) === String(id); }); if (!L) return Promise.reject(new Error('Only the listing’s owner can change it'));
+      L.lines = lines; keep(l); return Promise.resolve(true); },
     renewInfo: function (id) { var L = find(id); return L ? (L.bumped || L.at) : null; },
     distributor: function (slug) { var all_ = D.store.get('tradeDist', null); if (!all_) { all_ = { 'pharaonic-logistics': { govs: ['cairo', 'giza', 'alex', 'qalyubia', 'sharqia', 'dakahlia'], cats: ['medicines', 'supplements'], warehouses: 3, cold_chain: true, fleet: 22, agencies: 7 } }; D.store.set('tradeDist', all_); }
       return Promise.resolve(all_[slug] || null); },
@@ -695,6 +697,10 @@
   }, true);
   new MutationObserver(function (muts) {
     muts.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType !== 1 || !n.matches || !n.matches('.dbk-ov')) return;
+      var ed = n.querySelector('#mlT'); if (ed && !n.querySelector('[data-tx-items]')) { var rowE = [].find.call(document.querySelectorAll('#tab-manage [data-ml]'), function (r) { var s0 = r.querySelector('[data-noi18n]'); return s0 && s0.textContent === ed.value; });
+        var idE = rowE && rowE.getAttribute('data-ml'), LE = idE && ((window.dxTrade.rowOf && window.dxTrade.rowOf(idE)) || find(idE)); if (LE && LE.kind === 'stock') {
+          ed.closest('.dbk-f').insertAdjacentHTML('afterend', '<button type="button" class="dbk-btn s" data-tx-items="1">📦 Edit items</button>');
+          n.querySelector('[data-tx-items]').addEventListener('click', function () { var x = n.querySelector('.dbk-x'); if (x) x.click(); itemsEditor(isNaN(+idE) ? idE : +idE, ed.value); }); } }
       var btn = n.querySelector('[data-x="del"]'), title = (n.querySelector('.dbk-hd b') || {}).textContent || ''; if (!btn || n.querySelector('[data-x="tx-close"]')) return;
       var row = [].find.call(document.querySelectorAll('#tab-manage [data-ml]'), function (r) { var s = r.querySelector('[data-noi18n]'); return s && s.textContent === title.trim(); });
       if (!row) return; var id = row.getAttribute('data-ml');
@@ -703,6 +709,16 @@
       n.querySelector('[data-x="tx-close"]').addEventListener('click', function (ev) { ev.stopPropagation(); var x = n.querySelector('.dbk-x'); if (x) x.click(); else n.remove(); closeDialog(isNaN(+id) ? id : +id, title.trim()); });
     }); });
   }).observe(document.body, { childList: true });
+  function itemsEditor(id, title) {   /* the items of a published stock listing: change quantities, remove, add */
+    svc().items(id).then(function (lines) {
+      var m = D.modal({ title: title, body: '<div class="dx-tx" id="dxItemsF"><div class="dx-lines"></div><div class="dx-lines-a"><button type="button" class="dx-tbtn s" data-tx-a="addline">＋ Add another item</button></div></div>',
+        primary: { label: 'Save changes', onClick: function (b) { var ls = readLines(b.querySelector('#dxItemsF'));
+          if (!ls.length || ls.some(function (l) { return !(l.qty > 0); })) { toast('Please fill: Quantity of every item'); return false; }
+          svc().saveLines(id, ls).then(function () { toast('Items saved'); paintDemo(); if (window.dxMarket) window.dxMarket.paint(); }, function (er) { toast((er && er.message) || 'Could not save'); }); } } });
+      var f = m.el.querySelector('#dxItemsF'); lines.forEach(function (l) { addLine(f, l); }); if (!lines.length) addLine(f);
+      f.addEventListener('click', function (e) { var a = e.target.closest('[data-tx-a]'); if (!a) return; e.preventDefault(); if (a.dataset.txA === 'addline') addLine(f); if (a.dataset.txA === 'delline') { var ln = a.closest('.dx-line'); if (f.querySelectorAll('.dx-line').length > 1) ln.remove(); } });
+    }, function (er) { toast((er && er.message) || 'Could not load the items'); });
+  }
   function isFile(id) { var L = (window.dxTrade.rowOf && window.dxTrade.rowOf(id)) || find(id); return !!(L && L.kind === 'file_sale'); }
   function closeDialog(id, title) {
     svc().counterparts(id).then(function (who) {
@@ -887,7 +903,7 @@
     'Your listing is live': 'إعلانك اتنشر', 'Price request sent — the answer comes in Messages': 'طلب السعر اتبعت — الرد هيوصلك في الرسايل', 'Price request sent — follow it in Requests & deals': 'طلب السعر اتبعت — تابعه في الطلبات والصفقات',
     'Marked reserved — buyers see «Reserved»': 'اتعلّم محجوز — المشترين هيشوفوا «محجوز»', 'Open again': 'اتفتح تاني', 'Listing withdrawn': 'الإعلان اتسحب', 'Sent — follow it in Requests & deals': 'اتبعت — تابعه في الطلبات والصفقات',
     'Renewed — it moved up and shows for another 30 days': 'اتجدّد — طلع لفوق وهيفضل ظاهر 30 يوم كمان', 'Answered — it did not happen': 'اتسجّل إنها ماحصلتش',
-    '📑 Trade documents': '📑 مستندات التجارة', 'Or start from a trade template': 'أو ابدأ من قالب تجارة', 'Trade between companies — each template opens its own form': 'تجارة بين الشركات — كل قالب بيفتح الفورم بتاعه', 'Factory wanted': 'مطلوب مصنع', 'Mark seen': 'اتشافت', 'Trade documents': 'مستندات التجارة', 'Distributor profile': 'بروفايل الموزّع'
+    '📑 Trade documents': '📑 مستندات التجارة', '📦 Edit items': '📦 عدّل الأصناف', 'Items saved': 'الأصناف اتحفظت', 'Or start from a trade template': 'أو ابدأ من قالب تجارة', 'Trade between companies — each template opens its own form': 'تجارة بين الشركات — كل قالب بيفتح الفورم بتاعه', 'Factory wanted': 'مطلوب مصنع', 'Mark seen': 'اتشافت', 'Trade documents': 'مستندات التجارة', 'Distributor profile': 'بروفايل الموزّع'
   };
   if (window.dxI18nExtend) window.dxI18nExtend(AR, [
     [/^(\d+) items$/, function (m) { return m[1] + ' صنف'; }], [/^(\d+(?:\.\d+)?)% off$/, function (m) { return 'خصم ' + m[1] + '%'; }], [/^🗓 Credit (\d+) days$/, function (m) { return '🗓 آجل ' + m[1] + ' يوم'; }],

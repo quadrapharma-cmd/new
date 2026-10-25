@@ -110,6 +110,13 @@ def queries(ctx):
         ('my_payments', "select public.my_payments(null)"),
         ('market_search', "select public.market_search(null, 'supply', null, 40, 0)"),
         ('market_search_q', "select public.market_search('metformin', null, null, 40, 0)"),
+        # area w-trade (0071–0075): Arabic ⇄ English search, a kind, the items of a listing, my matches, my listings, a price request's counterparts
+        ('market_search_ar', "select public.market_search('بنادول', null, null, 40, 0)"),
+        ('market_search_ar_digits', "select public.market_search('كونكور ٥', null, null, 40, 0)"),
+        ('market_search_kind', "select public.market_search(null, 'supply', null, 40, 0, 'stock')"),
+        ('listing_items', "select public.listing_items((select id from public.products where kind = 'stock' order by id limit 1))"),
+        ('my_trade_matches', "select public.my_trade_matches(50)"),
+        ('my_listings', "select public.my_listings()"),
         # phase 1b (0035): the ticker at sign-in, the Jobs numbers, a profile's connections, My Network's numbers, Home faces
         ('ticker_feed', "select public.ticker_feed()"),
         ('jobs_stats', "select public.jobs_stats()"),

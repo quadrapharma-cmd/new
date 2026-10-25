@@ -12,6 +12,7 @@ KIND_PILL = {'stock': 'supply', 'materials': 'supply', 'wanted': 'demand', 'toll
 SEEK = ('wanted', 'file_wanted', 'distributor', 'toll_wanted')
 
 def q(s): return "$q$%s$q$" % s
+q_ = q
 
 def market(j, pg, tab='browse'):
     close_dialogs(pg); j.nav(pg, 'market'); j.settle(pg, 1200)
@@ -137,6 +138,14 @@ def stock_lines(j):
     with j.step('After a reload the listing and its items are still there'):
         if j.demo: j.demo_persists('the trade listings are kept in this browser')
         reopen(j, pg); c = find_card(j, pg, title); j.check('Panadol Extra' in c.inner_text(), 'the items are gone after the reload')
+    with j.step("My Listings → 'Edit' → '📦 Edit items': the first item's quantity becomes 95 → the card shows it"):
+        market(j, pg, 'manage'); row = pg.locator('#tab-manage [data-ml]', has_text=title).first; j.check(row.count(), 'the listing is not in My Listings')
+        row.locator('[data-ml-a=edit]').click(); pg.wait_for_timeout(500)
+        dlg_click(j, pg, r'Edit items|عدّل الأصناف'); pg.wait_for_timeout(900)
+        q = pg.locator('#dxItemsF .dx-line [data-l=qty]'); j.check(q.count() == 2, 'the items editor does not list the two items (%d)' % q.count()); q.first.fill('95')
+        dlg_click(j, pg, r'Save changes|احفظ التغييرات|حفظ'); j.settle(pg, 2000)
+        if j.live: j.check(j.wait_db("select l.qty::int from public.listing_lines l join public.products p on p.id=l.listing_id where p.name=%s and l.pos=0" % q_(title), 8) == '95', 'the new quantity is not stored')
+        c = find_card(j, pg, title); j.check('95' in c.inner_text(), 'the card does not show the new quantity')
 
 @journey('J-BUSINESS-W02')
 def price_modes(j):

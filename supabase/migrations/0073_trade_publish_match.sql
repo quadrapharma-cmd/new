@@ -84,10 +84,11 @@ create or replace function public.my_trade_matches(p_limit int default 50) retur
            'owner', (select jsonb_build_object('name', pr.name, 'verified', pr.verified) from public.profiles pr where pr.id = op.user_id),
            'co', (select jsonb_build_object('slug', c.slug, 'name', c.name, 'verified', c.status = 'verified') from public.companies c where c.id = op.company_id))
            order by m.created_at desc), '[]')
-  from (select case when pa.user_id = auth.uid() then t.a else t.b end as mine, case when pa.user_id = auth.uid() then t.b else t.a end as other, t.created_at
-          from public.trade_matches t join public.products pa on pa.id = t.a join public.products pb on pb.id = t.b
-         where auth.uid() is not null and (pa.user_id = auth.uid() or pb.user_id = auth.uid())
-         order by t.created_at desc limit least(greatest(coalesce(p_limit, 50), 1), 200)) m
+  from (select case when x.mine_a then x.a else x.b end as mine, case when x.mine_a then x.b else x.a end as other, x.created_at
+          from (select t.a, t.b, t.created_at, true as mine_a from public.trade_matches t join public.products pa on pa.id = t.a where pa.user_id = (select auth.uid())
+                union all
+                select t.a, t.b, t.created_at, false from public.trade_matches t join public.products pb on pb.id = t.b where pb.user_id = (select auth.uid())) x
+         order by x.created_at desc limit least(greatest(coalesce(p_limit, 50), 1), 200)) m
   join public.products mp on mp.id = m.mine join public.products op on op.id = m.other
   where op.status in ('active', 'reserved') and (op.expires_at is null or op.expires_at > now())
 $$;

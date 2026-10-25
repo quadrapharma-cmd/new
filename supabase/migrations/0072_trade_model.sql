@@ -53,6 +53,8 @@ create index if not exists idx_products_kind_open on public.products (kind, type
 create index if not exists idx_products_fingerprint on public.products (user_id, fingerprint) where status in ('active', 'paused', 'reserved');
 create index if not exists idx_products_docs_checked_by on public.products (docs_checked_by) where docs_checked_by is not null;
 create index if not exists idx_products_bumped on public.products (type, (coalesce(bumped_at, created_at)) desc, id desc) where active;
+-- market_search's hit set read from the index alone (the rows are wider now: search text, attrs) — 100k seed: 18 → 5 ms
+create index if not exists idx_products_market_hits on public.products (type) include (user_id, category, kind, expires_at, featured_until, boosted_until, created_at, bumped_at, id) where active;
 
 -- ── 2. the kind's fields ────
 -- spec per kind: key → 'text:N' · 'num:max' · 'int:max' · 'bool' · 'month' (YYYY-MM) · 'enum:a,b' · 'list:enum:a,b' · 'list:month' · 'gov' (governorates)
@@ -231,6 +233,28 @@ end $$;
 revoke all on function public.listing_lines_derive() from public, anon, authenticated, service_role;
 drop trigger if exists trg_listing_lines_derive on public.listing_lines;
 create trigger trg_listing_lines_derive before insert or update on public.listing_lines for each row execute function public.listing_lines_derive();
+
+-- the owner replaces the items of a listing in one go (one transaction: never a listing left without its items); RLS decides
+create or replace function public.listing_lines_replace(p_id bigint, p_lines jsonb) returns int language plpgsql security invoker set search_path = public as $$
+declare n int;
+begin
+  if auth.uid() is null then raise exception 'Sign in first' using errcode = '42501'; end if;
+  if jsonb_typeof(p_lines) is distinct from 'array' or jsonb_array_length(p_lines) = 0 then raise exception 'Add at least one item' using errcode = '22023'; end if;
+  if not exists (select 1 from public.products where id = p_id and user_id = auth.uid() and status in ('draft', 'active', 'paused')) then
+    raise exception 'Only the listing''s owner can change it' using errcode = '42501'; end if;
+  delete from public.listing_lines where listing_id = p_id;
+  insert into public.listing_lines (listing_id, pos, name, name_ar, strength, form, qty, unit, expiry, source, origin_country, pack_state, cold, price, discount_pct)
+  select p_id, (o - 1)::int, x.name, x.name_ar, x.strength, x.form, x.qty, x.unit, x.expiry, x.source, x.origin_country, x.pack_state, coalesce(x.cold, false), x.price, x.discount_pct
+    from jsonb_to_recordset(p_lines) with ordinality as x(name text, name_ar text, strength text, form text, qty numeric, unit text, expiry date, source text, origin_country text,
+                                                          pack_state text, cold boolean, price numeric, discount_pct numeric, o bigint);
+  get diagnostics n = row_count;
+  if exists (select 1 from public.products where id = p_id and kind = 'stock' and status = 'active')
+     and exists (select 1 from public.listing_lines where listing_id = p_id and (coalesce(qty, 0) <= 0 or unit is null)) then
+    raise exception 'Add the quantity and unit of every item' using errcode = '22023'; end if;
+  return n;
+end $$;
+revoke all on function public.listing_lines_replace(bigint, jsonb) from public, anon, authenticated, service_role;
+grant execute on function public.listing_lines_replace(bigint, jsonb) to authenticated, service_role;
 
 -- ── 4. the listing's derived columns ────
 -- the words of the listing: name, description, the text of its attrs; the lines' keys are added by trade_refresh
@@ -413,7 +437,7 @@ create or replace function public.my_listings() returns jsonb language sql stabl
            'inquiries', p.inquiry_count, 'boosted', (p.boosted_until > now() or p.featured_until > now()), 'company_id', p.company_id, 'kind', p.kind, 'attrs', p.attrs,
            'price_mode', p.price_mode, 'discount_pct', p.discount_pct, 'docs_checked_at', p.docs_checked_at,
            'lines', (select count(*) from public.listing_lines l where l.listing_id = p.id)) order by p.created_at desc, p.id desc), '[]'::jsonb)
-  from (select * from public.products where user_id = auth.uid() and status <> 'closed' order by created_at desc limit 200) p
+  from (select * from public.products where user_id = (select auth.uid()) and status <> 'closed' order by created_at desc limit 200) p   -- (select …): once, so the index on user_id is used
 $$;
 revoke all on function public.my_listings() from public, anon, authenticated, service_role;
 grant execute on function public.my_listings() to authenticated, service_role;
