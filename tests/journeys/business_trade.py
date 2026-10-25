@@ -67,13 +67,18 @@ def line_fill(pg, f, i, d):
         else: el.fill(str(v))
 
 def publish(j, pg, f, publish_click=True):
-    """'Preview Listing →' then 'Publish listing'; returns the toasts. When the form refuses, returns them without a dialog."""
+    """'Preview Listing →' then 'Publish listing'; returns the toasts (waiting for the database's answer, up to 15 s). When the
+    form refuses, returns them without a dialog."""
+    pg.evaluate("window.__jt&&window.__jt.push('\u00a7')")   # the toast log skips a repeat of its last line: the same words again are a new notice
     mark = j.toast_mark(pg)
     b = pg.locator(f + ' .btn-create:visible'); j.check(b.count(), "no 'Preview Listing'"); b.first.scroll_into_view_if_needed(); b.first.click(); pg.wait_for_timeout(700)
-    if dlg_open(pg) and publish_click:
-        dlg_click(j, pg, r'Publish listing|انشر', 'Publish listing'); j.settle(pg, 2200)
-    pg.wait_for_timeout(600)
-    return j.toasts_since(pg, mark)
+    if not (dlg_open(pg) and publish_click): pg.wait_for_timeout(300); return [t for t in j.toasts_since(pg, mark) if t != '\u00a7']
+    dlg_click(j, pg, r'Publish listing|انشر', 'Publish listing')
+    for _ in range(60):
+        pg.wait_for_timeout(250); said = [t for t in j.toasts_since(pg, mark) if t != '\u00a7']
+        if any(re.search(r'live|اتنشر|match|مطابق|draft|مسودة|Please|كمّل', t) for t in said) or (dlg_open(pg) and re.search(r'already posted|منشور قبل', dlg_text(pg))): break
+    j.settle(pg, 800)
+    return [t for t in j.toasts_since(pg, mark) if t != '\u00a7']
 
 def card(pg, title):
     return pg.locator('#tab-browse [data-trade-id]', has_text=title).first
@@ -335,7 +340,7 @@ def renew_and_duplicates(j):
 @journey('J-BUSINESS-W09')
 def reserved_sold(j):
     """«محجوز / اتباع»: the owner reserves the listing (buyers see it, price requests stop), marks it sold to the member who asked, who confirms and rates; the owner rates back."""
-    me = me_and(j, 'Sold Seller'); pg = me['page']; title = 'Reserved list %s' % j.tag
+    me = me_and(j, 'Sold Seller'); pg = me['page']; title = 'Weekly offer %s' % j.tag
     with j.step('Publish a stock list; a buyer asks its price'):
         f = trade_form(j, pg, 'stock'); title_field(pg, f, title); line_fill(pg, f, 0, {'name': 'Cataflam 50 mg', 'qty': 90, 'unit': 'box'}); publish(j, pg, f)
         o = other(j, 'Sold Buyer', co=True, sector='Distribution'); op = o['page'] if o else pg
@@ -345,7 +350,8 @@ def reserved_sold(j):
         row.locator('[data-ml-a=more]').click(); pg.wait_for_timeout(400); dlg_click(j, pg, r'Reserved / sold|محجوز / اتباع'); pg.wait_for_timeout(600)
         dlg_click(j, pg, r'Mark reserved|علّمه محجوز'); j.settle(pg, 1500)
         if j.live: j.check(j.wait_db("select status from public.products where name=%s" % q(title), 6) == 'reserved', 'the reservation is not stored')
-        c = find_card(j, op, title); j.check(re.search(r'Reserved|محجوز', c.inner_text()), 'the card does not say Reserved')
+        if j.live: j.reload(op)
+        c = find_card(j, op, title); j.check(c.locator('.dx-res').count() and re.search(r'Reserved|محجوز', c.locator('.dx-res').inner_text()), 'the card does not say Reserved')
         if j.live: j.check(c.locator('[data-tx-c=ask][disabled]').count(), "'Ask for price' is still open on a reserved listing")
     with j.step("'Mark sold' to the buyer who asked: the listing leaves Browse and the buyer is asked to confirm and rate"):
         market(j, pg, 'manage'); row = pg.locator('#tab-manage [data-ml]', has_text=title).first; row.locator('[data-ml-a=more]').click(); pg.wait_for_timeout(400)
@@ -445,8 +451,8 @@ def agency_both_ways(j):
     with j.step("The owner opens it: 'Open talks' → 'Agree terms' → Agreed"):
         if j.demo: j.skip('the agency owner is a sample company in the demo')
         j.reload(ap); open_deal(j, ap, ta)
-        deal_act(j, ap, r'Open talks|ابدأ التفاوض'); j.check(j.wait_db("select status from public.deals where lines->>'listing_id'=(select id::text from public.products where name=%s)" % q(ta), 8) == 'talks', 'the talks did not start')
-        open_deal(j, ap, ta); deal_act(j, ap, r'Agree terms|اتفقنا')
+        deal_act(j, ap, r'^\W*(Open talks|ابدأ التفاوض)\W*$'); j.check(j.wait_db("select status from public.deals where lines->>'listing_id'=(select id::text from public.products where name=%s)" % q(ta), 8) == 'talks', 'the talks did not start')
+        open_deal(j, ap, ta); deal_act(j, ap, 'Agree terms')
         j.check(j.wait_db("select status from public.deals where lines->>'listing_id'=(select id::text from public.products where name=%s)" % q(ta), 8) == 'agreed', 'the agency was not agreed')
     with j.step("The distributor's company page shows its distributor profile (governorates, categories, warehouses, cold chain)"):
         if j.live:
@@ -454,7 +460,7 @@ def agency_both_ways(j):
             e = bp.locator('[data-dist-edit]'); j.check(e.count(), "no 'Edit distributor profile' on the distributor's own page"); e.click(); bp.wait_for_timeout(400)
             for v in ('asyut', 'minya', 'supplements'): bp.locator('#dxDistF .chip[data-v="%s"]' % v).click()
             bp.locator('#dxDistF [data-tx=warehouses] input').fill('2'); bp.locator('#dxDistF [data-tx=cold_chain] .radio-opt[data-v=yes]').click(); dlg_click(j, bp, r'^\W*(Save|حفظ)\W*$'); j.settle(bp, 1500)
-            j.check(j.wait_db("select govs::text||cats::text||warehouses||cold_chain from public.distributor_profiles where company_id=%s" % b['co']['id'], 8) == '{asyut,minya}{supplements}2t', 'the distributor profile is not stored')
+            j.check(j.wait_db("select (select array_agg(x order by x) from unnest(govs) x)::text||cats::text||warehouses||cold_chain from public.distributor_profiles where company_id=%s" % b['co']['id'], 8) == '{asyut,minya}{supplements}2true', 'the distributor profile is not stored')
             op = j.person('Profile Viewer')['page']; directory(j, op); open_card(j, op, b['co']['name']); j.settle(op, 1500)
             j.wait(op, "!!document.querySelector('.dx-dist .cap-forms')", 10); t = op.locator('.dx-dist').text_content() if op.locator('.dx-dist').count() else ''
         else:
@@ -489,12 +495,12 @@ def file_trust(j):
         if j.demo: j.skip('the file deal has two companies (live)')
         b = other(j, 'Checklist Buyer', co=True, sector='Manufacturer'); bp = b['page']
         c = find_card(j, bp, title); c.locator('[data-tx-c=respond]').click(); bp.wait_for_timeout(400); dlg_click(j, bp, r'^\W*(Send|إرسال|ابعت)\W*$', 'Send'); j.settle(bp, 1500)
-        j.reload(pg); open_deal(j, pg, title); deal_act(j, pg, r'Sign NDA|وقّع'); open_deal(j, pg, title); deal_act(j, pg, r'Share details|شارك')
-        j.reload(bp); open_deal(j, bp, title); j.click(bp, r'Agree terms|اتفقنا', scope='body'); bp.wait_for_timeout(500)
-        j.check(re.search(r'Before you agree|قبل «اتفقنا»', dlg_text(bp)), 'no checklist before agreeing')
-        mark = j.toast_mark(bp); dlg_click(j, bp, r'Agree terms|اتفقنا'); bp.wait_for_timeout(500)
+        j.reload(pg); open_deal(j, pg, title); deal_act(j, pg, 'Sign NDA'); open_deal(j, pg, title); deal_act(j, pg, 'Share details', {r'Shared|مشترك|شارك': 'Data room: registration certificate %s' % j.tag})
+        j.reload(bp); txt = open_deal(j, bp, title); j.check(re.search(r'Agree terms|وافق على الشروط', txt), 'the buyer cannot agree after the details were shared: %s' % txt[:400]); j.click(bp, r'Agree terms|وافق على الشروط', scope='body'); bp.wait_for_timeout(500)
+        j.check(re.search(r'Before you agree|قبل الموافقة', dlg_text(bp)), 'no checklist before agreeing')
+        mark = j.toast_mark(bp); dlg_click(j, bp, r'Agree terms|وافق على الشروط'); bp.wait_for_timeout(500)
         j.check(dlg_open(bp) and any(re.search(r'Tick every box|علّم على كل', t) for t in j.toasts_since(bp, mark)), 'agreeing without the checklist was not refused')
-        bp.locator('.dbk-ov [data-ck]').evaluate_all("l=>l.forEach(c=>{if(!c.checked)c.click()})"); dlg_click(j, bp, r'Agree terms|اتفقنا'); j.settle(bp, 1800)
+        bp.locator('.dbk-ov [data-ck]').evaluate_all("l=>l.forEach(c=>{if(!c.checked)c.click()})"); dlg_click(j, bp, r'Agree terms|وافق على الشروط'); j.settle(bp, 1800)
         j.check(j.wait_db("select d.status||(e.data->'checklist'->>'transfer_needs_approval') from public.deals d join public.deal_events e on e.deal_id=d.id and e.action='agree' where d.lines->>'listing_id'=(select id::text from public.products where name=%s)" % q(title), 8) == 'agreedtrue', 'the agreement and its checklist are not stored')
 
 if __name__ == '__main__': main()

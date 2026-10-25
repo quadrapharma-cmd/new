@@ -96,7 +96,7 @@ begin
     elsif parts[1] in ('num', 'int') then
       begin n := (v #>> '{}')::numeric; exception when others then n := null; end;
       lim := parts[2]::numeric;
-      if n is not null and n = n and n >= 0 and n <= lim then out := out || jsonb_build_object(k, case when parts[1] = 'int' then trunc(n) else round(n, 2) end); end if;
+      if n is not null and n = n and n >= 0 and n <= lim then out := out || jsonb_build_object(k, case when parts[1] = 'int' or n = trunc(n) then trunc(n) else round(n, 2) end); end if;   -- 34, not 34.00
     elsif parts[1] = 'bool' then
       if jsonb_typeof(v) = 'boolean' then out := out || jsonb_build_object(k, v); end if;
     elsif parts[1] = 'month' then

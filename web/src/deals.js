@@ -121,7 +121,7 @@
   /* ── act: move the state machine ── */
   var NEXT = { quote: 'quoted', revise: 'quoted', counter: 'countered', accept: 'accepted', confirm: 'confirmed', ship: 'shipped', receive: 'delivered', rate: 'closed', decline: 'declined', cancel: 'cancelled',
     propose: 'proposed', start: 'in_progress', deliver: 'delivered', accept_offer: 'accepted', counter_offer: 'countered', accept_counter: 'accepted', answer: 'answered', approve: 'approved', reject: 'rejected',
-    sign_nda: 'nda_signed', share: 'shared', agree: 'agreed', shortlist: 'shortlisted', interview: 'interview', offer: 'offer', accept_job: 'hired', confirm_group: 'confirmed' };
+    sign_nda: 'nda_signed', share: 'shared', agree: 'agreed', shortlist: 'shortlisted', interview: 'interview', offer: 'offer', accept_job: 'hired', confirm_group: 'confirmed', talk: 'talks' };
   function offerAt(d) { if (!Array.isArray(d.events)) return d.updated; for (var i = d.events.length - 1; i >= 0; i--) if (['quote', 'revise', 'propose'].indexOf(d.events[i].kind) >= 0) return d.events[i].at; return d.updated; }
   function offerExpired(d) { var m = d.offer && /(\d+)\s*day/.exec(d.offer.validity || ''); return !!(m && Date.now() - offerAt(d) > (+m[1]) * 864e5); }
   function offerExpiry(d) { var m = d.offer && /(\d+)\s*day/.exec(d.offer.validity || ''); return m ? new Date(offerAt(d) + (+m[1]) * 864e5) : null; }

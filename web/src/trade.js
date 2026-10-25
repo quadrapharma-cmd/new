@@ -54,7 +54,8 @@
   var REGT = [['human', 'Human medicine'], ['supplement', 'Food supplement'], ['cosmetic', 'Cosmetic'], ['device', 'Medical device'], ['vet', 'Veterinary']];
   var INCL = [['brand', 'Brand name'], ['dossier', 'Dossier'], ['studies', 'Studies (stability / BE)'], ['artwork', 'Artwork'], ['stock', 'Stock'], ['trademark', 'Trademark'], ['manufacturing', 'Manufacturing rights']];
   var BCOND = [['own_factory', 'Buyer has a factory'], ['toll_ok', 'Toll manufacturing accepted'], ['licensed_warehouse', 'Licensed warehouse'], ['company_only', 'Companies only']];
-  var LBL = {}; [GOVS.reduce(function (a, g) { g[1].forEach(function (k) { a.push([k, GOV[k]]); }); return a; }, []), CATS, FORMS_, PACKS, UNITS, SOURCES, PACKST, COUNTRIES, STAGES, AUTH, REGT, INCL, BCOND]
+  var CTYPES = [['manufacturer', 'Manufacturer'], ['distributor', 'Distributor / warehouse'], ['importer', 'Importer'], ['scientific_office', 'Scientific office'], ['warehouse', 'Licensed warehouse'], ['cosmetics', 'Cosmetics'], ['other', 'Other']];
+  var LBL = {}; [CTYPES, GOVS.reduce(function (a, g) { g[1].forEach(function (k) { a.push([k, GOV[k]]); }); return a; }, []), CATS, FORMS_, PACKS, UNITS, SOURCES, PACKST, COUNTRIES, STAGES, AUTH, REGT, INCL, BCOND]
     .forEach(function (l) { l.forEach(function (x) { if (!(x[0] in LBL)) LBL[x[0]] = x[1]; }); });
   function lbl(k) { return LBL[k] || k; }
   function opts(list, blank) { return (blank ? '<option value="">' + esc(blank) + '</option>' : '') + list.map(function (x) { return '<option value="' + esc(x[0]) + '">' + esc(x[1]) + '</option>'; }).join(''); }
@@ -445,10 +446,14 @@
   }
   /* the approved first card of its kind, filled from a listing (demo samples and new demo listings) */
   var TPL = {};
-  function tpls() { var mk = document.getElementById('mkx'); if (!mk) return; if (!TPL.l) { var l = mk.querySelector('.lcard:not([data-trade-id])'); if (l) TPL.l = l.outerHTML; } if (!TPL.d) { var d = mk.querySelector('.dcard:not([data-trade-id])'); if (d) TPL.d = d.outerHTML; } }
+  function tpls() {   /* the approved page's own first cards (from its markup, before any layer filled them) */
+    if (TPL.l && TPL.d) return;
+    var w = document.createElement('div'); w.innerHTML = typeof window.MKX_HTML === 'string' ? window.MKX_HTML : '';
+    var l = w.querySelector('.lcard'), d = w.querySelector('.dcard'); if (l) TPL.l = l.outerHTML; if (d) TPL.d = d.outerHTML;
+    var mk = document.getElementById('mkx'); if (mk) { if (!TPL.l) { l = mk.querySelector('.lcard:not([data-trade-id])'); if (l) TPL.l = l.outerHTML; } if (!TPL.d) { d = mk.querySelector('.dcard:not([data-trade-id])'); if (d) TPL.d = d.outerHTML; } } }
   function el(h) { var w = document.createElement('div'); w.innerHTML = h; return w.firstElementChild; }
   function demoCard(L) {
-    tpls(); var K = KIND[L.kind], demand = K.side === 'demand', c = el(demand ? TPL.d : TPL.l); if (!c) return null;
+    tpls(); var K = KIND[L.kind], demand = K.side === 'demand', h = demand ? TPL.d : TPL.l, c = h ? el(h) : null; if (!c) return null;
     c.removeAttribute('data-live'); c.style.display = '';
     var who = L.co ? L.co.name : (window.U ? window.U(L.uid).name : 'Member');
     if (demand) {
@@ -885,6 +890,10 @@
     '📑 Trade documents': '📑 مستندات التجارة', 'Or start from a trade template': 'أو ابدأ من قالب تجارة', 'Trade between companies — each template opens its own form': 'تجارة بين الشركات — كل قالب بيفتح الفورم بتاعه', 'Factory wanted': 'مطلوب مصنع', 'Mark seen': 'اتشافت', 'Trade documents': 'مستندات التجارة', 'Distributor profile': 'بروفايل الموزّع'
   }, [
     [/^(\d+) items$/, function (m) { return m[1] + ' صنف'; }], [/^(\d+(?:\.\d+)?)% off$/, function (m) { return 'خصم ' + m[1] + '%'; }], [/^🗓 Credit (\d+) days$/, function (m) { return '🗓 آجل ' + m[1] + ' يوم'; }],
+    [/^Before you agree — (.+)$/, function (m) { return 'قبل الموافقة — ' + m[1]; }], [/^(\d+) (listings? match(?:es)? it) — see My Listings → Matches$/, function (m) { return m[1] + ' إعلان مطابق — شوف إعلاناتي ← المطابقات'; }],
+    [/^Your listing is live — (\d+) listings? match(?:es)? it \(My Listings → Matches\)$/, function (m) { return 'إعلانك اتنشر — ' + m[1] + ' إعلان مطابق (إعلاناتي ← المطابقات)'; }], [/^(\d+) items? added — add quantities where missing$/, function (m) { return 'اتضاف ' + m[1] + ' صنف — كمّل الكميات الناقصة'; }],
+    [/^(\d+) items? found — untick any line that is not an item$/, function (m) { return m[1] + ' صنف — شيل العلامة من أي سطر مش صنف'; }], [/^Marked sold — (.+) is asked to confirm and rate$/, function (m) { return 'اتعلّم اتباع — هيتطلب من ' + m[1] + ' يأكّد ويقيّم'; }],
+    [/^Shared with (.+)$/, function (m) { return 'اتشارك مع ' + m[1]; }], [/^Thank you — rated (\d)★$/, function (m) { return 'شكراً — قيّمت ' + m[1] + '★'; }], [/^(\d+) (?:items?|صنف) · (.+)$/, null],
     [/^Please fill: (.+)$/, null]
   ].filter(function (p) { return p[1]; }));
 })();
