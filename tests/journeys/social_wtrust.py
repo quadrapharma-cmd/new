@@ -33,9 +33,9 @@ def verified_private_phone(j):
             j.check(code and len(code) == 6, 'no SMS with a code was queued for the number')
         else:
             m = re.search(r'(\d{6})', t); j.check(m, 'the demo does not show its code (no SMS in the demo)'); code = m.group(1)
-        pg.fill('#wtCode', '000000' if code != '000000' else '111111'); dlg_click(j, pg, r'^\W*(Verify|وثّق)\W*$', 'Verify'); pg.wait_for_timeout(1200)
+        pg.fill('#wtCode', '000000' if code != '000000' else '111111'); pg.locator('.dbk-ov [data-a=ok]').last.click(); pg.wait_for_timeout(1200)
         j.check(re.search(r'not right|غير صحيح', pg.evaluate("(document.getElementById('wtCodeErr')||{}).innerText||''")), 'a wrong code is not refused')
-        pg.fill('#wtCode', code); mark = j.toast_mark(pg); dlg_click(j, pg, r'^\W*(Verify|وثّق)\W*$', 'Verify'); j.settle(pg, 1500)
+        pg.fill('#wtCode', code); mark = j.toast_mark(pg); pg.locator('.dbk-ov [data-a=ok]').last.click(); j.settle(pg, 1500)
         j.check(re.search(r'phone is verified|رقمك اتوثّق', ' '.join(j.toasts_since(pg, mark))), 'not told the phone is verified')
         j.wait(pg, "!!document.querySelector('.wt-line .wt-ok')", 8)
         j.check(re.search(r'Phone verified|رقم موثّق', line(pg)), 'my profile does not show "Phone verified": "%s"' % line(pg))
