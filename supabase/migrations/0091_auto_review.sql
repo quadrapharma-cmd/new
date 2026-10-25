@@ -37,7 +37,7 @@ create or replace function private.review_norm(p text) returns text language sql
   select regexp_replace(
            translate(
              regexp_replace(lower(coalesce(p, '')), '[ً-ٰٟـ​-‏‪-‮⁦-⁩﻿­]', '', 'g'),
-             'أإآٱةىؤئ', 'اااااهيوي'),
+             'أإآٱةىؤئ', 'ااااهيوي'),
            '\s+', ' ', 'g')
 $$;
 revoke all on function private.review_norm(text) from public, anon, authenticated, service_role;
@@ -45,31 +45,32 @@ grant execute on function private.review_norm(text) to authenticated, service_ro
 
 insert into private.review_rules (topic, pattern) values
   -- retail: consumers, patients, pharmacies as buyers, loose packs (normalised Arabic: ة→ه, ى→ي, أ→ا)
-  ('retail', '\m(for|to) (a|my|the|our)? ?patients?\M'),
+  ('retail', '\m(for|to) (a|my|the|our|this) patient\M'),
   ('retail', '\mpatient (needs|is looking|urgently)'),
   ('retail', '\m(retail|consumer) (sale|sales|price|customers?|buyers?)\M'),
   ('retail', '\m(sell|selling|sale|supply|supplying|deliver|delivery) (to|for) (the )?(public|consumers?|pharmac(y|ies))\M'),
   ('retail', '\mhome delivery\M'),
   ('retail', '\m(single|one|loose|open(ed)?) (box|pack|strip)s?\M'),
   ('retail', '\mper (box|strip) (to|for) (the )?public\M'),
-  ('retail', 'لمريض|للمريض|للعيان|لعيان|حاله انسانيه|حالات انسانيه|محتاج دوا|محتاجه دوا|ابحث عن دواء لمريض'),
-  ('retail', 'بالروشته|روشته|قطاعي|بالقطاعي|للجمهور|توصيل للمنازل|توصيل للبيت|دليفري'),
-  ('retail', 'للصيدليات|لصيدليه|لصيدليتي|بيع للصيدليات|توزيع على الصيدليات|طلبيه صيدليه'),
-  ('retail', 'علبه واحده|شريط واحد|علب مفتوحه|علبه مفتوحه|فرط|بالشريط'),
   -- controlled substances
   ('controlled', '\m(tramadol|tapentadol|pregabalin|lyrica|codeine|morphine|fentanyl|oxycodone|methadone|alprazolam|xanax|clonazepam|rivotril|diazepam|valium|zolpidem|ketamine|methylphenidate|ritalin|captagon|fenethylline|nalbuphine|pethidine|buprenorphine)\M'),
   ('controlled', '\m(controlled (substances?|drugs?|medicines?)|psychotropics?|narcotics?|schedule (i|ii|1|2) (drugs?|medicines?|products?))\M'),
-  ('controlled', 'ترامادول|تامول|ترامال|ليريكا|بريجابالين|كودايين|كوديين|مورفين|فنتانيل|زاناكس|زانكس|ريفوتريل|كلونازيبام|فاليوم|ديازيبام|كيتامين|ريتالين|كبتاجون|نالبوفين|بيثيدين'),
-  ('controlled', 'ادويه الجدول|ادويه جدول|جدول اول|جدول ثاني|جدول تاني|من الجدول|مخدر|مخدرات|ادويه نفسيه|موثر عقلي|مؤثرات عقليه|موثرات عقليه'),
   -- import for others
   ('import', '\mimport(ing)? (on behalf of|for others|for clients|for a client|under (my|our|your) licen[cs]e)'),
   ('import', '\m(rent|hire|lend)(ing)? (an |my |our )?import (licen[cs]e|card|registration)'),
-  ('import', 'استيراد لحساب|استيراد للغير|استيراد باسم|استيراد لصالح|استيراد علي سجلي|استيراد علي سجلنا|استيراد علي بطاقتي|استيراد علي بطاقتنا|استيراد علي رخصتي|استيراد علي رخصتنا'),
-  ('import', 'تاجير سجل|تاجير بطاقه استيراد|بطاقه استيراديه للايجار|سجل مستوردين للايجار|ايجار سجل'),
   -- sham papers
   ('sham', '\m(sham|fake|fictitious) (contracts?|invoices?|tenders?|coas?|certificates?|papers?)\M'),
   ('sham', '\m(backdated|forged) (contracts?|invoices?|papers?|documents?|certificates?)\M'),
-  ('sham', 'عقد صوري|عقود صوريه|فاتوره وهميه|فواتير وهميه|فواتير مضروبه|شهاده مضروبه|شهادات مضروبه|ورق مضروب|اوراق مضروبه|مزوره|تزوير'),
+  -- Arabic (normalised): whole words — no Arabic letter before or after; drug names also with و ف ب ل ك ال
+  ('retail', '(^|[^ء-ي])(و|ف)?(لمريض|للمريض|لمريضه|للمريضه|للعيان|لعيان|حاله انسانيه|حالات انسانيه|محتاج دوا|محتاجه دوا)([^ء-ي]|$)'),
+  ('retail', '(^|[^ء-ي])(و|ف)?(روشته|بالروشته|الروشته|قطاعي|بالقطاعي|للجمهور|توصيل للمنازل|توصيل للبيت|دليفري)([^ء-ي]|$)'),
+  ('retail', '(^|[^ء-ي])(و|ف)?(للصيدليات|لصيدليه|لصيدليتي|بيع للصيدليات|توزيع علي الصيدليات|طلبيه صيدليه)([^ء-ي]|$)'),
+  ('retail', '(^|[^ء-ي])(و|ف)?(علبه واحده|شريط واحد|علب مفتوحه|علبه مفتوحه|فرط|بالفرط|بالشريط)([^ء-ي]|$)'),
+  ('controlled', '(^|[^ء-ي])(و|ف)?(ب|ل|ك)?(ال|ل)?(ترامادول|ترامال|تامول|ليريكا|بريجابالين|كودايين|كوديين|مورفين|فنتانيل|زاناكس|زانكس|ريفوتريل|كلونازيبام|فاليوم|ديازيبام|كيتامين|ريتالين|كبتاجون|نالبوفين|بيثيدين)([^ء-ي]|$)'),
+  ('controlled', '(^|[^ء-ي])(و|ف)?(ادويه الجدول|ادويه جدول|جدول اول|جدول ثاني|جدول تاني|من الجدول|مخدر|مخدرات|المخدرات|ادويه نفسيه|موثر عقلي|موثرات عقليه|الموثرات العقليه)([^ء-ي]|$)'),
+  ('import', '(^|[^ء-ي])(و|ف)?(استيراد لحساب|استيراد للغير|استيراد باسم|استيراد لصالح|استيراد علي سجلي|استيراد علي سجلنا|استيراد علي بطاقتي|استيراد علي بطاقتنا|استيراد علي رخصتي|استيراد علي رخصتنا)([^ء-ي]|$)'),
+  ('import', '(^|[^ء-ي])(و|ف)?(تاجير سجل|تاجير بطاقه استيراد|بطاقه استيراديه للايجار|سجل مستوردين للايجار|ايجار سجل)([^ء-ي]|$)'),
+  ('sham', '(^|[^ء-ي])(و|ف)?(عقد صوري|عقود صوريه|فاتوره وهميه|فواتير وهميه|فواتير مضروبه|شهاده مضروبه|شهادات مضروبه|ورق مضروب|اوراق مضروبه|مزوره|مزور|تزوير)([^ء-ي]|$)'),
   -- invite links to outside groups
   ('invite', 'chat\.whatsapp\.com|wa\.me/|whatsapp\.com/(channel|invite)|t\.me/|telegram\.(me|dog)/|telegram\.org/joinchat|discord\.(gg|com/invite)|invite\.viber\.com|vb\.me/')
 on conflict (pattern) do nothing;
@@ -122,33 +123,37 @@ grant select (review_hold) on table public.group_listings to authenticated;
 create index if not exists idx_posts_review_hold on public.posts (id) where review_hold;
 
 -- BEFORE: decide the hold (the browser can never set or clear it); an offer that is held is paused
+create or replace function private.review_text(p_table text, r jsonb) returns text language sql immutable set search_path = public as $$
+  select case p_table when 'posts' then r ->> 'body'
+                      when 'products' then concat_ws(' ', r ->> 'name', r ->> 'description', r ->> 'price', r ->> 'moq', r ->> 'broker_for')
+                      else concat_ws(' ', r ->> 'title', r ->> 'details', r ->> 'price', r ->> 'broker_for') end
+$$;
+revoke all on function private.review_text(text, jsonb) from public, anon, authenticated, service_role;
+grant execute on function private.review_text(text, jsonb) to authenticated, service_role;
+
 create or replace function public.review_hold_before() returns trigger language plpgsql security definer set search_path = public as $$
-declare txt text; old_txt text; t text[];
+declare txt text := private.review_text(tg_table_name, to_jsonb(new)); prod boolean := tg_table_name = 'products';
 begin
-  if tg_table_name = 'posts' then txt := new.body; if tg_op = 'UPDATE' then old_txt := old.body; end if;
-  elsif tg_table_name = 'products' then txt := concat_ws(' ', new.name, new.description, new.price, new.moq, new.broker_for);
-    if tg_op = 'UPDATE' then old_txt := concat_ws(' ', old.name, old.description, old.price, old.moq, old.broker_for); end if;
-  else txt := concat_ws(' ', new.title, new.details, new.price, new.broker_for);
-    if tg_op = 'UPDATE' then old_txt := concat_ws(' ', old.title, old.details, old.price, old.broker_for); end if;
-  end if;
   if tg_op = 'UPDATE' then
     if current_setting('drugbox.hold_decision', true) = '1' then return new; end if;   -- held_review_decide() sets / clears it
     new.review_hold := old.review_hold;
-    if tg_table_name = 'products' and new.review_hold and new.status = 'active' and old.status <> 'active' then
-      raise exception 'This offer is waiting for Drugbox review — it shows again once it is checked' using errcode = '42501', hint = 'DX417';
+    if prod and new.review_hold then
+      if (to_jsonb(new) ->> 'status') = 'active' and (to_jsonb(old) ->> 'status') <> 'active' then
+        raise exception 'This offer is waiting for Drugbox review — it shows again once it is checked' using errcode = '42501', hint = 'DX417';
+      end if;
     end if;
-    if txt is not distinct from old_txt then return new; end if;
+    if txt is not distinct from private.review_text(tg_table_name, to_jsonb(old)) then return new; end if;
   else
     new.review_hold := false;
   end if;
   if new.review_hold then return new; end if;                                    -- already waiting: an edit keeps it waiting
   -- Drugbox's own team is not held (it posts as Drugbox and decides the queue); server writes (imports, fixtures) neither
-  if (auth.uid() is not null and exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('admin', 'moderator')))
-     or (auth.uid() is null) then return new; end if;
-  t := private.review_topics(txt);
-  if cardinality(t) > 0 then
+  if auth.uid() is null or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('admin', 'moderator')) then return new; end if;
+  if cardinality(private.review_topics(txt)) > 0 then
     new.review_hold := true;
-    if tg_table_name = 'products' and new.status = 'active' then new.status := 'paused'; end if;
+    if prod then
+      if (to_jsonb(new) ->> 'status') = 'active' then new := jsonb_populate_record(new, jsonb_build_object('status', 'paused')); end if;
+    end if;
   end if;
   return new;
 end $$;
@@ -157,18 +162,17 @@ grant execute on function public.review_hold_before() to authenticated, service_
 
 -- AFTER: the queue row and the author's notice (once per hold)
 create or replace function public.review_hold_after() returns trigger language plpgsql security definer set search_path = public as $$
-declare k text := case tg_table_name when 'posts' then 'post' when 'products' then 'offer' else 'listing' end; txt text; t text[]; ex text;
+declare k text := case tg_table_name when 'posts' then 'post' when 'products' then 'offer' else 'listing' end; j jsonb := to_jsonb(new); t text[]; ex text;
 begin
   if not new.review_hold or (tg_op = 'UPDATE' and old.review_hold) then return null; end if;
   if exists (select 1 from public.content_holds h where h.kind = k and h.item_id = new.id and h.status = 'held') then return null; end if;
-  if tg_table_name = 'posts' then txt := new.body; elsif tg_table_name = 'products' then txt := concat_ws(' — ', new.name, new.description);
-  else txt := concat_ws(' — ', new.title, new.details); end if;
-  t := private.review_topics(case when tg_table_name = 'products' then concat_ws(' ', new.name, new.description, new.price, new.moq, new.broker_for)
-                                   when tg_table_name = 'group_listings' then concat_ws(' ', new.title, new.details, new.price, new.broker_for) else new.body end);
-  ex := left(regexp_replace(coalesce(txt, ''), '\s+', ' ', 'g'), 200);
-  insert into public.content_holds (kind, item_id, user_id, topics, excerpt) values (k, new.id, new.user_id, t, ex);
+  t := private.review_topics(private.review_text(tg_table_name, j));
+  ex := left(regexp_replace(case tg_table_name when 'posts' then coalesce(j ->> 'body', '')
+                                               when 'products' then concat_ws(' — ', j ->> 'name', j ->> 'description')
+                                               else concat_ws(' — ', j ->> 'title', j ->> 'details') end, '\s+', ' ', 'g'), 200);
+  insert into public.content_holds (kind, item_id, user_id, topics, excerpt) values (k, new.id, (j ->> 'user_id')::uuid, t, ex);
   insert into public.notifications (user_id, type, from_user, message, data)
-  values (new.user_id, 'auto_review', null, null, jsonb_build_object('kind', k, 'topics', to_jsonb(t), 'excerpt', left(ex, 80) || case when char_length(ex) > 80 then '…' else '' end));
+  values ((j ->> 'user_id')::uuid, 'auto_review', null, null, jsonb_build_object('kind', k, 'topics', to_jsonb(t), 'excerpt', left(ex, 80) || case when char_length(ex) > 80 then '…' else '' end));
   return null;
 end $$;
 revoke all on function public.review_hold_after() from public, anon, authenticated, service_role;
