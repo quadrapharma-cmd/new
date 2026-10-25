@@ -416,7 +416,9 @@ select pg_temp.as_server(); select pg_temp.step('… K joins on the invitation',
 select pg_temp.ok('… and is no longer marked removed', $$not exists (select 1 from private.group_removals where group_id = pg_temp.id('g') and user_id = pg_temp.u(10))$$);
 -- F14 partner badge
 select pg_temp.act(8);
-select pg_temp.step('G renames the partner group', $$update public.groups set name = 'Drugbox Official Traders' where id = pg_temp.id('g')$$);
+select pg_temp.nohint('G cannot call the group Drugbox''s own (N12)', $$update public.groups set name = 'Drugbox Official Traders' where id = pg_temp.id('g')$$, 'DX437');
+select pg_temp.nohint('… nor describe it so', $$update public.groups set description = 'Official Drugbox group — run by Drugbox' where id = pg_temp.id('g')$$, 'DX437');
+select pg_temp.step('G renames the partner group', $$update public.groups set name = 'WT Traders Egypt' where id = pg_temp.id('g')$$);
 select pg_temp.ok('… the badge goes with the old name', $$(select partner_at is null from public.groups where id = pg_temp.id('g'))$$);
 select pg_temp.step('G asks again', $$select public.group_partner_request(pg_temp.id('g'), 'WT renamed, same traders as before')$$);
 select pg_temp.act(5);
@@ -432,11 +434,12 @@ select pg_temp.act(3); select pg_temp.step('C makes an invite link for the priva
 select pg_temp.act(2);
 select pg_temp.no('B (not invited) gets "not found" for the private group', $$select public.group_accept_rules(pg_temp.id('room'))$$, 'P0002');
 -- F8 codes per number across accounts
-select pg_temp.act(6); select pg_temp.step('three accounts ask a code for one number', $$select public.phone_verify_start('01211112222')$$);
-select pg_temp.act(7); select pg_temp.step('… second', $$select public.phone_verify_start('01211112222')$$);
-select pg_temp.act(10); select pg_temp.step('… third', $$select public.phone_verify_start('01211112222')$$);
-select pg_temp.act(5);
-select pg_temp.nohint('a fourth account gets no fourth SMS to that number this hour', $$select public.phone_verify_start('01211112222')$$, 'DX442');
+select pg_temp.act(6); select pg_temp.step('one account asks three codes for a number', $$select public.phone_verify_start('01211112222'); select public.phone_verify_start('01211112222'); select public.phone_verify_start('01211112222')$$);
+select pg_temp.nohint('… a fourth from that account waits (3 an hour)', $$select public.phone_verify_start('01211112222')$$, 'DX442');
+select pg_temp.act(5); select pg_temp.ok('… the number''s owner can still ask for a code (N8: one account does not lock a number out)', $$(public.phone_verify_start('01211112222') ->> 'sent')::boolean$$);
+select pg_temp.act(7); select pg_temp.step('another account asks two more', $$select public.phone_verify_start('01211112222'); select public.phone_verify_start('01211112222')$$);
+select pg_temp.act(10);
+select pg_temp.nohint('a number gets at most 6 codes a day across accounts', $$select public.phone_verify_start('01211112222')$$, 'DX442');
 -- F11 files in use
 select pg_temp.as_server();
 select pg_temp.ok('a broker''s authorisation and a report''s evidence are files in use', $$public.document_in_use('listings/' || pg_temp.u(1) || '/auth.pdf') and public.document_in_use((select evidence[1] from public.trader_reports order by id limit 1))$$);
@@ -455,6 +458,58 @@ select pg_temp.step('V edits the paused offer (fine)', $$update public.products 
 select pg_temp.as_server(); select pg_temp.step('the badge comes back', $$update public.companies set status = 'verified' where id = pg_temp.id('coV')$$);
 select pg_temp.act(4);
 select pg_temp.step('… and V resumes the offer', $$update public.products set status = 'active' where id = pg_temp.id('pco')$$);
+
+-- ══ 6d. the verifier's second round (0097) ══
+select pg_temp.as_server();
+select pg_temp.ok('rules v3: ordinary trade text the squashed rules held now passes', $$(select bool_and(cardinality(private.review_topics(x)) = 0) from unnest(array[
+  'What is the HS code in Egypt for paracetamol API?', 'Barcode in every carton per EDA rules', 'الأمور فين في تسجيل المستحضر؟', 'Contact Rita Lin, export manager',
+  'cap tag on each vial', 'Item code 7R-4M-4D-0L-3', 'Lot no. 1N3 45, code 1N3', 'مخدر للأسنان للمستشفيات', 'We need a distributor who can deliver to pharmacies across Delta',
+  'Market research: retail sales of antibiotics grew 12%', 'Opened box of HPMC 15 kg', 'Visit our site www.pharma-t.me.eg', 'Vitamin B12 1000 mcg, D3 50000 IU, zinc 15 mg',
+  'Training for pharmacists on GMP', 'WhatsApp Business API integration for orders']) x)$$);
+select pg_temp.ok('rules v3: the spellings round 2 missed are caught', $$(select bool_and(private.review_topics(x[1]) @> array[x[2]]) from (values
+  (array['lyr1ca 300', 'controlled']), (array['L y r i c a', 'controlled']), (array['ZANAX 1mg', 'controlled']), (array['بريجابلين ٧٥', 'controlled']),
+  (array['chat。whatsapp。com/AbC', 'invite']), (array['chat(dot)whatsapp(dot)com/AbC', 'invite']), (array['chat.whatsapp.c0m/AbC', 'invite']), (array['wa.me /2010', 'invite']),
+  (array['whatsapp.com /channel/abc', 'invite']), (array['telegram: @pharmatraders', 'invite']), (array['ابعتلي على الواتس وهضيفك للجروب', 'invite']),
+  (array['we deliver to your pharmacy', 'retail']), (array['sell to drugstores', 'retail']), (array['pharmacy orders welcome', 'retail']), (array['بنبيع للصيادلة', 'retail']),
+  (array['للصيادلة فقط بسعر الجمهور', 'retail']), (array['توصيل لحد الصيدلية', 'retail']), (array['fake documents', 'sham']), (array['forged COA', 'sham']),
+  (array['شهادات تحليل مزيفة', 'sham']), (array['فاتورة صورية', 'sham']), (array['we import under your name', 'import']), (array['we can import for you', 'import']),
+  (array['نستورد لحضرتك', 'import']), (array['بنستورد باسم شركتك', 'import'])) v(x))$$);
+select pg_temp.act(4);
+select pg_temp.step('V lists an offer whose documents list an invite link (N5)', $$with p as (insert into public.products (user_id, name, type, category, docs) values (pg_temp.u(4), 'WT Clean offer docs', 'supply', 'api', array['COA', 'chat.whatsapp.com/x']) returning id) insert into ids select 'pdoc', id::text from p$$);
+select pg_temp.ok('… held', $$(select review_hold from public.products where id = pg_temp.id('pdoc'))$$);
+-- N1/N2 a company without the badge
+select pg_temp.step('V posts an offer as the company that is held', $$with p as (insert into public.products (user_id, name, type, category, company_id, posted_as, description) values (pg_temp.u(4), 'WT Held company offer', 'supply', 'api', pg_temp.id('coV'), 'company', 'we deliver to pharmacies') returning id) insert into ids select 'phc', id::text from p$$);
+select pg_temp.as_server(); select pg_temp.step('Drugbox takes V''s badge back again', $$update public.companies set status = 'pending' where id = pg_temp.id('coV')$$);
+select pg_temp.act(4);
+select pg_temp.step('V closes the paused company offer', $$update public.products set status = 'closed' where id = pg_temp.id('pco')$$);
+select pg_temp.nohint('… and cannot renew it into a live one (N1)', $$select public.listing_renew(pg_temp.id('pco'))$$, 'DX412');
+select pg_temp.act(5);
+select pg_temp.ok('a moderator publishes it (N2)', $$public.held_review_decide((select id from public.content_holds where kind = 'offer' and item_id = pg_temp.id('phc')), true) = 'published'$$);
+select pg_temp.as_server();
+select pg_temp.ok('… the hold goes; the offer stays paused while the badge is gone', $$(select not review_hold and status = 'paused' from public.products where id = pg_temp.id('phc'))$$);
+select pg_temp.as_server(); select pg_temp.step('V verified again', $$update public.companies set status = 'verified' where id = pg_temp.id('coV')$$);
+-- N3 a member who leaves the company
+select pg_temp.step('W (J) joins V''s company and posts as it', $$insert into public.company_members (company_id, user_id, role, accepted) values (pg_temp.id('coV'), pg_temp.u(9), 'sales', true);
+  insert into public.trade_profiles (user_id, role, governorate, sells) values (pg_temp.u(9), 'distributor', 'Cairo', 'APIs') on conflict do nothing$$);
+select pg_temp.act(9);
+select pg_temp.step('J posts as the company', $$with p as (insert into public.products (user_id, name, type, category, company_id, posted_as) values (pg_temp.u(9), 'WT Mannitol 25 kg', 'supply', 'api', pg_temp.id('coV'), 'company') returning id) insert into ids select 'pw', id::text from p$$);
+select pg_temp.act(4);
+select pg_temp.step('V removes J from the company', $$delete from public.company_members where company_id = pg_temp.id('coV') and user_id = pg_temp.u(9)$$);
+select pg_temp.ok('… J''s company offer is paused and V is told', $$(select status from public.products where id = pg_temp.id('pw')) = 'paused'$$);
+select pg_temp.act(9);
+select pg_temp.nohint('J cannot edit the company''s offer any more', $$update public.products set price = 'EGP 1 per kg' where id = pg_temp.id('pw')$$, 'DX419');
+select pg_temp.act(4);
+select pg_temp.step('V (the owner) deletes it', $$delete from public.products where id = pg_temp.id('pw')$$);
+select pg_temp.as_server(); select pg_temp.ok('… gone', $$not exists (select 1 from public.products where id = pg_temp.id('pw'))$$);
+select pg_temp.act(4);
+-- N9 a removed member and a public group
+select pg_temp.act(8); select pg_temp.step('G removes K again', $$delete from public.group_members where group_id = pg_temp.id('g') and user_id = pg_temp.u(10)$$);
+select pg_temp.step('G turns rules off (so only the removal stops K)', $$update public.groups set rules_required = false where id = pg_temp.id('g')$$);
+select pg_temp.act(10);
+select pg_temp.nohint('K does not rejoin the public group by himself (N9)', $$insert into public.group_members (group_id, user_id) values (pg_temp.id('g'), pg_temp.u(10))$$, 'DX429');
+select pg_temp.as_server(); select pg_temp.ok('… the removal stays', $$exists (select 1 from private.group_removals where group_id = pg_temp.id('g') and user_id = pg_temp.u(10))$$);
+-- N11 Arabic-Indic digits
+select pg_temp.ok('٥٠٠ and ٢٠٠ are different posts', $$private.dup_key('مطلوب أموكسيسيلين ٥٠٠ كجم') <> private.dup_key('مطلوب أموكسيسيلين ٢٠٠ كجم') and private.dup_key('Lactose 200 kg ') = private.dup_key('lactose, 200 kg.')$$);
 
 -- ══ 7. anon ══
 select pg_temp.as_anon();

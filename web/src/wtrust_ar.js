@@ -3,6 +3,7 @@
   if (!window.dxI18nExtend) return;
   var WHY_AR = { 'a sale to patients, pharmacies or the public (Drugbox is business-to-business)': 'بيع للمرضى أو الصيدليات أو الجمهور (Drugbox تجارة بين الشركات والمنشآت)',
     'controlled substances': 'مواد خاضعة للرقابة (أدوية الجدول)', 'importing for others': 'استيراد لحساب الغير', 'sham or forged papers': 'أوراق صورية أو مزورة', 'an invite link to an outside group': 'لينك دعوة لجروب خارجي' };
+  var WHY_DICT = {}; Object.keys(WHY_AR).forEach(function (k) { WHY_DICT[k] = WHY_AR[k]; }); window.dxI18nExtend(WHY_DICT);   /* each reason on its own (the held-post banner) */
   function whyAr(s) { return String(s || '').split(', ').map(function (x) { return WHY_AR[x] || x; }).join('، '); }
   var KIND_AR = { post: 'منشورك', offer: 'عرضك', 'deal-room listing': 'إعلانك في غرفة الصفقات', 'company listing': 'إعلان شركتك' };
   var REASON_AR = { 'did not pay': 'لم يدفع', 'did not deliver': 'لم يسلّم', 'counterfeit or not as agreed': 'بضاعة مغشوشة أو غير المتفق عليه', 'not who they said they were': 'ليس من قال إنه هو', 'sham or forged papers': 'أوراق صورية أو مزورة', 'something else': 'شيء آخر', other: 'شيء آخر' };
@@ -164,4 +165,57 @@
     'The group\'s admins removed you from this group — ask them to add you again': 'أدمن الجروب شالوك منه — اطلب منهم يضيفوك تاني',
     'Your listing is live': 'إعلانك منشور الآن'
   });
+})();
+/* ===== AREA w-trust: the database's refusals (0090–0097, and the deal-room / marketplace answers they lean on) in Arabic ===== */
+(function () {
+  if (!window.dxI18nExtend) return;
+  window.dxI18nExtend({
+    'A Drugbox offer is not a company\'s offer': 'عرض Drugbox مش عرض شركة',
+    'A link lasts 1 to 365 days': 'اللينك يفضل من يوم لـ 365 يوم',
+    'An offer keeps its author': 'العرض بيفضل باسم اللي نشره',
+    'Choose 1 to 5 stars': 'اختار من نجمة لـ 5 نجوم',
+    'Join the group to answer its listings': 'انضم للجروب علشان ترد على إعلاناته',
+    'Only Drugbox\'s team names or describes a group as Drugbox\'s own — ask for the partner badge instead': 'فريق Drugbox بس هو اللي يسمّي أو يوصف جروب إنه تابع لـ Drugbox — اطلب شارة الجروب الشريك بدل كده',
+    'Only the Drugbox team can do this': 'فريق Drugbox بس اللي يقدر يعمل ده',
+    'Only the group\'s admins ask for this': 'أدمن الجروب بس اللي يطلبوا ده',
+    'Only the group\'s admins decide': 'أدمن الجروب بس اللي يقرروا',
+    'Only the group\'s admins stop invite links': 'أدمن الجروب بس اللي يوقفوا لينكات الدعوة',
+    'Post not found': 'المنشور مش موجود',
+    'Quote on behalf of a company you belong to — create or claim your company page first': 'ابعت عرض السعر باسم شركة إنت فيها — اعمل صفحة شركتك أو اطلبها الأول',
+    'Request not found': 'الطلب مش موجود',
+    'Sign in first': 'سجّل الدخول الأول',
+    'This buyer has no company page yet — message them instead': 'المشتري ده لسه معندوش صفحة شركة — ابعتله رسالة بدل كده',
+    'This group is already a Drugbox partner group': 'الجروب ده جروب شريك لـ Drugbox بالفعل',
+    'This group is archived': 'الجروب ده متأرشف',
+    'This group is not a partner group': 'الجروب ده مش جروب شريك',
+    'This is your own request': 'ده طلبك إنت',
+    'This item is not in the queue': 'العنصر ده مش في قائمة المراجعة',
+    'This listing has no company page — message its author instead': 'الإعلان ده مالوش صفحة شركة — ابعت رسالة لصاحبه بدل كده',
+    'This listing is closed': 'الإعلان ده اتقفل',
+    'This listing is no longer available': 'الإعلان ده مبقاش متاح',
+    'This listing is not available any more': 'الإعلان ده مبقاش متاح',
+    'This member is not on Drugbox': 'العضو ده مش على Drugbox',
+    'This post was already decided': 'المنشور ده اتقرر فيه بالفعل',
+    'This report is not about you': 'البلاغ ده مش عنك',
+    'This report is not in the queue': 'البلاغ ده مش في قائمة المراجعة',
+    'This request is not open any more': 'الطلب ده مبقاش مفتوح',
+    'Too many actions in one hour — please try again later': 'عمليات كتير في ساعة واحدة — حاول تاني بعدين',
+    'Uphold or dismiss': 'أكّد البلاغ أو ارفضه',
+    'Upload your files first (at most 5)': 'ارفع ملفاتك الأول (5 بالكتير)',
+    'Write a message': 'اكتب رسالة',
+    'You already answered this listing — follow it in your Deals': 'إنت رديت على الإعلان ده قبل كده — تابعه في صفقاتك',
+    'You are no longer on this company\'s team — its offers are managed by the company': 'إنت مبقتش في فريق الشركة دي — عروضها بتديرها الشركة',
+    'You can name only a deal you are part of': 'تقدر تذكر صفقة إنت طرف فيها بس',
+    'You cannot message this member': 'مش ممكن تبعت رسالة للعضو ده',
+    'You cannot quote to your own company': 'مش ممكن تبعت عرض سعر لشركتك',
+    'Your account is suspended': 'حسابك موقوف',
+    'Your company has already quoted on this request — revise it in Requests & deals': 'شركتك بعتت عرض سعر على الطلب ده قبل كده — عدّله من الطلبات والصفقات',
+    'Your company is suspended and cannot send quotes': 'شركتك موقوفة ومش ممكن تبعت عروض أسعار',
+    'Drugbox withdrew the partner badge': 'Drugbox سحب شارة الجروب الشريك'
+  });
+  window.dxI18nExtend({}, [
+    [/^Already decided by (.+) \((.+)\)$/, function (m) { return 'اتقرر بالفعل — ' + m[1] + ' (' + m[2] + ')'; }],
+    [/^Already decided \((.+)\)$/, function (m) { return 'اتقرر بالفعل (' + m[1] + ')'; }],
+    [/^The member has until (.+) to reply — decide after their reply$/, function (m) { return 'العضو قدامه لحد ' + m[1] + ' علشان يرد — قرّر بعد رده'; }]
+  ]);
 })();

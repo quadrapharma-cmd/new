@@ -185,7 +185,7 @@
   function markHeld() {
     heldList().then(function (l) {
       l.forEach(function (h) {
-        if (h.kind === 'post') { var el = $('post-' + h.item); if (el && !el.querySelector('.wt-held')) el.insertAdjacentHTML('afterbegin', '<div class="wt-held">⏳ Waiting for Drugbox review — only you can see this post' + (h.topics && h.topics.length ? ' · <span>it looks like</span> <span>' + esc(UI.why(h.topics)) + '</span>' : '') + '</div>'); }
+        if (h.kind === 'post') { var el = $('post-' + h.item); if (el && !el.querySelector('.wt-held')) el.insertAdjacentHTML('afterbegin', '<div class="wt-held"><span>⏳ Waiting for Drugbox review — only you can see this post</span>' + (h.topics && h.topics.length ? ' · <span>it looks like</span> ' + h.topics.map(function (x) { return '<span>' + esc(UI.why([x])) + '</span>'; }).join(', ') : '') + '</div>'); }
         if (h.kind === 'offer') { var row = document.querySelector('#tab-manage [data-ml="' + h.item + '"]'), card = document.querySelector('#mkx [data-live="p' + h.item + '"]');
           if (row && !row.querySelector('.wt-held')) row.children[1] && row.children[1].insertAdjacentHTML('beforeend', '<div class="wt-held wt-held-s">⏳ Waiting for Drugbox review</div>');
           if (card) heldOnCard(card); }

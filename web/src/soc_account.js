@@ -139,6 +139,7 @@
     A().forgot(e).then(function (r) {
       msg('fpOk', 'If an account exists for this email, we sent it a link to choose a new password. Check your inbox and spam folder.' +
         (r && r.demo ? ' (Demo: no email is sent here — password reset works in the live app.)' : ''));
+      var f = $('fpEmail'); if (f) f.value = '';   /* AREA w-trust (SIM-01): the address is not kept once the link is asked for */
     }, function (err) { msg('fpErr', (err && err.message) || 'Could not send the link — please try again'); })
       .then(function () { b.disabled = false; b.removeAttribute('aria-busy'); });
   }

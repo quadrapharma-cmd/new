@@ -178,6 +178,9 @@ drop function if exists public.open_candidates(int);   -- 0065 made it RETURNS T
 \ir ../migrations/0092_trader_reports.sql
 \ir ../migrations/0093_member_identity.sql
 \ir ../migrations/0094_group_tools.sql
+\ir ../migrations/0095_trust_followups.sql
+\ir ../migrations/0096_trust_followups_2.sql
+\ir ../migrations/0097_trust_followups_3.sql
 select pg_temp.as_server();
 create temp table priv_after as select pg_temp.privs() as p;
 select pg_temp.ok('grants: 0026 alone restores every privilege of anon, authenticated and service_role exactly (effective rights + ACL entries)',
