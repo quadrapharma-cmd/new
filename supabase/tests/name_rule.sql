@@ -18,13 +18,13 @@ set client_min_messages = warning;
 \o /dev/null
 begin;
 create temp table r (n serial, name text, ok boolean, err text);
-create temp table app (cp int, place text, norm text, problem text, skel text, nf text, nd text, msg text);
+create temp table app (cp int, place text, norm text, problem text, skel text, nf text, nd text, msg text, sound text);
 \set ON_ERROR_STOP on
 \copy app from program 'node tools/names/name_rule.mjs --expect'
 \set ON_ERROR_STOP off
 create temp table got as
   select a.*, d.s, public.person_name_norm(d.s) as db_norm, public.person_name_problem(public.person_name_norm(d.s)) as db_problem, public.person_name_key(d.s) as db_skel,
-         case when a.problem <> '' and a.place in ('w', 's') then public.person_name_message(d.s, a.problem) else '' end as db_msg,
+         case when a.problem <> '' and a.place in ('w', 's') then public.person_name_message(d.s, a.problem) else '' end as db_msg, public.person_name_sound(d.s) as db_sound,
          normalize(chr(a.cp), NFKC) is distinct from a.nf or normalize(chr(a.cp), NFD) is distinct from a.nd as skew
     from app a cross join lateral (select case a.place when 'w' then 'Ab' || chr(a.cp) || 'ab' when 's' then 'Ab ' || chr(a.cp) || ' ab'
                                                      when 'b' then chr(a.cp) || 'ab' else 'بب' || chr(a.cp) || 'بب' end as s) d;
@@ -41,18 +41,22 @@ insert into r(name, ok, err) select 'database = app: the skeleton, for every cod
 insert into r(name, ok, err) select 'database = app: the message (the character as typed, the word), for every code point refused', count(*) = 0,
        count(*) || ' differ, e.g. ' || string_agg(format('U+%s/%s db=%s app=%s', upper(to_hex(cp)), place, db_msg, msg), '; ') filter (where rn <= 6)
   from (select *, row_number() over () rn from got where not skew and db_msg is distinct from msg) d;
+insert into r(name, ok, err) select 'database = app: the sound key (ninth version, search only), for every code point', count(*) = 0,
+       count(*) || ' differ, e.g. ' || string_agg(format('U+%s/%s db=%s app=%s', upper(to_hex(cp)), place, db_sound, sound), '; ') filter (where rn <= 6)
+  from (select *, row_number() over () rn from got where not skew and db_sound is distinct from sound) d;
 insert into r(name, ok, err) select 'few code points normalise differently in Node and PostgreSQL (newer Unicode)', count(distinct cp) < 400, count(distinct cp)::text from got where skew;
 -- every string the verifiers used in rounds 1-4 (fifth version; round 4 added 10,000+ whole-name variants and the bold-weight letters): the database = the app, and an allowed name holds no combining mark
-create temp table vs (s text, norm text, problem text, skel text, msg text, hasmark boolean);
+create temp table vs (s text, norm text, problem text, skel text, msg text, hasmark boolean, sound text);
 \set ON_ERROR_STOP on
 \copy vs from program 'node tools/names/name_rule.mjs --strings supabase/tests/name_rule_strings.txt'
 \set ON_ERROR_STOP off
 create temp table vgot as select v.*, public.person_name_norm(v.s) as db_norm, public.person_name_problem(public.person_name_norm(v.s)) as db_problem,
-       public.person_name_key(v.s) as db_skel, case when v.problem <> '' then public.person_name_message(v.s, v.problem) else '' end as db_msg from vs v;
+       public.person_name_key(v.s) as db_skel, case when v.problem <> '' then public.person_name_message(v.s, v.problem) else '' end as db_msg,
+       public.person_name_sound(v.s) as db_sound from vs v;
 insert into r(name, ok, err) select 'the verifiers'' strings of rounds 1-4 were loaded', count(*) >= 12000, count(*)::text from vs;
 insert into r(name, ok, err) select 'database = app for every string the verifiers used (normalised name, reason, skeleton, message)', count(*) = 0,
        count(*) || ' differ, e.g. ' || string_agg(format('%s: db=%s/%s app=%s/%s', s, db_norm, db_problem, norm, problem), '; ') filter (where rn <= 6)
-  from (select *, row_number() over () rn from vgot where db_norm <> norm or db_problem <> problem or db_skel <> skel or db_msg is distinct from msg) d;
+  from (select *, row_number() over () rn from vgot where db_norm <> norm or db_problem <> problem or db_skel <> skel or db_msg is distinct from msg or db_sound is distinct from sound) d;
 insert into r(name, ok, err) select 'no allowed name keeps a combining mark (accents are one character, Arabic diacritics are removed)', count(*) = 0, string_agg(s, ' | ')
   from vgot where problem = '' and hasmark;
 insert into r(name, ok, err) select 'no allowed name keeps an Arabic diacritic (vowel mark, tanween, shadda, sukun, superscript alef, Quranic mark)', count(*) = 0, string_agg(s, ' | ')
