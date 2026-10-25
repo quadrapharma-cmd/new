@@ -29,3 +29,12 @@ Baseline at f7dc703: parity vs web/reference/demo-approved.html already FAILS (t
   deleted; visitors got address/location/website; SEO meta JS-only; founder dialog twice), 9 minor — all fixed, regression checks added
   (growth_channels 67/67, growth_members 101/101 on a fresh DB). SEO: /c/<slug> server page (deploy/share/company.js → live api/company.js,
   vercel.json rewrite, gateway route); live share links use /c/<slug>.
+- Verifier round 2: 3 major (channel posts deleted with the publishing admin's account; the admin named by the API author embed and
+  told of removals; visitors saw a verified company as "Not verified"), 4 minor (browser dictionary, ended sessions under Upcoming,
+  expert member for good / answers on hidden questions / restore lost tags, Arabic leftovers). Fixed in 0105 (Drugbox posts have no
+  member author: posts.user_id null + as_drugbox, constraint posts_author_or_drugbox, channel_schedule.published_by; notices to nobody
+  dropped; registry «•••» for visitors; ماشية → الماشية/للماشية; expert_sessions_list.ended; expert member set per save; expert answers
+  only visible questions until a week after) and the interface (SYS_UID author, Arabic channel names via i18n, «نص المنشور», import
+  label, one banner for non-members). growth_channels 75/75, growth_members 107/107, SQL 31/31 + sweep, migration_check OK (73).
+  Growth journeys: demo EN/AR × 1440/390 + live EN/AR all pass (two cross-run races in the journeys fixed: W04 counts this session's
+  notice; W02 live runs one config at a time when two share a segment quota). Build deterministic 867c11d19241ddff, reference refreshed.
