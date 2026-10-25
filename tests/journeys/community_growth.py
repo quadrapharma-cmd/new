@@ -8,7 +8,7 @@ from _biz import ui_ok, dlg_open, dlg_click, fill_by_label
 from _growth import staff, admin_tab, cairo_slot
 
 from _growth import T
-CH_AR = {}   # a channel's name is a name (Drugbox News …) — it reads the same in Arabic
+CH_AR = {'Drugbox News': 'Drugbox أخبار', 'Drugbox Jobs': 'Drugbox وظائف', 'Drugbox Regulatory': 'Drugbox تسجيل ورقابة', 'Drugbox Market': 'Drugbox السوق'}   # groups.name_ar (0100)
 
 
 
@@ -19,7 +19,7 @@ def seed_channel_post(j, admin_id, channel, body, thera='{}'):
     return j.sql1("select private.channel_publish(%s)" % sid)
 
 def channel_card(j, pg, en):
-    title = CH_AR.get(en, en)
+    title = CH_AR.get(en, en) if j.ar else en
     c = pg.locator('#content .gcard').filter(has=pg.locator('.gcard-title', has_text=title))
     j.check(c.count(), 'no card for the channel "%s" (cards: %s)' % (title, ', '.join(pg.evaluate("[...document.querySelectorAll('#content .gcard-title')].map(e=>e.innerText)"))[:300]))
     return c.first, title
@@ -54,6 +54,7 @@ def official_channels(j):
         nm = post.locator('.post-name').inner_text()
         j.check(nm.startswith('Drugbox') and re.search(T(j, r'Official', r'رسمي'), nm), 'the post does not read as Drugbox ✓ Official (author: %s)' % nm)
         if j.live: j.check(adm['name'] not in post.inner_text(), "the Drugbox post shows the admin's own name — it must read as Drugbox")
+        if j.live: j.check(j.sql1("select (user_id is null and as_drugbox)::text from public.posts where id=%s" % pid) == 'true', 'the channel post is stored with a member as its author (0105: Drugbox posts have none)')
         j.check(not post.locator('.post-name[onclick], .post-av[onclick]').count(), 'the Drugbox author still opens a member profile')
         ui_ok(j, pg, 'inside a channel')
     with j.step('React to the Drugbox post (members comment and react)'):
@@ -214,7 +215,7 @@ def ask_an_expert(j):
         if j.live:
             sid = j.wait_db("select id from public.expert_sessions where title like '%%%s'" % tag, 6); j.check(sid, 'no expert_sessions row')
             j.check(j.sql1("select to_char(starts_at at time zone 'Africa/Cairo','YYYY-MM-DD HH24:MI') from public.expert_sessions where id=%s" % sid) == when[:10] + ' 20:00', 'the session is not at 20:00 Cairo')
-            j.check(j.wait_db("select count(*) from public.notifications where user_id='%s' and type='expert_session'" % me['id'], 6) == '1', 'the member who asked was not told')
+            j.check(j.wait_db("select count(*) from public.notifications where user_id='%s' and type='expert_session' and data->>'session'='%s'" % (me['id'], sid), 6) == '1', 'the member who asked was not told (once, about this session)')
     with j.step('The member registers and asks the expert a question'):
         if j.live: j.reload(pg)
         experts(pg)

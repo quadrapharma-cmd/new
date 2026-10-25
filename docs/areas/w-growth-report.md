@@ -1,6 +1,6 @@
 # Area report — w-growth (growth plan and the owner's pending decisions)
 
-Branch `claude/w-growth` (from `claude/integ` f7dc703) · migrations **0100–0104** · running log `docs/areas/w-growth-progress.md`.
+Branch `claude/w-growth` (from `claude/integ` f7dc703) · migrations **0100–0105** · running log `docs/areas/w-growth-progress.md`.
 Interface: `web/src/growth.js` + `growth.css` (demo behaviour and all drawing), live services `web/src/live/growth.js`, one block
 "AREA w-growth" at the end of `web/src/live/adapter.js`, three small hooks in `web/src/groups.js`.
 
@@ -67,20 +67,36 @@ Independent verification: see §3.
   "Is this still your specialty?" (the sign-up list + "Other…"); Save records the answer (`member_prompts`), "Ask me later" does not.
   New accounts chose their specialty themselves and are not asked.
 
-## 2. Migrations (0100–0104)
+## 2. Migrations (0100–0105)
 | Migration | Content | Test |
 |---|---|---|
-| 0100_official_channels | groups.official/channel_key/name_ar/description_ar/thera + guards; posts.as_drugbox/thera; products.thera; thera dictionary; channel_templates, channel_schedule + RPCs; feed_thera, market_search_thera; growth_tick + pg_cron | growth_channels.rls.sql 63/63 |
+| 0100_official_channels | groups.official/channel_key/name_ar/description_ar/thera + guards; posts.as_drugbox/thera; products.thera; thera dictionary; channel_templates, channel_schedule + RPCs; feed_thera, market_search_thera; growth_tick + pg_cron | growth_channels.rls.sql |
 | 0101_founding_members | founder_segments, founder_invites (hash), founder_members, attempts; create/revoke/quota/overview/list/peek/redeem/apply_vip/my_founder | growth_members.rls.sql §1 |
 | 0102_expert_sessions | expert_topics/requests/sessions/registrations/questions + RPCs; reminders in growth_tick | growth_members.rls.sql §2 |
 | 0103_public_company_pages | public_directory_page, public_company, public_company_sites/certs, public_sites_for, public_company_meta (anon, public fields only) | growth_members.rls.sql §3 |
-| 0104_courses_ar_specialty | training_courses.title_ar/description_ar (6 courses); member_prompts; specialty_prompt_due/answer | growth_members.rls.sql §4 (96/96 in all) |
+| 0104_courses_ar_specialty | training_courses.title_ar/description_ar (6 courses); member_prompts; specialty_prompt_due/answer | growth_members.rls.sql §4 |
+| 0105_growth_fixes | the second verifier round: channel posts without a member author (posts.user_id null + as_drugbox, channel_schedule.published_by), notices to nobody dropped, admin_delete/restore_post keep a Drugbox post Drugbox's with its tags, visitors' registry «•••», dictionary (ماشية), expert sessions (ended, expert member, answer limits) | growth_channels 75/75, growth_members 107/107 |
 
 Every table, sequence and function grants its own privileges; every table has RLS with policies; every migration ends with
 `notify pgrst`; re-run safe (`tools/migration_check.py` OK); `schema_sweep.sql` six × none.
 
 ## 3. Independent verification
-(filled in below)
+Two rounds by an independent verifier agent (it read the code and attacked the running stack through the API and the browser, EN/AR,
+1440/390; it edited no code).
+- **Round 1** — 1 critical (the meeting link was given to every member when a session had no expert member: a NULL in
+  `expert_session_link`), 6 major (a restored channel post lost `as_drugbox`; channel posts showed the publishing admin on Saved and in
+  notices and kept the former admin's own-post rights; a founder invitation reopened after the founder's account was deleted; visitors
+  received the address / location / website; the SEO tags were set only by script; the founder dialog showed twice), 9 minor (Cairo time
+  of "Publish now", registration after the start, moving a session into the past, dictionary false positives, the Home filter's paging,
+  Arabic leftovers …). All fixed, each with a regression check.
+- **Round 2** — the 14 round-1 items confirmed fixed except two partial ones, plus 3 major and 4 minor new findings:
+  (1) deleting the publishing admin's account deleted Drugbox's channel posts (cascade); (2) the API embed of a channel post's author still
+  named the admin, and the admin got "removed / restored your post" notices; (3) a verified company read "Not verified" to visitors
+  (registry stripped); (4) the browser's dictionary still had `hmg` / `كيماوي`, and «الأمور ماشية» was tagged veterinary; (5) a session past
+  its end stayed under Upcoming as "Happening now"; (6) an expert member could not be removed and could answer hidden questions for good;
+  restore lost the tags; (7) Arabic leftovers (channel names and descriptions, the «انشر» column header, the import label, two banners for
+  non-members). **All fixed in 0105 and the interface** — a Drugbox post now has no member author at all, so neither a deletion nor an
+  embed can reach an admin; regression checks in `growth_channels.rls.sql` §6 and `growth_members.rls.sql` (marked 0105).
 
 ## 4. Interface changes for the owner's approval (EN + AR, 1440 + 390)
 - **Groups:** four official channel cards with "✓ Drugbox official" (priority-badge slot) and an "OFFICIAL" tag; inside a channel the
@@ -96,7 +112,7 @@ Every table, sequence and function grants its own privileges; every table has RL
 - **Sign-in page:** "🏭 Browse the company directory without signing in" link; the **visitor bar** on top of the directory (All
   companies / Sign in / Join Drugbox); for visitors the member navigation is hidden.
 - **Arabic:** new labels in the interface's own (formal) register with the trade's words for the new things — «مطلوب النهارده»،
-  «نواقص الأسبوع»، سوق الوكالات، ملف تسجيل، التصنيع لدى الغير; the six course titles in Arabic. Channel names stay "Drugbox News…".
+  «نواقص الأسبوع»، سوق الوكالات، ملف تسجيل، التصنيع لدى الغير; the six course titles in Arabic; the channels' Arabic names and descriptions («Drugbox أخبار»، «Drugbox وظائف»، «Drugbox تسجيل ورقابة»، «Drugbox السوق»).
 
 ## 5. Suites
 (filled in below)
@@ -118,3 +134,6 @@ Every table, sequence and function grants its own privileges; every table has RL
   with the Drugbox sender; `private.can_post_in_group` (0061) now refuses official channels; the schema sweep and
   `security_core.rls.sql` F-27 name the six `public_*` functions; `launch_readiness.rls.sql` re-applies 0100–0104;
   `tests/journeys/business_directory.py` J-02/J-04 visitor steps enter through the sign-in page's directory link.
+  `web/src/i18n.js`: an official channel's card title and description are translated (the SKIP list skips only other groups' cards).
+  `posts.user_id` is now nullable (only for `as_drugbox` posts — constraint `posts_author_or_drugbox`): code elsewhere that reads a post's
+  author must allow none (all suites, the 150 journeys and the crawler were run on it).
