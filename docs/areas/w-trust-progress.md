@@ -19,3 +19,7 @@ Live code in delimited blocks `/* ===== AREA w-trust: <feature> ===== */`. Repor
   soc_account.js (SIM-01), build.py (layers).
 - Journeys: business_wtrust.py (W10, W16, W25, W19), community_wtrust.py (W08, W44, W17, W19), social_wtrust.py (W20), J-SOCIAL-04 strengthened.
   All pass demo EN 1440 + live EN 1440 (first round). Next: all configs, other suites, verifier.
+- Round 2: all w-trust journeys pass demo EN/AR 1440/390 + live EN/AR 1440. run_all sql/sweep/demo/legacy/stress green after: demo groups_test fills the
+  trade profile; deal-room chips in their own row. e2e green after c3/d1 preconditions and name_paths catalog. sms-dispatch + e2e w_sms_test 16/16.
+  Company surplus / dossier ask for the badge + trade profile first. Independent verifier launched (brief: /tmp/claude-0/sc/verifier_brief.md —
+  copy kept below if the container restarts). Scale DB drugbox_scale being seeded (tools/scale/seed_100k.sql) for timings.py.
