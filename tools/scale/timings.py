@@ -86,6 +86,20 @@ def queries(ctx):
         ('profile_counts', "select public.profile_counts('%s')" % me),
         ('home_faces', wrap("select id, avatar_url from public.profiles where avatar_url is not null order by created_at desc limit 6")),
     ]
+    # S-03 (0039_names_rule_9 + 0070_usernames): the ✎ New message picker's search (adapter nmSearch — two reads per typed text: every
+    # member whose search key IS the typed name's, oldest first, up to 30; and the members whose name, search key or sound key holds
+    # it, or whose @username starts with it, 12) and the resolver's read of an exact @username (nmResolve)
+    pcols = 'x.id, x.name, x.headline, x.company, x.location, x.verified, x.avatar_url, x.name_needs_fix, x.name_key, x.created_at, x.username'
+    def like(v): return v.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_').replace("'", "''")
+    for tag, t in ctx['picker'].items():
+        if t['key']:
+            q.append(('picker_%s_exact' % tag, wrap("select %s from public.profiles x where x.name_key = '%s' and x.id <> '%s' order by x.created_at, x.id limit 30"
+                                                    % (pcols, t['key'].replace("'", "''"), me))))
+        ors = ([] if t['at'] else ["x.name ilike '%%%s%%'" % like(t['norm'])]) + (["x.name_key like '%%%s%%'" % like(t['key'])] if t['key'] else []) \
+            + (["x.name_sound like '%%%s%%'" % like(t['sound'])] if len(t['sound']) > 2 else []) + (["x.username_key like '%s%%'" % like(t['ukey'])] if len(t['ukey']) > 1 else [])
+        q.append(('picker_%s_search' % tag, wrap("select %s from public.profiles x where (%s) and x.id <> '%s' order by x.created_at, x.id limit 12" % (pcols, ' or '.join(ors), me))))
+    q.append(('picker_resolve_username', wrap("select %s from public.profiles x where x.username_key = public.username_key('%s') and x.id <> '%s' limit 2"
+                                              % (pcols, ctx['some_username'], me))))
     return q
 
 
@@ -114,7 +128,13 @@ def context(db, n, explicit_uuid):
         'notif_after', coalesce((select max(id) - 30 from public.notifications where user_id = '{me}'), 0),
         'msg_after', coalesce((select max(id) - 20 from public.messages where receiver_id = '{me}'), 0),
         'dir_offset', greatest(((select count(*) from public.companies) / 2 / 100) * 100, 0),
-        'review_ids', (select string_agg(quote_literal(reviewee::text), ',') from (select distinct reviewee from public.job_reviews where reviewee_role = 'employer' limit 60) r))
+        'review_ids', (select string_agg(quote_literal(reviewee::text), ',') from (select distinct reviewee from public.job_reviews where reviewee_role = 'employer' limit 60) r),
+        'some_username', (select username from public.profiles where username is not null order by created_at desc limit 1),
+        'picker', (select json_object_agg(tag, json_build_object('at', left(t, 1) = '@', 'norm', public.person_name_norm(t),
+                     'key', case when left(t, 1) = '@' then '' else public.person_name_key(t) end, 'sound', case when left(t, 1) = '@' then '' else public.person_name_sound(t) end,
+                     'ukey', public.username_key(regexp_replace(regexp_replace(t, '^@', ''), '[^A-Za-z0-9.]', '', 'g'))))
+                   from (values ('ar_first', 'محمد'), ('ar_full', 'محمد ابراهيم'), ('lat_first', 'Moh'), ('lat_full', 'Mohamed Hassan'), ('lat_sound', 'Mohammed Hasan'),
+                                ('at_prefix', '@mohamed.h'), ('rare', 'Zzyzx Qwerty')) v(tag, t)))
     """
     code, out, err = psql(db, sql)
     if code: sys.exit('context query failed: ' + err.strip())

@@ -2,8 +2,11 @@
 # a-z 0-9, one side a single character. The fold writes the single character as the other side, so the two can never both be taken
 # («ahmed» and «ahrned» are one username). confusables.txt gives 0 / o, 1 / l, I / l and m / rn for ASCII; the lines below are the
 # owner's (25 Oct: «0/o, 1/l/i, rn/m, vv/w, cl/d») and what tools/names/render_scan.py --part usernames --write finds in the app's
-# fonts (Poppins, system-ui; 12-16 px; 400-700). The scan fails while it finds a pair the fold keys apart.
+# fonts (where the app draws a username: Poppins 400-700 at 11-16 px, the picker's system-ui and the sans-serif system
+# fonts at 400, 12-16 px — one full stop of the same font apart). The scan fails while it finds a pair the fold keys apart.
 # owner, 25 Oct
 l ; i
 vv ; w
 cl ; d
+# tools/names/render_scan.py --part usernames, 25 Oct: «ri» draws as «n» in Liberation Sans (Arial's metrics) at 12 px, 0.85 of a full stop
+n ; ri

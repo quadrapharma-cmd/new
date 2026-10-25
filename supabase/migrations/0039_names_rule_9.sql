@@ -223,11 +223,12 @@ drop trigger if exists trg_profiles_clean_name on public.profiles;
 create trigger trg_profiles_clean_name before insert or update on public.profiles
   for each row execute function public.profiles_clean_name();
 -- the ✎ picker searches by substring of the skeleton and of the sound key, oldest member first (S-03 fix 9): trigram indexes, as the
--- company directory has (0001); created_at orders the members of one skeleton
+-- company directory has (0001); created_at orders the members of one search key
 create index if not exists idx_profiles_name_key_trgm on public.profiles using gin (name_key gin_trgm_ops);
 create index if not exists idx_profiles_name_sound_trgm on public.profiles using gin (name_sound gin_trgm_ops);
 create index if not exists idx_profiles_name_trgm on public.profiles using gin (name gin_trgm_ops);
 create index if not exists idx_profiles_name_key_created on public.profiles (name_key, created_at, id);
+drop index if exists public.idx_profiles_name_key;   -- 0038's (name_key): the index above leads with it (one index less to write)
 
 -- open_candidates() "returns setof profiles": its column list follows the table, now with name_sound (phone stays private — 0036)
 do $do$

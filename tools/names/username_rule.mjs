@@ -73,6 +73,11 @@ for (const [a, b] of PAIRS) if (b.length > 1) {
   const t = [...b].map((x) => find(x)).join(''); if (KEY.has(a) && KEY.get(a) !== t) throw new Error(`the key of ${a} is both ${KEY.get(a)} and ${t}`);
   KEY.set(a, t); for (const x of ALNUM) if (find(x) === a && x !== a) KEY.set(x, t);
 }
+// a sequence that holds a character with a key of its own is written with that key (m → rn, n → ri: m → rri), until nothing changes
+for (let more = true, n = 0; more; n++) {
+  if (n > 10) throw new Error('the look-alikes of the key do not settle');
+  more = false; for (const [a, t] of KEY) { const t2 = [...t].map((x) => KEY.get(x) ?? x).join(''); if (t2 !== t) { KEY.set(a, t2); more = true; } }
+}
 for (const t of KEY.values()) for (const x of t) if (KEY.has(x)) throw new Error('a key is not a fixed point: ' + x);
 const KEY1 = [...KEY].filter(([, t]) => t.length === 1), KEYN = [...KEY].filter(([, t]) => t.length > 1);
 const keyOf = (u) => [...String(u).toLowerCase().replace(/\./g, '')].map((x) => KEY.get(x) ?? x).join('');

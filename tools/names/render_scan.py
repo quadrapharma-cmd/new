@@ -1,4 +1,7 @@
 """Render check for the name rule (S-03): do two names that LOOK the same always get the same skeleton?
+*(25 Oct) The owner's decision (Facebook's rule) lets names be alike: what must never draw alike is the @USERNAME — part
+'usernames' (see US_SETUP below; tests/run_all.py render runs it and its proofs). The name parts below served rounds 1-8 and
+are run by hand.
 Everything is drawn on a Chromium canvas the way the app draws a name — with the app's own FONT STACKS (English `Poppins, sans-serif`;
 Arabic `Poppins, "Segoe UI", …, sans-serif` from web/src/i18n.css; the datalist popup's `system-ui, sans-serif`), so a letter Poppins
 lacks is drawn by the fallback font next to a letter Poppins has — at weights 400, 500, 600 and 700 (the thread list and the chat header
@@ -40,7 +43,7 @@ Reads the generated rule of web/src/live/adapter.js (run `node tools/names/name_
 adapter of a git revision (`--rule e972163` is the third version, 0039_names_rule_3; `--rule 0fbc662` the fourth, 0039_names_rule_4;
 `--rule 91ca446` the fifth, 0039_names_rule_5; `--rule 881d71a` the sixth, 0039_names_rule_6; `--rule f7d1fc0` the seventh, 0039_names_rule_7).
   python3 tools/names/render_scan.py [OUT.json] [THRESHOLD]   Playwright 1.56 Chromium; exit 1 when a pair is found
-  --part letters|sequences|names|beside|final|all   (default all)
+  --part letters|sequences|names|beside|final|all   (default all; names only)  --part usernames [--key plain]   (the @username)
   --rule REV            scan the rule of that git revision instead of the working tree
   --must-find U/T       exit 0 only when the pair U / T is among the pairs found, 1 otherwise — the proof that the scan sees a
                         look-alike: --rule e972163 --part letters --must-find حْ/خ ; --rule 0fbc662 --part letters --must-find ث/ئ ;
@@ -67,7 +70,7 @@ no dot when it joins the next one (ى ں: «ىىى» drew as «سـ», which the
 import itertools, json, os, re, subprocess, sys, time, unicodedata
 from playwright.sync_api import sync_playwright
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.abspath(os.path.join(HERE, '../..'))
-VALUED = ('--rule', '--must-find', '--sizes', '--weights', '--part', '--final-thr')
+VALUED = ('--rule', '--must-find', '--sizes', '--weights', '--part', '--final-thr', '--key')
 def opt(name, default=None):
     return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
 ARGS = [x for i, x in enumerate(sys.argv[1:], 1) if not x.startswith('--') and sys.argv[i - 1] not in VALUED]
@@ -295,6 +298,109 @@ def contexts(part):
             if part == 'sequences' and not QUICK and s == ss[len(ss) // 2]:   # *(sixth version) two-letter sequences in the system fonts too
                 for f in SINGLE: out.append(('%d %dpx %s' % (w, s, f), '%d %dpx %s' % (w, s, f), ['ltr'], True))
     return out
+
+# ── *(usernames, 25 Oct) the @username's look-alikes ──
+# The owner's decision (25 Oct, Facebook's rule) ends the chase above for NAMES — names may be alike; what tells two members apart is
+# the @username, and two usernames must never DRAW alike. A username is a-z 0-9 and '.', written small; its key
+# (web/src/username.js usKey = 0070 username_key) folds what confusables.txt and tools/names/username-twins.txt say draws alike. This
+# part draws, the way the app shows a username (left to right): every character; every two-character sequence; and the three-
+# character sequences of the narrow letters (i j l r t f 1 . n) — where the app draws them (US_CTX below) — and compares every sequence with every character and sequence (blurred difference, as above). The unit is ONE
+# FULL STOP of the same font, weight and size (the ink of «.»: what a reader sees as a dot). A pair within THRESHOLD (1.0) of a full
+# stop whose keys differ fails the scan; --write adds it to tools/names/username-twins.txt (then node tools/names/username_rule.mjs
+# --write). --key plain compares without the fold (small letters, no dots) — the proof that the scan sees a look-alike
+# (--part usernames --key plain --must-find l/1 …).
+US_SETUP = r"""([layer, plain]) => {
+ const w = {}; new Function('window', layer)(w); const key = plain ? (u) => u.replace(/[.]/g, '') : w.dxUsername.key;
+ const A = [...'abcdefghijklmnopqrstuvwxyz0123456789'], N = [...'ijlrtf1.n'];
+ const U = A.concat(['.']); for (const x of A) for (const y of A) U.push(x + y);
+ for (const x of N) for (const y of N) for (const z of N) if ((x + y + z).replace(/[.]/g, '')) U.push(x + y + z);
+ window.__U = { U: [...new Set(U)], key };
+ return { units: window.__U.U.length };
+}"""
+US_SCAN = r"""([font, thr]) => {
+ const { U, key } = window.__U;
+ const W = 96, H = 40, BASE = 28, SIG = 1, R = 3;
+ const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d', { willReadFrequently: true });
+ const K = []; { let s = 0; for (let i = -R; i <= R; i++) { const v = Math.exp(-i * i / (2 * SIG * SIG)); K.push(v); s += v; } for (let i = 0; i < K.length; i++) K[i] /= s; }
+ const tmp = new Float32Array(W * H), t2 = new Float32Array(W * H);
+ function draw(t) {
+   x.clearRect(0, 0, W, H); x.font = font; x.fillStyle = '#000'; x.direction = 'ltr'; x.textAlign = 'center'; x.fillText(t, W / 2, BASE);
+   const d = x.getImageData(0, 0, W, H).data; let x0 = W, x1 = -1, ink = 0;
+   for (let i = 0; i < W * H; i++) { const v = d[i * 4 + 3]; if (v) { ink += v; const c = i % W; if (c < x0) x0 = c; if (c > x1) x1 = c; } }
+   if (!ink) return null;
+   const sh = Math.round(W / 2 - (x0 + x1 + 1) / 2), a = new Float32Array(W * H);
+   for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { const c2 = c - sh; tmp[y * W + c] = c2 >= 0 && c2 < W ? d[(y * W + c2) * 4 + 3] : 0; }
+   for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { let v = 0; for (let k = -R; k <= R; k++) { const X = c + k; if (X >= 0 && X < W) v += tmp[y * W + X] * K[k + R]; } t2[y * W + c] = v; }
+   for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { let v = 0; for (let k = -R; k <= R; k++) { const Y = y + k; if (Y >= 0 && Y < H) v += t2[Y * W + c] * K[k + R]; } a[y * W + c] = v; }
+   const NB = (W >> 3) * (H >> 3), b8 = new Float32Array(NB); let sum = 0;
+   for (let y = 0; y < H; y++) for (let c = 0; c < W; c++) { const v = a[y * W + c]; b8[(y >> 3) * (W >> 3) + (c >> 3)] += v; sum += v; }
+   return { a, b8, sum };
+ }
+ function l1(p, q, lim) {
+   if (Math.abs(p.sum - q.sum) >= lim) return lim;
+   let s = 0; for (let i = 0; i < p.b8.length; i++) s += Math.abs(p.b8[i] - q.b8[i]); if (s >= lim) return lim;
+   s = 0; for (let i = 0; i < W * H; i++) { s += Math.abs(p.a[i] - q.a[i]); if (s >= lim) return lim; } return s;
+ }
+ const dot = draw('.').sum, lim = thr * dot, near = []; let pairs = 0, best = [];
+ const bm = U.map((u) => [u, draw(u)]).filter((e) => e[1]).sort((p, q) => p[1].sum - q[1].sum), sums = bm.map((e) => e[1].sum);
+ const oneApart = (p, q) => p.length === q.length && [...p].filter((c, i) => c !== q[i]).length === 1 && p.length > 1;
+ for (let i = 0; i < bm.length; i++) { const [u, p] = bm[i], ku = key(u);
+   for (let j = i + 1; j < bm.length && sums[j] < p.sum + lim * 3; j++) { const [t, q] = bm[j];
+     if (key(t) === ku || oneApart(u, t)) continue;   // one character apart: the single characters are compared
+     pairs++; const m = l1(p, q, lim * 3);
+     if (m < lim * 3) best.push([+(m / dot).toFixed(3), u, t]);
+     if (m < lim) near.push([font, 'username', u, t, +(m / dot).toFixed(3), key(u), key(t)]); } }
+ best.sort((p, q) => p[0] - q[0]);
+ return { font, dot: +dot.toFixed(1), drawn: bm.length, pairs, near, best: best.slice(0, 8) };
+}"""
+if PART == 'usernames':
+    US_PLAIN = opt('--key') == 'plain'
+    # a username is drawn in Poppins (embedded: it has a-z 0-9 . @, so no fallback ever draws one) or, in the ✎ picker's native list,
+    # in system-ui — a sans-serif UI font (Segoe UI, San Francisco, Roboto, Cantarell / DejaVu Sans on Linux): the sans-serif system
+    # fonts stand for the other machines; a serif (FreeSerif) never draws a username
+    US_SINGLE = [f for f in SINGLE if 'Serif' not in f]
+    layer = open(os.path.join(ROOT, 'web/src/username.js'), encoding='utf8').read()
+    # where the app draws one: Poppins — the chat header's line (11 px, 600), the profile (13.5 px), Edit Profile (14 px), bold anywhere
+    # a design may put it: 400-700 at 11-16 px; the ✎ picker's native list draws system-ui at its regular weight: 400 at 12-16 px
+    US_WEIGHTS = [int(x) for x in opt('--weights', '400,500,600,700').split(',')]
+    US_SIZES = [int(x) for x in opt('--sizes', '11,12,13,14,15,16').split(',')]
+    US_CTX = [('%d %dpx %s' % (w, sz, f)) for w in US_WEIGHTS for sz in US_SIZES for f in ['Poppins, sans-serif']] + \
+             [('%d %dpx %s' % (400, sz, f)) for sz in US_SIZES if sz >= 12 for f in ['system-ui, sans-serif'] + US_SINGLE]
+    t0 = time.time(); near = []; closest = []
+    with sync_playwright() as p:
+        br = p.chromium.launch(args=['--no-sandbox']); pg = br.new_page(); pg.set_content('<style>' + FACES + '</style><p style="font-family:Poppins">x</p>')
+        pg.evaluate("Promise.all(['400','500','600','700'].map((w) => document.fonts.load(w + ' 15px Poppins')))")
+        assert pg.evaluate("document.fonts.check('700 15px Poppins')"), 'Poppins did not load'
+        info = pg.evaluate(US_SETUP, [layer, US_PLAIN])
+        print('usernames — key', 'plain (no fold)' if US_PLAIN else 'web/src/username.js usKey', info, 'threshold', THR, 'of a full stop', flush=True)
+        for fnt in US_CTX:
+                    r = pg.evaluate(US_SCAN, [fnt, THR])
+                    near += r['near']; closest += [[b[0], b[1], b[2], r['font']] for b in r['best']]
+                    print('  %-36s drawn %5d  dot %6.1f  pairs %8d  near %d  closest %s  [%.0fs]' % (r['font'][:36], r['drawn'], r['dot'], r['pairs'], len(r['near']),
+                          ' '.join('%s/%s %.2f' % (b[1], b[2], b[0]) for b in r['best'][:3]), time.time() - t0), flush=True)
+        br.close()
+    distinct = {}
+    for n in near: distinct.setdefault(tuple(sorted((n[2], n[3]))), n)
+    print('usernames: pairs within %.2f of a full stop with different keys: %d (%d distinct)  [%.0fs]' % (THR, len(near), len(distinct), time.time() - t0))
+    for n in sorted(distinct.values(), key=lambda n: n[4])[:60]: print('NEAR ', n)
+    seen = set(); print('closest pairs with different keys (any font):')
+    for b in sorted(closest)[:200]:
+        k = tuple(sorted(b[1:3]))
+        if k in seen: continue
+        seen.add(k); print('   %.3f  %s / %s  (%s)' % tuple(b)) if len(seen) <= 15 else None
+    if OUT: json.dump({'threshold': THR, 'near': near}, open(OUT, 'w'), ensure_ascii=False, indent=1)
+    if '--write' in sys.argv and not US_PLAIN and distinct:
+        TW = os.path.join(HERE, 'username-twins.txt'); have = open(TW, encoding='utf8').read()
+        with open(TW, 'a', encoding='utf8') as f:
+            for n in sorted(distinct.values(), key=lambda n: n[4]):
+                a_, b_ = sorted((n[2].replace('.', ''), n[3].replace('.', '')), key=len)
+                if len(a_) == 1 and a_ != b_ and ('\n%s ; %s' % (a_, b_)) not in have: f.write('%s ; %s   # %s, %.2f of a full stop\n' % (a_, b_, n[0], n[4]))
+                elif len(a_) != 1: print('NOT WRITTEN (neither side is one character):', n)
+        print('written', TW, '— now node tools/names/username_rule.mjs --write')
+    if MUST:
+        u_, t_ = MUST.split('/'); hit = [n for n in near if {n[2], n[3]} == {u_, t_}]
+        print(('FOUND ' if hit else 'NOT FOUND ') + MUST + (' — e.g. ' + str(hit[0]) if hit else '')); sys.exit(0 if hit else 1)
+    sys.exit(1 if near else 0)
 
 t0 = time.time(); parts = ['letters', 'sequences', 'names', 'beside', 'final'] if PART == 'all' else [PART]; near = []; report = {}; finals = {}
 with sync_playwright() as p:

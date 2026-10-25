@@ -81,6 +81,18 @@ select pg_temp.ok('the 300+ real names signed up twice: every member has a usern
   (select count(*) >= 600 and count(distinct username_key) = count(*) and bool_and(username is not null) from public.profiles where id::text like 'f3700000-%')$q$);
 select pg_temp.ok('the second of each name is numbered (base.2 …)', $q$(select count(*) >= 300 and bool_and(username ~ '[.][0-9]+$') from public.profiles
   where id in (select pg_temp.u(3000 + g) from generate_series(1, 999) g))$q$);
+-- a bulk import defers the per-row trigger in its session and gives every new member a username at once (username_assign_missing:
+-- set-based, numbered among the members of the same username, the oldest first) — tools/scale/seed_100k.sql
+set drugbox.defer_usernames = 'on';
+insert into auth.users (id, email, raw_user_meta_data) select pg_temp.u(5000 + g), 'defer' || g || '@un70.test', jsonb_build_object('name', (array['Ahmed Ali', 'أحمد علي', 'Mona Hassan', 'Ali'])[1 + g % 4])
+  from generate_series(1, 40) g;
+select pg_temp.ok('deferred: the bulk-imported members have no username yet', $q$(select count(*) = 40 and bool_and(username is null) from public.profiles where id in (select pg_temp.u(5000 + g) from generate_series(1, 40) g))$q$);
+reset drugbox.defer_usernames;
+select pg_temp.ok('username_assign_missing gives the 40 members a username', $q$public.username_assign_missing() = 40$q$);
+select pg_temp.ok('…each valid, with its key, all keys distinct — numbered after the members who had the name''s username', $q$
+  (select count(*) = 40 and count(distinct username_key) = 40 and bool_and(username is not null and username_key = public.username_key(username) and public.username_problem(username) = '')
+         from public.profiles where id in (select pg_temp.u(5000 + g) from generate_series(1, 40) g))
+  and (select count(distinct username_key) = count(*) from public.profiles)$q$);
 
 -- ══ 3. written only through set_username() ═════════════════════════════════════════════════════
 select pg_temp.as_user(pg_temp.u(1));
@@ -121,6 +133,7 @@ select pg_temp.no('anon cannot call username_available', $q$select public.userna
 select pg_temp.as_user(pg_temp.u(9));
 select pg_temp.ok('another member reads usernames by column (select username from profiles)', $q$(select count(*) > 0 from public.profiles where username is not null and id <> pg_temp.u(9))$q$);
 select pg_temp.no('a member cannot call username_assign (server only)', $q$select public.username_assign(pg_temp.u(9), 'x.y.z.w')$q$, '42501');
+select pg_temp.no('a member cannot call username_assign_missing (server only)', $q$select public.username_assign_missing()$q$, '42501');
 
 -- ══ 4. tables, policies, conversations ═════════════════════════════════════════════════════════
 select pg_temp.as_user(pg_temp.u(1));

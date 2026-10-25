@@ -135,19 +135,21 @@ select pg_temp.as_user(pg_temp.u(2));
 select pg_temp.ok('names: the refusal names the character typed (U+FE69, not the "$" it becomes)', $$(select pg_temp.err_of($q$update public.profiles set name = U&'PN Ahmed \FE69x' where id = pg_temp.u(2)$q$)) like U&'%remove “\2068﹩\2069” (\2068U+FE69\2069)'$$);
 select pg_temp.ok('names: …the word that is only punctuation', $$(select pg_temp.err_of($q$update public.profiles set name = 'د . أحمد' where id = pg_temp.u(2)$q$)) = U&'“\2068.\2069” is not a word — join it to the word next to it (remove the space)'$$);
 select pg_temp.ok('names: …and the alphabets accepted', $$(select pg_temp.err_of($q$update public.profiles set name = '张伟' where id = pg_temp.u(2)$q$)) like U&'Write a name in Latin, Arabic, Greek or Cyrillic letters — “\2068张\2069” (\2068U+5F20\2069)%'$$);
--- 0039: a conversation says how many other members share the partner's skeleton — even members this browser never loaded
+-- 0039: a conversation said how many other members shared the partner's skeleton; since the owner's decision of 25 Oct (names may be
+-- alike, every member has a unique @username — 0070) it carries the partner's username instead
 select pg_temp.as_server();
 insert into auth.users (id, email, raw_user_meta_data) select pg_temp.u(g), 'pn' || g || '@pn36.test', jsonb_build_object('name', 'PN Famous Person') from generate_series(12, 13) g on conflict do nothing;
 update public.profiles set name = 'PN F' || chr(1072) || 'mous Person' where id = pg_temp.u(13);   -- a server write: kept, flagged, same skeleton
 insert into public.messages (sender_id, receiver_id, body) values (pg_temp.u(13), pg_temp.u(4), 'PN hello, it is me');
 select pg_temp.as_user(pg_temp.u(4));
-select pg_temp.ok('my_conversations: name_twins counts the other members with the partner''s skeleton', $$(select name_twins = 1 and name_key = public.person_name_key('PN Famous Person') and name_needs_fix from public.my_conversations(30) where partner = pg_temp.u(13))$$);
+select pg_temp.ok('my_conversations: the partner''s key, flag and @username — no name_twins (names may be alike)', $$(select name_key = public.person_name_key(name) and name_needs_fix and username is not null
+  from public.my_conversations(30) where partner = pg_temp.u(13)) and pg_get_function_result('public.my_conversations(int)'::regprocedure) !~ 'name_twins'$$);
 select pg_temp.as_user(pg_temp.u(12));
 select pg_temp.ok('my_conversations: a member sees no conversation she is not in', $$not exists (select 1 from public.my_conversations(30) where partner = pg_temp.u(13))$$);
 -- a flagged member cannot lift her own flag, nor give herself another key, by keeping her name (the trigger computes both)
 select pg_temp.as_user(pg_temp.u(13));
 select pg_temp.step('u13 (flagged) writes name_needs_fix = false and a key of her own', $$update public.profiles set name_needs_fix = false, name_key = 'pn someone else' where id = pg_temp.u(13)$$);
-select pg_temp.ok('names: the flag and the key stay what the rule says', $$(select name_needs_fix and name_key = public.person_name_key('PN Famous Person') from public.profiles where id = pg_temp.u(13))$$);
+select pg_temp.ok('names: the flag and the key stay what the rule says', $$(select name_needs_fix and name_key = public.person_name_key(name) from public.profiles where id = pg_temp.u(13))$$);
 select pg_temp.as_server();
 -- existing names (0038's own update, then 0039's, re-applied here): invisible characters and U+FFFC go; a name the new rule allows
 -- once normalised is stored normalised and not flagged; any other name is kept and flagged
@@ -188,6 +190,12 @@ update public.profiles set name_key = null, name_needs_fix = false where id in (
 update public.profiles set name_key = 'stale', name_needs_fix = true where id = pg_temp.u(9);    -- flagged by 0038 ("/" was refused)
 update public.profiles set name_key = null, name_needs_fix = false where id in (pg_temp.u(10), pg_temp.u(11));
 set session_replication_role = origin;
+-- 0038 … 0039_names_rule_8 were written for profiles without the ninth version's name_sound and 0070's username columns (their
+-- open_candidates() "returns setof profiles" lists every column): those come off for the replay (with 0070's two triggers, which name
+-- them), and 0039_names_rule_8, 0039_names_rule_9 and 0070_usernames put them back after it — the write paths below see today's rule
+drop trigger if exists trg_profiles_username_guard on public.profiles;
+drop trigger if exists trg_profiles_username_assign on public.profiles;
+alter table public.profiles drop column if exists name_sound, drop column if exists username, drop column if exists username_key;
 \ir ../migrations/0038_names_allowlist.sql
 \ir ../migrations/0039_names_rule_2.sql
 \o /dev/null
@@ -233,6 +241,13 @@ select pg_temp.ok('existing names: U+FFFC is removed, the name is then allowed (
 select pg_temp.ok('existing names: a name that still breaks the rule is kept as it reads and flagged', $$(select name = 'PN Hala Old - Pharco Old' and name_needs_fix and name_key is not null from public.profiles where id = pg_temp.u(8))$$);
 select pg_temp.ok('existing names: every profile has a key', $$not exists (select 1 from public.profiles where name_key is null)$$);
 
+-- the eighth and ninth versions and the usernames (0070) on the replayed rows: every profile keyed again, every member has a username
+\ir ../migrations/0039_names_rule_8.sql
+\ir ../migrations/0039_names_rule_9.sql
+\ir ../migrations/0070_usernames.sql
+select pg_temp.ok('existing names (ninth version + 0070): every profile has a search key, a sound key and a username', $$not exists (select 1 from public.profiles
+   where name_key is null or name_sound is null or username is null or username_key is distinct from public.username_key(username))$$);
+
 -- ══ 2b. every way a name is written (fourth and fifth versions, 0039_names_rule_4 and _5) ═══════════════════════════════════════════════════
 -- The ways a name reaches profiles.name, found by reading the catalog (so a new one fails this suite until it is added here): the
 -- sign-up trigger handle_new_user (auth.users metadata) and a member's own UPDATE (Edit Profile, PATCH /profiles); a Drugbox admin's
@@ -241,9 +256,9 @@ select pg_temp.ok('existing names: every profile has a key', $$not exists (selec
 -- member is normalised the same way (the mark over an undotted letter removed; an accent that draws like another keyed as its twin),
 -- and the stored name_key is the database's skeleton of what was typed (supabase/tests/name_rule.sql shows it is the app's).
 select pg_temp.as_server();
-select pg_temp.ok('write paths: the functions that INSERT or UPDATE profiles are the four known ones', $$(select array_agg(p.proname::text order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+select pg_temp.ok('write paths: the functions that INSERT or UPDATE profiles are the six known ones', $$(select array_agg(p.proname::text order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname in ('public', 'private', 'auth') and p.prosrc ~* '(insert\s+into\s+(public\.)?profiles|update\s+(public\.)?profiles\s+(as\s+\w+\s+)?set)')
-  = array['handle_new_user', 'increment_profile_view', 'person_followers_count', 'profiles_followers_count']$$);
+  = array['handle_new_user', 'increment_profile_view', 'person_followers_count', 'profiles_followers_count', 'set_username', 'username_assign']$$);   -- 0070: the two write the username, never the name
 select pg_temp.ok('write paths: of them only handle_new_user writes a name (the others count views and followers)', $$not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname in ('public', 'private', 'auth') and p.proname <> 'handle_new_user' and p.prosrc ~* 'profiles' and p.prosrc ~* '(set|,)\s*name\s*=|profiles\s*\([^)]*\mname\M')$$);
 select pg_temp.ok('write paths: the only trigger on auth.users runs on INSERT (a later metadata change never reaches the name)', $$(select array_agg(tgname::text) from pg_trigger
@@ -263,8 +278,8 @@ select pg_temp.no('sign-up: a spaced hyphen is refused', $$insert into auth.user
 select pg_temp.ok('sign-up: …suggesting the parentheses', $$pg_temp.err_of($q$insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(23), 'pn23@pn36.test', jsonb_build_object('name', 'PN Ali - MBA'))$q$)
   = U&'Put what follows the name in parentheses — write “\2068PN Ali (MBA)\2069”'$$);
 insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(23), 'pn23@pn36.test', jsonb_build_object('name', 'حْالد الفيصل')) on conflict do nothing;
-select pg_temp.ok('sign-up: «حْالد الفيصل» (looks like «خالد الفيصل») is stored without the sukun: «حالد الفيصل», keyed as typed — the twin of «خالد الفيصل» (sixth version: ح / خ draw within a dot in some font)', $$(select name = 'حالد الفيصل' and name_key = public.person_name_key('حْالد الفيصل')
-  and name_key = (select name_key from public.profiles where id = pg_temp.u(20)) and not name_needs_fix from public.profiles where id = pg_temp.u(23))$$);
+select pg_temp.ok('sign-up: «حْالد الفيصل» (looks like «خالد الفيصل») is stored without the sukun: «حالد الفيصل», keyed as typed — a name like any other since 25 Oct (the @username tells them apart)', $$(select name = 'حالد الفيصل' and name_key = public.person_name_key('حْالد الفيصل')
+  and name_key <> (select name_key from public.profiles where id = pg_temp.u(20)) and not name_needs_fix and username is not null from public.profiles where id = pg_temp.u(23))$$);
 insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(24), 'pn24@pn36.test', jsonb_build_object('name', 'Josè Tufice')) on conflict do nothing;
 select pg_temp.ok('sign-up: «Josè Tufice» (looks like «José Tufice») is keyed as its twin', $$(select name_key = (select name_key from public.profiles where id = pg_temp.u(21)) and name_key = public.person_name_key('Josè Tufice')
   from public.profiles where id = pg_temp.u(24))$$);
@@ -274,8 +289,8 @@ select pg_temp.ok('sign-up: …suggesting the bracket after the name', $$pg_temp
   = U&'Put the part in brackets after the name — write “\2068PN Ali (MBA)\2069”'$$);
 select pg_temp.no('sign-up: «PN (علي) محمد» is refused (drew as «PN محمد (علي)» in English)', $$insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(33), 'pn33@pn36.test', jsonb_build_object('name', 'PN (علي) محمد'))$$, '23514');
 insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(33), 'pn33@pn36.test', jsonb_build_object('name', 'ئروت الفيصل')) on conflict do nothing;
-select pg_temp.ok('sign-up: «ئروت الفيصل» (bold, looks like «ثروت الفيصل») is keyed as its twin', $$(select name = 'ئروت الفيصل' and not name_needs_fix and name_key = public.person_name_key('ئروت الفيصل')
-  and name_key = (select name_key from public.profiles where id = pg_temp.u(31)) from public.profiles where id = pg_temp.u(33))$$);
+select pg_temp.ok('sign-up: «ئروت الفيصل» (bold, looks like «ثروت الفيصل») is allowed and keyed as typed (no twins since 25 Oct)', $$(select name = 'ئروت الفيصل' and not name_needs_fix and name_key = public.person_name_key('ئروت الفيصل')
+  and name_key <> (select name_key from public.profiles where id = pg_temp.u(31)) from public.profiles where id = pg_temp.u(33))$$);
 insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(34), 'pn34@pn36.test', jsonb_build_object('name', U&'\0639\0644\06CC\200C\0631\0636\0627 Tufice')) on conflict do nothing;
 select pg_temp.ok('sign-up: «علی‌رضا» (a zero-width non-joiner) is stored «علی رضا»', $$(select name = 'علی رضا Tufice' and not name_needs_fix from public.profiles where id = pg_temp.u(34))$$);
 -- sixth version (round 5): the Turkish İ, a space after a letter that never joins — allowed, keyed as the twins they look like; a space
@@ -290,7 +305,7 @@ select pg_temp.ok('sign-up: «عبد الله الفيصل» is allowed, stored 
 select pg_temp.ok('sign-up: «PN Ali ( MBA )» is stored «PN Ali (MBA)» (it was refused)', $$(select name = 'PN Ali (MBA)' and not name_needs_fix from public.profiles where id = pg_temp.u(44))$$);
 insert into public.messages (sender_id, receiver_id, body) values (pg_temp.u(42), pg_temp.u(4), 'PN salam from Abdallah');
 select pg_temp.as_user(pg_temp.u(4));
-select pg_temp.ok('my_conversations: «عبد الله الفيصل» writes first — name_twins counts «عبدالله الفيصل» (the skeleton ignores the space)', $$(select name_twins = 1 and name_key = public.person_name_key('عبدالله الفيصل') from public.my_conversations(30) where partner = pg_temp.u(42))$$);
+select pg_temp.ok('my_conversations: «عبد الله الفيصل» writes first — her search key is «عبدالله الفيصل»''s (typed either way, she is found) and her @username is there', $$(select name_key = public.person_name_key('عبدالله الفيصل') and username is not null from public.my_conversations(30) where partner = pg_temp.u(42))$$);
 select pg_temp.as_server();
 insert into auth.users (id, email, raw_user_meta_data) values (pg_temp.u(25), 'pn25@pn36.test', jsonb_build_object('name', 'د / سامي فهمي')) on conflict do nothing;
 select pg_temp.ok('sign-up: «د / سامي فهمي» is stored «د/ سامي فهمي»', $$(select name = 'د/ سامي فهمي' and not name_needs_fix from public.profiles where id = pg_temp.u(25))$$);
@@ -298,7 +313,7 @@ select pg_temp.ok('sign-up: «د / سامي فهمي» is stored «د/ سامي 
 select pg_temp.as_user(pg_temp.u(25));
 select pg_temp.no('member: a letter not supported yet is refused', $$update public.profiles set name = 'Ɔpɔku Mensah' where id = pg_temp.u(25)$$, '23514');
 select pg_temp.step('member: renames herself «عْادة الفيصل» (looks like «غادة»)', $$update public.profiles set name = 'عْادة الفيصل' where id = pg_temp.u(25)$$);
-select pg_temp.ok('member: stored «عادة الفيصل», keyed as typed — the twin of «غادة الفيصل» (sixth version)', $$(select name = 'عادة الفيصل' and name_key = public.person_name_key('عْادة الفيصل') and name_key = public.person_name_key('غادة الفيصل') from public.profiles where id = pg_temp.u(25))$$);
+select pg_temp.ok('member: stored «عادة الفيصل», keyed as typed — a name like any other, not «غادة الفيصل» (no twins since 25 Oct)', $$(select name = 'عادة الفيصل' and name_key = public.person_name_key('عْادة الفيصل') and name_key <> public.person_name_key('غادة الفيصل') from public.profiles where id = pg_temp.u(25))$$);
 select pg_temp.step('member: renames herself «حْالد الفيصل»', $$update public.profiles set name = 'حْالد الفيصل' where id = pg_temp.u(25)$$);
 select pg_temp.ok('member: stored like the sign-up path stores it (same name, same key)', $$(select row(name, name_key) from public.profiles where id = pg_temp.u(25)) = (select row(name, name_key) from public.profiles where id = pg_temp.u(23))$$);
 select pg_temp.step('member: «Saʿīd Ḥasan» (ʿ U+02BF)', $$update public.profiles set name = 'Saʿīd Ḥasan' where id = pg_temp.u(25)$$);
