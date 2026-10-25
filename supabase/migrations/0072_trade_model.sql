@@ -243,7 +243,9 @@ declare t text := public.trade_text_of(p); lines_txt text; lines_roots text[]; l
 begin
   select coalesce(string_agg(l.search_text, ' ' order by l.pos, l.id), ''), coalesce(array_agg(distinct l.root) filter (where l.root <> ''), '{}'),
          coalesce(string_agg(coalesce(l.item_key, '') || '/' || coalesce(l.qty::text, '') || '/' || coalesce(l.expiry::text, '') || '/' || coalesce(l.price::text, ''), ';' order by l.item_key, l.qty, l.id), '')
-    into lines_txt, lines_roots, lines_fp from public.listing_lines l where l.listing_id = p.id;
+    into lines_txt, lines_roots, lines_fp from public.listing_lines l
+   where l.listing_id = p.id and (auth.uid() is null or auth.uid() = p.user_id)          -- the caller's own listing only (a row passed in names its owner)
+     and exists (select 1 from public.products x where x.id = p.id and x.user_id = p.user_id);
   -- toll: the dosage forms are what matches; agency / distributor: the categories
   if p.kind in ('toll', 'toll_wanted') then extra := array(select 'form:' || x from jsonb_array_elements_text(coalesce(p.attrs -> 'forms', '[]')) x); end if;
   if p.kind in ('agency', 'distributor') then extra := array(select 'cat:' || x from jsonb_array_elements_text(coalesce(p.attrs -> 'cats', '[]')) x); end if;
@@ -255,6 +257,7 @@ begin
   return p;
 end $$;
 revoke all on function public.trade_compute(public.products) from public, anon, authenticated, service_role;
+grant execute on function public.trade_compute(public.products) to authenticated, service_role;   -- the derive trigger runs as the caller
 
 -- after the lines change, the listing's search text, keys and fingerprint follow (the owner wrote the line; the database writes the listing)
 create or replace function public.trade_refresh(p_id bigint) returns void language plpgsql security definer set search_path = public as $$
