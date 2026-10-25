@@ -73,12 +73,13 @@ returns text language sql immutable parallel safe as $$
       from unnest(string_to_array(n, ' ')) w)
   end
 $$;
--- *(fifth version) the words of a name that hold a letter (what a suggestion keeps), and the name a 'bracket' or 'dash' refusal
+-- *(fifth version) the words of a name that hold a letter (what a suggestion keeps; *ninth version: without a hyphen at either end — a
+-- suggestion never has a hyphen with a space next to it), and the name a 'bracket' or 'dash' refusal
 -- suggests: every bracketed part moved after the name, in one pair ("(MBA) Ahmed Ali" → "Ahmed Ali (MBA)"; "Ali (علي) محمد" →
 -- "Ali محمد (علي)"; two pairs → one), without words that hold no letter; parts of both directions are written without brackets
 create or replace function public.person_name_words(s text)
 returns text language sql immutable parallel safe as $$
-  select coalesce(string_agg(w, ' ' order by i), '') from unnest(string_to_array(public.person_name_norm(s), ' ')) with ordinality u(w, i)
+  select coalesce(string_agg(regexp_replace(w, '^-+|-+$', '', 'g'), ' ' order by i), '') from unnest(string_to_array(public.person_name_norm(s), ' ')) with ordinality u(w, i)
    where w ~ ('[' || U&'!0041-!005A!0061-!007A!00C0-!00D6!00D8-!00F6!00F8-!0131!0134-!013E!0141-!0148!014A-!017E!018F!01A0-!01A1!01AF-!01B0!01CD-!01DC!01DE-!01E3!01E6-!01F0!01F4-!01F5!01F8-!021B!021E-!021F!0226-!0233!0259!037B-!037D!0386!0388-!038A!038C!038E-!03A1!03A3-!03CE!03FC-!045F!048A-!04FF!0510-!0529!052E-!052F!0621-!063A!0641-!064A!0671!0679!067E!0686!0688!0691!0695!0698!06A2!06A4!06A7-!06A9!06AD!06AF!06B5!06BA!06BE!06C0-!06C3!06C6!06CC!06CE!06D2-!06D3!06D5!1E00-!1E99!1E9E!1EA0-!1EF9!1F00-!1F15!1F18-!1F1D!1F20-!1F45!1F48-!1F4D!1F50-!1F57!1F59!1F5B!1F5D!1F5F-!1F70!1F72!1F74!1F76!1F78!1F7A!1F7C!1F80-!1FB4!1FB6-!1FBA!1FBC!1FC2-!1FC4!1FC6-!1FC8!1FCA!1FCC!1FD0-!1FD2!1FD6-!1FDA!1FE0-!1FE2!1FE4-!1FEA!1FEC!1FF2-!1FF4!1FF6-!1FF8!1FFA!1FFC' uescape '!' || ']')
 $$;
 create or replace function public.person_name_bracket_fix(m text)

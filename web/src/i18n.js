@@ -364,7 +364,7 @@
     "This name cannot be used — a name can only have letters, spaces and . - ' ( ) , / ،": "لا يمكن استخدام هذا الاسم — الاسم يقبل الحروف والمسافات و \u2066. - ' ( ) , /\u2069 ، فقط",
     'Please update your name — it has characters Drugbox no longer allows, so other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه حروف لم يعد Drugbox يسمح بها، لذلك يرى الأعضاء الآخرون تحذيرًا بجانبه.',
     'Please update your name — move the part in brackets after the name. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — انقل الجزء الذي بين القوسين إلى ما بعد الاسم. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
-    'Please update your name — put what follows it in parentheses instead of after a spaced dash. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — ضع ما بعد الاسم بين قوسين بدل الشرطة بين مسافتين. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
+    'Please update your name — a hyphen in it has a space next to it. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه شَرطة بجانبها مسافة. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
     'Please update your name — a mark in it stands alone between spaces. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه علامة وحدها بين مسافتين. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
     'Please update your name — a name cannot contain numbers. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — الاسم لا يحتوي على أرقام. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
     'Please update your name — a word in it mixes alphabets. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه كلمة تخلط بين أبجديات. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
@@ -551,6 +551,7 @@
     [/^The letter “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) is not supported in names yet$/, function (m) { return 'الحرف «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) غير مدعوم في الأسماء بعد'; }],
     [/^“\u2068([^]*)\u2069” is not a word — join it to the word next to it \(remove the space\)$/, function (m) { return '«\u2068' + m[1] + '\u2069» ليست كلمة — ألصقها بالكلمة المجاورة (احذف المسافة)'; }],
     [/^Put what follows the name in parentheses — write “\u2068([^]*)\u2069”$/, function (m) { return 'ضع ما يلي الاسم بين قوسين — اكتب «\u2068' + m[1] + '\u2069»'; }],
+    [/^A hyphen joins two words without a space — write “\u2068([^]*)\u2069”$/, function (m) { return 'الشَرطة تصل كلمتين بلا مسافة — اكتب «\u2068' + m[1] + '\u2069»'; }],   /* ninth version: a space on one side of a hyphen */
     [/^Put the part in brackets after the name — write “\u2068([^]*)\u2069”$/, function (m) { return 'ضع الجزء الذي بين القوسين بعد الاسم — اكتب «\u2068' + m[1] + '\u2069»'; }],   /* fifth version (0039_names_rule_5) */
     [/^What is in brackets is written in one direction — Arabic letters, or Latin, Greek and Cyrillic ones — “\u2068([^]*)\u2069” mixes them$/, function (m) { return 'ما بين القوسين يُكتب باتجاه واحد — حروف عربية، أو حروف لاتينية ويونانية وسيريلية — «\u2068' + m[1] + '\u2069» يخلط بينها'; }],
     /* @username refusals (0070_usernames / web/src/username.js): the username quoted is isolated left to right (U+2066 … U+2069) */

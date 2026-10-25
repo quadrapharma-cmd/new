@@ -102,7 +102,8 @@ def new_message_to_named_person(j):
         to.fill(bfull); pg.wait_for_timeout(800)
         if j.live:      # choose B's suggestion, as a person does when several members share the name (the option shows the company)
             opts = [o for o in pg.evaluate("(()=>{const i=document.querySelector('#nmTo');const l=i&&i.list;return l?[...l.options].map(o=>o.value):[]})()") if o.startswith(bfull)]
-            if len(opts) > 1: to.fill(next((o for o in opts if bco in o), bfull + ' · ' + bco))
+            if len(opts) > 1:   # B's option (it carries B's @username); a shared test database holds dozens of «Dr. Carim Audit»: type B's @username
+                to.fill(next((o for o in opts if bco in o), '@' + j.sql1("select username from public.profiles where id='%s'" % b['id'])))
         pg.locator('#nmTx:visible, .dbk-ov textarea:visible').first.fill(text)
         j.click(pg, r'^(Send|إرسال)$', scope='.dbk-ov', what='Send', exact=True); j.settle(pg, 1200)
         j.check(bname in head(pg), 'after sending, the open thread is not with B (header: "%s")' % head(pg)[:60])
@@ -144,7 +145,7 @@ def new_message_to_named_person(j):
                           ('Ali %s (علي) محمد' % j.tag, r'after the name — write “Ali %s محمد \(علي\)”|بعد الاسم — اكتب «Ali %s محمد \(علي\)»' % (j.tag, j.tag)),
                           ('Hala Sign %s – Head of QA – Pharco' % j.tag, r'write “Hala Sign %s \(Head of QA, Pharco\)”|اكتب «Hala Sign %s \(Head of QA, Pharco\)»' % (j.tag, j.tag)),
                           # ninth version: a space on one side of a hyphen is refused with the fix, not joined silently
-                          ('Abdel- Rahman Sign %s' % j.tag, r'without a space — write “Abdel-Rahman Sign %s”|بدون مسافة — اكتب «Abdel-Rahman Sign %s»' % (j.tag, j.tag))):
+                          ('Abdel- Rahman Sign %s' % j.tag, r'without a space — write “Abdel-Rahman Sign %s”|بلا مسافة — اكتب «Abdel-Rahman Sign %s»' % (j.tag, j.tag))):
             p2, email, err0 = ui_signup(name); err = re.sub('[\u2068\u2069]', '', err0)
             j.check(re.search(pat, err), 'sign-up as %s is not refused with a clear message (said: "%s")' % (ascii(name), err[:140]))
             j.check(re.search('[“«]\u2068[^\u2069]+\u2069[”»]', err0), 'the refusal of %s does not isolate what it quotes (U+2068 … U+2069): %s' % (ascii(name), ascii(err0[:120])))
@@ -174,13 +175,13 @@ def new_message_to_named_person(j):
                 'the profile says @username under the name (left to right), and «@username» typed in To sends to that member'):
         ISO = re.compile('[⁦-⁩]')
         def picker(typed):
-            to_list(j, pg); j.click(pg, r'✎|New message|رسالة جديدة', scope='#content', what='✎ New message')
+            cancel(); to_list(j, pg); j.click(pg, r'✎|New message|رسالة جديدة', scope='#content', what='✎ New message')
             pg.locator('#nmTo:visible').first.fill(typed); pg.wait_for_timeout(1500 if j.live else 300)
             return pg.evaluate("(()=>{const i=document.querySelector('#nmTo');const l=i&&i.list;return l?[...l.options].map(o=>[o.value,o.label||'']):[]})()")
         def cancel():
             if pg.locator('.dbk-ov:visible').count(): j.click(pg, r'^(Cancel|إلغاء|×|✕)$', scope='.dbk-ov', what='Cancel', exact=True)
         def new_message(to_value, body):
-            to_list(j, pg); j.click(pg, r'✎|New message|رسالة جديدة', scope='#content', what='✎ New message')
+            cancel(); to_list(j, pg); j.click(pg, r'✎|New message|رسالة جديدة', scope='#content', what='✎ New message')
             box = pg.locator('#nmTo:visible').first; box.fill(to_value); pg.wait_for_timeout(1200 if j.live else 300)
             pg.locator('#nmTx:visible').first.fill(body)
             mark = j.toast_mark(pg); j.click(pg, r'^(Send|إرسال)$', scope='.dbk-ov', what='Send', exact=True); j.settle(pg, 1500)

@@ -438,12 +438,13 @@ returns text language sql immutable parallel safe as $$
       from unnest(string_to_array(n, ' ')) w)
   end
 $$;
--- *(fifth version) the words of a name that hold a letter (what a suggestion keeps), and the name a 'bracket' or 'dash' refusal
+-- *(fifth version) the words of a name that hold a letter (what a suggestion keeps; *ninth version: without a hyphen at either end — a
+-- suggestion never has a hyphen with a space next to it), and the name a 'bracket' or 'dash' refusal
 -- suggests: every bracketed part moved after the name, in one pair ("(MBA) Ahmed Ali" → "Ahmed Ali (MBA)"; "Ali (علي) محمد" →
 -- "Ali محمد (علي)"; two pairs → one), without words that hold no letter; parts of both directions are written without brackets
 create or replace function public.person_name_words(s text)
 returns text language sql immutable parallel safe as $$
-  select coalesce(string_agg(w, ' ' order by i), '') from unnest(string_to_array(public.person_name_norm(s), ' ')) with ordinality u(w, i)
+  select coalesce(string_agg(regexp_replace(w, '^-+|-+$', '', 'g'), ' ' order by i), '') from unnest(string_to_array(public.person_name_norm(s), ' ')) with ordinality u(w, i)
    where w ~ ('[' || ${U(sqlClass(LET_ANY))} || ']')
 $$;
 create or replace function public.person_name_bracket_fix(m text)
@@ -556,7 +557,7 @@ function jsRegion() {
     '${SKEL_D}');
   function nmLikeTo(c) { return NM_LIKE_TO.get(c); }
   function nmNorm(x) { return String(x == null ? '' : x).replace(NM_ZWNJ, '$1$2 ').replace(NM_INVIS, '').replace(NM_LIKE, nmLikeTo).normalize('NFKC').replace(NM_STRIP, '').replace(NM_LIKE, nmLikeTo).normalize('NFKC').replace(NM_SPACE, ' ').replace(/ \\//g, '/').replace(/\\( /g, '(').replace(/ \\)/g, ')').replace(/^ | $/g, ''); }
-  function nmWords(x) { return nmNorm(x).split(' ').filter(function (w) { return NM_LET.test(w); }).join(' '); }
+  function nmWords(x) { return nmNorm(x).split(' ').filter(function (w) { return NM_LET.test(w); }).map(function (w) { return w.replace(/^-+|-+$/g, ''); }).join(' '); }
   function nmBrFix(m) {
     var g = [], re = /[(]([^()]*)(?:[)]|$)/gu, x; while ((x = re.exec(m))) { var t = nmWords(x[1]); if (t) g.push(t); }
     var base = nmWords(m.replace(/[(][^()]*(?:[)]|$)/gu, ' ').replace(/[()]/gu, ' '));

@@ -21,6 +21,12 @@ only END a word (joined to the next letter they draw as a bare tooth: «بىىى
 with reason 'final' (EN and AR, the letter and the word isolated), a name stored before it is flagged and its banner says why (not
 «characters»); names ending in ى sign up as typed; a space on one side of a hyphen is tidied, a zero-width space is a space; the avatar
 skips a leading ’.
+Ninth version (the owner's decision of 25 Oct — Facebook's rule: names may be alike, every member has a unique @username): the
+look-alike chase is over — «حْالد» is stored «حالد» (hygiene: no mark left to draw as a dot) and is ANOTHER name than «خالد» (its own
+search key), «ئروت» / «ثروت» too; what a person TYPES for a name keys alike (accents, İ, spaces, the apostrophe: «Josè» / «José»,
+«Alİ Kaya» / «Ali Kaya»); ى / ں inside a word are allowed again; a space on ONE side of a hyphen is refused ('dash', «A hyphen joins two
+words without a space»), a zero-width space draws nothing; the greeting greets «El Sayed» and the given name of «Ali, Mohamed». The
+functions that write profiles now also include set_username and username_assign (0070 — they write the username, never the name).
   python3 tests/e2e/name_paths_test.py        (tools/local-supabase/start.sh; settings in tests/e2e/_dx.py)"""
 import json, re
 from playwright.sync_api import sync_playwright
@@ -45,7 +51,9 @@ T('setup: the members a look-alike would copy exist', sql(f"select count(*) from
 # the catalog: no function other than the sign-up trigger writes a name, none stores a profile's name elsewhere, nothing copies metadata later
 T('catalog: the functions that INSERT or UPDATE profiles are handle_new_user and three counters', sql(r"""select string_agg(p.proname, ',' order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname in ('public', 'private', 'auth') and p.prosrc ~* '(insert\s+into\s+(public\.)?profiles|update\s+(public\.)?profiles\s+(as\s+\w+\s+)?set)'""")
-  == 'handle_new_user,increment_profile_view,person_followers_count,profiles_followers_count')
+  == 'handle_new_user,increment_profile_view,person_followers_count,profiles_followers_count,set_username,username_assign')
+T('catalog: set_username and username_assign write the username only (never the name)', sql(r"""select count(*) from pg_proc p where p.proname in ('set_username', 'username_assign')
+  and p.prosrc ~* 'update\s+public\.profiles\s+set\s+(?!username\s*=)'""") == '0')
 T('catalog: no function reads a profile name into a variable to store it elsewhere', sql(r"""select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname in ('public', 'private') and p.prosrc ~* 'insert\s+into' and p.prosrc ~* 'select\s+[^;]*\mname\M[^;]*\minto\M[^;]*from\s+(public\.)?profiles'""") == '0')
 T('catalog: the only trigger on auth.users is the sign-up one (INSERT)', sql("select string_agg(tgname, ',') from pg_trigger where tgrelid = 'auth.users'::regclass and not tgisinternal") == 'on_auth_user_created')
@@ -82,8 +90,7 @@ with sync_playwright() as p:
                       (f'Ahme̵d {NT}', 'a mark NFKC cannot join to its letter'), (f'Hala {NT} · Pharco', 'the picker separator'),
                       (f'(MBA) Ali {NT}', 'a bracket before the name (fifth version: drew as «Ali (MBA)» in Arabic)'),
                       (f'Ali {NT} (علي) محمد', 'an Arabic word in brackets between a Latin and an Arabic word (drew as «Ali محمد (علي)»)'),
-                      (f'بىىىام علي {NT}', 'ى inside a word (eighth version: «بىىىام» drew as «بسام»)'), (f'هىثىام {NT}', '«ىثى» inside a word (drew as «هشام»)'),
-                      (f'حسںین {NT}', 'ں inside a word')]:
+                      (f'Abdel- Rahman {NT}', 'a space on one side of a hyphen (ninth version: refused with the fix, not joined)')]:
         e = f'np-bad{len(R)}{ST}@np.test'; r = signup(e, name)
         T(f'sign-up API: {why} is refused, nothing is created', r is not None and sql(f"select count(*) from auth.users where email = {q(e)}") == '0', r)
     LA = {f'حْالد {NT}': f'np-lak{ST}@np.test', f'Josè {NT}': f'np-laj{ST}@np.test', f'ئروت {NT}': f'np-lat{ST}@np.test', f'Szổke {NT}': f'np-las{ST}@np.test',
@@ -96,7 +103,7 @@ with sync_playwright() as p:
         T(f'sign-up API: {why} is stored as the rule writes it, keyed as the app keys it', r is None and len(rw) == 4 and rw[1] == app_norm(nm, name) and rw[2] == app_skel(nm, name)
           and rw[3] == 'false', [r, rw, app_norm(nm, name)])
     rw = row(f'np-lak{ST}@np.test').split('|')
-    T('sign-up API: «حْالد» is stored «حالد» (no mark left to draw as the dot) — and is «خالد»\'s twin (sixth version: one dot apart)', rw[1] == f'حالد {NT}' and rw[2] == row(f'np-k{ST}@np.test').split('|')[2], rw)
+    T('sign-up API: «حْالد» is stored «حالد» (no mark left to draw as the dot) — another name than «خالد» (ninth version: names may be alike)', rw[1] == f'حالد {NT}' and rw[2] != row(f'np-k{ST}@np.test').split('|')[2], rw)
     for e2, e1, what in [('lai', 'a', '«Alİ Kaya» has «Ali Kaya»\'s skeleton (İ is i — sixth version)'), ('lad', 'd', '«عبد الله أحمد» has «عبدالله أحمد»\'s skeleton (the skeleton ignores spaces — sixth version)'),
                          ('lap', 'p', '«Pal’o Kováč» has «Paľo Kováč»\'s skeleton (no apostrophe in the skeleton, ľ is l — seventh version)'), ('lan', 'n', '«’Αννα Νίκου» has «Άννα Νίκου»\'s skeleton (seventh version)')]:
         r2, r1 = row(f'np-{e2}{ST}@np.test').split('|'), row(f'np-{e1}{ST}@np.test').split('|')
@@ -104,13 +111,14 @@ with sync_playwright() as p:
     e = f'np-br{ST}@np.test'; r = signup(e, f'Ali {NT} ( MBA )')
     T('sign-up API: «Ali ( MBA )» is stored «Ali (MBA)» (sixth version: the spaces inside the brackets tidied; it was refused)', r is None and row(e).split('|')[1] == f'Ali {NT} (MBA)' and row(e).split('|')[3] == 'false', [r, row(e)])
     T('sign-up API: «Josè» has «José»\'s skeleton (a twin, told apart in every list)', row(f'np-laj{ST}@np.test').split('|')[2] == row(f'np-j{ST}@np.test').split('|')[2])
-    T('sign-up API: «ئروت» has «ثروت»\'s skeleton (bold initial ئ / ث, fifth version)', row(f'np-lat{ST}@np.test').split('|')[2] == row(f'np-t{ST}@np.test').split('|')[2])
+    T('sign-up API: «ئروت» is another name than «ثروت» (ninth version: letters that only look alike are not one search key)', row(f'np-lat{ST}@np.test').split('|')[2] != row(f'np-t{ST}@np.test').split('|')[2])
     T('sign-up API: «Szổke» has «Szőke»\'s skeleton (bold ő / ổ, fifth version)', row(f'np-las{ST}@np.test').split('|')[2] == row(f'np-s{ST}@np.test').split('|')[2])
-    # eighth version: names that END in ى sign up as typed; a space on one side of a hyphen is tidied, a zero-width space is a space
+    # ninth version: names with ى anywhere sign up as typed (the eighth version's 'final' is gone); a zero-width space draws nothing between
+    # Latin letters (removed) and breaks an Arabic join (a space)
     for i, (name, want) in enumerate([(f'مصطفى كامل {NT}', None), (f'ليلى موسى {NT}', None), (f'يحيى {NT}', None), (f'هدى منى {NT}', None),
-                                      (f'Abdel- Rahman {NT}', f'Abdel-Rahman {NT}'), (f'Ahmed Hassan -MBA {NT}', f'Ahmed Hassan-MBA {NT}'), (f'Ahmed\u200bAli {NT}', f'Ahmed Ali {NT}')]):
+                                      (f'بىىىام علي {NT}', None), (f'هانىء سعيد {NT}', None), (f'Ahmed\u200bAli {NT}', f'AhmedAli {NT}'), (f'سم\u200bير {NT}', f'سم ير {NT}')]):
         e = f'np-e8{i}{ST}@np.test'; r = signup(e, name); rw = row(e).split('|')
-        T(f'sign-up API: «{name}» is stored «{want or name}» (eighth version), keyed as the app keys it', r is None and len(rw) == 4 and rw[1] == (want or name) == app_norm(nm, name)
+        T(f'sign-up API: «{name}» is stored «{want or name}» (ninth version), keyed as the app keys it', r is None and len(rw) == 4 and rw[1] == (want or name) == app_norm(nm, name)
           and rw[2] == app_skel(nm, name) and rw[3] == 'false', [r, rw])
     e = f'np-sl{ST}@np.test'; r = signup(e, f'د / Sami {NT}')
     T('sign-up API: «د / Sami» is stored «د/ Sami» (the slash joined to the title)', r is None and row(e).split('|')[1] == f'د/ Sami {NT}', [r, row(e)])
@@ -126,9 +134,9 @@ with sync_playwright() as p:
     T('sign-up form (EN): a spaced hyphen → the parentheses suggested', f'write “{FSI}Ali {NT} (MBA){PDI}”' in pg.inner_text('#suErr'), repr(pg.inner_text('#suErr')))
     pg.fill('#suName', f'(MBA) Ali {NT}'); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(500)
     T('sign-up form (EN): a bracket before the name → the bracket after it suggested', pg.inner_text('#suErr') == f'Put the part in brackets after the name — write “{FSI}Ali {NT} (MBA){PDI}”', repr(pg.inner_text('#suErr')))
-    pg.fill('#suName', f'بىىىام علي {NT}'); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(500)
-    T('sign-up form (EN): ى inside a word → «can only be the last letter of a word», the letter and the word isolated (eighth version)',
-      pg.inner_text('#suErr') == f'The letter “{FSI}ى{PDI}” ({FSI}U+0649{PDI}) can only be the last letter of a word — inside “{FSI}بىىىام{PDI}” it has no dots and can read as another letter', repr(pg.inner_text('#suErr')))
+    pg.fill('#suName', f'Abdel- Rahman {NT}'); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(500)
+    T('sign-up form (EN): a space on one side of a hyphen → «A hyphen joins two words without a space», the fix isolated (ninth version)',
+      pg.inner_text('#suErr') == f'A hyphen joins two words without a space — write “{FSI}Abdel-Rahman {NT}{PDI}”', repr(pg.inner_text('#suErr')))
     ar = ctx.new_page(); ar.add_init_script("try{localStorage.setItem('dx_lang','ar')}catch(e){}"); ar.goto(U, wait_until='load'); ar.wait_for_timeout(500); ar.evaluate('endSplash()'); ar.wait_for_timeout(900)
     ar.evaluate('showSignup()'); ar.wait_for_timeout(300)
     ar.fill('#suName', f'Ɗanjuma {NT}'); ar.fill('#suEmail', f'np-uia{ST}@np.test'); ar.fill('#suPw', PW); ar.click('#signupPage button.f-btn'); ar.wait_for_timeout(600)
@@ -141,9 +149,9 @@ with sync_playwright() as p:
     T('sign-up form (AR): the parentheses suggested', ar.inner_text('#suErr') == f'ضع ما يلي الاسم بين قوسين — اكتب «{FSI}Ali {NT} (MBA){PDI}»', repr(ar.inner_text('#suErr')))
     ar.fill('#suName', f'(صيدلي) أحمد {NT}'); ar.click('#signupPage button.f-btn'); ar.wait_for_timeout(500)
     T('sign-up form (AR): a bracket before the name → «ضع الجزء الذي بين القوسين بعد الاسم», the name isolated', ar.inner_text('#suErr') == f'ضع الجزء الذي بين القوسين بعد الاسم — اكتب «{FSI}أحمد {NT} (صيدلي){PDI}»', repr(ar.inner_text('#suErr')))
-    ar.fill('#suName', f'هىثىام علي {NT}'); ar.click('#signupPage button.f-btn'); ar.wait_for_timeout(500)
-    T('sign-up form (AR): «ىثى» inside a word → «لا يأتي إلا آخر حرف في الكلمة», the letter and the word isolated (eighth version)',
-      ar.inner_text('#suErr') == f'الحرف «{FSI}ى{PDI}» ({FSI}U+0649{PDI}) لا يأتي إلا آخر حرف في الكلمة — في وسط «{FSI}هىثىام{PDI}» يُكتب بلا نقط وقد يُقرأ حرفًا آخر', repr(ar.inner_text('#suErr')))
+    ar.fill('#suName', f'Abdel- Rahman {NT}'); ar.click('#signupPage button.f-btn'); ar.wait_for_timeout(500)
+    T('sign-up form (AR): a space on one side of a hyphen → «الشَرطة تصل كلمتين بلا مسافة», the fix isolated (ninth version)',
+      ar.inner_text('#suErr') == f'الشَرطة تصل كلمتين بلا مسافة — اكتب «{FSI}Abdel-Rahman {NT}{PDI}»', repr(ar.inner_text('#suErr')))
     ar.fill('#suName', f'Hala {NT} – Head of QA – Pharco'); ar.click('#signupPage button.f-btn'); ar.wait_for_timeout(500)
     T('sign-up form (AR): several dashes → one pair the rule accepts', ar.inner_text('#suErr') == f'ضع ما يلي الاسم بين قوسين — اكتب «{FSI}Hala {NT} (Head of QA, Pharco){PDI}»', repr(ar.inner_text('#suErr')))
     T('sign-up form: nothing was created by the refused names', sql(f"select count(*) from auth.users where email in ('np-ui{ST}@np.test', 'np-uia{ST}@np.test')") == '0')
@@ -162,23 +170,23 @@ with sync_playwright() as p:
     T('member: …the refusal names the letter, isolated', r['e'] and r['e']['message'] == f'The letter “{FSI}Ɔ{PDI}” ({FSI}U+0186{PDI}) is not supported in names yet', r)
     r = patch(ar, uid, {'name': f'(صيدلي) أحمد {NT}'})
     T('member: a bracket before the name is refused (23514), suggesting it after the name', r['e'] and r['e']['code'] == '23514' and r['e']['message'] == f'Put the part in brackets after the name — write “{FSI}أحمد {NT} (صيدلي){PDI}”', r)
-    r = patch(ar, uid, {'name': f'حىىىن {NT}'})
-    T('member: ى inside a word is refused (23514, reason final — eighth version), the name stays', r['e'] and r['e']['code'] == '23514' and 'can only be the last letter of a word' in r['e']['message']
+    r = patch(ar, uid, {'name': f'El- Sayed {NT}'})
+    T('member: a space on one side of a hyphen is refused (23514, reason dash — ninth version), the name stays', r['e'] and r['e']['code'] == '23514' and 'A hyphen joins two words without a space' in r['e']['message']
       and row(f'np-uia{ST}@np.test').split('|')[1] == f'حالد {NT}', r)
     r = patch(ar, uid, {'name': f'منى (Ali) {NT}'})
     T('member: a Latin word in brackets between an Arabic and a Latin word is refused (drew as «منى … (Ali)» in Arabic)', r['e'] and r['e']['code'] == '23514', r)
     for name in [f'عْادة {NT}', f'رْياد {NT}', f'Saʿīd {NT}', f'Hêlène {NT}', f'مُحَمَّد {NT}', f'ا.د / Sami {NT}', f'ئروت {NT}', f'Szổke {NT}', f'علی\u200cرضا {NT}', f'Ali {NT} محمد (علي)',
                  f'Alİ Kaya {NT}', f'أبو بكر {NT}', f'Ahmed ( Mido ) {NT}',   # sixth version: İ, a space after a letter that never joins, spaces inside brackets
                  f'Pal’o Kováč {NT}', f'Šťastný {NT}', f'Marie ďAlessandro {NT}', f'’Ολγα {NT}', f'Phương {NT}',   # seventh version: a mark drawn beside its letter, the apostrophe
-                 f'موسى عيسى {NT}', f'El- Sayed {NT}', f'Ahmed\u200bAli {NT}']:   # eighth version: ى at the end, a hyphen with a space on one side, a zero-width space
+                 f'موسى عيسى {NT}', f'حىىىن {NT}', f'Ahmed\u200bAli {NT}']:   # ninth version: ى anywhere, a zero-width space
         r = patch(ar, uid, {'name': name}); rw = row(f'np-uia{ST}@np.test').split('|')
         T(f'member: «{name}» stored as the rule writes it and keyed as the app keys it', not r['e'] and rw[1] == app_norm(nm, name) and rw[2] == app_skel(nm, name) and rw[3] == 'false', [r, rw, app_norm(nm, name)])
     T('member: the Arabic diacritics are gone from what was stored («مُحَمَّد» → «محمد»)', row(f'np-uia{ST}@np.test').split('|')[1] != f'مُحَمَّد {NT}' and app_norm(nm, f'مُحَمَّد {NT}') == f'محمد {NT}')
     T('member: a zero-width non-joiner between Arabic letters is a space («علی‌رضا» → «علی رضا»)', app_norm(nm, f'علی\u200cرضا {NT}') == f'علی رضا {NT}')
     T('member: spaces inside brackets are tidied («Ahmed ( Mido )» → «Ahmed (Mido)», sixth version)', app_norm(nm, f'Ahmed ( Mido ) {NT}') == f'Ahmed (Mido) {NT}')
-    T('member: «أبو بكر» and «أبوبكر» are one name to the app (no spaces in the skeleton)', app_skel(nm, f'أبو بكر {NT}') == app_skel(nm, f'أبوبكر {NT}'))
+    T('member: «أبو بكر» and «أبوبكر» are one search key to the app (no spaces in the key)', app_skel(nm, f'أبو بكر {NT}') == app_skel(nm, f'أبوبكر {NT}'))
     for a_, b_ in [(f'Paľo Kováč {NT}', f'Pal’o Kováč {NT}'), (f'Šťastný {NT}', f'Št’astný {NT}'), (f'Marie ďAlessandro {NT}', f'Marie d’Alessandro {NT}'), (f'Όλγα {NT}', f'’Ολγα {NT}'), (f'Phương {NT}', f'Phu’o’ng {NT}')]:
-        T(f'member: «{a_}» and «{b_}» are one name to the app and the database (seventh version: a mark drawn beside its letter)', app_skel(nm, a_) == app_skel(nm, b_)
+        T(f'member: «{a_}» and «{b_}» are one search key to the app and the database (no marks, no apostrophe in the key)', app_skel(nm, a_) == app_skel(nm, b_)
           == sql(f"select public.person_name_key({q(a_)})") == sql(f"select public.person_name_key({q(b_)})"), [app_skel(nm, a_), app_skel(nm, b_)])
     r = patch(ar, uid, {'name': f'حْالد {NT}', 'name_key': row(f'np-j{ST}@np.test').split('|')[2], 'name_needs_fix': True})
     rw = row(f'np-uia{ST}@np.test').split('|')
@@ -203,7 +211,7 @@ with sync_playwright() as p:
     T('sign-in toast (AR): «أهلًا بعودتك يا …!» with the name isolated', any(f'أهلًا بعودتك يا {FSI}Sami{PDI}!' in t for t in toasts), toasts[-5:])
     # the greeting uses the first name — after the title, with the word that completes it (v-real-r1: «عبد الله» was greeted «يا الله»)
     for stored, greet in [(f'عبد الله {NT}', 'عبد الله'), (f'د/ محمد أحمد {NT}', 'محمد'), (f'Ἀλέξανδρος', 'Ἀλέξανδρος'),
-                          (f'الحاج أحمد {NT}', 'أحمد'), (f'El Sayed Mohamed {NT}', 'Sayed'), (f'Ali, Mohamed {NT}', 'Ali'), (f'Haytham {NT}', 'Haytham')]:   # sixth version
+                          (f'الحاج أحمد {NT}', 'أحمد'), (f'El Sayed Mohamed {NT}', 'El Sayed'), (f'Ali, Mohamed {NT}', 'Mohamed'), (f'Haytham {NT}', 'Haytham')]:   # sixth version
         ar.evaluate('doLogout()'); ar.wait_for_timeout(800); sql(f"update public.profiles set name = {q(stored)} where id = '{uid}'")
         ar.evaluate('showLogin()'); ar.fill('#loginEmail', f'np-uia{ST}@np.test'); ar.fill('#loginPw', PW); ar.evaluate('window.__toasts = []')
         ar.click('#loginPage button.f-btn'); wait_for(lambda: ar.is_visible('#app'), 15); ar.wait_for_timeout(1500)
@@ -223,15 +231,15 @@ with sync_playwright() as p:
         T(f'banner ({lang}): a bracket-order name is asked to move the part in brackets — not told it has characters Drugbox does not allow', want in ban and 'Drugbox' not in ban.split('\n')[0], repr(ban))
         page.evaluate('doLogout()'); page.wait_for_timeout(800)
 
-    # ── 4c. eighth version: a name stored before the rule that has ى inside a word is FLAGGED (never renamed); the banner's first sentence
-    #        says why — a letter in the middle of a word — not «characters Drugbox no longer allows» (v-real6-r2), EN and AR ──
-    sql(f"update public.profiles set name = {q(f'بىىىام {NT}')} where id = '{uid}'")
-    T('banner: precondition — a server write keeps «بىىىام» and flags it', row(f'np-uia{ST}@np.test').split('|')[1] == f'بىىىام {NT}' and row(f'np-uia{ST}@np.test').split('|')[3] == 'true')
-    for page, lang, want, why in [(ar, 'ar', 'فيه حرف مكتوب في وسط كلمة', 'لا يأتي إلا آخر حرف في الكلمة'), (pg, 'en', 'a letter in it is written in the middle of a word', 'can only be the last letter of a word')]:
+    # ── 4c. ninth version: a name stored before the rule with a space on one side of a hyphen is FLAGGED (never renamed); the banner's
+    #        first sentence says why — a hyphen with a space next to it —, the second line the fix, EN and AR ──
+    sql(f"update public.profiles set name = {q(f'Abdel- Rahman {NT}')} where id = '{uid}'")
+    T('banner: precondition — a server write keeps «Abdel- Rahman» and flags it', row(f'np-uia{ST}@np.test').split('|')[1] == f'Abdel- Rahman {NT}' and row(f'np-uia{ST}@np.test').split('|')[3] == 'true')
+    for page, lang, want, why in [(ar, 'ar', 'فيه شَرطة بجانبها مسافة', 'الشَرطة تصل كلمتين بلا مسافة'), (pg, 'en', 'a hyphen in it has a space next to it', 'A hyphen joins two words without a space')]:
         page.evaluate('showLogin()'); page.fill('#loginEmail', f'np-uia{ST}@np.test'); page.fill('#loginPw', PW); page.click('#loginPage button.f-btn')
         wait_for(lambda: page.is_visible('#app'), 15); page.wait_for_timeout(1200); page.evaluate('gotoProfile(ME.id)'); page.wait_for_timeout(1500)
         ban = page.evaluate("(() => { const d = document.querySelector('.dx-name-fix'); return d ? d.innerText : ''; })()")
-        T(f'banner ({lang}): a «final» name is told a letter is in the middle of a word (first sentence), and what to change (second line)',
+        T(f'banner ({lang}): a one-sided hyphen is told so (first sentence), and what to write (second line)',
           want in ban.split('\n')[0] and why in ban and not re.search('characters|حروف لم يعد', ban.split('\n')[0]), repr(ban))
         page.evaluate('doLogout()'); page.wait_for_timeout(800)
     # the avatar skips a leading ’ («’Abd al-Rahman» → «AA», not «’A»)

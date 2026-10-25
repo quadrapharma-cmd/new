@@ -177,10 +177,10 @@ insert into r(name, ok, err) select 'verifier: ' || x.name, public.person_name_p
   ('Greek capital with tonos ("Άννα Νίκου")', 'Άννα Νίκου', ''), ('…"’Αννα Νίκου"', '’Αννα Νίκου', ''), ('"Marie ďAlessandro"', 'Marie ďAlessandro', ''), ('Vietnamese ơ ư ("Phương Hồ")', 'Phương Hồ', ''),
   -- eighth version (round 7, v-spoof6-r2): ى and ں have no dot when they join the next letter — «ىىى» drew as «سـ», «ىثى» as «شـ» —
   -- so they may only be the LAST letter of a word (tools/names/final-only.txt, measured by render_scan.py --part final)
-  ('«بىىىام علي» (drew as «بسام علي»)', 'بىىىام علي', 'final'), ('«ىىىمير حسن» (drew as «سمير حسن»)', 'ىىىمير حسن', 'final'),
-  ('«حىىىن محمود» (drew as «حسن محمود»)', 'حىىىن محمود', 'final'), ('«هىثىام علي» (drew as «هشام علي»)', 'هىثىام علي', 'final'),
-  ('«ىثىريف» (drew as «شريف»)', 'ىثىريف', 'final'), ('«بىثىير» (drew as «بشير»)', 'بىثىير', 'final'), ('«عىثىري» (drew as «عشري»)', 'عىثىري', 'final'),
-  ('noon ghunna inside a word («بںںںام»)', 'بںںںام علي', 'final'), ('one ى before a letter («ىا»)', 'ىا', 'final'), ('two words glued («مصطفىكامل»)', 'مصطفىكامل', 'final'),
+  ('«بىىىام علي» (drew as «بسام علي»)', 'بىىىام علي', ''), ('«ىىىمير حسن» (drew as «سمير حسن»)', 'ىىىمير حسن', ''),
+  ('«حىىىن محمود» (drew as «حسن محمود»)', 'حىىىن محمود', ''), ('«هىثىام علي» (drew as «هشام علي»)', 'هىثىام علي', ''),
+  ('«ىثىريف» (drew as «شريف»)', 'ىثىريف', ''), ('«بىثىير» (drew as «بشير»)', 'بىثىير', ''), ('«عىثىري» (drew as «عشري»)', 'عىثىري', ''),
+  ('noon ghunna inside a word («بںںںام»)', 'بںںںام علي', ''), ('one ى before a letter («ىا»)', 'ىا', ''), ('two words glued («مصطفىكامل»)', 'مصطفىكامل', ''),
   ('ى at the end of the word, a hyphen after it', 'مصطفى-كامل', ''), ('ى then a zero-width non-joiner (a space)', U&'\0649\200C\0628', ''),
   ('invisible U+200B is removed: allowed', U&'Dr. Zeina Tufice\200B', ''),
   ('invisible U+1D173 is removed: allowed', U&'Dr. Zeina Tufice\+01D173', ''),
@@ -209,7 +209,12 @@ insert into r(name, ok, err) select 'real name allowed: ' || x.s, public.person_
   ('İsmail Ñúñez'), ('Məmmədov Əli'), ('Nguyễn Thị Ánh'), ('مُحَمَّد عَبْدُ الرَّحْمٰن'), ('الدكتورة/ هالة السعيد'), ('Ґанна Ґонта'),
   -- eighth version: names that END in ى (or ں) are untouched by the 'final' reason; ي, ی and ئ inside a word keep their dots
   ('مصطفى كامل'), ('موسى عيسى'), ('يحيى زكريا'), ('هدى شعراوي'), ('منى زكي'), ('ليلى مراد'), ('مصطفىٰ'), ('عبد الهادى'), ('حسں'), ('وائل رائد'), ('فائزة'),
-  ('پرویز گلشیری'), ('علی رضا'), ('Abdel- Rahman'), ('Ahmed Hassan -MBA')) x(s);
+  ('پرویز گلشیری'), ('علی رضا'),
+  -- ninth version (the owner's decision of 25 Oct — names may be alike): ى / ں inside a word are allowed again; ىء names (v-real8)
+  ('بىىىام علي'), ('هىثىام علي'), ('ىا'), ('هانىء سعيد'), ('شاطىء الأمين'), ('بنت الشاطىء'), ('هادىء')) x(s);
+insert into r(name, ok, err) select 'ninth version: a space on ONE side of a hyphen is refused (dash), with the fix in the message: ' || x.s,
+       public.person_name_problem(public.person_name_norm(x.s)) = 'dash', public.person_name_problem(public.person_name_norm(x.s)) from (values
+  ('Abdel- Rahman'), ('Ahmed Hassan -MBA'), ('El -Sayed'), ('A- B- C')) x(s);
 insert into r(name, ok, err) select 'stored as typed: ' || x.s, public.person_name_norm(x.s) = x.want, public.person_name_norm(x.s) from (values
   ('هـالة', 'هالة'), (U&'\FF24\FF52. Hala', 'Dr. Hala'), ('  José   Müller ', 'José Müller'), (U&'Jose\0301', 'José'),
   -- 0039: look-alikes of the punctuation a name holds are written as it; the apostrophe is stored as ’ (as the app shows it)
@@ -227,10 +232,12 @@ insert into r(name, ok, err) select 'stored as typed: ' || x.s, public.person_na
   -- sixth version: a space just inside a bracket is tidied away (it was refused as a word: "(" alone)
   ('Ahmed Ali ( MBA )', 'Ahmed Ali (MBA)'), ('Ahmed Ali (MBA )', 'Ahmed Ali (MBA)'), ('أحمد علي ( صيدلي )', 'أحمد علي (صيدلي)'), ('Ahmed ( Mido ) Ali', 'Ahmed (Mido) Ali'),
   ('Alİ Kaya', 'Alİ Kaya'), ('عبد الله أحمد', 'عبد الله أحمد'),
-  -- eighth version (v-real6-r2): a space on ONE side of a hyphen is tidied away (a spaced hyphen « - » stays: 'dash'), a zero-width
-  -- space is a space between words (it joined them: «AhmedAli»)
-  ('Abdel- Rahman', 'Abdel-Rahman'), ('El -Sayed', 'El-Sayed'), ('Ahmed Hassan -MBA', 'Ahmed Hassan-MBA'), ('Abdel-  Rahman', 'Abdel-Rahman'), ('A- B- C', 'A-B-C'),
-  ('Ahmed - MBA', 'Ahmed - MBA'), (U&'Ahmed\200BAli', 'Ahmed Ali'), (U&'\0639\0628\062F\200B\0627\0644\0644\0647', 'عبد الله'), (U&'Dr. Zeina\200B', 'Dr. Zeina')) x(s, want);
+  -- ninth version (v-real8): a space on ONE side of a hyphen is kept as typed (and refused: 'dash', with the fix); a zero-width space
+  -- draws nothing between Latin letters or after a letter that never joins the next (removed: «Moham + U+200B + ed» is «Mohamed») and
+  -- breaks an Arabic join like the zero-width non-joiner (a space)
+  ('Abdel- Rahman', 'Abdel- Rahman'), ('El -Sayed', 'El -Sayed'), ('Abdel-  Rahman', 'Abdel- Rahman'), ('Ahmed - MBA', 'Ahmed - MBA'),
+  (U&'Ahmed\200BAli', 'AhmedAli'), (U&'Moham\200Bed Ali', 'Mohamed Ali'), (U&'\0639\0628\062F\200B\0627\0644\0644\0647', 'عبدالله'), (U&'Dr. Zeina\200B', 'Dr. Zeina'),
+  (U&'\0633\0645\200B\064A\0631', 'سم ير')) x(s, want);
 -- the refusal names what the person typed (not what normalising made of it), the word to fix, and the accepted alphabets
 insert into r(name, ok, err) select 'message: ' || x.s, public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) = x.want,
        public.person_name_message(x.s, public.person_name_problem(public.person_name_norm(x.s))) from (values
@@ -259,71 +266,41 @@ insert into r(name, ok, err) select 'message: ' || x.s, public.person_name_messa
   ('Hala Ali (Head of QA) (Pharco)', U&'Put the part in brackets after the name — write “\2068Hala Ali (Head of QA, Pharco)\2069”'),
   ('Ahmed Ali (MBA', U&'Put the part in brackets after the name — write “\2068Ahmed Ali (MBA)\2069”'),
   ('Ali (Head, فاركو)', U&'What is in brackets is written in one direction — Arabic letters, or Latin, Greek and Cyrillic ones — “\2068(Head, فاركو)\2069” mixes them'),
-  -- eighth version: the letter, its code point and the word, each isolated
-  ('بىىىام علي', U&'The letter “\2068ى\2069” (\2068U+0649\2069) can only be the last letter of a word — inside “\2068بىىىام\2069” it has no dots and can read as another letter'),
-  ('علي هىثىام', U&'The letter “\2068ى\2069” (\2068U+0649\2069) can only be the last letter of a word — inside “\2068هىثىام\2069” it has no dots and can read as another letter'),
-  ('حسںین', U&'The letter “\2068ں\2069” (\2068U+06BA\2069) can only be the last letter of a word — inside “\2068حسںین\2069” it has no dots and can read as another letter')) x(s, want);
+  -- ninth version: a space on one side of a hyphen — the fix in the message; the 'word' refusal quotes what was typed
+  ('Abdel- Rahman', U&'A hyphen joins two words without a space — write “\2068Abdel-Rahman\2069”'),
+  ('Ahmed Ali -MBA', U&'Put what follows the name in parentheses — write “\2068Ahmed Ali (MBA)\2069”'),
+  ('ʿ Ali', U&'“\2068ʿ\2069” is not a word — join it to the word next to it (remove the space)')) x(s, want);
 -- fifth version: every suggestion a message gives ('dash', 'bracket') is a name the rule accepts, for every string the verifiers used
 -- (a name refused for its brackets may also break a rule checked after them — 'mark', 'script' —, which the suggestion keeps)
 insert into r(name, ok, err) select 'every suggested name is accepted (''dash'' and ''bracket'', ' || count(*) || ' strings)', count(*) filter (where sp not in ('', 'mark', 'script')) = 0,
        string_agg(s || ' → ' || sug || ' (' || sp || ')', ' | ') filter (where sp not in ('', 'mark', 'script'))
   from (select s, sug, public.person_name_problem(public.person_name_norm(sug)) as sp
           from (select s, substring(msg from U&'“\2068(.*)\2069”$') as sug from vgot where problem in ('dash', 'bracket') and msg !~ '^What is in brackets') a) b;
--- twins by skeleton: names that look the same have the same key; names that differ do not
-insert into r(name, ok, err) select 'same skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) = public.person_name_key(x.b), public.person_name_key(x.a) || ' / ' || public.person_name_key(x.b) from (values
-  ('Dr. Rana Tufice', U&'Dr. R\0430na Tufice'), ('Ilya', 'llya'), ('O''Brien', 'O’Brien'), ('هالة', 'هالَة'), ('د. هالة الشامي', 'د. هالَة الشّامي'),
-  ('Dr. Nermeen Tufece', 'DR. NERMEEN TUFECE'), ('Dr. Islam Tufice', 'Dr. lslam Tufice'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\200B'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\+01D173'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\FFFC'),
-  ('Paul', U&'\0420aul'), ('Rana', U&'R\0430na'), ('Omar', U&'\039Fmar'),
-  -- 0039: a whole word in another alphabet that copies a Latin word; Arabic letters that draw the same before another letter
-  -- (TR39 maps them: a qaf with one dot / feh, Farsi yeh / yeh / alef maksura, keheh / kaf, heh goal / heh, teh marbuta goal)
-  ('Dr. Papa Tufice', U&'Dr. \0420\0430\0440\0430 Tufice'), ('فاطمة', 'ڧاطمة'), ('علي', 'على'), ('علي', 'علی'),
-  ('كريم', 'کریم'), ('هالة', 'ہالۃ'), ('Anne-Marie', U&'Anne\2011Marie'), ('O’Brien', 'O´Brien'),
-  -- third version: letters that draw alike while TR39 keys them apart (tools/names/pixel-twins.txt), a whole Cyrillic name that
-  -- reads as Latin, the em dash
-  ('Dr. Salih', U&'Dr. \0405\0430\04CF\0456\04BB'), ('Salih', U&'\0405\0430\04C0\0456\04BB'), ('Ahmed Ali', U&'Ahmed A\04CFi'),
-  ('Jean-Paul', 'Jean—Paul'), ('Mapía', 'Μαρία'),
-  -- fourth version: a name typed with Arabic diacritics is the same name as without them (and is stored without them)
-  ('حالد', 'حْالد'), ('محمد عبد الرحمن', 'مُحَمَّد عَبْدُ الرَّحْمٰن'), ('د/ محمد علي', 'د / محمد علي'), ('Sa’īd', 'Saʿīd'), ('Sa’īd', 'Saʾīd'),
-  -- fourth version: what tools/names/render_scan.py found drawn alike (every letter against every letter, 14-16 px): accents at the same
-  -- place (é / è, Ŝ / Š, ἀ / ἁ, ş / ș / ę), two stacked accents and one (Ẵ / Ǎ), an accent above i or j in place of its dot (í / i),
-  -- ئ / ت before a letter, г / ґ, ӏ / l / ا
-  ('José Tufice', 'Josè Tufice'), ('Šara', 'Ŝara'), ('Hélène', 'Hêlène'), ('Müller', 'Mûller'), ('ἀλέξανδρος', 'ἁλέξανδρος'), ('Ştefan', 'Ștefan'),
-  ('Ẵnh', 'Ǎnh'), ('Alí Tufice', 'Ali Tufice'), ('Ĵan', 'Jan'), ('تامر', 'ئامر'), ('Анна ганна', 'Анна ґанна'), ('Ahmed Ali', U&'Ahmed A\0627i'),
-  -- fifth version: what the scan found with the app's font stacks at every weight (v-spoof-r1): bold initial ث / ئ (so ت / ث / ئ are one
-  -- skeleton), double acute / circumflex + acute / inverted breve, the marks below (ring, dot, macron, circumflex, tilde, breve), ģ / ġ
-  -- (g draws its cedilla above), и / н, к / ԟ, г / ғ, d / đ
-  ('ثروت عادل', 'ئروت عادل'), ('ثامر', 'تامر'), ('Szőke Anna', 'Szổke Anna'), ('Szűcs', 'Szȗcs'), ('ḁla', 'ạla'), ('Ḏina', 'Ḓina'), ('Ṯariq', 'Ṱariq'), ('Ṯariq', 'Ţariq'),
-  ('Ġorġ', 'Ģorģ'), ('Ģirts', 'Ǵirts'), ('Анна иванова', 'Анна нванова'), ('Mađar', 'Madar'), ('Ӱлан', 'Ӳлан'),
-  -- fifth version: a zero-width non-joiner is a space; a letter of another alphabet is U+FFFD (the database and the app decompose the
-  -- letters Unicode 16 added differently)
-  (U&'\0639\0644\06CC\200C\0631\0636\0627', 'علی رضا'), (U&'\+0105C9abc', U&'\+011383abc'), (U&'\+016D68 Ahmed', U&'\+0105E4 Ahmed'),
-  -- sixth version (round 5; the skeleton OVER-merges — twins cost a line of context, a look-alike with its own skeleton can be sent the
-  -- message): the Turkish İ and ı are i and every key is case folded; spaces are ignored («عبد الله» = «عبدالله»); every pair
-  -- tools/names/render_scan.py draws within ONE Arabic dot shares a skeleton (i / l / İ / î / Ī, the dotted and undotted Arabic letters
-  -- that measure under a dot in some font and weight, an accent that draws within a dot of nothing on a bold capital); the first mark
-  -- above every letter that shares i's key is dropped (أ / ا)
-  ('Alİ Kaya', 'Ali Kaya'), ('Alı Kaya', 'Ali Kaya'), ('ALİ KAYA', 'Ali Kaya'), ('İsmail Öztürk', 'Ismail Ozturk'), ('Alî', 'AlĪ'), ('Ali', 'All'), ('Ibrahim', 'ibrahim'), ('ILYA', 'ilya'),
-  ('عبد الله أحمد', 'عبدالله أحمد'), ('أبو بكر', 'أبوبكر'), ('نور الدين', 'نورالدين'), ('عبد الرحمن محمد', 'عبدالرحمن محمد'), ('ابن سينا', 'ابنسينا'), ('Ali Kaya', 'AliKaya'),
-  (U&'\0639\0644\06CC\200C\0631\0636\0627', 'علیرضا'), ('Straße', 'Strasse'), ('Ahmed Ali ( MBA )', 'Ahmed Ali (MBA)'),
-  ('أبو', 'ابو'), ('أحمد علي', 'احمد علي'), ('آمال', 'أمال'), ('حْالد', 'خالد'), ('رْياد', 'زياد'), ('دْكي', 'ذكي'), ('عْادة', 'غادة'), ('حسںْ', 'حسن'),
-  ('تامر', 'بامر'), ('ح', 'خ'), ('ر', 'ز'), ('ص', 'ض'), ('ب', 'ن'), ('ي', 'ى'), ('ه', 'ة'), ('ف', 'ق'), ('هبة', 'هنة'),
-  ('José', 'Jose'), ('Müller', 'Muller'), ('Ştefan', 'Stefan'), ('Alena', 'Alёna'), ('Ḣana', 'Hana'), ('Ḥana', 'Hana'), ('Ńada', 'Nada'),
-  -- seventh version (round 6, v-spoof6-r1): the skeleton drops the apostrophe, and a letter whose mark the fonts draw BESIDE it (within
-  -- the rows the letter covers: tools/names/render_scan.py --part beside) has its base letter's skeleton — Slovak / Czech ľ ť ď Ľ (the
-  -- caron drawn as ’ after the letter), Greek capitals with the tonos or a breathing at their upper left, Vietnamese ơ ư (the horn)
-  ('Paľo Kováč', 'Pal’o Kováč'), ('Paľo Kováč', 'Palo Kováč'), ('Peter Kráľ', 'Peter Král’'), ('Šťastný', 'Št’astný'), ('Ľudmila', 'L’udmila'), ('Marie d’Alessandro', 'Marie ďAlessandro'),
-  ('ďurica', 'd’urica'), ('Άννα Νίκου', '’Αννα Νίκου'), ('Όλγα', '’Ολγα'), ('Ἀλέξανδρος', '’Αλέξανδρος'), ('Ή', '’Η'), ('Ώ', '’Ω'), ('Phương', 'Phu’o’ng'), ('Ơn', 'O’n'),
-  ('O’Brien', 'OBrien'), ('Mo’men', 'Momen'), ('d’Alessandro', 'dAlessandro')) x(a, b);
-insert into r(name, ok, err) select 'different skeleton: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) <> public.person_name_key(x.b), public.person_name_key(x.a) from (values
-  ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Hala', 'Hana'),
-  -- sixth version: the pairs below were different names until the fifth version (the undotted «حالد» and «خالد», «José» and «Jose»…);
-  -- they draw within a dot of each other in some font and weight, so they are twins now (above). These stay different names:
-  -- seventh version: an apostrophe is no letter — these stay different names
-  ('Paľo Kováč', 'Pavo Kováč'), ('O’Brien', 'O’Brian'), ('Άννα', 'Άνα'),
+-- the SEARCH key (ninth version — the owner's decision of 25 Oct: names may be alike, every member has a unique @username): what a
+-- person TYPES for a name they read has the same key — case, marks (Arabic diacritics, accents, the hamza and madda), the letter a
+-- keyboard types for another (ة / ه, ى / ي / ی, ک / ك), punctuation, spaces, invisible characters and a leading title
+insert into r(name, ok, err) select 'one search key: ' || x.a || ' / ' || x.b, public.person_name_key(x.a) = public.person_name_key(x.b), public.person_name_key(x.a) || ' / ' || public.person_name_key(x.b) from (values
+  ('O''Brien', 'O’Brien'), ('هالة', 'هالَة'), ('د. هالة الشامي', 'د. هالَة الشّامي'), ('Dr. Nermeen Tufece', 'DR. NERMEEN TUFECE'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\200B'),
+  ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\+01D173'), ('Dr. Zeina Tufice', U&'Dr. Zeina Tufice\FFFC'), ('علي', 'على'), ('علي', 'علی'), ('كريم', 'کریم'), ('هالة', 'ہالۃ'),
+  ('Anne-Marie', U&'Anne\2011Marie'), ('O’Brien', 'O´Brien'), ('Jean-Paul', 'Jean—Paul'), ('حالد', 'حْالد'), ('محمد عبد الرحمن', 'مُحَمَّد عَبْدُ الرَّحْمٰن'),
+  ('د/ محمد علي', 'د / محمد علي'), ('Sa’īd', 'Saʿīd'), ('Sa’īd', 'Saʾīd'), ('José Tufice', 'Jose Tufice'), ('Müller', 'Muller'), ('Ştefan', 'Stefan'), ('Ali Kaya', 'ALİ KAYA'),
+  ('Alı Kaya', 'Ali Kaya'), ('عبد الله أحمد', 'عبدالله أحمد'), ('أبو بكر', 'أبوبكر'), ('Straße', 'Strasse'), ('Ahmed Ali ( MBA )', 'Ahmed Ali (MBA)'), ('أحمد علي', 'احمد علي'),
+  ('آمال', 'أمال'), ('إبراهيم حسن', 'ابراهيم حسن'), ('فؤاد', 'فواد'), ('مؤمن', 'مومن'), ('فاطمة', 'فاطمه'), ('مصطفى', 'مصطفي'), ('Dr. Ahmed Ali', 'Ahmed Ali'), ('د. أحمد علي', 'احمد علي'),
+  ('Prof. Dr. Ahmed Ali', 'ahmed ali'), ('Søren Łukasz', 'Soren Lukasz'), ('Szőke Anna', 'Szổke Anna'), ('Đorđe', 'Dorde'), ('Þór', 'Thor'), ('Йосиф', 'Иосиф'), ('O’Brien', 'OBrien'), ('Paľo', 'Palo'),
+  (U&'\0639\0644\06CC\200C\0631\0636\0627', 'علی رضا'), (U&'\+0105C9abc', U&'\+011383abc')) x(a, b);
+-- …and names that only LOOK alike are different names now (the look-alike chase of rounds 1-8 is over: their @username tells them apart)
+insert into r(name, ok, err) select 'ninth version: a look-alike is another name (its own key): ' || x.a || ' / ' || x.b, public.person_name_key(x.a) <> public.person_name_key(x.b), public.person_name_key(x.a) from (values
+  ('Dr. Rana Tufice', U&'Dr. R\0430na Tufice'), ('Ilya', 'llya'), ('Paul', U&'\0420aul'), ('Dr. Papa Tufice', U&'Dr. \0420\0430\0440\0430 Tufice'), ('فاطمة', 'ڧاطمة'),
+  ('Dr. Salih', U&'Dr. \0405\0430\04CF\0456\04BB'), ('ثروت عادل', 'ئروت عادل'), ('تامر', 'ئامر'), ('بسام علي', 'بىىىام علي'), ('هشام علي', 'هىثىام علي'), ('حالد', 'خالد'),
+  ('Ali', 'All'), ('ح', 'خ'), ('ب', 'ن'), ('Анна иванова', 'Анна нванова'),
+  ('Dr. Zeina Tufice', 'Dr. Zeina Tufica'), ('Hala', 'Hana'), ('Paľo Kováč', 'Pavo Kováč'), ('O’Brien', 'O’Brian'), ('Άννα', 'Άνα'),
   ('Hadia', 'Nadia'), ('Mona', 'Nona'), ('Omar', 'Amar'), ('Nour', 'Noor'), ('Dr. Ahmed Ali', 'Dr. Ahmad Ali'), ('Ali Kaya', 'Ali Kaye'), ('Mohamed', 'Mohammed'),
-  ('سمير', 'شمير'), ('حسن', 'حسين'), ('محمد', 'احمد'), ('أحمد', 'إحمد'), ('س', 'ش'), ('ا', 'ل'), ('د', 'ر'), ('ع', 'ف'),
-  -- fifth version: the words in another order are another name (the brackets that drew them alike are refused)
+  ('سمير', 'شمير'), ('حسن', 'حسين'), ('محمد', 'احمد'), ('س', 'ش'), ('ا', 'ل'), ('د', 'ر'), ('ع', 'ف'),
   ('Ahmed Ali (MBA)', 'Ahmed (MBA) Ali'), ('أحمد علي (صيدلي)', 'أحمد (صيدلي) علي'), ('Ali محمد (علي)', 'Ali (علي) محمد')) x(a, b);
+-- the sound key (search only): common Latin spellings of one Arabic name, and its Arabic spelling
+insert into r(name, ok, err) select 'one sound key: ' || x.a || ' / ' || x.b, public.person_name_sound(x.a) = public.person_name_sound(x.b), public.person_name_sound(x.a) || ' / ' || public.person_name_sound(x.b) from (values
+  ('Mohamed Ali', 'Muhammad Ali'), ('Mohamed Ali', 'محمد علي'), ('Abdel Rahman', 'Abdulrahman'), ('Abdel Rahman', 'عبد الرحمن'), ('Youssef', 'Yusuf'), ('Hussein', 'Hussain'),
+  ('Mostafa', 'Mustapha'), ('Gamal', 'Jamal'), ('Tarek', 'Tariq'), ('El Sayed', 'Elsayed'), ('Fatma', 'فاطمة'), ('Ibrahim', 'إبراهيم')) x(a, b);
 insert into r(name, ok, err) select 'stored without the mark that drew as a dot: ' || x.a || ' → ' || public.person_name_norm(x.a) || ', not ' || x.b,
        public.person_name_norm(x.a) <> x.b and public.person_name_norm(x.a) !~ ('[' || U&'!064B-!0652!0670' uescape '!' || ']') and strpos(public.person_name_norm(x.a), x.u) > 0,
        public.person_name_norm(x.a) from (values

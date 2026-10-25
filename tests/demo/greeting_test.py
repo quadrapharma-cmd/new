@@ -6,6 +6,8 @@ is dropped («Ali, Mohamed» → «Ali», «العلي، محمد» → «الع
 demo account is greeted «Haytham» in both («أهلًا بعودتك يا Haytham!»), no longer translated to «هيثم». S-03 fix 8 (v-real6-r2): a kunya or
 family prefix stays with its word («أم كلثوم», «آل سعود», «بنت الشاطئ», «Umm Kulthum», «Ben Ali»), «Abdel- Rahman» is «Abdel-Rahman», a
 zero-width space is a space, and a leading ’ / ʿ is not said («’Abd al-Rahman» → «Abd al-Rahman»); the sign-up avatar skips it too.
+S-03 fix 9 (v-real8, kept under the owner's username decision): a name written «Family, Given» greets the given name («Ali, Mohamed» →
+«Mohamed», «العلي، محمد» → «محمد»; «Ahmed Ali, PhD» stays «Ahmed»), and an article is greeted with its word («El Sayed Mohamed» → «El Sayed»).
   python3 tests/demo/greeting_test.py [en|ar]   (DEMO_FILE, default /tmp/drugbox_brand.html)"""
 from playwright.sync_api import sync_playwright
 import os, sys
@@ -16,7 +18,7 @@ CASES = [('Dr. Haytham Dweedar', 'Haytham'), ('عبد الله السيد', 'ع�
          ('ا.د/ سامي فهمي', 'سامي'), ('م. أحمد', 'أحمد'), ('Dr.Hala Ali', 'Hala'), ('د.أحمد علي', 'أحمد'), ('Pharm. Mona', 'Mona'),
          ('Abd El Rahman Ali', 'Abd El Rahman'), ('أبو بكر الصديق', 'أبو بكر'), ('D/ Ahmed', 'Ahmed'), ('Dr.', 'Dr.'),
          # S-03 fix 6 (v-real-r2): honorifics, articles, particles, trailing punctuation
-         ('El Sayed Mohamed', 'Sayed'), ('Al Sayed Ali', 'Sayed'), ('Ali, Mohamed', 'Ali'), ('العلي، محمد', 'العلي'), ('الحاج أحمد علي', 'أحمد'),
+         ('El Sayed Mohamed', 'El Sayed'), ('Al Sayed Ali', 'Al Sayed'), ('Ali, Mohamed', 'Mohamed'), ('العلي، محمد', 'محمد'), ('Smith, John Paul', 'John'), ('Dr. El Sayed Ali', 'El Sayed'), ('Ahmed Ali, PhD', 'Ahmed'), ('الحاج أحمد علي', 'أحمد'),
          ('الحاجة فاطمة محمود', 'فاطمة'), ('الشيخ محمد', 'محمد'), ('المهندس محمود سامي', 'محمود'), ('الدكتور أحمد', 'أحمد'), ('الأستاذ الدكتور سامي فهمي', 'سامي'),
          ('Sheikh Zayed', 'Zayed'), ('Hajj Ali Hassan', 'Ali'), ('ابن سينا', 'ابن سينا'), ('van der Berg', 'van der Berg'), ('Abu Bakr Salem', 'Abu Bakr'),
          ('أ. منى', 'منى'), ('م. أحمد علي', 'أحمد'), ('Al', 'Al'), ('Haytham', 'Haytham'),
