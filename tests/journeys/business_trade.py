@@ -330,7 +330,7 @@ def renew_and_duplicates(j):
         if j.live: j.check(j.wait_db("select count(*) from public.products where name=%s and status='active'" % q(title), 6) == '2', 'the second post is not stored')
     with j.step('My Listings → ··· → Renew just after posting: renewed and moved to the top (no weekly limit)'):
         t = market(j, pg, 'manage'); row = pg.locator('#tab-manage [data-ml]', has_text=title).first; row.locator('[data-ml-a=more]').click(); pg.wait_for_timeout(400)
-        mark = j.toast_mark(pg); dlg_click(j, pg, r'Renew listing|جدد الإعلان|تجديد'); j.settle(pg, 1500)
+        mark = j.toast_mark(pg); dlg_click(j, pg, r'Renew listing|جدّ?د الإعلان|تجديد'); j.settle(pg, 1500)
         j.check(any(re.search(r'Renewed|اتجدّد', t) for t in j.toasts_since(pg, mark)), 'the renewal is not confirmed')
         if j.live: j.check(j.wait_db("select count(*) from public.products where name=%s and bumped_at > now()-interval '1 minute'" % q(title), 6) == '1', 'the renewal is not stored')
 
