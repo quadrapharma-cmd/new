@@ -112,7 +112,7 @@ select pg_temp.ok('names: the hyphen look-alike is stored as "-" and the apostro
 select pg_temp.no('names: the same mark twice on one letter is refused', $$update public.profiles set name = U&'PN Hale\0301\0301' where id = pg_temp.u(2)$$, '23514');
 -- the third version (0039_names_rule_3): a Cyrillic word that reads as Latin is that Latin name's twin (ӏ U+04CF has the skeleton of l)
 select pg_temp.step('"Dr. Ѕаӏіһ" (Cyrillic letters that read "Dr. Salih")', $$update public.profiles set name = U&'Dr. \0405\0430\04CF\0456\04BB' where id = pg_temp.u(2)$$);
-select pg_temp.ok('names: "Dr. Ѕаӏіһ" is allowed with the skeleton of "Dr. Salih" (a twin, told apart)', $$(select name_key = public.person_name_key('Dr. Salih') and not name_needs_fix from public.profiles where id = pg_temp.u(2))$$);
+select pg_temp.ok('names: "Dr. Ѕаӏіһ" is allowed and keyed as typed — a name like any other since 25 Oct (the @username tells it from "Dr. Salih")', $$(select name_key = public.person_name_key(name) and name_key <> public.person_name_key('Dr. Salih') and not name_needs_fix from public.profiles where id = pg_temp.u(2))$$);
 select pg_temp.step('a Greek name that reads as Latin, "Άννα Βίσση"', $$update public.profiles set name = 'Άννα Βίσση' where id = pg_temp.u(2)$$);
 select pg_temp.ok('names: "Άννα Βίσση" is kept as written, not flagged', $$(select name = 'Άννα Βίσση' and not name_needs_fix from public.profiles where id = pg_temp.u(2))$$);
 select pg_temp.step('an em dash and a title glued to an Arabic name', $$update public.profiles set name = 'Dr.أحمد Jean—Paul' where id = pg_temp.u(2)$$);
