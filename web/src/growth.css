@@ -37,7 +37,7 @@
 .dx-xp-topic{border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fff;display:flex;flex-direction:column;gap:8px}
 .dx-xp-topic b{font-size:14px;color:#111827}.dx-xp-topic small{font-size:12px;color:#6b7280}
 .dx-xp-s{border:1px solid #e5e7eb;border-radius:14px;padding:14px;background:#fff;display:flex;flex-direction:column;gap:8px}
-.dx-xp-s h3{font:800 16px Inter,system-ui,sans-serif;margin:0;color:#0f172a}
+.dx-xp-t{font:800 16px Inter,system-ui,sans-serif;margin:0;color:#0f172a}
 .dx-xp-meta{font-size:12.5px;color:#4b5563;display:flex;flex-wrap:wrap;gap:4px 12px}
 .dx-xp-acts{display:flex;flex-wrap:wrap;gap:8px}
 .dx-xp-q{border-top:1px solid #f3f4f6;padding-top:8px;font-size:13px}
@@ -62,4 +62,3 @@
 .dbk-f .dx-th-ck input,.dbk-f .dx-ch-mode input{width:18px;height:18px;padding:0;margin:0;flex:none}
 /* a visitor sees the directory and company pages only: no member navigation */
 .dx-guest .topbar .top-search,.dx-guest .topbar .top-nav,.dx-guest #topAv,.dx-guest #sidebar,.dx-guest #sbToggle,.dx-guest #sbOverlay,.dx-guest .ticker,.dx-guest #dxCoSwitch,.dx-guest #dxDealsBtn,.dx-guest #dxSearchBtn,.dx-guest #mbnav,.dx-guest #dxRfqTray,.dx-guest #dxDock{display:none!important}
-.dx-xp .dx-xp-s h3{text-transform:none;letter-spacing:0;font-size:16px;color:#0f172a}

@@ -103,8 +103,9 @@
     el.classList.add('dx-dbx-post');
     var av = el.querySelector('.post-av'); if (av) { av.removeAttribute('onclick'); av.removeAttribute('data-gp'); av.removeAttribute('title'); var lg = typeof LOGO_ICON !== 'undefined' ? LOGO_ICON : ''; av.innerHTML = lg ? '<img src="' + esc(lg) + '" alt="Drugbox" style="width:100%;height:100%;object-fit:contain;background:#fff">' : 'DB';   /* the approved page's own logo (a global const) */
       var deg = av.parentNode && av.parentNode.querySelector('span'); if (deg) deg.remove(); }
-    var nm = el.querySelector('.post-name'); if (nm) { nm.removeAttribute('onclick'); nm.removeAttribute('data-gp2'); nm.style.cursor = 'default'; nm.innerHTML = '<span data-noi18n>Drugbox</span> <span class="dx-off-chip">✓ Official</span>'; }
-    var sub = el.querySelector('.post-sub'); if (sub) sub.textContent = 'Official Drugbox channel';
+    var nm = el.querySelector('.post-name'); if (nm) { nm.removeAttribute('onclick'); nm.removeAttribute('data-gp2'); nm.style.cursor = 'default'; var isAr = document.documentElement.lang === 'ar';   /* a post's name line is members' text, which the translation leaves alone: written in the language here */
+      nm.innerHTML = '<span data-noi18n>Drugbox</span> <span class="dx-off-chip" data-noi18n>' + (isAr ? '✓ رسمي' : '✓ Official') + '</span>'; }
+    var sub = el.querySelector('.post-sub'); if (sub) { sub.setAttribute('data-noi18n', ''); sub.textContent = document.documentElement.lang === 'ar' ? 'قناة Drugbox الرسمية' : 'Official Drugbox channel'; }
     el.querySelectorAll('[id^="pm-"] .ctx-item').forEach(function (x) { if (/✏️|Edit/.test(x.textContent)) x.remove(); });
     var tags = (p.thera || []).filter(function (k) { return THERA.some(function (t) { return t[0] === k; }); });
     var body = el.querySelector('.post-body'); if (body && tags.length && !el.querySelector('.dx-th-tags')) body.insertAdjacentHTML('afterend', '<div class="dx-th-tags">' + tags.map(function (k) { return '<span class="dx-th-tag">' + esc(theraLabel(k)) + '</span>'; }).join('') + '</div>');
@@ -414,9 +415,9 @@
           '<small><span data-noi18n>' + s.joined + '</span> <span>joined</span> · <span data-noi18n>' + s.open_invites + '</span> <span>invited</span> · <span>quota</span> <span data-noi18n>' + s.quota + '</span></small>' +
           '<button type="button" class="adm-link dx-fnd-quota" style="align-self:flex-start">Change quota</button></div>'; }).join('');
       var ib = c.querySelector('.dx-fnd-inv');
-      ib.innerHTML = FV.inv.length ? '<div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Code</th><th>Segment</th><th>For</th><th>State</th><th>Expires</th><th></th></tr></thead><tbody>' + FV.inv.map(function (x) {
+      ib.innerHTML = FV.inv.length ? '<div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Code</th><th>Segment</th><th>Invited</th><th>State</th><th>Expires</th><th></th></tr></thead><tbody>' + FV.inv.map(function (x) {
         return '<tr data-fid="' + x.id + '"><td data-noi18n>…' + esc(x.code_hint) + '</td><td>' + esc(segLabel(x.segment, FV.seg)) + '</td><td data-noi18n>' + esc(x.note || '') + '</td>' +
-          '<td><span class="dx-st ' + ({ open: 'dx-st-sched', used: 'dx-st-pub', revoked: 'dx-st-off', expired: 'dx-st-off' }[x.state] || '') + '">' + esc({ open: 'Open', used: 'Used', revoked: 'Revoked', expired: 'Expired' }[x.state] || x.state) + '</span>' +
+          '<td><span class="dx-st ' + ({ open: 'dx-st-sched', used: 'dx-st-pub', revoked: 'dx-st-off', expired: 'dx-st-off' }[x.state] || '') + '">' + esc({ open: 'Not used yet', used: 'Used', revoked: 'Revoked', expired: 'Expired' }[x.state] || x.state) + '</span>' +
           (x.used_by_name ? ' <span class="adm-muted" data-noi18n>' + esc(x.used_by_name) + '</span>' : '') + '</td><td data-noi18n>' + esc(day(x.expires_at)) + '</td>' +
           '<td>' + (x.state === 'open' ? '<button type="button" class="adm-link adm-danger dx-fnd-rev">Revoke</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>'
         : '<div class="dbk-empty">No invitations yet.</div>';
@@ -550,7 +551,7 @@
   function title(s) { return ar() && s.title_ar ? s.title_ar : s.title; }
   function sessHtml(s, admin) {
     var up = s.status === 'scheduled', left = Math.max(0, s.seats - s.registered_count);
-    return '<div class="dx-xp-s" data-xsid="' + s.id + '"><h3 data-noi18n>' + esc(title(s)) + '</h3>' +
+    return '<div class="dx-xp-s" data-xsid="' + s.id + '"><div class="dx-xp-t" role="heading" aria-level="3" data-noi18n>' + esc(title(s)) + '</div>' +
       '<div class="dx-xp-meta"><span>🎤 <span data-noi18n>' + esc(s.expert_name) + '</span>' + (s.expert_line ? ' — <span data-noi18n>' + esc(s.expert_line) + '</span>' : '') + '</span>' +
       '<span>🗓 <span data-noi18n>' + esc(s.starts_local) + '</span> <span>(Cairo)</span> · <span data-noi18n>' + s.minutes + '</span> <span>min</span></span><span>🏷 ' + esc(topicLabel(s.topic)) + '</span>' +
       (up ? '<span>👥 <span data-noi18n>' + s.registered_count + '</span> <span>registered</span> · <span data-noi18n>' + left + '</span> <span>seats left</span></span>' : '<span>' + (s.status === 'done' ? '✓ Took place' : '✕ Cancelled') + '</span>') + '</div>' +
@@ -732,7 +733,7 @@
   };
   function impResult(r) {
     var box = document.querySelector('#adminContent .dx-imp-out'); if (!box) return;
-    box.innerHTML = '<div class="dx-imp-sum"><span class="dx-imp-ok">' + esc(r.dry_run ? 'Would create' : 'Created') + ': <span data-noi18n>' + r.created + '</span></span><span class="dx-imp-dup">Duplicates: <span data-noi18n>' + r.duplicates + '</span></span><span class="dx-imp-bad">Invalid: <span data-noi18n>' + r.invalid + '</span></span></div>' +
+    box.innerHTML = '<div class="dx-imp-sum"><span class="dx-imp-ok">' + esc(r.dry_run ? 'Would add' : 'Added') + ': <span data-noi18n>' + r.created + '</span></span><span class="dx-imp-dup">Duplicates: <span data-noi18n>' + r.duplicates + '</span></span><span class="dx-imp-bad">Invalid: <span data-noi18n>' + r.invalid + '</span></span></div>' +
       '<div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Row</th><th>Company</th><th>Result</th></tr></thead><tbody>' + (r.results || []).map(function (x) {
         return '<tr><td data-noi18n>' + x.row + '</td><td data-noi18n>' + esc(x.name || '') + '</td><td>' + (x.status === 'invalid' ? '<span class="dx-imp-bad">Invalid</span>: <span data-noi18n>' + esc(x.reason || '') + '</span>'
           : x.status === 'duplicate' ? '<span class="dx-imp-dup">Already in the directory</span>' + (x.of ? ' (<span data-noi18n>' + esc(x.of) + '</span>)' : '') : '<span class="dx-imp-ok">' + esc(x.status === 'created' ? 'Created — unclaimed' : 'Would be created — unclaimed') + '</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>';
@@ -886,106 +887,107 @@
   });
 })();
 
-/* ═════════════════════════ AREA w-growth, part 3: Arabic (the new labels only; members' and Drugbox's own texts stay as written) ═════════════════════════ */
+/* ═════════════════════════ AREA w-growth, part 3: Arabic (the new labels only; members' and Drugbox's own texts stay as written) ═════════════════════════
+   The interface's own register (formal Arabic, as web/src/i18n.js), with the trade's own words for the new things: «مطلوب النهارده»،
+   «نواقص الأسبوع»، سوق الوكالات، ملف تسجيل، التصنيع لدى الغير. */
 (function () {
   if (!window.dxI18nExtend) return;
   window.dxI18nExtend({
     /* channels */
     '✓ Drugbox official': '✓ رسمي من Drugbox', 'OFFICIAL': 'رسمي', '✓ Drugbox official channel': '✓ قناة Drugbox الرسمية', '✓ Official': '✓ رسمي', 'Official Drugbox channel': 'قناة Drugbox الرسمية',
-    'Drugbox News': 'Drugbox أخبار', 'Drugbox Jobs': 'Drugbox وظائف', 'Drugbox Regulatory': 'Drugbox تسجيل ورقابة', 'Drugbox Market': 'Drugbox السوق',
     'Official Drugbox channel: industry news, Drugbox updates and the weekly practical guide.': 'قناة Drugbox الرسمية: أخبار الصناعة وتحديثات Drugbox والدليل العملي الأسبوعي.',
     'Official Drugbox channel: the week’s jobs and hiring news across the industry.': 'قناة Drugbox الرسمية: وظائف الأسبوع وأخبار التوظيف في الصناعة.',
-    'Official Drugbox channel: the weekly regulatory bulletin (EDA, NFSA) and how to read a registration-file ad.': 'قناة Drugbox الرسمية: النشرة التنظيمية الأسبوعية (هيئة الدواء، هيئة سلامة الغذاء) وإزاي تقرا إعلان ملف تسجيل.',
+    'Official Drugbox channel: the weekly regulatory bulletin (EDA, NFSA) and how to read a registration-file ad.': 'قناة Drugbox الرسمية: النشرة التنظيمية الأسبوعية (هيئة الدواء، هيئة سلامة الغذاء) وكيف تقرأ إعلان ملف تسجيل.',
     'Official Drugbox channel: «Wanted today» every evening, the week’s shortages and the agency market — business to business only.': 'قناة Drugbox الرسمية: «مطلوب النهارده» كل مساء ونواقص الأسبوع وسوق الوكالات — تجارة بين الشركات فقط.',
-    '✓ Official Drugbox channel — only Drugbox posts here; you can comment and react.': '✓ قناة Drugbox الرسمية — Drugbox بس اللي بينشر هنا؛ تقدر تعلّق وتتفاعل.',
-    'Drugbox speaks here': 'Drugbox بيتكلم هنا', 'Only Drugbox posts in its channels. Members comment and react.': 'Drugbox بس اللي بينشر في قنواته. الأعضاء بيعلّقوا ويتفاعلوا.',
-    'Business to business': 'تجارة بين الشركات', 'Offers and requests are between companies and their agents — never sales to pharmacies or the public.': 'العروض والطلبات بين الشركات ووكلائها — مفيش بيع لصيدليات أو للجمهور.',
+    '✓ Official Drugbox channel — only Drugbox posts here; you can comment and react.': '✓ قناة Drugbox الرسمية — لا ينشر هنا إلا Drugbox؛ يمكنك التعليق والتفاعل.',
+    'Drugbox speaks here': 'هنا يتحدث Drugbox', 'Only Drugbox posts in its channels. Members comment and react.': 'لا ينشر في قنوات Drugbox إلا Drugbox. يعلّق الأعضاء ويتفاعلون.',
+    'Business to business': 'تجارة بين الشركات', 'Offers and requests are between companies and their agents — never sales to pharmacies or the public.': 'العروض والطلبات بين الشركات ووكلائها — لا بيع للصيدليات أو للجمهور.',
     '📣 Channels': '📣 القنوات', '🏅 Founders': '🏅 الأعضاء المؤسسون', '🎤 Expert sessions': '🎤 جلسات الخبراء', '📥 Directory import': '📥 استيراد الدليل',
-    '📣 Channels ': '📣 القنوات', 'The official Drugbox channels: plan, schedule (Cairo time) and publish posts as Drugbox — nobody else posts there': 'قنوات Drugbox الرسمية: خطّط وجدول (بتوقيت القاهرة) وانشر باسم Drugbox — محدش غيره بينشر فيها',
+    'The official Drugbox channels: plan, schedule (Cairo time) and publish posts as Drugbox — nobody else posts there': 'قنوات Drugbox الرسمية: خطّط وجدول (بتوقيت القاهرة) وانشر باسم Drugbox — لا ينشر فيها أحد غيره',
     '+ New channel post': '+ منشور جديد في قناة', '🗓 Planned and published': '🗓 المخطط والمنشور', '📋 Content plan — ready templates': '📋 خطة المحتوى — قوالب جاهزة',
-    'Status': 'الحالة', 'Channel': 'القناة', 'When (Cairo)': 'الموعد (القاهرة)', 'Post': 'المنشور', 'Edit': 'تعديل', 'Publish now': 'انشر دلوقتي', 'Cancel': 'إلغاء',
-    '📝 Draft': '📝 مسودة', '🕘 Scheduled': '🕘 مجدول', '✓ Published': '✓ اتنشر', '✕ Cancelled': '✕ اتلغى', '⚠️ Not published': '⚠️ ماتنشرش',
-    'Nothing planned yet — start from a template below.': 'مفيش حاجة متخططة لسه — ابدأ من قالب تحت.', 'Use →': 'استخدم ←', 'Daily': 'يومي',
-    'Weekly, Sunday': 'أسبوعي، الأحد', 'Weekly, Monday': 'أسبوعي، الاتنين', 'Weekly, Tuesday': 'أسبوعي، التلات', 'Weekly, Wednesday': 'أسبوعي، الأربع', 'Weekly, Thursday': 'أسبوعي، الخميس', 'Weekly, Friday': 'أسبوعي، الجمعة', 'Weekly, Saturday': 'أسبوعي، السبت',
-    'New channel post': 'منشور جديد في قناة', 'Edit channel post': 'تعديل منشور القناة', 'Channel *': 'القناة *', 'Template': 'القالب', '— None —': '— من غير —', 'Post (as Drugbox) *': 'المنشور (باسم Drugbox) *',
-    'Therapeutic areas': 'المجموعات العلاجية', 'When': 'إمتى', 'Save as draft': 'احفظ مسودة', 'Schedule': 'جدول', 'Date (Cairo)': 'التاريخ (القاهرة)', 'Time (Cairo)': 'الساعة (القاهرة)',
-    'Times are Cairo time (Africa/Cairo). The best hour for the trade is 21:00–23:00.': 'المواعيد بتوقيت القاهرة. أحسن وقت للسوق من 9 لـ 11 بالليل.', 'Save': 'حفظ',
-    'Draft saved': 'اتحفظت المسودة', 'Channel post cancelled': 'اتلغى منشور القناة', 'Cancel this channel post?': 'تلغي منشور القناة ده؟', 'It will not be published. You can plan it again from a template.': 'مش هيتنشر. تقدر تخططه تاني من قالب.',
-    'Keep it': 'سيبه', 'Cancel post': 'ألغِ المنشور', 'Pick the date and time to publish (Cairo time)': 'اختار تاريخ وساعة النشر (بتوقيت القاهرة)', 'Write the post first': 'اكتب المنشور الأول',
-    'That time has passed — pick a later one or publish now': 'الوقت ده عدّى — اختار وقت بعده أو انشر دلوقتي', 'Give the date and time as YYYY-MM-DD HH:MM (Cairo time)': 'اكتب التاريخ والساعة بالشكل YYYY-MM-DD HH:MM (بتوقيت القاهرة)',
-    'Only a Drugbox admin plans channel posts': 'أدمن Drugbox بس اللي بيخطط منشورات القنوات', 'Only a Drugbox admin publishes to the channels': 'أدمن Drugbox بس اللي بينشر في القنوات', 'Pick one of the Drugbox channels': 'اختار قناة من قنوات Drugbox',
-    'Wanted today': 'مطلوب النهارده', 'This week’s shortages': 'نواقص الأسبوع', 'Weekly regulatory bulletin': 'النشرة التنظيمية الأسبوعية', 'How to read a registration-file ad': 'إزاي تقرا إعلان ملف تسجيل',
-    'The agency market this week': 'سوق الوكالات الأسبوع ده', 'Practical guide of the week': 'الدليل العملي للأسبوع', 'Jobs of the week': 'وظائف الأسبوع',
+    'Channel': 'القناة', 'When (Cairo)': 'الموعد (القاهرة)', 'Text': 'النص', 'Publish now': 'انشر الآن',
+    '📝 Draft': '📝 مسودة', '🕘 Scheduled': '🕘 مجدول', '✓ Published': '✓ نُشر', '✕ Cancelled': '✕ أُلغي', '⚠️ Not published': '⚠️ لم يُنشر',
+    'Nothing planned yet — start from a template below.': 'لا يوجد مخطط بعد — ابدأ من قالب بالأسفل.', 'Use →': 'استخدم ←',
+    'Weekly, Sunday': 'أسبوعيًا، الأحد', 'Weekly, Monday': 'أسبوعيًا، الإثنين', 'Weekly, Tuesday': 'أسبوعيًا، الثلاثاء', 'Weekly, Wednesday': 'أسبوعيًا، الأربعاء', 'Weekly, Thursday': 'أسبوعيًا، الخميس', 'Weekly, Friday': 'أسبوعيًا، الجمعة', 'Weekly, Saturday': 'أسبوعيًا، السبت',
+    'New channel post': 'منشور جديد في قناة', 'Edit channel post': 'تعديل منشور القناة', 'Channel *': 'القناة *', 'Template': 'القالب', '— None —': '— بدون —', 'Post (as Drugbox) *': 'المنشور (باسم Drugbox) *',
+    'Therapeutic areas': 'المجموعات العلاجية', 'When': 'الموعد', 'Save as draft': 'احفظ كمسودة', 'Schedule': 'جدولة', 'Date (Cairo)': 'التاريخ (القاهرة)', 'Time (Cairo)': 'الوقت (القاهرة)',
+    'Times are Cairo time (Africa/Cairo). The best hour for the trade is 21:00–23:00.': 'المواعيد بتوقيت القاهرة. أنسب وقت للسوق من 21:00 إلى 23:00.',
+    'Draft saved': 'تم حفظ المسودة', 'Channel post cancelled': 'تم إلغاء منشور القناة', 'Cancel this channel post?': 'إلغاء منشور القناة؟', 'It will not be published. You can plan it again from a template.': 'لن يُنشر. يمكنك تخطيطه مجددًا من قالب.',
+    'Cancel post': 'إلغاء المنشور', 'Pick the date and time to publish (Cairo time)': 'اختر تاريخ النشر ووقته (بتوقيت القاهرة)', 'Write the post first': 'اكتب المنشور أولًا',
+    'That time has passed — pick a later one or publish now': 'هذا الوقت مضى — اختر وقتًا لاحقًا أو انشر الآن', 'Give the date and time as YYYY-MM-DD HH:MM (Cairo time)': 'اكتب التاريخ والوقت بالصيغة YYYY-MM-DD HH:MM (بتوقيت القاهرة)',
+    'Only a Drugbox admin plans channel posts': 'فقط أدمن Drugbox يخطط منشورات القنوات', 'Only a Drugbox admin publishes to the channels': 'فقط أدمن Drugbox ينشر في القنوات', 'Pick one of the Drugbox channels': 'اختر إحدى قنوات Drugbox',
+    'Wanted today': 'مطلوب النهارده', 'This week’s shortages': 'نواقص الأسبوع', 'Weekly regulatory bulletin': 'النشرة التنظيمية الأسبوعية', 'How to read a registration-file ad': 'كيف تقرأ إعلان ملف تسجيل',
+    'The agency market this week': 'سوق الوكالات هذا الأسبوع', 'Practical guide of the week': 'الدليل العملي للأسبوع', 'Jobs of the week': 'وظائف الأسبوع',
     /* therapeutic areas */
     '🧬 Therapeutic area': '🧬 المجموعة العلاجية', 'Therapeutic area': 'المجموعة العلاجية', 'All therapeutic areas': 'كل المجموعات العلاجية',
     '🧬 Biologics': '🧬 بيولوجي', '🐄 Veterinary': '🐄 بيطري', '🌾 Agriculture': '🌾 زراعي', '💉 GLP-1': '💉 GLP-1', '🎗️ Oncology': '🎗️ أورام', '📏 Growth hormone': '📏 هرمون النمو', '👶 Fertility': '👶 خصوبة', '🩸 Insulin': '🩸 إنسولين',
     /* founders */
-    '🏅 Founding members': '🏅 الأعضاء المؤسسون', 'Invite-only early access: a founder badge and 3 months of VIP. Each invitation is for one segment, works once and is shown only once — joining is the invitee’s own choice': 'دخول مبكر بالدعوة بس: شارة عضو مؤسس و3 شهور VIP. كل دعوة لشريحة واحدة، بتشتغل مرة واحدة وبتظهر مرة واحدة — والانضمام اختيار المدعو نفسه',
-    '+ New invitation': '+ دعوة جديدة', 'Segments and quotas': 'الشرائح والحصص', 'Invitations': 'الدعوات', 'joined': 'انضم', 'invited': 'مدعو', 'quota': 'الحصة', 'Change quota': 'غيّر الحصة',
-    'Code': 'الكود', 'Segment': 'الشريحة', 'For': 'لمين', 'State': 'الحالة', 'Expires': 'بتنتهي', 'Open': 'مفتوحة', 'Used': 'اتستخدمت', 'Revoked': 'اتسحبت', 'Expired': 'انتهت', 'Revoke': 'اسحب',
-    'No invitations yet.': 'مفيش دعوات لسه.', 'New founding-member invitation': 'دعوة عضو مؤسس جديدة', 'Segment *': 'الشريحة *', 'Choose…': 'اختار…', 'Who it is for (your note)': 'لمين (ملاحظتك)',
-    'Valid for (days)': 'صالحة لمدة (أيام)', 'Make invitation': 'اعمل الدعوة', 'Founding members in this segment *': 'الأعضاء المؤسسون في الشريحة دي *', 'Quota saved': 'اتحفظت الحصة',
-    'Revoke this invitation?': 'تسحب الدعوة دي؟', 'The code stops working at once and its place in the segment is free again.': 'الكود بيبطل يشتغل فوراً ومكانه في الشريحة بيفضى.', 'Invitation revoked': 'اتسحبت الدعوة',
-    'Invitation ready — copy it now': 'الدعوة جاهزة — انسخها دلوقتي', 'This code is shown only once. Send the link to the person it is for; they join by their own choice.': 'الكود ده بيظهر مرة واحدة بس. ابعت اللينك للشخص المقصود؛ هو اللي يختار ينضم.',
-    'Link': 'اللينك', 'Copy code': 'انسخ الكود', 'Copy link': 'انسخ اللينك', 'Done': 'تمام', 'Copied': 'اتنسخ', 'Select the text and copy it': 'حدد النص وانسخه',
-    '🏅 You are invited to be a founding member': '🏅 أنت مدعو تكون عضو مؤسس', 'Drugbox invites you to join its founding members as:': 'Drugbox بيدعوك تنضم لأعضائه المؤسسين كـ:',
-    'Founders get the founder badge on their profile and 3 months of VIP for a company page they run. Joining is your choice — nothing changes unless you press Join.': 'المؤسسين بياخدوا شارة عضو مؤسس على البروفايل و3 شهور VIP لصفحة شركة بيديروها. الانضمام اختيارك — مفيش حاجة بتتغير إلا لو دوست انضم.',
-    'Give the 3 VIP months to': 'ادّي الـ 3 شهور VIP لـ', 'Later — I will choose a company page': 'بعدين — هختار صفحة شركة', 'You can give the 3 VIP months to your company page later, from your profile.': 'تقدر تدّي الـ 3 شهور VIP لصفحة شركتك بعدين، من البروفايل.',
-    'Join as a founding member': 'انضم كعضو مؤسس', 'Not now': 'مش دلوقتي', 'Welcome, founding member!': 'أهلاً بيك عضو مؤسس!', 'Welcome, founding member! Your company page is VIP for 3 months': 'أهلاً بيك عضو مؤسس! صفحة شركتك بقت VIP لمدة 3 شهور',
-    'This invitation code is not valid': 'كود الدعوة ده مش صحيح', 'This invitation was already used.': 'الدعوة دي اتستخدمت قبل كده.', 'This invitation was withdrawn by Drugbox.': 'Drugbox سحب الدعوة دي.',
-    'This invitation has expired — ask Drugbox for a new one.': 'الدعوة دي انتهت — اطلب دعوة جديدة من Drugbox.', 'You are already a founding member.': 'أنت عضو مؤسس بالفعل.', '🏅 Founding members ': '🏅 الأعضاء المؤسسون',
-    '🏅 Founding member': '🏅 عضو مؤسس', '🎁 You have 3 VIP months to give to a company page you run.': '🎁 عندك 3 شهور VIP تدّيها لصفحة شركة بتديرها.', 'Choose a company': 'اختار شركة',
-    'Your 3 VIP months': 'الـ 3 شهور VIP بتوعك', 'Company page *': 'صفحة الشركة *', 'This can be done once.': 'ده بيتعمل مرة واحدة.', 'Give the VIP months': 'ادّي شهور الـ VIP', 'Your company page is VIP for 3 months': 'صفحة شركتك بقت VIP لمدة 3 شهور',
-    'Create or claim your company page first': 'اعمل أو اطلب صفحة شركتك الأول', 'Manufacturers': 'مصانع', 'Toll manufacturers / brand owners': 'تصنيع لدى الغير / أصحاب براند', 'Agencies': 'وكالات',
-    'Distributors / warehouses': 'موزّعين / مخازن', 'Registration-file owners': 'أصحاب ملفات تسجيل', 'API / excipient suppliers': 'موردي خامات', 'Packaging suppliers': 'موردي عبوات وتغليف', 'Regulatory consultants': 'استشاريين تسجيل',
-    'This segment is full — ask Drugbox': 'الشريحة دي اتملت — كلّم Drugbox', 'You are already a founding member': 'أنت عضو مؤسس بالفعل', 'This invitation was already used': 'الدعوة دي اتستخدمت قبل كده', 'This invitation was withdrawn by Drugbox': 'Drugbox سحب الدعوة دي',
-    'This invitation has expired — ask Drugbox for a new one': 'الدعوة دي انتهت — اطلب دعوة جديدة من Drugbox', 'Too many tries — wait an hour and open your invitation link again': 'محاولات كتير — استنى ساعة وافتح لينك الدعوة تاني',
-    'Give the VIP months to a company page you run (owner or admin)': 'ادّي شهور الـ VIP لصفحة شركة بتديرها (مالك أو أدمن)', 'Your 3 VIP months were already given to a company page': 'الـ 3 شهور VIP اتدّوا لصفحة شركة قبل كده',
-    'Only founding members have the 3 VIP months': 'الـ 3 شهور VIP للأعضاء المؤسسين بس', 'One of Drugbox’s founding members': 'من أعضاء Drugbox المؤسسين',
+    '🏅 Founding members': '🏅 الأعضاء المؤسسون', 'Invite-only early access: a founder badge and 3 months of VIP. Each invitation is for one segment, works once and is shown only once — joining is the invitee’s own choice': 'دخول مبكر بالدعوة فقط: شارة عضو مؤسس و3 أشهر VIP. كل دعوة لشريحة واحدة، تعمل مرة واحدة وتظهر مرة واحدة — والانضمام اختيار المدعو نفسه',
+    '+ New invitation': '+ دعوة جديدة', 'Segments and quotas': 'الشرائح والحصص', 'Invitations': 'الدعوات', 'joined': 'انضموا', 'invited': 'مدعوون', 'quota': 'الحصة', 'Change quota': 'تعديل الحصة',
+    'Code': 'الكود', 'Segment': 'الشريحة', 'Invited': 'المدعو', 'State': 'الحالة', 'Expires': 'تنتهي', 'Not used yet': 'لم تُستخدم بعد', 'Revoked': 'مسحوبة', 'Revoke': 'سحب',
+    'No invitations yet.': 'لا توجد دعوات بعد.', 'New founding-member invitation': 'دعوة عضو مؤسس جديدة', 'Segment *': 'الشريحة *', 'Who it is for (your note)': 'لمن الدعوة (ملاحظتك)',
+    'Valid for (days)': 'صالحة لمدة (أيام)', 'Make invitation': 'إنشاء الدعوة', 'Founding members in this segment *': 'الأعضاء المؤسسون في هذه الشريحة *', 'Quota saved': 'تم حفظ الحصة',
+    'Revoke this invitation?': 'سحب هذه الدعوة؟', 'The code stops working at once and its place in the segment is free again.': 'يتوقف الكود فورًا ويعود مكانه في الشريحة متاحًا.', 'Invitation revoked': 'تم سحب الدعوة',
+    'Invitation ready — copy it now': 'الدعوة جاهزة — انسخها الآن', 'This code is shown only once. Send the link to the person it is for; they join by their own choice.': 'هذا الكود يظهر مرة واحدة فقط. أرسل الرابط إلى الشخص المقصود؛ والانضمام باختياره.',
+    'Link': 'الرابط', 'Copy code': 'انسخ الكود', 'Select the text and copy it': 'حدد النص وانسخه',
+    '🏅 You are invited to be a founding member': '🏅 أنت مدعو لتكون عضوًا مؤسسًا', 'Drugbox invites you to join its founding members as:': 'يدعوك Drugbox للانضمام إلى أعضائه المؤسسين بصفة:',
+    'Founders get the founder badge on their profile and 3 months of VIP for a company page they run. Joining is your choice — nothing changes unless you press Join.': 'يحصل المؤسسون على شارة عضو مؤسس في الملف الشخصي و3 أشهر VIP لصفحة شركة يديرونها. الانضمام اختيارك — لا يتغير شيء ما لم تضغط انضم.',
+    'Give the 3 VIP months to': 'امنح أشهر VIP الثلاثة إلى', 'Later — I will choose a company page': 'لاحقًا — سأختار صفحة شركة', 'You can give the 3 VIP months to your company page later, from your profile.': 'يمكنك منح أشهر VIP الثلاثة لصفحة شركتك لاحقًا من ملفك الشخصي.',
+    'Join as a founding member': 'انضم كعضو مؤسس', 'Not now': 'ليس الآن', 'Welcome, founding member!': 'مرحبًا بك عضوًا مؤسسًا!', 'Welcome, founding member! Your company page is VIP for 3 months': 'مرحبًا بك عضوًا مؤسسًا! صفحة شركتك VIP لمدة 3 أشهر',
+    'This invitation code is not valid': 'كود الدعوة غير صحيح', 'This invitation was already used.': 'هذه الدعوة استُخدمت من قبل.', 'This invitation was withdrawn by Drugbox.': 'سحب Drugbox هذه الدعوة.',
+    'This invitation has expired — ask Drugbox for a new one.': 'انتهت صلاحية هذه الدعوة — اطلب دعوة جديدة من Drugbox.', 'You are already a founding member.': 'أنت عضو مؤسس بالفعل.',
+    '🏅 Founding member': '🏅 عضو مؤسس', '🎁 You have 3 VIP months to give to a company page you run.': '🎁 لديك 3 أشهر VIP لتمنحها لصفحة شركة تديرها.', 'Choose a company': 'اختر شركة',
+    'Your 3 VIP months': 'أشهر VIP الثلاثة', 'Company page *': 'صفحة الشركة *', 'This can be done once.': 'يتم ذلك مرة واحدة فقط.', 'Give the VIP months': 'امنح أشهر VIP', 'Your company page is VIP for 3 months': 'صفحة شركتك VIP لمدة 3 أشهر',
+    'Toll manufacturers / brand owners': 'التصنيع لدى الغير / أصحاب البراند', 'Agencies': 'وكالات', 'Distributors / warehouses': 'موزعون / مخازن', 'Registration-file owners': 'أصحاب ملفات التسجيل',
+    'API / excipient suppliers': 'موردو الخامات', 'Packaging suppliers': 'موردو العبوات والتغليف',
+    'This segment is full — ask Drugbox': 'اكتملت هذه الشريحة — تواصل مع Drugbox', 'You are already a founding member': 'أنت عضو مؤسس بالفعل', 'This invitation was already used': 'هذه الدعوة استُخدمت من قبل', 'This invitation was withdrawn by Drugbox': 'سحب Drugbox هذه الدعوة',
+    'This invitation has expired — ask Drugbox for a new one': 'انتهت صلاحية هذه الدعوة — اطلب دعوة جديدة من Drugbox', 'Too many tries — wait an hour and open your invitation link again': 'محاولات كثيرة — انتظر ساعة ثم افتح رابط الدعوة مجددًا',
+    'Give the VIP months to a company page you run (owner or admin)': 'امنح أشهر VIP لصفحة شركة تديرها (مالك أو مسؤول)', 'Your 3 VIP months were already given to a company page': 'مُنحت أشهر VIP الثلاثة لصفحة شركة من قبل',
+    'Only founding members have the 3 VIP months': 'أشهر VIP الثلاثة للأعضاء المؤسسين فقط', 'One of Drugbox’s founding members': 'من الأعضاء المؤسسين في Drugbox',
     /* ask an expert */
-    '🎤 Ask an expert': '🎤 اسأل خبير', '← All courses': '→ كل الدورات', 'Sessions arranged on request: ask for a topic, Drugbox invites an expert, you register, get a reminder and the questions and answers stay here.': 'جلسات بالطلب: اطلب موضوع، Drugbox يجيب خبير، تسجّل، يوصلك تذكير، والأسئلة والإجابات بتفضل هنا.',
-    'Upcoming sessions': 'الجلسات الجاية', 'Ask for a topic': 'اطلب موضوع', 'Past sessions — questions and answers': 'جلسات فاتت — الأسئلة والإجابات', 'No session is scheduled yet — ask for a topic below.': 'مفيش جلسة متحددة لسه — اطلب موضوع تحت.',
-    'No past sessions yet.': 'مفيش جلسات فاتت لسه.', 'asked': 'طلبوا', 'Request this topic': 'اطلب الموضوع ده', '✓ Requested · Withdraw': '✓ طلبته · اسحب الطلب', 'registered': 'مسجّل', 'seats left': 'مكان فاضي', '(Cairo)': '(القاهرة)', 'min': 'دقيقة',
-    '✓ Took place': '✓ اتعملت', '✕ Cancelled ': '✕ اتلغت', '✓ Registered': '✓ مسجّل', '▶ Join the session': '▶ ادخل الجلسة', 'Cancel registration': 'ألغِ التسجيل', 'Register': 'سجّل', 'Full': 'كاملة',
-    '💬 Questions and answers (': '💬 الأسئلة والإجابات (', 'Answer:': 'الإجابة:', 'Not answered yet': 'لسه متجاوبش', 'No questions yet.': 'مفيش أسئلة لسه.', 'Your question for the expert': 'سؤالك للخبير', 'Send question': 'ابعت السؤال',
-    'Register to ask the expert a question.': 'سجّل عشان تسأل الخبير.', 'Registered — you will get a reminder a day and an hour before': 'اتسجّلت — هيوصلك تذكير قبلها بيوم وبساعة', 'Registration cancelled': 'اتلغى التسجيل',
-    'The meeting link is not set yet — Drugbox will notify you': 'لينك الجلسة لسه متحطش — Drugbox هيبلغك', 'Question sent': 'اتبعت السؤال', 'Request withdrawn': 'اتسحب الطلب', 'Which topic? *': 'موضوع إيه؟ *', 'What do you want to know? (optional)': 'عايز تعرف إيه؟ (اختياري)',
-    'Drugbox schedules a session when enough members ask — you are told when it is set.': 'Drugbox بيحدد جلسة لما أعضاء كفاية يطلبوا — هيتقالك لما تتحدد.', 'Send request': 'ابعت الطلب', 'Request sent — you will be told when a session is set': 'اتبعت الطلب — هيتقالك لما الجلسة تتحدد',
-    'Write your question (at least 5 characters)': 'اكتب سؤالك (5 حروف على الأقل)', 'Register for the session to get its link': 'سجّل في الجلسة عشان تاخد اللينك', 'The link opens an hour before the session': 'اللينك بيفتح قبل الجلسة بساعة',
-    'This session has ended — its questions and answers stay here': 'الجلسة دي خلصت — أسئلتها وإجاباتها فاضلة هنا', 'This session is full': 'الجلسة دي اتملت', 'This session has already started': 'الجلسة دي بدأت خلاص', 'Say which topic (a few words)': 'قول موضوع إيه (كام كلمة)',
-    'You already asked for this topic': 'أنت طلبت الموضوع ده قبل كده', 'Register for the session to ask': 'سجّل في الجلسة عشان تسأل',
-    'Buying a registration file safely': 'شراء ملف تسجيل بأمان', 'NFSA notification (supplements, food)': 'إخطار هيئة سلامة الغذاء', 'Agency and distribution contracts': 'عقد الوكالة والتوزيع', 'The toll-manufacturing card': 'كارت التصنيع لدى الغير',
-    'Pricing and price increases': 'التسعير وزيادة الأسعار', 'Importing and the importer’s file': 'الاستيراد وملف المستورد', 'Cold chain': 'سلسلة التبريد', 'Authority labs and track & trace': 'معامل الهيئة والتتبع', 'Choosing a factory': 'اختيار مصنع', 'Another topic': 'موضوع تاني',
-    'What members ask for, the sessions and their questions — members are told when a session on their topic is set and reminded a day and an hour before': 'الأعضاء بيطلبوا إيه، والجلسات وأسئلتها — الأعضاء بيتبلغوا لما تتحدد جلسة في موضوعهم وبيتفكروا قبلها بيوم وبساعة',
-    '+ Schedule a session': '+ حدد جلسة', 'Requests by topic': 'الطلبات حسب الموضوع', 'Sessions': 'الجلسات', 'Topic': 'الموضوع', 'Asked': 'طلبوا', 'Notes': 'ملاحظات', 'No sessions yet.': 'مفيش جلسات لسه.',
-    'Mark done': 'اتعملت', 'Cancel session': 'ألغِ الجلسة', '💬 Questions (': '💬 الأسئلة (', 'Edit session': 'تعديل الجلسة', 'Schedule an expert session': 'حدد جلسة مع خبير', 'Topic *': 'الموضوع *', 'Title (English) *': 'العنوان (إنجليزي) *',
-    'Title (Arabic)': 'العنوان (عربي)', 'About': 'عن الجلسة', 'Expert *': 'الخبير *', 'The expert’s line': 'نبذة عن الخبير', 'Date (Cairo) *': 'التاريخ (القاهرة) *', 'Time (Cairo) *': 'الساعة (القاهرة) *', 'Minutes': 'الدقايق', 'Seats': 'الأماكن',
-    'Meeting link (https://…) — given only to the registered, an hour before': 'لينك الجلسة (https://…) — بيوصل للمسجّلين بس، قبلها بساعة', 'Session saved': 'اتحفظت الجلسة', 'Session scheduled — the members who asked are told': 'اتحددت الجلسة — اللي طلبوا اتبلغوا',
-    'Mark this session as done?': 'الجلسة دي اتعملت؟', 'Cancel this session?': 'تلغي الجلسة دي؟', 'Its questions and answers stay readable to every member.': 'أسئلتها وإجاباتها هتفضل متاحة لكل الأعضاء.', 'The registered members are told.': 'المسجّلين هيتبلغوا.', 'Back': 'رجوع',
-    'Session marked done': 'الجلسة اتسجّلت إنها اتعملت', 'Session cancelled — the registered are told': 'اتلغت الجلسة — المسجّلين اتبلغوا', 'Answer': 'الإجابة', 'Send answer': 'ابعت الإجابة', 'Answer sent — the member is told': 'اتبعتت الإجابة — العضو اتبلغ',
-    'Give the session a title': 'اكتب عنوان للجلسة', 'Name the expert': 'اكتب اسم الخبير', 'The meeting link must start with https://': 'لينك الجلسة لازم يبدأ بـ https://', 'Pick a time in the future': 'اختار وقت جاي',
+    '🎤 Ask an expert': '🎤 اسأل خبيرًا', '← All courses': '→ كل الدورات', 'Sessions arranged on request: ask for a topic, Drugbox invites an expert, you register, get a reminder and the questions and answers stay here.': 'جلسات حسب الطلب: اطلب موضوعًا، يدعو Drugbox خبيرًا، تسجّل وتصلك تذكرة، وتبقى الأسئلة والإجابات هنا.',
+    'Upcoming sessions': 'الجلسات القادمة', 'Ask for a topic': 'اطلب موضوعًا', 'Past sessions — questions and answers': 'جلسات سابقة — الأسئلة والإجابات', 'No session is scheduled yet — ask for a topic below.': 'لا توجد جلسة محددة بعد — اطلب موضوعًا بالأسفل.',
+    'No past sessions yet.': 'لا توجد جلسات سابقة بعد.', 'asked': 'طلبوه', 'Request this topic': 'اطلب هذا الموضوع', '✓ Requested · Withdraw': '✓ طلبته · اسحب الطلب', 'registered': 'مسجلون', 'seats left': 'مقعدًا متاحًا', '(Cairo)': '(القاهرة)', 'min': 'دقيقة',
+    '✓ Took place': '✓ عُقدت', '✓ Registered': '✓ مسجّل', '▶ Join the session': '▶ ادخل الجلسة', 'Cancel registration': 'إلغاء التسجيل', 'Register': 'سجّل', 'Full': 'مكتملة',
+    'Answer:': 'الإجابة:', 'Not answered yet': 'لم تتم الإجابة بعد', 'No questions yet.': 'لا توجد أسئلة بعد.', 'Your question for the expert': 'سؤالك للخبير', 'Send question': 'أرسل السؤال',
+    'Register to ask the expert a question.': 'سجّل لتسأل الخبير.', 'Registered — you will get a reminder a day and an hour before': 'تم التسجيل — ستصلك تذكرة قبلها بيوم وبساعة', 'Registration cancelled': 'تم إلغاء التسجيل',
+    'The meeting link is not set yet — Drugbox will notify you': 'لم يُحدد رابط الجلسة بعد — سيخطرك Drugbox', 'Question sent': 'تم إرسال السؤال', 'Request withdrawn': 'تم سحب الطلب', 'Which topic? *': 'أي موضوع؟ *', 'What do you want to know? (optional)': 'ماذا تريد أن تعرف؟ (اختياري)',
+    'Drugbox schedules a session when enough members ask — you are told when it is set.': 'يحدد Drugbox جلسة عندما يطلبها عدد كافٍ من الأعضاء — ونخبرك عند تحديدها.', 'Request sent — you will be told when a session is set': 'تم إرسال الطلب — سنخبرك عند تحديد الجلسة',
+    'Write your question (at least 5 characters)': 'اكتب سؤالك (5 أحرف على الأقل)', 'Register for the session to get its link': 'سجّل في الجلسة لتحصل على رابطها', 'The link opens an hour before the session': 'يُفتح الرابط قبل الجلسة بساعة',
+    'This session has ended — its questions and answers stay here': 'انتهت هذه الجلسة — تبقى أسئلتها وإجاباتها هنا', 'This session is full': 'الجلسة مكتملة', 'This session has already started': 'الجلسة بدأت بالفعل', 'Say which topic (a few words)': 'اذكر الموضوع (بضع كلمات)',
+    'You already asked for this topic': 'طلبت هذا الموضوع من قبل', 'Register for the session to ask': 'سجّل في الجلسة لتسأل',
+    'Buying a registration file safely': 'شراء ملف تسجيل بأمان', 'NFSA notification (supplements, food)': 'إخطار هيئة سلامة الغذاء (المكملات والأغذية)', 'Agency and distribution contracts': 'عقود الوكالة والتوزيع', 'The toll-manufacturing card': 'كارت التصنيع لدى الغير',
+    'Pricing and price increases': 'التسعير وزيادة الأسعار', 'Importing and the importer’s file': 'الاستيراد وملف المستورد', 'Cold chain': 'سلسلة التبريد', 'Authority labs and track & trace': 'معامل الهيئة والتتبع', 'Choosing a factory': 'اختيار مصنع', 'Another topic': 'موضوع آخر',
+    'What members ask for, the sessions and their questions — members are told when a session on their topic is set and reminded a day and an hour before': 'ما يطلبه الأعضاء والجلسات وأسئلتها — يُخطر الأعضاء عند تحديد جلسة في موضوعهم ويُذكَّرون قبلها بيوم وبساعة',
+    '+ Schedule a session': '+ حدد جلسة', 'Requests by topic': 'الطلبات حسب الموضوع', 'Sessions': 'الجلسات', 'Asked': 'الطلبات', 'Notes': 'ملاحظات', 'No sessions yet.': 'لا توجد جلسات بعد.',
+    'Mark done': 'تمت الجلسة', 'Cancel session': 'إلغاء الجلسة', 'Edit session': 'تعديل الجلسة', 'Schedule an expert session': 'حدد جلسة مع خبير', 'Topic *': 'الموضوع *', 'Title (English) *': 'العنوان (بالإنجليزية) *',
+    'Title (Arabic)': 'العنوان (بالعربية)', 'Expert *': 'الخبير *', 'The expert’s line': 'نبذة عن الخبير', 'Date (Cairo) *': 'التاريخ (القاهرة) *', 'Time (Cairo) *': 'الوقت (القاهرة) *', 'Seats': 'المقاعد',
+    'Meeting link (https://…) — given only to the registered, an hour before': 'رابط الجلسة (https://…) — يصل للمسجلين فقط قبلها بساعة', 'Session saved': 'تم حفظ الجلسة', 'Session scheduled — the members who asked are told': 'تم تحديد الجلسة — أُخطر من طلبوها',
+    'Mark this session as done?': 'هل عُقدت هذه الجلسة؟', 'Cancel this session?': 'إلغاء هذه الجلسة؟', 'Its questions and answers stay readable to every member.': 'تبقى أسئلتها وإجاباتها متاحة لكل الأعضاء.', 'The registered members are told.': 'سيُخطر المسجلون.',
+    'Session marked done': 'سُجلت الجلسة كمنعقدة', 'Session cancelled — the registered are told': 'أُلغيت الجلسة — أُخطر المسجلون', 'Answer': 'الإجابة', 'Send answer': 'أرسل الإجابة', 'Answer sent — the member is told': 'تم إرسال الإجابة — أُخطر العضو',
+    'Give the session a title': 'اكتب عنوانًا للجلسة', 'Name the expert': 'اكتب اسم الخبير', 'The meeting link must start with https://': 'يجب أن يبدأ رابط الجلسة بـ https://', 'Pick a time in the future': 'اختر وقتًا قادمًا',
     /* directory import */
-    'Load companies from an official PUBLIC list (CSV) as unclaimed pages, marked as such; each row names its source. Duplicates (same registry number or name, English or Arabic) are skipped. Check first, then import': 'حمّل شركات من قايمة رسمية علنية (CSV) كصفحات من غير مالك ومتعلّمة كده؛ كل صف بيذكر مصدره. المكرر (نفس رقم السجل أو الاسم، إنجليزي أو عربي) بيتخطى. راجع الأول وبعدين استورد',
-    '⬇ Sample CSV': '⬇ ملف CSV نموذجي', 'Check (nothing is written)': 'راجع (مفيش حاجة بتتكتب)', 'Import': 'استورد', 'Would create': 'هيتعمل', 'Created': 'اتعمل', 'Duplicates': 'مكرر', 'Invalid': 'غير صالح', 'Row': 'الصف', 'Company': 'الشركة', 'Result': 'النتيجة',
-    'Already in the directory': 'موجودة في الدليل', 'Created — unclaimed': 'اتعملت — من غير مالك', 'Would be created — unclaimed': 'هتتعمل — من غير مالك', 'Choose the CSV file first': 'اختار ملف الـ CSV الأول',
-    'No rows found — the first line must be the column names': 'مفيش صفوف — أول سطر لازم يكون أسماء الأعمدة', 'At most 2,000 rows per import': '2,000 صف بالكتير في المرة', 'The file is larger than 2 MB — split it': 'الملف أكبر من 2 ميجا — قسّمه',
-    '1 company imported as an unclaimed page': 'اتستوردت شركة واحدة كصفحة من غير مالك',
+    'Load companies from an official PUBLIC list (CSV) as unclaimed pages, marked as such; each row names its source. Duplicates (same registry number or name, English or Arabic) are skipped. Check first, then import': 'حمّل شركات من قائمة رسمية عامة (CSV) كصفحات غير مُطالَب بها ومعلَّمة بذلك؛ كل صف يذكر مصدره. يُتخطى المكرر (نفس رقم السجل أو الاسم بالعربية أو الإنجليزية). راجع أولًا ثم استورد',
+    '⬇ Sample CSV': '⬇ ملف CSV نموذجي', 'Check (nothing is written)': 'مراجعة (لا يُحفظ شيء)', 'Import': 'استيراد', 'Would add': 'ستُضاف', 'Added': 'أُضيفت', 'Duplicates': 'مكررة', 'Invalid': 'غير صالحة', 'Row': 'الصف', 'Result': 'النتيجة',
+    'Already in the directory': 'موجودة في الدليل', 'Created — unclaimed': 'أُنشئت — غير مُطالَب بها', 'Would be created — unclaimed': 'ستُنشأ — غير مُطالَب بها', 'Choose the CSV file first': 'اختر ملف CSV أولًا',
+    'No rows found — the first line must be the column names': 'لا توجد صفوف — يجب أن يكون السطر الأول أسماء الأعمدة', 'At most 2,000 rows per import': '2,000 صف كحد أقصى في كل استيراد', 'The file is larger than 2 MB — split it': 'الملف أكبر من 2 ميجابايت — قسّمه',
+    '1 company imported as an unclaimed page': 'استُوردت شركة واحدة كصفحة غير مُطالَب بها',
     /* visitors */
-    '👋 You are browsing as a visitor — sign in to contact companies, follow them or ask for a quote.': '👋 أنت بتتصفح كزائر — سجّل دخول عشان تكلّم الشركات أو تتابعها أو تطلب عرض سعر.', 'Sign in': 'تسجيل الدخول', 'Join Drugbox': 'انضم لـ Drugbox',
-    '🏭 Browse the company directory without signing in': '🏭 تصفّح دليل الشركات من غير تسجيل', 'Sign in or join Drugbox to do this': 'سجّل دخول أو انضم لـ Drugbox عشان تعمل كده', 'Visitor': 'زائر',
+    '👋 You are browsing as a visitor — sign in to contact companies, follow them or ask for a quote.': '👋 أنت تتصفح كزائر — سجّل الدخول لتتواصل مع الشركات أو تتابعها أو تطلب عرض سعر.', 'Sign in': 'تسجيل الدخول',
+    '🏭 Browse the company directory without signing in': '🏭 تصفّح دليل الشركات دون تسجيل الدخول', 'Sign in or join Drugbox to do this': 'سجّل الدخول أو انضم إلى Drugbox للقيام بذلك', 'Visitor': 'زائر',
     /* the specialty question */
-    'Is this still your specialty?': 'ده لسه تخصصك؟', 'Ask me later': 'اسألني بعدين', 'Your specialty': 'تخصصك', 'Other…': 'تاني…', 'Your specialty, in your words': 'تخصصك بكلامك',
-    'Your profile says': 'البروفايل بتاعك بيقول', '— the sign-up form used to choose it for everyone. Please confirm it or pick yours, so the right people, jobs and groups find you.': '— نموذج التسجيل كان بيختاره للكل. أكّده أو اختار تخصصك، عشان الناس والوظايف والجروبات المناسبة توصلك.', 'Write your specialty': 'اكتب تخصصك', 'Thanks — your specialty is confirmed': 'شكراً — تخصصك اتأكد', 'Your specialty is saved': 'اتحفظ تخصصك',
-    'Loading…': 'جارٍ التحميل…'
+    'Is this still your specialty?': 'هل هذا تخصصك فعلًا؟', 'Ask me later': 'اسألني لاحقًا', 'Your specialty': 'تخصصك', 'Other…': 'آخر…', 'Your specialty, in your words': 'تخصصك بكلماتك',
+    'Your profile says': 'يذكر ملفك الشخصي', '— the sign-up form used to choose it for everyone. Please confirm it or pick yours, so the right people, jobs and groups find you.': '— كان نموذج التسجيل يختاره للجميع. أكّده أو اختر تخصصك ليصل إليك الأشخاص والوظائف والمجموعات المناسبة.',
+    'Write your specialty': 'اكتب تخصصك', 'Thanks — your specialty is confirmed': 'شكرًا — تم تأكيد تخصصك', 'Your specialty is saved': 'تم حفظ تخصصك'
   }, [
-    [/^Published in (.+)$/, function (m) { return 'اتنشر في ' + m[1]; }], [/^Scheduled for (.+) \(Cairo\)$/, function (m) { return 'اتجدول لـ ' + m[1] + ' (القاهرة)'; }],
-    [/^No posts about (.+) yet\.$/, function (m) { return 'مفيش منشورات عن ' + m[1] + ' لسه.'; }], [/^No listings about (.+) yet — try another area\.$/, function (m) { return 'مفيش إعلانات عن ' + m[1] + ' لسه — جرّب مجموعة تانية.'; }],
-    [/^Request: (.+)$/, function (m) { return 'طلب: ' + m[1]; }], [/^Quota — (.+)$/, function (m) { return 'الحصة — ' + m[1]; }], [/^This segment is full \((\d+) of (\d+)\)$/, function (m) { return 'الشريحة دي اتملت (' + m[1] + ' من ' + m[2] + ')'; }],
-    [/^(\d+) rows read — check them first$/, function (m) { return 'اتقرا ' + m[1] + ' صف — راجعهم الأول'; }], [/^(\d+) companies imported as unclaimed pages$/, function (m) { return 'اتستوردت ' + m[1] + ' شركة كصفحات من غير مالك'; }],
+    [/^Published in (.+)$/, function (m) { return 'نُشر في ' + m[1]; }], [/^Scheduled for (.+) \(Cairo\)$/, function (m) { return 'تمت الجدولة في ' + m[1] + ' (القاهرة)'; }],
+    [/^No posts about (.+) yet\.$/, function (m) { return 'لا توجد منشورات عن ' + m[1] + ' بعد.'; }], [/^No listings about (.+) yet — try another area\.$/, function (m) { return 'لا توجد إعلانات عن ' + m[1] + ' بعد — جرّب مجموعة أخرى.'; }],
+    [/^Request: (.+)$/, function (m) { return 'طلب: ' + m[1]; }], [/^Quota — (.+)$/, function (m) { return 'الحصة — ' + m[1]; }], [/^This segment is full \((\d+) of (\d+)\)$/, function (m) { return 'اكتملت هذه الشريحة (' + m[1] + ' من ' + m[2] + ')'; }],
+    [/^(\d+) rows read — check them first$/, function (m) { return 'تمت قراءة ' + m[1] + ' صفًا — راجعها أولًا'; }], [/^(\d+) companies imported as unclaimed pages$/, function (m) { return 'استُوردت ' + m[1] + ' شركة كصفحات غير مُطالَب بها'; }],
     [/^posted in "(.+)"$/, function (m) { return 'نشر في "' + m[1] + '"'; }], [/^(\d+) new posts in "(.+)"$/, function (m) { return m[1] + ' منشورات جديدة في "' + m[2] + '"'; }],
-    [/^An expert session you asked for: "(.+)"$/, function (m) { return 'جلسة خبير طلبتها: "' + m[1] + '"'; }], [/^The expert session "(.+)" moved to a new time$/, function (m) { return 'جلسة الخبير "' + m[1] + '" اتغير ميعادها'; }],
-    [/^The expert session "(.+)" was cancelled$/, function (m) { return 'جلسة الخبير "' + m[1] + '" اتلغت'; }], [/^Tomorrow: the expert session "(.+)"$/, function (m) { return 'بكرة: جلسة الخبير "' + m[1] + '"'; }],
-    [/^In an hour: the expert session "(.+)" — the link is open$/, function (m) { return 'كمان ساعة: جلسة الخبير "' + m[1] + '" — اللينك مفتوح'; }], [/^Your question in "(.+)" was answered$/, function (m) { return 'سؤالك في "' + m[1] + '" اتجاوب'; }],
-    [/^This post is already (\w+)$/, function (m) { return 'المنشور ده ' + ({ published: 'اتنشر', cancelled: 'اتلغى', failed: 'ماتنشرش' }[m[1]] || m[1]) + ' بالفعل'; }]
+    [/^An expert session you asked for: "(.+)"$/, function (m) { return 'جلسة خبير طلبتها: "' + m[1] + '"'; }], [/^The expert session "(.+)" moved to a new time$/, function (m) { return 'تغير موعد جلسة الخبير "' + m[1] + '"'; }],
+    [/^The expert session "(.+)" was cancelled$/, function (m) { return 'أُلغيت جلسة الخبير "' + m[1] + '"'; }], [/^Tomorrow: the expert session "(.+)"$/, function (m) { return 'غدًا: جلسة الخبير "' + m[1] + '"'; }],
+    [/^In an hour: the expert session "(.+)" — the link is open$/, function (m) { return 'بعد ساعة: جلسة الخبير "' + m[1] + '" — الرابط متاح'; }], [/^Your question in "(.+)" was answered$/, function (m) { return 'تمت الإجابة عن سؤالك في "' + m[1] + '"'; }],
+    [/^This post is already (\w+)$/, function (m) { return 'هذا المنشور ' + ({ published: 'منشور', cancelled: 'ملغى', failed: 'لم يُنشر' }[m[1]] || m[1]) + ' بالفعل'; }]
   ]);
 })();

@@ -17,3 +17,6 @@ Baseline at f7dc703: parity vs web/reference/demo-approved.html already FAILS (t
 ## Log
 - 0100 written; growth_channels.rls.sql 63/63; sweep 6× none; migration_check OK.
 - 0101–0104 done: growth_members.rls.sql 95/95, growth_channels 63/63, sweep 6× none, migration_check OK (72). founder_apply_vip steps out of the member identity for its one companies update (companies_guard 0006 has no server bypass while auth.uid() is set). Sweep allowlists the six public_* read-only definer functions (0103) by name.
+- UI: web/src/growth.js/.css (demo + all drawing), web/src/live/growth.js (live services), adapter block "AREA w-growth" (end of adapter.js), groups.js extension points.
+- tests/journeys/community_growth.py J-COMMUNITY-W01…W05: demo EN 1440 / AR 1440 / EN 390 pass; live EN 1440 pass (W04 after routing the meeting host).
+- Arabic labels rewritten in the interface's formal register (the existing i18n is MSA) with the trade's terms kept.
