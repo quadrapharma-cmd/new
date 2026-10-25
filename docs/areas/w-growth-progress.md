@@ -16,3 +16,4 @@ Baseline at f7dc703: parity vs web/reference/demo-approved.html already FAILS (t
 
 ## Log
 - 0100 written; growth_channels.rls.sql 63/63; sweep 6× none; migration_check OK.
+- 0101 founders, 0102 expert sessions, 0103 public company pages, 0104 courses AR + specialty prompt written; growth_members.rls.sql at 82/96 (WIP: companies_guard refuses plan change from founder_apply_vip; notification asserts) — container restarted here
