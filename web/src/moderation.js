@@ -42,7 +42,7 @@
       link: function () { return Promise.resolve(null); }
     };
   }
-  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts'], ['members', '👤', 'Reported members'], ['claims', '🏷️', 'Claims'], ['documents', '📁', 'Compliance documents'], ['reviews', '⭐', 'Reviews'], ['decided', '🗂', 'Decided']];   /* the approved queues first, in their order; the newer ones after them (AREA social: members, soc_safety.js) */
+  var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts'], ['members', '👤', 'Reported members'], ['claims', '🏷️', 'Claims'], ['documents', '📁', 'Compliance documents'], ['reviews', '⭐', 'Reviews'], ['tradedocs', '📑', 'Trade documents'], ['decided', '🗂', 'Decided']];   /* the approved queues first, in their order; the newer ones after them (AREA social: members, soc_safety.js) */
   var cur = 'verifications', data = null, find = '';
   function docs(list) { return (list || []).map(function (d) { return '<button type="button" class="dx-mod-doc" data-doc="' + esc(d.path) + '" data-bucket="' + esc(d.bucket) + '">📄 ' + esc(d.label) + '</button>'; }).join(''); }
   function row(kind, x) {
@@ -81,6 +81,8 @@
         '<span>' + esc(x.reports) + ' reports from ' + esc(x.reporters) + ' members · ' + (x.reasons || []).map(function (r) { return esc(MR[r] || r); }).join(', ') + ' · ' + esc(x.posts || 0) + ' posts</span>' +
         (x.samples || []).slice(0, 3).map(function (m) { return '<p data-noi18n>“' + esc(m.text || m.note) + '”</p>'; }).join('');
       acts = '<button class="dx-mod-no" data-k="members" data-id="' + esc(x.id) + '" data-v="suspend">Suspend</button><button class="dx-mod-ok" data-k="members" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
+    if (kind === 'tradedocs') { body = '<b data-noi18n>' + esc(x.name) + '</b><span><span data-noi18n>' + esc((x.owner && x.owner.name) || '') + '</span>' + (x.notif_no ? ' · <span>Notification number</span> <span data-noi18n>' + esc(x.notif_no) + '</span>' : '') + (x.mine ? ' · <span>your own listing</span>' : '') + '</span>' + docs(x.docs);   /* W-18: documents of a trade listing */
+      acts = x.mine ? '' : '<button class="dx-mod-ok" data-k="tradedocs" data-id="' + esc(x.id) + '" data-v="seen">Mark seen</button><button class="dx-mod-no" data-k="tradedocs" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>'; }
     return '<div class="dx-mod-row"><div class="dx-mod-b">' + body + '</div><div class="dx-mod-a">' + acts + '</div></div>';
   }
   function paint(c) {

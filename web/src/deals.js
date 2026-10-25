@@ -38,13 +38,13 @@
   };
   var LABEL = { file: 'Document attached', expired: 'Closed — target not reached', change: 'Quantity changed', leave: 'Left the group', sent: 'Sent', quoted: 'Quote received', countered: 'Counter-offer', accepted: 'Accepted', confirmed: 'Order confirmed', shipped: 'Shipped', delivered: 'Delivered', closed: 'Closed', declined: 'Declined', cancelled: 'Cancelled',
     proposed: 'Proposal received', in_progress: 'In progress', offered: 'Offer sent', answered: 'Answered', approved: 'Approved', rejected: 'Rejected', requested: 'Requested', nda_signed: 'NDA signed', shared: 'Details shared', agreed: 'Agreed',
-    applied: 'Applied', shortlisted: 'Shortlisted', interview: 'Interview', offer: 'Job offer', hired: 'Hired', open: 'Open', target_reached: 'Target reached' };
+    applied: 'Applied', shortlisted: 'Shortlisted', interview: 'Interview', offer: 'Job offer', hired: 'Hired', open: 'Open', target_reached: 'Target reached', talks: 'In talks' };
   var TONE = { declined: 'dec', cancelled: 'dec', rejected: 'dec', closed: 'acc', approved: 'acc', agreed: 'acc', hired: 'acc', delivered: 'acc', confirmed: 'acc', accepted: 'acc' };
   var ACT = {
     quote: ['Send quote', 'p'], revise: ['Revise quote', ''], decline: ['Decline', 'd'], cancel: ['Withdraw', 'd'], accept: ['Accept quote', 'p'], counter: ['Counter-offer', ''], confirm: ['Confirm order', 'p'], ship: ['Mark shipped', 'p'], receive: ['Confirm received', 'p'], rate: ['Rate supplier', 'p'],
     propose: ['Send proposal', 'p'], start: ['Start work', 'p'], deliver: ['Mark delivered', 'p'], accept_offer: ['Accept offer', 'p'], counter_offer: ['Counter-offer', ''], accept_counter: ['Accept counter-offer', 'p'],
     answer: ['Answer questionnaire', 'p'], approve: ['Approve supplier', 'p'], reject: ['Reject', 'd'], sign_nda: ['Sign NDA', 'p'], share: ['Share details', 'p'], agree: ['Agree terms', 'p'],
-    shortlist: ['Shortlist', 'p'], interview: ['Invite to interview', 'p'], offer: ['Make offer', 'p'], accept_job: ['Accept job offer', 'p'], confirm_group: ['Confirm group price', 'p']
+    shortlist: ['Shortlist', 'p'], interview: ['Invite to interview', 'p'], offer: ['Make offer', 'p'], accept_job: ['Accept job offer', 'p'], confirm_group: ['Confirm group price', 'p'], talk: ['Open talks', 'p']
   };
   /* forms some actions need */
   var FORMS = {
@@ -286,6 +286,7 @@
   }
   function runAction(d, a, side, back) {
     if (a === 'answer') return answerForm(d, back);
+    if (a === 'agree' && d.type === 'dossier' && window.dxTradeChecklist) return window.dxTradeChecklist(d, function (data) { if (!act(d.id, a, data, side)) return; toast(ACT[a][0] + ' — sent to ' + other(d, side).name); if (window.dxDir) X().render(); later(function () { thread(d.id, back); }); });   /* W-18: the checklist before «اتفقنا» on a file deal */
     var form = FORMS[a];
     if (!form) { act(d.id, a, {}, side); toast(ACT[a][0] + ' — done'); if (window.dxDir) X().render(); return later(function () { thread(d.id, back); }); }
     D.modal({ title: ACT[a][0] + ' — ' + d.title, body: form.map(function (fl) { return '<div class="dbk-f"><label for="af_' + fl[0] + '">' + esc(fl[1]) + '</label>' + (fl[0] === 'stars' ? '<select id="af_stars"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>' : fl[0] === 'ontime' ? '<select id="af_ontime"><option value="yes">Yes, on time</option><option value="no">No, late</option></select>' : fl[0] === 'when' ? '<input id="af_when" type="date"' + (fl[3] ? ' data-req' : '') + '>' : fl[4] === 'file' ? '<input id="af_' + fl[0] + '" type="file" accept="' + DOC_TYPES + '">' : '<input id="af_' + fl[0] + '" placeholder="' + esc(fl[2]) + '"' + (fl[3] ? ' data-req' : '') + (fl[0] === 'validity' || fl[0] === 'terms' ? ' value="' + esc(fl[0] === 'terms' ? (d.lines.inc || fl[2]) : fl[2]) + '"' : '') + '>') + '</div>'; }).join(''),

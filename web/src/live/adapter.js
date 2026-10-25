@@ -4577,4 +4577,122 @@
     openListing: function (l) { window.goto('market'); var si = document.getElementById('searchIn'); if (si) { si.value = l.title; if (window.__mkxFilter) window.__mkxFilter(l.title); } }
   });
   /* ===== /AREA merge ===== */
+  /* ===== AREA w-trade: structured trade offers (W-01…W-07, W-09, W-13…W-15, W-18; 0071–0075) =====
+     window.dxTradeSvc over the database: a listing is written as a draft with its kind and fields, its items (listing_lines),
+     its private box and documents, then published by setting it active — the database checks the kind's required fields,
+     refuses a duplicate of the member's own open offer, matches it and alerts saved searches (0072/0073). Cards painted by
+     the marketplace block above are labelled by trade.js (dxTrade.decorate) from market_search's rows; the search box asks
+     market_search with canonical words (Arabic ⇄ English) when the page does not hold every listing. */
+  var TX = { mt: [], mtAt: 0 };
+  function txRow(p) { if (!p) return null; return Object.assign({}, p, { title: p.name, desc: p.description || '', mine: p.user_id === ME_UUID, price: p.price_mode === 'discount' ? '' : (p.price ? priceText(p) : ''),
+    docs: p.docs_checked_at ? 'seen' : null, lines: p.lines || [], attrs: p.attrs || {} }); }
+  function txFind(id) { id = +id; return MKT.products.concat(MK2.demandP).find(function (p) { return p.id === id; }); }
+  function txActing(g) { var a = actingRaw(); return g && g.as && a && a.slug === g.as ? a : null; }
+  function txErr(e) { var m = String((e && e.message) || ''); if (/^(DUPLICATE|RENEW_LIMIT)/.test(m)) { var x = new Error(m); var d = /DUPLICATE:(\d+)/.exec(m); if (d) x.dup = +d[1]; return x; } return new Error(friendly(e)); }
+  async function txPublish(g, status) {
+    var a = txActing(g);
+    var row = { user_id: ME_UUID, name: g.title, kind: g.kind, attrs: g.attrs || {}, price_mode: g.price_mode || null, discount_pct: g.price_mode === 'discount' ? g.discount_pct : null,
+      price: g.price || null, moq: g.moq || null, description: g.desc || '', status: 'draft', company_id: a ? a.id : null, unit: g.kind === 'materials' ? unitOfForm() : null };
+    var r = await sb.from('products').insert(row).select('id').single(); if (r.error) throw txErr(r.error);
+    var id = r.data.id;
+    try {
+      if ((g.lines || []).length) { var ls = g.lines.map(function (l, i) { var o = { listing_id: id, pos: i }; ['name', 'name_ar', 'strength', 'form', 'qty', 'unit', 'source', 'origin_country', 'pack_state', 'cold', 'price', 'discount_pct'].forEach(function (k) { if (l[k] !== undefined && l[k] !== '') o[k] = l[k]; });
+          if (l.expiry) o.expiry = l.expiry + '-01'; if (o.form && o.form.length > 40) o.form = o.form.slice(0, 40); return o; });
+        var lr = await sb.from('listing_lines').insert(ls); if (lr.error) throw txErr(lr.error); }
+      if (g.priv && (g.priv.notif_no || g.priv.reg_no)) { var pr = await sb.from('listing_private').insert({ listing_id: id, notif_no: g.priv.notif_no || null, reg_no: g.priv.reg_no || null }); if (pr.error) throw txErr(pr.error); }
+      if ((g.docs || []).length) { var paths = []; for (var i = 0; i < g.docs.length; i++) paths.push(await upDoc('documents', 'listings/' + ME_UUID + '/doc-' + rid() + '.' + extOf(g.docs[i]), g.docs[i]));
+        var dr = await sb.rpc('listing_docs_submit', { p_id: id, p_paths: paths }); if (dr.error) throw txErr(dr.error); }
+      var coa = window.dxMarket && window.dxMarket.coaOf && window.dxMarket.coaOf('form-supply');
+      if (coa && g.kind === 'materials') { var cp = await upDoc('documents', 'listings/' + ME_UUID + '/coa-' + rid() + '.' + extOf(coa), coa); var cu = await sb.from('products').update({ coa_path: cp }).eq('id', id); if (cu.error) throw txErr(cu.error); window.dxMarket.coaDone('form-supply'); }
+      if (status === 'active') { var u = await sb.from('products').update({ status: 'active' }).eq('id', id).eq('user_id', ME_UUID).select('id'); if (u.error) throw txErr(u.error); }
+    } catch (e) {
+      if (e.dup) await sb.from('products').delete().eq('id', id).eq('user_id', ME_UUID);          /* the same offer is open already: the twin draft goes */
+      else if (status === 'active') { e.message = e.message + ' — kept as a draft in My Listings'; }
+      MKT.at = 0; ML.at = 0; throw e;
+    }
+    MKT.at = 0; ML.at = 0; PG.statsAt = 0; TX.mtAt = 0;
+    var m = status === 'active' ? await sb.from('trade_matches').select('a', { count: 'exact', head: true }).or('a.eq.' + id + ',b.eq.' + id) : { count: 0 };
+    if (status === 'active') { await loadMarket().catch(function () {}); if (onPageNow('market')) { paintMarket(); if (window.dxMarket) window.dxMarket.paint(); } }
+    return { id: id, matches: m.count || 0 };
+  }
+  function txRpc(name, args) { return sb.rpc(name, args).then(function (r) { if (r.error) throw txErr(r.error); return r.data; }); }
+  window.dxTradeSvc = {
+    live: true,
+    rows: function () { return Promise.resolve([]); },
+    publish: function (g, status) { return txPublish(g, status || 'active'); },
+    items: function (id) { return txRpc('listing_items', { p_id: +id }).then(function (l) { return (l || []).map(function (x) { return Object.assign({}, x, { qty: x.qty != null ? +x.qty : null, price: x.price != null ? +x.price : null }); }); }); },
+    ask: function (id, line, qty, note) { var a = actingRaw(); return txRpc('listing_price_ask', { p_id: +id, p_line: typeof line === 'number' ? line : null, p_qty: qty || null, p_note: note || null, p_from_slug: a ? a.slug : null })
+      .then(function (r) { if (r && r.kind === 'deal') loadDeals().catch(function () {}); return r; }); },
+    respond: function (id, note) { var a = actingRaw(); if (!a) return Promise.reject(new Error('Answer on behalf of a company you belong to — or write to the lister'));
+      return txRpc('listing_respond', { p_id: +id, p_from_slug: a.slug, p_note: note || null }).then(function (r) { loadDeals().catch(function () {}); return r; }); },
+    close: function (id, outcome, who, note) { return txRpc('listing_close', { p_id: +id, p_outcome: outcome, p_counterpart: who ? uuidOf(who.id) || who.uuid || null : null, p_note: note || null })
+      .then(function (r) { MKT.at = 0; ML.at = 0; return loadMarket().then(function () { if (onPageNow('market')) paintMarket(); return r; }); }); },
+    counterparts: function (id) { return txRpc('listing_counterparts', { p_id: +id }).then(function (l) { return (l || []).map(function (u) { putUser(u); return { id: aid(u.id), uuid: u.id, name: u.name, company: u.company }; }); }); },
+    matches: function () { if (Date.now() - TX.mtAt < 4000) return Promise.resolve(TX.mt); return txRpc('my_trade_matches', { p_limit: 50 }).then(function (l) { TX.mt = l || []; TX.mtAt = Date.now(); return TX.mt; }); },
+    outcomes: function () { return txRpc('my_trade_outcomes', {}).then(function (l) { return (l || []).map(function (o) { return Object.assign({}, o, { other: o.other ? { id: o.other.id, name: o.other.name } : null }); }); }); },
+    confirm: function (id, yes, stars, note) { var a = actingRaw(); return txRpc('trade_outcome_confirm', { p_id: +id, p_yes: !!yes, p_stars: stars || null, p_note: note || null, p_from_slug: a ? a.slug : null }); },
+    rate: function (id, stars, note) { return txRpc('trade_outcome_rate', { p_id: +id, p_stars: stars, p_note: note || null }); },
+    privateGet: function (id) { return txRpc('listing_private_get', { p_id: +id }); },
+    privateShare: function (id, who) { return txRpc('listing_private_share', { p_id: +id, p_user: who.uuid || uuidOf(who.id) }); },
+    docsReview: function (id, ok, note) { return txRpc('listing_docs_review', { p_id: +id, p_ok: !!ok, p_note: note || null }); },
+    distributor: function (slug) { var raw = CO.raw[slug]; if (!raw || !raw.id) return Promise.resolve(null);
+      return sb.from('distributor_profiles').select('govs, cats, warehouses, cold_chain, fleet, agencies, note').eq('company_id', raw.id).maybeSingle().then(function (r) { if (r.error) throw txErr(r.error); return r.data; }); },
+    saveDistributor: function (slug, p) { var raw = CO.raw[slug]; if (!raw || !raw.id) return Promise.reject(new Error('Company not found'));
+      return sb.from('distributor_profiles').upsert(Object.assign({ company_id: raw.id }, p), { onConflict: 'company_id' }).then(function (r) { if (r.error) throw txErr(r.error); return true; }); }
+  };
+  if (window.dxTrade) window.dxTrade.rowOf = function (id) { return txRow(txFind(id)); };
+  /* the cards the marketplace block paints are labelled with their kind, items, price mode, reserved, documents seen */
+  var paintMarketTX = paintMarket;
+  paintMarket = function () { paintMarketTX(); var mk = document.getElementById('mkx'); if (!mk || !window.dxTrade) return;
+    mk.querySelectorAll('[data-live^="p"]').forEach(function (c) { var p = txFind(c.dataset.live.slice(1)); if (p && p.kind) window.dxTrade.decorate(c, txRow(p)); });
+    if (window.dxMarket && window.dxMarket.sync) window.dxMarket.sync(); };
+  /* publishing from an approved form with trade fields (supply, demand, CMO, license) or a draft of one: the trade path */
+  var hookTX = window.dxLiveHook;
+  window.dxLiveHook = function (kind, d) {
+    var st = window.dxTrade && window.dxTrade.STASH && window.dxTrade.STASH();
+    if (kind === 'listing' && ME_UUID && d && d.type !== 'job' && st && st.g && st.g.kind && Date.now() - st.at < 600000) { window.dxTrade.clearStash();
+      var g = Object.assign({}, st.g, { price: st.g.price || d.price || '', moq: st.g.moq || d.moq || '' });
+      txPublish(g, 'active').then(function (r) { if (r.matches) window.toast(r.matches + (r.matches === 1 ? ' listing matches it' : ' listings match it') + ' — see My Listings → Matches'); },
+        function (e) { window.dxTrade.failed(e, g); loadMarket().then(function () { if (onPageNow('market')) paintMarket(); }).catch(function () {}); });
+      return; }
+    return hookTX ? hookTX(kind, d) : undefined;
+  };
+  /* renewing keeps the database's own words (once a week; trade.js offers to feature it) */
+  if (window.dxMarketSvc) window.dxMarketSvc.renew = async function (id) { var r = await sb.rpc('listing_renew', { p_id: +id }); if (r.error) throw txErr(r.error); MKT.at = 0; return true; };
+  /* the search box: canonical words on the server when the page does not hold every listing (W-06) */
+  var txQ = { t: 0, q: '' };
+  function txWrapFilter() { var f = window.__mkxFilter; if (typeof f !== 'function' || f.__tx) return;
+    window.__mkxFilter = function (v) { var r = f.apply(this, arguments), q = String(v || '').trim(); if (!ME_UUID) return r;
+      clearTimeout(txQ.t); txQ.t = setTimeout(function () { if (q === txQ.q) return; txQ.q = q;
+        if (!q) { loadMarket().then(function () { if (onPageNow('market')) { paintMarket(); f(''); } }).catch(function () {}); return; }
+        Promise.all([sb.rpc('market_search', { p_q: q, p_type: 'supply', p_limit: MK2.page }), sb.rpc('market_search', { p_q: q, p_type: 'demand', p_limit: MK2.page })]).then(function (a) {
+          if (a[0].error || a[1].error || txQ.q !== q) return;
+          return Promise.all([sellersOf((a[0].data || {}).rows || []), sellersOf((a[1].data || {}).rows || [])]).then(function (x) { if (txQ.q !== q) return;
+            MKT.products = x[0]; MK2.total = +(a[0].data || {}).total || 0; MK2.more = MKT.products.length < MK2.total; MK2.demandP = x[1]; MKT.at = Date.now();
+            if (onPageNow('market')) { paintMarket(); f(q); } }); }).catch(function () {}); }, 350);
+      return r; }; window.__mkxFilter.__tx = true; }
+  var renderMarketTX = window.renderMarket;
+  window.renderMarket = function () { var r = renderMarketTX.apply(this, arguments); txWrapFilter(); return r; };
+  /* notices: a match, a price request, a sale to confirm, documents seen */
+  ICON.trade_match = '🎯'; ICON.price_ask = '💬'; ICON.trade_outcome = '🤝';
+  var notifFromTX = notifFrom;
+  notifFrom = function (n) { var o = notifFromTX(n), d = n.data && typeof n.data === 'object' ? n.data : null; if (!d) return o;
+    if (n.type === 'trade_match') { o.text = esc2(d.count ? d.count + (d.count === 1 ? ' listing matches ' : ' listings match ') + String(d.mine_name || '') + ' — see My Listings → Matches'
+        : (d.kind === 'wanted' || d.kind === 'file_wanted' || d.kind === 'distributor' || d.kind === 'toll_wanted' ? 'A buyer is looking for what you offer: ' : 'A new offer matches what you need: ') + String(d.name || '') + ' (for ' + String(d.mine_name || '') + ')'); o.txm = 1; }
+    if (n.type === 'price_ask') { o.text = '<b>' + esc2(n.actor ? n.actor.name : 'A member') + '</b> ' + esc2('asked the price of ' + String(d.name || '') + (d.qty ? ' · ' + d.qty : '') + ' — reply in Messages'); o.txa = n.from_user; }
+    if (n.type === 'trade_outcome') { o.text = esc2(String(n.message || '')); o.txo = d.outcome || null; o.txm = d.ask === 'private' ? 1 : o.txm; }
+    if (n.type === 'document_reviewed' && d.listing) { o.text = esc2(d.ok ? 'Drugbox saw the documents of “' + String(d.name || '') + '” — the card shows “Documents seen by Drugbox”' : 'Drugbox could not accept the documents of “' + String(d.name || '') + '”: ' + String(d.reason || '')); o.txm = 1; }
+    return o; };
+  document.addEventListener('click', function (e) { var it = ME_UUID && e.target.closest && e.target.closest('.notif-item'); if (!it) return;
+    var n = (window.NOTIFS || []).find(function (x) { return String(x.id) === String(it.dataset.nid); }); if (!n) return;
+    if (n.txa) { var u = aid(n.txa); setTimeout(function () { window.messageUser(u); }, 0); return; }
+    if (n.txm || n.txo) setTimeout(function () { window.goto('market'); setTimeout(function () { if (window.switchMasterTab) window.switchMasterTab('manage'); if (window.dxTrade) window.dxTrade.paint(); }, 300); }, 0); });
+  /* Admin → Review → Trade documents */
+  if (window.dxModeration) { var mLoadTX = window.dxModeration.load, mDecTX = window.dxModeration.decide;
+    window.dxModeration.load = function () { return mLoadTX.apply(this, arguments).then(function (d) { return sb.rpc('listing_docs_queue').then(function (r) {
+      d.tradedocs = ((r && r.data) || []).map(function (x) { return { id: x.id, name: x.name, kind: x.kind, owner: x.owner, mine: x.mine, notif_no: x.notif_no, docs: (x.docs || []).map(function (pth, i) { return { path: pth, bucket: 'documents', label: 'Document ' + (i + 1) }; }) }; }); return d; }, function () { d.tradedocs = []; return d; }); }); };
+    window.dxModeration.decide = function (kind, id, value, note) { if (kind === 'tradedocs') return txRpc('listing_docs_review', { p_id: +id, p_ok: value === 'seen', p_note: note || null }); return mDecTX.apply(this, arguments); };
+    window.dxModeration.__trade = true; }
+  onReset(function () { TX.mt = []; TX.mtAt = 0; txQ.q = ''; });
+  /* ===== /AREA w-trade ===== */
 })();
