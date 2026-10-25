@@ -20,3 +20,6 @@ Baseline at f7dc703: parity vs web/reference/demo-approved.html already FAILS (t
 - UI: web/src/growth.js/.css (demo + all drawing), web/src/live/growth.js (live services), adapter block "AREA w-growth" (end of adapter.js), groups.js extension points.
 - tests/journeys/community_growth.py J-COMMUNITY-W01…W05: demo EN 1440 / AR 1440 / EN 390 pass; live EN 1440 pass (W04 after routing the meeting host).
 - Arabic labels rewritten in the interface's formal register (the existing i18n is MSA) with the trade's terms kept.
+- Journeys: community_growth W01–W05, business_growth W01–W04, social_growth W01 — demo EN/AR × 1440/390 all pass; live EN 1440 all pass.
+- J-BUSINESS-02/04/10 visitor steps pass live (sign-in page → "Browse the company directory"); the journey takes that way in instead of failing "not built".
+- tools/scale/timings.py: feed_thera, market_search_thera, channel_posts, expert_sessions_list, expert_topic_demand, founder_badge, public_directory_page.

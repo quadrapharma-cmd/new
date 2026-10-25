@@ -167,7 +167,10 @@ def find_cmo(j):
     with j.step('A signed-out visitor sees the same capacity and calendar on the Sites tab'):
         if j.demo: j.skip('the demo has no signed-out visitor')
         v = j.new_page()
-        if j.on_login(v): j.notbuilt('a signed-out visitor gets the sign-in page instead of the public company directory')
+        if j.on_login(v):   # the owner's decision 1 (AREA w-growth): the sign-in page's way in for visitors
+            b = j.find(v, r'Browse the company directory|تصفّح دليل الشركات', scope='body')
+            if not b: j.notbuilt('a signed-out visitor gets the sign-in page instead of the public company directory')
+            b.click(); j.settle(v, 1500)
         directory(j, v); open_card(j, v, name); t = company_tab(j, v, 'Sites|%s' % ar('Sites'), 'Sites')
         j.check(re.search(r'Capacity|الطاقة', t) and first_free in t, 'a signed-out visitor does not see the capacity and calendar')
 
@@ -212,7 +215,10 @@ def judge_supplier(j):
     with j.step('A signed-out visitor sees the public page (no private documents)'):
         if j.demo: j.skip('the demo has no signed-out visitor')
         v = j.new_page()
-        if j.on_login(v): j.notbuilt('a signed-out visitor gets the sign-in page instead of the public company directory')
+        if j.on_login(v):   # the owner's decision 1 (AREA w-growth): the sign-in page's way in for visitors
+            b = j.find(v, r'Browse the company directory|تصفّح دليل الشركات', scope='body')
+            if not b: j.notbuilt('a signed-out visitor gets the sign-in page instead of the public company directory')
+            b.click(); j.settle(v, 1500)
         directory(j, v); open_card(j, v, name)
         j.check(not re.search(r'Open company workspace|Add document', j.text(v)), 'a signed-out visitor sees private company controls')
 

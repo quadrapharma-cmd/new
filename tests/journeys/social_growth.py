@@ -27,7 +27,7 @@ def specialty_question(j):
         pg = j.new_page(); demo_signup(j, pg, 'Hala Old Member')
     with j.step('On coming in, the member is asked whether Regulatory Affairs is really their specialty'):
         j.check(asked(j, pg, 10), 'the member with the old default is not asked about the specialty')
-        j.check(re.search(r'Regulatory Affairs', dlg_text(pg)), 'the question does not name the current specialty')
+        j.check(re.search(r'Regulatory Affairs|الشؤون التنظيمية', dlg_text(pg)), 'the question does not name the current specialty')
         ui_ok(j, pg, 'the specialty question')
     with j.step('"Ask me later" closes it without recording an answer'):
         dlg_click(j, pg, T(j, r'Ask me later', r'اسألني لاحقًا'), 'Ask me later'); j.settle(pg, 600)
@@ -42,7 +42,7 @@ def specialty_question(j):
         if j.live:
             j.check(j.wait_db("select headline from public.profiles where id='%s'" % me['id'], 6) == 'Quality Control / QA', 'the headline was not changed')
             j.check(j.sql1("select answer from public.member_prompts where user_id='%s' and key='specialty'" % me['id']) == 'Quality Control / QA', 'the answer was not recorded')
-        j.nav(pg, 'profile'); j.check('Quality Control / QA' in j.text(pg, '#content .profile-headline'), 'the profile does not show the new specialty')
+        j.nav(pg, 'profile'); j.check(re.search(r'Quality Control / QA|مراقبة الجودة / ضمان الجودة', j.text(pg, '#content .profile-headline')), 'the profile does not show the new specialty')
     with j.step('It is asked only once: after a reload nothing is asked'):
         if j.demo: j.skip('the demo signs in again as its sample account after a reload')
         j.reload(pg); j.settle(pg, 2500); j.check(not asked(j, pg, 3), 'the member is asked again after answering')
