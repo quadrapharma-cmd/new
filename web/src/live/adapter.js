@@ -834,7 +834,7 @@
     if (p === 'word') { var nw = n.split(' '), wi = nw.findIndex(function (x) { return !NM_LET.test(x); }), rw = String(s == null ? '' : s).replace(NM_INVIS, '').replace(NM_SPACE, ' ').replace(/^ | $/g, '').split(' ');
       return put(wi < 0 ? '' : rw.length === nw.length ? rw[wi] : nw[wi]); }
     if (p === 'dash') { var j = n.replace(/([^ -])- (?=[^ -])/g, '$1-').replace(/([^ -]) -(?=[^ -])/g, '$1 - '), i = j.indexOf(' - '), d = j.slice(0, i) + ' (' + j.slice(i + 3).split(' - ').join(', ') + ')';
-      if (i < 0) return NM_MSG.dashJoin.replace('%s', function () { return j; });
+      if (i < 0) return NM_MSG.dashJoin.replace('%s', function () { return nmProblem(j) === 'bracket' ? nmBrFix(j) : j; });
       return put(nmProblem(nmNorm(d)) === 'bracket' ? nmBrFix(nmNorm(d)) : d); }
     if (p === 'bracket') return put(NM_BR_MIX.test(n) ? n.match(/[(][^()]*[)]/u)[0] : nmBrFix(n));
     if (p === 'script') return put(n.split(NM_RUN).find(function (x) { return x !== '' && !nmScript(x); }) || '');

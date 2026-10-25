@@ -468,7 +468,8 @@ ${['empty', 'long', 'digit', 'mark'].map((k) => `    when '${k}' then ${sqlStr(M
                           from ${sqlFirstChar(`('[' || ${U(sqlClass(UNSUP_LET))} || ']')`)} z)
     when 'char' then (select format(${sqlStr(MSG.char)}, c, ${sqlHex('c')})
                         from ${sqlFirstChar(`('[^' || ${U(sqlClass(OK_OR_ACCENT))} || ']')`)} z)
-    when 'dash' then (select case when strpos(j, ' - ') = 0 then format(${sqlStr(MSG.dashJoin)}, j)
+    when 'dash' then (select case when strpos(j, ' - ') = 0 then format(${sqlStr(MSG.dashJoin)}, case when public.person_name_problem(j) = 'bracket'
+                                                                 then public.person_name_bracket_fix(j) else j end)
                                   else format(${sqlStr(MSG.dash)}, case when public.person_name_problem(public.person_name_norm(d)) = 'bracket'
                                                                  then public.person_name_bracket_fix(public.person_name_norm(d)) else d end) end
                         from (select j, left(j, strpos(j, ' - ') - 1) || ' (' || replace(substr(j, strpos(j, ' - ') + 3), ' - ', ', ') || ')' as d
@@ -579,7 +580,7 @@ function jsRegion() {
     if (p === 'word') { var nw = n.split(' '), wi = nw.findIndex(function (x) { return !NM_LET.test(x); }), rw = String(s == null ? '' : s).replace(NM_INVIS, '').replace(NM_SPACE, ' ').replace(/^ | $/g, '').split(' ');
       return put(wi < 0 ? '' : rw.length === nw.length ? rw[wi] : nw[wi]); }
     if (p === 'dash') { var j = n.replace(/([^ -])- (?=[^ -])/g, '$1-').replace(/([^ -]) -(?=[^ -])/g, '$1 - '), i = j.indexOf(' - '), d = j.slice(0, i) + ' (' + j.slice(i + 3).split(' - ').join(', ') + ')';
-      if (i < 0) return NM_MSG.dashJoin.replace('%s', function () { return j; });
+      if (i < 0) return NM_MSG.dashJoin.replace('%s', function () { return nmProblem(j) === 'bracket' ? nmBrFix(j) : j; });
       return put(nmProblem(nmNorm(d)) === 'bracket' ? nmBrFix(nmNorm(d)) : d); }
     if (p === 'bracket') return put(NM_BR_MIX.test(n) ? n.match(/[(][^()]*[)]/u)[0] : nmBrFix(n));
     if (p === 'script') return put(n.split(NM_RUN).find(function (x) { return x !== '' && !nmScript(x); }) || '');
