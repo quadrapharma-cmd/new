@@ -96,7 +96,9 @@ def queries(ctx):
             q.append(('picker_%s_exact' % tag, wrap("select %s from public.profiles x where x.name_key = '%s' and x.id <> '%s' order by x.created_at, x.id limit 30"
                                                     % (pcols, t['key'].replace("'", "''"), me))))
         ors = ([] if t['at'] else ["x.name ilike '%%%s%%'" % like(t['norm'])]) + (["x.name_key like '%%%s%%'" % like(t['key'])] if t['key'] else []) \
-            + (["x.name_sound like '%%%s%%'" % like(t['sound'])] if len(t['sound']) > 2 else []) + (["x.username_key like '%s%%'" % like(t['ukey'])] if len(t['ukey']) > 1 else [])
+            + (["x.name_sound like '%%%s%%'" % like(t['sound'].split('|')[0])] if len(t['sound'].split('|')[0]) > 2
+               else ["x.name_sound like '%%|%s|%%'" % like(w) for w in t['sound'].split('|')[1:4] if w]) \
+            + (["x.username_key like '%s%%'" % like(t['ukey'])] if len(t['ukey']) > 1 else [])
         q.append(('picker_%s_search' % tag, wrap("select %s from public.profiles x where (%s) and x.id <> '%s' order by x.created_at, x.id limit 12" % (pcols, ' or '.join(ors), me))))
     q.append(('picker_resolve_username', wrap("select %s from public.profiles x where x.username_key = public.username_key('%s') and x.id <> '%s' limit 2"
                                               % (pcols, ctx['some_username'], me))))
@@ -134,7 +136,8 @@ def context(db, n, explicit_uuid):
                      'key', case when left(t, 1) = '@' then '' else public.person_name_key(t) end, 'sound', case when left(t, 1) = '@' then '' else public.person_name_sound(t) end,
                      'ukey', public.username_key(regexp_replace(regexp_replace(t, '^@', ''), '[^A-Za-z0-9.]', '', 'g'))))
                    from (values ('ar_first', 'محمد'), ('ar_full', 'محمد ابراهيم'), ('lat_first', 'Moh'), ('lat_full', 'Mohamed Hassan'), ('lat_sound', 'Mohammed Hasan'),
-                                ('at_prefix', '@mohamed.h'), ('rare', 'Zzyzx Qwerty')) v(tag, t)))
+                                ('at_prefix', '@mohamed.h'), ('rare', 'Zzyzx Qwerty'),
+                                ('short_sound', 'Abdullah'), ('short_sound2', 'Umar'), ('bare_username', 'mohamed.hassan')) v(tag, t)))
     """
     code, out, err = psql(db, sql)
     if code: sys.exit('context query failed: ' + err.strip())

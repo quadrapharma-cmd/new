@@ -62,9 +62,9 @@ def edit_own_profile(j):
         j.check('pharco.example.org' in t and re.search(r'Cairo|القاهرة', t), 'the profile does not show the website / location')
         j.check(re.search(r'Open to work|متاح للعمل', t), 'no Open-to-work marker on the profile')
         j.check('<b>bold?</b>' in t, 'HTML in the bio was not shown as text')
-        # the interface's monogram is the first letter of the first two words, title included ("Dr. Haytham Dweedar" → DH; e2e b1: "Dr. Test
-        # Person" → DT), so "Dr. Mona Fathy" is DM — the top bar must show the NEW monogram (or a photo) and the sidebar card the new name
-        ini = ''.join(w[0] for w in vals['ep-name'].split()[:2]).upper()
+        # the monogram is the first letter of the first two words AFTER any title (S-03 fix 9, s03-user2: dxInitials — "Dr. Mona Fathy" is
+        # MF, the same right after Save, sign-up and sign-in) — the top bar must show the NEW monogram (or a photo) and the sidebar card the new name
+        ini = ''.join(w[0] for w in re.sub(r'^(?:Dr|Prof|Eng|Pharm)\.?\s+', '', vals['ep-name']).split()[:2]).upper()
         j.check(j.text(pg, '#topAv').strip() in (ini, '') and 'Mona Fathy' in pg.evaluate("(document.getElementById('meName')||{}).textContent||''")
                 and 'Mona Fathy' in j.text(pg, '#app'), 'the top bar / sidebar still show the old name')
     if j.live:

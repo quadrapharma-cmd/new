@@ -5977,14 +5977,30 @@ function endSplash(){var s=document.getElementById('splash');if(!s||s.classList.
    trailing comma; one word: the whole name. The name is said as written, in its own script, in either interface. S-03 fix 8 (v-real6-r2):
    a kunya or family prefix stays with its word (أم كلثوم, آل سعود, بنت الشاطئ, Umm Kulthum, Ben Ali, Bint …), a space beside a hyphen
    is not a word break («Abdel- Rahman» → «Abdel-Rahman»), a zero-width space is one, and a leading ’ ʿ is not said («’Abd» → «Abd») */
+/* the titles a name may start with: skipped by the greeting, the avatar initials and the name rule's search key and username
+   (tools/names/name_rule.mjs and username_rule.mjs read this list from here) */
+var DX_TITLE=/^(?:dr|prof|eng|engr|pharm|pharmd|ph|d|mr|mrs|ms|miss|dipl|dipl\.-ing|sir|dame|hajj|haj|hadj|hajja|hajjah|sheikh|shaikh|sheikha|shaikha|د|م|ص|ك|أ|ا|د\.ص|ا\.د|أ\.د|ك\.د|م\.د|الحاج|الحاجة|الحاجه|الشيخ|الشيخة|المهندس|المهندسة|الدكتور|الدكتورة|الأستاذ|الاستاذ|الأستاذة|الاستاذة)$/i;
+/* avatar initials (s03-user2, v-real1): the first letters of the first two words after any title («Dr Mohamed Salah» → MS, not DM),
+   without the part in brackets or after a comma, an article standing alone (El, Al) or starting a word (ال: «نور الدين» → ند) left out */
+function dxInitials(n){var s=String(n||'').replace(/\([^()]*\)?/g,' ').split(/[,،]/)[0].replace(/^\s+|\s+$/g,''),w=s.split(/\s+/).filter(Boolean),i=0,
+ tl=function(x){var t=x.replace(/[.\/,،]+$/,'');return DX_TITLE.test(t)||(/[.\/]$/.test(x)&&t.length<=5);};
+ while(i<w.length-1&&tl(w[i]))i++;w=w.slice(i);var g=w.length?/^(.*[.\/])([^.\/]+)$/.exec(w[0]):null;if(g&&DX_TITLE.test(g[1].replace(/[.\/]+$/,'')))w[0]=g[2];
+ if(w.length>2&&/^(?:el|al|ال)$/i.test(w[1]))w.splice(1,1);
+ var r=w.slice(0,2).map(function(x){x=x.replace(/^[^\p{L}]+/u,'');if(/^ال./.test(x)&&Array.from(x).length>3)x=x.slice(2);return Array.from(x)[0]||'';}).join('').toUpperCase();
+ return r||String(n||'?').trim().charAt(0)||'?';}
+/* a username for a member who signs up in the demo (the live app's comes from the database: 0070 username_base): the Latin words of
+   the name after its titles, first.last, numbered when a sample member has it */
+function dxDemoUsername(n){var R=window.dxUsername,w=String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().split(/[\s.,،\/()-]+/).filter(function(x){return x&&!DX_TITLE.test(x);}).map(function(x){return x.replace(/[^a-z0-9]/g,'');}).filter(Boolean),
+ b=w.length?(w.length>1?w[0]+'.'+w[w.length-1]:w[0]):'member';if(!R)return b;
+ for(var i=1;i<1000;i++){var c=R.candidate(b,i);if(R.problem(c)===''&&!USERS.some(function(u){return u!==ME&&u.username&&R.key(u.username)===R.key(c);}))return c;}return b;}
 function dxGreetName(n){var s=String(n||'').replace(/\u200B/g,' ').replace(/^\s+|\s+$/g,'').replace(/([^\s-])-\s+(?=[^\s-])/g,'$1-').replace(/([^\s-])\s+-(?=[^\s-])/g,'$1-'),
  inv=/^([^\s,،]+)\s*[,،]\s*(\S.*)$/.exec(s);if(inv&&/[^\s.,،]/.test(inv[2]))s=inv[2];var
  w=s.split(/\s+/).map(function(x){return x.replace(/^[’'ʿʻ‘`ʾ]+(?=.)/,'');}),i=0,
- T=/^(?:dr|prof|eng|engr|pharm|pharmd|ph|d|mr|mrs|ms|miss|dipl|dipl\.-ing|hajj|haj|hadj|hajja|hajjah|sheikh|shaikh|sheikha|shaikha|د|م|ص|ك|أ|ا|د\.ص|ا\.د|أ\.د|ك\.د|م\.د|الحاج|الحاجة|الحاجه|الشيخ|الشيخة|المهندس|المهندسة|الدكتور|الدكتورة|الأستاذ|الاستاذ|الأستاذة|الاستاذة)$/i,
+ T=DX_TITLE,
  A=/^(?:el|al|ال)$/i,P=/[.,،;:!?]+$/;
  var title=function(x){var t=x.replace(/[.\/,،]+$/,'');return T.test(t)||(/[.\/]$/.test(x)&&t.length<=5);};
  while(i<w.length-1&&title(w[i]))i++;
- var g=/^(.*[.\/])([^.\/]+)$/.exec(w[i]);if(g&&title(g[1]))w[i]=g[2];
+ var g=/^(.*[.\/])([^.\/]+)$/.exec(w[i]);if(g&&T.test(g[1].replace(/[.\/,،]+$/,'')))w[i]=g[2];   /* glued: only a title of the list («Dr.Ahmed», «د/محمد» — never «Ahmed.Ali») */
  if(title(w[i])&&i===w.length-1)return s;
  var c=/^(?:عبد|عبدال|abd|abdel|abdul|abdal|abu|abou|abo|abul|أبو|ابو|ابن|بن|ibn|bin|ben|أم|ام|آل|بنت|ابنة|umm|um|om|oum|bint|bent|van|von|de|da|di|du|del|della|der|den|le|la)$/i,j=i;
  if(i<w.length-1&&c.test(w[i])){j=i+1;while(j<w.length-1&&/^(?:el|al|ال|der|den|de|la|le|van|von)$/i.test(w[j]))j++;}
@@ -5992,8 +6008,8 @@ function dxGreetName(n){var s=String(n||'').replace(/\u200B/g,' ').replace(/^\s+
  var r=w.slice(i,j+1).join(' '),t=r.replace(P,'');return t||r||s;}
 function doLogin(){var email=document.getElementById('loginEmail').value.trim();var pw=document.getElementById('loginPw').value;var err=document.getElementById('loginErr');err.style.display='none';if(!email){err.textContent='Email is required';err.style.display='block';return;}if(!pw){err.textContent='Password is required';err.style.display='block';return;}document.getElementById('authWrap').style.display='none';document.getElementById('app').style.display='flex';goto('feed');updateTopUser();toast('Welcome back, '+dxGreetName(ME.name)+'!');}
 
-function doSignup(){var name=document.getElementById('suName').value.trim();var email=document.getElementById('suEmail').value.trim();var pw=document.getElementById('suPw').value;var err=document.getElementById('suErr');err.style.display='none';if(!name){err.textContent='Name is required';err.style.display='block';return;}if(!email){err.textContent='Email is required';err.style.display='block';return;}if(pw.length<8){err.textContent='Password must be at least 8 characters';err.style.display='block';return;}if(email.toLowerCase()==='haytham@drugbox.app'){err.textContent='An account with this email already exists — sign in instead';err.style.display='block';return;}var co=document.getElementById('suCompany'),ro=document.getElementById('suRole');if(ME.id===1){ME.id=USERS.reduce(function(m,u){return u.id<1000&&u.id>m?u.id:m;},1)+1;ME.color='#0E8C66';USERS.push(ME);}signupEnter(name,co?co.value.trim():'',ro&&ro.selectedIndex<ro.options.length-1?ro.value.trim():'');}
-function signupEnter(name,company,specialty){Object.assign(ME,{name:name,initials:name.split(' ').map(function(w){return w.replace(/^[’'ʿʻ‘`ʾ(]+(?=.)/,'').charAt(0);}).slice(0,2).join('').toUpperCase(),company:company,headline:specialty,verified:false,role:'user',bio:'',web:'',phone:'',certs:'',location:'',avatar:null,openToWork:false,hiring:false,experience:[],education:[],skills:[],languages:[],connections:'0',followers:0,profileViews:'0'});var mine=USERS.find(function(u){return u.id===ME.id;});if(mine&&mine!==ME)Object.assign(mine,ME);document.getElementById('authWrap').style.display='none';document.getElementById('app').style.display='flex';goto('feed');updateTopUser();toast('Welcome to Drugbox, '+dxGreetName(name)+'!');}
+function doSignup(){var name=document.getElementById('suName').value.trim();var email=document.getElementById('suEmail').value.trim();var pw=document.getElementById('suPw').value;var err=document.getElementById('suErr');err.style.display='none';if(!name){err.textContent='Name is required';err.style.display='block';return;}if(!email){err.textContent='Email is required';err.style.display='block';return;}if(pw.length<8){err.textContent='Password must be at least 8 characters';err.style.display='block';return;}if(email.toLowerCase()==='haytham@drugbox.app'){err.textContent='An account with this email already exists — sign in instead';err.style.display='block';return;}var co=document.getElementById('suCompany'),ro=document.getElementById('suRole');if(ME.id===1){ME.id=USERS.reduce(function(m,u){return u.id<1000&&u.id>m?u.id:m;},1)+1;ME.color='#0E8C66';USERS.push(ME);}ME.username=dxDemoUsername(name);signupEnter(name,co?co.value.trim():'',ro&&ro.selectedIndex<ro.options.length-1?ro.value.trim():'');}
+function signupEnter(name,company,specialty){Object.assign(ME,{name:name,initials:dxInitials(name),company:company,headline:specialty,verified:false,role:'user',bio:'',web:'',phone:'',certs:'',location:'',avatar:null,openToWork:false,hiring:false,experience:[],education:[],skills:[],languages:[],connections:'0',followers:0,profileViews:'0'});var mine=USERS.find(function(u){return u.id===ME.id;});if(mine&&mine!==ME)Object.assign(mine,ME);document.getElementById('authWrap').style.display='none';document.getElementById('app').style.display='flex';goto('feed');updateTopUser();toast('Welcome to Drugbox, '+dxGreetName(name)+'!');}
 
 /* Enter in a sign-in field: ignored while the button is busy (the live app disables it during the request) or the key repeats */
 function authEnter(e,fn){if(e.key!=='Enter'||e.repeat)return;var p=e.target.closest('#loginPage,#signupPage'),b=p&&p.querySelector('button.f-btn');if(b&&b.disabled)return;fn();}
@@ -6892,7 +6908,7 @@ function profileForm(){
 function saveProfile(f){
   f=f&&f.name?f:profileForm();if(!f)return;
   ['name','headline','company','location','web','phone','certs','bio','openToWork'].forEach(function(k){ME[k]=f[k];});if(f.username)ME.username=f.username;
-  ME.initials=ME.name.split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
+  ME.initials=dxInitials(ME.name);
   var mine=USERS.find(function(u){return u.id===ME.id;});if(mine&&mine!==ME)Object.assign(mine,ME);
   document.querySelector('.modal-bg').remove();
   updateTopUser();
@@ -9231,8 +9247,11 @@ window.mxComplete = function (root) {
         if (at) hit = people.filter(function (p) { return p.user && R.key(p.user.username) === R.key(at); })[0];
         else {
           hit = people.filter(function (p) { return p.name.toLowerCase() === lc; })[0];
-          if (!hit) { var same = people.filter(function (p) { return p.person.toLowerCase() === lc; });
-            if (same.length > 1) { toEl.classList.add('dbk-err'); D.toast('Several members are called ' + to + ' — choose one from the list'); return false; }
+          if (!hit) { var same = people.filter(function (p) { return p.person.toLowerCase() === lc; }),
+              /* a bare text that can be a username is read as one too: it reaches a member only when everyone it fits is that member */
+              byU = R && /^[A-Za-z0-9.]{5,30}$/.test(to) ? people.filter(function (p) { return p.user && p.user.username && R.key(p.user.username) === R.key(to); }) : [];
+            byU.forEach(function (p) { if (same.indexOf(p) < 0 && !same.some(function (x) { return x.user && x.user === p.user; })) same.push(p); });
+            if (same.length > 1) { toEl.classList.add('dbk-err'); D.toast(byU.length && same.some(function (x) { return x.user !== byU[0].user; }) ? to + ' fits more than one member (a username and a name) — choose one from the list, or type @' + R.typed('@' + to) : 'Several members are called ' + to + ' — choose one from the list'); return false; }
             hit = same[0]; }
         }
         if (!hit) { toEl.classList.add('dbk-err'); D.toast('No member called ' + to + ' — choose someone from the list'); return false; }
@@ -9714,23 +9733,28 @@ function dgPhoto(c,page){
 /* >>> generated by tools/names/username_rule.mjs (confusables.txt 16.0.0, tools/names/username-twins.txt, tools/names/translit-ar.txt) — do not edit by hand */
   var US_MIN = 5, US_MAX = 30;
   var US_K1 = {"0":"o","1":"i","l":"i"};
-  var US_RES_WHOLE = ["about","accourit","accourits","aierts","arioriyrrious","api","careers","chaririei","charirieis","corripariies","coritact","cieais","ciirectory","erriaii","everits","everyorie","feeci","groups","irifo","irisights","jobs","iegai","iogiri","iogout","rriaii","rriarket","rriarketpiace","rrierribers","rriessages","rietvvork","rievvs","riotificatioris","riuii","postrriaster","privacy","profiie","register","saies","settirigs","sigriiri","sigriup","terrris","trairiirig","uriciefirieci","upciates","userriarrie","userriarries","vvebrriaster","acacierriy","cirugboxrievvs","cirugboxjobs","cirugboxacacierriy","cirugboxrriarket","cirugboxcieais","cirugboxirisights","cirugboxtearri","cirugboxofficiai","cirugboxsupport","cirugbox","acirriiri","acirriiriistrator","support","heip","heipciesk","officiai","rriocierator","rriocierators","staff","tearri","security","payrrierits","payrrierit","biiiirig","verify","verifieci","verificatiori","systerri","root","riorepiy","abuse","trust","safety"], US_RES_PART = ["cirugbox","acirriiri","acirriiriistrator","support","heip","heipciesk","officiai","rriocierator","rriocierators","staff","tearri","security","payrrierits","payrrierit","biiiirig","verify","verifieci","verificatiori","systerri","root","riorepiy","abuse","trust","safety"], US_RES_BRAND = 'cirugbox';
-  var US_MSG = {"empty":"Choose a username","char":"A username can only have small letters a-z, numbers 0-9 and dots — remove “\u2066%s\u2069”","short":"A username has at least 5 characters","long":"A username has at most 30 characters","dot":"A dot cannot start or end a username or follow another dot","letter":"A username needs at least one letter","reserved":"“\u2066%s\u2069” is kept for Drugbox — choose another username","taken":"“\u2066%s\u2069” is taken — choose another username","held":"“\u2066%s\u2069” was just given up by a member and is kept for them for 30 days — choose another username","rate":"You changed your username too often today — try again tomorrow","slow":"Too many tries — wait a minute and try again","signin":"Sign in to choose a username"};
+  var US_RES_WHOLE = ["about","accourit","accourits","aierts","arioriyrrious","api","careers","chaririei","charirieis","corripariies","coritact","cieais","ciirectory","erriaii","everits","everyorie","feeci","groups","irifo","irisights","jobs","iegai","iogiri","iogout","rriaii","rriarket","rriarketpiace","rrierribers","rriessages","rietvvork","rievvs","riotificatioris","riuii","postrriaster","privacy","profiie","register","saies","settirigs","sigriiri","sigriup","terrris","trairiirig","uriciefirieci","upciates","userriarrie","userriarries","vvebrriaster","acacierriy","heip","staff","tearri","systerri","root","abuse","trust","safety","rrioci","rriocis","ceo","cirugbox","acirriiri","rriocierator","officiai","support","payrrierit","verif","riorepiy","heipciesk","security","biiiirig"], US_RES_PART = ["heip","staff","tearri","systerri","root","abuse","trust","safety","rrioci","rriocis","ceo","cirugbox","acirriiri","rriocierator","officiai","support","payrrierit","verif","riorepiy","heipciesk","security","biiiirig"], US_RES_ANY = ["cirugbox","acirriiri","rriocierator","officiai","support","payrrierit","verif","riorepiy","heipciesk","security","biiiirig"], US_RUDE = ["shit","fuck","fck","dick","cock","cunt","piss","slut","whore","bitch","bastard","porn","sex","nazi","ass","arse","fag","rape"];
+  var US_MSG = {"empty":"Choose a username","char":"A username can only have small letters a-z, numbers 0-9 and dots — remove “\u2066%s\u2069”","short":"A username has at least 5 characters","long":"A username has at most 30 characters","dot":"A dot cannot start or end a username or follow another dot","letter":"A username needs at least one letter","reserved":"“\u2066%s\u2069” is kept for Drugbox — choose another username","taken":"“\u2066%s\u2069” is taken — choose another username","alike":"“\u2066%s\u2069” reads like a username a member has (capitals, dots and look-alikes such as 0 / o and 1 / l do not count) — choose another username","held":"“\u2066%s\u2069” was just given up by a member and is kept for them for 30 days — choose another username","rate":"You changed your username too often today — try again tomorrow","slow":"Too many tries — wait a minute and try again","signin":"Sign in to choose a username"};
   function usKey(u) { return String(u == null ? '' : u).replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }).replace(/\./g, '').replace(/[l01]/g, function (c) { return US_K1[c]; }).split('m').join('rri').split('w').join('vv').split('d').join('ci').split('n').join('ri'); }
   function usProblem(u) {
     u = String(u == null ? '' : u); var l = u.replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }), n = Array.from(u).length;
     if (!u) return 'empty'; if (/[^a-z0-9.]/.test(l)) return 'char'; if (n < US_MIN) return 'short'; if (n > US_MAX) return 'long';
     if (/^[.]|[.]$|[.][.]/.test(u)) return 'dot'; if (!/[a-z]/.test(l)) return 'letter';
-    var k = usKey(u);
-    if (US_RES_WHOLE.indexOf(k) >= 0 || k.indexOf(US_RES_BRAND) >= 0 || l.split('.').some(function (w) { return US_RES_PART.indexOf(usKey(w.replace(/[0-9]/g, ''))) >= 0; })) return 'reserved';
-    return '';
+    return usReserved(u) ? 'reserved' : '';
+  }
+  function usEnds(x) { return x.replace(/^[0-9]+|[0-9]+$/g, ''); }
+  function usReserved(u) {
+    var l = String(u == null ? '' : u).replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }), k = usKey(l), ks = usKey(usEnds(l.replace(/\./g, '')));
+    return US_RES_WHOLE.indexOf(k) >= 0 || US_RES_WHOLE.indexOf(ks) >= 0
+      || US_RES_ANY.some(function (a) { return [k, ks].some(function (x) { return x.slice(0, a.length) === a || (x.length >= a.length && x.slice(x.length - a.length) === a); }); })
+      || l.split('.').some(function (w) { var kw = usKey(w); return US_RES_PART.indexOf(kw) >= 0 || US_RES_PART.indexOf(usKey(usEnds(w))) >= 0 || US_RES_ANY.some(function (a) { return kw.indexOf(a) >= 0; }); });
   }
   function usMessage(u, p) { var m = US_MSG[p] || '', l = String(u == null ? '' : u).replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }); return m.replace('%s', function () { return p === 'char' ? (l.match(/[^a-z0-9.]/u) || [''])[0] : l; }); }
-  function usReservedWord(w) { var k = usKey(w); return US_RES_PART.indexOf(usKey(w.replace(/[0-9]/g, ''))) >= 0 || k.indexOf(US_RES_BRAND) >= 0; }
+  function usReservedWord(w) { var k = usKey(w); return US_RUDE.indexOf(w) >= 0 || US_RES_ANY.some(function (a) { return k.indexOf(a) >= 0; }); }
   function usCandidate(b, n) { var d = String(Math.max(n, 1)); if (n <= 1 && b.length >= US_MIN) return b.slice(0, US_MAX); if (b.length + 1 + d.length < US_MIN) d = d.padStart(US_MIN - 1 - b.length, '0');
     return b.slice(0, US_MAX - 1 - d.length).replace(/[.]+$/, '') + '.' + d; }
 /* <<< generated */
-  window.dxUsername = { key: usKey, problem: usProblem, message: usMessage, candidate: usCandidate, reservedWord: usReservedWord,
+  window.dxUsername = { key: usKey, problem: usProblem, message: usMessage, candidate: usCandidate, reservedWord: usReservedWord, reserved: usReserved,
     /* «@name» typed in a To field, or the «@name» part of a picker option: the username, without the @ ('' when there is none) */
     typed: function (x) { var m = /(?:^|\s)@([A-Za-z0-9.]{1,40})(?=\s|$)/.exec(String(x == null ? '' : x)); return m ? m[1].replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }) : ''; },
     /* shown left to right, isolated, in either language («@ahmed.ali» stays one piece in an Arabic sentence) */
@@ -13751,6 +13775,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     [/^Unread \((\d+)\)$/, function (m) { return 'غير مقروء (' + m[1] + ')'; }],   /* the Messages filter, recounted (J-SOCIAL-38) */
     [/^No member called (.+) — choose someone from the list$/, function (m) { return 'لا يوجد عضو باسم ' + m[1] + ' — اختر شخصًا من القائمة'; }],   /* ✎ New message (S-03) */
     [/^Several members are called (.+) — choose one from the list$/, function (m) { return 'أكثر من عضو باسم ' + m[1] + ' — اختر واحدًا من القائمة'; }],
+    [/^(.+) fits more than one member \(a username and a name\) — choose one from the list, or type @([a-z0-9.]+)$/, function (m) { return '«' + m[1] + '» يطابق أكثر من عضو (اسم مستخدم واسم) — اختر واحدًا من القائمة أو اكتب ⁦@' + m[2] + '⁩'; }],
     [/^Choose (.+) from the list to be sure who receives it$/, function (m) { return 'اختر ' + m[1] + ' من القائمة لتتأكد من المستلم'; }],
     /* the name rule's refusals (live: sign-up, Edit Profile, the database — 0039_names_rule_4 and _5): what they quote is isolated (U+2068 …
        U+2069), kept in the Arabic sentence so a Latin, Greek or Cyrillic character or name keeps its place */
@@ -13766,8 +13791,10 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     [/^A username can only have small letters a-z, numbers 0-9 and dots — remove “⁦([^]*)⁩”$/, function (m) { return 'اسم المستخدم يقبل الحروف الصغيرة ⁦a-z⁩ والأرقام ⁦0-9⁩ والنقطة فقط — احذف «⁦' + m[1] + '⁩»'; }],
     [/^“⁦([^]*)⁩” is kept for Drugbox — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» محجوز لـ Drugbox — اختر اسم مستخدم آخر'; }],
     [/^“⁦([^]*)⁩” is taken — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» مستخدم بالفعل — اختر اسم مستخدم آخر'; }],
+    [/^“⁦([^]*)⁩” reads like a username a member has \(capitals, dots and look-alikes such as 0 \/ o and 1 \/ l do not count\) — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» يُقرأ مثل اسم مستخدم لعضو آخر (لا تُحسب الحروف الكبيرة والنقاط والمتشابهات مثل ⁦0 / o⁩ و⁦1 / l⁩) — اختر اسم مستخدم آخر'; }],
     [/^“⁦([^]*)⁩” was just given up by a member and is kept for them for 30 days — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» تخلّى عنه عضو منذ قليل وهو محفوظ له 30 يومًا — اختر اسم مستخدم آخر'; }],
     [/^✓ @([a-z0-9.]+) is available$/, function (m) { return '✓ ⁦@' + m[1] + '⁩ متاح'; }],
+    [/^Use “\u2068([^]*)\u2069”$/, function (m) { return 'استخدم «\u2068' + m[1] + '\u2069»'; }],   /* the one-click name fix (s03-user2) */
     [/^No member has the username @(.+)$/, function (m) { return 'لا يوجد عضو باسم المستخدم ⁦@' + m[1] + '⁩'; }],
     [/^Write each word of a name in one alphabet — “\u2068([^]*)\u2069” mixes alphabets$/, function (m) { return 'اكتب كل كلمة من الاسم بأبجدية واحدة — «\u2068' + m[1] + '\u2069» تخلط بين أبجديات'; }],
     [/^Remove the mark added to “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ$/, function (m) { return 'احذف العلامة المضافة إلى «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) — يقبل Drugbox الحرف ذا العلامة مكتوبًا كحرف واحد، مثل \u2066é، ü، ñ\u2069'; }],
