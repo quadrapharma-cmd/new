@@ -4605,7 +4605,7 @@
   };
   /* Home: the posts about one area (newest first, a page at a time — the same card and state as the feed) */
   async function feedThera(tag, cursor) {   /* cursor: the last post shown ({t, id}) — the next page by (created_at, id) as the feed pages */
-    var q = sb.from('posts').select(POST_SEL).is('group_id', null).contains('thera', [tag]).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
+    var q = sb.from('posts').select(POST_SEL).is('group_id', null).neq('thera', '{}').contains('thera', [tag]).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(PAGE);
     if (cursor) q = q.lte('created_at', cursor.t).or('created_at.lt.' + cursor.t + ',and(created_at.eq.' + cursor.t + ',id.lt.' + cursor.id + ')');
     var r = await q;
     if (r.error) throw r.error; var rows = r.data || [], ps = await postState(rows.map(function (x) { return x.id; }));

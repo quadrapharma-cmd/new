@@ -95,6 +95,8 @@ do $$ begin
   alter table public.posts add constraint posts_thera_chk check (public.thera_ok(thera));
 exception when duplicate_object then null; end $$;
 create index if not exists idx_posts_thera on public.posts using gin (thera) where group_id is null;
+-- Home's filter reads the newest tagged posts in order (an area with few posts must not walk the whole feed index: 500 ms → 0.1 ms at 300k posts)
+create index if not exists idx_posts_thera_feed on public.posts (created_at desc, id desc) where group_id is null and thera <> '{}';
 create index if not exists idx_posts_drugbox on public.posts (group_id, created_at desc) where as_drugbox;
 
 -- a Drugbox post is Drugbox's: its publishing admin keeps no own-post rights over it once no longer a Drugbox admin
@@ -448,7 +450,7 @@ grant execute on function public.channel_schedule_list(int) to authenticated, se
 create or replace function public.feed_thera(p_tag text, p_before timestamptz default null, p_before_id bigint default null, p_limit int default 20)
 returns setof public.posts language sql stable security invoker set search_path = public as $$
   select p.* from public.posts p
-   where p.group_id is null and p.thera @> array[p_tag]
+   where p.group_id is null and p.thera <> '{}' and p.thera @> array[p_tag]
      and (p_before is null or (p.created_at, p.id) < (p_before, coalesce(p_before_id, 9223372036854775807)))
    order by p.created_at desc, p.id desc
    limit least(greatest(coalesce(p_limit, 20), 1), 50)
