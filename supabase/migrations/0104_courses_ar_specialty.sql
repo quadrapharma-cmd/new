@@ -3,7 +3,8 @@
 --   Decision 7: the six courses get their Arabic title and description now (training_courses.title_ar / description_ar,
 --               shown in the Arabic interface); they stay free until the owner sends their content and prices.
 --   Decision 9: members whose headline is still the old sign-up default "Regulatory Affairs" are asked ONCE to confirm or
---               change their specialty (member_prompts records the answer; specialty_prompt_due() / specialty_answer()).
+--               change their specialty (member_prompts records the answer; specialty_prompt_due() / specialty_answer()) — accounts
+--               made before this migration ran (newer ones chose their specialty on a sign-up form with no default).
 -- Every table and function grants its own privileges (0026). Safe to run twice.
 -- ═════════════════════════════════════════════════════════════════════
 
@@ -48,10 +49,17 @@ revoke all on table public.member_prompts from public, anon, authenticated, serv
 grant select on table public.member_prompts to anon, authenticated;              -- writes through specialty_answer() only
 grant select, insert, update, delete, truncate, references, trigger on table public.member_prompts to service_role;
 
--- is the one-time question due for me? (my headline is exactly the old default, and I have not answered)
+-- the moment this migration first ran: accounts made after it chose their specialty on the new sign-up form (no default)
+create table if not exists private.growth_marks (key text primary key, at timestamptz not null default now());
+revoke all on table private.growth_marks from public, anon, authenticated, service_role;
+grant select on table private.growth_marks to service_role;
+insert into private.growth_marks (key) values ('specialty_prompt_from') on conflict (key) do nothing;
+
+-- is the one-time question due for me? (an account from before, whose headline is exactly the old default, that has not answered)
 create or replace function public.specialty_prompt_due() returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.profiles p where p.id = auth.uid() and p.headline = 'Regulatory Affairs')
+  select exists (select 1 from public.profiles p where p.id = auth.uid() and p.headline = 'Regulatory Affairs'
+                   and p.created_at < (select at from private.growth_marks where key = 'specialty_prompt_from'))
      and not exists (select 1 from public.member_prompts m where m.user_id = auth.uid() and m.key = 'specialty')
 $$;
 revoke all on function public.specialty_prompt_due() from public, anon, authenticated, service_role;

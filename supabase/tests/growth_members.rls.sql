@@ -200,6 +200,11 @@ select pg_temp.F();
 select pg_temp.ok('a member gets the same public page (mine = false)', $$(select (public.public_company('gm-founder-pharma') ->> 'mine')::boolean = false)$$);
 
 -- ══ 4. courses in Arabic, the specialty prompt ═══════════════════════════════════════════════
+select pg_temp.as_server();
+select pg_temp.step('F and X are accounts from before the new sign-up form', $$update public.profiles set created_at = (select at from private.growth_marks where key = 'specialty_prompt_from') - interval '1 day' where id in ('b2000000-0000-0000-0000-000000000002', 'b2000000-0000-0000-0000-000000000003')$$);
+select pg_temp.step('N is a new account with the same headline', $$insert into auth.users (id, email) values ('b2000000-0000-0000-0000-000000000005','gm-n@x'); insert into public.profiles (id, name, headline) values ('b2000000-0000-0000-0000-000000000005', 'GM New', 'Regulatory Affairs') on conflict (id) do update set headline = excluded.headline$$);
+select pg_temp.as_user('b2000000-0000-0000-0000-000000000005');
+select pg_temp.ok('a new account that chose Regulatory Affairs is not asked', $$not public.specialty_prompt_due()$$);
 select pg_temp.as_anon();
 select pg_temp.ok('the six courses have Arabic titles and descriptions where they exist', $$not exists (select 1 from public.training_courses where title in ('GMP Fundamentals','EDA Registration Process','ICH Guidelines','Cosmetics Regulation','Stability Studies','GCC Market Access') and (title_ar is null or description_ar is null))$$);
 select pg_temp.X();
