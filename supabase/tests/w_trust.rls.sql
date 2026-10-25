@@ -86,6 +86,10 @@ select pg_temp.step('V fills the trade profile', $$insert into public.trade_prof
 select pg_temp.step('V posts AS the verified company', $$insert into public.products (user_id, name, type, category, company_id) values (pg_temp.u(4), 'WT Tablets 500mg', 'supply', 'finished', pg_temp.id('coV'))$$);
 select pg_temp.ok('… posted_as is company', $$(select posted_as from public.products where name = 'WT Tablets 500mg') = 'company'$$);
 select pg_temp.no('V cannot post for a company V does not belong to', $$insert into public.products (user_id, name, type, category, company_id) values (pg_temp.u(4), 'WT Other', 'supply', 'finished', pg_temp.id('coU'))$$, '42501');
+select pg_temp.act(3);
+select pg_temp.nohint('a company surplus listing needs the badge too', $$insert into public.company_listings (company_id, kind, product, created_by) values (pg_temp.id('coU'), 'surplus', 'WT MCC 200 kg', pg_temp.u(3))$$, 'DX412');
+select pg_temp.act(4);
+select pg_temp.step('the verified company posts its surplus', $$insert into public.company_listings (company_id, kind, product, created_by) values (pg_temp.id('coV'), 'surplus', 'WT MCC 200 kg', pg_temp.u(4))$$);
 -- deal-room listings follow the same rules
 select pg_temp.as_server();
 select pg_temp.step('a deal room with C and A as members', $$with g as (insert into public.groups (name, topic, type, created_by) values ('WT Deal Room', 'DEAL ROOM', 'private', pg_temp.u(3)) returning id),

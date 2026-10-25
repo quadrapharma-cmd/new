@@ -85,7 +85,7 @@ begin
   if private.is_suspended(me) then raise exception 'Your account is suspended' using errcode = '42501'; end if;
   if p_user is null or p_user = me then raise exception 'Choose the trader you are reporting' using errcode = '22023'; end if;
   if not exists (select 1 from public.profiles p where p.id = p_user and p.account_type is distinct from 'deleted') then
-    raise exception 'This member does not exist' using errcode = 'P0002'; end if;
+    raise exception 'This member is not on Drugbox' using errcode = 'P0002'; end if;
   if p_reason is null or p_reason not in ('non_payment', 'non_delivery', 'counterfeit', 'misrepresentation', 'sham_papers', 'other') then
     raise exception 'Choose what happened' using errcode = '22023'; end if;
   if char_length(v_details) < 20 then raise exception 'Say what happened in at least 20 characters' using errcode = '22023', hint = 'DX430'; end if;
@@ -93,9 +93,9 @@ begin
   if cardinality(p_evidence) > 5 or not private.own_report_files(p_evidence) then
     raise exception 'Upload the evidence first (at most 5 files)' using errcode = '42501', hint = 'DX431'; end if;
   if exists (select 1 from public.trader_reports r where r.reporter = me and r.reported = p_user and r.status = 'open') then
-    raise exception 'You already have an open report about this member — Drugbox is checking it' using errcode = '23505', hint = 'DX432'; end if;
+    raise exception 'You already have an open report about this member — Drugbox is checking it' using errcode = 'P0001', hint = 'DX432'; end if;
   if (select count(*) from public.trader_reports r where r.reporter = me and r.created_at > now() - interval '1 day') >= 5 then
-    raise exception 'You sent 5 reports today — try again tomorrow' using errcode = '54000'; end if;
+    raise exception 'You sent 5 reports today — try again tomorrow' using errcode = 'P0001'; end if;
   if nullif(btrim(coalesce(p_deal_ref, '')), '') is not null then
     select * into d from public.deals where ref = btrim(p_deal_ref);
     if d.id is null or not public.deal_is_party(d.id) then raise exception 'You can name only a deal you are part of' using errcode = '42501'; end if;
@@ -137,14 +137,14 @@ begin
   if me is null or not public.is_moderator() then raise exception 'Only the Drugbox team can do this' using errcode = '42501'; end if;
   if p_uphold is null then raise exception 'Uphold or dismiss' using errcode = '22023'; end if;
   select * into r from public.trader_reports where id = p_report for update;
-  if r.id is null then raise exception 'This report does not exist' using errcode = 'P0002'; end if;
+  if r.id is null then raise exception 'This report is not in the queue' using errcode = 'P0002'; end if;
   if r.status <> 'open' then raise exception 'Already decided (%)', r.status using errcode = 'DX409'; end if;
   if me in (r.reporter, r.reported) then raise exception 'You are a party to this report — another moderator decides' using errcode = '42501'; end if;
   if r.replied_at is null and r.created_at > now() - interval '7 days' then
     raise exception 'The member has until % to reply — decide after their reply', to_char(r.created_at + interval '7 days', 'YYYY-MM-DD') using errcode = '22023', hint = 'DX433';
   end if;
   if exists (select 1 from public.trader_report_votes v where v.report_id = r.id and v.moderator = me) then
-    raise exception 'You already voted — a second moderator decides' using errcode = '23505', hint = 'DX434'; end if;
+    raise exception 'You already voted — a second moderator decides' using errcode = 'P0001', hint = 'DX434'; end if;
   insert into public.trader_report_votes (report_id, moderator, uphold, note) values (r.id, me, p_uphold, v_note);
   select count(*) into n from public.trader_report_votes v where v.report_id = r.id and v.uphold = p_uphold;
   if n < 2 then return 'voted'; end if;
@@ -224,7 +224,7 @@ begin
   if d.to_company_id is null or not public.is_company_member(d.to_company_id) then raise exception 'Only the supplier''s team rates the buyer' using errcode = '42501'; end if;
   if d.status not in ('delivered', 'closed') then raise exception 'Rate the buyer once the deal is delivered' using errcode = '22023', hint = 'DX435'; end if;
   if p_stars is null or p_stars not between 1 and 5 then raise exception 'Choose 1 to 5 stars' using errcode = '22023'; end if;
-  if exists (select 1 from public.deal_ratings r where r.deal_id = d.id) then raise exception 'You already rated this buyer' using errcode = '23505', hint = 'DX436'; end if;
+  if exists (select 1 from public.deal_ratings r where r.deal_id = d.id) then raise exception 'You already rated this buyer' using errcode = 'P0001', hint = 'DX436'; end if;
   insert into public.deal_ratings (deal_id, by_user, by_company, buyer_user, buyer_company, stars, note)
   values (d.id, me, d.to_company_id, d.from_user, d.from_company_id, p_stars, nullif(left(btrim(coalesce(p_note, '')), 500), ''));
   insert into public.deal_events (deal_id, side, action, note, actor, data)

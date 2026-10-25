@@ -61,7 +61,7 @@
   }
   var BYPASS = false;
   document.addEventListener('click', function (e) {
-    var b = e.target.closest && e.target.closest('#mkx .btn-create'); if (!b || BYPASS) return;
+    var b = e.target.closest && e.target.closest('#mkx .btn-create, #mkx .btn-draft'); if (!b || BYPASS) return;
     var f = b.closest('.form-section'); if (!f) return; var type = f.id.replace('form-', ''); if (TRADE_FORMS.indexOf(type) < 0) return;
     e.preventDefault(); e.stopImmediatePropagation();
     UI.needTradeProfile(function () {
@@ -319,7 +319,7 @@
     if (!JOIN || !inApp()) return; var tok = JOIN; JOIN = null;
     try { history.replaceState(null, '', location.pathname + location.search); } catch (x) {}
     S().preview(tok).then(function (p) {
-      if (!p) { D.modal({ title: 'Invite link', body: '<p>This invite link does not exist.</p>', secondary: 'Close' }); return; }
+      if (!p) { D.modal({ title: 'Invite link', body: '<p>This invite link is not valid — check that you copied all of it.</p>', secondary: 'Close' }); return; }
       if (!p.ok) { D.modal({ title: 'Invite link', body: '<p>This invite link no longer works — ask the group’s admin for a new one.</p>', secondary: 'Close' }); return; }
       if (p.member) { openGroup(p); return; }
       var rules = (p.rules || []).map(function (x) { return Array.isArray(x) ? x : [String(x), '']; });

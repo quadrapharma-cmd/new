@@ -73,10 +73,10 @@ begin
   if ph is null then raise exception 'Enter a mobile number (e.g. 010 1234 5678 or +971 50 123 4567)' using errcode = '22023', hint = 'DX440'; end if;
   h := encode(sha256(convert_to('drugbox-phone:' || ph, 'UTF8')), 'hex');
   if exists (select 1 from public.member_verifications v where v.phone_hash = h and v.user_id <> me) then
-    raise exception 'This number is already verified on another Drugbox account' using errcode = '23505', hint = 'DX441'; end if;
+    raise exception 'This number is already verified on another Drugbox account' using errcode = 'P0001', hint = 'DX441'; end if;
   if (select count(*) from private.phone_code_log l where l.user_id = me and l.sent_at > now() - interval '1 hour') >= 3
      or (select count(*) from private.phone_code_log l where l.user_id = me and l.sent_at > now() - interval '1 day') >= 6 then
-    raise exception 'Too many codes — try again later' using errcode = '54000', hint = 'DX442'; end if;
+    raise exception 'Too many codes — try again later' using errcode = 'P0001', hint = 'DX442'; end if;
   code := lpad((floor(random() * 1000000))::int::text, 6, '0');
   insert into private.phone_codes (user_id, phone, code_hash, tries, expires_at)
   values (me, ph, encode(sha256(convert_to(me::text || ':' || code, 'UTF8')), 'hex'), 0, now() + interval '10 minutes')
@@ -95,14 +95,14 @@ begin
   if me is null then raise exception 'Sign in first' using errcode = '42501'; end if;
   select * into c from private.phone_codes where user_id = me for update;
   if c.user_id is null or c.expires_at < now() then raise exception 'The code expired — ask for a new one' using errcode = '22023', hint = 'DX443'; end if;
-  if c.tries >= 5 then raise exception 'Too many wrong codes — ask for a new one' using errcode = '54000', hint = 'DX444'; end if;
+  if c.tries >= 5 then raise exception 'Too many wrong codes — ask for a new one' using errcode = 'P0001', hint = 'DX444'; end if;
   if c.code_hash <> encode(sha256(convert_to(me::text || ':' || regexp_replace(translate(coalesce(p_code, ''), '٠١٢٣٤٥٦٧٨٩', '0123456789'), '\D', '', 'g'), 'UTF8')), 'hex') then
     update private.phone_codes set tries = tries + 1 where user_id = me;
     raise exception 'That code is not right' using errcode = '22023', hint = 'DX445';
   end if;
   h := encode(sha256(convert_to('drugbox-phone:' || c.phone, 'UTF8')), 'hex');
   if exists (select 1 from public.member_verifications v where v.phone_hash = h and v.user_id <> me) then
-    raise exception 'This number is already verified on another Drugbox account' using errcode = '23505', hint = 'DX441'; end if;
+    raise exception 'This number is already verified on another Drugbox account' using errcode = 'P0001', hint = 'DX441'; end if;
   delete from private.phone_codes where user_id = me;
   perform set_config('drugbox.phone_verifying', '1', true);
   update public.profiles set phone = c.phone where id = me;

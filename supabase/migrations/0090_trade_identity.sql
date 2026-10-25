@@ -6,7 +6,8 @@
 --   1. trade_profiles: the short trade card a member fills before their first trade offer — role, company, governorate,
 --      what they sell / buy. Read by every signed-in member (it is the card shown on the profile and to group admins);
 --      written by its owner only. Pharmacies are not trading parties: no pharmacy role.
---   2. products (marketplace offers) and group_listings (deal-room listings) carry posted_as:
+--   2. products (marketplace offers) and group_listings (deal-room listings) carry posted_as (a company's surplus / dossier listings,
+--      company_listings, are always the company's: the same badge rule):
 --        'company'    — company_id set, the company is verified (and the poster belongs to it, as before)
 --        'individual' — the member as themselves
 --        'broker'     — the member for someone else: broker_for (the owner of the product / file), broker_auth_path (the owner's
@@ -172,6 +173,18 @@ drop trigger if exists trg_products_trade_guard on public.products;
 create trigger trg_products_trade_guard before insert or update on public.products for each row execute function public.trade_offer_guard();
 drop trigger if exists trg_group_listings_trade_guard on public.group_listings;
 create trigger trg_group_listings_trade_guard before insert or update on public.group_listings for each row execute function public.trade_offer_guard();
+-- a company's surplus / dossier listings (0008) are offers AS the company: the same badge rule (and the poster's trade profile)
+create or replace function public.company_listings_trade_guard() returns trigger language plpgsql set search_path = public as $$
+begin
+  if public.is_server_call() then return new; end if;
+  if tg_op = 'UPDATE' and new.company_id is not distinct from old.company_id then return new; end if;
+  perform private.trade_gate(coalesce(new.created_by, auth.uid()), new.company_id, 'company');
+  return new;
+end $$;
+revoke all on function public.company_listings_trade_guard() from public, anon, authenticated, service_role;
+grant execute on function public.company_listings_trade_guard() to authenticated, service_role;
+drop trigger if exists trg_company_listings_trade_guard on public.company_listings;
+create trigger trg_company_listings_trade_guard before insert or update on public.company_listings for each row execute function public.company_listings_trade_guard();
 
 -- the broker's authorisation (documents/listings/<member>/…) is read by its owner, the Drugbox team and the members who can read the
 -- offer: can_read_document() gets that branch in 0092 (with the trader reports' evidence), on top of 0060's version

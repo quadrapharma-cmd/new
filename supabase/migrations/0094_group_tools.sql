@@ -76,21 +76,21 @@ begin
       day0 := (date_trunc('day', now() at time zone 'Africa/Cairo')) at time zone 'Africa/Cairo';
       select count(*) into n from public.posts p where p.group_id = g.id and p.user_id = me and p.created_at >= day0;
       if n >= g.daily_post_limit then
-        raise exception 'This group allows % post(s) a day per member — you can post again tomorrow', g.daily_post_limit using errcode = '54000', hint = 'DX420';
+        raise exception 'This group allows % post(s) a day per member — you can post again tomorrow', g.daily_post_limit using errcode = 'P0001', hint = 'DX420';
       end if;
     end if;
     if g.slow_mode_minutes is not null then
       select max(p.created_at) into last_at from public.posts p where p.group_id = g.id and p.user_id = me;
       if last_at is not null and last_at > now() - make_interval(mins => g.slow_mode_minutes) then
         raise exception 'Slow mode: this group allows one post every % minute(s) — wait % more', g.slow_mode_minutes,
-          greatest(1, ceil(extract(epoch from (last_at + make_interval(mins => g.slow_mode_minutes) - now())) / 60))::int using errcode = '54000', hint = 'DX421';
+          greatest(1, ceil(extract(epoch from (last_at + make_interval(mins => g.slow_mode_minutes) - now())) / 60))::int using errcode = 'P0001', hint = 'DX421';
       end if;
     end if;
   end if;
   if g.block_duplicates and char_length(nb) >= 12 and exists (
        select 1 from public.posts p where p.group_id = g.id and p.id is distinct from new.id and p.created_at > now() - interval '7 days'
           and p.user_id = me and private.review_norm(p.body) = nb) then
-    raise exception 'You already posted this in the group this week — edit the earlier post instead of posting it again' using errcode = '23505', hint = 'DX422';
+    raise exception 'You already posted this in the group this week — edit the earlier post instead of posting it again' using errcode = 'P0001', hint = 'DX422';
   end if;
   if tg_op = 'INSERT' and g.review_posts then new.group_pending := true; end if;
   return new;
@@ -257,7 +257,7 @@ begin
   if not public.is_group_member(p_group, array['admin', 'moderator']) then raise exception 'Only the group''s admins make invite links' using errcode = '42501'; end if;
   if exists (select 1 from public.groups g where g.id = p_group and g.archived_at is not null) then raise exception 'This group is archived' using errcode = '42501'; end if;
   if (select count(*) from public.group_invite_links l where l.group_id = p_group and l.revoked_at is null and (l.expires_at is null or l.expires_at > now())) >= 5 then
-    raise exception 'A group keeps at most 5 active invite links — stop one first' using errcode = '54000', hint = 'DX426'; end if;
+    raise exception 'A group keeps at most 5 active invite links — stop one first' using errcode = 'P0001', hint = 'DX426'; end if;
   if p_days is not null and p_days not between 1 and 365 then raise exception 'A link lasts 1 to 365 days' using errcode = '22023'; end if;
   t := replace(gen_random_uuid()::text, '-', '') || left(replace(gen_random_uuid()::text, '-', ''), 8);   -- 40 random hex characters
   insert into public.group_invite_links (group_id, token, created_by, expires_at, max_uses)
@@ -299,7 +299,7 @@ begin
   if me is null then raise exception 'Sign in first' using errcode = '42501'; end if;
   if private.is_suspended(me) then raise exception 'Your account is suspended' using errcode = '42501'; end if;
   select * into l from public.group_invite_links where token = p_token for update;
-  if l.id is null then raise exception 'This invite link does not exist' using errcode = 'P0002', hint = 'DX427'; end if;
+  if l.id is null then raise exception 'This invite link is not valid — check that you copied all of it' using errcode = 'P0002', hint = 'DX427'; end if;
   select * into g from public.groups where id = l.group_id;
   if l.revoked_at is not null or (l.expires_at is not null and l.expires_at <= now()) or (l.max_uses is not null and l.uses >= l.max_uses) or g.archived_at is not null then
     raise exception 'This invite link no longer works — ask the group''s admin for a new one' using errcode = '42501', hint = 'DX428'; end if;
