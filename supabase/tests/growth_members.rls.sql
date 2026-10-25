@@ -213,7 +213,7 @@ select pg_temp.step('X keeps it', $$select public.specialty_answer(null)$$);
 select pg_temp.ok('… and is not asked again', $$not public.specialty_prompt_due()$$);
 select pg_temp.ok('… the headline is unchanged', $$(select headline = 'Regulatory Affairs' from public.profiles where id = auth.uid())$$);
 select pg_temp.F();
-select pg_temp.step('F changes it to Quality Control / QA', $$select public.specialty_answer('Quality Control / QA')$$);
+select pg_temp.step('F changes it to Quality Control / QA (their own profile row, then the answer)', $$update public.profiles set headline = 'Quality Control / QA' where id = auth.uid(); select public.specialty_answer('Quality Control / QA')$$);
 select pg_temp.ok('… the headline is changed and the question gone', $$(select headline = 'Quality Control / QA' from public.profiles where id = auth.uid()) and not public.specialty_prompt_due()$$);
 select pg_temp.no('a specialty with markup is refused', $$select public.specialty_answer('<b>x</b>')$$, '22023');
 select pg_temp.no('F cannot write someone else''s answer', $$insert into public.member_prompts (user_id, key) values ('b2000000-0000-0000-0000-000000000003', 'specialty')$$, '42501');

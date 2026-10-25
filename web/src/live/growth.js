@@ -89,6 +89,9 @@
       return COURSE_AR;
     },
     specialtyDue: async function () { return !!ok(await sb.rpc('specialty_prompt_due')); },
-    specialtyAnswer: async function (h) { return ok(await sb.rpc('specialty_answer', { p_headline: h || null })); }
+    specialtyAnswer: async function (h) {   /* a new specialty goes into my own profile row (as Edit Profile writes it), then the answer is recorded */
+      if (h) { var u = await sb.from('profiles').update({ headline: h }).eq('id', me()).select('id'); ok(u); if (!(u.data || []).length) throw new Error('Your profile could not be saved — try again'); }
+      return ok(await sb.rpc('specialty_answer', { p_headline: h || null }));
+    }
   };
 })();

@@ -44,7 +44,7 @@ on conflict (key) do nothing;
 create table if not exists public.expert_requests (
   id          bigint generated always as identity primary key,
   user_id     uuid not null default auth.uid() references public.profiles(id) on delete cascade,
-  topic       text not null references public.expert_topics(key),
+  topic       text not null references public.expert_topics(key) on delete restrict,
   note        text check (length(note) <= 500),
   created_at  timestamptz not null default now(),
   unique (user_id, topic)
@@ -91,7 +91,7 @@ grant execute on function public.expert_topic_demand() to authenticated, service
 -- ── 3. sessions ─────────────────────────────────────────────────────────────────────────────────────────
 create table if not exists public.expert_sessions (
   id                bigint generated always as identity primary key,
-  topic             text not null references public.expert_topics(key),
+  topic             text not null references public.expert_topics(key) on delete restrict,
   title             text not null check (length(title) between 3 and 160),
   title_ar          text check (length(title_ar) <= 160),
   about             text check (length(about) <= 2000),
@@ -118,7 +118,7 @@ create policy "expert sessions: members read" on public.expert_sessions for sele
 revoke all on table public.expert_sessions from public, anon, authenticated, service_role;
 grant select (id, topic, title, title_ar, about, expert_name, expert_line, expert_user, starts_at, minutes, seats, status, registered_count, created_at, updated_at)
   on table public.expert_sessions to authenticated;                            -- the meeting link only through expert_session_link()
-grant select (id) on table public.expert_sessions to anon;                     -- no policy for anon → empty (F-26)
+grant select on table public.expert_sessions to anon;                          -- no policy for anon → empty (F-26)
 grant select, insert, update, delete, truncate, references, trigger on table public.expert_sessions to service_role;
 revoke all on sequence public.expert_sessions_id_seq from public, anon, authenticated, service_role;
 grant usage, select on sequence public.expert_sessions_id_seq to service_role;

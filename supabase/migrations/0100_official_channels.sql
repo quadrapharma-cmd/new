@@ -38,7 +38,7 @@ create or replace function public.thera_ok(t text[]) returns boolean language sq
      and coalesce(cardinality(t), 0) <= 8
 $$;
 revoke all on function public.thera_ok(text[]) from public, anon, authenticated, service_role;
-grant execute on function public.thera_ok(text[]) to anon, authenticated, service_role;
+grant execute on function public.thera_ok(text[]) to authenticated, service_role;
 do $$ begin
   alter table public.groups add constraint groups_thera_chk check (public.thera_ok(thera));
 exception when duplicate_object then null; end $$;

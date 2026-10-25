@@ -65,7 +65,9 @@ $$;
 revoke all on function public.specialty_prompt_due() from public, anon, authenticated, service_role;
 grant execute on function public.specialty_prompt_due() to authenticated, service_role;
 
--- the answer: keep "Regulatory Affairs" (p_headline null or the same) or one of the sign-up specialties, or a headline of their own
+-- the answer: kept as it is (p_headline null or "Regulatory Affairs") or the specialty the member chose. A changed specialty is
+-- written to the member's own profile row by the member (Edit Profile's own update, under the profile's rules: 0020 columns,
+-- suspension) before this records the answer — so no server function writes profiles for it (privacy_names.rls.sql's write paths)
 create or replace function public.specialty_answer(p_headline text) returns text
 language plpgsql security definer set search_path = public as $$
 declare me uuid := auth.uid(); h text := nullif(trim(coalesce(p_headline, '')), '');
@@ -73,10 +75,6 @@ begin
   if me is null then raise exception 'Sign in first' using errcode = '42501'; end if;
   if h is not null and (length(h) < 2 or length(h) > 120) then raise exception 'A specialty is 2 to 120 characters' using errcode = '22023'; end if;
   if h is not null and h ~ '[<>]' then raise exception 'A specialty cannot contain < or >' using errcode = '22023'; end if;
-  if h is not null and h is distinct from (select headline from public.profiles where id = me) then
-    if exists (select 1 from public.account_suspensions s where s.user_id = me) then raise exception 'This account is suspended' using errcode = '42501'; end if;
-    update public.profiles set headline = h where id = me;          -- only the headline, only the caller's own row
-  end if;
   insert into public.member_prompts (user_id, key, answer) values (me, 'specialty', coalesce(h, 'Regulatory Affairs'))
   on conflict (user_id, key) do update set answer = excluded.answer, answered_at = now();
   return coalesce(h, 'Regulatory Affairs');

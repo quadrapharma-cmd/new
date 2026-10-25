@@ -257,7 +257,10 @@ insert into r(name,ok) select 'F-27 anon cannot call the app''s RPCs', pg_temp.e
   and pg_temp.err($$select public.company_track_record(1)$$)='42501' and pg_temp.err($$select public.deal_receiver(1,'quote')$$)='42501' and pg_temp.err($$select public.moderate_reference(1,'published')$$)='42501';
 insert into r(name,ok) select 'F-27 anon executes no public function except the helpers row policies evaluate', not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and has_function_privilege('anon', p.oid, 'execute') and p.prorettype <> 'trigger'::regtype   -- trigger functions cannot be called
-    and not exists(select 1 from pg_policies q where coalesce(q.qual,'')||' '||coalesce(q.with_check,'') ~ ('\m' || p.proname || '\('))) ;
+    and not exists(select 1 from pg_policies q where coalesce(q.qual,'')||' '||coalesce(q.with_check,'') ~ ('\m' || p.proname || '\('))
+    -- AREA w-growth (0103, the owner's decision 1): the signed-out company pages, read-only, public fields only (as schema_sweep.sql names them)
+    and p.oid::regprocedure::text not in ('public_directory_page(integer,integer,text)', 'public_company(text)', 'public_company_sites(text)',
+                                          'public_company_certs(text)', 'public_sites_for(bigint[])', 'public_company_meta(text)')) ;
 select pg_temp.as_user(:A);
 insert into r(name,ok) select 'F-27 members cannot run pgcrypto / pg_trgm either', pg_temp.err($$select public.gen_salt('bf')$$) in ('42501','42883') and pg_temp.err($$select public.crypt('a','b')$$) in ('42501','42883') and pg_temp.err($$select show_limit()$$)='42501'
   and not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace join pg_depend d on d.objid=p.oid and d.classid='pg_proc'::regclass and d.deptype='e'

@@ -41,7 +41,7 @@ create table if not exists public.founder_invites (
   id          bigint generated always as identity primary key,
   code_hash   bytea not null unique,                         -- sha256 of the code; the code itself is never stored
   code_hint   text not null,                                 -- its last 4 characters, so the admin can tell invitations apart
-  segment     text not null references public.founder_segments(key),
+  segment     text not null references public.founder_segments(key) on delete restrict,
   note        text check (length(note) <= 200),               -- who it is for (the admin's own note)
   created_by  uuid references public.profiles(id) on delete set null,
   created_at  timestamptz not null default now(),
@@ -58,13 +58,14 @@ drop policy if exists "founder invites: Drugbox admins read" on public.founder_i
 create policy "founder invites: Drugbox admins read" on public.founder_invites for select to authenticated using (public.is_platform_admin());
 revoke all on table public.founder_invites from public, anon, authenticated, service_role;
 grant select (id, code_hint, segment, note, created_by, created_at, expires_at, revoked_at, used_by, used_at) on table public.founder_invites to authenticated;  -- never the hash
+grant select on table public.founder_invites to anon;                                -- no policy for anon → empty (F-26)
 grant select, insert, update, delete, truncate, references, trigger on table public.founder_invites to service_role;
 revoke all on sequence public.founder_invites_id_seq from public, anon, authenticated, service_role;
 grant usage, select on sequence public.founder_invites_id_seq to service_role;
 
 create table if not exists public.founder_members (
   user_id         uuid primary key references public.profiles(id) on delete cascade,
-  segment         text not null references public.founder_segments(key),
+  segment         text not null references public.founder_segments(key) on delete restrict,
   invite_id       bigint unique references public.founder_invites(id) on delete set null,
   joined_at       timestamptz not null default now(),
   vip_company_id  bigint references public.companies(id) on delete set null,
@@ -77,7 +78,7 @@ drop policy if exists "founder members: the badge is public to members" on publi
 create policy "founder members: the badge is public to members" on public.founder_members for select to authenticated using (true);
 revoke all on table public.founder_members from public, anon, authenticated, service_role;
 grant select (user_id, segment, joined_at) on table public.founder_members to authenticated;     -- the badge; which invitation / company is the founder's own business
-grant select (user_id) on table public.founder_members to anon;                                  -- no policy for anon → empty (F-26)
+grant select on table public.founder_members to anon;                                           -- no policy for anon → empty (F-26)
 grant select, insert, update, delete, truncate, references, trigger on table public.founder_members to service_role;
 
 create table if not exists private.founder_attempts (

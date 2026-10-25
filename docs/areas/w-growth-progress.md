@@ -23,3 +23,4 @@ Baseline at f7dc703: parity vs web/reference/demo-approved.html already FAILS (t
 - Journeys: community_growth W01–W05, business_growth W01–W04, social_growth W01 — demo EN/AR × 1440/390 all pass; live EN 1440 all pass.
 - J-BUSINESS-02/04/10 visitor steps pass live (sign-in page → "Browse the company directory"); the journey takes that way in instead of failing "not built".
 - tools/scale/timings.py: feed_thera, market_search_thera, channel_posts, expert_sessions_list, expert_topic_demand, founder_badge, public_directory_page.
+- SQL: 31/31 suites (+ growth_channels 63, growth_members 96) after: explicit FK actions, anon empty reads, 0100–0104 in launch_readiness, the visitor functions named in security_core F-27, specialty_answer no longer writes profiles (the member's own row update does).
