@@ -36,6 +36,8 @@ def deal_room_listings(j):
     if j.live:
         v = j.person('Vivian Zhou'); h = j.person('Hany Buyer'); o = j.person('Omar Outsider')
         cv = seed_company(j, v['id'], 'Shandong Hexa Biotech %s' % t, sectors=('API & excipients',))
+        j.sql("insert into public.trade_profiles (user_id, role, governorate, sells) values ('%s', 'importer_exporter', 'Outside Egypt', 'APIs') on conflict (user_id) do nothing" % v['id'])   # w-trust (W-10): V trades
+        j.sql("update public.companies set status='verified' where id=%s" % cv['id'])                                                                                         # … as her verified company (W-16)
         ch = seed_company(j, h['id'], 'Haytham Buyers %s' % t)
         xx = seed_user(j, 'Dr. Xena Admin'); gname = 'API Sourcing Deal Room %s' % t
         gid = seed_group(j, gname, xx, deal=True, desc='Buyers and suppliers of APIs')

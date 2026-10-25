@@ -260,6 +260,12 @@ def seed_product(j, cid, name, ingredient, ingredient_ar='', form='Tablet', stre
 def seed_listing(j, uid, name, type_='supply', category='api', price='5.80', unit='kg', moq='500 kg'):
     return j.sql1("insert into public.products (user_id, name, category, type, price, unit, moq, active) values ('%s',$q$%s$q$,'%s','%s','%s','%s','%s',true) returning id" % (uid, name, category, type_, price, unit, moq))
 
+def trader(j, uid, company_id=None):
+    """Precondition (w-trust, W-10 / W-16): a member who posts trade offers has a trade profile; a company page that posts them as the
+    company has the Drugbox verification badge."""
+    j.sql("insert into public.trade_profiles (user_id, role, governorate, sells, buys) values ('%s', 'distributor', 'Cairo', 'APIs and excipients', 'Finished products') on conflict (user_id) do nothing" % uid)
+    if company_id: j.sql("update public.companies set status='verified' where id=%s" % company_id)
+
 def make_admin(j, uid): j.sql("update public.profiles set role='admin' where id='%s'" % uid)
 
 def acting(pg):

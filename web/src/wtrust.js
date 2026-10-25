@@ -63,15 +63,18 @@
   function sampleSince(uid) { if (uid === me().id) return '2024-03-12T09:00:00Z'; var n = +uid || 0; if (n === 6) return new Date(Date.now() - 9 * 864e5).toISOString();   /* sample people: one new account */
     return new Date(Date.UTC(2023 + (n % 3), (n * 5) % 12, 1 + (n % 27))).toISOString(); }
   function wait(x) { return new Promise(function (r) { setTimeout(function () { r(x); }, 60); }); }
+  /* the sample account already has its trade profile (as a member who trades would); a journey that starts "before the first offer" empties wtTrade */
+  function trades() { var v = D.store.get('wtTrade', null); if (v != null) return v; var o = {}; o[me().id] = { role: 'manufacturer', company: (me().company || 'Quadra Pharm'), governorate: 'Cairo',
+    sells: 'Finished products, toll manufacturing capacity', buys: 'APIs and excipients' }; return o; }
   var demo = {
     live: false,
     card: function (uid) {
-      var tp = dget('wtTrade', {}), ph = dget('wtPhone', {}), reps = dget('wtReports', []), mine = dget('wtMyOffers', 0);
+      var tp = trades(), ph = dget('wtPhone', {}), reps = dget('wtReports', []), mine = dget('wtMyOffers', 0);
       return wait({ member_since: sampleSince(uid), new_account: daysSince(sampleSince(uid)) < 30, profile: tp[uid] || null, phone_verified: !!ph[uid],
         offers: uid === me().id ? (mine || 0) + 3 : 0, reports_upheld: reps.filter(function (r) { return r.uid === uid && r.status === 'upheld'; }).length, buyer_rating: null });
     },
-    myProfile: function () { return Promise.resolve(dget('wtTrade', {})[me().id] || null); },
-    saveProfile: function (p) { var tp = dget('wtTrade', {}); tp[me().id] = p; dset('wtTrade', tp); return wait(p); },
+    myProfile: function () { return Promise.resolve(trades()[me().id] || null); },
+    saveProfile: function (p) { var tp = trades(); tp[me().id] = p; dset('wtTrade', tp); return wait(p); },
     phoneStart: function (phone) { var d = String(phone || '').replace(/[\s().-]/g, '').replace(/[٠-٩]/g, function (c) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(c); });
       if (!/^(\+20|0020|20)?0?1[0125]\d{8}$/.test(d) && !/^(\+|00)[1-9]\d{6,14}$/.test(d)) return Promise.reject(new Error('Enter a mobile number (e.g. 010 1234 5678 or +971 50 123 4567)'));
       var code = String(100000 + Math.floor(Math.random() * 900000)); dset('wtPhoneCode', { code: code, phone: d }); return wait({ to: d.slice(0, 4) + '•••' + d.slice(-2), demoCode: code }); },

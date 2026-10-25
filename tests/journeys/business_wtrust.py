@@ -74,7 +74,8 @@ def trade_profile_first(j):
     name = 'Lactose monohydrate %s' % j.tag
     if j.live:
         a = j.person('Tarek Mansour'); pg = a['page']; b = j.person('Bassem Rizk')
-    else: pg = j.demo_signin(j.new_page())
+    else:   # precondition: the sample account has a trade profile already — this journey is about a member who has none yet
+        pg = j.demo_signin(j.new_page()); pg.evaluate("DBK.store.set('wtTrade', {})")
     with j.step('Market → Create Listing → I\'m Offering: Preview asks for the trade profile first'):
         offer_form(j, pg, name); choose_as(j, pg, 'individual')
         b0 = pg.locator('#tab-create .form-section.active .btn-create:visible'); b0.first.click(); pg.wait_for_timeout(700)
