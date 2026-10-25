@@ -70,6 +70,19 @@
     });
   }, true);
 
+  /* a company's own listings (surplus, dossiers: company_listings) are offers AS the company — the Drugbox badge first, then the
+     poster's trade profile; the database refuses otherwise (DX412 / DX410) */
+  var GATE_OK = false;
+  window.dxTrustUI.companyOfferGate = function (co, go) {
+    if (GATE_OK) { GATE_OK = false; return true; }
+    var c = co && co.slug && window.dxDir && window.dxDir.bySlug ? (window.dxDir.bySlug(co.slug) || co) : co;
+    if (!c || c.status !== 'verified') {
+      D.modal({ title: 'The Drugbox badge first', body: '<p>Only a company page with the Drugbox verification badge posts trade offers as the company. Verification is free — or post the offer as yourself in the Marketplace.</p>',
+        primary: { label: 'Get verified', onClick: function () { if (window.dxDir && window.dxDir.verify && c) setTimeout(function () { window.dxDir.verify(c.slug); }, 30); } } });
+      return false;
+    }
+    UI.needTradeProfile(function () { GATE_OK = true; go(); }); return false;
+  };
   /* the chip on an offer card: «Verified company» / «Individual» / «Broker · n% commission» / Drugbox */
   function chipHtml(i) {
     if (!i) return '';

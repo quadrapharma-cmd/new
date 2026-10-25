@@ -146,6 +146,7 @@
       } } });
   }
   function addDossier(co) {
+    if (window.dxTrustUI && window.dxTrustUI.companyOfferGate && !window.dxTrustUI.companyOfferGate(co, function () { addDossier(co); })) return;   /* AREA w-trust (W-16): the badge and the trade profile first */
     D.modal({ title: 'Add a dossier', body: '<div class="dbk-f"><label for="dsP">Product *</label><input id="dsP" data-req placeholder="e.g. Esomeprazole 40 mg tablets"></div><div class="dbk-row"><div class="dbk-f"><label for="dsS">Status</label><select id="dsS"><option>EDA registered</option><option>Under EDA review</option><option>CTD dossier ready</option></select></div><div class="dbk-f"><label for="dsD">Deal</label><select id="dsD"><option>License out</option><option>Sell dossier</option><option>Co-marketing</option></select></div></div><div class="dbk-f"><label for="dsM">Markets</label><input id="dsM" placeholder="Egypt · GCC"></div>',
       primary: { label: 'Add', onClick: function (b) { if (!D.requireFields(b)) return false; var l = st('dossiers') || []; l.unshift({ id: 'd' + Date.now(), slug: co.slug, product: b.querySelector('#dsP').value.trim(), status: b.querySelector('#dsS').value, deal: b.querySelector('#dsD').value, markets: b.querySelector('#dsM').value.trim() || 'Egypt' }); st('dossiers', l); X().render(); toast('Dossier listed'); } } });
   }
@@ -218,6 +219,7 @@
   }
   function postSurplus() {
     var a = acting(); if (!a) { toast('Act as a company to post surplus'); return; }
+    if (window.dxTrustUI && window.dxTrustUI.companyOfferGate && !window.dxTrustUI.companyOfferGate(a, postSurplus)) return;   /* AREA w-trust (W-16): the badge and the trade profile first */
     D.modal({ title: 'Post surplus stock', body: '<div class="dbk-f"><label for="spP">Product *</label><input id="spP" data-req></div><div class="dbk-row"><div class="dbk-f"><label for="spQ">Quantity *</label><input id="spQ" data-req></div><div class="dbk-f"><label for="spB">Batch</label><input id="spB"></div></div><div class="dbk-row"><div class="dbk-f"><label for="spE">Expiry</label><input id="spE" type="month"></div><div class="dbk-f"><label for="spR">Price *</label><input id="spR" data-req placeholder="e.g. US$ 2.40/kg"></div></div><div class="dbk-f"><label for="spO">Discount %</label><input id="spO" type="number" min="0" max="95" value="30"></div>',
       primary: { label: 'Post', onClick: function (b) { if (!D.requireFields(b)) return false; var l = st('surplus_new') || []; l.unshift({ id: 's' + Date.now(), slug: a.slug, product: b.querySelector('#spP').value.trim(), qty: b.querySelector('#spQ').value.trim(), batch: b.querySelector('#spB').value.trim() || '—', expiry: b.querySelector('#spE').value || '—', price: b.querySelector('#spR').value.trim(), off: Math.min(95, Math.max(0, Math.round(+b.querySelector('#spO').value) || 0)) }); st('surplus_new', l); toast('Surplus posted'); later(surplusDialog); } } });
   }

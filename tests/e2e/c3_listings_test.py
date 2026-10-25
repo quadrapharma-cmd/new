@@ -22,6 +22,8 @@ with sync_playwright() as p:
     SA, SB, SS, SS2 = f'org-pharma-{st}', f'member-labs-{st}', f'big-api-{st}', f'second-api-{st}'
     for uid, name, slug, sect in ((a, 'Org Pharma', SA, 'Manufacturer'), (bm, 'Member Labs', SB, 'Manufacturer'), (s, 'Big API', SS, 'API supplier'), (s, 'Second API', SS2, 'API supplier')):
         sql(f"insert into public.companies (owner_id, name, slug, type, status, registry, sectors, governorate) values ('{uid}','{name} {st}','{slug}','Manufacturer','verified','9{abs(hash(slug)) % 10**6}','{{{sect}}}','Giza')")
+    for uid in (a, bm, s):   # w-trust (0090): a member who posts trade offers has a trade profile (the journeys fill it through its window)
+        sql(f"insert into public.trade_profiles (user_id, role, governorate, sells) values ('{uid}', 'manufacturer', 'Cairo', 'APIs and finished products') on conflict (user_id) do nothing")
     act_as(A, SA); act_as(B, SB); act_as(S, SS)
     # surplus through the real dialogs
     S.evaluate("dxDir3.surplusDialog()"); S.wait_for_timeout(600); S.evaluate(OK); S.wait_for_timeout(700)

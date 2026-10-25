@@ -17,6 +17,8 @@ with sync_playwright() as p:
     pg.on("pageerror", lambda e: errs.append(str(e)[:150])); pg.on("dialog", lambda d: d.accept())
     pg.goto(U, wait_until='load'); pg.wait_for_timeout(400); pg.evaluate('endSplash()'); pg.wait_for_timeout(700)
     pg.evaluate("showSignup()"); pg.fill('#suName', 'Dr. Market Visitor'); pg.fill('#suEmail', f'visitor{st}@x.test'); pg.fill('#suPw', 'Strong-pass-2026'); pg.click('#signupPage button.f-btn'); wait_for(lambda: pg.evaluate("window.dxLive && window.ME && !!dxLive.uuidOf(ME.id)"), 20); pg.wait_for_timeout(2000)
+    # w-trust (0090): a member who posts trade offers has a trade profile (the journeys fill it through its window)
+    sql(f"insert into public.trade_profiles (user_id, role, governorate, sells) values ('{pg.evaluate('dxLive.uuidOf(ME.id)')}', 'distributor', 'Cairo', 'APIs') on conflict (user_id) do nothing")
     pg.evaluate("goto('market')"); pg.wait_for_timeout(3500)
     sup = pg.evaluate("[...document.querySelectorAll('#mkx .supply-grid .lcard .lc-title')].map(e=>e.textContent)")
     pos = lambda name: next((i for i, x in enumerate(sup) if x.startswith(name)), -1)
