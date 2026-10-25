@@ -85,6 +85,11 @@
     reply: function () { return Promise.reject(new Error('In the demo nobody has reported you — this works in the live app')); },
     myHeld: function () { return Promise.resolve(dget('wtHeld', []).filter(function (h) { return h.status === 'held'; })); },
     hold: function (kind, id, text, t) { var l = dget('wtHeld', []); l.push({ id: 'H' + Date.now(), kind: kind, item: id, excerpt: String(text || '').slice(0, 200), topics: t, status: 'held', at: new Date().toISOString() }); dset('wtHeld', l); },
+    rateBuyer: function (id, stars, note) { var r = dget('wtBuyerRatings', {}); if (r[id]) return Promise.reject(new Error('You already rated this buyer')); var d = window.dxDeals && window.dxDeals.get(id);
+      r[id] = { stars: stars, note: note, buyer: d && d.from ? (d.from.slug || d.from.name) : '' }; dset('wtBuyerRatings', r); return wait(true); },
+    buyerRated: function (id) { var r = dget('wtBuyerRatings', {})[id]; return Promise.resolve(r ? r.stars : null); },
+    buyerRating: function (from) { var all = dget('wtBuyerRatings', {}), k = from.slug || from.name, l = Object.keys(all).map(function (x) { return all[x]; }).filter(function (x) { return x.buyer === k; });
+      return Promise.resolve(l.length ? { n: l.length, avg: (l.reduce(function (a, x) { return a + x.stars; }, 0) / l.length).toFixed(1) } : null); },
     /* groups */
     tools: function (g) { return Object.assign({ rules_required: false, daily_post_limit: null, slow_mode_minutes: null, block_duplicates: true, block_links: false, review_posts: false, require_category: false, partner: false }, (dget('wtGroupTools', {})[g.key] || {})); },
     saveTools: function (g, t) { var all = dget('wtGroupTools', {}); all[g.key] = Object.assign({}, all[g.key] || {}, t); dset('wtGroupTools', all); return wait(true); },

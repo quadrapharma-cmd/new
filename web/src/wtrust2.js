@@ -419,6 +419,32 @@
     };
   }
 
+  /* ══════════ 6. after a deal: the supplier rates the buyer too (W-19) ══════════ */
+  function paintDealRating() {
+    [].forEach.call(document.querySelectorAll('.dbk-ov .dl-acts[data-dl]'), function (box) {
+      if (box.dataset.wtRate) return; box.dataset.wtRate = '1';
+      var id = box.dataset.dl, side = box.dataset.dlside, d = window.dxDeals && window.dxDeals.get ? window.dxDeals.get(id) : null; if (!d) return;
+      var parties = box.closest('.dbk-box') && box.closest('.dbk-box').querySelector('.dl-parties');
+      if (side === 'to' && d.from && (d.from.slug || d.from.person) && parties) S().buyerRating(d.from).then(function (r) { if (r && r.n && !parties.querySelector('.wt-brate')) parties.insertAdjacentHTML('beforeend', '<small class="dl-asg wt-brate">★ ' + esc(r.avg) + ' <span>as a buyer</span> (' + r.n + ')</small>'); }, function () {});
+      if (side !== 'to' || ['delivered', 'closed'].indexOf(d.status) < 0) return;
+      S().buyerRated(id).then(function (stars) {
+        if (stars) box.insertAdjacentHTML('afterbegin', '<span class="cp-muted wt-rated">★ <span>You rated the buyer</span> ' + stars + '/5</span>');
+        else box.insertAdjacentHTML('afterbegin', '<button type="button" class="dr-btn p" data-wtrate="' + esc(id) + '">★ Rate the buyer</button>');
+        if (window.dxI18nAttrs) window.dxI18nAttrs(box);
+      }, function () {});
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-wtrate]'); if (!b) return; e.preventDefault(); var id = b.dataset.wtrate, d = window.dxDeals.get(id);
+    D.modal({ title: 'Rate the buyer', body: '<p><span>How was</span> <b data-noi18n>' + esc((d && d.from && d.from.name) || 'the buyer') + '</b> <span>as a buyer in this deal? Other suppliers see the average, never your comment.</span></p>' +
+      '<div class="dbk-f"><label for="wtStars">Rating (1–5) *</label><select id="wtStars"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></div>' +
+      '<div class="dbk-f"><label for="wtSnote">Comment (for the buyer)</label><textarea id="wtSnote" maxlength="500" placeholder="Paid on time, clear specifications…"></textarea></div>',
+      primary: { label: 'Send rating', onClick: function (bx, close) { var ok = bx.parentNode.querySelector('[data-a=ok]'); if (ok) ok.disabled = true;
+        S().rateBuyer(id, +bx.querySelector('#wtStars').value, bx.querySelector('#wtSnote').value.trim()).then(function () { close(); toast('Thanks — the buyer is told'); b.outerHTML = '<span class="cp-muted wt-rated">★ <span>You rated the buyer</span> ' + bx.querySelector('#wtStars').value + '/5</span>'; },
+          function (er) { if (ok) ok.disabled = false; toast((er && er.message) || 'Could not send the rating'); }); return false; } } });
+  });
+  new MutationObserver(function () { if (document.querySelector('.dbk-ov .dl-acts[data-dl]:not([data-wt-rate])')) paintDealRating(); }).observe(document.body, { childList: true });
+
   /* ══════════ after every page draw ══════════ */
   C.onRender('wtrust', function () {
     var p = page();
