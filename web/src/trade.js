@@ -253,7 +253,9 @@
     form.querySelectorAll('.wizard-body > .field, .wizard-body > .row2 > .field, .wizard-body > .row3 > .field').forEach(function (fd) { var l = orig(fd.querySelector('.field-label')), i = fd.querySelector('input.field-input');   /* the approved price / quantity fields */
       if (!i || !i.value.trim()) return; if (!ap && /^(Price per unit|Asking price|Target price)/.test(l)) ap = i.value.trim(); if (!amoq && /^(MOQ|Quantity needed|Min\. batch)/.test(l)) amoq = i.value.trim(); });
     var as = form.querySelector('[data-tx="_as"] select');
-    return { kind: kind, title: title, attrs: a, priv: r.priv, lines: kind === 'stock' ? readLines(form) : [], price_mode: pm === 'amount' ? null : pm,
+    var lines = kind === 'stock' ? readLines(form) : [];
+    if (kind === 'stock' && pm === 'amount' && !ap && !lines.some(function (l) { return l.price; })) pm = 'ask';   /* no price anywhere: «اطلب سعر», said plainly */
+    return { kind: kind, title: title, attrs: a, priv: r.priv, lines: lines, price_mode: pm === 'amount' ? null : pm,
       discount_pct: pm === 'discount' && disc && disc.value ? +disc.value : null, price: pm === 'ask' ? '' : ap, moq: amoq, as: as && as.value ? as.value : '', desc: desc.trim(), docs: (DOCS[form.id] || []).slice() };
   }
   function missing(form, g) {
@@ -363,7 +365,8 @@
     docsReview: function (id, ok, note) { var l = all(), L = l.find(function (x) { return String(x.id) === String(id); }); if (!L) return Promise.reject(new Error('Nothing waits for a check on this listing'));
       L.docs = ok ? 'seen' : 'rejected'; L.docsAt = ok ? Date.now() : null; L.docsNote = note || ''; keep(l); return Promise.resolve(true); },
     renewInfo: function (id) { var L = find(id); return L ? (L.bumped || L.at) : null; },
-    distributor: function (slug) { var p = (D.store.get('tradeDist', {}) || {})[slug]; return Promise.resolve(p || null); },
+    distributor: function (slug) { var all_ = D.store.get('tradeDist', null); if (!all_) { all_ = { 'pharaonic-logistics': { govs: ['cairo', 'giza', 'alex', 'qalyubia', 'sharqia', 'dakahlia'], cats: ['medicines', 'supplements'], warehouses: 3, cold_chain: true, fleet: 22, agencies: 7 } }; D.store.set('tradeDist', all_); }
+      return Promise.resolve(all_[slug] || null); },
     saveDistributor: function (slug, p) { var all_ = D.store.get('tradeDist', {}) || {}; all_[slug] = p; D.store.set('tradeDist', all_); return Promise.resolve(true); }
   };
   function svc() { return window.dxTradeSvc || demoSvc; }
@@ -490,7 +493,9 @@
       if (!document.getElementById('form-' + k) && last) last.insertAdjacentHTML('afterend', '<div class="wizard form-section" id="form-' + k + '" data-tx-kind="' + k + '" data-tx-form="1"><div class="wizard-head"><div class="wh-icon">' + K.em + '</div><div><div class="wizard-title">' + esc(K.title) + '</div><div class="wizard-sub">' + esc(K.sub) + '</div></div></div>' +
         '<div class="wizard-body"><div class="dx-tx">' + NEWF[k]() + postAs() + '</div></div><div class="wizard-footer"><button class="btn-draft" type="button">Save as Draft</button><button class="btn-create" type="button">Preview Listing →</button></div></div>');
     });
-    paintPostAs(); markSupplyMode(sup);
+    var q1 = document.getElementById('step1Question'); if (q1 && !q1.querySelector('.dx-tplbox')) q1.insertAdjacentHTML('beforeend', '<div class="dx-tplbox"><div class="dx-tpl-h">Or start from a trade template</div><div class="dx-tpl">' +
+      TPL_ORDER.map(function (k) { return '<button type="button" class="dx-tpl-b" data-tx-tpl="' + k + '">' + esc(KIND[k].em + ' ' + KIND[k].title) + '</button>'; }).join('') + '</div><div class="dx-tpl-n">Trade between companies — each template opens its own form</div></div>');
+    paintPostAs(); markSupplyMode(sup); if (sup) syncPrice(sup);
     paintDemo(); paintMine();
   }
   function paintPostAs() {
@@ -508,8 +513,9 @@
   }
   function syncPrice(f) {   /* a discount or «اطلب سعر»: the approved price field is not required */
     var pm = priceMode(f); var disc = f.querySelector('.dx-disc'); if (disc) disc.style.display = pm === 'discount' ? '' : 'none';
+    var need = pm === 'amount' && kindOf(f) !== 'stock';   /* stock: each item may carry its price; none at all → «اطلب سعر» */
     f.querySelectorAll('.field').forEach(function (fd) { var l = fd.querySelector('.field-label'); if (!l || fd.closest('.dx-tx') || !/^Price per unit/.test(orig(l))) return;
-      var r = l.querySelector('.req'); if (pm === 'amount' && !r) l.insertAdjacentHTML('beforeend', ' <span class="req">*</span>'); if (pm !== 'amount' && r) r.remove();
+      var r = l.querySelector('.req'); if (need && !r) l.insertAdjacentHTML('beforeend', ' <span class="req">*</span>'); if (!need && r) r.remove();
       var i = fd.querySelector('input'); if (i) i.disabled = pm === 'ask'; });
   }
 
@@ -526,7 +532,7 @@
       return; }
     var ro = t.closest('#mkx .dx-tx .radio-opt[data-v]');
     if (ro) { ro.parentElement.querySelectorAll('.radio-opt').forEach(function (x) { x.classList.remove('selected'); }); ro.classList.add('selected');
-      var f2 = ro.closest('.form-section'); if (ro.closest('[data-tx="_mode"]')) markSupplyMode(f2); if (ro.closest('[data-tx="price_mode"]')) syncPrice(f2); return; }
+      var f2 = ro.closest('.form-section'); if (ro.closest('[data-tx="_mode"]')) { markSupplyMode(f2); syncPrice(f2); } if (ro.closest('[data-tx="price_mode"]')) syncPrice(f2); return; }
     var act = t.closest('#mkx [data-tx-a]');
     if (act) { var f3 = act.closest('.form-section'); e.preventDefault();
       if (act.dataset.txA === 'addline') { var r = addLine(f3); if (r) r.querySelector('input').focus(); }
@@ -688,17 +694,20 @@
       var row = [].find.call(document.querySelectorAll('#tab-manage [data-ml]'), function (r) { var s = r.querySelector('[data-noi18n]'); return s && s.textContent === title.trim(); });
       if (!row) return; var id = row.getAttribute('data-ml');
       btn.insertAdjacentHTML('beforebegin', '<button type="button" class="dbk-btn s" data-x="tx-close" data-ml-id="' + esc(id) + '">🔒 Reserved / sold</button>');
+      var rn = n.querySelector('[data-x="renew"]'); if (rn) rn.addEventListener('click', function (ev) { ev.stopImmediatePropagation(); var x0 = n.querySelector('.dbk-x'); if (x0) x0.click(); renewTrade(isNaN(+id) ? id : +id); }, true);   /* once a week, or feature it */
       n.querySelector('[data-x="tx-close"]').addEventListener('click', function (ev) { ev.stopPropagation(); var x = n.querySelector('.dbk-x'); if (x) x.click(); else n.remove(); closeDialog(isNaN(+id) ? id : +id, title.trim()); });
     }); });
   }).observe(document.body, { childList: true });
+  function isFile(id) { var L = (window.dxTrade.rowOf && window.dxTrade.rowOf(id)) || find(id); return !!(L && L.kind === 'file_sale'); }
   function closeDialog(id, title) {
     svc().counterparts(id).then(function (who) {
       var m = D.modal({ title: title || 'Reserved / sold', secondary: 'Close', body: '<div class="dx-close">' +
         '<button type="button" class="dbk-btn s" data-o="reserved">🔒 Mark reserved (محجوز)</button><button type="button" class="dbk-btn s" data-o="reopen">🔓 Open it again</button>' +
         '<div class="dbk-f"><label for="dxSoldTo">Sold to / bought from</label><select id="dxSoldTo"><option value="">Someone outside Drugbox</option>' + who.map(function (u) { return '<option value="' + esc(u.id) + '">' + esc(u.name) + (u.company ? ' · ' + esc(u.company) : '') + '</option>'; }).join('') + '</select></div>' +
         '<p class="cp-muted">They are asked to confirm and rate; when both act for companies the sale counts in the company’s track record.</p>' +
-        '<button type="button" class="dbk-btn s" data-o="sold">✅ Mark sold (اتباع)</button><button type="button" class="dbk-btn d" data-o="withdrawn">Withdraw listing</button></div>' });
+        '<button type="button" class="dbk-btn s" data-o="sold">✅ Mark sold (اتباع)</button>' + (isFile(id) ? '<button type="button" class="dbk-btn s" data-o="share">🔒 Share the private box with them</button>' : '') + '<button type="button" class="dbk-btn d" data-o="withdrawn">Withdraw listing</button></div>' });
       m.el.addEventListener('click', function (ev) { var b = ev.target.closest && ev.target.closest('[data-o]'); if (!b) return; var o = b.dataset.o, sel = m.el.querySelector('#dxSoldTo'), w = who.find(function (u) { return String(u.id) === sel.value; }) || null;
+        if (o === 'share') { if (!w) { toast('Choose the member to share it with'); return; } b.disabled = true; svc().privateShare(id, w).then(function () { m.close(); toast('Shared with ' + w.name); }, function (er) { b.disabled = false; toast((er && er.message) || 'Could not share'); }); return; }
         b.disabled = true; svc().close(id, o, o === 'sold' ? w : null, '').then(function () { m.close(); toast(o === 'reserved' ? 'Marked reserved — buyers see «Reserved»' : o === 'reopen' ? 'Open again' : o === 'sold' ? (w ? 'Marked sold — ' + w.name + ' is asked to confirm and rate' : 'Marked sold') : 'Listing withdrawn');
           paintDemo(); if (window.dxMarket) window.dxMarket.paint(); paintMine(); }, function (er) { b.disabled = false; toast((er && er.message) || 'Could not save'); }); });
     }, function (er) { toast((er && er.message) || 'Could not load'); });
@@ -748,8 +757,37 @@
     M.__trade = true;
   }
 
-  /* ── the company page: the distributor's profile (W-15) ── */
+  /* ── the company page: the distributor's profile (W-15) — on the Overview of a page in the Distribution sector ── */
   window.dxTradeDistributor = function (slug) { return svc().distributor(slug); };
+  function distSlug() { var b = document.querySelector('#content .cp-hero [data-hws], #content .cp-hero [data-hrfq]'); return b ? (b.getAttribute('data-hws') || b.getAttribute('data-hrfq')) : null; }
+  function paintDist() {
+    var two = document.querySelector('#content .cp-two'), tab = document.querySelector('#content .cp-tab.on'); if (!two || !tab || tab.getAttribute('data-htab2') !== 'overview' || two.querySelector('.dx-dist')) return;
+    var slug = distSlug(), co = slug && window.dxDir && window.dxDir.bySlug && window.dxDir.bySlug(slug); if (!co || !(co.sectors || []).some(function (x) { return /Distribution/.test(x); })) return;
+    var sec = two.querySelector('section.cp-sec'); if (!sec) return;
+    var box = document.createElement('div'); box.className = 'dx-dist'; box.setAttribute('data-dist', slug); sec.appendChild(box);
+    var member = !!document.querySelector('#content .cp-hero [data-hws]');
+    svc().distributor(slug).then(function (p) { if (!box.isConnected) return;
+      box.innerHTML = '<h3 style="margin-top:16px">Distributor profile</h3>' + (p ? '<div class="cap-forms">' + (p.govs || []).map(function (g) { return '<span class="lk">📍 ' + esc(lbl(g === 'all' ? 'all' : g) === 'all' ? GOV.all : lbl(g)) + '</span>'; }).join('') + (p.cats || []).map(function (c) { return '<span class="lk">' + esc(lbl(c)) + '</span>'; }).join('') + '</div>' +
+        '<p class="cp-muted">' + esc([p.warehouses != null ? p.warehouses + ' warehouses' : '', p.fleet != null ? p.fleet + ' vehicles' : '', p.agencies != null ? p.agencies + ' agencies' : '', p.cold_chain ? 'Cold chain' : ''].filter(Boolean).join(' · ')) + '</p>'
+        : '<p class="cp-muted">No distributor profile yet.</p>') + (member ? '<button type="button" class="dr-btn sm" data-dist-edit="1">Edit distributor profile</button>' : '');
+      var e = box.querySelector('[data-dist-edit]'); if (e) e.addEventListener('click', function () { distEdit(slug, p || {}); });
+    }, function () { box.remove(); });
+  }
+  function distEdit(slug, p) {
+    var m = D.modal({ title: 'Distributor profile', body: '<div class="dx-tx" id="dxDistF">' + fChips('cats', 'Categories you carry', CATS) + fGov('govs', 'Governorates you cover (map)') +
+      row3(fText('warehouses', 'Warehouses', '', false, '', 'number'), fText('fleet', 'Vehicles', '', false, '', 'number'), fText('agencies', 'Agencies you hold', '', false, '', 'number')) + fYesNo('cold_chain', 'Cold chain') + '</div>',
+      primary: { label: 'Save', onClick: function (b) { var r = readTx(b.querySelector('#dxDistF')).attrs, out = { govs: r.govs || [], cats: r.cats || [], warehouses: r.warehouses != null ? r.warehouses : null, fleet: r.fleet != null ? r.fleet : null, agencies: r.agencies != null ? r.agencies : null, cold_chain: !!r.cold_chain };
+        svc().saveDistributor(slug, out).then(function () { toast('Distributor profile saved'); var o = document.querySelector('.dx-dist'); if (o) o.remove(); paintDist(); }, function (er) { toast((er && er.message) || 'Could not save'); }); } } });
+    var f = m.el.querySelector('#dxDistF');
+    (p.cats || []).concat(p.govs || []).forEach(function (v) { var c = f.querySelector('.chip[data-v="' + v + '"]'); if (c) c.classList.add('selected'); });
+    ['warehouses', 'fleet', 'agencies'].forEach(function (k) { var i = f.querySelector('[data-tx="' + k + '"] input'); if (i && p[k] != null) i.value = p[k]; });
+    var cc = f.querySelector('[data-tx="cold_chain"] .radio-opt[data-v="' + (p.cold_chain ? 'yes' : 'no') + '"]'); if (cc) cc.classList.add('selected');
+  }
+  /* chips and yes/no in the profile window (outside #mkx) */
+  document.addEventListener('click', function (e) { var c = e.target.closest && e.target.closest('#dxDistF .chip[data-v], #dxDistF .radio-opt[data-v]'); if (!c) return;
+    if (c.classList.contains('radio-opt')) { c.parentElement.querySelectorAll('.radio-opt').forEach(function (x) { x.classList.remove('selected'); }); c.classList.add('selected'); return; }
+    c.classList.toggle('selected'); var gv = c.closest('.dx-gov'); if (gv) { if (c.dataset.v === 'all' && c.classList.contains('selected')) gv.querySelectorAll('.chip[data-v]:not([data-v="all"])').forEach(function (x) { x.classList.remove('selected'); }); else if (c.dataset.v !== 'all') { var al = gv.querySelector('.chip[data-v="all"]'); if (al) al.classList.remove('selected'); } } });
+  (function watchCompany() { var ct = document.getElementById('content'); if (!ct) return setTimeout(watchCompany, 500); new MutationObserver(function () { if (document.body.getAttribute('data-page') === 'companies') paintDist(); }).observe(ct, { childList: true }); })();
 
   /* ── search: every card in the marketplace carries its canonical words (approved cards too) ── */
   function words(card) {
@@ -762,9 +800,21 @@
     muts.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType !== 1) return; if (n.matches && n.matches(CARDS) && n.closest('#mkx')) words(n); else if (n.querySelectorAll) n.querySelectorAll(CARDS).forEach(function (c) { if (c.closest('#mkx')) words(c); }); }); });
   }).observe(document.body, { childList: true, subtree: true });
 
-  window.dxTrade = { decorate: decorate, parse: parseList, demoSvc: demoSvc, svc: svc, KIND: KIND, lbl: lbl, summary: summary, priceLabel: priceLabel, renewFailed: renewFailed, failed: failed, paint: function () { paintDemo(); paintMine(); },
+  /* ── W-13: the Home composer's "🛒 Product" offers the ten trade templates; each opens Create Listing on its form ── */
+  var TPL_ORDER = ['wanted', 'stock', 'file_sale', 'file_wanted', 'company_sale', 'agency', 'distributor', 'toll', 'toll_wanted', 'materials'];
+  function openKind(kind) {
+    var K = KIND[kind]; if (!K) return; if (document.body.getAttribute('data-page') !== 'market') window.goto('market');
+    setTimeout(function () { inject(); if (window.switchMasterTab) window.switchMasterTab('create'); if (window.chooseIntent) window.chooseIntent(K.side === 'demand' ? 'seek' : 'offer');
+      var pillT = kind === 'stock' || kind === 'materials' ? 'supply' : kind === 'wanted' ? 'demand' : kind === 'toll' ? 'cmo' : kind === 'file_sale' ? 'license' : kind;
+      var pl = document.querySelector('#mkx .type-pill[data-type="' + pillT + '"]'); if (pl) pl.click();
+      if (pillT === 'supply') { var r = document.querySelector('#form-supply [data-tx="_mode"] .radio-opt[data-v="' + kind + '"]'); if (r) r.click(); }
+      var f = document.querySelector('#mkx .form-section.active .field-input'); if (f) f.focus(); }, 120);
+  }
+  /* the templates on Create Listing's first step (the composer's '🛒 Product' opens it — soc_nav.js) */
+  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('#mkx [data-tx-tpl]'); if (!b) return; e.preventDefault(); openKind(b.dataset.txTpl); });
+  window.dxTrade = { decorate: decorate, openKind: openKind, parse: parseList, demoSvc: demoSvc, svc: svc, KIND: KIND, lbl: lbl, summary: summary, priceLabel: priceLabel, renewFailed: renewFailed, failed: failed, paint: function () { paintDemo(); paintMine(); },
     rowOf: null, gather: gather, STASH: function () { return STASH; }, clearStash: function () { STASH = null; }, govText: govText, CATS: CATS, GOVS: GOVS, GOV: GOV };
-  C.onRender('trade', function () { if (document.body.getAttribute('data-page') !== 'market') return; inject(); paintPostAs(); var mk = document.getElementById('mkx'); if (mk) mk.querySelectorAll(CARDS).forEach(words); });
+  C.onRender('trade', function () { if (document.body.getAttribute('data-page') === 'companies') paintDist(); if (document.body.getAttribute('data-page') !== 'market') return; inject(); paintPostAs(); var mk = document.getElementById('mkx'); if (mk) mk.querySelectorAll(CARDS).forEach(words); });
 
   /* ── Arabic: the trade's own words for the new labels (existing wording unchanged) ── */
   if (window.dxI18nExtend) window.dxI18nExtend({
@@ -822,7 +872,17 @@
     'Agency request': 'طلب وكالة', 'Open talks': 'ابدأ التفاوض', 'In talks': 'في تفاوض', 'Agree terms': 'اتفقنا', 'Tick every box before agreeing': 'علّم على كل البنود قبل «اتفقنا»',
     'I saw the notification number and its validity': 'شفت رقم الإخطار وسريانه', 'I understand the file’s stage and what is still missing': 'فاهم مرحلة الملف واللي لسه ناقص', 'I checked whether a price increase is submitted or approved': 'اتأكدت إن زيادة السعر مقدَّمة ولا معتمدة',
     'I know the transfer needs the authority’s approval': 'عارف إن نقل الملف محتاج موافقة الهيئة', 'I reviewed the documents shared in this deal': 'راجعت المستندات اللي اتشاركت في الصفقة',
-    '📑 Trade documents': '📑 مستندات التجارة', 'Mark seen': 'اتشافت', 'Trade documents': 'مستندات التجارة', 'Distributor profile': 'بروفايل الموزّع'
+    'e.g. 500 mg': 'مثلاً 500 مجم', 'e.g. 200,000 tablets': 'مثلاً 200,000 قرص', 'e.g. 6–8 weeks': 'مثلاً 6–8 أسابيع', 'e.g. EDA / WHO': 'مثلاً هيئة الدواء / WHO', 'e.g. Tablets': 'مثلاً أقراص', 'e.g. 85': 'مثلاً 85', 'e.g. 20 tablets': 'مثلاً 20 قرص',
+    'e.g. EGP 400,000': 'مثلاً 400,000 ج.م', 'e.g. 2%': 'مثلاً 2%', 'e.g. 12345/2024': 'مثلاً 12345/2024', 'e.g. Paracetamol 500 mg tablets — EDA': 'مثلاً باراسيتامول 500 مجم أقراص — هيئة الدواء', 'e.g. up to EGP 500,000': 'مثلاً لحد 500,000 ج.م',
+    'e.g. with stability studies, transfer within 6 months': 'مثلاً بدراسات الثبات، والنقل خلال 6 شهور', 'e.g. Scientific office with 12 registered files': 'مثلاً مكتب علمي بـ 12 ملف مسجّل', 'e.g. EGP 3,000,000': 'مثلاً 3,000,000 ج.م',
+    'e.g. Our vitamin range (12 products)': 'مثلاً مجموعة الفيتامينات بتاعتنا (12 منتج)', 'e.g. 7': 'مثلاً 7', 'e.g. EGP 2 M / year': 'مثلاً 2 مليون ج.م / سنة', 'e.g. 90': 'مثلاً 90', 'e.g. Distributor in Upper Egypt looking for supplements': 'مثلاً موزّع في الصعيد بيدوّر على مكملات',
+    'e.g. 1,200 accounts in 6 governorates': 'مثلاً 1,200 عميل في 6 محافظات', 'e.g. Ibuprofen 400 mg tablets': 'مثلاً ايبوبروفين 400 مجم أقراص', 'e.g. 100,000 tablets': 'مثلاً 100,000 قرص', 'e.g. 50 box': 'مثلاً 50 علبة', 'Delivery, payment terms…': 'التسليم، طريقة الدفع…',
+    'Registration file you are looking for': 'ملف التسجيل اللي بتدوّر عليه', 'Edit distributor profile': 'عدّل بروفايل الموزّع', 'No distributor profile yet.': 'لسه مفيش بروفايل موزّع.', 'Distributor profile saved': 'اتحفظ بروفايل الموزّع',
+    '🔒 Share the private box with them': '🔒 شارك الصندوق الخاص معاه', 'Choose the member to share it with': 'اختار العضو اللي هتشاركه', 'Before you agree — ': 'قبل «اتفقنا» — ', 'Ask for price': 'اسأل عن السعر',
+    'Your listing is live': 'إعلانك اتنشر', 'Price request sent — the answer comes in Messages': 'طلب السعر اتبعت — الرد هيوصلك في الرسايل', 'Price request sent — follow it in Requests & deals': 'طلب السعر اتبعت — تابعه في الطلبات والصفقات',
+    'Marked reserved — buyers see «Reserved»': 'اتعلّم محجوز — المشترين هيشوفوا «محجوز»', 'Open again': 'اتفتح تاني', 'Listing withdrawn': 'الإعلان اتسحب', 'Sent — follow it in Requests & deals': 'اتبعت — تابعه في الطلبات والصفقات',
+    'Renewed — it moved up and shows for another 30 days': 'اتجدّد — طلع لفوق وهيفضل ظاهر 30 يوم كمان', 'Answered — it did not happen': 'اتسجّل إنها ماحصلتش',
+    '📑 Trade documents': '📑 مستندات التجارة', 'Or start from a trade template': 'أو ابدأ من قالب تجارة', 'Trade between companies — each template opens its own form': 'تجارة بين الشركات — كل قالب بيفتح الفورم بتاعه', 'Factory wanted': 'مطلوب مصنع', 'Mark seen': 'اتشافت', 'Trade documents': 'مستندات التجارة', 'Distributor profile': 'بروفايل الموزّع'
   }, [
     [/^(\d+) items$/, function (m) { return m[1] + ' صنف'; }], [/^(\d+(?:\.\d+)?)% off$/, function (m) { return 'خصم ' + m[1] + '%'; }], [/^🗓 Credit (\d+) days$/, function (m) { return '🗓 آجل ' + m[1] + ' يوم'; }],
     [/^Please fill: (.+)$/, null]

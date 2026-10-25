@@ -47,3 +47,11 @@
 }
 html.dx-dark #mkx .dx-line,html.dx-dark #tab-manage .dx-trade-mine,html.dx-dark #mkx .dx-priv{background:transparent;border-color:#334155}
 html.dx-dark #mkx .dx-tbtn.s{background:#1e293b;color:#e2e8f0}
+
+.dx-tplbox{border:1.5px solid #eef0f4;border-radius:12px;padding:10px;margin-bottom:10px;background:#f8fafc}
+.dx-tpl-h{font-size:12.5px;font-weight:800;color:#0f172a;margin-bottom:6px}
+.dx-tpl{display:flex;flex-wrap:wrap;gap:6px}
+.dx-tpl-b{padding:6px 10px;border-radius:999px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#0f172a;min-height:34px}
+.dx-tpl-b:hover{border-color:#1a56db;color:#1a56db}
+.dx-tpl-n{font-size:11px;color:#64748b;margin-top:6px}
+@media (max-width:600px){.dx-tpl-b{min-height:40px}}
