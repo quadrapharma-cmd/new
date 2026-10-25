@@ -181,7 +181,8 @@ def signin_stays_signed_in(j):
         if j.live: j.check(pg.evaluate('ME.name') == 'Dr. Amal Sign', 'signed in as "%s"' % pg.evaluate('ME.name'))
         who = pg.evaluate('ME.name')
     with j.step('Reload: the app opens directly as the same person'):
-        j.reload(pg); j.check(j.in_app(pg) and pg.evaluate('ME.name') == who, 'reload did not keep the session')
+        j.reload(pg); ia, nm = j.in_app(pg), pg.evaluate('typeof ME=="object"&&ME?ME.name:null')
+        j.check(ia and nm == who, 'reload did not keep the session (app shown: %s, signed in as %r, expected %r)' % (ia, nm, who))
     with j.step('A new browser context with the saved session opens the app as the same person'):
         if j.demo:   # a file:// page has no origin Playwright can copy into a new context: the demo reopens in this browser instead
             pg2 = j.new_page(pg.context)
@@ -420,7 +421,8 @@ def switch_language(j):
                 eng += [t for t in j.toasts_since(pg, before) if re.search(r'[A-Za-z]{4,}', t) and not re.search(r'[؀-ۿ]', t)]
         j.check(not eng, 'English toasts in Arabic: %s' % eng)
     with j.step('Reload, and the login page after sign-out, stay Arabic'):
-        j.reload(pg); j.check(pg.evaluate("document.documentElement.lang") == 'ar', 'after reload the interface is not Arabic')
+        kept = pg.evaluate("(()=>{try{return localStorage.getItem('dx_lang')}catch(e){return 'unreadable'}})()")
+        j.reload(pg); j.check(pg.evaluate("document.documentElement.lang") == 'ar', 'after reload the interface is not Arabic (stored before the reload: %r, after: %r)' % (kept, pg.evaluate("(()=>{try{return localStorage.getItem('dx_lang')}catch(e){return 'unreadable'}})()")))
         pg.evaluate('doLogout()'); j.settle(pg)
         j.check(pg.evaluate("document.documentElement.dir") == 'rtl' and re.search(r'[؀-ۿ]', j.text(pg, '#loginPage')), 'the login page after sign-out is not Arabic')
     with j.step('Switch back to English: full English and LTR'):

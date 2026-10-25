@@ -27,7 +27,7 @@
       return true;
     });
     if (S.sort === 'name') list.sort(function (a, b) { return a.co.name.localeCompare(b.co.name); });
-    else if (S.sort === 'newest') list.sort(function (a, b) { return (b.co.createdAt || b.co.founded || 0) - (a.co.createdAt || a.co.founded || 0); });
+    else if (S.sort === 'newest') list.sort(function (a, b) { return (b.co.createdAt || b.co.founded || 0) - (a.co.createdAt || a.co.founded || 0) || (b.co.createdUs || 0) - (a.co.createdUs || 0) || (b.co._id || 0) - (a.co._id || 0); });   /* same millisecond: the database's microseconds, then the later page, as the database orders them */
     else list.sort(function (a, b) { return b.score - a.score; });
     return list;
   }

@@ -1106,9 +1106,11 @@
       address: txt(pr.address || c.location), hours: txt(c.hours), services: (pr.services || []).map(txt), jobs: [], team: [], logo: safeUrl(c.logo_url) || null, cover: safeUrl(pr.cover) || null,
       products: (c.products || []).map(function (p) { return { id: 'p' + String(p.name).replace(/\W+/g, '').slice(0, 10), name: txt(p.name), cat: ROLE[p.role] || 'Finished dosage', kind: txt(p.form),
         desc: [p.ingredient ? 'Active ingredient: ' + txt(p.ingredient) : '', txt(p.strength)].filter(Boolean).join(' · '), moq: '', price: '', specs: [] }; }),
-      createdAt: new Date(c.created_at).getTime(), updatedAt: fresher(c), _id: c.id, _tier: c.tier,
+      createdAt: new Date(c.created_at).getTime(), createdUs: usOf(c.created_at), updatedAt: fresher(c), _id: c.id, _tier: c.tier,
       vr: CO.vr[c.id] ? CO.vr[c.id].s : undefined, vrNote: CO.vr[c.id] ? CO.vr[c.id].note : '' };   /* AREA community (J-COMMUNITY-41): the latest own verification request */
   }
+  /* the database's microseconds (a JavaScript date keeps milliseconds): 'Newest' orders two pages made in the same millisecond as the database does */
+  function usOf(t) { var ms = new Date(t).getTime(); if (!t || isNaN(ms)) return 0; var m = /:\d\d\.(\d+)/.exec(String(t)); return Math.floor(ms / 1000) * 1e6 + (m ? +(m[1] + '00000').slice(0, 6) : 0); }
   /* when the page was last written (companies.updated_at, set by the database on every save, B-22): the "older than 6 months"
      notice counts from it, else from the day the page was made — never from a sample date. The directory's rows do not carry it,
      so an opened page asks for it (loadContacts). */

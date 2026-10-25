@@ -260,6 +260,8 @@ def suggestions(j):
         j.check(re.search(r'mutual|same company|works at|مشترك|نفس الشركة', sec, re.I), 'suggestion cards give no reason')
     with j.step('Dismiss one suggestion; Connect to another from its card'):
         name = d['name'].split('Dr. ')[-1] if j.live else 'Sara'
+        if j.live and name not in (section(pg, r'People you may know|أشخاص قد تعرفهم') or ''):   # a shared database's earlier runs (same company) can rank D out of the list: dismiss another suggestion that is not C
+            name = next((n for n in names if n and c['name'].split('Dr. ')[-1] not in n), name)
         click_in(j, pg, card_of(pg, name), r'^(×|✕|Dismiss|Hide|إخفاء|تجاهل)$', 'Dismiss suggestion')
         j.check(name not in (section(pg, r'People you may know|أشخاص قد تعرفهم') or ''), 'the dismissed suggestion is still shown')
         cn = c['name'].split('Dr. ')[-1] if j.live else 'Omar'

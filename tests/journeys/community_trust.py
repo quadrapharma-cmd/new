@@ -21,7 +21,7 @@ def reviews(j):
     """People and companies rate each other after a real interaction, so trustworthy employers and candidates stand out."""
     t = j.tag[:4]; body = 'Clear interview process, answered within a week and explained the salary band. %s' % t
     if j.live:
-        e = employer(j, 'Ehab Employer', 'Indovista Pharma'); s = j.person('Youssef Hassan %s' % t); pg = s['page']; f = employer(j, 'Fady NoContact', 'Beauty Lab')
+        e = employer(j, 'Ehab Employer', 'Indus Valley Pharma')   # not a sample company's name: live Home must show no sample names (J-SOCIAL-10); s = j.person('Youssef Hassan %s' % t); pg = s['page']; f = employer(j, 'Fady NoContact', 'Beauty Lab')
         je = seed_job(j, e['id'], 'Reviewed Role %s' % t, e['co']['name']); seed_job(j, f['id'], 'Unrelated Role %s' % t, f['co']['name'])
         j.sql("insert into public.job_applications (job_id, user_id, note) values (%d,'%s','hi')" % (je, s['id']))
         j.sql("update public.profiles set open_to_work=true, headline='QC Chemist' where id='%s'" % s['id'])

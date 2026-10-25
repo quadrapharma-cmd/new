@@ -72,9 +72,10 @@ def read_home_feed(j):
         j.check(len(box.inner_text()) > before + 20, '"see more" did not expand the text')
     with j.step('Scroll to the bottom repeatedly: older posts load until all are shown, then an end marker; no duplicates'):
         seen = []
-        for _ in range(12):
+        for _ in range(40):   # until nothing more loads (a shared database grows with every run: 20 posts a page)
             pg.evaluate("(()=>{const c=document.getElementById('content');c.scrollTop=c.scrollHeight;window.scrollTo(0,document.body.scrollHeight)})()"); pg.wait_for_timeout(900)
-            ids = pg.eval_on_selector_all('#content .post', 'e=>e.map(x=>x.id)')
+            # a repost is a card of its own ("… reposted", .dx-repost-card) carrying the post it reposts: not a duplicate of paging
+            ids = pg.eval_on_selector_all('#content .post:not(.dx-repost-card)', 'e=>e.map(x=>x.id)')
             if ids == seen: break
             seen = ids
         j.check(len(seen) == len(set(seen)), 'duplicate posts in the feed: %d shown, %d unique' % (len(seen), len(set(seen))))
@@ -117,7 +118,7 @@ def publish_text_post(j):
         pg.fill('#postBody', body); pg.select_option('#postCat', value='regulatory')
         pg.locator('.modal-bg [onclick^="submitPost"]').last.click(); j.settle(pg, 1200)
         top = pg.locator('#content .post').filter(has_not_text=re.compile('📌')).first; t = top.inner_text()
-        j.check('Quarterly update ' + j.tag in t, 'the new post is not at the top (below pinned posts)')
+        j.check('Quarterly update ' + j.tag in t, 'the new post is not at the top (below pinned posts); the top post reads: %s' % ' '.join(t.split())[:160])
         me = pg.evaluate('ME.name'); j.check(me.split()[-1] in t, 'the new post does not show the author name')
         j.check(re.search(r'just now|now|0m|الآن|للتو', t, re.I), 'the new post does not say "just now"')
         j.check(re.search(r'regulatory|تسجيل|تنظيمي|الشؤون التنظيمية|رقابي', t, re.I), 'the chosen category is not shown')

@@ -225,7 +225,9 @@
         (rp.note ? '<div class="dx-repost-note" data-noi18n>' + esc(rp.note) + '</div>' : '') + '</div>');
       var at = rp.created_at ? new Date(rp.created_at).getTime() : 0, before = null;
       if (at) before = [].find.call(col.querySelectorAll(':scope > .post:not(.dx-repost-card)'), function (x) { var q = find(x.id.slice(5)); return q && q.created_at && new Date(q.created_at).getTime() < at && !q.pinned; });
-      var first = col.querySelector(':scope > .post'); col.insertBefore(card, before || (first && !at ? first : before) || first);
+      /* older than every post on the page: after the last of them (it was put first, above the newest posts) */
+      var first = col.querySelector(':scope > .post'), all = col.querySelectorAll(':scope > .post:not(.dx-repost-card)'), last = all[all.length - 1];
+      if (at && !before && last) col.insertBefore(card, last.nextSibling); else col.insertBefore(card, before || first);
     });
     endMarker(c);
     return r;

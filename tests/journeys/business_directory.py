@@ -88,7 +88,8 @@ def find_supplier(j):
         if j.live:
             got = [s for s in card_slugs(pg)]
             order = j.sql("select slug from public.companies where slug in (%s) order by created_at desc, id desc" % ','.join("'%s'" % s for s in got)).split('\n')
-            j.check(got == order, 'Newest does not follow the creation dates: %s vs %s' % (got[:4], order[:4]))
+            k = next((i for i, (x, y) in enumerate(zip(got, order)) if x != y), 0)
+            j.check(got == order, 'Newest does not follow the creation dates: %s vs %s (first difference at %d: %s vs %s)' % (got[:4], order[:4], k, got[k:k + 3], order[k:k + 3]))
         j.click(pg, L('How results are ordered'), scope='#dxDir', what='How results are ordered')
         t = dlg_text(pg); j.check(re.search(r'Sponsored|مموّل|ممول|الممولة', t), 'the ordering explanation does not explain Sponsored placement')
         close_dialogs(pg); set_select(pg, '#hbSort', 'Best match|الأكثر')
