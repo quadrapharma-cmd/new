@@ -1,0 +1,341 @@
+# real names (Arabic, Latin, Greek, Cyrillic, with titles, brackets, particles): the username each gives — tools/names/username_rule.mjs --expect, supabase/tests/usernames.sql
+حازم محمد
+اسلام عطية
+شيماء كامل
+حسن الخولي
+علي عطية
+إيمان مرسي
+عمرو سليم
+ايمان البنا
+منى بركات
+يارا فرج
+رنا جاد
+منى كامل
+ياسمين عثمان
+هانىء منصور
+ندى جاد
+مؤمن جاد
+عادل الحداد
+مها الجمال
+يوسف عبد الرحمن
+علاء المصري
+منى دويدار
+ليلى إبراهيم
+ريم رزق
+يوسف يونس
+رانيا مرسي
+شروق سرحان
+نور عزت
+سلمى طلعت
+دعاء صبري
+هيثم الشامي
+بسمة عزت
+رمضان زيدان
+حسين أبو زيد
+مي الهواري
+نهى الجمال
+محمود صبري
+أسامة مرسي
+مها وهبة
+ابراهيم دويدار
+هشام عبد العزيز
+سامي فرج
+بىىىام حجازي
+أسامة الشربيني
+هانىء الألفي
+إسلام زيدان
+نهى فوزي
+يحيى الألفي
+فتحي الحسيني
+مريم عزت
+بيشوي مراد
+رشا مرسي
+يحيى الهواري
+عبد الفتاح طلعت
+تيم خليل
+ميار الدسوقي
+مؤمن بركات
+عائشة حسن
+أميرة الشناوي
+ايمان علي
+هاني الدسوقي
+منى خليل
+هالة الدسوقي
+آية حسين
+إبراهيم فوزي
+عائشة الحداد
+نرمين حسين
+نبيل رزق
+سلمى بركات
+خالد منصور
+فؤاد النجار
+ريم الألفي
+وليد شحاتة
+عمر عبد العزيز
+نادية إمام
+رنا زيدان
+سلمى علي
+عبد الله زيدان
+سارة الشناوي
+كمال عبد الرحمن
+نرمين عبد العزيز
+نادية سليم
+السيد حسن
+مينا الصاوي
+زينب الحسيني
+رمضان الخولي
+مجدي الشامي
+حنان الحداد
+مجدي فهمي
+حسن فوزي
+عبد الرحمن أحمد
+غيث قنديل
+ابراهيم الشربيني
+عبد العزيز صبري
+إبراهيم غنيم
+فاطمه سرحان
+أبو بكر طلعت
+حسين شلبي
+يحيى بركات
+عبد الرحمن النجار
+أبو بكر أبو الفتوح
+ابراهيم غنيم
+حسين منصور
+وليد الزيات
+هبة محمد
+وليد حجازي
+آلاء عبد الله
+أميرة بركات
+السيد إبراهيم
+يوسف الألفي
+كريم خليل
+شروق حسين
+طارق عزت
+إبراهيم عبد الرحمن
+خديجة عبد الله
+عصام المصري
+فاطمة رزق
+غادة الزيات
+رضوى الشاذلي
+عبير الحداد
+زياد الحسيني
+دينا خليل
+إبراهيم عبد الله
+عبد الرحمن طلعت
+ريم البنا
+هاني عبد الرحمن
+سارة الهواري
+عمرو سرحان
+ابراهيم يونس
+حازم فرج
+زينب دويدار
+سارة عوض
+رمضان صبري
+هانىء مرسي
+نادية البنا
+ابراهيم مراد
+طه حجازي
+عبد الرحمن غنيم
+عبد الحميد رزق
+أشرف مرسي
+غادة حسين
+عبد الله لطفي
+زينب الشناوي
+هالة العطار
+عبد العزيز الشاذلي
+لؤي سرحان
+أبو بكر الشامي
+شروق العطار
+عبد الحميد كامل
+ليلى السيد
+Nada Mohamed
+Zeinab El Shamy
+Hesham Gad
+Bishoy Hegazy
+Nguyễn Strauß
+Sherine Abdel Rahman
+Ghada Strauß
+Mahmoud Awad
+Mariam Shehata
+Nabil Rizk
+Ali El-Sayed
+Mona Barakat
+Reem Dweedar
+Hassan Morsy
+Çağlar El Sherbiny
+Yehia Ahmed
+Sara Ahmed
+Youssef Farag
+Samy El-Sayed
+Hussein Yılmaz
+Mohamed Elsayed
+Ali Barakat
+Ali Kamel
+Walid Elsayed
+Abeer Fawzy
+Nada Ørsted
+Abdelrahman Elsayed
+Salma Ghoneim
+Eman Fahmy
+Mona Wahba
+Sameh Yılmaz
+Samira Fahmy
+Yasser Shahin
+Sherine Ali
+Magdy Mohamed
+Haytham Shehata
+Hussein Shahin
+Nour Dubois
+Renée Núñez
+Ayman Yılmaz
+Hesham Attia
+Alaa Hegazy
+Mahmoud Ali
+Magdy Fahmy
+Noha Kandil
+Maha El Sherbiny
+Fouad Shehata
+Nadia Gad
+Ibrahim Shahin
+Karim Fahmy
+Tarek Abdallah
+Samir Sabry
+Şükrü Gad
+Hazem Öztürk
+José Wahba
+José Ali
+Sameh El Naggar
+Ayman Farag
+Rasha Wahba
+Abdallah El Sherbiny
+Dalia Shehata
+Hala Barakat
+Walid Müller
+Noura Gad
+Shaimaa Ezzat
+Jürgen Khalil
+Moamen García
+Björk Öztürk
+Mostafa El-Masry
+Mariam Ezzat
+Nguyễn Mohamed
+Said Awad
+Ömer El Naggar
+François El Shamy
+Mina Ørsted
+Moamen Sabry
+Hazem Mohamed
+Zeinab Elsayed
+Abeer O’Brien
+José Strauß
+Nadia Núñez
+Youssef Ali
+Sherine Shehata
+Björk Fahmy
+Eslam Fahmy
+Ayman Mohamed
+Shaimaa Abdallah
+Doaa Strauß
+Mostafa Sabry
+Noha Fawzy
+Shaimaa Shalaby
+Nour El Naggar
+Said El Naggar
+Hassan Selim
+Mostafa Kandil
+Fatma Gad
+Mona Attia
+Hoda Kamel
+Nadia El Sayed
+Alaa Barakat
+Sara Fahmy
+Abdelrahman Kandil
+Taha Kowalski
+Abd El Rahman El Sherbiny
+Samir Younes
+Rania Mohamed
+Ömer Ørsted
+Alaa Abdallah
+Magdy Hassan
+Nermeen Kamel
+Bishoy Khalil
+Alaa Sabry
+Ðorđe Ahmed
+Dalia El-Sayed
+Amr Elsayed
+Hesham Öztürk
+Chloé Ezzat
+Rana Müller
+Moamen El Sayed
+مريم عبد الله صبري
+سمير الحسيني الشاذلي
+رضوى فرج الفقي
+عصام حجازي الحداد
+أشرف الشناوي مرسي
+عبدالرحمن يونس العطار
+مروة عبد الرحمن الخولي
+طارق بركات الهواري
+يارا فهمي صبري
+نهى لطفي حسن
+شيماء قنديل قنديل
+يحيى يونس بدوي
+محمود خليل بدوي
+حسين الزيات عبد العزيز
+شريف عثمان أبو زيد
+مؤمن الشامي بركات
+ياسمين مكرم العشري
+شريف بدوي عثمان
+صفوان عوض الشناوي
+عبدالله شاهين دويدار
+د. هيثم دويدار
+Dr. Haytham Dweedar
+Prof. Dr. Ahmed Zewail
+Eng. Omar Khaled
+د/ محمد علي
+أ.د/ سامي فهمي
+م. أحمد حسن
+Ph. Mohamed Hassan
+Dr.أحمد علي
+Ahmed Ali (MBA)
+أحمد علي (صيدلي)
+Hala Ali (Head of QA)
+Smith, John
+العلي، محمد
+Ali
+مي
+Om
+Ali Ali
+Admin Support
+Drugbox Team
+Security Staff
+Mohamed Ahmed Ali Hassan
+محمد أحمد علي حسن
+Мария Иванова
+Олександр Шевченко
+Νίκος Παπαδόπουλος
+Μαρία Κωνσταντίνου
+Ἀλέξανδρος
+Иван Петров
+Dr. Мария Иванова
+Ziad (زياد)
+Mona (منى) Ali
+علی‌رضا محمدی
+پرویز گلشیری
+ڭمال العلوي
+Anne-Marie Dubois
+Jean—Paul Sartre
+Mo’men Abd El-Raouf
+Saʿīd Ḥasan
+İsmail Ñúñez
+Məmmədov Əli
+Ærø Þór
+abcdefghijklmnopqrstuvwxyzabcdefghijklmnopq
+عبد الرحمن عبد العزيز عبد الحميد
+Abdelrahman Abdelaziz Abdelhamid Mohamed
+Umm Kalthoum
+Om Kalthoum Ibrahim
+Bint El Shatei
+بنت الشاطئ
+آل سعود
+أم كلثوم إبراهيم
+ابن سينا

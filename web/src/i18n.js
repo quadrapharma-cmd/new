@@ -350,14 +350,20 @@
     'Created just now': 'أُنشئت الآن', 'you are the admin': 'أنت المدير',
     /* form checks (sign in, sign up, posts, listings, groups) */
     'Email is required': 'البريد الإلكتروني مطلوب', 'Password is required': 'كلمة المرور مطلوبة', 'Name is required': 'الاسم مطلوب',
+    /* @username (S-03, the owner's decision of 25 Oct: every member has a unique username — 0070_usernames, web/src/username.js) */
+    'Username': 'اسم المستخدم', 'Name or @username': 'الاسم أو ⁦@username⁩', 'Choose a username': 'اختر اسم مستخدم',
+    'A username has at least 5 characters': 'اسم المستخدم 5 أحرف على الأقل', 'A username has at most 30 characters': 'اسم المستخدم 30 حرفًا على الأكثر',
+    'A dot cannot start or end a username or follow another dot': 'النقطة لا تبدأ اسم المستخدم ولا تنهيه ولا تأتي بعد نقطة أخرى',
+    'A username needs at least one letter': 'اسم المستخدم يحتاج حرفًا واحدًا على الأقل',
+    'You changed your username too often today — try again tomorrow': 'غيّرت اسم المستخدم مرات كثيرة اليوم — حاول غدًا',
+    'Too many tries — wait a minute and try again': 'محاولات كثيرة — انتظر دقيقة ثم حاول مرة أخرى', 'Sign in to choose a username': 'سجّل الدخول لتختار اسم مستخدم',
+    'Change your username in Edit Profile': 'غيّر اسم المستخدم من تعديل الملف', 'Checking…': 'جارٍ التحقق…',
     /* the name rule (live: sign-up, Edit Profile, the database's refusal — 0038) */
     'A name cannot contain numbers': 'لا يمكن أن يحتوي الاسم على أرقام', 'A name can be up to 120 characters': 'الاسم 120 حرفًا على الأكثر',
     'An accent or vowel mark must sit on a letter, once (at most 3 marks on one letter)': 'علامة التشكيل أو النبرة يجب أن تكون على حرف، مرة واحدة (3 علامات على الأكثر للحرف الواحد)',
     "This name cannot be used — a name can only have letters, spaces and . - ' ( ) , / ،": "لا يمكن استخدام هذا الاسم — الاسم يقبل الحروف والمسافات و \u2066. - ' ( ) , /\u2069 ، فقط",
     'Please update your name — it has characters Drugbox no longer allows, so other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه حروف لم يعد Drugbox يسمح بها، لذلك يرى الأعضاء الآخرون تحذيرًا بجانبه.',
     'Please update your name — move the part in brackets after the name. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — انقل الجزء الذي بين القوسين إلى ما بعد الاسم. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
-    /* the name-fix banner's first sentence follows the reason (S-03 fix 8) */
-    'Please update your name — a letter in it is written in the middle of a word where it can only end one. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه حرف مكتوب في وسط كلمة ولا يأتي إلا في آخرها. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
     'Please update your name — put what follows it in parentheses instead of after a spaced dash. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — ضع ما بعد الاسم بين قوسين بدل الشرطة بين مسافتين. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
     'Please update your name — a mark in it stands alone between spaces. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه علامة وحدها بين مسافتين. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
     'Please update your name — a name cannot contain numbers. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — الاسم لا يحتوي على أرقام. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
@@ -547,7 +553,13 @@
     [/^Put what follows the name in parentheses — write “\u2068([^]*)\u2069”$/, function (m) { return 'ضع ما يلي الاسم بين قوسين — اكتب «\u2068' + m[1] + '\u2069»'; }],
     [/^Put the part in brackets after the name — write “\u2068([^]*)\u2069”$/, function (m) { return 'ضع الجزء الذي بين القوسين بعد الاسم — اكتب «\u2068' + m[1] + '\u2069»'; }],   /* fifth version (0039_names_rule_5) */
     [/^What is in brackets is written in one direction — Arabic letters, or Latin, Greek and Cyrillic ones — “\u2068([^]*)\u2069” mixes them$/, function (m) { return 'ما بين القوسين يُكتب باتجاه واحد — حروف عربية، أو حروف لاتينية ويونانية وسيريلية — «\u2068' + m[1] + '\u2069» يخلط بينها'; }],
-    [/^The letter “\u2068([^]*?)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) can only be the last letter of a word — inside “\u2068([^]*?)\u2069” it has no dots and can read as another letter$/, function (m) { return 'الحرف «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) لا يأتي إلا آخر حرف في الكلمة — في وسط «\u2068' + m[3] + '\u2069» يُكتب بلا نقط وقد يُقرأ حرفًا آخر'; }],   /* eighth version (0039_names_rule_8) */
+    /* @username refusals (0070_usernames / web/src/username.js): the username quoted is isolated left to right (U+2066 … U+2069) */
+    [/^A username can only have small letters a-z, numbers 0-9 and dots — remove “⁦([^]*)⁩”$/, function (m) { return 'اسم المستخدم يقبل الحروف الصغيرة ⁦a-z⁩ والأرقام ⁦0-9⁩ والنقطة فقط — احذف «⁦' + m[1] + '⁩»'; }],
+    [/^“⁦([^]*)⁩” is kept for Drugbox — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» محجوز لـ Drugbox — اختر اسم مستخدم آخر'; }],
+    [/^“⁦([^]*)⁩” is taken — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» مستخدم بالفعل — اختر اسم مستخدم آخر'; }],
+    [/^“⁦([^]*)⁩” was just given up by a member and is kept for them for 30 days — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» تخلّى عنه عضو منذ قليل وهو محفوظ له 30 يومًا — اختر اسم مستخدم آخر'; }],
+    [/^✓ @([a-z0-9.]+) is available$/, function (m) { return '✓ ⁦@' + m[1] + '⁩ متاح'; }],
+    [/^No member has the username @(.+)$/, function (m) { return 'لا يوجد عضو باسم المستخدم ⁦@' + m[1] + '⁩'; }],
     [/^Write each word of a name in one alphabet — “\u2068([^]*)\u2069” mixes alphabets$/, function (m) { return 'اكتب كل كلمة من الاسم بأبجدية واحدة — «\u2068' + m[1] + '\u2069» تخلط بين أبجديات'; }],
     [/^Remove the mark added to “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ$/, function (m) { return 'احذف العلامة المضافة إلى «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) — يقبل Drugbox الحرف ذا العلامة مكتوبًا كحرف واحد، مثل \u2066é، ü، ñ\u2069'; }],
     [/^🚫 Block (.+)$/, function (m) { return '🚫 حظر ' + m[1]; }], [/^✅ Unblock (.+)$/, function (m) { return '✅ إلغاء الحظر عن ' + m[1]; }],   /* the conversation menu (J-SOCIAL-40) */

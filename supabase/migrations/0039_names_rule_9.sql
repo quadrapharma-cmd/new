@@ -227,6 +227,23 @@ create index if not exists idx_profiles_name_sound_trgm on public.profiles using
 create index if not exists idx_profiles_name_trgm on public.profiles using gin (name gin_trgm_ops);
 create index if not exists idx_profiles_name_key_created on public.profiles (name_key, created_at, id);
 
+-- open_candidates() "returns setof profiles": its column list follows the table, now with name_sound (phone stays private — 0036)
+do $do$
+declare cols text;
+begin
+  select string_agg(case when column_name = 'phone' then 'null::text' else 'p.' || quote_ident(column_name) end, ', ' order by ordinal_position) into cols
+    from information_schema.columns where table_schema = 'public' and table_name = 'profiles';
+  execute format($f$create or replace function public.open_candidates(p_limit int default 40)
+returns setof public.profiles language sql stable set search_path = public as $q$
+  select %s
+    from public.profiles p where p.open_to_work and p.id <> coalesce(auth.uid(), '00000000-0000-0000-0000-000000000000'::uuid)
+     and p.id <> all (coalesce((select private.blocked_parties()), '{}'::uuid[]))
+   order by p.created_at desc limit least(greatest(coalesce(p_limit, 40), 1), 100)
+$q$$f$, cols);
+end $do$;
+revoke all on function public.open_candidates(int) from public, anon, authenticated, service_role;
+grant execute on function public.open_candidates(int) to authenticated, service_role;
+
 -- ── 3. existing names: never renamed; flagged when the new rule refuses them; keyed again and given their sound key ──
 do $$
 declare total int; differ int; dash1 int; unflag int; rekeyed int; renamed int; flagged_before int; flagged_after int;
