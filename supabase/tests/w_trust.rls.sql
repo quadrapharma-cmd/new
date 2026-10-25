@@ -328,6 +328,36 @@ select pg_temp.ok('M1 approves', $$public.group_partner_decide(pg_temp.id('g'), 
 select pg_temp.as_server();
 select pg_temp.ok('the group is a partner and G is told', $$(select partner_at is not null from public.groups where id = pg_temp.id('g')) and pg_temp.told(8, 'group_partner_decided') = 1$$);
 
+-- ══ 6b. follow-ups after the independent verification (0095) ══
+select pg_temp.as_server();
+select pg_temp.ok('rules v2: the ordinary trade phrases the first rules held now pass', $$(select bool_and(cardinality(private.review_topics(x)) = 0) from unnest(array[
+  'ليدوكايين مخدر موضعي ٢٪ للمصانع', 'علاج فرط ضغط الدم — ملف تسجيل للبيع', 'الأسعار من الجدول المرفق، الدفع آجل ٩٠ يوم', 'Discount 30% off retail price for distributors',
+  'non-narcotic analgesic dossier available', 'عبوات ضد التزوير وملصقات مكافحة تزوير', 'وكالة توزيع حصرية — استيراد باسم شركتنا', 'Single pack size 20 tablets, registration file for sale',
+  'سعر الجمهور 45 جنيه، خصم للموزعين', 'مستحضر غير مزور مسجل بالهيئة', 'Dr. Ahmed. Available 100 kg, COA. Contact: sales dot team', 'Metoclopramide, amlodipine 5 mg, losartan 50 mg']) x)$$);
+select pg_temp.ok('rules v2: the spellings the first rules missed are caught', $$(select bool_and(private.review_topics(x[1]) @> array[x[2]]) from (values
+  (array['tramadol100mg', 'controlled']), (array['Tramal 100', 'controlled']), (array['ترمادول', 'controlled']), (array['ترا' || chr(1564) || 'مادول', 'controlled']),
+  (array['ترا' || chr(8288) || 'مادول', 'controlled']), (array['ﺗﺮﺍﻣﺎﺩﻭﻝ', 'controlled']), (array['ｔｒａｍａｄｏｌ', 'controlled']), (array['tramad0l', 'controlled']),
+  (array['t r a m a d o l', 'controlled']), (array['we sell directly to pharmacies', 'retail']), (array['لصيدليتك', 'retail']), (array['بيع للمرضى مباشرة', 'retail']),
+  (array['chat.whatsapp .com/AbC', 'invite']), (array['chat[.]whatsapp[.]com/AbC', 'invite']), (array['wa.link/abc12', 'invite']), (array['https://api.whatsapp.com/send?phone=2010', 'invite']),
+  (array['https://t.me', 'invite']), (array['tg://join?invite=abc', 'invite']), (array['ｔ.ｍｅ/abc', 'invite']), (array['facebook.com/groups/abc', 'invite'])) v(x))$$);
+select pg_temp.act(9);
+select pg_temp.nohint('a duplicate with a space more is the same post', $$insert into public.posts (user_id, group_id, body, category) values (pg_temp.u(9), pg_temp.id('g'), 'WT available: lactose monohydrate 200 kg ', 'market')$$, 'DX422');
+select pg_temp.nohint('… with a dot or an emoji more too', $$insert into public.posts (user_id, group_id, body, category) values (pg_temp.u(9), pg_temp.id('g'), 'WT available: lactose monohydrate, 200 kg. 👍', 'market')$$, 'DX422');
+select pg_temp.nohint('an outside link written apart is refused', $$insert into public.posts (user_id, group_id, body, category) values (pg_temp.u(9), pg_temp.id('g'), 'WT our group chat[.]whatsapp[.]com/AbC', 'market')$$, 'DX423');
+select pg_temp.as_server();
+select pg_temp.step('V joins the deal room', $$insert into public.group_members (group_id, user_id) values (pg_temp.id('room'), pg_temp.u(4))$$);
+select pg_temp.act(4);
+select pg_temp.step('V lists a held offer in the deal room as the company', $$with l as (insert into public.group_listings (group_id, company_id, posted_as, kind, title) values (pg_temp.id('room'), pg_temp.id('coV'), 'company', 'surplus', 'WT surplus, order on t.me/wtroom') returning id) insert into ids select 'hl', id::text from l$$);
+select pg_temp.step('V lists a held marketplace offer', $$with p as (insert into public.products (user_id, name, type, category, description) values (pg_temp.u(4), 'WT Pregabalin 300 stock', 'supply', 'finished', '5,000 boxes') returning id) insert into ids select 'hp', id::text from p$$);
+select pg_temp.ok('… both held', $$(select review_hold from public.group_listings where id = pg_temp.id('hl')) and (select review_hold from public.products where id = pg_temp.id('hp'))$$);
+select pg_temp.act(1);
+select pg_temp.no('A cannot answer the held deal-room listing (as if it were not there)', $$select public.group_listing_respond(pg_temp.id('hl'), 'wt-verified', 'interested')$$, 'P0002');
+select pg_temp.no('A cannot message the owner about the held offer', $$select public.listing_contact(pg_temp.id('hp'), 'is it available?')$$, 'P0002');
+select pg_temp.ok('… nor count a view of it', $$not public.listing_view(pg_temp.id('hp'))$$);
+select pg_temp.as_server();
+select pg_temp.ok('… no deal, message or view came of it', $$not exists (select 1 from public.deals where title like 'WT surplus, order%') and not exists (select 1 from public.listing_views where listing_id = pg_temp.id('hp'))
+  and not exists (select 1 from public.messages where body like '%listing #' || pg_temp.id('hp') || ')%')$$);
+
 -- ══ 7. anon ══
 select pg_temp.as_anon();
 select pg_temp.ok('anon reads no trade profile, hold, report, verification', $$(select count(*) from public.trade_profiles) + (select count(*) from public.content_holds) + (select count(*) from public.trader_reports) = 0$$);
