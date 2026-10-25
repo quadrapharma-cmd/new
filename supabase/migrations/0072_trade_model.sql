@@ -51,6 +51,7 @@ create index if not exists idx_products_search_trgm on public.products using gin
 create index if not exists idx_products_root_words on public.products using gin (root_words);
 create index if not exists idx_products_kind_open on public.products (kind, type) where active and kind is not null;
 create index if not exists idx_products_fingerprint on public.products (user_id, fingerprint) where status in ('active', 'paused', 'reserved');
+create index if not exists idx_products_docs_checked_by on public.products (docs_checked_by) where docs_checked_by is not null;
 create index if not exists idx_products_bumped on public.products (type, (coalesce(bumped_at, created_at)) desc, id desc) where active;
 
 -- ── 2. the kind's fields ────
@@ -118,6 +119,9 @@ begin
   end loop;
   return out;
 end $$;
+
+revoke all on function public.trade_attr_spec(), public.trade_govs(), public.trade_attrs_clean(text, jsonb) from public, anon;
+grant execute on function public.trade_attr_spec(), public.trade_govs(), public.trade_attrs_clean(text, jsonb) to authenticated, service_role;   -- the guards run as the caller
 
 -- what a kind still needs before it is published (null = nothing); EN — the page shows its own words for each
 create or replace function public.trade_missing(p_kind text, p_attrs jsonb, p_id bigint, p_name text) returns text language plpgsql stable security definer set search_path = public as $$
@@ -208,8 +212,8 @@ grant insert (listing_id, pos, name, name_ar, strength, form, qty, unit, expiry,
 grant update (pos, name, name_ar, strength, form, qty, unit, expiry, source, origin_country, pack_state, cold, price, discount_pct) on public.listing_lines to authenticated;
 grant delete on public.listing_lines to authenticated;
 grant all on public.listing_lines to service_role;
-revoke all on sequence public.listing_lines_id_seq from public, anon, authenticated;
-grant usage, select on sequence public.listing_lines_id_seq to authenticated, service_role;
+revoke all on sequence public.listing_lines_id_seq from public, anon, authenticated, service_role;
+grant usage, select, update on sequence public.listing_lines_id_seq to authenticated, service_role;   -- as 0059: explicit, the same as an automatic grant
 
 -- a line's keys come from its words; at most 300 lines a listing
 create or replace function public.listing_lines_derive() returns trigger language plpgsql set search_path = public as $$

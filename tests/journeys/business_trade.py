@@ -76,7 +76,7 @@ def publish(j, pg, f, publish_click=True):
     dlg_click(j, pg, r'Publish listing|انشر', 'Publish listing')
     for _ in range(60):
         pg.wait_for_timeout(250); said = [t for t in j.toasts_since(pg, mark) if t != '\u00a7']
-        if any(re.search(r'live|اتنشر|match|مطابق|draft|مسودة|Please|كمّل', t) for t in said) or (dlg_open(pg) and re.search(r'already posted|منشور قبل', dlg_text(pg))): break
+        if any(re.search(r'live|اتنشر|منشور|match|مطابق|draft|مسودة|Please|كمّل', t) for t in said) or (dlg_open(pg) and re.search(r'already posted|منشور قبل', dlg_text(pg))): break
     j.settle(pg, 800)
     return [t for t in j.toasts_since(pg, mark) if t != '\u00a7']
 
@@ -148,7 +148,7 @@ def price_modes(j):
             line_fill(pg, f, 0, {'name': 'Concor 5 mg %s' % title.split()[0], 'qty': 30, 'unit': 'box', 'expiry': '2027-01'})
             tx_radio(pg, f, 'price_mode', mode)
             if mode == 'discount': pg.locator(f + ' .dx-disc').fill('28')
-            said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر', t) for t in said), 'the %s listing was not published (%s)' % (mode, said))
+            said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the %s listing was not published (%s)' % (mode, said))
         if j.live:
             j.check(j.wait_db("select price_mode||coalesce(discount_pct::text,'') from public.products where name=%s" % q(t1)) == 'discount28.00', 'the discount is not stored')
             j.check(j.wait_db("select price_mode from public.products where name=%s" % q(t2)) == 'ask', "'Ask for price' is not stored")
@@ -184,7 +184,7 @@ def matching(j):
     if j.live:
         with j.step("A member posts 'Wanted' Augmentin 1 g"):
             f = trade_form(j, ap, 'wanted'); title_field(ap, f, need); approved(ap, f, '2 MT/month', '300 box')
-            said = publish(j, ap, f); j.check(any(re.search(r'live|اتنشر', t) for t in said), 'the wanted listing was not published')
+            said = publish(j, ap, f); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the wanted listing was not published')
         b = other(j, 'Match Seller'); bp = b['page']; title = 'Weekly list %s' % j.tag
     else:
         b = a; bp = ap; title = 'Weekly list %s' % j.tag
@@ -225,7 +225,7 @@ def file_listing(j):
         tx_fill(pg, f, 'form', 'Tablets'); tx_fill(pg, f, 'strength', '500 mg'); tx_radio(pg, f, 'decision', 'yes'); tx_fill(pg, f, 'notif_valid_until', '2027-06')
         tx_fill(pg, f, 'public_price', 34); tx_fill(pg, f, 'pack', '20 tablets'); tx_radio(pg, f, 'price_increase', 'submitted'); tx_fill(pg, f, 'asking_price', 'EGP 450,000')
         tx_fill(pg, f, 'commission', '2%'); tx_fill(pg, f, 'sales_units', 120000); tx_chips(pg, f, 'buyer_conditions', 'toll_ok'); tx_fill(pg, f, 'priv.notif_no', '7781/%s' % j.tag)
-        said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر', t) for t in said), 'the file was not published (%s)' % said)
+        said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the file was not published (%s)' % said)
         if j.live:
             a = j.wait_db("select (attrs->>'stage')||'|'||(attrs->>'price_increase')||'|'||(attrs->>'public_price')||'|'||(attrs->'stages_done')::text||'|'||kind from public.products where name=%s" % q(title), 8)
             j.check(a == 'notification|submitted|34|["submitted", "pricing", "committee"]|file_sale', 'the file fields are not stored: %s' % a)
@@ -271,7 +271,7 @@ def toll_capacity(j):
         j.check(not dlg_open(pg) and any(re.search(r'GMP', t) for t in said), 'GMP without issuer and date was accepted')
         tx_fill(pg, f, 'gmp_by', 'EDA'); tx_fill(pg, f, 'gmp_date', '2025-04'); tx_radio(pg, f, 'reg_contract', 'yes'); tx_radio(pg, f, 'licensed', 'yes')
         mo = pg.locator(f + ' [data-tx=free_months] .chip[data-v]').nth(2); mo.click(); fm = mo.get_attribute('data-v')
-        said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر', t) for t in said), 'the capacity was not published (%s)' % said)
+        said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the capacity was not published (%s)' % said)
         if j.live:
             a = j.wait_db("select (attrs->'forms')::text||'|'||(attrs->>'min_batch')||'|'||(attrs->>'lead_time')||'|'||(attrs->>'gmp_by')||(attrs->>'gmp_date')||'|'||(attrs->>'reg_contract')||'|'||(attrs->'free_months')::text from public.products where name=%s" % q(title), 8)
             j.check(a == '["tab", "cap"]|150,000 tablets|6 weeks|EDA2025-04|true|["%s"]' % fm, 'the toll fields are not stored: %s' % a)
@@ -316,7 +316,7 @@ def renew_and_duplicates(j):
     def post():
         f = trade_form(j, pg, 'stock'); title_field(pg, f, title); line_fill(pg, f, 0, {'name': 'Brufen 400 mg', 'qty': 70, 'unit': 'box', 'expiry': '2027-05'}); return publish(j, pg, f)
     with j.step('Publish a stock list'):
-        said = post(); j.check(any(re.search(r'live|اتنشر', t) for t in said), 'the list was not published')
+        said = post(); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the list was not published')
     with j.step("Publish the exact same list again: refused — 'You already posted this offer' with 'Renew that one'"):
         post(); j.wait(pg, "!!document.querySelector('.dbk-ov')", 8)
         j.check(re.search(r'already posted|منشور قبل', dlg_text(pg)), 'the duplicate was not refused: %s' % dlg_text(pg)[:160])
@@ -393,7 +393,7 @@ def templates(j):
                               ('toll_wanted', 'Factory wanted %s' % j.tag, lambda f: (tx_chips(pg, f, 'forms', 'syrup'), tx_fill(pg, f, 'batch', '50,000 bottles')))):
         with j.step("Template '%s': fill and publish" % kind):
             f = trade_form(j, pg, kind); title_field(pg, f, title); fill(f)
-            said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر', t) for t in said), 'the %s listing was not published (%s)' % (kind, said))
+            said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the %s listing was not published (%s)' % (kind, said))
             if j.live: j.check(j.wait_db("select kind||'|'||type from public.products where name=%s" % q(title), 8) == '%s|%s' % (kind, 'demand' if kind in SEEK else 'supply'), 'the %s listing is not stored with its kind and side' % kind)
             c = find_card(j, pg, title); j.check(c.get_attribute('data-trade-kind') == kind, 'the card does not carry its kind')
     with j.step('Every template is reachable on Create Listing (offering and seeking)'):
@@ -419,7 +419,7 @@ def paste_list(j):
     with j.step('Untick the last item, add the others, publish: the listing has those three items'):
         pg.locator('.dbk-ov [data-pr="3"]').uncheck(); pg.wait_for_timeout(600); dlg_click(j, pg, r'Add the items|ضيف الأصناف'); pg.wait_for_timeout(500)
         j.check(pg.locator(f + ' .dx-line').count() == 3, 'the three items are not in the form (%d)' % pg.locator(f + ' .dx-line').count())
-        said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر', t) for t in said), 'the pasted list was not published (%s)' % said)
+        said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the pasted list was not published (%s)' % said)
         if j.live:
             rows = j.sql("select l.qty::int||'|'||coalesce(to_char(l.expiry,'YYYY-MM'),'')||'|'||coalesce(l.discount_pct::int::text,'')||'|'||l.cold::text||'|'||coalesce(l.source,'') from public.listing_lines l join public.products p on p.id=l.listing_id where p.name=%s order by l.pos" % q(title)).split('\n')
             j.check(rows == ['20|2026-05|30|false|', '10|||true|', '15|2027-03||false|importer'], 'the items are not stored as read: %s' % rows)
@@ -432,7 +432,7 @@ def agency_both_ways(j):
     with j.step("Create Listing → 'Agency': categories, governorates on the map, exclusive, contract, bonus → Publish"):
         f = trade_form(j, ap, 'agency'); title_field(ap, f, ta); tx_chips(ap, f, 'cats', 'supplements'); tx_chips(ap, f, 'govs', 'asyut', 'sohag', 'qena')
         tx_radio(ap, f, 'exclusive', 'yes'); tx_fill(ap, f, 'contract_years', 3); tx_fill(ap, f, 'bonus_pct', 7)
-        said = publish(j, ap, f); j.check(any(re.search(r'live|اتنشر', t) for t in said), 'the agency was not published (%s)' % said)
+        said = publish(j, ap, f); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the agency was not published (%s)' % said)
         if j.live: j.check(j.wait_db("select (attrs->'govs')::text||(attrs->>'bonus_pct')||(attrs->>'exclusive') from public.products where name=%s" % q(ta), 8) == '["asyut", "sohag", "qena"]7true', 'the agency fields are not stored')
     if j.demo:
         bp = ap; tb = None
@@ -478,7 +478,7 @@ def file_trust(j):
         z = pg.locator(f + ' .dx-docs'); j.check(z.count(), 'no upload for the documents')
         with pg.expect_file_chooser() as fc: z.click()
         fc.value.set_files([PDF, PNG]); pg.wait_for_timeout(400)
-        said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر', t) for t in said), 'the file was not published (%s)' % said)
+        said = publish(j, pg, f); j.check(any(re.search(r'live|اتنشر|منشور', t) for t in said), 'the file was not published (%s)' % said)
         if j.live: j.check(j.wait_db("select review_status||cardinality(doc_paths) from public.listing_private b join public.products p on p.id=b.listing_id where p.name=%s" % q(title), 10) == 'waiting2', 'the documents are not waiting for Drugbox')
     with j.step("Admin → Review → 'Trade documents' → 'Mark seen': the card shows «Documents seen by Drugbox» with the disclaimer"):
         if j.live: ad = j.person('Drugbox Checker'); make_admin(j, ad['id']); adp = ad['page']; j.reload(adp)

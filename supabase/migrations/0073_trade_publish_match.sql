@@ -37,6 +37,9 @@ create or replace function public.trade_counter_kinds(p_kind text) returns text[
                      when 'toll_wanted' then array['toll'] when 'agency' then array['distributor'] when 'distributor' then array['agency'] else '{}'::text[] end
 $$;
 
+revoke all on function public.trade_counter_kinds(text) from public, anon, authenticated;
+grant execute on function public.trade_counter_kinds(text) to service_role;
+
 create or replace function public.trade_match_run(p_id bigint) returns int language plpgsql security definer set search_path = public as $$
 declare me public.products; c record; n int := 0; mine_govs jsonb;
 begin
@@ -101,10 +104,11 @@ begin
             where ss.kind = 'market' and ss.alert <> 'off' and ss.q <> '' and ss.user_id <> p.user_id
               and not exists (select 1 from public.user_blocks b where (b.blocker = ss.user_id and b.blocked = p.user_id) or (b.blocker = p.user_id and b.blocked = ss.user_id))
             limit 2000 loop
-    if cardinality(public.trade_query_patterns(s.q)) = 0 or not (p.search_text like all (public.trade_query_patterns(s.q))) then continue; end if;
+    -- the canonical words (Arabic ⇄ English, digits, forms), or the search written inside the name as 0045 matched it
+    if not ((cardinality(public.trade_query_patterns(s.q)) > 0 and p.search_text like all (public.trade_query_patterns(s.q))) or position(lower(s.q) in lower(p.name)) > 0) then continue; end if;
     insert into public.notifications (user_id, type, from_user, message, data)
     values (s.user_id, 'saved_search', p.user_id, 'New match for your saved search “' || left(s.name, 80) || '”: ' || left(p.name, 120),
-            jsonb_build_object('kind', 'market', 'id', p.id, 'search', s.id));
+            jsonb_build_object('kind', 'market', 'id', p.id, 'search', s.id, 'title', left(p.name, 120)));
     n := n + 1; exit when n >= 200;
   end loop;
   return n;

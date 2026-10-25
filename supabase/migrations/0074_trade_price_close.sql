@@ -138,6 +138,8 @@ exception when duplicate_object then null; end $$;
 revoke all on public.trade_outcomes from public, anon, authenticated;
 grant select on public.trade_outcomes to anon, authenticated;      -- writes only through the functions below
 grant all on public.trade_outcomes to service_role;
+revoke all on sequence public.trade_outcomes_id_seq from public, anon, authenticated, service_role;
+grant usage, select, update on sequence public.trade_outcomes_id_seq to authenticated, service_role;
 
 -- who may be named as the other side of a sale: members who wrote about it, asked its price, or quoted / were quoted on it
 create or replace function public.listing_counterparts(p_id bigint) returns jsonb language sql stable security definer set search_path = public as $$

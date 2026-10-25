@@ -164,6 +164,8 @@ grant execute on function public.listing_docs_review(bigint, boolean, text) to a
 create or replace function public.trade_agree_checklist() returns text[] language sql immutable set search_path = public as $$
   select array['notif_seen', 'stage_understood', 'price_increase_checked', 'transfer_needs_approval', 'docs_reviewed']
 $$;
+revoke all on function public.trade_agree_checklist() from public, anon;
+grant execute on function public.trade_agree_checklist() to authenticated, service_role;
 create or replace function public.deal_events_agree_guard() returns trigger language plpgsql set search_path = public as $$
 declare k text;
 begin
@@ -264,6 +266,7 @@ create table if not exists public.distributor_profiles (
   updated_at  timestamptz not null default now(),
   constraint distributor_profiles_lists check (govs <@ (public.trade_govs() || 'all'::text) and cats <@ array['medicines', 'supplements', 'cosmetics', 'devices', 'veterinary', 'herbal', 'baby', 'hospital']
     and cardinality(govs) <= 28 and cardinality(cats) <= 8));
+create index if not exists idx_distributor_profiles_updated_by on public.distributor_profiles (updated_by) where updated_by is not null;
 alter table public.distributor_profiles enable row level security;
 do $$ begin
   create policy "distributor profiles: members read" on public.distributor_profiles for select to authenticated using (true);

@@ -24,6 +24,7 @@ create table if not exists public.trade_terms (
   created_at timestamptz not null default now(),
   constraint trade_terms_len check (length(term) between 1 and 60 and length(canon) between 1 and 40 and canon ~ '^[0-9a-z]+$'));
 create index if not exists idx_trade_terms_canon on public.trade_terms (canon);
+create index if not exists idx_trade_terms_added_by on public.trade_terms (added_by) where added_by is not null;
 alter table public.trade_terms enable row level security;
 do $$ begin
   create policy "trade terms: members read" on public.trade_terms for select to authenticated using (true);

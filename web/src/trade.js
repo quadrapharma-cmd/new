@@ -822,7 +822,7 @@
   C.onRender('trade', function () { if (document.body.getAttribute('data-page') === 'companies') paintDist(); if (document.body.getAttribute('data-page') !== 'market') return; inject(); paintPostAs(); var mk = document.getElementById('mkx'); if (mk) mk.querySelectorAll(CARDS).forEach(words); });
 
   /* ── Arabic: the trade's own words for the new labels (existing wording unchanged) ── */
-  if (window.dxI18nExtend) window.dxI18nExtend({
+  var AR = {
     'Available': 'متوفر', 'Raw materials': 'خامات', 'Wanted': 'مطلوب', 'Registration file': 'ملف تسجيل', 'File wanted': 'مطلوب ملف', 'Company for sale': 'شركة للبيع', 'Agency': 'وكالة', 'Distributor': 'موزّع', 'Toll capacity': 'سعة تول', 'Factory wanted': 'مطلوب مصنع',
     '📦 Available stock': '📦 متوفر', '⚗️ Raw materials': '⚗️ خامات وعبوات', '📋 File wanted': '📋 مطلوب ملف', '🏢 Company for sale': '🏢 شركة للبيع', '🤝 Agency': '🤝 وكالة', '🚚 Distributor': '🚚 موزّع بيدوّر على منتج', '🏭 Factory wanted': '🏭 مطلوب مصنع',
     'Available stock': 'متوفر', 'Raw materials & packaging': 'خامات وعبوات', 'Wanted item': 'مطلوب صنف', 'Registration file for sale': 'ملف تسجيل للبيع', 'Registration file wanted': 'مطلوب ملف تسجيل', 'Agency / distribution rights': 'فرصة وكالة / توزيع',
@@ -888,12 +888,13 @@
     'Marked reserved — buyers see «Reserved»': 'اتعلّم محجوز — المشترين هيشوفوا «محجوز»', 'Open again': 'اتفتح تاني', 'Listing withdrawn': 'الإعلان اتسحب', 'Sent — follow it in Requests & deals': 'اتبعت — تابعه في الطلبات والصفقات',
     'Renewed — it moved up and shows for another 30 days': 'اتجدّد — طلع لفوق وهيفضل ظاهر 30 يوم كمان', 'Answered — it did not happen': 'اتسجّل إنها ماحصلتش',
     '📑 Trade documents': '📑 مستندات التجارة', 'Or start from a trade template': 'أو ابدأ من قالب تجارة', 'Trade between companies — each template opens its own form': 'تجارة بين الشركات — كل قالب بيفتح الفورم بتاعه', 'Factory wanted': 'مطلوب مصنع', 'Mark seen': 'اتشافت', 'Trade documents': 'مستندات التجارة', 'Distributor profile': 'بروفايل الموزّع'
-  }, [
+  };
+  if (window.dxI18nExtend) window.dxI18nExtend(AR, [
     [/^(\d+) items$/, function (m) { return m[1] + ' صنف'; }], [/^(\d+(?:\.\d+)?)% off$/, function (m) { return 'خصم ' + m[1] + '%'; }], [/^🗓 Credit (\d+) days$/, function (m) { return '🗓 آجل ' + m[1] + ' يوم'; }],
     [/^Before you agree — (.+)$/, function (m) { return 'قبل الموافقة — ' + m[1]; }], [/^(\d+) (listings? match(?:es)? it) — see My Listings → Matches$/, function (m) { return m[1] + ' إعلان مطابق — شوف إعلاناتي ← المطابقات'; }],
     [/^Your listing is live — (\d+) listings? match(?:es)? it \(My Listings → Matches\)$/, function (m) { return 'إعلانك اتنشر — ' + m[1] + ' إعلان مطابق (إعلاناتي ← المطابقات)'; }], [/^(\d+) items? added — add quantities where missing$/, function (m) { return 'اتضاف ' + m[1] + ' صنف — كمّل الكميات الناقصة'; }],
     [/^(\d+) items? found — untick any line that is not an item$/, function (m) { return m[1] + ' صنف — شيل العلامة من أي سطر مش صنف'; }], [/^Marked sold — (.+) is asked to confirm and rate$/, function (m) { return 'اتعلّم اتباع — هيتطلب من ' + m[1] + ' يأكّد ويقيّم'; }],
     [/^Shared with (.+)$/, function (m) { return 'اتشارك مع ' + m[1]; }], [/^Thank you — rated (\d)★$/, function (m) { return 'شكراً — قيّمت ' + m[1] + '★'; }], [/^(\d+) (?:items?|صنف) · (.+)$/, null],
-    [/^Please fill: (.+)$/, null]
+    [/^Please fill: (.+)$/, function (m) { return 'كمّل: ' + m[1].split(', ').map(function (x) { return AR[x] || ({ Name: 'الاسم', 'Quantity of every item': 'كمية كل صنف', 'GMP issued by and date': 'جهة الـ GMP وتاريخها' })[x] || x; }).join('، '); }]
   ].filter(function (p) { return p[1]; }));
 })();
