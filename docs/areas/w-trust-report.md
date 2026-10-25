@@ -75,7 +75,18 @@ New function: `supabase/functions/sms-dispatch` (deploy script, local stand-in a
   `tools/local-supabase/*` (SMS stand-in), `deploy/supabase_deploy.sh` (sms-dispatch). `web/src/i18n.js` is untouched (Arabic is in `wtrust_ar.js`).
 
 ## 5. Independent verification
-<!-- filled at the end -->
+
+Three rounds by independent verifier agents (each started fresh, given the code and the product rules — not the builder's conclusions); they
+attacked REST / RPC as members, moderators and anon, walked the live app in EN 1440 and AR 390 with touch, and ran phrase tables against the W-17
+rules. Scripts and screenshots: `/tmp/claude-0/verify/`, `/tmp/claude-0/verify2/`, `/tmp/claude-0/verify3/` (container only).
+
+| Round | Found | Fixed in |
+|---|---|---|
+| 1 | 1 blocking (a held offer went public by `active=true`), 9 major (held deal-room listings answerable, company lots never reviewed, product fields and comments not checked, 20 rule misses + 11 false positives, offers kept "Verified company" after the badge went, phone check revealed registered numbers, SIM-01 on the confirm screen, "live"/"published" toasts for held content), 6 minor | 0095, 0096 + interface |
+| 2 | 12 of 16 fixed, 4 partly; new: 1 blocking (a paused company offer back on through Close → Renew), 4 major (moderator Publish, former members' offers, "squashed" rules false positives, `docs` not checked), 7 minor | 0097 + interface |
+| 3 | 6 fixed, 3 partly; new: 1 blocking regression of 0097 (a member with company offers could not leave), 5 major (ex-member takes the offer as their own, an admin moves an offer to another company, phone lockout by one account, negated statements held, misses with look-alike letters / misspellings), 4 minor | 0098 + interface |
+<!-- ROUND 4 -->
+
 
 ## 6. Suites
 <!-- filled at the end -->
