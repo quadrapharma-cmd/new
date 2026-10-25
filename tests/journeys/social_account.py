@@ -122,6 +122,8 @@ def signup_with_confirmation(j):
         j.check(email in t, 'the message after sign-up does not name the address the link went to: "%s"' % t[:200])
         j.check(re.search(r'confirm|تأكيد', t, re.I) and not re.search(r'error|AuthApi|\{', t), 'no clear confirmation message after sign-up: "%s"' % t[:200])
         j.check(j.find(pg, r'Resend|إعادة إرسال', scope='#signupPage'), 'no "Resend confirmation email" after sign-up')
+        left = pg.evaluate("['suName','suEmail','suPw','suCompany'].filter(i=>(document.getElementById(i)||{}).value)")
+        j.check(not left, 'SIM-01: the sign-up form still holds what was typed while it waits for the confirmation: %s' % left)
         wait_mail(j, email, r'Confirm your signup', 1)
         j.check(j.sql1("select count(*) from auth.users where email='%s' and email_confirmed_at is null" % email) == '1', 'auth.users has no unconfirmed row for the new address')
     with j.step('Sign in before confirming: "not confirmed" with Resend (not "invalid credentials")'):

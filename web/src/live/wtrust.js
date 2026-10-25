@@ -76,10 +76,12 @@
     return { company_id: null, posted_as: 'individual' };
   };
   window.dxTradeAfter = function (data) {
+    if (window.dxTrustUI && window.dxTrustUI.listed) window.dxTrustUI.listed(!!(data && data.review_hold));   /* "Your listing is live" only when it is */
     if (!data || !data.review_hold) return;
     setTimeout(function () { toast('Your offer is waiting for Drugbox review — you are told when it is checked. Only you can see it until then.'); if (window.dxTrustUI) window.dxTrustUI.heldChanged(); }, 900);
   };
   window.dxPostSaved = function (row) {
+    if (window.dxTrustUI && window.dxTrustUI.posted) window.dxTrustUI.posted(row);   /* "Post published! ✅" only when it is */
     if (!row || !(row.review_hold || row.group_pending)) return;
     setTimeout(function () { toast(row.review_hold ? 'Your post is waiting for Drugbox review — only you can see it until it is checked.' : 'Sent to the group’s admins — it shows once they publish it');
       if (window.dxTrustUI) window.dxTrustUI.heldChanged(); }, 900);
@@ -121,16 +123,19 @@
     var M = window.dxModeration; if (!M || M.__wtLive) return; M.__wtLive = true;
     var oLoad = M.load, oDecide = M.decide;
     M.load = function () { return oLoad.apply(M, arguments).then(async function (d) {
-      var a = await Promise.all([sb.rpc('held_review_queue', { p_limit: 100 }), sb.rpc('trader_reports_queue', { p_limit: 100 }), sb.rpc('group_partner_queue')]);
+      var a = await Promise.all([sb.rpc('held_review_queue', { p_limit: 100 }), sb.rpc('trader_reports_queue', { p_limit: 100 }), sb.rpc('group_partner_queue'),
+        sb.from('groups').select('id, name, member_count, partner_at').not('partner_at', 'is', null).order('partner_at', { ascending: false }).limit(100)]);
       d.held = ((a[0] && a[0].data) || []).map(function (x) { return { id: x.id, kind: x.kind, author: x.author, topics: x.topics, body: x.body || x.excerpt, group_name: x.group_name }; });
       d.traders = ((a[1] && a[1].data) || []).map(function (x) { x.evidence = (x.evidence || []).map(function (p) { return { path: p, label: p.split('/').pop() }; });
         x.reply_evidence = (x.reply_evidence || []).map(function (p) { return { path: p, label: p.split('/').pop() }; }); return x; });
-      d.partners = ((a[2] && a[2].data) || []).map(function (x) { return { id: x.group_id, name: x.name, who: x.who, note: x.note, member_count: x.member_count }; });
+      d.partners = ((a[2] && a[2].data) || []).map(function (x) { return { id: x.group_id, name: x.name, who: x.who, note: x.note, member_count: x.member_count }; })
+        .concat(((a[3] && a[3].data) || []).map(function (g) { return { id: g.id, name: g.name, current: true, since: g.partner_at, member_count: g.member_count }; }));
       return d; }); };
     M.decide = async function (kind, id, value, note) {
       if (kind === 'held') return err(await sb.rpc('held_review_decide', { p_hold: +id, p_publish: value === 'published', p_note: note || null }));
       if (kind === 'traders') { var out = err(await sb.rpc('trader_report_vote', { p_report: +id, p_uphold: value === 'upheld', p_note: note || null }));
         if (out === 'voted') toast('Your vote is saved — a second moderator decides'); return out; }
+      if (kind === 'partners' && value === 'withdrawn') return err(await sb.rpc('group_partner_withdraw', { p_group: +id, p_note: note || null }));
       if (kind === 'partners') return err(await sb.rpc('group_partner_decide', { p_group: +id, p_ok: value === 'approved', p_note: note || null }));
       return oDecide.apply(M, arguments);
     };
@@ -140,7 +145,7 @@
 
   /* ===== AREA w-trust: the sentences of the new notices (written here in English; the Arabic interface translates them) ===== */
   var WHY = { retail: 'a sale to patients, pharmacies or the public (Drugbox is business-to-business)', controlled: 'controlled substances', import: 'importing for others', sham: 'sham or forged papers', invite: 'an invite link to an outside group' };
-  var WHAT = { post: 'post', offer: 'offer', listing: 'deal-room listing' };
+  var WHAT = { post: 'post', offer: 'offer', listing: 'deal-room listing', company: 'company listing' };
   var REASON = { non_payment: 'did not pay', non_delivery: 'did not deliver', counterfeit: 'counterfeit or not as agreed', misrepresentation: 'not who they said they were', sham_papers: 'sham or forged papers', other: 'something else' };
   window.dxNotifHook = function (n, o, SYS) {
     var d = n.data && typeof n.data === 'object' ? n.data : {}, t = null, icon = null;
@@ -151,6 +156,8 @@
     else if (n.type === 'trader_report_reply') { t = 'The member you reported replied with their side — Drugbox moderators read both.'; icon = '⚖️'; }
     else if (n.type === 'trader_report_decided') { t = d.side === 'reported' ? (d.outcome === 'upheld' ? 'Drugbox upheld a report about a trade with you — it now counts on your trade card.' : 'Drugbox dismissed a report about a trade with you — nothing changes on your profile.')
       : (d.outcome === 'upheld' ? 'Drugbox upheld your report — it now counts on the trader’s card.' : 'Drugbox checked your report and dismissed it.'); icon = '⚖️'; }
+    else if (n.type === 'group_partner_decided' && d.outcome === 'withdrawn') { t = 'Drugbox withdrew the partner badge of “' + String(d.group || '') + '”' + (d.note ? ' — ' + String(d.note) : '') + '.'; icon = '🤝'; }
+    else if (n.type === 'company_badge_withdrawn') { t = '“' + String(d.company || '') + '” no longer has the Drugbox verification badge, so its offers posted as the company are paused (' + (+d.offers || 0) + '). They can go back on once it is verified again.'; icon = '🏢'; }
     else if (n.type === 'group_partner_decided') { t = d.outcome === 'approved' ? 'Drugbox marked “' + String(d.group || '') + '” as a Drugbox partner group.' : 'Drugbox could not mark “' + String(d.group || '') + '” as a partner group' + (d.note ? ' — ' + String(d.note) : '') + '.'; icon = '🤝'; }
     else if (n.type === 'deal_rated_buyer') { o.text = '<b>' + esc2((o.text.match(/<b>(.*?)<\/b>/) || [, 'The supplier'])[1]) + '</b> ' + esc2('rated you as a buyer: ' + (d.stars || '') + '/5 for “' + String(d.title || '') + '”'); o.icon = '★'; return o; }
     if (t == null) return o;

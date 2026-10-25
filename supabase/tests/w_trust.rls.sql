@@ -242,7 +242,10 @@ select pg_temp.act(3);
 select pg_temp.ok('C sees "verified" but never B''s number', $$(public.trade_card(pg_temp.u(2)) ->> 'phone_verified')::boolean and (public.trade_card(pg_temp.u(2))::text !~ '1012345678')$$);
 select pg_temp.no('C cannot read B''s phone column', $$select phone from public.profiles where id = pg_temp.u(2)$$, '42501');
 select pg_temp.no('C cannot read the phone hash', $$select phone_hash from public.member_verifications$$, '42501');
-select pg_temp.nohint('C cannot verify the same number', $$select public.phone_verify_start('+20 101 234 5678')$$, 'DX441');
+select pg_temp.ok('asking a code for B''s number does not say it is on Drugbox (F8)', $$(public.phone_verify_start('+20 101 234 5678') ->> 'sent')::boolean$$);
+select pg_temp.as_server(); select pg_temp.step('the code C got', $$insert into ids select 'ccode', substring(body from 'code: (\d{6})') from private.sms_outbox order by id desc limit 1$$);
+select pg_temp.act(3);
+select pg_temp.nohint('… only with the code (the phone''s owner) is it said: C cannot verify the same number', $$select public.phone_verify_confirm((select v from ids where k = 'ccode'))$$, 'DX441');
 select pg_temp.no('C cannot write a verification', $$insert into public.member_verifications (user_id, phone_verified_at) values (pg_temp.u(3), now())$$, '42501');
 select pg_temp.act(2);
 select pg_temp.step('B types another number in Edit Profile', $$update public.profiles set phone = '01099999999' where id = pg_temp.u(2)$$);
@@ -350,6 +353,11 @@ select pg_temp.act(4);
 select pg_temp.step('V lists a held offer in the deal room as the company', $$with l as (insert into public.group_listings (group_id, company_id, posted_as, kind, title) values (pg_temp.id('room'), pg_temp.id('coV'), 'company', 'surplus', 'WT surplus, order on t.me/wtroom') returning id) insert into ids select 'hl', id::text from l$$);
 select pg_temp.step('V lists a held marketplace offer', $$with p as (insert into public.products (user_id, name, type, category, description) values (pg_temp.u(4), 'WT Pregabalin 300 stock', 'supply', 'finished', '5,000 boxes') returning id) insert into ids select 'hp', id::text from p$$);
 select pg_temp.ok('… both held', $$(select review_hold from public.group_listings where id = pg_temp.id('hl')) and (select review_hold from public.products where id = pg_temp.id('hp'))$$);
+select pg_temp.nohint('V cannot switch the held offer on with the active flag either (F1)', $$update public.products set active = true where id = pg_temp.id('hp')$$, 'DX417');
+select pg_temp.step('V lists an offer whose payment terms invite to an outside group', $$with p as (insert into public.products (user_id, name, type, category, payment_terms, specs) values (pg_temp.u(4), 'WT Lactose 200 mesh', 'supply', 'api', 'order on wa.link/abc12', '{"grade":"for pharmacies only"}') returning id) insert into ids select 'hp2', id::text from p$$);
+select pg_temp.ok('… every typed field is checked: held and off (F4)', $$(select review_hold and not active from public.products where id = pg_temp.id('hp2'))$$);
+select pg_temp.as_server();
+select pg_temp.ok('the held offers stay off', $$(select bool_and(not active and status = 'paused') from public.products where id in (pg_temp.id('hp'), pg_temp.id('hp2')))$$);
 select pg_temp.act(1);
 select pg_temp.no('A cannot answer the held deal-room listing (as if it were not there)', $$select public.group_listing_respond(pg_temp.id('hl'), 'wt-verified', 'interested')$$, 'P0002');
 select pg_temp.no('A cannot message the owner about the held offer', $$select public.listing_contact(pg_temp.id('hp'), 'is it available?')$$, 'P0002');
@@ -357,6 +365,96 @@ select pg_temp.ok('… nor count a view of it', $$not public.listing_view(pg_tem
 select pg_temp.as_server();
 select pg_temp.ok('… no deal, message or view came of it', $$not exists (select 1 from public.deals where title like 'WT surplus, order%') and not exists (select 1 from public.listing_views where listing_id = pg_temp.id('hp'))
   and not exists (select 1 from public.messages where body like '%listing #' || pg_temp.id('hp') || ')%')$$);
+
+select pg_temp.act(4);
+select pg_temp.step('V posts a company surplus lot for pharmacies', $$with c as (insert into public.company_listings (company_id, kind, product, qty, created_by) values (pg_temp.id('coV'), 'surplus', 'WT Amoxicillin caps — للصيدليات', '500 boxes', pg_temp.u(4)) returning id) insert into ids select 'hc', id::text from c$$);
+select pg_temp.ok('… held and switched off; the company team still sees it', $$(select review_hold and not active from public.company_listings where id = pg_temp.id('hc'))$$);
+select pg_temp.nohint('V cannot switch it back on', $$update public.company_listings set active = true where id = pg_temp.id('hc')$$, 'DX417');
+select pg_temp.act(2);
+select pg_temp.ok('B does not see the held company listing', $$not exists (select 1 from public.company_listings where id = pg_temp.id('hc'))$$);
+select pg_temp.act(5);
+select pg_temp.ok('the queue shows it as a company listing, with the company', $$exists (select 1 from jsonb_array_elements(public.held_review_queue()) x where x ->> 'kind' = 'company' and (x ->> 'item_id')::bigint = pg_temp.id('hc') and x ->> 'group_name' = 'WT Verified Pharma' and x ->> 'body' ~ 'Amoxicillin')$$);
+select pg_temp.ok('M1 publishes it', $$public.held_review_decide((select id from public.content_holds where kind = 'company' and item_id = pg_temp.id('hc')), true) = 'published'$$);
+select pg_temp.act(2);
+select pg_temp.ok('… B sees it now (active)', $$(select active from public.company_listings where id = pg_temp.id('hc'))$$);
+select pg_temp.as_server();
+select pg_temp.ok('V was told it was held, then published', $$exists (select 1 from public.notifications where user_id = pg_temp.u(4) and type = 'auto_review' and data ->> 'kind' = 'company')
+  and exists (select 1 from public.notifications where user_id = pg_temp.u(4) and type = 'auto_review_decided' and data ->> 'kind' = 'company' and data ->> 'outcome' = 'published')$$);
+
+-- ══ 6c. the verifier's other findings (0096) ══
+-- F5 comments
+select pg_temp.act(9);
+select pg_temp.nohint('a comment with an outside invite link is not posted, with the reason', $$insert into public.comments (post_id, user_id, body) values (pg_temp.id('pend'), pg_temp.u(9), 'join us chat.whatsapp.com/XyZ789')$$, 'DX418');
+select pg_temp.step('an ordinary comment is posted', $$insert into public.comments (post_id, user_id, body) values (pg_temp.id('pend'), pg_temp.u(9), 'WT how many kg in stock?')$$);
+-- F15 activity counts what members see
+select pg_temp.step('J writes a post that waits for the admins', $$with p as (insert into public.posts (user_id, group_id, body, category) values (pg_temp.u(9), pg_temp.id('g'), 'WT needed: maize starch 50 kg', 'market') returning id) insert into ids select 'pend2', id::text from p$$);
+select pg_temp.act(2);
+select pg_temp.ok('group_activity counts only the posts B can see', $$(select posts_today from public.group_activity(array[pg_temp.id('g')])) = (select count(*) from public.posts where group_id = pg_temp.id('g') and created_at >= date_trunc('day', now()))
+  and not exists (select 1 from public.posts where id = pg_temp.id('pend2'))$$);
+-- F12 a deleted post still counts toward the day
+select pg_temp.act(8);
+select pg_temp.step('G: one post a day, no review', $$update public.groups set daily_post_limit = 1, review_posts = false where id = pg_temp.id('g')$$);
+select pg_temp.act(2);
+select pg_temp.step('B posts and deletes it', $$with p as (insert into public.posts (user_id, group_id, body, category) values (pg_temp.u(2), pg_temp.id('g'), 'WT offering talc 25 kg bags', 'market') returning id) delete from public.posts where id in (select id from p)$$);
+select pg_temp.nohint('… the day''s post is still used', $$insert into public.posts (user_id, group_id, body, category) values (pg_temp.u(2), pg_temp.id('g'), 'WT offering talc 25 kg bags again', 'market')$$, 'DX420');
+select pg_temp.act(8);
+select pg_temp.step('G: no daily limit', $$update public.groups set daily_post_limit = null where id = pg_temp.id('g')$$);
+-- F13 removed members and links of former admins
+select pg_temp.step('G removes K from the group', $$delete from public.group_members where group_id = pg_temp.id('g') and user_id = pg_temp.u(10)$$);
+select pg_temp.step('G makes a new link', $$insert into ids select 'tok3', public.group_link_create(pg_temp.id('g')) ->> 'token'$$);
+select pg_temp.act(10);
+select pg_temp.nohint('K does not come back through a link', $$select public.group_join_by_link((select v from ids where k = 'tok3'), true)$$, 'DX429');
+select pg_temp.ok('… and the preview says the link does not work for K', $$not (public.group_link_preview((select v from ids where k = 'tok3')) ->> 'ok')::boolean$$);
+select pg_temp.as_server(); select pg_temp.step('J becomes a moderator of the group', $$update public.group_members set role = 'moderator' where group_id = pg_temp.id('g') and user_id = pg_temp.u(9)$$);
+select pg_temp.act(9); select pg_temp.step('J makes a link', $$insert into ids select 'tok4', public.group_link_create(pg_temp.id('g')) ->> 'token'$$);
+select pg_temp.as_server(); select pg_temp.step('J is a member again', $$update public.group_members set role = 'member' where group_id = pg_temp.id('g') and user_id = pg_temp.u(9)$$);
+select pg_temp.act(3);
+select pg_temp.nohint('a link of a former admin no longer works', $$select public.group_join_by_link((select v from ids where k = 'tok4'), true)$$, 'DX428');
+select pg_temp.act(8);
+select pg_temp.step('G adds K back', $$insert into public.group_invites (group_id, user_id, invited_by) values (pg_temp.id('g'), pg_temp.u(10), pg_temp.u(8)) on conflict do nothing$$);
+select pg_temp.as_server(); select pg_temp.step('… K joins on the invitation', $$insert into public.group_members (group_id, user_id) values (pg_temp.id('g'), pg_temp.u(10))$$);
+select pg_temp.ok('… and is no longer marked removed', $$not exists (select 1 from private.group_removals where group_id = pg_temp.id('g') and user_id = pg_temp.u(10))$$);
+-- F14 partner badge
+select pg_temp.act(8);
+select pg_temp.step('G renames the partner group', $$update public.groups set name = 'Drugbox Official Traders' where id = pg_temp.id('g')$$);
+select pg_temp.ok('… the badge goes with the old name', $$(select partner_at is null from public.groups where id = pg_temp.id('g'))$$);
+select pg_temp.step('G asks again', $$select public.group_partner_request(pg_temp.id('g'), 'WT renamed, same traders as before')$$);
+select pg_temp.act(5);
+select pg_temp.ok('M1 approves again', $$public.group_partner_decide(pg_temp.id('g'), true) = 'approved'$$);
+select pg_temp.act(8);
+select pg_temp.no('G cannot withdraw it', $$select public.group_partner_withdraw(pg_temp.id('g'))$$, '42501');
+select pg_temp.act(6);
+select pg_temp.ok('Drugbox withdraws the badge', $$public.group_partner_withdraw(pg_temp.id('g'), 'WT not a trade group any more') = 'withdrawn'$$);
+select pg_temp.as_server();
+select pg_temp.ok('… no badge; the admin is told', $$(select partner_at is null from public.groups where id = pg_temp.id('g')) and exists (select 1 from public.notifications where user_id = pg_temp.u(8) and type = 'group_partner_decided' and data ->> 'outcome' = 'withdrawn')$$);
+-- F16 accepting rules of a private group one was not invited to
+select pg_temp.act(3); select pg_temp.step('C makes an invite link for the private deal room', $$select public.group_link_create(pg_temp.id('room'))$$);
+select pg_temp.act(2);
+select pg_temp.no('B (not invited) gets "not found" for the private group', $$select public.group_accept_rules(pg_temp.id('room'))$$, 'P0002');
+-- F8 codes per number across accounts
+select pg_temp.act(6); select pg_temp.step('three accounts ask a code for one number', $$select public.phone_verify_start('01211112222')$$);
+select pg_temp.act(7); select pg_temp.step('… second', $$select public.phone_verify_start('01211112222')$$);
+select pg_temp.act(10); select pg_temp.step('… third', $$select public.phone_verify_start('01211112222')$$);
+select pg_temp.act(5);
+select pg_temp.nohint('a fourth account gets no fourth SMS to that number this hour', $$select public.phone_verify_start('01211112222')$$, 'DX442');
+-- F11 files in use
+select pg_temp.as_server();
+select pg_temp.ok('a broker''s authorisation and a report''s evidence are files in use', $$public.document_in_use('listings/' || pg_temp.u(1) || '/auth.pdf') and public.document_in_use((select evidence[1] from public.trader_reports order by id limit 1))$$);
+-- F7 a company that loses its badge
+select pg_temp.act(4);
+select pg_temp.step('V posts an offer as the verified company', $$with p as (insert into public.products (user_id, name, type, category, company_id, posted_as) values (pg_temp.u(4), 'WT Povidone K30 25 kg', 'supply', 'api', pg_temp.id('coV'), 'company') returning id) insert into ids select 'pco', id::text from p$$);
+select pg_temp.as_server();
+select pg_temp.step('Drugbox takes the badge back', $$update public.companies set status = 'pending' where id = pg_temp.id('coV')$$);
+select pg_temp.ok('… the company''s offers are off and V is told', $$(select status = 'paused' and not active from public.products where id = pg_temp.id('pco'))
+  and not exists (select 1 from public.company_listings where company_id = pg_temp.id('coV') and active)
+  and exists (select 1 from public.notifications where user_id = pg_temp.u(4) and type = 'company_badge_withdrawn')$$);
+select pg_temp.act(4);
+select pg_temp.nohint('V cannot put the offer back on', $$update public.products set status = 'active' where id = pg_temp.id('pco')$$, 'DX412');
+select pg_temp.nohint('… nor the company''s surplus lot', $$update public.company_listings set active = true where id = pg_temp.id('hc')$$, 'DX412');
+select pg_temp.step('V edits the paused offer (fine)', $$update public.products set description = 'WT 25 kg bags, COA' where id = pg_temp.id('pco')$$);
+select pg_temp.as_server(); select pg_temp.step('the badge comes back', $$update public.companies set status = 'verified' where id = pg_temp.id('coV')$$);
+select pg_temp.act(4);
+select pg_temp.step('… and V resumes the offer', $$update public.products set status = 'active' where id = pg_temp.id('pco')$$);
 
 -- ══ 7. anon ══
 select pg_temp.as_anon();

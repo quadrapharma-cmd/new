@@ -101,6 +101,10 @@
     function clearAuth() { ['loginEmail', 'loginPw', 'suName', 'suEmail', 'suPw', 'suCompany', 'fpEmail'].forEach(function (id) { var f = $(id); if (f) f.value = ''; }); }
     function look() { var on = app.getClientRects().length > 0; if (was !== null && on !== was) clearAuth(); was = on; }
     new MutationObserver(look).observe(app, { attributes: true, attributeFilter: ['style', 'class'] }); look();
+    /* a sign-up (or sign-in) that waits for the e-mail confirmation never opens the app: the "check your e-mail" screen empties the form too */
+    var wrap = $('authWrap'), pending = false;
+    function waiting() { pending = false; if (wrap.querySelector('.dx-auth-panel [data-auth="resend"], #suErr.dx-auth-info')) clearAuth(); }
+    if (wrap) new MutationObserver(function () { if (!pending) { pending = true; setTimeout(waiting, 0); } }).observe(wrap, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
   })();
   /* ===== end AREA w-trust: SIM-01 ===== */
 

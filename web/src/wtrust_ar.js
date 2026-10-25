@@ -4,7 +4,7 @@
   var WHY_AR = { 'a sale to patients, pharmacies or the public (Drugbox is business-to-business)': 'بيع للمرضى أو الصيدليات أو الجمهور (Drugbox تجارة بين الشركات والمنشآت)',
     'controlled substances': 'مواد خاضعة للرقابة (أدوية الجدول)', 'importing for others': 'استيراد لحساب الغير', 'sham or forged papers': 'أوراق صورية أو مزورة', 'an invite link to an outside group': 'لينك دعوة لجروب خارجي' };
   function whyAr(s) { return String(s || '').split(', ').map(function (x) { return WHY_AR[x] || x; }).join('، '); }
-  var KIND_AR = { post: 'منشورك', offer: 'عرضك', 'deal-room listing': 'إعلانك في غرفة الصفقات' };
+  var KIND_AR = { post: 'منشورك', offer: 'عرضك', 'deal-room listing': 'إعلانك في غرفة الصفقات', 'company listing': 'إعلان شركتك' };
   var REASON_AR = { 'did not pay': 'لم يدفع', 'did not deliver': 'لم يسلّم', 'counterfeit or not as agreed': 'بضاعة مغشوشة أو غير المتفق عليه', 'not who they said they were': 'ليس من قال إنه هو', 'sham or forged papers': 'أوراق صورية أو مزورة', 'something else': 'شيء آخر', other: 'شيء آخر' };
   window.dxI18nExtend({
     /* trade profile (W-10) */
@@ -98,7 +98,7 @@
     'Could not send the rating': 'تعذّر إرسال التقييم', 'You already rated this buyer': 'قيّمت المشتري ده بالفعل', 'Rate the buyer once the deal is delivered': 'قيّم المشتري بعد التسليم', 'Only the supplier\'s team rates the buyer': 'فريق المورد بس هو اللي يقيّم المشتري',
     /* Admin → Review */
     'Held for review': 'محجوز للمراجعة', 'Trader reports': 'بلاغات التجار', 'Partner groups': 'الجروبات الشريكة', '🔎 Held for review': '🔎 محجوز للمراجعة', '⚖️ Trader reports': '⚖️ بلاغات التجار', '🤝 Partner groups': '🤝 الجروبات الشريكة',
-    'Post': 'منشور', 'Marketplace offer': 'عرض في السوق', 'Deal-room listing': 'إعلان في غرفة الصفقات', 'Retail / patients / pharmacies': 'تجزئة / مرضى / صيدليات', 'Controlled substances': 'مواد خاضعة للرقابة', 'Import for others': 'استيراد لحساب الغير',
+    'Post': 'منشور', 'Marketplace offer': 'عرض في السوق', 'Deal-room listing': 'إعلان في غرفة الصفقات', 'Company listing': 'إعلان شركة', 'Retail / patients / pharmacies': 'تجزئة / مرضى / صيدليات', 'Controlled substances': 'مواد خاضعة للرقابة', 'Import for others': 'استيراد لحساب الغير',
     'Sham papers': 'أوراق صورية', 'Invite link ': 'لينك دعوة', 'Remove': 'إزالة', 'Remove it?': 'إزالته؟', 'It is deleted and its author is told why.': 'هيتحذف وصاحبه هيتبلّغ بالسبب.', 'Note for the author (optional)': 'ملاحظة لصاحبه (اختياري)',
     'The member replied:': 'العضو ردّ:', 'No reply yet — they can reply until': 'مفيش رد لسه — يقدر يرد لحد', 'Two moderators decide.': 'مشرفين اتنين بيقرروا.', 'Votes:': 'الأصوات:', 'No votes yet.': 'مفيش أصوات لسه.', 'uphold': 'تأكيد', 'dismiss': 'رفض',
     'You voted — a second moderator decides': 'صوّتت — مشرف تاني هو اللي يحسم', 'Uphold': 'أكّد', 'Dismiss': 'ارفض', 'Uphold this report?': 'تأكيد البلاغ ده؟', 'Dismiss this report?': 'رفض البلاغ ده؟',
@@ -113,11 +113,14 @@
   }, [
     [/^Your offer is waiting for Drugbox review — it looks like (.+)\. You are told when it is checked\.$/, function (m) { return 'عرضك قيد مراجعة Drugbox — يبدو أنه ' + whyAr(m[1]) + '. هنبلغك لما يتراجع.'; }],
     [/^Your post is waiting for Drugbox review — it looks like (.+)\. Only you see it until it is checked\.$/, function (m) { return 'منشورك قيد مراجعة Drugbox — يبدو أنه ' + whyAr(m[1]) + '. أنت بس اللي شايفه لحد ما يتراجع.'; }],
-    [/^Drugbox is checking your (post|offer|deal-room listing) before it shows — it looks like (.+): “(.*)”\. Only you can see it until then\.$/, function (m) { return 'Drugbox بيراجع ' + KIND_AR[m[1]] + ' قبل ما يظهر — يبدو أنه ' + whyAr(m[2]) + ': «' + m[3] + '». لحد ساعتها أنت بس اللي شايفه.'; }],
+    [/^Drugbox is checking your (post|offer|deal-room listing|company listing) before it shows — it looks like (.+): “(.*)”\. Only you can see it until then\.$/, function (m) { return 'Drugbox بيراجع ' + KIND_AR[m[1]] + ' قبل ما يظهر — يبدو أنه ' + whyAr(m[2]) + ': «' + m[3] + '». لحد ساعتها أنت بس اللي شايفه.'; }],
     [/^Drugbox is checking your post before it shows — it looks like (.+): “(.*)”$/, function (m) { return 'Drugbox بيراجع منشورك قبل ما يظهر — يبدو أنه ' + whyAr(m[1]) + ': «' + m[2] + '»'; }],
-    [/^Drugbox checked your (post|offer|deal-room listing) “(.*)” — it now shows to everyone\.$/, function (m) { return 'Drugbox راجع ' + KIND_AR[m[1]] + ' «' + m[2] + '» — وبقى ظاهر للكل.'; }],
-    [/^Drugbox removed your (post|offer|deal-room listing) “(.*)” — reason: (.+)$/, function (m) { return 'Drugbox حذف ' + KIND_AR[m[1]] + ' «' + m[2] + '» — السبب: ' + m[3]; }],
-    [/^Drugbox removed your (post|offer|deal-room listing) “(.*)” — it is outside what Drugbox trades\.$/, function (m) { return 'Drugbox حذف ' + KIND_AR[m[1]] + ' «' + m[2] + '» — خارج نطاق التجارة على Drugbox.'; }],
+    [/^Drugbox checked your (post|offer|deal-room listing|company listing) “(.*)” — it now shows to everyone\.$/, function (m) { return 'Drugbox راجع ' + KIND_AR[m[1]] + ' «' + m[2] + '» — وبقى ظاهر للكل.'; }],
+    [/^Drugbox removed your (post|offer|deal-room listing|company listing) “(.*)” — reason: (.+)$/, function (m) { return 'Drugbox حذف ' + KIND_AR[m[1]] + ' «' + m[2] + '» — السبب: ' + m[3]; }],
+    [/^Drugbox withdrew the partner badge of “(.*)”(?: — (.*))?\.$/, function (m) { return 'Drugbox سحب شارة الجروب الشريك من «' + m[1] + '»' + (m[2] ? ' — ' + m[2] : '') + '.'; }],
+    [/^“(.*)” no longer has the Drugbox verification badge, so its offers posted as the company are paused \((\d+)\)\. They can go back on once it is verified again\.$/,
+      function (m) { return '«' + m[1] + '» مبقاش عندها شارة توثيق Drugbox، فعروضها المنشورة باسم الشركة اتوقفت (' + m[2] + '). ترجع تاني لما الشركة تتوثّق من جديد.'; }],
+    [/^Drugbox removed your (post|offer|deal-room listing|company listing) “(.*)” — it is outside what Drugbox trades\.$/, function (m) { return 'Drugbox حذف ' + KIND_AR[m[1]] + ' «' + m[2] + '» — خارج نطاق التجارة على Drugbox.'; }],
     [/^A member reported a problem in a trade with you \((.+)\)\. Reply with your side by (.+) — open My trade reports on your profile\. Two Drugbox moderators decide\.$/, function (m) { return 'عضو بلّغ عن مشكلة في تعامل معاك (' + (REASON_AR[m[1]] || m[1]) + '). ردّ بوجهة نظرك قبل ' + m[2] + ' — افتح «بلاغاتي التجارية» من بروفايلك. مشرفين اتنين من Drugbox بيقرروا.'; }],
     [/^Drugbox marked “(.+)” as a Drugbox partner group\.$/, function (m) { return 'Drugbox علّم «' + m[1] + '» كجروب شريك.'; }],
     [/^Drugbox could not mark “(.+)” as a partner group(?: — (.+))?\.$/, function (m) { return 'Drugbox معلّمش «' + m[1] + '» كجروب شريك' + (m[2] ? ' — ' + m[2] : '') + '.'; }],
@@ -152,6 +155,13 @@
     'This file type or size is not accepted': 'نوع الملف أو حجمه غير مقبول',
     'Check your email to confirm your account, then sign in': 'افحص بريدك الإلكتروني لتأكيد حسابك، ثم سجّل الدخول',
     'Could not send the email — please try again': 'تعذّر إرسال البريد — حاول مرة أخرى',
-    'Sent again — check your inbox': 'اتبعت تاني — افحص بريدك'
+    'Sent again — check your inbox': 'اتبعت تاني — افحص بريدك',
+    '🤝 Drugbox partner group since': '🤝 جروب شريك لـ Drugbox من', 'Withdraw badge': 'اسحب الشارة', 'Withdraw the partner badge?': 'تسحب شارة الجروب الشريك؟',
+    'The group keeps its members and posts; only the badge goes. Its admins are told why.': 'الجروب بيفضل بأعضائه ومنشوراته؛ الشارة بس هي اللي بتتشال. والأدمن بيتبلّغوا بالسبب.',
+    'Reason for the group’s admins *': 'السبب لأدمن الجروب *',
+    'This comment looks outside Drugbox trade (a sale to patients, pharmacies or the public, controlled substances, import for others, sham papers or an invite link to an outside group) — it was not posted':
+      'التعليق ده شكله خارج تجارة Drugbox (بيع للمرضى أو الصيدليات أو الجمهور، مواد خاضعة للرقابة، استيراد لحساب الغير، أوراق صورية أو لينك جروب برّه) — متنشرش',
+    'The group\'s admins removed you from this group — ask them to add you again': 'أدمن الجروب شالوك منه — اطلب منهم يضيفوك تاني',
+    'Your listing is live': 'إعلانك منشور الآن'
   });
 })();

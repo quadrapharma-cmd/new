@@ -120,6 +120,7 @@
   /* after Publish: the new card (the approved page inserts it) and, in the demo, the review rules */
   var oHook = window.dxLiveHook;
   window.dxLiveHook = function (kind, d) {
+    if (kind === 'listing') { LISTED.at = Date.now(); LISTED.held = !live() && d && TRADE_FORMS.indexOf(d.type) >= 0 && UI.topics([d.title, d.desc, d.price, d.moq, (window.__wtAs || {}).broker_for].join(' ')).length > 0; }
     var r = oHook ? oHook.apply(this, arguments) : undefined;
     if (kind === 'listing' && !live() && d && TRADE_FORMS.indexOf(d.type) >= 0) {
       var o = window.__wtAs || { as: 'individual' }, t = UI.topics([d.title, d.desc, d.price, d.moq, o.broker_for].join(' '));
@@ -135,6 +136,15 @@
     }
     return r;
   };
+  /* the approved Publish says "Your listing is live" at once: a held offer is not live — the demo knows at once, the live app once the
+     database answered (window.dxTrustUI.listed, called by dxTradeAfter); an offer the database refused shows only its refusal */
+  var LISTED = { at: 0, held: false, wait: 0 }, oToast = D.toast;
+  D.toast = function (m) {
+    if (m === 'Your listing is live' && Date.now() - LISTED.at < 1500) { if (live()) { LISTED.wait = Date.now(); return; } if (LISTED.held) return; }
+    if (pubSkip(m)) return;
+    return oToast.apply(this, arguments);
+  };
+  UI.listed = function (held) { var w = LISTED.wait; LISTED.wait = 0; if (!held && w && Date.now() - w < 30000) oToast.call(D, 'Your listing is live'); };
   function notifyHeld(t, text) {
     if (live() || !window.NOTIFS) return;
     window.NOTIFS.unshift({ id: Date.now(), uid: me().id, icon: '🔎', text: esc(T('Drugbox is checking your post before it shows') + ' — ' + T('it looks like') + ' ' + UI.why(t) + ': “' + String(text || '').slice(0, 60) + '”'), ts: 'now', read: false, type: 'auto_review' });
@@ -142,10 +152,21 @@
   }
 
   /* ══════════ 2. posts held for review (W-17) ══════════ */
+  /* "Post published! ✅" only when it is: a held post (demo: known at once; live: once the database answered, UI.posted from
+     dxPostSaved) or a group post waiting for its admins says that instead (F10) */
+  var PUB = { feed: false, held: false, wait: 0, skip: 0 }, oWToast = window.toast;
+  function pubSkip(m) { if (m !== 'Post published! ✅') return false;
+    if (PUB.feed) { if (PUB.held) return true; if (live()) { PUB.wait = Date.now(); return true; } }
+    if (Date.now() - PUB.skip < 3000) { PUB.skip = 0; return true; }
+    return false; }
+  if (typeof oWToast === 'function') window.toast = function (m) { if (pubSkip(m)) return; return oWToast.apply(this, arguments); };
+  UI.posted = function (row) { var held = !!(row && (row.review_hold || row.group_pending)), w = PUB.wait; PUB.wait = 0;
+    if (w && Date.now() - w < 30000) { if (!held) oWToast.call(window, 'Post published! ✅'); } else if (held) PUB.skip = Date.now(); };
   var oSubmit = window.submitPost;
   if (typeof oSubmit === 'function') window.submitPost = function () {
     var b = $('postBody'), body = b ? b.value : '', inGroup = !!document.querySelector('.modal-bg[data-gpk]');
-    var r = oSubmit.apply(this, arguments);
+    PUB.feed = true; PUB.held = !live() && !inGroup && body.trim() && UI.topics(body).length > 0;
+    var r; try { r = oSubmit.apply(this, arguments); } finally { PUB.feed = false; }
     if (!live() && !inGroup && body.trim()) {
       var t = UI.topics(body), p = window.POSTS && window.POSTS[0];
       if (t.length && p && p.uid === me().id) { p.wtHeld = t; UI.demo.hold('post', p.id, body, t); notifyHeld(t, body);
@@ -416,7 +437,7 @@
 
   /* ══════════ 5. Admin → Review: Held for review, Trader reports, Partner groups ══════════ */
   var TOPIC_SHORT = { retail: 'Retail / patients / pharmacies', controlled: 'Controlled substances', import: 'Import for others', sham: 'Sham papers', invite: 'Invite link' };
-  var KIND = { post: 'Post', offer: 'Marketplace offer', listing: 'Deal-room listing' };
+  var KIND = { post: 'Post', offer: 'Marketplace offer', listing: 'Deal-room listing', company: 'Company listing' };
   function docs(list, bucket) { return (list || []).map(function (d) { var p = typeof d === 'string' ? d : d.path, l = typeof d === 'string' ? d.split('/').pop() : d.label; return '<button type="button" class="dx-mod-doc" data-doc="' + esc(p) + '" data-bucket="' + esc(bucket || 'documents') + '">📄 <span data-noi18n>' + esc(l) + '</span></button>'; }).join(''); }
   window.dxModX = {
     queues: [['held', '🔎', 'Held for review'], ['traders', '⚖️', 'Trader reports'], ['partners', '🤝', 'Partner groups']],
@@ -431,7 +452,10 @@
           '<span>Two moderators decide.</span> ' + (votes ? '<span>Votes:</span> ' + votes : '<span>No votes yet.</span>'),
           !x.can_vote ? '<span class="dx-mod-pill">Waiting for the reply</span>' : mine ? '<span class="dx-mod-pill">You voted — a second moderator decides</span>' :
           '<button class="dx-mod-ok dx-mod-danger" data-k="traders" data-id="' + esc(x.id) + '" data-v="upheld">Uphold</button><button class="dx-mod-no" data-k="traders" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>']; },
-      partners: function (x) { return ['<b data-noi18n>' + esc(x.name) + '</b><span><span>Asked by</span> <span data-noi18n>' + esc(x.who || 'a group admin') + '</span> · ' + esc((x.member_count || 0) + ' members') + '</span><p data-noi18n>“' + esc(x.note) + '”</p>',
+      partners: function (x) {
+        if (x.current) return ['<b data-noi18n>' + esc(x.name) + '</b><span><span>🤝 Drugbox partner group since</span> <span data-noi18n>' + esc(String(x.since || '').slice(0, 10)) + '</span> · ' + esc((x.member_count || 0) + ' members') + '</span>',
+          '<button class="dx-mod-no dx-mod-danger" data-k="partners" data-id="' + esc(x.id) + '" data-v="withdrawn">Withdraw badge</button>'];
+        return ['<b data-noi18n>' + esc(x.name) + '</b><span><span>Asked by</span> <span data-noi18n>' + esc(x.who || 'a group admin') + '</span> · ' + esc((x.member_count || 0) + ' members') + '</span><p data-noi18n>“' + esc(x.note) + '”</p>',
         '<button class="dx-mod-ok" data-k="partners" data-id="' + esc(x.id) + '" data-v="approved">Approve</button><button class="dx-mod-no" data-k="partners" data-id="' + esc(x.id) + '" data-v="rejected">Reject</button>']; }
     },
     ask: function (k, v, item, go, setNote) {
@@ -439,6 +463,8 @@
         primary: { label: 'Remove', danger: true, onClick: function (bx) { setNote(bx.querySelector('#wtMn').value.trim()); go(); } } }); return true; }
       if (k === 'traders') { D.modal({ title: v === 'upheld' ? 'Uphold this report?' : 'Dismiss this report?', body: '<p>Your vote counts once. The report is decided when a second moderator votes the same way; both members are then told.</p><div class="dbk-f"><label for="wtMn">Your note (for the other moderators)</label><textarea id="wtMn" maxlength="500"></textarea></div>',
         primary: { label: v === 'upheld' ? 'Vote: uphold' : 'Vote: dismiss', danger: v === 'upheld', onClick: function (bx) { setNote(bx.querySelector('#wtMn').value.trim()); go(); } } }); return true; }
+      if (k === 'partners' && v === 'withdrawn') { D.modal({ title: 'Withdraw the partner badge?', body: '<p>The group keeps its members and posts; only the badge goes. Its admins are told why.</p><div class="dbk-f"><label for="wtMn">Reason for the group’s admins *</label><textarea id="wtMn" data-req maxlength="500"></textarea></div>',
+        primary: { label: 'Withdraw badge', danger: true, onClick: function (bx) { if (!D.requireFields(bx)) return false; setNote(bx.querySelector('#wtMn').value.trim()); go(); } } }); return true; }
       if (k === 'partners' && v === 'rejected') { D.modal({ title: 'Reject this request?', body: '<div class="dbk-f"><label for="wtMn">Reason for the group’s admin *</label><textarea id="wtMn" data-req maxlength="500"></textarea></div>',
         primary: { label: 'Reject', danger: true, onClick: function (bx) { if (!D.requireFields(bx)) return false; setNote(bx.querySelector('#wtMn').value.trim()); go(); } } }); return true; }
       return false;
@@ -452,7 +478,8 @@
       d.held = (D.store.get('wtHeld', []) || []).filter(function (h) { return h.status === 'held'; }).map(function (h) { return { id: h.id, kind: h.kind, author: me().name, topics: h.topics, body: h.excerpt }; });
       d.traders = (D.store.get('wtReports', []) || []).filter(function (r) { return r.status === 'open'; }).map(function (r) { return { id: r.id, reporter_name: me().name, reported_name: r.name, reason: r.reason, details: r.details, evidence: r.files.map(function (f) { return { path: 'demo', label: f }; }),
         reply: r.reply || '', reply_by: new Date(Date.parse(r.at) + 7 * 864e5).toISOString().slice(0, 10), can_vote: true, votes: (r.votes || []).map(function (v) { return { by: v.by, uphold: v.uphold, mine: true }; }) }; });
-      var pa = D.store.get('wtPartner', {}) || {}; d.partners = Object.keys(pa).filter(function (k) { return pa[k].status === 'pending'; }).map(function (k) { return { id: k, name: pa[k].name, who: me().name, note: pa[k].note, member_count: 0 }; });
+      var pa = D.store.get('wtPartner', {}) || {}; d.partners = Object.keys(pa).filter(function (k) { return pa[k].status === 'pending'; }).map(function (k) { return { id: k, name: pa[k].name, who: me().name, note: pa[k].note, member_count: 0 }; })
+        .concat(Object.keys(pa).filter(function (k) { return pa[k].status === 'approved'; }).map(function (k) { return { id: k, name: pa[k].name, current: true, since: pa[k].at || '', member_count: 0 }; }));
       return d; }); };
     M.decide = function (kind, id, value, note) {
       if (live() || ['held', 'traders', 'partners'].indexOf(kind) < 0) return oDecide.apply(M, arguments);

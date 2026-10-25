@@ -1521,7 +1521,8 @@
       var raw = CO.raw[it.slug]; if (!raw || !raw.id) continue;
       var row = kind === 'surplus' ? { ref: it.id, company_id: raw.id, kind: 'surplus', product: it.product, qty: it.qty, batch: it.batch, expiry: it.expiry, price: it.price, off: it.off || 0, created_by: ME_UUID }
         : { ref: it.id, company_id: raw.id, kind: 'dossier', product: it.product, reg_status: it.status, deal_kind: it.deal, markets: it.markets, created_by: ME_UUID };
-      var r = await sb.from('company_listings').insert(row); if (r.error) { delete LIST.known[it.id]; toastErr(r.error); await loadListings().catch(function () {}); return; } }
+      var r = await sb.from('company_listings').insert(row).select('review_hold'); if (r.error) { delete LIST.known[it.id]; toastErr(r.error); await loadListings().catch(function () {}); return; }
+      if (window.dxTradeAfter) window.dxTradeAfter(r.data && r.data[0]); }   /* AREA w-trust: a held lot / dossier (0095) says so */
     if (kind === 'surplus') LIST.surplus = list; else LIST.dossiers = list;
   }
   async function loadAvl() {

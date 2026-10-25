@@ -154,8 +154,30 @@ insert into private.review_rules (topic, squashed, pattern) values
   ('controlled', true, $r$ترامادول|ترمادول|بريجابالين|ليريكا|مورفين|فنتانيل|زاناكس|ريفوتريل|كلونازيبام|ديازيبام|كيتامين|ريتالين|كبتاجون|نالبوفين|بيثيدين$r$)
 on conflict (pattern) do nothing;
 
--- ── 3. group rules (0094): the outside-link rule is the W-17 invite rule (one list, the new spellings included), and a duplicate is the
---      same letters and digits (a space, a dot or an emoji more was a new post) ────
+-- ── 3. group rules (0094): the outside-link rule is the W-17 invite rule (one list, the new spellings included); a duplicate is the
+--      same letters and digits (a space, a dot or an emoji more was a new post); the daily limit and slow mode count every post written,
+--      also one deleted since (deleting today's post freed the slot) ────
+create table if not exists private.group_post_log (
+  group_id   bigint not null,
+  user_id    uuid not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_group_post_log on private.group_post_log (group_id, user_id, created_at desc);
+revoke all on table private.group_post_log from public, anon, authenticated;
+grant select, insert, update, delete on table private.group_post_log to service_role;
+create or replace function public.posts_group_log() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into private.group_post_log (group_id, user_id, created_at) values (new.group_id, new.user_id, new.created_at);
+  delete from private.group_post_log where created_at < now() - interval '2 days' and group_id = new.group_id and user_id = new.user_id;
+  return null;
+end $$;
+revoke all on function public.posts_group_log() from public, anon, authenticated, service_role;
+grant execute on function public.posts_group_log() to service_role;
+insert into private.group_post_log (group_id, user_id, created_at)           -- the last two days' posts, once (re-run safe)
+select p.group_id, p.user_id, p.created_at from public.posts p
+ where p.group_id is not null and p.created_at > now() - interval '2 days' and not exists (select 1 from private.group_post_log);
+drop trigger if exists trg_posts_group_log on public.posts;
+create trigger trg_posts_group_log after insert on public.posts for each row when (new.group_id is not null) execute function public.posts_group_log();
 create or replace function public.posts_group_rules() returns trigger language plpgsql security definer set search_path = public as $$
 declare g public.groups; me uuid := auth.uid(); n int; last_at timestamptz; nb text; sq text; day0 timestamptz;
 begin
@@ -180,13 +202,13 @@ begin
     end if;
     if g.daily_post_limit is not null then
       day0 := (date_trunc('day', now() at time zone 'Africa/Cairo')) at time zone 'Africa/Cairo';
-      select count(*) into n from public.posts p where p.group_id = g.id and p.user_id = me and p.created_at >= day0;
+      select count(*) into n from private.group_post_log p where p.group_id = g.id and p.user_id = me and p.created_at >= day0;
       if n >= g.daily_post_limit then
         raise exception 'This group allows % post(s) a day per member — you can post again tomorrow', g.daily_post_limit using errcode = 'P0001', hint = 'DX420';
       end if;
     end if;
     if g.slow_mode_minutes is not null then
-      select max(p.created_at) into last_at from public.posts p where p.group_id = g.id and p.user_id = me;
+      select max(p.created_at) into last_at from private.group_post_log p where p.group_id = g.id and p.user_id = me;
       if last_at is not null and last_at > now() - make_interval(mins => g.slow_mode_minutes) then
         raise exception 'Slow mode: this group allows one post every % minute(s) — wait % more', g.slow_mode_minutes,
           greatest(1, ceil(extract(epoch from (last_at + make_interval(mins => g.slow_mode_minutes) - now())) / 60))::int using errcode = 'P0001', hint = 'DX421';
@@ -206,5 +228,152 @@ revoke all on function public.posts_group_rules() from public, anon, authenticat
 grant execute on function public.posts_group_rules() to authenticated, service_role;
 drop trigger if exists trg_posts_c_group_rules on public.posts;
 create trigger trg_posts_c_group_rules before insert or update on public.posts for each row execute function public.posts_group_rules();
+
+
+-- ── 4. a company's surplus lots and dossiers (company_listings, the company workspace) are trade offers too: held like the others ────
+-- a held one is inactive (the existing read rule shows inactive listings to the company's own team only), cannot be switched back on
+-- (DX417), tells no follower; publishing switches it on and tells the followers then; removing deletes it
+alter table public.company_listings add column if not exists review_hold boolean not null default false;
+create index if not exists idx_company_listings_review_hold on public.company_listings (id) where review_hold;
+alter table public.content_holds drop constraint if exists content_holds_kind_check;
+alter table public.content_holds add constraint content_holds_kind_check check (kind in ('post', 'offer', 'listing', 'company'));
+
+create or replace function private.review_text(p_table text, r jsonb) returns text language sql immutable set search_path = public as $$
+  select case p_table when 'posts' then r ->> 'body'
+                      when 'products' then concat_ws(' ', r ->> 'name', r ->> 'description', r ->> 'price', r ->> 'moq', r ->> 'broker_for', r ->> 'unit', r ->> 'tag',
+                                                     r ->> 'incoterms', r ->> 'payment_terms', r ->> 'lead_time', r ->> 'stock', r ->> 'specs', r ->> 'price_tiers')   -- every field people type (F4)
+                      when 'company_listings' then concat_ws(' ', r ->> 'product', r ->> 'qty', r ->> 'batch', r ->> 'expiry', r ->> 'price', r ->> 'reg_status', r ->> 'deal_kind', r ->> 'markets')
+                      else concat_ws(' ', r ->> 'title', r ->> 'details', r ->> 'price', r ->> 'broker_for') end
+$$;
+revoke all on function private.review_text(text, jsonb) from public, anon, authenticated, service_role;
+grant execute on function private.review_text(text, jsonb) to authenticated, service_role;
+create or replace function private.hold_kind(p_table text) returns text language sql immutable set search_path = public as $$
+  select case p_table when 'posts' then 'post' when 'products' then 'offer' when 'company_listings' then 'company' else 'listing' end
+$$;
+revoke all on function private.hold_kind(text) from public, anon, authenticated, service_role;
+grant execute on function private.hold_kind(text) to authenticated, service_role;
+
+create or replace function public.review_hold_before() returns trigger language plpgsql security definer set search_path = public as $$
+declare txt text := private.review_text(tg_table_name, to_jsonb(new)); prod boolean := tg_table_name = 'products'; cl boolean := tg_table_name = 'company_listings';
+begin
+  if tg_op = 'UPDATE' then
+    if current_setting('drugbox.hold_decision', true) = '1' then return new; end if;   -- held_review_decide() sets / clears it
+    new.review_hold := old.review_hold;
+    -- a held offer stays off: neither its status nor its active flag (products derive one from the other after this trigger — F1) turns it on
+    if new.review_hold and ((prod and (to_jsonb(new) ->> 'status') = 'active' and (to_jsonb(old) ->> 'status') <> 'active')
+                         or ((prod or cl) and (to_jsonb(new) ->> 'active')::boolean and not (to_jsonb(old) ->> 'active')::boolean)) then
+      raise exception 'This offer is waiting for Drugbox review — it shows again once it is checked' using errcode = '42501', hint = 'DX417';
+    end if;
+    if txt is not distinct from private.review_text(tg_table_name, to_jsonb(old)) then return new; end if;
+  else
+    new.review_hold := false;
+  end if;
+  if new.review_hold then return new; end if;                                    -- already waiting: an edit keeps it waiting
+  -- Drugbox's own team is not held (it posts as Drugbox and decides the queue); server writes (imports, fixtures) neither
+  if auth.uid() is null or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('admin', 'moderator')) then return new; end if;
+  if cardinality(private.review_topics(txt)) > 0 then
+    new.review_hold := true;
+    if prod and (to_jsonb(new) ->> 'status') = 'active' then new := jsonb_populate_record(new, jsonb_build_object('status', 'paused')); end if;
+    if cl then new := jsonb_populate_record(new, jsonb_build_object('active', false)); end if;
+  end if;
+  return new;
+end $$;
+revoke all on function public.review_hold_before() from public, anon, authenticated, service_role;
+grant execute on function public.review_hold_before() to authenticated, service_role;
+
+create or replace function public.review_hold_after() returns trigger language plpgsql security definer set search_path = public as $$
+declare k text := private.hold_kind(tg_table_name); j jsonb := to_jsonb(new); t text[]; ex text; who uuid := coalesce(j ->> 'user_id', j ->> 'created_by')::uuid;
+begin
+  if not new.review_hold or (tg_op = 'UPDATE' and old.review_hold) then return null; end if;
+  if exists (select 1 from public.content_holds h where h.kind = k and h.item_id = new.id and h.status = 'held') then return null; end if;
+  t := private.review_topics(private.review_text(tg_table_name, j));
+  ex := left(regexp_replace(case tg_table_name when 'posts' then coalesce(j ->> 'body', '')
+                                               when 'products' then concat_ws(' — ', j ->> 'name', j ->> 'description')
+                                               when 'company_listings' then concat_ws(' — ', j ->> 'product', j ->> 'qty', j ->> 'price', j ->> 'markets')
+                                               else concat_ws(' — ', j ->> 'title', j ->> 'details') end, '\s+', ' ', 'g'), 200);
+  insert into public.content_holds (kind, item_id, user_id, topics, excerpt) values (k, new.id, who, t, ex);
+  if who is not null then
+    insert into public.notifications (user_id, type, from_user, message, data)
+    values (who, 'auto_review', null, null, jsonb_build_object('kind', k, 'topics', to_jsonb(t), 'excerpt', left(ex, 80) || case when char_length(ex) > 80 then '…' else '' end));
+  end if;
+  return null;
+end $$;
+revoke all on function public.review_hold_after() from public, anon, authenticated, service_role;
+grant execute on function public.review_hold_after() to service_role;
+
+create or replace function public.review_hold_gone() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  update public.content_holds set status = 'removed', decided_at = coalesce(decided_at, now())
+   where kind = private.hold_kind(tg_table_name) and item_id = old.id and status = 'held';
+  return null;
+end $$;
+revoke all on function public.review_hold_gone() from public, anon, authenticated, service_role;
+grant execute on function public.review_hold_gone() to service_role;
+
+-- before the other company_listings triggers (not_suspended, trade_guard: b < n < t), as on the other tables
+drop trigger if exists trg_company_listings_b_review_hold on public.company_listings;
+create trigger trg_company_listings_b_review_hold before insert or update on public.company_listings for each row execute function public.review_hold_before();
+drop trigger if exists trg_company_listings_review_hold_after on public.company_listings;
+create trigger trg_company_listings_review_hold_after after insert or update on public.company_listings for each row execute function public.review_hold_after();
+drop trigger if exists trg_company_listings_review_hold_gone on public.company_listings;
+create trigger trg_company_listings_review_hold_gone after delete on public.company_listings for each row when (old.review_hold) execute function public.review_hold_gone();
+drop policy if exists "company listings: held for review" on public.company_listings;
+create policy "company listings: held for review" on public.company_listings as restrictive for select
+  using (not review_hold or public.is_company_member(company_id) or (select public.is_moderator()));
+
+create or replace function public.held_review_queue(p_limit int default 100) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select case when not public.is_moderator() then null else coalesce((select jsonb_agg(to_jsonb(x) order by x.created_at) from (
+    select h.id, h.kind, h.item_id, h.topics, h.excerpt, h.created_at, h.user_id,
+           (select p.name from public.profiles p where p.id = h.user_id) as author,
+           case h.kind when 'post' then (select o.body from public.posts o where o.id = h.item_id)
+                       when 'offer' then (select concat_ws(' — ', r.name, r.description) from public.products r where r.id = h.item_id)
+                       when 'company' then (select concat_ws(' — ', c.product, c.qty, c.batch, c.expiry, c.price, c.reg_status, c.deal_kind, c.markets) from public.company_listings c where c.id = h.item_id)
+                       else (select concat_ws(' — ', l.title, l.details) from public.group_listings l where l.id = h.item_id) end as body,
+           -- where it was posted: the group, or the company page
+           case h.kind when 'post' then (select g.name from public.posts o join public.groups g on g.id = o.group_id where o.id = h.item_id)
+                       when 'listing' then (select g.name from public.group_listings l join public.groups g on g.id = l.group_id where l.id = h.item_id)
+                       when 'company' then (select co.name from public.company_listings c join public.companies co on co.id = c.company_id where c.id = h.item_id) end as group_name
+      from public.content_holds h where h.status = 'held' order by h.created_at limit least(greatest(coalesce(p_limit, 100), 1), 300)) x), '[]'::jsonb) end
+$$;
+revoke all on function public.held_review_queue(int) from public, anon, authenticated, service_role;
+grant execute on function public.held_review_queue(int) to authenticated, service_role;
+
+create or replace function public.held_review_decide(p_hold bigint, p_publish boolean, p_note text default null) returns text
+language plpgsql security definer set search_path = public as $$
+declare h public.content_holds; me uuid := auth.uid(); v_note text := nullif(left(trim(coalesce(p_note, '')), 500), ''); out text; c public.company_listings;
+begin
+  if me is null or not public.is_moderator() then raise exception 'Only the Drugbox team can do this' using errcode = '42501'; end if;
+  select * into h from public.content_holds where id = p_hold for update;
+  if h.id is null then raise exception 'This item is not in the queue' using errcode = 'P0002'; end if;
+  if h.status <> 'held' then raise exception 'Already decided by % (%)', private.who(h.decided_by), h.status using errcode = 'DX409'; end if;
+  out := case when p_publish then 'published' else 'removed' end;
+  update public.content_holds set status = out, decided_by = me, decided_at = now(), note = v_note where id = h.id;
+  perform set_config('drugbox.hold_decision', '1', true);
+  if p_publish then
+    if h.kind = 'post' then update public.posts set review_hold = false where id = h.item_id;
+    elsif h.kind = 'offer' then update public.products set review_hold = false, status = case when status = 'paused' then 'active' else status end where id = h.item_id;
+    elsif h.kind = 'company' then
+      update public.company_listings set review_hold = false, active = true where id = h.item_id returning * into c;
+      if c.id is not null then perform public.notify_company_followers(array[c.company_id], c.created_by, c.product, c.kind); end if;   -- told now, not when it was held
+    else update public.group_listings set review_hold = false where id = h.item_id; end if;
+  else
+    if h.kind = 'post' then delete from public.posts where id = h.item_id;
+    elsif h.kind = 'offer' then delete from public.products where id = h.item_id;
+    elsif h.kind = 'company' then delete from public.company_listings where id = h.item_id;
+    else delete from public.group_listings where id = h.item_id; end if;
+  end if;
+  perform set_config('drugbox.hold_decision', '', true);
+  if h.user_id is not null then
+    insert into public.notifications (user_id, type, from_user, message, data)
+    values (h.user_id, 'auto_review_decided', null, null, jsonb_strip_nulls(jsonb_build_object('kind', h.kind, 'outcome', out,
+            'excerpt', left(h.excerpt, 80) || case when char_length(h.excerpt) > 80 then '…' else '' end, 'note', v_note)));
+  end if;
+  perform private.log_decision('held', h.id::text, left(coalesce((select name from public.profiles where id = h.user_id), 'A member') || ' · ' || h.excerpt, 300), out, v_note,
+                               jsonb_build_object('kind', h.kind, 'item', h.item_id, 'topics', to_jsonb(h.topics)));
+  return out;
+end $$;
+revoke all on function public.held_review_decide(bigint, boolean, text) from public, anon, authenticated, service_role;
+grant execute on function public.held_review_decide(bigint, boolean, text) to authenticated, service_role;
 
 notify pgrst, 'reload schema';

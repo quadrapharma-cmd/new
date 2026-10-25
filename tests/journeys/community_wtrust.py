@@ -8,6 +8,8 @@ from _j import journey, main, PW
 from _community import *
 from _social import compose as feed_compose, goto_profile
 import _dx
+import _j as _jm
+_n = len(_jm.REGISTRY); import business_wtrust as bw; del _jm.REGISTRY[_n:]   # its form helpers (offer_form, preview_publish), not its journeys
 
 def gpost_try(j, pg, body, category=None):
     """Write a post in the open group; returns the toasts it caused (a refusal says why)."""
@@ -220,12 +222,16 @@ def held_for_review(j):
             j.reload(pb); j.nav(pb, 'feed'); j.settle(pb, 2000); j.check(t in j.text(pb).replace(clean, ''), 'after Publish another member still does not see the post')
         else:
             j.check(t not in admin_review(j, pa, r'Held for review|محجوز للمراجعة'), 'the decided post stays in the queue')
+    off = 'Tramadol 225 mg strips %s' % t
+    with j.step('Publish an offer of a controlled substance in Market → Create Listing: told it waits for review — never "Your listing is live"'):
+        bw.offer_form(j, pg, off); mark = j.toast_mark(pg); bw.preview_publish(j, pg, profile={'role': 'distributor', 'gov': 'Cairo', 'sells': 'Finished products'})
+        j.settle(pg, 2500); said = ' '.join(j.toasts_since(pg, mark))
+        j.check(re.search(r'waiting for Drugbox review|قيد مراجعة Drugbox|مراجعة Drugbox', said), 'the member is not told the offer waits for review (toasts: %s)' % said[:240])
+        j.check(not re.search(r'Your listing is live|إعلانك منشور الآن', said), 'a held offer says "Your listing is live" (toasts: %s)' % said[:240])
     if j.live:
-        with j.step('An offer of a controlled substance is held too; Drugbox removes it with a note; the member is told the reason'):
-            off = 'Tramadol 225 mg strips %s' % t
-            pg.evaluate("([u,n])=>dxLive.sb.from('trade_profiles').upsert({user_id:u,role:'distributor',governorate:'Cairo',sells:'Finished products'})", [a['id'], off])
-            r = pg.evaluate("([u,n])=>dxLive.sb.from('products').insert({user_id:u,name:n,type:'supply',category:'finished'}).select('id,review_hold,status').single().then(r=>r.error?r.error.message:r.data)", [a['id'], off])
-            j.check(isinstance(r, dict) and r.get('review_hold') and r.get('status') == 'paused', 'a controlled substance offer was not held: %s' % r)
+        with j.step('… held and paused in the database; Drugbox removes it with a note; the member is told the reason'):
+            r = j.wait_db("select review_hold||'|'||status from public.products where user_id='%s' and name=$q$%s$q$" % (a['id'], off), 8)
+            j.check(r == 'true|paused', 'a controlled substance offer was not held and paused: %s' % r)
             q = admin_review(j, pa, r'Held for review|محجوز للمراجعة'); j.check(off in q, 'the held offer is not in the queue')
             admin_decide(j, pa, off, ok=False, reason='Controlled substances are not traded on Drugbox')
             j.check(j.wait_db("select count(*) from public.products where name=$q$%s$q$" % off, 8, want='0'), 'Remove did not remove the offer')
