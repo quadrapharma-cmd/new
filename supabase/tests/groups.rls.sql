@@ -182,6 +182,10 @@ select pg_temp.C(); select pg_temp.step('C creates its company page', $$insert i
 select pg_temp.as_server();
 insert into ids select 'cob', id::text from public.companies where slug = 'gr-buyer';
 insert into ids select 'cos', id::text from public.companies where slug = 'gr-seller';
+-- w-trust (0090): a trade listing needs the poster's trade profile, and a listing AS a company needs the company's Drugbox badge
+insert into public.trade_profiles (user_id, role, governorate, sells) values ('a2000000-0000-0000-0000-000000000001', 'distributor', 'Cairo', 'APIs'),
+  ('a2000000-0000-0000-0000-000000000003', 'manufacturer', 'Giza', 'APIs') on conflict (user_id) do nothing;
+update public.companies set status = 'verified' where slug in ('gr-buyer', 'gr-seller');
 select pg_temp.A();
 select pg_temp.step('A creates a deal room', $$with x as (insert into public.groups (created_by, name, type, topic) values ('a2000000-0000-0000-0000-000000000001', 'GR Deal Room', 'public', 'DEAL ROOM') returning id) insert into ids select 'dr', id::text from x$$);
 select pg_temp.no('a listing in a group that is not a deal room is refused', $$insert into public.group_listings (group_id, kind, title) values (pg_temp.id('p'), 'rfq', 'GR wrong room')$$, '42501');

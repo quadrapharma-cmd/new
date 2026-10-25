@@ -43,6 +43,10 @@
     };
   }
   var Q = [['verifications', '🏢', 'Verification requests'], ['warnings', '⚠️', 'Warning references'], ['certs', '📜', 'Site certificates'], ['reports', '🚩', 'Company reports'], ['payments', '💳', 'Payments'], ['messages', '💬', 'Message reports'], ['posts', '🚩', 'Reported posts'], ['members', '👤', 'Reported members'], ['claims', '🏷️', 'Claims'], ['documents', '📁', 'Compliance documents'], ['reviews', '⭐', 'Reviews'], ['decided', '🗂', 'Decided']];   /* the approved queues first, in their order; the newer ones after them (AREA social: members, soc_safety.js) */
+  /* ===== AREA w-trust: other layers add queues before Decided — window.dxModX = { queues: [[key, icon, label]], row: { key: function (x, esc) → [body, actions] },
+     ask: function (key, value, item, go, setNote) → true when it asked first (a confirmation / a note) } ===== */
+  function QX() { var x = window.dxModX && window.dxModX.queues; return x && x.length ? Q.slice(0, -1).concat(x, Q.slice(-1)) : Q; }
+  /* ===== end AREA w-trust ===== */
   var cur = 'verifications', data = null, find = '';
   function docs(list) { return (list || []).map(function (d) { return '<button type="button" class="dx-mod-doc" data-doc="' + esc(d.path) + '" data-bucket="' + esc(d.bucket) + '">📄 ' + esc(d.label) + '</button>'; }).join(''); }
   function row(kind, x) {
@@ -81,12 +85,13 @@
         '<span>' + esc(x.reports) + ' reports from ' + esc(x.reporters) + ' members · ' + (x.reasons || []).map(function (r) { return esc(MR[r] || r); }).join(', ') + ' · ' + esc(x.posts || 0) + ' posts</span>' +
         (x.samples || []).slice(0, 3).map(function (m) { return '<p data-noi18n>“' + esc(m.text || m.note) + '”</p>'; }).join('');
       acts = '<button class="dx-mod-no" data-k="members" data-id="' + esc(x.id) + '" data-v="suspend">Suspend</button><button class="dx-mod-ok" data-k="members" data-id="' + esc(x.id) + '" data-v="dismissed">Dismiss</button>'; }
+    var ox = window.dxModX && window.dxModX.row && window.dxModX.row[kind]; if (ox) { var oxr = ox(x, esc); body = oxr[0]; acts = oxr[1]; }   /* AREA w-trust: a queue another layer added */
     return '<div class="dx-mod-row"><div class="dx-mod-b">' + body + '</div><div class="dx-mod-a">' + acts + '</div></div>';
   }
   function paint(c) {
     if (!data) { c.innerHTML = '<div class="dx-mod"><div class="dx-mod-empty">Loading the review queues…</div></div>'; return; }
     c.innerHTML = '<div class="dx-mod"><div class="dx-mod-h"><h2>Review</h2><span>Decisions here change what everyone sees — verification, published warnings, level 3.</span></div>' +
-      '<div class="dx-mod-tabs">' + Q.map(function (q) { var n = q[0] === 'decided' ? 0 : (data[q[0]] || []).length; return '<button class="dx-mod-tab' + (q[0] === cur ? ' on' : '') + '" data-q="' + q[0] + '">' + q[1] + ' ' + q[2] + (n ? ' <i>' + n + '</i>' : '') + '</button>'; }).join('') + '</div>' +
+      '<div class="dx-mod-tabs">' + QX().map(function (q) { var n = q[0] === 'decided' ? 0 : (data[q[0]] || []).length; return '<button class="dx-mod-tab' + (q[0] === cur ? ' on' : '') + '" data-q="' + q[0] + '">' + q[1] + ' ' + q[2] + (n ? ' <i>' + n + '</i>' : '') + '</button>'; }).join('') + '</div>' +
       '<div class="dx-mod-find"><input type="search" id="dxModFind" placeholder="Search this queue…" aria-label="Search this queue" value="' + esc(find) + '"></div>' +
       '<div class="dx-mod-list">' + list() + '</div></div>';
   }
@@ -126,6 +131,8 @@
           load().then(function (d) { data = d; paint(c); }, function () {}); },
         function (err) { D.toast && D.toast((err && err.message) || 'Could not save the decision');   /* decided meanwhile (another moderator): the queue is read again */
           load().then(function (d) { data = d; paint(c); }, function () { t.disabled = false; }); }); }
+    var itemX = (data[k] || []).filter(function (x) { return String(x.id) === String(id); })[0] || {};   /* AREA w-trust: another layer's queue asks first */
+    if (window.dxModX && window.dxModX.ask && window.dxModX.ask(k, v, itemX, go, function (n) { note = n; })) return;
     if (k === 'posts' && v === 'removed') {   /* the author is told why: an optional note goes with the decision */
       D.modal({ title: 'Remove this post?', body: '<p>The author is told it was removed and why. Every reporter is told the outcome.</p><div class="dbk-f"><label for="dxModNote">Note for the author (optional)</label><textarea id="dxModNote" maxlength="500"></textarea></div>',
         primary: { label: 'Remove post', onClick: function (bx) { note = bx.querySelector('#dxModNote').value.trim(); go(); } } }); return; }

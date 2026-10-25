@@ -1532,7 +1532,8 @@
     open: function (name, tab) { if (document.body.getAttribute('data-page') !== 'groups' && typeof window.goto === 'function') window.goto('groups'); var r = document.getElementById('gx'); if (r) { wire(); initPage(r); } return open(name, tab); },
     pick: function (card, tab) { if (card && card.nodeType === 1) { LAST_CARD = card; OPEN_ARGS = { tab: tab || 'disc' }; } },
     refresh: function (tab) { refresh(tab); },
-    joinClick: joinClick, current: function () { return CUR ? { key: CUR.g.key, title: CUR.g.title, tab: CUR.tab, member: CUR.g.member, role: CUR.g.role, posts: (CUR.posts || []).length } : null; },
+    joinClick: joinClick, current: function () { return CUR ? { key: CUR.g.key, title: CUR.g.title, tab: CUR.tab, member: CUR.g.member, role: CUR.g.role, posts: (CUR.posts || []).length,
+      gid: CUR.g.gid, live: CUR.g.live, priv: CUR.g.priv, admin: CUR.g.admin, deal: CUR.g.deal, rules: CUR.g.rules || [], card: CUR.g.card } : null; },   /* AREA w-trust: + id, rules, role for wtrust.js */
     seed: SEED, adopt: adopt
   };
 })();
