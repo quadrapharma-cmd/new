@@ -124,18 +124,18 @@
   /* ===== AREA w-trust: Admin → Review — Held for review, Trader reports, Partner groups ===== */
   (function () {
     var M = window.dxModeration; if (!M || M.__wtLive) return; M.__wtLive = true;
-    var oLoad = M.load, oDecide = M.decide;
+    var oLoad = M.load, oDecide = M.decide, KEY = {};
     M.load = function () { return oLoad.apply(M, arguments).then(async function (d) {
       var a = await Promise.all([sb.rpc('held_review_queue', { p_limit: 100 }), sb.rpc('trader_reports_queue', { p_limit: 100 }), sb.rpc('group_partner_queue'),
         sb.from('groups').select('id, name, member_count, partner_at').not('partner_at', 'is', null).order('partner_at', { ascending: false }).limit(100)]);
-      d.held = ((a[0] && a[0].data) || []).map(function (x) { return { id: x.id, kind: x.kind, author: x.author, topics: x.topics, body: x.body || x.excerpt, group_name: x.group_name }; });
+      d.held = ((a[0] && a[0].data) || []).map(function (x) { KEY[x.id] = x.key; return { id: x.id, kind: x.kind, author: x.author, topics: x.topics, body: x.body || x.excerpt, group_name: x.group_name }; });
       d.traders = ((a[1] && a[1].data) || []).map(function (x) { x.evidence = (x.evidence || []).map(function (p) { return { path: p, label: p.split('/').pop() }; });
         x.reply_evidence = (x.reply_evidence || []).map(function (p) { return { path: p, label: p.split('/').pop() }; }); return x; });
       d.partners = ((a[2] && a[2].data) || []).map(function (x) { return { id: x.group_id, name: x.name, who: x.who, note: x.note, member_count: x.member_count }; })
         .concat(((a[3] && a[3].data) || []).map(function (g) { return { id: g.id, name: g.name, current: true, since: g.partner_at, member_count: g.member_count }; }));
       return d; }); };
     M.decide = async function (kind, id, value, note) {
-      if (kind === 'held') return err(await sb.rpc('held_review_decide', { p_hold: +id, p_publish: value === 'published', p_note: note || null }));
+      if (kind === 'held') return err(await sb.rpc('held_review_decide', { p_hold: +id, p_publish: value === 'published', p_note: note || null, p_key: KEY[id] || null }));   /* the words I read (0099, DX447) */
       if (kind === 'traders') { var out = err(await sb.rpc('trader_report_vote', { p_report: +id, p_uphold: value === 'upheld', p_note: note || null }));
         if (out === 'voted') toast('Your vote is saved — a second moderator decides'); return out; }
       if (kind === 'partners' && value === 'withdrawn') return err(await sb.rpc('group_partner_withdraw', { p_group: +id, p_note: note || null }));

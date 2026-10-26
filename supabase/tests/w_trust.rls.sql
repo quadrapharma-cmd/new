@@ -479,7 +479,7 @@ select pg_temp.act(4);
 select pg_temp.step('V lists an offer whose documents list an invite link (N5)', $$with p as (insert into public.products (user_id, name, type, category, docs) values (pg_temp.u(4), 'WT Clean offer docs', 'supply', 'api', array['COA', 'chat.whatsapp.com/x']) returning id) insert into ids select 'pdoc', id::text from p$$);
 select pg_temp.ok('… held', $$(select review_hold from public.products where id = pg_temp.id('pdoc'))$$);
 -- N1/N2 a company without the badge
-select pg_temp.step('V posts an offer as the company that is held', $$with p as (insert into public.products (user_id, name, type, category, company_id, posted_as, description) values (pg_temp.u(4), 'WT Held company offer', 'supply', 'api', pg_temp.id('coV'), 'company', 'we deliver to pharmacies') returning id) insert into ids select 'phc', id::text from p$$);
+select pg_temp.step('V posts an offer as the company that is held', $$with p as (insert into public.products (user_id, name, type, category, company_id, posted_as, description, price) values (pg_temp.u(4), 'WT Held company offer', 'supply', 'api', pg_temp.id('coV'), 'company', 'we deliver to pharmacies', 'USD 4.00') returning id) insert into ids select 'phc', id::text from p$$);
 select pg_temp.as_server(); select pg_temp.step('Drugbox takes V''s badge back again', $$update public.companies set status = 'pending' where id = pg_temp.id('coV')$$);
 select pg_temp.act(4);
 select pg_temp.step('V closes the paused company offer', $$update public.products set status = 'closed' where id = pg_temp.id('pco')$$);
@@ -593,6 +593,47 @@ select pg_temp.as_server(); select pg_temp.step('W (u10) owns a verified company
 select pg_temp.act(2); select pg_temp.step('B posts as that company', $$with p as (insert into public.products (user_id, name, type, category, company_id, posted_as) values (pg_temp.u(2), 'WT Glycerin USP', 'supply', 'api', pg_temp.id('coD'), 'company') returning id) insert into ids select 'pdel', id::text from p$$);
 select pg_temp.act(10); select pg_temp.step('W deletes the company (B1)', $$delete from public.companies where id = pg_temp.id('coD')$$);
 select pg_temp.as_server(); select pg_temp.ok('… gone; B''s offer is B''s own now, paused', $$not exists (select 1 from public.companies where id = pg_temp.id('coD')) and (select posted_as = 'individual' and company_id is null and status = 'paused' from public.products where id = pg_temp.id('pdel'))$$);
+
+-- ══ 6g. the verifier's fifth round (0099, second part) ══
+select pg_temp.as_server();
+select pg_temp.ok('rules v6: a qualified negation hides nothing (N5)', $$(select bool_and(cardinality(private.review_topics(x)) > 0) from unnest(array[
+  'No delivery to pharmacies outside Cairo', 'We don''t sell to pharmacies on credit — cash on delivery', 'We don''t deliver to pharmacies after 5 pm', 'Not for sale to the public at this price — public price is EGP 45',
+  'Do not sell to pharmacies! We do.', 'No sale to patients under 18', 'مش بنبيع للصيدليات غالي، أرخص سعر عندنا', 'لا توصيل للصيدليات يوم الجمعة', 'ما نبيع للصيدليات بالآجل، كاش وعالباب']) x)$$);
+select pg_temp.ok('rules v6: the round-5 misses are caught (N8)', $$(select bool_and(cardinality(private.review_topics(x)) > 0) from unnest(array[
+  'no prescription needed', 'without prescription', 'doorstep delivery across Cairo', 'door-to-door delivery', 'for personal use', 'tramadoI', 'tramadolum', 'ترامادل', 'ترمدول', 'كابتجون',
+  'Parkinol 2mg', 'باركينول', 'حشيش', 'Contramal 100', 'Ultram', 'Lorazepam 2mg', 'Midazolam amp', '@pharmadeals on telegram', 'telegram - @pharmadeals', 'instagram.com/pharmadeals', 'goo.gl/abc',
+  'import for your company under our registration', 'Import under your import card', 'COA printed with any expiry you want', 'we can change the expiry date on the boxes', 'تعديل تاريخ الصلاحية']) x)$$);
+select pg_temp.ok('rules v6: plain prohibitions still pass in posts', $$(select bool_and(cardinality(private.review_topics(x)) = 0) from unnest(array[
+  'We do not sell to pharmacies', 'Sale to the public is not allowed on Drugbox', 'No sales to pharmacies, distributors only', 'لا نبيع للصيدليات — للموزعين فقط']) x)$$);
+-- N1 edited while held
+select pg_temp.act(4);
+select pg_temp.step('V posts an offer that is held', $$with p as (insert into public.products (user_id, name, type, category, description) values (pg_temp.u(4), 'WT Tramadol HCl API (EU DMF) for licensed factories', 'supply', 'api', 'GMP API, 25 kg drums') returning id) insert into ids select 'pn1', id::text from p$$);
+select pg_temp.act(5); select pg_temp.step('M1 opens the queue (reads the key)', $$insert into ids select 'kn1', x ->> 'key' from jsonb_array_elements(public.held_review_queue()) x where x ->> 'kind' = 'offer' and (x ->> 'item_id')::bigint = pg_temp.id('pn1')$$);
+select pg_temp.act(4);
+select pg_temp.step('… V edits it while it waits', $$update public.products set payment_terms = 'Cash — order on wa.me/201001234567, home delivery to your pharmacy' where id = pg_temp.id('pn1')$$);
+select pg_temp.act(5);
+select pg_temp.ok('the queue now shows the new words and every reason (N1)', $$exists (select 1 from jsonb_array_elements(public.held_review_queue()) x where (x ->> 'item_id')::bigint = pg_temp.id('pn1') and x ->> 'body' ~ 'wa\.me' and x -> 'topics' ? 'invite' and x -> 'topics' ? 'retail')$$);
+select pg_temp.nohint('… and a Publish of the words M1 read before is refused', $$select public.held_review_decide((select id from public.content_holds where kind = 'offer' and item_id = pg_temp.id('pn1')), true, null, (select v from ids where k = 'kn1'))$$, 'DX447');
+-- N2 a published item gains a reason through digits / unit words
+select pg_temp.act(9); select pg_temp.step('J posts a group post with a reference that is held for a link', $$with p as (insert into public.posts (user_id, body) values (pg_temp.u(9), 'WT contact t.me/wtgroup — Ref TR8M8D8L') returning id) insert into ids select 'pn2', id::text from p$$);
+select pg_temp.act(5); select pg_temp.step('M1 publishes it', $$select public.held_review_decide((select id from public.content_holds where kind = 'post' and item_id = pg_temp.id('pn2')), true)$$);
+select pg_temp.act(9); select pg_temp.step('J changes the digits of the reference', $$update public.posts set body = 'WT contact t.me/wtgroup — Ref TR4M4D0L' where id = pg_temp.id('pn2')$$);
+select pg_temp.as_server(); select pg_temp.ok('… held again (N2)', $$(select review_hold from public.posts where id = pg_temp.id('pn2'))$$);
+-- N3 comments and group rules that forbid things
+select pg_temp.act(9);
+select pg_temp.step('a comment that states the rule is posted (N3)', $$insert into public.comments (post_id, user_id, body) values (pg_temp.id('pend'), pg_temp.u(9), 'Reminder: no controlled substances in this group; we do not sell to pharmacies or patients — B2B only')$$);
+select pg_temp.act(8);
+select pg_temp.step('rules that forbid things are kept', $$update public.groups set rules = '["No sale to pharmacies or patients. No controlled substances. No invite links.", "ممنوع الترامادول والليريكا والأدوية المخدرة"]'::jsonb where id = pg_temp.id('g')$$);
+-- N4 topic / emoji / cover
+select pg_temp.nohint('a group topic is checked (N4)', $$update public.groups set topic = 'Tramadol & Lyrica wholesale' where id = pg_temp.id('g')$$, 'DX439');
+select pg_temp.nohint('… an emoji is an emoji', $$update public.groups set emoji = 'chat.whatsapp.com/AbC' where id = pg_temp.id('g')$$, 'DX439');
+select pg_temp.nohint('… the cover is no outside link', $$update public.groups set cover_url = 'https://chat.whatsapp.com/AbCdEf' where id = pg_temp.id('g')$$, 'DX439');
+-- N6 group names
+select pg_temp.nohint('"Drugbox® Official"', $$update public.groups set name = 'Drugbox® Official' where id = pg_temp.id('g')$$, 'DX437');
+select pg_temp.nohint('"Verified by Drugbox"', $$update public.groups set name = 'Traders verified by Drugbox' where id = pg_temp.id('g')$$, 'DX437');
+select pg_temp.nohint('«معتمد من Drugbox»', $$update public.groups set name = 'تجار معتمد من Drugbox' where id = pg_temp.id('g')$$, 'DX437');
+select pg_temp.nohint('… in the rules too', $$update public.groups set rules = '["This is the official Drugbox group."]'::jsonb where id = pg_temp.id('g')$$, 'DX437');
+select pg_temp.step('an ordinary name is fine', $$update public.groups set name = 'WT Traders of Alexandria' where id = pg_temp.id('g')$$);
 
 -- ══ 7. anon ══
 select pg_temp.as_anon();

@@ -213,6 +213,11 @@
     'Your company is suspended and cannot send quotes': 'شركتك موقوفة ومش ممكن تبعت عروض أسعار',
     'Drugbox withdrew the partner badge': 'Drugbox سحب شارة الجروب الشريك',
     'Waiting for Drugbox review': 'قيد مراجعة Drugbox',
+    'This group\'s name, description or rules look outside Drugbox trade (a sale to patients, pharmacies or the public, controlled substances, import for others, sham papers or an invite link to an outside group) — change them': 'اسم الجروب أو وصفه أو قواعده شكلها خارج تجارة Drugbox (بيع للمرضى أو الصيدليات أو الجمهور، مواد خاضعة للرقابة، استيراد لحساب الغير، أوراق صورية أو لينك جروب برّه) — غيّرها',
+    'This group\'s name, description, topic or rules look outside Drugbox trade (a sale to patients, pharmacies or the public, controlled substances, import for others, sham papers or an invite link to an outside group) — change them': 'اسم الجروب أو وصفه أو موضوعه أو قواعده شكلها خارج تجارة Drugbox (بيع للمرضى أو الصيدليات أو الجمهور، مواد خاضعة للرقابة، استيراد لحساب الغير، أوراق صورية أو لينك جروب برّه) — غيّرها',
+    'This item was edited after you opened the queue — reload and read it again': 'العنصر ده اتعدّل بعد ما فتحت القائمة — حدّث الصفحة واقراه تاني',
+    'Links to outside chat groups are not allowed in comments — it was not posted': 'لينكات الجروبات الخارجية ممنوعة في التعليقات — التعليق متنشرش',
+    'A group\'s emoji is an emoji': 'أيقونة الجروب لازم تكون إيموجي',
     'Your company listing is waiting for Drugbox review — you are told when it is checked. Only your company’s team sees it until then.': 'إعلان شركتك قيد مراجعة Drugbox — هنبلّغك لما يتراجع. فريق شركتك بس اللي شايفه لحد كده.',
     'Only the person who posted an offer moves it to another company or changes who posts it': 'اللي نشر العرض بس هو اللي ينقله لشركة تانية أو يغيّر مين ناشره'
   });

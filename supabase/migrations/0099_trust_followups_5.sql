@@ -275,4 +275,287 @@ create policy "group listings: held for review" on public.group_listings as rest
   using (not review_hold or user_id = (select auth.uid()) or (select public.is_moderator())
          or (posted_as = 'company' and public.is_company_member(company_id, array['owner', 'admin'])));
 
+-- ═════ the fifth verifier round (the same migration: 0090–0099 are not applied anywhere yet; the merge renumbers them) ═════
+--   N1 (blocking) a held item edited while it waited was published with words the moderator never saw: an edit refreshes the queue row
+--      (reasons added, excerpt, changed_at), the queue shows every field the rules read, and Publish carries the key of what was read (DX447)
+--   N2 the published words: every word that has a letter (digits inside it kept), and no new reason
+--   N3 comments and a group's rules stop only for outside invite links (rules and replies that forbid things name them)
+--   N4 a group's topic is checked like its name; its emoji is an emoji; its cover is no outside link
+--   N5 a negation strips only a plain statement that ends its clause; "!" keeps the whole text checked
+--   N6–N9 group-name claims, rules v6 (no prescription, door-to-door, street and brand names, more link services, import "under your card",
+--      "any expiry"), a lot's ref is checked, the partner badge also goes with sector or country
+-- ── rules v6 ────
+delete from private.review_rules where pattern = $r$\m(tramado+l+e?s?|tram+ad+o+l+e?s?|tramal|tapentadol|pregabal[ie]n|lyrica|codeine|codiene|morphine|morfin|fentan[iy]l|oxycodone|methadone|alprazolam|[xz]ana(x|ks)|clonazepam|rivotril|diazepam|valium|zolpidem|ketamine?|methylphenidate|ritalin|[ck]apt[ae]g[oa]ne?|fenethylline|nalbuphine|pethidine|buprenorphine|apetryl|abetryl)(?![a-z])$r$ and exists (select 1 from private.review_rules x where x.pattern = $r$\m(tramado+[li]+e?s?|tramadolum|tram+ad+o+l+e?s?|tramal|tapentadol|pregabal[ie]n|lyrica|codeine|codiene|morphine|morfin|fentan[iy]l|oxycodone|methadone|alprazolam|[xz]ana(x|ks)|clonazepam|rivotril|diazepam|valium|zolpidem|ketamine?|methylphenidate|ritalin|[ck]apt[ae]g[oa]ne?|fenethylline|nalbuphine|pethidine|buprenorphine|apetryl|abetryl|contramal|tramax|ultram|zaldiar|lorazepam|bromazepam|nitrazepam|midazolam|dormicum|nucynta|nubain|parkinol|strox|shabu|bango|hashish)(?![a-z])$r$);   -- re-run safe
+update private.review_rules set pattern = $r$\m(tramado+[li]+e?s?|tramadolum|tram+ad+o+l+e?s?|tramal|tapentadol|pregabal[ie]n|lyrica|codeine|codiene|morphine|morfin|fentan[iy]l|oxycodone|methadone|alprazolam|[xz]ana(x|ks)|clonazepam|rivotril|diazepam|valium|zolpidem|ketamine?|methylphenidate|ritalin|[ck]apt[ae]g[oa]ne?|fenethylline|nalbuphine|pethidine|buprenorphine|apetryl|abetryl|contramal|tramax|ultram|zaldiar|lorazepam|bromazepam|nitrazepam|midazolam|dormicum|nucynta|nubain|parkinol|strox|shabu|bango|hashish)(?![a-z])$r$ where pattern = $r$\m(tramado+l+e?s?|tram+ad+o+l+e?s?|tramal|tapentadol|pregabal[ie]n|lyrica|codeine|codiene|morphine|morfin|fentan[iy]l|oxycodone|methadone|alprazolam|[xz]ana(x|ks)|clonazepam|rivotril|diazepam|valium|zolpidem|ketamine?|methylphenidate|ritalin|[ck]apt[ae]g[oa]ne?|fenethylline|nalbuphine|pethidine|buprenorphine|apetryl|abetryl)(?![a-z])$r$;
+delete from private.review_rules where pattern = $r$(^|[^a-z])(tramado+l+e?s?|tram+ad+o+l+e?s?|tramal|tapentadol|pregabal[ie]n|lyrica|codeine|codiene|morphine|morfin|fentan[iy]l|oxycodone|methadone|alprazolam|[xz]ana(x|ks)|clonazepam|rivotril|diazepam|valium|zolpidem|ketamine?|methylphenidate|ritalin|[ck]apt[ae]g[oa]ne?|fenethylline|nalbuphine|pethidine|buprenorphine|apetryl|abetryl)(?![a-z])$r$ and exists (select 1 from private.review_rules x where x.pattern = $r$(^|[^a-z])(tramado+[li]+e?s?|tramadolum|tram+ad+o+l+e?s?|tramal|tapentadol|pregabal[ie]n|lyrica|codeine|codiene|morphine|morfin|fentan[iy]l|oxycodone|methadone|alprazolam|[xz]ana(x|ks)|clonazepam|rivotril|diazepam|valium|zolpidem|ketamine?|methylphenidate|ritalin|[ck]apt[ae]g[oa]ne?|fenethylline|nalbuphine|pethidine|buprenorphine|apetryl|abetryl|contramal|tramax|ultram|zaldiar|lorazepam|bromazepam|nitrazepam|midazolam|dormicum|nucynta|nubain|parkinol|strox|shabu|bango|hashish)(?![a-z])$r$);   -- re-run safe
+update private.review_rules set pattern = $r$(^|[^a-z])(tramado+[li]+e?s?|tramadolum|tram+ad+o+l+e?s?|tramal|tapentadol|pregabal[ie]n|lyrica|codeine|codiene|morphine|morfin|fentan[iy]l|oxycodone|methadone|alprazolam|[xz]ana(x|ks)|clonazepam|rivotril|diazepam|valium|zolpidem|ketamine?|methylphenidate|ritalin|[ck]apt[ae]g[oa]ne?|fenethylline|nalbuphine|pethidine|buprenorphine|apetryl|abetryl|contramal|tramax|ultram|zaldiar|lorazepam|bromazepam|nitrazepam|midazolam|dormicum|nucynta|nubain|parkinol|strox|shabu|bango|hashish)(?![a-z])$r$ where pattern = $r$(^|[^a-z])(tramado+l+e?s?|tram+ad+o+l+e?s?|tramal|tapentadol|pregabal[ie]n|lyrica|codeine|codiene|morphine|morfin|fentan[iy]l|oxycodone|methadone|alprazolam|[xz]ana(x|ks)|clonazepam|rivotril|diazepam|valium|zolpidem|ketamine?|methylphenidate|ritalin|[ck]apt[ae]g[oa]ne?|fenethylline|nalbuphine|pethidine|buprenorphine|apetryl|abetryl)(?![a-z])$r$;
+delete from private.review_rules where pattern = $r$(^|[^ء-ي])(و|ف)?(ب|ل|ك)?(ال|ل)?(ترمادول|ترامدول|بريجابلين|كودين|كبتجون|كابتاجون|ابتريل|فينتانيل)([^ء-ي]|$)$r$ and exists (select 1 from private.review_rules x where x.pattern = $r$(^|[^ء-ي])(و|ف)?(ب|ل|ك)?(ال|ل)?(ترمادول|ترامادل|ترمدول|كابتجون|باركينول|سومينالتا|استروكس|حشيش|بانجو|شابو|ترامدول|بريجابلين|كودين|كبتجون|كابتاجون|ابتريل|فينتانيل)([^ء-ي]|$)$r$);   -- re-run safe
+update private.review_rules set pattern = $r$(^|[^ء-ي])(و|ف)?(ب|ل|ك)?(ال|ل)?(ترمادول|ترامادل|ترمدول|كابتجون|باركينول|سومينالتا|استروكس|حشيش|بانجو|شابو|ترامدول|بريجابلين|كودين|كبتجون|كابتاجون|ابتريل|فينتانيل)([^ء-ي]|$)$r$ where pattern = $r$(^|[^ء-ي])(و|ف)?(ب|ل|ك)?(ال|ل)?(ترمادول|ترامدول|بريجابلين|كودين|كبتجون|كابتاجون|ابتريل|فينتانيل)([^ء-ي]|$)$r$;
+delete from private.review_rules where pattern = $r$chat ?\.? ?whatsapp ?\.? ?(com|dot com)|wa\.me/|wa\.link/|api\.whatsapp\.com/send|whatsapp\.com/(channel|invite|send)|whatsapp://|(?<![a-z0-9.@\-])t\.me(?![a-z0-9.@\-])|tg://|telegram\.(me|dog)/|telegram\.org/joinchat|(telegram|tele|تليجرام|تيليجرام|تلجرام) ?:? ?@[a-z0-9_]{4,}|discord\.(gg|com/invite)|invite\.viber\.com|vb\.me/|facebook\.com/groups/|fb\.com/groups?/|m\.me/j/|\m(bit\.ly|tinyurl\.com|cutt\.ly|rb\.gy|shorturl\.at|is\.gd|t\.co)/|\m(t\.ly|s\.id|linktr\.ee)/|signal\.group/|\mtg ?:? ?@[a-z0-9_]{4,}$r$ and exists (select 1 from private.review_rules x where x.pattern = $r$chat ?\.? ?whatsapp ?\.? ?(com|dot com)|wa\.me/|wa\.link/|api\.whatsapp\.com/send|whatsapp\.com/(channel|invite|send)|whatsapp://|(?<![a-z0-9.@\-])t\.me(?![a-z0-9.@\-])|tg://|telegram\.(me|dog)/|telegram\.org/joinchat|(telegram|tele|تليجرام|تيليجرام|تلجرام) ?:? ?@[a-z0-9_]{4,}|discord\.(gg|com/invite)|invite\.viber\.com|vb\.me/|facebook\.com/groups/|fb\.com/groups?/|m\.me/j/|\m(bit\.ly|tinyurl\.com|cutt\.ly|rb\.gy|shorturl\.at|is\.gd|t\.co)/|\m(t\.ly|s\.id|linktr\.ee)/|signal\.group/|\mtg ?:? ?@[a-z0-9_]{4,}|\m(goo\.gl|ow\.ly|rebrand\.ly|tiny\.cc|ln\.run|qr\.link|instagram\.com)/|@[a-z0-9_]{4,} on telegram|\mtelegram ?[-:] ?@[a-z0-9_]{4,}|\mtelegram channel ?:$r$);   -- re-run safe
+update private.review_rules set pattern = $r$chat ?\.? ?whatsapp ?\.? ?(com|dot com)|wa\.me/|wa\.link/|api\.whatsapp\.com/send|whatsapp\.com/(channel|invite|send)|whatsapp://|(?<![a-z0-9.@\-])t\.me(?![a-z0-9.@\-])|tg://|telegram\.(me|dog)/|telegram\.org/joinchat|(telegram|tele|تليجرام|تيليجرام|تلجرام) ?:? ?@[a-z0-9_]{4,}|discord\.(gg|com/invite)|invite\.viber\.com|vb\.me/|facebook\.com/groups/|fb\.com/groups?/|m\.me/j/|\m(bit\.ly|tinyurl\.com|cutt\.ly|rb\.gy|shorturl\.at|is\.gd|t\.co)/|\m(t\.ly|s\.id|linktr\.ee)/|signal\.group/|\mtg ?:? ?@[a-z0-9_]{4,}|\m(goo\.gl|ow\.ly|rebrand\.ly|tiny\.cc|ln\.run|qr\.link|instagram\.com)/|@[a-z0-9_]{4,} on telegram|\mtelegram ?[-:] ?@[a-z0-9_]{4,}|\mtelegram channel ?:$r$ where pattern = $r$chat ?\.? ?whatsapp ?\.? ?(com|dot com)|wa\.me/|wa\.link/|api\.whatsapp\.com/send|whatsapp\.com/(channel|invite|send)|whatsapp://|(?<![a-z0-9.@\-])t\.me(?![a-z0-9.@\-])|tg://|telegram\.(me|dog)/|telegram\.org/joinchat|(telegram|tele|تليجرام|تيليجرام|تلجرام) ?:? ?@[a-z0-9_]{4,}|discord\.(gg|com/invite)|invite\.viber\.com|vb\.me/|facebook\.com/groups/|fb\.com/groups?/|m\.me/j/|\m(bit\.ly|tinyurl\.com|cutt\.ly|rb\.gy|shorturl\.at|is\.gd|t\.co)/|\m(t\.ly|s\.id|linktr\.ee)/|signal\.group/|\mtg ?:? ?@[a-z0-9_]{4,}$r$;
+insert into private.review_rules (topic, squashed, pattern) values
+  ('retail', false, $r$\m(no|without( a)?) prescription( (needed|required))?\M|\mdoorstep delivery\M|\mdeliver(y)? to your door\M|\mdoor-to-door delivery\M|\mend customers welcome\M|\mfor personal use\M$r$),
+  ('import', false, $r$\munder (our|your) (registration|import card|company.?s? card)\M|\mregister the product under your licen[cs]e\M|\mimport on your company.?s? card\M$r$),
+  ('retail', false, $r$\m(don't|do not|never|not|no) (sell|deliver|delivery|supply|sale)( to| for) (the )?(pharmac(y|ies)|public|patients|drugstores?) (after|before|on|at|outside|in|during|with|without|through|via|late|early|under|over|below|above)\M$r$),
+  ('sham', false, $r$\many expiry( date)?( you (want|need))?\M|\mchange the expiry( date)?\M|\mrelabel expired\M|\mcoa documents? on request\M$r$),
+  ('sham', false, $r$(^|[^ء-ي])(و|ف)?(تعديل تاريخ الصلاحيه|تغيير تاريخ الصلاحيه|بتاريخ اللي تحبه|بالتاريخ اللي تحبه)([^ء-ي]|$)$r$)
+on conflict (pattern) do nothing;
+
+create or replace function private.text_key(p text) returns text language sql immutable set search_path = public as $$
+  -- the words that have a letter, digits inside them kept ("TR4M4D0L"); numbers on their own (a price, a quantity) do not change it
+  select md5(coalesce(string_agg(w, ' ' order by i), ''))
+    from regexp_split_to_table(private.review_norm(p), '[^[:alnum:]]+') with ordinality as t(w, i) where w ~ '[[:alpha:]]'
+$$;
+revoke all on function private.text_key(text) from public, anon, authenticated, service_role;
+grant execute on function private.text_key(text) to authenticated, service_role;
+alter table public.content_holds add column if not exists changed_at timestamptz;
+CREATE OR REPLACE FUNCTION public.review_hold_after()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare k text := private.hold_kind(tg_table_name); j jsonb := to_jsonb(new); t text[]; ex text; who uuid := coalesce(j ->> 'user_id', j ->> 'created_by')::uuid;
+begin
+  if not new.review_hold then return null; end if;
+  -- 0099 (round 5, N1): a held item edited while it waits: the queue row shows the new words and every reason they give
+  if tg_op = 'UPDATE' and old.review_hold then
+    if private.review_text(tg_table_name, j) is distinct from private.review_text(tg_table_name, to_jsonb(old)) then
+      update public.content_holds h set topics = (select coalesce(array_agg(distinct x order by x), '{}') from unnest(h.topics || private.review_topics(private.review_text(tg_table_name, j))) x),
+             excerpt = left(regexp_replace(private.review_text(tg_table_name, j), '\s+', ' ', 'g'), 200), changed_at = now()
+       where h.kind = k and h.item_id = new.id and h.status = 'held';
+    end if;
+    return null;
+  end if;
+  if exists (select 1 from public.content_holds h where h.kind = k and h.item_id = new.id and h.status = 'held') then return null; end if;
+  t := private.review_topics(private.review_text(tg_table_name, j));
+  ex := left(regexp_replace(case tg_table_name when 'posts' then coalesce(j ->> 'body', '')
+                                               when 'products' then concat_ws(' — ', j ->> 'name', j ->> 'description')
+                                               when 'company_listings' then concat_ws(' — ', j ->> 'product', j ->> 'qty', j ->> 'price', j ->> 'markets')
+                                               else concat_ws(' — ', j ->> 'title', j ->> 'details') end, '\s+', ' ', 'g'), 200);
+  insert into public.content_holds (kind, item_id, user_id, topics, excerpt) values (k, new.id, who, t, ex);
+  if who is not null then
+    insert into public.notifications (user_id, type, from_user, message, data)
+    values (who, 'auto_review', null, null, jsonb_build_object('kind', k, 'topics', to_jsonb(t), 'excerpt', left(ex, 80) || case when char_length(ex) > 80 then '…' else '' end));
+  end if;
+  return null;
+end $function$;
+revoke all on function public.review_hold_after() from public, anon, authenticated, service_role;
+grant execute on function public.review_hold_after() to service_role;
+CREATE OR REPLACE FUNCTION public.held_review_queue(p_limit integer DEFAULT 100)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  select case when not public.is_moderator() then null else coalesce((select jsonb_agg(to_jsonb(x) order by x.created_at) from (
+    select h.id, h.kind, h.item_id, h.topics, h.excerpt, h.created_at, h.user_id,
+           (select p.name from public.profiles p where p.id = h.user_id) as author,
+           private.item_text(h.kind, h.item_id) as body,   -- 0099 (round 5): every field the rules read, as it is now
+           private.text_key(private.item_text(h.kind, h.item_id)) as key, h.changed_at,
+           -- where it was posted: the group, or the company page
+           case h.kind when 'post' then (select g.name from public.posts o join public.groups g on g.id = o.group_id where o.id = h.item_id)
+                       when 'listing' then (select g.name from public.group_listings l join public.groups g on g.id = l.group_id where l.id = h.item_id)
+                       when 'company' then (select co.name from public.company_listings c join public.companies co on co.id = c.company_id where c.id = h.item_id) end as group_name
+      from public.content_holds h where h.status = 'held' order by h.created_at limit least(greatest(coalesce(p_limit, 100), 1), 300)) x), '[]'::jsonb) end
+$function$;
+revoke all on function public.held_review_queue(integer) from public, anon, authenticated, service_role;
+grant execute on function public.held_review_queue(integer) to authenticated, service_role;
+drop function if exists public.held_review_decide(bigint, boolean, text);
+CREATE OR REPLACE FUNCTION public.held_review_decide(p_hold bigint, p_publish boolean, p_note text DEFAULT NULL::text, p_key text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare h public.content_holds; me uuid := auth.uid(); v_note text := nullif(left(trim(coalesce(p_note, '')), 500), ''); out text; c public.company_listings;
+begin
+  if me is null or not public.is_moderator() then raise exception 'Only the Drugbox team can do this' using errcode = '42501'; end if;
+  select * into h from public.content_holds where id = p_hold for update;
+  if h.id is null then raise exception 'This item is not in the queue' using errcode = 'P0002'; end if;
+  if h.status <> 'held' then raise exception 'Already decided by % (%)', private.who(h.decided_by), h.status using errcode = 'DX409'; end if;
+  -- 0099 (round 5, N1): Publish only the words the moderator read (the queue gives their key); edited since → read it again
+  if p_publish and p_key is not null and p_key is distinct from private.text_key(private.item_text(h.kind, h.item_id)) then
+    raise exception 'This item was edited after you opened the queue — reload and read it again' using errcode = 'P0001', hint = 'DX447';
+  end if;
+  out := case when p_publish then 'published' else 'removed' end;
+  update public.content_holds set status = out, decided_by = me, decided_at = now(), note = v_note,
+         text_key = case when p_publish then private.text_key(private.item_text(h.kind, h.item_id)) end,
+         topics = case when p_publish then private.review_topics(private.item_text(h.kind, h.item_id)) else topics end where id = h.id;   -- 0099 (B2): the words Drugbox read
+  perform set_config('drugbox.hold_decision', '1', true);
+  if p_publish then
+    if h.kind = 'post' then update public.posts set review_hold = false where id = h.item_id;
+    -- 0097 (N2): a company offer goes back on only while the company is verified; otherwise it stays paused (the owner resumes it once verified)
+    elsif h.kind = 'offer' then update public.products p set review_hold = false,
+                                    status = case when p.status = 'paused' and (p.posted_as is distinct from 'company' or exists (select 1 from public.companies cc where cc.id = p.company_id and cc.status = 'verified'))
+                                                  then 'active' else p.status end where p.id = h.item_id;
+    elsif h.kind = 'company' then
+      update public.company_listings x set review_hold = false, active = exists (select 1 from public.companies co where co.id = x.company_id and co.status = 'verified')
+       where x.id = h.item_id returning * into c;
+      if c.id is not null and c.active then perform public.notify_company_followers(array[c.company_id], c.created_by, c.product, c.kind); end if;   -- told now, not when it was held
+    else update public.group_listings l set review_hold = false,
+                status = case when l.posted_as = 'company' and not exists (select 1 from public.companies co where co.id = l.company_id and co.status = 'verified') then 'closed' else l.status end
+          where l.id = h.item_id; end if;
+  else
+    if h.kind = 'post' then delete from public.posts where id = h.item_id;
+    elsif h.kind = 'offer' then delete from public.products where id = h.item_id;
+    elsif h.kind = 'company' then delete from public.company_listings where id = h.item_id;
+    else delete from public.group_listings where id = h.item_id; end if;
+  end if;
+  perform set_config('drugbox.hold_decision', '', true);
+  if h.user_id is not null then
+    insert into public.notifications (user_id, type, from_user, message, data)
+    values (h.user_id, 'auto_review_decided', null, null, jsonb_strip_nulls(jsonb_build_object('kind', h.kind, 'outcome', out,
+            'excerpt', left(h.excerpt, 80) || case when char_length(h.excerpt) > 80 then '…' else '' end, 'note', v_note)));
+  end if;
+  perform private.log_decision('held', h.id::text, left(coalesce((select name from public.profiles where id = h.user_id), 'A member') || ' · ' || h.excerpt, 300), out, v_note,
+                               jsonb_build_object('kind', h.kind, 'item', h.item_id, 'topics', to_jsonb(h.topics)));
+  return out;
+end $function$;
+revoke all on function public.held_review_decide(bigint, boolean, text, text) from public, anon, authenticated, service_role;
+grant execute on function public.held_review_decide(bigint, boolean, text, text) to authenticated, service_role;
+CREATE OR REPLACE FUNCTION public.review_hold_before()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare txt text := private.review_text(tg_table_name, to_jsonb(new)); prod boolean := tg_table_name = 'products'; cl boolean := tg_table_name = 'company_listings';
+begin
+  if tg_op = 'UPDATE' then
+    if current_setting('drugbox.hold_decision', true) = '1' then return new; end if;   -- held_review_decide() sets / clears it
+    new.review_hold := old.review_hold;
+    -- a held offer stays off: neither its status nor its active flag (products derive one from the other after this trigger — F1) turns it on
+    if new.review_hold and ((prod and (to_jsonb(new) ->> 'status') = 'active' and (to_jsonb(old) ->> 'status') <> 'active')
+                         or ((prod or cl) and (to_jsonb(new) ->> 'active')::boolean and not (to_jsonb(old) ->> 'active')::boolean)) then
+      raise exception 'This offer is waiting for Drugbox review — it shows again once it is checked' using errcode = '42501', hint = 'DX417';
+    end if;
+    if txt is not distinct from private.review_text(tg_table_name, to_jsonb(old)) then return new; end if;
+  else
+    new.review_hold := false;
+  end if;
+  if new.review_hold then return new; end if;                                    -- already waiting: an edit keeps it waiting
+  -- Drugbox's own team is not held (it posts as Drugbox and decides the queue); server writes (imports, fixtures) neither
+  if auth.uid() is null or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('admin', 'moderator')) then return new; end if;
+  -- 0098 (F9): an item Drugbox published is not held again on a price or quantity edit…
+  -- 0099 (B2): … only while its words are the ones Drugbox read (prices, quantities and other numbers may change); new words are checked again
+  if tg_op = 'UPDATE' and exists (select 1 from public.content_holds h where h.kind = private.hold_kind(tg_table_name) and h.item_id = new.id and h.status = 'published'
+                                    and h.text_key = private.text_key(txt) and private.review_topics(txt) <@ h.topics) then return new; end if;
+  if cardinality(private.review_topics(txt)) > 0 then
+    new.review_hold := true;
+    if prod and (to_jsonb(new) ->> 'status') = 'active' then new := jsonb_populate_record(new, jsonb_build_object('status', 'paused')); end if;
+    if cl then new := jsonb_populate_record(new, jsonb_build_object('active', false)); end if;
+  end if;
+  return new;
+end $function$;
+revoke all on function public.review_hold_before() from public, anon, authenticated, service_role;
+grant execute on function public.review_hold_before() to authenticated, service_role;
+CREATE OR REPLACE FUNCTION private.review_text(p_table text, r jsonb)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+  select case p_table when 'posts' then r ->> 'body'
+                      when 'products' then concat_ws(' ', r ->> 'name', r ->> 'description', r ->> 'price', r ->> 'moq', r ->> 'broker_for', r ->> 'unit', r ->> 'tag',
+                                                     r ->> 'incoterms', r ->> 'payment_terms', r ->> 'lead_time', r ->> 'stock', r ->> 'specs', r ->> 'price_tiers', r ->> 'docs', r ->> 'emoji')   -- 0097: docs and emoji too (N5)   -- every field people type (F4)
+                      when 'company_listings' then concat_ws(' ', r ->> 'ref', r ->> 'product', r ->> 'qty', r ->> 'batch', r ->> 'expiry', r ->> 'price', r ->> 'reg_status', r ->> 'deal_kind', r ->> 'markets')
+                      else concat_ws(' ', r ->> 'title', r ->> 'details', r ->> 'price', r ->> 'broker_for') end
+$function$;
+revoke all on function private.review_text(text, jsonb) from public, anon, authenticated, service_role;
+grant execute on function private.review_text(text, jsonb) to authenticated, service_role;
+CREATE OR REPLACE FUNCTION public.comments_review_guard()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+begin
+  if auth.uid() is null or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('admin', 'moderator')) then return new; end if;
+  if tg_op = 'UPDATE' and new.body is not distinct from old.body then return new; end if;
+  -- 0099 (round 5, N3): a comment is a reply, not an offer — only an invite link to an outside group stops it ("no controlled substances here" is fine)
+  if 'invite' = any(private.review_topics(new.body)) then
+    raise exception 'Links to outside chat groups are not allowed in comments — it was not posted'
+      using errcode = 'P0001', hint = 'DX418';
+  end if;
+  return new;
+end $function$;
+revoke all on function public.comments_review_guard() from public, anon, authenticated, service_role;
+grant execute on function public.comments_review_guard() to authenticated, service_role;
+CREATE OR REPLACE FUNCTION public.groups_review_guard()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare t text[];
+begin
+  if auth.uid() is null or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('admin', 'moderator')) then return new; end if;
+  if tg_op = 'UPDATE' and (new.name, new.description, new.rules, new.topic, new.emoji, new.cover_url) is not distinct from (old.name, old.description, old.rules, old.topic, old.emoji, old.cover_url) then return new; end if;
+  -- 0099 (round 5): name, description and topic by every rule (N4); the rules only for invite links — rules that forbid things name them (N3)
+  if coalesce(new.emoji, '') ~ '[[:alnum:]./:@]' or char_length(coalesce(new.emoji, '')) > 16 then
+    raise exception 'A group''s emoji is an emoji' using errcode = '22023', hint = 'DX439';
+  end if;
+  t := private.review_topics(concat_ws(' ', new.name, new.description, new.topic))
+       || case when 'invite' = any(private.review_topics(concat_ws(' ', new.rules::text, new.cover_url))) then array['invite'] else '{}'::text[] end;
+  if cardinality(t) > 0 then
+    raise exception 'This group''s name, description, topic or rules look outside Drugbox trade (a sale to patients, pharmacies or the public, controlled substances, import for others, sham papers or an invite link to an outside group) — change them'
+      using errcode = 'P0001', hint = 'DX439';
+  end if;
+  return new;
+end $function$;
+revoke all on function public.groups_review_guard() from public, anon, authenticated, service_role;
+grant execute on function public.groups_review_guard() to authenticated, service_role;
+CREATE OR REPLACE FUNCTION public.groups_partner_guard()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+begin
+  if public.is_server_call() then return new; end if;
+  if tg_op = 'INSERT' then new.partner_at := null; elsif new.partner_at is distinct from old.partner_at then new.partner_at := old.partner_at; end if;
+  -- 0096 (F14): Drugbox approved the group under its name — a new name asks again (the badge is not carried to "Drugbox Official …")
+  if tg_op = 'UPDATE' and old.partner_at is not null and (new.name, new.description, new.cover_url, new.topic, new.type, new.sector, new.country) is distinct from (old.name, old.description, old.cover_url, old.topic, old.type, old.sector, old.country) then new.partner_at := null; end if;   -- 0098 (F7): name, description or cover
+  return new;
+end $function$;
+revoke all on function public.groups_partner_guard() from public, anon, authenticated, service_role;
+grant execute on function public.groups_partner_guard() to authenticated, service_role;
+
+-- a negation strips only a plain statement that ends its clause ("we do not sell to pharmacies." — not "… outside Cairo", "… on credit",
+-- "… at this price"); "!" and "?" keep the whole text checked as "only", "but", «بس» do (round 5, N5)
+create or replace function private.review_neg(n text) returns text language sql immutable set search_path = public as $$
+  select case when coalesce(n, '') ~ '[?؟!]|(?<!distributors )(?<!wholesalers )(?<!companies )(?<!factories )(?<!manufacturers )(?<!warehouses )(?<!b2b )\monly\M|\m(too|also|but|except|unless|however|wrong|exception|instead|anyway|guaranteed|made to order|any date|we do(?! not))\M|(^|[^ء-ي])(كمان|الا|لكن|خالص|برضه|برضو|غير ان)([^ء-ي]|$)|(?<!للموزعين )(?<!للمصانع )(?<!للشركات )(^|[^ء-ي])بس([^ء-ي]|$)'
+    then coalesce(n, '') else
+  regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(coalesce(n, ''),
+    '\m(we (do not|don''t|never|won''t|will not)|do not|don''t|never|no|not)( directly| ever)? (sell|sale|sales|selling|supply|supplying|deliver|delivery|distribute|distributing)( directly)?( to| for)? (the |any |retail )?(public|pharmac(y|ies|ists?)|drugstores?|patients|consumers)\M( or (the )?(public|pharmac(y|ies|ists?)|patients|consumers)\M)?(?=( (on drugbox|here|in this group|on this platform))?\s*([.,;:—–-]|$))', ' ', 'g'),
+    '\mnot for (retail )?sale( to (the )?(public|pharmac(y|ies)|patients|consumers))?\M(?=( (on drugbox|here|in this group|on this platform))?\s*([.,;:—–-]|$))', ' ', 'g'),
+    '\m(sale|sales|selling|delivery) to (the )?(public|pharmac(y|ies)|patients|consumers) (is|are) (not allowed|forbidden|prohibited|not permitted)\M(?=( (on drugbox|here|in this group|on this platform))?\s*([.,;:—–-]|$))', ' ', 'g'),
+    '\m(no|spot|spotting|detect|detecting|detection of|against|beware of) (sham|fake|fictitious|forged|backdated) [a-z]+( (and|or) (sham|fake|fictitious|forged|backdated) [a-z]+)?', ' ', 'g'),
+    '\m(sham|fake|fictitious|forged|backdated) [a-z]+ (detection|training|awareness)\M', ' ', 'g'),
+    '(^|[^ء-ي])(لا|مش|مبن|ما|ممنوع|غير مسموح) ?(نبيع|بنبيع|بيع|البيع|نوزع|بنوزع|يوجد توصيل|توصيل|التوصيل) (لل|ل|علي ال)?(صيادله|صيدليات|صيدليه|مرضي|جمهور)(?=\s*([.,،؛:—–-]|$))', '\1 ', 'g'),
+    '(^|[^ء-ي])(البيع|بيع|التوصيل|توصيل) (لل|ل)(صيادله|صيدليات|صيدليه|مرضي|جمهور) (ممنوع|غير مسموح)(?=\s*([.,،؛:—–-]|$))', '\1 ', 'g') end
+$$;
+revoke all on function private.review_neg(text) from public, anon, authenticated, service_role;
+grant execute on function private.review_neg(text) to authenticated, service_role;
+
+-- only Drugbox's team names, describes or rules a group as Drugbox's own (round 5, N6: ®/™, separators, "verified / approved by", "partner of",
+-- "official … of Drugbox", support / help desk, «دروب بوكس», «معتمد من»; the group's rules are read too)
+create or replace function public.groups_drugbox_name_guard() returns trigger language plpgsql set search_path = public as $$
+declare t text := regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(
+                    private.review_squash(regexp_replace(concat_ws(' ', new.name, new.description, new.topic, new.rules::text), '[®©™℠]|\((tm|r|c)\)', '', 'gi')),
+                    'drug[ .\-]?box', 'drugbox', 'g'), '(دروج|دراج|دراغ|درج|دروب) ?بوكس', 'drugbox', 'g'),
+                    'drugbox(official|oficial|officiel|team|staff|admins?|hq|support|run)', 'drugbox \1', 'g'), '[|:\-–—_]+', ' ', 'g'), '\s+', ' ', 'g');
+begin
+  if public.is_server_call() or public.is_moderator() then return new; end if;
+  if tg_op = 'UPDATE' and (new.name, new.description, new.topic, new.rules) is not distinct from (old.name, old.description, old.topic, old.rules) then return new; end if;
+  if t ~ '\m(official(?! drugbox partner)( group| page| traders?)?( of( the)?)? drugbox|drugbox( egypt| eg|''s| com| com eg)? (official|oficial|officiel)|drugbox''s own|(run|managed|owned|moderated|operated|verified|approved|endorsed|certified|authori[sz]ed) by (the )?drugbox|drugbox run|partner(ed)? (of|with) drugbox|drugbox (team|staff|admins?|moderators?|moderation|support|help ?desk|help|management|hq|customer (care|service|support)|verified)\M(?![ -](building|picks|ideas|talk|tips|spirit)))'
+     or (t ~ '\mdrugbox partner' and new.partner_at is null)
+     or t ~ 'drugbox ?(الرسمي|الرسميه|رسمي|الاصلي|الاصليه|المعتمد|المعتمده)|(الرسمي|الرسميه|التابع|تابع|تابعه) (ل|لـ ?)?drugbox|(فريق|اداره|ادمن|مشرفين|معتمد من|باشراف|بإشراف) drugbox' then
+    raise exception 'Only Drugbox''s team names or describes a group as Drugbox''s own — ask for the partner badge instead' using errcode = '42501', hint = 'DX437';
+  end if;
+  return new;
+end $$;
+revoke all on function public.groups_drugbox_name_guard() from public, anon, authenticated, service_role;
+grant execute on function public.groups_drugbox_name_guard() to authenticated, service_role;
+
 notify pgrst, 'reload schema';
