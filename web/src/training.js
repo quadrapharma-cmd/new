@@ -156,7 +156,8 @@
     if (V.topic !== 'all' && c.topic !== V.topic) return false;
     if (V.level && c.level !== V.level) return false;
     var q = V.q.trim().toLowerCase(); if (!q) return true;
-    var hay = (c.title + ' ' + c.desc + ' ' + (TOPIC[c.topic] || '') + ' ' + c.instructor).toLowerCase();
+    var ar = ((window.dxGrowthUI || {}).courseAr || {})[c.title] || [];   /* AREA w-growth: the six courses' Arabic title and description (decision 7) */
+    var hay = (c.title + ' ' + c.desc + ' ' + (TOPIC[c.topic] || '') + ' ' + c.instructor + ' ' + ar.join(' ')).toLowerCase();
     return q.split(/\s+/).every(function (w) { return hay.indexOf(w) >= 0; });
   }
   function card(c) {

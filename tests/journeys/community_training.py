@@ -18,7 +18,13 @@ def courses(pg):
     return pg.evaluate("""()=>[...document.querySelectorAll('#content .tr-card')].filter(e=>e.getClientRects().length&&getComputedStyle(e).display!='none').map(c=>({
         title:((c.querySelector('.tr-title')||{}).innerText||'').trim(), text:c.innerText.replace(/\\s+/g,' ').trim(), btn:((c.querySelector('button')||{}).innerText||'').trim()}))""")
 
+def shown(j, pg, title):
+    """The title a course card shows: in Arabic, the six courses read in Arabic (decision 7, growth.js / training_courses.title_ar)."""
+    if not j.ar: return title
+    return pg.evaluate("t=>{const m=(window.dxGrowthUI||{}).courseAr||{};return m[t]?m[t][0]:t}", title)
+
 def course(j, pg, title):
+    title = shown(j, pg, title)
     loc = pg.locator('#content .tr-card:visible').filter(has=pg.locator('.tr-title', has_text=title))
     j.check(loc.count(), 'no course card "%s" on Training (cards: %s)' % (title, ', '.join(c['title'] for c in courses(pg))[:160]))
     return loc.first
@@ -55,7 +61,7 @@ def find_course(j):
         j.check(cs and all(re.search(r'GMP|Manufactur', c['text'], re.I) for c in cs), 'the GMP filter shows other courses')
         box = pg.locator('#content input[type=search]:visible, #content input[placeholder*="earch" i]:visible')
         j.check(box.count(), 'not built: no course search'); box.first.fill('stability'); j.settle(pg, 900)
-        j.check(all(re.search(r'stabil', c['text'], re.I) for c in courses(pg)) and courses(pg), "searching 'stability' does not narrow to stability courses")
+        j.check(all(re.search(r'stabil|الثبات', c['text'], re.I) for c in courses(pg)) and courses(pg), "searching 'stability' does not narrow to stability courses")
     with j.step('Open a course card: syllabus (lessons with durations), instructor, level, duration, price (Free or EGP incl. VAT), certificate, enrolled count'):
         training(j, pg); d = open_course(j, pg, courses(pg)[0]['title'])
         missing = [k for k, p in (('syllabus / lessons', r'Lesson|Syllabus|Module|الدرس|المنهج'), ('instructor', r'Instructor|by |المحاضر|المدرب'), ('price', r'Free|EGP|مجاني|ج\.م'),
@@ -131,7 +137,7 @@ def buy_paid_course(j):
         training(j, pg); paid = [c for c in courses(pg) if re.search(r'EGP|ج\.م|\$', c['text'])]
         if j.live: j.check(j.has_column('training_courses', 'price') or j.has_column('training_courses', 'price_egp') or j.sql1("select count(*) from public.payment_products where kind ~ 'course'") != '0', 'not built: courses have no price (no price column, no course payment product)')
         j.check(paid, 'not built: no paid course on Training (every course is free / has no price)')
-        j.check(any(c['title'] == title for c in paid), 'the paid course "%s" does not show its price' % title)
+        j.check(any(c['title'] == shown(j, pg, title) for c in paid), 'the paid course "%s" does not show its price' % title)
         c = course(j, pg, title); c.locator('button').first.click(); j.settle(pg, 1200)
         j.check(mopen(pg) and money(mtext(pg)), 'Buy opens no checkout with an amount')
         j.check(want in mtext(pg), 'the checkout total is not the server price + 14%% VAT (%s): %s' % (want, mtext(pg)[:200]))
