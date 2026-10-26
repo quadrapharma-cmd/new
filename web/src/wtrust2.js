@@ -99,7 +99,7 @@
       after.insertAdjacentHTML('afterend', '<div class="trust-bar wt-tb"></div>'); tb = card.querySelector('.trust-bar'); }
     [].forEach.call(tb.querySelectorAll('.wt-as-chip, .wt-as-for'), function (x) { x.remove(); });
     tb.insertAdjacentHTML('afterbegin', chipHtml(i)); tb.style.display = '';
-    card.dataset.wtAs = i.as;
+    card.__wtAs = i.as;   /* a property, not an attribute: the build's page snapshot stays the same byte for byte */
     if (i.held) heldOnCard(card);
   }
   function heldOnCard(card) { if (card.querySelector('.wt-held')) return; var host = card.querySelector('.lc-inner') || card; host.insertAdjacentHTML('afterbegin', '<div class="wt-held">⏳ Waiting for Drugbox review — only you can see it</div>'); }
@@ -112,7 +112,7 @@
   /* the demo's sample cards: sample data says who posts them */
   function demoCards() {
     var n = 0; [].forEach.call(document.querySelectorAll('#mkx .supply-grid .lcard, #mkx .dcard, #mkx .lcard'), function (c) {
-      if (c.dataset.wtAs || c.dataset.live) return;
+      if (c.__wtAs || c.dataset.live) return;
       if (c.dataset.new === '1') return;                                        /* a card just published gets its own choice (below) */
       badge(c, c.classList.contains('dcard') ? { as: 'individual' } : (n++ % 2 === 0 ? { as: 'company' } : { as: 'individual' }));
     });
@@ -128,7 +128,7 @@
       D.store.set('wtMyOffers', (D.store.get('wtMyOffers', 0) || 0) + 1);
       if (t.length) { UI.demo.hold('offer', d.title, d.title + ' — ' + (d.desc || ''), t); notifyHeld(t, d.title); }
       setTimeout(function () {
-        var c = [].filter.call(document.querySelectorAll('#mkx [data-new="1"]'), function (x) { return !x.dataset.wtAs; })[0];
+        var c = [].filter.call(document.querySelectorAll('#mkx [data-new="1"]'), function (x) { return !x.__wtAs; })[0];
         if (c) badge(c, info);
         if (t.length) toast('Your offer is waiting for Drugbox review — it looks like ' + UI.why(t) + '. You are told when it is checked.');
       }, 400);
@@ -274,7 +274,7 @@
   }, true);
   function roomCards() {
     if (live()) return;   /* live: web/src/live/wtrust.js reads each listing's posted_as */
-    [].forEach.call(document.querySelectorAll('#gpBox [data-lid]'), function (c) { if (c.dataset.wtAs) return; var co = c.querySelector('.gp-lco'); badge(c, { as: co && co.querySelector('.gp-ver') ? 'company' : 'individual' }); });
+    [].forEach.call(document.querySelectorAll('#gpBox [data-lid]'), function (c) { if (c.__wtAs) return; var co = c.querySelector('.gp-lco'); badge(c, { as: co && co.querySelector('.gp-ver') ? 'company' : 'individual' }); });
   }
   window.dxTrustUI.roomCards = roomCards;
   /* the demo keeps the group's posting rules the way the database does in the live app (0094) */

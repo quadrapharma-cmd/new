@@ -94,7 +94,7 @@
   var INFO = {}, ASKING = {};
   function paintCards() {
     var cards = [].slice.call(document.querySelectorAll('#mkx [data-live^="p"]')), need = [];
-    cards.forEach(function (c) { var id = +c.dataset.live.slice(1); if (INFO[id]) { if (c.dataset.wtAs !== INFO[id].as) window.dxTrustUI.badge(c, INFO[id]); } else if (!ASKING[id]) need.push(id); });
+    cards.forEach(function (c) { var id = +c.dataset.live.slice(1); if (INFO[id]) { if (c.__wtAs !== INFO[id].as) window.dxTrustUI.badge(c, INFO[id]); } else if (!ASKING[id]) need.push(id); });
     if (!need.length) return; need.forEach(function (id) { ASKING[id] = 1; });
     sb.from('products').select('id, posted_as, broker_for, broker_commission, review_hold').in('id', need.slice(0, 200)).then(function (r) {
       need.forEach(function (id) { delete ASKING[id]; }); (r.data || []).forEach(function (x) { INFO[x.id] = { as: x.posted_as || 'individual', broker_for: x.broker_for, commission: x.broker_commission, held: x.review_hold, id: x.posted_as === 'broker' ? x.id : null }; });
@@ -105,7 +105,7 @@
   var LINFO = {}, LASK = {};
   function paintRoom() {
     var cards = [].slice.call(document.querySelectorAll('#gpBox [data-lid]')), need = [];
-    cards.forEach(function (c) { var id = +c.dataset.lid; if (!id) return; if (LINFO[id]) { if (c.dataset.wtAs !== LINFO[id].as) window.dxTrustUI.badge(c, LINFO[id]); } else if (!LASK[id]) need.push(id); });
+    cards.forEach(function (c) { var id = +c.dataset.lid; if (!id) return; if (LINFO[id]) { if (c.__wtAs !== LINFO[id].as) window.dxTrustUI.badge(c, LINFO[id]); } else if (!LASK[id]) need.push(id); });
     if (!need.length) return; need.forEach(function (id) { LASK[id] = 1; });
     sb.from('group_listings').select('id, posted_as, broker_for, broker_commission').in('id', need.slice(0, 100)).then(function (r) {
       need.forEach(function (id) { delete LASK[id]; }); (r.data || []).forEach(function (x) { LINFO[x.id] = { as: x.posted_as || 'individual', broker_for: x.broker_for, commission: x.broker_commission }; }); paintRoom(); });
