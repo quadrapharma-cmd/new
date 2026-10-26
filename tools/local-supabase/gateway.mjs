@@ -35,7 +35,7 @@ const banned = u => u.banned_until && new Date(u.banned_until) > new Date();
 /* the same response headers a production host sends (see deploy/vercel.json; deploy/vercel_deploy.sh warns when the two drift apart): the page scripts are same-origin files in /js ('self'); small inline scripts and onclick handlers remain, so 'unsafe-inline' too (no eval) */
 const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; " +
   "img-src 'self' data: blob: http://localhost:* http://127.0.0.1:*; media-src 'self' data: blob: http://localhost:* http://127.0.0.1:*; " +
-  "connect-src 'self' data: blob: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:* https://api.exchangerate.host; worker-src 'self' blob:; " +   // data:/blob: — the app turns picked files into uploads with fetch()
+  "connect-src 'self' data: blob: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:* https://api.exchangerate.host; worker-src 'self' blob:; manifest-src 'self'; " +   // data:/blob: — the app turns picked files into uploads with fetch()
   "frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 const SEC = { 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' };
 const PAGE = { ...SEC, 'content-security-policy': CSP, 'x-frame-options': 'DENY', 'permissions-policy': 'camera=(), microphone=(), geolocation=()' };   // (HSTS only on https: see vercel.json)
@@ -67,6 +67,10 @@ http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://x');
     if (req.method === 'OPTIONS') return send(res, 204);
     if (url.pathname === '/' || url.pathname === '/index.html') return stream(res, APP_DIR + '/index.html', 200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', ...PAGE });
+    /* the installable app (w-pwa), as deploy/vercel.json serves it: the worker and the manifest are no-cache, the hashed icons immutable */
+    if (url.pathname === '/sw.js' && fs.existsSync(APP_DIR + '/sw.js')) return stream(res, APP_DIR + '/sw.js', 200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache', ...SEC });
+    if (url.pathname === '/manifest.webmanifest' && fs.existsSync(APP_DIR + '/manifest.webmanifest')) return stream(res, APP_DIR + '/manifest.webmanifest', 200, { 'content-type': 'application/manifest+json; charset=utf-8', 'cache-control': 'no-cache', ...SEC });
+    if (/^\/icons\/[\w.-]+\.png$/.test(url.pathname) && fs.existsSync(APP_DIR + url.pathname)) return stream(res, APP_DIR + url.pathname, 200, { 'content-type': 'image/png', 'cache-control': 'public, max-age=31536000, immutable', ...SEC });
     if (/^\/js\/[\w.-]+\.js$/.test(url.pathname) && fs.existsSync(APP_DIR + url.pathname)) return stream(res, APP_DIR + url.pathname, 200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'public, max-age=31536000, immutable', ...SEC });
     if (/^\/media\/[\w.-]+\.mp4$/.test(url.pathname) && fs.existsSync(APP_DIR + url.pathname)) {   // the splash video of the live build (content-hashed)
       const f = APP_DIR + url.pathname, size = fs.statSync(f).size, rg = range(req, size);

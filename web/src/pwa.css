@@ -1,0 +1,27 @@
+/* ═════ the installable app (w-pwa): install offer, iPhone guide, Settings → app and device, Notifications ask ═════ */
+.dx-pwa-offer{position:fixed;z-index:900;inset-inline-end:24px;bottom:24px;width:380px;max-width:calc(100vw - 32px);box-sizing:border-box;display:flex;gap:12px;align-items:flex-start;
+  background:#fff;border:1px solid var(--dg-line,#E6E8EE);border-radius:16px;padding:16px 40px 16px 16px;box-shadow:0 12px 32px rgba(10,31,77,.16);color:var(--dg-ink,#0a1f4d);animation:dxPwaIn .22s ease-out}
+[dir=rtl] .dx-pwa-offer{padding:16px 16px 16px 40px}
+@keyframes dxPwaIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.dx-pwa-logo{width:44px;height:44px;flex:none;object-fit:contain}
+.dx-pwa-txt{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:13px;line-height:1.5;color:var(--dg-muted,#5B6475)}
+.dx-pwa-txt b{font-size:15px;color:var(--dg-ink,#0a1f4d)}
+.dx-pwa-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.dx-pwa-btns button{min-height:40px}
+.dx-pwa-x{position:absolute;top:6px;inset-inline-end:6px;width:40px;height:40px;border:0;background:none;font-size:22px;line-height:1;color:var(--dg-muted,#5B6475);cursor:pointer;border-radius:50%}
+.dx-pwa-x:hover{background:var(--dg-soft,#F7F8FB)}
+.dx-pwa-x:focus-visible,.dx-pwa-btns button:focus-visible{outline:3px solid var(--food-l,#F3B258);outline-offset:2px}
+@media (max-width:768px){.dx-pwa-offer{inset-inline:12px;width:auto;max-width:none;bottom:calc(56px + 12px + env(safe-area-inset-bottom,0px))}}
+.dx-pwa-guide .dx-pwa-h{font-size:15px;margin:14px 0 6px;color:var(--dg-ink,#0a1f4d)}
+.dx-pwa-guide .dx-pwa-h:first-child{margin-top:0}
+.dx-pwa-steps{margin:0;padding-inline-start:22px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.55}
+.dx-pwa-ic{vertical-align:-3px;color:var(--blue,#1a56db)}
+.dx-pwa-note{margin:10px 0 0;font-size:12.5px;color:var(--dg-muted,#5B6475)}
+.dx-pwa-row{align-items:center;gap:12px}
+.dx-pwa-row>span:first-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+.dx-pwa-row button{min-height:40px;white-space:nowrap}
+.dx-pwa-ok{color:#15803d;font-weight:600;white-space:nowrap}
+.dx-pwa-ask{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--blue-tint,#EAF1FE);border:1px solid #cfe0fd;border-radius:14px;padding:12px 14px;margin:0 0 12px}
+.dx-pwa-ask .dx-pwa-txt{flex:1 1 220px}
+.dx-pwa-ask .dx-pwa-btns{margin-top:0}
+.dx-pwa-bell{font-size:22px}

@@ -3,7 +3,11 @@ The demo build (web/dist/drugbox.html) is not changed.
 Needs DRUGBOX_SUPABASE_URL and DRUGBOX_SUPABASE_ANON_KEY (public values; never the service key).
 Optional: DRUGBOX_SENTRY_LOADER (the Sentry "Loader Script" URL https://js.sentry-cdn.com/<key>.min.js — injected first in <head>, and its
 hosts are allowed by the CSP only then), DRUGBOX_LIVE_OUT (output folder, default web/dist/live), DRUGBOX_DEMO (the demo build to package,
-default web/dist/drugbox.html). Hosting headers come from deploy/vercel.json (the one template)."""
+default web/dist/drugbox.html), DRUGBOX_VAPID_PUBLIC_KEY (web push: the PUBLIC VAPID key, base64url of the 65-byte point — never the private
+one; without it the app keeps in-app notifications only). Hosting headers come from deploy/vercel.json (the one template).
+Installable app (w-pwa): manifest.webmanifest, sw.js (the service worker, its VERSION = this build's stamp) and icons/ (content-hashed
+copies of web/src/pwa/*.png, made by tools/pwa/make_icons.py) are written next to index.html; index.html gets the manifest, icon and
+iOS tags in <head>."""
 import os, re, json, base64, hashlib, glob
 from urllib.parse import urlparse
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -28,12 +32,21 @@ if sentry:
     if su.scheme != 'https' or not (su.hostname or '').endswith('.sentry-cdn.com') or not re.fullmatch(r'/[A-Za-z0-9]+\.min\.js', su.path or '') or su.query:
         raise SystemExit('DRUGBOX_SENTRY_LOADER must be the Sentry loader URL, e.g. https://js.sentry-cdn.com/<public key>.min.js '
                          '(Sentry → Settings → Projects → <project> → Loader Script)')
+# web push (optional): the PUBLIC VAPID key only — an uncompressed P-256 point (65 bytes, 0x04 first). The private key is 32 bytes
+# and lives only in the Edge Function secrets: a 32-byte value here is refused, so it can never reach the browser by mistake.
+vapid = os.environ.get('DRUGBOX_VAPID_PUBLIC_KEY', '').strip()
+if vapid:
+    try: vk = base64.urlsafe_b64decode(vapid + '=' * (-len(vapid) % 4)) if re.fullmatch(r'[A-Za-z0-9_-]+', vapid) else b''
+    except Exception: vk = b''
+    if len(vk) == 32: raise SystemExit('DRUGBOX_VAPID_PUBLIC_KEY looks like the PRIVATE key (32 bytes) — only the public key belongs in the browser build')
+    if len(vk) != 65 or vk[0] != 4: raise SystemExit('DRUGBOX_VAPID_PUBLIC_KEY must be the base64url public VAPID key (65 bytes, from tools/pwa/vapid_keys.mjs)')
 # the live app is the demo build: refuse to package an older demo than the sources (run web/build/build.py first)
 srcs = [ROOT + '/base/app.html'] + [f for f in glob.glob(ROOT + '/src/*') if os.path.isfile(f) and not f.endswith(('_static.html', '_static.css'))]
+# (web/src/pwa/* is read by this script itself, not by the demo build: not a reason to rebuild the demo)
 newer = [os.path.relpath(f, ROOT) for f in srcs if os.path.getmtime(f) > os.path.getmtime(DEMO)] if os.path.exists(DEMO) else ['(no demo build)']
 if newer and os.environ.get('DRUGBOX_ALLOW_STALE') != '1':
     raise SystemExit('web/dist/drugbox.html is older than %s — run python3 web/build/build.py first (or DRUGBOX_ALLOW_STALE=1)' % ', '.join(newer[:3]))
-OUT = os.path.abspath(os.environ.get('DRUGBOX_LIVE_OUT') or ROOT + '/dist/live'); os.makedirs(OUT + '/js', exist_ok=True); os.makedirs(OUT + '/media', exist_ok=True)
+OUT = os.path.abspath(os.environ.get('DRUGBOX_LIVE_OUT') or ROOT + '/dist/live'); os.makedirs(OUT + '/js', exist_ok=True); os.makedirs(OUT + '/media', exist_ok=True); os.makedirs(OUT + '/icons', exist_ok=True)
 def asset(src, name, sub='js', ext='js', data=None):   # content-hashed file name → safe to cache forever on a CDN
     data = data if data is not None else open(src, 'rb').read(); h = hashlib.sha256(data).hexdigest()[:10]; fn = f'{name}.{h}.{ext}'
     open(f'{OUT}/{sub}/{fn}', 'wb').write(data); return f'{sub}/{fn}'
@@ -71,6 +84,24 @@ if 'three' in moved:   # the loader: fetch the file once, start the globe when i
     assert H.count(OLD_LOAD) == 1, 'lazy-globe loader not found: update live.py with web/src/mobile_opt.py'
     H = H.replace(OLD_LOAD, 'if(src.getAttribute(\'data-src\')){ if(src.dataset.loading) return; src.dataset.loading=\'1\'; s.src=src.getAttribute(\'data-src\'); '
                   's.onload=function(){ if(window.dxGlobeStart) setTimeout(window.dxGlobeStart,30); }; } else s.text=src.text; ' + OLD_LOAD[len('s.text=src.text; '):])
+# ── installable app (w-pwa): icons, manifest, head tags; the service worker is written below with this build's stamp ──
+PWA = ROOT + '/src/pwa'
+ico = {n: asset(PWA + '/' + n, n[:-4], 'icons', 'png') for n in ('icon-192.png', 'icon-512.png', 'maskable-192.png', 'maskable-512.png', 'apple-touch-icon.png', 'favicon-32.png', 'badge-72.png')}
+manifest = {'id': './', 'name': 'Drugbox', 'short_name': 'Drugbox', 'description': 'The professional network for pharma, cosmetics & medical devices.',
+            'lang': 'en', 'dir': 'auto', 'start_url': './', 'scope': './', 'display': 'standalone', 'orientation': 'any',
+            'background_color': '#ffffff', 'theme_color': '#ffffff', 'categories': ['business', 'medical', 'social'],
+            'icons': [{'src': ico['icon-192.png'], 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any'},
+                      {'src': ico['icon-512.png'], 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any'},
+                      {'src': ico['maskable-192.png'], 'sizes': '192x192', 'type': 'image/png', 'purpose': 'maskable'},
+                      {'src': ico['maskable-512.png'], 'sizes': '512x512', 'type': 'image/png', 'purpose': 'maskable'}]}
+MAN = json.dumps(manifest, indent=1, ensure_ascii=False) + '\n'
+open(OUT + '/manifest.webmanifest', 'w', encoding='utf-8').write(MAN)
+HEAD = ('<link rel="manifest" href="manifest.webmanifest">\n<meta name="theme-color" content="#ffffff">\n'
+        '<link rel="icon" type="image/png" sizes="32x32" href="%s">\n<link rel="apple-touch-icon" href="%s">\n'
+        '<meta name="mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-capable" content="yes">\n'
+        '<meta name="apple-mobile-web-app-title" content="Drugbox">\n<meta name="apple-mobile-web-app-status-bar-style" content="default">\n') % (ico['favicon-32.png'], ico['apple-touch-icon.png'])
+hz = H.find('</head>'); assert 0 < hz < H.find('<body'), 'no </head> before <body>: cannot place the app manifest tags'
+H = H[:hz] + HEAD + H[hz:]
 cfg = json.dumps({'url': url, 'anonKey': key, 'realtime': os.environ.get('DRUGBOX_REALTIME', '1') != '0'}).replace('<', '\\u003c')   # never ends the <script>
 live = ('<style data-dx="live">.lg-demo{display:none!important}[data-sim]{display:none!important}</style>\n'
         '<script data-dx="live-config">window.DRUGBOX_CONFIG=' + cfg + ';</script>\n'
@@ -81,10 +112,21 @@ if sentry:   # first script after the charset: it must be there before anything 
     cm = re.search(r'<meta charset="[^"]*">', H)
     assert cm and cm.start() < H.find('</head>'), 'no <meta charset> in <head>: cannot place the Sentry loader'
     H = H[:cm.end()] + '\n<script data-dx="sentry-loader" src="%s" crossorigin="anonymous"></script>' % sentry + H[cm.end():]
+# the build stamp: everything this deploy serves (the page, the manifest, the worker's source and offline page); it goes into the
+# config (window.DRUGBOX_CONFIG.build) and into sw.js — a new deploy is a new worker, which removes the old version's caches
+OFFLINE = open(PWA + '/offline.html', encoding='utf-8').read().replace('__ICON_DATA__', 'data:image/png;base64,' + base64.b64encode(open(PWA + '/icon-192.png', 'rb').read()).decode())
+SWSRC = open(PWA + '/sw.js', encoding='utf-8').read()
+build = hashlib.sha256('\0'.join([H, MAN, SWSRC, OFFLINE]).encode('utf-8')).hexdigest()[:12]
+cfgb = cfg[:-1] + ', "build": "%s"' % build + (', "vapidPublicKey": "%s"' % vapid if vapid else '') + '}'
+assert H.count('window.DRUGBOX_CONFIG=' + cfg + ';') == 1; H = H.replace('window.DRUGBOX_CONFIG=' + cfg + ';', 'window.DRUGBOX_CONFIG=' + cfgb + ';')
+SW = (SWSRC.replace('__VERSION__', build).replace('__ICON__', ico['icon-192.png']).replace('__BADGE__', ico['badge-72.png'])
+      .replace('__OFFLINE__', json.dumps(OFFLINE, ensure_ascii=False).replace('<', '\\u003c')))
+assert '__' + 'VERSION__' not in SW and '__OFFLINE__' not in SW
+open(OUT + '/sw.js', 'w', encoding='utf-8').write(SW)
 open(OUT + '/index.html', 'w', encoding='utf-8').write(H)
 # N-3: only the files this index.html references are published — older hashed copies (an old adapter, an old video) are removed
-used = set(re.findall(r'(?:src|data-src)="((?:js|media)/[\w.-]+)"', H)); stale = []
-for sub in ('js', 'media'):
+used = set(re.findall(r'(?:src|data-src|href)="((?:js|media|icons)/[\w.-]+)"', H)) | set(ico.values()); stale = []
+for sub in ('js', 'media', 'icons'):
     for f in sorted(os.listdir(f'{OUT}/{sub}')):
         if f'{sub}/{f}' not in used: os.remove(f'{OUT}/{sub}/{f}'); stale.append(f'{sub}/{f}')
 # hosting headers (CSP, frame, cache): ONE template, deploy/vercel.json, with this build's Supabase origin (and Sentry's hosts only when set)
@@ -105,4 +147,4 @@ vj.pop('$comment', None)   # the template's note is for people; the published fi
 assert 'YOUR-PROJECT' not in json.dumps(vj), 'deploy/vercel.json: a YOUR-PROJECT placeholder was not replaced'
 open(OUT + '/vercel.json', 'w', encoding='utf-8').write(json.dumps(vj, indent=2, ensure_ascii=False) + '\n')
 print('live build →', OUT, '| index.html %.2f MB' % (len(H.encode('utf-8')) / 1e6), '| scripts:', lib, ada, ' '.join(a for _, a in xtra), '+ %d page scripts as files' % len(moved),
-      '| media:', 'splash' if m else 'none', '| removed old files: %d' % len(stale), '| lite copy → no-script notice' if lite else '', '| sentry loader' if sentry else '')
+      '| media:', 'splash' if m else 'none', '| removed old files: %d' % len(stale), '| lite copy → no-script notice' if lite else '', '| app: sw.js %s, manifest, %d icons%s' % (build, len(ico), ', push' if vapid else ''), '| sentry loader' if sentry else '')

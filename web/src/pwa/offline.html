@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Drugbox — offline</title>
+<style>
+html,body{margin:0;height:100%;background:#f0f4fb;color:#0a1f4d;font:15px/1.6 Poppins,"Segoe UI",Tahoma,Arial,sans-serif}
+main{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px 16px;box-sizing:border-box}
+.card{max-width:420px;width:100%;background:#fff;border:1px solid #E6E8EE;border-radius:16px;padding:28px 22px;text-align:center;box-shadow:0 6px 24px rgba(10,31,77,.08)}
+img{width:72px;height:72px}
+h1{font-size:19px;margin:14px 0 4px}
+p{margin:6px 0 0;color:#5B6475}
+.ar{direction:rtl;font-family:Cairo,Tahoma,Arial,sans-serif;margin-top:18px;padding-top:16px;border-top:1px solid #E6E8EE}
+a.btn{display:inline-block;margin-top:22px;background:#1a56db;color:#fff;text-decoration:none;font-weight:600;padding:11px 22px;border-radius:999px;min-height:20px}
+a.btn:focus-visible{outline:3px solid #F3B258;outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+<div class="card" role="alert">
+<img src="__ICON_DATA__" alt="Drugbox">
+<h1>You are offline</h1>
+<p>Drugbox needs an internet connection. Check your connection and try again.</p>
+<div class="ar" lang="ar"><h1>أنت غير متصل بالإنترنت</h1><p>يحتاج Drugbox إلى اتصال بالإنترنت. تأكّد من الاتصال وحاول مرة أخرى.</p></div>
+<a class="btn" href="./">Try again · حاول مرة أخرى</a>
+</div>
+</main>
+<script>addEventListener('online',function(){location.reload()})</script>
+</body>
+</html>

@@ -4577,4 +4577,104 @@
     openListing: function (l) { window.goto('market'); var si = document.getElementById('searchIn'); if (si) { si.value = l.title; if (window.__mkxFilter) window.__mkxFilter(l.title); } }
   });
   /* ===== /AREA merge ===== */
+  /* ===== AREA w-pwa: the installable app — service worker, device notifications (web push), clean-up on sign-out =====
+     The service worker (sw.js, written by web/build/live.py) is registered once the page has loaded and the browser is idle, so it
+     never competes with the first screen. It keeps nothing of the member's (see sw.js); on sign-out this page still removes every
+     'drugbox-*' cache, closes the notifications this device shows and ends the device's push subscription (the server row first,
+     while the session can still delete it — RLS: own rows only). Notifications need the PUBLIC VAPID key in DRUGBOX_CONFIG; without
+     it, or in a browser without push, members keep the in-app notifications and Settings says so. */
+  (function () {
+    var CFG = window.DRUGBOX_CONFIG || {}, VAPID = CFG.vapidPublicKey || '', SW = 'serviceWorker' in navigator && window.isSecureContext;
+    var PUSH = SW && VAPID && 'PushManager' in window && 'Notification' in window && 'showNotification' in ServiceWorkerRegistration.prototype;
+    var IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    function standalone() { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } }
+    function lsGet(k) { try { return localStorage.getItem('drugbox.' + k); } catch (e) { return null; } }
+    function lsSet(k, v) { try { if (v == null) localStorage.removeItem('drugbox.' + k); else localStorage.setItem('drugbox.' + k, v); } catch (e) {} }
+    var REG = null;
+    function register() {
+      if (!SW || REG) return REG;
+      REG = navigator.serviceWorker.register('sw.js', { scope: './', updateViaCache: 'none' }).then(function (r) { return r; }, function (e) { console.warn('service worker:', e && e.message); REG = null; return null; });
+      return REG;
+    }
+    function whenIdle() { (window.requestIdleCallback || function (f) { setTimeout(f, 1); })(function () { register(); }, { timeout: 5000 }); }
+    if (SW) { if (document.readyState === 'complete') setTimeout(whenIdle, 3000); else window.addEventListener('load', function () { setTimeout(whenIdle, 3000); }); }
+    /* a tapped notification: the worker asks this page to open what it is about (the address router of soc_nav.js) */
+    if (SW) navigator.serviceWorker.addEventListener('message', function (e) {
+      var d = e.data || {}; if (d.dx !== 'open' || !/^#\/[\w\/-]{0,120}$/.test(String(d.hash || ''))) return;
+      if (location.hash === d.hash) window.dispatchEvent(new PopStateEvent('popstate', { state: { dx: 1 } })); else location.hash = d.hash;
+    });
+    function key() { var s = VAPID.replace(/-/g, '+').replace(/_/g, '/'), b = atob(s + '='.repeat((4 - s.length % 4) % 4)); return Uint8Array.from(b, function (c) { return c.charCodeAt(0); }); }
+    function sameKey(sub) { try { var k = new Uint8Array(sub.options.applicationServerKey), w = key(); return k.length === w.length && k.every(function (x, i) { return x === w[i]; }); } catch (e) { return true; } }
+    function registration() { var p = register(); return p ? p.then(function (r) { return r ? navigator.serviceWorker.ready : null; }) : Promise.resolve(null); }
+    function current() { return registration().then(function (r) { return r ? r.pushManager.getSubscription().then(function (s) { return { reg: r, sub: s }; }) : { reg: null, sub: null }; }); }
+    function state() {
+      if (!PUSH) return Promise.resolve(IOS && !standalone() && VAPID ? 'install' : 'unsupported');
+      if (Notification.permission === 'denied') return Promise.resolve('denied');
+      if (Notification.permission !== 'granted' || !ME_UUID) return Promise.resolve('off');
+      return current().then(function (c) { return c.sub && lsGet('push.owner') === ME_UUID ? 'on' : 'off'; }, function () { return 'off'; });
+    }
+    async function save(sub) {
+      var j = sub.toJSON(), r = await sb.rpc('push_subscribe', { p_endpoint: j.endpoint, p_p256dh: (j.keys || {}).p256dh, p_auth: (j.keys || {}).auth });
+      if (r.error) throw new Error(friendly(r.error)); lsSet('push.owner', ME_UUID); return r.data;
+    }
+    async function on() {
+      if (!PUSH) return IOS && !standalone() && VAPID ? 'install' : 'unsupported';
+      if (!ME_UUID) throw new Error('Sign in first');
+      var perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();   /* asked only now, after "Turn on" */
+      if (perm !== 'granted') return perm === 'denied' ? 'denied' : 'off';
+      var c = await current(); if (!c.reg) return 'unsupported';
+      var sub = c.sub && sameKey(c.sub) ? c.sub : null;
+      if (c.sub && !sub) await c.sub.unsubscribe().catch(function () {});
+      if (!sub) sub = await c.reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key() });
+      try { await save(sub); } catch (e) { await sub.unsubscribe().catch(function () {}); throw e; }
+      return 'on';
+    }
+    async function forget(sub, server) {      /* this device stops: the server row (when the session still can), then the browser's subscription */
+      if (!sub) { lsSet('push.owner', null); return; }
+      if (server && ME_UUID) { try { await Promise.race([sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint), new Promise(function (r) { setTimeout(r, 2500); })]); } catch (e) {} }
+      try { await sub.unsubscribe(); } catch (e) {}
+      lsSet('push.owner', null);
+    }
+    async function off() { var c = await current(); await forget(c.sub, true); return 'off'; }
+    /* signed in: a subscription left by someone else on this browser is ended at once; one of mine is saved again (the browser may
+       have replaced it: pushsubscriptionchange) — once per sign-in, when the browser is idle */
+    if (window.dxLive && window.dxLive.k && window.dxLive.k.onSignIn) window.dxLive.k.onSignIn(function () {
+      if (!PUSH) return;
+      setTimeout(function () { current().then(function (c) {
+        if (!c.sub) { lsSet('push.owner', null); return; }
+        var owner = lsGet('push.owner');
+        if (owner !== ME_UUID || Notification.permission !== 'granted' || !sameKey(c.sub)) return forget(c.sub, false);
+        return save(c.sub).catch(function () {});
+      }, function () {}); }, 4000);
+    });
+    function cleanLocal() {                   /* nothing of this member stays on the device: notifications shown, caches, the subscription */
+      var w = [];
+      if (SW && navigator.serviceWorker.controller !== undefined) w.push(navigator.serviceWorker.getRegistration().then(function (r) { return r && r.getNotifications().then(function (ns) { ns.forEach(function (n) { n.close(); }); }); }).catch(function () {}));
+      if (window.caches) w.push(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return /^drugbox-/.test(k); }).map(function (k) { return caches.delete(k); })); }).catch(function () {}));
+      if (PUSH) w.push(navigator.serviceWorker.getRegistration().then(function (r) { return r && r.pushManager.getSubscription(); }).then(function (s) { return forget(s, false); }).catch(function () {}));
+      return Promise.all(w);
+    }
+    var logoutPWA = window.doLogout;
+    window.doLogout = async function () {
+      if (PUSH && ME_UUID) { try { var c = await Promise.race([navigator.serviceWorker.getRegistration().then(function (r) { return r && r.pushManager.getSubscription(); }), new Promise(function (r) { setTimeout(r, 1500); })]); if (c) await forget(c, true); } catch (e) {} }
+      cleanLocal();
+      return logoutPWA.apply(this, arguments);
+    };
+    onReset(function () { cleanLocal(); });    /* also when the session ended elsewhere: the server row goes when the push service answers 410 */
+    var DEF = { push_messages: true, push_connections: true, push_comments: true, push_mentions: true, push_reactions: false, push_follows: false, push_jobs: true, push_business: true };
+    window.dxPwa = {
+      live: true,
+      pushState: state, pushOn: on, pushOff: off,
+      prefs: async function () {
+        var r = await sb.from('member_settings').select(Object.keys(DEF).join(',')).eq('user_id', ME_UUID).maybeSingle();
+        if (r.error) throw new Error(friendly(r.error)); return Object.assign({}, DEF, r.data || {});
+      },
+      savePrefs: function (o) {
+        var x = {}; Object.keys(DEF).forEach(function (k) { if (k in o) x[k] = !!o[k]; });
+        return window.dxAccount && window.dxAccount.saveSettings ? window.dxAccount.saveSettings(x) : sb.from('member_settings').update(x).eq('user_id', ME_UUID).then(function (r) { if (r.error) throw new Error(friendly(r.error)); });
+      },
+      version: function () { return CFG.build || ''; }
+    };
+  })();
+  /* ===== /AREA w-pwa ===== */
 })();

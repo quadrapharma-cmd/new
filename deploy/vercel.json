@@ -1,5 +1,5 @@
 {
-  "$comment": "Single source of truth for the hosting headers (CSP, frame, cache). web/build/live.py writes it to <live out>/vercel.json with https://YOUR-PROJECT.supabase.co / wss://YOUR-PROJECT.supabase.co replaced by DRUGBOX_SUPABASE_URL, and — only when DRUGBOX_SENTRY_LOADER is set — the Sentry loader/CDN hosts added to script-src and https://*.sentry.io to connect-src. deploy/vercel_deploy.sh deploys that folder. The page scripts are content-hashed same-origin files in js/ (script-src 'self'); a few small scripts and the approved page's onclick handlers stay inline, so script-src also needs 'unsafe-inline' (no 'unsafe-eval': the app never evaluates strings). index.html is no-cache (always the newest build); js/ and media/ never change under a name, so they are immutable. The local gateway (tools/local-supabase/gateway.mjs) sends the same policy for localhost.",
+  "$comment": "Single source of truth for the hosting headers (CSP, frame, cache). web/build/live.py writes it to <live out>/vercel.json with https://YOUR-PROJECT.supabase.co / wss://YOUR-PROJECT.supabase.co replaced by DRUGBOX_SUPABASE_URL, and — only when DRUGBOX_SENTRY_LOADER is set — the Sentry loader/CDN hosts added to script-src and https://*.sentry.io to connect-src. deploy/vercel_deploy.sh deploys that folder. The page scripts are content-hashed same-origin files in js/ (script-src 'self'); a few small scripts and the approved page's onclick handlers stay inline, so script-src also needs 'unsafe-inline' (no 'unsafe-eval': the app never evaluates strings). index.html is no-cache (always the newest build); js/, media/ and icons/ never change under a name, so they are immutable. The installable app (w-pwa): sw.js (the service worker, scope '/') and manifest.webmanifest are no-cache, so a new deploy is seen on the next open; no Service-Worker-Allowed header is needed (the worker sits at the root). The local gateway (tools/local-supabase/gateway.mjs) sends the same policy for localhost.",
   "cleanUrls": false,
   "headers": [
     {
@@ -7,7 +7,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://YOUR-PROJECT.supabase.co; media-src 'self' data: blob: https://YOUR-PROJECT.supabase.co; connect-src 'self' data: blob: https://YOUR-PROJECT.supabase.co wss://YOUR-PROJECT.supabase.co https://api.exchangerate.host; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://YOUR-PROJECT.supabase.co; media-src 'self' data: blob: https://YOUR-PROJECT.supabase.co; connect-src 'self' data: blob: https://YOUR-PROJECT.supabase.co wss://YOUR-PROJECT.supabase.co https://api.exchangerate.host; worker-src 'self' blob:; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
         },
         {
           "key": "X-Frame-Options",
@@ -60,6 +60,41 @@
     },
     {
       "source": "/media/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Content-Type",
+          "value": "text/javascript; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/icons/(.*)",
       "headers": [
         {
           "key": "Cache-Control",

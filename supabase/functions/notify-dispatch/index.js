@@ -8,7 +8,7 @@
 import { rpc, env } from '../_shared/db.js';
 import { safeEqual } from '../_shared/signatures.js';
 
-const SUBJECT = {
+export const SUBJECT = {
   deal: ['A request or deal needs you', 'طلب أو صفقة في انتظارك'], payment: ['Payment update', 'تحديث بخصوص الدفع'],
   company_invite: ['You are invited to a company team', 'دعوة للانضمام إلى فريق شركة'], company_join_request: ['Someone asked to join your company', 'طلب انضمام إلى شركتك'],
   company_join_answer: ['Your request to join a team was answered', 'تم الرد على طلب انضمامك'], company_message: ['New message to your company', 'رسالة جديدة لشركتك'],

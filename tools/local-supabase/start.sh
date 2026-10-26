@@ -23,6 +23,11 @@ echo "database $DB: drop and recreate"
 psql -h "$PGH" -p "$PGP" -U postgres -q -c "drop database if exists $DB" -c "create database $DB"
 psql -h "$PGH" -p "$PGP" -U postgres -d "$DB" -q -v ON_ERROR_STOP=1 -f "$ROOT/supabase/tests/_local_supabase_stub.sql"
 for f in ${MIGRATIONS:-"$ROOT"/supabase/migrations/*.sql}; do psql -h "$PGH" -p "$PGP" -U postgres -d "$DB" -q -v ON_ERROR_STOP=1 -f "$f"; done
+# web push (w-pwa): the loopback push stand-in (start-payments.sh, :54600) is a push service for this database only; a VAPID key pair
+# for local tests is made once per RUN_DIR ($RUN/drugbox-vapid.env, mode 600) — the public key goes into the live build
+psql -h "$PGH" -p "$PGP" -U postgres -d "$DB" -q -c "do \$\$ begin if to_regclass('private.push_hosts') is not null then insert into private.push_hosts (host, allow_http) values ('127.0.0.1', true) on conflict (host) do nothing; end if; end \$\$"
+[ -s "$RUN/drugbox-vapid.env" ] || node "$ROOT/tools/pwa/vapid_keys.mjs" --env > "$RUN/drugbox-vapid.env"
+VAPID_PUB=$(sed -n 's/^VAPID_PUBLIC_KEY=//p' "$RUN/drugbox-vapid.env")
 # PostgREST as on Supabase: at most 1000 rows per request (Dashboard → API → Max rows), a small pool
 cat > "$RUN/drugbox-pgrst.conf" <<CONF
 db-uri = "postgres://authenticator:local-only@127.0.0.1:$PGP/$DB"
@@ -38,7 +43,7 @@ nohup ${POSTGREST:-postgrest} "$RUN/drugbox-pgrst.conf" > "$RUN/drugbox-pgrst.lo
 ANON=$(node -e "const c=require('crypto');const b=x=>Buffer.from(JSON.stringify(x)).toString('base64url');const h=b({alg:'HS256',typ:'JWT'}),p=b({role:'anon',iss:'local',iat:1700000000,exp:2000000000});console.log(h+'.'+p+'.'+c.createHmac('sha256','$SECRET').update(h+'.'+p).digest('base64url'))")
 # the local stack has no Realtime server: build without it (the same code runs on the timer)
 ( cd "$ROOT/web" && { [ "${SKIP_BUILD:-0}" = 1 ] && [ -f dist/drugbox.html ] || python3 build/build.py >/dev/null; } \
-  && DRUGBOX_SUPABASE_URL=http://localhost:$GW DRUGBOX_SUPABASE_ANON_KEY=$ANON DRUGBOX_REALTIME=0 DRUGBOX_ALLOW_STALE=${SKIP_BUILD:-0} python3 build/live.py )
+  && DRUGBOX_SUPABASE_URL=http://localhost:$GW DRUGBOX_SUPABASE_ANON_KEY=$ANON DRUGBOX_REALTIME=0 DRUGBOX_VAPID_PUBLIC_KEY=${VAPID_PUB:-} DRUGBOX_ALLOW_STALE=${SKIP_BUILD:-0} python3 build/live.py )
 ( cd "$ROOT/tools/local-supabase" && npm install --silent --no-audit --no-fund )
 cd "$ROOT/tools/local-supabase"
 PORT=$GW REST_URL=http://127.0.0.1:$RP FN_PORT=${FN_PORT:-54400} JWT_SECRET=$SECRET DATABASE_URL=postgres://postgres@127.0.0.1:$PGP/$DB APP_DIR="$ROOT/web/dist/live" STORE_DIR="$STORE" \
