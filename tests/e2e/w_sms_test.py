@@ -45,7 +45,7 @@ T('one SMS to the number, from the configured sender, with the provider account'
 code = (m[0]['body'].get('Body', '') if m else '')
 T('…carrying the 6-digit code, in English and Arabic', m and __import__('re').search(r'Drugbox code: \d{6}', code) and 'رمز Drugbox' in code, code)
 T('the outbox marks it sent', sql(f"select (sent_at is not null)||'|'||attempts from private.sms_outbox where phone='{e164}'") == 'true|1')
-T('a refused SMS stays for a later try, with the reason', sql("select (sent_at is null)||'|'||attempts||'|'||(last_error like 'provider answered 400%') from private.sms_outbox where phone='+201099900000'") == 'true|1|true')
+T('a refused SMS stays for a later try, with the reason', sql("select (sent_at is null)||'|'||attempts||'|'||(last_error like 'provider answered 400%') from private.sms_outbox where phone='+201099900000' order by id desc limit 1") == 'true|1|true')   # the newest: earlier runs leave theirs
 s, j = dispatch(SECRET); after = len(smss())
 T('a sent SMS is not sent again (the refused one is tried again later, not at once)', s == 200 and j.get('sent', 0) == 0 and len([x for x in smss()[before:] if x['body'].get('To') == e164]) == 1, (s, j))
 # the code arrives and verifies
