@@ -1,6 +1,6 @@
 # Area report — w-growth (growth plan and the owner's pending decisions)
 
-Branch `claude/w-growth` (from `claude/integ` f7dc703) · migrations **0100–0105** · running log `docs/areas/w-growth-progress.md`.
+Branch `claude/w-growth` (from `claude/integ` f7dc703) · migrations **0100–0106** · running log `docs/areas/w-growth-progress.md`.
 Interface: `web/src/growth.js` + `growth.css` (demo behaviour and all drawing), live services `web/src/live/growth.js`, one block
 "AREA w-growth" at the end of `web/src/live/adapter.js`, three small hooks in `web/src/groups.js`.
 
@@ -67,7 +67,7 @@ Independent verification: see §3.
   "Is this still your specialty?" (the sign-up list + "Other…"); Save records the answer (`member_prompts`), "Ask me later" does not.
   New accounts chose their specialty themselves and are not asked.
 
-## 2. Migrations (0100–0105)
+## 2. Migrations (0100–0106)
 | Migration | Content | Test |
 |---|---|---|
 | 0100_official_channels | groups.official/channel_key/name_ar/description_ar/thera + guards; posts.as_drugbox/thera; products.thera; thera dictionary; channel_templates, channel_schedule + RPCs; feed_thera, market_search_thera; growth_tick + pg_cron | growth_channels.rls.sql |
@@ -76,6 +76,7 @@ Independent verification: see §3.
 | 0103_public_company_pages | public_directory_page, public_company, public_company_sites/certs, public_sites_for, public_company_meta (anon, public fields only) | growth_members.rls.sql §3 |
 | 0104_courses_ar_specialty | training_courses.title_ar/description_ar (6 courses); member_prompts; specialty_prompt_due/answer | growth_members.rls.sql §4 |
 | 0105_growth_fixes | the second verifier round: channel posts without a member author (posts.user_id null + as_drugbox, channel_schedule.published_by), notices to nobody dropped, admin_delete/restore_post keep a Drugbox post Drugbox's with its tags, visitors' registry «•••», dictionary (ماشية), expert sessions (ended, expert member, answer limits) | growth_channels 75/75, growth_members 107/107 |
+| 0106_growth_fixes_2 | the third verifier round: a Drugbox post is removed by Drugbox admins only (trigger, whatever the path), reports on channel posts go to Admin → Review, a restored post relinks to its plan, admin_posts names Drugbox posts, «العلاج الكيماوي» | growth_channels 80/80 |
 
 Every table, sequence and function grants its own privileges; every table has RLS with policies; every migration ends with
 `notify pgrst`; re-run safe (`tools/migration_check.py` OK); `schema_sweep.sql` six × none.
@@ -97,6 +98,17 @@ Two rounds by an independent verifier agent (it read the code and attacked the r
   restore lost the tags; (7) Arabic leftovers (channel names and descriptions, the «انشر» column header, the import label, two banners for
   non-members). **All fixed in 0105 and the interface** — a Drugbox post now has no member author at all, so neither a deletion nor an
   embed can reach an admin; regression checks in `growth_channels.rls.sql` §6 and `growth_members.rls.sql` (marked 0105).
+- **Round 3** (on 0105) — the 7 round-2 items: 5 fixed, 2 partly (the channel's About tab and the channel notice still English in Arabic;
+  the Admin could not keep an expert member set through the API). New: 1 major (reposting a Drugbox post credited it to the member who
+  reposted), 6 minor (Admin → Posts showed Drugbox posts as "Member"; reports on channel posts reached nobody; a moderator could remove a
+  Drugbox post through `admin_delete_post`; a restored post lost its plan link; «العلاج الكيماوي» no longer tagged; the notices-to-nobody
+  trigger — kept: it is not callable by members and only guards notices whose post has no author). Fixed in 0106 and the interface,
+  checks added (`growth_channels` 80/80, W01 now reposts a Drugbox post and checks it is credited to Drugbox). It confirmed no security
+  issue in the re-created functions and nothing broken by authorless posts (feed, saved, comments, likes, mentions, reposts, search,
+  export, notifications). Its process note: 0100 was edited in place before any deployment (no ledger has it) — later changes went into
+  0105 / 0106.
+- **Verdict:** every item's journeys pass on the demo (EN/AR × 1440/390) and live (EN/AR 1440); the remaining verifier findings are fixed
+  and covered by checks. A fourth round was not run (the shared limits) — the 0106 changes are small and each has its own check.
 
 ## 4. Interface changes for the owner's approval (EN + AR, 1440 + 390)
 - **Groups:** four official channel cards with "✓ Drugbox official" (priority-badge slot) and an "OFFICIAL" tag; inside a channel the
@@ -114,8 +126,24 @@ Two rounds by an independent verifier agent (it read the code and attacked the r
 - **Arabic:** new labels in the interface's own (formal) register with the trade's words for the new things — «مطلوب النهارده»،
   «نواقص الأسبوع»، سوق الوكالات، ملف تسجيل، التصنيع لدى الغير; the six course titles in Arabic; the channels' Arabic names and descriptions («Drugbox أخبار»، «Drugbox وظائف»، «Drugbox تسجيل ورقابة»، «Drugbox السوق»).
 
-## 5. Suites
-(filled in below)
+## 5. Suites (final head; the 150 journeys + crawler on the build before the last two interface commits, re-run where touched)
+- SQL: **31 / 31** suites (each on a fresh database: stub + 0001–0106) incl. growth_channels 80/80, growth_members 107/107;
+  schema sweep **6 × none**; `tools/migration_check.py` **OK (74 migrations)**.
+- Build: deterministic (two builds, same sha256); `web/reference/demo-approved.html` refreshed — **PARITY OK**.
+- Demo + legacy: **30 / 30** suites. Speed A/B against the base branch's build (f7dc703, 3 rounds): median page switch **7.0 ms vs 6.9 ms**
+  (within noise) — PASS.
+- e2e: **25 / 25** — `p1_no_sample_content_test` failed once (38/39: the Jobs "Reach N pharma professionals" count raced accounts other
+  agents created at the same moment) and passes 39/39 re-run alone.
+- Journeys, all **160** (150 + the 10 growth ones), demo EN 1440 / AR 1440 / EN 390 + live EN 1440 (report-only): **158 pass, 2 fail —
+  both fail on the base branch too**:
+  - J-SOCIAL-49 (demo): "impr differ between Home (16909) and Network (2840)" — same failure on the f7dc703 build.
+  - J-COMMUNITY-30 (live): `NameError: name 'f' is not defined` — `tests/journeys/community_trust.py` line 24 has the statements that
+    create `s` and `f` inside a `#` comment (file unchanged by this area).
+  - Fixed here after the first run: J-COMMUNITY-35…39 in Arabic (the six courses now show their Arabic titles — the journeys look the
+    card up by its shown title; the course search also matches the Arabic title). J-BUSINESS-01 live failed once (18 of 20 companies via
+    Show more while another run was adding companies) and passes alone.
+  - The 10 growth journeys also pass on AR 390 and live AR 1440.
+- Dead-end crawler: CRAWL_RESULT
 
 ## 6. Open problems / waiting on the owner
 - **Hospitals (W-21 "مستشفيات"):** left out — hospital tenders are not among the trading parties the owner listed; one line in
