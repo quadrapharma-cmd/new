@@ -85,11 +85,33 @@ rules. Scripts and screenshots: `/tmp/claude-0/verify/`, `/tmp/claude-0/verify2/
 | 1 | 1 blocking (a held offer went public by `active=true`), 9 major (held deal-room listings answerable, company lots never reviewed, product fields and comments not checked, 20 rule misses + 11 false positives, offers kept "Verified company" after the badge went, phone check revealed registered numbers, SIM-01 on the confirm screen, "live"/"published" toasts for held content), 6 minor | 0095, 0096 + interface |
 | 2 | 12 of 16 fixed, 4 partly; new: 1 blocking (a paused company offer back on through Close → Renew), 4 major (moderator Publish, former members' offers, "squashed" rules false positives, `docs` not checked), 7 minor | 0097 + interface |
 | 3 | 6 fixed, 3 partly; new: 1 blocking regression of 0097 (a member with company offers could not leave), 5 major (ex-member takes the offer as their own, an admin moves an offer to another company, phone lockout by one account, negated statements held, misses with look-alike letters / misspellings), 4 minor | 0098 + interface |
-<!-- ROUND 4 -->
+| 4 | F2, F3 fixed; F1, F5–F10 partly; new: 2 blocking (deleting a company with offers; publish once then rewrite), 4 major (phone lockout, "-free" exemption, offers hidden behind negations, group name / rules unchecked), 7 minor | 0099 + interface |
+<!-- ROUND 5 -->
 
 
 ## 6. Suites
 <!-- filled at the end -->
 
 ## 7. Open problems / waiting on the owner
-<!-- filled at the end -->
+
+**Waiting on the owner**
+- **SMS provider** for phone verification (W-20): Twilio or Vonage account, sender id / number, then `SMS_PROVIDER`, `SMS_ACCOUNT`, `SMS_TOKEN`,
+  `SMS_FROM`, `SMS_DISPATCH_SECRET` as function secrets (`docs/LAUNCH.md`). Until then codes queue in `private.sms_outbox` and nobody can verify.
+- **The W-17 word list is a policy:** what counts as retail, a controlled substance, import for others, sham papers or an outside invite link.
+  The rules hold for a human, they never delete; the owner (or his moderators) should read the list in `private.review_rules` and say what to
+  add or drop. Known and chosen: a mention of a controlled drug ("codeine-free …", "pregabalin-free formulation") is held for a human; bare
+  "for patients" / «للمرضى» / «بالعلبة» are not held (dossier and price-list language); spelled apart syllables («ترا مادول», "trama dol") and
+  misspellings beyond the listed ones are not caught — the report button (W-19) and the moderators are the second line.
+- **Comments** that match the rules are refused with the reason (there is no review queue for comments).
+- **Phone codes:** per account 3 an hour, 6 a day, 3 a number a day, 3 numbers a day; no cap on one number across accounts (any such cap
+  lets strangers lock the owner of the number out — verifier round 4). SMS to one number therefore grow only with new accounts, each needing a
+  confirmed e-mail; the provider's own fraud limits are the backstop. The owner may prefer a cap with a support path instead.
+- **Partner badge:** Drugbox's moderators grant and withdraw it (Admin → Review → Partner groups); a group that changes its name,
+  description, cover, topic or type loses it until asked again; emoji and rules changes keep it.
+
+**Known limits (not blocking)**
+- A held company surplus lot / dossier is shown to its company's team with «⏳ Waiting for Drugbox review —» in front of the product (the approved
+  dialog has no status field); it shows to everyone once published.
+- Removed group members do not come back by a link or by joining a public group; an admin's invitation brings them back.
+- J-SOCIAL-49 (demo) fails the same way on `claude/integ` f7dc703 — not this slice's (sample reach numbers differ between Home and Network).
+- Migrations 0090–0099 are all used; a further database change from this slice needs a number from the coordinator.
