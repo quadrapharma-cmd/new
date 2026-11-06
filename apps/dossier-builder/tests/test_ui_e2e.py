@@ -159,3 +159,28 @@ def test_generate_from_ui(server, browser):
     page.click('[data-f=all]')
     row = page.locator('tr', has_text='Composition certificate')
     assert 'composition.pdf' in row.inner_text()
+
+
+def test_bulk_classify(server, browser, tmp_path):
+    import httpx
+    prof = dict(dossier_kind='generic', origin='local', licence='own', activity='new',
+                apis=[dict(name='Paracetamol', manufacturer='Granules India', option='CEP')])
+    did = httpx.post(server + '/api/dossiers', json=dict(name='Bulk test', profile=prof, product=dict(
+        name='Examplol 500 mg', dosageform='tablet', manufacturer='Example Pharma'), envelope={})).json()['id']
+    files = [make_pdf(tmp_path / n, n) for n in ('GMP certificate Example Pharma.pdf', 'Pricing certificate.pdf', 'IMG_2041.pdf')]
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    page.add_init_script("localStorage.setItem('db.lang','en')")
+    page.goto(f'{server}/#/d/{did}/board')
+    page.wait_for_selector('#bulkBtn')
+    with page.expect_file_chooser() as fc:
+        page.click('#bulkBtn')
+    fc.value.set_files([str(f) for f in files])
+    page.wait_for_selector('[data-bulk]')
+    vals = page.eval_on_selector_all('[data-bulk]', 'els => els.map(e => e.value)')
+    assert vals == ['M1-37', 'M1-05', '']                     # unknown file: no guess
+    page.click('#bulkGo')
+    page.wait_for_selector('#toast:has-text("2 files added")')
+    board = httpx.get(f'{server}/api/dossiers/{did}/board').json()
+    st = {s['slot_id']: s['status'] for s in board['slots']}
+    assert st['M1-37'] == 'conforming' and st['M1-05'] == 'conforming'

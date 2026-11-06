@@ -239,7 +239,9 @@ const T = {
   doExport:{en:'Export selected outputs',ar:'تصدير المخرجات المختارة'}, exporting:{en:'Building…',ar:'جاري البناء…'}, downloads:{en:'Downloads',ar:'التنزيلات'},
   audit:{en:'Activity log',ar:'سجل النشاط'}, auditSub:{en:'Every action is recorded; nothing is overwritten.',ar:'كل إجراء مسجل؛ لا شيء يُستبدل.'},
   when:{en:'When',ar:'الوقت'}, event:{en:'Event',ar:'الحدث'}, detail:{en:'Detail',ar:'التفاصيل'}, restore:{en:'Restore',ar:'استرجاع'},
-  err:{en:'Error',ar:'خطأ'}, generate:{en:'Generate',ar:'توليد'}, justify:{en:'Write a justification',ar:'كتابة تبرير'},
+  err:{en:'Error',ar:'خطأ'}, bulk:{en:'Add files',ar:'إضافة ملفات'}, bulkSub:{en:'The tool suggests a section for each file from its name, CTD number and first page. Check and confirm.',ar:'الأداة تقترح قسماً لكل ملف من اسمه ورقم الـ CTD وأول صفحة. راجع وأكّد.'},
+  noSuggest:{en:'— choose a section —',ar:'— اختر القسم —'}, skip:{en:'Skip',ar:'تخطي'}, confirmAll:{en:'Add to the chosen sections',ar:'إضافة للأقسام المختارة'},
+  needsDetails:{en:'needs details — use the section\'s Upload button',ar:'يحتاج بيانات — استخدم زر الرفع في القسم'}, added:{en:'files added',ar:'ملفات أضيفت'}, generate:{en:'Generate',ar:'توليد'}, justify:{en:'Write a justification',ar:'كتابة تبرير'},
   genSub:{en:'Filled from the dossier where possible. Missing data is asked for, never guessed. The PDF is marked «DRAFT — unsigned» until the signed scan is uploaded.',
           ar:'تُملأ من بيانات الملف قدر الإمكان. البيانات الناقصة تُطلب ولا تُخمَّن. الملف عليه «مسودة — غير موقّعة» لحد ما يترفع المسح الموقّع.'},
   addRow:{en:'Add row',ar:'إضافة سطر'}, genDone:{en:'Generated and added to the section.',ar:'تم التوليد وإضافته للقسم.'}, generating:{en:'Generating…',ar:'جاري التوليد…'},
@@ -393,7 +395,7 @@ function renderBoard(){
       <button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></td></tr>`;
   });
   $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('board'))}</h1><p class="sub">${esc(t('boardSub'))}</p></div>
-    <div class="toolbar"><span class="modeswitch"><a class="on" href="#/d/${S.dossier.id}/board">${esc(t('guided'))}</a><a href="#/d/${S.dossier.id}/publisher">${esc(t('navPublisher'))}</a></span>
+    <div class="toolbar"><button class="btn" id="bulkBtn">⤒ ${esc(t('bulk'))}</button><span class="modeswitch"><a class="on" href="#/d/${S.dossier.id}/board">${esc(t('guided'))}</a><a href="#/d/${S.dossier.id}/publisher">${esc(t('navPublisher'))}</a></span>
     <a class="btn pri" href="#/d/${S.dossier.id}/export">${esc(t('navExport'))} ${S.lang==='ar'?'←':'→'}</a></div></div>
     <div class="kpis">
       <div class="card kpi br"><span class="n">${pct}%</span><span class="l">${esc(t('progress'))} (${ready}/${req.length})</span></div>
@@ -411,6 +413,33 @@ function renderBoard(){
   v.querySelectorAll('[data-m]').forEach(x=>x.onclick=()=>{S.module=+x.dataset.m; renderBoard();});
   v.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up));
   v.querySelectorAll('[data-why]').forEach(x=>x.onclick=()=>openWhy(x.dataset.why));
+  $('#bulkBtn').onclick=()=>{ const p=$('#picker'); p.multiple=true; p.value=''; p.onchange=()=>{ p.multiple=false; bulk([...p.files]); }; p.click(); };
+  v.ondragover=e=>{ if(e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); };
+  v.ondrop=e=>{ if(e.dataTransfer && e.dataTransfer.files.length){ e.preventDefault(); bulk([...e.dataTransfer.files]); } };
+}
+async function bulk(files){
+  if(!files.length) return;
+  const fd=new FormData(); files.forEach(f=>fd.append('files',f));
+  const res = await api(`/dossiers/${S.dossier.id}/classify`,{method:'POST',body:fd});
+  const act = S.board.slots.filter(s=>s.level==='R'||s.level==='O');
+  const opt = s => `${esc(s.ctd)} ${esc(s.title[S.lang]).slice(0,70)}${s.item?' · '+esc(s.item.manufacturer):''}`;
+  openDrawer(t('bulk'), `<p class="small muted">${esc(t('bulkSub'))}</p><div class="tablewrap"><table><thead><tr><th>${esc(t('pFile'))}</th><th>${esc(t('colSec'))}</th></tr></thead><tbody>
+    ${res.map((r,i)=>{ const best=r.suggestions[0]; return `<tr><td>${bdi(r.filename)}${best?`<div class="small muted">${esc(best.why.join(' · '))}</div>`:''}</td>
+      <td><select data-bulk="${i}"><option value="">${esc(t('noSuggest'))}</option>
+      ${r.suggestions.map(x=>`<option value="${esc(x.slot_id)}" ${best&&x.slot_id===best.slot_id?'selected':''}>★ ${opt(slotById(x.slot_id))}</option>`).join('')}
+      <option disabled>────────</option>${act.map(s=>`<option value="${esc(s.slot_id)}">${opt(s)}</option>`).join('')}</select></td></tr>`; }).join('')}
+    </tbody></table></div><div class="toolbar"><button class="btn pri" id="bulkGo">${esc(t('confirmAll'))}</button></div>`);
+  $('#drawer').classList.add('wide');
+  $('#bulkGo').onclick=async()=>{
+    let n=0; const skipped=[];
+    for(const sel of document.querySelectorAll('[data-bulk]')){
+      const slotId=sel.value, f=files[+sel.dataset.bulk]; if(!slotId) continue;
+      if(needsMeta(slotById(slotId))){ skipped.push(f.name); continue; }
+      const fd=new FormData(); fd.append('file',f); fd.append('meta','{}');
+      try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd}); n++; }catch(e){ toast(e.message); }
+    }
+    closeDrawer(); toast(`${n} ${t('added')}${skipped.length?' · '+skipped.join(', ')+': '+t('needsDetails'):''}`); await board();
+  };
 }
 function slotById(id){ return S.board.slots.find(s=>s.slot_id===id); }
 function needsMeta(s){ return s.req_id==='M1-09' ? 'pi' : (s.module===5 ? 'study' : null); }

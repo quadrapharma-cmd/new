@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from ..profile import Profile, ProfileError
 from ..guard import assert_allowed, LockedError
 from ..assemble import docs_for
+from ..classify import Classifier
 from ..writers import ctd, ectd32, ectd40
 from ..writers.ectd32 import WriterError
 from ..generate import letters
@@ -259,6 +260,26 @@ def create_app(workspace):
         out = {k: v for k, v in {**base, **last}.items() if v not in (None, '', [])}
         keys = {f['key'] for f in letters.SCHEMAS[kind]['fields']}
         return {k: v for k, v in out.items() if k in keys}
+
+    @app.post('/api/dossiers/{did}/classify')
+    async def classify(did: str, files: list[UploadFile] = File(...)):
+        """Suggest a slot for each file (nothing is stored until the user confirms)."""
+        from io import BytesIO
+        from pypdf import PdfReader
+        d = st.dossier(did)
+        clf = Classifier(st.pack(d['pack']))
+        slots = st.slots(did)
+        out = []
+        for f in files:
+            data = await f.read()
+            text = ''
+            try:
+                rd = PdfReader(BytesIO(data), strict=False)
+                text = ' '.join((p.extract_text() or '') for p in rd.pages[:1])
+            except Exception:
+                pass
+            out.append({'filename': f.filename, 'size': len(data), 'suggestions': clf.suggest(f.filename, text, slots)})
+        return out
 
     @app.get('/api/dossiers/{did}/gate')
     def gate(did: str):
