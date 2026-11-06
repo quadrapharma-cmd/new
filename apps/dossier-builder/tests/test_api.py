@@ -123,3 +123,32 @@ def test_generate_cover_letter_into_slot(c):
     assert r.status_code == 201, r.text
     assert r.json()['slot_id'] == 'M1-43' and r.json()['meta']['draft_unsigned'] is True
     assert r.json()['check_status'] in ('conforming', 'needs_attention')
+
+
+def test_preview_three_outputs(c, pdf):
+    did = new(c)
+    up(c, did, 'M1-31', pdf)
+    up(c, did, 'M1-09', pdf, {'pi_type': 'pl', 'lang': 'ar'})
+    up(c, did, 'S-08@Paracetamol|Granules India', pdf)
+    p3 = {r['slot_id']: r for r in c.get(f'/api/dossiers/{did}/preview?output=ectd32').json()['rows']}
+    assert p3['M1-31']['path'] == 'm1/eg/12-form/128-composit/1281-compositcert/compositcert.pdf'
+    assert p3['M1-31']['target'] == 'm1-2-8-1-compositcert'
+    assert p3['M1-09']['path'] == 'm1/eg/13-pi/131-spclabelpl/ar/pl.pdf'
+    assert p3['S-08@Paracetamol|Granules India']['target'] == 'm3-2-s-4-1-specification'
+    p4 = {r['slot_id']: r for r in c.get(f'/api/dossiers/{did}/preview?output=ectd40').json()['rows']}
+    assert p4['M1-31']['target'] == 'eg_1.2.8.1' and p4['M1-31']['path'] == 'm1/compositcert.pdf'
+    assert p4['M1-09']['path'] == 'm1/pl-ar.pdf' and p4['S-08@Paracetamol|Granules India']['target'] == 'ich_3.2.s.4.1'
+    pc = {r['slot_id']: r for r in c.get(f'/api/dossiers/{did}/preview?output=ctd').json()['rows']}
+    assert pc['M1-31']['path'].startswith('Examplol 500 mg FCT/Module 1/')
+    assert not list((c.app.state.store.root).glob('exports/*'))          # preview writes nothing
+
+
+def test_concurrent_requests(c, pdf):
+    """Board + preview + gate in parallel threads (the UI does this) must not break the store."""
+    from concurrent.futures import ThreadPoolExecutor
+    did = new(c)
+    up(c, did, 'M1-31', pdf)
+    urls = [f'/api/dossiers/{did}/board', f'/api/dossiers/{did}/preview?output=ectd32', f'/api/dossiers/{did}/gate'] * 8
+    with ThreadPoolExecutor(8) as ex:
+        codes = list(ex.map(lambda u: c.get(u).status_code, urls))
+    assert codes == [200] * len(urls)

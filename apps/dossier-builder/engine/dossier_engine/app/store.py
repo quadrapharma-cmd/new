@@ -4,7 +4,7 @@
 <workspace>/blobs/<sha256>    — content-addressed files: never overwritten, never deleted
 Principle 7 «no silent data loss»: a document is withdrawn or superseded, not deleted;
 a profile change moves documents of removed slots to «unassigned»."""
-import hashlib, json, shutil, sqlite3, time, uuid
+import hashlib, json, shutil, sqlite3, threading, time, uuid
 from pathlib import Path
 from .. import packs
 from ..profile import Profile
@@ -37,16 +37,29 @@ class Store:
     def __init__(self, root):
         self.root = Path(root)
         (self.root / 'blobs').mkdir(parents=True, exist_ok=True)
-        self.db = sqlite3.connect(self.root / 'workspace.sqlite', check_same_thread=False)
-        self.db.row_factory = sqlite3.Row
+        self._local = threading.local()
+        self.db.execute('pragma journal_mode=wal')
         self.db.executescript(SCHEMA)
         self._packs = {}
+        self._pack_lock = threading.Lock()
+
+    @property
+    def db(self):
+        """One SQLite connection per thread (the API serves requests in a thread pool)."""
+        c = getattr(self._local, 'conn', None)
+        if c is None:
+            c = sqlite3.connect(self.root / 'workspace.sqlite', timeout=30)
+            c.row_factory = sqlite3.Row
+            c.execute('pragma busy_timeout=30000')
+            self._local.conn = c
+        return c
 
     # ---------------- helpers
     def pack(self, pid):
-        if pid not in self._packs:
-            self._packs[pid] = packs.load(pid)
-        return self._packs[pid]
+        with self._pack_lock:
+            if pid not in self._packs:
+                self._packs[pid] = packs.load(pid)
+            return self._packs[pid]
 
     def audit(self, dossier_id, event, **detail):
         self.db.execute('insert into audit(ts, dossier_id, event, detail) values (?,?,?,?)',
@@ -105,7 +118,7 @@ class Store:
         self.db.execute('update dossier set profile=? where id=?', (json.dumps(profile, ensure_ascii=False), did))
         moved = []
         for sid in change['removed']:
-            for r in self.db.execute("select id from document where dossier_id=? and slot_id=? and state='current'", (did, sid)):
+            for r in self.db.execute("select id from document where dossier_id=? and slot_id=? and state='current'", (did, sid)).fetchall():
                 self.db.execute("update document set slot_id=null, meta=json_set(meta, '$.previous_slot', ?) where id=?",
                                 (sid, r['id']))
                 moved.append(r['id'])
@@ -157,7 +170,8 @@ class Store:
             args.append(slot_id)
         if not include_withdrawn:
             q += " and state='current'"
-        return [self.document(r['id']) for r in self.db.execute(q + ' order by created', args)]
+        ids = [r['id'] for r in self.db.execute(q + ' order by created', args).fetchall()]
+        return [self.document(i) for i in ids]
 
     def withdraw(self, did, doc_id, reason):
         d = self.document(doc_id)

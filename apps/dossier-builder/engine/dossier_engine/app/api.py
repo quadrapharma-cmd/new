@@ -154,6 +154,72 @@ def create_app(workspace):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+    @app.get('/api/dossiers/{did}/preview')
+    def preview(did: str, output: str = 'ectd32'):
+        """Publisher view: where every current document will go, per output, without writing anything."""
+        if output not in ('ctd', 'ectd32', 'ectd40'):
+            err(422, 'E-OUTPUT', 'Unknown output.', 'مخرج غير معروف.')
+        d = st.dossier(did)
+        slots = st.slots(did)
+        by_slot = {s.slot_id: s for s in slots}
+        files, docmeta = {}, {}
+        for s in slots:
+            for doc in st.documents(did, s.slot_id) if s.active else []:
+                files.setdefault(s.slot_id, []).append({'file': doc['id'], 'title': doc['title'], **doc['meta']})
+                docmeta[doc['id']] = doc
+        rows = []
+        if output == 'ctd':
+            plan = ctd.write('/nonexistent', d['name'], slots, files, dry_run=True)
+            for sid, paths in plan['plan'].items():
+                for f, path in zip(files[sid], paths):
+                    rows.append(dict(slot_id=sid, doc_id=f['file'], node=by_slot[sid].ctd, target=by_slot[sid].ctd,
+                                     path=f"{plan['root']}/{path}"))
+        else:
+            prof = Profile.from_dict(d['profile'])
+            pr = d['product']
+            product = ectd32.Product(pr['name'], pr['dosageform'], pr['manufacturer'], pr.get('indication'))
+            p32 = app.state.p32 = getattr(app.state, 'p32', None) or ectd32.Profile32()
+            p40 = getattr(app.state, 'p40', None)
+            if output == 'ectd40' and p40 is None:
+                p40 = app.state.p40 = ectd40.Profile40(v32=p32)
+            used = set()
+            for s in slots:
+                if not s.active:
+                    continue
+                for f in files.get(s.slot_id, []):
+                    one, _ = docs_for([s], prof, {s.slot_id: [f]})
+                    if not one:
+                        rows.append(dict(slot_id=s.slot_id, doc_id=f['file'], node=None, target=None, path=None,
+                                         note='CTD only'))
+                        continue
+                    doc = one[0]
+                    try:
+                        if output == 'ectd32':
+                            rel = ectd32.rel_path(doc, product, p32)
+                            target = p32.m1[doc.node]['element'] if doc.node.startswith('1.') else p32.ich_element(doc.node)
+                        else:
+                            code, _, spec = p40.cou(doc.node)
+                            target = code
+                            rel = ectd32.rel_path(doc, product, p32)
+                            if doc.node.startswith('1.'):
+                                stem = rel.rsplit('/', 1)[1][:-4]
+                                rel = f"m1/{f'{doc.pi_type}-{doc.lang}' if doc.node == '1.3.1' else stem}.pdf"
+                        n, k = rel, 2
+                        while n in used:
+                            n = rel[:-4] + f'-{k}.pdf'
+                            k += 1
+                        used.add(n)
+                        rows.append(dict(slot_id=s.slot_id, doc_id=f['file'], node=doc.node, target=target, path=n))
+                    except WriterError as e:
+                        rows.append(dict(slot_id=s.slot_id, doc_id=f['file'], node=doc.node, target=None, path=None,
+                                         note=str(e)))
+        for r in rows:
+            m = docmeta[r['doc_id']]
+            r.update(title=m['title'], filename=m['filename'], version=m['version'], sha256=m['sha256'],
+                     check_status=m['check_status'], operation='new', doc_class=m['doc_class'],
+                     ctd=by_slot[r['slot_id']].ctd, module=by_slot[r['slot_id']].module)
+        return {'output': output, 'rows': rows}
+
     @app.get('/api/dossiers/{did}/gate')
     def gate(did: str):
         return st.gate(did)

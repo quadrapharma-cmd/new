@@ -87,3 +87,38 @@ def test_journey(server, browser, tmp_path):
     assert sw <= 390, sw
     page.screenshot(path=str(tmp_path / 'ar-390.png'))
     assert errors == []
+
+
+def test_publisher_view(server, browser, tmp_path):
+    import httpx, json
+    pdf = make_pdf(tmp_path / 'c.pdf', 'Composition').read_bytes()
+    prof = dict(dossier_kind='generic', origin='local', licence='own', activity='new',
+                apis=[dict(name='Paracetamol', manufacturer='Granules India', option='CEP')])
+    did = httpx.post(server + '/api/dossiers', json=dict(name='Pub test', profile=prof, product=dict(
+        name='Examplol 500 mg', dosageform='film-coated tablet', manufacturer='Example Pharma'), envelope={})).json()['id']
+    httpx.post(f'{server}/api/dossiers/{did}/slots/M1-31/documents', files={'file': ('comp.pdf', pdf, 'application/pdf')},
+               data={'meta': '{}'})
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    page.add_init_script("localStorage.setItem('db.lang','en')")
+    page.goto(f'{server}/#/d/{did}/publisher')
+    page.wait_for_selector('[data-node="M1-31"]')
+    page.click('[data-node="M1-31"]')
+    page.wait_for_selector('.props')
+    assert 'm1-2-8-1-compositcert' in page.inner_text('.props')
+    assert 'm1/eg/12-form/128-composit/1281-compositcert/compositcert.pdf' in page.inner_text('.props')
+    page.click('[data-out=ectd40]')
+    page.wait_for_selector('.props:has-text("eg_1.2.8.1")')
+    assert 'm1/compositcert.pdf' in page.inner_text('.props')
+    page.click('[data-out=ctd]')
+    page.wait_for_selector('.props:has-text("Module 1")')
+    # drag-and-drop a file onto a section (DataTransfer built in the page)
+    page.evaluate("""async (b64) => {
+        const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+        const dt = new DataTransfer(); dt.items.add(new File([bin], 'loa.pdf', {type: 'application/pdf'}));
+        const n = document.querySelector('[data-node="M1-02"]');
+        n.dispatchEvent(new DragEvent('drop', {dataTransfer: dt, bubbles: true, cancelable: true}));
+    }""", __import__('base64').b64encode(pdf).decode())
+    page.wait_for_selector('[data-node="M1-02"].sel')
+    page.wait_for_selector('#leafPane tr.leaf')
+    assert page.locator('[data-node="M1-02"] .dot.d-conforming').count() == 1

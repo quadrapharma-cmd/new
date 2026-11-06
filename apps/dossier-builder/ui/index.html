@@ -113,6 +113,25 @@ html[dir="rtl"] .toast{transform:translateX(50%)}
 .toast[hidden]{display:none}
 .empty{padding:36px 16px;text-align:center;color:var(--muted)}
 .dl{display:flex;gap:8px;flex-wrap:wrap}
+.pub{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr) minmax(240px,320px);gap:12px;min-height:560px}
+.pub .card{display:flex;flex-direction:column;min-height:0;max-height:calc(100vh - 210px)}
+.pub .card>h3{padding:12px 14px;border-bottom:1px solid var(--line)}
+.pub .scroll{overflow:auto;min-height:0}
+.tree details{border-bottom:1px solid var(--line)}
+.tree summary{padding:8px 14px;cursor:pointer;font-weight:600;font-size:12.5px;color:var(--muted)}
+.node{display:flex;gap:8px;align-items:flex-start;padding:6px 14px 6px 22px;cursor:pointer;font-size:13px;border-inline-start:3px solid transparent}
+html[dir=rtl] .node{padding:6px 22px 6px 14px}
+.node:hover{background:var(--surface-2)} .node.sel{background:var(--brand-soft);border-inline-start-color:var(--brand)}
+.node.drop{outline:2px dashed var(--brand);outline-offset:-2px}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:var(--na)}
+.d-conforming{background:var(--ok)} .d-needs_attention{background:var(--warn)} .d-non_conforming{background:var(--bad)} .d-received{background:var(--rec)}
+.leaf{cursor:pointer} .leaf.sel td{background:var(--brand-soft)}
+.op{font-family:var(--f-mono);font-size:11.5px;padding:1px 6px;border-radius:4px;background:var(--ok-soft);color:var(--ok)}
+.props{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;padding:14px;font-size:13px}
+.props dt{color:var(--muted)} .props dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.modeswitch{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.modeswitch a{padding:6px 12px;text-decoration:none;color:var(--muted)} .modeswitch a.on{background:var(--brand);color:var(--brand-ink)}
+@media (max-width:1100px){.pub{grid-template-columns:minmax(0,1fr)} .pub .card{max-height:none}}
 .mobnav{display:none}
 @media (max-width:860px){
   .app{grid-template-columns:minmax(0,1fr)}
@@ -131,6 +150,7 @@ html[dir="rtl"] .toast{transform:translateX(50%)}
       <a href="#/" data-r="home"><span data-t="navDossiers"></span></a>
       <div class="grp" data-t="navCurrent"></div>
       <a href="#" data-r="board" id="navBoard" aria-disabled="true"><span data-t="navBoard"></span></a>
+      <a href="#" data-r="publisher" id="navPublisher" aria-disabled="true"><span data-t="navPublisher"></span></a>
       <a href="#" data-r="export" id="navExport" aria-disabled="true"><span data-t="navExport"></span></a>
       <a href="#" data-r="audit" id="navAudit" aria-disabled="true"><span data-t="navAudit"></span></a>
     </nav>
@@ -155,7 +175,16 @@ html[dir="rtl"] .toast{transform:translateX(50%)}
 const T = {
   appName:{en:'Dossier Builder',ar:'منشئ الملفات'},
   navDossiers:{en:'Dossiers',ar:'الملفات'}, navCurrent:{en:'Current dossier',ar:'الملف الحالي'},
-  navBoard:{en:'Requirements',ar:'المتطلبات'}, navExport:{en:'Export',ar:'التصدير'}, navAudit:{en:'Activity log',ar:'سجل النشاط'},
+  navBoard:{en:'Requirements',ar:'المتطلبات'}, navPublisher:{en:'Publisher',ar:'الناشر'},
+  guided:{en:'Guided',ar:'إرشادي'}, publisher:{en:'Publisher view',ar:'وضع الناشر'},
+  pubSub:{en:'Expert view: the dossier tree, the documents in each section and their properties, for the chosen output.',ar:'وضع الخبير: شجرة الملف، ومستندات كل قسم وخصائصها، حسب المخرج المختار.'},
+  sections:{en:'Sections',ar:'الأقسام'}, leaves:{en:'Documents in this section',ar:'مستندات القسم'}, props:{en:'Properties',ar:'الخصائص'},
+  pickNode:{en:'Choose a section on the left. Drop PDF files on a section to add them.',ar:'اختر قسماً. اسحب ملفات PDF على القسم لإضافتها.'},
+  pickLeaf:{en:'Choose a document to see its properties.',ar:'اختر مستنداً لعرض خصائصه.'}, noLeaves:{en:'No documents yet — drop a PDF here or on the section.',ar:'لا توجد مستندات — اسحب ملف PDF هنا أو على القسم.'},
+  pTitle:{en:'Title',ar:'العنوان'}, pFile:{en:'Original file',ar:'الملف الأصلي'}, pPath:{en:'Path in output',ar:'المسار في المخرج'},
+  pTarget:{en:'Element / context of use',ar:'العنصر / سياق الاستخدام'}, pOp:{en:'Operation',ar:'العملية'}, pHash:{en:'SHA-256',ar:'SHA-256'},
+  pClass:{en:'Document class',ar:'فئة المستند'}, pLen:{en:'Lengths',ar:'الأطوال'}, pVer:{en:'Version',ar:'الإصدار'},
+  ctdOnly:{en:'CTD only (no eCTD node)',ar:'CTD فقط (لا يوجد قسم eCTD)'}, navExport:{en:'Export',ar:'التصدير'}, navAudit:{en:'Activity log',ar:'سجل النشاط'},
   localNote:{en:'Local workspace — files stay on this computer.',ar:'مساحة عمل محلية — الملفات لا تغادر هذا الجهاز.'},
   dossiers:{en:'Dossiers',ar:'الملفات'}, dossiersSub:{en:'One dossier per product, strength and dosage form.',ar:'ملف لكل منتج وتركيز وشكل صيدلي.'},
   newDossier:{en:'New dossier',ar:'ملف جديد'}, none:{en:'No dossiers yet. Create the first one.',ar:'لا توجد ملفات بعد. أنشئ أول ملف.'},
@@ -237,15 +266,15 @@ const chip = st => `<span class="chip ${STATUS_CHIP[st]||'c-na'}"><i></i>${esc(t
 
 function nav(r){
   const id = S.dossier && S.dossier.id;
-  [['navBoard','board'],['navExport','export'],['navAudit','audit']].forEach(([n,k])=>{const a=$('#'+n); a.href= id?`#/d/${id}/${k}`:'#'; a.setAttribute('aria-disabled', id?'false':'true');});
+  [['navBoard','board'],['navPublisher','publisher'],['navExport','export'],['navAudit','audit']].forEach(([n,k])=>{const a=$('#'+n); a.href= id?`#/d/${id}/${k}`:'#'; a.setAttribute('aria-disabled', id?'false':'true');});
   document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on', a.dataset.r===r));
-  const m=$('#mobnav'); m.innerHTML = `<option value="#/">${esc(t('navDossiers'))}</option>` + (id?['board','export','audit'].map(k=>`<option value="#/d/${id}/${k}" ${k===r?'selected':''}>${esc(t('nav'+k[0].toUpperCase()+k.slice(1)))}</option>`).join(''):'');
+  const m=$('#mobnav'); m.innerHTML = `<option value="#/">${esc(t('navDossiers'))}</option>` + (id?['board','publisher','export','audit'].map(k=>`<option value="#/d/${id}/${k}" ${k===r?'selected':''}>${esc(t('nav'+k[0].toUpperCase()+k.slice(1)))}</option>`).join(''):'');
   m.onchange=()=>location.hash=m.value;
   $('#crumb').innerHTML = S.dossier ? bdi(S.dossier.name) : esc(t('appName'));
 }
 async function route(){
   const h = location.hash.replace(/^#/,'') || '/';
-  const m = h.match(/^\/d\/([^/]+)\/(board|export|audit)$/);
+  const m = h.match(/^\/d\/([^/]+)\/(board|publisher|export|audit)$/);
   const v = $('#view');
   try{
     if(h==='/new'){ S.dossier=null; nav('home'); return wizard(); }
@@ -254,6 +283,7 @@ async function route(){
     nav(m[2]);
     if(m[2]==='board') return board();
     if(m[2]==='export') return exportView();
+    if(m[2]==='publisher') return publisherView();
     return auditView();
   }catch(e){ v.innerHTML = `<div class="alert bad"><p><b>${esc(t('err'))}:</b> ${esc(e.message)}</p></div>`; }
 }
@@ -353,7 +383,8 @@ function renderBoard(){
       <button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></td></tr>`;
   });
   $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('board'))}</h1><p class="sub">${esc(t('boardSub'))}</p></div>
-    <a class="btn pri" href="#/d/${S.dossier.id}/export">${esc(t('navExport'))} ${S.lang==='ar'?'←':'→'}</a></div>
+    <div class="toolbar"><span class="modeswitch"><a class="on" href="#/d/${S.dossier.id}/board">${esc(t('guided'))}</a><a href="#/d/${S.dossier.id}/publisher">${esc(t('navPublisher'))}</a></span>
+    <a class="btn pri" href="#/d/${S.dossier.id}/export">${esc(t('navExport'))} ${S.lang==='ar'?'←':'→'}</a></div></div>
     <div class="kpis">
       <div class="card kpi br"><span class="n">${pct}%</span><span class="l">${esc(t('progress'))} (${ready}/${req.length})</span></div>
       <div class="card kpi ns"><span class="n">${c.not_started||0}</span><span class="l">${esc(t('not_started'))}</span></div>
@@ -390,7 +421,7 @@ function pick(slotId, meta){
   p.onchange=async()=>{ if(!p.files[0]) return; const fd=new FormData(); fd.append('file',p.files[0]); fd.append('meta',JSON.stringify(meta));
     toast(t('uploading'));
     try{ const doc = await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd});
-      toast(t('uploaded')+' '+t(doc.check_status)); await board(); if(doc.findings.length) openWhy(slotId); }
+      toast(t('uploaded')+' '+t(doc.check_status)); if(location.hash.endsWith('/publisher')){ S.sel=slotId; await publisherView(); } else await board(); if(doc.findings.length) openWhy(slotId); }
     catch(e){ toast(e.message); } };
   p.click();
 }
@@ -413,6 +444,70 @@ function openDrawer(title, html){ $('#dTitle').textContent=title; $('#dBody').in
 function closeDrawer(){ $('#drawer').hidden=true; $('#scrim').hidden=true; }
 $('#dClose').onclick=closeDrawer; $('#scrim').onclick=closeDrawer;
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
+
+
+/* ---------------- publisher (EXTEDO-like expert view) */
+S.out = 'ectd32'; S.sel = null; S.leaf = null;
+async function publisherView(){
+  const [b, pv] = await Promise.all([api(`/dossiers/${S.dossier.id}/board`), api(`/dossiers/${S.dossier.id}/preview?output=${S.out}`)]);
+  S.board = b; S.pv = pv.rows;
+  renderPublisher();
+}
+function renderPublisher(){
+  const id=S.dossier.id, act=S.board.slots.filter(s=>s.level==='R'||s.level==='O');
+  if(S.sel && !act.find(s=>s.slot_id===S.sel)) S.sel=null;
+  const mods=[1,2,3,4,5].map(m=>[m, act.filter(s=>s.module===m)]).filter(x=>x[1].length);
+  const label = s => `${esc(s.ctd)} ${esc(s.title[S.lang]).slice(0,60)}${s.item?` · ${bdi(s.item.manufacturer)}`:''}`;
+  const tree = mods.map(([m,list])=>`<details open><summary>${esc(t('module'))} ${m}</summary>${list.map(s=>`<div class="node ${s.slot_id===S.sel?'sel':''}" data-node="${esc(s.slot_id)}" tabindex="0" role="button"><span class="dot d-${s.status}"></span><span>${label(s)}</span></div>`).join('')}</details>`).join('');
+  const sel = S.sel && act.find(s=>s.slot_id===S.sel);
+  const rows = sel ? S.pv.filter(r=>r.slot_id===sel.slot_id) : [];
+  if(!rows.find(r=>r.doc_id===S.leaf)) S.leaf = rows[0] ? rows[0].doc_id : null;
+  const leaf = rows.find(r=>r.doc_id===S.leaf);
+  const leaves = !sel ? `<div class="empty">${esc(t('pickNode'))}</div>` : rows.length ? `<div class="tablewrap"><table><thead><tr><th>${esc(t('pTitle'))}</th><th>${esc(t('pPath'))}</th><th>${esc(t('pOp'))}</th><th>${esc(t('colStatus'))}</th></tr></thead><tbody>
+     ${rows.map(r=>`<tr class="leaf ${r.doc_id===S.leaf?'sel':''}" data-leaf="${r.doc_id}"><td>${bdi(r.title)}</td><td class="code" style="white-space:normal">${r.path?esc(r.path.split('/').slice(-2).join('/')):esc(t('ctdOnly'))}</td><td><span class="op">${esc(r.operation)}</span></td><td>${chip(r.check_status)}</td></tr>`).join('')}</tbody></table></div>`
+     : `<div class="empty" data-dropzone="1">${esc(t('noLeaves'))}</div>`;
+  const props = !leaf ? `<div class="empty">${esc(t('pickLeaf'))}</div>` : `<dl class="props">
+     <dt>${esc(t('pTitle'))}</dt><dd>${bdi(leaf.title)}</dd>
+     <dt>${esc(t('pTarget'))}</dt><dd class="code" style="white-space:normal">${esc(leaf.target||'—')}</dd>
+     <dt>${esc(t('pPath'))}</dt><dd class="code" style="white-space:normal">${esc(leaf.path||t('ctdOnly'))}</dd>
+     <dt>${esc(t('pLen'))}</dt><dd class="small">${leaf.path?`${esc(t('name'))} ${leaf.path.split('/').pop().length}/64 · path ${leaf.path.length+5}/180`:'—'}</dd>
+     <dt>${esc(t('pOp'))}</dt><dd><span class="op">${esc(leaf.operation)}</span></dd>
+     <dt>${esc(t('pVer'))}</dt><dd>${leaf.version}</dd>
+     <dt>${esc(t('pFile'))}</dt><dd>${bdi(leaf.filename)}</dd>
+     <dt>${esc(t('pClass'))}</dt><dd class="code">${esc(leaf.doc_class)}</dd>
+     <dt>${esc(t('pHash'))}</dt><dd class="code" style="white-space:normal">${esc(leaf.sha256.slice(0,16))}…</dd></dl>
+     <div class="toolbar" style="padding:0 14px 14px"><a class="btn sm" target="_blank" rel="noopener" href="/api/dossiers/${id}/documents/${leaf.doc_id}/file">${esc(t('view'))}</a><button class="btn sm" data-why="${esc(leaf.slot_id)}">${esc(t('why'))}</button></div>`;
+  $('#view').innerHTML = `<div class="head"><div><h1>${esc(t('publisher'))}</h1><p class="sub">${esc(t('pubSub'))}</p></div>
+    <div class="toolbar"><span class="modeswitch"><a href="#/d/${id}/board">${esc(t('guided'))}</a><a class="on" href="#/d/${id}/publisher">${esc(t('navPublisher'))}</a></span>
+    <div class="seg" role="group" aria-label="Output">${[['ctd','CTD'],['ectd32','eCTD 3.2.2'],['ectd40','eCTD 4.0']].map(([k,l])=>`<button data-out="${k}" class="${S.out===k?'on':''}">${l}</button>`).join('')}</div>
+    <a class="btn pri" href="#/d/${id}/export">${esc(t('navExport'))}</a></div></div>
+    <div class="pub"><div class="card"><h3>${esc(t('sections'))}</h3><div class="scroll tree">${tree}</div></div>
+    <div class="card"><h3>${sel?`<span class="code">${esc(sel.ctd)}</span> ${esc(sel.title[S.lang])}`:esc(t('leaves'))}</h3><div class="scroll" id="leafPane">${leaves}</div>
+      ${sel&&(sel.level==='R'||sel.level==='O')?`<div class="toolbar" style="padding:10px 14px;border-top:1px solid var(--line)"><button class="btn sm" data-up="${esc(sel.slot_id)}">⤒ ${esc(t('upload'))}</button></div>`:''}</div>
+    <div class="card"><h3>${esc(t('props'))}</h3><div class="scroll">${props}</div></div></div>`;
+  const v=$('#view');
+  v.querySelectorAll('[data-out]').forEach(b=>b.onclick=()=>{S.out=b.dataset.out; publisherView();});
+  v.querySelectorAll('[data-node]').forEach(n=>{
+    n.onclick=()=>{S.sel=n.dataset.node; S.leaf=null; renderPublisher();};
+    n.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); n.click(); } };
+    n.ondragover=e=>{e.preventDefault(); n.classList.add('drop');};
+    n.ondragleave=()=>n.classList.remove('drop');
+    n.ondrop=e=>{e.preventDefault(); n.classList.remove('drop'); dropFiles(n.dataset.node, e.dataTransfer.files);};
+  });
+  const lp=$('#leafPane'); if(lp && sel){ lp.ondragover=e=>e.preventDefault(); lp.ondrop=e=>{e.preventDefault(); dropFiles(sel.slot_id, e.dataTransfer.files);}; }
+  v.querySelectorAll('[data-leaf]').forEach(r=>r.onclick=()=>{S.leaf=r.dataset.leaf; renderPublisher();});
+  v.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up));
+  v.querySelectorAll('[data-why]').forEach(x=>x.onclick=()=>openWhy(x.dataset.why));
+}
+async function dropFiles(slotId, list){
+  const s = slotById(slotId);
+  if(!s || !(s.level==='R'||s.level==='O') || !list.length) return;
+  if(needsMeta(s)) return startUpload(slotId);
+  for(const f of list){ const fd=new FormData(); fd.append('file',f); fd.append('meta','{}');
+    try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd}); toast(t('uploaded')); }
+    catch(e){ toast(e.message); } }
+  S.sel=slotId; publisherView();
+}
 
 /* ---------------- export */
 async function exportView(){

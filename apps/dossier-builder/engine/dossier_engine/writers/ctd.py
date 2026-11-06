@@ -27,11 +27,12 @@ def _sec_key(sec):
     return [int(x) if x.isdigit() else x for x in re.split(r'[.\s–-]+', sec)]
 
 
-def write(out_dir, root_name, slots, files, lang_note=None):
+def write(out_dir, root_name, slots, files, lang_note=None, dry_run=False):
     """slots: resolver output (all, incl. NR/NA). files: {slot_id: [{file, title?, variation?, date?}]}.
     Returns {path, files, missing}."""
     root = Path(out_dir) / clean(root_name, 60)
-    if root.exists():
+    plan = {}
+    if root.exists() and not dry_run:
         raise WriterError(f'{root} exists — an export is never overwritten')
     rows, written, missing = [], [], []
     order = {}
@@ -64,6 +65,10 @@ def write(out_dir, root_name, slots, files, lang_note=None):
             rel = sub / name
             if len(f'{root.name}/{rel}') > MAX_PATH:
                 raise WriterError(f'path > {MAX_PATH}: {rel}')
+            plan.setdefault(s.slot_id, []).append(str(rel))
+            if dry_run:
+                placed.append(str(rel))
+                continue
             if not Path(f['file']).is_file():
                 raise WriterError(f'missing file {f["file"]}')
             (root / rel).parent.mkdir(parents=True, exist_ok=True)
@@ -72,6 +77,8 @@ def write(out_dir, root_name, slots, files, lang_note=None):
             written.append(str(rel))
         rows.append((s, placed))
 
+    if dry_run:
+        return {'root': root.name, 'plan': plan, 'missing': missing}
     root.mkdir(parents=True, exist_ok=True)
     with open(root / '00-checklist.csv', 'w', newline='', encoding='utf-8-sig') as fh:
         w = csv.writer(fh)
