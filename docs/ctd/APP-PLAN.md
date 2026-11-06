@@ -128,3 +128,13 @@ Company ─┬─ Parties (MAH, manufacturers, packager, releaser, store)
 2. أول مخرج: CTD One Submission (التوصية، لأنه الشغّال النهارده) ولا eCTD على طول.
 3. مستخدم واحد ولا فريق (مراجع ومعتمد).
 4. هل الأداة للاستخدام الداخلي بس، ولا هتتباع للشركات.
+
+## 10. Readiness to build (06/11/2026)
+
+| Phase | Ready? | What it needs |
+|---|---|---|
+| 0 Rules as data | ✅ knowledge complete | NP.CAPP.065 v5 (+ v6 draft), M1 Submission Guidance draft, QM v2 + GL.CAPP.039, NP.CAPP.040, NP.CAPP.112, Variations v6 + EDA variation tool data, ICH M4 |
+| 1 CTD One Submission + M1 letters | ✅ can start | Owner decisions (§9) + a real test dossier |
+| 2 Module 3 tables, QOS, cross-checks | ✅ can start | Real sample data (specs, batch results, stability) to test against |
+| 3 eCTD 3.2.2 | ⚠️ partial | Structure from the EG M1 spec draft is enough to build. **EG DTD, validation criteria and CV lists are missing**, so «EDA-valid» cannot be claimed |
+| 4 eCTD 4.0 | ⚠️ partial | ICH v4.0 complete; **the EG regional v4 package (CoU, keywords, OIDs) does not exist yet** (target Q1 2028) |
