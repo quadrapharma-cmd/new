@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dossier-builder/requirement.schema.json",
+  "title": "Rule-pack requirement record",
+  "type": "object",
+  "required": ["id", "module", "ctd", "title", "matrix", "applies", "required", "doc_class", "sources", "provenance"],
+  "additionalProperties": false,
+  "$defs": {
+    "level": {"enum": ["R", "NR", "O"]},
+    "case": {
+      "type": "object",
+      "required": ["level"],
+      "additionalProperties": false,
+      "properties": {
+        "when": {"type": "string"},
+        "level": {"$ref": "#/$defs/level"},
+        "reason": {"$ref": "#/$defs/bilingual"},
+        "provenance": {"type": "string"}
+      }
+    },
+    "cell": {
+      "oneOf": [
+        {"$ref": "#/$defs/level"},
+        {"type": "object", "required": ["cases"], "additionalProperties": false,
+         "properties": {"cases": {"type": "array", "items": {"$ref": "#/$defs/case"}, "minItems": 1}}}
+      ]
+    },
+    "bilingual": {
+      "type": "object", "required": ["en", "ar"], "additionalProperties": false,
+      "properties": {"en": {"type": "string", "minLength": 1}, "ar": {"type": "string", "minLength": 1}}
+    }
+  },
+  "properties": {
+    "id": {"type": "string", "pattern": "^[A-Z0-9]+-[0-9]+[a-z]?$"},
+    "module": {"enum": [1, 2, 3, 4, 5]},
+    "group": {"type": "string"},
+    "ctd": {"type": "object", "required": ["nta065_v5"], "additionalProperties": {"type": "string"}},
+    "title": {"$ref": "#/$defs/bilingual"},
+    "matrix": {"type": "object", "required": ["I", "G_IMP", "G_LOC"], "additionalProperties": false,
+               "properties": {"I": {"type": "string"}, "G_IMP": {"type": "string"}, "G_LOC": {"type": "string"}}},
+    "applies": {"type": "string", "minLength": 1},
+    "required": {"type": "object", "required": ["I", "G_IMP", "G_LOC"], "additionalProperties": false,
+                 "properties": {"I": {"$ref": "#/$defs/cell"}, "G_IMP": {"$ref": "#/$defs/cell"}, "G_LOC": {"$ref": "#/$defs/cell"}}},
+    "per": {"type": "object", "required": ["over"], "additionalProperties": false,
+            "properties": {"over": {"enum": ["apis"]}, "where": {"type": "string"}}},
+    "item_cases": {"type": "array", "items": {"$ref": "#/$defs/case"}},
+    "confirm_applicability": {"type": "boolean"},
+    "doc_class": {"enum": ["generated", "company_letter", "company_technical", "third_party_certificate",
+                           "eda_document", "executed_record", "signed_scan"]},
+    "produced_by": {"type": "string"},
+    "rebuild": {"type": "object", "properties": {"verdict": {"type": "string"}, "needs": {"type": "string"}}},
+    "condition_note": {"type": "string"},
+    "acceptance_text": {"type": "string"},
+    "sources": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "provenance": {"enum": ["EG-IN-FORCE", "EG-DRAFT", "EU-DERIVED", "ICH", "ASSUMPTION"]},
+    "logic_provenance": {"type": "string"}
+  }
+}

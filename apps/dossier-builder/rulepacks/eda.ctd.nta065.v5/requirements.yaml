@@ -1,0 +1,2891 @@
+# Generated once from docs/ctd/checklist/EDA-eCTD-Company-Checklist.xlsx by
+# tools/xlsx_to_pack.py, then maintained as data. Matrix cells are verbatim
+# from NP.CAPP.065 v5 (columns I / G-Imp / G-Loc).
+- id: M1-01
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.1
+  title:
+    en: Application form (Annex I) + Arabic undertaking
+    ar: نموذج الطلب + التعهد
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Product/Application/Parties sheets + APIs sheet + list of variations (re-reg) + signatory. Output: print
+      on company letterhead → sign → stamp → scan.'
+  condition_note: Annex I fields; undertaking per decree case (3-year/5-year transfer clause)
+  acceptance_text: 'All Annex I fields filled; one API box per API; manufacturer address as on GMP; variations table
+    (re-reg); signed by chairman/MD/authorised signatory; company stamp; dated. eCTD: file form-af.pdf, operation
+    ''new''.'
+  sources:
+  - NP.CAPP.065 Annex I
+  - EG draft §3.2.4.1
+  provenance: EG-IN-FORCE
+- id: M1-02
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.2
+  title:
+    en: Letter of Attorney for company representative
+    ar: توكيل ممثل الشركة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: 'Original/copy from issuer. Tool: rename/place only.'
+  acceptance_text: Valid; names the representative; notarised as issued.
+  sources:
+  - NP.CAPP.065 1.1.2
+  provenance: EG-IN-FORCE
+- id: M1-03
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.3
+  title:
+    en: Fees payment receipt(s)
+    ar: إيصالات الرسوم
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: Receipt from EDA finance.
+  condition_note: Each relevant service (leaflet, BE, dossier). 10,000 LE service fee only for line-extension/non-routine
+    requests above the monthly allowance
+  acceptance_text: Legible; product details & purpose written on it.
+  sources:
+  - NP.CAPP.065 1.1.3
+  - GL.CAP.Care/CAPP.002 v4
+  provenance: EG-IN-FORCE
+- id: M1-04
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.4
+  title:
+    en: Action Letter & Name Approval (new) / Registration Licence & Preliminary Approval (re-reg)
+    ar: خطاب القرار وموافقة الاسم / الترخيص والموافقة المبدئية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  condition_note: Variant by new vs re-registration
+  acceptance_text: Matches product name/strength/form.
+  sources:
+  - NP.CAPP.065 1.1.4
+  provenance: EG-IN-FORCE
+- id: M1-05
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.5
+  title:
+    en: Pricing Certificate
+    ar: شهادة التسعير
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  condition_note: 'If expired: evidence of pricing-update request (screenshot); re-evaluation if required'
+  acceptance_text: Valid; pack units match Annex I.
+  sources:
+  - NP.CAPP.065 1.1.5
+  provenance: EG-IN-FORCE
+- id: M1-06
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.6
+  title:
+    en: Pre-approved EDA letters (Technical Committee decisions, extensions…)
+    ar: خطابات الهيئة السابقة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  acceptance_text: All letters concerning the product.
+  sources:
+  - NP.CAPP.065 1.1.6
+  provenance: EG-IN-FORCE
+- id: M1-07
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.7
+  title:
+    en: Variation approvals
+    ar: موافقات التغييرات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: activity == 're_registration'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: Partly
+    needs: Approvals from EDA; tool builds the sub-folder structure, names and order from a list (variation type,
+      date, approval no.).
+  condition_note: Re-registration only. Each variation in its own sub-folder named by variation type, in date order,
+    with all studies
+  acceptance_text: Arranged by date; sub-folder per variation named with type.
+  sources:
+  - NP.CAPP.065 1.1.7
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-08
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.8
+  title:
+    en: Pharmacovigilance approval
+    ar: موافقة اليقظة الدوائية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  sources:
+  - NP.CAPP.065 1.1.8
+  provenance: EG-IN-FORCE
+- id: M1-09
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.9
+  title:
+    en: 'Leaflet — One Submission: proposed SmPC & PIL (EN + AR, Word) + most updated reference SmPC & PIL'
+    ar: النشرة المقترحة عربي وإنجليزي Word + المرجع
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Reference SmPC/PIL text + product data → tool drafts EN/AR SmPC & PIL in standard section order; medical
+      translation review by company required.
+  condition_note: 'Rolling: approved valid leaflet. PIL-only imported/innovator: legalised COO letter. Non-English:
+    translation declaration. Non-referenced: committee approval'
+  acceptance_text: Word files EN & AR (SmPC & PIL); PDF copy in eCTD + Word in xxxx-workingdocuments; aligned with
+    reference; warnings per pharmacology guidelines.
+  sources:
+  - NP.CAPP.065 1.1.9
+  - EG draft §2.9.10, §3.2.5
+  provenance: EG-IN-FORCE
+- id: M1-10
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.9
+  title:
+    en: Leaflet translation declaration (non-English leaflets)
+    ar: إقرار ترجمة النشرة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: leaflet == 'non_english'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Signatory + product names + version of leaflet. Output: print on company letterhead → sign → stamp →
+      scan.'
+  condition_note: 'Only if leaflet non-English: licence-holder declaration OR legalised head-office letter + scientific-office
+    declaration (legalise within 6 months)'
+  acceptance_text: Signed & stamped; states authorised medical translation.
+  sources:
+  - NP.CAPP.065 1.1.9
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-11
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.10
+  title:
+    en: Layout — coloured stamped outer & inner (editable PDF preferred) + monograph (compendial) + image of original
+      pack (imported/UL)
+    ar: التصميم الملون + المونوجراف + صورة العبوة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Artwork files from company design; tool checks text vs Annex I data and assembles PDF. Stamps must be
+      original.
+  condition_note: 'Rolling: approved layout'
+  acceptance_text: Coloured; stamped; matches name/strength/pack; hard copy to unit administrator if soft accepted.
+  sources:
+  - NP.CAPP.065 1.1.10
+  provenance: EG-IN-FORCE
+- id: M1-12
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.11
+  title:
+    en: Inspection report — pilot/production batches (new) / valid marketed batch (re-reg)
+    ar: تقرير التفتيش
+  matrix:
+    I: NR (new) / R (re-reg)
+    G_IMP: NR (new) / R (re-reg)
+    G_LOC: R
+  applies: 'true'
+  required:
+    I:
+      cases:
+      - when: activity == 're_registration'
+        level: R
+      - level: NR
+    G_IMP:
+      cases:
+      - when: activity == 're_registration'
+        level: R
+      - level: NR
+    G_LOC: R
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA (CIP).
+  sources:
+  - NP.CAPP.065 1.1.11
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-13
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.12
+  title:
+    en: Importation approval for each API
+    ar: موافقة استيراد كل مادة فعالة
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: column == 'G_LOC'
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  acceptance_text: One per API source.
+  sources:
+  - NP.CAPP.065 1.1.12
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+  logic_provenance: checklist condition column
+- id: M1-14
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.13
+  title:
+    en: CPP / eCPP from competent authority in COO
+    ar: شهادة CPP
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: column != 'G_LOC' or licence == 'under_licence'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: 'Re-obtain from competent authority. Tool: placement only. (Hard copy also required — EG draft §2.7.)'
+  condition_note: 'Local: only under-licence products. eCPP accepted without legalisation if company provides a
+    verification method'
+  acceptance_text: Valid; COO; Egypt named as importing country; date; trade name; forms & strengths; licence holder
+    address; marketed ≥1 year in COO (or explained); actives as salt/hydrate with qty; inactives with qty; capsule
+    shell for capsules; Egyptian name noted or separate legalised declaration; signed/stamped by chamber/notary/foreign
+    affairs + legalised by Egyptian Embassy (eCPP exempt).
+  sources:
+  - NP.CAPP.065 1.1.13
+  - GL.CAP.Care/CAPP.002 v4 item 6
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-15
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.14
+  title:
+    en: List of countries where registered & marketed
+    ar: قائمة الدول
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Country list with status. Output: print on company letterhead → sign → stamp → scan.'
+  sources:
+  - NP.CAPP.065 1.1.14
+  provenance: EG-IN-FORCE
+- id: M1-16
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.15
+  title:
+    en: Sameness letter
+    ar: خطاب التطابق
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: From licence holder.
+  sources:
+  - NP.CAPP.065 1.1.15
+  provenance: EG-IN-FORCE
+- id: M1-17
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.16
+  title:
+    en: Unredacted assessment report
+    ar: تقرير التقييم غير المحجوب
+  matrix:
+    I: O
+    G_IMP: O
+    G_LOC: NR
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: NR
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: From reference authority/holder.
+  sources:
+  - NP.CAPP.065 1.1.16
+  provenance: EG-IN-FORCE
+- id: M1-18
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.17.1
+  title:
+    en: Factory licence of manufacturer & IDA licence
+    ar: رخصة المصنع وIDA
+  matrix:
+    I: R*
+    G_IMP: R*
+    G_LOC: R
+  applies: column == 'G_LOC' or licence == 'imported_bulk'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  condition_note: '*Imported: imported bulk only'
+  acceptance_text: Valid.
+  sources:
+  - NP.CAPP.065 1.1.17.1
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-19
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.17.2
+  title:
+    en: Register of trade (valid)
+    ar: السجل التجاري
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  acceptance_text: Valid.
+  sources:
+  - NP.CAPP.065 1.1.17.2
+  provenance: EG-IN-FORCE
+- id: M1-20
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.17.3
+  title:
+    en: Toll manufacturer licence
+    ar: رخصة التصنيع لدى الغير
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: licence in ['toll', 'f_toll']
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  condition_note: Toll products only
+  acceptance_text: Valid.
+  sources:
+  - NP.CAPP.065 1.1.17.3
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-21
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.17.4
+  title:
+    en: Scientific office licence
+    ar: رخصة المكتب العلمي
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  acceptance_text: Valid.
+  sources:
+  - NP.CAPP.065 1.1.17.4
+  provenance: EG-IN-FORCE
+- id: M1-22
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.17.5
+  title:
+    en: Importers register licence
+    ar: سجل المستوردين
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  acceptance_text: Valid.
+  sources:
+  - NP.CAPP.065 1.1.17.5
+  provenance: EG-IN-FORCE
+- id: M1-23
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.17.6
+  title:
+    en: Store licence (if different from factory)
+    ar: رخصة المخزن
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: store_separate_from_factory
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  condition_note: Only if store ≠ factory
+  acceptance_text: Valid.
+  sources:
+  - NP.CAPP.065 1.1.17.6
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-24
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.17.7
+  title:
+    en: 'Agreements: manufacturing / storage / packaging (imported bulk) / authorisation-agency'
+    ar: العقود
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Original authenticated agreements. Tool can draft an unsigned template only for negotiation — authentication
+      must be redone.
+  condition_note: 'Manufacturing: imported exempt. Storage: bank or EDA legal; imported legalised (chamber + embassy).
+    Packaging: bank & EDA legal. Agency: legalised (chamber + embassy)'
+  acceptance_text: Authenticated/legalised as stated per agreement type.
+  sources:
+  - NP.CAPP.065 1.1.17.7
+  provenance: EG-IN-FORCE
+- id: M1-25
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.17.8
+  title:
+    en: 'Declaration: registered & under-registration products owned by toll company'
+    ar: إقرار منتجات شركة الـ toll
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: licence in ['toll', 'f_toll']
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Product list of toll company. Output: print on company letterhead → sign → stamp → scan.'
+  condition_note: Toll products
+  acceptance_text: Letterhead, signed, stamped, dated.
+  sources:
+  - NP.CAPP.065 1.1.17.8
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-26
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.17.9
+  title:
+    en: Licence-holder declaration specifying API manufacturers
+    ar: إقرار مصنّعي المادة الفعالة
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: licence == 'under_licence'
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Tool drafts text from APIs sheet; signature by licence holder + legalisation needed.
+  condition_note: Under-licence products; legalised if different entity
+  acceptance_text: Names & addresses match 3.2.S.2.1 and GMP.
+  sources:
+  - NP.CAPP.065 1.1.17.9
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-27
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.17.10
+  title:
+    en: Licence-holder declaration of API manufacturers (name & address) + Module 3
+    ar: إقرار مصنّعي المادة الفعالة (إعادة تسجيل)
+  matrix:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  applies: activity == 're_registration'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: As M1-26.
+  condition_note: Re-registration; legalised for under-licence
+  sources:
+  - NP.CAPP.065 1.1.17.10
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-27b
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.17.11
+  title:
+    en: Licence-holder declaration of form of bulk
+    ar: إقرار شكل الـ bulk
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  applies: licence == 'imported_bulk'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Tool drafts; holder signs; legalisation.
+  condition_note: Imported bulk; legalised
+  sources:
+  - NP.CAPP.065 1.1.17.11
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-28
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.18
+  title:
+    en: Registration licence of the solvent
+    ar: ترخيص المذيب
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: '''powder_inj_with_solvent'' in dosage_specifics'
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  condition_note: Powder for injection with attached solvent
+  sources:
+  - NP.CAPP.065 1.1.18
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-29
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.19
+  title:
+    en: Latest pharmacopoeia monograph for the FPP
+    ar: المونوجراف الدستوري
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: pharmacopoeial
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Copy from current pharmacopoeia (company licence).
+  condition_note: Pharmacopoeial products
+  acceptance_text: Latest edition; edition stated.
+  sources:
+  - NP.CAPP.065 1.1.19
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-30
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.1.20
+  title:
+    en: Letter of Access (API master file)
+    ar: خطاب السماح بالاطلاع على الـ DMF
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: '''DMF'' in api_options'
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: From DMF holder.
+  condition_note: API via DMF/ASMF
+  acceptance_text: Addressed to EDA; names applicant, product, DMF version.
+  sources:
+  - NP.CAPP.065 1.1.20
+  - EG draft §4.4
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+    where: option == 'DMF'
+  logic_provenance: checklist condition column
+- id: M1-31
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.1
+  title:
+    en: Composition certificate
+    ar: شهادة التركيب
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Unit formula (each component, qty/unit, function, standard/grade), salt factor & MW reference, tablet
+      weight/capsule size. Output: print on company letterhead → sign → stamp → scan.'
+  condition_note: 'Local: manufacturer/applicant letterhead. UL: applicant letterhead if composition in CPP, else
+    legalised from LH/manufacturer'
+  acceptance_text: 'Trade name; dosage form; actives as hydrate/salt with qty per unit identical to supplier CoA
+    (else synonyms); inactives separate; overage stated; coated tablet: core & coat separate + tablet weight; capsule:
+    body & cap + size; pellets/premix calculation; signed & stamped.'
+  sources:
+  - NP.CAPP.065 1.2.1
+  provenance: EG-IN-FORCE
+- id: M1-32
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.1
+  title:
+    en: Equivalence (salt) calculation
+    ar: حساب الملح المكافئ
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Salt & base MW with reference; label claim. Output: print on company letterhead → sign → stamp → scan.'
+  acceptance_text: MW reference cited; signed & stamped.
+  sources:
+  - NP.CAPP.065 1.2.1 N.B. 2
+  provenance: EG-IN-FORCE
+- id: M1-33
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.1
+  title:
+    en: Coating premix (e.g. Opadry) / capsule shell / pellets / premix composition on SUPPLIER letterhead
+    ar: تركيب الغلاف/الكبسولة/البيليتس من المورد
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: '''coated'' in dosage_specifics or ''capsule_hard'' in dosage_specifics or ''pellets'' in dosage_specifics
+    or ''premix'' in dosage_specifics'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Request from supplier.
+  condition_note: Only for coated tablets / hard capsules / pellets / premix
+  acceptance_text: On supplier letterhead.
+  sources:
+  - NP.CAPP.065 1.2.1 N.B. 5–8
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-34
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.2.1–4
+  title:
+    en: CADC certificate, stability approval, BE approval, Technical Affairs approval
+    ar: موافقات CADC والثبات والتكافؤ والشؤون الفنية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: route == 'rolling'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  condition_note: Rolling Submission ONLY (not One Submission)
+  acceptance_text: Trade name & strength, FPP manufacturer & LH, API manufacturer, batch no., purpose specified.
+  sources:
+  - NP.CAPP.065 1.2.2
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: M1-35
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.3.1
+  title:
+    en: API certificate of analysis (supplier)
+    ar: شهادة تحليل المادة الفعالة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: From supplier.
+  acceptance_text: Supplier letterhead; signed & stamped; manufacture & expiry dates; batch no.
+  sources:
+  - NP.CAPP.065 1.2.3.1
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: M1-36
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.3.2
+  title:
+    en: Specifications (all actives; in-house specs of all inactives)
+    ar: المواصفات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Spec tables (test, limit, method, reference with general-chapter no.). Output: print on company letterhead
+      → sign → stamp → scan.'
+  acceptance_text: Recent pharmacopoeial edition and/or in-house; inactives on company letterhead signed & stamped.
+  sources:
+  - NP.CAPP.065 1.2.3.2
+  provenance: EG-IN-FORCE
+- id: M1-37
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.4.1
+  title:
+    en: GMP certificate(s) of FPP manufacturer(s)
+    ar: شهادة GMP للمصنع
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain from authority.
+  acceptance_text: Valid; production lines specified.
+  sources:
+  - NP.CAPP.065 1.2.4.1
+  provenance: EG-IN-FORCE
+- id: M1-38
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.4.2
+  title:
+    en: GMP certificate(s) of API manufacturer(s)
+    ar: شهادة GMP لمصنّع المادة الفعالة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  condition_note: Every API source
+  acceptance_text: Valid; address matches APIs sheet.
+  sources:
+  - NP.CAPP.065 1.2.4.2
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: M1-39
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.4.3
+  title:
+    en: CEP incl. all annexes
+    ar: شهادة الـ CEP بملحقاتها
+  matrix:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  applies: '''CEP'' in api_options'
+  required:
+    I:
+      cases:
+      - when: '''CEP'' in api_options'
+        level: R
+      - level: O
+    G_IMP:
+      cases:
+      - when: '''CEP'' in api_options'
+        level: R
+      - level: O
+    G_LOC:
+      cases:
+      - when: '''CEP'' in api_options'
+        level: R
+      - level: O
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Current CEP from holder.
+  condition_note: API via CEP
+  acceptance_text: Current version on EDQM website; all annexes; declaration-of-access box filled & signed by CEP
+    holder.
+  sources:
+  - NP.CAPP.065 1.2.4.3
+  - NP.CAPP.040
+  - 'WHO screening #6'
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+    where: option == 'CEP'
+  logic_provenance: checklist condition column
+- id: M1-40
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.4.3
+  title:
+    en: 'Written commitment: inform EDA if CEP revised/renewed/withdrawn'
+    ar: تعهد الـ CEP
+  matrix:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  applies: '''CEP'' in api_options'
+  required:
+    I:
+      cases:
+      - when: '''CEP'' in api_options'
+        level: R
+      - level: O
+    G_IMP:
+      cases:
+      - when: '''CEP'' in api_options'
+        level: R
+      - level: O
+    G_LOC:
+      cases:
+      - when: '''CEP'' in api_options'
+        level: R
+      - level: O
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'CEP no., holder, API. Output: print on company letterhead → sign → stamp → scan.'
+  condition_note: API via CEP
+  acceptance_text: Acknowledges that withdrawal requires full 3.2.S data.
+  sources:
+  - NP.CAPP.065 1.2.4.3
+  - CTD QM guideline v2
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+    where: option == 'CEP'
+  logic_provenance: checklist condition column
+- id: M1-41
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.5.1
+  title:
+    en: Reference (online/textbook) OR Non-Reference Approval
+    ar: المرجع العلمي أو موافقة عدم المرجعية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Tool captures the web reference to PDF with URL & date; Non-Reference Approval comes from EDA.
+  acceptance_text: Reference registered & marketed; identical API, strength, form; latest edition / recent online
+    (FDA, MHRA, EMA, ANSM, Swissmedic, TGA, PMDA…).
+  sources:
+  - NP.CAPP.065 1.2.5.1
+  provenance: EG-IN-FORCE
+- id: M1-42
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.2.5.2
+  title:
+    en: Leaflet of the reference product
+    ar: نشرة المرجعي
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Tool captures from reference source with URL & date.
+  sources:
+  - NP.CAPP.065 1.2.5.2
+  provenance: EG-IN-FORCE
+- id: M1-43
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.0 (eCTD)
+  title:
+    en: Cover letter (+ statement 'true, complete and correct')
+    ar: خطاب التغطية
+  matrix:
+    I: —
+    G_IMP: —
+    G_LOC: —
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Product, sequence, submission type/unit, description. Output: print on company letterhead → sign → stamp
+      → scan.'
+  condition_note: 'eCTD: always ''new''; leaf title e.g. ''Cover Letter for Sequence 0000''; baseline letter states
+    content unchanged'
+  acceptance_text: Sequence no. matches folder & envelope.
+  sources:
+  - EG draft §3.2.3.1, §2.11
+  - 'WHO screening #2'
+  provenance: EG-DRAFT
+- id: M1-44
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd:
+    nta065_v5: 1.0 (eCTD)
+  title:
+    en: Tracking table (tracking-var.pdf in m1/eg/10-cover)
+    ar: جدول التتبع
+  matrix:
+    I: —
+    G_IMP: —
+    G_LOC: —
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Sequence history.
+  condition_note: Every submission
+  acceptance_text: 'Columns: sequence, description, type, date.'
+  sources:
+  - EG draft §3.2.3.2, Annex 2
+  provenance: EG-DRAFT
+- id: M2-01
+  module: 2
+  group: 'MODULE 2 — Summaries (Innovators only; generics: ''incorporated in Modules 3, 4 & 5'')'
+  ctd:
+    nta065_v5: 2.1–2.2
+  title:
+    en: CTD TOC (M2–5) + Introduction
+    ar: فهرس + مقدمة
+  matrix:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Generated from dossier structure + product data.
+  sources:
+  - NP.CAPP.065 M2
+  - ICH M4
+  provenance: EG-IN-FORCE
+- id: M2-02
+  module: 2
+  group: 'MODULE 2 — Summaries (Innovators only; generics: ''incorporated in Modules 3, 4 & 5'')'
+  ctd:
+    nta065_v5: '2.3'
+  title:
+    en: Quality Overall Summary (QOS)
+    ar: ملخص الجودة الشامل
+  matrix:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Built from M3 data (spec tables, batch, stability, composition) — narrative reviewed by company.
+  condition_note: One QOS per ASMF (applicant part) with front page version/date
+  acceptance_text: Follows M3; cross-references to M3; WHO QOS-PD tables are the model.
+  sources:
+  - NP.CAPP.065
+  - EG draft §3.3.2
+  - WHO QOS-PD 01/2025
+  provenance: EG-IN-FORCE
+- id: M2-03
+  module: 2
+  group: 'MODULE 2 — Summaries (Innovators only; generics: ''incorporated in Modules 3, 4 & 5'')'
+  ctd:
+    nta065_v5: 2.4–2.7
+  title:
+    en: Non-clinical & clinical overviews and summaries
+    ar: الملخصات قبل السريرية والسريرية
+  matrix:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Tool structures/tabulates; scientific text from company.
+  acceptance_text: ICH M4S/M4E headings; one 2.7.3 per indication.
+  sources:
+  - NP.CAPP.065
+  - ICH M4(R4)
+  provenance: EG-IN-FORCE
+- id: S-01
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.1.1
+  title:
+    en: Nomenclature
+    ar: التسمية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: API identity data.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: INN, compendial, chemical & IUPAC name, company code, USAN/BAN, correct CAS no.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-02
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.1.2
+  title:
+    en: Structure
+    ar: التركيب الكيميائي
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Structure file + formula + MW.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: Structure showing chiral centres; molecular formula; relative molecular mass incl. hydrate.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-03
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.1.3
+  title:
+    en: General properties
+    ar: الخصائص العامة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Measured data from company/supplier.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: 'Solubility pH 1.2–6.8 (37 °C) & organic solvents; PSD & polymorphism for low-solubility API;
+    hygroscopicity. With CEP: only properties not controlled by CEP/monograph.'
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-04
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.2.1
+  title:
+    en: Manufacturer(s)
+    ar: المصنّعون
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: APIs sheet.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: Name, address, responsibility of every site incl. contractors & testing.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-05
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.2.2–2.6
+  title:
+    en: Manufacture (process, materials, critical steps, validation, development)
+    ar: التصنيع
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: DMF holder's documents (applicant's part); tool places & indexes.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: 'Flow diagram with all steps & CPPs; starting-material details & specs; sterile API: process
+    validation. (From DMF AP/RP or CEP — not required for CEP route).'
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+  item_cases:
+  - when: option == 'CEP'
+    level: NR
+    reason:
+      en: Covered by the CEP (manufacture is assessed by EDQM).
+      ar: مغطى بشهادة الـ CEP (التصنيع مُقيَّم من EDQM).
+    provenance: ASSUMPTION
+  logic_provenance: CTD Quality guideline v2 (CEP route) — ASSUMPTION for NR
+- id: S-06
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.3.1
+  title:
+    en: Elucidation of structure
+    ar: إثبات التركيب
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Spectra & data; tool builds interpretation tables.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: 'All essential techniques; legible spectra; interpretation table; enumerated & zoomed NMR. CEP:
+    polymorph & PSD studies.'
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-07
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.3.2
+  title:
+    en: Impurities
+    ar: الشوائب
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Impurity list, origin, limits, RA reports (company/supplier).
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: Potential impurities; compendial specified impurities justified; ICH Q3A limits; carry-over;
+    Q3D & M7 risk assessment; residual solvents RA incl. benzene; nitrosamine RA.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+  item_cases:
+  - when: option == 'CEP'
+    level: NR
+    reason:
+      en: Impurity profile covered by the CEP; add only impurities not controlled by it under S.4.1.
+      ar: الشوائب مغطاة بالـ CEP؛ أضف فقط ما لا تضبطه الشهادة في S.4.1.
+    provenance: ASSUMPTION
+  logic_provenance: CTD Quality guideline v2 (CEP route) — ASSUMPTION for NR
+- id: S-08
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.4.1
+  title:
+    en: Specification (FPP manufacturer's)
+    ar: المواصفات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Spec table data (test, limit, method ref, chapter).
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: 'Universal tests (description, ID, assay, impurities); reference column with general-chapter
+    numbers; ID not by single RT; CEP route: all CEP + monograph tests + extra (PSD, polymorph).'
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-09
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.4.2–4.3
+  title:
+    en: Analytical procedures & validation
+    ar: الطرق والتحقق
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Methods & validation raw data/reports; tool builds 3.2.R.2 summary tables.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: Procedure for every test; validation for in-house; verification for compendial; chromatograms
+    (specificity, forced degradation, SST).
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-10
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.4.4
+  title:
+    en: Batch analyses
+    ar: تحليل التشغيلات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Batches sheet + numeric results per test.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: '≥2 recent batches (CEP route: 2 pilot-scale) with no., size, date, type, site; numeric results;
+    consistent with S.4.1.'
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-11
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.4.5
+  title:
+    en: Justification of specification
+    ar: تبرير المواصفات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Rationale inputs per test.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: Justify impurity & solvent limits and non-routine tests.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-12
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.5
+  title:
+    en: Reference standards
+    ar: المواد المرجعية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: RS CoAs & IR spectra.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: Primary RS source & lot; working standard CoA; concomitant IR primary vs secondary; impurity
+    standards.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-13
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.6
+  title:
+    en: Container closure (API)
+    ar: عبوة المادة الفعالة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Supplier specs, CoA, IR.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: 'Description & specs; IR of reference vs test material; suitability; packaging CoA. CEP: exempt
+    if CEP specifies & same used.'
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-14
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S.7
+  title:
+    en: Stability (summary, protocol & commitment, data)
+    ar: الثبات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Stability raw data; tool builds summary tables & commitment letter.
+  condition_note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  acceptance_text: 'Conditions & conclusion; protocol data (batch type/size, container, start date, period); results
+    summary; signed commitment letters; ongoing batches; forced degradation with chromatograms. CEP: exempt if CEP
+    retest period ≥ proposed & conditions ≥.'
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-15
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.S (front)
+  title:
+    en: Statement of S-part option per API manufacturer + DMF applicant's-part cover page (version/date)
+    ar: بيان طريقة تقديم المادة الفعالة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: APIs sheet.
+  acceptance_text: Option 1–4 stated at start of 3.2.S; AP front page in 3.2.S.1.1 ('nomenclature-cover page applicant's
+    part').
+  sources:
+  - CTD QM guideline v2
+  - EG draft §3.4.1.1
+  provenance: EG-IN-FORCE
+  per:
+    over: apis
+- id: S-16
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd:
+    nta065_v5: 3.2.R (CEP)
+  title:
+    en: CEP copy placed in 3.2.R regional information (eCTD)
+    ar: نسخة الـ CEP في 3.2.R
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: '''CEP'' in api_options'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: From holder (same as M1-39).
+  condition_note: API via CEP
+  sources:
+  - EG draft §3.4.1.1.1
+  provenance: EG-DRAFT
+  per:
+    over: apis
+    where: option == 'CEP'
+  logic_provenance: checklist condition column
+- id: P-01
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.1
+  title:
+    en: Description & composition
+    ar: الوصف والتركيب
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Composition data (same as M1-31).
+  acceptance_text: API standard consistent with S-part; excipient grades; salt equivalence; potency note; overage;
+    removed ingredients noted; shell/coating composition; identical to CPP & approvals.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-02
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.2
+  title:
+    en: Pharmaceutical development
+    ar: التطوير الصيدلي
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Development data & study reports; tool builds comparison & batch tables.
+  acceptance_text: Reference product named; QTPP, CQAs, CPPs; compatibility if excipients differ from reference;
+    formulation comparison; overage justified step by step; sterilisation choice; compatibility with diluent/device;
+    multipoint dissolution in 3 BCS media.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-03
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.3.1
+  title:
+    en: Manufacturer(s)
+    ar: المصنعون
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Parties sheet.
+  acceptance_text: 'Responsibility of each site; imported: same sites as CPP.'
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-04
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.3.2
+  title:
+    en: Batch formula
+    ar: تركيبة التشغيلة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Batch sizes + unit formula.
+  acceptance_text: Every commercial batch size; overage/overfill; potency calculation.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-05
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.3.3
+  title:
+    en: Manufacturing process & controls
+    ar: خطوات التصنيع
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Master BMR content; tool drafts flow diagram & narrative tables.
+  acceptance_text: Flow diagram with all steps & CPPs; narrative incl. packaging; equipment type & capacity; parameter
+    ranges; hold times with supporting stability; transfer precautions.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-06
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.3.4
+  title:
+    en: Controls of critical steps
+    ar: ضبط الخطوات الحرجة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: IPC table.
+  acceptance_text: CPPs discussed; IPC tests & limits with justification.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-07
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.3.5
+  title:
+    en: Process validation
+    ar: التحقق من العملية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Validation protocol/report from company.
+  acceptance_text: 3 batches (if applicable) for all batch sizes, or protocol; each API source in ≥1 batch.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-08
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.4
+  title:
+    en: Control of excipients (+ 4.5 human/animal origin, 4.6 novel)
+    ar: ضبط السواغات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Specs (tool) + TSE certificates (supplier).
+  acceptance_text: In-house excipient specs; TSE/BSE certificates for animal/human origin.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-09
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.5.1
+  title:
+    en: Specification(s)
+    ar: مواصفات المنتج
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Spec table data.
+  acceptance_text: Universal tests; general-chapter reference column; ID not single RT; dissolution Q stated; release
+    & shelf-life limits.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-10
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.5.2–5.3
+  title:
+    en: Analytical procedures & validation
+    ar: الطرق والتحقق
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Method & validation reports.
+  acceptance_text: In-house methods + validation + chromatograms; compendial verification.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-11
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.5.4
+  title:
+    en: Batch analyses
+    ar: تحليل التشغيلات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Batches sheet + numeric results.
+  acceptance_text: ≥2 batches; size, strength, no., date, site, type; numeric results (not 'conform'); recent; consistent
+    with P.5.1.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-12
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.5.5
+  title:
+    en: Characterisation of impurities
+    ar: توصيف الشوائب
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: RA reports & impurity data.
+  acceptance_text: Degradation & synthetic impurities (source, structure, limit); Q3D RA; nitrosamine RA.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-13
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.5.6
+  title:
+    en: Justification of specification(s)
+    ar: تبرير المواصفات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Rationale inputs.
+  acceptance_text: Justify impurity limits & non-routine tests.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-14
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.6
+  title:
+    en: Reference standards
+    ar: المواد المرجعية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: RS CoAs & IR.
+  acceptance_text: Primary RS lot; working RS CoA; primary lot used for standardisation; concomitant IR.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-15
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.7
+  title:
+    en: Container closure
+    ar: العبوة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Supplier specs & CoA & IR.
+  acceptance_text: Description & specs per component; IR reference vs test; suitability; CoA.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: P-16
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd:
+    nta065_v5: 3.2.P.8
+  title:
+    en: Stability (summary, protocol & commitment, data)
+    ar: الثبات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Stability raw data; tool builds tables, conclusions & commitment letters.
+  acceptance_text: Summary & storage conclusion; complete protocol data; photostability; in-use stability; signed
+    commitment letters; up-to-date data; ongoing batches.
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  provenance: EG-IN-FORCE
+- id: A-01
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd:
+    nta065_v5: 3.2.A.1
+  title:
+    en: Facilities & equipment
+    ar: المنشآت والمعدات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Statement.
+  condition_note: 'Guideline v2: ''Not Applicable'' for these files'
+  sources:
+  - CTD QM guideline v2
+  provenance: EG-IN-FORCE
+- id: A-02
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd:
+    nta065_v5: 3.2.A.2
+  title:
+    en: Adventitious agents safety evaluation
+    ar: تقييم العوامل العارضة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: biological_origin_materials
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Certificates from suppliers.
+  condition_note: Where materials of biological origin
+  acceptance_text: Risk assessment; certificates.
+  sources:
+  - CTD QM guideline v2
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: A-03
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd:
+    nta065_v5: 3.2.A.3
+  title:
+    en: Excipients (novel / non-compendial, large data)
+    ar: السواغات الجديدة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: novel_excipient
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Supplier data.
+  condition_note: Only one novel excipient fits in 3.2.A.3 in eCTD v3.2.2
+  sources:
+  - CTD QM guideline v2
+  - ICH Q&A 12
+  provenance: EG-IN-FORCE
+  logic_provenance: checklist condition column
+- id: R-01
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd:
+    nta065_v5: 3.2.R.1.1
+  title:
+    en: Executed production documents (BE batch + pilot/primary batches)
+    ar: سجلات التشغيلات المنفّذة
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: executed_record
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Original executed records — scan only; never re-typed.
+  acceptance_text: 'Batches used in BE/biowaiver; fully representative of production; legible operator notes; English
+    translation where relevant; NP.CAPP.040: records of the three manufactured batches.'
+  sources:
+  - CTD QM guideline v2
+  - NP.CAPP.040
+  - WHO TRS 986 A6
+  provenance: EG-IN-FORCE
+- id: R-02
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd:
+    nta065_v5: 3.2.R.1.2
+  title:
+    en: Master production documents (each strength, commercial batch size, site)
+    ar: سجلات التشغيل الرئيسية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Company master BMR; tool can rebuild a blank master record template from process data, but the approved
+      master record must be the company's controlled document.
+  acceptance_text: '(a) master formula (b) dispensing/processing/packaging (c) calculations (d) equipment type,
+    capacity, make/model (e) parameters target & range (f) IPCs (g) sampling plan (h) precautions & hold times (i)
+    sterile: SOP list (j) theoretical & actual yield.'
+  sources:
+  - CTD QM guideline v2 §3.2.R.1.2
+  provenance: EG-IN-FORCE
+- id: R-03
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd:
+    nta065_v5: 3.2.R.2
+  title:
+    en: Analytical procedures & validation — tabular summaries
+    ar: ملخص جداول الطرق والتحقق
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Method parameters & validation results (WHO HPLC-method & validation summary template).
+  acceptance_text: Tables from S.4.2/4.3/4.4/7.3, P.5.2/5.3.
+  sources:
+  - CTD QM guideline v2
+  - WHO QOS-PD 2.3.R.2
+  provenance: EG-IN-FORCE
+- id: R-04
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd:
+    nta065_v5: '3.3'
+  title:
+    en: Literature references (one file per reference)
+    ar: المراجع العلمية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Source articles; tool splits one file per reference.
+  sources:
+  - ICH M4 Granularity
+  provenance: EG-DRAFT
+- id: M4-01
+  module: 4
+  group: 'MODULE 4 — Non-clinical (Innovators; generics: 4.3 literature optional)'
+  ctd:
+    nta065_v5: 4.2.x
+  title:
+    en: Non-clinical study reports (pharmacology, PK, toxicology)
+    ar: تقارير الدراسات قبل السريرية
+  matrix:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Study reports from sponsor; tool places with node extensions.
+  sources:
+  - NP.CAPP.065 M4
+  provenance: EG-IN-FORCE
+- id: M4-02
+  module: 4
+  group: 'MODULE 4 — Non-clinical (Innovators; generics: 4.3 literature optional)'
+  ctd:
+    nta065_v5: '4.3'
+  title:
+    en: Literature references
+    ar: المراجع
+  matrix:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Articles; one file per reference.
+  sources:
+  - NP.CAPP.065 M4
+  provenance: EG-IN-FORCE
+- id: M5-01
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: '5.1'
+  title:
+    en: Table of contents of Module 5
+    ar: فهرس Module 5
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Generated.
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
+- id: M5-02
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: '5.2'
+  title:
+    en: Tabular listing of all clinical studies
+    ar: قائمة الدراسات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Study list (incl. pilot & failed BE studies — WHO screening 12e/f).
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
+- id: M5-03
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: 5.3.1.1
+  title:
+    en: BA study reports
+    ar: دراسات الإتاحة الحيوية
+  matrix:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Study report.
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
+- id: M5-04
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: 5.3.1.2
+  title:
+    en: Comparative BA & BE study reports
+    ar: تقرير دراسة التكافؤ الحيوي
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: CRO report per GL.CAPP.024 v4 (effective 01/07/2026); node extension per study.
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
+- id: M5-05
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: 5.3.1.3
+  title:
+    en: IVIVC study reports
+    ar: IVIVC
+  matrix:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Study report.
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
+- id: M5-06
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: 5.3.1.4
+  title:
+    en: Bioanalytical & analytical methods for human studies
+    ar: الطرق التحليلية الحيوية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Validation reports.
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
+- id: M5-07
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: 5.3.2.1–2
+  title:
+    en: Plasma protein binding; hepatic metabolism & interaction
+    ar: ارتباط البروتين/الأيض
+  matrix:
+    I: R
+    G_IMP: R if applicable
+    G_LOC: R if applicable
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Reports/literature.
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
+  confirm_applicability: true
+- id: M5-08
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: 5.3.3.1
+  title:
+    en: Healthy subject PK & initial tolerability
+    ar: حرائك صحية
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Reports.
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
+- id: M5-09
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: 5.3.5.4
+  title:
+    en: Other study reports
+    ar: تقارير أخرى
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Reports (e.g. comparative in-vitro dissolution).
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
+- id: M5-10
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: 5.3.7
+  title:
+    en: Case report forms & individual listings
+    ar: نماذج الحالات
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Indexed by study, same order as 5.3.5; no bookmarks needed.
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
+- id: M5-11
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: '5.4'
+  title:
+    en: Literature references
+    ar: المراجع
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Articles; one file per reference.
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
+- id: M5-12
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd:
+    nta065_v5: 5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6
+  title:
+    en: Other clinical sections
+    ar: باقي الأقسام السريرية
+  matrix:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Innovator study reports.
+  acceptance_text: PDF searchable; node extension per study (EG draft §3.6.2).
+  sources:
+  - NP.CAPP.065 M5
+  - EG draft §3.6
+  provenance: EG-IN-FORCE
