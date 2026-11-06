@@ -1,0 +1,376 @@
+<title>EDA Dossier Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: app shell — side rail + top bar + content; RTL/LTR mirrored; regulatory-desk density */
+:root{
+  --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#EEF2F5; --line:#DCE2E8; --ink:#0F1B2A; --muted:#5B6B7C;
+  --brand:#0E7C86; --brand-ink:#FFFFFF; --brand-soft:#E3F3F4; --accent:#1E3A8A;
+  --ok:#15803D; --ok-soft:#E5F4EA; --warn:#B45309; --warn-soft:#FBF0E1; --bad:#C62828; --bad-soft:#FBE7E7;
+  --wait:#6D28D9; --wait-soft:#F0EAFC; --na:#8A97A6; --na-soft:#EEF1F4;
+  --f-ui:"IBM Plex Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --f-ar:"IBM Plex Sans Arabic","IBM Plex Sans",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  --r:10px; --shadow:0 1px 2px rgba(15,27,42,.06),0 4px 14px rgba(15,27,42,.05);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D141C; --surface:#131C26; --surface-2:#18232F; --line:#253343; --ink:#E6EDF3; --muted:#93A3B5;
+  --brand:#2BB3BD; --brand-ink:#04161A; --brand-soft:#0F2F33; --accent:#8FA8FF;
+  --ok:#4ADE80; --ok-soft:#10261A; --warn:#F5A64A; --warn-soft:#2B1F0E; --bad:#F87171; --bad-soft:#2C1414;
+  --wait:#B49AF7; --wait-soft:#211A36; --na:#7C8B9C; --na-soft:#1B2531; --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D141C; --surface:#131C26; --surface-2:#18232F; --line:#253343; --ink:#E6EDF3; --muted:#93A3B5;
+  --brand:#2BB3BD; --brand-ink:#04161A; --brand-soft:#0F2F33; --accent:#8FA8FF;
+  --ok:#4ADE80; --ok-soft:#10261A; --warn:#F5A64A; --warn-soft:#2B1F0E; --bad:#F87171; --bad-soft:#2C1414;
+  --wait:#B49AF7; --wait-soft:#211A36; --na:#7C8B9C; --na-soft:#1B2531; --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5}
+html[lang="ar"] body{font-family:var(--f-ar)}
+button{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100%}
+.rail{background:var(--surface);border-inline-end:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;padding:6px 8px 14px;font-weight:700;letter-spacing:.2px}
+.logo b{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--brand);color:var(--brand-ink);font-family:var(--f-mono);font-size:12px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:500}
+.nav a:hover{background:var(--surface-2);color:var(--ink)}
+.nav a.on{background:var(--brand-soft);color:var(--brand)}
+.nav a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.nav .grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--na);padding:12px 10px 4px}
+html[lang="ar"] .nav .grp{letter-spacing:0}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.ws{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-weight:600;white-space:nowrap}
+.ws small{color:var(--muted);font-weight:500}
+.search{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted)}
+.search kbd{margin-inline-start:auto;font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 5px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn.pri:hover{filter:brightness(1.05)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.content{padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1440px;width:100%;display:flex;flex-direction:column;gap:18px}
+h1{font-size:22px;margin:0;text-wrap:balance}
+h2{font-size:16px;margin:0}
+.sub{color:var(--muted);margin:2px 0 0}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.kpi .n{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .l{color:var(--muted);font-size:12.5px}
+.kpi.b{border-inline-start:3px solid var(--bad)} .kpi.w{border-inline-start:3px solid var(--wait)} .kpi.o{border-inline-start:3px solid var(--ok)} .kpi.p{border-inline-start:3px solid var(--brand)}
+.alert{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:var(--r);background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+.alert p{margin:0;flex:1;min-width:0}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:start;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;color:var(--muted);font-weight:600;background:var(--surface-2)}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--surface-2)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip i{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.c-ok{background:var(--ok-soft);color:var(--ok)} .c-warn{background:var(--warn-soft);color:var(--warn)} .c-bad{background:var(--bad-soft);color:var(--bad)}
+.c-wait{background:var(--wait-soft);color:var(--wait)} .c-na{background:var(--na-soft);color:var(--na)} .c-rec{background:#E6EEFB;color:#1E40AF}
+:root[data-theme="dark"] .c-rec{background:#13213D;color:#93B4FF}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .c-rec{background:#13213D;color:#93B4FF}}
+.src{font-family:var(--f-mono);font-size:11.5px;color:var(--accent);direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.code{font-family:var(--f-mono);font-size:12px;direction:ltr;unicode-bidi:isolate}
+.bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;min-width:80px}
+.bar span{display:block;height:100%;background:var(--brand)}
+.ring{--p:60;width:64px;height:64px;border-radius:50%;background:conic-gradient(var(--brand) calc(var(--p)*1%),var(--surface-2) 0);display:grid;place-items:center}
+.ring::after{content:attr(data-v);width:48px;height:48px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-weight:700;font-size:13px}
+.mods{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.mod{display:flex;align-items:center;gap:12px;padding:14px}
+.mod small{display:block;color:var(--muted)}
+.two{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px}
+.list{display:flex;flex-direction:column}
+.li{display:flex;gap:10px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid var(--line)}
+.li:last-child{border-bottom:0}
+.li p{margin:0;min-width:0;flex:1}
+.li .muted{color:var(--muted);font-size:12.5px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:6px 10px;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--brand-soft);color:var(--brand);font-weight:600}
+.sec-h td{background:var(--bg);font-weight:700;font-size:12.5px;color:var(--muted)}
+.drawer-bg{position:fixed;inset:0;background:rgba(10,18,28,.35);z-index:20}
+.drawer{position:fixed;top:0;bottom:0;inset-inline-end:0;width:min(520px,100%);background:var(--surface);z-index:21;border-inline-start:1px solid var(--line);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.drawer header{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+.drawer header div{flex:1;min-width:0}
+.drawer .body{padding:16px 18px;overflow:auto;display:flex;flex-direction:column;gap:16px;flex:1}
+.drawer footer{padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.check{display:flex;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
+.check .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.check.ok .ic{background:var(--ok-soft);color:var(--ok)} .check.bad .ic{background:var(--bad-soft);color:var(--bad)} .check.warn .ic{background:var(--warn-soft);color:var(--warn)}
+.check p{margin:0;min-width:0}
+.lock{display:flex;gap:10px;padding:12px;border-radius:8px;background:var(--wait-soft);color:var(--ink);border:1px solid color-mix(in srgb,var(--wait) 30%,transparent)}
+.modal{position:fixed;inset:0;display:grid;place-items:center;z-index:30;background:rgba(10,18,28,.4);padding:16px}
+.modal .card{max-width:480px;width:100%;padding:20px;display:flex;flex-direction:column;gap:12px}
+.steps{display:flex;gap:8px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:13px}
+.step b{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--surface-2);font-size:11px}
+.step.on{border-color:var(--brand);color:var(--brand)} .step.on b{background:var(--brand);color:var(--brand-ink)}
+.step.done b{background:var(--ok);color:#fff}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label{font-size:12.5px;color:var(--muted);font-weight:500}
+.f input,.f select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}
+.f .err{color:var(--bad);font-size:12px}
+.side-note{position:sticky;top:76px}
+.big{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
+.tpl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tpl .card{padding:14px;display:flex;flex-direction:column;gap:8px}
+.tpl .card p{margin:0;color:var(--muted);font-size:13px}
+.miss{color:var(--bad);font-size:12.5px}
+.pac{font-family:var(--f-mono);font-weight:600;padding:2px 8px;border-radius:6px;font-size:12px}
+.pac.N{background:var(--ok-soft);color:var(--ok)} .pac.A{background:#E6EEFB;color:#1E40AF} .pac.B{background:var(--warn-soft);color:var(--warn)} .pac.II{background:var(--bad-soft);color:var(--bad)}
+.gate{display:flex;flex-direction:column;gap:8px}
+.gate div{display:flex;gap:10px;align-items:center}
+.toast{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));inset-inline-start:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:40;max-width:calc(100% - 32px)}
+html[dir="rtl"] .toast{transform:translateX(50%)}
+.ex{font-size:11px;color:var(--muted);border:1px dashed var(--line);border-radius:6px;padding:1px 6px}
+@media (max-width:1100px){.mods{grid-template-columns:repeat(3,minmax(0,1fr))}.tpl{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .rail{position:static;height:auto;flex-direction:row;overflow-x:auto;padding:8px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));border-inline-end:0;border-bottom:1px solid var(--line)}
+  .nav{display:flex;gap:4px}.nav .grp,.logo span{display:none}.logo{padding:0 8px 0 0}
+  .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}.mods{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .form,.tpl{grid-template-columns:1fr}.search kbd{display:none}.ws small{display:none}
+}
+@media (prefers-reduced-motion:no-preference){.drawer{animation:in .18s ease-out}@keyframes in{from{transform:translateX(16px);opacity:.6}}}
+</style>
+
+<div class="app" id="app">
+  <aside class="rail">
+    <div class="logo"><b>CTD</b><span data-t="appname"></span></div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+  <div class="main">
+    <div class="top">
+      <div class="ws">Example Pharma <small data-t="wsrole"></small></div>
+      <div class="search">⌕ <span data-t="search"></span><kbd>Ctrl K</kbd></div>
+      <button class="btn" id="lang" aria-label="Language"></button>
+    </div>
+    <main class="content" id="view"></main>
+  </div>
+</div>
+<div id="layer"></div>
+
+<script>
+const T={
+ en:{appname:"Dossier Builder",wsrole:"· Preparer · Approver",search:"Search dossiers, documents, rules…",lang:"العربية",
+  home:"Home",dossier:"Dossier",reqs:"Requirements",gen:"Generate",vars:"Variations",exp:"Export",packs:"Rule packs",grp1:"Workspace",grp2:"Examplol 500 mg",
+  hTitle:"Good morning, Mona",hSub:"3 dossiers in progress · 1 ready to export",kInp:"In progress",kBlk:"Blocking items",kWait:"Waiting on third party",kRdy:"Ready to export",
+  alertTxt:"EDA published draft NP.CAPP.065 v6 and the EG Module 1 guidance (consultation closed 29/10/2026). 2 dossiers would change.",review:"Review impact",
+  tProd:"Product",tType:"Type",tAct:"Activity",tPack:"Rules",tReady:"Readiness",tBlk:"Blocking",tOwner:"Owner",newD:"New dossier",
+  dSub:"Local generic · new registration · One Submission · rules NP.CAPP.065 v5",nba:"Next best actions",appr:"Approval",
+  reqSub:"Requirements resolved from the product profile. Every row links to its EDA source.",all:"All",blocking:"Blocking",waiting:"Waiting",mine:"Generable",
+  thSlot:"Requirement",thSrc:"Source",thSt:"Status",thAct:"Action",
+  st_ok:"Conforming",st_bad:"Non-conforming",st_warn:"Needs attention",st_wait:"Waiting on issuer",st_na:"Not started",st_rec:"Received",
+  a_up:"Upload",a_gen:"Generate",a_fix:"Fix",a_reb:"Rebuild",a_req:"Request from issuer",a_view:"Open",
+  dChecks:"Checks",dAcc:"Acceptance criteria",dHist:"Versions",close:"Close",lockT:"Issued by a third party — content cannot be edited.",lockD:"You can replace the file or request a corrected copy from the issuer. Technical fixes (file name, placement, bookmarks) are allowed.",
+  editTry:"Edit content",lockModalT:"Editing not allowed",lockModalB:"This GMP certificate is a third-party document. Changing its content would make it invalid. Replace it with a new copy, or generate a request letter to the issuing authority.",genReq:"Generate request letter",cancel:"Cancel",
+  genSub:"Letters and tables built from your dossier data, in English and Arabic. Missing fields are listed before you generate.",missing:"Missing",ready:"Ready",create:"Create DOCX & PDF",
+  varSub:"Pick a change. Class, conditions, requirements and CTD sections come from EDA's variation tool and NP.CAPP.112.",basket:"Variation basket",grouped:"Grouped class (highest wins)",addB:"Add",makeSeq:"Create variation sequence",
+  expSub:"Choose an output. Export is blocked while required items fail.",gate:"Pre-export gate",g1:"No blocking failures in required items",g2:"Approver sign-off",g3:"Provisional EG profile acknowledged (eCTD only)",
+  outCTD:"CTD · One Submission",outE3:"eCTD 3.2.2",outE4:"eCTD 4.0",expBtn:"Export package",blockedN:"items blocking",howSubmit:"How to submit",howTxt:"Decree 450/2023 Case 1: upload the full dossier through EDA's Case 1/3 submission form, then the updated Module I with approvals within 6 months of the PV approval or pricing certificate, whichever is later.",
+  provT:"eCTD outputs use a provisional EG profile",provD:"EDA has not published the EG DTD, validation criteria or controlled vocabularies. Reports say «conforms to EDA drafts + ICH».",
+  wizT:"New dossier",wizSub:"Six steps. You can save and resume at any time.",w1:"Product",w2:"Type & activity",w3:"APIs",w4:"Dosage specifics",w5:"Parties",w6:"Rules & confirm",
+  fKind:"Dossier kind",fOrigin:"Origin",fLic:"Licence",fAct:"Activity",fRoute:"Submission route",fCase:"Decree 450 case",
+  errCombo:"Local origin cannot use «Imported bulk». Choose Own, Toll or Under licence.",rollOff:"Rolling (closed 01/12/2026)",
+  willNeed:"You will need",docs:"documents",weGen:"we can generate",thirdP:"from third parties",saveR:"Save & resume later",next:"Next",
+  packsSub:"Versioned rule sets with sources. Drafts can be previewed per dossier.",inforce:"In force",draft:"Draft",derived:"Provisional",
+  sample:"Example data",toastGen:"Composition certificate created · DOCX + PDF (unsigned draft)",toastAdd:"Added to basket",toastReq:"Request letter to the GMP issuer created",toastExp:"Export blocked: resolve the blocking items first",
+ },
+ ar:{appname:"مُعِدّ الملف",wsrole:"· مُعِد · معتمِد",search:"ابحث في الملفات والمستندات والقواعد…",lang:"English",
+  home:"الرئيسية",dossier:"الملف",reqs:"المتطلبات",gen:"التوليد",vars:"التغييرات",exp:"التصدير",packs:"حزم القواعد",grp1:"مساحة العمل",grp2:"Examplol 500 mg",
+  hTitle:"صباح الخير يا منى",hSub:"3 ملفات قيد الإعداد · ملف واحد جاهز للتصدير",kInp:"قيد الإعداد",kBlk:"بنود مانعة",kWait:"بانتظار جهات خارجية",kRdy:"جاهزة للتصدير",
+  alertTxt:"نشرت الهيئة مسودة NP.CAPP.065 الإصدار 6 ودليل تقديم Module 1 (أُغلقت الاستشارة 29/10/2026). سيتأثر ملفان.",review:"راجِع الأثر",
+  tProd:"المستحضر",tType:"النوع",tAct:"الإجراء",tPack:"القواعد",tReady:"الجاهزية",tBlk:"مانع",tOwner:"المسؤول",newD:"ملف جديد",
+  dSub:"جنيس محلي · تسجيل جديد · One Submission · قواعد NP.CAPP.065 الإصدار 5",nba:"الخطوة التالية الأنسب",appr:"الاعتماد",
+  reqSub:"المتطلبات محسوبة من ملف تعريف المستحضر. كل بند مرتبط بمصدره في أدلة الهيئة.",all:"الكل",blocking:"مانعة",waiting:"بانتظار",mine:"قابلة للتوليد",
+  thSlot:"المتطلب",thSrc:"المصدر",thSt:"الحالة",thAct:"الإجراء",
+  st_ok:"مطابق",st_bad:"غير مطابق",st_warn:"يحتاج انتباه",st_wait:"بانتظار الجهة المصدِرة",st_na:"لم يبدأ",st_rec:"تم الاستلام",
+  a_up:"رفع",a_gen:"توليد",a_fix:"إصلاح",a_reb:"إعادة بناء",a_req:"طلب من الجهة",a_view:"فتح",
+  dChecks:"الفحوص",dAcc:"معايير القبول",dHist:"الإصدارات",close:"إغلاق",lockT:"صادر من جهة خارجية — لا يمكن تعديل محتواه.",lockD:"يمكنك استبدال الملف أو طلب نسخة مصححة من الجهة المصدرة. الإصلاحات الفنية (الاسم والمكان والإشارات المرجعية) مسموحة.",
+  editTry:"تعديل المحتوى",lockModalT:"التعديل غير مسموح",lockModalB:"شهادة الـ GMP مستند صادر من جهة خارجية، وتعديل محتواها يُبطلها. استبدلها بنسخة جديدة، أو أنشئ خطاب طلب للجهة المصدرة.",genReq:"إنشاء خطاب طلب",cancel:"إلغاء",
+  genSub:"خطابات وجداول تُبنى من بيانات الملف بالعربية والإنجليزية. الحقول الناقصة تظهر قبل التوليد.",missing:"ناقص",ready:"جاهز",create:"إنشاء DOCX و PDF",
+  varSub:"اختر التغيير. الفئة والشروط والمطلوب وأقسام الـ CTD من أداة التغييرات بالهيئة و NP.CAPP.112.",basket:"سلة التغييرات",grouped:"فئة المجموعة (الأعلى يغلب)",addB:"إضافة",makeSeq:"إنشاء تسلسل التغيير",
+  expSub:"اختر المخرج. التصدير ممنوع طالما هناك بنود مطلوبة غير مطابقة.",gate:"بوابة ما قبل التصدير",g1:"لا توجد إخفاقات مانعة في البنود المطلوبة",g2:"موافقة المعتمِد",g3:"الإقرار بملف التعريف المصري المؤقت (eCTD فقط)",
+  outCTD:"CTD · One Submission",outE3:"eCTD 3.2.2",outE4:"eCTD 4.0",expBtn:"تصدير الحزمة",blockedN:"بنود مانعة",howSubmit:"طريقة التقديم",howTxt:"القرار 450/2023 الحالة الأولى: ارفع الملف الكامل عبر نموذج التقديم للحالتين الأولى والثالثة، ثم Module I المحدّث بالموافقات خلال 6 أشهر من موافقة اليقظة أو شهادة التسعير أيهما أبعد.",
+  provT:"مخرجات eCTD تستخدم ملف تعريف مصري مؤقت",provD:"لم تنشر الهيئة ملف DTD المصري ولا معايير التحقق ولا القوائم المعتمدة. التقارير تقول «مطابق لمسودات الهيئة و ICH».",
+  wizT:"ملف جديد",wizSub:"ست خطوات، ويمكنك الحفظ والاستكمال في أي وقت.",w1:"المستحضر",w2:"النوع والإجراء",w3:"المواد الفعالة",w4:"خصائص الشكل الصيدلي",w5:"الأطراف",w6:"القواعد والتأكيد",
+  fKind:"نوع الملف",fOrigin:"المنشأ",fLic:"نوع الترخيص",fAct:"الإجراء",fRoute:"مسار التقديم",fCase:"حالة القرار 450",
+  errCombo:"المنشأ المحلي لا يقبل «مستورد Bulk». اختر: ملكية ذاتية أو تصنيع لدى الغير أو تحت ترخيص.",rollOff:"Rolling (أُغلق 01/12/2026)",
+  willNeed:"ستحتاج",docs:"مستنداً",weGen:"نولّدها لك",thirdP:"من جهات خارجية",saveR:"حفظ والاستكمال لاحقاً",next:"التالي",
+  packsSub:"مجموعات قواعد بإصداراتها ومصادرها. يمكن معاينة المسودات لكل ملف.",inforce:"سارية",draft:"مسودة",derived:"مؤقتة",
+  sample:"بيانات توضيحية",toastGen:"تم إنشاء شهادة التركيب · DOCX و PDF (مسودة غير موقّعة)",toastAdd:"أُضيف إلى السلة",toastReq:"تم إنشاء خطاب طلب للجهة المصدرة لشهادة GMP",toastExp:"التصدير ممنوع: عالج البنود المانعة أولاً",
+ }};
+let L='en'; try{L=localStorage.getItem('db-lang')||'en'}catch(e){}
+const t=k=>(T[L][k]??k);
+
+const ST={ok:['c-ok','st_ok'],bad:['c-bad','st_bad'],warn:['c-warn','st_warn'],wait:['c-wait','st_wait'],na:['c-na','st_na'],rec:['c-rec','st_rec']};
+const chip=s=>`<span class="chip ${ST[s][0]}"><i></i>${t(ST[s][1])}</span>`;
+
+const SLOTS=[
+ {sec:'Module 1 · 1.1 Administrative'},
+ {id:'1.1.1',en:'Application form (Annex I) + Arabic undertaking',ar:'نموذج الطلب (Annex I) + التعهد العربي',src:'NP.CAPP.065 §1.1.1',st:'ok',cls:'generated',act:'a_view'},
+ {id:'1.1.4',en:'Action letter & name approval',ar:'خطاب القرار وموافقة الاسم',src:'NP.CAPP.065 §1.1.4',st:'ok',cls:'eda',act:'a_view'},
+ {id:'1.1.5',en:'Pricing certificate (valid)',ar:'شهادة التسعير (سارية)',src:'NP.CAPP.065 §1.1.5',st:'wait',cls:'eda',act:'a_view'},
+ {id:'1.1.9',en:'Proposed SmPC & PIL, English + Arabic (Word)',ar:'النشرة المقترحة إنجليزي + عربي (Word)',src:'NP.CAPP.065 §1.1.9',st:'warn',cls:'company',act:'a_fix'},
+ {id:'1.1.12',en:'Importation approval for each API',ar:'موافقة استيراد لكل مادة فعالة',src:'NP.CAPP.065 §1.1.12',st:'na',cls:'eda',act:'a_up'},
+ {id:'1.1.20',en:'Letter of Access (DMF — Sino API Co.)',ar:'خطاب السماح بالاطلاع (DMF)',src:'NP.CAPP.065 §1.1.20',st:'rec',cls:'third',act:'a_view'},
+ {sec:'Module 1 · 1.2 Technical studies / approvals'},
+ {id:'1.2.1',en:'Composition certificate + salt calculation',ar:'شهادة التركيب + حساب الملح',src:'NP.CAPP.065 §1.2.1',st:'bad',cls:'generated',act:'a_reb'},
+ {id:'1.2.4.1',en:'GMP certificate — FPP manufacturer',ar:'شهادة GMP — مصنع المستحضر',src:'NP.CAPP.065 §1.2.4.1',st:'bad',cls:'third',act:'a_req',lock:1},
+ {id:'1.2.4.3',en:'CEP + commitment (Euro API Ltd.)',ar:'شهادة CEP + التعهد',src:'CTD QM v2/2023',st:'ok',cls:'third',act:'a_view'},
+ {sec:'Module 3 · 3.2.P Drug product'},
+ {id:'3.2.P.1',en:'Description and composition',ar:'الوصف والتركيب',src:'NP.CAPP.040 · P.1',st:'ok',cls:'generated',act:'a_view'},
+ {id:'3.2.P.5.4',en:'Batch analyses (≥ 2 batches, numeric)',ar:'تحليل التشغيلات (تشغيلتان على الأقل، نتائج رقمية)',src:'NP.CAPP.040 · P.5.4',st:'bad',cls:'company',act:'a_fix'},
+ {id:'3.2.P.8',en:'Stability + signed commitments',ar:'الثبات + تعهدات موقّعة',src:'WHO TRS 986 A6 · P.8',st:'warn',cls:'company',act:'a_fix'},
+ {id:'3.2.R.1.1',en:'Executed batch records (BE batch)',ar:'سجلات التشغيلة المنفّذة (تشغيلة BE)',src:'CTD QM v2 · 3.2.R',st:'na',cls:'exec',act:'a_up'},
+ {sec:'Module 5 · Clinical'},
+ {id:'5.3.1.2',en:'Bioequivalence study report',ar:'تقرير دراسة التكافؤ الحيوي',src:'GL.CAPP.024 v4',st:'ok',cls:'company',act:'a_view'},
+];
+
+const views={home,dossier,reqs,gen,vars,exp,wizard,packs};
+function nav(){
+ const it=(h,k)=>`<a href="#${h}" class="${(location.hash.slice(1)||'home')===h?'on':''}">${t(k)}</a>`;
+ document.getElementById('nav').innerHTML=`<div class="grp">${t('grp1')}</div>${it('home','home')}${it('packs','packs')}<div class="grp">${t('grp2')}</div>${it('dossier','dossier')}${it('reqs','reqs')}${it('gen','gen')}${it('vars','vars')}${it('exp','exp')}`;
+}
+function render(){
+ document.documentElement.lang=L; document.documentElement.dir=L==='ar'?'rtl':'ltr';
+ document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));
+ document.getElementById('lang').textContent=t('lang');
+ nav(); const v=location.hash.slice(1)||'home'; (views[v]||home)(); document.getElementById('layer').innerHTML='';
+}
+const V=h=>document.getElementById('view').innerHTML=h;
+function toast(k){const d=document.createElement('div');d.className='toast';d.textContent=t(k);document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
+
+function home(){V(`
+ <div class="head"><div><h1>${t('hTitle')}</h1><p class="sub">${t('hSub')} · <span class="ex">${t('sample')}</span></p></div><a class="btn pri" href="#wizard">+ ${t('newD')}</a></div>
+ <div class="alert"><p>${t('alertTxt')}</p><a class="btn" href="#packs">${t('review')}</a></div>
+ <div class="grid4">
+  <div class="card kpi p"><span class="n">3</span><span class="l">${t('kInp')}</span></div>
+  <div class="card kpi b"><span class="n">7</span><span class="l">${t('kBlk')}</span></div>
+  <div class="card kpi w"><span class="n">4</span><span class="l">${t('kWait')}</span></div>
+  <div class="card kpi o"><span class="n">1</span><span class="l">${t('kRdy')}</span></div>
+ </div>
+ <div class="card tablewrap"><table><thead><tr><th>${t('tProd')}</th><th>${t('tType')}</th><th>${t('tAct')}</th><th>${t('tPack')}</th><th>${t('tReady')}</th><th>${t('tBlk')}</th><th>${t('tOwner')}</th></tr></thead><tbody>
+  <tr class="click" onclick="location.hash='dossier'"><td><b>Examplol 500 mg</b><br><span class="sub">Film-coated tablets</span></td><td>G-Loc</td><td>New · One Submission</td><td><span class="src">NP.CAPP.065 v5</span></td><td><div class="bar"><span style="width:64%"></span></div> 64%</td><td>${chip('bad')} 5</td><td>Mona</td></tr>
+  <tr class="click" onclick="location.hash='dossier'"><td><b>Cardiolex 10 mg</b><br><span class="sub">Hard capsules</span></td><td>G-Imp</td><td>Re-registration</td><td><span class="src">GL.CAPP.039 v1</span></td><td><div class="bar"><span style="width:81%"></span></div> 81%</td><td>${chip('wait')} 2</td><td>Sara</td></tr>
+  <tr class="click" onclick="location.hash='vars'"><td><b>Respira 100 mcg</b><br><span class="sub">Inhalation powder</span></td><td>G-Loc</td><td>Variation · PAC-II</td><td><span class="src">GL.CAPP.026 v6</span></td><td><div class="bar"><span style="width:100%"></span></div> 100%</td><td>${chip('ok')}</td><td>Karim</td></tr>
+ </tbody></table></div>`)}
+
+function dossier(){const m=[['M1',72],['M2',100],['M3',58],['M4',100],['M5',90]];V(`
+ <div class="head"><div><h1>Examplol 500 mg FCT</h1><p class="sub">${t('dSub')}</p></div><div class="toolbar"><a class="btn" href="#reqs">${t('reqs')}</a><a class="btn pri" href="#exp">${t('exp')}</a></div></div>
+ <div class="mods">${m.map(([k,p])=>`<div class="card mod"><div class="ring" style="--p:${p}" data-v="${p}%"></div><div><b>${k}</b><small>${p===100?(L==='ar'?'غير مطلوب للجنيس':'Not required for generics'):(L==='ar'?'مكتمل':'complete')}</small></div></div>`).join('')}</div>
+ <div class="two">
+  <div class="card"><div class="pad"><h2>${t('nba')}</h2></div><div class="list">
+   <div class="li">${chip('bad')}<p><b>GMP certificate expired (FPP site)</b><br><span class="muted">Validity date 30/09/2026 has passed · <span class="src">NP.CAPP.065 §1.2.4.1</span></span></p><button class="btn" onclick="openSlot('1.2.4.1')">${t('a_req')}</button></div>
+   <div class="li">${chip('bad')}<p><b>Batch results written as «Conform»</b><br><span class="muted">Quantitative tests need numeric results · <span class="src">NP.CAPP.040 · P.5.4</span></span></p><button class="btn" onclick="openSlot('3.2.P.5.4')">${t('a_fix')}</button></div>
+   <div class="li">${chip('bad')}<p><b>Composition differs from CPP of licensor</b><br><span class="muted">Opadry quantity 12 mg vs 14 mg · cross-check</span></p><button class="btn" onclick="openSlot('1.2.1')">${t('a_reb')}</button></div>
+   <div class="li">${chip('wait')}<p><b>Pricing certificate requested</b><br><span class="muted">Expected 20/11/2026 · reminder set</span></p><button class="btn ghost">${t('a_view')}</button></div>
+  </div></div>
+  <div class="card pad" style="display:flex;flex-direction:column;gap:10px"><h2>${t('appr')}</h2>
+   <div class="gate"><div>${chip('bad')} ${t('g1')}</div><div>${chip('na')} ${t('g2')}</div></div>
+   <p class="sub">UUID <span class="code">8f3c2a1e-6b4d-4c0e-9a71-2d5e7b9c1f04</span></p>
+  </div>
+ </div>`)}
+
+let filt='all';
+function reqs(){
+ const rows=SLOTS.filter(s=>s.sec||filt==='all'||(filt==='bad'&&s.st==='bad')||(filt==='wait'&&s.st==='wait')||(filt==='gen'&&s.cls==='generated'));
+ V(`<div class="head"><div><h1>${t('reqs')}</h1><p class="sub">${t('reqSub')}</p></div>
+  <div class="seg" role="tablist">${[['all','all'],['bad','blocking'],['wait','waiting'],['gen','mine']].map(([k,l])=>`<button class="${filt===k?'on':''}" onclick="filt='${k}';reqs()">${t(l)}</button>`).join('')}</div></div>
+  <div class="card tablewrap"><table><thead><tr><th>#</th><th>${t('thSlot')}</th><th>${t('thSrc')}</th><th>${t('thSt')}</th><th>${t('thAct')}</th></tr></thead><tbody>
+  ${rows.map(s=>s.sec?`<tr class="sec-h"><td colspan="5">${s.sec}</td></tr>`:`<tr class="click" onclick="openSlot('${s.id}')"><td class="code">${s.id}</td><td>${L==='ar'?s.ar:s.en}${s.lock?' 🔒':''}</td><td><span class="src">${s.src}</span></td><td>${chip(s.st)}</td><td><button class="btn" onclick="event.stopPropagation();act('${s.id}')">${t(s.act)}</button></td></tr>`).join('')}
+  </tbody></table></div>`)}
+
+function act(id){const s=SLOTS.find(x=>x.id===id);if(s.act==='a_gen'||s.act==='a_reb'){location.hash='gen';return}if(s.act==='a_req'){toast('toastReq');return}openSlot(id)}
+
+function openSlot(id){
+ const s=SLOTS.find(x=>x.id===id); const ar=L==='ar';
+ const checks={
+  '1.2.4.1':[['bad','Certificate expired on 30/09/2026','Validity required','NP.CAPP.065 §1.2.4.1'],['ok','Production lines specified','',''],['ok','Address matches Annex I and 3.2.P.3.1','','cross-check']],
+  '3.2.P.5.4':[['bad','Results written as «Conform» for assay and impurities','Numeric values required','NP.CAPP.040 · P.5.4'],['ok','2 batches present (EX0001, EX0002)','',''],['warn','Batch EX0001 is 14 months old','Recent batches expected','NP.CAPP.040']],
+  '1.2.1':[['bad','Opadry 12 mg/tab differs from licensor CPP (14 mg)','Must match CPP and approvals','NP.CAPP.040 · P.1'],['ok','Salt factor 1.0874 with MW reference','','NP.CAPP.065 §1.2.1'],['bad','Coating premix composition on supplier letterhead missing','','NP.CAPP.065 §1.2.1 N.B.5']],
+ }[id]||[['ok','PDF 1.7, text searchable, no security','','EG TG draft §2.9.3'],['ok','File name 41 chars, path 112 chars','','EG TG draft §2.5.2']];
+ document.getElementById('layer').innerHTML=`<div class="drawer-bg" onclick="closeL()"></div><aside class="drawer" role="dialog" aria-label="${s.en}">
+  <header><div><span class="code">${s.id}</span><h2>${ar?s.ar:s.en}</h2><div style="margin-top:6px">${chip(s.st)} <span class="src">${s.src}</span></div></div><button class="btn ghost" onclick="closeL()" aria-label="${t('close')}">✕</button></header>
+  <div class="body">
+   ${s.lock?`<div class="lock">🔒<div><b>${t('lockT')}</b><br>${t('lockD')}</div></div>`:''}
+   <div><h2 style="margin-bottom:8px">${t('dChecks')}</h2><div style="display:flex;flex-direction:column;gap:8px">${checks.map(([k,m,w,src])=>`<div class="check ${k}"><span class="ic">${k==='ok'?'✓':k==='bad'?'!':'~'}</span><p><b>${m}</b>${w?`<br><span class="sub">${w}</span>`:''}${src?` <span class="src">${src}</span>`:''}</p></div>`).join('')}</div></div>
+   <div><h2 style="margin-bottom:8px">${t('dHist')}</h2><p class="sub">v3 · 05/11/2026 · Mona · <span class="code">sha256 7e1c…a90b</span><br>v2 · 28/10/2026 · Mona<br>v1 · 12/10/2026 · upload</p></div>
+  </div>
+  <footer>${s.lock?`<button class="btn pri" onclick="toast('toastReq');closeL()">${t('a_req')}</button><button class="btn" onclick="lockModal()">${t('editTry')}</button>`:s.cls==='generated'?`<a class="btn pri" href="#gen" onclick="closeL()">${t('a_reb')}</a>`:`<button class="btn pri">${t('a_fix')}</button>`}<button class="btn" onclick="closeL()">${t('close')}</button></footer>
+ </aside>`;
+}
+function lockModal(){document.getElementById('layer').insertAdjacentHTML('beforeend',`<div class="modal" id="m"><div class="card" role="alertdialog"><h2>🔒 ${t('lockModalT')}</h2><p>${t('lockModalB')}</p><div class="toolbar"><button class="btn pri" onclick="toast('toastReq');closeL()">${t('genReq')}</button><button class="btn" onclick="document.getElementById('m').remove()">${t('cancel')}</button></div></div></div>`)}
+function closeL(){document.getElementById('layer').innerHTML=''}
+
+function gen(){const ar=L==='ar';const tp=[
+ ['Annex I application form',ar?'نموذج الطلب Annex I + التعهد':'Annex I + Arabic undertaking',[],'NP.CAPP.065 Annex I'],
+ ['Composition certificate',ar?'شهادة التركيب':'Per-unit formula, core/coat, function, standard',['Opadry supplier quantity'],'NP.CAPP.065 §1.2.1'],
+ ['Salt equivalence calculation',ar?'حساب الملح المكافئ':'Base vs salt with MW reference',[],'NP.CAPP.065 §1.2.1'],
+ ['CEP commitment letter',ar?'تعهد الـ CEP':'Inform EDA on revision or withdrawal',[],'CTD QM v2/2023'],
+ ['Stability commitments',ar?'تعهدات الثبات':'Primary, 3 production batches, ongoing 1/year',['Commitment batch sizes'],'WHO TRS 986 A6'],
+ ['Cover letter + tracking table',ar?'خطاب التغطية + جدول التتبع':'True, complete and correct statement',[],'EG TG draft §3.2.3'],
+];V(`<div class="head"><div><h1>${t('gen')}</h1><p class="sub">${t('genSub')}</p></div></div>
+ <div class="tpl">${tp.map(([n,d,miss,src])=>`<div class="card"><b>${n}</b><p>${d}</p><span class="src">${src}</span>${miss.length?`<span class="miss">${t('missing')}: ${miss.join(', ')}</span>`:`<span class="chip c-ok"><i></i>${t('ready')}</span>`}<button class="btn ${miss.length?'':'pri'}" ${miss.length?'disabled':''} onclick="toast('toastGen')">${t('create')}</button></div>`).join('')}</div>`)}
+
+let basket=[];
+const CAT=[['5','Drug Substance','Manufacturing site','Introduction of a new manufacturer for Active Substance.','II','3.2.S (new DMF AP/RP + LoA), 3.2.P.1, 3.2.P.5.4, 3.2.P.8'],
+ ['60','Drug Product','Formulation','Increase or reduction in components of the flavoring or coloring system','B','3.2.P.1, 3.2.P.2.1.2, 3.2.P.3.2, 3.2.P.4, 3.2.P.5.1, 3.2.P.5.4'],
+ ['1','Drug Substance','Administrative','Change in the name and/or address of Manufacturer of the active substance (API).','N','3.2.S.2.1, LoA'],
+ ['30','Drug Product','Administrative','Change in Name / Address of Manufacturing sites (bulk manufacturer, packager & batch releaser)','N','3.2.P.3.1']];
+function vars(){const rank={N:0,A:1,B:2,II:3};const g=basket.length?basket.map(i=>CAT[i][4]).sort((a,b)=>rank[b]-rank[a])[0]:null;V(`
+ <div class="head"><div><h1>${t('vars')}</h1><p class="sub">${t('varSub')}</p></div></div>
+ <div class="two"><div class="card tablewrap"><table><thead><tr><th>ID</th><th>${L==='ar'?'التغيير':'Change'}</th><th>PAC</th><th>CTD</th><th></th></tr></thead><tbody>
+  ${CAT.map((c,i)=>`<tr><td class="code">${c[0]}</td><td><b>${c[3]}</b><br><span class="sub">${c[1]} · ${c[2]}</span></td><td><span class="pac ${c[4]}">PAC-${c[4]}</span></td><td><span class="src" style="white-space:normal">${c[5]}</span></td><td><button class="btn" ${basket.includes(i)?'disabled':''} onclick="basket.push(${i});toast('toastAdd');vars()">${t('addB')}</button></td></tr>`).join('')}
+ </tbody></table></div>
+ <div class="card pad side-note" style="display:flex;flex-direction:column;gap:10px"><h2>${t('basket')}</h2>
+  ${basket.length?basket.map(i=>`<div class="li" style="padding:8px 0"><span class="pac ${CAT[i][4]}">PAC-${CAT[i][4]}</span><p>${CAT[i][3]}</p></div>`).join(''):`<p class="sub">${L==='ar'?'أضف تغييراً لترى فئته وأقسامه.':'Add a change to see its class and sections.'}</p>`}
+  ${g?`<div><span class="sub">${t('grouped')}</span><div class="big"><span class="pac ${g}" style="font-size:20px">PAC-${g}</span></div><span class="src">GL.CAPP.026 v6 §2.5.3</span></div><button class="btn pri">${t('makeSeq')}</button>`:''}
+ </div></div>`)}
+
+let out='ctd';
+function exp(){V(`
+ <div class="head"><div><h1>${t('exp')}</h1><p class="sub">${t('expSub')}</p></div></div>
+ <div class="seg">${[['ctd','outCTD'],['e3','outE3'],['e4','outE4']].map(([k,l])=>`<button class="${out===k?'on':''}" onclick="out='${k}';exp()">${t(l)}</button>`).join('')}</div>
+ ${out!=='ctd'?`<div class="alert"><p><b>${t('provT')}</b><br>${t('provD')}</p></div>`:''}
+ <div class="two"><div class="card pad" style="display:flex;flex-direction:column;gap:12px"><h2>${t('gate')}</h2>
+  <div class="gate"><div>${chip('bad')} ${t('g1')} — <b>5 ${t('blockedN')}</b> <a class="btn ghost" href="#reqs" onclick="filt='bad'">→</a></div><div>${chip('na')} ${t('g2')}</div>${out!=='ctd'?`<div><input type="checkbox" id="ack"> <label for="ack">${t('g3')}</label></div>`:''}</div>
+  <button class="btn pri" onclick="toast('toastExp')">${t('expBtn')}</button></div>
+ <div class="card pad"><h2>${t('howSubmit')}</h2><p>${t('howTxt')}</p><span class="src">EDA · Submission Procedures for Registration Dossiers</span></div></div>`)}
+
+let combo=false;
+function wizard(){V(`
+ <div class="head"><div><h1>${t('wizT')}</h1><p class="sub">${t('wizSub')}</p></div><button class="btn">${t('saveR')}</button></div>
+ <div class="steps">${['w1','w2','w3','w4','w5','w6'].map((k,i)=>`<span class="step ${i===0?'done':i===1?'on':''}"><b>${i===0?'✓':i+1}</b>${t(k)}</span>`).join('')}</div>
+ <div class="two"><div class="card pad"><div class="form">
+  <div class="f"><label for="k">${t('fKind')}</label><select id="k"><option>Generic</option><option>Innovator</option></select></div>
+  <div class="f"><label for="o">${t('fOrigin')}</label><select id="o" onchange="combo=this.value==='Local'&&document.getElementById('l').value==='Imported bulk';wizErr()"><option>Local</option><option>Imported</option></select></div>
+  <div class="f"><label for="l">${t('fLic')}</label><select id="l" onchange="combo=document.getElementById('o').value==='Local'&&this.value==='Imported bulk';wizErr()"><option>Own</option><option>Toll</option><option>Under licence</option><option>Imported bulk</option></select><span class="err" id="e" hidden>${t('errCombo')} <span class="src">NP.CAPP.065</span></span></div>
+  <div class="f"><label for="a">${t('fAct')}</label><select id="a"><option>New registration</option><option>Re-registration</option><option>Variation</option></select></div>
+  <div class="f"><label for="r">${t('fRoute')}</label><select id="r"><option>One Submission</option><option disabled>${t('rollOff')}</option></select></div>
+  <div class="f"><label for="c">${t('fCase')}</label><select id="c"><option>Case 1</option><option>Case 2 · Track A</option><option>Case 2 · Track B</option><option>Case 2 · Track C</option><option>Case 3</option></select></div>
+ </div><div class="toolbar" style="margin-top:14px;justify-content:flex-end"><button class="btn pri">${t('next')}</button></div></div>
+ <div class="card pad side-note"><span class="sub">${t('willNeed')}</span><div class="big">58 <small style="font-size:14px;font-weight:500">${t('docs')}</small></div>
+  <div class="gate"><div><span class="chip c-ok"><i></i>21</span> ${t('weGen')}</div><div><span class="chip c-wait"><i></i>19</span> ${t('thirdP')}</div></div><span class="src">NP.CAPP.065 v5 · G-Loc column</span></div></div>`)}
+function wizErr(){document.getElementById('e').hidden=!combo}
+
+function packs(){const p=[['eda.ctd.nta065','NP.CAPP.065',' v5 · 01/11/2025','inforce'],['eda.ctd.nta065','NP.CAPP.065',' v6 · 2026','draft'],['eda.m1.subguid','EG M1 Submission Guidance',' v1 · 2026','draft'],['eda.qm.rereg','GL.CAPP.039',' v1 · eff. 01/01/2026','inforce'],['eda.var','GL.CAPP.026',' v6 · eff. 01/01/2026','inforce'],['eda.ectd.eg-m1','EG Module 1 eCTD Spec',' v1.0 · 2026','draft'],['eg.profile','EG regional profile (DTD/criteria)',' v0','derived']];
+ const c={inforce:'c-ok',draft:'c-warn',derived:'c-wait'};V(`
+ <div class="head"><div><h1>${t('packs')}</h1><p class="sub">${t('packsSub')}</p></div></div>
+ <div class="card tablewrap"><table><thead><tr><th>Pack</th><th>${L==='ar'?'المصدر':'Source'}</th><th>${L==='ar'?'الإصدار':'Version'}</th><th>${L==='ar'?'الحالة':'Status'}</th></tr></thead><tbody>
+ ${p.map(r=>`<tr><td class="code">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><span class="chip ${c[r[3]]}"><i></i>${t(r[3])}</span></td></tr>`).join('')}</tbody></table></div>`)}
+
+document.getElementById('lang').onclick=()=>{L=L==='en'?'ar':'en';try{localStorage.setItem('db-lang',L)}catch(e){}render()};
+addEventListener('hashchange',render);
+addEventListener('keydown',e=>{if(e.key==='Escape')closeL()});
+render();
+</script>
