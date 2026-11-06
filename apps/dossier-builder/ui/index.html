@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dossier Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#EEF2F5; --line:#DCE2E8; --ink:#0F1B2A; --muted:#5B6B7C;
+  --brand:#0E7C86; --brand-ink:#FFFFFF; --brand-soft:#E3F3F4; --accent:#1E3A8A;
+  --ok:#15803D; --ok-soft:#E5F4EA; --warn:#B45309; --warn-soft:#FBF0E1; --bad:#C62828; --bad-soft:#FBE7E7;
+  --wait:#6D28D9; --wait-soft:#F0EAFC; --na:#8A97A6; --na-soft:#EEF1F4; --rec:#1E40AF; --rec-soft:#E6EEFB;
+  --f-ui:"IBM Plex Sans","IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;
+  --f-ar:"IBM Plex Sans Arabic","IBM Plex Sans",system-ui,"Segoe UI",Tahoma,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  --r:10px; --shadow:0 1px 2px rgba(15,27,42,.06),0 4px 14px rgba(15,27,42,.05);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D141C; --surface:#131C26; --surface-2:#18232F; --line:#253343; --ink:#E6EDF3; --muted:#93A3B5;
+  --brand:#2BB3BD; --brand-ink:#04161A; --brand-soft:#0F2F33; --accent:#8FA8FF;
+  --ok:#4ADE80; --ok-soft:#10261A; --warn:#F5A64A; --warn-soft:#2B1F0E; --bad:#F87171; --bad-soft:#2C1414;
+  --wait:#B49AF7; --wait-soft:#211A36; --na:#7C8B9C; --na-soft:#1B2531; --rec:#93B4FF; --rec-soft:#13213D;
+  --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D141C; --surface:#131C26; --surface-2:#18232F; --line:#253343; --ink:#E6EDF3; --muted:#93A3B5;
+  --brand:#2BB3BD; --brand-ink:#04161A; --brand-soft:#0F2F33; --accent:#8FA8FF;
+  --ok:#4ADE80; --ok-soft:#10261A; --warn:#F5A64A; --warn-soft:#2B1F0E; --bad:#F87171; --bad-soft:#2C1414;
+  --wait:#B49AF7; --wait-soft:#211A36; --na:#7C8B9C; --na-soft:#1B2531; --rec:#93B4FF; --rec-soft:#13213D;
+  --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5}
+html[lang="ar"] body{font-family:var(--f-ar)}
+button,input,select{font:inherit;color:inherit}
+a{color:var(--brand)}
+a.btn{text-decoration:none;color:inherit}
+a.btn.pri{color:var(--brand-ink)}
+.f .seg{align-self:flex-start;flex-wrap:wrap}
+.steps .n{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:color-mix(in srgb,currentColor 18%,transparent);font-size:11px;margin-inline-end:6px}
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+.rail{background:var(--surface);border-inline-end:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;padding:6px 8px 14px;font-weight:700}
+.logo b{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--brand);color:var(--brand-ink);font-family:var(--f-mono);font-size:12px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:500}
+.nav a:hover{background:var(--surface-2);color:var(--ink)}
+.nav a.on{background:var(--brand-soft);color:var(--brand)}
+.nav a[aria-disabled="true"]{opacity:.45;pointer-events:none}
+.nav .grp{font-size:11px;color:var(--na);padding:12px 10px 4px;text-transform:uppercase;letter-spacing:.08em}
+html[lang="ar"] .nav .grp{letter-spacing:0}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;padding:10px 16px;flex-wrap:wrap}
+.top .crumb{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:500;white-space:nowrap;min-height:36px}
+.btn:hover{background:var(--surface-2)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.sm{padding:3px 9px;min-height:30px;font-size:12.5px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.content{padding:20px 16px 48px;max-width:1440px;width:100%;display:flex;flex-direction:column;gap:18px}
+h1{font-size:22px;margin:0} h2{font-size:16px;margin:0} h3{font-size:14px;margin:0}
+.sub{color:var(--muted);margin:2px 0 0}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{padding:14px 16px;display:flex;flex-direction:column;gap:2px;border-inline-start:3px solid var(--line)}
+.kpi .n{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .l{color:var(--muted);font-size:12.5px}
+.kpi.ok{border-inline-start-color:var(--ok)} .kpi.bad{border-inline-start-color:var(--bad)} .kpi.warn{border-inline-start-color:var(--warn)} .kpi.ns{border-inline-start-color:var(--na)} .kpi.br{border-inline-start-color:var(--brand)}
+.alert{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:var(--r);background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+.alert.bad{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 30%,transparent)}
+.alert.ok{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+.alert p{margin:0;flex:1;min-width:0}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:start;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;background:var(--surface-2);position:sticky;top:0}
+tr.grp td{background:var(--surface-2);font-weight:600;font-size:12.5px;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip i{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.c-ok{background:var(--ok-soft);color:var(--ok)} .c-warn{background:var(--warn-soft);color:var(--warn)} .c-bad{background:var(--bad-soft);color:var(--bad)}
+.c-wait{background:var(--wait-soft);color:var(--wait)} .c-na{background:var(--na-soft);color:var(--na)} .c-rec{background:var(--rec-soft);color:var(--rec)}
+.code{font-family:var(--f-mono);font-size:12px;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+.api{display:inline-block;margin-top:2px;font-size:12px;color:var(--accent)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:6px 10px;cursor:pointer;color:var(--muted);min-height:34px}
+.seg button.on{background:var(--brand-soft);color:var(--brand);font-weight:600}
+input[type=text],input[type=email],select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);min-height:38px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+label.f span{font-weight:600}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer}
+.steps{display:flex;gap:8px;flex-wrap:wrap}
+.steps span{padding:4px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:12.5px}
+.steps span.on{background:var(--brand);color:var(--brand-ink)}
+.drawer{position:fixed;inset-block:0;inset-inline-end:0;width:min(480px,100%);background:var(--surface);border-inline-start:1px solid var(--line);box-shadow:var(--shadow);z-index:20;display:flex;flex-direction:column;transform:translateX(0)}
+.drawer[hidden]{display:none}
+.drawer header{display:flex;gap:8px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.drawer header h2{flex:1;min-width:0}
+.drawer .body{padding:16px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.scrim{position:fixed;inset:0;background:rgba(10,20,30,.35);z-index:15}
+.scrim[hidden]{display:none}
+.finding{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.finding.block{border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.toast{position:fixed;bottom:16px;inset-inline-start:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;z-index:30;max-width:min(560px,calc(100% - 32px))}
+html[dir="rtl"] .toast{transform:translateX(50%)}
+.toast[hidden]{display:none}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.dl{display:flex;gap:8px;flex-wrap:wrap}
+.mobnav{display:none}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{display:none}
+  .mobnav{display:flex}
+  .hide-m{display:none}
+  th,td{padding:8px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail" aria-label="Main">
+    <div class="logo"><b>DB</b><span data-t="appName"></span></div>
+    <nav class="nav" id="nav">
+      <a href="#/" data-r="home"><span data-t="navDossiers"></span></a>
+      <div class="grp" data-t="navCurrent"></div>
+      <a href="#" data-r="board" id="navBoard" aria-disabled="true"><span data-t="navBoard"></span></a>
+      <a href="#" data-r="export" id="navExport" aria-disabled="true"><span data-t="navExport"></span></a>
+      <a href="#" data-r="audit" id="navAudit" aria-disabled="true"><span data-t="navAudit"></span></a>
+    </nav>
+    <div style="margin-top:auto" class="small muted" data-t="localNote"></div>
+  </aside>
+  <main class="main">
+    <div class="top">
+      <select class="mobnav btn" id="mobnav" aria-label="Navigate" style="width:auto"></select>
+      <div class="crumb" id="crumb"></div>
+      <div class="seg" role="group" aria-label="Language"><button id="lang-ar" lang="ar">عربي</button><button id="lang-en" lang="en">EN</button></div>
+      <button class="btn ghost" id="theme" aria-label="Theme"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
+    </div>
+    <div class="content" id="view" tabindex="-1"></div>
+  </main>
+</div>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog"><header><h2 id="dTitle"></h2><button class="btn ghost" id="dClose" aria-label="Close">✕</button></header><div class="body" id="dBody"></div></aside>
+<div class="toast" id="toast" role="status" hidden></div>
+<input type="file" id="picker" accept="application/pdf,.pdf" hidden>
+<script>
+'use strict';
+const T = {
+  appName:{en:'Dossier Builder',ar:'منشئ الملفات'},
+  navDossiers:{en:'Dossiers',ar:'الملفات'}, navCurrent:{en:'Current dossier',ar:'الملف الحالي'},
+  navBoard:{en:'Requirements',ar:'المتطلبات'}, navExport:{en:'Export',ar:'التصدير'}, navAudit:{en:'Activity log',ar:'سجل النشاط'},
+  localNote:{en:'Local workspace — files stay on this computer.',ar:'مساحة عمل محلية — الملفات لا تغادر هذا الجهاز.'},
+  dossiers:{en:'Dossiers',ar:'الملفات'}, dossiersSub:{en:'One dossier per product, strength and dosage form.',ar:'ملف لكل منتج وتركيز وشكل صيدلي.'},
+  newDossier:{en:'New dossier',ar:'ملف جديد'}, none:{en:'No dossiers yet. Create the first one.',ar:'لا توجد ملفات بعد. أنشئ أول ملف.'},
+  open:{en:'Open',ar:'فتح'}, created:{en:'Created',ar:'تاريخ الإنشاء'}, name:{en:'Name',ar:'الاسم'},
+  step1:{en:'Product',ar:'المنتج'}, step2:{en:'Profile',ar:'الملف التعريفي'}, step3:{en:'Active substances',ar:'المواد الفعالة'}, step4:{en:'Submission',ar:'التقديم'},
+  next:{en:'Next',ar:'التالي'}, back:{en:'Back',ar:'السابق'}, create:{en:'Create dossier',ar:'إنشاء الملف'}, cancel:{en:'Cancel',ar:'إلغاء'},
+  pName:{en:'Dossier name (product, strength, form)',ar:'اسم الملف (المنتج والتركيز والشكل)'}, pTrade:{en:'Trade name',ar:'الاسم التجاري'},
+  pForm:{en:'Dosage form',ar:'الشكل الصيدلي'}, pMan:{en:'FPP manufacturer',ar:'مصنع المستحضر'}, pInd:{en:'Indication (short)',ar:'الاستطباب (مختصر)'},
+  kind:{en:'Dossier type',ar:'نوع الملف'}, generic:{en:'Generic',ar:'مثيل'}, innovator:{en:'Innovator',ar:'مبتكر'},
+  origin:{en:'Origin',ar:'المنشأ'}, local:{en:'Local',ar:'محلي'}, imported:{en:'Imported',ar:'مستورد'},
+  licence:{en:'Licence',ar:'نوع الترخيص'}, own:{en:'Own',ar:'ملك الشركة'}, toll:{en:'Toll',ar:'تصنيع لدى الغير'}, f_toll:{en:'F-Toll',ar:'F-Toll'},
+  under_licence:{en:'Under licence',ar:'تحت الترخيص'}, imported_bulk:{en:'Imported bulk',ar:'Bulk مستورد'},
+  activity:{en:'Application',ar:'نوع الطلب'}, new:{en:'New registration',ar:'تسجيل جديد'}, re_registration:{en:'Re-registration',ar:'إعادة تسجيل'},
+  leaflet:{en:'Leaflet language',ar:'لغة النشرة'}, english:{en:'English',ar:'إنجليزي'}, non_english:{en:'Not English',ar:'غير إنجليزي'},
+  specifics:{en:'Dosage-form specifics',ar:'خصائص الشكل الصيدلي'}, coated:{en:'Coated',ar:'مغلف'}, capsule_hard:{en:'Hard capsule',ar:'كبسولة صلبة'},
+  pellets:{en:'Pellets',ar:'حبيبات'}, premix:{en:'Premix',ar:'Premix'}, powder_inj_with_solvent:{en:'Powder for injection + solvent',ar:'بودرة حقن + مذيب'},
+  sterile:{en:'Sterile',ar:'معقم'}, pharmacopoeial:{en:'Pharmacopoeial product',ar:'منتج دستوري'}, store_separate:{en:'Store separate from factory',ar:'مخزن منفصل عن المصنع'},
+  bioorigin:{en:'Materials of biological origin',ar:'مواد من أصل حيوي'}, novelexc:{en:'Novel excipient',ar:'سواغ جديد'},
+  apiName:{en:'API (INN)',ar:'المادة الفعالة'}, apiMan:{en:'API manufacturer',ar:'مصنع المادة الفعالة'}, apiOpt:{en:'Submitted as',ar:'طريقة التقديم'},
+  addApi:{en:'Add API / manufacturer',ar:'إضافة مادة / مصنّع'}, remove:{en:'Remove',ar:'حذف'},
+  applicant:{en:'Applicant (exact legal name)',ar:'المتقدم (الاسم القانوني)'}, tracking:{en:'EDA procedure tracking number',ar:'رقم التتبع من بوابة الهيئة'},
+  portal:{en:'Company profile username',ar:'اسم المستخدم بحساب الشركة'}, inn:{en:'INN(s), comma separated',ar:'الأسماء العلمية (مفصولة بفاصلة)'},
+  required:{en:'Required',ar:'مطلوب'}, optional:{en:'Optional',ar:'اختياري'}, notreq:{en:'Not required',ar:'غير مطلوب'}, na:{en:'Not applicable',ar:'لا ينطبق'},
+  not_started:{en:'Not started',ar:'لم يبدأ'}, received:{en:'Received',ar:'مستلم'}, conforming:{en:'Conforming',ar:'مطابق'},
+  needs_attention:{en:'Needs attention',ar:'يحتاج مراجعة'}, non_conforming:{en:'Non-conforming',ar:'غير مطابق'}, not_applicable:{en:'Not applicable',ar:'لا ينطبق'},
+  board:{en:'Requirements board',ar:'لوحة المتطلبات'}, boardSub:{en:'Every item comes from NP.CAPP.065 v5 with its reason and source.',ar:'كل بند من NP.CAPP.065 الإصدار 5 مع سببه ومصدره.'},
+  all:{en:'All',ar:'الكل'}, todo:{en:'To do',ar:'المطلوب'}, problems:{en:'Problems',ar:'المشاكل'}, hidden:{en:'Not required',ar:'غير المطلوب'},
+  colSec:{en:'Section',ar:'القسم'}, colDoc:{en:'Document',ar:'المستند'}, colLevel:{en:'Level',ar:'المستوى'}, colStatus:{en:'Status',ar:'الحالة'}, colFiles:{en:'Files',ar:'الملفات'},
+  upload:{en:'Upload',ar:'رفع'}, why:{en:'Why?',ar:'ليه؟'}, module:{en:'Module',ar:'Module'},
+  progress:{en:'Required items ready',ar:'البنود المطلوبة الجاهزة'}, unassigned:{en:'Unassigned documents',ar:'مستندات غير مخصصة'},
+  unassignedSub:{en:'Kept after a profile change — nothing is deleted.',ar:'محفوظة بعد تغيير الملف التعريفي — لا شيء يُحذف.'},
+  reasons:{en:'Why this item',ar:'سبب البند'}, findings:{en:'Check results',ar:'نتائج الفحص'}, noFind:{en:'No problems found.',ar:'لا توجد مشاكل.'},
+  docs:{en:'Documents',ar:'المستندات'}, version:{en:'v',ar:'إصدار'}, withdraw:{en:'Withdraw',ar:'سحب'}, view:{en:'View',ar:'عرض'},
+  lockedNote:{en:'Third-party evidence: read-only. The tool can rename and place it, never change its content.',ar:'مستند جهة خارجية: للقراءة فقط. الأداة تقدر تسميه وتحطه في مكانه بس، ومتغيرش محتواه أبداً.'},
+  act_auto_fix:{en:'The tool can fix this automatically.',ar:'الأداة تقدر تصلحه تلقائياً.'}, act_rebuild:{en:'Rebuild from data.',ar:'يُعاد بناؤه من البيانات.'},
+  act_re_obtain:{en:'Re-obtain from the issuer.',ar:'اطلبه من الجهة المصدرة.'}, act_user_fix:{en:'Replace the file.',ar:'استبدل الملف.'}, act_none:{en:'',ar:''},
+  uploading:{en:'Uploading…',ar:'جاري الرفع…'}, uploaded:{en:'Uploaded and checked.',ar:'تم الرفع والفحص.'}, withdrawn:{en:'Withdrawn — still recoverable in the log.',ar:'تم السحب — قابل للاسترجاع من السجل.'},
+  piType:{en:'Document type',ar:'نوع المستند'}, piLang:{en:'Language',ar:'اللغة'}, study:{en:'Study ID — title',ar:'رقم الدراسة — العنوان'}, docType:{en:'ICH document type',ar:'نوع المستند (ICH)'},
+  choose:{en:'Choose PDF',ar:'اختر ملف PDF'}, extra:{en:'This heading needs a few details for eCTD.',ar:'القسم ده محتاج بيانات إضافية لـ eCTD.'},
+  export:{en:'Export',ar:'التصدير'}, exportSub:{en:'One dossier, three outputs.',ar:'ملف واحد، ثلاث مخرجات.'},
+  gateOk:{en:'Every required item is present and conforming.',ar:'كل البنود المطلوبة موجودة ومطابقة.'},
+  gateBad:{en:'Export is blocked until these are fixed:',ar:'التصدير متوقف لحد ما دول يتصلحوا:'}, missingReq:{en:'Missing required',ar:'مطلوب وناقص'}, nonconf:{en:'Non-conforming',ar:'غير مطابق'},
+  outCtd:{en:'CTD One Submission package (NP.CAPP.065 numbering + navigator)',ar:'ملف CTD One Submission (ترقيم NP.CAPP.065 + فهرس)'},
+  outE3:{en:'eCTD 3.2.2 — sequence 0000 (index.xml + eg-regional.xml)',ar:'eCTD 3.2.2 — التسلسل 0000'}, outE4:{en:'eCTD 4.0 — submission unit 1 (submissionunit.xml)',ar:'eCTD 4.0 — الوحدة 1'},
+  ack:{en:'I understand the eCTD outputs use provisional EG profiles built from EDA drafts + the EU model; they are «conforming to EDA drafts + ICH», not «EDA-valid».',
+       ar:'أفهم أن مخرجات eCTD مبنية على ملف تعريف مصري مؤقت من مسودات الهيئة ونموذج الاتحاد الأوروبي؛ هي «مطابقة لمسودات الهيئة و ICH» وليست «معتمدة من الهيئة».'},
+  doExport:{en:'Export selected outputs',ar:'تصدير المخرجات المختارة'}, exporting:{en:'Building…',ar:'جاري البناء…'}, downloads:{en:'Downloads',ar:'التنزيلات'},
+  audit:{en:'Activity log',ar:'سجل النشاط'}, auditSub:{en:'Every action is recorded; nothing is overwritten.',ar:'كل إجراء مسجل؛ لا شيء يُستبدل.'},
+  when:{en:'When',ar:'الوقت'}, event:{en:'Event',ar:'الحدث'}, detail:{en:'Detail',ar:'التفاصيل'}, restore:{en:'Restore',ar:'استرجاع'},
+  err:{en:'Error',ar:'خطأ'}, apiPer:{en:'per API',ar:'لكل مادة'}
+};
+const S = {lang: localGet('db.lang') || 'ar', dossier: null, board: null, filter: 'todo', module: 0, wiz: null};
+function localGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function localSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+const $ = (s,el=document)=>el.querySelector(s);
+const t = k => (T[k] ? T[k][S.lang] : k);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const bdi = s => `<bdi>${esc(s)}</bdi>`;
+
+async function api(path, opt={}){
+  const r = await fetch('/api' + path, opt);
+  const ct = r.headers.get('content-type') || '';
+  const body = ct.includes('json') ? await r.json() : null;
+  if(!r.ok){ const d = body && body.detail || {}; const e = new Error(d[S.lang] || d.en || r.statusText); e.detail = d; e.status = r.status; throw e; }
+  return body;
+}
+function toast(msg){ const el=$('#toast'); el.textContent=msg; el.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>el.hidden=true, 3800); }
+function setLang(l){ S.lang=l; localSet('db.lang',l); document.documentElement.lang=l; document.documentElement.dir = l==='ar'?'rtl':'ltr';
+  $('#lang-ar').classList.toggle('on',l==='ar'); $('#lang-en').classList.toggle('on',l==='en');
+  document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t)); route(); }
+$('#lang-ar').onclick=()=>setLang('ar'); $('#lang-en').onclick=()=>setLang('en');
+$('#theme').onclick=()=>{ const r=document.documentElement; const cur=r.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  r.dataset.theme = cur==='dark'?'light':'dark'; localSet('db.theme', r.dataset.theme); };
+if(localGet('db.theme')) document.documentElement.dataset.theme = localGet('db.theme');
+
+const STATUS_CHIP = {not_started:'c-na',received:'c-rec',conforming:'c-ok',needs_attention:'c-warn',non_conforming:'c-bad',not_applicable:'c-na'};
+const LEVEL = {R:'required',O:'optional',NR:'notreq',NA:'na'};
+const chip = st => `<span class="chip ${STATUS_CHIP[st]||'c-na'}"><i></i>${esc(t(st))}</span>`;
+
+function nav(r){
+  const id = S.dossier && S.dossier.id;
+  [['navBoard','board'],['navExport','export'],['navAudit','audit']].forEach(([n,k])=>{const a=$('#'+n); a.href= id?`#/d/${id}/${k}`:'#'; a.setAttribute('aria-disabled', id?'false':'true');});
+  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on', a.dataset.r===r));
+  const m=$('#mobnav'); m.innerHTML = `<option value="#/">${esc(t('navDossiers'))}</option>` + (id?['board','export','audit'].map(k=>`<option value="#/d/${id}/${k}" ${k===r?'selected':''}>${esc(t('nav'+k[0].toUpperCase()+k.slice(1)))}</option>`).join(''):'');
+  m.onchange=()=>location.hash=m.value;
+  $('#crumb').innerHTML = S.dossier ? bdi(S.dossier.name) : esc(t('appName'));
+}
+async function route(){
+  const h = location.hash.replace(/^#/,'') || '/';
+  const m = h.match(/^\/d\/([^/]+)\/(board|export|audit)$/);
+  const v = $('#view');
+  try{
+    if(h==='/new'){ S.dossier=null; nav('home'); return wizard(); }
+    if(!m){ S.dossier=null; nav('home'); return home(); }
+    if(!S.dossier || S.dossier.id!==m[1]) S.dossier = await api(`/dossiers/${m[1]}`);
+    nav(m[2]);
+    if(m[2]==='board') return board();
+    if(m[2]==='export') return exportView();
+    return auditView();
+  }catch(e){ v.innerHTML = `<div class="alert bad"><p><b>${esc(t('err'))}:</b> ${esc(e.message)}</p></div>`; }
+}
+window.addEventListener('hashchange', route);
+
+/* ---------------- home */
+async function home(){
+  const list = await api('/dossiers');
+  $('#view').innerHTML = `<div class="head"><div><h1>${esc(t('dossiers'))}</h1><p class="sub">${esc(t('dossiersSub'))}</p></div>
+    <a class="btn pri" href="#/new" id="btnNew">＋ ${esc(t('newDossier'))}</a></div>
+    <div class="card">${list.length?`<div class="tablewrap"><table><thead><tr><th>${esc(t('name'))}</th><th class="hide-m">${esc(t('created'))}</th><th></th></tr></thead><tbody>
+    ${list.map(d=>`<tr><td>${bdi(d.name)}</td><td class="hide-m code">${new Date(d.created*1000).toLocaleString(S.lang==='ar'?'ar-EG':'en-GB')}</td>
+    <td style="text-align:end"><a class="btn sm" href="#/d/${d.id}/board">${esc(t('open'))}</a></td></tr>`).join('')}</tbody></table></div>`
+    :`<div class="empty">${esc(t('none'))}</div>`}</div>`;
+}
+
+/* ---------------- wizard */
+function wizard(){
+  if(!S.wiz) S.wiz = {step:0, d:{name:'',trade:'',form:'film-coated tablet',man:'',ind:'',dossier_kind:'generic',origin:'local',licence:'own',activity:'new',leaflet:'english',
+    specifics:[],pharmacopoeial:false,store:false,bio:false,novel:false,apis:[{name:'',manufacturer:'',option:'CEP'}],applicant:'',tracking:'',portal:'',inn:''}};
+  const w=S.wiz, d=w.d, steps=['step1','step2','step3','step4'];
+  const radio=(k,opts)=>`<div class="seg" role="radiogroup">${opts.map(o=>`<button type="button" data-k="${k}" data-v="${o}" class="${d[k]===o?'on':''}" aria-pressed="${d[k]===o}">${esc(t(o))}</button>`).join('')}</div>`;
+  const txt=(k,lab,ph='')=>`<label class="f"><span>${esc(t(lab))}</span><input type="text" data-in="${k}" value="${esc(d[k])}" placeholder="${esc(ph)}"></label>`;
+  let body='';
+  if(w.step===0) body=`<div class="form">${txt('name','pName','Examplol 500 mg FCT')}${txt('trade','pTrade')}${txt('form','pForm')}${txt('man','pMan')}${txt('ind','pInd','pain-and-fever')}</div>`;
+  if(w.step===1) body=`<div style="display:flex;flex-direction:column;gap:14px">
+    <label class="f"><span>${esc(t('kind'))}</span>${radio('dossier_kind',['generic','innovator'])}</label>
+    <label class="f"><span>${esc(t('origin'))}</span>${radio('origin',['local','imported'])}</label>
+    <label class="f"><span>${esc(t('licence'))}</span>${radio('licence', d.origin==='local'?['own','toll','f_toll','under_licence']:['imported','imported_bulk'])}</label>
+    <label class="f"><span>${esc(t('activity'))}</span>${radio('activity',['new','re_registration'])}</label>
+    <label class="f"><span>${esc(t('leaflet'))}</span>${radio('leaflet',['english','non_english'])}</label>
+    <div class="f"><span class="muted small" style="font-weight:600">${esc(t('specifics'))}</span><div class="checks">
+      ${['coated','capsule_hard','pellets','premix','powder_inj_with_solvent','sterile'].map(s=>`<label><input type="checkbox" data-spec="${s}" ${d.specifics.includes(s)?'checked':''}>${esc(t(s))}</label>`).join('')}</div></div>
+    <div class="checks">${[['pharmacopoeial','pharmacopoeial'],['store','store_separate'],['bio','bioorigin'],['novel','novelexc']].map(([k,l])=>`<label><input type="checkbox" data-flag="${k}" ${d[k]?'checked':''}>${esc(t(l))}</label>`).join('')}</div></div>`;
+  if(w.step===2) body=`<div style="display:flex;flex-direction:column;gap:10px">${d.apis.map((a,i)=>`<div class="form card pad" style="box-shadow:none">
+     <label class="f"><span>${esc(t('apiName'))}</span><input type="text" data-api="${i}" data-f="name" value="${esc(a.name)}"></label>
+     <label class="f"><span>${esc(t('apiMan'))}</span><input type="text" data-api="${i}" data-f="manufacturer" value="${esc(a.manufacturer)}"></label>
+     <label class="f"><span>${esc(t('apiOpt'))}</span><select data-api="${i}" data-f="option">${['CEP','DMF','PQ','FULL'].map(o=>`<option ${a.option===o?'selected':''}>${o}</option>`).join('')}</select></label>
+     ${d.apis.length>1?`<div style="align-self:end"><button class="btn sm" data-rmapi="${i}">${esc(t('remove'))}</button></div>`:''}</div>`).join('')}
+     <div><button class="btn" id="addApi">＋ ${esc(t('addApi'))}</button></div></div>`;
+  if(w.step===3) body=`<div class="form">${txt('applicant','applicant')}${txt('tracking','tracking','P-MAA-0001')}${txt('portal','portal')}${txt('inn','inn','paracetamol')}</div>`;
+  $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('newDossier'))}</h1></div></div>
+   <div class="steps">${steps.map((s,i)=>`<span class="${i===w.step?'on':''}"><span class="n">${i+1}</span>${esc(t(s))}</span>`).join('')}</div>
+   <div class="card pad" id="wizBody">${body}</div><div id="wizErr"></div>
+   <div class="toolbar"><a class="btn" href="#/" id="wizCancel">${esc(t('cancel'))}</a><span style="flex:1"></span>
+   ${w.step?`<button class="btn" id="wizBack">${esc(t('back'))}</button>`:''}
+   ${w.step<3?`<button class="btn pri" id="wizNext">${esc(t('next'))}</button>`:`<button class="btn pri" id="wizCreate">${esc(t('create'))}</button>`}</div>`;
+  const v=$('#view');
+  v.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{d[b.dataset.k]=b.dataset.v; if(b.dataset.k==='origin') d.licence = d.origin==='local'?'own':'imported'; wizard();});
+  v.querySelectorAll('[data-in]').forEach(i=>i.oninput=()=>d[i.dataset.in]=i.value);
+  v.querySelectorAll('[data-spec]').forEach(c=>c.onchange=()=>{d.specifics = c.checked? [...d.specifics,c.dataset.spec] : d.specifics.filter(x=>x!==c.dataset.spec);});
+  v.querySelectorAll('[data-flag]').forEach(c=>c.onchange=()=>d[c.dataset.flag]=c.checked);
+  v.querySelectorAll('[data-api]').forEach(i=>i.oninput=i.onchange=()=>d.apis[+i.dataset.api][i.dataset.f]=i.value);
+  v.querySelectorAll('[data-rmapi]').forEach(b=>b.onclick=()=>{d.apis.splice(+b.dataset.rmapi,1); wizard();});
+  if($('#addApi')) $('#addApi').onclick=()=>{d.apis.push({name:'',manufacturer:'',option:'FULL'}); wizard();};
+  $('#wizCancel').onclick=()=>{S.wiz=null;};
+  if($('#wizBack')) $('#wizBack').onclick=()=>{w.step--; wizard();};
+  if($('#wizNext')) $('#wizNext').onclick=()=>{w.step++; wizard();};
+  if($('#wizCreate')) $('#wizCreate').onclick=async()=>{
+    const profile={dossier_kind:d.dossier_kind,origin:d.origin,licence:d.licence,activity:d.activity,route:'one_submission',leaflet:d.leaflet,
+      dosage_specifics:d.specifics,pharmacopoeial:d.pharmacopoeial,store_separate_from_factory:d.store,biological_origin_materials:d.bio,novel_excipient:d.novel,
+      apis:d.apis.filter(a=>a.name&&a.manufacturer)};
+    try{
+      const r = await api('/dossiers',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:d.name||d.trade||'Dossier',profile,
+        product:{name:d.trade||d.name,dosageform:d.form,manufacturer:d.man,indication:d.ind||null},
+        envelope:{tracking:d.tracking,applicant:d.applicant,invented_name:d.trade||d.name,inn:d.inn.split(',').map(s=>s.trim()).filter(Boolean),portal_id:d.portal,description:'Initial MAA'}})});
+      S.wiz=null; location.hash=`#/d/${r.id}/board`;
+    }catch(e){
+      const probs = e.detail && e.detail.problems;
+      $('#wizErr').innerHTML=`<div class="alert bad"><p>${probs?probs.map(p=>esc(p[S.lang])).join('<br>'):esc(e.message)}</p></div>`;
+    }
+  };
+}
+
+/* ---------------- board */
+async function board(){
+  S.board = await api(`/dossiers/${S.dossier.id}/board`);
+  renderBoard();
+}
+function renderBoard(){
+  const b=S.board, c=b.counts, slots=b.slots;
+  const req = slots.filter(s=>s.level==='R'); const ready = req.filter(s=>['conforming','needs_attention'].includes(s.status)).length;
+  const pct = req.length? Math.round(100*ready/req.length):0;
+  const f=S.filter, m=S.module;
+  const show = s => (m===0||s.module===m) && (f==='all' ? true : f==='todo' ? (s.level!=='NR'&&s.level!=='NA'&&s.status!=='conforming') :
+     f==='problems' ? ['non_conforming','needs_attention'].includes(s.status) : (s.level==='NR'||s.level==='NA'));
+  let rows='', lastGroup='';
+  slots.filter(show).forEach(s=>{
+    const grp = `M${s.module}`;
+    if(grp!==lastGroup){ rows+=`<tr class="grp"><td colspan="5">${esc(t('module'))} ${s.module}</td></tr>`; lastGroup=grp; }
+    const api = s.item? `<span class="api">${bdi(s.item.name)} · ${bdi(s.item.manufacturer)} · <span class="code">${esc(s.item.option)}</span></span>`:'';
+    const files = s.documents.map(d=>`<div class="small"><span class="muted">${esc(t('version'))} ${d.version}</span> · ${bdi(d.filename)}${d.findings.length?` <span class="chip ${d.check_status==='non_conforming'?'c-bad':'c-warn'}">${d.findings.length}</span>`:''}</div>`).join('');
+    const can = s.level==='R'||s.level==='O';
+    rows+=`<tr><td><span class="code">${esc(s.ctd)}</span></td><td>${esc(s.title[S.lang])}<br>${api}</td>
+      <td class="hide-m"><span class="chip ${s.level==='R'?'c-rec':'c-na'}">${esc(t(LEVEL[s.level]))}</span></td><td>${chip(s.status)}</td>
+      <td>${files}<div class="toolbar" style="margin-top:4px">${can?`<button class="btn sm" data-up="${esc(s.slot_id)}">⤒ ${esc(t('upload'))}</button>`:''}
+      <button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></td></tr>`;
+  });
+  $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('board'))}</h1><p class="sub">${esc(t('boardSub'))}</p></div>
+    <a class="btn pri" href="#/d/${S.dossier.id}/export">${esc(t('navExport'))} ${S.lang==='ar'?'←':'→'}</a></div>
+    <div class="kpis">
+      <div class="card kpi br"><span class="n">${pct}%</span><span class="l">${esc(t('progress'))} (${ready}/${req.length})</span></div>
+      <div class="card kpi ns"><span class="n">${c.not_started||0}</span><span class="l">${esc(t('not_started'))}</span></div>
+      <div class="card kpi ok"><span class="n">${c.conforming||0}</span><span class="l">${esc(t('conforming'))}</span></div>
+      <div class="card kpi warn"><span class="n">${c.needs_attention||0}</span><span class="l">${esc(t('needs_attention'))}</span></div>
+      <div class="card kpi bad"><span class="n">${c.non_conforming||0}</span><span class="l">${esc(t('non_conforming'))}</span></div></div>
+    <div class="toolbar"><div class="seg" role="group">${['todo','problems','all','hidden'].map(k=>`<button data-f="${k}" class="${f===k?'on':''}">${esc(t(k))}</button>`).join('')}</div>
+      <div class="seg" role="group">${[0,1,2,3,4,5].map(k=>`<button data-m="${k}" class="${m===k?'on':''}">${k?'M'+k:esc(t('all'))}</button>`).join('')}</div></div>
+    <div class="card"><div class="tablewrap"><table><thead><tr><th>${esc(t('colSec'))}</th><th>${esc(t('colDoc'))}</th><th class="hide-m">${esc(t('colLevel'))}</th><th>${esc(t('colStatus'))}</th><th>${esc(t('colFiles'))}</th></tr></thead>
+    <tbody>${rows||`<tr><td colspan="5" class="empty">—</td></tr>`}</tbody></table></div></div>
+    ${b.unassigned.length?`<div class="card pad"><h2>${esc(t('unassigned'))}</h2><p class="sub">${esc(t('unassignedSub'))}</p>${b.unassigned.map(d=>`<div class="small">${bdi(d.filename)} <span class="code">${esc(d.meta.previous_slot||'')}</span></div>`).join('')}</div>`:''}`;
+  const v=$('#view');
+  v.querySelectorAll('[data-f]').forEach(x=>x.onclick=()=>{S.filter=x.dataset.f; renderBoard();});
+  v.querySelectorAll('[data-m]').forEach(x=>x.onclick=()=>{S.module=+x.dataset.m; renderBoard();});
+  v.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up));
+  v.querySelectorAll('[data-why]').forEach(x=>x.onclick=()=>openWhy(x.dataset.why));
+}
+function slotById(id){ return S.board.slots.find(s=>s.slot_id===id); }
+function needsMeta(s){ return s.req_id==='M1-09' ? 'pi' : (s.module===5 ? 'study' : null); }
+function startUpload(slotId){
+  const s=slotById(slotId), kind=needsMeta(s);
+  if(!kind) return pick(slotId, {});
+  openDrawer(s.title[S.lang], `<p class="muted">${esc(t('extra'))}</p>${kind==='pi'?
+    `<label class="f"><span>${esc(t('piType'))}</span><select id="mType"><option value="spc">SmPC</option><option value="pl">PIL / Leaflet</option><option value="outer">Outer label</option><option value="interpack">Inner label</option></select></label>
+     <label class="f"><span>${esc(t('piLang'))}</span><select id="mLang"><option value="en">English</option><option value="ar">العربية</option></select></label>`:
+    `<label class="f"><span>${esc(t('study'))}</span><input type="text" id="mStudy" placeholder="EXM-BE-01 — Bioequivalence of …"></label>
+     <label class="f"><span>${esc(t('docType'))}</span><select id="mDocType"><option value="ich_document_type_2">legacy clinical study report</option><option value="ich_document_type_4">study report body</option><option value="ich_document_type_3">synopsis</option><option value="ich_document_type_5">protocol or amendment</option></select></label>`}
+    <button class="btn pri" id="mGo">${esc(t('choose'))}</button>`);
+  $('#mGo').onclick=()=>{ const meta = kind==='pi'?{pi_type:$('#mType').value,lang:$('#mLang').value}:{study:$('#mStudy').value,doc_type:$('#mDocType').value};
+    if(kind==='study' && !meta.study){ $('#mStudy').focus(); return; } closeDrawer(); pick(slotId, meta); };
+}
+function pick(slotId, meta){
+  const p=$('#picker'); p.value='';
+  p.onchange=async()=>{ if(!p.files[0]) return; const fd=new FormData(); fd.append('file',p.files[0]); fd.append('meta',JSON.stringify(meta));
+    toast(t('uploading'));
+    try{ const doc = await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd});
+      toast(t('uploaded')+' '+t(doc.check_status)); await board(); if(doc.findings.length) openWhy(slotId); }
+    catch(e){ toast(e.message); } };
+  p.click();
+}
+function openWhy(slotId){
+  const s=slotById(slotId);
+  const locked = ['third_party_certificate','eda_document','executed_record','signed_scan'].includes(s.doc_class);
+  const reasons = s.reasons.map(r=>`<div class="finding"><div>${esc(r[S.lang]||r.en)}</div><div class="code small muted">${esc(r.source||'')}</div></div>`).join('');
+  const docs = s.documents.map(d=>`<div class="finding ${d.check_status==='non_conforming'?'block':''}">
+     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b><span class="muted">${esc(t('version'))} ${d.version}</span> · ${bdi(d.filename)}</b> ${chip(d.check_status)}</div>
+     ${d.findings.length? d.findings.map(f=>`<div class="small">● ${esc(f[S.lang])} <span class="code muted">${esc(f.rule)}</span><br><span class="muted">${esc(t('act_'+f.action))}</span></div>`).join('') : `<div class="small muted">${esc(t('noFind'))}</div>`}
+     <div class="toolbar"><a class="btn sm" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${d.id}/file">${esc(t('view'))}</a>
+     <button class="btn sm" data-wd="${d.id}">${esc(t('withdraw'))}</button></div></div>`).join('');
+  openDrawer(s.title[S.lang], `<div class="toolbar"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${chip(s.status)}</div>
+    ${locked?`<div class="alert"><p class="small">${esc(t('lockedNote'))}</p></div>`:''}
+    <h3>${esc(t('reasons'))}</h3>${reasons}${s.flags.length?`<div class="small muted code">${esc(s.flags.join(' · '))}</div>`:''}
+    ${s.documents.length?`<h3>${esc(t('docs'))}</h3>${docs}`:''}`);
+  $('#dBody').querySelectorAll('[data-wd]').forEach(b=>b.onclick=async()=>{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.wd}/withdraw`,{method:'POST'}); toast(t('withdrawn')); closeDrawer(); board(); });
+}
+function openDrawer(title, html){ $('#dTitle').textContent=title; $('#dBody').innerHTML=html; $('#drawer').hidden=false; $('#scrim').hidden=false; $('#dClose').focus(); }
+function closeDrawer(){ $('#drawer').hidden=true; $('#scrim').hidden=true; }
+$('#dClose').onclick=closeDrawer; $('#scrim').onclick=closeDrawer;
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
+
+/* ---------------- export */
+async function exportView(){
+  const g = await api(`/dossiers/${S.dossier.id}/gate`);
+  const list=(k,arr)=>arr.length?`<div><b>${esc(t(k))} (${arr.length})</b><div class="small code" style="white-space:normal">${arr.map(esc).join(' · ')}</div></div>`:'';
+  $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('export'))}</h1><p class="sub">${esc(t('exportSub'))}</p></div></div>
+   ${g.ok?`<div class="alert ok"><p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad"><p>${esc(t('gateBad'))}</p></div><div class="card pad" style="display:flex;flex-direction:column;gap:8px">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}
+     <div><a class="btn sm" href="#/d/${S.dossier.id}/board">${esc(t('navBoard'))}</a></div></div>`}
+   <div class="card pad" style="display:flex;flex-direction:column;gap:10px">
+     ${[['ctd','outCtd'],['ectd32','outE3'],['ectd40','outE4']].map(([k,l])=>`<label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-out="${k}" checked> <span>${esc(t(l))}</span></label>`).join('')}
+     <label class="alert" style="cursor:pointer"><input type="checkbox" id="ack"> <p class="small">${esc(t('ack'))}</p></label>
+     <div><button class="btn pri" id="go" ${g.ok?'':'disabled'}>${esc(t('doExport'))}</button></div></div><div id="res"></div>`;
+  $('#go').onclick=async()=>{ const outs=[...document.querySelectorAll('[data-out]:checked')].map(c=>c.dataset.out);
+    $('#go').disabled=true; $('#go').textContent=t('exporting');
+    try{ const r=await api(`/dossiers/${S.dossier.id}/export`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({outputs:outs,acknowledge_provisional:$('#ack').checked})});
+      $('#res').innerHTML=`<div class="card pad"><h2>${esc(t('downloads'))}</h2><div class="dl" style="margin-top:8px">${Object.entries(r.downloads).map(([k,u])=>`<a class="btn" href="${esc(u)}" download>⤓ ${esc(k)}.zip</a>`).join('')}</div><p class="small muted">${esc(r.label)}</p></div>`;
+    }catch(e){ $('#res').innerHTML=`<div class="alert bad"><p>${esc(e.message)}</p></div>`; }
+    finally{ $('#go').disabled=false; $('#go').textContent=t('doExport'); } };
+}
+
+/* ---------------- audit */
+async function auditView(){
+  const a = await api(`/dossiers/${S.dossier.id}/audit`);
+  $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('audit'))}</h1><p class="sub">${esc(t('auditSub'))}</p></div></div>
+   <div class="card"><div class="tablewrap"><table><thead><tr><th>${esc(t('when'))}</th><th>${esc(t('event'))}</th><th>${esc(t('detail'))}</th></tr></thead><tbody>
+   ${a.slice().reverse().map(x=>`<tr><td class="code">${new Date(x.ts*1000).toLocaleString(S.lang==='ar'?'ar-EG':'en-GB')}</td><td class="code">${esc(x.event)}</td>
+     <td class="small"><span class="code" style="white-space:normal">${esc(JSON.stringify(x.detail))}</span>
+     ${x.event==='document.withdrawn'?` <button class="btn sm" data-rs="${esc(x.detail.doc)}">${esc(t('restore'))}</button>`:''}</td></tr>`).join('')}</tbody></table></div></div>`;
+  $('#view').querySelectorAll('[data-rs]').forEach(b=>b.onclick=async()=>{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.rs}/restore`,{method:'POST'}); auditView(); });
+}
+setLang(S.lang);
+</script>
+</body>
+</html>

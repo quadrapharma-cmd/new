@@ -20,10 +20,19 @@ This folder is the code skeleton. It is kept here until the separate repository 
 | PDF checks | `engine/dossier_engine/checks/pdf.py` | PDF version 1.4–1.7, password and security settings, empty or corrupt files, Portfolio, JavaScript, searchable text (a scan is allowed for third-party certificates and blocks company documents), name ≤ 64. Each finding has a rule number, an Arabic/English message and an action (auto_fix / rebuild / re_obtain) |
 | Evidence lock | `engine/dossier_engine/guard.py` | Any operation that changes the content of a GMP certificate, CPP, EDA document or executed record → `E-LOCKED` + audit event. Only placement operations are allowed |
 | Generators | `engine/dossier_engine/generate/` | Annex I + the Arabic undertaking (text taken from NP.CAPP.065 v5 pp.27–30, conditional clauses: decree 450 case 1/3, re-registration, variations), composition certificate (core/coat, % and totals), salt calculation (formula + MW reference + assay), CEP commitment, translation declaration, cover letter, tracking table. Word with real RTL → PDF via LibreOffice, «مسودة — غير موقّعة» (unsigned draft) watermark. Missing data → `MissingData(fields)`, never a guess |
+| **App** | `engine/dossier_engine/app/` + `ui/index.html` | Local workspace (SQLite + files stored by hash: never overwritten, never deleted, every version kept), HTTP API on localhost, and an interface (Arabic/English, light/dark, phone width). Covered by an end-to-end Playwright test |
 | Assembler | `engine/dossier_engine/assemble.py` | Turns slots + files into writer documents. Picks the right node when a requirement has more than one (e.g. M1-04 new vs re-registration) |
 | CLI | `tools/resolve.py` | Prints the requirements board for a profile |
 
-## Run
+## Run the app (local, nothing leaves the machine)
+
+```bash
+pip install -r requirements-dev.txt          # + LibreOffice for Word → PDF
+python3 tools/serve.py ~/DossierBuilder      # then open http://127.0.0.1:8765/
+```
+The interface is Arabic first (RTL), with English one click away. The flow: new-dossier wizard (product → profile → active substances → submission) → requirements board (status, «why?», upload with an instant check) → export (gate + provisional acknowledgement → three zips) → activity log (restore anything withdrawn).
+
+## Run (engine and tests)
 
 ```bash
 pip install -r requirements-dev.txt
