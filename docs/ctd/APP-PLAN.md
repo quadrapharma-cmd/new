@@ -138,3 +138,15 @@ Company ─┬─ Parties (MAH, manufacturers, packager, releaser, store)
 | 2 Module 3 tables, QOS, cross-checks | ✅ can start | Real sample data (specs, batch results, stability) to test against |
 | 3 eCTD 3.2.2 | ⚠️ partial | Structure from the EG M1 spec draft is enough to build. **EG DTD, validation criteria and CV lists are missing**, so «EDA-valid» cannot be claimed |
 | 4 eCTD 4.0 | ⚠️ partial | ICH v4.0 complete; **the EG regional v4 package (CoU, keywords, OIDs) does not exist yet** (target Q1 2028) |
+
+## 11. Owner decision 06/11/2026: three outputs from the first release
+
+**CTD One Submission, eCTD 3.2.2 and eCTD 4.0 ship together.** The phases are rewritten in `design/01-PLAN.md`.
+
+What EDA has not published is completed from the EU model as provisional EG profiles, and every output is labelled «provisional»:
+- for v3.2.2: the DTD/mod files, the controlled vocabularies and the validation criteria;
+- for v4.0: the regional context-of-use list, keywords and OIDs.
+
+Profile locations:
+- `ectd/EG-PROVISIONAL-PROFILE-v0/`
+- `ectd/EG-PROVISIONAL-PROFILE-v4-v0/`

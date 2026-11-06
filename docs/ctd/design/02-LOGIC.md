@@ -199,6 +199,8 @@ Outputs:
 
 | Writer | Structure | Notes |
 |---|---|---|
+All three writers ship in the first release and read the same dossier model. Each eCTD writer loads its **regional profile pack** (provisional EG v0 now, official EG later).
+
 | `ctd.nta065` | Folders `Module 1/1.1.x …`, `Module 3/3.2.S/...` with titles; variation approvals in one sub-folder per variation (NP.CAPP.065 1.1.7); `index.html` navigator; readiness report | Today's One Submission (upload through the EDA Google Forms) |
 | `ectd.322` | `NNNN/` + `index.xml` (ICH DTD) + `index-md5.txt` + `util/dtd`, `util/style` + `m1/eg/eg-regional.xml` (profile) + ICH App. 4 names; `NNNN-workingdocuments/` | Leaf ops new/replace/delete; modified-file = `../NNNN/index.xml#id` |
 | `ectd.40` | `N/submissionunit.xml` + `sha256.txt` | Context of use from ICH CV; keywords; UUID reuse |
