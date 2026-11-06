@@ -26,6 +26,7 @@ def docs_for(slots, profile, files):
             kw = {}
             if s.item and node.startswith(('3.2.S', '2.3.S')):
                 kw = dict(substance=s.item['name'], manufacturer=s.item['manufacturer'])
-            out.append(Doc(node=node, file=f['file'], title=f.get('title') or s.title['en'][:120],
-                           pi_type=f.get('pi_type'), lang=f.get('lang'), **kw))
+            extra = {k: f[k] for k in ('pi_type', 'lang', 'study', 'doc_type', 'control', 'indication', 'excipient', 'uuid')
+                     if f.get(k)}
+            out.append(Doc(node=node, file=f['file'], title=f.get('title') or s.title['en'][:120], **extra, **kw))
     return out, unplaced

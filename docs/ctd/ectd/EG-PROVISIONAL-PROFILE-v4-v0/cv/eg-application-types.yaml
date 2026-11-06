@@ -100,16 +100,28 @@ related_lists:
     codes:
     - code: eg_regtype_local
       v322_token: local
-      display_name: Local
-      provenance: EG-DRAFT example value (SPEC p.18)
+      display_name: Locally Manufactured
+      provenance: EG-DRAFT example value (SPEC p.18); label HPG p.9
+    - code: eg_regtype_toll
+      v322_token: toll
+      display_name: Toll
+      provenance: EG-DRAFT label (HPG p.10, p.17 l.388); token ASSUMPTION — harmonised with v3.2.2 profile vocab/registration-type.yaml
+    - code: eg_regtype_f-toll
+      v322_token: f-toll
+      display_name: F-Toll
+      provenance: EG-DRAFT label (HPG p.9-10, p.15 l.285); token ASSUMPTION — harmonised with v3.2.2 profile
+    - code: eg_regtype_under-license
+      v322_token: under-license
+      display_name: Under License
+      provenance: EG-DRAFT label (HPG p.11, p.20 l.504); token ASSUMPTION — harmonised with v3.2.2 profile
     - code: eg_regtype_imported-finished
-      v322_token: (unknown)
+      v322_token: imported-finished
       display_name: Imported Finished
-      provenance: EG-DRAFT description example (SPEC p.18; TG p.28 l.755)
+      provenance: EG-DRAFT description example (SPEC p.18; TG p.28 l.755); token harmonised with v3.2.2 profile
     - code: eg_regtype_imported-bulk
-      v322_token: (unknown)
+      v322_token: imported-bulk
       display_name: Imported Bulk
-      provenance: EG-DRAFT description example (SPEC p.18; TG p.28 l.755)
+      provenance: EG-DRAFT description example (SPEC p.18; TG p.28 l.755); token harmonised with v3.2.2 profile
   marketing_type:
     code_system:
       name: EG Marketing Type
@@ -124,10 +136,19 @@ related_lists:
       v322_token: local
       display_name: Local
       provenance: EG-DRAFT example (SPEC p.19)
-    - code: eg_mkttype_tender-and-export
-      v322_token: (unknown)
-      display_name: Tender and Export
-      provenance: EG-DRAFT description example (SPEC p.19; TG p.28 l.758); ASSUMPTION that it is one value
+    - code: eg_mkttype_tender
+      v322_token: tender
+      display_name: Tender
+      provenance: EG-DRAFT HPG p.52 (Local/Tender/Export/Hospital); SPEC p.19 prints "Tender and Export" — split
+        per HPG, ASSUMPTION; harmonised with v3.2.2 profile
+    - code: eg_mkttype_export
+      v322_token: export
+      display_name: Export
+      provenance: EG-DRAFT HPG p.52; harmonised with v3.2.2 profile
+    - code: eg_mkttype_hospital
+      v322_token: hospital
+      display_name: Hospital
+      provenance: EG-DRAFT HPG p.52; harmonised with v3.2.2 profile
   territorial_authority:
     code_system:
       name: EG Territorial Authority

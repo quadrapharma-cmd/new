@@ -54,6 +54,11 @@ class Doc:
     pi_type: str = None          # 1.3.1: spc / pl / …
     lang: str = None             # 1.3.1: en / ar
     indication: str = None       # 2.7.3 / 5.3.5 (defaults to Product.indication)
+    study: str = None            # v4: 'study id_study title' keyword (M5 study reports)
+    doc_type: str = None         # v4: ICH document type code for study documents
+    control: str = None          # v4: ICH type-of-control code (5.3.5.1)
+    excipient: str = None        # v4: excipient keyword (3.2.P.4 / 3.2.A.3)
+    uuid: str = None             # v4: document UUID (reuse keeps it identical)
     name: str = None             # optional file stem override
     operation: str = 'new'
 
@@ -148,6 +153,33 @@ def _leaf_id(seq, href):
     return 'id' + uuid.uuid5(uuid.NAMESPACE_URL, f'{seq}/{href}').hex[:20]
 
 
+def rel_path(d, product, profile):
+    """v3.2.2 path of a document relative to the sequence folder."""
+    if d.node.startswith('1.'):
+        row = profile.m1.get(d.node)
+        if not row or row['kind'] not in ('leaf container', 'pi-doc container'):
+            raise WriterError(f'{d.node}: not a document heading in the EG M1 map')
+        directory = row['directory']
+        pat = (row['file_pattern'] or '').split(' | ')[0]
+        stem = d.name or (os.path.basename(pat).split('-VAR')[0].split('.')[0] if pat else slug(d.title))
+        if d.node == '1.3.1':
+            if not (d.pi_type and d.lang):
+                raise WriterError('1.3.1 needs pi_type and lang')
+            directory = f'{directory}/{d.lang}'
+            stem = d.name or d.pi_type
+        return f'{directory}/{stem}.pdf'
+    el = profile.ich_element(d.node)
+    directory, default = profile.ich_location(el)
+    if d.node.startswith(('3.2.S', '2.3.S')) and 'substance-1-manufacturer-1' in directory:
+        if not (d.substance and d.manufacturer):
+            raise WriterError(f'{d.node} needs substance and manufacturer')
+        directory = directory.replace('substance-1-manufacturer-1',
+                                      f'{slug(d.substance, 20)}-{slug(d.manufacturer, 20)}')
+    directory = directory.replace('product-1', slug(product.name, 30)).replace('/excipient-1', '')
+    stem = d.name or (default.rsplit('.', 1)[0] if default else slug(d.title))
+    return f'{directory}/{stem}.pdf'
+
+
 def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile32 = None):
     """Writes the sequence; returns a report dict {path, files, problems}."""
     profile = profile or Profile32()
@@ -162,30 +194,7 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
     for d in docs:
         if not Path(d.file).is_file():
             raise WriterError(f'missing file {d.file}')
-        if d.node.startswith('1.') or d.node == '1.0':
-            row = profile.m1.get(d.node)
-            if not row or row['kind'] not in ('leaf container', 'pi-doc container'):
-                raise WriterError(f'{d.node}: not a document heading in the EG M1 map')
-            directory = row['directory']
-            pat = (row['file_pattern'] or '').split(' | ')[0]
-            stem = d.name or (os.path.basename(pat).split('-VAR')[0].split('.')[0] if pat else slug(d.title))
-            if d.node == '1.3.1':
-                if not (d.pi_type and d.lang):
-                    raise WriterError('1.3.1 needs pi_type and lang')
-                directory = f'{directory}/{d.lang}'
-                stem = d.name or d.pi_type
-            rel = f'{directory}/{stem}.pdf'
-        else:
-            el = profile.ich_element(d.node)
-            directory, default = profile.ich_location(el)
-            if d.node.startswith(('3.2.S', '2.3.S')) and 'substance-1-manufacturer-1' in directory:
-                if not (d.substance and d.manufacturer):
-                    raise WriterError(f'{d.node} needs substance and manufacturer')
-                directory = directory.replace('substance-1-manufacturer-1',
-                                              f'{slug(d.substance, 20)}-{slug(d.manufacturer, 20)}')
-            directory = directory.replace('product-1', slug(product.name, 30)).replace('/excipient-1', '')
-            stem = d.name or (default.rsplit('.', 1)[0] if default else slug(d.title))
-            rel = f'{directory}/{stem}.pdf'
+        rel = rel_path(d, product, profile)
         n, k = rel, 2
         while n in used:                          # second document in the same heading
             n = rel[:-4] + f'-{k}.pdf'

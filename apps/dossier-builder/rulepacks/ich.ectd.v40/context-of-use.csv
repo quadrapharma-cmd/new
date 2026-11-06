@@ -1,0 +1,144 @@
+code,description,keywords,status
+ich_2,m2 common technical document summaries,,Retired
+ich_2.2,m2.2 introduction,,Active
+ich_2.3,m2.3 quality overall summary,,Active
+ich_2.3.i,m2.3 introduction,,Active
+ich_2.3.s,m2.3.s drug substance,"substance (O), manufacturer (O)",Active
+ich_2.3.p,m2.3.p drug product,"product (O), dosage form (O)",Active
+ich_2.3.a.1,m2.3.a.1 facilities and equipment,facility (O),Active
+ich_2.3.a.2,m2.3.a.2 adventitious agents safety evaluation,component (O),Active
+ich_2.3.a.3,m2.3.a.3 excipients,,Active
+ich_2.3.r,m2.3.r regional information,,Active
+ich_2.4,m2.4 nonclinical overview,,Active
+ich_2.5,m2.5 clinical overview,,Active
+ich_2.6.1,m2.6.1 introduction,,Active
+ich_2.6.2,m2.6.2 pharmacology written summary,,Active
+ich_2.6.3,m2.6.3 pharmacology tabulated summary,,Active
+ich_2.6.4,m2.6.4 pharmacokinetics written summary,,Active
+ich_2.6.5,m2.6.5 pharmacokinetics tabulated summary,,Active
+ich_2.6.6,m2.6.6 toxicology written summary,,Active
+ich_2.6.7,m2.6.7 toxicology tabulated summary,,Active
+ich_2.7.1,m2.7.1 summary of biopharmaceutic studies and associated analytical methods,,Active
+ich_2.7.2,m2.7.2 summary of clinical pharmacology studies,,Active
+ich_2.7.3,m2.7.3 summary of clinical efficacy,indication (R),Active
+ich_2.7.4,m2.7.4 summary of clinical safety,,Active
+ich_2.7.5,m2.7.5 literature references,,Active
+ich_2.7.6,m2.7.6 synopses of individual studies,,Active
+ich_3.2.s,m3.2.s drug substance,substance (O),Active
+ich_3.2.s.1,m3.2.s.1 general information,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.2,m3.2.s.2 manufacture,"substance (O), manufacturer (O)",Active
+ich_3.2.s.2.1,m3.2.s.2.1 manufacturer(s),"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.2.2,m3.2.s.2.2 description of manufacturing process and process controls,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.2.3,m3.2.s.2.3 control of materials,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.2.4,m3.2.s.2.4 controls of critical steps and intermediates,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.2.5,m3.2.s.2.5 process validation and/or  evaluation,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.2.6,m3.2.s.2.6 manufacturing process development,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.3,m3.2.s.3 characterisation,"substance (O), manufacturer (O)",Active
+ich_3.2.s.3.1,m3.2.s.3.1 elucidation of structure and other characteristics,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.3.2,m3.2.s.3.2 impurities,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.4,m3.2.s.4 control of drug substance,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.4.1,m3.2.s.4.1 specification,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.4.2,m3.2.s.4.2 analytical procedures,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.4.3,m3.2.s.4.3 validation of analytical procedures,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.4.4,m3.2.s.4.4 batch analyses,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.4.5,m3.2.s.4.5 justification of specification,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.5,m3.2.s.5 reference standards or materials,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.6,m3.2.s.6 container closure system,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.7,m3.2.s.7 stability,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.7.1,m3.2.s.7.1 stability summary and conclusions,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.7.2,m3.2.s.7.2 post-approval stability protocol and stability commitment,"substance (O), manufacturer (O), group title (O)",Active
+ich_3.2.s.7.3,m3.2.s.7.3 stability data,"substance (O), manufacturer (O), descriptor (O),  group title (O)",Active
+ich_3.2.p,m3.2.p drug product,"product (O), dosage form (O)",Active
+ich_3.2.p.1,m3.2.p.1 description and composition of the drug product,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.2,m3.2.p.2 pharmaceutical development,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.2.1,m3.2.p.2.1 components of the drug product,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.2.2,m3.2.p.2.2 drug product,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.2.3,m3.2.p.2.3 manufacturing process development,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.2.4,m3.2.p.2.4 container closure system,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.2.5,m3.2.p.2.5 microbiological attributes,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.2.6,m3.2.p.2.6 compatibility,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.3,m3.2.p.3 manufacture,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.3.1,m3.2.p.3.1 manufacturer(s),"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.3.2,m3.2.p.3.2 batch formula,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.3.3,m3.2.p.3.3 description of manufacturing process and process controls,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.3.4,m3.2.p.3.4 controls of critical steps and intermediates,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.3.5,m3.2.p.3.5 process validation and/or  evaluation,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.4,m3.2.p.4 control of excipients,"product (O), dosage form (O), manufacturer (O), excipient (O), group title (O)",Active
+ich_3.2.p.4.1,m3.2.p.4.1 specifications,"product (O), dosage form (O), manufacturer (O), excipient (O), group title (O)",Active
+ich_3.2.p.4.2,m3.2.p.4.2 analytical procedures,"product (O), dosage form (O), manufacturer (O), excipient (O), group title (O)",Active
+ich_3.2.p.4.3,m3.2.p.4.3 validation of analytical procedures,"product (O), dosage form (O), manufacturer (O), excipient (O), group title (O)",Active
+ich_3.2.p.4.4,m3.2.p.4.4 justification of specifications,"product (O), dosage form (O), manufacturer (O), excipient (O), group title (O)",Active
+ich_3.2.p.4.5,m3.2.p.4.5 excipients of human or animal origin,"product (O), dosage form (O), manufacturer (O), excipient (O), group title (O)",Active
+ich_3.2.p.4.6,m3.2.p.4.6 novel excipients,"product (O), dosage form (O), manufacturer (O), excipient (O), group title (O)",Active
+ich_3.2.p.5,m3.2.p.5 control of drug product,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.5.1,m3.2.p.5.1 specification(s),"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.5.2,m3.2.p.5.2 analytical procedures,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.5.3,m3.2.p.5.3 validation of analytical procedures,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.5.4,m3.2.p.5.4 batch analyses,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.5.5,m3.2.p.5.5 characterisation of impurities,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.5.6,m3.2.p.5.6 justification of specifications,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.6,m3.2.p.6 reference standards or materials,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.7,m3.2.p.7 container closure system,"product (O), dosage form (O), manufacturer (O), container (O), group title (O)",Active
+ich_3.2.p.8,m3.2.p.8 stability,"product (O), dosage form (O), manufacturer (O)",Active
+ich_3.2.p.8.1,m3.2.p.8.1 stability summary and conclusion,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.8.2,m3.2.p.8.2 post-approval stability protocol and stability commitment,"product (O), dosage form (O), manufacturer (O), group title (O)",Active
+ich_3.2.p.8.3,m3.2.p.8.3 stability data,"product (O), dosage form (O), manufacturer (O), descriptor (O), group title (O)",Active
+ich_3.2.a,m3.2.a appendices,,Active
+ich_3.2.a.1,m3.2.a.1 facilities and equipment,"facility (O), group title (O)",Active
+ich_3.2.a.2,m3.2.a.2 adventitious agents safety evaluation,"component (O), group title (O)",Active
+ich_3.2.a.3,m3.2.a.3 excipients,"excipient (O), group title (O)",Active
+ich_3.2.r,m3.2 r regional information,group title (O),Active
+ich_3.3,m3.3 literature references,group title (O),Active
+ich_4.2.1.1,m4.2.1 1 primary pharmacodynamics,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.1.2,m4.2.1 2 secondary pharmacodynamics,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.1.3,m4.2.1 3 safety pharmacology,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.1.4,m4.2.1 4 pharmacodynamic drug interactions,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.2.1,m4.2.2.1 analytical methods and validation reports,"study id_study title (R), document type (R), study group order (O),  group title (O)",Active
+ich_4.2.2.2,m4.2.2 2 absorption,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.2.3,m4.2.2.3 distribution,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.2.4,m4.2.2.4 metabolism,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.2.5,m4.2.2.5 excretion,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.2.6,m4.2.2.6 pharmacokinetic drug interactions,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.2.7,m4.2.2.7 other pharmacokinetic studies,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.1,m4.2.3.1 single-dose toxicity,"study id_study title (R), document type (R), species (R), route of admin (R), study group order (O), group title (O)",Active
+ich_4.2.3.2,m4.2.3.2 repeat-dose toxicity,"study id_study title (R), document type (R), species (R), route of admin (R), duration (O), study group order (O), group title (O)",Active
+ich_4.2.3.3.1,m4.2.3.3.1 in vitro,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.3.2,m4.2.3.3.2 in vivo,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.4.1,m4.2.3.4.1 long-term studies,"study id_study title (R), document type (R), species (R), study group order (O), group title (O)",Active
+ich_4.2.3.4.2,m4.2.3.4.2 short or medium-term studies,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.4.3,m4.2.3.4.3 other studies,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.5.1,m4.2.3.5.1 fertility and early embryonic development,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.5.2,m4.2.3.5.2 embryofetal development,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.5.3,"m4.2.3.5.3 prenatal and postnatal development, including maternal function","study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.5.4,m4.2.3.5.4 studies in which the offspring juvenile animals are dosed and/or further evaluated,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.6,m4.2.3.6 local tolerance,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.7.1,m4.2.3.7.1 antigenicity,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.7.2,m4.2.3.7.2 immunotoxicity,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.7.3,m4.2.3.7.3 mechanistic studies,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.7.4,m4.2.3.7.4 dependence,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.7.5,m4.2.3.7.5 metabolites,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.7.6,m4.2.3.7.6 impurities,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.2.3.7.7,m4.2.3.7.7 other,"study id_study title (R), document type (R), study group order (O), group title (O)",Active
+ich_4.3,m4.3 literature references,group title (O),Active
+ich_5.2,m5.2 tabular listing of all clinical studies,,Active
+ich_5.3.1.1,m5.3.1 1 bioavailability study reports,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.1.2,m5.3.1 2 comparative ba and bioequivalence study reports,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.1.3,m5.3.1 3 in vitro  in vivo correlation study reports,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.1.4,m5.3.1 4 reports of bioanalytical and analytical methods for human studies,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.2.1,m5.3.2.1 plasma protein binding study reports,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.2.2,m5.3.2.2 reports of hepatic metabolism and drug interaction studies,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.2.3,m5.3.2.3 reports of studies using other human biomaterials,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.3.1,m5.3.3.1 healthy subject pk and initial tolerability study reports,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.3.2,m5.3.3.2 patient pk and initial tolerability study reports,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.3.3,m5.3.3 3 intrinsic factor pk study reports,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.3.4,m5.3.3.4 extrinsic factor pk study reports,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.3.5,m5.3.3.5 population pk study reports,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.4.1,m5.3.4.1 healthy subject pd and pk/pd study reports,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.4.2,m5.3.4.2 patient pd and pk/pd study reports,"study id_study title (R), document type (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.5.1,m5.3.5.1 study reports of controlled clinical studies pertinent to the claimed indication,"study id_study title (R), document type (R), indication (R),  type of control (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.5.2,m5.3.5.2 study reports of uncontrolled clinical studies,"study id_study title (R), document type (R), indication (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.5.3,m5.3.5.3 reports of analyses of data from more than one study,"study id_study title (R), document type (R), indication (R), site-id (O), study group order (O), group title (O)",Active
+ich_5.3.5.4,m5.3.5.4 other study reports,"study id_study title (R), document type (R), indication (R), study group order (O), site-id (O), group title (O)",Active
+ich_5.3.6,m5.3.6 reports of postmarketing experience,"study id_study title (O), document type (O),  site-id (O), study group order (O), group title (O)",Active
+ich_5.3.7,m5.3.7 case report forms and individual patient listings,"study id_study title (O), document type (O),  site-id (O), study group order (O), group title (O)",Active
+ich_5.4,m5.4 literature references,group title (O),Active
