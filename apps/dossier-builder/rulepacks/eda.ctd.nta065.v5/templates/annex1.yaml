@@ -1,0 +1,87 @@
+# Annex I — Application form (NP.CAPP.065 v5, pp.27–30). Arabic clauses transcribed
+# from the PDF text layer (pypdf), normalised only for: mirrored brackets, tanween
+# («اا» → «ًا»), spacing around numbers, final ى→ي, «تقديمة»→«تقديمه», and
+# «Safety Periodic Report Update» (split across lines in the PDF) → «Periodic Safety
+# Update Report». Verify against the official EDA form before first real use
+# (provenance EG-IN-FORCE, transcription check = PENDING).
+id: annex1
+source: {doc: NP.CAPP.065, ver: 5, pages: 27-30}
+transcription_check: pending
+salutation_ar:
+  - "السيد الدكتور/ رئيس هيئة الدواء المصرية"
+  - "تحية طيبة وبعد،،،،"
+  - "نتقدم لسيادتكم بملف التسجيل للحصول على رخصة تسويق المستحضر الآتي:"
+sections:
+  - title: null
+    fields:
+      - {key: trade_name, label: "Trade Name: English and Arabic", required: true}
+      - {key: registration_number, label: "Registration Request number / Registration number", required: true}
+      - {key: actives_strengths, label: "Active Ingredient(s) & Strength (s)", required: true}
+      - {key: dosage_form, label: "Pharmaceutical dosage form", required: true}
+      - {key: route, label: "Route of administration", required: true}
+      - {key: physical_characters, label: "Physical Characters", required: true}
+      - {key: shelf_life, label: "Shelf Life", required: true}
+      - {key: storage, label: "Storage Condition", required: true}
+      - {key: price_pack, label: "Approved Price Pack", required: true,
+         note: "Kindly Specify No. of Units according to the Pricing Certificate & Packaging Material according to the Stability Approval."}
+      - {key: price, label: "Price", required: true}
+  - title: "Reference drug product (Note: According to bioequivalence approval)"
+    fields:
+      - {key: ref_name, label: "Name of reference product (RLD, RS,…)", required: true}
+      - {key: ref_mah, label: "Name of MAH, Manufacturer and country of origin", required: true}
+      - {key: ref_link, label: "Reference Link", required: true}
+      - {key: therapeutic_group, label: "Therapeutic Group", required: true}
+      - {key: atc, label: "ATC Code", required: true}
+      - {key: indication, label: "Approved Indication", required: true}
+  - title: null
+    fields:
+      - {key: applicant, label: "Applicant", required: true}
+      - {key: portal_username, label: "Company Profile Username", required: true}
+      - {key: mah, label: "Marketing Authorization Holder/License Holder", required: true}
+      - {key: manufacturer, label: "Manufacturer", required: true}
+      - {key: solvent_manufacturer, label: "Manufacturer of Solvent/ Accessories (If Applicable)", required: false}
+      - {key: packager, label: "Packager", required: true}
+      - {key: batch_releaser, label: "Batch releaser", required: true}
+      - {key: storage_site, label: "Storage Site & Address", required: true}
+      - {key: registration_type, label: "Type of registration", required: true}
+      - {key: market_status, label: "Market status", required: true}
+      - {key: decree, label: "EDA Chairman Decree", required: true}
+      - {key: batch_type, label: "Batch Type", required: true}
+      - {key: batch_numbers, label: "Batch Number(s)", required: true}
+api_box:   # repeated per API (note: «The above box can be repeated according to No. of APIs in Product»)
+  - {key: option, label: "API information submitted as", choices: [Prequalification, DMF, CEP, Full details in the PD]}
+  - {key: cep, label: "CEP number & issue date (If applicable)", required: false}
+  - {key: name_form_specs, label: "API Name / Form / Specs", required: true}
+  - {key: manufacturer_gmp_address, label: "Name of Manufacturer & country of origin + Address as in the manufacturer's GMP", required: true}
+  - {key: studies, label: "Studies that had been performed on each manufacturer of API", required: true}
+contact:
+  - {key: contact_person, label: "Contact person", required: true}
+  - {key: telephone, label: "Telephone number", required: true}
+  - {key: email, label: "E-mail", required: true}
+undertaking_intro_ar: "وأتعهد أنا الموقع أدناه {signatory} {signatory_title} شركة {company} بالآتي:"
+undertaking_ar:
+  - {text: "بأن كافة البيانات المذكورة أعلاه صحيحة ودقيقة وكاملة."}
+  - {text: "الالتزام بأحكام قانون حماية حقوق الملكية الفكرية رقم 82 لسنة 2002 ولائحته التنفيذية دون أدنى مسؤولية على هيئة الدواء المصرية."}
+  - {text: "الالتزام بطباعة اسم المصنع وعنوانه والشركة مالكة المستحضر (أو اسم الشركة مالكة الحق في التسويق للمستحضرات المستوردة بدلًا من الشركة مالكة المستحضر وذلك طبقًا لشهادة CPP المقدمة) وتاريخ الإنتاج وتاريخ انتهاء الصلاحية ورقم التشغيلة ورقم التسجيل والسعر على العبوة الخارجية وعدم إحداث أي تغيير في المستحضر إلا بعد الحصول على موافقة هيئة الدواء المصرية."}
+  - {text: "إخطار هيئة الدواء المصرية بأسماء جميع الموزعين المعتمدين وبأي تغيير يطرأ على البيانات الخاصة بهم والتأكد من أن الموزع المعتمد يطبق قواعد التخزين والتوزيع الجيد (GSP&GDP) ومتابعتها من قبل الإدارة العامة للتفتيش على المصانع."}
+  - {text: "عدم تغيير مصادر المادة الخام الفعالة إلا بعد موافقة الإدارة العامة لتسجيل المستحضرات البشرية، وإلا يلغى إخطار التسجيل."}
+  - {text: "تحمل المسئولية الكاملة عن تخزين المواد الخام، وعن جميع مراحل تصنيع المستحضر، وعن مطابقة المستحضر للمواصفات الفنية وتخزين المنتج حتى تمام التوزيع وفى حالة التصنيع لدى الغير يشترط أن يكون المصنع مرخصًا وأن يلتزم بجميع الالتزامات الواردة بهذا القرار بقواعد التصنيع الجيد وما ورد بالقرار الوزاري 539 لسنة 2007 بشأن اعتماد المدونة المصرية لأساليب التصنيع الجيد للمستحضرات الصيدلية."}
+  - {text: "لا يتم نقل مكان التصنيع أو نقل الملكية إلا بعد موافقة الإدارة العامة لتسجيل المستحضرات البشرية، وإلا يلغى إخطار التسجيل."}
+  - {when: "origin == 'local' and decree_case == '450-Case1'",
+     text: "لا يتم نقل ملكية المستحضرات المحلية إلا بعد مرور ثلاث سنوات من التداول المحلي وموافقة الإدارة العامة لتسجيل المستحضرات البشرية، وإلا يلغى إخطار التسجيل (في حالة المستحضرات المقدمة طبقًا للقرار الوزاري 425/2015 وقرار رئيس هيئة الدواء المصرية رقم 450/2023 الحالة الأولى)."}
+  - {when: "origin == 'local' and decree_case == '450-Case3'",
+     text: "لا يتم نقل ملكية المستحضرات المحلية إلا بعد مرور خمس سنوات من التداول المحلي وموافقة الإدارة العامة لتسجيل المستحضرات البشرية، وإلا يلغى إخطار التسجيل (في حالة المستحضرات المقدمة طبقًا للقرار الوزاري 645/2018 وقرار رئيس هيئة الدواء المصرية رقم 450/2023 الحالة الثالثة)."}
+  - {text: "أن جميع البيانات المقدمة بملف التحليل بالإدارة المركزية للرقابة الدوائية للمستحضر مطابقة لما تم تقديمه بملف التسجيل بهيئة الدواء المصرية وأن جميع المستندات والبيانات صحيحة وعلى مسئوليتي الخاصة."}
+  - {text: "تقديم شهادة الـ GMP وشهادة التحليل الخاصة بالمادة الخام، وذلك عند التقدم لاستيراد المادة الخام بهيئة الدواء المصرية."}
+  - {text: "إبلاغ الإدارة العامة لليقظة الصيدلية عن أي آثار عكسية خطيرة يتم رصدها عن هذا المستحضر وتقديم تقرير Periodic Safety Update Report، ومتابعة مأمونية مستحضراتها وتنفيذ جميع أنشطة اليقظة الدوائية وذلك وفقًا للمهل المحددة والقواعد الواردة بأسس الممارسة الجيدة لليقظة الدوائية الصادرة والمفعلة من الإدارة."}
+  - {text: "سوف يتم توزيع المستحضر عن طريق الشركات الآتية: {distributors}"}
+  - {when: "activity == 're_registration'",
+     text: "تم إجراء دراسات إعادة التسجيل (تحليل بالإدارة المركزية للرقابة الدوائية / دراسة الثبات / دراسة التكافؤ الحيوي / معدل الذوبان) على تشغيلات إنتاجية باستخدام مصدر المادة الخام: {rereg_studies_api_source}"}
+  - {when: "activity == 're_registration' and pending_studies_api_source",
+     text: "تتعهد الشركة باستكمال الدراسات على تشغيلات إنتاجية باستخدام مصدر المادة الخام: {pending_studies_api_source}"}
+  - {text: "{variations_statement}"}
+variations_statement_ar:
+  with: "تم عمل المتغيرات (Variations) الآتية للمستحضر عن آخر إخطار تسجيل للمستحضر (لإعادة التسجيل) / موافقة طلب الاستعلام (للمستحضرات الجديدة):"
+  none: "لم يتم عمل أي متغيرات (Variations) للمستحضر عن آخر إخطار تسجيل للمستحضر (لإعادة التسجيل) / موافقة طلب الاستعلام (للمستحضرات الجديدة)."
+variations_table: [Type of Variation, From, To, "Status (Final /Conditioned)"]
+signature_ar: ["رئيس مجلس الإدارة أو المفوض إليه بالإمضاء", "ختم الشركة", "الاسم:", "التوقيع:", "التاريخ:"]
