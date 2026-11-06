@@ -1,0 +1,19 @@
+# EG agency code - EG provisional profile v0 (PROVISIONAL, not issued by EDA). Built 2026-11-06.
+# Field: envelope/agency/@code
+# provenance: EG-DRAFT (stated in an EDA draft) | EU-DERIVED | ASSUMPTION (reason in note)
+# Sources: SPEC = EG Module 1 eCTD Specification draft v1.0/2026; TG = Technical Guidance for eCTD Submissions in Egypt draft v1.0/2026;
+#          HPG = EG Human Pharmaceutical Module 1 Submission Guidance draft v1/2026; EU = EU M1 v3.1.1 / eu-envelope.mod 3.1.
+vocabulary: "EG agency code"
+field: "envelope/agency/@code"
+status: PROVISIONAL
+intro: "SPEC App. 2.4 p.78."
+values:
+  - value: "EG-EDA"
+    label: "Egyptian Drug Authority"
+    provenance: "EG-DRAFT"
+    source: "SPEC p.18, App. 2.4 p.78 l.336-337"
+    note: "Decision D-01: TG p.27 l.743 says 'EDA'; SPEC (the XML specification) and the EU CC-ACRONYM pattern give EG-EDA."
+excluded_values:
+  - value: "EDA"
+    source: "TG p.27 l.743 ('This authority code is EDA for Egypt')"
+    reason: "Conflicts with SPEC; decision D-01 keeps EG-EDA."

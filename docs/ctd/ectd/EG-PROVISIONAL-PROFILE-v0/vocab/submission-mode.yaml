@@ -1,0 +1,34 @@
+# EG submission mode - EG provisional profile v0 (PROVISIONAL, not issued by EDA). Built 2026-11-06.
+# Field: envelope/submission/@mode
+# provenance: EG-DRAFT (stated in an EDA draft) | EU-DERIVED | ASSUMPTION (reason in note)
+# Sources: SPEC = EG Module 1 eCTD Specification draft v1.0/2026; TG = Technical Guidance for eCTD Submissions in Egypt draft v1.0/2026;
+#          HPG = EG Human Pharmaceutical Module 1 Submission Guidance draft v1/2026; EU = EU M1 v3.1.1 / eu-envelope.mod 3.1.
+vocabulary: "EG submission mode"
+field: "envelope/submission/@mode"
+status: PROVISIONAL
+intro: "Only for variation activities, in every sequence of the activity (SPEC p.8 l.78-80, p.15; TG p.27 l.722-724)."
+values:
+  - value: "single"
+    label: "A Single Regulatory Activity"
+    provenance: "EG-DRAFT"
+    source: "SPEC p.8 l.79, p.15; TG p.72"
+    note: ""
+  - value: "grouping"
+    label: "A Grouped Activity"
+    provenance: "EG-DRAFT"
+    source: "SPEC p.8 l.79, p.15; TG p.72"
+    note: "Meaning differs: Human Pharmaceuticals = several variations, one product; Biological and Innovative = also one or several variations for several products (SPEC p.15; TG p.72). 'grouped' in TG p.17 l.430 read as this token."
+  - value: "parallel-single"
+    label: "Parallel Assessment Single RA (imported products, evaluated together with the country of origin)"
+    provenance: "EG-DRAFT"
+    source: "SPEC p.8 l.79, p.15; TG p.72 ('Parallel Single')"
+    note: "Decision D-06: hyphenated token from SPEC p.8; TG prints a title with a space."
+  - value: "parallel-grouping"
+    label: "Parallel Assessment Grouped RA"
+    provenance: "EG-DRAFT"
+    source: "SPEC p.8 l.79 (p.15 prints 'parallel  grouping'); TG p.72 ('Parallel Grouping')"
+    note: "Definition identical to parallel-single in both drafts (SPEC p.15)."
+excluded_values:
+  - value: "worksharing"
+    source: "EU eu-envelope.mod"
+    reason: "EU worksharing procedure; no EG equivalent in either draft."

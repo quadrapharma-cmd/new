@@ -1,0 +1,34 @@
+# EG marketing type - EG provisional profile v0 (PROVISIONAL, not issued by EDA). Built 2026-11-06.
+# Field: envelope/marketing/@type
+# provenance: EG-DRAFT (stated in an EDA draft) | EU-DERIVED | ASSUMPTION (reason in note)
+# Sources: SPEC = EG Module 1 eCTD Specification draft v1.0/2026; TG = Technical Guidance for eCTD Submissions in Egypt draft v1.0/2026;
+#          HPG = EG Human Pharmaceutical Module 1 Submission Guidance draft v1/2026; EU = EU M1 v3.1.1 / eu-envelope.mod 3.1.
+vocabulary: "EG marketing type"
+field: "envelope/marketing/@type"
+status: PROVISIONAL
+intro: "Not in the EU model (EG-only field). The 'Marketing Type CV' is referenced (SPEC p.19; TG p.28 l.757-759) but unpublished."
+values:
+  - value: "local"
+    label: "Local market"
+    provenance: "EG-DRAFT"
+    source: "SPEC p.19 (example 'local'); TG p.28 l.758; HPG p.52"
+    note: ""
+  - value: "tender"
+    label: "Tender"
+    provenance: "ASSUMPTION"
+    source: "SPEC p.19; TG p.28 l.758; HPG p.52"
+    note: "Decision D-07: 'Tender and Export' read as two values (HPG p.52 lists them separately); token is our choice."
+  - value: "export"
+    label: "Export"
+    provenance: "ASSUMPTION"
+    source: "SPEC p.19; TG p.28 l.758; HPG p.52"
+    note: "See 'tender'."
+  - value: "hospital"
+    label: "Hospital use"
+    provenance: "ASSUMPTION"
+    source: "HPG p.52 (pack-type list 'Local/Tender/Export/Hospital use')"
+    note: "Only evidence is a pack-type list in a variation form; included so a hospital-only pack is not rejected; drop if EDA's CV lacks it."
+excluded_values:
+  - value: "tender-and-export"
+    source: "SPEC p.19 wording 'Tender and Export'"
+    reason: "Alternative reading of decision D-07; not used."
