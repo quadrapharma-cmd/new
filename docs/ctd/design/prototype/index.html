@@ -132,6 +132,38 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--surface-2)}
 .toast{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));inset-inline-start:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:40;max-width:calc(100% - 32px)}
 html[dir="rtl"] .toast{transform:translateX(50%)}
 .ex{font-size:11px;color:var(--muted);border:1px dashed var(--line);border-radius:6px;padding:1px 6px}
+
+.pub{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr) minmax(240px,320px);gap:12px;min-height:560px}
+.pub .card{display:flex;flex-direction:column;min-height:0}
+.pane-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:600}
+.tree{overflow:auto;padding:6px 4px;font-size:13px}
+.tree details{margin-inline-start:10px}
+.tree summary{list-style:none;cursor:pointer;padding:4px 6px;border-radius:6px;display:flex;gap:6px;align-items:center}
+.tree summary::-webkit-details-marker{display:none}
+.tree summary::before{content:"▸";color:var(--muted);font-size:10px;transition:transform .15s}
+.tree details[open]>summary::before{transform:rotate(90deg)}
+html[dir="rtl"] .tree summary::before{content:"◂"}
+html[dir="rtl"] .tree details[open]>summary::before{transform:rotate(-90deg)}
+.tree .node{display:flex;gap:6px;align-items:center;padding:4px 6px 4px 22px;border-radius:6px;cursor:pointer}
+html[dir="rtl"] .tree .node{padding:4px 22px 4px 6px}
+.tree .node:hover,.tree summary:hover{background:var(--surface-2)}
+.tree .node.sel{background:var(--brand-soft);color:var(--brand);font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.d-ok{background:var(--ok)}.d-bad{background:var(--bad)}.d-warn{background:var(--warn)}.d-na{background:var(--na)}.d-wait{background:var(--wait)}
+.drop{margin:10px 12px;border:1.5px dashed var(--line);border-radius:8px;padding:14px;text-align:center;color:var(--muted)}
+.drop.hot{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+.op{font-family:var(--f-mono);font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px}
+.op.new{background:var(--ok-soft);color:var(--ok)}.op.replace{background:#E6EEFB;color:#1E40AF}.op.delete{background:var(--bad-soft);color:var(--bad)}
+.props{padding:12px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.kv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:4px 8px;font-size:12.5px}
+.kv span:nth-child(odd){color:var(--muted)}
+.seqbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.modeswitch{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.modeswitch a{padding:6px 12px;text-decoration:none;color:var(--muted)}
+.modeswitch a.on{background:var(--brand);color:var(--brand-ink)}
+.vrep{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}
+@media (max-width:1100px){.pub{grid-template-columns:minmax(0,1fr)}}
+.pane-h{flex-wrap:wrap;min-width:0}.kv span{min-width:0;overflow-wrap:anywhere}
 @media (max-width:1100px){.mods{grid-template-columns:repeat(3,minmax(0,1fr))}.tpl{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}}
 @media (max-width:820px){
   .app{grid-template-columns:1fr}
@@ -162,7 +194,7 @@ html[dir="rtl"] .toast{transform:translateX(50%)}
 <script>
 const T={
  en:{appname:"Dossier Builder",wsrole:"· Preparer · Approver",search:"Search dossiers, documents, rules…",lang:"العربية",
-  home:"Home",dossier:"Dossier",reqs:"Requirements",gen:"Generate",vars:"Variations",exp:"Export",packs:"Rule packs",grp1:"Workspace",grp2:"Examplol 500 mg",
+  home:"Home",dossier:"Dossier",reqs:"Requirements",gen:"Generate",vars:"Variations",exp:"Export",packs:"Rule packs",pubv:"Publisher view",guided:"Guided",expert:"Publisher",seq:"Sequence",env:"Envelope",validate:"Validate",publish:"Publish",dropTxt:"Drop files on a section, or here — they are named, placed and checked automatically",props:"Properties",lifec:"Lifecycle",vrep:"Validation report",pubSub:"Expert mode for publishers: CTD tree, documents and lifecycle per section, properties and checks.",grp1:"Workspace",grp2:"Examplol 500 mg",
   hTitle:"Good morning, Mona",hSub:"3 dossiers in progress · 1 ready to export",kInp:"In progress",kBlk:"Blocking items",kWait:"Waiting on third party",kRdy:"Ready to export",
   alertTxt:"EDA published draft NP.CAPP.065 v6 and the EG Module 1 guidance (consultation closed 29/10/2026). 2 dossiers would change.",review:"Review impact",
   tProd:"Product",tType:"Type",tAct:"Activity",tPack:"Rules",tReady:"Readiness",tBlk:"Blocking",tOwner:"Owner",newD:"New dossier",
@@ -186,7 +218,7 @@ const T={
   sample:"Example data",toastGen:"Composition certificate created · DOCX + PDF (unsigned draft)",toastAdd:"Added to basket",toastReq:"Request letter to the GMP issuer created",toastExp:"Export blocked: resolve the blocking items first",
  },
  ar:{appname:"مُعِدّ الملف",wsrole:"· مُعِد · معتمِد",search:"ابحث في الملفات والمستندات والقواعد…",lang:"English",
-  home:"الرئيسية",dossier:"الملف",reqs:"المتطلبات",gen:"التوليد",vars:"التغييرات",exp:"التصدير",packs:"حزم القواعد",grp1:"مساحة العمل",grp2:"Examplol 500 mg",
+  home:"الرئيسية",dossier:"الملف",reqs:"المتطلبات",gen:"التوليد",vars:"التغييرات",exp:"التصدير",packs:"حزم القواعد",pubv:"وضع الناشر",guided:"إرشادي",expert:"الناشر",seq:"التسلسل",env:"بيانات الـ Envelope",validate:"تحقق",publish:"نشر",dropTxt:"اسحب الملفات على القسم أو هنا — تُسمّى وتوضع وتُفحص تلقائياً",props:"الخصائص",lifec:"دورة الحياة",vrep:"تقرير التحقق",pubSub:"وضع الخبير للناشر: شجرة الـ CTD، ومستندات كل قسم ودورة حياتها، والخصائص والفحوص.",grp1:"مساحة العمل",grp2:"Examplol 500 mg",
   hTitle:"صباح الخير يا منى",hSub:"3 ملفات قيد الإعداد · ملف واحد جاهز للتصدير",kInp:"قيد الإعداد",kBlk:"بنود مانعة",kWait:"بانتظار جهات خارجية",kRdy:"جاهزة للتصدير",
   alertTxt:"نشرت الهيئة مسودة NP.CAPP.065 الإصدار 6 ودليل تقديم Module 1 (أُغلقت الاستشارة 29/10/2026). سيتأثر ملفان.",review:"راجِع الأثر",
   tProd:"المستحضر",tType:"النوع",tAct:"الإجراء",tPack:"القواعد",tReady:"الجاهزية",tBlk:"مانع",tOwner:"المسؤول",newD:"ملف جديد",
@@ -236,10 +268,10 @@ const SLOTS=[
  {id:'5.3.1.2',en:'Bioequivalence study report',ar:'تقرير دراسة التكافؤ الحيوي',src:'GL.CAPP.024 v4',st:'ok',cls:'company',act:'a_view'},
 ];
 
-const views={home,dossier,reqs,gen,vars,exp,wizard,packs};
+const views={home,dossier,reqs,gen,vars,exp,wizard,packs,pub};
 function nav(){
  const it=(h,k)=>`<a href="#${h}" class="${(location.hash.slice(1)||'home')===h?'on':''}">${t(k)}</a>`;
- document.getElementById('nav').innerHTML=`<div class="grp">${t('grp1')}</div>${it('home','home')}${it('packs','packs')}<div class="grp">${t('grp2')}</div>${it('dossier','dossier')}${it('reqs','reqs')}${it('gen','gen')}${it('vars','vars')}${it('exp','exp')}`;
+ document.getElementById('nav').innerHTML=`<div class="grp">${t('grp1')}</div>${it('home','home')}${it('packs','packs')}<div class="grp">${t('grp2')}</div>${it('dossier','dossier')}${it('reqs','reqs')}${it('pub','pubv')}${it('gen','gen')}${it('vars','vars')}${it('exp','exp')}`;
 }
 function render(){
  document.documentElement.lang=L; document.documentElement.dir=L==='ar'?'rtl':'ltr';
@@ -303,7 +335,7 @@ function openSlot(id){
   <header><div><span class="code">${s.id}</span><h2>${ar?s.ar:s.en}</h2><div style="margin-top:6px">${chip(s.st)} <span class="src">${s.src}</span></div></div><button class="btn ghost" onclick="closeL()" aria-label="${t('close')}">✕</button></header>
   <div class="body">
    ${s.lock?`<div class="lock">🔒<div><b>${t('lockT')}</b><br>${t('lockD')}</div></div>`:''}
-   <div><h2 style="margin-bottom:8px">${t('dChecks')}</h2><div style="display:flex;flex-direction:column;gap:8px">${checks.map(([k,m,w,src])=>`<div class="check ${k}"><span class="ic">${k==='ok'?'✓':k==='bad'?'!':'~'}</span><p><b>${m}</b>${w?`<br><span class="sub">${w}</span>`:''}${src?` <span class="src">${src}</span>`:''}</p></div>`).join('')}</div></div>
+   <div><h2 style="margin-bottom:8px">${t('dChecks')}</h2><div style="display:flex;flex-direction:column;gap:8px">${checks.map(([k,m,w,src])=>`<div class="check ${k}"><span class="ic">${k==='ok'?'✓':k==='bad'?'!':'~'}</span><p><b><bdi>${m}</bdi></b>${w?`<br><span class="sub">${w}</span>`:''}${src?` <span class="src">${src}</span>`:''}</p></div>`).join('')}</div></div>
    <div><h2 style="margin-bottom:8px">${t('dHist')}</h2><p class="sub">v3 · 05/11/2026 · Mona · <span class="code">sha256 7e1c…a90b</span><br>v2 · 28/10/2026 · Mona<br>v1 · 12/10/2026 · upload</p></div>
   </div>
   <footer>${s.lock?`<button class="btn pri" onclick="toast('toastReq');closeL()">${t('a_req')}</button><button class="btn" onclick="lockModal()">${t('editTry')}</button>`:s.cls==='generated'?`<a class="btn pri" href="#gen" onclick="closeL()">${t('a_reb')}</a>`:`<button class="btn pri">${t('a_fix')}</button>`}<button class="btn" onclick="closeL()">${t('close')}</button></footer>
@@ -368,6 +400,65 @@ function packs(){const p=[['eda.ctd.nta065','NP.CAPP.065',' v5 · 01/11/2025','i
  <div class="head"><div><h1>${t('packs')}</h1><p class="sub">${t('packsSub')}</p></div></div>
  <div class="card tablewrap"><table><thead><tr><th>Pack</th><th>${L==='ar'?'المصدر':'Source'}</th><th>${L==='ar'?'الإصدار':'Version'}</th><th>${L==='ar'?'الحالة':'Status'}</th></tr></thead><tbody>
  ${p.map(r=>`<tr><td class="code">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><span class="chip ${c[r[3]]}"><i></i>${t(r[3])}</span></td></tr>`).join('')}</tbody></table></div>`)}
+
+
+const TREE=[
+ ['m1','Module 1 · Regional (EG)',[
+   ['1.0','1.0 Cover letter & tracking table','ok'],
+   ['1.2.1','1.2.1 Application form','ok'],
+   ['1.2.2','1.2.2 Legal documents','bad'],
+   ['1.2.3','1.2.3 EDA approvals','wait'],
+   ['1.2.8','1.2.8 Composition documents','bad'],
+   ['1.3.1','1.3.1 SmPC, labelling, PIL (en/ar)','warn']]],
+ ['m2','Module 2 · Summaries',[['2.3','2.3 Quality overall summary','na']]],
+ ['m3','Module 3 · Quality',[
+   ['3.2.S','3.2.S Drug substance [Paracetamol · Euro API]','ok'],
+   ['3.2.S-2','3.2.S Drug substance [Paracetamol · Sino API]','warn'],
+   ['3.2.P.1','3.2.P.1 Description and composition','ok'],
+   ['3.2.P.5.4','3.2.P.5.4 Batch analyses','bad'],
+   ['3.2.P.8','3.2.P.8 Stability','warn'],
+   ['3.2.R','3.2.R Regional information','na']]],
+ ['m5','Module 5 · Clinical',[['5.3.1.2','5.3.1.2 Comparative BA/BE study reports','ok']]]];
+const LEAVES={
+ '3.2.P.5.4':[['batch-analyses-ex0001.pdf','Batch analyses EX0001','new','0000','bad'],['batch-analyses-ex0002.pdf','Batch analyses EX0002','new','0000','ok']],
+ '1.2.8':[['composition-certificate.pdf','Composition certificate','new','0000','bad'],['salt-calculation.pdf','Salt equivalence calculation','new','0000','ok']],
+ '1.2.2':[['gmp-certificate-site-a.pdf','GMP certificate · Site A','new','0000','bad'],['register-of-trade.pdf','Register of trade','new','0000','ok']],
+ '1.0':[['cover-letter.pdf','Cover Letter for Sequence 0000','new','0000','ok'],['tracking-var.pdf','Tracking table','new','0000','ok']]};
+let selN='3.2.P.5.4', selL=0, seqN='0000', fmt='e3';
+function pub(){
+ const leaves=LEAVES[selN]||[['document.pdf','Document','new','0000','ok']]; const lf=leaves[selL]||leaves[0];
+ const path=(fmt==='e3'?'0000/m3/32-body-data/32p-drug-prod/examplol-500-mg-fct/32p5-contr-drug-prod/32p54-batch-analys/':fmt==='e4'?'1/m3/':'Module 3/3.2.P.5.4 Batch Analyses/')+lf[0];
+ V(`<div class="head"><div><h1>${t('pubv')}</h1><p class="sub">${t('pubSub')} <span class="ex">${t('sample')}</span></p></div>
+  <div class="seqbar"><span class="modeswitch"><a href="#reqs">${t('guided')}</a><a class="on" href="#pub">${t('expert')}</a></span>
+   <div class="seg">${[['ctd','CTD'],['e3','eCTD 3.2.2'],['e4','eCTD 4.0']].map(([k,l])=>`<button class="${fmt===k?'on':''}" onclick="fmt='${k}';pub()">${l}</button>`).join('')}</div>
+   <label class="sub" for="sq">${t('seq')}</label><select id="sq" class="btn" dir="ltr" onchange="seqN=this.value"><option>0000 · initial · maa</option><option>0001 · response</option></select>
+   <button class="btn" onclick="envModal()">${t('env')}</button><button class="btn" onclick="toast('toastExp')">${t('validate')}</button><button class="btn pri" onclick="toast('toastExp')">${t('publish')}</button></div></div>
+  <div class="pub">
+   <div class="card"><div class="pane-h">CTD <span class="sub" style="font-weight:400">Examplol 500 mg</span></div>
+    <div class="tree">${TREE.map(([id,n,ch])=>`<details open><summary><bdi>${n}</bdi></summary>${ch.map(([k,l,st])=>`<div class="node ${k===selN?'sel':''}" onclick="selN='${k}';selL=0;pub()" ondragover="event.preventDefault();this.classList.add('sel')" ondrop="event.preventDefault();toast('toastGen')"><span class="dot d-${st}"></span><bdi>${l}</bdi></div>`).join('')}</details>`).join('')}</div></div>
+   <div class="card"><div class="pane-h"><bdi>${(TREE.flatMap(x=>x[2]).find(x=>x[0]===selN)||[,''])[1]}</bdi> <span class="sub" style="font-weight:400">${leaves.length} docs</span></div>
+    <div class="tablewrap"><table><thead><tr><th>${L==='ar'?'العنوان':'Leaf title'}</th><th>${L==='ar'?'الملف':'File'}</th><th>Op</th><th>Seq</th><th>${t('thSt')}</th></tr></thead><tbody>
+     ${leaves.map((x,i)=>`<tr class="click" onclick="selL=${i};pub()" style="${i===selL?'outline:2px solid var(--brand);outline-offset:-2px':''}"><td><bdi>${x[1]}</bdi></td><td class="code">${x[0]}</td><td><span class="op ${x[2]}">${x[2]}</span></td><td class="code">${x[3]}</td><td>${chip(x[4])}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="drop" ondragover="event.preventDefault();this.classList.add('hot')" ondragleave="this.classList.remove('hot')" ondrop="event.preventDefault();this.classList.remove('hot');toast('toastGen')">⇪ ${t('dropTxt')}</div>
+    <div class="pane-h" style="border-top:1px solid var(--line)">${t('vrep')} <span class="src">${fmt==='ctd'?'EDA NP.CAPP.065':'ICH 3.2.2 + EG draft + EU-derived'}</span></div>
+    <div class="props vrep">
+     <div class="check bad"><span class="ic">!</span><p><b>Results written as «Conform» (EX0001)</b> <span class="src">NP.CAPP.040 · P.5.4</span></p></div>
+     ${fmt!=='ctd'?`<div class="check ok"><span class="ic">✓</span><p><b>File name ≤ 64, path ${path.length} ≤ 180</b> <span class="src">EG TG §2.5.2</span></p></div><div class="check ok"><span class="ic">✓</span><p><b>${fmt==='e3'?'index.xml valid (ich-ectd-3-2.dtd) · eg-regional.xml valid (provisional DTD)':'submissionunit.xml valid (PORP_IN000001UV.xsd) · SHA-256 listed'}</b> <span class="src">${fmt==='e3'?'ICH App. 6':'ICH v4 IG v1.7'}</span></p></div><div class="check warn"><span class="ic">~</span><p><b>Provisional EG profile in use</b> <span class="src">EG-PROVISIONAL-PROFILE-v0</span></p></div>`:''}
+    </div></div>
+   <div class="card"><div class="pane-h">${t('props')}</div><div class="props">
+    <div class="kv"><span>Title</span><span>${lf[1]}</span><span>File</span><span class="code">${lf[0]}</span><span>Path</span><span class="code" style="word-break:break-all">${path}</span>
+     <span>Operation</span><span><span class="op ${lf[2]}">${lf[2]}</span></span><span>Checksum</span><span class="code">${fmt==='e4'?'SHA-256 7e1c…a90b':'MD5 3f9a…c21d'}</span>
+     ${fmt==='e3'?`<span>Attributes</span><span class="code">product-name=examplol · dosageform=500-mg-fct · manufacturer=all</span>`:fmt==='e4'?`<span>Context of use</span><span class="code">ich_3.2.p.5.4 · keywords: product, dosage form</span>`:''}
+     <span>Class</span><span>Company technical</span><span>Version</span><span>v3 · 05/11/2026</span></div>
+    <div><b>${t('lifec')}</b><p class="sub" dir="ltr" style="margin:4px 0 0;text-align:start">0000 <span class="op new">new</span> → 0001 <span class="op replace">replace</span> (planned)</p></div>
+    <div class="toolbar"><button class="btn pri" onclick="openSlot('3.2.P.5.4')">${t('a_fix')}</button><button class="btn">Replace…</button><button class="btn">Delete</button></div>
+   </div></div>
+  </div>`)}
+function envModal(){document.getElementById('layer').innerHTML=`<div class="modal" id="m"><div class="card" role="dialog"><h2>${t('env')} · eg-envelope</h2>
+ <div class="kv"><span>identifier</span><span class="code">8f3c2a1e-6b4d-4c0e-9a71-2d5e7b9c1f04</span><span>agency</span><span class="code">EG-EDA</span><span>submission type</span><span class="code">maa</span><span>unit</span><span class="code">initial</span><span>sequence</span><span class="code">0000</span><span>related seq.</span><span class="code">0000</span><span>invented name</span><span>Examplol</span><span>INN</span><span>Paracetamol</span><span>registration type</span><span class="code">local-finished*</span><span>marketing type</span><span class="code">local</span><span>tracking no.</span><span class="code">EDA-portal value</span></div>
+ <p class="sub">${L==='ar'?'تُملأ تلقائياً من ملف تعريف المستحضر. * قيمة مؤقتة لعدم نشر القائمة الرسمية.':'Filled automatically from the product profile. * provisional value — the official list is not published.'}</p>
+ <div class="toolbar"><button class="btn pri" onclick="closeL()">OK</button></div></div></div>`}
 
 document.getElementById('lang').onclick=()=>{L=L==='en'?'ar':'en';try{localStorage.setItem('db-lang',L)}catch(e){}render()};
 addEventListener('hashchange',render);
