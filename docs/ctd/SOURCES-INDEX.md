@@ -149,3 +149,24 @@
 - مجلد OneDrive التدريبي (`edaegypt-my.sharepoint.com`) بيحتاج تسجيل دخول، وفيه شرائح ICH M4Q(R2) العامة.
 - يوتيوب: مفيش تسجيل للويبينار طالع في البحث.
 - **معايير التحقق المصرية والـ DTD والقيم المعتمدة: لسه مش منشورة في أي مكان عام.**
+
+## 9. Deep search round 3: the three missing artefacts (06/11/2026)
+
+**Target:** EG validation criteria, the EG regional DTD (`eg-regional.dtd` / `eg-envelope.mod` / `eg-leaf.mod`), and the controlled-vocabulary (CV) lists.
+
+| Avenue | Result |
+|---|---|
+| Exact file-name search (`eg-regional.dtd`, `eg-envelope.mod`, `eg-leaf.mod`, `eg-regional.xsl`) | **No hits.** Only the EU and Swiss equivalents exist publicly |
+| Indexed EDA media (`.xlsx`, `.zip`, «validation criteria», «controlled vocabulary») | None |
+| The draft EG M1 spec's own text | It says the DTD is modular (`eg-envelope.mod`, `eg-leaf.mod`) and that util files live in **`m1/eg/util/dtd`** (EG) and `util/dtd` (ICH). The «subset of CV» table (pp. 14–16) is **the envelope table only**: country `eg`, the submission-mode values, number formats. It says «The list is available in the Submission Type CV», but the full CV lists are **not included** |
+| Vendor release notes | **Asphalion (EXTEDO partner), 25.06 announcement, 07/2025:** the 25.07 release was planned to add «**Egypt — new RST for eCTD v1.0**». So the EG M1 v1.0 regional standard (DTD/CV/rules) was **already delivered to the vendor in mid-2025**, before the public consultation in 09/2026. It is distributed to licensed vendor customers through the myEXTEDO portal, not publicly |
+| LORENZ / others | No Egypt-specific support found |
+| EDA development mirror (`dev.edaegypt.gov.eg`) | Stopped: the automatic safety check blocked crawling a non-public test environment |
+
+**Conclusion:**
+- The DTD, the validation criteria and the CV lists exist (EXTEDO built a regional standard from them in 2025).
+- They are **not public**. Today they are reachable only through:
+  - (a) an eCTDmanager / EURSvalidator licence (myEXTEDO portal);
+  - (b) EDA's eCTD onboarding with DAF / EXTEDO;
+  - (c) a written request to EDA (hdr.regua.acc@edaegypt.gov.eg, the consultation address for the eCTD drafts).
+- They may also be published when the drafts are adopted.
