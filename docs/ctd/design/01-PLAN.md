@@ -1,6 +1,6 @@
 # 01 — Build plan: «Dossier Builder for EDA» (working name)
 
-Version 1.0 · 06/11/2026. This is a plan only; no app code exists yet.
+Version 1.1 · 06/11/2026. **Status: P0 and P1 built and tested** (`apps/dossier-builder/`, 140 tests). See `P1-RELEASE-NOTE.md` for each acceptance criterion and what is still open.
 Inputs:
 - `../CTD-KNOWLEDGE-BASE.md`
 - `../ECTD-KNOWLEDGE-BASE.md`
