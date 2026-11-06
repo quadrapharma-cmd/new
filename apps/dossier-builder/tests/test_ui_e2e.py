@@ -122,3 +122,40 @@ def test_publisher_view(server, browser, tmp_path):
     page.wait_for_selector('[data-node="M1-02"].sel')
     page.wait_for_selector('#leafPane tr.leaf')
     assert page.locator('[data-node="M1-02"] .dot.d-conforming').count() == 1
+
+
+def test_generate_from_ui(server, browser):
+    import httpx
+    prof = dict(dossier_kind='generic', origin='local', licence='own', activity='new', dosage_specifics=['coated'],
+                apis=[dict(name='Paracetamol', manufacturer='Granules India', option='CEP')])
+    did = httpx.post(server + '/api/dossiers', json=dict(name='Gen test', profile=prof, product=dict(
+        name='Examplol 500 mg', dosageform='film-coated tablet', manufacturer='Example Pharma'),
+        envelope=dict(applicant='Example Pharma S.A.E.', tracking='P-MAA-0001', invented_name='Examplol 500 mg'))).json()['id']
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    page.add_init_script("localStorage.setItem('db.lang','en')")
+    page.goto(f'{server}/#/d/{did}/board')
+    page.wait_for_selector('tbody tr')
+    page.locator('tr', has_text='Composition certificate').locator('[data-why]').click()
+    page.click('[data-gen=composition]')
+    page.wait_for_selector('.gform')
+    assert page.input_value('[data-p=trade_name]') == 'Examplol 500 mg'          # prefilled
+    page.click('#genGo')                                                       # missing -> highlighted
+    page.wait_for_selector('.gform .miss')
+    page.fill('[data-p="components.0.name"]', 'Paracetamol')
+    page.fill('[data-p="components.0.function"]', 'API')
+    page.fill('[data-p="components.0.qty_mg"]', '500')
+    page.fill('[data-p="components.0.standard"]', 'Ph. Eur.')
+    page.click('[data-add=components]')
+    page.fill('[data-p="components.1.name"]', 'Opadry II')
+    page.fill('[data-p="components.1.function"]', 'Film coat')
+    page.fill('[data-p="components.1.qty_mg"]', '15')
+    page.fill('[data-p="components.1.standard"]', 'In-house')
+    page.select_option('[data-p="components.1.part"]', 'coat')
+    page.fill('[data-p=signatory]', 'A. Example')
+    page.fill('[data-p=signatory_title]', 'Managing Director')
+    page.click('#genGo')
+    page.wait_for_selector('#toast:has-text("Generated")', timeout=60000)
+    page.click('[data-f=all]')
+    row = page.locator('tr', has_text='Composition certificate')
+    assert 'composition.pdf' in row.inner_text()

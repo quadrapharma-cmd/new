@@ -132,6 +132,11 @@ html[dir=rtl] .node{padding:6px 22px 6px 14px}
 .modeswitch{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .modeswitch a{padding:6px 12px;text-decoration:none;color:var(--muted)} .modeswitch a.on{background:var(--brand);color:var(--brand-ink)}
 @media (max-width:1100px){.pub{grid-template-columns:minmax(0,1fr)} .pub .card{max-height:none}}
+.gform{display:flex;flex-direction:column;gap:10px}
+.gform .miss input,.gform .miss textarea,.gform .miss select{border-color:var(--bad);background:var(--bad-soft)}
+textarea{width:100%;min-height:90px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font:inherit;color:inherit}
+.rows table td{padding:4px} .rows input,.rows select{min-height:32px;padding:4px 6px}
+.drawer.wide{width:min(760px,100%)}
 .mobnav{display:none}
 @media (max-width:860px){
   .app{grid-template-columns:minmax(0,1fr)}
@@ -234,7 +239,11 @@ const T = {
   doExport:{en:'Export selected outputs',ar:'تصدير المخرجات المختارة'}, exporting:{en:'Building…',ar:'جاري البناء…'}, downloads:{en:'Downloads',ar:'التنزيلات'},
   audit:{en:'Activity log',ar:'سجل النشاط'}, auditSub:{en:'Every action is recorded; nothing is overwritten.',ar:'كل إجراء مسجل؛ لا شيء يُستبدل.'},
   when:{en:'When',ar:'الوقت'}, event:{en:'Event',ar:'الحدث'}, detail:{en:'Detail',ar:'التفاصيل'}, restore:{en:'Restore',ar:'استرجاع'},
-  err:{en:'Error',ar:'خطأ'}, apiPer:{en:'per API',ar:'لكل مادة'}
+  err:{en:'Error',ar:'خطأ'}, generate:{en:'Generate',ar:'توليد'}, justify:{en:'Write a justification',ar:'كتابة تبرير'},
+  genSub:{en:'Filled from the dossier where possible. Missing data is asked for, never guessed. The PDF is marked «DRAFT — unsigned» until the signed scan is uploaded.',
+          ar:'تُملأ من بيانات الملف قدر الإمكان. البيانات الناقصة تُطلب ولا تُخمَّن. الملف عليه «مسودة — غير موقّعة» لحد ما يترفع المسح الموقّع.'},
+  addRow:{en:'Add row',ar:'إضافة سطر'}, genDone:{en:'Generated and added to the section.',ar:'تم التوليد وإضافته للقسم.'}, generating:{en:'Generating…',ar:'جاري التوليد…'},
+  fillMissing:{en:'Please fill the highlighted fields.',ar:'من فضلك املأ الحقول المحددة.'}, apiPer:{en:'per API',ar:'لكل مادة'}
 };
 const S = {lang: localGet('db.lang') || 'ar', dossier: null, board: null, filter: 'todo', module: 0, wiz: null};
 function localGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
@@ -306,7 +315,7 @@ function wizard(){
     specifics:[],pharmacopoeial:false,store:false,bio:false,novel:false,apis:[{name:'',manufacturer:'',option:'CEP'}],applicant:'',tracking:'',portal:'',inn:''}};
   const w=S.wiz, d=w.d, steps=['step1','step2','step3','step4'];
   const radio=(k,opts)=>`<div class="seg" role="radiogroup">${opts.map(o=>`<button type="button" data-k="${k}" data-v="${o}" class="${d[k]===o?'on':''}" aria-pressed="${d[k]===o}">${esc(t(o))}</button>`).join('')}</div>`;
-  const txt=(k,lab,ph='')=>`<label class="f"><span>${esc(t(lab))}</span><input type="text" data-in="${k}" value="${esc(d[k])}" placeholder="${esc(ph)}"></label>`;
+  const txt=(k,lab,ph='')=>`<label class="f"><span>${esc(t(lab))}</span><input type="text" dir="auto" data-in="${k}" value="${esc(d[k])}" placeholder="${esc(ph)}"></label>`;
   let body='';
   if(w.step===0) body=`<div class="form">${txt('name','pName','Examplol 500 mg FCT')}${txt('trade','pTrade')}${txt('form','pForm')}${txt('man','pMan')}${txt('ind','pInd','pain-and-fever')}</div>`;
   if(w.step===1) body=`<div style="display:flex;flex-direction:column;gap:14px">
@@ -319,8 +328,8 @@ function wizard(){
       ${['coated','capsule_hard','pellets','premix','powder_inj_with_solvent','sterile'].map(s=>`<label><input type="checkbox" data-spec="${s}" ${d.specifics.includes(s)?'checked':''}>${esc(t(s))}</label>`).join('')}</div></div>
     <div class="checks">${[['pharmacopoeial','pharmacopoeial'],['store','store_separate'],['bio','bioorigin'],['novel','novelexc']].map(([k,l])=>`<label><input type="checkbox" data-flag="${k}" ${d[k]?'checked':''}>${esc(t(l))}</label>`).join('')}</div></div>`;
   if(w.step===2) body=`<div style="display:flex;flex-direction:column;gap:10px">${d.apis.map((a,i)=>`<div class="form card pad" style="box-shadow:none">
-     <label class="f"><span>${esc(t('apiName'))}</span><input type="text" data-api="${i}" data-f="name" value="${esc(a.name)}"></label>
-     <label class="f"><span>${esc(t('apiMan'))}</span><input type="text" data-api="${i}" data-f="manufacturer" value="${esc(a.manufacturer)}"></label>
+     <label class="f"><span>${esc(t('apiName'))}</span><input type="text" dir="auto" data-api="${i}" data-f="name" value="${esc(a.name)}"></label>
+     <label class="f"><span>${esc(t('apiMan'))}</span><input type="text" dir="auto" data-api="${i}" data-f="manufacturer" value="${esc(a.manufacturer)}"></label>
      <label class="f"><span>${esc(t('apiOpt'))}</span><select data-api="${i}" data-f="option">${['CEP','DMF','PQ','FULL'].map(o=>`<option ${a.option===o?'selected':''}>${o}</option>`).join('')}</select></label>
      ${d.apis.length>1?`<div style="align-self:end"><button class="btn sm" data-rmapi="${i}">${esc(t('remove'))}</button></div>`:''}</div>`).join('')}
      <div><button class="btn" id="addApi">＋ ${esc(t('addApi'))}</button></div></div>`;
@@ -360,6 +369,7 @@ function wizard(){
 
 /* ---------------- board */
 async function board(){
+  await loadGens();
   S.board = await api(`/dossiers/${S.dossier.id}/board`);
   renderBoard();
 }
@@ -437,11 +447,14 @@ function openWhy(slotId){
   openDrawer(s.title[S.lang], `<div class="toolbar"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${chip(s.status)}</div>
     ${locked?`<div class="alert"><p class="small">${esc(t('lockedNote'))}</p></div>`:''}
     <h3>${esc(t('reasons'))}</h3>${reasons}${s.flags.length?`<div class="small muted code">${esc(s.flags.join(' · '))}</div>`:''}
-    ${s.documents.length?`<h3>${esc(t('docs'))}</h3>${docs}`:''}`);
+    ${s.documents.length?`<h3>${esc(t('docs'))}</h3>${docs}`:''}
+    ${(s.level==='R'||s.level==='O')?`<div class="toolbar">${genFor(s)?`<button class="btn pri" data-gen="${genFor(s)}">✦ ${esc(t('generate'))}: ${esc(S.gens[genFor(s)].title[S.lang])}</button>`:''}
+      <button class="btn" data-gen="justification">${esc(t('justify'))}</button></div>`:''}`);
+  $('#dBody').querySelectorAll('[data-gen]').forEach(b=>b.onclick=()=>genForm(b.dataset.gen, s));
   $('#dBody').querySelectorAll('[data-wd]').forEach(b=>b.onclick=async()=>{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.wd}/withdraw`,{method:'POST'}); toast(t('withdrawn')); closeDrawer(); board(); });
 }
 function openDrawer(title, html){ $('#dTitle').textContent=title; $('#dBody').innerHTML=html; $('#drawer').hidden=false; $('#scrim').hidden=false; $('#dClose').focus(); }
-function closeDrawer(){ $('#drawer').hidden=true; $('#scrim').hidden=true; }
+function closeDrawer(){ $('#drawer').hidden=true; $('#scrim').hidden=true; $('#drawer').classList.remove('wide'); }
 $('#dClose').onclick=closeDrawer; $('#scrim').onclick=closeDrawer;
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
 
@@ -449,6 +462,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
 /* ---------------- publisher (EXTEDO-like expert view) */
 S.out = 'ectd32'; S.sel = null; S.leaf = null;
 async function publisherView(){
+  await loadGens();
   const [b, pv] = await Promise.all([api(`/dossiers/${S.dossier.id}/board`), api(`/dossiers/${S.dossier.id}/preview?output=${S.out}`)]);
   S.board = b; S.pv = pv.rows;
   renderPublisher();
@@ -507,6 +521,52 @@ async function dropFiles(slotId, list){
     try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd}); toast(t('uploaded')); }
     catch(e){ toast(e.message); } }
   S.sel=slotId; publisherView();
+}
+
+
+/* ---------------- generators (schema-driven forms) */
+S.gens = null;
+async function loadGens(){ if(!S.gens) S.gens = await api('/generators'); return S.gens; }
+function genFor(s){ if(!S.gens) return null; for(const [k,v] of Object.entries(S.gens)) if(v.req && v.req===s.req_id) return k; return null; }
+async function genForm(kind, s, missing){
+  await loadGens();
+  const sch = S.gens[kind];
+  const data = genForm.data && genForm.kind===kind && genForm.slot===s.slot_id ? genForm.data
+             : await api(`/dossiers/${S.dossier.id}/generate/${kind}/prefill?slot_id=${encodeURIComponent(s.slot_id)}`);
+  genForm.kind=kind; genForm.slot=s.slot_id; genForm.data=data;
+  const miss = new Set(missing||[]);
+  const lab = f => esc(f[S.lang]||f.en) + (f.required===false?` <span class="muted">(${esc(t('optional'))})</span>`:'');
+  const input = (f, v, path) => f.type==='textarea' ? `<textarea dir="auto" data-p="${path}">${esc(v??'')}</textarea>`
+     : f.type==='choice' ? `<select data-p="${path}"><option value=""></option>${f.choices.map(c=>`<option ${v===c?'selected':''}>${esc(c)}</option>`).join('')}</select>`
+     : `<input type="text" dir="auto" inputmode="${f.type==='number'?'decimal':'text'}" data-p="${path}" value="${esc(v??'')}">`;
+  const html = sch.fields.map(f=>{
+    if(f.type!=='list') return `<label class="f ${miss.has(f.key)?'miss':''}"><span>${lab(f)}</span>${input(f, data[f.key], f.key)}</label>`;
+    const rows = (data[f.key] && data[f.key].length) ? data[f.key] : (data[f.key]=[{}]);
+    return `<div class="f ${[...miss].some(m=>m===f.key||m.startsWith(f.key+'['))?'miss':''}"><span class="small" style="font-weight:600;color:var(--muted)">${lab(f)}</span>
+      <div class="rows tablewrap"><table><thead><tr>${f.item.map(i=>`<th>${lab(i)}</th>`).join('')}<th></th></tr></thead><tbody>
+      ${rows.map((r,ri)=>`<tr>${f.item.map(i=>`<td class="${miss.has(`${f.key}[${ri}].${i.key}`)?'miss':''}">${input(i, r[i.key], `${f.key}.${ri}.${i.key}`)}</td>`).join('')}
+        <td><button class="btn sm ghost" data-rm="${f.key}.${ri}" aria-label="${esc(t('remove'))}">✕</button></td></tr>`).join('')}</tbody></table></div>
+      <div><button class="btn sm" data-add="${f.key}">＋ ${esc(t('addRow'))}</button></div></div>`;
+  }).join('');
+  openDrawer(sch.title[S.lang], `<p class="small muted">${esc(t('genSub'))}</p>${miss.size?`<div class="alert bad"><p class="small">${esc(t('fillMissing'))}</p></div>`:''}
+    <div class="gform">${html}</div><div class="toolbar"><button class="btn pri" id="genGo">✦ ${esc(t('generate'))}</button></div>`);
+  $('#drawer').classList.add('wide');
+  const body=$('#dBody');
+  const sync=()=>body.querySelectorAll('[data-p]').forEach(el=>{ const parts=el.dataset.p.split('.'); let v=el.value.trim();
+      const fdef = parts.length===1? sch.fields.find(f=>f.key===parts[0]) : sch.fields.find(f=>f.key===parts[0]).item.find(i=>i.key===parts[2]);
+      if(fdef && fdef.type==='number' && v!=='' && !isNaN(+v.replace(',','.'))) v=+v.replace(',','.');
+      if(parts.length===1) data[parts[0]] = v===''?undefined:v; else { data[parts[0]][+parts[1]][parts[2]] = v===''?undefined:v; } });
+  body.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{ sync(); data[b.dataset.add].push({}); genForm(kind, s, missing); });
+  body.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ sync(); const [k,i]=b.dataset.rm.split('.'); data[k].splice(+i,1); genForm(kind, s, missing); });
+  $('#genGo').onclick=async()=>{
+    sync();
+    for(const f of sch.fields) if(f.type==='list') data[f.key] = (data[f.key]||[]).filter(r=>Object.values(r).some(v=>v!==undefined&&v!==''));
+    $('#genGo').disabled=true; $('#genGo').textContent=t('generating');
+    try{ await api(`/dossiers/${S.dossier.id}/generate/${kind}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({data, slot_id:s.slot_id})});
+      genForm.data=null; $('#drawer').classList.remove('wide'); closeDrawer(); toast(t('genDone'));
+      if(location.hash.endsWith('/publisher')){ S.sel=s.slot_id; await publisherView(); } else await board(); }
+    catch(e){ if(e.detail && e.detail.request_data) return genForm(kind, s, e.detail.request_data); toast(e.message); $('#genGo').disabled=false; $('#genGo').textContent=t('generate'); }
+  };
 }
 
 /* ---------------- export */

@@ -19,7 +19,8 @@ GEN = {  # kind -> (function, requirement id)
     'annex1': ('annex1', 'M1-01'), 'composition': ('composition_certificate', 'M1-31'),
     'salt': ('salt_calc_letter', 'M1-32'), 'cep_commitment': ('cep_commitment', 'M1-40'),
     'translation': ('translation_declaration', 'M1-10'), 'cover': ('cover_letter', 'M1-43'),
-    'tracking': ('tracking_table', 'M1-44'),
+    'tracking': ('tracking_table', 'M1-44'), 'stability_commitment': ('stability_commitment', 'P-16'),
+    'justification': ('justification', None),
 }
 
 
@@ -128,7 +129,8 @@ def create_app(workspace):
         if kind not in GEN:
             err(404, 'E-GEN', f'Unknown generator {kind}.', 'مولّد غير معروف.')
         fn_name, req_id = GEN[kind]
-        slots = [s for s in st.slots(did) if s.req_id == req_id and s.active]
+        slots = [s for s in st.slots(did) if (s.req_id == req_id or (req_id is None and s.slot_id == body.slot_id))
+                 and s.active]
         slot = next((s for s in slots if s.slot_id == (body.slot_id or s.slot_id)), None)
         if not slot:
             err(422, 'E-SLOT-INACTIVE', f'{req_id} is not required for this product.', 'البند ده مش مطلوب للمنتج ده.')
@@ -147,8 +149,8 @@ def create_app(workspace):
                 err(422, 'E-MISSING-DATA', 'Some data is missing: ' + ', '.join(e.fields),
                     'فيه بيانات ناقصة: ' + '، '.join(e.fields), request_data=e.fields)
             pdf = to_pdf(out)
-            doc = st.add_document(did, slot.slot_id, f'{kind}.pdf', pdf.read_bytes(), meta={'generated': kind,
-                                                                                              'draft_unsigned': True})
+            doc = st.add_document(did, slot.slot_id, f'{kind}.pdf', pdf.read_bytes(), meta={
+                'generated': kind, 'draft_unsigned': True, 'data': body.data})
             st.put_blob(out.read_bytes())
             return doc
         finally:
@@ -219,6 +221,44 @@ def create_app(workspace):
                      check_status=m['check_status'], operation='new', doc_class=m['doc_class'],
                      ctd=by_slot[r['slot_id']].ctd, module=by_slot[r['slot_id']].module)
         return {'output': output, 'rows': rows}
+
+    @app.get('/api/generators')
+    def generators():
+        return {k: {kk: v[kk] for kk in ('req', 'title', 'fields')} for k, v in letters.SCHEMAS.items()}
+
+    @app.get('/api/dossiers/{did}/generate/{kind}/prefill')
+    def prefill(did: str, kind: str, slot_id: str = None):
+        """What the dossier already knows for this generator — the UI asks only for the rest."""
+        if kind not in GEN:
+            err(404, 'E-GEN', f'Unknown generator {kind}.', 'مولّد غير معروف.')
+        d = st.dossier(did)
+        pr, env, prof = d['product'], d['envelope'], d['profile']
+        last = {}
+        for doc in st.documents(did):
+            if doc['meta'].get('generated') == kind and doc['meta'].get('data'):
+                last = doc['meta']['data']                           # most recent wins (ordered by created)
+        base = {'trade_name': env.get('invented_name') or pr.get('name'), 'dosage_form': pr.get('dosageform'),
+                'company': env.get('applicant'), 'applicant': env.get('applicant'), 'tracking': env.get('tracking'),
+                'sequence': env.get('sequence', '0000'), 'submission_type': env.get('submission_type', 'maa'),
+                'unit': env.get('unit', 'initial'), 'description': env.get('description'),
+                'manufacturer': pr.get('manufacturer'), 'indication': pr.get('indication')}
+        if kind == 'salt':
+            base['apis'] = [{'name_base': n} for n in dict.fromkeys(a['name'] for a in prof.get('apis', []))]
+        if kind == 'cep_commitment' and slot_id and '@' in slot_id:
+            name, man = slot_id.split('@', 1)[1].split('|', 1)
+            base.update(api=name, cep_holder=man)
+        if kind == 'tracking':
+            seqs = [{'sequence': env.get('sequence', '0000'), 'description': env.get('description') or 'Initial MAA',
+                     'type': env.get('submission_type', 'maa'), 'unit': env.get('unit', 'initial'),
+                     'tracking': env.get('tracking'), 'status': 'Submitted'}]
+            base['sequences'] = seqs
+        if kind == 'justification' and slot_id:
+            s = next((x for x in st.slots(did) if x.slot_id == slot_id), None)
+            if s:
+                base.update(section=s.ctd, item=s.title['en'])
+        out = {k: v for k, v in {**base, **last}.items() if v not in (None, '', [])}
+        keys = {f['key'] for f in letters.SCHEMAS[kind]['fields']}
+        return {k: v for k, v in out.items() if k in keys}
 
     @app.get('/api/dossiers/{did}/gate')
     def gate(did: str):

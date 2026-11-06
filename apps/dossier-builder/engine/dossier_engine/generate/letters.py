@@ -215,3 +215,101 @@ def _sign(d, data):
     para(d, f"Title: {data['signatory_title']}")
     para(d, 'Signature: ______________________     Company stamp:')
     para(d, f"Date: {data.get('date') or '____/____/________'}")
+
+
+def stability_commitment(data, out, letterhead=None):
+    """Post-approval stability commitment (ICH Q1A(R2) §2.2.7; WHO TRS 953 Annex 2 — KB §10.3):
+    continue the primary batches, place ≥3 production batches per strength/container on study,
+    and one production batch per year per strength/container in the ongoing programme."""
+    require(data, ['trade_name', 'strengths', 'containers', 'long_term_condition', 'shelf_life', 'company',
+                   'signatory', 'signatory_title'])
+    d = new_doc(letterhead=letterhead)
+    para(d, 'To: Egyptian Drug Authority — General Administration for Human Pharmaceuticals Registration')
+    para(d, f"Subject: Stability commitment — {data['trade_name']}", bold=True)
+    para(d, f"We, {data['company']}, commit for {data['trade_name']} ({data['strengths']}; {data['containers']}) to:")
+    for line in (f"continue the long-term stability studies on the primary batches until the end of the proposed "
+                 f"shelf life of {data['shelf_life']} at {data['long_term_condition']};",
+                 'place at least three production batches of each strength in each container-closure system on '
+                 'long-term and accelerated stability studies (commitment batches), using the approved protocol;',
+                 'place at least one production batch per year of each strength in each container-closure system in '
+                 'the ongoing stability programme;',
+                 'report any confirmed out-of-specification result or significant change to the Egyptian Drug '
+                 'Authority without delay.'):
+        para(d, line, bullet=True)
+    _sign(d, data)
+    d.save(out)
+    return Path(out)
+
+
+def justification(data, out, letterhead=None):
+    """Justification for an item that is not provided or differs from the requirement
+    (02-LOGIC §7 action «waive_with_justification»)."""
+    require(data, ['trade_name', 'section', 'item', 'justification', 'company', 'signatory', 'signatory_title'])
+    d = new_doc(letterhead=letterhead)
+    para(d, 'To: Egyptian Drug Authority — General Administration for Human Pharmaceuticals Registration')
+    para(d, f"Subject: {data['trade_name']} — justification for section {data['section']}", bold=True)
+    para(d, f"Item: {data['item']}")
+    para(d, data['justification'])
+    if data.get('references'):
+        para(d, 'References:', bold=True)
+        for r in str(data['references']).split('\n'):
+            if r.strip():
+                para(d, r.strip(), bullet=True)
+    _sign(d, data)
+    d.save(out)
+    return Path(out)
+
+
+# ---------------------------------------------------------------- schemas for the UI
+_SIGN = [('company', 'Company (legal name)', 'الشركة (الاسم القانوني)'), ('signatory', 'Signatory name', 'اسم الموقّع'),
+         ('signatory_title', 'Signatory title', 'صفة الموقّع')]
+
+
+def _f(key, en, ar, kind='text', **kw):
+    return {'key': key, 'en': en, 'ar': ar, 'type': kind, **kw}
+
+
+SCHEMAS = {
+    'cover': {'req': 'M1-43', 'title': {'en': 'Cover letter', 'ar': 'خطاب التغطية'}, 'fields': [
+        _f('trade_name', 'Trade name', 'الاسم التجاري'), _f('sequence', 'Sequence', 'التسلسل'),
+        _f('submission_type', 'Submission type', 'نوع التقديم'), _f('unit', 'Submission unit', 'وحدة التقديم'),
+        _f('tracking', 'EDA tracking number', 'رقم التتبع'), _f('description', 'Description', 'الوصف')]
+        + [_f(*x) for x in _SIGN]},
+    'tracking': {'req': 'M1-44', 'title': {'en': 'Tracking table', 'ar': 'جدول التتبع'}, 'fields': [
+        _f('trade_name', 'Trade name', 'الاسم التجاري'),
+        _f('sequences', 'Sequences', 'التسلسلات', 'list', item=[
+            _f('sequence', 'Sequence', 'التسلسل'), _f('description', 'Description', 'الوصف'),
+            _f('type', 'Type', 'النوع'), _f('unit', 'Unit', 'الوحدة'), _f('date', 'Date', 'التاريخ', required=False),
+            _f('tracking', 'Tracking no.', 'رقم التتبع', required=False), _f('status', 'Status', 'الحالة', required=False)])]},
+    'composition': {'req': 'M1-31', 'title': {'en': 'Composition certificate', 'ar': 'شهادة التركيب'}, 'fields': [
+        _f('trade_name', 'Trade name', 'الاسم التجاري'), _f('dosage_form', 'Dosage form', 'الشكل الصيدلي'),
+        _f('components', 'Unit formula', 'التركيبة لكل وحدة', 'list', item=[
+            _f('name', 'Component', 'المكوّن'), _f('function', 'Function', 'الوظيفة'), _f('qty_mg', 'mg / unit', 'مجم / وحدة', 'number'),
+            _f('standard', 'Standard', 'المرجع'),
+            _f('part', 'Part', 'الجزء', 'choice', choices=['core', 'coat', 'body', 'cap', 'fill'], required=False)]),
+        _f('capsule_size', 'Capsule size', 'مقاس الكبسولة', required=False),
+        _f('overage_pct', 'Overage %', 'الزيادة %', 'number', required=False)] + [_f(*x) for x in _SIGN[1:]]},
+    'salt': {'req': 'M1-32', 'title': {'en': 'Salt equivalence calculation', 'ar': 'حساب الملح المكافئ'}, 'fields': [
+        _f('trade_name', 'Trade name', 'الاسم التجاري'),
+        _f('apis', 'Active substances', 'المواد الفعالة', 'list', item=[
+            _f('name_salt', 'Salt / hydrate', 'الملح / الهيدرات'), _f('name_base', 'Base', 'القاعدة'),
+            _f('label_claim_mg', 'Label claim (base) mg', 'التركيز (كقاعدة) مجم', 'number'),
+            _f('mw_salt', 'MW salt', 'الوزن الجزيئي للملح', 'number'), _f('mw_base', 'MW base', 'الوزن الجزيئي للقاعدة', 'number'),
+            _f('mw_ref', 'MW reference', 'مرجع الوزن الجزيئي'),
+            _f('assay_pct', 'Assay % (as is)', 'المحتوى % ', 'number', required=False)])] + [_f(*x) for x in _SIGN[1:]]},
+    'cep_commitment': {'req': 'M1-40', 'title': {'en': 'CEP commitment', 'ar': 'تعهد الـ CEP'}, 'fields': [
+        _f('trade_name', 'Trade name', 'الاسم التجاري'), _f('api', 'API', 'المادة الفعالة'),
+        _f('cep_number', 'CEP number', 'رقم الـ CEP'), _f('cep_holder', 'CEP holder', 'حامل الـ CEP')] + [_f(*x) for x in _SIGN]},
+    'translation': {'req': 'M1-10', 'title': {'en': 'Leaflet translation declaration', 'ar': 'إقرار ترجمة النشرة'}, 'fields': [
+        _f('trade_name', 'Trade name', 'الاسم التجاري'), _f('leaflet_version', 'Leaflet version', 'إصدار النشرة'),
+        _f('source_language', 'Source language', 'لغة الأصل'), _f('translator', 'Authorised medical translator', 'المترجم الطبي المعتمد')]
+        + [_f(*x) for x in _SIGN]},
+    'stability_commitment': {'req': 'P-16', 'title': {'en': 'Stability commitment', 'ar': 'تعهد الثبات'}, 'fields': [
+        _f('trade_name', 'Trade name', 'الاسم التجاري'), _f('strengths', 'Strength(s)', 'التركيزات'),
+        _f('containers', 'Container-closure system(s)', 'نظام العبوة'), _f('long_term_condition', 'Long-term condition', 'ظرف التخزين طويل المدى'),
+        _f('shelf_life', 'Proposed shelf life', 'الصلاحية المقترحة')] + [_f(*x) for x in _SIGN]},
+    'justification': {'req': None, 'title': {'en': 'Justification letter', 'ar': 'خطاب تبرير'}, 'fields': [
+        _f('trade_name', 'Trade name', 'الاسم التجاري'), _f('section', 'Section', 'القسم'), _f('item', 'Item', 'البند'),
+        _f('justification', 'Justification', 'التبرير', 'textarea'), _f('references', 'References (one per line)', 'المراجع (سطر لكل مرجع)', 'textarea', required=False)]
+        + [_f(*x) for x in _SIGN]},
+}

@@ -152,3 +152,28 @@ def test_concurrent_requests(c, pdf):
     with ThreadPoolExecutor(8) as ex:
         codes = list(ex.map(lambda u: c.get(u).status_code, urls))
     assert codes == [200] * len(urls)
+
+
+def test_generator_schemas_and_prefill(c):
+    did = new(c)
+    sch = c.get('/api/generators').json()
+    assert {'cover', 'tracking', 'composition', 'salt', 'cep_commitment', 'stability_commitment', 'justification'} <= set(sch)
+    assert any(f['type'] == 'list' for f in sch['composition']['fields'])
+    pf = c.get(f'/api/dossiers/{did}/generate/cover/prefill').json()
+    assert pf['trade_name'] == 'Examplol 500 mg film-coated tablets' and pf['tracking'] == 'P-MAA-0001'
+    assert pf['company'] == 'Example Pharma S.A.E.' and 'signatory' not in pf          # never guessed
+    pf = c.get(f'/api/dossiers/{did}/generate/cep_commitment/prefill?slot_id=M1-40@Paracetamol|Granules India').json()
+    assert pf['api'] == 'Paracetamol' and pf['cep_holder'] == 'Granules India'
+    assert c.get(f'/api/dossiers/{did}/generate/salt/prefill').json()['apis'] == [{'name_base': 'Paracetamol'}]
+
+
+@pytest.mark.skipif(not __import__('shutil').which('soffice'), reason='LibreOffice not installed')
+def test_generate_stability_commitment_and_reuse_data(c):
+    did = new(c)
+    data = dict(trade_name='Examplol 500 mg', strengths='500 mg', containers='Alu/PVC blister', long_term_condition='30 °C / 75 % RH',
+                shelf_life='36 months', company='Example Pharma S.A.E.', signatory='A. Example', signatory_title='MD')
+    r = c.post(f'/api/dossiers/{did}/generate/stability_commitment', json={'data': data})
+    assert r.status_code == 201, r.text
+    assert r.json()['slot_id'] == 'P-16'
+    pf = c.get(f'/api/dossiers/{did}/generate/stability_commitment/prefill').json()
+    assert pf['signatory'] == 'A. Example'                                            # last entered data reused
