@@ -14,6 +14,7 @@ class Slot:
     ctd: str
     doc_class: str
     module: int
+    ectd: list = field(default_factory=list)   # eCTD 3.2.2 nodes (m1/eg or ICH)
     item: dict = None       # the API this slot is for (per-API expansion)
     reasons: list = field(default_factory=list)   # [{en, ar, source}]
     flags: list = field(default_factory=list)     # ASSUMPTION, CONFIRM_APPLICABILITY…
@@ -24,7 +25,7 @@ class Slot:
 
     def to_dict(self):
         return {k: getattr(self, k) for k in
-                ('req_id', 'slot_id', 'level', 'title', 'ctd', 'doc_class', 'module', 'item', 'reasons', 'flags')}
+                ('req_id', 'slot_id', 'level', 'title', 'ctd', 'ectd', 'doc_class', 'module', 'item', 'reasons', 'flags')}
 
 
 def _cell_level(cell, env):
@@ -44,7 +45,8 @@ def resolve(profile, pack, validate=True, today=None):
     slots = []
     for r in pack.requirements:
         base = dict(req_id=r['id'], title=r['title'], ctd=r['ctd']['nta065_v5'],
-                    doc_class=r['doc_class'], module=r['module'])
+                    doc_class=r['doc_class'], module=r['module'],
+                    ectd=list(r['ectd']['nodes']))
         src = '; '.join(r['sources'])
         flags = ['ASSUMPTION_LOCAL_INNOVATOR'] if col_assumed else []
         if r.get('confirm_applicability'):

@@ -6,6 +6,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.1
+  ectd:
+    nodes:
+    - 1.2.1
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Application form (Annex I) + Arabic undertaking
     ar: نموذج الطلب + التعهد
@@ -37,6 +42,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.2
+  ectd:
+    nodes:
+    - 1.2.2.1
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Letter of Attorney for company representative
     ar: توكيل ممثل الشركة
@@ -63,6 +73,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.3
+  ectd:
+    nodes:
+    - 1.2.11
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Fees payment receipt(s)
     ar: إيصالات الرسوم
@@ -92,6 +107,14 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.4
+  ectd:
+    nodes:
+    - 1.2.3.3
+    - 1.2.3.4
+    - 1.2.3.5
+    source: 'EG M1 eCTD Spec draft v1.0 App. 2 — writer picks: name approval (new) / registration licence + preliminary
+      approval (re-reg)'
+    provenance: EG-DRAFT
   title:
     en: Action Letter & Name Approval (new) / Registration Licence & Preliminary Approval (re-reg)
     ar: خطاب القرار وموافقة الاسم / الترخيص والموافقة المبدئية
@@ -119,6 +142,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.5
+  ectd:
+    nodes:
+    - 1.2.3.8
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Pricing Certificate
     ar: شهادة التسعير
@@ -146,6 +174,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.6
+  ectd:
+    nodes:
+    - 1.2.3.17
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Pre-approved EDA letters (Technical Committee decisions, extensions…)
     ar: خطابات الهيئة السابقة
@@ -172,6 +205,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.7
+  ectd:
+    nodes:
+    - 1.2.3.18
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Variation approvals
     ar: موافقات التغييرات
@@ -202,6 +240,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.8
+  ectd:
+    nodes:
+    - 1.2.3.9
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Pharmacovigilance approval
     ar: موافقة اليقظة الدوائية
@@ -227,6 +270,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.9
+  ectd:
+    nodes:
+    - 1.3.1
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: 'Leaflet — One Submission: proposed SmPC & PIL (EN + AR, Word) + most updated reference SmPC & PIL'
     ar: النشرة المقترحة عربي وإنجليزي Word + المرجع
@@ -258,6 +306,12 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.9
+  ectd:
+    nodes:
+    - 1.2.4.9
+    source: 'EG M1 Submission Guidance draft 2026 p.36 (1.2.4.9 "may be but not limited to: Letter of access; SmPC/PIL
+      declarations")'
+    provenance: EG-DRAFT
   title:
     en: Leaflet translation declaration (non-English leaflets)
     ar: إقرار ترجمة النشرة
@@ -288,6 +342,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.10
+  ectd:
+    nodes:
+    - 1.3.2
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Layout — coloured stamped outer & inner (editable PDF preferred) + monograph (compendial) + image of original
       pack (imported/UL)
@@ -317,6 +376,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.11
+  ectd:
+    nodes:
+    - 1.2.3.10
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Inspection report — pilot/production batches (new) / valid marketed batch (re-reg)
     ar: تقرير التفتيش
@@ -351,6 +415,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.12
+  ectd:
+    nodes:
+    - 1.2.3.11
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Importation approval for each API
     ar: موافقة استيراد كل مادة فعالة
@@ -380,6 +449,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.13
+  ectd:
+    nodes:
+    - 1.2.6.1
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: CPP / eCPP from competent authority in COO
     ar: شهادة CPP
@@ -413,6 +487,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.14
+  ectd:
+    nodes:
+    - 1.2.4.10
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: List of countries where registered & marketed
     ar: قائمة الدول
@@ -438,6 +517,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.15
+  ectd:
+    nodes:
+    - 1.2.7.1
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Sameness letter
     ar: خطاب التطابق
@@ -463,6 +547,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.16
+  ectd:
+    nodes:
+    - 1.2.7.2
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Unredacted assessment report
     ar: تقرير التقييم غير المحجوب
@@ -488,6 +577,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.17.1
+  ectd:
+    nodes:
+    - 1.2.2.2
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Factory licence of manufacturer & IDA licence
     ar: رخصة المصنع وIDA
@@ -516,6 +610,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.17.2
+  ectd:
+    nodes:
+    - 1.2.2.4
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Register of trade (valid)
     ar: السجل التجاري
@@ -542,6 +641,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.17.3
+  ectd:
+    nodes:
+    - 1.2.2.5
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Toll manufacturer licence
     ar: رخصة التصنيع لدى الغير
@@ -570,6 +674,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.17.4
+  ectd:
+    nodes:
+    - 1.2.2.6
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Scientific office licence
     ar: رخصة المكتب العلمي
@@ -596,6 +705,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.17.5
+  ectd:
+    nodes:
+    - 1.2.2.7
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Importers register licence
     ar: سجل المستوردين
@@ -622,6 +736,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.17.6
+  ectd:
+    nodes:
+    - 1.2.2.8
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Store licence (if different from factory)
     ar: رخصة المخزن
@@ -650,6 +769,15 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.17.7
+  ectd:
+    nodes:
+    - 1.2.2.10
+    - 1.2.2.12
+    - 1.2.2.11
+    - 1.2.2.9
+    source: EG M1 eCTD Spec draft v1.0 App. 2 — one node per agreement type (manufacturing / storage / packaging
+      / authorisation-agency)
+    provenance: EG-DRAFT
   title:
     en: 'Agreements: manufacturing / storage / packaging (imported bulk) / authorisation-agency'
     ar: العقود
@@ -679,6 +807,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.17.8
+  ectd:
+    nodes:
+    - 1.2.4.1
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: 'Declaration: registered & under-registration products owned by toll company'
     ar: إقرار منتجات شركة الـ toll
@@ -707,6 +840,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.17.9
+  ectd:
+    nodes:
+    - 1.2.4.2
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Licence-holder declaration specifying API manufacturers
     ar: إقرار مصنّعي المادة الفعالة
@@ -735,6 +873,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.17.10
+  ectd:
+    nodes:
+    - 1.2.4.2
+    source: 'ASSUMPTION: re-registration variant of the same declaration'
+    provenance: ASSUMPTION
   title:
     en: Licence-holder declaration of API manufacturers (name & address) + Module 3
     ar: إقرار مصنّعي المادة الفعالة (إعادة تسجيل)
@@ -762,6 +905,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.17.11
+  ectd:
+    nodes:
+    - 1.2.4.4
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Licence-holder declaration of form of bulk
     ar: إقرار شكل الـ bulk
@@ -789,6 +937,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.18
+  ectd:
+    nodes:
+    - 1.2.3.20
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Registration licence of the solvent
     ar: ترخيص المذيب
@@ -816,6 +969,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.19
+  ectd:
+    nodes:
+    - 1.2.5.4
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Latest pharmacopoeia monograph for the FPP
     ar: المونوجراف الدستوري
@@ -844,6 +1002,12 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.1.20
+  ectd:
+    nodes:
+    - 1.2.4.9
+    source: 'EG M1 Submission Guidance draft 2026 p.36 (1.2.4.9 "may be but not limited to: Letter of access; SmPC/PIL
+      declarations")'
+    provenance: EG-DRAFT
   title:
     en: Letter of Access (API master file)
     ar: خطاب السماح بالاطلاع على الـ DMF
@@ -876,6 +1040,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.1
+  ectd:
+    nodes:
+    - 1.2.8.1
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Composition certificate
     ar: شهادة التركيب
@@ -907,6 +1076,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.1
+  ectd:
+    nodes:
+    - 1.2.8.3
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Equivalence (salt) calculation
     ar: حساب الملح المكافئ
@@ -933,6 +1107,13 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.1
+  ectd:
+    nodes:
+    - 1.2.8.5
+    - 1.2.8.6
+    - 1.2.8.4
+    source: EG M1 eCTD Spec draft v1.0 App. 2 — coating premix / capsule shell / pellets-premix
+    provenance: EG-DRAFT
   title:
     en: Coating premix (e.g. Opadry) / capsule shell / pellets / premix composition on SUPPLIER letterhead
     ar: تركيب الغلاف/الكبسولة/البيليتس من المورد
@@ -962,6 +1143,15 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.2.1–4
+  ectd:
+    nodes:
+    - 1.2.3.12
+    - 1.2.3.13
+    - 1.2.3.14
+    - 1.2.3.15
+    - 1.2.3.16
+    source: EG M1 eCTD Spec draft v1.0 App. 2 (Rolling legacy approvals)
+    provenance: EG-DRAFT
   title:
     en: CADC certificate, stability approval, BE approval, Technical Affairs approval
     ar: موافقات CADC والثبات والتكافؤ والشؤون الفنية
@@ -990,6 +1180,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.3.1
+  ectd:
+    nodes:
+    - 1.2.9
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: API certificate of analysis (supplier)
     ar: شهادة تحليل المادة الفعالة
@@ -1018,6 +1213,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.3.2
+  ectd:
+    nodes:
+    - 1.2.8.2
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Specifications (all actives; in-house specs of all inactives)
     ar: المواصفات
@@ -1045,6 +1245,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.4.1
+  ectd:
+    nodes:
+    - 1.2.2.3
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: GMP certificate(s) of FPP manufacturer(s)
     ar: شهادة GMP للمصنع
@@ -1071,6 +1276,12 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.4.2
+  ectd:
+    nodes:
+    - 1.2.2.3
+    source: EG M1 eCTD Spec draft v1.0 App. 2 — 1.2.2.3 covers FPP and API GMP (M1 guidance p.13); 1.2.2.21 overlaps,
+      not used
+    provenance: EG-DRAFT
   title:
     en: GMP certificate(s) of API manufacturer(s)
     ar: شهادة GMP لمصنّع المادة الفعالة
@@ -1100,6 +1311,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.4.3
+  ectd:
+    nodes:
+    - 3.2.R
+    source: EG eCTD TG draft §3.4.1.1.1 (CEP copy in 3.2.R) — same document as S-16, one leaf
+    provenance: EG-DRAFT
   title:
     en: CEP incl. all annexes
     ar: شهادة الـ CEP بملحقاتها
@@ -1146,6 +1362,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.4.3
+  ectd:
+    nodes:
+    - 3.2.R
+    source: 'ASSUMPTION: CEP commitment placed with the CEP in 3.2.R (M1 guidance drops it as a separate item)'
+    provenance: ASSUMPTION
   title:
     en: 'Written commitment: inform EDA if CEP revised/renewed/withdrawn'
     ar: تعهد الـ CEP
@@ -1190,6 +1411,12 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.5.1
+  ectd:
+    nodes:
+    - 1.2.5.1
+    - 1.2.5.2
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Reference (online/textbook) OR Non-Reference Approval
     ar: المرجع العلمي أو موافقة عدم المرجعية
@@ -1217,6 +1444,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.2.5.2
+  ectd:
+    nodes:
+    - 1.2.5.1
+    source: EG M1 eCTD Spec draft v1.0 App. 2
+    provenance: EG-DRAFT
   title:
     en: Leaflet of the reference product
     ar: نشرة المرجعي
@@ -1242,6 +1474,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.0 (eCTD)
+  ectd:
+    nodes:
+    - '1.0'
+    source: EG M1 eCTD Spec draft v1.0 App. 2 row 4 (cover-VAR.pdf)
+    provenance: EG-DRAFT
   title:
     en: Cover letter (+ statement 'true, complete and correct')
     ar: خطاب التغطية
@@ -1272,6 +1509,11 @@
   group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
   ctd:
     nta065_v5: 1.0 (eCTD)
+  ectd:
+    nodes:
+    - '1.0'
+    source: EG M1 eCTD Spec draft v1.0 App. 2 row 4 (tracking-VAR.pdf)
+    provenance: EG-DRAFT
   title:
     en: Tracking table (tracking-var.pdf in m1/eg/10-cover)
     ar: جدول التتبع
@@ -1299,6 +1541,11 @@
   group: 'MODULE 2 — Summaries (Innovators only; generics: ''incorporated in Modules 3, 4 & 5'')'
   ctd:
     nta065_v5: 2.1–2.2
+  ectd:
+    nodes:
+    - '2.2'
+    source: ICH eCTD 3.2.2 App. 4 — 2.1 TOC is replaced by the backbone; 2.2 introduction only
+    provenance: ICH
   title:
     en: CTD TOC (M2–5) + Introduction
     ar: فهرس + مقدمة
@@ -1325,6 +1572,11 @@
   group: 'MODULE 2 — Summaries (Innovators only; generics: ''incorporated in Modules 3, 4 & 5'')'
   ctd:
     nta065_v5: '2.3'
+  ectd:
+    nodes:
+    - '2.3'
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Quality Overall Summary (QOS)
     ar: ملخص الجودة الشامل
@@ -1354,6 +1606,14 @@
   group: 'MODULE 2 — Summaries (Innovators only; generics: ''incorporated in Modules 3, 4 & 5'')'
   ctd:
     nta065_v5: 2.4–2.7
+  ectd:
+    nodes:
+    - '2.4'
+    - '2.5'
+    - '2.6'
+    - '2.7'
+    source: ICH M4 / App. 4
+    provenance: ICH
   title:
     en: Non-clinical & clinical overviews and summaries
     ar: الملخصات قبل السريرية والسريرية
@@ -1381,6 +1641,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.1.1
+  ectd:
+    nodes:
+    - 3.2.S.1.1
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Nomenclature
     ar: التسمية
@@ -1411,6 +1676,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.1.2
+  ectd:
+    nodes:
+    - 3.2.S.1.2
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Structure
     ar: التركيب الكيميائي
@@ -1441,6 +1711,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.1.3
+  ectd:
+    nodes:
+    - 3.2.S.1.3
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: General properties
     ar: الخصائص العامة
@@ -1472,6 +1747,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.2.1
+  ectd:
+    nodes:
+    - 3.2.S.2.1
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Manufacturer(s)
     ar: المصنّعون
@@ -1502,6 +1782,15 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.2.2–2.6
+  ectd:
+    nodes:
+    - 3.2.S.2.2
+    - 3.2.S.2.3
+    - 3.2.S.2.4
+    - 3.2.S.2.5
+    - 3.2.S.2.6
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Manufacture (process, materials, critical steps, validation, development)
     ar: التصنيع
@@ -1541,6 +1830,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.3.1
+  ectd:
+    nodes:
+    - 3.2.S.3.1
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Elucidation of structure
     ar: إثبات التركيب
@@ -1572,6 +1866,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.3.2
+  ectd:
+    nodes:
+    - 3.2.S.3.2
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Impurities
     ar: الشوائب
@@ -1611,6 +1910,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.4.1
+  ectd:
+    nodes:
+    - 3.2.S.4.1
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Specification (FPP manufacturer's)
     ar: المواصفات
@@ -1642,6 +1946,12 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.4.2–4.3
+  ectd:
+    nodes:
+    - 3.2.S.4.2
+    - 3.2.S.4.3
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Analytical procedures & validation
     ar: الطرق والتحقق
@@ -1673,6 +1983,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.4.4
+  ectd:
+    nodes:
+    - 3.2.S.4.4
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Batch analyses
     ar: تحليل التشغيلات
@@ -1704,6 +2019,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.4.5
+  ectd:
+    nodes:
+    - 3.2.S.4.5
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Justification of specification
     ar: تبرير المواصفات
@@ -1734,6 +2054,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.5
+  ectd:
+    nodes:
+    - 3.2.S.5
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Reference standards
     ar: المواد المرجعية
@@ -1765,6 +2090,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.6
+  ectd:
+    nodes:
+    - 3.2.S.6
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Container closure (API)
     ar: عبوة المادة الفعالة
@@ -1796,6 +2126,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S.7
+  ectd:
+    nodes:
+    - 3.2.S.7
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Stability (summary, protocol & commitment, data)
     ar: الثبات
@@ -1828,6 +2163,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.S (front)
+  ectd:
+    nodes:
+    - 3.2.S
+    source: EG eCTD TG draft §3.4.1.1 (statement at start of 3.2.S)
+    provenance: EG-DRAFT
   title:
     en: Statement of S-part option per API manufacturer + DMF applicant's-part cover page (version/date)
     ar: بيان طريقة تقديم المادة الفعالة
@@ -1858,6 +2198,11 @@
   group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
   ctd:
     nta065_v5: 3.2.R (CEP)
+  ectd:
+    nodes:
+    - 3.2.R
+    source: EG eCTD TG draft §3.4.1.1.1
+    provenance: EG-DRAFT
   title:
     en: CEP copy placed in 3.2.R regional information (eCTD)
     ar: نسخة الـ CEP في 3.2.R
@@ -1888,6 +2233,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.1
+  ectd:
+    nodes:
+    - 3.2.P.1
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Description & composition
     ar: الوصف والتركيب
@@ -1916,6 +2266,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.2
+  ectd:
+    nodes:
+    - 3.2.P.2
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Pharmaceutical development
     ar: التطوير الصيدلي
@@ -1945,6 +2300,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.3.1
+  ectd:
+    nodes:
+    - 3.2.P.3.1
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Manufacturer(s)
     ar: المصنعون
@@ -1972,6 +2332,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.3.2
+  ectd:
+    nodes:
+    - 3.2.P.3.2
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Batch formula
     ar: تركيبة التشغيلة
@@ -1999,6 +2364,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.3.3
+  ectd:
+    nodes:
+    - 3.2.P.3.3
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Manufacturing process & controls
     ar: خطوات التصنيع
@@ -2027,6 +2397,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.3.4
+  ectd:
+    nodes:
+    - 3.2.P.3.4
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Controls of critical steps
     ar: ضبط الخطوات الحرجة
@@ -2054,6 +2429,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.3.5
+  ectd:
+    nodes:
+    - 3.2.P.3.5
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Process validation
     ar: التحقق من العملية
@@ -2081,6 +2461,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.4
+  ectd:
+    nodes:
+    - 3.2.P.4
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Control of excipients (+ 4.5 human/animal origin, 4.6 novel)
     ar: ضبط السواغات
@@ -2108,6 +2493,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.5.1
+  ectd:
+    nodes:
+    - 3.2.P.5.1
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Specification(s)
     ar: مواصفات المنتج
@@ -2136,6 +2526,12 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.5.2–5.3
+  ectd:
+    nodes:
+    - 3.2.P.5.2
+    - 3.2.P.5.3
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Analytical procedures & validation
     ar: الطرق والتحقق
@@ -2163,6 +2559,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.5.4
+  ectd:
+    nodes:
+    - 3.2.P.5.4
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Batch analyses
     ar: تحليل التشغيلات
@@ -2191,6 +2592,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.5.5
+  ectd:
+    nodes:
+    - 3.2.P.5.5
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Characterisation of impurities
     ar: توصيف الشوائب
@@ -2218,6 +2624,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.5.6
+  ectd:
+    nodes:
+    - 3.2.P.5.6
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Justification of specification(s)
     ar: تبرير المواصفات
@@ -2245,6 +2656,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.6
+  ectd:
+    nodes:
+    - 3.2.P.6
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Reference standards
     ar: المواد المرجعية
@@ -2272,6 +2688,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.7
+  ectd:
+    nodes:
+    - 3.2.P.7
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Container closure
     ar: العبوة
@@ -2299,6 +2720,11 @@
   group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
   ctd:
     nta065_v5: 3.2.P.8
+  ectd:
+    nodes:
+    - 3.2.P.8
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Stability (summary, protocol & commitment, data)
     ar: الثبات
@@ -2327,6 +2753,11 @@
   group: MODULE 3 — 3.2.A / 3.2.R / 3.3
   ctd:
     nta065_v5: 3.2.A.1
+  ectd:
+    nodes:
+    - 3.2.A.1
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Facilities & equipment
     ar: المنشآت والمعدات
@@ -2353,6 +2784,11 @@
   group: MODULE 3 — 3.2.A / 3.2.R / 3.3
   ctd:
     nta065_v5: 3.2.A.2
+  ectd:
+    nodes:
+    - 3.2.A.2
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Adventitious agents safety evaluation
     ar: تقييم العوامل العارضة
@@ -2381,6 +2817,11 @@
   group: MODULE 3 — 3.2.A / 3.2.R / 3.3
   ctd:
     nta065_v5: 3.2.A.3
+  ectd:
+    nodes:
+    - 3.2.A.3
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Excipients (novel / non-compendial, large data)
     ar: السواغات الجديدة
@@ -2409,6 +2850,11 @@
   group: MODULE 3 — 3.2.A / 3.2.R / 3.3
   ctd:
     nta065_v5: 3.2.R.1.1
+  ectd:
+    nodes:
+    - 3.2.R
+    source: EG eCTD TG draft §3.4 / CTD QM v2 3.2.R.1.1
+    provenance: EG-IN-FORCE
   title:
     en: Executed production documents (BE batch + pilot/primary batches)
     ar: سجلات التشغيلات المنفّذة
@@ -2438,6 +2884,11 @@
   group: MODULE 3 — 3.2.A / 3.2.R / 3.3
   ctd:
     nta065_v5: 3.2.R.1.2
+  ectd:
+    nodes:
+    - 3.2.R
+    source: CTD QM v2 3.2.R.1.2
+    provenance: EG-IN-FORCE
   title:
     en: Master production documents (each strength, commercial batch size, site)
     ar: سجلات التشغيل الرئيسية
@@ -2467,6 +2918,11 @@
   group: MODULE 3 — 3.2.A / 3.2.R / 3.3
   ctd:
     nta065_v5: 3.2.R.2
+  ectd:
+    nodes:
+    - 3.2.R
+    source: CTD QM v2 3.2.R.2
+    provenance: EG-IN-FORCE
   title:
     en: Analytical procedures & validation — tabular summaries
     ar: ملخص جداول الطرق والتحقق
@@ -2494,6 +2950,11 @@
   group: MODULE 3 — 3.2.A / 3.2.R / 3.3
   ctd:
     nta065_v5: '3.3'
+  ectd:
+    nodes:
+    - '3.3'
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Literature references (one file per reference)
     ar: المراجع العلمية
@@ -2519,6 +2980,11 @@
   group: 'MODULE 4 — Non-clinical (Innovators; generics: 4.3 literature optional)'
   ctd:
     nta065_v5: 4.2.x
+  ectd:
+    nodes:
+    - '4.2'
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Non-clinical study reports (pharmacology, PK, toxicology)
     ar: تقارير الدراسات قبل السريرية
@@ -2544,6 +3010,11 @@
   group: 'MODULE 4 — Non-clinical (Innovators; generics: 4.3 literature optional)'
   ctd:
     nta065_v5: '4.3'
+  ectd:
+    nodes:
+    - '4.3'
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Literature references
     ar: المراجع
@@ -2569,6 +3040,10 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: '5.1'
+  ectd:
+    nodes: []
+    source: 'ICH eCTD: no 5.1 node — the TOC is replaced by the backbone (CTD output only)'
+    provenance: ICH
   title:
     en: Table of contents of Module 5
     ar: فهرس Module 5
@@ -2596,6 +3071,11 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: '5.2'
+  ectd:
+    nodes:
+    - '5.2'
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Tabular listing of all clinical studies
     ar: قائمة الدراسات
@@ -2623,6 +3103,11 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: 5.3.1.1
+  ectd:
+    nodes:
+    - 5.3.1.1
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: BA study reports
     ar: دراسات الإتاحة الحيوية
@@ -2650,6 +3135,11 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: 5.3.1.2
+  ectd:
+    nodes:
+    - 5.3.1.2
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Comparative BA & BE study reports
     ar: تقرير دراسة التكافؤ الحيوي
@@ -2677,6 +3167,11 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: 5.3.1.3
+  ectd:
+    nodes:
+    - 5.3.1.3
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: IVIVC study reports
     ar: IVIVC
@@ -2704,6 +3199,11 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: 5.3.1.4
+  ectd:
+    nodes:
+    - 5.3.1.4
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Bioanalytical & analytical methods for human studies
     ar: الطرق التحليلية الحيوية
@@ -2731,6 +3231,12 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: 5.3.2.1–2
+  ectd:
+    nodes:
+    - 5.3.2.1
+    - 5.3.2.2
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Plasma protein binding; hepatic metabolism & interaction
     ar: ارتباط البروتين/الأيض
@@ -2759,6 +3265,11 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: 5.3.3.1
+  ectd:
+    nodes:
+    - 5.3.3.1
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Healthy subject PK & initial tolerability
     ar: حرائك صحية
@@ -2786,6 +3297,11 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: 5.3.5.4
+  ectd:
+    nodes:
+    - 5.3.5.4
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Other study reports
     ar: تقارير أخرى
@@ -2813,6 +3329,11 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: 5.3.7
+  ectd:
+    nodes:
+    - 5.3.7
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Case report forms & individual listings
     ar: نماذج الحالات
@@ -2840,6 +3361,11 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: '5.4'
+  ectd:
+    nodes:
+    - '5.4'
+    source: ICH M4(R4) / eCTD 3.2.2 App. 4 (same number as the CTD section)
+    provenance: ICH
   title:
     en: Literature references
     ar: المراجع
@@ -2867,6 +3393,20 @@
   group: 'MODULE 5 — Clinical (generics: partial)'
   ctd:
     nta065_v5: 5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6
+  ectd:
+    nodes:
+    - 5.3.2.3
+    - 5.3.3.2
+    - 5.3.3.3
+    - 5.3.3.4
+    - 5.3.3.5
+    - 5.3.4
+    - 5.3.5.1
+    - 5.3.5.2
+    - 5.3.5.3
+    - 5.3.6
+    source: ICH M4 / App. 4
+    provenance: ICH
   title:
     en: Other clinical sections
     ar: باقي الأقسام السريرية
