@@ -170,3 +170,18 @@
   - (b) EDA's eCTD onboarding with DAF / EXTEDO;
   - (c) a written request to EDA (hdr.regua.acc@edaegypt.gov.eg, the consultation address for the eCTD drafts).
 - They may also be published when the drafts are adopted.
+
+## 10. Deep search round 4 (06/11/2026)
+
+| Avenue | Result |
+|---|---|
+| GitHub code search (`eg-envelope`, `eg-regional`, `m1-eg`, `EG-EDA envelope`) | 183, 98, 432 and 14 hits, **all unrelated** (no eCTD repositories) |
+| Internet Archive / Common Crawl | **Not reachable**: the environment service rejected adding `web.archive.org`, `index.commoncrawl.org` and `www.asphalion.com` (two attempts) |
+| EDA development mirror | Not crawled (blocked by the automatic safety check; non-public test environment) |
+| EXTEDO site, blog and file store (hubfs) | Only generic product flyers. **New facts from the two EXTEDO posts (24/11/2025 and the Phase II launch):** |
+| | • **Phase I started January 2025.** It implemented **eCTD v3**, the **health-authority review solution** (EXTEDO's reviewer — so EDA validates with **EXTEDO EURSvalidator / EURS** carrying the EG rule set) and the **submission portal** |
+| | • **Phase II contract** signed in Cairo **20/11/2025** (EXTEDO CEO Martin Schmid, DAF CEO Eng. Hatem Kandeel). It covers the **EXTEDOpulse Agency Portal powered by CARA** (two-way portal), Master Data Management, Regulatory Procedure Management, Document Management, and the groundwork for **eCTD v4** |
+| | • Purpose: support EDA towards **WHO Maturity Level 4** |
+| Arabic / English searches for «معايير التحقق», Pass/Fail, «validation rules» | No EDA eCTD rule set. Found EDA's in-force **GL.CADC.002 v02/2024** (CADC file assessment: test-by-test acceptance criteria; issued 23/05/2024, effective 01/06/2024). Archived; this is the version in force (the 3/2025 file is the draft) |
+
+**Practical consequence:** EDA checks submissions with EXTEDO's validator and the EG regional standard. A tool that wants «first-pass» acceptance has to reproduce the EG rule set. The only channel that has it today is EXTEDO (EURSvalidator/eCTDmanager EG RST, via the myEXTEDO portal) or EDA directly.
