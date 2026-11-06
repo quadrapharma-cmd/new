@@ -1,0 +1,85 @@
+# =====================================================================================
+# PROVISIONAL — NOT ISSUED BY EDA.  EG provisional regional profile v0 for eCTD v4.0.
+# Every OID containing "EG-PLACEHOLDER" is a deliberately INVALID marker, not an OID.
+# EDA must register real OIDs before any of these codes can pass ICH rules
+# eCTD4-008/009/031/075/081/083/084.  See ../README.md (provenance tags, OID plan).
+# Provenance tags:  ICH | EU-DERIVED | EG-DRAFT | ASSUMPTION
+# Source short-cites: IG = ICH eCTD v4.0 IG v1.7 (5 May 2026); CV = ICH CV package v1.0.3;
+#   EU-IG = EU eCTD v4.0 M1 IG draft v1.2 (Oct 2024, cited by heading); SPEC = EG M1 eCTD
+#   Specification DRAFT v1.0 (2026, page/line/App.2 row); TG = EDA draft Technical Guidance
+#   for eCTD Submissions in Egypt v1.0/2026 (PDF page / margin line).
+# =====================================================================================
+
+code_system:
+  name: EG Submission Unit Type
+  short_name: eg-submission-unit
+  oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.2.0
+  version: 0 (provisional)
+  xpath: /PORP_IN000001UV/controlActProcess/subject/submissionUnit/code/@code
+  ich_basis: 'IG §9.2.4.2: SU code + codeSystem are regional (rules eCTD4-006..009); IG §6.2 "Submission Unit Codes".'
+  eu_model: 'EU-IG "Submission Unit": OID 2.16.840.1.113883.3.6905.1.8.1, e.g. 100000155047 "Initial".'
+  status_rule: submissionUnit/statusCode only "active" (IG §9.2.4.2, rule eCTD4-010, CR 00800). An SU cannot be
+    suspended (EU-IG "Submission Unit").
+  code_pattern: eg_su_<EG v3.2.2 token> (ASSUMPTION; keeps a 1:1 link to the 3.2.2 token)
+codes:
+- code: eg_su_initial
+  v322_token: initial
+  display_name: initial
+  description: Initial submission to start any regulatory activity
+  provenance: EG-DRAFT
+  source: SPEC p.24 l.269-273; TG p.73-74 Annex 6 "EG Submission Unit" (l.1440 ff.)
+- code: eg_su_validation-response
+  v322_token: validation-response
+  display_name: validation-response
+  description: For rectifying submission in response to content validation issues
+  provenance: EG-DRAFT
+  source: SPEC p.24 Table 1; TG p.73-74 Annex 6 "EG Submission Unit" (l.1440 ff.)
+- code: eg_su_response
+  v322_token: response
+  display_name: response
+  description: Response to any kind of question, outstanding issues or information requested by the agency; also
+    used when consolidating the dossier after withdrawal/rejection of a single regulatory activity (submission description
+    must say so)
+  provenance: EG-DRAFT
+  source: SPEC p.25 l.283-287; TG p.73-74 Annex 6 "EG Submission Unit" (l.1440 ff.)
+  note: EU v4 uses a distinct "consolidating" type for this (EU-IG "Submission Unit"). EG drafts use response —
+    kept (EG-DRAFT). Open question for EDA.
+- code: eg_su_additional-info
+  v322_token: additional-info
+  display_name: additional-info
+  description: Other additional information (e.g. missing files); only if validation-response or response is not
+    suitable
+  provenance: EG-DRAFT
+  source: SPEC p.22, p.21 l.264; TG p.73-74 Annex 6 "EG Submission Unit" (l.1440 ff.)
+- code: eg_su_corrigendum
+  v322_token: corrigendum
+  display_name: corrigendum
+  description: Correction of information after the regulatory activity has concluded; exceptional, agreed with EDA
+    in advance
+  provenance: EG-DRAFT
+  source: TG p.73-74 Annex 6 "EG Submission Unit" (l.1440 ff.)
+  note: Not in SPEC (only as a word, p.18).
+- code: eg_su_reformat
+  v322_token: reformat
+  display_name: reformat
+  description: 'Baseline: reformatting an existing application from any format to eCTD, no content change, not reviewed;
+    always with submission type none'
+  provenance: EG-DRAFT
+  source: SPEC p.25 l.279-280; TG p.22 l.592-606; TG p.73-74 Annex 6 "EG Submission Unit" (l.1440 ff.)
+  note: ICH v4 defines no baseline/transition submission (TMM removed, CR 00710); EU-IG "COMPATIBILITY..." says
+    the same baselining rules can presumably be applied. In v4 use only for non-eCTD -> v4 baselines; v3.2.2 ->
+    v4 uses Forward Compatibility, not reformat (see ../migration.md).
+- code: eg_su_re-examination
+  v322_token: re-examination
+  display_name: re-examination
+  description: Request for re-examination of an authority opinion (MAA, type II variation)
+  provenance: EG-DRAFT
+  source: TG p.73-74 Annex 6 "EG Submission Unit" (l.1440 ff.)
+  note: Not in SPEC.
+not_adopted:
+- token: closing
+  reason: EU v3 type; absent from both EG drafts (EG ref §9.1)
+- token: consolidating
+  reason: EU type; EG drafts use response instead (SPEC p.25; TG Annex 6)
+- token: responses / Response
+  reason: typos in SPEC p.25 Table 4 and l.285 for "response" (EG ref §10 item 13)

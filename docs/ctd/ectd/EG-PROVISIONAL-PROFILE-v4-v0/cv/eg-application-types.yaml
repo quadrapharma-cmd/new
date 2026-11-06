@@ -1,0 +1,179 @@
+# =====================================================================================
+# PROVISIONAL — NOT ISSUED BY EDA.  EG provisional regional profile v0 for eCTD v4.0.
+# Every OID containing "EG-PLACEHOLDER" is a deliberately INVALID marker, not an OID.
+# EDA must register real OIDs before any of these codes can pass ICH rules
+# eCTD4-008/009/031/075/081/083/084.  See ../README.md (provenance tags, OID plan).
+# Provenance tags:  ICH | EU-DERIVED | EG-DRAFT | ASSUMPTION
+# Source short-cites: IG = ICH eCTD v4.0 IG v1.7 (5 May 2026); CV = ICH CV package v1.0.3;
+#   EU-IG = EU eCTD v4.0 M1 IG draft v1.2 (Oct 2024, cited by heading); SPEC = EG M1 eCTD
+#   Specification DRAFT v1.0 (2026, page/line/App.2 row); TG = EDA draft Technical Guidance
+#   for eCTD Submissions in Egypt v1.0/2026 (PDF page / margin line).
+# =====================================================================================
+
+code_system:
+  name: EG Application Type
+  short_name: eg-application-type
+  oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.4.0
+  version: 0 (provisional)
+  xpath: /PORP_IN000001UV/controlActProcess/subject/submissionUnit/componentOf1/submission/componentOf/application/code/@code
+  ich_basis: 'IG §9.2.14: application code + codeSystem regional, "The concept of application element differs among
+    regions" (rules eCTD4-038..042).'
+  eu_model: 'EU-IG "Application": "EU Application Code - Legal Basis" OID 2.16.840.1.113883.3.6905.1.4.1 (e.g. 100000116047
+    Art. 8(3)); application/id/item@root = the v3.2.2 envelope UUID, @extension = procedure number.'
+  gap: 'GAP: neither EG draft defines an application-type list. This list is EU-DERIVED from the EG M1 1.5 headings,
+    which EG copied from the EU.'
+  eg_scope_rule: 'EG-DRAFT: "For products with different dosage forms and strengths are submitted under separate
+    applications" (SPEC Glossary p.3-4) -> one v4 application per strength/dosage form.'
+codes:
+- code: eg_application_type_1
+  display_name: Full / stand-alone dossier (incl. innovative product)
+  provenance: 'EU-DERIVED (EU-IG "Application" terminology: Full Dossier) + EG-DRAFT maa-inn (TG p.66)'
+- code: eg_application_type_2
+  display_name: Generic
+  provenance: 'EG-DRAFT M1.5.2 heading + file component "generic" (SPEC App.2 rows 149-150 p.64); EU-DERIVED (EU-IG
+    "Application": Generic)'
+- code: eg_application_type_3
+  display_name: Hybrid
+  provenance: EG-DRAFT M1.5.2 "hybrid" (SPEC row 150 p.64); EU-DERIVED
+- code: eg_application_type_4
+  display_name: Biosimilar
+  provenance: 'EG-DRAFT M1.5.2 "biosimilar" (SPEC row 150); maa-bios (TG p.69); EU-DERIVED (EU-IG "Application":
+    Biosimilar)'
+- code: eg_application_type_5
+  display_name: Bibliographic (well-established use)
+  provenance: 'EG-DRAFT M1.5.1 (SPEC rows 147-148 p.63-64); EU-DERIVED (EU-IG "Application": Bibliographic)'
+- code: eg_application_type_6
+  display_name: Active Substance Master File
+  provenance: 'ASSUMPTION from EG submission type asmf (TG p.61): a master file has its own lifecycle, so its own
+    v4 application'
+- code: eg_application_type_7
+  display_name: Plasma Master File
+  provenance: ASSUMPTION from submission type PMF (TG p.65)
+- code: eg_application_type_8
+  display_name: Certificate of Suitability (CEP) application
+  provenance: ASSUMPTION from submission type cep (TG p.61)
+  note: Whether a CEP is an application or a document inside an MA lifecycle must be decided by EDA.
+related_lists:
+  mode:
+    code_system:
+      name: EG Submission Mode
+      short_name: eg-mode
+      oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.5.0
+      version: 0 (provisional)
+      xpath: /PORP_IN000001UV/controlActProcess/subject/submissionUnit/componentOf1/submission/subject3/mode/code/@code
+      eu_model: 'EU-IG "Mode": OID 2.16.840.1.113883.3.6905.1.10.1 (100000155556 = worksharing); only for variation/extension
+        activities, in every sequence.'
+    codes:
+    - code: eg_mode_single
+      v322_token: single
+      display_name: A Single Regulatory Activity
+      provenance: EG-DRAFT
+      source: SPEC p.8 l.79, p.15; TG p.72
+    - code: eg_mode_grouping
+      v322_token: grouping
+      display_name: A Grouped Activity
+      provenance: EG-DRAFT
+      source: SPEC p.8 l.79, p.15; TG p.72
+      note: 'Meaning differs: Human Pharmaceuticals = several variations, single product; Biological/Innovative
+        = also multi-product (SPEC p.15).'
+    - code: eg_mode_parallel-single
+      v322_token: parallel-single
+      display_name: Parallel Assessment Single RA
+      provenance: EG-DRAFT
+      source: SPEC p.8 l.79, p.15; TG p.72 ("Parallel Single")
+    - code: eg_mode_parallel-grouping
+      v322_token: parallel-grouping
+      display_name: Parallel Assessment Grouped RA
+      provenance: EG-DRAFT
+      source: SPEC p.8 l.79 (p.15 prints "parallel  grouping"); TG p.72
+      note: Definition identical to parallel-single in SPEC p.15 (EG ref §10 item 14).
+  registration_type:
+    code_system:
+      name: EG Registration Type
+      short_name: eg-registration-type
+      oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.6.0
+      version: 0 (provisional)
+      v4_carrier: /…/submission/subject2/review/subject2/productCategory/code (one productCategory per EG list)
+        — ASSUMPTION, see ../rules.md §6
+      gap: 'GAP: "Registration Type CV" referenced (SPEC p.18; TG p.28 l.754-756 "published on the EDA web site")
+        but not published. Codes below are built from the examples only; spelling is ASSUMPTION.'
+    codes:
+    - code: eg_regtype_local
+      v322_token: local
+      display_name: Local
+      provenance: EG-DRAFT example value (SPEC p.18)
+    - code: eg_regtype_imported-finished
+      v322_token: (unknown)
+      display_name: Imported Finished
+      provenance: EG-DRAFT description example (SPEC p.18; TG p.28 l.755)
+    - code: eg_regtype_imported-bulk
+      v322_token: (unknown)
+      display_name: Imported Bulk
+      provenance: EG-DRAFT description example (SPEC p.18; TG p.28 l.755)
+  marketing_type:
+    code_system:
+      name: EG Marketing Type
+      short_name: eg-marketing-type
+      oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.7.0
+      version: 0 (provisional)
+      v4_carrier: second productCategory element (ASSUMPTION, see ../rules.md §6)
+      gap: 'GAP: "Marketing Type CV" not published (SPEC p.19; TG p.28 l.757-759). Whether "Tender and Export" is
+        one value or two is unknown.'
+    codes:
+    - code: eg_mkttype_local
+      v322_token: local
+      display_name: Local
+      provenance: EG-DRAFT example (SPEC p.19)
+    - code: eg_mkttype_tender-and-export
+      v322_token: (unknown)
+      display_name: Tender and Export
+      provenance: EG-DRAFT description example (SPEC p.19; TG p.28 l.758); ASSUMPTION that it is one value
+  territorial_authority:
+    code_system:
+      name: EG Territorial Authority
+      short_name: eg-authority
+      oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.12.0
+      version: 0 (provisional)
+      v4_carrier: /…/application/informationRecipient/territorialAuthority/governingAuthority (EU-IG "Territorial
+        Authority (as information recipient related to application)")
+    codes:
+    - code: EG-EDA
+      display_name: Egyptian Drug Authority
+      provenance: EG-DRAFT agency/@code (SPEC p.18; App.2.4 p.78)
+      note: TG p.27 says the authority code is "EDA" (conflict, EG ref §10 item 29). SPEC value adopted.
+  territory:
+    code_system:
+      name: EG Territory / Country (constrained ISO 3166-1 alpha-2)
+      short_name: eg-country
+      oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.11.0
+      version: 0 (provisional)
+      note: IG §6.4 names ISO 3166-1; EU constrains it in SPOR (EU-IG "Controlled Vocabulary specified by ISO").
+        EG constrains it to one value.
+    codes:
+    - code: eg
+      display_name: Egypt
+      provenance: EG-DRAFT App.2.1 p.78; envelope/@country (SPEC p.14)
+  contact_party_role:
+    code_system:
+      name: EG Contact Party Role
+      short_name: eg-contact-party-role
+      oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.13.0
+      version: 0 (provisional)
+      gap: 'GAP: EG drafts have no contact-party concept. EU-DERIVED (EU-IG "Contact Party": at least one per SU;
+        role list 2.16.840.1.113883.3.6905.1.6.1).'
+    codes:
+    - code: eg_contact_1
+      display_name: Regulatory contact (person authorised for communication on behalf of the applicant)
+      provenance: EU-DERIVED
+    - code: eg_contact_2
+      display_name: eCTD technical contact
+      provenance: 'EU-DERIVED (EU-IG: technical contact for troubleshooting, e.g. forward compatibility)'
+  organisation_identifier:
+    code_system:
+      name: EDA portal organisation identifier (namespace)
+      short_name: eg-org-id
+      oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.14.0
+      version: 0 (provisional)
+      use: sponsorOrganization/id/item@root = this OID, @extension = applicant ID issued by the EDA portal (https://reg-submit.edaegypt.gov.eg,
+        TG p.26 l.686). EU-DERIVED from EU OMS LOC-ID (EU-IG "Applicant"); ASSUMPTION that EDA has such an ID.
+    codes: []

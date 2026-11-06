@@ -1,0 +1,2841 @@
+# =====================================================================================
+# PROVISIONAL — NOT ISSUED BY EDA.  EG provisional regional profile v0 for eCTD v4.0.
+# Every OID containing "EG-PLACEHOLDER" is a deliberately INVALID marker, not an OID.
+# EDA must register real OIDs before any of these codes can pass ICH rules
+# eCTD4-008/009/031/075/081/083/084.  See ../README.md (provenance tags, OID plan).
+# Provenance tags:  ICH | EU-DERIVED | EG-DRAFT | ASSUMPTION
+# Source short-cites: IG = ICH eCTD v4.0 IG v1.7 (5 May 2026); CV = ICH CV package v1.0.3;
+#   EU-IG = EU eCTD v4.0 M1 IG draft v1.2 (Oct 2024, cited by heading); SPEC = EG M1 eCTD
+#   Specification DRAFT v1.0 (2026, page/line/App.2 row); TG = EDA draft Technical Guidance
+#   for eCTD Submissions in Egypt v1.0/2026 (PDF page / margin line).
+# =====================================================================================
+
+code_system:
+  name: EG eCTD Context of Use (Module 1)
+  short_name: eg-context-of-use
+  oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.1.0
+  version: 0 (provisional)
+  status: PROVISIONAL - not issued by EDA
+  xpath: /PORP_IN000001UV/controlActProcess/subject/submissionUnit/component/contextOfUse/code/@code
+  purpose: Module 1 headings for Egypt; ICH CoU list covers M2-M5 only (IG §6.1 "Consult Regional/Module 1 IG to
+    complete the list"; IG §6.2 "Context of Use Codes ... specifically Module 1").
+  naming: Code pattern eg_<CTD number> follows the ICH CoU pattern ich_<section> (CV sheet "ICH Context of Use")
+    with the regional prefix style seen in ICH/EU samples (us_application_type_1, IG §9.2.14; eu_keyword_definition_type_2,
+    EU-IG "Keyword Definition"). Display names follow the EU M1 CoU display style "M1.0 Cover Letter" (EU-IG Table
+    3). The EU itself uses opaque numeric SPOR-RMS term IDs (OID 2.16.840.1.113883.3.6905.1.17.1); EDA may later
+    replace these mnemonic codes with opaque IDs — the maps_from_v322 block keeps the forward-compatibility link
+    either way. ASSUMPTION.
+  hierarchy_rule: 'No ICH table of contents exists for v4 (VEN 30 Sep 2026 Open Discussion #2); viewers build the
+    tree from the parent field. The Module 1 root itself has NO code (cf. ich_2 retired in CV v1.0.3, CR 00790).'
+  keyword_rule: Keyword types not listed for a code are not allowed on it (rule eCTD4-071); R types are required
+    (eCTD4-070); one keyword per type per CoU (eCTD4-072).
+  source_rows: 185 rows of SPEC App.2 (p.28-78); util rows 180-183 and the eg-regional.xml row 2 have no v4 equivalent
+    (IG §5.1 no util folder; one submissionunit.xml).
+count: 151
+codes:
+- code: eg_1.0
+  display_name: M1.0 Cover Letter
+  ctd_section: '1.0'
+  parent: null
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: eg document type (cover)
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.9.0
+    allowed_values:
+    - cover
+    - tracking
+    provenance: EG-DRAFT fixed file-name components cover-/tracking- (SPEC App.2 rows 4-5 p.29-30) turned into a
+      keyword as EU-IG "Naming Conventions" does; ASSUMPTION (optional)
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-0-cover
+    folder: m1/eg/10-cover
+    file_patterns:
+    - m1/eg/10-cover/cover-VAR.EXT
+    - m1/eg/10-cover/tracking-VAR.EXT
+    spec_ref: SPEC App.2 row 3, p.29
+  eu_equivalent:
+    code: '100000164029'
+    code_system: 2.16.840.1.113883.3.6905.1.17.1
+    display: M1.0 Cover Letter
+    basis: EU-IG table 3 "Example of Controlled Vocabularies for EU purpose"
+- code: eg_1.2
+  display_name: M1.2 Application Forms
+  ctd_section: '1.2'
+  parent: null
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-form
+    folder: m1/eg/12-form
+    file_patterns: null
+    spec_ref: SPEC App.2 row 6, p.30
+- code: eg_1.2.1
+  display_name: M1.2.1 Application Form
+  ctd_section: 1.2.1
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-1-af
+    folder: m1/eg/12-form/121-af/
+    file_patterns:
+    - m1/eg/12-form/121-af/form-af-VAR.EXT
+    spec_ref: SPEC App.2 row 7, p.30
+  eu_equivalent:
+    code: '100000164030'
+    code_system: 2.16.840.1.113883.3.6905.1.17.1
+    basis: EU-IG territorial-authority sample, comment "Component Application Form" (display name not printed; inferred)
+- code: eg_1.2.2
+  display_name: M1.2.2 Legal Documents
+  ctd_section: 1.2.2
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: 'ASSUMPTION: TG Annex 5 prints 1.2.2 NON-italic although it only has sub-folders (TG
+    p.55); treated as folder-only for consistency with the other 1.2.x parents — confirm with EDA'
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-2-legal
+    folder: m1/eg/12-form/122-legal
+    file_patterns: null
+    spec_ref: SPEC App.2 row 9, p.31
+- code: eg_1.2.2.1
+  display_name: M1.2.2.1 Letter of Attorney for Company Representative
+  ctd_section: 1.2.2.1
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-1-loattor
+    folder: m1/eg/12-form/122-legal/1221-loattor
+    file_patterns: null
+    spec_ref: SPEC App.2 row 10, p.31
+- code: eg_1.2.2.2
+  display_name: M1.2.2.2 Manufacturing License and IDA License
+  ctd_section: 1.2.2.2
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-2-manlic
+    folder: m1/eg/12-form/122-legal/1222-manlic
+    file_patterns: null
+    spec_ref: SPEC App.2 row 11, p.31
+- code: eg_1.2.2.3
+  display_name: M1.2.2.3 GMP Certificate(s) / Alternative Documents
+  ctd_section: 1.2.2.3
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-3-gmpcert
+    folder: m1/eg/12-form/122-legal/1223-gmpcert
+    file_patterns: null
+    spec_ref: SPEC App.2 row 12, p.31
+  notes:
+  - 'Overlap: 1.2.2.3 "GMP Certificate(s) / Alternative Documents" vs 1.2.2.21 "GMP Certificate" (EG ref §10 item
+    20). Placement rule needed from EDA.'
+- code: eg_1.2.2.4
+  display_name: M1.2.2.4 The Register of Trade
+  ctd_section: 1.2.2.4
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-4-trade
+    folder: m1/eg/12-form/122-legal/1224-trade
+    file_patterns: null
+    spec_ref: SPEC App.2 row 13, p.31
+- code: eg_1.2.2.5
+  display_name: M1.2.2.5 Toll Manufacturer License
+  ctd_section: 1.2.2.5
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-5-toll
+    folder: m1/eg/12-form/122-legal/1225-toll
+    file_patterns: null
+    spec_ref: SPEC App.2 row 14, p.32
+- code: eg_1.2.2.6
+  display_name: M1.2.2.6 Scientific Office License
+  ctd_section: 1.2.2.6
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-6-sol
+    folder: m1/eg/12-form/122-legal/1226-sol
+    file_patterns: null
+    spec_ref: SPEC App.2 row 15, p.32
+- code: eg_1.2.2.7
+  display_name: M1.2.2.7 Importers Register License
+  ctd_section: 1.2.2.7
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-7-import
+    folder: m1/eg/12-form/122-legal/1227-import
+    file_patterns: null
+    spec_ref: SPEC App.2 row 16, p.32
+- code: eg_1.2.2.8
+  display_name: M1.2.2.8 Store License
+  ctd_section: 1.2.2.8
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-8-storelic
+    folder: m1/eg/12-form/122-legal/1228-storelic
+    file_patterns: null
+    spec_ref: SPEC App.2 row 17, p.32
+- code: eg_1.2.2.9
+  display_name: M1.2.2.9 Authorisation Letter / Agency Agreement
+  ctd_section: 1.2.2.9
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-9-authlet
+    folder: m1/eg/12-form/122-legal/1229-authlet
+    file_patterns: null
+    spec_ref: SPEC App.2 row 18, p.33
+- code: eg_1.2.2.10
+  display_name: M1.2.2.10 Manufacturing Agreement
+  ctd_section: 1.2.2.10
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-10-managre
+    folder: m1/eg/12-form/122-legal/12210-managre
+    file_patterns: null
+    spec_ref: SPEC App.2 row 19, p.33
+- code: eg_1.2.2.11
+  display_name: M1.2.2.11 Packaging Agreement
+  ctd_section: 1.2.2.11
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-11-pacagre
+    folder: m1/eg/12-form/122-legal/12211-pacagre
+    file_patterns: null
+    spec_ref: SPEC App.2 row 20, p.33
+- code: eg_1.2.2.12
+  display_name: M1.2.2.12 Storage Agreement
+  ctd_section: 1.2.2.12
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-12-storeagre
+    folder: m1/eg/12-form/122-legal/12212-storeagre
+    file_patterns: null
+    spec_ref: SPEC App.2 row 21, p.33
+- code: eg_1.2.2.13
+  display_name: M1.2.2.13 Other Agreements
+  ctd_section: 1.2.2.13
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-13-othagre
+    folder: m1/eg/12-form/122-legal/12213-othagre
+    file_patterns: null
+    spec_ref: SPEC App.2 row 22, p.33
+- code: eg_1.2.2.14
+  display_name: M1.2.2.14 Termination / Waiver
+  ctd_section: 1.2.2.14
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-14-term
+    folder: m1/eg/12-form/122-legal/12214-term
+    file_patterns: null
+    spec_ref: SPEC App.2 row 23, p.34
+- code: eg_1.2.2.15
+  display_name: M1.2.2.15 Tax Card
+  ctd_section: 1.2.2.15
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-15-tax
+    folder: m1/eg/12-form/122-legal/12215-tax
+    file_patterns: null
+    spec_ref: SPEC App.2 row 24, p.34
+- code: eg_1.2.2.16
+  display_name: M1.2.2.16 List of Distributors
+  ctd_section: 1.2.2.16
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-16-distribut
+    folder: m1/eg/12-form/122-legal/12216-distribut
+    file_patterns: null
+    spec_ref: SPEC App.2 row 25, p.34
+- code: eg_1.2.2.17
+  display_name: M1.2.2.17 IP Protection Law No. 82 of 2002 Commitment
+  ctd_section: 1.2.2.17
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-17-ipp
+    folder: m1/eg/12-form/122-legal/12217-ipp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 26, p.34
+- code: eg_1.2.2.18
+  display_name: M1.2.2.18 NEW local MA legal Agreement
+  ctd_section: 1.2.2.18
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-18-newlegag
+    folder: m1/eg/12-form/122-legal/12218-newlegag
+    file_patterns: null
+    spec_ref: SPEC App.2 row 27, p.35
+- code: eg_1.2.2.19
+  display_name: M1.2.2.19 Letter of Authorisation for a new Applicant in Egypt
+  ctd_section: 1.2.2.19
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-19-loauth
+    folder: m1/eg/12-form/122-legal/12219-loauth
+    file_patterns: null
+    spec_ref: SPEC App.2 row 28, p.35
+- code: eg_1.2.2.20
+  display_name: M1.2.2.20 PV Agreement between the MAH & the Service Provider
+  ctd_section: 1.2.2.20
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-20-pvagre
+    folder: m1/eg/12-form/122-legal/12220-pvagre
+    file_patterns: null
+    spec_ref: SPEC App.2 row 29, p.35
+- code: eg_1.2.2.21
+  display_name: M1.2.2.21 GMP Certificate
+  ctd_section: 1.2.2.21
+  parent: eg_1.2.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-2-21-gmpcert2
+    folder: m1/eg/12-form/122-legal/12221-gmpcert2
+    file_patterns: null
+    spec_ref: SPEC App.2 row 30, p.35
+  notes:
+  - 'Overlap: 1.2.2.3 "GMP Certificate(s) / Alternative Documents" vs 1.2.2.21 "GMP Certificate" (EG ref §10 item
+    20). Placement rule needed from EDA.'
+- code: eg_1.2.3
+  display_name: M1.2.3 EDA Approvals
+  ctd_section: 1.2.3
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-3-edaapp
+    folder: m1/eg/12-form/123-edaapp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 31, p.35
+- code: eg_1.2.3.1
+  display_name: M1.2.3.1 Registration Request Approval
+  ctd_section: 1.2.3.1
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-1-regreq
+    folder: m1/eg/12-form/123-edaapp/1231-regreq
+    file_patterns: null
+    spec_ref: SPEC App.2 row 32, p.36
+- code: eg_1.2.3.2
+  display_name: M1.2.3.2 Inquiry Approval
+  ctd_section: 1.2.3.2
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-2-inqapp
+    folder: m1/eg/12-form/123-edaapp/1232-inqapp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 33, p.36
+- code: eg_1.2.3.3
+  display_name: M1.2.3.3 Name Approval
+  ctd_section: 1.2.3.3
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-3-nameapp
+    folder: m1/eg/12-form/123-edaapp/1233-nameapp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 34, p.36
+- code: eg_1.2.3.4
+  display_name: M1.2.3.4 Registration License
+  ctd_section: 1.2.3.4
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-4-reglic
+    folder: m1/eg/12-form/123-edaapp/1234-reglic
+    file_patterns: null
+    spec_ref: SPEC App.2 row 35, p.36
+- code: eg_1.2.3.5
+  display_name: M1.2.3.5 Preliminary Approval
+  ctd_section: 1.2.3.5
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-5-prelimapp
+    folder: m1/eg/12-form/123-edaapp/1235-prelimapp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 36, p.37
+- code: eg_1.2.3.6
+  display_name: M1.2.3.6 Non-Reference Approval
+  ctd_section: 1.2.3.6
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-6-nonrefapp
+    folder: m1/eg/12-form/123-edaapp/1236-nonrefapp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 37, p.37
+- code: eg_1.2.3.7
+  display_name: M1.2.3.7 Exemption Approval
+  ctd_section: 1.2.3.7
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-7-exemptapp
+    folder: m1/eg/12-form/123-edaapp/1237-exemptapp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 38, p.37
+- code: eg_1.2.3.8
+  display_name: M1.2.3.8 Pricing Certificate
+  ctd_section: 1.2.3.8
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-8-price
+    folder: m1/eg/12-form/123-edaapp/1238-price
+    file_patterns: null
+    spec_ref: SPEC App.2 row 39, p.37
+- code: eg_1.2.3.9
+  display_name: M1.2.3.9 Pharmacovigilance Approval
+  ctd_section: 1.2.3.9
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-9-pvapp
+    folder: m1/eg/12-form/123-edaapp/1239-pvapp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 40, p.37
+- code: eg_1.2.3.10
+  display_name: M1.2.3.10 Inspection Report
+  ctd_section: 1.2.3.10
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-10-insprep
+    folder: m1/eg/12-form/123-edaapp/12310-insprep
+    file_patterns: null
+    spec_ref: SPEC App.2 row 41, p.38
+- code: eg_1.2.3.11
+  display_name: M1.2.3.11 Importation Approval for each API
+  ctd_section: 1.2.3.11
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-11-importapp
+    folder: m1/eg/12-form/123-edaapp/12311-importapp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 42, p.38
+- code: eg_1.2.3.12
+  display_name: M1.2.3.12 CADC Report
+  ctd_section: 1.2.3.12
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-12-cadcrep
+    folder: m1/eg/12-form/123-edaapp/12312-cadcrep
+    file_patterns: null
+    spec_ref: SPEC App.2 row 43, p.38
+- code: eg_1.2.3.13
+  display_name: M1.2.3.13 Stability Study Approval
+  ctd_section: 1.2.3.13
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-13-stabstud
+    folder: m1/eg/12-form/123-edaapp/12313-stabstud
+    file_patterns: null
+    spec_ref: SPEC App.2 row 44, p.38
+- code: eg_1.2.3.14
+  display_name: M1.2.3.14 Stability Protocol Approval
+  ctd_section: 1.2.3.14
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-14-stabprot
+    folder: m1/eg/12-form/123-edaapp/12314-stabprot
+    file_patterns: null
+    spec_ref: SPEC App.2 row 45, p.39
+- code: eg_1.2.3.15
+  display_name: M1.2.3.15 Module 3 Approval
+  ctd_section: 1.2.3.15
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-15-m3app
+    folder: m1/eg/12-form/123-edaapp/12315-m3app
+    file_patterns: null
+    spec_ref: SPEC App.2 row 46, p.39
+- code: eg_1.2.3.16
+  display_name: M1.2.3.16 Module 5 Approval
+  ctd_section: 1.2.3.16
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-16-m5app
+    folder: m1/eg/12-form/123-edaapp/12316-m5app
+    file_patterns: null
+    spec_ref: SPEC App.2 row 47, p.39
+- code: eg_1.2.3.17
+  display_name: M1.2.3.17 Pre-approved letters from EDA concerning the product
+  ctd_section: 1.2.3.17
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-17-preapplet
+    folder: m1/eg/12-form/123-edaapp/12317-preapplet
+    file_patterns: null
+    spec_ref: SPEC App.2 row 48, p.39
+- code: eg_1.2.3.18
+  display_name: M1.2.3.18 Variation Approvals
+  ctd_section: 1.2.3.18
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-18-varapp
+    folder: m1/eg/12-form/123-edaapp/12318-varapp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 49, p.39
+- code: eg_1.2.3.19
+  display_name: M1.2.3.19 Innovative Products Scientific Committee Approval
+  ctd_section: 1.2.3.19
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-19-ipsca
+    folder: m1/eg/12-form/123-edaapp/12319-ipsca
+    file_patterns: null
+    spec_ref: SPEC App.2 row 50, p.40
+- code: eg_1.2.3.20
+  display_name: M1.2.3.20 Registration License for the Solvent
+  ctd_section: 1.2.3.20
+  parent: eg_1.2.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-3-20-reglicsolv
+    folder: m1/eg/12-form/123-edaapp/12320-reglicsolv
+    file_patterns: null
+    spec_ref: SPEC App.2 row 51, p.40
+- code: eg_1.2.4
+  display_name: M1.2.4 Declarations
+  ctd_section: 1.2.4
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-4-declar
+    folder: m1/eg/12-form/124-declar
+    file_patterns: null
+    spec_ref: SPEC App.2 row 52, p.40
+- code: eg_1.2.4.1
+  display_name: M1.2.4.1 Declaration Letter stating the list of Registered & Under-Registration Products owned by
+    the Toll Company
+  ctd_section: 1.2.4.1
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-1-regprod
+    folder: m1/eg/12-form/124-declar/1241-regprod
+    file_patterns: null
+    spec_ref: SPEC App.2 row 53, p.41
+- code: eg_1.2.4.2
+  display_name: M1.2.4.2 Declaration Letter from the License Holder specifying the API Manufacturers
+  ctd_section: 1.2.4.2
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-2-apiman
+    folder: m1/eg/12-form/124-declar/1242-apiman
+    file_patterns: null
+    spec_ref: SPEC App.2 row 54, p.41
+- code: eg_1.2.4.3
+  display_name: M1.2.4.3 Declaration letter from the license holder specifying approved pack in Egypt
+  ctd_section: 1.2.4.3
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-3-liceholdpac
+    folder: m1/eg/12-form/124-declar/1243-liceholdpac
+    file_patterns: null
+    spec_ref: SPEC App.2 row 55, p.41
+- code: eg_1.2.4.4
+  display_name: M1.2.4.4 Declaration Letter from the License Holder stating the Form of Bulk (Strips, Capsules,
+    etc.)
+  ctd_section: 1.2.4.4
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-4-liceholdbulk
+    folder: m1/eg/12-form/124-declar/1244-liceholdbulk
+    file_patterns: null
+    spec_ref: SPEC App.2 row 56, p.41
+- code: eg_1.2.4.5
+  display_name: M1.2.4.5 Declaration Letter from the Manufacturer of the Active Substance to inform the Applicant
+    in case of Modification of the manufacturing Process or Specifications
+  ctd_section: 1.2.4.5
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-5-apimanappl
+    folder: m1/eg/12-form/124-declar/1245-apimanappl
+    file_patterns: null
+    spec_ref: SPEC App.2 row 57, p.42
+- code: eg_1.2.4.6
+  display_name: M1.2.4.6 Declaration Letter from API Supplier
+  ctd_section: 1.2.4.6
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-6-apisupp
+    folder: m1/eg/12-form/124-declar/1246-apisupp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 58, p.42
+- code: eg_1.2.4.7
+  display_name: M1.2.4.7 Declaration Letter for Site Addition
+  ctd_section: 1.2.4.7
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-7-siteadd
+    folder: m1/eg/12-form/124-declar/1247-siteadd
+    file_patterns: null
+    spec_ref: SPEC App.2 row 59, p.42
+- code: eg_1.2.4.8
+  display_name: M1.2.4.8 Declaration Letter Form LH stating all Variations & Justification for the Change
+  ctd_section: 1.2.4.8
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-8-allvar
+    folder: m1/eg/12-form/124-declar/1248-allvar
+    file_patterns: null
+    spec_ref: SPEC App.2 row 60, p.42
+- code: eg_1.2.4.9
+  display_name: M1.2.4.9 Other declarations requested by Egyptian Drug Authority
+  ctd_section: 1.2.4.9
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-9-decother
+    folder: m1/eg/12-form/124-declar/1249-decother
+    file_patterns: null
+    spec_ref: SPEC App.2 row 61, p.43
+- code: eg_1.2.4.10
+  display_name: M1.2.4.10 List of the Countries where the Product is registered & marketed
+  ctd_section: 1.2.4.10
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-10-countries
+    folder: m1/eg/12-form/124-declar/12410-countries
+    file_patterns: null
+    spec_ref: SPEC App.2 row 62, p.43
+- code: eg_1.2.4.11
+  display_name: M1.2.4.11 Ph. Eur. Certificate(s) of Suitability for TSE
+  ctd_section: 1.2.4.11
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-11-tse
+    folder: m1/eg/12-form/124-declar/12411-tse
+    file_patterns: null
+    spec_ref: SPEC App.2 row 63, p.43
+- code: eg_1.2.4.12
+  display_name: M1.2.4.12 TSE/BSE Supplier Safety Declaration (if CEP not available)
+  ctd_section: 1.2.4.12
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-12-bsesafdec
+    folder: m1/eg/12-form/124-declar/12412-bsesafdec
+    file_patterns: null
+    spec_ref: SPEC App.2 row 64, p.43
+- code: eg_1.2.4.13
+  display_name: M1.2.4.13 Raw Materials Storage Responsibility Declaration (for local Products)
+  ctd_section: 1.2.4.13
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-13-rawmat
+    folder: m1/eg/12-form/124-declar/12413-rawmat
+    file_patterns: null
+    spec_ref: SPEC App.2 row 65, p.43
+- code: eg_1.2.4.14
+  display_name: M1.2.4.14 Excipient/s Supplier Name & Origin
+  ctd_section: 1.2.4.14
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-14-exipsup
+    folder: m1/eg/12-form/124-declar/12414-exipsup
+    file_patterns: null
+    spec_ref: SPEC App.2 row 66, p.44
+- code: eg_1.2.4.15
+  display_name: M1.2.4.15 Trade Name of the Albumin used as Stabilizer
+  ctd_section: 1.2.4.15
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-15-albtraden
+    folder: m1/eg/12-form/124-declar/12415-albtraden
+    file_patterns: null
+    spec_ref: SPEC App.2 row 67, p.44
+- code: eg_1.2.4.16
+  display_name: M1.2.4.16 Albumin as Stabilizer Batch Release Certificate
+  ctd_section: 1.2.4.16
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-16-albstabil
+    folder: m1/eg/12-form/124-declar/12416-albstabil
+    file_patterns: null
+    spec_ref: SPEC App.2 row 68, p.44
+- code: eg_1.2.4.17
+  display_name: M1.2.4.17 Plasma Derivative Supplier Safety and Efficacy Commitment
+  ctd_section: 1.2.4.17
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-17-plasdersub
+    folder: m1/eg/12-form/124-declar/12417-plasdersub
+    file_patterns: null
+    spec_ref: SPEC App.2 row 69, p.44
+- code: eg_1.2.4.18
+  display_name: M1.2.4.18 No Change in physical Address and Product related Processes Declaration
+  ctd_section: 1.2.4.18
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-18-nochaadd
+    folder: m1/eg/12-form/124-declar/12418-nochaadd
+    file_patterns: null
+    spec_ref: SPEC App.2 row 70, p.45
+- code: eg_1.2.4.19
+  display_name: M1.2.4.19 Pack Type Declaration
+  ctd_section: 1.2.4.19
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-19-pactype
+    folder: m1/eg/12-form/124-declar/12419-pactype
+    file_patterns: null
+    spec_ref: SPEC App.2 row 71, p.45
+- code: eg_1.2.4.20
+  display_name: M1.2.4.20 Insert Declaration Letter
+  ctd_section: 1.2.4.20
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-20-insdeclet
+    folder: m1/eg/12-form/124-declar/12420-insdeclet
+    file_patterns: null
+    spec_ref: SPEC App.2 row 72, p.45
+- code: eg_1.2.4.21
+  display_name: M1.2.4.21 Site Master File Declaration
+  ctd_section: 1.2.4.21
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-21-sitemfdec
+    folder: m1/eg/12-form/124-declar/12421-sitemfdec
+    file_patterns: null
+    spec_ref: SPEC App.2 row 73, p.45
+- code: eg_1.2.4.22
+  display_name: M1.2.4.22 Storage Temperature at 25 °C Declaration
+  ctd_section: 1.2.4.22
+  parent: eg_1.2.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-4-22-storetemp
+    folder: m1/eg/12-form/124-declar/12422-storetemp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 74, p.45
+- code: eg_1.2.5
+  display_name: M1.2.5 Reference Product Document / Compendial
+  ctd_section: 1.2.5
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-5-refprod
+    folder: m1/eg/12-form/125-refprod
+    file_patterns: null
+    spec_ref: SPEC App.2 row 75, p.46
+- code: eg_1.2.5.1
+  display_name: M1.2.5.1 The Reference Product Documents
+  ctd_section: 1.2.5.1
+  parent: eg_1.2.5
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-5-1-refproddoc
+    folder: m1/eg/12-form/125-refprod/1251-refproddoc
+    file_patterns: null
+    spec_ref: SPEC App.2 row 76, p.46
+- code: eg_1.2.5.2
+  display_name: M1.2.5.2 Scientific Reference (Trials & Literature)
+  ctd_section: 1.2.5.2
+  parent: eg_1.2.5
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-5-2-sciref
+    folder: m1/eg/12-form/125-refprod/1252-sciref
+    file_patterns: null
+    spec_ref: SPEC App.2 row 77, p.46
+- code: eg_1.2.5.3
+  display_name: M1.2.5.3 Reference for the trade name change
+  ctd_section: 1.2.5.3
+  parent: eg_1.2.5
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-5-3-reftradn
+    folder: m1/eg/12-form/125-refprod/1253-reftradn
+    file_patterns: null
+    spec_ref: SPEC App.2 row 78, p.46
+- code: eg_1.2.5.4
+  display_name: M1.2.5.4 The latest recent Pharmacopeia
+  ctd_section: 1.2.5.4
+  parent: eg_1.2.5
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-5-4-recph
+    folder: m1/eg/12-form/125-refprod/1254-recph
+    file_patterns: null
+    spec_ref: SPEC App.2 row 79, p.47
+- code: eg_1.2.6
+  display_name: M1.2.6 Imported Products Documents
+  ctd_section: 1.2.6
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-6-importdoc
+    folder: m1/eg/12-form/126-importdoc
+    file_patterns: null
+    spec_ref: SPEC App.2 row 80, p.47
+- code: eg_1.2.6.1
+  display_name: M1.2.6.1 Certificate of Pharmaceutical Product (CPP)
+  ctd_section: 1.2.6.1
+  parent: eg_1.2.6
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-6-1-cpp
+    folder: m1/eg/12-form/126-importdoc/1261-cpp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 81, p.47
+- code: eg_1.2.6.2
+  display_name: M1.2.6.2 List of Affiliates / Subsidiaries
+  ctd_section: 1.2.6.2
+  parent: eg_1.2.6
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-6-2-loaff
+    folder: m1/eg/12-form/126-importdoc/1262-loaff
+    file_patterns: null
+    spec_ref: SPEC App.2 row 82, p.47
+- code: eg_1.2.7
+  display_name: M1.2.7 Reliance Documents
+  ctd_section: 1.2.7
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-7-reliance
+    folder: m1/eg/12-form/127-reliance
+    file_patterns: null
+    spec_ref: SPEC App.2 row 83, p.47
+- code: eg_1.2.7.1
+  display_name: M1.2.7.1 Sameness Letter
+  ctd_section: 1.2.7.1
+  parent: eg_1.2.7
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-7-1-sameness
+    folder: m1/eg/12-form/127-reliance/1271-sameness
+    file_patterns: null
+    spec_ref: SPEC App.2 row 84, p.48
+- code: eg_1.2.7.2
+  display_name: M1.2.7.2 Unredacted Assessment Report
+  ctd_section: 1.2.7.2
+  parent: eg_1.2.7
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-7-2-unredact
+    folder: m1/eg/12-form/127-reliance/1272-unredact
+    file_patterns: null
+    spec_ref: SPEC App.2 row 85, p.48
+- code: eg_1.2.7.3
+  display_name: M1.2.7.3 RRA Variation Application with Annexes
+  ctd_section: 1.2.7.3
+  parent: eg_1.2.7
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-7-3-rravar
+    folder: m1/eg/12-form/127-reliance/1273-rravar
+    file_patterns: null
+    spec_ref: SPEC App.2 row 86, p.48
+- code: eg_1.2.7.4
+  display_name: M1.2.7.4 Correspondences between the Applicant and the Reference Agency
+  ctd_section: 1.2.7.4
+  parent: eg_1.2.7
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-7-4-correspond
+    folder: m1/eg/12-form/127-reliance/1274-correspond
+    file_patterns: null
+    spec_ref: SPEC App.2 row 87, p.48
+- code: eg_1.2.7.5
+  display_name: M1.2.7.5 List of Changes after first MA issued from EMA or FDA
+  ctd_section: 1.2.7.5
+  parent: eg_1.2.7
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-7-5-lofchange
+    folder: m1/eg/12-form/127-reliance/1275-lofchange
+    file_patterns: null
+    spec_ref: SPEC App.2 row 88, p.49
+- code: eg_1.2.7.6
+  display_name: M1.2.7.6 Rejection or Amendment Reporting Commitment
+  ctd_section: 1.2.7.6
+  parent: eg_1.2.7
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-7-6-reject
+    folder: m1/eg/12-form/127-reliance/1276-reject
+    file_patterns: null
+    spec_ref: SPEC App.2 row 89, p.49
+- code: eg_1.2.8
+  display_name: M1.2.8 Composition Documents
+  ctd_section: 1.2.8
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-8-composit
+    folder: m1/eg/12-form/128-composit
+    file_patterns: null
+    spec_ref: SPEC App.2 row 90, p.49
+- code: eg_1.2.8.1
+  display_name: M1.2.8.1 Composition Certificate
+  ctd_section: 1.2.8.1
+  parent: eg_1.2.8
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-8-1-compositcert
+    folder: m1/eg/12-form/128-composit/1281-compositcert
+    file_patterns: null
+    spec_ref: SPEC App.2 row 91, p.49
+- code: eg_1.2.8.2
+  display_name: M1.2.8.2 Specifications
+  ctd_section: 1.2.8.2
+  parent: eg_1.2.8
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-8-2-spec
+    folder: m1/eg/12-form/128-composit/1282-spec
+    file_patterns: null
+    spec_ref: SPEC App.2 row 92, p.49
+- code: eg_1.2.8.3
+  display_name: M1.2.8.3 Any Composition Calculations
+  ctd_section: 1.2.8.3
+  parent: eg_1.2.8
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-8-3-compcalc
+    folder: m1/eg/12-form/128-composit/1283-compcalc
+    file_patterns: null
+    spec_ref: SPEC App.2 row 93, p.50
+- code: eg_1.2.8.4
+  display_name: M1.2.8.4 Pellets / Premix Composition and Certificates
+  ctd_section: 1.2.8.4
+  parent: eg_1.2.8
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-8-4-pelletcomp
+    folder: m1/eg/12-form/128-composit/1284-pelletcomp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 94, p.50
+- code: eg_1.2.8.5
+  display_name: M1.2.8.5 Opadry / Coating Premix Composition
+  ctd_section: 1.2.8.5
+  parent: eg_1.2.8
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-8-5-opadry
+    folder: m1/eg/12-form/128-composit/1285-opadry
+    file_patterns: null
+    spec_ref: SPEC App.2 row 95, p.50
+- code: eg_1.2.8.6
+  display_name: M1.2.8.6 Capsule Shell Composition
+  ctd_section: 1.2.8.6
+  parent: eg_1.2.8
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-8-6-capshell
+    folder: m1/eg/12-form/128-composit/1286-capshell
+    file_patterns: null
+    spec_ref: SPEC App.2 row 96, p.50
+- code: eg_1.2.8.7
+  display_name: M1.2.8.7 Synonyms Evidence
+  ctd_section: 1.2.8.7
+  parent: eg_1.2.8
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-8-7-synonyms
+    folder: m1/eg/12-form/128-composit/1287-synonyms
+    file_patterns: null
+    spec_ref: SPEC App.2 row 97, p.51
+- code: eg_1.2.9
+  display_name: M1.2.9 Certificate of Analysis
+  ctd_section: 1.2.9
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-9-coa
+    folder: m1/eg/12-form/129-coa
+    file_patterns: null
+    spec_ref: SPEC App.2 row 98, p.51
+- code: eg_1.2.10
+  display_name: M1.2.10 Post Approval Changes Requirements
+  ctd_section: 1.2.10
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-10-postappch
+    folder: m1/eg/12-form/1210-postappch
+    file_patterns: null
+    spec_ref: SPEC App.2 row 99, p.51
+- code: eg_1.2.10.1
+  display_name: M1.2.10.1 PAC Approval from the COO (Imported Products)
+  ctd_section: 1.2.10.1
+  parent: eg_1.2.10
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-10-1-pacapp
+    folder: m1/eg/12-form/1210-postappch/12101-pacapp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 100, p.51
+- code: eg_1.2.10.2
+  display_name: M1.2.10.2 Summary of Change for Variation
+  ctd_section: 1.2.10.2
+  parent: eg_1.2.10
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-10-2-sumcavar
+    folder: m1/eg/12-form/1210-postappch/12102-sumcavar
+    file_patterns: null
+    spec_ref: SPEC App.2 row 101, p.51
+- code: eg_1.2.10.3
+  display_name: M1.2.10.3 Justification of the proposed Post Approval Change
+  ctd_section: 1.2.10.3
+  parent: eg_1.2.10
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-10-3-justpoc
+    folder: m1/eg/12-form/1210-postappch/12103-justpoc
+    file_patterns: null
+    spec_ref: SPEC App.2 row 102, p.52
+- code: eg_1.2.10.4
+  display_name: M1.2.10.4 Any additional Documents relevant to Variations
+  ctd_section: 1.2.10.4
+  parent: eg_1.2.10
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-10-4-anydoc
+    folder: m1/eg/12-form/1210-postappch/12104-anydoc
+    file_patterns: null
+    spec_ref: SPEC App.2 row 103, p.52
+- code: eg_1.2.11
+  display_name: M1.2.11 Proof of Payment
+  ctd_section: 1.2.11
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-11-pop
+    folder: m1/eg/12-form/1211-pop
+    file_patterns: null
+    spec_ref: SPEC App.2 row 104, p.52
+- code: eg_1.2.12
+  display_name: M1.2.12 Analysis Requirements Documentation (for Biological Products only)
+  ctd_section: 1.2.12
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-12-analysreq
+    folder: m1/eg/12-form/1212-analysreq
+    file_patterns: null
+    spec_ref: SPEC App.2 row 105, p.52
+- code: eg_1.2.12.1
+  display_name: M1.2.12.1 Detailed Standard Operating Procedures (SOP)
+  ctd_section: 1.2.12.1
+  parent: eg_1.2.12
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-12-1-sop
+    folder: m1/eg/12-form/1212-analysreq/12121-sop
+    file_patterns: null
+    spec_ref: SPEC App.2 row 106, p.53
+- code: eg_1.2.12.2
+  display_name: M1.2.12.2 Summary Protocol for Vaccines and Plasma derived Medicinal Products
+  ctd_section: 1.2.12.2
+  parent: eg_1.2.12
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-12-2-sumvacc
+    folder: m1/eg/12-form/1212-analysreq/12122-sumvacc
+    file_patterns: null
+    spec_ref: SPEC App.2 row 107, p.53
+- code: eg_1.2.13
+  display_name: M1.2.13 For Plasma derived Medicinal Products
+  ctd_section: 1.2.13
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-13-plasma
+    folder: m1/eg/12-form/1213-plasma
+    file_patterns: null
+    spec_ref: SPEC App.2 row 108, p.53
+- code: eg_1.2.13.1
+  display_name: M1.2.13.1 Plasma Master File
+  ctd_section: 1.2.13.1
+  parent: eg_1.2.13
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-13-1-pmf
+    folder: m1/eg/12-form/1213-plasma/12131-pmf
+    file_patterns: null
+    spec_ref: SPEC App.2 row 109, p.53
+- code: eg_1.2.13.2
+  display_name: M1.2.13.2 Certificate of Plasma Batch Release from Health Authority
+  ctd_section: 1.2.13.2
+  parent: eg_1.2.13
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-13-2-plasbatch
+    folder: m1/eg/12-form/1213-plasma/12132-plasbatch
+    file_patterns: null
+    spec_ref: SPEC App.2 row 110, p.53
+- code: eg_1.2.13.3
+  display_name: M1.2.13.3 PMF Approval from Country of Origin
+  ctd_section: 1.2.13.3
+  parent: eg_1.2.13
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-13-3-pmfapp
+    folder: m1/eg/12-form/1213-plasma/12133-pmfapp/
+    file_patterns: null
+    spec_ref: SPEC App.2 row 111, p.54
+- code: eg_1.2.14
+  display_name: M1.2.14 Scientific Advice Report
+  ctd_section: 1.2.14
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-14-scienadv
+    folder: m1/eg/12-form/1214-scienadv/
+    file_patterns: null
+    spec_ref: SPEC App.2 row 112, p.54
+- code: eg_1.2.15
+  display_name: M1.2.15 Documents related PV
+  ctd_section: 1.2.15
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-15-relpv
+    folder: m1/eg/12-form/1215-relpv/
+    file_patterns: null
+    spec_ref: SPEC App.2 row 113, p.54
+- code: eg_1.2.15.1
+  display_name: M1.2.15.1 Latest valid PSMF Assessment Report / Confirmation E-mail of PSMF Document(s) Receival
+  ctd_section: 1.2.15.1
+  parent: eg_1.2.15
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-15-1-valpsmfas
+    folder: m1/eg/12-form/1215-relpv/12151-valpsmfas/
+    file_patterns: null
+    spec_ref: SPEC App.2 row 114, p.54
+- code: eg_1.2.15.2
+  display_name: M1.2.15.2 Updated Version of Summary of PSMF(s) / PSSF
+  ctd_section: 1.2.15.2
+  parent: eg_1.2.15
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-15-2-updpsmf
+    folder: m1/eg/12-form/1215-relpv/12152-updpsmf/
+    file_patterns: null
+    spec_ref: SPEC App.2 row 115, p.55
+- code: eg_1.2.15.3
+  display_name: M1.2.15.3 The latest PSUR(s) (or the ACO in Case of Renewal)
+  ctd_section: 1.2.15.3
+  parent: eg_1.2.15
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-15-3-latpsur
+    folder: m1/eg/12-form/1215-relpv/12153-latpsur
+    file_patterns: null
+    spec_ref: SPEC App.2 row 116, p.55
+- code: eg_1.2.15.4
+  display_name: M1.2.15.4 The most updated EU/Global/Core-Risk Management Plan (RMP)
+  ctd_section: 1.2.15.4
+  parent: eg_1.2.15
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-15-4-updrmp
+    folder: m1/eg/12-form/1215-relpv/12154-updrmp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 117, p.55
+- code: eg_1.2.15.5
+  display_name: M1.2.15.5 The Egyptian Display of EU-RMP / Global-RMP
+  ctd_section: 1.2.15.5
+  parent: eg_1.2.15
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-15-5-egrmp
+    folder: m1/eg/12-form/1215-relpv/12155-egrmp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 118, p.55
+- code: eg_1.2.16
+  display_name: M1.2.16 Documents related Inspection
+  ctd_section: 1.2.16
+  parent: eg_1.2
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: EG-DRAFT (TG p.55-58 Annex 5, italic = folder only)
+  keyword_types: []
+  maps_from_v322:
+    element: m1-2-16-relinsp
+    folder: m1/eg/12-form/1216-relinsp
+    file_patterns: null
+    spec_ref: SPEC App.2 row 119, p.55
+- code: eg_1.2.16.1
+  display_name: M1.2.16.1 Site Master File for all Manufacturers
+  ctd_section: 1.2.16.1
+  parent: eg_1.2.16
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-16-1-smfall
+    folder: m1/eg/12-form/1216-relinsp/12161-smfall
+    file_patterns: null
+    spec_ref: SPEC App.2 row 120, p.56
+- code: eg_1.2.16.2
+  display_name: M1.2.16.2 Latest Full Inspection Report(s) by SRA (past 3 Years)
+  ctd_section: 1.2.16.2
+  parent: eg_1.2.16
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-16-2-fullinsprep
+    folder: m1/eg/12-form/1216-relinsp/12162-fullinsprep/
+    file_patterns: null
+    spec_ref: SPEC App.2 row 121, p.56
+- code: eg_1.2.16.3
+  display_name: M1.2.16.3 One completed Batch Manufacturing and Packaging Record
+  ctd_section: 1.2.16.3
+  parent: eg_1.2.16
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-16-3-batchrep
+    folder: m1/eg/12-form/1216-relinsp/12163-batchrep
+    file_patterns: null
+    spec_ref: SPEC App.2 row 122, p.56
+- code: eg_1.2.16.4
+  display_name: M1.2.16.4 List of any Recalls with Quality Defects (past 3 Years) (if found)
+  ctd_section: 1.2.16.4
+  parent: eg_1.2.16
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-16-4-recalls
+    folder: m1/eg/12-form/1216-relinsp/12164-recalls
+    file_patterns: null
+    spec_ref: SPEC App.2 row 123, p.56
+- code: eg_1.2.16.5
+  display_name: M1.2.16.5 Any Warning Letter or equivalent regulatory Action (Production-line specific) (if found)
+  ctd_section: 1.2.16.5
+  parent: eg_1.2.16
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-16-5-warnlet
+    folder: m1/eg/12-form/1216-relinsp/12165-warnlet
+    file_patterns: null
+    spec_ref: SPEC App.2 row 124, p.57
+- code: eg_1.2.16.6
+  display_name: M1.2.16.6 Last Annual Product Quality Review
+  ctd_section: 1.2.16.6
+  parent: eg_1.2.16
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: manufacturer
+    keyword_definition_type: ich_keyword_type_3
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type (CV sheet "ICH Keyword Definition Type"); use on this EG heading = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-16-6-annualrev
+    folder: m1/eg/12-form/1216-relinsp/12166-annualrev
+    file_patterns: null
+    spec_ref: SPEC App.2 row 125, p.57
+- code: eg_1.2.16.7
+  display_name: M1.2.16.7 Cold Chain Storage & Transportation Procedures including Excursion allowed
+  ctd_section: 1.2.16.7
+  parent: eg_1.2.16
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-2-16-7-coldchain
+    folder: m1/eg/12-form/1216-relinsp/12167-coldchain
+    file_patterns: null
+    spec_ref: SPEC App.2 row 126, p.57
+- code: eg_1.3
+  display_name: M1.3 Product Information
+  ctd_section: '1.3'
+  parent: null
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: 'ASSUMPTION: parent heading with sub-headings and no file-name row in SPEC App.2; same
+    rule as TG Annex 5 applied by analogy'
+  keyword_types: []
+  maps_from_v322:
+    element: m1-3-pi
+    folder: m1/eg/13-pi
+    file_patterns: null
+    spec_ref: SPEC App.2 row 127, p.57
+- code: eg_1.3.1
+  display_name: M1.3.1 SmPC, Labelling and Package Leaflet
+  ctd_section: 1.3.1
+  parent: eg_1.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: eg document type (product information)
+    cardinality: R
+    code_system: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.9.0
+    allowed_values:
+    - spc
+    - pl
+    - interpack
+    - combined
+    - outer
+    - other
+    provenance: 'EG-DRAFT pi-doc@type Mandatory (SPEC p.27; App.2.3 p.78; TG p.19 l.471-473) + EU-DERIVED (EU-IG
+      "Product Information Texts in EU Module 1.3.1": PI document type as CoU keyword)'
+  - type: eg language
+    cardinality: R
+    code_system: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.10.0
+    allowed_values:
+    - ar
+    - en
+    provenance: 'EG-DRAFT pi-doc@xml:lang Mandatory + language folder LL (SPEC p.27, App.2 rows 129-130, App.2.2
+      p.78) + EU-DERIVED (EU-IG keyword-definition sample: language code "fr" as CoU keyword)'
+  - type: eg country
+    cardinality: R
+    code_system: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.11.0
+    allowed_values:
+    - eg
+    provenance: 'EG-DRAFT pi-doc@country Mandatory (SPEC p.27; App.2.1) + EU-DERIVED (EU-IG "Keywords and Controlled
+      Vocabularies for EU Purpose": country keyword required for 13-pi)'
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-3-1-spc-label-pl
+    folder: m1/eg/13-pi/131-spclabelpl
+    file_patterns:
+    - m1/eg/13-pi/131-spclabelpl/LL/PIDOC-VAR.EXT
+    spec_ref: SPEC App.2 row 128, p.57
+    sub_folders:
+    - m1/eg/13-pi/131-spclabelpl/LL
+  eu_equivalent:
+    code: '100000164032'
+    code_system: 2.16.840.1.113883.3.6905.1.17.1
+    display: 1.3.1 SmPC, Label, PL
+    basis: EU-IG "Product Information Texts in EU Module 1.3.1" sample originalText
+- code: eg_1.3.2
+  display_name: M1.3.2 Mock-up
+  ctd_section: 1.3.2
+  parent: eg_1.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-3-2-mockup
+    folder: m1/eg/13-pi/132-mockup
+    file_patterns:
+    - m1/eg/13-pi/132-mockup/mockup-VAR.EXT
+    spec_ref: SPEC App.2 row 131, p.58
+- code: eg_1.3.3
+  display_name: M1.3.3 Specimen
+  ctd_section: 1.3.3
+  parent: eg_1.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-3-3-specimen
+    folder: m1/eg/13-pi/133-specimen
+    file_patterns:
+    - m1/eg/13-pi/133-specimen/specimen-VAR.EXT
+    spec_ref: SPEC App.2 row 133, p.59
+- code: eg_1.3.4
+  display_name: M1.3.4 Consultation with Target Patient Groups
+  ctd_section: 1.3.4
+  parent: eg_1.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-3-4-consultation
+    folder: m1/eg/13-pi/134-consultation
+    file_patterns:
+    - m1/eg/13-pi/134-consultation/consultation-VAR.EXT
+    spec_ref: SPEC App.2 row 135, p.59
+- code: eg_1.3.5
+  display_name: M1.3.5 Product Information already approved in the Member States
+  ctd_section: 1.3.5
+  parent: eg_1.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-3-5-approved
+    folder: m1/eg/13-pi/135-approved
+    file_patterns:
+    - m1/eg/13-pi/135-approved/approved-VAR.EXT
+    spec_ref: SPEC App.2 row 137, p.60
+  notes:
+  - EG-DRAFT title "approved in the Member States" is an EU remnant (EG ref §10 item 21) — kept verbatim, flagged.
+- code: eg_1.3.6
+  display_name: M1.3.6 Braille
+  ctd_section: 1.3.6
+  parent: eg_1.3
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-3-6-braille
+    folder: m1/eg/13-pi/136-braille
+    file_patterns:
+    - m1/eg/13-pi/136-braille/braille-VAR.EXT
+    spec_ref: SPEC App.2 row 139, p.60
+- code: eg_1.4
+  display_name: M1.4 Information about the Experts
+  ctd_section: '1.4'
+  parent: null
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: 'ASSUMPTION: parent heading with sub-headings and no file-name row in SPEC App.2; same
+    rule as TG Annex 5 applied by analogy'
+  keyword_types: []
+  maps_from_v322:
+    element: m1-4-expert
+    folder: m1/eg/14-expert
+    file_patterns: null
+    spec_ref: SPEC App.2 row 141, p.61
+- code: eg_1.4.1
+  display_name: M1.4.1 Quality
+  ctd_section: 1.4.1
+  parent: eg_1.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-4-1-quality
+    folder: m1/eg/14-expert/141-quality
+    file_patterns:
+    - m1/eg/14-expert/141-quality/quality-VAR.EXT
+    spec_ref: SPEC App.2 row 142, p.61
+- code: eg_1.4.2
+  display_name: M1.4.2 Non-Clinical
+  ctd_section: 1.4.2
+  parent: eg_1.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-4-2-non-clinical
+    folder: m1/eg/14-expert/142-nonclinical
+    file_patterns:
+    - m1/eg/14-expert/142-nonclinical/nonclinical-VAR.EXT
+    spec_ref: SPEC App.2 row 144, p.62
+- code: eg_1.4.3
+  display_name: M1.4.3 Clinical
+  ctd_section: 1.4.3
+  parent: eg_1.4
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-4-3-clinical
+    folder: m1/eg/14-expert/143-clinical
+    file_patterns:
+    - m1/eg/14-expert/143-clinical/clinical-VAR.EXT
+    spec_ref: SPEC App.2 row 144, p.62
+- code: eg_1.5
+  display_name: M1.5 Specific Requirements for Different Types of Applications
+  ctd_section: '1.5'
+  parent: null
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: 'ASSUMPTION: parent heading with sub-headings and no file-name row in SPEC App.2; same
+    rule as TG Annex 5 applied by analogy'
+  keyword_types: []
+  maps_from_v322:
+    element: m1-5-specific
+    folder: m1/eg/15-specific
+    file_patterns: null
+    spec_ref: SPEC App.2 row 146, p.63
+- code: eg_1.5.1
+  display_name: M1.5.1 Information for Bibliographical Applications
+  ctd_section: 1.5.1
+  parent: eg_1.5
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-5-1-bibliographic
+    folder: m1/eg/15-specific/151-bibliographic
+    file_patterns:
+    - m1/eg/15-specific/151-bibliographic/bibliographic-VAR.EXT
+    spec_ref: SPEC App.2 row 147, p.63
+- code: eg_1.5.2
+  display_name: M1.5.2 Information for Generic, Hybrid’ or Bio-similar Applications
+  ctd_section: 1.5.2
+  parent: eg_1.5
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: eg document type (application basis)
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.9.0
+    allowed_values:
+    - generic
+    - hybrid
+    - biosimilar
+    provenance: EG-DRAFT fixed file-name components (SPEC App.2 row 150 p.64); keyword form = ASSUMPTION
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-5-2-generic-hybrid-bio-similar
+    folder: m1/eg/15-specific/152-generic-hybrid-bio-similar
+    file_patterns:
+    - m1/eg/15-specific/152-generic-hybrid-bio-similar/generic-VAR.EXT | m1/eg/15-specific/152-generic-hybrid-bio-similar/hybrid-VAR.EXT
+      | m1/eg/15-specific/152-generic-hybrid-bio-similar/biosimilar-VAR.EXT
+    spec_ref: SPEC App.2 row 149, p.64
+- code: eg_1.5.3
+  display_name: M1.5.3 (Extended) Data/Market Exclusivity
+  ctd_section: 1.5.3
+  parent: eg_1.5
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-5-3-data-market-exclusivity
+    folder: m1/eg/15-specific/153-data-market-exclusivity
+    file_patterns:
+    - m1/eg/15-specific/153-data-market-exclusivity/datamarketexclusivity-VAR.EXT
+    spec_ref: SPEC App.2 row 151, p.65
+- code: eg_1.5.4
+  display_name: M1.5.4 Exceptional Circumstances
+  ctd_section: 1.5.4
+  parent: eg_1.5
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-5-4-exceptional-circumstances
+    folder: m1/eg/15-specific/154-exceptional
+    file_patterns:
+    - m1/eg/15-specific/154-exceptional/exceptional-VAR.EXT
+    spec_ref: SPEC App.2 row 153, p.66
+- code: eg_1.5.5
+  display_name: M1.5.5 Conditional Marketing Authorisation
+  ctd_section: 1.5.5
+  parent: eg_1.5
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-5-5-conditional-ma
+    folder: m1/eg/15-specific/155-conditional-ma
+    file_patterns:
+    - m1/eg/15-specific/155-conditional-ma/conditionalma-VAR.EXT
+    spec_ref: SPEC App.2 row 155, p.66
+- code: eg_1.6
+  display_name: M1.6 Environmental Risk Assessment
+  ctd_section: '1.6'
+  parent: null
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: 'ASSUMPTION: parent heading with sub-headings and no file-name row in SPEC App.2; same
+    rule as TG Annex 5 applied by analogy'
+  keyword_types: []
+  maps_from_v322:
+    element: m1-6-environrisk
+    folder: m1/eg/16-environrisk
+    file_patterns: null
+    spec_ref: SPEC App.2 row 157, p.67
+- code: eg_1.6.1
+  display_name: M1.6.1 Non-GMO
+  ctd_section: 1.6.1
+  parent: eg_1.6
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-6-1-non-gmo
+    folder: m1/eg/16-environrisk/161-nongmo
+    file_patterns:
+    - m1/eg/16-environrisk/161-nongmo/nongmo-VAR.EXT
+    spec_ref: SPEC App.2 row 158, p.67
+  notes:
+  - 'EG-DRAFT: "Only one of the 2 folders 1.6.1 or 1.6.2 can have content when sending a sequence" (SPEC App.2 rows
+    159,161). Kept as regional rule EG-V4-031.'
+- code: eg_1.6.2
+  display_name: M1.6.2 GMO
+  ctd_section: 1.6.2
+  parent: eg_1.6
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-6-2-gmo
+    folder: m1/eg/16-environrisk/162-gmo
+    file_patterns:
+    - m1/eg/16-environrisk/162-gmo/gmo-VAR.EXT
+    spec_ref: SPEC App.2 row 160, p.68
+  notes:
+  - 'EG-DRAFT: "Only one of the 2 folders 1.6.1 or 1.6.2 can have content when sending a sequence" (SPEC App.2 rows
+    159,161). Kept as regional rule EG-V4-031.'
+- code: eg_1.7
+  display_name: M1.7 Information relating to Orphan Market Exclusivity
+  ctd_section: '1.7'
+  parent: null
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: 'ASSUMPTION: parent heading with sub-headings and no file-name row in SPEC App.2; same
+    rule as TG Annex 5 applied by analogy'
+  keyword_types: []
+  maps_from_v322:
+    element: m1-7-orphan
+    folder: m1/eg/17-orphan
+    file_patterns: null
+    spec_ref: SPEC App.2 row 162, p.69
+- code: eg_1.7.1
+  display_name: M1.7.1 Similarity
+  ctd_section: 1.7.1
+  parent: eg_1.7
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-7-1-similarity
+    folder: m1/eg/17-orphan/171-similarity
+    file_patterns:
+    - m1/eg/17-orphan/171-similarity/similarity-VAR.EXT
+    spec_ref: SPEC App.2 row 163, p.69
+- code: eg_1.7.2
+  display_name: M1.7.2 Market Exclusivity
+  ctd_section: 1.7.2
+  parent: eg_1.7
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-7-2-market-exclusivity
+    folder: m1/eg/17-orphan/172-market-exclusivity
+    file_patterns:
+    - m1/eg/17-orphan/172-market-exclusivity/marketexclusivity-VAR.EXT
+    spec_ref: SPEC App.2 row 165, p.70
+- code: eg_1.8
+  display_name: M1.8 Information relating to Pharmacovigilance
+  ctd_section: '1.8'
+  parent: null
+  status: Active (provisional)
+  documents_allowed: false
+  documents_allowed_basis: 'ASSUMPTION: parent heading with sub-headings and no file-name row in SPEC App.2; same
+    rule as TG Annex 5 applied by analogy'
+  keyword_types: []
+  maps_from_v322:
+    element: m1-8-pharmacovigilance
+    folder: m1/eg/18-pharmacovigilance
+    file_patterns: null
+    spec_ref: SPEC App.2 row 167, p.71
+- code: eg_1.8.1
+  display_name: M1.8.1 Pharmacovigilance System
+  ctd_section: 1.8.1
+  parent: eg_1.8
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-8-1-pharmacovigilance-system
+    folder: m1/eg/18-pharmacovigilance/181-phvig-system
+    file_patterns:
+    - m1/eg/18-pharmacovigilance/181-phvig-system/phvigsystem-VAR.EXT
+    spec_ref: SPEC App.2 row 168, p.71
+- code: eg_1.8.2
+  display_name: M1.8.2 Risk-management System
+  ctd_section: 1.8.2
+  parent: eg_1.8
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-8-2-risk-management-system
+    folder: m1/eg/18-pharmacovigilance/182-riskmgt-system
+    file_patterns:
+    - m1/eg/18-pharmacovigilance/182-riskmgt-system/riskmgtsystem-VAR.EXT
+    spec_ref: SPEC App.2 row 170, p.72
+- code: eg_1.9
+  display_name: M1.9 Information relating to Clinical Trials
+  ctd_section: '1.9'
+  parent: null
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-9-clinical-trials
+    folder: m1/eg/19-clinical-trials
+    file_patterns:
+    - m1/eg/19-clinical-trials/clinicaltrials-VAR.EXT
+    spec_ref: SPEC App.2 row 172, p.73
+- code: eg_1.10
+  display_name: M1.10 Information relating to Paediatrics
+  ctd_section: '1.10'
+  parent: null
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-10-paediatrics
+    folder: m1/eg/110-paediatrics
+    file_patterns:
+    - m1/eg/110-paediatrics/paediatrics-VAR.EXT
+    spec_ref: SPEC App.2 row 174, p.73
+- code: eg_responses
+  display_name: M1 Responses to Questions
+  ctd_section: null
+  parent: null
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: 'ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). EG-DRAFT: responses "should
+      be grouped under a node-extension" per regulatory activity (SPEC p.10 l.137-142) -> RECOMMENDED here'
+  maps_from_v322:
+    element: m1-responses
+    folder: m1/eg/responses
+    file_patterns:
+    - m1/eg/responses/responses-VAR.EXT
+    spec_ref: SPEC App.2 row 176, p.74
+  notes:
+  - EG-DRAFT file name responses-<activity>-<n>-<content>.pdf (SPEC p.11 l.174-178). TG 2.9.8 forbids extra folders
+    in m1-responses (TG p.20); irrelevant in v4 (flat m1).
+- code: eg_additional-data
+  display_name: M1 Additional Data
+  ctd_section: null
+  parent: null
+  status: Active (provisional)
+  documents_allowed: true
+  documents_allowed_basis: EG-DRAFT (leaf heading in SPEC App.2)
+  keyword_types:
+  - type: group title
+    keyword_definition_type: ich_keyword_type_11
+    cardinality: O
+    code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+    provenance: ICH type; replaces node-extensions (IG §9.2.10.2, §8.1.2 Table 9). Use on this EG heading = ASSUMPTION
+  maps_from_v322:
+    element: m1-additional-data
+    folder: m1/eg/additional-data
+    file_patterns:
+    - m1/eg/additional-data/additionaldata-VAR.EXT
+    spec_ref: SPEC App.2 row 178, p.75
+  notes:
+  - 'Conflict: SPEC row 178 (supportive docs go here) vs TG 3.2.4.1 (supportive docs go to 1.2). Unresolved in EG
+    drafts.'

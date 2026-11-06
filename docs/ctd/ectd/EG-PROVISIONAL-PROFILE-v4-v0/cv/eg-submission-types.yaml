@@ -1,0 +1,424 @@
+# =====================================================================================
+# PROVISIONAL — NOT ISSUED BY EDA.  EG provisional regional profile v0 for eCTD v4.0.
+# Every OID containing "EG-PLACEHOLDER" is a deliberately INVALID marker, not an OID.
+# EDA must register real OIDs before any of these codes can pass ICH rules
+# eCTD4-008/009/031/075/081/083/084.  See ../README.md (provenance tags, OID plan).
+# Provenance tags:  ICH | EU-DERIVED | EG-DRAFT | ASSUMPTION
+# Source short-cites: IG = ICH eCTD v4.0 IG v1.7 (5 May 2026); CV = ICH CV package v1.0.3;
+#   EU-IG = EU eCTD v4.0 M1 IG draft v1.2 (Oct 2024, cited by heading); SPEC = EG M1 eCTD
+#   Specification DRAFT v1.0 (2026, page/line/App.2 row); TG = EDA draft Technical Guidance
+#   for eCTD Submissions in Egypt v1.0/2026 (PDF page / margin line).
+# =====================================================================================
+
+code_system:
+  name: EG Submission Type (regulatory activity)
+  short_name: eg-submission-type
+  oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.3.0
+  version: 0 (provisional)
+  xpath: /PORP_IN000001UV/controlActProcess/subject/submissionUnit/componentOf1/submission/code/@code
+  ich_basis: 'IG Table 11 / §12.2: submission code + codeSystem regional (rules eCTD4-034..037); IG §6.2 "Submission
+    Codes".'
+  eu_model: 'EU-IG "Submission": OID 2.16.840.1.113883.3.6905.1.11.1, e.g. 100000155689 = initial MAA; submission
+    id.item@root stays the same for all SUs of the regulatory activity; only one id item.'
+  v322_source: eg-envelope submission/@type (SPEC App.1.1 p.14) - the CV itself is NOT in SPEC; values from TG Annex
+    6 (TG p.59-71, l.1417 ff.).
+  code_pattern: eg_st_<EG v3.2.2 token> (ASSUMPTION)
+mode_required_for:
+  tokens:
+  - var-pac-n
+  - var-pac-b
+  - var-pac-a
+  - var-pac-ii
+  - ipv-admc
+  - ipv-admlc
+  - ipv-tlc
+  - ipv-pu
+  - ipv-safeffc
+  - imv-majvar
+  - imv-minvar
+  - imv-not
+  - ibv-majqualc
+  - ibv-modqualc
+  - ibv-minqualc
+  - ibv-qcnoimp
+  - np-modqualc
+  - np-pilc
+  - np-majqualc
+  - np-safeffc
+  - np-admpilc
+  - np-packup
+  - np-adminc
+  - rp-majcq
+  - rp-modqc
+  - rl-pilc
+  - not-minqc
+  - not-qcnoimp
+  rule: submission/subject3/mode required in every SU of these activities (SPEC p.8 l.78-80, p.15; TG p.27 l.722-724).
+    Which tokens count as "variation" is inferred from the token names = ASSUMPTION.
+codes:
+- code: eg_st_maa
+  v322_token: maa
+  display_name: Marketing Authorisation Application
+  administrations:
+  - pharmaceuticals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.59
+  note: Also the only type shown in SPEC (p.14, 22, 24).
+- code: eg_st_var-pac-n
+  v322_token: var-pac-n
+  display_name: Variation PAC-N (notification)
+  administrations:
+  - pharmaceuticals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.59
+  note: SPEC tracking example P-VAR-PAC-N-0002 (p.17).
+- code: eg_st_var-pac-b
+  v322_token: var-pac-b
+  display_name: Variation PAC-B
+  administrations:
+  - pharmaceuticals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.60
+- code: eg_st_var-pac-a
+  v322_token: var-pac-a
+  display_name: Variation PAC-A (annual)
+  administrations:
+  - pharmaceuticals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.60
+- code: eg_st_var-pac-ii
+  v322_token: var-pac-ii
+  display_name: Variation PAC-II (major)
+  administrations:
+  - pharmaceuticals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.60
+  note: Spelled "Var PAC-II" (SPEC p.23-25), "var-pac-II" (TG 2.9.5 p.17, TG p.22 Table 3), "var-pac-ii" (Annex
+    6). Lower-case token adopted (ICH lower-case convention).
+- code: eg_st_renewal
+  v322_token: renewal
+  display_name: Renewal
+  administrations:
+  - pharmaceuticals
+  - biologics-and-innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.61, 64
+- code: eg_st_asmf
+  v322_token: asmf
+  display_name: Active Substance Master File
+  administrations:
+  - pharmaceuticals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.61
+- code: eg_st_cep
+  v322_token: cep
+  display_name: Certificate of Suitability
+  administrations:
+  - pharmaceuticals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.61
+- code: eg_st_none
+  v322_token: none
+  display_name: none (reformat/baseline only)
+  administrations:
+  - pharmaceuticals
+  - biologics-and-innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.61, 64
+  note: Only with SU type reformat (TG p.74; SPEC p.25).
+- code: eg_st_preass
+  v322_token: preass
+  display_name: Pre-assessment
+  administrations:
+  - pharmaceuticals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.61
+- code: eg_st_pacstab
+  v322_token: pacstab
+  display_name: Post MA Commitments (Stability Studies)
+  administrations:
+  - pharmaceuticals
+  - biologics-and-innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.62, 64
+- code: eg_st_paccadc
+  v322_token: paccadc
+  display_name: Post MA Commitments (CADC analysis)
+  administrations:
+  - pharmaceuticals
+  - biologics-and-innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.62, 64
+- code: eg_st_paci
+  v322_token: paci
+  display_name: Post MA Commitments (Inspection)
+  administrations:
+  - pharmaceuticals
+  - biologics-and-innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.62, 65
+- code: eg_st_pacqr
+  v322_token: pacqr
+  display_name: Post MA Commitments (Quality requirements)
+  administrations:
+  - pharmaceuticals
+  - biologics-and-innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.62, 65
+- code: eg_st_5yr
+  v322_token: 5yr
+  display_name: Fifth Year Report
+  administrations:
+  - pharmaceuticals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.62
+- code: eg_st_appeal
+  v322_token: appeal
+  display_name: Appeals
+  administrations:
+  - pharmaceuticals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.63
+- code: eg_st_preappinq
+  v322_token: preappinq
+  display_name: Preliminary Approval Inquiry
+  administrations:
+  - pharmaceuticals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.63
+- code: eg_st_pmf
+  v322_token: PMF
+  display_name: Plasma Master File
+  administrations:
+  - biologics-and-innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.65
+  note: Printed upper case "PMF" in TG Annex 6; lower-cased here (ASSUMPTION).
+- code: eg_st_withdrawal
+  v322_token: withdrawal
+  display_name: Withdrawal (of the entire MA application)
+  administrations:
+  - biologics-and-innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.65
+  note: Printed only in the Biologics & Innovative list, but SPEC p.26 l.291-294 and TG 4.6 present it as general
+    (EG ref §10 item 38). Offered to all administrations here (ASSUMPTION).
+- code: eg_st_maa-inn
+  v322_token: maa-inn
+  display_name: MAA for an innovative product
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.66
+- code: eg_st_ipv-admc
+  v322_token: ipv-admc
+  display_name: Innovative product variation - administrative changes
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.66
+- code: eg_st_ipv-admlc
+  v322_token: ipv-admlc
+  display_name: Innovative product variation - administrative product labelling information changes
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.66
+  note: Abbreviation printed "IPV-ADMIC".
+- code: eg_st_ipv-tlc
+  v322_token: ipv-tlc
+  display_name: Innovative product variation - therapeutic labelling information changes
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.66
+- code: eg_st_ipv-pu
+  v322_token: ipv-pu
+  display_name: Innovative product variation - pack update
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.66
+  note: SPEC tracking example I-IPV-PU-0001 (p.17).
+- code: eg_st_ipv-safeffc
+  v322_token: ipv-safeffc
+  display_name: Innovative product variation - safety and efficacy labelling changes
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.67
+- code: eg_st_imv-majvar
+  v322_token: imv-majvar
+  display_name: Innovative medicinal products variation - major
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.67
+- code: eg_st_imv-minvar
+  v322_token: imv-minvar
+  display_name: Innovative medicinal products variation - minor
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.67
+- code: eg_st_imv-not
+  v322_token: imv-not
+  display_name: Innovative medicinal products variation - notification
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.67
+- code: eg_st_ibv-majqualc
+  v322_token: ibv-majqualc
+  display_name: Innovative biological products variation - major quality changes
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.67
+- code: eg_st_ibv-modqualc
+  v322_token: ibv-modqualc
+  display_name: Innovative biological products variation - moderate quality changes
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.67
+- code: eg_st_ibv-minqualc
+  v322_token: ibv-minqualc
+  display_name: Innovative biological products variation - minor quality changes
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.68
+- code: eg_st_ibv-qcnoimp
+  v322_token: ibv-qcnoimp
+  display_name: Innovative biological products variation - quality changes with no impact
+  administrations:
+  - innovative
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.68
+- code: eg_st_maa-nt
+  v322_token: maa-nt
+  display_name: MAA - Normal Track
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.69
+- code: eg_st_maa-ft
+  v322_token: maa-ft
+  display_name: MAA - Fast Track
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.69
+- code: eg_st_maa-sb
+  v322_token: maa-sb
+  display_name: MAA - Second Brand
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.69
+- code: eg_st_maa-rl1
+  v322_token: maa-rl1
+  display_name: MAA - Reliance level 1
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.69
+- code: eg_st_maa-rl2
+  v322_token: maa-rl2
+  display_name: MAA - Reliance level 2
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.69
+- code: eg_st_maa-bios
+  v322_token: maa-bios
+  display_name: MAA - Biosimilar
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.69
+- code: eg_st_np-modqualc
+  v322_token: np-modqualc
+  display_name: Normal pathway - moderate quality changes
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.70
+- code: eg_st_np-pilc
+  v322_token: np-pilc
+  display_name: Normal pathway - product labelling information changes
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.70
+- code: eg_st_np-majqualc
+  v322_token: np-majqualc
+  display_name: Normal pathway - major quality changes
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.70
+- code: eg_st_np-safeffc
+  v322_token: np-safeffc
+  display_name: Normal pathway - safety and efficacy changes
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.70
+- code: eg_st_np-admpilc
+  v322_token: np-admpilc
+  display_name: Normal pathway - administrative product labelling information changes
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.70
+- code: eg_st_np-packup
+  v322_token: np-packup
+  display_name: Normal pathway - pack update
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.70
+- code: eg_st_np-adminc
+  v322_token: np-adminc
+  display_name: Normal pathway - administrative changes
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.71
+- code: eg_st_rp-majcq
+  v322_token: rp-majcq
+  display_name: Reliance pathway - major quality changes
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.71
+- code: eg_st_rp-modqc
+  v322_token: rp-modqc
+  display_name: Reliance pathway - moderate quality changes
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.71
+- code: eg_st_rl-pilc
+  v322_token: rl-pilc
+  display_name: Reliance pathway - product labelling information changes
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.71
+- code: eg_st_not-minqc
+  v322_token: not-minqc
+  display_name: Notification - minor quality changes
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.71
+- code: eg_st_not-qcnoimp
+  v322_token: not-qcnoimp
+  display_name: Notification - quality changes with no impact
+  administrations:
+  - biologicals
+  provenance: EG-DRAFT
+  source: TG Annex 6 p.71
