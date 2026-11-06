@@ -155,6 +155,7 @@ textarea{width:100%;min-height:90px;padding:8px 10px;border:1px solid var(--line
       <a href="#/" data-r="home"><span data-t="navDossiers"></span></a>
       <div class="grp" data-t="navCurrent"></div>
       <a href="#" data-r="board" id="navBoard" aria-disabled="true"><span data-t="navBoard"></span></a>
+      <a href="#" data-r="data" id="navData" aria-disabled="true"><span data-t="navData"></span></a>
       <a href="#" data-r="publisher" id="navPublisher" aria-disabled="true"><span data-t="navPublisher"></span></a>
       <a href="#" data-r="export" id="navExport" aria-disabled="true"><span data-t="navExport"></span></a>
       <a href="#" data-r="audit" id="navAudit" aria-disabled="true"><span data-t="navAudit"></span></a>
@@ -180,7 +181,13 @@ textarea{width:100%;min-height:90px;padding:8px 10px;border:1px solid var(--line
 const T = {
   appName:{en:'Dossier Builder',ar:'منشئ الملفات'},
   navDossiers:{en:'Dossiers',ar:'الملفات'}, navCurrent:{en:'Current dossier',ar:'الملف الحالي'},
-  navBoard:{en:'Requirements',ar:'المتطلبات'}, navPublisher:{en:'Publisher',ar:'الناشر'},
+  navBoard:{en:'Requirements',ar:'المتطلبات'}, navData:{en:'Product data',ar:'بيانات المنتج'},
+  dataSub:{en:'Enter each fact once. Annex I, Module 3 tables and the cross-checks all read from here.',ar:'أدخل كل معلومة مرة واحدة. نموذج الطلب وجداول Module 3 وفحوص التطابق كلها تقرأ من هنا.'},
+  dApis:{en:'API sources',ar:'مصادر المادة الفعالة'}, dBatches:{en:'Batches',ar:'التشغيلات'}, dSpec:{en:'Finished-product specification (3.2.P.5.1)',ar:'مواصفات المستحضر (3.2.P.5.1)'},
+  dResults:{en:'Batch results (3.2.P.5.4) — numbers, not «complies»',ar:'نتائج التشغيلات (3.2.P.5.4) — أرقام وليس «مطابق»'}, dPack:{en:'Pack',ar:'العبوة'},
+  dUse:{en:'Batch use',ar:'استخدام التشغيلات'}, beBatches:{en:'BE batch(es)',ar:'تشغيلات التكافؤ'}, stabBatches:{en:'Stability batches',ar:'تشغيلات الثبات'},
+  save:{en:'Save',ar:'حفظ'}, saved:{en:'Saved — checks updated.',ar:'تم الحفظ — الفحوص اتحدّثت.'}, crossT:{en:'Cross-document checks',ar:'فحوص التطابق بين المستندات'},
+  crossNone:{en:'No inconsistencies found in the data entered.',ar:'لا توجد تعارضات في البيانات المدخلة.'}, commaList:{en:'comma separated',ar:'مفصولة بفاصلة'}, navPublisher:{en:'Publisher',ar:'الناشر'},
   guided:{en:'Guided',ar:'إرشادي'}, publisher:{en:'Publisher view',ar:'وضع الناشر'},
   pubSub:{en:'Expert view: the dossier tree, the documents in each section and their properties, for the chosen output.',ar:'وضع الخبير: شجرة الملف، ومستندات كل قسم وخصائصها، حسب المخرج المختار.'},
   sections:{en:'Sections',ar:'الأقسام'}, leaves:{en:'Documents in this section',ar:'مستندات القسم'}, props:{en:'Properties',ar:'الخصائص'},
@@ -224,7 +231,7 @@ const T = {
   reasons:{en:'Why this item',ar:'سبب البند'}, findings:{en:'Check results',ar:'نتائج الفحص'}, noFind:{en:'No problems found.',ar:'لا توجد مشاكل.'},
   docs:{en:'Documents',ar:'المستندات'}, version:{en:'v',ar:'إصدار'}, withdraw:{en:'Withdraw',ar:'سحب'}, view:{en:'View',ar:'عرض'},
   lockedNote:{en:'Third-party evidence: read-only. The tool can rename and place it, never change its content.',ar:'مستند جهة خارجية: للقراءة فقط. الأداة تقدر تسميه وتحطه في مكانه بس، ومتغيرش محتواه أبداً.'},
-  act_auto_fix:{en:'The tool can fix this automatically.',ar:'الأداة تقدر تصلحه تلقائياً.'}, act_rebuild:{en:'Rebuild from data.',ar:'يُعاد بناؤه من البيانات.'},
+  act_auto_fix:{en:'The tool can fix this automatically.',ar:'الأداة تقدر تصلحه تلقائياً.'}, act_request_data:{en:'Enter the missing data.',ar:'أدخل البيانات الناقصة.'}, act_rebuild:{en:'Rebuild from data.',ar:'يُعاد بناؤه من البيانات.'},
   act_re_obtain:{en:'Re-obtain from the issuer.',ar:'اطلبه من الجهة المصدرة.'}, act_user_fix:{en:'Replace the file.',ar:'استبدل الملف.'}, act_none:{en:'',ar:''},
   uploading:{en:'Uploading…',ar:'جاري الرفع…'}, uploaded:{en:'Uploaded and checked.',ar:'تم الرفع والفحص.'}, withdrawn:{en:'Withdrawn — still recoverable in the log.',ar:'تم السحب — قابل للاسترجاع من السجل.'},
   piType:{en:'Document type',ar:'نوع المستند'}, piLang:{en:'Language',ar:'اللغة'}, study:{en:'Study ID — title',ar:'رقم الدراسة — العنوان'}, docType:{en:'ICH document type',ar:'نوع المستند (ICH)'},
@@ -239,7 +246,7 @@ const T = {
   doExport:{en:'Export selected outputs',ar:'تصدير المخرجات المختارة'}, exporting:{en:'Building…',ar:'جاري البناء…'}, downloads:{en:'Downloads',ar:'التنزيلات'},
   audit:{en:'Activity log',ar:'سجل النشاط'}, auditSub:{en:'Every action is recorded; nothing is overwritten.',ar:'كل إجراء مسجل؛ لا شيء يُستبدل.'},
   when:{en:'When',ar:'الوقت'}, event:{en:'Event',ar:'الحدث'}, detail:{en:'Detail',ar:'التفاصيل'}, restore:{en:'Restore',ar:'استرجاع'},
-  err:{en:'Error',ar:'خطأ'}, vPass:{en:'pass',ar:'ناجح'}, vFail:{en:'fail',ar:'فشل'}, vWarn:{en:'warning',ar:'تحذير'}, vNotRun:{en:'not run',ar:'لم يُشغَّل'},
+  err:{en:'Error',ar:'خطأ'}, needData:{en:'Enter the specification and batches in «Product data» first.',ar:'أدخل المواصفات والتشغيلات في «بيانات المنتج» الأول.'}, vPass:{en:'pass',ar:'ناجح'}, vFail:{en:'fail',ar:'فشل'}, vWarn:{en:'warning',ar:'تحذير'}, vNotRun:{en:'not run',ar:'لم يُشغَّل'},
   vReport:{en:'Validation report',ar:'تقرير التحقق'}, bulk:{en:'Add files',ar:'إضافة ملفات'}, bulkSub:{en:'The tool suggests a section for each file from its name, CTD number and first page. Check and confirm.',ar:'الأداة تقترح قسماً لكل ملف من اسمه ورقم الـ CTD وأول صفحة. راجع وأكّد.'},
   noSuggest:{en:'— choose a section —',ar:'— اختر القسم —'}, skip:{en:'Skip',ar:'تخطي'}, confirmAll:{en:'Add to the chosen sections',ar:'إضافة للأقسام المختارة'},
   needsDetails:{en:'needs details — use the section\'s Upload button',ar:'يحتاج بيانات — استخدم زر الرفع في القسم'}, added:{en:'files added',ar:'ملفات أضيفت'}, generate:{en:'Generate',ar:'توليد'}, justify:{en:'Write a justification',ar:'كتابة تبرير'},
@@ -278,15 +285,15 @@ const chip = st => `<span class="chip ${STATUS_CHIP[st]||'c-na'}"><i></i>${esc(t
 
 function nav(r){
   const id = S.dossier && S.dossier.id;
-  [['navBoard','board'],['navPublisher','publisher'],['navExport','export'],['navAudit','audit']].forEach(([n,k])=>{const a=$('#'+n); a.href= id?`#/d/${id}/${k}`:'#'; a.setAttribute('aria-disabled', id?'false':'true');});
+  [['navBoard','board'],['navData','data'],['navPublisher','publisher'],['navExport','export'],['navAudit','audit']].forEach(([n,k])=>{const a=$('#'+n); a.href= id?`#/d/${id}/${k}`:'#'; a.setAttribute('aria-disabled', id?'false':'true');});
   document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on', a.dataset.r===r));
-  const m=$('#mobnav'); m.innerHTML = `<option value="#/">${esc(t('navDossiers'))}</option>` + (id?['board','publisher','export','audit'].map(k=>`<option value="#/d/${id}/${k}" ${k===r?'selected':''}>${esc(t('nav'+k[0].toUpperCase()+k.slice(1)))}</option>`).join(''):'');
+  const m=$('#mobnav'); m.innerHTML = `<option value="#/">${esc(t('navDossiers'))}</option>` + (id?['board','data','publisher','export','audit'].map(k=>`<option value="#/d/${id}/${k}" ${k===r?'selected':''}>${esc(t('nav'+k[0].toUpperCase()+k.slice(1)))}</option>`).join(''):'');
   m.onchange=()=>location.hash=m.value;
   $('#crumb').innerHTML = S.dossier ? bdi(S.dossier.name) : esc(t('appName'));
 }
 async function route(){
   const h = location.hash.replace(/^#/,'') || '/';
-  const m = h.match(/^\/d\/([^/]+)\/(board|publisher|export|audit)$/);
+  const m = h.match(/^\/d\/([^/]+)\/(board|data|publisher|export|audit)$/);
   const v = $('#view');
   try{
     if(h==='/new'){ S.dossier=null; nav('home'); return wizard(); }
@@ -296,6 +303,7 @@ async function route(){
     if(m[2]==='board') return board();
     if(m[2]==='export') return exportView();
     if(m[2]==='publisher') return publisherView();
+    if(m[2]==='data') return dataView();
     return auditView();
   }catch(e){ v.innerHTML = `<div class="alert bad"><p><b>${esc(t('err'))}:</b> ${esc(e.message)}</p></div>`; }
 }
@@ -477,10 +485,11 @@ function openWhy(slotId){
   openDrawer(s.title[S.lang], `<div class="toolbar"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${chip(s.status)}</div>
     ${locked?`<div class="alert"><p class="small">${esc(t('lockedNote'))}</p></div>`:''}
     <h3>${esc(t('reasons'))}</h3>${reasons}${s.flags.length?`<div class="small muted code">${esc(s.flags.join(' · '))}</div>`:''}
+    ${s.cross&&s.cross.length?`<h3>${esc(t('crossT'))}</h3>${s.cross.map(f=>`<div class="finding ${f.severity==='block'?'block':''}"><div>${esc(f[S.lang])} <span class="code muted">${esc(f.id)}</span></div><div class="small muted">${esc(f.source)}</div></div>`).join('')}`:''}
     ${s.documents.length?`<h3>${esc(t('docs'))}</h3>${docs}`:''}
     ${(s.level==='R'||s.level==='O')?`<div class="toolbar">${genFor(s)?`<button class="btn pri" data-gen="${genFor(s)}">✦ ${esc(t('generate'))}: ${esc(S.gens[genFor(s)].title[S.lang])}</button>`:''}
       <button class="btn" data-gen="justification">${esc(t('justify'))}</button></div>`:''}`);
-  $('#dBody').querySelectorAll('[data-gen]').forEach(b=>b.onclick=()=>genForm(b.dataset.gen, s));
+  $('#dBody').querySelectorAll('[data-gen]').forEach(b=>b.onclick=()=>S.gens[b.dataset.gen].source==='data'? genDirect(b.dataset.gen, s) : genForm(b.dataset.gen, s));
   $('#dBody').querySelectorAll('[data-wd]').forEach(b=>b.onclick=async()=>{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.wd}/withdraw`,{method:'POST'}); toast(t('withdrawn')); closeDrawer(); board(); });
 }
 function openDrawer(title, html){ $('#dTitle').textContent=title; $('#dBody').innerHTML=html; $('#drawer').hidden=false; $('#scrim').hidden=false; $('#dClose').focus(); }
@@ -597,6 +606,75 @@ async function genForm(kind, s, missing){
       if(location.hash.endsWith('/publisher')){ S.sel=s.slot_id; await publisherView(); } else await board(); }
     catch(e){ if(e.detail && e.detail.request_data) return genForm(kind, s, e.detail.request_data); toast(e.message); $('#genGo').disabled=false; $('#genGo').textContent=t('generate'); }
   };
+}
+
+
+async function genDirect(kind, s){
+  toast(t('generating'));
+  try{ await api(`/dossiers/${S.dossier.id}/generate/${kind}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({data:{}, slot_id:s.slot_id})});
+    closeDrawer(); toast(t('genDone')); if(location.hash.endsWith('/publisher')){ S.sel=s.slot_id; await publisherView(); } else await board(); }
+  catch(e){ toast(e.detail && e.detail.request_data ? t('needData') : e.message); }
+}
+/* ---------------- structured product data (P2) */
+const DCOLS = {
+  apis: [['name','apiName'],['manufacturer','apiMan'],['option','apiOpt',['CEP','DMF','PQ','FULL']],['address_gmp',{en:'Site address as on GMP',ar:'عنوان الموقع كما في الـ GMP'}],
+         ['spec_standard',{en:'API spec standard',ar:'مرجع مواصفات المادة'}],['coa_name',{en:'Name on supplier CoA',ar:'الاسم في شهادة التحليل'}],['cep_no',{en:'CEP no.',ar:'رقم الـ CEP'}],['cep_status',{en:'CEP status (EDQM)',ar:'حالة الـ CEP'},['','valid','suspended','withdrawn','expired']]],
+  batches: [['no',{en:'Batch no.',ar:'رقم التشغيلة'}],['kind',{en:'Of',ar:'نوع'},['fpp','api']],['api',{en:'API source (for API batches)',ar:'مصدر المادة (لتشغيلات المادة)'}],['size',{en:'Size',ar:'الحجم'}],['scale',{en:'Scale',ar:'المقياس'},['','pilot','production','smaller']],
+            ['date',{en:'Manufacture date',ar:'تاريخ التصنيع'}],['site',{en:'Site',ar:'الموقع'}],['executed_bmr',{en:'Executed BMR',ar:'سجل تشغيل منفّذ'},['','yes']]],
+  spec: [['test',{en:'Test',ar:'الاختبار'}],['limit',{en:'Limit',ar:'الحد'}],['method',{en:'Method',ar:'الطريقة'}],['qualitative',{en:'Qualitative',ar:'وصفي'},['','yes']]],
+};
+function lbl(x){ return typeof x==='string'? t(x) : x[S.lang]; }
+async function dataView(){
+  S.data = await api(`/dossiers/${S.dossier.id}/data`);
+  const d=S.data;
+  if(!d.apis) d.apis = (S.dossier.profile.apis||[]).map(a=>({name:a.name, manufacturer:a.manufacturer, option:a.option}));
+  d.batches = d.batches || []; d.specs = d.specs || {}; d.specs.product = d.specs.product || []; d.results = d.results || {}; d.pack = d.pack || {};
+  renderData();
+}
+function tableEditor(key, rows, cols){
+  return `<div class="tablewrap rows"><table><thead><tr>${cols.map(c=>`<th>${esc(lbl(c[1]))}</th>`).join('')}<th></th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr>${cols.map(c=>`<td>${c[2]?`<select data-d="${key}.${i}.${c[0]}">${c[2].map(o=>`<option ${String(r[c[0]]??'')===String(o)||(o==='yes'&&r[c[0]]===true)?'selected':''}>${esc(o)}</option>`).join('')}</select>`
+      :`<input type="text" dir="auto" data-d="${key}.${i}.${c[0]}" value="${esc(r[c[0]]??'')}">`}</td>`).join('')}<td><button class="btn sm ghost" data-drm="${key}.${i}">✕</button></td></tr>`).join('')}</tbody></table></div>
+    <div><button class="btn sm" data-dadd="${key}">＋ ${esc(t('addRow'))}</button></div>`;
+}
+function renderData(cross){
+  const d=S.data, fpp=d.batches.filter(b=>(b.kind||'fpp')==='fpp');
+  const resGrid = d.specs.product.length && fpp.length ? `<div class="tablewrap rows"><table><thead><tr><th>${esc(lbl({en:'Test',ar:'الاختبار'}))}</th>${fpp.map(b=>`<th><bdi>${esc(b.no)}</bdi></th>`).join('')}</tr></thead><tbody>
+     ${d.specs.product.map(sp=>`<tr><td>${bdi(sp.test)}<div class="small muted">${bdi(sp.limit||'')}</div></td>${fpp.map(b=>`<td><input type="text" dir="auto" data-r="${esc(b.no)}" data-t2="${esc(sp.test)}" value="${esc(((d.results[b.no]||{})[sp.test])??'')}"></td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<p class="small muted">—</p>';
+  const pk=d.pack, pf=(k,l)=>`<label class="f"><span>${esc(lbl(l))}</span><input type="text" dir="auto" data-pk="${k}" value="${esc(pk[k]??'')}"></label>`;
+  $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('navData'))}</h1><p class="sub">${esc(t('dataSub'))}</p></div><button class="btn pri" id="dSave">${esc(t('save'))}</button></div>
+   <div id="crossBox"></div>
+   <div class="card pad"><h2>${esc(t('dApis'))}</h2>${tableEditor('apis', d.apis, DCOLS.apis)}</div>
+   <div class="card pad"><h2>${esc(t('dBatches'))}</h2>${tableEditor('batches', d.batches, DCOLS.batches)}
+     <div class="form" style="margin-top:10px"><label class="f"><span>${esc(t('beBatches'))} (${esc(t('commaList'))})</span><input type="text" dir="auto" id="beB" value="${esc((d.be_batches||[]).join(', '))}"></label>
+     <label class="f"><span>${esc(t('stabBatches'))} (${esc(t('commaList'))})</span><input type="text" dir="auto" id="stB" value="${esc((d.stability_batches||[]).join(', '))}"></label></div></div>
+   <div class="card pad"><h2>${esc(t('dSpec'))}</h2>${tableEditor('specs.product', d.specs.product, DCOLS.spec)}</div>
+   <div class="card pad"><h2>${esc(t('dResults'))}</h2>${resGrid}</div>
+   <div class="card pad"><h2>${esc(t('dPack'))}</h2><div class="form">${pf('units_annex',{en:'Units — Annex I',ar:'الوحدات — نموذج الطلب'})}${pf('units_pricing',{en:'Units — Pricing Certificate',ar:'الوحدات — شهادة التسعير'})}
+     ${pf('material_annex',{en:'Material — Annex I',ar:'المادة — نموذج الطلب'})}${pf('material_stability',{en:'Material — stability',ar:'المادة — الثبات'})}</div></div>`;
+  showCross(cross);
+  const v=$('#view');
+  const get=(path)=>path.split('.').reduce((o,k)=>o[k],d);
+  const sync=()=>{
+    v.querySelectorAll('[data-d]').forEach(el=>{ const parts=el.dataset.d.split('.'); const f=parts.pop(), i=+parts.pop(); const arr=get(parts.join('.'));
+      let val=el.value.trim(); if(val==='yes') val=true; if(val==='') delete arr[i][f]; else arr[i][f]=val; });
+    v.querySelectorAll('[data-r]').forEach(el=>{ const b=el.dataset.r, tt=el.dataset.t2; d.results[b]=d.results[b]||{}; if(el.value.trim()==='') delete d.results[b][tt]; else d.results[b][tt]=el.value.trim(); });
+    v.querySelectorAll('[data-pk]').forEach(el=>{ if(el.value.trim()) d.pack[el.dataset.pk]=el.value.trim(); else delete d.pack[el.dataset.pk]; });
+    d.be_batches=$('#beB').value.split(',').map(x=>x.trim()).filter(Boolean); d.stability_batches=$('#stB').value.split(',').map(x=>x.trim()).filter(Boolean);
+  };
+  v.querySelectorAll('[data-dadd]').forEach(b=>b.onclick=()=>{ sync(); get(b.dataset.dadd).push({}); renderData(cross); });
+  v.querySelectorAll('[data-drm]').forEach(b=>b.onclick=()=>{ sync(); const parts=b.dataset.drm.split('.'); const i=+parts.pop(); get(parts.join('.')).splice(i,1); renderData(cross); });
+  $('#dSave').onclick=async()=>{ sync();
+    d.apis.forEach(a=>{ if(a.address_gmp) a.address_annex = a.address_gmp; });   // Annex I is generated from the GMP address (XC-06 by construction)
+    const r = await api(`/dossiers/${S.dossier.id}/data`,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(d)});
+    toast(t('saved')); renderData(r.cross); };
+  if(cross===undefined) api(`/dossiers/${S.dossier.id}/board`).then(b=>showCross(b.cross));
+}
+function showCross(cross){
+  if(!cross) return;
+  $('#crossBox').innerHTML = `<div class="card pad"><h2>${esc(t('crossT'))}</h2>${cross.length? cross.map(f=>`<div class="finding ${f.severity==='block'?'block':''}" style="margin-top:8px">
+     <div>${f.severity==='block'?'●':'○'} ${esc(f[S.lang])} <span class="code muted">${esc(f.id)}</span></div><div class="small muted">${esc(f.source)} · ${esc(t('act_'+f.action)||'')}</div></div>`).join('')
+     : `<p class="small muted">✓ ${esc(t('crossNone'))}</p>`}</div>`;
 }
 
 /* ---------------- export */

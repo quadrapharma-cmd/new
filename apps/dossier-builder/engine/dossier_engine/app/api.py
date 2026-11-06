@@ -12,7 +12,7 @@ from ..classify import Classifier
 from ..validators import ectd32 as v32, ectd40 as v40, report as vreport
 from ..writers import ctd, ectd32, ectd40
 from ..writers.ectd32 import WriterError
-from ..generate import letters
+from ..generate import letters, m3tables
 from ..generate.docx_kit import MissingData, to_pdf
 from .store import Store, StoreError
 
@@ -23,6 +23,7 @@ GEN = {  # kind -> (function, requirement id)
     'translation': ('translation_declaration', 'M1-10'), 'cover': ('cover_letter', 'M1-43'),
     'tracking': ('tracking_table', 'M1-44'), 'stability_commitment': ('stability_commitment', 'P-16'),
     'justification': ('justification', None),
+    'p51': ('m3', 'P-09'), 'p54': ('m3', 'P-11'), 's41': ('m3', 'S-08'), 's44': ('m3', 'S-10'),
 }
 
 
@@ -147,14 +148,14 @@ def create_app(workspace):
         d = st.dossier(did)
         tmp = Path(tempfile.mkdtemp())
         try:
-            fn = getattr(letters, fn_name)
             out = tmp / f'{kind}.docx'
             try:
-                if kind == 'annex1':
-                    ctx = {**d['profile'], **body.ctx}
-                    fn(body.data, ctx, out)
+                if fn_name == 'm3':
+                    m3tables.build(kind, d['data'], out, item=slot.item, product_name=d['product'].get('name'))
+                elif kind == 'annex1':
+                    letters.annex1(body.data, {**d['profile'], **body.ctx}, out)
                 else:
-                    fn(body.data, out)
+                    getattr(letters, fn_name)(body.data, out)
             except MissingData as e:
                 err(422, 'E-MISSING-DATA', 'Some data is missing: ' + ', '.join(e.fields),
                     'فيه بيانات ناقصة: ' + '، '.join(e.fields), request_data=e.fields)

@@ -184,3 +184,29 @@ def test_bulk_classify(server, browser, tmp_path):
     board = httpx.get(f'{server}/api/dossiers/{did}/board').json()
     st = {s['slot_id']: s['status'] for s in board['slots']}
     assert st['M1-37'] == 'conforming' and st['M1-05'] == 'conforming'
+
+
+def test_product_data_page(server, browser):
+    import httpx
+    prof = dict(dossier_kind='generic', origin='local', licence='own', activity='new',
+                apis=[dict(name='Paracetamol', manufacturer='Granules India', option='CEP')])
+    did = httpx.post(server + '/api/dossiers', json=dict(name='Data test', profile=prof, product=dict(
+        name='Examplol 500 mg', dosageform='tablet', manufacturer='Example Pharma'), envelope={'applicant': 'Example Pharma'})).json()['id']
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    page.add_init_script("localStorage.setItem('db.lang','en')")
+    page.goto(f'{server}/#/d/{did}/data')
+    page.wait_for_selector('#dSave')
+    assert page.input_value('[data-d="apis.0.manufacturer"]') == 'Granules India'      # prefilled from the profile
+    page.click('[data-dadd=batches]')
+    page.fill('[data-d="batches.0.no"]', 'EX0001')
+    page.click('[data-dadd="specs.product"]')
+    page.fill('[data-d="specs.product.0.test"]', 'Assay')
+    page.fill('[data-d="specs.product.0.limit"]', '95.0–105.0 %')
+    page.click('#dSave')
+    page.wait_for_selector('#crossBox .finding')
+    txt = page.inner_text('#crossBox')
+    assert 'NP040-P54' in txt and 'NP040-S44' in txt                    # 1 FPP batch, 0 API batches
+    page.fill('[data-r="EX0001"][data-t2="Assay"]', 'Conforms')
+    page.click('#dSave')
+    page.wait_for_selector('#crossBox:has-text("NP040-NUM")')

@@ -308,6 +308,10 @@ SCHEMAS = {
         _f('trade_name', 'Trade name', 'الاسم التجاري'), _f('strengths', 'Strength(s)', 'التركيزات'),
         _f('containers', 'Container-closure system(s)', 'نظام العبوة'), _f('long_term_condition', 'Long-term condition', 'ظرف التخزين طويل المدى'),
         _f('shelf_life', 'Proposed shelf life', 'الصلاحية المقترحة')] + [_f(*x) for x in _SIGN]},
+    'p51': {'req': 'P-09', 'source': 'data', 'title': {'en': '3.2.P.5.1 specification table', 'ar': 'جدول المواصفات 3.2.P.5.1'}, 'fields': []},
+    'p54': {'req': 'P-11', 'source': 'data', 'title': {'en': '3.2.P.5.4 batch analyses table', 'ar': 'جدول تحليل التشغيلات 3.2.P.5.4'}, 'fields': []},
+    's41': {'req': 'S-08', 'source': 'data', 'title': {'en': '3.2.S.4.1 API specification table', 'ar': 'جدول مواصفات المادة 3.2.S.4.1'}, 'fields': []},
+    's44': {'req': 'S-10', 'source': 'data', 'title': {'en': '3.2.S.4.4 API batch analyses table', 'ar': 'جدول تحليل تشغيلات المادة 3.2.S.4.4'}, 'fields': []},
     'justification': {'req': None, 'title': {'en': 'Justification letter', 'ar': 'خطاب تبرير'}, 'fields': [
         _f('trade_name', 'Trade name', 'الاسم التجاري'), _f('section', 'Section', 'القسم'), _f('item', 'Item', 'البند'),
         _f('justification', 'Justification', 'التبرير', 'textarea'), _f('references', 'References (one per line)', 'المراجع (سطر لكل مرجع)', 'textarea', required=False)]

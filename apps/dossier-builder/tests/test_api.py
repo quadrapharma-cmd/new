@@ -198,3 +198,21 @@ def test_structured_data_drives_cross_checks(c, pdf):
     assert s['status'] == 'non_conforming' and s['cross'][0]['id'] == 'XC-07'      # document fine, dossier inconsistent
     g = c.get(f'/api/dossiers/{did}/gate').json()
     assert not g['ok'] and g['cross_blocking'][0]['id'] == 'XC-07'
+
+
+@pytest.mark.skipif(not __import__('shutil').which('soffice'), reason='LibreOffice not installed')
+def test_m3_tables_from_data(c):
+    from test_crosschecks import GOOD
+    did = new(c)
+    r = c.post(f'/api/dossiers/{did}/generate/p54', json={'data': {}})
+    assert r.status_code == 422 and r.json()['detail']['code'] == 'E-MISSING-DATA'          # no data yet
+    c.put(f'/api/dossiers/{did}/data', json=GOOD)
+    r = c.post(f'/api/dossiers/{did}/generate/p54', json={'data': {}})
+    assert r.status_code == 201, r.text
+    pdf = c.get(f"/api/dossiers/{did}/documents/{r.json()['id']}/file").content
+    import io
+    from pypdf import PdfReader
+    txt = ' '.join(p.extract_text() for p in PdfReader(io.BytesIO(pdf)).pages)
+    assert 'EX0001' in txt and '99.8' in txt and '3.2.P.5.4' in txt
+    r = c.post(f'/api/dossiers/{did}/generate/s44', json={'data': {}, 'slot_id': 'S-10@Paracetamol|Granules India'})
+    assert r.status_code == 201 and r.json()['slot_id'] == 'S-10@Paracetamol|Granules India'
