@@ -112,6 +112,10 @@ def test_gate_and_full_export(c, pdf):
         z = c.get(url)
         assert z.status_code == 200 and z.content[:2] == b'PK', k
     assert 'not «EDA-valid»' in r.json()['label']
+    v = r.json()['validation']
+    assert v['eCTD 3.2.2']['ok'] and v['eCTD 4.0']['ok'], v
+    rep = c.get(r.json()['report'])
+    assert rep.status_code == 200 and 'EG-PF-15.11' in rep.text
 
 
 @pytest.mark.skipif(not __import__('shutil').which('soffice'), reason='LibreOffice not installed')

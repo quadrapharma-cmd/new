@@ -25,7 +25,7 @@ Run it with `python3 apps/dossier-builder/tools/serve.py`, then open `http://127
 | P1 | Third-party content edit impossible (negative test) | ✅ | `test_checks_pdf.py::test_locked_content_edit_impossible` (20 cases), plus the same check through the API and the UI (`E-LOCKED`, audit event) |
 | P1 | Arabic generated text renders correctly | ✅ technical / ⏳ owner review | Word with real RTL → LibreOffice PDF; `pdftotext` returns the Arabic words in the right order; I checked the page images visually. The owner's own review is still to come |
 
-**Tests:** 140 automated tests, all passing:
+**Tests:** 158 automated tests, all passing:
 - engine and writers;
 - checks and lock;
 - generators;
@@ -42,7 +42,7 @@ Run it with `python3 apps/dossier-builder/tools/serve.py`, then open `http://127
 | Writer 1 CTD | ✅ |
 | Writer 2 eCTD 3.2.2 | ✅ |
 | Writer 3 eCTD 4.0 | ✅ |
-| Internal validator per output | ✅ Partial: DTD/XSD validation, checksums, lengths, vocabularies, required keywords, headings that take documents. The full rule list (141 rules for 3.2.2) is still a CSV in the profile and is not yet run as a report |
+| Internal validator per output | ✅ It reads the output back from disk. **3.2.2:** 91/141 profile rules automated (the rest are «not run» with the reason). **4.0:** XSD, SHA-256, references, unassociated files, context of use, keywords, EG headings. Report in Arabic/English with every export. The validator caught a real defect in our own demo — the tracking table was named `cover-2.pdf` (EG-PF-15.11/15.12) — and it is fixed |
 | Export gate + «provisional profile» acknowledgement | ✅ Export stops if a required item is missing or a document is non-conforming, and stops if the eCTD acknowledgement is not given |
 | **Publisher view (owner request: like EXTEDO)** | ✅ Section tree → documents → properties. Switch CTD / 3.2.2 / 4.0 with a live preview; drag files onto sections |
 
@@ -74,7 +74,7 @@ All were found by the tests:
 Until then the eCTD outputs say «conforms to EDA drafts + ICH», never «EDA-valid». P4 swaps the profile packs only.
 
 **Engineering:**
-- Run the 141 3.2.2 validation rules as a report in the UI.
+- Automate the remaining 3.2.2 rules (lifecycle across sequences — arrives with P3 — plus links and bookmarks inside PDFs).
 - Automatic fixes, beyond the guard: OCR layer, PDF version, bookmarks.
 - Roles and approvals (P5).
 - A PDF watermark until a signed copy is uploaded (today the watermark is in the Word header).

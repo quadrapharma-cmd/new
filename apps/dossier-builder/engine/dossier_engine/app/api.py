@@ -9,6 +9,7 @@ from ..profile import Profile, ProfileError
 from ..guard import assert_allowed, LockedError
 from ..assemble import docs_for
 from ..classify import Classifier
+from ..validators import ectd32 as v32, ectd40 as v40, report as vreport
 from ..writers import ctd, ectd32, ectd40
 from ..writers.ectd32 import WriterError
 from ..generate import letters
@@ -336,6 +337,17 @@ def create_app(workspace):
             shutil.rmtree(base, ignore_errors=True)
             err(422, 'E-WRITER', f'Export failed: {e}', f'التصدير فشل: {e}')
         shutil.rmtree(work)
+        reports = {}
+        if 'ectd32' in results:
+            reports['eCTD 3.2.2'] = v32.validate(results['ectd32'], ectd32.DEFAULT_PROFILE)
+        if 'ectd40' in results:
+            p40 = getattr(app.state, 'p40', None) or ectd40.Profile40()
+            app.state.p40 = p40
+            ig = Path(__file__).resolve().parents[5] / 'docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip'
+            reports['eCTD 4.0'] = v40.validate(results['ectd40'], p40, ig, st.root / 'cache')
+        if reports:
+            (base / 'validation-report.json').write_text(json.dumps(reports, ensure_ascii=False, indent=1), encoding='utf-8')
+            (base / 'validation-report.html').write_text(vreport.render(d['name'], reports), encoding='utf-8')
         zips = {}
         for k, p in results.items():
             z = base / f'{k}.zip'
@@ -348,8 +360,12 @@ def create_app(workspace):
         st.db.execute('insert into export values (?,?,?,?,?,?)', (exp_id, did, json.dumps(body.outputs), str(base),
                                                                   int(body.acknowledge_provisional), time.time()))
         st.db.commit()
-        st.audit(did, 'export', id=exp_id, outputs=body.outputs, acknowledged=body.acknowledge_provisional)
-        return {'id': exp_id, 'downloads': zips, 'ctd_only': ctd_only,
+        st.audit(did, 'export', id=exp_id, outputs=body.outputs, acknowledged=body.acknowledge_provisional,
+                 validation={k: r['counts'] for k, r in reports.items()})
+        summary = {k: {'ok': r['ok'], 'counts': r['counts'], 'coverage': r['coverage'], 'label': r['label']}
+                   for k, r in reports.items()}
+        return {'id': exp_id, 'downloads': zips, 'ctd_only': ctd_only, 'validation': summary,
+                'report': f'/api/dossiers/{did}/exports/{exp_id}/validation-report.html' if reports else None,
                 'label': 'Conforms to EDA drafts + ICH (provisional EG profiles) — not «EDA-valid».'}
 
     @app.get('/api/dossiers/{did}/exports/{exp_id}/{name}')

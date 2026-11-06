@@ -239,7 +239,8 @@ const T = {
   doExport:{en:'Export selected outputs',ar:'تصدير المخرجات المختارة'}, exporting:{en:'Building…',ar:'جاري البناء…'}, downloads:{en:'Downloads',ar:'التنزيلات'},
   audit:{en:'Activity log',ar:'سجل النشاط'}, auditSub:{en:'Every action is recorded; nothing is overwritten.',ar:'كل إجراء مسجل؛ لا شيء يُستبدل.'},
   when:{en:'When',ar:'الوقت'}, event:{en:'Event',ar:'الحدث'}, detail:{en:'Detail',ar:'التفاصيل'}, restore:{en:'Restore',ar:'استرجاع'},
-  err:{en:'Error',ar:'خطأ'}, bulk:{en:'Add files',ar:'إضافة ملفات'}, bulkSub:{en:'The tool suggests a section for each file from its name, CTD number and first page. Check and confirm.',ar:'الأداة تقترح قسماً لكل ملف من اسمه ورقم الـ CTD وأول صفحة. راجع وأكّد.'},
+  err:{en:'Error',ar:'خطأ'}, vPass:{en:'pass',ar:'ناجح'}, vFail:{en:'fail',ar:'فشل'}, vWarn:{en:'warning',ar:'تحذير'}, vNotRun:{en:'not run',ar:'لم يُشغَّل'},
+  vReport:{en:'Validation report',ar:'تقرير التحقق'}, bulk:{en:'Add files',ar:'إضافة ملفات'}, bulkSub:{en:'The tool suggests a section for each file from its name, CTD number and first page. Check and confirm.',ar:'الأداة تقترح قسماً لكل ملف من اسمه ورقم الـ CTD وأول صفحة. راجع وأكّد.'},
   noSuggest:{en:'— choose a section —',ar:'— اختر القسم —'}, skip:{en:'Skip',ar:'تخطي'}, confirmAll:{en:'Add to the chosen sections',ar:'إضافة للأقسام المختارة'},
   needsDetails:{en:'needs details — use the section\'s Upload button',ar:'يحتاج بيانات — استخدم زر الرفع في القسم'}, added:{en:'files added',ar:'ملفات أضيفت'}, generate:{en:'Generate',ar:'توليد'}, justify:{en:'Write a justification',ar:'كتابة تبرير'},
   genSub:{en:'Filled from the dossier where possible. Missing data is asked for, never guessed. The PDF is marked «DRAFT — unsigned» until the signed scan is uploaded.',
@@ -612,7 +613,9 @@ async function exportView(){
   $('#go').onclick=async()=>{ const outs=[...document.querySelectorAll('[data-out]:checked')].map(c=>c.dataset.out);
     $('#go').disabled=true; $('#go').textContent=t('exporting');
     try{ const r=await api(`/dossiers/${S.dossier.id}/export`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({outputs:outs,acknowledge_provisional:$('#ack').checked})});
-      $('#res').innerHTML=`<div class="card pad"><h2>${esc(t('downloads'))}</h2><div class="dl" style="margin-top:8px">${Object.entries(r.downloads).map(([k,u])=>`<a class="btn" href="${esc(u)}" download>⤓ ${esc(k)}.zip</a>`).join('')}</div><p class="small muted">${esc(r.label)}</p></div>`;
+      const val = Object.entries(r.validation||{}).map(([k,v])=>`<div class="alert ${v.ok?'ok':'bad'}"><p><b>${esc(k)}</b> — ${esc(v.label)}<br><span class="small">${esc(t('vPass'))} ${v.counts.pass} · ${esc(t('vFail'))} ${v.counts.fail} · ${esc(t('vWarn'))} ${v.counts.warning} · ${esc(t('vNotRun'))} ${v.counts.not_run}</span></p></div>`).join('');
+      $('#res').innerHTML=`<div class="card pad" style="display:flex;flex-direction:column;gap:10px"><h2>${esc(t('downloads'))}</h2><div class="dl">${Object.entries(r.downloads).map(([k,u])=>`<a class="btn" href="${esc(u)}" download>⤓ ${esc(k)}.zip</a>`).join('')}
+        ${r.report?`<a class="btn" href="${esc(r.report)}" target="_blank" rel="noopener">${esc(t('vReport'))}</a>`:''}</div>${val}<p class="small muted">${esc(r.label)}</p></div>`;
     }catch(e){ $('#res').innerHTML=`<div class="alert bad"><p>${esc(e.message)}</p></div>`; }
     finally{ $('#go').disabled=false; $('#go').textContent=t('doExport'); } };
 }

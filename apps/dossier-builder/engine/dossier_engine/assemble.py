@@ -26,7 +26,9 @@ def docs_for(slots, profile, files):
             kw = {}
             if s.item and node.startswith(('3.2.S', '2.3.S')):
                 kw = dict(substance=s.item['name'], manufacturer=s.item['manufacturer'])
-            extra = {k: f[k] for k in ('pi_type', 'lang', 'study', 'doc_type', 'control', 'indication', 'excipient', 'uuid')
+            extra = {k: f[k] for k in ('pi_type', 'lang', 'study', 'doc_type', 'control', 'indication', 'excipient', 'uuid', 'name')
                      if f.get(k)}
+            if s.req_id == 'M1-44':
+                extra.setdefault('name', 'tracking')          # EG-PF-15.12: tracking.pdf / tracking-<var>.pdf
             out.append(Doc(node=node, file=f['file'], title=f.get('title') or s.title['en'][:120], **extra, **kw))
     return out, unplaced
