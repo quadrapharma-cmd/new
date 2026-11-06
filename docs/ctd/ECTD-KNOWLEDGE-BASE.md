@@ -80,3 +80,17 @@ reference files under `ectd/`, and the original specifications, schemas and exam
 6. Final, adopted version of the eCTD technical guidance (the consultation ended 14/10/2026, per the external KB v3).
 
 Where to look: the "EDA eCTD webpage" named in the draft (not found on the public site), the portal `reg-submit.edaegypt.gov.eg` after login, or a written enquiry to the General Administration for Human Pharmaceuticals Registration.
+
+## 5. Hunt for the EG Module 1 specification (06/11/2026) — result
+
+| Where searched | Result |
+|---|---|
+| EDA website: guideline and notice indexes, the internal site search («eCTD», «Module 1», «validation criteria»), `/en/ectd/` | Nothing. `/en/ectd/` returns a «Page Not Found» page with HTTP 200 |
+| EDA public-consultation page for the eCTD draft | Links only the draft guidance PDF. No M1 specification attached |
+| Submission portal `reg-submit.edaegypt.gov.eg` | **GoAnywhere** file-transfer login (`/webclient/Login.xhtml`) and nothing else. No public download area |
+| EXTEDO/DAF webinar «Navigate Egypt's Digital Shift to eCTD» (**03/12/2025**, 14:30 Egypt time) | The announcement lists «Module 1 requirements, specifications and validation criteria». The documents are presented at registration-gated sessions and not published on the page |
+| EXTEDO Egypt Q&A blog | «eCTD accepted from Q3/2025; mandatory January 2026 (for new pharmaceutical registrations)… An update from the authority is expected». Upload is a zipped package through a browser portal reachable from abroad |
+| Web (LinkedIn posts, second-hand) | Describe an **EG Module 1 eCTD Specification Version 1.0 (2026)**: `eg-regional.xml`, with `eg-envelope` and `m1-eg`, used with the ICH spec; path ≤ 180; constant UUID; first sequence 0000. All of this is consistent with the draft guidance. **The document itself was not found publicly** |
+| **GL.Bioinn.004 v5 (25/05/2026)**, biologicals file content | Annex I (new registration) and Annex II (re-registration) give Module 1 document lists «aligned with the eCTD format». They match the draft's M1.2 tree (cover letter, application form, product information, PV, legal, EDA approvals, declarations, imported-product documents). **Archived** in `sources/` |
+
+**Conclusion:** the EG M1 specification v1.0 most likely exists but is distributed outside the public website, through the EXTEDO/DAF onboarding or to registered portal users. A company with a portal account or an EXTEDO/DAF contact can obtain it. It cannot be downloaded from here.
