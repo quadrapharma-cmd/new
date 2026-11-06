@@ -62,3 +62,9 @@ def test_seed_dossier_exports_valid_ectd32(tmp_path):
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr[:2000]
     assert rep4['documents'] == len(docs)
+
+    # and the CTD One Submission package from the same slots
+    from dossier_engine.writers import ctd
+    rep1 = ctd.write(tmp_path / 'out1', 'Examplol 500 mg FCT', slots, files)
+    assert rep1['missing'] == []
+    assert len([f for f in rep1['files'] if f.endswith('.pdf')]) == sum(len(v) for v in files.values())
