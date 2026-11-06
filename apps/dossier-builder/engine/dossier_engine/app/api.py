@@ -83,6 +83,14 @@ def create_app(workspace):
     def get_dossier(did: str):
         return st.dossier(did)
 
+    @app.get('/api/dossiers/{did}/data')
+    def get_data(did: str):
+        return st.dossier(did)['data']
+
+    @app.put('/api/dossiers/{did}/data')
+    def put_data(did: str, data: dict):
+        return {'cross': st.set_data(did, data)}
+
     @app.get('/api/dossiers/{did}/board')
     def board(did: str):
         return st.board(did)

@@ -10,6 +10,7 @@ from .. import packs
 from ..profile import Profile
 from ..resolver import resolve, diff
 from ..checks.pdf import check as pdf_check
+from .. import crosschecks
 
 SCHEMA = '''
 create table if not exists dossier(id text primary key, name text not null, profile text not null,
@@ -40,6 +41,10 @@ class Store:
         self._local = threading.local()
         self.db.execute('pragma journal_mode=wal')
         self.db.executescript(SCHEMA)
+        cols = {r[1] for r in self.db.execute('pragma table_info(dossier)')}
+        if 'data' not in cols:                       # P2: structured dossier data (additive migration)
+            self.db.execute("alter table dossier add column data text not null default '{}'")
+            self.db.commit()
         self._packs = {}
         self._pack_lock = threading.Lock()
 
@@ -85,7 +90,7 @@ class Store:
         did = str(uuid.uuid4())
         envelope = dict(envelope)
         envelope.setdefault('application_uuid', str(uuid.uuid4()))
-        self.db.execute('insert into dossier values (?,?,?,?,?,?,?)',
+        self.db.execute('insert into dossier(id, name, profile, product, envelope, pack, created) values (?,?,?,?,?,?,?)',
                         (did, name, json.dumps(profile, ensure_ascii=False), json.dumps(product, ensure_ascii=False),
                          json.dumps(envelope, ensure_ascii=False), pack, time.time()))
         self.db.commit()
@@ -97,8 +102,8 @@ class Store:
         if not r:
             raise StoreError('E-NOT-FOUND', 'Dossier not found.', 'الملف غير موجود.')
         d = dict(r)
-        for k in ('profile', 'product', 'envelope'):
-            d[k] = json.loads(d[k])
+        for k in ('profile', 'product', 'envelope', 'data'):
+            d[k] = json.loads(d.get(k) or '{}')
         return d
 
     def list_dossiers(self):
@@ -125,6 +130,26 @@ class Store:
         self.db.commit()
         self.audit(did, 'profile.changed', diff=change, moved_to_unassigned=moved)
         return {**change, 'moved_to_unassigned': moved}
+
+    def set_data(self, did, data):
+        self.dossier(did)
+        self.db.execute('update dossier set data=? where id=?', (json.dumps(data, ensure_ascii=False), did))
+        self.db.commit()
+        self.audit(did, 'data.updated', keys=sorted(data))
+        return self.cross(did)
+
+    def cross(self, did):
+        d = self.dossier(did)
+        data = dict(d['data'])
+        names = dict(data.get('applicant_names') or {})
+        names.setdefault('envelope', d['envelope'].get('applicant'))
+        for doc in self.documents(did):
+            g = (doc['meta'].get('data') or {}).get('company')
+            if g:
+                names.setdefault(doc['meta'].get('generated') or 'letter', g)
+        data['applicant_names'] = names
+        return [f.to_dict() for f in crosschecks.run(data, Profile.from_dict(d['profile']))] if (d['data'] or len(set(
+            v for v in names.values() if v)) > 1) else []
 
     # ---------------- documents
     def add_document(self, did, slot_id, filename, data, title=None, meta=None):
@@ -202,16 +227,28 @@ class Store:
             out.append({**s.to_dict(), 'status': status,
                         'documents': [{k: d[k] for k in ('id', 'version', 'filename', 'title', 'check_status',
                                                          'findings', 'sha256', 'meta')} for d in docs]})
+        cross = self.cross(did)
+        by_slot = {}
+        for f in cross:
+            for sid in f['slots']:
+                by_slot.setdefault(sid, []).append(f)
+        for x in out:
+            x['cross'] = by_slot.get(x['slot_id'], [])
+            if x['status'] in ('received', 'conforming', 'needs_attention') and x['cross']:
+                x['status'] = 'non_conforming' if any(f['severity'] == 'block' for f in x['cross']) else \
+                    max(x['status'], 'needs_attention', key=STATUS_ORDER.index)
         unassigned = [d for d in self.documents(did) if d['slot_id'] is None]
         counts = {}
         for x in out:
             counts[x['status']] = counts.get(x['status'], 0) + 1
-        return {'slots': out, 'unassigned': unassigned, 'counts': counts}
+        return {'slots': out, 'unassigned': unassigned, 'counts': counts, 'cross': cross}
 
     def gate(self, did):
         """Blocking reasons before export (01-PLAN P1 «export gate»)."""
         b = self.board(did)
         missing = [s['slot_id'] for s in b['slots'] if s['level'] == 'R' and s['status'] == 'not_started']
         blocking = [s['slot_id'] for s in b['slots'] if s['status'] == 'non_conforming']
-        return {'ok': not missing and not blocking, 'missing_required': missing, 'non_conforming': blocking,
+        xb = [f for f in b['cross'] if f['severity'] == 'block']
+        return {'ok': not missing and not blocking and not xb, 'missing_required': missing, 'non_conforming': blocking,
+                'cross_blocking': [{'id': f['id'], 'en': f['en'], 'ar': f['ar']} for f in xb],
                 'provisional_profiles': ['EG eCTD 3.2.2 provisional v0', 'EG eCTD 4.0 provisional v0']}

@@ -181,3 +181,20 @@ def test_generate_stability_commitment_and_reuse_data(c):
     assert r.json()['slot_id'] == 'P-16'
     pf = c.get(f'/api/dossiers/{did}/generate/stability_commitment/prefill').json()
     assert pf['signatory'] == 'A. Example'                                            # last entered data reused
+
+
+def test_structured_data_drives_cross_checks(c, pdf):
+    from test_crosschecks import GOOD
+    import copy
+    did = new(c)
+    up(c, did, 'M1-05', pdf)                                     # pricing certificate uploaded and conforming
+    assert c.put(f'/api/dossiers/{did}/data', json=GOOD).json()['cross'] == []
+    bad = copy.deepcopy(GOOD)
+    bad['pack']['units_pricing'] = '1 x 10'
+    r = c.put(f'/api/dossiers/{did}/data', json=bad).json()
+    assert [f['id'] for f in r['cross']] == ['XC-07']
+    b = c.get(f'/api/dossiers/{did}/board').json()
+    s = next(x for x in b['slots'] if x['slot_id'] == 'M1-05')
+    assert s['status'] == 'non_conforming' and s['cross'][0]['id'] == 'XC-07'      # document fine, dossier inconsistent
+    g = c.get(f'/api/dossiers/{did}/gate').json()
+    assert not g['ok'] and g['cross_blocking'][0]['id'] == 'XC-07'
