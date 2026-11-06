@@ -14,6 +14,8 @@ This folder is the code skeleton. It is kept here until the separate repository 
 | Profile | `engine/dossier_engine/profile.py` | The product facts. Blocks contradictions with a bilingual message (local + imported bulk, toll + imported, Rolling after 01/12/2026, biological, duplicate API) |
 | eCTD placement | `requirements.yaml` → `ectd.nodes` | Each requirement is mapped to its node: `m1/eg` from the provisional profile, M2–M5 from the ICH DTD (tested) |
 | Resolver | `engine/dossier_engine/resolver.py` | profile + pack → slots (R / O / NR / NA). Each slot gives a reason and a source. Slots are expanded per API manufacturer (CEP / DMF / FULL). `diff()` reports what a profile change adds or removes |
+| **Writer 2: eCTD 3.2.2** | `engine/dossier_engine/writers/ectd32.py` | Builds a sequence from documents. Element order comes from the DTDs, folders from ICH App. 4 and the EG map. Writes `index.xml`, `m1/eg/eg-regional.xml` (envelope `EG-EDA`), MD5, `util/`. Limits: 64 characters per name, 180 per path. A sequence is never overwritten. Required DTD attributes (substance, manufacturer, product, indication) are filled in |
+| Assembler | `engine/dossier_engine/assemble.py` | Turns slots + files into writer documents. Picks the right node when a requirement has more than one (e.g. M1-04 new vs re-registration) |
 | CLI | `tools/resolve.py` | Prints the requirements board for a profile |
 
 ## Run
@@ -23,6 +25,7 @@ pip install -r requirements-dev.txt
 python3 -m pytest -q tests                                  # 50+ tests
 python3 tools/resolve.py examples/examplol.yaml             # required items
 python3 tools/resolve.py examples/examplol.yaml --all --lang ar   # with the reasons, Arabic
+python3 tools/build_demo_ectd32.py examples/examplol.yaml /tmp/out   # sequence 0000 (placeholder PDFs) + xmllint
 ```
 
 ## Rules for editing the pack
