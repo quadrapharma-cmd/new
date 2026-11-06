@@ -9,6 +9,7 @@ from ..profile import Profile, ProfileError
 from ..guard import assert_allowed, LockedError
 from ..assemble import docs_for
 from ..classify import Classifier
+from ..variations import Variations
 from ..validators import ectd32 as v32, ectd40 as v40, report as vreport
 from ..writers import ctd, ectd32, ectd40
 from ..writers.ectd32 import WriterError
@@ -70,6 +71,17 @@ def create_app(workspace):
     @app.get('/api/health')
     def health():
         return {'ok': True, 'workspace': str(st.root)}
+
+    VAR = Variations()
+
+    @app.get('/api/variations')
+    def var_search(q: str = '', group: str = None, pac: str = None):
+        return {'items': VAR.search(q, group, pac), 'groups': sorted({v['group'] for v in VAR.items}),
+                'classes': VAR.order, 'source': VAR.meta['sources']}
+
+    @app.post('/api/variations/plan')
+    def var_plan(ids: list[str]):
+        return VAR.plan(ids)
 
     @app.get('/api/dossiers')
     def list_dossiers():

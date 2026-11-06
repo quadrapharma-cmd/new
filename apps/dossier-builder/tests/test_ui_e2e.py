@@ -210,3 +210,16 @@ def test_product_data_page(server, browser):
     page.fill('[data-r="EX0001"][data-t2="Assay"]', 'Conforms')
     page.click('#dSave')
     page.wait_for_selector('#crossBox:has-text("NP040-NUM")')
+
+
+def test_variations_page(server, browser):
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    page.add_init_script("localStorage.setItem('db.lang','en')")
+    page.goto(f'{server}/#/variations')
+    page.wait_for_selector('[data-v]')
+    page.fill('#vq', 'new manufacturer for Active Substance')
+    page.wait_for_function("document.querySelectorAll('[data-v]').length <= 3")
+    page.check('[data-v="H-05"]')
+    page.wait_for_selector('.kpi:has-text("PAC-II")')
+    assert 'var-pac-ii' in page.inner_text('#view')

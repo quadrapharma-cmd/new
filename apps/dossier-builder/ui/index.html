@@ -139,6 +139,7 @@ textarea{width:100%;min-height:90px;padding:8px 10px;border:1px solid var(--line
 .drawer.wide{width:min(760px,100%)}
 .mobnav{display:none}
 @media (max-width:860px){
+  .two{grid-template-columns:minmax(0,1fr)!important}
   .app{grid-template-columns:minmax(0,1fr)}
   .rail{display:none}
   .mobnav{display:flex}
@@ -153,6 +154,7 @@ textarea{width:100%;min-height:90px;padding:8px 10px;border:1px solid var(--line
     <div class="logo"><b>DB</b><span data-t="appName"></span></div>
     <nav class="nav" id="nav">
       <a href="#/" data-r="home"><span data-t="navDossiers"></span></a>
+      <a href="#/variations" data-r="variations"><span data-t="navVars"></span></a>
       <div class="grp" data-t="navCurrent"></div>
       <a href="#" data-r="board" id="navBoard" aria-disabled="true"><span data-t="navBoard"></span></a>
       <a href="#" data-r="data" id="navData" aria-disabled="true"><span data-t="navData"></span></a>
@@ -180,7 +182,13 @@ textarea{width:100%;min-height:90px;padding:8px 10px;border:1px solid var(--line
 'use strict';
 const T = {
   appName:{en:'Dossier Builder',ar:'منشئ الملفات'},
-  navDossiers:{en:'Dossiers',ar:'الملفات'}, navCurrent:{en:'Current dossier',ar:'الملف الحالي'},
+  navDossiers:{en:'Dossiers',ar:'الملفات'}, navVars:{en:'Variations',ar:'التغييرات'},
+  varsSub:{en:'EDA variation list (GL.CAPP.026 v6 via the EDA self-guided tool): pick one or more changes to get the class, the eCTD submission type, the conditions and the requirements.',
+           ar:'قائمة تغييرات الهيئة (GL.CAPP.026 الإصدار 6 من أداة الهيئة): اختر تغييراً أو أكثر لتعرف التصنيف ونوع تقديم eCTD والشروط والمتطلبات.'},
+  searchVar:{en:'Search (e.g. batch size, manufacturer, shelf life)',ar:'ابحث (مثلاً batch size أو manufacturer أو shelf life)'},
+  plan:{en:'Plan',ar:'الخطة'}, cls:{en:'Class',ar:'التصنيف'}, subType:{en:'eCTD submission type',ar:'نوع التقديم eCTD'}, mode:{en:'Mode',ar:'الطريقة'},
+  conditions:{en:'Conditions to be fulfilled',ar:'الشروط الواجب استيفاؤها'}, requirements:{en:'Requirements',ar:'المتطلبات'}, noReq:{en:'No requirements listed.',ar:'لا توجد متطلبات مذكورة.'},
+  pickVars:{en:'Tick the changes on the left.',ar:'علّم التغييرات من القائمة.'}, enOnly:{en:'',ar:'نص التغييرات بالإنجليزية كما في أداة الهيئة.'}, navCurrent:{en:'Current dossier',ar:'الملف الحالي'},
   navBoard:{en:'Requirements',ar:'المتطلبات'}, navData:{en:'Product data',ar:'بيانات المنتج'},
   dataSub:{en:'Enter each fact once. Annex I, Module 3 tables and the cross-checks all read from here.',ar:'أدخل كل معلومة مرة واحدة. نموذج الطلب وجداول Module 3 وفحوص التطابق كلها تقرأ من هنا.'},
   dApis:{en:'API sources',ar:'مصادر المادة الفعالة'}, dBatches:{en:'Batches',ar:'التشغيلات'}, dSpec:{en:'Finished-product specification (3.2.P.5.1)',ar:'مواصفات المستحضر (3.2.P.5.1)'},
@@ -297,6 +305,7 @@ async function route(){
   const v = $('#view');
   try{
     if(h==='/new'){ S.dossier=null; nav('home'); return wizard(); }
+    if(h==='/variations'){ nav('variations'); return varsView(); }
     if(!m){ S.dossier=null; nav('home'); return home(); }
     if(!S.dossier || S.dossier.id!==m[1]) S.dossier = await api(`/dossiers/${m[1]}`);
     nav(m[2]);
@@ -675,6 +684,34 @@ function showCross(cross){
   $('#crossBox').innerHTML = `<div class="card pad"><h2>${esc(t('crossT'))}</h2>${cross.length? cross.map(f=>`<div class="finding ${f.severity==='block'?'block':''}" style="margin-top:8px">
      <div>${f.severity==='block'?'●':'○'} ${esc(f[S.lang])} <span class="code muted">${esc(f.id)}</span></div><div class="small muted">${esc(f.source)} · ${esc(t('act_'+f.action)||'')}</div></div>`).join('')
      : `<p class="small muted">✓ ${esc(t('crossNone'))}</p>`}</div>`;
+}
+
+
+/* ---------------- variations (P3) */
+S.vsel = new Set(); S.vq = '';
+async function varsView(){
+  const r = await api(`/variations?q=${encodeURIComponent(S.vq)}`);
+  const plan = S.vsel.size ? await api('/variations/plan',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify([...S.vsel])}) : null;
+  const pacChip = p => `<span class="chip ${p==='PAC-II'?'c-bad':p==='PAC-B'?'c-warn':p==='PAC-A'?'c-rec':'c-ok'}"><bdi>${esc(p)}</bdi></span>`;
+  $('#view').innerHTML = `<div class="head"><div><h1>${esc(t('navVars'))}</h1><p class="sub">${esc(t('varsSub'))}</p>${t('enOnly')?`<p class="small muted">${esc(t('enOnly'))}</p>`:''}</div></div>
+   <div class="two" style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px">
+    <div class="card"><div class="pad"><input type="text" dir="auto" id="vq" placeholder="${esc(t('searchVar'))}" value="${esc(S.vq)}"></div>
+     <div class="tablewrap" style="max-height:calc(100vh - 260px);overflow:auto"><table><tbody>
+     ${r.items.map(v=>`<tr><td style="width:28px"><input type="checkbox" data-v="${v.id}" ${S.vsel.has(v.id)?'checked':''} aria-label="${esc(v.id)}"></td>
+       <td><div dir="ltr" style="text-align:start">${esc(v.request)}</div><div class="small muted"><bdi>${esc(v.group)} · ${esc(v.type)}</bdi></div></td><td>${pacChip(v.pac)}</td></tr>`).join('')}
+     </tbody></table></div></div>
+    <div class="card pad" style="display:flex;flex-direction:column;gap:12px"><h2>${esc(t('plan'))}</h2>
+     ${!plan?`<p class="muted">${esc(t('pickVars'))}</p>`:`<div class="kpis"><div class="card kpi br"><span class="n"><bdi>${esc(plan.class)}</bdi></span><span class="l">${esc(t('cls'))}</span></div>
+       <div class="card kpi"><span class="n code" style="font-size:18px">${esc(plan.submission_type)}</span><span class="l">${esc(t('subType'))}</span></div>
+       <div class="card kpi"><span class="n code" style="font-size:18px">${esc(plan.mode)}</span><span class="l">${esc(t('mode'))}</span></div></div>
+       <p class="small muted" dir="ltr" style="text-align:start">${esc(plan.rule.en)} — ${esc(plan.rule.source)}</p>
+       ${plan.items.map(i=>`<div class="finding"><div dir="ltr" style="text-align:start"><b>${esc(i.id)}</b> ${esc(i.request)} ${pacChip(i.pac)}</div>
+         ${i.conditions.length?`<div class="small"><b>${esc(t('conditions'))}</b><ol dir="ltr" style="text-align:start;margin:4px 0">${i.conditions.map(c=>`<li>${esc(c)}</li>`).join('')}</ol></div>`:''}
+         <div class="small"><b>${esc(t('requirements'))}</b>${i.requirements.length?`<ol dir="ltr" style="text-align:start;margin:4px 0">${i.requirements.map(c=>`<li>${esc(c)}</li>`).join('')}</ol>`:` <span class="muted">${esc(t('noReq'))}</span>`}</div>
+         <div class="code small muted">${esc(i.source.doc)} #${i.source.row}</div></div>`).join('')}`}
+    </div></div>`;
+  const q=$('#vq'); let h; q.oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ S.vq=q.value; varsView().then(()=>{ const n=$('#vq'); n.focus(); n.setSelectionRange(n.value.length,n.value.length); }); },250); };
+  document.querySelectorAll('[data-v]').forEach(c=>c.onchange=()=>{ c.checked?S.vsel.add(c.dataset.v):S.vsel.delete(c.dataset.v); varsView(); });
 }
 
 /* ---------------- export */
