@@ -8,6 +8,8 @@ reference files under `ectd/`, and the original specifications, schemas and exam
 | `ectd/ICH-eCTD-3.2.2-reference.md` | ICH v3.2.2: the complete Appendix 4 folder/file table (379 rows), naming rules, `index.xml` + DTD verbatim, all 159 heading elements with attributes, lifecycle, MD5, M8 formats, all Q&As |
 | `ectd/EU-M1-3.1.1-reference-model-for-EG.md` | EU Module 1 v3.1.1 — **the model the Egyptian draft was adapted from**: `m1/eu` tree, `eu-regional.xml` envelope DTD verbatim, all 111 EU validation criteria v8.2, accepted formats, a section-by-section map of EG draft ↔ EU HTG v6.0.1 with every Egyptian difference, and a real example sequence (`index.xml` + `eu-regional.xml`) |
 | `ectd/ICH-eCTD-4.0-reference.md` | ICH v4.0 (IG v1.7, May 2026 cover; CV package v1.0.3; Q&A v1.10): `submissionunit.xml` (HL7 RPS), context-of-use codes (142), keywords, document reuse, lifecycle, SHA-256, rules eCTD4-001…085, what a region must define (EU draft IG as model), forward compatibility from v3.2.2, vendor-group status 30/09/2026 |
+| `ectd/EG-M1-eCTD-Specification-DRAFT-v1.0-reference.md` | **EDA draft EG Module 1 eCTD Specification v1.0** (consultation 02/09–14/10/2026): eg-regional.xml, envelope (25 elements), m1-eg, Appendix 2 (185 rows), 38 issues. No DTD or vocabularies published |
+| `EG-M1-Submission-Guidance-and-CTD-v6-DRAFTS-reference.md` | **EDA drafts:** M1 Submission Guidance (68 pp.) and NP.CAPP.065 v6, with the v5→v6 diff (consultation 15–29/10/2026) |
 | `CTD-KNOWLEDGE-BASE.md` | Dossier *content*: EDA Module 1–5 requirements (NP.CAPP.065 v5), Module 3 rules, deficiencies, variation → sections, WHO QOS/QIS examples |
 | `SOURCES-INDEX.md` · `RECONCILIATION-KB-v3.md` | Which document version is in force, and corrections to the external KB v3 |
 
