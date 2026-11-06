@@ -1,0 +1,243 @@
+"""HTTP API on localhost (D1). Errors always carry code + en + ar (+ action)."""
+import json, shutil, tempfile, time, uuid, zipfile
+from pathlib import Path
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from ..profile import Profile, ProfileError
+from ..guard import assert_allowed, LockedError
+from ..assemble import docs_for
+from ..writers import ctd, ectd32, ectd40
+from ..writers.ectd32 import WriterError
+from ..generate import letters
+from ..generate.docx_kit import MissingData, to_pdf
+from .store import Store, StoreError
+
+STATIC = Path(__file__).resolve().parents[3] / 'ui'
+GEN = {  # kind -> (function, requirement id)
+    'annex1': ('annex1', 'M1-01'), 'composition': ('composition_certificate', 'M1-31'),
+    'salt': ('salt_calc_letter', 'M1-32'), 'cep_commitment': ('cep_commitment', 'M1-40'),
+    'translation': ('translation_declaration', 'M1-10'), 'cover': ('cover_letter', 'M1-43'),
+    'tracking': ('tracking_table', 'M1-44'),
+}
+
+
+def err(status, code, en, ar, **extra):
+    raise HTTPException(status, detail={'code': code, 'en': en, 'ar': ar, **extra})
+
+
+class NewDossier(BaseModel):
+    name: str
+    profile: dict
+    product: dict
+    envelope: dict = {}
+
+
+class ExportReq(BaseModel):
+    outputs: list = ['ctd', 'ectd32', 'ectd40']
+    acknowledge_provisional: bool = False
+
+
+class GenReq(BaseModel):
+    data: dict
+    ctx: dict = {}
+    slot_id: str = None
+
+
+class OpReq(BaseModel):
+    op: str
+
+
+def create_app(workspace):
+    st = Store(workspace)
+    app = FastAPI(title='Dossier Builder (local)', version='0.1')
+
+    @app.exception_handler(StoreError)
+    def _store_err(_, e):
+        return JSONResponse(status_code=404 if e.code == 'E-NOT-FOUND' else 422,
+                            content={'detail': {'code': e.code, 'en': e.en, 'ar': e.ar, **e.extra}})
+
+    @app.exception_handler(ProfileError)
+    def _prof_err(_, e):
+        return JSONResponse(status_code=422, content={'detail': {'code': 'E-PROFILE', 'problems': e.problems,
+                                                                 'en': str(e), 'ar': '؛ '.join(p['ar'] for p in e.problems)}})
+
+    @app.get('/api/health')
+    def health():
+        return {'ok': True, 'workspace': str(st.root)}
+
+    @app.get('/api/dossiers')
+    def list_dossiers():
+        return st.list_dossiers()
+
+    @app.post('/api/dossiers', status_code=201)
+    def new_dossier(body: NewDossier):
+        did = st.create_dossier(body.name, body.profile, body.product, body.envelope)
+        return {'id': did, **st.board(did)['counts']}
+
+    @app.get('/api/dossiers/{did}')
+    def get_dossier(did: str):
+        return st.dossier(did)
+
+    @app.get('/api/dossiers/{did}/board')
+    def board(did: str):
+        return st.board(did)
+
+    @app.put('/api/dossiers/{did}/profile')
+    def put_profile(did: str, profile: dict):
+        return st.update_profile(did, profile)
+
+    @app.post('/api/dossiers/{did}/slots/{slot_id:path}/documents', status_code=201)
+    async def upload(did: str, slot_id: str, file: UploadFile = File(...), title: str = Form(None),
+                     meta: str = Form('{}')):
+        data = await file.read()
+        return st.add_document(did, slot_id, file.filename, data, title, json.loads(meta or '{}'))
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/file')
+    def get_file(did: str, doc_id: str):
+        d = st.document(doc_id)
+        return FileResponse(st.blob_path(d['sha256']), media_type='application/pdf', filename=d['filename'])
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/withdraw')
+    def withdraw(did: str, doc_id: str, reason: str = 'user'):
+        return st.withdraw(did, doc_id, reason)
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/restore')
+    def restore(did: str, doc_id: str):
+        return st.restore(did, doc_id)
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/ops')
+    def op(did: str, doc_id: str, body: OpReq):
+        d = st.document(doc_id)
+        audit = []
+        try:
+            assert_allowed(d['doc_class'], body.op, audit)
+        except LockedError as e:
+            for a in audit:
+                st.audit(did, a['event'], doc=doc_id, op=body.op, doc_class=d['doc_class'])
+            err(403, 'E-LOCKED', str(e), 'المستند ده دليل من جهة خارجية ومينفعش يتعدّل محتواه؛ اطلبه من مصدره.',
+                action='re_obtain')
+        except ValueError as e:
+            err(422, 'E-OP', str(e), 'عملية غير معروفة.')
+        st.audit(did, 'document.op', doc=doc_id, op=body.op)
+        return {'allowed': True, 'op': body.op}
+
+    @app.post('/api/dossiers/{did}/generate/{kind}', status_code=201)
+    def generate(did: str, kind: str, body: GenReq):
+        if kind not in GEN:
+            err(404, 'E-GEN', f'Unknown generator {kind}.', 'مولّد غير معروف.')
+        fn_name, req_id = GEN[kind]
+        slots = [s for s in st.slots(did) if s.req_id == req_id and s.active]
+        slot = next((s for s in slots if s.slot_id == (body.slot_id or s.slot_id)), None)
+        if not slot:
+            err(422, 'E-SLOT-INACTIVE', f'{req_id} is not required for this product.', 'البند ده مش مطلوب للمنتج ده.')
+        d = st.dossier(did)
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            fn = getattr(letters, fn_name)
+            out = tmp / f'{kind}.docx'
+            try:
+                if kind == 'annex1':
+                    ctx = {**d['profile'], **body.ctx}
+                    fn(body.data, ctx, out)
+                else:
+                    fn(body.data, out)
+            except MissingData as e:
+                err(422, 'E-MISSING-DATA', 'Some data is missing: ' + ', '.join(e.fields),
+                    'فيه بيانات ناقصة: ' + '، '.join(e.fields), request_data=e.fields)
+            pdf = to_pdf(out)
+            doc = st.add_document(did, slot.slot_id, f'{kind}.pdf', pdf.read_bytes(), meta={'generated': kind,
+                                                                                              'draft_unsigned': True})
+            st.put_blob(out.read_bytes())
+            return doc
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    @app.get('/api/dossiers/{did}/gate')
+    def gate(did: str):
+        return st.gate(did)
+
+    @app.post('/api/dossiers/{did}/export', status_code=201)
+    def export(did: str, body: ExportReq):
+        g = st.gate(did)
+        if not g['ok']:
+            err(409, 'E-GATE', 'Export blocked: required documents are missing or non-conforming.',
+                'التصدير متوقف: فيه مستندات مطلوبة ناقصة أو غير مطابقة.', gate=g)
+        if {'ectd32', 'ectd40'} & set(body.outputs) and not body.acknowledge_provisional:
+            err(409, 'E-PROVISIONAL-ACK', 'eCTD outputs use the provisional EG profiles; acknowledge before export.',
+                'مخرجات eCTD مبنية على ملف تعريف مصري مؤقت؛ لازم توافق قبل التصدير.', gate=g)
+        d = st.dossier(did)
+        slots = st.slots(did)
+        exp_id = time.strftime('%Y%m%d-%H%M%S-') + uuid.uuid4().hex[:6]
+        base = st.root / 'exports' / did / exp_id
+        work = base / '_files'
+        work.mkdir(parents=True)
+        files = {}
+        for s in slots:
+            for doc in st.documents(did, s.slot_id) if s.active else []:
+                p = work / f"{doc['id']}.pdf"
+                shutil.copyfile(st.blob_path(doc['sha256']), p)
+                files.setdefault(s.slot_id, []).append({'file': str(p), 'title': doc['title'], **doc['meta']})
+        prof = Profile.from_dict(d['profile'])
+        docs, ctd_only = docs_for(slots, prof, files)
+        pr, env = d['product'], d['envelope']
+        product = ectd32.Product(pr['name'], pr['dosageform'], pr['manufacturer'], pr.get('indication'))
+        results = {}
+        try:
+            if 'ctd' in body.outputs:
+                results['ctd'] = ctd.write(base / 'ctd', d['name'], slots, files)['path']
+            if 'ectd32' in body.outputs:
+                results['ectd32'] = ectd32.write(base / 'ectd-3.2.2', ectd32.Envelope(
+                    identifier=env['application_uuid'], submission_type=env.get('submission_type', 'maa'),
+                    tracking=[env['tracking']], unit=env.get('unit', 'initial'), applicant=env['applicant'],
+                    invented_name=env.get('invented_name', d['name']), registration=ectd32.REG_TYPE[prof.licence],
+                    marketing=env.get('marketing', 'local'), inn=env.get('inn', []),
+                    sequence=env.get('sequence', '0000'), description=env.get('description', d['name'])),
+                    product, docs)['path']
+            if 'ectd40' in body.outputs:
+                results['ectd40'] = ectd40.write(base / 'ectd-4.0', ectd40.Envelope4(
+                    application_uuid=env['application_uuid'],
+                    submission_uuid=env.setdefault('submission_uuid', str(uuid.uuid4())), tracking=env['tracking'],
+                    submission_type=env.get('submission_type', 'maa'), unit=env.get('unit', 'initial'),
+                    sequence=int(env.get('sequence_v4', 1)), title=env.get('description', d['name']),
+                    applicant=env['applicant'], applicant_portal_id=env.get('portal_id', 'UNKNOWN'),
+                    product_name=env.get('invented_name', d['name']), inn=env.get('inn', []),
+                    registration=ectd32.REG_TYPE[prof.licence], marketing=env.get('marketing', 'local')),
+                    product, docs)['path']
+        except (WriterError, KeyError) as e:
+            shutil.rmtree(base, ignore_errors=True)
+            err(422, 'E-WRITER', f'Export failed: {e}', f'التصدير فشل: {e}')
+        shutil.rmtree(work)
+        zips = {}
+        for k, p in results.items():
+            z = base / f'{k}.zip'
+            root = Path(p).parent if k != 'ectd40' else Path(p).parent.parent
+            with zipfile.ZipFile(z, 'w', zipfile.ZIP_DEFLATED) as zf:
+                for f in sorted(Path(root).rglob('*')):
+                    if f.is_file():
+                        zf.write(f, f.relative_to(root.parent))
+            zips[k] = f'/api/dossiers/{did}/exports/{exp_id}/{k}.zip'
+        st.db.execute('insert into export values (?,?,?,?,?,?)', (exp_id, did, json.dumps(body.outputs), str(base),
+                                                                  int(body.acknowledge_provisional), time.time()))
+        st.db.commit()
+        st.audit(did, 'export', id=exp_id, outputs=body.outputs, acknowledged=body.acknowledge_provisional)
+        return {'id': exp_id, 'downloads': zips, 'ctd_only': ctd_only,
+                'label': 'Conforms to EDA drafts + ICH (provisional EG profiles) — not «EDA-valid».'}
+
+    @app.get('/api/dossiers/{did}/exports/{exp_id}/{name}')
+    def download(did: str, exp_id: str, name: str):
+        p = st.root / 'exports' / did / exp_id / name
+        if '/' in name or not p.is_file():
+            err(404, 'E-NOT-FOUND', 'Export not found.', 'التصدير غير موجود.')
+        return FileResponse(p, filename=name)
+
+    @app.get('/api/dossiers/{did}/audit')
+    def audit(did: str):
+        return [dict(r) | {'detail': json.loads(r['detail'])}
+                for r in st.db.execute('select * from audit where dossier_id=? order by id', (did,))]
+
+    if STATIC.exists():
+        app.mount('/', StaticFiles(directory=STATIC, html=True), name='ui')
+    app.state.store = st
+    return app

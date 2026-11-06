@@ -1,0 +1,125 @@
+"""API: create -> board -> upload (checks) -> gate -> generate -> export (3 outputs), safety rules."""
+import io, json
+from datetime import date
+import pytest
+from fastapi.testclient import TestClient
+from fixtures_pdf import make_pdf
+from dossier_engine.app.api import create_app
+
+PROFILE = dict(dossier_kind='generic', origin='local', licence='own', activity='new', pharmacopoeial=True,
+               dosage_specifics=['coated'], apis=[dict(name='Paracetamol', manufacturer='Granules India', option='CEP')])
+PRODUCT = dict(name='Examplol 500 mg', dosageform='film-coated tablet', manufacturer='Example Pharma', indication='pain-and-fever')
+ENV = dict(tracking='P-MAA-0001', applicant='Example Pharma S.A.E.', invented_name='Examplol 500 mg film-coated tablets',
+           inn=['paracetamol'], description='Initial MAA', portal_id='EXAMPLE-0001')
+
+
+@pytest.fixture()
+def c(tmp_path):
+    return TestClient(create_app(tmp_path / 'ws'))
+
+
+@pytest.fixture()
+def pdf(tmp_path):
+    return make_pdf(tmp_path / 'doc.pdf', 'content').read_bytes()
+
+
+def new(c):
+    r = c.post('/api/dossiers', json=dict(name='Examplol 500 mg FCT', profile=PROFILE, product=PRODUCT, envelope=ENV))
+    assert r.status_code == 201, r.text
+    return r.json()['id']
+
+
+def up(c, did, slot, data, meta=None):
+    return c.post(f'/api/dossiers/{did}/slots/{slot}/documents', files={'file': ('x.pdf', io.BytesIO(data), 'application/pdf')},
+                  data={'meta': json.dumps(meta or {})})
+
+
+def test_profile_contradiction_is_explained(c):
+    r = c.post('/api/dossiers', json=dict(name='x', profile={**PROFILE, 'licence': 'imported_bulk'}, product=PRODUCT))
+    assert r.status_code == 422 and r.json()['detail']['code'] == 'E-PROFILE'
+    assert r.json()['detail']['ar']
+
+
+def test_board_upload_and_status(c, pdf):
+    did = new(c)
+    b = c.get(f'/api/dossiers/{did}/board').json()
+    st = {s['slot_id']: s['status'] for s in b['slots']}
+    assert st['M1-01'] == 'not_started' and st['M1-14'] == 'not_applicable'
+    r = up(c, did, 'M1-31', pdf)
+    assert r.status_code == 201 and r.json()['check_status'] == 'conforming' and r.json()['version'] == 1
+    assert up(c, did, 'M1-31', pdf).json()['version'] == 2                     # new version, nothing overwritten
+    old = pdf.replace(b'%PDF-1.4', b'%PDF-1.3', 1)
+    up(c, did, 'M1-02', old)
+    st = {s['slot_id']: s['status'] for s in c.get(f'/api/dossiers/{did}/board').json()['slots']}
+    assert st['M1-31'] == 'conforming' and st['M1-02'] == 'non_conforming'
+    r = up(c, did, 'M1-14', pdf)                                                # not applicable slot
+    assert r.status_code == 422 and r.json()['detail']['code'] == 'E-SLOT-INACTIVE'
+
+
+def test_withdraw_keeps_blob_and_audit(c, pdf):
+    did = new(c)
+    doc = up(c, did, 'M1-31', pdf).json()
+    c.post(f"/api/dossiers/{did}/documents/{doc['id']}/withdraw")
+    assert c.get(f'/api/dossiers/{did}/board').json()['counts'].get('conforming', 0) == 0
+    assert c.get(f"/api/dossiers/{did}/documents/{doc['id']}/file").status_code == 200   # still recoverable
+    c.post(f"/api/dossiers/{did}/documents/{doc['id']}/restore")
+    events = [a['event'] for a in c.get(f'/api/dossiers/{did}/audit').json()]
+    assert events[-3:] == ['document.added', 'document.withdrawn', 'document.restored']
+
+
+def test_locked_op_refused(c, pdf):
+    did = new(c)
+    doc = up(c, did, 'M1-37', pdf).json()                 # GMP certificate
+    r = c.post(f"/api/dossiers/{did}/documents/{doc['id']}/ops", json={'op': 'edit_text'})
+    assert r.status_code == 403 and r.json()['detail']['code'] == 'E-LOCKED'
+    assert c.post(f"/api/dossiers/{did}/documents/{doc['id']}/ops", json={'op': 'rename'}).json()['allowed']
+    assert 'E-LOCKED' in [a['event'] for a in c.get(f'/api/dossiers/{did}/audit').json()]
+
+
+def test_profile_change_moves_docs_to_unassigned(c, pdf):
+    did = new(c)
+    up(c, did, 'M1-33', pdf)                              # coating premix (coated)
+    r = c.put(f'/api/dossiers/{did}/profile', json={**PROFILE, 'dosage_specifics': []}).json()
+    assert 'M1-33' in r['removed'] and len(r['moved_to_unassigned']) == 1
+    assert len(c.get(f'/api/dossiers/{did}/board').json()['unassigned']) == 1
+
+
+def test_generate_requests_missing_data(c):
+    did = new(c)
+    r = c.post(f'/api/dossiers/{did}/generate/salt', json={'data': {'trade_name': 'X'}})
+    assert r.status_code == 422 and r.json()['detail']['code'] == 'E-MISSING-DATA'
+    assert 'apis' in r.json()['detail']['request_data']
+
+
+def test_gate_and_full_export(c, pdf):
+    did = new(c)
+    r = c.post(f'/api/dossiers/{did}/export', json={})
+    assert r.status_code == 409 and r.json()['detail']['code'] == 'E-GATE'
+    board = c.get(f'/api/dossiers/{did}/board').json()
+    for s in board['slots']:
+        if s['level'] in ('R', 'O') and s['status'] == 'not_started':
+            meta = {}
+            if s['req_id'] == 'M1-09':
+                meta = {'pi_type': 'spc', 'lang': 'en'}
+            elif s['module'] == 5:
+                meta = {'study': 'EXM-BE-01', 'doc_type': 'ich_document_type_2'}
+            assert up(c, did, s['slot_id'], pdf, meta).status_code == 201
+    r = c.post(f'/api/dossiers/{did}/export', json={})
+    assert r.status_code == 409 and r.json()['detail']['code'] == 'E-PROVISIONAL-ACK'
+    r = c.post(f'/api/dossiers/{did}/export', json={'acknowledge_provisional': True})
+    assert r.status_code == 201, r.text
+    for k, url in r.json()['downloads'].items():
+        z = c.get(url)
+        assert z.status_code == 200 and z.content[:2] == b'PK', k
+    assert 'not «EDA-valid»' in r.json()['label']
+
+
+@pytest.mark.skipif(not __import__('shutil').which('soffice'), reason='LibreOffice not installed')
+def test_generate_cover_letter_into_slot(c):
+    did = new(c)
+    r = c.post(f'/api/dossiers/{did}/generate/cover', json={'data': dict(
+        trade_name='Examplol 500 mg', sequence='0000', submission_type='maa', unit='initial', tracking='P-MAA-0001',
+        description='Initial MAA', company='Example Pharma S.A.E.', signatory='A. Example', signatory_title='MD')})
+    assert r.status_code == 201, r.text
+    assert r.json()['slot_id'] == 'M1-43' and r.json()['meta']['draft_unsigned'] is True
+    assert r.json()['check_status'] in ('conforming', 'needs_attention')
