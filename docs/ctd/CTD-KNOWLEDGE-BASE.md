@@ -385,6 +385,50 @@ Module 3 is **R for every type at every heading**, from 3.2.S.1.1 down to 3.3, i
 
 ---
 
+## 5b. Module 3 for **re-registration** — GL.CAPP.039 v1 (VERIFIED, read in full)
+
+**Identity:** EDREX: GL.CAPP.039, Version 1. Issued 30/04/2025, **effective 01/01/2026**. 22 pp. Scope: any human product whose Quality Module is evaluated in re-registration. Archived as `sources/EDA_GL.CAPP.039_v1_2025_QM-re-registration.pdf`; the copy the owner uploaded is byte-identical (SHA-256 match).
+
+**Structure:** the same ICH M4Q headings and the same four S-part options as the new-registration guideline v2/2023 (§5 above). It lists Option 3 (DMF) first. The CEP-route rules are **unchanged** from v2: full CEP with annexes, holder's declaration of access, written commitment, the FPP maker's API spec, **2 pilot-scale API batches**, and the S.6/S.7 exceptions.
+
+**What re-registration relaxes, compared with new registration (v2/2023):**
+
+| Section | Re-registration rule (GL.CAPP.039) | p. |
+|---|---|---|
+| 3.2.S.2.2 | «**Brief** information» on process and controls | 10 |
+| 3.2.S.2.1–2.6 | **If data aren't available (e.g. a well-established or old molecule), submit a justification** | 10 |
+| 3.2.S.3.1 | Structure confirmation by spectral analyses; **a reference to the identification test in 3.2.S.4 can be accepted** | 10 |
+| 3.2.S.4.2 / 4.3 / 4.5 | **Pharmacopoeial API: a reference to the monograph is acceptable** | 11 |
+| 3.2.S.4.4 | Results of **recent** batch analyses (the number of batches is not stated for the full/DMF route) | 11 |
+| 3.2.S.5, 3.2.S.7.2 | Justification accepted if data are not available (old molecule) | 12 |
+| 3.2.S.6 | **Brief** description and materials of the primary packaging (no specification demand stated for the DMF/full route) | 12 |
+| 3.2.S.7.3 | Results of **recent** stability studies | 12 |
+| 3.2.P.2 (all subsections) | **Brief description** of development studies; **a reference to studies already assessed or to EDA approvals is accepted**; justification if not available | 15 |
+| 3.2.P.3.3 | Flow diagram and narrative (no equipment/parameter detail demanded) | 15 |
+| 3.2.P.3.4 | Justification accepted for a well-established manufacturing process | 16 |
+| 3.2.P.4.1 | **CoAs could be accepted** as excipient specifications | 16 |
+| 3.2.P.4.2–4.4, 3.2.P.5.2 / 5.3 / 5.6 | **Pharmacopoeial: reference to the monograph is acceptable** | 16–18 |
+| 3.2.P.5.4 | Results of **recent** batch analyses | 17 |
+| 3.2.P.5.5 | **Reference to the specification (3.2.P.5.1) could be accepted** | 18 |
+| 3.2.P.6, 3.2.P.8.2, 3.3 | Justification if data are not available | 18–20 |
+| 3.2.P.7 | Description, materials and specification (description + identification); **CoAs could be accepted** | 18 |
+| 3.2.R.1.1 | Executed records of batches **fully representative of a production-scale batch** (no BE-batch wording) | 20 |
+| 3.2.R.1.2 | Master documents per strength, batch size and site; **a reference to 3.2.R.1.1 could be accepted** (no (a)–(j) content list) | 20 |
+
+**General notice (p. 20):**
+- Data must represent the **current** API and FPP quality **including all approved variations**.
+- EDA may ask for anything more «regardless of the current status [of] previously issued EDA approval or assessed parts».
+
+**Carried-over errors from v2:**
+- «3.2.P.4 Control of FPP» should read 3.2.P.5.
+- 3.2.R.2 cites «2.3.S.4.4, 2.3.S.7.3» where it means 3.2.S.
+- «Soft File Arrangement Guidance» is cited but was not found as a published document.
+
+**For the tool:**
+- Re-registration is a separate rule set with relaxed acceptance criteria.
+- A new document type is needed: the **«justification for unavailable data (well-established molecule / process)»** letter, rebuildable from data. This applies to S.2, S.5, S.7.2, P.3.4, P.6, P.8.2 and 3.3.
+- Where the guideline accepts a **monograph reference** or a **CoA**, that satisfies the slot.
+
 ## 6. Most common Module 3 deficiencies (S3, NP.CAPP.040) — use as a pre-submission checklist
 
 **3.2.S**
