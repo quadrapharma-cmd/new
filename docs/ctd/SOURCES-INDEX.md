@@ -1,0 +1,77 @@
+# فهرس المصادر الموحّد — CTD / eCTD مصر (06/11/2026)
+
+الفهرس ده بيجمع **الجلسة دي** (الملفات في `sources/`) و**فهرس الجلسة التانية v3** (`inputs/SOURCES_INDEX-v3-external.md`، والملفات بتاعته في مجلد `eda_sources/`، **ومش موجود في الريبو**).
+
+الحالة متاخدة من **غلاف المستند نفسه** متى اتفتح هنا. لو حالة الجلسة التانية مختلفة، بتلاقي التصحيح في عمود «ملاحظة».
+
+**مفتاح الأعمدة:**
+- **الحالة:** سارٍ / مُستبدل / مسودة / مرجع.
+- **هنا؟:** ✅ يعني الملف موجود في `sources/`، و— يعني موجود في الجلسة التانية بس.
+
+## 1. مستندات هيئة الدواء — الساري
+
+| المستند | الكود | الإصدار | الإصدار / السريان | الحالة | هنا؟ | ملاحظة |
+|---|---|---|---|---|---|---|
+| Submission Guidance for the CTD (NtA) | NP.CAPP.065 | **5** | 01/11/2025 / 01/11/2025 | سارٍ | ✅ | فهرس v3 (#21) لسه بيقول **v4 23/07/2024**، ودي **مُستبدلة** |
+| BE Guideline (generic MA) | GL.CAPP.024 | **4** | **23/06/2026 / 01/07/2026** (مكتوب على الغلاف) | سارٍ | ✅ | فهرس v3 (#15) بيقول «السريان غير مذكور داخل الوثيقة»، ده **غلط** |
+| Human Pharmaceuticals Variations (6th ed.) | GL.CAPP.026 | 6 | 01/12/2025 / 01/01/2026 | سارٍ | ✅ | الفئات **PAC-N / PAC-A / PAC-B / PAC-II** |
+| Dossier Requirements — Registration & Re-registration | GL.CAP.Care/CAPP.002 | 4 | 14/12/2023 / 14/12/2023 | سارٍ | ✅ | مطابق لـ #19 |
+| Regulatory guide — Decree 450/2023 | GL.CAPP.027 | 5 | 30/10/2025 (سريان القرار 01/11/2025) | سارٍ | ✅ | مطابق لـ #24 |
+| Regulatory guide — Decree 150/2022 (re-registration) | (مفيش EDREX على الغلاف) | **7** | **30/12/2025 / 01/01/2026** | سارٍ | ✅ | فهرس v3 (#20) بيقول **GL.CAPP.030 v5 30/11/2023**، ودي **مُستبدلة** |
+| Egyptian Guidelines on CTD Quality Module | — | 2 | 12/03/2023 | سارٍ | ✅ | مطابق لـ #07 |
+| Quality Module — products for re-registration | GL.CAPP.039 | 1 | 30/04/2025 / **01/01/2026** | سارٍ | ✅ | **مش موجود في فهرس v3** |
+| QM File — Most Common Deficiencies (NtA) | NP.CAPP.040 | 1 | 09/03/2022 | سارٍ | ✅ | مش موجود في v3 |
+| Relevant Sections of CTD for Human Variations (NtA) | NP.CAPP.112 | 1 | 01/07/2026 | سارٍ | ✅ | مش موجود في v3. بيغطّي بند «CTD sections» اللي v3 قال إنه ما اتحمّلش |
+| File Content of Stability Study Dossier (NtA) | NP.CAPP.090 | 2 | 06/08/2026 | سارٍ | ✅ | مش موجود في v3 |
+| One Submission announcement | — | — | 19/08/2025 (توجيه 13/08/2025) | إلزامي من 01/11/2025 | (ويب) | مطابق لـ #12 |
+| Biological products file content | GL.Bioinn.004 | 5 | 25/05/2026 | سارٍ (حسب v3) | — | ما اتفتحش هنا |
+| Decree 343/2021 mechanisms | GL.BioInn.001 | 5 | 17/06/2026 / 21/06/2026 | سارٍ (حسب v3) | — | ما اتفتحش هنا |
+| Biosimilars registration | GL.Bioinn.005 | 4.0 | 11/09/2023 | سارٍ (حسب v3) | — | ما اتفتحش هنا |
+| GCP oversight of clinical trials | GL.Bioinn.006 | 4 | 26/03/2026 | سارٍ (حسب v3) | — | ما اتفتحش هنا |
+| Decree 475/2025 (track-and-trace) | — | — | 2025 | ساري (حسب v3) | — | ما اتفتحش هنا |
+
+## 2. مسودات (متستشهدش بيها كأنها متطلبات)
+
+| المستند | الكود | الإصدار | الحالة | هنا؟ |
+|---|---|---|---|---|
+| Technical Guidance for eCTD Submissions in Egypt | (فاضي) | 1/2026 | مسودة، والتواريخ فاضية. الاستشارة 02/09–14/10/2026 (حسب v3) | ✅ |
+| CADC File Assessment | GL.CADC.002 | 3/2025 | مسودة (حسب v3) | — |
+
+## 3. مُستبدل (للمقارنة بس)
+
+| المستند | النسخة المُستبدلة | البديل |
+|---|---|---|
+| NP.CAPP.065 | v4 (23/07/2024) | **v5 (01/11/2025)** |
+| Decree 150 guide | GL.CAPP.030 v5 (30/11/2023) | **v7 (30/12/2025)** |
+| BE | v3 (17/07/2023) | v4 (23/06/2026) |
+| Dossier requirements | v3 (14/08/2023) | v4 (14/12/2023) |
+| Variations | v4 (15/11/2023)، v5 (2024) | v6 (01/12/2025) |
+
+## 4. مراجع دولية
+
+| المرجع | الإصدار | هنا؟ |
+|---|---|---|
+| ICH M4(R4) Organisation + Granularity | 2016 | ✅ |
+| ICH M4Q(R1) | 2002 | ✅ |
+| **ICH eCTD Specification v3.2.2** + DTD `ich-ectd-3-2.dtd` + قالب الفولدرات الفاضي | 16/07/2008 | ✅ اتحمّل من `admin.ich.org` (فهرس v3 كان بيقول «فشل التحميل»). ملخّص في `ectd/ICH-eCTD-3.2.2-reference.md` |
+| ICH M8 Specification for Submission Formats for eCTD | v1.3 | ✅ (scratch، ملخّص في الملف السابق) |
+| ICH eCTD v3.2 Q&A | v1.33 (05/2024) | ✅ (scratch) |
+| **ICH eCTD v4.0** Implementation Guide + XSD | **v1.7 (07/2026)** | بيتجمّع، وحالته في `ectd/` |
+| ICH eCTD v4.0 CV Package / Q&A | v1.0.3 / v1.10 (07/2026) | بيتجمّع |
+| EU M1 Implementation Guide | v3.1.1 (06/2025) | بيتجمّع (النموذج اللي اتنقلت منه المسودة المصرية) |
+| EU Validation Criteria | v8.2 | بيتجمّع |
+| EU Accepted File Formats | 06/2024 | بيتجمّع (#04 في v3) |
+| EU Harmonised Technical Guidance for eCTD | v6.0.1 | بيتجمّع |
+| WHO TRS 986 Annex 6 | 2014 | ✅ |
+| WHO PQ QOS-PD / QIS / BTIF / Screening checklist | 01/2025، 01/2025، 01/2023، 05/2021 | ✅ |
+| FDA M1 v2.6 backbone / FDA v4.0 RPS | — | — (موجودين في v3 بس، #09–11) |
+
+## 5. لسه مش منشور (اتدوّر عليه في الجلستين)
+
+- EG M1 eCTD Specification (`eg-regional.xml` والـ DTD)
+- EG Validation Criteria
+- EG Accepted File Formats
+- Controlled Vocabulary ككود رسمي. القيم موجودة في ملحق 6 بالمسودة.
+- One Submission checklist كملف مستقل. الأقرب ليه جداول NP.CAPP.065 v5.
+
+**خطة الهيئة الرسمية:** منظومة RPM بحلول **فبراير 2027**، وتطبيق كامل لـ **eCTD v4.0** خلال **الربع الأول من 2028** (جريدة المال، 14/06/2026، اجتماع رئيس الهيئة مع شركتي داف وإكستيدو).
