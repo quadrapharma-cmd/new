@@ -19,6 +19,8 @@ jobs:
             asset: DossierBuilder-Windows.zip
           - os: macos-latest
             asset: DossierBuilder-Mac.zip
+          - os: macos-13
+            asset: DossierBuilder-Mac-Intel.zip
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -27,13 +29,20 @@ jobs:
       - name: Install
         run: python -m pip install -r apps/dossier-builder/desktop/requirements.txt pyinstaller==6.22.3
       - name: Build
+        env:
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.os == 'macos-13' && '10.15' || '' }}
         run: pyinstaller --noconfirm apps/dossier-builder/desktop/dossier.spec
       - name: Self-test (Windows)
         if: runner.os == 'Windows'
         run: dist\DossierBuilder\DossierBuilder.exe --smoke
       - name: Self-test (macOS)
         if: runner.os == 'macOS'
-        run: dist/DossierBuilder.app/Contents/MacOS/DossierBuilder --smoke
+        run: |
+          if [ -d dist/DossierBuilder.app ]; then
+            dist/DossierBuilder.app/Contents/MacOS/DossierBuilder --smoke
+          else
+            dist/DossierBuilder/DossierBuilder --smoke
+          fi
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -43,8 +52,14 @@ jobs:
       - name: Package (macOS)
         if: runner.os == 'macOS'
         run: |
-          mkdir pkg && cp -R dist/DossierBuilder.app pkg/ && cp apps/dossier-builder/desktop/README-AR.txt pkg/
-          ditto -c -k --keepParent pkg DossierBuilder-Mac-tmp.zip && mv DossierBuilder-Mac-tmp.zip ${{ matrix.asset }}
+          mkdir pkg
+          if [ -d dist/DossierBuilder.app ]; then
+            cp -R dist/DossierBuilder.app pkg/
+          else
+            cp -R dist/DossierBuilder pkg/
+          fi
+          cp apps/dossier-builder/desktop/README-AR.txt pkg/
+          ditto -c -k --keepParent pkg tmp.zip && mv tmp.zip ${{ matrix.asset }}
       - uses: actions/upload-artifact@v4
         with: { name: '${{ matrix.asset }}', path: '${{ matrix.asset }}', retention-days: 30 }
   publish:
@@ -60,4 +75,8 @@ jobs:
             gh release create desktop-latest -R "$REPO" --prerelease --target "${{ github.sha }}" \
               --title "Dossier Builder — Windows & Mac" --notes "Latest desktop builds."
           gh release upload desktop-latest out/*.zip -R "$REPO" --clobber
-          gh release edit desktop-latest -R "$REPO" --notes "Built from ${{ github.sha }} on $(date -u +%F). Download the zip for your computer and read README-AR.txt inside."
+          gh release edit desktop-latest -R "$REPO" --notes "Built from ${{ github.sha }} on $(date -u +%F).
+          - **Windows:** DossierBuilder-Windows.zip
+          - **Mac (Apple Silicon, macOS 11+):** DossierBuilder-Mac.zip
+          - **Mac (Intel, macOS 10.15+):** DossierBuilder-Mac-Intel.zip
+          Read README-AR.txt inside the zip."
