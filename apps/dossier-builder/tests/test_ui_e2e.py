@@ -255,3 +255,28 @@ def test_rebuild_loop_ui(server, browser, tmp_path):
         page.click('#rqGo')
     newp.value.close()
     page.wait_for_selector('tr:has-text("Register of trade") .chip.c-wait')
+
+
+def test_upload_asks_replace(server, browser, tmp_path):
+    import httpx
+    prof = dict(dossier_kind='generic', origin='local', licence='own', activity='new',
+                apis=[dict(name='Paracetamol', manufacturer='Granules India', option='CEP')])
+    did = httpx.post(server + '/api/dossiers', json=dict(name='Replace test', profile=prof, product=dict(
+        name='Examplol', dosageform='tablet', manufacturer='Example Pharma'), envelope={})).json()['id']
+    pdf = make_pdf(tmp_path / 'c.pdf', 'Composition')
+    httpx.post(f'{server}/api/dossiers/{did}/slots/M1-31/documents', files={'file': ('c1.pdf', pdf.read_bytes(), 'application/pdf')}, data={'meta': '{}'})
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    page.add_init_script("localStorage.setItem('db.lang','en')")
+    page.goto(f'{server}/#/d/{did}/board')
+    page.wait_for_selector('tbody tr')
+    page.click('[data-f=all]')
+    page.locator('tr', has_text='Composition certificate').locator('[data-up]').click()
+    page.wait_for_selector('[data-rp]')
+    with page.expect_file_chooser() as fc:
+        page.click('[data-rp]')
+    fc.value.set_files(str(pdf))
+    page.wait_for_selector('#toast:not([hidden])')
+    page.wait_for_timeout(500)
+    s = next(x for x in httpx.get(f'{server}/api/dossiers/{did}/board').json()['slots'] if x['slot_id'] == 'M1-31')
+    assert [d['version'] for d in s['documents']] == [2]                    # v1 superseded, not duplicated

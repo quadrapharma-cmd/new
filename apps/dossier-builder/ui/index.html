@@ -124,7 +124,7 @@ html[dir=rtl] .node{padding:6px 22px 6px 14px}
 .node:hover{background:var(--surface-2)} .node.sel{background:var(--brand-soft);border-inline-start-color:var(--brand)}
 .node.drop{outline:2px dashed var(--brand);outline-offset:-2px}
 .dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:var(--na)}
-.d-waiting{background:var(--wait)} .d-conforming{background:var(--ok)} .d-needs_attention{background:var(--warn)} .d-non_conforming{background:var(--bad)} .d-received{background:var(--rec)}
+.d-waiting{background:var(--wait)} .d-auto{background:var(--ok)} .d-conforming{background:var(--ok)} .d-needs_attention{background:var(--warn)} .d-non_conforming{background:var(--bad)} .d-received{background:var(--rec)}
 .leaf{cursor:pointer} .leaf.sel td{background:var(--brand-soft)}
 .op{font-family:var(--f-mono);font-size:11.5px;padding:1px 6px;border-radius:4px;background:var(--ok-soft);color:var(--ok)}
 .props{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;padding:14px;font-size:13px}
@@ -254,7 +254,13 @@ const T = {
   doExport:{en:'Export selected outputs',ar:'تصدير المخرجات المختارة'}, exporting:{en:'Building…',ar:'جاري البناء…'}, downloads:{en:'Downloads',ar:'التنزيلات'},
   audit:{en:'Activity log',ar:'سجل النشاط'}, auditSub:{en:'Every action is recorded; nothing is overwritten.',ar:'كل إجراء مسجل؛ لا شيء يُستبدل.'},
   when:{en:'When',ar:'الوقت'}, event:{en:'Event',ar:'الحدث'}, detail:{en:'Detail',ar:'التفاصيل'}, restore:{en:'Restore',ar:'استرجاع'},
-  err:{en:'Error',ar:'خطأ'}, waiting:{en:'Waiting on issuer',ar:'في انتظار الجهة المصدرة'},
+  err:{en:'Error',ar:'خطأ'}, auto:{en:'Built at export',ar:'يتولد عند التصدير'},
+  replaceQ:{en:'This section already has a document. Is the new file a new version of it?',ar:'القسم ده فيه مستند بالفعل. هل الملف الجديد إصدار جديد منه؟'},
+  replaceIt:{en:'Yes — new version (replaces it)',ar:'أيوه — إصدار جديد (يحل محله)'}, addAnother:{en:'No — an additional document',ar:'لا — مستند إضافي'},
+  nextSeq:{en:'Next sequence',ar:'التسلسل التالي'}, history:{en:'Submitted sequences',ar:'التسلسلات المقدَّمة'}, subType:{en:'Submission type',ar:'نوع التقديم'},
+  unit:{en:'Submission unit',ar:'وحدة التقديم'}, descr:{en:'Description',ar:'الوصف'}, trackNo:{en:'EDA tracking number',ar:'رقم التتبع من الهيئة'},
+  fromPlan:{en:'Filled from your Variations plan.',ar:'اتملت من خطة التغييرات.'}, onlyChanges:{en:'Only new, replaced or deleted documents go into the next sequence; the tracking table is rebuilt from the history.',ar:'التسلسل الجديد فيه بس المستندات الجديدة أو المستبدلة أو المحذوفة؛ وجدول التتبع بيتبني من السجل.'},
+  seqDone:{en:'Sequence',ar:'التسلسل'}, opsL:{en:'new / replaced / deleted',ar:'جديد / مستبدل / محذوف'}, waiting:{en:'Waiting on issuer',ar:'في انتظار الجهة المصدرة'},
   autofix:{en:'Fix automatically',ar:'إصلاح تلقائي'}, fixing:{en:'Fixing…',ar:'جاري الإصلاح…'}, fixedNew:{en:'Fixed — saved as a new version; the original is kept.',ar:'اتصلح — اتحفظ كإصدار جديد والأصل محفوظ.'},
   fixRefused:{en:'Not fixed automatically:',ar:'لم يُصلح تلقائياً:'}, reqIssuer:{en:'Request from issuer',ar:'طلب من الجهة المصدرة'}, issuer:{en:'Issuer (name / department)',ar:'الجهة المصدرة (الاسم / الإدارة)'},
   letterLang:{en:'Letter language',ar:'لغة الخطاب'}, dueDays:{en:'Follow-up after (days)',ar:'المتابعة بعد (يوم)'}, makeLetter:{en:'Create request letter',ar:'إنشاء خطاب الطلب'},
@@ -294,7 +300,7 @@ $('#theme').onclick=()=>{ const r=document.documentElement; const cur=r.dataset.
   r.dataset.theme = cur==='dark'?'light':'dark'; localSet('db.theme', r.dataset.theme); };
 if(localGet('db.theme')) document.documentElement.dataset.theme = localGet('db.theme');
 
-const STATUS_CHIP = {waiting:'c-wait',not_started:'c-na',received:'c-rec',conforming:'c-ok',needs_attention:'c-warn',non_conforming:'c-bad',not_applicable:'c-na'};
+const STATUS_CHIP = {auto:'c-ok',waiting:'c-wait',not_started:'c-na',received:'c-rec',conforming:'c-ok',needs_attention:'c-warn',non_conforming:'c-bad',not_applicable:'c-na'};
 const LEVEL = {R:'required',O:'optional',NR:'notreq',NA:'na'};
 const chip = st => `<span class="chip ${STATUS_CHIP[st]||'c-na'}"><i></i>${esc(t(st))}</span>`;
 
@@ -480,9 +486,17 @@ function startUpload(slotId){
   $('#mGo').onclick=()=>{ const meta = kind==='pi'?{pi_type:$('#mType').value,lang:$('#mLang').value}:{study:$('#mStudy').value,doc_type:$('#mDocType').value};
     if(kind==='study' && !meta.study){ $('#mStudy').focus(); return; } closeDrawer(); pick(slotId, meta); };
 }
-function pick(slotId, meta){
+function pick(slotId, meta, replaces){
+  const sl=slotById(slotId);
+  if(replaces===undefined && !meta.signed_for && sl && sl.documents.length){
+    openDrawer(sl.title[S.lang], `<p>${esc(t('replaceQ'))}</p>${sl.documents.map(d=>`<button class="btn pri" data-rp="${d.id}" style="margin:4px 0">${esc(t('replaceIt'))}: ${esc(t('version'))} ${d.version} · ${bdi(d.filename)}</button>`).join('')}
+      <button class="btn" id="rpAdd">${esc(t('addAnother'))}</button>`);
+    $('#dBody').querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, meta, b.dataset.rp); });
+    $('#rpAdd').onclick=()=>{ closeDrawer(); pick(slotId, meta, null); };
+    return;
+  }
   const p=$('#picker'); p.value='';
-  p.onchange=async()=>{ if(!p.files[0]) return; const fd=new FormData(); fd.append('file',p.files[0]); fd.append('meta',JSON.stringify(meta));
+  p.onchange=async()=>{ if(!p.files[0]) return; const fd=new FormData(); fd.append('file',p.files[0]); fd.append('meta',JSON.stringify(meta)); if(replaces) fd.append('replaces', replaces);
     toast(t('uploading'));
     try{ const doc = await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd});
       toast(t('uploaded')+' '+t(doc.check_status)); if(location.hash.endsWith('/publisher')){ S.sel=slotId; await publisherView(); } else await board(); if(doc.findings.length) openWhy(slotId); }
@@ -731,6 +745,7 @@ S.vsel = new Set(); S.vq = '';
 async function varsView(){
   const r = await api(`/variations?q=${encodeURIComponent(S.vq)}`);
   const plan = S.vsel.size ? await api('/variations/plan',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify([...S.vsel])}) : null;
+  S.lastPlan = plan;
   const pacChip = p => `<span class="chip ${p==='PAC-II'?'c-bad':p==='PAC-B'?'c-warn':p==='PAC-A'?'c-rec':'c-ok'}"><bdi>${esc(p)}</bdi></span>`;
   $('#view').innerHTML = `<div class="head"><div><h1>${esc(t('navVars'))}</h1><p class="sub">${esc(t('varsSub'))}</p>${t('enOnly')?`<p class="small muted">${esc(t('enOnly'))}</p>`:''}</div></div>
    <div class="two" style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px">
@@ -755,20 +770,35 @@ async function varsView(){
 
 /* ---------------- export */
 async function exportView(){
-  const g = await api(`/dossiers/${S.dossier.id}/gate`);
+  const [g, hist] = await Promise.all([api(`/dossiers/${S.dossier.id}/gate`), api(`/dossiers/${S.dossier.id}/submissions`)]);
+  const follow = hist.ectd32.length || hist.ectd40.length;
+  const pl = S.lastPlan;
+  const n32 = hist.ectd32.length ? String(+hist.ectd32[hist.ectd32.length-1].seq + 1).padStart(4,'0') : '0000';
+  const n40 = hist.ectd40.length ? +hist.ectd40[hist.ectd40.length-1].seq + 1 : 1;
   const list=(k,arr)=>arr.length?`<div><b>${esc(t(k))} (${arr.length})</b><div class="small code" style="white-space:normal">${arr.map(esc).join(' · ')}</div></div>`:'';
   $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('export'))}</h1><p class="sub">${esc(t('exportSub'))}</p></div></div>
    ${g.ok?`<div class="alert ok"><p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad"><p>${esc(t('gateBad'))}</p></div><div class="card pad" style="display:flex;flex-direction:column;gap:8px">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}${list('unsignedL',g.unsigned||[])}${(g.cross_blocking||[]).length?`<div><b>${esc(t('crossT'))} (${g.cross_blocking.length})</b>${g.cross_blocking.map(f=>`<div class="small">● ${esc(f[S.lang])}</div>`).join('')}</div>`:''}
      <div><a class="btn sm" href="#/d/${S.dossier.id}/board">${esc(t('navBoard'))}</a></div></div>`}
    <div class="card pad" style="display:flex;flex-direction:column;gap:10px">
-     ${[['ctd','outCtd'],['ectd32','outE3'],['ectd40','outE4']].map(([k,l])=>`<label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-out="${k}" checked> <span>${esc(t(l))}</span></label>`).join('')}
+     ${[['ctd',t('outCtd')],['ectd32',`eCTD 3.2.2 — ${t('seqDone')} ${n32}`],['ectd40',`eCTD 4.0 — ${t('seqDone')} ${n40}`]].map(([k,l])=>`<label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-out="${k}" checked> <span>${esc(l)}</span></label>`).join('')}
+     ${follow?`<div class="card pad" style="box-shadow:none;display:flex;flex-direction:column;gap:10px"><h2>${esc(t('nextSeq'))}</h2>
+       <p class="small muted">${esc(t('onlyChanges'))}${pl?' '+esc(t('fromPlan')):''}</p><div class="form">
+       <label class="f"><span>${esc(t('subType'))}</span><select id="sqType">${['var-pac-n','var-pac-a','var-pac-b','var-pac-ii','renewal','5yr','pacstab','paccadc','withdrawal','none'].map(o=>`<option ${pl&&pl.submission_type===o?'selected':''}>${o}</option>`).join('')}</select></label>
+       <label class="f"><span>${esc(t('unit'))}</span><select id="sqUnit">${['initial','response','validation-response','additional-info','corrigendum','reformat'].map(o=>`<option>${o}</option>`).join('')}</select></label>
+       <label class="f"><span>${esc(t('mode'))}</span><select id="sqMode">${['single','grouping','parallel-single','parallel-grouping'].map(o=>`<option ${pl&&pl.mode===o?'selected':''}>${o}</option>`).join('')}</select></label>
+       <label class="f"><span>${esc(t('trackNo'))}</span><input type="text" dir="auto" id="sqTrack" placeholder="P-VAR-PAC-B-0001"></label>
+       <label class="f"><span>${esc(t('descr'))}</span><input type="text" dir="auto" id="sqDesc" value="${esc(pl?pl.items.map(i=>i.request).join('; ').slice(0,200):'')}"></label></div></div>
+     <div class="card pad" style="box-shadow:none"><h2>${esc(t('history'))}</h2><div class="tablewrap"><table><thead><tr><th>eCTD</th><th>${esc(t('seqDone'))}</th><th>${esc(t('subType'))}</th><th>${esc(t('unit'))}</th><th>${esc(t('descr'))}</th></tr></thead><tbody>
+       ${[['3.2.2',hist.ectd32],['4.0',hist.ectd40]].flatMap(([k,a])=>a.map(h=>`<tr><td>${k}</td><td class="code">${esc(h.seq)}</td><td class="code">${esc(h.envelope.type)}</td><td>${esc(h.envelope.unit)}</td><td>${bdi(h.envelope.description||'')}</td></tr>`)).join('')}</tbody></table></div></div>`:''}
      <label class="alert" style="cursor:pointer"><input type="checkbox" id="ack"> <p class="small">${esc(t('ack'))}</p></label>
      <div><button class="btn pri" id="go" ${g.ok?'':'disabled'}>${esc(t('doExport'))}</button></div></div><div id="res"></div>`;
   $('#go').onclick=async()=>{ const outs=[...document.querySelectorAll('[data-out]:checked')].map(c=>c.dataset.out);
     $('#go').disabled=true; $('#go').textContent=t('exporting');
-    try{ const r=await api(`/dossiers/${S.dossier.id}/export`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({outputs:outs,acknowledge_provisional:$('#ack').checked})});
+    try{ const r=await api(`/dossiers/${S.dossier.id}/export`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({outputs:outs,acknowledge_provisional:$('#ack').checked,
+        submission: follow? {type:$('#sqType').value, unit:$('#sqUnit').value, mode:$('#sqMode').value, tracking:$('#sqTrack').value.trim()||null, description:$('#sqDesc').value.trim()||null} : null})});
       const val = Object.entries(r.validation||{}).map(([k,v])=>`<div class="alert ${v.ok?'ok':'bad'}"><p><b>${esc(k)}</b> — ${esc(v.label)}<br><span class="small">${esc(t('vPass'))} ${v.counts.pass} · ${esc(t('vFail'))} ${v.counts.fail} · ${esc(t('vWarn'))} ${v.counts.warning} · ${esc(t('vNotRun'))} ${v.counts.not_run}</span></p></div>`).join('');
-      $('#res').innerHTML=`<div class="card pad" style="display:flex;flex-direction:column;gap:10px"><h2>${esc(t('downloads'))}</h2><div class="dl">${Object.entries(r.downloads).map(([k,u])=>`<a class="btn" href="${esc(u)}" download>⤓ ${esc(k)}.zip</a>`).join('')}
+      const sq = Object.entries(r.sequences||{}).map(([k,v])=>`<div class="small"><b>${k==='ectd32'?'eCTD 3.2.2':'eCTD 4.0'}</b> · ${esc(t('seqDone'))} <span class="code">${esc(v.sequence)}</span> · ${esc(t('opsL'))}: ${v.operations.new} / ${v.operations.replace} / ${v.operations.delete}</div>`).join('');
+      $('#res').innerHTML=`<div class="card pad" style="display:flex;flex-direction:column;gap:10px"><h2>${esc(t('downloads'))}</h2>${sq}<div class="dl">${Object.entries(r.downloads).map(([k,u])=>`<a class="btn" href="${esc(u)}" download>⤓ ${esc(k)}.zip</a>`).join('')}
         ${r.report?`<a class="btn" href="${esc(r.report)}" target="_blank" rel="noopener">${esc(t('vReport'))}</a>`:''}</div>${val}<p class="small muted">${esc(r.label)}</p></div>`;
     }catch(e){ $('#res').innerHTML=`<div class="alert bad"><p>${esc(e.message)}</p></div>`; }
     finally{ $('#go').disabled=false; $('#go').textContent=t('doExport'); } };

@@ -25,6 +25,9 @@ create table if not exists audit(id integer primary key autoincrement, ts real n
 create table if not exists request(id text primary key, dossier_id text not null, slot_id text not null,
   issuer text not null, lang text not null, sent real not null, due real not null, state text not null default 'open',
   letter_sha text, reason text not null default '[]', closed real);
+create table if not exists submission(id text primary key, dossier_id text not null, output text not null,
+  seq text not null, activity text, submission_uuid text, envelope text not null, history text not null,
+  path text not null, created real not null, unique(dossier_id, output, seq));
 create table if not exists export(id text primary key, dossier_id text not null, outputs text not null,
   path text not null, acknowledged integer not null, created real not null);
 '''
@@ -213,6 +216,23 @@ class Store:
                    done=[x['op'] for x in r['done']], refused=[x['op'] for x in r['refused']])
         return {'document': new, 'done': r['done'], 'refused': r['refused']}
 
+    # ---------------- submission history (lifecycle, P3)
+    def record_submission(self, did, output, seq, activity, suuid, envelope, history, path):
+        self.db.execute('insert into submission values (?,?,?,?,?,?,?,?,?,?)',
+                        (str(uuid.uuid4()), did, output, str(seq), str(activity), suuid, json.dumps(envelope, ensure_ascii=False),
+                         json.dumps(history, ensure_ascii=False), str(path), time.time()))
+        self.db.commit()
+
+    def history(self, did, output):
+        rows = self.db.execute('select * from submission where dossier_id=? and output=? order by created', (did, output)).fetchall()
+        out = []
+        for r in rows:
+            seq = r['seq'] if output == 'ectd32' else int(r['seq'])
+            act = r['activity'] if output == 'ectd32' else int(r['activity'])
+            out.append({'seq': seq, 'activity': act, 'submission_uuid': r['submission_uuid'], 'created': r['created'],
+                        'envelope': json.loads(r['envelope']), 'leaves': json.loads(r['history']), 'path': r['path']})
+        return out
+
     # ---------------- requests to issuers (re-obtain)
     def open_request(self, did, slot_id, issuer, lang, due_days, letter_sha, reason):
         rid = str(uuid.uuid4())
@@ -294,6 +314,8 @@ class Store:
                 x['status'] = 'needs_attention'
             if x['request'] and x['status'] in ('not_started', 'non_conforming', 'needs_attention', 'received'):
                 x['status'] = 'waiting'
+            if x['req_id'] == 'M1-44' and x['status'] == 'not_started':
+                x['status'] = 'auto'              # tracking table: rebuilt from the history at every eCTD export
         unassigned = [d for d in self.documents(did) if d['slot_id'] is None]
         counts = {}
         for x in out:

@@ -16,6 +16,7 @@ from ..writers.ectd32 import WriterError
 from ..generate import letters, m3tables
 from ..generate.docx_kit import MissingData, to_pdf
 from .store import Store, StoreError
+from . import exporter
 
 STATIC = Path(__file__).resolve().parents[3] / 'ui'
 GEN = {  # kind -> (function, requirement id)
@@ -42,6 +43,7 @@ class NewDossier(BaseModel):
 class ExportReq(BaseModel):
     outputs: list = ['ctd', 'ectd32', 'ectd40']
     acknowledge_provisional: bool = False
+    submission: dict = None      # follow-on sequence: {type, unit, mode, description, activity, tracking}
 
 
 class GenReq(BaseModel):
@@ -123,9 +125,15 @@ def create_app(workspace):
 
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/documents', status_code=201)
     async def upload(did: str, slot_id: str, file: UploadFile = File(...), title: str = Form(None),
-                     meta: str = Form('{}')):
+                     meta: str = Form('{}'), replaces: str = Form(None)):
+        """replaces: id of the current document this file supersedes (a new version → «replace» in the next sequence)."""
         data = await file.read()
-        return st.add_document(did, slot_id, file.filename, data, title, json.loads(meta or '{}'))
+        if replaces:
+            old = st.document(replaces)
+            if old['dossier_id'] != did or old['slot_id'] != slot_id or old['state'] != 'current':
+                err(422, 'E-REPLACES', 'The replaced document must be a current document of the same section.',
+                    'المستند المستبدَل لازم يكون مستند حالي في نفس القسم.')
+        return st.add_document(did, slot_id, file.filename, data, title, json.loads(meta or '{}'), supersede=replaces or None)
 
     @app.get('/api/dossiers/{did}/documents/{doc_id}/file')
     def get_file(did: str, doc_id: str):
@@ -370,85 +378,18 @@ def create_app(workspace):
 
     @app.post('/api/dossiers/{did}/export', status_code=201)
     def export(did: str, body: ExportReq):
-        g = st.gate(did)
-        if not g['ok']:
-            err(409, 'E-GATE', 'Export blocked: required documents are missing or non-conforming.',
-                'التصدير متوقف: فيه مستندات مطلوبة ناقصة أو غير مطابقة.', gate=g)
-        if {'ectd32', 'ectd40'} & set(body.outputs) and not body.acknowledge_provisional:
-            err(409, 'E-PROVISIONAL-ACK', 'eCTD outputs use the provisional EG profiles; acknowledge before export.',
-                'مخرجات eCTD مبنية على ملف تعريف مصري مؤقت؛ لازم توافق قبل التصدير.', gate=g)
-        d = st.dossier(did)
-        slots = st.slots(did)
-        exp_id = time.strftime('%Y%m%d-%H%M%S-') + uuid.uuid4().hex[:6]
-        base = st.root / 'exports' / did / exp_id
-        work = base / '_files'
-        work.mkdir(parents=True)
-        files = {}
-        for s in slots:
-            for doc in st.documents(did, s.slot_id) if s.active else []:
-                p = work / f"{doc['id']}.pdf"
-                shutil.copyfile(st.blob_path(doc['sha256']), p)
-                files.setdefault(s.slot_id, []).append({'file': str(p), 'title': doc['title'], **doc['meta']})
-        prof = Profile.from_dict(d['profile'])
-        docs, ctd_only = docs_for(slots, prof, files)
-        pr, env = d['product'], d['envelope']
-        product = ectd32.Product(pr['name'], pr['dosageform'], pr['manufacturer'], pr.get('indication'))
-        results = {}
+        p40 = getattr(app.state, 'p40', None) or ectd40.Profile40()
+        app.state.p40 = p40
+        ig = Path(__file__).resolve().parents[5] / 'docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip'
         try:
-            if 'ctd' in body.outputs:
-                results['ctd'] = ctd.write(base / 'ctd', d['name'], slots, files)['path']
-            if 'ectd32' in body.outputs:
-                results['ectd32'] = ectd32.write(base / 'ectd-3.2.2', ectd32.Envelope(
-                    identifier=env['application_uuid'], submission_type=env.get('submission_type', 'maa'),
-                    tracking=[env['tracking']], unit=env.get('unit', 'initial'), applicant=env['applicant'],
-                    invented_name=env.get('invented_name', d['name']), registration=ectd32.REG_TYPE[prof.licence],
-                    marketing=env.get('marketing', 'local'), inn=env.get('inn', []),
-                    sequence=env.get('sequence', '0000'), description=env.get('description', d['name'])),
-                    product, docs)['path']
-            if 'ectd40' in body.outputs:
-                results['ectd40'] = ectd40.write(base / 'ectd-4.0', ectd40.Envelope4(
-                    application_uuid=env['application_uuid'],
-                    submission_uuid=env.setdefault('submission_uuid', str(uuid.uuid4())), tracking=env['tracking'],
-                    submission_type=env.get('submission_type', 'maa'), unit=env.get('unit', 'initial'),
-                    sequence=int(env.get('sequence_v4', 1)), title=env.get('description', d['name']),
-                    applicant=env['applicant'], applicant_portal_id=env.get('portal_id', 'UNKNOWN'),
-                    product_name=env.get('invented_name', d['name']), inn=env.get('inn', []),
-                    registration=ectd32.REG_TYPE[prof.licence], marketing=env.get('marketing', 'local')),
-                    product, docs)['path']
-        except (WriterError, KeyError) as e:
-            shutil.rmtree(base, ignore_errors=True)
-            err(422, 'E-WRITER', f'Export failed: {e}', f'التصدير فشل: {e}')
-        shutil.rmtree(work)
-        reports = {}
-        if 'ectd32' in results:
-            reports['eCTD 3.2.2'] = v32.validate(results['ectd32'], ectd32.DEFAULT_PROFILE)
-        if 'ectd40' in results:
-            p40 = getattr(app.state, 'p40', None) or ectd40.Profile40()
-            app.state.p40 = p40
-            ig = Path(__file__).resolve().parents[5] / 'docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip'
-            reports['eCTD 4.0'] = v40.validate(results['ectd40'], p40, ig, st.root / 'cache')
-        if reports:
-            (base / 'validation-report.json').write_text(json.dumps(reports, ensure_ascii=False, indent=1), encoding='utf-8')
-            (base / 'validation-report.html').write_text(vreport.render(d['name'], reports), encoding='utf-8')
-        zips = {}
-        for k, p in results.items():
-            z = base / f'{k}.zip'
-            root = Path(p).parent if k != 'ectd40' else Path(p).parent.parent
-            with zipfile.ZipFile(z, 'w', zipfile.ZIP_DEFLATED) as zf:
-                for f in sorted(Path(root).rglob('*')):
-                    if f.is_file():
-                        zf.write(f, f.relative_to(root.parent))
-            zips[k] = f'/api/dossiers/{did}/exports/{exp_id}/{k}.zip'
-        st.db.execute('insert into export values (?,?,?,?,?,?)', (exp_id, did, json.dumps(body.outputs), str(base),
-                                                                  int(body.acknowledge_provisional), time.time()))
-        st.db.commit()
-        st.audit(did, 'export', id=exp_id, outputs=body.outputs, acknowledged=body.acknowledge_provisional,
-                 validation={k: r['counts'] for k, r in reports.items()})
-        summary = {k: {'ok': r['ok'], 'counts': r['counts'], 'coverage': r['coverage'], 'label': r['label']}
-                   for k, r in reports.items()}
-        return {'id': exp_id, 'downloads': zips, 'ctd_only': ctd_only, 'validation': summary,
-                'report': f'/api/dossiers/{did}/exports/{exp_id}/validation-report.html' if reports else None,
-                'label': 'Conforms to EDA drafts + ICH (provisional EG profiles) — not «EDA-valid».'}
+            return exporter.export(st, did, body.outputs, body.acknowledge_provisional, body.submission, p40, ig)
+        except exporter.ExportError as e:
+            err(e.status, e.code, e.en, e.ar, **e.extra)
+
+    @app.get('/api/dossiers/{did}/submissions')
+    def submissions(did: str):
+        return {o: [{k: h[k] for k in ('seq', 'activity', 'envelope', 'created')} | {'documents': len(h['leaves'])}
+                    for h in st.history(did, o)] for o in ('ectd32', 'ectd40')}
 
     @app.get('/api/dossiers/{did}/exports/{exp_id}/{name}')
     def download(did: str, exp_id: str, name: str):
