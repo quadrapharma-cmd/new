@@ -7,7 +7,7 @@ pixel-identical to the original — otherwise the fix is discarded and the user 
 told to re-obtain the document. Digitally signed PDFs are never rewritten
 (it would break the signature). The original is never modified: the caller
 stores the result as a new version."""
-import io, shutil, subprocess, tempfile
+import io, re, shutil, subprocess, tempfile
 from pathlib import Path
 from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject
@@ -16,11 +16,13 @@ from .checks.pdf import LOCKED, check
 
 RULE_TO_OP = {'EG-PF-16.1': 'pdf_version_normalise', 'EG-BP-16.BP1': 'pdf_version_normalise',
               'EG-PF-16.3': 'remove_security', 'PDF-JS': 'remove_javascript',
-              'NTA065-N4': 'add_ocr_layer', 'EG-BP-E23': 'add_ocr_layer'}
-ORDER = ['remove_security', 'remove_javascript', 'pdf_version_normalise', 'add_ocr_layer']
+              'NTA065-N4': 'add_ocr_layer', 'EG-BP-E23': 'add_ocr_layer', 'NTA065-BM': 'add_bookmarks'}
+ORDER = ['remove_security', 'remove_javascript', 'pdf_version_normalise', 'add_ocr_layer', 'add_bookmarks']
+HEADING = re.compile(r'^\s*((?:\d{1,2}|[A-Z])(?:\.(?:\d{1,2}|[A-Z])){1,7}\.?|\d{1,2}[.)]|[IVX]{1,4}\.)\s+(\S.{2,90})$')
 LABEL = {'remove_security': ('Security restrictions removed', 'تمت إزالة قيود الحماية'),
          'remove_javascript': ('JavaScript removed', 'تمت إزالة JavaScript'),
          'pdf_version_normalise': ('Saved as PDF 1.7', 'تم الحفظ كـ PDF 1.7'),
+         'add_bookmarks': ('Bookmarks added from the document headings', 'تمت إضافة bookmarks من عناوين المستند'),
          'add_ocr_layer': ('Searchable text layer added (OCR, Arabic + English); page images unchanged',
                            'تمت إضافة طبقة نص قابلة للبحث (OCR عربي + إنجليزي)؛ صور الصفحات كما هي')}
 
@@ -57,6 +59,49 @@ def _rewrite(src, dst, op):
             del root[NameObject('/OpenAction')]
         if '/AA' in root:
             del root[NameObject('/AA')]
+    w.pdf_header = '%PDF-1.7'
+    with open(dst, 'wb') as f:
+        w.write(f)
+
+
+def headings(path):
+    """Numbered headings per page (first occurrence), e.g. «3.2.P.5.1 Specification», «2.1 Introduction»."""
+    rd = PdfReader(str(path), strict=False)
+    if rd.is_encrypted:
+        rd.decrypt('')
+    out, seen = [], set()
+    for i, pg in enumerate(rd.pages):
+        try:
+            lines = (pg.extract_text() or '').splitlines()
+        except Exception:
+            continue
+        for ln in lines:
+            m = HEADING.match(ln)
+            if m and ln.strip() not in seen:
+                num = m.group(1).rstrip('.)')
+                if not re.search(r'\d', num) or re.fullmatch(r'\d{1,2}\.\d{1,2}', num) and re.search(r'\d\.\d+\s*(mg|%|g|ml)', ln, re.I):
+                    continue                      # not a heading (e.g. «1.5 mg»)
+                seen.add(ln.strip())
+                out.append((i, ln.strip()[:120], num.count('.') + 1))
+    return out
+
+
+def _bookmarks(src, dst):
+    hs = headings(src)
+    if len(hs) < 2:
+        raise RuntimeError('no numbered headings detected — add bookmarks in the source document')
+    rd = PdfReader(str(src), strict=False)
+    if rd.is_encrypted:
+        rd.decrypt('')
+    w = PdfWriter(clone_from=rd)
+    parents = {}
+    for page, title, level in hs:
+        par = next((parents[l] for l in range(level - 1, 0, -1) if l in parents), None)
+        item = w.add_outline_item(title, page, parent=par)
+        parents[level] = item
+        for l in [k for k in parents if k > level]:
+            del parents[l]
+    w.page_mode = '/UseOutlines'
     w.pdf_header = '%PDF-1.7'
     with open(dst, 'wb') as f:
         w.write(f)
@@ -111,7 +156,7 @@ def apply(path, findings, doc_class):
                 continue
             nxt = Path(d) / f'v{i}.pdf'
             try:
-                _ocr(cur, nxt) if op == 'add_ocr_layer' else _rewrite(cur, nxt, op)
+                {'add_ocr_layer': lambda: _ocr(cur, nxt), 'add_bookmarks': lambda: _bookmarks(cur, nxt)}.get(op, lambda: _rewrite(cur, nxt, op))()
             except Exception as e:
                 refused.append({'op': op, 'en': f'Could not apply: {type(e).__name__}: {e}'[:300], 'ar': 'تعذّر التطبيق.'})
                 continue

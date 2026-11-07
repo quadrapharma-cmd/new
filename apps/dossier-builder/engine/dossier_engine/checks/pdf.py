@@ -108,6 +108,15 @@ def check(path, doc_class='company_technical', ectd_name=False):
         elif eff > (1, 7):
             add(Finding('EG-BP-16.BP1', 'warn', f'PDF version {eff[0]}.{eff[1]}; 1.4–1.7 recommended.',
                         f'إصدار PDF {eff[0]}.{eff[1]}؛ المفضل 1.4–1.7.', 'auto_fix', 'EG eCTD TG draft (BP1)'))
+        try:
+            has_outline = bool(rd.outline)
+        except Exception:
+            has_outline = False
+        r.info['bookmarks'] = has_outline
+        if pages >= 10 and not has_outline:
+            add(Finding('NTA065-BM', 'warn', f'{pages} pages and no bookmarks; long documents need bookmarks to navigate.',
+                        f'{pages} صفحة من غير bookmarks؛ المستندات الطويلة لازم يبقى فيها bookmarks.',
+                        'auto_fix', 'EG eCTD TG draft (bookmarks for documents with a TOC); ICH eCTD SPEC App. 7'))
         text_pages = 0
         for pg in rd.pages[:min(pages, 5)]:
             try:
