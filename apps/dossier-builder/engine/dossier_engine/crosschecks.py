@@ -157,8 +157,10 @@ def run(data, profile):
                          'CTD QM guideline v2 (CEP S.7 exception)'))
     # ---- XC-11 applicant spelled identically (envelope ↔ Annex I ↔ cover letter)
     names = {k: v for k, v in (data.get('applicant_names') or {}).items() if v}
+    core = lambda v: re.sub(r'\b(egypt|s a e|sae|co|company|ltd|llc|for pharmaceutical industries)\b', '', _norm(v).replace('-', ' ')).strip()
     if len({_norm(v) for v in names.values()}) > 1:
-        add(XFinding('XC-11', 'block', 'Applicant name is not spelled identically: ' + '; '.join(f'{k} «{v}»' for k, v in names.items()) + '.',
+        same_company = len({core(v) for v in names.values()}) == 1
+        add(XFinding('XC-11', 'warn' if same_company else 'block', 'Applicant name is not spelled identically: ' + '; '.join(f'{k} «{v}»' for k, v in names.items()) + '.',
                      'اسم المتقدم غير مكتوب بنفس الطريقة في كل المستندات.', ['M1-01', 'M1-43'], 'rebuild', 'EG draft §3.2.2; EG-BP-E09'))
     # ---- XC-10 leaflet/layout vs product data: shelf life / storage given in data but differ
     lf = data.get('leaflet') or {}

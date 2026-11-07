@@ -34,6 +34,10 @@ def test_ctd_numbers():
     ('cover letter seq 0000.pdf', '', 'M1-43'),
     ('شهادة التسعير.pdf', '', 'M1-05'),
     ('BE study report EXM-BE-01.pdf', 'bioequivalence study of paracetamol', 'M5-04'),
+    # real-dossier regressions (a local toll product, 11/2026): reference leaflets in German, committee letters
+    ('7-9451__DOTC_FACH_INFO.pdf', 'Fachinformation reference SmPC', 'M1-42'),
+    ('8-9451__DMTC_GEBR_INFO_BF.pdf', 'Gebrauchsinformation', 'M1-42'),
+    ('14-pharmacology committee approvaL.pdf', 'pharmacology committee approval', 'M1-06'),
 ])
 def test_suggestions(ctx, name, text, expected):
     assert top(ctx, name, text) == expected

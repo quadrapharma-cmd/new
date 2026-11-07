@@ -68,3 +68,12 @@ def test_findings_are_explained():
     bad['pack']['units_pricing'] = '1 x 10'
     f = run(bad, PROF)[0]
     assert f.ar and f.en and f.source and f.slots == ['M1-01', 'M1-05']
+
+
+def test_applicant_suffix_is_warning_not_block():
+    d = copy.deepcopy(GOOD)
+    d['applicant_names'] = {'MA': 'QUADRA PHARM-EGYPT', 'cover': 'Quadra Pharm'}
+    f = [x for x in run(d, PROF) if x.id == 'XC-11']
+    assert f and f[0].severity == 'warn'
+    d['applicant_names'] = {'MA': 'Quadra Pharm', 'cover': 'Example Pharma'}
+    assert [x for x in run(d, PROF) if x.id == 'XC-11'][0].severity == 'block'
