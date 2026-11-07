@@ -3091,18 +3091,18 @@
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: R
     G_LOC:
       cases:
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: R
   doc_class: generated
   produced_by: Tool (generated)
@@ -3139,18 +3139,18 @@
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: O
     G_LOC:
       cases:
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: O
   doc_class: company_technical
   produced_by: Company
@@ -3187,18 +3187,30 @@
       - when: biowaiver != ''
         level: R
         reason:
-          en: 'No in-vivo BE study: the product qualifies for a biowaiver (basis: local action / aqueous solution / BCS). This slot holds the biowaiver justification (Q1/Q2 sameness, in-vitro data) instead of a BE report.'
-          ar: 'مفيش دراسة تكافؤ حيوي مطلوبة: المستحضر مؤهل للإعفاء (تأثير موضعي / محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (تطابق التركيب والبيانات المعملية) بدل تقرير الدراسة.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.'
+          ar: 'مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز، ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
+      - when: local_equivalence
+        level: R
+        reason:
+          en: 'Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical, pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic risk.'
+          ar: 'مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §3.13 p.111-112'
       - level: R
     G_LOC:
       cases:
       - when: biowaiver != ''
         level: R
         reason:
-          en: 'No in-vivo BE study: the product qualifies for a biowaiver (basis: local action / aqueous solution / BCS). This slot holds the biowaiver justification (Q1/Q2 sameness, in-vitro data) instead of a BE report.'
-          ar: 'مفيش دراسة تكافؤ حيوي مطلوبة: المستحضر مؤهل للإعفاء (تأثير موضعي / محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (تطابق التركيب والبيانات المعملية) بدل تقرير الدراسة.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.'
+          ar: 'مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز، ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
+      - when: local_equivalence
+        level: R
+        reason:
+          en: 'Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical, pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic risk.'
+          ar: 'مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §3.13 p.111-112'
       - level: R
   doc_class: company_technical
   produced_by: Company
@@ -3235,18 +3247,18 @@
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: O
     G_LOC:
       cases:
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: O
   doc_class: company_technical
   produced_by: Company
@@ -3283,18 +3295,18 @@
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: R
     G_LOC:
       cases:
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: R
   doc_class: company_technical
   produced_by: Company
@@ -3332,18 +3344,18 @@
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: R
     G_LOC:
       cases:
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: R
   doc_class: company_technical
   produced_by: Company
@@ -3381,18 +3393,18 @@
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: R
     G_LOC:
       cases:
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: R
   doc_class: company_technical
   produced_by: Company
@@ -3461,18 +3473,18 @@
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: R
     G_LOC:
       cases:
       - when: biowaiver != ''
         level: NR
         reason:
-          en: 'Not required: no clinical/BE study under a biowaiver.'
-          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
-        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+          en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+          ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+        provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - level: R
   doc_class: company_technical
   produced_by: Company

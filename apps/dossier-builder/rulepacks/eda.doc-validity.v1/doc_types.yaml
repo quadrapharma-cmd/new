@@ -13,7 +13,7 @@ types:
     issuer_kind: authority
     validity_months: 120
     warn_days: 365
-    source: EDA GL.CAPP.030 v7 (re-registration every 10 years, effective 01/01/2026) — read from search extracts, confirm in the PDF
+    source: EDA GL.CAPP.030 v7 p.3-4 (re-registered every 10 years; apply in the last year; up to 4 years' grace with a preliminary approval); 5th-year report within the last 3 months of year 5 (NP.CAPP.093 v1 p.3)
     provenance: EG-IN-FORCE
   - id: variation_approval
     en: Variation approval
@@ -62,8 +62,8 @@ types:
     issuer_kind: authority
     validity_months: 12
     warn_days: 120
-    source: EDA importation approvals are issued for one year; apply at least 4 months before expiry (seen on approval 175/2025) — confirm
-    provenance: ASSUMPTION
+    source: EDA GL.PPMA.004 v5 p.3, p.5 (valid one year from issue; apply for the next annual approval at least 4 months before expiry; 6 months for unregistered products from a reference country, p.22-23)
+    provenance: EG-IN-FORCE
   - id: gmp_certificate
     en: GMP certificate
     ar: شهادة GMP
@@ -71,7 +71,7 @@ types:
     issuer_kind: authority
     validity_months: 36
     warn_days: 120
-    source: End date printed on the certificate prevails; 3 years when none is printed (EU GMP certificate practice, EudraGMDP) — confirm EDA acceptance
+    source: EDA requires a «valid GMP» with production lines specified, no fixed term (NP.CAPP.065 v5 p.12; draft EG M1 NtA p.13). End date printed on the certificate prevails; 3 years when none is printed is EU practice (EudraGMDP), not an EDA rule
     provenance: EU-DERIVED
   - id: written_confirmation
     en: Written confirmation (API exported to the EU)
@@ -80,7 +80,7 @@ types:
     issuer_kind: authority
     validity_months: 36
     warn_days: 120
-    source: End date printed on the WC prevails (Directive 2011/62/EU Art. 46b) — confirm EDA acceptance
+    source: Accepted by EDA as API-manufacturer evidence with GMP / CPP / ISO 9001 (NP.CAPP.109 v2 p.8-10). End date printed on the WC prevails (Directive 2011/62/EU Art. 46b); EDA states no term
     provenance: EU-DERIVED
   - id: api_coa
     en: API certificate of analysis
@@ -111,9 +111,10 @@ types:
     ar: كارت / سجل التصنيع لدى الغير
     scope: party
     issuer_kind: authority
-    validity_months: null
-    source: EDA GL.CAO.005; NP.CAPP.065 v5 §1.1.17.3 — validity term to confirm
-    provenance: ASSUMPTION
+    validity_months: 120
+    warn_days: 90
+    source: EDA GL.CAO.005 v3 p.5 (toll register entry updated every 10 calendar years; request within the last 3 months)
+    provenance: EG-IN-FORCE
   - id: commercial_register
     en: Commercial register
     ar: السجل التجاري
@@ -121,7 +122,7 @@ types:
     issuer_kind: authority
     validity_months: 60
     warn_days: 90
-    source: Commercial register extracts are renewed every 5 years (Law 34/1976 as amended) — confirm; EDA asks for a valid extract (NP.CAPP.065 v5 §1.1.17.2)
+    source: EDA asks for the «last updated» commercial register / «valid register of trade», no term (NP.CAPP.109 v2 p.5, 7; NP.CAPP.065 v5 §1.1.17.2). 5 years is the commercial-registry renewal term (Law 34/1976 as amended) — confirm; changes must be notified to the toll register within 18 months (GL.CAO.005 p.11)
     provenance: ASSUMPTION
   - id: tax_card
     en: Tax card

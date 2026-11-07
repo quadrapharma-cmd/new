@@ -47,9 +47,9 @@ class Profile:
     dosage_specifics: list = field(default_factory=list)
     leaflet: str = 'english'
     admin_route: str = 'oral'          # route of administration (drives BE / biowaiver logic)
-    local_action: bool = False         # acts locally, not intended for systemic absorption
+    local_action: bool = False         # acts locally (GL.CAPP.024 §3.13): equivalence by clinical/PD/in-vitro data, not PK BE
     aqueous_solution: bool = False     # simple aqueous solution (parenteral / oral / ophthalmic / otic)
-    bcs_waiver: bool = False           # company claims a BCS-based biowaiver (class I/III data supplied)
+    bcs_waiver: bool = False           # BCS biowaiver claimed (class I, III or II weak acid, IR oral — GL.CAPP.024 §4.5.1)
     store_separate_from_factory: bool = False
     biological: bool = False
     biological_origin_materials: bool = False
@@ -119,12 +119,22 @@ class Profile:
         d['api_options'] = sorted({a.option for a in self.apis})
         d['api_count'] = len(self.apis)
         d['biowaiver'] = self.biowaiver()
+        d['local_equivalence'] = bool(self.local_action and not d['biowaiver'] and self.dossier_kind != 'innovator')
         return d
 
     def biowaiver(self):
-        """Basis on which an in-vivo BE study is not required ('' = BE study required)."""
+        """Basis on which equivalence data are NOT required ('' = required).
+        EDA GL.CAPP.024 v4/2026 §2.2 (p.25): aqueous solutions (parenteral, oral, otic/ophthalmic/nasal, topical,
+        nebuliser), powders for reconstitution as a solution, gases. §4.5.1 (p.119-121): BCS class I, III and
+        class II weak acids, immediate release, oral. §3.13 (p.111): a locally acting product that is NOT a solution
+        is NOT exempt — equivalence data (clinical, pharmacodynamic, skin-PK or in-vitro) are still required."""
         if self.dossier_kind == 'innovator':
             return ''
+        if self.aqueous_solution and self.admin_route in ('parenteral', 'oral', 'ophthalmic', 'otic', 'nasal', 'topical', 'inhalation'):
+            return 'aqueous_solution'
+        if self.bcs_waiver and self.admin_route == 'oral':
+            return 'bcs'
+        return ''
         if self.admin_route in ('topical', 'ophthalmic', 'otic', 'nasal', 'rectal_vaginal') and self.local_action:
             return 'local_action'
         if self.aqueous_solution and self.admin_route in ('parenteral', 'oral', 'ophthalmic', 'otic'):

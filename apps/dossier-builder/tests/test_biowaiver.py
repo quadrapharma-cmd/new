@@ -20,20 +20,22 @@ def test_oral_tablet_needs_be_study():
     assert all(s[k].level in ('R', 'O') for k in STUDY)
 
 
-def test_topical_locally_acting_gets_waiver():
+def test_topical_locally_acting_powder_is_not_exempt():
+    """EDA GL.CAPP.024 v4 §3.13: only solutions are exempt; a locally acting powder/cream needs equivalence data."""
     s = levels(admin_route='topical', local_action=True)
-    assert s['M5-04'].level == 'R'                                      # holds the waiver justification
-    assert 'biowaiver' in s['M5-04'].reasons[-1]['en'] and 'CHMP/QWP/708282/2018' in s['M5-04'].reasons[-1]['source']
-    assert all(s[k].level == 'NR' for k in STUDY)
-    assert s['M5-11'].level == 'R'                                      # literature still required
+    assert s['M5-04'].level == 'R' and '§3.13' in s['M5-04'].reasons[-1]['source']
+    assert 'in-vitro' in s['M5-04'].reasons[-1]['en'] and 'موضعي' in s['M5-04'].reasons[-1]['ar']
+    assert s['M5-06'].level == 'R'
 
 
-def test_topical_with_systemic_action_needs_study():
-    assert levels(admin_route='topical', local_action=False)['M5-06'].level == 'R'
+def test_aqueous_solutions_are_exempt_on_every_route():
+    for route in ('parenteral', 'oral', 'ophthalmic', 'nasal', 'topical'):
+        s = levels(admin_route=route, aqueous_solution=True)
+        assert s['M5-06'].level == 'NR' and '§2.2' in s['M5-04'].reasons[-1]['source'], route
+    assert levels(admin_route='topical', local_action=True, aqueous_solution=True)['M5-06'].level == 'NR'
 
 
-def test_aqueous_solution_and_bcs():
-    assert levels(admin_route='parenteral', aqueous_solution=True)['M5-06'].level == 'NR'
+def test_bcs_oral_only():
     assert levels(admin_route='oral', bcs_waiver=True)['M5-06'].level == 'NR'
     assert levels(admin_route='topical', bcs_waiver=True)['M5-06'].level == 'R'       # BCS is for oral only
 
