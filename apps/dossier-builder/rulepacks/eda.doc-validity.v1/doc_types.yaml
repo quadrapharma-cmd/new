@@ -1,0 +1,190 @@
+# Document types of the product file and their validity rules.
+# validity_months: null = no fixed term (the end date is read from the document itself, if it has one).
+# Every value carries its source and provenance; ASSUMPTION values must be confirmed by the owner and are
+# shown as «assumption» in the interface. Change a value here, never in code.
+pack: eda.doc-validity.v1
+title: {en: Document types and validity rules, ar: أنواع المستندات وقواعد صلاحيتها}
+warn_days_default: 90
+types:
+  - id: registration_licence
+    en: Registration licence / marketing authorisation
+    ar: إخطار / رخصة التسجيل
+    scope: product
+    issuer_kind: authority
+    validity_months: 120
+    warn_days: 365
+    source: EDA GL.CAPP.030 v7 (re-registration every 10 years, effective 01/01/2026) — read from search extracts, confirm in the PDF
+    provenance: EG-IN-FORCE
+  - id: variation_approval
+    en: Variation approval
+    ar: موافقة تغيير
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    source: EDA GL.CAPP.026 v6
+    provenance: EG-IN-FORCE
+  - id: pricing_certificate
+    en: Pricing certificate
+    ar: شهادة التسعير
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    source: Ministerial decree 499/2012; EDA pricing decision 480/2026 (review after 6 months)
+    provenance: EG-IN-FORCE
+  - id: stability_approval
+    en: Stability committee approval
+    ar: موافقة لجنة الثبات
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    source: EDA stability guidelines (zone IVa)
+    provenance: EG-IN-FORCE
+  - id: eda_letter
+    en: EDA letter / committee decision
+    ar: خطاب / قرار من الهيئة
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    source: NP.CAPP.065 v5 §1.1.6
+    provenance: EG-IN-FORCE
+  - id: analysis_conformity
+    en: NODCAR / CADC analysis or conformity
+    ar: تحليل / مطابقة من الرقابة الدوائية
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    source: NP.CAPP.065 v5 §1.1.11
+    provenance: EG-IN-FORCE
+  - id: import_approval
+    en: Importation approval (API)
+    ar: موافقة استيرادية (مادة فعالة)
+    scope: product_party
+    issuer_kind: authority
+    validity_months: 12
+    warn_days: 120
+    source: EDA importation approvals are issued for one year; apply at least 4 months before expiry (seen on approval 175/2025) — confirm
+    provenance: ASSUMPTION
+  - id: gmp_certificate
+    en: GMP certificate
+    ar: شهادة GMP
+    scope: party
+    issuer_kind: authority
+    validity_months: 36
+    warn_days: 120
+    source: End date printed on the certificate prevails; 3 years when none is printed (EU GMP certificate practice, EudraGMDP) — confirm EDA acceptance
+    provenance: EU-DERIVED
+  - id: written_confirmation
+    en: Written confirmation (API exported to the EU)
+    ar: Written Confirmation للمادة الفعالة
+    scope: party
+    issuer_kind: authority
+    validity_months: 36
+    warn_days: 120
+    source: End date printed on the WC prevails (Directive 2011/62/EU Art. 46b) — confirm EDA acceptance
+    provenance: EU-DERIVED
+  - id: api_coa
+    en: API certificate of analysis
+    ar: شهادة تحليل المادة الفعالة
+    scope: product_party
+    issuer_kind: supplier
+    validity_months: null
+    source: Valid until the retest / expiry date of the batch printed on the CoA
+    provenance: ICH
+  - id: dmf_cep
+    en: DMF / CEP
+    ar: DMF / CEP
+    scope: party
+    issuer_kind: supplier
+    validity_months: null
+    source: CEP status on the EDQM database; DMF version
+    provenance: EU-DERIVED
+  - id: factory_licence
+    en: Factory licence (manufacturer)
+    ar: ترخيص المصنع
+    scope: party
+    issuer_kind: authority
+    validity_months: null
+    source: NP.CAPP.065 v5 §1.1.17.1
+    provenance: EG-IN-FORCE
+  - id: toll_card
+    en: Toll manufacturer card / register
+    ar: كارت / سجل التصنيع لدى الغير
+    scope: party
+    issuer_kind: authority
+    validity_months: null
+    source: EDA GL.CAO.005; NP.CAPP.065 v5 §1.1.17.3 — validity term to confirm
+    provenance: ASSUMPTION
+  - id: commercial_register
+    en: Commercial register
+    ar: السجل التجاري
+    scope: party
+    issuer_kind: authority
+    validity_months: 60
+    warn_days: 90
+    source: Commercial register extracts are renewed every 5 years (Law 34/1976 as amended) — confirm; EDA asks for a valid extract (NP.CAPP.065 v5 §1.1.17.2)
+    provenance: ASSUMPTION
+  - id: tax_card
+    en: Tax card
+    ar: البطاقة الضريبية
+    scope: party
+    issuer_kind: authority
+    validity_months: null
+    source: Company document
+    provenance: ASSUMPTION
+  - id: manufacturing_contract
+    en: Manufacturing / storage contract
+    ar: عقد تصنيع / تخزين
+    scope: product_party
+    issuer_kind: company
+    validity_months: null
+    source: End date stated in the contract; NP.CAPP.065 v5 §1.1.17.7
+    provenance: EG-IN-FORCE
+  - id: leaflet
+    en: Approved leaflet (SmPC / PIL)
+    ar: النشرة المعتمدة
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    source: EDA GL.CAP.Care.032 v4
+    provenance: EG-IN-FORCE
+  - id: artwork
+    en: Approved layout / artwork
+    ar: العبوة المعتمدة (Layout)
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    source: NP.CAPP.065 v5 §1.1.10
+    provenance: EG-IN-FORCE
+  - id: stability_data
+    en: Stability study data / report
+    ar: بيانات / تقرير دراسة الثبات
+    scope: product
+    issuer_kind: company
+    validity_months: null
+    source: ICH Q1A(R2); 3.2.P.8
+    provenance: ICH
+  - id: specification
+    en: Specification / method / validation
+    ar: مواصفات / طريقة تحليل / تحقق
+    scope: product
+    issuer_kind: company
+    validity_months: null
+    source: 3.2.P.5 / 3.2.S.4
+    provenance: ICH
+  - id: other
+    en: Other document
+    ar: مستند آخر
+    scope: product
+    issuer_kind: other
+    validity_months: null
+    source: —
+    provenance: ASSUMPTION
+# What every product must have on file (checked on the dashboard as «missing»).
+# A list inside the list means «any one of these» (e.g. GMP certificate OR written confirmation for an API site:
+# EDA NP.CAPP.109 accepts GMP certificate, CPP or written confirmation as API-manufacturer evidence).
+required:
+  product: [registration_licence, pricing_certificate, leaflet, artwork, stability_approval]
+  api_supplier: [[gmp_certificate, written_confirmation], api_coa, import_approval]
+  manufacturer: [gmp_certificate, factory_licence]
+  holder: [commercial_register]
+  toll: [toll_card]

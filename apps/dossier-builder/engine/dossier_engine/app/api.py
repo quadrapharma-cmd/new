@@ -423,6 +423,9 @@ def create_app(workspace, auth_enabled=None):
         return [dict(r) | {'detail': json.loads(r['detail'])}
                 for r in st.db.execute('select * from audit where dossier_id=? order by id', (did,))]
 
+    from . import suite as _suite
+    _suite.install(app, st, err)
+
     if STATIC.exists():
         app.mount('/', StaticFiles(directory=STATIC, html=True), name='ui')
     app.state.store = st
