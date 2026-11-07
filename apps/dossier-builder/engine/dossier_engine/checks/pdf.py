@@ -89,7 +89,7 @@ def check(path, doc_class='company_technical', ectd_name=False):
         root = rd.trailer['/Root']
         if '/Collection' in root:
             add(Finding('EG-BP-E23', 'block', 'PDF Portfolio is not allowed; submit each document as its own PDF.',
-                        'ملفات الـ Portfolio ممنوعة؛ كل مستند PDF لوحده.', 'auto_fix', 'EG eCTD TG draft (EG-BP-E23)'))
+                        'ملفات الـ Portfolio ممنوعة؛ كل مستند PDF لوحده.', 'user_fix', 'EG eCTD TG draft (EG-BP-E23)'))
         names = root.get('/Names') or {}
         if '/JavaScript' in names or ('/OpenAction' in root and '/JS' in str(root['/OpenAction'])):
             add(Finding('PDF-JS', 'block', 'The PDF contains JavaScript.', 'الملف فيه JavaScript.',

@@ -223,3 +223,35 @@ def test_variations_page(server, browser):
     page.check('[data-v="H-05"]')
     page.wait_for_selector('.kpi:has-text("PAC-II")')
     assert 'var-pac-ii' in page.inner_text('#view')
+
+
+def test_rebuild_loop_ui(server, browser, tmp_path):
+    import httpx
+    prof = dict(dossier_kind='generic', origin='local', licence='own', activity='new',
+                apis=[dict(name='Paracetamol', manufacturer='Granules India', option='CEP')])
+    did = httpx.post(server + '/api/dossiers', json=dict(name='Loop test', profile=prof, product=dict(
+        name='Examplol 500 mg', dosageform='tablet', manufacturer='Example Pharma'),
+        envelope={'applicant': 'Example Pharma S.A.E.', 'tracking': 'P-MAA-0001', 'invented_name': 'Examplol'})).json()['id']
+    bad = make_pdf(tmp_path / 'gmp.pdf', 'GMP').read_bytes().replace(b'%PDF-1.4', b'%PDF-1.3', 1)
+    httpx.post(f'{server}/api/dossiers/{did}/slots/M1-37/documents', files={'file': ('gmp.pdf', bad, 'application/pdf')}, data={'meta': '{}'})
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    page.add_init_script("localStorage.setItem('db.lang','en')")
+    page.goto(f'{server}/#/d/{did}/board')
+    page.wait_for_selector('tbody tr')
+    page.locator('tr', has_text='GMP certificate(s) of FPP').locator('[data-why]').click()
+    page.click('[data-fix]')
+    page.wait_for_function("document.querySelector('#dBody').innerText.includes('v 2')", timeout=60000)
+    assert 'Non-conforming' not in page.inner_text('#dBody')
+    page.keyboard.press('Escape')
+    # request from issuer for a missing third-party document
+    page.click('[data-f=all]')
+    page.locator('tr', has_text='Register of trade').locator('[data-why]').click()
+    page.click('[data-req]')
+    page.fill('#rqIssuer', 'Commercial Registry Office')
+    page.fill('#rqSig', 'A. Example')
+    page.fill('#rqSigT', 'Regulatory Affairs Manager')
+    with page.context.expect_page() as newp:
+        page.click('#rqGo')
+    newp.value.close()
+    page.wait_for_selector('tr:has-text("Register of trade") .chip.c-wait')

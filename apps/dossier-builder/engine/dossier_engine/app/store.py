@@ -22,10 +22,15 @@ create table if not exists document(id text primary key, dossier_id text not nul
 create index if not exists document_slot on document(dossier_id, slot_id, state);
 create table if not exists audit(id integer primary key autoincrement, ts real not null, dossier_id text,
   event text not null, detail text not null default '{}');
+create table if not exists request(id text primary key, dossier_id text not null, slot_id text not null,
+  issuer text not null, lang text not null, sent real not null, due real not null, state text not null default 'open',
+  letter_sha text, reason text not null default '[]', closed real);
 create table if not exists export(id text primary key, dossier_id text not null, outputs text not null,
   path text not null, acknowledged integer not null, created real not null);
 '''
 STATUS_ORDER = ['not_started', 'received', 'conforming', 'needs_attention', 'non_conforming', 'not_applicable']
+SIGN_KINDS = {'annex1', 'cover', 'composition', 'salt', 'cep_commitment', 'translation', 'stability_commitment', 'justification',
+              'reobtain'}
 
 
 class StoreError(ValueError):
@@ -152,7 +157,7 @@ class Store:
             v for v in names.values() if v)) > 1) else []
 
     # ---------------- documents
-    def add_document(self, did, slot_id, filename, data, title=None, meta=None):
+    def add_document(self, did, slot_id, filename, data, title=None, meta=None, supersede=None, doc_class=None):
         slots = {s.slot_id: s for s in self.slots(did)}
         if slot_id not in slots:
             raise StoreError('E-SLOT', f'Unknown requirement slot {slot_id}.', 'بند غير معروف.')
@@ -160,24 +165,68 @@ class Store:
         if not s.active:
             raise StoreError('E-SLOT-INACTIVE', f'{slot_id} is not required for this product ({s.level}).',
                              'البند ده مش مطلوب للمنتج ده.', reason=s.reasons[-1])
+        meta = dict(meta or {})
+        if meta.get('signed_for'):                    # signed scan of a generated draft (02-LOGIC §6 «signed_scan»)
+            draft = self.document(meta['signed_for'])
+            if draft['dossier_id'] != did or draft['slot_id'] != slot_id or not draft['meta'].get('draft_unsigned'):
+                raise StoreError('E-SIGNED-FOR', 'The signed copy must belong to an unsigned draft of the same section.',
+                                 'النسخة الموقّعة لازم تخص مسودة غير موقّعة في نفس القسم.')
+            doc_class, supersede = 'signed_scan', draft['id']
         sha = self.put_blob(data)
         tmp = self.root / 'blobs' / f'.check-{uuid.uuid4().hex}.pdf'
         shutil.copyfile(self.blob_path(sha), tmp)
         try:
-            rep = pdf_check(str(tmp), s.doc_class)
+            rep = pdf_check(str(tmp), doc_class or s.doc_class)
         finally:
             tmp.unlink(missing_ok=True)
         version = 1 + (self.db.execute('select coalesce(max(version),0) from document where dossier_id=? and slot_id=?',
                                        (did, slot_id)).fetchone()[0])
         doc_id = str(uuid.uuid4())
         self.db.execute('insert into document values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                        (doc_id, did, slot_id, version, sha, filename, title or s.title['en'], s.doc_class,
-                         json.dumps(meta or {}, ensure_ascii=False), json.dumps([f.to_dict() for f in rep.findings],
+                        (doc_id, did, slot_id, version, sha, filename, title or s.title['en'], doc_class or s.doc_class,
+                         json.dumps(meta, ensure_ascii=False), json.dumps([f.to_dict() for f in rep.findings],
                                                                                 ensure_ascii=False),
                          rep.status, 'current', time.time()))
+        if supersede:
+            self.db.execute("update document set state='superseded' where id=? and dossier_id=?", (supersede, did))
+        if rep.status == 'conforming':
+            for r in self.db.execute("select id from request where dossier_id=? and slot_id=? and state='open'", (did, slot_id)).fetchall():
+                self.db.execute("update request set state='closed', closed=? where id=?", (time.time(), r['id']))
+                self.audit(did, 'request.closed', request=r['id'], by_doc=doc_id)
         self.db.commit()
-        self.audit(did, 'document.added', slot=slot_id, doc=doc_id, version=version, sha256=sha, status=rep.status)
+        self.audit(did, 'document.added', slot=slot_id, doc=doc_id, version=version, sha256=sha, status=rep.status,
+                   supersedes=supersede, signed_for=meta.get('signed_for'))
         return self.document(doc_id)
+
+    def fix_document(self, did, doc_id):
+        from .. import fixes
+        d = self.document(doc_id)
+        if d['dossier_id'] != did or d['state'] != 'current':
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        r = fixes.apply(self.blob_path(d['sha256']), d['findings'], d['doc_class'])
+        new = None
+        if r['data']:
+            new = self.add_document(did, d['slot_id'], d['filename'], r['data'], d['title'],
+                                    {**d['meta'], 'fixed_from': doc_id, 'fixes': [x['op'] for x in r['done']]},
+                                    supersede=doc_id, doc_class=d['doc_class'])
+        self.audit(did, 'document.fixed' if new else 'document.fix_refused', doc=doc_id, new=new and new['id'],
+                   done=[x['op'] for x in r['done']], refused=[x['op'] for x in r['refused']])
+        return {'document': new, 'done': r['done'], 'refused': r['refused']}
+
+    # ---------------- requests to issuers (re-obtain)
+    def open_request(self, did, slot_id, issuer, lang, due_days, letter_sha, reason):
+        rid = str(uuid.uuid4())
+        now = time.time()
+        self.db.execute('insert into request(id, dossier_id, slot_id, issuer, lang, sent, due, letter_sha, reason) values (?,?,?,?,?,?,?,?,?)',
+                        (rid, did, slot_id, issuer, lang, now, now + 86400 * int(due_days), letter_sha,
+                         json.dumps(reason, ensure_ascii=False)))
+        self.db.commit()
+        self.audit(did, 'request.opened', request=rid, slot=slot_id, issuer=issuer, due_days=due_days)
+        return rid
+
+    def requests(self, did, state='open'):
+        return [dict(r) | {'reason': json.loads(r['reason']), 'overdue': r['state'] == 'open' and r['due'] < time.time()}
+                for r in self.db.execute('select * from request where dossier_id=? and state=? order by sent', (did, state))]
 
     def document(self, doc_id):
         r = self.db.execute('select * from document where id=?', (doc_id,)).fetchone()
@@ -232,11 +281,19 @@ class Store:
         for f in cross:
             for sid in f['slots']:
                 by_slot.setdefault(sid, []).append(f)
+        reqs = {r['slot_id']: r for r in self.requests(did)}
         for x in out:
             x['cross'] = by_slot.get(x['slot_id'], [])
+            x['request'] = reqs.get(x['slot_id'])
+            x['unsigned'] = [d['id'] for d in x['documents'] if d['meta'].get('draft_unsigned')]
             if x['status'] in ('received', 'conforming', 'needs_attention') and x['cross']:
                 x['status'] = 'non_conforming' if any(f['severity'] == 'block' for f in x['cross']) else \
                     max(x['status'], 'needs_attention', key=STATUS_ORDER.index)
+        for x in out:
+            if x['unsigned'] and x['status'] == 'conforming':
+                x['status'] = 'needs_attention'
+            if x['request'] and x['status'] in ('not_started', 'non_conforming', 'needs_attention', 'received'):
+                x['status'] = 'waiting'
         unassigned = [d for d in self.documents(did) if d['slot_id'] is None]
         counts = {}
         for x in out:
@@ -246,9 +303,12 @@ class Store:
     def gate(self, did):
         """Blocking reasons before export (01-PLAN P1 «export gate»)."""
         b = self.board(did)
-        missing = [s['slot_id'] for s in b['slots'] if s['level'] == 'R' and s['status'] == 'not_started']
-        blocking = [s['slot_id'] for s in b['slots'] if s['status'] == 'non_conforming']
+        missing = [s['slot_id'] for s in b['slots'] if s['level'] == 'R' and (s['status'] == 'not_started' or
+                   s['status'] == 'waiting' and not s['documents'])]
+        blocking = [s['slot_id'] for s in b['slots'] if s['status'] == 'non_conforming' or
+                    s['status'] == 'waiting' and s['documents']]
+        unsigned = [s['slot_id'] for s in b['slots'] if s['unsigned']]
         xb = [f for f in b['cross'] if f['severity'] == 'block']
-        return {'ok': not missing and not blocking and not xb, 'missing_required': missing, 'non_conforming': blocking,
+        return {'ok': not missing and not blocking and not xb and not unsigned, 'unsigned': unsigned, 'missing_required': missing, 'non_conforming': blocking,
                 'cross_blocking': [{'id': f['id'], 'en': f['en'], 'ar': f['ar']} for f in xb],
                 'provisional_profiles': ['EG eCTD 3.2.2 provisional v0', 'EG eCTD 4.0 provisional v0']}

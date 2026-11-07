@@ -75,9 +75,8 @@ Until then the eCTD outputs say «conforms to EDA drafts + ICH», never «EDA-va
 
 **Engineering:**
 - Automate the remaining 3.2.2 rules (lifecycle across sequences — arrives with P3 — plus links and bookmarks inside PDFs).
-- Automatic fixes, beyond the guard: OCR layer, PDF version, bookmarks.
+- ~~Automatic fixes~~ ✅ done 07/11/2026: version, security, JavaScript, OCR, with a pixel guard on evidence; issuer request letter + «waiting» status; signed-scan linking + gate on unsigned drafts. Still open: automatic bookmarks.
 - Roles and approvals (P5).
-- A PDF watermark until a signed copy is uploaded (today the watermark is in the Word header).
 
 ## 6. Next phase (P2: quality intelligence)
 

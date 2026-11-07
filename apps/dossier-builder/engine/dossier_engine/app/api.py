@@ -54,6 +54,15 @@ class OpReq(BaseModel):
     op: str
 
 
+class ReqReq(BaseModel):
+    issuer: str
+    lang: str = 'en'
+    due_days: int = 21
+    company: str = None
+    signatory: str = None
+    signatory_title: str = None
+
+
 def create_app(workspace):
     st = Store(workspace)
     app = FastAPI(title='Dossier Builder (local)', version='0.1')
@@ -131,6 +140,57 @@ def create_app(workspace):
     def restore(did: str, doc_id: str):
         return st.restore(did, doc_id)
 
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/fix')
+    def fix(did: str, doc_id: str):
+        """Apply the allowed automatic fixes; the result is a new version, the original is kept (superseded)."""
+        return st.fix_document(did, doc_id)
+
+    @app.post('/api/dossiers/{did}/slots/{slot_id:path}/request', status_code=201)
+    def request_reobtain(did: str, slot_id: str, body: ReqReq):
+        """Letter to the issuer + «waiting on third party» status with a due date (02-LOGIC §5.2 🟣)."""
+        d = st.dossier(did)
+        s = next((x for x in st.board(did)['slots'] if x['slot_id'] == slot_id), None)
+        if not s or s['level'] not in ('R', 'O'):
+            err(422, 'E-SLOT-INACTIVE', 'This item is not required for this product.', 'البند ده مش مطلوب للمنتج ده.')
+        req = next(r for r in st.pack(d['pack']).requirements if r['id'] == s['req_id'])
+        problems = []
+        for doc in s['documents']:
+            problems += [f[body.lang if body.lang in f else 'en'] for f in doc['findings'] if f['severity'] == 'block']
+        problems += [f[body.lang if body.lang in f else 'en'] for f in s['cross']]
+        last = {}
+        for doc in st.documents(did):
+            if doc['meta'].get('data', {}).get('signatory'):
+                last = doc['meta']['data']
+        data = {'issuer': body.issuer, 'document': s['title'][body.lang if body.lang in s['title'] else 'en'],
+                'trade_name': d['envelope'].get('invented_name') or d['product'].get('name'), 'problems': problems,
+                'acceptance': req.get('acceptance_text'), 'lang': body.lang,
+                'company': body.company or d['envelope'].get('applicant'),
+                'signatory': body.signatory or last.get('signatory'), 'signatory_title': body.signatory_title or last.get('signatory_title')}
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            try:
+                letters.reobtain_request(data, tmp / 'request.docx')
+            except MissingData as e:
+                err(422, 'E-MISSING-DATA', 'Some data is missing: ' + ', '.join(e.fields), 'فيه بيانات ناقصة: ' + '، '.join(e.fields),
+                    request_data=e.fields)
+            sha = st.put_blob(to_pdf(tmp / 'request.docx').read_bytes())
+            st.put_blob((tmp / 'request.docx').read_bytes())
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+        rid = st.open_request(did, slot_id, body.issuer, body.lang, body.due_days, sha, problems)
+        return {'request_id': rid, 'letter': f'/api/dossiers/{did}/requests/{rid}/letter', 'problems': problems}
+
+    @app.get('/api/dossiers/{did}/requests')
+    def list_requests(did: str, state: str = 'open'):
+        return st.requests(did, state)
+
+    @app.get('/api/dossiers/{did}/requests/{rid}/letter')
+    def request_letter(did: str, rid: str):
+        r = st.db.execute('select letter_sha from request where id=? and dossier_id=?', (rid, did)).fetchone()
+        if not r:
+            err(404, 'E-NOT-FOUND', 'Request not found.', 'الطلب غير موجود.')
+        return FileResponse(st.blob_path(r['letter_sha']), media_type='application/pdf', filename='request-letter.pdf')
+
     @app.post('/api/dossiers/{did}/documents/{doc_id}/ops')
     def op(did: str, doc_id: str, body: OpReq):
         d = st.document(doc_id)
@@ -172,8 +232,9 @@ def create_app(workspace):
                 err(422, 'E-MISSING-DATA', 'Some data is missing: ' + ', '.join(e.fields),
                     'فيه بيانات ناقصة: ' + '، '.join(e.fields), request_data=e.fields)
             pdf = to_pdf(out)
+            from .store import SIGN_KINDS
             doc = st.add_document(did, slot.slot_id, f'{kind}.pdf', pdf.read_bytes(), meta={
-                'generated': kind, 'draft_unsigned': True, 'data': body.data})
+                'generated': kind, 'draft_unsigned': kind in SIGN_KINDS, 'data': body.data})
             st.put_blob(out.read_bytes())
             return doc
         finally:

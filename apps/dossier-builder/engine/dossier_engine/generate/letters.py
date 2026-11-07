@@ -317,3 +317,39 @@ SCHEMAS = {
         _f('justification', 'Justification', 'التبرير', 'textarea'), _f('references', 'References (one per line)', 'المراجع (سطر لكل مرجع)', 'textarea', required=False)]
         + [_f(*x) for x in _SIGN]},
 }
+
+
+def reobtain_request(data, out, letterhead=None):
+    """Request to the issuer of a third-party/EDA document for a conforming copy (02-LOGIC §6 «re-obtain»).
+    data: issuer, document, trade_name, problems [str], acceptance (str), company, signatory, signatory_title, lang en|ar."""
+    require(data, ['issuer', 'document', 'trade_name', 'company', 'signatory', 'signatory_title'])
+    ar = data.get('lang') == 'ar'
+    d = new_doc(letterhead=letterhead)
+    probs = [p for p in (data.get('problems') or []) if p]
+    if ar:
+        para(d, f"السادة/ {data['issuer']}", ar=True, bold=True)
+        para(d, 'تحية طيبة وبعد،', ar=True)
+        para(d, f"الموضوع: طلب نسخة مطابقة من «{data['document']}» — المستحضر {data['trade_name']}", ar=True, bold=True)
+        para(d, f"نتشرف نحن {data['company']} بطلب نسخة محدثة/مطابقة من المستند المذكور لاستكمال ملف التسجيل لدى هيئة الدواء المصرية، "
+                'حيث تبين بالفحص ما يلي:', ar=True)
+        for p in probs:
+            para(d, p, ar=True, bullet=True)
+        if data.get('acceptance'):
+            para(d, f"والمطلوب أن يستوفي المستند: {data['acceptance']}", ar=True)
+        para(d, 'مع رجاء إرسال المستند بصيغة PDF غير محمية (بدون كلمة مرور أو قيود طباعة/نسخ)، وقابلة للبحث إن أمكن.', ar=True)
+        para(d, 'وتفضلوا بقبول فائق الاحترام،', ar=True)
+    else:
+        para(d, f"To: {data['issuer']}", bold=True)
+        para(d, f"Subject: Request for a conforming copy of «{data['document']}» — {data['trade_name']}", bold=True)
+        para(d, f"{data['company']} kindly requests an updated/conforming copy of the above document for its registration "
+                'dossier at the Egyptian Drug Authority. Our review found:')
+        for p in probs:
+            para(d, p, bullet=True)
+        if data.get('acceptance'):
+            para(d, f"The document must meet: {data['acceptance']}")
+        para(d, 'Please send it as a PDF without passwords or printing/copying restrictions, text-searchable where possible. '
+                'If the document is digitally signed, please keep printing and content copying allowed.')
+        para(d, 'Yours faithfully,')
+    _sign(d, data)
+    d.save(out)
+    return Path(out)

@@ -124,7 +124,7 @@ html[dir=rtl] .node{padding:6px 22px 6px 14px}
 .node:hover{background:var(--surface-2)} .node.sel{background:var(--brand-soft);border-inline-start-color:var(--brand)}
 .node.drop{outline:2px dashed var(--brand);outline-offset:-2px}
 .dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:var(--na)}
-.d-conforming{background:var(--ok)} .d-needs_attention{background:var(--warn)} .d-non_conforming{background:var(--bad)} .d-received{background:var(--rec)}
+.d-waiting{background:var(--wait)} .d-conforming{background:var(--ok)} .d-needs_attention{background:var(--warn)} .d-non_conforming{background:var(--bad)} .d-received{background:var(--rec)}
 .leaf{cursor:pointer} .leaf.sel td{background:var(--brand-soft)}
 .op{font-family:var(--f-mono);font-size:11.5px;padding:1px 6px;border-radius:4px;background:var(--ok-soft);color:var(--ok)}
 .props{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;padding:14px;font-size:13px}
@@ -254,7 +254,14 @@ const T = {
   doExport:{en:'Export selected outputs',ar:'تصدير المخرجات المختارة'}, exporting:{en:'Building…',ar:'جاري البناء…'}, downloads:{en:'Downloads',ar:'التنزيلات'},
   audit:{en:'Activity log',ar:'سجل النشاط'}, auditSub:{en:'Every action is recorded; nothing is overwritten.',ar:'كل إجراء مسجل؛ لا شيء يُستبدل.'},
   when:{en:'When',ar:'الوقت'}, event:{en:'Event',ar:'الحدث'}, detail:{en:'Detail',ar:'التفاصيل'}, restore:{en:'Restore',ar:'استرجاع'},
-  err:{en:'Error',ar:'خطأ'}, needData:{en:'Enter the specification and batches in «Product data» first.',ar:'أدخل المواصفات والتشغيلات في «بيانات المنتج» الأول.'}, vPass:{en:'pass',ar:'ناجح'}, vFail:{en:'fail',ar:'فشل'}, vWarn:{en:'warning',ar:'تحذير'}, vNotRun:{en:'not run',ar:'لم يُشغَّل'},
+  err:{en:'Error',ar:'خطأ'}, waiting:{en:'Waiting on issuer',ar:'في انتظار الجهة المصدرة'},
+  autofix:{en:'Fix automatically',ar:'إصلاح تلقائي'}, fixing:{en:'Fixing…',ar:'جاري الإصلاح…'}, fixedNew:{en:'Fixed — saved as a new version; the original is kept.',ar:'اتصلح — اتحفظ كإصدار جديد والأصل محفوظ.'},
+  fixRefused:{en:'Not fixed automatically:',ar:'لم يُصلح تلقائياً:'}, reqIssuer:{en:'Request from issuer',ar:'طلب من الجهة المصدرة'}, issuer:{en:'Issuer (name / department)',ar:'الجهة المصدرة (الاسم / الإدارة)'},
+  letterLang:{en:'Letter language',ar:'لغة الخطاب'}, dueDays:{en:'Follow-up after (days)',ar:'المتابعة بعد (يوم)'}, makeLetter:{en:'Create request letter',ar:'إنشاء خطاب الطلب'},
+  reqOpen:{en:'Requested from',ar:'تم الطلب من'}, due:{en:'follow up on',ar:'المتابعة يوم'}, overdue:{en:'overdue',ar:'متأخر'}, letter:{en:'Letter',ar:'الخطاب'},
+  unsignedDraft:{en:'Unsigned draft',ar:'مسودة غير موقّعة'}, uploadSigned:{en:'Upload the signed copy',ar:'رفع النسخة الموقّعة'},
+  signHint:{en:'Print on letterhead → sign → stamp → scan → upload here. The signed copy replaces the draft.',ar:'اطبع على ورق الشركة ← امضِ ← اختم ← امسح ضوئياً ← ارفع هنا. النسخة الموقّعة بتحل محل المسودة.'},
+  unsignedL:{en:'Unsigned drafts',ar:'مسودات غير موقّعة'}, needData:{en:'Enter the specification and batches in «Product data» first.',ar:'أدخل المواصفات والتشغيلات في «بيانات المنتج» الأول.'}, vPass:{en:'pass',ar:'ناجح'}, vFail:{en:'fail',ar:'فشل'}, vWarn:{en:'warning',ar:'تحذير'}, vNotRun:{en:'not run',ar:'لم يُشغَّل'},
   vReport:{en:'Validation report',ar:'تقرير التحقق'}, bulk:{en:'Add files',ar:'إضافة ملفات'}, bulkSub:{en:'The tool suggests a section for each file from its name, CTD number and first page. Check and confirm.',ar:'الأداة تقترح قسماً لكل ملف من اسمه ورقم الـ CTD وأول صفحة. راجع وأكّد.'},
   noSuggest:{en:'— choose a section —',ar:'— اختر القسم —'}, skip:{en:'Skip',ar:'تخطي'}, confirmAll:{en:'Add to the chosen sections',ar:'إضافة للأقسام المختارة'},
   needsDetails:{en:'needs details — use the section\'s Upload button',ar:'يحتاج بيانات — استخدم زر الرفع في القسم'}, added:{en:'files added',ar:'ملفات أضيفت'}, generate:{en:'Generate',ar:'توليد'}, justify:{en:'Write a justification',ar:'كتابة تبرير'},
@@ -287,7 +294,7 @@ $('#theme').onclick=()=>{ const r=document.documentElement; const cur=r.dataset.
   r.dataset.theme = cur==='dark'?'light':'dark'; localSet('db.theme', r.dataset.theme); };
 if(localGet('db.theme')) document.documentElement.dataset.theme = localGet('db.theme');
 
-const STATUS_CHIP = {not_started:'c-na',received:'c-rec',conforming:'c-ok',needs_attention:'c-warn',non_conforming:'c-bad',not_applicable:'c-na'};
+const STATUS_CHIP = {waiting:'c-wait',not_started:'c-na',received:'c-rec',conforming:'c-ok',needs_attention:'c-warn',non_conforming:'c-bad',not_applicable:'c-na'};
 const LEVEL = {R:'required',O:'optional',NR:'notreq',NA:'na'};
 const chip = st => `<span class="chip ${STATUS_CHIP[st]||'c-na'}"><i></i>${esc(t(st))}</span>`;
 
@@ -489,16 +496,32 @@ function openWhy(slotId){
   const docs = s.documents.map(d=>`<div class="finding ${d.check_status==='non_conforming'?'block':''}">
      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b><span class="muted">${esc(t('version'))} ${d.version}</span> · ${bdi(d.filename)}</b> ${chip(d.check_status)}</div>
      ${d.findings.length? d.findings.map(f=>`<div class="small">● ${esc(f[S.lang])} <span class="code muted">${esc(f.rule)}</span><br><span class="muted">${esc(t('act_'+f.action))}</span></div>`).join('') : `<div class="small muted">${esc(t('noFind'))}</div>`}
+     ${d.meta&&d.meta.draft_unsigned?`<div class="alert"><p class="small"><b>${esc(t('unsignedDraft'))}</b> — ${esc(t('signHint'))}</p></div>`:''}
      <div class="toolbar"><a class="btn sm" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${d.id}/file">${esc(t('view'))}</a>
+     ${d.findings.some(f=>f.action==='auto_fix')?`<button class="btn sm pri" data-fix="${d.id}">✦ ${esc(t('autofix'))}</button>`:''}
+     ${d.meta&&d.meta.draft_unsigned?`<button class="btn sm pri" data-signed="${d.id}">⤒ ${esc(t('uploadSigned'))}</button>`:''}
      <button class="btn sm" data-wd="${d.id}">${esc(t('withdraw'))}</button></div></div>`).join('');
   openDrawer(s.title[S.lang], `<div class="toolbar"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${chip(s.status)}</div>
     ${locked?`<div class="alert"><p class="small">${esc(t('lockedNote'))}</p></div>`:''}
     <h3>${esc(t('reasons'))}</h3>${reasons}${s.flags.length?`<div class="small muted code">${esc(s.flags.join(' · '))}</div>`:''}
     ${s.cross&&s.cross.length?`<h3>${esc(t('crossT'))}</h3>${s.cross.map(f=>`<div class="finding ${f.severity==='block'?'block':''}"><div>${esc(f[S.lang])} <span class="code muted">${esc(f.id)}</span></div><div class="small muted">${esc(f.source)}</div></div>`).join('')}`:''}
     ${s.documents.length?`<h3>${esc(t('docs'))}</h3>${docs}`:''}
+    ${s.request?`<div class="alert"><p class="small"><b>${esc(t('reqOpen'))}</b> ${bdi(s.request.issuer)} · ${esc(t('due'))} ${new Date(s.request.due*1000).toLocaleDateString(S.lang==='ar'?'ar-EG':'en-GB')}${s.request.overdue?` · <b style="color:var(--bad)">${esc(t('overdue'))}</b>`:''}
+      · <a href="/api/dossiers/${S.dossier.id}/requests/${s.request.id}/letter" target="_blank" rel="noopener">${esc(t('letter'))}</a></p></div>`:''}
+    ${(s.level==='R'||s.level==='O')&&!['generated','company_letter'].includes(s.doc_class)&&(s.documents.some(d=>d.check_status==='non_conforming')||s.cross.length||!s.documents.length)&&!s.request?
+      `<div class="toolbar"><button class="btn" data-req="1">✉ ${esc(t('reqIssuer'))}</button></div>`:''}
     ${(s.level==='R'||s.level==='O')?`<div class="toolbar">${genFor(s)?`<button class="btn pri" data-gen="${genFor(s)}">✦ ${esc(t('generate'))}: ${esc(S.gens[genFor(s)].title[S.lang])}</button>`:''}
       <button class="btn" data-gen="justification">${esc(t('justify'))}</button></div>`:''}`);
   $('#dBody').querySelectorAll('[data-gen]').forEach(b=>b.onclick=()=>S.gens[b.dataset.gen].source==='data'? genDirect(b.dataset.gen, s) : genForm(b.dataset.gen, s));
+  $('#dBody').querySelectorAll('[data-fix]').forEach(b=>b.onclick=async()=>{
+    b.disabled=true; b.textContent=t('fixing');
+    try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.fix}/fix`,{method:'POST'});
+      if(r.document) toast(t('fixedNew')+' '+r.done.map(x=>x[S.lang]).join(' · '));
+      if(r.refused.length) toast(t('fixRefused')+' '+r.refused.map(x=>x[S.lang]).join(' · '));
+      await refreshCurrent(); openWhy(slotId);
+    }catch(e){ toast(e.message); } });
+  $('#dBody').querySelectorAll('[data-signed]').forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, {signed_for:b.dataset.signed}); });
+  const rq=$('#dBody').querySelector('[data-req]'); if(rq) rq.onclick=()=>requestForm(s);
   $('#dBody').querySelectorAll('[data-wd]').forEach(b=>b.onclick=async()=>{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.wd}/withdraw`,{method:'POST'}); toast(t('withdrawn')); closeDrawer(); board(); });
 }
 function openDrawer(title, html){ $('#dTitle').textContent=title; $('#dBody').innerHTML=html; $('#drawer').hidden=false; $('#scrim').hidden=false; $('#dClose').focus(); }
@@ -572,6 +595,22 @@ async function dropFiles(slotId, list){
 }
 
 
+async function refreshCurrent(){ if(location.hash.endsWith('/publisher')) await publisherView(); else await board(); }
+function requestForm(s){
+  openDrawer(t('reqIssuer'), `<p class="small muted">${esc(s.title[S.lang])}</p><div class="gform">
+    <label class="f"><span>${esc(t('issuer'))}</span><input type="text" dir="auto" id="rqIssuer"></label>
+    <label class="f"><span>${esc(t('letterLang'))}</span><select id="rqLang"><option value="en">English</option><option value="ar" ${s.doc_class==='eda_document'?'selected':''}>العربية</option></select></label>
+    <label class="f"><span>${esc(t('dueDays'))}</span><input type="text" inputmode="numeric" id="rqDue" value="21"></label>
+    <label class="f"><span>${esc(lbl({en:'Signatory name',ar:'اسم الموقّع'}))}</span><input type="text" dir="auto" id="rqSig" value="${esc(S.lastSig||'')}"></label>
+    <label class="f"><span>${esc(lbl({en:'Signatory title',ar:'صفة الموقّع'}))}</span><input type="text" dir="auto" id="rqSigT" value="${esc(S.lastSigT||'')}"></label></div>
+    <div class="toolbar"><button class="btn pri" id="rqGo">${esc(t('makeLetter'))}</button></div><div id="rqErr"></div>`);
+  $('#rqGo').onclick=async()=>{ const issuer=$('#rqIssuer').value.trim(); if(!issuer){ $('#rqIssuer').focus(); return; }
+    try{ const r=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(s.slot_id)}/request`,{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({issuer, lang:$('#rqLang').value, due_days:+$('#rqDue').value||21, signatory:$('#rqSig').value.trim()||null, signatory_title:$('#rqSigT').value.trim()||null})});
+      S.lastSig=$('#rqSig').value.trim(); S.lastSigT=$('#rqSigT').value.trim();
+      window.open(r.letter,'_blank','noopener'); closeDrawer(); await refreshCurrent(); }
+    catch(e){ $('#rqErr').innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; } };
+}
 /* ---------------- generators (schema-driven forms) */
 S.gens = null;
 async function loadGens(){ if(!S.gens) S.gens = await api('/generators'); return S.gens; }
@@ -719,7 +758,7 @@ async function exportView(){
   const g = await api(`/dossiers/${S.dossier.id}/gate`);
   const list=(k,arr)=>arr.length?`<div><b>${esc(t(k))} (${arr.length})</b><div class="small code" style="white-space:normal">${arr.map(esc).join(' · ')}</div></div>`:'';
   $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('export'))}</h1><p class="sub">${esc(t('exportSub'))}</p></div></div>
-   ${g.ok?`<div class="alert ok"><p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad"><p>${esc(t('gateBad'))}</p></div><div class="card pad" style="display:flex;flex-direction:column;gap:8px">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}
+   ${g.ok?`<div class="alert ok"><p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad"><p>${esc(t('gateBad'))}</p></div><div class="card pad" style="display:flex;flex-direction:column;gap:8px">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}${list('unsignedL',g.unsigned||[])}${(g.cross_blocking||[]).length?`<div><b>${esc(t('crossT'))} (${g.cross_blocking.length})</b>${g.cross_blocking.map(f=>`<div class="small">● ${esc(f[S.lang])}</div>`).join('')}</div>`:''}
      <div><a class="btn sm" href="#/d/${S.dossier.id}/board">${esc(t('navBoard'))}</a></div></div>`}
    <div class="card pad" style="display:flex;flex-direction:column;gap:10px">
      ${[['ctd','outCtd'],['ectd32','outE3'],['ectd40','outE4']].map(([k,l])=>`<label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-out="${k}" checked> <span>${esc(t(l))}</span></label>`).join('')}
