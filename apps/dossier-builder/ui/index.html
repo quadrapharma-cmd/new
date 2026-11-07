@@ -265,7 +265,10 @@ const T = {
   fixRefused:{en:'Not fixed automatically:',ar:'لم يُصلح تلقائياً:'}, reqIssuer:{en:'Request from issuer',ar:'طلب من الجهة المصدرة'}, issuer:{en:'Issuer (name / department)',ar:'الجهة المصدرة (الاسم / الإدارة)'},
   letterLang:{en:'Letter language',ar:'لغة الخطاب'}, dueDays:{en:'Follow-up after (days)',ar:'المتابعة بعد (يوم)'}, makeLetter:{en:'Create request letter',ar:'إنشاء خطاب الطلب'},
   reqOpen:{en:'Requested from',ar:'تم الطلب من'}, due:{en:'follow up on',ar:'المتابعة يوم'}, overdue:{en:'overdue',ar:'متأخر'}, letter:{en:'Letter',ar:'الخطاب'},
-  unsignedDraft:{en:'Unsigned draft',ar:'مسودة غير موقّعة'}, uploadSigned:{en:'Upload the signed copy',ar:'رفع النسخة الموقّعة'},
+  unsignedDraft:{en:'Unsigned draft',ar:'مسودة غير موقّعة'}, extRef:{en:'External reference — not checked',ar:'مرجع خارجي — لم يُفحص'},
+  extHint:{en:'The document is registered from the company Drive. Upload the file itself so it can be checked and exported.',ar:'المستند متسجّل من درايف الشركة. ارفع الملف نفسه علشان يتفحص ويدخل التصدير.'},
+  extOpen:{en:'Open on Drive',ar:'افتح على الدرايف'}, extUpload:{en:'Upload the file',ar:'ارفع الملف'},
+  extL:{en:'Registered from Drive, file not uploaded',ar:'متسجّلة من الدرايف ولسه الملف ماترفعش'}, uploadSigned:{en:'Upload the signed copy',ar:'رفع النسخة الموقّعة'},
   signHint:{en:'Print on letterhead → sign → stamp → scan → upload here. The signed copy replaces the draft.',ar:'اطبع على ورق الشركة ← امضِ ← اختم ← امسح ضوئياً ← ارفع هنا. النسخة الموقّعة بتحل محل المسودة.'},
   unsignedL:{en:'Unsigned drafts',ar:'مسودات غير موقّعة'}, needData:{en:'Enter the specification and batches in «Product data» first.',ar:'أدخل المواصفات والتشغيلات في «بيانات المنتج» الأول.'}, vPass:{en:'pass',ar:'ناجح'}, vFail:{en:'fail',ar:'فشل'}, vWarn:{en:'warning',ar:'تحذير'}, vNotRun:{en:'not run',ar:'لم يُشغَّل'},
   vReport:{en:'Validation report',ar:'تقرير التحقق'}, bulk:{en:'Add files',ar:'إضافة ملفات'}, bulkSub:{en:'The tool suggests a section for each file from its name, CTD number and first page. Check and confirm.',ar:'الأداة تقترح قسماً لكل ملف من اسمه ورقم الـ CTD وأول صفحة. راجع وأكّد.'},
@@ -511,9 +514,10 @@ function openWhy(slotId){
   const reasons = s.reasons.map(r=>`<div class="finding"><div>${esc(r[S.lang]||r.en)}</div><div class="code small muted">${esc(r.source||'')}</div></div>`).join('');
   const docs = s.documents.map(d=>`<div class="finding ${d.check_status==='non_conforming'?'block':''}">
      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b><span class="muted">${esc(t('version'))} ${d.version}</span> · ${bdi(d.filename)}</b> ${chip(d.check_status)}</div>
-     ${d.findings.length? d.findings.map(f=>`<div class="small">● ${esc(f[S.lang])} <span class="code muted">${esc(f.rule)}</span><br><span class="muted">${esc(t('act_'+f.action))}</span></div>`).join('') : `<div class="small muted">${esc(t('noFind'))}</div>`}
+     ${d.findings.length? d.findings.map(f=>`<div class="small">● ${esc(f[S.lang])} <span class="code muted">${esc(f.rule)}</span><br><span class="muted">${esc(t('act_'+f.action))}</span></div>`).join('') : (d.meta&&d.meta.external?'':`<div class="small muted">${esc(t('noFind'))}</div>`)}
      ${d.meta&&d.meta.draft_unsigned?`<div class="alert"><p class="small"><b>${esc(t('unsignedDraft'))}</b> — ${esc(t('signHint'))}</p></div>`:''}
-     <div class="toolbar"><a class="btn sm" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${d.id}/file">${esc(t('view'))}</a>
+     ${d.meta&&d.meta.external?`<div class="alert"><p class="small"><b>${esc(t('extRef'))}</b> — ${esc(t('extHint'))}${d.meta.note?`<br>${bdi(d.meta.note)}`:''}</p></div>`:''}
+     <div class="toolbar">${d.meta&&d.meta.external?`<a class="btn sm" target="_blank" rel="noopener noreferrer" href="${esc(/^https:\/\//.test(d.meta.url)?d.meta.url:'#')}">↗ ${esc(t('extOpen'))}</a><button class="btn sm pri" data-extup="${d.id}">⤒ ${esc(t('extUpload'))}</button>`:`<a class="btn sm" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${d.id}/file">${esc(t('view'))}</a>`}
      ${d.findings.some(f=>f.action==='auto_fix')?`<button class="btn sm pri" data-fix="${d.id}">✦ ${esc(t('autofix'))}</button>`:''}
      ${d.meta&&d.meta.draft_unsigned?`<button class="btn sm pri" data-signed="${d.id}">⤒ ${esc(t('uploadSigned'))}</button>`:''}
      <button class="btn sm" data-wd="${d.id}">${esc(t('withdraw'))}</button></div></div>`).join('');
@@ -524,7 +528,7 @@ function openWhy(slotId){
     ${s.documents.length?`<h3>${esc(t('docs'))}</h3>${docs}`:''}
     ${s.request?`<div class="alert"><p class="small"><b>${esc(t('reqOpen'))}</b> ${bdi(s.request.issuer)} · ${esc(t('due'))} ${new Date(s.request.due*1000).toLocaleDateString(S.lang==='ar'?'ar-EG':'en-GB')}${s.request.overdue?` · <b style="color:var(--bad)">${esc(t('overdue'))}</b>`:''}
       · <a href="/api/dossiers/${S.dossier.id}/requests/${s.request.id}/letter" target="_blank" rel="noopener">${esc(t('letter'))}</a></p></div>`:''}
-    ${(s.level==='R'||s.level==='O')&&!['generated','company_letter'].includes(s.doc_class)&&(s.documents.some(d=>d.check_status==='non_conforming')||s.cross.length||!s.documents.length)&&!s.request?
+    ${(s.level==='R'||s.level==='O')&&!['generated','company_letter'].includes(s.doc_class)&&(s.documents.some(d=>d.check_status==='non_conforming')||s.cross.length||!s.documents.length||s.documents.every(d=>d.meta&&d.meta.external))&&!s.request?
       `<div class="toolbar"><button class="btn" data-req="1">✉ ${esc(t('reqIssuer'))}</button></div>`:''}
     ${(s.level==='R'||s.level==='O')?`<div class="toolbar">${genFor(s)?`<button class="btn pri" data-gen="${genFor(s)}">✦ ${esc(t('generate'))}: ${esc(S.gens[genFor(s)].title[S.lang])}</button>`:''}
       <button class="btn" data-gen="justification">${esc(t('justify'))}</button></div>`:''}`);
@@ -537,6 +541,7 @@ function openWhy(slotId){
       await refreshCurrent(); openWhy(slotId);
     }catch(e){ toast(e.message); } });
   $('#dBody').querySelectorAll('[data-signed]').forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, {signed_for:b.dataset.signed}); });
+  $('#dBody').querySelectorAll('[data-extup]').forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, {}, b.dataset.extup); });
   const rq=$('#dBody').querySelector('[data-req]'); if(rq) rq.onclick=()=>requestForm(s);
   $('#dBody').querySelectorAll('[data-wd]').forEach(b=>b.onclick=async()=>{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.wd}/withdraw`,{method:'POST'}); toast(t('withdrawn')); closeDrawer(); board(); });
 }
@@ -577,7 +582,7 @@ function renderPublisher(){
      <dt>${esc(t('pFile'))}</dt><dd>${bdi(leaf.filename)}</dd>
      <dt>${esc(t('pClass'))}</dt><dd class="code">${esc(leaf.doc_class)}</dd>
      <dt>${esc(t('pHash'))}</dt><dd class="code" style="white-space:normal">${esc(leaf.sha256.slice(0,16))}…</dd></dl>
-     <div class="toolbar" style="padding:0 14px 14px"><a class="btn sm" target="_blank" rel="noopener" href="/api/dossiers/${id}/documents/${leaf.doc_id}/file">${esc(t('view'))}</a><button class="btn sm" data-why="${esc(leaf.slot_id)}">${esc(t('why'))}</button></div>`;
+     <div class="toolbar" style="padding:0 14px 14px">${leaf.external?`<a class="btn sm" target="_blank" rel="noopener noreferrer" href="${esc(/^https:\/\//.test(leaf.external)?leaf.external:'#')}">↗ ${esc(t('extOpen'))}</a>`:`<a class="btn sm" target="_blank" rel="noopener" href="/api/dossiers/${id}/documents/${leaf.doc_id}/file">${esc(t('view'))}</a>`}<button class="btn sm" data-why="${esc(leaf.slot_id)}">${esc(t('why'))}</button></div>`;
   $('#view').innerHTML = `<div class="head"><div><h1>${esc(t('publisher'))}</h1><p class="sub">${esc(t('pubSub'))}</p></div>
     <div class="toolbar"><span class="modeswitch"><a href="#/d/${id}/board">${esc(t('guided'))}</a><a class="on" href="#/d/${id}/publisher">${esc(t('navPublisher'))}</a></span>
     <div class="seg" role="group" aria-label="Output">${[['ctd','CTD'],['ectd32','eCTD 3.2.2'],['ectd40','eCTD 4.0']].map(([k,l])=>`<button data-out="${k}" class="${S.out===k?'on':''}">${l}</button>`).join('')}</div>
@@ -779,7 +784,7 @@ async function exportView(){
   const n40 = hist.ectd40.length ? +hist.ectd40[hist.ectd40.length-1].seq + 1 : 1;
   const list=(k,arr)=>arr.length?`<div><b>${esc(t(k))} (${arr.length})</b><div class="small code" style="white-space:normal">${arr.map(esc).join(' · ')}</div></div>`:'';
   $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('export'))}</h1><p class="sub">${esc(t('exportSub'))}</p></div></div>
-   ${g.ok?`<div class="alert ok"><p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad"><p>${esc(t('gateBad'))}</p></div><div class="card pad" style="display:flex;flex-direction:column;gap:8px">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}${list('unsignedL',g.unsigned||[])}${(g.cross_blocking||[]).length?`<div><b>${esc(t('crossT'))} (${g.cross_blocking.length})</b>${g.cross_blocking.map(f=>`<div class="small">● ${esc(f[S.lang])}</div>`).join('')}</div>`:''}
+   ${g.ok?`<div class="alert ok"><p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad"><p>${esc(t('gateBad'))}</p></div><div class="card pad" style="display:flex;flex-direction:column;gap:8px">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}${list('unsignedL',g.unsigned||[])}${list('extL',g.external_only||[])}${(g.cross_blocking||[]).length?`<div><b>${esc(t('crossT'))} (${g.cross_blocking.length})</b>${g.cross_blocking.map(f=>`<div class="small">● ${esc(f[S.lang])}</div>`).join('')}</div>`:''}
      <div><a class="btn sm" href="#/d/${S.dossier.id}/board">${esc(t('navBoard'))}</a></div></div>`}
    <div class="card pad" style="display:flex;flex-direction:column;gap:10px">
      ${[['ctd',t('outCtd')],['ectd32',`eCTD 3.2.2 — ${t('seqDone')} ${n32}`],['ectd40',`eCTD 4.0 — ${t('seqDone')} ${n40}`]].map(([k,l])=>`<label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-out="${k}" checked> <span>${esc(l)}</span></label>`).join('')}

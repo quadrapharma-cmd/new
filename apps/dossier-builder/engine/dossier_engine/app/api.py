@@ -141,9 +141,17 @@ def create_app(workspace, auth_enabled=None):
                     'المستند المستبدَل لازم يكون مستند حالي في نفس القسم.')
         return st.add_document(did, slot_id, file.filename, data, title, json.loads(meta or '{}'), supersede=replaces or None)
 
+    @app.post('/api/dossiers/{did}/slots/{slot_id:path}/references', status_code=201)
+    def add_reference(did: str, slot_id: str, body: dict):
+        """Register a document that exists elsewhere (company Drive) before its file is uploaded."""
+        return st.add_reference(did, slot_id, body.get('title'), body.get('url'), body.get('source') or 'drive',
+                                body.get('note'), body.get('ref_id'))
+
     @app.get('/api/dossiers/{did}/documents/{doc_id}/file')
     def get_file(did: str, doc_id: str):
         d = st.document(doc_id)
+        if d['meta'].get('external'):
+            err(404, 'E-EXTERNAL', 'This is an external reference; open its link.', 'ده مرجع خارجي؛ افتح الرابط بتاعه.')
         return FileResponse(st.blob_path(d['sha256']), media_type='application/pdf', filename=d['filename'])
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/withdraw')
@@ -317,7 +325,8 @@ def create_app(workspace, auth_enabled=None):
             m = docmeta[r['doc_id']]
             r.update(title=m['title'], filename=m['filename'], version=m['version'], sha256=m['sha256'],
                      check_status=m['check_status'], operation='new', doc_class=m['doc_class'],
-                     ctd=by_slot[r['slot_id']].ctd, module=by_slot[r['slot_id']].module)
+                     ctd=by_slot[r['slot_id']].ctd, module=by_slot[r['slot_id']].module,
+                     external=m['meta'].get('url') if m['meta'].get('external') else None)
         return {'output': output, 'rows': rows}
 
     @app.get('/api/generators')

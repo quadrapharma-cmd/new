@@ -216,3 +216,30 @@ def test_m3_tables_from_data(c):
     assert 'EX0001' in txt and '99.8' in txt and '3.2.P.5.4' in txt
     r = c.post(f'/api/dossiers/{did}/generate/s44', json={'data': {}, 'slot_id': 'S-10@Paracetamol|Granules India'})
     assert r.status_code == 201 and r.json()['slot_id'] == 'S-10@Paracetamol|Granules India'
+
+
+def test_external_reference_blocks_until_file_uploaded(c, pdf):
+    """A document registered from the company Drive shows as «received», blocks export, and is replaced by the real file."""
+    did = new(c)
+    url = 'https://drive.google.com/file/d/abc/view'
+    r = c.post(f'/api/dossiers/{did}/slots/M1-31/references', json={'title': 'GMP certificate', 'url': url, 'ref_id': 'abc'})
+    assert r.status_code == 201, r.text
+    ref = r.json()
+    assert ref['check_status'] == 'received' and ref['meta']['external'] and ref['sha256'] == ''
+    b = c.get(f'/api/dossiers/{did}/board').json()
+    s = next(x for x in b['slots'] if x['slot_id'] == 'M1-31')
+    assert s['status'] == 'received' and s['external'] == [ref['id']]
+    assert 'M1-31' in c.get(f'/api/dossiers/{did}/gate').json()['external_only']
+    assert c.get(f"/api/dossiers/{did}/documents/{ref['id']}/file").status_code == 404
+    assert c.post(f"/api/dossiers/{did}/documents/{ref['id']}/fix").status_code == 422
+    rows = c.get(f'/api/dossiers/{did}/preview?output=ectd32').json()['rows']
+    assert any(x['doc_id'] == ref['id'] and x['external'] == url for x in rows)
+    assert c.post(f'/api/dossiers/{did}/slots/M1-14/references', json={'title': 'x', 'url': url}).status_code == 422
+    assert c.post(f'/api/dossiers/{did}/slots/M1-31/references', json={'title': 'x'}).status_code == 422
+    r = c.post(f'/api/dossiers/{did}/slots/M1-31/documents', files={'file': ('gmp.pdf', io.BytesIO(pdf), 'application/pdf')},
+               data={'replaces': ref['id']})
+    assert r.status_code == 201 and r.json()['check_status'] == 'conforming'
+    s = next(x for x in c.get(f'/api/dossiers/{did}/board').json()['slots'] if x['slot_id'] == 'M1-31')
+    assert s['status'] == 'conforming' and not s['external']
+    assert 'M1-31' not in c.get(f'/api/dossiers/{did}/gate').json()['external_only']
+    assert any(e['event'] == 'reference.added' for e in c.get(f'/api/dossiers/{did}/audit').json())

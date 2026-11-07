@@ -201,11 +201,38 @@ class Store:
                    supersedes=supersede, signed_for=meta.get('signed_for'))
         return self.document(doc_id)
 
+    def add_reference(self, did, slot_id, title, url, source='drive', note=None, ref_id=None):
+        """An «external reference»: the document exists (e.g. on the company Drive) but its file is not in the
+        workspace yet. Shown as «received — not checked»; it never counts as conforming and it blocks export
+        until the real file is uploaded (upload with replaces=<reference id>)."""
+        slots = {s.slot_id: s for s in self.slots(did)}
+        if slot_id not in slots:
+            raise StoreError('E-SLOT', f'Unknown requirement slot {slot_id}.', 'بند غير معروف.')
+        s = slots[slot_id]
+        if not s.active:
+            raise StoreError('E-SLOT-INACTIVE', f'{slot_id} is not required for this product ({s.level}).',
+                             'البند ده مش مطلوب للمنتج ده.', reason=s.reasons[-1])
+        if not title or not url:
+            raise StoreError('E-REFERENCE', 'A reference needs a title and a link.', 'المرجع محتاج عنوان ورابط.')
+        version = 1 + (self.db.execute('select coalesce(max(version),0) from document where dossier_id=? and slot_id=?',
+                                       (did, slot_id)).fetchone()[0])
+        doc_id = str(uuid.uuid4())
+        meta = {'external': True, 'url': url, 'source': source, 'note': note, 'ref_id': ref_id}
+        self.db.execute('insert into document values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                        (doc_id, did, slot_id, version, '', title, title, s.doc_class,
+                         json.dumps(meta, ensure_ascii=False), '[]', 'received', 'current', time.time()))
+        self.db.commit()
+        self.audit(did, 'reference.added', slot=slot_id, doc=doc_id, source=source, url=url)
+        return self.document(doc_id)
+
     def fix_document(self, did, doc_id):
         from .. import fixes
         d = self.document(doc_id)
         if d['dossier_id'] != did or d['state'] != 'current':
             raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        if d['meta'].get('external'):
+            raise StoreError('E-EXTERNAL', 'Upload the file first: an external reference has nothing to fix.',
+                             'ارفع الملف الأول: المرجع الخارجي مفيهوش ملف يتصلّح.')
         r = fixes.apply(self.blob_path(d['sha256']), d['findings'], d['doc_class'])
         new = None
         if r['data']:
@@ -306,6 +333,7 @@ class Store:
             x['cross'] = by_slot.get(x['slot_id'], [])
             x['request'] = reqs.get(x['slot_id'])
             x['unsigned'] = [d['id'] for d in x['documents'] if d['meta'].get('draft_unsigned')]
+            x['external'] = [d['id'] for d in x['documents'] if d['meta'].get('external')]
             if x['status'] in ('received', 'conforming', 'needs_attention') and x['cross']:
                 x['status'] = 'non_conforming' if any(f['severity'] == 'block' for f in x['cross']) else \
                     max(x['status'], 'needs_attention', key=STATUS_ORDER.index)
@@ -330,7 +358,9 @@ class Store:
         blocking = [s['slot_id'] for s in b['slots'] if s['status'] == 'non_conforming' or
                     s['status'] == 'waiting' and s['documents']]
         unsigned = [s['slot_id'] for s in b['slots'] if s['unsigned']]
+        external = [s['slot_id'] for s in b['slots'] if s['external']]
         xb = [f for f in b['cross'] if f['severity'] == 'block']
-        return {'ok': not missing and not blocking and not xb and not unsigned, 'unsigned': unsigned, 'missing_required': missing, 'non_conforming': blocking,
+        return {'ok': not missing and not blocking and not xb and not unsigned and not external, 'unsigned': unsigned,
+                'external_only': external, 'missing_required': missing, 'non_conforming': blocking,
                 'cross_blocking': [{'id': f['id'], 'en': f['en'], 'ar': f['ar']} for f in xb],
                 'provisional_profiles': ['EG eCTD 3.2.2 provisional v0', 'EG eCTD 4.0 provisional v0']}
