@@ -27,7 +27,9 @@ def md5(p):
 
 
 class Ctx:
-    def __init__(self, seq_dir, profile_root):
+    def __init__(self, seq_dir, profile_root, previous=None):
+        self.previous = {Path(p).name: Path(p) for p in (previous or [])}
+        self._prev_xml = {}
         self.base = Path(seq_dir)
         self.seq = self.base.name
         self.profile = Path(profile_root)
@@ -69,6 +71,14 @@ class Ctx:
         if dtd.validate(t):
             return t.getroot(), []
         return t.getroot(), [f'{e.line}: {e.message}' for e in dtd.error_log.filter_from_errors()][:50]
+
+    def prev_xml(self, seq, which):
+        k = (seq, which)
+        if k not in self._prev_xml:
+            p = self.previous.get(seq)
+            f = p / ('index.xml' if which == 'index' else 'm1/eg/eg-regional.xml') if p else None
+            self._prev_xml[k] = etree.parse(str(f)).getroot() if f and f.exists() else None
+        return self._prev_xml[k]
 
     def env(self, tag):
         if self.reg is None:
@@ -238,7 +248,70 @@ def r_empty_headings(ctx, rid):
 @rule('EG-PF-11.1')
 def r_cktype(ctx, rid):
     return [f"{x}: leaf {lf.get('ID')} checksum-type {lf.get('checksum-type')}" for x, lf, _ in ctx.leaves
-            if (lf.get('checksum-type') or '').lower() != 'md5']
+            if lf.get('operation') != 'delete' and (lf.get('checksum-type') or '').lower() != 'md5']
+
+
+MOD_RE = re.compile(r'^(?:\.\./)+(\d{4})/(index\.xml|m1/eg/eg-regional\.xml)#(.+)$')
+
+
+def _target(ctx, lf):
+    m = MOD_RE.match(lf.get('modified-file') or '')
+    if not m:
+        return None, 'modified-file is not ../SSSS/index.xml#ID or ../../../SSSS/m1/eg/eg-regional.xml#ID'
+    seq, f, lid = m.groups()
+    if seq not in ctx.previous:
+        return None, f'sequence {seq} not available'
+    root = ctx.prev_xml(seq, 'index' if f == 'index.xml' else 'regional')
+    tgt = None if root is None else next((x for x in root.iter('leaf') if x.get('ID') == lid), None)
+    return tgt, None if tgt is not None else f'leaf {lid} not found in {seq}/{f}'
+
+
+@rule('EG-PF-11.9')
+def r_modfile_target(ctx, rid):
+    out = []
+    for x, lf, _ in ctx.leaves:
+        if lf.get('operation') in ('replace', 'delete', 'append'):
+            tgt, why = _target(ctx, lf)
+            if tgt is None:
+                out.append(f"leaf {lf.get('ID')}: {why}")
+    return out
+
+
+@rule('EG-PF-11.10')
+def r_same_location(ctx, rid):
+    def loc(el):
+        p = el.getparent()
+        a = dict(p.attrib) if p is not None else {}
+        return (p.tag if p is not None else None, tuple(sorted(a.items())))
+    out = []
+    for x, lf, _ in ctx.leaves:
+        if lf.get('operation') in ('replace', 'delete', 'append'):
+            tgt, _ = _target(ctx, lf)
+            if tgt is not None and loc(tgt) != loc(lf):
+                out.append(f"leaf {lf.get('ID')} is in {loc(lf)[0]}, target in {loc(tgt)[0]}")
+    return out
+
+
+@rule('EG-PF-9.8')
+def r_uuid_lifecycle(ctx, rid):
+    lower = sorted(s for s in ctx.previous if s < ctx.seq)
+    if not lower:
+        return []
+    root = ctx.prev_xml(lower[-1], 'regional')
+    prev = root.findtext('.//envelope/identifier') if root is not None else None
+    cur = [(e.text or '').strip() for e in ctx.env('identifier')]
+    return [] if prev and cur and cur[0] == prev.strip() else [f'UUID {cur} differs from {lower[-1]} ({prev})']
+
+
+@rule('EG-PF-13.2')
+def r_seq_unused(ctx, rid):
+    return [f'sequence {ctx.seq} already used'] if ctx.seq in ctx.previous and ctx.previous[ctx.seq] != ctx.base else []
+
+
+@rule('EG-PF-11.6')
+def r_href_exists(ctx, rid):
+    return [f'{rel} missing' for x, lf, rel in ctx.leaves
+            if lf.get('operation') in ('new', 'replace', 'append') and rel and not (ctx.base / rel).is_file()]
 
 
 @rule('EG-PF-11.2')
@@ -571,14 +644,20 @@ def load_rules(profile_root):
     return [r for r in rows if r['mapping'] != 'DROP' and not r['rule_id'].startswith('DROPPED')]
 
 
-def validate(seq_dir, profile_root):
-    ctx = Ctx(seq_dir, profile_root)
+LIFECYCLE = {'EG-PF-11.9', 'EG-PF-11.10', 'EG-PF-9.8', 'EG-PF-13.2', 'EG-PF-11.6'}
+
+
+def validate(seq_dir, profile_root, previous=None):
+    """previous: earlier sequence folders of the same application (enables the lifecycle rules)."""
+    ctx = Ctx(seq_dir, profile_root, previous)
     results = []
     for r in load_rules(profile_root):
         rid = r['rule_id']
         sev = 'pass_fail' if r['category'].startswith('Pass') else 'best_practice'
         base = {'rule': rid, 'severity': sev, 'text': r['rule_text'], 'provenance': r['provenance'], 'source': r['source']}
         fn = RULES.get(rid)
+        if rid in LIFECYCLE and previous is None:
+            fn = None
         if fn is None:
             reason = 'needs earlier sequences (lifecycle)' if r['lifecycle_needed'] == 'Y' else 'not automated yet (manual/visual check)'
             results.append({**base, 'status': 'not_run', 'reason': reason, 'failures': []})

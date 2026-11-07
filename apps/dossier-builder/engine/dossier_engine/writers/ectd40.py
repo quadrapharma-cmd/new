@@ -15,6 +15,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape, quoteattr
 import yaml
 from .ectd32 import Doc, Product, Profile32, WriterError, rel_path, slug, REPO, APP
+from ..lifecycle import location_key
 
 DEFAULT_V4 = REPO / 'docs' / 'ctd' / 'ectd' / 'EG-PROVISIONAL-PROFILE-v4-v0'
 ICH_DIR = APP / 'rulepacks' / 'ich.ectd.v40'
@@ -120,7 +121,8 @@ def _u(*parts):
     return str(_uuid.uuid5(_uuid.NAMESPACE_URL, '/'.join(map(str, parts))))
 
 
-def write(out_dir, env: Envelope4, product: Product, docs, profile: Profile40 = None):
+def write(out_dir, env: Envelope4, product: Product, docs, profile: Profile40 = None, suspend=None):
+    """suspend: [{'cou_id', 'priority'}] contexts of use to suspend (3.2.2 «delete»; IG §9.2.11.3)."""
     p = profile or Profile40()
     if f'eg_st_{env.submission_type}' not in p.st:
         raise WriterError(f'submission type {env.submission_type!r} not in the EG v4 list')
@@ -183,8 +185,11 @@ def write(out_dir, env: Envelope4, product: Product, docs, profile: Profile40 = 
                 key = (KW_TYPE[name], val)
                 kwdefs.setdefault(key, f'kw{len(kwdefs) + 1:04d}')
                 kws.append((kwdefs[key], sender_cs))
-        doc_id = d.uuid or _u(env.application_uuid, 'doc', rel)
-        cous.append(dict(code=code, cs=cs, doc=doc_id, kws=kws, id=_u(env.application_uuid, env.sequence, 'cou', i)))
+        doc_id = d.uuid or _u(env.application_uuid, 'doc', d.doc_id or rel)
+        if d.operation == 'replace' and not d.cou_replaces:
+            raise WriterError(f'{d.node}: replace needs the context of use being replaced (eCTD4-024)')
+        cous.append(dict(code=code, cs=cs, doc=doc_id, kws=kws, id=_u(env.application_uuid, env.sequence, 'cou', i),
+                         replaces=d.cou_replaces if d.operation == 'replace' else None, d=d, rel=rel))
         placed.append((d, rel, doc_id))
 
     for d, rel, _ in placed:
@@ -196,6 +201,7 @@ def write(out_dir, env: Envelope4, product: Product, docs, profile: Profile40 = 
     comps = ''
     for c in cous:
         prio[c['code']] = prio.get(c['code'], 0) + 1000
+        c['priority'] = prio[c['code']]
         kw = ''.join(f'\n            <referencedBy typeCode="REFR"><keyword><code code="{escape(v)}" codeSystem="{cs}"/></keyword></referencedBy>'
                      for v, cs in c['kws'])
         comps += f'''
@@ -204,10 +210,26 @@ def write(out_dir, env: Envelope4, product: Product, docs, profile: Profile40 = 
           <contextOfUse>
             <id root="{c['id']}"/>
             <code code="{c['code']}" codeSystem="{c['cs']}"/>
-            <statusCode code="active"/>
+            <statusCode code="active"/>{f'''
+            <replacementOf typeCode="RPLC"><relatedContextOfUse><id root="{c['replaces']}"/></relatedContextOfUse></replacementOf>''' if c['replaces'] else ''}
             <derivedFrom><documentReference><id root="{c['doc']}"/></documentReference></derivedFrom>{kw}
           </contextOfUse>
         </component>'''
+    for sp in suspend or []:
+        comps += f'''
+        <component>
+          <priorityNumber value="{int(sp.get('priority') or 1000)}"/>
+          <contextOfUse>
+            <id root="{sp['cou_id']}"/>
+            <statusCode code="suspended"/>
+          </contextOfUse>
+        </component>'''
+    history = [{'doc_id': c['d'].doc_id, 'key': list(location_key(c['d'])),
+                'leaf_id': c['id'], 'cou_id': c['id'], 'href': c['rel'], 'op': 'replace' if c['replaces'] else 'new',
+                'replaces': c['replaces'], 'priority': c['priority'], 'doc_uuid': c['doc'], 'node': c['d'].node,
+                'title': c['d'].title} for c in cous]
+    history += [{'doc_id': None, 'key': [], 'leaf_id': sp['cou_id'], 'cou_id': sp['cou_id'], 'op': 'delete',
+                 'replaces': sp['cou_id'], 'href': None} for sp in suspend or []]
     docs_xml = ''
     for d, rel, doc_id in placed:
         lang = d.lang or 'en'
@@ -339,7 +361,8 @@ def write(out_dir, env: Envelope4, product: Product, docs, profile: Profile40 = 
     (base / 'submissionunit.xml').write_text(xml, encoding='utf-8', newline='\n')
     (base / 'sha256.txt').write_text(_sha(base / 'submissionunit.xml'), encoding='ascii')
     files = sorted(str(x.relative_to(base)) for x in base.rglob('*') if x.is_file())
-    return {'path': str(base), 'files': files, 'documents': len(placed), 'keyword_definitions': len(kwdefs)}
+    return {'path': str(base), 'files': files, 'documents': len(placed), 'keyword_definitions': len(kwdefs),
+            'history': history}
 
 
 def _kw_value(name, d, product):

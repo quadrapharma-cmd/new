@@ -60,7 +60,11 @@ class Doc:
     excipient: str = None        # v4: excipient keyword (3.2.P.4 / 3.2.A.3)
     uuid: str = None             # v4: document UUID (reuse keeps it identical)
     name: str = None             # optional file stem override
-    operation: str = 'new'
+    operation: str = 'new'       # new | replace | delete (lifecycle)
+    modified_file: str = None    # 3.2.2 replace/delete: '<seq>/<index.xml|m1/eg/eg-regional.xml>#<leaf ID>'
+    leaf_id: str = None          # keep a stable leaf ID (lifecycle history)
+    doc_id: str = None           # dossier document id (lifecycle history)
+    cou_replaces: str = None     # 4.0 replace: id of the context of use being replaced
 
 
 @dataclass
@@ -134,9 +138,22 @@ class _Node:
 
 
 def _leaf_xml(leaf, ind):
-    return (f'{ind}<leaf ID="{leaf["id"]}" operation="{leaf["op"]}" checksum="{leaf["md5"]}" '
-            f'checksum-type="md5" xlink:type="simple" xlink:href={quoteattr(leaf["href"])}>\n'
-            f'{ind}  <title>{escape(leaf["title"])}</title>\n{ind}</leaf>\n')
+    if leaf['op'] == 'delete':        # ICH SPEC Table 6-3: no file, empty checksum (and checksum-type outside Japan)
+        head = f'{ind}<leaf ID="{leaf["id"]}" operation="delete" checksum="" checksum-type="" xlink:type="simple"'
+    else:
+        head = (f'{ind}<leaf ID="{leaf["id"]}" operation="{leaf["op"]}" checksum="{leaf["md5"]}" '
+                f'checksum-type="md5" xlink:type="simple" xlink:href={quoteattr(leaf["href"])}')
+    if leaf.get('modified'):
+        head += f' modified-file={quoteattr(leaf["modified"])}'
+    return f'{head}>\n{ind}  <title>{escape(leaf["title"])}</title>\n{ind}</leaf>\n'
+
+
+def _modified(d, xml):
+    """Doc.modified_file 'SSSS#LEAFID' -> path relative to the XML that holds the new leaf."""
+    if not d.modified_file:
+        return None
+    seq, lid = d.modified_file.split('#', 1)
+    return f'../{seq}/index.xml#{lid}' if xml == 'index' else f'../../../{seq}/m1/eg/eg-regional.xml#{lid}'
 
 
 def _render(node, children, ind='  '):
@@ -192,6 +209,13 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
     problems, placed, used = [], [], set()
 
     for d in docs:
+        if d.operation not in ('new', 'replace', 'delete'):
+            raise WriterError(f'operation {d.operation!r} not supported (append is not used in EG: EG-BP-E06)')
+        if d.operation in ('replace', 'delete') and not d.modified_file:
+            raise WriterError(f'{d.node}: {d.operation} needs modified_file (ICH SPEC Table 6-3)')
+        if d.operation == 'delete':
+            placed.append((d, None))
+            continue
         if not Path(d.file).is_file():
             raise WriterError(f'missing file {d.file}')
         rel = rel_path(d, product, profile)
@@ -204,6 +228,8 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
 
     # limits (EG-PF-15.3/15.4/15.5)
     for d, rel in placed:
+        if rel is None:
+            continue
         parts = rel.split('/')
         if len(parts[-1]) > MAX_NAME:
             problems.append(('EG-PF-15.4', rel, f'file name {len(parts[-1])} > {MAX_NAME}'))
@@ -217,11 +243,14 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
 
     # copy files
     for d, rel in placed:
+        if rel is None:
+            continue
         dst = base / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(d.file, dst)
 
     # ---- eg-regional.xml ----
+    history = []
     eg_root = _Node('m1-eg')
     for d, rel in placed:
         if not d.node.startswith('1.'):
@@ -233,8 +262,10 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
         cur = eg_root
         for name in reversed(chain):
             cur = cur.child(name, {}, profile.eg_children.get(cur.name, []))
-        href = rel[len('m1/eg/'):]
-        leaf = dict(id=_leaf_id(seq, rel), op=d.operation, md5=md5(base / rel), href=href, title=d.title)
+        href = rel[len('m1/eg/'):] if rel else None
+        leaf = dict(id=d.leaf_id or _leaf_id(seq, rel or d.modified_file), op=d.operation,
+                    md5=md5(base / rel) if rel else '', href=href, title=d.title, modified=_modified(d, 'regional'))
+        history.append(_hist(d, leaf, rel, 'regional'))
         if d.node == '1.3.1':
             pi = _Node('pi-doc', {'xml:lang': d.lang, 'type': d.pi_type, 'country': 'eg'})
             pi.leaves.append(leaf)
@@ -297,7 +328,10 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
                     raise WriterError(f'{d.node} needs an indication (ICH DTD #REQUIRED)')
                 attrs = {'indication': ind}
             cur = cur.child(name, attrs, profile.ich_children.get(cur.name, []))
-        cur.leaves.append(dict(id=_leaf_id(seq, rel), op=d.operation, md5=md5(base / rel), href=rel, title=d.title))
+        leaf = dict(id=d.leaf_id or _leaf_id(seq, rel or d.modified_file), op=d.operation,
+                    md5=md5(base / rel) if rel else '', href=rel, title=d.title, modified=_modified(d, 'index'))
+        cur.leaves.append(leaf)
+        history.append(_hist(d, leaf, rel, 'index'))
     body = ''.join(_render(k, profile.ich_children) for k in root.kids)
     index = ('<?xml version="1.0" encoding="UTF-8"?>\n'
              '<?xml-stylesheet type="text/xsl" href="util/style/ectd-2-0.xsl"?>\n'
@@ -311,4 +345,11 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
     for sub in ('dtd', 'style'):
         shutil.copytree(profile.root / 'util' / sub, base / 'util' / sub)
     files = sorted(str(p.relative_to(base)) for p in base.rglob('*') if p.is_file())
-    return {'path': str(base), 'files': files, 'leaves': len(placed) + 1, 'problems': []}
+    return {'path': str(base), 'files': files, 'leaves': len(placed) + 1, 'problems': [], 'history': history}
+
+
+def _hist(d, leaf, rel, xml):
+    from ..lifecycle import location_key
+    return {'doc_id': d.doc_id, 'key': list(location_key(d)), 'leaf_id': leaf['id'], 'href': rel, 'xml': xml,
+            'op': d.operation, 'replaces': d.modified_file.split('#', 1)[1] if d.modified_file else None,
+            'node': d.node, 'title': d.title}
