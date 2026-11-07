@@ -3086,8 +3086,24 @@
   applies: 'true'
   required:
     I: R
-    G_IMP: R
-    G_LOC: R
+    G_IMP:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
+    G_LOC:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
   doc_class: generated
   produced_by: Tool (generated)
   rebuild:
@@ -3118,8 +3134,24 @@
   applies: 'true'
   required:
     I: R
-    G_IMP: O
-    G_LOC: O
+    G_IMP:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: O
+    G_LOC:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: O
   doc_class: company_technical
   produced_by: Company
   rebuild:
@@ -3150,8 +3182,24 @@
   applies: 'true'
   required:
     I: R
-    G_IMP: R
-    G_LOC: R
+    G_IMP:
+      cases:
+      - when: biowaiver != ''
+        level: R
+        reason:
+          en: 'No in-vivo BE study: the product qualifies for a biowaiver (basis: local action / aqueous solution / BCS). This slot holds the biowaiver justification (Q1/Q2 sameness, in-vitro data) instead of a BE report.'
+          ar: 'مفيش دراسة تكافؤ حيوي مطلوبة: المستحضر مؤهل للإعفاء (تأثير موضعي / محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (تطابق التركيب والبيانات المعملية) بدل تقرير الدراسة.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
+    G_LOC:
+      cases:
+      - when: biowaiver != ''
+        level: R
+        reason:
+          en: 'No in-vivo BE study: the product qualifies for a biowaiver (basis: local action / aqueous solution / BCS). This slot holds the biowaiver justification (Q1/Q2 sameness, in-vitro data) instead of a BE report.'
+          ar: 'مفيش دراسة تكافؤ حيوي مطلوبة: المستحضر مؤهل للإعفاء (تأثير موضعي / محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (تطابق التركيب والبيانات المعملية) بدل تقرير الدراسة.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
   doc_class: company_technical
   produced_by: Company
   rebuild:
@@ -3182,8 +3230,24 @@
   applies: 'true'
   required:
     I: R
-    G_IMP: O
-    G_LOC: O
+    G_IMP:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: O
+    G_LOC:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: O
   doc_class: company_technical
   produced_by: Company
   rebuild:
@@ -3214,8 +3278,24 @@
   applies: 'true'
   required:
     I: R
-    G_IMP: R
-    G_LOC: R
+    G_IMP:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
+    G_LOC:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
   doc_class: company_technical
   produced_by: Company
   rebuild:
@@ -3247,8 +3327,24 @@
   applies: 'true'
   required:
     I: R
-    G_IMP: R
-    G_LOC: R
+    G_IMP:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
+    G_LOC:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
   doc_class: company_technical
   produced_by: Company
   rebuild:
@@ -3280,8 +3376,24 @@
   applies: 'true'
   required:
     I: R
-    G_IMP: R
-    G_LOC: R
+    G_IMP:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
+    G_LOC:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
   doc_class: company_technical
   produced_by: Company
   rebuild:
@@ -3344,8 +3456,24 @@
   applies: 'true'
   required:
     I: R
-    G_IMP: R
-    G_LOC: R
+    G_IMP:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
+    G_LOC:
+      cases:
+      - when: biowaiver != ''
+        level: NR
+        reason:
+          en: 'Not required: no clinical/BE study under a biowaiver.'
+          ar: 'غير مطلوب: مفيش دراسة إكلينيكية أو تكافؤ لأن المستحضر مؤهل للإعفاء.'
+        provenance: 'EMA CHMP/QWP/708282/2018 (locally applied, locally acting cutaneous products); WHO TRS 1003 Annex 6 & EMA CPMP/EWP/QWP/1401/98 Rev.1 §5.1.6 (aqueous solutions, BCS); EDA GL.CAPP.024 to confirm'
+      - level: R
   doc_class: company_technical
   produced_by: Company
   rebuild:

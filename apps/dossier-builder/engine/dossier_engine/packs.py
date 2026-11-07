@@ -9,7 +9,8 @@ PACKS_DIR = ROOT / 'rulepacks'
 PROFILE_FIELDS = {'dossier_kind', 'origin', 'licence', 'activity', 'route', 'reference_status',
                   'pharmacopoeial', 'dosage_specifics', 'leaflet', 'store_separate_from_factory',
                   'biological', 'biological_origin_materials', 'novel_excipient',
-                  'column', 'api_options', 'api_count'}
+                  'column', 'api_options', 'api_count',
+                  'admin_route', 'local_action', 'aqueous_solution', 'bcs_waiver', 'biowaiver'}
 API_FIELDS = {'name', 'manufacturer', 'option'}
 
 

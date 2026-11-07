@@ -10,6 +10,7 @@ ENUMS = {
     'route': {'one_submission', 'rolling'},
     'reference_status': {'referenced', 'non_referenced'},
     'leaflet': {'english', 'non_english', 'pil_only'},
+    'admin_route': {'oral', 'topical', 'parenteral', 'ophthalmic', 'otic', 'nasal', 'inhalation', 'rectal_vaginal', 'other'},
 }
 DOSAGE_SPECIFICS = {'coated', 'capsule_hard', 'pellets', 'premix', 'powder_inj_with_solvent',
                     'sterile', 'modified_release', 'inhalation'}
@@ -45,6 +46,10 @@ class Profile:
     pharmacopoeial: bool = False
     dosage_specifics: list = field(default_factory=list)
     leaflet: str = 'english'
+    admin_route: str = 'oral'          # route of administration (drives BE / biowaiver logic)
+    local_action: bool = False         # acts locally, not intended for systemic absorption
+    aqueous_solution: bool = False     # simple aqueous solution (parenteral / oral / ophthalmic / otic)
+    bcs_waiver: bool = False           # company claims a BCS-based biowaiver (class I/III data supplied)
     store_separate_from_factory: bool = False
     biological: bool = False
     biological_origin_materials: bool = False
@@ -113,4 +118,17 @@ class Profile:
         d['column'] = col
         d['api_options'] = sorted({a.option for a in self.apis})
         d['api_count'] = len(self.apis)
+        d['biowaiver'] = self.biowaiver()
         return d
+
+    def biowaiver(self):
+        """Basis on which an in-vivo BE study is not required ('' = BE study required)."""
+        if self.dossier_kind == 'innovator':
+            return ''
+        if self.admin_route in ('topical', 'ophthalmic', 'otic', 'nasal', 'rectal_vaginal') and self.local_action:
+            return 'local_action'
+        if self.aqueous_solution and self.admin_route in ('parenteral', 'oral', 'ophthalmic', 'otic'):
+            return 'aqueous_solution'
+        if self.bcs_waiver and self.admin_route == 'oral':
+            return 'bcs'
+        return ''

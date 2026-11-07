@@ -33,7 +33,7 @@ def _cell_level(cell, env):
         return cell, None
     for case in cell['cases']:
         if 'when' not in case or expr.evaluate(case['when'], env):
-            return case['level'], case.get('when')
+            return case['level'], case
     raise ValueError('no default case')  # pragma: no cover (lint forbids it)
 
 
@@ -59,10 +59,13 @@ def resolve(profile, pack, validate=True, today=None):
                       + (f" — الشرط: {r['condition_note']}" if r.get('condition_note') else '.'),
                 'rule': r['applies'], 'source': src}], **base))
             continue
-        level, why = _cell_level(r['required'][col], env)
+        level, case = _cell_level(r['required'][col], env)
+        why = case.get('when') if case else None
         reasons = [{'en': f"NP.CAPP.065 matrix column {col}: {r['matrix'][col]}"
                           + (f" (case: {why})" if why else ''),
                     'ar': f"مصفوفة NP.CAPP.065 العمود {col}: {r['matrix'][col]}", 'source': src}]
+        if case and case.get('reason'):
+            reasons.append({**case['reason'], 'source': case.get('provenance', src), 'rule': why})
         per = r.get('per')
         if not per:
             slots.append(Slot(slot_id=r['id'], level=level, reasons=reasons, flags=flags, **base))

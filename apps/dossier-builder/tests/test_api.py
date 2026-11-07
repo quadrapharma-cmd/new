@@ -243,3 +243,27 @@ def test_external_reference_blocks_until_file_uploaded(c, pdf):
     assert s['status'] == 'conforming' and not s['external']
     assert 'M1-31' not in c.get(f'/api/dossiers/{did}/gate').json()['external_only']
     assert any(e['event'] == 'reference.added' for e in c.get(f'/api/dossiers/{did}/audit').json())
+
+
+def test_expired_evidence_blocks_item(c, pdf):
+    """A certificate past its validity date makes its item non-conforming and blocks export; 90 days before, a warning."""
+    from datetime import date, timedelta
+    did = new(c)
+    d = up(c, did, 'M1-31', pdf).json()
+    assert d['check_status'] == 'conforming'
+    past = (date.today() - timedelta(days=10)).isoformat()
+    r = c.put(f"/api/dossiers/{did}/documents/{d['id']}/validity", json={'valid_until': past})
+    assert r.status_code == 200 and r.json()['check_status'] == 'non_conforming'
+    assert r.json()['findings'][-1]['rule'] == 'DOC-EXPIRED' and 'منتهي' in r.json()['findings'][-1]['ar']
+    s = next(x for x in c.get(f'/api/dossiers/{did}/board').json()['slots'] if x['slot_id'] == 'M1-31')
+    assert s['status'] == 'non_conforming'
+    assert 'M1-31' in c.get(f'/api/dossiers/{did}/gate').json()['non_conforming']
+    soon = (date.today() + timedelta(days=30)).isoformat()
+    r = c.put(f"/api/dossiers/{did}/documents/{d['id']}/validity", json={'valid_until': soon})
+    assert r.json()['check_status'] == 'needs_attention' and r.json()['findings'][-1]['rule'] == 'DOC-EXPIRING'
+    far = (date.today() + timedelta(days=400)).isoformat()
+    assert c.put(f"/api/dossiers/{did}/documents/{d['id']}/validity", json={'valid_until': far}).json()['check_status'] == 'conforming'
+    assert c.put(f"/api/dossiers/{did}/documents/{d['id']}/validity", json={'valid_until': '31/12/2026'}).status_code == 422
+    ref = c.post(f'/api/dossiers/{did}/slots/M1-19/references',
+                 json={'title': 'Register', 'url': 'https://drive.google.com/x', 'valid_until': past}).json()
+    assert ref['check_status'] == 'non_conforming'

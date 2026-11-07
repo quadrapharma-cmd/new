@@ -218,7 +218,16 @@ const T = {
   licence:{en:'Licence',ar:'نوع الترخيص'}, own:{en:'Own',ar:'ملك الشركة'}, toll:{en:'Toll',ar:'تصنيع لدى الغير'}, f_toll:{en:'F-Toll',ar:'F-Toll'},
   under_licence:{en:'Under licence',ar:'تحت الترخيص'}, imported_bulk:{en:'Imported bulk',ar:'Bulk مستورد'},
   activity:{en:'Application',ar:'نوع الطلب'}, new:{en:'New registration',ar:'تسجيل جديد'}, re_registration:{en:'Re-registration',ar:'إعادة تسجيل'},
-  leaflet:{en:'Leaflet language',ar:'لغة النشرة'}, english:{en:'English',ar:'إنجليزي'}, non_english:{en:'Not English',ar:'غير إنجليزي'},
+  leaflet:{en:'Leaflet language',ar:'لغة النشرة'}, adminRoute:{en:'Route of administration',ar:'طريق الإعطاء'},
+  oral:{en:'Oral',ar:'فموي'}, topical:{en:'Topical (skin)',ar:'موضعي (جلد)'}, parenteral:{en:'Injection',ar:'حقن'}, ophthalmic:{en:'Eye',ar:'عين'},
+  inhalation:{en:'Inhalation',ar:'استنشاق'}, other:{en:'Other',ar:'أخرى'},
+  localAction:{en:'Acts locally (not meant to be absorbed)',ar:'تأثيره موضعي (مش مقصود يتمتص)'},
+  aqueousSol:{en:'Simple aqueous solution',ar:'محلول مائي بسيط'}, bcsWaiver:{en:'BCS biowaiver claimed (class I/III data)',ar:'إعفاء BCS (بيانات فئة I/III)'},
+  acceptT:{en:'Acceptance criteria — check each before upload',ar:'معايير القبول — راجع كل نقطة قبل الرفع'},
+  sourcesT:{en:'Sources',ar:'المصادر'}, howT:{en:'How to get it',ar:'تجيبه إزاي'}, byT:{en:'Issued by',ar:'بيصدر من'},
+  validUntil:{en:'Valid until',ar:'صالح لحد'}, saveDate:{en:'Save date',ar:'احفظ التاريخ'}, dateSaved:{en:'Date saved',ar:'التاريخ اتحفظ'},
+  prov_EG_IN_FORCE:{en:'EDA rule in force',ar:'قاعدة سارية من الهيئة'}, prov_EG_DRAFT:{en:'EDA draft',ar:'مسودة الهيئة'},
+  prov_EU_DERIVED:{en:'Filled from EU rules',ar:'مكمّل من قواعد أوروبية'}, prov_ICH:{en:'ICH',ar:'ICH'}, prov_ASSUMPTION:{en:'Assumption — confirm',ar:'افتراض — محتاج تأكيد'}, english:{en:'English',ar:'إنجليزي'}, non_english:{en:'Not English',ar:'غير إنجليزي'},
   specifics:{en:'Dosage-form specifics',ar:'خصائص الشكل الصيدلي'}, coated:{en:'Coated',ar:'مغلف'}, capsule_hard:{en:'Hard capsule',ar:'كبسولة صلبة'},
   pellets:{en:'Pellets',ar:'حبيبات'}, premix:{en:'Premix',ar:'Premix'}, powder_inj_with_solvent:{en:'Powder for injection + solvent',ar:'بودرة حقن + مذيب'},
   sterile:{en:'Sterile',ar:'معقم'}, pharmacopoeial:{en:'Pharmacopoeial product',ar:'منتج دستوري'}, store_separate:{en:'Store separate from factory',ar:'مخزن منفصل عن المصنع'},
@@ -349,7 +358,7 @@ async function home(){
 
 /* ---------------- wizard */
 function wizard(){
-  if(!S.wiz) S.wiz = {step:0, d:{name:'',trade:'',form:'film-coated tablet',man:'',ind:'',dossier_kind:'generic',origin:'local',licence:'own',activity:'new',leaflet:'english',
+  if(!S.wiz) S.wiz = {step:0, d:{name:'',trade:'',form:'film-coated tablet',man:'',ind:'',dossier_kind:'generic',origin:'local',licence:'own',activity:'new',leaflet:'english',admin_route:'oral',local_action:false,aqueous_solution:false,bcs_waiver:false,
     specifics:[],pharmacopoeial:false,store:false,bio:false,novel:false,apis:[{name:'',manufacturer:'',option:'CEP'}],applicant:'',tracking:'',portal:'',inn:''}};
   const w=S.wiz, d=w.d, steps=['step1','step2','step3','step4'];
   const radio=(k,opts)=>`<div class="seg" role="radiogroup">${opts.map(o=>`<button type="button" data-k="${k}" data-v="${o}" class="${d[k]===o?'on':''}" aria-pressed="${d[k]===o}">${esc(t(o))}</button>`).join('')}</div>`;
@@ -362,6 +371,8 @@ function wizard(){
     <label class="f"><span>${esc(t('licence'))}</span>${radio('licence', d.origin==='local'?['own','toll','f_toll','under_licence']:['imported','imported_bulk'])}</label>
     <label class="f"><span>${esc(t('activity'))}</span>${radio('activity',['new','re_registration'])}</label>
     <label class="f"><span>${esc(t('leaflet'))}</span>${radio('leaflet',['english','non_english'])}</label>
+    <label class="f"><span>${esc(t('adminRoute'))}</span>${radio('admin_route',['oral','topical','parenteral','ophthalmic','inhalation','other'])}</label>
+    <div class="checks">${[['local_action','localAction'],['aqueous_solution','aqueousSol'],['bcs_waiver','bcsWaiver']].map(([k,l])=>`<label><input type="checkbox" data-flag="${k}" ${d[k]?'checked':''}>${esc(t(l))}</label>`).join('')}</div>
     <div class="f"><span class="muted small" style="font-weight:600">${esc(t('specifics'))}</span><div class="checks">
       ${['coated','capsule_hard','pellets','premix','powder_inj_with_solvent','sterile'].map(s=>`<label><input type="checkbox" data-spec="${s}" ${d.specifics.includes(s)?'checked':''}>${esc(t(s))}</label>`).join('')}</div></div>
     <div class="checks">${[['pharmacopoeial','pharmacopoeial'],['store','store_separate'],['bio','bioorigin'],['novel','novelexc']].map(([k,l])=>`<label><input type="checkbox" data-flag="${k}" ${d[k]?'checked':''}>${esc(t(l))}</label>`).join('')}</div></div>`;
@@ -391,6 +402,7 @@ function wizard(){
   if($('#wizNext')) $('#wizNext').onclick=()=>{w.step++; wizard();};
   if($('#wizCreate')) $('#wizCreate').onclick=async()=>{
     const profile={dossier_kind:d.dossier_kind,origin:d.origin,licence:d.licence,activity:d.activity,route:'one_submission',leaflet:d.leaflet,
+      admin_route:d.admin_route,local_action:!!d.local_action,aqueous_solution:!!d.aqueous_solution,bcs_waiver:!!d.bcs_waiver,
       dosage_specifics:d.specifics,pharmacopoeial:d.pharmacopoeial,store_separate_from_factory:d.store,biological_origin_materials:d.bio,novel_excipient:d.novel,
       apis:d.apis.filter(a=>a.name&&a.manufacturer)};
     try{
@@ -515,6 +527,7 @@ function openWhy(slotId){
   const docs = s.documents.map(d=>`<div class="finding ${d.check_status==='non_conforming'?'block':''}">
      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b><span class="muted">${esc(t('version'))} ${d.version}</span> · ${bdi(d.filename)}</b> ${chip(d.check_status)}</div>
      ${d.findings.length? d.findings.map(f=>`<div class="small">● ${esc(f[S.lang])} <span class="code muted">${esc(f.rule)}</span><br><span class="muted">${esc(t('act_'+f.action))}</span></div>`).join('') : (d.meta&&d.meta.external?'':`<div class="small muted">${esc(t('noFind'))}</div>`)}
+     ${['third_party_certificate','eda_document'].includes(s.doc_class)||(d.meta&&d.meta.valid_until)?`<div class="toolbar"><label class="small" style="display:flex;gap:6px;align-items:center">${esc(t('validUntil'))} <input type="date" data-vu="${d.id}" value="${esc((d.meta&&d.meta.valid_until)||'')}"></label><button class="btn sm" data-vusave="${d.id}">${esc(t('saveDate'))}</button></div>`:''}
      ${d.meta&&d.meta.draft_unsigned?`<div class="alert"><p class="small"><b>${esc(t('unsignedDraft'))}</b> — ${esc(t('signHint'))}</p></div>`:''}
      ${d.meta&&d.meta.external?`<div class="alert"><p class="small"><b>${esc(t('extRef'))}</b> — ${esc(t('extHint'))}${d.meta.note?`<br>${bdi(d.meta.note)}`:''}</p></div>`:''}
      <div class="toolbar">${d.meta&&d.meta.external?`<a class="btn sm" target="_blank" rel="noopener noreferrer" href="${esc(/^https:\/\//.test(d.meta.url)?d.meta.url:'#')}">↗ ${esc(t('extOpen'))}</a><button class="btn sm pri" data-extup="${d.id}">⤒ ${esc(t('extUpload'))}</button>`:`<a class="btn sm" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${d.id}/file">${esc(t('view'))}</a>`}
@@ -523,7 +536,10 @@ function openWhy(slotId){
      <button class="btn sm" data-wd="${d.id}">${esc(t('withdraw'))}</button></div></div>`).join('');
   openDrawer(s.title[S.lang], `<div class="toolbar"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${chip(s.status)}</div>
     ${locked?`<div class="alert"><p class="small">${esc(t('lockedNote'))}</p></div>`:''}
-    <h3>${esc(t('reasons'))}</h3>${reasons}${s.flags.length?`<div class="small muted code">${esc(s.flags.join(' · '))}</div>`:''}
+    <h3>${esc(t('reasons'))}</h3>${reasons}
+    ${s.acceptance?`<h3>${esc(t('acceptT'))}</h3><div class="finding">${s.acceptance.split(/;\s+|\.\s+(?=[A-Z])/).filter(x=>x.trim()).map(x=>`<label class="small" style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox"><span dir="auto">${esc(x.trim().replace(/\.$/,''))}</span></label>`).join('')}</div>`:''}
+    ${s.how||s.produced_by?`<div class="small">${s.produced_by?`<b>${esc(t('byT'))}:</b> ${bdi(s.produced_by)}`:''}${s.how?`<br><b>${esc(t('howT'))}:</b> <span dir="auto">${esc(s.how)}</span>`:''}</div>`:''}
+    ${s.sources&&s.sources.length?`<div class="small muted"><b>${esc(t('sourcesT'))}:</b> <span class="code">${esc(s.sources.join(' · '))}</span>${s.provenance?` · ${esc(t('prov_'+s.provenance.replace(/-/g,'_')))}`:''}</div>`:''}${s.flags.length?`<div class="small muted code">${esc(s.flags.join(' · '))}</div>`:''}
     ${s.cross&&s.cross.length?`<h3>${esc(t('crossT'))}</h3>${s.cross.map(f=>`<div class="finding ${f.severity==='block'?'block':''}"><div>${esc(f[S.lang])} <span class="code muted">${esc(f.id)}</span></div><div class="small muted">${esc(f.source)}</div></div>`).join('')}`:''}
     ${s.documents.length?`<h3>${esc(t('docs'))}</h3>${docs}`:''}
     ${s.request?`<div class="alert"><p class="small"><b>${esc(t('reqOpen'))}</b> ${bdi(s.request.issuer)} · ${esc(t('due'))} ${new Date(s.request.due*1000).toLocaleDateString(S.lang==='ar'?'ar-EG':'en-GB')}${s.request.overdue?` · <b style="color:var(--bad)">${esc(t('overdue'))}</b>`:''}
@@ -541,6 +557,9 @@ function openWhy(slotId){
       await refreshCurrent(); openWhy(slotId);
     }catch(e){ toast(e.message); } });
   $('#dBody').querySelectorAll('[data-signed]').forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, {signed_for:b.dataset.signed}); });
+  $('#dBody').querySelectorAll('[data-vusave]').forEach(b=>b.onclick=async()=>{ const v=$('#dBody').querySelector(`[data-vu="${b.dataset.vusave}"]`).value;
+    try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.vusave}/validity`,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({valid_until:v})});
+      toast(t('dateSaved')); await refreshCurrent(); openWhy(slotId); }catch(e){ toast(e.message); } });
   $('#dBody').querySelectorAll('[data-extup]').forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, {}, b.dataset.extup); });
   const rq=$('#dBody').querySelector('[data-req]'); if(rq) rq.onclick=()=>requestForm(s);
   $('#dBody').querySelectorAll('[data-wd]').forEach(b=>b.onclick=async()=>{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.wd}/withdraw`,{method:'POST'}); toast(t('withdrawn')); closeDrawer(); board(); });

@@ -145,7 +145,12 @@ def create_app(workspace, auth_enabled=None):
     def add_reference(did: str, slot_id: str, body: dict):
         """Register a document that exists elsewhere (company Drive) before its file is uploaded."""
         return st.add_reference(did, slot_id, body.get('title'), body.get('url'), body.get('source') or 'drive',
-                                body.get('note'), body.get('ref_id'))
+                                body.get('note'), body.get('ref_id'), body.get('valid_until'))
+
+    @app.put('/api/dossiers/{did}/documents/{doc_id}/validity')
+    def set_validity(did: str, doc_id: str, body: dict):
+        """Expiry date of a certificate / licence / approval; expired evidence blocks the item."""
+        return st.set_validity(did, doc_id, body.get('valid_until'), body.get('issued'), body.get('note'))
 
     @app.get('/api/dossiers/{did}/documents/{doc_id}/file')
     def get_file(did: str, doc_id: str):

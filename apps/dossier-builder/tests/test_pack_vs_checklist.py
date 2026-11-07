@@ -51,4 +51,14 @@ def test_unconditional_levels_match_matrix(pack, col):
             continue
         assert got[r['id']] == NORM[r['matrix'][col]], (r['id'], col)
         checked += 1
-    assert checked >= 60
+    assert checked >= 50          # M5 study items became biowaiver-conditional (see test_biowaiver)
+
+
+@pytest.mark.parametrize('col', ['G_IMP', 'G_LOC'])
+def test_case_cells_default_to_matrix_without_biowaiver(pack, col):
+    """An oral tablet with no waiver basis gets exactly the matrix level for the biowaiver-conditional cells."""
+    prof = Profile(**COLS[col], apis=[Api('Paracetamol', 'API Co', 'FULL')])
+    got = {s.req_id: s.level for s in resolve(prof, pack) if '@' not in s.slot_id}
+    for r in pack.requirements:
+        if r['id'].startswith('M5-') and isinstance(r['required'][col], dict):
+            assert got[r['id']] == NORM[r['matrix'][col]], r['id']

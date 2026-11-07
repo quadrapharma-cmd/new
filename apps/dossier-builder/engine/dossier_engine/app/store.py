@@ -5,6 +5,7 @@
 Principle 7 «no silent data loss»: a document is withdrawn or superseded, not deleted;
 a profile change moves documents of removed slots to «unassigned»."""
 import hashlib, json, shutil, sqlite3, threading, time, uuid
+from datetime import date, timedelta
 from pathlib import Path
 from .. import packs
 from ..profile import Profile
@@ -31,6 +32,33 @@ create table if not exists submission(id text primary key, dossier_id text not n
 create table if not exists export(id text primary key, dossier_id text not null, outputs text not null,
   path text not null, acknowledged integer not null, created real not null);
 '''
+EXPIRY_WARN_DAYS = 90
+
+
+def _validity(d, today):
+    """Expired evidence blocks its item; evidence expiring within 90 days is flagged. Computed on every read,
+    so a document turns red on the day it expires without anyone re-uploading it."""
+    vu = d['meta'].get('valid_until')
+    if not vu:
+        return
+    try:
+        end = date.fromisoformat(vu)
+    except ValueError:
+        return
+    shown = end.strftime('%d/%m/%Y')
+    if end < today:
+        d['findings'] = d['findings'] + [{'rule': 'DOC-EXPIRED', 'severity': 'block', 'action': 're_obtain',
+            'en': f'Expired on {shown} ({(today - end).days} days ago). Obtain a current certificate from the issuer.',
+            'ar': f'منتهي من {shown} (من {(today - end).days} يوم). لازم نسخة سارية من الجهة اللي أصدرته.'}]
+        d['check_status'] = 'non_conforming'
+    elif end <= today + timedelta(days=EXPIRY_WARN_DAYS):
+        d['findings'] = d['findings'] + [{'rule': 'DOC-EXPIRING', 'severity': 'warn', 'action': 're_obtain',
+            'en': f'Expires on {shown} (in {(end - today).days} days). Start renewal now.',
+            'ar': f'هينتهي {shown} (بعد {(end - today).days} يوم). ابدأ التجديد من دلوقتي.'}]
+        if d['check_status'] in ('conforming', 'received'):
+            d['check_status'] = 'needs_attention'
+
+
 STATUS_ORDER = ['not_started', 'received', 'conforming', 'needs_attention', 'non_conforming', 'not_applicable']
 SIGN_KINDS = {'annex1', 'cover', 'composition', 'salt', 'cep_commitment', 'translation', 'stability_commitment', 'justification',
               'reobtain'}
@@ -201,7 +229,7 @@ class Store:
                    supersedes=supersede, signed_for=meta.get('signed_for'))
         return self.document(doc_id)
 
-    def add_reference(self, did, slot_id, title, url, source='drive', note=None, ref_id=None):
+    def add_reference(self, did, slot_id, title, url, source='drive', note=None, ref_id=None, valid_until=None):
         """An «external reference»: the document exists (e.g. on the company Drive) but its file is not in the
         workspace yet. Shown as «received — not checked»; it never counts as conforming and it blocks export
         until the real file is uploaded (upload with replaces=<reference id>)."""
@@ -218,6 +246,9 @@ class Store:
                                        (did, slot_id)).fetchone()[0])
         doc_id = str(uuid.uuid4())
         meta = {'external': True, 'url': url, 'source': source, 'note': note, 'ref_id': ref_id}
+        if valid_until:
+            date.fromisoformat(valid_until)
+            meta['valid_until'] = valid_until
         self.db.execute('insert into document values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
                         (doc_id, did, slot_id, version, '', title, title, s.doc_class,
                          json.dumps(meta, ensure_ascii=False), '[]', 'received', 'current', time.time()))
@@ -281,7 +312,30 @@ class Store:
             raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
         d = dict(r)
         d['meta'], d['findings'] = json.loads(d['meta']), json.loads(d['findings'])
+        _validity(d, self.today())
         return d
+
+    def today(self):
+        return date.today()
+
+    def set_validity(self, did, doc_id, valid_until, issued=None, note=None):
+        """Record the date a certificate / licence / approval stops being valid (ISO yyyy-mm-dd)."""
+        d = self.document(doc_id)
+        if d['dossier_id'] != did:
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        try:
+            date.fromisoformat(valid_until)
+        except (TypeError, ValueError):
+            raise StoreError('E-DATE', 'Use a date like 2027-03-31.', 'اكتب التاريخ بالشكل 2027-03-31.')
+        meta = {**d['meta'], 'valid_until': valid_until}
+        if issued:
+            meta['issued'] = issued
+        if note:
+            meta['validity_note'] = note
+        self.db.execute('update document set meta=? where id=?', (json.dumps(meta, ensure_ascii=False), doc_id))
+        self.db.commit()
+        self.audit(did, 'document.validity', doc=doc_id, valid_until=valid_until)
+        return self.document(doc_id)
 
     def documents(self, did, slot_id=None, include_withdrawn=False):
         q = 'select id from document where dossier_id=?'
@@ -323,6 +377,14 @@ class Store:
             out.append({**s.to_dict(), 'status': status,
                         'documents': [{k: d[k] for k in ('id', 'version', 'filename', 'title', 'check_status',
                                                          'findings', 'sha256', 'meta')} for d in docs]})
+        reqs_by_id = self.pack(self.dossier(did)['pack']).by_id
+        for x in out:
+            rq = reqs_by_id.get(x['req_id'], {})
+            x['acceptance'] = rq.get('acceptance_text')
+            x['sources'] = rq.get('sources', [])
+            x['provenance'] = rq.get('provenance')
+            x['produced_by'] = rq.get('produced_by')
+            x['how'] = (rq.get('rebuild') or {}).get('needs')
         cross = self.cross(did)
         by_slot = {}
         for f in cross:
