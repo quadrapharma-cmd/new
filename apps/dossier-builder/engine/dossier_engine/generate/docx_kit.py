@@ -120,15 +120,29 @@ def require(data, keys):
         raise MissingData(miss)
 
 
+def find_soffice():
+    """LibreOffice on PATH, or in its standard place on macOS / Windows (desktop builds)."""
+    import os, sys
+    exe = shutil.which('soffice') or shutil.which('libreoffice')
+    if exe:
+        return exe
+    cands = ['/Applications/LibreOffice.app/Contents/MacOS/soffice'] if sys.platform == 'darwin' else []
+    if os.name == 'nt':
+        for base in (os.environ.get('PROGRAMFILES', r'C:\Program Files'), os.environ.get('PROGRAMFILES(X86)', r'C:\Program Files (x86)')):
+            cands.append(os.path.join(base, 'LibreOffice', 'program', 'soffice.exe'))
+    return next((c for c in cands if os.path.exists(c)), None)
+
+
 def to_pdf(docx_path, out_dir=None):
     """LibreOffice headless conversion (Arabic shaping by the layout engine)."""
-    exe = shutil.which('soffice') or shutil.which('libreoffice')
+    exe = find_soffice()
     if not exe:
-        raise RuntimeError('LibreOffice not found')
+        raise RuntimeError('LibreOffice not found — install it free from https://www.libreoffice.org/download/ '
+                           '(لازم LibreOffice علشان الخطابات تتحول لـ PDF؛ نزّله مجانًا من libreoffice.org)')
     docx_path = Path(docx_path)
     out_dir = Path(out_dir or docx_path.parent)
     with tempfile.TemporaryDirectory() as prof:
-        subprocess.run([exe, f'-env:UserInstallation=file://{prof}', '--headless', '--convert-to', 'pdf',
+        subprocess.run([exe, f'-env:UserInstallation={Path(prof).as_uri()}', '--headless', '--convert-to', 'pdf',
                         '--outdir', str(out_dir), str(docx_path)], check=True, capture_output=True, timeout=180)
     pdf = out_dir / (docx_path.stem + '.pdf')
     if not pdf.exists():
