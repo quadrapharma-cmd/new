@@ -1,0 +1,17 @@
+# Dossier Builder inside the company (local network, no internet needed after the first build).
+#   Windows: double-click start-windows.bat      Linux/Mac: ./start.sh
+#   Then open http://localhost:8765 on this computer, or http://<this computer's IP>:8765 from colleagues' PCs.
+services:
+  app:
+    build: { context: ../../../.., dockerfile: apps/dossier-builder/deploy/Dockerfile }
+    image: dossier-builder:local
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_MODE: cloud            # login required, roles (admin / editor / viewer)
+      DB_COOKIE_SECURE: "0"     # plain HTTP inside the company network
+      DB_HOME: suite            # open on the product file / dashboard
+      PORT: "8765"              # inside the container; the outside port comes from .env PORT
+    ports: [ "${PORT:-8765}:8765" ]
+    volumes: [ "dossier-data:/data" ]
+volumes: { dossier-data: { name: dossier-builder-data } }

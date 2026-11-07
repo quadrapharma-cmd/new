@@ -29,6 +29,7 @@
   --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+body.ro .btn.pri, body.ro [data-reg], body.ro [data-replace], body.ro [data-editdoc], body.ro [data-unlink], body.ro #npy, body.ro #lpGo, body.ro #lpNew, body.ro #editP{display:none!important}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.55}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -148,6 +149,8 @@ td .toolbar{flex-wrap:nowrap}
       <a href="#/parties" data-nav="parties"><span data-t="navParties"></span></a>
       <div class="grp" data-t="navRef"></div>
       <a href="#/rules" data-nav="rules"><span data-t="navRules"></span></a>
+      <a href="#/activity" data-nav="activity"><span data-t="navActivity"></span></a>
+      <a href="#/users" data-nav="users" id="navUsers" hidden><span data-t="navUsers"></span></a>
       <a href="/" data-t="navDossiers"></a>
     </nav>
     <div class="foot" data-t="foot"></div>
@@ -157,6 +160,9 @@ td .toolbar{flex-wrap:nowrap}
       <div class="crumb" id="crumb"></div>
       <div class="seg" role="group" aria-label="language"><button id="l-ar">عربي</button><button id="l-en">EN</button></div>
       <button class="btn sm" id="theme" aria-label="theme">◐</button>
+      <span class="small muted" id="who" hidden></span>
+      <button class="btn sm" id="pw" hidden></button>
+      <button class="btn sm" id="logout" hidden></button>
     </div>
     <main class="view" id="view"></main>
   </div>
@@ -174,7 +180,15 @@ try{ S.lang=localStorage.getItem('rs.lang')||'ar'; }catch(e){}
 const T={
  appName:{ar:'ملف المنتجات',en:'Product file'}, navHome:{ar:'لوحة القيادة',en:'Dashboard'}, navProducts:{ar:'المنتجات',en:'Products'},
  navDocs:{ar:'مكتبة المستندات',en:'Document library'}, navParties:{ar:'الأطراف',en:'Parties'}, navRef:{ar:'مرجع',en:'Reference'},
- navRules:{ar:'أنواع المستندات والصلاحية',en:'Document types & validity'}, navDossiers:{ar:'ملفات التقديم (eCTD)',en:'Submission dossiers (eCTD)'},
+ navRules:{ar:'أنواع المستندات والصلاحية',en:'Document types & validity'},
+ navActivity:{ar:'سجل النشاط',en:'Activity log'}, navUsers:{ar:'المستخدمون',en:'Users'}, logout:{ar:'خروج',en:'Sign out'}, chpw:{ar:'كلمة السر',en:'Password'},
+ role_admin:{ar:'مدير',en:'Administrator'}, role_editor:{ar:'محرّر',en:'Editor'}, role_viewer:{ar:'مشاهد',en:'Viewer'}, role_disabled:{ar:'موقوف',en:'Disabled'},
+ actor:{ar:'مين',en:'Who'}, when:{ar:'إمتى',en:'When'}, event:{ar:'عمل إيه',en:'What'}, details:{ar:'التفاصيل',en:'Details'},
+ chainOk:{ar:'✓ السجل سليم: كل سطر مربوط باللي قبله ببصمة، ومفيش سطر اتعدّل أو اتمسح.',en:'✓ Log intact: every row is hash-linked to the previous one; nothing was altered or removed.'},
+ chainBad:{ar:'⚠ السجل فيه تلاعب ابتداءً من السطر رقم',en:'⚠ The log was tampered with starting at row'},
+ addUser:{ar:'مستخدم جديد',en:'New user'}, username:{ar:'اسم المستخدم',en:'Username'}, password:{ar:'كلمة السر (10 حروف على الأقل)',en:'Password (10+ characters)'},
+ oldPw:{ar:'كلمة السر الحالية',en:'Current password'}, newPw:{ar:'كلمة السر الجديدة',en:'New password'}, resetPw:{ar:'كلمة سر جديدة',en:'Reset password'},
+ roleHelp:{ar:'المدير: كل حاجة + المستخدمين · المحرّر: يضيف ويعدّل · المشاهد: يشوف بس · الموقوف: ما يدخلش.',en:'Admin: everything + users · Editor: add and edit · Viewer: read only · Disabled: cannot sign in.'}, navDossiers:{ar:'ملفات التقديم (eCTD)',en:'Submission dossiers (eCTD)'},
  foot:{ar:'كل حالة محسوبة من التواريخ والقواعد، ولكل قاعدة مصدر.',en:'Every status is computed from dates and rules; every rule has a source.'},
  todo:{ar:'اعمل إيه النهارده',en:'What to do today'}, todoSub:{ar:'مرتّب حسب الخطورة: المنتهي، ثم الناقص، ثم اللي محتاج تاريخ، ثم اللي هينتهي قريب، ثم التجديد.',en:'Ordered by severity: expired, missing, no date, expiring soon, renewal.'},
  k_products:{ar:'منتجات',en:'Products'}, k_expired:{ar:'منتهي',en:'Expired'}, k_missing:{ar:'ناقص',en:'Missing'}, k_needs_date:{ar:'محتاج تاريخ',en:'Needs a date'},
@@ -221,10 +235,10 @@ const tn=x=>S.lang==='ar'?x.type_ar:x.type_en;
 const basis=b=>{ if(!b) return ''; if(b==='printed') return S.lang==='ar'?'التاريخ المكتوب على المستند':'date printed on the document';
   const m=b.match(/^(issued|reg_date)\+(\d+)$/); if(!m) return b;
   return S.lang==='ar'?`${m[1]==='issued'?'تاريخ الإصدار':'تاريخ التسجيل'} + ${m[2]} شهر`:`${m[1]==='issued'?'issue date':'registration date'} + ${m[2]} months`; };
-async function api(path,opt={}){
+async function api(path,opt={},root='/api/suite'){
   opt.headers=Object.assign({'X-DB':'1'},opt.headers||{});
   if(opt.json!==undefined){ opt.body=JSON.stringify(opt.json); opt.headers['content-type']='application/json'; delete opt.json; }
-  const r=await fetch('/api/suite'+path,opt);
+  const r=await fetch(root+path,opt);
   if(r.status===401){ location.href='/login'; throw new Error('auth'); }
   const b=(r.headers.get('content-type')||'').includes('json')?await r.json():null;
   if(!r.ok){ const d=b&&b.detail||{}; throw new Error(d[S.lang]||d.en||r.statusText); }
@@ -252,6 +266,8 @@ async function route(){
     if(h==='/docs') return await docsView();
     if(h==='/parties') return await partiesView();
     if(h==='/rules') return await rulesView();
+    if(h==='/activity') return await activityView();
+    if(h==='/users') return await usersView();
     return await home();
   }catch(e){ v.innerHTML=`<div class="alert bad"><b>${esc(t('err'))}:</b> ${esc(e.message)}</div>`; }
 }
@@ -456,7 +472,47 @@ async function rulesView(){
      <td>${x.validity_months?`${x.validity_months} ${esc(t('months'))}`:`<span class="muted">${esc(t('noTerm'))}</span>`}</td><td class="num">${x.warn_days||90} ${esc(t('days'))}</td>
      <td class="small">${prov(x.provenance)}<div dir="ltr" style="text-align:start">${esc(x.source)}</div></td></tr>`).join('')}</tbody></table></div></div>`;
 }
-setLang(S.lang);
+/* ---------- people & activity */
+async function whoami(){
+  try{ S.me=await api('/me',{},'/api'); }catch(e){ S.me={auth:false,role:'admin'}; }
+  document.body.classList.toggle('ro', S.me.role==='viewer');
+  $('#navUsers').hidden = !(S.me.auth && S.me.role==='admin');
+  if(S.me.auth){ $('#who').hidden=false; $('#who').textContent=`${S.me.user} · ${t('role_'+S.me.role)}`;
+    $('#logout').hidden=false; $('#logout').textContent=t('logout'); $('#pw').hidden=false; $('#pw').textContent=t('chpw'); }
+}
+$('#logout').onclick=async()=>{ await api('/logout',{method:'POST'},'/api'); location.href='/login'; };
+$('#pw').onclick=()=>{ drawer(t('chpw'),`<div class="form"><label class="f"><span>${esc(t('oldPw'))}</span><input type="password" id="pw-old" autocomplete="current-password"></label>
+  <label class="f"><span>${esc(t('newPw'))}</span><input type="password" id="pw-new" autocomplete="new-password"></label></div>
+  <div class="toolbar"><button class="btn pri" id="pwSave">${esc(t('save'))}</button></div>`);
+  $('#pwSave').onclick=async()=>{ try{ await api('/me/password',{method:'POST',json:{old:$('#pw-old').value,new:$('#pw-new').value}},'/api'); closeDrawer(); toast(t('saved')); }catch(e){ toast(e.message); } }; };
+async function activityView(){
+  nav('activity',t('navActivity'));
+  const a=await api('/activity?limit=400',{},'/api');
+  $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('navActivity'))}</h1></div></div>
+   <div class="alert ${a.chain_ok?'':'bad'}" style="${a.chain_ok?'background:var(--ok-soft);border-color:transparent':''}">${a.chain_ok?esc(t('chainOk')):`${esc(t('chainBad'))} ${a.first_bad}`}</div>
+   <div class="card"><div class="tbl"><table><thead><tr><th>${esc(t('when'))}</th><th>${esc(t('actor'))}</th><th>${esc(t('event'))}</th><th>${esc(t('details'))}</th></tr></thead><tbody>
+   ${a.rows.map(r=>`<tr><td class="small">${new Date(r.ts*1000).toLocaleString(S.lang==='ar'?'ar-EG':'en-GB')}</td><td>${bdi(r.actor||'—')}</td><td class="code">${esc(r.event)}</td>
+     <td class="small code" style="max-width:520px;overflow-wrap:anywhere">${esc(JSON.stringify(r.detail))}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+async function usersView(){
+  nav('users',t('navUsers'));
+  const us=await api('/users',{},'/api'); const roles=['admin','editor','viewer','disabled'];
+  $('#view').innerHTML=`<div class="head"><div><h1>${esc(t('navUsers'))}</h1><p class="sub">${esc(t('roleHelp'))}</p></div></div>
+   <div class="card"><div class="tbl"><table><thead><tr><th>${esc(t('username'))}</th><th>${esc(t('roleL'))}</th><th></th></tr></thead><tbody>
+   ${us.map(u=>`<tr><td>${bdi(u.username)}</td><td><select data-role="${esc(u.username)}" aria-label="role">${roles.map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${esc(t('role_'+r))}</option>`).join('')}</select></td>
+     <td><button class="btn sm" data-reset="${esc(u.username)}">${esc(t('resetPw'))}</button></td></tr>`).join('')}</tbody></table></div></div>
+   <div class="card pad"><h3>${esc(t('addUser'))}</h3><div class="form" style="margin-top:10px">
+     <label class="f"><span>${esc(t('username'))}</span><input id="nu-name" autocomplete="off"></label>
+     <label class="f"><span>${esc(t('password'))}</span><input id="nu-pw" type="password" autocomplete="new-password"></label>
+     <label class="f"><span>${esc(t('roleL'))}</span><select id="nu-role">${roles.slice(0,3).map(r=>`<option value="${r}" ${r==='editor'?'selected':''}>${esc(t('role_'+r))}</option>`).join('')}</select></label></div>
+     <div class="toolbar" style="margin-top:10px"><button class="btn pri" id="nuGo">＋ ${esc(t('addUser'))}</button></div></div>`;
+  document.querySelectorAll('[data-role]').forEach(s=>s.onchange=async()=>{ try{ await api('/users/'+encodeURIComponent(s.dataset.role),{method:'PUT',json:{role:s.value}},'/api'); toast(t('saved')); }catch(e){ toast(e.message); route(); } });
+  document.querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{ drawer(t('resetPw')+' — '+b.dataset.reset,`<label class="f"><span>${esc(t('newPw'))}</span><input type="password" id="rp" autocomplete="new-password"></label>
+    <div class="toolbar"><button class="btn pri" id="rpGo">${esc(t('save'))}</button></div>`);
+    $('#rpGo').onclick=async()=>{ try{ await api('/users/'+encodeURIComponent(b.dataset.reset),{method:'PUT',json:{password:$('#rp').value}},'/api'); closeDrawer(); toast(t('saved')); }catch(e){ toast(e.message); } }; });
+  $('#nuGo').onclick=async()=>{ try{ await api('/users',{method:'POST',json:{username:$('#nu-name').value,password:$('#nu-pw').value,role:$('#nu-role').value}},'/api'); toast(t('saved')); route(); }catch(e){ toast(e.message); } };
+}
+whoami().then(()=>setLang(S.lang));
 </script>
 </body>
 </html>

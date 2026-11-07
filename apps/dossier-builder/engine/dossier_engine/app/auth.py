@@ -44,12 +44,38 @@ class Auth:
     def users(self):
         return json.loads(self.users_file.read_text()) if self.users_file.exists() else {}
 
-    def add_user(self, username, password, role='user'):
+    ROLES = ('admin', 'editor', 'viewer', 'disabled')
+
+    def role(self, username):
+        r = self.users().get(username, {}).get('role', 'editor')
+        return 'editor' if r == 'user' else r            # «user» from the first version = editor
+
+    def add_user(self, username, password, role='editor'):
         if len(password) < 10:
             raise ValueError('password must be at least 10 characters')
+        role = 'editor' if role == 'user' else role
+        if role not in self.ROLES:
+            raise ValueError(f'role must be one of {self.ROLES}')
+        if not username or not all(c.isalnum() or c in '._-@' for c in username):
+            raise ValueError('username: letters, digits and . _ - @ only')
         users = self.users()
         salt = secrets.token_bytes(16)
-        users[username] = {'salt': salt.hex(), 'hash': _scrypt(password, salt).hex(), 'role': role, 'created': time.time()}
+        prev = users.get(username, {})
+        users[username] = {'salt': salt.hex(), 'hash': _scrypt(password, salt).hex(), 'role': role,
+                           'created': prev.get('created', time.time())}
+        self._save(users)
+
+    def set_role(self, username, role):
+        users = self.users()
+        if username not in users or role not in self.ROLES:
+            raise ValueError('unknown user or role')
+        if users[username].get('role') == 'admin' and role != 'admin' and \
+                sum(1 for u in users.values() if u.get('role') == 'admin') == 1:
+            raise ValueError('keep at least one admin')
+        users[username]['role'] = role
+        self._save(users)
+
+    def _save(self, users):
         tmp = self.users_file.with_suffix('.tmp')
         tmp.write_text(json.dumps(users, indent=1))
         os.chmod(tmp, 0o600)
@@ -57,7 +83,7 @@ class Auth:
 
     def check(self, username, password):
         u = self.users().get(username)
-        if not u:
+        if not u or u.get('role') == 'disabled':
             _scrypt(password, b'0' * 16)          # same cost for unknown users (no user enumeration by timing)
             return False
         return hmac.compare_digest(bytes.fromhex(u['hash']), _scrypt(password, bytes.fromhex(u['salt'])))
@@ -86,7 +112,7 @@ class Auth:
             if not hmac.compare_digest(sig, hmac.new(self.key, body.encode(), hashlib.sha256).hexdigest()):
                 return None
             data = json.loads(base64.urlsafe_b64decode(body))
-            if data['exp'] < time.time() or data['u'] not in self.users():
+            if data['exp'] < time.time() or data['u'] not in self.users() or self.role(data['u']) == 'disabled':
                 return None
             return data['u']
         except Exception:
@@ -115,7 +141,20 @@ def install(app, auth, store):
                 return JSONResponse({'detail': {'code': 'E-CSRF', 'en': 'Request refused.', 'ar': 'الطلب مرفوض.'}},
                                     status_code=403)
             request.state.user = user
-        resp = await call_next(request)
+            request.state.role = auth.role(user)
+            write = request.method not in ('GET', 'HEAD', 'OPTIONS')
+            if write and request.state.role == 'viewer' and path not in ('/api/logout', '/api/me/password'):
+                return JSONResponse({'detail': {'code': 'E-ROLE', 'en': 'Your role can view only.',
+                                                'ar': 'صلاحيتك مشاهدة بس.'}}, status_code=403)
+            if path.startswith('/api/users') and request.state.role != 'admin':
+                return JSONResponse({'detail': {'code': 'E-ROLE', 'en': 'Only an administrator can manage users.',
+                                                'ar': 'إدارة المستخدمين للمدير بس.'}}, status_code=403)
+        from .store import ACTOR
+        token = ACTOR.set(getattr(request.state, 'user', None) or 'local')
+        try:
+            resp = await call_next(request)
+        finally:
+            ACTOR.reset(token)
         if not auth.enabled:
             return resp                       # local mode: unchanged
         resp.headers['X-Content-Type-Options'] = 'nosniff'
@@ -148,7 +187,10 @@ def install(app, auth, store):
             store.audit(None, 'login.failed', user=body.username)
             return JSONResponse({'detail': {'code': 'E-LOGIN', 'en': 'Wrong username or password.',
                                             'ar': 'اسم المستخدم أو كلمة السر غلط.'}}, status_code=401)
+        from .store import ACTOR
+        t = ACTOR.set(body.username)
         store.audit(None, 'login', user=body.username)
+        ACTOR.reset(t)
         r = JSONResponse({'ok': True, 'user': body.username})
         r.set_cookie(COOKIE, auth.issue(body.username), max_age=TTL, httponly=True, samesite='strict', secure=auth.secure)
         return r
@@ -161,4 +203,62 @@ def install(app, auth, store):
 
     @app.get('/api/me')
     def me(request: Request):
-        return {'user': getattr(request.state, 'user', None), 'auth': auth.enabled}
+        return {'user': getattr(request.state, 'user', None), 'auth': auth.enabled,
+                'role': getattr(request.state, 'role', None) if auth.enabled else 'admin'}
+
+    def bad(code, en, ar, status=422):
+        return JSONResponse({'detail': {'code': code, 'en': en, 'ar': ar}}, status_code=status)
+
+    class Pw(BaseModel):
+        old: str
+        new: str
+
+    @app.post('/api/me/password')
+    def change_password(body: Pw, request: Request):
+        u = getattr(request.state, 'user', None)
+        if not u or not auth.check(u, body.old):
+            return bad('E-LOGIN', 'Current password is wrong.', 'كلمة السر الحالية غلط.', 401)
+        try:
+            auth.add_user(u, body.new, auth.role(u))
+        except ValueError as e:
+            return bad('E-PASSWORD', str(e), 'كلمة السر لازم تكون 10 حروف على الأقل.')
+        store.audit(None, 'user.password_changed', user=u)
+        return {'ok': True}
+
+    @app.get('/api/users')
+    def users_list():
+        return [{'username': k, 'role': auth.role(k), 'created': v.get('created')} for k, v in sorted(auth.users().items())]
+
+    class NewUser(BaseModel):
+        username: str
+        password: str
+        role: str = 'editor'
+
+    @app.post('/api/users', status_code=201)
+    def users_add(body: NewUser):
+        if body.username in auth.users():
+            return bad('E-DUP', 'This username exists.', 'اسم المستخدم موجود.')
+        try:
+            auth.add_user(body.username, body.password, body.role)
+        except ValueError as e:
+            return bad('E-USER', str(e), 'بيانات المستخدم غير صحيحة (كلمة السر 10 حروف على الأقل، والدور مدير/محرّر/مشاهد).')
+        store.audit(None, 'user.added', user=body.username, role=body.role)
+        return {'ok': True}
+
+    class RoleBody(BaseModel):
+        role: str = None
+        password: str = None
+
+    @app.put('/api/users/{username}')
+    def users_update(username: str, body: RoleBody):
+        if username not in auth.users():
+            return bad('E-NOT-FOUND', 'User not found.', 'المستخدم غير موجود.', 404)
+        try:
+            if body.role:
+                auth.set_role(username, body.role)
+            if body.password:
+                auth.add_user(username, body.password, auth.role(username))
+        except ValueError as e:
+            return bad('E-USER', str(e), 'مينفعش: لازم يفضل مدير واحد على الأقل، وكلمة السر 10 حروف على الأقل.')
+        store.audit(None, 'user.updated', user=username, role=body.role, password_reset=bool(body.password))
+        return {'ok': True}

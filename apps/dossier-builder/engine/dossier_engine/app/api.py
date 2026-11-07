@@ -426,6 +426,22 @@ def create_app(workspace, auth_enabled=None):
     from . import suite as _suite
     _suite.install(app, st, err)
 
+    @app.get('/api/activity')
+    def activity(limit: int = 300):
+        rows = st.db.execute('select id, ts, dossier_id, event, detail, actor from audit order by id desc limit ?',
+                             (min(int(limit), 2000),)).fetchall()
+        ok, bad_id = st.verify_audit()
+        return {'chain_ok': ok, 'first_bad': bad_id,
+                'rows': [dict(r) | {'detail': json.loads(r['detail'] or '{}')} for r in rows]}
+
+    import os as _os
+    if _os.environ.get('DB_HOME') == 'suite':          # local / company install: open on the product file
+        from fastapi.responses import RedirectResponse as _RR
+
+        @app.get('/', include_in_schema=False)
+        def _home():
+            return _RR('/suite/', status_code=307)
+
     if STATIC.exists():
         app.mount('/', StaticFiles(directory=STATIC, html=True), name='ui')
     app.state.store = st

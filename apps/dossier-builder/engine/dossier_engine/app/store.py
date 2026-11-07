@@ -4,7 +4,7 @@
 <workspace>/blobs/<sha256>    — content-addressed files: never overwritten, never deleted
 Principle 7 «no silent data loss»: a document is withdrawn or superseded, not deleted;
 a profile change moves documents of removed slots to «unassigned»."""
-import hashlib, json, shutil, sqlite3, threading, time, uuid
+import contextvars, hashlib, json, shutil, sqlite3, threading, time, uuid
 from datetime import date, timedelta
 from pathlib import Path
 from .. import packs
@@ -64,6 +64,21 @@ SIGN_KINDS = {'annex1', 'cover', 'composition', 'salt', 'cep_commitment', 'trans
               'reobtain'}
 
 
+# who is acting in the current request (set by the auth middleware; 'local' when login is off)
+ACTOR = contextvars.ContextVar('actor', default='local')
+
+# Numbered, additive schema migrations with a ledger (never edit an applied one — add a new one).
+MIGRATIONS = [
+    (1, 'dossier.data column', ["alter table dossier add column data text not null default '{}'"]),
+    (2, 'audit actor and hash chain', ["alter table audit add column actor text",
+                                       "alter table audit add column prev_hash text",
+                                       "alter table audit add column hash text"]),
+    (3, 'audit is append-only', [
+        "create trigger if not exists audit_no_update before update on audit begin select raise(abort, 'audit is append-only'); end",
+        "create trigger if not exists audit_no_delete before delete on audit begin select raise(abort, 'audit is append-only'); end"]),
+]
+
+
 class StoreError(ValueError):
     def __init__(self, code, en, ar, **extra):
         self.code, self.en, self.ar, self.extra = code, en, ar, extra
@@ -77,10 +92,7 @@ class Store:
         self._local = threading.local()
         self.db.execute('pragma journal_mode=wal')
         self.db.executescript(SCHEMA)
-        cols = {r[1] for r in self.db.execute('pragma table_info(dossier)')}
-        if 'data' not in cols:                       # P2: structured dossier data (additive migration)
-            self.db.execute("alter table dossier add column data text not null default '{}'")
-            self.db.commit()
+        self._migrate()
         self._packs = {}
         self._pack_lock = threading.Lock()
 
@@ -102,10 +114,49 @@ class Store:
                 self._packs[pid] = packs.load(pid)
             return self._packs[pid]
 
+    def _migrate(self):
+        db = self.db
+        db.execute('create table if not exists schema_migrations(id integer primary key, name text not null, applied real not null)')
+        done = {r[0] for r in db.execute('select id from schema_migrations')}
+        for mid, name, stmts in MIGRATIONS:
+            if mid in done:
+                continue
+            for sql in stmts:
+                try:
+                    db.execute(sql)
+                except sqlite3.OperationalError as e:      # column already there from an older ad-hoc migration
+                    if 'duplicate column' not in str(e):
+                        raise
+            db.execute('insert into schema_migrations values (?,?,?)', (mid, name, time.time()))
+            db.commit()
+
+    _audit_lock = threading.Lock()
+
     def audit(self, dossier_id, event, **detail):
-        self.db.execute('insert into audit(ts, dossier_id, event, detail) values (?,?,?,?)',
-                        (time.time(), dossier_id, event, json.dumps(detail, ensure_ascii=False)))
-        self.db.commit()
+        """Append-only, hash-chained activity record: who (actor), when, what. Each row's hash covers the previous
+        row's hash, so editing or removing a row breaks the chain (see verify_audit)."""
+        actor = ACTOR.get()
+        ts = time.time()
+        body = json.dumps(detail, ensure_ascii=False, sort_keys=True)
+        with self._audit_lock:
+            prev = self.db.execute('select hash from audit order by id desc limit 1').fetchone()
+            prev = prev[0] if prev and prev[0] else ''
+            h = hashlib.sha256(f'{prev}|{ts!r}|{actor}|{dossier_id}|{event}|{body}'.encode()).hexdigest()
+            self.db.execute('insert into audit(ts, dossier_id, event, detail, actor, prev_hash, hash) values (?,?,?,?,?,?,?)',
+                            (ts, dossier_id, event, body, actor, prev, h))
+            self.db.commit()
+
+    def verify_audit(self):
+        """Recompute the chain; returns (ok, first_bad_id)."""
+        prev = ''
+        for r in self.db.execute('select id, ts, dossier_id, event, detail, actor, prev_hash, hash from audit order by id'):
+            if r['hash'] is None:                  # rows written before migration 2 are outside the chain
+                continue
+            h = hashlib.sha256(f"{prev}|{r['ts']!r}|{r['actor']}|{r['dossier_id']}|{r['event']}|{r['detail']}".encode()).hexdigest()
+            if r['prev_hash'] != prev or r['hash'] != h:
+                return False, r['id']
+            prev = r['hash']
+        return True, None
 
     def blob_path(self, sha):
         return self.root / 'blobs' / sha
