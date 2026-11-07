@@ -1,0 +1,11 @@
+fastapi==0.162.0
+uvicorn==0.54.0
+python-multipart
+pydantic>=2
+pyyaml>=6
+jsonschema>=4.20
+python-docx>=1.1
+pypdf>=6
+lxml>=5
+pillow>=10
+ocrmypdf>=17

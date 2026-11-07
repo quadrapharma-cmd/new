@@ -32,7 +32,11 @@ This folder is the code skeleton. It is kept here until the separate repository 
 | Assembler | `engine/dossier_engine/assemble.py` | Turns slots + files into writer documents. Picks the right node when a requirement has more than one (e.g. M1-04 new vs re-registration) |
 | CLI | `tools/resolve.py` | Prints the requirements board for a profile |
 
-## Run the app (local, nothing leaves the machine)
+## Run the app
+
+**Online (cloud):** see `deploy/DEPLOY-AR.md` (Docker + login + HTTPS).
+
+### Locally (nothing leaves the machine)
 
 ```bash
 pip install -r requirements-dev.txt          # + LibreOffice for Word → PDF

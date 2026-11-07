@@ -285,7 +285,9 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const bdi = s => `<bdi>${esc(s)}</bdi>`;
 
 async function api(path, opt={}){
+  opt.headers = Object.assign({'X-DB':'1'}, opt.headers||{});
   const r = await fetch('/api' + path, opt);
+  if(r.status===401){ location.href='/login'; throw new Error('auth'); }
   const ct = r.headers.get('content-type') || '';
   const body = ct.includes('json') ? await r.json() : null;
   if(!r.ok){ const d = body && body.detail || {}; const e = new Error(d[S.lang] || d.en || r.statusText); e.detail = d; e.status = r.status; throw e; }

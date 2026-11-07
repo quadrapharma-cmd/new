@@ -65,9 +65,15 @@ class ReqReq(BaseModel):
     signatory_title: str = None
 
 
-def create_app(workspace):
+def create_app(workspace, auth_enabled=None):
+    import os
+    from .auth import Auth, install
     st = Store(workspace)
-    app = FastAPI(title='Dossier Builder (local)', version='0.1')
+    app = FastAPI(title='Dossier Builder', version='0.2', docs_url=None, redoc_url=None, openapi_url=None)
+    if auth_enabled is None:
+        auth_enabled = os.environ.get('DB_MODE') == 'cloud' or os.environ.get('DB_AUTH') == '1'
+    app.state.auth = Auth(workspace, auth_enabled)
+    install(app, app.state.auth, st)
 
     @app.exception_handler(StoreError)
     def _store_err(_, e):

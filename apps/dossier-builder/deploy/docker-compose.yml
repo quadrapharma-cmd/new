@@ -1,0 +1,20 @@
+# Dossier Builder on your own server with automatic HTTPS (Caddy + Let's Encrypt).
+#   1. point your domain (e.g. dossier.example.com) to the server's IP
+#   2. copy .env.example to .env and fill it
+#   3. docker compose up -d --build      (run from apps/dossier-builder/deploy/)
+services:
+  app:
+    build: { context: ../../.., dockerfile: apps/dossier-builder/deploy/Dockerfile }
+    restart: unless-stopped
+    env_file: .env
+    environment: { DB_MODE: cloud, DB_COOKIE_SECURE: "1" }
+    volumes: [ "dossier-data:/data" ]
+    expose: [ "8765" ]
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: [ "80:80", "443:443" ]
+    environment: { DOMAIN: "${DOMAIN}" }
+    volumes: [ "./Caddyfile:/etc/caddy/Caddyfile:ro", "caddy-data:/data" ]
+    depends_on: [ app ]
+volumes: { dossier-data: {}, caddy-data: {} }
