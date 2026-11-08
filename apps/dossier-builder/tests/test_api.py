@@ -267,3 +267,33 @@ def test_expired_evidence_blocks_item(c, pdf):
     ref = c.post(f'/api/dossiers/{did}/slots/M1-19/references',
                  json={'title': 'Register', 'url': 'https://drive.google.com/x', 'valid_until': past}).json()
     assert ref['check_status'] == 'non_conforming'
+
+
+def test_capabilities_are_counted_from_the_engine(c):
+    d = c.get('/api/capabilities').json()
+    assert d['requirements']['total'] == 101 and d['requirements']['by_module']['1'] == 45
+    assert d['variations']['total'] == 90 and d['validators']['ectd32']['automated'] > 80
+    assert {g['kind'] for g in d['generators']} >= {'cover', 'composition', 'salt', 'p51'}
+    assert 'XC-06' in d['checks']['cross'] and 'NP040-NUM' in d['checks']['cross']
+    assert d['doc_types'] == 21 and d['outputs'] == ['ctd', 'ectd32', 'ectd40']
+
+
+def test_profile_preview_before_any_dossier(c):
+    p = c.post('/api/profile/preview', json={**PROFILE, 'licence': 'toll'}).json()
+    assert p['counts']['R'] > 60 and p['column'] == 'G_LOC' and not p['column_assumed']
+    ids = {s['req_id'] for s in p['slots'] if s['level'] == 'R'}
+    assert 'M1-20' in ids and 'M1-31' in ids                      # toll licence + composition certificate
+    assert 'M1-31' in p['generable'] and 'M1-37' in p['third_party']
+    assert any(s['slot_id'].startswith('S-') and s['item'] for s in p['slots'])   # per-API expansion
+    # the wizard asks for the APIs in step 3: the preview still works without them
+    p0 = c.post('/api/profile/preview', json={**PROFILE, 'apis': []}).json()
+    assert p0['counts']['R'] > 40 and not any(s['item'] for s in p0['slots'])
+    # a real contradiction is still refused with its explanation
+    r = c.post('/api/profile/preview', json={**PROFILE, 'origin': 'local', 'licence': 'imported'})
+    assert r.status_code == 422 and r.json()['detail']['code'] == 'E-PROFILE'
+
+
+def test_dossier_list_carries_profile_and_product(c):
+    did = new(c)
+    row = next(d for d in c.get('/api/dossiers').json() if d['id'] == did)
+    assert row['profile']['licence'] == 'own' and row['product']['name'] == PRODUCT['name']

@@ -280,3 +280,48 @@ def test_upload_asks_replace(server, browser, tmp_path):
     page.wait_for_timeout(500)
     s = next(x for x in httpx.get(f'{server}/api/dossiers/{did}/board').json()['slots'] if x['slot_id'] == 'M1-31')
     assert [d['version'] for d in s['documents']] == [2]                    # v1 superseded, not duplicated
+
+
+def test_guide_and_live_preview(server, browser, tmp_path):
+    """Home shows the engine's capabilities; the wizard previews the requirements live; the guide computes the next step."""
+    import httpx
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    errors = []
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    page.add_init_script("localStorage.setItem('db.lang','en')")
+    page.goto(server + '/#/')
+    page.wait_for_selector('.caps .cap')
+    assert page.locator('.cap').count() >= 10 and '101' in page.inner_text('.caps')
+    page.click('#btnNew')
+    page.wait_for_selector('#pvBody .n')
+    base = int(page.inner_text('#pvBody .n'))
+    page.click('#wizNext')
+    page.click('[data-k=licence][data-v=toll]')
+    page.wait_for_function(f"(n=>n && +n.innerText > {base})(document.querySelector('#pvBody .n'))")   # toll adds requirements
+    page.click('[data-k=origin][data-v=imported]')
+    page.click('#wizNext'); page.fill('[data-api="0"][data-f=name]', 'Paracetamol'); page.fill('[data-api="0"][data-f=manufacturer]', 'Granules India')
+    page.click('#wizNext')
+    page.wait_for_selector('.reqlist details[open]')                                        # last step: the full list
+    assert 'Required' in page.inner_text('.reqlist')
+    # guide on a seeded dossier: nothing entered -> first step is the product data
+    prof = dict(dossier_kind='generic', origin='local', licence='own', activity='new',
+                apis=[dict(name='Paracetamol', manufacturer='Granules India', option='CEP')])
+    did = httpx.post(server + '/api/dossiers', json=dict(name='Guide test', profile=prof, product=dict(
+        name='Examplol', dosageform='tablet', manufacturer='Example Pharma'), envelope={})).json()['id']
+    page.goto(f'{server}/#/d/{did}/guide')
+    page.wait_for_selector('.journey')
+    assert 'Start with the product data' in page.inner_text('.next')
+    assert page.locator('.jbar a').count() == 6 and page.locator('.jbar a.now').count() == 1
+    page.click('.next [data-go]')
+    page.wait_for_selector('#dSave')
+    page.click('[data-dadd=batches]'); page.fill('[data-d="batches.0.no"]', 'EX0001'); page.click('#dSave')
+    page.wait_for_selector('#crossBox .finding')
+    page.goto(f'{server}/#/d/{did}/guide')
+    page.wait_for_selector('.journey')
+    nxt = page.inner_text('.next')
+    assert 'Generate' in nxt or 'Upload' in nxt                                            # data started -> documents
+    page.goto(f'{server}/#/d/{did}/checks')
+    page.wait_for_selector('.kpis')
+    assert 'Cross-document' in page.inner_text('#view')
+    assert errors == []

@@ -194,7 +194,9 @@ class Store:
         return d
 
     def list_dossiers(self):
-        return [dict(r) for r in self.db.execute('select id, name, created from dossier order by created desc')]
+        rows = self.db.execute('select id, name, created, profile, product from dossier order by created desc')
+        return [dict(r) | {'profile': json.loads(r['profile'] or '{}'), 'product': json.loads(r['product'] or '{}')}
+                for r in rows]
 
     def slots(self, did):
         d = self.dossier(did)

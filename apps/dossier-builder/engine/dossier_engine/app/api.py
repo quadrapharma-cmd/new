@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from ..profile import Profile, ProfileError
+from ..resolver import resolve
 from ..guard import assert_allowed, LockedError
 from ..assemble import docs_for
 from ..classify import Classifier
@@ -337,6 +338,58 @@ def create_app(workspace, auth_enabled=None):
     @app.get('/api/generators')
     def generators():
         return {k: {kk: v[kk] for kk in ('req', 'title', 'fields')} for k, v in letters.SCHEMAS.items()}
+
+    @app.get('/api/capabilities')
+    def capabilities():
+        """What the program can do, counted from the engine itself (rule packs, generators, checks, validators)."""
+        import inspect, re
+        from .. import crosschecks, fixes
+        from .suite import TYPES_FILE
+        import yaml
+        pack = st.pack('eda.ctd.nta065.v5')
+        by_module, by_class = {}, {}
+        for r in pack.requirements:
+            by_module[str(r['module'])] = by_module.get(str(r['module']), 0) + 1
+            by_class[r['doc_class']] = by_class.get(r['doc_class'], 0) + 1
+        rules40 = sorted(set(re.findall(r"'(eCTD4-[0-9A-Za-z/.-]+)'", inspect.getsource(v40))))
+        cross_ids = sorted(set(re.findall(r"'((?:XC|NP040)-[A-Z0-9]+)'", inspect.getsource(crosschecks))))
+        doc_types = yaml.safe_load(TYPES_FILE.read_text(encoding='utf-8'))['types']
+        return {'version': app.version, 'workspace': str(st.root),
+                'dossiers': st.db.execute('select count(*) from dossier').fetchone()[0],
+                'pack': {'id': pack.id, 'title': pack.meta['title'], 'status': pack.meta['status'],
+                         'valid_from': pack.meta['valid_from'], 'sources': pack.meta['sources']},
+                'requirements': {'total': len(pack.requirements), 'by_module': by_module, 'by_class': by_class},
+                'variations': {'total': len(VAR.items), 'classes': VAR.order, 'source': VAR.meta['sources']},
+                'generators': [{'kind': k, 'req': v.get('req'), 'title': v['title']} for k, v in letters.SCHEMAS.items()],
+                'checks': {'cross': cross_ids, 'fixes': fixes.ORDER,
+                           'pdf': ['EG-PF-16.1', 'EG-PF-16.2', 'EG-PF-16.3', 'EG-PF-16.5', 'EG-PF-15.4', 'EG-BP-E23',
+                                   'EG-BP-16.BP1', 'PDF-JS', 'NTA065-N4', 'NTA065-BM', 'ICH-NAME']},
+                'validators': {'ectd32': {'automated': len(v32.RULES), 'profile': 'EG eCTD 3.2.2 provisional v0'},
+                               'ectd40': {'rules': rules40, 'profile': 'EG eCTD 4.0 provisional v0'}},
+                'doc_types': len(doc_types), 'outputs': ['ctd', 'ectd32', 'ectd40']}
+
+    @app.post('/api/profile/preview')
+    def profile_preview(profile: dict):
+        """The requirements a profile would produce, before any dossier exists (the wizard's last step)."""
+        prof = Profile.from_dict(profile)
+        try:
+            prof.validate()
+        except ProfileError as e:                       # a wizard without its APIs yet still gets the non-API items
+            rest = [p for p in e.problems if p['code'] != 'P-NO-API']
+            if rest:
+                raise ProfileError(rest)
+        slots = [s.to_dict() for s in resolve(prof, st.pack('eda.ctd.nta065.v5'), validate=False)]
+        gen = {v['req'] for v in letters.SCHEMAS.values() if v.get('req')}
+        counts = {k: sum(1 for s in slots if s['level'] == k) for k in ('R', 'O', 'NR', 'NA')}
+        by_module = {}
+        for s in slots:
+            m = by_module.setdefault(str(s['module']), {'R': 0, 'O': 0, 'NR': 0, 'NA': 0})
+            m[s['level']] += 1
+        col, assumed = prof.column()
+        return {'slots': slots, 'counts': counts, 'by_module': by_module, 'column': col, 'column_assumed': assumed,
+                'generable': [s['slot_id'] for s in slots if s['level'] in ('R', 'O') and s['req_id'] in gen],
+                'third_party': [s['slot_id'] for s in slots if s['level'] in ('R', 'O') and
+                                s['doc_class'] in ('third_party_certificate', 'eda_document')]}
 
     @app.get('/api/dossiers/{did}/generate/{kind}/prefill')
     def prefill(did: str, kind: str, slot_id: str = None):

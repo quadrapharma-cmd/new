@@ -1,22 +1,29 @@
 <!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dossier Builder — Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/ds.css">
 <style>
-:root{--bg:#F4F6F8;--surface:#fff;--line:#DCE2E8;--ink:#0F1B2A;--muted:#5B6B7C;--brand:#0E7C86;--brand-ink:#fff;--bad:#C62828}
-@media (prefers-color-scheme:dark){:root{--bg:#0D141C;--surface:#131C26;--line:#253343;--ink:#E6EDF3;--muted:#93A3B5;--brand:#2BB3BD;--brand-ink:#04161A;--bad:#F87171}}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans Arabic","IBM Plex Sans",system-ui,"Segoe UI",Tahoma,sans-serif;padding:16px}
-form{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;width:min(380px,100%);display:flex;flex-direction:column;gap:12px}
-h1{font-size:20px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 8px;font-size:13px}
-label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-input{font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:40px}
-button{font:inherit;border:0;border-radius:8px;padding:10px;background:var(--brand);color:var(--brand-ink);font-weight:600;cursor:pointer;min-height:42px}
-.err{color:var(--bad);font-size:13px;min-height:1em}
+body{min-height:100vh;display:grid;place-items:center;padding:16px}
+.login{width:min(420px,100%);padding:28px 26px;display:flex;flex-direction:column;gap:14px}
+.login .logo{padding:0 0 6px}
+.login h1{font-size:20px}
+.login label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted);font-weight:600}
+.login .err{color:var(--bad);font-size:13px;min-height:1.2em}
+.login .foot{font-size:12px;color:var(--faint);display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
 </style></head><body>
-<form id="f"><h1>منشئ الملفات · Dossier Builder</h1><p class="sub">سجّل الدخول · Sign in</p>
-<label>اسم المستخدم · Username<input name="username" autocomplete="username" required dir="ltr"></label>
-<label>كلمة السر · Password<input name="password" type="password" autocomplete="current-password" required dir="ltr"></label>
-<div class="err" id="e" role="alert"></div><button>دخول · Sign in</button></form>
+<form id="f" class="card glow login">
+  <div class="logo"><span class="tile">DB</span><span><span class="name">منشئ ملفات التسجيل · Dossier Builder</span><span class="tag">EDA · CTD / eCTD</span></span></div>
+  <div><h1>سجّل الدخول · Sign in</h1><p class="sub small">مساحة عمل الشركة — كل إجراء بيتسجل باسم صاحبه. · Company workspace — every action is recorded under its author.</p></div>
+  <label>اسم المستخدم · Username<input name="username" autocomplete="username" required dir="ltr" autofocus></label>
+  <label>كلمة السر · Password<input name="password" type="password" autocomplete="current-password" required dir="ltr"></label>
+  <div class="err" id="e" role="alert"></div>
+  <button class="btn pri lg">دخول · Sign in</button>
+  <div class="foot"><span class="led">HTTPS · signed session</span><span class="code">NP.CAPP.065 v5 · eCTD 3.2.2 / 4.0</span></div>
+</form>
 <script>
+try{ document.documentElement.dataset.theme = localStorage.getItem('db.theme') || 'dark'; }catch(e){ document.documentElement.dataset.theme='dark'; }
 document.getElementById('f').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);
  const r=await fetch('/api/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:fd.get('username'),password:fd.get('password')})});
  if(r.ok){location.href='/';return;} const j=await r.json().catch(()=>({}));const d=j.detail||{};document.getElementById('e').textContent=(d.ar||'')+(d.en?' · '+d.en:'');};

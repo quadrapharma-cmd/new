@@ -130,7 +130,7 @@ def install(app, auth, store):
     @app.middleware('http')
     async def guard(request: Request, call_next):
         path = request.url.path
-        if auth.enabled and path not in OPEN:
+        if auth.enabled and path not in OPEN and not path.startswith('/assets/'):
             user = auth.verify(request.cookies.get(COOKIE, ''))
             if not user:
                 if path.startswith('/api/'):
