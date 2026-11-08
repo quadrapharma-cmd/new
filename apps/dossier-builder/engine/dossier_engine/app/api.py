@@ -75,6 +75,8 @@ def create_app(workspace, auth_enabled=None):
         auth_enabled = os.environ.get('DB_MODE') == 'cloud' or os.environ.get('DB_AUTH') == '1'
     app.state.auth = Auth(workspace, auth_enabled)
     install(app, app.state.auth, st)
+    from . import review_api
+    review_api.install(app, st)
 
     @app.exception_handler(StoreError)
     def _store_err(_, e):

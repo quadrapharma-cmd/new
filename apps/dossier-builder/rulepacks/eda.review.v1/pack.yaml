@@ -1,0 +1,81 @@
+id: eda.review.v1
+version: "2026-11"
+title:
+  en: Assessor knowledge pack — EDA departments plus the international layer
+  ar: حزمة معرفة المُقيِّم — إدارات هيئة الدواء المصرية + الطبقة الدولية
+status: provisional   # becomes 'in_force' when every provisional question has been read against its source in full
+files: [screening.yaml, quality.yaml, cadc.yaml, stability.yaml, be.yaml, rereg.yaml, labelling.yaml, gates.yaml, clinical.yaml, international.yaml]
+requirements_pack: eda.ctd.nta065.v5      # slot ids referenced in evidence.slots come from this pack
+layers:
+  eda:  {en: What EDA publishes, ar: ما تنشره الهيئة}
+  intl: {en: Beyond EDA — ICH / WHO / EMA / FDA assessment practice, ar: فوق الهيئة — ممارسة التقييم في ICH / WHO / EMA / FDA}
+  prep: {en: Preparatory items assessors are known to look for (WHO screening checklist), ar: بنود تحضيرية يبحث عنها المُقيِّمون (قائمة فحص WHO)}
+strictness:
+  eda:           {layers: [eda], en: EDA only, ar: الهيئة فقط}
+  international: {layers: [eda, intl], en: EDA + international (default), ar: الهيئة + الدولي (الافتراضي)}
+  strict:        {layers: [eda, intl, prep], en: Everything, ar: كل البنود}
+departments:
+  - {id: screening, en: Screening, ar: الفحص الأولي, body: {en: Administration of Human Pharmaceuticals Regulatory Affairs, ar: إدارة الشؤون التنظيمية للمستحضرات البشرية}, modules: [1]}
+  - {id: technical, en: Technical file, ar: الملف الفني, body: {en: eCTD / PDF technical profile, ar: الملف الإلكتروني (PDF / eCTD)}, modules: []}
+  - {id: quality, en: Quality (Module 3), ar: الجودة (الوحدة 3), body: {en: Technical Affairs — Quality assessment, ar: الشؤون الفنية — تقييم الجودة}, modules: [2, 3]}
+  - {id: cadc, en: CADC (national control laboratory), ar: معامل الرقابة الدوائية CADC, body: {en: Central Administration of Drug Control — file assessment, ar: الإدارة المركزية للرقابة الدوائية — تقييم الملف}, modules: [3]}
+  - {id: stability, en: Stability, ar: الثبات, body: {en: General Administration for Stability, ar: الإدارة العامة للثبات}, modules: [3]}
+  - {id: be, en: Bioequivalence, ar: التكافؤ الحيوي, body: {en: Bioequivalence assessment (GL.CAPP.024), ar: تقييم التكافؤ الحيوي (GL.CAPP.024)}, modules: [5]}
+  - {id: clinical, en: Clinical / non-clinical, ar: الإكلينيكي وغير الإكلينيكي, body: {en: Innovative products — scientific assessment, ar: المنتجات المبتكرة — التقييم العلمي}, modules: [2, 4, 5]}
+  - {id: labelling, en: Labelling, ar: النشرة والعبوة, body: {en: SmPC · PIL · artwork, ar: النشرة الداخلية والخارجية والعبوة}, modules: [1]}
+  - {id: gates, en: Gates, ar: البوابات, body: {en: Inspection · pharmacovigilance · pricing · prior approvals, ar: التفتيش · اليقظة الدوائية · التسعير · الموافقات المسبقة}, modules: [1]}
+  - {id: reliance, en: Reliance route, ar: مسار الاعتماد, body: {en: Imported products approved by a reference authority, ar: المنتجات المستوردة المعتمدة من جهة مرجعية}, modules: [1]}
+severity:
+  critical: {en: Stops the file at screening or makes the department refuse it, ar: يوقف الملف عند الفحص الأولي أو يجعل الإدارة ترفضه}
+  major:    {en: A query that stops the clock until answered, ar: استفسار يوقف الساعة حتى الرد}
+  minor:    {en: Answered in the same round without affecting the decision, ar: يُجاب في نفس الجولة دون أثر على القرار}
+  note:     {en: Improvement from the tool, kept out of the letter, ar: تحسين من الأداة، لا يدخل الخطاب}
+verdict_rules:
+  department: "critical → reject · major → clock_stop · minor → comments · none → approve; not_assessable items keep the department at 'approve pending review'"
+  dossier: "screening reject → not_ready (will not pass screening) · any reject → not_ready · any clock_stop → ready_with_risks · else ready"
+module_departments: {1: screening, 2: quality, 3: quality, 4: clinical, 5: be}
+sources:
+  - {code: NP.CAPP.065 v5/2025, title: Guidance on submission of CTD dossiers — Module 1 checklist, file: EDA_NP.CAPP.065_v5_2025_CTD-submission-guidance.pdf}
+  - {code: NP.CAPP.040 v1/2022, title: Quality module file — most common deficiencies, file: EDA_NP.CAPP.040_v1_2022_QM-common-deficiencies.pdf}
+  - {code: GL.CADC.002 v02/2024, title: Guidelines for file assessment for pharmaceutical products for human use (CADC), file: EDA_GL.CADC.002_v02_2024_CADC-file-assessment_IN-FORCE.pdf}
+  - {code: NP.CAPP.090 v2/2026, title: File content of stability study dossier, file: EDA_NP.CAPP.090_v2_2026_stability-dossier-content.pdf}
+  - {code: GL.CAPP.024 v4/2026, title: Bioequivalence guideline, file: EDA_GL.CAPP.024_v4_2026_BE-guideline.pdf}
+  - {code: GL.CAPP.039 v1/2025, title: Quality module for re-registration, file: EDA_GL.CAPP.039_v1_2025_QM-re-registration.pdf}
+  - {code: EDA Quality Module guideline v2/2023, title: CTD Quality Module guideline, file: EDA_CTD-Quality-Module-guideline_v2_2023.pdf}
+  - {code: EDA submission procedures, title: A step-by-step overview — submission procedures for registration dossiers (timelines), file: EDA_Submission-Procedures-Registration-Dossiers_GoogleForms_step-by-step.pdf}
+  - {code: WHO PQ screening checklist 05/2021, title: Screening checklist for multisource FPP dossiers, file: WHO_PQ_screening-checklist_May2021.doc}
+  - {code: WHO TRS 986 Annex 6, title: Guidelines on submission of documentation for a multisource (generic) FPP — quality part, file: WHO_TRS986_Annex6_generic-FPP-quality.pdf}
+  - {code: ICH M4Q(R1), title: The CTD — Quality, file: ICH_M4Q_R1.pdf}
+  - {code: WHO TRS 992 Annex 9 (2015), title: Good review practices — guidelines for national and regional regulatory authorities, file: (not in sources — cited at guideline level)}
+  - {code: WHO TRS 1033 Annex 10 (2021), title: Good reliance practices in the regulation of medical products, file: (not in sources — cited at guideline level)}
+unread:   # named so that no question pretends to cite them
+  - {code: EDA labelling / artwork guideline, note: not in sources; labelling questions are marked provisional}
+  - {code: EDA stability guideline (long-term storage condition for Egypt), note: not in sources; no storage condition is asserted}
+  - {code: EG eCTD validation criteria, note: not published; technical questions rely on ICH + EDA drafts}
+clock_stop:
+  fast_track_months: 3     # decree 450/2023 case 2 and 820/2016: resubmission after screening rejection and supplementary documents — 3 months
+  normal_track_screening_wds: 30   # decree 450/2023 case 1 & 3 (imported): resubmission after screening rejection
+  normal_track_supplementary_days: 60
+tracks:    # working days per stage, as published in the submission-procedures guide (EDA timeframes tables)
+  d820_emafda:   {decree: 820/2016, en: 820/2016 — approved by EMA and FDA, ar: 820/2016 — معتمد من EMA وFDA, stages: [3, 3, 10, 7], total_months: 1}
+  d820_emaorfda: {decree: 820/2016, en: 820/2016 — approved by EMA or FDA, ar: 820/2016 — معتمد من EMA أو FDA, stages: [6, 6, 20, 14], total_months: 2}
+  d820_imported: {decree: 820/2016, en: 820/2016 — imported (CTD), ar: 820/2016 — مستورد (CTD), stages: [15, 20, "3m", "2m"], total_months: 6}
+  d820_local:    {decree: 820/2016, en: 820/2016 — local (CTD), ar: 820/2016 — محلي (CTD), stages: [15, 20, "3m", "2m"], total_months: 6}
+  c2_track_a:    {decree: 450/2023 case 2, en: 450/2023 case 2 — Track A, ar: 450/2023 الحالة 2 — المسار A, stages: [3, 10, 5, 7], total_months: 1}
+  c2_track_b:    {decree: 450/2023 case 2, en: 450/2023 case 2 — Track B, ar: 450/2023 الحالة 2 — المسار B, stages: [6, 20, 10, 14], total_months: 2}
+  c2_track_c_ref: {decree: 450/2023 case 2, en: 450/2023 case 2 — Track C imported from a reference country, ar: 450/2023 الحالة 2 — المسار C مستورد من دولة مرجعية, stages: [9, 30, 10, 25], total_months: 3}
+  c2_track_c:    {decree: 450/2023 case 2, en: 450/2023 case 2 — Track C local / imported non-reference, ar: 450/2023 الحالة 2 — المسار C محلي / مستورد غير مرجعي, stages: [15, 60, 10, 60], total_months: 6}
+  c13_ref:       {decree: 450/2023 case 1 & 3, en: 450/2023 case 1 & 3 — imported from a reference country, ar: 450/2023 الحالة 1 و3 — مستورد من دولة مرجعية, stages: [20, 45, 10, 45, 15, 30], total_months: null}
+  c13_nonref:    {decree: 450/2023 case 1 & 3, en: 450/2023 case 1 & 3 — imported non-reference, ar: 450/2023 الحالة 1 و3 — مستورد غير مرجعي, stages: [30, 80, 10, 45, 15, 30], total_months: null}
+stage_names:
+  four: [{en: Screening, ar: الفحص الأولي}, {en: Distribution and technical evaluation, ar: التوزيع والتقييم الفني}, {en: Release of departmental approvals, ar: صدور موافقات الإدارات}, {en: Final revision · Technical Committee · licence, ar: المراجعة النهائية · اللجنة الفنية · الرخصة}]
+  six:  [{en: Screening, ar: الفحص الأولي}, {en: Distribution and technical evaluation, ar: التوزيع والتقييم الفني}, {en: Release of departmental approvals, ar: صدور موافقات الإدارات}, {en: Final revision of the dossier, ar: المراجعة النهائية للملف}, {en: Review of supplementary documents, ar: مراجعة المستندات التكميلية}, {en: Technical Committee and licence release, ar: اللجنة الفنية وإصدار الرخصة}]
+letters:
+  deficiency:
+    title: {en: Request for supplementary information, ar: طلب استيفاء}
+    intro: {en: "Following the assessment of the above dossier against the published requirements, the applicant is requested to address the following points. All supporting documents should be submitted within the relevant CTD folders, as new versions of the affected documents.",
+            ar: "بعد تقييم الملف المذكور أعلاه وفقاً للمتطلبات المنشورة، يُطلب من مقدم الطلب استيفاء النقاط التالية. تُقدَّم جميع المستندات الداعمة داخل مجلدات CTD المعنية كنسخ جديدة من المستندات المتأثرة."}
+    closing: {en: "This letter is a simulation produced by the applicant's own review tool from EDA's published documents. It is not issued by the Egyptian Drug Authority.", ar: "هذا الخطاب محاكاة أعدّتها أداة المراجعة الخاصة بمقدم الطلب من مستندات الهيئة المنشورة، وليس صادراً عن هيئة الدواء المصرية."}
+  report:
+    title: {en: Assessment report, ar: تقرير التقييم}
+    recommendation: {approve: {en: Recommended for approval, ar: يُوصى بالموافقة}, comments: {en: Approvable with comments, ar: قابل للموافقة مع ملاحظات}, clock_stop: {en: Supplementary information required (clock stop), ar: مطلوب استيفاء (إيقاف الساعة)}, reject: {en: Not approvable in the present form, ar: غير قابل للموافقة بصورته الحالية}}

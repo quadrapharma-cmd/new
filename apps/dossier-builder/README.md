@@ -63,6 +63,26 @@ python3 apps/dossier-builder/web/build.py      # → web/dist (index.html for th
 python3 -m pytest -q apps/dossier-builder/tests/test_web_edition.py   # the journey inside Chromium, no server
 ```
 
+## Regulatory Reviewer — the dossier reviewed the way EDA (and the international assessors) review it
+
+`engine/dossier_engine/review/` + `rulepacks/eda.review.v1/` + the «المراجع الرقابي» pages of the builder (`#/d/<id>/review/…`).
+One run (`POST /api/dossiers/{id}/review`) resolves the profile, then asks every applicable **assessor question** of the
+knowledge pack (226 questions: screening · quality M3 · CADC · stability · bioequivalence · labelling · gates · clinical ·
+reliance; layers `eda` = what EDA publishes, `intl` = ICH/WHO/EMA/FDA practice beyond EDA, `prep` = WHO screening
+items). Evidence comes from the documents (per-page text, keyword hits with page and excerpt — a scan without a text
+layer is «not assessable», never «missing»), from the structured data (named checks in `review/checks.py`), from the
+board (missing required items, technical PDF findings) and from the cross-checks. Every finding carries the EDA source
+with a verbatim quote and, where it exists, the international anchor; a severity (critical / major / minor / note — the
+tool's own scale, EDA publishes none); the authority-voice wording EN + AR; and the action that fixes it. Departments get
+a verdict (approve · approve with comments · clock stop · reject), the dossier a readiness verdict, and the regulatory
+clock is simulated from the published timelines table (decrees 820/2016 and 450/2023). Outputs: the **deficiency letter**
+and the **assessment report** per department (DOCX, PDF with LibreOffice), a response cycle (respond → re-assess closes
+the finding only when the question becomes adequate), manual overrides with a reason (audit log), a second-assessor
+sign-off (good review practice), and the **AI assessor** — Claude reads a section's documents (browser edition through
+the `sample` capability, server through the SDK with a key) and suggests verdicts that enter the letter only after a
+human confirms them; quoted excerpts are verified against the document text. Everything says «simulation — EDA decides».
+Lint: `python3 -m pytest -q tests/test_review.py` (pack clean and cited, run, responses, letters, sign-off, AI, reliance).
+
 ## Run the app
 
 **Online (cloud):** see `deploy/DEPLOY-AR.md` (Docker + login + HTTPS).

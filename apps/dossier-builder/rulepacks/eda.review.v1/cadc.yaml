@@ -1,0 +1,734 @@
+# EDA CADC "Guidelines for File Assessment for Pharmaceutical Products for Human Use"
+# GL.CADC.002 v02/2024 (effective 01/06/2024) - assessor questions, dept cadc, layer eda
+- id: CD-65-01
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Latest pharmacopoeia edition referenced", ar: "الاستناد إلى أحدث إصدار من دستور الأدوية"}
+  question: {en: "Wherever a pharmacopoeia (USP, BP, Ph. Eur.) is cited in the specification, methods or composition, is the most recent edition the one referred to?", ar: "حيثما يُستشهد بدستور أدوية (USP أو BP أو Ph. Eur.) في المواصفات أو طرق التحليل أو التركيب، هل الإصدار المشار إليه هو أحدث إصدار؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-09, M1-36]
+    keywords: ["current edition", "latest edition", "USP", "Ph. Eur.", "BP"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should update every pharmacopoeial reference in the specifications and analytical procedures to the most recent edition of the pharmacopoeia.", ar: "يجب على مقدم الطلب تحديث كل إشارة إلى دستور الأدوية في المواصفات وطرق التحليل إلى أحدث إصدار من دستور الأدوية المعني."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "§6.5.2", quote: "Whenever a pharmacopeia is used as a reference, this shall always refer to the most recent version thereof."}
+- id: CD-65-02
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.6"
+  title: {en: "Monograph tests included or waiver justified", ar: "إدراج اختبارات الدستور أو تبرير إسقاطها"}
+  question: {en: "Where the finished product is pharmacopoeial or has a pharmacopoeial monograph, does the specification adhere to all monograph tests and acceptance criteria, and is every monograph test not listed in this guideline either added or its waiver justified?", ar: "إذا كان المستحضر النهائي دستورياً أو له دراسة (مونوغراف) في دستور أدوية، فهل تلتزم المواصفات بجميع اختبارات الدراسة ومعايير قبولها، وهل أُضيف كل اختبار تنص عليه الدراسة ولا يرد في هذا الدليل أو قُدّم تبرير لإسقاطه؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-09, P-13]
+    keywords: ["monograph", "justif", "waive", "not applicable"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should add the tests prescribed in the finished product monograph that are missing from the specification, or provide a scientific justification for waiving each of them.", ar: "يجب على مقدم الطلب إضافة الاختبارات المنصوص عليها في دراسة المستحضر النهائي بدستور الأدوية والمفقودة من المواصفات، أو تقديم تبرير علمي لإسقاط كل منها."}
+  action: {type: generate, target: "P-13"}
+  source: {code: "GL.CADC.002 v02/2024", section: "§6.5.3 and §6.5.7", quote: "if the monograph specifies certain tests that are not stated in this guideline, the manufacturer/MAH should add those tests, or otherwise justify waiving those tests."}
+- id: CD-65-03
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.2.2"
+  title: {en: "Dissolution study submitted", ar: "تقديم دراسة الانحلال"}
+  question: {en: "Has a complete dissolution study with scientific justification been submitted for a new drug product, or a complete comparative dissolution study in different media in other cases?", ar: "هل قُدّمت دراسة انحلال كاملة مع تبرير علمي للمستحضر الدوائي الجديد، أو دراسة انحلال مقارنة كاملة في أوساط مختلفة في الحالات الأخرى؟"}
+  applies: "'oral_solution' not in dosage_specifics and not aqueous_solution"
+  severity: major
+  evidence:
+    slots: [P-02]
+    keywords: ["dissolution profile", "comparative dissolution", "f2", "dissolution study", "similarity"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit a complete dissolution study with scientific justification (new drug product) or a complete comparative dissolution study in different media against the reference product.", ar: "يجب على مقدم الطلب تقديم دراسة انحلال كاملة مع تبرير علمي (للمستحضر الجديد) أو دراسة انحلال مقارنة كاملة في أوساط مختلفة مقابل المستحضر المرجعي."}
+  action: {type: upload, target: "P-02"}
+  source: {code: "GL.CADC.002 v02/2024", section: "§6.5.4 and §6.5.5", quote: "For new pharmaceutical drug products, a complete dissolution study with scientific justification should be submitted."}
+- id: CD-65-04
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Reference-country approved specifications", ar: "المواصفات المعتمدة من الدولة المرجعية"}
+  question: {en: "For an imported product approved in a reference country of the Technical Committee for Drug Control list, are the submitted specifications those previously approved by the reference country's NRA?", ar: "بالنسبة للمستحضر المستورد المعتمد في دولة مرجعية مدرجة في قائمة اللجنة الفنية لمراقبة الأدوية، هل المواصفات المقدمة هي المواصفات المعتمدة سابقاً من السلطة التنظيمية الوطنية للدولة المرجعية؟"}
+  applies: "origin == 'imported'"
+  severity: major
+  evidence:
+    slots: [P-09, P-13]
+    keywords: ["approved", "reference country", "EMA", "FDA", "MHRA", "marketing authori"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit the finished product specifications as approved by the reference country's national regulatory authority, with evidence of that approval.", ar: "يجب على مقدم الطلب تقديم مواصفات المستحضر النهائي كما اعتمدتها السلطة التنظيمية الوطنية للدولة المرجعية، مع ما يثبت ذلك الاعتماد."}
+  action: {type: upload, target: "P-09"}
+  source: {code: "GL.CADC.002 v02/2024", section: "§6.5.6.1", quote: "The products are assessed and analyzed according to their specifications that have been previously approved by the reference country‘s NRA."}
+- id: CD-65-05
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Shelf-life specifications provided", ar: "تقديم مواصفات نهاية الصلاحية"}
+  question: {en: "Are shelf-life (end of shelf-life) specifications provided, since CADC assesses and analyses the product against shelf-life specifications, with release specifications set out separately where they differ?", ar: "هل قُدّمت مواصفات نهاية الصلاحية، علماً بأن الإدارة المركزية للرقابة الدوائية تقيّم المستحضر وتحلله وفق مواصفات نهاية الصلاحية، مع عرض مواصفات الإفراج في مجموعة منفصلة حيثما اختلفت؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["shelf-life", "shelf life", "end of shelf", "release and shelf", "check limit"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the shelf-life specifications of the finished product, clearly distinguished from the release specifications, as the product is assessed and analysed against shelf-life specifications.", ar: "يجب على مقدم الطلب تقديم مواصفات نهاية الصلاحية للمستحضر النهائي مميزة بوضوح عن مواصفات الإفراج، إذ يُقيَّم المستحضر ويُحلَّل وفق مواصفات نهاية الصلاحية."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "§6.5.8", quote: "The products are assessed and analyzed according to shelf-life specifications."}
+- id: CD-66-01
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.1"
+  title: {en: "Composition pharmacopoeial references match licence", ar: "مطابقة المراجع الدستورية في التركيب للترخيص"}
+  question: {en: "Does the pharmacopoeial reference stated for each ingredient in the composition (BP, USP, etc.) comply with the registration licence, and does each pharmacopoeial API comply with the latest version of the specified pharmacopoeia?", ar: "هل يتطابق المرجع الدستوري المذكور لكل مكوّن في التركيب (BP أو USP وغيرهما) مع ترخيص التسجيل، وهل تلتزم كل مادة فعالة دستورية بأحدث إصدار من دستور الأدوية المحدد؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-01, M1-31]
+    keywords: ["BP", "USP", "Ph. Eur.", "Ph.Eur", "in-house"]
+    data: [composition, apis]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should align the pharmacopoeial reference of each ingredient in the product composition with the registration licence and state the latest version of the pharmacopoeia for each pharmacopoeial API.", ar: "يجب على مقدم الطلب مطابقة المرجع الدستوري لكل مكوّن في تركيب المستحضر مع ترخيص التسجيل، وبيان أحدث إصدار من دستور الأدوية لكل مادة فعالة دستورية."}
+  action: {type: edit_data, target: "composition"}
+  source: {code: "GL.CADC.002 v02/2024", section: "§6.6.1.1 and §6.6.1.3", quote: "The reference specified in the product composition (BP, USP etc.) must comply with the registration license."}
+- id: CD-66-02
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.1"
+  title: {en: "Excipient functions stated", ar: "بيان وظيفة كل مادة غير فعالة"}
+  question: {en: "Is the function of every inactive ingredient in the composition stated according to the Handbook of Pharmaceutical Excipients or another reliable reference?", ar: "هل وُضحت وظيفة كل مادة غير فعالة في التركيب وفقاً لكتيب السواغات الصيدلانية (Handbook of Pharmaceutical Excipients) أو مرجع آخر موثوق؟"}
+  applies: "true"
+  severity: minor
+  evidence:
+    slots: [P-01]
+    keywords: ["function", "Handbook of Pharmaceutical Excipients", "lubricant", "disintegrant", "binder", "diluent"]
+    data: [composition]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should state the function of each inactive ingredient in the composition according to the Handbook of Pharmaceutical Excipients or another reliable reference.", ar: "يجب على مقدم الطلب بيان وظيفة كل مادة غير فعالة في التركيب وفقاً لكتيب السواغات الصيدلانية أو مرجع آخر موثوق."}
+  action: {type: edit_data, target: "composition"}
+  source: {code: "GL.CADC.002 v02/2024", section: "§6.6.1.2", quote: "The function of inactive materials in product should be clarified according to Handbook of Pharmaceutical Excipients or any other reliable reference."}
+- id: CD-66-03
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.1"
+  title: {en: "Calculation sheet for salt and IU potency", ar: "ورقة حساب مكافئ الملح والفاعلية بالوحدات الدولية"}
+  question: {en: "Where the active is a salt, is a separate calculation sheet for the salt-to-base equivalency provided, and where potency is expressed in international units, is the amount marked with (*) and footnoted that the quantity used depends on the potency of the raw material?", ar: "إذا كانت المادة الفعالة ملحاً، فهل قُدّمت ورقة حساب منفصلة لمكافئ الملح إلى القاعدة؟ وإذا كانت الفاعلية تُحسب بالوحدات الدولية، فهل وُضعت علامة (*) على الكمية مع حاشية أسفل الجدول توضح أن الكمية المستخدمة تعتمد على فاعلية المادة الخام؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M1-32, P-01]
+    keywords: ["equivalent to", "salt", "base", "potency", "international unit", "IU"]
+    data: [composition]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit a separate calculation sheet for the equivalency of the salt to the base and, for actives expressed in international units, mark the amount with (*) and add the potency footnote below the composition table.", ar: "يجب على مقدم الطلب تقديم ورقة حساب منفصلة لمكافئ الملح إلى القاعدة، وبالنسبة للمواد الفعالة المعبر عنها بالوحدات الدولية وضع علامة (*) على الكمية وإضافة حاشية الفاعلية أسفل جدول التركيب."}
+  action: {type: upload, target: "M1-32"}
+  source: {code: "GL.CADC.002 v02/2024", section: "§6.6.2.1 and §6.6.2.2", quote: "There should be a separate calculation sheet to calculate equivalency of salt to the base."}
+- id: CD-66-04
+  dept: cadc
+  layer: eda
+  ctd: "CADC-DOCS"
+  title: {en: "Registration form package and manufacturer", ar: "وصف العبوة واسم المصنّع في نموذج التسجيل"}
+  question: {en: "Does the registration form give a full description of the package that is concordant with the attached samples, and does it state the name of the manufacturer?", ar: "هل يتضمن نموذج التسجيل وصفاً كاملاً للعبوة متطابقاً مع العينات المرفقة، وهل يذكر اسم المصنّع؟"}
+  applies: "true"
+  severity: minor
+  evidence:
+    slots: [P-15, M1-11]
+    keywords: ["carton", "blister", "bottle", "vial", "manufactured by", "manufacturer"]
+    data: [packs]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should complete the registration form with a full description of the package concordant with the submitted samples and state the name of the manufacturer.", ar: "يجب على مقدم الطلب استكمال نموذج التسجيل بوصف كامل للعبوة متطابق مع العينات المقدمة، وبيان اسم المصنّع."}
+  action: {type: edit_data, target: "packs"}
+  source: {code: "GL.CADC.002 v02/2024", section: "§6.6.3.1 and §6.6.3.2", quote: "A full description of the package , concordant with the attached samples , should be stated."}
+- id: CD-66-05
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Active in specification matches licence", ar: "مطابقة المادة الفعالة في المواصفات للترخيص"}
+  question: {en: "Do the finished product specification and the production certificate of analysis state the active material exactly as stated in the registration licence and the product composition (same form, salt and strength)?", ar: "هل تذكر مواصفات المستحضر النهائي وشهادة تحليل الإنتاج المادة الفعالة تماماً كما وردت في ترخيص التسجيل وتركيب المستحضر (الصورة نفسها والملح نفسه والتركيز نفسه)؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-09, P-11]
+    keywords: ["assay", "content", "label claim", "labelled amount"]
+    data: [composition, specs.product, apis]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should correct the finished product specification and certificate of analysis so that the active material is stated as in the registration licence and the product composition.", ar: "يجب على مقدم الطلب تصحيح مواصفات المستحضر النهائي وشهادة التحليل بحيث تُذكر المادة الفعالة كما وردت في ترخيص التسجيل وتركيب المستحضر."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "§6.6.4", quote: "The finished product specification and certificate of analysis of production should contain the active material as stated in registration license and product composition."}
+- id: CD-66-06
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.2"
+  title: {en: "Updated method documents and fee receipt", ar: "مستندات الطريقة المحدّثة وإيصال الرسوم"}
+  question: {en: "Where an analytical method has been updated from the registered one, are the full detailed method, the complete validation or verification protocol and report, the complete validation or verification charts, and the receipt of the method-change fee all submitted?", ar: "في حال تحديث طريقة التحليل عن الطريقة المسجلة، هل قُدّمت الطريقة الكاملة المفصلة، وبروتوكول وتقرير التحقق أو التثبت الكاملان، والرسوم البيانية الكاملة للتحقق أو التثبت، وإيصال سداد رسوم تغيير الطريقة؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-10]
+    keywords: ["validation report", "verification report", "protocol", "chromatogram", "receipt"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "For the updated analytical method the applicant should submit the full detailed method, the complete validation or verification protocol and report with the charts, and the receipt of payment of the method-change fee.", ar: "يجب على مقدم الطلب، بالنسبة لطريقة التحليل المحدّثة، تقديم الطريقة الكاملة المفصلة، وبروتوكول وتقرير التحقق أو التثبت الكاملين مع الرسوم البيانية، وإيصال سداد رسوم تغيير الطريقة."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "GL.CADC.002 v02/2024", section: "§6.6.5", quote: "In case of using updated method, the following shall be submitted"}
+- id: CD-A1-01
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Uniformity of mass per Ph. Eur. 2.9.5", ar: "تجانس الكتلة وفق Ph. Eur. 2.9.5"}
+  question: {en: "For solid dosage units (tablets, capsules, suppositories, single-dose powders and granules), does the specification include uniformity of mass per Ph. Eur. 2.9.5 (not more than 2 individual masses deviate from the average by more than the percentage deviation and none by more than twice it), unless uniformity of content is prescribed for all actives?", ar: "بالنسبة لوحدات الجرعة الصلبة (الأقراص والكبسولات والتحاميل والمساحيق والحبيبات أحادية الجرعة)، هل تتضمن المواصفات اختبار تجانس الكتلة وفق Ph. Eur. 2.9.5 (لا تنحرف أكثر من كتلتين فرديتين عن المتوسط بأكثر من نسبة الانحراف المقررة ولا تنحرف أي منها بأكثر من ضعفها)، ما لم يكن تجانس المحتوى مقرراً لجميع المواد الفعالة؟"}
+  applies: "admin_route in ('oral','rectal','vaginal') and 'oral_solution' not in dosage_specifics and 'suspension' not in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["uniformity of mass", "mass uniformity", "average mass", "2.9.5", "uniformity of dosage units", "weight variation"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include the uniformity of mass test (Ph. Eur. 2.9.5) with its acceptance criteria in the finished product specification, or demonstrate that uniformity of content is prescribed and authorised for all active substances.", ar: "يجب على مقدم الطلب إدراج اختبار تجانس الكتلة (Ph. Eur. 2.9.5) بمعايير قبوله في مواصفات المستحضر النهائي، أو إثبات أن اختبار تجانس المحتوى مقرر ومعتمد لجميع المواد الفعالة."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex I, tables 2, 7, 9, 12 and 14", quote: "Not more than 2 of the individual masses deviate from the average mass (actual) by more than the percentage deviation."}
+- id: CD-A1-02
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Disintegration test and Q6A substitution", ar: "اختبار التفتت وإحلاله محل الانحلال"}
+  question: {en: "Does the specification include disintegration per USP <701> / Ph. Eur. 2.9.1 for immediate-release, orally lyophilised and delayed-release tablets and for capsules (not for extended-release tablets), and where disintegration replaces dissolution for a locally acting API, is a justification per ICH Q6A submitted together with the dissolution method performed?", ar: "هل تتضمن المواصفات اختبار التفتت وفق USP <701> / Ph. Eur. 2.9.1 للأقراص فورية التحرر والأقراص المجففة بالتجميد فموياً والأقراص متأخرة التحرر وللكبسولات (وليس للأقراص ممتدة التحرر)؟ وفي حال إحلال التفتت محل الانحلال لمادة فعالة موضعية التأثير، هل قُدّم تبرير وفق ICH Q6A مع طريقة الانحلال التي أُجريت؟"}
+  applies: "admin_route == 'oral' and 'oral_solution' not in dosage_specifics and 'suspension' not in dosage_specifics and 'modified_release' not in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-09, P-13]
+    keywords: ["disintegration", "701", "2.9.1"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include the disintegration test (USP <701> / Ph. Eur. 2.9.1) in the specification or, where disintegration is proposed instead of dissolution, submit a justification according to ICH Q6A together with the dissolution method performed.", ar: "يجب على مقدم الطلب إدراج اختبار التفتت (USP <701> / Ph. Eur. 2.9.1) في المواصفات، أو في حال اقتراح التفتت بدلاً من الانحلال تقديم تبرير وفق ICH Q6A مع طريقة الانحلال التي أُجريت."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex I, table 2 (capsules) and table 14 (tablets)", quote: "Disintegration could substitute dissolution as a performance test if a justification submitted by the manufacturer that it obeys the ICH Q6A guidelines."}
+  anchor: {code: "ICH Q6A", section: ""}
+- id: CD-A1-03
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Dissolution method source and parameters", ar: "مصدر طريقة الانحلال ومعاييرها"}
+  question: {en: "Is the dissolution method taken from the USP/BP monograph, the FDA dissolution methods database (with a comparative profile in the most suitable media) or developed in-house per Annex II, and does the specification state all parameters: filter type, medium composition and pH, volume, apparatus, rpm, temperature, sinkers, sampling time and Q, with USP <711> / Ph. Eur. 2.9.3 acceptance stages?", ar: "هل طريقة الانحلال مأخوذة من دراسة USP/BP أو من قاعدة بيانات طرق الانحلال لدى FDA (مع منحنى مقارن في أنسب الأوساط) أو مطوَّرة داخلياً وفق الملحق الثاني، وهل تذكر المواصفات جميع المعايير: نوع المرشح، وتركيب الوسط ورقمه الهيدروجيني، والحجم، والجهاز، وسرعة الدوران، ودرجة الحرارة، والمثقلات، وزمن السحب، وقيمة Q، مع مراحل القبول وفق USP <711> / Ph. Eur. 2.9.3؟"}
+  applies: "admin_route in ('oral','rectal','vaginal') and 'oral_solution' not in dosage_specifics and not aqueous_solution"
+  severity: major
+  evidence:
+    slots: [P-09, P-10]
+    keywords: ["dissolution", "apparatus", "rpm", "medium", "sinker", "filter"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should state the source of the dissolution method and all its parameters (filter type, medium composition and pH, volume, apparatus, rpm, temperature, sinkers, sampling time and Q) with the USP <711> acceptance criteria in the specification.", ar: "يجب على مقدم الطلب بيان مصدر طريقة الانحلال وجميع معاييرها (نوع المرشح، وتركيب الوسط ورقمه الهيدروجيني، والحجم، والجهاز، وسرعة الدوران، ودرجة الحرارة، والمثقلات، وزمن السحب، وقيمة Q) مع معايير القبول وفق USP <711> في المواصفات."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex I, table 2 (capsules), item 4 Dissolution", quote: "Filter type (common types Nylon, PVDF & PTFE) o Media composition & pH o Media volume o Apparatus type o RPM o Temperature"}
+- id: CD-A1-04
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Tablet friability, hardness and subdivision", ar: "هشاشة الأقراص وصلابتها وتجزئتها"}
+  question: {en: "For tablets, does the specification include friability (USP <1216> / Ph. Eur. 2.9.7) and breaking force for uncoated tablets unless controlled in-process, and for scored tablets the subdivision test per Ph. Eur. 0478 (NMT 1 individual mass outside 85–115 % of the average and none outside 75–125 %), or else is the package marked 'Indivisible' with a justification?", ar: "بالنسبة للأقراص، هل تتضمن المواصفات اختبار الهشاشة (USP <1216> / Ph. Eur. 2.9.7) وقوة الكسر للأقراص غير المغلفة ما لم تُضبط كرقابة أثناء التشغيل، وللأقراص المحززة اختبار التجزئة وفق Ph. Eur. 0478 (لا تخرج أكثر من كتلة فردية واحدة عن 85–115 % من المتوسط ولا تخرج أي منها عن 75–125 %)، وإلا فهل كُتبت عبارة «غير قابل للتجزئة» على العبوة مع تبرير؟"}
+  applies: "admin_route == 'oral' and 'capsule_hard' not in dosage_specifics and 'oral_solution' not in dosage_specifics and 'suspension' not in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["friability", "hardness", "breaking force", "subdivision", "indivisible", "score"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include friability and breaking force (uncoated tablets) and, for scored tablets, the subdivision test with the Ph. Eur. 0478 limits (NMT 1 unit outside 85–115 %, none outside 75–125 %) in the specification, or justify their omission and mark the package 'Indivisible'.", ar: "يجب على مقدم الطلب إدراج اختباري الهشاشة وقوة الكسر (للأقراص غير المغلفة)، وللأقراص المحززة اختبار التجزئة بحدود Ph. Eur. 0478 (لا تخرج أكثر من وحدة واحدة عن 85–115 % ولا تخرج أي منها عن 75–125 %) في المواصفات، أو تبرير إغفالها وكتابة عبارة «غير قابل للتجزئة» على العبوة."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex I, table 14 (tablets), items 5–7", quote: "NMT 1 individual mass is outside the limits of 85- 115 % of the average mass."}
+- id: CD-A1-05
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.6"
+  title: {en: "Water content or justification to skip", ar: "اختبار محتوى الماء أو تبرير إسقاطه"}
+  question: {en: "Does the specification include a water content test (manufacturer's method or specific monograph) for the solid or semisolid dosage form, or is a justification submitted for skipping it?", ar: "هل تتضمن المواصفات اختبار محتوى الماء (بطريقة المصنّع أو الدراسة الدستورية الخاصة) للشكل الصيدلي الصلب أو شبه الصلب، أو قُدّم تبرير لإسقاطه؟"}
+  applies: "not aqueous_solution and 'oral_solution' not in dosage_specifics and 'suspension' not in dosage_specifics"
+  severity: minor
+  evidence:
+    slots: [P-09, P-13]
+    keywords: ["water content", "loss on drying", "Karl Fischer", "moisture", "water by KF"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should add a water content test with its acceptance criterion to the specification or provide a justification for skipping the test.", ar: "يجب على مقدم الطلب إضافة اختبار محتوى الماء بمعيار قبوله إلى المواصفات أو تقديم تبرير لإسقاط الاختبار."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex I, table 14 (tablets), item 8 Water content", quote: "If not stated by manufacturer: Need justification to skip test"}
+- id: CD-A1-06
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Parenteral and ophthalmic physical tests", ar: "الاختبارات الفيزيائية للحقن والمستحضرات العينية"}
+  question: {en: "For parenteral and ophthalmic solutions, does the specification include particulate matter per USP <788> (injections and extra-ocular) or USP <789> (intra-ocular), osmolality per USP <785>, and for parenterals container–closure integrity (USP <1207.2>/<1207.3>)?", ar: "بالنسبة للمحاليل الحقنية والعينية، هل تتضمن المواصفات اختبار الجسيمات الدقيقة وفق USP <788> (للحقن وخارج العين) أو USP <789> (داخل العين)، والأسمولالية وفق USP <785>، وللحقن سلامة إغلاق العبوة (USP <1207.2>/<1207.3>)؟"}
+  applies: "admin_route in ('parenteral','ophthalmic')"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["particulate matter", "sub-visible", "788", "789", "osmola", "container closure integrity"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include particulate matter (USP <788>/<789>), osmolality (USP <785>) and, for parenterals, container–closure integrity in the finished product specification with pharmacopoeial acceptance criteria.", ar: "يجب على مقدم الطلب إدراج اختبار الجسيمات الدقيقة (USP <788>/<789>) والأسمولالية (USP <785>)، وللحقن سلامة إغلاق العبوة، في مواصفات المستحضر النهائي بمعايير القبول الدستورية."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex I, table 10 (solutions), items 6, 11 and 12", quote: "Particulate Matter In Injections for Extra-ocular solutions for injections and for parenteral solutions"}
+- id: CD-A1-07
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Fill, deliverable volume and container content", ar: "الملء والحجم القابل للتسليم ومحتوى العبوة"}
+  question: {en: "Does the specification include the fill test appropriate to the dosage form: deliverable volume USP <698> for oral liquids, container content USP <697> for parenterals, and minimum fill USP <755> for topical, nasal, ophthalmic, otic, rectal, vaginal and inhalation preparations and aerosols?", ar: "هل تتضمن المواصفات اختبار الملء المناسب للشكل الصيدلي: الحجم القابل للتسليم USP <698> للسوائل الفموية، ومحتوى العبوة USP <697> للحقن، والحد الأدنى للملء USP <755> للمستحضرات الموضعية والأنفية والعينية والأذنية والشرجية والمهبلية والاستنشاقية والإيروسولات؟"}
+  applies: "aqueous_solution or 'oral_solution' in dosage_specifics or 'suspension' in dosage_specifics or 'topical' in dosage_specifics or admin_route in ('parenteral','ophthalmic','nasal','inhalation')"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["deliverable volume", "minimum fill", "container content", "extractable volume", "net fill", "fill weight"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should add the applicable fill test (deliverable volume USP <698>, container content for injections USP <697> or minimum fill USP <755>) with its acceptance criterion to the finished product specification.", ar: "يجب على مقدم الطلب إضافة اختبار الملء المنطبق (الحجم القابل للتسليم USP <698>، أو محتوى العبوة للحقن USP <697>، أو الحد الأدنى للملء USP <755>) بمعيار قبوله إلى مواصفات المستحضر النهائي."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex I, table 3 (creams, gels, ointments), item 2 Minimum fill", quote: "In case of single unit containers where the test for content uniformity is applied, the test for minimum fill is not required."}
+- id: CD-A1-08
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "pH and viscosity of liquids and semisolids", ar: "الرقم الهيدروجيني واللزوجة للسوائل وشبه الصلبة"}
+  question: {en: "For aqueous solutions, suspensions, emulsions and hydrophilic semisolids, does the specification include pH (formulation-dependent limits) and, where relevant, apparent viscosity or specific gravity with the device model, spindle, rpm and temperature stated?", ar: "بالنسبة للمحاليل والمعلقات والمستحلبات المائية وشبه الصلبة المحبة للماء، هل تتضمن المواصفات الرقم الهيدروجيني (بحدود تعتمد على الصياغة)، وعند الاقتضاء اللزوجة الظاهرية أو الكثافة النوعية مع بيان طراز الجهاز ورقم المغزل وسرعة الدوران ودرجة الحرارة؟"}
+  applies: "aqueous_solution or 'oral_solution' in dosage_specifics or 'suspension' in dosage_specifics or 'topical' in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["pH ", "pH:", "viscosity", "specific gravity", "spindle", "density"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include pH and, where relevant, apparent viscosity or specific gravity in the specification, stating the device model, spindle number, rpm and temperature of the viscosity measurement.", ar: "يجب على مقدم الطلب إدراج الرقم الهيدروجيني، وعند الاقتضاء اللزوجة الظاهرية أو الكثافة النوعية، في المواصفات مع بيان طراز الجهاز ورقم المغزل وسرعة الدوران ودرجة حرارة قياس اللزوجة."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex I, table 13 (suspensions), items 3 and 4", quote: "Aqueous suspensions It is formulation dependent, According to manufacturer specifications."}
+- id: CD-A1-09
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Inhalation and nasal performance tests", ar: "اختبارات أداء مستحضرات الاستنشاق والأنف"}
+  question: {en: "For inhalation and nasal products, does the specification include the performance tests of Annex I: valve or pump delivery (shot weight), number of deliveries per container, droplet or particle size distribution by laser diffraction (USP <601>), aerodynamic particle size by cascade impactor (inhalation), spray pattern and plume geometry (USP <5>), leak rate and water content?", ar: "بالنسبة لمستحضرات الاستنشاق والأنف، هل تتضمن المواصفات اختبارات الأداء الواردة في الملحق الأول: تسليم الصمام أو المضخة (وزن الدفعة)، وعدد الجرعات في العبوة، وتوزيع حجم القطيرات أو الجسيمات بحيود الليزر (USP <601>)، وحجم الجسيمات الهوائي الديناميكي بالمصادم التتابعي (للاستنشاق)، ونمط الرش وهندسة السحابة (USP <5>)، ومعدل التسرب، ومحتوى الماء؟"}
+  applies: "admin_route in ('inhalation','nasal')"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["cascade impactor", "aerodynamic", "spray pattern", "plume geometry", "droplet size", "delivered dose"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include the applicable inhalation/nasal performance tests (delivery per actuation, number of deliveries, droplet/particle size distribution, aerodynamic particle size, spray pattern and plume geometry, leak rate) in the specification according to USP <601>, <603>, <604> and <5>.", ar: "يجب على مقدم الطلب إدراج اختبارات الأداء المنطبقة لمستحضرات الاستنشاق/الأنف (التسليم لكل ضغطة، وعدد الجرعات، وتوزيع حجم القطيرات/الجسيمات، وحجم الجسيمات الهوائي الديناميكي، ونمط الرش وهندسة السحابة، ومعدل التسرب) في المواصفات وفق USP <601> و<603> و<604> و<5>."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex I, table 1 (aerosols), items 5–11", quote: "Perform these tests only on inhalation and nasal aerosol (metered dose)"}
+- id: CD-A2-01
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.2.2"
+  title: {en: "In-house dissolution for BCS I/III products", ar: "طريقة الانحلال الداخلية لمستحضرات BCS I/III"}
+  question: {en: "For an in-house dissolution method on an immediate-release tablet or capsule of a BCS class I or III (high-solubility) drug swallowed intact and not NTI, does the development follow Guide I: basket 100 rpm or paddle 50 rpm (75 rpm with justification), 500 mL (900 mL with justification) of 0.1 N HCl without surfactant at 37 ± 0.5 °C, and a criterion of Q = 80 % in 30 minutes?", ar: "بالنسبة لطريقة انحلال داخلية لقرص أو كبسولة فورية التحرر تحتوي مادة فعالة من الفئة I أو III في نظام التصنيف البيوصيدلاني (عالية الذوبان) تُبلع كاملة وليست ضيقة المجال العلاجي، هل اتبع التطوير الدليل الأول: السلة بسرعة 100 دورة/دقيقة أو المجداف بسرعة 50 دورة/دقيقة (75 بتبرير)، و500 مل (900 مل بتبرير) من حمض الهيدروكلوريك 0.1 عياري دون مادة خافضة للتوتر السطحي عند 37 ± 0.5 °م، ومعيار Q = 80 % خلال 30 دقيقة؟"}
+  applies: "admin_route == 'oral' and 'oral_solution' not in dosage_specifics and 'suspension' not in dosage_specifics and 'modified_release' not in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-02, P-10]
+    keywords: ["BCS", "Q=80", "80% in 30", "0.1 N HCl", "0.1N HCl", "500 mL"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "For a high-solubility (BCS I/III) immediate-release product the applicant should develop the in-house dissolution method according to Guide I of Annex II (0.1 N HCl, 500 mL, basket 100 rpm or paddle 50 rpm, 37 ± 0.5 °C) and set the criterion Q = 80 % in 30 minutes, or justify every deviation.", ar: "يجب على مقدم الطلب، للمستحضر فوري التحرر عالي الذوبان (BCS I/III)، تطوير طريقة الانحلال الداخلية وفق الدليل الأول في الملحق الثاني (حمض الهيدروكلوريك 0.1 عياري، 500 مل، السلة 100 دورة/دقيقة أو المجداف 50 دورة/دقيقة، 37 ± 0.5 °م) وتحديد المعيار Q = 80 % خلال 30 دقيقة، أو تبرير كل انحراف."}
+  action: {type: upload, target: "P-02"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex II §1, Guide I", quote: "(1) Basket method: 100 rpm. (2) Paddle method: 50 rpm (or 75 rpm with appropriate justification) Dissolution criteria Q=80% in 30 minutes."}
+  anchor: {code: "FDA dissolution guidance", section: "Dissolution Testing and Acceptance Criteria for IR Solid Oral Dosage Form Drug Products Containing High Solubility Drug Substances, August 2018"}
+- id: CD-A2-02
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.2.2"
+  title: {en: "In-house dissolution medium and agitation (Guide II)", ar: "وسط الانحلال والتحريك في الطريقة الداخلية (الدليل الثاني)"}
+  question: {en: "For an in-house dissolution method on a BCS class II or IV immediate-release product, does the development report justify the medium volume (500, 900 or 1000 mL), an aqueous medium of pH 1.2–6.8 (pH 6.8 for SIF, pH 1.2 without enzymes for SGF, not above pH 8.0), the need for and amount of surfactant, enzymes for gelatin capsules and deaeration, and agitation of 50–100 rpm basket or 50–75 rpm paddle (never above 150 rpm), with water and hydro-alcoholic media avoided?", ar: "بالنسبة لطريقة انحلال داخلية لمستحضر فوري التحرر من الفئة II أو IV في نظام التصنيف البيوصيدلاني، هل يبرر تقرير التطوير حجم الوسط (500 أو 900 أو 1000 مل)، ووسطاً مائياً برقم هيدروجيني 1.2–6.8 (6.8 لمحاكاة سائل الأمعاء، و1.2 دون إنزيمات لمحاكاة سائل المعدة، ولا يتجاوز 8.0)، والحاجة إلى المادة الخافضة للتوتر السطحي وكميتها، والإنزيمات لكبسولات الجيلاتين وإزالة الهواء، والتحريك بسرعة 50–100 دورة/دقيقة للسلة أو 50–75 للمجداف (دون تجاوز 150)، مع تجنب الماء والأوساط الكحولية المائية؟"}
+  applies: "admin_route == 'oral' and 'oral_solution' not in dosage_specifics and 'suspension' not in dosage_specifics and 'modified_release' not in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-02]
+    keywords: ["dissolution medium", "sink", "surfactant", "pH 6.8", "pH 1.2", "rpm"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit dissolution method development data justifying the medium (volume, pH 1.2–6.8, surfactant, enzymes, deaeration) and the agitation rate (basket 50–100 rpm, paddle 50–75 rpm) according to Guide II of Annex II.", ar: "يجب على مقدم الطلب تقديم بيانات تطوير طريقة الانحلال التي تبرر الوسط (الحجم، والرقم الهيدروجيني 1.2–6.8، والمادة الخافضة للتوتر السطحي، والإنزيمات، وإزالة الهواء) وسرعة التحريك (السلة 50–100 دورة/دقيقة، والمجداف 50–75 دورة/دقيقة) وفق الدليل الثاني في الملحق الثاني."}
+  action: {type: upload, target: "P-02"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex II §1, Guide II", quote: "An aqueous medium with pH range 1.2 to 6.8 (ionic strength of buffers the same as in USP) should be used."}
+  anchor: {code: "FDA dissolution guidance", section: "Dissolution Testing of Immediate Release Solid Oral Dosage Forms, August 1997"}
+- id: CD-A2-03
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.2.2"
+  title: {en: "Comparative dissolution f1/f2 criteria", ar: "معايير f1/f2 لدراسة الانحلال المقارنة"}
+  question: {en: "Does the comparative dissolution study report the dissolution parameters, test and reference measured under exactly the same conditions and time points (e.g. 15, 30, 45, 60 minutes), only one point after 85 % dissolution, CV not more than 20 % at early points and 10 % at others, and similarity shown by f1 of 0–15 and f2 of 50–100?", ar: "هل تورد دراسة الانحلال المقارنة معايير الانحلال، وقياس المستحضرين الاختباري والمرجعي في الظروف ونقاط الزمن نفسها تماماً (مثل 15 و30 و45 و60 دقيقة)، ونقطة واحدة فقط بعد انحلال 85 %، ومعامل اختلاف لا يتجاوز 20 % في النقاط المبكرة و10 % في غيرها، وتماثلاً يثبته f1 بين 0 و15 وf2 بين 50 و100؟"}
+  applies: "dossier_kind == 'generic' and admin_route == 'oral' and 'oral_solution' not in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-02]
+    keywords: ["f2", "f1", "similarity factor", "coefficient of variation", "85%", "comparative dissolution"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit a comparative dissolution study following Annex II §2: identical conditions and time points for test and reference, one point after 85 % dissolution, CV ≤ 20 % (early) / ≤ 10 % (later), and f1 (0–15) and f2 (50–100) values.", ar: "يجب على مقدم الطلب تقديم دراسة انحلال مقارنة وفق الملحق الثاني §2: ظروف ونقاط زمن متطابقة للمستحضرين الاختباري والمرجعي، ونقطة واحدة بعد انحلال 85 %، ومعامل اختلاف ≤ 20 % (مبكراً) / ≤ 10 % (لاحقاً)، وقيمتي f1 (0–15) وf2 (50–100)."}
+  action: {type: upload, target: "P-02"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex II §2 Comparative dissolution study", quote: "Generally, f1 values up to 15 (0-15) and f2 values greater than 50 (50-100) ensure sameness or equivalence of the two curves"}
+  anchor: {code: "FDA dissolution guidance", section: "Dissolution Testing of Immediate Release Solid Oral Dosage Forms, August 1997"}
+- id: CD-A3-01
+  dept: cadc
+  layer: eda
+  ctd: "3.2.S.4.1"
+  title: {en: "API CoA follows the referenced pharmacopoeia", ar: "شهادة تحليل المادة الفعالة وفق الدستور المرجعي"}
+  question: {en: "Does the API certificate of analysis follow the pharmacopoeia named in the composition, and for an in-house API, are the supplier's specifications compliant with or tighter than the pharmacopoeial monograph, or, where no monograph exists, are impurities controlled per ICH Q3A with chiral identity where relevant?", ar: "هل تتبع شهادة تحليل المادة الفعالة دستور الأدوية المذكور في التركيب؟ وبالنسبة للمادة الفعالة غير الدستورية، هل مواصفات المورد مطابقة لدراسة دستور الأدوية أو أشد منها، أو عند عدم وجود دراسة دستورية هل تُضبط الشوائب وفق ICH Q3A مع اختبار هوية الكيرالية عند الاقتضاء؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M1-35, S-08]
+    keywords: ["complies", "USP", "Ph. Eur.", "BP", "in-house", "Q3A"]
+    data: [apis]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit an API certificate of analysis whose specifications follow the pharmacopoeia referenced in the composition, or for an in-house API demonstrate that the supplier's specifications comply with or are tighter than the monograph (impurities per ICH Q3A where no monograph exists).", ar: "يجب على مقدم الطلب تقديم شهادة تحليل للمادة الفعالة تتبع مواصفاتها دستور الأدوية المشار إليه في التركيب، أو للمادة الفعالة غير الدستورية إثبات أن مواصفات المورد مطابقة للدراسة الدستورية أو أشد منها (والشوائب وفق ICH Q3A عند عدم وجود دراسة)."}
+  action: {type: upload, target: "M1-35"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex III §1.1", quote: "specifications of the API supplier are accepted only if they comply with the specifications listed in the pharmacopeia or tighter specifications."}
+  anchor: {code: "ICH Q3A", section: ""}
+- id: CD-A3-02
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Identification test in specification and CoA", ar: "اختبار الهوية في المواصفات وشهادة التحليل"}
+  question: {en: "Is an identification test for each API included in the specification sheet and in the finished product certificate of analysis, noting that titrimetry is not accepted as an identification test?", ar: "هل أُدرج اختبار هوية لكل مادة فعالة في ورقة المواصفات وفي شهادة تحليل المستحضر النهائي، علماً بأن المعايرة الحجمية لا تُقبل اختباراً للهوية؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-09, P-11]
+    keywords: ["identification", "identity", "IR spectrum", "retention time"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include an identification test for each active ingredient (other than titrimetry) in the finished product specification and certificate of analysis.", ar: "يجب على مقدم الطلب إدراج اختبار هوية لكل مادة فعالة (بخلاف المعايرة الحجمية) في مواصفات المستحضر النهائي وشهادة تحليله."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex III §2.1.3", quote: "Identification test item must be included in the specification sheet and finished product certificate of analysis (CoA)"}
+- id: CD-A3-03
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Assay limits for API, preservative, antioxidant", ar: "حدود المقايسة للمادة الفعالة والمادة الحافظة ومضاد الأكسدة"}
+  question: {en: "Are the assay limits expressed on the active moiety and set at 90–110 % of label claim for the API (90 % to 110 % plus overage where a stability overage is approved), 80–120 % for the preservative, and justified manufacturer limits for the antioxidant, with any wider limit justified only by the specific monograph or approved stability specifications?", ar: "هل حدود المقايسة معبَّر عنها بالجزء الفعال ومحددة بـ 90–110 % من الكمية المعلنة للمادة الفعالة (ومن 90 % إلى 110 % زائد الفائض عند اعتماد فائض ثباتي)، و80–120 % للمادة الحافظة، وحدود المصنّع المبررة لمضاد الأكسدة، مع تبرير أي حد أوسع بالدراسة الدستورية الخاصة أو مواصفات الثبات المعتمدة فقط؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-09, P-13]
+    keywords: ["90.0", "110.0", "90-110", "80-120", "overage", "assay"]
+    data: [specs.product, composition]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should set the assay limits in terms of the active moiety at 90–110 % of label claim for the API and 80–120 % for the preservative, justify the antioxidant limit scientifically, and justify any wider limit by the specific monograph or the approved stability specifications.", ar: "يجب على مقدم الطلب تحديد حدود المقايسة بدلالة الجزء الفعال عند 90–110 % من الكمية المعلنة للمادة الفعالة و80–120 % للمادة الحافظة، وتبرير حد مضاد الأكسدة علمياً، وتبرير أي حد أوسع بالدراسة الدستورية الخاصة أو مواصفات الثبات المعتمدة."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex III §2.1.4", quote: "General acceptance limit for the API is 90-110% of the Labeled claim."}
+- id: CD-A3-04
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.5"
+  title: {en: "Organic impurities controlled per monograph and Q3B", ar: "ضبط الشوائب العضوية وفق الدستور وICH Q3B"}
+  question: {en: "Is a related substances / organic impurities test included as in the finished product monograph (applied to any capsule type or tablet coat covered by a USP monograph), or where the monograph has none, is a stability-indicating method provided so that unjustified peaks can be assessed according to ICH Q3B?", ar: "هل أُدرج اختبار المواد ذات الصلة / الشوائب العضوية كما في دراسة المستحضر النهائي بدستور الأدوية (ويُطبق على أي نوع كبسولة أو تغليف قرص تشمله دراسة USP)، أو عند خلو الدراسة منه هل قُدّمت طريقة دالّة على الثبات بحيث تُقيَّم القمم غير المبررة وفق ICH Q3B؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-09, P-12]
+    keywords: ["related substances", "organic impurities", "degradation product", "unspecified impurit", "total impurities", "known impurit"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include the organic impurities / related substances test of the monograph in the specification or, where none exists, provide a stability-indicating method and control unjustified peaks according to ICH Q3B.", ar: "يجب على مقدم الطلب إدراج اختبار الشوائب العضوية / المواد ذات الصلة الوارد في الدراسة الدستورية في المواصفات، أو عند عدم وجوده تقديم طريقة دالّة على الثبات وضبط القمم غير المبررة وفق ICH Q3B."}
+  action: {type: upload, target: "P-12"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex III §2.1.5.1", quote: "Presence of unjustified peaks may require the performance of this test where applicable, which will be assessed according to ICH Q3B guideline."}
+  anchor: {code: "ICH Q3B", section: ""}
+- id: CD-A3-05
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.5"
+  title: {en: "Residual solvents per ICH Q3C", ar: "المذيبات المتبقية وفق ICH Q3C"}
+  question: {en: "Are residual solvents assessed according to ICH Q3C (unless the specific monograph states otherwise) using USP <467> or an alternative method verified or validated per USP <1467>, and where a solvent is controlled in an intermediate such as granules or pellets, is it still included in the finished product specification?", ar: "هل تُقيَّم المذيبات المتبقية وفق ICH Q3C (ما لم تنص الدراسة الدستورية الخاصة على خلاف ذلك) باستخدام USP <467> أو طريقة بديلة جرى التحقق منها أو التثبت من صلاحيتها وفق USP <1467>، وإذا كان المذيب مضبوطاً في منتج وسيط كالحبيبات أو الكريات فهل يظل مدرجاً في مواصفات المستحضر النهائي؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-09, P-12]
+    keywords: ["residual solvent", "467", "Q3C", "Class 2", "Class 3", "organic volatile"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include residual solvents in the finished product specification with limits according to ICH Q3C and a procedure per USP <467> or an alternative method verified/validated according to USP <1467>.", ar: "يجب على مقدم الطلب إدراج المذيبات المتبقية في مواصفات المستحضر النهائي بحدود وفق ICH Q3C وطريقة وفق USP <467> أو طريقة بديلة جرى التحقق منها/التثبت من صلاحيتها وفق USP <1467>."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex III §2.1.5.2", quote: "Assessment of residual solvents impurities will be according to ICH Q3C, unless otherwise specified in the specific monograph."}
+  anchor: {code: "ICH Q3C", section: ""}
+- id: CD-A3-06
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Uniformity of dosage units with target value", ar: "تجانس وحدات الجرعة مع القيمة المستهدفة"}
+  question: {en: "Does the specification include uniformity of dosage units per USP <905> / Ph. Eur. 2.9.40 / JP 6.02 with target value T = 100 % (or T stated in the monograph when assay limits are asymmetric, e.g. 90–115 %), with a correction factor where the content uniformity procedure differs from the assay, excluding multivitamin and trace-element preparations?", ar: "هل تتضمن المواصفات اختبار تجانس وحدات الجرعة وفق USP <905> / Ph. Eur. 2.9.40 / JP 6.02 بقيمة مستهدفة T = 100 % (أو T المذكورة في الدراسة الدستورية عند عدم تماثل حدود المقايسة، مثل 90–115 %)، مع معامل تصحيح عندما تختلف طريقة تجانس المحتوى عن طريقة المقايسة، باستثناء مستحضرات الفيتامينات المتعددة والعناصر النزرة؟"}
+  applies: "'oral_solution' not in dosage_specifics and not aqueous_solution and 'suspension' not in dosage_specifics and 'topical' not in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["uniformity of dosage units", "content uniformity", "905", "2.9.40", "acceptance value"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include uniformity of dosage units (USP <905> / Ph. Eur. 2.9.40) in the specification, stating the target value T where the assay limits are asymmetric and any correction factor applied.", ar: "يجب على مقدم الطلب إدراج اختبار تجانس وحدات الجرعة (USP <905> / Ph. Eur. 2.9.40) في المواصفات، مع بيان القيمة المستهدفة T عند عدم تماثل حدود المقايسة وأي معامل تصحيح مطبق."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex III §2.1.5 Uniformity of dosage unit", quote: "Uniformity of dosage units USP <905>, Ph.Eur. 2.9.40. and JP 6.02 where target Value (T) =100% otherwise stated in the product monograph."}
+  anchor: {code: "USP <905>", section: "Uniformity of Dosage Units"}
+- id: CD-A3-07
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.2"
+  title: {en: "Specific stability-indicating assay method", ar: "طريقة مقايسة نوعية دالّة على الثبات"}
+  question: {en: "Is a specific, stability-indicating assay method for determining the content of each active included, or where a non-specific assay (e.g. titration) is justified, is it combined with a suitable impurities test to achieve overall specificity?", ar: "هل أُدرجت طريقة مقايسة نوعية دالّة على الثبات لتحديد محتوى كل مادة فعالة، أو عند تبرير استخدام مقايسة غير نوعية (كالمعايرة) هل جُمعت مع اختبار مناسب للشوائب لتحقيق النوعية الكلية؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-10, P-09]
+    keywords: ["stability-indicating", "stability indicating", "forced degradation", "stress", "specific"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide a specific, stability-indicating assay method for the drug product or justify the non-specific assay and support it with a suitable test for impurities.", ar: "يجب على مقدم الطلب تقديم طريقة مقايسة نوعية دالّة على الثبات للمستحضر أو تبرير المقايسة غير النوعية ودعمها باختبار مناسب للشوائب."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex III §2.2 Method of analysis (MOA)", quote: "A specific, stability -indicating assay method to determine strength (content) should be included for all drug products."}
+- id: CD-A3-08
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.6"
+  title: {en: "Reference standard traceability", ar: "تتبع المعيار المرجعي"}
+  question: {en: "Is a certified reference material (pharmacopoeial or otherwise) used, or where a working standard is submitted, is its certificate of analysis on the EDA template and does it state the lot number of the primary standard used for its qualification as evidence of traceability?", ar: "هل استُخدمت مادة مرجعية معتمدة (دستورية أو غيرها)؟ وفي حال تقديم معيار عمل، هل شهادة تحليله على نموذج هيئة الدواء المصرية وتذكر رقم تشغيلة المعيار الأولي المستخدم في تأهيله إثباتاً لإمكانية التتبع؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-14]
+    keywords: ["working standard", "primary standard", "traceab", "certified reference", "CRM", "USP RS"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the working standard certificate of analysis on the EDA template, stating the lot number of the primary (pharmacopoeial) standard used for its qualification, or supply a certified reference material.", ar: "يجب على مقدم الطلب تقديم شهادة تحليل معيار العمل على نموذج هيئة الدواء المصرية مع بيان رقم تشغيلة المعيار الأولي (الدستوري) المستخدم في تأهيله، أو توفير مادة مرجعية معتمدة."}
+  action: {type: upload, target: "P-14"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex III §2.4.1 Standards", quote: "EDA template for COA of a working standard is mandatory, and the lot number for the primary standard used in its qualification"}
+- id: CD-A3-09
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.2"
+  title: {en: "Placebo for impurities testing", ar: "الغفل لاختبار الشوائب"}
+  question: {en: "Where organic impurities are tested, is a placebo provided, or has the company submitted a declaration accepting that the impurities analysis starts without placebo and committing to provide it with the other analysis requirements and reference standards if results are unsatisfactory?", ar: "عند اختبار الشوائب العضوية، هل قُدّم الغفل (البلاسيبو)، أو قدّمت الشركة إقراراً بقبول بدء تحليل الشوائب دون غفل مع الالتزام بتوفيره مع متطلبات التحليل الأخرى والمعايير المرجعية إذا كانت النتائج غير مرضية؟"}
+  applies: "true"
+  severity: critical
+  evidence:
+    slots: [P-10, P-12]
+    keywords: ["placebo", "placebo declaration", "without placebo"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the placebo for the organic impurities testing or submit a declaration of acceptance to start the analysis of impurities without placebo, committing to provide it with the other analysis requirements and reference standards if the results are unsatisfactory.", ar: "يجب على مقدم الطلب توفير الغفل لاختبار الشوائب العضوية أو تقديم إقرار بقبول بدء تحليل الشوائب دون غفل، مع الالتزام بتوفيره مع متطلبات التحليل الأخرى والمعايير المرجعية إذا كانت النتائج غير مرضية."}
+  action: {type: generate, target: "P-10"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex III §2.4.3 Placebo", quote: "If the placebo is unavailable the company should send a declaration of acceptance to start the analysis of impurities without placebo"}
+- id: CD-A4-01
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Microbial limits for non-sterile products", ar: "الحدود الميكروبية للمستحضرات غير المعقمة"}
+  question: {en: "Does the specification of the non-sterile product state TAMC, TYMC and specified microorganisms by route per Annex IV Table 1 (non-aqueous oral 10^3/10^2 cfu, E. coli absent; aqueous oral 10^2/10^1, E. coli absent; cutaneous, nasal, oromucosal and auricular 10^2/10^1, S. aureus and P. aeruginosa absent; vaginal also C. albicans absent; inhalation also bile-tolerant Gram-negatives absent; rectal 10^3/10^2), interpreted as maximum counts of 20, 200 and 2000, with method, neutraliser and reference stated and B. cepacia where USP requires it?", ar: "هل تحدد مواصفات المستحضر غير المعقم العد الكلي للهوائيات والعد الكلي للخمائر والفطريات والكائنات المحددة حسب طريق الإعطاء وفق الجدول 1 من الملحق الرابع (الفموية غير المائية 10^3/10^2 وحدة مكوّنة للمستعمرات مع غياب الإشريكية القولونية؛ والفموية المائية 10^2/10^1 مع غيابها؛ والجلدية والأنفية والفموية المخاطية والأذنية 10^2/10^1 مع غياب المكورات العنقودية الذهبية والزائفة الزنجارية؛ والمهبلية مع غياب المبيضة البيضاء أيضاً؛ والاستنشاقية مع غياب سالبات الجرام المتحملة للصفراء أيضاً؛ والشرجية 10^3/10^2)، مفسَّرة كحد أقصى 20 و200 و2000، مع بيان الطريقة والمعادل الكيميائي والمرجع واختبار B. cepacia حيث يشترطه USP؟"}
+  applies: "'sterile' not in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["TAMC", "TYMC", "total aerobic", "cfu", "microbial", "Escherichia coli"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include the microbiological quality tests (TAMC, TYMC and specified microorganisms) with the acceptance criteria of Annex IV Table 1 for the route of administration, stating the method, any neutraliser and the pharmacopoeial reference.", ar: "يجب على مقدم الطلب إدراج اختبارات الجودة الميكروبيولوجية (العد الكلي للهوائيات، والعد الكلي للخمائر والفطريات، والكائنات المحددة) بمعايير القبول الواردة في الجدول 1 من الملحق الرابع لطريق الإعطاء، مع بيان الطريقة وأي معادل كيميائي والمرجع الدستوري."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex IV §1, Table 1 and Note (3)", quote: "101 cfu: maximum acceptable count =20, 102 cfu: maximum acceptable count =200, 103 cfu: maximum acceptable count =2000; and so forth."}
+- id: CD-A4-02
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Sterility test specification", ar: "مواصفة اختبار العقامة"}
+  question: {en: "For a sterile product, does the specification include the sterility test stating the technique (direct inoculation or membrane filtration), any neutraliser with its percentage, the sterilisation method of the product (filtration, steam, dry heat, irradiation or ethylene oxide), the acceptance criterion 'complies' and the pharmacopoeial reference, with a method suitability certificate for products with antimicrobial activity?", ar: "بالنسبة للمستحضر المعقم، هل تتضمن المواصفات اختبار العقامة مع بيان التقنية (التلقيح المباشر أو الترشيح الغشائي)، وأي معادل كيميائي ونسبته، وطريقة تعقيم المستحضر (الترشيح أو البخار أو الحرارة الجافة أو التشعيع أو غاز أكسيد الإيثيلين)، ومعيار القبول «مطابق»، والمرجع الدستوري، مع شهادة ملاءمة الطريقة للمستحضرات ذات النشاط المضاد للميكروبات؟"}
+  applies: "'sterile' in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-09, P-10]
+    keywords: ["sterility", "membrane filtration", "direct inoculation", "sterilisation", "sterilization"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include the sterility test in the specification stating the technique, neutraliser, sterilisation method of the product and pharmacopoeial reference, and provide a method suitability certificate where the product has antimicrobial activity.", ar: "يجب على مقدم الطلب إدراج اختبار العقامة في المواصفات مع بيان التقنية والمعادل الكيميائي وطريقة تعقيم المستحضر والمرجع الدستوري، وتقديم شهادة ملاءمة الطريقة إذا كان للمستحضر نشاط مضاد للميكروبات."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex IV §2 Sterility testing, 2.2 Test specifications", quote: "Sterilization method of the product By filtration, steam, dry heat, irradiation or ethylene oxide gas"}
+- id: CD-A4-03
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Bacterial endotoxin limit", ar: "حد الذيفان الداخلي البكتيري"}
+  question: {en: "For a parenteral product, does the specification state the bacterial endotoxin limit per the pharmacopoeia or, for a non-pharmacopoeial product, BEL = K/M (K = 5 EU/kg for intravenous and other injections, 0.2 EU/kg intrathecal, 100 EU/m² for products dosed per body surface; M = maximum dose per kg in 1 h), with the detailed method including inhibition/enhancement testing and the reference edition, and is a rabbit pyrogen test proposed only with proven LAL incompatibility?", ar: "بالنسبة للمستحضر الحقني، هل تحدد المواصفات حد الذيفان الداخلي البكتيري وفق دستور الأدوية، أو للمستحضر غير الدستوري BEL = K/M (حيث K = 5 وحدة ذيفان/كجم للحقن الوريدي وغيره، و0.2 وحدة/كجم داخل القراب، و100 وحدة/م² للمستحضرات المجرَّعة حسب مساحة سطح الجسم؛ وM = الجرعة القصوى لكل كجم خلال ساعة)، مع الطريقة المفصلة شاملة اختبار التثبيط/التعزيز وإصدار المرجع، وهل يُقترح اختبار البيروجينات في الأرانب فقط عند إثبات عدم التوافق مع تقنية LAL؟"}
+  applies: "admin_route == 'parenteral'"
+  severity: major
+  evidence:
+    slots: [P-09, P-10]
+    keywords: ["endotoxin", "LAL", "EU/", "pyrogen", "BET", "MVD"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include the bacterial endotoxins test in the specification with the pharmacopoeial limit or the calculated limit (BEL = K/M), the detailed method including inhibition/enhancement testing and the reference edition; a rabbit test is accepted only with a complete justification of LAL incompatibility.", ar: "يجب على مقدم الطلب إدراج اختبار الذيفانات الداخلية البكتيرية في المواصفات بالحد الدستوري أو الحد المحسوب (BEL = K/M)، مع الطريقة المفصلة شاملة اختبار التثبيط/التعزيز وإصدار المرجع؛ ولا يُقبل اختبار الأرانب إلا بتبرير كامل لعدم التوافق مع تقنية LAL."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex IV §5 Bacterial endotoxins test, Table 4", quote: "5 EU/kg of body weight Maximum dose per kilogram administered in 1 h"}
+- id: CD-A5-01
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.3"
+  title: {en: "Validation specificity, range, LOD and LOQ", ar: "النوعية والمدى وحدا الكشف والتقدير في التثبت"}
+  question: {en: "For each non-pharmacopoeial method (or a pharmacopoeial method used outside its scope), does the full validation per ICH Q2(R2) show specificity (resolution NLT 1.5, blank interference NMT 1 %, placebo interference NMT 2 %, forced degradation with resolution ≥ 2 and peak purity), a range from at least five standard solutions covering 80–120 % for assay, 70–130 % for content uniformity and reporting level to 120 % for impurities with R² ≥ 0.995 (≥ 0.99 for impurities), and LOD and LOQ at S/N ≥ 3 and ≥ 10?", ar: "لكل طريقة غير دستورية (أو طريقة دستورية مستخدمة خارج نطاقها)، هل يُظهر التثبت الكامل وفق ICH Q2(R2) النوعية (درجة فصل لا تقل عن 1.5، وتداخل الشاهد لا يتجاوز 1 %، وتداخل الغفل لا يتجاوز 2 %، والتحلل القسري بدرجة فصل ≥ 2 ونقاء القمة)، ومدى من خمسة محاليل قياسية على الأقل يغطي 80–120 % للمقايسة و70–130 % لتجانس المحتوى ومن مستوى الإبلاغ إلى 120 % للشوائب بمعامل تحديد R² ≥ 0.995 (≥ 0.99 للشوائب)، وحدي الكشف والتقدير عند نسبة إشارة إلى ضوضاء ≥ 3 و≥ 10؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-10]
+    keywords: ["specificity", "linearity", "correlation coefficient", "LOQ", "LOD", "range"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit a full validation study of the in-house analytical method according to ICH Q2(R2) covering specificity (including forced degradation), range/linearity with at least five concentrations and R² ≥ 0.995 (≥ 0.99 for impurities), LOD (S/N ≥ 3) and LOQ (S/N ≥ 10) against the acceptance criteria of Annex V Table 1.", ar: "يجب على مقدم الطلب تقديم دراسة تثبت كاملة لطريقة التحليل الداخلية وفق ICH Q2(R2) تشمل النوعية (بما فيها التحلل القسري)، والمدى/الخطية بخمسة تراكيز على الأقل وR² ≥ 0.995 (≥ 0.99 للشوائب)، وحد الكشف (إشارة/ضوضاء ≥ 3) وحد التقدير (≥ 10) مقابل معايير القبول في الجدول 1 من الملحق الخامس."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex V Table 1 (with Annex III §2.3.1)", quote: "Minimum five standard solutions covering: o 80-120% (assay) o 70-130% (content uniformity) o Reporting level - 120% of specifications (impurities)"}
+  anchor: {code: "ICH Q2(R2)", section: ""}
+- id: CD-A5-02
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.3"
+  title: {en: "Validation precision, accuracy, system suitability", ar: "الدقة والصحة وملاءمة النظام في التثبت"}
+  question: {en: "Does the validation report show repeatability from nine determinations (three concentrations in triplicate) or six at 100 % with RSD ≤ 3 % for the drug product (impurities: RSD ≤ 30 % below 0.1 %, ≤ 20 % at 0.1–0.2 %, ≤ 10 % at 0.2–0.5 %, ≤ 5 % at 0.5–5 %), intermediate precision across days, analysts and equipment with RSD ≤ 3 %, accuracy from matrix spiked at three levels (n = 9) within 95–105 % (impurities 70–130 % ≤ 0.2 %, 80–120 % at 0.2–0.5 %, 90–110 % at 0.5–5 %), and system suitability (n = 5 RSD NMT 2 %, resolution ≥ 2, tailing ≤ 2, plates ≥ 2000, k ≥ 2) with robustness available on request?", ar: "هل يُظهر تقرير التثبت التكرارية من تسعة تقديرات (ثلاثة تراكيز بثلاث مكررات) أو ستة عند 100 % بانحراف معياري نسبي ≤ 3 % للمستحضر (وللشوائب: ≤ 30 % دون 0.1 %، و≤ 20 % عند 0.1–0.2 %، و≤ 10 % عند 0.2–0.5 %، و≤ 5 % عند 0.5–5 %)، والدقة الوسيطة عبر الأيام والمحللين والأجهزة بانحراف ≤ 3 %، والصحة بإضافة معلومة إلى المصفوفة عند ثلاثة مستويات (ن = 9) ضمن 95–105 % (وللشوائب 70–130 % عند ≤ 0.2 %، و80–120 % عند 0.2–0.5 %، و90–110 % عند 0.5–5 %)، وملاءمة النظام (ن = 5 بانحراف لا يتجاوز 2 %، ودرجة فصل ≥ 2، وعامل تذيل ≤ 2، وعدد صفائح نظرية ≥ 2000، وعامل سعة ≥ 2) مع إتاحة المتانة عند الطلب؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-10]
+    keywords: ["repeatability", "intermediate precision", "accuracy", "recovery", "system suitability", "RSD"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should complete the validation with repeatability and intermediate precision (RSD ≤ 3 % for the drug product), accuracy at three levels in the matrix (n = 9, 95–105 %) and system suitability (RSD NMT 2 %, resolution ≥ 2, tailing ≤ 2, plates ≥ 2000) according to Annex V Table 1, and make the robustness data available.", ar: "يجب على مقدم الطلب استكمال التثبت بالتكرارية والدقة الوسيطة (انحراف معياري نسبي ≤ 3 % للمستحضر)، والصحة عند ثلاثة مستويات في المصفوفة (ن = 9، 95–105 %)، وملاءمة النظام (انحراف لا يتجاوز 2 %، ودرجة فصل ≥ 2، وعامل تذيل ≤ 2، وصفائح ≥ 2000) وفق الجدول 1 من الملحق الخامس، وإتاحة بيانات المتانة."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex V Table 1, Accuracy and System suitability", quote: "Matrix spiked at 3 levels covering linearity range (nine determinations) (i.e., three concentrations and three replicates of each concentration) (n=9) 95-105.0% drug product"}
+  anchor: {code: "ICH Q2(R2)", section: ""}
+- id: CD-A5-03
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.3"
+  title: {en: "Dissolution method validation criteria", ar: "معايير التثبت من طريقة الانحلال"}
+  question: {en: "Does the dissolution method validation meet Annex V Table 2: interference of placebo and of other actives/degradants not exceeding 2 % and of the medium 1 %, a range of at least five concentrations with R² ≥ 0.98 and a non-significant intercept (immediate release: Q − 45 % of the lowest strength to 130 % of the highest), repeatability RSD < 2 %, intermediate precision with two analysts on two days differing by not more than an absolute 10 % below 85 % dissolved and 5 % at or above it, and recovery of 95–105 %?", ar: "هل يستوفي التثبت من طريقة الانحلال الجدول 2 من الملحق الخامس: تداخل الغفل والمواد الفعالة الأخرى/نواتج التحلل لا يتجاوز 2 % والوسط 1 %، ومدى من خمسة تراكيز على الأقل بمعامل تحديد R² ≥ 0.98 وتقاطع غير ذي دلالة (للتحرر الفوري: من Q − 45 % من أدنى تركيز إلى 130 % من أعلاه)، وتكرارية بانحراف معياري نسبي < 2 %، ودقة وسيطة بمحللَين في يومين لا يتجاوز فرقها 10 % مطلقة دون انحلال 85 % و5 % عنده أو فوقه، واسترداد 95–105 %؟"}
+  applies: "admin_route in ('oral','rectal','vaginal') and 'oral_solution' not in dosage_specifics and not aqueous_solution"
+  severity: major
+  evidence:
+    slots: [P-10]
+    keywords: ["dissolution method validation", "validation of the dissolution", "dissolution medium", "filter", "recovery"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit a validation of the dissolution method meeting Annex V Table 2 (specificity ≤ 2 %/1 %, five-point range with R² ≥ 0.98, repeatability RSD < 2 %, intermediate precision within 10 %/5 %, recovery 95–105 %).", ar: "يجب على مقدم الطلب تقديم تثبت من طريقة الانحلال يستوفي الجدول 2 من الملحق الخامس (نوعية ≤ 2 %/1 %، ومدى بخمس نقاط وR² ≥ 0.98، وتكرارية بانحراف < 2 %، ودقة وسيطة ضمن 10 %/5 %، واسترداد 95–105 %)."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex V Table 2", quote: "The difference in the mean value for dissolution results between any two conditions does not exceed an absolute 10% at time points with <85% dissolved"}
+  anchor: {code: "ICH Q2(R2)", section: ""}
+- id: CD-A5-04
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.3"
+  title: {en: "Verification of compendial procedures", ar: "التحقق من الطرق الدستورية"}
+  question: {en: "For each compendial procedure used, has verification per USP <1226> and the OMCL guideline been submitted under the actual conditions of use and product matrix: for impurities, specificity (no interference from excipients) and a reporting threshold at least at the LOQ; for assay, specificity, accuracy (recovery, at least one determination), repeatability around the target concentration (at least two determinations) and linearity at three points around the target?", ar: "لكل طريقة دستورية مستخدمة، هل قُدّم التحقق وفق USP <1226> ودليل OMCL في ظروف الاستخدام الفعلية ومصفوفة المستحضر: للشوائب النوعية (دون تداخل من السواغات) وعتبة إبلاغ لا تقل عن حد التقدير؛ وللمقايسة النوعية، والصحة (الاسترداد بتقدير واحد على الأقل)، والتكرارية حول التركيز المستهدف (تقديران على الأقل)، والخطية عند ثلاث نقاط حول القيمة المستهدفة؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-10]
+    keywords: ["verification", "1226", "compendial", "pharmacopoeial method", "actual conditions of use"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit a verification of each compendial procedure (USP <1226> / OMCL) under the actual conditions of use covering specificity and reporting threshold for impurities, and specificity, accuracy, repeatability and three-point linearity for the assay.", ar: "يجب على مقدم الطلب تقديم تحقق من كل طريقة دستورية (USP <1226> / OMCL) في ظروف الاستخدام الفعلية يشمل النوعية وعتبة الإبلاغ للشوائب، والنوعية والصحة والتكرارية والخطية بثلاث نقاط للمقايسة."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex V §2 (with Annex III §2.3.3)", quote: "The verification process for compendial test procedures is the assessment of whether the procedure can be used for its intended purpose, under the actual conditions"}
+  anchor: {code: "USP <1226>", section: "Verification of Compendial Procedures"}
+- id: CD-A6-01
+  dept: cadc
+  layer: eda
+  ctd: "CADC-DOCS"
+  title: {en: "Regulatory folder documents complete", ar: "اكتمال مستندات الملف التنظيمي"}
+  question: {en: "Does the Group 2 regulatory folder contain all twelve documents of Annex VI: registration licence and relevant approvals, registration form, quantitative composition, sample analysis request and sample collection report, API CoAs, finished product specifications, finished product CoA, box approval, payment receipt, MSDS for every API, antioxidant and preservative, a declaration of the sample collection category and number of batches, and a declaration that the file information is correct?", ar: "هل يحتوي الملف التنظيمي للمجموعة الثانية على المستندات الاثني عشر الواردة في الملحق السادس: ترخيص التسجيل والموافقات ذات الصلة، ونموذج التسجيل، والتركيب الكمي، وطلب تحليل العينة ومحضر سحبها، وشهادات تحليل المواد الفعالة، ومواصفات المستحضر النهائي، وشهادة تحليل المستحضر النهائي، وموافقة العبوة، وإيصال السداد، وصحيفة بيانات سلامة المواد لكل مادة فعالة ومضاد أكسدة ومادة حافظة، وإقراراً بفئة سحب العينات وعدد التشغيلات المسحوبة، وإقراراً بصحة المعلومات الواردة في الملف؟"}
+  applies: "true"
+  severity: critical
+  evidence:
+    slots: [M1-35, P-09, P-11, M1-31]
+    keywords: ["registration license", "payment receipt", "material safety data sheet", "declaration", "sample collection"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should complete the regulatory folder with the missing Annex VI documents (licence and approvals, registration form, quantitative composition, sample analysis request and collection report, API CoAs, finished product specifications and CoA, box approval, payment receipt, MSDS, and the two declarations).", ar: "يجب على مقدم الطلب استكمال الملف التنظيمي بالمستندات الناقصة وفق الملحق السادس (الترخيص والموافقات، ونموذج التسجيل، والتركيب الكمي، وطلب تحليل العينة ومحضر سحبها، وشهادات تحليل المواد الفعالة، ومواصفات المستحضر النهائي وشهادة تحليله، وموافقة العبوة، وإيصال السداد، وصحائف بيانات السلامة، والإقرارين)."}
+  action: {type: upload, target: "M1-35"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex VI, Group 2 Files, Regulatory folder", quote: "Regulatory folder contains the following: 1. Registration license and other relevant approvals (eg. variation approvals) 2. Registration Form 3. Quantitative composition"}
+- id: CD-A6-02
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.4"
+  title: {en: "Excipient specifications in 3.2.P.4.1", ar: "مواصفات السواغات في 3.2.P.4.1"}
+  question: {en: "Does section 3.2.P.4.1 provide the specification of each in-house excipient or the monograph reference of each compendial excipient?", ar: "هل يقدم القسم 3.2.P.4.1 مواصفات كل سواغ غير دستوري أو مرجع الدراسة الدستورية لكل سواغ دستوري؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-08]
+    keywords: ["excipient", "monograph", "specification", "in-house"]
+    data: [composition]
+  auto: {kind: slot}
+  deficiency: {en: "The applicant should provide in 3.2.P.4.1 the specifications of the in-house excipients and the monograph references of the compendial excipients.", ar: "يجب على مقدم الطلب تقديم مواصفات السواغات غير الدستورية ومراجع الدراسات الدستورية للسواغات الدستورية في القسم 3.2.P.4.1."}
+  action: {type: upload, target: "P-08"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex VI Table 1, 3.2.P.4.1", quote: "Specification of in-house excipients or monograph of compendial excipients"}
+- id: CD-A6-03
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "Tabulated specification with method source and version", ar: "جدول المواصفات مع مصدر الطريقة وإصدارها"}
+  question: {en: "Is 3.2.P.5.1 presented as a table listing each test, its acceptance criteria (numerical limits, ranges or other criteria) and its analytical procedure with type (visual, IR, UV, HPLC), source (BP, Ph. Eur., Ph. Int., JP, USP, in-house) and version (code, version, date), with release and end-of-shelf-life sets set out separately where they differ?", ar: "هل يُعرض القسم 3.2.P.5.1 في صورة جدول يذكر كل اختبار ومعايير قبوله (حدود رقمية أو مدى أو معايير أخرى) وطريقته التحليلية بنوعها (بصري، أشعة تحت الحمراء، أشعة فوق بنفسجية، كروماتوغرافيا سائلة عالية الأداء) ومصدرها (BP أو Ph. Eur. أو Ph. Int. أو JP أو USP أو داخلية) وإصدارها (الرمز والإصدار والتاريخ)، مع عرض مجموعتي الإفراج ونهاية الصلاحية منفصلتين حيثما اختلفتا؟"}
+  applies: "true"
+  severity: minor
+  evidence:
+    slots: [P-09]
+    keywords: ["release", "shelf", "version", "in-house", "HPLC", "source"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should present the finished product specification as a table of tests, acceptance criteria and analytical procedures stating the type, source and version of each method, and separate the release and shelf-life specifications where they differ.", ar: "يجب على مقدم الطلب عرض مواصفات المستحضر النهائي في جدول يضم الاختبارات ومعايير القبول وطرق التحليل مع بيان نوع كل طريقة ومصدرها وإصدارها، وفصل مواصفات الإفراج عن مواصفات نهاية الصلاحية حيثما اختلفتا."}
+  action: {type: generate, target: "P-09"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex VI Table 1, 3.2.P.5.1", quote: "Two separate sets of specifications may be set out: after packaging of the FPP (release) and at the end of shelf-life."}
+- id: CD-A6-04
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.4"
+  title: {en: "Batch analysis with batch description", ar: "تحليل التشغيلات مع وصف التشغيلة"}
+  question: {en: "Does 3.2.P.5.4 provide the certificate of analysis of each batch together with a batch description giving the strength, batch number, date, site of production and the results of the batch analyses?", ar: "هل يقدم القسم 3.2.P.5.4 شهادة تحليل كل تشغيلة مع وصف للتشغيلة يبين التركيز ورقم التشغيلة والتاريخ وموقع الإنتاج ونتائج تحليل التشغيلات؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-11]
+    keywords: ["batch no", "batch number", "lot no", "date of manufactur", "manufacturing date", "site"]
+    data: [batches]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide in 3.2.P.5.4 the certificates of analysis of the batches with a description of each batch (strength, batch number, date, site of production) and the results of the batch analyses.", ar: "يجب على مقدم الطلب تقديم شهادات تحليل التشغيلات في القسم 3.2.P.5.4 مع وصف كل تشغيلة (التركيز، ورقم التشغيلة، والتاريخ، وموقع الإنتاج) ونتائج تحليل التشغيلات."}
+  action: {type: edit_data, target: "batches"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex VI Table 1, 3.2.P.5.4", quote: "A description of batch (include strength, batch number, date, site of production and results of batch analyses should be provided."}
+- id: CD-A6-05
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.2"
+  title: {en: "Copies of in-house analytical procedures", ar: "نسخ طرق التحليل الداخلية"}
+  question: {en: "Does 3.2.P.5.2 contain copies of all in-house analytical procedures used (copies of officially recognised compendial procedures are not required)?", ar: "هل يحتوي القسم 3.2.P.5.2 على نسخ من جميع طرق التحليل الداخلية المستخدمة (ولا تلزم نسخ الطرق الدستورية المعترف بها رسمياً)؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-10]
+    keywords: ["method of analysis", "analytical procedure", "procedure", "HPLC"]
+    data: []
+  auto: {kind: slot}
+  deficiency: {en: "The applicant should provide copies of the in-house analytical procedures used for the finished product in 3.2.P.5.2.", ar: "يجب على مقدم الطلب تقديم نسخ من طرق التحليل الداخلية المستخدمة للمستحضر النهائي في القسم 3.2.P.5.2."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex VI Table 1, 3.2.P.5.2", quote: "Copies of the in-house analytical procedures used should be provided"}
+- id: CD-A6-06
+  dept: cadc
+  layer: eda
+  ctd: "3.2.P.5.6"
+  title: {en: "Justification of specifications discussion", ar: "مناقشة تبرير المواصفات"}
+  question: {en: "Does 3.2.P.5.6 provide a discussion of the omission or inclusion of particular tests, the evolution of the tests, the analytical procedures and the acceptance criteria?", ar: "هل يقدم القسم 3.2.P.5.6 مناقشة لإغفال أو إدراج اختبارات بعينها، وتطور الاختبارات، وطرق التحليل، ومعايير القبول؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-13]
+    keywords: ["justification", "omission", "inclusion", "acceptance criteria"]
+    data: []
+  auto: {kind: slot}
+  deficiency: {en: "The applicant should provide in 3.2.P.5.6 a justification of the specifications discussing the omission or inclusion of particular tests, the evolution of tests, the analytical procedures and the acceptance criteria.", ar: "يجب على مقدم الطلب تقديم تبرير للمواصفات في القسم 3.2.P.5.6 يناقش إغفال أو إدراج اختبارات بعينها، وتطور الاختبارات، وطرق التحليل، ومعايير القبول."}
+  action: {type: generate, target: "P-13"}
+  source: {code: "GL.CADC.002 v02/2024", section: "Annex VI Table 1, 3.2.P.5.6", quote: "A discussion should be provided on the omission or inclusion of particular tests, evolution of tests, analytical procedures and acceptance criteria"}

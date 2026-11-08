@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Assessor question (eda.review.v1)",
+  "type": "object",
+  "required": ["id", "dept", "layer", "ctd", "title", "question", "severity", "deficiency", "source"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {"type": "string", "pattern": "^[A-Z]{2}-[A-Za-z0-9]+(-[A-Za-z0-9]+)*$"},
+    "dept": {"enum": ["screening", "technical", "quality", "cadc", "stability", "be", "labelling", "clinical", "gates", "reliance"]},
+    "layer": {"enum": ["eda", "intl", "prep"]},
+    "ctd": {"type": "string", "minLength": 1},
+    "title": {"$ref": "#/$defs/bi"},
+    "question": {"$ref": "#/$defs/bi"},
+    "applies": {"type": "string"},
+    "severity": {"enum": ["critical", "major", "minor", "note"]},
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "slots": {"type": "array", "items": {"type": "string"}},
+        "keywords": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "data": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "auto": {
+      "type": "object", "additionalProperties": false, "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["text", "slot", "data", "none"]},
+        "check": {"type": "string"},
+        "min_hits": {"type": "integer", "minimum": 1}
+      }
+    },
+    "deficiency": {"$ref": "#/$defs/bi"},
+    "adequate": {"$ref": "#/$defs/bi"},
+    "action": {
+      "type": "object", "additionalProperties": false, "required": ["type"],
+      "properties": {"type": {"enum": ["upload", "generate", "request_data", "request_issuer", "rebuild", "edit_data", "ocr", "fix", "none"]},
+                     "target": {"type": "string"}}
+    },
+    "source": {
+      "type": "object", "additionalProperties": false, "required": ["code"],
+      "properties": {"code": {"type": "string", "minLength": 2}, "section": {"type": "string"}, "quote": {"type": "string"}, "title": {"type": "string"}}
+    },
+    "anchor": {
+      "type": "object", "additionalProperties": false, "required": ["code"],
+      "properties": {"code": {"type": "string", "minLength": 2}, "section": {"type": "string"}, "title": {"type": "string"}}
+    },
+    "tags": {"type": "array", "items": {"type": "string"}},
+    "provisional": {"type": "boolean"}
+  },
+  "$defs": {
+    "bi": {"type": "object", "required": ["en", "ar"], "additionalProperties": false,
+           "properties": {"en": {"type": "string", "minLength": 1}, "ar": {"type": "string", "minLength": 1}}}
+  }
+}

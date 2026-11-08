@@ -1,0 +1,168 @@
+# Screening — what the Regulatory Affairs administration checks before the clock starts (NP.CAPP.065 v5 + WHO screening checklist).
+# Missing REQUIRED Module 1 slots are generated at run time from the requirements pack (SC-M1-<req>): this file holds the specific checks.
+- id: SC-COVER-01
+  dept: screening
+  layer: eda
+  ctd: "1.0"
+  title: {en: "Cover letter completeness statement", ar: "إقرار الاكتمال في خطاب التغطية"}
+  question: {en: "Does the cover letter state that the submitted data are true, complete and correct?", ar: "هل يذكر خطاب التغطية أن البيانات المقدمة صحيحة وكاملة ودقيقة؟"}
+  severity: minor
+  evidence: {slots: [M1-43], keywords: ["true, complete and correct", "complete and correct", "true and complete", "صحيحة وكاملة"]}
+  auto: {kind: text}
+  deficiency: {en: "The cover letter should include a statement that the submitted data are true, complete and correct.", ar: "يجب أن يتضمن خطاب التغطية إقراراً بأن البيانات المقدمة صحيحة وكاملة ودقيقة."}
+  action: {type: generate, target: cover}
+  source: {code: NP.CAPP.065 v5/2025, section: "1.0 cover letter (eCTD) · general notes", quote: "The soft copy must be complete for the file to be accepted for assessment"}
+  anchor: {code: WHO PQ screening checklist 05/2021, section: "§1 cover letter"}
+- id: SC-SOFT-01
+  dept: screening
+  layer: eda
+  ctd: "1.0"
+  title: {en: "Complete soft copy", ar: "اكتمال النسخة الإلكترونية"}
+  question: {en: "Is the soft copy complete — every required Module 1 item has a document and no required slot is empty?", ar: "هل النسخة الإلكترونية كاملة — لكل بند مطلوب في الوحدة 1 مستند ولا توجد خانة مطلوبة فارغة؟"}
+  severity: critical
+  evidence: {data: [board.missing_required]}
+  auto: {kind: data, check: m1_complete}
+  deficiency: {en: "The soft copy is incomplete: required Module 1 items are missing. The file is not accepted for assessment until the soft copy is complete.", ar: "النسخة الإلكترونية غير مكتملة: توجد بنود مطلوبة في الوحدة 1 ناقصة. لا يُقبل الملف للتقييم قبل اكتمال النسخة الإلكترونية."}
+  action: {type: upload, target: board}
+  source: {code: NP.CAPP.065 v5/2025, section: "General notes, note 1", quote: "The soft copy must be complete for the file to be accepted for assessment"}
+- id: SC-PDF-01
+  dept: screening
+  layer: eda
+  ctd: "1.0"
+  title: {en: "Searchable PDFs", ar: "ملفات PDF قابلة للبحث"}
+  question: {en: "Are all company documents scanned and searchable PDFs (a text layer in every company PDF)?", ar: "هل جميع مستندات الشركة ملفات PDF ممسوحة وقابلة للبحث (طبقة نصية في كل ملف)؟"}
+  severity: critical
+  evidence: {data: [documents.searchable]}
+  auto: {kind: data, check: pdfs_searchable}
+  deficiency: {en: "All documents must be scanned and searchable PDF. The listed company documents have no text layer; run OCR and replace them.", ar: "يجب أن تكون جميع المستندات PDF ممسوحة وقابلة للبحث. مستندات الشركة المذكورة بلا طبقة نصية؛ شغّل OCR واستبدلها."}
+  action: {type: ocr, target: documents}
+  source: {code: NP.CAPP.065 v5/2025, section: "General notes, note 4", quote: "All documents must be scanned and searchable PDF"}
+- id: SC-VALID-01
+  dept: screening
+  layer: eda
+  ctd: "1.1 · 1.2"
+  title: {en: "Validity of dated certificates", ar: "صلاحية الشهادات المؤرخة"}
+  question: {en: "Is every dated certificate in Module 1 (GMP, CPP, licences, pricing, register of trade) within its validity period at the planned submission date?", ar: "هل كل شهادة مؤرخة في الوحدة 1 (GMP، CPP، التراخيص، التسعير، السجل التجاري) سارية في تاريخ التقديم المخطط؟"}
+  severity: critical
+  evidence: {data: [documents.valid_until]}
+  auto: {kind: data, check: certificates_valid}
+  deficiency: {en: "The listed certificates are expired or expire within 90 days; a valid certificate (or evidence of the renewal request where the checklist allows it) should be provided.", ar: "الشهادات المذكورة منتهية الصلاحية أو تنتهي خلال 90 يوماً؛ يجب تقديم شهادة سارية (أو دليل طلب التجديد حيث تسمح القائمة بذلك)."}
+  action: {type: request_issuer, target: documents}
+  source: {code: NP.CAPP.065 v5/2025, section: "1.1.5 pricing certificate · 1.1.17.2 register of trade · 1.2.4 GMP", quote: "Must be valid"}
+- id: SC-CEP-01
+  dept: screening
+  layer: eda
+  ctd: "1.2.4.3"
+  title: {en: "CEP valid and authorised", ar: "شهادة CEP سارية ومفوَّضة"}
+  question: {en: "Is the CEP valid on the EDQM database (not suspended or withdrawn), with all annexes, and is the declaration of access (authorisation box) completed and signed by the CEP holder?", ar: "هل شهادة CEP سارية في قاعدة بيانات EDQM (غير موقوفة أو مسحوبة)، مع جميع الملاحق، ومربع التفويض مستكمل وموقَّع من حامل الشهادة؟"}
+  applies: "'CEP' in api_options"
+  severity: critical
+  evidence: {slots: [M1-39], keywords: ["declaration of access", "access", "annex"], data: [apis.cep_status]}
+  auto: {kind: data, check: cep_valid}
+  deficiency: {en: "The CEP should be valid (not withdrawn or suspended), submitted with all its annexes, and the box of authorisation should be filled and signed by the CEP holder in favour of the applicant.", ar: "يجب أن تكون شهادة CEP سارية (غير مسحوبة أو موقوفة)، مقدَّمة بجميع ملاحقها، مع استكمال مربع التفويض وتوقيعه من حامل الشهادة لصالح مقدم الطلب."}
+  action: {type: request_issuer, target: M1-39}
+  source: {code: NP.CAPP.040 v1/2022, section: "Option 2 — CEP", quote: "Box of authorization in the CEP is not filled or signed by the CEP holder"}
+  anchor: {code: WHO PQ screening checklist 05/2021, section: "CEP — check the valid version on the EDQM site"}
+- id: SC-CEP-02
+  dept: screening
+  layer: eda
+  ctd: "1.2.4.3"
+  title: {en: "CEP commitment letter", ar: "خطاب الالتزام الخاص بشهادة CEP"}
+  question: {en: "Is the applicant's written commitment to inform EDA if the CEP is revised, renewed or withdrawn provided?", ar: "هل يوجد تعهد كتابي من مقدم الطلب بإخطار الهيئة في حال تعديل شهادة CEP أو تجديدها أو سحبها؟"}
+  applies: "'CEP' in api_options"
+  severity: major
+  evidence: {slots: [M1-40], keywords: ["commit", "withdraw", "revis", "inform"]}
+  auto: {kind: slot}
+  deficiency: {en: "A commitment letter acknowledging that EDA will be informed of any CEP withdrawal or update should be provided.", ar: "يجب تقديم خطاب التزام بإخطار الهيئة بأي سحب أو تحديث لشهادة CEP."}
+  action: {type: generate, target: cep_commitment}
+  source: {code: NP.CAPP.040 v1/2022, section: "Option 2 — CEP", quote: "Absence of the acknowledgement commitment letter by the applicant to EDA in case of CEP withdrawal or updates"}
+- id: SC-SITE-01
+  dept: screening
+  layer: eda
+  ctd: "1.1.17 · 3.2.P.3.1"
+  title: {en: "Sites consistent across the file", ar: "اتساق المواقع عبر الملف"}
+  question: {en: "Are the manufacturing sites named in Module 1 (licences, GMP, CPP) the same as those in 3.2.P.3.1 and 3.2.S.2.1, with full addresses?", ar: "هل مواقع التصنيع المذكورة في الوحدة 1 (التراخيص، GMP، CPP) هي نفسها في 3.2.P.3.1 و3.2.S.2.1 وبعناوين كاملة؟"}
+  severity: critical
+  evidence: {slots: [M1-14, M1-37, M1-38, P-03, S-04], keywords: ["manufactur", "site", "address"], data: [apis.address_gmp]}
+  auto: {kind: data, check: sites_consistent}
+  deficiency: {en: "The manufacturers and sites stated in Module 1 should be identical to those in 3.2.P.3.1 / 3.2.S.2.1 and on the CPP; for imported products the manufacturers must not differ from the CPP.", ar: "يجب أن تتطابق أسماء المصنّعين والمواقع في الوحدة 1 مع 3.2.P.3.1 / 3.2.S.2.1 ومع شهادة CPP؛ وللمنتجات المستوردة يجب ألا تختلف عن CPP."}
+  action: {type: edit_data, target: apis}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.3.1", quote: "For Imported products: Manufactures in this section are different than that in the CPP"}
+  anchor: {code: WHO PQ screening checklist 05/2021, section: "full site address including unit and block"}
+- id: SC-COMP-01
+  dept: screening
+  layer: eda
+  ctd: "1.2.1 · 3.2.P.1"
+  title: {en: "Composition identical everywhere", ar: "تطابق التركيب في كل المستندات"}
+  question: {en: "Is the composition in the composition certificate identical to 3.2.P.1 and to any approval or CPP that states the composition?", ar: "هل التركيب في شهادة التركيب مطابق لـ 3.2.P.1 ولأي موافقة أو شهادة CPP تذكر التركيب؟"}
+  severity: critical
+  evidence: {slots: [M1-31, P-01, M1-14], keywords: ["composition", "mg", "excipient"], data: [composition]}
+  auto: {kind: none}
+  deficiency: {en: "The composition stated in the qualitative-quantitative formula should be identical to the composition in every approval and on the CPP.", ar: "يجب أن يتطابق التركيب في الصيغة الكمية والنوعية مع التركيب في كل موافقة وعلى شهادة CPP."}
+  action: {type: rebuild, target: M1-31}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.1", quote: "Difference between composition in Q.F and any approval containing composition or CPP"}
+- id: SC-LEG-01
+  dept: screening
+  layer: eda
+  ctd: "1.1.13 · 1.1.17.7"
+  title: {en: "Legalisation of foreign documents", ar: "تصديق المستندات الأجنبية"}
+  question: {en: "Are the CPP / eCPP and the foreign agreements (storage, agency) legalised as the checklist requires (chamber of commerce and embassy, or eCPP verifiable online)?", ar: "هل شهادة CPP / eCPP والعقود الأجنبية (التخزين، الوكالة) مصدَّقة كما تطلب القائمة (الغرفة التجارية والسفارة، أو eCPP قابلة للتحقق إلكترونياً)؟"}
+  applies: "origin == 'imported'"
+  severity: critical
+  evidence: {slots: [M1-14, M1-24], keywords: ["legalis", "legaliz", "embassy", "apostille", "chamber", "eCPP"]}
+  auto: {kind: text}
+  deficiency: {en: "The CPP and the foreign agreements should be legalised (chamber of commerce and Egyptian embassy) or submitted as an electronically verifiable eCPP.", ar: "يجب تصديق شهادة CPP والعقود الأجنبية (الغرفة التجارية والسفارة المصرية) أو تقديم eCPP قابلة للتحقق إلكترونياً."}
+  action: {type: request_issuer, target: M1-14}
+  source: {code: NP.CAPP.065 v5/2025, section: "1.1.13 CPP · 1.1.17.7 agreements", quote: "legalised"}
+- id: SC-WHO-QOS
+  dept: screening
+  layer: prep
+  ctd: "2.3"
+  title: {en: "QOS in the current template", ar: "الملخص الشامل للجودة بالقالب الحديث"}
+  question: {en: "Is the Quality Overall Summary provided as an editable Word document in the current template, with volume and page cross-references?", ar: "هل الملخص الشامل للجودة مقدَّم كملف Word قابل للتحرير بالقالب الحديث مع إحالات إلى المجلد والصفحة؟"}
+  severity: minor
+  evidence: {slots: [M2-02], keywords: ["QOS", "Quality Overall Summary", "2.3.S", "2.3.P"]}
+  auto: {kind: slot}
+  deficiency: {en: "The QOS should be submitted in the latest template as an unaltered Word document with cross-references to the dossier.", ar: "يجب تقديم الملخص الشامل للجودة بالقالب الأحدث كملف Word غير معدَّل مع إحالات إلى الملف."}
+  action: {type: upload, target: M2-02}
+  source: {code: WHO PQ screening checklist 05/2021, section: "QOS / QIS", quote: "QOS and QIS as Word, in the latest template, unaltered"}
+  anchor: {code: WHO PQ QOS-PD template 01/2025}
+- id: SC-WHO-NITRO
+  dept: screening
+  layer: prep
+  ctd: "3.2.P.5.5 · 3.2.S.3.2"
+  title: {en: "Nitrosamine risk declared", ar: "إقرار تقييم مخاطر النيتروزامين"}
+  question: {en: "Is a nitrosamine risk assessment (or a declaration of its outcome) included in the dossier?", ar: "هل يتضمن الملف تقييم مخاطر النيتروزامين (أو إقراراً بنتيجته)؟"}
+  severity: minor
+  evidence: {slots: [S-07, P-12, M1-43], keywords: ["nitrosamine", "NDMA", "N-nitroso", "نيتروزامين"]}
+  auto: {kind: text}
+  deficiency: {en: "A nitrosamine risk assessment for the API and the FPP should be declared and, where a risk is identified, confirmatory testing and a control strategy provided.", ar: "يجب الإقرار بتقييم مخاطر النيتروزامين للمادة الفعالة والمنتج النهائي، وعند وجود خطر تقديم اختبار تأكيدي واستراتيجية ضبط."}
+  action: {type: upload, target: P-12}
+  source: {code: WHO PQ screening checklist 05/2021, section: "nitrosamine", quote: "Nitrosamine RA declared"}
+  anchor: {code: "EMA/409815/2020 rev. · FDA guidance on nitrosamine impurities (2021, rev. 2024)"}
+- id: SC-WHO-BELIST
+  dept: screening
+  layer: prep
+  ctd: "5.2"
+  title: {en: "List of all BE studies", ar: "قائمة كل دراسات التكافؤ"}
+  question: {en: "Is a list of all bioequivalence studies conducted on the product, including failed and pilot studies, provided?", ar: "هل توجد قائمة بجميع دراسات التكافؤ الحيوي التي أُجريت على المنتج بما فيها الفاشلة والتجريبية؟"}
+  applies: "dossier_kind == 'generic' and admin_route == 'oral' and not aqueous_solution and not bcs_waiver and not local_action"
+  severity: minor
+  evidence: {slots: [M5-02, M5-04], keywords: ["pilot", "failed", "all studies", "list of studies", "tabular listing"]}
+  auto: {kind: text}
+  deficiency: {en: "A list of all BE studies performed on the product, including pilot and failed studies, should be provided in 5.2.", ar: "يجب تقديم قائمة بجميع دراسات التكافؤ الحيوي التي أُجريت على المنتج، بما فيها التجريبية والفاشلة، في 5.2."}
+  action: {type: upload, target: M5-02}
+  source: {code: WHO PQ screening checklist 05/2021, section: "BE", quote: "a list of all BE studies, including failed and pilot studies"}
+- id: SC-WHO-CMO
+  dept: screening
+  layer: prep
+  ctd: "1.1.17.7 · 3.2.P.3.1"
+  title: {en: "Contract responsibilities defined", ar: "تحديد مسؤوليات التعاقد"}
+  question: {en: "Where manufacturing, testing or storage is contracted out, are the responsibilities of each party defined in a signed agreement?", ar: "عند إسناد التصنيع أو الاختبار أو التخزين لطرف آخر، هل مسؤوليات كل طرف محددة في اتفاقية موقَّعة؟"}
+  applies: "licence in ['toll', 'f_toll', 'imported_bulk'] or store_separate_from_factory"
+  severity: minor
+  evidence: {slots: [M1-24], keywords: ["responsib", "agreement", "contract"]}
+  auto: {kind: text}
+  deficiency: {en: "The contract-manufacturing (or storage/testing) agreement should define the responsibilities of each party.", ar: "يجب أن تحدد اتفاقية التصنيع (أو التخزين/الاختبار) لدى الغير مسؤوليات كل طرف."}
+  action: {type: upload, target: M1-24}
+  source: {code: WHO PQ screening checklist 05/2021, section: "contract manufacturing", quote: "Contract-manufacturing responsibilities defined"}

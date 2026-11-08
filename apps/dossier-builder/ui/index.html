@@ -27,6 +27,137 @@
 .statline{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)} .statline b{color:var(--ink)}
 .outcard{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
 .outcard .code{font-size:11.5px}
+/* Regulatory Reviewer (review desk · workspace · letter) — page layer on top of ds.css. Layout: app shell (rail + top + view); the desk reads top-down
+   (verdict strip → departments → clock → KPIs); the workspace is three panes (tree · questions · evidence). */
+.sim{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);border:1px dashed var(--line-2);border-radius:999px;padding:2px 10px;font-family:var(--f-mono)}
+.sim::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--wait)}
+.vstrip{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center;padding:18px 22px;border-radius:16px;border:1px solid var(--line);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--v-color,var(--warn)) 14%,var(--surface)),var(--surface) 70%);box-shadow:var(--shadow)}
+.vstrip .vlabel{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--f-mono)}
+html[lang="ar"] .vstrip .vlabel{letter-spacing:0;text-transform:none}
+.vstrip h1{font-size:22px;color:var(--v-color,var(--warn))}
+.vstrip .why{color:var(--ink-2);margin-top:4px;max-width:70ch}
+.vstrip .ring{--size:84px} .vstrip .ring b{font-size:17px}
+.vstrip .acts{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.depts{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.dept{display:flex;flex-direction:column;gap:10px;padding:14px 16px;text-align:start;cursor:pointer;color:inherit;font:inherit;transition:transform .15s,border-color .15s}
+.dept:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--brand) 45%,var(--line))}
+.dept .dh{display:flex;align-items:center;gap:10px}
+.dept .dh h3{flex:1;min-width:0;font-size:14px}
+.dept .dh .ic-tile{width:32px;height:32px;border-radius:9px}
+.dept .sub{font-size:12px;margin:0}
+.sevs{display:flex;gap:6px;flex-wrap:wrap}
+.sev{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--muted);font-family:var(--f-mono)}
+.sev::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--na)}
+.sev.critical::before{background:var(--bad)} .sev.major::before{background:var(--warn)} .sev.minor::before{background:var(--info)} .sev.na::before{background:var(--wait)}
+.sev b{color:var(--ink)}
+.dept .prog{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted)} .dept .prog .meter{flex:1}
+.clock{display:flex;flex-wrap:wrap;gap:8px 0;padding:4px 2px}
+.clock .st{flex:1 1 128px;position:relative;padding:12px 14px 12px 0;display:flex;flex-direction:column;gap:5px;min-width:0}
+.clock .st .k{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-2);font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.clock .st::after{content:"";position:absolute;top:26px;inset-inline-start:34px;inset-inline-end:-2px;height:1px;background:var(--line-2)}
+.clock .st:last-child::after{display:none}
+.clock .st b{font-size:13px} .clock .st .wd{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.clock .st.now .k{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);box-shadow:0 0 0 4px var(--brand-soft)}
+.clock .st.stop .k{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 50%,transparent);color:var(--warn)}
+.clock .st.stop b{color:var(--warn)}
+.clock .st.end .k{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 50%,transparent);color:var(--ok)}
+.runbox{display:flex;flex-direction:column;gap:10px}
+.runbox .rstep{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px}
+.runbox .rstep .k{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface-3);font-size:11px;font-family:var(--f-mono);color:var(--muted)}
+.runbox .rstep.done .k{background:var(--ok-soft);color:var(--ok)} .runbox .rstep.now .k{background:var(--brand);color:var(--brand-ink)}
+.runbox .rstep .res{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ws{display:grid;grid-template-columns:270px minmax(0,1fr) 330px;gap:14px;align-items:start}
+.ws>.card{min-height:200px}
+.ws .tree{max-height:calc(100vh - 230px);overflow:auto}
+.ws .tree summary .dot{margin-top:0}
+.qlist{display:flex;flex-direction:column;gap:12px}
+.qcard{border:1px solid var(--line);border-radius:12px;background:var(--surface-2);padding:12px 14px;display:flex;flex-direction:column;gap:9px;border-inline-start:3px solid var(--line-2)}
+.qcard.deficient.critical{border-inline-start-color:var(--bad)} .qcard.deficient.major{border-inline-start-color:var(--warn)} .qcard.deficient.minor{border-inline-start-color:var(--info)}
+.qcard.adequate{border-inline-start-color:var(--ok)} .qcard.not_assessable{border-inline-start-color:var(--wait)}
+.qcard .qh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qcard .qh .code{color:var(--muted)}
+.qcard .q{font-weight:600;font-size:14px}
+.qcard .ev{display:flex;flex-direction:column;gap:6px}
+.evi{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:start;padding:7px 10px;border-radius:9px;background:var(--surface);border:1px solid var(--line);cursor:pointer;text-align:start;font:inherit;color:inherit}
+.evi:hover,.evi.on{border-color:color-mix(in srgb,var(--brand) 50%,var(--line))}
+.evi .m{font-size:11.5px;color:var(--muted);font-family:var(--f-mono);direction:ltr;text-align:start;display:flex;gap:8px;flex-wrap:wrap}
+.evi .x{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.evi .x mark{background:color-mix(in srgb,var(--warn) 30%,transparent);color:inherit;border-radius:3px;padding:0 2px}
+.evi.data .m{color:var(--accent)}
+.fnd{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--line)}
+.fnd .en{direction:ltr;text-align:start;font-size:13px;line-height:1.5}
+.fnd .ar{direction:rtl;text-align:start;font-size:13px;color:var(--ink-2);font-family:var(--f-ar)}
+.fnd .src{font-size:11.5px;color:var(--muted);font-family:var(--f-mono);direction:ltr;text-align:start}
+.qcard .qa{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ai{border:1px dashed color-mix(in srgb,var(--accent) 55%,transparent);background:var(--accent-soft);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.ai .aih{display:flex;gap:8px;align-items:center;color:var(--accent);font-weight:650;font-size:12.5px}
+.ai .conf{margin-inline-start:auto;font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.viewer{display:flex;flex-direction:column;gap:10px;position:sticky;top:calc(var(--top-h) + 14px)}
+.viewer .vh{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:12.5px}
+.viewer .vh .code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.page{margin:0 14px 14px;background:#fff;color:#1a2230;border-radius:6px;box-shadow:0 1px 0 rgba(0,0,0,.2),0 10px 30px rgba(0,0,0,.35);padding:22px 20px;font-family:"IBM Plex Sans",Georgia,serif;font-size:11.5px;line-height:1.6;direction:ltr;text-align:left;min-height:300px;position:relative;overflow:hidden}
+:root[data-theme="light"] .page{box-shadow:0 1px 2px rgba(15,27,42,.12),0 8px 22px rgba(15,27,42,.12);border:1px solid #d7dee7}
+.page .ph{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#6b7686;display:flex;justify-content:space-between;border-bottom:1px solid #e3e8ee;padding-bottom:6px;margin-bottom:10px}
+.page h4{margin:0 0 6px;font-size:12.5px;color:#0f1b2a}
+.page p{margin:0 0 7px}
+.page mark{background:#ffe08a;color:#1a2230;padding:0 2px;border-radius:2px;box-shadow:0 0 0 2px #ffe08a}
+.page .skel{height:7px;background:#e6ebf1;border-radius:3px;margin:6px 0}
+.page .skel.s{width:60%} .page .skel.m{width:85%}
+.page .pn{position:absolute;bottom:8px;right:12px;font-size:9px;color:#8a96a6}
+.letter{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px 32px;direction:ltr;text-align:left;font-size:13.5px;line-height:1.6;max-width:900px;box-shadow:var(--shadow)}
+.letter .lh{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap}
+.letter .lh .ref{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right}
+.letter h2{font-size:16px;margin:0 0 4px}
+.letter .meta{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;margin:12px 0;font-size:13px}
+.letter .meta dt{color:var(--muted)} .letter .meta dd{margin:0}
+.letter h3{font-size:13px;margin:16px 0 8px;color:var(--brand);text-transform:uppercase;letter-spacing:.06em;font-family:var(--f-mono)}
+.letter ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.letter li{padding-left:4px}
+.letter li .ar{direction:rtl;text-align:right;color:var(--ink-2);font-family:var(--f-ar);margin-top:3px}
+.letter li .lm{display:flex;gap:8px;flex-wrap:wrap;margin-top:5px;font-size:11.5px;font-family:var(--f-mono);color:var(--muted)}
+.letter .sign{margin-top:22px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.letter .stamp{display:inline-block;border:2px solid var(--wait);color:var(--wait);border-radius:8px;padding:4px 10px;font-family:var(--f-mono);font-size:11px;transform:rotate(-3deg);letter-spacing:.08em}
+.sevtag{font-family:var(--f-mono);font-size:11px;border-radius:5px;padding:0 7px;line-height:20px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.sevtag.critical{background:var(--bad-soft);color:var(--bad)} .sevtag.major{background:var(--warn-soft);color:var(--warn)} .sevtag.minor{background:var(--info-soft);color:var(--info)} .sevtag.note{background:var(--na-soft);color:var(--muted)}
+.otag{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line-2);border-radius:5px;padding:0 6px;line-height:20px;color:var(--muted)}
+.otag.ai{border-color:color-mix(in srgb,var(--accent) 55%,transparent);color:var(--accent)}
+.otag.human{border-color:color-mix(in srgb,var(--brand) 55%,transparent);color:var(--brand)}
+.vbars{display:flex;flex-direction:column;gap:10px}
+.vbar{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:12px;align-items:center;font-size:13px}
+.vbar .meter{height:8px}
+.vbar .n{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.impact{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+.impact:last-child{border-bottom:0}
+.impact .d{font-size:12.5px;color:var(--muted)}
+.impact .delta{font-family:var(--f-mono);font-size:12px;color:var(--ok);white-space:nowrap}
+.tl{display:flex;flex-direction:column;gap:0}
+.tl .ti{display:grid;grid-template-columns:120px 18px minmax(0,1fr);gap:0 12px;align-items:start;position:relative;padding-bottom:14px}
+.tl .ti::before{content:"";position:absolute;inset-inline-start:128px;top:16px;bottom:0;width:2px;background:var(--line)}
+.tl .ti:last-child::before{display:none}
+.tl .ti .dt{font-family:var(--f-mono);font-size:12px;color:var(--muted);padding-top:2px;direction:ltr;text-align:end}
+.tl .ti .pt{width:12px;height:12px;border-radius:50%;background:var(--surface-3);border:2px solid var(--line-2);margin:3px 3px 0}
+.tl .ti.now .pt{background:var(--brand);border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
+.tl .ti.stop .pt{background:var(--warn-soft);border-color:var(--warn)}
+.tl .ti.end .pt{background:var(--ok-soft);border-color:var(--ok)}
+.tl .ti b{font-size:13px} .tl .ti span{display:block;font-size:12px;color:var(--muted)}
+.rtable td .st-open{color:var(--warn)} .rtable td .st-answered{color:var(--info)} .rtable td .st-accepted{color:var(--ok)} .rtable td .st-not_accepted{color:var(--bad)}
+.due{font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums}
+.due.late{color:var(--bad)} .due.soon{color:var(--warn)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.stepper{display:flex;gap:8px;flex-wrap:wrap}
+.stepper .s{display:inline-flex;gap:7px;align-items:center;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);font-size:12.5px;color:var(--muted)}
+.stepper .s.done{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent)} .stepper .s.now{color:var(--brand);border-color:color-mix(in srgb,var(--brand) 45%,transparent);background:var(--brand-soft);font-weight:650}
+.gate{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:16px 18px;border-radius:12px;border:1px solid var(--line)}
+.gate.ok{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 35%,transparent)} .gate.bad{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.gate h3{font-size:15px} .gate p{color:var(--ink-2);font-size:13px}
+.tiny-note{font-size:11.5px;color:var(--faint)}
+.seg.wrapseg{flex-wrap:wrap}
+@media (max-width:1180px){.ws{grid-template-columns:250px minmax(0,1fr)} .ws .viewer{grid-column:1/-1;position:static}}
+@media (max-width:900px){.ws{grid-template-columns:1fr} .ws .tree{max-height:260px} .vstrip{grid-template-columns:1fr} .vstrip .acts{flex-direction:row;flex-wrap:wrap} .vbar{grid-template-columns:110px minmax(0,1fr) auto} .letter{padding:18px 16px} .tl .ti{grid-template-columns:86px 18px minmax(0,1fr)} .tl .ti::before{inset-inline-start:94px}}
+
 </style>
 </head>
 <body>
@@ -249,6 +380,7 @@ const T = {
   /* audit */
   audit:{en:'Activity log',ar:'سجل النشاط'}, auditSub:{en:'Every action is recorded; nothing is overwritten.',ar:'كل إجراء مسجل؛ لا شيء يُستبدل.'},
   when:{en:'When',ar:'الوقت'}, event:{en:'Event',ar:'الحدث'}, detail:{en:'Detail',ar:'التفاصيل'}, restore:{en:'Restore',ar:'استرجاع'},
+  navReview:{en:'Regulatory Reviewer',ar:'المراجع الرقابي'},
   err:{en:'Error',ar:'خطأ'},
   /* variations */
   varsSub:{en:'EDA variation list (GL.CAPP.026 v6 via the EDA self-guided tool): pick one or more changes to get the class, the eCTD submission type, the conditions and the requirements.',
@@ -270,7 +402,7 @@ const dateL = d => fmtDate(d, S.lang), tsL = ts => fmtTs(ts, S.lang);
 
 /* ---------------- chrome */
 const NAV = [['home','#/','home','navHome'],['dossiers','#/dossiers','layers','navDossiers'],['variations','#/variations','branch','navVars'],['suite','/suite/','folder','navSuite']];
-const DNAV = [['guide','compass','navGuide'],['board','checklist','navBoard'],['data','database','navData'],['publisher','tree','navPublisher'],['checks','shield','navChecks'],['export','package','navExport'],['audit','history','navAudit']];
+const DNAV = [['guide','compass','navGuide'],['board','checklist','navBoard'],['data','database','navData'],['publisher','tree','navPublisher'],['checks','shield','navChecks'],['review','stamp','navReview'],['export','package','navExport'],['audit','history','navAudit']];
 $('#nav').innerHTML = NAV.map(([r,h,i,k])=>`<a href="${h}" data-r="${r}">${icon(i)}<span data-t="${k}"></span></a>`).join('')
   + `<div class="grp" data-t="navCurrent"></div>` + DNAV.map(([r,i,k])=>`<a href="#" data-r="${r}" id="nav${r[0].toUpperCase()+r.slice(1)}" aria-disabled="true">${icon(i)}<span data-t="${k}"></span></a>`).join('');
 function paintT(){ $$('[data-t]').forEach(e=>e.textContent=t(e.dataset.t)); }
@@ -296,7 +428,7 @@ function nav(r){
 async function route(){
   const tok = ++S.rt;
   const h = location.hash.replace(/^#/,'') || '/';
-  const m = h.match(/^\/d\/([^/]+)\/(guide|board|data|publisher|checks|export|audit)$/);
+  const m = h.match(/^\/d\/([^/]+)\/(guide|board|data|publisher|checks|export|audit|review)(?:\/([a-z]+))?$/);
   try{
     if(h==='/new'){ S.dossier=null; nav('dossiers'); return wizard(); }
     if(h==='/variations'){ S.dossier=null; nav('variations'); return varsView(tok); }
@@ -311,6 +443,7 @@ async function route(){
     if(m[2]==='publisher') return publisherView(tok);
     if(m[2]==='data') return dataView(tok);
     if(m[2]==='checks') return checksView(tok);
+    if(m[2]==='review') return reviewView(tok, m[3]||'desk');
     return auditView(tok);
   }catch(e){ if(tok===S.rt) $('#view').innerHTML = `<div class="alert bad">${icon('alert')}<p><b>${esc(t('err'))}:</b> ${esc(e.message)}</p></div>`; }
 }
@@ -1189,6 +1322,288 @@ async function auditView(tok){
      ${x.event==='document.withdrawn'?` <button class="btn sm" data-rs="${esc(x.detail.doc)}">${esc(t('restore'))}</button>`:''}</td></tr>`).join('')}</tbody></table></div></div>`)) return;
   $$('[data-rs]').forEach(b=>b.onclick=async()=>{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.rs}/restore`,{method:'POST'}); auditView(); });
 }
+/* ---------------- Regulatory Reviewer (review desk · screening · workspace · letter · responses · verdict · settings) */
+const RT = {
+  desk:{ar:'مكتب المراجعة', en:'Review desk'}, screening:{ar:'الفحص الأولي', en:'Screening'}, assess:{ar:'ورشة التقييم', en:'Assessment workspace'},
+  letter:{ar:'خطاب الاستيفاء', en:'Deficiency letter'}, responses:{ar:'دورة الردود', en:'Response cycle'}, verdict:{ar:'الحكم', en:'Verdict'}, settings:{ar:'إعدادات المراجعة', en:'Review settings'},
+  run:{ar:'شغّل المراجعة', en:'Run the review'}, rerun:{ar:'أعد التشغيل', en:'Run again'}, running:{ar:'جارٍ التشغيل…', en:'Running…'}, lastRun:{ar:'آخر جولة', en:'Last run'},
+  noRun:{ar:'لم تُشغَّل المراجعة بعد. اضغط «شغّل المراجعة» عشان الأداة تراجع الملف زي إدارات الهيئة والمُقيِّمين الدوليين.', en:'No review yet. Press «Run the review» and the tool reviews the dossier the way the EDA departments and international assessors do.'},
+  ready:{ar:'جاهز للتقديم', en:'Ready to submit'}, ready_with_risks:{ar:'جاهز مع مخاطر', en:'Ready with risks'}, not_ready:{ar:'غير جاهز', en:'Not ready'},
+  readiness:{ar:'الجاهزية', en:'Readiness'}, depts:{ar:'الإدارات', en:'Departments'}, clock:{ar:'الساعة الرقابية', en:'Regulatory clock'}, wds:{ar:'يوم عمل', en:'WDs'},
+  critical:{ar:'حرج', en:'Critical'}, major:{ar:'رئيسي', en:'Major'}, minor:{ar:'ثانوي', en:'Minor'}, note:{ar:'ملاحظة', en:'Note'}, na:{ar:'غير قابل للتقييم', en:'Not assessable'},
+  approve:{ar:'موافقة', en:'Approve'}, comments:{ar:'موافقة مع ملاحظات', en:'Approve with comments'}, clock_stop:{ar:'استيفاء — Clock stop', en:'Clock stop'}, reject:{ar:'رفض / إعادة تقديم', en:'Reject / resubmit'},
+  adequate:{ar:'كافٍ', en:'Adequate'}, deficient:{ar:'ناقص', en:'Deficient'}, not_assessable:{ar:'غير قابل للتقييم', en:'Not assessable'},
+  rule:{ar:'قاعدة', en:'rule'}, data:{ar:'بيانات', en:'data'}, text:{ar:'نص', en:'text'}, slot:{ar:'خانة', en:'slot'}, manual:{ar:'يحتاج مُقيِّماً', en:'needs assessor'}, ai:{ar:'AI', en:'AI'}, human:{ar:'يدوي', en:'manual'}, pending:{ar:'بانتظار التأكيد', en:'needs confirmation'},
+  evidence:{ar:'الدليل', en:'Evidence'}, finding:{ar:'الملاحظة بصيغة الهيئة', en:'Finding (authority wording)'}, ref:{ar:'المرجع', en:'Reference'}, anchor:{ar:'الأساس الدولي', en:'International basis'},
+  askAI:{ar:'اسأل المُقيِّم الذكي', en:'Ask the AI assessor'}, askAISec:{ar:'اسأل الذكاء عن القسم كله', en:'Ask AI about the whole section'}, confirm:{ar:'تأكيد', en:'Confirm'}, dismiss:{ar:'تجاهل', en:'Dismiss'},
+  override:{ar:'عدّل الحكم', en:'Override verdict'}, withdraw:{ar:'اسحب الملاحظة', en:'Withdraw'}, reason:{ar:'السبب (يُسجَّل في سجل التدقيق)', en:'Reason (recorded in the audit log)'}, save:{ar:'حفظ', en:'Save'}, cancel:{ar:'إلغاء', en:'Cancel'},
+  noQ:{ar:'لا توجد أسئلة في هذا القسم', en:'No questions in this section'}, allSecs:{ar:'كل الأقسام', en:'All sections'}, all:{ar:'الكل', en:'All'}, open:{ar:'مفتوح', en:'Open'}, needsReview:{ar:'يحتاج مراجعة', en:'Needs review'},
+  viewer:{ar:'عارض الدليل', en:'Evidence viewer'}, pickEv:{ar:'اختر دليلاً من سؤال لعرضه هنا', en:'Pick a piece of evidence to show it here'}, page:{ar:'صفحة', en:'page'}, dataCard:{ar:'قيمة من بيانات الملف', en:'Value from the dossier data'}, openDoc:{ar:'افتح المستند', en:'Open the document'},
+  gateOk:{ar:'Completed — الملف يتوزع على الإدارات وتبدأ الساعة', en:'Completed — distributed to the departments, the clock starts'},
+  gateBad:{ar:'In-completed — رفض بتعليقات وإعادة تقديم كملف جديد', en:'In-completed — rejection with comments, resubmit as a new submission'},
+  rejectPreview:{ar:'معاينة خطاب رفض الفحص الأولي', en:'Preview of the screening rejection letter'}, status:{ar:'الحالة', en:'Status'}, item:{ar:'البند', en:'Item'},
+  genDocx:{ar:'ولّد الخطاب (Word)', en:'Generate the letter (Word)'}, genReport:{ar:'ولّد تقرير التقييم', en:'Generate the assessment report'}, download:{ar:'تنزيل', en:'Download'}, generated:{ar:'تم التوليد', en:'Generated'},
+  respond:{ar:'رد', en:'Respond'}, reassess:{ar:'أعد التقييم', en:'Re-assess'}, respText:{ar:'نص الرد', en:'Response text'}, respDocs:{ar:'المستندات (ارفع النسخ الجديدة في خاناتها من لوحة المتطلبات)', en:'Documents (upload the new versions to their slots from the requirements board)'},
+  answered:{ar:'تم الرد', en:'Answered'}, accepted:{ar:'مقبول', en:'Accepted'}, not_accepted:{ar:'غير مقبول', en:'Not accepted'}, withdrawn:{ar:'مسحوبة', en:'Withdrawn'}, closed:{ar:'مقفولة', en:'Closed'},
+  impact:{ar:'إيه اللي يغيّر الحكم', en:'What changes the verdict'}, timeline:{ar:'الخط الزمني المتوقع', en:'Expected timeline'}, history:{ar:'سجل الجولات', en:'Run history'}, trend:{ar:'مقارنة بالجولة السابقة', en:'Versus the previous run'},
+  closedSince:{ar:'اتقفلت', en:'closed'}, stillOpen:{ar:'لسه مفتوحة', en:'still open'}, newF:{ar:'جديدة', en:'new'}, openQ:{ar:'استفسار مفتوح', en:'open queries'}, assessed:{ar:'سؤال', en:'questions'},
+  strict:{ar:'الصرامة', en:'Strictness'}, track:{ar:'المسار (لمحاكاة الساعة)', en:'Track (clock simulation)'}, deptsOn:{ar:'الإدارات المفعّلة', en:'Departments enabled'}, reliance:{ar:'مسار الاعتماد (مستورد معتمد من جهة مرجعية)', en:'Reliance route (import approved by a reference authority)'},
+  aiOn:{ar:'المُقيِّم الذكي مفعّل', en:'AI assessor enabled'}, pack:{ar:'حزمة المعرفة', en:'Knowledge pack'}, runWith:{ar:'شغّل بهذه الإعدادات', en:'Run with these settings'},
+  sign:{ar:'توقيع', en:'Sign'}, signAssessor:{ar:'توقيع المُقيِّم', en:'Assessor sign-off'}, signPeer:{ar:'توقيع المُقيِّم الثاني', en:'Second assessor sign-off'}, signedBy:{ar:'وقّع', en:'signed by'}, yourName:{ar:'اسمك', en:'Your name'},
+  simNote:{ar:'محاكاة مبنية على مستندات الهيئة المنشورة — القرار للهيئة', en:'Simulation built on published EDA documents — EDA decides'}, provisional:{ar:'مؤقت — المصدر لم يُقرأ بالكامل', en:'provisional — source not fully read'},
+  layer_eda:{ar:'الهيئة', en:'EDA'}, layer_intl:{ar:'دولي', en:'international'}, layer_prep:{ar:'تحضيري', en:'preparatory'}, abbreviated:{ar:'تقييم مختصر (اعتماد)', en:'abbreviated (reliance)'},
+  goBoard:{ar:'افتح في لوحة المتطلبات', en:'Open in the requirements board'}, goData:{ar:'افتح البيانات', en:'Open the data'}, goChecks:{ar:'افتح الفحوص', en:'Open the checks'}, aiNone:{ar:'المُقيِّم الذكي غير متاح هنا (يحتاج claude.ai أو مفتاح API على الخادم)', en:'The AI assessor is not available here (needs claude.ai or an API key on the server)'},
+  aiReading:{ar:'المُقيِّم الذكي بيقرأ المستندات…', en:'The AI assessor is reading the documents…'}, aiDone:{ar:'اقتراحات الذكاء الاصطناعي جاهزة للمراجعة — لا تدخل الخطاب قبل التأكيد', en:'AI suggestions are ready for review — nothing enters the letter before confirmation'},
+};
+const rt = k => L(RT[k]) || k;
+const RSEV = ['critical','major','minor','note'];
+const RSTATE = { rset: {strictness:'international', track:null, departments:null, reliance:false, ai:true}, dept:'quality', sec:'', ev:null, filter:'all', letterDept:'quality', busy:false };
+const rOpen = f => f.verdict==='deficient' && ['open','answered','not_accepted'].includes(f.status) && !(f.origin==='ai' && !f.confirmed_by);
+const rPendingAI = f => !!(f.payload && f.payload.ai) && !f.confirmed_by;
+const rSevTag = s => `<span class="sevtag ${s}">${esc(rt(s))}</span>`;
+const rVChip = v => `<span class="chip ${v==='adequate'?'c-ok':v==='deficient'?'c-bad':'c-wait'}"><i></i>${esc(rt(v))}</span>`;
+const rDChip = v => `<span class="chip ${ {approve:'c-ok',comments:'c-info',clock_stop:'c-warn',reject:'c-bad'}[v]||'c-na'}"><i></i>${esc(rt(v))}</span>`;
+const rOTag = f => `<span class="otag ${f.origin}">${esc(rt(f.origin))}${f.confidence?` · ${Math.round(f.confidence*100)}%`:''}${rPendingAI(f)?` · ${esc(rt('pending'))}`:''}</span>`;
+const rSevDots = c => `<div class="sevs"><span class="sev critical"><b>${c.critical||0}</b> ${esc(rt('critical'))}</span><span class="sev major"><b>${c.major||0}</b> ${esc(rt('major'))}</span><span class="sev minor"><b>${c.minor||0}</b> ${esc(rt('minor'))}</span>${c.not_assessable?`<span class="sev na"><b>${c.not_assessable}</b> ${esc(rt('na'))}</span>`:''}</div>`;
+const rSim = () => `<span class="sim">${esc(rt('simNote'))}</span>`;
+const RICON = {screening:'checklist', technical:'cpu', quality:'flask', cadc:'target', stability:'activity', be:'pill', clinical:'users', labelling:'book', gates:'stamp', reliance:'globe'};
+async function rLoad(){
+  if(!S.rpack) S.rpack = await api('/review/pack');
+  const r = await api(`/dossiers/${S.dossier.id}/review/latest`);
+  S.review = r; return r;
+}
+const rDepts = () => S.rpack.departments;
+const rDeptName = id => { const d = rDepts().find(x=>x.id===id); return d ? L(d) : id; };
+const rFind = () => (S.review && S.review.findings) || [];
+const rByDept = d => rFind().filter(f=>f.dept===d);
+function rHead(title, extra){
+  const run = S.review && S.review.run;
+  return `${stripHtml(S.J)}<div class="head"><div class="title"><div class="eyebrow">${esc(L({ar:'المراجع الرقابي', en:'Regulatory Reviewer'}))}${run?` · ${esc(run.id)} · ${esc(fmtDate(new Date(run.created*1000).toISOString().slice(0,10), S.lang))}`:''}</div><h1>${esc(title)}</h1>
+    <p class="sub">${bdi(S.dossier.name)} · ${profileChips(S.dossier.profile)}</p></div><div class="row">${extra||''}${rSim()}</div></div>
+    <nav class="tabs">${['desk','screening','assess','letter','responses','verdict','settings'].map(k=>`<a href="#/d/${S.dossier.id}/review/${k}" class="${RSTATE.tab===k?'on':''}">${esc(rt(k))}</a>`).join('')}</nav>`;
+}
+async function rRun(){
+  if(RSTATE.busy) return; RSTATE.busy = true; toast(rt('running'));
+  try{ const body = {...RSTATE.rset, actor: S.me && S.me.user || null}; await api(`/dossiers/${S.dossier.id}/review`, {method:'POST', json: body}); await rLoad(); toast(`${rt('lastRun')} ${S.review.run.id} · ${rt(S.review.run.verdict)}`); route(); }
+  catch(e){ toast(e.message); } finally { RSTATE.busy = false; }
+}
+async function reviewView(tok, tab){
+  RSTATE.tab = tab || 'desk';
+  const {b, data, J} = await loadJourney(); S.J = J; await rLoad();
+  if(!fresh(tok)) return;
+  const run = S.review.run;
+  if(!run){ if(!show(tok, `${rHead(rt(RSTATE.tab))}<div class="card empty">${icon('stamp',40)}<div style="max-width:60ch">${esc(rt('noRun'))}</div><button class="btn primary lg" id="runBtn">${icon('zap',16)} ${esc(rt('run'))}</button></div>`)) return; $('#runBtn').onclick = rRun; return; }
+  const V = {desk:rDesk, screening:rScreening, assess:rAssess, letter:rLetter, responses:rResponses, verdict:rVerdict, settings:rSettings};
+  if(!show(tok, (V[RSTATE.tab]||rDesk)())) return;
+  rBind();
+}
+function rDesk(){
+  const run = S.review.run, c = run.counts, dv = run.dept_verdicts, ck = run.clock, diff = run.diff || {closed:[], new:[], still_open:[]};
+  const color = run.verdict==='ready'?'var(--ok)':run.verdict==='ready_with_risks'?'var(--warn)':'var(--bad)';
+  const stages = ck.stages.map((s,i)=>`<div class="st ${i===0?'now':i===ck.stages.length-1?'end':''}"><span class="k">${i+1}</span><b>${esc(L(s.label))}</b><span class="wd">${typeof s.wds==='number'?`${s.wds} ${esc(rt('wds'))}`:esc(String(s.wds))}</span></div>`).join('');
+  const stop = ck.expected_rounds ? `<div class="st stop"><span class="k">⏸</span><b>${esc(L({ar:'جولات استيفاء متوقعة', en:'Expected deficiency rounds'}))}</b><span class="wd">${ck.expected_rounds} × ${ck.clock_stop_months} ${esc(L({ar:'شهور كحد أقصى', en:'months max'}))}</span></div>` : '';
+  const readiness = c.total ? Math.round(100*c.adequate/c.total) : 0;
+  return `${rHead(rt('desk'), `<button class="btn primary" id="runBtn">${icon('zap',16)} ${esc(rt('rerun'))}</button>`)}
+  <section class="vstrip" style="--v-color:${color}">${ring(readiness,'lg')}<div><div class="vlabel">${esc(rt('verdict'))} · ${esc(rt('lastRun'))} ${esc(run.id)} · ${esc(run.pack_version)}</div><h1>${esc(rt(run.verdict))}</h1><p class="why">${esc(L(run.why||{}))}</p><div class="row gap-s" style="margin-top:10px">${rSevDots(c)}<span class="small muted">${c.adequate} ${esc(rt('adequate'))} · ${c.total} ${esc(rt('assessed'))}${c.needs_review?` · ${c.needs_review} ${esc(rt('needsReview'))}`:''}</span></div></div>
+    <div class="acts"><a class="btn" href="#/d/${S.dossier.id}/review/assess">${icon('search',16)} ${esc(rt('assess'))}</a><a class="btn" href="#/d/${S.dossier.id}/review/letter">${icon('mail',16)} ${esc(rt('letter'))}</a></div></section>
+  <section class="stack gap-s"><div class="row"><h2>${esc(rt('depts'))}</h2><span class="small muted">${esc(L({ar:'كل كارت = مُقيِّم يحاكي إدارة في الهيئة (أو الطبقة الدولية)', en:'Each card is an assessor simulating one EDA department (or the international layer)'}))}</span></div>
+    <div class="depts">${rDepts().filter(d=>dv[d.id]).map(d=>{ const x=dv[d.id]; return `<button class="card dept" data-rdept="${d.id}"><div class="dh"><span class="ic-tile ${x.verdict==='approve'?'ok':x.verdict==='reject'?'bad':x.verdict==='clock_stop'?'warn':''}">${icon(RICON[d.id]||'info',17)}</span><h3>${esc(L(d))}</h3>${rDChip(x.verdict)}</div><p class="sub">${esc(L(d.body))}</p>${rSevDots({...x.counts, not_assessable:x.not_assessable})}<div class="prog">${meter(x.total?Math.round(100*(x.total-x.not_assessable)/x.total):0,'ok')}<span class="num">${x.total-x.not_assessable}/${x.total} ${esc(rt('assessed'))}</span></div></button>`; }).join('')}</div></section>
+  <div class="grid2">
+    <section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(rt('clock'))}</h3><span class="small muted">${esc(L(ck.label))}${ck.total_months?` · ${ck.total_months} ${esc(L({ar:'شهور إجمالي منشور', en:'months published total'}))}`:''}</span></div><div class="pad"><div class="clock">${stages}${stop}</div><p class="tiny-note" style="margin-top:8px">${esc(L(ck.note||{}))}</p></div></section>
+    <section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(rt('trend'))}</h3><span class="code muted">${esc(run.previous_run_id||'—')} → ${esc(run.id)}</span></div><div class="pad stack gap-s"><div class="kpis"><div class="card kpi ok"><span class="n">${diff.closed.length}</span><span class="l">${esc(rt('closedSince'))}</span></div><div class="card kpi warn"><span class="n">${diff.still_open.length}</span><span class="l">${esc(rt('stillOpen'))}</span></div><div class="card kpi info"><span class="n">${diff.new.length}</span><span class="l">${esc(rt('newF'))}</span></div></div>
+      ${diff.closed.length?`<div class="small muted">${esc(rt('closedSince'))}: ${diff.closed.slice(0,8).map(x=>`<span class="pchip">${esc(x.split('|')[0])}</span>`).join(' ')}</div>`:''}</div></section>
+  </div>`;
+}
+function rScreening(){
+  const fs = rByDept('screening'), dv = S.review.run.dept_verdicts.screening || {verdict:'approve', counts:{}};
+  const gateOk = dv.verdict !== 'reject';
+  const rows = fs.filter(f=>f.verdict!=='adequate' || RSTATE.filter==='all').sort((a,b)=>RSEV.indexOf(a.severity)-RSEV.indexOf(b.severity)).map(f=>`<tr><td class="code">${esc(f.ctd)}</td><td>${esc(L(f.payload.title))}<div class="small muted">${esc(L(f.payload.question))}</div></td><td>${rVChip(f.verdict)}</td><td>${rSevTag(f.severity)}</td><td class="small muted">${esc(L(f.payload.detail||{}))}</td><td class="end nowrap">${rActBtn(f)}</td></tr>`).join('');
+  return `${rHead(rt('screening'), `<div class="seg"><button data-rf="all" class="${RSTATE.filter==='all'?'on':''}">${esc(rt('all'))}</button><button data-rf="open" class="${RSTATE.filter!=='all'?'on':''}">${esc(rt('open'))}</button></div>`)}
+  <section class="gate ${gateOk?'ok':'bad'}"><span class="ic-tile ${gateOk?'ok':'bad'}">${icon(gateOk?'check':'alert',18)}</span><div><h3>${esc(gateOk?rt('gateOk'):rt('gateBad'))}</h3><p>${esc(L({ar:`${fs.length} بنداً فُحص · ${dv.counts.critical||0} حرج · ${dv.counts.major||0} رئيسي · ${dv.counts.minor||0} ثانوي · ${dv.not_assessable||0} غير قابل للتقييم. إعادة التقديم بعد الرفض خلال ${S.review.run.clock.clock_stop_months} شهور (المسار السريع) أو 30 يوم عمل (المسار العادي للمستورد).`, en:`${fs.length} items checked · ${dv.counts.critical||0} critical · ${dv.counts.major||0} major · ${dv.counts.minor||0} minor · ${dv.not_assessable||0} not assessable. Resubmission after rejection within ${S.review.run.clock.clock_stop_months} months (fast track) or 30 WDs (normal track, imported).`}))}</p></div>${gateOk?'':`<button class="btn" id="rejPrev">${icon('mail',16)} ${esc(rt('rejectPreview'))}</button>`}</section>
+  <section class="card"><div class="tbl"><table><thead><tr><th>${esc(L({ar:'البند', en:'Item'}))}</th><th>${esc(L({ar:'السؤال', en:'Question'}))}</th><th>${esc(rt('verdict'))}</th><th></th><th>${esc(L({ar:'التفصيل', en:'Detail'}))}</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="6" class="muted">${esc(rt('noQ'))}</td></tr>`}</tbody></table></div></section>`;
+}
+function rActBtn(f){
+  const a = f.payload.action; if(!a || a.type==='none' || f.verdict==='adequate') return '';
+  const id = S.dossier.id;
+  const map = {upload:['board','goBoard'], generate:['board','goBoard'], request_issuer:['board','goBoard'], rebuild:['board','goBoard'], fix:['checks','goChecks'], ocr:['checks','goChecks'], edit_data:['data','goData'], request_data:['data','goData']};
+  const [to, label] = map[a.type] || ['board','goBoard'];
+  return `<a class="btn sm" href="#/d/${id}/${to}">${icon('arrow',14)} ${esc(rt(label))}</a>`;
+}
+function rTree(){
+  const dv = S.review.run.dept_verdicts;
+  return rDepts().filter(d=>dv[d.id] && d.id!=='technical').map(d=>{ const fs=rByDept(d.id); const secs=[...new Set(fs.map(f=>f.ctd))].sort(); const v=dv[d.id].verdict;
+    return `<details ${RSTATE.dept===d.id?'open':''}><summary><span class="dot" style="background:var(--${v==='approve'?'ok':v==='reject'?'bad':v==='clock_stop'?'warn':'info'})"></span>${esc(L(d))}<span class="cnt">${fs.filter(rOpen).length}</span></summary>
+      <div class="node ${RSTATE.dept===d.id&&!RSTATE.sec?'sel':''}" data-rsec="" data-rd="${d.id}"><span class="dot" style="background:var(--na)"></span><span>${esc(rt('allSecs'))}</span></div>
+      ${secs.map(k=>{ const g=fs.filter(f=>f.ctd===k); const c=g.some(f=>rOpen(f)&&f.severity==='critical')?'bad':g.some(rOpen)?'warn':g.some(f=>f.verdict==='not_assessable')?'wait':'ok';
+        return `<div class="node ${RSTATE.dept===d.id&&RSTATE.sec===k?'sel':''}" data-rsec="${esc(k)}" data-rd="${d.id}"><span class="dot" style="background:var(--${c})"></span><span><span class="code">${esc(k)}</span> <span class="small muted">${g.length}</span></span></div>`; }).join('')}</details>`; }).join('');
+}
+function rEvItem(f, i, e){
+  const on = RSTATE.ev && RSTATE.ev.id===f.id && RSTATE.ev.i===i;
+  if(e.field!==undefined) return `<button class="evi data ${on?'on':''}" data-rev="${f.id}:${i}"><span class="m">${icon('database',13)} ${esc(e.field)}</span><span class="x code wrap">${esc(e.value)}</span></button>`;
+  const name = e.filename || e.doc || '';
+  return `<button class="evi ${on?'on':''}" data-rev="${f.id}:${i}"><span class="m">${icon('file',13)} ${esc(name)}${e.page?` · ${esc(rt('page'))} ${e.page}`:''}${e.ctd?` · ${esc(e.ctd)}`:''}${e.verified===false?` · <span class="c-bad">${esc(L({ar:'غير متحقق', en:'unverified'}))}</span>`:''}</span>${e.excerpt?`<span class="x">${rMark(e.excerpt, e.keyword)}</span>`:''}</button>`;
+}
+function rMark(text, kw){ const s = esc(text); if(!kw) return s; const i = s.toLowerCase().indexOf(esc(kw).toLowerCase()); return i<0 ? s : s.slice(0,i)+'<mark>'+s.slice(i,i+kw.length)+'</mark>'+s.slice(i+kw.length); }
+function rQcard(f){
+  const p = f.payload, ai = p.ai && !f.confirmed_by ? p.ai : null;
+  const aiBox = ai ? `<div class="ai"><div class="aih">${icon('sparkles',15)} ${esc(L({ar:'اقتراح المُقيِّم الذكي', en:'AI assessor suggestion'}))} · ${rVChip(ai.verdict)}<span class="conf">confidence ${Math.round((ai.confidence||0)*100)}%</span></div><div class="fnd"><div class="en">${esc(ai.en)}</div><div class="ar">${esc(ai.ar)}</div></div>${(ai.evidence||[]).map((e,i)=>rEvItem(f,'ai'+i,e)).join('')}
+      <div class="row gap-s"><button class="btn sm primary" data-ract="confirm" data-rid="${f.id}">${icon('check',14)} ${esc(rt('confirm'))}</button><button class="btn sm ghost" data-ract="dismiss_ai" data-rid="${f.id}">${esc(rt('dismiss'))}</button><span class="tiny-note">${esc(L({ar:'لا يدخل الخطاب قبل التأكيد', en:'Enters the letter only after confirmation'}))}</span></div></div>` : '';
+  const stat = f.status==='answered'?`<span class="chip c-info"><i></i>${esc(rt('answered'))}</span>`:['accepted'].includes(f.status)?`<span class="chip c-ok"><i></i>${esc(rt('accepted'))}</span>`:f.status==='not_accepted'?`<span class="chip c-bad"><i></i>${esc(rt('not_accepted'))}</span>`:f.status==='withdrawn'?`<span class="chip c-na"><i></i>${esc(rt('withdrawn'))}</span>`:'';
+  return `<article class="qcard ${f.verdict} ${f.severity}" id="q-${f.id}">
+    <div class="qh"><span class="code">${esc(f.question_id)}</span><span class="code muted">${esc(f.ctd)}</span>${rVChip(f.verdict)}${rSevTag(f.severity)}${rOTag(f)}<span class="tag">${esc(rt('layer_'+f.layer))}</span>${p.provisional?`<span class="tag warn">${esc(rt('provisional'))}</span>`:''}${p.abbreviated?`<span class="tag">${esc(rt('abbreviated'))}</span>`:''}${stat}</div>
+    <div class="q">${esc(L(p.question))}</div>
+    <div class="ev"><span class="tiny-note">${esc(rt('evidence'))}${p.detail?` — ${esc(L(p.detail))}`:''}</span>${(p.evidence||[]).slice(0,8).map((e,i)=>rEvItem(f,i,e)).join('')}</div>
+    ${f.verdict!=='adequate'?`<div class="fnd"><span class="tiny-note">${esc(rt('finding'))}</span><div class="en">${esc(p.deficiency.en)}</div><div class="ar">${esc(p.deficiency.ar)}</div><div class="src">${esc(rt('ref'))}: ${esc((p.source||{}).code||'')} ${esc((p.source||{}).section||'')}${(p.source||{}).quote?` — «${esc(p.source.quote)}»`:''}${p.anchor?` · ${esc(rt('anchor'))}: ${esc(p.anchor.code||'')} ${esc(p.anchor.section||'')}`:''}</div></div>`
+      :`<div class="src small muted code">${esc((p.source||{}).code||'')} ${esc((p.source||{}).section||'')}${p.anchor?` · ${esc(p.anchor.code||'')}`:''}</div>`}
+    ${f.override?`<div class="alert info">${icon('pen',16)}<p class="small"><b>${esc(f.override.by||'')}</b>: ${esc(f.override.reason||'')}</p></div>`:''}
+    ${aiBox}
+    <div class="qa">${rActBtn(f)}${!ai && !f.question_id.startsWith('MISSING-') && !f.question_id.startsWith('TECH-') && RSTATE.rset.ai ? `<button class="btn sm ghost" data-rai="${f.id}">${icon('sparkles',14)} ${esc(rt('askAI'))}</button>`:''}<button class="btn sm ghost" data-rovr="${f.id}">${icon('pen',14)} ${esc(rt('override'))}</button>${f.verdict==='deficient'&&f.status!=='withdrawn'?`<button class="btn sm ghost" data-rwd="${f.id}">${esc(rt('withdraw'))}</button>`:''}</div></article>`;
+}
+function rViewer(){
+  if(!RSTATE.ev) return `<div class="empty">${icon('eye',34)}<div>${esc(rt('pickEv'))}</div></div>`;
+  const f = rFind().find(x=>x.id===RSTATE.ev.id); if(!f) return '';
+  const e = String(RSTATE.ev.i).startsWith('ai') ? ((f.payload.ai||{}).evidence||[])[+String(RSTATE.ev.i).slice(2)] : (f.payload.evidence||[])[RSTATE.ev.i]; if(!e) return '';
+  if(e.field!==undefined) return `<div class="vh">${icon('database',15)}<span class="code">${esc(e.field)}</span></div><div class="pad stack gap-s"><div class="eyebrow">${esc(rt('dataCard'))}</div><div class="code wrap" style="font-size:14px">${esc(e.value)}</div><p class="small muted">${esc(L({ar:'القيمة من صفحة «البيانات»؛ تعديلها هناك ثم «أعد التقييم» يعيد تشغيل السؤال.', en:'The value comes from the Data page; change it there and press «Re-assess» to re-run the question.'}))}</p><a class="btn sm" href="#/d/${S.dossier.id}/data">${esc(rt('goData'))}</a></div>`;
+  const name = e.filename || e.doc || '', doc = e.doc_id ? `/api/dossiers/${S.dossier.id}/documents/${e.doc_id}/file` : null;
+  return `<div class="vh">${icon('file',15)}<span class="code">${esc(name)}</span>${e.page?`<span class="tag">${esc(rt('page'))} ${e.page}</span>`:''}</div>
+    <div class="page"><div class="ph"><span>${esc(S.dossier.name)}</span><span>${esc(e.ctd||e.slot_id||'')}</span></div><h4>${esc(name)}</h4><div class="skel m"></div><div class="skel"></div><p>${e.excerpt?rMark(e.excerpt, e.keyword):esc(L({ar:'(مستند بلا مقتطف — افتحه للقراءة)', en:'(document without an excerpt — open it to read)'}))}</p><div class="skel"></div><div class="skel s"></div>${e.page?`<span class="pn">${e.page}</span>`:''}</div>
+    ${doc?`<div class="pad" style="padding-top:0"><a class="btn sm" href="${doc}" target="_blank" rel="noopener">${icon('external',14)} ${esc(rt('openDoc'))}</a></div>`:''}`;
+}
+function rAssess(){
+  const dv = S.review.run.dept_verdicts;
+  if(!dv[RSTATE.dept]) RSTATE.dept = Object.keys(dv).find(k=>k!=='technical') || 'quality';
+  let fs = rByDept(RSTATE.dept).filter(f=>!RSTATE.sec || f.ctd===RSTATE.sec);
+  if(RSTATE.filter==='open') fs = fs.filter(f=>rOpen(f) || rPendingAI(f) || f.verdict==='not_assessable');
+  else if(RSTATE.filter==='review') fs = fs.filter(f=>f.payload.needs_review || rPendingAI(f) || f.verdict==='not_assessable');
+  else if(RSTATE.filter!=='all') fs = fs.filter(f=>f.severity===RSTATE.filter && f.verdict==='deficient');
+  fs.sort((a,b)=>a.ctd.localeCompare(b.ctd) || RSEV.indexOf(a.severity)-RSEV.indexOf(b.severity));
+  return `${rHead(rt('assess'), `<div class="seg wrapseg">${['all','open','review','critical','major','minor'].map(k=>`<button data-rf="${k}" class="${RSTATE.filter===k?'on':''}">${esc(k==='review'?rt('needsReview'):rt(k))}</button>`).join('')}</div>`)}
+  <div class="legend"><span><i style="background:var(--ok)"></i>${esc(rt('adequate'))}</span><span><i style="background:var(--warn)"></i>${esc(rt('deficient'))}</span><span><i style="background:var(--bad)"></i>${esc(rt('critical'))}</span><span><i style="background:var(--wait)"></i>${esc(rt('na'))}</span></div>
+  <div class="ws"><aside class="card tree" id="rtree">${rTree()}</aside>
+    <section class="stack gap-s"><div class="row"><h2>${esc(rDeptName(RSTATE.dept))} · <span class="code">${esc(RSTATE.sec||'')}</span></h2><span class="muted small">${fs.length} ${esc(rt('assessed'))}</span>${RSTATE.sec && RSTATE.rset.ai?`<button class="btn sm ghost" id="askSec">${icon('sparkles',14)} ${esc(rt('askAISec'))}</button>`:''}</div>
+      <div class="qlist">${fs.length?fs.map(rQcard).join(''):`<div class="card empty">${icon('checklist',34)}<div>${esc(rt('noQ'))}</div></div>`}</div></section>
+    <aside class="card viewer" id="rviewer">${rViewer()}</aside></div>`;
+}
+function rLetterItems(dept){ return rFind().filter(f=>f.dept===dept && f.verdict==='deficient' && f.severity!=='note' && f.status!=='withdrawn' && !(f.origin==='ai'&&!f.confirmed_by)); }
+function rLetter(){
+  const run = S.review.run, depts = rDepts().filter(d=>rLetterItems(d.id).length);
+  if(!depts.find(d=>d.id===RSTATE.letterDept)) RSTATE.letterDept = depts.length ? depts[0].id : 'quality';
+  const d = rDepts().find(x=>x.id===RSTATE.letterDept) || {id:RSTATE.letterDept, en:RSTATE.letterDept, ar:RSTATE.letterDept, body:{en:'',ar:''}};
+  const items = rLetterItems(d.id), secs = [...new Set(items.map(f=>f.ctd))].sort(); let n=0;
+  const id = S.dossier.id, L_ = (run.letters||{})[`letter:${d.id}`], R_ = (run.letters||{})[`report:${d.id}`];
+  const dl = (meta, kind) => meta ? `<a class="btn sm" href="/api/dossiers/${id}/review/${run.id}/${kind}/${d.id}/file?fmt=docx">${icon('download',14)} Word</a>${meta.pdf?`<a class="btn sm" href="/api/dossiers/${id}/review/${run.id}/${kind}/${d.id}/file?fmt=pdf">${icon('download',14)} PDF</a>`:''}` : '';
+  const env = S.dossier.envelope || {};
+  return `${rHead(rt('letter'), `<div class="seg wrapseg">${depts.map(x=>`<button data-rld="${x.id}" class="${RSTATE.letterDept===x.id?'on':''}">${esc(L(x))} <span class="code">${rLetterItems(x.id).length}</span></button>`).join('')||`<span class="small muted">${esc(L({ar:'لا ملاحظات مؤكدة', en:'No confirmed findings'}))}</span>`}</div>`)}
+  <div class="row"><button class="btn" data-rgen="letters">${icon('mail',16)} ${esc(rt('genDocx'))}</button>${dl(L_,'letters')}<button class="btn" data-rgen="reports">${icon('file',16)} ${esc(rt('genReport'))}</button>${dl(R_,'reports')}<span class="small muted">${esc(L({ar:'الإنجليزي أولاً زي خطابات الهيئة، ثم العربي', en:'English first, as EDA letters are written, then Arabic'}))}</span></div>
+  <article class="letter"><div class="lh"><div><h2>Request for supplementary information — ${esc(d.en)}</h2><div class="small muted">${esc(d.body.en)} · simulated assessor · ${esc(run.pack_version)}</div></div><div class="ref"><span class="stamp">SIMULATION · NOT AN EDA LETTER</span><div style="margin-top:8px">Ref. ${esc(run.id)}/${esc(d.id.toUpperCase())}-${String(items.length).padStart(3,'0')}</div></div></div>
+    <dl class="meta"><dt>Applicant</dt><dd>${esc(env.applicant||S.dossier.product.manufacturer||'')}</dd><dt>Product</dt><dd>${esc(S.dossier.name)}</dd><dt>Tracking</dt><dd>${esc(Array.isArray(env.tracking)?env.tracking.join(', '):(env.tracking||''))}</dd><dt>Clock</dt><dd>Stopped at technical evaluation — reply within <b>${run.clock.clock_stop_months} months</b> as supplementary documents (submission procedures, Step 3)</dd></dl>
+    <p>Dear Sir / Madam,</p><p>${esc(S.rpack.letters ? '' : '')}Following the assessment of the above dossier against the published requirements, the applicant is requested to address the following points. All supporting documents should be submitted within the relevant CTD folders, as new versions of the affected documents.</p>
+    ${secs.map(sec=>`<h3>${esc(sec)}</h3><ol start="${n+1}">${items.filter(f=>f.ctd===sec).map(f=>{ n++; const p=f.payload; return `<li><b>${esc(p.deficiency.en)}</b><div class="ar">${esc(p.deficiency.ar)}</div><div class="lm"><span>${esc(f.question_id)}</span>${rSevTag(f.severity)}<span>Ref: ${esc((p.source||{}).code||'')} ${esc((p.source||{}).section||'')}</span>${p.anchor?`<span>Intl: ${esc(p.anchor.code||'')}</span>`:''}${p.action&&p.action.type!=='none'?`<span>Requested: ${esc(p.action.type.replace('_',' '))} ${esc(p.action.target||'')}</span>`:''}${['accepted','closed'].includes(f.status)?`<span class="chip c-ok"><i></i>closed</span>`:''}</div></li>`; }).join('')}</ol>`).join('')}
+    <div class="sign"><span>Open queries: ${items.filter(rOpen).length} of ${items.length}</span><span>${run.signed&&run.signed.assessor?`Assessor: ${esc(run.signed.assessor.by)} · `:''}${run.signed&&run.signed.peer?`Second assessor: ${esc(run.signed.peer.by)}`:`<span class="c-warn">${esc(L({ar:'لم يوقّع مُقيِّم ثانٍ — الخطاب مسودة', en:'No second assessor yet — the letter is a draft'}))}</span>`}</span></div></article>`;
+}
+function rResponses(){
+  const run = S.review.run;
+  const fs = rFind().filter(f=>f.verdict==='deficient' && f.severity!=='note' && f.status!=='withdrawn' && !(f.origin==='ai'&&!f.confirmed_by)).sort((a,b)=>RSEV.indexOf(a.severity)-RSEV.indexOf(b.severity));
+  const st = f => f.status==='answered'?'answered':['accepted','closed'].includes(f.status)?'accepted':f.status==='not_accepted'?'not_accepted':'open';
+  const stChip = s => `<span class="chip ${s==='open'?'c-warn':s==='answered'?'c-info':s==='accepted'?'c-ok':'c-bad'}"><i></i>${esc(rt(s))}</span>`;
+  const c = {open:fs.filter(f=>st(f)==='open').length, answered:fs.filter(f=>st(f)==='answered').length, accepted:fs.filter(f=>st(f)==='accepted').length, not_accepted:fs.filter(f=>st(f)==='not_accepted').length};
+  const rows = fs.map(f=>{ const last=(f.responses||[]).slice(-1)[0]; return `<tr><td class="code">${esc(f.question_id)}</td><td>${esc(rDeptName(f.dept))}<div class="small muted code">${esc(f.ctd)}</div></td><td>${rSevTag(f.severity)}</td><td>${stChip(st(f))}</td><td>${last?`<span class="small">${esc(last.text.slice(0,90))}${last.text.length>90?'…':''}</span><div class="small muted">${esc(L({ar:'الجولة', en:'round'}))} ${last.round}${(last.doc_ids||[]).length?` · ${last.doc_ids.length} ${esc(L({ar:'مستند', en:'docs'}))}`:''}</div>`:'<span class="muted small">—</span>'}</td>
+    <td class="end nowrap"><button class="btn sm" data-rresp="${f.id}">${icon('pen',14)} ${esc(rt('respond'))}</button> <button class="btn sm ${f.status==='answered'?'primary':''}" data-rre="${f.id}">${icon('repeat',14)} ${esc(rt('reassess'))}</button></td></tr>`; }).join('');
+  return `${rHead(rt('responses'), `<span class="badge">${esc(L({ar:'المهلة', en:'deadline'}))} ${run.clock.clock_stop_months} ${esc(L({ar:'شهور من الخطاب', en:'months from the letter'}))}</span>`)}
+  <div class="kpis"><div class="card kpi warn"><span class="n">${c.open}</span><span class="l">${esc(rt('open'))}</span></div><div class="card kpi info"><span class="n">${c.answered}</span><span class="l">${esc(rt('answered'))}</span></div><div class="card kpi ok"><span class="n">${c.accepted}</span><span class="l">${esc(rt('accepted'))}</span></div><div class="card kpi bad"><span class="n">${c.not_accepted}</span><span class="l">${esc(rt('not_accepted'))}</span></div></div>
+  <section class="card rtable"><div class="tbl"><table><thead><tr><th>#</th><th>${esc(L({ar:'الإدارة · البند', en:'Department · section'}))}</th><th></th><th>${esc(rt('status'))}</th><th>${esc(L({ar:'الرد', en:'Response'}))}</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="6" class="muted">${esc(L({ar:'لا استفسارات مفتوحة', en:'No open queries'}))}</td></tr>`}</tbody></table></div></section>
+  <p class="tiny-note">${esc(L({ar:'ارفع النسخ الجديدة في خاناتها من لوحة المتطلبات أو عدّل البيانات، ثم «أعد التقييم»: السؤال يتشغّل تاني على النسخة الجديدة ويتقفل لو بقى كافياً.', en:'Upload the new versions to their slots from the requirements board or edit the data, then «Re-assess»: the question re-runs on the new version and closes when adequate.'}))}</p>`;
+}
+function rVerdict(){
+  const run = S.review.run, dv = run.dept_verdicts, c = run.counts, ck = run.clock;
+  const color = run.verdict==='ready'?'var(--ok)':run.verdict==='ready_with_risks'?'var(--warn)':'var(--bad)';
+  const impacts = rFind().filter(rOpen).sort((a,b)=>RSEV.indexOf(a.severity)-RSEV.indexOf(b.severity)).slice(0,8).map(f=>`<div class="impact">${rSevTag(f.severity)}<div><b>${esc(f.question_id)}</b> · ${esc(rDeptName(f.dept))} · <span class="code">${esc(f.ctd)}</span><div class="d">${esc(L(f.payload.action&&f.payload.action.type!=='none'?{ar:`${f.payload.action.type.replace('_',' ')} → ${f.payload.action.target||''}`, en:`${f.payload.action.type.replace('_',' ')} → ${f.payload.action.target||''}`}:f.payload.title))}</div></div><span class="delta">${esc(rt(dv[f.dept].verdict))}</span></div>`).join('');
+  let cur = new Date(); const tl=[]; const push=(cls,label,sub)=>tl.push({cls,label,sub,d:new Date(cur)}); const addD=(n)=>{cur=new Date(cur.getTime()+n*864e5);}; const addW=(w)=>addD(Math.round((typeof w==='number'?w:60)*7/5));
+  push('now',{ar:'التقديم المفترض (اليوم)',en:'Assumed submission (today)'},{ar:'الوحدة 1 كاملة + soft copy',en:'Complete Module 1 + soft copy'});
+  ck.stages.forEach((s,i)=>{ addW(s.wds); push(i===ck.stages.length-1?'end':'', s.label, {ar:`${s.wds} ${rt('wds')}`, en:`${s.wds} WDs`}); if(i===1 && ck.expected_rounds){ addD(ck.clock_stop_months*30); push('stop',{ar:`جولة استيفاء (${ck.expected_rounds} إدارة)`,en:`Deficiency round (${ck.expected_rounds} departments)`},{ar:`حتى ${ck.clock_stop_months} شهور — Clock stop`,en:`Up to ${ck.clock_stop_months} months — clock stop`}); } });
+  const readiness = c.total ? Math.round(100*c.adequate/c.total) : 0;
+  const signed = run.signed || {};
+  return `${rHead(rt('verdict'), `<button class="btn" id="runBtn">${icon('zap',16)} ${esc(rt('rerun'))}</button>`)}
+  <section class="vstrip" style="--v-color:${color}">${ring(readiness,'lg')}<div><div class="vlabel">${esc(rt('readiness'))}</div><h1>${esc(rt(run.verdict))}</h1><p class="why">${esc(L(run.why||{}))}</p></div>
+    <div class="acts"><div class="row gap-s"><input type="text" id="signName" placeholder="${esc(rt('yourName'))}" value="${esc(S.me&&S.me.user||'')}" style="max-width:160px"></div><button class="btn sm" data-rsign="assessor">${icon('pen',14)} ${esc(rt('signAssessor'))}${signed.assessor?` ✓ ${esc(signed.assessor.by)}`:''}</button><button class="btn sm" data-rsign="peer">${icon('users',14)} ${esc(rt('signPeer'))}${signed.peer?` ✓ ${esc(signed.peer.by)}`:''}</button></div></section>
+  <div class="grid2"><section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(rt('impact'))}</h3></div><div>${impacts||`<div class="empty">${icon('check',30)}<div>${esc(L({ar:'لا ملاحظات مفتوحة', en:'No open findings'}))}</div></div>`}</div></section>
+    <section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(rt('depts'))}</h3></div><div class="pad vbars">${rDepts().filter(d=>dv[d.id]).map(d=>{ const x=dv[d.id]; const p=x.total?Math.round(100*(x.total-x.not_assessable-(x.counts.critical+x.counts.major+x.counts.minor))/x.total):0; return `<div class="vbar"><span>${esc(L(d))}</span>${meter(p, x.verdict==='approve'?'ok':x.verdict==='reject'?'bad':x.verdict==='clock_stop'?'warn':'')}<span class="n">${x.counts.critical+x.counts.major+x.counts.minor} ${esc(rt('openQ'))}</span></div>`; }).join('')}</div></section></div>
+  <div class="grid2"><section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(rt('timeline'))}</h3><span class="small muted">${esc(L(ck.label))}</span></div><div class="pad tl">${tl.map(x=>`<div class="ti ${x.cls}"><span class="dt">${esc(fmtDate(x.d.toISOString().slice(0,10), S.lang))}</span><span class="pt"></span><div><b>${esc(L(x.label))}</b><span>${esc(L(x.sub))}</span></div></div>`).join('')}</div><p class="tiny-note pad" style="padding-top:0">${esc(L({ar:'أيام العمل تتحول لتقويم تقريبي (5 أيام عمل = 7 أيام). الجدول المنشور لا يشمل جولات الاستيفاء.', en:'Working days are converted approximately (5 WDs = 7 calendar days). The published table excludes deficiency rounds.'}))}</p></section>
+    <section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(rt('history'))}</h3></div><div class="tbl" id="rhist"><table><thead><tr><th>${esc(L({ar:'الجولة', en:'Run'}))}</th><th>${esc(L({ar:'التاريخ', en:'Date'}))}</th><th>${esc(rt('openQ'))}</th><th>${esc(rt('verdict'))}</th><th>${esc(rt('strict'))}</th></tr></thead><tbody><tr><td colspan="5" class="muted small">…</td></tr></tbody></table></div></section></div>`;
+}
+function rSettings(){
+  const p = S.rpack, s = RSTATE.rset, depts = rDepts();
+  return `${rHead(rt('settings'))}
+  <div class="grid2"><section class="card pad stack">
+    <div class="f"><label>${esc(rt('strict'))}</label><div class="choice">${Object.entries(p.strictness).map(([k,v])=>`<button data-rstrict="${k}" class="${s.strictness===k?'on':''}"><b>${esc(L(v))}</b><span>${esc(v.layers.map(l=>L(p.layers[l])).join(' + '))}</span></button>`).join('')}</div></div>
+    <div class="f"><label>${esc(rt('track'))}</label><select id="rtrack"><option value="">${esc(L({ar:'تلقائي حسب المنتج', en:'Automatic from the product'}))}</option>${Object.entries(p.tracks).map(([k,v])=>`<option value="${k}" ${s.track===k?'selected':''}>${esc(L(v))}</option>`).join('')}</select></div>
+    <div class="f"><label>${esc(rt('deptsOn'))}</label><div class="picks">${depts.map(d=>`<label><input type="checkbox" data-rdep="${d.id}" ${!s.departments||s.departments.includes(d.id)?'checked':''}> ${esc(L(d))} <span class="muted small">— ${esc(L(d.body))}</span></label>`).join('')}</div></div>
+    <label class="opt"><input type="checkbox" id="rrel" ${s.reliance?'checked':''}><span><b>${esc(rt('reliance'))}</b><span>${esc(L({ar:'يضيف أسئلة الاعتماد (تقرير الجهة المرجعية غير المحجوب، التطابق) ويختصر التقييم الفني الكامل.', en:'Adds the reliance questions (unredacted reference assessment report, sameness) and abbreviates the full technical assessment.'}))}</span></span></label>
+    <label class="opt"><input type="checkbox" id="rai" ${s.ai?'checked':''}><span><b>${esc(rt('aiOn'))}</b><span>${esc(L({ar:'يقرأ النصوص وصور الصفحات ويقترح الحكم؛ لا يدخل الخطاب قبل التأكيد. في نسخة المتصفح عبر claude.ai؛ على الخادم بمفتاح.', en:'Reads the text and page images and suggests verdicts; nothing enters the letter before confirmation. In the browser edition via claude.ai; on a server with a key.'}))}</span></span></label>
+    <div class="row"><button class="btn primary" id="runBtn">${icon('zap',16)} ${esc(rt('runWith'))}</button></div></section>
+  <section class="stack"><div class="card pad stack gap-s"><h3>${esc(rt('pack'))} · ${esc(p.id)} ${esc(p.version)} <span class="tag warn">${esc(p.status||'')}</span></h3>
+      <div class="kpis"><div class="card kpi br"><span class="n">${p.counts.total}</span><span class="l">${esc(L({ar:'سؤال', en:'questions'}))}</span></div><div class="card kpi info"><span class="n">${p.counts.by_layer.intl||0}</span><span class="l">${esc(rt('layer_intl'))}</span></div><div class="card kpi warn"><span class="n">${p.counts.provisional}</span><span class="l">${esc(rt('provisional'))}</span></div><div class="card kpi ${p.lint.length?'bad':'ok'}"><span class="n">${p.lint.length}</span><span class="l">lint</span></div></div>
+      <dl class="props" style="padding:0">${p.sources.map(x=>`<dt class="code">${esc(x.code)}</dt><dd>${esc(x.title)}</dd>`).join('')}</dl>
+      ${p.unread.length?`<div class="alert">${icon('alert',18)}<p class="small">${esc(L({ar:'غير مقروء بعد (الأسئلة المتعلقة معلَّمة «مؤقت»):', en:'Not yet read (related questions are marked provisional):'}))} ${p.unread.map(u=>esc(u.code)).join(' · ')}</p></div>`:''}
+      <p class="small muted">${esc(L({ar:'سلم الخطورة من الأداة — الهيئة لا تنشر سلماً رسمياً لتعليقاتها.', en:'The severity scale is the tool’s own — EDA publishes no formal scale for its comments.'}))}</p></div></section></div>`;
+}
+async function rAct(fid, body){ const r = await api(`/dossiers/${S.dossier.id}/review/${S.review.run.id}/findings/${fid}`, {method:'POST', json: body}); S.review.run = r.run; const i = S.review.findings.findIndex(f=>f.id===fid); if(i>=0) S.review.findings[i] = r.finding; return r; }
+async function rAskAI(ids, dept, sec){
+  const id = S.dossier.id, rid = S.review.run.id;
+  const q = ids ? `ids=${encodeURIComponent(ids.join(','))}` : `dept=${encodeURIComponent(dept)}&ctd=${encodeURIComponent(sec)}`;
+  const p = await api(`/dossiers/${id}/review/${rid}/ai?${q}`);
+  toast(rt('aiReading'));
+  if(window.DBAI && await window.DBAI.available()){
+    const files = [], meta = [];
+    for(const d of p.documents.filter(x=>x.scanned).slice(0,3)){ try{ const r = await fetch(`/api/dossiers/${id}/documents/${d.doc_id}/file`); files.push(new File([await r.blob()], d.filename, {type:'application/pdf'})); meta.push({scanned:true}); }catch(e){} }
+    const answers = await window.DBAI.extract(p.prompt, files, meta, 'review');
+    const r = await api(`/dossiers/${id}/review/${rid}/ai`, {method:'POST', json:{answers}}); S.review.run = r.run; await rLoad(); toast(rt('aiDone')); return;
+  }
+  try{ const r = await api(`/dossiers/${id}/review/${rid}/ai/server?${q}`, {method:'POST'}); S.review.run = r.run; await rLoad(); toast(rt('aiDone')); }
+  catch(e){ if(e.status===501) toast(rt('aiNone')); else toast(e.message); }
+}
+function rBind(){
+  const root = $('#view'), id = S.dossier.id, rid = S.review.run.id;
+  const rb = $('#runBtn'); if(rb) rb.onclick = rRun;
+  root.querySelectorAll('[data-rdept]').forEach(b=>b.onclick=()=>{ RSTATE.dept=b.dataset.rdept; RSTATE.sec=''; location.hash=`#/d/${id}/review/assess`; });
+  root.querySelectorAll('[data-rf]').forEach(b=>b.onclick=()=>{ RSTATE.filter=b.dataset.rf; route(); });
+  root.querySelectorAll('.node[data-rd]').forEach(n=>n.onclick=()=>{ RSTATE.dept=n.dataset.rd; RSTATE.sec=n.dataset.rsec; route(); });
+  root.querySelectorAll('[data-rev]').forEach(b=>b.onclick=()=>{ const [f,i]=b.dataset.rev.split(':'); RSTATE.ev={id:f, i:i.startsWith('ai')?i:+i}; const v=$('#rviewer'); if(v){ v.innerHTML=rViewer(); root.querySelectorAll('.evi').forEach(x=>x.classList.toggle('on', x.dataset.rev===b.dataset.rev)); v.scrollIntoView({block:'nearest', behavior:'smooth'}); } });
+  root.querySelectorAll('[data-ract]').forEach(b=>b.onclick=async()=>{ try{ await rAct(b.dataset.rid, {action:b.dataset.ract, by:S.me&&S.me.user||'reviewer'}); toast(b.dataset.ract==='confirm'?L({ar:'اتأكدت ودخلت الخطاب', en:'Confirmed and added to the letter'}):L({ar:'تم التجاهل', en:'Dismissed'})); route(); }catch(e){ toast(e.message); } });
+  root.querySelectorAll('[data-rai]').forEach(b=>b.onclick=()=>rAskAI([b.dataset.rai]).then(route).catch(e=>toast(e.message)));
+  const as = $('#askSec'); if(as) as.onclick=()=>rAskAI(null, RSTATE.dept, RSTATE.sec).then(route).catch(e=>toast(e.message));
+  root.querySelectorAll('[data-rovr]').forEach(b=>b.onclick=()=>rOverride(b.dataset.rovr, 'override'));
+  root.querySelectorAll('[data-rwd]').forEach(b=>b.onclick=()=>rOverride(b.dataset.rwd, 'withdraw'));
+  root.querySelectorAll('[data-rld]').forEach(b=>b.onclick=()=>{ RSTATE.letterDept=b.dataset.rld; route(); });
+  root.querySelectorAll('[data-rgen]').forEach(b=>b.onclick=async()=>{ try{ b.disabled=true; await api(`/dossiers/${id}/review/${rid}/${b.dataset.rgen}/${RSTATE.letterDept}`, {method:'POST'}); await rLoad(); toast(rt('generated')); route(); }catch(e){ toast(e.message); b.disabled=false; } });
+  root.querySelectorAll('[data-rresp]').forEach(b=>b.onclick=()=>rRespond(b.dataset.rresp));
+  root.querySelectorAll('[data-rre]').forEach(b=>b.onclick=async()=>{ try{ const r = await api(`/dossiers/${id}/review/${rid}/findings/${b.dataset.rre}/reassess`, {method:'POST'}); await rLoad(); toast(`${r.finding.question_id}: ${rt(r.finding.verdict)} · ${rt(r.finding.status)}`); route(); }catch(e){ toast(e.message); } });
+  root.querySelectorAll('[data-rsign]').forEach(b=>b.onclick=async()=>{ const by=($('#signName')||{}).value||''; if(!by.trim()){ toast(rt('yourName')); return; } try{ await api(`/dossiers/${id}/review/${rid}/sign`, {method:'POST', json:{role:b.dataset.rsign, by:by.trim()}}); await rLoad(); toast(`${rt('signedBy')} ${by}`); route(); }catch(e){ toast(e.message); } });
+  root.querySelectorAll('[data-rstrict]').forEach(b=>b.onclick=()=>{ RSTATE.rset.strictness=b.dataset.rstrict; route(); });
+  const tr = $('#rtrack'); if(tr) tr.onchange=()=>{ RSTATE.rset.track = tr.value || null; };
+  root.querySelectorAll('[data-rdep]').forEach(c=>c.onchange=()=>{ RSTATE.rset.departments = [...root.querySelectorAll('[data-rdep]')].filter(x=>x.checked).map(x=>x.dataset.rdep); });
+  const rel = $('#rrel'); if(rel) rel.onchange=()=>{ RSTATE.rset.reliance = rel.checked; };
+  const rai = $('#rai'); if(rai) rai.onchange=()=>{ RSTATE.rset.ai = rai.checked; };
+  const rp = $('#rejPrev'); if(rp) rp.onclick=()=>{ const items = rByDept('screening').filter(f=>f.verdict==='deficient' && rOpen(f)); openDrawer(rt('rejectPreview'), `<div class="letter" style="padding:20px 22px;max-width:none"><div class="lh"><div><h2>Screening outcome: In-completed</h2><div class="small muted">Administration of Human Pharmaceuticals Regulatory Affairs (simulated)</div></div><span class="stamp">SIMULATION</span></div><p>Re: ${esc(S.dossier.name)}</p><p>The registration dossier was screened against the published Module 1 checklist (NP.CAPP.065 v5). The following items are missing or not acceptable; the full dossier should be resubmitted as a new submission within the period stated in the submission procedures:</p><ol>${items.map(f=>`<li><b>${esc(f.ctd)}</b> — ${esc(f.payload.deficiency.en)}<div class="ar">${esc(f.payload.deficiency.ar)}</div></li>`).join('')}</ol></div>`, true); };
+  const h = $('#rhist'); if(h) api(`/dossiers/${id}/review`).then(r=>{ h.querySelector('tbody').innerHTML = r.runs.map(x=>`<tr><td class="code">${esc(x.id)}</td><td class="code">${esc(new Date(x.created*1000).toISOString().slice(0,10))}</td><td class="num">${x.counts.open}</td><td><span class="chip ${x.verdict==='ready'?'c-ok':x.verdict==='ready_with_risks'?'c-warn':'c-bad'}"><i></i>${esc(rt(x.verdict))}</span></td><td class="small">${esc(x.options.strictness||'')}</td></tr>`).join(''); }).catch(()=>{});
+}
+function rOverride(fid, action){
+  const f = rFind().find(x=>x.id===fid); if(!f) return;
+  openDrawer(`${rt(action)} · ${f.question_id}`, `<div class="stack">${action==='override'?`<div class="f"><label>${esc(rt('verdict'))}</label><select id="ovV">${['adequate','deficient','not_assessable'].map(v=>`<option value="${v}" ${f.verdict===v?'selected':''}>${esc(rt(v))}</option>`).join('')}</select></div>`:''}
+    <div class="f"><label>${esc(rt('reason'))}</label><textarea id="ovR" rows="3"></textarea></div><div class="row"><button class="btn primary" id="ovSave">${esc(rt('save'))}</button><button class="btn ghost" id="ovCancel">${esc(rt('cancel'))}</button></div></div>`);
+  $('#ovCancel').onclick = closeDrawer;
+  $('#ovSave').onclick = async()=>{ const reason=$('#ovR').value.trim(); if(!reason){ $('#ovR').focus(); return; } try{ await rAct(fid, {action, verdict: action==='override'?$('#ovV').value:undefined, reason, by:S.me&&S.me.user||'reviewer'}); closeDrawer(); toast(L({ar:'اتسجل في سجل التدقيق', en:'Recorded in the audit log'})); route(); }catch(e){ toast(e.message); } };
+}
+function rRespond(fid){
+  const f = rFind().find(x=>x.id===fid); if(!f) return; const last=(f.responses||[]).slice(-1)[0];
+  openDrawer(`${rt('respond')} · ${f.question_id}`, `<div class="stack"><div class="fnd"><div class="en">${esc(f.payload.deficiency.en)}</div><div class="ar">${esc(f.payload.deficiency.ar)}</div></div>
+    <div class="f"><label>${esc(rt('respText'))}</label><textarea id="rsT" rows="4">${esc(last?last.text:'')}</textarea></div><p class="small muted">${esc(rt('respDocs'))}</p>
+    <div class="row"><button class="btn primary" id="rsSave">${esc(rt('save'))}</button><button class="btn ghost" id="rsCancel">${esc(rt('cancel'))}</button></div></div>`);
+  $('#rsCancel').onclick = closeDrawer;
+  $('#rsSave').onclick = async()=>{ const text=$('#rsT').value.trim(); if(!text){ $('#rsT').focus(); return; } try{ await api(`/dossiers/${S.dossier.id}/review/${S.review.run.id}/findings/${fid}/responses`, {method:'POST', json:{text, by:S.me&&S.me.user||'reviewer'}}); await rLoad(); closeDrawer(); toast(L({ar:'تم حفظ الرد — اضغط «أعد التقييم» بعد رفع النسخة الجديدة', en:'Response saved — press «Re-assess» after uploading the new version'})); route(); }catch(e){ toast(e.message); } };
+}
+
+
 setLang(S.lang);
 </script>
 </body>

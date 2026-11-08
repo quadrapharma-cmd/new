@@ -1,0 +1,80 @@
+# Labelling — SmPC, PIL and artwork as the Module 1 checklist requires (NP.CAPP.065 v5 items 1.1.9–1.1.10).
+# The EDA labelling guideline itself is not in the sources: every item here is marked provisional.
+- id: LB-SMPC-01
+  dept: labelling
+  layer: eda
+  ctd: "1.1.9"
+  title: {en: "SmPC and PIL in English and Arabic (Word)", ar: "النشرة SmPC وPIL بالإنجليزية والعربية (Word)"}
+  question: {en: "Are the proposed SmPC and PIL provided in English and Arabic as editable Word documents, together with the most updated reference SmPC and PIL?", ar: "هل النشرة SmPC وPIL المقترحتان مقدَّمتان بالإنجليزية والعربية كملفات Word قابلة للتحرير، مع أحدث نشرة مرجعية SmPC وPIL؟"}
+  severity: major
+  provisional: true
+  evidence: {slots: [M1-09, M1-42], keywords: ["summary of product characteristics", "package leaflet", "patient information leaflet", "النشرة"]}
+  auto: {kind: data, check: leaflet_set}
+  deficiency: {en: "The proposed SmPC and PIL should be submitted in English and Arabic as Word documents, with the latest reference SmPC and PIL.", ar: "يجب تقديم النشرة SmPC وPIL المقترحتين بالإنجليزية والعربية كملفات Word مع أحدث نشرة مرجعية."}
+  action: {type: upload, target: M1-09}
+  source: {code: NP.CAPP.065 v5/2025, section: "1.1.9", quote: "proposed SmPC & PIL (EN + AR, Word) + most updated reference SmPC & PIL"}
+- id: LB-TRANS-01
+  dept: labelling
+  layer: eda
+  ctd: "1.1.9"
+  title: {en: "Translation declaration", ar: "إقرار الترجمة"}
+  question: {en: "For a non-English reference leaflet, is the signed translation declaration provided?", ar: "عند كون النشرة المرجعية بغير الإنجليزية، هل إقرار الترجمة الموقَّع مقدَّم؟"}
+  applies: "leaflet == 'non_english'"
+  severity: major
+  provisional: true
+  evidence: {slots: [M1-10], keywords: ["translation", "declar", "ترجمة"]}
+  auto: {kind: slot}
+  deficiency: {en: "A signed declaration that the translation conforms to the reference leaflet should be provided.", ar: "يجب تقديم إقرار موقَّع بمطابقة الترجمة للنشرة المرجعية."}
+  action: {type: generate, target: translation}
+  source: {code: NP.CAPP.065 v5/2025, section: "1.1.9", quote: "Leaflet translation declaration (non-English leaflets)"}
+- id: LB-ART-01
+  dept: labelling
+  layer: eda
+  ctd: "1.1.10"
+  title: {en: "Coloured stamped artwork", ar: "تصميم العبوة الملوّن المختوم"}
+  question: {en: "Is the coloured, stamped outer and inner artwork provided (editable PDF preferred), with the monograph for a pharmacopoeial product and an image of the original pack for imported or under-licence products?", ar: "هل تصميم العبوة الخارجية والداخلية الملوّن والمختوم مقدَّم (يفضَّل PDF قابل للتحرير)، مع الدراسة الدستورية للمنتج الدستوري وصورة العبوة الأصلية للمنتج المستورد أو المرخَّص؟"}
+  severity: major
+  provisional: true
+  evidence: {slots: [M1-11], keywords: ["artwork", "label", "carton", "layout"]}
+  auto: {kind: slot}
+  deficiency: {en: "The coloured and stamped layout of the outer and inner packs should be provided in 1.1.10.", ar: "يجب تقديم تصميم العبوة الخارجية والداخلية الملوّن والمختوم في 1.1.10."}
+  action: {type: upload, target: M1-11}
+  source: {code: NP.CAPP.065 v5/2025, section: "1.1.10", quote: "coloured stamped outer & inner (editable PDF preferred)"}
+- id: LB-CONS-01
+  dept: labelling
+  layer: eda
+  ctd: "1.1.9 · 3.2.P.1"
+  title: {en: "Leaflet consistent with the composition and manufacturer", ar: "اتساق النشرة مع التركيب والمصنّع"}
+  question: {en: "Do the excipients, strength, pack sizes, shelf life and manufacturer on the leaflet match 3.2.P.1, 3.2.P.3.1 and 3.2.P.8?", ar: "هل السواغات والتركيز وأحجام العبوات ومدة الصلاحية والمصنّع في النشرة مطابقة لـ 3.2.P.1 و3.2.P.3.1 و3.2.P.8؟"}
+  severity: major
+  provisional: true
+  evidence: {slots: [M1-09, P-01, P-16], keywords: ["excipient", "shelf life", "manufacturer", "store"], data: [composition, product]}
+  auto: {kind: none}
+  deficiency: {en: "The leaflet should state the excipients, the manufacturer, the shelf life and the storage conditions consistently with Module 3.", ar: "يجب أن تذكر النشرة السواغات والمصنّع ومدة الصلاحية وظروف التخزين بما يتسق مع الوحدة 3."}
+  action: {type: upload, target: M1-09}
+  source: {code: EG Module 1 submission guidance (DRAFT 2026), section: "1.3.1 approved leaflet", quote: "Manufacturer and excipients must be mentioned"}
+- id: LB-REF-01
+  dept: labelling
+  layer: eda
+  ctd: "1.2.5"
+  title: {en: "Reference or non-reference approval", ar: "موافقة المرجع أو عدم وجود مرجع"}
+  question: {en: "Is the reference (online or textbook) provided, or the non-reference approval of the Evaluation unit when no scientific reference exists?", ar: "هل المرجع (إلكتروني أو كتاب) مقدَّم، أو موافقة وحدة التقييم بعدم وجود مرجع عند غياب المرجع العلمي؟"}
+  severity: major
+  evidence: {slots: [M1-41], keywords: ["reference", "approval", "non-reference", "مرجع"]}
+  auto: {kind: slot}
+  deficiency: {en: "The reference product documentation or the non-reference approval should be provided in 1.2.5.", ar: "يجب تقديم مستندات المنتج المرجعي أو موافقة عدم وجود مرجع في 1.2.5."}
+  action: {type: upload, target: M1-41}
+  source: {code: NP.CAPP.065 v5/2025, section: "1.2.5.1", quote: "Reference (online/textbook) OR Non-Reference Approval"}
+- id: LB-QRD-01
+  dept: labelling
+  layer: intl
+  ctd: "1.1.9"
+  title: {en: "SmPC structure per the QRD template", ar: "بنية النشرة وفق قالب QRD"}
+  question: {en: "Does the SmPC follow the standard section structure (1–10, with 4.1–4.9 and 6.1–6.6) and does the PIL mirror it in patient language?", ar: "هل تتبع النشرة SmPC البنية القياسية للأقسام (1–10 مع 4.1–4.9 و6.1–6.6) وهل تعكسها نشرة المريض بلغة مبسطة؟"}
+  severity: minor
+  evidence: {slots: [M1-09], keywords: ["4.1 Therapeutic indications", "4.8 Undesirable effects", "6.1 List of excipients", "6.3 Shelf life"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The SmPC should follow the standard QRD section structure so that it can be compared with the reference SmPC section by section.", ar: "يجب أن تتبع النشرة SmPC بنية أقسام QRD القياسية حتى يمكن مقارنتها بالنشرة المرجعية قسماً بقسم."}
+  action: {type: upload, target: M1-09}
+  source: {code: NP.CAPP.065 v5/2025, section: "1.1.9", quote: "most updated reference SmPC & PIL"}
+  anchor: {code: EMA QRD product-information template v10.x, section: "SmPC sections 1–10"}
