@@ -360,7 +360,28 @@ def fields_for(kind, filename, text):
         if eda.get('suppliers'):
             doc['suppliers'] = eda['suppliers']
         out['profile'] = {k: v for k, v in out['profile'].items() if v not in (None, [], '')}
+    _standardise(out)
     return out
+
+
+def _standardise(out):
+    """Controlled vocabularies: the dose form → its standard entry (and the route it implies), countries → ISO entries."""
+    from . import vocab
+    P = out.get('product') or {}
+    std = vocab.match_form(P.get('dosage_form_en') or P.get('dosage_form') or '')
+    if std:
+        P['dosage_form_std'] = std['id']
+        P['dosage_form_en'] = P.get('dosage_form_en') or std['en']
+        out.setdefault('profile', {})
+        if not out['profile'].get('admin_route'):
+            out['profile']['admin_route'] = std['route']
+    for a in out.get('apis') or []:
+        c = vocab.match_country(a.get('country') or '')
+        if c:
+            a['country'], a['country_code'] = c['en'], c['code']
+    c = vocab.match_country(P.get('manufacturer_country') or '')
+    if c:
+        P['manufacturer_country'], P['manufacturer_country_code'] = c['en'], c['code']
 
 
 def merge(items):

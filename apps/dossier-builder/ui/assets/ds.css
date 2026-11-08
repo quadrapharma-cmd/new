@@ -364,3 +364,6 @@ body.ro .btn.pri,body.ro [data-reg],body.ro [data-replace],body.ro [data-editdoc
 #asstText{width:100%;resize:vertical;min-height:64px}
 @media (max-width:700px){.asst-fab span{display:none} .asst-fab{padding:12px}}
 .drev{margin:6px 0 2px;padding:8px 10px;border:1px dashed var(--line);border-radius:10px;display:flex;flex-direction:column;gap:4px}
+.smart{display:flex;flex-direction:column;gap:4px;min-width:0}
+.smart select{width:100%;max-width:100%}
+.smart .smart-other{width:100%}

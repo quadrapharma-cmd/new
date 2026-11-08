@@ -1,0 +1,66 @@
+# Pharmaceutical dose forms (EDQM Standard Terms, the ones Egyptian registrations use) with the Arabic name as printed on
+# EDA forms, the default route of administration (the profile's set: oral | topical | parenteral | ophthalmic | inhalation | other)
+# and the spellings the documents use. Used by vocab.match_form(): a read value is matched here, the list fills the dropdowns.
+- {id: tablet, en: Tablet, ar: أقراص, route: oral, syn: [tablets, tab, tabs, uncoated tablet, plain tablet, قرص, اقراص, أقراص غير مغلفة]}
+- {id: tablet-fc, en: Film-coated tablet, ar: أقراص مغلفة, route: oral, syn: [film coated tablet, film-coated tablets, film coated tablets, fct, f.c. tablet, f.c.t, f.c tablets, coated tablet, coated tablets, أقراص مغلفة بالفيلم, اقراص مغلفة, أقراص مغلفه]}
+- {id: tablet-sc, en: Sugar-coated tablet, ar: أقراص مغلفة بالسكر, route: oral, syn: [sugar coated tablet, sugar-coated tablets, dragee, dragées]}
+- {id: tablet-ec, en: Gastro-resistant tablet, ar: أقراص مقاومة لعصارة المعدة, route: oral, syn: [enteric coated tablet, enteric-coated tablets, gastro resistant tablet, delayed release tablet, delayed-release tablets]}
+- {id: tablet-pr, en: Prolonged-release tablet, ar: أقراص ممتدة المفعول, route: oral, syn: [prolonged release tablet, extended release tablet, extended-release tablets, sustained release tablet, sustained-release tablets, controlled release tablet, modified release tablet, modified-release tablets, er tablets, sr tablets, xr tablets, retard tablet, أقراص مديدة المفعول, اقراص ممتدة المفعول]}
+- {id: tablet-eff, en: Effervescent tablet, ar: أقراص فوارة, route: oral, syn: [effervescent tablets, اقراص فوارة]}
+- {id: tablet-chew, en: Chewable tablet, ar: أقراص للمضغ, route: oral, syn: [chewable tablets, اقراص للمضغ, أقراص قابلة للمضغ]}
+- {id: tablet-odt, en: Orodispersible tablet, ar: أقراص تذوب في الفم, route: oral, syn: [orodispersible tablets, orally disintegrating tablet, orally disintegrating tablets, odt, mouth dissolving tablet, dispersible tablet, dispersible tablets]}
+- {id: tablet-sl, en: Sublingual tablet, ar: أقراص تحت اللسان, route: oral, syn: [sublingual tablets]}
+- {id: tablet-vag, en: Vaginal tablet, ar: أقراص مهبلية, route: other, syn: [vaginal tablets, pessary tablet]}
+- {id: capsule-hard, en: "Capsule, hard", ar: كبسولات, route: oral, syn: [hard capsule, hard capsules, capsule, capsules, hard gelatin capsule, hard gelatin capsules, كبسول, كبسولات جيلاتينية صلبة]}
+- {id: capsule-soft, en: "Capsule, soft", ar: كبسولات جيلاتينية رخوة, route: oral, syn: [soft capsule, soft capsules, soft gelatin capsule, soft gelatin capsules, softgel, softgels, كبسولات رخوة, كبسولات جيلاتينية لينة]}
+- {id: capsule-pr, en: "Prolonged-release capsule, hard", ar: كبسولات ممتدة المفعول, route: oral, syn: [prolonged release capsule, extended release capsule, extended-release capsules, sustained release capsule, modified release capsule, modified-release capsules]}
+- {id: capsule-ec, en: "Gastro-resistant capsule, hard", ar: كبسولات مقاومة لعصارة المعدة, route: oral, syn: [enteric coated capsule, enteric-coated capsules, gastro resistant capsule, delayed release capsule, delayed-release capsules]}
+- {id: granules, en: Granules, ar: حبيبات, route: oral, syn: [granule, حبيبات فموية]}
+- {id: granules-sachet, en: Granules in sachet, ar: حبيبات في أكياس, route: oral, syn: [sachet, sachets, granules sachet, powder in sachet, أكياس, اكياس]}
+- {id: granules-eff, en: Effervescent granules, ar: حبيبات فوارة, route: oral, syn: [effervescent granules]}
+- {id: powder-oral, en: Oral powder, ar: مسحوق للاستعمال عن طريق الفم, route: oral, syn: [oral powder, powder for oral use, مسحوق فموي]}
+- {id: powder-oral-susp, en: Powder for oral suspension, ar: مسحوق لتحضير معلق فموي, route: oral, syn: [powder for oral suspension, dry powder for oral suspension, dry suspension, powder for suspension, مسحوق لعمل معلق, بودرة معلق]}
+- {id: powder-oral-sol, en: Powder for oral solution, ar: مسحوق لتحضير محلول فموي, route: oral, syn: [powder for oral solution, oral rehydration salts, ors]}
+- {id: syrup, en: Syrup, ar: شراب, route: oral, syn: [syrups, شراب فموي]}
+- {id: oral-solution, en: Oral solution, ar: محلول فموي, route: oral, syn: [oral solution, elixir, oral liquid, محلول للشرب]}
+- {id: oral-suspension, en: Oral suspension, ar: معلق فموي, route: oral, syn: [oral suspension, suspension, معلق, معلق للشرب]}
+- {id: oral-emulsion, en: Oral emulsion, ar: مستحلب فموي, route: oral, syn: [oral emulsion, مستحلب]}
+- {id: oral-drops, en: "Oral drops, solution", ar: نقط فموية, route: oral, syn: [oral drops, drops for oral use, نقط للفم, نقط فموية]}
+- {id: oral-gel, en: Oral gel, ar: جل فموي, route: oral, syn: [oral gel, oromucosal gel]}
+- {id: lozenge, en: Lozenge, ar: أقراص استحلاب, route: oral, syn: [lozenges, pastille, pastilles, اقراص استحلاب]}
+- {id: mouthwash, en: Mouthwash, ar: غسول للفم, route: other, syn: [mouth wash, gargle, oral rinse, غسول الفم]}
+- {id: injection-sol, en: Solution for injection, ar: محلول للحقن, route: parenteral, syn: [solution for injection, injection, injectable solution, ampoule, ampoules, ampule, vial, vials, pre-filled syringe, prefilled syringe, حقن, أمبول, امبول, فيال, حقن وريدية, حقن عضلية]}
+- {id: injection-susp, en: Suspension for injection, ar: معلق للحقن, route: parenteral, syn: [suspension for injection, injectable suspension]}
+- {id: injection-emul, en: Emulsion for injection, ar: مستحلب للحقن, route: parenteral, syn: [emulsion for injection]}
+- {id: powder-injection, en: Powder for solution for injection, ar: مسحوق لتحضير محلول للحقن, route: parenteral, syn: [powder for injection, powder for solution for injection, lyophilized powder for injection, lyophilised powder, dry powder for injection, powder for injection or infusion, مسحوق للحقن, بودرة للحقن]}
+- {id: infusion-sol, en: Solution for infusion, ar: محلول للتسريب الوريدي, route: parenteral, syn: [solution for infusion, infusion, intravenous infusion, iv infusion, large volume parenteral, محلول وريدي, محلول للتسريب]}
+- {id: concentrate-infusion, en: Concentrate for solution for infusion, ar: مركز لتحضير محلول للتسريب, route: parenteral, syn: [concentrate for infusion, concentrate for solution for infusion]}
+- {id: eye-drops, en: "Eye drops, solution", ar: قطرة للعين, route: ophthalmic, syn: [eye drops, eye drop, ophthalmic solution, ophthalmic drops, قطرة عين, قطرة للعين, نقط للعين]}
+- {id: eye-drops-susp, en: "Eye drops, suspension", ar: قطرة معلق للعين, route: ophthalmic, syn: [ophthalmic suspension, eye drops suspension]}
+- {id: eye-ointment, en: Eye ointment, ar: مرهم للعين, route: ophthalmic, syn: [ophthalmic ointment, eye ointment, مرهم عين]}
+- {id: eye-gel, en: Eye gel, ar: جل للعين, route: ophthalmic, syn: [ophthalmic gel]}
+- {id: ear-drops, en: "Ear drops, solution", ar: قطرة للأذن, route: other, syn: [ear drops, otic solution, otic drops, قطرة أذن, قطرة للاذن, نقط للأذن]}
+- {id: nasal-drops, en: "Nasal drops, solution", ar: قطرة للأنف, route: inhalation, syn: [nasal drops, nose drops, قطرة أنف, نقط للأنف]}
+- {id: nasal-spray, en: "Nasal spray, solution", ar: بخاخ للأنف, route: inhalation, syn: [nasal spray, nasal spray solution, nasal spray suspension, بخاخ أنف, بخاخ انف]}
+- {id: inhalation-mdi, en: "Pressurised inhalation, suspension", ar: بخاخ للاستنشاق, route: inhalation, syn: [metered dose inhaler, mdi, pressurised inhalation, pressurized inhalation, inhaler, aerosol inhaler, بخاخ استنشاق]}
+- {id: inhalation-dpi, en: Inhalation powder, ar: مسحوق للاستنشاق, route: inhalation, syn: [dry powder inhaler, dpi, inhalation powder, inhalation powder hard capsule]}
+- {id: inhalation-neb, en: Nebuliser solution, ar: محلول للاستنشاق بالرذاذ, route: inhalation, syn: [nebuliser solution, nebulizer solution, solution for nebulisation, inhalation solution, respules, respirator solution]}
+- {id: cream, en: Cream, ar: كريم, route: topical, syn: [creams, topical cream, كريم موضعي]}
+- {id: ointment, en: Ointment, ar: مرهم, route: topical, syn: [ointments, topical ointment, مرهم موضعي]}
+- {id: gel, en: Gel, ar: جل, route: topical, syn: [gels, topical gel, جل موضعي, جيل]}
+- {id: lotion, en: Cutaneous solution, ar: لوشن, route: topical, syn: [lotion, lotions, cutaneous solution, topical solution, skin solution, محلول موضعي, لوسيون]}
+- {id: cutaneous-emulsion, en: Cutaneous emulsion, ar: مستحلب موضعي, route: topical, syn: [cutaneous emulsion, topical emulsion, milk]}
+- {id: cutaneous-spray, en: "Cutaneous spray, solution", ar: بخاخ موضعي, route: topical, syn: [cutaneous spray, topical spray, skin spray, spray, بخاخ, بخاخ للجلد]}
+- {id: powder-topical, en: Cutaneous powder, ar: بودرة موضعية, route: topical, syn: [topical powder, cutaneous powder, dusting powder, skin powder, powder for cutaneous use, بودرة للاستعمال الموضعي, مسحوق موضعي, بودرة موضعية, مسحوق للجلد]}
+- {id: foam, en: Cutaneous foam, ar: رغوة موضعية, route: topical, syn: [cutaneous foam, topical foam, foam]}
+- {id: shampoo, en: Shampoo, ar: شامبو, route: topical, syn: [medicated shampoo, شامبو طبي]}
+- {id: patch, en: Transdermal patch, ar: لصقة جلدية, route: topical, syn: [transdermal patch, transdermal patches, patch, patches, لصقات, لاصقة طبية]}
+- {id: paste, en: Paste, ar: معجون, route: topical, syn: [cutaneous paste, pastes, معجون موضعي]}
+- {id: suppository, en: Suppository, ar: لبوس, route: other, syn: [suppositories, rectal suppository, rectal suppositories, لبوس شرجي, تحاميل]}
+- {id: pessary, en: Pessary, ar: لبوس مهبلي, route: other, syn: [pessaries, vaginal suppository, vaginal suppositories, vaginal ovule, ovule, ovules, تحاميل مهبلية]}
+- {id: vaginal-cream, en: Vaginal cream, ar: كريم مهبلي, route: other, syn: [vaginal creams]}
+- {id: rectal-solution, en: Rectal solution, ar: محلول شرجي, route: other, syn: [enema, enemas, rectal solution, حقنة شرجية]}
+- {id: implant, en: Implant, ar: غرسة, route: parenteral, syn: [implants, subcutaneous implant]}
+- {id: medicated-plaster, en: Medicated plaster, ar: لصقة طبية, route: topical, syn: [medicated plasters]}
+- {id: irrigation, en: Solution for irrigation, ar: محلول للغسيل, route: other, syn: [irrigation solution, solution for irrigation, bladder irrigation]}
+- {id: haemodialysis, en: Solution for haemodialysis, ar: محلول للغسيل الكلوي, route: other, syn: [haemodialysis solution, hemodialysis solution, dialysis solution]}

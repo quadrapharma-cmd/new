@@ -275,7 +275,7 @@ const T = {
   apiManMissing:{en:'manufacturer not read — type it',ar:'المصنع ما اتقراش — اكتبه'}, compRead:{en:'Composition rows read',ar:'صفوف التركيب اللي اتقرت'}, batchRead:{en:'Batches',ar:'تشغيلات'}, toData:{en:'they go to the product data after the dossier is created',ar:'بتتحط في بيانات المنتج بعد إنشاء الملف'}, pagesN:{en:'p.',ar:'صفحة'}, fText:{en:'text',ar:'نص مقروء'},
   fScan:{en:'scan — no text layer',ar:'سكان بدون نص'}, fVision:{en:'scan read from its page images',ar:'سكان اتقرى من صور صفحاته'}, fOcrBrowser:{en:'scan read by OCR in the browser',ar:'سكان اتقرى بـ OCR في المتصفح'},
   ocrRunning:{en:'Reading the scan (OCR in the browser)…',ar:'بيقرأ السكان (OCR في المتصفح)…'},
-  readableBtn:{en:'Make readable (OCR)',ar:'حوّل لمقروء (OCR)'}, readableRunning:{en:'Making a readable copy…',ar:'بيعمل نسخة مقروءة…'}, readableDone:{en:'Readable copy saved as a new version (page images unchanged).',ar:'اتحفظت نسخة مقروءة كإصدار جديد (صور الصفحات زي ما هي).'},
+  readableBtn:{en:'Make readable (OCR)',ar:'حوّل لمقروء (OCR)'}, choose:{en:'— choose —',ar:'— اختر —'}, otherVal:{en:'Other…',ar:'أخرى…'}, readableRunning:{en:'Making a readable copy…',ar:'بيعمل نسخة مقروءة…'}, readableDone:{en:'Readable copy saved as a new version (page images unchanged).',ar:'اتحفظت نسخة مقروءة كإصدار جديد (صور الصفحات زي ما هي).'},
   readableNoOcr:{en:'No OCR available here: install tesseract on this computer or use the browser edition.',ar:'مفيش OCR متاح هنا: ثبّت tesseract على الجهاز أو استخدم نسخة المتصفح.'},
   makeReadable:{en:'After saving, convert the scanned files to readable PDFs (OCR text layer; the page images stay as they are)',ar:'بعد الحفظ، حوّل الملفات الممسوحة لـ PDF مقروء (طبقة نص OCR؛ صور الصفحات زي ما هي)'}, ocrFailed:{en:'Browser OCR failed:',ar:'قراءة الـ OCR في المتصفح فشلت:'},
   scanByVision:{en:'Scans without text were read from their page images by Claude',ar:'المستندات الممسوحة بدون نص اتقرت من صور صفحاتها بواسطة Claude'},
@@ -564,7 +564,7 @@ async function asstAsk(text){ const did=S.dossier&&S.dossier.id; if(!did) return
 window.addEventListener('hashchange', route);
 const fresh = tok => tok===undefined || tok===S.rt;
 function show(tok, html){ if(!fresh(tok)) return false; $('#view').innerHTML = html; return true; }
-async function caps(){ if(!S.caps) S.caps = await api('/capabilities'); $('#verTag').textContent = `v${S.caps.version} · ${S.caps.pack.id}`; return S.caps; }
+async function caps(){ if(!S.caps) S.caps = await api('/capabilities'); if(!S.vocab) vocab(); $('#verTag').textContent = `v${S.caps.version} · ${S.caps.pack.id}`; return S.caps; }
 
 /* ---------------- home: capabilities + journey + dossiers */
 function profileChips(p){
@@ -659,10 +659,12 @@ function bindProfileControls(root, d, rerender){
 function wizard(){
   if(!S.wiz) S.wiz = {step:0, d:Object.assign({name:'',trade:'',form:'film-coated tablet',man:'',ind:'',applicant:'',tracking:'',portal:'',inn:''}, DEF_PROFILE())};
   const w=S.wiz, d=w.d, steps=['step1','step2','step3','step4'];
-  const txt=(k,lab,ph='')=>`<label class="f"><span>${esc(t(lab))}</span><input type="text" dir="auto" data-in="${k}" value="${esc(d[k])}" placeholder="${esc(ph)}"></label>`;
+  const txt=(k,lab,ph='',extra='')=>`<label class="f"><span>${esc(t(lab))}</span><input type="text" dir="auto" data-in="${k}" value="${esc(d[k])}" placeholder="${esc(ph)}" ${extra}></label>`;
   const prevPv = $('#pvBody') ? $('#pvBody').innerHTML : `<div class="skeleton" style="height:60px"></div>`;   // keep the last preview while the next one loads
   let body='';
-  if(w.step===0) body=`<div class="form">${txt('name','pName','Examplol 500 mg FCT')}${txt('trade','pTrade')}${txt('form','pForm')}${txt('man','pMan')}${txt('ind','pInd','pain-and-fever')}</div>`;
+  if(!S.vocab) vocab().then(()=>{ if(S.wiz&&S.wiz.step===0) wizard(); });
+  const formField=S.vocab?`<label class="f"><span>${esc(t('pForm'))}</span>${smartSel('data-in="form" data-wiz="form"', VOC().forms, d.form_std||d.form, {key:'id', otherAttrs:'data-in-other="form"'})}</label>`:txt('form','pForm');
+  if(w.step===0) body=`<div class="form">${txt('name','pName','Examplol 500 mg FCT')}${txt('trade','pTrade')}${formField}${txt('man','pMan','', 'list="dl-man"')}${txt('ind','pInd','pain-and-fever')}</div>${datalists()}`;
   if(w.step===1) body=profileControls(d);
   if(w.step===2) body=`<div class="stack"><p class="small muted">${esc(t('apiHint'))}</p>${d.apis.map((a,i)=>`<div class="form card flat pad">
      <label class="f"><span>${esc(t('apiName'))}</span><input type="text" dir="auto" data-api="${i}" data-f="name" value="${esc(a.name)}"></label>
@@ -682,7 +684,9 @@ function wizard(){
    <aside class="card glow pv" id="pv"><div class="hd"><span class="ic-tile">${icon('checklist')}</span><h3>${esc(t('pvT'))}</h3></div><div class="pad" id="pvBody">${prevPv}</div></aside></div>`;
   const v=$('#view');
   bindProfileControls(v, d, ()=>wizard());
-  v.querySelectorAll('[data-in]').forEach(i=>i.oninput=()=>d[i.dataset.in]=i.value);
+  v.querySelectorAll('[data-in]').forEach(i=>i.oninput=()=>{ if(i.dataset.smart){ const val=smartVal(i); if(i.dataset.wiz==='form'){ d.form=i.value==='__other__'?val:formText(val); d.form_std=i.value==='__other__'?'':i.value; const f=VOC().forms.find(x=>x.id===i.value); if(f) d.admin_route=f.route; } else d[i.dataset.in]=val; } else d[i.dataset.in]=i.value; });
+  v.querySelectorAll('[data-in-other]').forEach(i=>i.oninput=()=>{ d[i.dataset.inOther]=i.value; if(i.dataset.inOther==='form') d.form_std=''; });
+  smartWire(v);
   v.querySelectorAll('[data-api]').forEach(i=>i.oninput=i.onchange=()=>{ d.apis[+i.dataset.api][i.dataset.f]=i.value; previewReq(); });
   v.querySelectorAll('[data-rmapi]').forEach(b=>b.onclick=()=>{ d.apis.splice(+b.dataset.rmapi,1); wizard(); });
   if($('#addApi')) $('#addApi').onclick=()=>{ d.apis.push({name:'',manufacturer:'',option:'FULL'}); wizard(); };
@@ -762,6 +766,23 @@ async function makeReadable(did, docId, filename){
   const fd=new FormData(); (o.pdfs||[]).forEach((u,i)=>fd.append('pages', new Blob([u||new Uint8Array()],{type:'application/pdf'}), `p${i+1}.pdf`));
   const doc=await api(`/dossiers/${did}/documents/${docId}/ocr-layer`,{method:'POST',body:fd}); toast(t('readableDone')); return doc;
 }
+
+/* ---------------- smart fields: vocabularies as dropdowns, the read value matched, «Other…» for the rest, suggestions from the workspace */
+const EMPTY_VOC={forms:[],routes:[],countries:[],units:[],api_options:[],known:{}};
+async function vocab(){ if(!S.vocab){ try{ S.vocab=await api('/vocab'); }catch(e){ S.vocab=EMPTY_VOC; } } return S.vocab; }
+const VOC=()=>S.vocab||EMPTY_VOC;
+function vocFind(items, key, value){ if(value===undefined||value===null||value==='') return null; const v=String(value).trim(), lv=v.toLowerCase();
+  return items.find(it=>String(it[key]).toLowerCase()===lv)||items.find(it=>(it.en||'').toLowerCase()===lv||it.ar===v)||null; }
+function formText(id){ const f=VOC().forms.find(x=>x.id===id); return f?f.en:(id||''); }
+function countryText(code){ const c=VOC().countries.find(x=>x.code===code); return c?c.en:(code||''); }
+function smartSel(attrs, items, value, opts){ opts=opts||{}; const key=opts.key||'id'; const std=vocFind(items, key, value); const custom=value&&!std?String(value):'';
+  const opt=items.map(it=>`<option value="${esc(it[key])}" ${std&&std[key]===it[key]?'selected':''}>${esc(L(it))}</option>`).join('');
+  return `<span class="smart"><select ${attrs} data-smart="1" dir="auto"><option value="">${esc(t('choose'))}</option>${opt}<option value="__other__" ${custom?'selected':''}>${esc(t('otherVal'))}${custom?` ${esc(custom)}`:''}</option></select><input type="text" dir="auto" class="smart-other" value="${esc(custom)}" ${custom?'':'hidden'} ${opts.otherAttrs||''} placeholder="${esc(t('otherVal'))}"></span>`; }
+function smartVal(sel){ if(!sel) return ''; if(sel.value==='__other__'){ const o=sel.parentElement&&sel.parentElement.querySelector('.smart-other'); return (o&&o.value||'').trim(); } return sel.value; }
+function smartWire(root){ $$('select[data-smart]', root||document).forEach(sl=>{ if(sl.__smart) return; sl.__smart=true; sl.addEventListener('change',()=>{ const o=sl.parentElement.querySelector('.smart-other'); if(o){ o.hidden=sl.value!=='__other__'; if(!o.hidden) o.focus(); }
+  if(sl.dataset.onform){ const f=VOC().forms.find(x=>x.id===sl.value); const r=$('#rv-route'); if(f&&r&&!r.value) r.value=f.route; } }); }); }
+function datalists(){ const k=VOC().known||{}; const dl=(id,arr)=>`<datalist id="${id}">${(arr||[]).slice(0,200).map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
+  return dl('dl-man',k.manufacturers)+dl('dl-app',k.applicants)+dl('dl-api',k.apis)+dl('dl-apiman',k.api_manufacturers); }
 async function browserOcr(r, files, target){
   /* scans the server could not read (no tesseract there) are read here, in the browser, then the rules run again on the texts */
   const scans=(r.files||[]).map((f,i)=>({f,i})).filter(x=>x.f.scanned&&!x.f.ocr&&files[x.i]);
@@ -789,12 +810,12 @@ async function readFiles(files, target){
 async function intake(files){
   files=files.filter(f=>/\.(pdf|jpe?g|png|webp|tiff?|docx)$/i.test(f.name)); if(!files.length){ toast(t('badFiles')); return; }
   toast(t('reading'));
-  try{ reviewIntake(await readFiles(files,'dossier'), files); }catch(e){ toast(e.message); }
+  try{ await vocab(); reviewIntake(await readFiles(files,'dossier'), files); }catch(e){ toast(e.message); }
 }
 function reviewIntake(x, files){
   const f=x.fill, P=f.product||{}, R=f.profile||{}, E=f.envelope||{};
   if(S.wiz) S.wiz.intakeFill=f;
-  const inp=(id,v)=>`<input type="text" dir="auto" id="${id}" value="${esc(v??'')}">`;
+  const inp=(id,v,extra='')=>`<input type="text" dir="auto" id="${id}" value="${esc(v??'')}" ${extra}>`;
   const sel=(id,opts,v)=>`<select id="${id}"><option value=""></option>${opts.map(o=>`<option value="${o}" ${v===o?'selected':''}>${esc(t(o))}</option>`).join('')}</select>`;
   const src=k=>f.sources&&f.sources[k]?`<span class="tag">${esc(f.sources[k])}</span>`:'';
   const apis=(f.apis||[]).length?f.apis:[{}];
@@ -810,8 +831,8 @@ function reviewIntake(x, files){
       return x.ai?`<div class="alert ok">${icon('sparkles')}<p class="small">${esc(t('scanByVision'))}: ${sc.map(f=>bdi(f.filename)).join(', ')}</p></div>`
                  :`<div class="alert">${icon('alert')}<p class="small"><b>${esc(t('scanUnread'))}:</b> ${sc.map(f=>bdi(f.filename)).join(', ')}. ${esc(t('scanHint'))}</p></div>`; })()}
    <h3>${esc(t('secProduct'))} ${src('product')}</h3><div class="form">
-     <label class="f"><span>${esc(t('pTrade'))}</span>${inp('rv-name',P.name)}</label><label class="f"><span>${esc(t('pForm'))}</span>${inp('rv-form',P.dosage_form)}</label>
-     <label class="f"><span>${esc(L({en:'Strength',ar:'التركيز'}))}</span>${inp('rv-strength',P.strength)}</label><label class="f"><span>${esc(t('pMan'))}</span>${inp('rv-man',P.manufacturer)}</label>
+     <label class="f"><span>${esc(t('pTrade'))}</span>${inp('rv-name',P.name)}</label><label class="f"><span>${esc(t('pForm'))}</span>${smartSel('id="rv-form" data-onform="1"', VOC().forms, P.dosage_form_std||P.dosage_form_en||P.dosage_form, {key:'id'})}</label>
+     <label class="f"><span>${esc(L({en:'Strength',ar:'التركيز'}))}</span>${inp('rv-strength',P.strength)}</label><label class="f"><span>${esc(t('pMan'))}</span>${inp('rv-man',P.manufacturer,'list="dl-man"')}</label>
      <label class="f"><span>${esc(t('pInd'))}</span>${inp('rv-ind',P.indication)}</label></div>
    <h3>${esc(t('secProfile'))} ${src('profile')}</h3><div class="form">
      <label class="f"><span>${esc(t('kind'))}</span>${sel('rv-kind',['generic','innovator'],R.dossier_kind)}</label>
@@ -822,29 +843,31 @@ function reviewIntake(x, files){
      <label class="f"><span>${esc(t('leaflet'))}</span>${sel('rv-leaflet',['english','non_english'],R.leaflet)}</label>
      <label class="f"><span>${esc(t('specifics'))}</span>${inp('rv-spec',(R.dosage_specifics||[]).join(', '))}</label></div>
    <h3>${esc(t('secApis'))} ${src('apis')} <span class="small muted">${apis.filter(a=>a.name).length} · ${esc(t('apiHint'))}</span></h3><div class="rows tablewrap"><table><thead><tr><th>${esc(t('apiName'))}</th><th>${esc(L({en:'Strength',ar:'التركيز'}))}</th><th>${esc(t('apiMan'))}</th><th>${esc(L({en:'Country',ar:'البلد'}))}</th><th>${esc(t('apiOpt'))}</th></tr></thead><tbody>
-     ${apis.map((a,i)=>`<tr><td><input type="text" dir="auto" data-rva="${i}" data-f="name" value="${esc(a.name||'')}"></td><td><input type="text" dir="auto" data-rva="${i}" data-f="strength" value="${esc(a.strength||'')}" style="max-width:120px"></td><td><input type="text" dir="auto" data-rva="${i}" data-f="manufacturer" value="${esc(a.manufacturer||'')}" placeholder="${esc(t('apiManMissing'))}"></td><td><input type="text" dir="auto" data-rva="${i}" data-f="country" value="${esc(a.country||'')}" style="max-width:110px"></td>
+     ${apis.map((a,i)=>`<tr><td><input type="text" dir="auto" data-rva="${i}" data-f="name" value="${esc(a.name||'')}" list="dl-api"></td><td><input type="text" dir="auto" data-rva="${i}" data-f="strength" value="${esc(a.strength||'')}" style="max-width:120px"></td><td><input type="text" dir="auto" data-rva="${i}" data-f="manufacturer" value="${esc(a.manufacturer||'')}" placeholder="${esc(t('apiManMissing'))}" list="dl-apiman"></td><td style="min-width:150px">${smartSel(`data-rva="${i}" data-f="country"`, VOC().countries, a.country_code||a.country, {key:'code', otherAttrs:`data-rva="${i}" data-f="country_other"`})}</td>
        <td><select data-rva="${i}" data-f="option">${['CEP','DMF','PQ','FULL'].map(o=>`<option ${(a.option||'FULL')===o?'selected':''}>${o}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table></div>
    ${(f.composition||[]).length||(f.batches||[]).length?`<p class="small muted">${(f.composition||[]).length?`${esc(t('compRead'))}: ${f.composition.length} · `:''}${(f.batches||[]).length?`${esc(t('batchRead'))}: ${f.batches.map(b=>esc(b.no+(b.conformity?' ('+b.conformity+')':''))).join(', ')}`:''} — ${esc(t('toData'))}</p>`:''}
    <h3>${esc(t('secSub'))} ${src('envelope')}</h3><div class="form">
-     <label class="f"><span>${esc(t('applicant'))}</span>${inp('rv-applicant',E.applicant)}</label><label class="f"><span>${esc(t('tracking'))}</span>${inp('rv-tracking',E.tracking)}</label>
+     <label class="f"><span>${esc(t('applicant'))}</span>${inp('rv-applicant',E.applicant,'list="dl-app"')}</label><label class="f"><span>${esc(t('tracking'))}</span>${inp('rv-tracking',E.tracking)}</label>
      <label class="f"><span>${esc(t('inn'))}</span>${inp('rv-inn',(E.inn&&E.inn.length?E.inn:apis.map(a=>a.name).filter(Boolean)).join(', '))}</label></div>
    <h3>${esc(t('secDocs'))}</h3><div class="stack gap-s">${(f.documents||[]).map(d=>`<div class="jitem"><div class="t"><span>${bdi(d.filename)}</span><span class="small muted">${esc(t('kindOf'))}: <span class="code">${esc(d.kind||'other')}</span>${d.number?` · <span class="code">${esc(d.number)}</span>`:''}${d.issuer?` · ${bdi(d.issuer)}`:''}${d.valid_until?` · ${esc(t('validUntil'))} ${esc(d.valid_until)}`:''}</span></div></div>`).join('')}</div>
-   <p class="small muted">${esc(t('willPlace'))}</p>
+   <p class="small muted">${esc(t('willPlace'))}</p>${datalists()}
    <div class="row"><button class="btn pri" id="intakeApply">${icon('check')} ${esc(t('fillAll'))}</button><button class="btn ghost" onclick="DS.closeDrawer()">${esc(t('cancel'))}</button></div>`, true);
+  smartWire($('#dBody'));
   $('#intakeApply').onclick=()=>{ applyIntake(files); closeDrawer(); };
 }
 function applyIntake(files){
   const d=S.wiz.d, v=id=>(($('#'+id)||{}).value||'').trim();
   S.wiz.makeReadable=!!($('#rvReadable')&&$('#rvReadable').checked);
-  const name=v('rv-name'), strength=v('rv-strength'), form=v('rv-form');
-  d.trade=name||d.trade; d.form=form||d.form; d.man=v('rv-man')||d.man; d.ind=v('rv-ind')||d.ind;
-  if(name) d.name=[name, strength&&!name.includes(strength)?strength:'', form&&!name.toLowerCase().includes(form.toLowerCase())?form:''].filter(Boolean).join(' ');
+  const name=v('rv-name'), strength=v('rv-strength'); const formSel=$('#rv-form'), formRaw=smartVal(formSel); const form=formSel&&formSel.value!=='__other__'?formText(formRaw):formRaw;
+  d.trade=name||d.trade; if(form){ d.form=form; d.form_std=formSel&&formSel.value!=='__other__'?formSel.value:''; } d.man=v('rv-man')||d.man; d.ind=v('rv-ind')||d.ind;
+  if(name) d.name=[name, strength&&!name.includes(strength)?strength:'', form&&!name.toLowerCase().includes(form.toLowerCase())?form.toLowerCase():''].filter(Boolean).join(' ');
   for(const [id,k] of [['rv-kind','dossier_kind'],['rv-origin','origin'],['rv-licence','licence'],['rv-activity','activity'],['rv-route','admin_route'],['rv-leaflet','leaflet']]) if(v(id)) d[k]=v(id);
   const specs=v('rv-spec').split(',').map(s=>s.trim()).filter(Boolean); if(specs.length) d.dosage_specifics=specs;
   if(d.origin==='imported'&&!['imported','imported_bulk'].includes(d.licence)) d.licence='imported';
   if(d.origin==='local'&&['imported','imported_bulk'].includes(d.licence)) d.licence='own';
   const rows={}; $$('[data-rva]').forEach(el=>{ (rows[el.dataset.rva]=rows[el.dataset.rva]||{})[el.dataset.f]=el.value.trim(); });
-  const apis=Object.values(rows).filter(a=>a.name); if(apis.length) d.apis=apis.map(a=>({name:a.name,manufacturer:a.manufacturer||'',option:a.option||'FULL',strength:a.strength||'',country:a.country||''}));
+  const apis=Object.values(rows).filter(a=>a.name); if(apis.length) d.apis=apis.map(a=>({name:a.name,manufacturer:a.manufacturer||'',option:a.option||'FULL',strength:a.strength||'',
+    country:a.country==='__other__'?(a.country_other||''):(a.country?countryText(a.country):''), country_code:a.country&&a.country!=='__other__'?a.country:''}));
   S.wiz.intakeFill=S.wiz.intakeFill||null;
   d.applicant=v('rv-applicant')||d.applicant; d.tracking=v('rv-tracking')||d.tracking; d.inn=v('rv-inn')||d.inn;
   S.wiz.intakeFiles=files; S.wiz.intake=`${files.length} ${t('intakeDone')}`; toast(t('filled')); wizard();

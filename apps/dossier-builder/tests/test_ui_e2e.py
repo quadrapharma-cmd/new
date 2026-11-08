@@ -347,13 +347,13 @@ def test_intake_fills_the_wizard_and_places_the_files(server, browser, tmp_path)
         page.click('#intakeBtn')
     fc.value.set_files([str(cpp), str(gmp)])
     page.wait_for_selector('#intakeApply')
-    assert page.input_value('#rv-name') == 'Cardiolol 10 mg' and page.input_value('#rv-form') == 'film-coated tablet'
+    assert page.input_value('#rv-name') == 'Cardiolol 10 mg' and page.input_value('#rv-form') == 'tablet-fc'      # the read form matched the standard term (dropdown)
     assert page.input_value('[data-rva="0"][data-f=name]') == 'Bisoprolol fumarate'
     assert page.input_value('#rv-origin') == 'imported' and 'cpp.pdf' in page.inner_text('#dBody')
     page.fill('[data-rva="0"][data-f=manufacturer]', 'Unichem Laboratories')     # the reviewer completes what the documents lack
     page.click('#intakeApply')
     page.wait_for_selector('#toast:not([hidden])')
-    assert page.input_value('[data-in=trade]') == 'Cardiolol 10 mg' and page.input_value('[data-in=form]') == 'film-coated tablet'
+    assert page.input_value('[data-in=trade]') == 'Cardiolol 10 mg' and page.input_value('[data-in=form]') == 'tablet-fc'
     assert page.input_value('[data-in=name]') == 'Cardiolol 10 mg film-coated tablet'
     page.click('#wizNext')
     assert page.locator('[data-k=origin][data-v=imported].on').count() == 1 and page.locator('[data-k=licence][data-v=imported].on').count() == 1

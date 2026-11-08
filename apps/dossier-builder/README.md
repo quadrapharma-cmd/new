@@ -112,6 +112,17 @@ signs; a PDF without a Word source gets an **amendment memo** (rule · where · 
 a third-party document is never altered — the memo goes to the issuer with a re-issue request; a program-generated document is
 regenerated from corrected data. Tests: `tests/test_docreview.py`.
 
+## Smart fields (controlled vocabularies)
+
+Fields whose answers are a bounded set are dropdowns, filled from vocabularies the engine owns (`rulepacks/vocab/`, served by
+`GET /api/vocab`): dose forms as EDQM standard terms with their Arabic names, the spellings documents use and the route each
+form implies (`forms.yaml`, 63 terms), countries as ISO 3166-1 with Arabic names (`countries.json`, 249), strength units and
+API submission options. The intake matches what it read to the standard entry (`vocab.match_form`, `vocab.match_country`:
+«Topical Powder» → Cutaneous powder · topical, «P.R. China» → China · CN, «أقراص مغلفة» → Film-coated tablet) and the dropdown opens
+on it; a value that matches nothing stays as printed under «Other…» so nothing read is lost. Choosing a form sets the route of
+administration. Free-name fields (applicant, manufacturers, substances) suggest the names already used in this workspace.
+Tests: `tests/test_vocab.py`.
+
 ## Browser edition (open from a link, nothing to install)
 
 `web/` turns the same app into a claude.ai artifact: the Python engine runs **inside the browser** (Pyodide), the

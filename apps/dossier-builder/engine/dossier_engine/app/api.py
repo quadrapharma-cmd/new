@@ -454,6 +454,12 @@ def create_app(workspace, auth_enabled=None):
             err(502, 'E-AI-JSON', 'Claude did not return the expected JSON.', 'Claude ما رجّعش البيانات بالشكل المتوقع.')
         return {'ai': ai, 'rules': r['rules'], 'files': [dict(f) for f in r['files']]}
 
+    @app.get('/api/vocab')
+    def vocab_lists():
+        """Dropdown vocabularies (dose forms with routes, countries, units, API options) and the names this workspace already uses."""
+        from .. import vocab as _vocab
+        return _vocab.payload(st)
+
     @app.post('/api/extract/text')
     def extract_texts(body: dict, target: str = 'dossier'):
         """The rules on texts the browser extracted itself (OCR of scans in the browser): same shape as /api/extract."""
