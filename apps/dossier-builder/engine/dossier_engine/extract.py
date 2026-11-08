@@ -8,17 +8,18 @@ document is a scan — against SCHEMA and returns the same shape. Every value is
 used; nothing is written without the user's confirmation."""
 import re
 from io import BytesIO
-from . import arabic
+from . import arabic, intake_eda
 
 KINDS = [  # (kind, keywords in lower-case text or file name); first match wins, in this order
+    ('cadc', ['notification letter', 'statement of conformity', 'sample identification code', 'qf:cadc', 'شهادة مطابقة']),
     ('cpp', ['certificate of pharmaceutical product', 'who certification scheme', ' cpp']),
     ('cep', ['certificate of suitability', 'r1-cep', 'r0-cep', 'edqm']),
     ('gmp', ['good manufacturing practice', 'gmp certificate', 'certificate of gmp', 'gmp compliance', 'gmp', 'التصنيع الجيد']),
     ('coa', ['certificate of analysis', 'analytical report', ' coa', 'c of a', 'شهادة تحليل', 'شهادة التحليل']),
     ('composition', ['composition certificate', 'unit formula', 'quantitative composition', 'شهادة التركيب', 'التركيب']),
-    ('licence', ['registration licence', 'registration license', 'marketing authori', 'registration notification', 'إخطار التسجيل', 'رخصة التسجيل', 'شهادة تسجيل',
+    ('pricing', ['pricing certificate', 'price certificate', 'pricing policies', 'pricing', 'تسعير', 'التسعيرة', 'سعر البيع للجمهور', 'لجنة تسعير', 'سعر بيع الجمهور']),
+    ('licence', ['registration licence', 'registration license', 'marketing authori', 'registration notification', 'final registration license', 'final registration licence', 'إخطار التسجيل', 'إخطار تسجيل', 'رخصة التسجيل', 'شهادة تسجيل',
                  'شهادة التسجيل', 'إخطار', 'اخطار', 'ترخيص']),
-    ('pricing', ['pricing certificate', 'price certificate', 'pricing', 'تسعير', 'التسعيرة']),
     ('annex1', ['annex i', 'application form', 'نموذج الطلب']),
     ('smpc', ['summary of product characteristics', 'smpc', 'package leaflet', 'patient information leaflet', 'النشرة']),
     ('factory', ['factory licence', 'factory license', 'manufacturing licence', 'manufacturing license', 'رخصة المصنع']),
@@ -36,9 +37,9 @@ FORMS = ['film-coated tablet', 'film coated tablet', 'coated tablet', 'effervesc
          'prolonged-release tablet', 'extended release tablet', 'tablet', 'hard capsule', 'soft capsule', 'capsule', 'oral suspension',
          'suspension', 'oral solution', 'syrup', 'solution for injection', 'powder for injection', 'injection', 'infusion', 'cream',
          'ointment', 'gel', 'eye drops', 'ear drops', 'nasal spray', 'inhaler', 'inhalation', 'suppository', 'sachet', 'granules',
-         'powder for oral suspension', 'lotion', 'drops', 'spray']
+         'powder for oral suspension', 'topical powder', 'dusting powder', 'powder', 'lotion', 'drops', 'spray', 'emulsion', 'solution', 'foam', 'shampoo', 'patch']
 ROUTE = {'oral': ['tablet', 'capsule', 'syrup', 'suspension', 'oral', 'sachet', 'granules', 'drops'], 'parenteral': ['injection', 'infusion'],
-         'topical': ['cream', 'ointment', 'gel', 'lotion'], 'ophthalmic': ['eye'], 'inhalation': ['inhal', 'nasal']}
+         'topical': ['cream', 'ointment', 'gel', 'lotion', 'topical', 'dusting', 'shampoo', 'patch', 'foam'], 'ophthalmic': ['eye'], 'inhalation': ['inhal', 'nasal']}
 ISSUERS = ['Egyptian Drug Authority', 'EDA', 'EDQM', 'Ministry of Health', 'Ministry of Health and Population', 'MHRA', 'FDA', 'WHO',
            'Central Drugs Standard Control Organization', 'CDSCO', 'ANVISA', 'Saudi Food and Drug Authority', 'SFDA', 'TGA', 'Swissmedic',
            'BfArM', 'AIFA', 'AEMPS', 'ANSM', 'Health Canada', 'HPRA', 'MFDS', 'PMDA', 'Jordan Food and Drug Administration', 'JFDA',
@@ -48,28 +49,33 @@ TESTS = ['assay', 'dissolution', 'uniformity of dosage units', 'content uniformi
          'residual solvents', 'particle size', 'sterility', 'bacterial endotoxins', 'average weight', 'uniformity of mass', 'viscosity']
 
 SCHEMA = {
-    'product': {'name': 'trade name as registered', 'dosage_form': 'pharmaceutical form', 'strength': 'strength per unit, e.g. 500 mg',
+    'product': {'name': 'trade name as registered (Latin)', 'name_ar': 'trade name in Arabic as printed', 'dosage_form': 'pharmaceutical form', 'strength': 'strength per unit, e.g. 500 mg',
                 'manufacturer': 'finished-product manufacturer (legal name)', 'manufacturer_address': 'site address as on the GMP certificate',
                 'indication': 'main indication, few words'},
     'profile': {'dossier_kind': 'generic | innovator', 'origin': 'local | imported', 'licence': 'own | toll | f_toll | under_licence | imported | imported_bulk',
                 'activity': 'new | re_registration', 'admin_route': 'oral | topical | parenteral | ophthalmic | inhalation | other',
                 'leaflet': 'english | non_english', 'dosage_specifics': '[coated, capsule_hard, pellets, premix, powder_inj_with_solvent, sterile]',
                 'pharmacopoeial': 'true if the product is a pharmacopoeial (BP/USP/Ph. Eur.) product'},
-    'apis': [{'name': 'INN of the active substance', 'manufacturer': 'API manufacturer legal name', 'address_gmp': 'API site address',
+    'apis': [{'name': 'INN of the active substance (one entry per active substance; salt as printed)', 'strength': 'amount per unit as printed, e.g. 3.5 mg (3300 unit)',
+              'manufacturer': 'the API manufacturer printed for THIS substance (e.g. under «Manufacturer Of active substance», the line after the substance name)',
+              'country': 'country of that manufacturer', 'alternatives': ['other approved suppliers named for this substance, if any'], 'address_gmp': 'API site address',
               'option': 'CEP | DMF | PQ | FULL', 'cep_no': 'e.g. R1-CEP 2010-123-Rev 02', 'cep_status': 'valid | suspended | withdrawn | expired',
               'spec_standard': 'Ph. Eur. | USP | BP | in-house', 'coa_name': 'name on the supplier CoA'}],
     'envelope': {'applicant': 'applicant / MA holder legal name', 'tracking': 'EDA procedure tracking number', 'inn': ['INN list']},
     'batches': [{'no': 'batch number', 'kind': 'fpp | api', 'api': 'API name for API batches', 'size': 'batch size with unit',
-                 'scale': 'pilot | production | smaller', 'date': 'YYYY-MM-DD', 'site': 'manufacturing site'}],
+                 'scale': 'pilot | production | smaller', 'date': 'YYYY-MM-DD', 'expiry': 'YYYY-MM-DD', 'site': 'manufacturing site', 'conformity': 'Conform | Non-conform (CADC letter)'}],
     'specs': [{'test': 'test name', 'limit': 'acceptance criterion', 'method': 'method / reference'}],
     'results': [{'batch': 'batch number', 'test': 'test name', 'value': 'numeric result as printed (not «complies»)'}],
-    'registration': {'reg_no': 'registration / licence number', 'reg_date': 'YYYY-MM-DD', 'shelf_life': 'e.g. 36 months',
-                     'storage': 'storage condition', 'price': 'public price', 'packs': ['pack sizes']},
-    'documents': [{'filename': 'as given', 'kind': 'cpp | gmp | cep | coa | composition | licence | pricing | annex1 | smpc | factory | bmr | stability | spec | loa | poa | commercial | contract | other',
+    'registration': {'reg_no': 'registration / licence number', 'reg_date': 'YYYY-MM-DD', 'valid_until': 'YYYY-MM-DD (invalidation date)', 'shelf_life': 'e.g. 36 months',
+                     'storage': 'storage condition', 'price': 'public price', 'prices': [{'price': 'e.g. 34 EGP', 'pack': 'pack it applies to'}], 'packs': ['pack sizes'],
+                     'licence_type': 'toll | own | under_licence', 'marketing': 'local | export'},
+    'composition': [{'name': 'ingredient as printed', 'amount': 'per unit, e.g. 3.5 mg', 'standard': 'BP 2018 | USP | Ph. Eur. | in-house', 'role': 'active | excipient',
+                     'equivalent': 'e.g. equivalent to 3300 units/g'}],
+    'documents': [{'filename': 'as given', 'kind': 'cpp | gmp | cep | coa | cadc | composition | licence | pricing | annex1 | smpc | factory | bmr | stability | spec | loa | poa | commercial | contract | other',
                    'title': 'document title', 'number': 'certificate / licence number', 'issuer': 'issuing authority or company',
                    'issued': 'YYYY-MM-DD', 'valid_until': 'YYYY-MM-DD or null'}],
 }
-PRIORITY = ['licence', 'annex1', 'cpp', 'smpc', 'composition', 'pricing', 'spec', 'coa', 'cep', 'gmp', 'stability', 'bmr', 'factory', 'other']
+PRIORITY = ['licence', 'annex1', 'cpp', 'smpc', 'composition', 'pricing', 'spec', 'coa', 'cadc', 'cep', 'gmp', 'stability', 'bmr', 'factory', 'other']
 
 
 def pdf_text(data, max_pages=12):
@@ -162,7 +168,7 @@ def iso_date(m):
 
 def date_after(text, labels, window=90):
     for lab in labels:
-        rx = arabic.label_rx(lab) if arabic.has_arabic(lab) else re.escape(lab)
+        rx = r'(?<![A-Za-z\u0600-\u06FF])' + (arabic.label_rx(lab) if arabic.has_arabic(lab) else re.escape(lab))
         for m in re.finditer(rx, text, re.I):
             dm = DATE.search(text, m.end(), m.end() + window)
             if dm:
@@ -177,7 +183,7 @@ def after(text, labels, pattern=r'([^\n:]{2,80})', window=120, flags=re.I):
     (alef / yaa / taa-marbuta variants); when nothing follows an Arabic label on its line, the value printed before it
     (visual order of some extractors) is taken."""
     for lab in labels:
-        rx = arabic.label_rx(lab) if arabic.has_arabic(lab) else re.escape(lab)
+        rx = r'(?<![A-Za-z\u0600-\u06FF])' + (arabic.label_rx(lab) if arabic.has_arabic(lab) else re.escape(lab) + r'(?![A-Za-z])')
         m = re.search(rx + r'\s*[:：\-]?\s*' + pattern, text[:60000], flags)
         if m and m.group(1).strip(' .,-:'):
             return m.group(1).strip(' .,-:')
@@ -213,7 +219,7 @@ def fields_for(kind, filename, text):
                               'رقم الإخطار', 'رقم الطلب', 'رقم الملف', 'رقم القيد', 'رقم الموافقة', 'إخطار رقم', 'رقم المرجع'],
                      r'([A-Z0-9][A-Z0-9\-/.]{2,30})', flags=0)
     for name in ISSUERS:
-        if name.lower() in low:
+        if re.search(r'(?<![A-Za-z])' + re.escape(name.lower()) + r'(?![A-Za-z])', low):
             doc['issuer'] = name
             break
     doc['issuer'] = doc.get('issuer') or after(t, ['Issued by', 'Issuing authority', 'Competent authority', 'Certifying authority'])
@@ -226,19 +232,26 @@ def fields_for(kind, filename, text):
     product['name'] = after(t, ['Trade name', 'Brand name', 'Proprietary name', 'Product name', 'Name of the product', 'Name of product',
                                 'Invented name', 'الاسم التجاري', 'اسم المستحضر', 'اسم الدواء', 'اسم المنتج', 'المستحضر'])
     NAME_LABELS = ['Trade name', 'Brand name', 'Proprietary name', 'Product name', 'Invented name', 'الاسم التجاري', 'اسم المستحضر', 'اسم الدواء', 'اسم المنتج']
+    if product.get('name') and re.search(r'سعر|التاريخ|رقم|الشكل|المادة|الشركة|^\W*$', product['name']):   # a table header, not a name
+        product['name'] = None
     product['name_en'] = (arabic.latin_in(product['name']) or arabic.latin_in(line_of(t, NAME_LABELS))) if product.get('name') and arabic.has_arabic(product['name']) else None
     if product.get('name') and arabic.has_arabic(product['name']):
         product['name'] = re.sub(r'\s*\(?[A-Za-z][A-Za-z0-9 .,\-/%]{2,80}\)?\s*$', '', product['name']).strip() or product['name']
     product['dosage_form'] = after(t, ['Dosage form', 'Pharmaceutical form', 'Form', 'الشكل الصيدلي', 'الشكل الدوائي', 'الصورة الصيدلية', 'الشكل الصيدلاني']) \
         or next((f for f in FORMS if f in low), None) or arabic.form_en(t)
     product['dosage_form_en'] = arabic.form_en(product['dosage_form']) if product.get('dosage_form') and arabic.has_arabic(product['dosage_form']) else None
-    st = re.search(r'\b(\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|g|iu|%|ml))(?:\s*/\s*(?:\d+(?:[.,]\d+)?\s?)?(?:ml|tablet|capsule|dose|g))?', t, re.I)
+    st = re.search(r'(?<![\d.,])((?:[1-9]\d*(?:[.,]\d+)?|0[.,]\d+)\s?(?:mg|mcg|µg|g|iu|%|ml))\b(?:\s*/\s*(?:\d+(?:[.,]\d+)?\s?)?(?:ml|tablet|capsule|dose|g))?', t, re.I)
     product['strength'] = after(t, ['Strength', 'التركيز', 'العيار', 'القوة']) or (st.group(0).strip() if st else None) or arabic.strength_en(t)
     if product.get('strength') and arabic.has_arabic(product['strength']):
         product['strength'] = arabic.strength_en(product['strength']) or product['strength']
+    if product.get('strength') and not re.search(r'\d', product['strength']):
+        product['strength'] = None
     product['manufacturer'] = after(t, ['Manufacturer', 'Manufactured by', 'Manufacturing site', 'Name of manufacturer', 'Name and address of the manufacturer',
                                         'Manufacturer name', 'الشركة المصنعة', 'الشركة المنتجة', 'جهة التصنيع', 'مكان التصنيع', 'اسم المصنع', 'المصنع'])
     product['manufacturer_address'] = after(t, ['Site address', 'Address of manufacturer', 'Manufacturing site address', 'Address', 'عنوان المصنع', 'عنوان الشركة', 'العنوان'])
+    if product.get('manufacturer_address') and (re.search('هيئة الدواء|وزارة الصحة', product['manufacturer_address'])
+                                                or any(re.search(r'(?<![A-Za-z])' + re.escape(i) + r'(?![A-Za-z])', product['manufacturer_address']) for i in ISSUERS if len(i) > 4)):
+        product['manufacturer_address'] = None                                         # the authority's address in a letter footer
     apis = [_clean(x) for x in re.split(r'[,;/]|\band\b', after(t, ['Active ingredient', 'Active ingredients', 'Active substance', 'Active substances',
                                                                      'Active pharmaceutical ingredient', 'INN', 'Generic name', 'Generic Name',
                                                                      'المادة الفعالة', 'المواد الفعالة', 'المكونات الفعالة', 'الاسم العلمي']) or '') if _clean(x)]
@@ -246,6 +259,7 @@ def fields_for(kind, filename, text):
     if apis and all(arabic.has_arabic(a) and not arabic.latin_in(a) for a in apis) and len(apis) == 1 and arabic.latin_in(line_of(t, API_LABELS)):
         apis = [arabic.latin_in(line_of(t, API_LABELS))]
     apis = [arabic.latin_in(a) or re.sub(r'\s*\d.*$', '', a).strip() or a for a in apis]      # «باراسيتامول 500 مجم (Paracetamol)» → Paracetamol
+    apis = [a for a in apis if not re.match(r'^(?:each|every|&|and)\b', a, re.I)]
     if cep and not apis:
         m = re.search(r'for\s+([A-Z][a-z]+(?:\s[a-z]+)?)', t)
         if m:
@@ -317,14 +331,40 @@ def fields_for(kind, filename, text):
                 'profile': {k: v for k, v in profile.items() if v not in (None, [], '')},
                 'apis': [{'name': a, **({'cep_no': cep.group(0), 'option': 'CEP'} if cep else {})} for a in apis],
                 'envelope': {k: _clean(v) for k, v in envelope.items() if v}, 'batches': batches, 'specs': specs, 'results': results,
-                'registration': {k: v for k, v in registration.items() if v}})
+                'registration': {k: v for k, v in registration.items() if v}, 'composition': []})
+    eda = intake_eda.read(t)
+    if eda:
+        for sec in ('product', 'envelope', 'registration', 'profile'):
+            for k, v in eda.get(sec, {}).items():
+                if v not in (None, '', []):
+                    out[sec][k] = v
+        if eda.get('apis'):
+            out['apis'] = eda['apis']
+            if len(eda['apis']) > 1 and not eda['product'].get('strength'):
+                out['product'].pop('strength', None)                    # a combination: the strengths live on the substances
+            form = (out['product'].get('dosage_form_en') or out['product'].get('dosage_form') or '').lower()
+            out['profile']['admin_route'] = out['profile'].get('admin_route') or next((r for r, ws in ROUTE.items() if any(w in form for w in ws)), None)
+        if eda.get('batches'):                                   # the form's batch row (expiry, conformity) joins what the generic rules read (size, date)
+            merged = []
+            for eb in eda['batches']:
+                g = next((b for b in batches if b['no'] == eb['no']), None)
+                merged.append({**g, **{k: v for k, v in eb.items() if v}} if g else eb)
+            out['batches'] = merged + [b for b in batches if b['no'] not in {x['no'] for x in merged}]
+        if eda.get('composition'):
+            out['composition'] = eda['composition']
+        for k, v in eda.get('document', {}).items():
+            if v:
+                doc[k] = v
+        if eda.get('suppliers'):
+            doc['suppliers'] = eda['suppliers']
+        out['profile'] = {k: v for k, v in out['profile'].items() if v not in (None, [], '')}
     return out
 
 
 def merge(items):
     """Combine the readings of several documents into one fill (first non-empty value, by document priority)."""
     order = sorted(items, key=lambda it: PRIORITY.index(it['document']['kind']) if it['document']['kind'] in PRIORITY else 99)
-    fill = {'product': {}, 'profile': {}, 'envelope': {}, 'registration': {}, 'apis': [], 'batches': [], 'specs': [], 'results': [], 'documents': []}
+    fill = {'product': {}, 'profile': {}, 'envelope': {}, 'registration': {}, 'apis': [], 'batches': [], 'specs': [], 'results': [], 'composition': [], 'documents': []}
     for it in order:
         for sec in ('product', 'profile', 'envelope', 'registration'):
             for k, v in it.get(sec, {}).items():
@@ -341,7 +381,7 @@ def merge(items):
         for b in it.get('batches', []):
             if b['no'] not in [x['no'] for x in fill['batches']]:
                 fill['batches'].append(b)
-        for key in ('specs', 'results'):
+        for key in ('specs', 'results', 'composition'):
             for row in it.get(key, []):
                 if row not in fill[key]:
                     fill[key].append(row)
@@ -372,7 +412,14 @@ def ai_prompt(texts, target='dossier'):
             'Arabic labels (اسم المستحضر، المادة الفعالة، الشكل الصيدلي، الشركة المنتجة، صاحب الترخيص، رقم الإخطار، التاريخ، ساري حتى، '
             'سعر الجمهور، العبوة، مدة الصلاحية) and Arabic-Indic digits; text marked OCR may contain errors, trust the page images. Reply '
             'with ONLY one JSON object with exactly these keys (omit a key or value you cannot find; never guess; copy numbers and names '
-            'exactly as printed, keep Arabic names in Arabic and add the Latin name when printed; dates as YYYY-MM-DD; INN in English):\n'
+            'exactly as printed, keep Arabic names in Arabic and add the Latin name when printed; dates as YYYY-MM-DD; INN in English). '
+            'EDA forms are label:value tables. In the Final Registration License, «Active Ingredient(s) & Strength(s)» lists one active substance per line '
+            'after «Each 1g contains:» — return one apis entry per substance with its strength; «Manufacturer Of active substance» lists each substance '
+            'name followed by its manufacturer and country on the next line (two names may share one manufacturer) — pair them; the Arabic notes may '
+            'name other approved or not-permitted suppliers — put approved ones in alternatives; «License Holder» is the applicant; «Manufacturer» is '
+            'the finished-product manufacturer; «Invalidation Date» is valid_until; «Type of License: Toll» is licence_type toll; «Price» lines give '
+            'one price per pack. In a CADC Notification Letter, return the batch with its expiry and conformity. In a pricing letter the «Each 1g contains» '
+            'line separates substances with «+».:\n'
             + json.dumps(want, ensure_ascii=False, indent=1)
             + '\nAlso add "sources": {"<key>": "<filename>"} naming the document each top-level section came from.\n\nDOCUMENTS:\n')
     body = ''

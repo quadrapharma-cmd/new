@@ -51,6 +51,21 @@ Arabic-Indic digits and dates (`engine/dossier_engine/arabic.py`); a **scan or a
 tesseract with the Arabic language is installed (`apt install tesseract-ocr tesseract-ocr-ara poppler-utils`), and goes to Claude as
 page images otherwise; the review drawer says per file whether it was text, an OCR'd scan or a scan without text.
 
+**EDA forms are read as tables, with understanding of their layout** (`engine/dossier_engine/intake_eda.py`): the Final Registration
+License (trade name with its Arabic name, dosage form, one active substance per line after «Each 1g contains» with its strength and
+unit equivalence, «Manufacturer Of active substance» paired to each substance — two substances may share one manufacturer —, the
+licence holder as applicant, the finished-product manufacturer and its country, registration number, invalidation date, shelf life,
+approved pack, one price per pack, toll / local), the PPMA pricing letter («Each 1g contains: A + B …» and the price-table rows, one
+per pack and page) and the CADC Notification Letter (batch, expiry, Conform / Non-conform), plus composition tables (ingredient ·
+standard · amount · active / excipient). OCR noise is tolerated («Zine» → «Zinc», «10,000 mg» → «10.000 mg» when the form prints
+three decimals, «1! mg», junk prefixes, «Co.» never splits a company) and nothing is guessed: an unreadable date stays empty and a
+substance whose manufacturer is not printed stays without one, highlighted in the review drawer for the user to complete. The
+wizard carries each active substance with strength, manufacturer and country into the dossier, and the composition rows and
+batches into the product data once the dossier exists. **A scan without any text is read from its page images**: by Claude in the
+browser edition (the `sample` capability receives the rendered pages) or through the Anthropic API on a computer with
+`ANTHROPIC_API_KEY` (PDFs attached as documents, photos as images); the drawer names the scans that were read that way and those
+that were not read on this computer. Tests: `tests/test_intake_eda.py` (a fictional product on the three forms, clean and OCR-noisy).
+
 ## Browser edition (open from a link, nothing to install)
 
 `web/` turns the same app into a claude.ai artifact: the Python engine runs **inside the browser** (Pyodide), the

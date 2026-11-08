@@ -139,18 +139,20 @@
       const sample = await window.claude.use('sample');
       if (!sample) throw { code: 'unavailable', message: 'sample unavailable' };
       const lim = await sample.limits().catch(() => null);
+      const maxImages = (lim && lim.images && lim.images.maxCount) || 4;     // limits unknown → still send the scans (4 pages)
       const images = [];
-      if (lim && lim.images && files && meta) {
-        for (let i = 0; i < files.length && images.length < lim.images.maxCount; i++) {
+      if (files && meta && !(lim && lim.images === false)) {
+        for (let i = 0; i < files.length && images.length < maxImages; i++) {
           if (!files[i] || !meta[i] || !meta[i].scanned) continue;
           const isImage = /^image\//.test(files[i].type || '') || /\.(jpe?g|png|webp|gif)$/i.test(files[i].name || '');
-          const imgs = (isImage ? [files[i]] : await pageImages(files[i], 3)).slice(0, lim.images.maxCount - images.length);
+          const imgs = (isImage ? [files[i]] : await pageImages(files[i], 3)).slice(0, maxImages - images.length);
           if (imgs.length) { prompt += `\n(Images ${images.length + 1}-${images.length + imgs.length} are the pages of document "${files[i].name}".)`; images.push(...imgs); }
         }
       }
       const opts = { modelTier: target === 'document' ? 'quick' : 'default', cache: false };
       if (images.length) opts.images = images;
-      return await sample.json(prompt, opts);
+      try { return await sample.json(prompt, opts); }
+      catch (e) { if (images.length && !(e && e.code === 'declined')) { delete opts.images; return await sample.json(prompt, opts); } throw e; }
     },
     pageImages,
   };
