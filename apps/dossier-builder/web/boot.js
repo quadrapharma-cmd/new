@@ -143,7 +143,8 @@
       if (lim && lim.images && files && meta) {
         for (let i = 0; i < files.length && images.length < lim.images.maxCount; i++) {
           if (!files[i] || !meta[i] || !meta[i].scanned) continue;
-          const imgs = (await pageImages(files[i], 3)).slice(0, lim.images.maxCount - images.length);
+          const isImage = /^image\//.test(files[i].type || '') || /\.(jpe?g|png|webp|gif)$/i.test(files[i].name || '');
+          const imgs = (isImage ? [files[i]] : await pageImages(files[i], 3)).slice(0, lim.images.maxCount - images.length);
           if (imgs.length) { prompt += `\n(Images ${images.length + 1}-${images.length + imgs.length} are the pages of document "${files[i].name}".)`; images.push(...imgs); }
         }
       }

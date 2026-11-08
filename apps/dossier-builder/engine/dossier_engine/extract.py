@@ -8,15 +8,17 @@ document is a scan — against SCHEMA and returns the same shape. Every value is
 used; nothing is written without the user's confirmation."""
 import re
 from io import BytesIO
+from . import arabic
 
 KINDS = [  # (kind, keywords in lower-case text or file name); first match wins, in this order
     ('cpp', ['certificate of pharmaceutical product', 'who certification scheme', ' cpp']),
     ('cep', ['certificate of suitability', 'r1-cep', 'r0-cep', 'edqm']),
-    ('gmp', ['good manufacturing practice', 'gmp certificate', 'certificate of gmp', 'gmp compliance', 'gmp']),
-    ('coa', ['certificate of analysis', 'analytical report', ' coa', 'c of a']),
-    ('composition', ['composition certificate', 'unit formula', 'quantitative composition', 'شهادة التركيب']),
-    ('licence', ['registration licence', 'registration license', 'marketing authori', 'إخطار التسجيل', 'رخصة التسجيل', 'إخطار']),
-    ('pricing', ['pricing certificate', 'price certificate', 'pricing', 'تسعير']),
+    ('gmp', ['good manufacturing practice', 'gmp certificate', 'certificate of gmp', 'gmp compliance', 'gmp', 'التصنيع الجيد']),
+    ('coa', ['certificate of analysis', 'analytical report', ' coa', 'c of a', 'شهادة تحليل', 'شهادة التحليل']),
+    ('composition', ['composition certificate', 'unit formula', 'quantitative composition', 'شهادة التركيب', 'التركيب']),
+    ('licence', ['registration licence', 'registration license', 'marketing authori', 'registration notification', 'إخطار التسجيل', 'رخصة التسجيل', 'شهادة تسجيل',
+                 'شهادة التسجيل', 'إخطار', 'اخطار', 'ترخيص']),
+    ('pricing', ['pricing certificate', 'price certificate', 'pricing', 'تسعير', 'التسعيرة']),
     ('annex1', ['annex i', 'application form', 'نموذج الطلب']),
     ('smpc', ['summary of product characteristics', 'smpc', 'package leaflet', 'patient information leaflet', 'النشرة']),
     ('factory', ['factory licence', 'factory license', 'manufacturing licence', 'manufacturing license', 'رخصة المصنع']),
@@ -29,7 +31,7 @@ KINDS = [  # (kind, keywords in lower-case text or file name); first match wins,
     ('contract', ['agreement', 'contract', 'عقد']),
 ]
 MONTHS = {m: i for i, m in enumerate(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'], 1)}
-DATE = re.compile(r'(\d{4})-(\d{2})-(\d{2})|(\d{1,2})[./\-\s]+([A-Za-z]{3,9}|\d{1,2})[./\-\s,]+(\d{4})')
+DATE = re.compile(r'(\d{4})[-/](\d{2})[-/](\d{2})|(\d{1,2})[./\-\s]+([A-Za-z]{3,9}|\d{1,2})[./\-\s,]+(\d{4})')
 FORMS = ['film-coated tablet', 'film coated tablet', 'coated tablet', 'effervescent tablet', 'chewable tablet', 'orodispersible tablet',
          'prolonged-release tablet', 'extended release tablet', 'tablet', 'hard capsule', 'soft capsule', 'capsule', 'oral suspension',
          'suspension', 'oral solution', 'syrup', 'solution for injection', 'powder for injection', 'injection', 'infusion', 'cream',
@@ -88,6 +90,51 @@ def pdf_text(data, max_pages=12):
     return {'pages': n, 'text': text, 'scanned': n > 0 and len(re.sub(r'\s', '', text)) < 20}
 
 
+def docx_text(data):
+    try:
+        import docx
+        d = docx.Document(BytesIO(data))
+        text = '\n'.join(p.text for p in d.paragraphs)
+        for t in d.tables:
+            for row in t.rows:
+                text += '\n' + ' | '.join(c.text for c in row.cells)
+        return text
+    except Exception:
+        return ''
+
+
+def read_text(name, data, max_pages=12, ocr=True):
+    """What one uploaded file says: a PDF's text layer, or OCR of its pages when it is a scan (tesseract ara+eng, local
+    computers only), a DOCX's paragraphs and tables, or OCR of an image. `scanned` = image-only (the AI layer then
+    reads the page images), `ocr` = the text came from OCR, `kind_of_file` = pdf | docx | image | other."""
+    low = (name or '').lower()
+    out = {'pages': 0, 'text': '', 'scanned': False, 'ocr': False, 'kind_of_file': 'other'}
+    img = arabic.image_type(data or b'')
+    if data[:4] == b'%PDF' or low.endswith('.pdf'):
+        pt = pdf_text(data, max_pages)
+        out.update(pt, kind_of_file='pdf')
+        if pt['scanned'] and ocr:
+            txt = arabic.ocr_pdf(data, pages=min(pt['pages'] or 1, 4))
+            if len(re.sub(r'\s', '', txt)) >= 20:
+                out.update(text=txt, ocr=True)
+    elif img:
+        out.update(pages=1, scanned=True, kind_of_file='image')
+        if ocr:
+            txt = arabic.ocr_image_bytes(data, '.' + img.split('/')[-1].replace('jpeg', 'jpg'))
+            if len(re.sub(r'\s', '', txt)) >= 20:
+                out.update(text=txt, ocr=True)
+    elif data[:2] == b'PK' and low.endswith('.docx'):
+        out.update(pages=1, text=docx_text(data), kind_of_file='docx')
+    else:
+        try:
+            out.update(data.decode('utf-8'), pages=1) if False else out.update(text=data.decode('utf-8', 'ignore')[:60000], pages=1)
+        except Exception:
+            pass
+    out['text'] = arabic.prepare(out['text'])
+    out['arabic'] = arabic.has_arabic(out['text'])
+    return out
+
+
 def guess_kind(filename, text):
     hay = ' ' + (filename or '').lower().replace('_', ' ').replace('-', ' ') + ' ' + (text or '')[:4000].lower()
     for kind, words in KINDS:
@@ -115,7 +162,8 @@ def iso_date(m):
 
 def date_after(text, labels, window=90):
     for lab in labels:
-        for m in re.finditer(re.escape(lab), text, re.I):
+        rx = arabic.label_rx(lab) if arabic.has_arabic(lab) else re.escape(lab)
+        for m in re.finditer(rx, text, re.I):
             dm = DATE.search(text, m.end(), m.end() + window)
             if dm:
                 v = iso_date(dm)
@@ -125,16 +173,33 @@ def date_after(text, labels, window=90):
 
 
 def after(text, labels, pattern=r'([^\n:]{2,80})', window=120, flags=re.I):
-    """The value printed after one of the labels (same line, after an optional colon)."""
+    """The value printed after one of the labels (same line, after an optional colon). Arabic labels match leniently
+    (alef / yaa / taa-marbuta variants); when nothing follows an Arabic label on its line, the value printed before it
+    (visual order of some extractors) is taken."""
     for lab in labels:
-        m = re.search(re.escape(lab) + r'\s*[:：\-]?\s*' + pattern, text[:60000], flags)
-        if m and m.group(1).strip(' .,-'):
-            return m.group(1).strip(' .,-')
+        rx = arabic.label_rx(lab) if arabic.has_arabic(lab) else re.escape(lab)
+        m = re.search(rx + r'\s*[:：\-]?\s*' + pattern, text[:60000], flags)
+        if m and m.group(1).strip(' .,-:'):
+            return m.group(1).strip(' .,-:')
+        if arabic.has_arabic(lab):
+            m = re.search(r'^([^\n]{2,80}?)\s*[:：\-]?\s*' + rx + r'\s*[:：]?\s*$', text[:60000], flags | re.M)
+            if m and m.group(1).strip(' .,-:'):
+                return m.group(1).strip(' .,-:')
     return None
 
 
+def line_of(text, labels):
+    """The whole line that carries one of the labels (for values printed elsewhere on that line)."""
+    for lab in labels:
+        rx = arabic.label_rx(lab) if arabic.has_arabic(lab) else re.escape(lab)
+        m = re.search(r'^.*' + rx + r'.*$', text[:60000], re.I | re.M)
+        if m:
+            return m.group(0)
+    return ''
+
+
 def _clean(s):
-    return re.sub(r'\s+', ' ', s or '').strip(' .,;:-')
+    return re.sub(r'\s+', ' ', arabic.BIDI.sub('', s or '')).strip(' .,;:-')
 
 
 def fields_for(kind, filename, text):
@@ -144,44 +209,65 @@ def fields_for(kind, filename, text):
     out = {'document': {'filename': filename, 'kind': kind}}
     doc = out['document']
     doc['number'] = after(t, ['Certificate No', 'Certificate Number', 'Certificate no', 'Cert. No', 'Licence No', 'License No', 'Registration No',
-                              'Registration Number', 'Reg. No', 'Approval No', 'Authorisation No', 'رقم الشهادة', 'رقم الترخيص', 'رقم التسجيل'],
+                              'Registration Number', 'Reg. No', 'Approval No', 'Authorisation No', 'Notification No', 'رقم الشهادة', 'رقم الترخيص', 'رقم التسجيل',
+                              'رقم الإخطار', 'رقم الطلب', 'رقم الملف', 'رقم القيد', 'رقم الموافقة', 'إخطار رقم', 'رقم المرجع'],
                      r'([A-Z0-9][A-Z0-9\-/.]{2,30})', flags=0)
     for name in ISSUERS:
         if name.lower() in low:
             doc['issuer'] = name
             break
     doc['issuer'] = doc.get('issuer') or after(t, ['Issued by', 'Issuing authority', 'Competent authority', 'Certifying authority'])
-    doc['issued'] = date_after(t, ['Date of issue', 'Issued on', 'Issue date', 'Date of issuance', 'Dated', 'Date:', 'تاريخ الإصدار'])
+    doc['issued'] = date_after(t, ['Date of issue', 'Issued on', 'Issue date', 'Date of issuance', 'Dated', 'Date:', 'تاريخ الإصدار', 'تاريخ الإخطار', 'تاريخ الموافقة',
+                                   'تاريخ التسجيل', 'التاريخ', 'بتاريخ', 'تحريرا في', 'صادر في', 'تاريخ'])
     doc['valid_until'] = date_after(t, ['Valid until', 'Valid to', 'Expiry date', 'Expires on', 'Date of expiry', 'Validity', 'Valid through',
-                                        'صالح حتى', 'صالحة حتى', 'تاريخ الانتهاء', 'ينتهي'])
+                                        'صالح حتى', 'صالحة حتى', 'ساري حتى', 'سارية حتى', 'تاريخ الانتهاء', 'ينتهي في', 'ينتهي', 'حتى تاريخ', 'الصلاحية حتى', 'نهاية الصلاحية'])
     cep = re.search(r'R\d-CEP\s?\d{4}-\d{3}(?:-Rev\s?\d{2})?', t)
     product = {}
     product['name'] = after(t, ['Trade name', 'Brand name', 'Proprietary name', 'Product name', 'Name of the product', 'Name of product',
-                                'Invented name', 'الاسم التجاري', 'اسم المستحضر'])
-    product['dosage_form'] = after(t, ['Dosage form', 'Pharmaceutical form', 'Form', 'الشكل الصيدلي']) or next((f for f in FORMS if f in low), None)
+                                'Invented name', 'الاسم التجاري', 'اسم المستحضر', 'اسم الدواء', 'اسم المنتج', 'المستحضر'])
+    NAME_LABELS = ['Trade name', 'Brand name', 'Proprietary name', 'Product name', 'Invented name', 'الاسم التجاري', 'اسم المستحضر', 'اسم الدواء', 'اسم المنتج']
+    product['name_en'] = (arabic.latin_in(product['name']) or arabic.latin_in(line_of(t, NAME_LABELS))) if product.get('name') and arabic.has_arabic(product['name']) else None
+    if product.get('name') and arabic.has_arabic(product['name']):
+        product['name'] = re.sub(r'\s*\(?[A-Za-z][A-Za-z0-9 .,\-/%]{2,80}\)?\s*$', '', product['name']).strip() or product['name']
+    product['dosage_form'] = after(t, ['Dosage form', 'Pharmaceutical form', 'Form', 'الشكل الصيدلي', 'الشكل الدوائي', 'الصورة الصيدلية', 'الشكل الصيدلاني']) \
+        or next((f for f in FORMS if f in low), None) or arabic.form_en(t)
+    product['dosage_form_en'] = arabic.form_en(product['dosage_form']) if product.get('dosage_form') and arabic.has_arabic(product['dosage_form']) else None
     st = re.search(r'\b(\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|g|iu|%|ml))(?:\s*/\s*(?:\d+(?:[.,]\d+)?\s?)?(?:ml|tablet|capsule|dose|g))?', t, re.I)
-    product['strength'] = after(t, ['Strength', 'التركيز']) or (st.group(0).strip() if st else None)
+    product['strength'] = after(t, ['Strength', 'التركيز', 'العيار', 'القوة']) or (st.group(0).strip() if st else None) or arabic.strength_en(t)
+    if product.get('strength') and arabic.has_arabic(product['strength']):
+        product['strength'] = arabic.strength_en(product['strength']) or product['strength']
     product['manufacturer'] = after(t, ['Manufacturer', 'Manufactured by', 'Manufacturing site', 'Name of manufacturer', 'Name and address of the manufacturer',
-                                        'Manufacturer name', 'الشركة المصنعة', 'المصنع'])
-    product['manufacturer_address'] = after(t, ['Site address', 'Address of manufacturer', 'Manufacturing site address', 'Address', 'العنوان'])
+                                        'Manufacturer name', 'الشركة المصنعة', 'الشركة المنتجة', 'جهة التصنيع', 'مكان التصنيع', 'اسم المصنع', 'المصنع'])
+    product['manufacturer_address'] = after(t, ['Site address', 'Address of manufacturer', 'Manufacturing site address', 'Address', 'عنوان المصنع', 'عنوان الشركة', 'العنوان'])
     apis = [_clean(x) for x in re.split(r'[,;/]|\band\b', after(t, ['Active ingredient', 'Active ingredients', 'Active substance', 'Active substances',
                                                                      'Active pharmaceutical ingredient', 'INN', 'Generic name', 'Generic Name',
-                                                                     'المادة الفعالة', 'المواد الفعالة']) or '') if _clean(x)]
+                                                                     'المادة الفعالة', 'المواد الفعالة', 'المكونات الفعالة', 'الاسم العلمي']) or '') if _clean(x)]
+    API_LABELS = ['Active ingredient', 'Active substance', 'INN', 'Generic name', 'المادة الفعالة', 'المواد الفعالة', 'المكونات الفعالة', 'الاسم العلمي']
+    if apis and all(arabic.has_arabic(a) and not arabic.latin_in(a) for a in apis) and len(apis) == 1 and arabic.latin_in(line_of(t, API_LABELS)):
+        apis = [arabic.latin_in(line_of(t, API_LABELS))]
+    apis = [arabic.latin_in(a) or re.sub(r'\s*\d.*$', '', a).strip() or a for a in apis]      # «باراسيتامول 500 مجم (Paracetamol)» → Paracetamol
     if cep and not apis:
         m = re.search(r'for\s+([A-Z][a-z]+(?:\s[a-z]+)?)', t)
         if m:
             apis = [m.group(1)]
     envelope = {'applicant': after(t, ['Applicant', 'Marketing authorisation holder', 'Marketing authorization holder', 'MA holder', 'Licence holder',
-                                      'License holder', 'Holder', 'Registrant', 'مقدم الطلب', 'صاحب الترخيص', 'صاحب التسجيل']),
+                                      'License holder', 'Holder', 'Registrant', 'مقدم الطلب', 'صاحب الترخيص', 'الشركة صاحبة الترخيص', 'صاحب التسجيل',
+                                      'الشركة المالكة', 'الشركة الطالبة', 'اسم الشركة', 'الوكيل', 'المستورد', 'الشركة']),
                 'tracking': (re.search(r'\bP-[A-Z]{2,5}-\d{3,6}\b', t) or [None])[0] if re.search(r'\bP-[A-Z]{2,5}-\d{3,6}\b', t) else None}
     profile = {}
     if 'toll' in low:
         profile['licence'] = 'toll'
-    if 'imported' in low or kind == 'cpp' or 'country of import' in low:
+    if 'imported' in low or kind == 'cpp' or 'country of import' in low or 'مستورد' in t:
         profile['origin'] = 'imported'
-    if 'generic' in low:
+    elif re.search(r'\blocal\b', low) or 'محلي' in t:
+        profile['origin'] = 'local'
+    if 'generic' in low or 'مثيل' in t or 'جنيس' in t:
         profile['dossier_kind'] = 'generic'
-    form = (product.get('dosage_form') or '').lower()
+    elif 'innovator' in low or 'مبتكر' in t:
+        profile['dossier_kind'] = 'innovator'
+    if re.search(r're-?registration|renewal', low) or re.search(arabic.label_rx('إعادة تسجيل') + '|' + arabic.label_rx('إعادة التسجيل') + '|تجديد', t):
+        profile['activity'] = 're_registration'
+    form = (product.get('dosage_form_en') or product.get('dosage_form') or '').lower()
     profile['admin_route'] = next((r for r, ws in ROUTE.items() if any(w in form for w in ws)), None)
     specifics = []
     if 'coated' in form:
@@ -224,7 +310,9 @@ def fields_for(kind, filename, text):
     if kind in ('licence', 'pricing', 'annex1'):
         registration = {'reg_no': doc.get('number'), 'reg_date': doc.get('issued'),
                         'shelf_life': after(t, ['Shelf life', 'Shelf-life', 'مدة الصلاحية'], r'(\d{1,3}\s?(?:months|month|years|year|شهر|سنة|سنوات))'),
-                        'storage': after(t, ['Storage', 'Store', 'Storage condition', 'التخزين']), 'price': after(t, ['Price', 'Public price', 'السعر'], r'([\d.,]+\s?(?:EGP|LE|L\.E\.|جنيه)?)')}
+                        'storage': after(t, ['Storage condition', 'Storage', 'Store', 'ظروف التخزين', 'التخزين', 'يحفظ', 'الحفظ']),
+                        'price': after(t, ['Public price', 'Price', 'سعر الجمهور', 'سعر البيع للجمهور', 'السعر', 'سعر'], r'([\d.,]+\s?(?:EGP|LE|L\.E\.|جنيه|ج\.م)?)'),
+                        'packs': [p for p in [after(t, ['Pack size', 'Pack', 'Presentation', 'حجم العبوة', 'العبوة', 'التعبئة'])] if p]}
     out.update({'product': {k: _clean(v) if isinstance(v, str) else v for k, v in product.items() if v},
                 'profile': {k: v for k, v in profile.items() if v not in (None, [], '')},
                 'apis': [{'name': a, **({'cep_no': cep.group(0), 'option': 'CEP'} if cep else {})} for a in apis],
@@ -242,6 +330,8 @@ def merge(items):
             for k, v in it.get(sec, {}).items():
                 if v not in (None, '', []) and not fill[sec].get(k):
                     fill[sec][k] = v
+        for a in it.get('apis', []):
+            a['name'] = _clean(a.get('name'))
         for a in it.get('apis', []):
             cur = next((x for x in fill['apis'] if x['name'].lower() == a['name'].lower()), None)
             if cur:
@@ -263,10 +353,11 @@ def read_files(files):
     """files: [(filename, bytes)] -> per-file readings + the merged fill + the text the AI layer will read."""
     items, texts = [], []
     for name, data in files:
-        pt = pdf_text(data)
+        pt = read_text(name, data)
         kind = guess_kind(name, pt['text'])
         items.append(fields_for(kind, name, pt['text']))
-        texts.append({'filename': name, 'kind': kind, 'pages': pt['pages'], 'scanned': pt['scanned'], 'text': pt['text'][:14000]})
+        texts.append({'filename': name, 'kind': kind, 'pages': pt['pages'], 'scanned': pt['scanned'], 'ocr': pt['ocr'], 'file': pt['kind_of_file'],
+                      'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:14000]})
     return {'files': texts, 'rules': merge(items)}
 
 
@@ -276,13 +367,16 @@ def ai_prompt(texts, target='dossier'):
     import json
     want = {k: SCHEMA[k] for k in (('documents',) if target == 'document' else SCHEMA.keys())}
     head = ('You are a regulatory affairs assistant for the Egyptian Drug Authority (EDA). Read the company documents below '
-            '(certificates, licences, CoAs, specifications, application forms, leaflets) and extract the facts needed to register a '
-            'pharmaceutical product. Reply with ONLY one JSON object with exactly these keys (omit a key or value you cannot find; never '
-            'guess; copy numbers and names exactly as printed; dates as YYYY-MM-DD; INN in English):\n'
+            '(certificates, licences, EDA letters such as the registration notification «إخطار تسجيل», CoAs, specifications, application '
+            'forms, leaflets) and extract the facts needed to register a pharmaceutical product. Documents are often in Arabic: read '
+            'Arabic labels (اسم المستحضر، المادة الفعالة، الشكل الصيدلي، الشركة المنتجة، صاحب الترخيص، رقم الإخطار، التاريخ، ساري حتى، '
+            'سعر الجمهور، العبوة، مدة الصلاحية) and Arabic-Indic digits; text marked OCR may contain errors, trust the page images. Reply '
+            'with ONLY one JSON object with exactly these keys (omit a key or value you cannot find; never guess; copy numbers and names '
+            'exactly as printed, keep Arabic names in Arabic and add the Latin name when printed; dates as YYYY-MM-DD; INN in English):\n'
             + json.dumps(want, ensure_ascii=False, indent=1)
             + '\nAlso add "sources": {"<key>": "<filename>"} naming the document each top-level section came from.\n\nDOCUMENTS:\n')
     body = ''
     for i, f in enumerate(texts, 1):
-        body += f"\n=== Document {i}: {f['filename']} (kind guess: {f['kind']}, {f['pages']} pages{', SCANNED — read its page images' if f.get('scanned') else ''}) ===\n"
+        body += f"\n=== Document {i}: {f['filename']} (kind guess: {f['kind']}, {f['pages']} pages{', SCANNED — read its page images' if f.get('scanned') else ''}{', text below is OCR' if f.get('ocr') else ''}) ===\n"
         body += (f.get('text') or '(no text layer)')[:14000] + '\n'
     return head + body

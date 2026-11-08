@@ -45,7 +45,11 @@ edition (page images of scanned PDFs rendered by pdf.js), or `POST /api/extract/
 `POST /api/dossiers/{id}/extract` (the dossier's own documents). In the interface: the first wizard step («Upload
 documents and fill» → review every value → fill all steps → the files are placed in their sections after creation),
 «Extract from the documents» on the product-data page, and the document form of the product file. Every value is
-reviewed before it is used; nothing is written without the user's confirmation.
+reviewed before it is used; nothing is written without the user's confirmation. **Arabic documents** (EDA letters such as the
+registration notification «إخطار تسجيل», Arabic certificates) are read natively: Arabic labels, Arabic dosage forms and units,
+Arabic-Indic digits and dates (`engine/dossier_engine/arabic.py`); a **scan or a photo (JPG/PNG) is OCR'd** on the computer when
+tesseract with the Arabic language is installed (`apt install tesseract-ocr tesseract-ocr-ara poppler-utils`), and goes to Claude as
+page images otherwise; the review drawer says per file whether it was text, an OCR'd scan or a scan without text.
 
 ## Browser edition (open from a link, nothing to install)
 

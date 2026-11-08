@@ -182,7 +182,7 @@ html[lang="ar"] .vstrip .vlabel{letter-spacing:0;text-transform:none}
 <div class="scrim" id="scrim" hidden></div>
 <aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog" aria-labelledby="dTitle"><header><h2 id="dTitle"></h2><button class="btn ghost sm" id="dClose" aria-label="Close">✕</button></header><div class="body" id="dBody"></div></aside>
 <div class="toast" id="toast" role="status" hidden></div>
-<input type="file" id="picker" accept="application/pdf,.pdf" hidden>
+<input type="file" id="picker" accept="application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.tif,.tiff,.docx" hidden>
 <script src="/assets/ds.js"></script>
 <script>
 'use strict';
@@ -269,6 +269,10 @@ const T = {
   reviewT:{en:'Review what was read',ar:'راجع اللي اتقرا'}, byAi:{en:'Read by Claude — check each value.',ar:'قراها Claude — راجع كل قيمة.'},
   byRules:{en:'Read by the rules (no AI available here) — check each value.',ar:'قرتها القواعد (الذكاء الاصطناعي مش متاح هنا) — راجع كل قيمة.'},
   aiFailed:{en:'AI reading unavailable:',ar:'القراءة الذكية مش متاحة:'}, fillAll:{en:'Fill the fields',ar:'املأ الخانات'},
+  badFiles:{en:'Choose PDF, image (JPG/PNG) or Word files.',ar:'اختار ملفات PDF أو صور (JPG/PNG) أو Word.'}, pagesN:{en:'p.',ar:'صفحة'}, fText:{en:'text',ar:'نص مقروء'},
+  fScan:{en:'scan — no text layer',ar:'سكان بدون نص'}, fOcr:{en:'scan read by OCR',ar:'سكان اتقرى بـ OCR'}, whatRead:{en:'What was read',ar:'اللي اتقرى'},
+  scanHint:{en:'A scanned document has no text. On this computer, install tesseract (Arabic) for automatic OCR; in the browser edition allow Claude to read the page images; or type the values by hand.',
+            ar:'المستند صورة ممسوحة بدون نص. على الجهاز: ثبّت tesseract (عربي) عشان القراءة التلقائية؛ في نسخة المتصفح: وافق على إن Claude يقرأ صور الصفحات؛ أو اكتب القيم بإيدك.'},
   filled:{en:'Fields filled — check each step, then create the dossier.',ar:'الخانات اتملت — راجع كل خطوة وبعدين أنشئ الملف.'},
   secProduct:{en:'Product',ar:'المنتج'}, secProfile:{en:'Profile',ar:'الملف التعريفي'}, secApis:{en:'Active substances',ar:'المواد الفعالة'}, secSub:{en:'Submission',ar:'التقديم'},
   secDocs:{en:'Documents read',ar:'المستندات اللي اتقرت'}, willPlace:{en:'After the dossier is created, these files are placed in their sections automatically.',ar:'بعد إنشاء الملف، الملفات دي هتتحط في أقسامها تلقائياً.'},
@@ -641,7 +645,7 @@ async function readFiles(files, target){
   return {r, ai, note, fill:mergeFill(r.rules, ai)};
 }
 async function intake(files){
-  files=files.filter(f=>/\.pdf$/i.test(f.name)); if(!files.length) return;
+  files=files.filter(f=>/\.(pdf|jpe?g|png|webp|tiff?|docx)$/i.test(f.name)); if(!files.length){ toast(t('badFiles')); return; }
   toast(t('reading'));
   try{ reviewIntake(await readFiles(files,'dossier'), files); }catch(e){ toast(e.message); }
 }
@@ -654,7 +658,8 @@ function reviewIntake(x, files){
   const any=Object.keys(P).length||(f.apis||[]).length||Object.keys(E).length||Object.keys(R).length;
   openDrawer(t('reviewT'), `
    <div class="alert ${x.ai?'ok':'info'}">${icon(x.ai?'sparkles':'info')}<p class="small">${esc(x.ai?t('byAi'):t('byRules'))}${x.note?` — ${esc(t('aiFailed'))} <span class="code">${esc(x.note)}</span>`:''}</p></div>
-   ${any?'':`<div class="alert">${icon('alert')}<p class="small">${esc(t('nothingRead'))}</p></div>`}
+   ${(x.r&&x.r.files||[]).length?`<div class="row gap-s"><span class="small muted">${esc(t('whatRead'))}:</span>${x.r.files.map(f=>`<span class="chip ${f.chars>20?'c-ok':'c-warn'}"><i></i>${esc(f.filename)} · ${f.pages} ${esc(t('pagesN'))} · ${esc(f.ocr?t('fOcr'):f.scanned?t('fScan'):t('fText'))}${f.kind&&f.kind!=='other'?` · ${esc(f.kind)}`:''}</span>`).join('')}</div>`:''}
+   ${any?'':`<div class="alert">${icon('alert')}<p class="small">${esc(t('nothingRead'))}${(x.r&&x.r.files||[]).some(f=>f.scanned&&!f.ocr)&&!x.ai?` ${esc(t('scanHint'))}`:''}</p></div>`}
    <h3>${esc(t('secProduct'))} ${src('product')}</h3><div class="form">
      <label class="f"><span>${esc(t('pTrade'))}</span>${inp('rv-name',P.name)}</label><label class="f"><span>${esc(t('pForm'))}</span>${inp('rv-form',P.dosage_form)}</label>
      <label class="f"><span>${esc(L({en:'Strength',ar:'التركيز'}))}</span>${inp('rv-strength',P.strength)}</label><label class="f"><span>${esc(t('pMan'))}</span>${inp('rv-man',P.manufacturer)}</label>

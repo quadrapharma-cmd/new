@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from ..profile import Profile, ProfileError
 from ..resolver import resolve
+from .. import arabic as _arabic
 from ..guard import assert_allowed, LockedError
 from ..assemble import docs_for
 from ..classify import Classifier
@@ -394,7 +395,7 @@ def create_app(workspace, auth_enabled=None):
     def _dossier_pdfs(did):
         out = []
         for d in st.documents(did):
-            if d['filename'].lower().endswith('.pdf') and not d['meta'].get('external'):
+            if d['filename'].lower().endswith(('.pdf', '.jpg', '.jpeg', '.png', '.webp', '.tif', '.tiff', '.docx')) and not d['meta'].get('external'):
                 out.append((d['filename'], st.blob_path(d['sha256']).read_bytes(), d['id']))
         return out
 
@@ -418,6 +419,10 @@ def create_app(workspace, auth_enabled=None):
         r = _extract.read_files(pairs)
         content = [{'type': 'document', 'title': name, 'source': {'type': 'base64', 'media_type': 'application/pdf',
                     'data': base64.standard_b64encode(data).decode()}} for name, data in pairs if data[:4] == b'%PDF']
+        for name, data in pairs:                      # photos / scans uploaded as images
+            mt = _arabic.image_type(data)
+            if mt:
+                content.append({'type': 'image', 'source': {'type': 'base64', 'media_type': mt, 'data': base64.standard_b64encode(data).decode()}})
         content.append({'type': 'text', 'text': _extract.ai_prompt([dict(f, text='(the PDF is attached above)') for f in r['files']], target)})
         client = anthropic.Anthropic()
         with client.beta.messages.stream(model='claude-opus-5-5', max_tokens=16000, output_config={'effort': 'medium'},
