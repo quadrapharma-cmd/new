@@ -376,7 +376,68 @@ def create_app(workspace, auth_enabled=None):
                                    'EG-BP-16.BP1', 'PDF-JS', 'NTA065-N4', 'NTA065-BM', 'ICH-NAME']},
                 'validators': {'ectd32': {'automated': len(v32.RULES), 'profile': 'EG eCTD 3.2.2 provisional v0'},
                                'ectd40': {'rules': rules40, 'profile': 'EG eCTD 4.0 provisional v0'}},
-                'doc_types': len(doc_types), 'outputs': ['ctd', 'ectd32', 'ectd40']}
+                'doc_types': len(doc_types), 'outputs': ['ctd', 'ectd32', 'ectd40'],
+                'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
+
+    from .. import extract as _extract
+
+    @app.post('/api/extract')
+    async def extract_files(files: list[UploadFile] = File(...), target: str = 'dossier'):
+        """Intake: read uploaded PDFs with the rules and prepare the AI prompt; nothing is stored."""
+        pairs = [(f.filename, await f.read()) for f in files]
+        r = _extract.read_files(pairs)
+        return {'files': [{k: v for k, v in f.items() if k != 'text'} for f in r['files']], 'rules': r['rules'],
+                'prompt': _extract.ai_prompt(r['files'], target), 'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
+
+    def _dossier_pdfs(did):
+        out = []
+        for d in st.documents(did):
+            if d['filename'].lower().endswith('.pdf') and not d['meta'].get('external'):
+                out.append((d['filename'], st.blob_path(d['sha256']).read_bytes(), d['id']))
+        return out
+
+    @app.post('/api/dossiers/{did}/extract')
+    def extract_dossier(did: str, target: str = 'dossier'):
+        """Intake from the documents already in the dossier (the product-data page)."""
+        docs = _dossier_pdfs(did)
+        r = _extract.read_files([(n, b) for n, b, _ in docs])
+        files = [dict({k: v for k, v in f.items() if k != 'text'}, doc_id=d[2]) for f, d in zip(r['files'], docs)]
+        return {'files': files, 'rules': r['rules'], 'prompt': _extract.ai_prompt(r['files'], target),
+                'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
+
+    def _ai_read(pairs, target):
+        """Claude reads the PDFs themselves (scans included) against the intake schema — the API edition of the
+        browser's «sample» layer. Needs ANTHROPIC_API_KEY on this computer."""
+        if not os.environ.get('ANTHROPIC_API_KEY'):
+            err(501, 'E-NO-AI', 'Set ANTHROPIC_API_KEY on this computer to let Claude read the documents.',
+                'اضبط ANTHROPIC_API_KEY على الجهاز ده عشان Claude يقرأ المستندات.')
+        import base64
+        import anthropic
+        r = _extract.read_files(pairs)
+        content = [{'type': 'document', 'title': name, 'source': {'type': 'base64', 'media_type': 'application/pdf',
+                    'data': base64.standard_b64encode(data).decode()}} for name, data in pairs if data[:4] == b'%PDF']
+        content.append({'type': 'text', 'text': _extract.ai_prompt([dict(f, text='(the PDF is attached above)') for f in r['files']], target)})
+        client = anthropic.Anthropic()
+        with client.beta.messages.stream(model='claude-opus-5-5', max_tokens=16000, output_config={'effort': 'medium'},
+                                         betas=['server-side-fallback-2026-07-01'], fallbacks='default',
+                                         messages=[{'role': 'user', 'content': content}]) as stream:
+            msg = stream.get_final_message()
+        if msg.stop_reason == 'refusal':
+            err(422, 'E-AI-REFUSED', 'Claude declined to read these documents.', 'Claude اعتذر عن قراءة المستندات دي.')
+        text = ''.join(b.text for b in msg.content if b.type == 'text')
+        try:
+            ai = json.loads(text[text.index('{'):text.rindex('}') + 1])
+        except ValueError:
+            err(502, 'E-AI-JSON', 'Claude did not return the expected JSON.', 'Claude ما رجّعش البيانات بالشكل المتوقع.')
+        return {'ai': ai, 'rules': r['rules'], 'files': [{k: v for k, v in f.items() if k != 'text'} for f in r['files']]}
+
+    @app.post('/api/extract/ai')
+    async def extract_ai(files: list[UploadFile] = File(...), target: str = 'dossier'):
+        return _ai_read([(f.filename, await f.read()) for f in files], target)
+
+    @app.post('/api/dossiers/{did}/extract/ai')
+    def extract_dossier_ai(did: str, target: str = 'dossier'):
+        return _ai_read([(n, b) for n, b, _ in _dossier_pdfs(did)], target)
 
     @app.post('/api/profile/preview')
     def profile_preview(profile: dict):

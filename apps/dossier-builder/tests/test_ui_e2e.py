@@ -325,3 +325,49 @@ def test_guide_and_live_preview(server, browser, tmp_path):
     page.wait_for_selector('.kpis')
     assert 'Cross-document' in page.inner_text('#view')
     assert errors == []
+
+
+def test_intake_fills_the_wizard_and_places_the_files(server, browser, tmp_path):
+    """Upload the product's documents on the first wizard step: the rules read them, every value is reviewed,
+    the steps are filled, and after creation the files land in their sections."""
+    from fixtures_pdf import make_pdf_lines
+    cpp = make_pdf_lines(tmp_path / 'cpp.pdf', ['Certificate of Pharmaceutical Product', 'Certificate No: CPP-2024-0117', 'Trade name: Cardiolol 10 mg',
+                         'Dosage form: film-coated tablet', 'Active ingredient: Bisoprolol fumarate', 'Manufacturer: Medis S.A., Nabeul, Tunisia',
+                         'Marketing authorisation holder: Medis S.A.', 'Date of issue: 12 March 2025', 'Valid until: 11 March 2027'], 'WHO Certification Scheme')
+    gmp = make_pdf_lines(tmp_path / 'gmp certificate.pdf', ['GMP Certificate', 'Certificate Number: EG/GMP/2024/55', 'Manufacturer: Medis S.A.',
+                         'Egyptian Drug Authority', 'Date of issue: 01/06/2024', 'Valid until: 31/05/2027'])
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    errors = []
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    page.add_init_script("localStorage.setItem('db.lang','en')")
+    page.goto(server + '/#/new')
+    page.wait_for_selector('#intakeBtn')
+    with page.expect_file_chooser() as fc:
+        page.click('#intakeBtn')
+    fc.value.set_files([str(cpp), str(gmp)])
+    page.wait_for_selector('#intakeApply')
+    assert page.input_value('#rv-name') == 'Cardiolol 10 mg' and page.input_value('#rv-form') == 'film-coated tablet'
+    assert page.input_value('[data-rva="0"][data-f=name]') == 'Bisoprolol fumarate'
+    assert page.input_value('#rv-origin') == 'imported' and 'cpp.pdf' in page.inner_text('#dBody')
+    page.fill('[data-rva="0"][data-f=manufacturer]', 'Unichem Laboratories')     # the reviewer completes what the documents lack
+    page.click('#intakeApply')
+    page.wait_for_selector('#toast:not([hidden])')
+    assert page.input_value('[data-in=trade]') == 'Cardiolol 10 mg' and page.input_value('[data-in=form]') == 'film-coated tablet'
+    assert page.input_value('[data-in=name]') == 'Cardiolol 10 mg film-coated tablet'
+    page.click('#wizNext')
+    assert page.locator('[data-k=origin][data-v=imported].on').count() == 1 and page.locator('[data-k=licence][data-v=imported].on').count() == 1
+    page.click('#wizNext')
+    assert page.input_value('[data-api="0"][data-f=name]') == 'Bisoprolol fumarate'
+    page.click('#wizNext')
+    assert page.input_value('[data-in=applicant]').startswith('Medis')
+    page.click('#wizCreate')
+    page.wait_for_selector('text=Requirements board')
+    page.wait_for_selector('#toast:has-text("placed")', timeout=60000)
+    page.click('[data-f=all]')
+    assert 'cpp.pdf' in page.locator('tr', has_text='CPP / eCPP').first.inner_text()
+    import httpx
+    did = page.url.split('/d/')[1].split('/')[0]
+    placed = {d['filename']: s['slot_id'] for s in httpx.get(f'{server}/api/dossiers/{did}/board').json()['slots'] for d in s['documents']}
+    assert placed['cpp.pdf'] == 'M1-14' and placed['gmp certificate.pdf'] in ('M1-37', 'M1-38')
+    assert errors == [], errors

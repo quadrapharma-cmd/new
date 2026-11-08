@@ -34,6 +34,19 @@ This folder is the code skeleton. It is kept here until the separate repository 
 | Assembler | `engine/dossier_engine/assemble.py` | Turns slots + files into writer documents. Picks the right node when a requirement has more than one (e.g. M1-04 new vs re-registration) |
 | CLI | `tools/resolve.py` | Prints the requirements board for a profile |
 
+## Intake — «upload the documents and the forms fill themselves»
+
+`engine/dossier_engine/extract.py` reads the company's PDFs (CPP, registration licence, GMP, CEP, CoA, specification,
+Annex I, SmPC…) into the forms' shape: document kind, certificate numbers, issuers, issue and expiry dates, trade
+name, dosage form, strength, manufacturer, active substances, applicant, batches, results. Two layers over the same
+text: the **rules** (regular expressions; everywhere, offline) and **Claude** — the `sample` capability in the browser
+edition (page images of scanned PDFs rendered by pdf.js), or `POST /api/extract/ai` through the Anthropic SDK when
+`ANTHROPIC_API_KEY` is set on the computer. Endpoints: `POST /api/extract` (files → rules + the AI prompt),
+`POST /api/dossiers/{id}/extract` (the dossier's own documents). In the interface: the first wizard step («Upload
+documents and fill» → review every value → fill all steps → the files are placed in their sections after creation),
+«Extract from the documents» on the product-data page, and the document form of the product file. Every value is
+reviewed before it is used; nothing is written without the user's confirmation.
+
 ## Browser edition (open from a link, nothing to install)
 
 `web/` turns the same app into a claude.ai artifact: the Python engine runs **inside the browser** (Pyodide), the

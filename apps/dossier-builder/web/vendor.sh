@@ -15,3 +15,5 @@ pip download -q --no-deps --only-binary=:all: --python-version 3.12 --platform a
   "fastapi==0.115.12" "starlette==0.46.2" "anyio==4.6.2.post1" "sniffio==1.3.1" "idna==3.10" "python-multipart==0.0.20" \
   "typing_extensions==4.12.2" "pypdf==7.0.0" "python-docx==1.2.0"
 ls -la "$HERE/vendor/pyodide" "$HERE/vendor/wheels"
+# pdf.js (page images of scanned PDFs for the AI intake)
+mkdir -p "$HERE/vendor/pdfjs" && curl -sS -L "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.10.38.tgz" | tar -xz -C /tmp package/build/pdf.min.mjs package/build/pdf.worker.min.mjs && cp /tmp/package/build/pdf.min.mjs /tmp/package/build/pdf.worker.min.mjs "$HERE/vendor/pdfjs/"

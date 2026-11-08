@@ -93,6 +93,7 @@ const T={
  err:{ar:'حصل خطأ',en:'Error'}, assumptionNote:{ar:'القيم المعلّمة «افتراض» محتاجة تأكيدك؛ غيّرها في ملف القواعد.',en:'Values marked «assumption» need your confirmation.'},
  homeSub:{ar:'كل شهادة ورخصة وعقد على ملف منتجاتك — صلاحيته محسوبة، وتنبيه قبل ما ينتهي.',en:'Every certificate, licence and contract on your products — validity computed, warned before it expires.'},
  buildDossier:{ar:'ابنِ ملف تقديم',en:'Build a dossier'}, validity:{ar:'الصلاحية',en:'Validity'},
+ prefilled:{ar:'اتقرا من المستند — راجع الخانات',en:'Read from the document — check the fields'}, thinking:{ar:'Claude بيقرأ المستند…',en:'Claude is reading the document…'},
 };
 const t=k=>(T[k]&&T[k][S.lang])||k;
 const api=(path,opt={},root='/api/suite')=>DS.api(path,opt,root);
@@ -285,6 +286,16 @@ async function docForm(pre){
    <div class="row"><button class="btn pri" id="dfSave">${icon('check')} ${esc(t('save'))}</button><button class="btn ghost" onclick="DS.closeDrawer()">${esc(t('cancel'))}</button></div>`);
   const showRule=()=>{ const x=ty.find(y=>y.id===$('#df-type').value); $('#df-rule').innerHTML=`${esc(t('validityRule'))}: ${x.validity_months?`${x.validity_months} ${esc(t('months'))}`:esc(t('noTerm'))} · ${prov(x.provenance)} · ${esc(x.source)}`; };
   $('#df-type').onchange=showRule; showRule();
+  $('#df-file').onchange=async()=>{                       // the certificate itself fills number, issuer and dates (rules + Claude when available)
+    const f=$('#df-file').files[0]; if(!f||!/\.pdf$/i.test(f.name)) return;
+    const fd=new FormData(); fd.append('files',f);
+    try{ const r=await api('/extract?target=document',{method:'POST',body:fd},'/api'); let d=(r.rules.documents||[])[0]||{};
+      if(window.DBAI && await window.DBAI.available()){ toast(t('thinking')); try{ const ai=await window.DBAI.extract(r.prompt,[f],r.files,'document'); const a=(ai&&ai.documents||[])[0];
+        if(a) d=Object.assign({},d,Object.fromEntries(Object.entries(a).filter(([k,v])=>v))); }catch(e){} }
+      const set=(id,v)=>{ const el=$(id); if(el&&!el.value&&v) el.value=v; };
+      set('#df-number',d.number); set('#df-issuer',d.issuer); set('#df-issued',d.issued); set('#df-valid',d.valid_until);
+      set('#df-title',d.title||[S.lang==='ar'?(ty.find(y=>y.id===$('#df-type').value)||{}).ar:(ty.find(y=>y.id===$('#df-type').value)||{}).en, d.number].filter(Boolean).join(' '));
+      if(d.number||d.issued||d.valid_until) toast(t('prefilled')); }catch(e){} };
   $('#dfSave').onclick=async()=>{
     const meta={doc_type:$('#df-type').value,title:$('#df-title').value||null,number:$('#df-number').value||null,issuer:$('#df-issuer').value||null,
       issued:$('#df-issued').value||null,valid_until:$('#df-valid').value||null,url:$('#df-url').value||null,notes:$('#df-notes').value||null,replaces:pre.replaces||null,

@@ -10,6 +10,7 @@ Output: apps/dossier-builder/web/dist/
   assets/pyodide/   the Pyodide runtime + wasm wheels (see vendor.sh)
   assets/wheels/    the pure-Python wheels (fastapi, starlette, pypdf, python-docx, …)
   assets/engine.zip the engine, rule packs, EG profiles and the ICH XSD, unpacked to /app in the browser
+  assets/pdfjs/     pdf.js (renders scanned pages to images for the AI intake)
 Binary files (.wasm .zip .whl) are written as base64 text (<name>.b64.txt): the artifact host serves text, not
 archives, and boot.js decodes them when Pyodide fetches them.
 """
@@ -74,6 +75,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--pyodide', default=str(HERE / 'vendor' / 'pyodide'))
     ap.add_argument('--wheels', default=str(HERE / 'vendor' / 'wheels'))
+    ap.add_argument('--pdfjs', default=str(HERE / 'vendor' / 'pdfjs'))
     a = ap.parse_args()
     if DIST.exists():
         shutil.rmtree(DIST)
@@ -83,7 +85,7 @@ def main():
     (DIST / 'index.local.html').write_text(full, encoding='utf-8')
     (DIST / 'suite.html').write_text(page(UI / 'suite' / 'index.html', builder=False)[1], encoding='utf-8')
     n = engine_zip(DIST / 'assets' / 'engine.zip')
-    for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels')):
+    for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels'), (pathlib.Path(a.pdfjs), 'pdfjs')):
         for f in sorted(src.iterdir()):
             if f.is_file():
                 put(DIST / 'assets' / sub / f.name, f.read_bytes())

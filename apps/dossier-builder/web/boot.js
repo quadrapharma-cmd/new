@@ -115,5 +115,43 @@
   }, true);
   const nativeOpen = window.open;
   window.open = function (u) { if (typeof u === 'string' && u.startsWith('/api/')) { saveFromApi(u); return null; } return nativeOpen.apply(window, arguments); };
+  // ---- AI intake (claude.ai only): Claude reads the documents' text, and the page images of scanned PDFs
+  let pdfjsP = null;
+  function pdfjs() {
+    if (!pdfjsP) pdfjsP = import(base + 'assets/pdfjs/pdf.min.mjs').then(m => { m.GlobalWorkerOptions.workerSrc = base + 'assets/pdfjs/pdf.worker.min.mjs'; return m; });
+    return pdfjsP;
+  }
+  async function pageImages(file, max) {
+    const lib = await pdfjs();
+    const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    const out = [];
+    for (let i = 1; i <= Math.min(doc.numPages, max); i++) {
+      const page = await doc.getPage(i), vp = page.getViewport({ scale: 1.4 });
+      const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
+      await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      out.push(await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85)));
+    }
+    return out;
+  }
+  window.DBAI = {
+    async available() { try { return !!(window.claude && typeof window.claude.use === 'function' && await window.claude.use('sample')); } catch (e) { return false; } },
+    async extract(prompt, files, meta, target) {
+      const sample = await window.claude.use('sample');
+      if (!sample) throw { code: 'unavailable', message: 'sample unavailable' };
+      const lim = await sample.limits().catch(() => null);
+      const images = [];
+      if (lim && lim.images && files && meta) {
+        for (let i = 0; i < files.length && images.length < lim.images.maxCount; i++) {
+          if (!files[i] || !meta[i] || !meta[i].scanned) continue;
+          const imgs = (await pageImages(files[i], 3)).slice(0, lim.images.maxCount - images.length);
+          if (imgs.length) { prompt += `\n(Images ${images.length + 1}-${images.length + imgs.length} are the pages of document "${files[i].name}".)`; images.push(...imgs); }
+        }
+      }
+      const opts = { modelTier: target === 'document' ? 'quick' : 'default', cache: false };
+      if (images.length) opts.images = images;
+      return await sample.json(prompt, opts);
+    },
+    pageImages,
+  };
   window.DBWEB = { sync: () => syncfs(false), ready: () => S.ready, pyodide: () => S.pyodide, save: saveFromApi };
 })();
