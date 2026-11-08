@@ -27,6 +27,49 @@
   const syncfs = (populate) => new Promise((res, rej) => S.pyodide.FS.syncfs(populate, e => e ? rej(e) : res()));
   function scheduleSync() { clearTimeout(S.syncTimer); S.syncTimer = setTimeout(() => syncfs(false).catch(e => console.warn('sync', e)), 600); }
 
+  const nativeFetch = window.fetch.bind(window);
+  const B64 = /\/assets\/.+\.(wasm|zip|whl)$/;
+  const MIME = { wasm: 'application/wasm', zip: 'application/zip', whl: 'application/zip' };
+  function decode64(text) {
+    const bin = atob(text), out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  // binary assets are published as base64 text (the artifact host serves text, not archives); Pyodide fetches them through here
+  async function fetchAsset(input, init, url) {
+    let u; try { u = new URL(url, document.baseURI); } catch (e) { return nativeFetch(input, init); }
+    if (u.origin !== location.origin || !B64.test(u.pathname)) return nativeFetch(input, init);
+    const r = await nativeFetch(u.href + '.b64.txt');
+    if (!r.ok) return r;
+    const bytes = decode64(await r.text());
+    return new Response(bytes, { status: 200, headers: { 'content-type': MIME[u.pathname.split('.').pop()], 'content-length': String(bytes.length) } });
+  }
+  window.fetch = async function (input, init) {
+    init = init || {};
+    const url = typeof input === 'string' ? input : (input && input.url) || String(input);
+    if (!url.startsWith('/api/')) return fetchAsset(input, init, url);
+    await S.ready;
+    const method = (init.method || (input && input.method) || 'GET').toUpperCase();
+    const q = url.indexOf('?');
+    const path = q < 0 ? url : url.slice(0, q), query = q < 0 ? '' : url.slice(q + 1);
+    const headers = {};
+    new Headers(init.headers || {}).forEach((v, k) => { headers[k] = v; });
+    let body = new Uint8Array(0);
+    const b = init.body;
+    if (b != null) {
+      if (typeof b === 'string') body = new TextEncoder().encode(b);
+      else if (b instanceof FormData) { const r = new Response(b); headers['content-type'] = r.headers.get('content-type'); body = new Uint8Array(await r.arrayBuffer()); }
+      else if (b instanceof Blob) body = new Uint8Array(await b.arrayBuffer());
+      else if (b instanceof ArrayBuffer) body = new Uint8Array(b);
+      else if (ArrayBuffer.isView(b)) body = new Uint8Array(b.buffer, b.byteOffset, b.byteLength);
+    }
+    headers['content-length'] = String(body.length);
+    const res = await S.handle(method, path, query, JSON.stringify(headers), body);
+    const meta = JSON.parse(res[0]), out = res[1];
+    if (method !== 'GET' && method !== 'HEAD') scheduleSync();
+    return new Response(out.length ? out : null, { status: meta.status, headers: meta.headers });
+  };
+
   S.ready = (async () => {
     say('تحميل محرك الملفات…', 'Loading the dossier engine…', 4);
     sub('أول مرة بس — بعدها بيفتح فوراً', 'First time only — it opens instantly afterwards');
@@ -51,33 +94,6 @@
     say('جاهز', 'Ready', 100);
     setTimeout(() => ov.remove(), 150);
   })().catch(e => { console.error(e); say('تعذّر تشغيل المحرك', 'The engine could not start', 100); sub(String(e && e.message || e), String(e && e.message || e)); throw e; });
-
-  const nativeFetch = window.fetch.bind(window);
-  window.fetch = async function (input, init) {
-    init = init || {};
-    const url = typeof input === 'string' ? input : (input && input.url) || String(input);
-    if (!url.startsWith('/api/')) return nativeFetch(input, init);
-    await S.ready;
-    const method = (init.method || (input && input.method) || 'GET').toUpperCase();
-    const q = url.indexOf('?');
-    const path = q < 0 ? url : url.slice(0, q), query = q < 0 ? '' : url.slice(q + 1);
-    const headers = {};
-    new Headers(init.headers || {}).forEach((v, k) => { headers[k] = v; });
-    let body = new Uint8Array(0);
-    const b = init.body;
-    if (b != null) {
-      if (typeof b === 'string') body = new TextEncoder().encode(b);
-      else if (b instanceof FormData) { const r = new Response(b); headers['content-type'] = r.headers.get('content-type'); body = new Uint8Array(await r.arrayBuffer()); }
-      else if (b instanceof Blob) body = new Uint8Array(await b.arrayBuffer());
-      else if (b instanceof ArrayBuffer) body = new Uint8Array(b);
-      else if (ArrayBuffer.isView(b)) body = new Uint8Array(b.buffer, b.byteOffset, b.byteLength);
-    }
-    headers['content-length'] = String(body.length);
-    const res = await S.handle(method, path, query, JSON.stringify(headers), body);
-    const meta = JSON.parse(res[0]), out = res[1];
-    if (method !== 'GET' && method !== 'HEAD') scheduleSync();
-    return new Response(out.length ? out : null, { status: meta.status, headers: meta.headers });
-  };
 
   async function saveFromApi(url) {
     const r = await window.fetch(url);

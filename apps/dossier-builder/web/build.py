@@ -10,8 +10,10 @@ Output: apps/dossier-builder/web/dist/
   assets/pyodide/   the Pyodide runtime + wasm wheels (see vendor.sh)
   assets/wheels/    the pure-Python wheels (fastapi, starlette, pypdf, python-docx, …)
   assets/engine.zip the engine, rule packs, EG profiles and the ICH XSD, unpacked to /app in the browser
+Binary files (.wasm .zip .whl) are written as base64 text (<name>.b64.txt): the artifact host serves text, not
+archives, and boot.js decodes them when Pyodide fetches them.
 """
-import argparse, io, pathlib, re, shutil, zipfile
+import argparse, base64, io, pathlib, re, shutil, zipfile
 
 HERE = pathlib.Path(__file__).resolve().parent
 APP = HERE.parent
@@ -44,6 +46,18 @@ def page(src, *, builder):
     return content, SKELETON + content + '</body></html>\n'
 
 
+BINARY = ('.wasm', '.zip', '.whl')
+
+
+def put(dst, data):
+    """Write a dist file; binaries as base64 text under <name>.b64.txt."""
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    if dst.suffix in BINARY:
+        dst.with_name(dst.name + '.b64.txt').write_text(base64.b64encode(data).decode('ascii'))
+    else:
+        dst.write_bytes(data)
+
+
 def engine_zip(out):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:
@@ -52,7 +66,7 @@ def engine_zip(out):
             files = [p] if p.is_file() else sorted(x for x in p.rglob('*') if x.is_file() and '__pycache__' not in x.parts)
             for f in files:
                 z.write(f, str(f.relative_to(REPO)))
-    out.write_bytes(buf.getvalue())
+    put(out, buf.getvalue())
     return len(buf.getvalue())
 
 
@@ -69,8 +83,10 @@ def main():
     (DIST / 'index.local.html').write_text(full, encoding='utf-8')
     (DIST / 'suite.html').write_text(page(UI / 'suite' / 'index.html', builder=False)[1], encoding='utf-8')
     n = engine_zip(DIST / 'assets' / 'engine.zip')
-    shutil.copytree(a.pyodide, DIST / 'assets' / 'pyodide')
-    shutil.copytree(a.wheels, DIST / 'assets' / 'wheels')
+    for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels')):
+        for f in sorted(src.iterdir()):
+            if f.is_file():
+                put(DIST / 'assets' / sub / f.name, f.read_bytes())
     total = sum(f.stat().st_size for f in DIST.rglob('*') if f.is_file())
     print(f'dist: {DIST}\nengine.zip {n/1e6:.1f} MB · total {total/1e6:.1f} MB · files {sum(1 for f in DIST.rglob("*") if f.is_file())}')
 
