@@ -49,6 +49,25 @@ def install(app, st):
         s = _slot(did, slot_id, need_active=False)                  # the template of any item can be looked at
         return _draft.view(st, did, s, _req_item(did, s.req_id))
 
+    @app.post('/api/dossiers/{did}/slots/{slot_id:path}/fill')
+    def slot_fill(did: str, slot_id: str, body: DraftReq):
+        """The filled template without storing: the page shows it as the live document for editing, then saves with /draft."""
+        s = _slot(did, slot_id)
+        e = _draft.template(s.req_id)
+        if not e or e['draft'] not in ('full', 'partial'):
+            err(422, 'E-NOT-DRAFTABLE', 'This document is not drafted by the program.', 'المستند ده مش بيتعمل كمسودة.')
+        try:
+            answers = _draft.parse_answers(body.answers) if body.answers is not None else None
+        except ValueError as ex:
+            err(422, 'E-ANSWERS', str(ex), 'إجابات الموديل مش بالشكل المتوقع.')
+        try:
+            answers, how, _ctx = _draft.compute(st, did, s, answers=answers, use_ai=body.ai)
+        except ValueError as ex:
+            err(422, 'E-DRAFT', str(ex), 'ما قدرتش أملي النموذج.')
+        except Exception as ex:
+            err(502, 'E-DRAFT-AI', f'The template could not be filled: {ex}', f'النموذج ما اتملاش: {ex}')
+        return {'answers': answers, 'how': how}
+
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/draft', status_code=201)
     def slot_draft(did: str, slot_id: str, body: DraftReq):
         s = _slot(did, slot_id)

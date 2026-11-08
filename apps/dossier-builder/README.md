@@ -36,6 +36,13 @@ This folder is the code skeleton. It is kept here until the separate repository 
 
 ## Intake — «upload the documents and the forms fill themselves»
 
+**Documents first.** The new-dossier wizard opens with the documents, not with fields: one named upload button per base document the
+program needs (registration licence / notification, pricing certificate, reference SmPC, API CoA, GMP certificates, CEP/DMF, product
+analysis / conformity, specifications, stability, agreements / toll card, commercial register, other), plus a drop-everything zone and
+Google Drive. Each upload is read at once (rules, OCR in the page, the model where available) and the recognised values go into the
+product, profile, API and submission steps with their source marked; those steps then ask only for what is still missing («missing —
+type it») and say so at the top. «Review what was read» opens the full review of every value.
+
 `engine/dossier_engine/extract.py` reads the company's PDFs (CPP, registration licence, GMP, CEP, CoA, specification,
 Annex I, SmPC…) into the forms' shape: document kind, certificate numbers, issuers, issue and expiry dates, trade
 name, dosage form, strength, manufacturer, active substances, applicant, batches, results. Two layers over the same
@@ -123,8 +130,10 @@ structure and the tables, the company adds the science — development, process,
 **generator** (11: an existing generator makes it) or **none** (45: issued by a third party or EDA, uploaded as issued; the entry carries
 what an acceptable copy shows). Each template has sections (`para`, `list`, `table` with columns, `fields`), EN/AR titles and hints, the base
 document kinds it draws from, letterhead and language. The board shows **«النموذج»** on every row and **«اعمله لي»** on draftable
-items; the item drawer's template panel shows the kind, what an acceptable document shows, the sections, which base documents are present,
-and where the drafting intelligence runs. «Make it for me» (`POST /api/dossiers/{id}/slots/{slot}/draft`): the engine assembles the
+items; the item drawer shows **the document itself as a live page**: its sections with the product's own data where the program has it and
+grey example values elsewhere, every paragraph, table cell and field editable in place (+ row), «make it for me from the documents» fills
+the page (`POST …/fill`, nothing stored), «save as Word draft» stores what is on the page. Third-party and EDA items show a live example of the
+acceptable document (issuer, what it must show, the product's values) with upload and re-issue. «Make it for me» (`POST /api/dossiers/{id}/slots/{slot}/draft`): the engine assembles the
 prompt (template, product data, the texts of the base documents, saved readings) — in the browser edition claude.ai's built-in model answers
 it inside the page (no key); on a server with the company's Anthropic key the server asks the model; with neither, the program fills what it
 knows from the data and marks the rest — the Word draft is stored in the item as an unsigned version with its **gaps** (what is missing and

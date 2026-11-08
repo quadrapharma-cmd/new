@@ -159,6 +159,17 @@ html[lang="ar"] .vstrip .vlabel{letter-spacing:0;text-transform:none}
 @media (max-width:900px){.ws{grid-template-columns:1fr} .ws .tree{max-height:260px} .vstrip{grid-template-columns:1fr} .vstrip .acts{flex-direction:row;flex-wrap:wrap} .vbar{grid-template-columns:110px minmax(0,1fr) auto} .letter{padding:18px 16px} .tl .ti{grid-template-columns:86px 18px minmax(0,1fr)} .tl .ti::before{inset-inline-start:94px}}
 
 .rolebar{margin:10px 20px 0}
+.doccards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}.doccard{border:1px solid var(--line)}.doccard.ok{border-color:var(--ok)}
+.docprev{background:#fff;color:#111;border:1px solid var(--line);border-radius:6px;padding:22px 26px;margin:8px 0;font:14px/1.6 Arial,"Noto Naskh Arabic",sans-serif;box-shadow:var(--shadow-sm)}
+.docprev h2{margin:4px 0 2px;font-size:18px;color:#111}.docprev h3{margin:14px 0 4px;font-size:14px;color:#222;border-bottom:1px solid #ddd;padding-bottom:2px}
+.docprev .dp-meta{font-size:11px;color:#666;font-family:var(--f-mono)}.docprev .dp-lh{border:1px dashed #bbb;color:#888;text-align:center;padding:8px;font-size:12px;margin-bottom:10px}
+.docprev .dp-p{margin:4px 0;min-height:1.4em}.docprev .ex,.docprev .ex td,.docprev .ex li,.docprev td.ex{color:#8a8a8a;font-style:italic}
+.docprev [contenteditable]:focus{outline:2px solid var(--brand);background:#fffbe6;color:#111;font-style:normal}
+.docprev table{border-collapse:collapse;width:100%;font-size:12.5px;margin:4px 0;color:inherit}.docprev th,.docprev td{border:1px solid #cfcfcf;padding:4px 6px;text-align:start;vertical-align:top;background:#fff;color:inherit}.docprev th{background:#f3f4f6;font-weight:600;color:#222}
+.docprev .dp-f th{width:34%}.docprev .dp-hint{font-size:11px;color:#9a9a9a;margin-top:2px}.docprev .dp-sign{margin-top:18px;border-top:1px solid #999;padding-top:6px;font-size:12px;color:#555;width:70%}
+.docprev .dp-gaps{margin-top:12px;background:#fff4e5;border:1px solid #f0c48a;color:#7a4a00;padding:6px 8px;border-radius:4px;font-size:12px}.docprev .dp-legend{font-size:11px;color:#999;margin-top:8px}
+.docprev .dp-add{margin:4px 0;color:#444;border-color:#ccc;background:#fafafa}.docprev.mock .dp-must{margin:4px 18px;padding:0}.docprev.mock .dp-must li{margin:2px 0;list-style:none}
+.docprev .dp-stamp{float:inline-end;border:2px solid #b42318;color:#b42318;border-radius:50%;padding:14px 10px;font-size:11px;transform:rotate(-8deg);opacity:.75;max-width:120px;text-align:center}
 body[data-role="viewer"] .btn.pri{opacity:.55}
 body[data-role="editor"] .admin-only,body[data-role="viewer"] .admin-only{display:none}
 </style>
@@ -320,6 +331,17 @@ const T = {
   tplAiNone:{en:'No model here: the draft is filled from the product data only, the rest is marked as gaps.',ar:'مفيش موديل هنا: المسودة بتتملي من بيانات المنتج بس، والباقي يتعلّم كنواقص.'},
   drafting:{en:'Drafting from the documents…',ar:'بيصيغ من المستندات…'}, drafted:{en:'Draft added to the item',ar:'المسودة اتضافت للبند'}, gapsN:{en:'gaps',ar:'نواقص'},
   draftHow_answers:{en:'filled by claude.ai\'s model in this page',ar:'اتملت بموديل claude.ai في الصفحة'}, draftHow_server_model:{en:'filled by the model on the server',ar:'اتملت بالموديل على الخادم'}, draftHow_data:{en:'filled from the product data only',ar:'اتملت من بيانات المنتج بس'},
+  step0:{en:'Documents',ar:'المستندات'}, docsFirst:{en:'Start with the documents you already have: upload each one under its name. The program reads them, fills the product data from them, and in the next steps asks you only for what it could not find.',ar:'ابدأ بالمستندات اللي عندك: ارفع كل مستند تحت اسمه. البرنامج يقرأها ويملي بيانات المنتج منها، وفي الخطوات الجاية يطلب منك بس اللي ما لقاهوش.'},
+  intakeAllT:{en:'Or drop everything at once',ar:'أو ارمي كل الملفات مرة واحدة'}, intakeAllSub:{en:'The program tells each document apart by its content and sorts it into its place.',ar:'البرنامج يفرّق المستندات من محتواها ويرتّبها في مكانها.'},
+  reviewRead:{en:'Review what was read',ar:'راجع اللي اتقرا'}, missingWrite:{en:'missing — type it',ar:'ناقص — اكتبه'}, readN:{en:'fields recognised from the documents',ar:'بيانات اتعرّفت من المستندات'},
+  youWrite:{en:'Still needed from you',ar:'المطلوب منك'}, allRead:{en:'Every main field was recognised; check them and continue.',ar:'كل البيانات الأساسية اتعرّفت؛ راجعها وكمّل.'}, addMore:{en:'Add more',ar:'ضيف كمان'},
+  dpLetterhead:{en:'[ company letterhead ]',ar:'[ ورق الشركة ]'}, dpSign:{en:'Signature of the authorised person · title · company stamp · date',ar:'توقيع المفوَّض · الوظيفة · ختم الشركة · التاريخ'},
+  dpAddRow:{en:'row',ar:'صف'}, dpSave:{en:'Save as Word draft',ar:'احفظ مسودة Word'}, dpSaving:{en:'Saving the draft…',ar:'بيحفظ المسودة…'}, dpFilled:{en:'The page is filled: review, edit, then save',ar:'الصفحة اتملت: راجع وعدّل ثم احفظ'},
+  dpLegend:{en:'Grey italic text is an example: write over it, or let the program fill it from the documents. Everything on this page is editable.',ar:'النص الرمادي المائل مثال: اكتب مكانه أو خلّي البرنامج يملاه من المستندات. كل حاجة في الصفحة دي تتعدّل.'},
+  dpIssuedBy:{en:'Issued by',ar:'الجهة المُصدِرة'}, dpIssuer:{en:'Issuer',ar:'الجهة'}, dpMust:{en:'An acceptable copy must show',ar:'النسخة المقبولة لازم يظهر فيها'}, dpSealIssuer:{en:'Original signature and stamp of the issuer — uploaded as issued, never re-typed',ar:'توقيع وختم الجهة الأصليين — يُرفع كما صدر ولا يُعاد كتابته'},
+  tplKind_letter:{en:'letter',ar:'خطاب'}, tplKind_declaration:{en:'declaration',ar:'إقرار'}, tplKind_form:{en:'form',ar:'نموذج'}, tplKind_table:{en:'table',ar:'جدول'}, tplKind_summary:{en:'summary',ar:'ملخص'}, tplKind_section:{en:'CTD section',ar:'قسم CTD'},
+  tplKind_toc:{en:'table of contents',ar:'فهرس'}, tplKind_statement:{en:'statement',ar:'بيان'}, tplKind_certificate:{en:'certificate',ar:'شهادة'}, tplKind_calculation:{en:'calculation',ar:'حساب'}, tplKind_commitment:{en:'commitment',ar:'تعهد'}, tplKind_contract:{en:'agreement',ar:'عقد'},
+  tplKind_leaflet:{en:'leaflet',ar:'نشرة'}, tplKind_artwork:{en:'artwork',ar:'تصميم'}, tplKind_record:{en:'record',ar:'سجل'}, tplKind_third_party:{en:'third-party document',ar:'مستند جهة خارجية'}, tplKind_eda:{en:'EDA document',ar:'مستند من الهيئة'}, tplKind_report:{en:'report',ar:'تقرير'},
   draftGaps:{en:'What is still missing',ar:'اللي لسه ناقص'}, draftDocs:{en:'Documents read',ar:'المستندات اللي اتقرت'},
   driveConnHint:{en:'Paste any Drive link you can open: the page reads it through your Google Drive connector in claude.ai. The first time, Claude asks your permission once.',ar:'الصق أي لينك Drive تقدر تفتحه: الصفحة بتقرأه عبر موصّل Google Drive بتاع حسابك في Claude. أول مرة Claude هيطلب موافقتك مرة واحدة.'},
   driveBadLink:{en:'Not a Google Drive folder or file link.',ar:'ده مش لينك فولدر أو ملف على Google Drive.'},
@@ -785,31 +807,93 @@ function bindProfileControls(root, d, rerender){
   root.querySelectorAll('[data-spec]').forEach(c=>c.onchange=()=>{ d.dosage_specifics = c.checked? [...(d.dosage_specifics||[]),c.dataset.spec] : (d.dosage_specifics||[]).filter(x=>x!==c.dataset.spec); rerender(); });
   root.querySelectorAll('[data-flag]').forEach(c=>c.onchange=()=>{ d[c.dataset.flag]=c.checked; rerender(); });
 }
+
+/* ---------------- documents first: the base documents the program reads before anyone types */
+const BASE_DOCS=[
+  {kind:'registration_licence', ar:'إخطار / رخصة التسجيل أو خطاب الموافقة', en:'Registration licence / notification / approval letter', gives:{ar:'الاسم التجاري، الشكل، التركيز، المواد الفعالة ومصنّعوها، المصنّع، مالك الترخيص، رقم التسجيل، التواريخ', en:'trade name, form, strength, actives and their manufacturers, manufacturer, licence holder, registration number, dates'}, kinds:['licence','annex1','cpp']},
+  {kind:'pricing_certificate', ar:'شهادة التسعير', en:'Pricing certificate', gives:{ar:'السعر، العبوة المعتمدة', en:'price, approved pack'}, kinds:['pricing']},
+  {kind:'leaflet', ar:'النشرة / الـ SmPC المرجعية', en:'Reference SmPC / leaflet', gives:{ar:'دواعي الاستعمال، التركيب والسواغات، الصلاحية، التخزين، التحذيرات', en:'indications, composition and excipients, shelf life, storage, warnings'}, kinds:['smpc']},
+  {kind:'api_coa', ar:'شهادة تحليل المادة الفعالة (CoA)', en:'API certificate of analysis', gives:{ar:'اسم المادة، المصنّع، الدفعة، الاختبارات والحدود والنتائج', en:'substance, manufacturer, batch, tests, limits, results'}, kinds:['coa']},
+  {kind:'gmp_certificate', ar:'شهادة GMP للمصنع / لمصنّع المادة', en:'GMP certificate(s)', gives:{ar:'اسم المصنّع وعنوانه وخطوط الإنتاج والصلاحية', en:'manufacturer name, address, lines, validity'}, kinds:['gmp','factory']},
+  {kind:'dmf_cep', ar:'CEP / DMF / خطاب السماح', en:'CEP / DMF / letter of access', gives:{ar:'طريقة تقديم المادة الفعالة، رقم الـ CEP، صاحبه', en:'API option, CEP number, holder'}, kinds:['cep','loa']},
+  {kind:'analysis_conformity', ar:'شهادة التحليل / المطابقة للمنتج (CADC)', en:'Product analysis / conformity certificate', gives:{ar:'التشغيلات، النتائج، تاريخ الصلاحية', en:'batches, results, expiry'}, kinds:['cadc']},
+  {kind:'specification', ar:'المواصفات وشهادة التركيب', en:'Specifications / composition certificate', gives:{ar:'جداول المواصفات، التركيبة', en:'specification tables, unit formula'}, kinds:['spec','composition']},
+  {kind:'stability_data', ar:'دراسة / بيانات الثبات', en:'Stability study / data', gives:{ar:'الظروف، مدة الصلاحية، العبوة', en:'conditions, shelf life, container'}, kinds:['stability','bmr']},
+  {kind:'manufacturing_contract', ar:'عقد التصنيع / بطاقة الـ toll / التوكيل', en:'Manufacturing agreement / toll card / attorney', gives:{ar:'نوع الترخيص (toll / تحت الترخيص)، الأطراف', en:'licence type (toll / under licence), parties'}, kinds:['contract','poa']},
+  {kind:'commercial_register', ar:'السجل التجاري', en:'Commercial register', gives:{ar:'اسم مقدم الطلب القانوني وعنوانه', en:'applicant legal name and address'}, kinds:['commercial']},
+  {kind:'other', ar:'مستندات أخرى', en:'Other documents', gives:{ar:'أي مستند تاني هيتقرأ ويتصنّف ويتحط في مكانه', en:'anything else: read, classified and placed'}, kinds:[]}];
+const docCard = k => BASE_DOCS.find(c=>c.kind===k) || BASE_DOCS[BASE_DOCS.length-1];
+function docsOfFile(w, name){ const f=(w.intakeFill&&w.intakeFill.documents||[]).find(d=>d.filename===name); const k=f&&f.kind; const card=BASE_DOCS.find(c=>c.kinds.includes(k)); return card?card.kind:'other'; }
+function applyFillData(w, f){
+  /* the recognised values into the wizard's fields, remembering where each came from; nothing typed by the user is overwritten by an empty reading */
+  const d=w.d, P=f.product||{}, R=f.profile||{}, E=f.envelope||{}, src=f.sources||{}, from=w.fromDoc=w.fromDoc||{};
+  const set=(k,v,section)=>{ if(v===undefined||v===null||v==='') return; d[k]=v; from[k]=src[section]||from[k]||'document'; };
+  set('trade', P.name, 'product');
+  const formStd=P.dosage_form_std, formTxt=formStd?formText(formStd):(P.dosage_form_en||P.dosage_form);
+  if(formTxt){ set('form', formTxt, 'product'); d.form_std=formStd||''; } if(P.admin_route) set('admin_route', P.admin_route, 'product');
+  set('man', P.manufacturer, 'product'); set('ind', P.indication, 'product');
+  if(P.name) set('name', [P.name, P.strength&&!P.name.includes(P.strength)?P.strength:'', formTxt&&!P.name.toLowerCase().includes(String(formTxt).toLowerCase())?String(formTxt).toLowerCase():''].filter(Boolean).join(' '), 'product');
+  for(const k of ['dossier_kind','origin','licence','activity','admin_route','leaflet']) if(R[k]) set(k, R[k], 'profile');
+  if((R.dosage_specifics||[]).length) set('dosage_specifics', R.dosage_specifics, 'profile');
+  if(d.origin==='imported'&&!['imported','imported_bulk'].includes(d.licence)) d.licence='imported';
+  if(d.origin==='local'&&['imported','imported_bulk'].includes(d.licence)) d.licence='own';
+  const apis=(f.apis||[]).filter(a=>a.name);
+  if(apis.length){ d.apis=apis.map(a=>({name:a.name, manufacturer:a.manufacturer||'', option:a.option||'FULL', strength:a.strength||'', country:a.country_name||(a.country&&a.country.length===2?countryText(a.country):(a.country||'')), country_code:a.country&&a.country.length===2?a.country:''})); from.apis=src.apis||'document'; }
+  set('applicant', E.applicant, 'envelope'); set('tracking', E.tracking, 'envelope'); set('inn', (E.inn&&E.inn.length?E.inn:apis.map(a=>a.name)).filter(Boolean).join(', '), 'envelope');
+  w.intakeFill=f;
+}
+function wizMissing(w){ const d=w.d, m=[]; const need=[['trade','pTrade'],['form','pForm'],['man','pMan'],['applicant','applicant'],['tracking','tracking']];
+  for(const [k,lab] of need) if(!d[k]) m.push(t(lab)); if(!(d.apis||[]).some(a=>a.name)) m.push(t('apiName')); else if((d.apis||[]).some(a=>a.name&&!a.manufacturer)) m.push(t('apiMan')); return m; }
+function wizMark(w, k){ if(w.fromDoc&&w.fromDoc[k]) return ` <span class="tag" style="color:var(--ok)">${icon('check',11)} ${esc(String(w.fromDoc[k]).slice(0,28))}</span>`; if(w.read&&!w.d[k]) return ` <span class="tag" style="color:var(--warn)">${esc(t('missingWrite'))}</span>`; return ''; }
+function readBanner(w){ if(!w.read) return ''; const n=Object.keys(w.fromDoc||{}).length, miss=wizMissing(w);
+  return `<div class="alert ${miss.length?'info':'ok'}">${icon(miss.length?'info':'check')}<p class="small"><b>${n} ${esc(t('readN'))}</b> — ${miss.length?`${esc(t('youWrite'))}: ${miss.map(esc).join('، ')}`:esc(t('allRead'))} <button class="btn sm ghost" id="intakeReview2">${esc(t('reviewRead'))}</button></p></div>`; }
+async function addDocs(kind, files){
+  const w=S.wiz; if(!w) return; files=files.filter(f=>/\.(pdf|jpe?g|png|webp|tiff?|docx)$/i.test(f.name)); if(!files.length){ toast(t('badFiles')); return; }
+  w.allFiles=(w.allFiles||[]).concat(files); w.docs=w.docs||{}; for(const f of files) w.docs[f.name]=kind;
+  toast(t('reading'));
+  try{ await vocab(); const x=await readFiles(w.allFiles,'dossier'); w.read={x, files:w.allFiles}; applyFillData(w, x.fill);
+    const scannedAll=(x.r&&x.r.files||[]).filter(f=>f.scanned); w.scannedNames=scannedAll.map(f=>f.filename); w.makeReadable=scannedAll.length>0;
+    w.intakeFiles=w.allFiles; w.intake=`${w.allFiles.length} ${t('intakeDone')}`; toast(`${t('filled')} · ${Object.keys(w.fromDoc||{}).length} ${t('readN')}`); }
+  catch(e){ toast(e.message); }
+  wizard();
+}
+function docsStep(w){
+  const files=w.allFiles||[]; const byCard={}; for(const f of files){ const k=(w.docs&&w.docs[f.name])!=='other'&&w.docs&&w.docs[f.name]?w.docs[f.name]:docsOfFile(w, f.name); (byCard[k]=byCard[k]||[]).push(f.name); }
+  const rf=(w.read&&w.read.x&&w.read.x.r&&w.read.x.r.files)||[];
+  const cards=BASE_DOCS.map(c=>{ const mine=byCard[c.kind]||[]; const ok=mine.length>0;
+    const status=mine.map(n=>{ const r=rf.find(x=>x.filename===n); const how=r?(r.ocr?t('fOcr'):r.scanned?(r.ocr_error?t('fScan'):t('fVision')):t('fText')):''; return `<div class="small row gap-s"><span class="chip ${r&&(r.chars>20||r.ocr)?'c-ok':'c-warn'}"><i></i>${esc(n)}</span><span class="muted">${esc(how)}</span></div>`; }).join('');
+    return `<div class="card pad doccard ${ok?'ok':''}"><div class="row gap-s"><b>${esc(L({ar:c.ar,en:c.en}))}</b>${ok?`<span class="chip c-ok"><i></i>✓</span>`:''}</div><div class="small muted">${esc(L(c.gives))}</div>${status}
+      <div class="row gap-s" style="margin-top:6px"><button class="btn sm ${ok?'':'pri'}" data-updoc="${c.kind}">${icon('upload',14)} ${esc(ok?t('addMore'):t('upload'))}</button><button class="btn sm ghost" data-drvdoc="${c.kind}">${icon('link',14)} Drive</button></div></div>`; }).join('');
+  return `<div class="alert info">${icon('info')}<p class="small">${esc(t('docsFirst'))}</p></div><div class="doccards">${cards}</div>
+    <div class="card glow pad" id="intake" style="margin-top:10px"><div class="row"><span class="ic-tile accent">${icon('sparkles')}</span><div class="grow"><b>${esc(t('intakeAllT'))}</b><div class="small muted">${esc(t('intakeAllSub'))}</div></div>
+     <button class="btn" id="intakeBtn">${icon('upload')} ${esc(t('intakeBtn'))}</button><button class="btn" id="intakeDrive">${icon('link')} ${esc(t('driveT'))}</button></div>
+     ${w.read?`<div class="row gap-s" style="margin-top:8px"><span class="small" style="color:var(--ok)">${icon('check',12)} ${esc(w.intake||'')} · ${Object.keys(w.fromDoc||{}).length} ${esc(t('readN'))}</span><button class="btn sm" id="intakeReview">${esc(t('reviewRead'))}</button></div>`:''}</div>`;
+}
 function wizard(){
   if(!S.wiz) S.wiz = {step:0, d:Object.assign({name:'',trade:'',form:'film-coated tablet',man:'',ind:'',applicant:'',tracking:'',portal:'',inn:''}, DEF_PROFILE())};
-  const w=S.wiz, d=w.d, steps=['step1','step2','step3','step4'];
-  const txt=(k,lab,ph='',extra='')=>`<label class="f"><span>${esc(t(lab))}</span><input type="text" dir="auto" data-in="${k}" value="${esc(d[k])}" placeholder="${esc(ph)}" ${extra}></label>`;
+  const w=S.wiz, d=w.d, steps=['step0','step1','step2','step3','step4'];
+  const txt=(k,lab,ph='',extra='')=>`<label class="f"><span>${esc(t(lab))}${wizMark(w,k)}</span><input type="text" dir="auto" data-in="${k}" value="${esc(d[k])}" placeholder="${esc(ph)}" ${extra}></label>`;
   const prevPv = $('#pvBody') ? $('#pvBody').innerHTML : `<div class="skeleton" style="height:60px"></div>`;   // keep the last preview while the next one loads
   let body='';
-  if(!S.vocab) vocab().then(()=>{ if(S.wiz&&S.wiz.step===0) wizard(); });
-  const formField=S.vocab?`<label class="f"><span>${esc(t('pForm'))}</span>${smartSel('data-in="form" data-wiz="form"', VOC().forms, d.form_std||d.form, {key:'id', otherAttrs:'data-in-other="form"'})}</label>`:txt('form','pForm');
-  if(w.step===0) body=`<div class="form">${txt('name','pName','Examplol 500 mg FCT')}${txt('trade','pTrade')}${formField}${txt('man','pMan','', 'list="dl-man"')}${txt('ind','pInd','pain-and-fever')}</div>${datalists()}`;
-  if(w.step===1) body=profileControls(d);
-  if(w.step===2) body=`<div class="stack"><p class="small muted">${esc(t('apiHint'))}</p>${d.apis.map((a,i)=>`<div class="form card flat pad">
+  if(!S.vocab) vocab().then(()=>{ if(S.wiz&&S.wiz.step===1) wizard(); });
+  const formField=S.vocab?`<label class="f"><span>${esc(t('pForm'))}${wizMark(w,'form')}</span>${smartSel('data-in="form" data-wiz="form"', VOC().forms, d.form_std||d.form, {key:'id', otherAttrs:'data-in-other="form"'})}</label>`:txt('form','pForm');
+  if(w.step===0) body=docsStep(w);
+  if(w.step===1) body=`${readBanner(w)}<div class="form">${txt('name','pName','Examplol 500 mg FCT')}${txt('trade','pTrade')}${formField}${txt('man','pMan','', 'list="dl-man"')}${txt('ind','pInd','pain-and-fever')}</div>${datalists()}`;
+  if(w.step===2) body=`${readBanner(w)}${profileControls(d)}`;
+  if(w.step===3) body=`<div class="stack">${readBanner(w)}<p class="small muted">${esc(t('apiHint'))}</p>${d.apis.map((a,i)=>`<div class="form card flat pad">
      <label class="f"><span>${esc(t('apiName'))}</span><input type="text" dir="auto" data-api="${i}" data-f="name" value="${esc(a.name)}"></label>
      <label class="f"><span>${esc(t('apiMan'))}</span><input type="text" dir="auto" data-api="${i}" data-f="manufacturer" value="${esc(a.manufacturer)}"></label>
      <label class="f"><span>${esc(t('apiOpt'))}</span><select data-api="${i}" data-f="option">${['CEP','DMF','PQ','FULL'].map(o=>`<option ${a.option===o?'selected':''}>${o}</option>`).join('')}</select></label>
      ${d.apis.length>1?`<div style="align-self:end"><button class="btn sm ghost" data-rmapi="${i}">${icon('x',14)} ${esc(t('remove'))}</button></div>`:''}</div>`).join('')}
      <div><button class="btn" id="addApi">${icon('plus')} ${esc(t('addApi'))}</button></div></div>`;
-  if(w.step===3) body=`<div class="form">${txt('applicant','applicant')}${txt('tracking','tracking','P-MAA-0001')}${txt('portal','portal')}${txt('inn','inn','paracetamol')}</div>`;
-  const intakeCard = w.step===0 ? `<div class="card glow pad" id="intake"><div class="row"><span class="ic-tile accent">${icon('sparkles')}</span><div class="grow"><b>${esc(t('intakeT'))}</b><div class="small muted">${esc(t('intakeSub'))}</div></div>
-     <button class="btn pri" id="intakeBtn">${icon('upload')} ${esc(t('intakeBtn'))}</button><button class="btn" id="intakeDrive">${icon('link')} ${esc(t('driveT'))}</button></div>${w.intake?`<div class="small" style="margin-top:8px;color:var(--ok)">${icon('check',12)} ${esc(w.intake)}</div>`:''}</div>` : '';
+  if(w.step===4) body=`${readBanner(w)}<div class="form">${txt('applicant','applicant')}${txt('tracking','tracking','P-MAA-0001')}${txt('portal','portal')}${txt('inn','inn','paracetamol')}</div>`;
+  const intakeCard = '';
   $('#view').innerHTML=`<div class="head"><div class="title"><div class="eyebrow">${esc(t('f1'))} → ${esc(t('f2'))}</div><h1>${esc(t('newDossier'))}</h1><p class="sub">${esc(t('wizSub'))}</p></div></div>
    <div class="steps">${steps.map((s,i)=>`<span class="${i===w.step?'on':i<w.step?'done':''}"><span class="n">${i<w.step?'✓':i+1}</span>${esc(t(s))}</span>`).join('')}</div>
    <div class="wiz"><div class="stack">${intakeCard}<div class="card pad" id="wizBody">${body}</div><div id="wizErr"></div>
    <div class="row"><a class="btn ghost" href="#/" id="wizCancel">${esc(t('cancel'))}</a><span class="grow"></span>
    ${w.step?`<button class="btn" id="wizBack">${esc(t('back'))}</button>`:''}
-   ${w.step<3?`<button class="btn pri" id="wizNext">${esc(t('next'))} <span class="flip">${icon('arrow',16)}</span></button>`:`<button class="btn pri" id="wizCreate">${icon('check')} ${esc(t('create'))}</button>`}</div></div>
+   ${w.step<4?`<button class="btn pri" id="wizNext">${esc(t('next'))} <span class="flip">${icon('arrow',16)}</span></button>`:`<button class="btn pri" id="wizCreate">${icon('check')} ${esc(t('create'))}</button>`}</div></div>
    <aside class="card glow pv" id="pv"><div class="hd"><span class="ic-tile">${icon('checklist')}</span><h3>${esc(t('pvT'))}</h3></div><div class="pad" id="pvBody">${prevPv}</div></aside></div>`;
   const v=$('#view');
   bindProfileControls(v, d, ()=>wizard());
@@ -821,6 +905,9 @@ function wizard(){
   if($('#addApi')) $('#addApi').onclick=()=>{ d.apis.push({name:'',manufacturer:'',option:'FULL'}); wizard(); };
   const ib=$('#intakeBtn'); if(ib) ib.onclick=()=>pickFiles(intake);
   const idb=$('#intakeDrive'); if(idb) idb.onclick=()=>drivePicker(files=>intake(files));
+  v.querySelectorAll('[data-updoc]').forEach(b=>b.onclick=()=>pickFiles(files=>addDocs(b.dataset.updoc, files)));
+  v.querySelectorAll('[data-drvdoc]').forEach(b=>b.onclick=()=>drivePicker(files=>addDocs(b.dataset.drvdoc, files)));
+  v.querySelectorAll('#intakeReview, #intakeReview2').forEach(b=>b.onclick=()=>{ if(w.read) reviewIntake(w.read.x, w.read.files); });
   const iz=$('#intake'); if(iz){ iz.ondragover=e=>{ e.preventDefault(); iz.classList.add('drop'); }; iz.ondragleave=()=>iz.classList.remove('drop');
     iz.ondrop=e=>{ e.preventDefault(); iz.classList.remove('drop'); intake([...e.dataTransfer.files]); }; }
   $('#wizCancel').onclick=()=>{ S.wiz=null; };
@@ -850,7 +937,7 @@ function previewReq(now){
   pvTimer = setTimeout(async()=>{
     const w=S.wiz; if(!w || !$('#pvBody')) return;
     const my=++pvSeq; const prof=profileOf(w.d);
-    try{ const p = await api('/profile/preview',{method:'POST',json:prof}); if(my!==pvSeq || !$('#pvBody')) return; renderPreview(p, prof, w.step===3); }
+    try{ const p = await api('/profile/preview',{method:'POST',json:prof}); if(my!==pvSeq || !$('#pvBody')) return; renderPreview(p, prof, w.step===4); }
     catch(e){ if(my!==pvSeq || !$('#pvBody')) return;
       const probs = e.detail && e.detail.problems;
       $('#pvBody').innerHTML = `<div class="alert bad">${icon('alert')}<p><b>${esc(t('pvBad'))}</b><br>${probs?probs.map(x=>esc(x[S.lang])).join('<br>'):esc(e.message)}</p></div>`; }
@@ -1023,6 +1110,7 @@ async function readFiles(files, target){
   return {r, ai, note, fill:mergeFill(r.rules, ai)};
 }
 async function intake(files){
+  if(S.wiz){ return addDocs('other', files); }                        // the wizard: read, fill, show on the cards; «review what was read» opens the full review
   files=files.filter(f=>/\.(pdf|jpe?g|png|webp|tiff?|docx)$/i.test(f.name)); if(!files.length){ toast(t('badFiles')); return; }
   toast(t('reading'));
   try{ await vocab(); reviewIntake(await readFiles(files,'dossier'), files); }catch(e){ toast(e.message); }
@@ -1086,7 +1174,9 @@ function applyIntake(files){
     country:a.country==='__other__'?(a.country_other||''):(a.country?countryText(a.country):''), country_code:a.country&&a.country!=='__other__'?a.country:''}));
   S.wiz.intakeFill=S.wiz.intakeFill||null;
   d.applicant=v('rv-applicant')||d.applicant; d.tracking=v('rv-tracking')||d.tracking; d.inn=v('rv-inn')||d.inn;
-  S.wiz.intakeFiles=files; S.wiz.intake=`${files.length} ${t('intakeDone')}`; toast(t('filled')); wizard();
+  S.wiz.intakeFiles=files; S.wiz.intake=`${files.length} ${t('intakeDone')}`; S.wiz.read=S.wiz.read||{x:{fill:S.wiz.intakeFill||{}, r:{files:[]}}, files}; S.wiz.fromDoc=S.wiz.fromDoc||{};
+  for(const k of ['trade','form','man','ind','applicant','tracking','inn','dossier_kind','origin','licence','activity']) if(d[k]&&!S.wiz.fromDoc[k]) S.wiz.fromDoc[k]='review';
+  if(S.wiz.step===0) S.wiz.step=1; toast(t('filled')); wizard();
 }
 async function placeFiles(did, files, opts){
   opts=opts||{};
@@ -1453,45 +1543,105 @@ function requestForm(s){
 /* ---------------- generators (schema-driven forms) */
 S.gens = null;
 
-/* ---------------- templates & «make it for me»: what every document looks like, and the draft from the base documents */
+/* ---------------- live templates: every document as a page — read it, edit it, let the program fill it, save it as Word */
 async function loadTpl(){ if(!S.tpl){ try{ S.tpl=await api('/templates'); }catch(e){ S.tpl={}; } } return S.tpl; }
 const tplFor = s => (S.tpl||{})[s.req_id] || null;
 const draftable = s => { const e=tplFor(s); return !!(e && (e.draft==='full'||e.draft==='partial') && (s.level==='R'||s.level==='O')); };
 async function aiMode(){ if(window.DBAI && await window.DBAI.available()) return 'browser'; if(S.caps&&S.caps.assistant&&S.caps.assistant.configured) return 'server'; return 'none'; }
+S.tplState={};
+const dpPick = v => v==null ? '' : (typeof v==='object' && !Array.isArray(v) && ('en' in v || 'ar' in v)) ? (v[S.lang]||v.en||v.ar||'') : v;
+function dpPara(x, val, ex){ const text=String(dpPick(val)||''); const isEx=!text.trim(); return `<p class="dp-p ${isEx?'ex':''}" contenteditable="true">${esc(isEx?String(dpPick(ex)||'…'):text)}</p>`; }
+function dpList(x, val, ex){ let items=Array.isArray(val)?val:(val&&typeof val==='object')?(val[S.lang]||val.en||[]):(typeof val==='string'&&val.trim()?[val]:[]);
+  const isEx=!items.length; if(isEx) items=(ex&&(ex[S.lang]||ex.en))||['…']; return `<ul class="dp-l ${isEx?'ex':''}">${items.map(i=>`<li contenteditable="true">${esc(String(i))}</li>`).join('')}</ul>`; }
+function dpTable(x, val, ex){ const rows=(val&&val.rows&&val.rows.length)?val.rows:null; const isEx=!rows; const use=rows||((ex&&ex.rows)||[x.columns.map(()=>'…')]);
+  return `<table class="dp-t ${isEx?'ex':''}"><thead><tr>${x.columns.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${use.map(r=>`<tr>${x.columns.map((c,i)=>`<td contenteditable="true">${esc(String(r[i]??'…'))}</td>`).join('')}</tr>`).join('')}</tbody></table><button class="btn sm ghost dp-add" type="button">+ ${esc(t('dpAddRow'))}</button>`; }
+function dpFields(x, val, ex){ const v=(val&&typeof val==='object'&&!Array.isArray(val))?val:{}; return `<table class="dp-f">${(x.fields||[]).map(f=>{ const has=v[f.key]&&v[f.key]!=='[…]';
+  return `<tr><th>${esc(L(f.label))}</th><td class="${has?'':'ex'}" data-key="${esc(f.key)}" contenteditable="true">${esc(String(has?v[f.key]:((ex||{})[f.key]||'…')))}</td></tr>`; }).join('')}</table>`; }
+function renderDoc(s, v, answers){
+  const e=v.template, ar=S.lang==='ar', ex=v.examples||{}, sec=(answers&&answers.sections)||{}, p=v.product||{};
+  const secs=(e.sections||[]).map(x=>{ const val=sec[x.id]; const body=x.kind==='table'?dpTable(x,val,ex[x.id]):x.kind==='fields'?dpFields(x,val,ex[x.id]):x.kind==='list'?dpList(x,val,ex[x.id]):dpPara(x,val,ex[x.id]);
+    return `<section class="dp-sec" data-sec="${esc(x.id)}" data-kind="${x.kind}"><h3>${esc(L(x.title))}</h3>${body}${x.hint?`<div class="dp-hint">${esc(L(x.hint))}</div>`:''}</section>`; }).join('');
+  const gaps=(answers&&answers.gaps)||[];
+  return `<div class="docprev" dir="${ar?'rtl':'ltr'}">${e.letterhead?`<div class="dp-lh">${esc(t('dpLetterhead'))}</div>`:''}<h2>${esc(L(s.title))}</h2>
+    <div class="dp-meta">${esc(s.ctd)} · ${esc(s.req_id)} · ${esc(v.date||'')}${p.trade_name?` · ${esc(p.trade_name)}${p.strength?' '+esc(p.strength):''}`:''}</div>${secs}
+    ${e.letterhead?`<div class="dp-sign">${esc(t('dpSign'))}</div>`:''}${gaps.length?`<div class="dp-gaps"><b>${esc(t('draftGaps'))}:</b> ${gaps.map(g=>esc((ar&&g.ar)||g.what)).join(' · ')}</div>`:''}
+    <div class="dp-legend">${esc(t('dpLegend'))}</div></div>`;
+}
+function mockDoc(s, v){
+  const ar=S.lang==='ar', e=v.template||{}, req=v.requirement||{}, p=v.product||{};
+  const must=(req.acceptance||'').split(/;\s+|\.\s+(?=[A-Z])/).map(x=>x.trim().replace(/\.$/,'')).filter(Boolean);
+  const ex=e.example&&(e.example[S.lang]||e.example.en);
+  return `<div class="docprev mock" dir="${ar?'rtl':'ltr'}"><div class="dp-stamp">${esc(req.produced_by||t('dpIssuer'))}</div><h2>${esc(L(s.title))}</h2>
+    <div class="dp-meta">${esc(t('dpIssuedBy'))}: ${esc(req.produced_by||'—')} · ${esc(s.ctd)}</div>
+    ${p.trade_name?`<p class="dp-p">${esc(p.trade_name)}${p.strength?' · '+esc(p.strength):''}${p.dosage_form?' · '+esc(p.dosage_form):''}${p.manufacturer?' · '+esc(p.manufacturer):''}</p>`:''}
+    ${must.length?`<h3>${esc(t('dpMust'))}</h3><ul class="dp-must">${must.map(m=>`<li>☐ <span dir="auto">${esc(m)}</span></li>`).join('')}</ul>`:''}
+    ${ex?`<div class="dp-hint" style="margin-top:8px">${esc(ex)}</div>`:''}
+    ${req.rebuild&&req.rebuild.needs?`<div class="dp-hint">${esc(req.rebuild.verdict||'')} — ${esc(req.rebuild.needs)}</div>`:''}
+    <div class="dp-sign">${esc(t('dpSealIssuer'))}</div></div>`;
+}
+function collectDoc(box, v){
+  const sections={};
+  box.querySelectorAll('.dp-sec').forEach(sec=>{ const id=sec.dataset.sec, kind=sec.dataset.kind;
+    if(kind==='table'){ const tb=sec.querySelector('table'); if(tb&&!tb.classList.contains('ex')){ const rows=[...tb.querySelectorAll('tbody tr')].map(tr=>[...tr.children].map(td=>td.textContent.trim())).filter(r=>r.some(c=>c&&c!=='…')); if(rows.length) sections[id]={rows}; } }
+    else if(kind==='fields'){ const o={}; sec.querySelectorAll('td[data-key]').forEach(td=>{ if(!td.classList.contains('ex')&&td.textContent.trim()) o[td.dataset.key]=td.textContent.trim(); }); if(Object.keys(o).length) sections[id]=o; }
+    else if(kind==='list'){ const ul=sec.querySelector('ul'); if(ul&&!ul.classList.contains('ex')){ const items=[...ul.children].map(li=>li.textContent.trim()).filter(Boolean); if(items.length) sections[id]=items; } }
+    else { const p=sec.querySelector('.dp-p'); if(p&&!p.classList.contains('ex')&&p.textContent.trim()) sections[id]=p.textContent.trim(); } });
+  const st=S.tplState[v.slot_id]||{}, a=st.answers||{};
+  return {sections, gaps:a.gaps||[], sources:a.sources||{}, notes:a.notes||''};
+}
+function wireDoc(box, s, v){
+  box.addEventListener('input', ev=>{ const el=ev.target; const ex=el.closest('.ex'); if(ex) ex.classList.remove('ex'); const tb=el.closest('table'); if(tb) tb.classList.remove('ex'); });
+  box.querySelectorAll('.dp-add').forEach(b=>b.onclick=()=>{ const tb=b.previousElementSibling; const n=tb.querySelectorAll('th').length; if(tb.classList.contains('ex')){ tb.querySelector('tbody').innerHTML=''; tb.classList.remove('ex'); }
+    const tr=document.createElement('tr'); tr.innerHTML=Array.from({length:n},()=>'<td contenteditable="true"></td>').join(''); tb.querySelector('tbody').appendChild(tr); tr.firstChild.focus(); });
+}
+async function fetchAnswers(v){
+  const mode=await aiMode(); let note='';
+  if(mode==='browser' && v.prompt){ try{ const a=await window.DBAI.ask(v.prompt); if(a&&typeof a==='object') return {answers:a, how:'answers', note}; }catch(e){ note=(e&&(e.code||e.message))||'error'; } }
+  const r=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(v.slot_id)}/fill`,{method:'POST',json:{ai:true}});
+  return {answers:r.answers, how:r.how, note};
+}
 async function loadTemplatePanel(s, body){
   const box=body.querySelector('#tplPanel'); if(!box) return;
   let v; try{ v=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(s.slot_id)}/template`); }catch(e){ box.innerHTML=`<div class="small muted">${esc(e.message)}</div>`; return; }
-  const e=v.template||{draft:'none',kind:'report'}, mode=await aiMode();
-  const ex=e.example&&(e.example[S.lang]||e.example.en); const req=v.requirement||{};
-  const secs=(e.sections||[]).map(x=>`<li><b>${esc(L(x.title))}</b>${x.hint?` <span class="muted">— ${esc(L(x.hint))}</span>`:''}${x.columns?` <span class="code small">${esc(x.columns.join(' · '))}</span>`:''}</li>`).join('');
+  const e=v.template||{draft:'none',kind:'report'}, mode=await aiMode(); const st=S.tplState[s.slot_id]=S.tplState[s.slot_id]||{}; st.v=v;
+  if(!st.answers) st.answers={sections:Object.assign({}, v.prefill||{}), gaps:[]};
+  const kindName=T['tplKind_'+e.kind]?t('tplKind_'+e.kind):e.kind;
+  const lastDraft=(s.documents||[]).find(d=>d.meta&&d.meta.generated==='draft');
+  const head=`<h3>${esc(t('tplT'))}</h3><div class="row gap-s small" style="margin-bottom:4px"><span class="chip ${e.draft==='full'||e.draft==='generator'?'c-ok':e.draft==='partial'?'c-rec':'c-na'}"><i></i>${esc(kindName)}</span><span>${esc(t('tpl_'+e.draft))}</span></div>
+    ${lastDraft&&lastDraft.meta.gaps&&lastDraft.meta.gaps.length?`<div class="small" style="margin-bottom:4px"><b>${esc(t('draftGaps'))} (${lastDraft.meta.gaps.length}):</b> ${lastDraft.meta.gaps.slice(0,8).map(g=>esc((S.lang==='ar'&&g.ar)||g.what)).join(' · ')}</div>`:''}`;
   const inputs=(v.inputs||[]).map(i=>`<span class="chip ${i.present?'c-ok':'c-warn'}"><i></i>${esc(docTypeName(i.id))} · ${esc(t(i.present?'tplPresent':'tplMissing'))}</span>`).join('');
-  const last=(s.documents||[]).find(d=>d.meta&&d.meta.generated==='draft');
-  box.innerHTML=`<h3>${esc(t('tplT'))}</h3><div class="finding">
-    <div class="row gap-s"><span class="chip ${e.draft==='full'?'c-ok':e.draft==='partial'?'c-rec':e.draft==='generator'?'c-ok':'c-na'}"><i></i>${esc(e.kind)}</span><span class="small">${esc(t('tpl_'+e.draft))}</span></div>
-    ${e.letterhead?`<div class="small muted">${esc(t('tplLetterhead'))}</div>`:''}
-    ${ex?`<div class="small" style="margin-top:6px"><b>${esc(t('tplExample'))}:</b> <span dir="auto">${esc(ex)}</span></div>`:''}
-    ${req.rebuild&&req.rebuild.needs?`<div class="small muted">${esc(req.rebuild.verdict||'')} — ${esc(req.rebuild.needs)}</div>`:''}
-    ${e.note?`<div class="small muted">${esc(L(e.note))}</div>`:''}
-    ${secs?`<div class="small" style="margin-top:6px"><b>${esc(t('tplSections'))}:</b><ul style="margin:4px 18px;padding:0">${secs}</ul></div>`:''}
-    ${inputs?`<div class="small" style="margin-top:6px"><b>${esc(t('tplInputs'))}:</b> <span class="row gap-s" style="display:inline-flex;flex-wrap:wrap">${inputs}</span></div>`:''}
-    ${(e.draft==='full'||e.draft==='partial')?`<div class="small muted" style="margin-top:6px">${esc(t(mode==='browser'?'tplAiBrowser':mode==='server'?'tplAiServer':'tplAiNone'))}${v.documents&&v.documents.length?` · ${esc(t('draftDocs'))}: ${v.documents.map(d=>esc(d.filename)).join('، ')}`:''}</div>`:''}
-    ${last&&last.meta.gaps&&last.meta.gaps.length?`<div class="small" style="margin-top:6px"><b>${esc(t('draftGaps'))} (${last.meta.gaps.length}):</b> ${last.meta.gaps.slice(0,8).map(g=>esc((S.lang==='ar'&&g.ar)||g.what)).join(' · ')}</div>`:''}
-    ${draftable(s)?`<div class="row" style="margin-top:8px"><button class="btn pri" data-draft="${esc(s.slot_id)}">${icon('sparkles')} ${esc(t(last?'draftAgain':'draftBtnLong'))}</button></div>`:''}</div>`;
-  box.querySelectorAll('[data-draft]').forEach(b=>b.onclick=()=>draftIt(s.slot_id, v));
+  if(e.draft==='none' || !(e.sections&&e.sections.length)){
+    box.innerHTML=head+mockDoc(s, v)+`<div class="row gap-s" style="margin-top:8px"><button class="btn pri" data-upw="${esc(s.slot_id)}">${icon('upload')} ${esc(t('upload'))}</button>${e.generator?`<button class="btn" data-gen="${esc(e.generator)}">${icon('sparkles')} ${esc(t('generate'))}</button>`:''}</div>`;
+    box.querySelectorAll('[data-upw]').forEach(b=>b.onclick=()=>{ closeDrawer(); startUpload(b.dataset.upw); });
+    box.querySelectorAll('[data-gen]').forEach(b=>b.onclick=()=>S.gens&&S.gens[b.dataset.gen]&&S.gens[b.dataset.gen].source==='data'? genDirect(b.dataset.gen, s) : genForm(b.dataset.gen, s));
+    return;
+  }
+  const can=e.draft==='full'||e.draft==='partial';
+  box.innerHTML=head+`<div id="dpWrap">${renderDoc(s, v, st.answers)}</div>
+    <div class="row gap-s" style="margin-top:8px">${can?`<button class="btn pri" id="dpFill">${icon('sparkles')} ${esc(t('draftBtnLong'))}</button>`:''}<button class="btn" id="dpSave">${icon('download')} ${esc(t('dpSave'))}</button>${e.generator?`<button class="btn" data-gen="${esc(e.generator)}">${icon('sparkles')} ${esc(t('generate'))}</button>`:''}</div>
+    <div class="small muted" style="margin-top:6px">${esc(t(mode==='browser'?'tplAiBrowser':mode==='server'?'tplAiServer':'tplAiNone'))}${v.documents&&v.documents.length?` · ${esc(t('draftDocs'))}: ${v.documents.map(d=>esc(d.filename)).join('، ')}`:''}</div>
+    ${inputs?`<div class="row gap-s small" style="margin-top:6px;flex-wrap:wrap"><b>${esc(t('tplInputs'))}:</b> ${inputs}</div>`:''}`;
+  wireDoc(box.querySelector('#dpWrap'), s, v);
+  const fill=box.querySelector('#dpFill'); if(fill) fill.onclick=async()=>{ fill.disabled=true; toast(t('drafting'));
+    try{ const r=await fetchAnswers(v); st.answers=r.answers; box.querySelector('#dpWrap').innerHTML=renderDoc(s, v, st.answers); wireDoc(box.querySelector('#dpWrap'), s, v);
+      toast(`${t('dpFilled')} · ${t('draftHow_'+String(r.how).replace('-','_'))} · ${(r.answers.gaps||[]).length} ${t('gapsN')}${r.note?` · ${r.note}`:''}`); }
+    catch(err){ toast(err.message); } fill.disabled=false; };
+  box.querySelector('#dpSave').onclick=async()=>{ const answers=collectDoc(box.querySelector('#dpWrap'), v); toast(t('dpSaving'));
+    try{ const r=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(s.slot_id)}/draft`,{method:'POST',json:{answers, lang:S.lang}});
+      toast(`${t('drafted')} · ${(r.gaps||[]).length} ${t('gapsN')}`); delete S.tplState[s.slot_id]; S.board=null; await route(); openWhy(s.slot_id); }catch(err){ toast(err.message); } };
+  box.querySelectorAll('[data-gen]').forEach(b=>b.onclick=()=>S.gens&&S.gens[b.dataset.gen]&&S.gens[b.dataset.gen].source==='data'? genDirect(b.dataset.gen, s) : genForm(b.dataset.gen, s));
 }
 function docTypeName(id){ const m={registration_licence:{ar:'إخطار/رخصة التسجيل',en:'registration licence'},pricing_certificate:{ar:'شهادة التسعير',en:'pricing certificate'},leaflet:{ar:'النشرة المرجعية',en:'reference leaflet'},api_coa:{ar:'شهادة تحليل المادة الفعالة',en:'API CoA'},
     analysis_conformity:{ar:'شهادة التحليل/المطابقة',en:'analysis / conformity'},gmp_certificate:{ar:'شهادة GMP',en:'GMP certificate'},dmf_cep:{ar:'DMF / CEP',en:'DMF / CEP'},specification:{ar:'المواصفات',en:'specifications'},stability_data:{ar:'بيانات الثبات',en:'stability data'},
     stability_approval:{ar:'موافقة الثبات',en:'stability approval'},manufacturing_contract:{ar:'عقد التصنيع',en:'manufacturing contract'},toll_card:{ar:'بطاقة الـ toll',en:'toll card'},commercial_register:{ar:'السجل التجاري',en:'commercial register'}}; return L(m[id]||{ar:id,en:id}); }
-async function draftIt(slotId, v){
+async function draftIt(slotId){
+  /* one click from the row: the program fills the template from the documents and stores the Word draft at once */
   const s=slotById(slotId); if(!s) return;
-  v = v || await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/template`);
-  let answers=null, note='';
-  const mode=await aiMode();
-  if(mode==='browser' && v.prompt){ toast(t('drafting')); try{ answers=await window.DBAI.ask(v.prompt); }catch(e){ note=(e&&(e.code||e.message))||'error'; } }
+  let v; try{ v=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/template`); }catch(e){ toast(e.message); return; }
   toast(t('drafting'));
-  try{ const r=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/draft`,{method:'POST',json:{answers, lang:S.lang}});
-    toast(`${t('drafted')} · ${t('draftHow_'+String(r.how).replace('-','_'))} · ${(r.gaps||[]).length} ${t('gapsN')}${note?` · ${note}`:''}`);
-    S.board=null; await route(); openWhy(slotId); }
+  try{ const f=await fetchAnswers(v); const r=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/draft`,{method:'POST',json:{answers:f.answers, lang:S.lang}});
+    toast(`${t('drafted')} · ${t('draftHow_'+String(f.how).replace('-','_'))} · ${(r.gaps||[]).length} ${t('gapsN')}${f.note?` · ${f.note}`:''}`);
+    delete S.tplState[slotId]; S.board=null; await route(); openWhy(slotId); }
   catch(e){ toast(e.message); }
 }
 async function loadGens(){ if(!S.gens) S.gens = await api('/generators'); return S.gens; }

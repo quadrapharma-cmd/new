@@ -55,18 +55,24 @@ def test_templates_and_make_it_for_me(server):
         page.click('#dClose')
         # the template panel of an authored document, then «make it for me» from the data alone (no model on this server)
         page.click(f'[data-tpl="{p01["slot_id"]}"]')
-        page.wait_for_function("() => document.querySelector('#tplPanel') && document.querySelector('#tplPanel').textContent.includes('أقسام المستند')")
+        page.wait_for_selector('#tplPanel .docprev')
         panel = page.inner_text('#tplPanel')
         assert 'البرنامج يعمل المستند ده كامل' in panel and 'التركيب (تركيبة الوحدة)' in panel and 'مفيش موديل هنا' in panel
-        page.locator('#drawer').screenshot(path=f'{OUT}/template_panel_ar.png')
-        page.click('#tplPanel [data-draft]')
+        assert 'Neomycin sulphate' in panel and 'Ph. Eur.' in panel                         # the live page already carries the product's own data
+        assert page.locator('#tplPanel .docprev .ex').count() >= 1                           # and grey examples where nothing is known yet
+        page.locator('#drawer').screenshot(path=f'{OUT}/template_live_ar.png')
+        page.click('#dpFill')                                                                # «make it for me»: fills the page (no model here: from the data)
+        page.wait_for_function("() => document.querySelector('#toast').textContent.includes('الصفحة اتملت')")
+        page.click('#tplPanel .docprev .dp-sec[data-sec=\"removed\"] .dp-p')                 # the user types the part the documents lack
+        page.keyboard.type('None removed during manufacture.')
+        page.click('#dpSave')
         page.wait_for_function("() => document.querySelector('#toast').textContent.includes('المسودة اتضافت')")
         page.wait_for_function("() => document.querySelector('#dBody') && document.querySelector('#dBody').textContent.includes('P-01-draft.docx')")
         body = page.inner_text('#dBody')
-        assert 'اللي لسه ناقص' in body and 'اعمله تاني' in body                             # the gaps, and the draft can be made again
+        assert 'اللي لسه ناقص' in body or 'احفظ مسودة Word' in body
         docs = call(server, f'/api/dossiers/{did}/board')
         d = next(s for s in docs['slots'] if s['req_id'] == 'P-01')['documents'][0]
-        assert d['meta']['generated'] == 'draft' and d['meta']['draft_how'] == 'data' and d['meta']['gaps']
+        assert d['meta']['generated'] == 'draft' and d['meta']['draft_how'] == 'answers'     # saved from the page the user edited
         b.close()
     assert not errors, errors
 

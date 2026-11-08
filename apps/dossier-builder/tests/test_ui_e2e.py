@@ -42,6 +42,8 @@ def test_journey(server, browser, tmp_path):
     assert page.locator('html').get_attribute('dir') == 'rtl'          # Arabic first
     page.click('#lang-en')
     page.click('#btnNew')
+    page.wait_for_selector('.doccards')                                 # the wizard starts with the documents; nothing to upload here
+    page.click('#wizNext')
     page.fill('[data-in=name]', 'Examplol 500 mg FCT')
     page.fill('[data-in=trade]', 'Examplol 500 mg')
     page.fill('[data-in=man]', 'Example Pharma')
@@ -296,7 +298,7 @@ def test_guide_and_live_preview(server, browser, tmp_path):
     page.click('#btnNew')
     page.wait_for_selector('#pvBody .n')
     base = int(page.inner_text('#pvBody .n'))
-    page.click('#wizNext')
+    page.click('#wizNext'); page.click('#wizNext')                       # documents → product → profile
     page.click('[data-k=licence][data-v=toll]')
     page.wait_for_function(f"(n=>n && +n.innerText > {base})(document.querySelector('#pvBody .n'))")   # toll adds requirements
     page.click('[data-k=origin][data-v=imported]')
@@ -346,6 +348,10 @@ def test_intake_fills_the_wizard_and_places_the_files(server, browser, tmp_path)
     with page.expect_file_chooser() as fc:
         page.click('#intakeBtn')
     fc.value.set_files([str(cpp), str(gmp)])
+    page.wait_for_selector('#intakeReview', timeout=120000)              # read and filled; the cards show the files under their kinds
+    cards = page.inner_text('.doccards')
+    assert 'cpp.pdf' in cards and 'gmp certificate.pdf' in cards
+    page.click('#intakeReview')
     page.wait_for_selector('#intakeApply')
     assert page.input_value('#rv-name') == 'Cardiolol 10 mg' and page.input_value('#rv-form') == 'tablet-fc'      # the read form matched the standard term (dropdown)
     assert page.input_value('[data-rva="0"][data-f=name]') == 'Bisoprolol fumarate'

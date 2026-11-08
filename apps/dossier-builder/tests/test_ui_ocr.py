@@ -62,7 +62,9 @@ def test_scan_is_read_by_ocr_in_the_browser(server, tmp_path):
         with page.expect_file_chooser() as fc:
             page.click('#intakeBtn')
         fc.value.set_files([str(pdf)])
-        page.wait_for_selector('#intakeApply', timeout=240000)                  # the OCR runs in the page (wasm): allow time
+        page.wait_for_selector('#intakeReview', timeout=240000)                 # the OCR runs in the page (wasm): allow time
+        page.click('#intakeReview')
+        page.wait_for_selector('#intakeApply')
         page.wait_for_function("document.querySelector('#rv-name') && document.querySelector('#rv-name').value.length > 0", timeout=20000)
         assert page.input_value('#rv-name') == 'Dermacure' and page.input_value('#rv-form') == 'powder-topical'
         assert page.input_value('[data-rva="0"][data-f=name]') == 'Neomycin Sulphate' and page.input_value('[data-rva="0"][data-f=strength]') == '3.500 mg'

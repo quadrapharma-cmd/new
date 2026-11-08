@@ -123,7 +123,8 @@ def view(st, did, slot, req_item=None):
     ctx = context(st, did, slot, with_texts=True)
     kinds_present = {(d.get('meta') or {}).get('doc_type') or (d.get('meta') or {}).get('kind') for d in st.documents(did)}
     inputs = [{'id': i, 'present': i in kinds_present} for i in (entry or {}).get('inputs') or []]
-    out = {'req_id': slot.req_id, 'slot_id': slot.slot_id, 'template': entry, 'inputs': inputs,
+    out = {'req_id': slot.req_id, 'slot_id': slot.slot_id, 'template': entry, 'inputs': inputs, 'product': ctx.get('product'), 'date': ctx.get('date'),
+           'examples': examples(entry) if entry else {}, 'prefill': deterministic(entry, ctx)['sections'] if entry and entry.get('sections') else {},
            'documents': [{k: v for k, v in dd.items() if k != 'text'} for dd in ctx.get('documents', [])],
            'requirement': {'title': slot.title, 'ctd': slot.ctd, 'acceptance': (req_item or {}).get('acceptance_text'), 'produced_by': (req_item or {}).get('produced_by'),
                            'rebuild': (req_item or {}).get('rebuild'), 'sources': (req_item or {}).get('sources')},
@@ -293,6 +294,86 @@ def deterministic(entry, ctx):
     return {'sections': out, 'gaps': gaps, 'sources': {}, 'notes': 'filled from the product data only; no model was available'}
 
 
+# ---------------- examples: what a filled section looks like (fictional values, marked as examples in the page)
+SAMPLE_COLS = [('country', 'Egypt'), ('status', 'Registered & marketed'), ('authority', 'EDA'), ('registration', 'EG-12345'), ('date', '2024-03-15'),
+               ('batch', 'DC2301'), ('size', '50 kg'), ('type', 'pilot'), ('scale', 'pilot'), ('site', 'Cairo plant'), ('test', 'Assay'), ('limit', '95.0–105.0 %'),
+               ('acceptance', '95.0–105.0 %'), ('criterion', '95.0–105.0 %'), ('method', 'HPLC'), ('reference', 'Ph. Eur. 11.0 (2.2.29)'), ('result', '99.1 %'),
+               ('name', 'Example Pharm Co.'), ('address', '12 Industrial Zone, 6th of October City'), ('responsibility', 'Manufacture and release of the finished product'),
+               ('gmp', 'GMP-2024-0001'), ('licence', 'GMP-2024-0001'), ('component', 'Neomycin sulphate'), ('substance', 'Neomycin sulphate'), ('ingredient', 'Talc'),
+               ('excipient', 'Talc'), ('function', 'Active substance'), ('standard', 'Ph. Eur.'), ('grade', 'Ph. Eur.'), ('quantity', '3.5 mg'), ('%', '0.35 %'),
+               ('overage', 'none'), ('manufacturer', 'Example API Ltd.'), ('route', 'CEP'), ('option', 'Option 1 — CEP'), ('version', '1.0'), ('cep', 'R1-CEP 2020-123'),
+               ('impurity', 'Impurity A'), ('origin', 'Synthesis'), ('structure', 'C23H46N6O13'), ('justification', 'ICH Q3A reporting / identification thresholds'),
+               ('solvent', 'Methanol'), ('class', 'Class 2'), ('technique', 'IR spectroscopy'), ('observation', 'Bands at 3300, 1640 cm⁻¹'), ('interpretation', 'Consistent with the structure'),
+               ('spectrum', 'Annex 3.2.S.3.1-1'), ('property', 'Solubility (pH 6.8, 37 °C)'), ('value', '> 100 mg/mL (very soluble)'), ('source', 'Supplier data sheet'),
+               ('parameter', 'Mixing time'), ('target', '15 min'), ('range', '12–18 min'), ('equipment', 'Bin blender 200 L'), ('capacity', '200 L'), ('step', 'Blending'),
+               ('ipc', 'Blend uniformity'), ('sampling', '10 locations'), ('hold', '48 h'), ('condition', '30 °C / 75 % RH'), ('time', '6 months'), ('container', 'HDPE bottle 20 g'),
+               ('specificity', 'No interference'), ('linearity', 'r² = 0.9995, 50–150 %'), ('accuracy', '99.2–100.6 %'), ('precision', 'RSD 0.6 %'), ('lod', '0.02 / 0.05 %'),
+               ('robustness', 'Complies'), ('report', 'VAL-2024-07'), ('study', 'BE-2024-01'), ('design', 'Crossover, 2×2, fasting'), ('subjects', '28 healthy volunteers'),
+               ('product', 'Dermacure 3.5 mg/g'), ('cro', 'Example CRO, Cairo'), ('location', '5.3.1.2'), ('section', '2.3.P.1'), ('title', 'Description and composition'),
+               ('included', 'yes'), ('module', '3.2.P.1'), ('node', 'STF-01'), ('material', 'HDPE'), ('certificate', 'TSE/BSE statement 2024'), ('validity', '2026-12-31'),
+               ('field', 'Trade name'), ('party', 'Example Pharm Co.'), ('role', 'Licence holder'), ('register', 'CR 123456'), ('content', 'QOS-PD table'),
+               ('cross', '3.2.P.5.1'), ('attribute', 'Dissolution'), ('trial', 'F3 / DC2201'), ('change', 'Disintegrant 2 % → 4 %'), ('conclusion', 'Faster release, within limits'),
+               ('medium', 'pH 6.8 phosphate buffer'), ('point', '15 min'), ('f2', '62'), ('match', 'yes'), ('text', 'Dermacure 3.5 mg/g topical powder')]
+SAMPLE_FIELDS = {'trade_name': 'Dermacure', 'dosage_form': 'Topical powder', 'strength': '3.5 mg/g', 'pack': 'Bottle of 20 g', 'manufacturer': 'Example Pharm Co.',
+                 'applicant': 'Example Pharm Co.', 'registration_number': 'EG-12345', 'date': '2024-03-15', 'signatory': 'Dr. A. Example', 'signatory_title': 'Regulatory Affairs Manager',
+                 'company': 'Example Pharm Co.', 'version': '1.0', 'inn': 'Neomycin sulfate', 'compendial': 'Neomycin Sulfate Ph. Eur.', 'chemical': '…', 'iupac': '…', 'code': 'EX-001',
+                 'other': 'Neomycin sulphate (BAN)', 'cas': '1405-10-3', 'formula': 'C23H46N6O13 · xH2SO4', 'mw': '614.6 (base)', 'stereo': 'Several chiral centres (aminoglycoside)',
+                 'image': '[structure drawing]'}
+
+
+def _sample_for(col):
+    c = str(col).lower()
+    for key, val in SAMPLE_COLS:
+        if key in c:
+            return val
+    return '…'
+
+
+def examples(entry):
+    """Per section: an example of a filled section — one sample row per table, sample field values, the hint as the example of a text."""
+    out = {}
+    for s in entry.get('sections') or []:
+        if s['kind'] == 'table':
+            out[s['id']] = {'rows': [[_sample_for(c) for c in s['columns']]]}
+        elif s['kind'] == 'fields':
+            out[s['id']] = {f['key']: SAMPLE_FIELDS.get(f['key'], '…') for f in s.get('fields') or []}
+        elif s['kind'] == 'list':
+            h = (s.get('hint') or {})
+            out[s['id']] = {'en': [x.strip() for x in (h.get('en') or '').replace(';', '.').split('.') if x.strip()][:6] or ['…'],
+                            'ar': [x.strip() for x in (h.get('ar') or '').replace('؛', '.').split('.') if x.strip()][:6] or ['…']}
+        else:
+            h = (s.get('hint') or {})
+            out[s['id']] = {'en': h.get('en') or '…', 'ar': h.get('ar') or h.get('en') or '…'}
+    return out
+
+
+def compute(st, did, slot, answers=None, use_ai=True):
+    """The filled template without storing anything: (answers, how, ctx). answers given → used as they are (the page's model or the
+    user's edits); None → the server's model when a key exists and use_ai, else the deterministic fill. The data's own values fill
+    any section the answers left empty."""
+    entry = template(slot.req_id)
+    if not entry or entry['draft'] not in ('full', 'partial'):
+        raise ValueError('this item is not drafted by the program')
+    ctx = context(st, did, slot, with_texts=True)
+    how = 'answers'
+    if answers is None:
+        got = ask_model(st, prompt(entry, ctx)) if use_ai else None
+        if got is None:
+            answers, how = deterministic(entry, ctx), 'data'
+        else:
+            answers, how = got, 'server-model'
+    answers = dict(answers or {})
+    if not isinstance(answers.get('sections'), dict):
+        answers['sections'] = {}
+    det = deterministic(entry, ctx)
+    for k, v in det['sections'].items():
+        if not answers['sections'].get(k):
+            answers['sections'][k] = v
+    if 'gaps' not in answers or not isinstance(answers['gaps'], list):
+        answers['gaps'] = det['gaps'] if how == 'data' else []
+    return answers, how, ctx
+
+
 # ---------------- the Word draft
 def _lang_of(entry, lang):
     return lang if lang in ('en', 'ar') else ('ar' if entry.get('lang') == 'ar' else 'en')
@@ -351,30 +432,11 @@ def render(entry, answers, ctx, out, lang=None, title=None):
 
 
 def draft(st, did, slot, answers=None, lang=None, use_ai=True, req_item=None):
-    """Build the draft and store it in the item as an unsigned Word version. answers: the model's JSON (browser edition sends it);
-    None → the server's model when a key exists and use_ai, else the deterministic fill."""
+    """Build the draft and store it in the item as an unsigned Word version. answers: the model's JSON or the user's edited
+    preview (the page sends it); None → the server's model when a key exists and use_ai, else the deterministic fill."""
     import tempfile, shutil
     entry = template(slot.req_id)
-    if not entry or entry['draft'] not in ('full', 'partial'):
-        raise ValueError('this item is not drafted by the program')
-    ctx = context(st, did, slot, with_texts=True)
-    how = 'answers'
-    if answers is None:
-        got = ask_model(st, prompt(entry, ctx)) if use_ai else None
-        if got is None:
-            answers, how = deterministic(entry, ctx), 'data'
-        else:
-            answers, how = got, 'server-model'
-    answers = answers or {}
-    if not isinstance(answers.get('sections'), dict):
-        answers['sections'] = {}
-    # the program's own data wins over an empty model section
-    det = deterministic(entry, ctx)
-    for k, v in det['sections'].items():
-        if not answers['sections'].get(k):
-            answers['sections'][k] = v
-    if 'gaps' not in answers or not isinstance(answers['gaps'], list):
-        answers['gaps'] = det['gaps'] if how == 'data' else []
+    answers, how, ctx = compute(st, did, slot, answers=answers, use_ai=use_ai)
     tmp = Path(tempfile.mkdtemp())
     try:
         out = tmp / f"{slot.req_id}-draft.docx"

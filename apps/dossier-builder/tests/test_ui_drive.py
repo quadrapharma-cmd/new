@@ -62,7 +62,7 @@ def test_wizard_reads_a_drive_folder(server, tmp_path):
             assert page.is_checked('[data-drvsel="1"]') and page.is_disabled('[data-drvsel="2"]')     # the PDF is picked, the HEIC cannot be read
             page.locator('#drawer').screenshot(path=f'{OUT}/drive_picker_ar.png')
             page.click('#drvUse')
-            page.wait_for_selector('#intakeApply', timeout=120000)
+            page.wait_for_selector('#intakeReview', timeout=120000); page.click('#intakeReview'); page.wait_for_selector('#intakeApply')
             page.wait_for_function("document.querySelector('#rv-name') && document.querySelector('#rv-name').value === 'Dermacure'", timeout=20000)
             assert page.input_value('#rv-form') == 'powder-topical' and page.input_value('[data-rva="0"][data-f=name]') == 'Neomycin Sulphate'
             assert 'licence.pdf' in page.inner_text('#dBody')
@@ -118,7 +118,7 @@ def test_browser_edition_reads_a_link_through_the_viewers_drive_connector(server
         page.wait_for_function("() => document.querySelector('#drvFiles').textContent.includes('licence.pdf')")
         page.uncheck('[data-drvsel="3"]')                                                        # leave the Google Doc out: the stand-in has no bytes for it
         page.click('#drvUse')
-        page.wait_for_selector('#intakeApply', timeout=120000)
+        page.wait_for_selector('#intakeReview', timeout=120000); page.click('#intakeReview'); page.wait_for_selector('#intakeApply')
         page.wait_for_function("() => document.querySelector('#rv-name') && document.querySelector('#rv-name').value === 'Dermacure'", timeout=20000)
         calls = page.evaluate("() => window.__mcpCalls.map(c => c[1])")
         assert calls.count('download_file_content') == 1 and 'search_files' in calls
