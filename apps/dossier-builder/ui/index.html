@@ -303,6 +303,12 @@ const T = {
   apiManMissing:{en:'manufacturer not read — type it',ar:'المصنع ما اتقراش — اكتبه'}, compRead:{en:'Composition rows read',ar:'صفوف التركيب اللي اتقرت'}, batchRead:{en:'Batches',ar:'تشغيلات'}, toData:{en:'they go to the product data after the dossier is created',ar:'بتتحط في بيانات المنتج بعد إنشاء الملف'}, pagesN:{en:'p.',ar:'صفحة'}, fText:{en:'text',ar:'نص مقروء'},
   fScan:{en:'scan — no text layer',ar:'سكان بدون نص'}, fVision:{en:'scan read from its page images',ar:'سكان اتقرى من صور صفحاته'}, fOcrBrowser:{en:'scan read by OCR in the browser',ar:'سكان اتقرى بـ OCR في المتصفح'},
   ocrRunning:{en:'Reading the scan (OCR in the browser)…',ar:'بيقرأ السكان (OCR في المتصفح)…'},
+  ocrNoEngine:{en:'this edition has no engine for scanned pages (the OCR files are not installed): update to the latest build, or open the browser edition',ar:'النسخة دي من غير محرك لقراءة الصفحات الممسوحة (ملفات الـ OCR مش متثبتة): حدّث لآخر إصدار، أو افتح نسخة المتصفح'},
+  ocrWhyNot:{en:'why it was not read',ar:'ليه ما اتقراش'},
+  driveKeyHow:{en:'How do I get the key? (free, five minutes, once)',ar:'أجيب المفتاح منين؟ (مجاني، خمس دقايق، مرة واحدة)'},
+  driveKeySteps:{en:['Open console.cloud.google.com with your Google account and create a project (any name).','APIs & Services → Library → search «Google Drive API» → Enable.','APIs & Services → Credentials → Create credentials → API key; copy the key (it starts with AIza…).','Optional but wise: Edit the key → restrict it to the Google Drive API.','Paste it here and save. The folder itself must be shared «Anyone with the link — Viewer».'],
+   ar:['افتح console.cloud.google.com بحساب جوجل بتاعك واعمل مشروع (أي اسم).','APIs & Services ← Library ← دوّر على «Google Drive API» ← Enable.','APIs & Services ← Credentials ← Create credentials ← API key؛ انسخ المفتاح (بيبدأ بـ AIza…).','اختياري بس أحسن: Edit the key ← قصره على Google Drive API.','الصقه هنا واحفظ. والفولدر نفسه لازم يكون متشارك «Anyone with the link — Viewer».']},
+  driveKeyWhy:{en:'Google does not let a program read a folder from its link alone: the program must identify itself to the Drive API with a key. The key is an identifier of your project, not a password, and it only reaches folders shared with the link.',ar:'جوجل مش بيسمح لبرنامج يقرأ فولدر من اللينك لوحده: لازم البرنامج يعرّف نفسه لـ Drive API بمفتاح. المفتاح ده معرّف لمشروعك، مش كلمة سر، وما يوصلش غير للفولدرات المتشاركة باللينك.'},
   readableBtn:{en:'Make readable (OCR)',ar:'حوّل لمقروء (OCR)'}, chooseOpt:{en:'— choose —',ar:'— اختر —'}, otherVal:{en:'Other…',ar:'أخرى…'},
   driveT:{en:'From Google Drive',ar:'من Google Drive'}, driveList:{en:'Show the files',ar:'اعرض الملفات'}, driveUse:{en:'Read the selected files',ar:'اقرأ المختار'}, drivePlace:{en:'Use the selected files',ar:'استخدم المختار'},
   driveRec:{en:'include sub-folders',ar:'مع الفولدرات الفرعية'}, driveName:{en:'File',ar:'الملف'}, driveType:{en:'Type',ar:'النوع'}, driveSize:{en:'Size',ar:'الحجم'}, driveFetching:{en:'Reading from Drive…',ar:'بيجيب الملفات من Drive…'},
@@ -896,6 +902,7 @@ const fmtSize=n=>n>1e6?`${(n/1e6).toFixed(1)} MB`:n>1e3?`${Math.round(n/1e3)} KB
 const driveType=f=>f.kind==='folder'?L({en:'folder',ar:'فولدر'}):/pdf/.test(f.mimeType)?'PDF':/wordprocessingml|msword/.test(f.mimeType)?'Word':/google-apps.document/.test(f.mimeType)?'Google Doc':/google-apps.spreadsheet/.test(f.mimeType)?'Google Sheet':/google-apps.presentation/.test(f.mimeType)?'Google Slides':/^image\//.test(f.mimeType)?L({en:'image',ar:'صورة'}):(f.mimeType||'').split('/').pop()||'?';
 function driveSettingsForm(ds){ return `<div class="card pad stack gap-s" id="drvSetBox"><b>${esc(t('driveSet'))}</b><div class="form">
   <label class="f"><span>${esc(t('driveKey'))}</span><input type="password" id="drvKey" dir="ltr" autocomplete="off" placeholder="${esc(ds.api_key_hint||'AIza…')}"></label>
+  <details class="small" style="grid-column:1/-1"><summary style="cursor:pointer">${esc(t('driveKeyHow'))}</summary><p class="muted">${esc(t('driveKeyWhy'))}</p><ol style="margin:4px 18px;padding:0">${(T.driveKeySteps[S.lang]||T.driveKeySteps.en).map(s=>`<li>${esc(s)}</li>`).join('')}</ol></details>
   ${ds.browser?'':`<label class="f" style="grid-column:1/-1"><span>${esc(t('driveSA'))}${ds.service_account_email?` · <span class="code">${esc(ds.service_account_email)}</span>`:''}</span><textarea id="drvSA" rows="3" dir="ltr" placeholder='{"type":"service_account", "client_email": "…", "private_key": "…"}'></textarea></label>`}</div>
   <div class="row gap-s"><button class="btn pri sm" id="drvSave">${icon('check',14)} ${esc(t('driveSave'))}</button><span class="small muted" id="drvSetMsg"></span></div></div>`; }
 async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await api('/drive/settings'); }catch(e){ toast(e.message); return; }
@@ -927,16 +934,20 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
 async function browserOcr(r, files, target){
   /* scans the server could not read (no tesseract there) are read here, in the browser, then the rules run again on the texts */
   const scans=(r.files||[]).map((f,i)=>({f,i})).filter(x=>x.f.scanned&&!x.f.ocr&&files[x.i]);
-  if(!scans.length||!window.DBOCR||!(await window.DBOCR.available())) return r;
+  if(!scans.length) return r;
+  if(!window.DBOCR||!(await window.DBOCR.available())){ scans.forEach(x=>x.f.ocr_error='no-engine'); return r; }   // the reason is shown in the drawer
   const texts=r.files.map(f=>({filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,ocr:f.ocr,file:f.file}));
-  let any=false;
+  let any=false; const errs={};
   for(const {f,i} of scans){
     try{ const o=await window.DBOCR.readFile(files[i],{maxPages:4,onProgress:(st,p,pg,n)=>toast(`${t('ocrRunning')} ${f.filename}${pg?` · ${t('pagesN')} ${pg}/${n}`:''} ${Math.round((p||0)*100)}%`)});
-      if(o.chars>20){ texts[i].text=o.text; texts[i].ocr=true; texts[i].ocr_where='browser'; texts[i].pages=texts[i].pages||o.pages; any=true; } }
-    catch(e){ console.warn('browser ocr', e); toast(`${t('ocrFailed')} ${e&&e.message||e}`); }
+      if(o.chars>20){ texts[i].text=o.text; texts[i].ocr=true; texts[i].ocr_where='browser'; texts[i].pages=texts[i].pages||o.pages; any=true; }
+      else errs[i]=L({ar:'الصفحات طلعت فاضية (صورة باهتة أو مقلوبة؟)', en:'the pages came out empty (faint or rotated image?)'}); }
+    catch(e){ console.warn('browser ocr', e); errs[i]=String(e&&e.message||e); toast(`${t('ocrFailed')} ${errs[i]}`); }
   }
+  Object.entries(errs).forEach(([i,m])=>{ r.files[i].ocr_error=m; });
   if(!any) return r;
   const r2=await api(`/extract/text?target=${target}`,{method:'POST',json:{files:texts}});
+  Object.entries(errs).forEach(([i,m])=>{ if(r2.files[i]) r2.files[i].ocr_error=m; });
   return Object.assign({}, r, {files:r2.files, rules:r2.rules, prompt:r2.prompt});
 }
 async function readFiles(files, target){
@@ -965,7 +976,8 @@ function reviewIntake(x, files){
   const scannedAll=(x.r&&x.r.files||[]).filter(f=>f.scanned); if(S.wiz) S.wiz.scannedNames=scannedAll.map(f=>f.filename);
   openDrawer(t('reviewT'), `
    <div class="alert ${x.ai?'ok':'info'}">${icon(x.ai?'sparkles':'info')}<p class="small">${esc(x.ai?t('byAi'):t('byRules'))}${x.note?` — ${esc(t('aiFailed'))} <span class="code">${esc(x.note)}</span>`:''}</p></div>
-   ${(x.r&&x.r.files||[]).length?`<div class="row gap-s"><span class="small muted">${esc(t('whatRead'))}:</span>${x.r.files.map(f=>`<span class="chip ${f.chars>20||(f.scanned&&x.ai)?'c-ok':'c-warn'}"><i></i>${esc(f.filename)} · ${f.pages} ${esc(t('pagesN'))} · ${esc(f.ocr?(f.ocr_where==='browser'?t('fOcrBrowser'):t('fOcr')):f.scanned?(x.ai?t('fVision'):t('fScan')):t('fText'))}${f.kind&&f.kind!=='other'?` · ${esc(f.kind)}`:''}</span>`).join('')}</div>`:''}
+   ${(x.r&&x.r.files||[]).length?`<div class="row gap-s"><span class="small muted">${esc(t('whatRead'))}:</span>${x.r.files.map(f=>`<span class="chip ${f.chars>20||(f.scanned&&x.ai)?'c-ok':'c-warn'}"><i></i>${esc(f.filename)} · ${f.pages} ${esc(t('pagesN'))} · ${esc(f.ocr?(f.ocr_where==='browser'?t('fOcrBrowser'):t('fOcr')):f.scanned?(x.ai?t('fVision'):t('fScan')):t('fText'))}${f.kind&&f.kind!=='other'?` · ${esc(f.kind)}`:''}</span>`).join('')}</div>
+   ${(x.r.files.some(f=>f.ocr_error&&!x.ai))?`<div class="alert"><p class="small"><b>${esc(t('ocrWhyNot'))}:</b> ${x.r.files.filter(f=>f.ocr_error).map(f=>`${esc(f.filename)} — ${esc(f.ocr_error==='no-engine'?t('ocrNoEngine'):f.ocr_error)}`).join(' · ')}</p></div>`:''}`:''}
    ${any||(sc.length&&!x.ai)?'':`<div class="alert">${icon('alert')}<p class="small">${esc(t('nothingRead'))}</p></div>`}
    ${scannedAll.length&&(S.caps&&S.caps.ocr_server||scannedAll.some(f=>f.ocr_where==='browser'))?`<label class="small row gap-s" style="align-items:flex-start"><input type="checkbox" id="rvReadable" checked><span>${esc(t('makeReadable'))}</span></label>`:''}
    ${(()=>{ if(!sc.length) return '';

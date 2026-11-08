@@ -384,7 +384,8 @@ def create_app(workspace, auth_enabled=None):
         from ..assistant import settings as _asettings
         import importlib.util
         return {'version': app.version, 'workspace': str(st.root), 'assistant': _asettings.status(st.root),
-                'ocr_server': bool(_arabic.ocr_available() and importlib.util.find_spec('ocrmypdf')), 'drive': __import__('dossier_engine.drive', fromlist=['status']).status(st.root),
+                'ocr_server': bool(_arabic.ocr_available() and importlib.util.find_spec('ocrmypdf')),
+                'ocr_browser': bool(getattr(app.state, 'ocr_browser', False)), 'drive': __import__('dossier_engine.drive', fromlist=['status']).status(st.root),
                 'dossiers': st.db.execute('select count(*) from dossier').fetchone()[0],
                 'pack': {'id': pack.id, 'title': pack.meta['title'], 'status': pack.meta['status'],
                          'valid_from': pack.meta['valid_from'], 'sources': pack.meta['sources']},
@@ -611,6 +612,7 @@ def create_app(workspace, auth_enabled=None):
         for sub in ('tess', 'pdfjs'):                   # browser OCR and page rendering (fetched by web/vendor.sh; not in git)
             if (VENDOR / sub).is_dir():
                 app.mount(f'/assets/{sub}', StaticFiles(directory=VENDOR / sub), name=f'vendor-{sub}')
+        app.state.ocr_browser = (VENDOR / 'tess' / 'tesseract.min.js').exists() and (VENDOR / 'pdfjs' / 'pdf.min.mjs').exists()
         app.mount('/', StaticFiles(directory=STATIC, html=True), name='ui')
     app.state.store = st
     return app
