@@ -17,3 +17,12 @@ pip download -q --no-deps --only-binary=:all: --python-version 3.12 --platform a
 ls -la "$HERE/vendor/pyodide" "$HERE/vendor/wheels"
 # pdf.js (page images of scanned PDFs for the AI intake)
 mkdir -p "$HERE/vendor/pdfjs" && curl -sS -L "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.10.38.tgz" | tar -xz -C /tmp package/build/pdf.min.mjs package/build/pdf.worker.min.mjs && cp /tmp/package/build/pdf.min.mjs /tmp/package/build/pdf.worker.min.mjs "$HERE/vendor/pdfjs/"
+# tesseract.js (OCR in the browser: Arabic + English): the library, its single-file LSTM cores, and the fast language data as base64 text
+T="$HERE/vendor/tess"; mkdir -p "$T" /tmp/tessjs
+curl -sS -L "https://registry.npmjs.org/tesseract.js/-/tesseract.js-7.0.0.tgz" | tar -xz -C /tmp/tessjs package/dist/tesseract.min.js package/dist/worker.min.js package/dist/tesseract.min.js.LICENSE.txt
+curl -sS -L "https://registry.npmjs.org/tesseract.js-core/-/tesseract.js-core-6.1.2.tgz" | tar -xz -C /tmp/tessjs package/tesseract-core-simd-lstm.wasm.js package/tesseract-core-lstm.wasm.js package/LICENSE
+cp /tmp/tessjs/package/dist/tesseract.min.js /tmp/tessjs/package/dist/worker.min.js /tmp/tessjs/package/tesseract-core-simd-lstm.wasm.js /tmp/tessjs/package/tesseract-core-lstm.wasm.js "$T/"
+cp /tmp/tessjs/package/dist/tesseract.min.js.LICENSE.txt "$T/LICENSE.tesseract.js.txt"; cp /tmp/tessjs/package/LICENSE "$T/LICENSE.tesseract.js-core.txt"
+for l in ara eng; do curl -sS -L -o /tmp/$l.traineddata "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/$l.traineddata"; gzip -9 -c /tmp/$l.traineddata | base64 -w0 > "$T/$l.traineddata.gz.b64.txt"; done
+cp "$HERE/tess/worker.boot.js" "$T/"      # decodes the base64 language data inside the worker (tracked in git)
+ls -la "$T"

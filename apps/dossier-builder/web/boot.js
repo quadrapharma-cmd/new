@@ -7,6 +7,7 @@
     'python_multipart-0.0.20-py3-none-any.whl', 'pypdf-7.0.0-py3-none-any.whl', 'python_docx-1.2.0-py3-none-any.whl'];
   const PKGS = ['sqlite3', 'hashlib', 'ssl', 'lxml', 'pyyaml', 'pydantic', 'jsonschema'];
   const base = new URL('.', document.baseURI).href;
+  window.DB_TESS_BASE = base + 'assets/tess/'; window.DB_PDFJS_BASE = base + 'assets/pdfjs/';     // ocr.js (tesseract.js + pdf.js)
   const S = { pyodide: null, handle: null, syncTimer: null, ready: null };
   const AR = (document.documentElement.lang || 'ar') !== 'en';
 

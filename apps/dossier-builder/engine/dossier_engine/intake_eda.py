@@ -41,7 +41,7 @@ LABELS = [
 ]
 LABEL_RX = [(key, re.compile(r'(?<![A-Za-z])(?:' + '|'.join(pats) + r')\s*[^:\n]{0,3}:', re.I)) for key, pats in LABELS]
 UNIT = r'(?:mg|mcg|µg|ug|g|gm|iu|i\.u\.|%|ml|units?)'
-STRENGTH = re.compile(r'^(?P<name>[A-Za-z][A-Za-z\s\-\.\(\)/,]*?)\s*(?P<amt>\d+(?:[.,]\d+)?)[!|]?\s?(?P<unit>' + UNIT + r')\b\s*(?:\(\s*(?P<eq>[^)]{1,60}?)\s*\))?', re.I)
+STRENGTH = re.compile(r'^(?P<name>[A-Za-z][A-Za-z\s\-\.\(\)/,]*?)\s*(?P<amt>\d+(?:[.,]\d+)?)[!|]?\s?(?P<unit>' + UNIT + r')(?![A-Za-z])\s*(?:\(\s*(?P<eq>[^)]{1,60}?)\s*\))?', re.I)
 EACH = re.compile(r'^\s*' + EACH_RX + r'\s*:?-?\s*', re.I)
 SALTS = ['sulphate', 'sulfate', 'hydrochloride', 'zinc', 'sodium', 'potassium', 'calcium', 'magnesium', 'maleate', 'besylate', 'mesylate', 'tosylate',
          'acetate', 'citrate', 'phosphate', 'tartrate', 'fumarate', 'succinate', 'bromide', 'chloride', 'nitrate', 'stearate', 'trihydrate',
@@ -175,7 +175,7 @@ def actives(block_lines):
         it = _clean(it)
         if not it or EACH.match(it) or re.match(r'^(?:strength|each)\b', it, re.I):
             continue
-        if STD.search(it) or TITLE.match(it) or re.search(r'\b(?:website|tel|email|fax|issue\s*date)\b', it, re.I):
+        if STD.search(it) or TITLE.match(it) or re.search(r'\b(?:website|tel|email|fax|issue\s*date)\b|quivalent|\b\d{6}\b', it, re.I):
             continue                                     # a composition-table row (composition() reads it), a signature, a footer
         m = STRENGTH.match(it)
         if m:
@@ -189,7 +189,7 @@ def actives(block_lines):
     seen, uniq = set(), []
     for a in out:
         k = _norm(a['name'])
-        if k and k not in seen:
+        if k and k not in seen and not any(len(s) >= 6 and k.startswith(s) for s in seen):
             seen.add(k)
             uniq.append(a)
     if any(re.search(r'\d\.\d{3}\b', a['strength'] or '') for a in uniq):     # 3-decimal style on the form: «10,000 mg» is OCR for «10.000 mg»

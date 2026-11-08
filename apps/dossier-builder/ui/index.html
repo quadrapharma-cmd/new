@@ -184,6 +184,8 @@ html[lang="ar"] .vstrip .vlabel{letter-spacing:0;text-transform:none}
 <div class="toast" id="toast" role="status" hidden></div>
 <input type="file" id="picker" accept="application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.tif,.tiff,.docx" hidden>
 <script src="/assets/ds.js"></script>
+<script>window.DB_TESS_BASE=window.DB_TESS_BASE||'/assets/tess/';window.DB_PDFJS_BASE=window.DB_PDFJS_BASE||'/assets/pdfjs/';</script>
+<script src="/assets/ocr.js"></script>
 <script>
 'use strict';
 const {$, $$, esc, bdi, icon, store, toast, openDrawer, closeDrawer, ring, meter, fmtDate, fmtTs, pct} = DS;
@@ -271,7 +273,11 @@ const T = {
   aiFailed:{en:'AI reading unavailable:',ar:'القراءة الذكية مش متاحة:'}, fillAll:{en:'Fill the fields',ar:'املأ الخانات'},
   badFiles:{en:'Choose PDF, image (JPG/PNG) or Word files.',ar:'اختار ملفات PDF أو صور (JPG/PNG) أو Word.'}, apiHint:{en:'one row per active substance; a substance without a manufacturer is kept in the form for you to complete',ar:'صف لكل مادة فعالة؛ المادة اللي من غير مصنع بتفضل في النموذج عشان تكمّلها'},
   apiManMissing:{en:'manufacturer not read — type it',ar:'المصنع ما اتقراش — اكتبه'}, compRead:{en:'Composition rows read',ar:'صفوف التركيب اللي اتقرت'}, batchRead:{en:'Batches',ar:'تشغيلات'}, toData:{en:'they go to the product data after the dossier is created',ar:'بتتحط في بيانات المنتج بعد إنشاء الملف'}, pagesN:{en:'p.',ar:'صفحة'}, fText:{en:'text',ar:'نص مقروء'},
-  fScan:{en:'scan — no text layer',ar:'سكان بدون نص'}, fVision:{en:'scan read from its page images',ar:'سكان اتقرى من صور صفحاته'},
+  fScan:{en:'scan — no text layer',ar:'سكان بدون نص'}, fVision:{en:'scan read from its page images',ar:'سكان اتقرى من صور صفحاته'}, fOcrBrowser:{en:'scan read by OCR in the browser',ar:'سكان اتقرى بـ OCR في المتصفح'},
+  ocrRunning:{en:'Reading the scan (OCR in the browser)…',ar:'بيقرأ السكان (OCR في المتصفح)…'},
+  readableBtn:{en:'Make readable (OCR)',ar:'حوّل لمقروء (OCR)'}, readableRunning:{en:'Making a readable copy…',ar:'بيعمل نسخة مقروءة…'}, readableDone:{en:'Readable copy saved as a new version (page images unchanged).',ar:'اتحفظت نسخة مقروءة كإصدار جديد (صور الصفحات زي ما هي).'},
+  readableNoOcr:{en:'No OCR available here: install tesseract on this computer or use the browser edition.',ar:'مفيش OCR متاح هنا: ثبّت tesseract على الجهاز أو استخدم نسخة المتصفح.'},
+  makeReadable:{en:'After saving, convert the scanned files to readable PDFs (OCR text layer; the page images stay as they are)',ar:'بعد الحفظ، حوّل الملفات الممسوحة لـ PDF مقروء (طبقة نص OCR؛ صور الصفحات زي ما هي)'}, ocrFailed:{en:'Browser OCR failed:',ar:'قراءة الـ OCR في المتصفح فشلت:'},
   scanByVision:{en:'Scans without text were read from their page images by Claude',ar:'المستندات الممسوحة بدون نص اتقرت من صور صفحاتها بواسطة Claude'},
   scanUnread:{en:'Scans without text — not read on this computer',ar:'مستندات ممسوحة بدون نص — ما اتقرتش على الجهاز ده'},
   asst:{en:'Assistant',ar:'المساعد'}, asstBrowser:{en:'The Assistant works in the desktop and cloud editions: it needs the company\'s Anthropic key on the server.',ar:'المساعد بيشتغل في نسخة سطح المكتب والسحابة: محتاج مفتاح Anthropic بتاع الشركة على الخادم.'},
@@ -691,14 +697,14 @@ function wizard(){
       const r = await api('/dossiers',{method:'POST',json:{name:d.name||d.trade||'Dossier',profile:profileOf(d),
         product:{name:d.trade||d.name,dosageform:d.form,manufacturer:d.man,indication:d.ind||null},
         envelope:{tracking:d.tracking,applicant:d.applicant,invented_name:d.trade||d.name,inn:d.inn.split(',').map(s=>s.trim()).filter(Boolean),portal_id:d.portal,description:'Initial MAA'}}});
-      const files=S.wiz.intakeFiles||[], fill=S.wiz.intakeFill; S.wiz=null; location.hash=`#/d/${r.id}/board`;
+      const files=S.wiz.intakeFiles||[], fill=S.wiz.intakeFill, placeOpts={readable:!!S.wiz.makeReadable, scanned:S.wiz.scannedNames||[]}; S.wiz=null; location.hash=`#/d/${r.id}/board`;
       if(fill){ try{ const data={apis:(d.apis||[]).filter(a=>a.name).map(a=>({name:a.name,manufacturer:a.manufacturer||'',option:a.option||'FULL',strength:a.strength||'',country:a.country||''})),
           composition:(fill.composition||[]).map(c=>({name:c.name,amount:c.amount||'',standard:c.standard||'',function:c.role==='active'?'active':(c.role||''),equivalent:c.equivalent||''})),
           batches:(fill.batches||[]).map(b=>({no:b.no,kind:b.kind||'fpp',size:b.size||'',date:b.date||'',site:b.site||'',expiry:b.expiry||'',conformity:b.conformity||''})),
           specs:{product:(fill.specs||[]).map(s=>({test:s.test,limit:s.limit||'',method:s.method||''}))}, results:{}, registration:fill.registration||{}, product:{name_ar:(fill.product||{}).name_ar||''}};
           for(const r0 of (fill.results||[])){ if(r0.batch&&r0.test){ (data.results[r0.batch]=data.results[r0.batch]||{})[r0.test]=r0.value; } }
           await api(`/dossiers/${r.id}/data`,{method:'PUT',json:data}); }catch(e){ console.warn('intake data', e); } }
-      if(files.length){ S.dossier=await api(`/dossiers/${r.id}`); await placeFiles(r.id, files); }
+      if(files.length){ S.dossier=await api(`/dossiers/${r.id}`); await placeFiles(r.id, files, placeOpts); }
     }catch(e){ const probs = e.detail && e.detail.problems;
       $('#wizErr').innerHTML=`<div class="alert bad">${icon('alert')}<p>${probs?probs.map(p=>esc(p[S.lang])).join('<br>'):esc(e.message)}</p></div>`; }
   };
@@ -746,9 +752,35 @@ function mergeFill(rules, ai){
   out.sources=ai.sources||{};
   return out;
 }
+async function makeReadable(did, docId, filename){
+  if(S.caps&&S.caps.ocr_server){ const r=await api(`/dossiers/${did}/documents/${docId}/fix`,{method:'POST'});
+    if(r.document) toast(t('readableDone')); else if(r.refused&&r.refused.length) toast(t('fixRefused')+' '+r.refused.map(x=>x[S.lang]).join(' · ')); return r.document; }
+  if(!window.DBOCR||!(await window.DBOCR.available())){ toast(t('readableNoOcr')); return null; }
+  const blob=await (await fetch(`/api/dossiers/${did}/documents/${docId}/file`)).blob(); const file=new File([blob], filename||'scan.pdf', {type:'application/pdf'});
+  const n=await window.DBOCR.pageCount(file);
+  const o=await window.DBOCR.readFile(file,{pdfPages:true,maxPages:Math.min(n,60),scale:2.8,onProgress:(st,p,pg,m)=>toast(`${t('readableRunning')} ${filename||''}${pg?` · ${t('pagesN')} ${pg}/${m}`:''} ${Math.round((p||0)*100)}%`)});
+  const fd=new FormData(); (o.pdfs||[]).forEach((u,i)=>fd.append('pages', new Blob([u||new Uint8Array()],{type:'application/pdf'}), `p${i+1}.pdf`));
+  const doc=await api(`/dossiers/${did}/documents/${docId}/ocr-layer`,{method:'POST',body:fd}); toast(t('readableDone')); return doc;
+}
+async function browserOcr(r, files, target){
+  /* scans the server could not read (no tesseract there) are read here, in the browser, then the rules run again on the texts */
+  const scans=(r.files||[]).map((f,i)=>({f,i})).filter(x=>x.f.scanned&&!x.f.ocr&&files[x.i]);
+  if(!scans.length||!window.DBOCR||!(await window.DBOCR.available())) return r;
+  const texts=r.files.map(f=>({filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,ocr:f.ocr,file:f.file}));
+  let any=false;
+  for(const {f,i} of scans){
+    try{ const o=await window.DBOCR.readFile(files[i],{maxPages:4,onProgress:(st,p,pg,n)=>toast(`${t('ocrRunning')} ${f.filename}${pg?` · ${t('pagesN')} ${pg}/${n}`:''} ${Math.round((p||0)*100)}%`)});
+      if(o.chars>20){ texts[i].text=o.text; texts[i].ocr=true; texts[i].ocr_where='browser'; texts[i].pages=texts[i].pages||o.pages; any=true; } }
+    catch(e){ console.warn('browser ocr', e); toast(`${t('ocrFailed')} ${e&&e.message||e}`); }
+  }
+  if(!any) return r;
+  const r2=await api(`/extract/text?target=${target}`,{method:'POST',json:{files:texts}});
+  return Object.assign({}, r, {files:r2.files, rules:r2.rules, prompt:r2.prompt});
+}
 async function readFiles(files, target){
   const fd=new FormData(); files.forEach(f=>fd.append('files',f));
-  const r=await api(`/extract?target=${target}`,{method:'POST',body:fd});
+  let r=await api(`/extract?target=${target}`,{method:'POST',body:fd});
+  r=await browserOcr(r, files, target);
   let ai=null, note='';
   if(window.DBAI && await window.DBAI.available()){ toast(t('thinking')); try{ ai=await window.DBAI.extract(r.prompt, files, r.files, target); }catch(e){ note=(e&&(e.code||e.message))||'error'; } }
   else if(r.ai_server){ toast(t('thinking')); try{ const fd2=new FormData(); files.forEach(f=>fd2.append('files',f)); ai=(await api(`/extract/ai?target=${target}`,{method:'POST',body:fd2})).ai; }catch(e){ note=e.message; } }
@@ -768,10 +800,12 @@ function reviewIntake(x, files){
   const apis=(f.apis||[]).length?f.apis:[{}];
   const any=Object.keys(P).length||(f.apis||[]).length||Object.keys(E).length||Object.keys(R).length;
   const sc=(x.r&&x.r.files||[]).filter(f=>f.scanned&&!f.ocr);
+  const scannedAll=(x.r&&x.r.files||[]).filter(f=>f.scanned); if(S.wiz) S.wiz.scannedNames=scannedAll.map(f=>f.filename);
   openDrawer(t('reviewT'), `
    <div class="alert ${x.ai?'ok':'info'}">${icon(x.ai?'sparkles':'info')}<p class="small">${esc(x.ai?t('byAi'):t('byRules'))}${x.note?` — ${esc(t('aiFailed'))} <span class="code">${esc(x.note)}</span>`:''}</p></div>
-   ${(x.r&&x.r.files||[]).length?`<div class="row gap-s"><span class="small muted">${esc(t('whatRead'))}:</span>${x.r.files.map(f=>`<span class="chip ${f.chars>20||(f.scanned&&x.ai)?'c-ok':'c-warn'}"><i></i>${esc(f.filename)} · ${f.pages} ${esc(t('pagesN'))} · ${esc(f.ocr?t('fOcr'):f.scanned?(x.ai?t('fVision'):t('fScan')):t('fText'))}${f.kind&&f.kind!=='other'?` · ${esc(f.kind)}`:''}</span>`).join('')}</div>`:''}
+   ${(x.r&&x.r.files||[]).length?`<div class="row gap-s"><span class="small muted">${esc(t('whatRead'))}:</span>${x.r.files.map(f=>`<span class="chip ${f.chars>20||(f.scanned&&x.ai)?'c-ok':'c-warn'}"><i></i>${esc(f.filename)} · ${f.pages} ${esc(t('pagesN'))} · ${esc(f.ocr?(f.ocr_where==='browser'?t('fOcrBrowser'):t('fOcr')):f.scanned?(x.ai?t('fVision'):t('fScan')):t('fText'))}${f.kind&&f.kind!=='other'?` · ${esc(f.kind)}`:''}</span>`).join('')}</div>`:''}
    ${any||(sc.length&&!x.ai)?'':`<div class="alert">${icon('alert')}<p class="small">${esc(t('nothingRead'))}</p></div>`}
+   ${scannedAll.length&&(S.caps&&S.caps.ocr_server||scannedAll.some(f=>f.ocr_where==='browser'))?`<label class="small row gap-s" style="align-items:flex-start"><input type="checkbox" id="rvReadable" checked><span>${esc(t('makeReadable'))}</span></label>`:''}
    ${(()=>{ if(!sc.length) return '';
       return x.ai?`<div class="alert ok">${icon('sparkles')}<p class="small">${esc(t('scanByVision'))}: ${sc.map(f=>bdi(f.filename)).join(', ')}</p></div>`
                  :`<div class="alert">${icon('alert')}<p class="small"><b>${esc(t('scanUnread'))}:</b> ${sc.map(f=>bdi(f.filename)).join(', ')}. ${esc(t('scanHint'))}</p></div>`; })()}
@@ -801,6 +835,7 @@ function reviewIntake(x, files){
 }
 function applyIntake(files){
   const d=S.wiz.d, v=id=>(($('#'+id)||{}).value||'').trim();
+  S.wiz.makeReadable=!!($('#rvReadable')&&$('#rvReadable').checked);
   const name=v('rv-name'), strength=v('rv-strength'), form=v('rv-form');
   d.trade=name||d.trade; d.form=form||d.form; d.man=v('rv-man')||d.man; d.ind=v('rv-ind')||d.ind;
   if(name) d.name=[name, strength&&!name.includes(strength)?strength:'', form&&!name.toLowerCase().includes(form.toLowerCase())?form:''].filter(Boolean).join(' ');
@@ -814,28 +849,32 @@ function applyIntake(files){
   d.applicant=v('rv-applicant')||d.applicant; d.tracking=v('rv-tracking')||d.tracking; d.inn=v('rv-inn')||d.inn;
   S.wiz.intakeFiles=files; S.wiz.intake=`${files.length} ${t('intakeDone')}`; toast(t('filled')); wizard();
 }
-async function placeFiles(did, files){
+async function placeFiles(did, files, opts){
+  opts=opts||{};
   const fd=new FormData(); files.forEach(f=>fd.append('files',f));
   const res=await api(`/dossiers/${did}/classify`,{method:'POST',body:fd});
   if(!S.board||S.board.__did!==did){ S.board=await api(`/dossiers/${did}/board`); S.board.__did=did; }
-  let n=0; const left=[];
+  let n=0; const left=[], convert=[];
   for(const [i,r] of res.entries()){
     const best=r.suggestions[0], slot=best&&slotById(best.slot_id);
     if(!best||!slot||needsMeta(slot)){ left.push(r.filename); continue; }
     const f=new FormData(); f.append('file',files[i]); f.append('meta','{}');
-    try{ await api(`/dossiers/${did}/slots/${encodeURIComponent(best.slot_id)}/documents`,{method:'POST',body:f}); n++; }catch(e){ left.push(r.filename); }
+    try{ const doc=await api(`/dossiers/${did}/slots/${encodeURIComponent(best.slot_id)}/documents`,{method:'POST',body:f}); n++;
+      if(opts.readable&&(opts.scanned||[]).includes(files[i].name)&&doc&&doc.id) convert.push([doc.id, files[i].name]); }catch(e){ left.push(r.filename); }
   }
   toast(`${n} ${t('placed')}${left.length?` · ${left.length} ${t('notPlaced')}`:''}`);
+  for(const [id,name] of convert){ try{ await makeReadable(did, id, name); }catch(e){ toast(e.message); } }
   if(S.dossier&&S.dossier.id===did) await refreshCurrent();
 }
 async function dataExtract(){
   const id=S.dossier.id; toast(t('reading'));
   try{
-    const r=await api(`/dossiers/${id}/extract?target=dossier`,{method:'POST'});
+    let r=await api(`/dossiers/${id}/extract?target=dossier`,{method:'POST'});
     if(!r.files.length) return toast(t('noDocsYet'));
+    const files=[]; for(const f of r.files){ if(f.scanned&&!f.ocr&&f.doc_id){ const b=await (await fetch(`/api/dossiers/${id}/documents/${f.doc_id}/file`)).blob(); files.push(new File([b], f.filename, {type:'application/pdf'})); } else files.push(null); }
+    r=await browserOcr(r, files, 'dossier');
     let ai=null, note='';
     if(window.DBAI && await window.DBAI.available()){ toast(t('thinking'));
-      const files=[]; for(const f of r.files){ if(f.scanned&&f.doc_id){ const b=await (await fetch(`/api/dossiers/${id}/documents/${f.doc_id}/file`)).blob(); files.push(new File([b], f.filename, {type:'application/pdf'})); } else files.push(null); }
       try{ ai=await window.DBAI.extract(r.prompt, files, r.files, 'dossier'); }catch(e){ note=(e&&(e.code||e.message))||'error'; } }
     else if(r.ai_server){ toast(t('thinking')); try{ ai=(await api(`/dossiers/${id}/extract/ai?target=dossier`,{method:'POST'})).ai; }catch(e){ note=e.message; } }
     reviewData({fill:mergeFill(r.rules, ai), ai, note});
@@ -1101,7 +1140,7 @@ function openWhy(slotId){
      ${d.meta&&d.meta.draft_unsigned?`<div class="alert"><p class="small"><b>${esc(t('unsignedDraft'))}</b> — ${esc(t('signHint'))}</p></div>`:''}
      ${d.meta&&d.meta.external?`<div class="alert"><p class="small"><b>${esc(t('extRef'))}</b> — ${esc(t('extHint'))}${d.meta.note?`<br>${bdi(d.meta.note)}`:''}</p></div>`:''}
      <div class="row gap-s">${d.meta&&d.meta.external?`<a class="btn sm" target="_blank" rel="noopener noreferrer" href="${esc(/^https:\/\//.test(d.meta.url)?d.meta.url:'#')}">${icon('external',14)} ${esc(t('extOpen'))}</a><button class="btn sm pri" data-extup="${d.id}">${icon('upload',14)} ${esc(t('extUpload'))}</button>`:`<a class="btn sm" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${d.id}/file">${icon('eye',14)} ${esc(t('view'))}</a>`}
-     ${d.findings.some(f=>f.action==='auto_fix')?`<button class="btn sm pri" data-fix="${d.id}">${icon('wrench',14)} ${esc(t('autofix'))}</button>`:''}
+     ${d.findings.some(f=>f.action==='auto_fix')?`<button class="btn sm pri" data-fix="${d.id}">${icon('wrench',14)} ${esc(d.findings.some(f=>['EG-BP-E23','NTA065-N4'].includes(f.rule))?t('readableBtn'):t('autofix'))}</button>`:''}
      ${d.meta&&d.meta.draft_unsigned?`<button class="btn sm pri" data-signed="${d.id}">${icon('upload',14)} ${esc(t('uploadSigned'))}</button>`:''}
      <button class="btn sm ghost" data-wd="${d.id}">${esc(t('withdraw'))}</button></div></div>`).join('');
   openDrawer(L(s.title), `<div class="row"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${chip(s.status)}<span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></div>
@@ -1124,9 +1163,12 @@ function openWhy(slotId){
   $$('[data-upw]', body).forEach(b=>b.onclick=()=>{ closeDrawer(); startUpload(b.dataset.upw); });
   $$('[data-fix]', body).forEach(b=>b.onclick=async()=>{
     b.disabled=true; b.textContent=t('fixing');
-    try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.fix}/fix`,{method:'POST'});
-      if(r.document) toast(t('fixedNew')+' '+r.done.map(x=>x[S.lang]).join(' · '));
-      if(r.refused.length) toast(t('fixRefused')+' '+r.refused.map(x=>x[S.lang]).join(' · '));
+    const d=s.documents.find(x=>x.id===b.dataset.fix); const auto=d?d.findings.filter(f=>f.action==='auto_fix'):[];
+    const ocrOnly=auto.length>0&&auto.every(f=>['EG-BP-E23','NTA065-N4'].includes(f.rule));
+    try{ if(ocrOnly&&!(S.caps&&S.caps.ocr_server)){ await makeReadable(S.dossier.id, d.id, d.filename); }
+      else{ const r=await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.fix}/fix`,{method:'POST'});
+        if(r.document) toast(t('fixedNew')+' '+r.done.map(x=>x[S.lang]).join(' · '));
+        if(r.refused.length) toast(t('fixRefused')+' '+r.refused.map(x=>x[S.lang]).join(' · ')); }
       await refreshCurrent(); openWhy(slotId);
     }catch(e){ toast(e.message); } });
   $$('[data-signed]', body).forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, {signed_for:b.dataset.signed}); });

@@ -334,6 +334,21 @@ class Store:
                    done=[x['op'] for x in r['done']], refused=[x['op'] for x in r['refused']])
         return {'document': new, 'done': r['done'], 'refused': r['refused']}
 
+    def add_ocr_layer(self, did, doc_id, page_pdfs, where='browser'):
+        """A new version with an invisible text layer over the unchanged page images (the browser's OCR, or any OCR that
+        produced text-only pages). Allowed for third-party evidence too: the page image is not altered."""
+        from .. import fixes
+        d = self.document(doc_id)
+        if d['dossier_id'] != did or d['state'] != 'current':
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        if d['meta'].get('external') or not d['filename'].lower().endswith('.pdf'):
+            raise StoreError('E-NOT-PDF', 'Only a stored PDF can receive a text layer.', 'طبقة النص بتتضاف لملف PDF مخزّن بس.')
+        data = fixes.overlay_text_pages(self.blob_path(d['sha256']).read_bytes(), page_pdfs)
+        new = self.add_document(did, d['slot_id'], d['filename'], data, d['title'],
+                                {**d['meta'], 'fixed_from': doc_id, 'fixes': ['add_ocr_layer'], 'ocr_where': where}, supersede=doc_id, doc_class=d['doc_class'])
+        self.audit(did, 'document.fixed', doc=doc_id, new=new['id'], done=['add_ocr_layer'], refused=[], where=where)
+        return new
+
     # ---------------- submission history (lifecycle, P3)
     def record_submission(self, did, output, seq, activity, suuid, envelope, history, path):
         self.db.execute('insert into submission values (?,?,?,?,?,?,?,?,?,?)',

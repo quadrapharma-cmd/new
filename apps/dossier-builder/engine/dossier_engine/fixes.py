@@ -177,3 +177,23 @@ def apply(path, findings, doc_class):
             return {'data': None, 'done': [], 'refused': refused, 'report': None}
         rep = check(str(cur), doc_class)
         return {'data': cur.read_bytes(), 'done': done, 'refused': refused, 'report': rep}
+
+
+def overlay_text_pages(src, page_pdfs):
+    """A searchable copy without touching the page images: each text-only PDF page (invisible OCR text, as tesseract.js writes
+    with pdfTextOnly) is scaled to the original page and merged on top of it. Pages without an overlay stay as they are."""
+    import io
+    from pypdf import PdfReader, PdfWriter, Transformation
+    w = PdfWriter(clone_from=PdfReader(io.BytesIO(src), strict=False))
+    for i, page in enumerate(w.pages):
+        if i < len(page_pdfs) and page_pdfs[i]:
+            try:
+                ov = PdfReader(io.BytesIO(page_pdfs[i]), strict=False).pages[0]
+                sx = float(page.mediabox.width) / float(ov.mediabox.width)
+                sy = float(page.mediabox.height) / float(ov.mediabox.height)
+                page.merge_transformed_page(ov, Transformation().scale(sx, sy))
+            except Exception:          # a bad overlay page is skipped, the original page is kept
+                pass
+    out = io.BytesIO()
+    w.write(out)
+    return out.getvalue()

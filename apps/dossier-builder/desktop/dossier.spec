@@ -11,6 +11,9 @@ for rel in ['apps/dossier-builder/engine/dossier_engine', 'apps/dossier-builder/
             'docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0', 'docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0']:
     datas.append((os.path.join(REPO, rel), rel))
 datas.append((os.path.join(REPO, 'docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip'), 'docs/ctd/sources/ectd'))
+for rel in ['apps/dossier-builder/web/vendor/tess', 'apps/dossier-builder/web/vendor/pdfjs']:   # browser OCR + page rendering (web/vendor.sh)
+    if os.path.isdir(os.path.join(REPO, rel)):
+        datas.append((os.path.join(REPO, rel), rel))
 
 # libraries the engine imports at run time (it is not analysed, so collect them explicitly)
 for pkg in ['fastapi', 'starlette', 'uvicorn', 'pydantic', 'pydantic_core', 'anyio', 'h11', 'multipart', 'python_multipart',

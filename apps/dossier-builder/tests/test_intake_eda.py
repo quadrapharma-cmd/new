@@ -18,11 +18,12 @@ LICENCE = ['Arab Republic of Egypt', 'Egyptian Drug Authority', 'Central Adminis
            'Packager: Example Industries for pharmaceutical industries,EGYPT', 'Storage Site: Example Industries for pharmaceutical industries,EGYPT',
            'Manufacturer Of active substance: NEOMYCIN SULPHATE', 'Sichuan Example Pharmaceutical Co.Ltd,CHINA', 'Bacitracin Zinc', 'North Example Pharmaceutical Huasheng Co. LTD,CHINA',
            'THREONINE', 'GLYCINE', 'Hubei Example Pharmaceuticals and Chemicals Share Co.,Ltd ,CHINA', 'Issue Date: 26/7/2022']
-NOISY = ['i Active Ingredient(s) & Each 1g contains:', '1 Strength(s): NEOMYCIN SULPHATE 3.500 mg ( 3300 unit )', '| Bacitracin Zine 4.200 mg (250 unit )', 'CYSTEINE 2.000 mg',
+NOISY = ['i Active Ingredient(s) & Each 1g contains:', '1 Strength(s): NEOMYCIN SULPHATE 3.500 mg ( 3300 unit )\u200f1', '| Bacitracin Zine 4.200 mg (250 unit )', 'CYSTEINE 2.000 mg\u200f1',
          'GLYCINE 10,000 mg', 'THREONINE 1,000 mg 1 7', '| Trade Name: Dermacure ‘a 07 ديرماكيور', 'ioe ‘License Holder : EXAMPLE PHARM-EGYPT,EGYPT',
          'i Manufacturer + : Example Industries for gharmaceutical industries, EGYPT 1 1 1', 'be Manufacturer Of active substance: NEOMYCIN SULPHATE',
          'ee Sichuan Example Pharmaceutical Co.Ltd,CHINA', 'ad Bacitracin Zine', 'North Example Pharmaceutical Huasheng Co. LTD,CHINA', 'i THREONINE', 'GLYCINE',
-         'Hubei Example Pharmaceuticals and Chemicals Share Co.,Ltd ,CHINA', 'Registration No.: 29925/2022 Invalidation Date: 40-11-2032', '5 Type of License: Toll Type of Marketing: Local']
+         'Hubei Example Pharmaceuticals and Chemicals Share Co.,Ltd ,CHINA', 'Registration No.: 29925/2022 Invalidation Date: 40-11-2032', '5 Type of License: Toll Type of Marketing: Local',
+         'Each 1 gram Contains:-', 'Neomycin Sulphate   quivalent to 3300 units / 2529     282018', 'Bacitracin Zinc (Equivalent to 250 unit 81              BP2018              [42mg |']   # the composition table as the browser OCR reads it
 PRICING = ['Egyptian Drug Authority — Pricing Policies Administration', 'اسم المستحضر سعر البيع للجمهور', 'Dermacure Topical Powder قرش جنيه', 'Jar of 10gm 00 51',
            'Each 1g contains:', 'NEOMYCIN SULPHATE 3.5 mg + Bacitracin Zinc 4.2 mg + CYSTEINE 2 mg +', 'GLYCINE 10 mg + THREONINE 1 mg', 'Applicant: EXAMPLE PHARM; للعبوه 10 جرام',
            'العنوان: منطقة الخدمات زهراء المعادي - مبنى هيئة الدواء المصرية 7316 Tel.: +202']

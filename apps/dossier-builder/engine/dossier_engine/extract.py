@@ -237,6 +237,8 @@ def fields_for(kind, filename, text):
     product['name_en'] = (arabic.latin_in(product['name']) or arabic.latin_in(line_of(t, NAME_LABELS))) if product.get('name') and arabic.has_arabic(product['name']) else None
     if product.get('name') and arabic.has_arabic(product['name']):
         product['name'] = re.sub(r'\s*\(?[A-Za-z][A-Za-z0-9 .,\-/%]{2,80}\)?\s*$', '', product['name']).strip() or product['name']
+    if product.get('name') and (len(product['name'].split()) > 8 or re.search('طبقا|المذكور|سيادتكم|بموجب|وافق|اللجنة', product['name'])):
+        product['name'] = None                                          # a sentence from the Arabic notes is not a trade name
     product['dosage_form'] = after(t, ['Dosage form', 'Pharmaceutical form', 'Form', 'الشكل الصيدلي', 'الشكل الدوائي', 'الصورة الصيدلية', 'الشكل الصيدلاني']) \
         or next((f for f in FORMS if f in low), None) or arabic.form_en(t)
     product['dosage_form_en'] = arabic.form_en(product['dosage_form']) if product.get('dosage_form') and arabic.has_arabic(product['dosage_form']) else None
@@ -398,6 +400,19 @@ def read_files(files):
         items.append(fields_for(kind, name, pt['text']))
         texts.append({'filename': name, 'kind': kind, 'pages': pt['pages'], 'scanned': pt['scanned'], 'ocr': pt['ocr'], 'file': pt['kind_of_file'],
                       'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:14000]})
+    return {'files': texts, 'rules': merge(items)}
+
+
+def read_texts(files):
+    """Like read_files, for texts the browser already extracted (its own OCR of scans): files = [{filename, text, pages?, scanned?, ocr?, file?}]."""
+    items, texts = [], []
+    for f in files:
+        name, text = f.get('filename') or 'document', f.get('text') or ''
+        kind = guess_kind(name, text)
+        items.append(fields_for(kind, name, text))
+        texts.append({'filename': name, 'kind': kind, 'pages': int(f.get('pages') or 0), 'scanned': bool(f.get('scanned')), 'ocr': bool(f.get('ocr')),
+                      'ocr_where': f.get('ocr_where'), 'file': f.get('file') or ('pdf' if name.lower().endswith('.pdf') else 'other'), 'arabic': arabic.has_arabic(text),
+                      'chars': len(re.sub(r'\s', '', text)), 'text': text[:14000]})
     return {'files': texts, 'rules': merge(items)}
 
 

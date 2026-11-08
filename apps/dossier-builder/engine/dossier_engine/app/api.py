@@ -181,6 +181,16 @@ def create_app(workspace, auth_enabled=None):
         """Apply the allowed automatic fixes; the result is a new version, the original is kept (superseded)."""
         return st.fix_document(did, doc_id)
 
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/ocr-layer', status_code=201)
+    async def ocr_layer(did: str, doc_id: str, pages: list[UploadFile] = File(...)):
+        """Readable copy of a scan: text-only PDF pages produced by the browser's OCR, laid over the original pages."""
+        blobs = [await p.read() for p in pages]
+        if not blobs or len(blobs) > 400:
+            err(422, 'E-PAGES', 'Send one text-only PDF page per page (1–400).', 'ابعت صفحة PDF نصية لكل صفحة (1–400).')
+        if any(b[:4] != b'%PDF' for b in blobs if b):
+            err(422, 'E-PAGES', 'Each page must be a PDF.', 'كل صفحة لازم تكون PDF.')
+        return st.add_ocr_layer(did, doc_id, blobs, where='browser')
+
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/request', status_code=201)
     def request_reobtain(did: str, slot_id: str, body: ReqReq):
         """Letter to the issuer + «waiting on third party» status with a due date (02-LOGIC §5.2 🟣)."""
@@ -371,7 +381,9 @@ def create_app(workspace, auth_enabled=None):
         cross_ids = sorted(set(re.findall(r"'((?:XC|NP040)-[A-Z0-9]+)'", inspect.getsource(crosschecks))))
         doc_types = yaml.safe_load(TYPES_FILE.read_text(encoding='utf-8'))['types']
         from ..assistant import settings as _asettings
+        import importlib.util
         return {'version': app.version, 'workspace': str(st.root), 'assistant': _asettings.status(st.root),
+                'ocr_server': bool(_arabic.ocr_available() and importlib.util.find_spec('ocrmypdf')),
                 'dossiers': st.db.execute('select count(*) from dossier').fetchone()[0],
                 'pack': {'id': pack.id, 'title': pack.meta['title'], 'status': pack.meta['status'],
                          'valid_from': pack.meta['valid_from'], 'sources': pack.meta['sources']},
@@ -393,7 +405,7 @@ def create_app(workspace, auth_enabled=None):
         """Intake: read uploaded PDFs with the rules and prepare the AI prompt; nothing is stored."""
         pairs = [(f.filename, await f.read()) for f in files]
         r = _extract.read_files(pairs)
-        return {'files': [{k: v for k, v in f.items() if k != 'text'} for f in r['files']], 'rules': r['rules'],
+        return {'files': [dict(f) for f in r['files']], 'rules': r['rules'],
                 'prompt': _extract.ai_prompt(r['files'], target), 'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
 
     def _dossier_pdfs(did):
@@ -440,7 +452,17 @@ def create_app(workspace, auth_enabled=None):
             ai = json.loads(text[text.index('{'):text.rindex('}') + 1])
         except ValueError:
             err(502, 'E-AI-JSON', 'Claude did not return the expected JSON.', 'Claude ما رجّعش البيانات بالشكل المتوقع.')
-        return {'ai': ai, 'rules': r['rules'], 'files': [{k: v for k, v in f.items() if k != 'text'} for f in r['files']]}
+        return {'ai': ai, 'rules': r['rules'], 'files': [dict(f) for f in r['files']]}
+
+    @app.post('/api/extract/text')
+    def extract_texts(body: dict, target: str = 'dossier'):
+        """The rules on texts the browser extracted itself (OCR of scans in the browser): same shape as /api/extract."""
+        files = body.get('files') or []
+        if not isinstance(files, list) or len(files) > 40:
+            err(422, 'E-FILES', 'files must be a list of at most 40 items.', 'files لازم تكون قائمة بحد أقصى 40 عنصر.')
+        r = _extract.read_texts([f for f in files if isinstance(f, dict)])
+        return {'files': [{k: v for k, v in f.items() if k != 'text'} | {'text': f['text']} for f in r['files']], 'rules': r['rules'],
+                'prompt': _extract.ai_prompt(r['files'], target), 'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
 
     @app.post('/api/extract/ai')
     async def extract_ai(files: list[UploadFile] = File(...), target: str = 'dossier'):
@@ -578,6 +600,10 @@ def create_app(workspace, auth_enabled=None):
             return _RR('/suite/', status_code=307)
 
     if STATIC.exists():
+        VENDOR = Path(__file__).resolve().parents[3] / 'web' / 'vendor'
+        for sub in ('tess', 'pdfjs'):                   # browser OCR and page rendering (fetched by web/vendor.sh; not in git)
+            if (VENDOR / sub).is_dir():
+                app.mount(f'/assets/{sub}', StaticFiles(directory=VENDOR / sub), name=f'vendor-{sub}')
         app.mount('/', StaticFiles(directory=STATIC, html=True), name='ui')
     app.state.store = st
     return app

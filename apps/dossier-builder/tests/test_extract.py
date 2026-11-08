@@ -54,7 +54,7 @@ def test_extract_endpoints(tmp_path):
     assert r.status_code == 200, r.text
     j = r.json()
     assert j['rules']['product']['name'] == 'Cardiolol 10 mg' and 'cpp.pdf' in j['prompt'] and 'Certificate No: CPP-2024-0117' in j['prompt']
-    assert 'text' not in j['files'][0] and j['ai_server'] is False
+    assert 'text' in j['files'][0] and j['ai_server'] is False          # the texts go back to the browser: it re-runs the rules after its own OCR of scans
     # from the documents already in a dossier
     prof = dict(dossier_kind='generic', origin='imported', licence='imported', activity='new',
                 apis=[dict(name='Bisoprolol fumarate', manufacturer='Unichem', option='CEP')])

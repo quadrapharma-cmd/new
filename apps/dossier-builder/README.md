@@ -50,6 +50,18 @@ registration notification «إخطار تسجيل», Arabic certificates) are re
 Arabic-Indic digits and dates (`engine/dossier_engine/arabic.py`); a **scan or a photo (JPG/PNG) is OCR'd** on the computer when
 tesseract with the Arabic language is installed (`apt install tesseract-ocr tesseract-ocr-ara poppler-utils`), and goes to Claude as
 page images otherwise; the review drawer says per file whether it was text, an OCR'd scan or a scan without text.
+**OCR in the browser:** when the server has no tesseract (the browser edition, a desktop without it), the page itself reads the
+scan with tesseract.js (Arabic + English, `ui/assets/ocr.js`; pages rendered by pdf.js, first 4 pages, nothing leaves the browser),
+then the rules run again on that text (`POST /api/extract/text`); the chip says «scan read by OCR in the browser». The assets
+(~12 MB: library, single-file LSTM cores, fast language data as base64 text, `web/tess/worker.boot.js` decoding it inside the
+worker) come from `web/vendor.sh` into `web/vendor/tess`, are served at `/assets/tess/`, bundled by the desktop spec and copied
+into the browser edition by `web/build.py`.
+**Make readable (OCR):** a stored scan can be converted into a searchable PDF without touching its page images — on a server with
+tesseract through the existing auto-fix (ocrmypdf), otherwise in the browser: tesseract.js writes one text-only PDF page per page
+(invisible text at the right places), `POST /api/dossiers/{id}/documents/{doc}/ocr-layer` lays them over the original pages with
+pypdf (`fixes.overlay_text_pages`) and stores the result as a new version (`fixes: [add_ocr_layer]`, `ocr_where: browser`), so the
+searchable-text finding clears and third-party evidence stays unaltered. The item drawer offers it as «Make readable (OCR)» on any
+image-only PDF; the intake drawer offers to convert the scanned files right after they are saved.
 
 **EDA forms are read as tables, with understanding of their layout** (`engine/dossier_engine/intake_eda.py`): the Final Registration
 License (trade name with its Arabic name, dosage form, one active substance per line after «Each 1g contains» with its strength and
