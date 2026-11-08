@@ -78,10 +78,11 @@ def create_app(workspace, auth_enabled=None):
     app.state.internal_token = secrets.token_hex(24)        # in-process calls by the Assistant (never sent to a browser)
     app.state.auth = Auth(workspace, auth_enabled)
     install(app, app.state.auth, st)
-    from . import review_api, assistant_api, drive_api
+    from . import review_api, assistant_api, drive_api, draft_api
     review_api.install(app, st)
     assistant_api.install(app, st)
     drive_api.install(app, st)
+    draft_api.install(app, st)                           # templates + «make it for me»
 
     @app.exception_handler(StoreError)
     def _store_err(_, e):

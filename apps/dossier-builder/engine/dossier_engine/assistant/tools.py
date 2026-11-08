@@ -14,7 +14,7 @@ from .. import extract
 from . import storage
 
 APPROVAL = {'export_dossier', 'sign_review', 'withdraw_document'}
-WRITES = APPROVAL | {'put_data', 'set_profile', 'place_document', 'generate_document', 'run_review', 'act_on_finding',
+WRITES = APPROVAL | {'draft_document', 'put_data', 'set_profile', 'place_document', 'generate_document', 'run_review', 'act_on_finding',
                      'add_response', 'reassess_finding', 'make_review_letter', 'request_reissue', 'save_reading',
                      'record_document_review', 'amend_document', 'amendment_memo', 'drive_fetch'}
 MAX_TEXT = 60_000          # characters of document text returned per call
@@ -167,6 +167,16 @@ SPECS = [
     {'name': 'sign_review', 'description': 'Sign a review run as assessor or peer reviewer. REQUIRES THE USER\'S APPROVAL; the signature is the user\'s, not yours.',
      'input_schema': _obj('signature', {'run_id': S('review run id'), 'role': S('assessor | peer', enum=['assessor', 'peer']), 'by': S('the signer\'s name'),
                                         'rationale': S('why the run is complete')}, ['run_id', 'role', 'by', 'rationale'])},
+    {'name': 'get_draft_template', 'description': 'What ONE dossier document must look like and what the program knows for it: the template (sections with kind para|list|table|fields, '
+                                                   'columns, fields, hints EN/AR), the requirement\'s acceptance text, which base documents are present, their texts (excerpts) and the product data. '
+                                                   'Items with draft none (third-party / EDA documents) are never drafted: say so and offer a re-issue request. Call before draft_document.',
+     'input_schema': _obj('item', {'slot_id': S('the slot id from get_board')}, ['slot_id'])},
+    {'name': 'draft_document', 'description': 'Make the document of an item from your answers to its template and store it in the item as an UNSIGNED WORD DRAFT the user reviews. '
+                                              'answers = {"sections": {"<section id>": "text" | {"en","ar"} | ["bullet", …] | {"rows": [[cell, …], …]} | {"<field key>": "value"}}, '
+                                              '"gaps": [{"what","why","ar"}], "sources": {"<section id>": "file name"}, "notes": "…"}. Use only facts from the documents and the data; '
+                                              'write […] for anything unknown and list it in gaps. lang: en | ar (the edition of the Word file).',
+     'input_schema': _obj('draft', {'slot_id': S('the slot id'), 'answers': {'type': 'object', 'description': 'your filled template, see the description'}, 'lang': S('en | ar'),
+                                    'rationale': S('one line: which documents you drew on')}, ['slot_id', 'answers', 'rationale'])},
     {'name': 'withdraw_document', 'description': 'Withdraw a document from its item (kept in history, can be restored). REQUIRES THE USER\'S APPROVAL.',
      'input_schema': _obj('withdrawal', {'doc_id': S('document id'), 'reason': S('why')}, ['doc_id', 'reason'])},
 ]
@@ -407,6 +417,29 @@ def t_generate_document(ctx, kind, rationale, data=None, ctx_=None, slot_id=None
     _check(ctx, status, body, 'generate')
     return {'document': _doc_summary(body), 'unsigned_draft': bool((body.get('meta') or {}).get('draft_unsigned')),
             'next': 'the user prints, signs and uploads the signed PDF; the program then replaces the draft'}
+
+
+def t_get_draft_template(ctx, slot_id):
+    status, body = ctx.call('GET', f'/api/dossiers/{ctx.did}/slots/{slot_id}/template')
+    _check(ctx, status, body, 'template')
+    from ..generate import draft as _draft
+    tpl = body.get('template') or {}
+    if tpl.get('draft') not in ('full', 'partial'):
+        return {'draftable': False, 'draft': tpl.get('draft'), 'example': tpl.get('example'), 'requirement': body.get('requirement'),
+                'next': 'this document is issued by a third party / EDA or made by a generator: ask for the upload, or request_reissue; generate_document for generator kinds'}
+    slot = next(s for s in ctx.st.slots(ctx.did) if s.slot_id == slot_id)
+    ctx_ = _draft.context(ctx.st, ctx.did, slot, with_texts=True)
+    return {'draftable': True, 'template': {k: tpl.get(k) for k in ('id', 'kind', 'draft', 'lang', 'letterhead', 'sections', 'note')}, 'requirement': body.get('requirement'),
+            'inputs': body.get('inputs'), 'product_data': {k: ctx_.get(k) for k in ('product', 'profile', 'apis', 'composition', 'batches', 'specs', 'results', 'packs', 'registration', 'readings')},
+            'documents': [{'filename': d['filename'], 'slot_id': d.get('slot_id'), 'text': d['text'][:6000]} for d in ctx_.get('documents', [])],
+            'next': 'fill every section from the documents and the data, […] where unknown, then draft_document'}
+
+
+def t_draft_document(ctx, slot_id, answers, rationale, lang=None):
+    status, body = ctx.call('POST', f'/api/dossiers/{ctx.did}/slots/{slot_id}/draft', json={'answers': answers, 'lang': lang or 'en', 'ai': False})
+    _check(ctx, status, body, 'draft')
+    return {'document': _doc_summary(body['document']), 'gaps': body.get('gaps'), 'unsigned_draft': True,
+            'next': 'tell the user what is in the draft and what is still missing; the user reviews, completes, prints and signs where the template says so'}
 
 
 def t_get_gate(ctx):

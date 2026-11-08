@@ -306,6 +306,21 @@ const T = {
   ocrNoEngine:{en:'this edition has no engine for scanned pages (the OCR files are not installed): update to the latest build, or open the browser edition',ar:'النسخة دي من غير محرك لقراءة الصفحات الممسوحة (ملفات الـ OCR مش متثبتة): حدّث لآخر إصدار، أو افتح نسخة المتصفح'},
   ocrWhyNot:{en:'why it was not read',ar:'ليه ما اتقراش'},
   driveMode_connector:{en:'your Google Drive through Claude (no key)',ar:'Google Drive بتاعك عبر Claude (من غير مفتاح)'},
+  tplT:{en:'Template & example',ar:'النموذج والمثال'}, tplBtn:{en:'Template',ar:'النموذج'}, draftBtn:{en:'Make it for me',ar:'اعمله لي'},
+  draftBtnLong:{en:'Make it for me from the documents',ar:'اعمله لي من المستندات'}, draftAgain:{en:'Make it again',ar:'اعمله تاني'},
+  tpl_full:{en:'The program drafts this document from the uploaded documents and the product data.',ar:'البرنامج يعمل المستند ده كامل من المستندات المرفوعة وبيانات المنتج.'},
+  tpl_partial:{en:'The program builds the structure and the tables; the company adds the scientific content and reviews.',ar:'البرنامج يبني الهيكل والجداول؛ الشركة تضيف المحتوى العلمي وتراجع.'},
+  tpl_generator:{en:'Made by a ready generator (the «Generate» button).',ar:'بيتولّد بمولّد جاهز (زرار «ولّد»).'},
+  tpl_none:{en:'Issued by a third party or EDA: uploaded as issued, never re-typed. Below, what an acceptable copy shows.',ar:'صادر من جهة خارجية أو من الهيئة: يُرفع كما صدر ولا يُعاد كتابته. تحت، شكل النسخة المقبولة.'},
+  tplExample:{en:'What an acceptable document shows',ar:'شكل المستند المقبول'}, tplSections:{en:'Sections of the document',ar:'أقسام المستند'},
+  tplInputs:{en:'Base documents it draws from',ar:'المستندات الأساسية اللي بيعتمد عليها'}, tplPresent:{en:'present',ar:'موجود'}, tplMissing:{en:'not uploaded yet',ar:'مش مرفوع لسه'},
+  tplLetterhead:{en:'Printed on company letterhead, signed, stamped, dated.',ar:'يُطبع على ورق الشركة ويُوقَّع ويُختم ويُؤرَّخ.'},
+  tplAiBrowser:{en:'Drafting intelligence: claude.ai\'s model inside this page (no key).',ar:'ذكاء الصياغة: موديل claude.ai جوه الصفحة (من غير مفتاح).'},
+  tplAiServer:{en:'Drafting intelligence: the company\'s Anthropic key on this server.',ar:'ذكاء الصياغة: مفتاح Anthropic بتاع الشركة على الخادم ده.'},
+  tplAiNone:{en:'No model here: the draft is filled from the product data only, the rest is marked as gaps.',ar:'مفيش موديل هنا: المسودة بتتملي من بيانات المنتج بس، والباقي يتعلّم كنواقص.'},
+  drafting:{en:'Drafting from the documents…',ar:'بيصيغ من المستندات…'}, drafted:{en:'Draft added to the item',ar:'المسودة اتضافت للبند'}, gapsN:{en:'gaps',ar:'نواقص'},
+  draftHow_answers:{en:'filled by claude.ai\'s model in this page',ar:'اتملت بموديل claude.ai في الصفحة'}, draftHow_server_model:{en:'filled by the model on the server',ar:'اتملت بالموديل على الخادم'}, draftHow_data:{en:'filled from the product data only',ar:'اتملت من بيانات المنتج بس'},
+  draftGaps:{en:'What is still missing',ar:'اللي لسه ناقص'}, draftDocs:{en:'Documents read',ar:'المستندات اللي اتقرت'},
   driveConnHint:{en:'Paste any Drive link you can open: the page reads it through your Google Drive connector in claude.ai. The first time, Claude asks your permission once.',ar:'الصق أي لينك Drive تقدر تفتحه: الصفحة بتقرأه عبر موصّل Google Drive بتاع حسابك في Claude. أول مرة Claude هيطلب موافقتك مرة واحدة.'},
   driveBadLink:{en:'Not a Google Drive folder or file link.',ar:'ده مش لينك فولدر أو ملف على Google Drive.'},
   driveKeyHow:{en:'How do I get the key? (free, five minutes, once)',ar:'أجيب المفتاح منين؟ (مجاني، خمس دقايق، مرة واحدة)'},
@@ -1184,6 +1199,8 @@ function bindNext(root){
   root.querySelectorAll('[data-go]').forEach(a=>a.onclick=e=>{ e.preventDefault(); location.hash=`#/d/${S.dossier.id}/${a.dataset.go}`; });
   root.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up));
   root.querySelectorAll('[data-why]').forEach(x=>x.onclick=()=>openWhy(x.dataset.why));
+  root.querySelectorAll('[data-tpl]').forEach(x=>x.onclick=()=>openWhy(x.dataset.tpl, true));
+  root.querySelectorAll('[data-draft]').forEach(x=>x.onclick=()=>draftIt(x.dataset.draft));
   root.querySelectorAll('[data-ggen]').forEach(x=>x.onclick=()=>{ const s=slotById(x.dataset.slot); S.gens[x.dataset.ggen].source==='data'? genDirect(x.dataset.ggen, s) : genForm(x.dataset.ggen, s); });
 }
 function actionBtn(a, cls='btn pri'){
@@ -1248,7 +1265,7 @@ function profileEditor(){
 
 /* ---------------- board */
 async function board(tok){
-  await loadGens();
+  await Promise.all([loadGens(), loadTpl(), caps()]);
   const [b, data] = await Promise.all([api(`/dossiers/${S.dossier.id}/board`), api(`/dossiers/${S.dossier.id}/data`)]);
   if(!fresh(tok)) return;
   S.board = b; S.bdata = data;
@@ -1272,7 +1289,8 @@ function renderBoard(){
     rows+=`<tr><td><span class="code">${esc(s.ctd)}</span></td><td><div class="row gap-s">${esc(L(s.title))}${marks}</div>${apiL}</td>
       <td class="hide-m"><span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></td><td>${chip(s.status)}</td>
       <td>${files}<div class="row gap-s" style="margin-top:4px">${can?`<button class="btn sm" data-up="${esc(s.slot_id)}">${icon('upload',14)} ${esc(t('upload'))}</button>`:''}
-      <button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></td></tr>`;
+      ${draftable(s)&&!genFor(s)?`<button class="btn sm pri" data-draft="${esc(s.slot_id)}" title="${esc(t('draftBtnLong'))}">${icon('sparkles',14)} ${esc(t('draftBtn'))}</button>`:''}
+      <button class="btn sm ghost" data-tpl="${esc(s.slot_id)}">${icon('file',14)} ${esc(t('tplBtn'))}</button><button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></td></tr>`;
   });
   $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('board'))}</h1><p class="sub">${esc(t('boardSub'))}</p></div>
     <div class="row"><button class="btn" id="bulkBtn">${icon('upload')} ${esc(t('bulk'))}</button><button class="btn" id="bulkDrive">${icon('link')} ${esc(t('driveT'))}</button><span class="modeswitch"><a class="on" href="#/d/${id}/board">${esc(t('guided'))}</a><a href="#/d/${id}/publisher">${esc(t('navPublisher'))}</a></span>
@@ -1294,6 +1312,8 @@ function renderBoard(){
   v.querySelectorAll('[data-m]').forEach(x=>x.onclick=()=>{S.module=+x.dataset.m; renderBoard();});
   v.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up));
   v.querySelectorAll('[data-why]').forEach(x=>x.onclick=()=>openWhy(x.dataset.why));
+  v.querySelectorAll('[data-tpl]').forEach(x=>x.onclick=()=>openWhy(x.dataset.tpl, true));
+  v.querySelectorAll('[data-draft]').forEach(x=>x.onclick=()=>draftIt(x.dataset.draft));
   $('#bulkBtn').onclick=()=>{ const p=$('#picker'); p.multiple=true; p.value=''; p.onchange=()=>{ p.multiple=false; bulk([...p.files]); }; p.click(); };
   $('#bulkDrive').onclick=()=>drivePicker(files=>bulk(files), {label:t('drivePlace')});
   v.ondragover=e=>{ if(e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); };
@@ -1353,7 +1373,7 @@ function pick(slotId, meta, replaces){
     catch(e){ toast(e.message); } };
   p.click();
 }
-function openWhy(slotId){
+function openWhy(slotId, focusTemplate){
   const s=slotById(slotId);
   const locked = LOCKED.includes(s.doc_class);
   const reasons = s.reasons.map(r=>`<div class="finding"><div>${esc(r[S.lang]||r.en)}</div><div class="code small muted">${esc(r.source||'')}</div></div>`).join('');
@@ -1380,10 +1400,13 @@ function openWhy(slotId){
       · <a href="/api/dossiers/${S.dossier.id}/requests/${s.request.id}/letter" target="_blank" rel="noopener">${esc(t('letter'))}</a></p></div>`:''}
     ${(s.level==='R'||s.level==='O')&&!['generated','company_letter'].includes(s.doc_class)&&(s.documents.some(d=>d.check_status==='non_conforming')||s.cross.length||!s.documents.length||s.documents.every(d=>d.meta&&d.meta.external))&&!s.request?
       `<div class="row"><button class="btn" data-req="1">${icon('mail')} ${esc(t('reqIssuer'))}</button></div>`:''}
-    ${(s.level==='R'||s.level==='O')?`<div class="row">${(s.level==='R'||s.level==='O')?`<button class="btn" data-upw="${esc(s.slot_id)}">${icon('upload')} ${esc(t('upload'))}</button>`:''}${genFor(s)?`<button class="btn pri" data-gen="${genFor(s)}">${icon('sparkles')} ${esc(t('generate'))}: ${esc(L(S.gens[genFor(s)].title))}</button>`:''}
+    <div id="tplPanel" data-tpl-slot="${esc(s.slot_id)}"><h3>${esc(t('tplT'))}</h3><div class="small muted">…</div></div>
+    ${(s.level==='R'||s.level==='O')?`<div class="row">${(s.level==='R'||s.level==='O')?`<button class="btn" data-upw="${esc(s.slot_id)}">${icon('upload')} ${esc(t('upload'))}</button>`:''}${genFor(s)?`<button class="btn pri" data-gen="${genFor(s)}">${icon('sparkles')} ${esc(t('generate'))}: ${esc(L(S.gens[genFor(s)].title))}</button>`:''}${draftable(s)?`<button class="btn pri" data-draft="${esc(s.slot_id)}">${icon('sparkles')} ${esc(t('draftBtn'))}</button>`:''}
       <button class="btn" data-gen="justification">${esc(t('justify'))}</button></div>`:''}`);
   const body=$('#dBody');
   loadDocReviews(s, body);
+  loadTpl().then(()=>loadTemplatePanel(s, body)).then(()=>{ if(focusTemplate){ const p=body.querySelector('#tplPanel'); if(p) p.scrollIntoView({block:'start'}); } });
+  body.querySelectorAll('.row > [data-draft]').forEach(b=>b.onclick=()=>draftIt(s.slot_id));
   $$('[data-gen]', body).forEach(b=>b.onclick=()=>S.gens[b.dataset.gen].source==='data'? genDirect(b.dataset.gen, s) : genForm(b.dataset.gen, s));
   $$('[data-upw]', body).forEach(b=>b.onclick=()=>{ closeDrawer(); startUpload(b.dataset.upw); });
   $$('[data-fix]', body).forEach(b=>b.onclick=async()=>{
@@ -1429,6 +1452,48 @@ function requestForm(s){
 
 /* ---------------- generators (schema-driven forms) */
 S.gens = null;
+
+/* ---------------- templates & «make it for me»: what every document looks like, and the draft from the base documents */
+async function loadTpl(){ if(!S.tpl){ try{ S.tpl=await api('/templates'); }catch(e){ S.tpl={}; } } return S.tpl; }
+const tplFor = s => (S.tpl||{})[s.req_id] || null;
+const draftable = s => { const e=tplFor(s); return !!(e && (e.draft==='full'||e.draft==='partial') && (s.level==='R'||s.level==='O')); };
+async function aiMode(){ if(window.DBAI && await window.DBAI.available()) return 'browser'; if(S.caps&&S.caps.assistant&&S.caps.assistant.configured) return 'server'; return 'none'; }
+async function loadTemplatePanel(s, body){
+  const box=body.querySelector('#tplPanel'); if(!box) return;
+  let v; try{ v=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(s.slot_id)}/template`); }catch(e){ box.innerHTML=`<div class="small muted">${esc(e.message)}</div>`; return; }
+  const e=v.template||{draft:'none',kind:'report'}, mode=await aiMode();
+  const ex=e.example&&(e.example[S.lang]||e.example.en); const req=v.requirement||{};
+  const secs=(e.sections||[]).map(x=>`<li><b>${esc(L(x.title))}</b>${x.hint?` <span class="muted">— ${esc(L(x.hint))}</span>`:''}${x.columns?` <span class="code small">${esc(x.columns.join(' · '))}</span>`:''}</li>`).join('');
+  const inputs=(v.inputs||[]).map(i=>`<span class="chip ${i.present?'c-ok':'c-warn'}"><i></i>${esc(docTypeName(i.id))} · ${esc(t(i.present?'tplPresent':'tplMissing'))}</span>`).join('');
+  const last=(s.documents||[]).find(d=>d.meta&&d.meta.generated==='draft');
+  box.innerHTML=`<h3>${esc(t('tplT'))}</h3><div class="finding">
+    <div class="row gap-s"><span class="chip ${e.draft==='full'?'c-ok':e.draft==='partial'?'c-rec':e.draft==='generator'?'c-ok':'c-na'}"><i></i>${esc(e.kind)}</span><span class="small">${esc(t('tpl_'+e.draft))}</span></div>
+    ${e.letterhead?`<div class="small muted">${esc(t('tplLetterhead'))}</div>`:''}
+    ${ex?`<div class="small" style="margin-top:6px"><b>${esc(t('tplExample'))}:</b> <span dir="auto">${esc(ex)}</span></div>`:''}
+    ${req.rebuild&&req.rebuild.needs?`<div class="small muted">${esc(req.rebuild.verdict||'')} — ${esc(req.rebuild.needs)}</div>`:''}
+    ${e.note?`<div class="small muted">${esc(L(e.note))}</div>`:''}
+    ${secs?`<div class="small" style="margin-top:6px"><b>${esc(t('tplSections'))}:</b><ul style="margin:4px 18px;padding:0">${secs}</ul></div>`:''}
+    ${inputs?`<div class="small" style="margin-top:6px"><b>${esc(t('tplInputs'))}:</b> <span class="row gap-s" style="display:inline-flex;flex-wrap:wrap">${inputs}</span></div>`:''}
+    ${(e.draft==='full'||e.draft==='partial')?`<div class="small muted" style="margin-top:6px">${esc(t(mode==='browser'?'tplAiBrowser':mode==='server'?'tplAiServer':'tplAiNone'))}${v.documents&&v.documents.length?` · ${esc(t('draftDocs'))}: ${v.documents.map(d=>esc(d.filename)).join('، ')}`:''}</div>`:''}
+    ${last&&last.meta.gaps&&last.meta.gaps.length?`<div class="small" style="margin-top:6px"><b>${esc(t('draftGaps'))} (${last.meta.gaps.length}):</b> ${last.meta.gaps.slice(0,8).map(g=>esc((S.lang==='ar'&&g.ar)||g.what)).join(' · ')}</div>`:''}
+    ${draftable(s)?`<div class="row" style="margin-top:8px"><button class="btn pri" data-draft="${esc(s.slot_id)}">${icon('sparkles')} ${esc(t(last?'draftAgain':'draftBtnLong'))}</button></div>`:''}</div>`;
+  box.querySelectorAll('[data-draft]').forEach(b=>b.onclick=()=>draftIt(s.slot_id, v));
+}
+function docTypeName(id){ const m={registration_licence:{ar:'إخطار/رخصة التسجيل',en:'registration licence'},pricing_certificate:{ar:'شهادة التسعير',en:'pricing certificate'},leaflet:{ar:'النشرة المرجعية',en:'reference leaflet'},api_coa:{ar:'شهادة تحليل المادة الفعالة',en:'API CoA'},
+    analysis_conformity:{ar:'شهادة التحليل/المطابقة',en:'analysis / conformity'},gmp_certificate:{ar:'شهادة GMP',en:'GMP certificate'},dmf_cep:{ar:'DMF / CEP',en:'DMF / CEP'},specification:{ar:'المواصفات',en:'specifications'},stability_data:{ar:'بيانات الثبات',en:'stability data'},
+    stability_approval:{ar:'موافقة الثبات',en:'stability approval'},manufacturing_contract:{ar:'عقد التصنيع',en:'manufacturing contract'},toll_card:{ar:'بطاقة الـ toll',en:'toll card'},commercial_register:{ar:'السجل التجاري',en:'commercial register'}}; return L(m[id]||{ar:id,en:id}); }
+async function draftIt(slotId, v){
+  const s=slotById(slotId); if(!s) return;
+  v = v || await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/template`);
+  let answers=null, note='';
+  const mode=await aiMode();
+  if(mode==='browser' && v.prompt){ toast(t('drafting')); try{ answers=await window.DBAI.ask(v.prompt); }catch(e){ note=(e&&(e.code||e.message))||'error'; } }
+  toast(t('drafting'));
+  try{ const r=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/draft`,{method:'POST',json:{answers, lang:S.lang}});
+    toast(`${t('drafted')} · ${t('draftHow_'+String(r.how).replace('-','_'))} · ${(r.gaps||[]).length} ${t('gapsN')}${note?` · ${note}`:''}`);
+    S.board=null; await route(); openWhy(slotId); }
+  catch(e){ toast(e.message); }
+}
 async function loadGens(){ if(!S.gens) S.gens = await api('/generators'); return S.gens; }
 function genFor(s){ if(!S.gens) return null; for(const [k,v] of Object.entries(S.gens)) if(v.req && v.req===s.req_id) return k; return null; }
 async function genForm(kind, s, missing){

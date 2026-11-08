@@ -156,6 +156,12 @@
       catch (e) { if (images.length && !(e && e.code === 'declined')) { delete opts.images; return await sample.json(prompt, opts); } throw e; }
     },
     pageImages,
+    /* one JSON answer from claude.ai's model for a prompt the engine wrote (drafting a document, filling a template) */
+    async ask(prompt, opts) {
+      const sample = await window.claude.use('sample');
+      if (!sample) throw { code: 'unavailable', message: 'sample unavailable' };
+      return await sample.json(prompt, Object.assign({ modelTier: 'default', cache: false }, opts || {}));
+    },
   };
   window.DBWEB = { sync: () => syncfs(false), ready: () => S.ready, pyodide: () => S.pyodide, save: saveFromApi };
 })();
