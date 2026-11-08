@@ -125,7 +125,11 @@ Tests: `tests/test_vocab.py`.
 
 ## Google Drive as a source
 
-Paste a Drive folder (or file) link and the program lists what is there and reads what it needs (`engine/dossier_engine/drive.py`,
+Paste a Drive folder (or file) link and the program lists what is there and reads what it needs. **An open link needs no setup:** server and
+desktop editions read folders shared «anyone with the link» through Google's public folder page (verified against a real folder), and the
+browser edition reads any link the viewer can open through the viewer's own Google Drive connector in claude.ai (the artifact's `mcp`
+capability: `search_files`, `get_file_metadata`, `download_file_content`; Claude asks the viewer's permission once; private folders work
+too). The other ways in (`engine/dossier_engine/drive.py`,
 `GET/PUT /api/drive/settings`, `POST /api/drive/list`, `GET /api/drive/files/{id}`, `POST /api/dossiers/{id}/drive/stage`). Three ways in,
 by what the workspace holds in `drive.json` (mode 600): a **service account** key from Google Cloud — the company shares its folder
 with the account's e-mail once and private folders become readable (server editions; the key never goes to a browser); a **Google

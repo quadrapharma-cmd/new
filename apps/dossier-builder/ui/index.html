@@ -305,6 +305,9 @@ const T = {
   ocrRunning:{en:'Reading the scan (OCR in the browser)…',ar:'بيقرأ السكان (OCR في المتصفح)…'},
   ocrNoEngine:{en:'this edition has no engine for scanned pages (the OCR files are not installed): update to the latest build, or open the browser edition',ar:'النسخة دي من غير محرك لقراءة الصفحات الممسوحة (ملفات الـ OCR مش متثبتة): حدّث لآخر إصدار، أو افتح نسخة المتصفح'},
   ocrWhyNot:{en:'why it was not read',ar:'ليه ما اتقراش'},
+  driveMode_connector:{en:'your Google Drive through Claude (no key)',ar:'Google Drive بتاعك عبر Claude (من غير مفتاح)'},
+  driveConnHint:{en:'Paste any Drive link you can open: the page reads it through your Google Drive connector in claude.ai. The first time, Claude asks your permission once.',ar:'الصق أي لينك Drive تقدر تفتحه: الصفحة بتقرأه عبر موصّل Google Drive بتاع حسابك في Claude. أول مرة Claude هيطلب موافقتك مرة واحدة.'},
+  driveBadLink:{en:'Not a Google Drive folder or file link.',ar:'ده مش لينك فولدر أو ملف على Google Drive.'},
   driveKeyHow:{en:'How do I get the key? (free, five minutes, once)',ar:'أجيب المفتاح منين؟ (مجاني، خمس دقايق، مرة واحدة)'},
   driveKeySteps:{en:['Open console.cloud.google.com with your Google account and create a project (any name).','APIs & Services → Library → search «Google Drive API» → Enable.','APIs & Services → Credentials → Create credentials → API key; copy the key (it starts with AIza…).','Optional but wise: Edit the key → restrict it to the Google Drive API.','Paste it here and save. The folder itself must be shared «Anyone with the link — Viewer».'],
    ar:['افتح console.cloud.google.com بحساب جوجل بتاعك واعمل مشروع (أي اسم).','APIs & Services ← Library ← دوّر على «Google Drive API» ← Enable.','APIs & Services ← Credentials ← Create credentials ← API key؛ انسخ المفتاح (بيبدأ بـ AIza…).','اختياري بس أحسن: Edit the key ← قصره على Google Drive API.','الصقه هنا واحفظ. والفولدر نفسه لازم يكون متشارك «Anyone with the link — Viewer».']},
@@ -900,17 +903,59 @@ function datalists(){ const k=VOC().known||{}; const dl=(id,arr)=>`<datalist id=
 S.drive={link:'',files:[],recursive:false,gear:false};
 const fmtSize=n=>n>1e6?`${(n/1e6).toFixed(1)} MB`:n>1e3?`${Math.round(n/1e3)} KB`:`${n} B`;
 const driveType=f=>f.kind==='folder'?L({en:'folder',ar:'فولدر'}):/pdf/.test(f.mimeType)?'PDF':/wordprocessingml|msword/.test(f.mimeType)?'Word':/google-apps.document/.test(f.mimeType)?'Google Doc':/google-apps.spreadsheet/.test(f.mimeType)?'Google Sheet':/google-apps.presentation/.test(f.mimeType)?'Google Slides':/^image\//.test(f.mimeType)?L({en:'image',ar:'صورة'}):(f.mimeType||'').split('/').pop()||'?';
+
+/* ---------------- Google Drive through the viewer's own claude.ai connector (browser edition): no key, nothing to share */
+const GD_SERVER='Google Drive', GD_FOLDER='application/vnd.google-apps.folder';
+const GD_EXPORT={'application/vnd.google-apps.document':['application/vnd.openxmlformats-officedocument.wordprocessingml.document','.docx'],
+  'application/vnd.google-apps.spreadsheet':['application/pdf','.pdf'],'application/vnd.google-apps.presentation':['application/pdf','.pdf']};
+const GD_READABLE=/^(application\/pdf|image\/(jpeg|png|webp|tiff?)|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document)$/;
+const DBDRIVE={
+  _p:null,
+  mcp(){ if(!this._p) this._p=(async()=>{ try{ if(!(window.claude&&typeof window.claude.use==='function')) return null; const m=await window.claude.use('mcp'); if(!m) return null;
+      const r=await m.listTools(GD_SERVER).catch(()=>null); const s=r&&r.servers&&r.servers.find(x=>x.server===GD_SERVER);
+      return (s&&s.authStatus!=='needs_reauth'&&(s.tools||[]).length)?m:null; }catch(e){ return null; } })(); return this._p; },
+  async available(){ return !!(await this.mcp()); },
+  parseLink(u){ u=(u||'').trim(); let m;
+    if((m=u.match(/\/drive\/(?:u\/\d+\/)?folders\/([A-Za-z0-9_-]{10,})/))) return {kind:'folder',id:m[1]};
+    if((m=u.match(/\/(?:file|document|spreadsheets|presentation)\/d\/([A-Za-z0-9_-]{10,})/))) return {kind:'file',id:m[1]};
+    if((m=u.match(/[?&]id=([A-Za-z0-9_-]{10,})/))) return {kind:/folder/.test(u)?'folder':'file',id:m[1]};
+    if(/^[A-Za-z0-9_-]{20,}$/.test(u)) return {kind:'folder',id:u}; return null; },
+  entry(f, prefix){ const title=String(f.title||f.name||f.id), folder=f.mimeType===GD_FOLDER, exp=GD_EXPORT[f.mimeType];
+    const name=(prefix||'')+title+(exp&&!/\.[a-z0-9]{2,5}$/i.test(title)?exp[1]:'');
+    return {id:f.id, name, mimeType:f.mimeType||'', kind:folder?'folder':'file', size:f.fileSize?+f.fileSize:null, native:exp?exp[0]:null,
+      usable:!folder&&(!!exp||GD_READABLE.test(f.mimeType||'')||/\.(pdf|docx|jpe?g|png|webp|tiff?)$/i.test(title))}; },
+  async call(tool, input){ const m=await this.mcp(); if(!m) throw new Error(L({ar:'موصّل Google Drive مش متاح هنا',en:'The Google Drive connector is not available here'}));
+    try{ return (await m.callTool(GD_SERVER, tool, input)).payload; }
+    catch(e){ const code=(e&&e.code)||''; const say={
+        needs_reauth:L({ar:'وصّل Google Drive تاني من إعدادات Claude ← Connectors',en:'Reconnect Google Drive in claude.ai Settings → Connectors'}),
+        server_not_connected:L({ar:'ضيف Google Drive في إعدادات Claude ← Connectors',en:'Add Google Drive in claude.ai Settings → Connectors'}),
+        not_in_manifest:L({ar:'الصفحة مش مسموح لها بـ Google Drive: فعّله من قائمة الصلاحيات بتاعة الصفحة',en:'This page is not allowed to use Google Drive: enable it in the page\'s permissions menu'}),
+        approval_required:L({ar:'محتاج موافقتك على الطلب في Claude',en:'Needs your approval in Claude'}),
+        tool_error:L({ar:'Google Drive رفض الطلب: ',en:'Google Drive refused: '})+String(e&&e.message||'').slice(0,160)}[code];
+      throw new Error(say||`${code||'error'} ${String(e&&e.message||'').slice(0,160)}`); } },
+  async list(id, recursive, prefix, out, depth){ out=out||[]; prefix=prefix||''; depth=depth||0; let token=null; const kids=[];
+    do{ const r=await this.call('search_files', Object.assign({query:`parentId = '${id}'`, pageSize:100, excludeContentSnippets:true}, token?{pageToken:token}:{}));
+      (r&&r.files||[]).forEach(f=>kids.push(f)); token=(r&&r.nextPageToken)||null; }while(token&&kids.length<1000);
+    kids.sort((a,b)=>((a.mimeType===GD_FOLDER?0:1)-(b.mimeType===GD_FOLDER?0:1))||String(a.title||'').localeCompare(String(b.title||'')));
+    for(const f of kids){ const e=this.entry(f, prefix); out.push(e); if(recursive&&e.kind==='folder'&&depth<6&&out.length<1000) await this.list(f.id, true, prefix+String(f.title||'')+'/', out, depth+1); }
+    return out; },
+  async one(id){ return this.entry(await this.call('get_file_metadata',{fileId:id, excludeContentSnippets:true})); },
+  async fetch(e){ const r=await this.call('download_file_content', e.native?{fileId:e.id, exportMimeType:e.native}:{fileId:e.id});
+    const b64=(r&&(r.content||r.data))||''; if(!b64) throw new Error(L({ar:'الملف رجع فاضي',en:'the file came back empty'}));
+    const bin=atob(b64), u8=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+    return new File([u8], e.name, {type: e.native||(r&&r.mimeType)||e.mimeType||''}); }
+};
 function driveSettingsForm(ds){ return `<div class="card pad stack gap-s" id="drvSetBox"><b>${esc(t('driveSet'))}</b><div class="form">
   <label class="f"><span>${esc(t('driveKey'))}</span><input type="password" id="drvKey" dir="ltr" autocomplete="off" placeholder="${esc(ds.api_key_hint||'AIza…')}"></label>
   <details class="small" style="grid-column:1/-1"><summary style="cursor:pointer">${esc(t('driveKeyHow'))}</summary><p class="muted">${esc(t('driveKeyWhy'))}</p><ol style="margin:4px 18px;padding:0">${(T.driveKeySteps[S.lang]||T.driveKeySteps.en).map(s=>`<li>${esc(s)}</li>`).join('')}</ol></details>
   ${ds.browser?'':`<label class="f" style="grid-column:1/-1"><span>${esc(t('driveSA'))}${ds.service_account_email?` · <span class="code">${esc(ds.service_account_email)}</span>`:''}</span><textarea id="drvSA" rows="3" dir="ltr" placeholder='{"type":"service_account", "client_email": "…", "private_key": "…"}'></textarea></label>`}</div>
   <div class="row gap-s"><button class="btn pri sm" id="drvSave">${icon('check',14)} ${esc(t('driveSave'))}</button><span class="small muted" id="drvSetMsg"></span></div></div>`; }
 async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await api('/drive/settings'); }catch(e){ toast(e.message); return; }
-  const d=S.drive;
+  const d=S.drive; const conn=await DBDRIVE.available(); if(conn) ds.mode='connector';          // claude.ai: the viewer's own Drive, no key
   const fileList=files=>files.length?`<div class="rows tablewrap"><table><thead><tr><th></th><th>${esc(t('driveName'))}</th><th>${esc(t('driveType'))}</th><th>${esc(t('driveSize'))}</th></tr></thead><tbody>${files.map((f,i)=>`<tr><td>${f.kind==='folder'?`<button class="btn sm ghost" data-drvopen="${esc(f.id)}" title="${esc(f.name)}">▸</button>`:`<input type="checkbox" data-drvsel="${i}" ${f.usable?'checked':'disabled'}>`}</td><td dir="auto">${esc(f.path||f.name)}${f.export?` <span class="small muted">→ ${esc(f.export)}</span>`:''}</td><td class="small muted">${esc(driveType(f))}</td><td class="small muted">${f.size?fmtSize(f.size):''}</td></tr>`).join('')}</tbody></table></div>${files.some(f=>f.usable)?'':`<p class="small muted">${esc(t('driveNoUsable'))}</p>`}`:`<p class="small muted">${esc(t('driveHow'))}</p>`;
   const paint=()=>{ openDrawer(t('driveT'), `<div class="stack gap-s">
-    <div class="row gap-s small muted"><span class="chip ${ds.mode==='public'&&ds.browser?'c-warn':'c-ok'}"><i></i>${esc(t('driveMode_'+ds.mode))}</span>${ds.service_account_email?`<span class="code">${esc(ds.service_account_email)}</span>`:''}<span class="grow"></span><button class="btn sm ghost admin-only" id="drvGear" title="${esc(t('driveSet'))}">⚙</button></div>
-    <div id="drvSet">${(isAdmin()&&(d.gear||(ds.browser&&ds.mode==='public')))?driveSettingsForm(ds):''}</div>
+    <div class="row gap-s small muted"><span class="chip ${ds.mode==='public'&&ds.browser?'c-warn':'c-ok'}"><i></i>${esc(t('driveMode_'+ds.mode))}</span>${conn?`<span>${esc(t('driveConnHint'))}</span>`:''}${ds.service_account_email?`<span class="code">${esc(ds.service_account_email)}</span>`:''}<span class="grow"></span><button class="btn sm ghost admin-only" id="drvGear" title="${esc(t('driveSet'))}">⚙</button></div>
+    <div id="drvSet">${(isAdmin()&&(d.gear||(ds.browser&&ds.mode==='public'&&!conn)))?driveSettingsForm(ds):''}</div>
     <div class="row gap-s"><input type="text" id="drvLink" dir="ltr" placeholder="https://drive.google.com/drive/folders/…" value="${esc(d.link)}" style="flex:1"><button class="btn pri" id="drvList">${esc(t('driveList'))}</button></div>
     <label class="small row gap-s"><input type="checkbox" id="drvRec" ${d.recursive?'checked':''}> ${esc(t('driveRec'))}</label>
     <div id="drvFiles">${fileList(d.files)}</div>
@@ -918,13 +963,16 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
     $('#drvGear').onclick=()=>{ d.gear=!d.gear; paint(); };
     const sv=$('#drvSave'); if(sv) sv.onclick=async()=>{ const body={}; const k=$('#drvKey'); if(k&&k.value.trim()) body.api_key=k.value.trim(); const sa=$('#drvSA'); if(sa&&sa.value.trim()){ try{ body.service_account=JSON.parse(sa.value); }catch(e){ $('#drvSetMsg').textContent=L({en:'The service account must be JSON.',ar:'حساب الخدمة لازم يكون JSON.'}); return; } }
       sv.disabled=true; try{ ds=await api('/drive/settings',{method:'PUT',json:body}); d.gear=false; S.caps=null; paint(); }catch(e){ $('#drvSetMsg').textContent=e.message; sv.disabled=false; } };
-    const list=async link=>{ d.link=link; d.recursive=$('#drvRec').checked; $('#drvList').disabled=true; try{ const r=await api('/drive/list',{method:'POST',json:{link, recursive:d.recursive}}); d.files=r.files; ds.mode=r.mode; }catch(e){ toast(e.message); } paint(); };
+    const list=async link=>{ d.link=link; d.recursive=$('#drvRec').checked; $('#drvList').disabled=true;
+      try{ if(conn){ const p=DBDRIVE.parseLink(link); if(!p) throw new Error(t('driveBadLink')); toast(t('driveListing')); d.files=p.kind==='folder'?await DBDRIVE.list(p.id, d.recursive):[await DBDRIVE.one(p.id)]; ds.mode='connector'; }
+        else{ const r=await api('/drive/list',{method:'POST',json:{link, recursive:d.recursive}}); d.files=r.files; ds.mode=r.mode; } }catch(e){ toast(e.message); } paint(); };
     $('#drvList').onclick=()=>list($('#drvLink').value.trim()); $('#drvLink').onkeydown=e=>{ if(e.key==='Enter') list($('#drvLink').value.trim()); };
     $$('[data-drvopen]').forEach(b=>b.onclick=()=>list(`https://drive.google.com/drive/folders/${b.dataset.drvopen}`));
     $('#drvUse').onclick=async()=>{ const picked=$$('[data-drvsel]').filter(c=>c.checked).map(c=>d.files[+c.dataset.drvsel]); if(!picked.length){ toast(t('driveNoneSel')); return; }
       $('#drvUse').disabled=true; const files=[];
       for(const [i,f] of picked.entries()){ toast(`${t('driveFetching')} ${i+1}/${picked.length} · ${f.name}`);
-        try{ const r=await fetch(`/api/drive/files/${encodeURIComponent(f.id)}?name=${encodeURIComponent(f.name)}&mime=${encodeURIComponent(f.mimeType||'')}`,{headers:{'X-DB':'1'}}); if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error((j.detail&&(j.detail[S.lang]||j.detail.en))||r.statusText); }
+        try{ if(conn){ files.push(await DBDRIVE.fetch(f)); continue; }
+          const r=await fetch(`/api/drive/files/${encodeURIComponent(f.id)}?name=${encodeURIComponent(f.name)}&mime=${encodeURIComponent(f.mimeType||'')}`,{headers:{'X-DB':'1'}}); if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error((j.detail&&(j.detail[S.lang]||j.detail.en))||r.statusText); }
           const blob=await r.blob(); const hx=r.headers.get('x-filename'); let name=f.name; if(hx){ try{ name=new TextDecoder().decode(new Uint8Array(hx.match(/../g).map(h=>parseInt(h,16)))); }catch(e){} }
           files.push(new File([blob], name, {type: blob.type||f.mimeType||''})); }
         catch(e){ toast(`${f.name}: ${e.message}`); } }
