@@ -9,3 +9,5 @@ pypdf>=6
 lxml>=5
 pillow>=10
 anthropic>=0.80          # optional: Claude reads the documents in the intake when ANTHROPIC_API_KEY is set
+pyjwt>=2.8               # optional: Google Drive source with a service account (private folders)
+cryptography>=42         # optional: signs the service-account token

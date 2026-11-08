@@ -275,7 +275,15 @@ const T = {
   apiManMissing:{en:'manufacturer not read — type it',ar:'المصنع ما اتقراش — اكتبه'}, compRead:{en:'Composition rows read',ar:'صفوف التركيب اللي اتقرت'}, batchRead:{en:'Batches',ar:'تشغيلات'}, toData:{en:'they go to the product data after the dossier is created',ar:'بتتحط في بيانات المنتج بعد إنشاء الملف'}, pagesN:{en:'p.',ar:'صفحة'}, fText:{en:'text',ar:'نص مقروء'},
   fScan:{en:'scan — no text layer',ar:'سكان بدون نص'}, fVision:{en:'scan read from its page images',ar:'سكان اتقرى من صور صفحاته'}, fOcrBrowser:{en:'scan read by OCR in the browser',ar:'سكان اتقرى بـ OCR في المتصفح'},
   ocrRunning:{en:'Reading the scan (OCR in the browser)…',ar:'بيقرأ السكان (OCR في المتصفح)…'},
-  readableBtn:{en:'Make readable (OCR)',ar:'حوّل لمقروء (OCR)'}, chooseOpt:{en:'— choose —',ar:'— اختر —'}, otherVal:{en:'Other…',ar:'أخرى…'}, readableRunning:{en:'Making a readable copy…',ar:'بيعمل نسخة مقروءة…'}, readableDone:{en:'Readable copy saved as a new version (page images unchanged).',ar:'اتحفظت نسخة مقروءة كإصدار جديد (صور الصفحات زي ما هي).'},
+  readableBtn:{en:'Make readable (OCR)',ar:'حوّل لمقروء (OCR)'}, chooseOpt:{en:'— choose —',ar:'— اختر —'}, otherVal:{en:'Other…',ar:'أخرى…'},
+  driveT:{en:'From Google Drive',ar:'من Google Drive'}, driveList:{en:'Show the files',ar:'اعرض الملفات'}, driveUse:{en:'Read the selected files',ar:'اقرأ المختار'}, drivePlace:{en:'Use the selected files',ar:'استخدم المختار'},
+  driveRec:{en:'include sub-folders',ar:'مع الفولدرات الفرعية'}, driveName:{en:'File',ar:'الملف'}, driveType:{en:'Type',ar:'النوع'}, driveSize:{en:'Size',ar:'الحجم'}, driveFetching:{en:'Reading from Drive…',ar:'بيجيب الملفات من Drive…'},
+  driveHow:{en:'Paste the link of a Drive folder (or a file) the company shared. Private folders need a service account (share the folder with its e-mail once); folders shared «anyone with the link» need a Google API key in the browser edition and nothing on a server.',
+            ar:'الصق لينك فولدر (أو ملف) على Drive الشركة شاركته. الفولدرات الخاصة محتاجة حساب خدمة (شارك الفولدر مع إيميله مرة واحدة)؛ الفولدرات المشتركة «أي شخص معه اللينك» محتاجة مفتاح Google API في نسخة المتصفح، ومن غير أي حاجة على الخادم.'},
+  driveMode_public:{en:'public folders, no key',ar:'فولدرات عامة من غير مفتاح'}, driveMode_api_key:{en:'Google API key',ar:'مفتاح Google API'}, driveMode_service_account:{en:'service account',ar:'حساب خدمة'},
+  driveSet:{en:'Drive settings',ar:'إعدادات Drive'}, driveKey:{en:'Google API key (folders shared «anyone with the link»)',ar:'مفتاح Google API (للفولدرات المشتركة «أي شخص معه اللينك»)'},
+  driveSA:{en:'Service account JSON (private folders: share the folder with the account e-mail)',ar:'ملف حساب الخدمة JSON (للفولدرات الخاصة: شارك الفولدر مع إيميل الحساب)'}, driveSave:{en:'Save',ar:'احفظ'},
+  driveNoneSel:{en:'Select at least one file.',ar:'اختار ملف واحد على الأقل.'}, driveNoUsable:{en:'No readable files here (PDF, Word, images, Google Docs).',ar:'مفيش ملفات مقروءة هنا (PDF، Word، صور، Google Docs).'}, readableRunning:{en:'Making a readable copy…',ar:'بيعمل نسخة مقروءة…'}, readableDone:{en:'Readable copy saved as a new version (page images unchanged).',ar:'اتحفظت نسخة مقروءة كإصدار جديد (صور الصفحات زي ما هي).'},
   readableNoOcr:{en:'No OCR available here: install tesseract on this computer or use the browser edition.',ar:'مفيش OCR متاح هنا: ثبّت tesseract على الجهاز أو استخدم نسخة المتصفح.'},
   makeReadable:{en:'After saving, convert the scanned files to readable PDFs (OCR text layer; the page images stay as they are)',ar:'بعد الحفظ، حوّل الملفات الممسوحة لـ PDF مقروء (طبقة نص OCR؛ صور الصفحات زي ما هي)'}, ocrFailed:{en:'Browser OCR failed:',ar:'قراءة الـ OCR في المتصفح فشلت:'},
   scanByVision:{en:'Scans without text were read from their page images by Claude',ar:'المستندات الممسوحة بدون نص اتقرت من صور صفحاتها بواسطة Claude'},
@@ -674,7 +682,7 @@ function wizard(){
      <div><button class="btn" id="addApi">${icon('plus')} ${esc(t('addApi'))}</button></div></div>`;
   if(w.step===3) body=`<div class="form">${txt('applicant','applicant')}${txt('tracking','tracking','P-MAA-0001')}${txt('portal','portal')}${txt('inn','inn','paracetamol')}</div>`;
   const intakeCard = w.step===0 ? `<div class="card glow pad" id="intake"><div class="row"><span class="ic-tile accent">${icon('sparkles')}</span><div class="grow"><b>${esc(t('intakeT'))}</b><div class="small muted">${esc(t('intakeSub'))}</div></div>
-     <button class="btn pri" id="intakeBtn">${icon('upload')} ${esc(t('intakeBtn'))}</button></div>${w.intake?`<div class="small" style="margin-top:8px;color:var(--ok)">${icon('check',12)} ${esc(w.intake)}</div>`:''}</div>` : '';
+     <button class="btn pri" id="intakeBtn">${icon('upload')} ${esc(t('intakeBtn'))}</button><button class="btn" id="intakeDrive">${icon('link')} ${esc(t('driveT'))}</button></div>${w.intake?`<div class="small" style="margin-top:8px;color:var(--ok)">${icon('check',12)} ${esc(w.intake)}</div>`:''}</div>` : '';
   $('#view').innerHTML=`<div class="head"><div class="title"><div class="eyebrow">${esc(t('f1'))} → ${esc(t('f2'))}</div><h1>${esc(t('newDossier'))}</h1><p class="sub">${esc(t('wizSub'))}</p></div></div>
    <div class="steps">${steps.map((s,i)=>`<span class="${i===w.step?'on':i<w.step?'done':''}"><span class="n">${i<w.step?'✓':i+1}</span>${esc(t(s))}</span>`).join('')}</div>
    <div class="wiz"><div class="stack">${intakeCard}<div class="card pad" id="wizBody">${body}</div><div id="wizErr"></div>
@@ -691,6 +699,7 @@ function wizard(){
   v.querySelectorAll('[data-rmapi]').forEach(b=>b.onclick=()=>{ d.apis.splice(+b.dataset.rmapi,1); wizard(); });
   if($('#addApi')) $('#addApi').onclick=()=>{ d.apis.push({name:'',manufacturer:'',option:'FULL'}); wizard(); };
   const ib=$('#intakeBtn'); if(ib) ib.onclick=()=>pickFiles(intake);
+  const idb=$('#intakeDrive'); if(idb) idb.onclick=()=>drivePicker(files=>intake(files));
   const iz=$('#intake'); if(iz){ iz.ondragover=e=>{ e.preventDefault(); iz.classList.add('drop'); }; iz.ondragleave=()=>iz.classList.remove('drop');
     iz.ondrop=e=>{ e.preventDefault(); iz.classList.remove('drop'); intake([...e.dataTransfer.files]); }; }
   $('#wizCancel').onclick=()=>{ S.wiz=null; };
@@ -783,6 +792,41 @@ function smartWire(root){ $$('select[data-smart]', root||document).forEach(sl=>{
   if(sl.dataset.onform){ const f=VOC().forms.find(x=>x.id===sl.value); const r=$('#rv-route'); if(f&&r&&!r.value) r.value=f.route; } }); }); }
 function datalists(){ const k=VOC().known||{}; const dl=(id,arr)=>`<datalist id="${id}">${(arr||[]).slice(0,200).map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
   return dl('dl-man',k.manufacturers)+dl('dl-app',k.applicants)+dl('dl-api',k.apis)+dl('dl-apiman',k.api_manufacturers); }
+
+/* ---------------- Google Drive as a source: paste a link, pick files, read them like uploads */
+S.drive={link:'',files:[],recursive:false,gear:false};
+const fmtSize=n=>n>1e6?`${(n/1e6).toFixed(1)} MB`:n>1e3?`${Math.round(n/1e3)} KB`:`${n} B`;
+const driveType=f=>f.kind==='folder'?L({en:'folder',ar:'فولدر'}):/pdf/.test(f.mimeType)?'PDF':/wordprocessingml|msword/.test(f.mimeType)?'Word':/google-apps.document/.test(f.mimeType)?'Google Doc':/google-apps.spreadsheet/.test(f.mimeType)?'Google Sheet':/google-apps.presentation/.test(f.mimeType)?'Google Slides':/^image\//.test(f.mimeType)?L({en:'image',ar:'صورة'}):(f.mimeType||'').split('/').pop()||'?';
+function driveSettingsForm(ds){ return `<div class="card pad stack gap-s" id="drvSetBox"><b>${esc(t('driveSet'))}</b><div class="form">
+  <label class="f"><span>${esc(t('driveKey'))}</span><input type="password" id="drvKey" dir="ltr" autocomplete="off" placeholder="${esc(ds.api_key_hint||'AIza…')}"></label>
+  ${ds.browser?'':`<label class="f" style="grid-column:1/-1"><span>${esc(t('driveSA'))}${ds.service_account_email?` · <span class="code">${esc(ds.service_account_email)}</span>`:''}</span><textarea id="drvSA" rows="3" dir="ltr" placeholder='{"type":"service_account", "client_email": "…", "private_key": "…"}'></textarea></label>`}</div>
+  <div class="row gap-s"><button class="btn pri sm" id="drvSave">${icon('check',14)} ${esc(t('driveSave'))}</button><span class="small muted" id="drvSetMsg"></span></div></div>`; }
+async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await api('/drive/settings'); }catch(e){ toast(e.message); return; }
+  const d=S.drive;
+  const fileList=files=>files.length?`<div class="rows tablewrap"><table><thead><tr><th></th><th>${esc(t('driveName'))}</th><th>${esc(t('driveType'))}</th><th>${esc(t('driveSize'))}</th></tr></thead><tbody>${files.map((f,i)=>`<tr><td>${f.kind==='folder'?`<button class="btn sm ghost" data-drvopen="${esc(f.id)}" title="${esc(f.name)}">▸</button>`:`<input type="checkbox" data-drvsel="${i}" ${f.usable?'checked':'disabled'}>`}</td><td dir="auto">${esc(f.path||f.name)}${f.export?` <span class="small muted">→ ${esc(f.export)}</span>`:''}</td><td class="small muted">${esc(driveType(f))}</td><td class="small muted">${f.size?fmtSize(f.size):''}</td></tr>`).join('')}</tbody></table></div>${files.some(f=>f.usable)?'':`<p class="small muted">${esc(t('driveNoUsable'))}</p>`}`:`<p class="small muted">${esc(t('driveHow'))}</p>`;
+  const paint=()=>{ openDrawer(t('driveT'), `<div class="stack gap-s">
+    <div class="row gap-s small muted"><span class="chip ${ds.mode==='public'&&ds.browser?'c-warn':'c-ok'}"><i></i>${esc(t('driveMode_'+ds.mode))}</span>${ds.service_account_email?`<span class="code">${esc(ds.service_account_email)}</span>`:''}<span class="grow"></span><button class="btn sm ghost" id="drvGear" title="${esc(t('driveSet'))}">⚙</button></div>
+    <div id="drvSet">${(d.gear||(ds.browser&&ds.mode==='public'))?driveSettingsForm(ds):''}</div>
+    <div class="row gap-s"><input type="text" id="drvLink" dir="ltr" placeholder="https://drive.google.com/drive/folders/…" value="${esc(d.link)}" style="flex:1"><button class="btn pri" id="drvList">${esc(t('driveList'))}</button></div>
+    <label class="small row gap-s"><input type="checkbox" id="drvRec" ${d.recursive?'checked':''}> ${esc(t('driveRec'))}</label>
+    <div id="drvFiles">${fileList(d.files)}</div>
+    <div class="row"><button class="btn pri" id="drvUse" ${d.files.some(f=>f.usable)?'':'disabled'}>${icon('check')} ${esc(opts.label||t('driveUse'))}</button><button class="btn ghost" onclick="DS.closeDrawer()">${esc(t('cancel'))}</button></div></div>`, true);
+    $('#drvGear').onclick=()=>{ d.gear=!d.gear; paint(); };
+    const sv=$('#drvSave'); if(sv) sv.onclick=async()=>{ const body={}; const k=$('#drvKey'); if(k&&k.value.trim()) body.api_key=k.value.trim(); const sa=$('#drvSA'); if(sa&&sa.value.trim()){ try{ body.service_account=JSON.parse(sa.value); }catch(e){ $('#drvSetMsg').textContent=L({en:'The service account must be JSON.',ar:'حساب الخدمة لازم يكون JSON.'}); return; } }
+      sv.disabled=true; try{ ds=await api('/drive/settings',{method:'PUT',json:body}); d.gear=false; S.caps=null; paint(); }catch(e){ $('#drvSetMsg').textContent=e.message; sv.disabled=false; } };
+    const list=async link=>{ d.link=link; d.recursive=$('#drvRec').checked; $('#drvList').disabled=true; try{ const r=await api('/drive/list',{method:'POST',json:{link, recursive:d.recursive}}); d.files=r.files; ds.mode=r.mode; }catch(e){ toast(e.message); } paint(); };
+    $('#drvList').onclick=()=>list($('#drvLink').value.trim()); $('#drvLink').onkeydown=e=>{ if(e.key==='Enter') list($('#drvLink').value.trim()); };
+    $$('[data-drvopen]').forEach(b=>b.onclick=()=>list(`https://drive.google.com/drive/folders/${b.dataset.drvopen}`));
+    $('#drvUse').onclick=async()=>{ const picked=$$('[data-drvsel]').filter(c=>c.checked).map(c=>d.files[+c.dataset.drvsel]); if(!picked.length){ toast(t('driveNoneSel')); return; }
+      $('#drvUse').disabled=true; const files=[];
+      for(const [i,f] of picked.entries()){ toast(`${t('driveFetching')} ${i+1}/${picked.length} · ${f.name}`);
+        try{ const r=await fetch(`/api/drive/files/${encodeURIComponent(f.id)}?name=${encodeURIComponent(f.name)}&mime=${encodeURIComponent(f.mimeType||'')}`,{headers:{'X-DB':'1'}}); if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error((j.detail&&(j.detail[S.lang]||j.detail.en))||r.statusText); }
+          const blob=await r.blob(); const hx=r.headers.get('x-filename'); let name=f.name; if(hx){ try{ name=new TextDecoder().decode(new Uint8Array(hx.match(/../g).map(h=>parseInt(h,16)))); }catch(e){} }
+          files.push(new File([blob], name, {type: blob.type||f.mimeType||''})); }
+        catch(e){ toast(`${f.name}: ${e.message}`); } }
+      if(!files.length){ $('#drvUse').disabled=false; return; }
+      closeDrawer(); onFiles(files); }; };
+  paint(); }
 async function browserOcr(r, files, target){
   /* scans the server could not read (no tesseract there) are read here, in the browser, then the rules run again on the texts */
   const scans=(r.files||[]).map((f,i)=>({f,i})).filter(x=>x.f.scanned&&!x.f.ocr&&files[x.i]);
@@ -1074,7 +1118,7 @@ function renderBoard(){
       <button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></td></tr>`;
   });
   $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('board'))}</h1><p class="sub">${esc(t('boardSub'))}</p></div>
-    <div class="row"><button class="btn" id="bulkBtn">${icon('upload')} ${esc(t('bulk'))}</button><span class="modeswitch"><a class="on" href="#/d/${id}/board">${esc(t('guided'))}</a><a href="#/d/${id}/publisher">${esc(t('navPublisher'))}</a></span>
+    <div class="row"><button class="btn" id="bulkBtn">${icon('upload')} ${esc(t('bulk'))}</button><button class="btn" id="bulkDrive">${icon('link')} ${esc(t('driveT'))}</button><span class="modeswitch"><a class="on" href="#/d/${id}/board">${esc(t('guided'))}</a><a href="#/d/${id}/publisher">${esc(t('navPublisher'))}</a></span>
     <a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a><a class="btn pri" href="#/d/${id}/export">${esc(t('navExport'))} <span class="flip">${icon('arrow',16)}</span></a></div></div>
     <div class="kpis">
       <div class="card kpi br"><span class="n">${p}%</span><span class="l">${esc(t('progress'))} (${ready}/${req.length})</span></div>
@@ -1094,6 +1138,7 @@ function renderBoard(){
   v.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up));
   v.querySelectorAll('[data-why]').forEach(x=>x.onclick=()=>openWhy(x.dataset.why));
   $('#bulkBtn').onclick=()=>{ const p=$('#picker'); p.multiple=true; p.value=''; p.onchange=()=>{ p.multiple=false; bulk([...p.files]); }; p.click(); };
+  $('#bulkDrive').onclick=()=>drivePicker(files=>bulk(files), {label:t('drivePlace')});
   v.ondragover=e=>{ if(e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); };
   v.ondrop=e=>{ if(e.dataTransfer && e.dataTransfer.files.length){ e.preventDefault(); bulk([...e.dataTransfer.files]); } };
 }

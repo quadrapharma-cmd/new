@@ -123,6 +123,18 @@ on it; a value that matches nothing stays as printed under «Other…» so nothi
 administration. Free-name fields (applicant, manufacturers, substances) suggest the names already used in this workspace.
 Tests: `tests/test_vocab.py`.
 
+## Google Drive as a source
+
+Paste a Drive folder (or file) link and the program lists what is there and reads what it needs (`engine/dossier_engine/drive.py`,
+`GET/PUT /api/drive/settings`, `POST /api/drive/list`, `GET /api/drive/files/{id}`, `POST /api/dossiers/{id}/drive/stage`). Three ways in,
+by what the workspace holds in `drive.json` (mode 600): a **service account** key from Google Cloud — the company shares its folder
+with the account's e-mail once and private folders become readable (server editions; the key never goes to a browser); a **Google
+API key** for folders shared «anyone with the link» (works in the browser edition too, the Drive API answers CORS); or nothing, for
+public folders through Google's embedded folder view and the public download URL (server editions). Google Docs are exported to
+Word (so they can be amended), Sheets and Slides to PDF; everything is read-only. In the wizard the intake card has «From Google
+Drive»; the board's bulk upload has it too; the Assistant has `drive_list` and `drive_fetch` (a file becomes an unplaced document,
+then `read_document` and `place_document`). Tests: `tests/test_drive.py` (a stand-in for Google's HTTP).
+
 ## Browser edition (open from a link, nothing to install)
 
 `web/` turns the same app into a claude.ai artifact: the Python engine runs **inside the browser** (Pyodide), the

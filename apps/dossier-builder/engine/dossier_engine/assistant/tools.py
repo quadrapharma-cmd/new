@@ -16,7 +16,7 @@ from . import storage
 APPROVAL = {'export_dossier', 'sign_review', 'withdraw_document'}
 WRITES = APPROVAL | {'put_data', 'set_profile', 'place_document', 'generate_document', 'run_review', 'act_on_finding',
                      'add_response', 'reassess_finding', 'make_review_letter', 'request_reissue', 'save_reading',
-                     'record_document_review', 'amend_document', 'amendment_memo'}
+                     'record_document_review', 'amend_document', 'amendment_memo', 'drive_fetch'}
 MAX_TEXT = 60_000          # characters of document text returned per call
 MAX_PAGES = 20             # pages attached per call
 MAX_ATTACH = 24_000_000    # bytes of PDF attached per call
@@ -152,6 +152,13 @@ SPECS = [
                                    'items': {'type': 'array', 'items': {'type': 'object', 'properties': {'rule': S('rule id'), 'where': S('page / section'), 'finding': S('what is wrong'),
                                                                                                          'change': S('what must change')}, 'required': ['rule', 'change']}},
                                    'rationale': S('one sentence')}, ['doc_id', 'items', 'rationale'])},
+    {'name': 'drive_list', 'description': 'List the files of a Google Drive folder link (or one file link) the company shared: name, type, size, whether the program can '
+                                          'read it (PDF, Word, images, Google Docs). Use recursive for sub-folders.',
+     'input_schema': _obj('link', {'link': S('Google Drive folder or file link'), 'recursive': B('also list sub-folders (≤ 3 levels)')}, ['link'])},
+    {'name': 'drive_fetch', 'description': 'Read a Drive file into the dossier as an unplaced document (Google Docs are exported to Word); then read_document and '
+                                           'place_document as with any file.',
+     'input_schema': _obj('file', {'file_id': S('Drive file id from drive_list'), 'name': S('file name as listed'), 'mime': S('mimeType as listed'),
+                                   'rationale': S('why this file is needed')}, ['file_id', 'rationale'])},
     {'name': 'export_dossier', 'description': 'Export the dossier (CTD folder, eCTD 3.2.2, eCTD 4.0). REQUIRES THE USER\'S APPROVAL: the program asks them before this runs. '
                                               'Call it only when get_gate says ok (or the user asked to export anyway with acknowledge_provisional).',
      'input_schema': _obj('export', {'outputs': {'type': 'array', 'items': {'type': 'string', 'enum': ['ctd', 'ectd32', 'ectd40']}, 'description': 'outputs; default all three'},
@@ -570,3 +577,32 @@ def t_amendment_memo(ctx, doc_id, items, rationale, lang='en', to=None):
     name = f"Amendment memo - {d['filename'].rsplit('.', 1)[0]}.docx"
     memo = storage.stage_document(ctx.st, ctx.did, name, data, title=name, meta={'memo_for': doc_id, 'kind': 'amendment_memo', 'rationale': rationale, 'items': len(items)})
     return {'memo': {'id': memo['id'], 'filename': memo['filename']}, 'items': len(items), 'next': 'the user downloads the memo from the document\'s panel and sends it to the author or issuer'}
+
+
+# ---------------- Google Drive as a source
+def t_drive_list(ctx, link, recursive=False):
+    from .. import drive as _drive
+    lk = _drive.parse_link(link)
+    if not lk:
+        raise ToolError('not a Google Drive folder or file link')
+    d = _drive.Drive(_drive.load(ctx.st.root))
+    try:
+        if lk['kind'] == 'folder':
+            files = ctx.run_async(d.list_folder(lk['id'], bool(recursive)))
+        else:
+            m = ctx.run_async(d.meta(lk['id']))
+            files = [m] if m else [{'id': lk['id'], 'name': lk['id'], 'mimeType': 'application/pdf', 'kind': 'file', 'usable': True, 'path': lk['id']}]
+    except _drive.DriveError as e:
+        raise ToolError(e.en)
+    return {'mode': d.mode, 'files': [{k: f.get(k) for k in ('id', 'name', 'mimeType', 'size', 'modified', 'kind', 'usable', 'path')} for f in files][:200]}
+
+
+def t_drive_fetch(ctx, file_id, rationale, name=None, mime=None):
+    from .. import drive as _drive
+    d = _drive.Drive(_drive.load(ctx.st.root))
+    try:
+        fname, data, mt = ctx.run_async(d.fetch(file_id, name, mime))
+    except _drive.DriveError as e:
+        raise ToolError(e.en)
+    doc = storage.stage_document(ctx.st, ctx.did, fname, data, meta={'from_drive': file_id, 'rationale': rationale})
+    return {'document': {'id': doc['id'], 'filename': fname, 'bytes': len(data)}, 'next': 'read_document, then place_document into its CTD item'}

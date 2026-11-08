@@ -66,6 +66,7 @@ class Ctx:
     def __init__(self, runner):
         self.st, self.did, self.user, self.never_send = runner.st, runner.did, runner.user, runner.cfg.get('never_send') or []
         self.call = runner.call
+        self.run_async = runner.run_async
 
 
 class Runner:
@@ -92,6 +93,11 @@ class Runner:
         if self.loop is None:
             self.loop = asyncio.new_event_loop()
         return self.loop.run_until_complete(self._acall(method, path, json, params, files, data))
+
+    def run_async(self, coro):
+        if self.loop is None:
+            self.loop = asyncio.new_event_loop()
+        return self.loop.run_until_complete(coro)
 
     # ---------------- prompt
     def _context_block(self):

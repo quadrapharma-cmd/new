@@ -78,9 +78,10 @@ def create_app(workspace, auth_enabled=None):
     app.state.internal_token = secrets.token_hex(24)        # in-process calls by the Assistant (never sent to a browser)
     app.state.auth = Auth(workspace, auth_enabled)
     install(app, app.state.auth, st)
-    from . import review_api, assistant_api
+    from . import review_api, assistant_api, drive_api
     review_api.install(app, st)
     assistant_api.install(app, st)
+    drive_api.install(app, st)
 
     @app.exception_handler(StoreError)
     def _store_err(_, e):
@@ -383,7 +384,7 @@ def create_app(workspace, auth_enabled=None):
         from ..assistant import settings as _asettings
         import importlib.util
         return {'version': app.version, 'workspace': str(st.root), 'assistant': _asettings.status(st.root),
-                'ocr_server': bool(_arabic.ocr_available() and importlib.util.find_spec('ocrmypdf')),
+                'ocr_server': bool(_arabic.ocr_available() and importlib.util.find_spec('ocrmypdf')), 'drive': __import__('dossier_engine.drive', fromlist=['status']).status(st.root),
                 'dossiers': st.db.execute('select count(*) from dossier').fetchone()[0],
                 'pack': {'id': pack.id, 'title': pack.meta['title'], 'status': pack.meta['status'],
                          'valid_from': pack.meta['valid_from'], 'sources': pack.meta['sources']},
