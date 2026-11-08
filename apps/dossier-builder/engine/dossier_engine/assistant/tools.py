@@ -15,7 +15,8 @@ from . import storage
 
 APPROVAL = {'export_dossier', 'sign_review', 'withdraw_document'}
 WRITES = APPROVAL | {'put_data', 'set_profile', 'place_document', 'generate_document', 'run_review', 'act_on_finding',
-                     'add_response', 'reassess_finding', 'make_review_letter', 'request_reissue', 'save_reading'}
+                     'add_response', 'reassess_finding', 'make_review_letter', 'request_reissue', 'save_reading',
+                     'record_document_review', 'amend_document', 'amendment_memo'}
 MAX_TEXT = 60_000          # characters of document text returned per call
 MAX_PAGES = 20             # pages attached per call
 MAX_ATTACH = 24_000_000    # bytes of PDF attached per call
@@ -123,6 +124,34 @@ SPECS = [
                                       'reason': S('what is wrong with the current copy')}, ['slot_id', 'issuer', 'reason'])},
     {'name': 'get_audit', 'description': 'The last actions on this dossier (who did what, when).',
      'input_schema': _obj('limit', {'limit': I('rows (default 30)')})},
+    {'name': 'get_document_rubric', 'description': 'The rules ONE document must satisfy: the review pack\'s questions for its CTD item (with sources and the deficiency wording) '
+                                                   'plus general document rules (text layer, product named, signed, dated, validity, issuer). Start a document review here, then read the '
+                                                   'document and call record_document_review.',
+     'input_schema': _obj('which document', {'doc_id': S('document id')}, ['doc_id'])},
+    {'name': 'record_document_review', 'description': 'Record your review of a document against its rubric: one finding per rule with verdict adequate | deficient | '
+                                                      'not_assessable | not_applicable, where (page + short excerpt), what is wrong (finding) and the required change (change), '
+                                                      'each in English and Arabic. Judge content: wording, values, consistency with the licence and the data, required statements.',
+     'input_schema': _obj('review', {'doc_id': S('document id'), 'summary': S('two or three sentences: overall state of the document'),
+                                     'findings': {'type': 'array', 'description': 'one per rule', 'items': {'type': 'object', 'properties': {
+                                         'rule': S('rule id from the rubric'), 'verdict': S('adequate | deficient | not_assessable | not_applicable'),
+                                         'severity': S('critical | major | minor | note (default: the rule\'s)'),
+                                         'where': {'type': 'array', 'items': {'type': 'object', 'properties': {'page': I('page'), 'excerpt': S('≤ 40 words as printed')}}},
+                                         'finding': {'type': 'object', 'properties': {'en': S('en'), 'ar': S('ar')}}, 'change': {'type': 'object', 'properties': {'en': S('en'), 'ar': S('ar')}}},
+                                         'required': ['rule', 'verdict']}}}, ['doc_id', 'findings'])},
+    {'name': 'amend_document', 'description': 'Amend a WORD document per the rules with TRACKED CHANGES: each edit quotes the paragraph to find (exact text or a unique '
+                                              'passage) and gives the new text, the rule and the reason; ops replace | insert_after | delete. The program stores the result as a new '
+                                              'unsigned draft version with a change log; the company accepts the changes in Word and signs. PDFs and third-party documents cannot be '
+                                              'amended here: use amendment_memo (and request_reissue for third-party documents); program-generated documents: fix the data and generate again.',
+     'input_schema': _obj('edits', {'doc_id': S('document id (.docx)'), 'edits': {'type': 'array', 'items': {'type': 'object', 'properties': {
+                                        'op': S('replace | insert_after | delete', enum=['replace', 'insert_after', 'delete']), 'find': S('paragraph text to locate'),
+                                        'text': S('new text (replace / insert_after)'), 'rule': S('rule id'), 'reason': S('why, one sentence')}, 'required': ['op', 'find']}},
+                                    'rationale': S('one sentence: which review findings these edits answer')}, ['doc_id', 'edits', 'rationale'])},
+    {'name': 'amendment_memo', 'description': 'Write an amendment memo (DOCX) for a document that is not edited here (a PDF without a Word source, or a third-party document '
+                                              'that must be re-issued): rule · where · finding · required change per item. Stored next to the dossier\'s files, linked to the document.',
+     'input_schema': _obj('memo', {'doc_id': S('document id'), 'lang': S('en | ar', enum=['en', 'ar']), 'to': S('addressee (issuer or author), optional'),
+                                   'items': {'type': 'array', 'items': {'type': 'object', 'properties': {'rule': S('rule id'), 'where': S('page / section'), 'finding': S('what is wrong'),
+                                                                                                         'change': S('what must change')}, 'required': ['rule', 'change']}},
+                                   'rationale': S('one sentence')}, ['doc_id', 'items', 'rationale'])},
     {'name': 'export_dossier', 'description': 'Export the dossier (CTD folder, eCTD 3.2.2, eCTD 4.0). REQUIRES THE USER\'S APPROVAL: the program asks them before this runs. '
                                               'Call it only when get_gate says ok (or the user asked to export anyway with acknowledge_provisional).',
      'input_schema': _obj('export', {'outputs': {'type': 'array', 'items': {'type': 'string', 'enum': ['ctd', 'ectd32', 'ectd40']}, 'description': 'outputs; default all three'},
@@ -471,3 +500,73 @@ def t_withdraw_document(ctx, doc_id, reason):
     st_, body = ctx.call('POST', f'/api/dossiers/{ctx.did}/documents/{doc_id}/withdraw', params={'reason': reason})
     _check(ctx, st_, body, 'withdraw')
     return _doc_summary(body) if isinstance(body, dict) and body.get('id') else body
+
+
+# ---------------- one document: review per the rules, amend per the rules
+def t_get_document_rubric(ctx, doc_id):
+    from ..review import docreview
+    try:
+        rb = docreview.rubric(ctx.st, ctx.did, doc_id)
+    except KeyError:
+        raise ToolError('document not in this dossier')
+    prev = docreview.latest(ctx.st, doc_id)
+    rb['rules'] = [{k: r[k] for k in ('id', 'kind', 'dept', 'severity', 'title', 'question', 'deficiency', 'source') if k in r} for r in rb['rules']]
+    rb['previous_review'] = prev and {'origin': prev['origin'], 'verdict': prev['verdict'], 'counts': prev['counts'], 'created': prev['created']}
+    rb['how_to_amend'] = ('amend_document (Word, tracked changes)' if rb['document']['is_docx'] else 'amendment_memo + request_reissue (third-party)' if rb['document']['third_party']
+                          else 'put_data + generate_document' if rb['document']['generated'] else 'amendment_memo (PDF without a Word source)')
+    return rb
+
+
+def t_record_document_review(ctx, doc_id, findings, summary=None):
+    from ..review import docreview
+    try:
+        rv = docreview.record(ctx.st, ctx.did, doc_id, findings, summary, actor='claude', origin='assistant')
+    except KeyError:
+        raise ToolError('document not in this dossier')
+    except ValueError as e:
+        raise ToolError(str(e))
+    return {'review_id': rv['id'], 'verdict': rv['verdict'], 'counts': rv['counts']}
+
+
+def t_amend_document(ctx, doc_id, edits, rationale):
+    from ..generate import amend
+    d = ctx.st.document(doc_id)
+    if d['dossier_id'] != ctx.did:
+        raise ToolError('document not in this dossier')
+    if d.get('doc_class') in ('third_party_certificate', 'eda_document'):
+        raise ToolError('a third-party document is never altered: write an amendment_memo and request_reissue')
+    if not d['filename'].lower().endswith('.docx'):
+        raise ToolError('not a Word document: use amendment_memo (or put_data + generate_document for a generated document)')
+    data = ctx.st.blob_path(d['sha256']).read_bytes()
+    try:
+        out, log = amend.apply_edits(data, edits)
+    except amend.AmendError as e:
+        raise ToolError(str(e))
+    meta = {k: v for k, v in d['meta'].items() if k not in ('amended_from', 'change_log')}
+    meta.update({'amended_from': doc_id, 'change_log': log, 'draft_unsigned': True, 'amended_by': 'assistant', 'rationale': rationale})
+    try:
+        new = ctx.st.add_document(ctx.did, d['slot_id'], d['filename'], out, d.get('title'), meta, supersede=doc_id)
+    except Exception as e:
+        raise ToolError(getattr(e, 'en', None) or str(e))
+    return {'document': _doc_summary(new), 'changes': len(log), 'next': 'the company opens the Word file, accepts the tracked changes, signs and uploads the signed PDF'}
+
+
+def t_amendment_memo(ctx, doc_id, items, rationale, lang='en', to=None):
+    import tempfile, pathlib
+    from ..generate import amend
+    d = ctx.st.document(doc_id)
+    if d['dossier_id'] != ctx.did:
+        raise ToolError('document not in this dossier')
+    if not items:
+        raise ToolError('no items')
+    product = (ctx.st.dossier(ctx.did).get('product') or {}).get('name')
+    tmp = pathlib.Path(tempfile.mkdtemp())
+    try:
+        p = amend.memo(items, d['filename'], product, tmp / 'memo.docx', lang=lang or 'en', to=to)
+        data = p.read_bytes()
+    finally:
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+    name = f"Amendment memo - {d['filename'].rsplit('.', 1)[0]}.docx"
+    memo = storage.stage_document(ctx.st, ctx.did, name, data, title=name, meta={'memo_for': doc_id, 'kind': 'amendment_memo', 'rationale': rationale, 'items': len(items)})
+    return {'memo': {'id': memo['id'], 'filename': memo['filename']}, 'items': len(items), 'next': 'the user downloads the memo from the document\'s panel and sends it to the author or issuer'}

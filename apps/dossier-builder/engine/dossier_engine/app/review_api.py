@@ -47,7 +47,9 @@ class AiAnswers(BaseModel):
 
 
 def install(app, st):
+    from ..review import docreview
     storage.ensure(st)
+    docreview.ensure(st)
     PACK = packmod.load()
     REQ = st.pack(PACK.meta['requirements_pack'])
 
@@ -211,6 +213,34 @@ def install(app, st):
         data = st.blob_path(meta[fmt]).read_bytes()
         name = f"{k}-{dept}-{rid}.{fmt}"
         return Response(data, media_type=MEDIA.get(fmt, 'application/octet-stream'), headers={'content-disposition': f'attachment; filename="{name}"'})
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/review', status_code=201)
+    def doc_review_run(did: str, doc_id: str):
+        """One document against its rubric, by the rules (keywords, dates, validity); the rest is left to the Assistant."""
+        st.dossier(did)
+        try:
+            return docreview.run_rules(st, did, doc_id, PACK)
+        except KeyError:
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/review')
+    def doc_review_get(did: str, doc_id: str):
+        st.dossier(did)
+        try:
+            rb = docreview.rubric(st, did, doc_id, PACK)
+        except KeyError:
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        return {'latest': docreview.latest(st, doc_id), 'history': len(docreview.history(st, doc_id)), 'rules': len(rb['rules']),
+                'is_docx': rb['document']['is_docx'], 'third_party': rb['document']['third_party'], 'generated': rb['document']['generated'],
+                'memos': docreview.memos_for(st, did, doc_id)}
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/rubric')
+    def doc_rubric(did: str, doc_id: str):
+        st.dossier(did)
+        try:
+            return docreview.rubric(st, did, doc_id, PACK)
+        except KeyError:
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
 
     @app.get('/api/dossiers/{did}/review/{rid}/ai')
     def ai_prompt(did: str, rid: str, dept: str = None, ctd: str = None, ids: str = None):

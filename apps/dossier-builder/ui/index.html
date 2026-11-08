@@ -284,7 +284,12 @@ const T = {
   asstSend:{en:'Send',ar:'إرسال'}, asstStop:{en:'Stop',ar:'وقّف'}, asstClear:{en:'Clear chat',ar:'امسح المحادثة'}, asstClearQ:{en:'Clear this dossier\'s conversation? The activity log keeps what was done.',ar:'تمسح محادثة الملف ده؟ سجل النشاط بيفضل زي ما هو.'},
   asstEmpty:{en:'Ask for anything about this dossier: «read the uploaded documents and fill the data», «review the dossier and draft the responses», «what is missing before export?». Export, signing and withdrawals wait for your approval.',
             ar:'اطلب أي حاجة في الملف ده: «اقرأ المستندات اللي اترفعت واملأ البيانات»، «راجع الملف واكتب الردود»، «إيه الناقص قبل التصدير؟». التصدير والتوقيع والسحب بيستنوا موافقتك.'},
-  asstReadings:{en:'saved digests',ar:'خلاصات محفوظة'}, asstStopped:{en:'stopped',ar:'اتوقف'}, asstErr:{en:'The Assistant stopped with an error',ar:'المساعد وقف بخطأ'}, fOcr:{en:'scan read by OCR',ar:'سكان اتقرى بـ OCR'}, whatRead:{en:'What was read',ar:'اللي اتقرى'},
+  asstReadings:{en:'saved digests',ar:'خلاصات محفوظة'},
+  drevT:{en:'Document review',ar:'مراجعة المستند'}, drevByRules:{en:'the rules',ar:'القواعد'}, drevRules:{en:'rules',ar:'قاعدة'}, drevRulesBtn:{en:'Review by the rules',ar:'راجع بالقواعد'}, drevAsst:{en:'Review with the Assistant',ar:'راجع بالمساعد'},
+  drevAmend:{en:'Amend per the rules',ar:'عدّل حسب القواعد'}, drevNone:{en:'not reviewed yet',ar:'لم يُراجع بعد'}, drevBy:{en:'by',ar:'بواسطة'}, drevDone:{en:'Document reviewed by the rules',ar:'تمت مراجعة المستند بالقواعد'},
+  drevNeedsAsst:{en:'Needs the Assistant (Anthropic key in the Assistant settings)',ar:'محتاج المساعد (مفتاح Anthropic في إعدادات المساعد)'}, drevMemo:{en:'amendment memo',ar:'مذكرة تعديل'},
+  dv_adequate:{en:'adequate',ar:'مطابق'}, dv_deficient:{en:'deficient',ar:'ناقص'}, dv_not_assessable:{en:'needs reading',ar:'يحتاج قراءة'}, dv_not_applicable:{en:'n/a',ar:'لا ينطبق'},
+  dv_partly_assessed:{en:'partly assessed',ar:'مُقيَّم جزئيًا'}, dv_no_rules:{en:'no rules',ar:'بلا قواعد'}, asstStopped:{en:'stopped',ar:'اتوقف'}, asstErr:{en:'The Assistant stopped with an error',ar:'المساعد وقف بخطأ'}, fOcr:{en:'scan read by OCR',ar:'سكان اتقرى بـ OCR'}, whatRead:{en:'What was read',ar:'اللي اتقرى'},
   scanHint:{en:'A scanned document has no text. On this computer, install tesseract (Arabic) for automatic OCR; in the browser edition allow Claude to read the page images; or type the values by hand.',
             ar:'المستند صورة ممسوحة بدون نص. على الجهاز: ثبّت tesseract (عربي) عشان القراءة التلقائية؛ في نسخة المتصفح: وافق على إن Claude يقرأ صور الصفحات؛ أو اكتب القيم بإيدك.'},
   filled:{en:'Fields filled — check each step, then create the dossier.',ar:'الخانات اتملت — راجع كل خطوة وبعدين أنشئ الملف.'},
@@ -525,6 +530,31 @@ async function asstSend(){ const ta=$('#asstText'), fi=$('#asstFiles'); const tx
   const fd=new FormData(); fd.append('text',txt); files.forEach(f=>fd.append('files',f)); $('#asstSend').disabled=true;
   try{ await api(`/dossiers/${S.asst.did}/assistant/messages`,{method:'POST',body:fd}); ta.value=''; fi.value=''; $('#asstNFiles').textContent=''; asstRefresh(false); }
   catch(e){ toast(e.message); $('#asstSend').disabled=false; } }
+
+/* ---------------- one document against its rules: review (rules / Assistant) and amend */
+function dvChip(v){ const m={adequate:'c-ok',deficient:'c-bad',partly_assessed:'c-warn',no_rules:'c-na'}; return `<span class="chip ${m[v]||'c-na'}"><i></i>${esc(t('dv_'+v))}</span>`; }
+async function loadDocReviews(slot, body){
+  const asstOk=!!(S.caps&&S.caps.assistant&&S.caps.assistant.configured);
+  for(const el of $$('[data-docrev]', body)){ const id=el.dataset.docrev; let r; try{ r=await api(`/dossiers/${S.dossier.id}/documents/${id}/review`); }catch(e){ el.innerHTML=''; continue; }
+    if(!el.isConnected) return;
+    const lt=r.latest, lang=S.lang||'ar';
+    const counts=lt?Object.entries(lt.counts).map(([k,v])=>`${v} ${esc(t('dv_'+k))}`).join(' · '):'';
+    const top=lt?lt.findings.filter(f=>f.verdict==='deficient').slice(0,4).map(f=>`<div class="small">● <span class="code">${esc(f.rule)}</span> ${esc(f.finding[lang]||f.finding.en||'')}${f.change&&(f.change[lang]||f.change.en)?` → <i>${esc(f.change[lang]||f.change.en)}</i>`:''}${f.where&&f.where.length&&f.where.some(w=>w.page)?` <span class="muted">(${esc(t('pagesN'))} ${f.where.map(w=>w.page).filter(Boolean).join(', ')})</span>`:''}</div>`).join(''):'';
+    el.innerHTML=`<div class="drev"><div class="row gap-s small"><b>${esc(t('drevT'))}</b>${lt?`${dvChip(lt.verdict)}<span class="muted">${counts} · ${esc(t('drevBy'))} ${esc(lt.origin==='assistant'?t('asst'):lt.origin==='rules'?t('drevByRules'):lt.origin)} · ${r.rules} ${esc(t('drevRules'))}</span>`:`<span class="muted">${esc(t('drevNone'))} · ${r.rules} ${esc(t('drevRules'))}</span>`}</div>${top}
+      ${r.memos.length?`<div class="small">${r.memos.map(m=>`${icon('mail',12)} <a href="/api/dossiers/${S.dossier.id}/documents/${m.id}/file" target="_blank" rel="noopener">${bdi(m.filename)}</a>`).join(' · ')}</div>`:''}
+      <div class="row gap-s" style="margin-top:4px"><button class="btn sm" data-drules="${id}">${icon('shield',14)} ${esc(t('drevRulesBtn'))}</button>
+        <button class="btn sm" data-dasst="${id}" ${asstOk?'':'disabled'} title="${asstOk?'':esc(t('drevNeedsAsst'))}">${icon('sparkles',14)} ${esc(t('drevAsst'))}</button>
+        <button class="btn sm ${asstOk?'pri':''}" data-damend="${id}" ${asstOk?'':'disabled'} title="${asstOk?'':esc(t('drevNeedsAsst'))}">${icon('wrench',14)} ${esc(t('drevAmend'))}</button></div></div>`;
+  }
+  const docOf=id=>slot.documents.find(x=>x.id===id)||{id, filename:id};
+  $$('[data-drules]', body).forEach(b=>b.onclick=async()=>{ b.disabled=true; try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.drules}/review`,{method:'POST'}); toast(t('drevDone')); openWhy(slot.slot_id); }catch(e){ toast(e.message); b.disabled=false; } });
+  $$('[data-dasst]', body).forEach(b=>b.onclick=()=>{ const d=docOf(b.dataset.dasst); asstAsk(L({ar:`راجع المستند «${d.filename}» (id ${d.id}) بالكامل حسب القواعد: هات قواعده بـ get_document_rubric، اقرأ كل صفحاته، وسجّل نتيجة لكل قاعدة بـ record_document_review مع الصفحة والمقتطف والتعديل المطلوب.`,
+      en:`Review the document «${d.filename}» (id ${d.id}) in full per the rules: get its rubric with get_document_rubric, read all its pages, and record one finding per rule with record_document_review (page, excerpt, required change).`})); });
+  $$('[data-damend]', body).forEach(b=>b.onclick=()=>{ const d=docOf(b.dataset.damend); asstAsk(L({ar:`عدّل المستند «${d.filename}» (id ${d.id}) حسب القواعد ونتائج مراجعته: لو Word استخدم amend_document بتغييرات متتبعة مع سبب كل تغيير؛ لو PDF اكتب amendment_memo؛ لو مستند جهة خارجية اكتب المذكرة واطلب إعادة الإصدار بـ request_reissue.`,
+      en:`Amend the document «${d.filename}» (id ${d.id}) per the rules and its review findings: Word → amend_document with tracked changes and a reason per change; PDF → amendment_memo; third-party → the memo and request_reissue.`})); });
+}
+async function asstAsk(text){ const did=S.dossier&&S.dossier.id; if(!did) return; S.asst.did=did; await asstOpen();
+  try{ const fd=new FormData(); fd.append('text', text); await api(`/dossiers/${did}/assistant/messages`,{method:'POST',body:fd}); asstRefresh(false); }catch(e){ toast(e.message); } }
 window.addEventListener('hashchange', route);
 const fresh = tok => tok===undefined || tok===S.rt;
 function show(tok, html){ if(!fresh(tok)) return false; $('#view').innerHTML = html; return true; }
@@ -1066,6 +1096,7 @@ function openWhy(slotId){
   const docs = s.documents.map(d=>`<div class="finding ${d.check_status==='non_conforming'?'block':''}">
      <div class="row"><b><span class="muted">${esc(t('version'))} ${d.version}</span> · ${bdi(d.filename)}</b> ${chip(d.check_status)}</div>
      ${d.findings.length? d.findings.map(f=>`<div class="small">● ${esc(f[S.lang])} <span class="code muted">${esc(f.rule)}</span><br><span class="muted">${esc(t('act_'+f.action))}</span></div>`).join('') : (d.meta&&d.meta.external?'':`<div class="small muted">${esc(t('noFind'))}</div>`)}
+     ${d.meta&&d.meta.external?'':`<div class="docrev" data-docrev="${d.id}"></div>`}
      ${['third_party_certificate','eda_document'].includes(s.doc_class)||(d.meta&&d.meta.valid_until)?`<div class="row"><label class="small row gap-s">${esc(t('validUntil'))} <input type="date" data-vu="${d.id}" value="${esc((d.meta&&d.meta.valid_until)||'')}" style="width:auto"></label><button class="btn sm" data-vusave="${d.id}">${esc(t('saveDate'))}</button></div>`:''}
      ${d.meta&&d.meta.draft_unsigned?`<div class="alert"><p class="small"><b>${esc(t('unsignedDraft'))}</b> — ${esc(t('signHint'))}</p></div>`:''}
      ${d.meta&&d.meta.external?`<div class="alert"><p class="small"><b>${esc(t('extRef'))}</b> — ${esc(t('extHint'))}${d.meta.note?`<br>${bdi(d.meta.note)}`:''}</p></div>`:''}
@@ -1088,6 +1119,7 @@ function openWhy(slotId){
     ${(s.level==='R'||s.level==='O')?`<div class="row">${(s.level==='R'||s.level==='O')?`<button class="btn" data-upw="${esc(s.slot_id)}">${icon('upload')} ${esc(t('upload'))}</button>`:''}${genFor(s)?`<button class="btn pri" data-gen="${genFor(s)}">${icon('sparkles')} ${esc(t('generate'))}: ${esc(L(S.gens[genFor(s)].title))}</button>`:''}
       <button class="btn" data-gen="justification">${esc(t('justify'))}</button></div>`:''}`);
   const body=$('#dBody');
+  loadDocReviews(s, body);
   $$('[data-gen]', body).forEach(b=>b.onclick=()=>S.gens[b.dataset.gen].source==='data'? genDirect(b.dataset.gen, s) : genForm(b.dataset.gen, s));
   $$('[data-upw]', body).forEach(b=>b.onclick=()=>{ closeDrawer(); startUpload(b.dataset.upw); });
   $$('[data-fix]', body).forEach(b=>b.onclick=async()=>{

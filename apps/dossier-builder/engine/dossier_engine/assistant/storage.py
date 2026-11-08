@@ -170,12 +170,12 @@ def readings(st, did, doc_id=None):
 
 
 # ---------------- staged files (uploaded in the chat, not yet placed in a CTD item)
-def stage_document(st, did, filename, data, title=None):
+def stage_document(st, did, filename, data, title=None, meta=None):
     """A document row without a slot («unassigned»): the Assistant reads it and places it with place_document."""
     sha = st.put_blob(data)
     doc_id = str(uuid.uuid4())
     st.db.execute('insert into document values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                  (doc_id, did, None, 1, sha, filename, title or filename, 'unassigned', json.dumps({'staged_by': 'assistant'}), '[]',
+                  (doc_id, did, None, 1, sha, filename, title or filename, 'unassigned', json.dumps({'staged_by': 'assistant', **(meta or {})}, ensure_ascii=False), '[]',
                    'received', 'current', time.time()))
     st.db.commit()
     st.audit(did, 'document.staged', doc=doc_id, filename=filename, sha256=sha)

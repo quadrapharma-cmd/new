@@ -85,6 +85,21 @@ drawer saves and tests it (`/api/assistant/settings`, admin-only in cloud mode).
 `…/readings`. Desktop and cloud editions only; the browser edition says so. Tests: `tests/test_assistant.py` (scripted stand-in
 for the API client), `tests/test_ui_assistant.py` (the drawer journey). Design note: `docs/ctd/design/05-OPERATOR.md`.
 
+## One document: read → review → amend per the rules
+
+Every document in the item drawer has a **Document review** panel (`engine/dossier_engine/review/docreview.py`). Its rubric is
+the review pack's questions that point at the document's CTD item (by requirement id, slot id or CTD number, filtered by the
+dossier's profile) plus general document rules by class: text layer, product named, signed, dated (company documents), validity
+and issuer (certificates). **Review by the rules** answers what keywords, dates and the validity record can answer
+(`POST /api/dossiers/{id}/documents/{doc}/review`); the rest is marked «needs reading». **Review with the Assistant** sends the
+document to the Assistant, which reads every page and records one finding per rule with page, excerpt, what is wrong and the
+required change, in English and Arabic (`record_document_review`); every review is kept with its origin. **Amend per the rules**:
+a Word document is edited with **tracked changes** (`engine/dossier_engine/generate/amend.py`: `w:ins`/`w:del` with author and
+date, a change log appended as a final section) and stored as a new unsigned draft version that the company accepts in Word and
+signs; a PDF without a Word source gets an **amendment memo** (rule · where · finding · required change) linked to the document;
+a third-party document is never altered — the memo goes to the issuer with a re-issue request; a program-generated document is
+regenerated from corrected data. Tests: `tests/test_docreview.py`.
+
 ## Browser edition (open from a link, nothing to install)
 
 `web/` turns the same app into a claude.ai artifact: the Python engine runs **inside the browser** (Pyodide), the
