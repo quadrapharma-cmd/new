@@ -42,6 +42,14 @@ analysis / conformity, specifications, stability, agreements / toll card, commer
 Google Drive. Each upload is read at once (rules, OCR in the page, the model where available) and the recognised values go into the
 product, profile, API and submission steps with their source marked; those steps then ask only for what is still missing («missing —
 type it») and say so at the top. «Review what was read» opens the full review of every value.
+Each upload is read **once**: the texts (OCR included) are cached and only new files go through text, OCR and the model again; the
+cards show **live progress** per file (reading the text, OCR page n/N, the model reading the pages, read) and **what each document
+gave** (trade name, form, manufacturer, 3 actives…), with a running «recognised so far» summary. The **kind rule** refuses a document
+uploaded under the wrong name (a stability approval under «pricing certificate»): the card shows «not this document: stability»
+with «move it to its card» / «remove»; the same rule runs on every board upload (`extract.kind_check`, `KIND_HOME`): a blocking
+finding `DOC-KIND` names the item the file belongs to and «move it» (`POST documents/{id}/move`) takes it there. The wizard's work is
+**kept on the server** as it goes (`/api/intake/drafts…`: fields, the files, the readings) and restored after a refresh or on another
+computer; a file whose reading was not saved yet is read again on restore; «Start over» discards the draft.
 
 `engine/dossier_engine/extract.py` reads the company's PDFs (CPP, registration licence, GMP, CEP, CoA, specification,
 Annex I, SmPC…) into the forms' shape: document kind, certificate numbers, issuers, issue and expiry dates, trade

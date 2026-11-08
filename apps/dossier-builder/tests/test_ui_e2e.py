@@ -351,6 +351,26 @@ def test_intake_fills_the_wizard_and_places_the_files(server, browser, tmp_path)
     page.wait_for_selector('#intakeReview', timeout=120000)              # read and filled; the cards show the files under their kinds
     cards = page.inner_text('.doccards')
     assert 'cpp.pdf' in cards and 'gmp certificate.pdf' in cards
+    assert 'It gave us' in cards and 'trade name' in cards                 # live per-file lines: what each document yielded
+    assert 'Recognised so far' in page.inner_text('#view')
+    reads_before = page.evaluate("() => performance.getEntriesByType('resource').filter(e => e.name.includes('/api/extract?')).length")
+    # a pricing certificate uploaded under the GMP card: refused by the kind rule, then moved to its own card
+    pricing = make_pdf_lines(tmp_path / 'price letter.pdf', ['Egyptian Drug Authority', 'Pricing Certificate', 'Trade name: Cardiolol 10 mg', 'Public price: 45.00 EGP', 'Pack: 30 tablets'], 'Pricing')
+    with page.expect_file_chooser() as fc2:
+        page.click('[data-updoc="gmp_certificate"]')
+    fc2.value.set_files([str(pricing)])
+    page.wait_for_selector('[data-mvdoc="price letter.pdf"]', timeout=120000)
+    assert 'not this document' in page.inner_text('.doccards')
+    page.click('[data-mvdoc="price letter.pdf"]')
+    page.wait_for_function("() => !document.querySelector('[data-mvdoc]')")
+    reads_after = page.evaluate("() => performance.getEntriesByType('resource').filter(e => e.name.includes('/api/extract?')).length")
+    assert reads_after == reads_before + 1                                 # only the new file was read; the first two were not read again
+    # the work survives a reload: the cards, the readings and the filled fields come back from the server
+    page.wait_for_function("() => /\\d/.test(document.querySelector('#wizSaved').textContent)")     # written to the server
+    page.reload()
+    page.wait_for_selector('#intakeReview', timeout=60000)
+    cards = page.inner_text('.doccards')
+    assert 'cpp.pdf' in cards and 'gmp certificate.pdf' in cards and 'price letter.pdf' in cards and 'Saved' in page.inner_text('#wizSaved')
     page.click('#intakeReview')
     page.wait_for_selector('#intakeApply')
     assert page.input_value('#rv-name') == 'Cardiolol 10 mg' and page.input_value('#rv-form') == 'tablet-fc'      # the read form matched the standard term (dropdown)

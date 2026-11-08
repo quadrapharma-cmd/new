@@ -346,3 +346,36 @@ def test_profile_preview_accepts_a_stringified_specifics_list(tmp_path):
         assert r.status_code == 200, (sp, r.text)
     r = c.post('/api/profile/preview', json={**PROFILE, 'dosage_specifics': "['nonsense']"}, headers={'X-DB': '1'})
     assert r.status_code == 422 and 'nonsense' in r.text                                      # unknown values are still refused, by name
+
+
+def test_a_file_must_be_the_document_its_item_expects(tmp_path):
+    """The kind rule: a stability approval uploaded to the pricing item is refused (blocking finding naming the item it belongs to)
+    and «move» takes it there; the intake drafts keep the wizard's work (state + files) on the server."""
+    from fixtures_pdf import make_pdf_lines
+    c = TestClient(create_app(tmp_path / 'ws', auth_enabled=False))
+    did = c.post('/api/dossiers', json=dict(name='X', profile=PROFILE, product=PRODUCT, envelope=ENV), headers={'X-DB': '1'}).json()['id']
+    slots = {s['req_id']: s for s in c.get(f'/api/dossiers/{did}/board').json()['slots']}
+    stab = make_pdf_lines(tmp_path / 'stability approval.pdf', ['Egyptian Drug Authority', 'Stability Study Approval', 'Trade name: X', 'Shelf life: 24 months'], 'Stability').read_bytes()
+    r = c.post(f"/api/dossiers/{did}/slots/{slots['M1-05']['slot_id']}/documents", files={'file': ('stability approval.pdf', io.BytesIO(stab), 'application/pdf')}, data={'meta': '{}'})
+    d = r.json()
+    assert r.status_code == 201 and d['check_status'] == 'non_conforming'
+    f = d['findings'][0]
+    assert f['rule'] == 'DOC-KIND' and f['severity'] == 'block' and f['action'] == 'move' and f['extra']['kind'] == 'stability'
+    assert f['extra']['suggested_slot'] in {slots[k]['slot_id'] for k in ('M1-34', 'S-14', 'P-16') if k in slots} and 'مستند ثبات' in f['ar']
+    mv = c.post(f"/api/dossiers/{did}/documents/{d['id']}/move", json={'slot_id': f['extra']['suggested_slot']}, headers={'X-DB': '1'}).json()
+    assert mv['slot_id'] == f['extra']['suggested_slot'] and mv['check_status'] == 'conforming' and mv['meta']['moved_from'] == slots['M1-05']['slot_id']
+    after = {s['req_id']: s for s in c.get(f'/api/dossiers/{did}/board').json()['slots']}
+    assert all(x['id'] != d['id'] for x in after['M1-05']['documents'])                       # gone from the pricing item
+    # the right document in the right item passes the rule
+    price = make_pdf_lines(tmp_path / 'pricing.pdf', ['Egyptian Drug Authority', 'Pricing Certificate', 'Trade name: X', 'Public price: 45 EGP'], 'Pricing').read_bytes()
+    r2 = c.post(f"/api/dossiers/{did}/slots/{slots['M1-05']['slot_id']}/documents", files={'file': ('pricing.pdf', io.BytesIO(price), 'application/pdf')}, data={'meta': '{}'})
+    assert r2.status_code == 201 and not any(x['rule'] == 'DOC-KIND' for x in r2.json()['findings'])
+    # intake drafts
+    dr = c.post('/api/intake/drafts', json={'state': {'step': 0}}, headers={'X-DB': '1'}).json()
+    c.put(f"/api/intake/drafts/{dr['id']}", json={'state': {'step': 1, 'd': {'trade': 'X'}, 'texts': {'a.pdf': {'text': 'abc'}}}}, headers={'X-DB': '1'})
+    c.post(f"/api/intake/drafts/{dr['id']}/files", files={'file': ('a.pdf', io.BytesIO(stab), 'application/pdf')}, data={'kind': 'stability_data'}, headers={'X-DB': '1'})
+    g = c.get(f"/api/intake/drafts/{dr['id']}").json()
+    assert g['state']['d']['trade'] == 'X' and g['files'][0]['filename'] == 'a.pdf' and g['files'][0]['kind'] == 'stability_data'
+    assert c.get(f"/api/intake/drafts/{dr['id']}/files/a.pdf").content == stab
+    assert [x['id'] for x in c.get('/api/intake/drafts').json()] == [dr['id']]
+    assert c.delete(f"/api/intake/drafts/{dr['id']}", headers={'X-DB': '1'}).json()['ok'] and c.get(f"/api/intake/drafts/{dr['id']}").status_code == 404

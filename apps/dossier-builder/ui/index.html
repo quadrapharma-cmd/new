@@ -159,7 +159,8 @@ html[lang="ar"] .vstrip .vlabel{letter-spacing:0;text-transform:none}
 @media (max-width:900px){.ws{grid-template-columns:1fr} .ws .tree{max-height:260px} .vstrip{grid-template-columns:1fr} .vstrip .acts{flex-direction:row;flex-wrap:wrap} .vbar{grid-template-columns:110px minmax(0,1fr) auto} .letter{padding:18px 16px} .tl .ti{grid-template-columns:86px 18px minmax(0,1fr)} .tl .ti::before{inset-inline-start:94px}}
 
 .rolebar{margin:10px 20px 0}
-.doccards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}.doccard{border:1px solid var(--line)}.doccard.ok{border-color:var(--ok)}
+.doccards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}.doccard{border:1px solid var(--line)}.doccard.ok{border-color:var(--ok)}.doccard.bad{border-color:var(--bad)}
+.docline{margin-top:4px;padding:4px 6px;border-radius:6px;background:var(--surface-2)}
 .docprev{background:#fff;color:#111;border:1px solid var(--line);border-radius:6px;padding:22px 26px;margin:8px 0;font:14px/1.6 Arial,"Noto Naskh Arabic",sans-serif;box-shadow:var(--shadow-sm)}
 .docprev h2{margin:4px 0 2px;font-size:18px;color:#111}.docprev h3{margin:14px 0 4px;font-size:14px;color:#222;border-bottom:1px solid #ddd;padding-bottom:2px}
 .docprev .dp-meta{font-size:11px;color:#666;font-family:var(--f-mono)}.docprev .dp-lh{border:1px dashed #bbb;color:#888;text-align:center;padding:8px;font-size:12px;margin-bottom:10px}
@@ -331,7 +332,10 @@ const T = {
   tplAiNone:{en:'No model here: the draft is filled from the product data only, the rest is marked as gaps.',ar:'مفيش موديل هنا: المسودة بتتملي من بيانات المنتج بس، والباقي يتعلّم كنواقص.'},
   drafting:{en:'Drafting from the documents…',ar:'بيصيغ من المستندات…'}, drafted:{en:'Draft added to the item',ar:'المسودة اتضافت للبند'}, gapsN:{en:'gaps',ar:'نواقص'},
   draftHow_answers:{en:'filled by claude.ai\'s model in this page',ar:'اتملت بموديل claude.ai في الصفحة'}, draftHow_server_model:{en:'filled by the model on the server',ar:'اتملت بالموديل على الخادم'}, draftHow_data:{en:'filled from the product data only',ar:'اتملت من بيانات المنتج بس'},
-  step0:{en:'Documents',ar:'المستندات'}, docsFirst:{en:'Start with the documents you already have: upload each one under its name. The program reads them, fills the product data from them, and in the next steps asks you only for what it could not find.',ar:'ابدأ بالمستندات اللي عندك: ارفع كل مستند تحت اسمه. البرنامج يقرأها ويملي بيانات المنتج منها، وفي الخطوات الجاية يطلب منك بس اللي ما لقاهوش.'},
+  step0:{en:'Documents',ar:'المستندات'}, notThisDoc:{en:'not this document',ar:'مش المستند ده'}, stText:{en:'reading the text…',ar:'بيقرأ النص…'}, stModel:{en:'the model is reading the pages…',ar:'الموديل بيقرأ الصفحات…'},
+  stDone:{en:'read',ar:'اتقرا'}, gotFrom:{en:'It gave us',ar:'خدنا منه'}, gotNothing:{en:'no data came out of it',ar:'ما طلعش منه بيانات'}, moveToIts:{en:'Move it to',ar:'انقله لخانة'}, removeFile:{en:'Remove it',ar:'شيله'},
+  dupFile:{en:'already uploaded',ar:'مرفوع قبل كده'}, wizSaved:{en:'Saved ✓',ar:'محفوظ ✓'}, wizAutosave:{en:'Saved automatically as you go',ar:'بيتحفظ تلقائيًا أول بأول'}, wizRestart:{en:'Start over',ar:'ابدأ من الأول'},
+  wizRestored:{en:'Your saved work was restored.',ar:'رجّعنا شغلك المحفوظ.'}, liveT:{en:'Recognised so far',ar:'اللي اتعرفنا عليه لحد دلوقتي'}, act_move:{en:'Move it to its own item.',ar:'انقله لبنده الصح.'}, moveTo:{en:'Move to',ar:'انقله إلى'}, moved:{en:'Moved.',ar:'اتنقل.'}, docsFirst:{en:'Start with the documents you already have: upload each one under its name. The program reads them, fills the product data from them, and in the next steps asks you only for what it could not find.',ar:'ابدأ بالمستندات اللي عندك: ارفع كل مستند تحت اسمه. البرنامج يقرأها ويملي بيانات المنتج منها، وفي الخطوات الجاية يطلب منك بس اللي ما لقاهوش.'},
   intakeAllT:{en:'Or drop everything at once',ar:'أو ارمي كل الملفات مرة واحدة'}, intakeAllSub:{en:'The program tells each document apart by its content and sorts it into its place.',ar:'البرنامج يفرّق المستندات من محتواها ويرتّبها في مكانها.'},
   reviewRead:{en:'Review what was read',ar:'راجع اللي اتقرا'}, missingWrite:{en:'missing — type it',ar:'ناقص — اكتبه'}, readN:{en:'fields recognised from the documents',ar:'بيانات اتعرّفت من المستندات'},
   youWrite:{en:'Still needed from you',ar:'المطلوب منك'}, allRead:{en:'Every main field was recognised; check them and continue.',ar:'كل البيانات الأساسية اتعرّفت؛ راجعها وكمّل.'}, addMore:{en:'Add more',ar:'ضيف كمان'},
@@ -851,30 +855,145 @@ function wizMissing(w){ const d=w.d, m=[]; const need=[['trade','pTrade'],['form
 function wizMark(w, k){ if(w.fromDoc&&w.fromDoc[k]) return ` <span class="tag" style="color:var(--ok)">${icon('check',11)} ${esc(String(w.fromDoc[k]).slice(0,28))}</span>`; if(w.read&&!w.d[k]) return ` <span class="tag" style="color:var(--warn)">${esc(t('missingWrite'))}</span>`; return ''; }
 function readBanner(w){ if(!w.read) return ''; const n=Object.keys(w.fromDoc||{}).length, miss=wizMissing(w);
   return `<div class="alert ${miss.length?'info':'ok'}">${icon(miss.length?'info':'check')}<p class="small"><b>${n} ${esc(t('readN'))}</b> — ${miss.length?`${esc(t('youWrite'))}: ${miss.map(esc).join('، ')}`:esc(t('allRead'))} <button class="btn sm ghost" id="intakeReview2">${esc(t('reviewRead'))}</button></p></div>`; }
+const cardOfKind = kind => { const c=BASE_DOCS.find(c=>c.kinds.includes(kind)); return c?c.kind:'other'; };
+function mergeAi(a, b){
+  /* the model's readings of successive uploads, kept together: objects merge key by key (non-empty wins), lists add new items by name / number */
+  if(!b||typeof b!=='object') return a||null; if(!a) return JSON.parse(JSON.stringify(b)); const out=JSON.parse(JSON.stringify(a));
+  for(const [k,v] of Object.entries(b)){
+    if(Array.isArray(v)){ const cur=Array.isArray(out[k])?out[k]:[]; for(const it of v){ const key=it&&(it.name||it.no||it.test||it.filename); if(key&&cur.some(x=>x&&(x.name||x.no||x.test||x.filename)===key)) continue; cur.push(it); } out[k]=cur; }
+    else if(v&&typeof v==='object'){ out[k]=Object.assign({}, out[k]||{}, Object.fromEntries(Object.entries(v).filter(([kk,vv])=>vv!==null&&vv!==''&&!(Array.isArray(vv)&&!vv.length)))); }
+    else if(v!==null&&v!==''&&v!==undefined) out[k]=v; }
+  return out;
+}
+const FOUND_NAMES={'product.name':{ar:'الاسم التجاري',en:'trade name'},'product.dosage_form':{ar:'الشكل الصيدلي',en:'form'},'product.dosage_form_std':{ar:'الشكل الصيدلي',en:'form'},'product.dosage_form_en':{ar:'الشكل الصيدلي',en:'form'},'product.strength':{ar:'التركيز',en:'strength'},
+  'product.manufacturer':{ar:'المصنّع',en:'manufacturer'},'product.manufacturer_country':{ar:'بلد المصنّع',en:'manufacturer country'},'product.applicant':{ar:'مقدم الطلب',en:'applicant'},'envelope.applicant':{ar:'مقدم الطلب',en:'applicant'},'product.indication':{ar:'دواعي الاستعمال',en:'indication'},
+  'product.price':{ar:'السعر',en:'price'},'product.pack':{ar:'العبوة',en:'pack'},'product.shelf_life':{ar:'الصلاحية',en:'shelf life'},'registration.shelf_life':{ar:'الصلاحية',en:'shelf life'},'product.storage':{ar:'التخزين',en:'storage'},'product.admin_route':{ar:'طريقة الاستخدام',en:'route'},
+  'product.name_ar':{ar:'الاسم بالعربي',en:'Arabic name'},'registration.number':{ar:'رقم التسجيل',en:'registration no.'},'registration.valid_until':{ar:'انتهاء الترخيص',en:'licence expiry'},'registration.issued':{ar:'تاريخ الإصدار',en:'issue date'},'registration.licence_type':{ar:'نوع الترخيص',en:'licence type'},
+  'envelope.tracking':{ar:'رقم المتابعة',en:'tracking no.'},'envelope.inn':{ar:'الـ INN',en:'INN'},'document.number':{ar:'رقم المستند',en:'document no.'},'document.issuer':{ar:'الجهة المُصدِرة',en:'issuer'},'document.valid_until':{ar:'صلاحية المستند',en:'document validity'},'document.issued':{ar:'تاريخ المستند',en:'document date'}};
+function foundNames(found){ const out=[]; for(const k of found||[]){ if(/_(code|std|en|id)$/.test(k)) continue; const m=/^(apis|batches|specs|results|composition)×(\d+)$/.exec(k);
+  if(m){ const n=+m[2]; out.push(L({apis:{ar:`${n} مادة فعالة`,en:`${n} active(s)`},batches:{ar:`${n} تشغيلة`,en:`${n} batch(es)`},specs:{ar:`${n} مواصفة`,en:`${n} spec(s)`},results:{ar:`${n} نتيجة`,en:`${n} result(s)`},composition:{ar:`تركيب من ${n} مكوّن`,en:`${n} composition rows`}}[m[1]])); continue; }
+  if(k.startsWith('profile.')){ if(!out.includes(t('secProfile'))) out.push(t('secProfile')); continue; }
+  out.push(FOUND_NAMES[k]?L(FOUND_NAMES[k]):k.replace(/^[a-z]+\./,'')); } return [...new Set(out)]; }
+function docLine(w, name){
+  const st=w.docs[name]||{}, pr=(w.prog||{})[name]||{}, found=(w.found||{})[name]||[];
+  const det=st.detected?docCard(st.detected):null;
+  const stage = st.status==='mismatch' ? `<span class="chip c-bad"><i></i>${esc(t('notThisDoc'))}: ${esc(L({ar:det.ar,en:det.en}))}</span>`
+    : st.status==='error' ? `<span class="chip c-bad"><i></i>${esc(t('err'))}</span>`
+    : pr.stage==='text' ? `<span class="chip c-wait"><i></i>${esc(t('stText'))}</span>`
+    : pr.stage==='ocr' ? `<span class="chip c-wait"><i></i>OCR ${pr.pg||0}/${pr.n||'?'} · ${Math.round((pr.p||0)*100)}%</span>`
+    : pr.stage==='model' ? `<span class="chip c-wait"><i></i>${esc(t('stModel'))}</span>`
+    : pr.stage==='ocr-error' ? `<span class="chip c-warn"><i></i>${esc(t('ocrFailed'))} ${esc(pr.message||'')}</span>`
+    : pr.stage ? `<span class="chip c-ok"><i></i>${esc(t('stDone'))}${pr.pages?` · ${pr.pages} ${esc(t('pagesN'))}`:''}${pr.scanned?` · ${esc(pr.ocr?t('fOcr'):t('fScan'))}`:''}</span>` : '';
+  const got = found.length ? `<div class="small" style="color:var(--ok)">${esc(t('gotFrom'))}: ${esc(foundNames(found).join('، '))}</div>` : ((pr.stage==='done'||pr.stage==='read')&&st.status!=='mismatch'?`<div class="small muted">${esc(t('gotNothing'))}</div>`:'');
+  const fix = st.status==='mismatch' ? `<div class="row gap-s" style="margin-top:4px"><button class="btn sm pri" data-mvdoc="${esc(name)}">${esc(t('moveToIts'))} «${esc(L({ar:det.ar,en:det.en}))}»</button><button class="btn sm ghost" data-rmdoc="${esc(name)}">${esc(t('removeFile'))}</button></div>` : '';
+  return `<div class="docline" data-docline="${esc(name)}"><div class="small row gap-s" style="flex-wrap:wrap"><b dir="auto">${esc(name)}</b>${stage}</div>${got}${fix}</div>`;
+}
+function wizProg(name, stage, info){ const w=S.wiz; if(!w) return; w.prog=w.prog||{}; w.prog[name]=Object.assign({}, w.prog[name]||{}, {stage}, info||{});
+  if(info&&info.found){ w.found=w.found||{}; w.found[name]=info.found; }
+  const el=document.querySelector(`[data-docline="${CSS.escape(name)}"]`); if(el){ el.outerHTML=docLine(w, name); wireDocLines($('#view')); } }
+function wireDocLines(root){ if(!root) return;
+  root.querySelectorAll('[data-mvdoc]').forEach(b=>b.onclick=async()=>{ const w=S.wiz, n=b.dataset.mvdoc; w.docs[n]={kind:w.docs[n].detected, status:'ok'}; toast(t('reading')); await refill(w); wizard(); await wizSave(true); });
+  root.querySelectorAll('[data-rmdoc]').forEach(b=>b.onclick=async()=>{ const w=S.wiz, n=b.dataset.rmdoc; w.allFiles=(w.allFiles||[]).filter(f=>f.name!==n); delete w.texts[n]; delete w.found[n]; delete w.kinds[n]; delete w.prog[n]; w.docs[n]={status:'removed'};
+    if(w.draftId) api(`/intake/drafts/${w.draftId}/files/${encodeURIComponent(n)}`,{method:'DELETE'}).catch(()=>{}); await refill(w); wizard(); await wizSave(true); }); }
+async function refill(w){
+  /* the merged reading of every accepted document, from the cached texts — no document is read twice */
+  w.texts=w.texts||{}; w.docs=w.docs||{}; w.found=w.found||{};
+  const names=Object.keys(w.texts).filter(n=>!['mismatch','removed'].includes((w.docs[n]||{}).status));
+  let r={files:[],rules:{},prompt:''};
+  if(names.length) r=await api('/extract/text?target=dossier',{method:'POST',json:{files:names.map(n=>w.texts[n])}});
+  for(const f of r.files||[]) w.found[f.filename]=f.found||w.found[f.filename]||[];
+  const fill=mergeFill(r.rules||{}, w.aiFill||null);
+  w.fromDoc={}; applyFillData(w, fill);
+  const accepted=(w.allFiles||[]).filter(f=>names.includes(f.name));
+  w.read=names.length?{x:{r:{files:(r.files||[]).map(f=>Object.assign({}, f, {text:undefined}))}, fill, ai:w.aiFill||null, note:w.aiNote||'', prompt:r.prompt}, files:accepted}:null;
+  w.intakeFiles=accepted; w.intake=names.length?`${names.length} ${t('intakeDone')}`:'';
+  const scannedAll=names.filter(n=>w.texts[n].scanned); w.scannedNames=scannedAll; w.makeReadable=scannedAll.length>0;
+}
 async function addDocs(kind, files){
   const w=S.wiz; if(!w) return; files=files.filter(f=>/\.(pdf|jpe?g|png|webp|tiff?|docx)$/i.test(f.name)); if(!files.length){ toast(t('badFiles')); return; }
-  w.allFiles=(w.allFiles||[]).concat(files); w.docs=w.docs||{}; for(const f of files) w.docs[f.name]=kind;
-  toast(t('reading'));
-  try{ await vocab(); const x=await readFiles(w.allFiles,'dossier'); w.read={x, files:w.allFiles}; applyFillData(w, x.fill);
-    const scannedAll=(x.r&&x.r.files||[]).filter(f=>f.scanned); w.scannedNames=scannedAll.map(f=>f.filename); w.makeReadable=scannedAll.length>0;
-    w.intakeFiles=w.allFiles; w.intake=`${w.allFiles.length} ${t('intakeDone')}`; toast(`${t('filled')} · ${Object.keys(w.fromDoc||{}).length} ${t('readN')}`); }
-  catch(e){ toast(e.message); }
-  wizard();
+  w.allFiles=w.allFiles||[]; w.docs=w.docs||{}; w.texts=w.texts||{}; w.prog=w.prog||{}; w.found=w.found||{}; w.kinds=w.kinds||{};
+  const fresh=[]; for(const f of files){ if(w.allFiles.some(x=>x.name===f.name)||w.texts[f.name]){ toast(`${f.name}: ${t('dupFile')}`); continue; } w.allFiles.push(f); fresh.push(f); w.docs[f.name]={kind, status:'reading'}; w.prog[f.name]={stage:'text'}; }
+  if(!fresh.length) return;
+  wizard();                                                     // the cards show the new files as «reading…» at once
+  await wizDraftFiles(fresh, kind);                             // kept on the server for a refresh (the file first, then its reading)
+  await ingest(w, fresh);
+}
+async function ingest(w, fresh){
+  /* read these files (text → OCR → model), apply the kind rule to the card they were given, and re-merge everything that is known */
+  try{ await vocab();
+    const x=await readFiles(fresh,'dossier',(n,st,i)=>wizProg(n,st,i));
+    for(const f of x.r.files||[]){ w.texts[f.filename]={filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,ocr:f.ocr,ocr_where:f.ocr_where,file:f.file}; w.kinds[f.filename]=f.kind; w.found[f.filename]=f.found||[]; }
+    w.aiFill=mergeAi(w.aiFill, x.ai); if(x.note) w.aiNote=x.note;
+    for(const f of fresh){ const detected=cardOfKind(w.kinds[f.name]); const expected=(w.docs[f.name]||{}).kind||'other';
+      if(expected!=='other'&&detected!=='other'&&detected!==expected){ w.docs[f.name]={kind:expected, status:'mismatch', detected}; toast(`${f.name}: ${t('notThisDoc')}`); }
+      else w.docs[f.name]={kind:expected==='other'?detected:expected, status:'ok'}; }
+    await refill(w);
+    toast(`${t('filled')} · ${Object.keys(w.fromDoc||{}).length} ${t('readN')}`); }
+  catch(e){ toast(e.message); for(const f of fresh) w.docs[f.name]=Object.assign({}, w.docs[f.name], {status:'error'}); }
+  wizard(); await wizSave(true);
+}
+function liveSummary(w){
+  const d=w.d, from=w.fromDoc||{}; const items=[['trade','pTrade'],['form','pForm'],['man','pMan'],['applicant','applicant'],['tracking','tracking'],['dossier_kind','kind'],['origin','origin'],['licence','licence']]
+    .filter(([k])=>from[k]&&d[k]).map(([k,lab])=>`<span class="chip c-ok"><i></i>${esc(t(lab))}: ${esc(String(k==='form'?d.form:d[k]))}</span>`);
+  const apis=(d.apis||[]).filter(a=>a.name); if(from.apis&&apis.length) items.push(`<span class="chip c-ok"><i></i>${esc(t('secApis'))}: ${esc(apis.map(a=>a.name+(a.manufacturer?' · '+a.manufacturer:'')).join(' | '))}</span>`);
+  if(!items.length) return '';
+  return `<div class="card pad" id="wizLive" style="margin-top:10px"><b>${esc(t('liveT'))}</b><div class="row gap-s" style="flex-wrap:wrap;margin-top:6px">${items.join('')}</div>${wizMissing(w).length?`<div class="small muted" style="margin-top:6px">${esc(t('youWrite'))}: ${wizMissing(w).map(esc).join('، ')}</div>`:''}</div>`;
 }
 function docsStep(w){
-  const files=w.allFiles||[]; const byCard={}; for(const f of files){ const k=(w.docs&&w.docs[f.name])!=='other'&&w.docs&&w.docs[f.name]?w.docs[f.name]:docsOfFile(w, f.name); (byCard[k]=byCard[k]||[]).push(f.name); }
-  const rf=(w.read&&w.read.x&&w.read.x.r&&w.read.x.r.files)||[];
-  const cards=BASE_DOCS.map(c=>{ const mine=byCard[c.kind]||[]; const ok=mine.length>0;
-    const status=mine.map(n=>{ const r=rf.find(x=>x.filename===n); const how=r?(r.ocr?t('fOcr'):r.scanned?(r.ocr_error?t('fScan'):t('fVision')):t('fText')):''; return `<div class="small row gap-s"><span class="chip ${r&&(r.chars>20||r.ocr)?'c-ok':'c-warn'}"><i></i>${esc(n)}</span><span class="muted">${esc(how)}</span></div>`; }).join('');
-    return `<div class="card pad doccard ${ok?'ok':''}"><div class="row gap-s"><b>${esc(L({ar:c.ar,en:c.en}))}</b>${ok?`<span class="chip c-ok"><i></i>✓</span>`:''}</div><div class="small muted">${esc(L(c.gives))}</div>${status}
+  w.docs=w.docs||{}; w.prog=w.prog||{};
+  const names=[...new Set([...(w.allFiles||[]).map(f=>f.name), ...Object.keys(w.texts||{})])].filter(n=>(w.docs[n]||{}).status!=='removed');
+  const byCard={}; for(const n of names){ const st=w.docs[n]||{}; const k=st.kind||'other'; (byCard[k]=byCard[k]||[]).push(n); }
+  const cards=BASE_DOCS.map(c=>{ const mine=byCard[c.kind]||[]; const ok=mine.some(n=>(w.docs[n]||{}).status==='ok'); const bad=mine.some(n=>(w.docs[n]||{}).status==='mismatch');
+    return `<div class="card pad doccard ${ok?'ok':''} ${bad?'bad':''}"><div class="row gap-s"><b>${esc(L({ar:c.ar,en:c.en}))}</b>${ok?`<span class="chip c-ok"><i></i>✓</span>`:''}</div><div class="small muted">${esc(L(c.gives))}</div>${mine.map(n=>docLine(w, n)).join('')}
       <div class="row gap-s" style="margin-top:6px"><button class="btn sm ${ok?'':'pri'}" data-updoc="${c.kind}">${icon('upload',14)} ${esc(ok?t('addMore'):t('upload'))}</button><button class="btn sm ghost" data-drvdoc="${c.kind}">${icon('link',14)} Drive</button></div></div>`; }).join('');
   return `<div class="alert info">${icon('info')}<p class="small">${esc(t('docsFirst'))}</p></div><div class="doccards">${cards}</div>
     <div class="card glow pad" id="intake" style="margin-top:10px"><div class="row"><span class="ic-tile accent">${icon('sparkles')}</span><div class="grow"><b>${esc(t('intakeAllT'))}</b><div class="small muted">${esc(t('intakeAllSub'))}</div></div>
      <button class="btn" id="intakeBtn">${icon('upload')} ${esc(t('intakeBtn'))}</button><button class="btn" id="intakeDrive">${icon('link')} ${esc(t('driveT'))}</button></div>
-     ${w.read?`<div class="row gap-s" style="margin-top:8px"><span class="small" style="color:var(--ok)">${icon('check',12)} ${esc(w.intake||'')} · ${Object.keys(w.fromDoc||{}).length} ${esc(t('readN'))}</span><button class="btn sm" id="intakeReview">${esc(t('reviewRead'))}</button></div>`:''}</div>`;
+     ${w.read?`<div class="row gap-s" style="margin-top:8px"><span class="small" style="color:var(--ok)">${icon('check',12)} ${esc(w.intake||'')} · ${Object.keys(w.fromDoc||{}).length} ${esc(t('readN'))}</span><button class="btn sm" id="intakeReview">${esc(t('reviewRead'))}</button></div>`:''}</div>${liveSummary(w)}`;
 }
+/* ---------------- the wizard's work is kept on the server (intake drafts): a refresh, a closed tab or another computer picks it up */
+const WIZ_KEY='db.wizDraft';
+function wizState(w){ return {step:w.step, d:w.d, docs:w.docs||{}, fromDoc:w.fromDoc||{}, texts:w.texts||{}, kinds:w.kinds||{}, found:w.found||{}, aiFill:w.aiFill||null, aiNote:w.aiNote||'', fileNames:(w.allFiles||[]).map(f=>f.name), savedAt:Date.now()}; }
+let wizSaveT=null, wizSaving=null;
+async function wizWrite(w){
+  if(wizSaving) await wizSaving.catch(()=>{});
+  wizSaving=(async()=>{ if(!w.draftId){ const r=await api('/intake/drafts',{method:'POST',json:{state:wizState(w)}}); w.draftId=r.id; store.set(WIZ_KEY, r.id); } else await api(`/intake/drafts/${w.draftId}`,{method:'PUT',json:{state:wizState(w)}});
+    w.savedAt=Date.now(); const el=$('#wizSaved'); if(el) el.textContent=`${t('wizSaved')} ${new Date().toLocaleTimeString(S.lang==='ar'?'ar-EG':'en-GB',{hour:'2-digit',minute:'2-digit'})}`; })();
+  try{ await wizSaving; }catch(e){ console.warn('draft save', e); } wizSaving=null;
+}
+function wizSave(now){ const w=S.wiz; if(!w) return; clearTimeout(wizSaveT); if(now) return wizWrite(w); wizSaveT=setTimeout(()=>{ if(S.wiz===w) wizWrite(w); }, 600); }
+window.addEventListener('pagehide', ()=>{ const w=S.wiz; if(!w||!w.draftId||location.hash!=='#/new') return;        // leaving mid-typing: a last write that outlives the page
+  try{ fetch(`/api/intake/drafts/${w.draftId}`,{method:'PUT',keepalive:true,headers:{'X-DB':'1','content-type':'application/json'},body:JSON.stringify({state:wizState(w)})}); }catch(e){} });
+async function wizDraftFiles(files, kind){ const w=S.wiz; if(!w) return;
+  if(!w.draftId){ try{ const r=await api('/intake/drafts',{method:'POST',json:{state:wizState(w)}}); w.draftId=r.id; store.set(WIZ_KEY, r.id); }catch(e){ console.warn('draft', e); return; } }
+  for(const f of files){ try{ const fd=new FormData(); fd.append('file', f); fd.append('kind', kind||'other'); await api(`/intake/drafts/${w.draftId}/files`,{method:'POST',body:fd}); }catch(e){ console.warn('draft file', e); } } }
+async function wizRestore(){ const id=store.get(WIZ_KEY); if(!id) return null;
+  try{ const r=await api(`/intake/drafts/${id}`); const st=r.state||{}; if(!st.d) return null;
+    const w={step:st.step||0, d:Object.assign({name:'',trade:'',form:'film-coated tablet',man:'',ind:'',applicant:'',tracking:'',portal:'',inn:''}, DEF_PROFILE(), st.d), docs:st.docs||{}, fromDoc:st.fromDoc||{}, texts:st.texts||{}, kinds:st.kinds||{}, found:st.found||{},
+      aiFill:st.aiFill||null, aiNote:st.aiNote||'', draftId:id, allFiles:[], prog:{}, restored:true};
+    for(const n of Object.keys(w.texts)) w.prog[n]={stage:'done', pages:w.texts[n].pages, scanned:w.texts[n].scanned, ocr:w.texts[n].ocr};
+    if(Object.keys(w.texts).length){ try{ await refill(w); }catch(e){ console.warn('refill', e); } }
+    w.unread=(r.files||[]).filter(f=>!w.texts[f.filename]&&(w.docs[f.filename]||{}).status!=='removed');       // uploaded, reading not saved yet: read them once more after the page shows
+    return w; }
+  catch(e){ store.set(WIZ_KEY,''); return null; } }
+async function wizReadUnread(w){
+  const files=[]; for(const f of w.unread||[]){ try{ const r=await fetch(`/api/intake/drafts/${w.draftId}/files/${encodeURIComponent(f.filename)}`,{headers:{'X-DB':'1'}}); if(!r.ok) continue; const b=await r.blob();
+      const file=new File([b], f.filename, {type: f.filename.toLowerCase().endsWith('.pdf')?'application/pdf':(b.type||'')}); files.push(file); w.allFiles.push(file); w.docs[f.filename]={kind:f.kind||'other', status:'reading'}; w.prog[f.filename]={stage:'text'}; }catch(e){} }
+  w.unread=[]; if(files.length){ wizard(); await ingest(w, files); } }
+async function wizFiles(w){
+  /* the File objects for placing after creation: the ones in memory, the rest from the draft on the server */
+  const have=new Set((w.allFiles||[]).map(f=>f.name)); const out=[...(w.allFiles||[])];
+  for(const n of Object.keys(w.texts||{})){ if(have.has(n)||!w.draftId) continue;
+    try{ const r=await fetch(`/api/intake/drafts/${w.draftId}/files/${encodeURIComponent(n)}`,{headers:{'X-DB':'1'}}); if(r.ok){ const b=await r.blob(); out.push(new File([b], n, {type: n.toLowerCase().endsWith('.pdf')?'application/pdf':(b.type||'')})); } }catch(e){} }
+  return out.filter(f=>!['mismatch','removed'].includes(((w.docs||{})[f.name]||{}).status));
+}
+function wizReset(){ const w=S.wiz; if(w&&w.draftId) api(`/intake/drafts/${w.draftId}`,{method:'DELETE'}).catch(()=>{}); store.set(WIZ_KEY,''); S.wiz=null; }
 function wizard(){
-  if(!S.wiz) S.wiz = {step:0, d:Object.assign({name:'',trade:'',form:'film-coated tablet',man:'',ind:'',applicant:'',tracking:'',portal:'',inn:''}, DEF_PROFILE())};
+  if(!S.wiz){
+    if(!S.wizLoading){ S.wizLoading=true; $('#view').innerHTML=`<div class="skeleton" style="height:240px"></div>`;
+      wizRestore().then(w=>{ S.wizLoading=false; if(location.hash!=='#/new') return; S.wiz = w || {step:0, d:Object.assign({name:'',trade:'',form:'film-coated tablet',man:'',ind:'',applicant:'',tracking:'',portal:'',inn:''}, DEF_PROFILE())};
+        if(w) toast(t('wizRestored')); wizard(); if(w&&w.unread&&w.unread.length) wizReadUnread(w); }); }
+    return; }
   const w=S.wiz, d=w.d, steps=['step0','step1','step2','step3','step4'];
   const txt=(k,lab,ph='',extra='')=>`<label class="f"><span>${esc(t(lab))}${wizMark(w,k)}</span><input type="text" dir="auto" data-in="${k}" value="${esc(d[k])}" placeholder="${esc(ph)}" ${extra}></label>`;
   const prevPv = $('#pvBody') ? $('#pvBody').innerHTML : `<div class="skeleton" style="height:60px"></div>`;   // keep the last preview while the next one loads
@@ -892,7 +1011,8 @@ function wizard(){
      <div><button class="btn" id="addApi">${icon('plus')} ${esc(t('addApi'))}</button></div></div>`;
   if(w.step===4) body=`${readBanner(w)}<div class="form">${txt('applicant','applicant')}${txt('tracking','tracking','P-MAA-0001')}${txt('portal','portal')}${txt('inn','inn','paracetamol')}</div>`;
   const intakeCard = '';
-  $('#view').innerHTML=`<div class="head"><div class="title"><div class="eyebrow">${esc(t('f1'))} → ${esc(t('f2'))}</div><h1>${esc(t('newDossier'))}</h1><p class="sub">${esc(t('wizSub'))}</p></div></div>
+  $('#view').innerHTML=`<div class="head"><div class="title"><div class="eyebrow">${esc(t('f1'))} → ${esc(t('f2'))}</div><h1>${esc(t('newDossier'))}</h1><p class="sub">${esc(t('wizSub'))}</p></div>
+   <div class="row gap-s"><span class="small muted" id="wizSaved">${w.draftId?esc(t('wizSaved')):esc(t('wizAutosave'))}</span><button class="btn sm ghost" id="wizRestart">${esc(t('wizRestart'))}</button></div></div>
    <div class="steps">${steps.map((s,i)=>`<span class="${i===w.step?'on':i<w.step?'done':''}"><span class="n">${i<w.step?'✓':i+1}</span>${esc(t(s))}</span>`).join('')}</div>
    <div class="wiz"><div class="stack">${intakeCard}<div class="card pad" id="wizBody">${body}</div><div id="wizErr"></div>
    <div class="row"><a class="btn ghost" href="#/" id="wizCancel">${esc(t('cancel'))}</a><span class="grow"></span>
@@ -900,7 +1020,10 @@ function wizard(){
    ${w.step<4?`<button class="btn pri" id="wizNext">${esc(t('next'))} <span class="flip">${icon('arrow',16)}</span></button>`:`<button class="btn pri" id="wizCreate">${icon('check')} ${esc(t('create'))}</button>`}</div></div>
    <aside class="card glow pv" id="pv"><div class="hd"><span class="ic-tile">${icon('checklist')}</span><h3>${esc(t('pvT'))}</h3></div><div class="pad" id="pvBody">${prevPv}</div></aside></div>`;
   const v=$('#view');
-  bindProfileControls(v, d, ()=>wizard());
+  bindProfileControls(v, d, ()=>{ wizard(); wizSave(); });
+  v.addEventListener('input', ()=>wizSave()); v.addEventListener('change', ()=>wizSave());
+  wireDocLines(v);
+  $('#wizRestart').onclick=()=>{ wizReset(); wizard(); };
   v.querySelectorAll('[data-in]').forEach(i=>i.oninput=()=>{ if(i.dataset.smart){ const val=smartVal(i); if(i.dataset.wiz==='form'){ d.form=i.value==='__other__'?val:formText(val); d.form_std=i.value==='__other__'?'':i.value; const f=VOC().forms.find(x=>x.id===i.value); if(f) d.admin_route=f.route; } else d[i.dataset.in]=val; } else d[i.dataset.in]=i.value; });
   v.querySelectorAll('[data-in-other]').forEach(i=>i.oninput=()=>{ d[i.dataset.inOther]=i.value; if(i.dataset.inOther==='form') d.form_std=''; });
   smartWire(v);
@@ -914,15 +1037,15 @@ function wizard(){
   v.querySelectorAll('#intakeReview, #intakeReview2').forEach(b=>b.onclick=()=>{ if(w.read) reviewIntake(w.read.x, w.read.files); });
   const iz=$('#intake'); if(iz){ iz.ondragover=e=>{ e.preventDefault(); iz.classList.add('drop'); }; iz.ondragleave=()=>iz.classList.remove('drop');
     iz.ondrop=e=>{ e.preventDefault(); iz.classList.remove('drop'); intake([...e.dataTransfer.files]); }; }
-  $('#wizCancel').onclick=()=>{ S.wiz=null; };
-  if($('#wizBack')) $('#wizBack').onclick=()=>{ w.step--; wizard(); };
-  if($('#wizNext')) $('#wizNext').onclick=()=>{ w.step++; wizard(); };
+  $('#wizCancel').onclick=()=>{ wizReset(); };
+  if($('#wizBack')) $('#wizBack').onclick=()=>{ w.step--; wizard(); wizSave(true); };
+  if($('#wizNext')) $('#wizNext').onclick=()=>{ w.step++; wizard(); wizSave(true); };
   if($('#wizCreate')) $('#wizCreate').onclick=async()=>{
     try{
       const r = await api('/dossiers',{method:'POST',json:{name:d.name||d.trade||'Dossier',profile:profileOf(d),
         product:{name:d.trade||d.name,dosageform:d.form,manufacturer:d.man,indication:d.ind||null},
         envelope:{tracking:d.tracking,applicant:d.applicant,invented_name:d.trade||d.name,inn:d.inn.split(',').map(s=>s.trim()).filter(Boolean),portal_id:d.portal,description:'Initial MAA'}}});
-      const files=S.wiz.intakeFiles||[], fill=S.wiz.intakeFill, placeOpts={readable:!!S.wiz.makeReadable, scanned:S.wiz.scannedNames||[]}; S.wiz=null; location.hash=`#/d/${r.id}/board`;
+      const files=await wizFiles(S.wiz), fill=S.wiz.intakeFill, placeOpts={readable:!!S.wiz.makeReadable, scanned:S.wiz.scannedNames||[]}; wizReset(); location.hash=`#/d/${r.id}/board`;
       if(fill){ try{ const data={apis:(d.apis||[]).filter(a=>a.name).map(a=>({name:a.name,manufacturer:a.manufacturer||'',option:a.option||'FULL',strength:a.strength||'',country:a.country||''})),
           composition:(fill.composition||[]).map(c=>({name:c.name,amount:c.amount||'',standard:c.standard||'',function:c.role==='active'?'active':(c.role||''),equivalent:c.equivalent||''})),
           batches:(fill.batches||[]).map(b=>({no:b.no,kind:b.kind||'fpp',size:b.size||'',date:b.date||'',site:b.site||'',expiry:b.expiry||'',conformity:b.conformity||''})),
@@ -1085,18 +1208,20 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
       if(!files.length){ $('#drvUse').disabled=false; return; }
       closeDrawer(); onFiles(files); }; };
   paint(); }
-async function browserOcr(r, files, target){
+async function browserOcr(r, files, target, ev){
   /* scans the server could not read (no tesseract there) are read here, in the browser, then the rules run again on the texts */
+  ev=ev||(()=>{});
   const scans=(r.files||[]).map((f,i)=>({f,i})).filter(x=>x.f.scanned&&!x.f.ocr&&files[x.i]);
   if(!scans.length) return r;
-  if(!window.DBOCR||!(await window.DBOCR.available())){ scans.forEach(x=>x.f.ocr_error='no-engine'); return r; }   // the reason is shown in the drawer
+  if(!window.DBOCR||!(await window.DBOCR.available())){ scans.forEach(x=>{ x.f.ocr_error='no-engine'; ev(x.f.filename,'ocr-error',{message:t('ocrNoEngine')}); }); return r; }   // the reason is shown in the drawer
   const texts=r.files.map(f=>({filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,ocr:f.ocr,file:f.file}));
   let any=false; const errs={};
   for(const {f,i} of scans){
-    try{ const o=await window.DBOCR.readFile(files[i],{maxPages:4,onProgress:(st,p,pg,n)=>toast(`${t('ocrRunning')} ${f.filename}${pg?` · ${t('pagesN')} ${pg}/${n}`:''} ${Math.round((p||0)*100)}%`)});
-      if(o.chars>20){ texts[i].text=o.text; texts[i].ocr=true; texts[i].ocr_where='browser'; texts[i].pages=texts[i].pages||o.pages; any=true; }
-      else errs[i]=L({ar:'الصفحات طلعت فاضية (صورة باهتة أو مقلوبة؟)', en:'the pages came out empty (faint or rotated image?)'}); }
-    catch(e){ console.warn('browser ocr', e); errs[i]=String(e&&e.message||e); toast(`${t('ocrFailed')} ${errs[i]}`); }
+    ev(f.filename,'ocr',{p:0,pg:0,n:f.pages||0});
+    try{ const o=await window.DBOCR.readFile(files[i],{maxPages:4,onProgress:(st,p,pg,n)=>{ toast(`${t('ocrRunning')} ${f.filename}${pg?` · ${t('pagesN')} ${pg}/${n}`:''} ${Math.round((p||0)*100)}%`); ev(f.filename,'ocr',{p,pg,n}); }});
+      if(o.chars>20){ texts[i].text=o.text; texts[i].ocr=true; texts[i].ocr_where='browser'; texts[i].pages=texts[i].pages||o.pages; any=true; ev(f.filename,'ocr-done',{chars:o.chars}); }
+      else { errs[i]=L({ar:'الصفحات طلعت فاضية (صورة باهتة أو مقلوبة؟)', en:'the pages came out empty (faint or rotated image?)'}); ev(f.filename,'ocr-error',{message:errs[i]}); } }
+    catch(e){ console.warn('browser ocr', e); errs[i]=String(e&&e.message||e); toast(`${t('ocrFailed')} ${errs[i]}`); ev(f.filename,'ocr-error',{message:errs[i]}); }
   }
   Object.entries(errs).forEach(([i,m])=>{ r.files[i].ocr_error=m; });
   if(!any) return r;
@@ -1104,13 +1229,18 @@ async function browserOcr(r, files, target){
   Object.entries(errs).forEach(([i,m])=>{ if(r2.files[i]) r2.files[i].ocr_error=m; });
   return Object.assign({}, r, {files:r2.files, rules:r2.rules, prompt:r2.prompt});
 }
-async function readFiles(files, target){
+async function readFiles(files, target, onEvent){
+  const ev=(n,st,i)=>{ try{ if(onEvent) onEvent(n,st,i||{}); }catch(e){ console.warn('progress', e); } };
+  files.forEach(f=>ev(f.name,'text'));
   const fd=new FormData(); files.forEach(f=>fd.append('files',f));
   let r=await api(`/extract?target=${target}`,{method:'POST',body:fd});
-  r=await browserOcr(r, files, target);
+  (r.files||[]).forEach(f=>ev(f.filename,'read',{pages:f.pages,scanned:f.scanned,ocr:f.ocr,chars:f.chars,kind:f.kind,found:f.found}));
+  r=await browserOcr(r, files, target, ev);
   let ai=null, note='';
-  if(window.DBAI && await window.DBAI.available()){ toast(t('thinking')); try{ ai=await window.DBAI.extract(r.prompt, files, r.files, target); }catch(e){ note=(e&&(e.code||e.message))||'error'; } }
+  const scannedNames=(r.files||[]).filter(f=>f.scanned).map(f=>f.filename);
+  if(window.DBAI && await window.DBAI.available()){ toast(t('thinking')); scannedNames.forEach(n=>ev(n,'model')); try{ ai=await window.DBAI.extract(r.prompt, files, r.files, target); }catch(e){ note=(e&&(e.code||e.message))||'error'; } scannedNames.forEach(n=>ev(n,'model-done')); }
   else if(r.ai_server){ toast(t('thinking')); try{ const fd2=new FormData(); files.forEach(f=>fd2.append('files',f)); ai=(await api(`/extract/ai?target=${target}`,{method:'POST',body:fd2})).ai; }catch(e){ note=e.message; } }
+  (r.files||[]).forEach(f=>ev(f.filename,'done',{pages:f.pages,scanned:f.scanned,ocr:f.ocr,chars:f.chars,kind:f.kind,found:f.found}));
   return {r, ai, note, fill:mergeFill(r.rules, ai)};
 }
 async function intake(files){
@@ -1481,6 +1611,7 @@ function openWhy(slotId, focusTemplate){
      <div class="row gap-s">${d.meta&&d.meta.external?`<a class="btn sm" target="_blank" rel="noopener noreferrer" href="${esc(/^https:\/\//.test(d.meta.url)?d.meta.url:'#')}">${icon('external',14)} ${esc(t('extOpen'))}</a><button class="btn sm pri" data-extup="${d.id}">${icon('upload',14)} ${esc(t('extUpload'))}</button>`:`<a class="btn sm" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${d.id}/file">${icon('eye',14)} ${esc(t('view'))}</a>`}
      ${d.findings.some(f=>f.action==='auto_fix')?`<button class="btn sm pri" data-fix="${d.id}">${icon('wrench',14)} ${esc(d.findings.some(f=>['EG-BP-E23','NTA065-N4'].includes(f.rule))?t('readableBtn'):t('autofix'))}</button>`:''}
      ${d.meta&&d.meta.draft_unsigned?`<button class="btn sm pri" data-signed="${d.id}">${icon('upload',14)} ${esc(t('uploadSigned'))}</button>`:''}
+     ${(()=>{ const mv=(d.findings||[]).find(f=>f.action==='move'&&f.extra&&f.extra.suggested_slot); return mv?`<button class="btn sm pri" data-mvto="${d.id}" data-slot="${esc(mv.extra.suggested_slot)}">${icon('arrow',14)} ${esc(t('moveTo'))} ${esc(L(mv.extra.suggested_title||{en:mv.extra.suggested_slot,ar:mv.extra.suggested_slot}))}</button>`:''; })()}
      <button class="btn sm ghost" data-wd="${d.id}">${esc(t('withdraw'))}</button></div></div>`).join('');
   openDrawer(L(s.title), `<div class="row"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${chip(s.status)}<span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></div>
     ${locked?`<div class="alert">${icon('lock')}<p class="small">${esc(t('lockedNote'))}</p></div>`:''}
@@ -1519,6 +1650,7 @@ function openWhy(slotId, focusTemplate){
       toast(t('dateSaved')); await refreshCurrent(); openWhy(slotId); }catch(e){ toast(e.message); } });
   $$('[data-extup]', body).forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, {}, b.dataset.extup); });
   const rq=body.querySelector('[data-req]'); if(rq) rq.onclick=()=>requestForm(s);
+  $$('[data-mvto]', body).forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.mvto}/move`,{method:'POST',json:{slot_id:b.dataset.slot}}); toast(t('moved')); closeDrawer(); S.board=null; route(); }catch(e){ toast(e.message); } });
   $$('[data-wd]', body).forEach(b=>b.onclick=async()=>{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.wd}/withdraw`,{method:'POST'}); toast(t('withdrawn')); closeDrawer(); refreshCurrent(); });
 }
 async function refreshCurrent(selSlot){
