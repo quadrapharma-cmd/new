@@ -15,7 +15,7 @@ from ..validators import ectd32 as v32, ectd40 as v40, report as vreport
 from ..writers import ctd, ectd32, ectd40
 from ..writers.ectd32 import WriterError
 from ..generate import letters, m3tables
-from ..generate.docx_kit import MissingData, to_pdf
+from ..generate.docx_kit import MissingData, to_pdf, find_soffice
 from .store import Store, StoreError
 from . import exporter
 
@@ -158,7 +158,9 @@ def create_app(workspace, auth_enabled=None):
         d = st.document(doc_id)
         if d['meta'].get('external'):
             err(404, 'E-EXTERNAL', 'This is an external reference; open its link.', 'ده مرجع خارجي؛ افتح الرابط بتاعه.')
-        return FileResponse(st.blob_path(d['sha256']), media_type='application/pdf', filename=d['filename'])
+        docx = d['filename'].lower().endswith('.docx')
+        return FileResponse(st.blob_path(d['sha256']), filename=d['filename'],
+                            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document' if docx else 'application/pdf')
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/withdraw')
     def withdraw(did: str, doc_id: str, reason: str = 'user'):
@@ -201,7 +203,7 @@ def create_app(workspace, auth_enabled=None):
             except MissingData as e:
                 err(422, 'E-MISSING-DATA', 'Some data is missing: ' + ', '.join(e.fields), 'فيه بيانات ناقصة: ' + '، '.join(e.fields),
                     request_data=e.fields)
-            sha = st.put_blob(to_pdf(tmp / 'request.docx').read_bytes())
+            sha = st.put_blob(to_pdf(tmp / 'request.docx').read_bytes() if find_soffice() else (tmp / 'request.docx').read_bytes())
             st.put_blob((tmp / 'request.docx').read_bytes())
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -217,7 +219,11 @@ def create_app(workspace, auth_enabled=None):
         r = st.db.execute('select letter_sha from request where id=? and dossier_id=?', (rid, did)).fetchone()
         if not r:
             err(404, 'E-NOT-FOUND', 'Request not found.', 'الطلب غير موجود.')
-        return FileResponse(st.blob_path(r['letter_sha']), media_type='application/pdf', filename='request-letter.pdf')
+        p = st.blob_path(r['letter_sha'])
+        if p.read_bytes()[:4] == b'%PDF':
+            return FileResponse(p, media_type='application/pdf', filename='request-letter.pdf')
+        return FileResponse(p, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            filename='request-letter.docx')
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/ops')
     def op(did: str, doc_id: str, body: OpReq):
@@ -259,10 +265,14 @@ def create_app(workspace, auth_enabled=None):
             except MissingData as e:
                 err(422, 'E-MISSING-DATA', 'Some data is missing: ' + ', '.join(e.fields),
                     'فيه بيانات ناقصة: ' + '، '.join(e.fields), request_data=e.fields)
-            pdf = to_pdf(out)
             from .store import SIGN_KINDS
-            doc = st.add_document(did, slot.slot_id, f'{kind}.pdf', pdf.read_bytes(), meta={
-                'generated': kind, 'draft_unsigned': kind in SIGN_KINDS, 'data': body.data})
+            if find_soffice():
+                fname, blob = f'{kind}.pdf', to_pdf(out).read_bytes()
+            else:                                      # no LibreOffice (browser edition): the Word draft itself, replaced by the PDF the user uploads
+                fname, blob = f'{kind}.docx', out.read_bytes()
+            doc = st.add_document(did, slot.slot_id, fname, blob, meta={
+                'generated': kind, 'draft_unsigned': kind in SIGN_KINDS or fname.endswith('.docx'),
+                'draft_docx': fname.endswith('.docx'), 'data': body.data})
             st.put_blob(out.read_bytes())
             return doc
         finally:

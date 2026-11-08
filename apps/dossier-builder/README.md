@@ -34,6 +34,22 @@ This folder is the code skeleton. It is kept here until the separate repository 
 | Assembler | `engine/dossier_engine/assemble.py` | Turns slots + files into writer documents. Picks the right node when a requirement has more than one (e.g. M1-04 new vs re-registration) |
 | CLI | `tools/resolve.py` | Prints the requirements board for a profile |
 
+## Browser edition (open from a link, nothing to install)
+
+`web/` turns the same app into a claude.ai artifact: the Python engine runs **inside the browser** (Pyodide), the
+interface calls it through a fetch shim (`web/boot.js` → `web/pybridge.py`, the FastAPI app called as an ASGI app, no
+server), and the workspace lives in the browser's IndexedDB (`/workspace`). Downloads go through the artifact's
+`downloads` capability. Without LibreOffice, generated letters come out as **Word drafts**; the user prints, signs,
+scans and uploads the PDF, which replaces the draft (export stays blocked until then), and the tracking table is
+rendered as a text-only PDF (`docx_kit.basic_pdf`). No OCR and no ghostscript pixel check there (fixes on third-party
+evidence are refused rather than applied unverified).
+
+```bash
+bash apps/dossier-builder/web/vendor.sh        # once: Pyodide 0.27.7 + wasm wheels + pure wheels (~20 MB, not committed)
+python3 apps/dossier-builder/web/build.py      # → web/dist (index.html for the Artifact tool, index.local.html + suite.html, assets/)
+python3 -m pytest -q apps/dossier-builder/tests/test_web_edition.py   # the journey inside Chromium, no server
+```
+
 ## Run the app
 
 **Online (cloud):** see `deploy/DEPLOY-AR.md` (Docker + login + HTTPS).

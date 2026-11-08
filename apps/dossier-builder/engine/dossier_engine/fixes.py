@@ -160,10 +160,17 @@ def apply(path, findings, doc_class):
             except Exception as e:
                 refused.append({'op': op, 'en': f'Could not apply: {type(e).__name__}: {e}'[:300], 'ar': 'تعذّر التطبيق.'})
                 continue
-            if doc_class in LOCKED and not same_pixels(cur, nxt):
-                refused.append({'op': op, 'en': 'The result would not be pixel-identical to the original; discarded.',
-                                'ar': 'النتيجة كانت هتغيّر شكل الصفحة؛ اتلغت.'})
-                continue
+            if doc_class in LOCKED:
+                try:
+                    identical = same_pixels(cur, nxt)
+                except RuntimeError as e:                 # no ghostscript here (browser edition): never touch evidence unverified
+                    refused.append({'op': op, 'en': f'Cannot verify the page images on this machine ({e}); the original is kept.',
+                                    'ar': 'مش ممكن نتأكد إن شكل الصفحات ما اتغيّرش على الجهاز ده؛ الأصل محفوظ.'})
+                    continue
+                if not identical:
+                    refused.append({'op': op, 'en': 'The result would not be pixel-identical to the original; discarded.',
+                                    'ar': 'النتيجة كانت هتغيّر شكل الصفحة؛ اتلغت.'})
+                    continue
             cur = nxt
             done.append({'op': op, 'en': LABEL[op][0], 'ar': LABEL[op][1]})
         if not done:

@@ -14,7 +14,7 @@ from ..profile import Profile
 from ..writers import ctd, ectd32, ectd40
 from ..writers.ectd32 import WriterError
 from ..generate import letters
-from ..generate.docx_kit import to_pdf
+from ..generate.docx_kit import to_pdf, basic_pdf
 from ..validators import ectd32 as v32, ectd40 as v40, report as vreport
 
 
@@ -100,7 +100,10 @@ def export(st, did, outputs, ack, sub, p40, ig_zip):
                          'status': 'This sequence'})
             tdir = Path(tempfile.mkdtemp())
             letters.tracking_table({'trade_name': env.get('invented_name') or d['name'], 'sequences': rows}, tdir / 'tracking.docx')
-            tpdf = to_pdf(tdir / 'tracking.docx')
+            try:
+                tpdf = to_pdf(tdir / 'tracking.docx')
+            except RuntimeError:                         # no LibreOffice (browser edition): a text-only PDF of the same table
+                tpdf = basic_pdf(tdir / 'tracking.docx')
             tdoc = ectd32.Doc('1.0', str(tpdf), f'Tracking table — sequence {seq}', name='tracking', doc_id=f'tracking-{out}-{seq}')
             docs = docs_ectd + [tdoc]
             steps = plan(hist, docs, current_ids | {tdoc.doc_id})

@@ -4,13 +4,13 @@
 <workspace>/blobs/<sha256>    — content-addressed files: never overwritten, never deleted
 Principle 7 «no silent data loss»: a document is withdrawn or superseded, not deleted;
 a profile change moves documents of removed slots to «unassigned»."""
-import contextvars, hashlib, json, shutil, sqlite3, threading, time, uuid
+import contextvars, hashlib, json, shutil, sqlite3, sys, threading, time, uuid
 from datetime import date, timedelta
 from pathlib import Path
 from .. import packs
 from ..profile import Profile
 from ..resolver import resolve, diff
-from ..checks.pdf import check as pdf_check
+from ..checks.pdf import check as pdf_check, Finding, Report
 from .. import crosschecks
 
 SCHEMA = '''
@@ -90,7 +90,7 @@ class Store:
         self.root = Path(root)
         (self.root / 'blobs').mkdir(parents=True, exist_ok=True)
         self._local = threading.local()
-        self.db.execute('pragma journal_mode=wal')
+        self.db.execute('pragma journal_mode=' + ('delete' if sys.platform == 'emscripten' else 'wal'))   # no shared memory in the browser
         self.db.executescript(SCHEMA)
         self._migrate()
         self._packs = {}
@@ -257,12 +257,19 @@ class Store:
                                  'النسخة الموقّعة لازم تخص مسودة غير موقّعة في نفس القسم.')
             doc_class, supersede = 'signed_scan', draft['id']
         sha = self.put_blob(data)
-        tmp = self.root / 'blobs' / f'.check-{uuid.uuid4().hex}.pdf'
-        shutil.copyfile(self.blob_path(sha), tmp)
-        try:
-            rep = pdf_check(str(tmp), doc_class or s.doc_class)
-        finally:
-            tmp.unlink(missing_ok=True)
+        if filename.lower().endswith('.docx'):          # Word draft (no LibreOffice on this machine): the PDF copy the user uploads replaces it
+            rep = Report(str(self.blob_path(sha)), [Finding(
+                'DOCX-DRAFT', 'warn',
+                'Word draft. Print it on letterhead, sign, stamp, scan and upload the PDF (or export it to PDF): the PDF replaces this draft.',
+                'مسودة Word. اطبعها على ورق الشركة ووقّعها واختمها وامسحها ضوئياً وارفع الـ PDF (أو صدّرها PDF): نسخة الـ PDF بتحل محل المسودة.',
+                'user_fix', 'NP.CAPP.065 v5 general note 4 (PDF)')])
+        else:
+            tmp = self.root / 'blobs' / f'.check-{uuid.uuid4().hex}.pdf'
+            shutil.copyfile(self.blob_path(sha), tmp)
+            try:
+                rep = pdf_check(str(tmp), doc_class or s.doc_class)
+            finally:
+                tmp.unlink(missing_ok=True)
         version = 1 + (self.db.execute('select coalesce(max(version),0) from document where dossier_id=? and slot_id=?',
                                        (did, slot_id)).fetchone()[0])
         doc_id = str(uuid.uuid4())

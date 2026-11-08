@@ -297,3 +297,42 @@ def test_dossier_list_carries_profile_and_product(c):
     did = new(c)
     row = next(d for d in c.get('/api/dossiers').json() if d['id'] == did)
     assert row['profile']['licence'] == 'own' and row['product']['name'] == PRODUCT['name']
+
+
+def test_without_libreoffice_word_drafts_and_text_tracking_table(c, pdf, monkeypatch):
+    """Browser edition, or a desktop without LibreOffice: generated letters are Word drafts that the uploaded PDF
+    replaces; the export still carries its tracking table as a text-only PDF."""
+    from dossier_engine.app import api as api_mod, exporter
+
+    def no_soffice(*a, **k):
+        raise RuntimeError('LibreOffice not found')
+    monkeypatch.setattr(api_mod, 'find_soffice', lambda: None)
+    monkeypatch.setattr(exporter, 'to_pdf', no_soffice)
+    did = new(c)
+    r = c.post(f'/api/dossiers/{did}/generate/composition', json={'slot_id': 'M1-31', 'data': dict(
+        trade_name='Examplol 500 mg', dosage_form='film-coated tablet', signatory='A. Example', signatory_title='MD',
+        components=[dict(name='Paracetamol', function='API', qty_mg=500, standard='Ph. Eur.'),
+                    dict(name='Opadry II', function='Film coat', qty_mg=15, standard='In-house', part='coat')])})
+    assert r.status_code == 201, r.text
+    d = r.json()
+    assert d['filename'] == 'composition.docx' and d['check_status'] == 'needs_attention' and d['meta']['draft_unsigned']
+    assert d['findings'][0]['rule'] == 'DOCX-DRAFT'
+    f = c.get(f'/api/dossiers/{did}/documents/{d["id"]}/file')
+    assert f.status_code == 200 and f.content[:2] == b'PK' and 'wordprocessingml' in f.headers['content-type']
+    assert 'M1-31' in c.get(f'/api/dossiers/{did}/gate').json()['unsigned']
+    r2 = up(c, did, 'M1-31', pdf, {'signed_for': d['id']})                    # the signed PDF replaces the draft
+    assert r2.status_code == 201 and r2.json()['version'] == 2 and r2.json()['check_status'] == 'conforming'
+    assert 'M1-31' not in c.get(f'/api/dossiers/{did}/gate').json()['unsigned']
+    r3 = c.post(f'/api/dossiers/{did}/slots/M1-37/request', json={'issuer': 'GMP authority', 'lang': 'en', 'signatory': 'A', 'signatory_title': 'B'})
+    assert r3.status_code == 201, r3.text
+    letter = c.get(r3.json()['letter'])
+    assert letter.status_code == 200 and letter.content[:2] == b'PK' and 'wordprocessingml' in letter.headers['content-type']
+    for s in c.get(f'/api/dossiers/{did}/board').json()['slots']:
+        if s['level'] in ('R', 'O') and s['status'] in ('not_started', 'waiting'):
+            meta = {'pi_type': 'spc', 'lang': 'en'} if s['req_id'] == 'M1-09' else (
+                {'study': 'EXM-BE-01', 'doc_type': 'ich_document_type_2'} if s['module'] == 5 else {})
+            assert up(c, did, s['slot_id'], pdf, meta).status_code == 201, s['slot_id']
+    r = c.post(f'/api/dossiers/{did}/export', json={'acknowledge_provisional': True})
+    assert r.status_code == 201, r.text
+    v = r.json()['validation']
+    assert v['eCTD 3.2.2']['ok'] and v['eCTD 4.0']['ok'], v

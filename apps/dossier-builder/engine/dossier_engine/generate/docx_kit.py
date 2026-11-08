@@ -148,3 +148,58 @@ def to_pdf(docx_path, out_dir=None):
     if not pdf.exists():
         raise RuntimeError(f'conversion failed for {docx_path}')
     return pdf
+
+
+W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+
+
+def basic_pdf(docx_path, out_dir=None):
+    """Text-only PDF of a DOCX (paragraphs and table rows), for machines without LibreOffice: Latin text, Helvetica,
+    searchable. Good enough for tool-generated tables such as the tracking table; letters stay Word drafts."""
+    from docx import Document
+    docx_path = Path(docx_path)
+    out_dir = Path(out_dir or docx_path.parent)
+    lines = []
+    for child in Document(str(docx_path)).element.body.iterchildren():
+        tag = child.tag.rsplit('}', 1)[-1]
+        if tag == 'p':
+            lines.append(''.join(t.text or '' for t in child.iter(W + 't')))
+        elif tag == 'tbl':
+            for row in child.iter(W + 'tr'):
+                lines.append(' | '.join(' '.join(t.text or '' for t in tc.iter(W + 't')).strip() for tc in row.iter(W + 'tc')))
+            lines.append('')
+    return text_pdf(lines, out_dir / (docx_path.stem + '.pdf'))
+
+
+def text_pdf(lines, out_path, width=100, per_page=60):
+    """A minimal PDF 1.7 writer: Helvetica 9.5 pt, WinAnsi text (other scripts become «?»), one text object per page."""
+    import textwrap
+    wrapped = []
+    for ln in lines:
+        wrapped += textwrap.wrap(ln, width) or ['']
+    pages = [wrapped[i:i + per_page] for i in range(0, max(len(wrapped), 1), per_page)] or [['']]
+
+    def pdf_str(s):
+        b = s.encode('cp1252', 'replace')
+        return b.replace(b'\\', b'\\\\').replace(b'(', b'\\(').replace(b')', b'\\)')
+
+    objs = [b'<< /Type /Catalog /Pages 2 0 R >>', None,
+            b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>']
+    kids = []
+    for pg in pages:
+        content = b'BT /F1 9.5 Tf 11.5 TL 40 800 Td ' + b' '.join(b'(' + pdf_str(ln) + b') Tj T*' for ln in pg) + b' ET'
+        objs.append(b'<< /Length %d >>\nstream\n' % len(content) + content + b'\nendstream')
+        objs.append(b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents %d 0 R /Resources << /Font << /F1 3 0 R >> >> >>'
+                    % (len(objs)))
+        kids.append(len(objs))
+    objs[1] = b'<< /Type /Pages /Kids [' + b' '.join(b'%d 0 R' % k for k in kids) + b'] /Count %d >>' % len(kids)
+    out = bytearray(b'%PDF-1.7\n%\xe2\xe3\xcf\xd3\n')
+    offs = []
+    for i, o in enumerate(objs, 1):
+        offs.append(len(out))
+        out += b'%d 0 obj\n' % i + o + b'\nendobj\n'
+    x = len(out)
+    out += b'xref\n0 %d\n0000000000 65535 f \n' % (len(objs) + 1) + b''.join(b'%010d 00000 n \n' % o for o in offs)
+    out += b'trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n' % (len(objs) + 1, x)
+    Path(out_path).write_bytes(bytes(out))
+    return Path(out_path)
