@@ -39,6 +39,7 @@ def test_in_browser_journey(site, tmp_path):
             raise AssertionError('home did not render; view=' + page.inner_text('#view')[:800] + ' console=' + ' | '.join(console)[:800] + ' errors=' + ' | '.join(errors)[:400])
         assert '101' in page.inner_text('.caps')                                      # capabilities read from the in-browser engine
         page.click('#btnNew')
+        page.wait_for_selector('.doccards'); page.click('#wizNext')                 # the wizard opens with the documents step
         page.fill('[data-in=name]', 'Examplol 500 mg FCT')
         page.fill('[data-in=man]', 'Example Pharma')
         page.click('#wizNext'); page.click('[data-k=licence][data-v=toll]')
