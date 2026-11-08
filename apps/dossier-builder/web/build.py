@@ -50,12 +50,18 @@ def page(src, *, builder):
 BINARY = ('.wasm', '.zip', '.whl')
 
 
+CTRL = re.compile(rb'[\x00-\x08\x0b\x0c\x0e-\x1f]')
+
+
 def put(dst, data):
-    """Write a dist file; binaries as base64 text under <name>.b64.txt."""
+    """Write a dist file; binaries as base64 text under <name>.b64.txt. Raw control bytes inside a script's string
+    literals (pdf.js carries ESC and 0x03 as bytes) become the equivalent hex escapes: the artifact host refuses them."""
     dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.suffix in BINARY:
         dst.with_name(dst.name + '.b64.txt').write_text(base64.b64encode(data).decode('ascii'))
     else:
+        if dst.suffix in ('.js', '.mjs'):
+            data = CTRL.sub(lambda m: b'\\x%02x' % m.group(0)[0], data)
         dst.write_bytes(data)
 
 
