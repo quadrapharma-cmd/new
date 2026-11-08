@@ -78,11 +78,12 @@ def create_app(workspace, auth_enabled=None):
     app.state.internal_token = secrets.token_hex(24)        # in-process calls by the Assistant (never sent to a browser)
     app.state.auth = Auth(workspace, auth_enabled)
     install(app, app.state.auth, st)
-    from . import review_api, assistant_api, drive_api, draft_api
+    from . import review_api, assistant_api, drive_api, draft_api, intake_api
     review_api.install(app, st)
     assistant_api.install(app, st)
     drive_api.install(app, st)
     draft_api.install(app, st)                           # templates + «make it for me»
+    intake_api.install(app, st)                          # the wizard's work in progress, kept on the server
 
     @app.exception_handler(StoreError)
     def _store_err(_, e):
@@ -169,6 +170,14 @@ def create_app(workspace, auth_enabled=None):
         docx = d['filename'].lower().endswith('.docx')
         return FileResponse(st.blob_path(d['sha256']), filename=d['filename'],
                             media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document' if docx else 'application/pdf')
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/move')
+    def move_document(did: str, doc_id: str, body: dict):
+        """A misfiled document goes to the item it belongs to (new version there, old one withdrawn)."""
+        slot_id = (body or {}).get('slot_id')
+        if not slot_id:
+            err(422, 'E-SLOT', 'slot_id is required.', 'لازم تحدد البند.')
+        return st.move_document(did, doc_id, slot_id)
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/withdraw')
     def withdraw(did: str, doc_id: str, reason: str = 'user'):

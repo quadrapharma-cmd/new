@@ -16,8 +16,9 @@ class Finding:
     severity: str        # block | warn
     en: str
     ar: str
-    action: str          # auto_fix | rebuild | re_obtain | user_fix | none
+    action: str          # auto_fix | rebuild | re_obtain | user_fix | move | none
     source: str
+    extra: dict = field(default_factory=dict)      # e.g. the item a misfiled document belongs to
 
     def to_dict(self):
         return self.__dict__.copy()

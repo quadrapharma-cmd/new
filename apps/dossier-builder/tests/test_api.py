@@ -236,7 +236,7 @@ def test_external_reference_blocks_until_file_uploaded(c, pdf):
     assert any(x['doc_id'] == ref['id'] and x['external'] == url for x in rows)
     assert c.post(f'/api/dossiers/{did}/slots/M1-14/references', json={'title': 'x', 'url': url}).status_code == 422
     assert c.post(f'/api/dossiers/{did}/slots/M1-31/references', json={'title': 'x'}).status_code == 422
-    r = c.post(f'/api/dossiers/{did}/slots/M1-31/documents', files={'file': ('gmp.pdf', io.BytesIO(pdf), 'application/pdf')},
+    r = c.post(f'/api/dossiers/{did}/slots/M1-31/documents', files={'file': ('composition certificate.pdf', io.BytesIO(pdf), 'application/pdf')},   # a file named like a GMP certificate is refused here by the kind rule
                data={'replaces': ref['id']})
     assert r.status_code == 201 and r.json()['check_status'] == 'conforming'
     s = next(x for x in c.get(f'/api/dossiers/{did}/board').json()['slots'] if x['slot_id'] == 'M1-31')
@@ -336,3 +336,13 @@ def test_without_libreoffice_word_drafts_and_text_tracking_table(c, pdf, monkeyp
     assert r.status_code == 201, r.text
     v = r.json()['validation']
     assert v['eCTD 3.2.2']['ok'] and v['eCTD 4.0']['ok'], v
+
+
+def test_profile_preview_accepts_a_stringified_specifics_list(tmp_path):
+    """The browser's model once returned dosage_specifics as the text «[]»: the preview must not read it as the values '[' and ']'."""
+    c = TestClient(create_app(tmp_path / 'ws', auth_enabled=False))
+    for sp, want in (("[]", []), ("['coated']", ['coated']), ("coated, sterile", ['coated', 'sterile']), ([' coated '], ['coated'])):
+        r = c.post('/api/profile/preview', json={**PROFILE, 'dosage_specifics': sp}, headers={'X-DB': '1'})
+        assert r.status_code == 200, (sp, r.text)
+    r = c.post('/api/profile/preview', json={**PROFILE, 'dosage_specifics': "['nonsense']"}, headers={'X-DB': '1'})
+    assert r.status_code == 422 and 'nonsense' in r.text                                      # unknown values are still refused, by name

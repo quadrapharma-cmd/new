@@ -420,8 +420,48 @@ def read_files(files):
         kind = guess_kind(name, pt['text'])
         items.append(fields_for(kind, name, pt['text']))
         texts.append({'filename': name, 'kind': kind, 'pages': pt['pages'], 'scanned': pt['scanned'], 'ocr': pt['ocr'], 'file': pt['kind_of_file'],
-                      'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:14000]})
+                      'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:14000], 'found': found_fields(items[-1])})
     return {'files': texts, 'rules': merge(items)}
+
+
+# ---- the document-kind rule: which items a recognised kind of document belongs to (an upload elsewhere is refused)
+KIND_HOME = {'pricing': ['M1-05'], 'gmp': ['M1-37', 'M1-38'], 'cpp': ['M1-14'], 'cep': ['M1-39', 'S-16'], 'coa': ['M1-35', 'S-10', 'P-11'],
+             'licence': ['M1-04', 'M1-28'], 'commercial': ['M1-19'], 'poa': ['M1-02'], 'contract': ['M1-24'], 'smpc': ['M1-09', 'M1-42'],
+             'cadc': ['M1-34', 'P-11'], 'composition': ['M1-31', 'P-01'], 'spec': ['M1-36', 'S-08', 'P-09', 'P-08'], 'annex1': ['M1-01'],
+             'loa': ['M1-30'], 'factory': ['M1-18'], 'bmr': ['R-01', 'R-02'], 'stability': ['M1-34', 'S-14', 'P-16']}
+KIND_NAMES = {'pricing': {'en': 'pricing certificate', 'ar': 'شهادة تسعير'}, 'gmp': {'en': 'GMP certificate', 'ar': 'شهادة GMP'}, 'cpp': {'en': 'CPP', 'ar': 'شهادة CPP'},
+              'cep': {'en': 'CEP', 'ar': 'شهادة CEP'}, 'coa': {'en': 'certificate of analysis', 'ar': 'شهادة تحليل'}, 'licence': {'en': 'registration licence / notification', 'ar': 'إخطار / رخصة تسجيل'},
+              'commercial': {'en': 'commercial register', 'ar': 'سجل تجاري'}, 'poa': {'en': 'power of attorney', 'ar': 'توكيل'}, 'contract': {'en': 'agreement', 'ar': 'عقد'},
+              'smpc': {'en': 'SmPC / leaflet', 'ar': 'نشرة / SmPC'}, 'cadc': {'en': 'CADC conformity letter', 'ar': 'خطاب مطابقة CADC'}, 'composition': {'en': 'composition certificate', 'ar': 'شهادة تركيب'},
+              'spec': {'en': 'specification', 'ar': 'مواصفات'}, 'annex1': {'en': 'application form (Annex I)', 'ar': 'نموذج الطلب'}, 'loa': {'en': 'letter of access / DMF', 'ar': 'خطاب سماح / DMF'},
+              'factory': {'en': 'factory licence', 'ar': 'رخصة مصنع'}, 'bmr': {'en': 'batch record', 'ar': 'سجل تشغيلة'}, 'stability': {'en': 'stability document', 'ar': 'مستند ثبات'}}
+
+
+def kind_check(req_id, filename, data_or_text):
+    """Is this file the document the item expects? → {'kind', 'ok', 'homes'}. Unknown kinds and kinds without a fixed home pass;
+    a recognised kind whose home items do not include the target fails (a stability approval in the pricing slot)."""
+    text = data_or_text if isinstance(data_or_text, str) else read_text(filename, data_or_text, max_pages=2, ocr=False)['text']
+    kind = guess_kind(filename, text)
+    homes = KIND_HOME.get(kind, [])
+    return {'kind': kind, 'homes': homes, 'ok': kind == 'other' or not homes or req_id in homes, 'kind_name': KIND_NAMES.get(kind)}
+
+
+def found_fields(reading):
+    """What one document's reading yielded, as short keys the page can name: product.name, apis×2, registration.number …"""
+    out = []
+    for sec in ('product', 'profile', 'envelope', 'registration'):
+        for k, v in (reading.get(sec) or {}).items():
+            if v not in (None, '', []):
+                out.append(f'{sec}.{k}')
+    for sec in ('apis', 'batches', 'specs', 'results', 'composition'):
+        n = len(reading.get(sec) or [])
+        if n:
+            out.append(f'{sec}×{n}')
+    d = reading.get('document') or {}
+    for k in ('number', 'issuer', 'issued', 'valid_until'):
+        if d.get(k):
+            out.append(f'document.{k}')
+    return out
 
 
 def read_texts(files):
@@ -433,7 +473,7 @@ def read_texts(files):
         items.append(fields_for(kind, name, text))
         texts.append({'filename': name, 'kind': kind, 'pages': int(f.get('pages') or 0), 'scanned': bool(f.get('scanned')), 'ocr': bool(f.get('ocr')),
                       'ocr_where': f.get('ocr_where'), 'file': f.get('file') or ('pdf' if name.lower().endswith('.pdf') else 'other'), 'arabic': arabic.has_arabic(text),
-                      'chars': len(re.sub(r'\s', '', text)), 'text': text[:14000]})
+                      'chars': len(re.sub(r'\s', '', text)), 'text': text[:14000], 'found': found_fields(items[-1])})
     return {'files': texts, 'rules': merge(items)}
 
 

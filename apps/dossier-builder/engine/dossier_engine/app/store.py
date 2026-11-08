@@ -31,6 +31,9 @@ create table if not exists submission(id text primary key, dossier_id text not n
   path text not null, created real not null, unique(dossier_id, output, seq));
 create table if not exists export(id text primary key, dossier_id text not null, outputs text not null,
   path text not null, acknowledged integer not null, created real not null);
+create table if not exists intake_draft(id text primary key, state text not null default '{}', created real not null, updated real not null);
+create table if not exists intake_file(draft_id text not null, filename text not null, sha256 text not null, kind text, size integer not null default 0,
+  added real not null, primary key(draft_id, filename));
 '''
 EXPIRY_WARN_DAYS = 90
 
@@ -270,6 +273,22 @@ class Store:
                 rep = pdf_check(str(tmp), doc_class or s.doc_class)
             finally:
                 tmp.unlink(missing_ok=True)
+            if not meta.get('generated') and not meta.get('signed_for'):      # the kind rule: is this file the document the item expects?
+                try:
+                    from .. import extract as _extract
+                    kc = _extract.kind_check(s.req_id, filename, data)
+                except Exception:
+                    kc = {'ok': True}
+                if not kc.get('ok'):
+                    home = next((x.slot_id for x in slots.values() if x.req_id in kc['homes'] and x.active), None)
+                    home_title = next((x.title for x in slots.values() if x.slot_id == home), None)
+                    kn = kc.get('kind_name') or {'en': kc['kind'], 'ar': kc['kind']}
+                    rep.findings.insert(0, Finding(
+                        'DOC-KIND', 'block',
+                        f"This file reads as a {kn['en']}, not the document this item needs" + (f"; it belongs in {home_title['en']}." if home_title else '.'),
+                        f"الملف ده شكله {kn['ar']}، مش المستند المطلوب في البند ده" + (f"؛ مكانه «{home_title['ar']}»." if home_title else '.'),
+                        'move' if home else 'user_fix', 'intake kind rule (classify keywords)',
+                        {'kind': kc['kind'], 'suggested_slot': home, 'suggested_title': home_title}))
         version = 1 + (self.db.execute('select coalesce(max(version),0) from document where dossier_id=? and slot_id=?',
                                        (did, slot_id)).fetchone()[0])
         doc_id = str(uuid.uuid4())
@@ -431,6 +450,64 @@ class Store:
         self.db.commit()
         self.audit(did, 'document.withdrawn', doc=doc_id, reason=reason)   # blob kept: undo is possible
         return self.document(doc_id)
+
+    def move_document(self, did, doc_id, slot_id):
+        """A misfiled document goes to its own item: a new version there (checked again), the old one withdrawn; blob kept once."""
+        d = self.document(doc_id)
+        if d['dossier_id'] != did:
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        if d['slot_id'] == slot_id:
+            return d
+        data = self.blob_path(d['sha256']).read_bytes()
+        meta = {k: v for k, v in d['meta'].items() if k not in ('signed_for',)} | {'moved_from': d['slot_id']}
+        new = self.add_document(did, slot_id, d['filename'], data, None, meta)
+        self.db.execute("update document set state='withdrawn' where id=?", (doc_id,))
+        self.db.commit()
+        self.audit(did, 'document.moved', doc=doc_id, to=slot_id, new_doc=new['id'])
+        return new
+
+    # ---------------- intake drafts: the wizard's work in progress (fields, files, readings incl. OCR text), so a refresh loses nothing
+    def draft_save(self, draft_id, state):
+        now = time.time()
+        self.db.execute('insert into intake_draft(id, state, created, updated) values (?,?,?,?) on conflict(id) do update set state=excluded.state, updated=excluded.updated',
+                        (draft_id, json.dumps(state or {}, ensure_ascii=False), now, now))
+        self.db.commit()
+        return self.draft_get(draft_id)
+
+    def draft_get(self, draft_id):
+        r = self.db.execute('select * from intake_draft where id=?', (draft_id,)).fetchone()
+        if not r:
+            return None
+        files = [dict(x) for x in self.db.execute('select filename, sha256, kind, size, added from intake_file where draft_id=? order by added', (draft_id,))]
+        return {'id': r['id'], 'state': json.loads(r['state'] or '{}'), 'created': r['created'], 'updated': r['updated'], 'files': files}
+
+    def drafts(self):
+        return [{'id': r['id'], 'created': r['created'], 'updated': r['updated'], 'state': json.loads(r['state'] or '{}'),
+                 'files': self.db.execute('select count(*) from intake_file where draft_id=?', (r['id'],)).fetchone()[0]}
+                for r in self.db.execute('select * from intake_draft order by updated desc')]
+
+    def draft_add_file(self, draft_id, filename, data, kind=None):
+        if not self.draft_get(draft_id):
+            self.draft_save(draft_id, {})
+        sha = self.put_blob(data)
+        self.db.execute('insert into intake_file(draft_id, filename, sha256, kind, size, added) values (?,?,?,?,?,?) on conflict(draft_id, filename) do update set sha256=excluded.sha256, kind=excluded.kind, size=excluded.size',
+                        (draft_id, filename, sha, kind, len(data), time.time()))
+        self.db.execute('update intake_draft set updated=? where id=?', (time.time(), draft_id))
+        self.db.commit()
+        return {'filename': filename, 'sha256': sha, 'kind': kind, 'size': len(data)}
+
+    def draft_file(self, draft_id, filename):
+        r = self.db.execute('select sha256 from intake_file where draft_id=? and filename=?', (draft_id, filename)).fetchone()
+        return self.blob_path(r['sha256']).read_bytes() if r else None
+
+    def draft_remove_file(self, draft_id, filename):
+        self.db.execute('delete from intake_file where draft_id=? and filename=?', (draft_id, filename))
+        self.db.commit()
+
+    def draft_delete(self, draft_id):
+        self.db.execute('delete from intake_file where draft_id=?', (draft_id,))
+        self.db.execute('delete from intake_draft where id=?', (draft_id,))
+        self.db.commit()
 
     def restore(self, did, doc_id):
         self.db.execute("update document set state='current' where id=? and dossier_id=?", (doc_id, did))

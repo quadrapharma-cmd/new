@@ -784,8 +784,12 @@ async function dossiersView(tok){
 /* ---------------- wizard with live requirements preview */
 const DEF_PROFILE = () => ({dossier_kind:'generic',origin:'local',licence:'own',activity:'new',leaflet:'english',admin_route:'oral',local_action:false,aqueous_solution:false,bcs_waiver:false,
   dosage_specifics:[],pharmacopoeial:false,store_separate_from_factory:false,biological_origin_materials:false,novel_excipient:false,apis:[{name:'',manufacturer:'',option:'CEP'}]});
+const SPECIFICS=['coated','capsule_hard','pellets','premix','powder_inj_with_solvent','sterile','modified_release','inhalation'];
+/* the model or a reading may hand back «[]», «['coated']» or «coated, sterile»: keep only known values, as a list */
+function normSpecs(v){ if(Array.isArray(v)) return v.map(x=>String(x).replace(/[\[\]'"\s]/g,'')).filter(x=>SPECIFICS.includes(x)); if(typeof v!=='string') return [];
+  return v.replace(/[\[\]'"]/g,' ').split(/[,\s]+/).map(x=>x.trim()).filter(x=>SPECIFICS.includes(x)); }
 function profileOf(d){ return {dossier_kind:d.dossier_kind,origin:d.origin,licence:d.licence,activity:d.activity,route:'one_submission',leaflet:d.leaflet,admin_route:d.admin_route,
-  local_action:!!d.local_action,aqueous_solution:!!d.aqueous_solution,bcs_waiver:!!d.bcs_waiver,dosage_specifics:d.dosage_specifics||[],pharmacopoeial:!!d.pharmacopoeial,
+  local_action:!!d.local_action,aqueous_solution:!!d.aqueous_solution,bcs_waiver:!!d.bcs_waiver,dosage_specifics:normSpecs(d.dosage_specifics),pharmacopoeial:!!d.pharmacopoeial,
   store_separate_from_factory:!!d.store_separate_from_factory,biological_origin_materials:!!d.biological_origin_materials,novel_excipient:!!d.novel_excipient,
   apis:(d.apis||[]).filter(a=>a.name&&a.manufacturer).map(a=>({name:a.name,manufacturer:a.manufacturer,option:a.option||'FULL'}))}; }
 function profileControls(d){
@@ -834,7 +838,7 @@ function applyFillData(w, f){
   set('man', P.manufacturer, 'product'); set('ind', P.indication, 'product');
   if(P.name) set('name', [P.name, P.strength&&!P.name.includes(P.strength)?P.strength:'', formTxt&&!P.name.toLowerCase().includes(String(formTxt).toLowerCase())?String(formTxt).toLowerCase():''].filter(Boolean).join(' '), 'product');
   for(const k of ['dossier_kind','origin','licence','activity','admin_route','leaflet']) if(R[k]) set(k, R[k], 'profile');
-  if((R.dosage_specifics||[]).length) set('dosage_specifics', R.dosage_specifics, 'profile');
+  const specs=normSpecs(R.dosage_specifics); if(specs.length) set('dosage_specifics', specs, 'profile');
   if(d.origin==='imported'&&!['imported','imported_bulk'].includes(d.licence)) d.licence='imported';
   if(d.origin==='local'&&['imported','imported_bulk'].includes(d.licence)) d.licence='own';
   const apis=(f.apis||[]).filter(a=>a.name);
@@ -1166,7 +1170,7 @@ function applyIntake(files){
   d.trade=name||d.trade; if(form){ d.form=form; d.form_std=formSel&&formSel.value!=='__other__'?formSel.value:''; } d.man=v('rv-man')||d.man; d.ind=v('rv-ind')||d.ind;
   if(name) d.name=[name, strength&&!name.includes(strength)?strength:'', form&&!name.toLowerCase().includes(form.toLowerCase())?form.toLowerCase():''].filter(Boolean).join(' ');
   for(const [id,k] of [['rv-kind','dossier_kind'],['rv-origin','origin'],['rv-licence','licence'],['rv-activity','activity'],['rv-route','admin_route'],['rv-leaflet','leaflet']]) if(v(id)) d[k]=v(id);
-  const specs=v('rv-spec').split(',').map(s=>s.trim()).filter(Boolean); if(specs.length) d.dosage_specifics=specs;
+  const specs=normSpecs(v('rv-spec')); if(specs.length) d.dosage_specifics=specs;
   if(d.origin==='imported'&&!['imported','imported_bulk'].includes(d.licence)) d.licence='imported';
   if(d.origin==='local'&&['imported','imported_bulk'].includes(d.licence)) d.licence='own';
   const rows={}; $$('[data-rva]').forEach(el=>{ (rows[el.dataset.rva]=rows[el.dataset.rva]||{})[el.dataset.f]=el.value.trim(); });

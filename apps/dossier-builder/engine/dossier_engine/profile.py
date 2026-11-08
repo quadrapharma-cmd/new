@@ -60,6 +60,12 @@ class Profile:
     def from_dict(cls, d):
         d = dict(d)
         d['apis'] = [a if isinstance(a, Api) else Api(**a) for a in d.get('apis', [])]
+        sp = d.get('dosage_specifics')
+        if isinstance(sp, str):                          # «[]», «['coated']», «coated, sterile» from a model or a form: a list, never a character per value
+            import re as _re
+            d['dosage_specifics'] = [x for x in _re.split(r'[,\s]+', _re.sub(r'[\[\]\'"]', ' ', sp)) if x]
+        elif isinstance(sp, (list, tuple)):
+            d['dosage_specifics'] = [str(x).strip(" []'\"") for x in sp if str(x).strip(" []'\"")]
         return cls(**d)
 
     # ---- column of the NP.CAPP.065 matrix ----
