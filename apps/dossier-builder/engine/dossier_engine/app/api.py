@@ -72,8 +72,8 @@ def create_app(workspace, auth_enabled=None):
     from .auth import Auth, install
     st = Store(workspace)
     app = FastAPI(title='Dossier Builder', version='0.2', docs_url=None, redoc_url=None, openapi_url=None)
-    if auth_enabled is None:
-        auth_enabled = os.environ.get('DB_MODE') == 'cloud' or os.environ.get('DB_AUTH') == '1'
+    if auth_enabled is None and (os.environ.get('DB_MODE') == 'cloud' or os.environ.get('DB_AUTH') == '1'):
+        auth_enabled = True                                  # otherwise None: the workspace's own switch (Users screen) decides, default off
     import secrets
     app.state.internal_token = secrets.token_hex(24)        # in-process calls by the Assistant (never sent to a browser)
     app.state.auth = Auth(workspace, auth_enabled)

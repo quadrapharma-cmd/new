@@ -40,7 +40,7 @@ def free_port(start=8765):
 def start_server(ws, port):
     import uvicorn
     from dossier_engine.app.api import create_app
-    app = create_app(ws, auth_enabled=False)          # one person on one computer: no login
+    app = create_app(ws, auth_enabled=None)           # off until the owner turns sign-in on from the Users screen (auth.json in the workspace)
     server = uvicorn.Server(uvicorn.Config(app, host='127.0.0.1', port=port, log_level='warning'))
     threading.Thread(target=server.run, daemon=True).start()
     url = f'http://127.0.0.1:{port}'

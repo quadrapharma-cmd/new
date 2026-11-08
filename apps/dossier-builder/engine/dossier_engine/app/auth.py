@@ -21,11 +21,22 @@ def _scrypt(password, salt):
 
 class Auth:
     def __init__(self, workspace, enabled):
-        self.enabled = enabled
-        self._fail, self._lock = {}, threading.Lock()
+        """enabled: True (cloud / forced by the environment), False (never), None (the workspace's switch, auth.json, default off)."""
         self.root = Path(workspace)
         self.root.mkdir(parents=True, exist_ok=True)
+        self.switch_file = self.root / 'auth.json'
         self.users_file = self.root / 'users.json'
+        self.forced = enabled is True                      # cloud: always on, cannot be switched off
+        self.switchable = enabled is None                  # local editions: the Users screen turns it on and off
+        if enabled is None:
+            try:
+                enabled = bool(json.loads(self.switch_file.read_text()).get('enabled')) if self.switch_file.exists() else False
+            except (ValueError, OSError):
+                enabled = False
+            if enabled and not any(u.get('role') == 'admin' for u in self.users().values()):
+                enabled = False                            # the switch is on but no administrator could sign in: stay open rather than lock everyone out
+        self.enabled = bool(enabled)
+        self._fail, self._lock = {}, threading.Lock()
         key = os.environ.get('DB_SECRET')
         kf = self.root / 'secret.key'
         if not key:
@@ -40,9 +51,33 @@ class Auth:
             if u and p:
                 self.add_user(u, p, 'admin')
 
+    # ---- the switch (local editions): on from the Users screen once the first administrator exists
+    def set_enabled(self, on):
+        self.enabled = bool(on)
+        self.switch_file.write_text(json.dumps({'enabled': self.enabled}))
+        try:
+            os.chmod(self.switch_file, 0o600)
+        except OSError:
+            pass
+
     # ---- users
     def users(self):
         return json.loads(self.users_file.read_text()) if self.users_file.exists() else {}
+
+    def remove_user(self, username):
+        users = self.users()
+        if username not in users:
+            raise ValueError('unknown user')
+        if users[username].get('role') == 'admin' and sum(1 for u in users.values() if u.get('role') == 'admin') == 1:
+            raise ValueError('keep at least one admin')
+        del users[username]
+        self._save(users)
+
+    def touch_login(self, username):
+        users = self.users()
+        if username in users:
+            users[username]['last_login'] = time.time()
+            self._save(users)
 
     ROLES = ('admin', 'editor', 'viewer', 'disabled')
 
@@ -125,7 +160,7 @@ def install(app, auth, store):
     from pydantic import BaseModel
 
     LOGIN = (Path(__file__).resolve().parents[3] / 'ui' / 'login.html')
-    OPEN = {'/login', '/api/login', '/api/health', '/login.html'}
+    OPEN = {'/login', '/api/login', '/api/health', '/login.html', '/api/auth'}
 
     @app.middleware('http')
     async def guard(request: Request, call_next):
@@ -156,9 +191,11 @@ def install(app, auth, store):
             if write and request.state.role == 'viewer' and path not in ('/api/logout', '/api/me/password'):
                 return JSONResponse({'detail': {'code': 'E-ROLE', 'en': 'Your role can view only.',
                                                 'ar': 'صلاحيتك مشاهدة بس.'}}, status_code=403)
-            if path.startswith('/api/users') and request.state.role != 'admin':
-                return JSONResponse({'detail': {'code': 'E-ROLE', 'en': 'Only an administrator can manage users.',
-                                                'ar': 'إدارة المستخدمين للمدير بس.'}}, status_code=403)
+            admin_only = path.startswith('/api/users') or path == '/api/auth/disable' or \
+                (write and (path.startswith('/api/assistant/settings') or path.startswith('/api/drive/settings')))
+            if admin_only and request.state.role != 'admin':
+                return JSONResponse({'detail': {'code': 'E-ROLE', 'en': 'Administrators only: users, sign-in and the keys.',
+                                                'ar': 'للمدير بس: المستخدمين وتسجيل الدخول والمفاتيح.'}}, status_code=403)
         from .store import ACTOR
         token = ACTOR.set(getattr(request.state, 'user', None) or 'local')
         try:
@@ -201,6 +238,7 @@ def install(app, auth, store):
         t = ACTOR.set(body.username)
         store.audit(None, 'login', user=body.username)
         ACTOR.reset(t)
+        auth.touch_login(body.username)
         r = JSONResponse({'ok': True, 'user': body.username})
         r.set_cookie(COOKIE, auth.issue(body.username), max_age=TTL, httponly=True, samesite='strict', secure=auth.secure)
         return r
@@ -237,7 +275,75 @@ def install(app, auth, store):
 
     @app.get('/api/users')
     def users_list():
-        return [{'username': k, 'role': auth.role(k), 'created': v.get('created')} for k, v in sorted(auth.users().items())]
+        return [{'username': k, 'role': auth.role(k), 'created': v.get('created'), 'last_login': v.get('last_login')} for k, v in sorted(auth.users().items())]
+
+    @app.delete('/api/users/{username}')
+    def users_delete(username: str, request: Request):
+        if username == getattr(request.state, 'user', None):
+            return bad('E-SELF', 'You cannot delete your own account.', 'مينفعش تمسح حسابك إنت.')
+        try:
+            auth.remove_user(username)
+        except ValueError as e:
+            return bad('E-USER', str(e), 'مينفعش: المستخدم غير موجود أو هو آخر مدير.')
+        store.audit(None, 'user.removed', user=username)
+        return {'ok': True}
+
+    @app.get('/api/auth')
+    def auth_state():
+        """Is sign-in on, can it be switched here, how many accounts exist (no names)."""
+        return {'enabled': auth.enabled, 'forced': auth.forced, 'switchable': auth.switchable, 'users': len(auth.users()),
+                'can_enable': auth.switchable and not auth.enabled, 'can_disable': auth.switchable and auth.enabled}
+
+    class FirstAdmin(BaseModel):
+        username: str
+        password: str
+
+    @app.post('/api/auth/enable')
+    def auth_enable(body: FirstAdmin, request: Request):
+        """Local editions: turn sign-in on. No accounts yet → the body creates the first administrator (201); accounts exist →
+        the body must be an existing administrator's username and password (200). The caller is signed in at once."""
+        if auth.enabled:
+            return bad('E-AUTH-ON', 'Sign-in is already on.', 'تسجيل الدخول شغّال بالفعل.', 409)
+        if not auth.switchable:
+            return bad('E-AUTH-FIXED', 'Sign-in cannot be switched in this edition.', 'تسجيل الدخول مش بيتغيّر في النسخة دي.', 409)
+        users = auth.users()
+        created = not users
+        if users:                                             # a sign-in in effect: same brute-force limit as /api/login; 403, not 401, so the page stays
+            key = f"{body.username}|{request.client.host if request.client else '-'}"
+            if auth.blocked(key):
+                return bad('E-RATE', 'Too many attempts — try again in 15 minutes.', 'محاولات كتير — جرّب بعد 15 دقيقة.', 429)
+            if body.username not in users or auth.role(body.username) != 'admin' or not auth.check(body.username, body.password):
+                auth.fail(key)
+                store.audit(None, 'login.failed', user=body.username)
+                return bad('E-LOGIN', 'Accounts exist: sign in as an existing administrator to turn sign-in on.',
+                           'في حسابات موجودة: ادخل باسم مدير موجود وكلمة سره.', 403)
+        else:
+            try:
+                auth.add_user(body.username, body.password, 'admin')
+            except ValueError as e:
+                return bad('E-USER', str(e), 'اسم المستخدم حروف وأرقام و . _ - @ وكلمة السر 10 حروف على الأقل.')
+        auth.set_enabled(True)
+        from .store import ACTOR
+        t = ACTOR.set(body.username)
+        store.audit(None, 'auth.enabled', by=body.username)
+        if created:
+            store.audit(None, 'user.added', user=body.username, role='admin')
+        ACTOR.reset(t)
+        auth.touch_login(body.username)
+        r = JSONResponse({'ok': True, 'user': body.username, 'role': 'admin', 'created': created}, status_code=201 if created else 200)
+        r.set_cookie(COOKIE, auth.issue(body.username), max_age=TTL, httponly=True, samesite='strict', secure=auth.secure)
+        return r
+
+    @app.post('/api/auth/disable')
+    def auth_disable(request: Request):
+        """Local editions: turn sign-in off (accounts are kept). Not in the cloud edition."""
+        if not auth.switchable:
+            return bad('E-AUTH-FORCED', 'Sign-in is always on in this edition.', 'تسجيل الدخول إجباري في النسخة دي.', 409)
+        auth.set_enabled(False)
+        store.audit(None, 'auth.disabled', by=getattr(request.state, 'user', None))
+        r = JSONResponse({'ok': True})
+        r.delete_cookie(COOKIE)
+        return r
 
     class NewUser(BaseModel):
         username: str

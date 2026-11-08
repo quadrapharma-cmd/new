@@ -158,6 +158,9 @@ html[lang="ar"] .vstrip .vlabel{letter-spacing:0;text-transform:none}
 @media (max-width:1180px){.ws{grid-template-columns:250px minmax(0,1fr)} .ws .viewer{grid-column:1/-1;position:static}}
 @media (max-width:900px){.ws{grid-template-columns:1fr} .ws .tree{max-height:260px} .vstrip{grid-template-columns:1fr} .vstrip .acts{flex-direction:row;flex-wrap:wrap} .vbar{grid-template-columns:110px minmax(0,1fr) auto} .letter{padding:18px 16px} .tl .ti{grid-template-columns:86px 18px minmax(0,1fr)} .tl .ti::before{inset-inline-start:94px}}
 
+.rolebar{margin:10px 20px 0}
+body[data-role="viewer"] .btn.pri{opacity:.55}
+body[data-role="editor"] .admin-only,body[data-role="viewer"] .admin-only{display:none}
 </style>
 </head>
 <body>
@@ -174,8 +177,10 @@ html[lang="ar"] .vstrip .vlabel{letter-spacing:0;text-transform:none}
       <div class="seg" role="group" aria-label="Language"><button id="lang-ar" lang="ar">عربي</button><button id="lang-en" lang="en">EN</button></div>
       <button class="btn ghost" id="theme" aria-label="Theme"></button>
       <span class="small muted" id="who" hidden></span>
+      <button class="btn ghost sm" id="pwBtn" hidden></button>
       <button class="btn ghost sm" id="logout" hidden></button>
     </div>
+    <div class="alert info rolebar" id="roleNote" hidden></div>
     <div class="view" id="view" tabindex="-1"></div>
   </main>
 </div>
@@ -197,6 +202,29 @@ const T = {
   navPublisher:{en:'Publisher',ar:'الناشر'}, navChecks:{en:'Checks',ar:'الفحوص'}, navExport:{en:'Export',ar:'التصدير'}, navAudit:{en:'Activity log',ar:'سجل النشاط'},
   localNote:{en:'Local workspace — files stay on this computer.',ar:'مساحة عمل محلية — الملفات لا تغادر هذا الجهاز.'},
   logout:{en:'Sign out',ar:'خروج'}, role_admin:{en:'Administrator',ar:'مدير'}, role_editor:{en:'Editor',ar:'محرّر'}, role_viewer:{en:'Viewer',ar:'مشاهد'},
+  role_disabled:{en:'Disabled',ar:'موقوف'}, navUsers:{en:'Users',ar:'المستخدمون'},
+  users:{en:'Users & sign-in',ar:'المستخدمون وتسجيل الدخول'}, usersSub:{en:'Who may open the program and what each may do.',ar:'مين يفتح البرنامج، وكل واحد يقدر يعمل إيه.'},
+  usersOffFirst:{en:'Sign-in is off: anyone at this computer can open the program. Create the first administrator to turn it on; accounts for the rest of the team come after.',ar:'تسجيل الدخول متقفّل: أي حد على الجهاز ده يفتح البرنامج. اعمل أول مدير عشان تشغّله، وبعدها تضيف حسابات باقي الفريق.'},
+  usersOffAgain:{en:'Sign-in is off, but the accounts are kept. Sign in as an administrator to turn it back on.',ar:'تسجيل الدخول متقفّل والحسابات محفوظة. ادخل باسم مدير عشان تشغّله تاني.'},
+  usersNoSwitch:{en:'This edition has no accounts: it is for one person on one computer.',ar:'النسخة دي من غير حسابات: لشخص واحد على جهاز واحد.'},
+  username:{en:'Username',ar:'اسم المستخدم'}, password:{en:'Password',ar:'كلمة السر'}, password2:{en:'Password again',ar:'كلمة السر تاني'},
+  pwRule:{en:'Password: at least 10 characters. Username: letters, digits and . _ - @',ar:'كلمة السر 10 حروف على الأقل. اسم المستخدم: حروف وأرقام و . _ - @'},
+  pwMismatch:{en:'The two passwords differ.',ar:'كلمتا السر مش زي بعض.'},
+  enableLogin:{en:'Turn sign-in on',ar:'تشغيل تسجيل الدخول'}, disableLogin:{en:'Turn sign-in off',ar:'إيقاف تسجيل الدخول'},
+  disableNote:{en:'Anyone at this computer will open the program without a password. Accounts are kept, and any administrator can turn sign-in on again.',ar:'أي حد على الجهاز هيفتح البرنامج من غير كلمة سر. الحسابات هتفضل محفوظة، وأي مدير يقدر يشغّل تسجيل الدخول تاني.'},
+  loginEnabled:{en:'Sign-in is on; you are signed in as administrator.',ar:'تسجيل الدخول اشتغل، وإنت داخل كمدير.'}, loginDisabled:{en:'Sign-in is off.',ar:'تسجيل الدخول اتقفل.'},
+  loginForced:{en:'Sign-in is always on in this edition.',ar:'تسجيل الدخول إجباري في النسخة دي.'},
+  addUser:{en:'Add user',ar:'إضافة مستخدم'}, role:{en:'Role',ar:'الدور'}, lastLogin:{en:'Last sign-in',ar:'آخر دخول'}, never:{en:'never',ar:'لسه'},
+  resetPw:{en:'Set password',ar:'تغيير كلمة السر'}, newPw:{en:'New password',ar:'كلمة السر الجديدة'}, curPw:{en:'Current password',ar:'كلمة السر الحالية'},
+  myPw:{en:'My password',ar:'كلمة سري'}, pwChanged:{en:'Your password is changed.',ar:'كلمة سرك اتغيّرت.'}, pwSet:{en:'Password set.',ar:'كلمة السر اتحطّت.'}, pwBtn:{en:'Change my password',ar:'تغيير كلمة سري'},
+  delUser:{en:'Delete',ar:'حذف'}, delUserQ:{en:'Delete this account? What it did stays in the activity log.',ar:'تحذف الحساب ده؟ اللي عمله هيفضل في سجل النشاط.'},
+  you:{en:'you',ar:'إنت'}, userAdded:{en:'User added.',ar:'المستخدم اتضاف.'}, userRemoved:{en:'User deleted.',ar:'المستخدم اتحذف.'}, roleSaved:{en:'Role saved.',ar:'الدور اتحفظ.'},
+  rolesT:{en:'What each role may do',ar:'كل دور يقدر يعمل إيه'},
+  roleD_admin:{en:'Everything, plus users, sign-in and the keys (Assistant, Drive).',ar:'كل حاجة، زائد المستخدمين وتسجيل الدخول والمفاتيح (المساعد، درايف).'},
+  roleD_editor:{en:'Builds, uploads, reviews and exports; cannot manage users or keys.',ar:'يبني ويرفع ويراجع ويصدّر؛ من غير إدارة مستخدمين أو مفاتيح.'},
+  roleD_viewer:{en:'Reads everything, changes nothing.',ar:'يشوف كل حاجة ومايغيّرش حاجة.'},
+  roleD_disabled:{en:'Cannot sign in; the account and its history are kept.',ar:'مايقدرش يدخل؛ الحساب وتاريخه محفوظين.'},
+  viewerNote:{en:'Your role can view only: saving and uploading are refused.',ar:'صلاحيتك مشاهدة بس: الحفظ والرفع مرفوضين.'},
   /* home */
   heroEyebrow:{en:'Egyptian Drug Authority · NP.CAPP.065 v5 · eCTD 3.2.2 / 4.0',ar:'هيئة الدواء المصرية · NP.CAPP.065 الإصدار 5 · eCTD 3.2.2 / 4.0'},
   heroTitle:{en:'The regulatory dossier, built right the first time.',ar:'ملف التسجيل — مطابق من أول مرة.'},
@@ -438,25 +466,34 @@ const prov = p => p ? `<span class="prov ${esc(p)}">${esc(t('prov_'+p.replace(/-
 const dateL = d => fmtDate(d, S.lang), tsL = ts => fmtTs(ts, S.lang);
 
 /* ---------------- chrome */
-const NAV = [['home','#/','home','navHome'],['dossiers','#/dossiers','layers','navDossiers'],['variations','#/variations','branch','navVars'],['suite','/suite/','folder','navSuite']];
+const NAV_BASE = [['home','#/','home','navHome'],['dossiers','#/dossiers','layers','navDossiers'],['variations','#/variations','branch','navVars'],['suite','/suite/','folder','navSuite']];
+const NAV_USERS = ['users','#/users','users','navUsers'];
+/* the Users entry: when sign-in can be turned on here, or for a signed-in administrator */
+const navItems = () => (S.auth && (S.auth.can_enable || (S.me && S.me.auth && S.me.role==='admin'))) ? NAV_BASE.concat([NAV_USERS]) : NAV_BASE;
 const DNAV = [['guide','compass','navGuide'],['board','checklist','navBoard'],['data','database','navData'],['publisher','tree','navPublisher'],['checks','shield','navChecks'],['review','stamp','navReview'],['export','package','navExport'],['audit','history','navAudit']];
-$('#nav').innerHTML = NAV.map(([r,h,i,k])=>`<a href="${h}" data-r="${r}">${icon(i)}<span data-t="${k}"></span></a>`).join('')
-  + `<div class="grp" data-t="navCurrent"></div>` + DNAV.map(([r,i,k])=>`<a href="#" data-r="${r}" id="nav${r[0].toUpperCase()+r.slice(1)}" aria-disabled="true">${icon(i)}<span data-t="${k}"></span></a>`).join('');
+function paintNav(){ $('#nav').innerHTML = navItems().map(([r,h,i,k])=>`<a href="${h}" data-r="${r}">${icon(i)}<span data-t="${k}"></span></a>`).join('')
+  + `<div class="grp" data-t="navCurrent"></div>` + DNAV.map(([r,i,k])=>`<a href="#" data-r="${r}" id="nav${r[0].toUpperCase()+r.slice(1)}" aria-disabled="true">${icon(i)}<span data-t="${k}"></span></a>`).join(''); paintT(); }
 function paintT(){ $$('[data-t]').forEach(e=>e.textContent=t(e.dataset.t)); }
+paintNav();
 function setLang(l){ S.lang=l; store.set('db.lang',l); document.documentElement.lang=l; document.documentElement.dir = l==='ar'?'rtl':'ltr';
   $('#lang-ar').classList.toggle('on',l==='ar'); $('#lang-en').classList.toggle('on',l==='en'); paintT(); if(S.me) paintMe(); route(); }
 $('#lang-ar').onclick=()=>setLang('ar'); $('#lang-en').onclick=()=>setLang('en');
 $('#theme').onclick=DS.theme.toggle; DS.theme.init(); DS.wireChrome();
-function paintMe(){ const m=S.me; if(!m||!m.auth) return; $('#who').hidden=false; $('#who').innerHTML=`${icon('user',14)} ${esc(m.user)} · ${esc(t('role_'+m.role))}`; $('#logout').hidden=false; $('#logout').textContent=t('logout'); }
+function paintMe(){ const m=S.me, on=!!(m&&m.auth); document.body.dataset.role = on ? m.role : 'local';
+  $('#who').hidden=$('#logout').hidden=$('#pwBtn').hidden=!on; $('#roleNote').hidden=!(on&&m.role==='viewer'); if(!on) return;
+  $('#who').innerHTML=`${icon('user',14)} ${esc(m.user)} · ${esc(t('role_'+m.role))}`; $('#logout').textContent=t('logout');
+  $('#pwBtn').innerHTML=icon('key',14); $('#pwBtn').title=t('pwBtn'); $('#pwBtn').setAttribute('aria-label',t('pwBtn')); $('#roleNote').innerHTML=`${icon('eye')}<p>${esc(t('viewerNote'))}</p>`; }
 $('#logout').onclick=async()=>{ await api('/logout',{method:'POST'}); location.href='/login'; };
-api('/me').then(m=>{ S.me=m; paintMe(); }).catch(()=>{});
+$('#pwBtn').onclick=()=>pwDrawer();
+Promise.all([api('/me'), api('/auth').catch(()=>null)]).then(([m,a])=>{ S.me=m; S.auth=a; paintMe(); paintNav(); if(S.navR) nav(S.navR); }).catch(()=>{});
 
 function nav(r){
+  S.navR = r;
   const id = S.dossier && S.dossier.id;
   DNAV.forEach(([k])=>{ const a=$('#nav'+k[0].toUpperCase()+k.slice(1)); a.href = id?`#/d/${id}/${k}`:'#'; a.setAttribute('aria-disabled', id?'false':'true'); });
   $$('#nav a').forEach(a=>a.classList.toggle('on', a.dataset.r===r));
   const m=$('#mobnav');
-  m.innerHTML = NAV.map(([k,h,_,tk])=>`<option value="${h}" ${k===r?'selected':''}>${esc(t(tk))}</option>`).join('')
+  m.innerHTML = navItems().map(([k,h,_,tk])=>`<option value="${h}" ${k===r?'selected':''}>${esc(t(tk))}</option>`).join('')
     + (id? DNAV.map(([k,_,tk])=>`<option value="#/d/${id}/${k}" ${k===r?'selected':''}>— ${esc(t(tk))}</option>`).join('') : '');
   m.onchange=()=>{ if(m.value.startsWith('#')) location.hash=m.value; else location.href=m.value; };
   const sec = DNAV.find(x=>x[0]===r);
@@ -471,6 +508,7 @@ async function route(){
     if(h==='/new'){ S.dossier=null; nav('dossiers'); return wizard(); }
     if(h==='/variations'){ S.dossier=null; nav('variations'); return varsView(tok); }
     if(h==='/dossiers'){ S.dossier=null; nav('dossiers'); return dossiersView(tok); }
+    if(h==='/users'){ S.dossier=null; nav('users'); return usersView(tok); }
     if(!m){ S.dossier=null; nav('home'); return home(tok); }
     if(!S.dossier || S.dossier.id!==m[1]) S.dossier = await api(`/dossiers/${m[1]}`);
     if(tok!==S.rt) return;
@@ -484,6 +522,65 @@ async function route(){
     if(m[2]==='review') return reviewView(tok, m[3]||'desk');
     return auditView(tok);
   }catch(e){ if(tok===S.rt) $('#view').innerHTML = `<div class="alert bad">${icon('alert')}<p><b>${esc(t('err'))}:</b> ${esc(e.message)}</p></div>`; }
+}
+
+
+/* ---------------- Users & sign-in («المستخدمون»): the switch, the accounts, the roles */
+const isAdmin = () => !S.me || !S.me.auth || S.me.role==='admin';
+const ROLE_CHIP = {admin:'c-ok', editor:'c-rec', viewer:'c-wait', disabled:'c-bad'};
+function pwForm(ids, withOld){ return `<div class="form">${withOld?`<label class="f"><span>${esc(t('curPw'))}</span><input type="password" id="${ids}Old" dir="ltr" autocomplete="current-password"></label>`:''}
+  <label class="f"><span>${esc(t('newPw'))}</span><input type="password" id="${ids}New" dir="ltr" autocomplete="new-password"></label>
+  <label class="f"><span>${esc(t('password2'))}</span><input type="password" id="${ids}New2" dir="ltr" autocomplete="new-password"></label></div><p class="small muted">${esc(t('pwRule'))}</p>`; }
+function pwCheck(ids){ const p=$(`#${ids}New`).value; if(p.length<10){ toast(t('pwRule')); $(`#${ids}New`).focus(); return null; }
+  if(p!==$(`#${ids}New2`).value){ toast(t('pwMismatch')); $(`#${ids}New2`).focus(); return null; } return p; }
+async function changeMyPw(ids){ const p=pwCheck(ids); if(!p) return false;
+  try{ await api('/me/password',{method:'POST',json:{old:$(`#${ids}Old`).value,new:p}}); toast(t('pwChanged')); return true; }catch(e){ toast(e.message); return false; } }
+function pwDrawer(){ openDrawer(t('myPw'), `${pwForm('pw',true)}<div class="acts"><button class="btn pri" id="pwGo">${icon('key',14)} ${esc(t('resetPw'))}</button></div>`);
+  $('#pwGo').onclick=async()=>{ if(await changeMyPw('pw')) closeDrawer(); }; }
+async function refreshMe(){ const [m,a]=await Promise.all([api('/me'), api('/auth')]); S.me=m; S.auth=a; paintMe(); paintNav(); if(S.navR) nav(S.navR); }
+async function usersView(tok){
+  const [a, me] = await Promise.all([api('/auth'), api('/me')]); S.auth=a; S.me=me; paintMe(); paintNav(); nav('users');   // the screen depends on who is asking: never on a stale or not-yet-loaded /me
+  const head=`<div class="head"><div class="title"><h1>${esc(t('users'))}</h1><p class="sub">${esc(t('usersSub'))}</p></div></div>`;
+  const legend=`<section class="card pad stack gap-s"><b>${esc(t('rolesT'))}</b><div class="grid2">${['admin','editor','viewer','disabled'].map(r=>`<div class="row gap-s" style="align-items:flex-start"><span class="chip ${ROLE_CHIP[r]}"><i></i>${esc(t('role_'+r))}</span><span class="small muted">${esc(t('roleD_'+r))}</span></div>`).join('')}</div></section>`;
+  const myPw=cls=>`<section class="card pad stack gap-s" style="max-width:520px"><b>${esc(t('myPw'))}</b>${pwForm('mp',true)}<div class="acts"><button class="btn ${cls}" id="mpGo">${icon('key',14)} ${esc(t('resetPw'))}</button></div></section>`;
+  const wireMyPw=()=>{ const b=$('#mpGo'); if(b) b.onclick=async()=>{ if(await changeMyPw('mp')) $('#mpOld').value=$('#mpNew').value=$('#mpNew2').value=''; }; };
+  if(!a.enabled){
+    if(!a.switchable){ show(tok, head+`<div class="alert info">${icon('info')}<p>${esc(t('usersNoSwitch'))}</p></div>`); return; }
+    const first=!a.users;
+    if(!show(tok, head+`<section class="card pad stack gap-s" style="max-width:620px"><div class="alert info">${icon('lock')}<p>${esc(t(first?'usersOffFirst':'usersOffAgain'))}</p></div>
+      <div class="form"><label class="f"><span>${esc(t('username'))}</span><input id="enUser" dir="ltr" autocomplete="username"></label>
+      <label class="f"><span>${esc(t('password'))}</span><input id="enPw" type="password" dir="ltr" autocomplete="${first?'new-password':'current-password'}"></label>
+      ${first?`<label class="f"><span>${esc(t('password2'))}</span><input id="enPw2" type="password" dir="ltr" autocomplete="new-password"></label>`:''}</div>
+      ${first?`<p class="small muted">${esc(t('pwRule'))}</p>`:''}
+      <div class="acts"><button class="btn pri" id="enGo">${icon('lock')} ${esc(t('enableLogin'))}</button></div></section>${legend}`)) return;
+    $('#enGo').onclick=async()=>{ const u=$('#enUser').value.trim(), p=$('#enPw').value; if(!u){ $('#enUser').focus(); return; }
+      if(first){ if(p.length<10){ toast(t('pwRule')); $('#enPw').focus(); return; } if(p!==$('#enPw2').value){ toast(t('pwMismatch')); $('#enPw2').focus(); return; } }
+      try{ await api('/auth/enable',{method:'POST',json:{username:u,password:p}}); await refreshMe(); toast(t('loginEnabled')); route(); }catch(e){ toast(e.message); } };
+    return;
+  }
+  if(me.role!=='admin'){ if(show(tok, head+myPw('pri')+legend)) wireMyPw(); return; }
+  const list = await api('/users');
+  const roleSel=u=>`<select data-role-of="${esc(u.username)}" ${u.username===me.user?'disabled':''}>${['admin','editor','viewer','disabled'].map(r=>`<option value="${r}" ${r===u.role?'selected':''}>${esc(t('role_'+r))}</option>`).join('')}</select>`;
+  const rows=list.map(u=>`<tr data-user="${esc(u.username)}"><td><b dir="ltr">${esc(u.username)}</b>${u.username===me.user?` <span class="tag">${esc(t('you'))}</span>`:''}</td><td>${roleSel(u)}</td><td class="hide-m code small">${tsL(u.created)}</td><td class="code small">${u.last_login?tsL(u.last_login):esc(t('never'))}</td>
+    <td class="end"><div class="row gap-s" style="justify-content:flex-end"><button class="btn sm" data-reset="${esc(u.username)}">${icon('key',14)} ${esc(t('resetPw'))}</button>${u.username===me.user?'':`<button class="btn sm" data-del="${esc(u.username)}">${icon('x',14)} ${esc(t('delUser'))}</button>`}</div></td></tr>`).join('');
+  const html=head+`<section class="card"><div class="hd"><h2>${esc(t('navUsers'))} <span class="tag">${list.length}</span></h2>${a.can_disable?`<button class="btn sm" id="authOff">${icon('lock',14)} ${esc(t('disableLogin'))}</button>`:`<span class="small muted">${esc(t('loginForced'))}</span>`}</div>
+    <div class="tablewrap"><table id="usersTable"><thead><tr><th>${esc(t('username'))}</th><th>${esc(t('role'))}</th><th class="hide-m">${esc(t('created'))}</th><th>${esc(t('lastLogin'))}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="pad stack gap-s" style="border-top:1px solid var(--line)"><b>${esc(t('addUser'))}</b><div class="form"><label class="f"><span>${esc(t('username'))}</span><input id="nuUser" dir="ltr" autocomplete="off"></label>
+      <label class="f"><span>${esc(t('password'))}</span><input id="nuPw" type="password" dir="ltr" autocomplete="new-password"></label>
+      <label class="f"><span>${esc(t('role'))}</span><select id="nuRole">${['editor','viewer','admin'].map(r=>`<option value="${r}">${esc(t('role_'+r))}</option>`).join('')}</select></label></div>
+      <div class="row gap-s"><button class="btn pri sm" id="nuAdd">${icon('plus',14)} ${esc(t('addUser'))}</button><span class="small muted">${esc(t('pwRule'))}</span></div></div></section>
+    ${myPw('sm')}${legend}`;
+  if(!show(tok, html)) return;
+  wireMyPw();
+  $$('[data-role-of]').forEach(s=>s.onchange=async()=>{ try{ await api(`/users/${encodeURIComponent(s.dataset.roleOf)}`,{method:'PUT',json:{role:s.value}}); toast(t('roleSaved')); }catch(e){ toast(e.message); route(); } });
+  $$('[data-reset]').forEach(b=>b.onclick=()=>{ const u=b.dataset.reset; openDrawer(`${t('resetPw')} · ${u}`, `${pwForm('rp',false)}<div class="acts"><button class="btn pri" id="rpGo">${icon('key',14)} ${esc(t('resetPw'))}</button></div>`);
+    $('#rpGo').onclick=async()=>{ const p=pwCheck('rp'); if(!p) return; try{ await api(`/users/${encodeURIComponent(u)}`,{method:'PUT',json:{password:p}}); closeDrawer(); toast(t('pwSet')); }catch(e){ toast(e.message); } }; });
+  $$('[data-del]').forEach(b=>b.onclick=()=>{ const u=b.dataset.del; openDrawer(`${t('delUser')} · ${u}`, `<div class="alert bad">${icon('alert')}<p>${esc(t('delUserQ'))}</p></div><div class="acts"><button class="btn pri" id="delGo">${icon('x',14)} ${esc(t('delUser'))}</button></div>`);
+    $('#delGo').onclick=async()=>{ try{ await api(`/users/${encodeURIComponent(u)}`,{method:'DELETE'}); closeDrawer(); toast(t('userRemoved')); route(); }catch(e){ toast(e.message); } }; });
+  $('#nuAdd').onclick=async()=>{ const u=$('#nuUser').value.trim(), p=$('#nuPw').value; if(!u){ $('#nuUser').focus(); return; } if(p.length<10){ toast(t('pwRule')); $('#nuPw').focus(); return; }
+    try{ await api('/users',{method:'POST',json:{username:u,password:p,role:$('#nuRole').value}}); toast(t('userAdded')); route(); }catch(e){ toast(e.message); } };
+  const off=$('#authOff'); if(off) off.onclick=()=>{ openDrawer(t('disableLogin'), `<div class="alert info">${icon('lock')}<p>${esc(t('disableNote'))}</p></div><div class="acts"><button class="btn pri" id="offGo">${icon('lock',14)} ${esc(t('disableLogin'))}</button></div>`);
+    $('#offGo').onclick=async()=>{ try{ await api('/auth/disable',{method:'POST'}); closeDrawer(); await refreshMe(); toast(t('loginDisabled')); route(); }catch(e){ toast(e.message); } }; };
 }
 
 /* ---------------- Assistant («المساعد»): Claude inside the program, one conversation per dossier */
@@ -515,9 +612,9 @@ function asstPaint(st, first){ const body=$('#asstBody'); if(!body) return; cons
   const u=st.usage||{}, cost=u.cost_usd?` · $${(+u.cost_usd).toFixed(2)}`:'';
   $('#asstStatus').innerHTML = set.browser ? `<div class="alert info">${icon('info')}<p class="small">${esc(t('asstBrowser'))}</p></div>`
     : !set.configured ? `<div class="alert">${icon('alert')}<p class="small">${esc(t('asstNotConf'))}</p></div>`
-    : `<div class="row gap-s small muted"><span class="chip c-ok"><i></i>${esc(set.model)} · ${esc(set.effort)}</span><span>${esc(t('asstUsage'))}: ${(u.input_tokens||0)+(u.cache_read_input_tokens||0)} / ${u.output_tokens||0}${cost}</span>${st.readings?`<span>· ${st.readings} ${esc(t('asstReadings'))}</span>`:''}<span class="grow"></span><button class="btn sm ghost" id="asstGear" title="${esc(t('asstKeyT'))}">⚙</button></div>`;
+    : `<div class="row gap-s small muted"><span class="chip c-ok"><i></i>${esc(set.model)} · ${esc(set.effort)}</span><span>${esc(t('asstUsage'))}: ${(u.input_tokens||0)+(u.cache_read_input_tokens||0)} / ${u.output_tokens||0}${cost}</span>${st.readings?`<span>· ${st.readings} ${esc(t('asstReadings'))}</span>`:''}<span class="grow"></span><button class="btn sm ghost admin-only" id="asstGear" title="${esc(t('asstKeyT'))}">⚙</button></div>`;
   const gear=$('#asstGear'); if(gear) gear.onclick=()=>{ S.asst.gear=!S.asst.gear; asstPaint(S.asst.state,false); };
-  $('#asstSettings').innerHTML = (!set.browser && (!set.configured || S.asst.gear)) ? asstSettingsForm(set) : '';
+  $('#asstSettings').innerHTML = (!set.browser && isAdmin() && (!set.configured || S.asst.gear)) ? asstSettingsForm(set) : '';
   const save=$('#asstSave'); if(save) save.onclick=async()=>{ const k=$('#asstKey'); const body={model:$('#asstModel').value, effort:$('#asstEffort').value, budget_tokens:parseInt($('#asstBudget').value,10)||120000}; if(k&&k.value.trim()) body.api_key=k.value.trim();
     save.disabled=true; try{ await api('/assistant/settings',{method:'PUT',json:body}); const r=await api('/assistant/settings/test',{method:'POST'}); $('#asstSetMsg').textContent=`${t('asstKeyOk')} · ${r.model}`; S.asst.gear=false; S.caps=null; setTimeout(()=>asstRefresh(false), 600); }
     catch(e){ $('#asstSetMsg').textContent=e.message; } finally{ save.disabled=false; } };
@@ -805,8 +902,8 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
   const d=S.drive;
   const fileList=files=>files.length?`<div class="rows tablewrap"><table><thead><tr><th></th><th>${esc(t('driveName'))}</th><th>${esc(t('driveType'))}</th><th>${esc(t('driveSize'))}</th></tr></thead><tbody>${files.map((f,i)=>`<tr><td>${f.kind==='folder'?`<button class="btn sm ghost" data-drvopen="${esc(f.id)}" title="${esc(f.name)}">▸</button>`:`<input type="checkbox" data-drvsel="${i}" ${f.usable?'checked':'disabled'}>`}</td><td dir="auto">${esc(f.path||f.name)}${f.export?` <span class="small muted">→ ${esc(f.export)}</span>`:''}</td><td class="small muted">${esc(driveType(f))}</td><td class="small muted">${f.size?fmtSize(f.size):''}</td></tr>`).join('')}</tbody></table></div>${files.some(f=>f.usable)?'':`<p class="small muted">${esc(t('driveNoUsable'))}</p>`}`:`<p class="small muted">${esc(t('driveHow'))}</p>`;
   const paint=()=>{ openDrawer(t('driveT'), `<div class="stack gap-s">
-    <div class="row gap-s small muted"><span class="chip ${ds.mode==='public'&&ds.browser?'c-warn':'c-ok'}"><i></i>${esc(t('driveMode_'+ds.mode))}</span>${ds.service_account_email?`<span class="code">${esc(ds.service_account_email)}</span>`:''}<span class="grow"></span><button class="btn sm ghost" id="drvGear" title="${esc(t('driveSet'))}">⚙</button></div>
-    <div id="drvSet">${(d.gear||(ds.browser&&ds.mode==='public'))?driveSettingsForm(ds):''}</div>
+    <div class="row gap-s small muted"><span class="chip ${ds.mode==='public'&&ds.browser?'c-warn':'c-ok'}"><i></i>${esc(t('driveMode_'+ds.mode))}</span>${ds.service_account_email?`<span class="code">${esc(ds.service_account_email)}</span>`:''}<span class="grow"></span><button class="btn sm ghost admin-only" id="drvGear" title="${esc(t('driveSet'))}">⚙</button></div>
+    <div id="drvSet">${(isAdmin()&&(d.gear||(ds.browser&&ds.mode==='public')))?driveSettingsForm(ds):''}</div>
     <div class="row gap-s"><input type="text" id="drvLink" dir="ltr" placeholder="https://drive.google.com/drive/folders/…" value="${esc(d.link)}" style="flex:1"><button class="btn pri" id="drvList">${esc(t('driveList'))}</button></div>
     <label class="small row gap-s"><input type="checkbox" id="drvRec" ${d.recursive?'checked':''}> ${esc(t('driveRec'))}</label>
     <div id="drvFiles">${fileList(d.files)}</div>

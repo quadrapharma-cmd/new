@@ -135,6 +135,24 @@ Word (so they can be amended), Sheets and Slides to PDF; everything is read-only
 Drive»; the board's bulk upload has it too; the Assistant has `drive_list` and `drive_fetch` (a file becomes an unplaced document,
 then `read_document` and `place_document`). Tests: `tests/test_drive.py` (a stand-in for Google's HTTP).
 
+## Users and sign-in
+
+Sign-in is a **switch the owner controls** (`auth.json` in the workspace, `engine/dossier_engine/app/auth.py`). A fresh local or desktop
+install opens without a password (one person on one computer). The **Users** screen (`#/users`) turns it on: the owner creates the first
+administrator and is signed in at once; from then on the program asks for a username and password, `users.json` holds scrypt hashes
+(mode 600), sessions are signed cookies (12 h), writes need the `X-DB: 1` header, five wrong passwords lock a name for 15 minutes.
+Roles: **administrator** (everything, plus users, the switch and the keys of the Assistant and Drive), **editor** (builds, uploads,
+reviews, exports), **viewer** (reads everything, every write is refused by the server, the page says so and dims the primary buttons),
+**disabled** (cannot sign in; the account and its history stay). The administrator adds users, changes roles, sets passwords, deletes
+accounts (never their own, never the last administrator), sees the last sign-in, and can turn sign-in off again (accounts kept; turning
+it back on needs an administrator's password). Everyone changes their own password from the key button in the header. Every step is in
+the activity log with who did it (`auth.enabled`, `auth.disabled`, `user.added`, `user.updated`, `user.removed`, `login`, `login.failed`).
+API: `GET /api/auth` (state, counts only), `POST /api/auth/enable`, `POST /api/auth/disable`, `GET/POST /api/users`,
+`PUT/DELETE /api/users/{username}`, `POST /api/me/password`. The cloud/company edition (`DB_MODE=cloud` or `DB_AUTH=1`, first
+administrator from `DB_ADMIN_USER`/`DB_ADMIN_PASSWORD`) keeps sign-in always on; the browser edition has no accounts (one person,
+one browser). A switch left on with no administrator stays open rather than locking everyone out. Tests: `tests/test_users.py`,
+`tests/test_ui_users.py`, `tests/test_auth.py`, `tests/test_roles_audit.py`.
+
 ## Browser edition (open from a link, nothing to install)
 
 `web/` turns the same app into a claude.ai artifact: the Python engine runs **inside the browser** (Pyodide), the
