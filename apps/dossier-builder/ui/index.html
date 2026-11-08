@@ -273,7 +273,18 @@ const T = {
   apiManMissing:{en:'manufacturer not read — type it',ar:'المصنع ما اتقراش — اكتبه'}, compRead:{en:'Composition rows read',ar:'صفوف التركيب اللي اتقرت'}, batchRead:{en:'Batches',ar:'تشغيلات'}, toData:{en:'they go to the product data after the dossier is created',ar:'بتتحط في بيانات المنتج بعد إنشاء الملف'}, pagesN:{en:'p.',ar:'صفحة'}, fText:{en:'text',ar:'نص مقروء'},
   fScan:{en:'scan — no text layer',ar:'سكان بدون نص'}, fVision:{en:'scan read from its page images',ar:'سكان اتقرى من صور صفحاته'},
   scanByVision:{en:'Scans without text were read from their page images by Claude',ar:'المستندات الممسوحة بدون نص اتقرت من صور صفحاتها بواسطة Claude'},
-  scanUnread:{en:'Scans without text — not read on this computer',ar:'مستندات ممسوحة بدون نص — ما اتقرتش على الجهاز ده'}, fOcr:{en:'scan read by OCR',ar:'سكان اتقرى بـ OCR'}, whatRead:{en:'What was read',ar:'اللي اتقرى'},
+  scanUnread:{en:'Scans without text — not read on this computer',ar:'مستندات ممسوحة بدون نص — ما اتقرتش على الجهاز ده'},
+  asst:{en:'Assistant',ar:'المساعد'}, asstBrowser:{en:'The Assistant works in the desktop and cloud editions: it needs the company\'s Anthropic key on the server.',ar:'المساعد بيشتغل في نسخة سطح المكتب والسحابة: محتاج مفتاح Anthropic بتاع الشركة على الخادم.'},
+  asstNotConf:{en:'Set the company\'s Anthropic API key below to switch the Assistant on. The key stays on this computer and is never shown again.',ar:'سجّل مفتاح Anthropic بتاع الشركة تحت عشان المساعد يشتغل. المفتاح بيفضل على الجهاز ده ومش بيتعرض تاني.'},
+  asstKeyT:{en:'Assistant settings',ar:'إعدادات المساعد'}, asstKeyHint:{en:'A pay-as-you-go account at console.anthropic.com. Reading a 300-page dossier costs about 5 USD.',ar:'حساب دفع بالاستخدام من console.anthropic.com. قراءة ملف 300 صفحة بتكلف حوالي 5 دولار.'},
+  asstKey:{en:'API key',ar:'مفتاح API'}, asstKeyEnv:{en:'The key comes from the ANTHROPIC_API_KEY environment variable.',ar:'المفتاح جاي من متغير البيئة ANTHROPIC_API_KEY.'}, asstModel:{en:'Model',ar:'النموذج'}, asstEffort:{en:'Effort',ar:'الجهد'},
+  asstBudget:{en:'Token budget per turn',ar:'ميزانية الرموز لكل دور'}, asstSave:{en:'Save and test',ar:'احفظ واختبر'}, asstKeyOk:{en:'The key works',ar:'المفتاح شغّال'}, asstUsage:{en:'tokens in / out',ar:'رموز دخل / خرج'},
+  asstWorking:{en:'working…',ar:'بيشتغل…'}, asstResults:{en:'tool results',ar:'نتائج أدوات'}, asstApprovalT:{en:'The Assistant wants to do this step. Approve?',ar:'المساعد عايز يعمل الخطوة دي. توافق؟'},
+  asstApprove:{en:'Approve',ar:'موافق'}, asstDeny:{en:'Deny',ar:'ارفض'}, asstPlaceholder:{en:'Write to the Assistant… (Ctrl+Enter sends)',ar:'اكتب للمساعد… (Ctrl+Enter للإرسال)'}, asstAttach:{en:'Attach files',ar:'أرفق ملفات'},
+  asstSend:{en:'Send',ar:'إرسال'}, asstStop:{en:'Stop',ar:'وقّف'}, asstClear:{en:'Clear chat',ar:'امسح المحادثة'}, asstClearQ:{en:'Clear this dossier\'s conversation? The activity log keeps what was done.',ar:'تمسح محادثة الملف ده؟ سجل النشاط بيفضل زي ما هو.'},
+  asstEmpty:{en:'Ask for anything about this dossier: «read the uploaded documents and fill the data», «review the dossier and draft the responses», «what is missing before export?». Export, signing and withdrawals wait for your approval.',
+            ar:'اطلب أي حاجة في الملف ده: «اقرأ المستندات اللي اترفعت واملأ البيانات»، «راجع الملف واكتب الردود»، «إيه الناقص قبل التصدير؟». التصدير والتوقيع والسحب بيستنوا موافقتك.'},
+  asstReadings:{en:'saved digests',ar:'خلاصات محفوظة'}, asstStopped:{en:'stopped',ar:'اتوقف'}, asstErr:{en:'The Assistant stopped with an error',ar:'المساعد وقف بخطأ'}, fOcr:{en:'scan read by OCR',ar:'سكان اتقرى بـ OCR'}, whatRead:{en:'What was read',ar:'اللي اتقرى'},
   scanHint:{en:'A scanned document has no text. On this computer, install tesseract (Arabic) for automatic OCR; in the browser edition allow Claude to read the page images; or type the values by hand.',
             ar:'المستند صورة ممسوحة بدون نص. على الجهاز: ثبّت tesseract (عربي) عشان القراءة التلقائية؛ في نسخة المتصفح: وافق على إن Claude يقرأ صور الصفحات؛ أو اكتب القيم بإيدك.'},
   filled:{en:'Fields filled — check each step, then create the dossier.',ar:'الخانات اتملت — راجع كل خطوة وبعدين أنشئ الملف.'},
@@ -436,6 +447,7 @@ async function route(){
   const tok = ++S.rt;
   const h = location.hash.replace(/^#/,'') || '/';
   const m = h.match(/^\/d\/([^/]+)\/(guide|board|data|publisher|checks|export|audit|review)(?:\/([a-z]+))?$/);
+  asstFab(m?m[1]:null);
   try{
     if(h==='/new'){ S.dossier=null; nav('dossiers'); return wizard(); }
     if(h==='/variations'){ S.dossier=null; nav('variations'); return varsView(tok); }
@@ -454,6 +466,65 @@ async function route(){
     return auditView(tok);
   }catch(e){ if(tok===S.rt) $('#view').innerHTML = `<div class="alert bad">${icon('alert')}<p><b>${esc(t('err'))}:</b> ${esc(e.message)}</p></div>`; }
 }
+
+/* ---------------- Assistant («المساعد»): Claude inside the program, one conversation per dossier */
+const ASST_TOOLS={get_dossier:{ar:'قرأ بيانات الملف',en:'read the dossier'},get_board:{ar:'فحص اللوحة',en:'looked at the board'},get_slot:{ar:'فحص بند',en:'looked at an item'},get_data:{ar:'قرأ البيانات',en:'read the data'},
+  put_data:{ar:'كتب بيانات',en:'wrote data'},set_profile:{ar:'عدّل الملف التعريفي',en:'changed the profile'},read_document:{ar:'قرأ مستند',en:'read a document'},save_reading:{ar:'حفظ خلاصة',en:'saved a digest'},get_readings:{ar:'راجع الخلاصات',en:'checked digests'},
+  classify_unassigned:{ar:'صنّف الملفات',en:'classified files'},place_document:{ar:'حط مستند في مكانه',en:'placed a document'},generate_document:{ar:'ولّد مستند',en:'generated a document'},get_gate:{ar:'فحص بوابة التصدير',en:'checked the export gate'},
+  run_review:{ar:'شغّل المراجعة',en:'ran the review'},get_findings:{ar:'قرأ النتائج',en:'read findings'},get_finding:{ar:'قرأ نتيجة',en:'read a finding'},act_on_finding:{ar:'قيّم نتيجة',en:'assessed a finding'},add_response:{ar:'كتب رد',en:'drafted a response'},
+  reassess_finding:{ar:'أعاد التقييم',en:'re-assessed'},make_review_letter:{ar:'أصدر خطاب',en:'made a letter'},request_reissue:{ar:'طلب إعادة إصدار',en:'requested re-issue'},get_audit:{ar:'قرأ السجل',en:'read the log'},
+  export_dossier:{ar:'تصدير الملف',en:'export the dossier'},sign_review:{ar:'توقيع المراجعة',en:'sign the review'},withdraw_document:{ar:'سحب مستند',en:'withdraw a document'}};
+const ASST_APPROVAL=['export_dossier','sign_review','withdraw_document'];
+const asstTool=n=>L(ASST_TOOLS[n]||{ar:n,en:n});
+S.asst={did:null,timer:null,state:null,gear:false};
+function asstFab(did){ let b=$('#asstFab'); if(!did){ if(b) b.remove(); S.asst.did=null; return; } S.asst.did=did;
+  if(!b){ b=document.createElement('button'); b.id='asstFab'; b.className='asst-fab'; b.type='button'; b.innerHTML=`${icon('sparkles')} <span>${esc(t('asst'))}</span>`; b.onclick=()=>asstOpen(); document.body.appendChild(b); } }
+async function asstOpen(){ const did=S.asst.did||(S.dossier&&S.dossier.id); if(!did) return; S.asst.did=did; S.asst.gear=false;
+  openDrawer(t('asst'), `<div id="asstBody" class="stack gap-s"><div class="small muted">…</div></div>`, true); await asstRefresh(true); }
+async function asstRefresh(first){ const did=S.asst.did; clearTimeout(S.asst.timer); if(!did||!$('#asstBody')||$('#drawer').hidden) return;
+  let st; try{ st=await api(`/dossiers/${did}/assistant`); }catch(e){ if($('#asstBody')) $('#asstBody').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; return; }
+  if(S.asst.did!==did||!$('#asstBody')) return; S.asst.state=st; asstPaint(st, first);
+  const active=st.run&&['running','waiting_approval'].includes(st.run.status); if(active) S.asst.timer=setTimeout(()=>asstRefresh(false), 1200); }
+function asstSettingsForm(set){ return `<div class="card pad stack gap-s" id="asstSetBox"><b>${esc(t('asstKeyT'))}</b><p class="small muted">${esc(t('asstKeyHint'))}</p>
+  <div class="form">${set.source==='env'?`<p class="small muted">${esc(t('asstKeyEnv'))}</p>`:`<label class="f"><span>${esc(t('asstKey'))}</span><input type="password" id="asstKey" placeholder="${esc(set.key_hint||'sk-ant-…')}" autocomplete="off" dir="ltr"></label>`}
+   <label class="f"><span>${esc(t('asstModel'))}</span><select id="asstModel">${(set.models||[]).map(m=>`<option ${m===set.model?'selected':''}>${m}</option>`).join('')}</select></label>
+   <label class="f"><span>${esc(t('asstEffort'))}</span><select id="asstEffort">${(set.efforts||[]).map(m=>`<option ${m===set.effort?'selected':''}>${m}</option>`).join('')}</select></label>
+   <label class="f"><span>${esc(t('asstBudget'))}</span><input type="number" id="asstBudget" value="${set.budget_tokens||120000}" min="20000" step="10000" dir="ltr"></label></div>
+  <div class="row gap-s"><button class="btn pri sm" id="asstSave">${icon('check',14)} ${esc(t('asstSave'))}</button><span class="small muted" id="asstSetMsg"></span></div></div>`; }
+function asstPaint(st, first){ const body=$('#asstBody'); if(!body) return; const set=st.settings||{}, run=st.run; const active=run&&['running','waiting_approval'].includes(run.status);
+  if(first||!$('#asstMsgs')){ body.innerHTML=`<div id="asstStatus"></div><div id="asstSettings"></div><div id="asstMsgs" class="amsg"></div><div id="asstApprovals" class="stack gap-s"></div><div id="asstComposer"></div>`; asstComposer(); }
+  const u=st.usage||{}, cost=u.cost_usd?` · $${(+u.cost_usd).toFixed(2)}`:'';
+  $('#asstStatus').innerHTML = set.browser ? `<div class="alert info">${icon('info')}<p class="small">${esc(t('asstBrowser'))}</p></div>`
+    : !set.configured ? `<div class="alert">${icon('alert')}<p class="small">${esc(t('asstNotConf'))}</p></div>`
+    : `<div class="row gap-s small muted"><span class="chip c-ok"><i></i>${esc(set.model)} · ${esc(set.effort)}</span><span>${esc(t('asstUsage'))}: ${(u.input_tokens||0)+(u.cache_read_input_tokens||0)} / ${u.output_tokens||0}${cost}</span>${st.readings?`<span>· ${st.readings} ${esc(t('asstReadings'))}</span>`:''}<span class="grow"></span><button class="btn sm ghost" id="asstGear" title="${esc(t('asstKeyT'))}">⚙</button></div>`;
+  const gear=$('#asstGear'); if(gear) gear.onclick=()=>{ S.asst.gear=!S.asst.gear; asstPaint(S.asst.state,false); };
+  $('#asstSettings').innerHTML = (!set.browser && (!set.configured || S.asst.gear)) ? asstSettingsForm(set) : '';
+  const save=$('#asstSave'); if(save) save.onclick=async()=>{ const k=$('#asstKey'); const body={model:$('#asstModel').value, effort:$('#asstEffort').value, budget_tokens:parseInt($('#asstBudget').value,10)||120000}; if(k&&k.value.trim()) body.api_key=k.value.trim();
+    save.disabled=true; try{ await api('/assistant/settings',{method:'PUT',json:body}); const r=await api('/assistant/settings/test',{method:'POST'}); $('#asstSetMsg').textContent=`${t('asstKeyOk')} · ${r.model}`; S.asst.gear=false; S.caps=null; setTimeout(()=>asstRefresh(false), 600); }
+    catch(e){ $('#asstSetMsg').textContent=e.message; } finally{ save.disabled=false; } };
+  const M=$('#asstMsgs'); const atBottom=M.scrollHeight-M.scrollTop-M.clientHeight<80; const msgs=st.messages||[];
+  M.innerHTML = msgs.length ? msgs.map(m=> m.kind==='user' ? `<div class="am user">${esc(m.text).replace(/\n/g,'<br>')}</div>`
+    : m.kind==='assistant' ? `<div class="am asst">${m.text?`<div class="txt">${esc(m.text).replace(/\n/g,'<br>')}</div>`:''}${m.tools&&m.tools.length?`<div class="tools">${m.tools.map(tl=>`<span class="chip ${ASST_APPROVAL.includes(tl.name)?'c-warn':'c-na'}" title="${esc(JSON.stringify(tl.args))}"><i></i>${esc(asstTool(tl.name))}</span>`).join('')}</div>`:''}</div>`
+    : `<details class="am res"><summary class="small muted">${m.items.length} ${esc(t('asstResults'))}${m.items.some(i=>i.error)?' · ⚠':''}</summary>${m.items.map(i=>`<div class="small ${i.error?'bad':''}"><span class="code wrap">${esc(i.summary)}</span></div>`).join('')}</details>`).join('')
+    : `<div class="small muted" style="padding:10px">${esc(t('asstEmpty'))}</div>`;
+  if(run&&run.status==='running') M.insertAdjacentHTML('beforeend', `<div class="am asst live"><span class="dot"></span> ${run.partial?esc(run.partial).replace(/\n/g,'<br>'):esc(t('asstWorking'))}</div>`);
+  if(run&&run.status==='error') M.insertAdjacentHTML('beforeend', `<div class="alert bad">${icon('alert')}<p class="small">${esc(t('asstErr'))}: <span class="code">${esc(run.error||'')}</span></p></div>`);
+  if(atBottom||first) M.scrollTop=M.scrollHeight;
+  $('#asstApprovals').innerHTML=(st.approvals||[]).map(a=>`<div class="alert" data-apc="${a.id}"><div class="grow"><b>${esc(t('asstApprovalT'))}</b><div class="small" style="margin:4px 0"><span class="chip c-warn"><i></i>${esc(asstTool(a.tool))}</span>${a.args&&a.args.rationale?` ${esc(a.args.rationale)}`:''}</div>
+     <div class="code small wrap">${esc(JSON.stringify(a.args))}</div><div class="row gap-s" style="margin-top:8px"><button class="btn sm pri" data-apv="${a.id}" data-dec="approve">${icon('check',14)} ${esc(t('asstApprove'))}</button><button class="btn sm" data-apv="${a.id}" data-dec="deny">${esc(t('asstDeny'))}</button></div></div></div>`).join('');
+  $$('[data-apv]').forEach(b=>b.onclick=async()=>{ b.disabled=true; try{ await api(`/dossiers/${S.asst.did}/assistant/approvals/${b.dataset.apv}`,{method:'POST',json:{decision:b.dataset.dec}}); asstRefresh(false); }catch(e){ toast(e.message); b.disabled=false; } });
+  const sb=$('#asstSend'); if(sb) sb.disabled=!!active||!set.configured||!!set.browser; const stp=$('#asstStop'); if(stp) stp.hidden=!active; }
+function asstComposer(){ $('#asstComposer').innerHTML=`<div class="stack gap-s"><textarea id="asstText" rows="3" placeholder="${esc(t('asstPlaceholder'))}" dir="auto"></textarea>
+  <div class="row gap-s"><input type="file" id="asstFiles" multiple hidden accept=".pdf,.docx,image/*"><button class="btn sm" id="asstAttach" type="button">${icon('upload',14)} ${esc(t('asstAttach'))} <span id="asstNFiles" class="small muted"></span></button>
+  <span class="grow"></span><button class="btn sm ghost" id="asstStop" type="button" hidden>${esc(t('asstStop'))}</button><button class="btn sm ghost" id="asstClear" type="button">${esc(t('asstClear'))}</button><button class="btn pri sm" id="asstSend" type="button">${icon('arrow',14)} ${esc(t('asstSend'))}</button></div></div>`;
+  $('#asstAttach').onclick=()=>$('#asstFiles').click(); $('#asstFiles').onchange=()=>{ const n=$('#asstFiles').files.length; $('#asstNFiles').textContent=n?`(${n})`:''; };
+  $('#asstSend').onclick=asstSend; $('#asstText').onkeydown=e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)) asstSend(); };
+  $('#asstStop').onclick=async()=>{ try{ await api(`/dossiers/${S.asst.did}/assistant/stop`,{method:'POST'}); asstRefresh(false); }catch(e){ toast(e.message); } };
+  $('#asstClear').onclick=async()=>{ if(!confirm(t('asstClearQ'))) return; try{ await api(`/dossiers/${S.asst.did}/assistant`,{method:'DELETE'}); asstRefresh(true); }catch(e){ toast(e.message); } }; }
+async function asstSend(){ const ta=$('#asstText'), fi=$('#asstFiles'); const txt=ta.value.trim(), files=[...(fi.files||[])]; if(!txt&&!files.length) return;
+  const fd=new FormData(); fd.append('text',txt); files.forEach(f=>fd.append('files',f)); $('#asstSend').disabled=true;
+  try{ await api(`/dossiers/${S.asst.did}/assistant/messages`,{method:'POST',body:fd}); ta.value=''; fi.value=''; $('#asstNFiles').textContent=''; asstRefresh(false); }
+  catch(e){ toast(e.message); $('#asstSend').disabled=false; } }
 window.addEventListener('hashchange', route);
 const fresh = tok => tok===undefined || tok===S.rt;
 function show(tok, html){ if(!fresh(tok)) return false; $('#view').innerHTML = html; return true; }

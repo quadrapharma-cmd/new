@@ -66,6 +66,25 @@ browser edition (the `sample` capability receives the rendered pages) or through
 `ANTHROPIC_API_KEY` (PDFs attached as documents, photos as images); the drawer names the scans that were read that way and those
 that were not read on this computer. Tests: `tests/test_intake_eda.py` (a fictional product on the three forms, clean and OCR-noisy).
 
+## The Assistant («المساعد») — Claude inside the program
+
+A conversation per dossier (floating button on every dossier page) in which Claude does the work through the program's own
+operations, exposed to it as 25 tools (`engine/dossier_engine/assistant/tools.py`): read the board and an item's requirement,
+read a document's text **and its pages** (the PDF pages are attached, so scans are seen), save a digest of what a document
+states (kept in the store so later sessions do not re-read it), write product data and the profile, classify and place unplaced
+files, generate the program's documents, run the Regulatory Reviewer and judge its findings from the documents, draft
+responses, make letters, open re-issue requests. Writes go through the program's HTTP API in-process with the actor «claude»,
+so validation, errors and the audit trail are the same as the screen's (`assistant.tool` rows carry the rationale). Three
+tools never run without a person: export, signing a review, withdrawing a document — the drawer shows an approval card and the
+run waits (`engine/dossier_engine/assistant/runner.py`: a background thread per run, `claude-opus-5-5` through the Anthropic SDK
+with streaming, prompt caching on the system prompt and tools, refusal fallbacks, a per-turn task budget and step limit, context
+trimming that keeps attachments only in the last two turns, usage and cost accounting). The company's API key is stored in
+`<workspace>/assistant.json` (mode 600) or `ANTHROPIC_API_KEY` and is never returned to the browser; the settings form in the
+drawer saves and tests it (`/api/assistant/settings`, admin-only in cloud mode). Endpoints: `GET/POST /api/dossiers/{id}/assistant`,
+`…/assistant/messages` (text + files, stored as unplaced documents), `…/approvals/{id}`, `…/stop`, `DELETE …/assistant`,
+`…/readings`. Desktop and cloud editions only; the browser edition says so. Tests: `tests/test_assistant.py` (scripted stand-in
+for the API client), `tests/test_ui_assistant.py` (the drawer journey). Design note: `docs/ctd/design/05-OPERATOR.md`.
+
 ## Browser edition (open from a link, nothing to install)
 
 `web/` turns the same app into a claude.ai artifact: the Python engine runs **inside the browser** (Pyodide), the

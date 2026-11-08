@@ -130,6 +130,16 @@ def install(app, auth, store):
     @app.middleware('http')
     async def guard(request: Request, call_next):
         path = request.url.path
+        internal = request.headers.get('x-db-internal')
+        if internal and secrets.compare_digest(internal, getattr(app.state, 'internal_token', None) or '-'):
+            from .store import ACTOR                      # the Assistant calling the program's own API in-process
+            request.state.user = request.headers.get('x-db-actor') or 'claude'
+            request.state.role = 'assistant'
+            token = ACTOR.set(request.state.user)
+            try:
+                return await call_next(request)
+            finally:
+                ACTOR.reset(token)
         if auth.enabled and path not in OPEN and not path.startswith('/assets/'):
             user = auth.verify(request.cookies.get(COOKIE, ''))
             if not user:

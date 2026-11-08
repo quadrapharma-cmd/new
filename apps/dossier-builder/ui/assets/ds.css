@@ -349,3 +349,17 @@ body.ro .btn.pri,body.ro [data-reg],body.ro [data-replace],body.ro [data-editdoc
 @media (max-width:560px){.caps{grid-template-columns:1fr} .grid3{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media print{.rail,.top,.btn,.scrim,.drawer,.toast{display:none!important} .app{display:block} .view{padding:0;max-width:none} .card{box-shadow:none;break-inside:avoid}}
+
+/* ---------- assistant (Claude inside the program) */
+.asst-fab{position:fixed;inset-inline-end:22px;bottom:22px;z-index:25;display:inline-flex;align-items:center;gap:8px;padding:12px 16px;border-radius:999px;border:1px solid color-mix(in srgb,var(--brand) 40%,transparent);background:var(--brand);color:var(--brand-ink);font:inherit;font-weight:650;box-shadow:0 10px 30px var(--brand-glow);cursor:pointer}
+.asst-fab:hover{filter:brightness(1.06)}
+.amsg{display:flex;flex-direction:column;gap:8px;max-height:52vh;min-height:120px;overflow:auto;padding:4px}
+.am{max-width:92%;padding:10px 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);line-height:1.55;font-size:14px}
+.am.user{align-self:flex-end;background:var(--brand-soft);border-color:color-mix(in srgb,var(--brand) 35%,transparent)}
+.am.asst{align-self:flex-start}
+.am .tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.am.res{align-self:flex-start;padding:6px 10px;background:transparent;border-style:dashed}
+.am.res summary{cursor:pointer}
+.am.live .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--brand);margin-inline-end:6px;animation:sk 1.2s infinite}
+#asstText{width:100%;resize:vertical;min-height:64px}
+@media (max-width:700px){.asst-fab span{display:none} .asst-fab{padding:12px}}

@@ -74,10 +74,13 @@ def create_app(workspace, auth_enabled=None):
     app = FastAPI(title='Dossier Builder', version='0.2', docs_url=None, redoc_url=None, openapi_url=None)
     if auth_enabled is None:
         auth_enabled = os.environ.get('DB_MODE') == 'cloud' or os.environ.get('DB_AUTH') == '1'
+    import secrets
+    app.state.internal_token = secrets.token_hex(24)        # in-process calls by the Assistant (never sent to a browser)
     app.state.auth = Auth(workspace, auth_enabled)
     install(app, app.state.auth, st)
-    from . import review_api
+    from . import review_api, assistant_api
     review_api.install(app, st)
+    assistant_api.install(app, st)
 
     @app.exception_handler(StoreError)
     def _store_err(_, e):
@@ -367,7 +370,8 @@ def create_app(workspace, auth_enabled=None):
         rules40 = sorted(set(re.findall(r"'(eCTD4-[0-9A-Za-z/.-]+)'", inspect.getsource(v40))))
         cross_ids = sorted(set(re.findall(r"'((?:XC|NP040)-[A-Z0-9]+)'", inspect.getsource(crosschecks))))
         doc_types = yaml.safe_load(TYPES_FILE.read_text(encoding='utf-8'))['types']
-        return {'version': app.version, 'workspace': str(st.root),
+        from ..assistant import settings as _asettings
+        return {'version': app.version, 'workspace': str(st.root), 'assistant': _asettings.status(st.root),
                 'dossiers': st.db.execute('select count(*) from dossier').fetchone()[0],
                 'pack': {'id': pack.id, 'title': pack.meta['title'], 'status': pack.meta['status'],
                          'valid_from': pack.meta['valid_from'], 'sources': pack.meta['sources']},
