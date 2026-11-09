@@ -180,6 +180,8 @@
   ];
   var BY_KEY = {}, BY_TITLE = {};
   SEED.forEach(function (s) { BY_KEY[s.k] = s; BY_TITLE[s.t] = s.k; });
+  /* ===== AREA w-growth: another layer adds sample groups (the demo's official Drugbox channels, growth.js) ===== */
+  window.dxGroupsSeed = function (s) { if (!s || !s.k || BY_KEY[s.k]) return; SEED.push(s); BY_KEY[s.k] = s; BY_TITLE[s.t] = s.k; };
   var NEW_RULES = [['Be respectful', 'Disagree with ideas, never with people.'], ['Stay on topic', 'Posts should match what the group is about.'], ['No spam', 'No unrelated ads or repeated posts.']];
 
   /* ───────────────────────── what you did (demo, this browser) ───────────────────────── */
@@ -244,6 +246,7 @@
     var cd = card.dataset; tagCard(card);
     g.sector = cd.sector || inferSector(title + ' ' + g.desc); g.country = (cd.country || '').split(',').filter(Boolean);
     g.postPolicy = cd.post === 'admins' ? 'admins' : 'members'; g.archived = cd.archived === '1';
+    g.official = cd.official === '1'; if (g.official) g.postPolicy = 'admins';   /* AREA w-growth: an official Drugbox channel — Drugbox posts from Admin → Channels */
     g.admin = g.role === 'admin' || g.role === 'subadmin' || g.role === 'moderator';
     g.canSee = g.member || !g.priv;   /* private: only members see posts, members and listings */
     return g;
@@ -320,7 +323,7 @@
     el.setAttribute('data-gpp', p.id);
     return el;
   }
-  function postEl(p, g) { var t = document.createElement('div'); t.innerHTML = postHtml(p); return stamp(t.firstElementChild, p, g); }
+  function postEl(p, g) { var t = document.createElement('div'); t.innerHTML = postHtml(p); var el = stamp(t.firstElementChild, p, g); if (window.dxPostDecor) window.dxPostDecor(el, p, g); return el; }   /* AREA w-growth: a Drugbox post reads as Drugbox */
   function findPost(id) { return CUR && CUR.posts ? CUR.posts.find(function (p) { return p.id === id; }) : null; }
   function repaint(p) {
     var old = document.querySelector('#gpBox [data-gpp="' + p.id + '"]'); if (!old || !CUR) return;
@@ -538,6 +541,7 @@
         : g.pending ? '<button type="button" class="gcard-btn btn-joined" data-gpa="cancel">⏳ Request sent · Cancel</button>' : '<button type="button" class="gcard-btn btn-join" data-gpa="request">🔒 Request to join</button>';
       return '<div class="gp-lock"><div class="gp-lock-ic">' + (g.invited ? '✉️' : '🔒') + '</div><b>' + head + '</b><p>' + sub + '</p>' + btn + '</div>';
     }
+    if (g.official) return '<div class="why-banner gp-gate"><span>👀 Join this Drugbox channel to be told of its new posts.</span><button type="button" class="gcard-btn btn-join" data-gpa="join">+ Join Group</button></div>';   /* AREA w-growth: nobody posts in a channel but Drugbox */
     return '<div class="why-banner gp-gate"><span>👀 You’re viewing a preview. Join to post, comment and react.</span><button type="button" class="gcard-btn btn-join" data-gpa="join">+ Join Group</button>' +
       (g.invited ? ' <button type="button" class="gcard-btn gp-decline" data-gpa="declineinv">✕ Decline invitation</button>' : '') + '</div>';
   }
@@ -555,8 +559,9 @@
     if (!CUR.posts && !CUR.loading) loadPosts(g);
     var h = gate(g);
     if (g.archived) h += '<div class="why-banner gp-gate gp-arch"><span>📦 This group is archived — you can read its history; nobody can post, comment or join.</span></div>';
+    else if (g.official && g.member) h += '<div class="why-banner gp-gate dx-off-gate"><span>✓ Official Drugbox channel — only Drugbox posts here; you can comment and react.</span></div>';   /* AREA w-growth */
     else if (g.member && g.postPolicy === 'admins' && !g.admin) h += '<div class="why-banner gp-gate"><span>📣 Only the admins post in this group — you can comment and react.</span></div>';
-    if (g.member && !CUR.unsupported && !g.archived && (g.postPolicy !== 'admins' || g.admin)) h += '<div class="gp-comp">' + (typeof window.renderComposer === 'function' ? window.renderComposer() : '') + '</div>';
+    if (g.member && !CUR.unsupported && !g.archived && !g.official && (g.postPolicy !== 'admins' || g.admin)) h += '<div class="gp-comp">' + (typeof window.renderComposer === 'function' ? window.renderComposer() : '') + '</div>';
     if (CUR.loading && !CUR.posts) h += '<div class="gp-empty">Loading posts…</div>';
     else if (CUR.unsupported) h += '<div class="gp-empty">💬 Group discussions open here soon.</div>';
     else if (!CUR.posts.length) h += '<div class="gp-empty"><b>💬 No posts yet</b><span>' + (g.member ? 'Start the first discussion in this group.' : 'Join to start the first discussion.') + '</span></div>';
@@ -622,7 +627,7 @@
     var by = g.by && person(g.by), d = g.since ? new Date(g.since + (g.since.length === 10 ? 'T12:00:00' : '')) : null;
     var date = d && !isNaN(d) ? (window.dxFmtDate ? window.dxFmtDate(d, false, 'en') : d.toDateString()) : '';
     var admins = (g.live ? (CUR.members || []) : demoMembers(g)).filter(function (m) { return m.role === 'admin' || m.role === 'subadmin' || m.role === 'moderator'; });
-    var h = '<div class="gp-sec"><div class="field-label">About this group</div><div class="gp-text" data-noi18n>' + esc(g.about || g.desc || '') + '</div></div>' +
+    var h = '<div class="gp-sec"><div class="field-label">About this group</div><div class="gp-text"' + (g.official ? '' : ' data-noi18n') + '>' + esc(g.about || g.desc || '') + '</div></div>' +
       '<div class="gp-facts">' +
         '<div class="gp-fact"><span class="gp-k">Type</span><span class="gp-v">' + (g.deal ? '🤝 Deal Room' : '💬 Discussion') + '</span><small>' + (g.deal ? 'Buy/sell, RFQs & quotes' : 'Knowledge sharing, Q&A') + '</small></div>' +
         '<div class="gp-fact"><span class="gp-k">Privacy</span><span class="gp-v">' + (g.priv ? '🔒 Private' : '🌍 Public') + '</span><small>' + (g.priv ? 'Members must be approved or invited' : 'Anyone can find, view, and join') + '</small></div>' +
@@ -810,7 +815,7 @@
       var o = e.target.closest && e.target.closest('[data-so]'); if (!o) return;
       m.close();
       if (o.dataset.so === 'link') { copyLink(p); return; }
-      var a = person(p.uid) || me();
+      var a = p.drugbox ? { name: 'Drugbox' } : (person(p.uid) || me());   /* AREA w-growth: a Drugbox post is credited to Drugbox */
       p.sh = (p.sh || 0) + 1; commit(g, p, 'share', {}); repaint(p);
       if (!live && Array.isArray(window.POSTS)) window.POSTS.unshift({ id: Date.now(), uid: me().id, cat: p.cat || 'general', body: 'Shared from ' + g.title + ' — ' + a.name + ':\n\n' + (p.body || ''), likeCount: 0, liked: false, commentCount: 0, shareCount: 0, saved: false, pinned: false, ts: 'just now', imgs: (p.imgs || []).slice(), files: (p.files || []).slice(), reactions: {} });
       D.toast('Reposted to your feed');
@@ -1160,6 +1165,7 @@
     var c = tpl.cloneNode(true);
     ['.priority-badge', '.why-banner'].forEach(function (s) { var x = c.querySelector(s); if (x) x.remove(); });
     c.removeAttribute('onclick'); c.dataset.gk = o.k; c.style.opacity = '';
+    if (o.official) { c.dataset.official = '1'; c.dataset.post = 'admins'; }   /* AREA w-growth: growth.js badges it */
     var by = o.inv && person(o.inv), body = c.querySelector('.gcard-body');
     if (by && body) body.insertAdjacentHTML('afterbegin', '<div class="why-banner">✉️ <span>Invitation from</span> <span data-noi18n>' + esc(by.name) + '</span></div>');
     var cv = c.querySelector('.gcard-cover'); if (cv) { cv.textContent = o.emoji; cv.style.background = o.bg; }
@@ -1183,7 +1189,7 @@
     SEED.forEach(function (sd) {
       if (!sd.card || cardByKey(sd.k) || !first || !tpl) return;
       var joined = jn.indexOf(sd.t) >= 0 ? true : lf.indexOf(sd.t) >= 0 ? false : sd.card.joined !== false;
-      var c = makeCard(tpl, { k: sd.k, t: sd.t, emoji: sd.card.emoji, bg: sd.card.bg, desc: sd.card.desc, count: sd.card.count + (joined && sd.card.joined === false ? 1 : 0), faces: sd.card.faces, signal: sd.card.signal,
+      var c = makeCard(tpl, { k: sd.k, official: sd.official, t: sd.t, emoji: sd.card.emoji, bg: sd.card.bg, desc: sd.card.desc, count: sd.card.count + (joined && sd.card.joined === false ? 1 : 0), faces: sd.card.faces, signal: sd.card.signal,
         joined: joined, priv: sd.card.priv, deal: sd.card.deal, inv: joined || (st().noinv || {})[sd.k] ? null : sd.inv, countWord: sd.card.joined === false });
       (grids[sd.card.grid || 0] || first).appendChild(c);
     });

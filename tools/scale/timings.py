@@ -117,6 +117,14 @@ def queries(ctx):
         ('listing_items', "select public.listing_items((select id from public.products where kind = 'stock' order by id limit 1))"),
         ('my_trade_matches', "select public.my_trade_matches(50)"),
         ('my_listings', "select public.my_listings()"),
+        # AREA w-growth (0100–0104): the therapeutic filters, the channels, Ask an expert, the founder badge, the visitor's directory
+        ('feed_thera', wrap(feed.format(where="where p.group_id is null and p.thera <> '{}' and p.thera @> array['insulin']"))),
+        ('market_search_thera', "select public.market_search_thera('insulin', null, 'supply', null, 40, 0)"),
+        ('channel_posts', wrap("select p.* from public.posts p join public.groups g on g.id = p.group_id where g.channel_key = 'market' order by p.created_at desc, p.id desc limit 20")),
+        ('expert_sessions_list', "select json_agg(s) from public.expert_sessions_list(30) s"),
+        ('expert_topic_demand', "select json_agg(d) from public.expert_topic_demand() d"),
+        ('founder_badge', wrap("select user_id from public.founder_members where user_id = '%s'" % me)),
+        ('public_directory_page', "select public.public_directory_page(100, 0, null)"),
         # phase 1b (0035): the ticker at sign-in, the Jobs numbers, a profile's connections, My Network's numbers, Home faces
         ('ticker_feed', "select public.ticker_feed()"),
         ('jobs_stats', "select public.jobs_stats()"),

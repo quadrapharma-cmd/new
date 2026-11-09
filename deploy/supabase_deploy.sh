@@ -264,7 +264,11 @@ if [[ "$(q "select count(*) from pg_extension where extname = 'pg_cron'")" == 1 
   if [[ "$(q "select count(*) from cron.job where jobname = 'drugbox-vip-reminders'")" == 0 && $DRY == 0 ]]; then
     q "select cron.schedule('drugbox-vip-reminders', '23 7 * * *', 'select public.vip_reminders()')" >/dev/null && ok "pg_cron: scheduled drugbox-vip-reminders (daily 07:23 UTC)"
   else ok "pg_cron: drugbox-vip-reminders is scheduled"; fi
-else info "pg_cron is not enabled: VIP plans are not expired automatically and VIP reminders are not sent — enable it (Database → Extensions → pg_cron) and re-run this script"; fi
+  # AREA w-growth (0100): scheduled channel posts and expert-session reminders, every minute
+  if [[ "$(q "select count(*) from cron.job where jobname = 'drugbox-growth-tick'")" == 0 && $DRY == 0 ]]; then
+    q "select cron.schedule('drugbox-growth-tick', '* * * * *', 'select public.growth_tick()')" >/dev/null && ok "pg_cron: scheduled drugbox-growth-tick (every minute)"
+  else ok "pg_cron: drugbox-growth-tick is scheduled"; fi
+else info "pg_cron is not enabled: scheduled channel posts are not published and expert-session reminders are not sent; VIP plans are not expired automatically and VIP reminders are not sent — enable it (Database → Extensions → pg_cron) and re-run this script"; fi
 
 if [[ "$(q "select to_regclass('public.payment_products') is not null")" == t ]]; then
   info "prices (payment_products — confirm before launch, +VAT):"

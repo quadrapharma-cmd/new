@@ -11,8 +11,10 @@ PG=/usr/lib/postgresql/16/bin
 mkdir -p "$TOOLS/bin"
 
 python3 -c "import PIL" 2>/dev/null || pip install -q pillow
-python3 -c "import playwright, importlib.metadata as m; assert m.version('playwright')=='1.56.0'" 2>/dev/null \
-  || pip install -q playwright==1.56.0                # matches the pre-installed chromium-1194 (never 'playwright install')
+# the Python Playwright must match the pre-installed browser build (never 'playwright install'): chromium-1194 → 1.56.0, chromium-1243 → 1.63.0
+PWV=1.56.0; [ -d /opt/pw-browsers/chromium-1243 ] && PWV=1.63.0
+python3 -c "import playwright, importlib.metadata as m; assert m.version('playwright')=='$PWV'" 2>/dev/null \
+  || pip install -q playwright==$PWV
 
 if [ ! -x "$TOOLS/bin/postgrest" ]; then
   curl -sSL -m 120 -o "$TOOLS/pgrest.tar.xz" \

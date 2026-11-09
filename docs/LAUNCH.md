@@ -76,6 +76,12 @@ in the environment only — never on a command line (where `ps` would show them)
          `select cron.schedule('drugbox-notify-email', '* * * * *', $$ select net.http_post(url := 'https://<ref>.supabase.co/functions/v1/notify-email', headers := jsonb_build_object('Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'drugbox_service_key'))) $$);`
          Members choose what comes by e-mail in Settings → Notifications (member_settings; 0040/0045).
 - [ ] pg_cron (Database → Extensions) on, then re-run the deploy: it schedules `drugbox-expire-vip` (daily 01:17 UTC) — otherwise VIP plans never expire.
+      It also schedules `drugbox-growth-tick` (every minute: `select public.growth_tick()`, plain SQL, no Edge Function) — scheduled
+      Drugbox channel posts are published and expert-session reminders sent by it (AREA w-growth, 0100/0102). Without pg_cron they wait.
+- [ ] Founding members (0101): Admin → Founders — check the segment quotas (seeded 8/10/15/15/5/5/10/5, no pharmacy segment) before
+      sending invitations; each code is shown once — send it from Drugbox's own e-mail or WhatsApp.
+- [ ] Directory import: the owner's public lists (EDA licensed manufacturers, chamber member lists …) as CSV → Admin → Directory import
+      (check first, then import); every row names its source.
 - [ ] Web: `cp deploy/env.web.example deploy/.env.web`, fill in (staging URL + **anon** key; Vercel token + ids), then `deploy/vercel_deploy.sh`
       (`--dry-run` builds and checks without calling Vercel). Output goes to `deploy/.out/preview/` (never `web/dist`). It refuses a non-anon key, a key of another
       project, a build that fails parity with `web/reference/demo-approved.html`, a CSP without the Supabase origin, or a missing file.

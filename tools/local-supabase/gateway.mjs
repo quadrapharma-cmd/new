@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 // Local stand-in for Supabase (tests only): Auth endpoints used by supabase-js + a /rest/v1 proxy to PostgREST + the built app at /.
 // Passwords: bcrypt via pgcrypto. Tokens: HS256 JWT with the same secret PostgREST verifies, so RLS applies exactly as on Supabase.
 // Loopback only (HOST defaults to 127.0.0.1): it offers open sign-up and a storage emulation, never expose it to a network.
@@ -67,6 +68,10 @@ http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://x');
     if (req.method === 'OPTIONS') return send(res, 204);
     if (url.pathname === '/' || url.pathname === '/index.html') return stream(res, APP_DIR + '/index.html', 200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', ...PAGE });
+    if (/^\/c\/[^/]+$/.test(url.pathname) && fs.existsSync(APP_DIR + '/api/company.js')) {   // AREA w-growth: as Vercel's rewrite /c/:slug → api/company.js
+      const share = createRequire(import.meta.url)(APP_DIR + '/api/company.js');
+      return await share({ query: { slug: decodeURIComponent(url.pathname.slice(3)) }, headers: req.headers }, res);
+    }
     if (/^\/js\/[\w.-]+\.js$/.test(url.pathname) && fs.existsSync(APP_DIR + url.pathname)) return stream(res, APP_DIR + url.pathname, 200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'public, max-age=31536000, immutable', ...SEC });
     if (/^\/media\/[\w.-]+\.mp4$/.test(url.pathname) && fs.existsSync(APP_DIR + url.pathname)) {   // the splash video of the live build (content-hashed)
       const f = APP_DIR + url.pathname, size = fs.statSync(f).size, rg = range(req, size);

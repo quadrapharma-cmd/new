@@ -104,5 +104,9 @@ if sentry:
 vj.pop('$comment', None)   # the template's note is for people; the published file carries only what Vercel reads
 assert 'YOUR-PROJECT' not in json.dumps(vj), 'deploy/vercel.json: a YOUR-PROJECT placeholder was not replaced'
 open(OUT + '/vercel.json', 'w', encoding='utf-8').write(json.dumps(vj, indent=2, ensure_ascii=False) + '\n')
+# AREA w-growth: /c/<slug> — the company page's title / description / Open Graph for crawlers and link previews (deploy/share/company.js)
+os.makedirs(OUT + '/api', exist_ok=True)
+share = open(os.path.join(os.path.dirname(ROOT), 'deploy', 'share', 'company.js'), encoding='utf-8').read()
+open(OUT + '/api/company.js', 'w', encoding='utf-8').write(share.replace('__SUPABASE_URL__', url.rstrip('/')).replace('__ANON_KEY__', key))
 print('live build →', OUT, '| index.html %.2f MB' % (len(H.encode('utf-8')) / 1e6), '| scripts:', lib, ada, ' '.join(a for _, a in xtra), '+ %d page scripts as files' % len(moved),
       '| media:', 'splash' if m else 'none', '| removed old files: %d' % len(stale), '| lite copy → no-script notice' if lite else '', '| sentry loader' if sentry else '')
