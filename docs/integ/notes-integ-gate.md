@@ -26,3 +26,19 @@ Gate copy with ONLY the workaround below: scratchpad `gate/wt` (not in git).
   (name_rule + usernames fail only on Node/Unicode, pass with Node 22.13.1). schema_sweep 6/6 none. migration_check PASS.
 - demo quick suites: groups_test ar INTERMITTENT (fail, fail, fail, pass 67/67 on re-runs).
 - e2e (29): only name_paths_test 111/112.
+- legacy (22 suites, Chromium only): deals_test.py FAILS deterministically (3 of 3): after the counter-offer checks the group-buying
+  join window never shows `.dbk-ov [data-gq=<id>]` (Locator.fill timeout 30 s). b_p_rest_test.py failed once (a .dbk-ov overlay
+  intercepted the click on the Vivian Zhou thread) and passed 17/17 twice alone -> flake.
+- stress A/B (5 rounds, while one other browser ran): median switch 10.8 ms vs approved base 11.0 ms -> PASS, 0 JS errors.
+- root causes seen in the sql suites (not fixed):
+  * 0070 `my_conversations()` (drop+create) overwrites 0040_account's version -> the "Deleted member" left join is lost
+    (account.rls 31/32; live J-SOCIAL-07).
+  * trade.rls 108 failures: every listing write by a member without a trade profile is refused with "Add your trade profile first ..."
+    (0090 w-trust trade_gate) while w-trade 0076 ("no barriers", owner 25 Oct) and its tests assume none.
+  * growth_channels 30 failures: 0095 `private.group_post_log.user_id` is NOT NULL, the official-channel post (user_id null) fails
+    -> the scheduler cannot publish ("null value in column user_id of relation group_post_log"); the rest follows.
+  * security_core F-26: anon cannot `select` public.push_subscriptions (0110: no anon grant) -> "every table answers anon" fails.
+  * launch_readiness + privacy_names: replay old migrations (0038/0039 "returns setof profiles") on top of 0065's RETURNS TABLE
+    open_candidates -> "cannot change return type of existing function".
+  * e2e name_paths_test: the catalog list of profile writers is stale: now also account_anonymise, admin_set_role, admin_undo,
+    admin_verify_profile, phone_verify_confirm.
