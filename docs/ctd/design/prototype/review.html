@@ -1,0 +1,1126 @@
+<title>المراجع الرقابي</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Dossier Builder design system — "regulatory instrument": dark-first, precise, bilingual (RTL/LTR). */
+:root{
+  --bg:#070B12; --bg-2:#0A101A; --surface:#0E1520; --surface-2:#131C2A; --surface-3:#1A2536;
+  --line:#1C2838; --line-2:#2A3A52; --ink:#E9EFF7; --ink-2:#C4CFDD; --muted:#8C9BB0; --faint:#5E6D83;
+  --brand:#22D3EE; --brand-ink:#04161B; --brand-soft:rgba(34,211,238,.12); --brand-glow:rgba(34,211,238,.32);
+  --accent:#A78BFA; --accent-soft:rgba(167,139,250,.14);
+  --ok:#34D399; --ok-soft:rgba(52,211,153,.13); --warn:#FBBF24; --warn-soft:rgba(251,191,36,.13);
+  --bad:#F87171; --bad-soft:rgba(248,113,113,.13); --info:#60A5FA; --info-soft:rgba(96,165,250,.13);
+  --wait:#C084FC; --wait-soft:rgba(192,132,252,.14); --na:#6B7A90; --na-soft:rgba(107,122,144,.16); --rec:#60A5FA; --rec-soft:rgba(96,165,250,.13);
+  --f-ui:"IBM Plex Sans","IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;
+  --f-ar:"IBM Plex Sans Arabic","IBM Plex Sans",system-ui,"Segoe UI",Tahoma,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:12px; --r-sm:8px;
+  --shadow:0 1px 0 rgba(255,255,255,.025) inset,0 10px 30px rgba(0,0,0,.35);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --rail-w:252px; --top-h:58px;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#F2F5F9; --bg-2:#EAF0F7; --surface:#FFFFFF; --surface-2:#F5F8FC; --surface-3:#EAF0F7;
+  --line:#DCE4EE; --line-2:#C7D3E2; --ink:#0B1424; --ink-2:#263447; --muted:#5A6A80; --faint:#8B99AD;
+  --brand:#0891B2; --brand-ink:#FFFFFF; --brand-soft:rgba(8,145,178,.10); --brand-glow:rgba(8,145,178,.22);
+  --accent:#6D28D9; --accent-soft:rgba(109,40,217,.10);
+  --ok:#15803D; --ok-soft:rgba(21,128,61,.10); --warn:#B45309; --warn-soft:rgba(180,83,9,.10);
+  --bad:#C62828; --bad-soft:rgba(198,40,40,.10); --info:#1D4ED8; --info-soft:rgba(29,78,216,.10);
+  --wait:#7E22CE; --wait-soft:rgba(126,34,206,.10); --na:#64748B; --na-soft:rgba(100,116,139,.12); --rec:#1D4ED8; --rec-soft:rgba(29,78,216,.10);
+  --shadow:0 1px 2px rgba(15,27,42,.05),0 6px 18px rgba(15,27,42,.06);
+  --shadow-sm:0 1px 2px rgba(15,27,42,.08);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(900px 420px at 15% -10%,color-mix(in srgb,var(--brand) 9%,transparent),transparent 70%),
+                   radial-gradient(700px 380px at 95% 0%,color-mix(in srgb,var(--accent) 7%,transparent),transparent 70%);
+  background-attachment:fixed}
+html[lang="ar"] body{font-family:var(--f-ar)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--brand)}
+a.btn{text-decoration:none;color:inherit}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+h1{font-size:24px;margin:0;font-weight:700;letter-spacing:-.01em;text-wrap:balance} h2{font-size:16px;margin:0;font-weight:650} h3{font-size:14px;margin:0;font-weight:650}
+html[lang="ar"] h1{letter-spacing:0}
+p{margin:0}
+.sub{color:var(--muted);margin-top:3px}
+.muted{color:var(--muted)} .faint{color:var(--faint)} .small{font-size:12.5px} .tiny{font-size:11.5px} .b{font-weight:650}
+.num,.tabular{font-variant-numeric:tabular-nums}
+.code,.mono{font-family:var(--f-mono);font-size:12.5px;direction:ltr;unicode-bidi:isolate}
+.code.wrap{white-space:normal;overflow-wrap:anywhere}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .grow{flex:1;min-width:0} .nowrap{white-space:nowrap}
+.stack{display:flex;flex-direction:column;gap:14px} .gap-s{gap:8px} .gap-l{gap:20px}
+.end{text-align:end} .center{text-align:center}
+.right{margin-inline-start:auto}
+
+/* ---------- app frame */
+.app{display:grid;grid-template-columns:var(--rail-w) minmax(0,1fr);min-height:100vh}
+.rail{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:2px;padding:14px 12px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 92%,transparent),color-mix(in srgb,var(--bg) 85%,transparent));
+  border-inline-end:1px solid var(--line);backdrop-filter:blur(10px);overflow:auto}
+.logo{display:flex;align-items:center;gap:11px;padding:6px 8px 16px;text-decoration:none;color:inherit}
+.logo .tile{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;flex:none;font-family:var(--f-mono);font-weight:600;font-size:12.5px;
+  color:#04161B;background:linear-gradient(135deg,var(--brand),var(--accent));box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 6px 18px var(--brand-glow)}
+.logo .name{font-weight:700;font-size:14.5px;line-height:1.2}
+.logo .tag{display:block;font-size:11px;color:var(--muted);font-weight:500;margin-top:2px;font-family:var(--f-mono);letter-spacing:.02em}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;color:var(--muted);text-decoration:none;font-weight:500;position:relative;min-height:38px}
+.nav a svg{flex:none;opacity:.85}
+.nav a:hover{background:var(--surface-2);color:var(--ink)}
+.nav a.on{background:var(--brand-soft);color:var(--brand);font-weight:600}
+.nav a.on::before{content:"";position:absolute;inset-block:8px;inset-inline-start:0;width:3px;border-radius:3px;background:var(--brand);box-shadow:0 0 10px var(--brand-glow)}
+.nav a[aria-disabled="true"]{opacity:.4;pointer-events:none}
+.nav .grp{font-size:10.5px;color:var(--faint);padding:14px 11px 5px;text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+html[lang="ar"] .nav .grp{letter-spacing:0;text-transform:none;font-size:11.5px}
+.nav .cnt{margin-inline-start:auto;font-size:11px;background:var(--bad-soft);color:var(--bad);border-radius:999px;padding:0 7px;font-weight:650;font-variant-numeric:tabular-nums;min-width:20px;text-align:center}
+.nav .cnt.ok{background:var(--ok-soft);color:var(--ok)}
+.rail .foot{margin-top:auto;padding:12px 8px 4px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line)}
+.rail .foot .led{display:inline-flex;align-items:center;gap:7px}
+.led::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:8;min-height:var(--top-h);display:flex;gap:10px;align-items:center;padding:8px 22px;
+  background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top .crumb{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.top .crumb .sep{color:var(--faint)}
+.view{padding:22px 22px 60px;display:flex;flex-direction:column;gap:20px;max-width:1480px;width:100%;animation:view-in .22s ease-out}
+@keyframes view-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.head{display:flex;gap:14px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+.head .title{display:flex;flex-direction:column;gap:2px;min-width:0}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--brand);font-weight:650;font-family:var(--f-mono)}
+html[lang="ar"] .eyebrow{letter-spacing:.02em;text-transform:none}
+
+/* ---------- buttons, segments, chips */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink);
+  padding:7px 13px;border-radius:10px;cursor:pointer;font-weight:550;white-space:nowrap;min-height:36px;text-decoration:none;transition:background .15s,border-color .15s,transform .15s}
+.btn:hover{background:var(--surface-3);border-color:var(--line-2)}
+.btn:active{transform:translateY(1px)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);font-weight:650;box-shadow:0 4px 16px var(--brand-glow)}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)} .btn.ghost:hover{background:var(--surface-2);color:var(--ink)}
+.btn.soft{background:var(--brand-soft);border-color:transparent;color:var(--brand)}
+.btn.danger{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+.btn.sm{padding:3px 10px;min-height:30px;font-size:12.5px;border-radius:8px}
+.btn.lg{padding:10px 18px;min-height:44px;font-size:15px;border-radius:12px}
+.btn.link{border:0;background:none;color:var(--brand);padding:0;min-height:0}
+.btn[disabled]{opacity:.5;cursor:not-allowed;box-shadow:none}
+.btn svg{flex:none}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:10px;overflow:hidden;background:var(--surface);padding:2px;gap:2px}
+.seg button,.seg a{border:0;background:transparent;padding:5px 11px;cursor:pointer;color:var(--muted);min-height:30px;border-radius:8px;text-decoration:none;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.seg button.on,.seg a.on{background:var(--brand-soft);color:var(--brand);font-weight:650}
+.modeswitch{display:inline-flex;border:1px solid var(--line-2);border-radius:10px;overflow:hidden;padding:2px;gap:2px;background:var(--surface)}
+.modeswitch a{padding:5px 12px;text-decoration:none;color:var(--muted);border-radius:8px;min-height:30px;display:inline-flex;align-items:center} .modeswitch a.on{background:var(--brand);color:var(--brand-ink);font-weight:650}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:1px 9px 1px 7px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;line-height:20px}
+.chip::before,.chip i{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 0 2px color-mix(in srgb,currentColor 25%,transparent);display:inline-block;flex:none}
+.chip i+*{margin:0}
+.c-ok,.s-valid{background:var(--ok-soft);color:var(--ok)} .c-warn,.s-expiring{background:var(--warn-soft);color:var(--warn)}
+.c-bad,.s-expired,.s-missing{background:var(--bad-soft);color:var(--bad)} .c-wait,.s-needs_date{background:var(--wait-soft);color:var(--wait)}
+.c-na,.s-no_expiry{background:var(--na-soft);color:var(--muted)} .c-rec,.c-info,.s-renewal{background:var(--rec-soft);color:var(--rec)}
+.c-brand{background:var(--brand-soft);color:var(--brand)}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;border:1px solid var(--line-2);border-radius:6px;padding:0 7px;color:var(--muted);white-space:nowrap;font-family:var(--f-mono);line-height:20px}
+.tag.brand{border-color:color-mix(in srgb,var(--brand) 40%,transparent);color:var(--brand)}
+.tag.warn,.prov.ASSUMPTION{border-color:color-mix(in srgb,var(--warn) 50%,transparent);color:var(--warn)}
+.prov{font-size:11.5px;border:1px solid var(--line-2);border-radius:6px;padding:0 6px;color:var(--muted);white-space:nowrap}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line-2);font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2)}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand-glow)}
+.op{font-family:var(--f-mono);font-size:11.5px;padding:1px 7px;border-radius:5px;background:var(--ok-soft);color:var(--ok)}
+.op.replace{background:var(--info-soft);color:var(--info)} .op.delete{background:var(--bad-soft);color:var(--bad)}
+
+/* ---------- cards, KPIs, meters */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);min-width:0}
+.card.flat{box-shadow:none;background:var(--surface-2)}
+.card.glow{border-color:color-mix(in srgb,var(--brand) 35%,var(--line));box-shadow:var(--shadow),0 0 0 1px color-mix(in srgb,var(--brand) 12%,transparent),0 0 40px -10px var(--brand-glow)}
+.pad{padding:16px 18px}
+.card>.hd,.hd{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.hd h2,.hd h3{flex:1;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{padding:14px 16px;display:flex;flex-direction:column;gap:4px;border-inline-start:3px solid var(--line-2);position:relative;overflow:hidden}
+.kpi .n{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;letter-spacing:-.02em}
+.kpi .l{color:var(--muted);font-size:12.5px}
+.kpi.ok,.kpi.br{border-inline-start-color:var(--brand)} .kpi.ok .n{color:var(--ok)} .kpi.br .n{color:var(--brand)}
+.kpi.bad{border-inline-start-color:var(--bad)} .kpi.bad .n{color:var(--bad)}
+.kpi.warn{border-inline-start-color:var(--warn)} .kpi.warn .n{color:var(--warn)}
+.kpi.info{border-inline-start-color:var(--info)} .kpi.info .n{color:var(--info)}
+.kpi.wait{border-inline-start-color:var(--wait)} .kpi.wait .n{color:var(--wait)}
+.kpi.ns{border-inline-start-color:var(--na)}
+.kpi.ok{border-inline-start-color:var(--ok)}
+.meter{height:7px;border-radius:999px;background:var(--surface-3);overflow:hidden;min-width:80px;flex:1}
+.meter i,.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),color-mix(in srgb,var(--brand) 60%,var(--accent)));border-radius:999px;transition:width .4s ease}
+.bar{height:7px;border-radius:999px;background:var(--surface-3);overflow:hidden;min-width:90px}
+.meter.ok i,.bar.ok i{background:var(--ok)} .meter.bad i{background:var(--bad)} .meter.warn i{background:var(--warn)}
+.ring{--v:0;--size:64px;width:var(--size);height:var(--size);border-radius:50%;display:grid;place-items:center;flex:none;
+  background:conic-gradient(var(--brand) calc(var(--v)*1%),var(--surface-3) 0);box-shadow:0 0 24px -6px var(--brand-glow)}
+.ring b{width:calc(var(--size) - 14px);height:calc(var(--size) - 14px);border-radius:50%;background:var(--surface);display:grid;place-items:center;font-size:calc(var(--size)/4.4);font-variant-numeric:tabular-nums;font-weight:650}
+.ring.lg{--size:112px} .ring.sm{--size:44px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.two{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+@media (max-width:1000px){.grid2,.two{grid-template-columns:1fr} .grid3{grid-template-columns:1fr 1fr}}
+
+/* ---------- hero, capabilities, workflow */
+.hero{position:relative;overflow:hidden;padding:30px 30px 26px;border-radius:16px;border:1px solid color-mix(in srgb,var(--brand) 30%,var(--line));
+  background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 12%,var(--surface)),var(--surface) 55%,color-mix(in srgb,var(--accent) 10%,var(--surface)))}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;
+  background-image:linear-gradient(var(--line-2) 1px,transparent 1px),linear-gradient(90deg,var(--line-2) 1px,transparent 1px);background-size:34px 34px;
+  -webkit-mask-image:radial-gradient(80% 70% at 70% 30%,#000 30%,transparent 100%);mask-image:radial-gradient(80% 70% at 70% 30%,#000 30%,transparent 100%)}
+.hero>*{position:relative}
+.hero h1{font-size:30px;line-height:1.2;max-width:22ch}
+.hero .lead{color:var(--ink-2);max-width:62ch;font-size:15px;margin-top:8px}
+.hero .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.hero .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.caps{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.cap{display:flex;flex-direction:column;gap:10px;padding:16px;text-decoration:none;color:inherit;transition:transform .15s,border-color .15s}
+.cap:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--brand) 45%,var(--line))}
+.cap .ic{display:grid;place-items:center;width:40px;height:40px;border-radius:11px;background:var(--brand-soft);color:var(--brand)}
+.cap .ic.accent{background:var(--accent-soft);color:var(--accent)} .cap .ic.ok{background:var(--ok-soft);color:var(--ok)} .cap .ic.warn{background:var(--warn-soft);color:var(--warn)} .cap .ic.info{background:var(--info-soft);color:var(--info)}
+.cap .n{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1}
+.cap .n small{font-size:12px;color:var(--muted);font-weight:500;margin-inline-start:5px;letter-spacing:0}
+.cap h3{font-size:14.5px}
+.cap p{color:var(--muted);font-size:12.5px;line-height:1.5}
+.cap .src{margin-top:auto;font-family:var(--f-mono);font-size:11px;color:var(--faint);direction:ltr;text-align:start}
+.flow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;counter-reset:step}
+.flow .st{position:relative;padding:14px 12px 14px 0;display:flex;flex-direction:column;gap:6px}
+.flow .st .k{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-2);font-family:var(--f-mono);font-size:12.5px;color:var(--brand);font-weight:600;position:relative;z-index:1}
+.flow .st::after{content:"";position:absolute;top:28px;inset-inline-start:30px;inset-inline-end:-2px;height:1px;background:var(--line-2)}
+.flow .st:last-child::after{display:none}
+.flow .st b{font-size:13.5px} .flow .st span{font-size:12px;color:var(--muted)}
+@media (max-width:1000px){.flow{grid-template-columns:repeat(3,minmax(0,1fr))} .flow .st:nth-child(3n)::after{display:none}}
+@media (max-width:560px){.flow{grid-template-columns:repeat(2,minmax(0,1fr))} .flow .st::after{display:none}}
+
+/* ---------- journey (guide) */
+.journey{display:flex;flex-direction:column}
+.jstep{display:grid;grid-template-columns:34px minmax(0,1fr);gap:0 14px;position:relative;padding-bottom:18px}
+.jstep::before{content:"";position:absolute;inset-block:34px 0;inset-inline-start:16px;width:2px;background:var(--line)}
+.jstep:last-child::before{display:none}
+.jdot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line-2);color:var(--muted);font-family:var(--f-mono);font-weight:600;font-size:13px;z-index:1}
+.jstep.done .jdot{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 50%,transparent);color:var(--ok)}
+.jstep.now .jdot{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);box-shadow:0 0 0 5px var(--brand-soft),0 0 18px var(--brand-glow)}
+.jstep.warn .jdot{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 50%,transparent);color:var(--warn)}
+.jstep.bad .jdot{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 50%,transparent);color:var(--bad)}
+.jbody{display:flex;flex-direction:column;gap:8px;padding-top:5px;min-width:0}
+.jbody .jt{display:flex;gap:10px;align-items:center;flex-wrap:wrap} .jbody .jt h3{font-size:15px}
+.jbody .jd{color:var(--muted);font-size:13px}
+.jitems{display:flex;flex-direction:column;gap:6px}
+.jitem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.jitem .t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.next{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:center;padding:18px 20px}
+.next .ic{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--brand);color:var(--brand-ink);box-shadow:0 6px 20px var(--brand-glow)}
+@media (max-width:700px){.next{grid-template-columns:auto minmax(0,1fr)} .next .act{grid-column:1/-1}}
+
+/* ---------- tables */
+.tbl,.tablewrap{overflow-x:auto;border-radius:inherit}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:10px 14px;text-align:start;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;background:var(--surface-2);position:sticky;top:0;z-index:1;white-space:nowrap}
+html[lang="ar"] th{text-transform:none;letter-spacing:0;font-size:12.5px}
+tbody tr:hover>td{background:color-mix(in srgb,var(--surface-2) 60%,transparent)}
+tr:last-child td{border-bottom:0}
+tr.grp td{background:var(--surface-2);font-weight:650;font-size:12px;color:var(--muted);letter-spacing:.04em}
+td.num{font-variant-numeric:tabular-nums}
+.leaf{cursor:pointer} .leaf.sel td{background:var(--brand-soft)}
+.rows table td{padding:4px} .rows input,.rows select{min-height:32px;padding:4px 8px}
+.rows th{position:static}
+
+/* ---------- lists, issues, findings */
+.issue{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 18px;border-bottom:1px solid var(--line)}
+.issue:last-child{border-bottom:0}
+.issue .txt{display:flex;flex-direction:column;gap:4px;min-width:0}
+.issue .src{font-size:12px;color:var(--muted);font-family:var(--f-mono);direction:ltr;text-align:start}
+.pchips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pchip{font-size:12px;background:var(--surface-3);border-radius:6px;padding:1px 8px;text-decoration:none;color:var(--ink)}
+.finding{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:5px;background:var(--surface-2)}
+.finding.block{border-color:color-mix(in srgb,var(--bad) 45%,var(--line));background:color-mix(in srgb,var(--bad-soft) 60%,var(--surface-2))}
+.alert{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);color:var(--ink)}
+.alert.bad{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.alert.ok{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 35%,transparent)}
+.alert.info{background:var(--info-soft);border-color:color-mix(in srgb,var(--info) 35%,transparent)}
+.alert p{margin:0;flex:1;min-width:0}
+.empty{padding:34px 18px;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:10px;align-items:center}
+.empty svg{opacity:.5}
+.role{display:flex;flex-direction:column}
+.role h3{padding:12px 18px;background:var(--surface-2);border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.need{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--line)}
+.need:last-child{border-bottom:0}
+.need .meta{font-size:12.5px;color:var(--muted)}
+.api{display:inline-block;margin-top:2px;font-size:12px;color:var(--accent)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs a{padding:9px 14px;text-decoration:none;color:var(--muted);border-bottom:2px solid transparent;font-weight:500;margin-bottom:-1px}
+.tabs a.on{color:var(--brand);border-bottom-color:var(--brand);font-weight:650}
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.steps span{padding:5px 12px 5px 6px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted);font-size:12.5px;display:inline-flex;align-items:center;gap:7px}
+.steps span.on{background:var(--brand-soft);color:var(--brand);border-color:color-mix(in srgb,var(--brand) 40%,transparent);font-weight:650}
+.steps span.done{color:var(--ok)}
+.steps .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:color-mix(in srgb,currentColor 16%,transparent);font-size:11px;font-family:var(--f-mono)}
+
+/* ---------- forms */
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.f,label.f{display:flex;flex-direction:column;gap:5px;min-width:0;font-size:12.5px;color:var(--muted)}
+.f>span,label.f span{font-size:12.5px;color:var(--muted);font-weight:600}
+.f .seg{align-self:flex-start;flex-wrap:wrap}
+input[type=text],input[type=email],input[type=password],input[type=date],input[type=number],input:not([type]),select,textarea,.search{
+  width:100%;padding:8px 11px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface-2);color:var(--ink);min-height:38px;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus,.search:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+input[type=checkbox],input[type=radio],.picks input,.f input[type=checkbox]{width:auto;min-height:0;padding:0;flex:none;accent-color:var(--brand)}
+textarea{min-height:90px;resize:vertical}
+.f .hint{font-size:12px;color:var(--muted);font-weight:400}
+.search{min-width:240px;width:auto}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:inline-flex;gap:7px;align-items:center;padding:6px 11px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface-2);cursor:pointer;color:var(--ink)}
+.checks label:has(input:checked){border-color:color-mix(in srgb,var(--brand) 50%,transparent);background:var(--brand-soft);color:var(--brand)}
+.picks{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow:auto;border:1px solid var(--line-2);border-radius:10px;padding:6px 10px;background:var(--surface-2)}
+.picks label{display:flex;gap:8px;align-items:center;color:var(--ink)}
+.gform{display:flex;flex-direction:column;gap:10px}
+.gform .miss input,.gform .miss textarea,.gform .miss select,td.miss input,td.miss select{border-color:var(--bad);background:var(--bad-soft)}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line-2);border-radius:12px;background:var(--surface-2);cursor:pointer}
+.opt:has(input:checked){border-color:color-mix(in srgb,var(--brand) 55%,transparent);background:var(--brand-soft)}
+.opt input{margin-top:4px}
+.opt b{display:block} .opt span{display:block;color:var(--muted);font-size:12.5px}
+.choice{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.choice button{display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:start;padding:10px 12px;border:1px solid var(--line-2);border-radius:12px;background:var(--surface-2);cursor:pointer;min-height:56px}
+.choice button b{font-size:13.5px} .choice button span{font-size:12px;color:var(--muted)}
+.choice button.on{border-color:color-mix(in srgb,var(--brand) 60%,transparent);background:var(--brand-soft);box-shadow:0 0 0 1px color-mix(in srgb,var(--brand) 30%,transparent)}
+.choice button.on b{color:var(--brand)}
+
+/* ---------- publisher */
+.pub{display:grid;grid-template-columns:minmax(230px,320px) minmax(0,1fr) minmax(250px,340px);gap:12px;min-height:560px}
+.pub .card{display:flex;flex-direction:column;min-height:0;max-height:calc(100vh - 230px)}
+.pub .card>h3{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pub .scroll{overflow:auto;min-height:0}
+.tree details{border-bottom:1px solid var(--line)}
+.tree summary{padding:9px 14px;cursor:pointer;font-weight:650;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:8px}
+html[lang="ar"] .tree summary{text-transform:none;letter-spacing:0;font-size:12.5px}
+.tree summary .cnt{margin-inline-start:auto;font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.node{display:flex;gap:9px;align-items:flex-start;padding:7px 14px 7px 22px;cursor:pointer;font-size:13px;border-inline-start:3px solid transparent}
+html[dir=rtl] .node{padding:7px 22px 7px 14px}
+.node:hover{background:var(--surface-2)} .node.sel{background:var(--brand-soft);border-inline-start-color:var(--brand)}
+.node.drop{outline:2px dashed var(--brand);outline-offset:-2px}
+.node .code{color:var(--muted);font-size:11.5px}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:var(--na);box-shadow:0 0 0 2px color-mix(in srgb,currentColor 0%,transparent)}
+.d-waiting{background:var(--wait)} .d-auto,.d-conforming{background:var(--ok);box-shadow:0 0 6px var(--ok)} .d-needs_attention{background:var(--warn)} .d-non_conforming{background:var(--bad);box-shadow:0 0 6px var(--bad)} .d-received{background:var(--rec)}
+.props{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 12px;padding:14px;font-size:13px;margin:0}
+.props dt{color:var(--muted);font-size:12px} .props dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.lim{display:flex;align-items:center;gap:8px} .lim .meter{max-width:90px}
+@media (max-width:1100px){.pub{grid-template-columns:minmax(0,1fr)} .pub .card{max-height:none}}
+
+/* ---------- drawer, toast */
+.scrim{position:fixed;inset:0;background:rgba(3,8,14,.55);z-index:25;backdrop-filter:blur(2px)}
+.drawer{position:fixed;inset-block:0;inset-inline-end:0;width:min(620px,100vw);background:var(--surface);border-inline-start:1px solid var(--line-2);z-index:30;display:flex;flex-direction:column;
+  box-shadow:-20px 0 60px rgba(0,0,0,.45);animation:drawer-in .22s ease-out}
+html[dir=rtl] .drawer{box-shadow:20px 0 60px rgba(0,0,0,.45)}
+@keyframes drawer-in{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+html[dir=rtl] .drawer{animation-name:drawer-in-rtl}
+@keyframes drawer-in-rtl{from{transform:translateX(-24px);opacity:0}to{transform:none;opacity:1}}
+.drawer.wide{width:min(840px,100vw)}
+.drawer header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.drawer header h2{flex:1;min-width:0;font-size:15px}
+.drawer .body{padding:18px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.toast{position:fixed;bottom:20px;inset-inline-start:50%;transform:translateX(-50%);background:var(--surface-3);color:var(--ink);border:1px solid var(--line-2);
+  padding:10px 16px;border-radius:12px;z-index:40;max-width:min(600px,92vw);box-shadow:var(--shadow);display:flex;gap:10px;align-items:center}
+html[dir=rtl] .toast{transform:translateX(50%)}
+.toast::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--brand);box-shadow:0 0 10px var(--brand-glow);flex:none}
+
+/* ---------- misc */
+.dl{display:flex;gap:8px;flex-wrap:wrap}
+.mobnav{display:none}
+.kbd{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line-2);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--muted)}
+.divider{height:1px;background:var(--line);margin:4px 0}
+.ic-tile{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--brand-soft);color:var(--brand);flex:none}
+.ic-tile.ok{background:var(--ok-soft);color:var(--ok)} .ic-tile.warn{background:var(--warn-soft);color:var(--warn)} .ic-tile.bad{background:var(--bad-soft);color:var(--bad)} .ic-tile.wait{background:var(--wait-soft);color:var(--wait)} .ic-tile.na{background:var(--na-soft);color:var(--muted)} .ic-tile.accent{background:var(--accent-soft);color:var(--accent)}
+.flip{display:inline-flex} html[dir=rtl] .flip{transform:scaleX(-1)}
+.skeleton{background:linear-gradient(90deg,var(--surface-2),var(--surface-3),var(--surface-2));background-size:200% 100%;animation:sk 1.2s infinite;border-radius:8px;min-height:14px}
+@keyframes sk{from{background-position:200% 0}to{background-position:-200% 0}}
+body.ro .btn.pri,body.ro [data-reg],body.ro [data-replace],body.ro [data-editdoc],body.ro [data-unlink],body.ro #npy,body.ro #lpGo,body.ro #lpNew,body.ro #editP{display:none!important}
+
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;height:auto;flex-direction:row;align-items:center;gap:4px;padding:6px 10px;overflow-x:auto;border-inline-end:0;border-bottom:1px solid var(--line);scrollbar-width:none}
+  .rail .logo,.rail .foot,.nav .grp{display:none}
+  .nav{flex-direction:row;flex-wrap:nowrap;gap:4px} .nav a{white-space:nowrap;padding:6px 10px;min-height:34px;font-size:13px} .nav a.on::before{display:none} .nav a[aria-disabled="true"]{display:none}
+  .view{padding:14px 14px 50px;gap:14px} .top{padding:8px 14px}
+  .hero{padding:22px 18px} .hero h1{font-size:24px}
+  .issue{grid-template-columns:auto minmax(0,1fr)} .issue .act{grid-column:2}
+  .need{grid-template-columns:minmax(0,1fr)}
+  .hide-m{display:none!important}
+  th,td{padding:8px 10px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .caps{grid-template-columns:1fr 1fr}
+  .jstep{grid-template-columns:28px minmax(0,1fr);gap:0 10px} .jdot{width:28px;height:28px;font-size:12px} .jstep::before{inset-inline-start:13px;inset-block-start:28px}
+}
+@media (max-width:560px){.caps{grid-template-columns:1fr} .grid3{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{.rail,.top,.btn,.scrim,.drawer,.toast{display:none!important} .app{display:block} .view{padding:0;max-width:none} .card{box-shadow:none;break-inside:avoid}}
+
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#F2F5F9; --bg-2:#EAF0F7; --surface:#FFFFFF; --surface-2:#F5F8FC; --surface-3:#EAF0F7;
+  --line:#DCE4EE; --line-2:#C7D3E2; --ink:#0B1424; --ink-2:#263447; --muted:#5A6A80; --faint:#8B99AD;
+  --brand:#0891B2; --brand-ink:#FFFFFF; --brand-soft:rgba(8,145,178,.10); --brand-glow:rgba(8,145,178,.22);
+  --accent:#6D28D9; --accent-soft:rgba(109,40,217,.10);
+  --ok:#15803D; --ok-soft:rgba(21,128,61,.10); --warn:#B45309; --warn-soft:rgba(180,83,9,.10);
+  --bad:#C62828; --bad-soft:rgba(198,40,40,.10); --info:#1D4ED8; --info-soft:rgba(29,78,216,.10);
+  --wait:#7E22CE; --wait-soft:rgba(126,34,206,.10); --na:#64748B; --na-soft:rgba(100,116,139,.12); --rec:#1D4ED8; --rec-soft:rgba(29,78,216,.10);
+  --shadow:0 1px 2px rgba(15,27,42,.05),0 6px 18px rgba(15,27,42,.06);
+  --shadow-sm:0 1px 2px rgba(15,27,42,.08);
+  color-scheme:light;
+}}
+
+</style>
+<style>
+/* Regulatory Reviewer — page layer on top of ds.css. Layout: app shell (rail + top + view); the desk reads top-down
+   (verdict strip → departments → clock → KPIs); the workspace is three panes (tree · questions · evidence). */
+.sim{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);border:1px dashed var(--line-2);border-radius:999px;padding:2px 10px;font-family:var(--f-mono)}
+.sim::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--wait)}
+.vstrip{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center;padding:18px 22px;border-radius:16px;border:1px solid var(--line);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--v-color,var(--warn)) 14%,var(--surface)),var(--surface) 70%);box-shadow:var(--shadow)}
+.vstrip .vlabel{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--f-mono)}
+html[lang="ar"] .vstrip .vlabel{letter-spacing:0;text-transform:none}
+.vstrip h1{font-size:22px;color:var(--v-color,var(--warn))}
+.vstrip .why{color:var(--ink-2);margin-top:4px;max-width:70ch}
+.vstrip .ring{--size:84px} .vstrip .ring b{font-size:17px}
+.vstrip .acts{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.depts{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.dept{display:flex;flex-direction:column;gap:10px;padding:14px 16px;text-align:start;cursor:pointer;color:inherit;font:inherit;transition:transform .15s,border-color .15s}
+.dept:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--brand) 45%,var(--line))}
+.dept .dh{display:flex;align-items:center;gap:10px}
+.dept .dh h3{flex:1;min-width:0;font-size:14px}
+.dept .dh .ic-tile{width:32px;height:32px;border-radius:9px}
+.dept .sub{font-size:12px;margin:0}
+.sevs{display:flex;gap:6px;flex-wrap:wrap}
+.sev{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--muted);font-family:var(--f-mono)}
+.sev::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--na)}
+.sev.critical::before{background:var(--bad)} .sev.major::before{background:var(--warn)} .sev.minor::before{background:var(--info)} .sev.na::before{background:var(--wait)}
+.sev b{color:var(--ink)}
+.dept .prog{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted)} .dept .prog .meter{flex:1}
+.clock{display:flex;flex-wrap:wrap;gap:8px 0;padding:4px 2px}
+.clock .st{flex:1 1 128px;position:relative;padding:12px 14px 12px 0;display:flex;flex-direction:column;gap:5px;min-width:0}
+.clock .st .k{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-2);font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.clock .st::after{content:"";position:absolute;top:26px;inset-inline-start:34px;inset-inline-end:-2px;height:1px;background:var(--line-2)}
+.clock .st:last-child::after{display:none}
+.clock .st b{font-size:13px} .clock .st .wd{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.clock .st.now .k{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);box-shadow:0 0 0 4px var(--brand-soft)}
+.clock .st.stop .k{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 50%,transparent);color:var(--warn)}
+.clock .st.stop b{color:var(--warn)}
+.clock .st.end .k{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 50%,transparent);color:var(--ok)}
+.runbox{display:flex;flex-direction:column;gap:10px}
+.runbox .rstep{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px}
+.runbox .rstep .k{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface-3);font-size:11px;font-family:var(--f-mono);color:var(--muted)}
+.runbox .rstep.done .k{background:var(--ok-soft);color:var(--ok)} .runbox .rstep.now .k{background:var(--brand);color:var(--brand-ink)}
+.runbox .rstep .res{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ws{display:grid;grid-template-columns:270px minmax(0,1fr) 330px;gap:14px;align-items:start}
+.ws>.card{min-height:200px}
+.ws .tree{max-height:calc(100vh - 230px);overflow:auto}
+.ws .tree summary .dot{margin-top:0}
+.qlist{display:flex;flex-direction:column;gap:12px}
+.qcard{border:1px solid var(--line);border-radius:12px;background:var(--surface-2);padding:12px 14px;display:flex;flex-direction:column;gap:9px;border-inline-start:3px solid var(--line-2)}
+.qcard.deficient.critical{border-inline-start-color:var(--bad)} .qcard.deficient.major{border-inline-start-color:var(--warn)} .qcard.deficient.minor{border-inline-start-color:var(--info)}
+.qcard.adequate{border-inline-start-color:var(--ok)} .qcard.not_assessable{border-inline-start-color:var(--wait)}
+.qcard .qh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qcard .qh .code{color:var(--muted)}
+.qcard .q{font-weight:600;font-size:14px}
+.qcard .ev{display:flex;flex-direction:column;gap:6px}
+.evi{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:start;padding:7px 10px;border-radius:9px;background:var(--surface);border:1px solid var(--line);cursor:pointer;text-align:start;font:inherit;color:inherit}
+.evi:hover,.evi.on{border-color:color-mix(in srgb,var(--brand) 50%,var(--line))}
+.evi .m{font-size:11.5px;color:var(--muted);font-family:var(--f-mono);direction:ltr;text-align:start;display:flex;gap:8px;flex-wrap:wrap}
+.evi .x{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.evi .x mark{background:color-mix(in srgb,var(--warn) 30%,transparent);color:inherit;border-radius:3px;padding:0 2px}
+.evi.data .m{color:var(--accent)}
+.fnd{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--line)}
+.fnd .en{direction:ltr;text-align:start;font-size:13px;line-height:1.5}
+.fnd .ar{direction:rtl;text-align:start;font-size:13px;color:var(--ink-2);font-family:var(--f-ar)}
+.fnd .src{font-size:11.5px;color:var(--muted);font-family:var(--f-mono);direction:ltr;text-align:start}
+.qcard .qa{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ai{border:1px dashed color-mix(in srgb,var(--accent) 55%,transparent);background:var(--accent-soft);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.ai .aih{display:flex;gap:8px;align-items:center;color:var(--accent);font-weight:650;font-size:12.5px}
+.ai .conf{margin-inline-start:auto;font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.viewer{display:flex;flex-direction:column;gap:10px;position:sticky;top:calc(var(--top-h) + 14px)}
+.viewer .vh{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:12.5px}
+.viewer .vh .code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.page{margin:0 14px 14px;background:#fff;color:#1a2230;border-radius:6px;box-shadow:0 1px 0 rgba(0,0,0,.2),0 10px 30px rgba(0,0,0,.35);padding:22px 20px;font-family:"IBM Plex Sans",Georgia,serif;font-size:11.5px;line-height:1.6;direction:ltr;text-align:left;min-height:300px;position:relative;overflow:hidden}
+:root[data-theme="light"] .page{box-shadow:0 1px 2px rgba(15,27,42,.12),0 8px 22px rgba(15,27,42,.12);border:1px solid #d7dee7}
+.page .ph{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#6b7686;display:flex;justify-content:space-between;border-bottom:1px solid #e3e8ee;padding-bottom:6px;margin-bottom:10px}
+.page h4{margin:0 0 6px;font-size:12.5px;color:#0f1b2a}
+.page p{margin:0 0 7px}
+.page mark{background:#ffe08a;color:#1a2230;padding:0 2px;border-radius:2px;box-shadow:0 0 0 2px #ffe08a}
+.page .skel{height:7px;background:#e6ebf1;border-radius:3px;margin:6px 0}
+.page .skel.s{width:60%} .page .skel.m{width:85%}
+.page .pn{position:absolute;bottom:8px;right:12px;font-size:9px;color:#8a96a6}
+.letter{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px 32px;direction:ltr;text-align:left;font-size:13.5px;line-height:1.6;max-width:900px;box-shadow:var(--shadow)}
+.letter .lh{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap}
+.letter .lh .ref{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right}
+.letter h2{font-size:16px;margin:0 0 4px}
+.letter .meta{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;margin:12px 0;font-size:13px}
+.letter .meta dt{color:var(--muted)} .letter .meta dd{margin:0}
+.letter h3{font-size:13px;margin:16px 0 8px;color:var(--brand);text-transform:uppercase;letter-spacing:.06em;font-family:var(--f-mono)}
+.letter ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.letter li{padding-left:4px}
+.letter li .ar{direction:rtl;text-align:right;color:var(--ink-2);font-family:var(--f-ar);margin-top:3px}
+.letter li .lm{display:flex;gap:8px;flex-wrap:wrap;margin-top:5px;font-size:11.5px;font-family:var(--f-mono);color:var(--muted)}
+.letter .sign{margin-top:22px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.letter .stamp{display:inline-block;border:2px solid var(--wait);color:var(--wait);border-radius:8px;padding:4px 10px;font-family:var(--f-mono);font-size:11px;transform:rotate(-3deg);letter-spacing:.08em}
+.sevtag{font-family:var(--f-mono);font-size:11px;border-radius:5px;padding:0 7px;line-height:20px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.sevtag.critical{background:var(--bad-soft);color:var(--bad)} .sevtag.major{background:var(--warn-soft);color:var(--warn)} .sevtag.minor{background:var(--info-soft);color:var(--info)} .sevtag.note{background:var(--na-soft);color:var(--muted)}
+.otag{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line-2);border-radius:5px;padding:0 6px;line-height:20px;color:var(--muted)}
+.otag.ai{border-color:color-mix(in srgb,var(--accent) 55%,transparent);color:var(--accent)}
+.otag.human{border-color:color-mix(in srgb,var(--brand) 55%,transparent);color:var(--brand)}
+.vbars{display:flex;flex-direction:column;gap:10px}
+.vbar{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:12px;align-items:center;font-size:13px}
+.vbar .meter{height:8px}
+.vbar .n{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.impact{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+.impact:last-child{border-bottom:0}
+.impact .d{font-size:12.5px;color:var(--muted)}
+.impact .delta{font-family:var(--f-mono);font-size:12px;color:var(--ok);white-space:nowrap}
+.tl{display:flex;flex-direction:column;gap:0}
+.tl .ti{display:grid;grid-template-columns:120px 18px minmax(0,1fr);gap:0 12px;align-items:start;position:relative;padding-bottom:14px}
+.tl .ti::before{content:"";position:absolute;inset-inline-start:128px;top:16px;bottom:0;width:2px;background:var(--line)}
+.tl .ti:last-child::before{display:none}
+.tl .ti .dt{font-family:var(--f-mono);font-size:12px;color:var(--muted);padding-top:2px;direction:ltr;text-align:end}
+.tl .ti .pt{width:12px;height:12px;border-radius:50%;background:var(--surface-3);border:2px solid var(--line-2);margin:3px 3px 0}
+.tl .ti.now .pt{background:var(--brand);border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
+.tl .ti.stop .pt{background:var(--warn-soft);border-color:var(--warn)}
+.tl .ti.end .pt{background:var(--ok-soft);border-color:var(--ok)}
+.tl .ti b{font-size:13px} .tl .ti span{display:block;font-size:12px;color:var(--muted)}
+.rtable td .st-open{color:var(--warn)} .rtable td .st-answered{color:var(--info)} .rtable td .st-accepted{color:var(--ok)} .rtable td .st-not_accepted{color:var(--bad)}
+.due{font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums}
+.due.late{color:var(--bad)} .due.soon{color:var(--warn)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.stepper{display:flex;gap:8px;flex-wrap:wrap}
+.stepper .s{display:inline-flex;gap:7px;align-items:center;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);font-size:12.5px;color:var(--muted)}
+.stepper .s.done{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent)} .stepper .s.now{color:var(--brand);border-color:color-mix(in srgb,var(--brand) 45%,transparent);background:var(--brand-soft);font-weight:650}
+.gate{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:16px 18px;border-radius:12px;border:1px solid var(--line)}
+.gate.ok{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 35%,transparent)} .gate.bad{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.gate h3{font-size:15px} .gate p{color:var(--ink-2);font-size:13px}
+.tiny-note{font-size:11.5px;color:var(--faint)}
+.seg.wrapseg{flex-wrap:wrap}
+@media (max-width:1180px){.ws{grid-template-columns:250px minmax(0,1fr)} .ws .viewer{grid-column:1/-1;position:static}}
+@media (max-width:900px){.ws{grid-template-columns:1fr} .ws .tree{max-height:260px} .vstrip{grid-template-columns:1fr} .vstrip .acts{flex-direction:row;flex-wrap:wrap} .vbar{grid-template-columns:110px minmax(0,1fr) auto} .letter{padding:18px 16px} .tl .ti{grid-template-columns:86px 18px minmax(0,1fr)} .tl .ti::before{inset-inline-start:94px}}
+
+</style>
+<div class="app">
+  <aside class="rail" aria-label="Main">
+    <a class="logo" href="#desk"><span class="tile">DB</span><span><span class="name" data-t="appName"></span><span class="tag">EDA · Regulatory Reviewer</span></span></a>
+    <nav class="nav" id="nav"></nav>
+    <div class="foot"><span class="led" data-t="simNote"></span><span class="code">eda.review.v1 · 2026-11</span></div>
+  </aside>
+  <main class="main">
+    <div class="top">
+      <select class="mobnav btn" id="mobnav" aria-label="Navigate"></select>
+      <div class="crumb" id="crumb"></div>
+      <div class="seg" role="group" aria-label="Language"><button id="lang-ar" lang="ar">عربي</button><button id="lang-en" lang="en">EN</button></div>
+      <button class="btn ghost" id="theme" aria-label="Theme"></button>
+    </div>
+    <div class="view" id="view" tabindex="-1"></div>
+  </main>
+</div>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog" aria-labelledby="dTitle"><header><h2 id="dTitle"></h2><button class="btn ghost sm" id="dClose" aria-label="Close">✕</button></header><div class="body" id="dBody"></div></aside>
+<div class="toast" id="toast" role="status" hidden></div>
+<script>
+/* Shared runtime for the Dossier Builder pages: DOM helpers, API, toast, drawer, theme, icons. No dependencies. */
+(function(){
+  'use strict';
+  const $ = (s, el=document) => el.querySelector(s);
+  const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const bdi = s => `<bdi>${esc(s)}</bdi>`;
+  const store = {
+    get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+    set(k, v){ try{ localStorage.setItem(k, v); }catch(e){} },
+  };
+
+  /* ---- icons (24x24 strokes) */
+  const P = {
+    home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>',
+    layers:'<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/><path d="m3 17.5 9 5 9-5"/>',
+    folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+    branch:'<path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
+    checklist:'<path d="m3 7 2 2 4-4"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8M13 12h8M13 18h8"/>',
+    database:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+    tree:'<rect x="3" y="3" width="7" height="5" rx="1"/><rect x="14" y="10" width="7" height="5" rx="1"/><rect x="14" y="17" width="7" height="4" rx="1"/><path d="M6.5 8v11h7.5M6.5 12.5h7.5"/>',
+    shield:'<path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/><path d="m9 12 2 2 4-4"/>',
+    package:'<path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7Z"/>',
+    download:'<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/>',
+    upload:'<path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M4 3h16"/>',
+    history:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/>',
+    compass:'<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/>',
+    file:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>',
+    search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>',
+    globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M22 20a7 7 0 0 0-5-6.7"/>',
+    logout:'<path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M13 3h6v18h-6"/>',
+    key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l2 2M14 9l2 2"/>',
+    alert:'<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/>',
+    check:'<path d="m5 12 5 5L20 7"/>',
+    x:'<path d="M6 6l12 12M18 6 6 18"/>',
+    chevron:'<path d="m9 6 6 6-6 6"/>',
+    arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+    external:'<path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M19 13v7H4V5h7"/>',
+    sparkles:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="M19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8L19 17Z"/>',
+    wrench:'<path d="M14.7 6.3a4 4 0 0 0 5 5L22 9a6 6 0 0 1-8.5 7.3L7 22.8 1.2 17 7.7 10.5A6 6 0 0 1 15 2Z"/>',
+    mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    activity:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+    building:'<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-3h4v3"/>',
+    book:'<path d="M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3Z"/><path d="M4 4v16a3 3 0 0 1 3-3h12"/>',
+    grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+    info:'<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>',
+    flask:'<path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9V3"/><path d="M7 15h10"/>',
+    cpu:'<rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>',
+    link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    repeat:'<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+    menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+    calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    zap:'<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
+    target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    table:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/>',
+    scan:'<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>',
+    pill:'<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
+    stamp:'<path d="M5 22h14"/><path d="M19.3 17.6a1 1 0 0 1-1 1.4H5.7a1 1 0 0 1-1-1.4l1.3-4A1 1 0 0 1 7 13h10a1 1 0 0 1 1 .6Z"/><path d="M10 13V8.2A3 3 0 1 1 14 8.2V13"/>',
+    bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21h4"/>',
+    settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+  };
+  const icon = (n, s=18, cls='') => `<svg class="ic ${cls}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||P.info}</svg>`;
+
+  /* ---- API: errors carry {code,en,ar} from the server; X-DB marks a deliberate request (CSRF) */
+  async function api(path, opt={}, root='/api'){
+    opt = Object.assign({}, opt);
+    opt.headers = Object.assign({'X-DB':'1'}, opt.headers||{});
+    if(opt.json!==undefined){ opt.body = JSON.stringify(opt.json); opt.headers['content-type']='application/json'; delete opt.json; }
+    const r = await fetch(root + path, opt);
+    if(r.status===401){ location.href='/login'; throw new Error('auth'); }
+    const ct = r.headers.get('content-type') || '';
+    const body = ct.includes('json') ? await r.json() : null;
+    if(!r.ok){ const d = body && body.detail || {}; const lang = document.documentElement.lang || 'ar';
+      const e = new Error(d[lang] || d.en || d.ar || r.statusText); e.detail = d; e.status = r.status; throw e; }
+    return body;
+  }
+
+  /* ---- toast + drawer (elements #toast, #drawer, #dTitle, #dBody, #dClose, #scrim) */
+  function toast(msg){ const el=$('#toast'); if(!el) return; el.textContent=msg; el.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>el.hidden=true, 3800); }
+  function openDrawer(title, html, wide){ $('#dTitle').textContent=title; $('#dBody').innerHTML=html; $('#drawer').classList.toggle('wide', !!wide);
+    $('#drawer').hidden=false; $('#scrim').hidden=false;
+    setTimeout(()=>{ const f=$('#dBody').querySelector('input:not([type=checkbox]),select,textarea'); (f||$('#dClose')).focus(); }, 30); }
+  function closeDrawer(){ const d=$('#drawer'); if(!d) return; d.hidden=true; $('#scrim').hidden=true; d.classList.remove('wide'); }
+  function wireChrome(){
+    const c=$('#dClose'), s=$('#scrim'); if(c) c.onclick=closeDrawer; if(s) s.onclick=closeDrawer;
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDrawer(); });
+  }
+
+  /* ---- theme (dark by default: an instrument panel) */
+  const theme = {
+    init(){ const t = store.get('db.theme') || 'dark'; document.documentElement.dataset.theme = t; theme.paint(); },
+    toggle(){ const r=document.documentElement; r.dataset.theme = r.dataset.theme==='dark' ? 'light' : 'dark'; store.set('db.theme', r.dataset.theme); theme.paint(); },
+    paint(){ const b=$('#theme'); if(b) b.innerHTML = icon(document.documentElement.dataset.theme==='dark' ? 'sun' : 'moon', 17); },
+  };
+
+  /* ---- small renderers */
+  const ring = (pct, cls='') => `<div class="ring ${cls}" style="--v:${Math.max(0,Math.min(100,+pct||0))}"><b>${Math.round(+pct||0)}%</b></div>`;
+  const meter = (pct, cls='') => `<div class="meter ${cls}"><i style="width:${Math.max(0,Math.min(100,+pct||0))}%"></i></div>`;
+  const fmtDate = (d, lang) => d ? new Date(/^\d{4}-\d{2}-\d{2}$/.test(d) ? d+'T00:00:00' : d).toLocaleDateString(lang==='ar'?'ar-EG':'en-GB',{year:'numeric',month:'short',day:'numeric'}) : '—';
+  const fmtTs = (ts, lang) => new Date(ts*1000).toLocaleString(lang==='ar'?'ar-EG':'en-GB');
+  const pct = (a, b) => b ? Math.round(100*a/b) : 0;
+
+  window.DS = { $, $$, esc, bdi, store, icon, api, toast, openDrawer, closeDrawer, wireChrome, theme, ring, meter, fmtDate, fmtTs, pct };
+})();
+
+</script>
+<script>
+/* Sample review run of the Examplol dossier (illustrative data; every finding cites a published EDA source). */
+const DOSSIER = {
+  name: 'Examplol 500 mg film-coated tablets', applicant: 'Example Pharma S.A.E.', tracking: 'P-MAA-0001',
+  kind: {ar:'جنيس محلي · تسجيل جديد · One Submission', en:'Local generic · new registration · One Submission'},
+  track: 'c_local', run: {id:'R-0003', date:'2026-11-08', prev:'R-0002', pack:'eda.review.v1 (2026-11)'},
+};
+const TRACKS = {
+  a:        {label:{ar:'450/2023 — Track A', en:'450/2023 — Track A'}, wds:[3,10,5,7], total:1},
+  b:        {label:{ar:'450/2023 — Track B', en:'450/2023 — Track B'}, wds:[6,20,10,14], total:2},
+  c_ref:    {label:{ar:'450/2023 — Track C مستورد من دولة مرجعية', en:'450/2023 — Track C imported (reference country)'}, wds:[9,30,10,25], total:3},
+  c_local:  {label:{ar:'450/2023 — Track C محلي / مستورد غير مرجعي', en:'450/2023 — Track C local / non-reference import'}, wds:[15,60,10,60], total:6},
+  d820_loc: {label:{ar:'820/2016 — محلي (CTD)', en:'820/2016 — Local (CTD)'}, wds:[15,20,'3m','2m'], total:6},
+};
+const STAGES = [
+  {key:'screen', ar:'الفحص الأولي', en:'Screening'},
+  {key:'eval',   ar:'التوزيع والتقييم الفني', en:'Distribution & technical evaluation'},
+  {key:'stop',   ar:'استيفاء (Clock stop)', en:'Deficiency round (clock stop)'},
+  {key:'release',ar:'صدور موافقات الإدارات', en:'Release of departmental approvals'},
+  {key:'final',  ar:'المراجعة النهائية + اللجنة + الرخصة', en:'Final review · Technical Committee · licence'},
+];
+const DEPTS = [
+  {id:'screening', ar:'الفحص الأولي', en:'Screening', body:{ar:'إدارة الشؤون التنظيمية', en:'Regulatory Affairs admin.'}, icon:'checklist', verdict:'comments', assessed:[27,29]},
+  {id:'technical', ar:'الملف الفني', en:'Technical file', body:{ar:'eCTD / PDF', en:'eCTD / PDF'}, icon:'cpu', verdict:'approve', assessed:[112,112]},
+  {id:'quality',   ar:'الجودة (M3)', en:'Quality (M3)', body:{ar:'الشؤون الفنية', en:'Technical Affairs'}, icon:'flask', verdict:'reject', assessed:[41,46]},
+  {id:'cadc',      ar:'معامل الرقابة CADC', en:'CADC (NCL)', body:{ar:'تقييم الملف قبل التحليل', en:'File assessment before testing'}, icon:'target', verdict:'clock_stop', assessed:[12,12]},
+  {id:'stability', ar:'الثبات', en:'Stability', body:{ar:'الإدارة العامة للثبات', en:'General Admin. for Stability'}, icon:'activity', verdict:'clock_stop', assessed:[9,11]},
+  {id:'be',        ar:'التكافؤ الحيوي', en:'Bioequivalence', body:{ar:'GL.CAPP.024', en:'GL.CAPP.024'}, icon:'pill', verdict:'approve', assessed:[14,14]},
+  {id:'labelling', ar:'النشرة والعبوة', en:'Labelling', body:{ar:'SmPC · PIL · Artwork', en:'SmPC · PIL · Artwork'}, icon:'book', verdict:'comments', assessed:[6,6]},
+  {id:'gates',     ar:'البوابات', en:'Gates', body:{ar:'تفتيش · PV · تسعير', en:'Inspection · PV · Pricing'}, icon:'stamp', verdict:'comments', assessed:[5,5]},
+];
+const VERDICT = {
+  approve:    {ar:'موافقة', en:'Approve', cls:'c-ok'},
+  comments:   {ar:'موافقة مع ملاحظات', en:'Approve with comments', cls:'c-info'},
+  clock_stop: {ar:'استيفاء — Clock stop', en:'Clock stop', cls:'c-warn'},
+  reject:     {ar:'رفض / إعادة تقديم', en:'Reject / resubmit', cls:'c-bad'},
+};
+const SECTIONS = {
+  screening: [['1.1', {ar:'المتطلبات الإدارية', en:'Administrative requirements'}], ['1.2', {ar:'الدراسات والموافقات الفنية', en:'Technical studies / approvals'}]],
+  quality: [['3.2.S.1',{ar:'معلومات عامة',en:'General information'}],['3.2.S.3',{ar:'التوصيف والشوائب',en:'Characterisation & impurities'}],['3.2.S.4',{ar:'ضبط المادة الفعالة',en:'Control of the API'}],
+            ['3.2.P.1',{ar:'الوصف والتركيب',en:'Description & composition'}],['3.2.P.2',{ar:'التطوير الصيدلي',en:'Pharmaceutical development'}],['3.2.P.3',{ar:'التصنيع',en:'Manufacture'}],
+            ['3.2.P.5',{ar:'ضبط المنتج النهائي',en:'Control of the FPP'}],['3.2.P.8',{ar:'الثبات',en:'Stability'}],['3.2.R',{ar:'المعلومات الإقليمية',en:'Regional information'}]],
+  cadc: [['CADC-C',{ar:'التركيب وورقة الحساب',en:'Composition & calculation sheet'}],['CADC-M',{ar:'المواصفات والطريقة',en:'Specification & method'}]],
+  stability: [['ST-R',{ar:'مجلد المستندات التنظيمية',en:'Regulatory documents folder'}],['ST-D',{ar:'البيانات والالتزامات',en:'Data & commitments'}]],
+  be: [['5.3.1.2',{ar:'تقرير التكافؤ الحيوي',en:'BE study report'}],['5.3.1.4',{ar:'الطريقة الحيوية التحليلية',en:'Bioanalytical method'}]],
+  labelling: [['1.1.9',{ar:'النشرة SmPC / PIL',en:'SmPC / PIL'}],['1.1.10',{ar:'العبوة',en:'Artwork'}]],
+  gates: [['PRE',{ar:'المستندات التمهيدية',en:'Preliminary approvals'}]],
+  technical: [['TECH',{ar:'PDF و eCTD',en:'PDF & eCTD'}]],
+};
+/* findings: id, dept, sec, q{ar,en}, verdict, sev, origin, conf?, ev[], fnd{en,ar}, ref, act{ar,en}, status, resp? */
+const F = [
+ {id:'SC-01', dept:'screening', sec:'1.1', q:{en:'Does the cover letter state that the data are «true, complete and correct»?', ar:'هل خطاب التغطية يذكر أن البيانات «صحيحة وكاملة ودقيقة»؟'},
+  verdict:'deficient', sev:'minor', origin:'text', ev:[{doc:'1.1.1 cover-letter.pdf', page:1, x:'…we hereby submit the registration dossier of Examplol 500 mg film-coated tablets for your kind evaluation. <mark>(no completeness statement found)</mark>'}],
+  fnd:{en:'The cover letter should include a statement that the submitted data are true, complete and correct.', ar:'يجب أن يتضمن خطاب التغطية إقراراً بأن البيانات المقدمة صحيحة وكاملة ودقيقة.'},
+  ref:'WHO screening checklist (05/2021) §1 · NP.CAPP.065 v5 1.1.1', act:{ar:'أعد توليد خطاب التغطية', en:'Regenerate the cover letter'}, status:'open'},
+ {id:'SC-02', dept:'screening', sec:'1.2', q:{en:'Is the CEP valid, and is the authorisation box filled and signed by the CEP holder?', ar:'هل شهادة CEP سارية ومربع التفويض مملوء وموقَّع من حاملها؟'},
+  verdict:'deficient', sev:'critical', origin:'data', ev:[{data:'documents[1.2.4.3].validity', v:'CEP R1-CEP 2019-123-Rev 01 · valid · authorisation box: blank'},{doc:'1.2.4.3 CEP-examplol-hcl.pdf', page:3, x:'Declaration of access … <mark>Name of the applicant: ______  Signature: ______</mark>'}],
+  fnd:{en:'The CEP declaration of access (authorisation box) should be completed and signed by the CEP holder in favour of the applicant, and the applicant’s commitment letter attached.', ar:'يجب استكمال مربع التفويض في شهادة CEP وتوقيعه من حامل الشهادة لصالح مقدم الطلب، مع إرفاق خطاب التزام مقدم الطلب.'},
+  ref:'NP.CAPP.040 §CEP route · NP.CAPP.065 v5 1.2.4.3', act:{ar:'اطلب من مورّد المادة الفعالة', en:'Request from the API supplier'}, status:'open'},
+ {id:'SC-03', dept:'screening', sec:'1.1', q:{en:'Is every company document a searchable PDF?', ar:'هل كل مستندات الشركة PDF قابل للبحث؟'},
+  verdict:'adequate', sev:'critical', origin:'rule', ev:[{data:'checks.pdf.searchable', v:'112 / 112 company PDFs searchable · 9 third-party scans (allowed)'}],
+  fnd:{en:'All company documents are searchable PDFs.', ar:'كل مستندات الشركة PDF قابل للبحث.'}, ref:'NP.CAPP.065 v5 general note 4', status:'closed'},
+ {id:'QM-01', dept:'quality', sec:'3.2.P.5', q:{en:'Are batch analysis results reported for at least two batches of at least pilot scale, with numeric results?', ar:'هل نتائج تحليل التشغيلات مقدَّمة لتشغيلتين على الأقل بحجم تجريبي، وبقيم رقمية؟'},
+  verdict:'deficient', sev:'critical', origin:'data', ev:[{data:'batches.fpp', v:'1 batch · EX-23-001 · 120 000 tablets (pilot)'},{data:'results[EX-23-001].dissolution', v:'«conforms»'}],
+  fnd:{en:'Batch analysis data should be provided for at least two batches of at least pilot scale per strength (3.2.P.5.4), and results should be reported as numeric values rather than «conforms».', ar:'يجب تقديم نتائج تحليل لتشغيلتين على الأقل بحجم تجريبي لكل تركيز (3.2.P.5.4)، وبقيم رقمية بدل «مطابق».'},
+  ref:'NP.CAPP.040 §P.5.4 · WHO TRS 986 Annex 6', act:{ar:'أضف التشغيلة الثانية في البيانات', en:'Add the second batch in Data'}, status:'open'},
+ {id:'QM-02', dept:'quality', sec:'3.2.S.3', q:{en:'Are elemental (Q3D), mutagenic (M7), nitrosamine and benzene-in-solvents risk assessments provided?', ar:'هل تقييمات مخاطر العناصر Q3D والشوائب الطافرة M7 والنيتروزامين والبنزين في المذيبات مقدَّمة؟'},
+  verdict:'deficient', sev:'major', origin:'ai', conf:0.86, ev:[{doc:'3.2.S.3.2 impurities.pdf', page:4, x:'Potential impurities A, B and C are controlled in the specification. <mark>No elemental impurities or nitrosamine assessment is included in this section.</mark>'}],
+  fnd:{en:'A risk assessment for elemental impurities (ICH Q3D), mutagenic impurities (ICH M7), nitrosamines and benzene in solvents should be provided in 3.2.S.3.2, with the resulting control strategy.', ar:'يجب تقديم تقييم مخاطر للعناصر (ICH Q3D) والشوائب الطافرة (ICH M7) والنيتروزامين والبنزين في المذيبات في 3.2.S.3.2 مع استراتيجية الضبط الناتجة.'},
+  ref:'NP.CAPP.040 §S.3.2', act:{ar:'أرفق تقييم المخاطر', en:'Attach the risk assessment'}, status:'open'},
+ {id:'QM-03', dept:'quality', sec:'3.2.P.1', q:{en:'Does the API standard in 3.2.P.1 match the S-part specification (3.2.S.4.1)?', ar:'هل مرجع المادة الفعالة في 3.2.P.1 يطابق مواصفة الجزء S (3.2.S.4.1)؟'},
+  verdict:'deficient', sev:'major', origin:'data', ev:[{data:'composition[Examplol HCl].standard', v:'BP 2025'},{data:'apis[Examplol HCl].spec_standard', v:'Ph. Eur. 11.5'}],
+  fnd:{en:'The pharmacopoeial standard of the API declared in 3.2.P.1 (BP) differs from the specification in 3.2.S.4.1 (Ph. Eur.); the standard should be harmonised across the dossier and the composition certificate.', ar:'مرجع المادة الفعالة في 3.2.P.1 (BP) مختلف عن 3.2.S.4.1 (Ph. Eur.)؛ يجب توحيد المرجع في الملف كله وفي شهادة التركيب.'},
+  ref:'NP.CAPP.040 §P.1 · cross-check XC-03', act:{ar:'أعد بناء شهادة التركيب', en:'Rebuild the composition certificate'}, status:'answered', resp:{round:1, text:'Composition certificate re-issued with Ph. Eur. 11.5; CoA of API supplier attached.', docs:['1.2.1 composition-certificate v2.pdf']}},
+ {id:'QM-04', dept:'quality', sec:'3.2.P.5', q:{en:'Does the FPP specification include a dissolution acceptance criterion (Q) and a general-chapter reference column?', ar:'هل مواصفة المنتج النهائي فيها حد الذوبان Q وعمود مرجع الفصول العامة؟'},
+  verdict:'deficient', sev:'minor', origin:'data', ev:[{data:'specs.product[dissolution].limit', v:'NLT 80% (Q) in 30 min'},{data:'specs.product.reference_column', v:'absent'}],
+  fnd:{en:'The FPP specification should include a column referencing the general chapter of each compendial test (e.g. USP <711>, Ph. Eur. 2.9.3).', ar:'يجب أن تتضمن مواصفة المنتج النهائي عموداً يشير إلى الفصل العام لكل اختبار دستوري (مثل USP <711>، Ph. Eur. 2.9.3).'},
+  ref:'NP.CAPP.040 §P.5.1', act:{ar:'عدّل جدول المواصفات', en:'Edit the specification table'}, status:'open'},
+ {id:'QM-05', dept:'quality', sec:'3.2.P.8', q:{en:'Are photostability and in-use stability studies, commitment letters and an ongoing study on recent batches provided?', ar:'هل دراسات الثبات الضوئي وأثناء الاستخدام وخطابات الالتزام ودراسة جارية على تشغيلات حديثة مقدَّمة؟'},
+  verdict:'not_assessable', sev:'major', origin:'text', ev:[{data:'documents[3.2.P.8.3].text', v:'scanned · no OCR layer · 38 pages'}],
+  fnd:{en:'Not assessable: 3.2.P.8.3 is a scanned document without a text layer. Run OCR and re-assess.', ar:'غير قابل للتقييم: 3.2.P.8.3 مستند ممسوح بدون طبقة نص. شغّل OCR ثم أعد التقييم.'},
+  ref:'NP.CAPP.040 §P.8', act:{ar:'شغّل OCR', en:'Run OCR'}, status:'open'},
+ {id:'QM-06', dept:'quality', sec:'3.2.P.3', q:{en:'Is process validation provided on three consecutive batches for every commercial batch size, and are hold times supported by data?', ar:'هل تحقق العملية مقدَّم على ثلاث تشغيلات متتالية لكل حجم تجاري، وأزمنة الانتظار مدعومة ببيانات؟'},
+  verdict:'adequate', sev:'major', origin:'text', ev:[{doc:'3.2.P.3.5 process-validation-report.pdf', page:2, x:'Prospective validation of <mark>three consecutive production batches (300 000 tablets)</mark> … bulk hold time 30 days supported by <mark>hold-time study HT-22-04</mark>.'}],
+  fnd:{en:'Process validation on three consecutive production batches and a hold-time study are provided.', ar:'تحقق العملية على ثلاث تشغيلات إنتاجية ودراسة أزمنة الانتظار مقدَّمان.'}, ref:'NP.CAPP.040 §P.3', status:'closed'},
+ {id:'QM-07', dept:'quality', sec:'3.2.P.2', q:{en:'Are the QTPP, CQAs and CPPs identified, and is the formulation compared with the reference product?', ar:'هل تم تحديد QTPP وCQAs وCPPs، ومقارنة التركيب مع المنتج المرجعي؟'},
+  verdict:'adequate', sev:'major', origin:'ai', conf:0.78, ev:[{doc:'3.2.P.2 pharmaceutical-development.pdf', page:5, x:'Table 2 — <mark>Quality target product profile</mark> … Table 4 — <mark>Critical quality attributes</mark> … Section 2.3 compares the qualitative composition with <mark>Referenzol 500 mg (reference, EU)</mark>.'}],
+  fnd:{en:'QTPP, CQAs and CPPs are identified and the formulation is compared with the reference product.', ar:'تم تحديد QTPP وCQAs وCPPs ومقارنة التركيب مع المنتج المرجعي.'}, ref:'NP.CAPP.040 §P.2', status:'closed'},
+ {id:'QM-08', dept:'quality', sec:'3.2.R', q:{en:'Are the executed batch records of the manufactured (and biobatch) batches provided?', ar:'هل السجلات المنفذة لتشغيلات التصنيع (وتشغيلة التكافؤ) مقدَّمة؟'},
+  verdict:'deficient', sev:'major', origin:'rule', ev:[{data:'slots[R-01].documents', v:'0 documents · slot required (R)'}],
+  fnd:{en:'The executed batch manufacturing records of the submitted batches, including the biobatch, should be provided in 3.2.R.1.1 with legible operator notations.', ar:'يجب تقديم سجلات التصنيع المنفذة للتشغيلات المقدمة، بما فيها تشغيلة التكافؤ، في 3.2.R.1.1 بتدوينات واضحة.'},
+  ref:'NP.CAPP.040 §3.2.R.1.1 · WHO TRS 986 Annex 6', act:{ar:'ارفع السجلات في الخانة', en:'Upload the records to the slot'}, status:'open'},
+ {id:'CD-01', dept:'cadc', sec:'CADC-C', q:{en:'Is a separate calculation sheet provided for the salt-to-base equivalence?', ar:'هل توجد ورقة حساب منفصلة لتكافؤ الملح إلى القاعدة؟'},
+  verdict:'deficient', sev:'major', origin:'rule', ev:[{data:'generated[salt_calculation]', v:'not generated · API is a hydrochloride salt'}],
+  fnd:{en:'A separate calculation sheet converting the salt (Examplol hydrochloride) to the base should be provided with the composition.', ar:'يجب تقديم ورقة حساب منفصلة لتحويل الملح (هيدروكلوريد إكزامبلول) إلى القاعدة مع التركيب.'},
+  ref:'GL.CADC.002 v02/2024 §6.6.2.1', act:{ar:'ولّد ورقة الحساب', en:'Generate the calculation sheet'}, status:'open'},
+ {id:'CD-02', dept:'cadc', sec:'CADC-C', q:{en:'Is the function of every excipient stated per a recognised reference?', ar:'هل وظيفة كل مادة غير فعالة مذكورة حسب مرجع معتمد؟'},
+  verdict:'deficient', sev:'minor', origin:'data', ev:[{data:'composition[*].function', v:'7 / 9 excipients with a function · missing: Opadry II white, purified water'}],
+  fnd:{en:'The function of each inactive ingredient should be stated according to the Handbook of Pharmaceutical Excipients or another reliable reference (Opadry II, purified water).', ar:'يجب ذكر وظيفة كل مادة غير فعالة حسب Handbook of Pharmaceutical Excipients أو مرجع موثوق (Opadry II، الماء النقي).'},
+  ref:'GL.CADC.002 v02/2024 §6.6.1.2', act:{ar:'أكمل جدول التركيب', en:'Complete the composition table'}, status:'open'},
+ {id:'CD-03', dept:'cadc', sec:'CADC-M', q:{en:'Are the full analytical method and its validation (or verification, if compendial) with charts provided?', ar:'هل طريقة التحليل الكاملة والتحقق (أو التوثيق إن كانت دستورية) مع المنحنيات مقدَّمة؟'},
+  verdict:'adequate', sev:'major', origin:'text', ev:[{doc:'3.2.P.5.3 method-validation.pdf', page:1, x:'<mark>Validation report MV-23-07</mark> — specificity, linearity, accuracy, precision, robustness per <mark>ICH Q2(R2)</mark>; chromatograms in Annex B.'}],
+  fnd:{en:'Full method and validation report with chromatograms are provided.', ar:'الطريقة الكاملة وتقرير التحقق مع المنحنيات مقدَّمان.'}, ref:'GL.CADC.002 v02/2024 §6.6.5 · Annex V', status:'closed'},
+ {id:'ST-01', dept:'stability', sec:'ST-D', q:{en:'At submission: ≥ 6 months accelerated and ≥ 6 months long-term on ≥ 2 pilot batches?', ar:'عند التقديم: ≥ 6 شهور معجَّل و≥ 6 شهور طويل الأمد على ≥ 2 تشغيلة تجريبية؟'},
+  verdict:'deficient', sev:'critical', origin:'data', ev:[{data:'stability.batches', v:'EX-23-001 only · 30°C/75% RH 9 m · 40°C/75% RH 6 m'}],
+  fnd:{en:'Stability data should cover at least two primary batches of at least pilot scale; data for one batch only are presented.', ar:'يجب أن تغطي بيانات الثبات تشغيلتين أساسيتين على الأقل بحجم تجريبي؛ المقدَّم تشغيلة واحدة فقط.'},
+  ref:'WHO screening checklist §10 · WHO TRS 986 Annex 6', act:{ar:'أضف بيانات التشغيلة الثانية', en:'Add the second batch data'}, status:'open'},
+ {id:'ST-02', dept:'stability', sec:'ST-R', q:{en:'Is the regulatory documents folder complete (previous approvals, CADC final report, Annex II commitments)?', ar:'هل مجلد المستندات التنظيمية مكتمل (الموافقات السابقة، تقرير CADC النهائي، التزامات الملحق II)؟'},
+  verdict:'adequate', sev:'major', origin:'rule', ev:[{data:'stability.folder.regulatory', v:'6 / 6 items for new registration'}],
+  fnd:{en:'Regulatory documents folder complete for a new registration.', ar:'مجلد المستندات التنظيمية مكتمل للتسجيل الجديد.'}, ref:'NP.CAPP.090 v2 (06/08/2026)', status:'closed'},
+ {id:'BE-01', dept:'be', sec:'5.3.1.2', q:{en:'Are the 90% confidence intervals of AUC and Cmax ratios within 80.00–125.00%?', ar:'هل فواصل الثقة 90% لنسب AUC وCmax داخل 80.00–125.00%؟'},
+  verdict:'adequate', sev:'critical', origin:'data', ev:[{data:'be[EXM-BE-01].ci90', v:'AUC0-t 94.2–108.7% · Cmax 89.6–112.3% · n = 28'}],
+  fnd:{en:'The 90% CIs for AUC and Cmax lie within the acceptance range.', ar:'فواصل الثقة 90% لـ AUC وCmax داخل نطاق القبول.'}, ref:'GL.CAPP.024 v4/2026 §2.23', status:'closed'},
+ {id:'BE-02', dept:'be', sec:'5.3.1.2', q:{en:'Is a list of all BE studies on the product, including failed and pilot studies, provided?', ar:'هل قائمة كل دراسات التكافؤ على المنتج، بما فيها الفاشلة والتجريبية، مقدَّمة؟'},
+  verdict:'adequate', sev:'major', origin:'text', ev:[{doc:'5.2 tabular-listing.pdf', page:1, x:'<mark>Pilot study EXM-BE-00 (n = 12, 2023)</mark> and pivotal <mark>EXM-BE-01</mark>; no further studies conducted.'}],
+  fnd:{en:'A complete list of studies including the pilot study is provided.', ar:'قائمة كاملة بالدراسات بما فيها التجريبية مقدَّمة.'}, ref:'WHO screening checklist §7', status:'closed'},
+ {id:'LB-01', dept:'labelling', sec:'1.1.9', q:{en:'Are the proposed SmPC and PIL provided in English and Arabic as Word files, with the reference SmPC/PIL and a translation declaration?', ar:'هل SmPC وPIL المقترحان مقدَّمان بالإنجليزية والعربية بصيغة Word مع نشرة المرجع وإقرار الترجمة؟'},
+  verdict:'deficient', sev:'major', origin:'rule', ev:[{data:'slots[M1-19].documents', v:'SmPC EN (docx) · PIL EN (docx) · PIL AR (docx) · reference SmPC (pdf) · translation declaration: missing'}],
+  fnd:{en:'A signed declaration that the Arabic translation conforms to the English text should be provided with the leaflet.', ar:'يجب تقديم إقرار موقَّع بمطابقة الترجمة العربية للنص الإنجليزي مع النشرة.'},
+  ref:'NP.CAPP.065 v5 1.1.9', act:{ar:'ولّد إقرار الترجمة', en:'Generate the translation declaration'}, status:'open'},
+ {id:'GT-01', dept:'gates', sec:'PRE', q:{en:'Is evidence of submission to Pricing and Pharmacovigilance (screenshot) included?', ar:'هل دليل التقديم للتسعير واليقظة الدوائية (لقطة شاشة) مرفق؟'},
+  verdict:'deficient', sev:'minor', origin:'rule', ev:[{data:'slots[M1-06].documents', v:'pricing submission screenshot: present · PV submission screenshot: missing'}],
+  fnd:{en:'Evidence of submission to the Pharmacovigilance department (screenshot) should be included.', ar:'يجب إرفاق دليل التقديم لإدارة اليقظة الدوائية (لقطة شاشة).'},
+  ref:'Submission procedures (step-by-step), Step 1', act:{ar:'ارفع لقطة الشاشة', en:'Upload the screenshot'}, status:'open'},
+ {id:'TC-01', dept:'technical', sec:'TECH', q:{en:'Do all PDFs meet the technical profile (≥ 1.4, no encryption, no JavaScript, bookmarks for documents > 5 pages)?', ar:'هل كل ملفات PDF مطابقة للملف الفني (≥ 1.4، بدون تشفير، بدون JavaScript، فهارس للمستندات > 5 صفحات)؟'},
+  verdict:'adequate', sev:'major', origin:'rule', ev:[{data:'checks.pdf', v:'121 conforming · 0 non-conforming · 3 auto-fixed (version)'}],
+  fnd:{en:'All documents conform to the technical PDF profile.', ar:'كل المستندات مطابقة للملف الفني.'}, ref:'EDA eCTD technical guidance (DRAFT v1/2026) · ICH eCTD', status:'closed'},
+];
+const AI_SUGGEST = {
+  'QM-05': {verdict:'deficient', conf:0.71, en:'After OCR, section 3.2.P.8.1 states the storage conclusion but no photostability study (ICH Q1B) and no in-use study are found; commitment letters are present on page 31.', ar:'بعد OCR، القسم 3.2.P.8.1 يذكر خلاصة التخزين لكن لا توجد دراسة ثبات ضوئي (ICH Q1B) ولا دراسة أثناء الاستخدام؛ خطابات الالتزام موجودة في صفحة 31.', ev:{doc:'3.2.P.8.3 stability-data.pdf', page:31, x:'<mark>Commitment: the applicant undertakes to continue the long-term study</mark> … (no photostability section found in pages 1–38)'}},
+};
+const SCREEN_ROWS = [
+  {id:'1.1.1', ar:'خطاب التغطية', en:'Cover letter', st:'present', note:{ar:'بدون إقرار الاكتمال (SC-01)', en:'No completeness statement (SC-01)'}},
+  {id:'1.1.2', ar:'نموذج الطلب (الملحق I) + التعهد العربي', en:'Application form (Annex I) + Arabic undertaking', st:'present'},
+  {id:'1.1.3', ar:'موافقة الـ Box وموافقة الاسم', en:'Box approval and naming approval', st:'present'},
+  {id:'1.1.6', ar:'لقطة شاشة التقديم للتسعير واليقظة الدوائية', en:'Pricing / PV submission evidence', st:'partial', note:{ar:'PV ناقصة (GT-01)', en:'PV missing (GT-01)'}},
+  {id:'1.1.9', ar:'النشرة SmPC / PIL إنجليزي وعربي Word', en:'SmPC / PIL EN + AR (Word)', st:'partial', note:{ar:'إقرار الترجمة ناقص (LB-01)', en:'Translation declaration missing (LB-01)'}},
+  {id:'1.1.10', ar:'تصميم العبوة مختوم وملوّن', en:'Coloured stamped artwork', st:'present'},
+  {id:'1.1.11', ar:'تقرير تفتيش تشغيلات التصنيع', en:'Inspection report of the manufactured batches', st:'present', note:{ar:'ساري حتى 2027-03', en:'valid to 2027-03'}},
+  {id:'1.1.12', ar:'موافقة استيراد المادة الفعالة', en:'API importation approval', st:'present'},
+  {id:'1.1.17', ar:'رخص المصنع والمخزن والعقود', en:'Factory / store licences and agreements', st:'present'},
+  {id:'1.2.1', ar:'شهادة التركيب', en:'Composition certificate', st:'present', note:{ar:'نسخة 2 بعد QM-03', en:'v2 after QM-03'}},
+  {id:'1.2.3', ar:'شهادة تحليل ومواصفات المادة الفعالة', en:'API CoA and specifications', st:'present'},
+  {id:'1.2.4.1', ar:'GMP مصنّع المادة الفعالة', en:'API manufacturer GMP', st:'present'},
+  {id:'1.2.4.3', ar:'شهادة CEP مع الملاحق وخطاب الالتزام', en:'CEP with annexes + commitment letter', st:'invalid', note:{ar:'مربع التفويض غير موقَّع (SC-02)', en:'Authorisation box unsigned (SC-02)'}},
+  {id:'1.2.5', ar:'موافقة المرجع ونشرة المرجع', en:'Reference approval and reference leaflet', st:'present'},
+  {id:'—', ar:'Soft copy كامل · PDF قابل للبحث', en:'Complete soft copy · searchable PDFs', st:'present', note:{ar:'112 / 112', en:'112 / 112'}},
+];
+const PREV = {closed:['QM-09 (P.4 TSE/BSE)', 'SC-04 (GMP validity)', 'LB-02 (artwork stamp)'], still:14, fresh:['QM-04', 'GT-01']};
+
+/* Regulatory Reviewer prototype — part A: i18n, navigation, desk, screening, assessment workspace. */
+const {$, $$, esc, bdi, icon, store, toast, openDrawer, closeDrawer, ring, meter} = DS;
+let LANG = store.get('db.lang') || 'ar';
+const L = o => typeof o === 'string' ? o : (o && (o[LANG] || o.ar || o.en)) || '';
+const T = {
+  appName:{ar:'منشئ ملفات التسجيل', en:'Dossier Builder'}, simNote:{ar:'محاكاة — القرار للهيئة', en:'Simulation — EDA decides'},
+  desk:{ar:'مكتب المراجعة', en:'Review desk'}, screening:{ar:'الفحص الأولي', en:'Screening'}, assess:{ar:'ورشة التقييم', en:'Assessment workspace'},
+  letter:{ar:'خطاب الاستيفاء', en:'Deficiency letter'}, responses:{ar:'دورة الردود', en:'Response cycle'}, verdict:{ar:'الحكم', en:'Verdict'}, settings:{ar:'إعدادات المراجعة', en:'Review settings'},
+  builder:{ar:'منشئ الملفات', en:'Dossier Builder'}, reviewer:{ar:'المراجع الرقابي', en:'Regulatory Reviewer'},
+  guide:{ar:'الدليل', en:'Guide'}, board:{ar:'لوحة المتطلبات', en:'Requirements board'}, data:{ar:'البيانات', en:'Data'}, checks:{ar:'الفحوص', en:'Checks'}, export:{ar:'التصدير', en:'Export'},
+  run:{ar:'شغّل المراجعة', en:'Run the review'}, rerun:{ar:'أعد التشغيل', en:'Run again'}, lastRun:{ar:'آخر جولة', en:'Last run'}, pack:{ar:'حزمة المعرفة', en:'Knowledge pack'},
+  ready:{ar:'جاهز للتقديم', en:'Ready to submit'}, risks:{ar:'جاهز مع مخاطر', en:'Ready with risks'}, notReady:{ar:'غير جاهز', en:'Not ready'},
+  readiness:{ar:'الجاهزية', en:'Readiness'}, depts:{ar:'الإدارات', en:'Departments'}, clock:{ar:'الساعة الرقابية', en:'Regulatory clock'}, wds:{ar:'يوم عمل', en:'WDs'},
+  critical:{ar:'حرج', en:'Critical'}, major:{ar:'رئيسي', en:'Major'}, minor:{ar:'ثانوي', en:'Minor'}, note:{ar:'ملاحظة', en:'Note'}, na:{ar:'غير قابل للتقييم', en:'Not assessable'},
+  assessedOf:{ar:'بند مُقيَّم', en:'assessed'}, openQ:{ar:'استفسار مفتوح', en:'open queries'}, trend:{ar:'مقارنة بالجولة السابقة', en:'Versus the previous run'},
+  closedSince:{ar:'اتقفلت', en:'closed'}, stillOpen:{ar:'لسه مفتوحة', en:'still open'}, newF:{ar:'جديدة', en:'new'},
+  adequate:{ar:'كافٍ', en:'Adequate'}, deficient:{ar:'ناقص', en:'Deficient'}, not_assessable:{ar:'غير قابل للتقييم', en:'Not assessable'},
+  rule:{ar:'قاعدة', en:'rule'}, dataO:{ar:'بيانات', en:'data'}, text:{ar:'نص', en:'text'}, ai:{ar:'AI', en:'AI'}, human:{ar:'يدوي', en:'manual'}, pending:{ar:'بانتظار التأكيد', en:'needs confirmation'},
+  evidence:{ar:'الدليل', en:'Evidence'}, finding:{ar:'الملاحظة بصيغة الهيئة', en:'Finding (authority wording)'}, ref:{ar:'المرجع', en:'Reference'},
+  askAI:{ar:'اسأل المُقيِّم الذكي', en:'Ask the AI assessor'}, confirm:{ar:'تأكيد', en:'Confirm'}, dismiss:{ar:'تجاهل', en:'Dismiss'}, override:{ar:'عدّل الحكم', en:'Override verdict'},
+  reason:{ar:'السبب (يُسجَّل في سجل التدقيق)', en:'Reason (recorded in the audit log)'}, save:{ar:'حفظ', en:'Save'}, cancel:{ar:'إلغاء', en:'Cancel'},
+  noQ:{ar:'لا توجد أسئلة في هذا القسم', en:'No questions in this section'}, allSecs:{ar:'كل الأقسام', en:'All sections'}, filter:{ar:'تصفية', en:'Filter'}, all:{ar:'الكل', en:'All'}, open:{ar:'مفتوح', en:'Open'},
+  viewer:{ar:'عارض الدليل', en:'Evidence viewer'}, pickEv:{ar:'اختر دليلاً من سؤال لعرضه هنا', en:'Pick a piece of evidence to show it here'}, page:{ar:'صفحة', en:'page'}, dataCard:{ar:'قيمة من بيانات الملف', en:'Value from the dossier data'},
+  gateOk:{ar:'Completed — الملف يتوزع على الإدارات وتبدأ الساعة', en:'Completed — distributed to the departments, the clock starts'},
+  gateBad:{ar:'In-completed — رفض بتعليقات وإعادة تقديم كملف جديد', en:'In-completed — rejection with comments, resubmit as a new submission'},
+  present:{ar:'موجود', en:'Present'}, partial:{ar:'ناقص جزئياً', en:'Partial'}, invalid:{ar:'غير مقبول', en:'Not acceptable'}, missing:{ar:'ناقص', en:'Missing'},
+  item:{ar:'البند', en:'Item'}, status:{ar:'الحالة', en:'Status'}, notes:{ar:'ملاحظات', en:'Notes'}, openSlot:{ar:'افتح الخانة', en:'Open slot'},
+  rejectPreview:{ar:'معاينة خطاب رفض الفحص الأولي', en:'Preview of the screening rejection letter'},
+  whoItems:{ar:'بنود قائمة فحص المُقيِّم (WHO) المضافة في الوضع القياسي', en:'Assessor checklist items (WHO) added in standard strictness'},
+  runSteps:{ar:'خطوات الجولة', en:'Run steps'}, runDone:{ar:'اكتملت الجولة', en:'Run complete'},
+};
+const t = k => L(T[k]) || k;
+const S = {dept:'quality', sec:'3.2.P.5', ev:null, strict:'standard', track:'c_local', aiOn:true, filter:'all', letterDept:'quality', off:new Set()};
+const NAV = [
+  {grp:'reviewer'}, {h:'desk', icon:'stamp'}, {h:'screening', icon:'checklist'}, {h:'assess', icon:'search', cnt:true}, {h:'letter', icon:'mail'},
+  {h:'responses', icon:'repeat'}, {h:'verdict', icon:'target'}, {h:'settings', icon:'settings'},
+  {grp:'builder'}, {dis:'guide', icon:'compass'}, {dis:'board', icon:'layers'}, {dis:'data', icon:'database'}, {dis:'checks', icon:'shield'}, {dis:'export', icon:'package'},
+];
+const ROUTES = ['desk','screening','assess','letter','responses','verdict','settings'];
+const route = () => { const h = location.hash.replace('#',''); return ROUTES.includes(h) ? h : 'desk'; };
+
+/* ---- derived state */
+const pendingAI = f => f.origin === 'ai' && !f.confirmed;
+const counted = f => !(S.strict === 'lenient' && f.sev === 'minor');
+const isOpen = f => f.verdict === 'deficient' && !pendingAI(f) && !['accepted','closed','withdrawn'].includes(f.status) && counted(f);
+const byDept = d => F.filter(f => f.dept === d);
+const counts = arr => ({critical: arr.filter(f => isOpen(f) && f.sev === 'critical').length, major: arr.filter(f => isOpen(f) && f.sev === 'major').length,
+  minor: arr.filter(f => isOpen(f) && f.sev === 'minor').length, na: arr.filter(f => f.verdict === 'not_assessable').length});
+function deptVerdict(d){ const c = counts(byDept(d)); if(c.critical) return 'reject'; if(c.major) return 'clock_stop'; if(c.minor) return 'comments'; return 'approve'; }
+function overall(){
+  const act = DEPTS.filter(d => !S.off.has(d.id)).map(d => d.id);
+  if(act.includes('screening') && deptVerdict('screening') === 'reject') return {key:'notReady', color:'var(--bad)', why:{ar:'الملف مش هيعدي الفحص الأولي: ملاحظة حرجة في الوحدة 1 (CEP بدون تفويض موقَّع). الإدارات الفنية مش هتشوف الملف قبل ما تتصلح.', en:'The dossier will not pass screening: a critical Module 1 finding (CEP without a signed authorisation). Technical departments will not see the file until it is fixed.'}};
+  const vs = act.map(deptVerdict);
+  if(vs.includes('reject')) return {key:'notReady', color:'var(--bad)', why:{ar:'إدارة واحدة على الأقل هترفض الملف أو تطلب إعادة تقديم.', en:'At least one department would reject the dossier or require resubmission.'}};
+  if(vs.includes('clock_stop')) return {key:'risks', color:'var(--warn)', why:{ar:'متوقع جولة استيفاء واحدة على الأقل (Clock stop).', en:'At least one deficiency round (clock stop) is expected.'}};
+  return {key:'ready', color:'var(--ok)', why:{ar:'كل الإدارات موافقة أو موافقة مع ملاحظات.', en:'Every department approves, with or without comments.'}};
+}
+const readiness = () => { const tot = F.length, ok = F.filter(f => f.verdict === 'adequate' || ['accepted','closed'].includes(f.status)).length; return Math.round(100 * ok / tot); };
+const sevTag = s => `<span class="sevtag ${s}">${esc(t(s))}</span>`;
+const vChip = v => `<span class="chip ${v === 'adequate' ? 'c-ok' : v === 'deficient' ? 'c-bad' : 'c-wait'}"><i></i>${esc(t(v))}</span>`;
+const dChip = v => `<span class="chip ${VERDICT[v].cls}"><i></i>${esc(L(VERDICT[v]))}</span>`;
+const oTag = f => `<span class="otag ${f.origin}">${esc(f.origin === 'data' ? t('dataO') : t(f.origin))}${f.conf ? ` · ${Math.round(f.conf*100)}%` : ''}${pendingAI(f) ? ` · ${esc(t('pending'))}` : ''}</span>`;
+const sevDots = c => `<div class="sevs"><span class="sev critical"><b>${c.critical}</b> ${esc(t('critical'))}</span><span class="sev major"><b>${c.major}</b> ${esc(t('major'))}</span><span class="sev minor"><b>${c.minor}</b> ${esc(t('minor'))}</span>${c.na ? `<span class="sev na"><b>${c.na}</b> ${esc(t('na'))}</span>` : ''}</div>`;
+const simBadge = () => `<span class="sim">${esc(L({ar:'محاكاة مبنية على مستندات الهيئة المنشورة — القرار للهيئة', en:'Simulation built on published EDA documents — EDA decides'}))}</span>`;
+
+/* ---- chrome */
+function paintNav(){
+  const open = F.filter(isOpen).length;
+  $('#nav').innerHTML = NAV.map(n => n.grp ? `<div class="grp">${esc(t(n.grp))}</div>` : n.dis ? `<a aria-disabled="true" href="#desk">${icon(n.icon,17)}${esc(t(n.dis))}</a>`
+    : `<a href="#${n.h}" class="${route() === n.h ? 'on' : ''}">${icon(n.icon,17)}${esc(t(n.h))}${n.cnt && open ? `<span class="cnt">${open}</span>` : ''}</a>`).join('');
+  const mob = $('#mobnav'); mob.innerHTML = ROUTES.map(r => `<option value="${r}" ${route() === r ? 'selected' : ''}>${esc(t(r))}</option>`).join('');
+  $('#crumb').innerHTML = `${bdi(DOSSIER.name)}<span class="sep">/</span><span>${esc(t(route()))}</span>`;
+  $$('[data-t]').forEach(el => el.textContent = t(el.dataset.t));
+  $('#lang-ar').classList.toggle('on', LANG === 'ar'); $('#lang-en').classList.toggle('on', LANG === 'en');
+}
+function head(title, extra){
+  return `<div class="head"><div class="title"><div class="eyebrow">${esc(t('reviewer'))} · ${esc(DOSSIER.run.id)} · ${esc(DOSSIER.run.date)}</div><h1>${esc(title)}</h1><p class="sub">${bdi(DOSSIER.name)} · ${esc(L(DOSSIER.kind))}</p></div><div class="row">${extra || ''}${simBadge()}</div></div>`;
+}
+
+/* ---- desk */
+function desk(){
+  const o = overall(), c = counts(F), tr = TRACKS[S.track];
+  const stops = DEPTS.filter(d => !S.off.has(d.id) && ['clock_stop','reject'].includes(deptVerdict(d.id))).length;
+  const stages = STAGES.map((s, i) => { const w = i < 2 ? tr.wds[i] : i === 2 ? (stops ? `${stops} × 3 ${L({ar:'شهور كحد أقصى', en:'months max'})}` : L({ar:'لا جولات', en:'no rounds'})) : tr.wds[i-1];
+    const cls = i === 0 ? 'now' : i === 2 ? (stops ? 'stop' : '') : i === 4 ? 'end' : '';
+    return `<div class="st ${cls}"><span class="k">${i+1}</span><b>${esc(L(s))}</b><span class="wd">${typeof w === 'number' ? `${w} ${esc(t('wds'))}` : esc(String(w))}</span></div>`; }).join('');
+  return `${head(t('desk'), `<button class="btn primary" id="runBtn">${icon('zap',16)} ${esc(t('rerun'))}</button>`)}
+  <section class="vstrip" style="--v-color:${o.color}">
+    ${ring(readiness(), 'lg')}
+    <div><div class="vlabel">${esc(t('verdict'))} · ${esc(t('lastRun'))} ${esc(DOSSIER.run.id)}</div><h1>${esc(t(o.key))}</h1><p class="why">${esc(L(o.why))}</p>
+      <div class="row gap-s" style="margin-top:10px">${sevDots(c)}</div></div>
+    <div class="acts"><a class="btn" href="#assess">${icon('search',16)} ${esc(t('assess'))}</a><a class="btn" href="#letter">${icon('mail',16)} ${esc(t('letter'))}</a></div>
+  </section>
+  <section class="stack gap-s"><div class="row"><h2>${esc(t('depts'))}</h2><span class="small muted">${esc(L({ar:'كل كارت = مُقيِّم يحاكي إدارة في الهيئة', en:'Each card is an assessor simulating one EDA department'}))}</span></div>
+    <div class="depts">${DEPTS.map(d => { const v = deptVerdict(d.id), cc = counts(byDept(d.id)), off = S.off.has(d.id);
+      return `<button class="card dept" data-dept="${d.id}" ${off ? 'style="opacity:.45"' : ''}><div class="dh"><span class="ic-tile ${v === 'approve' ? 'ok' : v === 'reject' ? 'bad' : v === 'clock_stop' ? 'warn' : ''}">${icon(d.icon,17)}</span><h3>${esc(L(d))}</h3>${off ? `<span class="chip c-na"><i></i>${esc(L({ar:'معطّل', en:'off'}))}</span>` : dChip(v)}</div>
+        <p class="sub">${esc(L(d.body))}</p>${sevDots(cc)}<div class="prog">${meter(Math.round(100*d.assessed[0]/d.assessed[1]), 'ok')}<span class="num">${d.assessed[0]}/${d.assessed[1]} ${esc(t('assessedOf'))}</span></div></button>`; }).join('')}</div></section>
+  <div class="grid2">
+    <section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(t('clock'))}</h3><span class="small muted">${esc(L(tr.label))} · ${esc(L({ar:'إجمالي منشور', en:'published total'}))} ${tr.total} ${esc(L({ar:'شهور', en:'months'}))}</span></div>
+      <div class="pad"><div class="clock">${stages}</div><p class="tiny-note" style="margin-top:8px">${esc(L({ar:'المصدر: جدول المواعيد في دليل إجراءات التقديم (إدارة الشؤون التنظيمية). جولة الاستيفاء = أقصى مهلة للشركة، مش مدة الهيئة.', en:'Source: the timelines table of the submission-procedures guide (Regulatory Affairs). A deficiency round is the company’s maximum reply time, not EDA time.'}))}</p></div></section>
+    <section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(t('trend'))}</h3><span class="code muted">${esc(DOSSIER.run.prev)} → ${esc(DOSSIER.run.id)}</span></div>
+      <div class="pad stack gap-s">
+        <div class="kpis"><div class="card kpi ok"><span class="n">${PREV.closed.length}</span><span class="l">${esc(t('closedSince'))}</span></div><div class="card kpi warn"><span class="n">${PREV.still}</span><span class="l">${esc(t('stillOpen'))}</span></div><div class="card kpi info"><span class="n">${PREV.fresh.length}</span><span class="l">${esc(t('newF'))}</span></div></div>
+        <div class="small muted">${esc(t('closedSince'))}: ${PREV.closed.map(x => `<span class="pchip">${esc(x)}</span>`).join(' ')}</div>
+        <div class="small muted">${esc(t('newF'))}: ${PREV.fresh.map(x => `<span class="pchip">${esc(x)}</span>`).join(' ')}</div>
+      </div></section>
+  </div>`;
+}
+function runDemo(){
+  const steps = [{ar:'حل الملف الشخصي → الأسئلة المنطبقة', en:'Resolve profile → applicable questions', r:'146'}, {ar:'الفحص الأولي من حالة الخانات', en:'Screening from slot status', r:'29'},
+    {ar:'الملف الفني (PDF / eCTD)', en:'Technical file (PDF / eCTD)', r:'121 PDF'}, {ar:'بوابات البيانات (cross-checks، NP.CAPP.040)', en:'Data gates (cross-checks, NP.CAPP.040)', r:'16 + 11'},
+    {ar:'الدليل النصي من المستندات', en:'Text evidence from the documents', r:'4 812 p.'}, {ar:'المُقيِّم الذكي (عند الطلب)', en:'AI assessor (on demand)', r:S.aiOn ? '9 §' : 'off'}, {ar:'التجميع والحكم والساعة', en:'Aggregate · verdict · clock', r:'—'}];
+  openDrawer(t('runSteps'), `<div class="runbox" id="runbox">${steps.map((s, i) => `<div class="rstep" data-i="${i}"><span class="k">${i+1}</span><span>${esc(L(s))}</span><span class="res"></span></div>`).join('')}</div><p class="small muted">${esc(L({ar:'الخطوات 1–5 و7 حتمية: نفس الملف = نفس النتيجة.', en:'Steps 1–5 and 7 are deterministic: the same dossier gives the same result.'}))}</p>`);
+  let i = 0; const tick = () => { const rows = $$('#runbox .rstep'); if(i > 0){ rows[i-1].classList.replace('now','done'); rows[i-1].querySelector('.res').textContent = steps[i-1].r; }
+    if(i < rows.length){ rows[i].classList.add('now'); i++; setTimeout(tick, 420); } else { toast(`${t('runDone')} · ${DOSSIER.run.id}`); setTimeout(closeDrawer, 600); } };
+  tick();
+}
+
+/* ---- screening */
+function screening(){
+  const bad = SCREEN_ROWS.filter(r => r.st === 'invalid' || r.st === 'missing').length, part = SCREEN_ROWS.filter(r => r.st === 'partial').length;
+  const gateOk = deptVerdict('screening') !== 'reject';
+  const stChip = s => `<span class="chip ${s === 'present' ? 'c-ok' : s === 'partial' ? 'c-warn' : 'c-bad'}"><i></i>${esc(t(s))}</span>`;
+  const rows = SCREEN_ROWS.map(r => `<tr><td class="code">${esc(r.id)}</td><td>${esc(L(r))}</td><td>${stChip(r.st)}</td><td class="small muted">${r.note ? esc(L(r.note)) : ''}</td><td class="end"><button class="btn sm ghost" data-slot="${esc(r.id)}">${esc(t('openSlot'))}</button></td></tr>`).join('');
+  return `${head(t('screening'))}
+  <section class="gate ${gateOk ? 'ok' : 'bad'}"><span class="ic-tile ${gateOk ? 'ok' : 'bad'}">${icon(gateOk ? 'check' : 'alert',18)}</span><div><h3>${esc(gateOk ? t('gateOk') : t('gateBad'))}</h3><p>${esc(L({ar:`${SCREEN_ROWS.length} بنداً مطلوباً حسب الملف الشخصي · ${bad} غير مقبول · ${part} ناقص جزئياً. إعادة التقديم بعد الرفض: خلال 3 شهور (المسار السريع) أو 30 يوم عمل (المسار العادي للمستورد).`, en:`${SCREEN_ROWS.length} items required by the profile · ${bad} not acceptable · ${part} partial. Resubmission after rejection: within 3 months (fast track) or 30 WDs (normal track, imported).`}))}</p></div>
+    ${gateOk ? '' : `<button class="btn" id="rejPrev">${icon('mail',16)} ${esc(t('rejectPreview'))}</button>`}</section>
+  <section class="card"><div class="tbl"><table><thead><tr><th>${esc(L({ar:'رقم', en:'No.'}))}</th><th>${esc(t('item'))}</th><th>${esc(t('status'))}</th><th>${esc(t('notes'))}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></section>
+  <section class="card pad stack gap-s"><h3>${esc(t('whoItems'))}</h3><div class="checks">${['cover letter: «true, complete and correct»', 'QOS / QIS as Word, latest template', 'nitrosamine risk assessment declared', 'list of all BE studies incl. failed & pilot', 'full site address incl. unit and block', 'contract-manufacturing responsibilities defined'].map((x, i) => `<span class="chip ${i === 0 ? 'c-bad' : 'c-ok'}"><i></i>${esc(x)}</span>`).join('')}</div><p class="tiny-note">WHO PQ screening checklist (May 2021) — items the EDA screener is known to look for; shown as Minor unless NP.CAPP.065 requires them.</p></section>`;
+}
+function rejectPreview(){
+  const items = SCREEN_ROWS.filter(r => r.st !== 'present');
+  openDrawer(t('rejectPreview'), `<div class="letter" style="padding:20px 22px;max-width:none"><div class="lh"><div><h2>Screening outcome: In-completed</h2><div class="small muted">Administration of Human Pharmaceuticals Regulatory Affairs (simulated)</div></div><span class="stamp">SIMULATION</span></div>
+    <p>Re: ${esc(DOSSIER.name)} — tracking ${esc(DOSSIER.tracking)}</p><p>The registration dossier was screened against the published Module 1 checklist (NP.CAPP.065 v5). The following items are missing or not acceptable; the full dossier should be resubmitted as a new submission within the period stated in the submission procedures:</p>
+    <ol>${items.map(r => `<li><b>${esc(r.id)}</b> — ${esc(r.en)}: ${esc(r.note ? r.note.en : '')}<div class="ar">${esc(r.ar)}: ${esc(r.note ? r.note.ar : '')}</div></li>`).join('')}</ol></div>`, true);
+}
+
+/* ---- assessment workspace */
+function tree(){
+  return DEPTS.filter(d => d.id !== 'technical').map(d => { const secs = SECTIONS[d.id] || []; const v = deptVerdict(d.id);
+    return `<details ${S.dept === d.id ? 'open' : ''}><summary><span class="dot" style="background:var(--${v === 'approve' ? 'ok' : v === 'reject' ? 'bad' : v === 'clock_stop' ? 'warn' : 'info'})"></span>${esc(L(d))}<span class="cnt">${byDept(d.id).filter(isOpen).length}</span></summary>
+      <div class="node ${S.dept === d.id && !S.sec ? 'sel' : ''}" data-dept="${d.id}" data-sec=""><span class="dot" style="background:var(--na)"></span><span>${esc(t('allSecs'))}</span></div>
+      ${secs.map(([k, n]) => { const fs = byDept(d.id).filter(f => f.sec === k); const c = fs.some(f => isOpen(f) && f.sev === 'critical') ? 'bad' : fs.some(isOpen) ? 'warn' : fs.some(f => f.verdict === 'not_assessable') ? 'wait' : fs.length ? 'ok' : 'na';
+        return `<div class="node ${S.dept === d.id && S.sec === k ? 'sel' : ''}" data-dept="${d.id}" data-sec="${esc(k)}"><span class="dot" style="background:var(--${c})"></span><span><span class="code">${esc(k)}</span> ${esc(L(n))}</span></div>`; }).join('')}</details>`; }).join('');
+}
+function evItem(f, i, e){
+  const on = S.ev && S.ev.id === f.id && S.ev.i === i;
+  return e.data ? `<button class="evi data ${on ? 'on' : ''}" data-ev="${f.id}:${i}"><span class="m">${icon('database',13)} ${esc(e.data)}</span><span class="x code wrap">${esc(e.v)}</span></button>`
+    : `<button class="evi ${on ? 'on' : ''}" data-ev="${f.id}:${i}"><span class="m">${icon('file',13)} ${esc(e.doc)} · ${esc(t('page'))} ${e.page}</span><span class="x">${e.x}</span></button>`;
+}
+function qcard(f){
+  const aiBox = f.aiBox ? `<div class="ai"><div class="aih">${icon('sparkles',15)} ${esc(L({ar:'اقتراح المُقيِّم الذكي', en:'AI assessor suggestion'}))}<span class="conf">confidence ${Math.round(f.aiBox.conf*100)}%</span></div>
+      <div class="fnd"><div class="en">${esc(f.aiBox.en)}</div><div class="ar">${esc(f.aiBox.ar)}</div></div>${f.aiBox.ev ? evItem(f, 'ai', f.aiBox.ev) : ''}
+      <div class="row gap-s"><button class="btn sm primary" data-aiok="${f.id}">${icon('check',14)} ${esc(t('confirm'))}</button><button class="btn sm ghost" data-aino="${f.id}">${esc(t('dismiss'))}</button><span class="tiny-note">${esc(L({ar:'لا يدخل الخطاب قبل التأكيد', en:'Enters the letter only after confirmation'}))}</span></div></div>` : '';
+  return `<article class="qcard ${f.verdict} ${f.sev}" id="q-${f.id}">
+    <div class="qh"><span class="code">${esc(f.id)}</span><span class="code muted">${esc(f.sec)}</span>${vChip(f.verdict)}${sevTag(f.sev)}${oTag(f)}${f.status === 'answered' ? `<span class="chip c-info"><i></i>${esc(L({ar:'رد مقدَّم', en:'response submitted'}))}</span>` : ''}${['accepted','closed'].includes(f.status) && f.verdict === 'deficient' ? `<span class="chip c-ok"><i></i>${esc(L({ar:'مقبول بعد إعادة التقييم', en:'accepted after re-assessment'}))}</span>` : ''}</div>
+    <div class="q">${esc(L(f.q))}</div>
+    <div class="ev"><span class="tiny-note">${esc(t('evidence'))}</span>${f.ev.map((e, i) => evItem(f, i, e)).join('')}</div>
+    <div class="fnd"><span class="tiny-note">${esc(t('finding'))}</span><div class="en">${esc(f.fnd.en)}</div><div class="ar">${esc(f.fnd.ar)}</div><div class="src">${esc(t('ref'))}: ${esc(f.ref)}</div></div>
+    ${aiBox}
+    <div class="qa">${f.act && f.verdict !== 'adequate' ? `<button class="btn sm" data-act="${f.id}">${icon('arrow',14)} ${esc(L(f.act))}</button>` : ''}
+      ${pendingAI(f) ? `<button class="btn sm primary" data-conf="${f.id}">${icon('check',14)} ${esc(t('confirm'))} AI</button>` : ''}
+      ${S.aiOn && !f.aiBox && !pendingAI(f) ? `<button class="btn sm ghost" data-ai="${f.id}">${icon('sparkles',14)} ${esc(t('askAI'))}</button>` : ''}
+      <button class="btn sm ghost" data-ovr="${f.id}">${icon('pen',14)} ${esc(t('override'))}</button></div></article>`;
+}
+function viewer(){
+  if(!S.ev) return `<div class="empty">${icon('eye',34)}<div>${esc(t('pickEv'))}</div></div>`;
+  const f = F.find(x => x.id === S.ev.id); const e = S.ev.i === 'ai' ? f.aiBox && f.aiBox.ev : f.ev[S.ev.i]; if(!e) return '';
+  if(e.data) return `<div class="vh">${icon('database',15)}<span class="code">${esc(e.data)}</span></div><div class="pad stack gap-s"><div class="eyebrow">${esc(t('dataCard'))}</div><div class="code wrap" style="font-size:14px">${esc(e.v)}</div><p class="small muted">${esc(L({ar:'القيمة جاية من صفحة «البيانات» في منشئ الملفات؛ تعديلها هناك يعيد تقييم السؤال تلقائياً.', en:'The value comes from the builder’s Data page; changing it there re-assesses the question automatically.'}))}</p></div>`;
+  return `<div class="vh">${icon('file',15)}<span class="code">${esc(e.doc)}</span><span class="tag">${esc(t('page'))} ${e.page}</span></div>
+    <div class="page"><div class="ph"><span>${esc(DOSSIER.name)}</span><span>${esc(e.doc.split(' ')[0])}</span></div><h4>${esc(e.doc.replace(/\.pdf$/, '').replace(/^[\d.A-Z-]+\s/, ''))}</h4>
+      <div class="skel m"></div><div class="skel"></div><div class="skel s"></div><p>${e.x}</p><div class="skel"></div><div class="skel m"></div><div class="skel s"></div><div class="skel"></div><span class="pn">${e.page}</span></div>`;
+}
+function assess(){
+  let fs = byDept(S.dept).filter(f => !S.sec || f.sec === S.sec);
+  if(S.filter === 'open') fs = fs.filter(f => isOpen(f) || pendingAI(f) || f.verdict === 'not_assessable');
+  else if(S.filter !== 'all') fs = fs.filter(f => f.sev === S.filter && f.verdict === 'deficient');
+  const d = DEPTS.find(x => x.id === S.dept), secName = S.sec ? L((SECTIONS[S.dept] || []).find(s => s[0] === S.sec)[1]) : t('allSecs');
+  return `${head(t('assess'), `<div class="seg" id="fseg">${['all','open','critical','major','minor'].map(k => `<button data-f="${k}" class="${S.filter === k ? 'on' : ''}">${esc(t(k))}</button>`).join('')}</div>`)}
+  <div class="legend"><span><i style="background:var(--ok)"></i>${esc(t('adequate'))}</span><span><i style="background:var(--warn)"></i>${esc(t('deficient'))} (${esc(t('major'))})</span><span><i style="background:var(--bad)"></i>${esc(t('critical'))}</span><span><i style="background:var(--wait)"></i>${esc(t('na'))}</span><span><i style="background:var(--na)"></i>${esc(L({ar:'لم يُفحص', en:'not checked'}))}</span></div>
+  <div class="ws">
+    <aside class="card tree" id="tree">${tree()}</aside>
+    <section class="stack gap-s"><div class="row"><h2>${esc(L(d))} · <span class="code">${esc(S.sec || '')}</span> ${esc(secName)}</h2><span class="muted small">${fs.length} ${esc(L({ar:'سؤال', en:'questions'}))}</span>${S.sec ? `<button class="btn sm ghost" id="askSec">${icon('sparkles',14)} ${esc(L({ar:'اسأل الذكاء عن القسم كله', en:'Ask AI about the whole section'}))}</button>` : ''}</div>
+      <div class="qlist">${fs.length ? fs.map(qcard).join('') : `<div class="card empty">${icon('checklist',34)}<div>${esc(t('noQ'))}</div></div>`}</div></section>
+    <aside class="card viewer" id="viewer">${viewer()}</aside>
+  </div>`;
+}
+function askAI(id){
+  const f = F.find(x => x.id === id); const sug = AI_SUGGEST[id];
+  f.aiBox = sug || {verdict: f.verdict === 'not_assessable' ? 'deficient' : f.verdict, conf: 0.74, en:`Reading ${f.sec}: the evidence above supports the current verdict (${f.verdict}). No additional deficiency identified beyond the published rule set.`, ar:`قراءة ${f.sec}: الدليل أعلاه يدعم الحكم الحالي (${t(f.verdict)}). لا ملاحظة إضافية خارج القواعد المنشورة.`};
+  render(); toast(L({ar:'قرأ المُقيِّم الذكي المستندات (محاكاة) — راجع الاقتراح وأكده', en:'The AI assessor read the documents (simulated) — review and confirm the suggestion'}));
+}
+function overrideDlg(id){
+  const f = F.find(x => x.id === id);
+  openDrawer(`${t('override')} · ${id}`, `<div class="stack"><div class="f"><label>${esc(t('verdict'))}</label><select id="ovV">${['adequate','deficient','not_assessable'].map(v => `<option value="${v}" ${f.verdict === v ? 'selected' : ''}>${esc(t(v))}</option>`).join('')}</select></div>
+    <div class="f"><label>${esc(t('reason'))}</label><textarea id="ovR" rows="3" placeholder="${esc(L({ar:'مثال: الدليل موجود في ملحق خارجي رُفع في 3.2.A', en:'e.g. the evidence is in an external annex filed under 3.2.A'}))}"></textarea></div>
+    <div class="row"><button class="btn primary" id="ovSave">${esc(t('save'))}</button><button class="btn ghost" id="ovCancel">${esc(t('cancel'))}</button></div></div>`);
+  $('#ovCancel').onclick = closeDrawer;
+  $('#ovSave').onclick = () => { const r = $('#ovR').value.trim(); if(!r){ $('#ovR').focus(); return; } f.verdict = $('#ovV').value; f.origin = 'human'; f.confirmed = true; f.override = r; if(f.verdict === 'adequate') f.status = 'closed'; closeDrawer(); render(); toast(L({ar:'تم تسجيل التعديل في سجل التدقيق', en:'Override recorded in the audit log'})); };
+}
+
+/* Regulatory Reviewer prototype — part B: deficiency letter, response cycle, verdict, settings, routing and events. */
+const DUE_DAYS = 90, RUN_DATE = new Date(DOSSIER.run.date + 'T00:00:00'), TODAY = new Date('2026-11-23T00:00:00');
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const addWds = (d, n) => addDays(d, Math.round(n * 7 / 5));
+const fmt = d => d.toLocaleDateString(LANG === 'ar' ? 'ar-EG' : 'en-GB', {year:'numeric', month:'short', day:'numeric'});
+const fmtEn = d => d.toLocaleDateString('en-GB', {year:'numeric', month:'short', day:'numeric'});
+const letterItems = dept => byDept(dept).filter(f => f.verdict === 'deficient' && !pendingAI(f) && counted(f) && f.status !== 'withdrawn');
+
+function letter(){
+  const depts = DEPTS.filter(d => letterItems(d.id).length);
+  if(!depts.find(d => d.id === S.letterDept)) S.letterDept = depts.length ? depts[0].id : 'quality';
+  const d = DEPTS.find(x => x.id === S.letterDept), items = letterItems(S.letterDept);
+  const groups = [...new Set(items.map(f => f.sec))];
+  let n = 0;
+  const body = groups.map(sec => { const name = (SECTIONS[S.letterDept] || []).find(s => s[0] === sec); return `<h3>${esc(sec)} ${name ? '— ' + esc(name[1].en) : ''}</h3><ol start="${n+1}">${items.filter(f => f.sec === sec).map(f => { n++; return `<li><b>${esc(f.fnd.en)}</b><div class="ar">${esc(f.fnd.ar)}</div><div class="lm"><span>${esc(f.id)}</span><span>${sevTag(f.sev)}</span><span>Ref: ${esc(f.ref)}</span>${f.act ? `<span>Requested: ${esc(f.act.en)}</span>` : ''}${['accepted','closed'].includes(f.status) ? `<span class="chip c-ok"><i></i>closed in round ${f.resp ? f.resp.round : 1}</span>` : ''}</div></li>`; }).join('')}</ol>`; }).join('');
+  return `${head(t('letter'), `<div class="seg wrapseg">${depts.map(x => `<button data-ld="${x.id}" class="${S.letterDept === x.id ? 'on' : ''}">${esc(L(x))} <span class="code">${letterItems(x.id).length}</span></button>`).join('')}</div>`)}
+  <div class="row"><button class="btn" id="dlDocx">${icon('download',16)} Word</button><button class="btn" id="dlPdf">${icon('download',16)} PDF</button><button class="btn ghost" id="cpTxt">${icon('file',16)} ${esc(L({ar:'نسخ النص', en:'Copy text'}))}</button><a class="btn ghost" href="#responses">${icon('repeat',16)} ${esc(L({ar:'افتح دورة الردود', en:'Open the response cycle'}))}</a><span class="small muted">${esc(L({ar:'الإنجليزي أولاً زي خطابات الهيئة، ثم العربي', en:'English first, as EDA letters are written, then Arabic'}))}</span></div>
+  <article class="letter" id="letterDoc">
+    <div class="lh"><div><h2>Request for supplementary information — ${esc(d.en)}</h2><div class="small muted">${esc(d.body.en)} · simulated assessor · ${esc(DOSSIER.run.pack)}</div></div><div class="ref"><span class="stamp">SIMULATION · NOT AN EDA LETTER</span><div style="margin-top:8px">Ref. ${esc(DOSSIER.run.id)}/${esc(S.letterDept.toUpperCase())}-${String(items.length).padStart(3,'0')}<br>${esc(DOSSIER.run.date)}</div></div></div>
+    <dl class="meta"><dt>Applicant</dt><dd>${esc(DOSSIER.applicant)}</dd><dt>Product</dt><dd>${esc(DOSSIER.name)}</dd><dt>Tracking</dt><dd>${esc(DOSSIER.tracking)}</dd><dt>Submission</dt><dd>${esc(DOSSIER.kind.en)}</dd><dt>Clock</dt><dd>Stopped at technical evaluation — reply within <b>3 months</b> as supplementary documents (submission procedures, Step 3)</dd></dl>
+    <p>Dear Sir / Madam,</p><p>Following the assessment of the above dossier against the published requirements, the applicant is requested to address the following points. All supporting documents should be submitted within the relevant CTD folders, as new versions of the affected documents.</p>
+    ${body}
+    <div class="sign"><span>Reply deadline: ${esc(fmtEn(addDays(RUN_DATE, DUE_DAYS)))} · open queries: ${items.filter(isOpen).length} of ${items.length}</span><span>${esc(d.en)} assessor (simulation)</span></div>
+  </article>`;
+}
+
+function responses(){
+  const fs = F.filter(f => f.verdict === 'deficient' && !pendingAI(f) && counted(f)).sort((a, b) => ['critical','major','minor'].indexOf(a.sev) - ['critical','major','minor'].indexOf(b.sev));
+  const due = addDays(RUN_DATE, DUE_DAYS), left = Math.round((due - TODAY) / 864e5);
+  const st = f => f.status === 'open' ? 'open' : f.status === 'answered' ? 'answered' : ['accepted','closed'].includes(f.status) ? 'accepted' : f.status;
+  const stChip = s => `<span class="chip ${s === 'open' ? 'c-warn' : s === 'answered' ? 'c-info' : s === 'accepted' ? 'c-ok' : 'c-bad'}"><i></i>${esc(L({open:{ar:'مفتوح', en:'Open'}, answered:{ar:'تم الرد', en:'Answered'}, accepted:{ar:'مقبول', en:'Accepted'}, not_accepted:{ar:'غير مقبول', en:'Not accepted'}}[s]))}</span>`;
+  const who = {quality:'Mona A.', screening:'Mona A.', cadc:'QC lab · Hossam', stability:'Stability · Rania', labelling:'RA · Sara', gates:'RA · Mona A.', be:'CRO liaison'};
+  const rows = fs.map(f => `<tr><td class="code">${esc(f.id)}</td><td>${esc(L(DEPTS.find(d => d.id === f.dept)))}<div class="small muted code">${esc(f.sec)}</div></td><td>${sevTag(f.sev)}</td><td>${stChip(st(f))}</td><td class="hide-m">${esc(who[f.dept] || '—')}</td><td class="hide-m"><span class="due ${left < 15 ? 'soon' : ''}">${esc(fmt(due))} · ${left} d</span></td><td>${f.resp ? `<span class="small">${esc(f.resp.text.slice(0, 70))}${f.resp.text.length > 70 ? '…' : ''}</span><div class="small muted">${(f.resp.docs || []).map(x => `<span class="pchip">${esc(x)}</span>`).join(' ')}</div>` : '<span class="muted small">—</span>'}</td>
+    <td class="end nowrap"><button class="btn sm" data-resp="${f.id}">${icon('pen',14)} ${esc(L({ar:'رد', en:'Respond'}))}</button> ${f.status === 'answered' ? `<button class="btn sm primary" data-reassess="${f.id}">${icon('repeat',14)} ${esc(L({ar:'أعد التقييم', en:'Re-assess'}))}</button>` : ''}</td></tr>`).join('');
+  const c = {open: fs.filter(f => st(f) === 'open').length, answered: fs.filter(f => st(f) === 'answered').length, accepted: fs.filter(f => st(f) === 'accepted').length};
+  return `${head(t('responses'), `<span class="badge">${esc(L({ar:'الجولة 1', en:'Round 1'}))} · ${esc(L({ar:'المهلة', en:'deadline'}))} ${esc(fmt(due))}</span>`)}
+  <div class="kpis"><div class="card kpi warn"><span class="n">${c.open}</span><span class="l">${esc(L({ar:'مفتوح', en:'Open'}))}</span></div><div class="card kpi info"><span class="n">${c.answered}</span><span class="l">${esc(L({ar:'تم الرد — بانتظار إعادة التقييم', en:'Answered — awaiting re-assessment'}))}</span></div><div class="card kpi ok"><span class="n">${c.accepted}</span><span class="l">${esc(L({ar:'مقبول ومقفول', en:'Accepted and closed'}))}</span></div><div class="card kpi wait"><span class="n">${left}</span><span class="l">${esc(L({ar:'يوم متبقٍ من مهلة الـ Clock stop', en:'days left in the clock-stop period'}))}</span></div></div>
+  <section class="card rtable"><div class="tbl"><table><thead><tr><th>#</th><th>${esc(L({ar:'الإدارة · البند', en:'Department · section'}))}</th><th>${esc(L({ar:'الخطورة', en:'Severity'}))}</th><th>${esc(t('status'))}</th><th class="hide-m">${esc(L({ar:'المسؤول', en:'Owner'}))}</th><th class="hide-m">${esc(L({ar:'المهلة', en:'Due'}))}</th><th>${esc(L({ar:'الرد والمستندات', en:'Response & documents'}))}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></section>
+  <p class="tiny-note">${esc(L({ar:'نفس الشاشة تظهر في ملف المنتجات باسم «أسئلة الهيئة» لما تيجي الاستفسارات الحقيقية — بمصدر «الهيئة» بدل «محاكاة». أي مستند يُرفع هنا = نسخة جديدة في خانته الأصلية.', en:'The same screen appears in the product file as «EDA questions» when real queries arrive, sourced «authority» instead of «simulation». Any document uploaded here becomes a new version in its original slot.'}))}</p>`;
+}
+function respondDlg(id){
+  const f = F.find(x => x.id === id);
+  openDrawer(`${L({ar:'الرد على', en:'Respond to'})} ${id}`, `<div class="stack"><div class="fnd"><div class="en">${esc(f.fnd.en)}</div><div class="ar">${esc(f.fnd.ar)}</div><div class="src">${esc(f.ref)}</div></div>
+    <div class="f"><label>${esc(L({ar:'نص الرد', en:'Response text'}))}</label><textarea id="rsT" rows="4">${esc(f.resp ? f.resp.text : '')}</textarea></div>
+    <div class="f"><label>${esc(L({ar:'المستندات (نسخ جديدة في خاناتها)', en:'Documents (new versions in their slots)'}))}</label><div class="picks"><label><input type="checkbox" checked> ${esc(f.act ? f.act.en : 'Updated document')} — v2.pdf</label><label><input type="checkbox"> Cover note to the department (generated)</label></div></div>
+    <div class="row"><button class="btn primary" id="rsSave">${esc(t('save'))}</button><button class="btn ghost" id="rsCancel">${esc(t('cancel'))}</button></div></div>`);
+  $('#rsCancel').onclick = closeDrawer;
+  $('#rsSave').onclick = () => { const txt = $('#rsT').value.trim(); if(!txt){ $('#rsT').focus(); return; } f.resp = {round: 1, text: txt, docs: [`${f.sec} updated v2.pdf`]}; f.status = 'answered'; closeDrawer(); render(); toast(L({ar:'تم حفظ الرد — اضغط «أعد التقييم» لإعادة تشغيل سؤال المُقيِّم على النسخة الجديدة', en:'Response saved — press «Re-assess» to re-run the assessor question on the new version'})); };
+}
+function reassess(id){ const f = F.find(x => x.id === id); f.verdict = 'adequate'; f.status = 'accepted'; render(); toast(L({ar:`${id}: الحكم بعد إعادة التقييم كافٍ — الملاحظة اتقفلت`, en:`${id}: adequate after re-assessment — the finding is closed`})); }
+
+function verdictView(){
+  const o = overall(), tr = TRACKS[S.track];
+  const impacts = F.filter(isOpen).sort((a, b) => ['critical','major','minor'].indexOf(a.sev) - ['critical','major','minor'].indexOf(b.sev)).slice(0, 6).map(f => { const d = DEPTS.find(x => x.id === f.dept); const cur = deptVerdict(f.dept); const was = f.status; f.status = 'closed'; const nxt = deptVerdict(f.dept); f.status = was;
+    return `<div class="impact">${sevTag(f.sev)}<div><b>${esc(f.id)}</b> · ${esc(L(d))} · <span class="code">${esc(f.sec)}</span><div class="d">${esc(L(f.act || f.q))}</div></div><span class="delta">${cur === nxt ? esc(L({ar:'يقلّل الملاحظات', en:'fewer findings'})) : `${esc(L(VERDICT[cur]))} → ${esc(L(VERDICT[nxt]))}`}</span></div>`; }).join('');
+  const stops = DEPTS.filter(d => !S.off.has(d.id) && ['clock_stop','reject'].includes(deptVerdict(d.id))).length;
+  let cur = new Date('2026-12-01T00:00:00'); const tl = [];
+  const push = (cls, label, sub) => tl.push({cls, label, sub, d: new Date(cur)});
+  push('now', {ar:'التقديم المفترض', en:'Assumed submission'}, {ar:'الوحدة 1 كاملة + soft copy', en:'Complete Module 1 + soft copy'});
+  cur = addWds(cur, tr.wds[0]); push('', {ar:'نتيجة الفحص الأولي', en:'Screening outcome'}, {ar:`${tr.wds[0]} ${t('wds')}`, en:`${tr.wds[0]} WDs`});
+  cur = addWds(cur, typeof tr.wds[1] === 'number' ? tr.wds[1] : 60); push('', {ar:'انتهاء التقييم الفني', en:'Technical evaluation ends'}, {ar:`${tr.wds[1]} ${t('wds')}`, en:`${tr.wds[1]} WDs`});
+  if(stops){ cur = addDays(cur, DUE_DAYS); push('stop', {ar:`جولة استيفاء (${stops} إدارة)`, en:`Deficiency round (${stops} departments)`}, {ar:'حتى 3 شهور — Clock stop', en:'Up to 3 months — clock stop'}); }
+  cur = addWds(cur, typeof tr.wds[2] === 'number' ? tr.wds[2] : 60); push('', {ar:'صدور موافقات الإدارات', en:'Departmental approvals'}, {ar:`${tr.wds[2]} ${t('wds')}`, en:`${tr.wds[2]} WDs`});
+  cur = addWds(cur, typeof tr.wds[3] === 'number' ? tr.wds[3] : 40); push('end', {ar:'اللجنة الفنية → الرخصة', en:'Technical Committee → licence'}, {ar:`${tr.wds[3]} ${t('wds')}`, en:`${tr.wds[3]} WDs`});
+  const hist = [['R-0001', '2026-10-12', 31, 'notReady'], ['R-0002', '2026-10-28', 19, 'notReady'], [DOSSIER.run.id, DOSSIER.run.date, F.filter(isOpen).length, o.key]];
+  return `${head(t('verdict'))}
+  <section class="vstrip" style="--v-color:${o.color}">${ring(readiness(), 'lg')}<div><div class="vlabel">${esc(t('readiness'))}</div><h1>${esc(t(o.key))}</h1><p class="why">${esc(L(o.why))}</p></div><div class="acts"><button class="btn" id="runBtn">${icon('zap',16)} ${esc(t('rerun'))}</button></div></section>
+  <div class="grid2">
+    <section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(L({ar:'إيه اللي يغيّر الحكم', en:'What changes the verdict'}))}</h3><span class="small muted">${esc(L({ar:'مرتّبة بالأثر', en:'ordered by impact'}))}</span></div><div>${impacts || `<div class="empty">${icon('check',30)}<div>${esc(L({ar:'لا ملاحظات مفتوحة', en:'No open findings'}))}</div></div>`}</div></section>
+    <section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(t('depts'))}</h3></div><div class="pad vbars">${DEPTS.map(d => { const v = deptVerdict(d.id), p = Math.round(100 * d.assessed[0] / d.assessed[1]), c = counts(byDept(d.id)); return `<div class="vbar"><span>${esc(L(d))}</span>${meter(p, v === 'approve' ? 'ok' : v === 'reject' ? 'bad' : v === 'clock_stop' ? 'warn' : '')}<span class="n">${c.critical + c.major + c.minor} ${esc(t('openQ'))}</span></div>`; }).join('')}</div></section>
+  </div>
+  <div class="grid2">
+    <section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(L({ar:'الخط الزمني المتوقع', en:'Expected timeline'}))}</h3><span class="small muted">${esc(L(tr.label))}</span></div><div class="pad tl">${tl.map(x => `<div class="ti ${x.cls}"><span class="dt">${esc(fmt(x.d))}</span><span class="pt"></span><div><b>${esc(L(x.label))}</b><span>${esc(L(x.sub))}</span></div></div>`).join('')}</div><p class="tiny-note pad" style="padding-top:0">${esc(L({ar:'أيام العمل تتحول لتقويم تقريبي (5 أيام عمل = 7 أيام). الجدول المنشور لا يشمل جولات الاستيفاء.', en:'Working days are converted approximately (5 WDs = 7 calendar days). The published table excludes deficiency rounds.'}))}</p></section>
+    <section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(L({ar:'سجل الجولات', en:'Run history'}))}</h3></div><div class="tbl"><table><thead><tr><th>${esc(L({ar:'الجولة', en:'Run'}))}</th><th>${esc(L({ar:'التاريخ', en:'Date'}))}</th><th>${esc(t('openQ'))}</th><th>${esc(t('verdict'))}</th></tr></thead><tbody>${hist.map(h => `<tr><td class="code">${esc(h[0])}</td><td class="code">${esc(h[1])}</td><td class="num">${h[2]}</td><td><span class="chip ${h[3] === 'ready' ? 'c-ok' : h[3] === 'risks' ? 'c-warn' : 'c-bad'}"><i></i>${esc(t(h[3]))}</span></td></tr>`).join('')}</tbody></table></div></section>
+  </div>`;
+}
+
+function settingsView(){
+  return `${head(t('settings'))}
+  <div class="grid2">
+    <section class="card pad stack">
+      <div class="f"><label>${esc(L({ar:'الصرامة', en:'Strictness'}))}</label><div class="choice">${[['lenient', {ar:'متساهل', en:'Lenient'}, {ar:'Critical و Major فقط', en:'Critical and Major only'}], ['standard', {ar:'قياسي', en:'Standard'}, {ar:'الافتراضي — كل ما تنشره الهيئة', en:'Default — everything EDA publishes'}], ['strict', {ar:'صارم', en:'Strict'}, {ar:'+ بنود WHO التحضيرية كـ Minor', en:'+ WHO preparatory items as Minor'}]].map(([k, n, d]) => `<button data-strict="${k}" class="${S.strict === k ? 'on' : ''}"><b>${esc(L(n))}</b><span>${esc(L(d))}</span></button>`).join('')}</div></div>
+      <div class="f"><label>${esc(L({ar:'المسار (لمحاكاة الساعة)', en:'Track (for the clock simulation)'}))}</label><select id="trackSel">${Object.entries(TRACKS).map(([k, v]) => `<option value="${k}" ${S.track === k ? 'selected' : ''}>${esc(L(v.label))}</option>`).join('')}</select></div>
+      <div class="f"><label>${esc(L({ar:'الإدارات المفعّلة', en:'Departments enabled'}))}</label><div class="picks">${DEPTS.map(d => `<label><input type="checkbox" data-dep="${d.id}" ${S.off.has(d.id) ? '' : 'checked'}> ${esc(L(d))} <span class="muted small">— ${esc(L(d.body))}</span></label>`).join('')}</div></div>
+      <div class="f"><label>${esc(L({ar:'المُقيِّم الذكي', en:'AI assessor'}))}</label><label class="opt"><input type="checkbox" id="aiTog" ${S.aiOn ? 'checked' : ''}><span><b>${esc(L({ar:'مفعّل', en:'Enabled'}))}</b><span>${esc(L({ar:'يقرأ النصوص وصور صفحات السكان ويقترح الحكم؛ لا يدخل الخطاب قبل التأكيد. في نسخة المتصفح عبر قدرة claude.ai؛ على الخادم بمفتاح.', en:'Reads text and scanned page images and suggests verdicts; nothing enters the letter before confirmation. In the browser edition via the claude.ai capability; on a server with a key.'}))}</span></span></label></div>
+    </section>
+    <section class="stack">
+      <div class="card pad stack gap-s"><h3>${esc(t('pack'))}</h3><dl class="props" style="padding:0"><dt>eda.review.v1</dt><dd>2026-11 · 146 ${esc(L({ar:'سؤالاً', en:'questions'}))}</dd><dt>screening.yaml</dt><dd>NP.CAPP.065 v5 · WHO checklist 05/2021</dd><dt>quality.yaml</dt><dd>Quality Module guideline v2/2023 · NP.CAPP.040 · GL.CAPP.039 · TRS 986 A6</dd><dt>cadc.yaml</dt><dd>GL.CADC.002 v02/2024 §6.6 + Annexes I–VI</dd><dt>stability.yaml</dt><dd>NP.CAPP.090 v2 (06/08/2026) · Q1A/Q1E</dd><dt>be.yaml</dt><dd>GL.CAPP.024 v4/2026</dd><dt>clocks.yaml</dt><dd>${esc(L({ar:'دليل إجراءات التقديم — جدول المواعيد', en:'Submission procedures — timelines table'}))}</dd></dl></div>
+      <div class="alert info">${icon('info',18)}<p>${esc(L({ar:'سلم الخطورة (Critical / Major / Minor) من الأداة — الهيئة لا تنشر سلماً رسمياً لتعليقاتها. دليل النشرة ومعايير تحقق eCTD المصرية غير مقروءة بعد: أسئلتها معلَّمة «مؤقت».', en:'The severity scale (Critical / Major / Minor) is the tool’s own — EDA publishes no formal scale for its comments. The labelling guideline and the Egyptian eCTD validation criteria are not yet read: their questions are marked «provisional».'}))}</p></div>
+    </section>
+  </div>`;
+}
+
+/* ---- render + events */
+const VIEWS = {desk, screening, assess, letter, responses, verdict: verdictView, settings: settingsView};
+function render(){
+  document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+  paintNav(); $('#view').innerHTML = VIEWS[route()](); DS.theme.paint();
+  const rb = $('#runBtn'); if(rb) rb.onclick = runDemo;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-dept],[data-sec],[data-ev],[data-ai],[data-aiok],[data-aino],[data-conf],[data-ovr],[data-act],[data-f],[data-ld],[data-slot],[data-resp],[data-reassess],[data-strict],#rejPrev,#dlDocx,#dlPdf,#cpTxt,#askSec'); if(!b) return;
+  const d = b.dataset;
+  if(b.classList.contains('dept')){ S.dept = d.dept; S.sec = ''; location.hash = 'assess'; render(); return; }
+  if(b.classList.contains('node')){ S.dept = d.dept; S.sec = d.sec; render(); return; }
+  if(d.ev){ const [id, i] = d.ev.split(':'); S.ev = {id, i: i === 'ai' ? 'ai' : +i}; render(); $('#viewer').scrollIntoView({block:'nearest', behavior:'smooth'}); return; }
+  if(d.ai){ askAI(d.ai); return; }
+  if(d.aiok){ const f = F.find(x => x.id === d.aiok); f.verdict = f.aiBox.verdict; f.origin = 'ai'; f.conf = f.aiBox.conf; f.confirmed = true; f.fnd = {en: f.aiBox.en, ar: f.aiBox.ar}; if(f.aiBox.ev) f.ev = [...f.ev, f.aiBox.ev]; delete f.aiBox; render(); toast(L({ar:'اتأكدت ملاحظة الذكاء الاصطناعي ودخلت الخطاب', en:'AI finding confirmed and added to the letter'})); return; }
+  if(d.aino){ delete F.find(x => x.id === d.aino).aiBox; render(); return; }
+  if(d.conf){ const f = F.find(x => x.id === d.conf); f.confirmed = true; render(); toast(L({ar:`${f.id}: اتأكدت`, en:`${f.id}: confirmed`})); return; }
+  if(d.ovr){ overrideDlg(d.ovr); return; }
+  if(d.act){ const f = F.find(x => x.id === d.act); toast(L({ar:`في المنتج: ${L(f.act)} — يفتح في منشئ الملفات (${f.sec})`, en:`In the product: ${L(f.act)} — opens in the Dossier Builder (${f.sec})`})); return; }
+  if(d.f){ S.filter = d.f; render(); return; }
+  if(d.ld){ S.letterDept = d.ld; render(); return; }
+  if(d.slot){ toast(L({ar:`يفتح الخانة ${d.slot} في لوحة المتطلبات`, en:`Opens slot ${d.slot} in the requirements board`})); return; }
+  if(d.resp){ respondDlg(d.resp); return; }
+  if(d.reassess){ reassess(d.reassess); return; }
+  if(d.strict){ S.strict = d.strict; render(); return; }
+  if(b.id === 'rejPrev'){ rejectPreview(); return; }
+  if(b.id === 'dlDocx' || b.id === 'dlPdf'){ toast(L({ar:'في المنتج: الخطاب يتولد Word/PDF بمولدات المحرك ويتنزل', en:'In the product: the letter is generated as Word/PDF by the engine and downloaded'})); return; }
+  if(b.id === 'cpTxt'){ const txt = $('#letterDoc').innerText; navigator.clipboard.writeText(txt).then(() => toast(L({ar:'اتنسخ', en:'Copied'}))).catch(() => { const r = document.createRange(); r.selectNodeContents($('#letterDoc')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }); return; }
+  if(b.id === 'askSec'){ byDept(S.dept).filter(f => f.sec === S.sec && !pendingAI(f) && !f.aiBox).forEach(f => { const sug = AI_SUGGEST[f.id]; f.aiBox = sug || {verdict: f.verdict === 'not_assessable' ? 'deficient' : f.verdict, conf: 0.72, en:`Section ${f.sec} read in full: the current verdict (${f.verdict}) is supported by the cited evidence.`, ar:`قراءة القسم ${f.sec} كاملاً: الحكم الحالي (${t(f.verdict)}) مدعوم بالدليل المذكور.`}; }); render(); toast(L({ar:'اقتراحات الذكاء الاصطناعي جاهزة للمراجعة', en:'AI suggestions are ready for review'})); return; }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if(el.id === 'mobnav'){ location.hash = el.value; return; }
+  if(el.id === 'trackSel'){ S.track = el.value; render(); return; }
+  if(el.id === 'aiTog'){ S.aiOn = el.checked; return; }
+  if(el.dataset.dep){ if(el.checked) S.off.delete(el.dataset.dep); else S.off.add(el.dataset.dep); paintNav(); return; }
+});
+$('#lang-ar').onclick = () => { LANG = 'ar'; store.set('db.lang', 'ar'); render(); };
+$('#lang-en').onclick = () => { LANG = 'en'; store.set('db.lang', 'en'); render(); };
+$('#theme').onclick = () => DS.theme.toggle();
+window.addEventListener('hashchange', render);
+DS.wireChrome(); DS.theme.init(); render();
+
+</script>

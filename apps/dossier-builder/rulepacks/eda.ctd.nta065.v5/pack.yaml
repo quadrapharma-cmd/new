@@ -1,0 +1,26 @@
+id: eda.ctd.nta065.v5
+title:
+  en: EDA CTD dossier requirements — NP.CAPP.065 v5 (in force)
+  ar: متطلبات ملف CTD لهيئة الدواء المصرية — NP.CAPP.065 الإصدار 5 (سارٍ)
+status: in-force
+valid_from: '2025-11-01'
+valid_to: null
+supersedes: null
+columns:
+  I: {en: Imported innovator, ar: مبتكر مستورد}
+  G_IMP: {en: Imported generic, ar: مثيل مستورد}
+  G_LOC: {en: Local generic, ar: مثيل محلي}
+sources:
+  - {code: NP.CAPP.065, version: '5', status: in-force, effective: '2025-11-01',
+     file: docs/ctd/sources/ (NP.CAPP.065 v5 PDF)}
+  - {code: CTD Quality Module guideline, version: '2/2023', status: in-force}
+  - {code: EG eCTD Technical Guidance / M1 spec, version: 'draft 1.0 (2026)', status: draft}
+  - {code: GL.CAPP.039, version: '1', status: in-force, effective: '2026-01-01',
+     note: re-registration relaxations (acceptance level, not presence)}
+bootstrap: docs/ctd/checklist/EDA-eCTD-Company-Checklist.xlsx (sheet «قائمة المستندات Checklist»)
+provenance_tags:
+  EG-IN-FORCE: text of an EDA document in force
+  EG-DRAFT: EDA draft (may change at adoption)
+  EU-DERIVED: completed from the EU model where EDA has not published
+  ICH: ICH guideline / specification
+  ASSUMPTION: engineering assumption, flagged in the UI until confirmed

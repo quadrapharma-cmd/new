@@ -1,0 +1,455 @@
+# Quality (Module 3) — the questions the Technical Affairs assessor asks, built from NP.CAPP.040 v1/2022 (most common
+# deficiencies), the EDA Quality Module guideline v2/2023 and WHO TRS 986 Annex 6. Data-driven cross-checks (XC-*, NP040-*)
+# come from the engine's crosschecks module at run time and are not repeated here.
+- id: QM-S11-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.1.1"
+  title: {en: "Chemical name and CAS number", ar: "الاسم الكيميائي ورقم CAS"}
+  question: {en: "Are the chemical name, the IUPAC name and the correct CAS number of the API stated?", ar: "هل الاسم الكيميائي واسم IUPAC ورقم CAS الصحيح للمادة الفعالة مذكورة؟"}
+  severity: minor
+  evidence: {slots: [S-01], keywords: ["IUPAC", "CAS"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The chemical name, the IUPAC name and the CAS registry number of the API should be stated in 3.2.S.1.1.", ar: "يجب ذكر الاسم الكيميائي واسم IUPAC ورقم CAS للمادة الفعالة في 3.2.S.1.1."}
+  action: {type: upload, target: S-01}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.1.1", quote: "Chemical name and IUPAC name are not submitted · Incorrect CAS number"}
+- id: QM-S12-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.1.2"
+  title: {en: "Structure with stereochemistry and hydrate mass", ar: "البنية مع المراكز الفراغية وكتلة الهيدرات"}
+  question: {en: "Does the structure show every chiral centre, and is the relative molecular mass given for the hydrated form where applicable?", ar: "هل تُظهر البنية كل مركز كيرالي، وهل الكتلة الجزيئية النسبية مذكورة للصورة المائية عند الانطباق؟"}
+  severity: minor
+  evidence: {slots: [S-02], keywords: ["chiral", "stereo", "molecular mass", "molecular weight", "hydrate"]}
+  auto: {kind: none}
+  deficiency: {en: "The structural formula should show the chiral centres and the relative molecular mass should be stated for the hydrated form.", ar: "يجب أن تُظهر الصيغة البنائية المراكز الكيرالية وأن تُذكر الكتلة الجزيئية النسبية للصورة المائية."}
+  action: {type: upload, target: S-02}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.1.2", quote: "Drawing structure doesn’t show chiral center · Relative molecular mass for hydrated form is missing"}
+- id: QM-S13-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.1.3"
+  title: {en: "General properties discussed", ar: "مناقشة الخواص العامة"}
+  question: {en: "Are aqueous solubility at different pH, solubility in organic solvents, hygroscopicity and, for a low-solubility API, particle size distribution and polymorphism discussed?", ar: "هل نوقشت الذوبانية المائية عند درجات pH مختلفة، والذوبانية في المذيبات العضوية، والاسترطاب، وللمادة قليلة الذوبان توزيع حجم الجسيمات وتعدد الأشكال البلورية؟"}
+  severity: major
+  evidence: {slots: [S-03], keywords: ["solubility", "hygroscop", "polymorph", "particle size", "pH"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "3.2.S.1.3 should discuss aqueous solubility at different pH values, solubility in organic solvents, hygroscopicity, and for a low-solubility API the particle size distribution and polymorphism.", ar: "يجب أن يناقش 3.2.S.1.3 الذوبانية المائية عند قيم pH مختلفة والذوبانية في المذيبات العضوية والاسترطاب، وللمادة قليلة الذوبان توزيع حجم الجسيمات وتعدد الأشكال البلورية."}
+  action: {type: upload, target: S-03}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.1.3", quote: "Aqueous Solubility in Different pHs is not Discussed · Hygroscopicity is not discussed · Polymorphism for low soluble API is not discussed"}
+- id: QM-S21-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.2.1"
+  title: {en: "Responsibility of each API manufacturer", ar: "مسؤولية كل مصنّع للمادة الفعالة"}
+  question: {en: "Is the responsibility of each manufacturer involved in the API manufacturing process stated?", ar: "هل مسؤولية كل مصنّع مشارك في عملية تصنيع المادة الفعالة مذكورة؟"}
+  severity: major
+  evidence: {slots: [S-04], keywords: ["responsib", "step", "site"]}
+  auto: {kind: text}
+  deficiency: {en: "3.2.S.2.1 should state the responsibility of every manufacturer and site involved in the manufacture of the API.", ar: "يجب أن يذكر 3.2.S.2.1 مسؤولية كل مصنّع وموقع مشارك في تصنيع المادة الفعالة."}
+  action: {type: upload, target: S-04}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.2.1", quote: "Absence of discussion for the responsibility of each manufacturer involved in the manufacturing process of the API"}
+- id: QM-S22-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.2.2 · 3.2.S.2.3"
+  title: {en: "Synthesis flow diagram and control of materials", ar: "مخطط التخليق وضبط المواد"}
+  question: {en: "Does the flow diagram describe all synthetic steps with the critical process parameters, and are all raw materials and the starting material (preparation, purity, related substances) controlled?", ar: "هل يصف مخطط التدفق جميع خطوات التخليق مع معاملات العملية الحرجة، وهل جميع المواد الخام ومادة البدء (التحضير، النقاء، المواد ذات الصلة) مضبوطة؟"}
+  applies: "'FULL' in api_options or 'DMF' in api_options or 'PQ' in api_options"
+  severity: major
+  evidence: {slots: [S-05], keywords: ["flow", "starting material", "critical process parameter", "related substance", "purity"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The synthesis flow diagram should show all steps and critical process parameters; all raw materials should be controlled and the starting-material specification should include purity and related substances.", ar: "يجب أن يُظهر مخطط التخليق جميع الخطوات ومعاملات العملية الحرجة؛ وتُضبط جميع المواد الخام وتتضمن مواصفة مادة البدء النقاء والمواد ذات الصلة."}
+  action: {type: upload, target: S-05}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.2.2 · 3.2.S.2.3", quote: "Flow diagram of the synthetic process(es) is not describing all the manufacturing steps and critical process parameters"}
+- id: QM-S25-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.2.5"
+  title: {en: "Validation of sterile API processing", ar: "التحقق من المعالجة المعقَّمة للمادة الفعالة"}
+  question: {en: "For a sterile API, is the validation of aseptic processing and sterilisation submitted?", ar: "للمادة الفعالة المعقَّمة، هل التحقق من المعالجة المعقَّمة والتعقيم مقدَّم؟"}
+  applies: "'sterile' in dosage_specifics"
+  severity: major
+  evidence: {slots: [S-05], keywords: ["sterilis", "steriliz", "aseptic", "validation"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "Process validation of the API aseptic processing and sterilisation should be submitted in 3.2.S.2.5.", ar: "يجب تقديم التحقق من عملية المعالجة المعقَّمة وتعقيم المادة الفعالة في 3.2.S.2.5."}
+  action: {type: upload, target: S-05}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.2.5", quote: "Process Validation of API aseptic processing and sterilization is not submitted"}
+- id: QM-S31-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.3.1"
+  title: {en: "Structure elucidation complete and legible", ar: "اكتمال ووضوح إثبات البنية"}
+  question: {en: "Are all essential techniques performed with clear spectra, an interpretation table, and for NMR an enumerated structure and zoomed spectra?", ar: "هل أُجريت جميع التقنيات الأساسية بأطياف واضحة وجدول تفسير، ولطيف NMR بنية مرقَّمة وأطياف مكبَّرة؟"}
+  severity: major
+  evidence: {slots: [S-06], keywords: ["NMR", "IR", "mass", "UV", "interpretation", "elemental analysis"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "Structure elucidation should include all essential techniques with clear spectra, an interpretation table, and for NMR the enumerated structure and zoomed spectra.", ar: "يجب أن يتضمن إثبات البنية جميع التقنيات الأساسية بأطياف واضحة وجدول تفسير، ولطيف NMR البنية المرقَّمة والأطياف المكبَّرة."}
+  action: {type: upload, target: S-06}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.3.1", quote: "Enumerated Structure for NMR is not submitted · Zooming Spectrum for NMR is not submitted"}
+- id: QM-S32-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.3.2"
+  title: {en: "Potential impurities and limits", ar: "الشوائب المحتملة وحدودها"}
+  question: {en: "Are potential impurities discussed (including carry-over from starting materials), compendial specified impurities controlled, and limits justified against ICH Q3A?", ar: "هل نوقشت الشوائب المحتملة (بما فيها المنقولة من مواد البدء)، وضُبطت الشوائب المحددة دستورياً، وبُررت الحدود وفق ICH Q3A؟"}
+  severity: major
+  evidence: {slots: [S-07], keywords: ["potential impurit", "Q3A", "carry", "specified impurit", "degradation"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "3.2.S.3.2 should discuss all potential impurities, including carry-over from starting materials, control the impurities specified in the compendial monograph, and justify any acceptance criterion above the ICH Q3A thresholds.", ar: "يجب أن يناقش 3.2.S.3.2 جميع الشوائب المحتملة بما فيها المنقولة من مواد البدء، ويضبط الشوائب المحددة في الدراسة الدستورية، ويبرر أي حد قبول يتجاوز عتبات ICH Q3A."}
+  action: {type: upload, target: S-07}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.3.2", quote: "Setting Acceptance criteria for impurities exceeding ICH Q3A guideline Acceptance criteria without justification"}
+  anchor: {code: ICH Q3A(R2)}
+- id: QM-S32-02
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.3.2"
+  title: {en: "Elemental, mutagenic and solvent risk assessments", ar: "تقييمات مخاطر العناصر والشوائب الطافرة والمذيبات"}
+  question: {en: "Are the elemental impurities (ICH Q3D), mutagenic impurities (ICH M7), early-step residual solvents and benzene-in-solvents risk assessments provided?", ar: "هل تقييمات مخاطر شوائب العناصر (ICH Q3D) والشوائب الطافرة (ICH M7) والمذيبات المتبقية من الخطوات المبكرة والبنزين في المذيبات مقدَّمة؟"}
+  severity: major
+  evidence: {slots: [S-07, P-12], keywords: ["Q3D", "elemental impurit", "M7", "mutagenic", "genotoxic", "benzene", "residual solvent"]}
+  auto: {kind: text, min_hits: 3}
+  deficiency: {en: "Risk assessments for elemental impurities (ICH Q3D), mutagenic/genotoxic impurities (ICH M7), residual solvents used early in the synthesis and benzene as an impurity in solvents should be provided.", ar: "يجب تقديم تقييمات مخاطر شوائب العناصر (ICH Q3D) والشوائب الطافرة/السامة للجينات (ICH M7) والمذيبات المستخدمة مبكراً في التخليق والبنزين كشائبة في المذيبات."}
+  action: {type: upload, target: S-07}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.3.2", quote: "Elemental impurities and Genotoxic impurities Risk assessment are missing · Risk assessment for benzene as impurity in solvents is missing"}
+  anchor: {code: ICH Q3D(R2) · ICH M7(R2) · ICH Q3C(R8)}
+- id: QM-S41-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.4.1"
+  title: {en: "API specification complete", ar: "اكتمال مواصفة المادة الفعالة"}
+  question: {en: "Does the API specification include the universal tests (description, identification, assay, impurities), a reference column with the general-chapter numbers for compendial methods, the FPP manufacturer's own specification, and identification by more than a single chromatographic retention time?", ar: "هل تتضمن مواصفة المادة الفعالة الاختبارات الشاملة (الوصف، التعرف، المعايرة، الشوائب)، وعموداً مرجعياً بأرقام الفصول العامة للطرق الدستورية، ومواصفة مصنّع المنتج النهائي، وتعرفاً لا يعتمد على زمن احتباس كروماتوغرافي واحد؟"}
+  severity: major
+  evidence: {slots: [S-08], keywords: ["description", "identification", "assay", "related substances", "impurities"]}
+  auto: {kind: text, min_hits: 3}
+  deficiency: {en: "The API specification should list all universal tests, carry a reference column citing the general chapters of compendial methods, include the FPP manufacturer's specification used in routine testing, and not rely on a single chromatographic retention time for identification.", ar: "يجب أن تتضمن مواصفة المادة الفعالة جميع الاختبارات الشاملة، وعموداً مرجعياً بأرقام الفصول العامة للطرق الدستورية، ومواصفة مصنّع المنتج النهائي المستخدمة في الاختبار الروتيني، وألا يعتمد التعرف على زمن احتباس كروماتوغرافي واحد."}
+  action: {type: upload, target: S-08}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.4.1", quote: "Absence of reference column with the number of general chapters in case of pharmacopeial methods · Usage of one single chromatographic retention time procedure for identification test"}
+  anchor: {code: ICH Q6A}
+- id: QM-S42-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.4.2 · 3.2.S.4.3"
+  title: {en: "API methods validated or verified", ar: "التحقق أو التوثيق لطرق تحليل المادة الفعالة"}
+  question: {en: "Are analytical procedures given for every test, with a verification report for compendial methods, validation reports for in-house methods, and chromatograms for specificity, forced degradation and system suitability?", ar: "هل طرق التحليل مقدَّمة لكل اختبار، مع تقرير توثيق للطرق الدستورية وتقارير تحقق للطرق الداخلية، ومنحنيات كروماتوغرافية للخصوصية والتحلل القسري وملاءمة النظام؟"}
+  severity: major
+  evidence: {slots: [S-09], keywords: ["verification", "validation", "specificity", "forced degradation", "system suitability", "linearity"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "Analytical procedures should be provided for every test; compendial methods need a verification report and in-house methods a validation report, each with the chromatograms of specificity, forced degradation and system suitability.", ar: "يجب تقديم طرق التحليل لكل اختبار؛ وتحتاج الطرق الدستورية تقرير توثيق والطرق الداخلية تقرير تحقق، مع منحنيات الخصوصية والتحلل القسري وملاءمة النظام."}
+  action: {type: upload, target: S-09}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.4.3", quote: "Absence of verification report for compendial methods · Absence of chromatograms (Specificity, Forced degradation & system suitability)"}
+  anchor: {code: ICH Q2(R2)}
+- id: QM-S45-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.4.5"
+  title: {en: "Justification of the API specification", ar: "تبرير مواصفة المادة الفعالة"}
+  question: {en: "Are the impurity and residual-solvent limits and any non-routine tests justified?", ar: "هل حدود الشوائب والمذيبات المتبقية وأي اختبارات غير روتينية مبرَّرة؟"}
+  severity: minor
+  evidence: {slots: [S-11], keywords: ["justif", "limit", "non-routine", "skip"]}
+  auto: {kind: text}
+  deficiency: {en: "3.2.S.4.5 should justify the limits for impurities and residual solvents and any non-routine (skip) testing.", ar: "يجب أن يبرر 3.2.S.4.5 حدود الشوائب والمذيبات المتبقية وأي اختبار غير روتيني."}
+  action: {type: generate, target: justification}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.4.5", quote: "Absence of justification for some test (e.g. limit of impurity & limit of residual solvents) · Absence of justification for non-routine testing"}
+- id: QM-S5-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.5"
+  title: {en: "Reference standards documented", ar: "توثيق المواد المرجعية"}
+  question: {en: "Are the working-standard CoA, the concomitant IR spectra of the primary and secondary standards, the structural elucidation of the primary-standard batch and the impurity reference standards provided?", ar: "هل شهادة تحليل المعيار العامل، وأطياف IR المتزامنة للمعيارين الأولي والثانوي، وإثبات بنية تشغيلة المعيار الأولي، ومعايير الشوائب المرجعية مقدَّمة؟"}
+  severity: major
+  evidence: {slots: [S-12], keywords: ["working standard", "primary", "secondary", "concomitant", "IR", "certificate of analysis"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "3.2.S.5 should include the CoA of the working standard, legible IR spectra of the primary and secondary standards run concomitantly, the structural elucidation of the fully characterised primary-standard batch, and a discussion of the impurity reference standards.", ar: "يجب أن يتضمن 3.2.S.5 شهادة تحليل المعيار العامل، وأطياف IR واضحة للمعيارين الأولي والثانوي مُجراة بالتزامن، وإثبات بنية تشغيلة المعيار الأولي، ومناقشة معايير الشوائب المرجعية."}
+  action: {type: upload, target: S-12}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.5", quote: "Absence of legible copies of the IR of the primary and secondary reference standards run concomitantly"}
+- id: QM-S6-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.6"
+  title: {en: "API container closure documented", ar: "توثيق عبوة المادة الفعالة"}
+  question: {en: "Are the API packaging materials fully described with specifications, IR identification of reference and test materials, a justification of suitability and the packaging CoA?", ar: "هل مواد تعبئة المادة الفعالة موصوفة بالكامل مع المواصفات، وتعرف IR للمواد المرجعية والمختبرة، وتبرير الملاءمة، وشهادة تحليل التعبئة؟"}
+  severity: major
+  evidence: {slots: [S-13], keywords: ["specification", "IR", "suitab", "certificate of analysis", "polyethylene", "container"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "3.2.S.6 should describe the container closure system, its specifications, the IR identification of reference versus test packaging materials, the suitability of the immediate packaging and the packaging CoA.", ar: "يجب أن يصف 3.2.S.6 نظام العبوة ومواصفاته، والتعرف بالأشعة تحت الحمراء على مواد التعبئة المرجعية مقابل المختبرة، وملاءمة التعبئة المباشرة وشهادة تحليل التعبئة."}
+  action: {type: upload, target: S-13}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.6", quote: "Absence of Identification spectrum (IR) of reference and test packaging materials"}
+- id: QM-S7-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.7"
+  title: {en: "API stability package complete", ar: "اكتمال حزمة ثبات المادة الفعالة"}
+  question: {en: "Does 3.2.S.7 state the storage/retest conclusion, give complete protocol data (batch type and size, container, start date, period covered), a results summary, commitment letters, up-to-date and ongoing studies, and forced degradation with chromatograms?", ar: "هل يذكر 3.2.S.7 خلاصة التخزين/إعادة الاختبار، وبيانات البروتوكول كاملة (نوع التشغيلة وحجمها، العبوة، تاريخ البدء، المدة المغطاة)، وملخص النتائج، وخطابات الالتزام، ودراسات محدَّثة وجارية، والتحلل القسري مع المنحنيات؟"}
+  applies: "'FULL' in api_options or 'DMF' in api_options or 'PQ' in api_options"
+  severity: major
+  evidence: {slots: [S-14], keywords: ["retest", "re-test", "commitment", "forced degradation", "ongoing", "long-term", "accelerated"]}
+  auto: {kind: text, min_hits: 3}
+  deficiency: {en: "3.2.S.7 should include the stability conclusion (retest period and storage condition), complete protocol details, a summary of results, the commitment letters, up-to-date and ongoing studies on recent batches, and the forced-degradation study with chromatograms.", ar: "يجب أن يتضمن 3.2.S.7 خلاصة الثبات (فترة إعادة الاختبار وظروف التخزين)، وتفاصيل البروتوكول كاملة، وملخص النتائج، وخطابات الالتزام، ودراسات محدَّثة وجارية على تشغيلات حديثة، ودراسة التحلل القسري مع المنحنيات."}
+  action: {type: upload, target: S-14}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.7", quote: "Absence of Commitment letters · Absence of the ongoing stability study for the recent batches · Absence of forced degradation study and chromatograms"}
+  anchor: {code: ICH Q1A(R2)}
+- id: QM-CEP-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S (CEP route)"
+  title: {en: "CEP route — the parts the CEP does not cover", ar: "مسار CEP — الأجزاء غير المغطاة بالشهادة"}
+  question: {en: "For a CEP-covered API, is Ph. Eur. the declared standard, is the applicant's API specification provided, are at least two batch analyses included, and are the S-part sections the CEP does not cover (e.g. 3.2.S.6, stability when no retest period) submitted?", ar: "للمادة الفعالة المغطاة بشهادة CEP، هل دستور الأدوية الأوروبي هو المرجع المعلَن، وهل مواصفة المادة لدى مقدم الطلب مقدَّمة، وهل تحليلا تشغيلتين على الأقل مرفقان، وهل أقسام الجزء S غير المغطاة بالشهادة (مثل 3.2.S.6 والثبات عند غياب فترة إعادة الاختبار) مقدَّمة؟"}
+  applies: "'CEP' in api_options"
+  severity: major
+  evidence: {slots: [S-08, S-13, S-14, M1-39], keywords: ["Ph. Eur", "European Pharmacopoeia", "retest", "container"], data: [apis.spec_standard, batches]}
+  auto: {kind: data, check: cep_route}
+  deficiency: {en: "For a CEP-covered API the declared quality standard should be the European Pharmacopoeia, the applicant's API specification and at least two batch analyses should be provided, and the sections not covered by the CEP (container closure, stability where no retest period is granted) should be submitted.", ar: "للمادة المغطاة بشهادة CEP يجب أن يكون المرجع المعلَن دستور الأدوية الأوروبي، مع تقديم مواصفة المادة لدى مقدم الطلب وتحليل تشغيلتين على الأقل، وتقديم الأقسام غير المغطاة بالشهادة (العبوة، والثبات عند عدم منح فترة إعادة الاختبار)."}
+  action: {type: edit_data, target: apis}
+  source: {code: NP.CAPP.040 v1/2022, section: "Option 2 — CEP", quote: "Specifying a different reference quality standard for the API other than the European Pharmacopeia (ex: USP, In-House) · Absence of Batch Analysis for 2 API batches"}
+- id: QM-P1-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.1"
+  title: {en: "Composition fully declared", ar: "الإعلان الكامل عن التركيب"}
+  question: {en: "Does 3.2.P.1 declare excipient grades, the API equivalence (salt/base) and potency note, any overage, ingredients removed during processing, and the composition of the capsule shell or coating?", ar: "هل يعلن 3.2.P.1 درجات السواغات، ومكافئ المادة الفعالة (ملح/قاعدة) وملاحظة الفاعلية، وأي زيادة، والمكونات المُزالة أثناء التصنيع، وتركيب غلاف الكبسولة أو التغليف؟"}
+  severity: major
+  evidence: {slots: [P-01, M1-33], keywords: ["grade", "equivalent to", "potency", "overage", "removed", "coating", "capsule shell"], data: [composition]}
+  auto: {kind: data, check: composition_complete}
+  deficiency: {en: "3.2.P.1 should declare the grade of each excipient, the salt-to-base equivalence and potency note of the API, any overage with its justification, ingredients removed during manufacture, and the full composition of the coating or capsule shell.", ar: "يجب أن يعلن 3.2.P.1 درجة كل سواغ، ومكافئ الملح إلى القاعدة وملاحظة فاعلية المادة الفعالة، وأي زيادة مع تبريرها، والمكونات المُزالة أثناء التصنيع، والتركيب الكامل للتغليف أو غلاف الكبسولة."}
+  action: {type: edit_data, target: composition}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.1", quote: "Grades of excipients not declared · The equivalence of API is not stated or incorrect · Absence of Composition of capsule shell or coating materials used"}
+- id: QM-P2-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.2"
+  title: {en: "Reference product, QTPP, CQAs and CPPs", ar: "المنتج المرجعي وQTPP وCQAs وCPPs"}
+  question: {en: "Does the pharmaceutical development name the innovator/reference product and identify the QTPP, the critical quality attributes and the critical process parameters?", ar: "هل يذكر التطوير الصيدلي المنتج المبتكر/المرجعي ويحدد QTPP وسمات الجودة الحرجة ومعاملات العملية الحرجة؟"}
+  severity: major
+  evidence: {slots: [P-02], keywords: ["reference product", "innovator", "QTPP", "target product profile", "critical quality attribute", "CQA", "critical process parameter", "CPP"]}
+  auto: {kind: text, min_hits: 3}
+  deficiency: {en: "3.2.P.2 should name the reference product and identify the quality target product profile, the critical quality attributes and the critical process parameters.", ar: "يجب أن يذكر 3.2.P.2 المنتج المرجعي ويحدد ملف المنتج المستهدف للجودة وسمات الجودة الحرجة ومعاملات العملية الحرجة."}
+  action: {type: upload, target: P-02}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.2", quote: "Quality Target Product Profile , Critical Quality Attributes and Critical Process Parameters are not identified"}
+  anchor: {code: ICH Q8(R2)}
+- id: QM-P2-02
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.2.1 · 3.2.P.2.2"
+  title: {en: "Formulation compared with the reference", ar: "مقارنة التركيبة بالمرجع"}
+  question: {en: "Is the formulation compared with the reference product, is an API–excipient compatibility study provided where excipients differ from the reference, and is any overage justified step by step?", ar: "هل التركيبة مقارَنة بالمنتج المرجعي، وهل دراسة توافق المادة الفعالة مع السواغات مقدَّمة عند اختلاف السواغات عن المرجع، وهل أي زيادة مبرَّرة خطوة بخطوة؟"}
+  severity: major
+  evidence: {slots: [P-02], keywords: ["compatib", "comparison", "compared", "overage", "formulation development"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "Formulation development should compare the product with the reference, include an API–excipient compatibility study when an excipient is not in the reference product, and justify any overage by stating where the loss occurs.", ar: "يجب أن يقارن تطوير التركيبة المنتج بالمرجع، ويتضمن دراسة توافق بين المادة الفعالة والسواغات عند استخدام سواغ غير موجود في المنتج المرجعي، ويبرر أي زيادة ببيان موضع الفقد."}
+  action: {type: upload, target: P-02}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.2.1.1 · 3.2.P.2.2.1 · 3.2.P.2.2.2", quote: "Absence of comparison with the reference product or not enough data and studies concerning the details of formulation development"}
+- id: QM-P2-03
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.2.3 · 3.2.P.2.6"
+  title: {en: "Sterilisation choice and compatibility with diluents", ar: "اختيار التعقيم والتوافق مع المذيبات"}
+  question: {en: "For a sterile product, is the choice of sterilisation process justified and is compatibility with the diluent or administration device shown?", ar: "للمنتج المعقَّم، هل اختيار طريقة التعقيم مبرَّر وهل التوافق مع المذيب أو جهاز الإعطاء موضَّح؟"}
+  applies: "'sterile' in dosage_specifics or admin_route == 'parenteral'"
+  severity: major
+  evidence: {slots: [P-02, P-16], keywords: ["sterilis", "steriliz", "terminal", "aseptic", "diluent", "admixture", "infusion", "compatib"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The selection of the sterilisation process should be justified and the compatibility with diluents and administration devices demonstrated (in 3.2.P.2.6 or the stability section).", ar: "يجب تبرير اختيار عملية التعقيم وإثبات التوافق مع المذيبات وأجهزة الإعطاء (في 3.2.P.2.6 أو قسم الثبات)."}
+  action: {type: upload, target: P-02}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.2.3 · 3.2.P.2.6", quote: "Absence of justification for selection of sterilization process · Absence of compatibility with diluent, medical devices"}
+- id: QM-P31-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.3.1"
+  title: {en: "Responsibility of each FPP manufacturer", ar: "مسؤولية كل مصنّع للمنتج النهائي"}
+  question: {en: "Is the responsibility of each manufacturer and site involved in the manufacture, packaging and testing of the FPP stated?", ar: "هل مسؤولية كل مصنّع وموقع مشارك في تصنيع المنتج النهائي وتعبئته واختباره مذكورة؟"}
+  severity: major
+  evidence: {slots: [P-03], keywords: ["responsib", "packag", "testing", "release"]}
+  auto: {kind: text}
+  deficiency: {en: "3.2.P.3.1 should state the responsibility of each manufacturer involved (manufacture, primary and secondary packaging, testing and release).", ar: "يجب أن يذكر 3.2.P.3.1 مسؤولية كل مصنّع مشارك (التصنيع، التعبئة الأولية والثانوية، الاختبار والإفراج)."}
+  action: {type: upload, target: P-03}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.3.1", quote: "Absence of discussion for the responsibility of each manufacturer involved in the manufacturing process of the FPP"}
+- id: QM-P32-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.3.2"
+  title: {en: "Batch formula for every batch size", ar: "صيغة التشغيلة لكل حجم"}
+  question: {en: "Does the batch formula cover all commercial batch sizes, include overage and overfill where applicable, and show the potency calculation?", ar: "هل تغطي صيغة التشغيلة جميع أحجام التشغيلات التجارية، وتتضمن الزيادة والتعبئة الزائدة عند الانطباق، وتُظهر حساب الفاعلية؟"}
+  severity: major
+  evidence: {slots: [P-04], keywords: ["batch size", "batch formula", "overage", "overfill", "potency"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The batch formula should cover every commercial batch size, include overage and overfill where applicable, and include the potency calculation of the API.", ar: "يجب أن تغطي صيغة التشغيلة كل حجم تجاري، وتتضمن الزيادة والتعبئة الزائدة عند الانطباق، وحساب فاعلية المادة الفعالة."}
+  action: {type: upload, target: P-04}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.3.2", quote: "A batch formula is not covering all commercial batch sizes or not including overage and overfills if applicable · Batch formula not including potency calculation"}
+- id: QM-P33-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.3.3 · 3.2.P.3.4"
+  title: {en: "Process description, hold times and CPPs", ar: "وصف العملية وأزمنة الانتظار ومعاملات الحرجة"}
+  question: {en: "Does the process description include a flow diagram of all steps with the critical process parameters, specified hold times supported by stability data, and precautions for storage and transfer between sites?", ar: "هل يتضمن وصف العملية مخطط تدفق لجميع الخطوات مع معاملات العملية الحرجة، وأزمنة انتظار محددة مدعومة ببيانات ثبات، واحتياطات التخزين والنقل بين المواقع؟"}
+  severity: major
+  evidence: {slots: [P-05, P-06], keywords: ["hold time", "holding time", "flow", "critical process parameter", "in-process", "transfer"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "3.2.P.3.3 should include a flow diagram covering all steps and critical process parameters, specify the holding times with supportive stability data, and describe storage and transfer precautions between manufacturing sites.", ar: "يجب أن يتضمن 3.2.P.3.3 مخطط تدفق يغطي جميع الخطوات ومعاملات العملية الحرجة، ويحدد أزمنة الانتظار مع بيانات ثبات داعمة، ويصف احتياطات التخزين والنقل بين مواقع التصنيع."}
+  action: {type: upload, target: P-05}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.3.3 · 3.2.P.3.4", quote: "Holding time is not specified and supportive stability data is not submitted"}
+- id: QM-P35-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.3.5"
+  title: {en: "Process validation on three batches per size", ar: "التحقق من العملية على ثلاث تشغيلات لكل حجم"}
+  question: {en: "Is process validation (or a prospective validation protocol) provided on three consecutive batches for every commercial batch size?", ar: "هل التحقق من العملية (أو بروتوكول تحقق مستقبلي) مقدَّم على ثلاث تشغيلات متتالية لكل حجم تشغيلة تجاري؟"}
+  severity: major
+  evidence: {slots: [P-07], keywords: ["three", "3 consecutive", "consecutive", "validation protocol", "validation report", "batch size"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "Process validation data (or a prospective protocol) on three consecutive production batches should be provided for every commercial batch size.", ar: "يجب تقديم بيانات التحقق من العملية (أو بروتوكول مستقبلي) على ثلاث تشغيلات إنتاجية متتالية لكل حجم تشغيلة تجاري."}
+  action: {type: upload, target: P-07}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.3.5", quote: "Absence of Process Validation on 3 primary batches. (If applicable) · Process validation of all batch sizes is missing"}
+  anchor: {code: WHO TRS 986 Annex 6, section: "3 consecutive production batches of the largest size"}
+- id: QM-P4-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.4"
+  title: {en: "Excipient specifications and TSE/BSE", ar: "مواصفات السواغات وشهادات TSE/BSE"}
+  question: {en: "Are in-house specifications provided for non-compendial excipients, and TSE/BSE certificates for excipients of human or animal origin?", ar: "هل المواصفات الداخلية مقدَّمة للسواغات غير الدستورية، وشهادات TSE/BSE للسواغات ذات الأصل البشري أو الحيواني؟"}
+  severity: major
+  evidence: {slots: [P-08], keywords: ["TSE", "BSE", "specification", "in-house", "animal origin"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "3.2.P.4 should include the in-house specifications of non-compendial excipients and TSE/BSE certificates for excipients of human or animal origin.", ar: "يجب أن يتضمن 3.2.P.4 المواصفات الداخلية للسواغات غير الدستورية وشهادات TSE/BSE للسواغات ذات الأصل البشري أو الحيواني."}
+  action: {type: upload, target: P-08}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.4.1 · 3.2.P.4.5", quote: "Absence of specifications of the in-house excipients · Absence of TSE &BSE certificates for excipients of human or animal origin"}
+- id: QM-P51-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "FPP specification complete with dissolution Q", ar: "اكتمال مواصفة المنتج مع حد الذوبان Q"}
+  question: {en: "Does the FPP specification include all universal tests, a reference column with the general-chapter numbers, identification not based on a single retention time, and a dissolution acceptance criterion with the Q value?", ar: "هل تتضمن مواصفة المنتج النهائي جميع الاختبارات الشاملة، وعموداً مرجعياً بأرقام الفصول العامة، وتعرفاً لا يعتمد على زمن احتباس واحد، ومعيار قبول للذوبان بقيمة Q؟"}
+  severity: major
+  evidence: {slots: [P-09], keywords: ["description", "identification", "assay", "dissolution", "Q", "general chapter"], data: [specs.product]}
+  auto: {kind: data, check: fpp_spec_universal}
+  deficiency: {en: "The FPP specification should include the universal tests, a reference column citing the general chapters of compendial methods, an identification not relying on a single chromatographic retention time, and the amount of dissolved active (Q) in the dissolution acceptance criterion.", ar: "يجب أن تتضمن مواصفة المنتج النهائي الاختبارات الشاملة، وعموداً مرجعياً بأرقام الفصول العامة للطرق الدستورية، وتعرفاً لا يعتمد على زمن احتباس كروماتوغرافي واحد، وكمية المادة الفعالة المذابة (Q) في معيار قبول الذوبان."}
+  action: {type: edit_data, target: specs.product}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.5.1", quote: "Amount of dissolved active “Q” is missing in the acceptance criteria of dissolution test"}
+  anchor: {code: ICH Q6A}
+- id: QM-P52-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.5.2 · 3.2.P.5.3"
+  title: {en: "In-house methods validated with chromatograms", ar: "التحقق من الطرق الداخلية مع المنحنيات"}
+  question: {en: "Are the in-house analytical methods described in full and validated, with the validation chromatograms?", ar: "هل الطرق التحليلية الداخلية موصوفة بالكامل ومتحقَّق منها، مع منحنيات التحقق؟"}
+  severity: major
+  evidence: {slots: [P-10], keywords: ["validation", "specificity", "linearity", "accuracy", "precision", "chromatogram"]}
+  auto: {kind: text, min_hits: 3}
+  deficiency: {en: "The in-house analytical methods should be provided in full with their validation reports and validation chromatograms.", ar: "يجب تقديم الطرق التحليلية الداخلية كاملة مع تقارير التحقق ومنحنيات التحقق."}
+  action: {type: upload, target: P-10}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.5.2 · 3.2.P.5.3", quote: "Absence of validation for the in-house analytical methods · Absence of the validation chromatograms"}
+  anchor: {code: ICH Q2(R2)}
+- id: QM-P54-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.5.4"
+  title: {en: "At least two FPP batches, numeric results", ar: "تشغيلتان على الأقل بنتائج رقمية"}
+  question: {en: "Are batch analyses reported for at least two FPP batches of at least pilot scale per strength, with full batch description, numeric results and consistency with 3.2.P.5.1?", ar: "هل نتائج تحليل التشغيلات مقدَّمة لتشغيلتين على الأقل من المنتج النهائي بحجم تجريبي على الأقل لكل تركيز، مع وصف كامل للتشغيلة ونتائج رقمية واتساق مع 3.2.P.5.1؟"}
+  severity: critical
+  evidence: {slots: [P-11], keywords: ["batch", "pilot", "lot"], data: [batches, results]}
+  auto: {kind: data, check: fpp_batches_min_2}
+  deficiency: {en: "Batch analysis data should be provided for at least two batches of at least pilot scale per strength (one pilot plus one smaller batch for an uncomplicated FPP), with the batch description (size, strength, number, date, site, type) and numeric results instead of «conforms».", ar: "يجب تقديم نتائج تحليل لتشغيلتين على الأقل بحجم تجريبي على الأقل لكل تركيز (تشغيلة تجريبية وأخرى أصغر للمنتج البسيط)، مع وصف التشغيلة (الحجم، التركيز، الرقم، التاريخ، الموقع، النوع) ونتائج رقمية بدل «مطابق»."}
+  action: {type: edit_data, target: batches}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.5.4", quote: "Submission of only one batch while it should be at least 2 batches · In quantitative tests, results are written as “Conform” instead of numerical value"}
+  anchor: {code: WHO TRS 986 Annex 6, section: "FPP batch analysis — at least 2 batches of at least pilot scale"}
+- id: QM-P55-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.5.5"
+  title: {en: "Degradation products and elemental impurities in the FPP", ar: "نواتج التحلل وشوائب العناصر في المنتج"}
+  question: {en: "Does 3.2.P.5.5 give the source, structure and control of degradation and synthetic impurities, and an elemental-impurity risk assessment for the FPP?", ar: "هل يذكر 3.2.P.5.5 مصدر وبنية وضبط شوائب التحلل والتخليق، وتقييم مخاطر شوائب العناصر للمنتج النهائي؟"}
+  severity: major
+  evidence: {slots: [P-12], keywords: ["degradation", "Q3D", "elemental", "Q3B", "impurit"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "3.2.P.5.5 should include information on impurities arising as degradation products or from synthesis (source, structure and control limits) and an elemental impurity risk assessment for the finished product.", ar: "يجب أن يتضمن 3.2.P.5.5 معلومات عن الشوائب الناتجة عن التحلل أو التخليق (المصدر والبنية وحدود الضبط) وتقييم مخاطر شوائب العناصر للمنتج النهائي."}
+  action: {type: upload, target: P-12}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.5.5", quote: "Absence of elemental impurity risk assessment · Absence of Information on impurities arising as degradation product or synthetic impurities"}
+  anchor: {code: ICH Q3B(R2) · ICH Q3D(R2)}
+- id: QM-P56-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.5.6"
+  title: {en: "Justification of the FPP specification", ar: "تبرير مواصفة المنتج النهائي"}
+  question: {en: "Are the impurity limits and any non-routine tests in the FPP specification justified?", ar: "هل حدود الشوائب وأي اختبارات غير روتينية في مواصفة المنتج النهائي مبرَّرة؟"}
+  severity: minor
+  evidence: {slots: [P-13], keywords: ["justif", "limit", "non-routine", "skip"]}
+  auto: {kind: text}
+  deficiency: {en: "3.2.P.5.6 should justify the acceptance criteria, in particular the impurity limits and any non-routine testing.", ar: "يجب أن يبرر 3.2.P.5.6 معايير القبول، وبخاصة حدود الشوائب وأي اختبار غير روتيني."}
+  action: {type: generate, target: justification}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.5.6", quote: "Absence of justification for some test (e.g. limit of impurity, non-routine tests)"}
+- id: QM-P6-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.6"
+  title: {en: "FPP reference standards", ar: "المواد المرجعية للمنتج النهائي"}
+  question: {en: "Is the primary reference standard lot number given, and for a working standard its CoA, the primary lot it was standardised against and the concomitant IR spectra?", ar: "هل رقم تشغيلة المعيار المرجعي الأولي مذكور، وللمعيار العامل شهادة تحليله ورقم تشغيلة المعيار الأولي الذي عُوير عليه وأطياف IR المتزامنة؟"}
+  severity: major
+  evidence: {slots: [P-14], keywords: ["lot", "working standard", "primary", "IR", "standardi"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "3.2.P.6 should state the lot number of the primary reference standard and, for a working standard, provide its CoA, the primary lot it was standardised against and the IR spectra of both run concomitantly.", ar: "يجب أن يذكر 3.2.P.6 رقم تشغيلة المعيار المرجعي الأولي، وللمعيار العامل شهادة تحليله ورقم تشغيلة المعيار الأولي الذي عُوير عليه وأطياف IR لكليهما مُجراة بالتزامن."}
+  action: {type: upload, target: P-14}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.6", quote: "Absence of Lot number In case of using primary RS · IR of the primary RS and secondary RS run concomitantly"}
+- id: QM-P7-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.7"
+  title: {en: "FPP container closure documented", ar: "توثيق عبوة المنتج النهائي"}
+  question: {en: "Are the packaging materials fully described with specifications, IR identification of reference versus test materials, a justification of suitability of the immediate packaging and the packaging CoA?", ar: "هل مواد التعبئة موصوفة بالكامل مع المواصفات، وتعرف IR للمواد المرجعية مقابل المختبرة، وتبرير ملاءمة التعبئة المباشرة، وشهادة تحليل التعبئة؟"}
+  severity: major
+  evidence: {slots: [P-15], keywords: ["specification", "IR", "suitab", "certificate of analysis", "blister", "bottle", "vial"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "3.2.P.7 should describe the container closure system with its specifications, the IR identification of reference and test packaging materials, the suitability of the immediate packaging and the packaging CoA.", ar: "يجب أن يصف 3.2.P.7 نظام العبوة ومواصفاته، والتعرف بالأشعة تحت الحمراء على مواد التعبئة المرجعية والمختبرة، وملاءمة التعبئة المباشرة وشهادة تحليل التعبئة."}
+  action: {type: upload, target: P-15}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.7", quote: "Absence of Identification spectrum (IR) of reference and test packaging materials · Absence of COA of packaging materials"}
+- id: QM-P8-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.8"
+  title: {en: "FPP stability package complete", ar: "اكتمال حزمة ثبات المنتج النهائي"}
+  question: {en: "Does 3.2.P.8 include a results summary, the storage conclusion, complete protocol data, a photostability study, in-use stability where applicable, the commitment letters, up-to-date results and an ongoing study on recent batches?", ar: "هل يتضمن 3.2.P.8 ملخص النتائج، وخلاصة التخزين، وبيانات البروتوكول كاملة، ودراسة الثبات الضوئي، وثبات أثناء الاستخدام عند الانطباق، وخطابات الالتزام، ونتائج محدَّثة، ودراسة جارية على تشغيلات حديثة؟"}
+  severity: major
+  evidence: {slots: [P-16], keywords: ["photostab", "in-use", "commitment", "ongoing", "long-term", "accelerated", "shelf life", "shelf-life"]}
+  auto: {kind: text, min_hits: 3}
+  deficiency: {en: "3.2.P.8 should include the summary of results, the storage conclusion, complete protocol data (batch type and size, containers, start date, period covered), a photostability study, in-use stability where applicable, commitment letters, up-to-date results and an ongoing study on recent batches.", ar: "يجب أن يتضمن 3.2.P.8 ملخص النتائج، وخلاصة التخزين، وبيانات البروتوكول كاملة (نوع التشغيلة وحجمها، العبوات، تاريخ البدء، المدة المغطاة)، ودراسة الثبات الضوئي، وثبات أثناء الاستخدام عند الانطباق، وخطابات الالتزام، ونتائج محدَّثة، ودراسة جارية على تشغيلات حديثة."}
+  action: {type: generate, target: stability_commitment}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.8", quote: "Absence of photo stability study · Absence of Commitment letters · Absence of the ongoing stability study for the recent batches"}
+  anchor: {code: ICH Q1A(R2) · ICH Q1B}
+- id: QM-P8-02
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.8.3"
+  title: {en: "Stability data on two primary batches", ar: "بيانات الثبات على تشغيلتين أساسيتين"}
+  question: {en: "At submission, are at least 6 months of accelerated and 6 months of long-term data provided on at least two batches of at least pilot scale (or one pilot plus one smaller batch for an uncomplicated FPP) for every strength and container?", ar: "عند التقديم، هل توجد بيانات 6 أشهر على الأقل معجَّلة و6 أشهر طويلة الأمد على تشغيلتين على الأقل بحجم تجريبي (أو تجريبية وأخرى أصغر للمنتج البسيط) لكل تركيز وعبوة؟"}
+  severity: critical
+  evidence: {slots: [P-16], keywords: ["accelerated", "long-term", "long term", "months"], data: [stability]}
+  auto: {kind: data, check: stability_batches}
+  deficiency: {en: "Stability data at submission should cover at least two primary batches of at least pilot scale per strength and container, with at least six months of accelerated and six months of long-term data.", ar: "يجب أن تغطي بيانات الثبات عند التقديم تشغيلتين أساسيتين على الأقل بحجم تجريبي لكل تركيز وعبوة، مع ستة أشهر على الأقل من البيانات المعجَّلة وستة أشهر طويلة الأمد."}
+  action: {type: edit_data, target: stability}
+  source: {code: WHO TRS 986 Annex 6, section: "stability — primary batches", quote: "at least 2 batches of at least pilot scale"}
+  anchor: {code: WHO PQ screening checklist 05/2021, section: "≥ 6 months accelerated + ≥ 6 months long-term on ≥ 2 pilot-scale FPP batches"}
+- id: QM-R11-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.R.1.1"
+  title: {en: "Executed batch records", ar: "سجلات التشغيلات المنفذة"}
+  question: {en: "Are the executed batch manufacturing records of the submitted batches, including the bioequivalence batch, provided in 3.2.R.1.1?", ar: "هل سجلات التصنيع المنفذة للتشغيلات المقدمة، بما فيها تشغيلة التكافؤ الحيوي، مقدَّمة في 3.2.R.1.1؟"}
+  severity: major
+  evidence: {slots: [R-01], keywords: ["batch record", "executed", "BMR", "manufacturing record"], data: [batches.executed_bmr]}
+  auto: {kind: slot}
+  deficiency: {en: "The executed production documents of the manufactured batches (including the BE batch) should be provided in 3.2.R.1.1 with legible operator notations.", ar: "يجب تقديم سجلات الإنتاج المنفذة للتشغيلات المصنَّعة (بما فيها تشغيلة التكافؤ الحيوي) في 3.2.R.1.1 بتدوينات مقروءة."}
+  action: {type: upload, target: R-01}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.R.1.1", quote: "executed records of the three manufactured batches"}
+  anchor: {code: WHO TRS 986 Annex 6, section: "3.2.R.1.1 — executed records of the biobatch"}
+- id: QM-QOS-01
+  dept: quality
+  layer: eda
+  ctd: "2.3"
+  title: {en: "QOS consistent with Module 3", ar: "اتساق الملخص الشامل للجودة مع الوحدة 3"}
+  question: {en: "Does the Quality Overall Summary follow the 2.3.S / 2.3.P structure and summarise the same batches, specifications and conclusions as Module 3?", ar: "هل يتبع الملخص الشامل للجودة بنية 2.3.S / 2.3.P ويلخص نفس التشغيلات والمواصفات والاستنتاجات الواردة في الوحدة 3؟"}
+  severity: minor
+  evidence: {slots: [M2-02], keywords: ["2.3.S", "2.3.P", "Quality Overall Summary"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The QOS should follow the ICH M4Q structure (2.3.S, 2.3.P, 2.3.A, 2.3.R) and be consistent with the data in Module 3.", ar: "يجب أن يتبع الملخص الشامل للجودة بنية ICH M4Q (2.3.S، 2.3.P، 2.3.A، 2.3.R) ويتسق مع بيانات الوحدة 3."}
+  action: {type: upload, target: M2-02}
+  source: {code: EDA Quality Module guideline v2/2023, section: "4.1 Module 3 — structured CTD format", quote: "Information on Quality should be presented in the structured CTD format"}
+  anchor: {code: ICH M4Q(R1), section: "2.3 QOS"}

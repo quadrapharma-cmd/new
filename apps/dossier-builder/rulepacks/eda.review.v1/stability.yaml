@@ -1,0 +1,487 @@
+# Assessor questions extracted from EDA NP.CAPP.090 v2/2026 "File content of Stability study dossier"
+# (General Administration for Stability). Human pharmaceutical products only.
+- id: ST-01
+  dept: stability
+  layer: eda
+  ctd: "ST-R"
+  title: {en: "Registration licence and attachments", ar: "ترخيص التسجيل ومرفقاته"}
+  question: {en: "Does the Regulatory Documents Folder contain the registration licence with its attachments (composition, finished product specifications) or, for an expired licence, the preliminary re-registration approval?", ar: "هل يتضمن ملف المستندات التنظيمية ترخيص التسجيل مع مرفقاته (التركيبة ومواصفات المنتج النهائي)، أو الموافقة المبدئية على إعادة التسجيل في حالة انتهاء صلاحية الترخيص؟"}
+  applies: "activity != 'new'"
+  severity: major
+  evidence:
+    slots: [M1-04]
+    keywords: ["registration license", "registration licence", "preliminary", "re-registration"]
+    data: []
+  auto: {kind: slot}
+  deficiency: {en: "The applicant should submit the registration licence with its attachments (composition, finished product specifications) or the preliminary re-registration approval for an expired licence.", ar: "يجب على مقدم الطلب تقديم ترخيص التسجيل مع مرفقاته (التركيبة ومواصفات المنتج النهائي) أو الموافقة المبدئية على إعادة التسجيل في حالة انتهاء صلاحية الترخيص."}
+  action: {type: upload, target: "M1-04"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 1 (Administrative Documents)", quote: "Preliminary re-registration approval for expired registration license"}
+- id: ST-02
+  dept: stability
+  layer: eda
+  ctd: "ST-R"
+  title: {en: "CPP or free sale with SmPC", ar: "شهادة المنتج الصيدلي مع ملخص خصائص المنتج"}
+  question: {en: "For an imported product, is the (electronic) Certificate of Pharmaceutical Product or free sale certificate submitted together with the SmPC or insert attached to it?", ar: "بالنسبة للمستحضر المستورد، هل قُدمت شهادة المنتج الصيدلي (الإلكترونية) أو شهادة البيع الحر مرفقاً بها ملخص خصائص المنتج أو النشرة الداخلية؟"}
+  applies: "origin == 'imported'"
+  severity: major
+  evidence:
+    slots: [M1-14]
+    keywords: ["Certificate of Pharmaceutical Product", "CPP", "free sale", "SmPC"]
+    data: []
+  auto: {kind: slot}
+  deficiency: {en: "The applicant should submit the (e)CPP or free sale certificate with the attached SmPC or insert.", ar: "يجب على مقدم الطلب تقديم شهادة المنتج الصيدلي (الإلكترونية) أو شهادة البيع الحر مرفقاً بها ملخص خصائص المنتج أو النشرة الداخلية."}
+  action: {type: upload, target: "M1-14"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 1 (Administrative Documents)", quote: "(Electronic) Certificate of Pharmaceutical Product ((e)CPP) / free sale attached with Summary of product characteristics (SmPC) / Insert"}
+- id: ST-03
+  dept: stability
+  layer: eda
+  ctd: "ST-R"
+  title: {en: "Packaging material supplier COAs", ar: "شهادات تحليل مواد التعبئة من المورد"}
+  question: {en: "Are the supplier certificates of analysis of the primary (and functional secondary) packaging materials submitted for all volumes and all pack sizes, and the COA of the device for a combination product?", ar: "هل قُدمت شهادات تحليل المورد لمواد التعبئة الأولية (والثانوية الوظيفية) لجميع الأحجام وجميع العبوات، وشهادة تحليل الجهاز في حالة المنتج المركب مع جهاز طبي؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-15]
+    keywords: ["certificate of analysis", "COA", "CoA", "supplier"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit the packaging material supplier certificates of analysis for all volumes and pack sizes (primary and functional secondary packaging), and the COA of the device for combination products.", ar: "يجب على مقدم الطلب تقديم شهادات تحليل المورد لمواد التعبئة لجميع الأحجام والعبوات (الأولية والثانوية الوظيفية)، وشهادة تحليل الجهاز في حالة المنتجات المركبة."}
+  action: {type: upload, target: "P-15"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 1 (Administrative Documents); Technical Documents Folder, 3.2.P.7", quote: "Product's (all volumes / all pack sizes) packaging materials (primary, secondary (if functional)) supplier's certificate(s) of analysis / analyses."}
+- id: ST-04
+  dept: stability
+  layer: eda
+  ctd: "ST-R"
+  title: {en: "EDA reports on submitted batches", ar: "تقارير هيئة الدواء عن التشغيلات المقدمة"}
+  question: {en: "Are the EDA reports included: previous stability approvals with attachments, recent variation approvals, the CAO report of the submitted batches, the CADC detailed final report and renewal certificate of the analysis file, and the P-part quality approval?", ar: "هل أُدرجت تقارير هيئة الدواء المصرية: موافقات دراسات الثبات السابقة بمرفقاتها، وموافقات التغييرات الحديثة، وتقرير الإدارة المركزية للعمليات عن التشغيلات المقدمة، والتقرير النهائي التفصيلي للإدارة المركزية للرقابة الدوائية وشهادة تجديد ملف التحليل، وموافقة الجزء P للجودة؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M1-34, M1-07]
+    keywords: ["CADC", "Drug Control", "stability approval", "CAO", "variation approval"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit the EDA reports: previous stability approval(s), recent variation approval(s), the CAO report and the CADC detailed final report of the submitted batches, the CADC renewal certificate of the analysis file and the P-part quality approval, each with its attachments.", ar: "يجب على مقدم الطلب تقديم تقارير هيئة الدواء: موافقات الثبات السابقة، وموافقات التغييرات الحديثة، وتقرير الإدارة المركزية للعمليات والتقرير النهائي التفصيلي للإدارة المركزية للرقابة الدوائية عن التشغيلات المقدمة، وشهادة تجديد ملف التحليل، وموافقة الجزء P، مع مرفقات كل منها."}
+  action: {type: upload, target: "M1-34"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 2/3 (EDA Reports)", quote: "Central Administration of Drug Control (CADC) detailed final report of submitted batch(es) with its attachment(s)"}
+- id: ST-05
+  dept: stability
+  layer: eda
+  ctd: "ST-R"
+  title: {en: "Applicant review of changes and monitoring", ar: "مراجعة التغييرات وبرنامج متابعة الثبات"}
+  question: {en: "Has the applicant submitted a review of all changes made to the product, process and analytical methods, a review of the results of the stability monitoring programme, and a list of validated analytical and manufacturing procedures with their revalidation dates?", ar: "هل قدم مقدم الطلب مراجعة لجميع التغييرات التي أُجريت على المنتج وعملية التصنيع وطرق التحليل، ومراجعة لنتائج برنامج متابعة الثبات، وقائمة بالإجراءات التحليلية والتصنيعية المعتمدة (المتحقق من صلاحيتها) مع تواريخ إعادة التحقق؟"}
+  applies: "activity != 'new'"
+  severity: major
+  evidence:
+    slots: [P-16]
+    keywords: ["review of all changes", "monitoring program", "monitoring programme", "revalidation"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit a review of all changes to the product, process and analytical method, a review of the stability monitoring programme results, and a list of validated analytical and manufacturing procedures with their revalidation dates.", ar: "يجب على مقدم الطلب تقديم مراجعة لجميع التغييرات في المنتج وعملية التصنيع وطريقة التحليل، ومراجعة لنتائج برنامج متابعة الثبات، وقائمة بالإجراءات التحليلية والتصنيعية المعتمدة مع تواريخ إعادة التحقق."}
+  action: {type: upload, target: "P-16"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 4 (Applicant documents)", quote: "A review of all changes carried out to the product, process & analytical method"}
+- id: ST-06
+  dept: stability
+  layer: eda
+  ctd: "ST-C"
+  title: {en: "Applicant commitments form Annex II", ar: "نموذج تعهدات مقدم الطلب (الملحق الثاني)"}
+  question: {en: "Is the Annex II commitment form completed on the applicant's official template, with the commitment of responsibility (local) or authenticity (imported) for the stability data and the commitment on storage conditions, signed by the authorised person and stamped?", ar: "هل استُوفي نموذج التعهدات (الملحق الثاني) على النموذج الرسمي لمقدم الطلب، متضمناً تعهد المسؤولية (للمستحضرات المحلية) أو تعهد صحة البيانات (للمستوردة) عن بيانات الثبات، وتعهد ظروف التخزين، موقعاً من الشخص المفوض ومختوماً؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-16]
+    keywords: ["commit", "Annex II", "authenticity", "responsib", "storage"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should complete and submit the Annex II commitments (authenticity/responsibility for the stability data and storage conditions) on the official template, signed and stamped.", ar: "يجب على مقدم الطلب استيفاء وتقديم تعهدات الملحق الثاني (صحة بيانات الثبات والمسؤولية عنها وظروف التخزين) على النموذج الرسمي، موقعة ومختومة."}
+  action: {type: generate, target: "P-16"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 5 (Applicant Commitments); Annex II", quote: "We commit the authenticity / accuracy of all submitted stability study data and are fully responsible for it."}
+- id: ST-07
+  dept: stability
+  layer: eda
+  ctd: "ST-C"
+  title: {en: "API manufacturer matches 3.2.S.2.1", ar: "مطابقة مصنع المادة الفعالة للقسم 3.2.S.2.1"}
+  question: {en: "Is the API manufacturer stated in the Annex II commitment form the same as the drug substance manufacturer stated in CTD section 3.2.S.2.1?", ar: "هل مصنع المادة الفعالة المذكور في نموذج التعهدات (الملحق الثاني) هو نفسه مصنع المادة الفعالة المذكور في القسم 3.2.S.2.1 من ملف CTD؟"}
+  applies: "origin == 'imported'"
+  severity: major
+  evidence:
+    slots: [P-16]
+    keywords: ["3.2.S.2.1", "manufacturer", "API"]
+    data: [composition]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should ensure that the API manufacturer named in the Annex II commitment is identical to the manufacturer stated in CTD section 3.2.S.2.1 and correct the discrepancy.", ar: "يجب على مقدم الطلب التأكد من أن مصنع المادة الفعالة المذكور في تعهد الملحق الثاني مطابق للمصنع المذكور في القسم 3.2.S.2.1 من ملف CTD وتصحيح أي اختلاف."}
+  action: {type: edit_data, target: "composition"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 5 (Applicant Commitments), N.B.", quote: "API(s) manufacturer should be the same as stated in CTD Section 3.2. S.2.1: Drug Substance Manufacturer(s)"}
+- id: ST-08
+  dept: stability
+  layer: eda
+  ctd: "ST-R"
+  title: {en: "Outsourced stability testing contracts", ar: "عقود إجراء دراسات الثبات لدى الغير"}
+  question: {en: "Where the local stability performer differs from the applicant or finished product manufacturer, are the performer's EDA licence and the legalized stability contract with its annex (product, strength, dosage form, tests) submitted, plus a legalized microbiological testing contract specifying the test types?", ar: "في حالة اختلاف جهة إجراء دراسة الثبات المحلية عن مقدم الطلب أو مصنع المنتج النهائي، هل قُدم ترخيص هيئة الدواء لجهة الإجراء وعقد دراسة الثبات الموثق مع ملحقه (اسم المنتج والتركيز والشكل الصيدلي والاختبارات)، إضافة إلى عقد موثق للاختبارات الميكروبيولوجية يوضح أنواعها؟"}
+  applies: "origin == 'local'"
+  severity: major
+  evidence:
+    slots: [M1-24]
+    keywords: ["contract", "legalized", "legalised", "EDA-license", "microbiolog"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit the stability performer's EDA licence and the stability study contract with its annex, both legalized (bank signatures and EDA legal affairs), and a valid legalized microbiological testing contract that specifies the type of microbiological tests.", ar: "يجب على مقدم الطلب تقديم ترخيص هيئة الدواء لجهة إجراء الثبات وعقد دراسة الثبات مع ملحقه موثقين (توقيعات بنكية والشؤون القانونية بالهيئة)، وعقد ساري وموثق للاختبارات الميكروبيولوجية يوضح نوع الاختبارات."}
+  action: {type: upload, target: "M1-24"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 6 (Outsourcing Documents)", quote: "Both contract and annex must be legalized (bank signatures and EDA legal affairs)"}
+- id: ST-09
+  dept: stability
+  layer: eda
+  ctd: "ST-R"
+  title: {en: "Fees receipt for stability changes", ar: "إيصال الرسوم لتغييرات الثبات"}
+  question: {en: "Where the submission changes the shelf life, the storage conditions or the in-use duration/conditions compared with the last stability approval or registration licence, is the payment code or receipt copy included?", ar: "في حالة تغيير مدة الصلاحية أو ظروف التخزين أو مدة/ظروف الاستخدام بعد الفتح مقارنة بآخر موافقة ثبات أو ترخيص تسجيل، هل أُدرج كود السداد أو صورة الإيصال؟"}
+  applies: "activity == 'variation'"
+  severity: minor
+  evidence:
+    slots: [M1-03]
+    keywords: ["receipt", "payment", "fees"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit the payment code or receipt copy for the shelf-life extension, storage condition or in-use change.", ar: "يجب على مقدم الطلب تقديم كود السداد أو صورة الإيصال الخاص بتغيير مدة الصلاحية أو ظروف التخزين أو مدة الاستخدام بعد الفتح."}
+  action: {type: upload, target: "M1-03"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 7 (Fees)", quote: "Payment code / Receipt copy In case of change in the following from last stability approval / reg. license): 1- Shelf-life extension"}
+- id: ST-10
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "Composition certificate Annex I", ar: "شهادة التركيبة (الملحق الأول)"}
+  question: {en: "Is the composition certificate (Annex I) submitted on the applicant's letterhead with each ingredient's amount per unit, percentage, function and reference, excipient grades, coat or capsule shell separate from the core, solvents declared, and any overage stated and justified?", ar: "هل قُدمت شهادة التركيبة (الملحق الأول) على الورق الرسمي لمقدم الطلب موضحاً بها كمية كل مكون لكل وحدة ونسبته ووظيفته ومرجعه، ودرجات السواغات، والكسوة أو غلاف الكبسولة منفصلة عن القلب، والمذيبات المستخدمة، وأي زيادة في الكمية مع تبريرها؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-01]
+    keywords: ["function", "grade", "overage", "per unit", "letterhead"]
+    data: [composition]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit the Annex I composition certificate on company letterhead stating amount per unit, percentage, function and reference of each ingredient, excipient grades, coat or capsule shell separately from the core, solvents used, and any overage with its justification.", ar: "يجب على مقدم الطلب تقديم شهادة التركيبة (الملحق الأول) على الورق الرسمي للشركة موضحاً بها الكمية لكل وحدة والنسبة والوظيفة والمرجع لكل مكون، ودرجات السواغات، والكسوة أو غلاف الكبسولة منفصلة عن القلب، والمذيبات المستخدمة، وأي زيادة في الكمية مع تبريرها."}
+  action: {type: generate, target: "P-01"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Annex I Composition Certificate, Notes 1-8", quote: "This template should be copied and submitted on Applicant Company letterhead."}
+- id: ST-11
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "Pellets and premix supplier composition", ar: "تركيبة الحبيبات والخلطات من المورد"}
+  question: {en: "For pellets or premixes, is the composition on the supplier's letterhead attached, with the calculation of the quantity of pellets/premix or of the equivalent base of the API where applicable?", ar: "في حالة الحبيبات (البيليتس) أو الخلطات المسبقة، هل أُرفقت التركيبة على الورق الرسمي للمورد مع حساب كمية الحبيبات/الخلطة أو مكافئ القاعدة للمادة الفعالة حيثما ينطبق؟"}
+  applies: "'pellets' in dosage_specifics or 'premix' in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-01]
+    keywords: ["pellet", "premix", "supplier", "letterhead", "equivalen"]
+    data: [composition]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should attach the pellets/premix composition on the supplier's letterhead together with the detailed calculation of the quantity of pellets or premix and of the equivalent base of the API.", ar: "يجب على مقدم الطلب إرفاق تركيبة الحبيبات/الخلطة على الورق الرسمي للمورد مع الحساب التفصيلي لكمية الحبيبات أو الخلطة ومكافئ القاعدة للمادة الفعالة."}
+  action: {type: upload, target: "P-01"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Annex I Composition Certificate, Note 10", quote: "In case of Pellets & Premix: composition on supplier letterhead should be attached. (template 4)"}
+- id: ST-12
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "Reference product declaration", ar: "إقرار المستحضر المرجعي"}
+  question: {en: "Does Annex I include the declaration of the reference drug product used in the developmental studies or BE approval, stating its name, strength, dosage form, MAH, manufacturer and country of origin?", ar: "هل يتضمن الملحق الأول إقراراً بالمستحضر المرجعي المستخدم في دراسات التطوير أو موافقة التكافؤ الحيوي، مع بيان اسمه وتركيزه وشكله الصيدلي وحامل ترخيصه ومصنعه وبلد المنشأ؟"}
+  applies: "dossier_kind == 'generic'"
+  severity: major
+  evidence:
+    slots: [P-01]
+    keywords: ["reference product", "reference drug", "innovator", "country of origin"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit the Annex I declaration of the reference drug product used in the developmental studies or BE approval (name, strength, dosage form, MAH, manufacturer and country of origin), signed and stamped.", ar: "يجب على مقدم الطلب تقديم إقرار الملحق الأول بالمستحضر المرجعي المستخدم في دراسات التطوير أو موافقة التكافؤ الحيوي (الاسم والتركيز والشكل الصيدلي وحامل الترخيص والمصنع وبلد المنشأ) موقعاً ومختوماً."}
+  action: {type: generate, target: "P-01"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Annex I, Reference Product Details", quote: "Declaration states reference drug product used in developmental studies / BE approval"}
+- id: ST-13
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "Reference SmPC with highlighted shelf life", ar: "نشرة المرجع مع تمييز مدة الصلاحية"}
+  question: {en: "Is the brand leaflet or reference product SmPC submitted in English with the shelf life, storage conditions, in-use shelf life after opening/dilution/reconstitution, and solvents or diluents with their volumes highlighted?", ar: "هل قُدمت نشرة المستحضر المرجعي أو ملخص خصائصه باللغة الإنجليزية مع تمييز مدة الصلاحية وظروف التخزين ومدة الصلاحية أثناء الاستخدام بعد الفتح أو التخفيف أو إعادة التكوين، والمذيبات أو المخففات المستخدمة وأحجامها؟"}
+  applies: "true"
+  severity: minor
+  evidence:
+    slots: [M1-09]
+    keywords: ["shelf life", "shelf-life", "storage", "after opening", "reconstitut"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit the reference product SmPC or brand leaflet in English with the shelf life, storage conditions, in-use shelf life and conditions, and solvents/diluents and their volumes highlighted.", ar: "يجب على مقدم الطلب تقديم ملخص خصائص المستحضر المرجعي أو نشرته باللغة الإنجليزية مع تمييز مدة الصلاحية وظروف التخزين ومدة وظروف الصلاحية أثناء الاستخدام والمذيبات/المخففات وأحجامها."}
+  action: {type: upload, target: "M1-09"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Brand leaflet / SmPC", quote: "Brand leaflet / SmPC in English with highlighted shelf life, storage conditions, in- use (after opening/after dilution/after reconstitution) shelf life and storage conditions"}
+- id: ST-14
+  dept: stability
+  layer: eda
+  ctd: "ST-C"
+  title: {en: "Post-approval protocol and commitment", ar: "بروتوكول وتعهد الثبات بعد الموافقة"}
+  question: {en: "Is the post-approval stability protocol and commitment (Annex IX) submitted, committing to complete the long-term study (12 and/or 24 months) on the submitted pilot batches, to run stability on commercial batches and ongoing studies under the same protocol, with the Annex X declaration to report any OOS in ongoing or long-term studies?", ar: "هل قُدم بروتوكول وتعهد الثبات بعد الموافقة (الملحق التاسع) متضمناً التعهد بإكمال دراسة الصلاحية طويلة الأمد (12 و/أو 24 شهراً) على التشغيلات التجريبية المقدمة، وإجراء دراسات الثبات على التشغيلات التجارية والدراسات المستمرة بنفس البروتوكول، مع إقرار الملحق العاشر بالإبلاغ عن أي نتائج خارج المواصفات في الدراسات المستمرة أو طويلة الأمد؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-16]
+    keywords: ["commit", "ongoing", "on-going", "protocol", "24 months"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit the Annex IX post-approval stability protocol and commitment (long-term completion of 12 and/or 24 months on the submitted pilot batches, commercial-batch and ongoing studies under the same protocol) and the Annex X declaration to inform the Stability administration of any OOS.", ar: "يجب على مقدم الطلب تقديم بروتوكول وتعهد الثبات بعد الموافقة (الملحق التاسع) بإكمال الدراسة طويلة الأمد لمدة 12 و/أو 24 شهراً على التشغيلات التجريبية المقدمة ودراسات التشغيلات التجارية والدراسات المستمرة بنفس البروتوكول، وإقرار الملحق العاشر بإبلاغ الإدارة العامة للثبات بأي نتائج خارج المواصفات."}
+  action: {type: generate, target: "P-16"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Post approval stability protocol and stability commitment (Annex IX, Annex X)", quote: "To complete shelf study (12 and/ or 24 months) on the submitted pilot batches"}
+- id: ST-15
+  dept: stability
+  layer: eda
+  ctd: "ST-R"
+  title: {en: "Licence holder declaration when CPP incomplete", ar: "إقرار حامل الترخيص عند نقص بيانات CPP"}
+  question: {en: "Where the CPP does not state the shelf life, storage conditions, pack or in-use information, is a declaration letter from the licence holder stating these submitted?", ar: "في حالة عدم تضمن شهادة المنتج الصيدلي لمدة الصلاحية أو ظروف التخزين أو العبوة أو بيانات الاستخدام بعد الفتح، هل قُدم خطاب إقرار من حامل الترخيص يوضح هذه البيانات؟"}
+  applies: "origin == 'imported'"
+  severity: major
+  evidence:
+    slots: [M1-14]
+    keywords: ["declaration", "shelf life", "storage conditions", "in use", "in-use"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit a declaration letter from the licence holder stating the shelf life, storage conditions, pack and in-use information missing from the CPP.", ar: "يجب على مقدم الطلب تقديم خطاب إقرار من حامل الترخيص يوضح مدة الصلاحية وظروف التخزين والعبوة وبيانات الاستخدام بعد الفتح غير الواردة في شهادة المنتج الصيدلي."}
+  action: {type: request_issuer, target: "M1-14"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Declaration letter", quote: "Declaration letter from License Holder stating the shelf life, storage conditions, pack and in use in case of missing information in CPP"}
+- id: ST-16
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "CTD stability sections for reference-country imports", ar: "أقسام الثبات في CTD للمستورد من دول مرجعية"}
+  question: {en: "For a product imported from a reference country (or where the CTD format is required), are the supporting CTD sections included: 3.2.S.2.1, 3.2.P.1, 3.2.P.5.1 to 3.2.P.5.6, 3.2.P.6, 3.2.P.7, 3.2.P.8.1 (Annex VI), 3.2.P.8.2 (Annex IX) and 3.2.P.8.3?", ar: "بالنسبة للمستحضر المستورد من دولة مرجعية (أو عندما يكون تنسيق CTD مطلوباً)، هل أُدرجت أقسام CTD الداعمة: 3.2.S.2.1 و3.2.P.1 و3.2.P.5.1 إلى 3.2.P.5.6 و3.2.P.6 و3.2.P.7 و3.2.P.8.1 (الملحق السادس) و3.2.P.8.2 (الملحق التاسع) و3.2.P.8.3؟"}
+  applies: "origin == 'imported'"
+  severity: major
+  evidence:
+    slots: [P-16]
+    keywords: ["3.2.P.8", "stability summary", "stability data", "P.8"]
+    data: []
+  auto: {kind: slot}
+  deficiency: {en: "The applicant should submit the required CTD stability sections (3.2.S.2.1, 3.2.P.1, 3.2.P.5.1-5.6, 3.2.P.6, 3.2.P.7, 3.2.P.8.1, 3.2.P.8.2 and 3.2.P.8.3) as supportive data in the P-part.", ar: "يجب على مقدم الطلب تقديم أقسام CTD المطلوبة للثبات (3.2.S.2.1 و3.2.P.1 و3.2.P.5.1-5.6 و3.2.P.6 و3.2.P.7 و3.2.P.8.1 و3.2.P.8.2 و3.2.P.8.3) كبيانات داعمة في الجزء P."}
+  action: {type: upload, target: "P-16"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Required stability Sections in quality module", quote: "required in case of products imported from reference countries or in products in which the CTD format is a requirement for registration"}
+- id: ST-17
+  dept: stability
+  layer: eda
+  ctd: "ST-D"
+  title: {en: "Bulk holding time stability data", ar: "بيانات ثبات فترة انتظار المنتج السائب"}
+  question: {en: "Is the maximum holding time of the bulk finished product before final packaging stated and, where it exceeds 30 days, supported by stability data (with any holding time of an aseptically processed bulk justified)?", ar: "هل ذُكرت أقصى فترة انتظار للمنتج النهائي السائب قبل التعبئة النهائية، وهل دُعمت ببيانات ثبات إذا تجاوزت 30 يوماً (مع تبرير أي فترة انتظار للمنتج المعقم بالتعبئة اللاعقيمية)؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-16, P-07]
+    keywords: ["holding time", "hold time", "bulk"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should state the maximum holding time of the bulk FPP and, if it is longer than 30 days, support it with stability data; any holding time of an aseptically processed bulk should be justified.", ar: "يجب على مقدم الطلب بيان أقصى فترة انتظار للمنتج النهائي السائب ودعمها ببيانات ثبات إذا زادت عن 30 يوماً، مع تبرير أي فترة انتظار للمنتج المصنع بالتعبئة اللاعقيمية."}
+  action: {type: upload, target: "P-16"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, P-Part Note (bulk holding time)", quote: "The holding time should be supported by the submission of stability data, if longer than 30 days."}
+  anchor: {code: "WHO TRS 986 Annex 6", section: ""}
+- id: ST-18
+  dept: stability
+  layer: eda
+  ctd: "ST-D"
+  title: {en: "In-use stability justified by data", ar: "ثبات الاستخدام بعد الفتح مدعوم ببيانات"}
+  question: {en: "Is the in-use period after opening, reconstitution or dilution justified by experimental data on at least two batches (at least pilot scale, one chosen towards the end of shelf life), and stated with its storage conditions in the product information?", ar: "هل بُررت فترة الاستخدام بعد الفتح أو إعادة التكوين أو التخفيف ببيانات تجريبية على تشغيلتين على الأقل (تجريبيتين على الأقل، إحداهما مختارة قرب نهاية مدة الصلاحية)، وهل ذُكرت مع ظروف تخزينها في معلومات المنتج؟"}
+  applies: "'powder_inj_with_solvent' in dosage_specifics or 'sterile' in dosage_specifics or 'suspension' in dosage_specifics or 'oral_solution' in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [P-16]
+    keywords: ["in-use", "in use", "after opening", "reconstitut", "after dilution"]
+    data: [stability]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should justify the in-use period and its storage conditions with experimental data from a minimum of two batches (at least pilot scale, one towards the end of its shelf life) and state them in the product information.", ar: "يجب على مقدم الطلب تبرير فترة الاستخدام بعد الفتح وظروف تخزينها ببيانات تجريبية من تشغيلتين على الأقل (تجريبيتين على الأقل، إحداهما قرب نهاية مدة الصلاحية) وذكرها في معلومات المنتج."}
+  action: {type: upload, target: "P-16"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, P-Part Note (in-use); Stability study table(s) 3.2.P.8.3", quote: "Any in-use period and associated storage conditions should be justified with experimental data"}
+  anchor: {code: "WHO TRS 986 Annex 6", section: ""}
+- id: ST-19
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "Compatibility with diluents 3.2.P.2.6", ar: "التوافق مع المخففات 3.2.P.2.6"}
+  question: {en: "For a sterile product that is reconstituted or diluted, is compatibility demonstrated with all diluents over the labelled dilution range and for the labelled storage duration (e.g. 24 hours at controlled room temperature and 72 hours refrigerated), preferably on aged samples?", ar: "بالنسبة للمستحضر المعقم الذي يُعاد تكوينه أو يُخفف، هل أُثبت التوافق مع جميع المخففات على مدى نطاق التخفيف المذكور في النشرة ولمدة التخزين المذكورة (مثل 24 ساعة في درجة حرارة الغرفة المضبوطة و72 ساعة في الثلاجة)، ويفضل على عينات قديمة العمر؟"}
+  applies: "'powder_inj_with_solvent' in dosage_specifics or (admin_route == 'parenteral' and 'sterile' in dosage_specifics)"
+  severity: major
+  evidence:
+    slots: [P-16]
+    keywords: ["compatib", "diluent", "dilution", "reconstitut"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide 3.2.P.2.6 compatibility data with all diluents over the range of dilution proposed in the labelling, covering the labelled storage duration (e.g. 24 hours at controlled room temperature and 72 hours under refrigeration).", ar: "يجب على مقدم الطلب تقديم بيانات التوافق (3.2.P.2.6) مع جميع المخففات على مدى نطاق التخفيف المقترح في النشرة ولتغطية مدة التخزين المذكورة (مثل 24 ساعة في درجة حرارة الغرفة المضبوطة و72 ساعة في الثلاجة)."}
+  action: {type: upload, target: "P-16"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, 3.2.P.2.6 Compatibility", quote: "Studies should cover the duration of storage reported in the labelling (e.g. 24 hours under controlled room temperature and 72 hours under refrigeration)."}
+- id: ST-20
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "Specifications format Annex III", ar: "صيغة المواصفات (الملحق الثالث)"}
+  question: {en: "Are the finished product specifications (Annex III) presented by the stability testing site, signed and stamped, with product name, dosage form and strength, each test with its method and reference, limits stated as release and/or shelf specifications only, skip tests footnoted and residual solvents included in release specifications where present?", ar: "هل قُدمت مواصفات المنتج النهائي (الملحق الثالث) من موقع اختبار الثبات موقعة ومختومة، متضمنة اسم المنتج والشكل الصيدلي والتركيز، وكل اختبار مع طريقته ومرجعه، والحدود محددة كمواصفات إفراج و/أو صلاحية فقط، مع الإشارة إلى الاختبارات المتخطاة في حاشية، وإدراج المذيبات المتبقية في مواصفات الإفراج عند وجودها؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["release", "shelf", "acceptance criteria", "reference"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit the Annex III finished product specifications signed and stamped by the stability testing site, listing tests, acceptance criteria and references, with limits given as release and/or shelf specifications only, skip tests as footnotes and residual solvents in the release specifications where present in the formula.", ar: "يجب على مقدم الطلب تقديم مواصفات المنتج النهائي (الملحق الثالث) موقعة ومختومة من موقع اختبار الثبات، مع قائمة الاختبارات ومعايير القبول والمراجع، والحدود كمواصفات إفراج و/أو صلاحية فقط، والاختبارات المتخطاة كحاشية، والمذيبات المتبقية في مواصفات الإفراج عند وجودها في التركيبة."}
+  action: {type: upload, target: "P-09"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Finished product specifications (3.2.P.5.1), Annex III, Notes", quote: "Limit for any test should be specified as release and /or shelf specs (only)"}
+- id: ST-21
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "Specification test content", ar: "محتوى اختبارات المواصفات"}
+  question: {en: "Do the specifications include physical tests (with justification of mottling where applicable), assay of actives, quantitation of impurities and related substances, assay of preservatives/stabilizers/chelating agents/antioxidants where present, microbiological tests, and performance or functionality tests (dissolution, viscosity, dose delivery per actuation)?", ar: "هل تتضمن المواصفات الاختبارات الفيزيائية (مع تبرير التبقع حيثما ينطبق)، ومعايرة المواد الفعالة، وتقدير الشوائب والمواد ذات الصلة، ومعايرة المواد الحافظة والمثبتات والعوامل المخلبية ومضادات الأكسدة عند وجودها، والاختبارات الميكروبيولوجية، واختبارات الأداء أو الوظيفة (الانحلال، اللزوجة، الجرعة المنطلقة لكل ضغطة)؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["assay", "related substances", "impurit", "dissolution", "microbi"]
+    data: [specs.product]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should include in the specifications the physical, chemical (assay, impurities and related substances, preservative/stabilizer/chelating agent/antioxidant content), microbiological and performance/functionality tests required for the dosage form.", ar: "يجب على مقدم الطلب تضمين المواصفات الاختبارات الفيزيائية والكيميائية (المعايرة، الشوائب والمواد ذات الصلة، محتوى المادة الحافظة/المثبت/العامل المخلبي/مضاد الأكسدة) والميكروبيولوجية واختبارات الأداء/الوظيفة المطلوبة للشكل الصيدلي."}
+  action: {type: edit_data, target: "specs.product"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Finished product specifications (3.2.P.5.1), Chemical analysis", quote: "Should include assay of active ingredient(s), quantitation of impurities and related substances, and assay of preservative(s), stabilizers, chelating agents and/or antioxidant(s)"}
+  anchor: {code: "ICH Q6A", section: ""}
+- id: ST-22
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "Stability-indicating analytical methods", ar: "طرق التحليل الدالة على الثبات"}
+  question: {en: "Are the methods of analysis (3.2.P.5.2) presented by the stability site, signed and stamped, stability-indicating for the physical, chemical and microbiological tests, following the pharmacopoeial procedure where one exists, with Annex IV (ICH impurity thresholds) completed and any deviation from ICH limits justified?", ar: "هل قُدمت طرق التحليل (3.2.P.5.2) من موقع الثبات موقعة ومختومة، ودالة على الثبات للاختبارات الفيزيائية والكيميائية والميكروبيولوجية، ومتبعة للطريقة الدستورية عند وجودها، مع استيفاء الملحق الرابع (حدود ICH للشوائب) وتبرير أي انحراف عن حدود ICH؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-10]
+    keywords: ["stability-indicating", "stability indicating", "related substances", "degradation"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit stability-indicating analytical procedures signed and stamped by the stability testing site, follow the pharmacopoeial procedure where available, complete Annex IV for the ICH impurity thresholds and justify any deviation from the ICH limits.", ar: "يجب على مقدم الطلب تقديم إجراءات تحليلية دالة على الثبات موقعة ومختومة من موقع اختبار الثبات، واتباع الطريقة الدستورية عند توفرها، واستيفاء الملحق الرابع لحدود ICH للشوائب، وتبرير أي انحراف عن حدود ICH."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Method of analysis (3.2.P.5.2)", quote: "Should include stability-indicating analytical- procedures used for physical, chemical and microbiological analysis"}
+- id: ST-23
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "Method references and CADC commitment", ar: "مراجع الطرق وتعهد مطابقة CADC"}
+  question: {en: "Are the most updated finished product monograph, the commitment from the stability site that the assay/related substances/preservative/antioxidant methods are those validated at CADC, the certificate of the reference standard used, and full documents for any stability-only test submitted?", ar: "هل قُدمت أحدث دراسة دستورية للمنتج النهائي، وتعهد من موقع الثبات بأن طرق المعايرة والمواد ذات الصلة والمادة الحافظة ومضاد الأكسدة هي نفسها المعتمدة لدى الإدارة المركزية للرقابة الدوائية، وشهادة المادة المرجعية المستخدمة، والمستندات الكاملة لأي اختبار يُجرى في الثبات فقط؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-10]
+    keywords: ["CADC", "monograph", "reference standard", "commitment"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit the most updated monograph, a commitment from the stability testing site that the submitted methods are the same as those validated at CADC, the certificate of the primary or secondary reference standard, and procedure, validation and results for any test performed in stability only.", ar: "يجب على مقدم الطلب تقديم أحدث دراسة دستورية، وتعهداً من موقع اختبار الثبات بأن الطرق المقدمة هي نفسها المعتمدة لدى الإدارة المركزية للرقابة الدوائية، وشهادة المادة المرجعية الأولية أو الثانوية، والإجراء والتحقق والنتائج لأي اختبار يُجرى في الثبات فقط."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, 3-Method References + commitments; 3.2.P.6", quote: "Most updated monograph for finished product should be submitted."}
+- id: ST-24
+  dept: stability
+  layer: eda
+  ctd: "ST-D"
+  title: {en: "Assay chromatograms per interval", ar: "كروماتوجرامات المعايرة لكل فترة"}
+  question: {en: "Are stamped assay chromatograms provided for each time interval (each in a separate PDF) showing product name, batch number and injection date/time, with 3 injections of standard and test, system suitability charts, and covering assay, impurities, preservatives/antioxidants and dissolution where applicable?", ar: "هل قُدمت كروماتوجرامات المعايرة مختومة لكل فترة زمنية (كل فترة في ملف PDF منفصل) موضحاً بها اسم المنتج ورقم التشغيلة وتاريخ ووقت الحقن، مع 3 حقنات للمعيار والعينة، ومخططات ملاءمة النظام، وتغطي المعايرة والشوائب والمواد الحافظة/مضادات الأكسدة والانحلال حيثما ينطبق؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-16]
+    keywords: ["chromatogram", "system suitability", "injection"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit stamped assay chromatograms for each time interval in a separate PDF, including product name, batch number, injection date/time, 3 injections for standard and test, and system suitability charts.", ar: "يجب على مقدم الطلب تقديم كروماتوجرامات المعايرة مختومة لكل فترة زمنية في ملف PDF منفصل، متضمنة اسم المنتج ورقم التشغيلة وتاريخ ووقت الحقن و3 حقنات للمعيار والعينة ومخططات ملاءمة النظام."}
+  action: {type: upload, target: "P-16"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, 4-Assay chromatograms", quote: "Should include 3 injections for standard and test at each time interval"}
+- id: ST-25
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "Validation of analytical procedures", ar: "التحقق من صلاحية الإجراءات التحليلية"}
+  question: {en: "Is validation data for assay, impurities, preservative/antioxidant content and dissolution submitted as in CTD P.5.3/approved by CADC, with complete validation (specificity, precision, linearity, accuracy, ruggedness, robustness, tabulated results) when a new method is used, revalidation after a composition change, and method transfer per USP 1224 after a site transfer?", ar: "هل قُدمت بيانات التحقق من صلاحية طرق المعايرة والشوائب ومحتوى المادة الحافظة/مضاد الأكسدة والانحلال كما في القسم P.5.3 أو المعتمدة لدى CADC، مع تحقق كامل (النوعية والدقة والخطية والصحة والمتانة والصلابة مع جداول النتائج) عند استخدام طريقة جديدة، وإعادة التحقق بعد تغيير التركيبة، ونقل الطريقة وفق USP 1224 بعد نقل الموقع؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-10]
+    keywords: ["validation", "specificity", "linearity", "accuracy", "precision"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit the validation of the analytical procedures (assay, impurities, preservative/antioxidant, dissolution) consistent with P.5.3/CADC; complete validation data for any new method, revalidation for a composition change, and method transfer according to USP 1224 for a site transfer.", ar: "يجب على مقدم الطلب تقديم التحقق من صلاحية الإجراءات التحليلية (المعايرة، الشوائب، المادة الحافظة/مضاد الأكسدة، الانحلال) بما يتوافق مع P.5.3/CADC، وبيانات تحقق كاملة لأي طريقة جديدة، وإعادة التحقق عند تغيير التركيبة، ونقل الطريقة وفق USP 1224 عند نقل الموقع."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, 5-Validation of analytical procedure", quote: "In case of new method applied in stability dossier differs than that in section p.5.3, complete method validation data should be submitted"}
+- id: ST-26
+  dept: stability
+  layer: eda
+  ctd: "ST-T"
+  title: {en: "Stress testing 10-30% degradation", ar: "اختبارات الإجهاد بتحلل 10-30%"}
+  question: {en: "Are forced degradation studies reported in Annex V under conditions drastic enough to yield 10-30% degradation (acid, alkali, oxidation, heat, light/photostability), with validation chromatograms per API showing active and degradation peaks, and scientific evidence for any API found stable?", ar: "هل أُبلغ عن دراسات التحلل القسري في الملحق الخامس تحت ظروف قاسية بما يكفي لإحداث تحلل بنسبة 10-30% (حمضي، قلوي، أكسدة، حرارة، ضوء/ثبات ضوئي)، مع كروماتوجرامات التحقق لكل مادة فعالة توضح قمم المادة الفعالة ونواتج التحلل، ودليل علمي لأي مادة فعالة وُجدت ثابتة؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-10]
+    keywords: ["forced degradation", "stress", "degradation", "photostab"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should complete Annex V with stress conditions drastic enough to yield 10-30% degradation, provide the stress chromatograms for each API with adequate resolution of active and degradation peaks, and submit references and scientific evidence for any product found stable under stress.", ar: "يجب على مقدم الطلب استيفاء الملحق الخامس بظروف إجهاد قاسية بما يكفي لإحداث تحلل بنسبة 10-30%، وتقديم كروماتوجرامات الإجهاد لكل مادة فعالة بدقة فصل كافية لقمم المادة الفعالة ونواتج التحلل، وتقديم مراجع ودليل علمي لأي منتج وُجد ثابتاً تحت الإجهاد."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, In Case of Full Validation Data, Notes; Annex V", quote: "please apply conditions drastic enough to yield 10-30% degradation and fill Annex V (TRS 929 annex 5)"}
+  anchor: {code: "WHO TRS 929 Annex 5", section: ""}
+- id: ST-27
+  dept: stability
+  layer: eda
+  ctd: "ST-D"
+  title: {en: "Stability tables and summary content", ar: "محتوى جداول وملخص الثبات"}
+  question: {en: "Are the stability tables (3.2.P.8.3) signed and stamped by the stability site and do they state product name, dosage form, strength, batch number, batch size and type, manufacturing and expiry dates, study start date, conditions, intervals and pack, with physical, chemical and microbiological results within shelf-life specifications, and a summary per Annex VI?", ar: "هل جداول الثبات (3.2.P.8.3) موقعة ومختومة من موقع الثبات، وهل تذكر اسم المنتج والشكل الصيدلي والتركيز ورقم التشغيلة وحجمها ونوعها وتاريخي التصنيع والانتهاء وتاريخ بدء الدراسة والظروف والفترات والعبوة، مع نتائج فيزيائية وكيميائية وميكروبيولوجية ضمن مواصفات الصلاحية، وملخص وفق الملحق السادس؟"}
+  applies: "true"
+  severity: critical
+  evidence:
+    slots: [P-16]
+    keywords: ["batch size", "batch number", "long term", "long-term", "accelerated"]
+    data: [batches, stability]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit signed and stamped stability tables stating product name, dosage form, strength, batch number, batch size and type, manufacturing and expiry dates, start date, storage conditions, testing intervals and pack, with results within shelf-life specifications, and a stability summary according to Annex VI.", ar: "يجب على مقدم الطلب تقديم جداول ثبات موقعة ومختومة تذكر اسم المنتج والشكل الصيدلي والتركيز ورقم التشغيلة وحجمها ونوعها وتاريخي التصنيع والانتهاء وتاريخ البدء وظروف التخزين وفترات الاختبار والعبوة، مع نتائج ضمن مواصفات الصلاحية، وملخص ثبات وفق الملحق السادس."}
+  action: {type: upload, target: "P-16"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Stability study table(s) (3.2.P.8.3); Annex VI", quote: "Should clearly state product name, dosage form, concentration (if applicable), batch number on which stability study was done, manufacturing and expiry date"}
+- id: ST-28
+  dept: stability
+  layer: eda
+  ctd: "ST-D"
+  title: {en: "OOS, OOT and dissolution reporting", ar: "النتائج خارج المواصفات والاتجاه وعرض الانحلال"}
+  question: {en: "Are dissolution results expressed as average and range of individual results at each interval, any out-of-specification, out-of-trend or significant change scientifically justified, skipped tests justified, and statistical analysis submitted where applicable?", ar: "هل عُبّر عن نتائج الانحلال كمتوسط ومدى للنتائج الفردية في كل فترة، وهل بُررت علمياً أي نتائج خارج المواصفات أو خارج الاتجاه أو أي تغير جوهري، وبُررت الاختبارات المتخطاة، وقُدم التحليل الإحصائي حيثما ينطبق؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-16]
+    keywords: ["range", "out of specification", "OOS", "out of trend", "statistical"]
+    data: [stability]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should express dissolution results as average and range of individual results for each time interval, scientifically justify any OOS, OOT, significant change or skipped test, and submit the statistical analysis where applicable.", ar: "يجب على مقدم الطلب التعبير عن نتائج الانحلال كمتوسط ومدى للنتائج الفردية لكل فترة زمنية، وتبرير أي نتائج خارج المواصفات أو خارج الاتجاه أو تغير جوهري أو اختبار متخطى تبريراً علمياً، وتقديم التحليل الإحصائي حيثما ينطبق."}
+  action: {type: edit_data, target: "stability"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Stability study table(s) (3.2.P.8.3), Notes", quote: "Dissolution results should be expressed as (average and range of individual results) for each individual time interval"}
+- id: ST-29
+  dept: stability
+  layer: eda
+  ctd: "ST-D"
+  title: {en: "Comparative stability table for variations", ar: "جدول الثبات المقارن للتغييرات"}
+  question: {en: "For a variation, is a comparative stability table (Annex VII) submitted comparing the pre- and post-change data, including long-term data with any holding time?", ar: "بالنسبة للتغيير، هل قُدم جدول ثبات مقارن (الملحق السابع) يقارن البيانات قبل التغيير وبعده، متضمناً بيانات الدراسة طويلة الأمد مع أي فترة انتظار؟"}
+  applies: "activity == 'variation'"
+  severity: major
+  evidence:
+    slots: [P-16]
+    keywords: ["comparative", "Annex VII", "before", "after"]
+    data: [stability]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit the Annex VII comparative stability table for the variation study.", ar: "يجب على مقدم الطلب تقديم جدول الثبات المقارن (الملحق السابع) الخاص بدراسة التغيير."}
+  action: {type: generate, target: "P-16"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Stability study table(s) (3.2.P.8.3); Annex VII", quote: "Comparative stability table in case of variation studies should be submitted (annex VII)"}
+- id: ST-30
+  dept: stability
+  layer: eda
+  ctd: "ST-D"
+  title: {en: "Bracketing and matrixing design", ar: "تصميم التقويس والمصفوفة"}
+  question: {en: "Where bracketing or matrixing is applied, are the design table, its justification, the design data and statistical analysis (Annex VIII) submitted, with the COAs of the packaging materials of the different containers included in the design?", ar: "في حالة تطبيق التقويس أو المصفوفة، هل قُدم جدول التصميم ومبرراته وبيانات التصميم والتحليل الإحصائي (الملحق الثامن)، مع شهادات تحليل مواد التعبئة للعبوات المختلفة المشمولة في التصميم؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [P-16]
+    keywords: ["bracketing", "matrixing", "Annex VIII"]
+    data: [stability]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit the bracketing/matrixing design table, the justification of the design, the design data and statistical analysis (Annex VIII), and the COAs of the packaging materials of the different containers included in the design.", ar: "يجب على مقدم الطلب تقديم جدول تصميم التقويس/المصفوفة ومبررات التصميم وبيانات التصميم والتحليل الإحصائي (الملحق الثامن)، وشهادات تحليل مواد التعبئة للعبوات المختلفة المشمولة في التصميم."}
+  action: {type: upload, target: "P-16"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Multi container volume (Packaging Material); Annex VIII", quote: "In case of applying matrixing or bracketing; the design table, justification of the design, the design table data/ statistical analysis and data if applicable."}
+  anchor: {code: "ICH Q1D", section: ""}

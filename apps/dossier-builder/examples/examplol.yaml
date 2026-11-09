@@ -1,0 +1,14 @@
+# Seed product «Examplol 500 mg film-coated tablets» (fictional) — P0 demo profile
+dossier_kind: generic
+origin: local
+licence: own
+activity: new
+route: one_submission
+reference_status: referenced
+pharmacopoeial: true
+dosage_specifics: [coated]
+leaflet: english
+store_separate_from_factory: false
+apis:
+  - {name: Paracetamol, manufacturer: Granules India, option: CEP}
+  - {name: Paracetamol, manufacturer: Anqiu Lu'an, option: FULL}

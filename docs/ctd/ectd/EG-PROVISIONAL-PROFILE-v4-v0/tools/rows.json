@@ -1,0 +1,1852 @@
+[
+{
+"n": "1",
+"page": "29",
+"ctd": "",
+"title": "EG Module 1",
+"el": "m1-eg",
+"dir": "m1/eg",
+"file": "",
+"comment": "Top level directory for the EG Module 1 as per ICH eCTD Specification."
+},
+{
+"n": "2",
+"page": "29",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/eg-regional.xml`",
+"comment": "The EG Regional XML instance including envelope information. Note that the operation attribute for the eg.regional.xml should always be set to \u2018new\u2019."
+},
+{
+"n": "3",
+"page": "29",
+"ctd": "1.0",
+"title": "Cover Letter",
+"el": "m1-0-cover",
+"dir": "m1/eg/10-cover",
+"file": "",
+"comment": ""
+},
+{
+"n": "4",
+"page": "29",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/10-cover/cover-VAR.EXT`",
+"comment": "Filename for the Cover Letter composed of a fixed component \u201ccover\u201d and an optional variable component"
+},
+{
+"n": "5",
+"page": "30",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/10-cover/tracking-VAR.EXT`",
+"comment": "A tracking table should always be included in addition to the cover letter for submissions within all procedures The file should be named tracking-var.pdf (\u2018var\u2019 for the variable part) and be placed in /XXXX/m1/eg/10-cover"
+},
+{
+"n": "6",
+"page": "30",
+"ctd": "1.2",
+"title": "Application Forms",
+"el": "m1-2-form",
+"dir": "m1/eg/12-form",
+"file": "",
+"comment": "General placeholder for forms and annexes"
+},
+{
+"n": "7",
+"page": "30",
+"ctd": "1.2.1",
+"title": "Application Form",
+"el": "m1-2-1-af",
+"dir": "m1/eg/12-form/121-af/",
+"file": "",
+"comment": ""
+},
+{
+"n": "8",
+"page": "30",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/12-form/121-af/form-af-VAR.EXT`",
+"comment": "Filename for the Application Form composed of a fixed component \u2018form-af\u2019 and an optional variable component to be used if required (e.g. form-af-tablet.pdf)"
+},
+{
+"n": "9",
+"page": "31",
+"ctd": "1.2.2",
+"title": "Legal Documents",
+"el": "m1-2-2-legal",
+"dir": "m1/eg/12-form/122-legal",
+"file": "",
+"comment": ""
+},
+{
+"n": "10",
+"page": "31",
+"ctd": "1.2.2.1",
+"title": "Letter of Attorney for Company Representative",
+"el": "m1-2-2-1-loattor",
+"dir": "m1/eg/12-form/122-legal/1221-loattor",
+"file": "",
+"comment": ""
+},
+{
+"n": "11",
+"page": "31",
+"ctd": "1.2.2.2",
+"title": "Manufacturing License and IDA License",
+"el": "m1-2-2-2-manlic",
+"dir": "m1/eg/12-form/122-legal/1222-manlic",
+"file": "",
+"comment": ""
+},
+{
+"n": "12",
+"page": "31",
+"ctd": "1.2.2.3",
+"title": "GMP Certificate(s) / Alternative Documents",
+"el": "m1-2-2-3-gmpcert",
+"dir": "m1/eg/12-form/122-legal/1223-gmpcert",
+"file": "",
+"comment": ""
+},
+{
+"n": "13",
+"page": "31",
+"ctd": "1.2.2.4",
+"title": "The Register of Trade",
+"el": "m1-2-2-4-trade",
+"dir": "m1/eg/12-form/122-legal/1224-trade",
+"file": "",
+"comment": ""
+},
+{
+"n": "14",
+"page": "32",
+"ctd": "1.2.2.5",
+"title": "Toll Manufacturer License",
+"el": "m1-2-2-5-toll",
+"dir": "m1/eg/12-form/122-legal/1225-toll",
+"file": "",
+"comment": ""
+},
+{
+"n": "15",
+"page": "32",
+"ctd": "1.2.2.6",
+"title": "Scientific Office License",
+"el": "m1-2-2-6-sol",
+"dir": "m1/eg/12-form/122-legal/1226-sol",
+"file": "",
+"comment": ""
+},
+{
+"n": "16",
+"page": "32",
+"ctd": "1.2.2.7",
+"title": "Importers Register License",
+"el": "m1-2-2-7-import",
+"dir": "m1/eg/12-form/122-legal/1227-import",
+"file": "",
+"comment": ""
+},
+{
+"n": "17",
+"page": "32",
+"ctd": "1.2.2.8",
+"title": "Store License",
+"el": "m1-2-2-8-storelic",
+"dir": "m1/eg/12-form/122-legal/1228-storelic",
+"file": "",
+"comment": ""
+},
+{
+"n": "18",
+"page": "33",
+"ctd": "1.2.2.9",
+"title": "Authorisation Letter / Agency Agreement",
+"el": "m1-2-2-9-authlet",
+"dir": "m1/eg/12-form/122-legal/1229-authlet",
+"file": "",
+"comment": ""
+},
+{
+"n": "19",
+"page": "33",
+"ctd": "1.2.2.10",
+"title": "Manufacturing Agreement",
+"el": "m1-2-2-10-managre",
+"dir": "m1/eg/12-form/122-legal/12210-managre",
+"file": "",
+"comment": ""
+},
+{
+"n": "20",
+"page": "33",
+"ctd": "1.2.2.11",
+"title": "Packaging Agreement",
+"el": "m1-2-2-11-pacagre",
+"dir": "m1/eg/12-form/122-legal/12211-pacagre",
+"file": "",
+"comment": ""
+},
+{
+"n": "21",
+"page": "33",
+"ctd": "1.2.2.12",
+"title": "Storage Agreement",
+"el": "m1-2-2-12-storeagre",
+"dir": "m1/eg/12-form/122-legal/12212-storeagre",
+"file": "",
+"comment": ""
+},
+{
+"n": "22",
+"page": "33",
+"ctd": "1.2.2.13",
+"title": "Other Agreements",
+"el": "m1-2-2-13-othagre",
+"dir": "m1/eg/12-form/122-legal/12213-othagre",
+"file": "",
+"comment": ""
+},
+{
+"n": "23",
+"page": "34",
+"ctd": "1.2.2.14",
+"title": "Termination / Waiver",
+"el": "m1-2-2-14-term",
+"dir": "m1/eg/12-form/122-legal/12214-term",
+"file": "",
+"comment": ""
+},
+{
+"n": "24",
+"page": "34",
+"ctd": "1.2.2.15",
+"title": "Tax Card",
+"el": "m1-2-2-15-tax",
+"dir": "m1/eg/12-form/122-legal/12215-tax",
+"file": "",
+"comment": ""
+},
+{
+"n": "25",
+"page": "34",
+"ctd": "1.2.2.16",
+"title": "List of Distributors",
+"el": "m1-2-2-16-distribut",
+"dir": "m1/eg/12-form/122-legal/12216-distribut",
+"file": "",
+"comment": ""
+},
+{
+"n": "26",
+"page": "34",
+"ctd": "1.2.2.17",
+"title": "IP Protection Law No. 82 of 2002 Commitment",
+"el": "m1-2-2-17-ipp",
+"dir": "m1/eg/12-form/122-legal/12217-ipp",
+"file": "",
+"comment": ""
+},
+{
+"n": "27",
+"page": "35",
+"ctd": "1.2.2.18",
+"title": "NEW local MA legal Agreement",
+"el": "m1-2-2-18-newlegag",
+"dir": "m1/eg/12-form/122-legal/12218-newlegag",
+"file": "",
+"comment": ""
+},
+{
+"n": "28",
+"page": "35",
+"ctd": "1.2.2.19",
+"title": "Letter of Authorisation for a new Applicant in Egypt",
+"el": "m1-2-2-19-loauth",
+"dir": "m1/eg/12-form/122-legal/12219-loauth",
+"file": "",
+"comment": ""
+},
+{
+"n": "29",
+"page": "35",
+"ctd": "1.2.2.20",
+"title": "PV Agreement between the MAH & the Service Provider",
+"el": "m1-2-2-20-pvagre",
+"dir": "m1/eg/12-form/122-legal/12220-pvagre",
+"file": "",
+"comment": ""
+},
+{
+"n": "30",
+"page": "35",
+"ctd": "1.2.2.21",
+"title": "GMP Certificate",
+"el": "m1-2-2-21-gmpcert2",
+"dir": "m1/eg/12-form/122-legal/12221-gmpcert2",
+"file": "",
+"comment": ""
+},
+{
+"n": "31",
+"page": "35",
+"ctd": "1.2.3",
+"title": "EDA Approvals",
+"el": "m1-2-3-edaapp",
+"dir": "m1/eg/12-form/123-edaapp",
+"file": "",
+"comment": ""
+},
+{
+"n": "32",
+"page": "36",
+"ctd": "1.2.3.1",
+"title": "Registration Request Approval",
+"el": "m1-2-3-1-regreq",
+"dir": "m1/eg/12-form/123-edaapp/1231-regreq",
+"file": "",
+"comment": ""
+},
+{
+"n": "33",
+"page": "36",
+"ctd": "1.2.3.2",
+"title": "Inquiry Approval",
+"el": "m1-2-3-2-inqapp",
+"dir": "m1/eg/12-form/123-edaapp/1232-inqapp",
+"file": "",
+"comment": ""
+},
+{
+"n": "34",
+"page": "36",
+"ctd": "1.2.3.3",
+"title": "Name Approval",
+"el": "m1-2-3-3-nameapp",
+"dir": "m1/eg/12-form/123-edaapp/1233-nameapp",
+"file": "",
+"comment": ""
+},
+{
+"n": "35",
+"page": "36",
+"ctd": "1.2.3.4",
+"title": "Registration License",
+"el": "m1-2-3-4-reglic",
+"dir": "m1/eg/12-form/123-edaapp/1234-reglic",
+"file": "",
+"comment": ""
+},
+{
+"n": "36",
+"page": "37",
+"ctd": "1.2.3.5",
+"title": "Preliminary Approval",
+"el": "m1-2-3-5-prelimapp",
+"dir": "m1/eg/12-form/123-edaapp/1235-prelimapp",
+"file": "",
+"comment": ""
+},
+{
+"n": "37",
+"page": "37",
+"ctd": "1.2.3.6",
+"title": "Non-Reference Approval",
+"el": "m1-2-3-6-nonrefapp",
+"dir": "m1/eg/12-form/123-edaapp/1236-nonrefapp",
+"file": "",
+"comment": ""
+},
+{
+"n": "38",
+"page": "37",
+"ctd": "1.2.3.7",
+"title": "Exemption Approval",
+"el": "m1-2-3-7-exemptapp",
+"dir": "m1/eg/12-form/123-edaapp/1237-exemptapp",
+"file": "",
+"comment": ""
+},
+{
+"n": "39",
+"page": "37",
+"ctd": "1.2.3.8",
+"title": "Pricing Certificate",
+"el": "m1-2-3-8-price",
+"dir": "m1/eg/12-form/123-edaapp/1238-price",
+"file": "",
+"comment": ""
+},
+{
+"n": "40",
+"page": "37",
+"ctd": "1.2.3.9",
+"title": "Pharmacovigilance Approval",
+"el": "m1-2-3-9-pvapp",
+"dir": "m1/eg/12-form/123-edaapp/1239-pvapp",
+"file": "",
+"comment": ""
+},
+{
+"n": "41",
+"page": "38",
+"ctd": "1.2.3.10",
+"title": "Inspection Report",
+"el": "m1-2-3-10-insprep",
+"dir": "m1/eg/12-form/123-edaapp/12310-insprep",
+"file": "",
+"comment": ""
+},
+{
+"n": "42",
+"page": "38",
+"ctd": "1.2.3.11",
+"title": "Importation Approval for each API",
+"el": "m1-2-3-11-importapp",
+"dir": "m1/eg/12-form/123-edaapp/12311-importapp",
+"file": "",
+"comment": ""
+},
+{
+"n": "43",
+"page": "38",
+"ctd": "1.2.3.12",
+"title": "CADC Report",
+"el": "m1-2-3-12-cadcrep",
+"dir": "m1/eg/12-form/123-edaapp/12312-cadcrep",
+"file": "",
+"comment": ""
+},
+{
+"n": "44",
+"page": "38",
+"ctd": "1.2.3.13",
+"title": "Stability Study Approval",
+"el": "m1-2-3-13-stabstud",
+"dir": "m1/eg/12-form/123-edaapp/12313-stabstud",
+"file": "",
+"comment": ""
+},
+{
+"n": "45",
+"page": "39",
+"ctd": "1.2.3.14",
+"title": "Stability Protocol Approval",
+"el": "m1-2-3-14-stabprot",
+"dir": "m1/eg/12-form/123-edaapp/12314-stabprot",
+"file": "",
+"comment": ""
+},
+{
+"n": "46",
+"page": "39",
+"ctd": "1.2.3.15",
+"title": "Module 3 Approval",
+"el": "m1-2-3-15-m3app",
+"dir": "m1/eg/12-form/123-edaapp/12315-m3app",
+"file": "",
+"comment": ""
+},
+{
+"n": "47",
+"page": "39",
+"ctd": "1.2.3.16",
+"title": "Module 5 Approval",
+"el": "m1-2-3-16-m5app",
+"dir": "m1/eg/12-form/123-edaapp/12316-m5app",
+"file": "",
+"comment": ""
+},
+{
+"n": "48",
+"page": "39",
+"ctd": "1.2.3.17",
+"title": "Pre-approved letters from EDA concerning the product",
+"el": "m1-2-3-17-preapplet",
+"dir": "m1/eg/12-form/123-edaapp/12317-preapplet",
+"file": "",
+"comment": ""
+},
+{
+"n": "49",
+"page": "39",
+"ctd": "1.2.3.18",
+"title": "Variation Approvals",
+"el": "m1-2-3-18-varapp",
+"dir": "m1/eg/12-form/123-edaapp/12318-varapp",
+"file": "",
+"comment": ""
+},
+{
+"n": "50",
+"page": "40",
+"ctd": "1.2.3.19",
+"title": "Innovative Products Scientific Committee Approval",
+"el": "m1-2-3-19-ipsca",
+"dir": "m1/eg/12-form/123-edaapp/12319-ipsca",
+"file": "",
+"comment": ""
+},
+{
+"n": "51",
+"page": "40",
+"ctd": "1.2.3.20",
+"title": "Registration License for the Solvent",
+"el": "m1-2-3-20-reglicsolv",
+"dir": "m1/eg/12-form/123-edaapp/12320-reglicsolv",
+"file": "",
+"comment": ""
+},
+{
+"n": "52",
+"page": "40",
+"ctd": "1.2.4",
+"title": "Declarations",
+"el": "m1-2-4-declar",
+"dir": "m1/eg/12-form/124-declar",
+"file": "",
+"comment": ""
+},
+{
+"n": "53",
+"page": "41",
+"ctd": "1.2.4.1",
+"title": "Declaration Letter stating the list of Registered & Under-Registration Products owned by the Toll Company",
+"el": "m1-2-4-1-regprod",
+"dir": "m1/eg/12-form/124-declar/1241-regprod",
+"file": "",
+"comment": ""
+},
+{
+"n": "54",
+"page": "41",
+"ctd": "1.2.4.2",
+"title": "Declaration Letter from the License Holder specifying the API Manufacturers",
+"el": "m1-2-4-2-apiman",
+"dir": "m1/eg/12-form/124-declar/1242-apiman",
+"file": "",
+"comment": ""
+},
+{
+"n": "55",
+"page": "41",
+"ctd": "1.2.4.3",
+"title": "Declaration letter from the license holder specifying approved pack in Egypt",
+"el": "m1-2-4-3-liceholdpac",
+"dir": "m1/eg/12-form/124-declar/1243-liceholdpac",
+"file": "",
+"comment": ""
+},
+{
+"n": "56",
+"page": "41",
+"ctd": "1.2.4.4",
+"title": "Declaration Letter from the License Holder stating the Form of Bulk (Strips, Capsules, etc.)",
+"el": "m1-2-4-4-liceholdbulk",
+"dir": "m1/eg/12-form/124-declar/1244-liceholdbulk",
+"file": "",
+"comment": ""
+},
+{
+"n": "57",
+"page": "42",
+"ctd": "1.2.4.5",
+"title": "Declaration Letter from the Manufacturer of the Active Substance to inform the Applicant in case of Modification of the manufacturing Process or Specifications",
+"el": "m1-2-4-5-apimanappl",
+"dir": "m1/eg/12-form/124-declar/1245-apimanappl",
+"file": "",
+"comment": ""
+},
+{
+"n": "58",
+"page": "42",
+"ctd": "1.2.4.6",
+"title": "Declaration Letter from API Supplier",
+"el": "m1-2-4-6-apisupp",
+"dir": "m1/eg/12-form/124-declar/1246-apisupp",
+"file": "",
+"comment": ""
+},
+{
+"n": "59",
+"page": "42",
+"ctd": "1.2.4.7",
+"title": "Declaration Letter for Site Addition",
+"el": "m1-2-4-7-siteadd",
+"dir": "m1/eg/12-form/124-declar/1247-siteadd",
+"file": "",
+"comment": ""
+},
+{
+"n": "60",
+"page": "42",
+"ctd": "1.2.4.8",
+"title": "Declaration Letter Form LH stating all Variations & Justification for the Change",
+"el": "m1-2-4-8-allvar",
+"dir": "m1/eg/12-form/124-declar/1248-allvar",
+"file": "",
+"comment": ""
+},
+{
+"n": "61",
+"page": "43",
+"ctd": "1.2.4.9",
+"title": "Other declarations requested by Egyptian Drug Authority",
+"el": "m1-2-4-9-decother",
+"dir": "m1/eg/12-form/124-declar/1249-decother",
+"file": "",
+"comment": ""
+},
+{
+"n": "62",
+"page": "43",
+"ctd": "1.2.4.10",
+"title": "List of the Countries where the Product is registered & marketed",
+"el": "m1-2-4-10-countries",
+"dir": "m1/eg/12-form/124-declar/12410-countries",
+"file": "",
+"comment": ""
+},
+{
+"n": "63",
+"page": "43",
+"ctd": "1.2.4.11",
+"title": "Ph. Eur. Certificate(s) of Suitability for TSE",
+"el": "m1-2-4-11-tse",
+"dir": "m1/eg/12-form/124-declar/12411-tse",
+"file": "",
+"comment": ""
+},
+{
+"n": "64",
+"page": "43",
+"ctd": "1.2.4.12",
+"title": "TSE/BSE Supplier Safety Declaration (if CEP not available)",
+"el": "m1-2-4-12-bsesafdec",
+"dir": "m1/eg/12-form/124-declar/12412-bsesafdec",
+"file": "",
+"comment": ""
+},
+{
+"n": "65",
+"page": "43",
+"ctd": "1.2.4.13",
+"title": "Raw Materials Storage Responsibility Declaration (for local Products)",
+"el": "m1-2-4-13-rawmat",
+"dir": "m1/eg/12-form/124-declar/12413-rawmat",
+"file": "",
+"comment": ""
+},
+{
+"n": "66",
+"page": "44",
+"ctd": "1.2.4.14",
+"title": "Excipient/s Supplier Name & Origin",
+"el": "m1-2-4-14-exipsup",
+"dir": "m1/eg/12-form/124-declar/12414-exipsup",
+"file": "",
+"comment": ""
+},
+{
+"n": "67",
+"page": "44",
+"ctd": "1.2.4.15",
+"title": "Trade Name of the Albumin used as Stabilizer",
+"el": "m1-2-4-15-albtraden",
+"dir": "m1/eg/12-form/124-declar/12415-albtraden",
+"file": "",
+"comment": ""
+},
+{
+"n": "68",
+"page": "44",
+"ctd": "1.2.4.16",
+"title": "Albumin as Stabilizer Batch Release Certificate",
+"el": "m1-2-4-16-albstabil",
+"dir": "m1/eg/12-form/124-declar/12416-albstabil",
+"file": "",
+"comment": ""
+},
+{
+"n": "69",
+"page": "44",
+"ctd": "1.2.4.17",
+"title": "Plasma Derivative Supplier Safety and Efficacy Commitment",
+"el": "m1-2-4-17-plasdersub",
+"dir": "m1/eg/12-form/124-declar/12417-plasdersub",
+"file": "",
+"comment": ""
+},
+{
+"n": "70",
+"page": "45",
+"ctd": "1.2.4.18",
+"title": "No Change in physical Address and Product related Processes Declaration",
+"el": "m1-2-4-18-nochaadd",
+"dir": "m1/eg/12-form/124-declar/12418-nochaadd",
+"file": "",
+"comment": ""
+},
+{
+"n": "71",
+"page": "45",
+"ctd": "1.2.4.19",
+"title": "Pack Type Declaration",
+"el": "m1-2-4-19-pactype",
+"dir": "m1/eg/12-form/124-declar/12419-pactype",
+"file": "",
+"comment": ""
+},
+{
+"n": "72",
+"page": "45",
+"ctd": "1.2.4.20",
+"title": "Insert Declaration Letter",
+"el": "m1-2-4-20-insdeclet",
+"dir": "m1/eg/12-form/124-declar/12420-insdeclet",
+"file": "",
+"comment": ""
+},
+{
+"n": "73",
+"page": "45",
+"ctd": "1.2.4.21",
+"title": "Site Master File Declaration",
+"el": "m1-2-4-21-sitemfdec",
+"dir": "m1/eg/12-form/124-declar/12421-sitemfdec",
+"file": "",
+"comment": ""
+},
+{
+"n": "74",
+"page": "45",
+"ctd": "1.2.4.22",
+"title": "Storage Temperature at 25 \u00b0C Declaration",
+"el": "m1-2-4-22-storetemp",
+"dir": "m1/eg/12-form/124-declar/12422-storetemp",
+"file": "",
+"comment": ""
+},
+{
+"n": "75",
+"page": "46",
+"ctd": "1.2.5",
+"title": "Reference Product Document / Compendial",
+"el": "m1-2-5-refprod",
+"dir": "m1/eg/12-form/125-refprod",
+"file": "",
+"comment": ""
+},
+{
+"n": "76",
+"page": "46",
+"ctd": "1.2.5.1",
+"title": "The Reference Product Documents",
+"el": "m1-2-5-1-refproddoc",
+"dir": "m1/eg/12-form/125-refprod/1251-refproddoc",
+"file": "",
+"comment": ""
+},
+{
+"n": "77",
+"page": "46",
+"ctd": "1.2.5.2",
+"title": "Scientific Reference (Trials & Literature)",
+"el": "m1-2-5-2-sciref",
+"dir": "m1/eg/12-form/125-refprod/1252-sciref",
+"file": "",
+"comment": ""
+},
+{
+"n": "78",
+"page": "46",
+"ctd": "1.2.5.3",
+"title": "Reference for the trade name change",
+"el": "m1-2-5-3-reftradn",
+"dir": "m1/eg/12-form/125-refprod/1253-reftradn",
+"file": "",
+"comment": ""
+},
+{
+"n": "79",
+"page": "47",
+"ctd": "1.2.5.4",
+"title": "The latest recent Pharmacopeia",
+"el": "m1-2-5-4-recph",
+"dir": "m1/eg/12-form/125-refprod/1254-recph",
+"file": "",
+"comment": ""
+},
+{
+"n": "80",
+"page": "47",
+"ctd": "1.2.6",
+"title": "Imported Products Documents",
+"el": "m1-2-6-importdoc",
+"dir": "m1/eg/12-form/126-importdoc",
+"file": "",
+"comment": ""
+},
+{
+"n": "81",
+"page": "47",
+"ctd": "1.2.6.1",
+"title": "Certificate of Pharmaceutical Product (CPP)",
+"el": "m1-2-6-1-cpp",
+"dir": "m1/eg/12-form/126-importdoc/1261-cpp",
+"file": "",
+"comment": ""
+},
+{
+"n": "82",
+"page": "47",
+"ctd": "1.2.6.2",
+"title": "List of Affiliates / Subsidiaries",
+"el": "m1-2-6-2-loaff",
+"dir": "m1/eg/12-form/126-importdoc/1262-loaff",
+"file": "",
+"comment": ""
+},
+{
+"n": "83",
+"page": "47",
+"ctd": "1.2.7",
+"title": "Reliance Documents",
+"el": "m1-2-7-reliance",
+"dir": "m1/eg/12-form/127-reliance",
+"file": "",
+"comment": ""
+},
+{
+"n": "84",
+"page": "48",
+"ctd": "1.2.7.1",
+"title": "Sameness Letter",
+"el": "m1-2-7-1-sameness",
+"dir": "m1/eg/12-form/127-reliance/1271-sameness",
+"file": "",
+"comment": ""
+},
+{
+"n": "85",
+"page": "48",
+"ctd": "1.2.7.2",
+"title": "Unredacted Assessment Report",
+"el": "m1-2-7-2-unredact",
+"dir": "m1/eg/12-form/127-reliance/1272-unredact",
+"file": "",
+"comment": ""
+},
+{
+"n": "86",
+"page": "48",
+"ctd": "1.2.7.3",
+"title": "RRA Variation Application with Annexes",
+"el": "m1-2-7-3-rravar",
+"dir": "m1/eg/12-form/127-reliance/1273-rravar",
+"file": "",
+"comment": ""
+},
+{
+"n": "87",
+"page": "48",
+"ctd": "1.2.7.4",
+"title": "Correspondences between the Applicant and the Reference Agency",
+"el": "m1-2-7-4-correspond",
+"dir": "m1/eg/12-form/127-reliance/1274-correspond",
+"file": "",
+"comment": ""
+},
+{
+"n": "88",
+"page": "49",
+"ctd": "1.2.7.5",
+"title": "List of Changes after first MA issued from EMA or FDA",
+"el": "m1-2-7-5-lofchange",
+"dir": "m1/eg/12-form/127-reliance/1275-lofchange",
+"file": "",
+"comment": ""
+},
+{
+"n": "89",
+"page": "49",
+"ctd": "1.2.7.6",
+"title": "Rejection or Amendment Reporting Commitment",
+"el": "m1-2-7-6-reject",
+"dir": "m1/eg/12-form/127-reliance/1276-reject",
+"file": "",
+"comment": ""
+},
+{
+"n": "90",
+"page": "49",
+"ctd": "1.2.8",
+"title": "Composition Documents",
+"el": "m1-2-8-composit",
+"dir": "m1/eg/12-form/128-composit",
+"file": "",
+"comment": ""
+},
+{
+"n": "91",
+"page": "49",
+"ctd": "1.2.8.1",
+"title": "Composition Certificate",
+"el": "m1-2-8-1-compositcert",
+"dir": "m1/eg/12-form/128-composit/1281-compositcert",
+"file": "",
+"comment": ""
+},
+{
+"n": "92",
+"page": "49",
+"ctd": "1.2.8.2",
+"title": "Specifications",
+"el": "m1-2-8-2-spec",
+"dir": "m1/eg/12-form/128-composit/1282-spec",
+"file": "",
+"comment": ""
+},
+{
+"n": "93",
+"page": "50",
+"ctd": "1.2.8.3",
+"title": "Any Composition Calculations",
+"el": "m1-2-8-3-compcalc",
+"dir": "m1/eg/12-form/128-composit/1283-compcalc",
+"file": "",
+"comment": ""
+},
+{
+"n": "94",
+"page": "50",
+"ctd": "1.2.8.4",
+"title": "Pellets / Premix Composition and Certificates",
+"el": "m1-2-8-4-pelletcomp",
+"dir": "m1/eg/12-form/128-composit/1284-pelletcomp",
+"file": "",
+"comment": ""
+},
+{
+"n": "95",
+"page": "50",
+"ctd": "1.2.8.5",
+"title": "Opadry / Coating Premix Composition",
+"el": "m1-2-8-5-opadry",
+"dir": "m1/eg/12-form/128-composit/1285-opadry",
+"file": "",
+"comment": ""
+},
+{
+"n": "96",
+"page": "50",
+"ctd": "1.2.8.6",
+"title": "Capsule Shell Composition",
+"el": "m1-2-8-6-capshell",
+"dir": "m1/eg/12-form/128-composit/1286-capshell",
+"file": "",
+"comment": ""
+},
+{
+"n": "97",
+"page": "51",
+"ctd": "1.2.8.7",
+"title": "Synonyms Evidence",
+"el": "m1-2-8-7-synonyms",
+"dir": "m1/eg/12-form/128-composit/1287-synonyms",
+"file": "",
+"comment": ""
+},
+{
+"n": "98",
+"page": "51",
+"ctd": "1.2.9",
+"title": "Certificate of Analysis",
+"el": "m1-2-9-coa",
+"dir": "m1/eg/12-form/129-coa",
+"file": "",
+"comment": ""
+},
+{
+"n": "99",
+"page": "51",
+"ctd": "1.2.10",
+"title": "Post Approval Changes Requirements",
+"el": "m1-2-10-postappch",
+"dir": "m1/eg/12-form/1210-postappch",
+"file": "",
+"comment": ""
+},
+{
+"n": "100",
+"page": "51",
+"ctd": "1.2.10.1",
+"title": "PAC Approval from the COO (Imported Products)",
+"el": "m1-2-10-1-pacapp",
+"dir": "m1/eg/12-form/1210-postappch/12101-pacapp",
+"file": "",
+"comment": ""
+},
+{
+"n": "101",
+"page": "51",
+"ctd": "1.2.10.2",
+"title": "Summary of Change for Variation",
+"el": "m1-2-10-2-sumcavar",
+"dir": "m1/eg/12-form/1210-postappch/12102-sumcavar",
+"file": "",
+"comment": ""
+},
+{
+"n": "102",
+"page": "52",
+"ctd": "1.2.10.3",
+"title": "Justification of the proposed Post Approval Change",
+"el": "m1-2-10-3-justpoc",
+"dir": "m1/eg/12-form/1210-postappch/12103-justpoc",
+"file": "",
+"comment": ""
+},
+{
+"n": "103",
+"page": "52",
+"ctd": "1.2.10.4",
+"title": "Any additional Documents relevant to Variations",
+"el": "m1-2-10-4-anydoc",
+"dir": "m1/eg/12-form/1210-postappch/12104-anydoc",
+"file": "",
+"comment": ""
+},
+{
+"n": "104",
+"page": "52",
+"ctd": "1.2.11",
+"title": "Proof of Payment",
+"el": "m1-2-11-pop",
+"dir": "m1/eg/12-form/1211-pop",
+"file": "",
+"comment": ""
+},
+{
+"n": "105",
+"page": "52",
+"ctd": "1.2.12",
+"title": "Analysis Requirements Documentation (for Biological Products only)",
+"el": "m1-2-12-analysreq",
+"dir": "m1/eg/12-form/1212-analysreq",
+"file": "",
+"comment": ""
+},
+{
+"n": "106",
+"page": "53",
+"ctd": "1.2.12.1",
+"title": "Detailed Standard Operating Procedures (SOP)",
+"el": "m1-2-12-1-sop",
+"dir": "m1/eg/12-form/1212-analysreq/12121-sop",
+"file": "",
+"comment": ""
+},
+{
+"n": "107",
+"page": "53",
+"ctd": "1.2.12.2",
+"title": "Summary Protocol for Vaccines and Plasma derived Medicinal Products",
+"el": "m1-2-12-2-sumvacc",
+"dir": "m1/eg/12-form/1212-analysreq/12122-sumvacc",
+"file": "",
+"comment": ""
+},
+{
+"n": "108",
+"page": "53",
+"ctd": "1.2.13",
+"title": "For Plasma derived Medicinal Products",
+"el": "m1-2-13-plasma",
+"dir": "m1/eg/12-form/1213-plasma",
+"file": "",
+"comment": ""
+},
+{
+"n": "109",
+"page": "53",
+"ctd": "1.2.13.1",
+"title": "Plasma Master File",
+"el": "m1-2-13-1-pmf",
+"dir": "m1/eg/12-form/1213-plasma/12131-pmf",
+"file": "",
+"comment": ""
+},
+{
+"n": "110",
+"page": "53",
+"ctd": "1.2.13.2",
+"title": "Certificate of Plasma Batch Release from Health Authority",
+"el": "m1-2-13-2-plasbatch",
+"dir": "m1/eg/12-form/1213-plasma/12132-plasbatch",
+"file": "",
+"comment": ""
+},
+{
+"n": "111",
+"page": "54",
+"ctd": "1.2.13.3",
+"title": "PMF Approval from Country of Origin",
+"el": "m1-2-13-3-pmfapp",
+"dir": "m1/eg/12-form/1213-plasma/12133-pmfapp/",
+"file": "",
+"comment": ""
+},
+{
+"n": "112",
+"page": "54",
+"ctd": "1.2.14",
+"title": "Scientific Advice Report",
+"el": "m1-2-14-scienadv",
+"dir": "m1/eg/12-form/1214-scienadv/",
+"file": "",
+"comment": ""
+},
+{
+"n": "113",
+"page": "54",
+"ctd": "1.2.15",
+"title": "Documents related PV",
+"el": "m1-2-15-relpv",
+"dir": "m1/eg/12-form/1215-relpv/",
+"file": "",
+"comment": ""
+},
+{
+"n": "114",
+"page": "54",
+"ctd": "1.2.15.1",
+"title": "Latest valid PSMF Assessment Report / Confirmation E-mail of PSMF Document(s) Receival",
+"el": "m1-2-15-1-valpsmfas",
+"dir": "m1/eg/12-form/1215-relpv/12151-valpsmfas/",
+"file": "",
+"comment": ""
+},
+{
+"n": "115",
+"page": "55",
+"ctd": "1.2.15.2",
+"title": "Updated Version of Summary of PSMF(s) / PSSF",
+"el": "m1-2-15-2-updpsmf",
+"dir": "m1/eg/12-form/1215-relpv/12152-updpsmf/",
+"file": "",
+"comment": ""
+},
+{
+"n": "116",
+"page": "55",
+"ctd": "1.2.15.3",
+"title": "The latest PSUR(s) (or the ACO in Case of Renewal)",
+"el": "m1-2-15-3-latpsur",
+"dir": "m1/eg/12-form/1215-relpv/12153-latpsur",
+"file": "",
+"comment": ""
+},
+{
+"n": "117",
+"page": "55",
+"ctd": "1.2.15.4",
+"title": "The most updated EU/Global/Core-Risk Management Plan (RMP)",
+"el": "m1-2-15-4-updrmp",
+"dir": "m1/eg/12-form/1215-relpv/12154-updrmp",
+"file": "",
+"comment": ""
+},
+{
+"n": "118",
+"page": "55",
+"ctd": "1.2.15.5",
+"title": "The Egyptian Display of EU-RMP / Global-RMP",
+"el": "m1-2-15-5-egrmp",
+"dir": "m1/eg/12-form/1215-relpv/12155-egrmp",
+"file": "",
+"comment": ""
+},
+{
+"n": "119",
+"page": "55",
+"ctd": "1.2.16",
+"title": "Documents related Inspection",
+"el": "m1-2-16-relinsp",
+"dir": "m1/eg/12-form/1216-relinsp",
+"file": "",
+"comment": ""
+},
+{
+"n": "120",
+"page": "56",
+"ctd": "1.2.16.1",
+"title": "Site Master File for all Manufacturers",
+"el": "m1-2-16-1-smfall",
+"dir": "m1/eg/12-form/1216-relinsp/12161-smfall",
+"file": "",
+"comment": ""
+},
+{
+"n": "121",
+"page": "56",
+"ctd": "1.2.16.2",
+"title": "Latest Full Inspection Report(s) by SRA (past 3 Years)",
+"el": "m1-2-16-2-fullinsprep",
+"dir": "m1/eg/12-form/1216-relinsp/12162-fullinsprep/",
+"file": "",
+"comment": ""
+},
+{
+"n": "122",
+"page": "56",
+"ctd": "1.2.16.3",
+"title": "One completed Batch Manufacturing and Packaging Record",
+"el": "m1-2-16-3-batchrep",
+"dir": "m1/eg/12-form/1216-relinsp/12163-batchrep",
+"file": "",
+"comment": ""
+},
+{
+"n": "123",
+"page": "56",
+"ctd": "1.2.16.4",
+"title": "List of any Recalls with Quality Defects (past 3 Years) (if found)",
+"el": "m1-2-16-4-recalls",
+"dir": "m1/eg/12-form/1216-relinsp/12164-recalls",
+"file": "",
+"comment": ""
+},
+{
+"n": "124",
+"page": "57",
+"ctd": "1.2.16.5",
+"title": "Any Warning Letter or equivalent regulatory Action (Production-line specific) (if found)",
+"el": "m1-2-16-5-warnlet",
+"dir": "m1/eg/12-form/1216-relinsp/12165-warnlet",
+"file": "",
+"comment": ""
+},
+{
+"n": "125",
+"page": "57",
+"ctd": "1.2.16.6",
+"title": "Last Annual Product Quality Review",
+"el": "m1-2-16-6-annualrev",
+"dir": "m1/eg/12-form/1216-relinsp/12166-annualrev",
+"file": "",
+"comment": ""
+},
+{
+"n": "126",
+"page": "57",
+"ctd": "1.2.16.7",
+"title": "Cold Chain Storage & Transportation Procedures including Excursion allowed",
+"el": "m1-2-16-7-coldchain",
+"dir": "m1/eg/12-form/1216-relinsp/12167-coldchain",
+"file": "",
+"comment": ""
+},
+{
+"n": "127",
+"page": "57",
+"ctd": "1.3",
+"title": "Product Information",
+"el": "m1-3-pi",
+"dir": "m1/eg/13-pi",
+"file": "",
+"comment": "General placeholder for Product Information."
+},
+{
+"n": "128",
+"page": "57",
+"ctd": "1.3.1",
+"title": "SmPC, Labelling and Package Leaflet",
+"el": "m1-3-1-spc-label-pl",
+"dir": "m1/eg/13-pi/131-spclabelpl",
+"file": "",
+"comment": "General placeholder for SmPC, Package Leaflet."
+},
+{
+"n": "129",
+"page": "58",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "m1/eg/13-pi/131-spclabelpl/LL",
+"file": "",
+"comment": "Always use a language directory at this level during the lifecycle of the submission (Arabic or English)."
+},
+{
+"n": "130",
+"page": "58",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/13-pi/131-spclabelpl/LL/PIDOC-VAR.EXT`",
+"comment": "Filename for the spc-label-pl document composed of a fixed component \u201cPIDOC\u201d as per table of Appendix 2.3 and an optional variable component to be used if needed (e.g. m1/eg/13-pi/131-spclabelpl/ar/spc-tablet10mgar.pdf). Summary of Product Characteristics \"spc\" & Package Leaflet \"pl\" are required by EDA"
+},
+{
+"n": "131",
+"page": "58",
+"ctd": "1.3.2",
+"title": "Mock-up",
+"el": "m1-3-2-mockup",
+"dir": "m1/eg/13-pi/132-mockup",
+"file": "",
+"comment": ""
+},
+{
+"n": "132",
+"page": "59",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/13-pi/132-mockup/mockup-VAR.EXT`",
+"comment": "Filename for the mock-up document composed of a fixed component \u201cmockup\u201d and an optional variable component to be used if needed (e.g. mockup-tablet10mgouter.pdf)."
+},
+{
+"n": "133",
+"page": "59",
+"ctd": "1.3.3",
+"title": "Specimen",
+"el": "m1-3-3-specimen",
+"dir": "m1/eg/13-pi/133-specimen",
+"file": "",
+"comment": ""
+},
+{
+"n": "134",
+"page": "59",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/13-pi/133-specimen/specimen-VAR.EXT`",
+"comment": "Filename for the list of physical specimens provided with the submission composed of a fixed component \u201cspecimen\u201d and an optional variable component to be used if needed (e.g. specimen.pdf)."
+},
+{
+"n": "135",
+"page": "59",
+"ctd": "1.3.4",
+"title": "Consultation with Target Patient Groups",
+"el": "m1-3-4-consultation",
+"dir": "m1/eg/13-pi/134-consultation",
+"file": "",
+"comment": ""
+},
+{
+"n": "136",
+"page": "60",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/13-pi/134-consultation/consultation-VAR.EXT`",
+"comment": "Filename for the results of assessments carried out in cooperation with target patient groups on the package leaflet, composed of a fixed component \u201cconsultation\u201d and an optional variable component to be used if needed (e.g. consultation-tablet10mgpl.pdf)."
+},
+{
+"n": "137",
+"page": "60",
+"ctd": "1.3.5",
+"title": "Product Information already approved in the Member States",
+"el": "m1-3-5-approved",
+"dir": "m1/eg/13-pi/135-approved",
+"file": "",
+"comment": ""
+},
+{
+"n": "138",
+"page": "60",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/13-pi/135-approved/approved-VAR.EXT`",
+"comment": "Filename for the approved Product Information document composed of a fixed component \u201capproved\u201d and an optional variable component to be used if needed."
+},
+{
+"n": "139",
+"page": "60",
+"ctd": "1.3.6",
+"title": "Braille",
+"el": "m1-3-6-braille",
+"dir": "m1/eg/13-pi/136-braille",
+"file": "",
+"comment": ""
+},
+{
+"n": "140",
+"page": "61",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/13-pi/136-braille/braille-VAR.EXT`",
+"comment": "Filename for the Braille information is composed of a fixed component \u201cbraille\u201d and an optional variable component to be used if needed. (e.g. braille.pdf)."
+},
+{
+"n": "141",
+"page": "61",
+"ctd": "1.4",
+"title": "Information about the Experts",
+"el": "m1-4-expert",
+"dir": "m1/eg/14-expert",
+"file": "",
+"comment": "General placeholder for Expert Information."
+},
+{
+"n": "142",
+"page": "61",
+"ctd": "1.4.1",
+"title": "Quality",
+"el": "m1-4-1-quality",
+"dir": "m1/eg/14-expert/141-quality",
+"file": "",
+"comment": "General placeholder for quality information."
+},
+{
+"n": "143",
+"page": "61",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/14-expert/141-quality/quality-VAR.EXT`",
+"comment": "Filename for the quality expert document composed of a fixed component \u201cquality\u201d and an optional variable component to be used if needed (e.g. quality.pdf)."
+},
+{
+"n": "144",
+"page": "62",
+"ctd": "1.4.2",
+"title": "Non-Clinical",
+"el": "m1-4-2-non-clinical",
+"dir": "m1/eg/14-expert/142-nonclinical",
+"file": "",
+"comment": "General placeholder for non-clinical information."
+},
+{
+"n": "145",
+"page": "62",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/14-expert/142-nonclinical/nonclinical-VAR.EXT`",
+"comment": "Filename for the non-clinical expert document composed of a fixed component \u201cnonclinical\u201d and an optional variable component to be used if needed (e.g. nonclinical.pdf)."
+},
+{
+"n": "144",
+"page": "62",
+"ctd": "1.4.3",
+"title": "Clinical",
+"el": "m1-4-3-clinical",
+"dir": "m1/eg/14-expert/143-clinical",
+"file": "",
+"comment": "General placeholder for clinical information."
+},
+{
+"n": "145",
+"page": "63",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/14-expert/143-clinical/clinical-VAR.EXT`",
+"comment": "Filename for the clinical expert document composed of a fixed component \u201cclinical\u201d and an optional variable component to be used if needed (e.g. clinical.pdf)."
+},
+{
+"n": "146",
+"page": "63",
+"ctd": "1.5",
+"title": "Specific Requirements for Different Types of Applications",
+"el": "m1-5-specific",
+"dir": "m1/eg/15-specific",
+"file": "",
+"comment": "General placeholder for Specific Information."
+},
+{
+"n": "147",
+"page": "63",
+"ctd": "1.5.1",
+"title": "Information for Bibliographical Applications",
+"el": "m1-5-1-bibliographic",
+"dir": "m1/eg/15-specific/151-bibliographic",
+"file": "",
+"comment": "General placeholder for bibliographical applications."
+},
+{
+"n": "148",
+"page": "64",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/15-specific/151-bibliographic/bibliographic-VAR.EXT`",
+"comment": "Filename for the specific bibliographic submission information composed of a fixed component \u201cbibliographic\u201d and an optional variable component to be used if needed (e.g. bibliographic.pdf)."
+},
+{
+"n": "149",
+"page": "64",
+"ctd": "1.5.2",
+"title": "Information for Generic, Hybrid\u2019 or Bio-similar Applications",
+"el": "m1-5-2-generic-hybrid-bio-similar",
+"dir": "m1/eg/15-specific/152-generic-hybrid-bio-similar",
+"file": "",
+"comment": "General placeholder for generic, hybrid\u2019 or bio-similar applications."
+},
+{
+"n": "150",
+"page": "64",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/15-specific/152-generic-hybrid-bio-similar/generic-VAR.EXT` or `m1/eg/15-specific/152-generic-hybrid-bio-similar/hybrid-VAR.EXT` or `m1/eg/15-specific/152-generic-hybrid-bio-similar/biosimilar-VAR.EXT`",
+"comment": "Filename for the specific generic, hybrid or bio-similar submission information composed of a fixed component \u201cgeneric\u201d or \u201chybrid\u201d or \u201cbiosimilar\u201d, and an optional variable component to be used if needed (e.g. generic.pdf)."
+},
+{
+"n": "151",
+"page": "65",
+"ctd": "1.5.3",
+"title": "(Extended) Data/Market Exclusivity",
+"el": "m1-5-3-data-market-exclusivity",
+"dir": "m1/eg/15-specific/153-data-market-exclusivity",
+"file": "",
+"comment": "General placeholder for (extended) data/market exclusivity."
+},
+{
+"n": "152",
+"page": "65",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/15-specific/153-data-market-exclusivity/datamarketexclusivity-VAR.EXT`",
+"comment": "Filename for the data / market exclusivity composed of a fixed component \u201cdatamarketexclusivity\u201d and an optional variable component to be used if needed (e.g. datamarketexclusivity.pdf)."
+},
+{
+"n": "153",
+"page": "66",
+"ctd": "1.5.4",
+"title": "Exceptional Circumstances",
+"el": "m1-5-4-exceptional-circumstances",
+"dir": "m1/eg/15-specific/154-exceptional",
+"file": "",
+"comment": "General placeholder for marketing authorisation granted under exceptional circumstances."
+},
+{
+"n": "154",
+"page": "66",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/15-specific/154-exceptional/exceptional-VAR.EXT`",
+"comment": "Filename for marketing authorisation granted under exceptional circumstances, composed of a fixed component \u201cexceptional\u201d and an optional variable component to be used if needed (e.g. exceptional.pdf)."
+},
+{
+"n": "155",
+"page": "66",
+"ctd": "1.5.5",
+"title": "Conditional Marketing Authorisation",
+"el": "m1-5-5-conditional-ma",
+"dir": "m1/eg/15-specific/155-conditional-ma",
+"file": "",
+"comment": "General placeholder for conditional marketing authorisation."
+},
+{
+"n": "156",
+"page": "67",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/15-specific/155-conditional-ma/conditionalma-VAR.EXT`",
+"comment": "Filename for conditional marketing authorisation, composed of a fixed component \u201cconditionalma\u201d and an optional variable component to be used if needed (e.g. conditionalma.pdf)."
+},
+{
+"n": "157",
+"page": "67",
+"ctd": "1.6",
+"title": "Environmental Risk Assessment",
+"el": "m1-6-environrisk",
+"dir": "m1/eg/16-environrisk",
+"file": "",
+"comment": "General placeholder for Environmental Risk Assessment."
+},
+{
+"n": "158",
+"page": "67",
+"ctd": "1.6.1",
+"title": "Non-GMO",
+"el": "m1-6-1-non-gmo",
+"dir": "m1/eg/16-environrisk/161-nongmo",
+"file": "",
+"comment": "General placeholder for non-GMO."
+},
+{
+"n": "159",
+"page": "68",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/16-environrisk/161-nongmo/nongmo-VAR.EXT`",
+"comment": "Filename for the environmental risk assessment non-GMO composed of a fixed component \u201cnongmo\u201d and an optional variable component to be used if needed (e.g. nongmo.pdf). Only one of the 2 folders 1.6.1 or 1.6.2 can have content when sending a sequence."
+},
+{
+"n": "160",
+"page": "68",
+"ctd": "1.6.2",
+"title": "GMO",
+"el": "m1-6-2-gmo",
+"dir": "m1/eg/16-environrisk/162-gmo",
+"file": "",
+"comment": "General placeholder for GMO."
+},
+{
+"n": "161",
+"page": "69",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/16-environrisk/162-gmo/gmo-VAR.EXT`",
+"comment": "Filename for the environmental risk assessment GMO-composed of a fixed component \u201cgmo\u201d and an optional variable component to be used if needed (e.g. gmo.pdf). Only one of the 2 folders 1.6.1 or 1.6.2 can have content when sending a sequence."
+},
+{
+"n": "162",
+"page": "69",
+"ctd": "1.7",
+"title": "Information relating to Orphan Market Exclusivity",
+"el": "m1-7-orphan",
+"dir": "m1/eg/17-orphan",
+"file": "",
+"comment": "General placeholder for Orphan Market Exclusivity information."
+},
+{
+"n": "163",
+"page": "69",
+"ctd": "1.7.1",
+"title": "Similarity",
+"el": "m1-7-1-similarity",
+"dir": "m1/eg/17-orphan/171-similarity",
+"file": "",
+"comment": "General placeholder for information on similarity with authorised orphan product."
+},
+{
+"n": "164",
+"page": "70",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/17-orphan/171-similarity/similarity-VAR.EXT`",
+"comment": "Filename for the information on similarity composed of a fixed component \u201csimilarity\u201d and an optional variable component to be used if needed."
+},
+{
+"n": "165",
+"page": "70",
+"ctd": "1.7.2",
+"title": "Market Exclusivity",
+"el": "m1-7-2-market-exclusivity",
+"dir": "m1/eg/17-orphan/172-market-exclusivity",
+"file": "",
+"comment": "General placeholder for information on market exclusivity."
+},
+{
+"n": "166",
+"page": "71",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/17-orphan/172-market-exclusivity/marketexclusivity-VAR.EXT`",
+"comment": "Filename for information on market exclusivity composed of a fixed component \u201cmarketexclusivity\u201d and an optional variable component to be used if needed."
+},
+{
+"n": "167",
+"page": "71",
+"ctd": "1.8",
+"title": "Information relating to Pharmacovigilance",
+"el": "m1-8-pharmacovigilance",
+"dir": "m1/eg/18-pharmacovigilance",
+"file": "",
+"comment": "General placeholder for information on pharmacovigilance."
+},
+{
+"n": "168",
+"page": "71",
+"ctd": "1.8.1",
+"title": "Pharmacovigilance System",
+"el": "m1-8-1-pharmacovigilance-system",
+"dir": "m1/eg/18-pharmacovigilance/181-phvig-system",
+"file": "",
+"comment": "General placeholder for information on pharmacovigilance system."
+},
+{
+"n": "169",
+"page": "72",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/18-pharmacovigilance/181-phvig-system/phvigsystem-VAR.EXT`",
+"comment": "Filename for information on pharmacovigilance system composed of a fixed component \u201cphvigsystem\u201d and an optional variable component to be used if needed."
+},
+{
+"n": "170",
+"page": "72",
+"ctd": "1.8.2",
+"title": "Risk-management System",
+"el": "m1-8-2-risk-management-system",
+"dir": "m1/eg/18-pharmacovigilance/182-riskmgt-system",
+"file": "",
+"comment": "General placeholder for information on risk management system."
+},
+{
+"n": "171",
+"page": "72",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/18-pharmacovigilance/182-riskmgt-system/riskmgtsystem-VAR.EXT`",
+"comment": "Filename for information on pharmacovigilance system composed of a fixed component \u201criskmgtsystem\u201d and an optional variable component to be used if needed."
+},
+{
+"n": "172",
+"page": "73",
+"ctd": "1.9",
+"title": "Information relating to Clinical Trials",
+"el": "m1-9-clinical-trials",
+"dir": "m1/eg/19-clinical-trials",
+"file": "",
+"comment": "General placeholder for information on clinical trials."
+},
+{
+"n": "173",
+"page": "73",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/19-clinical-trials/clinicaltrials-VAR.EXT`",
+"comment": "Filename for information on clinical trials composed of a fixed component \u201cclinicaltrials\u201d and an optional variable component to be used if needed."
+},
+{
+"n": "174",
+"page": "73",
+"ctd": "1.10",
+"title": "Information relating to Paediatrics",
+"el": "m1-10-paediatrics",
+"dir": "m1/eg/110-paediatrics",
+"file": "",
+"comment": "General placeholder for information on paediatrics."
+},
+{
+"n": "175",
+"page": "74",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/110-paediatrics/paediatrics-VAR.EXT`",
+"comment": "Filename for information on paediatrics composed of a fixed component \u201cpaediatrics\u201d and an optional variable component to be used if needed."
+},
+{
+"n": "176",
+"page": "74",
+"ctd": "",
+"title": "Responses to Questions",
+"el": "m1-responses",
+"dir": "m1/eg/responses",
+"file": "",
+"comment": ""
+},
+{
+"n": "177",
+"page": "75",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "m1/eg/responses",
+"file": "`m1/eg/responses/responses-VAR.EXT`",
+"comment": "Placeholder for responses document. For file name of the response document please see section Node Extensions"
+},
+{
+"n": "178",
+"page": "75",
+"ctd": "",
+"title": "Additional Data",
+"el": "m1-additional-data",
+"dir": "m1/eg/additional-data",
+"file": "",
+"comment": "The section 'Additional Data\u2019 should only be used for required information that is not currently included in the EG eCTD M1 Specification. Supportive documents, which are not part of any M2-5 section or Response to Questions, should be placed here. Any updates to documents originating from M2-5 should replace the outdated version in its original location in M2-5. Supportive documents submitted as answers to questions should be placed in Module 1 Responses to Questions. This section is not intended for including already submitted documents. Any information/file which was already submitted in a previous sequence should not be submitted again in eCTD. For already submitted documents, a reference/hyperlink/cross-link to the existing file should be created. This helps to avoid multiple lifecycles and repetitions of the files."
+},
+{
+"n": "179",
+"page": "76",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "",
+"file": "`m1/eg/additional-data/additionaldata-VAR.EXT`",
+"comment": "Filename for additional information requested composed of a fixed component \u201cadditionaldata\u201d and an optional variable component to be used if needed (e.g. additionaldata-yellowpink.pdf).\""
+},
+{
+"n": "180",
+"page": "76",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "m1/eg/util",
+"file": "",
+"comment": "Additional folder to hold utility files used in EG"
+},
+{
+"n": "181",
+"page": "76",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "m1/eg/util/dtd",
+"file": "",
+"comment": "Additional folder to hold DTD files used in EG."
+},
+{
+"n": "182",
+"page": "77",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "util/dtd",
+"file": "",
+"comment": "ICH specified location for eCTD DTD files."
+},
+{
+"n": "183",
+"page": "77",
+"ctd": "",
+"title": "",
+"el": "",
+"dir": "util/style",
+"file": "",
+"comment": "ICH specified location for eCTD style-sheet files. The style-sheet to be used should be the most recent version, which is always published as part of the specification package for download. Note that the XML instance can only point to one style-sheet and that referencing a customised style-sheet will effectively prevent the EDA using the official one. It is therefore recommended not to submit customised style-sheets."
+}
+]

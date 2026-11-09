@@ -1,0 +1,11 @@
+**
+!apps/dossier-builder/deploy/requirements.txt
+!apps/dossier-builder/engine/**
+!apps/dossier-builder/rulepacks/**
+!apps/dossier-builder/ui/**
+!apps/dossier-builder/tools/serve.py
+!apps/dossier-builder/tools/adduser.py
+!docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0/**
+!docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0/**
+!docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip
+**/__pycache__

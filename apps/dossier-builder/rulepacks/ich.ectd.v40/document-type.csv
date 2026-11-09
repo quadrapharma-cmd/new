@@ -1,0 +1,94 @@
+code,description,status
+ich_document_type_1,preclinical study report,Active
+ich_document_type_2,legacy clinical study report,Active
+ich_document_type_3,synopsis,Active
+ich_document_type_4,study report body,Active
+ich_document_type_5,protocol or amendment,Active
+ich_document_type_6,sample case report form,Active
+ich_document_type_7,iec irb consent form list,Active
+ich_document_type_8,list description investigator site,Active
+ich_document_type_9,signatures investigators,Active
+ich_document_type_10,list patients with batches,Active
+ich_document_type_11,randomisation scheme,Active
+ich_document_type_12,audit certificates report,Active
+ich_document_type_13,statistical methods interim analysis plan,Active
+ich_document_type_14,inter-laboratory standardisation methods quality assurance,Active
+ich_document_type_15,publications based on study,Active
+ich_document_type_16,publications referenced in report,Active
+ich_document_type_17,discontinued patients,Active
+ich_document_type_18,protocol deviations,Active
+ich_document_type_19,patients excluded from efficacy analysis,Active
+ich_document_type_20,demographic data,Active
+ich_document_type_21,compliance and drug concentration data,Active
+ich_document_type_22,individual efficacy response data,Active
+ich_document_type_23,adverse event listings,Active
+ich_document_type_24,listing individual laboratory measurements by patient,Active
+ich_document_type_25,case report forms,Active
+ich_document_type_74,csr other,Active
+ich_document_type_26,available on request,Active
+ich_document_type_27,assay validation,Active
+ich_document_type_28,biomarkers,Active
+ich_document_type_29,data monitoring review committees,Active
+ich_document_type_30,device information,Active
+ich_document_type_31,diagnostic tests,Active
+ich_document_type_32,gene therapy,Active
+ich_document_type_33,patient reported outcomes,Active
+ich_document_type_34,pharmacodynamics,Active
+ich_document_type_35,pharmacogenomics,Active
+ich_document_type_36,pharmacokinetics,Active
+ich_document_type_37,quality of life,Active
+ich_document_type_75,hepatic impairment study​,Active
+ich_document_type_76,renal impairment study​,Active
+ich_document_type_77,drug-drug interaction study​,Active
+ich_document_type_78,mass balance study​,Active
+ich_document_type_79,population pk report​,Active
+ich_document_type_80,population pkpd report​,Active
+ich_document_type_81,pbpk report​,Active
+ich_document_type_82,pbbm report​,Active
+ich_document_type_83,qsp report​,Active
+ich_document_type_84,cp general​,Active
+ich_document_type_85,qt clinical study​,Active
+ich_document_type_86,qt invitro study​,Active
+ich_document_type_87,pd invivo study​,Active
+ich_document_type_88,pd invitro study​,Active
+ich_document_type_38,stem cells,Active
+ich_document_type_39,abuse liability,Active
+ich_document_type_40,antibody,Active
+ich_document_type_41,healthcare utilisation,Active
+ich_document_type_42,other data not specified,Active
+ich_document_type_43,pk/pd relationship,Active
+ich_document_type_44,specialty report,Active
+ich_document_type_45,bimo,Active
+ich_document_type_46,foreign clinical studies not under ind,Active
+ich_document_type_47,data tabulation dataset legacy,Active
+ich_document_type_48,data tabulation data definition,Active
+ich_document_type_71,data tabulation dataset sdtm,Active
+ich_document_type_72,data tabulation dataset send,Active
+ich_document_type_49,data listing dataset,Active
+ich_document_type_50,data listing data definition,Active
+ich_document_type_51,analysis dataset legacy,Active
+ich_document_type_52,analysis program,Active
+ich_document_type_53,analysis data definition,Active
+ich_document_type_73,analysis dataset adam,Active
+ich_document_type_54,annotated crf,Active
+ich_document_type_55,ecg,Active
+ich_document_type_56,image,Active
+ich_document_type_57,subject profiles,Active
+ich_document_type_58,safety report,Active
+ich_document_type_59,antibacterial,Active
+ich_document_type_60,special pathogen,Active
+ich_document_type_61,antiviral,Active
+ich_document_type_62,iss,Active
+ich_document_type_63,ise,Active
+ich_document_type_89,iscp​,Active
+ich_document_type_90,isi​,Active
+ich_document_type_91,weight of evidence​,Active
+ich_document_type_92,animal rule efficacy​,Active
+ich_document_type_93,animal rule natural history​,Active
+ich_document_type_94,nonstandard safety study​,Active
+ich_document_type_64,pm description,Active
+ich_document_type_66,study data reviewer's guide,Active
+ich_document_type_67,analysis data reviewer's guide,Active
+ich_document_type_68,hf validation protocol,Active
+ich_document_type_69,hf validation report,Active
+ich_document_type_70,hf validation other,Active

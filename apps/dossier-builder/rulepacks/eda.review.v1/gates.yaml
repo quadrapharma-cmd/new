@@ -1,0 +1,66 @@
+# Gates — prior approvals and the documents the other EDA bodies issue (inspection, pharmacovigilance, pricing, committees).
+# Source: EDA submission procedures (step-by-step overview) Step 1 and Step 4; NP.CAPP.065 v5 items 1.1.4–1.1.8, 1.1.11, 1.1.12.
+- id: GT-BOX-01
+  dept: gates
+  layer: eda
+  ctd: "1.1.4"
+  title: {en: "Box and naming approvals", ar: "موافقة الـ Box واعتماد الاسم"}
+  question: {en: "Are the registration-request (Box) approval and the name approval included before the full dossier is submitted?", ar: "هل موافقة طلب التسجيل (Box) واعتماد الاسم مرفقان قبل تقديم الملف الكامل؟"}
+  applies: "activity == 'new'"
+  severity: critical
+  evidence: {slots: [M1-04], keywords: ["name approval", "box", "registration request", "action letter"]}
+  auto: {kind: slot}
+  deficiency: {en: "The initial submission of the full CTD takes place only after obtaining the Box approval (registration request) and the naming approval; both should be included in 1.1.4.", ar: "لا يُقدَّم ملف CTD الكامل إلا بعد الحصول على موافقة الـ Box (طلب التسجيل) واعتماد الاسم؛ يجب إرفاقهما في 1.1.4."}
+  action: {type: upload, target: M1-04}
+  source: {code: EDA submission procedures, section: "Submission step 1", quote: "Obtaining Box approval (Registration request approval) and Naming approval"}
+- id: GT-PVPR-01
+  dept: gates
+  layer: eda
+  ctd: "1.1.5 · 1.1.8"
+  title: {en: "Pricing and PV submission evidence", ar: "دليل التقديم للتسعير واليقظة الدوائية"}
+  question: {en: "Is evidence of submission to the Pricing and the Pharmacovigilance departments (screenshots) included, or the approvals themselves?", ar: "هل دليل التقديم لإدارتي التسعير واليقظة الدوائية (لقطات شاشة) مرفق، أو الموافقتان نفسهما؟"}
+  applies: "activity == 'new'"
+  severity: major
+  evidence: {slots: [M1-05, M1-08], keywords: ["pricing", "pharmacovigilance", "screenshot", "submission"]}
+  auto: {kind: slot}
+  deficiency: {en: "Evidence of submission to the Pricing and Pharmacovigilance departments (a screenshot of each submission) should be included with the dossier.", ar: "يجب إرفاق دليل التقديم لإدارتي التسعير واليقظة الدوائية (لقطة شاشة لكل تقديم) مع الملف."}
+  action: {type: upload, target: M1-05}
+  source: {code: EDA submission procedures, section: "Submission step 1", quote: "Submission to the Pricing and Pharmacovigilance departments (*). (Submit a screenshot as evidence of submission)"}
+- id: GT-INSP-01
+  dept: gates
+  layer: eda
+  ctd: "1.1.11"
+  title: {en: "Inspection report of the batches", ar: "تقرير تفتيش التشغيلات"}
+  question: {en: "Is the inspection report of the pilot/production batches (new registration) or of a valid marketed batch (re-registration) included and valid?", ar: "هل تقرير تفتيش التشغيلات التجريبية/الإنتاجية (تسجيل جديد) أو تشغيلة مسوَّقة سارية (إعادة تسجيل) مرفق وساري؟"}
+  severity: critical
+  evidence: {slots: [M1-12], keywords: ["inspection", "batch", "تفتيش"]}
+  auto: {kind: slot}
+  deficiency: {en: "The inspection report of the submitted batches should be provided (or the Technical Committee exemption from decree 600 where applicable).", ar: "يجب تقديم تقرير تفتيش التشغيلات المقدمة (أو إعفاء اللجنة الفنية من القرار 600 عند الانطباق)."}
+  action: {type: request_issuer, target: M1-12}
+  source: {code: NP.CAPP.065 v5/2025, section: "1.1.11", quote: "inspection report"}
+- id: GT-APIIMP-01
+  dept: gates
+  layer: eda
+  ctd: "1.1.12"
+  title: {en: "API importation approval", ar: "موافقة استيراد المادة الفعالة"}
+  question: {en: "Is the importation approval for each API included for the local product?", ar: "هل موافقة استيراد كل مادة فعالة مرفقة للمنتج المحلي؟"}
+  applies: "column == 'G_LOC'"
+  severity: major
+  evidence: {slots: [M1-13], keywords: ["importation", "import approval", "استيراد"]}
+  auto: {kind: slot}
+  deficiency: {en: "The importation approval of each active pharmaceutical ingredient should be included in 1.1.12.", ar: "يجب إرفاق موافقة استيراد كل مادة فعالة في 1.1.12."}
+  action: {type: upload, target: M1-13}
+  source: {code: NP.CAPP.065 v5/2025, section: "1.1.12", quote: "Importation approval for each API"}
+- id: GT-M1UPD-01
+  dept: gates
+  layer: eda
+  ctd: "1.1.4 · 1.1.5 · 1.1.8"
+  title: {en: "Approvals to collect before the updated Module 1", ar: "الموافقات الواجب جمعها قبل الوحدة 1 المحدَّثة"}
+  question: {en: "After the technical approvals, are the pricing certificate and the PV approval ready for the updated Module 1 resubmission?", ar: "بعد الموافقات الفنية، هل شهادة التسعير وموافقة اليقظة الدوائية جاهزتان لإعادة تقديم الوحدة 1 المحدَّثة؟"}
+  applies: "activity == 'new'"
+  severity: note
+  evidence: {slots: [M1-05, M1-08], keywords: ["pricing certificate", "pharmacovigilance approval"]}
+  auto: {kind: none}
+  deficiency: {en: "Before the final review, the updated Module 1 must carry all technical approvals, the pricing certificate and the PV approval.", ar: "قبل المراجعة النهائية يجب أن تحمل الوحدة 1 المحدَّثة جميع الموافقات الفنية وشهادة التسعير وموافقة اليقظة الدوائية."}
+  action: {type: none}
+  source: {code: EDA submission procedures, section: "Step 4", quote: "After Obtaining all technical approvals, Pricing Certificate and PV approval , the applicant Must re-submit the updated Module I"}

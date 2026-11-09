@@ -62,9 +62,9 @@ def edit_own_profile(j):
         j.check('pharco.example.org' in t and re.search(r'Cairo|القاهرة', t), 'the profile does not show the website / location')
         j.check(re.search(r'Open to work|متاح للعمل', t), 'no Open-to-work marker on the profile')
         j.check('<b>bold?</b>' in t, 'HTML in the bio was not shown as text')
-        # the interface's monogram is the first letter of the first two words, title included ("Dr. Haytham Dweedar" → DH; e2e b1: "Dr. Test
-        # Person" → DT), so "Dr. Mona Fathy" is DM — the top bar must show the NEW monogram (or a photo) and the sidebar card the new name
-        ini = ''.join(w[0] for w in vals['ep-name'].split()[:2]).upper()
+        # the monogram is the first letter of the first two words AFTER any title (S-03 fix 9, s03-user2: dxInitials — "Dr. Mona Fathy" is
+        # MF, the same right after Save, sign-up and sign-in) — the top bar must show the NEW monogram (or a photo) and the sidebar card the new name
+        ini = ''.join(w[0] for w in re.sub(r'^(?:Dr|Prof|Eng|Pharm)\.?\s+', '', vals['ep-name']).split()[:2]).upper()
         j.check(j.text(pg, '#topAv').strip() in (ini, '') and 'Mona Fathy' in pg.evaluate("(document.getElementById('meName')||{}).textContent||''")
                 and 'Mona Fathy' in j.text(pg, '#app'), 'the top bar / sidebar still show the old name')
     if j.live:
@@ -90,6 +90,9 @@ def edit_own_profile(j):
         relogin(j, pc, c); own_profile(j, pc)
         why = j.text(pc, '#content .dx-name-fix')
         j.check(re.search(r'remove “\u2068?"\u2069?” \(\u2068?U\+0022\u2069?\)|احذف «\u2068?"\u2069?» \(\u2068?U\+0022\u2069?\)', why), 'the profile does not say which character to change: "%s"' % why[:160])
+        why0 = j.text(pc, '#content .dx-name-fix'); why = re.sub('[\u2068\u2069]', '', why0)   # what a message quotes is isolated (0039_names_rule_4)
+        j.check(re.search(r'remove “"” \(U\+0022\)|احذف «"» \(U\+0022\)', why), 'the profile does not say which character to change: "%s"' % why[:160])
+        j.check('\u2068"\u2069' in why0, 'the profile\'s message does not isolate the character it quotes: %s' % ascii(why0[-60:]))
         j.click(pc, r'Edit Profile|عدّل الملف|تعديل الملف', scope='#content .profile-info', what='Edit Profile')
         j.check(re.search(r'U\+0022', j.text(pc, '.modal-bg #ep-err')), 'Edit Profile does not say under the name what to change')
         pc.fill('#ep-headline', 'Flag headline %s' % j.tag); j.click(pc, r'Save Changes|Save|حفظ', scope='.modal-bg', what='Save Changes'); pc.wait_for_timeout(1200)

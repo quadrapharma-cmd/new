@@ -1,0 +1,23 @@
+id: eda.variations.gl026.v6
+status: in-force
+title:
+  en: EDA human variations — classes, conditions, requirements
+  ar: تغييرات المستحضرات البشرية — التصنيف والشروط والمتطلبات
+sources:
+- GL.CAPP.026 v6 (variations, 6th ed.)
+- EDA Variation Self-Guided Tool v1.0 (eservices.edaegypt.gov.eg/EDAVariationTool/)
+- NP.CAPP.112 v1 (variation → CTD sections)
+- EG eCTD TG draft Annex 6 (submission types)
+class_order:
+- PAC-N
+- PAC-A
+- PAC-B
+- PAC-II
+grouping_rule:
+  en: A group of variations is classified by its highest class.
+  source: GL.CAPP.026 v6
+ectd_submission_type:
+  PAC-N: var-pac-n
+  PAC-A: var-pac-a
+  PAC-B: var-pac-b
+  PAC-II: var-pac-ii

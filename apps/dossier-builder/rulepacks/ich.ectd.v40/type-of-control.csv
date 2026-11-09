@@ -1,0 +1,6 @@
+code,description,status
+ich_type_of_control_1,placebo,Active
+ich_type_of_control_2,no treatment,Active
+ich_type_of_control_3,dose response without placebo,Active
+ich_type_of_control_4,active control without placebo,Active
+ich_type_of_control_5,external,Active

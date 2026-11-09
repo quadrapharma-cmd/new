@@ -1,0 +1,709 @@
+# Assessor questions extracted from EDA GL.CAPP.024 v4/2026 "Egyptian Guideline for Conducting Bioequivalence
+# Studies for Marketing Authorization of Generic Products" (Evaluation Unit of BA/BE studies).
+- id: BE-01
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Exemption of aqueous solutions justified", ar: "تبرير إعفاء المحاليل المائية"}
+  question: {en: "Where exemption from equivalence studies is claimed for an aqueous solution (parenteral, oral, otic/ophthalmic/nasal, topical or nebulizer), has the applicant shown that the product contains the same APIs in the same molar concentration and the same or similar excipients in comparable concentrations as the reference product, with any excipient difference justified for its effect on absorption, disposition or GI transit?", ar: "عند طلب الإعفاء من دراسات التكافؤ لمحلول مائي (حقني أو فموي أو أذني/عيني/أنفي أو موضعي أو للاستنشاق بالرذاذ)، هل أثبت مقدم الطلب أن المستحضر يحتوي على نفس المواد الفعالة بنفس التركيز المولي ونفس السواغات أو سواغات مماثلة بتركيزات مقارنة للمستحضر المرجعي، مع تبرير أي اختلاف في السواغات من حيث تأثيره على الامتصاص أو التوزع أو العبور المعدي المعوي؟"}
+  applies: "aqueous_solution"
+  severity: critical
+  evidence:
+    slots: [M5-04, P-01]
+    keywords: ["excipient", "same molar", "reference", "exempt", "waiver"]
+    data: [composition]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should demonstrate that the product contains the same APIs in the same molar concentration and the same or similar excipients in comparable concentrations as the reference listed product, and justify that any excipient difference does not affect safety or efficacy.", ar: "يجب على مقدم الطلب إثبات أن المستحضر يحتوي على نفس المواد الفعالة بنفس التركيز المولي ونفس السواغات أو سواغات مماثلة بتركيزات مقارنة للمستحضر المرجعي، وتبرير أن أي اختلاف في السواغات لا يؤثر على السلامة أو الفعالية."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.2 Pharmaceutical products exempted from equivalence studies; 3.9; 3.10", quote: "The generic product should contain the same APIs in the same molar concentration"}
+- id: BE-02
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Signed protocol and ethics approval", ar: "البروتوكول الموقع وموافقة لجنة الأخلاقيات"}
+  question: {en: "Is the study protocol signed and dated by the investigator and sponsor, approved by an IRB/ethics committee before the study, and submitted together with the study report, with any protocol change signed and included in the final report?", ar: "هل بروتوكول الدراسة موقع ومؤرخ من الباحث والجهة الراعية، ومعتمد من مجلس المراجعة المؤسسي/لجنة الأخلاقيات قبل الدراسة، ومقدم مع تقرير الدراسة، مع توقيع أي تعديل في البروتوكول وإدراجه في التقرير النهائي؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["protocol", "ethics committee", "IRB", "signed"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit the signed and dated study protocol with the IRB/ethics committee approval together with the study report, including any signed protocol amendments.", ar: "يجب على مقدم الطلب تقديم بروتوكول الدراسة الموقع والمؤرخ مع موافقة مجلس المراجعة المؤسسي/لجنة الأخلاقيات إلى جانب تقرير الدراسة، متضمناً أي تعديلات موقعة على البروتوكول."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.5 Study protocol", quote: "A signed and dated study protocol together with the study report should be presented to the authority in order to obtain the marketing authorization"}
+- id: BE-03
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Study design justified", ar: "تبرير تصميم الدراسة"}
+  question: {en: "Is the study design justified: a two-formulation, two-period, two-sequence crossover in healthy subjects as default (or the published product-specific guidance), with a replicated design (e.g. four-period TRTR-RTRT using the same lots) where reference-scaling is intended, and a parallel design only where justified?", ar: "هل تصميم الدراسة مبرر: تصميم متقاطع بمستحضرين وفترتين وتسلسلين في متطوعين أصحاء كتصميم افتراضي (أو وفق الإرشادات المنشورة الخاصة بالمنتج)، مع تصميم مكرر (مثل أربع فترات TRTR-RTRT بنفس التشغيلات) عند اعتزام استخدام التوسيع المرجعي، وتصميم متوازٍ فقط عند وجود مبرر؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["crossover", "cross-over", "two-period", "replicate", "parallel"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should justify the study design against the published guidance; in the absence of product-specific guidance the default is a two-way crossover design, and a replicated crossover design (same lots of test and reference) is needed when reference-scaled bioequivalence is applied.", ar: "يجب على مقدم الطلب تبرير تصميم الدراسة وفق الإرشادات المنشورة؛ وفي غياب إرشادات خاصة بالمنتج يكون التصميم الافتراضي تصميماً متقاطعاً ثنائي الاتجاه، ويلزم تصميم متقاطع مكرر (بنفس تشغيلات المستحضر المختبر والمرجعي) عند تطبيق التكافؤ الحيوي الموسع مرجعياً."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.7.1 Types of Experimental Design", quote: "in case of no guidance for API the default design is two -way cross over design"}
+- id: BE-04
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Adequate washout period", ar: "كفاية فترة الغسيل"}
+  question: {en: "Is the washout period the same for all subjects, more than five terminal half-lives of the API (extended for active metabolites) and at least seven days, with pre-dose samples in period two assayed and shown to be below 5% of Cmax?", ar: "هل فترة الغسيل واحدة لجميع المتطوعين وتزيد عن خمسة أضعاف نصف العمر النهائي للمادة الفعالة (وتُمدد للمستقلبات الفعالة) ولا تقل عن سبعة أيام، مع تحليل عينات ما قبل الجرعة في الفترة الثانية وإثبات أنها أقل من 5% من Cmax؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["wash-out", "washout", "half-life", "pre-dose", "predose"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should justify the washout period (more than five terminal half-lives, the same for all subjects and at least seven days) and report the period-two pre-dose concentrations, which should be below 5% of Cmax.", ar: "يجب على مقدم الطلب تبرير فترة الغسيل (أكثر من خمسة أضعاف نصف العمر النهائي، وموحدة لجميع المتطوعين، ولا تقل عن سبعة أيام) وتقديم تركيزات ما قبل الجرعة في الفترة الثانية، والتي يجب أن تكون أقل من 5% من Cmax."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.7.2 Single dose studies", quote: "The minimum wash-out period should be at least seven days."}
+- id: BE-05
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Modified release: fasting and fed studies", ar: "الإطلاق المعدل: دراستا الصيام والتغذية"}
+  question: {en: "For a modified-release product, were single-dose crossover studies on the highest strength conducted under both fasting and fed conditions with the same design, a pharmaceutically equivalent modified-release reference, and the omission of either study justified; if two separate two-way studies were run, were they submitted as two files with the bioanalytical/in vitro part once?", ar: "بالنسبة لمستحضر الإطلاق المعدل، هل أُجريت دراسات متقاطعة بجرعة وحيدة على أعلى تركيز في حالتي الصيام والتغذية بنفس التصميم، مع مستحضر مرجعي معدل الإطلاق مكافئ صيدلانياً، وتبرير إغفال أي من الدراستين؛ وإذا أُجريت دراستان منفصلتان ثنائيتا الاتجاه، هل قُدمتا كملفين مع جزء التحليل الحيوي/المختبري مرة واحدة؟"}
+  applies: "'modified_release' in dosage_specifics"
+  severity: critical
+  evidence:
+    slots: [M5-04]
+    keywords: ["fed", "fasting", "high-fat", "high fat", "modified release"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit bioequivalence studies for the modified-release product under both fasting and fed conditions (same design, highest strength, pharmaceutically equivalent modified-release reference) or scientifically justify the omission of either study.", ar: "يجب على مقدم الطلب تقديم دراستي تكافؤ حيوي لمستحضر الإطلاق المعدل في حالتي الصيام والتغذية (بنفس التصميم وعلى أعلى تركيز ومع مرجع معدل الإطلاق مكافئ صيدلانياً) أو تبرير إغفال أي منهما تبريراً علمياً."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.7.6 Studies involving modified-release products; 3.12; Section 6 First, rule 3", quote: "a pharmacokinetic bioequivalence study under fed conditions is generally required, in addition to the study under fasting state"}
+- id: BE-06
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Subject selection criteria", ar: "معايير اختيار المتطوعين"}
+  question: {en: "Does the protocol state clear inclusion/exclusion criteria with healthy subjects aged 18-55 years, weight in the normal range (BMI preferably 18.5-30 kg/m2), preferably non-smokers, screened by laboratory tests, medical history and examination, excluding pregnant or lactating women and subjects with relevant GI, convulsive, depressive or hepatic disorders?", ar: "هل يحدد البروتوكول معايير إدراج واستبعاد واضحة لمتطوعين أصحاء تتراوح أعمارهم بين 18 و55 عاماً، بوزن ضمن المدى الطبيعي (مؤشر كتلة الجسم يفضل بين 18.5 و30 كجم/م2)، ويفضل غير المدخنين، تم فحصهم بالاختبارات المعملية والتاريخ المرضي والفحص السريري، مع استبعاد الحوامل والمرضعات ومن لديهم اضطرابات معدية معوية أو تشنجية أو اكتئابية أو كبدية ذات صلة؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["inclusion", "exclusion", "BMI", "Body Mass Index", "healthy"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the inclusion and exclusion criteria and demographic data showing healthy subjects aged 18-55 years with weight in the normal range (BMI preferably 18.5-30 kg/m2), screened by laboratory tests, medical history and physical examination.", ar: "يجب على مقدم الطلب تقديم معايير الإدراج والاستبعاد والبيانات الديموغرافية التي تبين متطوعين أصحاء بعمر 18-55 عاماً ووزن ضمن المدى الطبيعي (مؤشر كتلة الجسم يفضل 18.5-30 كجم/م2) تم فحصهم بالاختبارات المعملية والتاريخ المرضي والفحص السريري."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.8.1 Selection of subjects", quote: "subjects should be between the ages of 18 and 55 years, and their weight should be within the normal range"}
+- id: BE-07
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Sample size calculation and minimum 24", ar: "حساب حجم العينة والحد الأدنى 24"}
+  question: {en: "Is the number of subjects justified by a sample-size calculation in the protocol (error CV from pilot/previous/published data, 5% significance, desired power, expected deviation from the comparator and the 80-125% limits), with a minimum of 24 subjects recruited or a justification otherwise?", ar: "هل عدد المتطوعين مبرر بحساب حجم العينة في البروتوكول (معامل التباين من دراسة تجريبية أو سابقة أو بيانات منشورة، ومستوى معنوية 5%، والقوة الإحصائية المطلوبة، والانحراف المتوقع عن المستحضر المقارن، وحدود 80-125%)، مع تجنيد 24 متطوعاً على الأقل أو تقديم مبرر لخلاف ذلك؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["sample size", "sample-size", "statistical power", "coefficient of variation"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the sample-size calculation from the protocol and justify the number of subjects; a minimum of 24 subjects is required unless otherwise justified.", ar: "يجب على مقدم الطلب تقديم حساب حجم العينة من البروتوكول وتبرير عدد المتطوعين؛ ويلزم 24 متطوعاً على الأقل ما لم يُقدم مبرر لخلاف ذلك."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.8.3 Number of subjects", quote: "A minimum of 24 subjects is required (If otherwise, it should be justified)."}
+- id: BE-08
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Drop-outs, withdrawals and add-on", ar: "المنسحبون والمستبعدون والدراسة الإضافية"}
+  question: {en: "Are all drop-outs and withdrawals reported with their reasons, were drop-outs not replaced (unless replacement or an add-on design using not less than half the initial number was pre-specified in the protocol), and were all treated subjects, not only spare subjects, planned for inclusion in the analysis?", ar: "هل أُبلغ عن جميع حالات الانسحاب والاستبعاد مع أسبابها، ولم يُستبدل المنسحبون (ما لم يكن الاستبدال أو تصميم الدراسة الإضافية بما لا يقل عن نصف العدد الأولي محدداً مسبقاً في البروتوكول)، وهل خُطط لإدراج جميع المتطوعين المعالجين في التحليل وليس المتطوعين الاحتياطيين فقط؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["drop-out", "dropout", "withdraw", "add-on"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should report all drop-outs and withdrawals with reasons (Table 13/14), confirm that drop-outs were not replaced unless pre-specified, and that any add-on study used not less than half the number of subjects of the initial study under the same protocol and batches.", ar: "يجب على مقدم الطلب الإبلاغ عن جميع حالات الانسحاب والاستبعاد مع أسبابها (الجدولان 13 و14)، وتأكيد عدم استبدال المنسحبين ما لم يكن ذلك محدداً مسبقاً، وأن أي دراسة إضافية استخدمت ما لا يقل عن نصف عدد متطوعي الدراسة الأولية بنفس البروتوكول والتشغيلات."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.8.4 Drop-outs and withdrawals", quote: "Reasons for withdrawal (e.g. adverse drug reaction or personal reasons) must be reported."}
+- id: BE-09
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Pre-specified exclusion of subject data", ar: "استبعاد بيانات المتطوعين المحدد مسبقاً"}
+  question: {en: "Were decisions to exclude a subject made before bioanalysis on pre-defined rules (e.g. vomiting at or before 2 times median Tmax for IR products, pre-dose concentration above 5% of Cmax, reference AUC below 5% of the geometric mean), with excluded samples still assayed and listed and no exclusion for statistical or PK reasons alone?", ar: "هل اتُخذت قرارات استبعاد المتطوعين قبل التحليل الحيوي وفق قواعد محددة مسبقاً (مثل القيء عند أو قبل ضعف وسيط Tmax لمستحضرات الإطلاق الفوري، أو تركيز ما قبل الجرعة أعلى من 5% من Cmax، أو AUC للمرجع أقل من 5% من المتوسط الهندسي)، مع تحليل عينات المستبعدين وإدراجها وعدم الاستبعاد لأسباب إحصائية أو حركية دوائية فقط؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["vomit", "emesis", "exclu", "pre-dose", "outlier"]
+    data: [be]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should document that every exclusion of a subject was decided before bioanalysis according to protocol rules, list the assayed results of excluded subjects, and remove any exclusion based solely on statistical or pharmacokinetic grounds.", ar: "يجب على مقدم الطلب توثيق أن كل استبعاد لمتطوع تقرر قبل التحليل الحيوي وفق قواعد البروتوكول، وإدراج نتائج تحليل عينات المستبعدين، وإلغاء أي استبعاد قائم على أسس إحصائية أو حركية دوائية فقط."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.8.5 Reasons for exclusion", quote: "the decision to exclude a subject from the statistical analysis must be made before bioanalysis."}
+- id: BE-10
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Two-stage sequential design conditions", ar: "شروط التصميم التتابعي ذي المرحلتين"}
+  question: {en: "Where a two-stage design was used, was it pre-specified in the protocol with the adjusted significance levels for the interim and final analyses (overall type I error kept at 5%), a stage term in the ANOVA, no more than two stages, a washout between stages not exceeding two weeks, and no use with replicate or multi-arm designs?", ar: "عند استخدام تصميم ذي مرحلتين، هل حُدد مسبقاً في البروتوكول مع مستويات المعنوية المعدلة للتحليل المرحلي والنهائي (مع الحفاظ على خطأ النوع الأول الكلي عند 5%)، وإدراج حد المرحلة في نموذج ANOVA، وعدم تجاوز مرحلتين، وفترة غسيل بين المرحلتين لا تتجاوز أسبوعين، وعدم استخدامه مع التصاميم المكررة أو متعددة الأذرع؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["two-stage", "two stage", "interim", "alpha", "0.0294"]
+    data: [be]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should show that the two-stage approach and its adjusted significance levels were pre-specified in the protocol, that a stage factor was included in the final ANOVA, and that the center rules (maximum two stages, washout between stages not exceeding two weeks) were met.", ar: "يجب على مقدم الطلب إثبات أن نهج المرحلتين ومستويات المعنوية المعدلة كانت محددة مسبقاً في البروتوكول، وأن عامل المرحلة أُدرج في نموذج ANOVA النهائي، وأن قواعد المراكز (مرحلتان كحد أقصى وفترة غسيل بينهما لا تتجاوز أسبوعين) قد استُوفيت."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.9 Two-stage sequential design; Section 6 First, rule (6)", quote: "The plan to use a two -stage sequential approach must be pre -specified in the protocol along with the adjusted significance levels"}
+- id: BE-11
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Fasting or fed condition and meal", ar: "حالة الصيام أو التغذية ووجبة الدراسة"}
+  question: {en: "Is the choice of fasting and/or fed study justified from the comparator labelling and product risk (both for high-risk products), and for a fed study is the meal composition and caloric breakdown reported (high-fat about 50% of calories and 900-1000 kcal where required) with dosing 30 minutes after the start of the meal unless the SmPC states otherwise?", ar: "هل اختيار دراسة الصيام و/أو التغذية مبرر وفق نشرة المستحضر المقارن ومخاطر المنتج (كلتاهما للمنتجات عالية الخطورة)، وفي دراسة التغذية هل أُبلغ عن تركيب الوجبة وتوزيعها الحراري (عالية الدهون نحو 50% من السعرات و900-1000 سعر حراري عند الاقتضاء) مع إعطاء الجرعة بعد 30 دقيقة من بدء الوجبة ما لم ينص ملخص خصائص المنتج على خلاف ذلك؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["fasting", "fed", "kcal", "meal", "high-fat"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the rationale for the fasting/fed condition(s) and, for a fed study, the composition and caloric breakdown of the meal (Table 17), which for high-risk products should be a high-fat (about 50% of calories), high-calorie (about 900-1000 kcal) meal.", ar: "يجب على مقدم الطلب تقديم مبررات اختيار حالة الصيام/التغذية، وفي دراسة التغذية تركيب الوجبة وتوزيعها الحراري (الجدول 17)، والتي يجب أن تكون للمنتجات عالية الخطورة وجبة عالية الدهون (نحو 50% من السعرات) وعالية السعرات (نحو 900-1000 سعر حراري)."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.10 Fasting or/and fed conditions; Table 17", quote: "The meal should be a high-fat (approximately 50% of total caloric content of the meal) and high-calorie (approximately 900 to 1000 kcal) meal"}
+- id: BE-12
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Standardization of study conditions", ar: "توحيد ظروف الدراسة"}
+  question: {en: "Were study conditions standardized and reported: overnight fast of at least 10 hours, dose with 150-250 ml water, no water one hour before and after dosing, standard meal about four hours post-dose, controlled posture and activity, and restriction of alcohol, caffeine, interacting foods and concomitant medicines?", ar: "هل وُحدت ظروف الدراسة وأُبلغ عنها: صيام ليلي لا يقل عن 10 ساعات، وإعطاء الجرعة مع 150-250 مل من الماء، ومنع الماء لساعة قبل الجرعة وبعدها، ووجبة قياسية بعد نحو أربع ساعات من الجرعة، وضبط الوضعية والنشاط البدني، وتقييد الكحول والكافيين والأطعمة المتفاعلة والأدوية المصاحبة؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["overnight fast", "10 hours", "150", "posture", "standardiz"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should describe the standardization of fasting (at least 10 hours), fluid intake (150-250 ml water with the dose), meals, posture, physical activity and restricted substances in the protocol and report.", ar: "يجب على مقدم الطلب وصف توحيد الصيام (10 ساعات على الأقل) وتناول السوائل (150-250 مل ماء مع الجرعة) والوجبات والوضعية والنشاط البدني والمواد المقيدة في البروتوكول والتقرير."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.11 Study standardization", quote: "Medicines are usually given after an overnight fast of at least 10 hours, and volunteers are allowed free access to water."}
+- id: BE-13
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Test batch identity and documentation", ar: "هوية التشغيلة المختبرة وتوثيقها"}
+  question: {en: "Is the test product identical to the projected commercial product (composition, manufacturing method and equipment), manufactured under GMP, ideally from a production batch, with batch-control results of the test product and the lot numbers, expiry dates and batch size stated for test and reference (Table 12)?", ar: "هل المستحضر المختبر مطابق للمستحضر التجاري المزمع (التركيبة وطريقة التصنيع والمعدات)، ومصنع وفق ممارسات التصنيع الجيدة، ويفضل من تشغيلة إنتاجية، مع بيان نتائج مراقبة التشغيلة للمستحضر المختبر وأرقام التشغيلات وتواريخ الانتهاء وحجم التشغيلة للمستحضرين المختبر والمرجعي (الجدول 12)؟"}
+  applies: "true"
+  severity: critical
+  evidence:
+    slots: [M5-04]
+    keywords: ["batch", "lot number", "expiry", "GMP", "batch size"]
+    data: [batches, be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should state the batch-control results of the test product, the lot numbers, expiry dates and batch size of both test and reference products, and confirm that the biobatch is identical in composition and manufacturing method to the product submitted for registration.", ar: "يجب على مقدم الطلب بيان نتائج مراقبة التشغيلة للمستحضر المختبر، وأرقام التشغيلات وتواريخ الانتهاء وحجم التشغيلة للمستحضرين المختبر والمرجعي، وتأكيد أن التشغيلة الحيوية مطابقة في التركيبة وطريقة التصنيع للمستحضر المقدم للتسجيل."}
+  action: {type: edit_data, target: "batches"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.12.1 Generic product; Table 12 Product Information", quote: "Batch-control results of the generic product, the lot numbers and expiry dates of both generic and reference listed products should be stated."}
+- id: BE-14
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Acceptable reference product and source", ar: "المستحضر المرجعي المقبول ومصدره"}
+  question: {en: "Is the reference product one of the accepted options (FDA Orange Book RLD/RS or NDA, ANSM reference, MHRA or reference-country PAR, WHO comparator list, European reference product), purchased from an EDA reference country or from the Egyptian market/under licence from the licensing sponsor, with country of origin, lot number, expiry date and potency within 5% of the test reported?", ar: "هل المستحضر المرجعي من الخيارات المقبولة (المنتج المرجعي أو المعيار المرجعي أو NDA في الكتاب البرتقالي لـ FDA، أو المرجع في ANSM، أو تقارير التقييم العامة لـ MHRA أو لدولة مرجعية، أو قائمة المقارنات لمنظمة الصحة العالمية، أو المنتج المرجعي الأوروبي)، ومشترى من دولة مرجعية معتمدة لدى الهيئة أو من السوق المصري/بترخيص من الجهة المرخِّصة، مع بيان بلد المنشأ ورقم التشغيلة وتاريخ الانتهاء والفاعلية ضمن 5% من المستحضر المختبر؟"}
+  applies: "true"
+  severity: critical
+  evidence:
+    slots: [M5-04]
+    keywords: ["Orange Book", "reference listed", "country of origin", "lot number", "comparator"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should justify the selection of the reference product according to the listed options, report its country of origin, lot number and expiry date, and show that the assayed content of test and reference differs by not more than 5%; a non-listed reference requires a prior request to EDA.", ar: "يجب على مقدم الطلب تبرير اختيار المستحضر المرجعي وفق الخيارات المدرجة، وبيان بلد منشئه ورقم تشغيلته وتاريخ انتهائه، وإثبات أن الفرق في المحتوى المعاير بين المستحضرين المختبر والمرجعي لا يتجاوز 5%؛ ويتطلب المرجع غير المدرج طلباً مسبقاً إلى الهيئة."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.12.2 Reference listed product; 2.12.1", quote: "The country of origin of the reference product should be reported together with lot number and expiry date."}
+- id: BE-15
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Strength and dose studied", ar: "التركيز والجرعة المدروسان"}
+  question: {en: "Was the molar-equivalent dose given as a single unit of the most sensitive (usually highest) marketed strength, and if a lower strength or more than one unit was used, is this justified (safety/tolerability or high solubility with linear PK, proportional strengths and acceptable comparative dissolution; analytical difficulties without exceeding the maximal daily dose)?", ar: "هل أُعطيت الجرعة المكافئة مولياً كوحدة واحدة من التركيز المسوق الأكثر حساسية (عادة الأعلى)، وإذا استُخدم تركيز أقل أو أكثر من وحدة، فهل بُرر ذلك (السلامة/التحمل أو الذوبانية العالية مع حركية دوائية خطية وتركيزات متناسبة وانحلال مقارن مقبول؛ أو صعوبات تحليلية دون تجاوز الجرعة اليومية القصوى)؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["highest strength", "strength", "dose administered"]
+    data: [be]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should justify the strength and dose administered in the bioequivalence study; normally the highest marketed strength is given as a single unit, and any lower strength or multiple units require the conditions of section 2.13.1 to be met.", ar: "يجب على مقدم الطلب تبرير التركيز والجرعة المعطاة في دراسة التكافؤ الحيوي؛ وعادة يُعطى أعلى تركيز مسوق كوحدة واحدة، ويتطلب أي تركيز أقل أو وحدات متعددة استيفاء شروط القسم 2.13.1."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.13.1 Selection of dose", quote: "Generally the marketed strength with the greatest sensitivity to bioequivalence assessment should be administered as a single unit."}
+- id: BE-16
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Blood sampling schedule", ar: "جدول سحب عينات الدم"}
+  question: {en: "Does the sampling schedule include a pre-dose sample, at least 2 points before Cmax, 2 around Cmax and 3-4 in the elimination phase (12-18 samples per subject per dose, early 5-15 minute sample, continued for at least three half-lives to accrue 80% of AUC0-inf, but not beyond 72 hours), with actual clock times recorded?", ar: "هل يتضمن جدول السحب عينة قبل الجرعة، ونقطتين على الأقل قبل Cmax، ونقطتين حول Cmax، و3-4 نقاط في طور الإطراح (12-18 عينة لكل متطوع لكل جرعة، مع عينة مبكرة عند 5-15 دقيقة، والاستمرار لثلاثة أنصاف عمر على الأقل لتجميع 80% من AUC0-inf دون تجاوز 72 ساعة)، مع تسجيل الأوقات الفعلية للسحب؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["pre-dose", "predose", "sampling", "72 hours", "72 h"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should justify the sampling schedule: a pre-dose sample, at least 2 points before Cmax, 2 points around Cmax and 3-4 points in the elimination phase, an early 5-15 minute sample, and sampling for at least three terminal half-lives (not more than 72 hours), with actual sampling times reported.", ar: "يجب على مقدم الطلب تبرير جدول السحب: عينة قبل الجرعة، ونقطتان على الأقل قبل Cmax، ونقطتان حول Cmax، و3-4 نقاط في طور الإطراح، وعينة مبكرة عند 5-15 دقيقة، والسحب لثلاثة أنصاف عمر نهائية على الأقل (بما لا يزيد عن 72 ساعة)، مع بيان أوقات السحب الفعلية."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.13.2 Sampling times; 2.7.3", quote: "a pre-dose sample, at least 2 points before Cmax, 2 points around Cmax and 3 – 4 points during the elimination phase."}
+- id: BE-17
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Pharmacokinetic parameters and methods", ar: "معاملات الحركية الدوائية وطرق حسابها"}
+  question: {en: "Were AUC0-t and Cmax (plus AUC0-inf, Tmax, T1/2 and Kel; AUC0-tau, Cmax,ss and fluctuation at steady state; Ae and Rmax for urine) calculated by non-compartmental methods with the trapezoidal rule, and does AUC0-t cover at least 80% of AUC0-inf in most subjects (or AUC0-72 used)?", ar: "هل حُسبت AUC0-t وCmax (إضافة إلى AUC0-inf وTmax وT1/2 وKel؛ وAUC0-tau وCmax,ss والتذبذب في حالة الاستقرار؛ وAe وRmax للبول) بطرق غير حجرية باستخدام قاعدة شبه المنحرف، وهل تغطي AUC0-t ما لا يقل عن 80% من AUC0-inf لدى معظم المتطوعين (أو استُخدمت AUC0-72)؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["AUC", "Cmax", "Tmax", "non-compartmental", "trapezoidal"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should report AUC0-t, Cmax, AUC0-inf, Tmax, T1/2 and Kel calculated by non-compartmental methods, state the AUC calculation method, and discuss any subjects in whom AUC0-t covers less than 80% of AUC0-inf.", ar: "يجب على مقدم الطلب الإبلاغ عن AUC0-t وCmax وAUC0-inf وTmax وT1/2 وKel محسوبة بطرق غير حجرية، وبيان طريقة حساب AUC، ومناقشة أي متطوعين تغطي لديهم AUC0-t أقل من 80% من AUC0-inf."}
+  action: {type: edit_data, target: "be"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.14 Parameters to be assessed; 2.8.5", quote: "Non-compartmental methods should be used for determination of pharmacokinetic parameters in bioequivalence studies."}
+- id: BE-18
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Parent compound or metabolite analysed", ar: "تحليل المركب الأصلي أو المستقلب"}
+  question: {en: "Does the protocol state which entity is analysed (parent drug as the rule; a metabolite only for a pro-drug or when the parent cannot be reliably measured with justification, and primary metabolites formed pre-systemically that contribute to safety/efficacy), and were washout and sampling adjusted for the metabolite where measured?", ar: "هل يحدد البروتوكول الكيان الذي يُحلل (الدواء الأصلي كقاعدة؛ والمستقلب فقط في حالة طليعة الدواء أو عند تعذر قياس الأصل بشكل موثوق مع التبرير، والمستقلبات الأولية المتكونة قبل الدوران الجهازي والمساهمة في السلامة/الفعالية)، وهل عُدلت فترة الغسيل وأوقات السحب للمستقلب عند قياسه؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["metabolite", "parent", "pro-drug", "prodrug"]
+    data: [be]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should state in the protocol the priority of the analytes (pro-drug, parent drug or metabolite), base the bioequivalence evaluation on the parent compound unless a justified exception applies, and present data supporting that metabolite exposure reflects the parent drug where a metabolite is used.", ar: "يجب على مقدم الطلب تحديد أولوية المواد المحللة في البروتوكول (طليعة الدواء أو الدواء الأصلي أو المستقلب)، والاعتماد في تقييم التكافؤ الحيوي على المركب الأصلي ما لم ينطبق استثناء مبرر، وتقديم بيانات تدعم أن تعرض المستقلب يعكس الدواء الأصلي عند استخدام مستقلب."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.15 Parent compound or metabolites", quote: "It is important to state a priority in the study protocol which chemical entities (pro-drug, drug (APIs) or metabolite) will be analyzed"}
+- id: BE-19
+  dept: be
+  layer: eda
+  ctd: "5.3.1.4"
+  title: {en: "LLOQ and calibration range fit study", ar: "حد الكمية الأدنى ومدى المعايرة"}
+  question: {en: "Is the LLOQ not higher than 5% of Cmax (at least five times the blank response, precision within 20% CV and accuracy within 20%), and is the calibration range appropriate to the study concentrations with at least 2 QC levels within the measured range and no extrapolation outside LLOQ-ULOQ?", ar: "هل حد الكمية الأدنى (LLOQ) لا يتجاوز 5% من Cmax (واستجابته خمسة أضعاف استجابة العينة الفارغة على الأقل، ودقته ضمن 20% CV وصحته ضمن 20%)، وهل مدى المعايرة مناسب لتركيزات الدراسة مع مستويين على الأقل من عينات مراقبة الجودة ضمن المدى المقاس ودون استقراء خارج LLOQ-ULOQ؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-06]
+    keywords: ["LLOQ", "lower limit of quantification", "lower limit of quantitation", "calibration range"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should demonstrate that the LLOQ is not higher than 5% of Cmax with acceptable precision and accuracy at the LLOQ, and that the calibration range covers the study sample concentrations with at least 2 QC levels within the measured range.", ar: "يجب على مقدم الطلب إثبات أن حد الكمية الأدنى لا يتجاوز 5% من Cmax مع دقة وصحة مقبولتين عند هذا الحد، وأن مدى المعايرة يغطي تركيزات عينات الدراسة مع مستويين على الأقل من عينات مراقبة الجودة ضمن المدى المقاس."}
+  action: {type: upload, target: "M5-06"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.19.6 Lower limit of quantification; 2.18; 2.20.4", quote: "for bioequivalence studies the LLOQ should be not higher than 5% of the C max"}
+  anchor: {code: "ICH M10", section: ""}
+- id: BE-20
+  dept: be
+  layer: eda
+  ctd: "5.3.1.4"
+  title: {en: "Selectivity and carry-over", ar: "النوعية والانتقال المتبقي"}
+  question: {en: "Was selectivity proved in at least 6 individual blank matrix sources (interference below 20% of LLOQ for the analyte and 5% for the IS, including metabolites, co-medications and back-conversion where relevant), and carry-over assessed by blanks after the ULOQ standard with the same limits?", ar: "هل أُثبتت النوعية في 6 مصادر فردية على الأقل من المصفوفة الفارغة (تداخل أقل من 20% من LLOQ للمادة المحللة و5% للمعيار الداخلي، بما يشمل المستقلبات والأدوية المصاحبة والتحول العكسي عند الاقتضاء)، وهل قُيّم الانتقال المتبقي بحقن عينات فارغة بعد معيار ULOQ بنفس الحدود؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-06]
+    keywords: ["selectivity", "carry-over", "carry over", "carryover", "blank"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide selectivity data from at least 6 individual sources of blank matrix and carry-over data from blank samples injected after the ULOQ standard, meeting the limits of 20% of the LLOQ for the analyte and 5% for the internal standard.", ar: "يجب على مقدم الطلب تقديم بيانات النوعية من 6 مصادر فردية على الأقل من المصفوفة الفارغة وبيانات الانتقال المتبقي من عينات فارغة محقونة بعد معيار ULOQ، بما يستوفي حدود 20% من LLOQ للمادة المحللة و5% للمعيار الداخلي."}
+  action: {type: upload, target: "M5-06"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.19.4 Selectivity; 2.19.5 Carry over", quote: "Selectivity should be proved using at least 6 individual sources of the appropriate blank matrix"}
+- id: BE-21
+  dept: be
+  layer: eda
+  ctd: "5.3.1.4"
+  title: {en: "Calibration curve acceptance", ar: "معايير قبول منحنى المعايرة"}
+  question: {en: "Does each calibration curve use at least six non-zero levels plus blank and zero samples in the study matrix, with back-calculated concentrations within 15% of nominal (20% at LLOQ) for at least 75% of standards, reported slope/intercept and at least 3 curves from validation?", ar: "هل يستخدم كل منحنى معايرة ستة مستويات غير صفرية على الأقل إضافة إلى عينة فارغة وعينة صفرية في مصفوفة الدراسة، مع تركيزات محسوبة عكسياً ضمن 15% من القيمة الاسمية (20% عند LLOQ) لما لا يقل عن 75% من المعايير، وبيان الميل والتقاطع و3 منحنيات على الأقل من التحقق؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-06]
+    keywords: ["calibration curve", "calibration standard", "back-calculated", "back calculated"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should present the calibration curves (at least six non-zero levels plus blank and zero samples, at least 3 curves from validation) with back-calculated concentrations and accuracy within 15% (20% at the LLOQ) for at least 75% of the standards.", ar: "يجب على مقدم الطلب عرض منحنيات المعايرة (ستة مستويات غير صفرية على الأقل مع عينة فارغة وعينة صفرية، و3 منحنيات على الأقل من التحقق) مع التركيزات المحسوبة عكسياً والصحة ضمن 15% (20% عند LLOQ) لما لا يقل عن 75% من المعايير."}
+  action: {type: upload, target: "M5-06"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.19.8 Calibration curve", quote: "A minimum of six calibration concentration levels i.e., non -zero samples (matrix samples processed with analyte and IS) should be used"}
+- id: BE-22
+  dept: be
+  layer: eda
+  ctd: "5.3.1.4"
+  title: {en: "Accuracy and precision validation", ar: "التحقق من الصحة والدقة"}
+  question: {en: "Were within-run and between-run accuracy and precision determined with at least 5 samples per level at LLOQ, low, medium and high QC in at least three runs on two different days, with mean accuracy within 15% (20% at LLOQ) and CV not exceeding 15% (20% at LLOQ), calculated on area ratios?", ar: "هل حُددت الصحة والدقة ضمن التشغيلة وبين التشغيلات بخمس عينات على الأقل لكل مستوى عند LLOQ والمستويات المنخفض والمتوسط والمرتفع لعينات مراقبة الجودة في ثلاث تشغيلات على الأقل في يومين مختلفين، مع صحة متوسطة ضمن 15% (20% عند LLOQ) ومعامل تباين لا يتجاوز 15% (20% عند LLOQ)، محسوبة على نسب المساحات؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-06]
+    keywords: ["accuracy", "precision", "within-run", "between-run", "inter-run"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide within-run and between-run accuracy and precision data at LLOQ, low, medium and high QC levels (at least 5 samples per level, at least three runs on two different days) meeting 15% (20% at the LLOQ).", ar: "يجب على مقدم الطلب تقديم بيانات الصحة والدقة ضمن التشغيلة وبين التشغيلات عند LLOQ والمستويات المنخفض والمتوسط والمرتفع لعينات مراقبة الجودة (خمس عينات على الأقل لكل مستوى، وثلاث تشغيلات على الأقل في يومين مختلفين) بما يستوفي 15% (20% عند LLOQ)."}
+  action: {type: upload, target: "M5-06"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.19.10 Accuracy; 2.19.11 Precision", quote: "Within-run accuracy should be determined by analysing in a single run a minimum of 5 samples per level at a minimum of 4 concentration levels"}
+- id: BE-23
+  dept: be
+  layer: eda
+  ctd: "5.3.1.4"
+  title: {en: "Matrix effect evaluation", ar: "تقييم تأثير المصفوفة"}
+  question: {en: "For a mass spectrometric method, was the matrix effect investigated in at least 6 lots of blank matrix from individual donors (not pooled) at low and high concentration, with the IS-normalised matrix factor CV not greater than 15% and haemolysed/lipaemic matrix considered where relevant?", ar: "بالنسبة لطريقة مطيافية الكتلة، هل دُرس تأثير المصفوفة في 6 دفعات على الأقل من المصفوفة الفارغة من متبرعين أفراد (غير مجمعة) عند تركيز منخفض ومرتفع، مع معامل تباين لعامل المصفوفة المعاير بالمعيار الداخلي لا يتجاوز 15%، ومراعاة المصفوفة المنحلة الدم أو الدهنية عند الاقتضاء؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-06]
+    keywords: ["matrix effect", "matrix factor", "ion suppression", "lots of"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the matrix effect evaluation using at least 6 individual lots of blank matrix at low and high concentrations, reporting the matrix factor for analyte and IS and an IS-normalised MF CV not greater than 15%.", ar: "يجب على مقدم الطلب تقديم تقييم تأثير المصفوفة باستخدام 6 دفعات فردية على الأقل من المصفوفة الفارغة عند تركيز منخفض ومرتفع، مع بيان عامل المصفوفة للمادة المحللة والمعيار الداخلي ومعامل تباين لعامل المصفوفة المعاير لا يتجاوز 15%."}
+  action: {type: upload, target: "M5-06"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.19.15 Matrix effect", quote: "The CV of the IS -normalised MF calculated from the 6 lots of matrix should not be greater than 15 %."}
+- id: BE-24
+  dept: be
+  layer: eda
+  ctd: "5.3.1.4"
+  title: {en: "Analyte stability covering study samples", ar: "ثبات المادة المحللة يغطي عينات الدراسة"}
+  question: {en: "Were stock/working solution, freeze-thaw (minimum three cycles, frozen at least 12 hours each), bench-top, processed-sample/autosampler and long-term stability shown, with long-term stability in the freezer exceeding the time from first sample collection to last analysis (Table 11), QCs within 15% and % stability calculated against fresh samples for drug and IS?", ar: "هل أُثبت ثبات المحاليل الأم والعاملة، والتجميد والإذابة (ثلاث دورات على الأقل بتجميد 12 ساعة على الأقل لكل دورة)، وعلى سطح العمل، والعينات المعالجة/في حاقن العينات، والثبات طويل الأمد في المجمد لمدة تتجاوز الفترة من أول سحب للعينات إلى آخر تحليل (الجدول 11)، مع عينات مراقبة جودة ضمن 15% وحساب نسبة الثبات مقابل العينات الطازجة للدواء والمعيار الداخلي؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-06]
+    keywords: ["freeze", "thaw", "long-term stability", "long term stability", "bench"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide stability data (stock and working solutions, at least three freeze-thaw cycles, bench-top, processed sample and long-term) and demonstrate that the long-term stability period exceeds the time between the first sample collection and the last sample analysis.", ar: "يجب على مقدم الطلب تقديم بيانات الثبات (المحاليل الأم والعاملة، وثلاث دورات تجميد وإذابة على الأقل، وسطح العمل، والعينات المعالجة، والثبات طويل الأمد) وإثبات أن فترة الثبات طويل الأمد تتجاوز الفترة بين أول سحب للعينات وآخر تحليل لها."}
+  action: {type: upload, target: "M5-06"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.19.16 Stability; Table 11", quote: "frozen at the intended storage temperature which should exceed the time between the date of first sample collection and the date of last sample analysis"}
+- id: BE-25
+  dept: be
+  layer: eda
+  ctd: "5.3.1.4"
+  title: {en: "Analytical run acceptance", ar: "معايير قبول التشغيلة التحليلية"}
+  question: {en: "Did each run contain blank, zero, at least 6 calibration levels and at least 3 QC levels in duplicate (or 5% of study samples), with all samples of a subject analysed together where possible, and were runs accepted only when calibration standards met 15%/20% and at least 67% of QCs and 50% at each level were within 15%?", ar: "هل احتوت كل تشغيلة على عينة فارغة وصفرية و6 مستويات معايرة على الأقل و3 مستويات على الأقل من عينات مراقبة الجودة بالتكرار (أو 5% من عينات الدراسة)، مع تحليل جميع عينات المتطوع الواحد معاً حيثما أمكن، وهل قُبلت التشغيلات فقط عند استيفاء معايير المعايرة 15%/20% وكون 67% على الأقل من عينات مراقبة الجودة و50% عند كل مستوى ضمن 15%؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-06]
+    keywords: ["acceptance criteria", "QC", "quality control", "67%"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should document the run composition and the pre-defined run acceptance criteria and show that every accepted run met them (calibration standards within 15%, 20% at LLOQ; at least 67% of QCs and 50% at each level within 15%), listing failed runs with reasons.", ar: "يجب على مقدم الطلب توثيق تكوين التشغيلة ومعايير قبولها المحددة مسبقاً وإثبات أن كل تشغيلة مقبولة استوفتها (معايير المعايرة ضمن 15% و20% عند LLOQ؛ و67% على الأقل من عينات مراقبة الجودة و50% عند كل مستوى ضمن 15%)، مع قائمة بالتشغيلات الفاشلة وأسبابها."}
+  action: {type: upload, target: "M5-06"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.20.2 Analytical run; 2.20.3 Acceptance criteria of an analytical run", quote: "At least 67% of the QC samples and at least 50% at each concentration level should comply with this criterion."}
+- id: BE-26
+  dept: be
+  layer: eda
+  ctd: "5.3.1.4"
+  title: {en: "Reanalysis of study samples controlled", ar: "ضبط إعادة تحليل عينات الدراسة"}
+  question: {en: "Were the reasons for reanalysis and the rule for selecting the reported value pre-defined in the protocol/SOP, with no reanalysis for pharmacokinetic reasons, and are the reanalysed samples tabulated (Table 10) with initial value, reason, repeat values and accepted value?", ar: "هل حُددت أسباب إعادة التحليل وقاعدة اختيار القيمة المبلغ عنها مسبقاً في البروتوكول/إجراء العمل القياسي، دون إعادة تحليل لأسباب حركية دوائية، وهل جُدولت العينات المعاد تحليلها (الجدول 10) مع القيمة الأولية والسبب وقيم الإعادة والقيمة المقبولة؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-06, M5-04]
+    keywords: ["reanalysis", "re-analysis", "reassay", "re-assay", "repeat"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the pre-defined reanalysis criteria and a table of all reanalysed samples (number and percentage, reason, initial and repeat values, reported value); reanalysis for pharmacokinetic reasons is not acceptable.", ar: "يجب على مقدم الطلب تقديم معايير إعادة التحليل المحددة مسبقاً وجدولاً بجميع العينات المعاد تحليلها (العدد والنسبة والسبب والقيم الأولية والمعادة والقيمة المبلغ عنها)؛ ولا تُقبل إعادة التحليل لأسباب حركية دوائية."}
+  action: {type: upload, target: "M5-06"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.20.5 Reanalysis of study samples; Table 10", quote: "reasons for reanalysis of study samples and criteria to select the value to be reported should be predefined in the protocol, study plan or SOP"}
+- id: BE-27
+  dept: be
+  layer: eda
+  ctd: "5.3.1.4"
+  title: {en: "Incurred sample reanalysis performed", ar: "إجراء إعادة تحليل العينات الفعلية"}
+  question: {en: "Was incurred sample reanalysis performed on 10% of samples (5% of the number above 1000) taken around Cmax and in the elimination phase, in separate runs on different days against fresh calibrators, with at least 67% of repeats within 20% of the mean, or is its absence scientifically justified (not acceptable for back-conversion drugs such as clopidogrel, atorvastatin, ramipril)?", ar: "هل أُجريت إعادة تحليل العينات الفعلية على 10% من العينات (و5% مما يزيد عن 1000) مأخوذة حول Cmax وفي طور الإطراح، في تشغيلات منفصلة وأيام مختلفة مقابل معايير طازجة، مع 67% على الأقل من التكرارات ضمن 20% من المتوسط، أو هل بُرر غيابها علمياً (غير مقبول للأدوية ذات التحول العكسي مثل كلوبيدوجريل وأتورفاستاتين وراميبريل)؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-06]
+    keywords: ["incurred sample", "ISR", "reanalys"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide incurred sample reanalysis results (10% of samples below 1000 and 5% above, around Cmax and in the elimination phase) with at least 67% of repeats within 20% of their mean, or a scientific justification for its absence addressing back-conversion, other ISR data, repeat analyses, PK plausibility and the 90% CI width.", ar: "يجب على مقدم الطلب تقديم نتائج إعادة تحليل العينات الفعلية (10% من العينات دون 1000 و5% فوقها، حول Cmax وفي طور الإطراح) مع 67% على الأقل من التكرارات ضمن 20% من متوسطها، أو تبريراً علمياً لغيابها يتناول التحول العكسي وبيانات ISR الأخرى وإعادة التحاليل ومعقولية الحركية الدوائية وعرض فترة الثقة 90%."}
+  action: {type: upload, target: "M5-06"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.21 Requirement to perform incurred sample reanalysis (ISR)", quote: "10% of the samples should be reanalysed in case the number of samples is less than 1000 samples"}
+- id: BE-28
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Statistical method and model", ar: "الطريقة والنموذج الإحصائي"}
+  question: {en: "Were AUC and Cmax log-transformed and analysed by ANOVA (formulation, period, sequence, subject) pre-specified in the protocol, with 90% confidence intervals by two one-sided tests at 5%, validated software, no post hoc or data-driven adjustments, and outlier handling specified a priori?", ar: "هل حُولت AUC وCmax لوغاريتمياً وحُللت بتحليل التباين ANOVA (المستحضر والفترة والتسلسل والمتطوع) المحدد مسبقاً في البروتوكول، مع فترات ثقة 90% باختبارين أحاديي الجانب عند 5%، وبرمجيات متحقق من صلاحيتها، ودون تعديلات لاحقة أو موجهة بالبيانات، ومع تحديد مسبق لكيفية التعامل مع القيم الشاذة؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["ANOVA", "90%", "confidence interval", "log-transformed", "log transformed"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should present the pre-specified statistical model (ANOVA on log-transformed AUC and Cmax with formulation, period, sequence and subject factors), the 90% confidence intervals, the validated software used, and the a priori rules for outliers, in sufficient detail for the analysis to be repeated.", ar: "يجب على مقدم الطلب عرض النموذج الإحصائي المحدد مسبقاً (ANOVA على AUC وCmax المحولتين لوغاريتمياً بعوامل المستحضر والفترة والتسلسل والمتطوع)، وفترات الثقة 90%، والبرمجيات المتحقق من صلاحيتها، والقواعد المسبقة للقيم الشاذة، بتفصيل يكفي لإعادة التحليل."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.22 Statistical analysis", quote: "It is only acceptable to use a validated software for statistical analysis."}
+- id: BE-29
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "At least 24 evaluable subjects", ar: "24 متطوعاً قابلاً للتقييم على الأقل"}
+  question: {en: "Did at least 24 subjects provide evaluable data for the primary statistical analysis (for a crossover design, or per treatment arm for a parallel design), with exclusions documented at the end of clinical sampling and before sample analysis?", ar: "هل قدم 24 متطوعاً على الأقل بيانات قابلة للتقييم للتحليل الإحصائي الأساسي (للتصميم المتقاطع، أو لكل ذراع علاجية في التصميم المتوازي)، مع توثيق الاستبعادات عند نهاية مرحلة السحب السريري وقبل تحليل العينات؟"}
+  applies: "true"
+  severity: critical
+  evidence:
+    slots: [M5-04]
+    keywords: ["evaluable", "completed", "subjects"]
+    data: [be]
+  auto: {kind: none}
+  deficiency: {en: "The study is not acceptable with fewer than 24 subjects with evaluable data for the primary statistical analysis; the applicant should provide the number of evaluable subjects and the documented exclusion decisions.", ar: "لا تُقبل الدراسة بأقل من 24 متطوعاً ببيانات قابلة للتقييم للتحليل الإحصائي الأساسي؛ ويجب على مقدم الطلب بيان عدد المتطوعين القابلين للتقييم وقرارات الاستبعاد الموثقة."}
+  action: {type: edit_data, target: "be"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.22.1 General considerations", quote: "A study will not be considered acceptable if there are fewer than 24 subjects with evaluable data for primary statistical analysis"}
+- id: BE-30
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "90% CI within 80-125% for AUC and Cmax", ar: "فترة الثقة 90% ضمن 80-125% لـ AUC وCmax"}
+  question: {en: "Do the 90% confidence intervals of the test/reference geometric mean ratios for AUC and Cmax lie within 80.00-125.00% (tightened for a narrow therapeutic range), with Tmax reported descriptively (non-parametric analysis only where rapid onset is clinically relevant) and T1/2 descriptively?", ar: "هل تقع فترات الثقة 90% لنسب المتوسطات الهندسية (المختبر/المرجعي) لـ AUC وCmax ضمن 80.00-125.00% (مع تضييقها للمدى العلاجي الضيق)، مع عرض Tmax وصفياً (وتحليل لا معلمي فقط عندما يكون سرعة بدء التأثير ذا أهمية سريرية) وT1/2 وصفياً؟"}
+  applies: "true"
+  severity: critical
+  evidence:
+    slots: [M5-04]
+    keywords: ["80.00", "125.00", "80-125", "80 – 125", "confidence interval"]
+    data: [be]
+  auto: {kind: none}
+  deficiency: {en: "Bioequivalence is not demonstrated: the 90% confidence interval for AUC and/or Cmax falls outside 80-125%; the applicant should provide the statistical summary (Table 3) with least-squares geometric means, ratios and 90% CIs for AUC0-t, AUC0-inf and Cmax.", ar: "لم يُثبت التكافؤ الحيوي: فترة الثقة 90% لـ AUC و/أو Cmax تقع خارج 80-125%؛ ويجب على مقدم الطلب تقديم الملخص الإحصائي (الجدول 3) بالمتوسطات الهندسية بطريقة المربعات الصغرى والنسب وفترات الثقة 90% لـ AUC0-t وAUC0-inf وCmax."}
+  action: {type: none, target: "be"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.23 Acceptance ranges (2.23.1 AUC-ratio, 2.23.2 Cmax-ratio, 2.23.3 Tmax-difference)", quote: "The 90% confidence interval for this measure of relative bioavailability should lie within a bioequivalence range of 0.80–1.25 (80 – 125%)."}
+- id: BE-31
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Report completeness and identity statement", ar: "اكتمال التقرير وإقرار المطابقة"}
+  question: {en: "Does the signed study report name the investigators, site and study period, give the names, batch numbers, expiry dates and composition of the products, include the in vitro dissolution results and a signed statement that the test product is identical to the product submitted for registration?", ar: "هل يذكر تقرير الدراسة الموقع أسماء الباحثين وموقع الدراسة وفترة تنفيذها، وأسماء المستحضرات وأرقام تشغيلاتها وتواريخ انتهائها وتركيبتها، ويتضمن نتائج الانحلال المختبري وإقراراً موقعاً بأن المستحضر المختبر مطابق للمستحضر المقدم للتسجيل؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["identical", "signed statement", "batch number", "expiry"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should complete the study report with the investigators' names and signatures, site and period, product names, batch numbers, expiry dates and test product composition, the dissolution results, and a signed statement that the test product is identical to the product submitted for registration.", ar: "يجب على مقدم الطلب استكمال تقرير الدراسة بأسماء الباحثين وتوقيعاتهم وموقع الدراسة وفترتها وأسماء المستحضرات وأرقام التشغيلات وتواريخ الانتهاء وتركيبة المستحضر المختبر ونتائج الانحلال، وإقرار موقع بأن المستحضر المختبر مطابق للمستحضر المقدم للتسجيل."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.24 Reporting of results", quote: "the applicant should submit a signed statement confirming that the test product is identical to the pharmaceutical product which is submitted for registration"}
+- id: BE-32
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Individual data, plots and listings", ar: "البيانات الفردية والرسوم والقوائم"}
+  question: {en: "Are all individual concentrations with sampling times tabulated per formulation and per analytical run (including excluded runs with their standards and QCs), individual concentration-time curves plotted on linear and log-linear scales, PK parameters tabulated per subject with descriptive statistics, and drop-outs accounted for?", ar: "هل جُدولت جميع التركيزات الفردية مع أوقات السحب لكل مستحضر ولكل تشغيلة تحليلية (بما فيها التشغيلات المستبعدة مع معاييرها وعينات مراقبة جودتها)، ورُسمت منحنيات التركيز-الزمن الفردية على مقياسين خطي ولوغاريتمي-خطي، وجُدولت معاملات الحركية الدوائية لكل متطوع مع الإحصاءات الوصفية، وأُخذ المنسحبون في الحسبان؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04, M5-10]
+    keywords: ["individual", "linear", "log", "concentration-time"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide tabulated individual concentrations and sampling times for each formulation and analytical run, individual concentration-time plots on linear and log-linear scales, individual and descriptive PK parameters, and the accounting of drop-outs and withdrawn subjects.", ar: "يجب على مقدم الطلب تقديم جداول التركيزات الفردية وأوقات السحب لكل مستحضر وتشغيلة تحليلية، ورسوم التركيز-الزمن الفردية على مقياسين خطي ولوغاريتمي-خطي، ومعاملات الحركية الدوائية الفردية والوصفية، وبيان المنسحبين والمستبعدين."}
+  action: {type: upload, target: "M5-10"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.24 Reporting of results", quote: "Individual blood concentration / time curves should be plotted on a linear / linear and log / linear scale."}
+- id: BE-33
+  dept: be
+  layer: eda
+  ctd: "5.3.1.4"
+  title: {en: "Validation and analytical report contents", ar: "محتوى تقريري التحقق والتحليل"}
+  question: {en: "Does the validation report include the summary, method and assay details, reference standards, calibration/QC preparation, run acceptance criteria, deviations, tables of all runs (passed/failed with reasons), calibration and QC results and stability data, and does the analytical report include sample tracking, all runs with results, failed runs, reassays and all chromatograms of the runs covering 20% of subjects?", ar: "هل يتضمن تقرير التحقق الملخص وتفاصيل الطريقة والتحليل والمواد المرجعية وتحضير عينات المعايرة ومراقبة الجودة ومعايير قبول التشغيلة والانحرافات وجداول جميع التشغيلات (الناجحة/الفاشلة مع الأسباب) ونتائج المعايرة ومراقبة الجودة وبيانات الثبات، وهل يتضمن التقرير التحليلي تتبع العينات وجميع التشغيلات بنتائجها والتشغيلات الفاشلة وإعادة التحاليل وجميع كروماتوجرامات التشغيلات التي تغطي 20% من المتطوعين؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-06]
+    keywords: ["validation report", "analytical report", "chromatogram", "20%"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should submit a complete bioanalytical validation report and analytical report as listed in sections 2.24.1 and 2.24.2, appending all chromatograms from the runs that include 20% of the subjects with their QC samples and calibration standards.", ar: "يجب على مقدم الطلب تقديم تقرير تحقق حيوي وتقرير تحليلي كاملين وفق القسمين 2.24.1 و2.24.2، مع إرفاق جميع كروماتوجرامات التشغيلات التي تشمل 20% من المتطوعين مع عينات مراقبة الجودة ومعايير المعايرة الخاصة بها."}
+  action: {type: upload, target: "M5-06"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.24.1 Validation report; 2.24.2 Analytical report", quote: "all chromatograms from the runs which include 20% of the subjects, including the corresponding QC samples and calibration standards should be appended"}
+  anchor: {code: "ICH M10", section: ""}
+- id: BE-34
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Fixed-dose combination: all actives", ar: "التوليفة ثابتة الجرعة: جميع المواد الفعالة"}
+  question: {en: "For a fixed-dose combination, was the generic compared with the pharmaceutically equivalent reference FDC (or justified free combination), the bioanalytical method validated for all compounds, sampling adequate for all APIs, and the 90% confidence intervals of all active ingredients within the acceptance limits?", ar: "بالنسبة للتوليفة ثابتة الجرعة، هل قورن المستحضر الجنيس بالتوليفة المرجعية المكافئة صيدلانياً (أو بتوليفة حرة مبررة)، وتم التحقق من الطريقة التحليلية الحيوية لجميع المركبات، وكان السحب كافياً لجميع المواد الفعالة، ووقعت فترات الثقة 90% لجميع المواد الفعالة ضمن حدود القبول؟"}
+  applies: "true"
+  severity: critical
+  evidence:
+    slots: [M5-04]
+    keywords: ["fixed-dose", "fixed dose", "combination", "all active"]
+    data: [be]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should present the statistical analysis for every active ingredient of the fixed-dose combination with the 90% confidence intervals within the acceptance limits, and validation of the bioanalytical method for all measured compounds.", ar: "يجب على مقدم الطلب عرض التحليل الإحصائي لكل مادة فعالة في التوليفة ثابتة الجرعة مع فترات ثقة 90% ضمن حدود القبول، والتحقق من الطريقة التحليلية الحيوية لجميع المركبات المقاسة."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "3.1 Fixed-dose combination products", quote: "the 90% confidence intervals of test / reference ratio of all active ingredients should be within acceptance limits"}
+- id: BE-35
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Highly variable drug: reference scaling", ar: "الدواء عالي التباين: التوسيع المرجعي"}
+  question: {en: "Where widened Cmax limits are claimed for a highly variable drug, was a three-way partial or four-way full replicate design used with the approach pre-defined in the protocol, the reference intra-subject CV for Cmax shown to exceed 30% (sWR at or above 0.294) and not due to outliers, the limits widened at most to 69.84-143.19%, the Cmax GMR within 80.00-125.00%, and AUC assessed unscaled?", ar: "عند طلب توسيع حدود Cmax لدواء عالي التباين، هل استُخدم تصميم مكرر جزئي ثلاثي الاتجاه أو كامل رباعي الاتجاه مع تحديد النهج مسبقاً في البروتوكول، وأُثبت أن معامل التباين داخل الفرد للمرجع لـ Cmax يتجاوز 30% (sWR عند 0.294 أو أعلى) وليس ناتجاً عن قيم شاذة، ووُسعت الحدود بحد أقصى 69.84-143.19%، ووقعت نسبة المتوسط الهندسي لـ Cmax ضمن 80.00-125.00%، وقُيمت AUC دون توسيع؟"}
+  applies: "true"
+  severity: critical
+  evidence:
+    slots: [M5-04]
+    keywords: ["highly variable", "reference-scaled", "reference scaled", "sWR", "replicate"]
+    data: [be]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should demonstrate from a replicate design that the reference intra-subject variability for Cmax exceeds 30%, apply the pre-specified scaled limits not wider than 69.84-143.19% with the Cmax GMR within 80.00-125.00%, and keep the standard 80-125% criterion for AUC.", ar: "يجب على مقدم الطلب الإثبات من تصميم مكرر أن التباين داخل الفرد للمرجع لـ Cmax يتجاوز 30%، وتطبيق الحدود الموسعة المحددة مسبقاً بما لا يتجاوز 69.84-143.19% مع نسبة متوسط هندسي لـ Cmax ضمن 80.00-125.00%، والإبقاء على المعيار القياسي 80-125% لـ AUC."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "3.2 Highly variable drugs", quote: "the acceptance criteria for C max can be widened to a maximum of 69.84 –143.19%"}
+- id: BE-36
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Narrow therapeutic index limits", ar: "حدود الأدوية ذات المؤشر العلاجي الضيق"}
+  question: {en: "For a narrow therapeutic index drug, was the AUC acceptance interval tightened to 90.00-111.11% (also for Cmax where it matters for safety, efficacy or drug monitoring), or a four-way fully replicated design used with reference-scaled limits capped at 80-125%, the unscaled 80-125% also passed and the test/reference within-subject SD ratio upper 90% CI at or below 2.5, with potency specifications of 95.0-105.0%?", ar: "بالنسبة لدواء ذي مؤشر علاجي ضيق، هل ضُيقت فترة القبول لـ AUC إلى 90.00-111.11% (ولـ Cmax أيضاً عند أهميتها للسلامة أو الفعالية أو مراقبة مستوى الدواء)، أو استُخدم تصميم مكرر كامل رباعي الاتجاه بحدود موسعة مرجعياً لا تتجاوز 80-125% مع اجتياز حدود 80-125% غير الموسعة وكون الحد الأعلى لفترة الثقة 90% لنسبة الانحراف المعياري داخل الفرد بين المختبر والمرجع 2.5 أو أقل، مع مواصفات فاعلية 95.0-105.0%؟"}
+  applies: "true"
+  severity: critical
+  evidence:
+    slots: [M5-04, P-09]
+    keywords: ["narrow therapeutic", "NTI", "90.00", "111.11", "95.0"]
+    data: [be, specs.product]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should apply the NTI acceptance interval of 90.00-111.11% for AUC (and Cmax where relevant) or the four-way replicate reference-scaled approach with the variability comparison (upper 90% CI of the SD ratio at or below 2.5), and set assayed potency specifications of 95.0-105.0%.", ar: "يجب على مقدم الطلب تطبيق فترة القبول للأدوية ذات المؤشر العلاجي الضيق 90.00-111.11% لـ AUC (ولـ Cmax عند الاقتضاء) أو نهج التصميم المكرر رباعي الاتجاه الموسع مرجعياً مع مقارنة التباين (الحد الأعلى لفترة الثقة 90% لنسبة الانحراف المعياري 2.5 أو أقل)، ووضع مواصفات فاعلية معايرة 95.0-105.0%."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "3.3 Narrow therapeutic index drugs", quote: "The acceptance interval for AUC of NTI drugs should be tightened to 90.00 –111.11 %."}
+- id: BE-37
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "Locally acting products: systemic exposure", ar: "المستحضرات موضعية التأثير: التعرض الجهازي"}
+  question: {en: "For a locally applied, locally acting product, is equivalence addressed per the applicable guidance (solution waiver only with the same type of solution and concentration and justified excipients), and where systemic exposure carries a risk of systemic adverse reactions, is it measured and shown not higher than the reference (upper 90% CI not exceeding 125.00)?", ar: "بالنسبة لمستحضر موضعي التطبيق والتأثير، هل عولج التكافؤ وفق الإرشادات المنطبقة (الإعفاء للمحاليل فقط بنفس نوع المحلول والتركيز مع تبرير السواغات)، وعندما يحمل التعرض الجهازي خطر تفاعلات ضارة جهازية، هل قيس وأُثبت أنه ليس أعلى من المرجع (الحد الأعلى لفترة الثقة 90% لا يتجاوز 125.00)؟"}
+  applies: "local_action"
+  severity: major
+  evidence:
+    slots: [M5-04]
+    keywords: ["systemic exposure", "locally acting", "local action", "125.00"]
+    data: [be]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should justify the equivalence approach for the locally acting product and, where systemic exposure entails a risk of systemic adverse reactions, measure it and show that the upper limit of the 90% confidence interval does not exceed 125.00.", ar: "يجب على مقدم الطلب تبرير نهج التكافؤ للمستحضر موضعي التأثير، وعندما ينطوي التعرض الجهازي على خطر تفاعلات ضارة جهازية، قياسه وإثبات أن الحد الأعلى لفترة الثقة 90% لا يتجاوز 125.00."}
+  action: {type: upload, target: "M5-04"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "3.13 Locally acting locally applied products", quote: "the upper limit of the 90% confidence interval should not exceed the upper bioequivalence acceptance limit 125.00"}
+- id: BE-38
+  dept: be
+  layer: eda
+  ctd: "5.3.1.3"
+  title: {en: "Comparative dissolution test conditions", ar: "ظروف اختبار الانحلال المقارن"}
+  question: {en: "Were comparative dissolution profiles generated with USP apparatus I or II (basket usually 100 rpm, paddle 50-75 rpm), 900 ml or less at 37 plus or minus 1 degrees C, in pH 1.2, 4.5 and 6.8 plus the most suitable FDA/pharmacopoeial medium (two stages only for delayed-release), no surfactant, 12 units of each product, sampling at least every 15 minutes including 15 minutes, and a validated method?", ar: "هل أُنشئت منحنيات الانحلال المقارن بجهاز USP الأول أو الثاني (السلة عادة 100 دورة/دقيقة والمجداف 50-75 دورة/دقيقة)، في 900 مل أو أقل عند 37 ± 1 درجة مئوية، في أوساط pH 1.2 و4.5 و6.8 إضافة إلى الوسط الأنسب وفق FDA أو دساتير الأدوية (مرحلتان فقط للإطلاق المتأخر)، دون مادة خافضة للتوتر السطحي، على 12 وحدة من كل مستحضر، بسحب كل 15 دقيقة على الأقل بما فيها نقطة 15 دقيقة، وبطريقة تحليل متحقق من صلاحيتها؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-05]
+    keywords: ["pH 1.2", "pH 4.5", "pH 6.8", "paddle", "basket"]
+    data: [results]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide comparative dissolution profiles under the usual conditions (apparatus I or II, 900 ml or less, 37 plus or minus 1 degrees C, pH 1.2, 4.5 and 6.8 plus the most suitable medium, no surfactant, 12 units of each product, sampling at least every 15 minutes) with a validated analytical method (Table 6).", ar: "يجب على مقدم الطلب تقديم منحنيات انحلال مقارن بالظروف المعتادة (الجهاز الأول أو الثاني، 900 مل أو أقل، 37 ± 1 درجة مئوية، أوساط pH 1.2 و4.5 و6.8 إضافة إلى الوسط الأنسب، دون مادة خافضة للتوتر السطحي، 12 وحدة من كل مستحضر، وسحب كل 15 دقيقة على الأقل) بطريقة تحليل متحقق من صلاحيتها (الجدول 6)."}
+  action: {type: upload, target: "M5-05"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "4.2 The usual experimental conditions for in vitro dissolution testing; Section 6 First, rule 4", quote: "Number of dosage units: A minimum of 12 dosage units of each product should be evaluated."}
+- id: BE-39
+  dept: be
+  layer: eda
+  ctd: "5.3.1.3"
+  title: {en: "Dissolution similarity f2 and f1", ar: "تشابه الانحلال f2 وf1"}
+  question: {en: "Is similarity shown with f2 of 50 or more (and f1 reported) using at least three identical time points, 12 individual values per point, not more than one mean above 85%, CV below 20% at the first point and below 10% thereafter, without omitting early points, or justified as very rapidly dissolving (more than 85% in 15 minutes in all media for both products)?", ar: "هل أُثبت التشابه بقيمة f2 تساوي 50 أو أكثر (مع بيان f1) باستخدام ثلاث نقاط زمنية متطابقة على الأقل، و12 قيمة فردية لكل نقطة، وبما لا يزيد عن متوسط واحد أعلى من 85%، ومعامل تباين أقل من 20% عند النقطة الأولى وأقل من 10% بعدها، دون إغفال النقاط المبكرة، أو بُرر كمنتج سريع الانحلال جداً (أكثر من 85% خلال 15 دقيقة في جميع الأوساط لكلا المستحضرين)؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-05]
+    keywords: ["f2", "similarity factor", "f1", "difference factor"]
+    data: [results]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should report f2 (and f1) for each medium meeting the conditions of section 4.4 (at least three identical time points, 12 units, not more than one mean above 85%, CV limits of 20% and 10%), with f2 of 50 or more, or demonstrate that more than 85% dissolves within 15 minutes for both products in all media.", ar: "يجب على مقدم الطلب الإبلاغ عن f2 (وf1) لكل وسط مع استيفاء شروط القسم 4.4 (ثلاث نقاط زمنية متطابقة على الأقل، و12 وحدة، وبما لا يزيد عن متوسط واحد أعلى من 85%، وحدود معامل التباين 20% و10%)، بقيمة f2 تساوي 50 أو أكثر، أو إثبات انحلال أكثر من 85% خلال 15 دقيقة لكلا المستحضرين في جميع الأوساط."}
+  action: {type: edit_data, target: "results"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "4.4 Similarity of dissolution profiles", quote: "An f2 value of 50 or greater (50 –100) reflects sameness or equivalence of the two curves (less than 10% difference)"}
+- id: BE-40
+  dept: be
+  layer: eda
+  ctd: "5.3.1.3"
+  title: {en: "BCS class I/III biowaiver criteria", ar: "معايير الإعفاء الحيوي لفئتي BCS الأولى والثالثة"}
+  question: {en: "For a BCS-based biowaiver, is high solubility shown (highest single dose dissolved in 250 ml at pH 1-6.8 and 37 plus or minus 1 degrees C in at least three buffers and at the pKa), absorption documented (85% or more for class I, below 85% for class III), dissolution very rapid (more than 85% in 15 minutes) or similarly rapid (85% in 30 minutes, class I only), excipients not affecting bioavailability (qualitatively the same and quantitatively very similar for class III), and the drug not NTI, not non-linear, not modified release and not absorbed in the oral cavity?", ar: "بالنسبة للإعفاء الحيوي القائم على BCS، هل أُثبتت الذوبانية العالية (أعلى جرعة وحيدة تذوب في 250 مل عند pH 1-6.8 و37 ± 1 درجة مئوية في ثلاثة محاليل منظمة على الأقل وعند pKa)، ووُثق الامتصاص (85% أو أكثر للفئة الأولى، وأقل من 85% للفئة الثالثة)، وكان الانحلال سريعاً جداً (أكثر من 85% خلال 15 دقيقة) أو سريعاً بالمثل (85% خلال 30 دقيقة للفئة الأولى فقط)، ولم تؤثر السواغات على التوافر الحيوي (متطابقة نوعياً ومتشابهة جداً كمياً للفئة الثالثة)، والدواء ليس ذا مؤشر علاجي ضيق ولا حركية لا خطية ولا إطلاق معدل ولا يُمتص في تجويف الفم؟"}
+  applies: "bcs_waiver"
+  severity: critical
+  evidence:
+    slots: [M5-05]
+    keywords: ["BCS", "solubility", "permeability", "85%", "15 minutes"]
+    data: [results, composition]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should document the BCS biowaiver conditions: pH-solubility profile in at least three buffers (pH 1.2, 4.5, 6.8 and the pKa) at 37 plus or minus 1 degrees C for the highest single dose in 250 ml, human absorption data, very rapid or similarly rapid comparative dissolution, and an excipient comparison, and confirm that none of the exclusions (NTI, non-linear PK, modified release, oral-cavity absorption, different ester/ether/isomer) applies.", ar: "يجب على مقدم الطلب توثيق شروط الإعفاء الحيوي القائم على BCS: منحنى الذوبانية مع pH في ثلاثة محاليل منظمة على الأقل (pH 1.2 و4.5 و6.8 وعند pKa) عند 37 ± 1 درجة مئوية لأعلى جرعة وحيدة في 250 مل، وبيانات الامتصاص في الإنسان، وانحلالاً مقارناً سريعاً جداً أو سريعاً بالمثل، ومقارنة السواغات، وتأكيد عدم انطباق أي من الاستثناءات (المؤشر العلاجي الضيق، الحركية اللاخطية، الإطلاق المعدل، الامتصاص في تجويف الفم، اختلاف الإستر أو الإيثر أو الأيزومر)."}
+  action: {type: upload, target: "M5-05"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "4.5.1 Biowaivers based on the BCS (4.5.1.1-4.5.1.3 and exclusions)", quote: "Either very rapid (> 85 % within 15 minutes) or similarly rapid (85 % within 30 minutes) in vitro dissolution characteristics"}
+  anchor: {code: "ICH M9", section: ""}
+- id: BE-41
+  dept: be
+  layer: eda
+  ctd: "5.3.1.3"
+  title: {en: "BCS class II weak acid biowaiver", ar: "الإعفاء الحيوي للأحماض الضعيفة من فئة BCS الثانية"}
+  question: {en: "For a BCS class II weak acid biowaiver, does the API have a dose:solubility ratio of 250 ml or less at pH 6.8, is the generic rapidly dissolving (not less than 85% at pH 6.8 in 30 minutes) with profiles similar to the reference at pH 1.2, 4.5 and 6.8, are the excipients (e.g. surfactants) critically evaluated, and is Cmax not critical to the therapeutic effect?", ar: "بالنسبة للإعفاء الحيوي لحمض ضعيف من فئة BCS الثانية، هل نسبة الجرعة إلى الذوبانية للمادة الفعالة 250 مل أو أقل عند pH 6.8، وهل المستحضر الجنيس سريع الانحلال (لا يقل عن 85% عند pH 6.8 خلال 30 دقيقة) بمنحنيات مشابهة للمرجع عند pH 1.2 و4.5 و6.8، وهل قُيمت السواغات (مثل خافضات التوتر السطحي) تقييماً نقدياً، وهل Cmax غير حرجة للتأثير العلاجي؟"}
+  applies: "bcs_waiver"
+  severity: critical
+  evidence:
+    slots: [M5-05]
+    keywords: ["weak acid", "pH 6.8", "dose", "solubility", "surfactant"]
+    data: [results, composition]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should demonstrate for the weak acid API a dose:solubility ratio of 250 ml or less at pH 6.8, rapid dissolution of not less than 85% at pH 6.8 in 30 minutes, similar profiles to the reference at pH 1.2, 4.5 and 6.8, and a critical evaluation of the type and amount of excipients such as surfactants.", ar: "يجب على مقدم الطلب إثبات أن نسبة الجرعة إلى الذوبانية للمادة الفعالة الحمضية الضعيفة 250 مل أو أقل عند pH 6.8، وانحلالاً سريعاً لا يقل عن 85% عند pH 6.8 خلال 30 دقيقة، ومنحنيات مشابهة للمرجع عند pH 1.2 و4.5 و6.8، وتقييماً نقدياً لنوع وكميات السواغات مثل خافضات التوتر السطحي."}
+  action: {type: upload, target: "M5-05"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "4.5.1.4 BCS-Class II Weak Acids biowaivers", quote: "The generic product is rapidly dissolving (no less than 85% in pH 6.8 in 30minutes)"}
+- id: BE-42
+  dept: be
+  layer: eda
+  ctd: "5.3.1.3"
+  title: {en: "Additional strengths: dose-proportionality waiver", ar: "التركيزات الإضافية: إعفاء التناسب في الجرعة"}
+  question: {en: "Where additional strengths are waived, has one strength been shown bioequivalent in vivo, are all strengths made by the same process with the same qualitative and quantitatively proportional composition (or the permitted deviations: API below 5% of core weight with filler-only change, or high-potency API up to 10 mg with total weight within 10%), and is comparative dissolution on 12 units of every test strength versus the respective reference strength submitted?", ar: "عند طلب إعفاء التركيزات الإضافية، هل أُثبت التكافؤ الحيوي في الجسم الحي لتركيز واحد، وهل جميع التركيزات مصنعة بنفس العملية وبنفس التركيبة النوعية والمتناسبة كمياً (أو ضمن الانحرافات المسموح بها: مادة فعالة أقل من 5% من وزن القلب مع تغيير المادة المالئة فقط، أو مادة فعالة عالية الفاعلية حتى 10 مجم مع وزن كلي ضمن 10%)، وهل قُدم انحلال مقارن على 12 وحدة لكل تركيز مختبر مقابل التركيز المرجعي المقابل؟"}
+  applies: "dossier_kind == 'generic'"
+  severity: major
+  evidence:
+    slots: [M5-05, P-01]
+    keywords: ["proportional", "additional strength", "waiver", "12 dosage units"]
+    data: [composition, results]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should justify the waiver for the additional strength(s) by showing the same manufacturing process, qualitatively identical and quantitatively proportional composition (or a permitted deviation per section 4.5.2), and comparative dissolution on 12 dosage units of each test strength against the respective reference strength.", ar: "يجب على مقدم الطلب تبرير إعفاء التركيز/التركيزات الإضافية بإثبات نفس عملية التصنيع وتركيبة متطابقة نوعياً ومتناسبة كمياً (أو انحراف مسموح به وفق القسم 4.5.2)، وانحلال مقارن على 12 وحدة جرعية لكل تركيز مختبر مقابل التركيز المرجعي المقابل."}
+  action: {type: upload, target: "M5-05"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "4.5.2 Biowaivers based on dose-proportionality of formulations", quote: "Comparative dissolution testing should be conducted on 12 dosage units each of all strengths of the test"}
+- id: BE-43
+  dept: be
+  layer: eda
+  ctd: "BE-BTIF"
+  title: {en: "Bioequivalence summary tables completed", ar: "استيفاء جداول ملخص التكافؤ الحيوي"}
+  question: {en: "Are the bioequivalence summary tables (Tables 1-17: submission summary, study summaries, statistical summary, method validation per analyte, dissolution for all strengths, formulation of all strengths, demographics, adverse events, reanalysis, study and product information, drop-outs, standard curve/QC, reanalysis SOPs, fed meal composition) completed, one per study where required?", ar: "هل استُوفيت جداول ملخص التكافؤ الحيوي (الجداول 1-17: ملخص التقديم، وملخصات الدراسات، والملخص الإحصائي، والتحقق من الطريقة لكل مادة محللة، والانحلال لجميع التركيزات، وتركيبة جميع التركيزات، والبيانات الديموغرافية، والأحداث الضارة، وإعادة التحليل، ومعلومات الدراسة والمنتج، والمنسحبون، ومنحنى المعايرة/مراقبة الجودة، وإجراءات إعادة التحليل، وتركيب وجبة دراسة التغذية)، بجدول لكل دراسة عند الاقتضاء؟"}
+  applies: "true"
+  severity: minor
+  evidence:
+    slots: [M5-02, M5-04]
+    keywords: ["Submission Summary", "Statistical Summary", "Formulation Data", "Demographic", "Reanalysis of Study Samples"]
+    data: [be]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should complete the bioequivalence summary tables of Section 7 (Tables 1-17), providing a separate table for each bioequivalence study and each analyte where required, and submit all method validation SOPs.", ar: "يجب على مقدم الطلب استيفاء جداول ملخص التكافؤ الحيوي في القسم 7 (الجداول 1-17)، مع جدول منفصل لكل دراسة تكافؤ حيوي ولكل مادة محللة عند الاقتضاء، وتقديم جميع إجراءات العمل القياسية للتحقق من الطريقة."}
+  action: {type: generate, target: "M5-02"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "Section 7 Bioequivalence Summary Tables (Tables 1-17)", quote: "Please provide a separate table for each Bioequivalence Study."}
+- id: BE-44
+  dept: be
+  layer: eda
+  ctd: "5.3.1.2"
+  title: {en: "EDA sample withdrawal report and center rules", ar: "تقرير سحب العينات وقواعد مراكز الهيئة"}
+  question: {en: "For a study conducted in an Egyptian BE center, is the sample withdrawal report issued by the EDA inspector included (trade name, strength, dosage form, manufacturer, batch type and number, dates, study type and center), and does the file show compliance with the center rules (approved volunteer list, ethics approval naming the product, complementary in vitro study before dosing, samples kept at -80 C, analysis within the center)?", ar: "بالنسبة لدراسة أُجريت في مركز تكافؤ حيوي مصري، هل أُدرج تقرير سحب العينات الصادر عن مفتش هيئة الدواء (الاسم التجاري والتركيز والشكل الصيدلي والمصنع ونوع التشغيلة ورقمها والتواريخ ونوع الدراسة والمركز)، وهل يبين الملف الالتزام بقواعد المراكز (قائمة المتطوعين المعتمدة، وموافقة لجنة الأخلاقيات باسم المنتج، والدراسة المختبرية التكميلية قبل الجرعات، وحفظ العينات عند -80 درجة مئوية، والتحليل داخل المركز)؟"}
+  applies: "true"
+  severity: major
+  evidence:
+    slots: [M5-04, M1-34]
+    keywords: ["withdrawal report", "withdraw report", "inspector", "Central Administration"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit the EDA sample withdrawal report for the bioequivalence or comparative in vitro study and evidence of compliance with the Section 6 center rules (approved volunteers, dated ethics approval naming the product, complementary in vitro study completed before sampling).", ar: "يجب على مقدم الطلب تقديم تقرير سحب العينات الصادر عن هيئة الدواء لدراسة التكافؤ الحيوي أو الدراسة المختبرية المقارنة وما يثبت الالتزام بقواعد المراكز في القسم 6 (المتطوعون المعتمدون، وموافقة أخلاقية مؤرخة باسم المنتج، وإتمام الدراسة المختبرية التكميلية قبل سحب العينات)."}
+  action: {type: upload, target: "M1-34"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "Section 6 Regulatory Guidelines for Centers, First: rule 1; Second: rules 5-6; Third: general rules", quote: "The report must indicate the name of the bioavailability and bioequivalence center"}

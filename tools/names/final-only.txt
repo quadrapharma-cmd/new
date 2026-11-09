@@ -1,0 +1,6 @@
+# Arabic letters the name rule allows only as the LAST letter of a word (reason 'final'): joined to the next letter they draw
+# as a dotless letter (beh ٮ, feh ڡ, qaf ٯ) within 0.50 of an Arabic dot — Chromium canvas, the app's font stacks and the system
+# fonts, weights 400-700, 14-16 px, initial and medial forms. Written by tools/names/render_scan.py --part final --write; read by
+# tools/names/name_rule.mjs. Generated, never edited by hand.
+0649 # ى — ARABIC LETTER ALEF MAKSURA: 0 of a dot from ٮ (ARABIC LETTER DOTLESS BEH) init 400 14px Poppins, sans-serif, 120 drawings
+06BA # ں — ARABIC LETTER NOON GHUNNA: 0 of a dot from ٮ (ARABIC LETTER DOTLESS BEH) init 400 14px Poppins, sans-serif, 116 drawings

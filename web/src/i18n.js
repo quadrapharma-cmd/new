@@ -350,17 +350,33 @@
     'Created just now': 'أُنشئت الآن', 'you are the admin': 'أنت المدير',
     /* form checks (sign in, sign up, posts, listings, groups) */
     'Email is required': 'البريد الإلكتروني مطلوب', 'Password is required': 'كلمة المرور مطلوبة', 'Name is required': 'الاسم مطلوب',
+    /* @username (S-03, the owner's decision of 25 Oct: every member has a unique username — 0070_usernames, web/src/username.js) */
+    'Username': 'اسم المستخدم', 'Name or @username': 'الاسم أو ⁦@username⁩', 'Choose a username': 'اختر اسم مستخدم',
+    'A username has at least 5 characters': 'اسم المستخدم 5 أحرف على الأقل', 'A username has at most 30 characters': 'اسم المستخدم 30 حرفًا على الأكثر',
+    'A dot cannot start or end a username or follow another dot': 'النقطة لا تبدأ اسم المستخدم ولا تنهيه ولا تأتي بعد نقطة أخرى',
+    'A username needs at least one letter': 'اسم المستخدم يحتاج حرفًا واحدًا على الأقل',
+    'You changed your username too often today — try again tomorrow': 'غيّرت اسم المستخدم مرات كثيرة اليوم — حاول غدًا',
+    'Too many tries — wait a minute and try again': 'محاولات كثيرة — انتظر دقيقة ثم حاول مرة أخرى', 'Sign in to choose a username': 'سجّل الدخول لتختار اسم مستخدم',
+    'Change your username in Edit Profile': 'غيّر اسم المستخدم من تعديل الملف', 'Checking…': 'جارٍ التحقق…',
     /* the name rule (live: sign-up, Edit Profile, the database's refusal — 0038) */
     'A name cannot contain numbers': 'لا يمكن أن يحتوي الاسم على أرقام', 'A name can be up to 120 characters': 'الاسم 120 حرفًا على الأكثر',
     'An accent or vowel mark must sit on a letter, once (at most 3 marks on one letter)': 'علامة التشكيل أو النبرة يجب أن تكون على حرف، مرة واحدة (3 علامات على الأكثر للحرف الواحد)',
     "This name cannot be used — a name can only have letters, spaces and . - ' ( ) , / ،": "لا يمكن استخدام هذا الاسم — الاسم يقبل الحروف والمسافات و \u2066. - ' ( ) , /\u2069 ، فقط",
     'Please update your name — it has characters Drugbox no longer allows, so other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه حروف لم يعد Drugbox يسمح بها، لذلك يرى الأعضاء الآخرون تحذيرًا بجانبه.',
+    'Please update your name — move the part in brackets after the name. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — انقل الجزء الذي بين القوسين إلى ما بعد الاسم. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
+    'Please update your name — a hyphen in it has a space next to it. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه شَرطة بجانبها مسافة. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
+    'Please update your name — a mark in it stands alone between spaces. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه علامة وحدها بين مسافتين. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
+    'Please update your name — a name cannot contain numbers. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — الاسم لا يحتوي على أرقام. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
+    'Please update your name — a word in it mixes alphabets. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه كلمة تخلط بين أبجديات. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
+    'Please update your name — an accent or vowel mark in it does not sit on a letter. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — فيه علامة لا تقع على حرف. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
+    'Please update your name — it is longer than Drugbox allows. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — هو أطول مما يسمح به Drugbox. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
+    'Please update your name — it no longer follows Drugbox’s name rule. Until then other members see a warning next to it.': 'من فضلك عدّل اسمك — لم يعد يتبع قاعدة الأسماء في Drugbox. وإلى أن تفعل يرى الأعضاء الآخرون تحذيرًا بجانبه.',
     'Update my name': 'عدّل اسمي',
     'Password must be at least 8 characters': 'كلمة المرور يجب ألا تقل عن 8 أحرف', 'Title is required': 'العنوان مطلوب', 'Title required': 'العنوان مطلوب',
     'Details are required': 'التفاصيل مطلوبة', 'Product name required': 'اسم المنتج مطلوب', 'Product name is required': 'اسم المنتج مطلوب',
     'Group name required': 'اسم المجموعة مطلوب', 'Group name is required': 'اسم المجموعة مطلوب',
     'Please write at least 20 characters': 'اكتب 20 حرفًا على الأقل', 'Please write at least 40 characters of facts': 'اكتب 40 حرفًا على الأقل من الوقائع',
-    'Welcome back, Haytham!': 'أهلًا بعودتك يا هيثم!', 'Post shared': 'تم نشر المنشور', 'Copied': 'تم النسخ', 'Deleted': 'تم الحذف', 'Undo': 'تراجع',
+    'Post shared': 'تم نشر المنشور', 'Copied': 'تم النسخ', 'Deleted': 'تم الحذف', 'Undo': 'تراجع',
     'Discard your changes?': 'تجاهل تعديلاتك؟', 'Your edits to this page are not saved yet.': 'تعديلاتك على هذه الصفحة لم تُحفظ بعد.', 'Keep editing': 'متابعة التعديل', 'Discard changes': 'تجاهل التعديلات', 'Main navigation': 'التنقل الرئيسي',
     /* groups — the inside of a group (groups.js): tabs, members, about, listings, dialogs and notices */
     'Members': 'الأعضاء', 'Member': 'عضو', 'Sub-Admin': 'مشرف', 'You': 'أنت', 'Connected': 'متصل', 'Search members': 'ابحث في الأعضاء', 'Group sections': 'أقسام المجموعة', 'Member options': 'خيارات العضو',
@@ -527,14 +543,27 @@
     [/^Unread \((\d+)\)$/, function (m) { return 'غير مقروء (' + m[1] + ')'; }],   /* the Messages filter, recounted (J-SOCIAL-38) */
     [/^No member called (.+) — choose someone from the list$/, function (m) { return 'لا يوجد عضو باسم ' + m[1] + ' — اختر شخصًا من القائمة'; }],   /* ✎ New message (S-03) */
     [/^Several members are called (.+) — choose one from the list$/, function (m) { return 'أكثر من عضو باسم ' + m[1] + ' — اختر واحدًا من القائمة'; }],
+    [/^(.+) fits more than one member \(a username and a name\) — choose one from the list, or type @([a-z0-9.]+)$/, function (m) { return '«' + m[1] + '» يطابق أكثر من عضو (اسم مستخدم واسم) — اختر واحدًا من القائمة أو اكتب ⁦@' + m[2] + '⁩'; }],
     [/^Choose (.+) from the list to be sure who receives it$/, function (m) { return 'اختر ' + m[1] + ' من القائمة لتتأكد من المستلم'; }],
-    /* the name rule's refusals (live: sign-up, Edit Profile, the database — 0039_names_rule_4): what they quote is isolated (U+2068 …
+    /* the name rule's refusals (live: sign-up, Edit Profile, the database — 0039_names_rule_4 and _5): what they quote is isolated (U+2068 …
        U+2069), kept in the Arabic sentence so a Latin, Greek or Cyrillic character or name keeps its place */
     [/^A name can only have letters, spaces and \. - ' \( \) , \/ ، — remove “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\)$/, function (m) { return "الاسم يقبل الحروف والمسافات و \u2066. - ' ( ) , /\u2069 ، فقط — احذف «\u2068" + m[1] + '\u2069» (\u2068' + m[2] + '\u2069)'; }],
     [/^Write a name in Latin, Arabic, Greek or Cyrillic letters — “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) is not one of them$/, function (m) { return 'اكتب الاسم بحروف عربية أو لاتينية أو يونانية أو سيريلية — «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) ليس منها'; }],
     [/^The letter “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) is not supported in names yet$/, function (m) { return 'الحرف «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) غير مدعوم في الأسماء بعد'; }],
     [/^“\u2068([^]*)\u2069” is not a word — join it to the word next to it \(remove the space\)$/, function (m) { return '«\u2068' + m[1] + '\u2069» ليست كلمة — ألصقها بالكلمة المجاورة (احذف المسافة)'; }],
     [/^Put what follows the name in parentheses — write “\u2068([^]*)\u2069”$/, function (m) { return 'ضع ما يلي الاسم بين قوسين — اكتب «\u2068' + m[1] + '\u2069»'; }],
+    [/^A hyphen joins two words without a space — write “\u2068([^]*)\u2069”$/, function (m) { return 'الشَرطة تصل كلمتين بلا مسافة — اكتب «\u2068' + m[1] + '\u2069»'; }],   /* ninth version: a space on one side of a hyphen */
+    [/^Put the part in brackets after the name — write “\u2068([^]*)\u2069”$/, function (m) { return 'ضع الجزء الذي بين القوسين بعد الاسم — اكتب «\u2068' + m[1] + '\u2069»'; }],   /* fifth version (0039_names_rule_5) */
+    [/^What is in brackets is written in one direction — Arabic letters, or Latin, Greek and Cyrillic ones — “\u2068([^]*)\u2069” mixes them$/, function (m) { return 'ما بين القوسين يُكتب باتجاه واحد — حروف عربية، أو حروف لاتينية ويونانية وسيريلية — «\u2068' + m[1] + '\u2069» يخلط بينها'; }],
+    /* @username refusals (0070_usernames / web/src/username.js): the username quoted is isolated left to right (U+2066 … U+2069) */
+    [/^A username can only have small letters a-z, numbers 0-9 and dots — remove “⁦([^]*)⁩”$/, function (m) { return 'اسم المستخدم يقبل الحروف الصغيرة ⁦a-z⁩ والأرقام ⁦0-9⁩ والنقطة فقط — احذف «⁦' + m[1] + '⁩»'; }],
+    [/^“⁦([^]*)⁩” is kept for Drugbox — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» محجوز لـ Drugbox — اختر اسم مستخدم آخر'; }],
+    [/^“⁦([^]*)⁩” is taken — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» مستخدم بالفعل — اختر اسم مستخدم آخر'; }],
+    [/^“⁦([^]*)⁩” reads like a username a member has \(capitals, dots and look-alikes such as 0 \/ o and 1 \/ l do not count\) — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» يُقرأ مثل اسم مستخدم لعضو آخر (لا تُحسب الحروف الكبيرة والنقاط والمتشابهات مثل ⁦0 / o⁩ و⁦1 / l⁩) — اختر اسم مستخدم آخر'; }],
+    [/^“⁦([^]*)⁩” was just given up by a member and is kept for them for 30 days — choose another username$/, function (m) { return '«⁦' + m[1] + '⁩» تخلّى عنه عضو منذ قليل وهو محفوظ له 30 يومًا — اختر اسم مستخدم آخر'; }],
+    [/^✓ @([a-z0-9.]+) is available$/, function (m) { return '✓ ⁦@' + m[1] + '⁩ متاح'; }],
+    [/^Use “\u2068([^]*)\u2069”$/, function (m) { return 'استخدم «\u2068' + m[1] + '\u2069»'; }],   /* the one-click name fix (s03-user2) */
+    [/^No member has the username @(.+)$/, function (m) { return 'لا يوجد عضو باسم المستخدم ⁦@' + m[1] + '⁩'; }],
     [/^Write each word of a name in one alphabet — “\u2068([^]*)\u2069” mixes alphabets$/, function (m) { return 'اكتب كل كلمة من الاسم بأبجدية واحدة — «\u2068' + m[1] + '\u2069» تخلط بين أبجديات'; }],
     [/^Remove the mark added to “\u2068([^]*)\u2069” \(\u2068(U\+[0-9A-F]+)\u2069\) — Drugbox accepts an accented letter typed as one character, such as é, ü or ñ$/, function (m) { return 'احذف العلامة المضافة إلى «\u2068' + m[1] + '\u2069» (\u2068' + m[2] + '\u2069) — يقبل Drugbox الحرف ذا العلامة مكتوبًا كحرف واحد، مثل \u2066é، ü، ñ\u2069'; }],
     [/^🚫 Block (.+)$/, function (m) { return '🚫 حظر ' + m[1]; }], [/^✅ Unblock (.+)$/, function (m) { return '✅ إلغاء الحظر عن ' + m[1]; }],   /* the conversation menu (J-SOCIAL-40) */

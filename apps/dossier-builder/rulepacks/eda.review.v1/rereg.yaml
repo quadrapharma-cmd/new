@@ -1,0 +1,329 @@
+# Assessor questions extracted from EDA GL.CAPP.039 v1/2025 "Egyptian Guidelines on Quality Module for Human
+# Pharmaceuticals for products submitted for Re-registration" (Technical Affairs for Human Pharmaceuticals).
+- id: RR-01
+  dept: quality
+  layer: eda
+  ctd: "3.2.S"
+  title: {en: "API submission option declared", ar: "بيان خيار تقديم ملف المادة الفعالة"}
+  question: {en: "Does the applicant clearly indicate at the beginning of the API section, for each API manufacturer, which option is used (Option 1 API prequalification confirmation, Option 2 CEP, Option 3 APIMF/DMF, Option 4 full details in the dossier)?", ar: "هل يوضح مقدم الطلب في بداية قسم المادة الفعالة، لكل مصنع للمادة الفعالة، الخيار المستخدم (الخيار 1 تأكيد التأهيل المسبق، الخيار 2 شهادة الملاءمة CEP، الخيار 3 الملف الرئيسي APIMF/DMF، الخيار 4 التفاصيل الكاملة في ملف المنتج)؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [S-08, S-10]
+    keywords: ["Option", "CEP", "APIMF", "DMF", "prequalification"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should state at the beginning of section 3.2.S, for each API manufacturer, the option by which the API information is submitted (prequalification confirmation, CEP, APIMF/DMF or full details).", ar: "يجب على مقدم الطلب أن يبين في بداية القسم 3.2.S، لكل مصنع للمادة الفعالة، الخيار الذي تُقدم به معلومات المادة الفعالة (تأكيد التأهيل المسبق، أو CEP، أو APIMF/DMF، أو التفاصيل الكاملة)."}
+  action: {type: edit_data, target: "composition"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "5.1.2, 3.2 Body of Data, Options for S-part submission", quote: "The applicant should clearly indicate at the beginning of the API section how the information on the API for each API manufacturer is being submitted"}
+- id: RR-02
+  dept: quality
+  layer: eda
+  ctd: "3.2.S"
+  title: {en: "CEP copy, access and commitment", ar: "نسخة CEP وإقرار الإتاحة والتعهد"}
+  question: {en: "For the CEP option, is a complete copy of the CEP with its annexes provided, with the declaration of access from the CEP holder to the applicant/FPP manufacturer and a written commitment to inform EDA of changes or withdrawal of the CEP (acknowledging that withdrawal requires full 3.2.S data)?", ar: "في حالة خيار CEP، هل قُدمت نسخة كاملة من شهادة الملاءمة مع ملاحقها، مع إقرار الإتاحة من حامل الشهادة لمقدم الطلب/مصنع المنتج النهائي، وتعهد كتابي بإبلاغ الهيئة بأي تغييرات أو سحب للشهادة (مع الإقرار بأن سحبها يستلزم بيانات 3.2.S كاملة)؟"}
+  applies: "activity == 're_registration' and 'CEP' in api_options"
+  severity: major
+  evidence:
+    slots: [S-08]
+    keywords: ["CEP", "Certificate of Suitability", "declaration of access", "commitment"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide a complete copy of the CEP including annexes, the duly completed declaration of access, and a written commitment to inform EDA in the event of changes or withdrawal of the CEP.", ar: "يجب على مقدم الطلب تقديم نسخة كاملة من شهادة CEP مع ملاحقها، وإقرار الإتاحة المستوفى، وتعهداً كتابياً بإبلاغ الهيئة في حالة حدوث تغييرات أو سحب الشهادة."}
+  action: {type: upload, target: "S-08"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "In case of Option 2: Certificate of Suitability (CEP)", quote: "a written commitment should be included that the applicant will inform EDA in the event of changes, or if the CEP is withdrawn"}
+- id: RR-03
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.4.1"
+  title: {en: "CEP: additional controls and batches", ar: "CEP: الضوابط الإضافية ودفعات التحليل"}
+  question: {en: "With a CEP, do the FPP manufacturer's API specifications include all CEP/Ph.Eur. tests plus additional tests not controlled by the CEP (e.g. polymorphs, particle size distribution) with their methods and validation, and are batch analysis results from two batches of at least pilot scale provided?", ar: "مع شهادة CEP، هل تتضمن مواصفات المادة الفعالة لدى مصنع المنتج النهائي جميع اختبارات الشهادة ودستور الأدوية الأوروبي إضافة إلى الاختبارات غير المشمولة بالشهادة (مثل الأشكال البلورية وتوزيع حجم الجسيمات) مع طرقها والتحقق منها، وهل قُدمت نتائج تحليل تشغيلتين على الأقل بحجم تجريبي على الأقل؟"}
+  applies: "activity == 're_registration' and 'CEP' in api_options"
+  severity: major
+  evidence:
+    slots: [S-08, S-10]
+    keywords: ["polymorph", "particle size", "batch", "specification"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the FPP manufacturer's API specification including the CEP and Ph.Eur. tests and any additional tests (polymorphs, particle size distribution) with analytical procedures and validation, and batch analyses from two batches of at least pilot scale.", ar: "يجب على مقدم الطلب تقديم مواصفات المادة الفعالة لدى مصنع المنتج النهائي متضمنة اختبارات CEP ودستور الأدوية الأوروبي وأي اختبارات إضافية (الأشكال البلورية وتوزيع حجم الجسيمات) مع الإجراءات التحليلية والتحقق منها، ونتائج تحليل تشغيلتين على الأقل بحجم تجريبي على الأقل."}
+  action: {type: upload, target: "S-08"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "Option 2 CEP: 3.2.S.4.1 Specification; 3.2.S.4.4 Batch analysis", quote: "any additional tests and acceptance criteria that are not controlled in the CEP and Ph.Eur. monograph, such as polymorphs and/or particle size distribution"}
+- id: RR-04
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.2"
+  title: {en: "API manufacture described or justified", ar: "وصف تصنيع المادة الفعالة أو تبريره"}
+  question: {en: "Does 3.2.S.2 give the name, address and responsibility of each API manufacturer and a brief description of the manufacturing process, process controls, materials, critical steps and intermediates, or a justification where such data are not available (e.g. well-established or old molecule)?", ar: "هل يقدم القسم 3.2.S.2 اسم وعنوان ومسؤولية كل مصنع للمادة الفعالة ووصفاً موجزاً لعملية التصنيع وضوابطها والمواد والخطوات الحرجة والمركبات الوسيطة، أو تبريراً عند عدم توفر هذه البيانات (مثل الجزيئات الراسخة أو القديمة)؟"}
+  applies: "activity == 're_registration' and not ('CEP' in api_options)"
+  severity: major
+  evidence:
+    slots: [S-08]
+    keywords: ["manufacturing process", "process controls", "critical steps", "intermediate"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should provide brief information on the API manufacturing process and process controls (3.2.S.2.1 to 3.2.S.2.6) or submit a justification where data are not available for a well-established or old molecule.", ar: "يجب على مقدم الطلب تقديم معلومات موجزة عن عملية تصنيع المادة الفعالة وضوابطها (3.2.S.2.1 إلى 3.2.S.2.6) أو تقديم تبرير عند عدم توفر البيانات لجزيء راسخ أو قديم."}
+  action: {type: upload, target: "S-08"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.S.2 Manufacture (3.2.S.2.2)", quote: "Brief Information should be provided to adequately describe the manufacturing process and process controls of the drug substance."}
+- id: RR-05
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.4.2"
+  title: {en: "API analytical procedures and validation", ar: "الإجراءات التحليلية للمادة الفعالة والتحقق منها"}
+  question: {en: "Are the API analytical procedures and their validation with experimental data provided in 3.2.S.4.2/3.2.S.4.3, or, for a pharmacopoeial API, is reference to the monograph made (acceptable), with the specification justified in 3.2.S.4.5?", ar: "هل قُدمت الإجراءات التحليلية للمادة الفعالة والتحقق منها ببيانات تجريبية في القسمين 3.2.S.4.2 و3.2.S.4.3، أو في حالة المادة الفعالة الدستورية تمت الإحالة إلى الدراسة الدستورية (وهو مقبول)، مع تبرير المواصفات في القسم 3.2.S.4.5؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [S-09]
+    keywords: ["monograph", "validation", "analytical procedure", "specificity"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the API analytical procedures and validation data, or reference the pharmacopoeial monograph where the API is pharmacopoeial, and justify the API specification.", ar: "يجب على مقدم الطلب تقديم الإجراءات التحليلية للمادة الفعالة وبيانات التحقق منها، أو الإحالة إلى الدراسة الدستورية إذا كانت المادة الفعالة دستورية، وتبرير مواصفات المادة الفعالة."}
+  action: {type: upload, target: "S-09"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.S.4.2 Analytical Procedures; 3.2.S.4.3; 3.2.S.4.5", quote: "If API is pharmacopeial, Reference to monograph is acceptable."}
+  anchor: {code: "ICH Q2(R2)", section: ""}
+- id: RR-06
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.4.4"
+  title: {en: "Recent API batch analyses", ar: "تحاليل تشغيلات حديثة للمادة الفعالة"}
+  question: {en: "Does 3.2.S.4.4 describe the API batches (batch number, type, manufacturing date and production site) and give the results of recent batch analyses?", ar: "هل يصف القسم 3.2.S.4.4 تشغيلات المادة الفعالة (رقم التشغيلة ونوعها وتاريخ التصنيع وموقع الإنتاج) ويقدم نتائج تحاليل تشغيلات حديثة؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [S-10]
+    keywords: ["batch", "manufacturing date", "site", "result"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide a description of the API batches (batch number, type, manufacturing date and production site) and the results of recent batch analyses.", ar: "يجب على مقدم الطلب تقديم وصف لتشغيلات المادة الفعالة (رقم التشغيلة ونوعها وتاريخ التصنيع وموقع الإنتاج) ونتائج تحاليل تشغيلات حديثة."}
+  action: {type: upload, target: "S-10"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.S.4.4 Batch Analyses", quote: "Description of batches (batch number, type, manufacturing date & production site) and results of recent batch analyses should be provided."}
+- id: RR-07
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.7"
+  title: {en: "API stability summary, commitment and data", ar: "ملخص ثبات المادة الفعالة والتعهد والبيانات"}
+  question: {en: "Does 3.2.S.7 provide the stability summary and conclusions (studies, protocols, storage conditions and retest date), the post-approval protocol and commitment (or a justification for an old molecule) and recent stability data in tabular, graphical or narrative form, unless the CEP specifies an equal or longer retest period under the same or harsher conditions?", ar: "هل يقدم القسم 3.2.S.7 ملخص الثبات والاستنتاجات (الدراسات والبروتوكولات وظروف التخزين وتاريخ إعادة الاختبار)، وبروتوكول وتعهد الثبات بعد الموافقة (أو تبريراً لجزيء قديم)، وبيانات ثبات حديثة بشكل جدولي أو بياني أو سردي، ما لم تحدد شهادة CEP فترة إعادة اختبار مساوية أو أطول في ظروف مماثلة أو أشد؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [S-14]
+    keywords: ["retest", "re-test", "stability", "storage condition"]
+    data: []
+  auto: {kind: slot}
+  deficiency: {en: "The applicant should provide the API stability summary and conclusions, the post-approval stability protocol and commitment (or justification), and the results of recent stability studies, unless the CEP exception for the retest period and storage conditions applies.", ar: "يجب على مقدم الطلب تقديم ملخص ثبات المادة الفعالة واستنتاجاته، وبروتوكول وتعهد الثبات بعد الموافقة (أو التبرير)، ونتائج دراسات الثبات الحديثة، ما لم ينطبق استثناء شهادة CEP الخاص بفترة إعادة الاختبار وظروف التخزين."}
+  action: {type: upload, target: "S-14"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.S.7 Stability (3.2.S.7.1-3.2.S.7.3); Option 2 CEP exception", quote: "Results of the recent stability studies should be presented in an appropriate format such as tabular, graphical, or narrative."}
+  anchor: {code: "ICH Q1A", section: ""}
+- id: RR-08
+  dept: quality
+  layer: eda
+  ctd: "3.2.S.2.5"
+  title: {en: "Sterile API sterilisation data", ar: "بيانات تعقيم المادة الفعالة المعقمة"}
+  question: {en: "For a sterile API, are data on the sterilization process of the API, including validation data, included in the dossier (also when the API is covered by a CEP)?", ar: "بالنسبة للمادة الفعالة المعقمة، هل أُدرجت في الملف بيانات عملية تعقيم المادة الفعالة بما فيها بيانات التحقق من صلاحيتها (حتى عندما تكون المادة مشمولة بشهادة CEP)؟"}
+  applies: "activity == 're_registration' and 'sterile' in dosage_specifics"
+  severity: major
+  evidence:
+    slots: [S-09, P-07]
+    keywords: ["steriliz", "sterilis", "aseptic", "validation"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should include data on the sterilization process of the sterile API, including validation data, in the dossier.", ar: "يجب على مقدم الطلب تضمين الملف بيانات عملية تعقيم المادة الفعالة المعقمة، بما فيها بيانات التحقق من صلاحيتها."}
+  action: {type: upload, target: "S-09"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "Option 2 CEP, 3.2.S.7 Stability (sterile APIs); 3.2.S.2.5", quote: "In the case of sterile APIs, data on the sterilization process of the API, including validation data, should be included in the dossier."}
+- id: RR-09
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.1"
+  title: {en: "Description and composition of FPP", ar: "وصف وتركيبة المنتج النهائي"}
+  question: {en: "Does 3.2.P.1 describe the dosage form and list all components with their amount per unit (including overages), function and quality reference (compendial monograph or manufacturer's specification), the reconstitution diluent, and the container closure of the product and diluent?", ar: "هل يصف القسم 3.2.P.1 الشكل الصيدلي ويذكر جميع المكونات مع كميتها لكل وحدة (بما في ذلك الزيادات) ووظيفتها ومرجعها النوعي (دراسة دستورية أو مواصفات المصنع)، ومخفف إعادة التكوين، والعبوة والغلق للمنتج والمخفف؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [P-01]
+    keywords: ["function", "overage", "per unit", "container"]
+    data: [composition]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the description of the dosage form and the composition listing every component with amount per unit (including overages), function and reference to quality standards, plus the reconstitution diluent and container closure where applicable.", ar: "يجب على مقدم الطلب تقديم وصف الشكل الصيدلي والتركيبة بذكر كل مكون مع كميته لكل وحدة (بما في ذلك الزيادات) ووظيفته ومرجع معايير جودته، إضافة إلى مخفف إعادة التكوين والعبوة والغلق حيثما ينطبق."}
+  action: {type: edit_data, target: "composition"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.P.1 Description and Composition of the Drug Product", quote: "list of all components of the dosage form, and their amount on a per unit basis (including overages, if any) the function of the components"}
+- id: RR-10
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.2"
+  title: {en: "Pharmaceutical development brief", ar: "موجز التطوير الصيدلي"}
+  question: {en: "Does 3.2.P.2 give a brief description of the development studies (API-excipient compatibility, excipient choice, formulation, overages, process, container, microbiological attributes, compatibility with diluents), or reference previously assessed studies/EDA approvals, or justify the absence of data for an old molecule?", ar: "هل يقدم القسم 3.2.P.2 وصفاً موجزاً لدراسات التطوير (توافق المادة الفعالة مع السواغات، واختيار السواغات، والصياغة، والزيادات، والعملية، والعبوة، والخصائص الميكروبيولوجية، والتوافق مع المخففات)، أو يحيل إلى دراسات سبق تقييمها/موافقات صادرة عن الهيئة، أو يبرر غياب البيانات لجزيء قديم؟"}
+  applies: "activity == 're_registration'"
+  severity: minor
+  evidence:
+    slots: [P-01, P-07]
+    keywords: ["development", "compatib", "excipient", "overage"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should submit a brief description of the pharmaceutical development studies, or reference previously assessed studies or EDA-issued approvals, or justify the absence of data for a well-established molecule.", ar: "يجب على مقدم الطلب تقديم وصف موجز لدراسات التطوير الصيدلي، أو الإحالة إلى دراسات سبق تقييمها أو موافقات صادرة عن الهيئة، أو تبرير غياب البيانات لجزيء راسخ."}
+  action: {type: upload, target: "P-01"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.P.2 Pharmaceutical Development (all subsections)", quote: "Brief description of studies related to development of drug product should be submitted."}
+  anchor: {code: "ICH Q8(R2)", section: ""}
+- id: RR-11
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.3.3"
+  title: {en: "Process description and critical controls", ar: "وصف العملية وضوابط الخطوات الحرجة"}
+  question: {en: "Does 3.2.P.3 name each manufacturer and site with responsibilities, give the batch formula with overages, a flow diagram and narrative of the manufacturing process showing where materials enter, and tests/acceptance criteria at critical steps and intermediates (or a justification for a well-established process)?", ar: "هل يذكر القسم 3.2.P.3 كل مصنع وموقع مع مسؤولياته، ويقدم صيغة التشغيلة مع الزيادات، ومخططاً انسيابياً ووصفاً سردياً لعملية التصنيع يبينان مواضع دخول المواد، واختبارات ومعايير قبول عند الخطوات الحرجة والمركبات الوسيطة (أو تبريراً لعملية راسخة)؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [P-07, R-01]
+    keywords: ["flow", "narrative", "critical step", "in-process"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the manufacturer(s), batch formula, a flow diagram and narrative description of the manufacturing process, and the controls of critical steps and intermediates or a justification where data are not available.", ar: "يجب على مقدم الطلب تقديم بيانات المصنع/المصانع، وصيغة التشغيلة، ومخططاً انسيابياً ووصفاً سردياً لعملية التصنيع، وضوابط الخطوات الحرجة والمركبات الوسيطة أو تبريراً عند عدم توفر البيانات."}
+  action: {type: upload, target: "P-07"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.P.3.1-3.2.P.3.4 Manufacture", quote: "A flow diagram & a narrative description of the manufacturing process should be presented giving the steps of the process"}
+- id: RR-12
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.3.5"
+  title: {en: "Process validation of critical steps", ar: "التحقق من صلاحية الخطوات الحرجة للعملية"}
+  question: {en: "Does 3.2.P.3.5 provide the description, documentation and results of validation or evaluation studies for the critical steps or critical assays of the manufacturing process (e.g. sterilization, aseptic processing or filling)?", ar: "هل يقدم القسم 3.2.P.3.5 وصف وتوثيق ونتائج دراسات التحقق أو التقييم للخطوات الحرجة أو الاختبارات الحرجة في عملية التصنيع (مثل التعقيم أو التصنيع اللاعقيم أو التعبئة)؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [P-07]
+    keywords: ["validation", "critical", "steriliz", "aseptic"]
+    data: []
+  auto: {kind: slot}
+  deficiency: {en: "The applicant should provide the description, documentation and results of the process validation and/or evaluation studies for the critical steps or critical assays of the manufacturing process.", ar: "يجب على مقدم الطلب تقديم وصف وتوثيق ونتائج دراسات التحقق من صلاحية العملية و/أو تقييمها للخطوات الحرجة أو الاختبارات الحرجة في عملية التصنيع."}
+  action: {type: upload, target: "P-07"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.P.3.5 Process Validation and/or Evaluation", quote: "Description, documentation, and results of the validation and/or evaluation studies should be provided for critical steps or critical assays used in the manufacturing process"}
+- id: RR-13
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.4"
+  title: {en: "Control of excipients", ar: "ضبط السواغات"}
+  question: {en: "Are excipient specifications provided (CoAs acceptable), with reference to the monograph for pharmacopoeial excipients, adventitious agent information for excipients of human or animal origin (3.2.A.2), and full drug-substance-format details for any novel excipient (3.2.A.3)?", ar: "هل قُدمت مواصفات السواغات (وتُقبل شهادات التحليل)، مع الإحالة إلى الدراسة الدستورية للسواغات الدستورية، ومعلومات العوامل العارضة للسواغات ذات المصدر البشري أو الحيواني (3.2.A.2)، والتفاصيل الكاملة بصيغة المادة الفعالة لأي سواغ جديد (3.2.A.3)؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [P-01]
+    keywords: ["excipient", "CoA", "certificate of analysis", "TSE", "animal origin"]
+    data: []
+  auto: {kind: none}
+  deficiency: {en: "The applicant should provide the excipient specifications or CoAs, reference the monograph for pharmacopoeial excipients, and supply adventitious agents information for excipients of human or animal origin and full details for novel excipients.", ar: "يجب على مقدم الطلب تقديم مواصفات السواغات أو شهادات تحليلها، والإحالة إلى الدراسة الدستورية للسواغات الدستورية، وتقديم معلومات العوامل العارضة للسواغات ذات المصدر البشري أو الحيواني والتفاصيل الكاملة للسواغات الجديدة."}
+  action: {type: upload, target: "P-01"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.P.4 Control of Excipients (3.2.P.4.1-3.2.P.4.6)", quote: "The specifications for excipients should be provided. CoAs could be accepted."}
+- id: RR-14
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.5.1"
+  title: {en: "FPP specification and justification", ar: "مواصفات المنتج النهائي وتبريرها"}
+  question: {en: "Are the drug product specifications provided in 3.2.P.5.1, with impurity characterization (or reference to 3.2.S.3.2/3.2.P.5.1) and a justification of the specifications in 3.2.P.5.6 (reference to the monograph acceptable for a pharmacopoeial FPP)?", ar: "هل قُدمت مواصفات المنتج النهائي في القسم 3.2.P.5.1، مع توصيف الشوائب (أو الإحالة إلى 3.2.S.3.2/3.2.P.5.1) وتبرير المواصفات في القسم 3.2.P.5.6 (وتُقبل الإحالة إلى الدراسة الدستورية للمنتج الدستوري)؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [P-09]
+    keywords: ["specification", "acceptance criteria", "impurit", "justification"]
+    data: [specs.product]
+  auto: {kind: slot}
+  deficiency: {en: "The applicant should provide the drug product specification(s) with characterization of impurities and a justification of the specification(s), or reference the pharmacopoeial monograph where the FPP is pharmacopoeial.", ar: "يجب على مقدم الطلب تقديم مواصفات المنتج النهائي مع توصيف الشوائب وتبرير المواصفات، أو الإحالة إلى الدراسة الدستورية إذا كان المنتج النهائي دستورياً."}
+  action: {type: upload, target: "P-09"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.P.5.1 Specification(s); 3.2.P.5.5; 3.2.P.5.6", quote: "The specification(s) for the drug product should be provided."}
+  anchor: {code: "ICH Q6A", section: ""}
+- id: RR-15
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.5.2"
+  title: {en: "FPP analytical procedures and validation", ar: "الإجراءات التحليلية للمنتج والتحقق منها"}
+  question: {en: "Are the analytical procedures for the drug product and their validation with experimental data provided in 3.2.P.5.2/3.2.P.5.3, or is reference made to the monograph where the procedure is pharmacopoeial (acceptable), with tabular summaries in 3.2.R.2?", ar: "هل قُدمت الإجراءات التحليلية للمنتج النهائي والتحقق منها ببيانات تجريبية في القسمين 3.2.P.5.2 و3.2.P.5.3، أو تمت الإحالة إلى الدراسة الدستورية عندما يكون الإجراء دستورياً (وهو مقبول)، مع ملخصات جدولية في القسم 3.2.R.2؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [P-10]
+    keywords: ["monograph", "validation", "analytical procedure", "specificity"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide the drug product analytical procedures and their validation data, or reference the pharmacopoeial monograph where applicable, and the tabular summaries of 3.2.R.2.", ar: "يجب على مقدم الطلب تقديم الإجراءات التحليلية للمنتج النهائي وبيانات التحقق منها، أو الإحالة إلى الدراسة الدستورية حيثما ينطبق، والملخصات الجدولية في القسم 3.2.R.2."}
+  action: {type: upload, target: "P-10"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.P.5.2 Analytical Procedures; 3.2.P.5.3; 3.2.R.2", quote: "If analytical procedure is pharmacopeial, Reference to monograph is acceptable."}
+  anchor: {code: "ICH Q2(R2)", section: ""}
+- id: RR-16
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.5.4"
+  title: {en: "Recent FPP batch analyses", ar: "تحاليل تشغيلات حديثة للمنتج النهائي"}
+  question: {en: "Does 3.2.P.5.4 describe the batches (type, batch number, strength, manufacturing date and site) and give the results of recent batch analyses of the finished product?", ar: "هل يصف القسم 3.2.P.5.4 التشغيلات (النوع ورقم التشغيلة والتركيز وتاريخ التصنيع والموقع) ويقدم نتائج تحاليل تشغيلات حديثة للمنتج النهائي؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [P-11]
+    keywords: ["batch", "manufacturing date", "strength", "site"]
+    data: [batches]
+  auto: {kind: text}
+  deficiency: {en: "The applicant should provide a description of the finished product batches (type, batch number, strength, manufacturing date and site) and the results of recent batch analyses.", ar: "يجب على مقدم الطلب تقديم وصف لتشغيلات المنتج النهائي (النوع ورقم التشغيلة والتركيز وتاريخ التصنيع والموقع) ونتائج تحاليل تشغيلات حديثة."}
+  action: {type: upload, target: "P-11"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.P.5.4 Batch Analyses", quote: "A description of batches (Type, batch number, strength, manufacturing date & site) and results of recent batch analyses should be provided."}
+- id: RR-17
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.7"
+  title: {en: "Container closure system description", ar: "وصف نظام العبوة والغلق"}
+  question: {en: "Does 3.2.P.7 describe the container closure system, the materials of construction of each primary packaging component and its specification (description and identification; CoAs acceptable), with additional information for functional secondary packaging?", ar: "هل يصف القسم 3.2.P.7 نظام العبوة والغلق ومواد تصنيع كل مكون من مكونات التعبئة الأولية ومواصفاته (الوصف والتعريف؛ وتُقبل شهادات التحليل)، مع معلومات إضافية للتعبئة الثانوية الوظيفية؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [P-15]
+    keywords: ["identification", "description", "specification", "primary packaging"]
+    data: []
+  auto: {kind: text}
+  deficiency: {en: "The applicant should describe the container closure system with the materials of construction and specifications (description and identification) of each primary packaging component, and provide additional information for functional secondary packaging components.", ar: "يجب على مقدم الطلب وصف نظام العبوة والغلق مع مواد التصنيع والمواصفات (الوصف والتعريف) لكل مكون من مكونات التعبئة الأولية، وتقديم معلومات إضافية لمكونات التعبئة الثانوية الوظيفية."}
+  action: {type: upload, target: "P-15"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.P.7 Container Closure System", quote: "The specifications should include description and identification."}
+  anchor: {code: "WHO TRS 986 Annex 6", section: ""}
+- id: RR-18
+  dept: quality
+  layer: eda
+  ctd: "3.2.P.8"
+  title: {en: "FPP stability summary, commitment and data", ar: "ملخص ثبات المنتج والتعهد والبيانات"}
+  question: {en: "Does 3.2.P.8 provide the stability summary and conclusions on storage conditions and shelf life, the post-approval stability protocol and commitment (or a justification for an old molecule), and recent stability data in tabular, graphical or narrative form?", ar: "هل يقدم القسم 3.2.P.8 ملخص الثبات والاستنتاجات الخاصة بظروف التخزين ومدة الصلاحية، وبروتوكول وتعهد الثبات بعد الموافقة (أو تبريراً لجزيء قديم)، وبيانات ثبات حديثة بشكل جدولي أو بياني أو سردي؟"}
+  applies: "activity == 're_registration'"
+  severity: critical
+  evidence:
+    slots: [P-16]
+    keywords: ["shelf life", "shelf-life", "commitment", "long term", "accelerated"]
+    data: [stability]
+  auto: {kind: slot}
+  deficiency: {en: "The applicant should provide the stability summary and conclusions, the post-approval stability protocol and stability commitment (or a justification where not available) and the results of recent stability studies for the finished product.", ar: "يجب على مقدم الطلب تقديم ملخص الثبات والاستنتاجات، وبروتوكول وتعهد الثبات بعد الموافقة (أو تبريراً عند عدم توفره)، ونتائج دراسات الثبات الحديثة للمنتج النهائي."}
+  action: {type: upload, target: "P-16"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.P.8 Stability (3.2.P.8.1-3.2.P.8.3)", quote: "The post-approval stability protocol and stability commitment should be provided."}
+  anchor: {code: "ICH Q1A", section: ""}
+- id: RR-19
+  dept: quality
+  layer: eda
+  ctd: "3.2.R.1"
+  title: {en: "Executed and master production documents", ar: "سجلات التصنيع المنفذة والرئيسية"}
+  question: {en: "Are copies of executed production documents provided for batches manufactured by a procedure fully representative of a full production-scale batch, and master production documents for each strength, commercial batch size and site (or reference to 3.2.R.1.1)?", ar: "هل قُدمت نسخ من سجلات التصنيع المنفذة لتشغيلات مصنعة بإجراء يمثل تماماً تشغيلة بحجم الإنتاج الكامل، وسجلات التصنيع الرئيسية لكل تركيز وحجم تشغيلة تجارية وموقع (أو الإحالة إلى القسم 3.2.R.1.1)؟"}
+  applies: "activity == 're_registration'"
+  severity: major
+  evidence:
+    slots: [R-01]
+    keywords: ["executed", "batch record", "master", "production document"]
+    data: [batches]
+  auto: {kind: slot}
+  deficiency: {en: "The applicant should provide copies of the executed production documents for batches fully representative of production scale and the master production documents for each strength, commercial batch size and manufacturing site.", ar: "يجب على مقدم الطلب تقديم نسخ من سجلات التصنيع المنفذة لتشغيلات تمثل تماماً حجم الإنتاج، وسجلات التصنيع الرئيسية لكل تركيز وحجم تشغيلة تجارية وموقع تصنيع."}
+  action: {type: upload, target: "R-01"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "3.2.R.1.1 Executed production documents; 3.2.R.1.2", quote: "Copies of the executed production documents , for batches manufactured by a procedure fully representative of a full production-scale batch, should be provided"}
+- id: RR-20
+  dept: quality
+  layer: eda
+  ctd: "3.2"
+  title: {en: "Data reflect all approved variations", ar: "البيانات تعكس جميع التغييرات المعتمدة"}
+  question: {en: "Is the Module 3 data representative of the current drug substance and finished product quality, incorporating all approved variations (composition, sites, specifications, methods, packaging, shelf life), consistent with the variation approvals on file?", ar: "هل تمثل بيانات الوحدة الثالثة الجودة الحالية للمادة الفعالة والمنتج النهائي، متضمنة جميع التغييرات المعتمدة (التركيبة والمواقع والمواصفات والطرق والتعبئة ومدة الصلاحية)، ومتسقة مع موافقات التغييرات الموجودة بالملف؟"}
+  applies: "activity == 're_registration'"
+  severity: critical
+  evidence:
+    slots: [M1-07, P-01]
+    keywords: ["variation", "approved", "current"]
+    data: [composition]
+  auto: {kind: none}
+  deficiency: {en: "The applicant should update Module 3 so that the submitted data are representative of the last current drug substance and FPP quality data, taking into account all approved variations.", ar: "يجب على مقدم الطلب تحديث الوحدة الثالثة بحيث تمثل البيانات المقدمة أحدث بيانات الجودة الحالية للمادة الفعالة والمنتج النهائي، مع مراعاة جميع التغييرات المعتمدة."}
+  action: {type: rebuild, target: "P-01"}
+  source: {code: "GL.CAPP.039 v1/2025", section: "6. General Notice", quote: "Data submitted should be representative of last current Drug substance and FPP Quality data considering all approved variations."}

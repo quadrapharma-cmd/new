@@ -141,6 +141,13 @@ select pg_temp.ok('(setup) with nothing granted, the API is closed: authenticate
 -- second version of the name rule), 0039_names_rule_3 and 0039_names_rule_4 follow it
 alter table public.profiles drop column if exists name_key, drop column if exists name_needs_fix;
 drop function if exists public.open_candidates(int);   -- 0065 made it RETURNS TABLE; 0036/0038 re-create their "setof profiles" form, 0065 its own again
+-- second version of the name rule), 0039_names_rule_3, 0039_names_rule_4, 0039_names_rule_5, 0039_names_rule_6 and 0039_names_rule_7 follow it
+-- (0039_names_rule_8, the ninth version — which adds name_sound — and 0070_usernames — username, username_key and their two triggers —
+-- follow too; those columns and triggers come off with 0038's)
+drop trigger if exists trg_profiles_username_guard on public.profiles;
+drop trigger if exists trg_profiles_username_assign on public.profiles;
+alter table public.profiles drop column if exists name_key, drop column if exists name_needs_fix, drop column if exists name_sound,
+  drop column if exists username, drop column if exists username_key;
 \ir ../migrations/0036_privacy_names.sql
 \ir ../migrations/0037_names_twins.sql
 \ir ../migrations/0038_names_allowlist.sql
@@ -196,6 +203,12 @@ drop function if exists public.open_candidates(int);   -- 0065 made it RETURNS T
 \ir ../migrations/0097_trust_followups_3.sql
 \ir ../migrations/0098_trust_followups_4.sql
 \ir ../migrations/0099_trust_followups_5.sql
+\ir ../migrations/0039_names_rule_5.sql
+\ir ../migrations/0039_names_rule_6.sql
+\ir ../migrations/0039_names_rule_7.sql
+\ir ../migrations/0039_names_rule_8.sql
+\ir ../migrations/0039_names_rule_9.sql
+\ir ../migrations/0070_usernames.sql
 select pg_temp.as_server();
 create temp table priv_after as select pg_temp.privs() as p;
 select pg_temp.ok('grants: 0026 alone restores every privilege of anon, authenticated and service_role exactly (effective rights + ACL entries)',

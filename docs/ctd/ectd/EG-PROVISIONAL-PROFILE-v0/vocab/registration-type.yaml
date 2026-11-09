@@ -1,0 +1,40 @@
+# EG registration type - EG provisional profile v0 (PROVISIONAL, not issued by EDA). Built 2026-11-06.
+# Field: envelope/registration/@type
+# provenance: EG-DRAFT (stated in an EDA draft) | EU-DERIVED | ASSUMPTION (reason in note)
+# Sources: SPEC = EG Module 1 eCTD Specification draft v1.0/2026; TG = Technical Guidance for eCTD Submissions in Egypt draft v1.0/2026;
+#          HPG = EG Human Pharmaceutical Module 1 Submission Guidance draft v1/2026; EU = EU M1 v3.1.1 / eu-envelope.mod 3.1.
+vocabulary: "EG registration type"
+field: "envelope/registration/@type"
+status: PROVISIONAL
+intro: "Not in the EU model (EG-only field). The 'Registration Type CV' is referenced (SPEC p.18; TG p.28 l.754-756) but unpublished; labels from SPEC/TG examples and the HPG legal-documents table (pp.9-12)."
+values:
+  - value: "local"
+    label: "Locally Manufactured Products"
+    provenance: "EG-DRAFT"
+    source: "SPEC p.18 (example 'local'); HPG p.9 table, p.12 l.189"
+    note: "Token printed in SPEC; label from HPG."
+  - value: "toll"
+    label: "Toll Products"
+    provenance: "ASSUMPTION"
+    source: "HPG p.10 table, p.17 l.388"
+    note: "Label EG-DRAFT (HPG); token is our choice."
+  - value: "f-toll"
+    label: "F-Toll Products"
+    provenance: "ASSUMPTION"
+    source: "HPG p.9-10 table, p.15 l.285"
+    note: "Label EG-DRAFT (HPG); 'F-' is never expanded in the draft; token is our choice."
+  - value: "under-license"
+    label: "Under License Products"
+    provenance: "ASSUMPTION"
+    source: "HPG p.11 table, p.20 l.504"
+    note: "Label EG-DRAFT (HPG); token is our choice."
+  - value: "imported-finished"
+    label: "Imported (Finished) Products"
+    provenance: "ASSUMPTION"
+    source: "SPEC p.18 ('Imported Finished'); TG p.28 l.755; HPG p.11 table, p.24 l.635 ('Imported')"
+    note: "Label EG-DRAFT; token is our choice."
+  - value: "imported-bulk"
+    label: "Imported Bulk Products"
+    provenance: "ASSUMPTION"
+    source: "SPEC p.18; TG p.28 l.755; HPG p.11 table, p.24 l.635"
+    note: "Label EG-DRAFT; token is our choice."

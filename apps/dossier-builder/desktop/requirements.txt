@@ -1,0 +1,13 @@
+fastapi==0.162.0
+uvicorn==0.54.0
+python-multipart
+pydantic>=2
+pyyaml>=6
+jsonschema>=4.20
+python-docx>=1.1
+pypdf>=6
+lxml>=5
+pillow>=10
+anthropic>=0.80          # optional: Claude reads the documents in the intake when ANTHROPIC_API_KEY is set
+pyjwt>=2.8               # optional: Google Drive source with a service account (private folders)
+cryptography>=42         # optional: signs the service-account token

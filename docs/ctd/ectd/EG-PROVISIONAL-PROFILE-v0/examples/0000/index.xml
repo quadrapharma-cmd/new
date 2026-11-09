@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="util/style/ectd-2-0.xsl"?>
+<!DOCTYPE ectd:ectd SYSTEM "util/dtd/ich-ectd-3-2.dtd">
+<ectd:ectd xmlns:ectd="http://www.ich.org/ectd" xmlns:xlink="http://www.w3c.org/1999/xlink">
+  <m1-administrative-information-and-prescribing-information>
+    <leaf ID="egm1" operation="new" checksum="8102c6f16c1460e434e044f85cc26e5b" checksum-type="md5" xlink:href="m1/eg/eg-regional.xml">
+      <title>EG Module 1</title>
+    </leaf>
+  </m1-administrative-information-and-prescribing-information>
+</ectd:ectd>

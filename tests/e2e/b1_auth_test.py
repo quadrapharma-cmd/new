@@ -15,7 +15,7 @@ with sync_playwright() as p:
     pg.fill('#suPw','Strong-pass-2026'); pg.click('#signupPage button.f-btn'); pg.wait_for_timeout(2500)
     T('sign-up creates the account and opens the app', pg.is_visible('#app'))
     me=pg.evaluate("({id:dxLive.uuidOf(ME.id),local:ME.id,name:ME.name,ini:ME.initials})")
-    T('ME is the real person (database id behind a local number, entered name)', len(str(me['id']))==36 and me['local']>1000 and me['name']=='Dr. Test Person' and me['ini']=='DT', me)
+    T('ME is the real person (database id behind a local number, entered name)', len(str(me['id']))==36 and me['local']>1000 and me['name']=='Dr. Test Person' and me['ini']=='TP', me)   # initials skip the title right after sign-up too (s03-user2, v-real1)
     T('profile row created in the database with the name', sql(f"select name from public.profiles where id='{me['id']}'")=='Dr. Test Person')
     # S-15: the company and specialty typed at sign-up are kept (0029 handle_new_user) and shown as the new person's own
     T('sign-up keeps the company and the specialty (profile row + the app as that person)', sql(f"select company||'|'||headline from public.profiles where id='{me['id']}'")=='Test Labs|Quality Control / QA'

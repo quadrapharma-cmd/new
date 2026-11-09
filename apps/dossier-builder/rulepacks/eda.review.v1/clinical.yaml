@@ -1,0 +1,107 @@
+# Clinical / non-clinical — innovative products (dossier_kind == 'innovator'): presence and structure of Modules 2.4–2.7, 4 and 5
+# per ICH M4S/M4E, E3, E6 and E9. EDA's own innovator assessment guidance is not in the sources: every item is provisional.
+- id: CL-M24-01
+  dept: clinical
+  layer: eda
+  ctd: "2.4 · 2.6"
+  title: {en: "Non-clinical overview and summaries", ar: "النظرة العامة والملخصات غير الإكلينيكية"}
+  question: {en: "Are the non-clinical overview (2.4) and the tabulated and written summaries (2.6) provided, covering pharmacology, pharmacokinetics and toxicology?", ar: "هل النظرة العامة غير الإكلينيكية (2.4) والملخصات المجدولة والمكتوبة (2.6) مقدَّمة وتغطي علم الأدوية والحرائك الدوائية والسمية؟"}
+  applies: "dossier_kind == 'innovator'"
+  severity: critical
+  provisional: true
+  evidence: {slots: [M2-03], keywords: ["nonclinical overview", "non-clinical overview", "toxicology", "pharmacology", "pharmacokinetic"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The non-clinical overview and summaries (2.4, 2.6) should be provided in the ICH M4S structure.", ar: "يجب تقديم النظرة العامة والملخصات غير الإكلينيكية (2.4، 2.6) ببنية ICH M4S."}
+  action: {type: upload, target: M2-03}
+  source: {code: NP.CAPP.065 v5/2025, section: "Module 2 (2.4–2.7)", quote: "Non-clinical & clinical overviews and summaries"}
+  anchor: {code: ICH M4S(R2)}
+- id: CL-M25-01
+  dept: clinical
+  layer: eda
+  ctd: "2.5 · 2.7"
+  title: {en: "Clinical overview and summary", ar: "النظرة العامة والملخص الإكلينيكي"}
+  question: {en: "Are the clinical overview (2.5) with the benefit–risk conclusion and the clinical summary (2.7: biopharmaceutics, clinical pharmacology, efficacy, safety) provided?", ar: "هل النظرة العامة الإكلينيكية (2.5) مع خلاصة الفائدة–الخطر والملخص الإكلينيكي (2.7: الصيدلة الحيوية، الصيدلة الإكلينيكية، الفعالية، الأمان) مقدَّمان؟"}
+  applies: "dossier_kind == 'innovator'"
+  severity: critical
+  provisional: true
+  evidence: {slots: [M2-03], keywords: ["clinical overview", "benefit", "risk", "summary of clinical efficacy", "summary of clinical safety"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The clinical overview with an explicit benefit–risk assessment and the four clinical summaries of 2.7 should be provided.", ar: "يجب تقديم النظرة العامة الإكلينيكية مع تقييم صريح للفائدة–الخطر والملخصات الإكلينيكية الأربعة في 2.7."}
+  action: {type: upload, target: M2-03}
+  source: {code: NP.CAPP.065 v5/2025, section: "Module 2 (2.4–2.7)", quote: "Non-clinical & clinical overviews and summaries"}
+  anchor: {code: ICH M4E(R2)}
+- id: CL-M4-01
+  dept: clinical
+  layer: eda
+  ctd: "4.2"
+  title: {en: "Non-clinical study reports", ar: "تقارير الدراسات غير الإكلينيكية"}
+  question: {en: "Are the non-clinical study reports (pharmacology, pharmacokinetics, toxicology including genotoxicity, carcinogenicity and reproductive toxicity where applicable) provided in 4.2, with GLP statements?", ar: "هل تقارير الدراسات غير الإكلينيكية (علم الأدوية، الحرائك، السمية بما فيها السمية الجينية والسرطانية والتناسلية عند الانطباق) مقدَّمة في 4.2 مع إقرارات GLP؟"}
+  applies: "dossier_kind == 'innovator'"
+  severity: major
+  provisional: true
+  evidence: {slots: [M4-01], keywords: ["GLP", "toxicity", "genotoxicity", "carcinogenicity", "reproductive"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The non-clinical study reports should be provided in the 4.2 structure with GLP compliance statements.", ar: "يجب تقديم تقارير الدراسات غير الإكلينيكية ببنية 4.2 مع إقرارات الالتزام بـ GLP."}
+  action: {type: upload, target: M4-01}
+  source: {code: NP.CAPP.065 v5/2025, section: "4.2.x", quote: "Non-clinical study reports (pharmacology, PK, toxicology)"}
+  anchor: {code: ICH M4S(R2) · OECD GLP}
+- id: CL-E3-01
+  dept: clinical
+  layer: eda
+  ctd: "5.3.5"
+  title: {en: "Pivotal study reports in ICH E3 format", ar: "تقارير الدراسات المحورية بصيغة ICH E3"}
+  question: {en: "Are the pivotal efficacy and safety study reports provided in the ICH E3 structure (synopsis, protocol and amendments, statistical analysis plan, listings, CRFs sample)?", ar: "هل تقارير الدراسات المحورية للفعالية والأمان مقدَّمة ببنية ICH E3 (الملخص، البروتوكول وتعديلاته، خطة التحليل الإحصائي، الجداول، نموذج CRF)؟"}
+  applies: "dossier_kind == 'innovator'"
+  severity: critical
+  provisional: true
+  evidence: {slots: [M5-12, M5-10], keywords: ["synopsis", "statistical analysis plan", "protocol", "case report form", "E3"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "Each pivotal clinical study report should follow ICH E3 and include the protocol with amendments, the statistical analysis plan, the data listings and a sample CRF.", ar: "يجب أن يتبع كل تقرير دراسة إكلينيكية محورية ICH E3 ويتضمن البروتوكول وتعديلاته وخطة التحليل الإحصائي وجداول البيانات ونموذج CRF."}
+  action: {type: upload, target: M5-12}
+  source: {code: NP.CAPP.065 v5/2025, section: "5.3.5", quote: "Other clinical sections"}
+  anchor: {code: ICH E3 · ICH E9(R1)}
+- id: CL-E6-01
+  dept: clinical
+  layer: intl
+  ctd: "5.3.5"
+  title: {en: "GCP compliance of the pivotal studies", ar: "التزام الدراسات المحورية بـ GCP"}
+  question: {en: "Is GCP compliance of each pivotal study documented (ethics approvals, informed consent, investigator and site lists, audit certificates, protocol deviations)?", ar: "هل التزام كل دراسة محورية بـ GCP موثَّق (موافقات الأخلاقيات، الموافقة المستنيرة، قوائم الباحثين والمواقع، شهادات التدقيق، انحرافات البروتوكول)؟"}
+  applies: "dossier_kind == 'innovator'"
+  severity: major
+  provisional: true
+  evidence: {slots: [M5-12], keywords: ["GCP", "ethics", "informed consent", "investigator", "audit", "deviation"]}
+  auto: {kind: text, min_hits: 3}
+  deficiency: {en: "GCP compliance documentation (ethics approvals, consent forms, investigator lists, audit certificates and protocol deviations) should accompany the pivotal study reports.", ar: "يجب أن تُرفق مستندات الالتزام بـ GCP (موافقات الأخلاقيات، نماذج الموافقة، قوائم الباحثين، شهادات التدقيق، انحرافات البروتوكول) بتقارير الدراسات المحورية."}
+  action: {type: upload, target: M5-12}
+  source: {code: NP.CAPP.065 v5/2025, section: "5.3", quote: "clinical study reports"}
+  anchor: {code: ICH E6(R3)}
+- id: CL-RMP-01
+  dept: clinical
+  layer: intl
+  ctd: "1.1.8 · 2.5"
+  title: {en: "Risk management and pharmacovigilance plan", ar: "خطة إدارة المخاطر واليقظة الدوائية"}
+  question: {en: "Is a risk management plan (safety specification, pharmacovigilance plan and risk minimisation measures) provided for the innovative product?", ar: "هل خطة إدارة المخاطر (مواصفة الأمان، خطة اليقظة الدوائية، تدابير تقليل المخاطر) مقدَّمة للمنتج المبتكر؟"}
+  applies: "dossier_kind == 'innovator'"
+  severity: major
+  provisional: true
+  evidence: {slots: [M1-08, M2-03], keywords: ["risk management plan", "RMP", "safety specification", "risk minimisation", "pharmacovigilance plan"]}
+  auto: {kind: text, min_hits: 1}
+  deficiency: {en: "A risk management plan with the safety specification, the pharmacovigilance plan and the risk minimisation measures should be provided.", ar: "يجب تقديم خطة إدارة مخاطر تتضمن مواصفة الأمان وخطة اليقظة الدوائية وتدابير تقليل المخاطر."}
+  action: {type: upload, target: M1-08}
+  source: {code: NP.CAPP.065 v5/2025, section: "1.1.8", quote: "Pharmacovigilance approval"}
+  anchor: {code: ICH E2E · EMA GVP Module V}
+- id: CL-PED-01
+  dept: clinical
+  layer: intl
+  ctd: "2.5"
+  title: {en: "Paediatric and special populations", ar: "الأطفال والفئات الخاصة"}
+  question: {en: "Does the clinical overview address the paediatric population, the elderly, renal and hepatic impairment and pregnancy, with data or a justification for their absence?", ar: "هل تتناول النظرة العامة الإكلينيكية الأطفال وكبار السن والقصور الكلوي والكبدي والحمل، ببيانات أو بتبرير غيابها؟"}
+  applies: "dossier_kind == 'innovator'"
+  severity: minor
+  provisional: true
+  evidence: {slots: [M2-03], keywords: ["paediatric", "pediatric", "elderly", "renal impairment", "hepatic impairment", "pregnancy"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The clinical overview should discuss special populations (paediatric, elderly, renal and hepatic impairment, pregnancy) and justify any absence of data.", ar: "يجب أن تناقش النظرة العامة الإكلينيكية الفئات الخاصة (الأطفال، كبار السن، القصور الكلوي والكبدي، الحمل) وتبرر أي غياب للبيانات."}
+  action: {type: upload, target: M2-03}
+  source: {code: NP.CAPP.065 v5/2025, section: "Module 2", quote: "clinical overviews and summaries"}
+  anchor: {code: ICH E11(R1) · ICH E7}

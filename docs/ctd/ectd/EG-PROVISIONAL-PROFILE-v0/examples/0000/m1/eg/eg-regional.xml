@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE eg-backbone SYSTEM "../../util/dtd/eg-regional.dtd">
+<?xml-stylesheet type="text/xsl" href="../../util/style/eg-regional.xsl"?>
+<!-- EXAMPLE ONLY - PROVISIONAL EG profile v0, not issued by EDA. Fictitious product, applicant and numbers. -->
+<eg-backbone xmlns:xlink="http://www.w3c.org/1999/xlink">
+  <eg-envelope>
+    <envelope country="eg">
+      <identifier>3f2b8c1e-7d4a-4e5b-9c6d-0a1b2c3d4e5f</identifier>
+      <submission type="maa">
+        <procedure-tracking>
+          <number>P-MAA-0001</number>
+        </procedure-tracking>
+      </submission>
+      <submission-unit type="initial"/>
+      <applicant>Example Pharma Co.</applicant>
+      <agency code="EG-EDA"/>
+      <invented-name>Exemplarin 500 mg film-coated tablets</invented-name>
+      <registration type="local"/>
+      <marketing type="local"/>
+      <inn>paracetamol</inn>
+      <sequence>0000</sequence>
+      <related-sequence>0000</related-sequence>
+      <submission-description>Original MAA for Exemplarin 500 mg film-coated tablets</submission-description>
+    </envelope>
+  </eg-envelope>
+  <m1-eg>
+    <m1-0-cover>
+      <leaf ID="eg-cover" operation="new" checksum="abafebd539b3ce9675da385be30454f0" checksum-type="md5" xlink:href="10-cover/cover.pdf">
+        <title>Cover Letter for Sequence 0000</title>
+      </leaf>
+      <leaf ID="eg-tracking" operation="new" checksum="e91c788fc157d7143c43a3603ed7ebf9" checksum-type="md5" xlink:href="10-cover/tracking.pdf">
+        <title>Tracking Table</title>
+      </leaf>
+    </m1-0-cover>
+    <m1-2-form>
+      <m1-2-1-af>
+        <leaf ID="eg-form-af" operation="new" checksum="0ba09a55d09ceed349571d2fdf4115d5" checksum-type="md5" xlink:href="12-form/121-af/form-af.pdf">
+          <title>Application Form</title>
+        </leaf>
+      </m1-2-1-af>
+      <m1-2-11-pop>
+        <leaf ID="eg-pop" operation="new" checksum="ea86a9258107bad085794d3077f331d7" checksum-type="md5" xlink:href="12-form/1211-pop/pop.pdf">
+          <title>Proof of Payment</title>
+        </leaf>
+      </m1-2-11-pop>
+    </m1-2-form>
+    <m1-3-pi>
+      <m1-3-1-spc-label-pl>
+        <pi-doc xml:lang="en" type="spc" country="eg">
+          <leaf ID="eg-spc-en" operation="new" checksum="7dce40a8d9aa1703c5017010e41fde78" checksum-type="md5" xlink:href="13-pi/131-spclabelpl/en/spc.pdf">
+            <title>Summary of Product Characteristics (English)</title>
+          </leaf>
+        </pi-doc>
+        <pi-doc xml:lang="ar" type="pl" country="eg">
+          <leaf ID="eg-pl-ar" operation="new" checksum="04d65b87a61bcab73fd143c9eaef4f43" checksum-type="md5" xlink:href="13-pi/131-spclabelpl/ar/pl.pdf">
+            <title>Package Leaflet (Arabic)</title>
+          </leaf>
+        </pi-doc>
+      </m1-3-1-spc-label-pl>
+    </m1-3-pi>
+  </m1-eg>
+</eg-backbone>

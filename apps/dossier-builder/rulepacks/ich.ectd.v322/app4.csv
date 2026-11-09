@@ -1,0 +1,380 @@
+row,ctd,title,element,kind,path,placeholder
+1,,,,F,index.xml,
+2,,,,F,index-md5.txt,
+3,1,Administrative Information and Prescribing Information,m1-administrative-information-and-prescribing-information,D,m1,
+4,,,,D,m1/eu,
+5,,,,D,m1/jp,
+6,,,,D,m1/us,
+7,,,,D,m1/xx,
+8,2,Common Technical Document Summaries,m2-common-technical-document-summaries,D,m2,
+9,2.2,Introduction,m2-2-introduction,D,m2/22-intro,
+10,2.2,Introduction,m2-2-introduction,F,m2/22-intro/introduction.pdf,
+11,2.3,Quality Overall Summary,m2-3-quality-overall-summary,D,m2/23-qos,
+12,2.3,Introduction,m2-3-introduction,F,m2/23-qos/introduction.pdf,
+13,2.3.S,Drug Substance - Name - Manufacturer,m2-3-s-drug-substance,F,m2/23-qos/drug-substance.pdf,
+14,2.3.P,Drug Product -Name,m2-3-p-drug-product,F,m2/23-qos/drug-product-name.pdf,yes
+15,2.3.A,Appendices,m2-3-a-appendices,F,m2/23-qos/appendices.pdf,
+16,2.3.R,Regional Information,m2-3-r-regional-information,F,m2/23-qos/regional-information.pdf,
+17,2.4,Nonclinical Overview,m2-4-nonclinical-overview,D,m2/24-nonclin-over,
+18,2.4,Nonclinical Overview,m2-4-nonclinical-overview,F,m2/24-nonclin-over/nonclinical-overview.pdf,
+19,2.5,Clinical Overview,m2-5-clinical-overview,D,m2/25-clin-over,
+20,2.5,Clinical Overview,m2-5-clinical-overview,F,m2/25-clin-over/clinical-overview.pdf,
+21,2.6,Nonclinical Written and Tabulated Summaries,m2-6-nonclinical-written-and-tabulated-summaries,D,m2/26-nonclin-sum,
+22,2.6.1,Introduction,m2-6-1-introduction,F,m2/26-nonclin-sum/introduction.pdf,
+23,2.6.2,Pharmacology Written Summary,m2-6-2-pharmacology-written-summary,F,m2/26-nonclin-sum/pharmacol-written-summary.pdf,
+24,2.6.3,Pharmacology Tabulated Summary,m2-6-3-pharmacology-tabulated-summary,F,m2/26-nonclin-sum/pharmacol-tabulated-summary.pdf,
+25,2.6.4,Pharmacokinetics Written Summary,m2-6-4-pharmacokinetics-written-summary,F,m2/26-nonclin-sum/pharmkin-written-summary.pdf,
+26,2.6.5,Pharmacokinetics Tabulated Summary,m2-6-5-pharmacokinetics-tabulated-summary,F,m2/26-nonclin-sum/pharmkin-tabulated-summary.pdf,
+27,2.6.6,Toxicology Written Summary,m2-6-6-toxicology-written-summary,F,m2/26-nonclin-sum/toxicology-written-summary.pdf,
+28,2.6.7,Toxicology Tabulated Summary,m2-6-7-toxicology-tabulated-summary,F,m2/26-nonclin-sum/toxicology-tabulated-summary.pdf,
+29,2.7,Clinical Summary,m2-7-clinical-summary,D,m2/27-clin-sum,
+30,2.7.1,Summary of Biopharmaceutic Studies and Associated Analytical Methods,m2-7-1-summary-of-biopharmaceutic-studies-and-associated-analytical-methods,F,m2/27-clin-sum/summary-biopharm.pdf,
+31,2.7.2,Summary of Clinical Pharmacology Studies,m2-7-2-summary-of-clinical-pharmacology-studies,F,m2/27-clin-sum/summary-clin-pharm.pdf,
+32,2.7.3,Summary of Clinical Efficacy – Indication,m2-7-3-summary-of-clinical-efficacy,F,m2/27-clin-sum/summary-clin-efficacy-indication.pdf,yes
+33,2.7.4,Summary of Clinical Safety,m2-7-4-summary-of-clinical-safety,F,m2/27-clin-sum/summary-clin-safety.pdf,
+34,2.7.5,Literature References,m2-7-5-literature-references,F,m2/27-clin-sum/literature-references.pdf,
+35,2.7.6,Synopses of Individual Studies,m2-7-6-synopses-of-individual-studies,F,m2/27-clin-sum/synopses-indiv-studies.pdf,
+36,3,Quality,m3-quality,D,m3,
+37,3.2,Body of Data,m3-2-body-of-data,D,m3/32-body-data,
+38,3.2.S,Drug Substance,m3-2-s-drug-substance,D,m3/32-body-data/32s-drug-sub,
+39,3.2.S,Drug Substance - Drug Substance Name - Manufacturer,m3-2-s-drug-substance,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1,yes
+40,3.2.S.1,"General Information (name, manufacturer)",m3-2-s-1-general-information,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s1-gen-info,yes
+41,3.2.S.1.1,"Nomenclature (name, manufacturer)",m3-2-s-1-1-nomenclature,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s1-gen-info/nomenclature.pdf,yes
+42,3.2.S.1.2,"Structure (name, manufacturer)",m3-2-s-1-2-structure,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s1-gen-info/structure.pdf,yes
+43,3.2.S.1.3,"General Properties (name, manufacturer)",m3-2-s-1-3-general-properties,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s1-gen-info/general-properties.pdf,yes
+44,3.2.S.2,"Manufacture (name, manufacturer)",m3-2-s-2-manufacture,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s2-manuf,yes
+45,3.2.S.2.1,"Manufacturer(s) (name, manufacturer)",m3-2-s-2-1-manufacturer,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s2-manuf/manufacturer.pdf,yes
+46,3.2.S.2.2,"Description of Manufacturing Process and Process Controls (name, manufacturer)",m3-2-s-2-2-description-of-manufacturing-process-and-process-controls,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s2-manuf/manuf-process-and-controls.pdf,yes
+47,3.2.S.2.3,"Control of Materials (name, manufacturer)",m3-2-s-2-3-control-of-materials,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s2-manuf/control-of-materials.pdf,yes
+48,3.2.S.2.4,"Controls of Critical Steps and Intermediates (name, manufacturer)",m3-2-s-2-4-controls-of-critical-steps-and-intermediates,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s2-manuf/control-critical-steps.pdf,yes
+49,3.2.S.2.5,"Process Validation and/or Evaluation (name, manufacturer)",m3-2-s-2-5-process-validation-and-or-evaluation,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s2-manuf/process-validation.pdf,yes
+50,3.2.S.2.6,"Manufacturing Process Development (name, manufacturer)",m3-2-s-2-6-manufacturing-process-development,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s2-manuf/manuf-process-development.pdf,yes
+51,3.2.S.3,"Characterisation (name, manufacturer)",m3-2-s-3-characterisation,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s3-charac,yes
+52,3.2.S.3.1,"Elucidation of Structure and Other Characteristics (name, manufacturer)",m3-2-s-3-1-elucidation-of-structure-and-other-characteristics,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s3-charac/elucidation-of-structure.pdf,yes
+53,3.2.S.3.2,"Impurities (name, manufacturer)",m3-2-s-3-2-impurities,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s3-charac/impurities.pdf,yes
+54,3.2.S.4,"Control of Drug Substance (name, manufacturer)",m3-2-s-4-control-of-drug-substance,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub,yes
+55,3.2.S.4.1,"Specification (name, manufacturer)",m3-2-s-4-1-specification,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s41-spec,yes
+56,3.2.S.4.1,"Specification (name, manufacturer)",m3-2-s-4-1-specification,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s41-spec/specification.pdf,yes
+57,3.2.S.4.2,"Analytical Procedures (name, manufacturer)",m3-2-s-4-2-analytical-procedures,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s42-analyt-proc,yes
+58,,Analytical Procedure-1,m3-2-s-4-2-analytical-procedures,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s42-analyt-proc/analytical-procedure-1.pdf,yes
+59,,Analytical Procedure-2,m3-2-s-4-2-analytical-procedures,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s42-analyt-proc/analytical-procedure-2.pdf,yes
+60,,Analytical Procedure-3,m3-2-s-4-2-analytical-procedures,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s42-analyt-proc/analytical-procedure-3.pdf,yes
+61,3.2.S.4.3,"Validation of Analytical Procedures (name, manufacturer)",m3-2-s-4-3-validation-of-analytical-procedures,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s43-val-analyt-proc,yes
+62,,Validation of Analytical Procedure-1,m3-2-s-4-3-validation-of-analytical-procedures,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s43-val-analyt-proc/validation-analyt-procedure-1.pdf,yes
+63,,Validation of Analytical Procedure-2,m3-2-s-4-3-validation-of-analytical-procedures,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s43-val-analyt-proc/validation-analyt-procedure-2.pdf,yes
+64,,Validation of Analytical Procedure-3,m3-2-s-4-3-validation-of-analytical-procedures,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s43-val-analyt-proc/validation-analyt-procedure-3.pdf,yes
+65,3.2.S.4.4,"Batch Analyses (name, manufacturer)",m3-2-s-4-4-batch-analyses,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s44-batch-analys,yes
+66,3.2.S.4.4,"Batch Analyses (name, manufacturer)",m3-2-s-4-4-batch-analyses,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s44-batch-analys/batch-analyses.pdf,yes
+67,3.2.S.4.5,"Justification of Specification (name, manufacturer)",m3-2-s-4-5-justification-of-specification,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s45-justif-spec,yes
+68,3.2.S.4.5,"Justification of Specification (name, manufacturer)",m3-2-s-4-5-justification-of-specification,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s4-contr-drug-sub/32s45-justif-spec/justification-of-specification.pdf,yes
+69,3.2.S.5,"Reference Standards or Materials (name, manufacturer)",m3-2-s-5-reference-standards-or-materials,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s5-ref-stand,yes
+70,3.2.S.5,"Reference Standards or Materials (name, manufacturer)",m3-2-s-5-reference-standards-or-materials,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s5-ref-stand/reference-standards.pdf,yes
+71,3.2.S.6,"Container Closure System (name, manufacturer)",m3-2-s-6-container-closure-system,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s6-cont-closure-sys,yes
+72,3.2.S.6,"Container Closure System (name, manufacturer)",m3-2-s-6-container-closure-system,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s6-cont-closure-sys/container-closure-system.pdf,yes
+73,3.2.S.7,"Stability (name, manufacturer)",m3-2-s-7-stability,D,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s7-stab,yes
+74,3.2.S.7.1,"Stability Summary and Conclusions (name, manufacturer)",m3-2-s-7-1-stability-summary-and-conclusions,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s7-stab/stability-summary.pdf,yes
+75,3.2.S.7.2,"Post-approval Stability Protocol and Stability Commitment (name, manufacturer)",m3-2-s-7-2-post-approval-stability-protocol-and-stability-commitment,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s7-stab/postapproval-stability.pdf,yes
+76,3.2.S.7.3,"Stability Data (name, manufacturer)",m3-2-s-7-3-stability-data,F,m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1/32s7-stab/stability-data.pdf,yes
+77,3.2.P,"Drug Product (name, dosage form)",m3-2-p-drug-product,D,m3/32-body-data/32p-drug-prod,
+78,3.2.P,"Drug Product (name, dosage form) – Name",m3-2-p-drug-product,D,m3/32-body-data/32p-drug-prod/product-1,yes
+79,3.2.P.1,"Description and Composition of the Drug Product (name, dosage form)",m3-2-p-1-description-and-composition-of-the-drug-product,D,m3/32-body-data/32p-drug-prod/product-1/32p1-desc-comp,yes
+80,3.2.P.1,"Description and Composition of the Drug Product (name, dosage form)",m3-2-p-1-description-and-composition-of-the-drug-product,F,m3/32-body-data/32p-drug-prod/product-1/32p1-desc-comp/description-and-composition.pdf,yes
+81,3.2.P.2,"Pharmaceutical Development (name, dosage form)",m3-2-p-2-pharmaceutical-development,D,m3/32-body-data/32p-drug-prod/product-1/32p2-pharm-dev,yes
+82,3.2.P.2,"Pharmaceutical Development (name, dosage form)",m3-2-p-2-pharmaceutical-development,F,m3/32-body-data/32p-drug-prod/product-1/32p2-pharm-dev/pharmaceutical-development.pdf,yes
+83,3.2.P.3,"Manufacture (name, dosage form)",m3-2-p-3-manufacture,D,m3/32-body-data/32p-drug-prod/product-1/32p3-manuf,yes
+84,3.2.P.3.1,"Manufacturer(s) (name, dosage form)",m3-2-p-3-1-manufacturers,F,m3/32-body-data/32p-drug-prod/product-1/32p3-manuf/manufacturers.pdf,yes
+85,3.2.P.3.2,"Batch Formula (name, dosage form)",m3-2-p-3-2-batch-formula,F,m3/32-body-data/32p-drug-prod/product-1/32p3-manuf/batch-formula.pdf,yes
+86,3.2.P.3.3,"Description of Manufacturing Process and Process Controls (name, dosage form)",m3-2-p-3-3-description-of-manufacturing-process-and-process-controls,F,m3/32-body-data/32p-drug-prod/product-1/32p3-manuf/manuf-process-and-controls.pdf,yes
+87,3.2.P.3.4,"Controls of Critical Steps and Intermediates (name, dosage form)",m3-2-p-3-4-controls-of-critical-steps-and-intermediates,F,m3/32-body-data/32p-drug-prod/product-1/32p3-manuf/control-critical-steps.pdf,yes
+88,3.2.P.3.5,"Process Validation and/or Evaluation (name, dosage form)",m3-2-p-3-5-process-validation-and-or-evaluation,F,m3/32-body-data/32p-drug-prod/product-1/32p3-manuf/process-validation.pdf,yes
+89,3.2.P.4,"Control of Excipients (name, dosage form)",m3-2-p-4-control-of-excipients,D,m3/32-body-data/32p-drug-prod/product-1/32p4-contr-excip,yes
+90,3.2.P.4,"Control of Excipients (name, dosage form) – Excipient",m3-2-p-4-control-of-excipients,D,m3/32-body-data/32p-drug-prod/product-1/32p4-contr-excip/excipient-1,yes
+91,3.2.P.4.1,"Specifications (name, dosage form)",m3-2-p-4-1-specifications,F,m3/32-body-data/32p-drug-prod/product-1/32p4-contr-excip/excipient-1/specifications.pdf,yes
+92,3.2.P.4.2,"Analytical Procedures (name, dosage form)",m3-2-p-4-2-analytical-procedures,F,m3/32-body-data/32p-drug-prod/product-1/32p4-contr-excip/excipient-1/analytical-procedures.pdf,yes
+93,3.2.P.4.3,"Validation of Analytical Procedures (name, dosage form)",m3-2-p-4-3-validation-of-analytical-procedures,F,m3/32-body-data/32p-drug-prod/product-1/32p4-contr-excip/excipient-1/validation-analyt-procedures.pdf,yes
+94,3.2.P.4.4,"Justification of Specifications (name, dosage form)",m3-2-p-4-4-justification-of-specifications,F,m3/32-body-data/32p-drug-prod/product-1/32p4-contr-excip/excipient-1/justification-of-specifications.pdf,yes
+95,3.2.P.4.5,"Excipients of Human or Animal Origin (name, dosage form)",m3-2-p-4-5-excipients-of-human-or-animal-origin,F,m3/32-body-data/32p-drug-prod/product-1/32p4-contr-excip/excipients-human-animal.pdf,yes
+96,3.2.P.4.6,"Novel Excipients (name, dosage form)",m3-2-p-4-6-novel-excipients,F,m3/32-body-data/32p-drug-prod/product-1/32p4-contr-excip/novel-excipients.pdf,yes
+97,3.2.P.5,"Control of Drug Product (name, dosage form)",m3-2-p-5-control-of-drug-product,D,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod,yes
+98,3.2.P.5.1,"Specification(s) (name, dosage form)",m3-2-p-5-1-specifications,D,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p51-spec,yes
+99,3.2.P.5.1,"Specification(s) (name, dosage form)",m3-2-p-5-1-specifications,F,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p51-spec/specifications.pdf,yes
+100,3.2.P.5.2,"Analytical Procedures (name, dosage form)",m3-2-p-5-2-analytical-procedures,D,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p52-analyt-proc,yes
+101,,Analytical Procedure – 1,m3-2-p-5-2-analytical-procedures,F,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p52-analyt-proc/analytical-procedure-1.pdf,yes
+102,,Analytical Procedure – 2,m3-2-p-5-2-analytical-procedures,F,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p52-analyt-proc/analytical-procedure-2.pdf,yes
+103,,Analytical Procedure – 3,m3-2-p-5-2-analytical-procedures,F,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p52-analyt-proc/analytical-procedure-3.pdf,yes
+104,3.2.P.5.3,"Validation of Analytical Procedures (name, dosage form)",m3-2-p-5-3-validation-of-analytical-procedures,D,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p53-val-analyt-proc,yes
+105,,Validation of Analytical Procedures – 1,m3-2-p-5-3-validation-of-analytical-procedures,F,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p53-val-analyt-proc/validation-analytical-procedures-1.pdf,yes
+106,,Validation of Analytical Procedures – 2,m3-2-p-5-3-validation-of-analytical-procedures,F,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p53-val-analyt-proc/validation-analytical-procedures-2.pdf,yes
+107,,Validation of Analytical Procedures – 3,m3-2-p-5-3-validation-of-analytical-procedures,F,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p53-val-analyt-proc/validation-analytical-procedures-3.pdf,yes
+108,3.2.P.5.4,"Batch Analyses (name, dosage form)",m3-2-p-5-4-batch-analyses,D,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p54-batch-analys,yes
+109,3.2.P.5.4,"Batch Analyses (name, dosage form)",m3-2-p-5-4-batch-analyses,F,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p54-batch-analys/batch-analyses.pdf,yes
+110,3.2.P.5.5,"Characterisation of Impurities (name, dosage form)",m3-2-p-5-5-characterisation-of-impurities,D,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p55-charac-imp,yes
+111,3.2.P.5.5,"Characterisation of Impurities (name, dosage form)",m3-2-p-5-5-characterisation-of-impurities,F,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p55-charac-imp/characterisation-impurities.pdf,yes
+112,3.2.P.5.6,"Justification of Specifications (name, dosage form)",m3-2-p-5-6-justification-of-specifications,D,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p56-justif-spec,yes
+113,3.2.P.5.6,"Justification of Specifications (name, dosage form)",m3-2-p-5-6-justification-of-specifications,F,m3/32-body-data/32p-drug-prod/product-1/32p5-contr-drug-prod/32p56-justif-spec/justification-of-specifications.pdf,yes
+114,3.2.P.6,"Reference Standards or Materials (name, dosage form)",m3-2-p-6-reference-standards-or-materials,D,m3/32-body-data/32p-drug-prod/product-1/32p6-ref-stand,yes
+115,3.2.P.6,"Reference Standards or Materials (name, dosage form)",m3-2-p-6-reference-standards-or-materials,F,m3/32-body-data/32p-drug-prod/product-1/32p6-ref-stand/reference-standards.pdf,yes
+116,3.2.P.7,"Container Closure System (name, dosage form)",m3-2-p-7-container-closure-system,D,m3/32-body-data/32p-drug-prod/product-1/32p7-cont-closure-sys,yes
+117,3.2.P.7,"Container Closure System (name, dosage form)",m3-2-p-7-container-closure-system,F,m3/32-body-data/32p-drug-prod/product-1/32p7-cont-closure-sys/container-closure-system.pdf,yes
+118,3.2.P.8,"Stability (name, dosage form)",m3-2-p-8-stability,D,m3/32-body-data/32p-drug-prod/product-1/32p8-stab,yes
+119,3.2.P.8.1,"Stability Summary and Conclusion (name, dosage form)",m3-2-p-8-1-stability-summary-and-conclusion,F,m3/32-body-data/32p-drug-prod/product-1/32p8-stab/stability-summary.pdf,yes
+120,3.2.P.8.2,"Post-approval Stability Protocol and Stability Commitment (name, dosage form)",m3-2-p-8-2-post-approval-stability-protocol-and-stability-commitment,F,m3/32-body-data/32p-drug-prod/product-1/32p8-stab/postapproval-stability.pdf,yes
+121,3.2.P.8.3,"Stability Data (name, dosage form)",m3-2-p-8-3-stability-data,F,m3/32-body-data/32p-drug-prod/product-1/32p8-stab/stability-data.pdf,yes
+122,3.2.A,Appendices,m3-2-a-appendices,D,m3/32-body-data/32a-app,
+123,3.2.A.1,"Facilities and Equipment (name, manufacturer)",m3-2-a-1-facilities-and-equipment,D,m3/32-body-data/32a-app/32a1-fac-equip,
+124,,Facilities and Equipment Report 1,m3-2-a-1-facilities-and-equipment,F,m3/32-body-data/32a-app/32a1-fac-equip/facilities-and-equipment-report-1.pdf,yes
+125,,Facilities and Equipment Report 2,m3-2-a-1-facilities-and-equipment,F,m3/32-body-data/32a-app/32a1-fac-equip/facilities-and-equipment-report-2.pdf,yes
+126,,Facilities and Equipment Report 3,m3-2-a-1-facilities-and-equipment,F,m3/32-body-data/32a-app/32a1-fac-equip/facilities-and-equipment-report-3.pdf,yes
+127,3.2.A.2,"Adventitious Agents Safety Evaluation (name, dosage form, manufacturer)",m3-2-a-2-adventitious-agents-safety-evaluation,D,m3/32-body-data/32a-app/32a2-advent-agent,
+128,,Adventitious Agents Safety Evaluation Report 1,m3-2-a-2-adventitious-agents-safety-evaluation,F,m3/32-body-data/32a-app/32a2-advent-agent/adventitious-agents-report-1.pdf,yes
+129,,Adventitious Agents Safety Evaluation Report 2,m3-2-a-2-adventitious-agents-safety-evaluation,F,m3/32-body-data/32a-app/32a2-advent-agent/adventitious-agents-report-2.pdf,yes
+130,,Adventitious Agents Safety Evaluation Report 3,m3-2-a-2-adventitious-agents-safety-evaluation,F,m3/32-body-data/32a-app/32a2-advent-agent/adventitious-agents-report-3.pdf,yes
+131,3.2.A.3,Excipients – Name,m3-2-a-3-excipients,D,m3/32-body-data/32a-app/32a3-excip-name-1,yes
+132,3.2.R,Regional Information,m3-2-r-regional-information,D,m3/32-body-data/32r-reg-info,
+133,3.3,Literature References,m3-3-literature-references,D,m3/33-lit-ref,
+134,,Reference 1,m3-3-literature-references,F,m3/33-lit-ref/reference-1.pdf,yes
+135,,Reference 2,m3-3-literature-references,F,m3/33-lit-ref/reference-2.pdf,yes
+136,,Reference 3,m3-3-literature-references,F,m3/33-lit-ref/reference-3.pdf,yes
+137,4,Nonclinical Study Reports,m4-nonclinical-study-reports,D,m4,
+138,4.2,Study Reports,m4-2-study-reports,D,m4/42-stud-rep,
+139,4.2.1,Pharmacology,m4-2-1-pharmacology,D,m4/42-stud-rep/421-pharmacol,
+140,4.2.1.1,Primary Pharmacodynamics,m4-2-1-1-primary-pharmacodynamics,D,m4/42-stud-rep/421-pharmacol/4211-prim-pd,
+141,,Study Report 1,m4-2-1-1-primary-pharmacodynamics,F,m4/42-stud-rep/421-pharmacol/4211-prim-pd/study-report-1.pdf,yes
+142,,Study Report 2,m4-2-1-1-primary-pharmacodynamics,F,m4/42-stud-rep/421-pharmacol/4211-prim-pd/study-report-2.pdf,yes
+143,,Study Report 3,m4-2-1-1-primary-pharmacodynamics,F,m4/42-stud-rep/421-pharmacol/4211-prim-pd/study-report-3.pdf,yes
+144,4.2.1.2,Secondary Pharmacodynamics,m4-2-1-2-secondary-pharmacodynamics,D,m4/42-stud-rep/421-pharmacol/4212-sec-pd,
+145,,Study Report 1,m4-2-1-2-secondary-pharmacodynamics,F,m4/42-stud-rep/421-pharmacol/4212-sec-pd/study-report-1.pdf,yes
+146,,Study Report 2,m4-2-1-2-secondary-pharmacodynamics,F,m4/42-stud-rep/421-pharmacol/4212-sec-pd/study-report-2.pdf,yes
+147,,Study Report 3,m4-2-1-2-secondary-pharmacodynamics,F,m4/42-stud-rep/421-pharmacol/4212-sec-pd/study-report-3.pdf,yes
+148,4.2.1.3,Safety Pharmacology,m4-2-1-3-safety-pharmacology,D,m4/42-stud-rep/421-pharmacol/4213-safety-pharmacol,
+149,,Study Report 1,m4-2-1-3-safety-pharmacology,F,m4/42-stud-rep/421-pharmacol/4213-safety-pharmacol/study-report-1.pdf,yes
+150,,Study Report 2,m4-2-1-3-safety-pharmacology,F,m4/42-stud-rep/421-pharmacol/4213-safety-pharmacol/study-report-2.pdf,yes
+151,,Study Report 3,m4-2-1-3-safety-pharmacology,F,m4/42-stud-rep/421-pharmacol/4213-safety-pharmacol/study-report-3.pdf,yes
+152,4.2.1.4,Pharmacodynamic Drug Interactions,m4-2-1-4-pharmacodynamic-drug-interactions,D,m4/42-stud-rep/421-pharmacol/4214-pd-drug-interact,
+153,,Study Report 1,m4-2-1-4-pharmacodynamic-drug-interactions,F,m4/42-stud-rep/421-pharmacol/4214-pd-drug-interact/study-report-1.pdf,yes
+154,,Study Report 2,m4-2-1-4-pharmacodynamic-drug-interactions,F,m4/42-stud-rep/421-pharmacol/4214-pd-drug-interact/study-report-2.pdf,yes
+155,,Study Report 3,m4-2-1-4-pharmacodynamic-drug-interactions,F,m4/42-stud-rep/421-pharmacol/4214-pd-drug-interact/study-report-3.pdf,yes
+156,4.2.2,Pharmacokinetics,m4-2-2-pharmacokinetics,D,m4/42-stud-rep/422-pk,
+157,4.2.2.1,Analytical Methods and Validation Reports (if separate reports are available),m4-2-2-1-analytical-methods-and-validation-reports,D,m4/42-stud-rep/422-pk/4221-analyt-met-val,
+158,,Study Report 1,m4-2-2-1-analytical-methods-and-validation-reports,F,m4/42-stud-rep/422-pk/4221-analyt-met-val/study-report-1.pdf,yes
+159,,Study Report 2,m4-2-2-1-analytical-methods-and-validation-reports,F,m4/42-stud-rep/422-pk/4221-analyt-met-val/study-report-2.pdf,yes
+160,,Study Report 3,m4-2-2-1-analytical-methods-and-validation-reports,F,m4/42-stud-rep/422-pk/4221-analyt-met-val/study-report-3.pdf,yes
+161,4.2.2.2,Absorption,m4-2-2-2-absorption,D,m4/42-stud-rep/422-pk/4222-absorp,
+162,,Study Report 1,m4-2-2-2-absorption,F,m4/42-stud-rep/422-pk/4222-absorp/study-report-1.pdf,yes
+163,,Study Report 2,m4-2-2-2-absorption,F,m4/42-stud-rep/422-pk/4222-absorp/study-report-2.pdf,yes
+164,,Study Report 3,m4-2-2-2-absorption,F,m4/42-stud-rep/422-pk/4222-absorp/study-report-3.pdf,yes
+165,4.2.2.3,Distribution,m4-2-2-3-distribution,D,m4/42-stud-rep/422-pk/4223-distrib,
+166,,Study Report 1,m4-2-2-3-distribution,F,m4/42-stud-rep/422-pk/4223-distrib/study-report-1.pdf,yes
+167,,Study Report 2,m4-2-2-3-distribution,F,m4/42-stud-rep/422-pk/4223-distrib/study-report-2.pdf,yes
+168,,Study Report 3,m4-2-2-3-distribution,F,m4/42-stud-rep/422-pk/4223-distrib/study-report-3.pdf,yes
+169,4.2.2.4,Metabolism,m4-2-2-4-metabolism,D,m4/42-stud-rep/422-pk/4224-metab,
+170,,Study Report 1,m4-2-2-4-metabolism,F,m4/42-stud-rep/422-pk/4224-metab/study-report-1.pdf,yes
+171,,Study Report 2,m4-2-2-4-metabolism,F,m4/42-stud-rep/422-pk/4224-metab/study-report-2.pdf,yes
+172,,Study Report 3,m4-2-2-4-metabolism,F,m4/42-stud-rep/422-pk/4224-metab/study-report-3.pdf,yes
+173,4.2.2.5,Excretion,m4-2-2-5-excretion,D,m4/42-stud-rep/422-pk/4225-excr,
+174,,Study Report 1,m4-2-2-5-excretion,F,m4/42-stud-rep/422-pk/4225-excr/study-report-1.pdf,yes
+175,,Study Report 2,m4-2-2-5-excretion,F,m4/42-stud-rep/422-pk/4225-excr/study-report-2.pdf,yes
+176,,Study Report 3,m4-2-2-5-excretion,F,m4/42-stud-rep/422-pk/4225-excr/study-report-3.pdf,yes
+177,4.2.2.6,Pharmacokinetic Drug Interactions (nonclinical),m4-2-2-6-pharmacokinetic-drug-interactions,D,m4/42-stud-rep/422-pk/4226-pk-drug-interact,
+178,,Study Report 1,m4-2-2-6-pharmacokinetic-drug-interactions,F,m4/42-stud-rep/422-pk/4226-pk-drug-interact/study-report-1.pdf,yes
+179,,Study Report 2,m4-2-2-6-pharmacokinetic-drug-interactions,F,m4/42-stud-rep/422-pk/4226-pk-drug-interact/study-report-2.pdf,yes
+180,,Study Report 3,m4-2-2-6-pharmacokinetic-drug-interactions,F,m4/42-stud-rep/422-pk/4226-pk-drug-interact/study-report-3.pdf,yes
+181,4.2.2.7,Other Pharmacokinetic Studies,m4-2-2-7-other-pharmacokinetic-studies,D,m4/42-stud-rep/422-pk/4227-other-pk-stud,
+182,,Study Report 1,m4-2-2-7-other-pharmacokinetic-studies,F,m4/42-stud-rep/422-pk/4227-other-pk-stud/study-report-1.pdf,yes
+183,,Study Report 2,m4-2-2-7-other-pharmacokinetic-studies,F,m4/42-stud-rep/422-pk/4227-other-pk-stud/study-report-2.pdf,yes
+184,,Study Report 3,m4-2-2-7-other-pharmacokinetic-studies,F,m4/42-stud-rep/422-pk/4227-other-pk-stud/study-report-3.pdf,yes
+185,4.2.3,Toxicology,m4-2-3-toxicology,D,m4/42-stud-rep/423-tox,
+186,4.2.3.1,"Single-Dose Toxicity (in order by species, by route)",m4-2-3-1-single-dose-toxicity,D,m4/42-stud-rep/423-tox/4231-single-dose-tox,
+187,,Study Report 1,m4-2-3-1-single-dose-toxicity,F,m4/42-stud-rep/423-tox/4231-single-dose-tox/study-report-1.pdf,yes
+188,,Study Report 2,m4-2-3-1-single-dose-toxicity,F,m4/42-stud-rep/423-tox/4231-single-dose-tox/study-report-2.pdf,yes
+189,,Study Report 3,m4-2-3-1-single-dose-toxicity,F,m4/42-stud-rep/423-tox/4231-single-dose-tox/study-report-3.pdf,yes
+190,4.2.3.2,"Repeat-Dose Toxicity (in order by species, by route, by duration, including supportive toxicokinetics evaluations)",m4-2-3-2-repeat-dose-toxicity,D,m4/42-stud-rep/423-tox/4232-repeat-dose-tox,
+191,,Study Report 1,m4-2-3-2-repeat-dose-toxicity,F,m4/42-stud-rep/423-tox/4232-repeat-dose-tox/study-report-1.pdf,yes
+192,,Study Report 2,m4-2-3-2-repeat-dose-toxicity,F,m4/42-stud-rep/423-tox/4232-repeat-dose-tox/study-report-2.pdf,yes
+193,,Study Report 3,m4-2-3-2-repeat-dose-toxicity,F,m4/42-stud-rep/423-tox/4232-repeat-dose-tox/study-report-3.pdf,yes
+194,4.2.3.3,Genotoxicity,m4-2-3-3-genotoxicity,D,m4/42-stud-rep/423-tox/4233-genotox,
+195,4.2.3.3.1,In vitro,m4-2-3-3-1-in-vitro,D,m4/42-stud-rep/423-tox/4233-genotox/42331-in-vitro,
+196,,Study Report 1,m4-2-3-3-1-in-vitro,F,m4/42-stud-rep/423-tox/4233-genotox/42331-in-vitro/study-report-1.pdf,yes
+197,,Study Report 2,m4-2-3-3-1-in-vitro,F,m4/42-stud-rep/423-tox/4233-genotox/42331-in-vitro/study-report-2.pdf,yes
+198,,Study Report 3,m4-2-3-3-1-in-vitro,F,m4/42-stud-rep/423-tox/4233-genotox/42331-in-vitro/study-report-3.pdf,yes
+199,4.2.3.3.2,In vivo (including supportive toxicokinetics evaluations),m4-2-3-3-2-in-vivo,D,m4/42-stud-rep/423-tox/4233-genotox/42332-in-vivo,
+200,,Study Report 1,m4-2-3-3-2-in-vivo,F,m4/42-stud-rep/423-tox/4233-genotox/42332-in-vivo/study-report-1.pdf,yes
+201,,Study Report 2,m4-2-3-3-2-in-vivo,F,m4/42-stud-rep/423-tox/4233-genotox/42332-in-vivo/study-report-2.pdf,yes
+202,,Study Report 3,m4-2-3-3-2-in-vivo,F,m4/42-stud-rep/423-tox/4233-genotox/42332-in-vivo/study-report-3.pdf,yes
+203,4.2.3.4,Carcinogenicity (including supportive toxicokinetics evaluations),m4-2-3-4-carcinogenicity,D,m4/42-stud-rep/423-tox/4234-carcigen,
+204,4.2.3.4.1,"Long-term studies (in order by species, including range-finding studies that cannot be appropriately included under repeat-dose toxicity or pharmacokinetics)",m4-2-3-4-1-long-term-studies,D,m4/42-stud-rep/423-tox/4234-carcigen/42341-lt-stud,
+205,,Study Report 1,m4-2-3-4-1-long-term-studies,F,m4/42-stud-rep/423-tox/4234-carcigen/42341-lt-stud/study-report-1.pdf,yes
+206,,Study Report 2,m4-2-3-4-1-long-term-studies,F,m4/42-stud-rep/423-tox/4234-carcigen/42341-lt-stud/study-report-2.pdf,yes
+207,,Study Report 3,m4-2-3-4-1-long-term-studies,F,m4/42-stud-rep/423-tox/4234-carcigen/42341-lt-stud/study-report-3.pdf,yes
+208,4.2.3.4.2,Short- or medium-term studies (including range-finding studies that cannot be appropriately included under repeat-dose toxicity or pharmacokinetics),m4-2-3-4-2-short-or-medium-term-studies,D,m4/42-stud-rep/423-tox/4234-carcigen/42342-smt-stud,
+209,,Study Report 1,m4-2-3-4-2-short-or-medium-term-studies,F,m4/42-stud-rep/423-tox/4234-carcigen/42342-smt-stud/study-report-1.pdf,yes
+210,,Study Report 2,m4-2-3-4-2-short-or-medium-term-studies,F,m4/42-stud-rep/423-tox/4234-carcigen/42342-smt-stud/study-report-2.pdf,yes
+211,,Study Report 3,m4-2-3-4-2-short-or-medium-term-studies,F,m4/42-stud-rep/423-tox/4234-carcigen/42342-smt-stud/study-report-3.pdf,yes
+212,4.2.3.4.3,Other studies,m4-2-3-4-3-other-studies,D,m4/42-stud-rep/423-tox/4234-carcigen/42343-other-stud,
+213,,Study Report 1,m4-2-3-4-3-other-studies,F,m4/42-stud-rep/423-tox/4234-carcigen/42343-other-stud/study-report-1.pdf,yes
+214,,Study Report 2,m4-2-3-4-3-other-studies,F,m4/42-stud-rep/423-tox/4234-carcigen/42343-other-stud/study-report-2.pdf,yes
+215,,Study Report 3,m4-2-3-4-3-other-studies,F,m4/42-stud-rep/423-tox/4234-carcigen/42343-other-stud/study-report-3.pdf,yes
+216,4.2.3.5,"Reproductive and Developmental Toxicity (including range-finding studies and supportive toxicokinetics evaluations) (If modified study designs are used, the following subheadings should be modified accordingly)",m4-2-3-5-reproductive-and-developmental-toxicity,D,m4/42-stud-rep/423-tox/4235-repro-dev-tox,
+217,4.2.3.5.1,Fertility and early embryonic development,m4-2-3-5-1-fertility-and-early-embryonic-development,D,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42351-fert-embryo-dev,
+218,,Study Report 1,m4-2-3-5-1-fertility-and-early-embryonic-development,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42351-fert-embryo-dev/study-report-1.pdf,yes
+219,,Study Report 2,m4-2-3-5-1-fertility-and-early-embryonic-development,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42351-fert-embryo-dev/study-report-2.pdf,yes
+220,,Study Report 3,m4-2-3-5-1-fertility-and-early-embryonic-development,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42351-fert-embryo-dev/study-report-3.pdf,yes
+221,4.2.3.5.2,Embryo-fetal development,m4-2-3-5-2-embryo-fetal-development,D,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42352-embryo-fetal-dev,
+222,,Study Report 1,m4-2-3-5-2-embryo-fetal-development,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42352-embryo-fetal-dev/study-report-1.pdf,yes
+223,,Study Report 2,m4-2-3-5-2-embryo-fetal-development,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42352-embryo-fetal-dev/study-report-2.pdf,yes
+224,,Study Report 3,m4-2-3-5-2-embryo-fetal-development,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42352-embryo-fetal-dev/study-report-3.pdf,yes
+225,4.2.3.5.3,"Prenatal and postnatal development, including maternal function",m4-2-3-5-3-prenatal-and-postnatal-development-including-maternal-function,D,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42353-pre-postnatal-dev,
+226,,Study Report 1,m4-2-3-5-3-prenatal-and-postnatal-development-including-maternal-function,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42353-pre-postnatal-dev/study-report-1.pdf,yes
+227,,Study Report 2,m4-2-3-5-3-prenatal-and-postnatal-development-including-maternal-function,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42353-pre-postnatal-dev/study-report-2.pdf,yes
+228,,Study Report 3,m4-2-3-5-3-prenatal-and-postnatal-development-including-maternal-function,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42353-pre-postnatal-dev/study-report-3.pdf,yes
+229,4.2.3.5.4,Studies in which the offspring (juvenile animals) are dosed and/or further evaluated,m4-2-3-5-4-studies-in-which-the-offspring-juvenile-animals-are-dosed-and-or-further-evaluated,D,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42354-juv,
+230,,Study Report 1,m4-2-3-5-4-studies-in-which-the-offspring-juvenile-animals-are-dosed-and-or-further-evaluated,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42354-juv/study-report-1.pdf,yes
+231,,Study Report 2,m4-2-3-5-4-studies-in-which-the-offspring-juvenile-animals-are-dosed-and-or-further-evaluated,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42354-juv/study-report-2.pdf,yes
+232,,Study Report 3,m4-2-3-5-4-studies-in-which-the-offspring-juvenile-animals-are-dosed-and-or-further-evaluated,F,m4/42-stud-rep/423-tox/4235-repro-dev-tox/42354-juv/study-report-3.pdf,yes
+233,4.2.3.6,Local Tolerance,m4-2-3-6-local-tolerance,D,m4/42-stud-rep/423-tox/4236-loc-tol,
+234,,Study Report 1,m4-2-3-6-local-tolerance,F,m4/42-stud-rep/423-tox/4236-loc-tol/study-report-1.pdf,yes
+235,,Study Report 2,m4-2-3-6-local-tolerance,F,m4/42-stud-rep/423-tox/4236-loc-tol/study-report-2.pdf,yes
+236,,Study Report 3,m4-2-3-6-local-tolerance,F,m4/42-stud-rep/423-tox/4236-loc-tol/study-report-3.pdf,yes
+237,4.2.3.7,Other Toxicity Studies (if available),m4-2-3-7-other-toxicity-studies,D,m4/42-stud-rep/423-tox/4237-other-tox-stud,
+238,4.2.3.7.1,Antigenicity,m4-2-3-7-1-antigenicity,D,m4/42-stud-rep/423-tox/4237-other-tox-stud/42371-antigen,
+239,,Study Report 1,m4-2-3-7-1-antigenicity,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42371-antigen/study-report-1.pdf,yes
+240,,Study Report 2,m4-2-3-7-1-antigenicity,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42371-antigen/study-report-2.pdf,yes
+241,,Study Report 3,m4-2-3-7-1-antigenicity,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42371-antigen/study-report-3.pdf,yes
+242,4.2.3.7.2,Immunotoxicity,m4-2-3-7-2-immunotoxicity,D,m4/42-stud-rep/423-tox/4237-other-tox-stud/42372-immunotox,
+243,,Study Report 1,m4-2-3-7-2-immunotoxicity,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42372-immunotox/study-report-1.pdf,yes
+244,,Study Report 2,m4-2-3-7-2-immunotoxicity,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42372-immunotox/study-report-2.pdf,yes
+245,,Study Report 3,m4-2-3-7-2-immunotoxicity,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42372-immunotox/study-report-3.pdf,yes
+246,4.2.3.7.3,Mechanistic studies (if not included elsewhere),m4-2-3-7-3-mechanistic-studies,D,m4/42-stud-rep/423-tox/4237-other-tox-stud/42373-mechan-stud,
+247,,Study Report 1,m4-2-3-7-3-mechanistic-studies,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42373-mechan-stud/study-report-1.pdf,yes
+248,,Study Report 2,m4-2-3-7-3-mechanistic-studies,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42373-mechan-stud/study-report-2.pdf,yes
+249,,Study Report 3,m4-2-3-7-3-mechanistic-studies,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42373-mechan-stud/study-report-3.pdf,yes
+250,4.2.3.7.4,Dependence,m4-2-3-7-4-dependence,D,m4/42-stud-rep/423-tox/4237-other-tox-stud/42374-dep,
+251,,Study Report 1,m4-2-3-7-4-dependence,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42374-dep/study-report-1.pdf,yes
+252,,Study Report 2,m4-2-3-7-4-dependence,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42374-dep/study-report-2.pdf,yes
+253,,Study Report 3,m4-2-3-7-4-dependence,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42374-dep/study-report-3.pdf,yes
+254,4.2.3.7.5,Metabolites,m4-2-3-7-5-metabolites,D,m4/42-stud-rep/423-tox/4237-other-tox-stud/42375-metab,
+255,,Study Report 1,m4-2-3-7-5-metabolites,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42375-metab/study-report-1.pdf,yes
+256,,Study Report 2,m4-2-3-7-5-metabolites,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42375-metab/study-report-2.pdf,yes
+257,,Study Report 3,m4-2-3-7-5-metabolites,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42375-metab/study-report-3.pdf,yes
+258,4.2.3.7.6,Impurities,m4-2-3-7-6-impurities,D,m4/42-stud-rep/423-tox/4237-other-tox-stud/42376-imp,
+259,,Study Report 1,m4-2-3-7-6-impurities,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42376-imp/study-report-1.pdf,yes
+260,,Study Report 2,m4-2-3-7-6-impurities,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42376-imp/study-report-2.pdf,yes
+261,,Study Report 3,m4-2-3-7-6-impurities,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42376-imp/study-report-3.pdf,yes
+262,4.2.3.7.7,Other,m4-2-3-7-7-other,D,m4/42-stud-rep/423-tox/4237-other-tox-stud/42377-other,
+263,,Study Report 1,m4-2-3-7-7-other,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42377-other/study-report-1.pdf,yes
+264,,Study Report 2,m4-2-3-7-7-other,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42377-other/study-report-2.pdf,yes
+265,,Study Report 3,m4-2-3-7-7-other,F,m4/42-stud-rep/423-tox/4237-other-tox-stud/42377-other/study-report-3.pdf,yes
+266,4.3,Literature References,m4-3-literature-references,D,m4/43-lit-ref,
+267,,Reference 1,m4-3-literature-references,F,m4/43-lit-ref/reference-1.pdf,yes
+268,,Reference 2,m4-3-literature-references,F,m4/43-lit-ref/reference-2.pdf,yes
+269,,Reference 3,m4-3-literature-references,F,m4/43-lit-ref/reference-3.pdf,yes
+270,5,Clinical Study Reports,m5-clinical-study-reports,D,m5,
+271,5.2,Tabular Listing of all Clinical Studies,m5-2-tabular-listing-of-all-clinical-studies,D,m5/52-tab-list,
+272,5.2,Tabular Listing of all Clinical Studies,m5-2-tabular-listing-of-all-clinical-studies,F,m5/52-tab-list/tabular-listing.pdf,
+273,5.3,Clinical Study Reports,m5-3-clinical-study-reports,D,m5/53-clin-stud-rep,
+274,5.3.1,Reports of Biopharmaceutic Studies,m5-3-1-reports-of-biopharmaceutic-studies,D,m5/53-clin-stud-rep/531-rep-biopharm-stud,
+275,5.3.1.1,Bioavailability (BA) Study Reports,m5-3-1-1-bioavailability-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5311-ba-stud-rep,
+276,,Study Report 1,m5-3-1-1-bioavailability-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5311-ba-stud-rep/study-report-1,yes
+277,,Study Report 2,m5-3-1-1-bioavailability-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5311-ba-stud-rep/study-report-2,yes
+278,,Study Report 3,m5-3-1-1-bioavailability-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5311-ba-stud-rep/study-report-3,yes
+279,5.3.1.2,Comparative BA and Bioequivalence (BE) Study Reports,m5-3-1-2-comparative-ba-and-bioequivalence-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5312-compar-ba-be-stud-rep,
+280,,Study Report 1,m5-3-1-2-comparative-ba-and-bioequivalence-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5312-compar-ba-be-stud-rep/study-report-1,yes
+281,,Study Report 2,m5-3-1-2-comparative-ba-and-bioequivalence-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5312-compar-ba-be-stud-rep/study-report-2,yes
+282,,Study Report 3,m5-3-1-2-comparative-ba-and-bioequivalence-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5312-compar-ba-be-stud-rep/study-report-3,yes
+283,5.3.1.3,In vitro – In vivo Correlation Study Reports,m5-3-1-3-in-vitro-in-vivo-correlation-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5313-in-vitro-in-vivo-corr-stud-rep,
+284,,Study Report 1,m5-3-1-3-in-vitro-in-vivo-correlation-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5313-in-vitro-in-vivo-corr-stud-rep/study-report-1,yes
+285,,Study Report 2,m5-3-1-3-in-vitro-in-vivo-correlation-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5313-in-vitro-in-vivo-corr-stud-rep/study-report-2,yes
+286,,Study Report 3,m5-3-1-3-in-vitro-in-vivo-correlation-study-reports,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5313-in-vitro-in-vivo-corr-stud-rep/study-report-3,yes
+287,5.3.1.4,Reports of Bioanalytical and Analytical Methods for Human Studies,m5-3-1-4-reports-of-bioanalytical-and-analytical-methods-for-human-studies,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5314-bioanalyt-analyt-met,
+288,,Study Report 1,m5-3-1-4-reports-of-bioanalytical-and-analytical-methods-for-human-studies,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5314-bioanalyt-analyt-met/study-report-1,yes
+289,,Study Report 2,m5-3-1-4-reports-of-bioanalytical-and-analytical-methods-for-human-studies,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5314-bioanalyt-analyt-met/study-report-2,yes
+290,,Study Report 3,m5-3-1-4-reports-of-bioanalytical-and-analytical-methods-for-human-studies,D,m5/53-clin-stud-rep/531-rep-biopharm-stud/5314-bioanalyt-analyt-met/study-report-3,yes
+291,5.3.2,Reports of Studies Pertinent to Pharmacokinetics using Human Biomaterials,m5-3-2-reports-of-studies-pertinent-to-pharmacokinetics-using-human-biomaterials,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat,
+292,5.3.2.1,Plasma Protein Binding Study Reports,m5-3-2-1-plasma-protein-binding-study-reports,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5321-plasma-prot-bind-stud-rep,
+293,,Study Report 1,m5-3-2-1-plasma-protein-binding-study-reports,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5321-plasma-prot-bind-stud-rep/study-report-1,yes
+294,,Study Report 2,m5-3-2-1-plasma-protein-binding-study-reports,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5321-plasma-prot-bind-stud-rep/study-report-2,yes
+295,,Study Report 3,m5-3-2-1-plasma-protein-binding-study-reports,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5321-plasma-prot-bind-stud-rep/study-report-3,yes
+296,5.3.2.2,Reports of Hepatic Metabolism and Drug Interaction Studies,m5-3-2-2-reports-of-hepatic-metabolism-and-drug-interaction-studies,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5322-rep-hep-metab-interact-stud,
+297,,Study Report 1,m5-3-2-2-reports-of-hepatic-metabolism-and-drug-interaction-studies,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5322-rep-hep-metab-interact-stud/study-report-1,yes
+298,,Study Report 2,m5-3-2-2-reports-of-hepatic-metabolism-and-drug-interaction-studies,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5322-rep-hep-metab-interact-stud/study-report-2,yes
+299,,Study Report 3,m5-3-2-2-reports-of-hepatic-metabolism-and-drug-interaction-studies,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5322-rep-hep-metab-interact-stud/study-report-3,yes
+300,5.3.2.3,Reports of Studies Using Other Human Biomaterials,m5-3-2-3-reports-of-studies-using-other-human-biomaterials,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5323-stud-other-human-biomat,
+301,,Study Report 1,m5-3-2-3-reports-of-studies-using-other-human-biomaterials,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5323-stud-other-human-biomat/study-report-1,yes
+302,,Study Report 2,m5-3-2-3-reports-of-studies-using-other-human-biomaterials,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5323-stud-other-human-biomat/study-report-2,yes
+303,,Study Report 3,m5-3-2-3-reports-of-studies-using-other-human-biomaterials,D,m5/53-clin-stud-rep/532-rep-stud-pk-human-biomat/5323-stud-other-human-biomat/study-report-3,yes
+304,5.3.3,Reports of Human Pharmacokinetic (PK) Studies,m5-3-3-reports-of-human-pharmacokinetics-pk-studies,D,m5/53-clin-stud-rep/533-rep-human-pk-stud,
+305,5.3.3.1,Healthy Subject PK and Initial Tolerability Study Reports,m5-3-3-1-healthy-subject-pk-and-initial-tolerability-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5331-healthy-subj-pk-init-tol-stud-rep,
+306,,Study Report 1,m5-3-3-1-healthy-subject-pk-and-initial-tolerability-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5331-healthy-subj-pk-init-tol-stud-rep/study-report-1,yes
+307,,Study Report 2,m5-3-3-1-healthy-subject-pk-and-initial-tolerability-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5331-healthy-subj-pk-init-tol-stud-rep/study-report-2,yes
+308,,Study Report 3,m5-3-3-1-healthy-subject-pk-and-initial-tolerability-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5331-healthy-subj-pk-init-tol-stud-rep/study-report-3,yes
+309,5.3.3.2,Patient PK and Initial Tolerability Study Reports,m5-3-3-2-patient-pk-and-initial-tolerability-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5332-patient-pk-init-tol-stud-rep,
+310,,Study Report 1,m5-3-3-2-patient-pk-and-initial-tolerability-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5332-patient-pk-init-tol-stud-rep/study-report-1,yes
+311,,Study Report 2,m5-3-3-2-patient-pk-and-initial-tolerability-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5332-patient-pk-init-tol-stud-rep/study-report-2,yes
+312,,Study Report 3,m5-3-3-2-patient-pk-and-initial-tolerability-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5332-patient-pk-init-tol-stud-rep/study-report-3,yes
+313,5.3.3.3,Intrinsic Factor PK Study Reports,m5-3-3-3-intrinsic-factor-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5333-intrin-factor-pk-stud-rep,
+314,,Study Report 1,m5-3-3-3-intrinsic-factor-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5333-intrin-factor-pk-stud-rep/study-report-1,yes
+315,,Study Report 2,m5-3-3-3-intrinsic-factor-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5333-intrin-factor-pk-stud-rep/study-report-2,yes
+316,,Study Report 3,m5-3-3-3-intrinsic-factor-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5333-intrin-factor-pk-stud-rep/study-report-3,yes
+317,5.3.3.4,Extrinsic Factor PK Study Reports,m5-3-3-4-extrinsic-factor-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5334-extrin-factor-pk-stud-rep,
+318,,Study Report 1,m5-3-3-4-extrinsic-factor-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5334-extrin-factor-pk-stud-rep/study-report-1,yes
+319,,Study Report 2,m5-3-3-4-extrinsic-factor-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5334-extrin-factor-pk-stud-rep/study-report-2,yes
+320,,Study Report 3,m5-3-3-4-extrinsic-factor-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5334-extrin-factor-pk-stud-rep/study-report-3,yes
+321,5.3.3.5,Population PK Study Reports,m5-3-3-5-population-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5335-popul-pk-stud-rep,
+322,,Study Report 1,m5-3-3-5-population-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5335-popul-pk-stud-rep/study-report-1,yes
+323,,Study Report 2,m5-3-3-5-population-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5335-popul-pk-stud-rep/study-report-2,yes
+324,,Study Report 3,m5-3-3-5-population-pk-study-reports,D,m5/53-clin-stud-rep/533-rep-human-pk-stud/5335-popul-pk-stud-rep/study-report-3,yes
+325,5.3.4,Reports of Human Pharmacodynamic (PD) Studies,m5-3-4-reports-of-human-pharmacodynamics-pd-studies,D,m5/53-clin-stud-rep/534-rep-human-pd-stud,
+326,5.3.4.1,Healthy Subject PD and PK/PD Study Reports,m5-3-4-1-healthy-subject-pd-and-pk-pd-study-reports,D,m5/53-clin-stud-rep/534-rep-human-pd-stud/5341-healthy-subj-pd-stud-rep,
+327,,Study Report 1,m5-3-4-1-healthy-subject-pd-and-pk-pd-study-reports,D,m5/53-clin-stud-rep/534-rep-human-pd-stud/5341-healthy-subj-pd-stud-rep/study-report-1,yes
+328,,Study Report 2,m5-3-4-1-healthy-subject-pd-and-pk-pd-study-reports,D,m5/53-clin-stud-rep/534-rep-human-pd-stud/5341-healthy-subj-pd-stud-rep/study-report-2,yes
+329,,Study Report 3,m5-3-4-1-healthy-subject-pd-and-pk-pd-study-reports,D,m5/53-clin-stud-rep/534-rep-human-pd-stud/5341-healthy-subj-pd-stud-rep/study-report-3,yes
+330,5.3.4.2,Patient PD and PK/PD Study Reports,m5-3-4-2-patient-pd-and-pk-pd-study-reports,D,m5/53-clin-stud-rep/534-rep-human-pd-stud/5342-patient-pd-stud-rep,
+331,,Study Report 1,m5-3-4-2-patient-pd-and-pk-pd-study-reports,D,m5/53-clin-stud-rep/534-rep-human-pd-stud/5342-patient-pd-stud-rep/study-report-1,yes
+332,,Study Report 2,m5-3-4-2-patient-pd-and-pk-pd-study-reports,D,m5/53-clin-stud-rep/534-rep-human-pd-stud/5342-patient-pd-stud-rep/study-report-2,yes
+333,,Study Report 3,m5-3-4-2-patient-pd-and-pk-pd-study-reports,D,m5/53-clin-stud-rep/534-rep-human-pd-stud/5342-patient-pd-stud-rep/study-report-3,yes
+334,5.3.5,Reports of Efficacy and Safety Studies,m5-3-5-reports-of-efficacy-and-safety-studies,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud,
+335,5.3.5,Reports of Efficacy and Safety Studies - Indication Name,m5-3-5-reports-of-efficacy-and-safety-studies,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1,yes
+336,5.3.5.1,Study Reports of Controlled Clinical Studies Pertinent to the Claimed Indication,m5-3-5-1-study-reports-of-controlled-clinical-studies-pertinent-to-the-claimed-indication,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5351-stud-rep-contr,yes
+337,,Study Report 1,m5-3-5-1-study-reports-of-controlled-clinical-studies-pertinent-to-the-claimed-indication,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5351-stud-rep-contr/study-report-1,yes
+338,,Study Report 2,m5-3-5-1-study-reports-of-controlled-clinical-studies-pertinent-to-the-claimed-indication,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5351-stud-rep-contr/study-report-2,yes
+339,,Study Report 3,m5-3-5-1-study-reports-of-controlled-clinical-studies-pertinent-to-the-claimed-indication,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5351-stud-rep-contr/study-report-3,yes
+340,5.3.5.2,Study Reports of Uncontrolled Clinical Studies,m5-3-5-2-study-reports-of-uncontrolled-clinical-studies,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5352-stud-rep-uncontr,yes
+341,,Study Report 1,m5-3-5-2-study-reports-of-uncontrolled-clinical-studies,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5352-stud-rep-uncontr/study-report-1,yes
+342,,Study Report 2,m5-3-5-2-study-reports-of-uncontrolled-clinical-studies,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5352-stud-rep-uncontr/study-report-2,yes
+343,,Study Report 3,m5-3-5-2-study-reports-of-uncontrolled-clinical-studies,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5352-stud-rep-uncontr/study-report-3,yes
+344,5.3.5.3,Reports of Analyses of Data from More than One Study,m5-3-5-3-reports-of-analyses-of-data-from-more-than-one-study,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5353-rep-analys-data-more-one-stud,yes
+345,,Study Report 1,m5-3-5-3-reports-of-analyses-of-data-from-more-than-one-study,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5353-rep-analys-data-more-one-stud/study-report-1,yes
+346,,Study Report 2,m5-3-5-3-reports-of-analyses-of-data-from-more-than-one-study,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5353-rep-analys-data-more-one-stud/study-report-2,yes
+347,,Study Report 3,m5-3-5-3-reports-of-analyses-of-data-from-more-than-one-study,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5353-rep-analys-data-more-one-stud/study-report-3,yes
+348,5.3.5.4,Other Study Reports,m5-3-5-4-other-study-reports,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5354-other-stud-rep,yes
+349,,Study Report 1,m5-3-5-4-other-study-reports,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5354-other-stud-rep/study-report-1,yes
+350,,Study Report 2,m5-3-5-4-other-study-reports,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5354-other-stud-rep/study-report-2,yes
+351,,Study Report 3,m5-3-5-4-other-study-reports,D,m5/53-clin-stud-rep/535-rep-effic-safety-stud/indication-1/5354-other-stud-rep/study-report-3,yes
+352,5.3.6,Reports of Postmarketing Experience,m5-3-6-reports-of-postmarketing-experience,D,m5/53-clin-stud-rep/536-postmark-exp,
+353,5.3.7,Case Report Forms and Individual Patient Listings,m5-3-7-case-report-forms-and-individual-patient-listings,D,m5/53-clin-stud-rep/537-crf-ipl,
+354,,Study 1,m5-3-7-case-report-forms-and-individual-patient-listings,D,m5/53-clin-stud-rep/537-crf-ipl/study-1,yes
+355,,Document/Dataset 1,m5-3-7-case-report-forms-and-individual-patient-listings,F,m5/53-clin-stud-rep/537-crf-ipl/study-1/filename-1.pdf,yes
+356,,Document/Dataset 2,m5-3-7-case-report-forms-and-individual-patient-listings,F,m5/53-clin-stud-rep/537-crf-ipl/study-1/filename-2.pdf,yes
+357,,Document/Dataset 3,m5-3-7-case-report-forms-and-individual-patient-listings,F,m5/53-clin-stud-rep/537-crf-ipl/study-1/filename-3.pdf,yes
+358,,Study 2,m5-3-7-case-report-forms-and-individual-patient-listings,D,m5/53-clin-stud-rep/537-crf-ipl/study-2,yes
+359,,Document/Dataset 1,m5-3-7-case-report-forms-and-individual-patient-listings,F,m5/53-clin-stud-rep/537-crf-ipl/study-2/filename-1.pdf,yes
+360,,Document/Dataset 2,m5-3-7-case-report-forms-and-individual-patient-listings,F,m5/53-clin-stud-rep/537-crf-ipl/study-2/filename-2.pdf,yes
+361,,Document/Dataset 3,m5-3-7-case-report-forms-and-individual-patient-listings,F,m5/53-clin-stud-rep/537-crf-ipl/study-2/filename-3.pdf,yes
+362,,Study 3,m5-3-7-case-report-forms-and-individual-patient-listings,D,m5/53-clin-stud-rep/537-crf-ipl/study-3,yes
+363,,Document/Dataset 1,m5-3-7-case-report-forms-and-individual-patient-listings,F,m5/53-clin-stud-rep/537-crf-ipl/study-3/filename-1.pdf,yes
+364,,Document/Dataset 2,m5-3-7-case-report-forms-and-individual-patient-listings,F,m5/53-clin-stud-rep/537-crf-ipl/study-3/filename-2.pdf,yes
+365,,Document/Dataset 3,m5-3-7-case-report-forms-and-individual-patient-listings,F,m5/53-clin-stud-rep/537-crf-ipl/study-3/filename-3.pdf,yes
+366,5.4,Literature References,m5-4-literature-references,D,m5/54-lit-ref,
+367,,Reference 1,m5-4-literature-references,F,m5/54-lit-ref/reference-1.pdf,yes
+368,,Reference 2,m5-4-literature-references,F,m5/54-lit-ref/reference-2.pdf,yes
+369,,Reference 3,m5-4-literature-references,F,m5/54-lit-ref/reference-3.pdf,yes
+370,,,,D,util,
+371,,,,D,util/dtd,
+372,,,,F,util/dtd/ich-ectd-n.dtd,
+373,,,,F,util/dtd/eu-regional-n.dtd,
+374,,,,F,util/dtd/jp-regional-n.xsd,
+375,,,,F,util/dtd/us-regional-n.dtd,
+376,,,,F,util/dtd/xx-regional-n.dtd,
+377,,,,D,util/style,
+378,,,,F,util/style/ectd-n.xsl,
+379,,,,F,util/style/xx-regional-n.xsl,

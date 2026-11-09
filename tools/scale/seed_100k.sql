@@ -137,6 +137,9 @@ do $$ declare bad int; begin
      and u.id <> scale.u(nullif(substring(u.email from '^member([0-9]+)@scale\.test$'), '')::bigint);
   if bad > 0 then raise exception 'scale seed: % scale e-mails exist with other ids — run unseed.sql (or seed_auth_admin.mjs with the same ids)', bad; end if;
 end $$;
+-- usernames (0070_usernames): made for all the members at once at the end of this section, not one by one as each profile is made
+-- (~4 ms a member) — the per-row trigger is deferred for THIS session only
+set drugbox.defer_usernames = 'on';
 -- auth.users: only the columns this database has (Supabase GoTrue needs the token columns as '' not NULL,
 -- instance_id/aud/role and a confirmed e-mail; the local stub has a handful)
 do $$
@@ -218,6 +221,12 @@ from (select n, scale.u(n) as id, scale.person_name(n) as name from generate_ser
 where p.id = s.id;
 alter table public.profiles enable trigger user;
 commit;
+reset drugbox.defer_usernames;
+do $$ begin
+  if to_regprocedure('public.username_assign_missing()') is not null then
+    raise notice 'scale seed: % members given a username', public.username_assign_missing();
+  end if;
+end $$;
 call scale.done('1 members');
 
 -- ═════ 2. companies: 5k (+ team, products, sites, certificates, followers) ═════

@@ -1,0 +1,161 @@
+# =====================================================================================
+# PROVISIONAL — NOT ISSUED BY EDA.  EG provisional regional profile v0 for eCTD v4.0.
+# Every OID containing "EG-PLACEHOLDER" is a deliberately INVALID marker, not an OID.
+# EDA must register real OIDs before any of these codes can pass ICH rules
+# eCTD4-008/009/031/075/081/083/084.  See ../README.md (provenance tags, OID plan).
+# Provenance tags:  ICH | EU-DERIVED | EG-DRAFT | ASSUMPTION
+# Source short-cites: IG = ICH eCTD v4.0 IG v1.7 (5 May 2026); CV = ICH CV package v1.0.3;
+#   EU-IG = EU eCTD v4.0 M1 IG draft v1.2 (Oct 2024, cited by heading); SPEC = EG M1 eCTD
+#   Specification DRAFT v1.0 (2026, page/line/App.2 row); TG = EDA draft Technical Guidance
+#   for eCTD Submissions in Egypt v1.0/2026 (PDF page / margin line).
+# =====================================================================================
+
+purpose: Keyword vocabularies for EG Module 1 CoUs, plus the place of each EG v3.2.2 envelope/leaf attribute (registration
+  type, marketing type, product, manufacturer, INN, language, ...) in v4. In v4 keywords attach ONLY to contextOfUse
+  (IG §9.2.9; document/referencedBy/keyword is excluded, IG §4.7.2). Application-level facts therefore do NOT become
+  keywords.
+eg_keyword_definition_types:
+  code_system:
+    name: EG Keyword Definition Type (regional sender-defined types)
+    short_name: eg-keyword-definition-type
+    oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.8.0
+    version: 0 (provisional)
+    xpath: /…/application/referencedBy/keywordDefinition/code/@code
+    eu_model: 'EU allows ONE regional type in M1: eu_keyword_definition_type_2 = strength, list 2.16.840.1.113883.3.6905.5.1.1,
+      value pattern FIGURE_UNIT e.g. 30_mg (EU-IG "Keyword Definition", "Guidance regarding Keyword Definition values").'
+  codes: []
+  decision: EMPTY in v0 (ASSUMPTION). EU needs strength because one EU application spans several strengths; EG requires
+    one application per strength/dosage form (SPEC Glossary p.3-4), and EG v3.2.2 has no strength attribute. Sender-defined
+    keywords in EG M1 use the ICH types listed below.
+ich_keyword_definition_types_allowed_in_eg_m1:
+- code: ich_keyword_type_11
+  display_name: group title
+  code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+  where: all document-bearing EG CoUs (O); recommended on eg_responses (one group title per regulatory activity)
+  source: CV sheet "ICH Keyword Definition Type"; IG §9.2.10.2; EG node-extension rules SPEC p.9-10 N1-N10
+  provenance: ICH + EG-DRAFT
+- code: ich_keyword_type_3
+  display_name: manufacturer
+  code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+  where: EG CoUs flagged in eg-m1-context-of-use.yaml (GMP, licences, API declarations, inspection docs) (O)
+  source: CV sheet "ICH Keyword Definition Type"
+  provenance: ICH type; EG use = ASSUMPTION
+- code: ich_keyword_type_4
+  display_name: product
+  code_system: 2.16.840.1.113883.3.989.2.2.1.5.4
+  where: NOT used in M1 (one product per EG application). Remains available in M2/M3 per ICH CV.
+  source: CV; replaces v3.2.2 product-name attribute
+  provenance: ICH
+eg_keyword_code_systems:
+- code_system:
+    name: EG Document Type
+    short_name: eg-document-type
+    oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.9.0
+    version: 0 (provisional)
+    eu_model: EU Document Type list 2.16.840.1.113883.3.6905.1.18.1 (e.g. 100000155532 SmPC) used as CoU keyword
+      (EU-IG "Keyword", PI section).
+  codes:
+  - code: spc
+    display_name: Summary of Product Characteristics
+    use_on: eg_1.3.1
+    provenance: EG-DRAFT App.2.3 p.78
+  - code: pl
+    display_name: Package Leaflet
+    use_on: eg_1.3.1
+    provenance: EG-DRAFT App.2.3 p.78
+  - code: interpack
+    display_name: Outer and immediate labelling in one file
+    use_on: eg_1.3.1
+    provenance: EG-DRAFT App.2.3 footnote p.78
+  - code: combined
+    display_name: Combined product information
+    use_on: eg_1.3.1
+    provenance: EG-DRAFT App.1.2 example p.27; SPEC p.11 l.172; TG p.19 l.471
+  - code: outer
+    display_name: Outer labelling
+    use_on: eg_1.3.1
+    provenance: EG-DRAFT file-name example SPEC p.11 l.171
+  - code: other
+    display_name: Other product information
+    use_on: eg_1.3.1
+    provenance: EG-DRAFT TG p.19 l.473
+  - code: cover
+    display_name: Cover letter
+    use_on: eg_1.0
+    provenance: EG-DRAFT SPEC App.2 row 4 (fixed file component)
+  - code: tracking
+    display_name: Tracking table
+    use_on: eg_1.0
+    provenance: EG-DRAFT SPEC App.2 row 5; TG p.28 l.776-780
+  - code: generic
+    display_name: Generic application information
+    use_on: eg_1.5.2
+    provenance: EG-DRAFT SPEC App.2 row 150
+  - code: hybrid
+    display_name: Hybrid application information
+    use_on: eg_1.5.2
+    provenance: EG-DRAFT SPEC App.2 row 150
+  - code: biosimilar
+    display_name: Biosimilar application information
+    use_on: eg_1.5.2
+    provenance: EG-DRAFT SPEC App.2 row 150
+  gap: SPEC App.2.3 lists only spc and pl, but the drafts themselves use interpack, combined, outer, other (EG ref
+    §10 item 16). All six kept.
+- code_system:
+    name: EG Language (constrained ISO 639-1)
+    short_name: eg-language
+    oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.10.0
+    version: 0 (provisional)
+    note: Also used for document/text@language (ISO 639-1 two-letter, IG §6.4, §9.2.15.2) — that attribute carries
+      the bare ISO code, no codeSystem.
+  codes:
+  - code: ar
+    display_name: Arabic
+    provenance: EG-DRAFT App.2.2 p.78
+  - code: en
+    display_name: English
+    provenance: EG-DRAFT App.2.2 p.78
+- code_system:
+    name: EG Country
+    short_name: eg-country
+    oid: 2.16.840.1.113883.3.989.5.x.EG-PLACEHOLDER.1.11.0
+    version: 0 (provisional)
+    note: Same list as application informationRecipient territory.
+  codes:
+  - code: eg
+    display_name: Egypt
+    provenance: EG-DRAFT App.2.1 p.78
+v322_envelope_and_attribute_destinations:
+- v322: envelope/identifier (UUID)
+  v4: application/id/item@root
+  provenance: 'EU-DERIVED (EU-IG "Application": root reflects the UUID introduced in v3.2.2)'
+  note: Not a keyword.
+- v322: registration/@type
+  v4: submission/subject2/review/subject2/productCategory/code (code system eg-registration-type)
+  provenance: ASSUMPTION
+  note: 'No RPS class matches; alternatives: componentOf2/categoryEvent (regional, IG Table 11). Open question for
+    EDA.'
+- v322: marketing/@type
+  v4: second review/subject2/productCategory/code (code system eg-marketing-type)
+  provenance: ASSUMPTION
+  note: XSD allows productCategory 0..*; EU limits to one (EU-IG validation table) — EG deviates.
+- v322: invented-name
+  v4: submission/subject2/review/subject1/manufacturedProduct/manufacturedProduct/name
+  provenance: EU-DERIVED (EU-IG "Manufactured Product")
+  note: 'Required with SU type initial of an MAA-type submission (EU: initial MAA only).'
+- v322: inn
+  v4: …/manufacturedProduct/manufacturedProduct/ingredient[@classCode="ACTI"]/ingredientSubstance/name
+  provenance: EU-DERIVED (EU-IG "Manufactured Product"; EU uses SPOR SMS codes — EG has no substance list, so name
+    only)
+- v322: leaf attribute product-name / dosageform / manufacturer / substance (ICH index.xml)
+  v4: ICH keywordDefinition types 4 / 5 / 3 / 2 on M2-M5 CoUs
+  provenance: ICH (IG §8.1.2 Table 9)
+- v322: pi-doc @type / @xml:lang / @country
+  v4: CoU keywords eg-document-type / eg-language / eg-country on eg_1.3.1 (all R) + document/text@language
+  provenance: EG-DRAFT + EU-DERIVED
+- v322: node-extension/title
+  v4: 'group title keyword ich_keyword_type_11 (nested: joined with "_$")'
+  provenance: ICH (IG §8.1.2 Table 9; CR 00840)
+- v322: language folder 131-spclabelpl/LL
+  v4: document/text@language + eg-language keyword
+  provenance: 'EU-DERIVED (EU-IG "Keywords and Controlled Vocabularies for EU Purpose" note: language folder replaced)'

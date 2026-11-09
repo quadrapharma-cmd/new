@@ -1,0 +1,87 @@
+# Desktop builds of the Dossier Builder for Windows and macOS (no Docker needed on the user's computer).
+# Each build is self-tested on its own OS (launcher --smoke) before it is published.
+name: dossier-desktop
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/dossier-builder/**'
+      - '.github/workflows/dossier-desktop.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            asset: DossierBuilder-Windows.zip
+          - os: macos-latest
+            asset: DossierBuilder-Mac.zip
+          - os: macos-15-intel          # GitHub retired the macos-13 image (Dec 2025): a macos-13 job queues forever and blocks the publish
+            asset: DossierBuilder-Mac-Intel.zip
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Install
+        run: python -m pip install -r apps/dossier-builder/desktop/requirements.txt pyinstaller==6.22.3
+      - name: Browser OCR assets (tesseract.js + pdf.js — scanned documents are read in the user's browser)
+        shell: bash
+        run: bash apps/dossier-builder/web/vendor.sh ocr
+      - name: Build
+        env:
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.os == 'macos-15-intel' && '10.15' || '' }}
+        run: pyinstaller --noconfirm apps/dossier-builder/desktop/dossier.spec
+      - name: Self-test (Windows)
+        if: runner.os == 'Windows'
+        run: dist\DossierBuilder\DossierBuilder.exe --smoke
+      - name: Self-test (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          if [ -d dist/DossierBuilder.app ]; then
+            dist/DossierBuilder.app/Contents/MacOS/DossierBuilder --smoke
+          else
+            dist/DossierBuilder/DossierBuilder --smoke
+          fi
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Copy-Item apps/dossier-builder/desktop/README-AR.txt dist/DossierBuilder/
+          Compress-Archive -Path dist/DossierBuilder -DestinationPath ${{ matrix.asset }}
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir pkg
+          if [ -d dist/DossierBuilder.app ]; then
+            cp -R dist/DossierBuilder.app pkg/
+          else
+            cp -R dist/DossierBuilder pkg/
+          fi
+          cp apps/dossier-builder/desktop/README-AR.txt pkg/
+          ditto -c -k --keepParent pkg tmp.zip && mv tmp.zip ${{ matrix.asset }}
+      - uses: actions/upload-artifact@v4
+        with: { name: '${{ matrix.asset }}', path: '${{ matrix.asset }}', retention-days: 30 }
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: out, merge-multiple: true }
+      - name: Publish to the «desktop-latest» release
+        env: { GH_TOKEN: '${{ github.token }}', REPO: '${{ github.repository }}' }
+        run: |
+          gh release view desktop-latest -R "$REPO" >/dev/null 2>&1 || \
+            gh release create desktop-latest -R "$REPO" --prerelease --target "${{ github.sha }}" \
+              --title "Dossier Builder — Windows & Mac" --notes "Latest desktop builds."
+          gh release upload desktop-latest out/*.zip -R "$REPO" --clobber
+          gh release edit desktop-latest -R "$REPO" --notes "Built from ${{ github.sha }} on $(date -u +%F).
+          - **Windows:** DossierBuilder-Windows.zip
+          - **Mac (Apple Silicon, macOS 11+):** DossierBuilder-Mac.zip
+          - **Mac (Intel, macOS 10.15+):** DossierBuilder-Mac-Intel.zip
+          Read README-AR.txt inside the zip."

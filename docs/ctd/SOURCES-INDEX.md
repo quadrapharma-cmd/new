@@ -1,0 +1,187 @@
+# فهرس المصادر الموحّد — CTD / eCTD مصر (06/11/2026)
+
+الفهرس ده بيجمع **الجلسة دي** (الملفات في `sources/`) و**فهرس الجلسة التانية v3** (`inputs/SOURCES_INDEX-v3-external.md`، والملفات بتاعته في مجلد `eda_sources/`، **ومش موجود في الريبو**).
+
+الحالة متاخدة من **غلاف المستند نفسه** متى اتفتح هنا. لو حالة الجلسة التانية مختلفة، بتلاقي التصحيح في عمود «ملاحظة».
+
+**مفتاح الأعمدة:**
+- **الحالة:** سارٍ / مُستبدل / مسودة / مرجع.
+- **هنا؟:** ✅ يعني الملف موجود في `sources/`، و— يعني موجود في الجلسة التانية بس.
+
+## 1. مستندات هيئة الدواء — الساري
+
+| المستند | الكود | الإصدار | الإصدار / السريان | الحالة | هنا؟ | ملاحظة |
+|---|---|---|---|---|---|---|
+| Submission Guidance for the CTD (NtA) | NP.CAPP.065 | **5** | 01/11/2025 / 01/11/2025 | سارٍ | ✅ | فهرس v3 (#21) لسه بيقول **v4 23/07/2024**، ودي **مُستبدلة** |
+| BE Guideline (generic MA) | GL.CAPP.024 | **4** | **23/06/2026 / 01/07/2026** (مكتوب على الغلاف) | سارٍ | ✅ | فهرس v3 (#15) بيقول «السريان غير مذكور داخل الوثيقة»، ده **غلط** |
+| Human Pharmaceuticals Variations (6th ed.) | GL.CAPP.026 | 6 | 01/12/2025 / 01/01/2026 | سارٍ | ✅ | الفئات **PAC-N / PAC-A / PAC-B / PAC-II** |
+| Dossier Requirements — Registration & Re-registration | GL.CAP.Care/CAPP.002 | 4 | 14/12/2023 / 14/12/2023 | سارٍ | ✅ | مطابق لـ #19 |
+| Regulatory guide — Decree 450/2023 | GL.CAPP.027 | 5 | 30/10/2025 (سريان القرار 01/11/2025) | سارٍ | ✅ | مطابق لـ #24 |
+| Regulatory guide — Decree 150/2022 (re-registration) | (مفيش EDREX على الغلاف) | **7** | **30/12/2025 / 01/01/2026** | سارٍ | ✅ | فهرس v3 (#20) بيقول **GL.CAPP.030 v5 30/11/2023**، ودي **مُستبدلة** |
+| Egyptian Guidelines on CTD Quality Module | — | 2 | 12/03/2023 | سارٍ | ✅ | مطابق لـ #07 |
+| Quality Module — products for re-registration | GL.CAPP.039 | 1 | 30/04/2025 / **01/01/2026** | سارٍ | ✅ | **مش موجود في فهرس v3** |
+| QM File — Most Common Deficiencies (NtA) | NP.CAPP.040 | 1 | 09/03/2022 | سارٍ | ✅ | مش موجود في v3 |
+| Relevant Sections of CTD for Human Variations (NtA) | NP.CAPP.112 | 1 | 01/07/2026 | سارٍ | ✅ | مش موجود في v3. بيغطّي بند «CTD sections» اللي v3 قال إنه ما اتحمّلش |
+| File Content of Stability Study Dossier (NtA) | NP.CAPP.090 | 2 | 06/08/2026 | سارٍ | ✅ | مش موجود في v3 |
+| One Submission announcement | — | — | 19/08/2025 (توجيه 13/08/2025) | إلزامي من 01/11/2025 | (ويب) | مطابق لـ #12 |
+| Biological products file content | GL.Bioinn.004 | 5 | 25/05/2026 | سارٍ (حسب v3) | — | ما اتفتحش هنا |
+| Decree 343/2021 mechanisms | GL.BioInn.001 | 5 | 17/06/2026 / 21/06/2026 | سارٍ (حسب v3) | — | ما اتفتحش هنا |
+| Biosimilars registration | GL.Bioinn.005 | 4.0 | 11/09/2023 | سارٍ (حسب v3) | — | ما اتفتحش هنا |
+| GCP oversight of clinical trials | GL.Bioinn.006 | 4 | 26/03/2026 | سارٍ (حسب v3) | — | ما اتفتحش هنا |
+| Decree 475/2025 (track-and-trace) | — | — | 2025 | ساري (حسب v3) | — | ما اتفتحش هنا |
+
+## 2. مسودات (متستشهدش بيها كأنها متطلبات)
+
+| المستند | الكود | الإصدار | الحالة | هنا؟ |
+|---|---|---|---|---|
+| Technical Guidance for eCTD Submissions in Egypt | (فاضي) | 1/2026 | مسودة، والتواريخ فاضية. الاستشارة 02/09–14/10/2026 (حسب v3) | ✅ |
+| CADC File Assessment | GL.CADC.002 | 3/2025 | مسودة (حسب v3) | — |
+
+## 3. مُستبدل (للمقارنة بس)
+
+| المستند | النسخة المُستبدلة | البديل |
+|---|---|---|
+| NP.CAPP.065 | v4 (23/07/2024) | **v5 (01/11/2025)** |
+| Decree 150 guide | GL.CAPP.030 v5 (30/11/2023) | **v7 (30/12/2025)** |
+| BE | v3 (17/07/2023) | v4 (23/06/2026) |
+| Dossier requirements | v3 (14/08/2023) | v4 (14/12/2023) |
+| Variations | v4 (15/11/2023)، v5 (2024) | v6 (01/12/2025) |
+
+## 4. مراجع دولية
+
+| المرجع | الإصدار | هنا؟ |
+|---|---|---|
+| ICH M4(R4) Organisation + Granularity | 2016 | ✅ |
+| ICH M4Q(R1) | 2002 | ✅ |
+| **ICH eCTD Specification v3.2.2** + DTD `ich-ectd-3-2.dtd` + قالب الفولدرات الفاضي | 16/07/2008 | ✅ اتحمّل من `admin.ich.org` (فهرس v3 كان بيقول «فشل التحميل»). ملخّص في `ectd/ICH-eCTD-3.2.2-reference.md` |
+| ICH M8 Specification for Submission Formats for eCTD | v1.3 | ✅ (scratch، ملخّص في الملف السابق) |
+| ICH eCTD v3.2 Q&A | v1.33 (05/2024) | ✅ (scratch) |
+| **ICH eCTD v4.0** Implementation Guide + XSD | **v1.7 (07/2026)** | بيتجمّع، وحالته في `ectd/` |
+| ICH eCTD v4.0 CV Package / Q&A | v1.0.3 / v1.10 (07/2026) | بيتجمّع |
+| EU M1 Implementation Guide | v3.1.1 (06/2025) | بيتجمّع (النموذج اللي اتنقلت منه المسودة المصرية) |
+| EU Validation Criteria | v8.2 | بيتجمّع |
+| EU Accepted File Formats | 06/2024 | بيتجمّع (#04 في v3) |
+| EU Harmonised Technical Guidance for eCTD | v6.0.1 | بيتجمّع |
+| WHO TRS 986 Annex 6 | 2014 | ✅ |
+| WHO PQ QOS-PD / QIS / BTIF / Screening checklist | 01/2025، 01/2025، 01/2023، 05/2021 | ✅ |
+| FDA M1 v2.6 backbone / FDA v4.0 RPS | — | — (موجودين في v3 بس، #09–11) |
+
+## 5. لسه مش منشور (اتدوّر عليه في الجلستين)
+
+- EG M1 eCTD Specification (`eg-regional.xml` والـ DTD)
+- EG Validation Criteria
+- EG Accepted File Formats
+- Controlled Vocabulary ككود رسمي. القيم موجودة في ملحق 6 بالمسودة.
+- One Submission checklist كملف مستقل. الأقرب ليه جداول NP.CAPP.065 v5.
+
+**خطة الهيئة الرسمية:** منظومة RPM بحلول **فبراير 2027**، وتطبيق كامل لـ **eCTD v4.0** خلال **الربع الأول من 2028** (جريدة المال، 14/06/2026، اجتماع رئيس الهيئة مع شركتي داف وإكستيدو).
+
+## 6. فحص الشجرة العربية لموقع الهيئة (06/11/2026)
+
+الصفحات اللي اتفحصت (صاحب المشروع بعت رابط أول صفحة):
+- «الأدلة الخاصة بالإدارة المركزية للمستحضرات الصيدلية»، وفيها 34 بند؛
+- «إشعارات متلقي الخدمة» للإدارة المركزية للمستحضرات الصيدلية؛
+- «إشعارات متلقي الخدمة» للإدارة المركزية للمستحضرات الحيوية والمبتكرة؛
+- مجموع الصفحات التلاتة 101 بند.
+
+**النتيجة:** مفيش أي مستند eCTD تقني (مواصفة الـ Module 1، أو معايير التحقق، أو الـ DTD، أو القيم المعتمدة). المستند الوحيد عن الـ eCTD لسه هو المسودة.
+
+**بنود جديدة أو أحدث تخص ملف الـ CTD وما كانتش في الفهرس:**
+
+| البند | التاريخ / الإصدار | ملاحظة |
+|---|---|---|
+| إشعار: المستندات الإدارية والوثائق ذات الصلة والإطار الزمني لمتغيرات المستحضرات البشرية | **10/2026 – الإصدار 02** | أحدث من الإصدار 01 (01/2026) المذكور في المهارة |
+| الدليل الإرشادي لمتغيرات Type II | 12/2025 – 01 | |
+| قنوات الاتصال الخارجية مع أقسام الإدارة المركزية للمستحضرات الصيدلية | 06/2026 – 06 | |
+| الدول المرجعية لهيئة الدواء | 06/2026 – 02 | |
+| مخططات القرار 450 | 11/2025 – 06 | |
+| تقديم المواد الخام غير النمطية | 02/2026 – 03 | |
+| دليل الاعتماد على الجهات المرجعية (Reliance) أثناء التسجيل | 08/2024 – 04 | |
+| دليل شوائب النيتروزامين | 12/2025 – 01 | |
+| آلية إضافة أو نقل مكان التصنيع | 03/2026 – 03 | |
+| دليل تصميم العبوات (Mock-up) / دليل التسمية | 05/2023 – 03 / 04/2024 – 04 | |
+| البيولوجي: التسجيل المعجّل / سير عمل التسجيل / المستحضر الثاني | 07/2026 – 03 / 07/2026 – 02 / 03/2026 – 03 | |
+
+**عيوب في الصفحة نفسها:**
+- صف «متغيرات المستحضرات البشرية 06» فيه رابط زيادة بيودّي لدليل تصميم العبوات.
+- صف «تسمية المستحضرات 04» فيه رابط زيادة بيودّي لدليل مراكز التكافؤ الحيوي.
+
+**الدرس:** متعتمدش على الرابط من غير ما تفتح غلاف المستند وتتأكد من كوده وإصداره.
+
+## 7. فحص قائمة إعلانات الهيئة كاملة: أهم اكتشاف (06/11/2026)
+
+قايمة الإعلانات الإنجليزية فيها 140 إعلان، واتلقى فيها **3 مسودات ما كانتش ظاهرة في أي فهرس للأدلة أو الإشعارات**:
+
+| المستند (مسودة) | الاستشارة | الرابط | محفوظ في `sources/` |
+|---|---|---|---|
+| **EG Module 1 eCTD Specification v1.0 (2026)**: 79 صفحة. فيها ملحق 1 بملف XML الخاص بالـ Module 1، وملحق 2 بهيكل الفولدرات والملفات | 02/09 – 14/10/2026 | `/media/5bqn4tnh/draft-of-eg-module-1-ectd-specification-_2026.pdf` | ✅ |
+| **EG Human Pharmaceutical Module 1 Submission Guidance** (إشعار): 68 صفحة | 15/10 – 29/10/2026 | `/media/odgpnm43/draft-of-eg-human-pharmaceutical-module-1-submission-guidance-2.pdf` | ✅ |
+| **NP.CAPP.065 الإصدار 6** (دليل تقديم الـ CTD): 20 صفحة | 15/10 – 29/10/2026 | `/media/rdoj1r25/draft-of-submission-guidance-for-ctd-for-human-pharmaceutical-products-2.pdf` | ✅ |
+
+**إعلانات تأثّر على بناء الملف:**
+
+| التاريخ | الإعلان | الأثر |
+|---|---|---|
+| 20/09/2026 | **الإغلاق الكامل والنهائي لمسار الـ Rolling Submission** للمستحضرات البشرية المحلية **اعتباراً من 01/12/2026** | التقديم بقى One Submission بس. الملفات المفتوحة على Rolling بيتوقف تقييمها لو ما اكتملتش. التقارير الفنية اللي اتعتمدت قبل كده بتدخل الملف الموحد من غير إعادة تقييم |
+| 22/10/2026 | تحديث إشعار «المستندات الإدارية والإطار الزمني لمتغيرات المستحضرات البشرية» (الإصدار 2)، تماشياً مع Variations v6 | ⚠️ رابط الملف في الإعلان (`/media/tqjlbkkm/notice-to-applicant-version-2.pdf`) **بيرجّع صفحة HTML مش PDF**، يعني الرابط بايظ |
+| 21/10/2026 | استقبال ملفات **التسعير على أساس القيمة** للمنتجات اللي أقل سعر بيع للمصنّع ليها في الدول المرجعية بين 50,000 و500,000 جنيه، حسب **القرار 480/2026** | نموذج إضافي يترفع على منظومة التسعير |
+| 04/11/2026 | بوابة **ASMA** (Smart Medicinal Naming Assistant) بالذكاء الاصطناعي لطلبات الأسماء التجارية | موافقة الاسم (البند 1.1.4) بقت بتمشي من البوابة دي |
+
+**البحث في جوجل والفيسبوك ولينكدإن ومواقع الملفات:**
+- **فيسبوك:** محتوى الصفحات والجروبات مقفول وراء تسجيل الدخول، فمش متاح للبحث الآلي.
+- **لينكدإن:** منشورات بتأكد إن المسودتين اتطرحوا للاستشارة. وفيه جلسة لـ DAF وEXTEDO اسمها «Building a Compliant eCTD Submission» فيها «Validation Rules & Common Errors»، وتاريخها غير مؤكد.
+- **معايير التحقق المصرية (EG Validation Criteria) لسه مش منشورة** في أي مكان عام.
+
+## 8. البحث المعمّق — الجولة الثانية (06/11/2026)
+
+اتقرت **976 إعلان بالعربي** من موقع الهيئة. القايمة العربية أطول بكتير من الإنجليزية، اللي فيها 105 بس. وكمان اتفتحت المرفقات المرتبطة.
+
+| اللي لقيناه | الأهمية | في `sources/` |
+|---|---|---|
+| **«Submission Procedures for Registration Dossiers – A Step-by-Step Overview»** | **إزاي الملف بيتقدّم النهارده فعلاً:** بيترفع على **روابط Google Forms**، وكل نوع تقديم ليه رابط: الملف الكامل، والاستكمالات، والـ Module I بعد التحديث. والخطوات بالترتيب: (1) موافقة الطلب والاسم، والتقديم للتسعير واليقظة الدوائية مع إرفاق screenshot. (2) فحص أولي؛ لو الملف ناقص بيترفض، ويتعاد تقديمه خلال **3 شهور** في الحالة 2، أو **30 يوم عمل** في المسار العادي. (3) تقييم فني، وأي طلب استكمال بيوقّف العدّاد ومهلته 3 شهور. (4) **إعادة تقديم الـ Module I محدّث بالموافقات** خلال **6 شهور** من موافقة اليقظة أو شهادة التسعير، أيهم أبعد. (5) مراجعة نهائية، وعرض على اللجنة الفنية، والترخيص. فيه كمان جدول مُهل بأيام العمل لكل مسار (A وB وC والمستورد). المسارات A وB: من شهر لشهرين؛ المسار C: من 3 لـ 6 شهور | ✅ |
+| ويبينار الهيئة «نظرة عامة شاملة على وحدات الملف الفني الموحد الإلكتروني (eCTD)». **24/09/2026**، مركز التطوير المهني المستمر. فيه محاضرة eCTD لـ Dr. Frank Dickert، وحلقة نقاش مع مسؤولين من الهيئة | الأجندة بس. الشرائح أو التسجيل مش منشورين | ✅ الأجندة |
+| استشارة الهيئة على **ICH M4Q(R2)** (06/07 – 26/10/2025) | الهيئة عضو في ICH وبتشارك في المسودة. **M4Q(R2) هيعيد تنظيم Module 3**، ولازم الأداة تتابعه | (مسودة ICH عامة) |
+| **GL.CADC.002 v3/2025** (دليل تقييم ملف التحليل): مسودة، والتواريخ فاضية | زي ما في فهرس v3، **متستشهدش بيه** | ✅ |
+| «Submission Guidance for Module I» القديم ومسودته | تاريخي، واتستبدل بالمسودات الحالية | ✅ المسودة القديمة |
+| **أداة الهيئة الرسمية «EDA Variation Self-Guided Tool»** (`eservices.edaegypt.gov.eg/EDAVariationTool/`) | قاعدة بيانات بكل تغيير: المجموعة، والنوع، والطلب، وفئة PAC، والشروط، والمطلوب، ورابط التقديم، والإطار الزمني. بتغطي البشري والعشبي والبيطري والمستلزمات | بيتسحب |
+
+**مقفول أو مش متاح:**
+- مجلد OneDrive التدريبي (`edaegypt-my.sharepoint.com`) بيحتاج تسجيل دخول، وفيه شرائح ICH M4Q(R2) العامة.
+- يوتيوب: مفيش تسجيل للويبينار طالع في البحث.
+- **معايير التحقق المصرية والـ DTD والقيم المعتمدة: لسه مش منشورة في أي مكان عام.**
+
+## 9. Deep search round 3: the three missing artefacts (06/11/2026)
+
+**Target:** EG validation criteria, the EG regional DTD (`eg-regional.dtd` / `eg-envelope.mod` / `eg-leaf.mod`), and the controlled-vocabulary (CV) lists.
+
+| Avenue | Result |
+|---|---|
+| Exact file-name search (`eg-regional.dtd`, `eg-envelope.mod`, `eg-leaf.mod`, `eg-regional.xsl`) | **No hits.** Only the EU and Swiss equivalents exist publicly |
+| Indexed EDA media (`.xlsx`, `.zip`, «validation criteria», «controlled vocabulary») | None |
+| The draft EG M1 spec's own text | It says the DTD is modular (`eg-envelope.mod`, `eg-leaf.mod`) and that util files live in **`m1/eg/util/dtd`** (EG) and `util/dtd` (ICH). The «subset of CV» table (pp. 14–16) is **the envelope table only**: country `eg`, the submission-mode values, number formats. It says «The list is available in the Submission Type CV», but the full CV lists are **not included** |
+| Vendor release notes | **Asphalion (EXTEDO partner), 25.06 announcement, 07/2025:** the 25.07 release was planned to add «**Egypt — new RST for eCTD v1.0**». So the EG M1 v1.0 regional standard (DTD/CV/rules) was **already delivered to the vendor in mid-2025**, before the public consultation in 09/2026. It is distributed to licensed vendor customers through the myEXTEDO portal, not publicly |
+| LORENZ / others | No Egypt-specific support found |
+| EDA development mirror (`dev.edaegypt.gov.eg`) | Stopped: the automatic safety check blocked crawling a non-public test environment |
+
+**Conclusion:**
+- The DTD, the validation criteria and the CV lists exist (EXTEDO built a regional standard from them in 2025).
+- They are **not public**. Today they are reachable only through:
+  - (a) an eCTDmanager / EURSvalidator licence (myEXTEDO portal);
+  - (b) EDA's eCTD onboarding with DAF / EXTEDO;
+  - (c) a written request to EDA (hdr.regua.acc@edaegypt.gov.eg, the consultation address for the eCTD drafts).
+- They may also be published when the drafts are adopted.
+
+## 10. Deep search round 4 (06/11/2026)
+
+| Avenue | Result |
+|---|---|
+| GitHub code search (`eg-envelope`, `eg-regional`, `m1-eg`, `EG-EDA envelope`) | 183, 98, 432 and 14 hits, **all unrelated** (no eCTD repositories) |
+| Internet Archive / Common Crawl | **Not reachable**: the environment service rejected adding `web.archive.org`, `index.commoncrawl.org` and `www.asphalion.com` (two attempts) |
+| EDA development mirror | Not crawled (blocked by the automatic safety check; non-public test environment) |
+| EXTEDO site, blog and file store (hubfs) | Only generic product flyers. **New facts from the two EXTEDO posts (24/11/2025 and the Phase II launch):** |
+| | • **Phase I started January 2025.** It implemented **eCTD v3**, the **health-authority review solution** (EXTEDO's reviewer — so EDA validates with **EXTEDO EURSvalidator / EURS** carrying the EG rule set) and the **submission portal** |
+| | • **Phase II contract** signed in Cairo **20/11/2025** (EXTEDO CEO Martin Schmid, DAF CEO Eng. Hatem Kandeel). It covers the **EXTEDOpulse Agency Portal powered by CARA** (two-way portal), Master Data Management, Regulatory Procedure Management, Document Management, and the groundwork for **eCTD v4** |
+| | • Purpose: support EDA towards **WHO Maturity Level 4** |
+| Arabic / English searches for «معايير التحقق», Pass/Fail, «validation rules» | No EDA eCTD rule set. Found EDA's in-force **GL.CADC.002 v02/2024** (CADC file assessment: test-by-test acceptance criteria; issued 23/05/2024, effective 01/06/2024). Archived; this is the version in force (the 3/2025 file is the draft) |
+
+**Practical consequence:** EDA checks submissions with EXTEDO's validator and the EG regional standard. A tool that wants «first-pass» acceptance has to reproduce the EG rule set. The only channel that has it today is EXTEDO (EURSvalidator/eCTDmanager EG RST, via the myEXTEDO portal) or EDA directly.

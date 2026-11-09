@@ -1,0 +1,24 @@
+# EG language code - EG provisional profile v0 (PROVISIONAL, not issued by EDA). Built 2026-11-06.
+# Field: pi-doc/@xml:lang and LL folder of 1.3.1
+# provenance: EG-DRAFT (stated in an EDA draft) | EU-DERIVED | ASSUMPTION (reason in note)
+# Sources: SPEC = EG Module 1 eCTD Specification draft v1.0/2026; TG = Technical Guidance for eCTD Submissions in Egypt draft v1.0/2026;
+#          HPG = EG Human Pharmaceutical Module 1 Submission Guidance draft v1/2026; EU = EU M1 v3.1.1 / eu-envelope.mod 3.1.
+vocabulary: "EG language code"
+field: "pi-doc/@xml:lang and LL folder of 1.3.1"
+status: PROVISIONAL
+intro: "SPEC App. 2.2 p.78."
+values:
+  - value: "ar"
+    label: "Arabic"
+    provenance: "EG-DRAFT"
+    source: "SPEC App. 2.2 p.78"
+    note: ""
+  - value: "en"
+    label: "English"
+    provenance: "EG-DRAFT"
+    source: "SPEC App. 2.2 p.78"
+    note: ""
+excluded_values:
+  - value: "bg cs da de el es et fi fr ga hr hu is it lt lv mt nl no pl pt ro sk sl sv"
+    source: "EU App. 2.2"
+    reason: "EU official languages; not EDA languages."

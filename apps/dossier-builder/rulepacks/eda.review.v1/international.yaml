@@ -1,0 +1,273 @@
+# International layer — what EMA, FDA and WHO PQ assessors ask beyond EDA's published lists. Each item cites its guideline at
+# guideline level (the texts are not in docs/ctd/sources); the EDA source field names the EDA document the item extends.
+- id: IN-Q11-01
+  dept: quality
+  layer: intl
+  ctd: "3.2.S.2.3"
+  title: {en: "Starting material justified (ICH Q11)", ar: "تبرير مادة البدء (ICH Q11)"}
+  question: {en: "Is the selection of the regulatory starting material justified per ICH Q11 (enough synthetic steps under GMP before the API, impurity fate and purge)?", ar: "هل اختيار مادة البدء التنظيمية مبرَّر وفق ICH Q11 (عدد كافٍ من خطوات التخليق تحت GMP قبل المادة الفعالة، ومصير الشوائب وإزالتها)؟"}
+  applies: "'FULL' in api_options or 'DMF' in api_options"
+  severity: major
+  evidence: {slots: [S-05], keywords: ["starting material", "Q11", "justif", "purge", "GMP"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The choice of the starting material should be justified according to ICH Q11, showing sufficient GMP steps before the API and the fate and purge of impurities from the starting material.", ar: "يجب تبرير اختيار مادة البدء وفق ICH Q11 مع إظهار خطوات كافية تحت GMP قبل المادة الفعالة ومصير شوائب مادة البدء وإزالتها."}
+  action: {type: upload, target: S-05}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.S.2.3", quote: "Details concerning API starting materials preparation is insufficient or missed"}
+  anchor: {code: ICH Q11, section: "§5 selection of starting materials"}
+- id: IN-NITRO-01
+  dept: quality
+  layer: intl
+  ctd: "3.2.S.3.2 · 3.2.P.5.5"
+  title: {en: "Nitrosamine risk assessment with CPCA", ar: "تقييم مخاطر النيتروزامين مع CPCA"}
+  question: {en: "Is a three-step nitrosamine risk assessment provided (risk evaluation, confirmatory testing, control strategy), with acceptable intakes derived by the carcinogenic potency categorisation approach for drug-substance-related nitrosamines?", ar: "هل تقييم مخاطر النيتروزامين بخطواته الثلاث مقدَّم (تقييم المخاطر، الاختبار التأكيدي، استراتيجية الضبط)، مع مداخل مقبولة مشتقة بنهج تصنيف القوة المسرطنة للنيتروزامينات المرتبطة بالمادة الفعالة؟"}
+  severity: major
+  evidence: {slots: [S-07, P-12], keywords: ["nitrosamine", "NDSRI", "CPCA", "acceptable intake", "confirmatory"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "A nitrosamine risk assessment covering the API and the finished product should be provided, with confirmatory testing where a risk is identified and a control strategy; acceptable intakes for API-related nitrosamines should follow the CPCA approach.", ar: "يجب تقديم تقييم مخاطر النيتروزامين للمادة الفعالة والمنتج النهائي، مع اختبار تأكيدي عند وجود خطر واستراتيجية ضبط؛ وتُشتق المداخل المقبولة للنيتروزامينات المرتبطة بالمادة الفعالة بنهج CPCA."}
+  action: {type: upload, target: P-12}
+  source: {code: WHO PQ screening checklist 05/2021, section: "nitrosamine", quote: "Nitrosamine RA declared"}
+  anchor: {code: EMA/409815/2020 Q&A (rev. 2024) · FDA guidance «Control of nitrosamine impurities» (2024) · ICH M7(R2)}
+- id: IN-Q8-01
+  dept: quality
+  layer: intl
+  ctd: "3.2.P.2"
+  title: {en: "Risk assessment and control strategy (ICH Q8/Q9)", ar: "تقييم المخاطر واستراتيجية الضبط (ICH Q8/Q9)"}
+  question: {en: "Does the development section link the CQAs to the CPPs through a documented risk assessment and define a control strategy?", ar: "هل يربط قسم التطوير سمات الجودة الحرجة بمعاملات العملية الحرجة من خلال تقييم مخاطر موثَّق ويحدد استراتيجية ضبط؟"}
+  severity: major
+  evidence: {slots: [P-02], keywords: ["risk assessment", "control strategy", "FMEA", "Ishikawa", "design space", "Q9"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "Pharmaceutical development should include a risk assessment linking the critical quality attributes to the process parameters and material attributes, and a control strategy derived from it (ICH Q8/Q9).", ar: "يجب أن يتضمن التطوير الصيدلي تقييم مخاطر يربط سمات الجودة الحرجة بمعاملات العملية وسمات المواد، واستراتيجية ضبط مشتقة منه (ICH Q8/Q9)."}
+  action: {type: upload, target: P-02}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.2", quote: "Critical Quality Attributes and Critical Process Parameters are not identified"}
+  anchor: {code: ICH Q8(R2) · ICH Q9(R1)}
+- id: IN-DISS-01
+  dept: quality
+  layer: intl
+  ctd: "3.2.P.2.2 · 3.2.P.5.6"
+  title: {en: "Discriminatory dissolution method", ar: "طريقة ذوبان قادرة على التمييز"}
+  question: {en: "Is the dissolution method shown to be discriminatory (medium, apparatus, speed and sink conditions justified; profiles of batches with deliberate changes), with the specification set from the clinical/BE batch profiles?", ar: "هل ثبت أن طريقة الذوبان قادرة على التمييز (تبرير الوسط والجهاز والسرعة وظروف الغمر؛ منحنيات لتشغيلات ذات تغييرات متعمدة)، مع وضع المواصفة من منحنيات تشغيلة التكافؤ/الإكلينيكية؟"}
+  applies: "admin_route == 'oral' and not aqueous_solution"
+  severity: major
+  evidence: {slots: [P-02, P-13], keywords: ["discriminat", "dissolution method development", "sink", "medium", "profile"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The dissolution method development should demonstrate discriminatory power and justify the conditions, and the acceptance criterion should be derived from the profiles of the bioequivalence batch.", ar: "يجب أن يثبت تطوير طريقة الذوبان قدرتها على التمييز ويبرر ظروفها، وأن يُشتق معيار القبول من منحنيات تشغيلة التكافؤ الحيوي."}
+  action: {type: upload, target: P-02}
+  source: {code: GL.CADC.002 v02/2024, section: "6.5.4", quote: "For new pharmaceutical drug products, a complete dissolution study with scientific justification should be submitted"}
+  anchor: {code: FDA guidance «Dissolution testing of IR solid oral dosage forms» (1997) · EMA reflection paper on dissolution specification (2017)}
+- id: IN-PV-01
+  dept: quality
+  layer: intl
+  ctd: "3.2.P.3.5"
+  title: {en: "Validation approach justified", ar: "تبرير نهج التحقق من العملية"}
+  question: {en: "Is the validation approach (traditional three batches, continuous process verification or hybrid) justified, with a protocol that defines the sampling plan and acceptance criteria for each critical step?", ar: "هل نهج التحقق (ثلاث تشغيلات تقليدية، أو التحقق المستمر، أو هجين) مبرَّر، مع بروتوكول يحدد خطة أخذ العينات ومعايير القبول لكل خطوة حرجة؟"}
+  severity: major
+  evidence: {slots: [P-07], keywords: ["protocol", "sampling plan", "acceptance criteria", "continuous process verification", "scheme"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The process validation scheme should state the chosen approach and the protocol should define the sampling plan and acceptance criteria for each critical process step; for non-standard processes validation data on production-scale batches are expected before approval.", ar: "يجب أن يبيّن مخطط التحقق النهج المختار، وأن يحدد البروتوكول خطة أخذ العينات ومعايير القبول لكل خطوة حرجة؛ وللعمليات غير القياسية تُتوقع بيانات تحقق على تشغيلات إنتاجية قبل الموافقة."}
+  action: {type: upload, target: P-07}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.3.5", quote: "Absence of Process Validation on 3 primary batches"}
+  anchor: {code: "EMA/CHMP/CVMP/QWP/BWP/70278/2012-Rev1 (process validation) · FDA «Process validation: general principles and practices» (2011)"}
+- id: IN-HOLD-01
+  dept: quality
+  layer: intl
+  ctd: "3.2.P.3.3"
+  title: {en: "Bulk holding times and transport", ar: "أزمنة انتظار المنتج السائب ونقله"}
+  question: {en: "Are the maximum holding times of bulk and intermediates and any transport between sites supported by data (hold-time study, transport conditions)?", ar: "هل أزمنة الانتظار القصوى للمنتج السائب والوسائط وأي نقل بين المواقع مدعومة ببيانات (دراسة أزمنة الانتظار، ظروف النقل)؟"}
+  severity: major
+  evidence: {slots: [P-05, P-16], keywords: ["hold time", "holding time", "bulk", "transport", "shipping"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The holding times of bulk product and intermediates should be stated and supported by a hold-time study, and transport between sites (conditions and duration) should be described and justified.", ar: "يجب ذكر أزمنة انتظار المنتج السائب والوسائط ودعمها بدراسة أزمنة الانتظار، ووصف النقل بين المواقع (الظروف والمدة) وتبريره."}
+  action: {type: upload, target: P-05}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.3.3", quote: "Holding time is not specified and supportive stability data is not submitted"}
+  anchor: {code: EMA/CHMP/QWP/245074/2015 (manufacture of the finished dosage form)}
+- id: IN-Q6A-01
+  dept: quality
+  layer: intl
+  ctd: "3.2.P.5.6 · 3.2.S.4.5"
+  title: {en: "Specification justified with the Q6A decision trees", ar: "تبرير المواصفة بأشجار قرار Q6A"}
+  question: {en: "Are the acceptance criteria justified against the batch data, the stability data and the ICH Q6A decision trees (tests that may be omitted or performed periodically)?", ar: "هل معايير القبول مبرَّرة في ضوء بيانات التشغيلات والثبات وأشجار قرار ICH Q6A (الاختبارات التي يمكن حذفها أو إجراؤها دورياً)؟"}
+  severity: minor
+  evidence: {slots: [P-13, S-11], keywords: ["Q6A", "decision tree", "periodic", "batch data", "justif"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The justification of specifications should refer to the batch and stability data and to the ICH Q6A decision trees for each test and acceptance criterion.", ar: "يجب أن يستند تبرير المواصفات إلى بيانات التشغيلات والثبات وإلى أشجار قرار ICH Q6A لكل اختبار ومعيار قبول."}
+  action: {type: generate, target: justification}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.5.6", quote: "Absence of justification for some test"}
+  anchor: {code: ICH Q6A, section: "decision trees #1–#8"}
+- id: IN-Q14-01
+  dept: quality
+  layer: intl
+  ctd: "3.2.P.5.3 · 3.2.S.4.3"
+  title: {en: "Validation per ICH Q2(R2) with robustness", ar: "التحقق وفق ICH Q2(R2) مع المتانة"}
+  question: {en: "Do the validation reports cover specificity, linearity, range, accuracy, precision (repeatability and intermediate), robustness and solution stability per ICH Q2(R2), with system suitability criteria?", ar: "هل تغطي تقارير التحقق الخصوصية والخطية والمدى والدقة والضبط (التكرارية والوسيطة) والمتانة وثبات المحاليل وفق ICH Q2(R2)، مع معايير ملاءمة النظام؟"}
+  severity: major
+  evidence: {slots: [P-10, S-09], keywords: ["robustness", "intermediate precision", "range", "solution stability", "Q2(R2)", "Q2"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The validation of each in-house method should address all ICH Q2(R2) characteristics including robustness, intermediate precision and solution stability, and define the system suitability criteria.", ar: "يجب أن يتناول التحقق من كل طريقة داخلية جميع خصائص ICH Q2(R2) بما فيها المتانة والدقة الوسيطة وثبات المحاليل، وأن يحدد معايير ملاءمة النظام."}
+  action: {type: upload, target: P-10}
+  source: {code: GL.CADC.002 v02/2024, section: "Annex V", quote: "Revision of method validation and verification requirements (Annex V) to be aligned with ICH Q2(R2)"}
+  anchor: {code: ICH Q2(R2) · ICH Q14}
+- id: IN-EL-01
+  dept: quality
+  layer: intl
+  ctd: "3.2.P.2.4 · 3.2.P.7"
+  title: {en: "Extractables and leachables", ar: "المواد القابلة للاستخلاص والمتسربة"}
+  question: {en: "For parenteral, ophthalmic and inhalation products, is an extractables/leachables assessment of the primary packaging provided with a toxicological evaluation?", ar: "للمنتجات الحقنية والعينية والاستنشاقية، هل تقييم المواد القابلة للاستخلاص والمتسربة من التعبئة الأولية مقدَّم مع تقييم سمي؟"}
+  applies: "admin_route in ['parenteral', 'ophthalmic', 'inhalation'] or 'sterile' in dosage_specifics"
+  severity: major
+  evidence: {slots: [P-02, P-15], keywords: ["extractable", "leachable", "E&L", "toxicolog"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "An extractables and leachables study of the container closure system, with a toxicological assessment of the leachables, should be provided for this route of administration.", ar: "يجب تقديم دراسة المواد القابلة للاستخلاص والمتسربة لنظام العبوة مع تقييم سمي للمواد المتسربة لطريق الإعطاء هذا."}
+  action: {type: upload, target: P-15}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.7", quote: "Data or explanation about the suitability of selection of the immediate packaging materials"}
+  anchor: {code: EMA CPMP/QWP/4359/03 (plastic immediate packaging) · USP <1663>/<1664>}
+- id: IN-CCI-01
+  dept: quality
+  layer: intl
+  ctd: "3.2.P.2.4 · 3.2.P.8"
+  title: {en: "Container closure integrity for sterile products", ar: "سلامة إغلاق العبوة للمنتجات المعقَّمة"}
+  question: {en: "Is container closure integrity demonstrated for the sterile product (validated deterministic or microbial ingress method), including at the end of shelf life?", ar: "هل ثبتت سلامة إغلاق العبوة للمنتج المعقَّم (طريقة حتمية أو اختراق ميكروبي متحقَّق منها)، بما في ذلك في نهاية مدة الصلاحية؟"}
+  applies: "'sterile' in dosage_specifics or admin_route == 'parenteral'"
+  severity: major
+  evidence: {slots: [P-02, P-16], keywords: ["container closure integrity", "CCI", "dye ingress", "microbial ingress", "leak"]}
+  auto: {kind: text, min_hits: 1}
+  deficiency: {en: "Container closure integrity of the sterile product should be demonstrated with a validated method and confirmed over the shelf life.", ar: "يجب إثبات سلامة إغلاق العبوة للمنتج المعقَّم بطريقة متحقَّق منها وتأكيدها على مدى مدة الصلاحية."}
+  action: {type: upload, target: P-02}
+  source: {code: WHO PQ screening checklist 05/2021, section: "sterile products (Part C)", quote: "container integrity (microbial or dye ingress)"}
+  anchor: {code: USP <1207> · EU GMP Annex 1 (2022)}
+- id: IN-STER-01
+  dept: quality
+  layer: intl
+  ctd: "3.2.P.3.5 · 3.2.A.1"
+  title: {en: "Sterilisation and aseptic validation package", ar: "حزمة التحقق من التعقيم والمعالجة المعقَّمة"}
+  question: {en: "For a sterile product, are sterilisation/depyrogenation validation, media-fill results, filter validation (bacterial retention, compatibility) and environmental monitoring summarised?", ar: "للمنتج المعقَّم، هل التحقق من التعقيم وإزالة البيروجينات، ونتائج تعبئة الأوساط، والتحقق من المرشحات (الاحتجاز البكتيري، التوافق)، والرصد البيئي ملخَّصة؟"}
+  applies: "'sterile' in dosage_specifics or admin_route == 'parenteral'"
+  severity: major
+  evidence: {slots: [P-07, A-01], keywords: ["media fill", "sterilisation validation", "sterilization validation", "depyrogenation", "bacterial retention", "filter validation", "F0"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The sterile-product validation package should include sterilisation and depyrogenation validation, media-fill results, filter validation and a summary of environmental control.", ar: "يجب أن تتضمن حزمة التحقق للمنتج المعقَّم التحقق من التعقيم وإزالة البيروجينات، ونتائج تعبئة الأوساط، والتحقق من المرشحات، وملخص الرقابة البيئية."}
+  action: {type: upload, target: P-07}
+  source: {code: WHO PQ screening checklist 05/2021, section: "sterile products (Part C)", quote: "media-fill results … filter validation … sterilisation and depyrogenation validation"}
+  anchor: {code: EMA guideline on sterilisation of the medicinal product (2019) · EU GMP Annex 1}
+- id: IN-Q1E-01
+  dept: stability
+  layer: intl
+  ctd: "3.2.P.8.1"
+  title: {en: "Shelf-life extrapolation per ICH Q1E", ar: "استقراء مدة الصلاحية وفق ICH Q1E"}
+  question: {en: "Where the proposed shelf life exceeds the real-time data, is the extrapolation justified per ICH Q1E (no significant change at accelerated, little variability, statistical evaluation and poolability) and limited to twice the long-term data and not more than 12 months beyond?", ar: "عند تجاوز مدة الصلاحية المقترحة للبيانات الفعلية، هل الاستقراء مبرَّر وفق ICH Q1E (لا تغير ذو دلالة في المعجَّل، تباين قليل، تقييم إحصائي وإمكانية التجميع) ومحدود بضعف البيانات طويلة الأمد وبما لا يزيد على 12 شهراً؟"}
+  severity: major
+  evidence: {slots: [P-16], keywords: ["extrapolat", "Q1E", "regression", "poolab", "statistical"]}
+  auto: {kind: text, min_hits: 1}
+  deficiency: {en: "A shelf life longer than the available long-term data should be justified by the ICH Q1E extrapolation rules with a statistical evaluation of the data; the extension should not exceed twice the long-term period nor 12 months beyond it.", ar: "يجب تبرير مدة صلاحية أطول من البيانات طويلة الأمد المتاحة بقواعد الاستقراء في ICH Q1E مع تقييم إحصائي للبيانات؛ ولا يتجاوز التمديد ضعف المدة طويلة الأمد ولا 12 شهراً بعدها."}
+  action: {type: upload, target: P-16}
+  source: {code: WHO TRS 986 Annex 6, section: "extrapolation", quote: "up to 2 × the long-term data, but not more than long-term + 12 months"}
+  anchor: {code: ICH Q1E, section: "§2.4 and Appendix A"}
+- id: IN-Q1B-01
+  dept: stability
+  layer: intl
+  ctd: "3.2.P.8.3"
+  title: {en: "Photostability confirmatory study", ar: "دراسة الثبات الضوئي التأكيدية"}
+  question: {en: "Was photostability tested per ICH Q1B on at least one batch (1.2 million lux·h and 200 W·h/m²) on the product, in the immediate pack and in the marketed pack as needed?", ar: "هل اختُبر الثبات الضوئي وفق ICH Q1B على تشغيلة واحدة على الأقل (1.2 مليون لوكس·ساعة و200 واط·ساعة/م²) على المنتج، وفي العبوة المباشرة والعبوة التسويقية حسب الحاجة؟"}
+  severity: major
+  evidence: {slots: [P-16], keywords: ["photostab", "Q1B", "lux", "W h/m", "light"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "A confirmatory photostability study per ICH Q1B (1.2 million lux hours and 200 watt hours per square metre) should be provided on at least one batch, progressing from the exposed product to the immediate and marketing packs as needed.", ar: "يجب تقديم دراسة ثبات ضوئي تأكيدية وفق ICH Q1B (1.2 مليون لوكس·ساعة و200 واط·ساعة/م²) على تشغيلة واحدة على الأقل، بالتدرج من المنتج المكشوف إلى العبوة المباشرة والتسويقية حسب الحاجة."}
+  action: {type: upload, target: P-16}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.8.1", quote: "Absence of photo stability study"}
+  anchor: {code: ICH Q1B}
+- id: IN-INUSE-01
+  dept: stability
+  layer: intl
+  ctd: "3.2.P.8.3"
+  title: {en: "In-use stability for multidose and reconstituted products", ar: "ثبات أثناء الاستخدام للعبوات متعددة الجرعات والمحضَّرة"}
+  question: {en: "For multidose, reconstituted or diluted products, is an in-use stability study provided on at least two batches (one near the end of shelf life) supporting the in-use period in the SmPC?", ar: "للمنتجات متعددة الجرعات أو المحضَّرة أو المخففة، هل دراسة ثبات أثناء الاستخدام مقدَّمة على تشغيلتين على الأقل (إحداهما قرب نهاية مدة الصلاحية) تدعم فترة الاستخدام في النشرة؟"}
+  applies: "'powder_inj_with_solvent' in dosage_specifics or 'suspension' in dosage_specifics or 'oral_solution' in dosage_specifics or admin_route in ['parenteral', 'ophthalmic']"
+  severity: major
+  evidence: {slots: [P-16, M1-09], keywords: ["in-use", "in use", "after opening", "after reconstitution", "after dilution"]}
+  auto: {kind: text, min_hits: 1}
+  deficiency: {en: "An in-use stability study should support the in-use period and conditions stated in the SmPC, performed on at least two batches, one of them at the end of its shelf life.", ar: "يجب أن تدعم دراسة ثبات أثناء الاستخدام فترة الاستخدام وظروفه المذكورة في النشرة، على تشغيلتين على الأقل إحداهما في نهاية مدة صلاحيتها."}
+  action: {type: upload, target: P-16}
+  source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.8", quote: "in-use stability"}
+  anchor: {code: EMA CPMP/QWP/2934/99 (in-use stability testing)}
+- id: IN-M13A-01
+  dept: be
+  layer: intl
+  ctd: "5.3.1.2"
+  title: {en: "Study conditions per ICH M13A", ar: "ظروف الدراسة وفق ICH M13A"}
+  question: {en: "Does the pivotal BE study follow ICH M13A on fasting/fed conditions (as labelled for the reference), strength selection, sampling schedule and the handling of outliers and pre-dose concentrations?", ar: "هل تتبع دراسة التكافؤ المحورية ICH M13A في ظروف الصيام/الطعام (وفق نشرة المرجع)، واختيار التركيز، وجدول أخذ العينات، ومعالجة القيم الشاذة والتركيزات قبل الجرعة؟"}
+  applies: "dossier_kind == 'generic' and admin_route == 'oral' and not aqueous_solution and not bcs_waiver and not local_action"
+  severity: major
+  evidence: {slots: [M5-04], keywords: ["M13A", "fasting", "fed", "pre-dose", "outlier", "sampling schedule"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The BE study design should be justified against ICH M13A: fasting or fed condition consistent with the reference labelling, selection of the strength, sampling schedule covering ≥ 80% of AUC, and pre-specified handling of pre-dose concentrations and outliers.", ar: "يجب تبرير تصميم دراسة التكافؤ وفق ICH M13A: حالة الصيام أو الطعام المتسقة مع نشرة المرجع، واختيار التركيز، وجدول أخذ العينات المغطي 80% على الأقل من AUC، ومعالجة محددة مسبقاً للتركيزات قبل الجرعة والقيم الشاذة."}
+  action: {type: upload, target: M5-04}
+  source: {code: GL.CAPP.024 v4/2026, section: "references — ICH M13A", quote: "ICH M 13A"}
+  anchor: {code: ICH M13A (2024)}
+- id: IN-M10-01
+  dept: be
+  layer: intl
+  ctd: "5.3.1.4"
+  title: {en: "Bioanalytical validation per ICH M10 with ISR", ar: "التحقق التحليلي الحيوي وفق ICH M10 مع ISR"}
+  question: {en: "Does the bioanalytical method validation follow ICH M10 (selectivity, matrix effect, carry-over, stability in matrix, dilution integrity) and was incurred sample reanalysis performed on the required proportion of samples?", ar: "هل يتبع التحقق من الطريقة التحليلية الحيوية ICH M10 (الانتقائية، تأثير المصفوفة، الانتقال، الثبات في المصفوفة، سلامة التخفيف)، وهل أُعيد تحليل العينات المأخوذة بالنسبة المطلوبة؟"}
+  applies: "dossier_kind == 'generic' and admin_route == 'oral' and not aqueous_solution and not bcs_waiver and not local_action"
+  severity: major
+  evidence: {slots: [M5-06], keywords: ["M10", "incurred sample", "ISR", "matrix effect", "carry-over", "carryover", "dilution integrity"]}
+  auto: {kind: text, min_hits: 2}
+  deficiency: {en: "The bioanalytical validation report should cover all ICH M10 parameters and incurred sample reanalysis should be reported with its acceptance criteria.", ar: "يجب أن يغطي تقرير التحقق التحليلي الحيوي جميع معايير ICH M10، وأن يُبلَّغ عن إعادة تحليل العينات المأخوذة مع معايير قبولها."}
+  action: {type: upload, target: M5-06}
+  source: {code: GL.CAPP.024 v4/2026, section: "2.19 bioanalytical method validation · 2.21 incurred sample reanalysis", quote: "Requirement to perform incurred sample reanalysis"}
+  anchor: {code: ICH M10 (2022)}
+- id: IN-GCP-01
+  dept: be
+  layer: intl
+  ctd: "5.3.1.2"
+  title: {en: "GCP and ethics documentation", ar: "توثيق الممارسة الإكلينيكية الجيدة والأخلاقيات"}
+  question: {en: "Does the BE study report include the ethics committee approval, the informed consent form, the protocol with amendments, the CRO's GCP/GLP statement and the audit/monitoring summary?", ar: "هل يتضمن تقرير دراسة التكافؤ موافقة لجنة الأخلاقيات، ونموذج الموافقة المستنيرة، والبروتوكول مع تعديلاته، وإقرار مركز الدراسة بالالتزام بـ GCP/GLP، وملخص التدقيق/المتابعة؟"}
+  applies: "dossier_kind == 'generic' and admin_route == 'oral' and not aqueous_solution and not bcs_waiver and not local_action"
+  severity: major
+  evidence: {slots: [M5-04], keywords: ["ethics committee", "informed consent", "GCP", "protocol", "audit", "monitoring"]}
+  auto: {kind: text, min_hits: 3}
+  deficiency: {en: "The study report should be accompanied by the ethics approval, the informed consent form, the final protocol and amendments, a GCP compliance statement and the audit or monitoring summary.", ar: "يجب أن يُرفق بتقرير الدراسة موافقة لجنة الأخلاقيات ونموذج الموافقة المستنيرة والبروتوكول النهائي وتعديلاته وإقرار الالتزام بـ GCP وملخص التدقيق أو المتابعة."}
+  action: {type: upload, target: M5-04}
+  source: {code: GL.CAPP.024 v4/2026, section: "2.4 ethical considerations · 2.5 study protocol", quote: "Ethical considerations"}
+  anchor: {code: ICH E6(R3) · ICH E3}
+- id: IN-REL-01
+  dept: reliance
+  layer: intl
+  ctd: "1.1.16 · 1.1.15"
+  title: {en: "Reliance package — SRA assessment and sameness", ar: "حزمة الاعتماد — تقرير الجهة المرجعية والتطابق"}
+  question: {en: "For the reliance route, are the unredacted assessment report of the reference authority, the sameness declaration (same formulation, site, specifications and labelling as approved there) and the approval letter provided?", ar: "لمسار الاعتماد، هل تقرير التقييم غير المحجوب للجهة المرجعية، وإقرار التطابق (نفس التركيبة والموقع والمواصفات والنشرة المعتمدة هناك)، وخطاب الموافقة مقدَّمة؟"}
+  applies: "reliance"
+  severity: critical
+  evidence: {slots: [M1-17, M1-16, M1-15], keywords: ["assessment report", "sameness", "identical", "approved by"]}
+  auto: {kind: slot}
+  deficiency: {en: "The reliance submission should include the complete unredacted assessment report of the reference authority, a sameness letter confirming that the product is identical to the one it approved, and the list of countries with the approval.", ar: "يجب أن يتضمن تقديم الاعتماد تقرير التقييم الكامل غير المحجوب للجهة المرجعية، وخطاب تطابق يؤكد أن المنتج مطابق للمنتج المعتمد لديها، وقائمة الدول مع الموافقة."}
+  action: {type: upload, target: M1-17}
+  source: {code: EG Module 1 submission guidance (DRAFT 2026), section: "1.2.7.2 unredacted assessment report", quote: "complete version of assessment report of the SRA in which no information has been blacked out"}
+  anchor: {code: WHO TRS 1033 Annex 10 (good reliance practices)}
+- id: IN-REL-02
+  dept: reliance
+  layer: intl
+  ctd: "1.1.13"
+  title: {en: "Reference approval current and matching", ar: "موافقة المرجع سارية ومطابقة"}
+  question: {en: "Is the reference authority's approval current (not withdrawn or suspended), and do the CPP, the approved SmPC and the Module 3 of the submitted dossier correspond to that approval?", ar: "هل موافقة الجهة المرجعية سارية (غير مسحوبة أو موقوفة)، وهل شهادة CPP والنشرة المعتمدة والوحدة 3 في الملف المقدم مطابقة لتلك الموافقة؟"}
+  applies: "reliance"
+  severity: critical
+  evidence: {slots: [M1-14, M1-09, M1-17], keywords: ["marketing authorisation", "marketing authorization", "approved", "valid"]}
+  auto: {kind: none}
+  deficiency: {en: "The applicant should demonstrate that the reference approval is in force and that the submitted dossier is the same as the one assessed by the reference authority, with any differences listed and justified.", ar: "يجب أن يثبت مقدم الطلب أن موافقة المرجع سارية وأن الملف المقدم هو نفسه الذي قيّمته الجهة المرجعية، مع سرد أي اختلافات وتبريرها."}
+  action: {type: upload, target: M1-17}
+  source: {code: GL.CADC.002 v02/2024, section: "6.5.6", quote: "The products are assessed and analyzed according to their specifications that have been previously approved by the reference country‘s NRA"}
+  anchor: {code: WHO TRS 1033 Annex 10 (good reliance practices)}
+- id: IN-GREVP-01
+  dept: screening
+  layer: intl
+  ctd: "1.0"
+  title: {en: "Assessment report and second assessor", ar: "تقرير التقييم والمُقيِّم الثاني"}
+  question: {en: "Before the deficiency letter is issued, has a second assessor reviewed the findings and has an assessment report been written for each department (good review practice)?", ar: "قبل إصدار خطاب الاستيفاء، هل راجع مُقيِّم ثانٍ الملاحظات وهل كُتب تقرير تقييم لكل إدارة (ممارسة المراجعة الجيدة)؟"}
+  severity: note
+  evidence: {data: [run.signed]}
+  auto: {kind: data, check: peer_signed}
+  deficiency: {en: "The review should be signed by a second assessor and documented in an assessment report before the letter is treated as final.", ar: "يجب أن يوقّع مُقيِّم ثانٍ على المراجعة وأن تُوثَّق في تقرير تقييم قبل اعتبار الخطاب نهائياً."}
+  action: {type: none}
+  source: {code: WHO TRS 992 Annex 9 (2015), section: "good review practices", quote: "consistency, transparency, documentation"}
+  anchor: {code: WHO TRS 992 Annex 9 (2015)}

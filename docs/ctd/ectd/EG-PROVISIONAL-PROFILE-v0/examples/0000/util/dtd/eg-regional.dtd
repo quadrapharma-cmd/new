@@ -1,0 +1,570 @@
+<!--
+PROVISIONAL - NOT ISSUED BY THE EGYPTIAN DRUG AUTHORITY (EDA).
+PUBLIC "-//EG//DTD eCTD EG Backbone PROVISIONAL 0.1//EN" (identifier is an ASSUMPTION, not EDA)
+In the eCTD File Organisation: "util/dtd/eg-regional.dtd" (name ASSUMPTION, decision D-09).
+Part of the "EG provisional profile v0" for ICH eCTD v3.2.2, built 2026-11-06.
+Derived from the EU Module 1 eCTD util package v3.1 (eu-regional.dtd 3.1, EMA, June 2024) and adapted to the
+element and attribute names of the EDA draft "EG Module 1 eCTD Specification" v1.0/2026 and the EDA draft
+"Technical Guidance for eCTD Submissions in Egypt" v1.0/2026. EDA has not published an EG DTD; replace this
+file with the EDA-issued one as soon as it exists. Provenance of every name and value: README.md and vocab/*.yaml
+(EG-DRAFT = stated by EDA draft, EU-DERIVED = taken from EU, ASSUMPTION = our choice).
+
+Meaning or value of the suffixes:
+? : element must appear 0 or 1 time
+* : element must appear 0 or more time
++ : element must appear 1 or more times
+<none>: element must appear once and only once
+-->
+
+<!-- General declarations, external modules references................... -->
+<!ENTITY % countries "(eg)">
+<!ENTITY % languages "(ar | en)">
+
+<!ENTITY % leaf-node "(( leaf | node-extension )*)">
+
+<!ENTITY % envelope-module SYSTEM "eg-envelope.mod" >
+%envelope-module;
+
+<!ENTITY % leaf-module SYSTEM "eg-leaf.mod" >
+%leaf-module;
+
+<!-- pi-doc: SPEC App. 1.2 p.27; type list decision D-16 (vocab/pi-doc-type.yaml) -->
+<!ELEMENT pi-doc (
+%leaf-node;
+)>
+<!ATTLIST pi-doc
+xml:lang %languages; #REQUIRED
+type (spc | pl | interpack | outer | impack | combined | other) #REQUIRED
+country %countries; #REQUIRED
+>
+
+<!-- Root element (SPEC p.7 l.48-49 'eg-backbone' with 'eg-envelope' and 'm1-eg'; unprefixed, decision D-20) -->
+<!ELEMENT eg-backbone (
+eg-envelope,
+m1-eg
+)>
+
+<!ATTLIST eg-backbone
+xmlns:xlink CDATA #FIXED "http://www.w3c.org/1999/xlink"
+xml:lang CDATA #IMPLIED
+dtd-version CDATA #FIXED "0.1"
+>
+
+<!-- m1-eg tree: element names, order and nesting from SPEC Appendix 2 (pp.28-77); parents in 1.2 hold no
+     documents (TG Annex 5 p.55 l.1414); optionality as in eu-regional.dtd 3.1 (decision D-28). -->
+
+<!-- ................................................................... -->
+<!-- - EG Module 1 - SPEC p.29 row 1 -->
+<!ELEMENT m1-eg (
+m1-0-cover,
+m1-2-form?,
+m1-3-pi?,
+m1-4-expert?,
+m1-5-specific?,
+m1-6-environrisk?,
+m1-7-orphan?,
+m1-8-pharmacovigilance?,
+m1-9-clinical-trials?,
+m1-10-paediatrics?,
+m1-responses?,
+m1-additional-data?
+)>
+<!-- 1.0 Cover Letter - SPEC p.29 row 3 -->
+<!ELEMENT m1-0-cover %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2 Application Forms - SPEC p.30 row 6 -->
+<!ELEMENT m1-2-form (
+m1-2-1-af?,
+m1-2-2-legal?,
+m1-2-3-edaapp?,
+m1-2-4-declar?,
+m1-2-5-refprod?,
+m1-2-6-importdoc?,
+m1-2-7-reliance?,
+m1-2-8-composit?,
+m1-2-9-coa?,
+m1-2-10-postappch?,
+m1-2-11-pop?,
+m1-2-12-analysreq?,
+m1-2-13-plasma?,
+m1-2-14-scienadv?,
+m1-2-15-relpv?,
+m1-2-16-relinsp?
+)>
+<!-- 1.2.1 Application Form - SPEC p.30 row 7 -->
+<!ELEMENT m1-2-1-af %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.2 Legal Documents - SPEC p.31 row 9 -->
+<!ELEMENT m1-2-2-legal (
+m1-2-2-1-loattor?,
+m1-2-2-2-manlic?,
+m1-2-2-3-gmpcert?,
+m1-2-2-4-trade?,
+m1-2-2-5-toll?,
+m1-2-2-6-sol?,
+m1-2-2-7-import?,
+m1-2-2-8-storelic?,
+m1-2-2-9-authlet?,
+m1-2-2-10-managre?,
+m1-2-2-11-pacagre?,
+m1-2-2-12-storeagre?,
+m1-2-2-13-othagre?,
+m1-2-2-14-term?,
+m1-2-2-15-tax?,
+m1-2-2-16-distribut?,
+m1-2-2-17-ipp?,
+m1-2-2-18-newlegag?,
+m1-2-2-19-loauth?,
+m1-2-2-20-pvagre?,
+m1-2-2-21-gmpcert2?
+)>
+<!-- 1.2.2.1 Letter of Attorney for Company Representative - SPEC p.31 row 10 -->
+<!ELEMENT m1-2-2-1-loattor %leaf-node;>
+<!-- 1.2.2.2 Manufacturing License and IDA License - SPEC p.31 row 11 -->
+<!ELEMENT m1-2-2-2-manlic %leaf-node;>
+<!-- 1.2.2.3 GMP Certificate(s) / Alternative Documents - SPEC p.31 row 12 -->
+<!ELEMENT m1-2-2-3-gmpcert %leaf-node;>
+<!-- 1.2.2.4 The Register of Trade - SPEC p.31 row 13 -->
+<!ELEMENT m1-2-2-4-trade %leaf-node;>
+<!-- 1.2.2.5 Toll Manufacturer License - SPEC p.32 row 14 -->
+<!ELEMENT m1-2-2-5-toll %leaf-node;>
+<!-- 1.2.2.6 Scientific Office License - SPEC p.32 row 15 -->
+<!ELEMENT m1-2-2-6-sol %leaf-node;>
+<!-- 1.2.2.7 Importers Register License - SPEC p.32 row 16 -->
+<!ELEMENT m1-2-2-7-import %leaf-node;>
+<!-- 1.2.2.8 Store License - SPEC p.32 row 17 -->
+<!ELEMENT m1-2-2-8-storelic %leaf-node;>
+<!-- 1.2.2.9 Authorisation Letter / Agency Agreement - SPEC p.33 row 18 -->
+<!ELEMENT m1-2-2-9-authlet %leaf-node;>
+<!-- 1.2.2.10 Manufacturing Agreement - SPEC p.33 row 19 -->
+<!ELEMENT m1-2-2-10-managre %leaf-node;>
+<!-- 1.2.2.11 Packaging Agreement - SPEC p.33 row 20 -->
+<!ELEMENT m1-2-2-11-pacagre %leaf-node;>
+<!-- 1.2.2.12 Storage Agreement - SPEC p.33 row 21 -->
+<!ELEMENT m1-2-2-12-storeagre %leaf-node;>
+<!-- 1.2.2.13 Other Agreements - SPEC p.33 row 22 -->
+<!ELEMENT m1-2-2-13-othagre %leaf-node;>
+<!-- 1.2.2.14 Termination / Waiver - SPEC p.34 row 23 -->
+<!ELEMENT m1-2-2-14-term %leaf-node;>
+<!-- 1.2.2.15 Tax Card - SPEC p.34 row 24 -->
+<!ELEMENT m1-2-2-15-tax %leaf-node;>
+<!-- 1.2.2.16 List of Distributors - SPEC p.34 row 25 -->
+<!ELEMENT m1-2-2-16-distribut %leaf-node;>
+<!-- 1.2.2.17 IP Protection Law No. 82 of 2002 Commitment - SPEC p.34 row 26 -->
+<!ELEMENT m1-2-2-17-ipp %leaf-node;>
+<!-- 1.2.2.18 NEW local MA legal Agreement - SPEC p.35 row 27 -->
+<!ELEMENT m1-2-2-18-newlegag %leaf-node;>
+<!-- 1.2.2.19 Letter of Authorisation for a new Applicant in Egypt - SPEC p.35 row 28 -->
+<!ELEMENT m1-2-2-19-loauth %leaf-node;>
+<!-- 1.2.2.20 PV Agreement between the MAH & the Service Provider - SPEC p.35 row 29 -->
+<!ELEMENT m1-2-2-20-pvagre %leaf-node;>
+<!-- 1.2.2.21 GMP Certificate - SPEC p.35 row 30 -->
+<!ELEMENT m1-2-2-21-gmpcert2 %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.3 EDA Approvals - SPEC p.35 row 31 -->
+<!ELEMENT m1-2-3-edaapp (
+m1-2-3-1-regreq?,
+m1-2-3-2-inqapp?,
+m1-2-3-3-nameapp?,
+m1-2-3-4-reglic?,
+m1-2-3-5-prelimapp?,
+m1-2-3-6-nonrefapp?,
+m1-2-3-7-exemptapp?,
+m1-2-3-8-price?,
+m1-2-3-9-pvapp?,
+m1-2-3-10-insprep?,
+m1-2-3-11-importapp?,
+m1-2-3-12-cadcrep?,
+m1-2-3-13-stabstud?,
+m1-2-3-14-stabprot?,
+m1-2-3-15-m3app?,
+m1-2-3-16-m5app?,
+m1-2-3-17-preapplet?,
+m1-2-3-18-varapp?,
+m1-2-3-19-ipsca?,
+m1-2-3-20-reglicsolv?
+)>
+<!-- 1.2.3.1 Registration Request Approval - SPEC p.36 row 32 -->
+<!ELEMENT m1-2-3-1-regreq %leaf-node;>
+<!-- 1.2.3.2 Inquiry Approval - SPEC p.36 row 33 -->
+<!ELEMENT m1-2-3-2-inqapp %leaf-node;>
+<!-- 1.2.3.3 Name Approval - SPEC p.36 row 34 -->
+<!ELEMENT m1-2-3-3-nameapp %leaf-node;>
+<!-- 1.2.3.4 Registration License - SPEC p.36 row 35 -->
+<!ELEMENT m1-2-3-4-reglic %leaf-node;>
+<!-- 1.2.3.5 Preliminary Approval - SPEC p.37 row 36 -->
+<!ELEMENT m1-2-3-5-prelimapp %leaf-node;>
+<!-- 1.2.3.6 Non-Reference Approval - SPEC p.37 row 37 -->
+<!ELEMENT m1-2-3-6-nonrefapp %leaf-node;>
+<!-- 1.2.3.7 Exemption Approval - SPEC p.37 row 38 -->
+<!ELEMENT m1-2-3-7-exemptapp %leaf-node;>
+<!-- 1.2.3.8 Pricing Certificate - SPEC p.37 row 39 -->
+<!ELEMENT m1-2-3-8-price %leaf-node;>
+<!-- 1.2.3.9 Pharmacovigilance Approval - SPEC p.37 row 40 -->
+<!ELEMENT m1-2-3-9-pvapp %leaf-node;>
+<!-- 1.2.3.10 Inspection Report - SPEC p.38 row 41 -->
+<!ELEMENT m1-2-3-10-insprep %leaf-node;>
+<!-- 1.2.3.11 Importation Approval for each API - SPEC p.38 row 42 -->
+<!ELEMENT m1-2-3-11-importapp %leaf-node;>
+<!-- 1.2.3.12 CADC Report - SPEC p.38 row 43 -->
+<!ELEMENT m1-2-3-12-cadcrep %leaf-node;>
+<!-- 1.2.3.13 Stability Study Approval - SPEC p.38 row 44 -->
+<!ELEMENT m1-2-3-13-stabstud %leaf-node;>
+<!-- 1.2.3.14 Stability Protocol Approval - SPEC p.39 row 45 -->
+<!ELEMENT m1-2-3-14-stabprot %leaf-node;>
+<!-- 1.2.3.15 Module 3 Approval - SPEC p.39 row 46 -->
+<!ELEMENT m1-2-3-15-m3app %leaf-node;>
+<!-- 1.2.3.16 Module 5 Approval - SPEC p.39 row 47 -->
+<!ELEMENT m1-2-3-16-m5app %leaf-node;>
+<!-- 1.2.3.17 Pre-approved letters from EDA concerning the product - SPEC p.39 row 48 -->
+<!ELEMENT m1-2-3-17-preapplet %leaf-node;>
+<!-- 1.2.3.18 Variation Approvals - SPEC p.39 row 49 -->
+<!ELEMENT m1-2-3-18-varapp %leaf-node;>
+<!-- 1.2.3.19 Innovative Products Scientific Committee Approval - SPEC p.40 row 50 -->
+<!ELEMENT m1-2-3-19-ipsca %leaf-node;>
+<!-- 1.2.3.20 Registration License for the Solvent - SPEC p.40 row 51 -->
+<!ELEMENT m1-2-3-20-reglicsolv %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.4 Declarations - SPEC p.40 row 52 -->
+<!ELEMENT m1-2-4-declar (
+m1-2-4-1-regprod?,
+m1-2-4-2-apiman?,
+m1-2-4-3-liceholdpac?,
+m1-2-4-4-liceholdbulk?,
+m1-2-4-5-apimanappl?,
+m1-2-4-6-apisupp?,
+m1-2-4-7-siteadd?,
+m1-2-4-8-allvar?,
+m1-2-4-9-decother?,
+m1-2-4-10-countries?,
+m1-2-4-11-tse?,
+m1-2-4-12-bsesafdec?,
+m1-2-4-13-rawmat?,
+m1-2-4-14-exipsup?,
+m1-2-4-15-albtraden?,
+m1-2-4-16-albstabil?,
+m1-2-4-17-plasdersub?,
+m1-2-4-18-nochaadd?,
+m1-2-4-19-pactype?,
+m1-2-4-20-insdeclet?,
+m1-2-4-21-sitemfdec?,
+m1-2-4-22-storetemp?
+)>
+<!-- 1.2.4.1 Declaration Letter stating the list of Registered & Under-Registration Products owned by the Toll Company - SPEC p.41 row 53 -->
+<!ELEMENT m1-2-4-1-regprod %leaf-node;>
+<!-- 1.2.4.2 Declaration Letter from the License Holder specifying the API Manufacturers - SPEC p.41 row 54 -->
+<!ELEMENT m1-2-4-2-apiman %leaf-node;>
+<!-- 1.2.4.3 Declaration letter from the license holder specifying approved pack in Egypt - SPEC p.41 row 55 -->
+<!ELEMENT m1-2-4-3-liceholdpac %leaf-node;>
+<!-- 1.2.4.4 Declaration Letter from the License Holder stating the Form of Bulk (Strips, Capsules, etc.) - SPEC p.41 row 56 -->
+<!ELEMENT m1-2-4-4-liceholdbulk %leaf-node;>
+<!-- 1.2.4.5 Declaration Letter from the Manufacturer of the Active Substance to inform the Applicant in case of Modification of the manufacturing Process or Specifications - SPEC p.42 row 57 -->
+<!ELEMENT m1-2-4-5-apimanappl %leaf-node;>
+<!-- 1.2.4.6 Declaration Letter from API Supplier - SPEC p.42 row 58 -->
+<!ELEMENT m1-2-4-6-apisupp %leaf-node;>
+<!-- 1.2.4.7 Declaration Letter for Site Addition - SPEC p.42 row 59 -->
+<!ELEMENT m1-2-4-7-siteadd %leaf-node;>
+<!-- 1.2.4.8 Declaration Letter Form LH stating all Variations & Justification for the Change - SPEC p.42 row 60 -->
+<!ELEMENT m1-2-4-8-allvar %leaf-node;>
+<!-- 1.2.4.9 Other declarations requested by Egyptian Drug Authority - SPEC p.43 row 61 -->
+<!ELEMENT m1-2-4-9-decother %leaf-node;>
+<!-- 1.2.4.10 List of the Countries where the Product is registered & marketed - SPEC p.43 row 62 -->
+<!ELEMENT m1-2-4-10-countries %leaf-node;>
+<!-- 1.2.4.11 Ph. Eur. Certificate(s) of Suitability for TSE - SPEC p.43 row 63 -->
+<!ELEMENT m1-2-4-11-tse %leaf-node;>
+<!-- 1.2.4.12 TSE/BSE Supplier Safety Declaration (if CEP not available) - SPEC p.43 row 64 -->
+<!ELEMENT m1-2-4-12-bsesafdec %leaf-node;>
+<!-- 1.2.4.13 Raw Materials Storage Responsibility Declaration (for local Products) - SPEC p.43 row 65 -->
+<!ELEMENT m1-2-4-13-rawmat %leaf-node;>
+<!-- 1.2.4.14 Excipient/s Supplier Name & Origin - SPEC p.44 row 66 -->
+<!ELEMENT m1-2-4-14-exipsup %leaf-node;>
+<!-- 1.2.4.15 Trade Name of the Albumin used as Stabilizer - SPEC p.44 row 67 -->
+<!ELEMENT m1-2-4-15-albtraden %leaf-node;>
+<!-- 1.2.4.16 Albumin as Stabilizer Batch Release Certificate - SPEC p.44 row 68 -->
+<!ELEMENT m1-2-4-16-albstabil %leaf-node;>
+<!-- 1.2.4.17 Plasma Derivative Supplier Safety and Efficacy Commitment - SPEC p.44 row 69 -->
+<!ELEMENT m1-2-4-17-plasdersub %leaf-node;>
+<!-- 1.2.4.18 No Change in physical Address and Product related Processes Declaration - SPEC p.45 row 70 -->
+<!ELEMENT m1-2-4-18-nochaadd %leaf-node;>
+<!-- 1.2.4.19 Pack Type Declaration - SPEC p.45 row 71 -->
+<!ELEMENT m1-2-4-19-pactype %leaf-node;>
+<!-- 1.2.4.20 Insert Declaration Letter - SPEC p.45 row 72 -->
+<!ELEMENT m1-2-4-20-insdeclet %leaf-node;>
+<!-- 1.2.4.21 Site Master File Declaration - SPEC p.45 row 73 -->
+<!ELEMENT m1-2-4-21-sitemfdec %leaf-node;>
+<!-- 1.2.4.22 Storage Temperature at 25 °C Declaration - SPEC p.45 row 74 -->
+<!ELEMENT m1-2-4-22-storetemp %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.5 Reference Product Document / Compendial - SPEC p.46 row 75 -->
+<!ELEMENT m1-2-5-refprod (
+m1-2-5-1-refproddoc?,
+m1-2-5-2-sciref?,
+m1-2-5-3-reftradn?,
+m1-2-5-4-recph?
+)>
+<!-- 1.2.5.1 The Reference Product Documents - SPEC p.46 row 76 -->
+<!ELEMENT m1-2-5-1-refproddoc %leaf-node;>
+<!-- 1.2.5.2 Scientific Reference (Trials & Literature) - SPEC p.46 row 77 -->
+<!ELEMENT m1-2-5-2-sciref %leaf-node;>
+<!-- 1.2.5.3 Reference for the trade name change - SPEC p.46 row 78 -->
+<!ELEMENT m1-2-5-3-reftradn %leaf-node;>
+<!-- 1.2.5.4 The latest recent Pharmacopeia - SPEC p.47 row 79 -->
+<!ELEMENT m1-2-5-4-recph %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.6 Imported Products Documents - SPEC p.47 row 80 -->
+<!ELEMENT m1-2-6-importdoc (
+m1-2-6-1-cpp?,
+m1-2-6-2-loaff?
+)>
+<!-- 1.2.6.1 Certificate of Pharmaceutical Product (CPP) - SPEC p.47 row 81 -->
+<!ELEMENT m1-2-6-1-cpp %leaf-node;>
+<!-- 1.2.6.2 List of Affiliates / Subsidiaries - SPEC p.47 row 82 -->
+<!ELEMENT m1-2-6-2-loaff %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.7 Reliance Documents - SPEC p.47 row 83 -->
+<!ELEMENT m1-2-7-reliance (
+m1-2-7-1-sameness?,
+m1-2-7-2-unredact?,
+m1-2-7-3-rravar?,
+m1-2-7-4-correspond?,
+m1-2-7-5-lofchange?,
+m1-2-7-6-reject?
+)>
+<!-- 1.2.7.1 Sameness Letter - SPEC p.48 row 84 -->
+<!ELEMENT m1-2-7-1-sameness %leaf-node;>
+<!-- 1.2.7.2 Unredacted Assessment Report - SPEC p.48 row 85 -->
+<!ELEMENT m1-2-7-2-unredact %leaf-node;>
+<!-- 1.2.7.3 RRA Variation Application with Annexes - SPEC p.48 row 86 -->
+<!ELEMENT m1-2-7-3-rravar %leaf-node;>
+<!-- 1.2.7.4 Correspondences between the Applicant and the Reference Agency - SPEC p.48 row 87 -->
+<!ELEMENT m1-2-7-4-correspond %leaf-node;>
+<!-- 1.2.7.5 List of Changes after first MA issued from EMA or FDA - SPEC p.49 row 88 -->
+<!ELEMENT m1-2-7-5-lofchange %leaf-node;>
+<!-- 1.2.7.6 Rejection or Amendment Reporting Commitment - SPEC p.49 row 89 -->
+<!ELEMENT m1-2-7-6-reject %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.8 Composition Documents - SPEC p.49 row 90 -->
+<!ELEMENT m1-2-8-composit (
+m1-2-8-1-compositcert?,
+m1-2-8-2-spec?,
+m1-2-8-3-compcalc?,
+m1-2-8-4-pelletcomp?,
+m1-2-8-5-opadry?,
+m1-2-8-6-capshell?,
+m1-2-8-7-synonyms?
+)>
+<!-- 1.2.8.1 Composition Certificate - SPEC p.49 row 91 -->
+<!ELEMENT m1-2-8-1-compositcert %leaf-node;>
+<!-- 1.2.8.2 Specifications - SPEC p.49 row 92 -->
+<!ELEMENT m1-2-8-2-spec %leaf-node;>
+<!-- 1.2.8.3 Any Composition Calculations - SPEC p.50 row 93 -->
+<!ELEMENT m1-2-8-3-compcalc %leaf-node;>
+<!-- 1.2.8.4 Pellets / Premix Composition and Certificates - SPEC p.50 row 94 -->
+<!ELEMENT m1-2-8-4-pelletcomp %leaf-node;>
+<!-- 1.2.8.5 Opadry / Coating Premix Composition - SPEC p.50 row 95 -->
+<!ELEMENT m1-2-8-5-opadry %leaf-node;>
+<!-- 1.2.8.6 Capsule Shell Composition - SPEC p.50 row 96 -->
+<!ELEMENT m1-2-8-6-capshell %leaf-node;>
+<!-- 1.2.8.7 Synonyms Evidence - SPEC p.51 row 97 -->
+<!ELEMENT m1-2-8-7-synonyms %leaf-node;>
+<!-- 1.2.9 Certificate of Analysis - SPEC p.51 row 98 -->
+<!ELEMENT m1-2-9-coa %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.10 Post Approval Changes Requirements - SPEC p.51 row 99 -->
+<!ELEMENT m1-2-10-postappch (
+m1-2-10-1-pacapp?,
+m1-2-10-2-sumcavar?,
+m1-2-10-3-justpoc?,
+m1-2-10-4-anydoc?
+)>
+<!-- 1.2.10.1 PAC Approval from the COO (Imported Products) - SPEC p.51 row 100 -->
+<!ELEMENT m1-2-10-1-pacapp %leaf-node;>
+<!-- 1.2.10.2 Summary of Change for Variation - SPEC p.51 row 101 -->
+<!ELEMENT m1-2-10-2-sumcavar %leaf-node;>
+<!-- 1.2.10.3 Justification of the proposed Post Approval Change - SPEC p.52 row 102 -->
+<!ELEMENT m1-2-10-3-justpoc %leaf-node;>
+<!-- 1.2.10.4 Any additional Documents relevant to Variations - SPEC p.52 row 103 -->
+<!ELEMENT m1-2-10-4-anydoc %leaf-node;>
+<!-- 1.2.11 Proof of Payment - SPEC p.52 row 104 -->
+<!ELEMENT m1-2-11-pop %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.12 Analysis Requirements Documentation (for Biological Products only) - SPEC p.52 row 105 -->
+<!ELEMENT m1-2-12-analysreq (
+m1-2-12-1-sop?,
+m1-2-12-2-sumvacc?
+)>
+<!-- 1.2.12.1 Detailed Standard Operating Procedures (SOP) - SPEC p.53 row 106 -->
+<!ELEMENT m1-2-12-1-sop %leaf-node;>
+<!-- 1.2.12.2 Summary Protocol for Vaccines and Plasma derived Medicinal Products - SPEC p.53 row 107 -->
+<!ELEMENT m1-2-12-2-sumvacc %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.13 For Plasma derived Medicinal Products - SPEC p.53 row 108 -->
+<!ELEMENT m1-2-13-plasma (
+m1-2-13-1-pmf?,
+m1-2-13-2-plasbatch?,
+m1-2-13-3-pmfapp?
+)>
+<!-- 1.2.13.1 Plasma Master File - SPEC p.53 row 109 -->
+<!ELEMENT m1-2-13-1-pmf %leaf-node;>
+<!-- 1.2.13.2 Certificate of Plasma Batch Release from Health Authority - SPEC p.53 row 110 -->
+<!ELEMENT m1-2-13-2-plasbatch %leaf-node;>
+<!-- 1.2.13.3 PMF Approval from Country of Origin - SPEC p.54 row 111 -->
+<!ELEMENT m1-2-13-3-pmfapp %leaf-node;>
+<!-- 1.2.14 Scientific Advice Report - SPEC p.54 row 112 -->
+<!ELEMENT m1-2-14-scienadv %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.15 Documents related PV - SPEC p.54 row 113 -->
+<!ELEMENT m1-2-15-relpv (
+m1-2-15-1-valpsmfas?,
+m1-2-15-2-updpsmf?,
+m1-2-15-3-latpsur?,
+m1-2-15-4-updrmp?,
+m1-2-15-5-egrmp?
+)>
+<!-- 1.2.15.1 Latest valid PSMF Assessment Report / Confirmation E-mail of PSMF Document(s) Receival - SPEC p.54 row 114 -->
+<!ELEMENT m1-2-15-1-valpsmfas %leaf-node;>
+<!-- 1.2.15.2 Updated Version of Summary of PSMF(s) / PSSF - SPEC p.55 row 115 -->
+<!ELEMENT m1-2-15-2-updpsmf %leaf-node;>
+<!-- 1.2.15.3 The latest PSUR(s) (or the ACO in Case of Renewal) - SPEC p.55 row 116 -->
+<!ELEMENT m1-2-15-3-latpsur %leaf-node;>
+<!-- 1.2.15.4 The most updated EU/Global/Core-Risk Management Plan (RMP) - SPEC p.55 row 117 -->
+<!ELEMENT m1-2-15-4-updrmp %leaf-node;>
+<!-- 1.2.15.5 The Egyptian Display of EU-RMP / Global-RMP - SPEC p.55 row 118 -->
+<!ELEMENT m1-2-15-5-egrmp %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.2.16 Documents related Inspection - SPEC p.55 row 119 -->
+<!ELEMENT m1-2-16-relinsp (
+m1-2-16-1-smfall?,
+m1-2-16-2-fullinsprep?,
+m1-2-16-3-batchrep?,
+m1-2-16-4-recalls?,
+m1-2-16-5-warnlet?,
+m1-2-16-6-annualrev?,
+m1-2-16-7-coldchain?
+)>
+<!-- 1.2.16.1 Site Master File for all Manufacturers - SPEC p.56 row 120 -->
+<!ELEMENT m1-2-16-1-smfall %leaf-node;>
+<!-- 1.2.16.2 Latest Full Inspection Report(s) by SRA (past 3 Years) - SPEC p.56 row 121 -->
+<!ELEMENT m1-2-16-2-fullinsprep %leaf-node;>
+<!-- 1.2.16.3 One completed Batch Manufacturing and Packaging Record - SPEC p.56 row 122 -->
+<!ELEMENT m1-2-16-3-batchrep %leaf-node;>
+<!-- 1.2.16.4 List of any Recalls with Quality Defects (past 3 Years) (if found) - SPEC p.56 row 123 -->
+<!ELEMENT m1-2-16-4-recalls %leaf-node;>
+<!-- 1.2.16.5 Any Warning Letter or equivalent regulatory Action (Production-line specific) (if found) - SPEC p.57 row 124 -->
+<!ELEMENT m1-2-16-5-warnlet %leaf-node;>
+<!-- 1.2.16.6 Last Annual Product Quality Review - SPEC p.57 row 125 -->
+<!ELEMENT m1-2-16-6-annualrev %leaf-node;>
+<!-- 1.2.16.7 Cold Chain Storage & Transportation Procedures including Excursion allowed - SPEC p.57 row 126 -->
+<!ELEMENT m1-2-16-7-coldchain %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.3 Product Information - SPEC p.57 row 127 -->
+<!ELEMENT m1-3-pi (
+m1-3-1-spc-label-pl?,
+m1-3-2-mockup?,
+m1-3-3-specimen?,
+m1-3-4-consultation?,
+m1-3-5-approved?,
+m1-3-6-braille?
+)>
+<!-- 1.3.1 SmPC, Labelling and Package Leaflet - SPEC p.57 row 128 -->
+<!ELEMENT m1-3-1-spc-label-pl (
+pi-doc+
+)>
+<!-- 1.3.2 Mock-up - SPEC p.58 row 131 -->
+<!ELEMENT m1-3-2-mockup %leaf-node;>
+<!-- 1.3.3 Specimen - SPEC p.59 row 133 -->
+<!ELEMENT m1-3-3-specimen %leaf-node;>
+<!-- 1.3.4 Consultation with Target Patient Groups - SPEC p.59 row 135 -->
+<!ELEMENT m1-3-4-consultation %leaf-node;>
+<!-- 1.3.5 Product Information already approved in the Member States - SPEC p.60 row 137 -->
+<!ELEMENT m1-3-5-approved %leaf-node;>
+<!-- 1.3.6 Braille - SPEC p.60 row 139 -->
+<!ELEMENT m1-3-6-braille %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.4 Information about the Experts - SPEC p.61 row 141 -->
+<!ELEMENT m1-4-expert (
+m1-4-1-quality?,
+m1-4-2-non-clinical?,
+m1-4-3-clinical?
+)>
+<!-- 1.4.1 Quality - SPEC p.61 row 142 -->
+<!ELEMENT m1-4-1-quality %leaf-node;>
+<!-- 1.4.2 Non-Clinical - SPEC p.62 row 144 -->
+<!ELEMENT m1-4-2-non-clinical %leaf-node;>
+<!-- 1.4.3 Clinical - SPEC p.62 row 144 -->
+<!ELEMENT m1-4-3-clinical %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.5 Specific Requirements for Different Types of Applications - SPEC p.63 row 146 -->
+<!ELEMENT m1-5-specific (
+m1-5-1-bibliographic?,
+m1-5-2-generic-hybrid-bio-similar?,
+m1-5-3-data-market-exclusivity?,
+m1-5-4-exceptional-circumstances?,
+m1-5-5-conditional-ma?
+)>
+<!-- 1.5.1 Information for Bibliographical Applications - SPEC p.63 row 147 -->
+<!ELEMENT m1-5-1-bibliographic %leaf-node;>
+<!-- 1.5.2 Information for Generic, Hybrid’ or Bio-similar Applications - SPEC p.64 row 149 -->
+<!ELEMENT m1-5-2-generic-hybrid-bio-similar %leaf-node;>
+<!-- 1.5.3 (Extended) Data/Market Exclusivity - SPEC p.65 row 151 -->
+<!ELEMENT m1-5-3-data-market-exclusivity %leaf-node;>
+<!-- 1.5.4 Exceptional Circumstances - SPEC p.66 row 153 -->
+<!ELEMENT m1-5-4-exceptional-circumstances %leaf-node;>
+<!-- 1.5.5 Conditional Marketing Authorisation - SPEC p.66 row 155 -->
+<!ELEMENT m1-5-5-conditional-ma %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.6 Environmental Risk Assessment - SPEC p.67 row 157 -->
+<!ELEMENT m1-6-environrisk (
+(m1-6-1-non-gmo | m1-6-2-gmo)?
+)>
+<!-- 1.6.1 Non-GMO - SPEC p.67 row 158 -->
+<!ELEMENT m1-6-1-non-gmo %leaf-node;>
+<!-- 1.6.2 GMO - SPEC p.68 row 160 -->
+<!ELEMENT m1-6-2-gmo %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.7 Information relating to Orphan Market Exclusivity - SPEC p.69 row 162 -->
+<!ELEMENT m1-7-orphan (
+m1-7-1-similarity?,
+m1-7-2-market-exclusivity?
+)>
+<!-- 1.7.1 Similarity - SPEC p.69 row 163 -->
+<!ELEMENT m1-7-1-similarity %leaf-node;>
+<!-- 1.7.2 Market Exclusivity - SPEC p.70 row 165 -->
+<!ELEMENT m1-7-2-market-exclusivity %leaf-node;>
+
+<!-- ................................................................... -->
+<!-- 1.8 Information relating to Pharmacovigilance - SPEC p.71 row 167 -->
+<!ELEMENT m1-8-pharmacovigilance (
+m1-8-1-pharmacovigilance-system?,
+m1-8-2-risk-management-system?
+)>
+<!-- 1.8.1 Pharmacovigilance System - SPEC p.71 row 168 -->
+<!ELEMENT m1-8-1-pharmacovigilance-system %leaf-node;>
+<!-- 1.8.2 Risk-management System - SPEC p.72 row 170 -->
+<!ELEMENT m1-8-2-risk-management-system %leaf-node;>
+<!-- 1.9 Information relating to Clinical Trials - SPEC p.73 row 172 -->
+<!ELEMENT m1-9-clinical-trials %leaf-node;>
+<!-- 1.10 Information relating to Paediatrics - SPEC p.73 row 174 -->
+<!ELEMENT m1-10-paediatrics %leaf-node;>
+<!-- - Responses to Questions - SPEC p.74 row 176 -->
+<!ELEMENT m1-responses %leaf-node;>
+<!-- - Additional Data - SPEC p.75 row 178 -->
+<!ELEMENT m1-additional-data %leaf-node;>

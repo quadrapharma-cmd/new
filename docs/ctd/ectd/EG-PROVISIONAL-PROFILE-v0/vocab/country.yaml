@@ -1,0 +1,19 @@
+# EG destination/country code - EG provisional profile v0 (PROVISIONAL, not issued by EDA). Built 2026-11-06.
+# Field: envelope/@country and pi-doc/@country
+# provenance: EG-DRAFT (stated in an EDA draft) | EU-DERIVED | ASSUMPTION (reason in note)
+# Sources: SPEC = EG Module 1 eCTD Specification draft v1.0/2026; TG = Technical Guidance for eCTD Submissions in Egypt draft v1.0/2026;
+#          HPG = EG Human Pharmaceutical Module 1 Submission Guidance draft v1/2026; EU = EU M1 v3.1.1 / eu-envelope.mod 3.1.
+vocabulary: "EG destination/country code"
+field: "envelope/@country and pi-doc/@country"
+status: PROVISIONAL
+intro: "SPEC App. 2.1 p.78. No CC folders are used (decision D-08)."
+values:
+  - value: "eg"
+    label: "Egypt"
+    provenance: "EG-DRAFT"
+    source: "SPEC p.14 (envelope/@country), App. 2.1 p.78 (ISO-3166-1-alpha-2)"
+    note: ""
+excluded_values:
+  - value: "EU member-state codes, common, ema, edqm, xi"
+    source: "EU App. 2.1"
+    reason: "EU destinations; not applicable."
