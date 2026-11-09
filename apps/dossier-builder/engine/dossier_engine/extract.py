@@ -375,6 +375,7 @@ def _standardise(out):
         out.setdefault('profile', {})
         if not out['profile'].get('admin_route'):
             out['profile']['admin_route'] = std['route']
+    out['apis'] = clean_apis(out.get('apis') or [])
     for a in out.get('apis') or []:
         c = vocab.match_country(a.get('country') or '')
         if c:
@@ -382,6 +383,82 @@ def _standardise(out):
     c = vocab.match_country(P.get('manufacturer_country') or '')
     if c:
         P['manufacturer_country'], P['manufacturer_country_code'] = c['en'], c['code']
+
+
+# ---- active substances: one plausible entry per substance
+API_STOP = {'each', 'every', 'contains', 'contain', 'containing', 'tablet', 'tablets', 'capsule', 'capsules', 'and', 'or', 'of', 'the', 'per', 'with', 'film', 'coated',
+            'powder', 'solution', 'for', 'injection', 'active', 'ingredient', 'ingredients', 'substance', 'substances', 'strength', 'strengths', 'equivalent', 'to', 'as',
+            'base', 'dose', 'excipients', 'excipient', 'manufacturer', 'manufactured', 'by', 'label', 'claim', 'product', 'name', 'trade', 'form', 'dosage', 'composition',
+            'unit', 'units', 'iu', 'mg', 'g', 'ml', 'mcg', 'µg', 'qs', 'q.s', 'ad', 'other', 'inactive', 'inactives', 'actives', 'total', 'weight'}
+API_SALTS = {'sulphate', 'sulfate', 'hydrochloride', 'hcl', 'sodium', 'potassium', 'zinc', 'calcium', 'magnesium', 'acetate', 'citrate', 'maleate', 'fumarate', 'tartrate',
+             'mesylate', 'besylate', 'succinate', 'phosphate', 'nitrate', 'bromide', 'chloride', 'trihydrate', 'dihydrate', 'monohydrate', 'hydrate', 'anhydrous', 'base',
+             'usp', 'bp', 'ep', 'ph', 'eur', 'micronized', 'micronised'}
+API_BAD_WORDS = re.compile(r'\b(contains?|each|every|per\s|manufactur|licen[cs]e|holder|date|certificate|approved|registration|price|pack|shelf|storage|batch|lot|expiry|valid)\b', re.I)
+AR_SENTENCE = ('في', 'من', 'على', 'إلى', 'الى', 'التي', 'الذي', 'يحتوي', 'تحتوي', 'كل', 'مع', 'عن', 'هذا', 'هذه', 'يكون', 'تكون', 'أو', 'او', 'ثم', 'لكل')
+STRENGTH_RX = re.compile(r'(\d+(?:[.,]\d+)?\s*(?:mg|g|mcg|µg|iu|i\.u\.|ml|%|units?|ملجم|مجم|جم|مل|وحدة)(?:\s*\([^)]*\))?(?:\s*/\s*\d*\s*(?:g|ml|mg|جم|مل))?)', re.I)
+
+
+def api_key(name):
+    """The substance behind a printed name: no salt, no strength, no brackets, lower case — «NEOMYCIN SULPHATE 3.500 mg (3300 unit)» → «neomycin»."""
+    low = re.sub(r'\(.*?\)', ' ', (name or '').lower())
+    low = STRENGTH_RX.sub(' ', low)
+    low = re.sub(r'[^a-z\u0600-\u06ff ]+', ' ', low)
+    words = [w for w in low.split() if w not in API_SALTS and w not in API_STOP]
+    return ' '.join(words) or re.sub(r'\s+', ' ', low).strip()
+
+
+def plausible_api(name):
+    n = _clean(name)
+    if not n or len(n) < 3 or len(n) > 70:
+        return False
+    stripped = _clean(STRENGTH_RX.sub(' ', re.sub(r'\(.*?\)', ' ', n)))
+    words = stripped.split()
+    if not words or len(words) > 6:
+        return False
+    if len(re.sub(r'[^A-Za-z\u0600-\u06ff]', '', stripped)) < 3:
+        return False
+    if API_BAD_WORDS.search(stripped):
+        return False
+    if arabic.has_arabic(stripped) and not arabic.latin_in(stripped):
+        return len(words) <= 4 and not any(w in AR_SENTENCE for w in words)
+    low = [w.lower() for w in words]
+    if all(w in API_STOP or w in API_SALTS for w in low):
+        return False
+    return True
+
+
+def clean_apis(apis):
+    """Plausible, de-duplicated active substances: a strength glued to the name moves to `strength`, spellings / salts / strengths of one
+    substance become one entry (the richest wins), ordinary text is dropped; at most 12."""
+    out = []
+    for a in apis or []:
+        if not isinstance(a, dict):
+            a = {'name': str(a)}
+        a = dict(a)
+        name = _clean(str(a.get('name') or ''))
+        m = STRENGTH_RX.search(name)
+        if m and m.start() > 2:
+            if not a.get('strength'):
+                a['strength'] = _clean(m.group(1))
+            name = _clean(name[:m.start()])
+        name = re.sub(r'\s*[(（].*$', '', name).strip(' -:;,') or name
+        if not plausible_api(name):
+            continue
+        if name.isupper() and len(name) > 3:
+            name = name.title()
+        key = api_key(name)
+        cur = next((x for x in out if x['_k'] == key or (len(key) > 5 and len(x['_k']) > 5 and (key in x['_k'] or x['_k'] in key))), None)
+        if cur:
+            for k, v in a.items():
+                if v and not cur.get(k) and k != 'name':
+                    cur[k] = v
+            if len(name) > len(cur['name']) and api_key(cur['name']) in key:
+                cur['name'] = name
+        else:
+            out.append({**a, 'name': name, '_k': key})
+    for x in out:
+        x.pop('_k', None)
+    return out[:12]
 
 
 def merge(items):
@@ -409,6 +486,7 @@ def merge(items):
                 if row not in fill[key]:
                     fill[key].append(row)
         fill['documents'].append(it['document'])
+    fill['apis'] = clean_apis(fill['apis'])
     return fill
 
 

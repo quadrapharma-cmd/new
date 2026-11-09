@@ -332,7 +332,8 @@ const T = {
   tplAiNone:{en:'No model here: the draft is filled from the product data only, the rest is marked as gaps.',ar:'مفيش موديل هنا: المسودة بتتملي من بيانات المنتج بس، والباقي يتعلّم كنواقص.'},
   drafting:{en:'Drafting from the documents…',ar:'بيصيغ من المستندات…'}, drafted:{en:'Draft added to the item',ar:'المسودة اتضافت للبند'}, gapsN:{en:'gaps',ar:'نواقص'},
   draftHow_answers:{en:'filled by claude.ai\'s model in this page',ar:'اتملت بموديل claude.ai في الصفحة'}, draftHow_server_model:{en:'filled by the model on the server',ar:'اتملت بالموديل على الخادم'}, draftHow_data:{en:'filled from the product data only',ar:'اتملت من بيانات المنتج بس'},
-  step0:{en:'Documents',ar:'المستندات'}, notThisDoc:{en:'not this document',ar:'مش المستند ده'}, stText:{en:'reading the text…',ar:'بيقرأ النص…'}, stModel:{en:'the model is reading the pages…',ar:'الموديل بيقرأ الصفحات…'},
+  step0:{en:'Documents',ar:'المستندات'}, unplacedT:{en:'Uploaded, not placed yet',ar:'ملفات مرفوعة لسه ما اتحطتش في مكانها'}, unplacedSub:{en:'Pick the item and place it; the suggestion comes from the file\'s content.',ar:'اختار البند وحطّه؛ الاقتراح من محتوى الملف.'},
+  putHere:{en:'Place it',ar:'حطّه'}, stagedN:{en:'kept as not placed yet',ar:'اتحفظت كملفات لسه ما اتحطتش'}, placedOne:{en:'Placed.',ar:'اتحط.'}, suggested:{en:'suggested',ar:'مقترح'}, noSuggestion:{en:'no suggestion: choose the item',ar:'مفيش اقتراح: اختار البند'}, notThisDoc:{en:'not this document',ar:'مش المستند ده'}, stText:{en:'reading the text…',ar:'بيقرأ النص…'}, stModel:{en:'the model is reading the pages…',ar:'الموديل بيقرأ الصفحات…'},
   stDone:{en:'read',ar:'اتقرا'}, gotFrom:{en:'It gave us',ar:'خدنا منه'}, gotNothing:{en:'no data came out of it',ar:'ما طلعش منه بيانات'}, moveToIts:{en:'Move it to',ar:'انقله لخانة'}, removeFile:{en:'Remove it',ar:'شيله'},
   dupFile:{en:'already uploaded',ar:'مرفوع قبل كده'}, wizSaved:{en:'Saved ✓',ar:'محفوظ ✓'}, wizAutosave:{en:'Saved automatically as you go',ar:'بيتحفظ تلقائيًا أول بأول'}, wizRestart:{en:'Start over',ar:'ابدأ من الأول'},
   wizRestored:{en:'Your saved work was restored.',ar:'رجّعنا شغلك المحفوظ.'}, liveT:{en:'Recognised so far',ar:'اللي اتعرفنا عليه لحد دلوقتي'}, act_move:{en:'Move it to its own item.',ar:'انقله لبنده الصح.'}, moveTo:{en:'Move to',ar:'انقله إلى'}, moved:{en:'Moved.',ar:'اتنقل.'}, docsFirst:{en:'Start with the documents you already have: upload each one under its name. The program reads them, fills the product data from them, and in the next steps asks you only for what it could not find.',ar:'ابدأ بالمستندات اللي عندك: ارفع كل مستند تحت اسمه. البرنامج يقرأها ويملي بيانات المنتج منها، وفي الخطوات الجاية يطلب منك بس اللي ما لقاهوش.'},
@@ -845,7 +846,7 @@ function applyFillData(w, f){
   const specs=normSpecs(R.dosage_specifics); if(specs.length) set('dosage_specifics', specs, 'profile');
   if(d.origin==='imported'&&!['imported','imported_bulk'].includes(d.licence)) d.licence='imported';
   if(d.origin==='local'&&['imported','imported_bulk'].includes(d.licence)) d.licence='own';
-  const apis=(f.apis||[]).filter(a=>a.name);
+  const apis=cleanApis((f.apis||[]).filter(a=>a&&a.name));
   if(apis.length){ d.apis=apis.map(a=>({name:a.name, manufacturer:a.manufacturer||'', option:a.option||'FULL', strength:a.strength||'', country:a.country_name||(a.country&&a.country.length===2?countryText(a.country):(a.country||'')), country_code:a.country&&a.country.length===2?a.country:''})); from.apis=src.apis||'document'; }
   set('applicant', E.applicant, 'envelope'); set('tracking', E.tracking, 'envelope'); set('inn', (E.inn&&E.inn.length?E.inn:apis.map(a=>a.name)).filter(Boolean).join(', '), 'envelope');
   w.intakeFill=f;
@@ -1045,14 +1046,16 @@ function wizard(){
       const r = await api('/dossiers',{method:'POST',json:{name:d.name||d.trade||'Dossier',profile:profileOf(d),
         product:{name:d.trade||d.name,dosageform:d.form,manufacturer:d.man,indication:d.ind||null},
         envelope:{tracking:d.tracking,applicant:d.applicant,invented_name:d.trade||d.name,inn:d.inn.split(',').map(s=>s.trim()).filter(Boolean),portal_id:d.portal,description:'Initial MAA'}}});
-      const files=await wizFiles(S.wiz), fill=S.wiz.intakeFill, placeOpts={readable:!!S.wiz.makeReadable, scanned:S.wiz.scannedNames||[]}; wizReset(); location.hash=`#/d/${r.id}/board`;
+      const w0=S.wiz, files=await wizFiles(w0), fill=w0.intakeFill, placeOpts={readable:!!w0.makeReadable, scanned:w0.scannedNames||[], texts:w0.texts||{}, kinds:w0.kinds||{}}, draftId=w0.draftId;
+      S.wiz=null; store.set(WIZ_KEY,''); location.hash=`#/d/${r.id}/board`;
       if(fill){ try{ const data={apis:(d.apis||[]).filter(a=>a.name).map(a=>({name:a.name,manufacturer:a.manufacturer||'',option:a.option||'FULL',strength:a.strength||'',country:a.country||''})),
           composition:(fill.composition||[]).map(c=>({name:c.name,amount:c.amount||'',standard:c.standard||'',function:c.role==='active'?'active':(c.role||''),equivalent:c.equivalent||''})),
           batches:(fill.batches||[]).map(b=>({no:b.no,kind:b.kind||'fpp',size:b.size||'',date:b.date||'',site:b.site||'',expiry:b.expiry||'',conformity:b.conformity||''})),
           specs:{product:(fill.specs||[]).map(s=>({test:s.test,limit:s.limit||'',method:s.method||''}))}, results:{}, registration:fill.registration||{}, product:{name_ar:(fill.product||{}).name_ar||''}};
           for(const r0 of (fill.results||[])){ if(r0.batch&&r0.test){ (data.results[r0.batch]=data.results[r0.batch]||{})[r0.test]=r0.value; } }
           await api(`/dossiers/${r.id}/data`,{method:'PUT',json:data}); }catch(e){ console.warn('intake data', e); } }
-      if(files.length){ S.dossier=await api(`/dossiers/${r.id}`); await placeFiles(r.id, files, placeOpts); }
+      if(files.length){ S.dossier=await api(`/dossiers/${r.id}`); await placeFiles(r.id, files, placeOpts); route(); }
+      if(draftId) api(`/intake/drafts/${draftId}`,{method:'DELETE'}).catch(()=>{});          // the draft goes only once everything is in the dossier
     }catch(e){ const probs = e.detail && e.detail.problems;
       $('#wizErr').innerHTML=`<div class="alert bad">${icon('alert')}<p>${probs?probs.map(p=>esc(p[S.lang])).join('<br>'):esc(e.message)}</p></div>`; }
   };
@@ -1091,12 +1094,36 @@ function renderPreview(p, prof, full){
 
 /* ---------------- intake: upload the documents, the forms fill themselves (rules + Claude, every value reviewed) */
 function pickFiles(cb){ const p=$('#picker'); p.multiple=true; p.value=''; p.onchange=()=>{ p.multiple=false; cb([...p.files]); }; p.click(); }
+const API_STOP=new Set('each every contains contain containing tablet tablets capsule capsules and or of the per with film coated powder solution for injection active ingredient ingredients substance substances strength strengths equivalent to as base dose excipients excipient manufacturer manufactured by label claim product name trade form dosage composition unit units iu mg g ml mcg µg qs q.s ad other inactive inactives actives total weight'.split(' '));
+const API_SALTS=new Set('sulphate sulfate hydrochloride hcl sodium potassium zinc calcium magnesium acetate citrate maleate fumarate tartrate mesylate besylate succinate phosphate nitrate bromide chloride trihydrate dihydrate monohydrate hydrate anhydrous base usp bp ep ph eur micronized micronised'.split(' '));
+const API_BAD=/\b(contains?|each|every|per\s|manufactur|licen[cs]e|holder|date|certificate|approved|registration|price|pack|shelf|storage|batch|lot|expiry|valid)\b/i;
+const STRENGTH_RX=/(\d+(?:[.,]\d+)?\s*(?:mg|g|mcg|µg|iu|i\.u\.|ml|%|units?|ملجم|مجم|جم|مل|وحدة)(?:\s*\([^)]*\))?(?:\s*\/\s*\d*\s*(?:g|ml|mg|جم|مل))?)/i;
+const AR_SENT=new Set(['في','من','على','إلى','الى','التي','الذي','يحتوي','تحتوي','كل','مع','عن','هذا','هذه','يكون','تكون','أو','او','ثم','لكل']);
+const hasAr=s=>/[\u0600-\u06ff]/.test(s), hasLat=s=>/[A-Za-z]/.test(s);
+function apiKey(name){ let low=String(name||'').toLowerCase().replace(/\(.*?\)/g,' ').replace(STRENGTH_RX,' ').replace(/[^a-z\u0600-\u06ff ]+/g,' ');
+  const words=low.split(/\s+/).filter(w=>w&&!API_SALTS.has(w)&&!API_STOP.has(w)); return words.join(' ')||low.trim(); }
+function plausibleApi(name){ const n=String(name||'').replace(/\s+/g,' ').trim(); if(!n||n.length<3||n.length>70) return false;
+  const stripped=n.replace(/\(.*?\)/g,' ').replace(STRENGTH_RX,' ').replace(/\s+/g,' ').trim(); const words=stripped.split(' ').filter(Boolean); if(!words.length||words.length>6) return false;
+  if(stripped.replace(/[^A-Za-z\u0600-\u06ff]/g,'').length<3) return false; if(API_BAD.test(stripped)) return false;
+  if(hasAr(stripped)&&!hasLat(stripped)) return words.length<=4&&!words.some(w=>AR_SENT.has(w));
+  return !words.every(w=>API_STOP.has(w.toLowerCase())||API_SALTS.has(w.toLowerCase())); }
+function cleanApis(apis){ const out=[];
+  for(let a of apis||[]){ if(!a||typeof a!=='object') a={name:String(a||'')}; a=Object.assign({}, a); let name=String(a.name||'').replace(/\s+/g,' ').trim();
+    const m=STRENGTH_RX.exec(name); if(m&&m.index>2){ if(!a.strength) a.strength=m[1].trim(); name=name.slice(0,m.index).trim().replace(/[\s\-:;,]+$/,''); }
+    name=(name.replace(/\s*[(（].*$/,'').trim().replace(/[\s\-:;,]+$/,''))||name;
+    if(!plausibleApi(name)) continue;
+    if(name===name.toUpperCase()&&name.length>3) name=name.toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
+    const key=apiKey(name); const cur=out.find(x=>x._k===key||(key.length>5&&x._k.length>5&&(key.includes(x._k)||x._k.includes(key))));
+    if(cur){ for(const [k,v] of Object.entries(a)) if(v&&!cur[k]&&k!=='name') cur[k]=v; if(name.length>cur.name.length&&key.includes(apiKey(cur.name))) cur.name=name; }
+    else out.push(Object.assign({}, a, {name, _k:key})); }
+  out.forEach(x=>delete x._k); return out.slice(0,12); }
 function mergeFill(rules, ai){
   const out=JSON.parse(JSON.stringify(rules||{}));
-  if(!ai||typeof ai!=='object') return out;
+  if(!ai||typeof ai!=='object'){ out.apis=cleanApis(out.apis||[]); return out; }
   for(const sec of ['product','profile','envelope','registration']){ out[sec]=out[sec]||{};
     for(const [k,v] of Object.entries(ai[sec]||{})) if(v!==null&&v!==''&&!(Array.isArray(v)&&!v.length)) out[sec][k]=v; }
-  for(const key of ['apis','batches','specs','results','documents']) if(Array.isArray(ai[key])&&ai[key].length) out[key]=ai[key];
+  for(const key of ['batches','specs','results','documents']) if(Array.isArray(ai[key])&&ai[key].length) out[key]=ai[key];
+  out.apis=cleanApis([...(Array.isArray(ai.apis)?ai.apis:[]), ...(out.apis||[])]);      // the model's richer entries first, the rules' added, one per substance
   out.sources=ai.sources||{};
   return out;
 }
@@ -1304,7 +1331,7 @@ function applyIntake(files){
   if(d.origin==='imported'&&!['imported','imported_bulk'].includes(d.licence)) d.licence='imported';
   if(d.origin==='local'&&['imported','imported_bulk'].includes(d.licence)) d.licence='own';
   const rows={}; $$('[data-rva]').forEach(el=>{ (rows[el.dataset.rva]=rows[el.dataset.rva]||{})[el.dataset.f]=el.value.trim(); });
-  const apis=Object.values(rows).filter(a=>a.name); if(apis.length) d.apis=apis.map(a=>({name:a.name,manufacturer:a.manufacturer||'',option:a.option||'FULL',strength:a.strength||'',
+  const apis=cleanApis(Object.values(rows).filter(a=>a.name)); if(apis.length) d.apis=apis.map(a=>({name:a.name,manufacturer:a.manufacturer||'',option:a.option||'FULL',strength:a.strength||'',
     country:a.country==='__other__'?(a.country_other||''):(a.country?countryText(a.country):''), country_code:a.country&&a.country!=='__other__'?a.country:''}));
   S.wiz.intakeFill=S.wiz.intakeFill||null;
   d.applicant=v('rv-applicant')||d.applicant; d.tracking=v('rv-tracking')||d.tracking; d.inn=v('rv-inn')||d.inn;
@@ -1313,19 +1340,25 @@ function applyIntake(files){
   if(S.wiz.step===0) S.wiz.step=1; toast(t('filled')); wizard();
 }
 async function placeFiles(did, files, opts){
-  opts=opts||{};
-  const fd=new FormData(); files.forEach(f=>fd.append('files',f));
-  const res=await api(`/dossiers/${did}/classify`,{method:'POST',body:fd});
+  opts=opts||{}; const texts=opts.texts||{}, kinds=opts.kinds||{};
+  let res;
+  if(files.length&&files.every(f=>texts[f.name]&&texts[f.name].text)){            // the wizard read them already (scans included): classify by those texts and kinds
+    res=await api(`/dossiers/${did}/classify/text`,{method:'POST',json:{files:files.map(f=>({filename:f.name, text:texts[f.name].text, kind:kinds[f.name]||null}))}}); }
+  else { const fd=new FormData(); files.forEach(f=>fd.append('files',f)); res=await api(`/dossiers/${did}/classify`,{method:'POST',body:fd}); }
   if(!S.board||S.board.__did!==did){ S.board=await api(`/dossiers/${did}/board`); S.board.__did=did; }
-  let n=0; const left=[], convert=[];
+  let n=0; const left=[], leftFiles=[], convert=[];
   for(const [i,r] of res.entries()){
     const best=r.suggestions[0], slot=best&&slotById(best.slot_id);
-    if(!best||!slot||needsMeta(slot)){ left.push(r.filename); continue; }
-    const f=new FormData(); f.append('file',files[i]); f.append('meta','{}');
+    if(!best||!slot||needsMeta(slot)){ left.push(r.filename); leftFiles.push(files[i]); continue; }
+    const f=new FormData(); f.append('file',files[i]); f.append('meta',JSON.stringify(kinds[files[i].name]?{kind:kinds[files[i].name]}:{}));
     try{ const doc=await api(`/dossiers/${did}/slots/${encodeURIComponent(best.slot_id)}/documents`,{method:'POST',body:f}); n++;
-      if(opts.readable&&(opts.scanned||[]).includes(files[i].name)&&doc&&doc.id) convert.push([doc.id, files[i].name]); }catch(e){ left.push(r.filename); }
+      if(opts.readable&&(opts.scanned||[]).includes(files[i].name)&&doc&&doc.id) convert.push([doc.id, files[i].name]); }catch(e){ left.push(r.filename); leftFiles.push(files[i]); }
   }
-  toast(`${n} ${t('placed')}${left.length?` · ${left.length} ${t('notPlaced')}`:''}`);
+  if(leftFiles.length){                                                            // nothing uploaded is lost: kept as «not placed yet», the user puts it in its item
+    try{ const fd=new FormData(); leftFiles.forEach(f=>fd.append('files',f)); const meta={}; leftFiles.forEach(f=>{ if(kinds[f.name]||texts[f.name]) meta[f.name]={kind:kinds[f.name]||null, text:(texts[f.name]&&texts[f.name].text||'').slice(0,6000)}; });
+      fd.append('meta', JSON.stringify(meta)); await api(`/dossiers/${did}/unplaced`,{method:'POST',body:fd}); }catch(e){ console.warn('unplaced', e); } }
+  S.board=null;
+  toast(`${n} ${t('placed')}${left.length?` · ${left.length} ${t('stagedN')}`:''}`);
   for(const [id,name] of convert){ try{ await makeReadable(did, id, name); }catch(e){ toast(e.message); } }
   if(S.dossier&&S.dossier.id===did) await refreshCurrent();
 }
@@ -1528,6 +1561,9 @@ function renderBoard(){
       ${c.waiting?`<div class="card kpi wait"><span class="n">${c.waiting}</span><span class="l">${esc(t('waiting'))}</span></div>`:''}</div>
     <div class="row"><div class="seg" role="group">${['todo','problems','all','hidden'].map(k=>`<button data-f="${k}" class="${f===k?'on':''}">${esc(t(k))}</button>`).join('')}</div>
       <div class="seg" role="group">${[0,1,2,3,4,5].map(k=>`<button data-m="${k}" class="${m===k?'on':''}">${k?'M'+k:esc(t('all'))}</button>`).join('')}</div></div>
+    ${(b.unassigned||[]).length?`<div class="card pad stack gap-s" id="unplacedBox"><div class="row gap-s"><b>${icon('alert',16)} ${esc(t('unplacedT'))} <span class="tag">${b.unassigned.length}</span></b><span class="small muted">${esc(t('unplacedSub'))}</span></div>
+      ${b.unassigned.map(u=>`<div class="row gap-s" data-unp="${esc(u.id)}" style="flex-wrap:wrap"><b dir="auto">${bdi(u.filename)}</b><select data-ups="${esc(u.id)}">${slots.filter(x=>x.level==='R'||x.level==='O').map(x=>`<option value="${esc(x.slot_id)}">${esc(x.ctd)} · ${esc(L(x.title))}${x.item?' · '+esc(x.item.manufacturer):''}</option>`).join('')}</select>
+        <button class="btn sm pri" data-upl="${esc(u.id)}">${icon('check',14)} ${esc(t('putHere'))}</button><button class="btn sm ghost" data-updel="${esc(u.id)}">${esc(t('withdraw'))}</button><span class="small muted" data-upwhy="${esc(u.id)}"></span></div>`).join('')}</div>`:''}
     <div class="card"><div class="tablewrap"><table><thead><tr><th>${esc(t('colSec'))}</th><th>${esc(t('colDoc'))}</th><th class="hide-m">${esc(t('colLevel'))}</th><th>${esc(t('colStatus'))}</th><th>${esc(t('colFiles'))}</th></tr></thead>
     <tbody>${rows||`<tr><td colspan="5" class="empty">—</td></tr>`}</tbody></table></div></div>
     ${b.unassigned.length?`<div class="card pad"><h2>${esc(t('unassigned'))}</h2><p class="sub">${esc(t('unassignedSub'))}</p>${b.unassigned.map(d=>`<div class="small">${bdi(d.filename)} <span class="code">${esc(d.meta.previous_slot||'')}</span></div>`).join('')}</div>`:''}`;
@@ -1538,6 +1574,10 @@ function renderBoard(){
   v.querySelectorAll('[data-why]').forEach(x=>x.onclick=()=>openWhy(x.dataset.why));
   v.querySelectorAll('[data-tpl]').forEach(x=>x.onclick=()=>openWhy(x.dataset.tpl, true));
   v.querySelectorAll('[data-draft]').forEach(x=>x.onclick=()=>draftIt(x.dataset.draft));
+  if($('#unplacedBox')){ api(`/dossiers/${id}/unplaced`).then(list=>{ for(const u of list){ const sel=v.querySelector(`[data-ups="${u.id}"]`), why=v.querySelector(`[data-upwhy="${u.id}"]`); const best=(u.suggestions||[])[0];
+      if(sel&&best&&[...sel.options].some(o=>o.value===best.slot_id)) sel.value=best.slot_id; if(why) why.textContent=best?`${t('suggested')}: ${(best.why||[]).join(' · ')}`:t('noSuggestion'); } }).catch(()=>{});
+    v.querySelectorAll('[data-upl]').forEach(x=>x.onclick=async()=>{ const sel=v.querySelector(`[data-ups="${x.dataset.upl}"]`); x.disabled=true; try{ await api(`/dossiers/${id}/documents/${x.dataset.upl}/place`,{method:'POST',json:{slot_id:sel.value}}); toast(t('placedOne')); S.board=null; route(); }catch(e){ toast(e.message); x.disabled=false; } });
+    v.querySelectorAll('[data-updel]').forEach(x=>x.onclick=async()=>{ try{ await api(`/dossiers/${id}/documents/${x.dataset.updel}/withdraw`,{method:'POST'}); toast(t('withdrawn')); S.board=null; route(); }catch(e){ toast(e.message); } }); }
   $('#bulkBtn').onclick=()=>{ const p=$('#picker'); p.multiple=true; p.value=''; p.onchange=()=>{ p.multiple=false; bulk([...p.files]); }; p.click(); };
   $('#bulkDrive').onclick=()=>drivePicker(files=>bulk(files), {label:t('drivePlace')});
   v.ondragover=e=>{ if(e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); };
