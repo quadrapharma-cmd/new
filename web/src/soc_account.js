@@ -93,6 +93,22 @@
     clearMember(); setTimeout(clearMember, 400);
     return r;
   };
+  /* ===== AREA w-trust: SIM-01 — the sign-in and sign-up fields keep nothing once the app opens or closes ===== */
+  /* whatever opened or closed the app (the form, Enter, a remembered session, a session ended in another tab, account
+     deletion), the e-mail and password typed on this computer are gone: watched on the app's own visibility */
+  (function () {
+    var app = $('app'), was = null; if (!app || !window.MutationObserver) return;
+    function clearAuth() { ['loginEmail', 'loginPw', 'suName', 'suEmail', 'suPw', 'suCompany', 'fpEmail'].forEach(function (id) { var f = $(id); if (f) f.value = ''; }); }
+    function look() { var on = app.getClientRects().length > 0; if (was !== null && on !== was) clearAuth(); was = on; }
+    new MutationObserver(look).observe(app, { attributes: true, attributeFilter: ['style', 'class'] }); look();
+    /* a sign-up (or sign-in) that waits for the e-mail confirmation never opens the app: the "check your e-mail" screen empties the form too */
+    var wrap = $('authWrap'), pending = false, shown = false;
+    function waiting() { pending = false;
+      var on = [].some.call(wrap.querySelectorAll('.dx-auth-panel [data-auth="resend"], #suErr.dx-auth-info'), function (e) { return e.getClientRects().length > 0; });
+      if (on && !shown) clearAuth(); shown = on; }   /* once, when the "check your e-mail" screen appears */
+    if (wrap) new MutationObserver(function () { if (!pending) { pending = true; setTimeout(waiting, 0); } }).observe(wrap, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+  })();
+  /* ===== end AREA w-trust: SIM-01 ===== */
 
   /* ── the sign-in box shows one of: the sign-in form (approved), "Forgot password?", "Check your e-mail", a farewell ── */
   var box = document.querySelector('#loginPage .auth-form-box');
@@ -123,6 +139,7 @@
     A().forgot(e).then(function (r) {
       msg('fpOk', 'If an account exists for this email, we sent it a link to choose a new password. Check your inbox and spam folder.' +
         (r && r.demo ? ' (Demo: no email is sent here — password reset works in the live app.)' : ''));
+      var f = $('fpEmail'); if (f) f.value = '';   /* AREA w-trust (SIM-01): the address is not kept once the link is asked for */
     }, function (err) { msg('fpErr', (err && err.message) || 'Could not send the link — please try again'); })
       .then(function () { b.disabled = false; b.removeAttribute('aria-busy'); });
   }

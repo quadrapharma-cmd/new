@@ -340,6 +340,7 @@
     o2.submitPost(); var temp = window.POSTS[0];
     sb.from('posts').insert({ user_id: ME_UUID, body: text, category: category }).select().single().then(function (r) {
       if (r.error) throw r.error; temp.id = r.data.id; temp.created_at = r.data.created_at; temp.uid = window.ME.id;
+      if (window.dxPostSaved) window.dxPostSaved(r.data);   /* AREA w-trust: a post held for Drugbox review is marked as waiting */
       return uploadPostMedia(r.data.id, imgs, files).then(function (m) { if (m.imgs.length) temp.imgs = m.imgs; if (m.files.length) temp.files = m.files; refreshAfterPost(); });
     }).catch(function (e) { window.POSTS = window.POSTS.filter(function (p) { return p !== temp; }); refreshAfterPost(); toastErr(e); });
   };
@@ -360,7 +361,8 @@
     var inp = document.getElementById('ci-' + id), text = inp ? inp.value.trim() : ''; if (!text) return;
     o2.submitComment(id);
     sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: text }).then(function (r) {
-      if (r.error) { var c = window.COMMENTS[id]; if (c) c.pop(); var box = document.getElementById('cmt-' + id), last = box && box.querySelector('.cmt-box .cmt:last-child'); if (last) last.remove(); toastErr(r.error); } });
+      if (r.error) { var c = window.COMMENTS[id]; if (c) c.pop(); var box = document.getElementById('cmt-' + id), last = box && box.querySelector('.cmt-box .cmt:last-child'); if (last) last.remove(); toastErr(r.error); }
+      else if (window.dxTrustUI && window.dxTrustUI.commented) window.dxTrustUI.commented(); });   /* AREA w-trust: "Comment posted!" once it is */
   };
   window.toggleComments = function (id) {
     var box = document.getElementById('cmt-' + id), opening = box && box.style.display === 'none';
@@ -1508,11 +1510,12 @@
   /* ═══════════════ C3 — company listings (surplus, dossiers), group buying, approved suppliers ═══════════════ */
   var LIST = { surplus: [], dossiers: [], known: {}, avl: {} };
   function listingFrom(r) { var slug = CO.byId[r.company_id] || sslug(r.co && r.co.slug);
+    if (r.review_hold && window.dxTrustUI && window.dxTrustUI.heldLot) r = Object.assign({}, r, { product: window.dxTrustUI.heldLot(r.product) });   /* AREA w-trust: the team sees it waits */
     return r.kind === 'surplus' ? { id: r.ref, slug: slug, product: r.product, qty: r.qty || '', batch: r.batch || '—', expiry: r.expiry || '—', price: r.price || '', off: r.off || 0 }
       : { id: r.ref, slug: slug, product: r.product, status: r.reg_status || '', deal: r.deal_kind || '', markets: r.markets || 'Egypt' }; }
   async function loadListings() {
     window.dxLiveListings = true;                     /* set first: the demo's sample listings never show, even when this load fails (F-54) */
-    var r = await sb.from('company_listings').select('*, co:companies(slug)').eq('active', true).order('created_at', { ascending: false }).limit(500); if (r.error) throw r.error;
+    var r = await sb.from('company_listings').select('*, co:companies(slug)').or('active.eq.true,review_hold.eq.true').order('created_at', { ascending: false }).limit(500); if (r.error) throw r.error;   /* AREA w-trust: + the team's held lots (0095) */
     LIST.surplus = []; LIST.dossiers = []; (r.data || []).forEach(function (x) { LIST.known[x.ref] = 1; (x.kind === 'surplus' ? LIST.surplus : LIST.dossiers).push(listingFrom(x)); });
   }
   async function persistListings(kind, list) {
@@ -1520,7 +1523,9 @@
       var raw = CO.raw[it.slug]; if (!raw || !raw.id) continue;
       var row = kind === 'surplus' ? { ref: it.id, company_id: raw.id, kind: 'surplus', product: it.product, qty: it.qty, batch: it.batch, expiry: it.expiry, price: it.price, off: it.off || 0, created_by: ME_UUID }
         : { ref: it.id, company_id: raw.id, kind: 'dossier', product: it.product, reg_status: it.status, deal_kind: it.deal, markets: it.markets, created_by: ME_UUID };
-      var r = await sb.from('company_listings').insert(row); if (r.error) { delete LIST.known[it.id]; toastErr(r.error); await loadListings().catch(function () {}); return; } }
+      var r = await sb.from('company_listings').insert(row).select('review_hold'); if (r.error) { delete LIST.known[it.id]; toastErr(r.error); await loadListings().catch(function () {}); return; }
+      if (window.dxTradeAfter) window.dxTradeAfter(r.data && r.data[0], { lot: true });   /* AREA w-trust: a held lot / dossier (0095) says so */
+      if (r.data && r.data[0] && r.data[0].review_hold && window.dxTrustUI && window.dxTrustUI.heldLot) it.product = window.dxTrustUI.heldLot(it.product); }
     if (kind === 'surplus') LIST.surplus = list; else LIST.dossiers = list;
   }
   async function loadAvl() {
@@ -2118,6 +2123,7 @@
     c.dataset.about = txt(g.description || ''); c.dataset.rules = JSON.stringify(rulesOf(g.rules)); c.dataset.since = g.created_at || ''; c.dataset.by = g.created_by ? aid(g.created_by) : '';
     /* 0061: sector, countries, who posts, archived, my notifications — the filters and the inside read them */
     c.dataset.sector = g.sector || ''; c.dataset.country = (g.country || []).join(','); c.dataset.post = g.post_policy || 'members'; c.dataset.find = txt((g.name || '') + ' ' + (g.description || '')).toLowerCase();
+    if (window.dxGroupCardHook) window.dxGroupCardHook(c, g);   /* AREA w-trust: the admin tools and the partner badge of 0094 */
     if (g.archived_at) { c.dataset.archived = '1'; c.style.opacity = '.55'; if (!c.querySelector('.priority-badge')) { var pb = document.createElement('div'); pb.className = 'priority-badge'; pb.textContent = '📦 Archived'; c.insertBefore(pb, c.firstChild); } } else delete c.dataset.archived;
     if (GX.muted && GX.muted[g.id]) c.dataset.muted = '1'; else delete c.dataset.muted;
     var wb0 = c.querySelector('.why-banner'); if (wb0 && /✉️/.test(wb0.textContent)) wb0.remove();   /* an invitation shows who invited me, as in the demo */
@@ -2383,11 +2389,12 @@
         var imgs = p.imgs && p.imgs.length ? p.imgs : (d.imageFiles || []), files = d.file ? [d.file] : [];
         var m = imgs.length || files.length ? await uploadPostMedia(row.id, imgs, files) : { imgs: [], files: [] };
         var ac = GX.act[g.id] = GX.act[g.id] || { group_id: g.id, posts_today: 0, posts_week: 0 }; ac.posts_today++; ac.posts_week++;
+        if (window.dxPostSaved) window.dxPostSaved(row);   /* AREA w-trust: waiting for the group's admins / Drugbox review */
         return { id: row.id, created_at: row.created_at, ts: 'just now', imgs: m.imgs, files: m.files, own: true };
       }
       case 'react': return gpWrite(sb.from('reactions').upsert({ post_id: id, user_id: ME_UUID, kind: RK_OUT[d.kind] || d.kind || 'like' }, { onConflict: 'post_id,user_id' }));
       case 'unreact': return gpWrite(sb.from('reactions').delete().eq('post_id', id).eq('user_id', ME_UUID));
-      case 'comment': { var cr = await gpWrite(sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: (d.comment && d.comment.text) || '' }).select('id').single()); if (d.comment && cr) d.comment.id = cr.id; return; }
+      case 'comment': { var cr = await gpWrite(sb.from('comments').insert({ post_id: id, user_id: ME_UUID, body: (d.comment && d.comment.text) || '' }).select('id').single()); if (window.dxTrustUI && window.dxTrustUI.commented) window.dxTrustUI.commented();   /* AREA w-trust */ if (d.comment && cr) d.comment.id = cr.id; return; }
       case 'deleteComment': { var cid = d.comment && d.comment.id; if (!cid) throw new Error('Reload the group to delete this comment');
         return gpWrite(sb.from('comments').delete().eq('id', cid).select('id'), 'You can delete your own comments, comments on your posts, or (as an admin) any comment in the group'); }
       case 'commentLike': {   /* merge (G-15): the group comment Like is social's comment like — one counter trigger, the author is told (0049) */
@@ -4154,7 +4161,7 @@
     var g = gOf(d), l = d.listing || {};
     if (d.op === 'create') {
       var co = window.dxDir && window.dxDir.mine && window.dxDir.mine(), raw = co && CO.raw[co.slug];
-      await gpWrite(sb.from('group_listings').insert({ group_id: g.id, user_id: ME_UUID, kind: l.kind, title: l.t, details: l.d || '', price: l.kind === 'rfq' ? null : (l.price || null), company_id: raw && raw.id ? raw.id : null }).select('id'));
+      await gpWrite(sb.from('group_listings').insert({ group_id: g.id, user_id: ME_UUID, kind: l.kind, title: l.t, details: l.d || '', price: l.kind === 'rfq' ? null : (l.price || null), company_id: raw && raw.id && raw.status === 'verified' ? raw.id : null }).select('id'));   /* AREA w-trust (W-16): only a verified company page posts as the company; otherwise the member, as themselves */
       return;
     }
     if (d.op === 'close') return gpWrite(sb.from('group_listings').update({ status: 'closed' }).eq('id', l.id).select('id'), 'Only the author or the group’s admins can close it');
@@ -4465,7 +4472,9 @@
     var a = actingRaw(), demand = d.type === 'demand';
     var row = { user_id: ME_UUID, type: demand ? 'demand' : 'supply', category: CAT[d.type] || 'other', name: d.title, price: d.price || null, unit: demand ? null : unitOfForm(), moq: d.moq || null,
       description: d.desc || [d.lead, d.where].filter(Boolean).join(' · ') || '', docs: d.certs || [], lead_time: d.lead || null, status: status, company_id: a ? a.id : null };
-    var r = await sb.from('products').insert(row).select('id').single(); if (r.error) throw new Error(friendly(r.error));
+    if (window.dxTradeAs) Object.assign(row, await window.dxTradeAs(d, row, status));   /* AREA w-trust: posting as myself / a verified company / a broker (0090) */
+    var r = await sb.from('products').insert(row).select('id, review_hold').single(); if (r.error) throw new Error(friendly(r.error));
+    if (window.dxTradeAfter) window.dxTradeAfter(r.data, d);   /* AREA w-trust: held for Drugbox review → said so */
     var fid = 'form-' + d.type, coa = window.dxMarket && window.dxMarket.coaOf && window.dxMarket.coaOf(fid);   /* the COA: private storage, linked to the listing */
     if (coa) { try { var path = await upDoc('documents', 'listings/' + ME_UUID + '/coa-' + rid() + '.' + extOf(coa), coa);
       var u = await sb.from('products').update({ coa_path: path }).eq('id', r.data.id); if (u.error) throw u.error; window.dxMarket.coaDone(fid); } catch (e) { toastErr(e); } }
@@ -4792,4 +4801,11 @@
   openedMissing = function () { if (ME_UUID || !GUEST.on) return openedMissingGW.apply(this, arguments); var S = window.dxDir && window.dxDir.S; if (S && S.open && !CO.raw[S.open]) pageData(S.open, false); };
   window.dxLive.gw = { feedThera: feedThera, marketThera: marketThera, guest: guest, signedOut: function () { return GUEST.out === true; }, get me() { return ME_UUID; } };
   /* ===== /AREA w-growth ===== */
+
+  /* ===== AREA w-trust: what web/src/live/wtrust.js needs from here (notification sentences, companies, groups, uploads) ===== */
+  var notifFromWT = notifFrom;
+  notifFrom = function (n) { var o = notifFromWT(n); return window.dxNotifHook ? (window.dxNotifHook(n, o, SYS_UID) || o) : o; };
+  window.dxLive.wt = { get CO() { return CO; }, get GX() { return GX; }, get MKT() { return MKT; }, upDoc: upDoc, rid: rid, extOf: extOf, aid: aid, uuidOf: uuidOf, putUser: putUser,
+    toastErr: toastErr, friendly: friendly, onReset: onReset, loadGroups: function () { return loadGroups(); }, SYS_UID: SYS_UID };
+  /* ===== /AREA w-trust ===== */
 })();

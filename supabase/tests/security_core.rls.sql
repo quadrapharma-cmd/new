@@ -64,6 +64,8 @@ insert into r(name,ok) select 'F-177 anon has no write or sequence privilege on 
   and not exists(select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and (case when c.relkind='S' then has_sequence_privilege('anon', c.oid, 'usage') else false end));
 reset role;
 
+-- w-trust (0090): a trade offer needs the poster's trade profile (and a company's offer, the company's Drugbox badge)
+insert into public.trade_profiles (user_id, role, governorate, sells) values ('a0000000-0000-0000-0000-00000000000a', 'supplier', 'Cairo', 'APIs') on conflict (user_id) do nothing;
 -- ── F-03 paid placements come only from a confirmed payment ──
 select pg_temp.as_user(:A);
 insert into public.products (user_id, name, category, type, boosted_until, featured_until) values ('a0000000-0000-0000-0000-00000000000a','Metformin HCl','api','supply','2099-01-01','2099-01-01');

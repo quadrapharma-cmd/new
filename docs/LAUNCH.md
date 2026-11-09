@@ -46,6 +46,9 @@ in the environment only — never on a command line (where `ps` would show them)
 - [ ] Vercel team + one project (Root Directory irrelevant: the script uploads the built folder) + the domain (e.g. `app.drugbox.app`); Sentry project (JavaScript – Browser).
 - [ ] Paymob: secret/public keys, HMAC secret, card + wallet integration ids (**test** ones for staging). Fawry: merchant code + secure key (staging first). InstaPay address.
 - [ ] Prices: confirm boost/featured (seeded EGP 1,450 / 7 days, EGP 3,950 / 30 days, before 14% VAT) — `payment_products`. `supabase_deploy.sh` prints the current prices at the end of every run.
+- [ ] SMS provider for phone verification (W-20, migration 0093 → w-trust): the codes wait in `private.sms_outbox` (phone, body, sent_at). Choose the
+      provider (e.g. Vonage, Twilio, an Egyptian aggregator) and its sender id; until a sender function delivers that table, "Verify my phone" cannot finish
+      for real members. Nothing else depends on it.
 - [ ] A backup key: `deploy/backup.sh --gen-key ~/.drugbox-backup.key` — keep a second copy offline (password manager). Without it no backup can be restored.
 
 ## 2. Staging

@@ -61,7 +61,8 @@ def my_listings(j, pg):
 
 def lister(j, name='Supplier Lister', co=None):
     if j.demo: return {'page': j.demo_signin(j.new_page())}
-    return live_company_person(j, name, co or '%s Co %s' % (name, j.tag), sectors=('API & excipients',))
+    p = live_company_person(j, name, co or '%s Co %s' % (name, j.tag), sectors=('API & excipients',))
+    trader(j, p['id'], p['co']['id']); j.reload(p['page']); return p   # w-trust: trade profile + verified company (W-10, W-16)
 
 @journey('J-BUSINESS-34')
 def browse_market(j):

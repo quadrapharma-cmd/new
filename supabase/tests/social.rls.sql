@@ -172,6 +172,10 @@ select pg_temp.step('Alice saves 19 more', $$insert into public.saved_searches (
 select pg_temp.no('the 21st is refused', $$insert into public.saved_searches (user_id, name, q) values ('aaaa0041-0000-0000-0000-000000000001', 'one more', 'q')$$, '23514');
 select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000002');
 select pg_temp.ok('Bob cannot read Alice''s saved searches', $$(select count(*) = 0 from public.saved_searches where user_id = 'aaaa0041-0000-0000-0000-000000000001')$$);
+select pg_temp.as_server();
+-- w-trust (0090): a trade offer needs the poster's trade profile (and a company's offer, the company's Drugbox badge)
+insert into public.trade_profiles (user_id, role, governorate, sells) values ('aaaa0041-0000-0000-0000-000000000002', 'supplier', 'Cairo', 'APIs') on conflict (user_id) do nothing;
+select pg_temp.as_user('aaaa0041-0000-0000-0000-000000000002');
 select pg_temp.step('Bob lists Metformin', $$insert into public.products (user_id, name, category, price, unit) values ('aaaa0041-0000-0000-0000-000000000002', 'Metformin HCl S41 lot', 'api', 3.9, 'kg')$$);
 select pg_temp.as_server();
 select pg_temp.ok('Alice is told of the new match', $$(select count(*) = 1 from public.notifications where user_id = 'aaaa0041-0000-0000-0000-000000000001' and type = 'saved_search' and data->>'title' = 'Metformin HCl S41 lot')$$);

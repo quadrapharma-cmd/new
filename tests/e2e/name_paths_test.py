@@ -26,9 +26,9 @@ T('setup: the members a look-alike would copy exist', sql(f"select count(*) from
 # the catalog: no function other than the sign-up trigger writes a name, none stores a profile's name elsewhere, nothing copies metadata later
 # (merge: the areas added account_anonymise — a deleted account's tombstone «Deleted member», through the profiles trigger — and
 #  admin_set_role / admin_verify_profile / admin_undo — a role or the badge, never a name; supabase/tests/privacy_names.rls.sql checks each)
-T('catalog: the functions that INSERT or UPDATE profiles are handle_new_user, three counters and the areas\' four (tombstone, role, badge, undo)', sql(r"""select string_agg(p.proname, ',' order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+T('catalog: the functions that INSERT or UPDATE profiles are handle_new_user, three counters, the areas\' four (tombstone, role, badge, undo) and w-trust\'s verified phone (the phone column only, 0093)', sql(r"""select string_agg(p.proname, ',' order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname in ('public', 'private', 'auth') and p.prosrc ~* '(insert\s+into\s+(public\.)?profiles|update\s+(public\.)?profiles\s+(as\s+\w+\s+)?set)'""")
-  == 'account_anonymise,admin_set_role,admin_undo,admin_verify_profile,handle_new_user,increment_profile_view,person_followers_count,profiles_followers_count')
+  == 'account_anonymise,admin_set_role,admin_undo,admin_verify_profile,handle_new_user,increment_profile_view,person_followers_count,phone_verify_confirm,profiles_followers_count')
 T('catalog: no function reads a profile name into a variable to store it elsewhere', sql(r"""select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname in ('public', 'private') and p.prosrc ~* 'insert\s+into' and p.prosrc ~* 'select\s+[^;]*\mname\M[^;]*\minto\M[^;]*from\s+(public\.)?profiles'""") == '0')
 T('catalog: the only trigger on auth.users is the sign-up one (INSERT)', sql("select string_agg(tgname, ',') from pg_trigger where tgrelid = 'auth.users'::regclass and not tgisinternal") == 'on_auth_user_created')

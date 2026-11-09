@@ -1,4 +1,4 @@
-// Test stand-in for Paymob, FawryPay and the e-mail provider (Resend's API): records requests, checks Fawry's charge signature, answers like the real APIs.
+// Test stand-in for Paymob, FawryPay, the e-mail provider (Resend's API) and the SMS provider (Twilio's API): records requests, checks Fawry's charge signature, answers like the real APIs.
 import http from 'node:http'; import crypto from 'node:crypto';
 let SEQ = Date.now() % 1e9 * 100;   // provider ids stay unique when the stand-in restarts against the same database
 const LOG = [], CTL = { fawry_fail: 0, paymob_fail: 0 }, PORT = +(process.env.MOCK_PORT || 54500), FKEY = process.env.FAWRY_SECURE_KEY, PSECRET = process.env.PAYMOB_SECRET_KEY, EKEY = process.env.EMAIL_API_KEY;
@@ -10,6 +10,13 @@ http.createServer((req, res) => { let d = ''; req.on('data', c => d += c); req.o
   if (req.url === '/v1/intention/') { if (req.headers.authorization !== 'Token ' + PSECRET) return send(401, { detail: 'bad key' });
     if (CTL.paymob_fail > 0) { CTL.paymob_fail--; return send(500, { detail: 'temporarily unavailable' }); }
     return send(201, { id: 'pi_' + Date.now(), client_secret: 'egy_csk_' + crypto.randomBytes(8).toString('hex'), intention_order_id: ++SEQ }); }
+  if (/^\/2010-04-01\/Accounts\/[^/]+\/Messages\.json$/.test(req.url)) {   // Twilio: Basic auth with SMS_ACCOUNT:SMS_TOKEN, a form body
+    const f = Object.fromEntries(new URLSearchParams(d)); LOG[LOG.length - 1].body = f;
+    const want = 'Basic ' + Buffer.from((process.env.SMS_ACCOUNT || '') + ':' + (process.env.SMS_TOKEN || '')).toString('base64');
+    LOG[LOG.length - 1].auth_ok = !!process.env.SMS_ACCOUNT && req.headers.authorization === want;
+    if (!LOG[LOG.length - 1].auth_ok) return send(401, { message: 'Authenticate' });
+    if (/^\+2010999/.test(f.To || '')) return send(400, { code: 21211, message: 'Invalid To phone number' });   // a provider refusal, for the retry path
+    return send(201, { sid: 'SM' + LOG.length, status: 'queued' }); }
   if (req.url === '/emails') { if (!EKEY || req.headers.authorization !== 'Bearer ' + EKEY) return send(401, { message: 'bad key' });
     if (String(b.to && b.to[0]).includes('bounce')) return send(422, { message: 'invalid recipient' });   // a provider refusal, for the retry path
     return send(200, { id: 'em_' + LOG.length }); }

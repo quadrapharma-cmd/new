@@ -210,11 +210,12 @@ select pg_temp.ok('existing names: every profile has a key', $$not exists (selec
 -- member is normalised the same way (the mark over an undotted letter removed; an accent that draws like another keyed as its twin),
 -- and the stored name_key is the database's skeleton of what was typed (supabase/tests/name_rule.sql shows it is the app's).
 select pg_temp.as_server();
+-- (w-trust: phone_verify_confirm writes the verified number — the phone column only, never the name — 0093)
 -- (merge: the areas added account_anonymise — social, a deleted account's tombstone —, admin_set_role / admin_verify_profile /
 --  admin_undo — community, role and badge —, and company_invite — business, a name typed for someone else, kept in company_invites)
-select pg_temp.ok('write paths: the functions that INSERT or UPDATE profiles are the eight known ones', $$(select array_agg(p.proname::text order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+select pg_temp.ok('write paths: the functions that INSERT or UPDATE profiles are the nine known ones', $$(select array_agg(p.proname::text order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname in ('public', 'private', 'auth') and p.prosrc ~* '(insert\s+into\s+(public\.)?profiles|update\s+(public\.)?profiles\s+(as\s+\w+\s+)?set)')
-  = array['account_anonymise', 'admin_set_role', 'admin_undo', 'admin_verify_profile', 'handle_new_user', 'increment_profile_view', 'person_followers_count', 'profiles_followers_count']$$);
+  = array['account_anonymise', 'admin_set_role', 'admin_undo', 'admin_verify_profile', 'handle_new_user', 'increment_profile_view', 'person_followers_count', 'phone_verify_confirm', 'profiles_followers_count']$$);
 select pg_temp.ok('write paths: besides handle_new_user only account_anonymise writes a profile name (the others count views and followers, or set a role or the badge)', $$(select coalesce(array_agg(p.proname::text order by p.proname), '{}') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname in ('public', 'private', 'auth') and p.proname <> 'handle_new_user' and p.prosrc ~* 'profiles' and p.prosrc ~* '(set|,)\s*name\s*=|profiles\s*\([^)]*\mname\M') = array['account_anonymise']$$);
 select pg_temp.ok('write paths: account_anonymise writes the constant «Deleted member», which the rule allows as it is (profiles trigger)', $$(select prosrc ~ 'name = ''Deleted member''' from pg_proc where proname = 'account_anonymise')

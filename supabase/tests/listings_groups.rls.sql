@@ -39,6 +39,11 @@ select pg_temp.as_user('22222222-aaaa-0000-0000-000000000002');
 select pg_temp.step('the member creates its company', $$insert into public.companies (name, type, slug) values ('LG Member Labs','Manufacturer','lg-member-labs')$$);
 select pg_temp.as_user('33333333-aaaa-0000-0000-000000000003');
 select pg_temp.step('the supplier creates its company', $$insert into public.companies (name, type, slug) values ('LG Big API','Supplier','lg-big-api')$$);
+-- w-trust (0090): a company's listing needs its Drugbox badge and the poster's trade profile
+select pg_temp.as_server();
+insert into public.trade_profiles (user_id, role, governorate, sells) values ('33333333-aaaa-0000-0000-000000000003', 'supplier', 'Cairo', 'APIs') on conflict (user_id) do nothing;
+update public.companies set status = 'verified' where slug = 'lg-big-api';
+select pg_temp.as_user('33333333-aaaa-0000-0000-000000000003');
 -- listings
 select pg_temp.step('the supplier posts its surplus', $$insert into public.company_listings (company_id, kind, product, qty, price, off, created_by) select id, 'surplus', 'LG MCC PH-101', '750 kg', 'US$ 2.40/kg', 30, '33333333-aaaa-0000-0000-000000000003' from public.companies where slug = 'lg-big-api'$$);
 select pg_temp.ok('a company posts its surplus', $$(select count(*) = 1 from public.company_listings where product = 'LG MCC PH-101')$$);
