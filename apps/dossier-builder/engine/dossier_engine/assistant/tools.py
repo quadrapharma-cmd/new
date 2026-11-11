@@ -342,7 +342,7 @@ def t_read_document(ctx, doc_id, pages=None):
             attach.append({'type': 'document', 'title': f'{name} p.{a}-{b}', 'source': {'type': 'base64', 'media_type': 'application/pdf', 'data': base64.standard_b64encode(part).decode()}})
         else:
             head.append('(too large to attach as pages; text only)')
-    elif low.endswith('.docx'):
+    elif extract.word_kind(data):
         text = extract.read_text(name, data)['text']
         head.append('Word document: text below')
     else:
@@ -576,9 +576,18 @@ def t_amend_document(ctx, doc_id, edits, rationale):
         raise ToolError('document not in this dossier')
     if d.get('doc_class') in ('third_party_certificate', 'eda_document'):
         raise ToolError('a third-party document is never altered: write an amendment_memo and request_reissue')
-    if not d['filename'].lower().endswith('.docx'):
-        raise ToolError('not a Word document: use amendment_memo (or put_data + generate_document for a generated document)')
     data = ctx.st.blob_path(d['sha256']).read_bytes()
+    fname, wk = d['filename'], extract.word_kind(data)
+    if wk == 'doc':                                     # the old Word format: tracked changes need .docx, LibreOffice converts it
+        from ..generate.docx_kit import find_soffice, to_docx
+        if not find_soffice():
+            raise ToolError('an old-format Word file (.doc): open it in Word, save it as .docx and upload that (then amend_document), or write an amendment_memo')
+        try:
+            data, fname = to_docx(data), fname.rsplit('.', 1)[0] + '.docx'
+        except Exception as e:
+            raise ToolError(f'could not convert the .doc to .docx ({e}): save it as .docx in Word and upload that')
+    elif wk != 'docx':
+        raise ToolError('not a Word document: use amendment_memo (or put_data + generate_document for a generated document)')
     try:
         out, log = amend.apply_edits(data, edits)
     except amend.AmendError as e:
@@ -586,7 +595,7 @@ def t_amend_document(ctx, doc_id, edits, rationale):
     meta = {k: v for k, v in d['meta'].items() if k not in ('amended_from', 'change_log')}
     meta.update({'amended_from': doc_id, 'change_log': log, 'draft_unsigned': True, 'amended_by': 'assistant', 'rationale': rationale})
     try:
-        new = ctx.st.add_document(ctx.did, d['slot_id'], d['filename'], out, d.get('title'), meta, supersede=doc_id)
+        new = ctx.st.add_document(ctx.did, d['slot_id'], fname, out, d.get('title'), meta, supersede=doc_id)
     except Exception as e:
         raise ToolError(getattr(e, 'en', None) or str(e))
     return {'document': _doc_summary(new), 'changes': len(log), 'next': 'the company opens the Word file, accepts the tracked changes, signs and uploads the signed PDF'}

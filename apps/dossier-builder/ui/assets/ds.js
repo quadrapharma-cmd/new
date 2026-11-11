@@ -71,7 +71,24 @@
   const icon = (n, s=18, cls='') => `<svg class="ic ${cls}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||P.info}</svg>`;
 
   /* ---- API: errors carry {code,en,ar} from the server; X-DB marks a deliberate request (CSRF) */
+  /* a thin «working» bar while the engine answers (after a third of a second), so no button looks dead */
+  let busyN=0, busyT=null;
+  function busy(d){ busyN=Math.max(0, busyN+d); const el=document.getElementById('busy');
+    if(busyN&&!busyT&&!(el&&!el.hidden)) busyT=setTimeout(()=>{ busyT=null; if(!busyN||!document.body) return;
+      const b=document.getElementById('busy')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'busy'}));
+      b.setAttribute('role','status'); b.setAttribute('aria-label', document.documentElement.lang==='en'?'Working…':'شغّال…'); b.hidden=false; }, 350);
+    if(!busyN){ clearTimeout(busyT); busyT=null; if(el) el.hidden=true; } }
+  /* nothing fails silently: an error the page did not expect is shown, at most once every few seconds */
+  let lastErr=0;
+  function surface(msg){ const now=Date.now(); if(now-lastErr<4000) return; lastErr=now;
+    try{ toast((document.documentElement.lang==='en'?'Something went wrong: ':'حصل خطأ: ')+String(msg).slice(0,200)); }catch(e){} }
+  window.addEventListener('error', e=>{ if(e&&e.message&&!/ResizeObserver|Script error/.test(e.message)) surface(e.message+(e.lineno?` (${e.lineno})`:'')); });
+  window.addEventListener('unhandledrejection', e=>{ const r=e&&e.reason, m=r&&(r.message||r.code)||(typeof r==='string'?r:''); if(m&&m!=='auth'&&!/AbortError/.test(String(r&&r.name))) surface(m); });
   async function api(path, opt={}, root='/api'){
+    busy(1);
+    try{ return await apiCall(path, opt, root); } finally{ busy(-1); }
+  }
+  async function apiCall(path, opt, root){
     opt = Object.assign({}, opt);
     opt.headers = Object.assign({'X-DB':'1'}, opt.headers||{});
     if(opt.json!==undefined){ opt.body = JSON.stringify(opt.json); opt.headers['content-type']='application/json'; delete opt.json; }

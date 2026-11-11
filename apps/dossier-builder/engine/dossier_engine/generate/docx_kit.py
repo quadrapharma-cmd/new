@@ -150,6 +150,22 @@ def to_pdf(docx_path, out_dir=None):
     return pdf
 
 
+def to_docx(data):
+    """An old-format Word file (.doc bytes) as .docx bytes — LibreOffice headless; raises when it is not installed."""
+    exe = find_soffice()
+    if not exe:
+        raise RuntimeError('LibreOffice not found')
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / 'in.doc'
+        src.write_bytes(data)
+        subprocess.run([exe, f'-env:UserInstallation={(Path(tmp) / "profile").as_uri()}', '--headless', '--convert-to', 'docx',
+                        '--outdir', tmp, str(src)], check=True, capture_output=True, timeout=180)
+        out = Path(tmp) / 'in.docx'
+        if not out.exists():
+            raise RuntimeError('conversion failed')
+        return out.read_bytes()
+
+
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 
 

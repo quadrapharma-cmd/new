@@ -60,7 +60,7 @@ class DocText:
                 data = self.store.blob_path(sha).read_bytes()
             except OSError:
                 data = b''
-            self._cache[sha] = pages_of(data) if doc['filename'].lower().endswith('.pdf') else _docx_pages(data) if doc['filename'].lower().endswith('.docx') else []
+            self._cache[sha] = pages_of(data) if doc['filename'].lower().endswith('.pdf') else _docx_pages(data) if doc['filename'].lower().endswith(('.docx', '.doc')) else []
         return self._cache[sha]
 
     def scanned(self, doc):
@@ -68,6 +68,10 @@ class DocText:
 
 
 def _docx_pages(data):
+    if data[:2] != b'PK':                               # the old Word format (.doc)
+        from .. import msdoc
+        text = msdoc.doc_text(data)
+        return [(1, text)] if text else []
     try:
         import docx
         d = docx.Document(io.BytesIO(data))

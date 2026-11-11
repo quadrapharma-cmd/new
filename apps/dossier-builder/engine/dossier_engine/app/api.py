@@ -170,9 +170,10 @@ def create_app(workspace, auth_enabled=None):
         d = st.document(doc_id)
         if d['meta'].get('external'):
             err(404, 'E-EXTERNAL', 'This is an external reference; open its link.', 'ده مرجع خارجي؛ افتح الرابط بتاعه.')
-        docx = d['filename'].lower().endswith('.docx')
+        low = d['filename'].lower()
         return FileResponse(st.blob_path(d['sha256']), filename=d['filename'],
-                            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document' if docx else 'application/pdf')
+                            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document' if low.endswith('.docx')
+                            else 'application/msword' if low.endswith('.doc') else 'application/pdf')
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/move')
     def move_document(did: str, doc_id: str, body: dict):
@@ -426,7 +427,7 @@ def create_app(workspace, auth_enabled=None):
     def _dossier_pdfs(did):
         out = []
         for d in st.documents(did):
-            if d['filename'].lower().endswith(('.pdf', '.jpg', '.jpeg', '.png', '.webp', '.tif', '.tiff', '.docx')) and not d['meta'].get('external'):
+            if d['filename'].lower().endswith(('.pdf', '.jpg', '.jpeg', '.png', '.webp', '.tif', '.tiff', '.docx', '.doc')) and not d['meta'].get('external'):
                 out.append((d['filename'], st.blob_path(d['sha256']).read_bytes(), d['id']))
         return out
 
@@ -479,8 +480,8 @@ def create_app(workspace, auth_enabled=None):
     def extract_texts(body: dict, target: str = 'dossier'):
         """The rules on texts the browser extracted itself (OCR of scans in the browser): same shape as /api/extract."""
         files = body.get('files') or []
-        if not isinstance(files, list) or len(files) > 40:
-            err(422, 'E-FILES', 'files must be a list of at most 40 items.', 'files لازم تكون قائمة بحد أقصى 40 عنصر.')
+        if not isinstance(files, list) or len(files) > 300:
+            err(422, 'E-FILES', 'files must be a list of at most 300 items.', 'files لازم تكون قائمة بحد أقصى 300 عنصر.')
         r = _extract.read_texts([f for f in files if isinstance(f, dict)])
         return {'files': [{k: v for k, v in f.items() if k != 'text'} | {'text': f['text']} for f in r['files']], 'rules': r['rules'],
                 'prompt': _extract.ai_prompt(r['files'], target), 'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
@@ -666,20 +667,16 @@ def create_app(workspace, auth_enabled=None):
     @app.post('/api/dossiers/{did}/classify')
     async def classify(did: str, files: list[UploadFile] = File(...)):
         """Suggest a slot for each file (nothing is stored until the user confirms)."""
-        from io import BytesIO
-        from pypdf import PdfReader
         d = st.dossier(did)
         clf = Classifier(st.pack(d['pack']))
         slots = st.slots(did)
         out = []
         for f in files:
             data = await f.read()
-            text = ''
-            try:
-                rd = PdfReader(BytesIO(data), strict=False)
-                text = ' '.join((p.extract_text() or '') for p in rd.pages[:1])
+            try:                                        # what is written in the file: a PDF's text layer, a Word file (.docx or .doc)
+                text = _extract.read_text(f.filename, data, max_pages=2, ocr=False)['text']
             except Exception:
-                pass
+                text = ''
             kind, sugg, auto = _suggest_with_kind(clf, slots, f.filename, text, None, (d.get('product') or {}).get('name'))
             out.append({'filename': f.filename, 'size': len(data), 'kind': kind, 'suggestions': sugg, 'auto': auto})
         return out

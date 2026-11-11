@@ -103,7 +103,7 @@ def rubric(st, did, doc_id, pack=None):
                           'deficiency': g['deficiency'], 'keywords': g.get('keywords') or [], 'source': {'code': g['source']}, 'auto': 'text'})
     d = st.dossier(did)
     return {'document': {'id': doc['id'], 'filename': doc['filename'], 'title': doc.get('title'), 'doc_class': cls, 'slot_id': doc.get('slot_id'), 'version': doc.get('version'),
-                         'valid_until': doc['meta'].get('valid_until'), 'generated': doc['meta'].get('generated'), 'is_docx': doc['filename'].lower().endswith('.docx'),
+                         'valid_until': doc['meta'].get('valid_until'), 'generated': doc['meta'].get('generated'), 'is_docx': doc['filename'].lower().endswith(('.docx', '.doc')),
                          'third_party': cls in THIRD},
             'slot': s and {k: s.get(k) for k in ('slot_id', 'req_id', 'ctd', 'title', 'doc_class', 'level', 'acceptance', 'sources', 'how')},
             'product': d.get('product'), 'rules': rules}

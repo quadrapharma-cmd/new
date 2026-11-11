@@ -8,7 +8,7 @@ document is a scan — against SCHEMA and returns the same shape. Every value is
 used; nothing is written without the user's confirmation."""
 import re
 from io import BytesIO
-from . import arabic, intake_eda
+from . import arabic, intake_eda, msdoc
 
 KINDS = [  # (kind, keywords in lower-case text or file name); see guess_kind for how a match is chosen
     ('cadc', ['notification letter', 'statement of conformity', 'sample identification code', 'qf:cadc', 'شهادة مطابقة']),
@@ -108,12 +108,44 @@ def docx_text(data):
                 text += '\n' + ' | '.join(c.text for c in row.cells)
         return text
     except Exception:
+        return _docx_xml_text(data)
+
+
+def _docx_xml_text(data):
+    """A Word file python-docx will not open (a template, a macro-enabled document): the paragraphs of its document part."""
+    try:
+        import zipfile
+        from lxml import etree
+        w = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+        root = etree.fromstring(zipfile.ZipFile(BytesIO(data)).read('word/document.xml'))
+        return '\n'.join(''.join(t.text or '' for t in p.iter(w + 't')) for p in root.iter(w + 'p'))
+    except Exception:
         return ''
+
+
+def word_kind(data):
+    """'docx' | 'doc' | None — a Word file by what is inside it, whatever its name says: a zip with a Word document part, or the
+    Word 97-2003 container."""
+    data = data or b''
+    if data[:2] == b'PK':
+        try:
+            import zipfile
+            return 'docx' if 'word/document.xml' in zipfile.ZipFile(BytesIO(data)).namelist() else None
+        except Exception:
+            return None
+    return 'doc' if msdoc.is_doc(data) else None
+
+
+def is_word(filename, data=None):
+    """Is this file a Word document? By its bytes when they are at hand, by its name otherwise."""
+    if data is not None:
+        return bool(word_kind(data))
+    return (filename or '').lower().endswith(('.docx', '.doc', '.docm', '.dotx', '.dot'))
 
 
 def read_text(name, data, max_pages=12, ocr=True, ocr_pages=4):
     """What one uploaded file says: a PDF's text layer, or OCR of its pages when it is a scan (tesseract ara+eng, local
-    computers only), a DOCX's paragraphs and tables, or OCR of an image. `scanned` = image-only (the AI layer then
+    computers only), a Word file's paragraphs and tables (.docx or the old .doc), or OCR of an image. `scanned` = image-only (the AI layer then
     reads the page images), `ocr` = the text came from OCR, `kind_of_file` = pdf | docx | image | other."""
     low = (name or '').lower()
     out = {'pages': 0, 'text': '', 'scanned': False, 'ocr': False, 'kind_of_file': 'other'}
@@ -131,8 +163,8 @@ def read_text(name, data, max_pages=12, ocr=True, ocr_pages=4):
             txt = arabic.ocr_image_bytes(data, '.' + img.split('/')[-1].replace('jpeg', 'jpg'))
             if len(re.sub(r'\s', '', txt)) >= 20:
                 out.update(text=txt, ocr=True)
-    elif data[:2] == b'PK' and low.endswith('.docx'):
-        out.update(pages=1, text=docx_text(data), kind_of_file='docx')
+    elif word_kind(data):                              # Word, old (.doc) or new (.docx): its paragraphs and tables
+        out.update(pages=1, text=docx_text(data) if data[:2] == b'PK' else msdoc.doc_text(data), kind_of_file='docx')
     else:
         try:
             out.update(data.decode('utf-8'), pages=1) if False else out.update(text=data.decode('utf-8', 'ignore')[:60000], pages=1)
@@ -640,6 +672,9 @@ def merge(items):
     return fill
 
 
+TEXT_BACK = 60000       # the reading handed back to the page (it sends it again when the rules re-run): enough for the 12 pages read
+
+
 def read_files(files):
     """files: [(filename, bytes)] -> per-file readings + the merged fill + the text the AI layer will read."""
     items, texts = [], []
@@ -648,7 +683,7 @@ def read_files(files):
         kind = content_kind(pt['text'])
         items.append(fields_for(kind, name, pt['text']))
         texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': pt['pages'], 'scanned': pt['scanned'], 'ocr': pt['ocr'], 'file': pt['kind_of_file'],
-                      'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:14000], 'found': found_fields(items[-1])})
+                      'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:TEXT_BACK], 'found': found_fields(items[-1])})
     return {'files': texts, 'rules': merge(items)}
 
 
@@ -711,7 +746,7 @@ def read_texts(files):
         items.append(fields_for(kind, name, text))
         texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': int(f.get('pages') or 0), 'scanned': bool(f.get('scanned')), 'ocr': bool(f.get('ocr')),
                       'ocr_where': f.get('ocr_where'), 'file': f.get('file') or ('pdf' if name.lower().endswith('.pdf') else 'other'), 'arabic': arabic.has_arabic(text),
-                      'chars': len(re.sub(r'\s', '', text)), 'text': text[:14000], 'found': found_fields(items[-1])})
+                      'chars': len(re.sub(r'\s', '', text)), 'text': text[:TEXT_BACK], 'found': found_fields(items[-1])})
     return {'files': texts, 'rules': merge(items)}
 
 

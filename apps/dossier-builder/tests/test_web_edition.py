@@ -73,3 +73,35 @@ def test_in_browser_journey(site, tmp_path):
         assert 'Examplol 500 mg FCT' in page.inner_text('#view') and page.locator('.jbar a').count() == 6
         assert errors == [], errors
         b.close()
+
+
+def test_the_page_keeps_answering_while_the_engine_works(site):
+    """The engine runs in a worker (assets/engine.worker.js): a long reading does not freeze the page. Where a worker cannot be
+    used (`?engine=page` stands in for that), the engine runs on the page's thread as before and the page still opens."""
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1280, 'height': 800}).new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script("localStorage.setItem('db.lang','en')")
+        page.goto(site + '/index.local.html#/')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.wait_for_selector('.caps .cap', timeout=120000)
+        assert page.evaluate("() => document.documentElement.dataset.engine") == 'worker'
+        r = page.evaluate("""async () => {
+            let last = performance.now(), worst = 0;
+            const iv = setInterval(() => { const n = performance.now(); worst = Math.max(worst, n - last); last = n; }, 20);
+            const files = Array.from({length: 30}, (_, i) => ({filename: 'd' + i + '.pdf', text: ('Certificate of Analysis\\nProduct: Dermacure 500 mg tablets\\nBatch No.: 2401' + i + '\\nAssay | 95.0 - 105.0 % | 99.6 %\\n').repeat(150)}));
+            const t0 = performance.now();
+            const res = await fetch('/api/extract/text?target=dossier', {method: 'POST', headers: {'content-type': 'application/json', 'X-DB': '1'}, body: JSON.stringify({files})});
+            const took = performance.now() - t0; clearInterval(iv);
+            return {ok: res.ok, took, worst, n: (await res.json()).files.length}; }""")
+        assert r['ok'] and r['n'] == 30, r
+        assert r['took'] < 400 or r['worst'] < r['took'] / 3, r                       # the longest pause of the page is a small part of the engine's work
+        page.goto(site + '/index.local.html?engine=page#/')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.wait_for_selector('.caps .cap', timeout=120000)
+        assert page.evaluate("() => document.documentElement.dataset.engine") == 'page'
+        assert not errors, errors
+        b.close()

@@ -3,6 +3,7 @@ import time
 from fastapi import HTTPException, Request, UploadFile, File, Form
 from pydantic import BaseModel
 from ..assistant import settings as asettings, storage, runner
+from ..extract import word_kind as _word_kind
 
 
 def err(status, code, en, ar, **extra):
@@ -90,7 +91,7 @@ def install(app, st):
             data = await f.read()
             if not data:
                 continue
-            if not (data[:4] == b'%PDF' or f.filename.lower().endswith(('.docx', '.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff'))):
+            if not (data[:4] == b'%PDF' or _word_kind(data) or f.filename.lower().endswith(('.docx', '.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff'))):
                 err(422, 'E-FILE', f'{f.filename}: PDF, Word or image files only.', f'{f.filename}: ملفات PDF أو Word أو صور بس.')
             staged.append(storage.stage_document(st, did, f.filename, data))
         if not (text or '').strip() and not staged:

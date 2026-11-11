@@ -93,6 +93,16 @@ browser edition (the `sample` capability receives the rendered pages) or through
 `ANTHROPIC_API_KEY` (PDFs attached as documents, photos as images); the drawer names the scans that were read that way and those
 that were not read on this computer. Tests: `tests/test_intake_eda.py` (a fictional product on the three forms, clean and OCR-noisy).
 
+### Word files, old and new
+
+A Word document is recognised by what it is inside, whatever its name: a `.docx` (a zip with a Word document part) or the Word 97-2003
+format (`.doc`), which `engine/dossier_engine/msdoc.py` reads with the standard library only (the OLE2 container, the FIB and the piece
+table), so every edition reads it, the browser one included: paragraphs in their order, a table row as «cell | cell» where the table
+stands, a field as what it shows. Its kind comes from that text like any other document's, it is accepted wherever a document is
+(upload, Drive, the Assistant, bulk placement), and it is stored as a Word draft that the signed PDF replaces. Where LibreOffice is
+installed, `amend_document` converts a `.doc` to `.docx` first, so tracked changes work on it. Word 6/95 and password-protected files
+are not read: they wait for the person like any unread file. Tests: `tests/test_word_files.py` (made-up «Dermacure» fixtures).
+
 ### The reading rules, reviewed on real layouts (November 2026)
 
 A review of the intake logic (sixteen independent passes, each attacked and revised, then checked against real registration
@@ -206,6 +216,15 @@ Word (so they can be amended), Sheets and Slides to PDF; everything is read-only
 Drive»; the board's bulk upload has it too; the Assistant has `drive_list` and `drive_fetch` (a file becomes an unplaced document,
 then `read_document` and `place_document`). Tests: `tests/test_drive.py` (a stand-in for Google's HTTP).
 
+**The Drive panel says what it is doing (November 2026).** Reading the folder and fetching the files show on the panel itself (a
+count, a bar, the file in hand), not in a passing toast; a file Drive refuses stays listed with Drive's own reason, with «try these
+again» and «continue with the ones fetched»; nothing is handed over silently and nothing ends silently. Sub-folders are listed four
+at a time. A folder of up to 40 readable files comes pre-selected; a larger one is left for the person to choose from («select all»
+exists), and a selection over 40 files or 150 MB is confirmed with a second press, because in the browser edition every scan is
+read by OCR on the person's own machine. Word files of the old format (`.doc`) are offered like `.docx`; a title with no extension
+gets the one of its Drive type. Every item of the board and of the publisher view has a Drive button next to «upload» (one file, the
+same checks as an upload), and the last link is kept on the browser. Tests: `tests/test_ui_drive.py`.
+
 ## Users and sign-in
 
 Sign-in is a **switch the owner controls** (`auth.json` in the workspace, `engine/dossier_engine/app/auth.py`). A fresh local or desktop
@@ -233,6 +252,13 @@ server), and the workspace lives in the browser's IndexedDB (`/workspace`). Down
 scans and uploads the PDF, which replaces the draft (export stays blocked until then), and the tracking table is
 rendered as a text-only PDF (`docx_kit.basic_pdf`). No OCR and no ghostscript pixel check there (fixes on third-party
 evidence are refused rather than applied unverified).
+
+**The page never waits on the engine (November 2026).** The engine runs in a worker (`web/engine.worker.js`, started by `boot.js`;
+`?engine=page` or a browser without workers falls back to the page's own thread). Documents are read one file per request, then the
+rules run once on all the texts, so a large selection never becomes one giant request and the memory in use is that of one file.
+The rules' patterns are compiled once (`dossier_engine/__init__.py` enlarges `re`'s cache): on three real scans the rules pass went
+from about 4 s of frozen page to about a second off the page's thread. Every call that takes more than a third of a second shows a
+thin «working» bar (`ds.js`), and an error the page did not expect is shown instead of being swallowed.
 
 ```bash
 bash apps/dossier-builder/web/vendor.sh        # once: Pyodide 0.27.7 + wasm wheels + pure wheels (~20 MB, not committed)

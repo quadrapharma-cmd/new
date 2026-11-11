@@ -287,7 +287,7 @@ async function docForm(pre){
   const showRule=()=>{ const x=ty.find(y=>y.id===$('#df-type').value); $('#df-rule').innerHTML=`${esc(t('validityRule'))}: ${x.validity_months?`${x.validity_months} ${esc(t('months'))}`:esc(t('noTerm'))} · ${prov(x.provenance)} · ${esc(x.source)}`; };
   $('#df-type').onchange=showRule; showRule();
   $('#df-file').onchange=async()=>{                       // the certificate itself fills number, issuer and dates (rules + Claude when available)
-    const f=$('#df-file').files[0]; if(!f||!/\.(pdf|jpe?g|png|webp|tiff?|docx)$/i.test(f.name)) return;
+    const f=$('#df-file').files[0]; if(!f||!/\.(pdf|jpe?g|png|webp|tiff?|docx?)$/i.test(f.name)) return;
     const fd=new FormData(); fd.append('files',f);
     try{ const r=await api('/extract?target=document',{method:'POST',body:fd},'/api'); let d=(r.rules.documents||[])[0]||{};
       if(window.DBAI && await window.DBAI.available()){ toast(t('thinking')); try{ const ai=await window.DBAI.extract(r.prompt,[f],r.files,'document'); const a=(ai&&ai.documents||[])[0];

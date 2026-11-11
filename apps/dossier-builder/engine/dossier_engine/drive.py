@@ -21,8 +21,8 @@ FOLDER = 'application/vnd.google-apps.folder'
 EXPORT = {'application/vnd.google-apps.document': ('application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.docx'),
           'application/vnd.google-apps.spreadsheet': ('application/pdf', '.pdf'),
           'application/vnd.google-apps.presentation': ('application/pdf', '.pdf')}
-USABLE = {'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/png', 'image/jpeg', 'image/webp', 'image/tiff'} | set(EXPORT)
-EXT_MIME = {'.pdf': 'application/pdf', '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.png': 'image/png', '.jpg': 'image/jpeg',
+USABLE = {'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'image/png', 'image/jpeg', 'image/webp', 'image/tiff'} | set(EXPORT)
+EXT_MIME = {'.pdf': 'application/pdf', '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.doc': 'application/msword', '.png': 'image/png', '.jpg': 'image/jpeg',
             '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.tif': 'image/tiff', '.tiff': 'image/tiff'}
 FIELDS = 'nextPageToken,files(id,name,mimeType,size,modifiedTime,md5Checksum)'
 HTTP = None            # tests inject: (method, url, headers, data) -> (status, content_type, bytes) — sync or async

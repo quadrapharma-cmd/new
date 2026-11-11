@@ -1,4 +1,6 @@
 /* Boots the Python engine in the browser (Pyodide) and routes the interface's fetch('/api/…') calls to it.
+   The engine runs in a worker (assets/engine.worker.js), so the page keeps answering while a document is read; where a
+   worker cannot start, it runs on the page's own thread as before.
    Files stay in this browser (IndexedDB); downloads go through the claude.ai «downloads» capability when present. */
 (function () {
   'use strict';
@@ -8,7 +10,7 @@
   const PKGS = ['sqlite3', 'hashlib', 'ssl', 'lxml', 'pyyaml', 'pydantic', 'jsonschema'];
   const base = new URL('.', document.baseURI).href;
   window.DB_TESS_BASE = base + 'assets/tess/'; window.DB_PDFJS_BASE = base + 'assets/pdfjs/';     // ocr.js (tesseract.js + pdf.js)
-  const S = { pyodide: null, handle: null, syncTimer: null, ready: null };
+  const S = { pyodide: null, handle: null, worker: null, syncTimer: null, ready: null };
   const AR = (document.documentElement.lang || 'ar') !== 'en';
 
   const ov = document.createElement('div');
@@ -61,19 +63,48 @@
       if (typeof b === 'string') body = new TextEncoder().encode(b);
       else if (b instanceof FormData) { const r = new Response(b); headers['content-type'] = r.headers.get('content-type'); body = new Uint8Array(await r.arrayBuffer()); }
       else if (b instanceof Blob) body = new Uint8Array(await b.arrayBuffer());
-      else if (b instanceof ArrayBuffer) body = new Uint8Array(b);
-      else if (ArrayBuffer.isView(b)) body = new Uint8Array(b.buffer, b.byteOffset, b.byteLength);
+      else if (b instanceof ArrayBuffer) body = new Uint8Array(b.slice(0));                        // a copy: the caller keeps its buffer
+      else if (ArrayBuffer.isView(b)) body = new Uint8Array(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength));
     }
     headers['content-length'] = String(body.length);
-    const res = await S.handle(method, path, query, JSON.stringify(headers), body);
-    const meta = JSON.parse(res[0]), out = res[1];
-    if (method !== 'GET' && method !== 'HEAD') scheduleSync();
+    let meta, out;
+    if (S.worker) {
+      const m = await ask({ type: 'api', method, path, query, headers: JSON.stringify(headers), body: body.buffer }, [body.buffer]);
+      meta = JSON.parse(m.meta); out = new Uint8Array(m.out);
+    } else {
+      const res = await S.handle(method, path, query, JSON.stringify(headers), body);
+      meta = JSON.parse(res[0]); out = res[1];
+      if (method !== 'GET' && method !== 'HEAD') scheduleSync();
+    }
     return new Response(out.length ? out : null, { status: meta.status, headers: meta.headers });
   };
 
-  S.ready = (async () => {
+  // ---- the engine in its own thread: requests go out with an id and come back with it
+  const pending = new Map(); let seq = 0;
+  function ask(msg, transfer) { return new Promise(res => { const id = ++seq; pending.set(id, res); S.worker.postMessage(Object.assign({ id }, msg), transfer || []); }); }
+  function engineDown(why) {                                       // the worker died after it was ready: every waiting call gets an answer
+    const body = new TextEncoder().encode(JSON.stringify({ detail: { code: 'E-ENGINE', en: 'The engine stopped (' + why + '). Reload the page.', ar: 'المحرك وقف. افتح الصفحة من جديد.' } }));
+    for (const [id, res] of pending) res({ id, meta: JSON.stringify({ status: 500, headers: [['content-type', 'application/json']] }), out: body.slice().buffer });
+    pending.clear();
+  }
+  function startWorker() {
+    return new Promise((resolve, reject) => {
+      let w, settled = false, alive = false;
+      const fail = why => { if (settled) return; settled = true; clearTimeout(timer); try { w.terminate(); } catch (e) {} reject(new Error(why)); };
+      try { w = new Worker(base + 'assets/engine.worker.js'); } catch (e) { reject(e); return; }
+      const timer = setTimeout(() => { if (!alive) fail('the engine worker did not answer'); }, 20000);
+      w.onerror = e => { const why = (e && e.message) || 'worker error'; if (!settled) fail(why); else { console.error('engine worker', why); engineDown(why); } };
+      w.onmessage = ev => {
+        const m = ev.data || {}; alive = true;
+        if (m.type === 'say') say(m.ar, m.en, m.pct);
+        else if (m.type === 'ready') { settled = true; clearTimeout(timer); resolve(w); }
+        else if (m.type === 'failed') fail(m.message || 'the engine could not start');
+        else if (m.type === 'api' || m.type === 'sync') { const res = pending.get(m.id); if (res) { pending.delete(m.id); res(m); } }
+      };
+    });
+  }
+  async function bootHere() {                                      // the engine on the page's own thread (no worker available)
     say('تحميل محرك الملفات…', 'Loading the dossier engine…', 4);
-    sub('أول مرة بس — بعدها بيفتح فوراً', 'First time only — it opens instantly afterwards');
     const pyodide = await loadPyodide({ indexURL: base + 'assets/pyodide/' });
     S.pyodide = pyodide;
     say('تحميل المكتبات…', 'Loading libraries…', 45);
@@ -92,6 +123,17 @@
     say('تشغيل المحرك…', 'Starting the engine…', 86);
     await pyodide.runPythonAsync("import sys; sys.path.insert(0, '/app/apps/dossier-builder/web'); import pybridge");
     S.handle = pyodide.globals.get('pybridge').handle;
+  }
+  S.ready = (async () => {
+    say('تحميل محرك الملفات…', 'Loading the dossier engine…', 4);
+    sub('أول مرة بس — بعدها بيفتح فوراً', 'First time only — it opens instantly afterwards');
+    let inWorker = false;
+    if (window.Worker && !/[?&]engine=page\b/.test(location.search)) {
+      try { S.worker = await startWorker(); inWorker = true; }
+      catch (e) { S.worker = null; console.warn('engine worker unavailable; the engine runs in the page:', e && e.message); }
+    }
+    if (!inWorker) await bootHere();
+    document.documentElement.dataset.engine = inWorker ? 'worker' : 'page';
     say('جاهز', 'Ready', 100);
     setTimeout(() => ov.remove(), 150);
   })().catch(e => { console.error(e); say('تعذّر تشغيل المحرك', 'The engine could not start', 100); sub(String(e && e.message || e), String(e && e.message || e)); throw e; });
@@ -163,5 +205,6 @@
       return await sample.json(prompt, Object.assign({ modelTier: 'default', cache: false }, opts || {}));
     },
   };
-  window.DBWEB = { sync: () => syncfs(false), ready: () => S.ready, pyodide: () => S.pyodide, save: saveFromApi };
+  window.DBWEB = { sync: () => S.worker ? ask({ type: 'sync' }).then(m => { if (m.error) throw new Error(m.error); }) : syncfs(false), ready: () => S.ready, pyodide: () => S.pyodide,
+    engine: () => S.worker ? 'worker' : 'page', save: saveFromApi };
 })();

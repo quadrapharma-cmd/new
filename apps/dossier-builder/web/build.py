@@ -95,6 +95,7 @@ def main():
     (DIST / 'index.local.html').write_text(full, encoding='utf-8')
     (DIST / 'suite.html').write_text(page(UI / 'suite' / 'index.html', builder=False)[1], encoding='utf-8')
     n = engine_zip(DIST / 'assets' / 'engine.zip')
+    put(DIST / 'assets' / 'engine.worker.js', (HERE / 'engine.worker.js').read_bytes())      # the engine's own thread (boot.js starts it)
     for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels'), (pathlib.Path(a.pdfjs), 'pdfjs'), (pathlib.Path(a.tess), 'tess')):
         if not src.is_dir():
             print(f'(no {sub} assets at {src}; skipped)')

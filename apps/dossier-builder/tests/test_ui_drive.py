@@ -125,3 +125,143 @@ def test_browser_edition_reads_a_link_through_the_viewers_drive_connector(server
         assert all(c[0] == 'Google Drive' for c in page.evaluate("() => window.__mcpCalls"))
         assert not errors, errors
         b.close()
+
+
+# ---------------------------------------------------------------- the Drive panel says what it is doing, and reads old Word files
+import base64, pathlib
+DATA = pathlib.Path(__file__).parent / 'data'
+
+
+def connector_stub(tree_js, files_js, delay_ms=0):
+    """A stand-in for claude.ai's connector capability: `tree` = folder id → entries (as search_files gives them),
+    `files` = file id → base64 content, or {error:'…'} for a file Drive refuses."""
+    return """
+    window.__mcpCalls = [];
+    const FOLDER = 'application/vnd.google-apps.folder';
+    const tree = %s, files = %s;
+    const mcp = {
+      async listTools(server){ return {servers:[{server:'Google Drive', authStatus:'connected', tools:[{name:'search_files'},{name:'get_file_metadata'},{name:'download_file_content'}]}]}; },
+      async callTool(server, tool, input){ window.__mcpCalls.push([server, tool, input]); await new Promise(r=>setTimeout(r, %d));
+        if(tool==='search_files'){ const m=/parentId = '([^']+)'/.exec(input.query); if(!(m[1] in tree)) throw {code:'tool_error', message:'File not found'}; return {payload:{files: tree[m[1]]}}; }
+        if(tool==='download_file_content'){ const f=files[input.fileId]; if(!f) throw {code:'tool_error', message:'File not found'}; if(f.error) throw {code:f.code||'tool_error', message:f.error};
+          return {payload:{content:f, id:input.fileId, mimeType:'application/octet-stream', title:'x'}}; }
+        throw {code:'bad_request', message:'unknown tool '+tool}; } };
+    window.claude = { use: async name => name==='mcp' ? mcp : null };
+    """ % (tree_js, files_js, delay_ms)
+
+
+def open_page(p, server, stub, hash_='#/new'):
+    b = p.chromium.launch()
+    page = b.new_page(viewport={'width': 1440, 'height': 960})
+    errors = []
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    page.add_init_script("localStorage.setItem('db.lang','ar')")
+    page.add_init_script(stub)
+    page.goto(server + '/' + hash_)
+    return b, page, errors
+
+
+def test_old_word_files_are_selectable_and_read_by_what_is_inside_them(server, tmp_path):
+    """The owner's case: a Drive folder with Word 97-2003 files (.doc). They are offered like every readable document, a title with no
+    extension gets the one of its Drive type, and what the wizard knows of each file is what is written in it."""
+    pdf = make_pdf_lines(tmp_path / 'licence.pdf', ['Egyptian Drug Authority', 'Final Registration License for Pharmaceutical Product', 'Trade Name: Dermacure', 'Dosage Form: Topical Powder'], 'Licence').read_bytes()
+    b64 = lambda data: base64.b64encode(data).decode()
+    tree = json.dumps({'1AbCdEfGhIjKlMnOpQrStUv': [
+        {'id': 'd1', 'title': 'pricing.doc', 'mimeType': 'application/msword', 'fileSize': '19968'},                     # a misleading name: it is a stability protocol
+        {'id': 'd2', 'title': 'تعهد', 'mimeType': 'application/msword', 'fileSize': '19456'},                               # a title with no extension
+        {'id': 'f1', 'title': 'licence.pdf', 'mimeType': 'application/pdf', 'fileSize': str(len(pdf))},
+        {'id': 'z1', 'title': 'archive.rar', 'mimeType': 'application/rar', 'fileSize': '9'}]})
+    files = json.dumps({'d1': b64((DATA / 'dermacure-protocol.doc').read_bytes()), 'd2': b64((DATA / 'dermacure-undertaking.doc').read_bytes()), 'f1': b64(pdf)})
+    with pw.sync_playwright() as p:
+        b, page, errors = open_page(p, server, connector_stub(tree, files))
+        page.wait_for_selector('#intakeDrive'); page.click('#intakeDrive'); page.wait_for_selector('#drvLink')
+        page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv'); page.click('#drvList'); page.wait_for_selector('[data-drvsel]')
+        rows = page.inner_text('#drvFiles')
+        assert 'pricing.doc' in rows and 'تعهد.doc' in rows and 'Word (.doc)' in rows
+        state = page.evaluate("() => [...document.querySelectorAll('[data-drvsel]')].map(c => [c.closest('tr').innerText.split('\\t')[1] || c.closest('tr').innerText, c.checked, c.disabled])")
+        assert sum(1 for _, checked, disabled in state if checked and not disabled) == 3 and sum(1 for _, c, d in state if d) == 1, state     # only the archive is left out
+        assert '3' in page.inner_text('#drvCount')
+        page.click('#drvUse')
+        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 3 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=120000)
+        kinds = page.evaluate("() => S.wiz.kinds")
+        assert kinds['pricing.doc'] == 'stability' and kinds['licence.pdf'] == 'licence', kinds                         # by its content, not by «pricing» in its name
+        assert page.evaluate("() => S.wiz.texts['تعهد.doc'].text.slice(0, 5)") == 'إقرار'
+        assert page.evaluate("() => localStorage.getItem('db.drive.link')").endswith('1AbCdEfGhIjKlMnOpQrStUv')       # the link is kept for the next place it is needed
+        assert not errors, errors
+        b.close()
+
+
+def test_the_panel_shows_progress_and_keeps_what_failed_with_its_reason(server, tmp_path):
+    pdf = make_pdf_lines(tmp_path / 'licence.pdf', ['Egyptian Drug Authority', 'Final Registration License for Pharmaceutical Product', 'Trade Name: Dermacure'], 'Licence').read_bytes()
+    tree = json.dumps({'1AbCdEfGhIjKlMnOpQrStUv': [{'id': 'f1', 'title': 'licence.pdf', 'mimeType': 'application/pdf', 'fileSize': str(len(pdf))},
+                                                   {'id': 'f2', 'title': 'huge scan.pdf', 'mimeType': 'application/pdf', 'fileSize': '99000000'},
+                                                   {'id': 'sub1', 'title': 'Module 3', 'mimeType': drive.FOLDER}],
+                       'sub1': [{'id': 'f3', 'title': 'spec.pdf', 'mimeType': 'application/pdf', 'fileSize': str(len(pdf))}]})
+    files = json.dumps({'f1': base64.b64encode(pdf).decode(), 'f2': {'error': 'File too large to download'}, 'f3': base64.b64encode(pdf).decode()})
+    with pw.sync_playwright() as p:
+        b, page, errors = open_page(p, server, connector_stub(tree, files, delay_ms=350))
+        page.wait_for_selector('#intakeDrive'); page.click('#intakeDrive'); page.wait_for_selector('#drvLink')
+        page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv'); page.check('#drvRec'); page.click('#drvList')
+        page.wait_for_selector('#drvProg')                                                     # reading the folder is announced on the panel, not in a passing toast
+        page.wait_for_function("() => document.querySelector('#drvFiles').textContent.includes('Module 3/spec.pdf')")
+        assert page.locator('#drvProg').count() == 0
+        page.click('#drvUse')
+        page.wait_for_selector('#drvBar')                                              # fetching: a bar and a count
+        page.wait_for_selector('#drvFails')
+        fails = page.inner_text('#drvFails')
+        assert 'huge scan.pdf' in fails and 'File too large to download' in fails            # the file and Drive's own reason stay on the panel
+        assert page.locator('#drawer.open, #drawer:not([hidden])').count() >= 1 and page.locator('#drvGo').count() == 1
+        assert page.evaluate("() => !(typeof S !== 'undefined' && S.wiz && S.wiz.allFiles && S.wiz.allFiles.length)")        # nothing is handed over behind the person's back
+        page.click('#drvGo')                                                                   # go on with the two that came
+        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 2 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=120000)
+        assert sorted(page.evaluate("() => Object.keys(S.wiz.kinds)")) == ['licence.pdf', 'spec.pdf']                   # the file inside the sub-folder keeps its own name
+        assert not errors, errors
+        b.close()
+
+
+def test_a_large_folder_is_not_taken_whole_without_being_asked(server, tmp_path):
+    pdf = make_pdf_lines(tmp_path / 'a.pdf', ['Certificate of Analysis', 'Product: Dermacure', 'Batch No.: 240101'], 'CoA').read_bytes()
+    entries = [{'id': f'f{i}', 'title': f'scan {i:03d}.pdf', 'mimeType': 'application/pdf', 'fileSize': '4000000'} for i in range(60)]
+    tree = json.dumps({'1AbCdEfGhIjKlMnOpQrStUv': entries})
+    files = json.dumps({f'f{i}': base64.b64encode(pdf).decode() for i in range(60)})
+    with pw.sync_playwright() as p:
+        b, page, errors = open_page(p, server, connector_stub(tree, files))
+        page.wait_for_selector('#intakeDrive'); page.click('#intakeDrive'); page.wait_for_selector('#drvLink')
+        page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv'); page.click('#drvList'); page.wait_for_selector('[data-drvsel]')
+        assert page.evaluate("() => [...document.querySelectorAll('[data-drvsel]')].filter(c => c.checked).length") == 0     # sixty files: the person chooses
+        assert '60' in page.inner_text('#drvNote')
+        page.click('#drvAll')
+        assert page.evaluate("() => [...document.querySelectorAll('[data-drvsel]')].filter(c => c.checked).length") == 60
+        page.click('#drvUse')
+        page.wait_for_selector('#drvNote')
+        assert '240' in page.inner_text('#drvNote') and page.evaluate("() => window.__mcpCalls.filter(c => c[1] === 'download_file_content').length") == 0   # 60 files, 240 MB: asked first
+        page.click('#drvNone'); page.check('[data-drvsel="0"]'); page.check('[data-drvsel="1"]'); page.click('#drvUse')
+        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 2", timeout=120000)
+        assert page.evaluate("() => window.__mcpCalls.filter(c => c[1] === 'download_file_content').length") == 2
+        assert not errors, errors
+        b.close()
+
+
+def test_drive_is_offered_on_every_item_of_the_board(server, tmp_path):
+    """A single item takes its document from Drive too: one file is chosen and it goes through the same checks as an upload."""
+    from test_reading_cases import PROFILE, PRODUCT, ENV, PRICE_EN
+    import urllib.request
+    pdf = make_pdf_lines(tmp_path / 'price.pdf', PRICE_EN.split('\n'), 'Pricing').read_bytes()
+    req = urllib.request.Request(server + '/api/dossiers', data=json.dumps(dict(name='Dermacure', profile=PROFILE, product=PRODUCT, envelope=ENV)).encode(),
+                                 headers={'content-type': 'application/json', 'X-DB': '1'})
+    did = json.loads(urllib.request.urlopen(req).read())['id']
+    tree = json.dumps({'1AbCdEfGhIjKlMnOpQrStUv': [{'id': 'f1', 'title': 'scan0007.pdf', 'mimeType': 'application/pdf', 'fileSize': str(len(pdf))},
+                                                   {'id': 'f2', 'title': 'other.pdf', 'mimeType': 'application/pdf', 'fileSize': '5'}]})
+    files = json.dumps({'f1': base64.b64encode(pdf).decode()})
+    with pw.sync_playwright() as p:
+        b, page, errors = open_page(p, server, connector_stub(tree, files), f'#/d/{did}/board')
+        page.wait_for_selector('[data-updrv]')
+        assert page.locator('[data-updrv]').count() == page.locator('[data-up]').count()                 # wherever a file can be uploaded, Drive is offered
+        page.click('[data-updrv="M1-05"]'); page.wait_for_selector('#drvLink')
+        page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv'); page.click('#drvList'); page.wait_for_selector('[data-drvsel]')
+        assert page.get_attribute('[data-drvsel="0"]', 'type') == 'radio' and page.locator('#drvAll').count() == 0     # one item, one file
+        page.check('[data-drvsel="1"]'); page.click('#drvUse')
+        page.wait_for_function("async () => { const r = await fetch('/api/dossiers/%s/board', {headers:{'X-DB':'1'}}); const s = (await r.json()).slots.find(x => x.slot_id === 'M1-05'); return s.documents.length === 1 && s.documents[0].filename === 'scan0007.pdf'; }" % did, timeout=60000)
+        assert not errors, errors
+        b.close()

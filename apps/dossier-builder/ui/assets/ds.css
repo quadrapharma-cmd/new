@@ -367,3 +367,8 @@ body.ro .btn.pri,body.ro [data-reg],body.ro [data-replace],body.ro [data-editdoc
 .smart{display:flex;flex-direction:column;gap:4px;min-width:0}
 .smart select{width:100%;max-width:100%}
 .smart .smart-other{width:100%}
+/* the engine is working */
+#busy{position:fixed;top:0;inset-inline:0;height:3px;z-index:1200;pointer-events:none;background:linear-gradient(90deg,transparent,var(--brand),transparent) no-repeat;background-size:40% 100%;animation:busy 1.1s linear infinite}
+#busy[hidden]{display:none}
+@keyframes busy{from{background-position:-60% 0}to{background-position:160% 0}}
+@media (prefers-reduced-motion:reduce){#busy{animation:none;background:var(--brand);opacity:.75}}

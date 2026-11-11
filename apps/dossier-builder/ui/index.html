@@ -199,7 +199,7 @@ body[data-role="editor"] .admin-only,body[data-role="viewer"] .admin-only{displa
 <div class="scrim" id="scrim" hidden></div>
 <aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog" aria-labelledby="dTitle"><header><h2 id="dTitle"></h2><button class="btn ghost sm" id="dClose" aria-label="Close">✕</button></header><div class="body" id="dBody"></div></aside>
 <div class="toast" id="toast" role="status" hidden></div>
-<input type="file" id="picker" accept="application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.tif,.tiff,.docx" hidden>
+<input type="file" id="picker" accept="application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.tif,.tiff,.docx,.doc" hidden>
 <script src="/assets/ds.js"></script>
 <script>window.DB_TESS_BASE=window.DB_TESS_BASE||'/assets/tess/';window.DB_PDFJS_BASE=window.DB_PDFJS_BASE||'/assets/pdfjs/';</script>
 <script src="/assets/ocr.js"></script>
@@ -682,7 +682,7 @@ function asstPaint(st, first){ const body=$('#asstBody'); if(!body) return; cons
   $$('[data-apv]').forEach(b=>b.onclick=async()=>{ b.disabled=true; try{ await api(`/dossiers/${S.asst.did}/assistant/approvals/${b.dataset.apv}`,{method:'POST',json:{decision:b.dataset.dec}}); asstRefresh(false); }catch(e){ toast(e.message); b.disabled=false; } });
   const sb=$('#asstSend'); if(sb) sb.disabled=!!active||!set.configured||!!set.browser; const stp=$('#asstStop'); if(stp) stp.hidden=!active; }
 function asstComposer(){ $('#asstComposer').innerHTML=`<div class="stack gap-s"><textarea id="asstText" rows="3" placeholder="${esc(t('asstPlaceholder'))}" dir="auto"></textarea>
-  <div class="row gap-s"><input type="file" id="asstFiles" multiple hidden accept=".pdf,.docx,image/*"><button class="btn sm" id="asstAttach" type="button">${icon('upload',14)} ${esc(t('asstAttach'))} <span id="asstNFiles" class="small muted"></span></button>
+  <div class="row gap-s"><input type="file" id="asstFiles" multiple hidden accept=".pdf,.docx,.doc,image/*"><button class="btn sm" id="asstAttach" type="button">${icon('upload',14)} ${esc(t('asstAttach'))} <span id="asstNFiles" class="small muted"></span></button>
   <span class="grow"></span><button class="btn sm ghost" id="asstStop" type="button" hidden>${esc(t('asstStop'))}</button><button class="btn sm ghost" id="asstClear" type="button">${esc(t('asstClear'))}</button><button class="btn pri sm" id="asstSend" type="button">${icon('arrow',14)} ${esc(t('asstSend'))}</button></div></div>`;
   $('#asstAttach').onclick=()=>$('#asstFiles').click(); $('#asstFiles').onchange=()=>{ const n=$('#asstFiles').files.length; $('#asstNFiles').textContent=n?`(${n})`:''; };
   $('#asstSend').onclick=asstSend; $('#asstText').onkeydown=e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)) asstSend(); };
@@ -923,7 +923,7 @@ async function refill(w){
   const scannedAll=names.filter(n=>w.texts[n].scanned); w.scannedNames=scannedAll; w.makeReadable=scannedAll.length>0;
 }
 async function addDocs(kind, files){
-  const w=S.wiz; if(!w) return; files=files.filter(f=>/\.(pdf|jpe?g|png|webp|tiff?|docx)$/i.test(f.name)); if(!files.length){ toast(t('badFiles')); return; }
+  const w=S.wiz; if(!w) return; files=files.filter(f=>/\.(pdf|jpe?g|png|webp|tiff?|docx?)$/i.test(f.name)); if(!files.length){ toast(t('badFiles')); return; }
   w.allFiles=w.allFiles||[]; w.docs=w.docs||{}; w.texts=w.texts||{}; w.prog=w.prog||{}; w.found=w.found||{}; w.kinds=w.kinds||{};
   const taken=n=>w.allFiles.some(x=>x.name===n)||!!w.texts[n]||((w.docs[n]||{}).status&&w.docs[n].status!=='removed');
   const sizeOf=n=>{ const x=w.allFiles.find(y=>y.name===n); return x?x.size:(w.sizes||{})[n]; };
@@ -1222,15 +1222,16 @@ function datalists(){ const k=VOC().known||{}; const dl=(id,arr)=>`<datalist id=
   return dl('dl-man',k.manufacturers)+dl('dl-app',k.applicants)+dl('dl-api',k.apis)+dl('dl-apiman',k.api_manufacturers); }
 
 /* ---------------- Google Drive as a source: paste a link, pick files, read them like uploads */
-S.drive={link:'',files:[],recursive:false,gear:false};
+S.drive={link:'',files:[],recursive:false,gear:false,sel:{}}; try{ S.drive.link=localStorage.getItem('db.drive.link')||''; }catch(e){}   // the last Drive link is kept on this browser
 const fmtSize=n=>n>1e6?`${(n/1e6).toFixed(1)} MB`:n>1e3?`${Math.round(n/1e3)} KB`:`${n} B`;
-const driveType=f=>f.kind==='folder'?L({en:'folder',ar:'فولدر'}):/pdf/.test(f.mimeType)?'PDF':/wordprocessingml|msword/.test(f.mimeType)?'Word':/google-apps.document/.test(f.mimeType)?'Google Doc':/google-apps.spreadsheet/.test(f.mimeType)?'Google Sheet':/google-apps.presentation/.test(f.mimeType)?'Google Slides':/^image\//.test(f.mimeType)?L({en:'image',ar:'صورة'}):(f.mimeType||'').split('/').pop()||'?';
+const driveType=f=>f.kind==='folder'?L({en:'folder',ar:'فولدر'}):/pdf/.test(f.mimeType)?'PDF':/msword/.test(f.mimeType)||/\.doc$/i.test(f.name||'')?'Word (.doc)':/wordprocessingml/.test(f.mimeType)?'Word':/google-apps.document/.test(f.mimeType)?'Google Doc':/google-apps.spreadsheet/.test(f.mimeType)?'Google Sheet':/google-apps.presentation/.test(f.mimeType)?'Google Slides':/^image\//.test(f.mimeType)?L({en:'image',ar:'صورة'}):(f.mimeType||'').split('/').pop()||'?';
 
 /* ---------------- Google Drive through the viewer's own claude.ai connector (browser edition): no key, nothing to share */
 const GD_SERVER='Google Drive', GD_FOLDER='application/vnd.google-apps.folder';
 const GD_EXPORT={'application/vnd.google-apps.document':['application/vnd.openxmlformats-officedocument.wordprocessingml.document','.docx'],
   'application/vnd.google-apps.spreadsheet':['application/pdf','.pdf'],'application/vnd.google-apps.presentation':['application/pdf','.pdf']};
-const GD_READABLE=/^(application\/pdf|image\/(jpeg|png|webp|tiff?)|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document)$/;
+const GD_READABLE=/^(application\/pdf|image\/(jpeg|png|webp|tiff?)|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document)$/;
+const GD_EXT={'application/pdf':'.pdf','application/msword':'.doc','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'.docx','image/jpeg':'.jpg','image/png':'.png','image/webp':'.webp','image/tiff':'.tif'};
 const DBDRIVE={
   _p:null,
   mcp(){ if(!this._p) this._p=(async()=>{ try{ if(!(window.claude&&typeof window.claude.use==='function')) return null; const m=await window.claude.use('mcp'); if(!m) return null;
@@ -1243,24 +1244,35 @@ const DBDRIVE={
     if((m=u.match(/[?&]id=([A-Za-z0-9_-]{10,})/))) return {kind:/folder/.test(u)?'folder':'file',id:m[1]};
     if(/^[A-Za-z0-9_-]{20,}$/.test(u)) return {kind:'folder',id:u}; return null; },
   entry(f, prefix){ const title=String(f.title||f.name||f.id), folder=f.mimeType===GD_FOLDER, exp=GD_EXPORT[f.mimeType];
-    const name=(prefix||'')+title+(exp&&!/\.[a-z0-9]{2,5}$/i.test(title)?exp[1]:'');
-    return {id:f.id, name, mimeType:f.mimeType||'', kind:folder?'folder':'file', size:f.fileSize?+f.fileSize:null, native:exp?exp[0]:null,
-      usable:!folder&&(!!exp||GD_READABLE.test(f.mimeType||'')||/\.(pdf|docx|jpe?g|png|webp|tiff?)$/i.test(title))}; },
-  async call(tool, input){ const m=await this.mcp(); if(!m) throw new Error(L({ar:'موصّل Google Drive مش متاح هنا',en:'The Google Drive connector is not available here'}));
+    const name=title+(!folder&&!/\.[a-z0-9]{2,5}$/i.test(title)?(exp?exp[1]:(GD_EXT[f.mimeType]||'')):'');       // a title without an extension gets the one of its Drive type
+    return {id:f.id, name, path:(prefix||'')+name, dir:prefix||'', mimeType:f.mimeType||'', kind:folder?'folder':'file', size:f.fileSize?+f.fileSize:null, native:exp?exp[0]:null, export:exp?exp[1]:null,
+      usable:!folder&&(!!exp||GD_READABLE.test(f.mimeType||'')||/\.(pdf|docx?|jpe?g|png|webp|tiff?)$/i.test(title))}; },
+  async call(tool, input, again){ const m=await this.mcp(); if(!m) throw new Error(L({ar:'موصّل Google Drive مش متاح هنا',en:'The Google Drive connector is not available here'}));
     try{ return (await m.callTool(GD_SERVER, tool, input)).payload; }
-    catch(e){ const code=(e&&e.code)||''; const say={
+    catch(e){ const code=(e&&e.code)||'';
+      if(e&&e.retryable===true&&!again){ await new Promise(r=>setTimeout(r, Math.min(+e.retryAfterMs||0, 15000)+500+Math.random()*900)); return this.call(tool, input, true); }   // a read the runtime marks retryable: once
+      const say={
+        server_unavailable:L({ar:'Google Drive ما ردّش في الوقت (ملف كبير أو اتصال بطيء): جرّب تاني',en:'Google Drive did not answer in time (a large file or a slow connection): try again'}),
+        upstream_error:L({ar:'الطلب ما وصلش لـ Google Drive أو ما رجعش: جرّب تاني، ولو اتكرر افتح الصفحة من جديد',en:'The request did not reach Google Drive or did not come back: try again; if it repeats, reload the page'}),
+        selection_required:L({ar:'عندك أكتر من موصّل Google Drive: اختار واحد من الرسالة اللي Claude بيعرضها',en:'More than one Google Drive connector: choose one in the prompt Claude shows'}),
+        blocked_by_policy:L({ar:'سياسة المؤسسة مانعة الأداة دي من Google Drive',en:'Your organization\'s policy blocks this Google Drive tool'}),
+        not_granted:L({ar:'الصفحة ما أخدتش إذن استخدام الموصّلات في العرض ده',en:'This view was not granted connector access'}),
         needs_reauth:L({ar:'وصّل Google Drive تاني من إعدادات Claude ← Connectors',en:'Reconnect Google Drive in claude.ai Settings → Connectors'}),
         server_not_connected:L({ar:'ضيف Google Drive في إعدادات Claude ← Connectors',en:'Add Google Drive in claude.ai Settings → Connectors'}),
         not_in_manifest:L({ar:'الصفحة مش مسموح لها بـ Google Drive: فعّله من قائمة الصلاحيات بتاعة الصفحة',en:'This page is not allowed to use Google Drive: enable it in the page\'s permissions menu'}),
         approval_required:L({ar:'محتاج موافقتك على الطلب في Claude',en:'Needs your approval in Claude'}),
         tool_error:L({ar:'Google Drive رفض الطلب: ',en:'Google Drive refused: '})+String(e&&e.message||'').slice(0,160)}[code];
       throw new Error(say||`${code||'error'} ${String(e&&e.message||'').slice(0,160)}`); } },
-  async list(id, recursive, prefix, out, depth){ out=out||[]; prefix=prefix||''; depth=depth||0; let token=null; const kids=[];
-    do{ const r=await this.call('search_files', Object.assign({query:`parentId = '${id}'`, pageSize:100, excludeContentSnippets:true}, token?{pageToken:token}:{}));
-      (r&&r.files||[]).forEach(f=>kids.push(f)); token=(r&&r.nextPageToken)||null; }while(token&&kids.length<1000);
-    kids.sort((a,b)=>((a.mimeType===GD_FOLDER?0:1)-(b.mimeType===GD_FOLDER?0:1))||String(a.title||'').localeCompare(String(b.title||'')));
-    for(const f of kids){ const e=this.entry(f, prefix); out.push(e); if(recursive&&e.kind==='folder'&&depth<6&&out.length<1000) await this.list(f.id, true, prefix+String(f.title||'')+'/', out, depth+1); }
-    return out; },
+  async list(id, recursive, onProgress){ const out=[], queue=[{id, prefix:'', depth:0}], skipped=[]; let active=0, folders=0;      // sub-folders four at a time, with progress
+    const one=async job=>{ let token=null; const kids=[];
+      do{ const r=await this.call('search_files', Object.assign({query:`parentId = '${job.id}'`, pageSize:100, excludeContentSnippets:true}, token?{pageToken:token}:{}));
+        (r&&r.files||[]).forEach(f=>kids.push(f)); token=(r&&r.nextPageToken)||null; }while(token&&kids.length<1000);
+      for(const f of kids){ const e=this.entry(f, job.prefix); out.push(e); if(recursive&&e.kind==='folder'&&job.depth<6) queue.push({id:f.id, prefix:job.prefix+String(f.title||'')+'/', depth:job.depth+1}); }
+      folders++; if(onProgress) onProgress(out.filter(x=>x.kind==='file').length, folders); };
+    await one(queue.shift());                                   // the folder itself: when it cannot be read, the listing fails
+    await new Promise(resolve=>{ const pump=()=>{ while(active<4&&queue.length&&out.length<3000){ const job=queue.shift(); active++; one(job).catch(()=>skipped.push(job.prefix)).then(()=>{ active--; pump(); }); } if(!active) resolve(); }; pump(); });
+    out.sort((a,b)=>a.dir.localeCompare(b.dir)||((a.kind==='folder'?0:1)-(b.kind==='folder'?0:1))||a.name.localeCompare(b.name));
+    out.skipped=skipped; return out; },
   async one(id){ return this.entry(await this.call('get_file_metadata',{fileId:id, excludeContentSnippets:true})); },
   async fetch(e){ const r=await this.call('download_file_content', e.native?{fileId:e.id, exportMimeType:e.native}:{fileId:e.id});
     const b64=(r&&(r.content||r.data))||''; if(!b64) throw new Error(L({ar:'الملف رجع فاضي',en:'the file came back empty'}));
@@ -1274,32 +1286,66 @@ function driveSettingsForm(ds){ return `<div class="card pad stack gap-s" id="dr
   <div class="row gap-s"><button class="btn pri sm" id="drvSave">${icon('check',14)} ${esc(t('driveSave'))}</button><span class="small muted" id="drvSetMsg"></span></div></div>`; }
 async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await api('/drive/settings'); }catch(e){ toast(e.message); return; }
   const d=S.drive; const conn=await DBDRIVE.available(); if(conn) ds.mode='connector';          // claude.ai: the viewer's own Drive, no key
-  const fileList=files=>files.length?`<div class="rows tablewrap"><table><thead><tr><th></th><th>${esc(t('driveName'))}</th><th>${esc(t('driveType'))}</th><th>${esc(t('driveSize'))}</th></tr></thead><tbody>${files.map((f,i)=>`<tr><td>${f.kind==='folder'?`<button class="btn sm ghost" data-drvopen="${esc(f.id)}" title="${esc(f.name)}">▸</button>`:`<input type="checkbox" data-drvsel="${i}" ${f.usable?'checked':'disabled'}>`}</td><td dir="auto">${esc(f.path||f.name)}${f.export?` <span class="small muted">→ ${esc(f.export)}</span>`:''}</td><td class="small muted">${esc(driveType(f))}</td><td class="small muted">${f.size?fmtSize(f.size):''}</td></tr>`).join('')}</tbody></table></div>${files.some(f=>f.usable)?'':`<p class="small muted">${esc(t('driveNoUsable'))}</p>`}`:`<p class="small muted">${esc(t('driveHow'))}</p>`;
+  d.sel=d.sel||{}; d.busy=null; d.fails=[]; d.got=[]; d.warned=false; d.note=''; if(opts.single) d.sel={};
+  const say=(o,v)=>L(o).replace(/\{(\w+)\}/g,(m,k)=>v&&v[k]!==undefined?v[k]:m);
+  const usable=()=>d.files.filter(f=>f.usable), picked=()=>d.files.filter(f=>f.usable&&d.sel[f.id]);
+  const fileList=files=>files.length?`<div class="row gap-s small"><span id="drvCount" class="muted"></span><span class="grow"></span>${opts.single||!files.some(f=>f.usable)?'':`<button class="btn sm ghost" id="drvAll" type="button">${esc(L({ar:'اختار الكل',en:'Select all'}))}</button><button class="btn sm ghost" id="drvNone" type="button">${esc(L({ar:'شيل الكل',en:'Clear'}))}</button>`}</div>
+    <div class="rows tablewrap" style="max-height:44vh;overflow:auto"><table><thead><tr><th></th><th>${esc(t('driveName'))}</th><th>${esc(t('driveType'))}</th><th>${esc(t('driveSize'))}</th></tr></thead><tbody>${files.map((f,i)=>`<tr><td>${f.kind==='folder'?`<button class="btn sm ghost" data-drvopen="${esc(f.id)}" title="${esc(f.name)}">▸</button>`:`<input type="${opts.single?'radio':'checkbox'}" name="drvone" data-drvsel="${i}" ${f.usable?(d.sel[f.id]?'checked':''):'disabled'}>`}</td><td dir="auto">${esc(f.path||f.name)}${f.export?` <span class="small muted">→ ${esc(f.export)}</span>`:''}</td><td class="small muted">${esc(driveType(f))}</td><td class="small muted">${f.size?fmtSize(f.size):''}</td></tr>`).join('')}</tbody></table></div>${files.some(f=>f.usable)?'':`<p class="small muted">${esc(t('driveNoUsable'))}</p>`}`:`<p class="small muted">${esc(t('driveHow'))}</p>`;
+  const count=()=>{ const el=$('#drvCount'); if(!el) return; const p=picked(), size=p.reduce((a,f)=>a+(f.size||0),0);
+    el.textContent=say({ar:'مختار {k} من {n} ملف مقروء',en:'{k} of {n} readable files selected'},{k:p.length,n:usable().length})+(size?` · ${fmtSize(size)}`:''); const u=$('#drvUse'); if(u) u.disabled=!!d.busy||!usable().length; };
+  const lock=on=>{ ['#drvUse','#drvList','#drvAll','#drvNone','#drvRec','#drvLink'].forEach(q=>{ const el=$(q); if(el) el.disabled=on; }); $$('[data-drvsel]').forEach(c=>{ c.disabled=on||!d.files[+c.dataset.drvsel].usable; }); $$('[data-drvopen]').forEach(b=>b.disabled=on); };
+  const status=()=>{ const el=$('#drvStatus'); if(!el) return; const b=d.busy;        // what is happening now, what failed and why: it stays on the panel
+    el.innerHTML=(b?`<div class="card pad stack gap-s" id="drvProg"><div class="row gap-s small"><b>${esc(b.title)}</b><span class="grow"></span><span class="code">${b.total?`${b.done}/${b.total}`:''}</span></div>${b.total?`<div id="drvBar" style="height:7px;border-radius:999px;background:var(--surface-3);overflow:hidden"><i style="display:block;height:100%;width:${Math.round(100*b.done/b.total)}%;background:var(--brand);transition:width .2s"></i></div>`:''}<div class="small muted" dir="auto">${esc(b.now||'')}</div></div>`:'')
+      +(d.note?`<div class="alert" id="drvNote">${icon('alert')}<p class="small" dir="auto">${esc(d.note)}</p></div>`:'')
+      +(d.fails.length?`<div class="card pad stack gap-s" id="drvFails"><b class="small">${esc(say({ar:'ملفات ما اتجابتش ({n})',en:'Files that could not be fetched ({n})'},{n:d.fails.length}))}</b><ul class="small" style="margin:0 18px;padding:0">${d.fails.map(x=>`<li dir="auto">${esc(x.f.name)} — <span class="muted">${esc(x.why)}</span></li>`).join('')}</ul>
+        <div class="row gap-s"><button class="btn sm" id="drvRetry" type="button">${esc(L({ar:'جرّب تاني للملفات دي',en:'Try these again'}))}</button>${d.got.length?`<button class="btn sm pri" id="drvGo" type="button">${esc(say({ar:'كمّل بالملفات اللي اتجابت ({n})',en:'Continue with the {n} fetched'},{n:d.got.length}))}</button>`:''}</div></div>`:'');
+    const rt=$('#drvRetry'); if(rt) rt.onclick=()=>fetchAll(d.fails.map(x=>x.f)); const go=$('#drvGo'); if(go) go.onclick=finish; };
+  const getOne=async f=>{ if(conn) return DBDRIVE.fetch(f);
+    const r=await fetch(`/api/drive/files/${encodeURIComponent(f.id)}?name=${encodeURIComponent(f.name)}&mime=${encodeURIComponent(f.mimeType||'')}`,{headers:{'X-DB':'1'}}); if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error((j.detail&&(j.detail[S.lang]||j.detail.en))||r.statusText); }
+    const blob=await r.blob(); const hx=r.headers.get('x-filename'); let name=f.name; if(hx){ try{ name=new TextDecoder().decode(new Uint8Array(hx.match(/../g).map(h=>parseInt(h,16)))); }catch(e){} }
+    return new File([blob], name, {type: blob.type||f.mimeType||''}); };
+  const finish=()=>{ const files=d.got.slice().sort((a,b)=>d.files.indexOf(a.f)-d.files.indexOf(b.f)).map(x=>x.file); d.got=[]; d.fails=[]; d.note=''; if(!files.length) return; closeDrawer(); onFiles(opts.single?files.slice(0,1):files); };
+  const fetchAll=async list=>{ d.fails=[]; d.note=''; d.busy={title:t('driveFetching'), done:0, total:list.length, now:''}; lock(true); status();
+    let next=0; const worker=async()=>{ while(next<list.length){ const f=list[next++]; d.busy.now=f.name; status();
+        try{ d.got.push({f, file:await getOne(f)}); }catch(e){ d.fails.push({f, why:String(e&&e.message||e).slice(0,220)}); }
+        d.busy.done++; status(); } };
+    await Promise.all(Array.from({length:Math.min(3, list.length)}, worker));
+    d.busy=null; lock(false);
+    if(!d.fails.length) return finish();                    // everything came: straight on to reading
+    if(!d.got.length) d.note=L({ar:'ولا ملف اتجاب من Drive. السبب مكتوب جنب كل ملف.',en:'No file could be fetched from Drive. The reason is next to each file.'});
+    status(); count(); };
   const paint=()=>{ openDrawer(t('driveT'), `<div class="stack gap-s">
     <div class="row gap-s small muted"><span class="chip ${ds.mode==='public'&&ds.browser?'c-warn':'c-ok'}"><i></i>${esc(t('driveMode_'+ds.mode))}</span>${conn?`<span>${esc(t('driveConnHint'))}</span>`:''}${ds.service_account_email?`<span class="code">${esc(ds.service_account_email)}</span>`:''}<span class="grow"></span><button class="btn sm ghost admin-only" id="drvGear" title="${esc(t('driveSet'))}">⚙</button></div>
     <div id="drvSet">${(isAdmin()&&(d.gear||(ds.browser&&ds.mode==='public'&&!conn)))?driveSettingsForm(ds):''}</div>
     <div class="row gap-s"><input type="text" id="drvLink" dir="ltr" placeholder="https://drive.google.com/drive/folders/…" value="${esc(d.link)}" style="flex:1"><button class="btn pri" id="drvList">${esc(t('driveList'))}</button></div>
     <label class="small row gap-s"><input type="checkbox" id="drvRec" ${d.recursive?'checked':''}> ${esc(t('driveRec'))}</label>
+    <div id="drvStatus"></div>
     <div id="drvFiles">${fileList(d.files)}</div>
     <div class="row"><button class="btn pri" id="drvUse" ${d.files.some(f=>f.usable)?'':'disabled'}>${icon('check')} ${esc(opts.label||t('driveUse'))}</button><button class="btn ghost" onclick="DS.closeDrawer()">${esc(t('cancel'))}</button></div></div>`, true);
     $('#drvGear').onclick=()=>{ d.gear=!d.gear; paint(); };
     const sv=$('#drvSave'); if(sv) sv.onclick=async()=>{ const body={}; const k=$('#drvKey'); if(k&&k.value.trim()) body.api_key=k.value.trim(); const sa=$('#drvSA'); if(sa&&sa.value.trim()){ try{ body.service_account=JSON.parse(sa.value); }catch(e){ $('#drvSetMsg').textContent=L({en:'The service account must be JSON.',ar:'حساب الخدمة لازم يكون JSON.'}); return; } }
       sv.disabled=true; try{ ds=await api('/drive/settings',{method:'PUT',json:body}); d.gear=false; S.caps=null; paint(); }catch(e){ $('#drvSetMsg').textContent=e.message; sv.disabled=false; } };
-    const list=async link=>{ d.link=link; d.recursive=$('#drvRec').checked; $('#drvList').disabled=true;
-      try{ if(conn){ const p=DBDRIVE.parseLink(link); if(!p) throw new Error(t('driveBadLink')); toast(t('driveListing')); d.files=p.kind==='folder'?await DBDRIVE.list(p.id, d.recursive):[await DBDRIVE.one(p.id)]; ds.mode='connector'; }
-        else{ const r=await api('/drive/list',{method:'POST',json:{link, recursive:d.recursive}}); d.files=r.files; ds.mode=r.mode; } }catch(e){ toast(e.message); } paint(); };
+    const list=async link=>{ d.link=link; try{ localStorage.setItem('db.drive.link', link); }catch(e){} d.recursive=$('#drvRec').checked; d.note=''; d.fails=[]; d.got=[]; d.warned=false;
+      d.busy={title:L({ar:'بيقرا الفولدر من Drive…',en:'Reading the folder from Drive…'}), done:0, total:0, now:''}; lock(true); status();
+      try{ if(conn){ const p=DBDRIVE.parseLink(link); if(!p) throw new Error(t('driveBadLink'));
+          d.files=p.kind==='folder'?await DBDRIVE.list(p.id, d.recursive, (n,fo)=>{ if(d.busy){ d.busy.now=say({ar:'لقى {n} ملف في {f} فولدر…',en:'{n} files found in {f} folder(s)…'},{n,f:fo}); status(); } }):[await DBDRIVE.one(p.id)]; ds.mode='connector';
+          if(d.files.skipped&&d.files.skipped.length) d.note=say({ar:'{n} فولدر فرعي ما اتقراش: افتحه لوحده بالسهم اللي جنبه.',en:'{n} sub-folder(s) could not be read: open each with its arrow.'},{n:d.files.skipped.length}); }
+        else{ const r=await api('/drive/list',{method:'POST',json:{link, recursive:d.recursive}}); d.files=r.files; ds.mode=r.mode; }
+        const us=usable(); d.sel={};
+        if(!opts.single&&us.length<=40) us.forEach(f=>{ d.sel[f.id]=true; });
+        else if(!opts.single) d.note=(d.note?d.note+' ':'')+say({ar:'الفولدر فيه {n} ملف مقروء: اختار المستندات اللي محتاجها، أو «اختار الكل».',en:'The folder has {n} readable files: tick the documents you need, or «Select all».'},{n:us.length});
+        if(opts.single&&us.length===1) d.sel[us[0].id]=true;
+      }catch(e){ d.note=e.message; toast(e.message); }
+      d.busy=null; paint(); };
     $('#drvList').onclick=()=>list($('#drvLink').value.trim()); $('#drvLink').onkeydown=e=>{ if(e.key==='Enter') list($('#drvLink').value.trim()); };
     $$('[data-drvopen]').forEach(b=>b.onclick=()=>list(`https://drive.google.com/drive/folders/${b.dataset.drvopen}`));
-    $('#drvUse').onclick=async()=>{ const picked=$$('[data-drvsel]').filter(c=>c.checked).map(c=>d.files[+c.dataset.drvsel]); if(!picked.length){ toast(t('driveNoneSel')); return; }
-      $('#drvUse').disabled=true; const files=[];
-      for(const [i,f] of picked.entries()){ toast(`${t('driveFetching')} ${i+1}/${picked.length} · ${f.name}`);
-        try{ if(conn){ files.push(await DBDRIVE.fetch(f)); continue; }
-          const r=await fetch(`/api/drive/files/${encodeURIComponent(f.id)}?name=${encodeURIComponent(f.name)}&mime=${encodeURIComponent(f.mimeType||'')}`,{headers:{'X-DB':'1'}}); if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error((j.detail&&(j.detail[S.lang]||j.detail.en))||r.statusText); }
-          const blob=await r.blob(); const hx=r.headers.get('x-filename'); let name=f.name; if(hx){ try{ name=new TextDecoder().decode(new Uint8Array(hx.match(/../g).map(h=>parseInt(h,16)))); }catch(e){} }
-          files.push(new File([blob], name, {type: blob.type||f.mimeType||''})); }
-        catch(e){ toast(`${f.name}: ${e.message}`); } }
-      if(!files.length){ $('#drvUse').disabled=false; return; }
-      closeDrawer(); onFiles(files); }; };
+    $$('[data-drvsel]').forEach(c=>c.onchange=()=>{ const f=d.files[+c.dataset.drvsel]; if(opts.single) d.sel={}; d.sel[f.id]=c.checked; d.warned=false; count(); });
+    const all=$('#drvAll'), none=$('#drvNone'); if(all) all.onclick=()=>{ usable().forEach(f=>{ d.sel[f.id]=true; }); paint(); }; if(none) none.onclick=()=>{ d.sel={}; paint(); };
+    $('#drvUse').onclick=()=>{ const p=picked(); if(!p.length){ d.note=t('driveNoneSel'); toast(d.note); return status(); }
+      const size=p.reduce((a,f)=>a+(f.size||0),0);
+      if(!d.warned&&(p.length>40||size>150e6)){ d.warned=true; d.note=say({ar:'اختيارك كبير ({n} ملف، {mb} ميجا): الجلب والقراية هياخدوا وقت. دوس «{b}» تاني لو عايز تكمّل.',en:'A large selection ({n} files, {mb} MB): fetching and reading will take a while. Press «{b}» again to go on.'},{n:p.length,mb:Math.round(size/1e6),b:opts.label||t('driveUse')}); return status(); }
+      d.got=[]; fetchAll(p); };
+    status(); count(); };
   paint(); }
 async function browserOcr(r, files, target, ev){
   /* scans the server could not read (no tesseract there) are read here, in the browser, then the rules run again on the texts */
@@ -1325,9 +1371,14 @@ async function browserOcr(r, files, target, ev){
 async function readFiles(files, target, onEvent, keep){
   const ev=(n,st,i)=>{ try{ if(onEvent) onEvent(n,st,i||{}); }catch(e){ console.warn('progress', e); } };
   files.forEach(f=>ev(f.name,'text'));
-  const fd=new FormData(); files.forEach(f=>fd.append('files',f));
-  let r=await api(`/extract?target=${target}`,{method:'POST',body:fd});
-  (r.files||[]).forEach(f=>ev(f.filename,'read',{pages:f.pages,scanned:f.scanned,ocr:f.ocr,chars:f.chars,kind:f.kind,found:f.found}));
+  const readOne=async f=>{ const fd=new FormData(); fd.append('files',f); return api(`/extract?target=${target}`,{method:'POST',body:fd}); };
+  const said=f=>ev(f.filename,'read',{pages:f.pages,scanned:f.scanned,ocr:f.ocr,chars:f.chars,kind:f.kind,found:f.found});
+  let r;
+  if(files.length===1){ r=await readOne(files[0]); (r.files||[]).forEach(said); }
+  else{ const metas=[];                                              // file by file: the page keeps answering and the memory stays that of one file
+    for(const f of files){ let m; try{ m=((await readOne(f)).files||[])[0]; }catch(e){ console.warn('read', f.name, e); }
+      m=m||{filename:f.name,text:'',pages:0,scanned:false,ocr:false,chars:0,kind:'other',found:[]}; m.filename=f.name; metas.push(m); said(m); }
+    r=await api(`/extract/text?target=${target}`,{method:'POST',json:{files:metas.map(f=>({filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,ocr:f.ocr,ocr_where:f.ocr_where,file:f.file}))}}); }
   r=await browserOcr(r, files, target, ev);
   let ai=null, note='';
   let mFiles=files, mMeta=r.files||[], mPrompt=r.prompt;                         // what the model reads: only the files the caller keeps (the kind rule)
@@ -1361,7 +1412,7 @@ function aiFillOf(w){
 }
 async function intake(files){
   if(S.wiz){ return addDocs('other', files); }                        // the wizard: read, fill, show on the cards; «review what was read» opens the full review
-  files=files.filter(f=>/\.(pdf|jpe?g|png|webp|tiff?|docx)$/i.test(f.name)); if(!files.length){ toast(t('badFiles')); return; }
+  files=files.filter(f=>/\.(pdf|jpe?g|png|webp|tiff?|docx?)$/i.test(f.name)); if(!files.length){ toast(t('badFiles')); return; }
   toast(t('reading'));
   try{ await vocab(); reviewIntake(await readFiles(files,'dossier'), files); }catch(e){ toast(e.message); }
 }
@@ -1547,7 +1598,7 @@ function stripHtml(J){
 async function loadJourney(){ const [b, data, hist] = await Promise.all([api(`/dossiers/${S.dossier.id}/board`), api(`/dossiers/${S.dossier.id}/data`), api(`/dossiers/${S.dossier.id}/submissions`)]); S.board=b; return {b, data, hist, J: journey(b, data, hist)}; }
 function bindNext(root){
   root.querySelectorAll('[data-go]').forEach(a=>a.onclick=e=>{ e.preventDefault(); location.hash=`#/d/${S.dossier.id}/${a.dataset.go}`; });
-  root.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up));
+  root.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up)); root.querySelectorAll('[data-updrv]').forEach(x=>x.onclick=()=>startUpload(x.dataset.updrv,'drive'));
   root.querySelectorAll('[data-why]').forEach(x=>x.onclick=()=>openWhy(x.dataset.why));
   root.querySelectorAll('[data-tpl]').forEach(x=>x.onclick=()=>openWhy(x.dataset.tpl, true));
   root.querySelectorAll('[data-draft]').forEach(x=>x.onclick=()=>draftIt(x.dataset.draft));
@@ -1570,7 +1621,7 @@ async function guideView(tok){
   const todoList = (st, n=3) => st.todo.slice(0,n).map(s=>`<div class="jitem"><div class="t"><span><span class="code muted">${esc(s.ctd)}</span> ${esc(L(s.title))}${s.item?` <span class="api">· ${bdi(s.item.manufacturer)}</span>`:''}</span>
       <span class="row gap-s">${chip(s.status)}${LOCKED.includes(s.doc_class)?`<span class="tag">${icon('lock',11)} ${esc(t('thirdParty'))}</span>`:''}${genFor(s)?`<span class="tag brand">✦ ${esc(t('generable'))}</span>`:''}</span></div>
       <div class="row gap-s">${genFor(s)&&s.status==='not_started'?`<button class="btn sm pri" data-ggen="${genFor(s)}" data-slot="${esc(s.slot_id)}">${icon('sparkles',14)} ${esc(t('generate'))}</button>`:''}
-      ${s.status==='not_started'||s.status==='non_conforming'?`<button class="btn sm" data-up="${esc(s.slot_id)}">${icon('upload',14)} ${esc(t('upload'))}</button>`:''}<button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></div>`).join('')
+      ${s.status==='not_started'||s.status==='non_conforming'?`<button class="btn sm" data-up="${esc(s.slot_id)}">${icon('upload',14)} ${esc(t('upload'))}</button><button class="btn sm ghost" data-updrv="${esc(s.slot_id)}" title="${esc(t('driveT'))}" aria-label="${esc(t('driveT'))}">${icon('link',14)}</button>`:''}<button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></div>`).join('')
     + (st.todo.length>n?`<a class="small" href="#/d/${id}/board">+${st.todo.length-n} …</a>`:'');
   const stage = (s, i, body) => `<div class="jstep ${s.state}"><div class="jdot">${s.state==='done'?'✓':s.state==='bad'?'!':i+1}</div><div class="jbody">${body}</div></div>`;
   const names={profile:'st_profile',data:'st_data',m1:'st_m1',m25:'st_m25',checks:'st_checks',export:'st_export'};
@@ -1638,7 +1689,7 @@ function renderBoard(){
     const marks = `${LOCKED.includes(s.doc_class)?`<span class="tag" title="${esc(t('thirdParty'))}">${icon('lock',11)}</span>`:''}${genFor(s)?`<span class="tag brand" title="${esc(t('generable'))}">✦</span>`:''}`;
     rows+=`<tr><td><span class="code">${esc(s.ctd)}</span></td><td><div class="row gap-s">${esc(L(s.title))}${marks}</div>${apiL}</td>
       <td class="hide-m"><span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></td><td>${chip(s.status)}</td>
-      <td>${files}<div class="row gap-s" style="margin-top:4px">${can?`<button class="btn sm" data-up="${esc(s.slot_id)}">${icon('upload',14)} ${esc(t('upload'))}</button>`:''}
+      <td>${files}<div class="row gap-s" style="margin-top:4px">${can?`<button class="btn sm" data-up="${esc(s.slot_id)}">${icon('upload',14)} ${esc(t('upload'))}</button><button class="btn sm ghost" data-updrv="${esc(s.slot_id)}" title="${esc(t('driveT'))}" aria-label="${esc(t('driveT'))}">${icon('link',14)}</button>`:''}
       ${draftable(s)&&!genFor(s)?`<button class="btn sm pri" data-draft="${esc(s.slot_id)}" title="${esc(t('draftBtnLong'))}">${icon('sparkles',14)} ${esc(t('draftBtn'))}</button>`:''}
       <button class="btn sm ghost" data-tpl="${esc(s.slot_id)}">${icon('file',14)} ${esc(t('tplBtn'))}</button><button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></td></tr>`;
   });
@@ -1663,7 +1714,7 @@ function renderBoard(){
   const v=$('#view');
   v.querySelectorAll('[data-f]').forEach(x=>x.onclick=()=>{S.filter=x.dataset.f; renderBoard();});
   v.querySelectorAll('[data-m]').forEach(x=>x.onclick=()=>{S.module=+x.dataset.m; renderBoard();});
-  v.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up));
+  v.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up)); v.querySelectorAll('[data-updrv]').forEach(x=>x.onclick=()=>startUpload(x.dataset.updrv,'drive'));
   v.querySelectorAll('[data-why]').forEach(x=>x.onclick=()=>openWhy(x.dataset.why));
   v.querySelectorAll('[data-tpl]').forEach(x=>x.onclick=()=>openWhy(x.dataset.tpl, true));
   v.querySelectorAll('[data-draft]').forEach(x=>x.onclick=()=>draftIt(x.dataset.draft));
@@ -1678,8 +1729,10 @@ function renderBoard(){
 }
 async function bulk(files){
   if(!files.length) return;
-  const fd=new FormData(); files.forEach(f=>fd.append('files',f));
-  const res = await api(`/dossiers/${S.dossier.id}/classify`,{method:'POST',body:fd});
+  const res=[];                                                      // one file at a time: a big selection never becomes one giant request
+  for(const [i,f] of files.entries()){ if(files.length>1) toast(`${t('reading')} ${i+1}/${files.length} · ${f.name}`);
+    const fd=new FormData(); fd.append('files',f);
+    try{ res.push(...await api(`/dossiers/${S.dossier.id}/classify`,{method:'POST',body:fd})); }catch(e){ toast(`${f.name}: ${e.message}`); return; } }
   const act = S.board.slots.filter(s=>s.level==='R'||s.level==='O');
   const opt = s => `${esc(s.ctd)} ${esc(L(s.title)).slice(0,70)}${s.item?' · '+esc(s.item.manufacturer):''}`;
   openDrawer(t('bulk'), `<p class="small muted">${esc(t('bulkSub'))}</p><div class="tablewrap"><table><thead><tr><th>${esc(t('pFile'))}</th><th>${esc(t('colSec'))}</th></tr></thead><tbody>
@@ -1706,34 +1759,34 @@ const metaOf=kind=>{ const meta=kind==='pi'?{pi_type:$('#mType').value,lang:$('#
 function askMeta(s){ const kind=s&&needsMeta(s); if(!kind) return Promise.resolve({});              // an existing file going into such an item
   return new Promise(res=>{ openDrawer(L(s.title), `<p class="muted">${esc(t('extra'))}</p>${metaFields(kind)}<div><button class="btn pri" id="mGo">${icon('check')} ${esc(t('putHere'))}</button></div>`);
     $('#mGo').onclick=()=>{ const meta=metaOf(kind); if(!meta) return; closeDrawer(); res(meta); }; }); }
-function startUpload(slotId){
+function startUpload(slotId, from){                               // from: 'drive' = take the file from Google Drive, else from this computer
   const s=slotById(slotId), kind=needsMeta(s);
-  if(!kind) return pick(slotId, {});
+  if(!kind) return pick(slotId, {}, undefined, from);
   openDrawer(L(s.title), `<p class="muted">${esc(t('extra'))}</p>${metaFields(kind)}
     <div><button class="btn pri" id="mGo">${icon('upload')} ${esc(t('choose'))}</button></div>`);
-  $('#mGo').onclick=()=>{ const meta=metaOf(kind); if(!meta) return; closeDrawer(); pick(slotId, meta); };
+  $('#mGo').onclick=()=>{ const meta=metaOf(kind); if(!meta) return; closeDrawer(); pick(slotId, meta, undefined, from); };
 }
 function metaFields(kind){ return kind==='pi'?
     `<label class="f"><span>${esc(t('piType'))}</span><select id="mType"><option value="spc">SmPC</option><option value="pl">PIL / Leaflet</option><option value="outer">Outer label</option><option value="interpack">Inner label</option></select></label>
      <label class="f"><span>${esc(t('piLang'))}</span><select id="mLang"><option value="en">English</option><option value="ar">العربية</option></select></label>`:
     `<label class="f"><span>${esc(t('study'))}</span><input type="text" id="mStudy" placeholder="EXM-BE-01 — Bioequivalence of …"></label>
      <label class="f"><span>${esc(t('docType'))}</span><select id="mDocType"><option value="ich_document_type_2">legacy clinical study report</option><option value="ich_document_type_4">study report body</option><option value="ich_document_type_3">synopsis</option><option value="ich_document_type_5">protocol or amendment</option></select></label>`; }
-function pick(slotId, meta, replaces){
+function pick(slotId, meta, replaces, from){
   const sl=slotById(slotId);
   if(replaces===undefined && !meta.signed_for && sl && sl.documents.length){
     openDrawer(L(sl.title), `<p>${esc(t('replaceQ'))}</p><div class="stack gap-s">${sl.documents.map(d=>`<button class="btn pri" data-rp="${d.id}">${esc(t('replaceIt'))}: ${esc(t('version'))} ${d.version} · ${bdi(d.filename)}</button>`).join('')}
       <button class="btn" id="rpAdd">${esc(t('addAnother'))}</button></div>`);
-    $$('[data-rp]', $('#dBody')).forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, meta, b.dataset.rp); });
-    $('#rpAdd').onclick=()=>{ closeDrawer(); pick(slotId, meta, null); };
+    $$('[data-rp]', $('#dBody')).forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, meta, b.dataset.rp, from); });
+    $('#rpAdd').onclick=()=>{ closeDrawer(); pick(slotId, meta, null, from); };
     return;
   }
-  const p=$('#picker'); p.value='';
-  p.onchange=async()=>{ if(!p.files[0]) return; const fd=new FormData(); fd.append('file',p.files[0]); fd.append('meta',JSON.stringify(meta)); if(replaces) fd.append('replaces', replaces);
+  const send=async file=>{ if(!file) return; const fd=new FormData(); fd.append('file',file); fd.append('meta',JSON.stringify(meta)); if(replaces) fd.append('replaces', replaces);
     toast(t('uploading'));
     try{ const doc = await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd});
       toast(t('uploaded')+' '+t(doc.check_status)); await refreshCurrent(slotId); if(doc.findings.length) openWhy(slotId); }
     catch(e){ toast(e.message); } };
-  p.click();
+  if(from==='drive') return drivePicker(files=>send(files[0]), {single:true, label:t('drivePlace')});
+  const p=$('#picker'); p.value=''; p.onchange=()=>send(p.files[0]); p.click();
 }
 function openWhy(slotId, focusTemplate){
   const s=slotById(slotId);
@@ -2005,7 +2058,7 @@ function renderPublisher(){
     <a class="btn pri" href="#/d/${id}/export">${esc(t('navExport'))}</a></div></div>
     <div class="pub"><div class="card"><h3>${icon('tree',16)} ${esc(t('sections'))}</h3><div class="scroll tree">${tree}</div></div>
     <div class="card"><h3>${sel?`<span class="code">${esc(sel.ctd)}</span> ${esc(L(sel.title))}`:esc(t('leaves'))}</h3><div class="scroll" id="leafPane">${leaves}</div>
-      ${sel&&isActive(sel)?`<div class="row" style="padding:10px 14px;border-top:1px solid var(--line)"><button class="btn sm" data-up="${esc(sel.slot_id)}">${icon('upload',14)} ${esc(t('upload'))}</button>${genFor(sel)?`<button class="btn sm soft" data-ggen="${genFor(sel)}" data-slot="${esc(sel.slot_id)}">${icon('sparkles',14)} ${esc(t('generate'))}</button>`:''}</div>`:''}</div>
+      ${sel&&isActive(sel)?`<div class="row" style="padding:10px 14px;border-top:1px solid var(--line)"><button class="btn sm" data-up="${esc(sel.slot_id)}">${icon('upload',14)} ${esc(t('upload'))}</button><button class="btn sm ghost" data-updrv="${esc(sel.slot_id)}" title="${esc(t('driveT'))}" aria-label="${esc(t('driveT'))}">${icon('link',14)}</button>${genFor(sel)?`<button class="btn sm soft" data-ggen="${genFor(sel)}" data-slot="${esc(sel.slot_id)}">${icon('sparkles',14)} ${esc(t('generate'))}</button>`:''}</div>`:''}</div>
     <div class="card"><h3>${icon('info',16)} ${esc(t('props'))}</h3><div class="scroll">${props}</div></div></div>`;
   const v=$('#view');
   v.querySelectorAll('[data-out]').forEach(b=>b.onclick=()=>{S.out=b.dataset.out; publisherView();});

@@ -262,7 +262,9 @@ class Store:
                                  'النسخة الموقّعة لازم تخص مسودة غير موقّعة في نفس القسم.')
             doc_class, supersede = 'signed_scan', draft['id']
         sha = self.put_blob(data)
-        if filename.lower().endswith('.docx'):          # Word draft (no LibreOffice on this machine): the PDF copy the user uploads replaces it
+        from .. import extract as _extract
+        word = bool(_extract.word_kind(data)) or filename.lower().endswith('.docx')
+        if word:                                        # Word draft (.docx or the old .doc): the PDF copy the user uploads replaces it
             rep = Report(str(self.blob_path(sha)), [Finding(
                 'DOCX-DRAFT', 'warn',
                 'Word draft. Print it on letterhead, sign, stamp, scan and upload the PDF (or export it to PDF): the PDF replaces this draft.',
@@ -275,22 +277,21 @@ class Store:
                 rep = pdf_check(str(tmp), doc_class or s.doc_class)
             finally:
                 tmp.unlink(missing_ok=True)
-            if not meta.get('generated') and not meta.get('signed_for'):      # the kind rule: is this file the document the item expects?
-                try:
-                    from .. import extract as _extract
-                    kc = _extract.kind_check(s.req_id, filename, text or data, known_kind=kind)
-                except Exception:
-                    kc = {'ok': True}
-                if not kc.get('ok'):
-                    home = next((x.slot_id for x in slots.values() if x.req_id in kc['homes'] and x.active), None)
-                    home_title = next((x.title for x in slots.values() if x.slot_id == home), None)
-                    kn = kc.get('kind_name') or {'en': kc['kind'], 'ar': kc['kind']}
-                    rep.findings.insert(0, Finding(
-                        'DOC-KIND', 'block',
-                        f"This file reads as a {kn['en']}, not the document this item needs" + (f"; it belongs in {home_title['en']}." if home_title else '.'),
-                        f"الملف ده شكله {kn['ar']}، مش المستند المطلوب في البند ده" + (f"؛ مكانه «{home_title['ar']}»." if home_title else '.'),
-                        'move' if home else 'user_fix', 'intake kind rule (classify keywords)',
-                        {'kind': kc['kind'], 'suggested_slot': home, 'suggested_title': home_title}))
+        if not meta.get('generated') and not meta.get('signed_for') and not meta.get('amended_from'):      # the kind rule: is this file the document the item expects? (PDF, image or Word)
+            try:
+                kc = _extract.kind_check(s.req_id, filename, text or data, known_kind=kind)
+            except Exception:
+                kc = {'ok': True}
+            if not kc.get('ok'):
+                home = next((x.slot_id for x in slots.values() if x.req_id in kc['homes'] and x.active), None)
+                home_title = next((x.title for x in slots.values() if x.slot_id == home), None)
+                kn = kc.get('kind_name') or {'en': kc['kind'], 'ar': kc['kind']}
+                rep.findings.insert(0, Finding(
+                    'DOC-KIND', 'block',
+                    f"This file reads as a {kn['en']}, not the document this item needs" + (f"; it belongs in {home_title['en']}." if home_title else '.'),
+                    f"الملف ده شكله {kn['ar']}، مش المستند المطلوب في البند ده" + (f"؛ مكانه «{home_title['ar']}»." if home_title else '.'),
+                    'move' if home else 'user_fix', 'intake kind rule (classify keywords)',
+                    {'kind': kc['kind'], 'suggested_slot': home, 'suggested_title': home_title}))
         version = 1 + (self.db.execute('select coalesce(max(version),0) from document where dossier_id=? and slot_id=?',
                                        (did, slot_id)).fetchone()[0])
         doc_id = str(uuid.uuid4())
