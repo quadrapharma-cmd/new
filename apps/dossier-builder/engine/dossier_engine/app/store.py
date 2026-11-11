@@ -244,7 +244,9 @@ class Store:
             v for v in names.values() if v)) > 1) else []
 
     # ---------------- documents
-    def add_document(self, did, slot_id, filename, data, title=None, meta=None, supersede=None, doc_class=None):
+    def add_document(self, did, slot_id, filename, data, title=None, meta=None, supersede=None, doc_class=None, text=None, kind=None):
+        """text / kind: what an earlier reading of this file gave (the wizard's OCR of a scan) — the kind rule judges the file by it
+        when the file itself has no text layer."""
         slots = {s.slot_id: s for s in self.slots(did)}
         if slot_id not in slots:
             raise StoreError('E-SLOT', f'Unknown requirement slot {slot_id}.', 'بند غير معروف.')
@@ -276,7 +278,7 @@ class Store:
             if not meta.get('generated') and not meta.get('signed_for'):      # the kind rule: is this file the document the item expects?
                 try:
                     from .. import extract as _extract
-                    kc = _extract.kind_check(s.req_id, filename, data)
+                    kc = _extract.kind_check(s.req_id, filename, text or data, known_kind=kind)
                 except Exception:
                     kc = {'ok': True}
                 if not kc.get('ok'):
@@ -451,7 +453,20 @@ class Store:
         self.audit(did, 'document.withdrawn', doc=doc_id, reason=reason)   # blob kept: undo is possible
         return self.document(doc_id)
 
-    def move_document(self, did, doc_id, slot_id):
+    ITEM_META = ('pi_type', 'lang', 'study', 'doc_type')
+
+    def check_item_meta(self, did, slot_id, meta):
+        """A document placed or moved into the leaflet item (1.3.1) or a Module 5 item carries what the eCTD writers need — the PI type and
+        language, the study — as an upload there does; without them the gate says «ready» and the export fails."""
+        s = next((x for x in self.slots(did) if x.slot_id == slot_id), None)
+        need = ('pi_type', 'lang') if s and s.req_id == 'M1-09' else ('study', 'doc_type') if s and s.module == 5 else ()
+        missing = [k for k in need if not (meta or {}).get(k)]
+        if missing:
+            raise StoreError('E-META', f"This item needs the document's details first: {', '.join(missing)}.",
+                             'البند ده محتاج تفاصيل المستند الأول: ' + ('نوع النشرة ولغتها' if s.req_id == 'M1-09' else 'اسم الدراسة ونوع المستند') + '.',
+                             missing=missing)
+
+    def move_document(self, did, doc_id, slot_id, extra_meta=None):
         """A misfiled document goes to its own item: a new version there (checked again), the old one withdrawn; blob kept once."""
         d = self.document(doc_id)
         if d['dossier_id'] != did:
@@ -460,6 +475,8 @@ class Store:
             return d
         data = self.blob_path(d['sha256']).read_bytes()
         meta = {k: v for k, v in d['meta'].items() if k not in ('signed_for',)} | {'moved_from': d['slot_id']}
+        meta |= {k: v for k, v in (extra_meta or {}).items() if k in self.ITEM_META and v}
+        self.check_item_meta(did, slot_id, meta)
         new = self.add_document(did, slot_id, d['filename'], data, None, meta)
         self.db.execute("update document set state='withdrawn' where id=?", (doc_id,))
         self.db.commit()

@@ -65,7 +65,12 @@ class Classifier:
                     why.append(f'«{p}» in text')
             hits = [w for w in r['words'] if w in fn or w in tx]
             score += min(len(hits), 3)
-            if s.item:     # per-API slot: prefer the matching manufacturer
+            if s.item:     # per-API slot: prefer the item whose substance, then whose manufacturer, the document names
+                from .extract import api_key
+                sub = _norm(api_key(s.item.get('name') or ''))
+                if sub and re.search(r'(?<![a-z])' + re.escape(sub) + r'(?![a-z])', fn + ' ' + tx):
+                    score += 3
+                    why.append(f"substance «{s.item['name']}»")
                 man = _norm(s.item['manufacturer'])
                 if man and (man in fn or man in tx):
                     score += 3

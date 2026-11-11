@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from ..profile import Profile, ProfileError
 from ..resolver import resolve
 from .. import arabic as _arabic
+from .. import extract as _extract
 from ..guard import assert_allowed, LockedError
 from ..assemble import docs_for
 from ..classify import Classifier
@@ -177,7 +178,7 @@ def create_app(workspace, auth_enabled=None):
         slot_id = (body or {}).get('slot_id')
         if not slot_id:
             err(422, 'E-SLOT', 'slot_id is required.', 'لازم تحدد البند.')
-        return st.move_document(did, doc_id, slot_id)
+        return st.move_document(did, doc_id, slot_id, (body or {}).get('meta'))
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/withdraw')
     def withdraw(did: str, doc_id: str, reason: str = 'user'):
@@ -546,6 +547,113 @@ def create_app(workspace, auth_enabled=None):
         out = {k: v for k, v in {**base, **last}.items() if v not in (None, '', [])}
         keys = {f['key'] for f in letters.SCHEMAS[kind]['fields']}
         return {k: v for k, v in out.items() if k in keys}
+
+    def _suggest_with_kind(clf, slots, filename, text, kind=None, product=None):
+        """The classifier's suggestions, with the document kind's home item first (a licence goes to the licence item whatever the keywords say),
+        and `auto`: the one item the file may go into without asking. Among the per-API items (CEP, CoA, GMP of each active) the substance
+        the document names decides; when two items of different actives tie — the document names neither — nothing is automatic:
+        `auto` is None and the file waits in the «not placed yet» box for the user."""
+        kind = kind or _extract.guess_kind(filename, text)
+        sugg = clf.suggest(filename, text, slots)
+        homes = _extract.KIND_HOME.get(kind, [])
+        by_id = {s.slot_id: s for s in slots}
+        if homes and not any(x['req_id'] in homes for x in sugg):
+            cands = sorted((s for s in slots if s.active and s.req_id in homes), key=lambda s: homes.index(s.req_id))
+            first = [s for s in cands if s.req_id == cands[0].req_id] if cands else []
+            if len(first) == 1:                                                     # the only item of that kind (the licence item, the one API's CEP item)
+                sugg.insert(0, {'slot_id': first[0].slot_id, 'req_id': first[0].req_id, 'score': 9, 'why': [f'document kind: {kind}']})
+        if homes:
+            sugg.sort(key=lambda x: (0 if x['req_id'] in homes else 1, -x['score']))
+        if kind == 'coa' and product and not any('substance' in w for x in sugg for w in x['why']):
+            # a certificate of analysis that names the product and none of its actives is the finished product's: its batch analyses item
+            import re as _re
+            word = (_re.findall(r'[a-z\u0600-\u06ff]{4,}', product.lower()) or [None])[0]
+            fp = next((x for x in slots if x.active and x.req_id == 'P-11'), None)
+            if word and fp and _re.search(r'(?<![a-z])' + _re.escape(word) + r'(?![a-z])', (filename + ' ' + text).lower()):
+                sugg = [{'slot_id': fp.slot_id, 'req_id': fp.req_id, 'score': 10, 'why': ['names the product, none of its active substances']}] + \
+                       [x for x in sugg if x['slot_id'] != fp.slot_id]
+        auto = sugg[0]['slot_id'] if sugg else None
+        if len(sugg) > 1:
+            a, b = by_id.get(sugg[0]['slot_id']), by_id.get(sugg[1]['slot_id'])
+            if a and b and a.item and b.item and sugg[0]['score'] == sugg[1]['score'] and \
+                    _extract.api_key(a.item.get('name') or '') != _extract.api_key(b.item.get('name') or ''):
+                auto = None                                                         # a tie between two actives: never a guess
+        return kind, sugg, auto
+
+    @app.post('/api/dossiers/{did}/classify/text')
+    def classify_text(did: str, body: dict):
+        """Suggest a slot for files whose text the page already has (its own OCR of scans): [{filename, text, kind?}] → suggestions."""
+        d = st.dossier(did)
+        clf = Classifier(st.pack(d['pack']))
+        slots = st.slots(did)
+        out = []
+        for f in (body or {}).get('files') or []:
+            if not isinstance(f, dict):
+                continue
+            kind, sugg, auto = _suggest_with_kind(clf, slots, f.get('filename') or 'document', f.get('text') or '', f.get('kind'), (d.get('product') or {}).get('name'))
+            out.append({'filename': f.get('filename'), 'kind': kind, 'suggestions': sugg, 'auto': auto})
+        return out
+
+    @app.get('/api/dossiers/{did}/unplaced')
+    def unplaced_list(did: str):
+        """Uploaded files that are not in an item yet, each with where the program thinks it belongs."""
+        from io import BytesIO
+        from pypdf import PdfReader
+        d = st.dossier(did)
+        clf = Classifier(st.pack(d['pack']))
+        slots = st.slots(did)
+        out = []
+        for doc in st.board(did)['unassigned']:
+            text = ''
+            try:
+                data = st.blob_path(doc['sha256']).read_bytes()
+                rd = PdfReader(BytesIO(data), strict=False)
+                text = ' '.join((p.extract_text() or '') for p in rd.pages[:2])
+            except Exception:
+                pass
+            text = text or (doc.get('meta') or {}).get('text') or ''
+            kind, sugg, auto = _suggest_with_kind(clf, slots, doc['filename'], text, (doc.get('meta') or {}).get('kind'), (d.get('product') or {}).get('name'))
+            out.append({'id': doc['id'], 'filename': doc['filename'], 'kind': kind, 'suggestions': sugg, 'auto': auto, 'created': doc.get('created')})
+        return out
+
+    @app.post('/api/dossiers/{did}/unplaced', status_code=201)
+    async def unplaced_add(did: str, files: list[UploadFile] = File(...), meta: str = Form('{}')):
+        """Keep uploaded files the program could not place: they show on the board as «not placed yet» — nothing uploaded is lost."""
+        from ..assistant import storage as _storage
+        extra = json.loads(meta or '{}')
+        out = []
+        for f in files:
+            data = await f.read()
+            m = {'staged_by': 'user'}
+            fx = extra.get(f.filename) if isinstance(extra, dict) else None
+            if isinstance(fx, dict):
+                m.update({k: fx[k] for k in ('kind', 'text') if fx.get(k)})
+            doc = _storage.stage_document(st, did, f.filename, data, meta=m)
+            out.append(doc)
+        return out
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/place')
+    def place_document(did: str, doc_id: str, body: dict):
+        """An unplaced (or misplaced) document into an item: a new checked version there, the old row withdrawn."""
+        slot_id = (body or {}).get('slot_id')
+        if not slot_id:
+            err(422, 'E-SLOT', 'slot_id is required.', 'لازم تحدد البند.')
+        d0 = st.document(doc_id)
+        if d0['dossier_id'] != did:
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        if d0['meta'].get('external'):
+            err(422, 'E-EXTERNAL', 'An external reference cannot be placed; upload its file.', 'المرجع الخارجي ما ينفعش يتحط؛ ارفع ملفه.')
+        data = st.blob_path(d0['sha256']).read_bytes()
+        meta = {k: v for k, v in d0['meta'].items() if k not in ('placed_from', 'text')} | {'placed_by': 'user', 'placed_from': d0.get('slot_id')}
+        meta |= {k: v for k, v in ((body or {}).get('meta') or {}).items() if k in st.ITEM_META and v}       # the leaflet's type + language, the study
+        st.check_item_meta(did, slot_id, meta)
+        title = (body or {}).get('title') or d0.get('title')
+        if title == d0['filename']:
+            title = None                                    # a staged file's title is its file name: the item's own title names it in the dossier
+        new = st.add_document(did, slot_id, d0['filename'], data, title, meta, text=d0['meta'].get('text'), kind=d0['meta'].get('kind'))
+        if d0['state'] == 'current':
+            st.withdraw(did, doc_id, 'placed')
+        return new
 
     @app.post('/api/dossiers/{did}/classify')
     async def classify(did: str, files: list[UploadFile] = File(...)):

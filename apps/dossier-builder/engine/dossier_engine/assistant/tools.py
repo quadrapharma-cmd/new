@@ -400,6 +400,7 @@ def t_place_document(ctx, doc_id, slot_id, rationale, title=None):
     meta = {k: v for k, v in d['meta'].items() if k not in ('placed_from',)}
     meta.update({'placed_by': 'assistant', 'placed_from': d.get('slot_id'), 'rationale': rationale})
     try:
+        ctx.st.check_item_meta(ctx.did, slot_id, meta)              # the leaflet / a study: the user places it from the board with its details
         new = ctx.st.add_document(ctx.did, slot_id, d['filename'], data, title or d.get('title'), meta)
     except Exception as e:                                    # StoreError carries en/ar
         raise ToolError(getattr(e, 'en', None) or str(e))

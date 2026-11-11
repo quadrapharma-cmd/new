@@ -41,7 +41,8 @@ LABELS = [
 ]
 LABEL_RX = [(key, re.compile(r'(?<![A-Za-z])(?:' + '|'.join(pats) + r')\s*[^:\n]{0,3}:', re.I)) for key, pats in LABELS]
 UNIT = r'(?:mg|mcg|µg|ug|g|gm|iu|i\.u\.|%|ml|units?)'
-STRENGTH = re.compile(r'^(?P<name>[A-Za-z][A-Za-z\s\-\.\(\)/,]*?)\s*(?P<amt>\d+(?:[.,]\d+)?)[!|]?\s?(?P<unit>' + UNIT + r')(?![A-Za-z])\s*(?:\(\s*(?P<eq>[^)]{1,60}?)\s*\))?', re.I)
+NAME_DIGITS = r'(?:(?<=[A-Za-z])\d{1,2}(?![\d.,]))'      # the digits of a name: Vitamin B12, Vitamin D3, Coenzyme Q10 (never a strength)
+STRENGTH = re.compile(r'^(?P<name>[A-Za-z](?:[A-Za-z\s\-\.\(\)/,]|' + NAME_DIGITS + r')*?)\s*(?P<amt>\d+(?:[.,]\d+)?)[!|]?\s?(?P<unit>' + UNIT + r')(?![A-Za-z])\s*(?:\(\s*(?P<eq>[^)]{1,60}?)\s*\))?', re.I)
 EACH = re.compile(r'^\s*' + EACH_RX + r'\s*:?-?\s*', re.I)
 SALTS = ['sulphate', 'sulfate', 'hydrochloride', 'zinc', 'sodium', 'potassium', 'calcium', 'magnesium', 'maleate', 'besylate', 'mesylate', 'tosylate',
          'acetate', 'citrate', 'phosphate', 'tartrate', 'fumarate', 'succinate', 'bromide', 'chloride', 'nitrate', 'stearate', 'trihydrate',
@@ -70,13 +71,27 @@ def _line(s):
     return re.sub(r'\s+', ' ', s).strip(' .,;|-‘’“”\'"*')
 
 
-def fix_salt(word):
+REAL_WORDS = {'nitrite', 'sulfite', 'sulphite', 'sulfide', 'sulphide', 'chlorite', 'chlorine', 'bromine', 'phosphite', 'malate', 'iodide', 'iodine'}
+
+
+def _one_slip(a, b):
+    """One letter read wrong, lost or added by the OCR."""
+    if len(a) == len(b):
+        return sum(x != y for x, y in zip(a, b)) == 1
+    if abs(len(a) - len(b)) != 1:
+        return False
+    short, long_ = (a, b) if len(a) < len(b) else (b, a)
+    return any(long_[:i] + long_[i + 1:] == short for i in range(len(long_)))
+
+
+def fix_salt(word, first=False):
+    """An OCR'd salt repaired («Zine» → «Zinc», «Sulphale» → «Sulphate»): one slip away from a salt word, never the first word of a
+    name (that is the substance: «Hydrocortisone» is not «Hydrochloride») and never a word that is a chemical term itself («nitrite»)."""
     w = word.lower().strip('.,;')
-    if w in SALTS or len(w) < 4:
+    if first or w in SALTS or len(w) < 4 or w in REAL_WORDS:
         return word
-    best = difflib.get_close_matches(w, SALTS, n=1, cutoff=0.72)
-    if best and len(best[0]) >= 4 and abs(len(best[0]) - len(w)) <= 1 and best[0][0] == w[0]:
-        b = best[0]
+    b = next((x for x in SALTS if len(x) >= 4 and x[0] == w[0] and _one_slip(w, x) and (len(w) > 4 or x == 'zinc')), None)
+    if b:
         return b.upper() if word.isupper() else b.capitalize() if word[:1].isupper() else b     # cased like the printed word
     return word
 
@@ -102,7 +117,7 @@ def fix_words(text):
 def norm_name(name):
     """An all-caps name as EDA prints it («NEOMYCIN SULPHATE») → «Neomycin Sulphate»; OCR'd salts repaired («Zine» → «Zinc»);
     a name printed in mixed case («Bisoprolol fumarate») stays as printed."""
-    words = [fix_salt(w) for w in re.split(r'\s+', _clean(name)) if w]
+    words = [fix_salt(w, first=(i == 0)) for i, w in enumerate(w for w in re.split(r'\s+', _clean(name)) if w)]
     alpha = [w for w in words if w.isalpha()]
     if alpha and (all(w.isupper() for w in alpha) or all(w.islower() for w in alpha)):           # ALL CAPS or all lower → Title Case
         words = [w.capitalize() if len(w) > 2 else w for w in words]
@@ -131,6 +146,13 @@ def blocks(text):
         if not line:
             continue
         best = _first_label(line, 0)
+        each = EACH.match(line)
+        if each and (not best or best[1].start() > each.end()):       # «Each 1 g of powder contains A 3.5 mg, B …»: the sentence of a leaflet, no colon
+            cur = 'actives'
+            out.setdefault(cur, [])
+            if line[each.end():].strip():
+                out[cur].append(line[each.end():].strip())
+            continue
         if not best or best[1].start() > 28:
             if cur is not None:
                 arabic_share = len(re.findall('[؀-ۿ]', line)) / max(1, len(line))
@@ -161,35 +183,94 @@ def is_eda_form(text):
     return len(blocks(text)) >= 3
 
 
+HEADER_WORDS = {'quantity', 'quantities', 'specification', 'specifications', 'ingredient', 'ingredients', 'active ingredient', 'active ingredients',
+                'inactive ingredient', 'inactive ingredients', 'description', 'appearance', 'reference', 'function', 'standard', 'amount', 'role', 'item',
+                'items', 'name', 'unit', 'units', 'strength', 'strengths', 'generic name', 'trade name', 'composition', 'excipient', 'excipients'}
+OCR_ONE = re.compile(r'(?<![A-Za-z0-9])[Il](?=\s?(?:mg|mcg|gm|g|ml)\b)')        # «Threonine Img» is OCR for «Threonine 1mg»
+PACK_IN_NAME = re.compile(r'(?<![A-Za-z])' + PACK_WORDS + r's?(?![A-Za-z])|(?<![A-Za-z])contain(?:s|ing)?(?![A-Za-z])', re.I)
+CONTINUES = re.compile(r'^[\s(\[]*[\d.,]*\s*(?:' + UNIT + r')?s?\s*[)\]]?[\s.,;]*$|^\(', re.I)     # «(250Unit)», «3300 Units)»: the rest of the line above
+
+
+def _active_name(name):
+    """A printed name that can be an active substance: letters, not a table heading, a pack, a company or a signature."""
+    name = norm_name((name or '').split('(')[0])
+    low = name.lower().strip(' .:')
+    if not re.search(r'[A-Za-z]{4}', name) or len(name.split()) > 5 or low in HEADER_WORDS:
+        return None
+    if PACK_IN_NAME.search(name) or COMPANY.search(name) or TITLE.match(name):
+        return None
+    return name
+
+
+def _strength_items(piece):
+    """Every «name amount unit (equivalent)» printed in one piece of a line, in order («Bacitracin Zinc 4.2 mg (250 unit) Cysteine 2 mg» → two)."""
+    out, rest = [], piece
+    while rest:
+        m = STRENGTH.match(rest)
+        if not m:
+            break
+        name = _active_name(m.group('name'))
+        if not name:
+            return out, False
+        s = f"{m.group('amt')} {m.group('unit').lower().replace('gm', 'g')}"
+        out.append({'name': name, 'strength': s, 'equivalent': _clean(m.group('eq')) if m.group('eq') else None})
+        rest = rest[m.end():].lstrip(' ,')
+        if not re.match(r'[A-Za-z]', rest):
+            break
+    return out, True
+
+
 def actives(block_lines):
-    """[{name, strength, equivalent}] from «Each 1g contains: A 3.5 mg (3300 unit) / B 4.2 mg …» (lines or «+» separated)."""
+    """[{name, strength, equivalent}] from «Each 1g contains: A 3.5 mg (3300 unit) / B 4.2 mg …» (lines or «+» separated).
+    The substances are the run of «name amount unit» lines at the top of the block; the first line that is something else — the
+    appearance, the shelf life, the pack, the composition table, a signature — ends them (in the form's text the next cells' values
+    follow the actives without their labels). Names without an amount count only when no amount is printed at all, and only on the
+    block's first line («Active ingredient: Bisoprolol fumarate»)."""
     text = ' \n '.join(block_lines)
     per_unit = None
     m = EACH.search(text)
     if m:
         per_unit = _clean(m.group(0).rstrip(':-'))
         text = text[m.end():]
-    items = [x for x in re.split(r'\s*\+\s*|\n|;', text) if x.strip()]
-    out = []
-    for it in items:
-        it = _clean(it)
-        if not it or EACH.match(it) or re.match(r'^(?:strength|each)\b', it, re.I):
-            continue
-        if STD.search(it) or TITLE.match(it) or re.search(r'\b(?:website|tel|email|fax|issue\s*date)\b|quivalent|\b\d{6}\b', it, re.I):
-            continue                                     # a composition-table row (composition() reads it), a signature, a footer
-        m = STRENGTH.match(it)
-        if m:
-            name = norm_name(m.group('name').split('(')[0])
-            if not re.search(r'[A-Za-z]{4}', name):
+    text = re.sub(r'[^\S\n]*[;:|][^\S\n]*(?=\d+(?:[.,]\d+)?\s?' + UNIT + r'(?![A-Za-z]))', ' ', OCR_ONE.sub('1', text))    # «NEOMYCIN SULPHATE; 3.500 mg»: a column edge
+    lines = [ln for ln in (_clean(x) for x in text.split('\n')) if ln]
+    parsed = []                                              # per line: (strength items, name-only items, is it something else)
+    for ln in lines:
+        strong, plain, other = [], [], False
+        for it in (x for x in (_clean(y) for y in re.split(r'\s*\+\s*|;', ln)) if x):
+            if EACH.match(it) or re.match(r'^(?:strength|each)\b', it, re.I) or CONTINUES.match(it):
                 continue
-            s = f"{m.group('amt')} {m.group('unit').lower().replace('gm', 'g')}"
-            out.append({'name': name, 'strength': s, 'equivalent': _clean(m.group('eq')) if m.group('eq') else None})
-        elif re.fullmatch(r'[A-Za-z][A-Za-z\s\-\.]{2,60}', it) and re.search(r'[A-Za-z]{4}', it) and not COMPANY.search(it):
-            out.append({'name': norm_name(it), 'strength': None, 'equivalent': None})
+            if STD.search(it) or TITLE.match(it) or re.search(r'\b(?:website|tel|email|fax|issue\s*date)\b|\b\d{6}\b', it, re.I):
+                other = True                                 # a composition-table row (composition() reads it), a signature, a footer
+                continue
+            got, clean = _strength_items(it)
+            strong += got
+            if not got and re.search('quivalent', it, re.I):
+                other = True                                 # «Neomycin Sulphate (Equivalent to 3300 units/g)»: a composition-table name cell
+            elif not clean:
+                other = True
+            elif not got:
+                nm = _active_name(it) if re.fullmatch(r'[A-Za-z](?:[A-Za-z\s\-\.]|' + NAME_DIGITS + r'){2,60}', it) else None
+                if nm:
+                    plain.append({'name': nm, 'strength': None, 'equivalent': None})
+                else:
+                    other = True
+        parsed.append((strong, plain, other))
+    out = []
+    first = next((i for i, (strong, _, _) in enumerate(parsed[:6]) if strong), None)
+    if first is not None:
+        for strong, plain, other in parsed[first:]:
+            if not strong:
+                break
+            out += strong
+            if other or plain:
+                break                                        # the line carried something else after its substances: the run ends here
+    elif parsed:
+        out = parsed[0][1][:6]
     seen, uniq = set(), []
     for a in out:
-        k = _norm(a['name'])
-        if k and k not in seen and not any(len(s) >= 6 and k.startswith(s) for s in seen):
+        k = tuple(re.findall(r'[a-z0-9]+', a['name'].lower()))                  # words, digits kept: «vitamin b1» is not «vitamin b12»
+        if k and k not in seen and not any(len(''.join(s)) >= 6 and k[:len(s)] == s for s in seen):
             seen.add(k)
             uniq.append(a)
     if any(re.search(r'\d\.\d{3}\b', a['strength'] or '') for a in uniq):     # 3-decimal style on the form: «10,000 mg» is OCR for «10.000 mg»

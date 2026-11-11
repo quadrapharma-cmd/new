@@ -93,6 +93,33 @@ browser edition (the `sample` capability receives the rendered pages) or through
 `ANTHROPIC_API_KEY` (PDFs attached as documents, photos as images); the drawer names the scans that were read that way and those
 that were not read on this computer. Tests: `tests/test_intake_eda.py` (a fictional product on the three forms, clean and OCR-noisy).
 
+### The reading rules, reviewed on real layouts (November 2026)
+
+A review of the intake logic (sixteen independent passes, each attacked and revised, then checked against real registration
+notifications, pricing letters, leaflets and certificates) changed how documents are read, judged and placed:
+
+- **Active substances.** A form's substances are the run of «name amount unit» lines under their label and nothing else: the cells
+  printed after them (appearance, shelf life, pack, price), the composition table's headings («Quantity», «Specification») and OCR
+  fragments are not substances. A name without an amount counts only when no amount is printed at all («Active ingredient:
+  Bisoprolol fumarate»). A label is a field, not a word in a sentence («…the excretion of the active ingredients in human milk»).
+  Several substances on one line, «name; amount» column edges and «Img» for «1mg» are read; a salt repair never renames the
+  substance itself. `clean_apis` (engine) and `cleanApis` (page) drop headings, sentence tails, appearances, companies and
+  countries, keep substances that are salts («Sodium chloride»), never merge different ones («Vitamin B1» / «B12», «Salicylic» /
+  «Acetylsalicylic acid») and merge spellings, salts and typos of one; both give the same answer (a parity test) and keep up to 40.
+- **The kind rule.** A document is judged by what it says about itself: its title (the top lines) before its body, whole words
+  («coa» is not the start of «coated»), a reference to another document by its number («…بإخطار التسجيل رقم 123») only when nothing
+  else is named. Arabic stability approvals, WHO CPPs, leaflets by their section titles and contracts by «first party / الطرف الأول»
+  are recognised. A scan placed from the «not placed yet» box is judged by the reading the wizard made of it.
+- **Placement.** Among the per-substance items (CEP, CoA, GMP of each active) the substance the document names decides; a tie
+  between two actives is never guessed (`auto` is null and the file waits in the box). A certificate of analysis that names the
+  product and none of its actives goes to the product's batch analyses. The leaflet item and Module 5 items ask for the document's
+  details (type + language, study) before a file is placed or moved there; a placed file takes the item's title, not its file name.
+- **The wizard.** What the user typed outlives a refresh and a new upload; a file the kind rule refused waits in the box after
+  creation instead of vanishing; a refresh in the middle of placing resumes it.
+
+Tests: `tests/test_reading_cases.py`, `tests/test_intake_actives.py`, `tests/test_intake_fixes.py`, `tests/test_ui_reading_cases.py`,
+`tests/test_ui_intake_fixes.py`.
+
 ## The Assistant («المساعد») — Claude inside the program
 
 A conversation per dossier (floating button on every dossier page) in which Claude does the work through the program's own

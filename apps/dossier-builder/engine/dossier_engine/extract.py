@@ -10,7 +10,7 @@ import re
 from io import BytesIO
 from . import arabic, intake_eda
 
-KINDS = [  # (kind, keywords in lower-case text or file name); first match wins, in this order
+KINDS = [  # (kind, keywords in lower-case text or file name); see guess_kind for how a match is chosen
     ('cadc', ['notification letter', 'statement of conformity', 'sample identification code', 'qf:cadc', 'شهادة مطابقة']),
     ('cpp', ['certificate of pharmaceutical product', 'who certification scheme', ' cpp']),
     ('cep', ['certificate of suitability', 'r1-cep', 'r0-cep', 'edqm']),
@@ -18,18 +18,20 @@ KINDS = [  # (kind, keywords in lower-case text or file name); first match wins,
     ('coa', ['certificate of analysis', 'analytical report', ' coa', 'c of a', 'شهادة تحليل', 'شهادة التحليل']),
     ('composition', ['composition certificate', 'unit formula', 'quantitative composition', 'شهادة التركيب', 'التركيب']),
     ('pricing', ['pricing certificate', 'price certificate', 'pricing policies', 'pricing', 'تسعير', 'التسعيرة', 'سعر البيع للجمهور', 'لجنة تسعير', 'سعر بيع الجمهور']),
-    ('licence', ['registration licence', 'registration license', 'marketing authori', 'registration notification', 'final registration license', 'final registration licence', 'إخطار التسجيل', 'إخطار تسجيل', 'رخصة التسجيل', 'شهادة تسجيل',
-                 'شهادة التسجيل', 'إخطار', 'اخطار', 'ترخيص']),
+    ('licence', ['registration licence', 'registration license', 'marketing authorisation', 'marketing authorization', 'registration notification', 'final registration license', 'final registration licence', 'إخطار التسجيل', 'إخطار تسجيل', 'رخصة التسجيل', 'شهادة تسجيل',
+                 'شهادة التسجيل', 'ترخيص تداول', 'ترخيص التداول', 'رخصة تداول', 'إخطار', 'اخطار', 'ترخيص']),
     ('annex1', ['annex i', 'application form', 'نموذج الطلب']),
-    ('smpc', ['summary of product characteristics', 'smpc', 'package leaflet', 'patient information leaflet', 'النشرة']),
+    ('smpc', ['summary of product characteristics', 'name of the medicinal product', 'therapeutic indications', 'posology and method of administration', 'smpc',
+              'package leaflet', 'patient information leaflet', 'النشرة']),
     ('factory', ['factory licence', 'factory license', 'manufacturing licence', 'manufacturing license', 'رخصة المصنع']),
     ('bmr', ['batch manufacturing record', 'executed batch', 'batch record']),
-    ('stability', ['stability']),
+    ('stability', ['stability', 'الثبات', 'للثبات', 'دراسة ثبات', 'دراسات ثبات', 'موافقة ثبات', 'بيانات ثبات']),
     ('spec', ['specification', 'acceptance criteria']),
     ('loa', ['letter of access', 'drug master file', ' dmf']),
     ('poa', ['power of attorney', 'letter of attorney', 'توكيل']),
     ('commercial', ['commercial register', 'register of trade', 'سجل تجاري']),
-    ('contract', ['agreement', 'contract', 'عقد']),
+    ('contract', ['manufacturing agreement', 'toll manufacturing', 'first party', 'second party', 'تم الاتفاق بين', 'الطرف الأول', 'الطرف الاول', 'الطرف الثاني', 'ملحق عقد',
+                  'agreement', 'contract', 'اتفاقية', 'عقد']),
 ]
 MONTHS = {m: i for i, m in enumerate(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'], 1)}
 DATE = re.compile(r'(\d{4})[-/](\d{2})[-/](\d{2})|(\d{1,2})[./\-\s]+([A-Za-z]{3,9}|\d{1,2})[./\-\s,]+(\d{4})')
@@ -141,11 +143,78 @@ def read_text(name, data, max_pages=12, ocr=True):
     return out
 
 
+AR_CLITIC = '(?:ال|وال|بال|فال|لل|و|ب|ل|ف)?'
+
+
+def _kw_rx(word):
+    """One keyword as a whole word: «coa» is not the start of «coated», «gmp» not part of a longer token, «عقد» not inside
+    «المنعقدة». Latin keywords take an optional plural «s»; an Arabic keyword of more than three letters may sit inside a
+    word (ال / و / ب attach to it), a short one only after those proclitics."""
+    w = word.strip()
+    if arabic.has_arabic(w):
+        if len(w.replace(' ', '')) <= 3:
+            return re.compile(r'(?<![\u0600-\u06ff])' + AR_CLITIC + re.escape(w) + r'(?![\u0600-\u06ff])')
+        return re.compile(re.escape(w))
+    return re.compile(r'(?<![a-z])' + re.escape(w) + r's?(?![a-z])')
+
+
+KIND_GENERIC = {'إخطار', 'اخطار', 'ترخيص'}         # «a notification», «a licence»: every EDA letter says them, so they decide only when nothing else does
+
+
+def _tier(word):
+    return 2 if word.strip() in KIND_GENERIC else (0 if len(word.split()) > 1 else 1)     # 0 a phrase, 1 a single word, 2 a generic word
+
+
+KIND_RX = [(kind, [(_kw_rx(w), _tier(w)) for w in words]) for kind, words in KINDS]
+
+
+def _head(text, lines=10, chars=800):
+    """The top of the page, where a document says what it is (authority, department, title)."""
+    out = [ln for ln in (text or '').splitlines() if ln.strip()][:lines]
+    return '\n'.join(out)[:chars]
+
+
+CITE_BEFORE = re.compile(r'(?:رقم|برقم|no\.?|number|№)\s*[:\-]?\s*$')                 # «رقم إخطار التسجيل: 123»: a field label, not a title
+CITE_AFTER = re.compile(r'^\s*(?:رقم|برقم|no\.?|number|#|№)\s*[:.\-]?\s*[\d\u0660-\u0669]')   # «… المسجل بإخطار التسجيل رقم 123», «…, Registration License No. 123»
+
+
+def _cited(hay, m):
+    """The keyword only cites another document by its number: preceded by «رقم» / «No.», or followed by «رقم 123» / «No. 123» in the
+    middle of a line (a title can also carry a number, «إخطار تسجيل رقم 123» at the start of its line — that one stays a title)."""
+    before, after = hay[max(0, m.start() - 16):m.start()], hay[m.end():m.end() + 24]
+    if CITE_BEFORE.search(before):
+        return True
+    return bool(before.rsplit('\n', 1)[-1].strip(' \t:،,-')) and bool(CITE_AFTER.match(after))
+
+
+def _first_kind(hay, tiers, cited):
+    """The kind named first in `hay` by a keyword of these tiers (ties: the KINDS order); `cited` picks whether the number references
+    («Registration License No. 123») are the keywords looked at or the ones skipped."""
+    best = None
+    for i, (kind, rxs) in enumerate(KIND_RX):
+        for rx, tier in rxs:
+            if tier in tiers:
+                for m in rx.finditer(hay):
+                    if _cited(hay, m) != cited:
+                        continue
+                    if best is None or (m.start(), i) < best[:2]:
+                        best = (m.start(), i, kind)
+                    break
+    return best[2] if best else None
+
+
 def guess_kind(filename, text):
-    hay = ' ' + (filename or '').lower().replace('_', ' ').replace('-', ' ') + ' ' + (text or '')[:4000].lower()
-    for kind, words in KINDS:
-        if any(w in hay for w in words):
-            return kind
+    """The document's kind from what it says about itself: its title (the top lines) before its body, the keyword printed first within
+    them («شهادة تسعير» on line 2 beats «رقم إخطار التسجيل» on line 4), a reference to another document by its number («المسجل بإخطار
+    التسجيل رقم 123», «Registration License No. 123») and a generic word («إخطار», «ترخيص») only when nothing else is named anywhere,
+    the content before the file name."""
+    t = (text or '')[:4000].lower()
+    head = _head(t)
+    name = ' ' + (filename or '').lower().replace('_', ' ').replace('-', ' ') + ' '
+    for hay, tiers, cited in ((head, (0, 1), False), (t, (0, 1), False), (head, (0, 1), True), (t, (0, 1), True), (t, (2,), False), (t, (2,), True), (name, (0, 1, 2), False)):
+        k = hay.strip() and _first_kind(hay, tiers, cited)
+        if k:
+            return k
     return 'other'
 
 
@@ -185,12 +254,25 @@ def after(text, labels, pattern=r'([^\n:]{2,80})', window=120, flags=re.I):
     for lab in labels:
         rx = r'(?<![A-Za-z\u0600-\u06FF])' + (arabic.label_rx(lab) if arabic.has_arabic(lab) else re.escape(lab) + r'(?![A-Za-z])')
         m = re.search(rx + r'\s*[:：\-]?\s*' + pattern, text[:60000], flags)
+        if m and '\n' in text[m.start():m.start(1)] and text[m.end(1):m.end(1) + 1] in (':', '：'):
+            m = None                                        # the labels of a table printed as a column: the «value» is the next label
         if m and m.group(1).strip(' .,-:'):
             return m.group(1).strip(' .,-:')
         if arabic.has_arabic(lab):
             m = re.search(r'^([^\n]{2,80}?)\s*[:：\-]?\s*' + rx + r'\s*[:：]?\s*$', text[:60000], flags | re.M)
             if m and m.group(1).strip(' .,-:'):
                 return m.group(1).strip(' .,-:')
+    return None
+
+
+def label_value(text, labels):
+    """The value of a labelled field in Latin script: the label opens its line or its table cell (a number or a bullet may precede it)
+    and a colon or a dash follows it. «…the excretion of the active ingredients in human milk» is a sentence, not a field."""
+    for lab in labels:
+        m = re.search(r'(?im)(?:^|[|\t]|[^\S\n]{2,})[^\S\n]*(?:\d{1,2}[.)][^\S\n]*|[-•*][^\S\n]*)?' + re.escape(lab) + r'(?:\(s\)|s)?(?![A-Za-z])'
+                      r'[^\S\n]*[:：\-|][^\S\n]*([^\n:|]{2,80})', text[:60000])
+        if m and m.group(1).strip(' .,-:'):
+            return m.group(1).strip(' .,-:')
     return None
 
 
@@ -254,9 +336,8 @@ def fields_for(kind, filename, text):
     if product.get('manufacturer_address') and (re.search('هيئة الدواء|وزارة الصحة', product['manufacturer_address'])
                                                 or any(re.search(r'(?<![A-Za-z])' + re.escape(i) + r'(?![A-Za-z])', product['manufacturer_address']) for i in ISSUERS if len(i) > 4)):
         product['manufacturer_address'] = None                                         # the authority's address in a letter footer
-    apis = [_clean(x) for x in re.split(r'[,;/]|\band\b', after(t, ['Active ingredient', 'Active ingredients', 'Active substance', 'Active substances',
-                                                                     'Active pharmaceutical ingredient', 'INN', 'Generic name', 'Generic Name',
-                                                                     'المادة الفعالة', 'المواد الفعالة', 'المكونات الفعالة', 'الاسم العلمي']) or '') if _clean(x)]
+    apis = [_clean(x) for x in re.split(r'[,;/+]|\band\b|\.\s+(?=[A-Z])', label_value(t, ['Active ingredient', 'Active substance', 'Active pharmaceutical ingredient', 'INN', 'Generic name'])
+                                        or after(t, ['المادة الفعالة', 'المواد الفعالة', 'المكونات الفعالة', 'الاسم العلمي']) or '') if _clean(x)]
     API_LABELS = ['Active ingredient', 'Active substance', 'INN', 'Generic name', 'المادة الفعالة', 'المواد الفعالة', 'المكونات الفعالة', 'الاسم العلمي']
     if apis and all(arabic.has_arabic(a) and not arabic.latin_in(a) for a in apis) and len(apis) == 1 and arabic.latin_in(line_of(t, API_LABELS)):
         apis = [arabic.latin_in(line_of(t, API_LABELS))]
@@ -375,6 +456,7 @@ def _standardise(out):
         out.setdefault('profile', {})
         if not out['profile'].get('admin_route'):
             out['profile']['admin_route'] = std['route']
+    out['apis'] = clean_apis(out.get('apis') or [])
     for a in out.get('apis') or []:
         c = vocab.match_country(a.get('country') or '')
         if c:
@@ -382,6 +464,140 @@ def _standardise(out):
     c = vocab.match_country(P.get('manufacturer_country') or '')
     if c:
         P['manufacturer_country'], P['manufacturer_country_code'] = c['en'], c['code']
+
+
+# ---- active substances: one plausible entry per substance
+API_STOP = {'each', 'every', 'contains', 'contain', 'containing', 'tablet', 'tablets', 'capsule', 'capsules', 'and', 'or', 'of', 'the', 'per', 'with', 'film', 'coated',
+            'powder', 'solution', 'for', 'injection', 'active', 'ingredient', 'ingredients', 'substance', 'substances', 'strength', 'strengths', 'equivalent', 'to', 'as',
+            'base', 'dose', 'excipients', 'excipient', 'manufacturer', 'manufactured', 'by', 'label', 'claim', 'product', 'name', 'trade', 'form', 'dosage', 'composition',
+            'unit', 'units', 'iu', 'mg', 'g', 'ml', 'mcg', 'µg', 'qs', 'q.s', 'ad', 'other', 'inactive', 'inactives', 'actives', 'total', 'weight',
+            'topical', 'cutaneous', 'oral', 'cream', 'ointment', 'gel', 'suspension', 'syrup', 'drops', 'spray', 'use', 'dusting', 'lotion'}
+# what a form or a leaflet prints near its substances and is never one: a table heading, a section title, an empty answer
+API_HEADERS = {'quantity', 'quantities', 'specification', 'specifications', 'description', 'appearance', 'reference', 'function', 'standard', 'amount', 'item', 'items',
+               'posology', 'indications', 'contraindications', 'overdose', 'overdosage', 'management', 'none', 'nil', 'n/a', 'not relevant', 'not applicable', 'no data',
+               'none known', 'method of administration', 'pregnancy and lactation', 'symptoms and signs', 'generic name', 'trade name', 'physical character', 'shelf life'}
+API_SENTENCE = re.compile(r'(?<![A-Za-z])(?:should|must|may|is|are|was|were|not|see|this|that|which|has|have|been|will|can)(?![A-Za-z])', re.I)
+API_LEAD = {'in', 'on', 'of', 'for', 'with', 'by', 'to', 'from', 'at', 'as', 'the', 'a', 'an', 'no', 'and', 'or'}      # «in human milk» is the tail of a sentence
+API_LOOKS = {'white', 'off', 'yellow', 'yellowish', 'colourless', 'colorless', 'clear', 'transparent', 'pale', 'pink', 'brown', 'homogenous', 'homogeneous', 'opaque',
+             'plastic', 'crystalline', 'fine', 'odourless', 'odorless', 'almost', 'light'}                              # an appearance: «White homogenous powder»
+ROMAN = re.compile(r'\((I{1,3}|IV|V|VI)\)')
+API_SALTS = {'sulphate', 'sulfate', 'hydrochloride', 'hcl', 'sodium', 'potassium', 'zinc', 'calcium', 'magnesium', 'acetate', 'citrate', 'maleate', 'fumarate', 'tartrate',
+             'mesylate', 'besylate', 'succinate', 'phosphate', 'nitrate', 'bromide', 'chloride', 'trihydrate', 'dihydrate', 'monohydrate', 'hydrate', 'anhydrous', 'base',
+             'usp', 'bp', 'ep', 'ph', 'eur', 'micronized', 'micronised'}
+# a substance that is itself a salt (sodium chloride, magnesium sulphate, aluminium hydroxide): its metal and its acid part ARE the name
+API_CATIONS = {'sodium', 'potassium', 'zinc', 'calcium', 'magnesium', 'aluminium', 'aluminum', 'ferrous', 'ferric', 'lithium', 'ammonium', 'silver', 'copper', 'cupric', 'barium'}
+API_ANIONS = {'chloride', 'sulphate', 'sulfate', 'acetate', 'citrate', 'phosphate', 'nitrate', 'bromide', 'iodide', 'fluoride', 'carbonate', 'bicarbonate', 'hydrogen',
+              'hydroxide', 'oxide', 'gluconate', 'lactate', 'fumarate', 'tartrate', 'succinate', 'maleate', 'trisilicate', 'glycerophosphate', 'picosulfate', 'picosulphate'}
+API_GENERIC = {'vitamin', 'vitamins', 'acid', 'oil', 'extract', 'insulin'}
+API_COMPANY = re.compile(r'(?<![A-Za-z])(?:ltd|limited|inc|gmbh|pharma\w*|industr\w*|laborator\w*|labs?|chemicals?|corp\w*|llc|plc|pvt|srl|biotech\w*)(?![A-Za-z])'
+                         r'|(?<![A-Za-z])(?:co|s\.a|s\.p\.a)\.', re.I)          # «Unichem Laboratories», «X Co. Ltd» — never «Co-trimoxazole»
+API_BAD_WORDS = re.compile(r'\b(contains?|each|every|per\s|manufactur\w*|licen[cs]\w*|holder|dated?|certificat\w*|approv\w*|registration|price[sd]?|pack\w*|shelf|storage'
+                           r'|batch(?:es)?|lots?|expiry|valid\w*)\b', re.I)
+AR_SENTENCE = ('في', 'من', 'على', 'إلى', 'الى', 'التي', 'الذي', 'يحتوي', 'تحتوي', 'كل', 'مع', 'عن', 'هذا', 'هذه', 'يكون', 'تكون', 'أو', 'او', 'ثم', 'لكل')
+STRENGTH_RX = re.compile(r'(\d+(?:[.,]\d+)?\s*(?:mg|g|mcg|µg|iu|i\.u\.|ml|%|units?|ملجم|مجم|جم|مل|وحدة)(?:\s*\([^)]*\))?(?:\s*/\s*\d*\s*(?:g|ml|mg|جم|مل))?)', re.I)
+
+
+def _salt_substance(words):
+    """«Sodium chloride», «Magnesium sulphate»: a metal and an acid part and nothing else — a whole substance, not a salt suffix."""
+    return any(w in API_CATIONS for w in words) and any(w in API_ANIONS for w in words) and all(w in API_CATIONS or w in API_ANIONS or w in API_SALTS for w in words)
+
+
+def api_key(name):
+    """The substance behind a printed name: no salt, no strength, no brackets, lower case — «NEOMYCIN SULPHATE 3.500 mg (3300 unit)» → «neomycin».
+    The digits of a name stay («vitamin b1» ≠ «vitamin b12»), and a substance that is itself a salt keeps its words («magnesium hydroxide»)."""
+    low = re.sub(r'\(.*?\)', ' ', (name or '').lower())
+    low = STRENGTH_RX.sub(' ', low)
+    low = re.sub(r'[^a-z0-9\u0600-\u06ff ]+', ' ', low)
+    toks = [w for w in low.split() if not w.isdigit()]
+    if _salt_substance([w for w in toks if w not in API_STOP]):
+        return ' '.join(w for w in toks if w not in API_STOP)
+    words = [w for w in toks if w not in API_SALTS and w not in API_STOP]
+    return ' '.join(words) or ' '.join(toks)
+
+
+def _typo(a, b):
+    """One slip of the typist: two neighbouring letters swapped («bactiracin» for «bacitracin»)."""
+    if len(a) != len(b) or len(a) < 8:
+        return False
+    d = [i for i in range(len(a)) if a[i] != b[i]]
+    return len(d) == 2 and d[1] == d[0] + 1 and a[d[0]] == b[d[1]] and a[d[1]] == b[d[0]]
+
+
+def _same_substance(a, b):
+    """Two keys name one substance: equal, or one's words all inside the other's («hyoscine» / «hyoscine butylbromide», «vitamin a» /
+    «vitamin a palmitate») when the shorter is a name of its own: a real word (not just «vitamin» or «acid»), or a vitamin with its
+    letter. Letters inside a word never count: «carbonate» is not «bicarbonate», «vitamin b1» is not «vitamin b12»."""
+    if a == b or _typo(a, b):
+        return True
+    wa, wb = set(a.split()), set(b.split())
+    small, big = (wa, wb) if len(wa) <= len(wb) else (wb, wa)
+    named = any(len(w) >= 4 and w not in API_GENERIC for w in small) or ('vitamin' in small and any(re.fullmatch(r'[a-z]\d{0,2}', w) for w in small))
+    return bool(small) and small <= big and named
+
+
+def plausible_api(name, dosed=False):
+    """dosed: a strength was printed with it («Calcium 500 mg», «Zinc 10 mg»): a metal alone is then the substance."""
+    n = _clean(name)
+    if not n or len(n) < 3 or len(n) > 70:
+        return False
+    stripped = _clean(STRENGTH_RX.sub(' ', re.sub(r'\(.*?\)', ' ', n)))
+    words = stripped.split()
+    if not words or len(words) > 6:
+        return False
+    if len(re.sub(r'[^A-Za-z\u0600-\u06ff]', '', stripped)) < 3:
+        return False
+    if API_BAD_WORDS.search(stripped) or API_COMPANY.search(stripped):             # a label, a pack, a company («Unichem Laboratories»)
+        return False
+    if arabic.has_arabic(stripped) and not arabic.latin_in(stripped):
+        return len(words) <= 4 and not any(w in AR_SENTENCE for w in words)
+    low = [w.lower() for w in words]
+    if ' '.join(low) in intake_eda.COUNTRIES:                                       # «India» after «…, manufactured by X, India»
+        return False
+    if ' '.join(low).strip('.:') in API_HEADERS or low[0] in API_LEAD or API_SENTENCE.search(stripped):
+        return False                                                                # a heading, the tail of a sentence, a sentence
+    if all(w.strip('.,') in API_LOOKS or w in API_STOP for w in low):               # «White homogenous powder», «Transparent pale pink solution»
+        return False
+    if all(w in API_STOP or w in API_SALTS for w in low):
+        named = [w for w in low if w not in API_STOP]
+        return _salt_substance(named) or (dosed and len(named) == 1 and named[0] in API_CATIONS)
+    return True
+
+
+def clean_apis(apis):
+    """Plausible, de-duplicated active substances: a strength glued to the name moves to `strength`, spellings / salts / strengths of one
+    substance become one entry (the richest wins), ordinary text is dropped; at most 40 (a multivitamin has two dozen)."""
+    out, flat = [], []
+    for a in apis or []:
+        a = dict(a) if isinstance(a, dict) else {'name': str(a)}
+        parts = re.split(r'(?<=[a-z]{4})\.\s+(?=[A-Z][a-z]{3})', str(a.get('name') or ''))       # «threonine. Neomycin sulphate»: two names glued
+        flat += [{'name': x} for x in parts[:-1]] + [{**a, 'name': parts[-1]}]
+    for a in flat:
+        name = _clean(str(a.get('name') or ''))
+        m = STRENGTH_RX.search(ROMAN.sub(lambda r: '\x01' + r.group(1) + '\x02', name))
+        if m and (m.start() > 2 or name[m.end():].strip()):
+            if not a.get('strength'):
+                a['strength'] = _clean(m.group(1))
+            name = _clean(name[:m.start()] if m.start() > 2 else name[m.end():])     # «500 mg Paracetamol» → Paracetamol
+        name = ROMAN.sub(lambda r: '\x01' + r.group(1) + '\x02', name)                      # «Iron (III) hydroxide»: the bracket is part of the name
+        name = re.sub(r'\s*[(（][^)）]*[)）]\s*(?=[A-Za-z\u0600-\u06ff])', ' ', name)           # a remark inside the name goes, the name's tail stays
+        name = (re.sub(r'\s*[(（].*$', '', name).strip(' -:;,') or name).replace('\x01', '(').replace('\x02', ')')
+        if not plausible_api(name, dosed=bool(m or a.get('strength'))):
+            continue
+        if name.isupper() and len(name) > 3:
+            name = name.title()
+        key = api_key(name)
+        cur = next((x for x in out if _same_substance(x['_k'], key)), None)
+        if cur:
+            for k, v in a.items():
+                if v and not cur.get(k) and k != 'name':
+                    cur[k] = v
+            if len(name) > len(cur['name']) and set(cur['_k'].split()) <= set(key.split()):
+                cur['name'], cur['_k'] = name, key
+        else:
+            out.append({**a, 'name': name, '_k': key})
+    for x in out:
+        x.pop('_k', None)
+    return out[:40]
 
 
 def merge(items):
@@ -409,6 +625,7 @@ def merge(items):
                 if row not in fill[key]:
                     fill[key].append(row)
         fill['documents'].append(it['document'])
+    fill['apis'] = clean_apis(fill['apis'])
     return fill
 
 
@@ -437,11 +654,13 @@ KIND_NAMES = {'pricing': {'en': 'pricing certificate', 'ar': 'شهادة تسع�
               'factory': {'en': 'factory licence', 'ar': 'رخصة مصنع'}, 'bmr': {'en': 'batch record', 'ar': 'سجل تشغيلة'}, 'stability': {'en': 'stability document', 'ar': 'مستند ثبات'}}
 
 
-def kind_check(req_id, filename, data_or_text):
+def kind_check(req_id, filename, data_or_text, known_kind=None):
     """Is this file the document the item expects? → {'kind', 'ok', 'homes'}. Unknown kinds and kinds without a fixed home pass;
     a recognised kind whose home items do not include the target fails (a stability approval in the pricing slot)."""
     text = data_or_text if isinstance(data_or_text, str) else read_text(filename, data_or_text, max_pages=2, ocr=False)['text']
     kind = guess_kind(filename, text)
+    if kind == 'other' and known_kind in KIND_HOME:
+        kind = known_kind                                   # the file says nothing itself (a scan): an earlier reading of it does
     homes = KIND_HOME.get(kind, [])
     return {'kind': kind, 'homes': homes, 'ok': kind == 'other' or not homes or req_id in homes, 'kind_name': KIND_NAMES.get(kind)}
 
