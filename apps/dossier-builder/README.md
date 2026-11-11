@@ -106,7 +106,10 @@ notifications, pricing letters, leaflets and certificates) changed how documents
   substance itself. `clean_apis` (engine) and `cleanApis` (page) drop headings, sentence tails, appearances, companies and
   countries, keep substances that are salts («Sodium chloride»), never merge different ones («Vitamin B1» / «B12», «Salicylic» /
   «Acetylsalicylic acid») and merge spellings, salts and typos of one; both give the same answer (a parity test) and keep up to 40.
-- **The kind rule.** A document is judged by what it says about itself: its title (the top lines) before its body, whole words
+- **The kind rule.** A document is known by what is written inside it, never by the name of its file: the text layer, the reading
+  the wizard made of a scan (browser OCR, sent with the upload), or an OCR of the first page where the machine can. A file that
+  could not be read is not judged at all: its name only hints where to offer it (`kind_hint`), it is never placed or refused on
+  its name (`auto` is null). Inside the text, the heading printed at the top of the page counts before the body, whole words
   («coa» is not the start of «coated»), a reference to another document by its number («…بإخطار التسجيل رقم 123») only when nothing
   else is named. Arabic stability approvals, WHO CPPs, leaflets by their section titles and contracts by «first party / الطرف الأول»
   are recognised. A scan placed from the «not placed yet» box is judged by the reading the wizard made of it.

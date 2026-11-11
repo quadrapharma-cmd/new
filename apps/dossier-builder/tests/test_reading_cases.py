@@ -151,3 +151,32 @@ def test_placing_from_the_box(dossier, tmp_path):
     assert r.status_code == 422 and r.json()['detail']['code'] == 'E-META'
     r = c.post(f"/api/dossiers/{did}/documents/{d['id']}/place", json={'slot_id': 'M1-09', 'meta': {'pi_type': 'spc', 'lang': 'en'}})
     assert r.status_code == 200 and r.json()['meta']['pi_type'] == 'spc'
+
+
+# ---- a document is known by what is written inside it, never by the name of its file
+def test_the_kind_comes_from_inside_the_file_never_from_its_name(dossier, tmp_path):
+    assert X.kind_check('M1-05', 'stability approval.pdf', PRICE_EN)['ok']            # the name lies: inside it is a pricing certificate
+    assert not X.kind_check('M1-05', 'pricing certificate.pdf', STAB_AR)['ok']        # the name says pricing: inside it is a stability approval
+    r = X.kind_check('M1-37', 'pricing certificate.pdf', '')
+    assert r['ok'] and r['kind'] == 'other' and r['unread']                           # nothing could be read: nothing is judged, least of all by the name
+    f = X.read_texts([{'filename': 'gmp certificate.pdf', 'text': ''}])['files'][0]
+    assert f['kind'] == 'other' and f['kind_hint'] == 'gmp'                           # the name only hints where to offer the file
+    f = X.read_texts([{'filename': 'gmp certificate.pdf', 'text': PRICE_EN}])['files'][0]
+    assert f['kind'] == 'pricing' and f['kind_hint'] is None
+    c, did, _ = dossier
+    r = c.post(f'/api/dossiers/{did}/classify/text', json={'files': [{'filename': 'pricing certificate.pdf', 'text': ''}]}).json()[0]
+    assert r['auto'] is None and r['suggestions'][0]['req_id'] == 'M1-05'             # offered there, never placed on its name alone
+    r = c.post(f'/api/dossiers/{did}/classify/text', json={'files': [{'filename': 'gmp certificate.pdf', 'text': PRICE_EN}]}).json()[0]
+    assert r['kind'] == 'pricing' and r['auto'] == 'M1-05'                            # what is written inside decides
+
+
+def test_an_upload_is_judged_by_the_reading_that_comes_with_it(dossier, tmp_path):
+    c, did, _ = dossier
+    pdf = make_pdf(tmp_path / 'scan.pdf', 'Scanned page of a certificate').read_bytes()
+    r = c.post(f'/api/dossiers/{did}/slots/M1-05/documents', files={'file': ('pricing certificate.pdf', pdf, 'application/pdf')},
+               data={'meta': json.dumps({'text': STAB_AR})})
+    assert r.status_code == 201, r.text
+    assert any(f['rule'] == 'DOC-KIND' and f['severity'] == 'block' for f in r.json()['findings']) and 'text' not in r.json()['meta']
+    r = c.post(f'/api/dossiers/{did}/slots/M1-05/documents', files={'file': ('stability approval.pdf', pdf, 'application/pdf')},
+               data={'meta': json.dumps({'text': PRICE_EN})})
+    assert not any(f['rule'] == 'DOC-KIND' for f in r.json()['findings'])             # a pricing certificate under a misleading file name is accepted

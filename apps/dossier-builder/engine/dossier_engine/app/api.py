@@ -150,7 +150,9 @@ def create_app(workspace, auth_enabled=None):
             if old['dossier_id'] != did or old['slot_id'] != slot_id or old['state'] != 'current':
                 err(422, 'E-REPLACES', 'The replaced document must be a current document of the same section.',
                     'المستند المستبدَل لازم يكون مستند حالي في نفس القسم.')
-        return st.add_document(did, slot_id, file.filename, data, title, json.loads(meta or '{}'), supersede=replaces or None)
+        m = json.loads(meta or '{}')
+        known = m.pop('text', None) if isinstance(m, dict) else None       # the reading the page made of a scan: the kind rule judges the file by it
+        return st.add_document(did, slot_id, file.filename, data, title, m, supersede=replaces or None, text=known)
 
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/references', status_code=201)
     def add_reference(did: str, slot_id: str, body: dict):
@@ -553,7 +555,11 @@ def create_app(workspace, auth_enabled=None):
         and `auto`: the one item the file may go into without asking. Among the per-API items (CEP, CoA, GMP of each active) the substance
         the document names decides; when two items of different actives tie — the document names neither — nothing is automatic:
         `auto` is None and the file waits in the «not placed yet» box for the user."""
-        kind = kind or _extract.guess_kind(filename, text)
+        unread = len(''.join((text or '').split())) < 20 and not kind
+        kind = kind or _extract.content_kind(text)
+        by_name = False
+        if kind == 'other' and _extract.name_hint(filename):                # nothing inside says what it is: the name only hints where to offer it
+            kind, by_name = _extract.name_hint(filename), True
         sugg = clf.suggest(filename, text, slots)
         homes = _extract.KIND_HOME.get(kind, [])
         by_id = {s.slot_id: s for s in slots}
@@ -578,6 +584,8 @@ def create_app(workspace, auth_enabled=None):
             if a and b and a.item and b.item and sugg[0]['score'] == sugg[1]['score'] and \
                     _extract.api_key(a.item.get('name') or '') != _extract.api_key(b.item.get('name') or ''):
                 auto = None                                                         # a tie between two actives: never a guess
+        if by_name or unread:
+            auto = None                                                             # a file that was not read is offered, never placed on its name
         return kind, sugg, auto
 
     @app.post('/api/dossiers/{did}/classify/text')
@@ -672,7 +680,8 @@ def create_app(workspace, auth_enabled=None):
                 text = ' '.join((p.extract_text() or '') for p in rd.pages[:1])
             except Exception:
                 pass
-            out.append({'filename': f.filename, 'size': len(data), 'suggestions': clf.suggest(f.filename, text, slots)})
+            kind, sugg, auto = _suggest_with_kind(clf, slots, f.filename, text, None, (d.get('product') or {}).get('name'))
+            out.append({'filename': f.filename, 'size': len(data), 'kind': kind, 'suggestions': sugg, 'auto': auto})
         return out
 
     @app.get('/api/dossiers/{did}/gate')

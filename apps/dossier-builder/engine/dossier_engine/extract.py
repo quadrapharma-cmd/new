@@ -111,7 +111,7 @@ def docx_text(data):
         return ''
 
 
-def read_text(name, data, max_pages=12, ocr=True):
+def read_text(name, data, max_pages=12, ocr=True, ocr_pages=4):
     """What one uploaded file says: a PDF's text layer, or OCR of its pages when it is a scan (tesseract ara+eng, local
     computers only), a DOCX's paragraphs and tables, or OCR of an image. `scanned` = image-only (the AI layer then
     reads the page images), `ocr` = the text came from OCR, `kind_of_file` = pdf | docx | image | other."""
@@ -122,7 +122,7 @@ def read_text(name, data, max_pages=12, ocr=True):
         pt = pdf_text(data, max_pages)
         out.update(pt, kind_of_file='pdf')
         if pt['scanned'] and ocr:
-            txt = arabic.ocr_pdf(data, pages=min(pt['pages'] or 1, 4))
+            txt = arabic.ocr_pdf(data, pages=min(pt['pages'] or 1, ocr_pages))
             if len(re.sub(r'\s', '', txt)) >= 20:
                 out.update(text=txt, ocr=True)
     elif img:
@@ -216,6 +216,17 @@ def guess_kind(filename, text):
         if k:
             return k
     return 'other'
+
+
+def content_kind(text):
+    """What a document is, from what is written inside it — never from the name its file was given."""
+    return guess_kind('', text)
+
+
+def name_hint(filename):
+    """What the file's name suggests: a hint for where to offer a file that could not be read, never a verdict about what it is."""
+    k = guess_kind(filename, '')
+    return None if k == 'other' else k
 
 
 def iso_date(m):
@@ -634,9 +645,9 @@ def read_files(files):
     items, texts = [], []
     for name, data in files:
         pt = read_text(name, data)
-        kind = guess_kind(name, pt['text'])
+        kind = content_kind(pt['text'])
         items.append(fields_for(kind, name, pt['text']))
-        texts.append({'filename': name, 'kind': kind, 'pages': pt['pages'], 'scanned': pt['scanned'], 'ocr': pt['ocr'], 'file': pt['kind_of_file'],
+        texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': pt['pages'], 'scanned': pt['scanned'], 'ocr': pt['ocr'], 'file': pt['kind_of_file'],
                       'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:14000], 'found': found_fields(items[-1])})
     return {'files': texts, 'rules': merge(items)}
 
@@ -655,14 +666,22 @@ KIND_NAMES = {'pricing': {'en': 'pricing certificate', 'ar': 'شهادة تسع�
 
 
 def kind_check(req_id, filename, data_or_text, known_kind=None):
-    """Is this file the document the item expects? → {'kind', 'ok', 'homes'}. Unknown kinds and kinds without a fixed home pass;
-    a recognised kind whose home items do not include the target fails (a stability approval in the pricing slot)."""
-    text = data_or_text if isinstance(data_or_text, str) else read_text(filename, data_or_text, max_pages=2, ocr=False)['text']
-    kind = guess_kind(filename, text)
+    """Is this file the document the item expects? → {'kind', 'ok', 'homes', 'unread'}. The file is judged by what is written inside
+    it, never by its name: its text layer, or — a scan — the reading already made of it (`known_kind`, the text passed in) or an OCR
+    of its first page where this machine can. Unknown kinds and kinds without a fixed home pass; a recognised kind whose home items
+    do not include the target fails (a stability approval in the pricing slot). `unread`: nothing could be read, so nothing was judged."""
+    if isinstance(data_or_text, str):
+        text = data_or_text
+    else:
+        text = read_text(filename, data_or_text, max_pages=2, ocr=False)['text']
+        if not re.sub(r'\s', '', text) and known_kind not in KIND_HOME and arabic.ocr_available():
+            text = read_text(filename, data_or_text, max_pages=1, ocr=True, ocr_pages=1)['text']      # an image-only file: read its first page
+    kind = content_kind(text)
     if kind == 'other' and known_kind in KIND_HOME:
         kind = known_kind                                   # the file says nothing itself (a scan): an earlier reading of it does
     homes = KIND_HOME.get(kind, [])
-    return {'kind': kind, 'homes': homes, 'ok': kind == 'other' or not homes or req_id in homes, 'kind_name': KIND_NAMES.get(kind)}
+    return {'kind': kind, 'homes': homes, 'ok': kind == 'other' or not homes or req_id in homes, 'kind_name': KIND_NAMES.get(kind),
+            'unread': kind == 'other' and len(re.sub(r'\s', '', text)) < 20}
 
 
 def found_fields(reading):
@@ -688,9 +707,9 @@ def read_texts(files):
     items, texts = [], []
     for f in files:
         name, text = f.get('filename') or 'document', f.get('text') or ''
-        kind = guess_kind(name, text)
+        kind = content_kind(text)
         items.append(fields_for(kind, name, text))
-        texts.append({'filename': name, 'kind': kind, 'pages': int(f.get('pages') or 0), 'scanned': bool(f.get('scanned')), 'ocr': bool(f.get('ocr')),
+        texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': int(f.get('pages') or 0), 'scanned': bool(f.get('scanned')), 'ocr': bool(f.get('ocr')),
                       'ocr_where': f.get('ocr_where'), 'file': f.get('file') or ('pdf' if name.lower().endswith('.pdf') else 'other'), 'arabic': arabic.has_arabic(text),
                       'chars': len(re.sub(r'\s', '', text)), 'text': text[:14000], 'found': found_fields(items[-1])})
     return {'files': texts, 'rules': merge(items)}

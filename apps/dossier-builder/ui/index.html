@@ -940,11 +940,11 @@ async function ingest(w, fresh){
   try{ await vocab();
     const fits=f=>{ const det=cardOfKind(f.kind), exp=(w.docs[f.filename]||{}).kind||'other'; return exp==='other'||det==='other'||det===exp; };
     const x=await readFiles(fresh,'dossier',(n,st,i)=>wizProg(n,st,i), rf=>rf.filter(fits).map(f=>f.filename));
-    for(const f of x.r.files||[]){ w.texts[f.filename]={filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,ocr:f.ocr,ocr_where:f.ocr_where,file:f.file}; w.kinds[f.filename]=f.kind; w.found[f.filename]=f.found||[]; }
+    for(const f of x.r.files||[]){ w.texts[f.filename]={filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,ocr:f.ocr,ocr_where:f.ocr_where,file:f.file}; w.kinds[f.filename]=f.kind; (w.hints=w.hints||{})[f.filename]=f.kind_hint||null; w.found[f.filename]=f.found||[]; }
     if(x.modelAsked) (w.aiReads=w.aiReads||[]).push({files:x.modelFiles, ai:x.ai}); if(x.note) w.aiNote=x.note;      // the model's reading, remembered with the files it came from
     for(const f of fresh){ const detected=cardOfKind(w.kinds[f.name]); const expected=(w.docs[f.name]||{}).kind||'other';
       if(expected!=='other'&&detected!=='other'&&detected!==expected){ w.docs[f.name]={kind:expected, status:'mismatch', detected}; toast(`${f.name}: ${t('notThisDoc')}`); }
-      else w.docs[f.name]={kind:expected==='other'?detected:expected, status:'ok'}; }
+      else w.docs[f.name]={kind:expected==='other'?(detected!=='other'?detected:cardOfKind((w.hints||{})[f.name]||'other')):expected, status:'ok'}; }   // a file that could not be read sits under the card its name hints at; only what is written inside it can refuse it
     await refill(w);
     toast(`${t('filled')} · ${Object.keys(w.fromDoc||{}).length} ${t('readN')}`); }
   catch(e){ toast(e.message); for(const f of fresh) w.docs[f.name]=Object.assign({}, w.docs[f.name], {status:'error'}); }
@@ -1443,7 +1443,7 @@ async function placeFiles(did, files, opts){
   for(const [i,r] of res.entries()){
     const best=r.suggestions[0], auto=('auto' in r)?r.auto:(best&&best.slot_id), slot=auto&&slotById(auto);     // auto null: the items of two actives tie, the user decides from the box
     if(!best||!slot||needsMeta(slot)){ left.push(r.filename); leftFiles.push(files[i]); continue; }
-    const f=new FormData(); f.append('file',files[i]); f.append('meta',JSON.stringify(kinds[files[i].name]?{kind:kinds[files[i].name]}:{}));
+    const f=new FormData(); f.append('file',files[i]); f.append('meta',JSON.stringify(Object.assign({}, kinds[files[i].name]?{kind:kinds[files[i].name]}:{}, (texts[files[i].name]||{}).text?{text:String(texts[files[i].name].text).slice(0,4000)}:{})));   // the reading goes with the file: the kind rule judges a scan by it
     try{ const doc=await api(`/dossiers/${did}/slots/${encodeURIComponent(slot.slot_id)}/documents`,{method:'POST',body:f}); n++;
       if(opts.readable&&(opts.scanned||[]).includes(files[i].name)&&doc&&doc.id) convert.push([doc.id, files[i].name]); }catch(e){ left.push(r.filename); leftFiles.push(files[i]); }
   }
