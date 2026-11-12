@@ -144,3 +144,46 @@ def test_a_full_browser_storage_is_said_and_the_rest_is_still_saved(site, tmp_pa
         assert not page.query_selector('#dbStorage')
         assert errors == [], errors
         b.close()
+
+
+NO_BLOBS = """(() => { const put = IDBObjectStore.prototype.put;          /* a storage that keeps no Blob (some private windows) */
+  IDBObjectStore.prototype.put = function (v, k) { if (v && v.contents instanceof Blob) throw new DOMException('The object could not be cloned.', 'DataCloneError');
+    return put.call(this, v, k); }; })();
+"""
+
+
+def test_a_browser_that_keeps_no_blobs_stores_the_bytes_as_before(site, tmp_path):
+    """Never worse than it was: where the storage takes no Blob, a large file goes in as its bytes (the way every file used to)."""
+    f = scan_pdf(tmp_path / 'Dermacure stability scans 2024.pdf', 'Stability Study Report - Dermacure', 40)
+    sha = hashlib.sha256(f.read_bytes()).hexdigest()
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        ctx = b.new_context(viewport={'width': 1280, 'height': 800})
+
+        def no_blobs(route):
+            r = route.fetch()
+            route.fulfill(response=r, body=NO_BLOBS + r.text())
+        ctx.route('**/assets/engine.worker.js', no_blobs)
+        errors = []
+        open_ = opener(ctx, site, errors)
+        page = open_('#/')
+        page.evaluate("() => { const i = document.createElement('input'); i.type = 'file'; i.id = 'bigin'; document.body.appendChild(i); }")
+        page.set_input_files('#bigin', str(f))
+        got = page.evaluate("""async () => {
+          const post = (path, body, json) => fetch(path, {method: 'POST', headers: json ? {'X-DB': '1', 'content-type': 'application/json'} : {'X-DB': '1'}, body});
+          const dr = (await (await post('/api/intake/drafts', JSON.stringify({state: {step: 0}}), true)).json()).id;
+          const fd = new FormData(); fd.append('file', document.querySelector('#bigin').files[0]); fd.append('kind', 'stability');
+          const r = await post('/api/intake/drafts/' + dr + '/files', fd);
+          await DBWEB.sync();
+          const db = await new Promise((ok, bad) => { const q = indexedDB.open('/workspace'); q.onsuccess = () => ok(q.result); q.onerror = () => bad(q.error); });
+          const all = await new Promise((ok, bad) => { const q = db.transaction('FILE_DATA').objectStore('FILE_DATA').getAll(); q.onsuccess = () => ok(q.result); q.onerror = () => bad(q.error); });
+          return {dr, status: r.status, blobs: all.filter(e => e.contents instanceof Blob).length, bytes: all.filter(e => e.contents && e.contents.byteLength > 30e6).map(e => e.contents.byteLength),
+                  note: !!document.getElementById('dbStorage')}; }""")
+        assert got['status'] == 201 and got['blobs'] == 0 and got['bytes'] == [f.stat().st_size] and not got['note'], got
+        page.close()
+        page = open_('#/dossiers')
+        back = page.evaluate("""async (dr) => { const r = await fetch('/api/intake/drafts/' + dr + '/files/' + encodeURIComponent('Dermacure stability scans 2024.pdf'), %s);
+          const d = await r.arrayBuffer(); return {status: r.status, size: d.byteLength, sha: [...new Uint8Array(await crypto.subtle.digest('SHA-256', d))].map(x => x.toString(16).padStart(2, '0')).join('')}; }""" % H, got['dr'])
+        assert back == {'status': 200, 'size': f.stat().st_size, 'sha': sha}
+        assert errors == [], errors
+        b.close()

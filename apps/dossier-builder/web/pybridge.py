@@ -25,16 +25,15 @@ os.environ.setdefault('DB_HOME', 'web')
 APP = create_app('/workspace', auth_enabled=False)
 
 
+PIECE = 8 << 20                                       # of a request's body, as a server's network hands it over
+
+
 async def handle(method, path, query, headers_json, body):
     headers = json.loads(headers_json) if headers_json else {}
-    try:
-        if hasattr(body, 'to_bytes'):
-            body = body.to_bytes()
-        elif hasattr(body, 'to_py'):
-            body = bytes(body.to_py())
-        body = bytes(body or b'')
-    except MemoryError:
-        return _answer(507, [(b'content-type', b'application/json')], NO_MEMORY)
+    page = body if hasattr(body, 'subarray') else None      # the page's own bytes stay where they are and reach the engine a piece at a time:
+    if page is None:                                        # a large upload is never held whole in the engine's memory beside its copies
+        body = bytes(body.to_py()) if hasattr(body, 'to_py') else bytes(body or b'')
+    total, pos = (int(page.length) if page is not None else len(body)), 0
     scope = {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'method': method,
              'scheme': 'http', 'path': unquote(path), 'raw_path': path.encode(), 'query_string': (query or '').encode(),   # as a server does: the path decoded (a file name with a space or in Arabic), the raw one kept
              'root_path': '', 'headers': [(k.lower().encode(), str(v).encode()) for k, v in headers.items()],
@@ -43,10 +42,12 @@ async def handle(method, path, query, headers_json, body):
     never = asyncio.Event()
 
     async def receive():
-        nonlocal sent
+        nonlocal sent, pos
         if not sent:
-            sent = True
-            return {'type': 'http.request', 'body': body, 'more_body': False}
+            a, pos = pos, min(total, pos + PIECE)
+            piece = page.subarray(a, pos).to_bytes() if page is not None else body[a:pos]
+            sent = pos >= total
+            return {'type': 'http.request', 'body': piece, 'more_body': not sent}
         await never.wait()                               # a server keeps the connection open until the response ends
 
     status, resp_headers, chunks = 500, [], []
@@ -69,8 +70,8 @@ async def handle(method, path, query, headers_json, body):
     return _answer(status, resp_headers, b''.join(chunks))
 
 
-NO_MEMORY = json.dumps({'detail': {'code': 'E-MEMORY', 'en': 'The browser does not have the memory for a file this large. Close other tabs and try again, or split the file.',
-                                   'ar': 'ذاكرة المتصفح ما كفتش لملف بالحجم ده. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف.'}}).encode()
+NO_MEMORY = json.dumps({'detail': {'code': 'E-MEMORY', 'en': 'A file this large does not fit in the memory the browser gives the page. Close other tabs and try again, split the file, or use the desktop program, which takes it whole.',
+                                   'ar': 'ملف بالحجم ده أكبر من الذاكرة اللي المتصفح بيديها للصفحة. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف، أو استخدم برنامج سطح المكتب — بياخده كامل.'}}).encode()
 
 
 def _answer(status, resp_headers, out):

@@ -94,7 +94,7 @@
       else if (b instanceof ArrayBuffer) body = new Uint8Array(b.slice(0));                        // a copy: the caller keeps its buffer
       else if (ArrayBuffer.isView(b)) body = new Uint8Array(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength));
     } catch (e) {                                                      // the upload itself does not fit in the page's memory: said, not thrown
-      return new Response(JSON.stringify({ detail: { code: 'E-MEMORY', en: 'The browser does not have the memory for a file this large. Close other tabs and try again, or split the file.', ar: 'ذاكرة المتصفح ما كفتش لملف بالحجم ده. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف.' } }), { status: 507, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify({ detail: { code: 'E-MEMORY', en: 'A file this large does not fit in the memory the browser gives the page. Close other tabs and try again, split the file, or use the desktop program, which takes it whole.', ar: 'ملف بالحجم ده أكبر من الذاكرة اللي المتصفح بيديها للصفحة. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف، أو استخدم برنامج سطح المكتب — بياخده كامل.' } }), { status: 507, headers: { 'content-type': 'application/json' } });
     }
     headers['content-length'] = String(body.length);
     let meta, out;

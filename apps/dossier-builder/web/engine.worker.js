@@ -81,7 +81,7 @@ self.onmessage = async (ev) => {
       self.postMessage({ type: 'api', id: m.id, meta: res[0], out: buf }, [buf]);
     } catch (e) {
       const mem = /MemoryError|alloc|out of memory/i.test(String(e && e.message || e));          // a file larger than what the page can hold
-      const body = new TextEncoder().encode(JSON.stringify({ detail: mem ? { code: 'E-MEMORY', en: 'The browser does not have the memory for a file this large. Close other tabs and try again, or split the file.', ar: 'ذاكرة المتصفح ما كفتش لملف بالحجم ده. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف.' }
+      const body = new TextEncoder().encode(JSON.stringify({ detail: mem ? { code: 'E-MEMORY', en: 'A file this large does not fit in the memory the browser gives the page. Close other tabs and try again, split the file, or use the desktop program, which takes it whole.', ar: 'ملف بالحجم ده أكبر من الذاكرة اللي المتصفح بيديها للصفحة. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف، أو استخدم برنامج سطح المكتب — بياخده كامل.' }
         : { code: 'E-ENGINE', en: String(e && e.message || e), ar: 'المحرك ما قدرش ينفّذ الطلب.' } }));
       self.postMessage({ type: 'api', id: m.id, meta: JSON.stringify({ status: mem ? 507 : 500, headers: [['content-type', 'application/json']] }), out: body.buffer }, [body.buffer]);
     }

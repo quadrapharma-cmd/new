@@ -1,5 +1,5 @@
 """HTTP API on localhost (D1). Errors always carry code + en + ar (+ action)."""
-import json, shutil, tempfile, time, uuid, zipfile
+import json, shutil, sys, tempfile, time, uuid, zipfile
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -114,6 +114,9 @@ def create_app(workspace, auth_enabled=None):
                             content={'detail': {'code': e.code, 'en': e.en, 'ar': e.ar, **e.extra}})
 
     def _memory_answer():
+        if sys.platform == 'emscripten':                    # the browser edition: the page's memory, not the machine's
+            return JSONResponse(status_code=507, content={'detail': {'code': 'E-MEMORY', 'en': 'A file this large does not fit in the memory the browser gives the page. Close other tabs and try again, split the file, or use the desktop program, which takes it whole.',
+                                                                     'ar': 'ملف بالحجم ده أكبر من الذاكرة اللي المتصفح بيديها للصفحة. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف، أو استخدم برنامج سطح المكتب — بياخده كامل.'}})
         return JSONResponse(status_code=507, content={'detail': {
             'code': 'E-MEMORY', 'en': 'This machine does not have the memory for a file this large. Close other programs or tabs and try again, or split the file.',
             'ar': 'ذاكرة الجهاز ما كفتش لملف بالحجم ده. اقفل برامج أو تبويبات تانية وجرّب تاني، أو قسّم الملف.'}})
