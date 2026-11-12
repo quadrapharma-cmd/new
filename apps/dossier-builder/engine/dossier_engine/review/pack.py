@@ -2,6 +2,7 @@
 import json
 import pathlib
 import yaml
+from dossier_engine.yamlfast import load as yload
 from .. import expr, packs
 
 REVIEW_FIELDS = packs.PROFILE_FIELDS | {'reliance', 'strictness'}
@@ -46,13 +47,13 @@ class ReviewPack:
 
 def load(pack_id='eda.review.v1', packs_dir=packs.PACKS_DIR):
     d = pathlib.Path(packs_dir) / pack_id
-    meta = yaml.safe_load((d / 'pack.yaml').read_text(encoding='utf-8'))
+    meta = yload((d / 'pack.yaml').read_text(encoding='utf-8'))
     questions = []
     for name in meta['files']:
         p = d / name
         if not p.exists():
             continue
-        items = yaml.safe_load(p.read_text(encoding='utf-8')) or []
+        items = yload(p.read_text(encoding='utf-8')) or []
         for q in items:
             q['_file'] = name
             questions.append(q)

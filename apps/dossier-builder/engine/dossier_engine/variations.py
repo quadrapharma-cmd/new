@@ -4,6 +4,7 @@ GL.CAPP.026 v6); the only computation is the grouping rule (highest class) and t
 eCTD submission type/mode mapping (EG TG draft Annex 6)."""
 import re
 import yaml
+from dossier_engine.yamlfast import load as yload
 from .packs import PACKS_DIR
 
 PACK = PACKS_DIR / 'eda.variations.gl026.v6'
@@ -11,8 +12,8 @@ PACK = PACKS_DIR / 'eda.variations.gl026.v6'
 
 class Variations:
     def __init__(self, root=PACK):
-        self.meta = yaml.safe_load(open(root / 'pack.yaml', encoding='utf-8'))
-        self.items = yaml.safe_load(open(root / 'variations.yaml', encoding='utf-8'))
+        self.meta = yload(open(root / 'pack.yaml', encoding='utf-8'))
+        self.items = yload(open(root / 'variations.yaml', encoding='utf-8'))
         self.by_id = {v['id']: v for v in self.items}
         self.order = self.meta['class_order']
 

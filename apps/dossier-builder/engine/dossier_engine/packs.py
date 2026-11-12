@@ -2,6 +2,7 @@
 import json
 import pathlib
 import yaml
+from dossier_engine.yamlfast import load as yload
 from . import expr
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -26,8 +27,8 @@ class Pack:
 
 def load(pack_id, packs_dir=PACKS_DIR):
     d = pathlib.Path(packs_dir) / pack_id
-    meta = yaml.safe_load((d / 'pack.yaml').read_text(encoding='utf-8'))
-    reqs = yaml.safe_load((d / 'requirements.yaml').read_text(encoding='utf-8'))
+    meta = yload((d / 'pack.yaml').read_text(encoding='utf-8'))
+    reqs = yload((d / 'requirements.yaml').read_text(encoding='utf-8'))
     return Pack(meta, reqs, d)
 
 

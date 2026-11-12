@@ -9,6 +9,7 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 import yaml
+from dossier_engine.yamlfast import load as yload
 from .. import expr
 from .docx_kit import new_doc, para, table, require, MissingData
 
@@ -26,7 +27,7 @@ def _fmt(x, places='0.001'):
 # ---------------------------------------------------------------- Annex I
 def annex1(data, ctx, out, letterhead=None):
     """data: Annex I field values; ctx: profile env + apis/variations/distributors/signatory."""
-    t = yaml.safe_load(open(TPL / 'annex1.yaml', encoding='utf-8'))
+    t = yload(open(TPL / 'annex1.yaml', encoding='utf-8'))
     req = [f['key'] for s in t['sections'] for f in s['fields'] if f.get('required')]
     req += [f['key'] for f in t['contact'] if f.get('required')]
     req += ['signatory', 'signatory_title', 'company', 'distributors']

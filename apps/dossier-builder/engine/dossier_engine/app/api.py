@@ -476,6 +476,7 @@ def create_app(workspace, auth_enabled=None):
         from .. import crosschecks, fixes
         from .suite import TYPES_FILE
         import yaml
+        from dossier_engine.yamlfast import load as yload
         pack = st.pack('eda.ctd.nta065.v5')
         by_module, by_class = {}, {}
         for r in pack.requirements:
@@ -483,7 +484,7 @@ def create_app(workspace, auth_enabled=None):
             by_class[r['doc_class']] = by_class.get(r['doc_class'], 0) + 1
         rules40 = sorted(set(re.findall(r"'(eCTD4-[0-9A-Za-z/.-]+)'", inspect.getsource(v40))))
         cross_ids = sorted(set(re.findall(r"'((?:XC|NP040)-[A-Z0-9]+)'", inspect.getsource(crosschecks))))
-        doc_types = yaml.safe_load(TYPES_FILE.read_text(encoding='utf-8'))['types']
+        doc_types = yload(TYPES_FILE.read_text(encoding='utf-8'))['types']
         from ..assistant import settings as _asettings
         import importlib.util
         return {'version': app.version, 'workspace': str(st.root), 'assistant': _asettings.status(st.root),

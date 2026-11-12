@@ -12,19 +12,22 @@ const base = new URL('..', self.location.href).href;            // …/assets/en
 const realFetch = self.fetch.bind(self);
 const B64 = /\/assets\/.+\.(wasm|zip|whl)$/;
 const MIME = { wasm: 'application/wasm', zip: 'application/zip', whl: 'application/zip' };
-function decode64(text) {
-  const bin = atob(text), out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
+/* assets.js (put in front of this file by the build): the runtime's files are kept on this device after the first download, and
+   the page is told how far the loading is */
+let told = 0, later = null;
+const tellPage = st => { told = Date.now(); if (later) { clearTimeout(later); later = null; } self.postMessage({ type: 'load', loaded: st.loaded, total: st.total, net: st.net }); };
+const runtime = DB_ASSETS(typeof DB_MANIFEST === 'object' && DB_MANIFEST ? DB_MANIFEST : {}, realFetch, st => {
+  if (Date.now() - told > 120 || st.loaded >= st.total) tellPage(st);
+  else if (!later) later = setTimeout(() => tellPage(st), 150);          // the last figure is always sent, even when nothing follows it
+});
 // binary assets are published as base64 text (the artifact host serves text, not archives); Pyodide fetches them through here
 self.fetch = async function (input, init) {
   const url = typeof input === 'string' ? input : (input && input.url) || String(input);
   let u; try { u = new URL(url, base); } catch (e) { return realFetch(input, init); }
   if (u.origin !== self.location.origin || !B64.test(u.pathname)) return realFetch(input, init);
-  const r = await realFetch(u.href + '.b64.txt');
-  if (!r.ok) return r;
-  const bytes = decode64(await r.text());
+  let bytes;
+  try { bytes = await runtime.get(u.href.startsWith(base) ? u.href.slice(base.length) : u.pathname, u.href + '.b64.txt'); }
+  catch (e) { if (e && e.status) return new Response(null, { status: e.status }); throw e; }
   return new Response(bytes, { status: 200, headers: { 'content-type': MIME[u.pathname.split('.').pop()], 'content-length': String(bytes.length) } });
 };
 
@@ -68,6 +71,7 @@ const ready = (async () => {
   await pyodide.runPythonAsync("import sys; sys.path.insert(0, '/app/apps/dossier-builder/web'); import pybridge");
   handle = pyodide.globals.get('pybridge').handle;
   self.postMessage({ type: 'ready' });
+  runtime.tidy();
 })();
 ready.catch(e => { console.error(e); self.postMessage({ type: 'failed', message: String(e && e.message || e) }); });
 

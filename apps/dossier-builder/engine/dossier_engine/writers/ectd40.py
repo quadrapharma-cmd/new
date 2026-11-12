@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from xml.sax.saxutils import escape, quoteattr
 import yaml
+from dossier_engine.yamlfast import load as yload
 from .ectd32 import Doc, Product, Profile32, WriterError, rel_path, slug, REPO, APP
 from ..lifecycle import location_key
 
@@ -57,10 +58,10 @@ class Profile40:
         self.root = Path(root)
         cv = self.root / 'cv'
         self.v32 = v32 or Profile32()
-        cou = yaml.safe_load(open(cv / 'eg-m1-context-of-use.yaml', encoding='utf-8'))
+        cou = yload(open(cv / 'eg-m1-context-of-use.yaml', encoding='utf-8'))
         self.eg_cou_oid = cou['code_system']['oid']
         self.eg = {c['ctd_section']: c for c in cou['codes'] if c.get('ctd_section')}
-        app = yaml.safe_load(open(cv / 'eg-application-types.yaml', encoding='utf-8'))
+        app = yload(open(cv / 'eg-application-types.yaml', encoding='utf-8'))
         self.app_oid = app['code_system']['oid']
         rl = app['related_lists']
         self.reg = {c['v322_token']: (c['code'], rl['registration_type']['code_system']['oid'])
@@ -71,9 +72,9 @@ class Profile40:
         self.country_oid = rl['territory']['code_system']['oid']
         self.contact_oid = rl['contact_party_role']['code_system']['oid']
         self.org_oid = rl['organisation_identifier']['code_system']['oid']
-        st = yaml.safe_load(open(cv / 'eg-submission-types.yaml', encoding='utf-8'))
+        st = yload(open(cv / 'eg-submission-types.yaml', encoding='utf-8'))
         self.st_oid, self.st = st['code_system']['oid'], {c['code'] for c in st['codes']}
-        su = yaml.safe_load(open(cv / 'eg-submission-units.yaml', encoding='utf-8'))
+        su = yload(open(cv / 'eg-submission-units.yaml', encoding='utf-8'))
         self.su_oid, self.su = su['code_system']['oid'], {c['code'] for c in su['codes']}
         self.ich = {}
         for r in csv.DictReader(open(ICH_DIR / 'context-of-use.csv', encoding='utf-8')):

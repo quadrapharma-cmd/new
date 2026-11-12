@@ -33,7 +33,8 @@ def install(app, st):
                 return r
         try:
             import yaml
-            for r in yaml.safe_load((_draft.PACK / 'requirements.yaml').read_text(encoding='utf-8')):
+            from dossier_engine.yamlfast import load as yload
+            for r in yload((_draft.PACK / 'requirements.yaml').read_text(encoding='utf-8')):
                 if r['id'] == req_id:
                     return r
         except Exception:

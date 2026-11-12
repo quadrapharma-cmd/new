@@ -393,6 +393,17 @@ scans and uploads the PDF, which replaces the draft (export stays blocked until 
 rendered as a text-only PDF (`docx_kit.basic_pdf`). No OCR and no ghostscript pixel check there (fixes on third-party
 evidence are refused rather than applied unverified).
 
+**Opening (November 2026).** The runtime's own files — the Python engine, its libraries, the rule packs: about 29 MB on the
+wire — used to be fetched at every opening, behind a loading bar that stood at 4 % the whole time: on a slow line an opening looked
+stuck. They are now kept in the browser's storage after the first download (`web/assets.js`; each file known by a tag written at
+build time into the page and the worker, `DB_MANIFEST`): the next opening fetches none of them (1.9 MB instead of 30.5 MB — the
+page itself and two scripts), a new version fetches only the files that changed, and anything wrong with that storage falls back
+to the network. The loading screen says how far the download is («12 of 29 MB»), for how long, and — when no data has arrived for
+40 seconds — that the line is slow or down, with «try again». The engine itself starts faster: the rule packs are read with the C
+YAML parser where the build has one (every edition's does; `dossier_engine/yamlfast.py`), which took the application's start from
+1.8 s to 0.24 s natively and about two seconds off every opening in the browser. Measured on a 4 Mbps line with no browser cache:
+first opening 50 s with the progress shown, the next 9 s. Tests: `tests/test_web_start.py`.
+
 **The page never waits on the engine (November 2026).** The engine runs in a worker (`web/engine.worker.js`, started by `boot.js`;
 `?engine=page` or a browser without workers falls back to the page's own thread). Documents are read one file per request, then the
 rules run once on all the texts, so a large selection never becomes one giant request and the memory in use is that of one file.

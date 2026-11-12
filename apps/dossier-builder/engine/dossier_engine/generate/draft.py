@@ -12,6 +12,8 @@ from pathlib import Path
 
 import yaml
 
+from dossier_engine.yamlfast import load as yload
+
 from .docx_kit import new_doc, para, table, _has_ar
 
 PACK = Path(__file__).resolve().parents[3] / 'rulepacks' / 'eda.ctd.nta065.v5'
@@ -26,7 +28,7 @@ GAP = '[…]'
 def library():
     global _LIB
     if _LIB is None:
-        _LIB = {e['id']: e for e in yaml.safe_load(LIB_FILE.read_text(encoding='utf-8'))}
+        _LIB = {e['id']: e for e in yload(LIB_FILE.read_text(encoding='utf-8'))}
     return _LIB
 
 
@@ -41,7 +43,7 @@ def summary():
 
 def lint():
     """Every requirement has an entry; draftable entries have sections with EN/AR titles; sections have known kinds."""
-    reqs = yaml.safe_load((PACK / 'requirements.yaml').read_text(encoding='utf-8'))
+    reqs = yload((PACK / 'requirements.yaml').read_text(encoding='utf-8'))
     lib = library()
     problems = [f'{r["id"]}: no template entry' for r in reqs if r['id'] not in lib]
     problems += [f'{k}: not a requirement' for k in lib if k not in {r['id'] for r in reqs}]

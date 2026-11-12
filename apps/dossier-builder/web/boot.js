@@ -20,12 +20,40 @@
   ov.innerHTML = '<div style="width:min(440px,90vw);display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">' +
     '<div style="width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#22D3EE,#A78BFA);display:grid;place-items:center;font-family:ui-monospace,monospace;font-weight:600;color:#04161B">DB</div>' +
     '<div id="bootMsg" style="font-size:15px;font-weight:600"></div><div id="bootSub" style="font-size:12.5px;color:var(--muted,#8C9BB0)"></div>' +
-    '<div style="width:100%;height:6px;border-radius:999px;background:rgba(128,128,128,.2);overflow:hidden"><i id="bootBar" style="display:block;height:100%;width:3%;background:linear-gradient(90deg,#22D3EE,#A78BFA);transition:width .3s"></i></div></div>';
+    '<div style="width:100%;height:6px;border-radius:999px;background:rgba(128,128,128,.2);overflow:hidden"><i id="bootBar" style="display:block;height:100%;width:3%;background:linear-gradient(90deg,#22D3EE,#A78BFA);transition:width .3s"></i></div>' +
+    '<div id="bootTime" style="font-size:12px;color:var(--muted,#8C9BB0);font-variant-numeric:tabular-nums;min-height:1.4em"></div>' +
+    '<div id="bootHelp" hidden style="font-size:13px;line-height:1.7;display:flex;flex-direction:column;gap:10px;align-items:center"><span></span>' +
+    '<button type="button" style="font:inherit;padding:7px 18px;border-radius:9px;border:1px solid var(--line,rgba(128,128,128,.45));background:transparent;color:inherit;cursor:pointer"></button></div></div>';
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(ov));
   if (document.body) document.body.appendChild(ov);
-  const say = (ar, en, pct) => { const m = document.getElementById('bootMsg'), b = document.getElementById('bootBar');
-    if (m) m.textContent = AR ? ar : en; if (b && pct != null) b.style.width = pct + '%'; };
+  /* the loading screen says what is happening, how far it is and for how long — and, when nothing has moved for a while, that it
+     is the line that is slow, with a way to try again: an opening that is slow never looks like one that is stuck */
+  const L0 = { started: Date.now(), moved: Date.now(), bar: 3, done: false, failed: false, loaded: 0, total: 0, net: 0 };
+  const bar = pct => { const b = document.getElementById('bootBar'); if (pct > L0.bar) L0.bar = pct; if (b) b.style.width = L0.bar + '%'; };
+  const say = (ar, en, pct) => { const m = document.getElementById('bootMsg'); L0.moved = Date.now();
+    if (m) m.textContent = AR ? ar : en; if (pct != null) bar(pct); };
   const sub = (ar, en) => { const s = document.getElementById('bootSub'); if (s) s.textContent = AR ? ar : en; };
+  const mb = n => (n / 1048576).toFixed(n < 10485760 ? 1 : 0);
+  function loadProgress(st) {                                       // bytes of the runtime's files, from the network or from this device
+    if (st.loaded > L0.loaded) L0.moved = Date.now();
+    L0.loaded = st.loaded; L0.total = st.total; L0.net = st.net;
+    if (st.total) bar(4 + 60 * Math.min(1, st.loaded / st.total));
+    if (st.net > 0) sub(`بينزّل ملفات التشغيل: ${mb(st.loaded)} من ${mb(st.total)} ميجا — أول مرة بس، بعدها بتتفتح من جهازك`, `Downloading the runtime: ${mb(st.loaded)} of ${mb(st.total)} MB — the first time only; afterwards it opens from this device`);
+    else if (st.loaded > 0) sub('بيفتح من الملفات المحفوظة على جهازك — مفيش تنزيل', 'Opening from the files kept on this device — nothing to download');
+  }
+  const tick = setInterval(() => {
+    const t = document.getElementById('bootTime'), h = document.getElementById('bootHelp');
+    if (L0.done || !document.getElementById('boot')) { clearInterval(tick); return; }
+    const secs = Math.round((Date.now() - L0.started) / 1000), still = Math.round((Date.now() - L0.moved) / 1000);
+    if (t && secs >= 8 && !L0.failed) t.textContent = AR ? `بقاله ${secs} ثانية` : `${secs} s so far`;
+    const fetching = !L0.total || L0.loaded < L0.total;                // still waiting for bytes; after them the engine works with no news for a while
+    const stuck = L0.failed || still >= (fetching ? 40 : 150);
+    if (h) { h.hidden = !stuck;
+      if (stuck) { h.firstChild.textContent = L0.failed ? (AR ? 'ما فتحش. جرّب تاني؛ ولو اتكررت ابعت السطر اللي فوق.' : 'It did not open. Try again; if it repeats, send the line above.')
+          : fetching ? (AR ? `مفيش بيانات وصلت من ${still} ثانية: الاتصال بطيء أو مقطوع. استنى شوية أو جرّب تاني.` : `No data has arrived for ${still} s: the line is slow or down. Wait a little, or try again.`)
+          : (AR ? `المحرك بيشتغل من ${still} ثانية من غير رد. استنى شوية أو جرّب تاني.` : `The engine has been starting for ${still} s with no answer. Wait a little, or try again.`);
+        h.lastChild.textContent = AR ? 'حاول تاني' : 'Try again'; h.lastChild.onclick = () => location.reload(); } }
+  }, 1000);
 
   let bigSync = null;                                               // bigfs.js: large files of the workspace are stored as Blobs
   const syncfs = (populate) => (bigSync || (bigSync = DB_BIGFS(S.pyodide.FS.filesystems.IDBFS)))(S.pyodide.FS, populate);
@@ -67,12 +95,13 @@
     return out;
   }
   // binary assets are published as base64 text (the artifact host serves text, not archives); Pyodide fetches them through here
+  const runtime = DB_ASSETS(typeof DB_MANIFEST === 'object' && DB_MANIFEST ? DB_MANIFEST : {}, nativeFetch, st => { if (!L0.done) loadProgress(st); });      // assets.js: kept on this device after the first download
   async function fetchAsset(input, init, url) {
     let u; try { u = new URL(url, document.baseURI); } catch (e) { return nativeFetch(input, init); }
     if (u.origin !== location.origin || !B64.test(u.pathname)) return nativeFetch(input, init);
-    const r = await nativeFetch(u.href + '.b64.txt');
-    if (!r.ok) return r;
-    const bytes = decode64(await r.text());
+    let bytes;
+    try { bytes = await runtime.get(u.href.startsWith(base) ? u.href.slice(base.length) : u.pathname, u.href + '.b64.txt'); }
+    catch (e) { if (e && e.status) return new Response(null, { status: e.status }); throw e; }
     return new Response(bytes, { status: 200, headers: { 'content-type': MIME[u.pathname.split('.').pop()], 'content-length': String(bytes.length) } });
   }
   window.fetch = async function (input, init) {
@@ -127,6 +156,7 @@
       w.onmessage = ev => {
         const m = ev.data || {}; alive = true;
         if (m.type === 'say') say(m.ar, m.en, m.pct);
+        else if (m.type === 'load') loadProgress(m);
         else if (m.type === 'ready') { settled = true; clearTimeout(timer); resolve(w); }
         else if (m.type === 'failed') fail(m.message || 'the engine could not start');
         else if (m.type === 'storage') storageNote(m.error);
@@ -158,17 +188,17 @@
   }
   S.ready = (async () => {
     say('تحميل محرك الملفات…', 'Loading the dossier engine…', 4);
-    sub('أول مرة بس — بعدها بيفتح فوراً', 'First time only — it opens instantly afterwards');
     let inWorker = false;
     if (window.Worker && !/[?&]engine=page\b/.test(location.search)) {
       try { S.worker = await startWorker(); inWorker = true; }
       catch (e) { S.worker = null; console.warn('engine worker unavailable; the engine runs in the page:', e && e.message); }
     }
-    if (!inWorker) await bootHere();
+    if (!inWorker) { await bootHere(); runtime.tidy(); }
     document.documentElement.dataset.engine = inWorker ? 'worker' : 'page';
+    L0.done = true;
     say('جاهز', 'Ready', 100);
     setTimeout(() => ov.remove(), 150);
-  })().catch(e => { console.error(e); say('تعذّر تشغيل المحرك', 'The engine could not start', 100); sub(String(e && e.message || e), String(e && e.message || e)); throw e; });
+  })().catch(e => { console.error(e); L0.failed = true; say('تعذّر تشغيل المحرك', 'The engine could not start', 100); sub(String(e && e.message || e), String(e && e.message || e)); throw e; });
 
   async function saveFromApi(url) {
     const r = await window.fetch(url);

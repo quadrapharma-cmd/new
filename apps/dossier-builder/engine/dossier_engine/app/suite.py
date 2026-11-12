@@ -11,6 +11,7 @@ import json, time, uuid
 from datetime import date
 from pathlib import Path
 import yaml
+from dossier_engine.yamlfast import load as yload
 from fastapi import UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import FileResponse
 
@@ -64,7 +65,7 @@ class Suite:
         self._today = today
         st.db.executescript(SCHEMA)
         st.db.commit()
-        rules = yaml.safe_load(TYPES_FILE.read_text(encoding='utf-8'))
+        rules = yload(TYPES_FILE.read_text(encoding='utf-8'))
         self.types = {t['id']: t for t in rules['types']}
         self.required = rules['required']
         self.warn_default = rules.get('warn_days_default', 90)

@@ -5,6 +5,7 @@ file name and in the first page's text. Output is a ranked suggestion list; the
 user always confirms."""
 import re
 import yaml
+from dossier_engine.yamlfast import load as yload
 
 STOP = {'and', 'or', 'of', 'the', 'for', 'in', 'on', 'to', 'a', 'an', 'by', 'with', 'per', 'all', 'if', 'any', 'each',
         'new', 're', 'reg', 'incl', 'including', 'etc', 'from', 'one', 'only', 'other', 'study', 'reports', 'report'}
@@ -32,7 +33,7 @@ class Classifier:
     def __init__(self, pack):
         kw = {}
         try:
-            kw = yaml.safe_load(open(pack.path / 'classify.yaml', encoding='utf-8')) or {}
+            kw = yload(open(pack.path / 'classify.yaml', encoding='utf-8')) or {}
         except FileNotFoundError:
             pass
         self.reqs = {}

@@ -15,7 +15,7 @@ Output: apps/dossier-builder/web/dist/
 Binary files (.wasm .zip .whl) are written as base64 text (<name>.b64.txt): the artifact host serves text, not
 archives, and boot.js decodes them when Pyodide fetches them.
 """
-import argparse, base64, io, pathlib, re, shutil, zipfile
+import argparse, base64, io, json, pathlib, re, shutil, zipfile
 
 HERE = pathlib.Path(__file__).resolve().parent
 APP = HERE.parent
@@ -33,7 +33,7 @@ def page(src, *, builder):
     html = src.read_text(encoding='utf-8')
     css = (UI / 'assets' / 'ds.css').read_text(encoding='utf-8')
     js = (UI / 'assets' / 'ds.js').read_text(encoding='utf-8')
-    boot = (HERE / 'bigfs.js').read_text(encoding='utf-8') + '\n' + (HERE / 'boot.js').read_text(encoding='utf-8')      # large files as Blobs: used by the page and by the worker
+    boot = SHARED() + (HERE / 'boot.js').read_text(encoding='utf-8')      # large files as Blobs, the runtime kept on the device: used by the page and by the worker
     ocr = (UI / 'assets' / 'ocr.js').read_text(encoding='utf-8')
     html = html.replace('<link rel="stylesheet" href="/assets/ds.css">', f'<style>\n{css}\n</style>')
     html = html.replace('<script src="/assets/ds.js"></script>',
@@ -50,6 +50,37 @@ def page(src, *, builder):
     head = re.sub(r'<meta charset="utf-8">\s*|<meta name="viewport"[^>]*>\s*', '', head)
     content = head.strip() + '\n' + body.strip() + '\n'
     return content, SKELETON + content + '</body></html>\n'
+
+
+MARK = '/*DB_MANIFEST*/{}'
+
+
+def SHARED():
+    """What the page's boot script and the engine's worker both start with: the large-file storage, the on-device cache of the
+    runtime's files and the list of those files (filled in at the end of the build, when they all exist)."""
+    return ((HERE / 'bigfs.js').read_text(encoding='utf-8') + '\n' + (HERE / 'assets.js').read_text(encoding='utf-8')
+            + '\nconst DB_MANIFEST = ' + MARK + ';\n')
+
+
+def manifest(dist):
+    """path → [bytes on the wire, tag, needed at start, bytes once decoded] for every binary file of the runtime, written into
+    the pages and the worker: what a browser already holds with the same tag is not fetched again."""
+    import base64
+    import hashlib
+    m = {}
+    for f in sorted((dist / 'assets').rglob('*.b64.txt')):
+        rel = f.relative_to(dist).as_posix()[:-len('.b64.txt')]
+        if not rel.endswith(BINARY):
+            continue
+        data = f.read_bytes()
+        start = rel.startswith(('assets/pyodide/', 'assets/wheels/')) or rel == 'assets/engine.zip'
+        m[rel] = [len(data), hashlib.sha256(data).hexdigest()[:16], 1 if start else 0, len(base64.b64decode(data))]
+    text = json.dumps(m, separators=(',', ':'))
+    for f in (dist / 'index.html', dist / 'index.local.html', dist / 'suite.html', dist / 'assets' / 'engine.worker.js'):
+        src = f.read_text(encoding='utf-8')
+        assert src.count(MARK) == 1, (f, src.count(MARK))
+        f.write_text(src.replace(MARK, text), encoding='utf-8')
+    return m
 
 
 BINARY = ('.wasm', '.zip', '.whl')
@@ -98,7 +129,7 @@ def main():
     (DIST / 'index.local.html').write_text(full, encoding='utf-8')
     (DIST / 'suite.html').write_text(page(UI / 'suite' / 'index.html', builder=False)[1], encoding='utf-8')
     n = engine_zip(DIST / 'assets' / 'engine.zip')
-    put(DIST / 'assets' / 'engine.worker.js', (HERE / 'bigfs.js').read_bytes() + b'\n' + (HERE / 'engine.worker.js').read_bytes())      # the engine's own thread (boot.js starts it)
+    put(DIST / 'assets' / 'engine.worker.js', SHARED().encode('utf-8') + (HERE / 'engine.worker.js').read_bytes())      # the engine's own thread (boot.js starts it)
     for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels'), (pathlib.Path(a.pdfjs), 'pdfjs'), (pathlib.Path(a.tess), 'tess'), (pathlib.Path(a.img), 'img')):
         if not src.is_dir():
             print(f'(no {sub} assets at {src}; skipped)')
@@ -108,6 +139,7 @@ def main():
                 put(DIST / 'assets' / sub / f.name, f.read_bytes())
     if (HERE / 'tess' / 'worker.boot.js').exists() and (DIST / 'assets' / 'tess').is_dir():
         put(DIST / 'assets' / 'tess' / 'worker.boot.js', (HERE / 'tess' / 'worker.boot.js').read_bytes())
+    manifest(DIST)
     total = sum(f.stat().st_size for f in DIST.rglob('*') if f.is_file())
     print(f'dist: {DIST}\nengine.zip {n/1e6:.1f} MB · total {total/1e6:.1f} MB · files {sum(1 for f in DIST.rglob("*") if f.is_file())}')
 

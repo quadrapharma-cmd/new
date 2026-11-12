@@ -9,6 +9,8 @@ from pathlib import Path
 
 import yaml
 
+from dossier_engine.yamlfast import load as yload
+
 DIR = Path(__file__).resolve().parents[2] / 'rulepacks' / 'vocab'
 ROUTES = [{'id': 'oral', 'en': 'Oral', 'ar': 'فموي'}, {'id': 'topical', 'en': 'Topical (skin)', 'ar': 'موضعي (جلد)'}, {'id': 'parenteral', 'en': 'Parenteral (injection)', 'ar': 'حقن'},
           {'id': 'ophthalmic', 'en': 'Ophthalmic', 'ar': 'عين'}, {'id': 'inhalation', 'en': 'Inhalation / nasal', 'ar': 'استنشاق / أنف'}, {'id': 'other', 'en': 'Other', 'ar': 'أخرى'}]
@@ -33,7 +35,7 @@ _COUNTRIES = None
 def forms():
     global _FORMS
     if _FORMS is None:
-        _FORMS = yaml.safe_load((DIR / 'forms.yaml').read_text(encoding='utf-8')) or []
+        _FORMS = yload((DIR / 'forms.yaml').read_text(encoding='utf-8')) or []
     return _FORMS
 
 
