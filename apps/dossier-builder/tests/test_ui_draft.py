@@ -68,6 +68,7 @@ def test_templates_and_make_it_for_me(server):
         page.click('#dpSave')
         page.wait_for_function("() => document.querySelector('#toast').textContent.includes('المسودة اتضافت')")
         page.wait_for_function("() => document.querySelector('#dBody') && document.querySelector('#dBody').textContent.includes('P-01-draft.docx')")
+        page.wait_for_function("() => /اللي لسه ناقص|احفظ مسودة Word/.test(document.querySelector('#dBody').textContent)", timeout=20000)      # the item's panel is drawn after the list (it comes back faster since the rule packs are read faster)
         body = page.inner_text('#dBody')
         assert 'اللي لسه ناقص' in body or 'احفظ مسودة Word' in body
         docs = call(server, f'/api/dossiers/{did}/board')
