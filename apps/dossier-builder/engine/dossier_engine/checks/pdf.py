@@ -1,13 +1,21 @@
 """PDF technical checks. Each finding: rule, severity (block / warn), message
-(en/ar), action, source. Severity can depend on the document class, e.g. a scan
-without OCR is accepted for third-party certificates (EU/EG exception list) but
-blocks for company documents (NP.CAPP.065 general note 4: «searchable PDF»)."""
+(en/ar), action, source. A PDF without text blocks whatever the document is:
+NP.CAPP.065 v5 general note 4 wants every submitted document a scanned and
+searchable PDF (the eCTD draft's list of scans accepted without OCR is not in
+force). The program does no OCR; the text layer is made when scanning."""
 import os, re
 from dataclasses import dataclass, field
 
 LOCKED = {'third_party_certificate', 'eda_document', 'executed_record', 'signed_scan'}
-SCAN_OK = {'third_party_certificate', 'eda_document', 'executed_record', 'signed_scan'}
 NAME_OK = re.compile(r'^[a-z0-9][a-z0-9-]*\.pdf$')
+NO_TEXT_EN = ('No text: the pages are images only. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). '
+              'Make the text layer when scanning — the scanner\'s software, Acrobat, or a phone app that saves searchable PDFs — and upload it again.')
+NO_TEXT_AR = ('الملف ده من غير نص: صفحاته صور بس. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). '
+              'اعمل النص وقت المسح — من برنامج السكانر أو Acrobat أو تطبيق موبايل بيحفظ PDF قابل للبحث — وارفعه تاني.')
+NO_TEXT_IMAGE_EN = ('An image, not a document. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4): scan it, '
+                    'or photograph it with an app that saves searchable PDFs, and upload the PDF.')
+NO_TEXT_IMAGE_AR = ('ده صورة مش مستند. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4): امسحه بالسكانر، '
+                    'أو صوّره بتطبيق بيحفظ PDF قابل للبحث، وارفع الـ PDF.')
 
 
 @dataclass
@@ -103,12 +111,16 @@ def check(path, doc_class='company_technical', ectd_name=False):
                 eff = max(ver, (int(mv[1]), int(mv[2])))
         r.info['version'] = f'{eff[0]}.{eff[1]}'
         if eff < (1, 4):
-            add(Finding('EG-PF-16.1', 'block', f'PDF version {eff[0]}.{eff[1]} — EDA requires 1.4 to 1.7.',
-                        f'إصدار PDF {eff[0]}.{eff[1]} — المطلوب من 1.4 لـ 1.7.',
-                        'auto_fix', 'EG eCTD TG draft; EU VC 16.1'))
+            signed = b'/ByteRange' in open(path, 'rb').read()
+            add(Finding('EG-PF-16.1', 'warn' if signed else 'block',
+                        f'PDF version {eff[0]}.{eff[1]} — eCTD takes 1.4 to 1.7 (EDA eCTD technical guidance, draft).'
+                        + (' Digitally signed: the version line is left as it is, changing it would break the signature.' if signed else ''),
+                        f'إصدار PDF {eff[0]}.{eff[1]} — الـ eCTD بياخد من 1.4 لـ 1.7 (مسودة الهيئة).'
+                        + (' الملف موقّع رقميًا: رقم الإصدار متساب زي ما هو، تغييره يبوّظ التوقيع.' if signed else ''),
+                        'none' if signed else 'auto_fix', 'EG eCTD technical guidance v1.0/2026 (DRAFT, not in force); EU VC 16.1'))
         elif eff > (1, 7):
-            add(Finding('EG-BP-16.BP1', 'warn', f'PDF version {eff[0]}.{eff[1]}; 1.4–1.7 recommended.',
-                        f'إصدار PDF {eff[0]}.{eff[1]}؛ المفضل 1.4–1.7.', 'auto_fix', 'EG eCTD TG draft (BP1)'))
+            add(Finding('EG-BP-16.BP1', 'warn', f'PDF version {eff[0]}.{eff[1]}; eCTD prefers 1.4–1.7 (EDA eCTD technical guidance, draft).',
+                        f'إصدار PDF {eff[0]}.{eff[1]}؛ الـ eCTD بيفضّل 1.4–1.7 (مسودة الهيئة).', 'none', 'EG eCTD technical guidance v1.0/2026 (DRAFT)'))
         try:
             has_outline = bool(rd.outline)
         except Exception:
@@ -118,26 +130,18 @@ def check(path, doc_class='company_technical', ectd_name=False):
             add(Finding('NTA065-BM', 'warn', f'{pages} pages and no bookmarks; long documents need bookmarks to navigate.',
                         f'{pages} صفحة من غير bookmarks؛ المستندات الطويلة لازم يبقى فيها bookmarks.',
                         'auto_fix', 'EG eCTD TG draft (bookmarks for documents with a TOC); ICH eCTD SPEC App. 7'))
-        text_pages = 0
-        for pg in rd.pages[:min(pages, 5)]:
+        chars = 0                                        # the same measure as the upload gate: some text in the first 12 pages
+        for pg in rd.pages[:min(pages, 12)]:
             try:
-                if (pg.extract_text() or '').strip():
-                    text_pages += 1
+                chars += len(re.sub(r'\s', '', pg.extract_text() or ''))
             except Exception:
                 pass
-        r.info['text_pages_sampled'] = text_pages
-        if pages and text_pages == 0:
-            if doc_class in SCAN_OK:
-                add(Finding('EG-BP-E23', 'warn', 'Scanned without a text layer. Accepted for this document type; '
-                            'an OCR layer can be added without changing the page image.',
-                            'مسكان من غير طبقة نص. مقبول للنوع ده؛ ممكن نضيف طبقة OCR من غير ما نغيّر صورة الصفحة.',
-                            'auto_fix', 'NP.CAPP.065 general note 4; EU/EG scan exception list'))
-            else:
-                add(Finding('NTA065-N4', 'block', 'Not text-searchable. EDA requires searchable PDFs; '
-                            'rebuild from the source or add OCR.',
-                            'الملف مش قابل للبحث. الهيئة طالبة PDF قابل للبحث؛ اعمله من المصدر أو ضيف OCR.',
-                            'rebuild' if doc_class in ('generated', 'company_letter') else 'auto_fix',
-                            'NP.CAPP.065 v5 general note 4'))
+            if chars >= 20:
+                break
+        r.info['searchable'] = chars >= 20
+        if pages and chars < 20:
+            add(Finding('NTA065-N4', 'block', NO_TEXT_EN, NO_TEXT_AR,
+                        'rebuild' if doc_class in ('generated', 'company_letter') else 'user_fix', 'NP.CAPP.065 v5 general note 4'))
     except Exception as e:  # pypdf could not parse
         add(Finding('EG-PF-16.5', 'block', f'The PDF cannot be read ({type(e).__name__}).', 'الملف مش بيتقري (تالف).',
                     're_obtain' if doc_class in LOCKED else 'user_fix', 'EU VC 16.5'))

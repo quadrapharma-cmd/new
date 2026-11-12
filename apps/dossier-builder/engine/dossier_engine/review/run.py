@@ -87,8 +87,8 @@ def assess_question(q, ctx):
         if len(found) >= need:
             return _finding(q, 'adequate', hits[:8], _bi(f"Found {len(found)} of {len(ev_spec.get('keywords') or [])} indicators in {pages_read} page(s).", f"وُجد {len(found)} من {len(ev_spec.get('keywords') or [])} مؤشراً في {pages_read} صفحة."), 'text')
         if not readable:
-            return _finding(q, 'not_assessable', doc_ev, _bi('Scanned without a text layer: ' + ', '.join(scanned) + '. Run OCR and re-assess.', 'ممسوح بدون طبقة نصية: ' + '، '.join(scanned) + '. شغّل OCR ثم أعد التقييم.'), 'text',
-                            extra={'needs_ocr': True})
+            return _finding(q, 'not_assessable', doc_ev, _bi('Scanned without a text layer: ' + ', '.join(scanned) + '. EDA requires searchable PDFs: replace it with a copy made searchable when scanning, then re-assess.', 'ممسوح بدون طبقة نصية: ' + '، '.join(scanned) + '. الهيئة طالبة PDF قابل للبحث: استبدله بنسخة اتعمل لها OCR وقت المسح، وبعدين أعد التقييم.'), 'text',
+                            extra={'needs_text': True})
         detail = _bi(f"Searched {pages_read} page(s) of {len(readable)} document(s) for: {', '.join(ev_spec.get('keywords') or [])} — found {len(found)} (need {need})." + (f" Unreadable scans: {', '.join(scanned)}." if scanned else ''),
                      f"بُحث في {pages_read} صفحة من {len(readable)} مستند عن: {'، '.join(ev_spec.get('keywords') or [])} — وُجد {len(found)} (المطلوب {need})." + (f" مسوحات غير مقروءة: {'، '.join(scanned)}." if scanned else ''))
         return _finding(q, 'deficient', hits + doc_ev[:4], detail, 'text')

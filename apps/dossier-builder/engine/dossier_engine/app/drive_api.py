@@ -1,4 +1,5 @@
 """Drive source endpoints: settings (admin), list a folder link, read a file (proxied bytes), stage files into a dossier."""
+from .store import StoreError
 from fastapi import HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel
@@ -91,6 +92,10 @@ def install(app, st):
             except _drive.DriveError as e:
                 out.append({'id': f.get('id'), 'error': e.en})
                 continue
-            doc = astorage.stage_document(st, did, fname, data, meta={'from_drive': f.get('id')})
+            try:
+                doc = astorage.stage_document(st, did, fname, data, meta={'from_drive': f.get('id')})
+            except StoreError as e:                         # no text of its own (the upload gate): said for this file, the others go on
+                out.append({'id': f.get('id'), 'filename': fname, 'error': e.en, 'error_ar': e.ar, 'code': e.code})
+                continue
             out.append({'id': f.get('id'), 'doc_id': doc['id'], 'filename': fname, 'bytes': len(data)})
         return out

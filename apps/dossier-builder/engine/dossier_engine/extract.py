@@ -161,10 +161,9 @@ def is_word(filename, data=None):
 
 # ---- a file is read once: its reading is kept by the file's SHA-256, in memory and in the workspace's cache folder
 READ_DIR = None            # set by the app (workspace/cache/text): a restart, or the next item's template, does not read the file again
-READ_FORMAT = 2            # the reader's own version: raise it when what a reading holds changes, so that readings kept on disk by an older reader are made again
-_READ = {}                 # (sha, extension, max_pages, ocr, ocr_pages) → the reading
+READ_FORMAT = 3            # the reader's own version: raise it when what a reading holds changes, so that readings kept on disk by an older reader are made again (3: no OCR)
+_READ = {}                 # (sha, extension, max_pages) → the reading
 _READ_MAX = 300
-_KEPT = {}                 # sha → (text, pages it covers | None = the whole file): the text an earlier reading gave a file that has none of its own (an OCR of a scan)
 
 
 def _sha(data):
@@ -176,67 +175,10 @@ def _cache_file(key):
     return None if READ_DIR is None else Path(READ_DIR) / (f'r{READ_FORMAT}-' + '-'.join(str(k) for k in key) + '.json')
 
 
-def _keep(sha, text, pages=None):
-    if len(_KEPT) >= _READ_MAX and sha not in _KEPT:
-        _KEPT.pop(next(iter(_KEPT)))
-    _KEPT[sha] = (text, pages)
-    if READ_DIR is not None:
-        try:
-            Path(READ_DIR).mkdir(parents=True, exist_ok=True)
-            (Path(READ_DIR) / f'{sha}.kept.json').write_text(json.dumps({'text': text, 'pages': pages}, ensure_ascii=False), encoding='utf-8')
-        except OSError:
-            pass
-
-
-def _kept(sha):
-    if sha in _KEPT:
-        return _KEPT[sha]
-    if READ_DIR is not None:
-        try:
-            f = Path(READ_DIR) / f'{sha}.kept.json'
-            if f.exists():
-                j = json.loads(f.read_text(encoding='utf-8'))
-                if j.get('text'):
-                    _KEPT[sha] = (j['text'], j.get('pages'))
-                    return _KEPT[sha]
-        except (OSError, ValueError):
-            pass
-    return None, None
-
-
-def _forget(sha):
-    """The readings made of a file before its text was known are made again."""
-    for k in [k for k in _READ if k[0] == sha]:
-        _READ.pop(k, None)
-    if READ_DIR is not None:
-        try:
-            for f in Path(READ_DIR).glob(f'r*-{sha}-*.json'):
-                f.unlink(missing_ok=True)
-        except OSError:
-            pass
-
-
-def remember_text(data_or_sha, text):
-    """Keep the reading the page made of a scan (its OCR, the model's transcription) for the file itself: wherever the file's
-    text is needed later — the kind rule, a template's base documents, the Assistant — it is there without another OCR."""
-    text = (text or '').strip()
-    if len(re.sub(r'\s', '', text)) < 20:
-        return
-    sha = data_or_sha if isinstance(data_or_sha, str) else _sha(data_or_sha)
-    _keep(sha, text, None)
-    _forget(sha)
-
-
-def kept_text(sha):
-    return _kept(sha)[0]
-
-
-def read_text(name, data, max_pages=12, ocr=True, ocr_pages=4):
-    """What one uploaded file says — read once: the same bytes asked the same way give the kept reading (see _read_text). The
-    OCR of a scan is kept with the pages it covers: a later question is answered from it when it covers what is asked (a
-    question about fewer pages gets the fuller reading already made), and the file is OCR-ed again only for more pages."""
+def read_text(name, data, max_pages=12):
+    """What one uploaded file says — read once: the same bytes asked the same way give the kept reading (see _read_text)."""
     data = data or b''
-    key = (_sha(data), (name or '').lower().rsplit('.', 1)[-1][:6] if '.' in (name or '') else '', max_pages, int(bool(ocr)), ocr_pages)
+    key = (_sha(data), (name or '').lower().rsplit('.', 1)[-1][:6] if '.' in (name or '') else '', max_pages)
     if key in _READ:
         return dict(_READ[key])
     f = _cache_file(key)
@@ -247,21 +189,11 @@ def read_text(name, data, max_pages=12, ocr=True, ocr_pages=4):
                 return dict(_READ[key])
         except (OSError, ValueError):
             pass
-    kept, covers = _kept(key[0])                                      # the reading already made of this file (the page's OCR, or this engine's own)
-    enough = kept is not None and (covers is None or covers >= (ocr_pages if ocr else 0))
-    out = _read_text(name, data, max_pages, ocr and not enough, ocr_pages)
-    if out.get('scanned') and out.get('ocr'):                         # an OCR done once answers every later question it covers, however it is asked
-        pages = out.get('pages') or 1
-        _keep(key[0], out['text'], None if ocr_pages >= pages else ocr_pages)
-        _forget(key[0])
-    elif out.get('scanned') and kept:
-        out.update(text=arabic.prepare(kept), ocr=True, ocr_where='kept', arabic=arabic.has_arabic(kept))
-    if out.get('scanned') and not out.get('ocr'):                     # a scan nobody could read yet: nothing to keep — the next reader may have OCR
-        return dict(out)
+    out = _read_text(name, data, max_pages)
     if len(_READ) >= _READ_MAX:
         _READ.pop(next(iter(_READ)))
     _READ[key] = dict(out)
-    if f is not None and (out.get('ocr') or len(data) > 200000):      # what was costly to get is also kept on disk
+    if f is not None and len(data) > 200000:                          # a large file's reading is kept on disk too
         try:
             f.parent.mkdir(parents=True, exist_ok=True)
             f.write_text(json.dumps(out, ensure_ascii=False), encoding='utf-8')
@@ -270,29 +202,33 @@ def read_text(name, data, max_pages=12, ocr=True, ocr_pages=4):
     return dict(out)
 
 
-def _read_text(name, data, max_pages=12, ocr=True, ocr_pages=4):
-    """What one uploaded file says: a PDF's text layer, or OCR of its pages when it is a scan (tesseract ara+eng, local
-    computers only), an office file's text (Word, Excel, PowerPoint, OpenDocument, RTF, HTML, text: old formats and new — officefiles), or OCR of an image. `scanned` = image-only (the AI layer then
-    reads the page images), `ocr` = the text came from OCR, `kind_of_file` = pdf | docx | image | xlsx | xls | pptx | … | other."""
+def has_text(name, data):
+    """The upload gate's question — NP.CAPP.065 v5 general note 4: «All submitted documents should be scanned and searchable PDF
+    files». None when the file has text of its own (a PDF with a text layer, Word, Excel…); else why not: 'image' (a photo or an
+    image file) or 'scan' (a PDF whose pages are images only). The program does no OCR: the text layer is made when the paper is
+    scanned (the scanner's software, Acrobat, a phone app that saves searchable PDFs)."""
+    r = read_text(name, data)
+    if r['kind_of_file'] == 'image':
+        return 'image'
+    if r['kind_of_file'] == 'pdf' and r['scanned']:
+        return 'scan'
+    return None
+
+
+def _read_text(name, data, max_pages=12):
+    """What one uploaded file says: a PDF's text layer, or an office file's text (Word, Excel, PowerPoint, OpenDocument, RTF, HTML,
+    text: old formats and new — officefiles). No OCR anywhere: a PDF whose pages are images only, or an image, gives no text and is
+    marked `scanned`. `kind_of_file` = pdf | docx | image | xlsx | xls | pptx | … | other."""
     low = (name or '').lower()
-    out = {'pages': 0, 'text': '', 'scanned': False, 'ocr': False, 'kind_of_file': 'other'}
+    out = {'pages': 0, 'text': '', 'scanned': False, 'kind_of_file': 'other'}
     data = data or b''
     what = officefiles.sniff(name, data)                 # what the file is, by its bytes
     img = arabic.image_type(data)
     if data[:4] == b'%PDF' or what == 'pdf' or (low.endswith('.pdf') and what in ('other', 'text')):
-        pt = pdf_text(data, max_pages)
-        out.update(pt, kind_of_file='pdf')
-        if pt['scanned'] and ocr:
-            txt = arabic.ocr_pdf(data, pages=min(pt['pages'] or 1, ocr_pages))
-            if len(re.sub(r'\s', '', txt)) >= 20:
-                out.update(text=txt, ocr=True)
-    elif img or what == 'image':                         # an image of any kind (imagefiles): OCR where the machine can, page by page for a TIFF
+        out.update(pdf_text(data, max_pages), kind_of_file='pdf')
+    elif img or what == 'image':                         # an image of any kind (imagefiles): no text of its own
         fmt = imagefiles.image_format(data)
         out.update(pages=imagefiles.tiff_pages(data) if fmt == 'tiff' else 1, scanned=True, kind_of_file='image')
-        if ocr and img:
-            txt = arabic.ocr_image_bytes(data, imagefiles.EXT.get(fmt, '.png'), pages=ocr_pages)
-            if len(re.sub(r'\s', '', txt)) >= 20:
-                out.update(text=txt, ocr=True)
     elif what in ('docx', 'doc'):                        # Word, new or old: its paragraphs and tables
         out.update(pages=1, text=docx_text(data) if what == 'docx' else msdoc.doc_text(data), kind_of_file='docx')
     elif what in officefiles.OFFICE:                     # Excel, PowerPoint, OpenDocument, RTF, HTML, plain text — old formats and new
@@ -942,7 +878,7 @@ def read_files(files):
         pt = read_text(name, data)
         kind = content_kind(pt['text'])
         items.append(fields_for(kind, name, pt['text']))
-        texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': pt['pages'], 'scanned': pt['scanned'], 'ocr': pt['ocr'], 'file': pt['kind_of_file'],
+        texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': pt['pages'], 'scanned': pt['scanned'], 'file': pt['kind_of_file'],
                       'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:TEXT_BACK], 'found': found_fields(items[-1])})
     return {'files': texts, 'rules': merge(items)}
 
@@ -1007,18 +943,15 @@ def kind_homes(kind, pack=None, text=None, product=None, substances=()):
 
 def kind_check(req_id, filename, data_or_text, known_kind=None, pack=None):
     """Is this file the document the item expects? → {'kind', 'ok', 'homes', 'unread'}. The file is judged by what is written inside
-    it, never by its name: its text layer, or — a scan — the reading already made of it (`known_kind`, the text passed in) or an OCR
-    of its first page where this machine can. Unknown kinds and kinds without a fixed home pass; a recognised kind whose home items
+    it, never by its name: its text layer, or — a file with no text — the kind an earlier reading gave it (`known_kind`). Unknown kinds and kinds without a fixed home pass; a recognised kind whose home items
     do not include the target fails (a stability approval in the pricing slot). `unread`: nothing could be read, so nothing was judged."""
     if isinstance(data_or_text, str):
         text = data_or_text
     else:
-        text = read_text(filename, data_or_text, max_pages=2, ocr=False)['text']
-        if not re.sub(r'\s', '', text) and known_kind not in KIND_HOME and arabic.ocr_available():
-            text = read_text(filename, data_or_text, max_pages=1, ocr=True, ocr_pages=1)['text']      # an image-only file: read its first page
+        text = read_text(filename, data_or_text, max_pages=2)['text']
     kind = content_kind(text)
     if kind == 'other' and known_kind in KIND_HOME:
-        kind = known_kind                                   # the file says nothing itself (a scan): an earlier reading of it does
+        kind = known_kind                                   # the file says nothing itself: an earlier reading of it does
     homes = kind_homes(kind, pack, text)
     family = {h for k in TECHNICAL for h in kind_homes(k, pack)} if kind in TECHNICAL else set()
     return {'kind': kind, 'homes': homes, 'ok': kind == 'other' or not homes or req_id in homes or req_id in family, 'kind_name': KIND_NAMES.get(kind),
@@ -1044,14 +977,15 @@ def found_fields(reading):
 
 
 def read_texts(files):
-    """Like read_files, for texts the browser already extracted (its own OCR of scans): files = [{filename, text, pages?, scanned?, ocr?, file?}]."""
+    """Like read_files, for texts already read (the page sends back what the engine read, to merge again without reading the files
+    again): files = [{filename, text, pages?, scanned?, file?}]."""
     items, texts = [], []
     for f in files:
         name, text = f.get('filename') or 'document', f.get('text') or ''
         kind = content_kind(text)
         items.append(fields_for(kind, name, text))
-        texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': int(f.get('pages') or 0), 'scanned': bool(f.get('scanned')), 'ocr': bool(f.get('ocr')),
-                      'ocr_where': f.get('ocr_where'), 'file': f.get('file') or ('pdf' if name.lower().endswith('.pdf') else 'other'), 'arabic': arabic.has_arabic(text),
+        texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': int(f.get('pages') or 0), 'scanned': bool(f.get('scanned')),
+                      'file': f.get('file') or ('pdf' if name.lower().endswith('.pdf') else 'other'), 'arabic': arabic.has_arabic(text),
                       'chars': len(re.sub(r'\s', '', text)), 'text': text[:TEXT_BACK], 'found': found_fields(items[-1])})
     return {'files': texts, 'rules': merge(items)}
 
@@ -1065,7 +999,7 @@ def ai_prompt(texts, target='dossier'):
             '(certificates, licences, EDA letters such as the registration notification «إخطار تسجيل», CoAs, specifications, application '
             'forms, leaflets) and extract the facts needed to register a pharmaceutical product. Documents are often in Arabic: read '
             'Arabic labels (اسم المستحضر، المادة الفعالة، الشكل الصيدلي، الشركة المنتجة، صاحب الترخيص، رقم الإخطار، التاريخ، ساري حتى، '
-            'سعر الجمهور، العبوة، مدة الصلاحية) and Arabic-Indic digits; text marked OCR may contain errors, trust the page images. Reply '
+            'سعر الجمهور، العبوة، مدة الصلاحية) and Arabic-Indic digits. Reply '
             'with ONLY one JSON object with exactly these keys (omit a key or value you cannot find; never guess; copy numbers and names '
             'exactly as printed, keep Arabic names in Arabic and add the Latin name when printed; dates as YYYY-MM-DD; INN in English). '
             'EDA forms are label:value tables. In the Final Registration License, «Active Ingredient(s) & Strength(s)» lists one active substance per line '
@@ -1079,6 +1013,6 @@ def ai_prompt(texts, target='dossier'):
             + '\nAlso add "sources": {"<key>": "<filename>"} naming the document each top-level section came from.\n\nDOCUMENTS:\n')
     body = ''
     for i, f in enumerate(texts, 1):
-        body += f"\n=== Document {i}: {f['filename']} (kind guess: {f['kind']}, {f['pages']} pages{', SCANNED — read its page images' if f.get('scanned') else ''}{', text below is OCR' if f.get('ocr') else ''}) ===\n"
+        body += f"\n=== Document {i}: {f['filename']} (kind guess: {f['kind']}, {f['pages']} pages{', SCANNED — no text layer' if f.get('scanned') else ''}) ===\n"
         body += (f.get('text') or '(no text layer)')[:14000] + '\n'
     return head + body

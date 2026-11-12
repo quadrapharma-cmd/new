@@ -67,7 +67,7 @@ SPECS = [
                                            'leaflet english|non_english, dosage_specifics [], apis [{name, manufacturer, option}]). Merged over the current profile; '
                                            'the program re-resolves which items are required.',
      'input_schema': _obj('profile fields + why', {'profile': ANY, 'rationale': S('why, with the document that says so')}, ['profile', 'rationale'])},
-    {'name': 'read_document', 'description': 'Read a stored document: returns its text (text layer or OCR) and ATTACHES the requested pages as a PDF so you can '
+    {'name': 'read_document', 'description': 'Read a stored document: returns its text (its text layer) and ATTACHES the requested pages as a PDF so you can '
                                              'see them (scans, tables, stamps). Read at most 20 pages per call; use pages like "1-5" or "6-10" for long files. '
                                              'Your earlier saved readings of the document are returned first — do not re-read what you already noted.',
      'input_schema': _obj('document and pages', {'doc_id': S('document id from get_board / get_slot'), 'pages': S('page range "a-b" (1-based); omit for the first 20 pages')},
@@ -337,7 +337,7 @@ def t_read_document(ctx, doc_id, pages=None):
         part = _subpdf(data, a, b) if (a, b) != (1, n) else data
         rt = extract.read_text(name, part, max_pages=MAX_PAGES)
         text = rt['text']
-        head.append(f'pages {a}-{b} of {n}' + (' (scan: no text layer' + (', OCR text below' if rt['ocr'] else ', read the attached pages') + ')' if rt['scanned'] else ''))
+        head.append(f'pages {a}-{b} of {n}' + (' (scan: no text layer, read the attached pages)' if rt['scanned'] else ''))
         if len(part) <= MAX_ATTACH:
             attach.append({'type': 'document', 'title': f'{name} p.{a}-{b}', 'source': {'type': 'base64', 'media_type': 'application/pdf', 'data': base64.standard_b64encode(part).decode()}})
         else:
@@ -354,7 +354,7 @@ def t_read_document(ctx, doc_id, pages=None):
             im = imagefiles.for_model(data)                 # HEIC, TIFF, BMP… are converted: the API takes JPEG, PNG, GIF, WebP
             if im:
                 attach.append({'type': 'image', 'source': {'type': 'base64', 'media_type': im[0], 'data': base64.standard_b64encode(im[1]).decode()}})
-            head.append('image: attached' if im else f'image ({mt}): this machine cannot convert it for viewing; OCR text below if any')
+            head.append('image: attached' if im else f'image ({mt}): this machine cannot convert it for viewing')
         else:
             raise ToolError('unsupported file type')
     if len(text) > MAX_TEXT:

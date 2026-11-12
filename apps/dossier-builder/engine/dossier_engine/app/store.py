@@ -110,7 +110,7 @@ class Store:
 
     def __init__(self, root):
         self.root = Path(root)
-        self.claim_readings()                                # a file is read (and OCR-ed) once: its reading is kept by its SHA-256
+        self.claim_readings()                                # a file is read once: its reading is kept by its SHA-256
         (self.root / 'blobs').mkdir(parents=True, exist_ok=True)
         self._local = threading.local()
         self.db.execute('pragma journal_mode=' + ('delete' if sys.platform == 'emscripten' else 'wal'))   # no shared memory in the browser
@@ -354,9 +354,20 @@ class Store:
         return out
 
     # ---------------- documents
-    def add_document(self, did, slot_id, filename, data, title=None, meta=None, supersede=None, doc_class=None, text=None, kind=None):
-        """text / kind: what an earlier reading of this file gave (the wizard's OCR of a scan) — the kind rule judges the file by it
-        when the file itself has no text layer."""
+    def refuse_without_text(self, filename, data):
+        """The upload gate — NP.CAPP.065 v5 general note 4: every document a scanned and searchable PDF. A file without text of its own
+        (a PDF whose pages are images only, an image) is not stored: the program does no OCR, the text layer is made when scanning."""
+        from .. import extract as _extract
+        from ..checks.pdf import NO_TEXT_EN, NO_TEXT_AR, NO_TEXT_IMAGE_EN, NO_TEXT_IMAGE_AR
+        why = _extract.has_text(filename, data)
+        if why:
+            en, ar = (NO_TEXT_IMAGE_EN, NO_TEXT_IMAGE_AR) if why == 'image' else (NO_TEXT_EN, NO_TEXT_AR)
+            raise StoreError('E-NOTEXT', f'{filename}: {en}', f'{filename}: {ar}', why=why, filename=filename)
+
+    def add_document(self, did, slot_id, filename, data, title=None, meta=None, supersede=None, doc_class=None, kind=None):
+        """kind: the kind an earlier reading gave this file (the wizard's) — the kind rule uses it when the file's own words say nothing.
+        A file without text is refused (refuse_without_text); a PDF 1.0–1.3 is stored with its version line set to 1.7 (fixes.set_version_17:
+        every other byte the same; not for a digitally signed file) and says so in meta['converted']."""
         slots = {s.slot_id: s for s in self.slots(did)}
         if slot_id not in slots:
             raise StoreError('E-SLOT', f'Unknown requirement slot {slot_id}.', 'بند غير معروف.')
@@ -371,18 +382,16 @@ class Store:
                 raise StoreError('E-SIGNED-FOR', 'The signed copy must belong to an unsigned draft of the same section.',
                                  'النسخة الموقّعة لازم تخص مسودة غير موقّعة في نفس القسم.')
             doc_class, supersede = 'signed_scan', draft['id']
-        from .. import extract as _extract, imagefiles as _imagefiles
-        if _imagefiles.image_format(data):                # an image of any kind: the dossier takes PDF, so it is wrapped into one (pixels untouched for a JPEG)
-            pdf = _imagefiles.image_pdf(data, title or filename)
-            if pdf:
-                meta['from_image'] = filename
-                filename = (filename.rsplit('.', 1)[0] if '.' in filename[-6:] else filename) + '.pdf'
-                data = pdf
+        from .. import extract as _extract, fixes as _fixes
+        self.claim_readings()
+        if not meta.get('fixed_from') and not meta.get('external'):      # the upload gate (a fixed copy of a stored document passed it already)
+            self.refuse_without_text(filename, data)
+        v17 = _fixes.set_version_17(data) if data[:1024].find(b'%PDF-1.') >= 0 else None
+        if v17:                                       # PDF 1.0–1.3: only the version line changes (eCTD takes 1.4–1.7)
+            meta['converted'] = list(meta.get('converted') or []) + ['pdf_version_1.7']
+            data = v17
         sha = self.put_blob(data)
-        if text:                                       # the reading the page made of this file (its OCR of a scan) stays with the file
-            self.claim_readings()
-            _extract.remember_text(sha, text)
-        family = _extract.source_family(filename, data) or ('word' if filename.lower().endswith('.docx') else 'image' if _imagefiles.image_format(data) else None)
+        family = _extract.source_family(filename, data) or ('word' if filename.lower().endswith('.docx') else None)
         if family:                                      # a source file (Word, Excel, PowerPoint, text — old format or new): the PDF the user uploads replaces it
             en, ar = SOURCE_DRAFT[family]
             rep = Report(str(self.blob_path(sha)), [Finding('DOCX-DRAFT', 'warn', en, ar, 'user_fix', 'NP.CAPP.065 v5 general note 4 (PDF)')])
@@ -403,7 +412,7 @@ class Store:
                 pass
         elif not meta.get('generated') and not meta.get('signed_for') and not meta.get('amended_from'):      # the kind rule: is this file the document the item expects? (PDF, image or Word)
             try:
-                kc = _extract.kind_check(s.req_id, filename, text or data, known_kind=kind, pack=self.pack(self.dossier(did)['pack']))
+                kc = _extract.kind_check(s.req_id, filename, data, known_kind=kind or meta.get('kind'), pack=self.pack(self.dossier(did)['pack']))
             except Exception:
                 kc = {'ok': True}
             if not kc.get('ok'):
@@ -479,21 +488,6 @@ class Store:
         self.audit(did, 'document.fixed' if new else 'document.fix_refused', doc=doc_id, new=new and new['id'],
                    done=[x['op'] for x in r['done']], refused=[x['op'] for x in r['refused']])
         return {'document': new, 'done': r['done'], 'refused': r['refused']}
-
-    def add_ocr_layer(self, did, doc_id, page_pdfs, where='browser'):
-        """A new version with an invisible text layer over the unchanged page images (the browser's OCR, or any OCR that
-        produced text-only pages). Allowed for third-party evidence too: the page image is not altered."""
-        from .. import fixes
-        d = self.document(doc_id)
-        if d['dossier_id'] != did or d['state'] != 'current':
-            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
-        if d['meta'].get('external') or not d['filename'].lower().endswith('.pdf'):
-            raise StoreError('E-NOT-PDF', 'Only a stored PDF can receive a text layer.', 'طبقة النص بتتضاف لملف PDF مخزّن بس.')
-        data = fixes.overlay_text_pages(self.blob_path(d['sha256']).read_bytes(), page_pdfs)
-        new = self.add_document(did, d['slot_id'], d['filename'], data, d['title'],
-                                {**d['meta'], 'fixed_from': doc_id, 'fixes': ['add_ocr_layer'], 'ocr_where': where}, supersede=doc_id, doc_class=d['doc_class'])
-        self.audit(did, 'document.fixed', doc=doc_id, new=new['id'], done=['add_ocr_layer'], refused=[], where=where)
-        return new
 
     # ---------------- submission history (lifecycle, P3)
     def record_submission(self, did, output, seq, activity, suuid, envelope, history, path):
@@ -608,7 +602,7 @@ class Store:
         self.audit(did, 'document.moved', doc=doc_id, to=slot_id, new_doc=new['id'])
         return new
 
-    # ---------------- intake drafts: the wizard's work in progress (fields, files, readings incl. OCR text), so a refresh loses nothing
+    # ---------------- intake drafts: the wizard's work in progress (fields, files, readings), so a refresh loses nothing
     def draft_save(self, draft_id, state):
         now = time.time()
         self.db.execute('insert into intake_draft(id, state, created, updated) values (?,?,?,?) on conflict(id) do update set state=excluded.state, updated=excluded.updated',

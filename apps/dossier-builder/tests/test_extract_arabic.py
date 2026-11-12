@@ -1,5 +1,6 @@
-"""Intake on Arabic EDA documents: a registration notification («إخطار تسجيل») as a text PDF, as a scan (OCR) and as a photo.
-The fixture is made with python-docx + LibreOffice (skipped where soffice is missing); OCR tests need tesseract with Arabic."""
+"""Intake on Arabic EDA documents: a registration notification («إخطار تسجيل») as a text PDF is read; as a scan or a photo it is said
+to have no text (no OCR: such a file is refused at the upload gate). The fixture is made with python-docx + LibreOffice (skipped where
+soffice is missing)."""
 import io, shutil, subprocess
 import pytest
 from fastapi.testclient import TestClient
@@ -72,20 +73,14 @@ def notice_scan(notice_pdf, tmp_path_factory):
     return d / 'scan.pdf', png
 
 
-def test_scanned_notice_is_read_by_ocr_when_available(notice_scan):
+def test_a_scanned_notice_is_said_to_have_no_text(notice_scan):
     scan_pdf, png = notice_scan
     r = extract.read_files([('scan.pdf', scan_pdf.read_bytes()), ('photo.png', png.read_bytes())])
     a, b = r['files']
     assert a['scanned'] and a['file'] == 'pdf' and b['scanned'] and b['file'] == 'image' and b['pages'] == 1
-    if not (arabic.ocr_available() and 'ara' in arabic.ocr_langs()):
-        assert not a['ocr'] and r['rules']['product'] == {}
-        pytest.skip('tesseract with Arabic not installed — scans go to the AI layer')
-    assert a['ocr'] and b['ocr'] and a['kind'] == 'licence'
-    f = r['rules']
-    assert f['product']['name'].startswith('إكزامبلول') and f['product']['dosage_form_en'] == 'film-coated tablet'
-    assert f['apis'][0]['name'] == 'Paracetamol' and f['registration']['reg_no'] == '34567/2025'
-    assert f['documents'][0]['valid_until'] == '2030-03-14' and f['envelope']['applicant'].startswith('شركة إكزامبل')
-    assert 'text below is OCR' in extract.ai_prompt(r['files'])
+    assert a['chars'] == 0 and b['chars'] == 0 and 'ocr' not in a and r['rules']['product'] == {}         # no OCR: nothing is guessed from pictures
+    assert extract.has_text('scan.pdf', scan_pdf.read_bytes()) == 'scan' and extract.has_text('photo.png', png.read_bytes()) == 'image'
+    assert 'SCANNED — no text layer' in extract.ai_prompt(r['files'])
 
 
 def test_extract_endpoint_accepts_images_and_reports_what_was_read(tmp_path):
@@ -94,4 +89,4 @@ def test_extract_endpoint_accepts_images_and_reports_what_was_read(tmp_path):
     r = c.post('/api/extract', files=[('files', ('IMG_0001.png', io.BytesIO(png), 'image/png'))])
     assert r.status_code == 200, r.text
     f = r.json()['files'][0]
-    assert f['file'] == 'image' and f['scanned'] and f['pages'] == 1 and f['chars'] == 0 and 'ocr' in f
+    assert f['file'] == 'image' and f['scanned'] and f['pages'] == 1 and f['chars'] == 0 and 'ocr' not in f

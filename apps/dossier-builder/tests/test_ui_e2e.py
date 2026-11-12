@@ -68,14 +68,26 @@ def test_journey(server, browser, tmp_path):
     page.click('[data-f=all]')
     page.wait_for_selector('tr:has-text("Composition certificate") .chip.c-ok', state='attached')
     page.click('[data-f=todo]')
-    # upload a PDF 1.3 GMP certificate -> non-conforming, drawer explains + locked note
+    # a composition certificate saved as PDF 1.3, put in the GMP item: its version line was changed at upload; the kind rule refuses
+    # it there and the drawer says why, with the locked note of third-party evidence
     with page.expect_file_chooser() as fc:
         page.locator('tr', has_text='GMP certificate(s) of FPP').locator('[data-up]').first.click()
     fc.value.set_files(str(old))
     page.wait_for_selector('#drawer:not([hidden])')
     body = page.inner_text('#dBody')
-    assert 'PDF version 1.3' in body and 'fix this automatically' in body and 'read-only' in body   # version normalise = technical op, allowed
+    assert 'reads as' in body and 'read-only' in body and 'PDF version' not in body
     page.keyboard.press('Escape')
+    # a scan without text is refused at upload, with the reason and what to do; nothing is stored
+    from pypdf import PdfWriter
+    w = PdfWriter(); w.add_blank_page(595, 842)
+    scan = tmp_path / 'scan.pdf'
+    with open(scan, 'wb') as f:
+        w.write(f)
+    with page.expect_file_chooser() as fc:
+        page.locator('tbody tr', has_text='Toll manufacturer licence').locator('[data-up]').first.click()
+    fc.value.set_files(str(scan))
+    page.wait_for_function("document.querySelector('#toast') && !document.querySelector('#toast').hidden && document.querySelector('#toast').innerText.includes('searchable PDF')")
+    assert page.locator('tbody tr', has_text='Toll manufacturer licence').count() == 1          # still to do
     # export gate blocked
     page.click('#navExport')
     page.wait_for_selector('text=Export is blocked')
@@ -234,14 +246,19 @@ def test_rebuild_loop_ui(server, browser, tmp_path):
     did = httpx.post(server + '/api/dossiers', json=dict(name='Loop test', profile=prof, product=dict(
         name='Examplol 500 mg', dosageform='tablet', manufacturer='Example Pharma'),
         envelope={'applicant': 'Example Pharma S.A.E.', 'tracking': 'P-MAA-0001', 'invented_name': 'Examplol'})).json()['id']
-    bad = make_pdf(tmp_path / 'gmp.pdf', 'GMP').read_bytes().replace(b'%PDF-1.4', b'%PDF-1.3', 1)
-    httpx.post(f'{server}/api/dossiers/{did}/slots/M1-37/documents', files={'file': ('gmp.pdf', bad, 'application/pdf')}, data={'meta': '{}'})
+    from pypdf import PdfWriter
+    w = PdfWriter(clone_from=str(make_pdf(tmp_path / 'lay.pdf', 'Appendix 4'))); w.add_js('app.alert(1);')
+    js = tmp_path / 'js.pdf'
+    with open(js, 'wb') as f:
+        w.write(f)                                                                          # a company document with JavaScript: an auto-fix
+    r = httpx.post(f'{server}/api/dossiers/{did}/slots/M1-11/documents', files={'file': ('layout.pdf', js.read_bytes(), 'application/pdf')}, data={'meta': '{}'})
+    assert r.status_code == 201 and r.json()['check_status'] == 'non_conforming', r.text
     page = browser.new_page(viewport={'width': 1440, 'height': 900})
     page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
     page.add_init_script("localStorage.setItem('db.lang','en')")
     page.goto(f'{server}/#/d/{did}/board')
     page.wait_for_selector('tbody tr')
-    page.locator('tr', has_text='GMP certificate(s) of FPP').locator('[data-why]').click()
+    page.locator('tr', has_text='coloured stamped outer').locator('[data-why]').click()
     page.click('[data-fix]')
     page.wait_for_function("document.querySelector('#dBody').innerText.includes('v 2')", timeout=60000)
     assert 'Non-conforming' not in page.inner_text('#dBody')

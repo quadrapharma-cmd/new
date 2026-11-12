@@ -25,7 +25,7 @@ This folder is the code skeleton. It is kept here until the separate repository 
 | **P2: product data + cross-checks** | `engine/dossier_engine/crosschecks.py`, «Product data» page | Each fact is entered once: active-substance sources (address as on GMP, CEP, CoA name), batches, specification, results grid, packs. Then the 11 cross-checks from the checklist plus the NP.CAPP.040 deficiencies that can be judged from data (≥ 2 batches, numeric results instead of «complies», dissolution Q, API batches, executed BMR for the BE batch, CEP status and retest period). The findings reach the board status and the export gate |
 | **P2: Module 3 tables** | `engine/dossier_engine/generate/m3tables.py` | 3.2.P.5.1 / 3.2.P.5.4 / 3.2.S.4.1 / 3.2.S.4.4, built from the data in one click, printing values exactly as entered |
 | **P3: variation picker** | `engine/dossier_engine/variations.py` + `rulepacks/eda.variations.gl026.v6/` + «Variations» page | The EDA list of 90 human variations (from the EDA self-guided tool, matching GL.CAPP.026 v6). Search → choose one or more variations → class (a group takes the highest class) + eCTD submission type (var-pac-n/a/b/ii) + mode (single/grouping) + the conditions and requirements of each, with the source row |
-| **Rebuild/fix loop** | `engine/dossier_engine/fixes.py` + `POST …/fix`, `…/request`, upload with `signed_for` | **(1) Auto-fix:** PDF version → 1.7, remove security and JavaScript (company documents only), OCR layer (Arabic + English, tested on a real Arabic scan), bookmarks from numbered headings (CTD-style such as 3.2.P.5.1) for documents of 10+ pages. The result is saved as a new version and the original is kept. For third-party evidence, any change that alters the page image (checked by comparison) is refused. A digitally signed file is never touched. **(2) Re-obtain:** an Arabic or English request letter to the issuer, listing the defects found and what the document must meet. The item shows «waiting on issuer» with a follow-up date, and the request closes itself when a conforming copy is uploaded. **(3) Signature:** every generated letter is «unsigned draft»; export is blocked until its signed scan is uploaded. The signed scan replaces the draft and becomes locked like any evidence |
+| **Rebuild/fix loop** | `engine/dossier_engine/fixes.py` + `POST …/fix`, `…/request`, upload with `signed_for` | **(1) Auto-fix:** PDF version → 1.7 (the version line alone: every other byte the same), remove security and JavaScript (company documents only), bookmarks from numbered headings (CTD-style such as 3.2.P.5.1) for documents of 10+ pages. The result is saved as a new version and the original is kept. For third-party evidence, any change that alters the page image (checked by comparison) is refused. A digitally signed file is never touched. **(2) Re-obtain:** an Arabic or English request letter to the issuer, listing the defects found and what the document must meet. The item shows «waiting on issuer» with a follow-up date, and the request closes itself when a conforming copy is uploaded. **(3) Signature:** every generated letter is «unsigned draft»; export is blocked until its signed scan is uploaded. The signed scan replaces the draft and becomes locked like any evidence |
 | **External references** | `POST …/slots/{slot}/references` | Register a document that is still on the company Drive (title, link, note) in its section before the file itself is uploaded. It shows as «received — not checked», with a button to open it on Drive and one to upload the file. Export stays blocked (`gate.external_only`) until every reference is replaced by an uploaded file, which is then checked like any other |
 | **P3: follow-on sequences** | `engine/dossier_engine/lifecycle.py`, `app/exporter.py` | Every export after the first builds the next sequence automatically (0001… / 2…). It contains only what changed: **new**, **replace** (with `modified-file`) and **delete** in 3.2.2; a new context of use with `replacementOf`, plus suspension, in 4.0. Unchanged documents are not resent, and the tracking table is rebuilt from the history every time. A new cover letter is required for every sequence. Sequences accumulate in a lifecycle folder like a real archive, and the download holds only the new sequence. The validator runs the lifecycle rules (9.8, 11.6, 11.9, 11.10, 13.2) against the earlier sequences. On upload into a section that already has a document, the user is asked «new version or additional document» |
 | Auto-classify | `engine/dossier_engine/classify.py` + `rulepacks/…/classify.yaml` | Drop a batch of files and the tool suggests a section for each one (CTD number in the name such as 3.2.P.5.1 or 32p51, keywords in Arabic or English, first-page text, API manufacturer). It never guesses when there is no evidence, and the user confirms |
@@ -77,6 +77,29 @@ levels where it says otherwise and its regional items under 3.2.R.
   `sources`, `verified`) and `requirements.yaml` (Module 1 only, each item with its source), `classify.yaml`; lint with
   `packs.lint`. Nothing in the engine or the page changes.
 
+## No OCR — the upload gate (November 2026) — «مفيش OCR: الملف لازم يكون فيه نص»
+
+Two trials on real products showed the reading of scans as the program's weakest step (about 11 minutes of OCR for 26 files, a
+licence nobody recognised, a second pass of «readable copies» that wrote PDF 1.3). The program now does **no OCR anywhere** — not
+on the server, not in the desktop build, not in the browser — and sends no page images to a model:
+
+- **The upload gate.** EDA asks every document as a searchable PDF (NP.CAPP.065 v5, general note 4: «All submitted documents
+  should be scanned and searchable PDF files»). A file without text of its own — a PDF whose first 12 pages hold fewer than 20
+  characters of text, or an image of any kind — is **refused at upload** (`extract.has_text`, `Store.refuse_without_text`: 422
+  `E-NOTEXT` with `why: scan | image`) with the reason and what to do, in Arabic and English: make the text layer when scanning
+  (the scanner's software, Acrobat, or a phone app that saves searchable PDFs) and add it again. It stands on every way in: an
+  item's upload, the bulk upload, the «not placed yet» box, Drive, the Assistant's staging, a signed scan. In the wizard the file's
+  line says «no text — not accepted» with the reason and «remove»; its searchable copy added under the same name takes its place;
+  a refused file is never read by the model, never fills a field and never reaches the dossier.
+- **The PDF version.** A PDF 1.0–1.3 is stored with its first line set to `%PDF-1.7` (`fixes.set_version_17`): the same length,
+  every other byte identical — third-party evidence is not altered and no pixel check is needed — and never on a digitally signed
+  file (the signature covers that line; the version finding is then a warning). The auto-fix «PDF version» does the same.
+- **Reading** is the files' own text only (PDF text layer, Word, Excel, PowerPoint, OpenDocument, RTF, HTML, text); the model
+  (claude.ai's in the browser edition, or the API with a key) reads that text.
+- **Removed:** tesseract and ocrmypdf (server image, requirements), tesseract.js, pdf.js and the image decoders (browser and desktop
+  editions, `web/vendor.sh`, the desktop CI step), `ui/assets/ocr.js`, «Make readable (OCR)» and `…/ocr-layer`, `/api/images/pdf`
+  and `/api/images/png`, the wrapping of images into PDFs. Older notes below that still speak of OCR describe the program before.
+
 ## What a real product's trial changed (November 2026)
 
 The owner handed over a real product's folder (ten documents: licence, method of analysis, specifications, a batch certificate,
@@ -86,25 +109,22 @@ sterile («sterile peptone water»), 4 of 13 files landed in their place, two ge
 «conforming», «make it for me» took 78 s an item, and nothing could be exported (the gate). What was changed, each with a test on
 fictional documents (`tests/test_trial_fixes.py`, `tests/test_ui_working_copy.py`):
 
-- **A file is read once.** `extract.read_text` keeps each reading by the file's SHA-256 (memory + `workspace/cache/text`), and the
-  reading the page made of a scan (its own OCR) is kept with the file (`remember_text`): the kind rule, a template's base
-  documents and the Assistant get the text without another OCR — and in the browser edition, where the engine has no OCR, they
-  get it at all. An OCR is kept with the pages it covers: the first page read for the kind rule is not taken for the whole
-  file (a question about more pages reads the file once more, a question about fewer is answered from the fuller reading);
-  a scan nobody could read yet is not remembered as empty; a reading kept on disk belongs to the reader that made it
-  (`READ_FORMAT` — raise it when what a reading holds changes); the app that answers a request claims the cache folder of its
-  own workspace. A page larger than about A3 (a phone scan saved as 28 × 42 inches) is rendered to fit 2500 pixels for OCR.
+- **A file is read once.** `extract.read_text` keeps each reading by the file's SHA-256 and the pages asked (in memory; a large
+  file's reading also in `workspace/cache/text`): the kind rule, a template's base documents and the Assistant get the text without
+  reading the file again; the first pages read for the kind rule are not taken for the whole file; a reading kept on disk belongs
+  to the reader that made it (`READ_FORMAT` — raise it when what a reading holds changes); the app that answers a request claims
+  the cache folder of its own workspace.
 - **What a document is and where it goes.** Kinds for a method of analysis, a method validation / chromatograms, a fees receipt,
   a variation approval; phrases that settle the kind wherever they stand (an authority's own title or department); the home of a
   kind follows what the document is about (a certificate or a specification that names the product at its top is the finished
   product's: 3.2.P.5.4 / 3.2.P.5.1; an authority's stability letter goes to the approvals item or, where that does not apply,
   3.2.P.8). Nothing is placed by itself on weak evidence: only the home of a recognised kind or a strong match; a certificate
-  that names none of the actives its kind belongs to is offered, not placed. A readable copy keeps its document's verdict.
+  that names none of the actives its kind belongs to is offered, not placed. A fixed copy keeps its document's verdict.
 - **What the product is comes from the documents that state it** (licence, application form, CPP, SmPC, pricing, composition,
   CADC, variation approval) or from a labelled field / the title of a technical document — never from a word in a method. The
   form is matched against the vocabulary, longest name first, and travels with its standard entry. British and American
   spellings name one substance. The licence's «Manufacturer of active substance — For X:» block names an active whose strength
-  line the OCR garbled; a company name whose first word the OCR lost is taken as printed elsewhere in the document. «Invalidation
+  line the scanner's text layer garbled; a company name whose first word that layer lost is taken as printed elsewhere in the document. «Invalidation
   date» is not the date of issue; a batch number has a digit; a manufacture date is the one right after its label.
 - **Tables are read as tables.** A table row is one line «cell | cell | cell» in a .docx and in an old .doc alike (a cell's own
   paragraphs joined); specifications and results come from the rows under a «Test | Specification | Result | Method» header, one
@@ -120,18 +140,18 @@ fictional documents (`tests/test_trial_fixes.py`, `tests/test_ui_working_copy.py
 
 Still open after the trial: the Drive connector refuses a file over 10 MB (the page asks for it from the device); a full dossier
 needs documents no reading can supply (third-party certificates, the suppliers' substance files) and the signed copies of what
-the program drafts; OCR of stamped scans stays imperfect — the model's reading (browser edition) is what should check it.
+the program drafts.
 
 ## Intake — «upload the documents and the forms fill themselves»
 
 **Documents first.** The new-dossier wizard opens with the documents, not with fields: one named upload button per base document the
 program needs (registration licence / notification, pricing certificate, reference SmPC, API CoA, GMP certificates, CEP/DMF, product
 analysis / conformity, specifications, stability, agreements / toll card, commercial register, other), plus a drop-everything zone and
-Google Drive. Each upload is read at once (rules, OCR in the page, the model where available) and the recognised values go into the
+Google Drive. Each upload is read at once (its own text: the rules, and the model where available; a file without text is refused on its line) and the recognised values go into the
 product, profile, API and submission steps with their source marked; those steps then ask only for what is still missing («missing —
 type it») and say so at the top. «Review what was read» opens the full review of every value.
-Each upload is read **once**: the texts (OCR included) are cached and only new files go through text, OCR and the model again; the
-cards show **live progress** per file (reading the text, OCR page n/N, the model reading the pages, read) and **what each document
+Each upload is read **once**: the texts are cached and only new files go through the reading and the model again; the
+cards show **live progress** per file (reading the text, the model reading, read) and **what each document
 gave** (trade name, form, manufacturer, 3 actives…), with a running «recognised so far» summary. The **kind rule** refuses a document
 uploaded under the wrong name (a stability approval under «pricing certificate»): the card shows «not this document: stability»
 with «move it to its card» / «remove»; the same rule runs on every board upload (`extract.kind_check`, `KIND_HOME`): a blocking
@@ -143,28 +163,15 @@ computer; a file whose reading was not saved yet is read again on restore; «Sta
 Annex I, SmPC…) into the forms' shape: document kind, certificate numbers, issuers, issue and expiry dates, trade
 name, dosage form, strength, manufacturer, active substances, applicant, batches, results. Two layers over the same
 text: the **rules** (regular expressions; everywhere, offline) and **Claude** — the `sample` capability in the browser
-edition (page images of scanned PDFs rendered by pdf.js), or `POST /api/extract/ai` through the Anthropic SDK when
+edition (the documents' text), or `POST /api/extract/ai` through the Anthropic SDK when
 `ANTHROPIC_API_KEY` is set on the computer. Endpoints: `POST /api/extract` (files → rules + the AI prompt),
 `POST /api/dossiers/{id}/extract` (the dossier's own documents). In the interface: the first wizard step («Upload
 documents and fill» → review every value → fill all steps → the files are placed in their sections after creation),
 «Extract from the documents» on the product-data page, and the document form of the product file. Every value is
 reviewed before it is used; nothing is written without the user's confirmation. **Arabic documents** (EDA letters such as the
 registration notification «إخطار تسجيل», Arabic certificates) are read natively: Arabic labels, Arabic dosage forms and units,
-Arabic-Indic digits and dates (`engine/dossier_engine/arabic.py`); a **scan or a photo (JPG/PNG) is OCR'd** on the computer when
-tesseract with the Arabic language is installed (`apt install tesseract-ocr tesseract-ocr-ara poppler-utils`), and goes to Claude as
-page images otherwise; the review drawer says per file whether it was text, an OCR'd scan or a scan without text.
-**OCR in the browser:** when the server has no tesseract (the browser edition, a desktop without it), the page itself reads the
-scan with tesseract.js (Arabic + English, `ui/assets/ocr.js`; pages rendered by pdf.js, first 4 pages, nothing leaves the browser),
-then the rules run again on that text (`POST /api/extract/text`); the chip says «scan read by OCR in the browser». The assets
-(~12 MB: library, single-file LSTM cores, fast language data as base64 text, `web/tess/worker.boot.js` decoding it inside the
-worker) come from `web/vendor.sh` into `web/vendor/tess`, are served at `/assets/tess/`, bundled by the desktop spec and copied
-into the browser edition by `web/build.py`.
-**Make readable (OCR):** a stored scan can be converted into a searchable PDF without touching its page images — on a server with
-tesseract through the existing auto-fix (ocrmypdf), otherwise in the browser: tesseract.js writes one text-only PDF page per page
-(invisible text at the right places), `POST /api/dossiers/{id}/documents/{doc}/ocr-layer` lays them over the original pages with
-pypdf (`fixes.overlay_text_pages`) and stores the result as a new version (`fixes: [add_ocr_layer]`, `ocr_where: browser`), so the
-searchable-text finding clears and third-party evidence stays unaltered. The item drawer offers it as «Make readable (OCR)» on any
-image-only PDF; the intake drawer offers to convert the scanned files right after they are saved.
+Arabic-Indic digits and dates (`engine/dossier_engine/arabic.py`); a scan or a photo has no text of its own and is refused at upload
+(see «No OCR — the upload gate»); the review drawer says per file whether it was read or refused.
 
 **EDA forms are read as tables, with understanding of their layout** (`engine/dossier_engine/intake_eda.py`): the Final Registration
 License (trade name with its Arabic name, dosage form, one active substance per line after «Each 1g contains» with its strength and
@@ -176,10 +183,8 @@ standard · amount · active / excipient). OCR noise is tolerated («Zine» → 
 three decimals, «1! mg», junk prefixes, «Co.» never splits a company) and nothing is guessed: an unreadable date stays empty and a
 substance whose manufacturer is not printed stays without one, highlighted in the review drawer for the user to complete. The
 wizard carries each active substance with strength, manufacturer and country into the dossier, and the composition rows and
-batches into the product data once the dossier exists. **A scan without any text is read from its page images**: by Claude in the
-browser edition (the `sample` capability receives the rendered pages) or through the Anthropic API on a computer with
-`ANTHROPIC_API_KEY` (PDFs attached as documents, photos as images); the drawer names the scans that were read that way and those
-that were not read on this computer. Tests: `tests/test_intake_eda.py` (a fictional product on the three forms, clean and OCR-noisy).
+batches into the product data once the dossier exists. A scan without any text is not read at all (no OCR, no page images): it is
+refused at upload with its reason, and the drawer names it. Tests: `tests/test_intake_eda.py` (a fictional product on the three forms, clean and OCR-noisy).
 
 ### Every document format, old and new
 
@@ -211,21 +216,9 @@ An image is told by its bytes (`imagefiles.image_format`), whatever the file is 
 TIFF (multi-page, BigTIFF), WebP, HEIC/HEIF (iPhone photos), AVIF, JPEG 2000, PNM, PSD, ICO, PCX. Two letters are never enough: a
 text that starts with «BM» or «P5» is not a picture.
 
-| where | what reads it |
-|---|---|
-| in the browser (every edition; the only reader in the browser edition) | `ui/assets/ocr.js`: JPEG and PNG as they are; a phone photo turned the way its EXIF says; GIF, BMP, WebP, AVIF, ICO through the browser's decoder; **TIFF** page by page with UTIF.js (LZW, PackBits, CCITT G3/G4 fax, JPEG, Deflate); **HEIC/HEIF** with libheif (WebAssembly). Then tesseract.js. |
-| on the machine (desktop and server editions) | tesseract opens JPEG, PNG, GIF, BMP, TIFF (page by page, up to the page limit), WebP, JPEG 2000, PNM itself; the others (AVIF, PSD, PCX, ICO, HEIC) and a photo on its side go through `imagefiles.to_png`: Pillow where installed (the desktop build bundles it), else `sips` on macOS, ImageMagick, `heif-convert`, ffmpeg. `POST /api/images/png` lends that converter to the page for the kinds a browser cannot decode. |
-
-**An image placed in an item becomes a PDF** — the dossier takes PDF. A JPEG is wrapped as it is (`imagefiles.jpegs_pdf`: the image
-bytes untouched, the page turned by `/Rotate` when the EXIF says the photo is on its side, its own size when it states a sensible
-resolution, else fitted on A4); a TIFF keeps its pages; every other kind is decoded first — by the page before it uploads (so the
-browser edition does it too, `POST /api/images/pdf`), by Pillow in the engine. What is left is the scan's text layer, the same
-one-click OCR fix as any scanned PDF. An image nothing here can open is kept, with that reason. Not read inside the browser
-edition: JPEG 2000, PSD, PCX, PNM (no decoder in a browser); the desktop and server editions read them.
-The decoders — UTIF.js 3.1.0 (MIT), pako's inflate 2.1.0 (MIT/Zlib), libheif-js 1.23.5 (LGPL-3.0) — are vendored by `web/vendor.sh` into
-`web/vendor/img` (not committed, each with its licence file) and served at `/assets/img` by the desktop and server editions. The page
-published on claude.ai carries no copy: it loads the same releases from jsDelivr (unpkg as a second mirror), each checked against its
-SHA-384 (a file that differs is refused and the person is told the image could not be opened). Tests: `tests/test_image_files.py`, `tests/test_ui_images.py`, `tests/test_web_edition.py`.
+**An image is not a document.** The program does no OCR and wraps no picture in a PDF: an image of any kind put in an item, the
+box, the wizard or Drive is refused at the upload gate with its reason (`E-NOTEXT`, `why: image`) — scan the paper to a searchable
+PDF, or photograph it with an app that saves searchable PDFs, and add the PDF. Tests: `tests/test_image_files.py`.
 
 ### Compressed files
 
@@ -312,8 +305,8 @@ notifications, pricing letters, leaflets and certificates) changed how documents
   substance itself. `clean_apis` (engine) and `cleanApis` (page) drop headings, sentence tails, appearances, companies and
   countries, keep substances that are salts («Sodium chloride»), never merge different ones («Vitamin B1» / «B12», «Salicylic» /
   «Acetylsalicylic acid») and merge spellings, salts and typos of one; both give the same answer (a parity test) and keep up to 40.
-- **The kind rule.** A document is known by what is written inside it, never by the name of its file: the text layer, the reading
-  the wizard made of a scan (browser OCR, sent with the upload), or an OCR of the first page where the machine can. A file that
+- **The kind rule.** A document is known by what is written inside it, never by the name of its file: the text layer, or —
+  when its words name no kind — the kind the wizard's reading gave it (kept with the file). A file that
   could not be read is not judged at all: its name only hints where to offer it (`kind_hint`), it is never placed or refused on
   its name (`auto` is null). Inside the text, the heading printed at the top of the page counts before the body, whole words
   («coa» is not the start of «coated»), a reference to another document by its number («…بإخطار التسجيل رقم 123») only when nothing
@@ -442,8 +435,8 @@ then `read_document` and `place_document`). Tests: `tests/test_drive.py` (a stan
 count, a bar, the file in hand), not in a passing toast; a file Drive refuses stays listed with Drive's own reason, with «try these
 again» and «continue with the ones fetched»; nothing is handed over silently and nothing ends silently. Sub-folders are listed four
 at a time. A folder of up to 40 readable files comes pre-selected; a larger one is left for the person to choose from («select all»
-exists), and a selection over 40 files or 150 MB is confirmed with a second press, because in the browser edition every scan is
-read by OCR on the person's own machine. Word files of the old format (`.doc`) are offered like `.docx`; a title with no extension
+exists), and a selection over 40 files or 150 MB is confirmed with a second press, because in the browser edition every file is
+fetched and read on the person's own machine. Word files of the old format (`.doc`) are offered like `.docx`; a title with no extension
 gets the one of its Drive type. Every item of the board and of the publisher view has a Drive button next to «upload» (one file, the
 same checks as an upload), and the last link is kept on the browser. Tests: `tests/test_ui_drive.py`.
 
@@ -478,8 +471,8 @@ interface calls it through a fetch shim (`web/boot.js` → `web/pybridge.py`, th
 server), and the workspace lives in the browser's IndexedDB (`/workspace`). Downloads go through the artifact's
 `downloads` capability. Without LibreOffice, generated letters come out as **Word drafts**; the user prints, signs,
 scans and uploads the PDF, which replaces the draft (export stays blocked until then), and the tracking table is
-rendered as a text-only PDF (`docx_kit.basic_pdf`). No OCR and no ghostscript pixel check there (fixes on third-party
-evidence are refused rather than applied unverified).
+rendered as a text-only PDF (`docx_kit.basic_pdf`). No ghostscript pixel check there (a fix on third-party
+evidence that would rewrite a page is refused rather than applied unverified; the version line is changed everywhere).
 
 **Opening (November 2026).** The runtime's own files — the Python engine, its libraries, the rule packs: about 29 MB on the
 wire — used to be fetched at every opening, behind a loading bar that stood at 4 % the whole time: on a slow line an opening looked

@@ -81,82 +81,54 @@ SPEC = docx_bytes(lambda d: (d.add_paragraph('Specifications of Dermacure Topica
 
 
 # ---------------- a file is read once
-def test_a_file_is_read_once_and_a_kept_reading_serves_a_scan(tmp_path, monkeypatch):
+def test_a_file_is_read_once_and_a_scan_is_said_to_be_one(tmp_path, monkeypatch):
     calls = []
     real = extract._read_text
 
-    def counted(name, data, max_pages=12, ocr=True, ocr_pages=4):
-        calls.append((name, ocr))
+    def counted(name, data, max_pages=12):
+        calls.append(name)
         if data.startswith(b'SCAN'):
-            return {'pages': 2, 'text': '', 'scanned': True, 'ocr': False, 'kind_of_file': 'pdf', 'arabic': False}
-        return real(name, data, max_pages, ocr, ocr_pages)
+            return {'pages': 2, 'text': '', 'scanned': True, 'kind_of_file': 'pdf', 'arabic': False}
+        return real(name, data, max_pages)
 
     monkeypatch.setattr(extract, '_read_text', counted)
     monkeypatch.setattr(extract, 'READ_DIR', tmp_path / 'cache')
-    extract._READ.clear(); extract._KEPT.clear()
+    extract._READ.clear()
     pdf = make_pdf_lines(tmp_path / 'a.pdf', ['Certificate of Analysis', 'Assay 99.8 %']).read_bytes()
     a = extract.read_text('a.pdf', pdf)
     b = extract.read_text('a.pdf', pdf)
-    assert a == b and len(calls) == 1 and 'Certificate of Analysis' in a['text']
+    assert a == b and calls == ['a.pdf'] and 'Certificate of Analysis' in a['text']
     scan = b'SCAN of a licence'
-    assert extract.read_text('scan.pdf', scan)['text'] == ''
-    extract.remember_text(scan, 'Final Registration License for Pharmaceutical Product — Dermacure')      # the page's own OCR of it
     r = extract.read_text('scan.pdf', scan)
-    assert r['ocr'] and r['ocr_where'] == 'kept' and 'Dermacure' in r['text']
-    assert calls[-1] == ('scan.pdf', False)                                  # with a kept reading the engine does not OCR again
-    extract._READ.clear(); extract._KEPT.clear()                             # a restart: the workspace's cache folder still has it
-    assert 'Dermacure' in extract.read_text('scan.pdf', scan, max_pages=8)['text']
-    extract._READ.clear(); extract._KEPT.clear()
+    assert r['text'] == '' and r['scanned'] and 'ocr' not in r                     # no OCR: a scan is said to be one, nothing is guessed
+    assert extract.has_text('scan.pdf', scan) == 'scan' and extract.has_text('a.pdf', pdf) is None
+    assert calls == ['a.pdf', 'scan.pdf']                                           # the gate's question is answered from the same reading
 
 
-def test_a_reading_of_the_first_page_is_not_taken_for_the_whole_file(tmp_path, monkeypatch):
-    ocrs = []
+def test_a_reading_of_the_first_pages_is_not_taken_for_the_whole_file(tmp_path, monkeypatch):
+    asked = []
 
-    def fake(name, data, max_pages=12, ocr=True, ocr_pages=4):                # a six-page scan; the «OCR» says which pages it read
-        if not ocr:
-            return {'pages': 6, 'text': '', 'scanned': True, 'ocr': False, 'kind_of_file': 'pdf', 'arabic': False}
-        ocrs.append(ocr_pages)
-        return {'pages': 6, 'text': ' '.join(f'page-{i + 1} of the stability study report' for i in range(min(6, ocr_pages))), 'scanned': True, 'ocr': True, 'kind_of_file': 'pdf', 'arabic': False}
+    def fake(name, data, max_pages=12):
+        asked.append(max_pages)
+        return {'pages': 6, 'text': ' '.join(f'page-{i + 1} of the stability study report' for i in range(min(6, max_pages))), 'scanned': False, 'kind_of_file': 'pdf', 'arabic': False}
 
     monkeypatch.setattr(extract, '_read_text', fake)
     monkeypatch.setattr(extract, 'READ_DIR', tmp_path / 'cache')
-    scan = b'SCAN of six pages'
-    assert extract.read_text('s.pdf', scan, ocr=False)['text'] == ''          # nobody has read it yet …
-    one = extract.read_text('s.pdf', scan, max_pages=1, ocr_pages=1)['text']  # … the kind rule reads its first page
-    assert 'page-1' in one and 'page-2' not in one and ocrs == [1]
-    four = extract.read_text('s.pdf', scan)['text']                           # the reader then asks for its usual four pages: OCR-ed again, for more
-    assert 'page-4' in four and ocrs == [1, 4]
-    assert 'page-4' in extract.read_text('s.pdf', scan, ocr=False)['text']    # what was unreadable a moment ago is answered from the kept reading
-    assert 'page-4' in extract.read_text('s.pdf', scan, max_pages=8)['text'] and ocrs == [1, 4]      # asked another way: no third OCR
-    assert 'page-6' in extract.read_text('s.pdf', scan, ocr_pages=12)['text'] and ocrs == [1, 4, 12]  # more pages wanted: read once more, then whole
-    extract._READ.clear(); extract._KEPT.clear()                              # a restart
-    assert 'page-6' in extract.read_text('s.pdf', scan, ocr_pages=2)['text'] and ocrs == [1, 4, 12]
-
-
-def test_a_scan_nobody_could_read_is_not_remembered_as_empty(tmp_path, monkeypatch):
-    state = {'ocr': False}
-
-    def fake(name, data, max_pages=12, ocr=True, ocr_pages=4):
-        if ocr and state['ocr']:
-            return {'pages': 1, 'text': 'Certificate of Pharmaceutical Product — Dermacure', 'scanned': True, 'ocr': True, 'kind_of_file': 'pdf', 'arabic': False}
-        return {'pages': 1, 'text': '', 'scanned': True, 'ocr': False, 'kind_of_file': 'pdf', 'arabic': False}
-
-    monkeypatch.setattr(extract, '_read_text', fake)
-    monkeypatch.setattr(extract, 'READ_DIR', tmp_path / 'cache')
-    scan = b'SCAN ' + b'x' * 300000                                           # large enough for the disk cache
-    assert extract.read_text('c.pdf', scan)['text'] == ''                     # no OCR on this machine yet
-    assert not list((tmp_path / 'cache').glob('*')) if (tmp_path / 'cache').exists() else True
-    state['ocr'] = True                                                       # OCR is installed (or the page sends its reading) …
-    assert 'Dermacure' in extract.read_text('c.pdf', scan)['text']            # … and the same file is read, not answered «empty» from the cache
+    doc = b'%PDF-1.7 six pages'
+    one = extract.read_text('s.pdf', doc, max_pages=1)['text']                     # the kind rule reads the first page
+    assert 'page-1' in one and 'page-2' not in one
+    whole = extract.read_text('s.pdf', doc)['text']                                # the reader's usual pages: read again, not the first page's answer
+    assert 'page-6' in whole and asked == [1, 12]
+    assert extract.read_text('s.pdf', doc)['text'] == whole and asked == [1, 12]   # asked again the same way: the kept reading
 
 
 def test_a_reading_kept_by_an_older_reader_is_made_again(tmp_path, monkeypatch):
     monkeypatch.setattr(extract, 'READ_DIR', tmp_path / 'cache')
-    pdf = make_pdf_lines(tmp_path / 'big.pdf', ['Certificate of Analysis', 'Assay 99.8 %']).read_bytes()
-    monkeypatch.setattr(extract, '_read_text', lambda *a, **k: {'pages': 1, 'text': 'the old reader', 'scanned': False, 'ocr': True, 'kind_of_file': 'pdf', 'arabic': False})
+    pdf = b'%PDF-1.7 ' + b'x' * 250000                                              # a large file: its reading is kept on disk
+    monkeypatch.setattr(extract, '_read_text', lambda *a, **k: {'pages': 1, 'text': 'the old reader', 'scanned': False, 'kind_of_file': 'pdf', 'arabic': False})
     assert extract.read_text('big.pdf', pdf)['text'] == 'the old reader'
     extract._READ.clear()
-    monkeypatch.setattr(extract, '_read_text', lambda *a, **k: {'pages': 1, 'text': 'the new reader', 'scanned': False, 'ocr': True, 'kind_of_file': 'pdf', 'arabic': False})
+    monkeypatch.setattr(extract, '_read_text', lambda *a, **k: {'pages': 1, 'text': 'the new reader', 'scanned': False, 'kind_of_file': 'pdf', 'arabic': False})
     assert extract.read_text('big.pdf', pdf)['text'] == 'the old reader'      # the same reader: its reading is kept across a restart
     extract._READ.clear()
     monkeypatch.setattr(extract, 'READ_FORMAT', extract.READ_FORMAT + 1)       # a newer reader does not trust it
@@ -220,7 +192,7 @@ def test_documents_go_to_their_own_items_and_nothing_is_placed_on_a_guess(dossie
     assert r['auto'] is None                                                             # a few keywords are a suggestion, not a place
 
 
-def test_a_readable_copy_keeps_the_verdict_of_its_document(dossier, tmp_path):
+def test_a_fixed_copy_keeps_the_verdict_of_its_document(dossier, tmp_path):
     c, did = dossier
     from dossier_engine.app.store import Store
     gmp = make_pdf_lines(tmp_path / 'g.pdf', ['CERTIFICATE OF GMP COMPLIANCE OF A MANUFACTURER', 'Example Pharm Co. complies with Good Manufacturing Practice']).read_bytes()
@@ -228,11 +200,11 @@ def test_a_readable_copy_keeps_the_verdict_of_its_document(dossier, tmp_path):
     assert not any(f['rule'] == 'DOC-KIND' for f in r['findings'])
     other = make_pdf_lines(tmp_path / 'h.pdf', ['Stability study report', 'Long term 30/65', 'stability stability stability']).read_bytes()
     st = c.app.state.store if hasattr(c.app.state, 'store') else Store(tmp_path / 'ws')
-    new = st.add_document(did, 'M1-37', 'gmp.pdf', other, meta={'fixed_from': r['id'], 'fixes': ['add_ocr_layer']}, supersede=r['id'])
-    assert not any(f['rule'] == 'DOC-KIND' for f in new['findings'])                     # its OCR text is not judged again: it is the same document
+    new = st.add_document(did, 'M1-37', 'gmp.pdf', other, meta={'fixed_from': r['id'], 'fixes': ['pdf_version_normalise']}, supersede=r['id'])
+    assert not any(f['rule'] == 'DOC-KIND' for f in new['findings'])                     # a fixed copy is not judged again: it is the same document
     bad = c.post(f'/api/dossiers/{did}/slots/M1-05/documents', files={'file': ('x.pdf', io.BytesIO(other), 'application/pdf')}, data={'meta': '{}'}).json()
     assert bad['findings'][0]['rule'] == 'DOC-KIND'
-    copy = st.add_document(did, 'M1-05', 'x.pdf', gmp, meta={'fixed_from': bad['id'], 'fixes': ['add_ocr_layer']}, supersede=bad['id'])
+    copy = st.add_document(did, 'M1-05', 'x.pdf', gmp, meta={'fixed_from': bad['id'], 'fixes': ['pdf_version_normalise']}, supersede=bad['id'])
     assert copy['findings'][0]['rule'] == 'DOC-KIND' and copy['findings'][0]['extra']['kind'] == 'stability'      # …and a misfiled one stays misfiled
 
 

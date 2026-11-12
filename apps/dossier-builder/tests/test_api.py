@@ -49,9 +49,11 @@ def test_board_upload_and_status(c, pdf):
     assert r.status_code == 201 and r.json()['check_status'] == 'conforming' and r.json()['version'] == 1
     assert up(c, did, 'M1-31', pdf).json()['version'] == 2                     # new version, nothing overwritten
     old = pdf.replace(b'%PDF-1.4', b'%PDF-1.3', 1)
-    up(c, did, 'M1-02', old)
+    r = up(c, did, 'M1-02', old).json()                                        # a PDF 1.3: only its version line is changed at upload
+    assert r['check_status'] == 'conforming' and r['meta']['converted'] == ['pdf_version_1.7']
+    assert c.get(f"/api/dossiers/{did}/documents/{r['id']}/file").content == old.replace(b'%PDF-1.3', b'%PDF-1.7', 1)
     st = {s['slot_id']: s['status'] for s in c.get(f'/api/dossiers/{did}/board').json()['slots']}
-    assert st['M1-31'] == 'conforming' and st['M1-02'] == 'non_conforming'
+    assert st['M1-31'] == 'conforming' and st['M1-02'] == 'conforming'
     r = up(c, did, 'M1-14', pdf)                                                # not applicable slot
     assert r.status_code == 422 and r.json()['detail']['code'] == 'E-SLOT-INACTIVE'
 

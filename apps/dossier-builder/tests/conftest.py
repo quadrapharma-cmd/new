@@ -13,6 +13,6 @@ def no_reading_kept_from_another_test():
     """The reader keeps what it read by the file's SHA-256 (extract.read_text): a test must not be answered from another test's
     reading of the same fixture, nor write into a workspace a finished test left behind."""
     from dossier_engine import extract
-    extract._READ.clear(); extract._KEPT.clear(); extract.READ_DIR = None
+    extract._READ.clear(); extract.READ_DIR = None
     yield
-    extract._READ.clear(); extract._KEPT.clear(); extract.READ_DIR = None
+    extract._READ.clear(); extract.READ_DIR = None

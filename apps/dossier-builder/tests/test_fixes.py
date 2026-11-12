@@ -1,4 +1,5 @@
-"""Auto-fix: each fixable defect is fixed and re-checked; evidence stays pixel-identical; signed PDFs untouched."""
+"""Auto-fix: each fixable defect is fixed and re-checked; evidence stays pixel-identical; signed PDFs untouched; the PDF version is
+the version line alone (every other byte the same); no OCR — a scan is not «fixed» here."""
 import shutil
 import pytest
 from pypdf import PdfWriter
@@ -6,7 +7,7 @@ from fixtures_pdf import make_pdf
 from dossier_engine.checks.pdf import check
 from dossier_engine.fixes import apply, ops_for, same_pixels
 
-needs_tools = pytest.mark.skipif(not (shutil.which('gs') and shutil.which('tesseract')), reason='ghostscript/tesseract missing')
+needs_tools = pytest.mark.skipif(not shutil.which('gs'), reason='ghostscript missing (the pixel check renders the pages)')
 
 
 def findings(path, cls):
@@ -35,6 +36,17 @@ def test_version_fixed_on_evidence_pixels_identical(pdf13, tmp_path):
     assert [d['op'] for d in r['done']] == ['pdf_version_normalise']
     assert r['report'].status == 'conforming' and r['report'].info['version'] == '1.7'
     assert same_pixels(pdf13, r['path'])
+
+
+def test_the_version_line_alone_changes(pdf13):
+    from dossier_engine.fixes import set_version_17
+    old = pdf13.read_bytes()
+    new = set_version_17(old)
+    assert new is not None and len(new) == len(old) and new[:8] == b'%PDF-1.7'
+    assert [i for i in range(len(old)) if old[i] != new[i]] == [7]                     # one byte: the version digit, nothing else
+    r = apply(pdf13, findings(pdf13, 'executed_record'), 'executed_record')            # even on a locked record: only the version line
+    assert r['data'] == new and [d['op'] for d in r['done']] == ['pdf_version_normalise']
+    assert set_version_17(new) is None and set_version_17(b'%PDF-1.3 ' + b'/ByteRange [0 1 2 3]') is None    # 1.7 already; a signed file: never
 
 
 def test_security_on_evidence_refused(tmp_path):
@@ -67,26 +79,27 @@ def test_javascript_removed(tmp_path):
     assert 'PDF-JS' not in {f.rule for f in r['report'].findings}
 
 
-@needs_tools
-def test_ocr_on_scan(tmp_path):
-    from PIL import Image, ImageDraw, ImageFont
-    img = Image.new('RGB', (1240, 1754), 'white')
-    ImageDraw.Draw(img).text((120, 200), 'GOOD MANUFACTURING PRACTICE CERTIFICATE', fill='black',
-                             font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 40))
+def test_a_scan_is_not_fixed_here(tmp_path):
+    PIL = pytest.importorskip('PIL.Image')
+    from PIL import ImageDraw
+    img = PIL.new('RGB', (1240, 1754), 'white')
+    ImageDraw.Draw(img).rectangle([100, 100, 600, 160], fill='black')                # a printed line, as a picture
     p = tmp_path / 'scan.pdf'
     img.save(p, 'PDF', resolution=150)
-    p.write_bytes(p.read_bytes().replace(b'%PDF-1.3', b'%PDF-1.4', 1) if p.read_bytes().startswith(b'%PDF-1.3') else p.read_bytes())
-    assert 'NTA065-N4' in {f['rule'] for f in findings(p, 'company_technical')}
-    r = fix(p, 'company_technical', tmp_path)
-    assert 'add_ocr_layer' in [d['op'] for d in r['done']]
-    assert 'NTA065-N4' not in {f.rule for f in r['report'].findings}
-    r2 = fix(p, 'third_party_certificate', tmp_path)                         # OCR on evidence: allowed, pixels kept
-    assert 'add_ocr_layer' in [d['op'] for d in r2['done']] and same_pixels(p, r2['path'])
+    for cls in ('company_technical', 'third_party_certificate'):
+        f = findings(p, cls)
+        n4 = [x for x in f if x['rule'] == 'NTA065-N4']
+        assert n4 and n4[0]['severity'] == 'block' and n4[0]['action'] == 'user_fix' and 'searchable' in n4[0]['en'], cls   # the text layer is made when scanning
+        assert 'add_ocr_layer' not in ops_for(f)
 
 
 def test_signed_pdf_never_rewritten(pdf13):
     pdf13.write_bytes(pdf13.read_bytes() + b'% /ByteRange [0 1 2 3]\n')
-    r = apply(pdf13, findings(pdf13, 'third_party_certificate'), 'third_party_certificate')
+    f = findings(pdf13, 'third_party_certificate')
+    v = next(x for x in f if x['rule'] == 'EG-PF-16.1')
+    assert v['severity'] == 'warn' and v['action'] == 'none' and 'signed' in v['en'].lower()      # the version line is under the signature: left as it is
+    assert apply(pdf13, f, 'third_party_certificate')['data'] is None
+    r = apply(pdf13, [dict(v, action='auto_fix')], 'third_party_certificate')                     # and even when asked, a signed file is not rewritten
     assert r['data'] is None and 'signature' in r['refused'][0]['en']
 
 
@@ -115,27 +128,3 @@ def test_bookmarks_added_from_headings(tmp_path):
     assert 'NTA065-BM' not in {f.rule for f in r['report'].findings}
     r2 = fix(p, 'third_party_certificate', tmp_path)               # bookmarks on evidence: allowed, pixels identical
     assert [d['op'] for d in r2['done']] == ['add_bookmarks'] and same_pixels(p, r2['path'])
-
-
-@needs_tools
-def test_arabic_scan_ocr(tmp_path):
-    """A real Arabic scan (rendered by LibreOffice, rasterised) becomes searchable Arabic text."""
-    import subprocess
-    from PIL import Image
-    from dossier_engine.generate.docx_kit import new_doc, para, to_pdf
-    if not shutil.which('soffice'):
-        pytest.skip('LibreOffice missing')
-    d = new_doc(draft=False)
-    para(d, 'تشهد هيئة الدواء المصرية بأن المصنع مطابق لقواعد التصنيع الجيد', ar=True, size=18)
-    d.save(tmp_path / 'ar.docx')
-    src = to_pdf(tmp_path / 'ar.docx')
-    subprocess.run(['gs', '-q', '-dNOPAUSE', '-dBATCH', '-sDEVICE=pnggray', '-r200', f'-sOutputFile={tmp_path}/p.png', str(src)], check=True)
-    scan = tmp_path / 'scan.pdf'
-    Image.open(tmp_path / 'p.png').convert('RGB').save(scan, 'PDF', resolution=200)
-    scan.write_bytes(scan.read_bytes().replace(b'%PDF-1.3', b'%PDF-1.4', 1))
-    r = fix(scan, 'third_party_certificate', tmp_path)
-    assert 'add_ocr_layer' in [x['op'] for x in r['done']]
-    txt = subprocess.run(['pdftotext', str(r['path']), '-'], capture_output=True, text=True).stdout
-    for w in ('هيئة', 'الدواء', 'المصرية', 'المصنع'):
-        assert w in txt, txt
-    assert same_pixels(scan, r['path'])

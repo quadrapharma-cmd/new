@@ -1,7 +1,7 @@
 """Images of every kind. An image is told by its bytes, whatever the file is called: JPEG (JFIF/Exif), PNG, GIF, BMP, TIFF (also
 multi-page and BigTIFF), WebP, HEIC/HEIF (iPhone photos), AVIF, JPEG 2000, PNM, PSD, ICO. This module says what a file is, how
-many pages a TIFF has, which way up a phone photo is, and hands the OCR engine a form it can open. It also wraps JPEG pages into a
-PDF (the dossier takes PDF), with the standard library only."""
+many pages a TIFF has, which way up a phone photo is, and turns one into PNG for a model that takes only the common kinds. An image
+is not a document: the upload gate refuses it (no OCR, no wrapping into a PDF — NP.CAPP.065 v5 general note 4)."""
 import io
 import os
 import re
@@ -10,7 +10,6 @@ import struct
 import subprocess
 import sys
 import tempfile
-import zlib
 
 MIME = {'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif', 'bmp': 'image/bmp', 'tiff': 'image/tiff', 'webp': 'image/webp', 'heic': 'image/heic',
         'avif': 'image/avif', 'jp2': 'image/jp2', 'pnm': 'image/x-portable-anymap', 'psd': 'image/vnd.adobe.photoshop', 'ico': 'image/x-icon',
@@ -19,7 +18,6 @@ EXT = {'jpeg': '.jpg', 'png': '.png', 'gif': '.gif', 'bmp': '.bmp', 'tiff': '.ti
        'pnm': '.pnm', 'psd': '.psd', 'ico': '.ico', 'pcx': '.pcx', 'tga': '.tga'}
 EXTENSIONS = ('.jpg', '.jpeg', '.jfif', '.jpe', '.png', '.gif', '.bmp', '.dib', '.tif', '.tiff', '.webp', '.heic', '.heif', '.avif', '.jp2', '.j2k', '.jpx', '.jpf',
               '.pbm', '.pgm', '.ppm', '.pnm', '.psd', '.ico', '.pcx', '.tga')
-TESS_READS = {'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp', 'jp2', 'pnm'}          # what tesseract opens by itself (leptonica)
 HEIF_BRANDS = (b'heic', b'heix', b'hevc', b'hevx', b'heim', b'heis', b'mif1', b'msf1')
 
 
@@ -135,7 +133,7 @@ def _run(cmd, dst):
 
 
 def to_png(data):
-    """The image as an upright PNG the OCR engine opens: Pillow when it is installed (with its HEIF plugin when that is), else the
+    """The image as an upright PNG (for a model that takes only the common kinds): Pillow when it is installed (with its HEIF plugin when that is), else the
     converter the machine has (sips on macOS, ImageMagick, heif-convert, ffmpeg). None when nothing here can open it."""
     fmt = image_format(data)
     if not fmt or sys.platform == 'emscripten':
@@ -193,138 +191,3 @@ def for_model(data):
         return MIME[fmt], data
     png = to_png(data) if fmt else None
     return ('image/png', png) if png else None
-
-
-# ---------------------------------------------------------------- JPEG pages → one PDF (the dossier takes PDF)
-A4 = (595.276, 841.89)
-
-
-def jpeg_info(data):
-    """(width, height, components, dpi or None, Adobe marker) of a JPEG, from its frame header and its JFIF density."""
-    if data[:2] != b'\xff\xd8':
-        raise ValueError('not a JPEG')
-    pos, dpi, adobe = 2, None, False
-    while pos + 4 <= len(data):
-        if data[pos] != 0xFF:
-            pos += 1
-            continue
-        marker = data[pos + 1]
-        if marker in (0xD8, 0x01) or 0xD0 <= marker <= 0xD7:
-            pos += 2
-            continue
-        size = struct.unpack_from('>H', data, pos + 2)[0]
-        if marker == 0xE0 and data[pos + 4:pos + 9] == b'JFIF\x00' and size >= 14:
-            unit, xd, yd = struct.unpack_from('>BHH', data, pos + 11)
-            if unit in (1, 2) and xd == yd and xd > 0:
-                dpi = xd if unit == 1 else xd * 2.54
-        if marker == 0xEE and data[pos + 4:pos + 9] == b'Adobe':
-            adobe = True
-        if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
-            _bits, h, w, comps = struct.unpack_from('>BHHB', data, pos + 4)
-            if w and h and comps in (1, 3, 4):
-                return w, h, comps, dpi, adobe
-            raise ValueError('unusual JPEG frame')
-        pos += 2 + size
-    raise ValueError('no JPEG frame found')
-
-
-def page_size(w, h, dpi=None):
-    """The page of an image: its own size when it says a sensible resolution and fits A3, else fitted on A4 (upright or on its side)."""
-    if dpi and 90 <= dpi <= 1200:
-        pw, ph = w * 72.0 / dpi, h * 72.0 / dpi
-        if max(pw, ph) <= 1200 and min(pw, ph) >= 100:
-            return pw, ph, 0.0, 0.0, pw, ph
-    pw, ph = A4 if h >= w else (A4[1], A4[0])
-    scale = min(pw / w, ph / h)
-    iw, ih = w * scale, h * scale
-    return pw, ph, (pw - iw) / 2, (ph - ih) / 2, iw, ih
-
-
-def jpegs_pdf(pages, title=None, rotate=None):
-    """A PDF (1.4) with one page for each JPEG, the image stored as it is (no re-compression). `rotate` = degrees clockwise for
-    each page (a phone photo its EXIF says is on its side is shown upright without touching its pixels)."""
-    if not pages:
-        raise ValueError('no pages')
-    objs = []                                                             # object bodies; object n is objs[n - 1]
-
-    def add(body):
-        objs.append(body)
-        return len(objs)
-
-    catalog, tree = add(b''), add(b'')
-    kids = []
-    for k, jpg in enumerate(pages):
-        w, h, comps, dpi, adobe = jpeg_info(jpg)
-        turn = (rotate[k] if rotate and k < len(rotate) else 0) % 360
-        space = {1: b'/DeviceGray', 3: b'/DeviceRGB', 4: b'/DeviceCMYK'}[comps]
-        decode = b' /Decode [1 0 1 0 1 0 1 0]' if comps == 4 and adobe else b''      # Adobe CMYK JPEGs store inverted values
-        img = add(b'<< /Type /XObject /Subtype /Image /Width %d /Height %d /ColorSpace %s /BitsPerComponent 8 /Filter /DCTDecode%s /Length %d >>\nstream\n' % (
-            w, h, space, decode, len(jpg)) + jpg + b'\nendstream')
-        pw, ph, x, y, iw, ih = page_size(w, h, dpi)
-        content = zlib.compress(b'q %.3f 0 0 %.3f %.3f %.3f cm /Im0 Do Q' % (iw, ih, x, y))
-        stream = add(b'<< /Length %d /Filter /FlateDecode >>\nstream\n' % len(content) + content + b'\nendstream')
-        kids.append(add(b'<< /Type /Page /Parent %d 0 R /MediaBox [0 0 %.3f %.3f]%s /Resources << /XObject << /Im0 %d 0 R >> >> /Contents %d 0 R >>' % (
-            tree, pw, ph, b' /Rotate %d' % turn if turn in (90, 180, 270) else b'', img, stream)))
-    objs[catalog - 1] = b'<< /Type /Catalog /Pages %d 0 R >>' % tree
-    objs[tree - 1] = b'<< /Type /Pages /Count %d /Kids [%s] >>' % (len(kids), b' '.join(b'%d 0 R' % k for k in kids))
-    info = add(b'<< /Producer (Dossier Builder) /Title %s >>' % _pdf_text(title or 'Scanned document'))
-    out, offsets = bytearray(b'%PDF-1.4\n%\xe2\xe3\xcf\xd3\n'), []
-    for n, body in enumerate(objs, 1):
-        offsets.append(len(out))
-        out += b'%d 0 obj\n' % n + body + b'\nendobj\n'
-    xref = len(out)
-    out += b'xref\n0 %d\n0000000000 65535 f \n' % (len(objs) + 1) + b''.join(b'%010d 00000 n \n' % o for o in offsets)
-    out += b'trailer\n<< /Size %d /Root %d 0 R /Info %d 0 R >>\nstartxref\n%d\n%%%%EOF\n' % (len(objs) + 1, catalog, info, xref)
-    return bytes(out)
-
-
-def _pdf_text(s):
-    return b'<FEFF' + s.encode('utf-16-be').hex().upper().encode('ascii') + b'>'
-
-
-def to_jpegs(data, max_pages=None):
-    """The pages of an image as upright JPEGs (a TIFF page by page), through Pillow; None when it is not installed or cannot open the file."""
-    if sys.platform == 'emscripten':
-        return None
-    try:
-        from PIL import Image, ImageOps
-        try:
-            import pillow_heif
-            pillow_heif.register_heif_opener()
-        except Exception:
-            pass
-        im = Image.open(io.BytesIO(data))
-        n = getattr(im, 'n_frames', 1) if image_format(data) == 'tiff' else 1
-        out = []
-        for i in range(n if max_pages is None else min(n, max_pages)):
-            if n > 1:
-                im.seek(i)
-            fr = ImageOps.exif_transpose(im) or im
-            if fr.mode in ('RGBA', 'LA', 'PA') or (fr.mode == 'P' and 'transparency' in fr.info):
-                fr = fr.convert('RGBA')
-                white = Image.new('RGB', fr.size, 'white')
-                white.paste(fr, mask=fr.split()[-1])
-                fr = white
-            else:
-                fr = fr.convert('L' if fr.mode in ('1', 'L', 'I', 'I;16', 'F') else 'RGB')
-            dpi = im.info.get('dpi')
-            ok = dpi and all(isinstance(v, (int, float)) or hasattr(v, '__float__') for v in dpi) and 90 <= float(dpi[0]) <= 1200 and abs(float(dpi[0]) - float(dpi[1])) < 1
-            buf = io.BytesIO()
-            fr.save(buf, 'JPEG', quality=90, **({'dpi': (round(float(dpi[0])), round(float(dpi[1])))} if ok else {}))
-            out.append(buf.getvalue())
-        return out or None
-    except Exception:
-        return None
-
-
-def image_pdf(data, title=None):
-    """An image as the PDF the dossier takes: a JPEG is wrapped as it is (turned the way its EXIF says, pixels untouched); any other
-    kind goes through Pillow where it is installed. None when this machine cannot do it (the page then does it, before it uploads)."""
-    fmt = image_format(data)
-    try:
-        if fmt == 'jpeg':
-            return jpegs_pdf([data], title, rotate=[{3: 180, 6: 90, 8: 270}.get(exif_orientation(data), 0)])
-        pages = to_jpegs(data) if fmt else None
-        return jpegs_pdf(pages, title) if pages else None
-    except Exception:
-        return None

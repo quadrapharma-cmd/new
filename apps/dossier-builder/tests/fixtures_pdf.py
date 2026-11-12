@@ -1,4 +1,7 @@
-"""Minimal valid PDF 1.4 files for writer tests (one page, text = label)."""
+"""Minimal valid PDF 1.4 files for writer tests (one page: the label at the top, and a line of neutral filler at the foot — every
+real document has text of its own, and the upload gate refuses a PDF with fewer than 20 characters of it)."""
+
+FILLER = b'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'      # names no kind of document
 
 
 def make_pdf(path, label):
@@ -9,7 +12,7 @@ def make_pdf(path, label):
             None,
             b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>']
     text = label.replace('(', '').replace(')', '').encode('latin-1', 'replace')
-    stream = b'BT /F1 14 Tf 72 770 Td (' + text + b') Tj ET'
+    stream = b'BT /F1 14 Tf 72 770 Td (' + text + b') Tj ET\nBT /F1 8 Tf 72 40 Td (' + FILLER + b') Tj ET'
     objs[3] = b'<< /Length %d >>\nstream\n' % len(stream) + stream + b'\nendstream'
     out = bytearray(b'%PDF-1.4\n%\xe2\xe3\xcf\xd3\n')
     offs = []

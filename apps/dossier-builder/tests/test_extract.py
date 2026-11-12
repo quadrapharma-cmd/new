@@ -37,7 +37,11 @@ def test_rules_read_certificates_into_the_forms_shape(tmp_path):
 
 
 def test_scanned_pdf_is_flagged_and_dates_parse(tmp_path):
-    blank = make_pdf(tmp_path / 'scan.pdf', ' ')
+    from pypdf import PdfWriter
+    w = PdfWriter(); w.add_blank_page(595, 842)
+    blank = tmp_path / 'scan.pdf'
+    with open(blank, 'wb') as f:
+        w.write(f)                                                             # pages without any text: a scan
     r = extract.read_files([('scan.pdf', blank.read_bytes())])
     assert r['files'][0]['scanned'] and r['rules']['documents'][0]['kind'] == 'other'
     assert extract.date_after('Valid until 5 Nov 2026', ['Valid until']) == '2026-11-05'
@@ -54,7 +58,7 @@ def test_extract_endpoints(tmp_path):
     assert r.status_code == 200, r.text
     j = r.json()
     assert j['rules']['product']['name'] == 'Cardiolol 10 mg' and 'cpp.pdf' in j['prompt'] and 'Certificate No: CPP-2024-0117' in j['prompt']
-    assert 'text' in j['files'][0] and j['ai_server'] is False          # the texts go back to the browser: it re-runs the rules after its own OCR of scans
+    assert 'text' in j['files'][0] and j['ai_server'] is False          # the texts go back to the browser: it re-runs the rules on them without sending the files again
     # from the documents already in a dossier
     prof = dict(dossier_kind='generic', origin='imported', licence='imported', activity='new',
                 apis=[dict(name='Bisoprolol fumarate', manufacturer='Unichem', option='CEP')])

@@ -71,7 +71,7 @@ def _docx_pages(data, name=''):
     """The text of a source file (Word, Excel, PowerPoint, OpenDocument, RTF, text — old format or new) as one page."""
     try:
         from .. import extract
-        text = extract.read_text(name, data, ocr=False)['text'] if extract.source_family(name, data) else ''
+        text = extract.read_text(name, data)['text'] if extract.source_family(name, data) else ''
         return [(1, text)] if text else []
     except Exception:
         return []

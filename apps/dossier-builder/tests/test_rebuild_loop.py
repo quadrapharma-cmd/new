@@ -24,15 +24,26 @@ def status(c, did, sid):
 
 
 @SOFFICE
-def test_auto_fix_makes_new_conforming_version(c, pdf13):
+def test_auto_fix_makes_new_conforming_version(c, tmp_path):
+    from pypdf import PdfWriter
+    w = PdfWriter(clone_from=str(make_pdf(tmp_path / 's.pdf', 'Appendix 4'))); w.add_js('app.alert(1);')
+    p = tmp_path / 'js.pdf'; w.write(open(p, 'wb'))
     did = new(c)
-    doc = up(c, did, 'M1-37', pdf13).json()                         # GMP certificate, PDF 1.3
-    assert status(c, did, 'M1-37')['status'] == 'non_conforming'
+    doc = up(c, did, 'M1-11', p.read_bytes()).json()                # a company document with JavaScript (written as PDF 1.3: its version line changed at upload)
+    assert doc['meta']['converted'] == ['pdf_version_1.7'] and status(c, did, 'M1-11')['status'] == 'non_conforming'
     r = c.post(f"/api/dossiers/{did}/documents/{doc['id']}/fix").json()
-    assert [x['op'] for x in r['done']] == ['pdf_version_normalise'] and r['document']['check_status'] == 'conforming'
-    s = status(c, did, 'M1-37')
+    assert [x['op'] for x in r['done']] == ['remove_javascript'] and r['document']['check_status'] == 'conforming'
+    s = status(c, did, 'M1-11')
     assert s['status'] == 'conforming' and [d['version'] for d in s['documents']] == [2]   # original superseded, kept
     assert c.get(f"/api/dossiers/{did}/documents/{doc['id']}/file").status_code == 200
+
+
+def test_a_pdf_13_is_stored_with_only_its_version_line_changed(c, pdf13):
+    did = new(c)
+    doc = up(c, did, 'M1-37', pdf13).json()                          # a GMP certificate (third-party evidence), PDF 1.3
+    assert doc['check_status'] == 'conforming' and doc['meta']['converted'] == ['pdf_version_1.7']
+    got = c.get(f"/api/dossiers/{did}/documents/{doc['id']}/file").content
+    assert got == pdf13.replace(b'%PDF-1.3', b'%PDF-1.7', 1)          # the evidence byte for byte, but its first line
 
 
 @SOFFICE

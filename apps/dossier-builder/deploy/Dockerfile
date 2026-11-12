@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
       python3 python3-venv ca-certificates \
       libreoffice-writer-nogui fonts-noto-core fonts-dejavu-core \
-      tesseract-ocr tesseract-ocr-ara tesseract-ocr-eng ghostscript libxml2-utils pngquant \
+      ghostscript libxml2-utils pngquant \
     && rm -rf /var/lib/apt/lists/*
 RUN python3 -m venv /opt/venv
 ENV PATH=/opt/venv/bin:$PATH

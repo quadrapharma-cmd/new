@@ -10,8 +10,6 @@ Output: apps/dossier-builder/web/dist/
   assets/pyodide/   the Pyodide runtime + wasm wheels (see vendor.sh)
   assets/wheels/    the pure-Python wheels (fastapi, starlette, pypdf, python-docx, …)
   assets/engine.zip the engine, rule packs, EG profiles and the ICH XSD, unpacked to /app in the browser
-  assets/pdfjs/     pdf.js (renders scanned pages to images for the AI intake and the browser OCR)
-  assets/tess/      tesseract.js + Arabic/English language data (OCR of scans in the browser; see vendor.sh)
 Binary files (.wasm .zip .whl) are written as base64 text (<name>.b64.txt): the artifact host serves text, not
 archives, and boot.js decodes them when Pyodide fetches them.
 """
@@ -34,11 +32,9 @@ def page(src, *, builder):
     css = (UI / 'assets' / 'ds.css').read_text(encoding='utf-8')
     js = (UI / 'assets' / 'ds.js').read_text(encoding='utf-8')
     boot = SHARED() + (HERE / 'boot.js').read_text(encoding='utf-8')      # large files as Blobs, the runtime kept on the device: used by the page and by the worker
-    ocr = (UI / 'assets' / 'ocr.js').read_text(encoding='utf-8')
     html = html.replace('<link rel="stylesheet" href="/assets/ds.css">', f'<style>\n{css}\n</style>')
     html = html.replace('<script src="/assets/ds.js"></script>',
                         f'<script>\n{js}\n</script>\n<script src="assets/pyodide/pyodide.js"></script>\n<script>\n{boot}\n</script>')
-    html = html.replace('<script src="/assets/ocr.js"></script>', f'<script>\n{ocr}\n</script>')
     html = html.replace('<script src="/assets/rar.js"></script>', '<script>\n' + (UI / 'assets' / 'rar.js').read_text(encoding='utf-8') + '\n</script>')      # the page's own RAR reader
     html = html.replace('<script src="/assets/archive.js"></script>', '<script>\n' + (UI / 'assets' / 'archive.js').read_text(encoding='utf-8') + '\n</script>')
     if builder:
@@ -117,9 +113,6 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--pyodide', default=str(HERE / 'vendor' / 'pyodide'))
     ap.add_argument('--wheels', default=str(HERE / 'vendor' / 'wheels'))
-    ap.add_argument('--pdfjs', default=str(HERE / 'vendor' / 'pdfjs'))
-    ap.add_argument('--tess', default=str(HERE / 'vendor' / 'tess'))
-    ap.add_argument('--img', default=str(HERE / 'vendor' / 'img'))
     a = ap.parse_args()
     if DIST.exists():
         shutil.rmtree(DIST)
@@ -130,15 +123,13 @@ def main():
     (DIST / 'suite.html').write_text(page(UI / 'suite' / 'index.html', builder=False)[1], encoding='utf-8')
     n = engine_zip(DIST / 'assets' / 'engine.zip')
     put(DIST / 'assets' / 'engine.worker.js', SHARED().encode('utf-8') + (HERE / 'engine.worker.js').read_bytes())      # the engine's own thread (boot.js starts it)
-    for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels'), (pathlib.Path(a.pdfjs), 'pdfjs'), (pathlib.Path(a.tess), 'tess'), (pathlib.Path(a.img), 'img')):
+    for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels')):
         if not src.is_dir():
             print(f'(no {sub} assets at {src}; skipped)')
             continue
         for f in sorted(src.iterdir()):
             if f.is_file():
                 put(DIST / 'assets' / sub / f.name, f.read_bytes())
-    if (HERE / 'tess' / 'worker.boot.js').exists() and (DIST / 'assets' / 'tess').is_dir():
-        put(DIST / 'assets' / 'tess' / 'worker.boot.js', (HERE / 'tess' / 'worker.boot.js').read_bytes())
     manifest(DIST)
     total = sum(f.stat().st_size for f in DIST.rglob('*') if f.is_file())
     print(f'dist: {DIST}\nengine.zip {n/1e6:.1f} MB · total {total/1e6:.1f} MB · files {sum(1 for f in DIST.rglob("*") if f.is_file())}')

@@ -64,12 +64,6 @@ def test_a_file_taken_out_of_a_draft_frees_its_space(c, ws, tmp_path):
     assert c.get(f'/api/intake/drafts/{dr}').json()['files'] == []
 
 
-def test_a_long_scan_keeps_every_page(c):
-    page = (DATA / 'page.jpg').read_bytes()
-    r = c.post('/api/images/pdf', files=[('files', (f'p{i}.jpg', page, 'image/jpeg')) for i in range(1100)], data={'title': 'fax.tif'})      # more than the old 300 pages, and than the framework's own 1000 files of one request
-    assert r.status_code == 200 and len(PdfReader(io.BytesIO(r.content)).pages) == 1100
-
-
 def test_a_large_batch_with_its_readings_is_taken_whole(c):
     """The readings that go with documents not placed yet are text fields of the request: together they pass the megabyte the
     framework allowed one field, and the batch used to be refused whole — with every file in it."""

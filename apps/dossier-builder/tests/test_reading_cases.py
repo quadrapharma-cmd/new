@@ -129,7 +129,7 @@ def test_product_documents_go_to_the_product_items(dossier):
 # ---- the «not placed yet» box
 def staged(dossier, tmp_path, name, text, kind):
     c, did, _ = dossier
-    pdf = make_pdf(tmp_path / name, 'Scanned page').read_bytes()
+    pdf = make_pdf(tmp_path / name, 'Copy of the original document, page 1 of 1').read_bytes()      # its own words name no kind
     r = c.post(f'/api/dossiers/{did}/unplaced', files=[('files', (name, pdf, 'application/pdf'))], data={'meta': json.dumps({name: {'kind': kind, 'text': text}})})
     assert r.status_code == 201, r.text
     return r.json()[0]
@@ -141,7 +141,7 @@ def test_placing_from_the_box(dossier, tmp_path):
     r = c.post(f"/api/dossiers/{did}/documents/{d['id']}/place", json={'slot_id': 'M1-05'})
     assert r.status_code == 200 and r.json()['title'] == 'Pricing Certificate'      # the item's title, not «scan 0007.pdf» (it becomes the eCTD leaf title)
     assert not any(f['rule'] == 'DOC-KIND' for f in r.json()['findings'])
-    # a scan has no text of its own: the reading the wizard made of it (browser OCR) still decides whether it is the right document
+    # its own words name no kind: the kind the reading gave it (kept with the file) decides whether it is the right document
     d = staged(dossier, tmp_path, 'approval.pdf', STAB_AR, 'stability')
     r = c.post(f"/api/dossiers/{did}/documents/{d['id']}/place", json={'slot_id': 'M1-05'})
     assert r.status_code == 200 and any(f['rule'] == 'DOC-KIND' and f['severity'] == 'block' for f in r.json()['findings'])
@@ -170,13 +170,13 @@ def test_the_kind_comes_from_inside_the_file_never_from_its_name(dossier, tmp_pa
     assert r['kind'] == 'pricing' and r['auto'] == 'M1-05'                            # what is written inside decides
 
 
-def test_an_upload_is_judged_by_the_reading_that_comes_with_it(dossier, tmp_path):
+def test_an_upload_is_judged_by_its_own_words_then_by_the_kind_its_reading_gave(dossier, tmp_path):
     c, did, _ = dossier
-    pdf = make_pdf(tmp_path / 'scan.pdf', 'Scanned page of a certificate').read_bytes()
+    pdf = make_pdf(tmp_path / 'copy.pdf', 'Copy of the original document, page 1 of 1').read_bytes()       # its own words name no kind
     r = c.post(f'/api/dossiers/{did}/slots/M1-05/documents', files={'file': ('pricing certificate.pdf', pdf, 'application/pdf')},
-               data={'meta': json.dumps({'text': STAB_AR})})
+               data={'meta': json.dumps({'kind': 'stability', 'text': PRICE_EN})})
     assert r.status_code == 201, r.text
-    assert any(f['rule'] == 'DOC-KIND' and f['severity'] == 'block' for f in r.json()['findings']) and 'text' not in r.json()['meta']
+    assert any(f['rule'] == 'DOC-KIND' and f['severity'] == 'block' for f in r.json()['findings']) and 'text' not in r.json()['meta']   # a text sent along is not taken
     r = c.post(f'/api/dossiers/{did}/slots/M1-05/documents', files={'file': ('stability approval.pdf', pdf, 'application/pdf')},
-               data={'meta': json.dumps({'text': PRICE_EN})})
+               data={'meta': json.dumps({'kind': 'pricing'})})
     assert not any(f['rule'] == 'DOC-KIND' for f in r.json()['findings'])             # a pricing certificate under a misleading file name is accepted

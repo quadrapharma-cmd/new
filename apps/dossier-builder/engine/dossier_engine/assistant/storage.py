@@ -171,7 +171,9 @@ def readings(st, did, doc_id=None):
 
 # ---------------- staged files (uploaded in the chat, not yet placed in a CTD item)
 def stage_document(st, did, filename, data, title=None, meta=None):
-    """A document row without a slot («unassigned»): the Assistant reads it and places it with place_document."""
+    """A document row without a slot («unassigned»): the Assistant reads it and places it with place_document. A file without text
+    is refused here too (Store.refuse_without_text)."""
+    st.refuse_without_text(filename, data)
     sha = st.put_blob(data)
     doc_id = str(uuid.uuid4())
     st.db.execute('insert into document values (?,?,?,?,?,?,?,?,?,?,?,?,?)',

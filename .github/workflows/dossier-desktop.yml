@@ -29,9 +29,6 @@ jobs:
         with: { python-version: '3.12' }
       - name: Install
         run: python -m pip install -r apps/dossier-builder/desktop/requirements.txt pyinstaller==6.22.3
-      - name: Browser OCR assets (tesseract.js + pdf.js — scanned documents are read in the user's browser)
-        shell: bash
-        run: bash apps/dossier-builder/web/vendor.sh ocr
       - name: Build
         env:
           MACOSX_DEPLOYMENT_TARGET: ${{ matrix.os == 'macos-15-intel' && '10.15' || '' }}

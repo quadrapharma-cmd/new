@@ -34,9 +34,9 @@
   severity: critical
   evidence: {data: [documents.searchable]}
   auto: {kind: data, check: pdfs_searchable}
-  deficiency: {en: "All documents must be scanned and searchable PDF. The listed company documents have no text layer; run OCR and replace them.", ar: "يجب أن تكون جميع المستندات PDF ممسوحة وقابلة للبحث. مستندات الشركة المذكورة بلا طبقة نصية؛ شغّل OCR واستبدلها."}
-  action: {type: ocr, target: documents}
-  source: {code: NP.CAPP.065 v5/2025, section: "General notes, note 4", quote: "All documents must be scanned and searchable PDF"}
+  deficiency: {en: "All documents must be scanned and searchable PDF. The listed company documents have no text layer; make the text layer when scanning (the scanner's software, Acrobat, or a phone app that saves searchable PDFs) and replace them.", ar: "يجب أن تكون جميع المستندات PDF ممسوحة وقابلة للبحث. مستندات الشركة المذكورة بلا طبقة نصية؛ اعمل النص وقت المسح (برنامج السكانر أو Acrobat أو تطبيق بيحفظ PDF قابل للبحث) واستبدلها."}
+  action: {type: upload, target: documents}
+  source: {code: NP.CAPP.065 v5/2025, section: "General notes, note 4", quote: "All submitted documents should be scanned and searchable PDF files."}
 - id: SC-VALID-01
   dept: screening
   layer: eda

@@ -1,11 +1,7 @@
-"""Arabic documents in the intake: text normalisation, Arabic-Indic digits, lenient label matching, dosage-form names,
-and OCR (tesseract ara+eng) for scans and images when the tools exist on the computer. Nothing here needs the network."""
-import os
+"""Arabic documents in the intake: text normalisation, Arabic-Indic digits, lenient label matching, dosage-form names.
+No OCR: the program reads the text a file already has (NP.CAPP.065 v5 general note 4 wants every document searchable, so the
+text layer is made when the paper is scanned). Nothing here needs the network."""
 import re
-import shutil
-import subprocess
-import sys
-import tempfile
 import unicodedata
 from . import imagefiles
 
@@ -101,88 +97,3 @@ def strength_en(text):
 def image_type(data):
     """The media type of an image, by its bytes (JPEG, PNG, GIF, BMP, TIFF, WebP, HEIC, AVIF, JPEG 2000, …); None when it is not one."""
     return imagefiles.image_mime(data or b'')
-
-
-# ---------------- OCR (local tools only; never in the browser)
-_LANGS = None
-
-
-def ocr_available():
-    return sys.platform != 'emscripten' and shutil.which('tesseract') is not None
-
-
-def ocr_langs():
-    global _LANGS
-    if _LANGS is None:
-        try:
-            r = subprocess.run(['tesseract', '--list-langs'], capture_output=True, text=True, timeout=30)
-            langs = set(re.findall(r'^\w+$', r.stdout + r.stderr, re.M))
-        except Exception:
-            langs = set()
-        _LANGS = 'ara+eng' if 'ara' in langs and 'eng' in langs else 'ara' if 'ara' in langs else 'eng'
-    return _LANGS
-
-
-def ocr_image(path, page=None):
-    """OCR of an image file; `page` = one page (from 0) of a multi-page TIFF."""
-    try:
-        cmd = ['tesseract', str(path), 'stdout', '-l', ocr_langs(), '--psm', '6'] + (['-c', f'tessedit_page_number={page}'] if page is not None else [])
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
-        return r.stdout if r.returncode == 0 else ''
-    except Exception:
-        return ''
-
-
-def ocr_image_bytes(data, suffix='.png', pages=4):
-    """OCR of an image of any kind: a TIFF page by page (the first `pages`), a photo turned the way its EXIF says, and a format
-    tesseract does not open (HEIC, AVIF, PSD, ICO) through a conversion to PNG. '' when the machine has no tool for it."""
-    if not ocr_available():
-        return ''
-    fmt = imagefiles.image_format(data)
-    with tempfile.TemporaryDirectory() as d:
-        if fmt == 'tiff':
-            p = os.path.join(d, 'img.tif')
-            with open(p, 'wb') as f:
-                f.write(data)
-            total = imagefiles.tiff_pages(data)
-            if total == 1:
-                return ocr_image(p)
-            return '\n\f\n'.join(ocr_image(p, i) for i in range(min(max(1, pages), total)))      # page by page: left alone, tesseract reads every page of the file
-        if fmt and (fmt not in imagefiles.TESS_READS or (fmt == 'jpeg' and imagefiles.exif_orientation(data) not in (None, 1))):
-            png = imagefiles.to_png(data)
-            if png:
-                data, suffix = png, '.png'
-            elif fmt not in imagefiles.TESS_READS:
-                return ''
-        p = os.path.join(d, 'img' + (suffix if not fmt or suffix == '.png' else imagefiles.EXT[fmt]))
-        with open(p, 'wb') as f:
-            f.write(data)
-        return ocr_image(p)
-
-
-def ocr_pdf(data, pages=4, dpi=200):
-    """OCR of the first pages of an image-only PDF (pdftoppm → tesseract). '' when the tools are missing."""
-    if not ocr_available() or not shutil.which('pdftoppm'):
-        return ''
-    with tempfile.TemporaryDirectory() as d:
-        src = os.path.join(d, 'doc.pdf')
-        with open(src, 'wb') as f:
-            f.write(data)
-        try:
-            # an ordinary page is rendered at `dpi`; a phone scan saved as a 28 × 42 inch page would come out 5600 × 8400 pixels at 200 dpi
-            # (36 s a page to read): a page larger than about A3 is rendered to fit a box of dpi × 12.5 pixels instead — the same text, a sixth of the time
-            size = ['-r', str(dpi)]
-            try:
-                from pypdf import PdfReader
-                rd = PdfReader(src, strict=False)
-                if max(max(float(pg.mediabox.width), float(pg.mediabox.height)) for pg in rd.pages[:pages]) / 72 * dpi > dpi * 17:
-                    size = ['-scale-to', str(int(dpi * 12.5))]
-            except Exception:
-                pass
-            subprocess.run(['pdftoppm', *size, '-png', '-f', '1', '-l', str(pages), src, os.path.join(d, 'p')], capture_output=True, timeout=180, check=True)
-        except Exception:
-            return ''
-        out = []
-        for name in sorted(x for x in os.listdir(d) if x.endswith('.png')):
-            out.append(ocr_image(os.path.join(d, name)))
-        return '\n\f\n'.join(out)

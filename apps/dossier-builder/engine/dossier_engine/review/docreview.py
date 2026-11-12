@@ -30,7 +30,7 @@ def _bi(en, ar):
 GENERIC = [
     {'id': 'DOC-TEXT', 'classes': None, 'severity': 'major', 'title': _bi('Searchable text', 'نص قابل للبحث'),
      'question': _bi('Does the document carry a text layer (not an image-only scan)?', 'هل المستند يحمل طبقة نص (ليس صورة ممسوحة فقط)؟'),
-     'deficiency': _bi('The document is an image-only scan: add an OCR text layer (Fix) or obtain a text copy.', 'المستند صورة ممسوحة بلا نص: أضف طبقة OCR (إصلاح) أو احصل على نسخة نصية.'),
+     'deficiency': _bi('The document is an image-only scan: replace it with a searchable copy (OCR made when scanning) or a text copy.', 'المستند صورة ممسوحة بلا نص: استبدله بنسخة قابلة للبحث (OCR وقت المسح) أو نسخة نصية.'),
      'source': 'NP.CAPP.065 v5 general notes (PDF)'},
     {'id': 'DOC-NAME', 'classes': None, 'severity': 'minor', 'title': _bi('Product named', 'اسم المنتج مذكور'),
      'question': _bi('Does the document name the product (trade name) it belongs to?', 'هل يذكر المستند اسم المنتج التجاري الذي يخصه؟'),

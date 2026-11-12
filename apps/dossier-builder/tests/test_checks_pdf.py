@@ -75,7 +75,7 @@ def test_scan_without_text(tmp_path):
     with open(p, 'wb') as f:
         w.write(f)
     p.write_bytes(p.read_bytes().replace(b'%PDF-1.3', b'%PDF-1.4', 1))   # pypdf writes 1.3 by default
-    assert check(str(p), 'third_party_certificate').status == 'needs_attention'   # GMP scan: accepted
+    assert check(str(p), 'third_party_certificate').status == 'non_conforming'    # a scanned certificate too: every document searchable (note 4)
     r = check(str(p), 'company_technical')
     assert 'NTA065-N4' in rules(r) and r.status == 'non_conforming'
     assert check(str(p), 'generated').findings[0].action == 'rebuild'
@@ -114,12 +114,15 @@ def test_locked_content_edit_impossible(cls, op):
 
 
 def test_locked_allows_placement():
-    for op in ('rename', 'place', 'split_pages', 'add_bookmarks', 'add_ocr_layer'):
+    for op in ('rename', 'place', 'split_pages', 'add_bookmarks', 'pdf_version_normalise'):
         assert assert_allowed('third_party_certificate', op)
     with pytest.raises(LockedError):
         assert_allowed('third_party_certificate', 'remove_security')     # only the issuer can
     with pytest.raises(LockedError):
-        assert_allowed('executed_record', 'add_ocr_layer')               # scan placement only
+        assert_allowed('executed_record', 'split_pages')                 # placement and the version line only
+    assert assert_allowed('executed_record', 'pdf_version_normalise')
+    with pytest.raises(ValueError):
+        assert_allowed('company_technical', 'add_ocr_layer')             # no OCR in the program
 
 
 def test_generated_is_editable():

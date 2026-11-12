@@ -297,8 +297,9 @@ def create_app(workspace, auth_enabled=None):
                 err(422, 'E-REPLACES', 'The replaced document must be a current document of the same section.',
                     'المستند المستبدَل لازم يكون مستند حالي في نفس القسم.')
         m = json.loads(meta or '{}')
-        known = m.pop('text', None) if isinstance(m, dict) else None       # the reading the page made of a scan: the kind rule judges the file by it
-        return st.add_document(did, slot_id, file.filename, data, title, m, supersede=replaces or None, text=known)
+        if isinstance(m, dict):
+            m.pop('text', None)                         # an older page sent its reading along: the file's own text is what counts
+        return st.add_document(did, slot_id, file.filename, data, title, m, supersede=replaces or None)
 
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/references', status_code=201)
     def add_reference(did: str, slot_id: str, body: dict):
@@ -342,16 +343,6 @@ def create_app(workspace, auth_enabled=None):
     def fix(did: str, doc_id: str):
         """Apply the allowed automatic fixes; the result is a new version, the original is kept (superseded)."""
         return st.fix_document(did, doc_id)
-
-    @app.post('/api/dossiers/{did}/documents/{doc_id}/ocr-layer', status_code=201)
-    async def ocr_layer(did: str, doc_id: str, pages: list[UploadFile] = File(...)):
-        """Readable copy of a scan: text-only PDF pages produced by the browser's OCR, laid over the original pages."""
-        blobs = [await p.read() for p in pages]
-        if not blobs or len(blobs) > 400:
-            err(422, 'E-PAGES', 'Send one text-only PDF page per page (1–400).', 'ابعت صفحة PDF نصية لكل صفحة (1–400).')
-        if any(b[:4] != b'%PDF' for b in blobs if b):
-            err(422, 'E-PAGES', 'Each page must be a PDF.', 'كل صفحة لازم تكون PDF.')
-        return st.add_ocr_layer(did, doc_id, blobs, where='browser')
 
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/request', status_code=201)
     def request_reobtain(did: str, slot_id: str, body: ReqReq):
@@ -549,8 +540,7 @@ def create_app(workspace, auth_enabled=None):
         from ..assistant import settings as _asettings
         import importlib.util
         return {'version': app.version, 'workspace': str(st.root), 'assistant': _asettings.status(st.root),
-                'ocr_server': bool(_arabic.ocr_available() and importlib.util.find_spec('ocrmypdf')),
-                'ocr_browser': bool(getattr(app.state, 'ocr_browser', False)), 'drive': __import__('dossier_engine.drive', fromlist=['status']).status(st.root),
+                'drive': __import__('dossier_engine.drive', fromlist=['status']).status(st.root),
                 'dossiers': st.db.execute('select count(*) from dossier').fetchone()[0],
                 'pack': {'id': pack.id, 'title': pack.meta['title'], 'status': pack.meta['status'],
                          'valid_from': pack.meta['valid_from'], 'sources': pack.meta['sources']},
@@ -638,29 +628,10 @@ def create_app(workspace, auth_enabled=None):
         except _archives.ArchiveError as e:
             err(422, e.code, e.en, e.ar)
 
-    @app.post('/api/images/pdf')
-    async def images_pdf(files: list[UploadFile] = File(...), title: str = Form('')):
-        """JPEG pages (decoded by the page: a TIFF's pages, a HEIC photo, a BMP…) → one PDF, each image stored as it came."""
-        pages = [await f.read() for f in files]             # every page: a long fax is not cut
-        if not pages or any(_imagefiles.image_format(p) != 'jpeg' for p in pages):
-            err(422, 'E-IMAGE', 'The pages must be JPEG images.', 'الصفحات لازم تكون صور JPEG.')
-        try:
-            pdf = _imagefiles.jpegs_pdf(pages, title or None)
-        except ValueError as e:
-            err(422, 'E-IMAGE', f'A page could not be used ({e}).', 'فيه صفحة ما اتقبلتش.')
-        return Response(pdf, media_type='application/pdf')
-
-    @app.post('/api/images/png')
-    async def image_png(file: UploadFile = File(...)):
-        """An image the browser cannot decode (JPEG 2000, PSD, PCX, PNM…), as PNG — where this machine has Pillow or a converter."""
-        png = _imagefiles.to_png(await file.read())
-        if not png:
-            err(422, 'E-IMAGE', 'This machine cannot open that kind of image either.', 'الجهاز ده كمان مش بيفتح نوع الصورة ده.')
-        return Response(png, media_type='image/png')
-
     @app.post('/api/extract/text')
     def extract_texts(body: dict, target: str = 'dossier'):
-        """The rules on texts the browser extracted itself (OCR of scans in the browser): same shape as /api/extract."""
+        """The rules on texts already read (the page sends back what /api/extract gave it, to merge again without reading the files
+        again): same shape as /api/extract."""
         files = body.get('files') or []
         if not isinstance(files, list) or len(files) > 300:
             err(422, 'E-FILES', 'files must be a list of at most 300 items.', 'files لازم تكون قائمة بحد أقصى 300 عنصر.')
@@ -805,7 +776,7 @@ def create_app(workspace, auth_enabled=None):
 
     @app.post('/api/dossiers/{did}/classify/text')
     def classify_text(did: str, body: dict):
-        """Suggest a slot for files whose text the page already has (its own OCR of scans): [{filename, text, kind?}] → suggestions."""
+        """Suggest a slot for files whose text the page already has (the wizard's reading): [{filename, text, kind?}] → suggestions."""
         d = st.dossier(did)
         clf = Classifier(st.pack(d['pack']))
         slots = st.slots(did)
@@ -873,7 +844,7 @@ def create_app(workspace, auth_enabled=None):
         title = (body or {}).get('title') or d0.get('title')
         if title == d0['filename']:
             title = None                                    # a staged file's title is its file name: the item's own title names it in the dossier
-        new = st.add_document(did, slot_id, d0['filename'], data, title, meta, text=d0['meta'].get('text'), kind=d0['meta'].get('kind'))
+        new = st.add_document(did, slot_id, d0['filename'], data, title, meta, kind=d0['meta'].get('kind'))
         if d0['state'] == 'current':
             st.withdraw(did, doc_id, 'placed')
         return new
@@ -888,7 +859,7 @@ def create_app(workspace, auth_enabled=None):
         for f in files:
             data = await f.read()
             try:                                        # what is written in the file: a PDF's text layer, a Word file (.docx or .doc)
-                text = _extract.read_text(f.filename, data, max_pages=2, ocr=False)['text']
+                text = _extract.read_text(f.filename, data, max_pages=2)['text']
             except Exception:
                 text = ''
             kind, sugg, auto = _suggest_with_kind(clf, slots, f.filename, text, None, (d.get('product') or {}).get('name'))
@@ -946,11 +917,6 @@ def create_app(workspace, auth_enabled=None):
             return _RR('/suite/', status_code=307)
 
     if STATIC.exists():
-        VENDOR = Path(__file__).resolve().parents[3] / 'web' / 'vendor'
-        for sub in ('tess', 'pdfjs', 'img'):                   # browser OCR and page rendering (fetched by web/vendor.sh; not in git)
-            if (VENDOR / sub).is_dir():
-                app.mount(f'/assets/{sub}', StaticFiles(directory=VENDOR / sub), name=f'vendor-{sub}')
-        app.state.ocr_browser = (VENDOR / 'tess' / 'tesseract.min.js').exists() and (VENDOR / 'pdfjs' / 'pdf.min.mjs').exists()
         app.mount('/', StaticFiles(directory=STATIC, html=True), name='ui')
     app.state.store = st
     return app

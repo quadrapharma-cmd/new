@@ -9,7 +9,6 @@
     'python_multipart-0.0.20-py3-none-any.whl', 'pypdf-7.0.0-py3-none-any.whl', 'python_docx-1.2.0-py3-none-any.whl'];
   const PKGS = ['sqlite3', 'hashlib', 'ssl', 'lxml', 'pyyaml', 'pydantic', 'jsonschema'];
   const base = new URL('.', document.baseURI).href;
-  window.DB_TESS_BASE = base + 'assets/tess/'; window.DB_PDFJS_BASE = base + 'assets/pdfjs/'; window.DB_IMG_BASE = base + 'assets/img/';     // ocr.js (tesseract.js, pdf.js, image decoders)
   const S = { pyodide: null, handle: null, worker: null, syncTimer: null, ready: null };
   const AR = (document.documentElement.lang || 'ar') !== 'en';
 
@@ -220,52 +219,15 @@
   }, true);
   const nativeOpen = window.open;
   window.open = function (u) { if (typeof u === 'string' && u.startsWith('/api/')) { saveFromApi(u); return null; } return nativeOpen.apply(window, arguments); };
-  // ---- AI intake (claude.ai only): Claude reads the documents' text, and the page images of scanned PDFs
-  let pdfjsP = null;
-  function pdfjs() {
-    if (!pdfjsP) pdfjsP = import(base + 'assets/pdfjs/pdf.min.mjs').then(m => { m.GlobalWorkerOptions.workerSrc = base + 'assets/pdfjs/pdf.worker.min.mjs'; return m; });
-    return pdfjsP;
-  }
-  async function pageImages(file, max) {
-    const lib = await pdfjs();
-    const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
-    const out = [];
-    for (let i = 1; i <= Math.min(doc.numPages, max); i++) {
-      const page = await doc.getPage(i), vp = page.getViewport({ scale: 1.4 });
-      const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
-      await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
-      out.push(await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85)));
-    }
-    return out;
-  }
+  // ---- AI intake (claude.ai only): Claude reads the documents' own text, sent in the prompt — no OCR and no page images
+  // (a file without text is refused at the upload gate: NP.CAPP.065 v5 general note 4 wants every document searchable)
   window.DBAI = {
     async available() { try { return !!(window.claude && typeof window.claude.use === 'function' && await window.claude.use('sample')); } catch (e) { return false; } },
     async extract(prompt, files, meta, target) {
       const sample = await window.claude.use('sample');
       if (!sample) throw { code: 'unavailable', message: 'sample unavailable' };
-      const lim = await sample.limits().catch(() => null);
-      const maxImages = (lim && lim.images && lim.images.maxCount) || 4;     // limits unknown → still send the scans (4 pages)
-      const images = [];
-      if (files && meta && !(lim && lim.images === false)) {
-        for (let i = 0; i < files.length && images.length < maxImages; i++) {
-          if (!files[i] || !meta[i] || !meta[i].scanned) continue;
-          const isImage = meta[i].file === 'image' || /^image\//.test(files[i].type || '') || /\.(jpe?g|png|webp|gif)$/i.test(files[i].name || '');
-          // an image of any kind goes to the model as PNG/JPEG pages (TIFF, HEIC, BMP… are decoded by ocr.js); a PDF as its page images
-          const asPages = f => (window.DBOCR && window.DBOCR.images) ? window.DBOCR.images(f, 3).catch(() => [f]) : Promise.resolve([f]);
-          const imgs = (isImage ? await asPages(files[i]) : await pageImages(files[i], 3)).slice(0, maxImages - images.length);
-          if (imgs.length) { prompt += `\n(Images ${images.length + 1}-${images.length + imgs.length} are the pages of document "${files[i].name}".)`; images.push(...imgs); }
-        }
-      }
-      const opts = { modelTier: target === 'document' ? 'quick' : 'default', cache: false };
-      if (images.length) opts.images = images;
-      try { return await sample.json(prompt, opts); }
-      catch (e) {                                                      // the pictures may be what failed: once more with the text alone — never when the viewer said no or cannot
-        const final = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed', 'rate_limited', 'session_expired', 'cancelled'];
-        if (images.length && !(e && final.includes(e.code))) { delete opts.images; return await sample.json(prompt, opts); }
-        throw e;
-      }
+      return await sample.json(prompt, { modelTier: target === 'document' ? 'quick' : 'default', cache: false });
     },
-    pageImages,
     /* one JSON answer from claude.ai's model for a prompt the engine wrote (drafting a document, filling a template) */
     async ask(prompt, opts) {
       const sample = await window.claude.use('sample');

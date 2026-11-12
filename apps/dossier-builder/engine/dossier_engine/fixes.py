@@ -1,4 +1,5 @@
-"""Automatic technical fixes (02-LOGIC §6 «allowed technical ops»).
+"""Automatic technical fixes (02-LOGIC §6 «allowed technical ops»). No OCR: a PDF without text is refused at upload and its
+text layer is made when scanning.
 
 Each finding whose action is auto_fix maps to an operation. Every operation is
 checked by the guard for the document's class, and for read-only evidence
@@ -14,17 +15,28 @@ from pypdf.generic import NameObject
 from .guard import assert_allowed, LockedError
 from .checks.pdf import LOCKED, check
 
-RULE_TO_OP = {'EG-PF-16.1': 'pdf_version_normalise', 'EG-BP-16.BP1': 'pdf_version_normalise',
-              'EG-PF-16.3': 'remove_security', 'PDF-JS': 'remove_javascript',
-              'NTA065-N4': 'add_ocr_layer', 'EG-BP-E23': 'add_ocr_layer', 'NTA065-BM': 'add_bookmarks'}
-ORDER = ['remove_security', 'remove_javascript', 'pdf_version_normalise', 'add_ocr_layer', 'add_bookmarks']
+RULE_TO_OP = {'EG-PF-16.1': 'pdf_version_normalise', 'EG-PF-16.3': 'remove_security', 'PDF-JS': 'remove_javascript',
+              'NTA065-BM': 'add_bookmarks'}
+ORDER = ['remove_security', 'remove_javascript', 'pdf_version_normalise', 'add_bookmarks']
+HEADER = re.compile(rb'%PDF-1\.[0-3]')
 HEADING = re.compile(r'^\s*((?:\d{1,2}|[A-Z])(?:\.(?:\d{1,2}|[A-Z])){1,7}\.?|\d{1,2}[.)]|[IVX]{1,4}\.)\s+(\S.{2,90})$')
 LABEL = {'remove_security': ('Security restrictions removed', 'تمت إزالة قيود الحماية'),
          'remove_javascript': ('JavaScript removed', 'تمت إزالة JavaScript'),
-         'pdf_version_normalise': ('Saved as PDF 1.7', 'تم الحفظ كـ PDF 1.7'),
-         'add_bookmarks': ('Bookmarks added from the document headings', 'تمت إضافة bookmarks من عناوين المستند'),
-         'add_ocr_layer': ('Searchable text layer added (OCR, Arabic + English); page images unchanged',
-                           'تمت إضافة طبقة نص قابلة للبحث (OCR عربي + إنجليزي)؛ صور الصفحات كما هي')}
+         'pdf_version_normalise': ('Version line set to PDF 1.7 (nothing else in the file changed)',
+                                   'رقم الإصدار في أول سطر بقى 1.7 (ولا حاجة تانية في الملف اتغيّرت)'),
+         'add_bookmarks': ('Bookmarks added from the document headings', 'تمت إضافة bookmarks من عناوين المستند')}
+
+
+def set_version_17(data):
+    """The PDF's version line («%PDF-1.3») changed to «%PDF-1.7» in place: the same length, every other byte of the file identical, so
+    nothing on the pages can change (1.7 reads everything 1.0–1.3 wrote). None when there is nothing to change, or when the file is
+    digitally signed (the signature covers those bytes too)."""
+    data = data or b''
+    m = HEADER.search(data[:1024])
+    if not m or b'/ByteRange' in data:
+        return None
+    i = m.start() + 7
+    return data[:i] + b'7' + data[i + 1:]
 
 
 def ops_for(findings):
@@ -107,12 +119,6 @@ def _bookmarks(src, dst):
         w.write(f)
 
 
-def _ocr(src, dst):
-    import ocrmypdf
-    ocrmypdf.ocr(str(src), str(dst), language=['ara', 'eng'], skip_text=True, optimize=0, output_type='pdf',
-                 progress_bar=False)
-
-
 def _raster(path, outdir, tag):
     gs = shutil.which('gs')
     if not gs:
@@ -123,7 +129,10 @@ def _raster(path, outdir, tag):
 
 
 def same_pixels(a, b):
-    from PIL import Image, ImageChops
+    try:
+        from PIL import Image, ImageChops
+    except ImportError:                                  # the browser edition has no image library: the fix is refused, never a crash
+        raise RuntimeError('no image library on this machine for the pixel check')
     with tempfile.TemporaryDirectory() as d:
         pa, pb = _raster(a, d, 'a'), _raster(b, d, 'b')
         if len(pa) != len(pb):
@@ -155,8 +164,17 @@ def apply(path, findings, doc_class):
                                 'ar': 'التعديل ده على مستند جهة خارجية/الهيئة من حق الجهة المصدرة بس — اطلبه منها.'})
                 continue
             nxt = Path(d) / f'v{i}.pdf'
+            if op == 'pdf_version_normalise':              # the version line only: every other byte stays, so no pixel check is needed
+                v17 = set_version_17(cur.read_bytes())
+                if v17 is None:
+                    refused.append({'op': op, 'en': 'The version line could not be changed.', 'ar': 'رقم الإصدار ما ينفعش يتغيّر.'})
+                    continue
+                nxt.write_bytes(v17)
+                cur = nxt
+                done.append({'op': op, 'en': LABEL[op][0], 'ar': LABEL[op][1]})
+                continue
             try:
-                {'add_ocr_layer': lambda: _ocr(cur, nxt), 'add_bookmarks': lambda: _bookmarks(cur, nxt)}.get(op, lambda: _rewrite(cur, nxt, op))()
+                {'add_bookmarks': lambda: _bookmarks(cur, nxt)}.get(op, lambda: _rewrite(cur, nxt, op))()
             except Exception as e:
                 refused.append({'op': op, 'en': f'Could not apply: {type(e).__name__}: {e}'[:300], 'ar': 'تعذّر التطبيق.'})
                 continue
@@ -177,23 +195,3 @@ def apply(path, findings, doc_class):
             return {'data': None, 'done': [], 'refused': refused, 'report': None}
         rep = check(str(cur), doc_class)
         return {'data': cur.read_bytes(), 'done': done, 'refused': refused, 'report': rep}
-
-
-def overlay_text_pages(src, page_pdfs):
-    """A searchable copy without touching the page images: each text-only PDF page (invisible OCR text, as tesseract.js writes
-    with pdfTextOnly) is scaled to the original page and merged on top of it. Pages without an overlay stay as they are."""
-    import io
-    from pypdf import PdfReader, PdfWriter, Transformation
-    w = PdfWriter(clone_from=PdfReader(io.BytesIO(src), strict=False))
-    for i, page in enumerate(w.pages):
-        if i < len(page_pdfs) and page_pdfs[i]:
-            try:
-                ov = PdfReader(io.BytesIO(page_pdfs[i]), strict=False).pages[0]
-                sx = float(page.mediabox.width) / float(ov.mediabox.width)
-                sy = float(page.mediabox.height) / float(ov.mediabox.height)
-                page.merge_transformed_page(ov, Transformation().scale(sx, sy))
-            except Exception:          # a bad overlay page is skipped, the original page is kept
-                pass
-    out = io.BytesIO()
-    w.write(out)
-    return out.getvalue()

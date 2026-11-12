@@ -230,7 +230,7 @@ TEMPLATE (section id [kind] title EN / AR):
 PRODUCT DATA (JSON):
 {json.dumps(data, ensure_ascii=False)[:20000]}
 
-BASE DOCUMENTS (text as read; OCR may contain errors):
+BASE DOCUMENTS (their text as read from the files):
 {docs or '(none uploaded yet)'}
 
 Answer with ONE JSON object and nothing else:

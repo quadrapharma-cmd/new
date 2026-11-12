@@ -1,9 +1,10 @@
 """Review fixes in the page (Playwright): a refresh keeps what the user typed and chose, a file refused by the kind rule never fills the
 form (the model reads only the accepted files), another document with the same file name is kept under a free name, the page's copy of
-the active-substance cleaning matches the engine, one unread scan does not switch the kind off for the other files, and a leaflet placed
+the active-substance cleaning matches the engine, a scan without text is refused on its line (and its searchable copy takes its place)
+while the other files go on, and a leaflet placed
 from the «not placed yet» box asks for its type and language, a file the kind rule refused waits in that box after «Create» (never lost),
-a typed API cell never stops later readings, a file moved to its card by «move it» gets its model reading, and a resumed placement runs once,
-writes the data once and finishes the «make it readable» conversions. Fictional product «Dermacure» / «Cardiolol»."""
+a typed API cell never stops later readings, a file moved to its card by «move it» gets its model reading, and a resumed placement runs once
+and writes the data once. Fictional product «Dermacure» / «Cardiolol»."""
 import io, json
 import httpx
 import pytest
@@ -135,19 +136,21 @@ def test_the_pages_active_substance_cleaning_matches_the_engine(server, browser)
     page.close()
 
 
-def test_one_unread_scan_does_not_switch_the_kind_rule_off_for_the_others(server, browser, tmp_path):
+def test_a_scan_without_text_is_refused_and_the_others_go_on(server, browser, tmp_path):
     cpp = make_pdf_lines(tmp_path / 'cpp.pdf', CPP, 'WHO Certification Scheme')
     price = make_pdf_lines(tmp_path / 'price.pdf', EDA_PRICING, 'Pricing')               # an EDA pricing letter: no «pricing certificate» phrase
     PIL = pytest.importorskip('PIL.Image')
     blank = tmp_path / 'scan001.pdf'
-    PIL.new('RGB', (800, 1100), 'white').save(blank, 'PDF', resolution=100.0)          # an image-only scan nobody could read here (no text at all)
-    page, errors = _page(browser, server, "window.DBOCR={available:async()=>false};")
+    PIL.new('RGB', (800, 1100), 'white').save(blank, 'PDF', resolution=100.0)          # an image-only scan: no text of its own
+    page, errors = _page(browser, server)
     _upload(page, '[data-updoc="registration_licence"]', [cpp])
     page.wait_for_selector('#intakeReview', timeout=120000)
     _upload(page, '[data-updoc="pricing_certificate"]', [price])
     page.wait_for_selector('[data-docline="price.pdf"] .c-ok', timeout=120000)
     _upload(page, '[data-updoc="other"]', [blank])
-    page.wait_for_selector('[data-docline="scan001.pdf"]', timeout=120000)
+    page.wait_for_selector('[data-docline="scan001.pdf"] [data-notext]', timeout=120000)   # refused on its line …
+    why = page.inner_text('[data-docline="scan001.pdf"]')
+    assert 'no text' in why and 'searchable PDF' in why and 'NP.CAPP.065' in why            # … with the reason and what to do
     page.wait_for_function("() => !document.querySelector('.doccards .c-wait')", timeout=120000)
     page.click('#wizNext'); page.click('#wizNext'); page.click('#wizNext')
     page.fill('[data-api="0"][data-f=manufacturer]', 'Unichem Laboratories')
@@ -156,8 +159,26 @@ def test_one_unread_scan_does_not_switch_the_kind_rule_off_for_the_others(server
     page.click('#wizCreate')
     page.wait_for_selector('text=Requirements board')
     did = page.url.split('/d/')[1].split('/')[0]
-    placed, unplaced = _board_when(server, did, lambda p, u: 'scan001.pdf' in u)          # the placement is over once the unread scan is kept aside
-    assert placed.get('price.pdf') == 'M1-05' and placed.get('cpp.pdf') == 'M1-14'       # before the fix the pricing letter was left «not placed»
+    placed, unplaced = _board_when(server, did, lambda p, u: 'price.pdf' in p and 'cpp.pdf' in p)
+    assert placed.get('price.pdf') == 'M1-05' and placed.get('cpp.pdf') == 'M1-14'
+    assert 'scan001.pdf' not in placed and 'scan001.pdf' not in unplaced                   # never sent to the dossier
+    assert errors == [], errors
+    page.close()
+
+
+def test_a_refused_scan_is_replaced_by_its_searchable_copy(server, browser, tmp_path):
+    PIL = pytest.importorskip('PIL.Image')
+    (tmp_path / 'scan').mkdir()
+    blank = tmp_path / 'scan' / 'gmp.pdf'
+    PIL.new('RGB', (800, 1100), 'white').save(blank, 'PDF', resolution=100.0)
+    good = make_pdf_lines(tmp_path / 'gmp.pdf', ['Certificate of GMP Compliance of a Manufacturer', 'Medis S.A., Nabeul, Tunisia',
+                                                 'The manufacturer complies with Good Manufacturing Practice'], 'GMP')
+    page, errors = _page(browser, server)
+    _upload(page, '[data-updoc="other"]', [blank])
+    page.wait_for_selector('[data-docline="gmp.pdf"] [data-notext]', timeout=120000)
+    _upload(page, '[data-updoc="other"]', [good])                                            # the same name, now searchable
+    page.wait_for_selector('[data-docline="gmp.pdf"] .c-ok', timeout=120000)
+    assert page.locator('[data-docline="gmp.pdf"]').count() == 1 and page.locator('[data-notext]').count() == 0
     assert errors == [], errors
     page.close()
 
@@ -356,32 +377,3 @@ def test_a_resumed_placement_runs_once_and_keeps_what_was_edited_on_the_board(se
     assert not any((d['state'] or {}).get('created') == did for d in httpx.get(f'{server}/api/intake/drafts').json())
     assert errors == [], errors
     ctx.close()
-
-
-def test_a_resumed_placement_finishes_the_readable_conversions(server, browser, tmp_path):
-    prof = dict(dossier_kind='generic', origin='local', licence='own', activity='new', admin_route='topical',
-                apis=[dict(name='Neomycin sulphate', manufacturer='Sichuan Example Pharmaceutical', option='FULL')])
-    c = httpx.Client(base_url=server, headers={'X-DB': '1'})
-    did = c.post('/api/dossiers', json=dict(name='Dermacure', profile=prof, product=dict(name='Dermacure', dosageform='topical powder', manufacturer='Example'),
-                                            envelope={})).json()['id']
-    scan = make_pdf_lines(tmp_path / 'scan.pdf', ['GMP Certificate', 'Example Pharma'], 'GMP').read_bytes()
-    slot = next(s['slot_id'] for s in c.get(f'/api/dossiers/{did}/board').json()['slots'] if s['req_id'] == 'M1-37')
-    doc = c.post(f'/api/dossiers/{did}/slots/{slot}/documents', files={'file': ('scan.pdf', io.BytesIO(scan), 'application/pdf')}).json()   # placed before the refresh
-    state = {'step': 4, 'created': did, 'dataWritten': True, 'd': {'name': 'Dermacure', 'trade': 'Dermacure', 'apis': []}, 'docs': {'scan.pdf': {'kind': 'gmp_certificate', 'status': 'ok'}},
-             'texts': {'scan.pdf': {'filename': 'scan.pdf', 'text': 'GMP Certificate', 'pages': 1, 'scanned': True, 'ocr': True, 'ocr_where': 'browser'}}, 'kinds': {'scan.pdf': 'gmp'}}
-    draft = c.post('/api/intake/drafts', json={'state': state}).json()['id']
-    c.post(f'/api/intake/drafts/{draft}/files', files={'file': ('scan.pdf', io.BytesIO(scan), 'application/pdf')}, data={'kind': 'gmp_certificate'})
-    page = browser.new_page(viewport={'width': 1440, 'height': 900})
-    errors = []
-    page.on('pageerror', lambda e: errors.append(str(e)))
-    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
-    page.add_init_script("localStorage.setItem('db.lang','en')")
-    page.goto(f'{server}/#/d/{did}/board')
-    page.wait_for_selector('text=Requirements board')
-    page.evaluate("() => { window.__conv = []; window.makeReadable = async (d, id, name) => { window.__conv.push([id, name]); return {id}; }; }")
-    page.evaluate(f"() => {{ localStorage.setItem('db.wizDraft', '{draft}'); return wizResume(); }}")
-    assert page.evaluate('window.__conv') == [[doc['id'], 'scan.pdf']]                   # before the fix: nothing left to place, so no conversion and the draft gone
-    page.wait_for_timeout(500)
-    assert c.get('/api/intake/drafts/' + draft).status_code == 404
-    assert errors == [], errors
-    page.close()

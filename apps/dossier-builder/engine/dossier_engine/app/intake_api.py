@@ -1,5 +1,5 @@
 """Intake drafts — the new-dossier wizard keeps its work on the server as it goes (fields, the uploaded files, what was read from
-them including OCR text), so a page refresh, a closed tab or another computer picks up where it stopped. One draft per wizard
+them including their readings), so a page refresh, a closed tab or another computer picks up where it stopped. One draft per wizard
 run; it stays (and shows in the projects list as a draft) until the dossier is created or the user deletes it. A draft that was
 deleted never comes back through a late save: writing to it answers 404."""
 import uuid

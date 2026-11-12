@@ -1,8 +1,8 @@
 #!/bin/bash
-# Fetch the browser runtime once (not committed: ~20 MB): Pyodide 0.27.7 + the wasm wheels the engine needs, and the pure wheels,
-# plus pdf.js, tesseract.js and the image decoders (reading scanned documents and photos in the browser).
-#   web/vendor.sh        everything (the browser edition)
-#   web/vendor.sh ocr    pdf.js + tesseract.js + image decoders only (the desktop build: scans are read in the user's browser, no system tesseract)
+# Fetch the browser runtime once (not committed: ~20 MB): Pyodide 0.27.7 + the wasm wheels the engine needs, and the pure wheels.
+# No OCR anywhere (no tesseract.js, no pdf.js, no image decoders): a document without text is refused at the upload gate.
+#   web/vendor.sh        the runtime, then the public RAR samples for the archive tests
+#   web/vendor.sh tests  the RAR samples only
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"; V=0.27.7; MODE="${1:-all}"
 b64() { base64 | tr -d '\n'; }          # GNU and BSD/macOS base64 alike (no -w0 on macOS)
@@ -22,27 +22,6 @@ pip download -q --no-deps --only-binary=:all: --python-version 3.12 --platform a
   "typing_extensions==4.12.2" "pypdf==7.0.0" "python-docx==1.2.0"
 ls -la "$HERE/vendor/pyodide" "$HERE/vendor/wheels"
 fi
-# pdf.js (page images of scanned PDFs for the AI intake)
-mkdir -p "$HERE/vendor/pdfjs" && curl -sS -L "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.10.38.tgz" | tar -xz -C /tmp package/build/pdf.min.mjs package/build/pdf.worker.min.mjs && cp /tmp/package/build/pdf.min.mjs /tmp/package/build/pdf.worker.min.mjs "$HERE/vendor/pdfjs/"
-# tesseract.js (OCR in the browser: Arabic + English): the library, its single-file LSTM cores, and the fast language data as base64 text
-T="$HERE/vendor/tess"; mkdir -p "$T" /tmp/tessjs
-curl -sS -L "https://registry.npmjs.org/tesseract.js/-/tesseract.js-7.0.0.tgz" | tar -xz -C /tmp/tessjs package/dist/tesseract.min.js package/dist/worker.min.js package/dist/tesseract.min.js.LICENSE.txt
-curl -sS -L "https://registry.npmjs.org/tesseract.js-core/-/tesseract.js-core-6.1.2.tgz" | tar -xz -C /tmp/tessjs package/tesseract-core-simd-lstm.wasm.js package/tesseract-core-lstm.wasm.js package/LICENSE
-cp /tmp/tessjs/package/dist/tesseract.min.js /tmp/tessjs/package/dist/worker.min.js /tmp/tessjs/package/tesseract-core-simd-lstm.wasm.js /tmp/tessjs/package/tesseract-core-lstm.wasm.js "$T/"
-cp /tmp/tessjs/package/dist/tesseract.min.js.LICENSE.txt "$T/LICENSE.tesseract.js.txt"; cp /tmp/tessjs/package/LICENSE "$T/LICENSE.tesseract.js-core.txt"
-for l in ara eng; do curl -sS -L -o /tmp/$l.traineddata "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/$l.traineddata"; gzip -9 -c /tmp/$l.traineddata | b64 > "$T/$l.traineddata.gz.b64.txt"; done
-cp "$HERE/tess/worker.boot.js" "$T/"      # decodes the base64 language data inside the worker (tracked in git)
-ls -la "$T"
-# image decoders for the browser (ocr.js): TIFF pages (UTIF.js + pako's inflate) and HEIC/HEIF photos (libheif, WebAssembly inside one file)
-I="$HERE/vendor/img"; mkdir -p "$I" /tmp/imgjs/utif /tmp/imgjs/pako /tmp/imgjs/heif
-curl -sS -L "https://registry.npmjs.org/utif/-/utif-3.1.0.tgz" | tar -xz -C /tmp/imgjs/utif package/UTIF.js package/LICENSE
-curl -sS -L "https://registry.npmjs.org/pako/-/pako-2.1.0.tgz" | tar -xz -C /tmp/imgjs/pako package/dist/pako_inflate.min.js package/LICENSE
-curl -sS -L "https://registry.npmjs.org/libheif-js/-/libheif-js-1.23.5.tgz" | tar -xz -C /tmp/imgjs/heif package/libheif-wasm/libheif-bundle.js package/libheif-wasm/LICENSE
-cp /tmp/imgjs/utif/package/UTIF.js /tmp/imgjs/pako/package/dist/pako_inflate.min.js /tmp/imgjs/heif/package/libheif-wasm/libheif-bundle.js "$I/"
-cp /tmp/imgjs/utif/package/LICENSE "$I/LICENSE.utif.txt"; cp /tmp/imgjs/pako/package/LICENSE "$I/LICENSE.pako.txt"; cp /tmp/imgjs/heif/package/libheif-wasm/LICENSE "$I/LICENSE.libheif.txt"
-mkdir -p "$I/test" && curl -sS -L -o "$I/test/example.heic" "https://raw.githubusercontent.com/strukturag/libheif/master/examples/example.heic"   # a public sample for the HEIC test (not committed)
-ls -la "$I"
-
 # public RAR samples for the archive tests (not committed): libarchive's own test files, stored there uuencoded — old format and RAR5,
 # split in parts, solid, the text method, filters, a self-extracting one, and damaged ones that must be refused
 A="$HERE/vendor/arch/test"; mkdir -p "$A"
