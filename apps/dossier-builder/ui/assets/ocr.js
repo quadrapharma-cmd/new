@@ -72,13 +72,29 @@
      (GIF, BMP, WebP, AVIF, ICO, SVG, and HEIC or TIFF in Safari) goes through its decoder; a TIFF is decoded here, page by page
      (UTIF.js: LZW, PackBits, CCITT fax G3/G4, JPEG, Deflate); a HEIC/HEIF photo through libheif (WebAssembly). */
   const imgBase = () => abs(window.DB_IMG_BASE || (window.DB_TESS_BASE || 'assets/tess/').replace(/tess\/?$/, 'img/'));
+  /* the image decoders: the copy served with the program (desktop, server, local builds); where there is none (the page published on
+     claude.ai carries no copy of them), the same releases from jsDelivr, checked against their hashes */
+  const IMG_LIBS = {
+    utif: ['UTIF.js', 'https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js', 'sha384-RyBmXHdfZ/Uon+ud+/AqSyWpUWnKYt2tkRG/P4gWoRUGDU+qIAV3tGBPNlYTBZEF', () => !!window.UTIF],
+    pako: ['pako_inflate.min.js', 'https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako_inflate.min.js', 'sha384-taEjHL+GUvC8IhXeCaTNUxz3O8ItsajGFLDFj4v/VJvM24HU36qP/6sRpuAGGfeT', () => !!window.pako],
+    heif: ['libheif-bundle.js', 'https://cdn.jsdelivr.net/npm/libheif-js@1.23.5/libheif-wasm/libheif-bundle.js', 'sha384-QYMUACFeOR9DQlmZGsI+VXolKAMA0hYyiOXLSyd8o5rgrg9L+aKyRZCiiY7RNhPF', () => typeof window.libheif === 'function'],
+  };
   const scripts = {};
-  function loadScript(url) {
+  function loadScript(url, integrity) {
     return scripts[url] || (scripts[url] = new Promise((res, rej) => {
       const s = document.createElement('script'); s.src = url;
+      if (integrity) { s.integrity = integrity; s.crossOrigin = 'anonymous'; }
       s.onload = () => res(); s.onerror = () => { delete scripts[url]; rej(new Error('could not load ' + url.split('/').pop())); };
       document.head.appendChild(s);
     }));
+  }
+  async function loadLib(k) {
+    const [file, cdn, integrity, there] = IMG_LIBS[k];
+    if (there()) return;
+    await loadScript(imgBase() + file).catch(() => {});
+    if (!there()) await loadScript(cdn, integrity).catch(() => {});
+    if (!there()) await loadScript(cdn.replace('https://cdn.jsdelivr.net/npm/', 'https://unpkg.com/'), integrity).catch(() => {});   // the same file from a second public mirror
+    if (!there()) throw new Error('could not load ' + file);
   }
   const AR = () => (document.documentElement.lang || 'ar') !== 'en';
   function imageKind(h) {
@@ -123,8 +139,8 @@
     finally { URL.revokeObjectURL(url); }
   }
   async function tiffPages(file, maxPages) {
-    await loadScript(imgBase() + 'pako_inflate.min.js').catch(() => {});      // Deflate-compressed TIFFs; the others decode without it
-    await loadScript(imgBase() + 'UTIF.js');
+    await loadLib('pako').catch(() => {});                     // Deflate-compressed TIFFs; the others decode without it
+    await loadLib('utif');
     const buf = await file.arrayBuffer();
     const ifds = window.UTIF.decode(buf).filter(d => !(d.t254 && (d.t254[0] & 1)));   // reduced-resolution copies of a page are not pages
     const out = [];
@@ -142,7 +158,7 @@
   }
   let heifP = null;
   async function heicPage(file) {
-    await loadScript(imgBase() + 'libheif-bundle.js');
+    await loadLib('heif');
     if (!heifP) heifP = Promise.resolve(window.libheif());
     const lib = await heifP;
     const imgs = new lib.HeifDecoder().decode(new Uint8Array(await file.arrayBuffer()));

@@ -134,8 +134,10 @@ resolution, else fitted on A4); a TIFF keeps its pages; every other kind is deco
 browser edition does it too, `POST /api/images/pdf`), by Pillow in the engine. What is left is the scan's text layer, the same
 one-click OCR fix as any scanned PDF. An image nothing here can open is kept, with that reason. Not read inside the browser
 edition: JPEG 2000, PSD, PCX, PNM (no decoder in a browser); the desktop and server editions read them.
-Vendored by `web/vendor.sh` into `web/vendor/img` (not committed): UTIF.js (MIT), pako's inflate (MIT/Zlib), libheif-js (LGPL-3.0),
-each with its licence file. Tests: `tests/test_image_files.py`, `tests/test_ui_images.py`, `tests/test_web_edition.py`.
+The decoders — UTIF.js 3.1.0 (MIT), pako's inflate 2.1.0 (MIT/Zlib), libheif-js 1.23.5 (LGPL-3.0) — are vendored by `web/vendor.sh` into
+`web/vendor/img` (not committed, each with its licence file) and served at `/assets/img` by the desktop and server editions. The page
+published on claude.ai carries no copy: it loads the same releases from jsDelivr (unpkg as a second mirror), each checked against its
+SHA-384 (a file that differs is refused and the person is told the image could not be opened). Tests: `tests/test_image_files.py`, `tests/test_ui_images.py`, `tests/test_web_edition.py`.
 
 ### The reading rules, reviewed on real layouts (November 2026)
 

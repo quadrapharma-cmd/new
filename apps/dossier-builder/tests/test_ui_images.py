@@ -108,3 +108,52 @@ def test_an_image_put_in_an_item_is_stored_as_a_pdf(server):
         assert len(PdfReader(io.BytesIO(pdf)).pages) == 3
         assert not errors, errors
         b.close()
+
+
+def test_without_its_own_copy_the_page_takes_the_decoders_from_the_public_mirror(server):
+    """The page published on claude.ai carries no copy of the decoders: it loads the same releases from jsDelivr, each checked against
+    its hash (a file that differs is refused). Here the mirror is played by the vendored files."""
+    import hashlib, base64
+    libs = {'utif@3.1.0/UTIF.js': 'UTIF.js', 'pako@2.1.0/dist/pako_inflate.min.js': 'pako_inflate.min.js'}
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_page()
+        errors, asked = [], []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        def mirror(route):
+            path = route.request.url.split('/npm/')[1]
+            asked.append(path)
+            route.fulfill(status=200, content_type='text/javascript', headers={'access-control-allow-origin': '*'}, body=(VENDOR / 'img' / libs[path]).read_bytes())
+        page.route('https://cdn.jsdelivr.net/npm/**', mirror)
+        page.add_init_script("window.DB_IMG_BASE = '/assets/no-such-folder/';")
+        page.goto(server + '/#/')
+        page.wait_for_function("() => window.DBOCR && window.DS")
+        page.evaluate("() => { const i = document.createElement('input'); i.type = 'file'; i.id = 'fxin'; document.body.appendChild(i); }")
+        page.set_input_files('#fxin', str(FX / 'page-deflate.tif'))                               # Deflate: needs both libraries
+        r = page.evaluate("async () => { const pages = await DBOCR.images(document.querySelector('#fxin').files[0], 2); const bmp = await createImageBitmap(pages[0]); return [pages.length, bmp.width, bmp.height]; }")
+        assert r == [1, 1240, 700] and sorted(asked) == sorted(libs)
+        for path, name in libs.items():                                                            # the hashes written in ocr.js are those of the vendored releases
+            sri = 'sha384-' + base64.b64encode(hashlib.sha384((VENDOR / 'img' / name).read_bytes()).digest()).decode()
+            assert sri in (ROOT / 'ui' / 'assets' / 'ocr.js').read_text(encoding='utf-8'), name
+        assert not errors, errors
+        b.close()
+
+
+def test_a_decoder_that_does_not_match_its_hash_is_refused(server):
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_page()
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        tampered = lambda route: route.fulfill(status=200, content_type='text/javascript', headers={'access-control-allow-origin': '*'}, body=b'window.UTIF = {decode(){ return []; }}; window.pako = {};')
+        page.route('https://cdn.jsdelivr.net/npm/**', tampered)
+        page.route('https://unpkg.com/**', tampered)
+        page.route('**/api/images/png', lambda route: route.fulfill(status=422, content_type='application/json', body='{"detail":{"code":"E-IMAGE"}}'))   # as in the browser edition: no converter behind the page
+        page.add_init_script("localStorage.setItem('db.lang','en'); window.DB_IMG_BASE = '/assets/no-such-folder/';")
+        page.goto(server + '/#/')
+        page.wait_for_function("() => window.DBOCR && window.DS")
+        page.evaluate("() => { const i = document.createElement('input'); i.type = 'file'; i.id = 'fxin'; document.body.appendChild(i); }")
+        page.set_input_files('#fxin', str(FX / 'page-g4.tif'))
+        msg = page.evaluate("async () => { try { await DBOCR.images(document.querySelector('#fxin').files[0], 1); return 'opened'; } catch (e) { return String(e.message); } }")
+        assert 'cannot open this kind of image' in msg and page.evaluate("() => typeof window.UTIF") == 'undefined'     # the altered script never ran; the person is told
+        b.close()
