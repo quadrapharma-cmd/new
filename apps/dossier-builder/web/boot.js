@@ -27,11 +27,35 @@
     if (m) m.textContent = AR ? ar : en; if (b && pct != null) b.style.width = pct + '%'; };
   const sub = (ar, en) => { const s = document.getElementById('bootSub'); if (s) s.textContent = AR ? ar : en; };
 
-  const syncfs = (populate) => new Promise((res, rej) => S.pyodide.FS.syncfs(populate, e => e ? rej(e) : res()));
+  let bigSync = null;                                               // bigfs.js: large files of the workspace are stored as Blobs
+  const syncfs = (populate) => (bigSync || (bigSync = DB_BIGFS(S.pyodide.FS.filesystems.IDBFS)))(S.pyodide.FS, populate);
   function scheduleSync() {                                         // as in the worker: soon after a write, and at the latest 1.5 s into a run of requests
     const now = Date.now(); if (!S.syncSince) S.syncSince = now;
     clearTimeout(S.syncTimer);
-    S.syncTimer = setTimeout(() => { S.syncSince = 0; syncfs(false).catch(e => console.warn('sync', e)); }, now - S.syncSince > 1500 ? 0 : 250);
+    S.syncTimer = setTimeout(() => { S.syncSince = 0; syncfs(false).then(() => storageNote(), e => { console.warn('sync', e); storageNote(String(e && (e.name || e.message) || e)); }); }, now - S.syncSince > 1500 ? 0 : 250);
+  }
+  /* the browser refused to save (its storage for this page is full, or closed to it): said on the screen for as long as it is true —
+     nothing is lost in silence. The note goes away with the first save that goes through. */
+  function storageNote(error) {
+    let el = document.getElementById('dbStorage');
+    if (!error) { if (el) el.remove(); return; }
+    const ar = (document.documentElement.lang || 'ar') !== 'en', full = /quota/i.test(error);
+    if (!el) {
+      el = document.createElement('div'); el.id = 'dbStorage'; el.setAttribute('role', 'alert');
+      el.style.cssText = 'position:fixed;inset-inline:0;bottom:0;z-index:900;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:var(--surface,#111826);color:var(--ink,#E9EFF7);border-top:2px solid var(--warn,#FBBF24);font-size:13.5px;line-height:1.6;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 -8px 24px rgba(0,0,0,.25)';
+      (document.body || document.documentElement).appendChild(el);
+    }
+    const text = full
+      ? (ar ? 'المتصفح رفض يحفظ آخر تغييرات: مساحة التخزين اللي سامح بيها للصفحة دي خلصت. اللي بتعمله دلوقتي مش بيتحفظ. فضّي مساحة: شيل الملف الكبير اللي لسه ضايفه، أو احذف مشروع قديم وفضّي «المحذوفات» — أو استخدم برنامج سطح المكتب للملفات الكبيرة جدًا.'
+            : 'The browser refused to save the last changes: the storage it allows this page is full. What you do now is not being saved. Free some space: remove the large file you just added, or delete an old project and empty the trash — or use the desktop program for very large files.')
+      : (ar ? 'المتصفح ما قدرش يحفظ آخر تغييرات (' + error + '). اللي بتعمله دلوقتي مش بيتحفظ: جرّب تاني، ولو فضلت الرسالة افتح الصفحة من جديد.'
+            : 'The browser could not save the last changes (' + error + '). What you do now is not being saved: try again, and reload the page if this note stays.');
+    el.innerHTML = '<span style="flex:1 1 320px;min-width:0"></span><span id="dbStorageUse" style="color:var(--muted,#8C9BB0);font-variant-numeric:tabular-nums"></span><button type="button" style="font:inherit;padding:6px 14px;border-radius:8px;border:1px solid var(--warn,#FBBF24);background:transparent;color:inherit;cursor:pointer"></button>';
+    el.firstChild.textContent = '⚠ ' + text;
+    const btn = el.lastChild; btn.textContent = ar ? 'جرّب الحفظ تاني' : 'Try saving again';
+    btn.onclick = () => { btn.disabled = true; window.DBWEB.sync().then(() => storageNote(), e => storageNote(String(e && e.message || e))); };
+    if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(q => { const u = document.getElementById('dbStorageUse');
+      if (u && q && q.quota) u.textContent = (ar ? 'مستخدم ' : 'used ') + (q.usage / 1048576).toFixed(0) + (ar ? ' من ' : ' of ') + (q.quota / 1048576).toFixed(0) + (ar ? ' ميجا' : ' MB'); }).catch(() => {});
   }
 
   const nativeFetch = window.fetch.bind(window);
@@ -63,12 +87,14 @@
     new Headers(init.headers || {}).forEach((v, k) => { headers[k] = v; });
     let body = new Uint8Array(0);
     const b = init.body;
-    if (b != null) {
+    if (b != null) try {
       if (typeof b === 'string') body = new TextEncoder().encode(b);
       else if (b instanceof FormData) { const r = new Response(b); headers['content-type'] = r.headers.get('content-type'); body = new Uint8Array(await r.arrayBuffer()); }
       else if (b instanceof Blob) body = new Uint8Array(await b.arrayBuffer());
       else if (b instanceof ArrayBuffer) body = new Uint8Array(b.slice(0));                        // a copy: the caller keeps its buffer
       else if (ArrayBuffer.isView(b)) body = new Uint8Array(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength));
+    } catch (e) {                                                      // the upload itself does not fit in the page's memory: said, not thrown
+      return new Response(JSON.stringify({ detail: { code: 'E-MEMORY', en: 'The browser does not have the memory for a file this large. Close other tabs and try again, or split the file.', ar: 'ذاكرة المتصفح ما كفتش لملف بالحجم ده. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف.' } }), { status: 507, headers: { 'content-type': 'application/json' } });
     }
     headers['content-length'] = String(body.length);
     let meta, out;
@@ -103,6 +129,7 @@
         if (m.type === 'say') say(m.ar, m.en, m.pct);
         else if (m.type === 'ready') { settled = true; clearTimeout(timer); resolve(w); }
         else if (m.type === 'failed') fail(m.message || 'the engine could not start');
+        else if (m.type === 'storage') storageNote(m.error);
         else if (m.type === 'api' || m.type === 'sync') { const res = pending.get(m.id); if (res) { pending.delete(m.id); res(m); } }
       };
     });
@@ -212,6 +239,6 @@
     },
   };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && window.DBWEB) window.DBWEB.sync().catch(() => {}); });   // leaving the tab: write the storage now
-  window.DBWEB = { sync: () => S.worker ? ask({ type: 'sync' }).then(m => { if (m.error) throw new Error(m.error); }) : syncfs(false), ready: () => S.ready, pyodide: () => S.pyodide,
+  window.DBWEB = { sync: () => S.worker ? ask({ type: 'sync' }).then(m => { if (m.error) throw new Error(m.error); }) : syncfs(false).then(() => storageNote(), e => { storageNote(String(e && (e.name || e.message) || e)); throw e; }), ready: () => S.ready, pyodide: () => S.pyodide,
     engine: () => S.worker ? 'worker' : 'page', save: saveFromApi };
 })();

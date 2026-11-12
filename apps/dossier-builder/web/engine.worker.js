@@ -29,14 +29,20 @@ self.fetch = async function (input, init) {
 };
 
 let pyodide = null, handle = null, syncTimer = null;
-const syncfs = (populate) => new Promise((res, rej) => pyodide.FS.syncfs(populate, e => e ? rej(e) : res()));
+let bigSync = null;                                                 // bigfs.js (put in front of this file by the build): large files as Blobs
+const syncfs = (populate) => (bigSync || (bigSync = DB_BIGFS(pyodide.FS.filesystems.IDBFS)))(pyodide.FS, populate);
 /* what was written reaches the browser's storage a moment after the request, and never later than a second and a half into a long run
    of requests (a folder being read): closing the page in the middle loses nothing that was already taken */
 let syncSince = 0;
 function scheduleSync() {
   const now = Date.now(); if (!syncSince) syncSince = now;
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => { syncSince = 0; syncfs(false).catch(e => console.warn('sync', e)); }, now - syncSince > 1500 ? 0 : 250);
+  syncTimer = setTimeout(() => { syncSince = 0; syncfs(false).then(() => saved(), e => { console.warn('sync', e); saved(e); }); }, now - syncSince > 1500 ? 0 : 250);
+}
+let unsaved = false;
+function saved(e) {
+  if (e) { unsaved = true; self.postMessage({ type: 'storage', error: String(e && (e.name || e.message) || e) }); }
+  else if (unsaved) { unsaved = false; self.postMessage({ type: 'storage' }); }
 }
 const say = (ar, en, pct) => self.postMessage({ type: 'say', ar, en, pct });
 
@@ -74,11 +80,13 @@ self.onmessage = async (ev) => {
       if (m.method !== 'GET' && m.method !== 'HEAD') scheduleSync();
       self.postMessage({ type: 'api', id: m.id, meta: res[0], out: buf }, [buf]);
     } catch (e) {
-      const body = new TextEncoder().encode(JSON.stringify({ detail: { code: 'E-ENGINE', en: String(e && e.message || e), ar: 'المحرك ما قدرش ينفّذ الطلب.' } }));
-      self.postMessage({ type: 'api', id: m.id, meta: JSON.stringify({ status: 500, headers: [['content-type', 'application/json']] }), out: body.buffer }, [body.buffer]);
+      const mem = /MemoryError|alloc|out of memory/i.test(String(e && e.message || e));          // a file larger than what the page can hold
+      const body = new TextEncoder().encode(JSON.stringify({ detail: mem ? { code: 'E-MEMORY', en: 'The browser does not have the memory for a file this large. Close other tabs and try again, or split the file.', ar: 'ذاكرة المتصفح ما كفتش لملف بالحجم ده. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف.' }
+        : { code: 'E-ENGINE', en: String(e && e.message || e), ar: 'المحرك ما قدرش ينفّذ الطلب.' } }));
+      self.postMessage({ type: 'api', id: m.id, meta: JSON.stringify({ status: mem ? 507 : 500, headers: [['content-type', 'application/json']] }), out: body.buffer }, [body.buffer]);
     }
   } else if (m.type === 'sync') {
-    try { await ready; await syncfs(false); self.postMessage({ type: 'sync', id: m.id }); }
-    catch (e) { self.postMessage({ type: 'sync', id: m.id, error: String(e && e.message || e) }); }
+    try { await ready; await syncfs(false); saved(); self.postMessage({ type: 'sync', id: m.id }); }
+    catch (e) { saved(e); self.postMessage({ type: 'sync', id: m.id, error: String(e && (e.name || e.message) || e) }); }
   }
 };

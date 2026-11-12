@@ -27,11 +27,14 @@ APP = create_app('/workspace', auth_enabled=False)
 
 async def handle(method, path, query, headers_json, body):
     headers = json.loads(headers_json) if headers_json else {}
-    if hasattr(body, 'to_bytes'):
-        body = body.to_bytes()
-    elif hasattr(body, 'to_py'):
-        body = bytes(body.to_py())
-    body = bytes(body or b'')
+    try:
+        if hasattr(body, 'to_bytes'):
+            body = body.to_bytes()
+        elif hasattr(body, 'to_py'):
+            body = bytes(body.to_py())
+        body = bytes(body or b'')
+    except MemoryError:
+        return _answer(507, [(b'content-type', b'application/json')], NO_MEMORY)
     scope = {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'method': method,
              'scheme': 'http', 'path': unquote(path), 'raw_path': path.encode(), 'query_string': (query or '').encode(),   # as a server does: the path decoded (a file name with a space or in Arabic), the raw one kept
              'root_path': '', 'headers': [(k.lower().encode(), str(v).encode()) for k, v in headers.items()],
@@ -57,11 +60,20 @@ async def handle(method, path, query, headers_json, body):
 
     try:
         await APP(scope, receive, send)
+    except MemoryError:                                  # a file larger than what the page can hold: said, not a crash
+        status, resp_headers, chunks = 507, [(b'content-type', b'application/json')], [NO_MEMORY]
     except Exception:
         status, resp_headers = 500, [(b'content-type', b'application/json')]
         chunks = [json.dumps({'detail': {'code': 'E-INTERNAL', 'en': traceback.format_exc()[-1500:],
                                          'ar': 'حصل خطأ داخلي في المحرك.'}}).encode()]
-    out = b''.join(chunks)
+    return _answer(status, resp_headers, b''.join(chunks))
+
+
+NO_MEMORY = json.dumps({'detail': {'code': 'E-MEMORY', 'en': 'The browser does not have the memory for a file this large. Close other tabs and try again, or split the file.',
+                                   'ar': 'ذاكرة المتصفح ما كفتش لملف بالحجم ده. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف.'}}).encode()
+
+
+def _answer(status, resp_headers, out):
     from js import Uint8Array
     from pyodide.ffi import to_js
     u8 = Uint8Array.new(len(out))

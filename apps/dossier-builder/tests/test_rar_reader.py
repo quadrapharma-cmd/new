@@ -6,7 +6,7 @@ were recorded from it), or say why it does not.
 - web/vendor/arch/test: libarchive's public test archives (web/vendor.sh), skipped when absent — the old format (RAR 2.9–4.x) with
   its filters and the text method of «Best» compression, names in Unicode, links, a self-extracting archive, split and solid
   archives, and damaged ones that must be refused without a crash or a hang."""
-import json, pathlib
+import json, pathlib, struct, zlib
 import pytest
 from test_ui_e2e import server, browser          # noqa: F401  (the module's live server and Chromium)
 
@@ -131,7 +131,67 @@ def test_cut_short_or_not_a_rar_at_all(server, browser):
     page.close()
 
 
+def _vint(n):
+    out = bytearray()
+    while True:
+        b = n & 0x7f
+        n >>= 7
+        out.append(b | (0x80 if n else 0))
+        if not n:
+            return bytes(out)
+
+
+def rar5_stored(entries):
+    """A RAR5 archive of stored (not compressed) files, written here from the format's own headers, each with its CRC (the official
+    unpacker tests such an archive as good): any number of files of any size, with nothing to keep in the repository."""
+    def block(body):
+        size = _vint(len(body))
+        return struct.pack('<I', zlib.crc32(size + body)) + size + body
+    out = bytearray(b'Rar!\x1a\x07\x01\x00') + block(_vint(1) + _vint(0) + _vint(0))                    # the signature, the archive's own header
+    for name, data in entries:
+        n = name.encode('utf-8')
+        out += block(_vint(2) + _vint(0x02) + _vint(len(data)) + _vint(0x04) + _vint(len(data)) + _vint(0x20)       # a file, its data follows; CRC present, size, attributes
+                     + struct.pack('<I', zlib.crc32(data)) + _vint(0) + _vint(0) + _vint(len(n)) + n) + data      # CRC, stored, host; the name
+    return bytes(out + block(_vint(5) + _vint(0) + _vint(0)))                                               # the end of the archive
+
+
+def test_no_limit_of_the_readers_own(server, browser, tmp_path):
+    """More files than the old 600 and more megabytes than the old 500 of one archive: all of them come out, each checked."""
+    many = tmp_path / 'batch records.rar'
+    many.write_bytes(rar5_stored([(f'batch records/BR-{i:04d}.txt', b'Dermacure cream, batch %04d: released' % i) for i in range(1500)] + [('ثبات/تقرير.txt', 'تقرير الثبات'.encode())]))
+    block = bytes(range(256)) * 4096
+    scans = tmp_path / 'stability scans.rar'
+    with open(scans, 'wb') as f:                                                         # 3 × 180 MB of scans that do not repeat
+        f.write(rar5_stored([(f'stability/scans {y}.pdf', b''.join(block[:-4] + struct.pack('>I', y * 1000 + i) for i in range(180))) for y in (2022, 2023, 2024)]))
+    page = _page(browser, server)
+    page.set_input_files('#fxin', str(many))
+    got = page.evaluate("""async () => { const r = await DBRAR.extract([...document.querySelector('#fxin').files], {});
+      const last = r.files.find(f => f.name === 'batch records/BR-1499.txt'), ar = r.files.find(f => f.name === 'ثبات/تقرير.txt');
+      return {n: r.files.length, skipped: r.skipped.length, last: await new Blob(last.parts).text(), ar: await new Blob(ar.parts).text(), thread: r.thread}; }""")
+    assert got == {'n': 1501, 'skipped': 0, 'last': 'Dermacure cream, batch 1499: released', 'ar': 'تقرير الثبات', 'thread': 'worker'}, got
+    page.set_input_files('#fxin', str(scans))
+    got = page.evaluate("""async () => { const r = await DBRAR.extract([...document.querySelector('#fxin').files], {});
+      const sizes = r.files.map(f => f.parts.reduce((a, p) => a + p.byteLength, 0)), d = new Uint8Array(await new Blob(r.files[2].parts).slice(-4).arrayBuffer());
+      return {names: r.files.map(f => f.name), sizes, skipped: r.skipped, tail: [...d]}; }""")
+    assert got['names'] == [f'stability/scans {y}.pdf' for y in (2022, 2023, 2024)] and got['sizes'] == [180 << 20] * 3 and got['skipped'] == [], got
+    assert got['tail'] == list(struct.pack('>I', 2024 * 1000 + 179))                     # to the last byte of the last file
+    assert page.errors == [], page.errors
+    page.close()
+
+
+def test_an_archive_that_expands_hundreds_of_times_is_refused(server, browser):
+    """A «bomb» (120 MB of nothing packed in 5 KB) is the one thing still refused, before it fills the memory — and said in words."""
+    page = _page(browser, server)
+    assert _read(page, DATA, ['dermacure-bomb.rar']) == {'error': 'big'}
+    page.set_input_files('#fxin', [str(DATA / 'dermacure-bomb.rar'), str(DATA / 'dermacure.rar')])
+    got = page.evaluate("async () => { const r = await DBARCH.expand([...document.querySelector('#fxin').files], {}); return {files: r.files.length, notes: r.notes.map(n => n.error || n.taken)}; }")
+    assert got['files'] == 5 and got['notes'][1] == 5 and 'hundreds of times' in got['notes'][0], got       # the honest archive beside it is still opened
+    assert page.errors == [], page.errors
+    page.close()
+
+
 def test_limits_and_the_files_worth_taking(server, browser):
+    """The reader has no limit of its own; one that is asked for is still kept."""
     page = _page(browser, server)
     got = _read(page, DATA, ['dermacure.rar'], {'keepRx': r'\.(txt|pdf)$', 'skipRx': r'(^|/)notes\.txt$'})
     assert sorted(got['files']) == ['Module 1/pricing certificate.txt', 'licence.pdf', 'ثبات/تقرير الثبات.txt'] and got['left'] == 1, got      # scan.bin is not unpacked at all

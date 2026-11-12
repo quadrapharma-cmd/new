@@ -34,17 +34,13 @@ def install(app, st):
         state = body.get('state') if isinstance(body, dict) else None
         if not isinstance(state, dict):
             err(422, 'E-STATE', 'state must be an object.', 'state لازم يكون كائن.')
-        if len(str(state)) > 6_000_000:
-            err(413, 'E-STATE-SIZE', 'The draft state is too large.', 'حالة المسودة أكبر من اللازم.')
         if not st.draft_get(draft_id):
             err(404, 'E-DRAFT', 'No such draft.', 'المسودة دي مش موجودة.')
         return st.draft_save(draft_id, state)
 
     @app.post('/api/intake/drafts/{draft_id}/files', status_code=201)
     async def draft_add_file(draft_id: str, file: UploadFile = File(...), kind: str = Form(None)):
-        data = await file.read()
-        if len(data) > 60 * 1024 * 1024:
-            err(413, 'E-FILE-SIZE', 'The file is larger than 60 MB.', 'الملف أكبر من 60 ميجا.')
+        data = await file.read()                             # no limit on its size: the machine's own memory is the only one
         if not st.draft_get(draft_id):
             err(404, 'E-DRAFT', 'No such draft.', 'المسودة دي مش موجودة.')
         return st.draft_add_file(draft_id, file.filename, data, kind)
@@ -58,8 +54,8 @@ def install(app, st):
 
     @app.delete('/api/intake/drafts/{draft_id}/files/{filename:path}')
     def draft_remove_file(draft_id: str, filename: str):
-        st.draft_remove_file(draft_id, filename)
-        return {'ok': True}
+        freed = st.draft_remove_file(draft_id, filename)
+        return {'ok': True, 'files_removed': freed['files']}
 
     @app.delete('/api/intake/drafts/{draft_id}')
     def draft_delete(draft_id: str, free: int = 0):

@@ -85,7 +85,7 @@ def install(app, st):
         st.dossier(did)
         d = _client()
         out = []
-        for f in body.files[:40]:
+        for f in body.files:
             try:
                 fname, data, mt = await d.fetch(f.get('id'), f.get('name'), f.get('mime'))
             except _drive.DriveError as e:

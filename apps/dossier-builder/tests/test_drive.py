@@ -161,6 +161,10 @@ def test_endpoints_settings_list_and_file(tmp_path, transport):
     assert r.status_code == 201 and r.json()[0]['filename'] == 'licence.pdf' and 'error' in r.json()[1]
     board = c.get(f'/api/dossiers/{did}/board').json()
     assert [d['filename'] for d in board['unassigned']] == ['licence.pdf']
+    many = [{'id': 'f1', 'name': f'licence {i}.pdf', 'mime': 'application/pdf'} for i in range(45)]          # a whole folder at once: more than the old 40 of one staging
+    r = c.post(f'/api/dossiers/{did}/drive/stage', json={'files': many})
+    assert r.status_code == 201 and len(r.json()) == 45 and not any('error' in x for x in r.json())
+    assert len(c.get(f'/api/dossiers/{did}/board').json()['unassigned']) == 46
 
 
 def test_assistant_reads_a_drive_folder(tmp_path, transport, monkeypatch):

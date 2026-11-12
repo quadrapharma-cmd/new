@@ -149,17 +149,39 @@ bytes; a Word, Excel or OpenDocument file is a ZIP inside and is never mistaken 
 |---|---|
 | ZIP, TAR, `.tar.gz` / `.tgz`, `.tar.bz2`, a single `.gz` / `.bz2` | every edition (the standard library), the browser one included |
 | `.xz`, `.tar.xz` | the desktop and server editions (the browser edition's Python has no xz: said, with what to do) |
-| RAR (RAR 2.9–4.x and RAR5) | **every edition**: the page opens it itself with the program's own reader (`ui/assets/rar.js`, below), the same way everywhere. What the reader does not open (an archive older than RAR 2.9, one over 400 MB) goes to the unpacker the machine has, in the desktop and server editions (`tar` on Windows 10+ and macOS is bsdtar, else 7-Zip, unrar or unar) |
+| RAR (RAR 2.9–4.x and RAR5) | **every edition**: the page opens it itself with the program's own reader (`ui/assets/rar.js`, below), the same way everywhere. What the reader does not open (an archive older than RAR 2.9, one the page's memory cannot hold) goes to the unpacker the machine has, in the desktop and server editions (`tar` on Windows 10+ and macOS is bsdtar, else 7-Zip, unrar or unar) |
 | 7z | the desktop and server editions (the machine's unpacker). The browser edition refuses it with the reason («unpack it first, or pack the files as ZIP») |
 
 Names keep their Arabic (UTF-8, or the Windows code pages 1256/720 when the UTF-8 flag is missing); `..`, drive letters and leading
 slashes are dropped, nothing is written outside a private temporary folder; `__MACOSX`, `Thumbs.db`, `~$…` are left out; an archive
-inside the archive is opened too (two levels). Refused with the reason, never half-taken in silence: more than 600 files, more than
-800 MB unpacked (200 MB in the browser edition, where everything is in memory), an archive that expands too much (a «zip bomb»), a
-password. A TAR cut short keeps what was read before the break. More than 40 documents in one archive are not taken whole: the
+inside the archive is opened too (two levels). There is **no limit of the program's own** on the number of files in an archive or
+on their size (see «No limit on what is uploaded» below). Refused with the reason, never half-taken in silence: a password, and an
+archive that expands hundreds of times — a «zip bomb»: more than 100 MB coming out of less than a 250th of it, counted on what
+really comes out, whatever the format and whatever the headers declare (one found inside an honest archive is left out, the rest
+is taken). A TAR cut short keeps what was read before the break. More than 40 documents in one archive are not taken whole: the
 person ticks the ones the dossier needs. One item takes one document: an archive with several goes through «bulk upload».
 Tests: `tests/test_archives.py` (the RAR samples are libarchive's public test files, fetched by `web/vendor.sh`, skipped when
 absent), `tests/test_ui_projects.py`, `tests/test_web_edition.py`.
+
+**No limit on what is uploaded.** Nothing of the program's own stops a file for its size or a batch for its number: a file of a
+draft (it was 60 MB), the wizard's saved state, the files of an archive and their size, the pages of a scan turned into a PDF
+(it was 300), the files taken from a Drive folder at once (it was 40), the request body behind the cloud proxy (it was 500 MB).
+What is left is what the machine itself can hold, and it is never met in silence:
+- **memory** — a file larger than the memory answers `E-MEMORY` (507) in words, in every edition, wherever it runs out: the
+  upload's body, the engine, the page's RAR reader, the browser edition's bridge;
+- **the browser edition's storage** — the workspace lives in the browser's own storage (IndexedDB). The browser refuses one stored
+  value over about 127 MB, and a refused value used to stop every save after it: a large file is now stored as a Blob
+  (`web/bigfs.js`), which has no such ceiling — a 1 GB file was put in a draft, the page closed and opened, and it came back byte
+  for byte. A save is called done only once the large file reads back from the storage. The quota the browser gives the page is the
+  one ceiling left: when it refuses a save, a note stays on the screen for as long as that is true («the browser refused to save…»,
+  with what is used of what is allowed, and «try saving again»), a file the storage has no room for leaves the wizard's draft again
+  (said on the document's own line; it stays in the page for that visit) so that everything else keeps being saved, and a file
+  taken out of a draft frees its space at once;
+- **Google Drive inside claude.ai** — the Drive connection of claude.ai does not hand over a file larger than 10 MB. That limit is
+  the connection's, not the program's, and it cannot be lifted from here: such a file is marked in the Drive list with «open it
+  in Drive» and «upload from the device» (which has no limit). The desktop and server editions read Drive through Google's own
+  API, with no such limit.
+Tests: `tests/test_no_limits.py`, `tests/test_archives.py`, `tests/test_rar_reader.py`, `tests/test_web_large_files.py`.
 
 **RAR inside the page (`ui/assets/rar.js`).** The page of claude.ai may load nothing but scripts from a few CDNs and no binary
 file, so the RAR reader is the program's own code: about 600 lines of JavaScript with no library and nothing fetched, run in a
@@ -170,7 +192,8 @@ archives, archives split in parts (`name.part1.rar …`, or `name.rar` + `name.r
 language (the old format's packed Unicode names too), self-extracting archives, hard links and «same file» records as copies.
 Every file is checked against the CRC-32 the archive keeps for it: one that does not match is reported, never handed over. Left
 out, each with its reason: files under a password (the archive is named, the open files are still taken), symbolic links,
-archives older than RAR 2.9, a dictionary over 256 MB, more than 500 MB unpacked. Only the names worth taking are unpacked (the
+archives older than RAR 2.9, and what the page's memory cannot hold (said as that). The reader has no limit of its own on files
+or sizes; a «bomb» is refused as in the engine. Only the names worth taking are unpacked (the
 documents and the archives inside), except in a solid archive, where what comes before must be unpacked to reach what comes after.
 The PPMd model follows Dmitry Shkarin's public-domain design as written out in 7-Zip's Ppmd7 (Igor Pavlov, public domain); the
 rest was written from the published format notes and the behaviour of the free unpackers; there is no compression code.

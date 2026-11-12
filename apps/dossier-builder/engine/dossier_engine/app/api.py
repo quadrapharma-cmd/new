@@ -3,6 +3,9 @@ import json, shutil, tempfile, time, uuid, zipfile
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.routing import APIRoute
+from fastapi.exception_handlers import http_exception_handler as _default_http_error
+from starlette.exceptions import HTTPException as _AnyHTTPError          # what FastAPI itself raises while it reads a request's body
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from ..profile import Profile, ProfileError
@@ -69,11 +72,29 @@ class ReqReq(BaseModel):
     signatory_title: str = None
 
 
+class _OpenRequest(Request):
+    """No limit of the framework's own on an upload: the files of one request (it was 1000), its fields, the size of a text field
+    (it was 1 MB: the readings that go with a large batch of documents are longer)."""
+
+    def form(self, **kw):
+        return super().form(max_files=float('inf'), max_fields=float('inf'), max_part_size=1 << 40)
+
+
+class _OpenRoute(APIRoute):
+    def get_route_handler(self):
+        handler = super().get_route_handler()
+
+        async def open_handler(request):
+            return await handler(_OpenRequest(request.scope, request.receive))
+        return open_handler
+
+
 def create_app(workspace, auth_enabled=None):
     import os
     from .auth import Auth, install
     st = Store(workspace)
     app = FastAPI(title='Dossier Builder', version='0.2', docs_url=None, redoc_url=None, openapi_url=None)
+    app.router.route_class = _OpenRoute                     # before any route is added
     if auth_enabled is None and (os.environ.get('DB_MODE') == 'cloud' or os.environ.get('DB_AUTH') == '1'):
         auth_enabled = True                                  # otherwise None: the workspace's own switch (Users screen) decides, default off
     import secrets
@@ -91,6 +112,29 @@ def create_app(workspace, auth_enabled=None):
     def _store_err(_, e):
         return JSONResponse(status_code=404 if e.code == 'E-NOT-FOUND' else 422,
                             content={'detail': {'code': e.code, 'en': e.en, 'ar': e.ar, **e.extra}})
+
+    def _memory_answer():
+        return JSONResponse(status_code=507, content={'detail': {
+            'code': 'E-MEMORY', 'en': 'This machine does not have the memory for a file this large. Close other programs or tabs and try again, or split the file.',
+            'ar': 'ذاكرة الجهاز ما كفتش لملف بالحجم ده. اقفل برامج أو تبويبات تانية وجرّب تاني، أو قسّم الملف.'}})
+
+    @app.exception_handler(MemoryError)
+    async def _no_memory(request, exc):                     # a file larger than what this machine can hold at once: said, not a crash
+        return _memory_answer()
+
+    @app.exception_handler(FileNotFoundError)
+    async def _file_gone(request, exc):                     # a stored document whose own file is not in the storage: said, with what to do
+        if 'blobs' not in str(getattr(exc, 'filename', '') or '').replace('\\', '/').split('/'):
+            raise exc                                       # anything else missing is a fault of the program: as it always was
+        return JSONResponse(status_code=410, content={'detail': {
+            'code': 'E-FILE-GONE', 'en': 'The file itself is no longer in the storage (it was not saved completely, or was removed from the disk). Upload it again.',
+            'ar': 'الملف نفسه مش موجود في التخزين (ما اتحفظش كامل، أو اتشال من القرص). ارفعه تاني.'}})
+
+    @app.exception_handler(_AnyHTTPError)
+    async def _http_err(request, exc):                      # the same when the memory ran out while the upload's body was being read
+        if isinstance(exc.__cause__, MemoryError):
+            return _memory_answer()
+        return await _default_http_error(request, exc)
 
     @app.exception_handler(ProfileError)
     def _prof_err(_, e):
@@ -516,7 +560,7 @@ def create_app(workspace, auth_enabled=None):
     @app.post('/api/images/pdf')
     async def images_pdf(files: list[UploadFile] = File(...), title: str = Form('')):
         """JPEG pages (decoded by the page: a TIFF's pages, a HEIC photo, a BMP…) → one PDF, each image stored as it came."""
-        pages = [await f.read() for f in files[:300]]
+        pages = [await f.read() for f in files]             # every page: a long fax is not cut
         if not pages or any(_imagefiles.image_format(p) != 'jpeg' for p in pages):
             err(422, 'E-IMAGE', 'The pages must be JPEG images.', 'الصفحات لازم تكون صور JPEG.')
         try:

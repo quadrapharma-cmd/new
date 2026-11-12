@@ -265,9 +265,9 @@ class Store:
         self.audit(None, 'dossier.deleted', id=did, name=d['name'], documents=counts['documents'], files_removed=freed['files'])
         return {'id': did, 'name': d['name'], 'documents': counts['documents'], 'files_removed': freed['files'], 'bytes_freed': freed['bytes']}
 
-    def gc_blobs(self, min_age=600):
+    def gc_blobs(self, min_age=600, only=None):
         """Remove stored files that no row refers to any more (the activity record does not count: it only remembers). A file
-        written in the last `min_age` seconds is left alone: an upload may be on its way to its row."""
+        written in the last `min_age` seconds is left alone: an upload may be on its way to its row. `only`: look at these files alone."""
         used = set()
         for (t,) in self.db.execute("select name from sqlite_master where type='table'").fetchall():
             if t == 'audit':
@@ -278,8 +278,8 @@ class Store:
                         used.update(re.findall(r'(?<![0-9a-f])[0-9a-f]{64}(?![0-9a-f])', v))
         files = size = 0
         now = time.time()
-        for p in (self.root / 'blobs').iterdir():
-            if re.fullmatch(r'[0-9a-f]{64}', p.name) and p.name not in used and now - p.stat().st_mtime >= min_age:
+        for p in ((self.root / 'blobs').iterdir() if only is None else [self.root / 'blobs' / n for n in only]):
+            if re.fullmatch(r'[0-9a-f]{64}', p.name) and p.name not in used and p.exists() and now - p.stat().st_mtime >= min_age:
                 size += p.stat().st_size
                 p.unlink(missing_ok=True)
                 files += 1
@@ -606,8 +606,11 @@ class Store:
         return self.blob_path(r['sha256']).read_bytes() if r else None
 
     def draft_remove_file(self, draft_id, filename):
+        """The file leaves the draft, and the disk too when nothing else uses it (a large scan taken out frees its space at once)."""
+        r = self.db.execute('select sha256 from intake_file where draft_id=? and filename=?', (draft_id, filename)).fetchone()
         self.db.execute('delete from intake_file where draft_id=? and filename=?', (draft_id, filename))
         self.db.commit()
+        return self.gc_blobs(min_age=0, only={r['sha256']}) if r else {'files': 0, 'bytes': 0}
 
     def draft_delete(self, draft_id, free=False):
         """The draft goes. `free` (the user discarded it) also removes its files from the disk when nothing else uses them; a draft

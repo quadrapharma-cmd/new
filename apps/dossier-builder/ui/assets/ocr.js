@@ -198,7 +198,7 @@
   async function asPdf(file, isImage) {
     try {
       if (!file || !isImage) return file;
-      const pages = await images(file, 200);
+      const pages = await images(file, 100000);                  // every page of the image: a long fax is not cut
       if (pages.length === 1 && pages[0] === file && (file.type === 'image/jpeg' || /\.(jpe?g|jfif|jpe)$/i.test(file.name || ''))) return file;
       const fd = new FormData();
       for (let i = 0; i < pages.length; i++) fd.append('files', await jpeg(pages[i]), 'p' + (i + 1) + '.jpg');

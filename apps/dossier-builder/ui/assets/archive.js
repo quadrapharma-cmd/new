@@ -1,8 +1,8 @@
 /* Compressed files: an archive among the files a person gives is opened and what is inside it is taken like any other file.
    ZIP, TAR and GZ are unpacked by the engine everywhere. RAR is opened here in the page, in every edition, by the program's own
    reader (rar.js: RAR 2.9 to RAR5, solid archives, archives split in parts, names in any language; every file checked against its
-   CRC); what the reader does not open — an archive older than RAR 2.9, one too large for the page — goes to the machine's own
-   unpacker where there is one (desktop, server). An archive found inside an archive is opened too. A 7z in the browser edition is
+   CRC); what the reader does not open — an archive older than RAR 2.9, one the page's memory cannot hold — goes to the machine's own
+   unpacker where there is one (desktop, server). There is no limit of the program's own on an archive's size or on the files in it. An archive found inside an archive is opened too. A 7z in the browser edition is
    refused with the reason. */
 (function () {
   const ARCH_RX = /\.(zip|rar|7z|tar|tgz|tbz2?|txz|gz|bz2|xz|[rs]\d\d)$/i;
@@ -10,7 +10,6 @@
   const AR = () => (document.documentElement.lang || 'ar') !== 'en';
   const say = (ar, en) => AR() ? ar : en;
   const SYSTEM = /(^|\/)(__MACOSX\/|\.DS_Store$|Thumbs\.db$|desktop\.ini$|~\$[^/]*$|\._[^/]*$|\.~lock\.[^/]*$)/i;
-  const MAX_FILES = 600, MAX_TOTAL = 500 * 1048576, MAX_FILE = 300 * 1048576, MAX_ARCHIVE = 400 * 1048576;     // in the page everything is in memory
 
   async function head(file, n) { return String.fromCharCode.apply(null, new Uint8Array(await file.slice(0, n || 8).arrayBuffer())); }
   /* 'rar' | 'archive' | null — by its name, or by its first bytes when the name has no extension (a Drive title) */
@@ -50,12 +49,13 @@
   }
 
   /* ---------------- RAR in the page: the program's own reader, in a worker */
-  const tooBig = () => fail('E-ARCHIVE-BIG', `الأرشيف أكبر من اللي يتفك جوّه الصفحة (${MAX_TOTAL >> 20} ميجا): فكّه على جهازك واختار اللي الملف محتاجه.`, `The archive is larger than what the page unpacks (${MAX_TOTAL >> 20} MB): unpack it on your computer and choose what the dossier needs.`);
+  /* no limit of the program's own on an archive's size or on the number of files in it: only the memory the browser gives the page */
+  const noMemory = () => fail('E-ARCHIVE-BIG', 'ذاكرة المتصفح ما كفتش تفك الأرشيف ده كله مرة واحدة: فكّه على جهازك وارفع الملفات نفسها.', 'The browser does not have the memory to unpack this archive at once: unpack it on your computer and upload the files themselves.');
   function rarError(e) {
     const code = e && e.rar;
     if (code === 'password') return fail('E-ARCHIVE-PASSWORD', 'الأرشيف عليه كلمة سر: فكّه الأول.', 'The archive is protected with a password: unpack it first.');
-    if (code === 'big') return e.why === 'files' ? fail('E-ARCHIVE-BIG', `الأرشيف فيه أكتر من ${MAX_FILES} ملف: فكّه واختار اللي الملف محتاجه.`, `The archive holds more than ${MAX_FILES} files: unpack it and choose what the dossier needs.`) : tooBig();
-    if (code === 'memory') return fail('E-ARCHIVE-BIG', 'الأرشيف محتاج ذاكرة أكتر من المتاح في الصفحة: فكّه على جهازك.', 'The archive needs more memory than the page has: unpack it on your computer.');
+    if (code === 'big' && e.why === 'bomb') return Object.assign(fail('E-ARCHIVE-BIG', 'الأرشيف بيتفك لحجم كبير جدًا (مئات المرات قد حجمه): فكّه على جهازك واختار اللي الملف محتاجه.', 'The archive expands hundreds of times its size: unpack it on your computer and choose what the dossier needs.'), { bomb: true });
+    if (code === 'big' || code === 'memory') return noMemory();
     if (code === 'damaged') return fail('E-ARCHIVE', 'ملف الـ RAR تالف أو مش مكتمل.', 'The RAR file is damaged or incomplete.');
     return fail('E-ARCHIVE', 'ملف الـ RAR ما اتفتحش.', 'The RAR file could not be opened.');
   }
@@ -63,10 +63,9 @@
   async function unrar(vols, opts) {
     opts = opts || {};
     if (!window.DBRAR) throw fail('E-ARCHIVE-TOOL', 'فك RAR مش متاح في الصفحة دي: فك الأرشيف على جهازك، أو اضغط الملفات ZIP.', 'RAR cannot be opened in this page: unpack the archive on your computer, or pack the files as ZIP.');
-    if (vols.reduce((a, v) => a + v.file.size, 0) > MAX_ARCHIVE) throw tooBig();
     let r;
     try {
-      r = await window.DBRAR.extract(vols.map(v => v.file), { maxFiles: MAX_FILES, maxTotal: MAX_TOTAL, maxFile: MAX_FILE, skipRx: SYSTEM.source,
+      r = await window.DBRAR.extract(vols.map(v => v.file), { skipRx: SYSTEM.source,
         keepRx: opts.keep ? '(' + opts.keep.source + ')|(' + ARCH_RX.source + ')' : null }, name => { if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + name.split('/').pop() + '…'); });
     } catch (e) { throw rarError(e); }
     if (!r.files.length && r.skipped.some(s => s.why === 'password')) throw rarError({ rar: 'password' });
@@ -84,7 +83,7 @@
   async function unrarSet(set, opts) {
     let mine = null, err = null;
     try { mine = await unrar(set, opts); } catch (e) { err = e; }
-    const weak = err ? /^E-ARCHIVE(-TOOL|-BIG)?$/.test(err.code || '') : !mine.files.length || mine.skipped.some(s => s.why === 'unsupported');
+    const weak = err ? !err.bomb && /^E-ARCHIVE(-TOOL|-BIG)?$/.test(err.code || '') : !mine.files.length || mine.skipped.some(s => s.why === 'unsupported');      // a «bomb» is not handed on to another unpacker
     if (weak && set.length === 1 && !window.DBWEB) {                 // desktop, server: the machine's own unpacker may know an older or a larger archive
       try { const theirs = await unpack(set[0].file); if (!mine || theirs.files.length > mine.files.length) return theirs; } catch (e) {}
     }
@@ -130,7 +129,8 @@
 
   function summary(notes) {
     const why = { password: say('كلمة سر', 'password'), 'too large': say('كبير جدًا', 'too large'), link: say('رابط', 'a link'), unreadable: say('تالف', 'damaged'),
-      volume: say('جزء من الأرشيف ناقص', 'a part of the archive is missing'), unsupported: say('نسخة RAR قديمة جدًا', 'a very old RAR version') };
+      volume: say('جزء من الأرشيف ناقص', 'a part of the archive is missing'), unsupported: say('نسخة RAR قديمة جدًا', 'a very old RAR version'),
+      memory: say('ذاكرة المتصفح ما كفتش', 'the browser ran out of memory') };
     return notes.map(n => n.error ? `${n.archive}: ${n.error}`
       : say(`«${n.archive}» اتفك: ${n.taken} مستند`, `«${n.archive}» unpacked: ${n.taken} document(s)`)
         + (n.left ? say(`، و${n.left} ملف تاني اتساب`, `, ${n.left} other file(s) left out`) : '')

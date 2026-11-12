@@ -282,7 +282,7 @@ def _pdf_text(s):
     return b'<FEFF' + s.encode('utf-16-be').hex().upper().encode('ascii') + b'>'
 
 
-def to_jpegs(data, max_pages=200):
+def to_jpegs(data, max_pages=None):
     """The pages of an image as upright JPEGs (a TIFF page by page), through Pillow; None when it is not installed or cannot open the file."""
     if sys.platform == 'emscripten':
         return None
@@ -296,7 +296,7 @@ def to_jpegs(data, max_pages=200):
         im = Image.open(io.BytesIO(data))
         n = getattr(im, 'n_frames', 1) if image_format(data) == 'tiff' else 1
         out = []
-        for i in range(min(n, max_pages)):
+        for i in range(n if max_pages is None else min(n, max_pages)):
             if n > 1:
                 im.seek(i)
             fr = ImageOps.exif_transpose(im) or im

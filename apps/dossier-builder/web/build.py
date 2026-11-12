@@ -33,7 +33,7 @@ def page(src, *, builder):
     html = src.read_text(encoding='utf-8')
     css = (UI / 'assets' / 'ds.css').read_text(encoding='utf-8')
     js = (UI / 'assets' / 'ds.js').read_text(encoding='utf-8')
-    boot = (HERE / 'boot.js').read_text(encoding='utf-8')
+    boot = (HERE / 'bigfs.js').read_text(encoding='utf-8') + '\n' + (HERE / 'boot.js').read_text(encoding='utf-8')      # large files as Blobs: used by the page and by the worker
     ocr = (UI / 'assets' / 'ocr.js').read_text(encoding='utf-8')
     html = html.replace('<link rel="stylesheet" href="/assets/ds.css">', f'<style>\n{css}\n</style>')
     html = html.replace('<script src="/assets/ds.js"></script>',
@@ -98,7 +98,7 @@ def main():
     (DIST / 'index.local.html').write_text(full, encoding='utf-8')
     (DIST / 'suite.html').write_text(page(UI / 'suite' / 'index.html', builder=False)[1], encoding='utf-8')
     n = engine_zip(DIST / 'assets' / 'engine.zip')
-    put(DIST / 'assets' / 'engine.worker.js', (HERE / 'engine.worker.js').read_bytes())      # the engine's own thread (boot.js starts it)
+    put(DIST / 'assets' / 'engine.worker.js', (HERE / 'bigfs.js').read_bytes() + b'\n' + (HERE / 'engine.worker.js').read_bytes())      # the engine's own thread (boot.js starts it)
     for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels'), (pathlib.Path(a.pdfjs), 'pdfjs'), (pathlib.Path(a.tess), 'tess'), (pathlib.Path(a.img), 'img')):
         if not src.is_dir():
             print(f'(no {sub} assets at {src}; skipped)')

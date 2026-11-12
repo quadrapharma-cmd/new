@@ -1,7 +1,8 @@
 """Compressed files: an archive is opened and the documents inside it are taken like uploads. ZIP, TAR and a single packed file are
 read with the standard library (every edition); RAR and 7z go through the unpacker of the machine and are refused, with the reason,
 where there is none (the browser edition). Names keep their Arabic, lose «..», drive letters and system files; an archive that
-expands too much, holds too many files or needs a password is refused or reported, never half-taken in silence.
+expands hundreds of times (a «bomb») or needs a password is refused or reported, never half-taken in silence; there is no limit of the
+program's own on the number of files or on their size.
 Made-up data («Dermacure»); the RAR samples are libarchive's public test files (web/vendor.sh), skipped when absent."""
 import bz2, gzip, io, json, lzma, pathlib, struct, tarfile, zipfile, zlib
 import pytest
@@ -64,21 +65,65 @@ def test_a_name_never_leaves_the_archive():
     assert names(archives.unpack('a.zip', z)) == ['etc/passwd.txt', 'Users/me/secret.txt', 'abs/path.txt', 'ok/x/y.txt']
 
 
-def test_an_archive_that_expands_too_much_is_refused(monkeypatch):
-    bomb = zipped([('zeros.bin', b'\0' * (120 * 1024 * 1024))])
+def test_an_archive_that_expands_too_much_is_refused():
+    """A «bomb» is the one thing still refused — by what really comes out against the archive as it was given, whatever the format."""
+    zeros = b'\0' * (120 * 1024 * 1024)
+    bomb = zipped([('zeros.bin', zeros)])
     assert len(bomb) < 200 * 1024
-    with pytest.raises(archives.ArchiveError) as e:
-        archives.unpack('bomb.zip', bomb)
-    assert e.value.code == 'E-ARCHIVE-BIG'
+    t = io.BytesIO()
+    with tarfile.open(fileobj=t, mode='w:gz') as f:
+        i = tarfile.TarInfo('zeros.bin')
+        i.size = len(zeros)
+        f.addfile(i, io.BytesIO(zeros))
+    for name, data in (('bomb.zip', bomb), ('bomb.tgz', t.getvalue()), ('zeros.bin.gz', gzip.compress(zeros)), ('zeros.bin.bz2', bz2.compress(zeros))):
+        with pytest.raises(archives.ArchiveError) as e:
+            archives.unpack(name, data)
+        assert e.value.code == 'E-ARCHIVE-BIG' and 'expands' in e.value.en, name
+    r = archives.unpack('dossier.zip', zipped([('inner.zip', bomb), ('pricing.txt', PRICING.encode())]))        # one inside an honest archive: left out, the rest taken
+    assert names(r) == ['pricing.txt'] and r['skipped'] == [{'name': 'inner.zip', 'why': 'too large'}]
+
+
+def test_no_limit_of_the_programs_own_on_the_files_or_their_size():
+    """«Do not put a limit on what is uploaded»: more files than the old 600 and more megabytes than the old 300 a file / 800 an archive."""
+    many = zipped([(f'batch records/BR-{i:04d}.txt', b'Dermacure cream, batch %04d: released' % i) for i in range(1500)])
+    r = archives.unpack('batch records.zip', many)
+    assert len(r['files']) == 1500 and r['skipped'] == [] and dict(r['files'])['batch records/BR-1499.txt'] == b'Dermacure cream, batch 1499: released'
+    block = bytes(range(256)) * 4096                                              # 1 MB that does not pack to nothing: a scan, not a bomb
+    scan = b''.join(block[:-4] + struct.pack('>I', i) for i in range(330))        # one file of 330 MB
+    b = io.BytesIO()
+    with zipfile.ZipFile(b, 'w', zipfile.ZIP_STORED) as z:
+        z.writestr('stability/scans 2019-2024.pdf', scan)
+        z.writestr('stability/scans 2014-2018.pdf', scan[: 200 << 20])
+        z.writestr('stability/scans 2009-2013.pdf', scan[: 300 << 20])               # 830 MB in all
+    r = archives.unpack('stability.zip', b.getvalue())
+    del b
+    assert [(n, len(d)) for n, d in r['files']] == [('stability/scans 2019-2024.pdf', 330 << 20), ('stability/scans 2014-2018.pdf', 200 << 20), ('stability/scans 2009-2013.pdf', 300 << 20)]
+    assert r['files'][0][1] == scan and r['skipped'] == []
+
+
+def test_a_deployment_may_still_set_its_own_limits(monkeypatch):
     monkeypatch.setattr(archives, 'MAX_FILES', 3)
     with pytest.raises(archives.ArchiveError) as e:
         archives.unpack('many.zip', zipped([(f'{i}.txt', b'x') for i in range(5)]))
     assert e.value.code == 'E-ARCHIVE-BIG' and '3' in e.value.en
-    monkeypatch.setattr(archives, 'MAX_FILES', 600)
+    monkeypatch.setattr(archives, 'MAX_FILES', None)
     monkeypatch.setattr(archives, 'MAX_TOTAL', 1000)
     with pytest.raises(archives.ArchiveError) as e:                               # the real size is counted, whatever the archive declares
         archives.unpack('big.tar', tarred([('a.txt', b'x' * 600), ('b.txt', b'x' * 600)]))
     assert e.value.code == 'E-ARCHIVE-BIG'
+    monkeypatch.setattr(archives, 'MAX_TOTAL', None)
+    monkeypatch.setattr(archives, 'MAX_FILE', 500)
+    r = archives.unpack('one.zip', zipped([('small.txt', b'x' * 100), ('large.txt', b'y' * 900)]))
+    assert names(r) == ['small.txt'] and r['skipped'] == [{'name': 'large.txt', 'why': 'too large'}]
+
+
+def test_memory_that_runs_out_is_said_in_words(monkeypatch):
+    def no_memory(self, path, data):
+        raise MemoryError()
+    monkeypatch.setattr(archives._Take, 'add', no_memory)
+    with pytest.raises(archives.ArchiveError) as e:
+        archives.unpack('a.zip', zipped([('a.txt', b'x')]))
+    assert e.value.code == 'E-ARCHIVE-BIG' and 'memory' in e.value.en and 'ذاكرة' in e.value.ar
 
 
 def encrypted(data, which=None):

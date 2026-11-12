@@ -750,8 +750,9 @@ function DBRAR_MAIN(root) {
       const head = String.fromCharCode.apply(null, vols[0].subarray(0, 8)), list = [], st = {};
       const v5 = head === 'Rar!\x1a\x07\x01\x00';
       vols.forEach((v, i) => { if (i && String.fromCharCode.apply(null, v.subarray(0, 7)) !== head.slice(0, 7)) throw E('damaged'); (v5 ? parse5 : parse4)(v, i, list, st); });
-      const skipped = [], maxFiles = opts.maxFiles || 600, maxTotal = opts.maxTotal || 500 * 1048576, maxFile = opts.maxFile || 300 * 1048576;
-      let lz = null, broken = null, total = 0, count = 0; const kept = new Set();
+      const skipped = [], maxFiles = opts.maxFiles || Infinity, maxTotal = opts.maxTotal || Infinity, maxFile = opts.maxFile || Infinity;       // no limit unless one is asked for
+      let lz = null, broken = null, total = 0, decoded = 0, count = 0; const kept = new Set();
+      const packed = vols.reduce((a, v) => a + v.length, 0), ratio = opts.maxRatio || 250;       // a packed stream that expands hundreds of times past 100 MB is a «bomb»
       USED = {};
       for (const e of list) {
         const name = e.name.replace(/^[A-Za-z]:/, '').split('/').filter(x => x && x !== '.' && x !== '..').join('/') || 'file';
@@ -764,7 +765,7 @@ function DBRAR_MAIN(root) {
           continue;
         }
         let why = e.more ? 'volume' : e.enc ? 'password' : e.link ? 'link' : !e.ok ? 'unsupported' : e.solid && broken ? broken : null;
-        if (!why && !e.stored && e.dict > 268435456) why = 'too large';
+        if (!why && !e.stored && e.dict > 2147483648) why = 'memory';     // a 4 GB dictionary: more than a page can hold
         if (why) { if (!left) skipped.push({ name, why }); if (!e.stored) broken = why; continue; }
         if ((left || large) && (e.stored || !list.some(x => x !== e && x.solid && list.indexOf(x) > list.indexOf(e)))) {     // nothing after it leans on it: no need to unpack it
           if (large && !left) skipped.push({ name, why: 'too large' });
@@ -773,22 +774,27 @@ function DBRAR_MAIN(root) {
         }
         if (!left && !large && count >= maxFiles) throw E('big', 'files');
         if (onStatus && !left) onStatus(name);
-        const data = join(vols, e.parts), parts = []; let size = 0, crc = 0xffffffff, over = false;
+        const data = join(vols, e.parts), parts = []; let size = 0, crc = 0xffffffff;
         const keep = !left && !large;
-        const sink = b => { size += b.length; crc = crc32(crc, b, 0, b.length); if (keep) { total += b.length; if (total > maxTotal) over = true; else parts.push(b); } };
+        const sink = b => { size += b.length; decoded += b.length; crc = crc32(crc, b, 0, b.length);
+          if (decoded > 104857600 && decoded > ratio * packed) throw E('big', 'bomb');          // stopped at once, kept or not: nothing more is unpacked
+          if (keep) { total += b.length; if (total > maxTotal) throw E('big', 'total'); parts.push(b); } };
         try {
           if (e.stored) sink(e.unp === null ? data.slice() : data.slice(0, e.unp));
           else {
             const need = e.solid || list.some(x => x.solid) ? e.dict : Math.min(e.dict, Math.max(0x40000, Math.pow(2, Math.ceil(Math.log2(Math.max(1, e.unp === null ? e.dict : e.unp))))));
-            if (!e.solid || !lz || lz.ver !== e.ver || lz.size < need) { const keepWin = lz && e.solid && lz.ver === e.ver ? lz : null; lz = newLz(Math.max(need, keepWin ? keepWin.size : 0)); lz.ver = e.ver; }
+            if (!e.solid || !lz || lz.ver !== e.ver || lz.size < need) { const keepWin = lz && e.solid && lz.ver === e.ver ? lz : null;
+              try { lz = newLz(Math.max(need, keepWin ? keepWin.size : 0)); } catch (x) { lz = null; throw E('memory'); }          // the window itself does not fit in memory
+              lz.ver = e.ver; }
             (e.ver === 5 ? unpack5 : unpack29)(lz, data, e.unp, sink, e.solid);
           }
         } catch (err) {
+          if (err && err.rar === 'big') throw err;                                                   // the whole archive is refused
+          if (err && !err.rar && /alloc|out of memory/i.test(String(err))) err = E('memory');        // the browser refused the memory for it
           if (!err || !err.rar) throw err;
-          broken = err.rar === 'unsupported' ? 'unsupported' : 'unreadable'; lz = null;
+          broken = err.rar === 'unsupported' ? 'unsupported' : err.rar === 'memory' ? 'memory' : 'unreadable'; lz = null;
           if (!left) skipped.push({ name, why: broken }); continue;
         }
-        if (over) throw E('big', 'total');
         if ((e.unp !== null && size !== e.unp) || (e.crc !== null && ((crc ^ 0xffffffff) >>> 0) !== e.crc)) { broken = 'unreadable'; if (!left) skipped.push({ name, why: 'unreadable' }); continue; }
         if (keep) { count++; kept.add(name); onFile(name, parts, null); } else if (large && !left) skipped.push({ name, why: 'too large' });
       }
@@ -813,7 +819,7 @@ function DBRAR_MAIN(root) {
             const bufs = parts.map(p => p.byteOffset === 0 && p.byteLength === p.buffer.byteLength ? p.buffer : p.slice().buffer); root.postMessage({ t: 'file', name, parts: bufs }, bufs); },
           name => root.postMessage({ t: 'status', name }));
         root.postMessage({ t: 'done', skipped: r.skipped, left: opts.skip.left, format: r.format, filters: r.filters });
-      } catch (e) { root.postMessage({ t: 'error', rar: (e && e.rar) || 'damaged', why: (e && e.why) || '' }); }
+      } catch (e) { root.postMessage({ t: 'error', rar: (e && e.rar) || (/alloc|out of memory/i.test(String(e)) ? 'memory' : 'damaged'), why: (e && e.why) || '' }); }
     };
     return;
   }
@@ -827,7 +833,8 @@ function DBRAR_MAIN(root) {
     } catch (e) { res(false); }
   }));
   async function extract(files, opts, onStatus) {
-    const bufs = []; for (const f of files) bufs.push(await f.arrayBuffer());
+    const bufs = [];
+    try { for (const f of files) bufs.push(await f.arrayBuffer()); } catch (e) { const x = new Error('memory'); x.rar = 'memory'; throw x; }      // the archive itself does not fit in memory
     const out = []; let worker = null;
     if (await canWork()) { try { worker = new Worker(URL.createObjectURL(new Blob([DBRAR_MAIN.toString(), '\nDBRAR_MAIN(self);'], { type: 'text/javascript' }))); } catch (e) { worker = null; } }
     if (!worker) {                                                   // no worker here: the same work on this thread
