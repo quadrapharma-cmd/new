@@ -203,6 +203,7 @@ body[data-role="editor"] .admin-only,body[data-role="viewer"] .admin-only{displa
 <script src="/assets/ds.js"></script>
 <script>window.DB_TESS_BASE=window.DB_TESS_BASE||'/assets/tess/';window.DB_PDFJS_BASE=window.DB_PDFJS_BASE||'/assets/pdfjs/';window.DB_IMG_BASE=window.DB_IMG_BASE||'/assets/img/';</script>
 <script src="/assets/ocr.js"></script>
+<script src="/assets/rar.js"></script>
 <script src="/assets/archive.js"></script>
 <script>
 'use strict';
@@ -969,7 +970,7 @@ async function withArchives(files){
   files=[...(files||[])]; withArchives.said=false; if(!window.DBARCH||!files.length) return files;
   let any=false; for(const f of files){ if(await DBARCH.isArchive(f)){ any=true; break; } }
   if(!any) return files;
-  const r=await DBARCH.expand(files, {accept:n=>DS.isDoc(n)&&!DBARCH.ARCH_RX.test(n), onStatus:toast});
+  const r=await DBARCH.expand(files, {accept:n=>DS.isDoc(n)&&!DBARCH.ARCH_RX.test(n), keep:DS.DOC_RX, onStatus:toast});
   if(r.notes.length){ withArchives.said=true; toast(DBARCH.summary(r.notes), r.notes.some(n=>n.error||!n.taken)?12000:5000); }      // why an archive gave nothing stays long enough to be read
   const inside=r.files.filter(f=>f.dbPath), others=r.files.filter(f=>!f.dbPath);
   if(inside.length<=40) return r.files;
@@ -1316,6 +1317,11 @@ function datalists(){ const k=VOC().known||{}; const dl=(id,arr)=>`<datalist id=
 /* ---------------- Google Drive as a source: paste a link, pick files, read them like uploads */
 S.drive={link:'',files:[],recursive:false,gear:false,sel:{}}; try{ S.drive.link=localStorage.getItem('db.drive.link')||''; }catch(e){}   // the last Drive link is kept on this browser
 const fmtSize=n=>n>1e6?`${(n/1e6).toFixed(1)} MB`:n>1e3?`${Math.round(n/1e3)} KB`:`${n} B`;
+/* the Drive connection of claude.ai does not download a file over 10 MB (its own limit): such a file is opened in Drive, downloaded, and
+   uploaded from the computer. The limit is the connector's, so a file over it is offered and marked, not blocked. */
+const DRIVE_CONN_MAX=10*1024*1024, DRIVE_BIG_RX=/too large|over limit|exceeds? the|size limit/i;
+const DRIVE_BIG_WHY={ar:'أكبر من 10 ميجا: وصلة Google Drive هنا ما بتنزّلش ملف بالحجم ده. افتحه في Drive ونزّله، وبعدين ارفعه من جهازك.',en:'over 10 MB: the Google Drive connection here does not download a file that large. Open it in Drive, download it, then upload it from this computer.'};
+const driveLink=id=>`https://drive.google.com/file/d/${encodeURIComponent(id)}/view`;
 const driveType=f=>{ if(f.kind==='folder') return L({en:'folder',ar:'فولدر'}); const m=f.mimeType||'', e=((/\.([A-Za-z0-9]{1,6})$/.exec(f.name||'')||[])[1]||'').toLowerCase();
   if(f.why==='system') return L({en:'system file',ar:'ملف نظام'}); if(f.why==='empty') return L({en:'empty file',ar:'ملف فاضي'});
   if(/google-apps\.document/.test(m)) return 'Google Doc'; if(/google-apps\.spreadsheet/.test(m)) return 'Google Sheet'; if(/google-apps\.presentation/.test(m)) return 'Google Slides'; if(/google-apps\.drawing/.test(m)) return 'Google Drawing';
@@ -1374,6 +1380,7 @@ const DBDRIVE={
         not_in_manifest:L({ar:'الصفحة مش مسموح لها بـ Google Drive: فعّله من قائمة الصلاحيات بتاعة الصفحة',en:'This page is not allowed to use Google Drive: enable it in the page\'s permissions menu'}),
         approval_required:L({ar:'محتاج موافقتك على الطلب في Claude',en:'Needs your approval in Claude'}),
         tool_error:L({ar:'Google Drive رفض الطلب: ',en:'Google Drive refused: '})+String(e&&e.message||'').slice(0,160)}[code];
+      if(code==='tool_error'&&DRIVE_BIG_RX.test(String(e&&e.message||''))){ const big=new Error(L(DRIVE_BIG_WHY)); big.big=true; throw big; }      // the connector's own size limit
       throw new Error(say||`${code||'error'} ${String(e&&e.message||'').slice(0,160)}`); } },
   async list(id, recursive, onProgress){ const out=[], queue=[{id, prefix:'', depth:0}], skipped=[]; let active=0, folders=0;      // sub-folders four at a time, with progress
     const one=async job=>{ let token=null; const kids=[];
@@ -1398,20 +1405,33 @@ function driveSettingsForm(ds){ return `<div class="card pad stack gap-s" id="dr
   <div class="row gap-s"><button class="btn pri sm" id="drvSave">${icon('check',14)} ${esc(t('driveSave'))}</button><span class="small muted" id="drvSetMsg"></span></div></div>`; }
 async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await api('/drive/settings'); }catch(e){ toast(e.message); return; }
   const d=S.drive; const conn=await DBDRIVE.available(); if(conn) ds.mode='connector';          // claude.ai: the viewer's own Drive, no key
-  d.sel=d.sel||{}; d.busy=null; d.fails=[]; d.got=[]; d.warned=false; d.note=''; if(opts.single) d.sel={};
+  d.sel=d.sel||{}; d.busy=null; d.fails=[]; d.got=[]; d.warned=false; d.fetched=false; d.note=''; if(opts.single) d.sel={};
   const say=(o,v)=>L(o).replace(/\{(\w+)\}/g,(m,k)=>v&&v[k]!==undefined?v[k]:m);
   const usable=()=>d.files.filter(f=>f.usable), picked=()=>d.files.filter(f=>f.usable&&d.sel[f.id]);
   const fileList=files=>files.length?`<div class="row gap-s small"><span id="drvCount" class="muted"></span><span class="grow"></span>${opts.single||!files.some(f=>f.usable)?'':`<button class="btn sm ghost" id="drvAll" type="button">${esc(L({ar:'اختار الكل',en:'Select all'}))}</button><button class="btn sm ghost" id="drvNone" type="button">${esc(L({ar:'شيل الكل',en:'Clear'}))}</button>`}</div>
-    <div class="rows tablewrap" style="max-height:44vh;overflow:auto"><table><thead><tr><th></th><th>${esc(t('driveName'))}</th><th>${esc(t('driveType'))}</th><th>${esc(t('driveSize'))}</th></tr></thead><tbody>${files.map((f,i)=>`<tr><td>${f.kind==='folder'?`<button class="btn sm ghost" data-drvopen="${esc(f.id)}" title="${esc(f.name)}">▸</button>`:`<input type="${opts.single?'radio':'checkbox'}" name="drvone" data-drvsel="${i}" ${f.usable?(d.sel[f.id]?'checked':''):'disabled'}>`}</td><td dir="auto">${esc(f.path||f.name)}${f.export?` <span class="small muted">→ ${esc(f.export)}</span>`:''}</td><td class="small muted">${esc(driveType(f))}</td><td class="small muted">${f.size?fmtSize(f.size):''}</td></tr>`).join('')}</tbody></table></div>${files.some(f=>f.usable)?'':`<p class="small muted">${esc(t('driveNoUsable'))}</p>`}`:`<p class="small muted">${esc(t('driveHow'))}</p>`;
+    <div class="rows tablewrap" style="max-height:44vh;overflow:auto"><table><thead><tr><th></th><th>${esc(t('driveName'))}</th><th>${esc(t('driveType'))}</th><th>${esc(t('driveSize'))}</th></tr></thead><tbody>${files.map((f,i)=>`<tr><td>${f.kind==='folder'?`<button class="btn sm ghost" data-drvopen="${esc(f.id)}" title="${esc(f.name)}">▸</button>`:`<input type="${opts.single?'radio':'checkbox'}" name="drvone" data-drvsel="${i}" ${f.usable?(d.sel[f.id]?'checked':''):'disabled'}>`}</td><td dir="auto">${esc(f.path||f.name)}${f.export?` <span class="small muted">→ ${esc(f.export)}</span>`:''}</td><td class="small muted">${esc(driveType(f))}${f.big?` · <b style="color:var(--warn)">${esc(L({ar:'أكبر من 10 ميجا: بيتنزّل من Drive ويترفع من الجهاز',en:'over 10 MB: download it from Drive, upload it from this computer'}))}</b>`:''}</td><td class="small muted">${f.size?fmtSize(f.size):''}</td></tr>`).join('')}</tbody></table></div>${files.some(f=>f.usable)?'':`<p class="small muted">${esc(t('driveNoUsable'))}</p>`}`:`<p class="small muted">${esc(t('driveHow'))}</p>`;
   const count=()=>{ const el=$('#drvCount'); if(!el) return; const p=picked(), size=p.reduce((a,f)=>a+(f.size||0),0);
     el.textContent=say({ar:'مختار {k} من {n} ملف مقروء',en:'{k} of {n} readable files selected'},{k:p.length,n:usable().length})+(size?` · ${fmtSize(size)}`:''); const u=$('#drvUse'); if(u) u.disabled=!!d.busy||!usable().length; };
-  const lock=on=>{ ['#drvUse','#drvList','#drvAll','#drvNone','#drvRec','#drvLink'].forEach(q=>{ const el=$(q); if(el) el.disabled=on; }); $$('[data-drvsel]').forEach(c=>{ c.disabled=on||!d.files[+c.dataset.drvsel].usable; }); $$('[data-drvopen]').forEach(b=>b.disabled=on); };
+  const bigOnes=()=>conn?d.files.filter(f=>f.big&&f.usable):[];
+  const openLink=f=>`<a href="${esc(driveLink(f.id))}" target="_blank" rel="noopener">${esc(L({ar:'افتحه في Drive',en:'Open in Drive'}))}</a>`;
+  const localBtn=`<button class="btn sm" id="drvLocal" type="button">${icon('upload',14)} ${esc(L({ar:'ارفع من الجهاز',en:'Upload from this computer'}))}</button>`;
+  const lock=on=>{ ['#drvUse','#drvList','#drvAll','#drvNone','#drvRec','#drvLink','#drvLocal'].forEach(q=>{ const el=$(q); if(el) el.disabled=on; }); $$('[data-drvsel]').forEach(c=>{ c.disabled=on||!d.files[+c.dataset.drvsel].usable; }); $$('[data-drvopen]').forEach(b=>b.disabled=on); };
   const status=()=>{ const el=$('#drvStatus'); if(!el) return; const b=d.busy;        // what is happening now, what failed and why: it stays on the panel
     el.innerHTML=(b?`<div class="card pad stack gap-s" id="drvProg"><div class="row gap-s small"><b>${esc(b.title)}</b><span class="grow"></span><span class="code">${b.total?`${b.done}/${b.total}`:''}</span></div>${b.total?`<div id="drvBar" style="height:7px;border-radius:999px;background:var(--surface-3);overflow:hidden"><i style="display:block;height:100%;width:${Math.round(100*b.done/b.total)}%;background:var(--brand);transition:width .2s"></i></div>`:''}<div class="small muted" dir="auto">${esc(b.now||'')}</div></div>`:'')
       +(d.note?`<div class="alert" id="drvNote">${icon('alert')}<p class="small" dir="auto">${esc(d.note)}</p></div>`:'')
-      +(d.fails.length?`<div class="card pad stack gap-s" id="drvFails"><b class="small">${esc(say({ar:'ملفات ما اتجابتش ({n})',en:'Files that could not be fetched ({n})'},{n:d.fails.length}))}</b><ul class="small" style="margin:0 18px;padding:0">${d.fails.map(x=>`<li dir="auto">${esc(x.f.name)} — <span class="muted">${esc(x.why)}</span></li>`).join('')}</ul>
-        <div class="row gap-s"><button class="btn sm" id="drvRetry" type="button">${esc(L({ar:'جرّب تاني للملفات دي',en:'Try these again'}))}</button>${d.got.length?`<button class="btn sm pri" id="drvGo" type="button">${esc(say({ar:'كمّل بالملفات اللي اتجابت ({n})',en:'Continue with the {n} fetched'},{n:d.got.length}))}</button>`:''}</div></div>`:'');
-    const rt=$('#drvRetry'); if(rt) rt.onclick=()=>fetchAll(d.fails.map(x=>x.f)); const go=$('#drvGo'); if(go) go.onclick=finish; };
+      +(d.fails.length?`<div class="card pad stack gap-s" id="drvFails"><b class="small">${esc(say({ar:'ملفات ما اتجابتش ({n})',en:'Files that could not be fetched ({n})'},{n:d.fails.length}))}</b><ul class="small" style="margin:0 18px;padding:0">${d.fails.map(x=>`<li><bdi>${esc(x.f.name)}</bdi>${conn&&x.f.id?` · ${openLink(x.f)}`:''}<div class="muted" dir="auto">${esc(x.why)}</div></li>`).join('')}</ul>
+        <div class="row gap-s" style="flex-wrap:wrap">${d.fails.some(x=>!x.big)?`<button class="btn sm" id="drvRetry" type="button">${esc(L({ar:'جرّب تاني للملفات دي',en:'Try these again'}))}</button>`:''}${localBtn}${d.got.length?`<button class="btn sm pri" id="drvGo" type="button">${esc(say({ar:'كمّل بالملفات اللي اتجابت ({n})',en:'Continue with the {n} fetched'},{n:d.got.length}))}</button>`:''}</div></div>`
+       :(!b&&bigOnes().length?`<div class="card pad stack gap-s" id="drvBig"><b class="small">${esc(say({ar:'{n} ملف أكبر من 10 ميجا',en:'{n} file(s) over 10 MB'},{n:bigOnes().length}))}</b><p class="small muted">${esc(L({ar:'وصلة Google Drive هنا ما بتنزّلش ملف بالحجم ده. افتح الملف في Drive ونزّله على جهازك، وبعدين ارفعه من هنا: بيتقري مع باقي الملفات.',en:'The Google Drive connection here does not download a file that large. Open the file in Drive, download it, then upload it here: it is read with the others.'}))}</p>
+        <ul class="small" style="margin:0 18px;padding:0">${bigOnes().map(f=>`<li><bdi>${esc(f.name)}</bdi> <span class="muted">${fmtSize(f.size)}</span> · ${openLink(f)}</li>`).join('')}</ul>
+        <div class="row gap-s" style="flex-wrap:wrap">${localBtn}</div></div>`:''))
+      +(!b&&!d.fails.length&&d.got.some(x=>x.f.local)?`<div class="alert info" id="drvLocalGot">${icon('check')}<p class="small" dir="auto">${esc(say({ar:'{n} ملف من الجهاز مضاف: {names}. دوس «{b}» وهيتقروا مع اللي مختاره من Drive.',en:'{n} file(s) added from this computer: {names}. Press «{b}» and they are read with what is ticked in Drive.'},{n:d.got.filter(x=>x.f.local).length, names:d.got.filter(x=>x.f.local).map(x=>x.f.name).slice(0,3).join(' · '), b:opts.label||t('driveUse')}))}</p></div>`:'');
+    const rt=$('#drvRetry'); if(rt) rt.onclick=()=>fetchAll(d.fails.filter(x=>!x.big).map(x=>x.f)); const go=$('#drvGo'); if(go) go.onclick=finish;
+    const lc=$('#drvLocal'); if(lc) lc.onclick=()=>pickFiles(files=>{ if(!files.length) return;          // downloaded from Drive by hand: they join the ones fetched
+      const names=new Set(files.map(f=>f.name.toLowerCase())); files.forEach(file=>d.got.push({f:{name:file.name, local:true}, file}));
+      d.fails=d.fails.filter(x=>!names.has(String(x.f.name).toLowerCase())); d.files.forEach(f=>{ if(names.has(String(f.name).toLowerCase())){ f.big=false; delete d.sel[f.id]; } });
+      toast(say({ar:'اتضاف {n} ملف من الجهاز',en:'{n} file(s) added from this computer'},{n:files.length}));
+      if(opts.single||(!d.fails.length&&(d.fetched||!picked().length))) return finish();          // nothing else is waiting: straight on to reading
+      paint(); }); };
   const getOne=async f=>{ if(conn) return DBDRIVE.fetch(f);
     const r=await fetch(`/api/drive/files/${encodeURIComponent(f.id)}?name=${encodeURIComponent(f.name)}&mime=${encodeURIComponent(f.mimeType||'')}`,{headers:{'X-DB':'1'}}); if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error((j.detail&&(j.detail[S.lang]||j.detail.en))||r.statusText); }
     const blob=await r.blob(); const hx=r.headers.get('x-filename'); let name=f.name; if(hx){ try{ name=new TextDecoder().decode(new Uint8Array(hx.match(/../g).map(h=>parseInt(h,16)))); }catch(e){} }
@@ -1419,10 +1439,10 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
   const finish=()=>{ const files=d.got.slice().sort((a,b)=>d.files.indexOf(a.f)-d.files.indexOf(b.f)).map(x=>x.file); d.got=[]; d.fails=[]; d.note=''; if(!files.length) return; closeDrawer(); onFiles(opts.single?files.slice(0,1):files); };
   const fetchAll=async list=>{ d.fails=[]; d.note=''; d.busy={title:t('driveFetching'), done:0, total:list.length, now:''}; lock(true); status();
     let next=0; const worker=async()=>{ while(next<list.length){ const f=list[next++]; d.busy.now=f.name; status();
-        try{ d.got.push({f, file:await getOne(f)}); }catch(e){ d.fails.push({f, why:String(e&&e.message||e).slice(0,220)}); }
+        try{ d.got.push({f, file:await getOne(f)}); }catch(e){ d.fails.push({f, why:String(e&&e.message||e).slice(0,220), big:!!(e&&e.big)}); }
         d.busy.done++; status(); } };
     await Promise.all(Array.from({length:Math.min(3, list.length)}, worker));
-    d.busy=null; lock(false);
+    d.busy=null; d.fetched=true; lock(false);
     if(!d.fails.length) return finish();                    // everything came: straight on to reading
     if(!d.got.length) d.note=L({ar:'ولا ملف اتجاب من Drive. السبب مكتوب جنب كل ملف.',en:'No file could be fetched from Drive. The reason is next to each file.'});
     status(); count(); };
@@ -1437,11 +1457,12 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
     $('#drvGear').onclick=()=>{ d.gear=!d.gear; paint(); };
     const sv=$('#drvSave'); if(sv) sv.onclick=async()=>{ const body={}; const k=$('#drvKey'); if(k&&k.value.trim()) body.api_key=k.value.trim(); const sa=$('#drvSA'); if(sa&&sa.value.trim()){ try{ body.service_account=JSON.parse(sa.value); }catch(e){ $('#drvSetMsg').textContent=L({en:'The service account must be JSON.',ar:'حساب الخدمة لازم يكون JSON.'}); return; } }
       sv.disabled=true; try{ ds=await api('/drive/settings',{method:'PUT',json:body}); d.gear=false; S.caps=null; paint(); }catch(e){ $('#drvSetMsg').textContent=e.message; sv.disabled=false; } };
-    const list=async link=>{ d.link=link; try{ localStorage.setItem('db.drive.link', link); }catch(e){} d.recursive=$('#drvRec').checked; d.note=''; d.fails=[]; d.got=[]; d.warned=false;
+    const list=async link=>{ d.link=link; try{ localStorage.setItem('db.drive.link', link); }catch(e){} d.recursive=$('#drvRec').checked; d.note=''; d.fails=[]; d.got=[]; d.warned=false; d.fetched=false;
       d.busy={title:L({ar:'بيقرا الفولدر من Drive…',en:'Reading the folder from Drive…'}), done:0, total:0, now:''}; lock(true); status();
       try{ if(conn){ const p=DBDRIVE.parseLink(link); if(!p) throw new Error(t('driveBadLink'));
           d.files=p.kind==='folder'?await DBDRIVE.list(p.id, d.recursive, (n,fo)=>{ if(d.busy){ d.busy.now=say({ar:'لقى {n} ملف في {f} فولدر…',en:'{n} files found in {f} folder(s)…'},{n,f:fo}); status(); } }):[await DBDRIVE.one(p.id)]; ds.mode='connector';
-          if(d.files.skipped&&d.files.skipped.length) d.note=say({ar:'{n} فولدر فرعي ما اتقراش: افتحه لوحده بالسهم اللي جنبه.',en:'{n} sub-folder(s) could not be read: open each with its arrow.'},{n:d.files.skipped.length}); }
+          if(d.files.skipped&&d.files.skipped.length) d.note=say({ar:'{n} فولدر فرعي ما اتقراش: افتحه لوحده بالسهم اللي جنبه.',en:'{n} sub-folder(s) could not be read: open each with its arrow.'},{n:d.files.skipped.length});
+          d.files.forEach(f=>{ if(f.kind==='file'&&f.usable&&!f.native&&f.size>DRIVE_CONN_MAX){ f.big=true; f.guess=true; } }); }      // over the connector's limit: offered, not ticked
         else{ const r=await api('/drive/list',{method:'POST',json:{link, recursive:d.recursive}}); d.files=r.files; ds.mode=r.mode; }
         const us=usable(); d.sel={};
         if(!opts.single&&us.length<=40) us.filter(f=>!f.guess).forEach(f=>{ d.sel[f.id]=true; });      // a file of unknown type is offered, not ticked
@@ -1451,12 +1472,13 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
       d.busy=null; paint(); };
     $('#drvList').onclick=()=>list($('#drvLink').value.trim()); $('#drvLink').onkeydown=e=>{ if(e.key==='Enter') list($('#drvLink').value.trim()); };
     $$('[data-drvopen]').forEach(b=>b.onclick=()=>list(`https://drive.google.com/drive/folders/${b.dataset.drvopen}`));
-    $$('[data-drvsel]').forEach(c=>c.onchange=()=>{ const f=d.files[+c.dataset.drvsel]; if(opts.single) d.sel={}; d.sel[f.id]=c.checked; d.warned=false; count(); });
+    $$('[data-drvsel]').forEach(c=>c.onchange=()=>{ const f=d.files[+c.dataset.drvsel]; if(opts.single) d.sel={}; d.sel[f.id]=c.checked; d.warned=false; d.fetched=false; count(); });
     const all=$('#drvAll'), none=$('#drvNone'); if(all) all.onclick=()=>{ usable().forEach(f=>{ d.sel[f.id]=true; }); paint(); }; if(none) none.onclick=()=>{ d.sel={}; paint(); };
-    $('#drvUse').onclick=()=>{ const p=picked(); if(!p.length){ d.note=t('driveNoneSel'); toast(d.note); return status(); }
+    $('#drvUse').onclick=()=>{ const p=picked(); if(!p.length){ if(d.got.some(x=>x.f.local)) return finish();      // only files added from this computer
+        d.note=t('driveNoneSel'); toast(d.note); return status(); }
       const size=p.reduce((a,f)=>a+(f.size||0),0);
       if(!d.warned&&(p.length>40||size>150e6)){ d.warned=true; d.note=say({ar:'اختيارك كبير ({n} ملف، {mb} ميجا): الجلب والقراية هياخدوا وقت. دوس «{b}» تاني لو عايز تكمّل.',en:'A large selection ({n} files, {mb} MB): fetching and reading will take a while. Press «{b}» again to go on.'},{n:p.length,mb:Math.round(size/1e6),b:opts.label||t('driveUse')}); return status(); }
-      d.got=[]; fetchAll(p); };
+      d.got=d.got.filter(x=>x.f.local); fetchAll(p); };
     status(); count(); };
   paint(); }
 async function browserOcr(r, files, target, ev){

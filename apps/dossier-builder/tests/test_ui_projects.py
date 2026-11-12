@@ -249,16 +249,61 @@ def test_an_archive_with_many_documents_asks_which_ones(clean, browser, tmp_path
 
 def test_an_archive_that_cannot_be_opened_says_why(clean, browser, tmp_path, monkeypatch):
     server = clean
-    monkeypatch.setattr(archives, 'tools', lambda: [])                                  # as in the browser edition: no unpacker for RAR
-    rar = tmp_path / 'backup.rar'
-    rar.write_bytes(b'Rar!\x1a\x07\x01\x00' + b'\0' * 200)
+    monkeypatch.setattr(archives, 'tools', lambda: [])                                  # as in the browser edition: no unpacker for 7z
+    z7 = tmp_path / 'backup.7z'
+    z7.write_bytes(b"7z\xbc\xaf'\x1c" + b'\0' * 200)
     page = _open(browser, server)
-    _upload(page, '#intakeBtn', [rar])
-    page.wait_for_function("() => /RAR/.test(document.querySelector('#toast').textContent)")
+    _upload(page, '#intakeBtn', [z7])
+    page.wait_for_function("() => /ZIP/.test(document.querySelector('#toast').textContent)")
     said = page.inner_text('#toast')
-    assert 'backup.rar' in said and 'ZIP' in said                                       # what to do about it
+    assert 'backup.7z' in said and '7z archive' in said                                 # why, and what to do about it
     page.wait_for_timeout(4500)
-    assert page.is_visible('#toast') and 'RAR' in page.inner_text('#toast')             # still there to be read; not replaced by «choose documents»
+    assert page.is_visible('#toast') and '7z' in page.inner_text('#toast')              # still there to be read; not replaced by «choose documents»
+    assert _wiz_files(page) == []
+    assert page.errors == [], page.errors
+    page.close()
+
+
+# ---------------- RAR: opened inside the page by the program's own reader where the machine has no unpacker
+RAR = __import__('pathlib').Path(__file__).parent / 'data' / 'archives' / 'rar'
+RAR_DOCS = ['licence.pdf', 'notes.txt', 'pricing certificate.txt', 'تقرير الثبات.txt']       # scan.bin is not a document: left out
+
+
+def test_a_rar_is_opened_inside_the_page(clean, browser, monkeypatch):
+    server = clean
+    monkeypatch.setattr(archives, 'tools', lambda: [])
+    page = _open(browser, server)
+    _upload(page, '#intakeBtn', [RAR / 'dermacure.rar'])
+    page.wait_for_function("() => S.wiz.allFiles && S.wiz.allFiles.length === 4 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=120000)
+    assert _wiz_files(page) == RAR_DOCS
+    assert page.evaluate("() => S.wiz.kinds['licence.pdf']") == 'licence'               # and what is inside them was read
+    assert _drafts(server)[0]['files'] == 4
+    assert page.errors == [], page.errors
+    page.close()
+
+
+def test_a_rar_split_in_parts_and_a_part_given_alone(clean, browser, monkeypatch):
+    server = clean
+    monkeypatch.setattr(archives, 'tools', lambda: [])
+    parts = sorted(RAR.glob('dermacure-parts.part*.rar'))
+    page = _open(browser, server)
+    _upload(page, '#intakeBtn', [parts[2]])                                             # the third part alone
+    page.wait_for_function("() => /first part/.test(document.querySelector('#toast').textContent)")
+    assert _wiz_files(page) == []
+    _upload(page, '#intakeBtn', parts)                                                  # the four parts together: one archive
+    page.wait_for_function("() => S.wiz.allFiles && S.wiz.allFiles.length === 4", timeout=120000)
+    assert _wiz_files(page) == RAR_DOCS
+    assert page.errors == [], page.errors
+    page.close()
+
+
+def test_a_rar_under_a_password_says_so(clean, browser, monkeypatch):
+    server = clean
+    monkeypatch.setattr(archives, 'tools', lambda: [])
+    page = _open(browser, server)
+    for name in ('dermacure-password.rar', 'dermacure-locked-names.rar'):               # the files locked; the names locked too
+        _upload(page, '#intakeBtn', [RAR / name])
+        page.wait_for_function("(n) => document.querySelector('#toast').textContent.includes(n) && /password/.test(document.querySelector('#toast').textContent)", arg=name)
     assert _wiz_files(page) == []
     assert page.errors == [], page.errors
     page.close()

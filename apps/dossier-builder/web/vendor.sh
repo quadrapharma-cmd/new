@@ -43,16 +43,31 @@ cp /tmp/imgjs/utif/package/LICENSE "$I/LICENSE.utif.txt"; cp /tmp/imgjs/pako/pac
 mkdir -p "$I/test" && curl -sS -L -o "$I/test/example.heic" "https://raw.githubusercontent.com/strukturag/libheif/master/examples/example.heic"   # a public sample for the HEIC test (not committed)
 ls -la "$I"
 
-# public RAR samples for the archive tests (not committed): libarchive's own test files, stored there uuencoded
+# public RAR samples for the archive tests (not committed): libarchive's own test files, stored there uuencoded — old format and RAR5,
+# split in parts, solid, the text method, filters, a self-extracting one, and damaged ones that must be refused
 A="$HERE/vendor/arch/test"; mkdir -p "$A"
-for n in test_read_format_rar_compress_normal test_read_format_rar5_compressed test_read_format_rar5_stored; do
-  curl -sS -L "https://raw.githubusercontent.com/libarchive/libarchive/v3.7.2/libarchive/test/$n.rar.uu" | python3 -c "
+RARS="test_read_format_rar.rar test_read_format_rar_compress_normal.rar test_read_format_rar_compress_best.rar test_read_format_rar_unicode.rar
+test_read_format_rar_filter.rar test_read_format_rar_binary_data.rar test_read_format_rar_windows.rar test_read_format_rar_noeof.rar
+test_read_format_rar_subblock.rar test_read_format_rar_sfx.exe test_read_format_rar_encryption_header.rar
+test_read_format_rar_encryption_partially.rar test_rar_multivolume_multiple_files.part1.rar test_rar_multivolume_multiple_files.part2.rar
+test_rar_multivolume_multiple_files.part3.rar test_rar_multivolume_multiple_files.part4.rar test_rar_multivolume_multiple_files.part5.rar
+test_rar_multivolume_multiple_files.part6.rar test_read_format_rar5_arm.rar test_read_format_rar5_multiarchive_solid.part01.rar
+test_read_format_rar5_multiarchive_solid.part02.rar test_read_format_rar5_multiarchive_solid.part03.rar
+test_read_format_rar5_multiarchive_solid.part04.rar test_read_format_rar5_hardlink.rar test_read_format_rar5_symlink.rar
+test_read_format_rar5_blake2.rar test_read_format_rar5_win32.rar test_read_format_rar5_multiple_files_solid.rar test_read_format_rar5_compressed.rar
+test_read_format_rar5_stored.rar test_read_format_rar5_truncated_huff.rar test_read_format_rar5_distance_overflow.rar
+test_read_format_rar5_readtables_overflow.rar test_read_format_rar5_leftshift1.rar test_read_format_rar5_invalid_dict_reference.rar"
+for f in $RARS; do
+  curl -sS -f -L "https://raw.githubusercontent.com/libarchive/libarchive/v3.7.2/libarchive/test/$f.uu" | python3 -c "
 import binascii, sys
 out = b''
 for line in sys.stdin.buffer.read().splitlines()[1:]:
     if line.strip() in (b'end', b'\`', b''):
         break
-    out += binascii.a2b_uu(line)
-sys.stdout.buffer.write(out)" > "$A/$n.rar"
+    try:
+        out += binascii.a2b_uu(line)
+    except binascii.Error:
+        out += binascii.a2b_uu(line[:(((line[0] - 32) & 63) * 4 + 5) // 3])
+sys.stdout.buffer.write(out)" > "$A/$f"
 done
-ls -la "$A"
+ls "$A" | wc -l

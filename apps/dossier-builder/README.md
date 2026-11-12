@@ -149,7 +149,8 @@ bytes; a Word, Excel or OpenDocument file is a ZIP inside and is never mistaken 
 |---|---|
 | ZIP, TAR, `.tar.gz` / `.tgz`, `.tar.bz2`, a single `.gz` / `.bz2` | every edition (the standard library), the browser one included |
 | `.xz`, `.tar.xz` | the desktop and server editions (the browser edition's Python has no xz: said, with what to do) |
-| RAR (old and RAR5), 7z | the desktop and server editions, through the unpacker the machine has: `tar` on Windows 10+ and macOS is bsdtar (libarchive), else 7-Zip, unrar or unar. The browser edition has no unpacker: the RAR is refused with that reason («unpack it first, or pack the files as ZIP») |
+| RAR (RAR 2.9–4.x and RAR5) | **every edition**: the page opens it itself with the program's own reader (`ui/assets/rar.js`, below), the same way everywhere. What the reader does not open (an archive older than RAR 2.9, one over 400 MB) goes to the unpacker the machine has, in the desktop and server editions (`tar` on Windows 10+ and macOS is bsdtar, else 7-Zip, unrar or unar) |
+| 7z | the desktop and server editions (the machine's unpacker). The browser edition refuses it with the reason («unpack it first, or pack the files as ZIP») |
 
 Names keep their Arabic (UTF-8, or the Windows code pages 1256/720 when the UTF-8 flag is missing); `..`, drive letters and leading
 slashes are dropped, nothing is written outside a private temporary folder; `__MACOSX`, `Thumbs.db`, `~$…` are left out; an archive
@@ -159,6 +160,25 @@ password. A TAR cut short keeps what was read before the break. More than 40 doc
 person ticks the ones the dossier needs. One item takes one document: an archive with several goes through «bulk upload».
 Tests: `tests/test_archives.py` (the RAR samples are libarchive's public test files, fetched by `web/vendor.sh`, skipped when
 absent), `tests/test_ui_projects.py`, `tests/test_web_edition.py`.
+
+**RAR inside the page (`ui/assets/rar.js`).** The page of claude.ai may load nothing but scripts from a few CDNs and no binary
+file, so the RAR reader is the program's own code: about 600 lines of JavaScript with no library and nothing fetched, run in a
+worker made from its own source (on the page's thread where a worker cannot be made), at about 50 MB a second. It reads the old
+format (RAR 2.9–4.x, compression version 29: LZ with Huffman tables, the standard filters — x86, Itanium, delta, RGB, audio — and
+the text method of «Best» compression, PPMd variant H) and RAR5 (LZ with the x86, ARM and delta filters), stored files, solid
+archives, archives split in parts (`name.part1.rar …`, or `name.rar` + `name.r00 …`: the parts are given together), names in any
+language (the old format's packed Unicode names too), self-extracting archives, hard links and «same file» records as copies.
+Every file is checked against the CRC-32 the archive keeps for it: one that does not match is reported, never handed over. Left
+out, each with its reason: files under a password (the archive is named, the open files are still taken), symbolic links,
+archives older than RAR 2.9, a dictionary over 256 MB, more than 500 MB unpacked. Only the names worth taking are unpacked (the
+documents and the archives inside), except in a solid archive, where what comes before must be unpacked to reach what comes after.
+The PPMd model follows Dmitry Shkarin's public-domain design as written out in 7-Zip's Ppmd7 (Igor Pavlov, public domain); the
+rest was written from the published format notes and the behaviour of the free unpackers; there is no compression code.
+Checked against the original unpacker (RAR 7.00), file by file: three of the owner's own archives (RAR5 and RAR4 with Arabic names;
+one of them is cut short, and both programs refuse the same file in it), 17 packings of a 50 MB folder (every method, dictionaries
+from 128 KB to 64 MB, solid, up to 11 parts, every filter) and 43 public archives of the libarchive project, among them damaged
+ones that must be refused without a crash or a hang. Tests: `tests/test_rar_reader.py` (the archives in
+`tests/data/archives/rar` were made for it with RAR 7.00 from made-up documents; the public ones are fetched by `web/vendor.sh`).
 
 ### The reading rules, reviewed on real layouts (November 2026)
 
@@ -307,6 +327,12 @@ exists), and a selection over 40 files or 150 MB is confirmed with a second pres
 read by OCR on the person's own machine. Word files of the old format (`.doc`) are offered like `.docx`; a title with no extension
 gets the one of its Drive type. Every item of the board and of the publisher view has a Drive button next to «upload» (one file, the
 same checks as an upload), and the last link is kept on the browser. Tests: `tests/test_ui_drive.py`.
+
+**A file over 10 MB (browser edition).** The Drive connection of claude.ai does not download a file over 10 MB (its own limit).
+Such a file is marked in the list before anything is fetched and left unticked; asked for anyway, the refusal says what to do in the
+person's language. The panel gives the way out in place: «Open in Drive» for each such file, and «Upload from this computer», whose
+files join the ones Drive did give and are read with them. The desktop and server editions read Drive through the Drive API and
+have no such limit. Tests: `tests/test_ui_drive.py`.
 
 ## Users and sign-in
 

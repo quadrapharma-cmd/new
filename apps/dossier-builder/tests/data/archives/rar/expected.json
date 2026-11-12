@@ -1,0 +1,156 @@
+{
+ "dermacure.rar": {
+  "vols": [
+   "dermacure.rar"
+  ],
+  "format": "RAR5",
+  "files": {
+   "Module 1/pricing certificate.txt": [
+    66,
+    "731f351b785e7b4e6f8e33a349f977a6a60b424dcad38fd36b06e28685b85894"
+   ],
+   "licence.pdf": [
+    785,
+    "e40c21d7b6631d17c41c98dd52f19faa02c46264d5a9bf6c8e5b734257a07a81"
+   ],
+   "notes.txt": [
+    48896,
+    "ee447f0c4a8bdc417c0ef4d379e60c3e9075bfc0be143d6ea98c4682a5496d0e"
+   ],
+   "scan.bin": [
+    12000,
+    "cb935e18e276f251745cf0c3a6605eebb339bce87b439b77430ebda1a314c71c"
+   ],
+   "ثبات/تقرير الثبات.txt": [
+    76,
+    "1534a2763463f2a57745612dc51d131b9aff1435b6601d07d59389297b00d315"
+   ]
+  }
+ },
+ "dermacure-solid.rar": {
+  "vols": [
+   "dermacure-solid.rar"
+  ],
+  "format": "RAR5",
+  "files": {
+   "Module 1/pricing certificate.txt": [
+    66,
+    "731f351b785e7b4e6f8e33a349f977a6a60b424dcad38fd36b06e28685b85894"
+   ],
+   "licence.pdf": [
+    785,
+    "e40c21d7b6631d17c41c98dd52f19faa02c46264d5a9bf6c8e5b734257a07a81"
+   ],
+   "notes.txt": [
+    48896,
+    "ee447f0c4a8bdc417c0ef4d379e60c3e9075bfc0be143d6ea98c4682a5496d0e"
+   ],
+   "scan.bin": [
+    12000,
+    "cb935e18e276f251745cf0c3a6605eebb339bce87b439b77430ebda1a314c71c"
+   ],
+   "ثبات/تقرير الثبات.txt": [
+    76,
+    "1534a2763463f2a57745612dc51d131b9aff1435b6601d07d59389297b00d315"
+   ]
+  }
+ },
+ "dermacure-stored.rar": {
+  "vols": [
+   "dermacure-stored.rar"
+  ],
+  "format": "RAR5",
+  "files": {
+   "Module 1/pricing certificate.txt": [
+    66,
+    "731f351b785e7b4e6f8e33a349f977a6a60b424dcad38fd36b06e28685b85894"
+   ],
+   "licence.pdf": [
+    785,
+    "e40c21d7b6631d17c41c98dd52f19faa02c46264d5a9bf6c8e5b734257a07a81"
+   ],
+   "ثبات/تقرير الثبات.txt": [
+    76,
+    "1534a2763463f2a57745612dc51d131b9aff1435b6601d07d59389297b00d315"
+   ]
+  }
+ },
+ "dermacure-parts": {
+  "vols": [
+   "dermacure-parts.part01.rar",
+   "dermacure-parts.part02.rar",
+   "dermacure-parts.part03.rar",
+   "dermacure-parts.part04.rar"
+  ],
+  "format": "RAR5",
+  "files": {
+   "Module 1/pricing certificate.txt": [
+    66,
+    "731f351b785e7b4e6f8e33a349f977a6a60b424dcad38fd36b06e28685b85894"
+   ],
+   "licence.pdf": [
+    785,
+    "e40c21d7b6631d17c41c98dd52f19faa02c46264d5a9bf6c8e5b734257a07a81"
+   ],
+   "notes.txt": [
+    48896,
+    "ee447f0c4a8bdc417c0ef4d379e60c3e9075bfc0be143d6ea98c4682a5496d0e"
+   ],
+   "scan.bin": [
+    12000,
+    "cb935e18e276f251745cf0c3a6605eebb339bce87b439b77430ebda1a314c71c"
+   ],
+   "ثبات/تقرير الثبات.txt": [
+    76,
+    "1534a2763463f2a57745612dc51d131b9aff1435b6601d07d59389297b00d315"
+   ]
+  }
+ },
+ "dermacure-delta.rar": {
+  "vols": [
+   "dermacure-delta.rar"
+  ],
+  "format": "RAR5",
+  "files": {
+   "notes.txt": [
+    48896,
+    "ee447f0c4a8bdc417c0ef4d379e60c3e9075bfc0be143d6ea98c4682a5496d0e"
+   ]
+  },
+  "filters": [
+   "delta"
+  ]
+ },
+ "dermacure-e8.rar": {
+  "vols": [
+   "dermacure-e8.rar"
+  ],
+  "format": "RAR5",
+  "files": {
+   "notes.txt": [
+    48896,
+    "ee447f0c4a8bdc417c0ef4d379e60c3e9075bfc0be143d6ea98c4682a5496d0e"
+   ]
+  },
+  "filters": [
+   "e8"
+  ]
+ },
+ "dermacure-password.rar": {
+  "vols": [
+   "dermacure-password.rar"
+  ],
+  "format": "RAR5",
+  "files": {},
+  "skipped": {
+   "Module 1/pricing certificate.txt": "password",
+   "ثبات/تقرير الثبات.txt": "password"
+  }
+ },
+ "dermacure-locked-names.rar": {
+  "vols": [
+   "dermacure-locked-names.rar"
+  ],
+  "error": "password"
+ }
+}

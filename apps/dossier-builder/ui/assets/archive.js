@@ -1,21 +1,39 @@
 /* Compressed files: an archive among the files a person gives is opened and what is inside it is taken like any other file.
-   The engine unpacks (ZIP, TAR, GZ everywhere; RAR and 7z where the machine has an unpacker) and answers with one body that is cut
-   back into files here. A RAR or 7z in the browser edition is refused with the reason: there is no unpacker inside a browser. */
+   ZIP, TAR and GZ are unpacked by the engine everywhere. RAR is opened here in the page, in every edition, by the program's own
+   reader (rar.js: RAR 2.9 to RAR5, solid archives, archives split in parts, names in any language; every file checked against its
+   CRC); what the reader does not open — an archive older than RAR 2.9, one too large for the page — goes to the machine's own
+   unpacker where there is one (desktop, server). An archive found inside an archive is opened too. A 7z in the browser edition is
+   refused with the reason. */
 (function () {
-  const ARCH_RX = /\.(zip|rar|7z|tar|tgz|tbz2?|txz|gz|bz2|xz)$/i;
+  const ARCH_RX = /\.(zip|rar|7z|tar|tgz|tbz2?|txz|gz|bz2|xz|[rs]\d\d)$/i;
+  const RAR_RX = /\.(rar|[rs]\d\d)$/i;
   const AR = () => (document.documentElement.lang || 'ar') !== 'en';
   const say = (ar, en) => AR() ? ar : en;
+  const SYSTEM = /(^|\/)(__MACOSX\/|\.DS_Store$|Thumbs\.db$|desktop\.ini$|~\$[^/]*$|\._[^/]*$|\.~lock\.[^/]*$)/i;
+  const MAX_FILES = 600, MAX_TOTAL = 500 * 1048576, MAX_FILE = 300 * 1048576, MAX_ARCHIVE = 400 * 1048576;     // in the page everything is in memory
 
-  /* by its name, or by its first bytes when the name has no extension (a Drive title) */
-  async function isArchive(file) {
-    if (!file) return false;
-    if (ARCH_RX.test(file.name || '')) return true;
-    if (/\.[A-Za-z0-9]{1,6}$/.test(file.name || '')) return false;
-    const h = new Uint8Array(await file.slice(0, 8).arrayBuffer());
-    const s = String.fromCharCode.apply(null, h);
-    return s.startsWith('Rar!\x1a\x07') || s.startsWith("7z\xbc\xaf'\x1c");
+  async function head(file, n) { return String.fromCharCode.apply(null, new Uint8Array(await file.slice(0, n || 8).arrayBuffer())); }
+  /* 'rar' | 'archive' | null — by its name, or by its first bytes when the name has no extension (a Drive title) */
+  async function kindOf(file) {
+    const name = (file && file.name) || '';
+    if (!file) return null;
+    if (RAR_RX.test(name)) return 'rar';
+    if (ARCH_RX.test(name)) return 'archive';
+    if (/\.[A-Za-z0-9]{1,6}$/.test(name)) return null;
+    const s = await head(file);
+    return s.startsWith('Rar!\x1a\x07') ? 'rar' : s.startsWith("7z\xbc\xaf'\x1c") ? 'archive' : null;
+  }
+  async function isArchive(file) { return !!(await kindOf(file)); }
+
+  function fail(code, ar, en) { const e = new Error(say(ar, en)); e.code = code; return e; }
+  /* names for the files: the name alone, with its folder in front when two files of one name sit in different folders */
+  function named(entries) {
+    const seen = {}; entries.forEach(e => { const b = e.name.split('/').pop(); seen[b] = (seen[b] || 0) + 1; });
+    return entries.map(e => { const parts = e.name.split('/'), base = parts.pop();
+      const f = new File(e.parts, seen[base] > 1 && parts.length ? parts.join(' - ') + ' - ' + base : base, { type: '' }); f.dbPath = e.name; return f; });
   }
 
+  /* ---------------- the engine: ZIP, TAR, GZ everywhere; RAR and 7z where the machine has an unpacker */
   async function unpack(file) {
     const fd = new FormData(); fd.append('file', file, file.name || 'archive');
     const r = await fetch('/api/archives/unpack', { method: 'POST', body: fd, headers: { 'X-DB': '1' } });
@@ -25,41 +43,99 @@
     }
     const buf = await r.arrayBuffer(), u = new Uint8Array(buf);
     if (String.fromCharCode.apply(null, u.subarray(0, 5)) !== 'DBAR1') throw new Error('unexpected answer');
-    const n = new DataView(buf).getUint32(5), head = JSON.parse(new TextDecoder().decode(u.subarray(9, 9 + n)));
-    const seen = {}, files = []; let pos = 9 + n;
-    head.files.forEach(f => { const base = f.name.split('/').pop(); seen[base] = (seen[base] || 0) + 1; });
-    for (const f of head.files) {
-      const parts = f.name.split('/'), base = parts.pop();
-      const name = seen[base] > 1 && parts.length ? parts.join(' - ') + ' - ' + base : base;      // two files of one name in different folders keep apart
-      const file2 = new File([buf.slice(pos, pos + f.size)], name, { type: '' });
-      file2.dbPath = f.name; files.push(file2); pos += f.size;
+    const n = new DataView(buf).getUint32(5), meta = JSON.parse(new TextDecoder().decode(u.subarray(9, 9 + n)));
+    let pos = 9 + n;
+    const files = named(meta.files.map(f => { const e = { name: f.name, parts: [buf.slice(pos, pos + f.size)] }; pos += f.size; return e; }));
+    return { kind: meta.kind, files, skipped: meta.skipped || [], deep: true };
+  }
+
+  /* ---------------- RAR in the page: the program's own reader, in a worker */
+  const tooBig = () => fail('E-ARCHIVE-BIG', `الأرشيف أكبر من اللي يتفك جوّه الصفحة (${MAX_TOTAL >> 20} ميجا): فكّه على جهازك واختار اللي الملف محتاجه.`, `The archive is larger than what the page unpacks (${MAX_TOTAL >> 20} MB): unpack it on your computer and choose what the dossier needs.`);
+  function rarError(e) {
+    const code = e && e.rar;
+    if (code === 'password') return fail('E-ARCHIVE-PASSWORD', 'الأرشيف عليه كلمة سر: فكّه الأول.', 'The archive is protected with a password: unpack it first.');
+    if (code === 'big') return e.why === 'files' ? fail('E-ARCHIVE-BIG', `الأرشيف فيه أكتر من ${MAX_FILES} ملف: فكّه واختار اللي الملف محتاجه.`, `The archive holds more than ${MAX_FILES} files: unpack it and choose what the dossier needs.`) : tooBig();
+    if (code === 'memory') return fail('E-ARCHIVE-BIG', 'الأرشيف محتاج ذاكرة أكتر من المتاح في الصفحة: فكّه على جهازك.', 'The archive needs more memory than the page has: unpack it on your computer.');
+    if (code === 'damaged') return fail('E-ARCHIVE', 'ملف الـ RAR تالف أو مش مكتمل.', 'The RAR file is damaged or incomplete.');
+    return fail('E-ARCHIVE', 'ملف الـ RAR ما اتفتحش.', 'The RAR file could not be opened.');
+  }
+  /* vols: the parts of ONE archive in order ({file}); opts.keep: a RegExp of the names worth taking (the others are not unpacked) */
+  async function unrar(vols, opts) {
+    opts = opts || {};
+    if (!window.DBRAR) throw fail('E-ARCHIVE-TOOL', 'فك RAR مش متاح في الصفحة دي: فك الأرشيف على جهازك، أو اضغط الملفات ZIP.', 'RAR cannot be opened in this page: unpack the archive on your computer, or pack the files as ZIP.');
+    if (vols.reduce((a, v) => a + v.file.size, 0) > MAX_ARCHIVE) throw tooBig();
+    let r;
+    try {
+      r = await window.DBRAR.extract(vols.map(v => v.file), { maxFiles: MAX_FILES, maxTotal: MAX_TOTAL, maxFile: MAX_FILE, skipRx: SYSTEM.source,
+        keepRx: opts.keep ? '(' + opts.keep.source + ')|(' + ARCH_RX.source + ')' : null }, name => { if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + name.split('/').pop() + '…'); });
+    } catch (e) { throw rarError(e); }
+    if (!r.files.length && r.skipped.some(s => s.why === 'password')) throw rarError({ rar: 'password' });
+    return { kind: 'rar', files: named(r.files), skipped: r.skipped, left: r.left || 0 };
+  }
+
+  /* the parts of an archive split by WinRAR: name.part1.rar, name.part2.rar … or name.rar, name.r00, name.r01 … */
+  function volume(name) {
+    const m = /(\.part(\d+))?\.(rar|[rs]\d\d)$/i.exec(name || '');
+    if (!m) return { key: String(name).toLowerCase(), first: true, order: 0 };
+    const ext = m[3].toLowerCase(), part = m[2] ? +m[2] : null, old = ext !== 'rar';
+    return { key: name.slice(0, m.index).toLowerCase() + (part !== null ? '.part' : ''), first: part !== null ? part <= 1 && !old : !old,
+      order: part !== null ? part : old ? (ext.charCodeAt(0) - 113) * 100 + +ext.slice(1) : 0 };
+  }
+  async function unrarSet(set, opts) {
+    let mine = null, err = null;
+    try { mine = await unrar(set, opts); } catch (e) { err = e; }
+    const weak = err ? /^E-ARCHIVE(-TOOL|-BIG)?$/.test(err.code || '') : !mine.files.length || mine.skipped.some(s => s.why === 'unsupported');
+    if (weak && set.length === 1 && !window.DBWEB) {                 // desktop, server: the machine's own unpacker may know an older or a larger archive
+      try { const theirs = await unpack(set[0].file); if (!mine || theirs.files.length > mine.files.length) return theirs; } catch (e) {}
     }
-    return { kind: head.kind, files, skipped: head.skipped || [] };
+    if (err) throw err;
+    return mine;
   }
 
   /* files → the same list with every archive replaced by the documents inside it; notes say what each archive gave */
-  async function expand(files, opts) {
-    opts = opts || {};
-    const out = [], notes = [];
-    for (const f of files) {
-      if (!(await isArchive(f))) { out.push(f); continue; }
-      if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + f.name + '…');
+  async function expand(files, opts, depth) {
+    opts = opts || {}; depth = depth || 0;
+    const out = [], notes = [], sets = {}, kinds = [];
+    for (const f of files) kinds.push(await kindOf(f));
+    files.forEach((f, i) => { if (kinds[i] === 'rar') { const v = Object.assign(volume(f.name), { file: f }); (sets[v.key] = sets[v.key] || []).push(v); f.dbVol = v; } });
+    for (const [i, f] of files.entries()) {
+      if (!kinds[i]) { out.push(f); continue; }
+      let r;
       try {
-        const r = await unpack(f);
-        const docs = r.files.filter(x => !opts.accept || opts.accept(x.name));
-        out.push(...docs);
-        notes.push({ archive: f.name, taken: docs.length, left: r.files.length - docs.length, skipped: r.skipped });
-      } catch (e) { notes.push({ archive: f.name, error: String(e && e.message || e) }); }
+        if (kinds[i] === 'rar') {
+          const set = sets[f.dbVol.key];
+          if (!f.dbVol.first) {                                      // a later part: taken with its first part
+            if (!set.some(v => v.first) && !set.noted) { set.noted = true; throw fail('E-ARCHIVE-VOLUME', 'ده جزء من أرشيف متقسّم والجزء الأول مش مع الملفات: اختار كل الأجزاء مع بعض.', 'This is one part of a split archive and the first part is not among the files: choose all the parts together.'); }
+            continue;
+          }
+          if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + f.name + '…');
+          r = await unrarSet(set.slice().sort((a, b) => a.order - b.order), opts);
+        } else {
+          if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + f.name + '…');
+          r = await unpack(f);
+        }
+      } catch (e) { notes.push({ archive: f.name, error: String(e && e.message || e) }); continue; }
+      let inside = r.files, skipped = r.skipped.slice();
+      if (!r.deep && depth < 2 && inside.some(x => ARCH_RX.test(x.name))) {      // an archive inside the archive (the engine opens those itself)
+        const inner = await expand(inside, opts, depth + 1);
+        inside = inner.files; inner.notes.forEach(n => { if (n.error) skipped.push({ name: n.archive, why: 'unreadable' }); else skipped.push(...n.skipped); });
+      }
+      const docs = inside.filter(x => !opts.accept || opts.accept(x.name));
+      docs.forEach(d => { if (!d.dbPath) d.dbPath = d.name; });
+      out.push(...docs);
+      notes.push({ archive: f.name, taken: docs.length, left: inside.length - docs.length + (r.left || 0), skipped });
     }
     return { files: out, notes };
   }
 
   function summary(notes) {
+    const why = { password: say('كلمة سر', 'password'), 'too large': say('كبير جدًا', 'too large'), link: say('رابط', 'a link'), unreadable: say('تالف', 'damaged'),
+      volume: say('جزء من الأرشيف ناقص', 'a part of the archive is missing'), unsupported: say('نسخة RAR قديمة جدًا', 'a very old RAR version') };
     return notes.map(n => n.error ? `${n.archive}: ${n.error}`
       : say(`«${n.archive}» اتفك: ${n.taken} مستند`, `«${n.archive}» unpacked: ${n.taken} document(s)`)
         + (n.left ? say(`، و${n.left} ملف تاني اتساب`, `, ${n.left} other file(s) left out`) : '')
-        + (n.skipped.length ? say(`، و${n.skipped.length} ما اتفتحش`, `, ${n.skipped.length} not opened`) + ' (' + n.skipped.slice(0, 3).map(s => s.name.split('/').pop() + ': ' + ({ password: say('كلمة سر', 'password'), 'too large': say('كبير جدًا', 'too large'), link: say('رابط', 'link') }[s.why] || say('تالف', 'unreadable'))).join('، ') + ')' : '')).join(' · ');
+        + (n.skipped.length ? say(`، و${n.skipped.length} ما اتفتحش`, `, ${n.skipped.length} not opened`) + ' (' + n.skipped.slice(0, 3).map(s => s.name.split('/').pop() + ': ' + (why[s.why] || s.why)).join('، ') + ')' : '')).join(' · ');
   }
 
-  window.DBARCH = { ARCH_RX, isArchive, unpack, expand, summary };
+  window.DBARCH = { ARCH_RX, isArchive, kindOf, unpack, unrar, expand, summary };
 })();

@@ -141,14 +141,16 @@ def test_an_image_put_in_an_item_becomes_a_pdf_inside_the_browser_edition(site):
 
 def test_a_started_project_is_still_there_after_the_page_is_closed(site, tmp_path):
     """«I started adding a document and left»: the draft and its files are in the browser's storage before their reading ends, so a
-    page closed in the middle opens again with the draft in the projects list. A ZIP is opened inside the browser; a RAR says why not."""
+    page closed in the middle opens again with the draft in the projects list. A ZIP and a RAR are opened inside the browser (the RAR
+    by the page's own reader: the engine has no unpacker there); a 7z says why not."""
     import time, zipfile
     z = tmp_path / 'Dermacure documents.zip'
     with zipfile.ZipFile(z, 'w', zipfile.ZIP_DEFLATED) as f:
         f.writestr('Module 1/pricing certificate.txt', 'Pricing Certificate\nProduct: Dermacure 2 % cream\nPrice: EGP 45.00')
         f.writestr('ثبات.txt', 'Stability Study Report\nProduct: Dermacure\nStorage condition: 30 C / 65 % RH')
-    rar = tmp_path / 'backup.rar'
-    rar.write_bytes(b'Rar!\x1a\x07\x01\x00' + b'\0' * 200)
+    z7 = tmp_path / 'backup.7z'
+    z7.write_bytes(b"7z\xbc\xaf'\x1c" + b'\0' * 200)
+    rar = pathlib.Path(__file__).parent / 'data' / 'archives' / 'rar' / 'dermacure.rar'      # RAR5, with an Arabic folder and file name inside
     with pw.sync_playwright() as p:
         b = p.chromium.launch()
         ctx = b.new_context(viewport={'width': 1280, 'height': 800})
@@ -170,13 +172,15 @@ def test_a_started_project_is_still_there_after_the_page_is_closed(site, tmp_pat
 
         page = open_('#/new')
         page.wait_for_selector('#intakeBtn', timeout=120000)
-        give(page, rar)                                                                 # no unpacker inside a browser: said, with what to do
-        page.wait_for_function("() => /RAR/.test(document.querySelector('#toast').textContent)", timeout=60000)
-        assert 'ZIP' in page.inner_text('#toast')
+        give(page, z7)                                                                  # no unpacker for 7z inside a browser: said, with what to do
+        page.wait_for_function("() => /ZIP/.test(document.querySelector('#toast').textContent)", timeout=60000)
+        assert '7z' in page.inner_text('#toast')
         give(page, z)
+        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && (S.wiz.allFiles || []).length === 2", timeout=120000)
+        give(page, rar)                                                                 # the RAR is opened by the page itself
         end = time.time() + 120
-        while time.time() < end:                                                        # the two documents of the ZIP are in the draft…
-            if page.evaluate("async () => (await (await fetch('/api/intake/drafts', {headers: {'X-DB': '1'}})).json()).some(d => d.files === 2)"):
+        while time.time() < end:                                                        # the two documents of the ZIP and the four of the RAR are in the draft…
+            if page.evaluate("async () => (await (await fetch('/api/intake/drafts', {headers: {'X-DB': '1'}})).json()).some(d => d.files === 6)"):
                 break
             page.wait_for_timeout(100)
         else:
@@ -188,7 +192,7 @@ def test_a_started_project_is_still_there_after_the_page_is_closed(site, tmp_pat
         box = page.inner_text('#draftBox')
         assert 'pricing certificate.txt' in box and 'ثبات.txt' in box
         page.click('[data-draft]')
-        page.wait_for_selector('#intakeReview', timeout=120000)                         # continued: the documents are read again from the browser's storage
-        assert page.evaluate("() => Object.keys(S.wiz.texts).sort()") == ['pricing certificate.txt', 'ثبات.txt']
+        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && Object.keys(S.wiz.texts || {}).length === 6", timeout=180000)      # continued: the documents are read again from the browser's storage
+        assert page.evaluate("() => Object.keys(S.wiz.texts).sort()") == ['licence.pdf', 'notes.txt', 'pricing certificate (2).txt', 'pricing certificate.txt', 'تقرير الثبات.txt', 'ثبات.txt']
         assert errors == [], errors
         b.close()

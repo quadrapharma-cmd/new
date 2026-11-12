@@ -196,10 +196,10 @@ def test_old_word_files_are_selectable_and_read_by_what_is_inside_them(server, t
 def test_the_panel_shows_progress_and_keeps_what_failed_with_its_reason(server, tmp_path):
     pdf = make_pdf_lines(tmp_path / 'licence.pdf', ['Egyptian Drug Authority', 'Final Registration License for Pharmaceutical Product', 'Trade Name: Dermacure'], 'Licence').read_bytes()
     tree = json.dumps({'1AbCdEfGhIjKlMnOpQrStUv': [{'id': 'f1', 'title': 'licence.pdf', 'mimeType': 'application/pdf', 'fileSize': str(len(pdf))},
-                                                   {'id': 'f2', 'title': 'huge scan.pdf', 'mimeType': 'application/pdf', 'fileSize': '99000000'},
+                                                   {'id': 'f2', 'title': 'locked scan.pdf', 'mimeType': 'application/pdf', 'fileSize': '5000000'},
                                                    {'id': 'sub1', 'title': 'Module 3', 'mimeType': drive.FOLDER}],
                        'sub1': [{'id': 'f3', 'title': 'spec.pdf', 'mimeType': 'application/pdf', 'fileSize': str(len(pdf))}]})
-    files = json.dumps({'f1': base64.b64encode(pdf).decode(), 'f2': {'error': 'File too large to download'}, 'f3': base64.b64encode(pdf).decode()})
+    files = json.dumps({'f1': base64.b64encode(pdf).decode(), 'f2': {'error': 'The user does not have sufficient permissions for this file'}, 'f3': base64.b64encode(pdf).decode()})
     with pw.sync_playwright() as p:
         b, page, errors = open_page(p, server, connector_stub(tree, files, delay_ms=350))
         page.wait_for_selector('#intakeDrive'); page.click('#intakeDrive'); page.wait_for_selector('#drvLink')
@@ -211,7 +211,8 @@ def test_the_panel_shows_progress_and_keeps_what_failed_with_its_reason(server, 
         page.wait_for_selector('#drvBar')                                              # fetching: a bar and a count
         page.wait_for_selector('#drvFails')
         fails = page.inner_text('#drvFails')
-        assert 'huge scan.pdf' in fails and 'File too large to download' in fails            # the file and Drive's own reason stay on the panel
+        assert 'locked scan.pdf' in fails and 'sufficient permissions' in fails               # the file and Drive's own reason stay on the panel
+        assert page.locator('#drvRetry').count() == 1 and 'https://drive.google.com/file/d/f2/view' in page.inner_html('#drvFails')
         assert page.locator('#drawer.open, #drawer:not([hidden])').count() >= 1 and page.locator('#drvGo').count() == 1
         assert page.evaluate("() => !(typeof S !== 'undefined' && S.wiz && S.wiz.allFiles && S.wiz.allFiles.length)")        # nothing is handed over behind the person's back
         page.click('#drvGo')                                                                   # go on with the two that came
@@ -344,5 +345,60 @@ def test_a_compressed_file_in_a_drive_folder_gives_the_documents_inside_it(serve
         page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 2 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=120000)
         assert page.evaluate("() => Object.keys(S.wiz.kinds).sort()") == ['licence.pdf', 'ملاحظات التسعير.txt']
         assert page.evaluate("() => S.wiz.kinds['licence.pdf']") == 'licence'
+        assert not errors, errors
+        b.close()
+
+
+def test_a_drive_file_over_the_connectors_limit_is_said_and_taken_from_the_computer(server, tmp_path):
+    """The owner's case: «File too large for download, over limit of 10 MB». The file is marked in the list before anything is
+    fetched (offered, not ticked); when it is asked for anyway, the refusal says what to do in the person's language, with a link that
+    opens the file in Drive; «upload from this computer» takes the downloaded file and it is read with the ones Drive did give."""
+    pdf = make_pdf_lines(tmp_path / 'licence.pdf', ['Egyptian Drug Authority', 'Final Registration License for Pharmaceutical Product', 'Trade Name: Dermacure', 'Dosage Form: Topical Powder'], 'Licence').read_bytes()
+    big_name = '1 - Dermacure Final License + Pricing + API COAs.pdf'
+    big_local = make_pdf_lines(tmp_path / big_name, ['Pricing Certificate', 'Product: Dermacure 2 % cream', 'Price: EGP 45.00'], 'Pricing')
+    refusal = 'File too large for download, over limit of 10 MB. For downloading larger files, use the standard Google Drive API. See https://developers.google.com/workspace/drive/api/guides/manage-downloads'
+    tree = json.dumps({'1AbCdEfGhIjKlMnOpQrStUv': [
+        {'id': 'f1', 'title': 'licence.pdf', 'mimeType': 'application/pdf', 'fileSize': str(len(pdf))},
+        {'id': 'big1', 'title': big_name, 'mimeType': 'application/pdf', 'fileSize': '14680064'}]})
+    files = json.dumps({'f1': base64.b64encode(pdf).decode(), 'big1': {'error': refusal, 'code': 'tool_error'}})
+    with pw.sync_playwright() as p:
+        b, page, errors = open_page(p, server, connector_stub(tree, files))
+        page.wait_for_selector('#intakeDrive'); page.click('#intakeDrive'); page.wait_for_selector('#drvLink')
+        page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv'); page.click('#drvList'); page.wait_for_selector('[data-drvsel]')
+        big_row = page.locator('tr', has_text='COAs')
+        assert not big_row.locator('[data-drvsel]').is_checked() and not big_row.locator('[data-drvsel]').is_disabled()     # said before anything is fetched
+        assert 'أكبر من 10 ميجا' in big_row.inner_text() and page.locator('tr', has_text='licence.pdf').locator('[data-drvsel]').is_checked()
+        assert page.get_attribute('#drvBig a', 'href') == 'https://drive.google.com/file/d/big1/view' and page.locator('#drvBig #drvLocal').count() == 1
+        big_row.locator('[data-drvsel]').check(); page.click('#drvUse')                               # asked for anyway
+        page.wait_for_selector('#drvFails')
+        said = page.inner_text('#drvFails')
+        assert 'أكبر من 10 ميجا' in said and 'افتحه في Drive' in said and 'File too large' not in said, said
+        assert page.locator('#drvRetry').count() == 0 and page.locator('#drvGo').count() == 1                 # trying again cannot help; the fetched one is kept
+        assert page.get_attribute('#drvFails a', 'href') == 'https://drive.google.com/file/d/big1/view'
+        with page.expect_file_chooser() as fc:
+            page.click('#drvLocal')
+        fc.value.set_files(str(big_local))                                                                    # downloaded from Drive by hand
+        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 2 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=120000)
+        assert page.evaluate("() => Object.keys(S.wiz.kinds).sort()") == [big_name, 'licence.pdf']
+        assert page.evaluate("() => window.__mcpCalls.filter(c => c[1] === 'download_file_content').map(c => c[2].fileId).sort()") == ['big1', 'f1']     # nothing fetched twice
+        assert not errors, errors
+        b.close()
+
+
+def test_files_from_the_computer_alone_go_on_from_the_drive_panel(server, tmp_path):
+    """Only a file over the limit in the folder: it is uploaded from the computer and the panel goes on with it, nothing ticked."""
+    big_name = 'Dermacure stability data.pdf'
+    local = make_pdf_lines(tmp_path / big_name, ['Stability Study Report', 'Product: Dermacure', 'Storage condition: 30 C / 65 % RH'], 'Stability')
+    tree = json.dumps({'1AbCdEfGhIjKlMnOpQrStUv': [{'id': 'big1', 'title': big_name, 'mimeType': 'application/pdf', 'fileSize': '31457280'}]})
+    with pw.sync_playwright() as p:
+        b, page, errors = open_page(p, server, connector_stub(tree, '{}'))
+        page.wait_for_selector('#intakeDrive'); page.click('#intakeDrive'); page.wait_for_selector('#drvLink')
+        page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv'); page.click('#drvList'); page.wait_for_selector('#drvBig')
+        with page.expect_file_chooser() as fc:
+            page.click('#drvLocal')
+        fc.value.set_files(str(local))
+        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 1 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=120000)
+        assert page.evaluate("() => S.wiz.kinds") == {big_name: 'stability'}
+        assert page.evaluate("() => window.__mcpCalls.filter(c => c[1] === 'download_file_content').length") == 0
         assert not errors, errors
         b.close()

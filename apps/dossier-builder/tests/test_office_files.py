@@ -153,6 +153,9 @@ def test_the_drive_listing_offers_every_readable_type_and_no_system_file():
     for name, mt in (('a.xls', 'application/vnd.ms-excel'), ('a.pptx', ''), ('a.ppt', 'application/vnd.ms-powerpoint'), ('a.rtf', 'application/rtf'), ('a.odt', ''), ('a.csv', 'text/csv'),
                      ('notes.txt', 'text/plain'), ('a.bmp', 'image/bmp'), ('a.doc', 'application/msword'), ('a.html', 'text/html')):
         assert usable(name, mt), name
-    for name, mt in (('Thumbs.db', 'application/octet-stream'), ('~$report.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'), ('backup.rar', 'application/rar'),
+    for name, mt in (('Thumbs.db', 'application/octet-stream'), ('~$report.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
                      ('film.mp4', 'video/mp4'), ('desktop.ini', 'text/plain')):
         assert not usable(name, mt), name
+    for name, mt in (('backup.rar', 'application/rar'), ('dossier.zip', 'application/zip'), ('scans.7z', '')):      # a compressed file: offered, not ticked (the page opens it)
+        e = drive.Drive._entry({'id': 'x', 'name': name, 'mimeType': mt})
+        assert e['usable'] and e['guess'], name
