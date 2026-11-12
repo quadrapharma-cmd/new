@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unicodedata
+from . import imagefiles
 
 AR_DIGITS = {ord(c): str(i) for i, c in enumerate('٠١٢٣٤٥٦٧٨٩')}
 AR_DIGITS.update({ord(c): str(i) for i, c in enumerate('۰۱۲۳۴۵۶۷۸۹')})
@@ -98,10 +99,8 @@ def strength_en(text):
 
 
 def image_type(data):
-    for magic, mt in IMAGE_MAGIC:
-        if data[:len(magic)] == magic:
-            return mt
-    return None
+    """The media type of an image, by its bytes (JPEG, PNG, GIF, BMP, TIFF, WebP, HEIC, AVIF, JPEG 2000, …); None when it is not one."""
+    return imagefiles.image_mime(data or b'')
 
 
 # ---------------- OCR (local tools only; never in the browser)
@@ -124,19 +123,38 @@ def ocr_langs():
     return _LANGS
 
 
-def ocr_image(path):
+def ocr_image(path, page=None):
+    """OCR of an image file; `page` = one page (from 0) of a multi-page TIFF."""
     try:
-        r = subprocess.run(['tesseract', str(path), 'stdout', '-l', ocr_langs(), '--psm', '6'], capture_output=True, text=True, timeout=180)
+        cmd = ['tesseract', str(path), 'stdout', '-l', ocr_langs(), '--psm', '6'] + (['-c', f'tessedit_page_number={page}'] if page is not None else [])
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
         return r.stdout if r.returncode == 0 else ''
     except Exception:
         return ''
 
 
-def ocr_image_bytes(data, suffix='.png'):
+def ocr_image_bytes(data, suffix='.png', pages=4):
+    """OCR of an image of any kind: a TIFF page by page (the first `pages`), a photo turned the way its EXIF says, and a format
+    tesseract does not open (HEIC, AVIF, PSD, ICO) through a conversion to PNG. '' when the machine has no tool for it."""
     if not ocr_available():
         return ''
+    fmt = imagefiles.image_format(data)
     with tempfile.TemporaryDirectory() as d:
-        p = os.path.join(d, 'img' + suffix)
+        if fmt == 'tiff':
+            p = os.path.join(d, 'img.tif')
+            with open(p, 'wb') as f:
+                f.write(data)
+            total = imagefiles.tiff_pages(data)
+            if total == 1:
+                return ocr_image(p)
+            return '\n\f\n'.join(ocr_image(p, i) for i in range(min(max(1, pages), total)))      # page by page: left alone, tesseract reads every page of the file
+        if fmt and (fmt not in imagefiles.TESS_READS or (fmt == 'jpeg' and imagefiles.exif_orientation(data) not in (None, 1))):
+            png = imagefiles.to_png(data)
+            if png:
+                data, suffix = png, '.png'
+            elif fmt not in imagefiles.TESS_READS:
+                return ''
+        p = os.path.join(d, 'img' + (suffix if not fmt or suffix == '.png' else imagefiles.EXT[fmt]))
         with open(p, 'wb') as f:
             f.write(data)
         return ocr_image(p)

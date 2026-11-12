@@ -56,7 +56,8 @@ def test_a_file_is_what_its_bytes_say():
     assert O.sniff('dossier.zip', z.getvalue()) == 'archive' and O.sniff('a.rar', b'Rar!\x1a\x07\x00rest') == 'archive'
     assert O.sniff('Thumbs.db', msdoc.MAGIC + b'\x00' * 2000) == 'other' and O.sniff('x.bin', bytes(range(256)) * 20) == 'other'
     assert O.sniff('notes', 'شهادة تسعير\nPricing'.encode('utf-16')) == 'text' and O.sniff('page', b'<!DOCTYPE html><html><body>x</body></html>') == 'html'
-    assert O.sniff('photo.heic', b'\x00\x00\x00\x18ftypheic' + b'\x00' * 40) == 'image' and O.sniff('x.bmp', b'BM' + b'\x00' * 40) == 'image'
+    assert O.sniff('photo.heic', b'\x00\x00\x00\x18ftypheic' + b'\x00' * 40) == 'image' and O.sniff('x', (FX.parent / 'images' / 'page.bmp').read_bytes()) == 'image'
+    assert O.sniff('x.bmp', b'BM' + b'\x00' * 40) != 'image'                              # two letters are not a picture: the header has to make sense
     assert extract.read_text('photo.heic', b'\x00\x00\x00\x18ftypheic' + b'\x00' * 40, ocr=False)['scanned']                 # an image the engine cannot open: unread, not an error
     assert extract.read_text('dossier.zip', z.getvalue())['text'] == '' and O.text('xls', b'not a workbook') == ''
 

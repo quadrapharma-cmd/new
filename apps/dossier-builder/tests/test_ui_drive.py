@@ -262,7 +262,13 @@ def test_drive_is_offered_on_every_item_of_the_board(server, tmp_path):
         page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv'); page.click('#drvList'); page.wait_for_selector('[data-drvsel]')
         assert page.get_attribute('[data-drvsel="0"]', 'type') == 'radio' and page.locator('#drvAll').count() == 0     # one item, one file
         page.check('[data-drvsel="1"]'); page.click('#drvUse')
-        page.wait_for_function("async () => { const r = await fetch('/api/dossiers/%s/board', {headers:{'X-DB':'1'}}); const s = (await r.json()).slots.find(x => x.slot_id === 'M1-05'); return s.documents.length === 1 && s.documents[0].filename === 'scan0007.pdf'; }" % did, timeout=60000)
+        def docs():
+            r = urllib.request.urlopen(urllib.request.Request(f'{server}/api/dossiers/{did}/board', headers={'X-DB': '1'}))
+            return next(s for s in json.loads(r.read())['slots'] if s['slot_id'] == 'M1-05')['documents']
+        deadline = time.time() + 60
+        while time.time() < deadline and not docs():
+            page.wait_for_timeout(300)
+        assert [d['filename'] for d in docs()] == ['scan0007.pdf']                                  # the file chosen in Drive is in the item
         assert not errors, errors
         b.close()
 

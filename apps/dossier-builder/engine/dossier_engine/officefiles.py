@@ -16,12 +16,11 @@ import re
 import struct
 import zipfile
 
-from . import msdoc
+from . import imagefiles, msdoc
 
 MAX_CHARS = 400000          # a workbook of a hundred thousand rows is not read to its end
 MAX_ROWS = 4000
 
-IMAGES = ((b'\x89PNG', 'png'), (b'\xff\xd8\xff', 'jpg'), (b'GIF8', 'gif'), (b'II*\x00', 'tif'), (b'MM\x00*', 'tif'), (b'BM', 'bmp'))
 ARCHIVES = (b'Rar!\x1a\x07', b"7z\xbc\xaf'\x1c", b'\x1f\x8b\x08')
 TEXT_EXT = ('.txt', '.csv', '.tsv', '.md', '.log', '.xml', '.json', '.htm', '.html')
 OFFICE = ('docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt', 'odt', 'ods', 'odp', 'rtf', 'html', 'text')        # what `text` reads
@@ -30,7 +29,7 @@ FAMILY = {'docx': 'word', 'doc': 'word', 'odt': 'word', 'rtf': 'word', 'xlsx': '
 # what the interface and the Drive listing accept, by extension (the bytes decide what the file really is)
 EXTENSIONS = ('.pdf', '.docx', '.docm', '.dotx', '.dotm', '.doc', '.dot', '.rtf', '.odt', '.xlsx', '.xlsm', '.xltx', '.xls', '.xlt', '.ods', '.csv', '.tsv',
               '.pptx', '.ppsx', '.potx', '.ppt', '.pps', '.odp', '.txt', '.md', '.htm', '.html', '.xml', '.json',
-              '.jpg', '.jpeg', '.png', '.webp', '.tif', '.tiff', '.bmp', '.gif', '.heic', '.heif')
+              '.svg') + imagefiles.EXTENSIONS
 MIME = {'.pdf': 'application/pdf', '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.doc': 'application/msword',
         '.docm': 'application/vnd.ms-word.document.macroEnabled.12', '.dotx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.template',
         '.dot': 'application/msword', '.rtf': 'application/rtf', '.odt': 'application/vnd.oasis.opendocument.text',
@@ -40,7 +39,10 @@ MIME = {'.pdf': 'application/pdf', '.docx': 'application/vnd.openxmlformats-offi
         '.ppsx': 'application/vnd.openxmlformats-officedocument.presentationml.slideshow', '.ppt': 'application/vnd.ms-powerpoint', '.pps': 'application/vnd.ms-powerpoint',
         '.odp': 'application/vnd.oasis.opendocument.presentation', '.txt': 'text/plain', '.md': 'text/markdown', '.htm': 'text/html', '.html': 'text/html',
         '.xml': 'application/xml', '.json': 'application/json', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp',
-        '.tif': 'image/tiff', '.tiff': 'image/tiff', '.bmp': 'image/bmp', '.gif': 'image/gif', '.heic': 'image/heic', '.heif': 'image/heif'}
+        '.tif': 'image/tiff', '.tiff': 'image/tiff', '.bmp': 'image/bmp', '.gif': 'image/gif', '.heic': 'image/heic', '.heif': 'image/heif',
+        '.jfif': 'image/jpeg', '.jpe': 'image/jpeg', '.dib': 'image/bmp', '.avif': 'image/avif', '.jp2': 'image/jp2', '.j2k': 'image/jp2', '.jpx': 'image/jpx', '.jpf': 'image/jpx',
+        '.pbm': 'image/x-portable-bitmap', '.pgm': 'image/x-portable-graymap', '.ppm': 'image/x-portable-pixmap', '.pnm': 'image/x-portable-anymap',
+        '.psd': 'image/vnd.adobe.photoshop', '.ico': 'image/x-icon', '.pcx': 'image/x-pcx', '.tga': 'image/x-tga', '.svg': 'image/svg+xml'}
 
 
 def media_type(filename, data=None):
@@ -75,8 +77,7 @@ def sniff(name, data):
     data, low = data or b'', (name or '').lower()
     if data[:5] == b'%PDF-' or (b'%PDF-' in data[:1024] and low.endswith('.pdf')):
         return 'pdf'
-    if any(data.startswith(m) for m, _ in IMAGES) or (data[:4] == b'RIFF' and data[8:12] == b'WEBP') or data[4:8] == b'ftyp' and data[8:12] in (
-            b'heic', b'heix', b'hevc', b'mif1', b'msf1', b'heif', b'avif'):
+    if imagefiles.image_format(data):
         return 'image'
     if data[:2] == b'PK':
         try:
@@ -711,7 +712,14 @@ def html_text(data):
 
 
 def _office_xml(src):
-    """Word 2003 XML and Excel 2003 XML (a single .xml file each); None when the XML is something else."""
+    """Word 2003 XML and Excel 2003 XML (a single .xml file each), and the words written in an SVG drawing; None when the XML is
+    something else."""
+    if re.search(r'<svg[\s>]', src[:2000]):
+        try:
+            root = _xml(src.encode('utf-8'))
+            return '\n'.join(t for t in (''.join(el.itertext()).strip() for el in root.iter() if _local(el) in ('text', 'title', 'desc')) if t)
+        except Exception:
+            return None
     if 'schemas-microsoft-com:office:spreadsheet' not in src[:3000] and 'office/word/2003/wordml' not in src[:3000]:
         return None
     try:
@@ -756,7 +764,7 @@ def _office_xml(src):
 def plain_text(data, name=''):
     src = decode(data[:4 * MAX_CHARS])
     low = (name or '').lower()
-    if src.lstrip()[:5] == '<?xml' or low.endswith('.xml'):
+    if src.lstrip()[:5] == '<?xml' or low.endswith(('.xml', '.svg')) or src.lstrip()[:4] == '<svg':
         got = _office_xml(src)
         if got is not None:
             return got

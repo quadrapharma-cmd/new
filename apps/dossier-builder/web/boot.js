@@ -9,7 +9,7 @@
     'python_multipart-0.0.20-py3-none-any.whl', 'pypdf-7.0.0-py3-none-any.whl', 'python_docx-1.2.0-py3-none-any.whl'];
   const PKGS = ['sqlite3', 'hashlib', 'ssl', 'lxml', 'pyyaml', 'pydantic', 'jsonschema'];
   const base = new URL('.', document.baseURI).href;
-  window.DB_TESS_BASE = base + 'assets/tess/'; window.DB_PDFJS_BASE = base + 'assets/pdfjs/';     // ocr.js (tesseract.js + pdf.js)
+  window.DB_TESS_BASE = base + 'assets/tess/'; window.DB_PDFJS_BASE = base + 'assets/pdfjs/'; window.DB_IMG_BASE = base + 'assets/img/';     // ocr.js (tesseract.js, pdf.js, image decoders)
   const S = { pyodide: null, handle: null, worker: null, syncTimer: null, ready: null };
   const AR = (document.documentElement.lang || 'ar') !== 'en';
 
@@ -187,8 +187,10 @@
       if (files && meta && !(lim && lim.images === false)) {
         for (let i = 0; i < files.length && images.length < maxImages; i++) {
           if (!files[i] || !meta[i] || !meta[i].scanned) continue;
-          const isImage = /^image\//.test(files[i].type || '') || /\.(jpe?g|png|webp|gif)$/i.test(files[i].name || '');
-          const imgs = (isImage ? [files[i]] : await pageImages(files[i], 3)).slice(0, maxImages - images.length);
+          const isImage = meta[i].file === 'image' || /^image\//.test(files[i].type || '') || /\.(jpe?g|png|webp|gif)$/i.test(files[i].name || '');
+          // an image of any kind goes to the model as PNG/JPEG pages (TIFF, HEIC, BMP… are decoded by ocr.js); a PDF as its page images
+          const asPages = f => (window.DBOCR && window.DBOCR.images) ? window.DBOCR.images(f, 3).catch(() => [f]) : Promise.resolve([f]);
+          const imgs = (isImage ? await asPages(files[i]) : await pageImages(files[i], 3)).slice(0, maxImages - images.length);
           if (imgs.length) { prompt += `\n(Images ${images.length + 1}-${images.length + imgs.length} are the pages of document "${files[i].name}".)`; images.push(...imgs); }
         }
       }

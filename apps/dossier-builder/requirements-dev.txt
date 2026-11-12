@@ -11,3 +11,4 @@ pypdf>=4
 lxml>=5
 playwright  # UI tests; use the pre-installed browser
 anthropic>=0.80          # optional: Claude reads the documents in the intake when ANTHROPIC_API_KEY is set
+pillow>=10               # optional: opens the image kinds tesseract does not (HEIC with pillow-heif, AVIF, PSD, PCX…) and turns images into PDF pages

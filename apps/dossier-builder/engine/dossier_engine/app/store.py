@@ -95,6 +95,8 @@ SOURCE_DRAFT = {
               'ملف Excel. الملف التسجيلي بياخد PDF: صدّر الشيت PDF (موقّع ومختوم لو المستند محتاج) وارفعه؛ الـ PDF بيحل محل الملف ده.'),
     'powerpoint': ('A PowerPoint file. The dossier takes PDF: export it to PDF and upload it; the PDF replaces this file.',
                    'ملف PowerPoint. الملف التسجيلي بياخد PDF: صدّره PDF وارفعه؛ الـ PDF بيحل محل الملف ده.'),
+    'image': ('An image this machine could not turn into a PDF. The dossier takes PDF: save or scan it as PDF and upload it; the PDF replaces this file.',
+              'صورة الجهاز ده ما قدرش يحوّلها PDF. الملف التسجيلي بياخد PDF: احفظها أو امسحها PDF وارفعها؛ الـ PDF بيحل محل الملف ده.'),
     'text': ('A text or web file, not a PDF. The dossier takes PDF: save it as PDF (signed and stamped where the document needs it) and upload it; the PDF replaces this file.',
              'ملف نصي أو صفحة ويب، مش PDF. الملف التسجيلي بياخد PDF: احفظه PDF (موقّع ومختوم لو المستند محتاج) وارفعه؛ الـ PDF بيحل محل الملف ده.')}
 
@@ -272,9 +274,15 @@ class Store:
                 raise StoreError('E-SIGNED-FOR', 'The signed copy must belong to an unsigned draft of the same section.',
                                  'النسخة الموقّعة لازم تخص مسودة غير موقّعة في نفس القسم.')
             doc_class, supersede = 'signed_scan', draft['id']
+        from .. import extract as _extract, imagefiles as _imagefiles
+        if _imagefiles.image_format(data):                # an image of any kind: the dossier takes PDF, so it is wrapped into one (pixels untouched for a JPEG)
+            pdf = _imagefiles.image_pdf(data, title or filename)
+            if pdf:
+                meta['from_image'] = filename
+                filename = (filename.rsplit('.', 1)[0] if '.' in filename[-6:] else filename) + '.pdf'
+                data = pdf
         sha = self.put_blob(data)
-        from .. import extract as _extract
-        family = _extract.source_family(filename, data) or ('word' if filename.lower().endswith('.docx') else None)
+        family = _extract.source_family(filename, data) or ('word' if filename.lower().endswith('.docx') else 'image' if _imagefiles.image_format(data) else None)
         if family:                                      # a source file (Word, Excel, PowerPoint, text — old format or new): the PDF the user uploads replaces it
             en, ar = SOURCE_DRAFT[family]
             rep = Report(str(self.blob_path(sha)), [Finding('DOCX-DRAFT', 'warn', en, ar, 'user_fix', 'NP.CAPP.065 v5 general note 4 (PDF)')])

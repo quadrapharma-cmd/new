@@ -8,7 +8,7 @@ document is a scan — against SCHEMA and returns the same shape. Every value is
 used; nothing is written without the user's confirmation."""
 import re
 from io import BytesIO
-from . import arabic, intake_eda, msdoc, officefiles
+from . import arabic, imagefiles, intake_eda, msdoc, officefiles
 
 KINDS = [  # (kind, keywords in lower-case text or file name); see guess_kind for how a match is chosen
     ('cadc', ['notification letter', 'statement of conformity', 'sample identification code', 'qf:cadc', 'شهادة مطابقة']),
@@ -158,10 +158,11 @@ def read_text(name, data, max_pages=12, ocr=True, ocr_pages=4):
             txt = arabic.ocr_pdf(data, pages=min(pt['pages'] or 1, ocr_pages))
             if len(re.sub(r'\s', '', txt)) >= 20:
                 out.update(text=txt, ocr=True)
-    elif img or what == 'image':
-        out.update(pages=1, scanned=True, kind_of_file='image')
+    elif img or what == 'image':                         # an image of any kind (imagefiles): OCR where the machine can, page by page for a TIFF
+        fmt = imagefiles.image_format(data)
+        out.update(pages=imagefiles.tiff_pages(data) if fmt == 'tiff' else 1, scanned=True, kind_of_file='image')
         if ocr and img:
-            txt = arabic.ocr_image_bytes(data, '.' + img.split('/')[-1].replace('jpeg', 'jpg'))
+            txt = arabic.ocr_image_bytes(data, imagefiles.EXT.get(fmt, '.png'), pages=ocr_pages)
             if len(re.sub(r'\s', '', txt)) >= 20:
                 out.update(text=txt, ocr=True)
     elif what in ('docx', 'doc'):                        # Word, new or old: its paragraphs and tables

@@ -86,6 +86,7 @@ def main():
     ap.add_argument('--wheels', default=str(HERE / 'vendor' / 'wheels'))
     ap.add_argument('--pdfjs', default=str(HERE / 'vendor' / 'pdfjs'))
     ap.add_argument('--tess', default=str(HERE / 'vendor' / 'tess'))
+    ap.add_argument('--img', default=str(HERE / 'vendor' / 'img'))
     a = ap.parse_args()
     if DIST.exists():
         shutil.rmtree(DIST)
@@ -96,7 +97,7 @@ def main():
     (DIST / 'suite.html').write_text(page(UI / 'suite' / 'index.html', builder=False)[1], encoding='utf-8')
     n = engine_zip(DIST / 'assets' / 'engine.zip')
     put(DIST / 'assets' / 'engine.worker.js', (HERE / 'engine.worker.js').read_bytes())      # the engine's own thread (boot.js starts it)
-    for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels'), (pathlib.Path(a.pdfjs), 'pdfjs'), (pathlib.Path(a.tess), 'tess')):
+    for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels'), (pathlib.Path(a.pdfjs), 'pdfjs'), (pathlib.Path(a.tess), 'tess'), (pathlib.Path(a.img), 'img')):
         if not src.is_dir():
             print(f'(no {sub} assets at {src}; skipped)')
             continue

@@ -74,7 +74,8 @@ def smoke():
                                        'profile': {'dossier_kind': 'generic', 'origin': 'local', 'licence': 'own', 'activity': 'new',
                                                    'apis': [{'name': 'A', 'manufacturer': 'B', 'option': 'CEP'}]}})
     assert call('GET', f"/api/dossiers/{d['id']}/board")['counts'], 'resolver failed'
-    for sub, f in (('tess', 'tesseract.min.js'), ('tess', 'worker.boot.js'), ('tess', 'ara.traineddata.gz.b64.txt'), ('pdfjs', 'pdf.min.mjs')):
+    for sub, f in (('tess', 'tesseract.min.js'), ('tess', 'worker.boot.js'), ('tess', 'ara.traineddata.gz.b64.txt'), ('pdfjs', 'pdf.min.mjs'),
+                   ('img', 'UTIF.js'), ('img', 'libheif-bundle.js')):
         assert urllib.request.urlopen(f'{url}/assets/{sub}/{f}', timeout=20).status == 200, \
             f'browser OCR asset missing: {sub}/{f} — run web/vendor.sh ocr before the build'
     assert call('GET', '/api/capabilities')['ocr_browser'], 'capabilities must say the browser OCR engine is served'

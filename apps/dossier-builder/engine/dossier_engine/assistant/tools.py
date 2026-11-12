@@ -349,9 +349,12 @@ def t_read_document(ctx, doc_id, pages=None):
         from .. import arabic
         mt = arabic.image_type(data)
         if mt:
+            from .. import imagefiles
             text = extract.read_text(name, data)['text']
-            attach.append({'type': 'image', 'source': {'type': 'base64', 'media_type': mt, 'data': base64.standard_b64encode(data).decode()}})
-            head.append('image: attached')
+            im = imagefiles.for_model(data)                 # HEIC, TIFF, BMP… are converted: the API takes JPEG, PNG, GIF, WebP
+            if im:
+                attach.append({'type': 'image', 'source': {'type': 'base64', 'media_type': im[0], 'data': base64.standard_b64encode(im[1]).decode()}})
+            head.append('image: attached' if im else f'image ({mt}): this machine cannot convert it for viewing; OCR text below if any')
         else:
             raise ToolError('unsupported file type')
     if len(text) > MAX_TEXT:

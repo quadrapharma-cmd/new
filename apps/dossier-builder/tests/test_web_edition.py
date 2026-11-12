@@ -105,3 +105,35 @@ def test_the_page_keeps_answering_while_the_engine_works(site):
         assert page.evaluate("() => document.documentElement.dataset.engine") == 'page'
         assert not errors, errors
         b.close()
+
+
+def test_an_image_put_in_an_item_becomes_a_pdf_inside_the_browser_edition(site):
+    """No converter in the in-browser engine: the page decodes the image (here a three-page fax-compressed TIFF) and the engine wraps
+    the pages into a PDF, all inside the browser."""
+    tif = pathlib.Path(__file__).parent / 'data' / 'images' / 'pages-g4.tif'
+    if not (DIST / 'assets' / 'img' / 'UTIF.js').exists():
+        pytest.skip('image decoders not vendored (web/vendor.sh)')
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1280, 'height': 800}).new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script("localStorage.setItem('db.lang','en')")
+        page.goto(site + '/index.local.html#/')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.wait_for_selector('.caps .cap', timeout=120000)
+        page.evaluate("() => { const i = document.createElement('input'); i.type = 'file'; i.id = 'fxin'; document.body.appendChild(i); }")
+        page.set_input_files('#fxin', str(tif))
+        r = page.evaluate("""async () => {
+            const j = (u, o) => fetch(u, Object.assign({headers: {'X-DB': '1', 'content-type': 'application/json'}}, o)).then(r => r.json());
+            const d = await j('/api/dossiers', {method: 'POST', body: JSON.stringify({name: 'Dermacure', product: {name: 'Dermacure', dosageform: 'tablet', manufacturer: 'Example Pharma'},
+                profile: {dossier_kind: 'generic', origin: 'local', licence: 'own', activity: 'new', apis: [{name: 'Paracetamol', manufacturer: 'Granules', option: 'CEP'}]}})});
+            const pdf = await asDossierFile(document.querySelector('#fxin').files[0]);
+            const fd = new FormData(); fd.append('file', pdf); fd.append('meta', '{}');
+            const doc = await fetch('/api/dossiers/' + d.id + '/slots/M1-05/documents', {method: 'POST', body: fd, headers: {'X-DB': '1'}}).then(r => r.json());
+            const head = new Uint8Array(await pdf.slice(0, 5).arrayBuffer());
+            return {name: pdf.name, type: pdf.type, head: String.fromCharCode(...head), stored: doc.filename, findings: (doc.findings || []).map(f => f.rule)}; }""")
+        assert r['name'] == 'pages-g4.pdf' and r['head'] == '%PDF-' and r['stored'] == 'pages-g4.pdf', r
+        assert not errors, errors
+        b.close()

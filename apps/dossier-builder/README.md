@@ -105,7 +105,7 @@ inside with the standard library and lxml only, so every edition reads them, the
 | PowerPoint | `.pptx` `.ppsx` (slides in their order, tables) | `.ppt` 97-2003 (text atoms; masters and notes left out) |
 | OpenDocument | `.odt` `.ods` `.odp` | |
 | text | HTML, plain text, XML, JSON in UTF-8 / UTF-16 / Windows-1256 / 1252 | |
-| images | JPG, PNG, WebP, TIFF, BMP, GIF; HEIC where the browser can decode it (OCR) | |
+| images | every kind, see «Images of every kind» below | |
 
 The text comes out the way the rules read a document: lines in their order, a table or sheet row as «cell | cell», a date as
 `YYYY-MM-DD`, a field as what it shows. The kind comes from that text like any other document's; the file is accepted wherever a
@@ -116,6 +116,26 @@ unpack first) — they wait for the person like any unread file. In the Drive li
 empty files are left out with their reason, and a file with no extension and a general type is offered (not ticked) and read by its
 bytes once fetched. Tests: `tests/test_office_files.py`, `tests/test_word_files.py`, `tests/test_ui_drive.py` (made-up «Dermacure»
 fixtures converted by LibreOffice; the Excel reader was also compared with openpyxl on two real workbooks: no word missing).
+
+### Images of every kind
+
+An image is told by its bytes (`imagefiles.image_format`), whatever the file is called: JPEG (also `.jfif`, `.jpe`), PNG, GIF, BMP,
+TIFF (multi-page, BigTIFF), WebP, HEIC/HEIF (iPhone photos), AVIF, JPEG 2000, PNM, PSD, ICO, PCX. Two letters are never enough: a
+text that starts with «BM» or «P5» is not a picture.
+
+| where | what reads it |
+|---|---|
+| in the browser (every edition; the only reader in the browser edition) | `ui/assets/ocr.js`: JPEG and PNG as they are; a phone photo turned the way its EXIF says; GIF, BMP, WebP, AVIF, ICO through the browser's decoder; **TIFF** page by page with UTIF.js (LZW, PackBits, CCITT G3/G4 fax, JPEG, Deflate); **HEIC/HEIF** with libheif (WebAssembly). Then tesseract.js. |
+| on the machine (desktop and server editions) | tesseract opens JPEG, PNG, GIF, BMP, TIFF (page by page, up to the page limit), WebP, JPEG 2000, PNM itself; the others (AVIF, PSD, PCX, ICO, HEIC) and a photo on its side go through `imagefiles.to_png`: Pillow where installed (the desktop build bundles it), else `sips` on macOS, ImageMagick, `heif-convert`, ffmpeg. `POST /api/images/png` lends that converter to the page for the kinds a browser cannot decode. |
+
+**An image placed in an item becomes a PDF** — the dossier takes PDF. A JPEG is wrapped as it is (`imagefiles.jpegs_pdf`: the image
+bytes untouched, the page turned by `/Rotate` when the EXIF says the photo is on its side, its own size when it states a sensible
+resolution, else fitted on A4); a TIFF keeps its pages; every other kind is decoded first — by the page before it uploads (so the
+browser edition does it too, `POST /api/images/pdf`), by Pillow in the engine. What is left is the scan's text layer, the same
+one-click OCR fix as any scanned PDF. An image nothing here can open is kept, with that reason. Not read inside the browser
+edition: JPEG 2000, PSD, PCX, PNM (no decoder in a browser); the desktop and server editions read them.
+Vendored by `web/vendor.sh` into `web/vendor/img` (not committed): UTIF.js (MIT), pako's inflate (MIT/Zlib), libheif-js (LGPL-3.0),
+each with its licence file. Tests: `tests/test_image_files.py`, `tests/test_ui_images.py`, `tests/test_web_edition.py`.
 
 ### The reading rules, reviewed on real layouts (November 2026)
 

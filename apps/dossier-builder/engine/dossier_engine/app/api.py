@@ -2,14 +2,14 @@
 import json, shutil, tempfile, time, uuid, zipfile
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from ..profile import Profile, ProfileError
 from ..resolver import resolve
 from .. import arabic as _arabic
 from .. import extract as _extract
-from .. import officefiles as _officefiles
+from .. import officefiles as _officefiles, imagefiles as _imagefiles
 from ..guard import assert_allowed, LockedError
 from ..assemble import docs_for
 from ..classify import Classifier
@@ -454,9 +454,9 @@ def create_app(workspace, auth_enabled=None):
         content = [{'type': 'document', 'title': name, 'source': {'type': 'base64', 'media_type': 'application/pdf',
                     'data': base64.standard_b64encode(data).decode()}} for name, data in pairs if data[:4] == b'%PDF']
         for name, data in pairs:                      # photos / scans uploaded as images
-            mt = _arabic.image_type(data)
-            if mt:
-                content.append({'type': 'image', 'source': {'type': 'base64', 'media_type': mt, 'data': base64.standard_b64encode(data).decode()}})
+            im = _imagefiles.for_model(data)
+            if im:
+                content.append({'type': 'image', 'source': {'type': 'base64', 'media_type': im[0], 'data': base64.standard_b64encode(im[1]).decode()}})
         content.append({'type': 'text', 'text': _extract.ai_prompt([dict(f, text='(the PDF is attached above)') for f in r['files']], target)})
         client = anthropic.Anthropic()
         with client.beta.messages.stream(model='claude-opus-5-5', max_tokens=16000, output_config={'effort': 'medium'},
@@ -477,6 +477,26 @@ def create_app(workspace, auth_enabled=None):
         """Dropdown vocabularies (dose forms with routes, countries, units, API options) and the names this workspace already uses."""
         from .. import vocab as _vocab
         return _vocab.payload(st)
+
+    @app.post('/api/images/pdf')
+    async def images_pdf(files: list[UploadFile] = File(...), title: str = Form('')):
+        """JPEG pages (decoded by the page: a TIFF's pages, a HEIC photo, a BMP…) → one PDF, each image stored as it came."""
+        pages = [await f.read() for f in files[:300]]
+        if not pages or any(_imagefiles.image_format(p) != 'jpeg' for p in pages):
+            err(422, 'E-IMAGE', 'The pages must be JPEG images.', 'الصفحات لازم تكون صور JPEG.')
+        try:
+            pdf = _imagefiles.jpegs_pdf(pages, title or None)
+        except ValueError as e:
+            err(422, 'E-IMAGE', f'A page could not be used ({e}).', 'فيه صفحة ما اتقبلتش.')
+        return Response(pdf, media_type='application/pdf')
+
+    @app.post('/api/images/png')
+    async def image_png(file: UploadFile = File(...)):
+        """An image the browser cannot decode (JPEG 2000, PSD, PCX, PNM…), as PNG — where this machine has Pillow or a converter."""
+        png = _imagefiles.to_png(await file.read())
+        if not png:
+            err(422, 'E-IMAGE', 'This machine cannot open that kind of image either.', 'الجهاز ده كمان مش بيفتح نوع الصورة ده.')
+        return Response(png, media_type='image/png')
 
     @app.post('/api/extract/text')
     def extract_texts(body: dict, target: str = 'dossier'):
@@ -735,7 +755,7 @@ def create_app(workspace, auth_enabled=None):
 
     if STATIC.exists():
         VENDOR = Path(__file__).resolve().parents[3] / 'web' / 'vendor'
-        for sub in ('tess', 'pdfjs'):                   # browser OCR and page rendering (fetched by web/vendor.sh; not in git)
+        for sub in ('tess', 'pdfjs', 'img'):                   # browser OCR and page rendering (fetched by web/vendor.sh; not in git)
             if (VENDOR / sub).is_dir():
                 app.mount(f'/assets/{sub}', StaticFiles(directory=VENDOR / sub), name=f'vendor-{sub}')
         app.state.ocr_browser = (VENDOR / 'tess' / 'tesseract.min.js').exists() and (VENDOR / 'pdfjs' / 'pdf.min.mjs').exists()

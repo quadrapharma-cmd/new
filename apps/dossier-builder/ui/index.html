@@ -201,7 +201,7 @@ body[data-role="editor"] .admin-only,body[data-role="viewer"] .admin-only{displa
 <div class="toast" id="toast" role="status" hidden></div>
 <input type="file" id="picker" accept="" hidden>
 <script src="/assets/ds.js"></script>
-<script>window.DB_TESS_BASE=window.DB_TESS_BASE||'/assets/tess/';window.DB_PDFJS_BASE=window.DB_PDFJS_BASE||'/assets/pdfjs/';</script>
+<script>window.DB_TESS_BASE=window.DB_TESS_BASE||'/assets/tess/';window.DB_PDFJS_BASE=window.DB_PDFJS_BASE||'/assets/pdfjs/';window.DB_IMG_BASE=window.DB_IMG_BASE||'/assets/img/';</script>
 <script src="/assets/ocr.js"></script>
 <script>
 'use strict';
@@ -922,6 +922,11 @@ async function refill(w){
   w.intakeFiles=accepted; w.intake=names.length?`${names.length} ${t('intakeDone')}`:'';
   const scannedAll=names.filter(n=>w.texts[n].scanned); w.scannedNames=scannedAll; w.makeReadable=scannedAll.length>0;
 }
+/* an image placed in an item becomes a PDF (the dossier takes PDF): a TIFF page by page, a HEIC photo, a BMP… decoded here (ocr.js) and
+   wrapped by the engine; anything else goes as it is */
+async function asDossierFile(file){
+  const image=file&&(/^image\//.test(file.type||'')||DS.IMG_RX.test(file.name||''));
+  return (image&&window.DBOCR&&window.DBOCR.asPdf)?window.DBOCR.asPdf(file, true):file; }
 async function addDocs(kind, files){
   const w=S.wiz; if(!w) return; files=files.filter(f=>DS.isDoc(f.name)); if(!files.length){ toast(t('badFiles')); return; }
   w.allFiles=w.allFiles||[]; w.docs=w.docs||{}; w.texts=w.texts||{}; w.prog=w.prog||{}; w.found=w.found||{}; w.kinds=w.kinds||{};
@@ -1232,7 +1237,7 @@ const driveType=f=>{ if(f.kind==='folder') return L({en:'folder',ar:'فولدر'
   if(/ms-excel$/.test(m)||e==='xls'||e==='xlt') return 'Excel (.xls)'; if(/spreadsheetml|ms-excel/.test(m)||/^(xlsx|xlsm|xltx)$/.test(e)) return 'Excel'; if(/csv|tab-separated/.test(m)||e==='csv'||e==='tsv') return 'CSV';
   if(/ms-powerpoint$/.test(m)||e==='ppt'||e==='pps') return 'PowerPoint (.ppt)'; if(/presentationml|ms-powerpoint/.test(m)||/^(pptx|ppsx|potx)$/.test(e)) return 'PowerPoint';
   if(/opendocument/.test(m)||/^od[tsp]$/.test(e)) return 'OpenDocument'; if(/rtf/.test(m)||e==='rtf') return 'RTF'; if(/html/.test(m)||/^html?$/.test(e)) return 'HTML';
-  if(/^image\//.test(m)||/^(jpe?g|png|webp|tiff?|bmp|gif|heic|heif)$/.test(e)) return L({en:'image',ar:'صورة'}); if(/^text\/|json|xml/.test(m)||/^(txt|md|xml|json)$/.test(e)) return L({en:'text',ar:'نص'});
+  if(/^image\//.test(m)||DS.IMG_RX.test('.'+e)) return L({en:'image',ar:'صورة'})+(e&&!/^(jpe?g|png)$/.test(e)?` (.${e})`:''); if(/^text\/|json|xml/.test(m)||/^(txt|md|xml|json)$/.test(e)) return L({en:'text',ar:'نص'});
   if(/zip|rar|7z|compressed|x-tar|gzip/.test(m)||/^(zip|rar|7z|tar|gz)$/.test(e)) return L({en:'archive (unpack it first)',ar:'أرشيف مضغوط (فكّه الأول)'});
   if(f.guess) return L({en:'unknown type (read after fetching)',ar:'نوع غير معروف (هيتعرف بعد الجلب)'});
   return m.split('/').pop()||'?'; };
@@ -1242,7 +1247,7 @@ const GD_SERVER='Google Drive', GD_FOLDER='application/vnd.google-apps.folder';
 const GD_EXPORT={'application/vnd.google-apps.document':['application/vnd.openxmlformats-officedocument.wordprocessingml.document','.docx'],
   'application/vnd.google-apps.spreadsheet':['application/pdf','.pdf'],'application/vnd.google-apps.presentation':['application/pdf','.pdf'],'application/vnd.google-apps.drawing':['application/pdf','.pdf']};
 /* every type the engine reads, old formats and new: Word, Excel, PowerPoint, OpenDocument, RTF, text, HTML, images */
-const GD_READABLE=/^(application\/(pdf|msword|rtf|json|xml|vnd\.ms-(excel|powerpoint|word)[\w.+-]*|vnd\.openxmlformats-officedocument\.[\w.+-]+|vnd\.oasis\.opendocument\.(text|spreadsheet|presentation))|text\/(plain|csv|html|rtf|xml|markdown|tab-separated-values)|image\/(jpeg|png|webp|tiff?|bmp|gif|heic|heif))$/;
+const GD_READABLE=/^(application\/(pdf|msword|rtf|json|xml|vnd\.ms-(excel|powerpoint|word)[\w.+-]*|vnd\.openxmlformats-officedocument\.[\w.+-]+|vnd\.oasis\.opendocument\.(text|spreadsheet|presentation))|text\/(plain|csv|html|rtf|xml|markdown|tab-separated-values)|image\/[\w.+-]+)$/;        // an image of any kind
 const GD_EXT={'application/pdf':'.pdf','application/msword':'.doc','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'.docx','application/vnd.ms-excel':'.xls',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'.xlsx','application/vnd.ms-powerpoint':'.ppt','application/vnd.openxmlformats-officedocument.presentationml.presentation':'.pptx',
   'application/rtf':'.rtf','text/rtf':'.rtf','application/vnd.oasis.opendocument.text':'.odt','application/vnd.oasis.opendocument.spreadsheet':'.ods','application/vnd.oasis.opendocument.presentation':'.odp',
@@ -1513,7 +1518,7 @@ async function placeFiles(did, files, opts){
   for(const [i,r] of res.entries()){
     const best=r.suggestions[0], auto=('auto' in r)?r.auto:(best&&best.slot_id), slot=auto&&slotById(auto);     // auto null: the items of two actives tie, the user decides from the box
     if(!best||!slot||needsMeta(slot)){ left.push(r.filename); leftFiles.push(files[i]); continue; }
-    const f=new FormData(); f.append('file',files[i]); f.append('meta',JSON.stringify(Object.assign({}, kinds[files[i].name]?{kind:kinds[files[i].name]}:{}, (texts[files[i].name]||{}).text?{text:String(texts[files[i].name].text).slice(0,4000)}:{})));   // the reading goes with the file: the kind rule judges a scan by it
+    const f=new FormData(); f.append('file',await asDossierFile(files[i])); f.append('meta',JSON.stringify(Object.assign({}, kinds[files[i].name]?{kind:kinds[files[i].name]}:{}, (texts[files[i].name]||{}).text?{text:String(texts[files[i].name].text).slice(0,4000)}:{})));   // the reading goes with the file: the kind rule judges a scan by it
     try{ const doc=await api(`/dossiers/${did}/slots/${encodeURIComponent(slot.slot_id)}/documents`,{method:'POST',body:f}); n++;
       if(opts.readable&&(opts.scanned||[]).includes(files[i].name)&&doc&&doc.id) convert.push([doc.id, files[i].name]); }catch(e){ left.push(r.filename); leftFiles.push(files[i]); }
   }
@@ -1765,7 +1770,7 @@ async function bulk(files){
     for(const sel of $$('[data-bulk]')){
       const slotId=sel.value, f=files[+sel.dataset.bulk]; if(!slotId) continue;
       if(needsMeta(slotById(slotId))){ skipped.push(f.name); continue; }
-      const fd=new FormData(); fd.append('file',f); fd.append('meta','{}');
+      const fd=new FormData(); fd.append('file',await asDossierFile(f)); fd.append('meta','{}');
       try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd}); n++; }catch(e){ toast(e.message); }
     }
     closeDrawer(); toast(`${n} ${t('added')}${skipped.length?' · '+skipped.join(', ')+': '+t('needsDetails'):''}`); await refreshCurrent();
@@ -1799,8 +1804,8 @@ function pick(slotId, meta, replaces, from){
     $('#rpAdd').onclick=()=>{ closeDrawer(); pick(slotId, meta, null, from); };
     return;
   }
-  const send=async file=>{ if(!file) return; const fd=new FormData(); fd.append('file',file); fd.append('meta',JSON.stringify(meta)); if(replaces) fd.append('replaces', replaces);
-    toast(t('uploading'));
+  const send=async file=>{ if(!file) return; toast(t('uploading'));
+    const fd=new FormData(); fd.append('file',await asDossierFile(file)); fd.append('meta',JSON.stringify(meta)); if(replaces) fd.append('replaces', replaces);
     try{ const doc = await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd});
       toast(t('uploaded')+' '+t(doc.check_status)); await refreshCurrent(slotId); if(doc.findings.length) openWhy(slotId); }
     catch(e){ toast(e.message); } };
@@ -2096,7 +2101,7 @@ async function dropFiles(slotId, list){
   const s = slotById(slotId);
   if(!s || !isActive(s) || !list.length) return;
   if(needsMeta(s)) return startUpload(slotId);
-  for(const f of list){ const fd=new FormData(); fd.append('file',f); fd.append('meta','{}');
+  for(const f of list){ const fd=new FormData(); fd.append('file',await asDossierFile(f)); fd.append('meta','{}');
     try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd}); toast(t('uploaded')); }
     catch(e){ toast(e.message); } }
   S.sel=slotId; publisherView();
