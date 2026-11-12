@@ -34,6 +34,49 @@ This folder is the code skeleton. It is kept here until the separate repository 
 | Assembler | `engine/dossier_engine/assemble.py` | Turns slots + files into writer documents. Picks the right node when a requirement has more than one (e.g. M1-04 new vs re-registration) |
 | CLI | `tools/resolve.py` | Prints the requirements board for a profile |
 
+## Countries and authorities (November 2026) — «تختار الدولة ويعمل على أساسها موديول ١»
+
+A dossier is built for one country. The wizard opens with «where will this dossier be submitted?»; the country gives the
+authority, and the authority gives **Module 1** — its structure, its numbering, what each section must hold, and the text it
+was written from. **Modules 2 to 5 are the common CTD** (ICH M4), the same for every authority, with the authority's own
+levels where it says otherwise and its regional items under 3.2.R.
+
+| Country | Pack | Module 1 written from | Output |
+|---|---|---|---|
+| Egypt | `eda.ctd.nta065.v5` | NP.CAPP.065 v5 and the EDA guidelines (as before, untouched) | CTD · eCTD 3.2.2 · eCTD 4.0 |
+| Saudi Arabia, UAE, Kuwait, Bahrain, Oman, Qatar, Yemen | `gcc.ctd.m1.v1` | GCC Module 1 Specifications v1.5 (structure, common to the seven) + SFDA «Data Requirements for Human Drugs Submission» v4.0, 3 Aug 2025 (contents, levels) | CTD folders |
+| EU / EEA (30 countries) | `eu.ctd.m1.v1` | EU Module 1 eCTD Specification v3.1.1, June 2025 (structure); levels: the general rule of Directive 2001/83/EC and the Notice to Applicants | CTD folders |
+| United States | `us.ctd.m1.v1` | FDA «The Comprehensive Table of Contents Headings and Hierarchy» v2.3.3 (headings and numbers) | CTD folders |
+| Any other country | `intl.ctd.m1.v1` | a **general** Module 1 (marked so on the card and on every item) to be matched to the country's own checklist | CTD folders |
+
+- **What is the authority's own text and what is not is said in the program.** A pack is `verified: true` when its Module 1
+  was written from the authority's published document; each requirement names its source. Where the source gives a section
+  without saying which applications need it, the item carries a `level_note` (shown in the item drawer, flag `CONFIRM_LEVEL`):
+  «the level here is the general practice — confirm it with the authority». The EU levels and the FDA levels are of this kind;
+  the GCC contents are SFDA's — another Gulf authority's own forms and certificates are to be checked. Jordan's and the UAE's
+  own Module 1 texts could not be downloaded when this was written (JFDA's site, mohap.gov.ae): Jordan gets the general Module 1,
+  the UAE the GCC one.
+- **Each authority asks its own questions** (`questions` in `pack.yaml`, answered in the wizard's profile step, kept in
+  `profile.extra`): the receiving Gulf authority (taken from the country), the EU legal basis (Art. 8(3), 10(1), 10(3), 10(4),
+  10a, 10b, 10c) and procedure, the US application type (ANDA, NDA, 505(b)(2), BLA, IND). The requirements follow them — a
+  generic EU dossier gets 1.5.2 and no 1.10; an ANDA gets form 356h, the basis-for-submission statement and the comparison with
+  the RLD; a Saudi dossier gets the CPP as optional (SFDA v4.0), a Kuwaiti one as required.
+- **A pack stands on the common CTD**: `extends: ich.ctd.m4.v1` (a `kind: base` pack, never offered by itself), `overrides`
+  (the authority's levels over a common item), `drop`. Egypt's pack is whole in itself and was not changed. Columns stay
+  I / G_IMP / G_LOC — the origin is «made in the country of registration, or imported into it».
+- **Everything else follows the dossier's pack**: the classifier's keywords (`classify.yaml` of the common CTD, then the
+  authority's), the home of each document kind (`kinds` on a requirement: a GMP certificate goes to 1.7.1 in the Gulf, to
+  the application form's annexes in the EU), the kind check, the board, the templates and «make it for me» (an item the
+  template library does not describe gets its template from the requirement's own words; the model is told which authority
+  the document is for), the Assistant's context, the CTD folders. Egypt-only parts are not offered to other dossiers: the
+  regional eCTD package, the review desk (EDA assessor rules), NP.CAPP.040's deficiency checks, the Egyptian generators.
+- API: `GET /api/authorities` (authorities, their questions and sources, the country list), `country` or `pack` in
+  `POST /api/dossiers`, `?country=` / `?pack=` on `POST /api/profile/preview`, `authority` on `GET /api/dossiers/{id}` and in
+  the projects list. Tests: `tests/test_authorities.py` (21), `tests/test_ui_country.py` (3).
+- **Adding a country**: write `rulepacks/<id>/pack.yaml` (`extends`, `authority {id, countries, name}`, `questions`,
+  `sources`, `verified`) and `requirements.yaml` (Module 1 only, each item with its source), `classify.yaml`; lint with
+  `packs.lint`. Nothing in the engine or the page changes.
+
 ## Intake — «upload the documents and the forms fill themselves»
 
 **Documents first.** The new-dossier wizard opens with the documents, not with fields: one named upload button per base document the

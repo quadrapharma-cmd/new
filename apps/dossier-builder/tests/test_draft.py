@@ -43,7 +43,8 @@ def docx_text(blob):
 def test_library_covers_every_requirement():
     assert _draft.lint() == []
     s = _draft.summary()
-    assert len(s) == 101
+    assert len(_draft.library()) == 101                      # the library is written for Egypt's items …
+    assert len(s) > 101 and s['GCC-1.0']['draft'] == 'full' and s['GCC-1.7.1']['draft'] == 'none'      # … every other authority's items get theirs from their own words
     kinds = {v['draft'] for v in s.values()}
     assert kinds == {'full', 'partial', 'generator', 'none'}
     assert s['P-01']['draft'] == 'full' and s['M1-14']['draft'] == 'none' and s['M1-43']['generator'] == 'cover' and s['M1-09']['lang'] == 'both'

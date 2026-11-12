@@ -189,8 +189,16 @@ class Store:
 
     # ---------------- dossiers
     def create_dossier(self, name, profile, product, envelope, pack='eda.ctd.nta065.v5'):
+        """pack: the authority the dossier is for (its Module 1 on the common CTD); Egypt's when none is named."""
+        pack = pack or 'eda.ctd.nta065.v5'
+        try:
+            pk = self.pack(pack)
+        except (FileNotFoundError, NotADirectoryError):
+            raise StoreError('E-PACK', f'Unknown authority pack {pack}.', 'الهيئة دي مش موجودة في البرنامج.')
+        if pk.meta.get('kind') == 'base':
+            raise StoreError('E-PACK', 'A dossier is built for an authority, not on the common CTD alone.', 'الملف بيتعمل لهيئة، مش على الـ CTD المشترك لوحده.')
         prof = Profile.from_dict(profile)
-        prof.validate()
+        prof.validate(pack=pk)
         did = str(uuid.uuid4())
         envelope = dict(envelope)
         envelope.setdefault('application_uuid', str(uuid.uuid4()))
@@ -212,9 +220,18 @@ class Store:
 
     def list_dossiers(self, deleted=False):
         """The projects in use; `deleted=True` gives the ones in the trash instead (with how many documents each holds)."""
-        rows = self.db.execute('select id, name, created, profile, product, deleted from dossier where deleted is %s order by %s desc'
+        rows = self.db.execute('select id, name, created, profile, product, deleted, pack, envelope from dossier where deleted is %s order by %s desc'
                                % (('not null', 'deleted') if deleted else ('null', 'created'))).fetchall()
-        out = [dict(r) | {'profile': json.loads(r['profile'] or '{}'), 'product': json.loads(r['product'] or '{}')} for r in rows]
+        out = []
+        for r in rows:
+            d = dict(r) | {'profile': json.loads(r['profile'] or '{}'), 'product': json.loads(r['product'] or '{}')}
+            env = json.loads(d.pop('envelope') or '{}')
+            try:
+                au = self.pack(d['pack']).authority
+            except Exception:                              # a pack this version no longer has: the project still lists
+                au = {'id': '?', 'name': {'en': d['pack'], 'ar': d['pack']}, 'countries': []}
+            d['authority'] = {'id': au['id'], 'name': au['name'], 'country': env.get('country') or (au['countries'][0] if len(au['countries']) == 1 and au['countries'][0] != '*' else None)}
+            out.append(d)
         if deleted:
             for d in out:
                 d['documents'] = self.db.execute("select count(*) from document where dossier_id=? and state='current'", (d['id'],)).fetchone()[0]
@@ -293,7 +310,7 @@ class Store:
         d = self.dossier(did)
         old = self.slots(did)
         prof = Profile.from_dict(profile)
-        prof.validate()
+        prof.validate(pack=self.pack(d['pack']))
         new = resolve(prof, self.pack(d['pack']))
         change = diff(old, new)
         self.db.execute('update dossier set profile=? where id=?', (json.dumps(profile, ensure_ascii=False), did))
@@ -324,8 +341,11 @@ class Store:
             if g:
                 names.setdefault(doc['meta'].get('generated') or 'letter', g)
         data['applicant_names'] = names
-        return [f.to_dict() for f in crosschecks.run(data, Profile.from_dict(d['profile']))] if (d['data'] or len(set(
+        out = [f.to_dict() for f in crosschecks.run(data, Profile.from_dict(d['profile']))] if (d['data'] or len(set(
             v for v in names.values() if v)) > 1) else []
+        if not self.pack(d['pack']).egypt:               # Egypt's own deficiency list (NP.CAPP.040) is Egypt's; consistency across the dossier is everyone's
+            out = [dict(f, source='Consistency across the dossier (general practice)') for f in out if not f['id'].startswith('NP040')]
+        return out
 
     # ---------------- documents
     def add_document(self, did, slot_id, filename, data, title=None, meta=None, supersede=None, doc_class=None, text=None, kind=None):
@@ -366,7 +386,7 @@ class Store:
                 tmp.unlink(missing_ok=True)
         if not meta.get('generated') and not meta.get('signed_for') and not meta.get('amended_from'):      # the kind rule: is this file the document the item expects? (PDF, image or Word)
             try:
-                kc = _extract.kind_check(s.req_id, filename, text or data, known_kind=kind)
+                kc = _extract.kind_check(s.req_id, filename, text or data, known_kind=kind, pack=self.pack(self.dossier(did)['pack']))
             except Exception:
                 kc = {'ok': True}
             if not kc.get('ok'):
@@ -649,6 +669,8 @@ class Store:
             x['provenance'] = rq.get('provenance')
             x['produced_by'] = rq.get('produced_by')
             x['how'] = (rq.get('rebuild') or {}).get('needs')
+            x['note'] = rq.get('level_note')            # where the level comes from when the source does not state it
+            x['group'] = rq.get('group')
         cross = self.cross(did)
         by_slot = {}
         for f in cross:

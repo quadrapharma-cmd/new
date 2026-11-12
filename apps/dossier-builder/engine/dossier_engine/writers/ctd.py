@@ -47,7 +47,8 @@ def write(out_dir, root_name, slots, files, lang_note=None, dry_run=False):
         base = Path(f'Module {m}')
         if s.item and m == 3:
             base = base / clean(f"3.2.S {s.item['name']} - {s.item['manufacturer']}", 60)
-        folder = base / clean(f'{order[m]:02d} {sec} {s.title["en"]}', 44)
+        named = s.title['en'].lower().startswith(sec.lower())                # «Additional data»: a section the authority names by words
+        folder = base / clean(f'{order[m]:02d} {s.title["en"]}' if named else f'{order[m]:02d} {sec} {s.title["en"]}', 44)
         got = files.get(s.slot_id, [])
         if not got:
             missing.append(s.slot_id) if s.level == 'R' else None
@@ -61,7 +62,7 @@ def write(out_dir, root_name, slots, files, lang_note=None, dry_run=False):
             budget = min(56, MAX_PATH - len(f'{root.name}/{sub}/') - len(suffix))
             if budget < 12:
                 raise WriterError(f'path budget exhausted under {sub}')
-            name = clean(f'{sec} {title}', budget) + suffix
+            name = clean(title if named else f'{sec} {title}', budget) + suffix
             rel = sub / name
             if len(f'{root.name}/{rel}') > MAX_PATH:
                 raise WriterError(f'path > {MAX_PATH}: {rel}')
@@ -86,7 +87,7 @@ def write(out_dir, root_name, slots, files, lang_note=None, dry_run=False):
         for s, placed in rows:
             w.writerow([s.req_id, s.ctd, s.title['en'], s.title['ar'],
                         f"{s.item['name']} / {s.item['manufacturer']}" if s.item else '',
-                        s.level, _status(s, placed), ' | '.join(placed), s.reasons[-1]['en']])
+                        s.level, _status(s, placed), ' | '.join(placed), next((r for r in reversed(s.reasons) if not r.get('note')), s.reasons[-1])['en']])
     (root / '00-navigator.html').write_text(_navigator(root_name, rows, lang_note), encoding='utf-8')
     return {'path': str(root), 'files': sorted(written) + ['00-checklist.csv', '00-navigator.html'],
             'missing': missing}

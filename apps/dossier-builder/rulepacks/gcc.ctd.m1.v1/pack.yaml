@@ -1,0 +1,168 @@
+# GCC CTD dossier — GCC Module 1 (specification v1.5) with the SFDA data requirements v4.0
+# Written from the sources named below; a requirement's `sources` say where each line comes from.
+id: gcc.ctd.m1.v1
+extends: ich.ctd.m4.v1
+order: 20
+authority:
+  id: GCC
+  countries:
+  - SA
+  - AE
+  - KW
+  - BH
+  - OM
+  - QA
+  - YE
+  name:
+    en: GCC — Saudi Arabia (SFDA), UAE, Kuwait, Bahrain, Oman, Qatar, Yemen; national and centralised procedures
+    ar: الخليج — السعودية (SFDA)، الإمارات، الكويت، البحرين، عُمان، قطر، اليمن؛ التسجيل الوطني والمركزي
+title:
+  en: GCC CTD dossier — GCC Module 1 (specification v1.5) with the SFDA data requirements v4.0
+  ar: ملف CTD لدول الخليج — موديول ١ الخليجي (مواصفة 1.5) مع متطلبات SFDA الإصدار 4.0
+status: in-force
+valid_from: '2025-08-03'
+valid_to: null
+verified: true
+matrix:
+  en: SFDA data requirements v4.0 / GCC Module 1
+  ar: متطلبات SFDA الإصدار 4.0 / موديول ١ الخليجي
+columns:
+  I:
+    en: New chemical entity / biological
+    ar: مادة جديدة / بيولوجي
+  G_IMP:
+    en: Generic — imported
+    ar: مثيل — مستورد
+  G_LOC:
+    en: Generic — made in the country
+    ar: مثيل — مصنّع في الدولة
+questions:
+- id: gcc_agency
+  title:
+    en: The authority that receives the dossier
+    ar: الهيئة اللي هتستلم الملف
+  options:
+  - id: SA
+    en: Saudi Arabia — SFDA
+    ar: السعودية — الهيئة العامة للغذاء والدواء
+  - id: AE
+    en: United Arab Emirates
+    ar: الإمارات العربية المتحدة
+  - id: KW
+    en: Kuwait
+    ar: الكويت
+  - id: BH
+    en: Bahrain
+    ar: البحرين
+  - id: OM
+    en: Oman
+    ar: عُمان
+  - id: QA
+    en: Qatar
+    ar: قطر
+  - id: YE
+    en: Yemen
+    ar: اليمن
+  - id: GCC
+    en: GCC centralised procedure (Gulf Health Council)
+    ar: التسجيل المركزي الخليجي (مجلس الصحة لدول مجلس التعاون)
+  default: SA
+  from_country: true
+module1_note:
+  when: gcc_agency != 'SA'
+  en: What this section must hold is written from the Saudi (SFDA) text; the structure is common to the Gulf. For this authority check its own guidance
+    — its forms, the certificates it asks for and their legalisation, its pricing documents.
+  ar: محتوى البند مكتوب من نص SFDA السعودي؛ والهيكل مشترك في الخليج. للهيئة دي راجع دليلها — نماذجها، الشهادات اللي بتطلبها وتوثيقها، مستندات التسعير.
+overrides:
+  M2-TOC:
+    sources:
+    - ICH M4(R4)
+    - ICH M4Q(R1)
+    - ICH M4S(R2)
+    - ICH M4E(R2)
+    - 'SFDA Data Requirements for Human Drugs Submission v4.0 (2025-08-03) — Introduction, b) Generic products: Module 2 holds 2.1, 2.2, 2.3 and 2.5; Module
+      4 generally not applicable; Module 5: 5.1, 5.2, 5.3.1.2'
+    level_note: null
+  M2-INTRO:
+    sources:
+    - ICH M4(R4)
+    - ICH M4Q(R1)
+    - ICH M4S(R2)
+    - ICH M4E(R2)
+    - 'SFDA Data Requirements for Human Drugs Submission v4.0 (2025-08-03) — Introduction, b) Generic products: Module 2 holds 2.1, 2.2, 2.3 and 2.5; Module
+      4 generally not applicable; Module 5: 5.1, 5.2, 5.3.1.2'
+    level_note: null
+  M2-02:
+    sources:
+    - ICH M4(R4)
+    - ICH M4Q(R1)
+    - ICH M4S(R2)
+    - ICH M4E(R2)
+    - 'SFDA Data Requirements for Human Drugs Submission v4.0 (2025-08-03) — Introduction, b) Generic products: Module 2 holds 2.1, 2.2, 2.3 and 2.5; Module
+      4 generally not applicable; Module 5: 5.1, 5.2, 5.3.1.2'
+    level_note: null
+  M2-NCO:
+    sources:
+    - ICH M4(R4)
+    - ICH M4Q(R1)
+    - ICH M4S(R2)
+    - ICH M4E(R2)
+    - 'SFDA Data Requirements for Human Drugs Submission v4.0 (2025-08-03) — Introduction, b) Generic products: Module 2 holds 2.1, 2.2, 2.3 and 2.5; Module
+      4 generally not applicable; Module 5: 5.1, 5.2, 5.3.1.2'
+    level_note: null
+    required:
+      I: R
+      G_IMP: NR
+      G_LOC: NR
+  M2-CO:
+    sources:
+    - ICH M4(R4)
+    - ICH M4Q(R1)
+    - ICH M4S(R2)
+    - ICH M4E(R2)
+    - 'SFDA Data Requirements for Human Drugs Submission v4.0 (2025-08-03) — Introduction, b) Generic products: Module 2 holds 2.1, 2.2, 2.3 and 2.5; Module
+      4 generally not applicable; Module 5: 5.1, 5.2, 5.3.1.2'
+    level_note: null
+  M2-NCS:
+    sources:
+    - ICH M4(R4)
+    - ICH M4Q(R1)
+    - ICH M4S(R2)
+    - ICH M4E(R2)
+    - 'SFDA Data Requirements for Human Drugs Submission v4.0 (2025-08-03) — Introduction, b) Generic products: Module 2 holds 2.1, 2.2, 2.3 and 2.5; Module
+      4 generally not applicable; Module 5: 5.1, 5.2, 5.3.1.2'
+    level_note: null
+  M2-CS:
+    sources:
+    - ICH M4(R4)
+    - ICH M4Q(R1)
+    - ICH M4S(R2)
+    - ICH M4E(R2)
+    - 'SFDA Data Requirements for Human Drugs Submission v4.0 (2025-08-03) — Introduction, b) Generic products: Module 2 holds 2.1, 2.2, 2.3 and 2.5; Module
+      4 generally not applicable; Module 5: 5.1, 5.2, 5.3.1.2'
+    level_note: null
+    required:
+      I: R
+      G_IMP: NR
+      G_LOC: NR
+  M4-TOC:
+    sources:
+    - ICH M4S(R2)
+    - 'SFDA Data Requirements for Human Drugs Submission v4.0 (2025-08-03) — Introduction, b) Generic products: Module 2 holds 2.1, 2.2, 2.3 and 2.5; Module
+      4 generally not applicable; Module 5: 5.1, 5.2, 5.3.1.2'
+    level_note: null
+sources:
+- code: GCC Module 1 Specifications
+  version: '1.5'
+  date: 2015-11
+  url: https://sfda.gov.sa/sites/default/files/2021-03/GCC%20Module%201%20Specifications_v1.5-EN.pdf
+  gives: the structure and numbering of Module 1; the seven agencies (AE-MOH, BH-MOH, KW-MOH, OM-MOH, QA-NHA, SA-SFDA, YE-MOPHP); national and GCC procedures
+- code: SFDA — Data Requirements for Human Drugs Submission (Content of the Dossier)
+  version: '4.0'
+  date: '2025-08-03'
+  url: https://sfda.gov.sa/sites/default/files/2025-08/Data-Human-Drugs-SubV4.pdf
+  gives: what each section must hold; which Module 2–5 sections a generic needs
+note:
+  en: 'The structure is the GCC specification, common to the seven authorities. What each section must hold is written from the SFDA document: for another
+    GCC authority, check its own guidance for forms, pricing and certificates.'
+  ar: 'الهيكل من المواصفة الخليجية المشتركة بين السبع هيئات. محتوى كل بند مكتوب من مستند SFDA: لأي هيئة خليجية تانية راجع دليلها في النماذج والتسعير والشهادات.'

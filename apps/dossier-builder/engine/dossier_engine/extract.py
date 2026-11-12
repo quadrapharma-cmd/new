@@ -699,7 +699,17 @@ KIND_NAMES = {'pricing': {'en': 'pricing certificate', 'ar': 'شهادة تسع�
               'factory': {'en': 'factory licence', 'ar': 'رخصة مصنع'}, 'bmr': {'en': 'batch record', 'ar': 'سجل تشغيلة'}, 'stability': {'en': 'stability document', 'ar': 'مستند ثبات'}}
 
 
-def kind_check(req_id, filename, data_or_text, known_kind=None):
+def kind_homes(kind, pack=None):
+    """The items a document of this kind belongs in. Egypt's table above names its own items; another authority's items say it
+    themselves (`kinds` in the requirement). With a pack: only items that pack has."""
+    homes = list(KIND_HOME.get(kind, []))
+    if pack is None:
+        return homes
+    own = [r['id'] for r in pack.requirements if kind in (r.get('kinds') or ())]             # the authority's own item first, as Egypt's table has it
+    return own + [h for h in homes if h in pack.by_id and h not in own]
+
+
+def kind_check(req_id, filename, data_or_text, known_kind=None, pack=None):
     """Is this file the document the item expects? → {'kind', 'ok', 'homes', 'unread'}. The file is judged by what is written inside
     it, never by its name: its text layer, or — a scan — the reading already made of it (`known_kind`, the text passed in) or an OCR
     of its first page where this machine can. Unknown kinds and kinds without a fixed home pass; a recognised kind whose home items
@@ -713,7 +723,7 @@ def kind_check(req_id, filename, data_or_text, known_kind=None):
     kind = content_kind(text)
     if kind == 'other' and known_kind in KIND_HOME:
         kind = known_kind                                   # the file says nothing itself (a scan): an earlier reading of it does
-    homes = KIND_HOME.get(kind, [])
+    homes = kind_homes(kind, pack)
     return {'kind': kind, 'homes': homes, 'ok': kind == 'other' or not homes or req_id in homes, 'kind_name': KIND_NAMES.get(kind),
             'unread': kind == 'other' and len(re.sub(r'\s', '', text)) < 20}
 

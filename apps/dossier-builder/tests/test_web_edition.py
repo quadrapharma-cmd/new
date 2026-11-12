@@ -196,3 +196,43 @@ def test_a_started_project_is_still_there_after_the_page_is_closed(site, tmp_pat
         assert page.evaluate("() => Object.keys(S.wiz.texts).sort()") == ['licence.pdf', 'notes.txt', 'pricing certificate (2).txt', 'pricing certificate.txt', 'تقرير الثبات.txt', 'ثبات.txt']
         assert errors == [], errors
         b.close()
+
+
+def test_a_dossier_for_another_country_in_the_browser(site):
+    """The countries travel with the browser edition: the wizard offers them, a Saudi dossier gets the Gulf Module 1 from the engine
+    inside the page, its declaration has a template made from what SFDA asks, and it exports as CTD folders."""
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1440, 'height': 900}).new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script("localStorage.setItem('db.lang','en')")
+        page.goto(site + '/index.local.html#/new')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.wait_for_selector('#auCountry', timeout=120000)
+        assert page.input_value('#auCountry') == 'EG'
+        page.select_option('#auCountry', 'SA')
+        page.wait_for_function("() => document.querySelector('#auName') && document.querySelector('#auName').textContent.includes('SFDA')", timeout=60000)
+        assert "Module 1 from the authority's published text" in page.inner_text('#auCard')
+        page.click('#wizNext')
+        page.fill('[data-in=name]', 'Dermacure KSA'); page.fill('[data-in=man]', 'Example Pharm Co.')
+        page.click('#wizNext'); page.click('[data-k=origin][data-v=imported]')
+        page.wait_for_function("() => /1\\.7\\.5/.test(document.querySelector('#pvBody').textContent)", timeout=60000)
+        page.click('#wizNext')
+        page.fill('[data-api="0"][data-f=name]', 'Neomycin sulphate'); page.fill('[data-api="0"][data-f=manufacturer]', 'Example API Co.')
+        page.click('#wizNext')
+        page.fill('[data-in=applicant]', 'Example Pharm Co.'); page.fill('[data-in=tracking]', 'T-0001')
+        page.click('#wizCreate')
+        page.wait_for_selector('[data-tpl="GCC-1.7.5"]', timeout=60000)
+        assert 'Saudi Arabia' in page.inner_text('#crumbAu') and page.locator('#navReview').is_hidden()
+        page.click('[data-tpl="GCC-1.7.5"]')
+        page.wait_for_selector('#tplPanel .docprev', timeout=60000)
+        assert 'free from alcohol' in page.inner_text('#tplPanel')
+        page.keyboard.press('Escape')
+        page.click('#navExport')
+        page.wait_for_selector('#ctdOnly', timeout=60000)
+        assert page.locator('input[data-out]').count() == 1
+        b.close()
+    assert not errors, errors
+

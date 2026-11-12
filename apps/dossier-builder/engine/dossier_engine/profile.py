@@ -55,6 +55,7 @@ class Profile:
     biological_origin_materials: bool = False
     novel_excipient: bool = False
     apis: list = field(default_factory=list)   # list[Api]
+    extra: dict = field(default_factory=dict)  # the answers to the chosen authority's own questions (pack.yaml `questions`)
 
     @classmethod
     def from_dict(cls, d):
@@ -75,8 +76,11 @@ class Profile:
             return 'I', self.origin == 'local'   # local innovator not in the source matrix
         return ('G_IMP' if self.origin == 'imported' else 'G_LOC'), False
 
-    def validate(self, today=None):
+    def validate(self, today=None, pack=None):
+        """`pack`: the authority the dossier is for. Egypt's own rules (the licence kinds, the rolling route) are checked for Egypt
+        — and when no pack is given, as before."""
         today = today or date.today()
+        egypt = pack is None or pack.egypt
         p = []
 
         def bad(code, en, ar):
@@ -101,13 +105,17 @@ class Profile:
                 bad('P-DUP-API', f'API {a.name} / {a.manufacturer} is listed twice.',
                     f'المادة {a.name} من نفس المصنّع مكررة.')
             seen.add(a.key)
-        if self.origin == 'local' and self.licence in ('imported', 'imported_bulk'):
+        for q in (pack.questions if pack is not None else []):
+            v, allowed = self.extra.get(q['id'], q.get('default')), [o['id'] for o in q.get('options') or []]
+            if allowed and v not in allowed:
+                bad('P-ENUM', f"{q['id']}: {v!r} is not one of {allowed}", f"قيمة غير مقبولة للسؤال {q['id']}")
+        if egypt and self.origin == 'local' and self.licence in ('imported', 'imported_bulk'):
             bad('P-CONTRA', 'A local product cannot have an imported / imported-bulk licence.',
                 'المنتج المحلي لا يكون ترخيصه مستورد أو bulk مستورد.')
-        if self.origin == 'imported' and self.licence in ('toll', 'f_toll'):
+        if egypt and self.origin == 'imported' and self.licence in ('toll', 'f_toll'):
             bad('P-CONTRA', 'Toll manufacturing applies to local products only.',
                 'التصنيع لدى الغير للمنتج المحلي فقط.')
-        if self.route == 'rolling' and today >= ROLLING_CLOSES:
+        if egypt and self.route == 'rolling' and today >= ROLLING_CLOSES:
             bad('P-ROLLING-CLOSED', 'Rolling Submission closed on 01/12/2026; use One Submission.',
                 'مسار Rolling اتقفل 01/12/2026؛ استخدم One Submission.')
         if self.biological:
@@ -117,10 +125,12 @@ class Profile:
             raise ProfileError(p)
         return True
 
-    def env(self):
+    def env(self, pack=None):
         """Namespace exposed to rule-pack expressions."""
         col, _ = self.column()
-        d = {k: v for k, v in asdict(self).items() if k != 'apis'}
+        d = {k: v for k, v in asdict(self).items() if k not in ('apis', 'extra')}
+        for q in (pack.questions if pack is not None else []):          # the authority's own questions, each with its default
+            d[q['id']] = self.extra.get(q['id'], q.get('default'))
         d['column'] = col
         d['api_options'] = sorted({a.option for a in self.apis})
         d['api_count'] = len(self.apis)

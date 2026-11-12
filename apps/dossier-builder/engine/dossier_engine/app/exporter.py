@@ -42,6 +42,13 @@ def export(st, did, outputs, ack, sub, p40, ig_zip):
     if not g['ok']:
         raise ExportError(409, 'E-GATE', 'Export blocked: required documents are missing or non-conforming.',
                           'التصدير متوقف: فيه مستندات مطلوبة ناقصة أو غير مطابقة.', gate=g)
+    egypt = st.pack(st.dossier(did)['pack']).egypt
+    if not egypt:                                        # the regional eCTD backbone is written for Egypt; every other authority gets the CTD folders
+        if list(outputs) == ['ctd', 'ectd32', 'ectd40']:                     # nothing was asked: what this authority has
+            outputs = ['ctd']
+        elif {'ectd32', 'ectd40'} & set(outputs):
+            raise ExportError(422, 'E-OUTPUT-AUTHORITY', "The eCTD package is written for Egypt's regional Module 1 only; this dossier exports as CTD folders.",
+                              'حزمة الـ eCTD مكتوبة لموديول ١ المصري بس؛ الملف ده بيتصدّر كمجلدات CTD.', gate=g)
     if {'ectd32', 'ectd40'} & set(outputs) and not ack:
         raise ExportError(409, 'E-PROVISIONAL-ACK', 'eCTD outputs use the provisional EG profiles; acknowledge before export.',
                           'مخرجات eCTD مبنية على ملف تعريف مصري مؤقت؛ لازم توافق قبل التصدير.', gate=g)
@@ -61,10 +68,10 @@ def export(st, did, outputs, ack, sub, p40, ig_zip):
             p = work / f"{doc['id']}.pdf"
             shutil.copyfile(st.blob_path(doc['sha256']), p)
             files.setdefault(s.slot_id, []).append({'file': str(p), 'title': doc['title'], **doc['meta'], 'doc_id': doc['id']})
-    docs_all, ctd_only = docs_for(slots, prof, files)
+    docs_all, ctd_only = docs_for(slots, prof, files) if egypt else ([], [])
     current_ids = {x.doc_id for x in docs_all}
     eff = {k: v for k, v in files.items() if not k.startswith('M1-44')}
-    docs_ectd = [x for x in docs_for(slots, prof, eff)[0]]
+    docs_ectd = [x for x in docs_for(slots, prof, eff)[0]] if egypt else []
     results, reports, zips, seqinfo, done = {}, {}, {}, {}, []
     lc = st.root / 'lifecycle' / did
     try:
@@ -162,4 +169,5 @@ def export(st, did, outputs, ack, sub, p40, ig_zip):
             'validation': {k: {'ok': r['ok'], 'counts': r['counts'], 'coverage': r['coverage'], 'label': r['label']}
                            for k, r in reports.items()},
             'report': f'/api/dossiers/{did}/exports/{exp_id}/validation-report.html' if reports else None,
-            'label': 'Conforms to EDA drafts + ICH (provisional EG profiles) — not «EDA-valid».'}
+            'label': 'Conforms to EDA drafts + ICH (provisional EG profiles) — not «EDA-valid».' if egypt else
+                     f"CTD folders in the order of {st.pack(d['pack']).authority['name']['en']}'s Module 1 and the common CTD — the authority's own submission rules (portal, file naming, eCTD) still apply."}

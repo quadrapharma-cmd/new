@@ -3,6 +3,12 @@ title:
   en: EDA CTD dossier requirements — NP.CAPP.065 v5 (in force)
   ar: متطلبات ملف CTD لهيئة الدواء المصرية — NP.CAPP.065 الإصدار 5 (سارٍ)
 status: in-force
+order: 10                       # offered first
+authority:
+  id: EG-EDA
+  countries: [EG]
+  name: {en: Egyptian Drug Authority (EDA), ar: هيئة الدواء المصرية}
+verified: true
 valid_from: '2025-11-01'
 valid_to: null
 supersedes: null

@@ -6,6 +6,7 @@ user always confirms."""
 import re
 import yaml
 from dossier_engine.yamlfast import load as yload
+from dossier_engine.packs import number
 
 STOP = {'and', 'or', 'of', 'the', 'for', 'in', 'on', 'to', 'a', 'an', 'by', 'with', 'per', 'all', 'if', 'any', 'each',
         'new', 're', 'reg', 'incl', 'including', 'etc', 'from', 'one', 'only', 'other', 'study', 'reports', 'report'}
@@ -31,15 +32,17 @@ def _ctd_tokens(name):
 
 class Classifier:
     def __init__(self, pack):
+        self.pack = pack
         kw = {}
-        try:
-            kw = yload(open(pack.path / 'classify.yaml', encoding='utf-8')) or {}
-        except FileNotFoundError:
-            pass
+        for src in ([pack.base] if getattr(pack, 'base', None) else []) + [pack]:      # the common CTD's keywords, then the authority's own
+            try:
+                kw.update(yload(open(src.path / 'classify.yaml', encoding='utf-8')) or {})
+            except FileNotFoundError:
+                pass
         self.reqs = {}
         for r in pack.requirements:
             words = {w for w in re.findall(r'[a-z]{4,}', _norm(r['title']['en'])) if w not in STOP}
-            secs = {x.lower() for x in [r['ctd']['nta065_v5'].split(' ')[0]] + r['ectd']['nodes']}
+            secs = {x.lower() for x in [number(r).split(' ')[0]] + r['ectd']['nodes']}
             self.reqs[r['id']] = {'phrases': [_norm(p) for p in kw.get(r['id'], [])], 'words': words, 'secs': secs}
 
     def suggest(self, filename, text, slots, top=3):

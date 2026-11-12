@@ -32,13 +32,59 @@ def library():
     return _LIB
 
 
-def template(req_id):
-    return library().get(req_id)
+THIRD = ('third_party_certificate', 'eda_document', 'executed_record', 'signed_scan')
+_T = lambda en, ar: {'en': en, 'ar': ar}                                                   # noqa: E731
+
+
+def derived(req):
+    """The entry of an item the library does not describe — another authority's Module 1, the common CTD's own sections — made from
+    the requirement's own words: its title and what its section must hold. A certificate is uploaded as issued; a letter or a
+    declaration is drafted whole; a technical section gets its structure and what the documents give."""
+    acc, cls, title = req.get('acceptance_text') or '', req.get('doc_class'), req['title']
+    e = {'id': req['id'], 'lang': 'en', 'example': {'en': acc, 'ar': ''}, 'derived': True}
+    if cls in THIRD:
+        return {**e, 'kind': 'third_party', 'draft': 'none',
+                'note': _T('Uploaded as issued, never re-typed; the program checks it and can open a re-issue request to the issuer.',
+                           'يُرفع كما صدر ولا يُعاد كتابته؛ البرنامج يفحصه ويقدر يفتح طلب إعادة إصدار للجهة.')}
+    hint = _T(acc, '')
+    if cls == 'generated':
+        return {**e, 'kind': 'toc', 'draft': 'full', 'sections': [
+            {'id': 'contents', 'title': _T('Contents', 'المحتويات'), 'kind': 'table', 'columns': ['Section', 'Document', 'Location'], 'hint': hint}]}
+    if cls == 'company_letter':
+        return {**e, 'kind': 'letter', 'draft': 'full', 'letterhead': True, 'sections': [
+            {'id': 'addressee', 'title': _T('Addressed to', 'موجَّه إلى'), 'kind': 'para', 'hint': _T('The authority, and the department it asks to be addressed.', 'الهيئة والإدارة اللي بتطلب المخاطبة عليها.')},
+            {'id': 'subject', 'title': _T('Subject', 'الموضوع'), 'kind': 'para', 'source': 'product', 'hint': _T(f"{title['en']} — trade name, dosage form, strength.", f"{title['ar']} — الاسم التجاري، الشكل الصيدلي، التركيز.")},
+            {'id': 'body', 'title': _T('Text', 'النص'), 'kind': 'para', 'hint': hint},
+            {'id': 'enclosures', 'title': _T('Enclosures', 'المرفقات'), 'kind': 'list', 'hint': _T('What is attached to this document, one per line.', 'المرفقات، كل واحد في سطر.')},
+            {'id': 'signature', 'title': _T('Signature', 'التوقيع'), 'kind': 'fields', 'fields': [
+                {'key': 'signatory', 'label': _T('Name', 'الاسم')}, {'key': 'signatory_title', 'label': _T('Position', 'الوظيفة')},
+                {'key': 'applicant', 'label': _T('Company', 'الشركة')}, {'key': 'date', 'label': _T('Date', 'التاريخ')}]}]}
+    return {**e, 'kind': 'section', 'draft': 'partial', 'sections': [
+        {'id': 'content', 'title': title, 'kind': 'para', 'hint': hint},
+        {'id': 'references', 'title': _T('Supporting documents and references', 'المستندات المؤيدة والمراجع'), 'kind': 'list',
+         'hint': _T('The documents this section rests on, one per line.', 'المستندات اللي القسم ده مبني عليها، كل واحد في سطر.')}]}
+
+
+def template(req_id, req=None):
+    """The library's entry; for an item it does not describe, one made from the requirement itself when `req` is given."""
+    return library().get(req_id) or (derived(req) if req else None)
+
+
+def _req(st, did, req_id):
+    return st.pack(st.dossier(did)['pack']).by_id.get(req_id)
 
 
 def summary():
-    """For the board: per requirement, can the program draft it, how, and with which generator."""
-    return {k: {'draft': e['draft'], 'kind': e['kind'], 'generator': e.get('generator'), 'lang': e.get('lang', 'en')} for k, e in library().items()}
+    """For the board: per requirement, can the program draft it, how, and with which generator — the library's items and, for every
+    other authority's items, what their own words give."""
+    from .. import packs
+    out = {k: {'draft': e['draft'], 'kind': e['kind'], 'generator': e.get('generator'), 'lang': e.get('lang', 'en')} for k, e in library().items()}
+    for m in packs.available():
+        for r in packs.load(m['id']).requirements:
+            if r['id'] not in out:
+                e = derived(r)
+                out[r['id']] = {'draft': e['draft'], 'kind': e['kind'], 'generator': None, 'lang': 'en'}
+    return out
 
 
 def lint():
@@ -99,6 +145,7 @@ def context(st, did, slot, with_texts=True):
     d = st.dossier(did)
     entry = template(slot.req_id) or {}
     product, profile, env, data = d.get('product') or {}, d.get('profile') or {}, d.get('envelope') or {}, d.get('data') or {}
+    pk = st.pack(d['pack'])
     apis = data.get('apis') or profile.get('apis') or []
     ctx = {
         'dossier': {'id': did, 'name': d.get('name')},
@@ -112,6 +159,8 @@ def context(st, did, slot, with_texts=True):
         'item': slot.item, 'requirement': {'id': slot.req_id, 'title': slot.title, 'ctd': slot.ctd},
         'readings': [{'doc_id': n.get('doc_id'), 'note': n.get('note')} for n in storage.readings(st, did)][-20:],
         'date': _dt.date.today().isoformat(),
+        'authority': {'id': pk.authority['id'], 'name': pk.authority['name']['en'], 'egypt': pk.egypt, 'country': env.get('country'),
+                      'general': pk.meta.get('verified') is False, 'answers': profile.get('extra') or {}},
     }
     if with_texts:
         ctx['documents'] = _texts(st, did, slot, entry.get('inputs'), MAX_CONTEXT_CHARS)
@@ -121,7 +170,7 @@ def context(st, did, slot, with_texts=True):
 def view(st, did, slot, req_item=None):
     """The template panel: the entry, the requirement's own words, which base documents are present, and the prompt the browser
     edition sends to claude.ai's model."""
-    entry = template(slot.req_id)
+    entry = template(slot.req_id, req_item or _req(st, did, slot.req_id))
     ctx = context(st, did, slot, with_texts=True)
     kinds_present = {(d.get('meta') or {}).get('doc_type') or (d.get('meta') or {}).get('kind') for d in st.documents(did)}
     inputs = [{'id': i, 'present': i in kinds_present} for i in (entry or {}).get('inputs') or []]
@@ -151,7 +200,19 @@ def prompt(entry, ctx):
     docs = '\n\n'.join(f"=== Document {i + 1}: {d['filename']} (item {d.get('slot_id')})\n{d['text']}" for i, d in enumerate(ctx.get('documents') or []))
     data = {k: ctx.get(k) for k in ('product', 'profile', 'apis', 'composition', 'batches', 'specs', 'results', 'packs', 'registration', 'item', 'readings')}
     lang = entry.get('lang', 'en')
-    return f"""You draft one document of a CTD registration dossier for the Egyptian Drug Authority (EDA), as a regulatory affairs professional would.
+    au = ctx.get('authority') or {'egypt': True}
+    if au.get('egypt'):
+        whom, terms = 'the Egyptian Drug Authority (EDA)', 'the EDA / ICH terms; no marketing language; Arabic in formal Egyptian regulatory style'
+    else:
+        whom = au.get('name') or 'the authority of the country of registration'
+        if au.get('country'):
+            whom += f" (country of registration: {au['country']})"
+        if au.get('answers'):
+            whom += f"; the application: {json.dumps(au['answers'], ensure_ascii=False)}"
+        terms = "the authority's own and the ICH terms; no marketing language; Arabic, where the document is in Arabic, in formal regulatory style"
+        if au.get('general'):
+            terms += ". The program does not hold this country's own Module 1 text: follow ICH and general practice, and say in \"notes\" what must be checked against the authority's checklist"
+    return f"""You draft one document of a CTD registration dossier for {whom}, as a regulatory affairs professional would.
 Document: {ctx['requirement']['id']} — {ctx['requirement']['title'].get('en')} / {ctx['requirement']['title'].get('ar')} (CTD {ctx['requirement']['ctd']}). Kind: {entry.get('kind')}.
 Language of the document: {'English and Arabic (give both)' if lang == 'both' else 'Arabic' if lang == 'ar' else 'English'}.
 Date: {ctx['date']}.
@@ -160,7 +221,7 @@ RULES
 - Use only facts found in the product data and the base documents below. Never invent a number, a date, a name, a batch, a limit or a result.
 - Where a required fact is not in the data or the documents, write the placeholder {GAP} in the text and list it in "gaps" (what is missing, which document would give it).
 - Tables: rows as lists of strings in the order of the columns given; an unknown cell is "{GAP}".
-- Regulatory wording: precise, formal, the EDA / ICH terms; no marketing language; Arabic in formal Egyptian regulatory style.
+- Regulatory wording: precise, formal, {terms}.
 - Cite, per section, which document the facts came from (file name) in "sources".
 
 TEMPLATE (section id [kind] title EN / AR):
@@ -353,7 +414,7 @@ def compute(st, did, slot, answers=None, use_ai=True):
     """The filled template without storing anything: (answers, how, ctx). answers given → used as they are (the page's model or the
     user's edits); None → the server's model when a key exists and use_ai, else the deterministic fill. The data's own values fill
     any section the answers left empty."""
-    entry = template(slot.req_id)
+    entry = template(slot.req_id, _req(st, did, slot.req_id))
     if not entry or entry['draft'] not in ('full', 'partial'):
         raise ValueError('this item is not drafted by the program')
     ctx = context(st, did, slot, with_texts=True)
@@ -437,7 +498,7 @@ def draft(st, did, slot, answers=None, lang=None, use_ai=True, req_item=None):
     """Build the draft and store it in the item as an unsigned Word version. answers: the model's JSON or the user's edited
     preview (the page sends it); None → the server's model when a key exists and use_ai, else the deterministic fill."""
     import tempfile, shutil
-    entry = template(slot.req_id)
+    entry = template(slot.req_id, req_item or _req(st, did, slot.req_id))
     answers, how, ctx = compute(st, did, slot, answers=answers, use_ai=use_ai)
     tmp = Path(tempfile.mkdtemp())
     try:

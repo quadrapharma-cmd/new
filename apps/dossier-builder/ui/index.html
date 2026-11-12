@@ -334,6 +334,17 @@ const T = {
   tplAiNone:{en:'No model here: the draft is filled from the product data only, the rest is marked as gaps.',ar:'مفيش موديل هنا: المسودة بتتملي من بيانات المنتج بس، والباقي يتعلّم كنواقص.'},
   drafting:{en:'Drafting from the documents…',ar:'بيصيغ من المستندات…'}, drafted:{en:'Draft added to the item',ar:'المسودة اتضافت للبند'}, gapsN:{en:'gaps',ar:'نواقص'},
   draftHow_answers:{en:'filled by claude.ai\'s model in this page',ar:'اتملت بموديل claude.ai في الصفحة'}, draftHow_server_model:{en:'filled by the model on the server',ar:'اتملت بالموديل على الخادم'}, draftHow_data:{en:'filled from the product data only',ar:'اتملت من بيانات المنتج بس'},
+  country:{en:'Country of registration',ar:'دولة التسجيل'}, countryQ:{en:'Where will this dossier be submitted?',ar:'الملف ده هيتقدّم في أنهي دولة؟'},
+  countrySub:{en:"Module 1 is built for the country's authority; Modules 2 to 5 are the common CTD, the same everywhere.",ar:'موديول ١ بيتبني على هيئة الدولة؛ والموديولات ٢–٥ هي الـ CTD المشترك زي أي مكان.'},
+  auOwn:{en:"Module 1 from the authority's published text",ar:'موديول ١ من النص المنشور للهيئة'}, auGeneral:{en:"General Module 1 — match it to the authority's checklist",ar:'موديول ١ عام — طابقه على قائمة الهيئة'},
+  auSources:{en:'Written from',ar:'مكتوب من'}, auOutCtd:{en:'Output: CTD folders',ar:'المخرجات: مجلدات CTD'}, auOutAll:{en:'Output: CTD folders · eCTD 3.2.2 · eCTD 4.0',ar:'المخرجات: مجلدات CTD · eCTD 3.2.2 · eCTD 4.0'},
+  auChange:{en:'Change',ar:'تغيير'}, auWith:{en:'Countries with their own Module 1',ar:'دول ليها موديول ١ خاص'}, auRest:{en:'Other countries — general Module 1',ar:'باقي الدول — موديول ١ عام'},
+  originX:{en:'Made in the country of registration, or imported into it?',ar:'مصنّع في دولة التسجيل ولا مستورد ليها؟'}, auQT:{en:'What this authority asks',ar:'أسئلة الهيئة دي'},
+  auCtdOnly:{en:"This authority gets the dossier as CTD folders. The program's eCTD package is written for Egypt's regional Module 1.",ar:'الهيئة دي بتاخد الملف كمجلدات CTD. حزمة الـ eCTD في البرنامج مكتوبة لموديول ١ المصري.'},
+  auStExportD:{en:'When the gate is green: the CTD folders, with a navigator and a checklist.',ar:'لما البوابة تخضرّ: مجلدات CTD مع فهرس وقائمة.'},
+  auBoardSub:{en:"Every item comes from the authority's Module 1 or the common CTD, with its reason and source.",ar:'كل بند من موديول ١ بتاع الهيئة أو الـ CTD المشترك، مع سببه ومصدره.'},
+  auCtdD:{en:"Folders in the order of the authority's Module 1 and the common CTD, with a navigator and a checklist.",ar:'مجلدات بترتيب موديول ١ بتاع الهيئة والـ CTD المشترك، مع فهرس وقائمة.'}, auExportSub:{en:'One dossier, as CTD folders.',ar:'ملف واحد بمجلدات CTD.'},
+  auT:{en:'Countries and authorities',ar:'الدول والهيئات'}, auItems:{en:'items',ar:'بند'}, auAny:{en:'any other country',ar:'أي دولة تانية'},
   step0:{en:'Documents',ar:'المستندات'}, unplacedT:{en:'Uploaded, not placed yet',ar:'ملفات مرفوعة لسه ما اتحطتش في مكانها'}, unplacedSub:{en:'Pick the item and place it; the suggestion comes from the file\'s content.',ar:'اختار البند وحطّه؛ الاقتراح من محتوى الملف.'},
   putHere:{en:'Place it',ar:'حطّه'}, renamedDup:{en:'another file with this name: kept as',ar:'ملف تاني بنفس الاسم: اتحفظ باسم'}, stagedN:{en:'kept as not placed yet',ar:'اتحفظت كملفات لسه ما اتحطتش'}, placedOne:{en:'Placed.',ar:'اتحط.'}, suggested:{en:'suggested',ar:'مقترح'}, noSuggestion:{en:'no suggestion: choose the item',ar:'مفيش اقتراح: اختار البند'}, notThisDoc:{en:'not this document',ar:'مش المستند ده'}, stText:{en:'reading the text…',ar:'بيقرأ النص…'}, stModel:{en:'the model is reading the pages…',ar:'الموديل بيقرأ الصفحات…'},
   stDone:{en:'read',ar:'اتقرا'}, gotFrom:{en:'It gave us',ar:'خدنا منه'}, gotNothing:{en:'no data came out of it',ar:'ما طلعش منه بيانات'}, moveToIts:{en:'Move it to',ar:'انقله لخانة'}, removeFile:{en:'Remove it',ar:'شيله'},
@@ -442,7 +453,8 @@ const T = {
   choose:{en:'Choose PDF',ar:'اختر ملف PDF'}, extra:{en:'This heading needs a few details for eCTD.',ar:'القسم ده محتاج بيانات إضافية لـ eCTD.'},
   acceptT:{en:'Acceptance criteria — check each before upload',ar:'معايير القبول — راجع كل نقطة قبل الرفع'}, sourcesT:{en:'Sources',ar:'المصادر'}, howT:{en:'How to get it',ar:'تجيبه إزاي'}, byT:{en:'Issued by',ar:'بيصدر من'},
   validUntil:{en:'Valid until',ar:'صالح لحد'}, saveDate:{en:'Save date',ar:'احفظ التاريخ'}, dateSaved:{en:'Date saved',ar:'التاريخ اتحفظ'},
-  prov_EG_IN_FORCE:{en:'EDA rule in force',ar:'قاعدة سارية من الهيئة'}, prov_EG_DRAFT:{en:'EDA draft',ar:'مسودة الهيئة'}, prov_EU_DERIVED:{en:'Filled from EU rules',ar:'مكمّل من قواعد أوروبية'}, prov_ICH:{en:'ICH',ar:'ICH'}, prov_ASSUMPTION:{en:'Assumption — confirm',ar:'افتراض — محتاج تأكيد'},
+  prov_EG_IN_FORCE:{en:'EDA rule in force',ar:'قاعدة سارية من الهيئة'}, prov_EG_DRAFT:{en:'EDA draft',ar:'مسودة الهيئة'}, prov_EU_DERIVED:{en:'Filled from EU rules',ar:'مكمّل من قواعد أوروبية'}, prov_ICH:{en:'ICH',ar:'ICH'}, prov_ASSUMPTION:{en:'Assumption — confirm',ar:'افتراض — محتاج تأكيد'}, prov_GCC_IN_FORCE:{en:'GCC / SFDA text in force',ar:'نص خليجي / SFDA ساري'},
+  prov_EU_IN_FORCE:{en:'EU specification in force',ar:'مواصفة أوروبية سارية'}, prov_US_IN_FORCE:{en:'FDA headings in force',ar:'عناوين FDA السارية'}, prov_GENERAL:{en:'General practice — confirm',ar:'ممارسة عامة — محتاج تأكيد'},
   replaceQ:{en:'This section already has a document. Is the new file a new version of it?',ar:'القسم ده فيه مستند بالفعل. هل الملف الجديد إصدار جديد منه؟'},
   replaceIt:{en:'Yes — new version (replaces it)',ar:'أيوه — إصدار جديد (يحل محله)'}, addAnother:{en:'No — an additional document',ar:'لا — مستند إضافي'},
   autofix:{en:'Fix automatically',ar:'إصلاح تلقائي'}, fixing:{en:'Fixing…',ar:'جاري الإصلاح…'}, fixedNew:{en:'Fixed — saved as a new version; the original is kept.',ar:'اتصلح — اتحفظ كإصدار جديد والأصل محفوظ.'},
@@ -543,14 +555,16 @@ Promise.all([api('/me'), api('/auth').catch(()=>null)]).then(([m,a])=>{ S.me=m; 
 function nav(r){
   S.navR = r;
   const id = S.dossier && S.dossier.id;
-  DNAV.forEach(([k])=>{ const a=$('#nav'+k[0].toUpperCase()+k.slice(1)); a.href = id?`#/d/${id}/${k}`:'#'; a.setAttribute('aria-disabled', id?'false':'true'); });
+  const au = S.dossier && S.dossier.authority, eg = !au || au.egypt, dnav = DNAV.filter(([k])=>eg||k!=='review');      // the review desk reads Egypt's assessor rules
+  DNAV.forEach(([k])=>{ const a=$('#nav'+k[0].toUpperCase()+k.slice(1)); a.href = id?`#/d/${id}/${k}`:'#'; a.setAttribute('aria-disabled', id?'false':'true'); a.hidden = !eg && k==='review'; });
   $$('#nav a').forEach(a=>a.classList.toggle('on', a.dataset.r===r));
+  if(S.caps) $('#verTag').textContent = `v${S.caps.version} · ${(S.dossier&&S.dossier.pack)||S.caps.pack.id}`;          // the rules in use: the open dossier's own
   const m=$('#mobnav');
   m.innerHTML = navItems().map(([k,h,_,tk])=>`<option value="${h}" ${k===r?'selected':''}>${esc(t(tk))}</option>`).join('')
-    + (id? DNAV.map(([k,_,tk])=>`<option value="#/d/${id}/${k}" ${k===r?'selected':''}>— ${esc(t(tk))}</option>`).join('') : '');
+    + (id? dnav.map(([k,_,tk])=>`<option value="#/d/${id}/${k}" ${k===r?'selected':''}>— ${esc(t(tk))}</option>`).join('') : '');
   m.onchange=()=>{ if(m.value.startsWith('#')) location.hash=m.value; else location.href=m.value; };
   const sec = DNAV.find(x=>x[0]===r);
-  $('#crumb').innerHTML = S.dossier ? `${bdi(S.dossier.name)}${sec?`<span class="sep">/</span><span class="muted">${esc(t(sec[2]))}</span>`:''}` : esc(t('appName'));
+  $('#crumb').innerHTML = S.dossier ? `${bdi(S.dossier.name)}${au&&!eg?` <span class="tag" id="crumbAu" title="${esc(L(au.name))}">${icon('globe',11)} ${esc(au.country_name?L(au.country_name):au.id)}</span>`:''}${sec?`<span class="sep">/</span><span class="muted">${esc(t(sec[2]))}</span>`:''}` : esc(t('appName'));
 }
 async function route(){
   const tok = ++S.rt;
@@ -738,11 +752,13 @@ async function home(tok){
     <div class="eyebrow">${esc(t('heroEyebrow'))}</div>
     <h1>${esc(t('heroTitle'))}</h1>
     <p class="lead">${esc(t('heroLead'))}</p>
-    <div class="badges"><span class="badge">CTD One Submission</span><span class="badge">eCTD 3.2.2</span><span class="badge">eCTD 4.0</span><span class="badge">${esc(c.pack.id)}</span><span class="badge">AR / EN</span></div>
+    <div class="badges"><span class="badge">CTD One Submission</span><span class="badge">eCTD 3.2.2</span><span class="badge">eCTD 4.0</span><span class="badge">${esc(c.pack.id)}</span>${(c.authorities||[]).length>1?`<span class="badge" id="badgeAu">${icon('globe',12)} ${esc(t('auT'))}: ${(c.authorities||[]).length}</span>`:''}<span class="badge">AR / EN</span></div>
     <div class="cta"><a class="btn pri lg" href="#/new" id="btnNew">${icon('plus')} ${esc(t('newDossier'))}</a><a class="btn lg" href="#/dossiers">${icon('layers')} ${esc(t('openDossiers'))}${list.length?` <span class="tag">${list.length}</span>`:''}</a>${drafts.length?`<a class="btn lg" href="#/dossiers" id="homeDrafts" data-one="${drafts.length===1?esc(drafts[0].id):''}">${icon('pen')} ${esc(L({ar:'كمّل مسودة',en:'Continue a draft'}))} <span class="tag">${drafts.length}</span></a>`:''}<a class="btn lg" href="#/variations">${icon('branch')} ${esc(t('navVars'))}</a></div>
   </section>
   <section class="card"><div class="hd"><h2>${esc(t('flowT'))}</h2></div><div class="flow pad" style="padding-block:6px 10px">
     ${[1,2,3,4,5,6].map(i=>`<div class="st"><span class="k">${i}</span><b>${esc(t('f'+i))}</b><span>${esc(t('f'+i+'d'))}</span></div>`).join('')}</div></section>
+  ${(c.authorities||[]).length>1?`<section class="card" id="homeAu"><div class="hd"><span class="ic-tile accent">${icon('globe',16)}</span><h2>${esc(t('auT'))}</h2></div><div class="pad stack gap-s"><p class="small muted">${esc(t('countrySub'))}</p>
+    <div class="grid2">${c.authorities.map(a=>`<div class="row gap-s" style="align-items:flex-start"><span class="chip ${a.verified?'c-ok':'c-wait'}"><i></i>${esc(a.countries.includes('*')?t('auAny'):a.id)}</span><span class="small"><b>${esc(L(a.name))}</b><br><span class="muted">${esc(t('module'))} 1: ${a.requirements.by_module['1']||0} ${esc(t('auItems'))} · ${esc(t(a.outputs.length>1?'auOutAll':'auOutCtd'))}</span></span></div>`).join('')}</div></div></section>`:''}
   <section class="stack gap-s"><div class="head"><div class="title"><h2>${esc(t('capsT'))}</h2><p class="sub small">${esc(t('capsSub'))}</p></div></div>
    <div class="caps">
     ${C('cpu','',c.requirements.total,t('u_req'),'cap1','cap1d',`NP.CAPP.065 v5 · ${byMod}`)}
@@ -770,7 +786,7 @@ async function home(tok){
 function dossierTable(list){
   return `<div class="tablewrap"><table><thead><tr><th>${esc(t('name'))}</th><th class="hide-m">${esc(t('type'))}</th><th>${esc(t('readiness'))}</th><th class="hide-m">${esc(t('created'))}</th><th></th></tr></thead><tbody>
    ${list.map(d=>`<tr><td><a href="#/d/${d.id}/guide"><b>${bdi(d.name)}</b></a>${d.product&&d.product.name&&d.product.name!==d.name?`<div class="small muted">${bdi(d.product.name)}${d.product.dosageform?` · ${bdi(d.product.dosageform)}`:''}</div>`:''}</td>
-     <td class="hide-m"><div class="row gap-s">${profileChips(d.profile||{})}</div></td>
+     <td class="hide-m"><div class="row gap-s">${d.authority&&d.authority.id!=='EG-EDA'?`<span class="tag" data-au="${esc(d.authority.id)}" title="${esc(L(d.authority.name))}">${icon('globe',11)} ${esc(d.authority.country||d.authority.id)}</span>`:''}${profileChips(d.profile||{})}</div></td>
      <td><div class="row" data-ready="${d.id}" style="min-width:160px"><div class="meter"><i style="width:0"></i></div><span class="small code muted">…</span></div></td>
      <td class="hide-m code small">${tsL(d.created)}</td>
      <td class="end"><div class="row gap-s" style="justify-content:flex-end"><a class="btn sm" href="#/d/${d.id}/guide">${esc(t('open'))}</a><button class="btn sm ghost" data-deld="${d.id}" title="${esc(L({ar:'احذف المشروع',en:'Delete the project'}))}" aria-label="${esc(L({ar:'احذف المشروع',en:'Delete the project'}))}">${icon('trash',14)}</button></div></td></tr>`).join('')}</tbody></table></div>`;
@@ -820,28 +836,54 @@ const SPECIFICS=['coated','capsule_hard','pellets','premix','powder_inj_with_sol
 /* the model or a reading may hand back «[]», «['coated']» or «coated, sterile»: keep only known values, as a list */
 function normSpecs(v){ if(Array.isArray(v)) return v.map(x=>String(x).replace(/[\[\]'"\s]/g,'')).filter(x=>SPECIFICS.includes(x)); if(typeof v!=='string') return [];
   return v.replace(/[\[\]'"]/g,' ').split(/[,\s]+/).map(x=>x.trim()).filter(x=>SPECIFICS.includes(x)); }
-function profileOf(d){ return {dossier_kind:d.dossier_kind,origin:d.origin,licence:d.licence,activity:d.activity,route:'one_submission',leaflet:d.leaflet,admin_route:d.admin_route,
+/* ---------------- the country: a dossier is built for one authority — its Module 1 on the common CTD (Modules 2 to 5) */
+async function loadAu(){ if(!S.au){ try{ S.au=await api('/authorities'); }catch(e){ S.au={authorities:[],countries:[],default:null}; } } return S.au; }
+const AUS = () => (S.au&&S.au.authorities)||[];
+const isEG = () => !S.dossier || !S.dossier.authority || S.dossier.authority.egypt;
+function auOf(code){ const A=AUS(); return A.find(a=>a.countries.includes(code)) || A.find(a=>a.countries.includes('*')) || null; }
+const countryName = code => { const c=((S.au&&S.au.countries)||[]).find(x=>x.code===code); return c?L({ar:c.ar,en:c.en}):(code||''); };
+/* the answers to the authority's own questions: what was chosen, else what the country itself says (the receiving Gulf authority), else the default */
+function auExtra(d, a){ a=a||auOf(d.country||'EG'); const out={}, have=d.extra||{}, typed=d.extraTyped||{}; if(!a) return have;
+  for(const q of a.questions||[]){ const ids=(q.options||[]).map(o=>o.id); let v=have[q.id]; if(q.from_country&&ids.includes(d.country)&&!typed[q.id]) v=d.country; out[q.id]=ids.includes(v)?v:q.default; } return out; }
+function auQuestions(d, a){ const ex=auExtra(d, a); return (a&&a.questions||[]).map(q=>`<label class="f"><span>${esc(L(q.title))}</span><select data-auq="${esc(q.id)}">${q.options.map(o=>`<option value="${esc(o.id)}" ${ex[q.id]===o.id?'selected':''}>${esc(L(o))}</option>`).join('')}</select></label>`).join(''); }
+function countryCard(w){ const d=w.d, code=d.country||'EG', a=auOf(code), all=(S.au&&S.au.countries)||[];
+  if(!a) return `<div class="skeleton" style="height:96px;margin-bottom:10px"></div>`;
+  const own=new Set(AUS().filter(x=>!x.countries.includes('*')).flatMap(x=>x.countries)), nm=c=>L({ar:c.ar,en:c.en}), byName=(x,y)=>nm(x).localeCompare(nm(y), S.lang);
+  const first=all.filter(c=>own.has(c.code)).sort((x,y)=>(x.code==='EG'?-1:y.code==='EG'?1:0)||byName(x,y)), rest=all.filter(c=>!own.has(c.code)).sort(byName);
+  const opt=c=>`<option value="${c.code}" ${c.code===code?'selected':''}>${esc(nm(c))}</option>`;
+  const src=(a.sources||[]).map(s=>`${s.code}${s.version?` v${s.version}`:''}${s.date?` (${s.date})`:''}`).join(' · ');
+  return `<div class="card glow pad stack gap-s" id="auCard" style="margin-bottom:10px"><div class="row gap-s"><span class="ic-tile accent">${icon('globe')}</span><div class="grow"><b>${esc(t('countryQ'))}</b><div class="small muted">${esc(t('countrySub'))}</div></div></div>
+    <label class="f"><span>${esc(t('country'))}</span><select id="auCountry"><optgroup label="${esc(t('auWith'))}">${first.map(opt).join('')}</optgroup><optgroup label="${esc(t('auRest'))}">${rest.map(opt).join('')}</optgroup></select></label>
+    <div class="row gap-s wrap"><b id="auName">${esc(L(a.name))}</b><span class="chip ${a.verified?'c-ok':'c-wait'}"><i></i>${esc(t(a.verified?'auOwn':'auGeneral'))}</span><span class="tag">${esc(t(a.egypt?'auOutAll':'auOutCtd'))}</span></div>
+    ${src?`<div class="small muted"><b>${esc(t('auSources'))}:</b> <span dir="auto">${esc(src)}</span></div>`:''}
+    ${a.note?`<div class="alert ${a.verified?'info':''}">${icon('info')}<p class="small">${esc(L(a.note))}</p></div>`:''}</div>`; }
+function countryLine(w){ const a=auOf(w.d.country||'EG'); if(!a) return '';
+  return `<div class="row gap-s small" id="auLine" style="margin-bottom:8px"><span class="tag">${icon('globe',12)} ${esc(countryName(w.d.country||'EG'))}</span><span class="muted">${esc(L(a.name))}</span><button class="btn sm ghost" id="auGo">${esc(t('auChange'))}</button></div>`; }
+function profileOf(d, a){ return {extra:auExtra(d, a), dossier_kind:d.dossier_kind,origin:d.origin,licence:d.licence,activity:d.activity,route:'one_submission',leaflet:d.leaflet,admin_route:d.admin_route,
   local_action:!!d.local_action,aqueous_solution:!!d.aqueous_solution,bcs_waiver:!!d.bcs_waiver,dosage_specifics:normSpecs(d.dosage_specifics),pharmacopoeial:!!d.pharmacopoeial,
   store_separate_from_factory:!!d.store_separate_from_factory,biological_origin_materials:!!d.biological_origin_materials,novel_excipient:!!d.novel_excipient,
   apis:(d.apis||[]).filter(a=>a.name&&a.manufacturer).map(a=>({name:a.name,manufacturer:a.manufacturer,option:a.option||'FULL'}))}; }
-function profileControls(d){
+function profileControls(d, a){
+  const eg = !a || a.egypt;
   const radio=(k,opts)=>`<div class="seg" role="radiogroup">${opts.map(o=>`<button type="button" data-k="${k}" data-v="${o}" class="${d[k]===o?'on':''}" aria-pressed="${d[k]===o}">${esc(t(o))}</button>`).join('')}</div>`;
   const flag=(k,l)=>`<label><input type="checkbox" data-flag="${k}" ${d[k]?'checked':''}>${esc(t(l))}</label>`;
   return `<div class="stack">
     <div class="form"><label class="f"><span>${esc(t('kind'))}</span>${radio('dossier_kind',['generic','innovator'])}</label>
-    <label class="f"><span>${esc(t('origin'))}</span>${radio('origin',['local','imported'])}</label></div>
-    <label class="f"><span>${esc(t('licence'))}</span>${radio('licence', d.origin==='local'?['own','toll','f_toll','under_licence']:['imported','imported_bulk'])}</label>
+    <label class="f"><span>${esc(t(eg?'origin':'originX'))}</span>${radio('origin',['local','imported'])}</label></div>
+    ${eg?`<label class="f"><span>${esc(t('licence'))}</span>${radio('licence', d.origin==='local'?['own','toll','f_toll','under_licence']:['imported','imported_bulk'])}</label>
     <div class="form"><label class="f"><span>${esc(t('activity'))}</span>${radio('activity',['new','re_registration'])}</label>
-    <label class="f"><span>${esc(t('leaflet'))}</span>${radio('leaflet',['english','non_english'])}</label></div>
+    <label class="f"><span>${esc(t('leaflet'))}</span>${radio('leaflet',['english','non_english'])}</label></div>`
+    :((a.questions||[]).length?`<div class="form" id="auQs">${auQuestions(d, a)}</div>`:'')}
     <label class="f"><span>${esc(t('adminRoute'))}</span>${radio('admin_route',['oral','topical','parenteral','ophthalmic','inhalation','other'])}</label>
     <div class="checks">${flag('local_action','localAction')}${flag('aqueous_solution','aqueousSol')}${flag('bcs_waiver','bcsWaiver')}</div>
     <div class="f"><span>${esc(t('specifics'))}</span><div class="checks">${['coated','capsule_hard','pellets','premix','powder_inj_with_solvent','sterile'].map(s=>`<label><input type="checkbox" data-spec="${s}" ${(d.dosage_specifics||[]).includes(s)?'checked':''}>${esc(t(s))}</label>`).join('')}</div></div>
-    <div class="f"><span>${esc(t('flagsT'))}</span><div class="checks">${flag('pharmacopoeial','pharmacopoeial')}${flag('store_separate_from_factory','store_separate')}${flag('biological_origin_materials','bioorigin')}${flag('novel_excipient','novelexc')}</div></div></div>`;
+    <div class="f"><span>${esc(t('flagsT'))}</span><div class="checks">${flag('pharmacopoeial','pharmacopoeial')}${eg?flag('store_separate_from_factory','store_separate'):''}${flag('biological_origin_materials','bioorigin')}${flag('novel_excipient','novelexc')}</div></div></div>`;
 }
 function bindProfileControls(root, d, rerender, onSet){ const mark=(...ks)=>{ if(onSet) ks.forEach(onSet); };
   root.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{ d[b.dataset.k]=b.dataset.v; mark(b.dataset.k); if(b.dataset.k==='origin'){ d.licence = d.origin==='local'?'own':'imported'; mark('licence'); } rerender(); });
   root.querySelectorAll('[data-spec]').forEach(c=>c.onchange=()=>{ d.dosage_specifics = c.checked? [...(d.dosage_specifics||[]),c.dataset.spec] : (d.dosage_specifics||[]).filter(x=>x!==c.dataset.spec); mark('dosage_specifics'); rerender(); });
   root.querySelectorAll('[data-flag]').forEach(c=>c.onchange=()=>{ d[c.dataset.flag]=c.checked; mark(c.dataset.flag); rerender(); });
+  root.querySelectorAll('[data-auq]').forEach(s=>s.onchange=()=>{ d.extra=Object.assign({}, d.extra||{}, {[s.dataset.auq]:s.value}); (d.extraTyped=d.extraTyped||{})[s.dataset.auq]=1; mark('extra'); rerender(); });
 }
 
 /* ---------------- documents first: the base documents the program reads before anyone types */
@@ -852,11 +894,11 @@ const BASE_DOCS=[
   {kind:'api_coa', ar:'شهادة تحليل المادة الفعالة (CoA)', en:'API certificate of analysis', gives:{ar:'اسم المادة، المصنّع، الدفعة، الاختبارات والحدود والنتائج', en:'substance, manufacturer, batch, tests, limits, results'}, kinds:['coa']},
   {kind:'gmp_certificate', ar:'شهادة GMP للمصنع / لمصنّع المادة', en:'GMP certificate(s)', gives:{ar:'اسم المصنّع وعنوانه وخطوط الإنتاج والصلاحية', en:'manufacturer name, address, lines, validity'}, kinds:['gmp','factory']},
   {kind:'dmf_cep', ar:'CEP / DMF / خطاب السماح', en:'CEP / DMF / letter of access', gives:{ar:'طريقة تقديم المادة الفعالة، رقم الـ CEP، صاحبه', en:'API option, CEP number, holder'}, kinds:['cep','loa']},
-  {kind:'analysis_conformity', ar:'شهادة التحليل / المطابقة للمنتج (CADC)', en:'Product analysis / conformity certificate', gives:{ar:'التشغيلات، النتائج، تاريخ الصلاحية', en:'batches, results, expiry'}, kinds:['cadc']},
+  {kind:'analysis_conformity', eg:true, ar:'شهادة التحليل / المطابقة للمنتج (CADC)', en:'Product analysis / conformity certificate', gives:{ar:'التشغيلات، النتائج، تاريخ الصلاحية', en:'batches, results, expiry'}, kinds:['cadc']},
   {kind:'specification', ar:'المواصفات وشهادة التركيب', en:'Specifications / composition certificate', gives:{ar:'جداول المواصفات، التركيبة', en:'specification tables, unit formula'}, kinds:['spec','composition']},
   {kind:'stability_data', ar:'دراسة / بيانات الثبات', en:'Stability study / data', gives:{ar:'الظروف، مدة الصلاحية، العبوة', en:'conditions, shelf life, container'}, kinds:['stability','bmr']},
   {kind:'manufacturing_contract', ar:'عقد التصنيع / بطاقة الـ toll / التوكيل', en:'Manufacturing agreement / toll card / attorney', gives:{ar:'نوع الترخيص (toll / تحت الترخيص)، الأطراف', en:'licence type (toll / under licence), parties'}, kinds:['contract','poa']},
-  {kind:'commercial_register', ar:'السجل التجاري', en:'Commercial register', gives:{ar:'اسم مقدم الطلب القانوني وعنوانه', en:'applicant legal name and address'}, kinds:['commercial']},
+  {kind:'commercial_register', eg:true, ar:'السجل التجاري', en:'Commercial register', gives:{ar:'اسم مقدم الطلب القانوني وعنوانه', en:'applicant legal name and address'}, kinds:['commercial']},
   {kind:'other', ar:'مستندات أخرى', en:'Other documents', gives:{ar:'أي مستند تاني هيتقرأ ويتصنّف ويتحط في مكانه', en:'anything else: read, classified and placed'}, kinds:[]}];
 const docCard = k => BASE_DOCS.find(c=>c.kind===k) || BASE_DOCS[BASE_DOCS.length-1];
 function docsOfFile(w, name){ const f=(w.intakeFill&&w.intakeFill.documents||[]).find(d=>d.filename===name); const k=f&&f.kind; const card=BASE_DOCS.find(c=>c.kinds.includes(k)); return card?card.kind:'other'; }
@@ -1017,11 +1059,12 @@ function liveSummary(w){
   if(!items.length) return '';
   return `<div class="card pad" id="wizLive" style="margin-top:10px"><b>${esc(t('liveT'))}</b><div class="row gap-s" style="flex-wrap:wrap;margin-top:6px">${items.join('')}</div>${wizMissing(w).length?`<div class="small muted" style="margin-top:6px">${esc(t('youWrite'))}: ${wizMissing(w).map(esc).join('، ')}</div>`:''}</div>`;
 }
-function docsStep(w){
+function docsStep(w, au){
   w.docs=w.docs||{}; w.prog=w.prog||{};
+  const eg=!au||au.egypt;
   const names=[...new Set([...(w.allFiles||[]).map(f=>f.name), ...Object.keys(w.texts||{}), ...Object.keys(w.sizes||{})])].filter(n=>(w.docs[n]||{}).status!=='removed');   // w.sizes: the files a continued draft holds, read or not
   const byCard={}; for(const n of names){ const st=w.docs[n]||{}; const k=st.kind||'other'; (byCard[k]=byCard[k]||[]).push(n); }
-  const cards=BASE_DOCS.map(c=>{ const mine=byCard[c.kind]||[]; const ok=mine.some(n=>(w.docs[n]||{}).status==='ok'); const bad=mine.some(n=>(w.docs[n]||{}).status==='mismatch');
+  const cards=BASE_DOCS.filter(c=>eg||!c.eg||(byCard[c.kind]||[]).length).map(c=>{ const mine=byCard[c.kind]||[]; const ok=mine.some(n=>(w.docs[n]||{}).status==='ok'); const bad=mine.some(n=>(w.docs[n]||{}).status==='mismatch');
     return `<div class="card pad doccard ${ok?'ok':''} ${bad?'bad':''}"><div class="row gap-s"><b>${esc(L({ar:c.ar,en:c.en}))}</b>${ok?`<span class="chip c-ok"><i></i>✓</span>`:''}</div><div class="small muted">${esc(L(c.gives))}</div>${mine.map(n=>docLine(w, n)).join('')}
       <div class="row gap-s" style="margin-top:6px"><button class="btn sm ${ok?'':'pri'}" data-updoc="${c.kind}">${icon('upload',14)} ${esc(ok?t('addMore'):t('upload'))}</button><button class="btn sm ghost" data-drvdoc="${c.kind}">${icon('link',14)} Drive</button></div></div>`; }).join('');
   return `<div class="alert info">${icon('info')}<p class="small">${esc(t('docsFirst'))}</p></div><div class="doccards">${cards}</div>
@@ -1114,11 +1157,15 @@ function wizard(){
   const txt=(k,lab,ph='',extra='')=>`<label class="f"><span>${esc(t(lab))}${wizMark(w,k)}</span><input type="text" dir="auto" data-in="${k}" value="${esc(d[k])}" placeholder="${esc(ph)}" ${extra}></label>`;
   const prevPv = $('#pvBody') ? $('#pvBody').innerHTML : `<div class="skeleton" style="height:60px"></div>`;   // keep the last preview while the next one loads
   let body='';
+  if(!d.country) d.country='EG';
+  if(!S.au) loadAu().then(()=>wizShow());
+  const au=auOf(d.country);
   if(!S.vocab) vocab().then(()=>{ if(S.wiz&&S.wiz.step===1) wizShow(); });
   const formField=S.vocab?`<label class="f"><span>${esc(t('pForm'))}${wizMark(w,'form')}</span>${smartSel('data-in="form" data-wiz="form"', VOC().forms, d.form_std||d.form, {key:'id', otherAttrs:'data-in-other="form"'})}</label>`:txt('form','pForm');
-  if(w.step===0) body=docsStep(w);
+  if(w.step===0) body=countryCard(w)+docsStep(w, au);
   if(w.step===1) body=`${readBanner(w)}<div class="form">${txt('name','pName','Examplol 500 mg FCT')}${txt('trade','pTrade')}${formField}${txt('man','pMan','', 'list="dl-man"')}${txt('ind','pInd','pain-and-fever')}</div>${datalists()}`;
-  if(w.step===2) body=`${readBanner(w)}${profileControls(d)}`;
+  if(w.step===2) body=`${readBanner(w)}${profileControls(d, au)}`;
+  if(w.step>0) body=countryLine(w)+body;
   if(w.step===3) body=`<div class="stack">${readBanner(w)}<p class="small muted">${esc(t('apiHint'))}</p>${d.apis.map((a,i)=>`<div class="form card flat pad">
      <label class="f"><span>${esc(t('apiName'))}</span><input type="text" dir="auto" data-api="${i}" data-f="name" value="${esc(a.name)}"></label>
      <label class="f"><span>${esc(t('apiMan'))}</span><input type="text" dir="auto" data-api="${i}" data-f="manufacturer" value="${esc(a.manufacturer)}"></label>
@@ -1139,6 +1186,8 @@ function wizard(){
   const typed=w.typed=w.typed||{}; bindProfileControls(v, d, ()=>{ wizard(); wizSave(); }, k=>{ typed[k]=1; });
   v.addEventListener('input', ()=>wizSave()); v.addEventListener('change', ()=>wizSave());
   wireDocLines(v);
+  const cs=$('#auCountry'); if(cs) cs.onchange=()=>{ d.country=cs.value; typed.country=1; d.extraTyped={}; d.extra=auExtra(d); wizard(); wizSave(); };
+  const ag=$('#auGo'); if(ag) ag.onclick=()=>{ w.step=0; wizard(); };
   DS.twoStep($('#wizRestart'), L({ar:'متأكد؟ المسودة دي هتتمسح',en:'Sure? This draft is deleted'}), ()=>{ wizReset(); wizard(); });
   v.querySelectorAll('[data-in]').forEach(i=>i.oninput=()=>{ typed[i.dataset.in]=1; if(i.dataset.wiz==='form') typed.admin_route=1; if(i.dataset.smart){ const val=smartVal(i); if(i.dataset.wiz==='form'){ d.form=i.value==='__other__'?val:formText(val); d.form_std=i.value==='__other__'?'':i.value; const f=VOC().forms.find(x=>x.id===i.value); if(f) d.admin_route=f.route; } else d[i.dataset.in]=val; } else d[i.dataset.in]=i.value; });
   v.querySelectorAll('[data-in-other]').forEach(i=>i.oninput=()=>{ typed[i.dataset.inOther]=1; d[i.dataset.inOther]=i.value; if(i.dataset.inOther==='form') d.form_std=''; });
@@ -1160,7 +1209,7 @@ function wizard(){
   if($('#wizNext')) $('#wizNext').onclick=()=>{ w.step++; wizard(); wizSave(true); };
   if($('#wizCreate')) $('#wizCreate').onclick=async()=>{
     try{
-      const r = await api('/dossiers',{method:'POST',json:{name:d.name||d.trade||'Dossier',profile:profileOf(d),
+      const r = await api('/dossiers',{method:'POST',json:{name:d.name||d.trade||'Dossier',country:d.country||'EG',profile:profileOf(d),
         product:{name:d.trade||d.name,dosageform:d.form,manufacturer:d.man,indication:d.ind||null},
         envelope:{tracking:d.tracking,applicant:d.applicant,invented_name:d.trade||d.name,inn:d.inn.split(',').map(s=>s.trim()).filter(Boolean),portal_id:d.portal,description:'Initial MAA'}}});
       const w0=S.wiz; w0.created=r.id; await wizWrite(w0);          // the draft remembers its dossier: a refresh during the placement finishes it (wizResume)
@@ -1212,7 +1261,7 @@ function previewReq(now){
   pvTimer = setTimeout(async()=>{
     const w=S.wiz; if(!w || !$('#pvBody')) return;
     const my=++pvSeq; const prof=profileOf(w.d);
-    try{ const p = await api('/profile/preview',{method:'POST',json:prof}); if(my!==pvSeq || !$('#pvBody')) return; renderPreview(p, prof, w.step===4); }
+    try{ const p = await api('/profile/preview?country='+encodeURIComponent(w.d.country||'EG'),{method:'POST',json:prof}); if(my!==pvSeq || !$('#pvBody')) return; renderPreview(p, prof, w.step===4); }
     catch(e){ if(my!==pvSeq || !$('#pvBody')) return;
       const probs = e.detail && e.detail.problems;
       $('#pvBody').innerHTML = `<div class="alert bad">${icon('alert')}<p><b>${esc(t('pvBad'))}</b><br>${probs?probs.map(x=>esc(x[S.lang])).join('<br>'):esc(e.message)}</p></div>`; }
@@ -1227,11 +1276,13 @@ function renderPreview(p, prof, full){
      return `<details ${full?'open':''}><summary>${esc(t('module'))} ${m} <span class="tag">${rows.length}</span></summary>
        ${rows.map(s=>`<div class="r"><span class="code">${esc(s.ctd)}</span><span>${esc(L(s.title))}${s.item?` <span class="api">· ${bdi(s.item.manufacturer)}</span>`:''}</span>
          <span class="row gap-s nowrap">${gens.has(s.slot_id)?`<span class="tag brand" title="${esc(t('generable'))}">✦</span>`:''}${third.has(s.slot_id)?`<span class="tag" title="${esc(t('thirdParty'))}">${icon('lock',11)}</span>`:''}<span class="chip ${s.level==='R'?'c-rec':'c-na'}">${esc(t(LEVEL[s.level]))}</span></span></div>`).join('')}</details>`; }).join('')}</div>`;
+  const pa=p.authority||{};
   $('#pvBody').innerHTML = `<div class="stack">
+    ${pa.name?`<div class="small" id="pvAu"><b>${esc(L(pa.name))}</b>${pa.country_name&&!pa.egypt?` · ${esc(L(pa.country_name))}`:''}${pa.verified===false?`<div class="muted">${esc(t('auGeneral'))}</div>`:''}</div>`:''}
     <div><div class="n">${p.counts.R}</div><div class="muted">${esc(t('pvNeed'))}${p.counts.O?` · <b>${p.counts.O}</b> ${esc(t('pvOpt'))}`:''}</div></div>
     <div class="statline"><span>✦ <b>${p.generable.length}</b> ${esc(t('pvGen'))}</span><span>${icon('lock',12)} <b>${p.third_party.length}</b> ${esc(t('pvThird'))}</span></div>
     <div class="mods">${mods.map(([m,x])=>`<div class="mod"><span class="code">M${m}</span>${meter(100*(x.R+x.O)/maxR)}<span class="code">${x.R}${x.O?`+${x.O}`:''}</span></div>`).join('')}</div>
-    <div class="small muted">${esc(t('pvCol'))}: <span class="code">${esc(p.column)}</span>${p.column_assumed?`<div class="alert" style="margin-top:8px"><p class="small">${esc(t('pvAssumed'))}</p></div>`:''}</div>
+    <div class="small muted">${pa.egypt===false?`${esc(L(pa.matrix||{}))}: <b>${esc(L((pa.columns||{})[p.column]||{})||p.column)}</b>`:`${esc(t('pvCol'))}: <span class="code">${esc(p.column)}</span>`}${p.column_assumed?`<div class="alert" style="margin-top:8px"><p class="small">${esc(t('pvAssumed'))}</p></div>`:''}</div>
     ${!prof.apis.length?`<div class="alert info">${icon('info')}<p class="small">${esc(t('pvApis'))}</p></div>`:''}
     ${full?`<div class="divider"></div><div class="row"><h3>${esc(t('pvFull'))}</h3><button class="btn sm ghost right" onclick="window.print()">${icon('file',14)} ${esc(t('printList'))}</button></div>${listHtml}`
           :`<details><summary class="btn sm ghost" style="display:inline-flex">${esc(t('pvShow'))}</summary>${listHtml}</details>`}</div>`;
@@ -1780,7 +1831,7 @@ async function guideView(tok){
     checks: s => `<div class="jt"><h3>${esc(t(names.checks))}</h3><span class="row gap-s">${s.nonconf.length?`<span class="chip c-bad"><i></i>${s.nonconf.length} ${esc(t('k_block'))}</span>`:''}${s.attn.length?`<span class="chip c-warn"><i></i>${s.attn.length} ${esc(t('k_warn'))}</span>`:''}${s.xb.length?`<span class="chip c-bad"><i></i>${s.xb.length} ${esc(t('k_cross'))}</span>`:''}${s.waiting.length?`<span class="chip c-wait"><i></i>${s.waiting.length} ${esc(t('k_wait'))}</span>`:''}${s.unsigned.length?`<span class="chip c-warn"><i></i>${s.unsigned.length} ${esc(t('k_unsigned'))}</span>`:''}${s.external.length?`<span class="chip c-rec"><i></i>${s.external.length} ${esc(t('k_ext'))}</span>`:''}${s.state==='done'?`<span class="chip c-ok"><i></i>${esc(t('noFind'))}</span>`:''}</span></div>
       <div class="jd">${esc(t('stChecksD'))}</div><div><a class="btn sm ${s.state==='bad'?'pri':''}" href="#/d/${id}/checks">${icon('shield',14)} ${esc(t('navChecks'))}</a></div>`,
     export: s => `<div class="jt"><h3>${esc(t(names.export))}</h3>${s.gateOk?`<span class="chip c-ok"><i></i>${esc(t('gateGreen'))}</span>`:`<span class="chip c-bad"><i></i>${esc(t('gateRed'))}</span>`}${s.nExp?`<span class="tag">${s.nExp} ${esc(t('exported'))}</span>`:''}</div>
-      <div class="jd">${esc(t('stExportD'))}</div><div><a class="btn sm ${s.gateOk?'pri':''}" href="#/d/${id}/export">${icon('package',14)} ${esc(t('navExport'))}</a></div>`,
+      <div class="jd">${esc(t(isEG()?'stExportD':'auStExportD'))}</div><div><a class="btn sm ${s.gateOk?'pri':''}" href="#/d/${id}/export">${icon('package',14)} ${esc(t('navExport'))}</a></div>`,
   };
   const html = `${stripHtml(J)}
    <div class="head"><div class="row gap-l"><div class="ring lg" style="--v:${overall}"><b>${overall}%</b></div><div class="title"><div class="eyebrow">${esc(t('guide'))}</div><h1>${bdi(S.dossier.name)}</h1>
@@ -1791,8 +1842,8 @@ async function guideView(tok){
     <section class="card pad"><div class="journey">${J.stages.map((s,i)=>stage(s,i,bodies[s.key](s))).join('')}</div></section>
     <aside class="stack">
       <section class="card"><div class="hd"><h3>${esc(t('outputsT'))}</h3></div><div class="pad stack gap-s">
-        ${[['CTD One Submission','outCtdD','NP.CAPP.065 v5'],['eCTD 3.2.2','outE3D','EG provisional v0'],['eCTD 4.0','outE4D','EG provisional v0 · ICH IG 1.7']].map(([n,d,src])=>`<div class="outcard"><span class="ic-tile">${icon('package',16)}</span><div><b>${esc(n)}</b><div class="small muted">${esc(t(d))}</div><div class="code muted" style="margin-top:3px">${esc(src)}</div></div></div>`).join('')}</div></section>
-      <section class="card"><div class="hd"><h3>${esc(t('history'))}</h3></div>${hist.ectd32.length||hist.ectd40.length?`<div class="tablewrap"><table><thead><tr><th>eCTD</th><th>${esc(t('seqDone'))}</th><th>${esc(t('subType'))}</th><th>${esc(t('when'))}</th></tr></thead><tbody>
+        ${(isEG()?[['CTD One Submission','outCtdD','NP.CAPP.065 v5'],['eCTD 3.2.2','outE3D','EG provisional v0'],['eCTD 4.0','outE4D','EG provisional v0 · ICH IG 1.7']]:[['CTD','auCtdD',L((S.dossier.authority||{}).matrix||{})]]).map(([n,d,src])=>`<div class="outcard"><span class="ic-tile">${icon('package',16)}</span><div><b>${esc(n)}</b><div class="small muted">${esc(t(d))}</div><div class="code muted" style="margin-top:3px">${esc(src)}</div></div></div>`).join('')}</div></section>
+      <section class="card" ${isEG()?'':'hidden'}><div class="hd"><h3>${esc(t('history'))}</h3></div>${hist.ectd32.length||hist.ectd40.length?`<div class="tablewrap"><table><thead><tr><th>eCTD</th><th>${esc(t('seqDone'))}</th><th>${esc(t('subType'))}</th><th>${esc(t('when'))}</th></tr></thead><tbody>
         ${[['3.2.2',hist.ectd32],['4.0',hist.ectd40]].flatMap(([k,a])=>a.map(h=>`<tr><td>${k}</td><td class="code">${esc(h.seq)}</td><td class="code">${esc(h.envelope.type||'')}</td><td class="small">${tsL(h.created)}</td></tr>`)).join('')}</tbody></table></div>`:`<div class="empty small">${esc(t('none'))}</div>`}</section>
     </aside></div>`;
   if(!show(tok, html)) return;
@@ -1801,9 +1852,10 @@ async function guideView(tok){
 }
 function profileEditor(){
   const d = JSON.parse(JSON.stringify(S.dossier.profile));
-  const render = () => { $('#dBody').innerHTML = `${profileControls(d)}<div id="peErr"></div><div class="row"><button class="btn pri" id="peSave">${icon('check')} ${esc(t('save'))}</button></div>`;
+  const au = S.dossier.authority;
+  const render = () => { $('#dBody').innerHTML = `${profileControls(d, au)}<div id="peErr"></div><div class="row"><button class="btn pri" id="peSave">${icon('check')} ${esc(t('save'))}</button></div>`;
     bindProfileControls($('#dBody'), d, render);
-    $('#peSave').onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/profile`,{method:'PUT',json:profileOf(Object.assign({}, d, {apis:d.apis}))}); S.dossier=await api(`/dossiers/${S.dossier.id}`); closeDrawer(); toast(t('profileSaved')); route(); }
+    $('#peSave').onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/profile`,{method:'PUT',json:profileOf(Object.assign({}, d, {apis:d.apis, extraTyped:Object.fromEntries(Object.keys(d.extra||{}).map(k=>[k,1]))}), au)}); S.dossier=await api(`/dossiers/${S.dossier.id}`); closeDrawer(); toast(t('profileSaved')); route(); }
       catch(e){ const probs=e.detail&&e.detail.problems; $('#peErr').innerHTML=`<div class="alert bad">${icon('alert')}<p>${probs?probs.map(x=>esc(x[S.lang])).join('<br>'):esc(e.message)}</p></div>`; } }; };
   openDrawer(t('editProfile'), '', true); render();
 }
@@ -1837,7 +1889,7 @@ function renderBoard(){
       ${draftable(s)&&!genFor(s)?`<button class="btn sm pri" data-draft="${esc(s.slot_id)}" title="${esc(t('draftBtnLong'))}">${icon('sparkles',14)} ${esc(t('draftBtn'))}</button>`:''}
       <button class="btn sm ghost" data-tpl="${esc(s.slot_id)}">${icon('file',14)} ${esc(t('tplBtn'))}</button><button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></td></tr>`;
   });
-  $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('board'))}</h1><p class="sub">${esc(t('boardSub'))}</p></div>
+  $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('board'))}</h1><p class="sub">${esc(t(isEG()?'boardSub':'auBoardSub'))}</p></div>
     <div class="row"><button class="btn" id="bulkBtn">${icon('upload')} ${esc(t('bulk'))}</button><button class="btn" id="bulkDrive">${icon('link')} ${esc(t('driveT'))}</button><span class="modeswitch"><a class="on" href="#/d/${id}/board">${esc(t('guided'))}</a><a href="#/d/${id}/publisher">${esc(t('navPublisher'))}</a></span>
     <a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a><a class="btn pri" href="#/d/${id}/export">${esc(t('navExport'))} <span class="flip">${icon('arrow',16)}</span></a></div></div>
     <div class="kpis">
@@ -1940,7 +1992,7 @@ function pick(slotId, meta, replaces, from){
 function openWhy(slotId, focusTemplate){
   const s=slotById(slotId);
   const locked = LOCKED.includes(s.doc_class);
-  const reasons = s.reasons.map(r=>`<div class="finding"><div>${esc(r[S.lang]||r.en)}</div><div class="code small muted">${esc(r.source||'')}</div></div>`).join('');
+  const reasons = s.reasons.map(r=>r.note?`<div class="alert" data-levelnote>${icon('info')}<p class="small">${esc(r[S.lang]||r.en)}</p></div>`:`<div class="finding"><div>${esc(r[S.lang]||r.en)}</div><div class="code small muted">${esc(r.source||'')}</div></div>`).join('');
   const docs = s.documents.map(d=>`<div class="finding ${d.check_status==='non_conforming'?'block':''}">
      <div class="row"><b><span class="muted">${esc(t('version'))} ${d.version}</span> · ${bdi(d.filename)}</b> ${chip(d.check_status)}</div>
      ${d.findings.length? d.findings.map(f=>`<div class="small">● ${esc(f[S.lang])} <span class="code muted">${esc(f.rule)}</span><br><span class="muted">${esc(t('act_'+f.action))}</span></div>`).join('') : (d.meta&&d.meta.external?'':`<div class="small muted">${esc(t('noFind'))}</div>`)}
@@ -1956,9 +2008,9 @@ function openWhy(slotId, focusTemplate){
   openDrawer(L(s.title), `<div class="row"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${chip(s.status)}<span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></div>
     ${locked?`<div class="alert">${icon('lock')}<p class="small">${esc(t('lockedNote'))}</p></div>`:''}
     <h3>${esc(t('reasons'))}</h3>${reasons}
-    ${s.acceptance?`<h3>${esc(t('acceptT'))}</h3><div class="finding">${s.acceptance.split(/;\s+|\.\s+(?=[A-Z])/).filter(x=>x.trim()).map(x=>`<label class="small row gap-s" style="align-items:flex-start"><input type="checkbox"><span dir="auto">${esc(x.trim().replace(/\.$/,''))}</span></label>`).join('')}</div>`:''}
+    ${s.acceptance?`<h3>${esc(t('acceptT'))}</h3><div class="finding">${s.acceptance.split(/;\s+|\.\s+(?=[A-Z])/).filter(x=>x.trim()).map(x=>`<label class="small row gap-s" style="align-items:flex-start;flex-wrap:nowrap"><input type="checkbox"><span dir="auto" style="flex:1;min-width:0">${esc(x.trim().replace(/\.$/,''))}</span></label>`).join('')}</div>`:''}
     ${s.how||s.produced_by?`<div class="small">${s.produced_by?`<b>${esc(t('byT'))}:</b> ${bdi(s.produced_by)}`:''}${s.how?`<br><b>${esc(t('howT'))}:</b> <span dir="auto">${esc(s.how)}</span>`:''}</div>`:''}
-    ${s.sources&&s.sources.length?`<div class="small muted"><b>${esc(t('sourcesT'))}:</b> <span class="code">${esc(s.sources.join(' · '))}</span>${s.provenance?` · ${prov(s.provenance)}`:''}</div>`:''}${s.flags.length?`<div class="small muted code">${esc(s.flags.join(' · '))}</div>`:''}
+    ${s.sources&&s.sources.length?`<div class="small muted"><b>${esc(t('sourcesT'))}:</b> <span class="code">${esc(s.sources.join(' · '))}</span>${s.provenance?` · ${prov(s.provenance)}`:''}</div>`:''}${s.flags.filter(f=>f!=='CONFIRM_LEVEL').length?`<div class="small muted code">${esc(s.flags.filter(f=>f!=='CONFIRM_LEVEL').join(' · '))}</div>`:''}
     ${s.cross&&s.cross.length?`<h3>${esc(t('crossT'))}</h3>${s.cross.map(f=>`<div class="finding ${f.severity==='block'?'block':''}"><div>${esc(f[S.lang])} <span class="code muted">${esc(f.id)}</span></div><div class="small muted">${esc(f.source)}</div></div>`).join('')}`:''}
     ${s.documents.length?`<h3>${esc(t('docs'))}</h3>${docs}`:''}
     ${s.request?`<div class="alert">${icon('mail')}<p class="small"><b>${esc(t('reqOpen'))}</b> ${bdi(s.request.issuer)} · ${esc(t('due'))} ${dateL(new Date(s.request.due*1000).toISOString().slice(0,10))}${s.request.overdue?` · <b style="color:var(--bad)">${esc(t('overdue'))}</b>`:''}
@@ -2200,8 +2252,10 @@ async function genDirect(kind, s){
 
 /* ---------------- publisher (three panes) */
 S.out = 'ectd32'; S.sel = null; S.leaf = null;
+const auOuts = () => (S.dossier&&S.dossier.authority&&S.dossier.authority.outputs)||['ctd','ectd32','ectd40'];
 async function publisherView(tok){
   await loadGens();
+  if(!auOuts().includes(S.out)) S.out='ctd';
   const [b, pv, data] = await Promise.all([api(`/dossiers/${S.dossier.id}/board`), api(`/dossiers/${S.dossier.id}/preview?output=${S.out}`), api(`/dossiers/${S.dossier.id}/data`)]);
   if(!fresh(tok)) return;
   S.board = b; S.pv = pv.rows; S.bdata = data;
@@ -2234,7 +2288,7 @@ function renderPublisher(){
      <div class="row" style="padding:0 14px 14px">${leaf.external?`<a class="btn sm" target="_blank" rel="noopener noreferrer" href="${esc(/^https:\/\//.test(leaf.external)?leaf.external:'#')}">${icon('external',14)} ${esc(t('extOpen'))}</a>`:`<a class="btn sm" target="_blank" rel="noopener" href="/api/dossiers/${id}/documents/${leaf.doc_id}/file">${icon('eye',14)} ${esc(t('view'))}</a>`}<button class="btn sm" data-why="${esc(leaf.slot_id)}">${esc(t('why'))}</button></div>`;
   $('#view').innerHTML = `${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('publisher'))}</h1><p class="sub">${esc(t('pubSub'))}</p></div>
     <div class="row"><span class="modeswitch"><a href="#/d/${id}/board">${esc(t('guided'))}</a><a class="on" href="#/d/${id}/publisher">${esc(t('navPublisher'))}</a></span>
-    <div class="seg" role="group" aria-label="Output">${[['ctd','CTD'],['ectd32','eCTD 3.2.2'],['ectd40','eCTD 4.0']].map(([k,l])=>`<button data-out="${k}" class="${S.out===k?'on':''}">${l}</button>`).join('')}</div>
+    <div class="seg" role="group" aria-label="Output">${[['ctd','CTD'],['ectd32','eCTD 3.2.2'],['ectd40','eCTD 4.0']].filter(([k])=>auOuts().includes(k)).map(([k,l])=>`<button data-out="${k}" class="${S.out===k?'on':''}">${l}</button>`).join('')}</div>
     <a class="btn pri" href="#/d/${id}/export">${esc(t('navExport'))}</a></div></div>
     <div class="pub"><div class="card"><h3>${icon('tree',16)} ${esc(t('sections'))}</h3><div class="scroll tree">${tree}</div></div>
     <div class="card"><h3>${sel?`<span class="code">${esc(sel.ctd)}</span> ${esc(L(sel.title))}`:esc(t('leaves'))}</h3><div class="scroll" id="leafPane">${leaves}</div>
@@ -2396,12 +2450,14 @@ async function exportView(tok){
   const n32 = hist.ectd32.length ? String(+hist.ectd32[hist.ectd32.length-1].seq + 1).padStart(4,'0') : '0000';
   const n40 = hist.ectd40.length ? +hist.ectd40[hist.ectd40.length-1].seq + 1 : 1;
   const list=(k,arr)=>arr.length?`<div><b>${esc(t(k))} (${arr.length})</b><div class="small code wrap">${arr.map(esc).join(' · ')}</div></div>`:'';
-  const outs=[['ctd','CTD One Submission',t('outCtdD'),'NP.CAPP.065 v5'],['ectd32',`eCTD 3.2.2 — ${t('seqDone')} ${n32}`,t('outE3D'),'EG provisional v0'],['ectd40',`eCTD 4.0 — ${t('seqDone')} ${n40}`,t('outE4D'),'EG provisional v0 · ICH IG 1.7']];
-  $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('export'))}</h1><p class="sub">${esc(t('exportSub'))}</p></div><a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a></div>
+  const eg=isEG(), au=S.dossier.authority||{};
+  const outs=[['ctd',eg?'CTD One Submission':'CTD',t(eg?'outCtdD':'auCtdD'),eg?'NP.CAPP.065 v5':L(au.matrix||{})],['ectd32',`eCTD 3.2.2 — ${t('seqDone')} ${n32}`,t('outE3D'),'EG provisional v0'],['ectd40',`eCTD 4.0 — ${t('seqDone')} ${n40}`,t('outE4D'),'EG provisional v0 · ICH IG 1.7']].filter(([k])=>auOuts().includes(k));
+  $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('export'))}</h1><p class="sub">${esc(t(eg?'exportSub':'auExportSub'))}</p></div><a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a></div>
    ${g.ok?`<div class="alert ok">${icon('check')}<p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad">${icon('alert')}<p>${esc(t('gateBad'))}</p></div><div class="card pad stack gap-s">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}${list('unsignedL',g.unsigned||[])}${list('extL',g.external_only||[])}${(g.cross_blocking||[]).length?`<div><b>${esc(t('crossT'))} (${g.cross_blocking.length})</b>${g.cross_blocking.map(f=>`<div class="small">● ${esc(f[S.lang])}</div>`).join('')}</div>`:''}
      <div class="row"><a class="btn sm" href="#/d/${id}/board">${esc(t('navBoard'))}</a><a class="btn sm" href="#/d/${id}/checks">${esc(t('navChecks'))}</a></div></div>`}
    <div class="card"><div class="hd"><span class="ic-tile">${icon('package',16)}</span><h2>${esc(t('outputsT'))}</h2></div><div class="pad stack gap-s">
-     ${outs.map(([k,l,d,src])=>`<label class="opt"><input type="checkbox" data-out="${k}" checked><span><b>${esc(l)}</b><span>${esc(d)}</span><span class="code muted">${esc(src)}</span></span></label>`).join('')}</div></div>
+     ${outs.map(([k,l,d,src])=>`<label class="opt"><input type="checkbox" data-out="${k}" checked><span><b>${esc(l)}</b><span>${esc(d)}</span><span class="code muted">${esc(src)}</span></span></label>`).join('')}
+     ${eg?'':`<div class="alert info" id="ctdOnly">${icon('info')}<p class="small">${esc(t('auCtdOnly'))}</p></div>`}</div></div>
      ${follow?`<div class="card"><div class="hd"><span class="ic-tile accent">${icon('repeat',16)}</span><h2>${esc(t('nextSeq'))}</h2></div><div class="pad stack">
        <p class="small muted">${esc(t('onlyChanges'))}${pl?' '+esc(t('fromPlan')):''}</p><div class="form">
        <label class="f"><span>${esc(t('subType'))}</span><select id="sqType">${['var-pac-n','var-pac-a','var-pac-b','var-pac-ii','renewal','5yr','pacstab','paccadc','withdrawal','none'].map(o=>`<option ${pl&&pl.submission_type===o?'selected':''}>${o}</option>`).join('')}</select></label>
@@ -2412,7 +2468,7 @@ async function exportView(tok){
      <div class="card"><div class="hd"><h2>${esc(t('history'))}</h2></div><div class="tablewrap"><table><thead><tr><th>eCTD</th><th>${esc(t('seqDone'))}</th><th>${esc(t('subType'))}</th><th>${esc(t('unit'))}</th><th>${esc(t('descr'))}</th></tr></thead><tbody>
        ${[['3.2.2',hist.ectd32],['4.0',hist.ectd40]].flatMap(([k,a])=>a.map(h=>`<tr><td>${k}</td><td class="code">${esc(h.seq)}</td><td class="code">${esc(h.envelope.type)}</td><td>${esc(h.envelope.unit)}</td><td>${bdi(h.envelope.description||'')}</td></tr>`)).join('')}</tbody></table></div></div>`:''}
      <div class="card pad stack">
-     <label class="alert" style="cursor:pointer"><input type="checkbox" id="ack" style="margin-top:3px"> <p class="small">${esc(t('ack'))}</p></label>
+     <label class="alert" style="cursor:pointer" ${eg?'':'hidden'}><input type="checkbox" id="ack" style="margin-top:3px"> <p class="small">${esc(t('ack'))}</p></label>
      <div><button class="btn pri lg" id="go" ${g.ok?'':'disabled'}>${icon('package')} ${esc(t('doExport'))}</button></div></div><div id="res"></div>`;
   $('#go').onclick=async()=>{ const outsSel=$$('[data-out]:checked').map(c=>c.dataset.out);
     $('#go').disabled=true; $('#go').textContent=t('exporting');

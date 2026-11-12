@@ -110,7 +110,13 @@ class Runner:
         except Exception:
             pass
         prof = d.get('profile') or {}
+        pk = self.st.pack(d['pack'])
+        whom = pk.authority['name']['en'] + (f" — country of registration {(d.get('envelope') or {}).get('country')}" if (d.get('envelope') or {}).get('country') else '')
         lines = [f"Dossier «{d['name']}» (id {d['id']}), rule pack {d['pack']}.",
+                 f"Authority this dossier is for: {whom}. Module 1 follows this authority; Modules 2 to 5 are the common CTD."
+                 + ('' if pk.egypt else " This is NOT an Egyptian dossier: EDA's forms, decrees and NP.CAPP rules do not apply to it; the review desk, the variations planner and the"
+                    " eCTD package are Egypt's and are not offered here — it exports as CTD folders."
+                    + (" The program holds only a general Module 1 for this country: say what must be checked against the authority's own checklist." if pk.meta.get('verified') is False else '')),
                  f"Product: {json.dumps(d.get('product') or {}, ensure_ascii=False)}",
                  f"Applicant/envelope: {json.dumps(d.get('envelope') or {}, ensure_ascii=False)}",
                  f"Profile: {json.dumps({k: v for k, v in prof.items() if k != 'apis'}, ensure_ascii=False)}; APIs in profile: "

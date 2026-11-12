@@ -1,6 +1,7 @@
 """Requirement resolver (02-LOGIC §5.1): profile + pack -> slots with reasons."""
 from dataclasses import dataclass, field
 from . import expr
+from .packs import number
 
 LEVEL_RANK = {'NR': 0, 'O': 1, 'R': 2}
 
@@ -39,16 +40,19 @@ def _cell_level(cell, env):
 
 def resolve(profile, pack, validate=True, today=None):
     if validate:
-        profile.validate(today=today)
-    env = profile.env()
+        profile.validate(today=today, pack=pack)
+    env = profile.env(pack)
     col, col_assumed = profile.column()
+    m1_note = pack.meta.get('module1_note')              # {when, en, ar}: said on every Module 1 item while the condition holds
+    if m1_note and m1_note.get('when') and not expr.evaluate(m1_note['when'], env):
+        m1_note = None
     slots = []
     for r in pack.requirements:
-        base = dict(req_id=r['id'], title=r['title'], ctd=r['ctd']['nta065_v5'],
+        base = dict(req_id=r['id'], title=r['title'], ctd=number(r),
                     doc_class=r['doc_class'], module=r['module'],
                     ectd=list(r['ectd']['nodes']))
         src = '; '.join(r['sources'])
-        flags = ['ASSUMPTION_LOCAL_INNOVATOR'] if col_assumed else []
+        flags = ['ASSUMPTION_LOCAL_INNOVATOR'] if col_assumed and pack.egypt else []
         if r.get('confirm_applicability'):
             flags.append('CONFIRM_APPLICABILITY')
         if not expr.evaluate(r['applies'], env):
@@ -61,11 +65,16 @@ def resolve(profile, pack, validate=True, today=None):
             continue
         level, case = _cell_level(r['required'][col], env)
         why = case.get('when') if case else None
-        reasons = [{'en': f"NP.CAPP.065 matrix column {col}: {r['matrix'][col]}"
-                          + (f" (case: {why})" if why else ''),
-                    'ar': f"مصفوفة NP.CAPP.065 العمود {col}: {r['matrix'][col]}", 'source': src}]
+        mx, cell = pack.matrix_name(), (r.get('matrix') or {}).get(col, level)
+        reasons = [{'en': f"{mx['en']} column {col}: {cell}" + (f" (case: {why})" if why else ''),
+                    'ar': f"{mx['ar']} العمود {col}: {cell}", 'source': src}]
         if case and case.get('reason'):
             reasons.append({**case['reason'], 'source': case.get('provenance', src), 'rule': why})
+        if level in ('R', 'O'):                # where the source gives the section and not who needs it, the item says so: its own note, the
+            note = (case or {}).get('note') or r.get('level_note') or (m1_note if r['module'] == 1 else None)      # case's, or the pack's for Module 1
+            if note:
+                reasons.append({'en': note['en'], 'ar': note['ar'], 'source': src, 'note': True})
+                flags.append('CONFIRM_LEVEL')
         per = r.get('per')
         if not per:
             slots.append(Slot(slot_id=r['id'], level=level, reasons=reasons, flags=flags, **base))

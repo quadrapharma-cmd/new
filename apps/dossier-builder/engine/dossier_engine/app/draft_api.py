@@ -54,7 +54,7 @@ def install(app, st):
     def slot_fill(did: str, slot_id: str, body: DraftReq):
         """The filled template without storing: the page shows it as the live document for editing, then saves with /draft."""
         s = _slot(did, slot_id)
-        e = _draft.template(s.req_id)
+        e = _draft.template(s.req_id, _req_item(did, s.req_id))
         if not e or e['draft'] not in ('full', 'partial'):
             err(422, 'E-NOT-DRAFTABLE', 'This document is not drafted by the program.', 'المستند ده مش بيتعمل كمسودة.')
         try:
@@ -72,7 +72,7 @@ def install(app, st):
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/draft', status_code=201)
     def slot_draft(did: str, slot_id: str, body: DraftReq):
         s = _slot(did, slot_id)
-        e = _draft.template(s.req_id)
+        e = _draft.template(s.req_id, _req_item(did, s.req_id))
         if not e or e['draft'] not in ('full', 'partial'):
             err(422, 'E-NOT-DRAFTABLE', 'This document is not drafted by the program: it is issued by a third party or made by a generator.',
                 'المستند ده مش بيتعمل كمسودة: صادر من جهة خارجية أو بيتولّد بمولّد جاهز.')

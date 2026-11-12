@@ -11,7 +11,7 @@ def test_forms_and_countries_match_what_documents_print():
     assert vocab.match_form('F.C.T')['id'] == 'tablet-fc' and vocab.match_form('أقراص مغلفة')['id'] == 'tablet-fc' and vocab.match_form('Film-Coated Tablets')['route'] == 'oral'
     assert vocab.match_form('Hard gelatin capsules')['en'] == 'Capsule, hard' and vocab.match_form('Powder for oral suspension')['id'] == 'powder-oral-susp'
     assert vocab.match_form('eye drops')['route'] == 'ophthalmic' and vocab.match_form('nasal spray')['route'] == 'inhalation' and vocab.match_form('nonsense') is None
-    assert vocab.match_country('CHINA') == {'code': 'CN', 'en': 'China', 'ar': 'الصّين'} and vocab.match_country('P.R. China')['code'] == 'CN'
+    assert vocab.match_country('CHINA') == {'code': 'CN', 'en': 'China', 'ar': 'الصين'} and vocab.match_country('P.R. China')['code'] == 'CN'
     assert vocab.match_country('UK')['code'] == 'GB' and vocab.match_country('مصر')['code'] == 'EG' and vocab.match_country('Republic of India')['code'] == 'IN'
     assert vocab.match_country('Atlantis') is None and vocab.match_country('') is None
     ids = [f['id'] for f in vocab.forms()]

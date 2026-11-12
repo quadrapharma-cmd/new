@@ -1,0 +1,92 @@
+# US CTD dossier — FDA Module 1 (table of contents headings v2.3.3)
+# Written from the sources named below; a requirement's `sources` say where each line comes from.
+id: us.ctd.m1.v1
+extends: ich.ctd.m4.v1
+order: 40
+authority:
+  id: US-FDA
+  countries:
+  - US
+  name:
+    en: United States — Food and Drug Administration (FDA)
+    ar: الولايات المتحدة — إدارة الغذاء والدواء (FDA)
+title:
+  en: US CTD dossier — FDA Module 1 (table of contents headings v2.3.3)
+  ar: ملف CTD للولايات المتحدة — موديول ١ لـ FDA (جدول العناوين 2.3.3)
+status: in-force
+valid_from: '2020-11-09'
+valid_to: null
+verified: true
+matrix:
+  en: FDA Module 1 headings
+  ar: عناوين موديول ١ لـ FDA
+columns:
+  I:
+    en: New drug / biological
+    ar: دواء جديد / بيولوجي
+  G_IMP:
+    en: Generic (ANDA) — made outside the US
+    ar: مثيل (ANDA) — مصنّع خارج أمريكا
+  G_LOC:
+    en: Generic (ANDA) — made in the US
+    ar: مثيل (ANDA) — مصنّع في أمريكا
+questions:
+- id: us_application
+  title:
+    en: Type of application
+    ar: نوع الطلب
+  options:
+  - id: anda
+    en: ANDA — generic, 505(j)
+    ar: ANDA — مثيل، 505(j)
+  - id: nda
+    en: NDA — 505(b)(1)
+    ar: NDA — 505(b)(1)
+  - id: nda_b2
+    en: NDA — 505(b)(2)
+    ar: NDA — 505(b)(2)
+  - id: bla
+    en: BLA — biological
+    ar: BLA — بيولوجي
+  - id: ind
+    en: IND — investigational new drug
+    ar: IND — مستحضر تحت البحث
+  default: anda
+overrides:
+  M2-NCO:
+    required:
+      I: R
+      G_IMP: NR
+      G_LOC: NR
+    level_note: &id001
+      en: 'Which headings an application needs is set by FDA''s own forms and filing checklists, not by the table of headings: the level here marks the
+        usual case — confirm it.'
+      ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  M2-CO:
+    required:
+      I: R
+      G_IMP: NR
+      G_LOC: NR
+    level_note: *id001
+  M2-NCS:
+    level_note: *id001
+  M2-CS:
+    required:
+      I: R
+      G_IMP: R
+      G_LOC: R
+    level_note: *id001
+  M4-TOC:
+    level_note: *id001
+sources:
+- code: FDA — The Comprehensive Table of Contents Headings and Hierarchy
+  version: 2.3.3
+  date: '2020-11-09'
+  url: https://www.fda.gov/media/76444/download
+  gives: every heading of Module 1 and its number
+note:
+  en: 'The headings and numbers are the FDA document''s own (the detailed sub-headings of 1.15 and 1.16.2 are kept under their parent; 1.9.5, no longer
+    applicable, is left out). Which headings a given application needs is set by FDA forms and filing checklists: the levels here mark the usual ones and
+    say so on each item — confirm them.'
+  ar: 'العناوين والأرقام من مستند FDA نفسه (العناوين الفرعية التفصيلية في 1.15 و 1.16.2 تحت العنوان الأب؛ و 1.9.5 الملغي مش موجود). العناوين المطلوبة لكل
+    طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها: المستويات هنا للمعتاد ومكتوب ده على كل بند — راجعها.'

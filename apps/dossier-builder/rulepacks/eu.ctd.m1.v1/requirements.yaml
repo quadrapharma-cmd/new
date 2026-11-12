@@ -1,0 +1,766 @@
+- id: EU-1.0
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: '1.0'
+  ectd:
+    nodes:
+    - '1.0'
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Cover letter
+    ar: خطاب التقديم
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: One per submission; for MRP / DCP one for each Member State concerned (with the tracking table where the procedure asks for it).
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+- id: EU-1.2
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: '1.2'
+  ectd:
+    nodes:
+    - '1.2'
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Application form
+    ar: نموذج الطلب
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: The electronic application form (eAF) for the type of application, with its annexes (proof of payment, manufacturing authorisations,
+    GMP certificates, QP declaration, letters of access, CEPs, flow-chart of sites…).
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  kinds:
+  - gmp
+  - loa
+  - factory
+- id: EU-1.3.1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.3.1
+  ectd:
+    nodes:
+    - 1.3.1
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: SmPC, labelling and package leaflet
+    ar: ملخص خصائص المستحضر وبيانات العبوة والنشرة
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: The proposed SmPC, labelling and package leaflet, per language and Member State, on the QRD templates.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  kinds:
+  - smpc
+  level_note: &id001
+    en: The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to Applicants, which were
+      not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر للملف ده — راجعه
+      حسب الإجراء والدولة العضو.
+- id: EU-1.3.2
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.3.2
+  ectd:
+    nodes:
+    - 1.3.2
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Mock-up
+    ar: تصميم العبوة (Mock-up)
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: Mock-ups of the outer and immediate packaging and of the package leaflet.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.3.3
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.3.3
+  ectd:
+    nodes:
+    - 1.3.3
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Specimen
+    ar: عينة العبوة (Specimen)
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: Specimens of the sales presentation, where the competent authority asks for them (list of the specimens sent).
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+- id: EU-1.3.4
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.3.4
+  ectd:
+    nodes:
+    - 1.3.4
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Consultation with target patient groups
+    ar: اختبار النشرة مع مجموعات المرضى
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: The results of the consultation with target patient groups on the package leaflet (user testing), or the justification for not carrying
+    one out (bridging).
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.3.5
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.3.5
+  ectd:
+    nodes:
+    - 1.3.5
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Product information already approved in the Member States
+    ar: بيانات المستحضر المعتمدة بالفعل في الدول الأعضاء
+  applies: eu_procedure != 'cp'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  condition_note: Mutual recognition, decentralised and national procedures.
+  acceptance_text: SmPC, labelling and leaflet already approved in the Member States, where the product is authorised there.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+- id: EU-1.3.6
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.3.6
+  ectd:
+    nodes:
+    - 1.3.6
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Braille
+    ar: برايل
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: The name of the product in Braille as it will appear on the packaging, or the justification for its absence.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.4.1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.4.1
+  ectd:
+    nodes:
+    - 1.4.1
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Information about the expert — Quality
+    ar: بيانات الخبير — الجودة
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: The signed expert statement with brief information on the education, training and occupational experience of the expert (CV).
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.4.2
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.4.2
+  ectd:
+    nodes:
+    - 1.4.2
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Information about the expert — Non-clinical
+    ar: بيانات الخبير — غير الإكلينيكي
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: The signed expert statement with brief information on the education, training and occupational experience of the expert (CV).
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.4.3
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.4.3
+  ectd:
+    nodes:
+    - 1.4.3
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Information about the expert — Clinical
+    ar: بيانات الخبير — الإكلينيكي
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: The signed expert statement with brief information on the education, training and occupational experience of the expert (CV).
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.5.1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.5.1
+  ectd:
+    nodes:
+    - 1.5.1
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Information for bibliographical applications
+    ar: بيانات طلبات الاستخدام الطبي الراسخ (Bibliographical)
+  applies: eu_legal_basis == 'weu'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: The demonstration of well-established medicinal use (ten years of use in the Union, the extent and coherence of the scientific literature).
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.5.2
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.5.2
+  ectd:
+    nodes:
+    - 1.5.2
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Information for generic, hybrid or bio-similar applications
+    ar: بيانات طلبات المثيل / الهجين / المثيل الحيوي
+  applies: eu_legal_basis in ('generic', 'hybrid', 'biosimilar')
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: The reference medicinal product (name, strength, form, holder, date and number of first authorisation, Member State), the differences
+    from it, and the evidence that the data exclusivity period has expired.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.5.3
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.5.3
+  ectd:
+    nodes:
+    - 1.5.3
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: (Extended) data / market exclusivity
+    ar: حصرية البيانات / السوق (الممتدة)
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  acceptance_text: The request for (an extended period of) data or market exclusivity, with its justification.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+- id: EU-1.5.4
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.5.4
+  ectd:
+    nodes:
+    - 1.5.4
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Exceptional circumstances
+    ar: الظروف الاستثنائية
+  applies: eu_legal_basis == 'full'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  acceptance_text: The justification for an authorisation under exceptional circumstances.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+- id: EU-1.5.5
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.5.5
+  ectd:
+    nodes:
+    - 1.5.5
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Conditional marketing authorisation
+    ar: الترخيص المشروط
+  applies: eu_legal_basis == 'full' and eu_procedure == 'cp'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  acceptance_text: The request for a conditional marketing authorisation, with its justification.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+- id: EU-1.6.1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.6.1
+  ectd:
+    nodes:
+    - 1.6.1
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Environmental risk assessment — non-GMO
+    ar: تقييم المخاطر البيئية — غير معدّل وراثياً
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: 'The environmental risk assessment, or the justification for its absence (for a generic: that no increase of the environmental exposure
+    is expected).'
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.6.2
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.6.2
+  ectd:
+    nodes:
+    - 1.6.2
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Environmental risk assessment — GMO
+    ar: تقييم المخاطر البيئية — كائن معدّل وراثياً
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  acceptance_text: For a product that contains or consists of genetically modified organisms.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+- id: EU-1.7.1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.7.1
+  ectd:
+    nodes:
+    - 1.7.1
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Orphan market exclusivity — similarity
+    ar: حصرية المستحضر اليتيم — التشابه
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  acceptance_text: The report on similarity with authorised orphan medicinal products for the same indication.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+- id: EU-1.7.2
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.7.2
+  ectd:
+    nodes:
+    - 1.7.2
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Orphan market exclusivity — market exclusivity
+    ar: حصرية المستحضر اليتيم — حصرية السوق
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  acceptance_text: The claim for a derogation from the market exclusivity of an authorised orphan product.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+- id: EU-1.8.1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.8.1
+  ectd:
+    nodes:
+    - 1.8.1
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Pharmacovigilance system
+    ar: نظام اليقظة الدوائية
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: The summary of the applicant's pharmacovigilance system (the summary of the pharmacovigilance system master file).
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.8.2
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: 1.8.2
+  ectd:
+    nodes:
+    - 1.8.2
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Risk-management system
+    ar: نظام إدارة المخاطر (RMP)
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: The risk management plan.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.9
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: '1.9'
+  ectd:
+    nodes:
+    - '1.9'
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Information relating to clinical trials
+    ar: بيانات الدراسات الإكلينيكية
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  condition_note: Where a trial was carried out outside the Union.
+  acceptance_text: The statement that the clinical trials carried out outside the Union (bioequivalence studies included) meet the ethical requirements
+    of Directive 2001/20/EC.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-1.10
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: '1.10'
+  ectd:
+    nodes:
+    - '1.10'
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Information relating to paediatrics
+    ar: البيانات الخاصة بالأطفال
+  applies: eu_legal_basis in ('full', 'fixed', 'informed')
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: The paediatric investigation plan decision with the compliance check, or the waiver / deferral.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+  level_note: *id001
+- id: EU-RESP
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: Responses to questions
+  ectd:
+    nodes:
+    - '1'
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Responses to questions
+    ar: الرد على الاستفسارات
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  condition_note: Not part of the first submission.
+  acceptance_text: The answers to the questions raised during the procedure.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+- id: EU-ADD
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd:
+    number: Additional data
+  ectd:
+    nodes:
+    - '1'
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Additional data
+    ar: بيانات إضافية
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: National requirements of the Member State concerned that have no heading of their own.
+  sources:
+  - EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2; Notice to Applicants Volume 2B — Module 1
+  provenance: EU-IN-FORCE
+- id: EU-3.2.R-PV
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd:
+    number: 3.2.R
+  ectd:
+    nodes:
+    - 3.2.R
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Process validation scheme for the drug product
+    ar: مخطط التحقق من صحة عملية التصنيع
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: 'Where validation is still to be completed: a summary of the studies intended to be conducted.'
+  sources:
+  - ICH M4Q(R1) §3.2.R (the examples marked «EU only»)
+  provenance: EU-IN-FORCE
+- id: EU-3.2.R-DEV
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd:
+    number: 3.2.R
+  ectd:
+    nodes:
+    - 3.2.R
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Medical device
+    ar: الجهاز الطبي
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  acceptance_text: The documents of a device supplied with or integral to the product.
+  sources:
+  - ICH M4Q(R1) §3.2.R (the examples marked «EU only»)
+  provenance: EU-IN-FORCE
+- id: EU-3.2.R-CEP
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd:
+    number: 3.2.R
+  ectd:
+    nodes:
+    - 3.2.R
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Certificate(s) of suitability
+    ar: شهادة / شهادات الملاءمة (CEP)
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  per:
+    over: apis
+    where: option == 'CEP'
+  acceptance_text: The complete copy of the CEP with its annexes, and the declaration of access.
+  sources:
+  - Notice to Applicants Volume 2B — Module 3, 3.2.R Regional information
+  provenance: EU-IN-FORCE
+  level_note: *id001
+  kinds:
+  - cep
+- id: EU-3.2.R-TSE
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd:
+    number: 3.2.R
+  ectd:
+    nodes:
+    - 3.2.R
+    source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
+    provenance: EU-IN-FORCE
+  title:
+    en: Materials of animal and / or human origin (TSE)
+    ar: المواد من أصل حيواني / بشري (TSE)
+  applies: biological_origin_materials
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: The TSE tables and the certificates of suitability for the materials concerned.
+  sources:
+  - Notice to Applicants Volume 2B — Module 3, 3.2.R Regional information
+  provenance: EU-IN-FORCE
+  level_note: *id001

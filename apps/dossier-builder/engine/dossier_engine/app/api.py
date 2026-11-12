@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from ..profile import Profile, ProfileError
 from ..resolver import resolve
 from .. import arabic as _arabic
+from .. import packs as _packs
 from .. import extract as _extract
 from .. import officefiles as _officefiles, imagefiles as _imagefiles
 from ..guard import assert_allowed, LockedError
@@ -45,6 +46,8 @@ class NewDossier(BaseModel):
     profile: dict
     product: dict
     envelope: dict = {}
+    pack: str | None = None             # the authority's pack …
+    country: str | None = None          # … or the country the dossier is for (ISO code): its authority's pack is taken
 
 
 class ExportReq(BaseModel):
@@ -107,6 +110,33 @@ def create_app(workspace, auth_enabled=None):
     drive_api.install(app, st)
     draft_api.install(app, st)                           # templates + «make it for me»
     intake_api.install(app, st)                          # the wizard's work in progress, kept on the server
+
+    def _pack_of(pack=None, country=None):
+        """The pack a request means: the one it names, else the one of the country it names, else Egypt's."""
+        if pack:
+            try:
+                if st.pack(pack).meta.get('kind') != 'base':
+                    return pack
+            except (FileNotFoundError, NotADirectoryError, OSError):
+                pass
+            err(422, 'E-PACK', f'Unknown authority pack {pack}.', 'الهيئة دي مش موجودة في البرنامج.')
+        if country:
+            m = _packs.for_country(country)
+            if m:
+                return m['id']
+        return 'eda.ctd.nta065.v5'
+
+    def _authority(pack_id, envelope=None):
+        """Who a dossier is for, as the page needs it: the authority, the country, what it asks, what can be exported."""
+        pk = st.pack(pack_id)
+        au, code = pk.authority, ((envelope or {}).get('country') or '').upper() or None
+        if not code and len(au['countries']) == 1 and au['countries'][0] != '*':
+            code = au['countries'][0]
+        from .. import vocab as _vocab
+        name = next(({'en': c['en'], 'ar': c['ar']} for c in _vocab.countries() if c['code'] == code), None) if code else None
+        return {'pack': pk.id, 'id': au['id'], 'name': au['name'], 'egypt': pk.egypt, 'verified': pk.meta.get('verified', pk.egypt), 'country': code, 'country_name': name,
+                'questions': pk.questions, 'note': pk.meta.get('note'), 'matrix': pk.matrix_name(), 'columns': pk.meta.get('columns') or {},
+                'title': pk.meta.get('title'), 'sources': pk.meta.get('sources') or [], 'outputs': ['ctd', 'ectd32', 'ectd40'] if pk.egypt else ['ctd']}
 
     @app.exception_handler(StoreError)
     def _store_err(_, e):
@@ -205,12 +235,26 @@ def create_app(workspace, auth_enabled=None):
 
     @app.post('/api/dossiers', status_code=201)
     def new_dossier(body: NewDossier):
-        did = st.create_dossier(body.name, body.profile, body.product, body.envelope)
-        return {'id': did, **st.board(did)['counts']}
+        pack, env = _pack_of(body.pack, body.country), dict(body.envelope or {})
+        if body.country:
+            env['country'] = body.country.strip().upper()
+        did = st.create_dossier(body.name, body.profile, body.product, env, pack=pack)
+        return {'id': did, 'pack': st.dossier(did)['pack'], **st.board(did)['counts']}
 
     @app.get('/api/dossiers/{did}')
     def get_dossier(did: str):
-        return st.dossier(did)
+        d = st.dossier(did)
+        return {**d, 'authority': _authority(d['pack'], d['envelope'])}
+
+    @app.get('/api/authorities')
+    def authorities():
+        """Who a dossier can be built for: each authority with its countries, its own questions, the sources its Module 1 was written
+        from, and whether that is the authority's own text or a general layout. `default`: the pack a country without one gets."""
+        if not getattr(app.state, 'authorities', None):
+            app.state.authorities = _packs.authorities()
+        rest = next((a['pack'] for a in app.state.authorities if '*' in a['countries']), None)
+        from .. import vocab as _vocab
+        return {'authorities': app.state.authorities, 'default': rest, 'countries': [{k: c[k] for k in ('code', 'en', 'ar')} for c in _vocab.countries()]}
 
     @app.get('/api/dossiers/{did}/data')
     def get_data(did: str):
@@ -404,6 +448,9 @@ def create_app(workspace, auth_enabled=None):
         if output not in ('ctd', 'ectd32', 'ectd40'):
             err(422, 'E-OUTPUT', 'Unknown output.', 'مخرج غير معروف.')
         d = st.dossier(did)
+        if output != 'ctd' and not st.pack(d['pack']).egypt:
+            err(422, 'E-OUTPUT-AUTHORITY', "The eCTD package is written for Egypt's regional Module 1 only; this dossier exports as CTD folders.",
+                'حزمة الـ eCTD مكتوبة لموديول ١ المصري بس؛ الملف ده بيتصدّر كمجلدات CTD.')
         slots = st.slots(did)
         by_slot = {s.slot_id: s for s in slots}
         files, docmeta = {}, {}
@@ -494,6 +541,7 @@ def create_app(workspace, auth_enabled=None):
                 'pack': {'id': pack.id, 'title': pack.meta['title'], 'status': pack.meta['status'],
                          'valid_from': pack.meta['valid_from'], 'sources': pack.meta['sources']},
                 'requirements': {'total': len(pack.requirements), 'by_module': by_module, 'by_class': by_class},
+                'authorities': [{k: a[k] for k in ('pack', 'id', 'name', 'countries', 'verified', 'requirements', 'outputs')} for a in _packs.authorities()],
                 'variations': {'total': len(VAR.items), 'classes': VAR.order, 'source': VAR.meta['sources']},
                 'generators': [{'kind': k, 'req': v.get('req'), 'title': v['title']} for k, v in letters.SCHEMAS.items()],
                 'checks': {'cross': cross_ids, 'fixes': fixes.ORDER,
@@ -615,16 +663,23 @@ def create_app(workspace, auth_enabled=None):
         return _ai_read([(n, b) for n, b, _ in _dossier_pdfs(did)], target)
 
     @app.post('/api/profile/preview')
-    def profile_preview(profile: dict):
-        """The requirements a profile would produce, before any dossier exists (the wizard's last step)."""
+    def profile_preview(profile: dict, pack: str = None, country: str = None):
+        """The requirements a profile would produce, before any dossier exists (the wizard's last step). `pack` or `country`: the
+        authority the dossier is for; Egypt's when neither is given."""
+        pk = st.pack(_pack_of(pack, country))
         prof = Profile.from_dict(profile)
         try:
-            prof.validate()
+            prof.validate(pack=pk)
         except ProfileError as e:                       # a wizard without its APIs yet still gets the non-API items
             rest = [p for p in e.problems if p['code'] != 'P-NO-API']
             if rest:
                 raise ProfileError(rest)
-        slots = [s.to_dict() for s in resolve(prof, st.pack('eda.ctd.nta065.v5'), validate=False)]
+        slots = [s.to_dict() for s in resolve(prof, pk, validate=False)]
+        notes = {r['id']: r['level_note'] for r in pk.requirements if r.get('level_note')}
+        for s in slots:
+            s['group'] = pk.by_id[s['req_id']].get('group')
+            if s['req_id'] in notes:
+                s['note'] = notes[s['req_id']]
         gen = {v['req'] for v in letters.SCHEMAS.values() if v.get('req')}
         counts = {k: sum(1 for s in slots if s['level'] == k) for k in ('R', 'O', 'NR', 'NA')}
         by_module = {}
@@ -632,7 +687,8 @@ def create_app(workspace, auth_enabled=None):
             m = by_module.setdefault(str(s['module']), {'R': 0, 'O': 0, 'NR': 0, 'NA': 0})
             m[s['level']] += 1
         col, assumed = prof.column()
-        return {'slots': slots, 'counts': counts, 'by_module': by_module, 'column': col, 'column_assumed': assumed,
+        return {'slots': slots, 'counts': counts, 'by_module': by_module, 'column': col, 'column_assumed': assumed and pk.egypt,
+                'authority': _authority(pk.id, {'country': country}),
                 'generable': [s['slot_id'] for s in slots if s['level'] in ('R', 'O') and s['req_id'] in gen],
                 'third_party': [s['slot_id'] for s in slots if s['level'] in ('R', 'O') and
                                 s['doc_class'] in ('third_party_certificate', 'eda_document')]}
@@ -682,7 +738,7 @@ def create_app(workspace, auth_enabled=None):
         if kind == 'other' and _extract.name_hint(filename):                # nothing inside says what it is: the name only hints where to offer it
             kind, by_name = _extract.name_hint(filename), True
         sugg = clf.suggest(filename, text, slots)
-        homes = _extract.KIND_HOME.get(kind, [])
+        homes = _extract.kind_homes(kind, clf.pack)
         by_id = {s.slot_id: s for s in slots}
         if homes and not any(x['req_id'] in homes for x in sugg):
             cands = sorted((s for s in slots if s.active and s.req_id in homes), key=lambda s: homes.index(s.req_id))

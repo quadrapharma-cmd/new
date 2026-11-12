@@ -1,0 +1,140 @@
+# EU CTD dossier — EU Module 1 (eCTD specification v3.1.1)
+# Written from the sources named below; a requirement's `sources` say where each line comes from.
+id: eu.ctd.m1.v1
+extends: ich.ctd.m4.v1
+order: 30
+authority:
+  id: EU
+  countries:
+  - AT
+  - BE
+  - BG
+  - HR
+  - CY
+  - CZ
+  - DK
+  - EE
+  - FI
+  - FR
+  - DE
+  - GR
+  - HU
+  - IE
+  - IT
+  - LV
+  - LT
+  - LU
+  - MT
+  - NL
+  - PL
+  - PT
+  - RO
+  - SK
+  - SI
+  - ES
+  - SE
+  - IS
+  - LI
+  - 'NO'
+  name:
+    en: European Union / EEA — EMA and the national competent authorities
+    ar: الاتحاد الأوروبي / المنطقة الاقتصادية الأوروبية — EMA والهيئات الوطنية
+title:
+  en: EU CTD dossier — EU Module 1 (eCTD specification v3.1.1)
+  ar: ملف CTD للاتحاد الأوروبي — موديول ١ الأوروبي (مواصفة 3.1.1)
+status: in-force
+valid_from: '2025-06-01'
+valid_to: null
+verified: true
+matrix:
+  en: EU Module 1 / Notice to Applicants Vol. 2B
+  ar: موديول ١ الأوروبي / Notice to Applicants
+columns:
+  I:
+    en: New active substance
+    ar: مادة فعالة جديدة
+  G_IMP:
+    en: Generic / abridged — made outside the EEA
+    ar: مثيل — مصنّع خارج المنطقة
+  G_LOC:
+    en: Generic / abridged — made in the EEA
+    ar: مثيل — مصنّع داخل المنطقة
+questions:
+- id: eu_legal_basis
+  title:
+    en: Legal basis of the application (Directive 2001/83/EC)
+    ar: الأساس القانوني للطلب (التوجيه 2001/83/EC)
+  options:
+  - id: full
+    en: Full application — Art. 8(3)
+    ar: طلب كامل — المادة 8(3)
+  - id: generic
+    en: Generic — Art. 10(1)
+    ar: مثيل — المادة 10(1)
+  - id: hybrid
+    en: Hybrid — Art. 10(3)
+    ar: هجين — المادة 10(3)
+  - id: biosimilar
+    en: Bio-similar — Art. 10(4)
+    ar: مثيل حيوي — المادة 10(4)
+  - id: weu
+    en: Well-established use (bibliographical) — Art. 10a
+    ar: استخدام طبي راسخ — المادة 10a
+  - id: fixed
+    en: Fixed combination — Art. 10b
+    ar: تركيبة ثابتة — المادة 10b
+  - id: informed
+    en: Informed consent — Art. 10c
+    ar: موافقة مسبقة — المادة 10c
+  default: generic
+- id: eu_procedure
+  title:
+    en: Procedure
+    ar: الإجراء
+  options:
+  - id: dcp
+    en: Decentralised procedure (DCP)
+    ar: الإجراء اللامركزي (DCP)
+  - id: mrp
+    en: Mutual recognition procedure (MRP)
+    ar: إجراء الاعتراف المتبادل (MRP)
+  - id: np
+    en: National procedure
+    ar: إجراء وطني
+  - id: cp
+    en: Centralised procedure (EMA)
+    ar: الإجراء المركزي (EMA)
+  default: dcp
+overrides:
+  M2-NCO:
+    required:
+      I: R
+      G_IMP: R
+      G_LOC: R
+    level_note: &id001
+      en: The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to Applicants, which
+        were not re-read line by line for this pack — confirm for your procedure and Member State.
+      ar: البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر للملف ده —
+        راجعه حسب الإجراء والدولة العضو.
+  M2-CO:
+    level_note: *id001
+  M2-NCS:
+    level_note: *id001
+  M2-CS:
+    level_note: *id001
+  M4-TOC:
+    level_note: *id001
+sources:
+- code: EU Module 1 eCTD Specification
+  version: 3.1.1
+  date: 2025-06
+  url: https://esubmission.ema.europa.eu/eumodule1/
+  gives: the structure and numbering of Module 1
+- code: Notice to Applicants, Volume 2B — Presentation and content of the dossier
+  version: in force
+  gives: what each section holds
+note:
+  en: The structure and numbering are the specification, word for word. Which sections an application needs follows its legal basis; the levels are the
+    general rule of the Notice to Applicants — a Member State may ask for more under «Additional data».
+  ar: الهيكل والترقيم من المواصفة حرفياً. الأقسام المطلوبة بتتحدد بالأساس القانوني للطلب؛ المستويات هي القاعدة العامة في Notice to Applicants — والدولة
+    العضو ممكن تطلب أكتر تحت «بيانات إضافية».

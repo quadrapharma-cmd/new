@@ -1,0 +1,43 @@
+# ICH Common Technical Document — Modules 2 to 5 (the same for every authority)
+# Written from the sources named below; a requirement's `sources` say where each line comes from.
+id: ich.ctd.m4.v1
+kind: base
+title:
+  en: ICH Common Technical Document — Modules 2 to 5 (the same for every authority)
+  ar: الملف الفني المشترك (ICH CTD) — الموديولات من ٢ إلى ٥ (واحدة لكل الهيئات)
+status: in-force
+valid_from: '2016-06-15'
+valid_to: null
+matrix:
+  en: ICH CTD (general practice)
+  ar: الـ CTD المشترك (الممارسة العامة)
+columns:
+  I:
+    en: New active substance / innovator
+    ar: مادة فعالة جديدة / مبتكر
+  G_IMP:
+    en: Generic — imported into the country
+    ar: مثيل — مستورد للدولة
+  G_LOC:
+    en: Generic — made in the country
+    ar: مثيل — مصنّع في الدولة
+sources:
+- code: ICH M4(R4)
+  title: Organisation of the Common Technical Document, with the granularity annex
+  version: R4
+  date: '2016-06-15'
+- code: ICH M4Q(R1)
+  title: The CTD — Quality
+  version: R1
+  date: '2002-09-12'
+- code: ICH M4S(R2)
+  title: The CTD — Safety
+  version: R2
+  date: '2002-12-20'
+- code: ICH M4E(R2)
+  title: The CTD — Efficacy
+  version: R2
+  date: '2016-06-15'
+note:
+  en: 'Which sections a generic needs differs between authorities: each authority pack sets its own levels over these.'
+  ar: 'الأقسام المطلوبة من المثيل بتختلف من هيئة للتانية: كل هيئة بتحط مستوياتها فوق القائمة دي.'

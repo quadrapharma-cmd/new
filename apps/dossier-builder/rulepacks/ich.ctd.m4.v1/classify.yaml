@@ -1,0 +1,14 @@
+# Keywords that suggest an item for an uploaded file (file name + first-page text). Suggestions only — the user always confirms.
+# The titles' own words and the section numbers are added automatically.
+P-07: [process validation, validation protocol, validation report]
+P-16: [stability, stability protocol, stability report, ثبات]
+S-14: [stability, retest]
+P-10: [analytical method, method validation, validation of analytical]
+M5-04: [bioequivalence, be study, comparative ba, تكافؤ حيوي]
+M2-TOC: [table of contents, toc]
+M2-INTRO: [introduction]
+M2-02: [quality overall summary, qos]
+M2-NCO: [non-clinical overview, nonclinical overview]
+M2-CO: [clinical overview]
+M2-NCS: [non-clinical summary, nonclinical summary, tabulated summaries]
+M2-CS: [clinical summary, summary of biopharmaceutic]

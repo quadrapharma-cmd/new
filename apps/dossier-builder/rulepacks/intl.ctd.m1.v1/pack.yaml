@@ -1,0 +1,41 @@
+# CTD dossier for any other country — general Module 1
+# Written from the sources named below; a requirement's `sources` say where each line comes from.
+id: intl.ctd.m1.v1
+extends: ich.ctd.m4.v1
+order: 90
+authority:
+  id: OTHER
+  countries:
+  - '*'
+  name:
+    en: Any other country — the ICH CTD with a general Module 1
+    ar: أي دولة تانية — الـ CTD المشترك مع موديول ١ عام
+title:
+  en: CTD dossier for any other country — general Module 1
+  ar: ملف CTD لأي دولة تانية — موديول ١ عام
+status: general
+valid_from: null
+valid_to: null
+verified: false
+matrix:
+  en: General Module 1 layout
+  ar: هيكل عام لموديول ١
+columns:
+  I:
+    en: New active substance
+    ar: مادة فعالة جديدة
+  G_IMP:
+    en: Generic — imported into the country
+    ar: مثيل — مستورد للدولة
+  G_LOC:
+    en: Generic — made in the country
+    ar: مثيل — مصنّع في الدولة
+questions: []
+sources:
+- code: General practice
+  gives: 'a starting layout only: the country''s own guideline or checklist is the rule'
+note:
+  en: This country's own Module 1 has not been written into the program yet. Modules 2 to 5 are the ICH CTD as everywhere; Module 1 here is a general layout
+    — match it to the authority's checklist, and tell us the country so its own Module 1 is added.
+  ar: موديول ١ الخاص بالدولة دي لسه ما اتكتبش في البرنامج. الموديولات ٢–٥ هي الـ CTD المشترك زي أي مكان؛ وموديول ١ هنا هيكل عام — طابقه على قائمة الهيئة،
+    وقولّنا الدولة عشان موديول ١ بتاعها يتضاف.

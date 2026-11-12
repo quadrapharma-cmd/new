@@ -1,0 +1,2694 @@
+- id: US-1.1.1
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd:
+    number: 1.1.1
+  ectd:
+    nodes:
+    - 1.1.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: 'Application form: FDA form 1571'
+    ar: 'نموذج الطلب: FDA form 1571'
+  applies: us_application == 'ind'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.1.1 under 1.1 Forms.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.1.2
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd:
+    number: 1.1.2
+  ectd:
+    nodes:
+    - 1.1.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: 'Application form: FDA form 356h'
+    ar: 'نموذج الطلب: FDA form 356h'
+  applies: us_application != 'ind'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.1.2 under 1.1 Forms.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.1.3
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd:
+    number: 1.1.3
+  ectd:
+    nodes:
+    - 1.1.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: 'User fee cover sheet: FDA form 3397'
+    ar: 'صفحة رسوم المستخدم: FDA form 3397'
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.1.3 under 1.1 Forms.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.1.4
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd:
+    number: 1.1.4
+  ectd:
+    nodes:
+    - 1.1.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: 'Annual report transmittal: FDA form 2252'
+    ar: 'Annual report transmittal: FDA form 2252'
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.1.4 under 1.1 Forms.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.1.5
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd:
+    number: 1.1.5
+  ectd:
+    nodes:
+    - 1.1.5
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: 'Advertisements and promotional labeling transmittal: FDA form 2253'
+    ar: 'Advertisements and promotional labeling transmittal: FDA form 2253'
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.1.5 under 1.1 Forms.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.1.6
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd:
+    number: 1.1.6
+  ectd:
+    nodes:
+    - 1.1.6
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: 'Transmittal of Labels and Circulars: FDA form 2567'
+    ar: 'Transmittal of Labels and Circulars: FDA form 2567'
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.1.6 under 1.1 Forms.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.2
+  module: 1
+  group: MODULE 1 — 1.2 Cover letters (US FDA)
+  ctd:
+    number: '1.2'
+  ectd:
+    nodes:
+    - '1.2'
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Cover letters
+    ar: خطابات التقديم
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.2 under 1.2 Cover letters.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.3.1.1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.1.1
+  ectd:
+    nodes:
+    - 1.3.1.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Change of address or corporate name
+    ar: Change of address or corporate name
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.1.1 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.3.1.2
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.1.2
+  ectd:
+    nodes:
+    - 1.3.1.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Change in contact / agent
+    ar: Change in contact / agent
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.1.2 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.3.1.3
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.1.3
+  ectd:
+    nodes:
+    - 1.3.1.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Change in sponsor
+    ar: Change in sponsor
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.1.3 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.3.1.4
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.1.4
+  ectd:
+    nodes:
+    - 1.3.1.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Transfer of obligation
+    ar: Transfer of obligation
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.1.4 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.3.1.5
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.1.5
+  ectd:
+    nodes:
+    - 1.3.1.5
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Change in ownership of an application or reissuance of license
+    ar: Change in ownership of an application or reissuance of license
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.1.5 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.3.2
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.2
+  ectd:
+    nodes:
+    - 1.3.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Field copy certification
+    ar: إقرار نسخة المكتب الميداني
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.2 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.3.3
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.3
+  ectd:
+    nodes:
+    - 1.3.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Debarment certification
+    ar: إقرار عدم الحرمان (Debarment)
+  applies: us_application != 'ind'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.3 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: &id001
+    en: 'Which headings an application needs is set by FDA''s own forms and filing checklists, not by the table of headings: the level here marks the usual
+      case — confirm it.'
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+- id: US-1.3.4
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.4
+  ectd:
+    nodes:
+    - 1.3.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Financial certification and disclosure
+    ar: الإقرار والإفصاح المالي
+  applies: us_application != 'ind'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.4 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.3.5.1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.5.1
+  ectd:
+    nodes:
+    - 1.3.5.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Patent information
+    ar: بيانات البراءات
+  applies: us_application != 'ind'
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.5.1 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.3.5.2
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.5.2
+  ectd:
+    nodes:
+    - 1.3.5.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Patent certification
+    ar: إقرار البراءات (Patent certification)
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.5.2 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.3.5.3
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.5.3
+  ectd:
+    nodes:
+    - 1.3.5.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Exclusivity claim
+    ar: طلب الحصرية
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.5.3 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.3.6
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd:
+    number: 1.3.6
+  ectd:
+    nodes:
+    - 1.3.6
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Tropical disease priority review voucher
+    ar: Tropical disease priority review voucher
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.3.6 under 1.3 Administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.4.1
+  module: 1
+  group: MODULE 1 — 1.4 References (US FDA)
+  ctd:
+    number: 1.4.1
+  ectd:
+    nodes:
+    - 1.4.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Letter of authorization
+    ar: خطاب التفويض (Letter of authorization)
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: third_party_certificate
+  produced_by: Third party
+  per:
+    over: apis
+    where: option == 'DMF'
+  acceptance_text: FDA heading 1.4.1 under 1.4 References. Letter of authorization from the holder of each master file the application refers to.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+  kinds:
+  - loa
+- id: US-1.4.2
+  module: 1
+  group: MODULE 1 — 1.4 References (US FDA)
+  ctd:
+    number: 1.4.2
+  ectd:
+    nodes:
+    - 1.4.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Statement of right of reference
+    ar: Statement of right of reference
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.4.2 under 1.4 References.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.4.3
+  module: 1
+  group: MODULE 1 — 1.4 References (US FDA)
+  ctd:
+    number: 1.4.3
+  ectd:
+    nodes:
+    - 1.4.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: List of authorized persons to incorporate by reference
+    ar: List of authorized persons to incorporate by reference
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.4.3 under 1.4 References.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.4.4
+  module: 1
+  group: MODULE 1 — 1.4 References (US FDA)
+  ctd:
+    number: 1.4.4
+  ectd:
+    nodes:
+    - 1.4.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Cross-reference to previously submitted information
+    ar: Cross-reference to previously submitted information
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.4.4 under 1.4 References.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.5.1
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd:
+    number: 1.5.1
+  ectd:
+    nodes:
+    - 1.5.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Withdrawal of an IND
+    ar: Withdrawal of an IND
+  applies: us_application == 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.5.1 under 1.5 Application status.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.5.2
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd:
+    number: 1.5.2
+  ectd:
+    nodes:
+    - 1.5.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Inactivation request
+    ar: Inactivation request
+  applies: us_application == 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.5.2 under 1.5 Application status.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.5.3
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd:
+    number: 1.5.3
+  ectd:
+    nodes:
+    - 1.5.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Reactivation request
+    ar: Reactivation request
+  applies: us_application == 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.5.3 under 1.5 Application status.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.5.4
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd:
+    number: 1.5.4
+  ectd:
+    nodes:
+    - 1.5.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Reinstatement request
+    ar: Reinstatement request
+  applies: us_application == 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.5.4 under 1.5 Application status.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.5.5
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd:
+    number: 1.5.5
+  ectd:
+    nodes:
+    - 1.5.5
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Withdrawal of an unapproved BLA, NDA, ANDA, or supplement
+    ar: Withdrawal of an unapproved BLA, NDA, ANDA, or supplement
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.5.5 under 1.5 Application status.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.5.6
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd:
+    number: 1.5.6
+  ectd:
+    nodes:
+    - 1.5.6
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Withdrawal of listed drug
+    ar: Withdrawal of listed drug
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.5.6 under 1.5 Application status.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.5.7
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd:
+    number: 1.5.7
+  ectd:
+    nodes:
+    - 1.5.7
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Withdrawal of approval of an application or revocation of license
+    ar: Withdrawal of approval of an application or revocation of license
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.5.7 under 1.5 Application status.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.6.1
+  module: 1
+  group: MODULE 1 — 1.6 Meetings (US FDA)
+  ctd:
+    number: 1.6.1
+  ectd:
+    nodes:
+    - 1.6.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Meeting request
+    ar: Meeting request
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.6.1 under 1.6 Meetings.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.6.2
+  module: 1
+  group: MODULE 1 — 1.6 Meetings (US FDA)
+  ctd:
+    number: 1.6.2
+  ectd:
+    nodes:
+    - 1.6.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Meeting background materials
+    ar: Meeting background materials
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.6.2 under 1.6 Meetings.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.6.3
+  module: 1
+  group: MODULE 1 — 1.6 Meetings (US FDA)
+  ctd:
+    number: 1.6.3
+  ectd:
+    nodes:
+    - 1.6.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Correspondence regarding meetings
+    ar: Correspondence regarding meetings
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.6.3 under 1.6 Meetings.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.7.1
+  module: 1
+  group: MODULE 1 — 1.7 Fast track (US FDA)
+  ctd:
+    number: 1.7.1
+  ectd:
+    nodes:
+    - 1.7.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Fast track designation request
+    ar: Fast track designation request
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.7.1 under 1.7 Fast track.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.7.2
+  module: 1
+  group: MODULE 1 — 1.7 Fast track (US FDA)
+  ctd:
+    number: 1.7.2
+  ectd:
+    nodes:
+    - 1.7.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Fast track designation withdrawal request
+    ar: Fast track designation withdrawal request
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.7.2 under 1.7 Fast track.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.7.3
+  module: 1
+  group: MODULE 1 — 1.7 Fast track (US FDA)
+  ctd:
+    number: 1.7.3
+  ectd:
+    nodes:
+    - 1.7.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Rolling review request
+    ar: Rolling review request
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.7.3 under 1.7 Fast track.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.7.4
+  module: 1
+  group: MODULE 1 — 1.7 Fast track (US FDA)
+  ctd:
+    number: 1.7.4
+  ectd:
+    nodes:
+    - 1.7.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Correspondence regarding fast track / rolling review
+    ar: Correspondence regarding fast track / rolling review
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.7.4 under 1.7 Fast track.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.8.1
+  module: 1
+  group: MODULE 1 — 1.8 Special protocol assessment request (US FDA)
+  ctd:
+    number: 1.8.1
+  ectd:
+    nodes:
+    - 1.8.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Special protocol assessment request — clinical study
+    ar: Special protocol assessment request — clinical study
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.8.1 under 1.8 Special protocol assessment request.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.8.2
+  module: 1
+  group: MODULE 1 — 1.8 Special protocol assessment request (US FDA)
+  ctd:
+    number: 1.8.2
+  ectd:
+    nodes:
+    - 1.8.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Special protocol assessment request — carcinogenicity study
+    ar: Special protocol assessment request — carcinogenicity study
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.8.2 under 1.8 Special protocol assessment request.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.8.3
+  module: 1
+  group: MODULE 1 — 1.8 Special protocol assessment request (US FDA)
+  ctd:
+    number: 1.8.3
+  ectd:
+    nodes:
+    - 1.8.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Special protocol assessment request — stability study
+    ar: Special protocol assessment request — stability study
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.8.3 under 1.8 Special protocol assessment request.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.8.4
+  module: 1
+  group: MODULE 1 — 1.8 Special protocol assessment request (US FDA)
+  ctd:
+    number: 1.8.4
+  ectd:
+    nodes:
+    - 1.8.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Special protocol assessment request — animal efficacy study for approval under the animal rule
+    ar: Special protocol assessment request — animal efficacy study for approval under the animal rule
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.8.4 under 1.8 Special protocol assessment request.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.9.1
+  module: 1
+  group: MODULE 1 — 1.9 Pediatric administrative information (US FDA)
+  ctd:
+    number: 1.9.1
+  ectd:
+    nodes:
+    - 1.9.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Request for waiver of pediatric studies
+    ar: Request for waiver of pediatric studies
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.9.1 under 1.9 Pediatric administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.9.2
+  module: 1
+  group: MODULE 1 — 1.9 Pediatric administrative information (US FDA)
+  ctd:
+    number: 1.9.2
+  ectd:
+    nodes:
+    - 1.9.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Request for deferral of pediatric studies
+    ar: Request for deferral of pediatric studies
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.9.2 under 1.9 Pediatric administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.9.3
+  module: 1
+  group: MODULE 1 — 1.9 Pediatric administrative information (US FDA)
+  ctd:
+    number: 1.9.3
+  ectd:
+    nodes:
+    - 1.9.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Request for pediatric exclusivity determination
+    ar: Request for pediatric exclusivity determination
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.9.3 under 1.9 Pediatric administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.9.4
+  module: 1
+  group: MODULE 1 — 1.9 Pediatric administrative information (US FDA)
+  ctd:
+    number: 1.9.4
+  ectd:
+    nodes:
+    - 1.9.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Proposed pediatric study request and amendments
+    ar: Proposed pediatric study request and amendments
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.9.4 under 1.9 Pediatric administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.9.6
+  module: 1
+  group: MODULE 1 — 1.9 Pediatric administrative information (US FDA)
+  ctd:
+    number: 1.9.6
+  ectd:
+    nodes:
+    - 1.9.6
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Other correspondence regarding pediatric exclusivity or study plans
+    ar: Other correspondence regarding pediatric exclusivity or study plans
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.9.6 under 1.9 Pediatric administrative information.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.10.1
+  module: 1
+  group: MODULE 1 — 1.10 Dispute resolution (US FDA)
+  ctd:
+    number: 1.10.1
+  ectd:
+    nodes:
+    - 1.10.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Request for dispute resolution
+    ar: Request for dispute resolution
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.10.1 under 1.10 Dispute resolution.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.10.2
+  module: 1
+  group: MODULE 1 — 1.10 Dispute resolution (US FDA)
+  ctd:
+    number: 1.10.2
+  ectd:
+    nodes:
+    - 1.10.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Correspondence related to dispute resolution
+    ar: Correspondence related to dispute resolution
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.10.2 under 1.10 Dispute resolution.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.11.1
+  module: 1
+  group: 'MODULE 1 — 1.11 Information amendment: information not covered under Modules 2 to 5 (US FDA)'
+  ctd:
+    number: 1.11.1
+  ectd:
+    nodes:
+    - 1.11.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Quality information amendment
+    ar: Quality information amendment
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: 'FDA heading 1.11.1 under 1.11 Information amendment: information not covered under Modules 2 to 5.'
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.11.2
+  module: 1
+  group: 'MODULE 1 — 1.11 Information amendment: information not covered under Modules 2 to 5 (US FDA)'
+  ctd:
+    number: 1.11.2
+  ectd:
+    nodes:
+    - 1.11.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Nonclinical information amendment
+    ar: Nonclinical information amendment
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: 'FDA heading 1.11.2 under 1.11 Information amendment: information not covered under Modules 2 to 5.'
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.11.3
+  module: 1
+  group: 'MODULE 1 — 1.11 Information amendment: information not covered under Modules 2 to 5 (US FDA)'
+  ctd:
+    number: 1.11.3
+  ectd:
+    nodes:
+    - 1.11.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Clinical information amendment
+    ar: Clinical information amendment
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: 'FDA heading 1.11.3 under 1.11 Information amendment: information not covered under Modules 2 to 5.'
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.11.4
+  module: 1
+  group: 'MODULE 1 — 1.11 Information amendment: information not covered under Modules 2 to 5 (US FDA)'
+  ctd:
+    number: 1.11.4
+  ectd:
+    nodes:
+    - 1.11.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Multiple module information amendment
+    ar: Multiple module information amendment
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: 'FDA heading 1.11.4 under 1.11 Information amendment: information not covered under Modules 2 to 5.'
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.1
+  ectd:
+    nodes:
+    - 1.12.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Pre IND correspondence
+    ar: Pre IND correspondence
+  applies: us_application == 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.1 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.2
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.2
+  ectd:
+    nodes:
+    - 1.12.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Request to charge for clinical trial
+    ar: Request to charge for clinical trial
+  applies: us_application == 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.2 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.3
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.3
+  ectd:
+    nodes:
+    - 1.12.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Request to charge for expanded access
+    ar: Request to charge for expanded access
+  applies: us_application == 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.3 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.4
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.4
+  ectd:
+    nodes:
+    - 1.12.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Request for comments and advice
+    ar: Request for comments and advice
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.4 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.5
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.5
+  ectd:
+    nodes:
+    - 1.12.5
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Request for a waiver
+    ar: Request for a waiver
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.5 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.6
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.6
+  ectd:
+    nodes:
+    - 1.12.6
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Exception from informed consent for emergency research
+    ar: Exception from informed consent for emergency research
+  applies: us_application == 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.6 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.7
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.7
+  ectd:
+    nodes:
+    - 1.12.7
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Public disclosure statement for exception from informed consent for emergency research
+    ar: Public disclosure statement for exception from informed consent for emergency research
+  applies: us_application == 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.7 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.8
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.8
+  ectd:
+    nodes:
+    - 1.12.8
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Correspondence regarding exception from informed consent for emergency research
+    ar: Correspondence regarding exception from informed consent for emergency research
+  applies: us_application == 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.8 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.9
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.9
+  ectd:
+    nodes:
+    - 1.12.9
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Notification of discontinuation of clinical trial
+    ar: Notification of discontinuation of clinical trial
+  applies: us_application == 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.9 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.10
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.10
+  ectd:
+    nodes:
+    - 1.12.10
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Generic drug enforcement act statement
+    ar: Generic drug enforcement act statement
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.10 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.11
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.11
+  ectd:
+    nodes:
+    - 1.12.11
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: ANDA basis for submission statement
+    ar: بيان أساس التقديم للـ ANDA
+  applies: us_application == 'anda'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.11 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.12.12
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.12
+  ectd:
+    nodes:
+    - 1.12.12
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Comparison of generic drug and reference listed drug
+    ar: مقارنة المثيل بالمستحضر المرجعي (RLD)
+  applies: us_application == 'anda'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.12 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.12.13
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.13
+  ectd:
+    nodes:
+    - 1.12.13
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Request for waiver for in vivo studies
+    ar: Request for waiver for in vivo studies
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.13 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.14
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.14
+  ectd:
+    nodes:
+    - 1.12.14
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Environmental analysis
+    ar: التحليل البيئي
+  applies: us_application != 'ind'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.14 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.12.15
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.15
+  ectd:
+    nodes:
+    - 1.12.15
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Request for waiver of in vivo bioavailability studies
+    ar: طلب الإعفاء من دراسات التوافر الحيوي
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.15 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.16
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.16
+  ectd:
+    nodes:
+    - 1.12.16
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Field alert reports
+    ar: Field alert reports
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.16 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.12.17
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd:
+    number: 1.12.17
+  ectd:
+    nodes:
+    - 1.12.17
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Orphan drug designation
+    ar: Orphan drug designation
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.12.17 under 1.12 Other correspondence.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.1
+  ectd:
+    nodes:
+    - 1.13.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — summary for nonclinical studies
+    ar: Annual report — summary for nonclinical studies
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.1 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.2
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.2
+  ectd:
+    nodes:
+    - 1.13.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — summary of clinical pharmacology information
+    ar: Annual report — summary of clinical pharmacology information
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.2 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.3
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.3
+  ectd:
+    nodes:
+    - 1.13.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — summary of safety information
+    ar: Annual report — summary of safety information
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.3 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.4
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.4
+  ectd:
+    nodes:
+    - 1.13.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — summary of labeling changes
+    ar: Annual report — summary of labeling changes
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.4 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.5
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.5
+  ectd:
+    nodes:
+    - 1.13.5
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — summary of manufacturing changes
+    ar: Annual report — summary of manufacturing changes
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.5 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.6
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.6
+  ectd:
+    nodes:
+    - 1.13.6
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — summary of microbiological changes
+    ar: Annual report — summary of microbiological changes
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.6 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.7
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.7
+  ectd:
+    nodes:
+    - 1.13.7
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — summary of other significant new information
+    ar: Annual report — summary of other significant new information
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.7 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.8
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.8
+  ectd:
+    nodes:
+    - 1.13.8
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — individual study information
+    ar: Annual report — individual study information
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.8 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.9
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.9
+  ectd:
+    nodes:
+    - 1.13.9
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — general investigational plan
+    ar: Annual report — general investigational plan
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.9 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.10
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.10
+  ectd:
+    nodes:
+    - 1.13.10
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — foreign marketing
+    ar: Annual report — foreign marketing
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.10 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.11
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.11
+  ectd:
+    nodes:
+    - 1.13.11
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — distribution data
+    ar: Annual report — distribution data
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.11 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.12
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.12
+  ectd:
+    nodes:
+    - 1.13.12
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — status of postmarketing study commitments and requirements
+    ar: Annual report — status of postmarketing study commitments and requirements
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.12 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.13
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.13
+  ectd:
+    nodes:
+    - 1.13.13
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — status of other postmarketing studies and requirements
+    ar: Annual report — status of other postmarketing studies and requirements
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.13 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.14
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.14
+  ectd:
+    nodes:
+    - 1.13.14
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — log of outstanding regulatory business
+    ar: Annual report — log of outstanding regulatory business
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.14 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.13.15
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd:
+    number: 1.13.15
+  ectd:
+    nodes:
+    - 1.13.15
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annual report — development safety update report (DSUR)
+    ar: Annual report — development safety update report (DSUR)
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.13.15 under 1.13 Annual report.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.14.1.1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.1.1
+  ectd:
+    nodes:
+    - 1.14.1.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Draft carton and container labels
+    ar: مسودة ملصقات العلبة والعبوة
+  applies: us_application != 'ind'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.1.1 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.14.1.2
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.1.2
+  ectd:
+    nodes:
+    - 1.14.1.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annotated draft labeling text
+    ar: مسودة نص الملصق مع الشرح
+  applies: us_application != 'ind'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.1.2 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.14.1.3
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.1.3
+  ectd:
+    nodes:
+    - 1.14.1.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Draft labeling text
+    ar: مسودة نص الملصق
+  applies: us_application != 'ind'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.1.3 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+  kinds:
+  - smpc
+- id: US-1.14.1.4
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.1.4
+  ectd:
+    nodes:
+    - 1.14.1.4
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Label comprehension studies
+    ar: Label comprehension studies
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.1.4 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.14.1.5
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.1.5
+  ectd:
+    nodes:
+    - 1.14.1.5
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Labeling history
+    ar: Labeling history
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.1.5 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.14.2.1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.2.1
+  ectd:
+    nodes:
+    - 1.14.2.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Final carton or container labels
+    ar: Final carton or container labels
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.2.1 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.14.2.2
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.2.2
+  ectd:
+    nodes:
+    - 1.14.2.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Final package insert (package inserts, patient information, medication guides)
+    ar: Final package insert (package inserts, patient information, medication guides)
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.2.2 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.14.2.3
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.2.3
+  ectd:
+    nodes:
+    - 1.14.2.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Final labeling text
+    ar: Final labeling text
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.2.3 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.14.3.1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.3.1
+  ectd:
+    nodes:
+    - 1.14.3.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Annotated comparison with listed drug
+    ar: المقارنة المشروحة مع المستحضر المرجعي
+  applies: us_application in ('anda', 'nda_b2')
+  required:
+    I: O
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.3.1 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.14.3.2
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.3.2
+  ectd:
+    nodes:
+    - 1.14.3.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Approved labeling text for listed drug
+    ar: Approved labeling text for listed drug
+  applies: us_application in ('anda', 'nda_b2')
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.3.2 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.14.3.3
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.3.3
+  ectd:
+    nodes:
+    - 1.14.3.3
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Labeling text for reference listed drug
+    ar: نص ملصق المستحضر المرجعي (RLD)
+  applies: us_application in ('anda', 'nda_b2')
+  required:
+    I: O
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.3.3 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.14.4.1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.4.1
+  ectd:
+    nodes:
+    - 1.14.4.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Investigational brochure
+    ar: كتيّب الباحث
+  applies: us_application == 'ind'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.4.1 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.14.4.2
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.4.2
+  ectd:
+    nodes:
+    - 1.14.4.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Investigational drug labeling
+    ar: Investigational drug labeling
+  applies: us_application == 'ind'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.4.2 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-1.14.5
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.5
+  ectd:
+    nodes:
+    - 1.14.5
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Foreign labeling
+    ar: Foreign labeling
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.5 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.14.6
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd:
+    number: 1.14.6
+  ectd:
+    nodes:
+    - 1.14.6
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Product labeling for 2253 submissions
+    ar: Product labeling for 2253 submissions
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.14.6 under 1.14 Labeling.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.15.1
+  module: 1
+  group: MODULE 1 — 1.15 Promotional material (US FDA)
+  ctd:
+    number: 1.15.1
+  ectd:
+    nodes:
+    - 1.15.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Promotional material — correspondence relating to promotional materials
+    ar: Promotional material — correspondence relating to promotional materials
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.15.1 under 1.15 Promotional material.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.15.2
+  module: 1
+  group: MODULE 1 — 1.15 Promotional material (US FDA)
+  ctd:
+    number: 1.15.2
+  ectd:
+    nodes:
+    - 1.15.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Promotional material — materials
+    ar: Promotional material — materials
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.15.2 under 1.15 Promotional material.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.16.1
+  module: 1
+  group: MODULE 1 — 1.16 Risk management plan (US FDA)
+  ctd:
+    number: 1.16.1
+  ectd:
+    nodes:
+    - 1.16.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Risk management (non-REMS)
+    ar: Risk management (non-REMS)
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.16.1 under 1.16 Risk management plan.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.16.2
+  module: 1
+  group: MODULE 1 — 1.16 Risk management plan (US FDA)
+  ctd:
+    number: 1.16.2
+  ectd:
+    nodes:
+    - 1.16.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Risk evaluation and mitigation strategy (REMS)
+    ar: استراتيجية تقييم وتخفيف المخاطر (REMS)
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.16.2 under 1.16 Risk management plan.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.17.1
+  module: 1
+  group: MODULE 1 — 1.17 Postmarketing studies (US FDA)
+  ctd:
+    number: 1.17.1
+  ectd:
+    nodes:
+    - 1.17.1
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Correspondence regarding postmarketing commitments
+    ar: Correspondence regarding postmarketing commitments
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.17.1 under 1.17 Postmarketing studies.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.17.2
+  module: 1
+  group: MODULE 1 — 1.17 Postmarketing studies (US FDA)
+  ctd:
+    number: 1.17.2
+  ectd:
+    nodes:
+    - 1.17.2
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Correspondence regarding postmarketing requirements
+    ar: Correspondence regarding postmarketing requirements
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.17.2 under 1.17 Postmarketing studies.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.18
+  module: 1
+  group: MODULE 1 — 1.18 Proprietary names (US FDA)
+  ctd:
+    number: '1.18'
+  ectd:
+    nodes:
+    - '1.18'
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Proprietary names
+    ar: الأسماء التجارية
+  applies: us_application != 'ind'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_letter
+  produced_by: Company
+  acceptance_text: FDA heading 1.18 under 1.18 Proprietary names.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.19
+  module: 1
+  group: MODULE 1 — 1.19 Pre-EUA and EUA (US FDA)
+  ctd:
+    number: '1.19'
+  ectd:
+    nodes:
+    - '1.19'
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Pre-EUA and EUA
+    ar: Pre-EUA and EUA
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.19 under 1.19 Pre-EUA and EUA.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+- id: US-1.20
+  module: 1
+  group: MODULE 1 — 1.20 General investigational plan for initial IND (US FDA)
+  ctd:
+    number: '1.20'
+  ectd:
+    nodes:
+    - '1.20'
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: General investigational plan for initial IND
+    ar: الخطة البحثية العامة لأول IND
+  applies: us_application == 'ind'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: FDA heading 1.20 under 1.20 General investigational plan for initial IND.
+  sources:
+  - FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-3.2.R-EBR
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd:
+    number: 3.2.R
+  ectd:
+    nodes:
+    - 3.2.R
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Executed batch records
+    ar: سجلات التشغيلات المنفذة
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: The executed batch records of the batches the application relies on.
+  sources:
+  - ICH M4Q(R1) §3.2.R (the examples marked «USA only»); FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+  kinds:
+  - bmr
+- id: US-3.2.R-MVP
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd:
+    number: 3.2.R
+  ectd:
+    nodes:
+    - 3.2.R
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Method validation package
+    ar: حزمة التحقق من صحة الطرق
+  applies: 'true'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: The method validation package.
+  sources:
+  - ICH M4Q(R1) §3.2.R (the examples marked «USA only»); FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
+  level_note: *id001
+- id: US-3.2.R-CP
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd:
+    number: 3.2.R
+  ectd:
+    nodes:
+    - 3.2.R
+    source: FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+    provenance: US-IN-FORCE
+  title:
+    en: Comparability protocols
+    ar: بروتوكولات المقارنة
+  applies: 'true'
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  doc_class: company_technical
+  produced_by: Company
+  acceptance_text: Comparability protocols for planned post-approval changes.
+  sources:
+  - ICH M4Q(R1) §3.2.R (the examples marked «USA only»); FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)
+  provenance: US-IN-FORCE
