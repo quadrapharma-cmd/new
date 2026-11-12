@@ -2070,11 +2070,25 @@ function wireDoc(box, s, v){
   box.querySelectorAll('.dp-add').forEach(b=>b.onclick=()=>{ const tb=b.previousElementSibling; const n=tb.querySelectorAll('th').length; if(tb.classList.contains('ex')){ tb.querySelector('tbody').innerHTML=''; tb.classList.remove('ex'); }
     const tr=document.createElement('tr'); tr.innerHTML=Array.from({length:n},()=>'<td contenteditable="true"></td>').join(''); tb.querySelector('tbody').appendChild(tr); tr.firstChild.focus(); });
 }
-async function fetchAnswers(v){
-  const mode=await aiMode(); let note='';
-  if(mode==='browser' && v.prompt){ try{ const a=await window.DBAI.ask(v.prompt); if(a&&typeof a==='object') return {answers:a, how:'answers', note}; }catch(e){ note=(e&&(e.code||e.message))||'error'; } }
+/* why claude.ai's model gave no answer, in words (the codes are the page runtime's) */
+function aiWhy(code){
+  const w={not_granted:{ar:'Claude ما اتسمحلوش في الصفحة دي (افتح الصفحة من جديد واسمح لما يسألك).',en:'Claude was not allowed in this page (open the page again and allow it when asked).'},
+    rate_limited:{ar:'وصلت لحد استخدام Claude دلوقتي — جرّب بعد شوية.',en:'Claude\'s usage limit was reached — try again in a while.'},
+    invalid_json:{ar:'رد Claude ما طلعش بالشكل المطلوب — دوس «اعمله لي» تاني.',en:'Claude\'s answer did not come in the expected shape — press «Make it for me» again.'},
+    prompt_too_large:{ar:'المستندات أطول من اللي Claude يقراه في مرة واحدة.',en:'The documents are longer than Claude reads at once.'},
+    session_expired:{ar:'سجّل الدخول في claude.ai تاني.',en:'Sign in to claude.ai again.'},
+    refused:{ar:'Claude رفض الطلب ده.',en:'Claude declined this request.'},
+    empty_completion:{ar:'Claude ما كتبش حاجة — جرّب تاني.',en:'Claude wrote nothing — try again.'},
+    upstream_error:{ar:'الاتصال بـ Claude اتقطع — جرّب تاني.',en:'The connection to Claude dropped — try again.'}};
+  const off=['sampling_disabled','not_declared','capability_disabled','capability_removed','unavailable'];
+  return L(w[code]||(off.includes(code)?{ar:'Claude مش متاح في العرض ده.',en:'Claude is not available in this view.'}:{ar:`Claude ما كمّلش (${code||'error'}).`,en:`Claude did not finish (${code||'error'}).`}));
+}
+async function fetchAnswers(v, hooks){
+  const mode=await aiMode(); let note='', code='';
+  if(mode==='browser' && v.prompt){ try{ const a=await window.DBAI.ask(v.prompt, hooks&&{onText:hooks.onText, signal:hooks.signal}); if(a&&typeof a==='object') return {answers:a, how:'answers', note, code}; code='invalid_json'; }
+    catch(e){ code=(e&&e.code)||'error'; note=(e&&(e.code||e.message))||'error'; if(code==='cancelled') throw e; } }
   const r=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(v.slot_id)}/fill`,{method:'POST',json:{ai:true}});
-  return {answers:r.answers, how:r.how, note};
+  return {answers:r.answers, how:r.how, note, code, mode};
 }
 async function loadTemplatePanel(s, body){
   const box=body.querySelector('#tplPanel'); if(!box) return;
@@ -2094,14 +2108,31 @@ async function loadTemplatePanel(s, body){
   }
   const can=e.draft==='full'||e.draft==='partial';
   box.innerHTML=head+`<div id="dpWrap">${renderDoc(s, v, st.answers)}</div>
-    <div class="row gap-s" style="margin-top:8px">${can?`<button class="btn pri" id="dpFill">${icon('sparkles')} ${esc(t('draftBtnLong'))}</button>`:''}<button class="btn" id="dpSave">${icon('download')} ${esc(t('dpSave'))}</button>${e.generator?`<button class="btn" data-gen="${esc(e.generator)}">${icon('sparkles')} ${esc(t('generate'))}</button>`:''}</div>
+    <div class="row gap-s" style="margin-top:8px">${can?`<button class="btn pri" id="dpFill">${icon('sparkles')} ${esc(t('draftBtnLong'))}</button><button class="btn ghost" id="dpStop" hidden>${esc(L({ar:'إيقاف',en:'Stop'}))}</button>`:''}<button class="btn" id="dpSave">${icon('download')} ${esc(t('dpSave'))}</button>${e.generator?`<button class="btn" data-gen="${esc(e.generator)}">${icon('sparkles')} ${esc(t('generate'))}</button>`:''}</div>
     <div class="small muted" style="margin-top:6px">${esc(t(mode==='browser'?'tplAiBrowser':mode==='server'?'tplAiServer':'tplAiNone'))}${v.documents&&v.documents.length?` · ${esc(t('draftDocs'))}: ${v.documents.map(d=>esc(d.filename)).join('، ')}`:''}</div>
+    <div id="dpStat" class="small" role="status" hidden style="margin-top:6px;line-height:1.7"></div>
     ${inputs?`<div class="row gap-s small" style="margin-top:6px;flex-wrap:wrap"><b>${esc(t('tplInputs'))}:</b> ${inputs}</div>`:''}`;
   wireDoc(box.querySelector('#dpWrap'), s, v);
+  /* «make it for me»: the model can take from seconds to two minutes, so what it is doing stays on the screen the whole time (how
+     long, whether it has started writing), it can be stopped, and when it gives no answer the reason is said — the page is then
+     filled from the product data only, and says so */
   const fill=box.querySelector('#dpFill'); if(fill) fill.onclick=async()=>{ fill.disabled=true; toast(t('drafting'));
-    try{ const r=await fetchAnswers(v); st.answers=r.answers; box.querySelector('#dpWrap').innerHTML=renderDoc(s, v, st.answers); wireDoc(box.querySelector('#dpWrap'), s, v);
-      toast(`${t('dpFilled')} · ${t('draftHow_'+String(r.how).replace('-','_'))} · ${(r.answers.gaps||[]).length} ${t('gapsN')}${r.note?` · ${r.note}`:''}`); }
-    catch(err){ toast(err.message); } fill.disabled=false; };
+    const stat=box.querySelector('#dpStat'), stop=box.querySelector('#dpStop'), t0=Date.now(), ctl=new AbortController(); let chars=0;
+    const secs=()=>Math.round((Date.now()-t0)/1000);
+    const show=(text, tone)=>{ if(!stat.isConnected) return; stat.hidden=false; stat.style.color=tone?`var(--${tone})`:''; stat.textContent=text; };
+    const paint=()=>show(mode==='browser' ? (chars ? L({ar:`Claude بيكتب… ${chars} حرف · ${secs()} ثانية`,en:`Claude is writing… ${chars} characters · ${secs()} s`})
+        : L({ar:`Claude بيقرا المستندات وبيفكّر… ${secs()} ثانية — ممكن ياخد لحد دقيقتين. أول مرة هيسألك تسمحله.`,en:`Claude is reading the documents and thinking… ${secs()} s — it can take up to two minutes. The first time it asks you to allow it.`}))
+      : L({ar:`بيصيغ من المستندات… ${secs()} ثانية`,en:`Drafting from the documents… ${secs()} s`}));
+    paint(); const tick=setInterval(paint, 1000);
+    if(stop&&mode==='browser'){ stop.hidden=false; stop.onclick=()=>ctl.abort(); }
+    try{ const r=await fetchAnswers(v, {signal:ctl.signal, onText:u=>{ chars=(u&&u.text||'').length; paint(); }});
+      clearInterval(tick); st.answers=r.answers; box.querySelector('#dpWrap').innerHTML=renderDoc(s, v, st.answers); wireDoc(box.querySelector('#dpWrap'), s, v);
+      const gaps=`${(r.answers.gaps||[]).length} ${t('gapsN')}`;
+      if(r.code) show(`${aiWhy(r.code)} ${L({ar:'الصفحة اتملت من بيانات المنتج بس',en:'The page was filled from the product data only'})} · ${gaps}.`, 'warn');
+      else show(`${t('draftHow_'+String(r.how).replace('-','_'))} · ${secs()} ${L({ar:'ثانية',en:'s'})} · ${gaps} — ${t('dpFilled')}.`, r.how==='data'?'':'ok');
+      toast(`${t('dpFilled')} · ${t('draftHow_'+String(r.how).replace('-','_'))} · ${gaps}${r.note?` · ${r.note}`:''}`); }
+    catch(err){ clearInterval(tick); if(err&&err.code==='cancelled') show(L({ar:'اتوقف. الصفحة زي ما هي.',en:'Stopped. The page is as it was.'})); else { show(String(err&&err.message||err), 'bad'); toast(err&&err.message||String(err)); } }
+    if(stop) stop.hidden=true; fill.disabled=false; };
   box.querySelector('#dpSave').onclick=async()=>{ const answers=collectDoc(box.querySelector('#dpWrap'), v); toast(t('dpSaving'));
     try{ const r=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(s.slot_id)}/draft`,{method:'POST',json:{answers, lang:S.lang}});
       toast(`${t('drafted')} · ${(r.gaps||[]).length} ${t('gapsN')}`); delete S.tplState[s.slot_id]; S.board=null; await route(); openWhy(s.slot_id); }catch(err){ toast(err.message); } };

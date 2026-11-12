@@ -259,7 +259,11 @@
       const opts = { modelTier: target === 'document' ? 'quick' : 'default', cache: false };
       if (images.length) opts.images = images;
       try { return await sample.json(prompt, opts); }
-      catch (e) { if (images.length && !(e && e.code === 'declined')) { delete opts.images; return await sample.json(prompt, opts); } throw e; }
+      catch (e) {                                                      // the pictures may be what failed: once more with the text alone — never when the viewer said no or cannot
+        const final = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed', 'rate_limited', 'session_expired', 'cancelled'];
+        if (images.length && !(e && final.includes(e.code))) { delete opts.images; return await sample.json(prompt, opts); }
+        throw e;
+      }
     },
     pageImages,
     /* one JSON answer from claude.ai's model for a prompt the engine wrote (drafting a document, filling a template) */
