@@ -342,9 +342,9 @@ def t_read_document(ctx, doc_id, pages=None):
             attach.append({'type': 'document', 'title': f'{name} p.{a}-{b}', 'source': {'type': 'base64', 'media_type': 'application/pdf', 'data': base64.standard_b64encode(part).decode()}})
         else:
             head.append('(too large to attach as pages; text only)')
-    elif extract.word_kind(data):
+    elif extract.source_family(name, data):
         text = extract.read_text(name, data)['text']
-        head.append('Word document: text below')
+        head.append('office document (%s): text below' % extract.source_family(name, data))
     else:
         from .. import arabic
         mt = arabic.image_type(data)

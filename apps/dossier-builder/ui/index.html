@@ -199,7 +199,7 @@ body[data-role="editor"] .admin-only,body[data-role="viewer"] .admin-only{displa
 <div class="scrim" id="scrim" hidden></div>
 <aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog" aria-labelledby="dTitle"><header><h2 id="dTitle"></h2><button class="btn ghost sm" id="dClose" aria-label="Close">✕</button></header><div class="body" id="dBody"></div></aside>
 <div class="toast" id="toast" role="status" hidden></div>
-<input type="file" id="picker" accept="application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.tif,.tiff,.docx,.doc" hidden>
+<input type="file" id="picker" accept="" hidden>
 <script src="/assets/ds.js"></script>
 <script>window.DB_TESS_BASE=window.DB_TESS_BASE||'/assets/tess/';window.DB_PDFJS_BASE=window.DB_PDFJS_BASE||'/assets/pdfjs/';</script>
 <script src="/assets/ocr.js"></script>
@@ -311,7 +311,7 @@ const T = {
   reviewT:{en:'Review what was read',ar:'راجع اللي اتقرا'}, byAi:{en:'Read by Claude — check each value.',ar:'قراها Claude — راجع كل قيمة.'},
   byRules:{en:'Read by the rules (no AI available here) — check each value.',ar:'قرتها القواعد (الذكاء الاصطناعي مش متاح هنا) — راجع كل قيمة.'},
   aiFailed:{en:'AI reading unavailable:',ar:'القراءة الذكية مش متاحة:'}, fillAll:{en:'Fill the fields',ar:'املأ الخانات'},
-  badFiles:{en:'Choose PDF, image (JPG/PNG) or Word files.',ar:'اختار ملفات PDF أو صور (JPG/PNG) أو Word.'}, apiHint:{en:'one row per active substance; a substance without a manufacturer is kept in the form for you to complete',ar:'صف لكل مادة فعالة؛ المادة اللي من غير مصنع بتفضل في النموذج عشان تكمّلها'},
+  badFiles:{en:'Choose documents: PDF, Word, Excel, PowerPoint (old or new format), text or images.',ar:'اختار مستندات: PDF أو Word أو Excel أو PowerPoint (صيغة قديمة أو جديدة) أو نصوص أو صور.'}, apiHint:{en:'one row per active substance; a substance without a manufacturer is kept in the form for you to complete',ar:'صف لكل مادة فعالة؛ المادة اللي من غير مصنع بتفضل في النموذج عشان تكمّلها'},
   apiManMissing:{en:'manufacturer not read — type it',ar:'المصنع ما اتقراش — اكتبه'}, compRead:{en:'Composition rows read',ar:'صفوف التركيب اللي اتقرت'}, batchRead:{en:'Batches',ar:'تشغيلات'}, toData:{en:'they go to the product data after the dossier is created',ar:'بتتحط في بيانات المنتج بعد إنشاء الملف'}, pagesN:{en:'p.',ar:'صفحة'}, fText:{en:'text',ar:'نص مقروء'},
   fScan:{en:'scan — no text layer',ar:'سكان بدون نص'}, fVision:{en:'scan read from its page images',ar:'سكان اتقرى من صور صفحاته'}, fOcrBrowser:{en:'scan read by OCR in the browser',ar:'سكان اتقرى بـ OCR في المتصفح'},
   ocrRunning:{en:'Reading the scan (OCR in the browser)…',ar:'بيقرأ السكان (OCR في المتصفح)…'},
@@ -362,7 +362,7 @@ const T = {
   driveMode_public:{en:'public folders, no key',ar:'فولدرات عامة من غير مفتاح'}, driveMode_api_key:{en:'Google API key',ar:'مفتاح Google API'}, driveMode_service_account:{en:'service account',ar:'حساب خدمة'},
   driveSet:{en:'Drive settings',ar:'إعدادات Drive'}, driveKey:{en:'Google API key (folders shared «anyone with the link»)',ar:'مفتاح Google API (للفولدرات المشتركة «أي شخص معه اللينك»)'},
   driveSA:{en:'Service account JSON (private folders: share the folder with the account e-mail)',ar:'ملف حساب الخدمة JSON (للفولدرات الخاصة: شارك الفولدر مع إيميل الحساب)'}, driveSave:{en:'Save',ar:'احفظ'},
-  driveNoneSel:{en:'Select at least one file.',ar:'اختار ملف واحد على الأقل.'}, driveNoUsable:{en:'No readable files here (PDF, Word, images, Google Docs).',ar:'مفيش ملفات مقروءة هنا (PDF، Word، صور، Google Docs).'}, readableRunning:{en:'Making a readable copy…',ar:'بيعمل نسخة مقروءة…'}, readableDone:{en:'Readable copy saved as a new version (page images unchanged).',ar:'اتحفظت نسخة مقروءة كإصدار جديد (صور الصفحات زي ما هي).'},
+  driveNoneSel:{en:'Select at least one file.',ar:'اختار ملف واحد على الأقل.'}, driveNoUsable:{en:'No readable documents here (PDF, Word, Excel, PowerPoint, text, images, Google Docs).',ar:'مفيش مستندات مقروءة هنا (PDF، Word، Excel، PowerPoint، نصوص، صور، Google Docs).'}, readableRunning:{en:'Making a readable copy…',ar:'بيعمل نسخة مقروءة…'}, readableDone:{en:'Readable copy saved as a new version (page images unchanged).',ar:'اتحفظت نسخة مقروءة كإصدار جديد (صور الصفحات زي ما هي).'},
   readableNoOcr:{en:'No OCR available here: install tesseract on this computer or use the browser edition.',ar:'مفيش OCR متاح هنا: ثبّت tesseract على الجهاز أو استخدم نسخة المتصفح.'},
   makeReadable:{en:'After saving, convert the scanned files to readable PDFs (OCR text layer; the page images stay as they are)',ar:'بعد الحفظ، حوّل الملفات الممسوحة لـ PDF مقروء (طبقة نص OCR؛ صور الصفحات زي ما هي)'}, ocrFailed:{en:'Browser OCR failed:',ar:'قراءة الـ OCR في المتصفح فشلت:'},
   scanByVision:{en:'Scans without text were read from their page images by Claude',ar:'المستندات الممسوحة بدون نص اتقرت من صور صفحاتها بواسطة Claude'},
@@ -682,7 +682,7 @@ function asstPaint(st, first){ const body=$('#asstBody'); if(!body) return; cons
   $$('[data-apv]').forEach(b=>b.onclick=async()=>{ b.disabled=true; try{ await api(`/dossiers/${S.asst.did}/assistant/approvals/${b.dataset.apv}`,{method:'POST',json:{decision:b.dataset.dec}}); asstRefresh(false); }catch(e){ toast(e.message); b.disabled=false; } });
   const sb=$('#asstSend'); if(sb) sb.disabled=!!active||!set.configured||!!set.browser; const stp=$('#asstStop'); if(stp) stp.hidden=!active; }
 function asstComposer(){ $('#asstComposer').innerHTML=`<div class="stack gap-s"><textarea id="asstText" rows="3" placeholder="${esc(t('asstPlaceholder'))}" dir="auto"></textarea>
-  <div class="row gap-s"><input type="file" id="asstFiles" multiple hidden accept=".pdf,.docx,.doc,image/*"><button class="btn sm" id="asstAttach" type="button">${icon('upload',14)} ${esc(t('asstAttach'))} <span id="asstNFiles" class="small muted"></span></button>
+  <div class="row gap-s"><input type="file" id="asstFiles" multiple hidden accept="${DS.DOC_ACCEPT}"><button class="btn sm" id="asstAttach" type="button">${icon('upload',14)} ${esc(t('asstAttach'))} <span id="asstNFiles" class="small muted"></span></button>
   <span class="grow"></span><button class="btn sm ghost" id="asstStop" type="button" hidden>${esc(t('asstStop'))}</button><button class="btn sm ghost" id="asstClear" type="button">${esc(t('asstClear'))}</button><button class="btn pri sm" id="asstSend" type="button">${icon('arrow',14)} ${esc(t('asstSend'))}</button></div></div>`;
   $('#asstAttach').onclick=()=>$('#asstFiles').click(); $('#asstFiles').onchange=()=>{ const n=$('#asstFiles').files.length; $('#asstNFiles').textContent=n?`(${n})`:''; };
   $('#asstSend').onclick=asstSend; $('#asstText').onkeydown=e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)) asstSend(); };
@@ -923,7 +923,7 @@ async function refill(w){
   const scannedAll=names.filter(n=>w.texts[n].scanned); w.scannedNames=scannedAll; w.makeReadable=scannedAll.length>0;
 }
 async function addDocs(kind, files){
-  const w=S.wiz; if(!w) return; files=files.filter(f=>/\.(pdf|jpe?g|png|webp|tiff?|docx?)$/i.test(f.name)); if(!files.length){ toast(t('badFiles')); return; }
+  const w=S.wiz; if(!w) return; files=files.filter(f=>DS.isDoc(f.name)); if(!files.length){ toast(t('badFiles')); return; }
   w.allFiles=w.allFiles||[]; w.docs=w.docs||{}; w.texts=w.texts||{}; w.prog=w.prog||{}; w.found=w.found||{}; w.kinds=w.kinds||{};
   const taken=n=>w.allFiles.some(x=>x.name===n)||!!w.texts[n]||((w.docs[n]||{}).status&&w.docs[n].status!=='removed');
   const sizeOf=n=>{ const x=w.allFiles.find(y=>y.name===n); return x?x.size:(w.sizes||{})[n]; };
@@ -1224,14 +1224,30 @@ function datalists(){ const k=VOC().known||{}; const dl=(id,arr)=>`<datalist id=
 /* ---------------- Google Drive as a source: paste a link, pick files, read them like uploads */
 S.drive={link:'',files:[],recursive:false,gear:false,sel:{}}; try{ S.drive.link=localStorage.getItem('db.drive.link')||''; }catch(e){}   // the last Drive link is kept on this browser
 const fmtSize=n=>n>1e6?`${(n/1e6).toFixed(1)} MB`:n>1e3?`${Math.round(n/1e3)} KB`:`${n} B`;
-const driveType=f=>f.kind==='folder'?L({en:'folder',ar:'فولدر'}):/pdf/.test(f.mimeType)?'PDF':/msword/.test(f.mimeType)||/\.doc$/i.test(f.name||'')?'Word (.doc)':/wordprocessingml/.test(f.mimeType)?'Word':/google-apps.document/.test(f.mimeType)?'Google Doc':/google-apps.spreadsheet/.test(f.mimeType)?'Google Sheet':/google-apps.presentation/.test(f.mimeType)?'Google Slides':/^image\//.test(f.mimeType)?L({en:'image',ar:'صورة'}):(f.mimeType||'').split('/').pop()||'?';
+const driveType=f=>{ if(f.kind==='folder') return L({en:'folder',ar:'فولدر'}); const m=f.mimeType||'', e=((/\.([A-Za-z0-9]{1,6})$/.exec(f.name||'')||[])[1]||'').toLowerCase();
+  if(f.why==='system') return L({en:'system file',ar:'ملف نظام'}); if(f.why==='empty') return L({en:'empty file',ar:'ملف فاضي'});
+  if(/google-apps\.document/.test(m)) return 'Google Doc'; if(/google-apps\.spreadsheet/.test(m)) return 'Google Sheet'; if(/google-apps\.presentation/.test(m)) return 'Google Slides'; if(/google-apps\.drawing/.test(m)) return 'Google Drawing';
+  if(/pdf/.test(m)||e==='pdf') return 'PDF';
+  if(/msword/.test(m)||e==='doc'||e==='dot') return 'Word (.doc)'; if(/wordprocessingml|ms-word/.test(m)||/^(docx|docm|dotx|dotm)$/.test(e)) return 'Word';
+  if(/ms-excel$/.test(m)||e==='xls'||e==='xlt') return 'Excel (.xls)'; if(/spreadsheetml|ms-excel/.test(m)||/^(xlsx|xlsm|xltx)$/.test(e)) return 'Excel'; if(/csv|tab-separated/.test(m)||e==='csv'||e==='tsv') return 'CSV';
+  if(/ms-powerpoint$/.test(m)||e==='ppt'||e==='pps') return 'PowerPoint (.ppt)'; if(/presentationml|ms-powerpoint/.test(m)||/^(pptx|ppsx|potx)$/.test(e)) return 'PowerPoint';
+  if(/opendocument/.test(m)||/^od[tsp]$/.test(e)) return 'OpenDocument'; if(/rtf/.test(m)||e==='rtf') return 'RTF'; if(/html/.test(m)||/^html?$/.test(e)) return 'HTML';
+  if(/^image\//.test(m)||/^(jpe?g|png|webp|tiff?|bmp|gif|heic|heif)$/.test(e)) return L({en:'image',ar:'صورة'}); if(/^text\/|json|xml/.test(m)||/^(txt|md|xml|json)$/.test(e)) return L({en:'text',ar:'نص'});
+  if(/zip|rar|7z|compressed|x-tar|gzip/.test(m)||/^(zip|rar|7z|tar|gz)$/.test(e)) return L({en:'archive (unpack it first)',ar:'أرشيف مضغوط (فكّه الأول)'});
+  if(f.guess) return L({en:'unknown type (read after fetching)',ar:'نوع غير معروف (هيتعرف بعد الجلب)'});
+  return m.split('/').pop()||'?'; };
 
 /* ---------------- Google Drive through the viewer's own claude.ai connector (browser edition): no key, nothing to share */
 const GD_SERVER='Google Drive', GD_FOLDER='application/vnd.google-apps.folder';
 const GD_EXPORT={'application/vnd.google-apps.document':['application/vnd.openxmlformats-officedocument.wordprocessingml.document','.docx'],
-  'application/vnd.google-apps.spreadsheet':['application/pdf','.pdf'],'application/vnd.google-apps.presentation':['application/pdf','.pdf']};
-const GD_READABLE=/^(application\/pdf|image\/(jpeg|png|webp|tiff?)|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document)$/;
-const GD_EXT={'application/pdf':'.pdf','application/msword':'.doc','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'.docx','image/jpeg':'.jpg','image/png':'.png','image/webp':'.webp','image/tiff':'.tif'};
+  'application/vnd.google-apps.spreadsheet':['application/pdf','.pdf'],'application/vnd.google-apps.presentation':['application/pdf','.pdf'],'application/vnd.google-apps.drawing':['application/pdf','.pdf']};
+/* every type the engine reads, old formats and new: Word, Excel, PowerPoint, OpenDocument, RTF, text, HTML, images */
+const GD_READABLE=/^(application\/(pdf|msword|rtf|json|xml|vnd\.ms-(excel|powerpoint|word)[\w.+-]*|vnd\.openxmlformats-officedocument\.[\w.+-]+|vnd\.oasis\.opendocument\.(text|spreadsheet|presentation))|text\/(plain|csv|html|rtf|xml|markdown|tab-separated-values)|image\/(jpeg|png|webp|tiff?|bmp|gif|heic|heif))$/;
+const GD_EXT={'application/pdf':'.pdf','application/msword':'.doc','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'.docx','application/vnd.ms-excel':'.xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'.xlsx','application/vnd.ms-powerpoint':'.ppt','application/vnd.openxmlformats-officedocument.presentationml.presentation':'.pptx',
+  'application/rtf':'.rtf','text/rtf':'.rtf','application/vnd.oasis.opendocument.text':'.odt','application/vnd.oasis.opendocument.spreadsheet':'.ods','application/vnd.oasis.opendocument.presentation':'.odp',
+  'text/plain':'.txt','text/csv':'.csv','text/html':'.html','image/jpeg':'.jpg','image/png':'.png','image/webp':'.webp','image/tiff':'.tif','image/bmp':'.bmp','image/gif':'.gif','image/heic':'.heic'};
+const GD_SYSTEM=/^(~\$|\.~lock\.|\._)|^(thumbs\.db|desktop\.ini|\.ds_store)$|\.(db|ini|lnk|tmp|bak|exe|dll|msi|bat|cmd|scr)$/i;       // lock files and system files are never documents
 const DBDRIVE={
   _p:null,
   mcp(){ if(!this._p) this._p=(async()=>{ try{ if(!(window.claude&&typeof window.claude.use==='function')) return null; const m=await window.claude.use('mcp'); if(!m) return null;
@@ -1243,10 +1259,13 @@ const DBDRIVE={
     if((m=u.match(/\/(?:file|document|spreadsheets|presentation)\/d\/([A-Za-z0-9_-]{10,})/))) return {kind:'file',id:m[1]};
     if((m=u.match(/[?&]id=([A-Za-z0-9_-]{10,})/))) return {kind:/folder/.test(u)?'folder':'file',id:m[1]};
     if(/^[A-Za-z0-9_-]{20,}$/.test(u)) return {kind:'folder',id:u}; return null; },
-  entry(f, prefix){ const title=String(f.title||f.name||f.id), folder=f.mimeType===GD_FOLDER, exp=GD_EXPORT[f.mimeType];
-    const name=title+(!folder&&!/\.[a-z0-9]{2,5}$/i.test(title)?(exp?exp[1]:(GD_EXT[f.mimeType]||'')):'');       // a title without an extension gets the one of its Drive type
-    return {id:f.id, name, path:(prefix||'')+name, dir:prefix||'', mimeType:f.mimeType||'', kind:folder?'folder':'file', size:f.fileSize?+f.fileSize:null, native:exp?exp[0]:null, export:exp?exp[1]:null,
-      usable:!folder&&(!!exp||GD_READABLE.test(f.mimeType||'')||/\.(pdf|docx?|jpe?g|png|webp|tiff?)$/i.test(title))}; },
+  entry(f, prefix){ const title=String(f.title||f.name||f.id), mime=f.mimeType||'', folder=mime===GD_FOLDER, exp=GD_EXPORT[mime], hasExt=/\.[A-Za-z0-9]{1,6}$/.test(title);
+    const name=title+(!folder&&!hasExt?(exp?exp[1]:(GD_EXT[mime]||'')):'');       // a title without an extension gets the one of its Drive type
+    const why=folder?null:GD_SYSTEM.test(title)?'system':(f.fileSize==='0'||f.fileSize===0)?'empty':null;
+    const known=!!exp||GD_READABLE.test(mime)||(hasExt&&DS.DOC_RX.test(title));
+    const guess=!folder&&!why&&!known&&!hasExt&&!/^application\/vnd\.google-apps\./.test(mime);    // no extension and a general type: the engine looks inside after the fetch
+    return {id:f.id, name, path:(prefix||'')+name, dir:prefix||'', mimeType:mime, kind:folder?'folder':'file', size:f.fileSize?+f.fileSize:null, native:exp?exp[0]:null, export:exp?exp[1]:null,
+      why, guess, usable:!folder&&!why&&(known||guess)}; },
   async call(tool, input, again){ const m=await this.mcp(); if(!m) throw new Error(L({ar:'موصّل Google Drive مش متاح هنا',en:'The Google Drive connector is not available here'}));
     try{ return (await m.callTool(GD_SERVER, tool, input)).payload; }
     catch(e){ const code=(e&&e.code)||'';
@@ -1332,9 +1351,9 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
           if(d.files.skipped&&d.files.skipped.length) d.note=say({ar:'{n} فولدر فرعي ما اتقراش: افتحه لوحده بالسهم اللي جنبه.',en:'{n} sub-folder(s) could not be read: open each with its arrow.'},{n:d.files.skipped.length}); }
         else{ const r=await api('/drive/list',{method:'POST',json:{link, recursive:d.recursive}}); d.files=r.files; ds.mode=r.mode; }
         const us=usable(); d.sel={};
-        if(!opts.single&&us.length<=40) us.forEach(f=>{ d.sel[f.id]=true; });
+        if(!opts.single&&us.length<=40) us.filter(f=>!f.guess).forEach(f=>{ d.sel[f.id]=true; });      // a file of unknown type is offered, not ticked
         else if(!opts.single) d.note=(d.note?d.note+' ':'')+say({ar:'الفولدر فيه {n} ملف مقروء: اختار المستندات اللي محتاجها، أو «اختار الكل».',en:'The folder has {n} readable files: tick the documents you need, or «Select all».'},{n:us.length});
-        if(opts.single&&us.length===1) d.sel[us[0].id]=true;
+        if(opts.single&&us.length===1&&!us[0].guess) d.sel[us[0].id]=true;
       }catch(e){ d.note=e.message; toast(e.message); }
       d.busy=null; paint(); };
     $('#drvList').onclick=()=>list($('#drvLink').value.trim()); $('#drvLink').onkeydown=e=>{ if(e.key==='Enter') list($('#drvLink').value.trim()); };
@@ -1412,7 +1431,7 @@ function aiFillOf(w){
 }
 async function intake(files){
   if(S.wiz){ return addDocs('other', files); }                        // the wizard: read, fill, show on the cards; «review what was read» opens the full review
-  files=files.filter(f=>/\.(pdf|jpe?g|png|webp|tiff?|docx?)$/i.test(f.name)); if(!files.length){ toast(t('badFiles')); return; }
+  files=files.filter(f=>DS.isDoc(f.name)); if(!files.length){ toast(t('badFiles')); return; }
   toast(t('reading'));
   try{ await vocab(); reviewIntake(await readFiles(files,'dossier'), files); }catch(e){ toast(e.message); }
 }

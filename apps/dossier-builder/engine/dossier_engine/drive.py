@@ -13,6 +13,7 @@ import re
 import sys
 import time
 import urllib.parse
+from . import officefiles as _of
 
 FILE = 'drive.json'
 SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
@@ -21,9 +22,9 @@ FOLDER = 'application/vnd.google-apps.folder'
 EXPORT = {'application/vnd.google-apps.document': ('application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.docx'),
           'application/vnd.google-apps.spreadsheet': ('application/pdf', '.pdf'),
           'application/vnd.google-apps.presentation': ('application/pdf', '.pdf')}
-USABLE = {'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'image/png', 'image/jpeg', 'image/webp', 'image/tiff'} | set(EXPORT)
-EXT_MIME = {'.pdf': 'application/pdf', '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.doc': 'application/msword', '.png': 'image/png', '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.tif': 'image/tiff', '.tiff': 'image/tiff'}
+USABLE = set(_of.MIME.values()) | {'text/rtf', 'text/xml'} | set(EXPORT)        # every type the engine reads, old formats and new
+EXT_MIME = dict(_of.MIME)
+_SYSTEM = re.compile(r'^(~\$|\.~lock\.|\._)|^(thumbs\.db|desktop\.ini|\.ds_store)$', re.I)        # lock files and system files are never documents
 FIELDS = 'nextPageToken,files(id,name,mimeType,size,modifiedTime,md5Checksum)'
 HTTP = None            # tests inject: (method, url, headers, data) -> (status, content_type, bytes) — sync or async
 
@@ -192,7 +193,8 @@ class Drive:
     def _entry(f, prefix=''):
         mt = f.get('mimeType') or EXT_MIME.get(os.path.splitext(f.get('name', ''))[1].lower(), '')
         return {'id': f['id'], 'name': f.get('name', f['id']), 'mimeType': mt, 'size': int(f['size']) if str(f.get('size', '')).isdigit() else None,
-                'modified': f.get('modifiedTime'), 'kind': 'folder' if mt == FOLDER else 'file', 'usable': mt in USABLE, 'path': prefix + f.get('name', f['id']),
+                'modified': f.get('modifiedTime'), 'kind': 'folder' if mt == FOLDER else 'file',
+                'usable': mt != FOLDER and not _SYSTEM.search(f.get('name', '')) and (mt in USABLE or os.path.splitext(f.get('name', ''))[1].lower() in EXT_MIME), 'path': prefix + f.get('name', f['id']),
                 'export': EXPORT.get(mt, (None, None))[1]}
 
     async def list_folder(self, folder_id, recursive=False, _prefix='', _depth=0):

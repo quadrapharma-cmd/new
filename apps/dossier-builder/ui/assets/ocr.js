@@ -67,14 +67,26 @@
     return workerP;
   }
 
+  /* an image the OCR engine may not open itself (BMP, GIF, and TIFF or HEIC where the browser can show them) goes through the browser's
+     own decoder and comes out as PNG; when the browser cannot decode it either, the file is handed over as it is */
+  async function asPng(file) {
+    if (/\.(jpe?g|png)$/i.test(file.name || '') || /^image\/(jpeg|png)$/.test(file.type || '') || typeof createImageBitmap !== 'function') return file;
+    try {
+      const bmp = await createImageBitmap(file);
+      const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+      c.getContext('2d').drawImage(bmp, 0, 0);
+      return await new Promise(r => c.toBlob(b => r(b || file), 'image/png'));
+    } catch (e) { return file; }
+  }
   /* file: File/Blob (PDF or image) → {text, pages, chars, pdfs?}. onProgress(status, 0..1, pageNo, pageCount).
      opts.pdfPages: also return, per page, a text-only PDF (invisible OCR text at the right places) that the engine lays over the
      original page to make the scan searchable without touching its image. */
   async function readFile(file, opts) {
     opts = opts || {};
     const maxPages = opts.maxPages || 4;
-    const isPdf = /\.pdf$/i.test(file.name || '') || file.type === 'application/pdf';
-    const images = isPdf ? await pageImages(file, maxPages, opts.scale || 2.8, 'png') : [file];
+    const head = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+    const isPdf = /\.pdf$/i.test(file.name || '') || file.type === 'application/pdf' || String.fromCharCode(...head) === '%PDF-';      // by its bytes too: a Drive file may have no extension
+    const images = isPdf ? await pageImages(file, maxPages, opts.scale || 2.8, 'png') : [await asPng(file)];
     const w = await worker((status, p) => opts.onProgress && opts.onProgress(status, p));
     await w.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
     const texts = [], pdfs = [];

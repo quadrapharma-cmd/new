@@ -1,8 +1,8 @@
 """Word 97-2003 files (.doc) read from the inside with the standard library only, so every edition reads them (the browser
 one too): the OLE2 container ([MS-CFB]), the FIB of the «WordDocument» stream and the piece table of the table stream
 ([MS-DOC] 2.4.1 «Retrieving Text»). The text comes out the way `extract.docx_text` gives a .docx: paragraphs in their order,
-a table row as «cell | cell», a field as what it shows (never its code). Word 6/95 files and password-protected files are
-not read: `doc_text` gives '' and the file is treated as unread (the person places it)."""
+a table row as «cell | cell», a field as what it shows (never its code). Word 6/95 files are read too when they are not fast-saved. A
+password-protected file is not read: `doc_text` gives '' and the file is treated as unread (the person places it)."""
 import re
 import struct
 
@@ -91,6 +91,18 @@ class _Cfb:
         return self._chain(e['start'])[:e['size']]
 
 
+def streams(data):
+    """The top-level streams of a compound file, by name (Word, Excel and PowerPoint 97-2003 files are told apart by them)."""
+    return _Cfb(data).streams
+
+
+def stream(data, name):
+    try:
+        return _Cfb(data).stream(name)
+    except Exception:
+        return None
+
+
 def is_doc(data):
     """A Word 97-2003 document by its bytes (an .xls or a .msg is a compound file too, with other streams)."""
     try:
@@ -162,6 +174,22 @@ def _clean(raw):
     return re.sub(r'\n{3,}', '\n\n', '\n'.join(lines)).strip()
 
 
+LID_CP = {0x01: 'cp1256', 0x20: 'cp1256', 0x29: 'cp1256', 0x0D: 'cp1255', 0x19: 'cp1251', 0x22: 'cp1251', 0x08: 'cp1253', 0x1F: 'cp1254', 0x1E: 'cp874',
+          0x05: 'cp1250', 0x0E: 'cp1250', 0x15: 'cp1250'}
+
+
+def _word6(wd, flags):
+    """Word 6 / 95: the text sits in this same stream, one byte a character in the code page of the document's language, from
+    fcMin to fcMac. A fast-saved file keeps its text in pieces this reader does not follow: it gives ''."""
+    if flags & 0x0004:
+        return ''
+    lid = struct.unpack_from('<H', wd, 0x06)[0]
+    fc_min, fc_mac = struct.unpack_from('<II', wd, 0x18)
+    if not 0 < fc_min < fc_mac <= len(wd):
+        return ''
+    return _clean(wd[fc_min:fc_mac].decode(LID_CP.get(lid & 0x3FF, 'cp1252'), 'replace'))
+
+
 def doc_text(data):
     """The text of a .doc: the body, then what is written in its text boxes. '' when the file cannot be read."""
     try:
@@ -170,7 +198,11 @@ def doc_text(data):
         if not wd or len(wd) < 0x60:
             return ''
         ident, flags = struct.unpack_from('<H', wd, 0)[0], struct.unpack_from('<H', wd, 0x0A)[0]
-        if ident != 0xA5EC or flags & 0x0100:               # Word 6/95, or encrypted
+        if flags & 0x0100:                                  # password-protected
+            return ''
+        if ident == 0xA5DC:
+            return _word6(wd, flags)
+        if ident != 0xA5EC:
             return ''
         table = cfb.stream('1Table' if flags & 0x0200 else '0Table') or cfb.stream('0Table') or cfb.stream('1Table')
         if not table:

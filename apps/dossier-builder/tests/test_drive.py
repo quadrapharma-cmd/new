@@ -15,7 +15,7 @@ DOCX = b'PK\x03\x04 fake docx'
 FOLDER = drive.FOLDER
 FILES_P1 = {'files': [{'id': 'sub1', 'name': 'Module 3', 'mimeType': FOLDER}, {'id': 'f1', 'name': 'licence.pdf', 'mimeType': 'application/pdf', 'size': '12345', 'modifiedTime': '2026-01-02T00:00:00Z'},
                       {'id': 'g1', 'name': 'Specification', 'mimeType': 'application/vnd.google-apps.document'}], 'nextPageToken': 'p2'}
-FILES_P2 = {'files': [{'id': 'x1', 'name': 'notes.xlsx', 'mimeType': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'size': '10'}]}
+FILES_P2 = {'files': [{'id': 'x1', 'name': 'backup.rar', 'mimeType': 'application/rar', 'size': '10'}]}
 SUB = {'files': [{'id': 'f2', 'name': 'stability.pdf', 'mimeType': 'application/pdf', 'size': '5'}]}
 
 
@@ -75,12 +75,12 @@ async def _api_key_lists_and_reads(transport):
     d = drive.Drive({'api_key': 'AIzaTESTKEY0000000000'}, browser=False)
     assert d.mode == 'api_key'
     files = await d.list_folder('root1')
-    assert [f['name'] for f in files] == ['Module 3', 'licence.pdf', 'Specification', 'notes.xlsx']
+    assert [f['name'] for f in files] == ['Module 3', 'licence.pdf', 'Specification', 'backup.rar']
     assert [f['kind'] for f in files] == ['folder', 'file', 'file', 'file'] and [f['usable'] for f in files] == [False, True, True, False]
     assert files[1]['size'] == 12345 and files[2]['export'] == '.docx'
     assert all('key=AIzaTESTKEY0000000000' in c[1] for c in transport if 'googleapis' in c[1])
     deep = await d.list_folder('root1', recursive=True)
-    assert [f['path'] for f in deep] == ['Module 3', 'Module 3/stability.pdf', 'licence.pdf', 'Specification', 'notes.xlsx']
+    assert [f['path'] for f in deep] == ['Module 3', 'Module 3/stability.pdf', 'licence.pdf', 'Specification', 'backup.rar']
     name, data, mt = await d.fetch('f1')
     assert name == 'licence.pdf' and data[:4] == b'%PDF' and mt == 'application/pdf'
     name, data, mt = await d.fetch('g1', 'Specification', 'application/vnd.google-apps.document')

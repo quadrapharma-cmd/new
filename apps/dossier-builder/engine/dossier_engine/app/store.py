@@ -88,6 +88,17 @@ class StoreError(ValueError):
         super().__init__(f'{code}: {en}')
 
 
+SOURCE_DRAFT = {
+    'word': ('Word draft. Print it on letterhead, sign, stamp, scan and upload the PDF (or export it to PDF): the PDF replaces this draft.',
+             'مسودة Word. اطبعها على ورق الشركة ووقّعها واختمها وامسحها ضوئياً وارفع الـ PDF (أو صدّرها PDF): نسخة الـ PDF بتحل محل المسودة.'),
+    'excel': ('An Excel file. The dossier takes PDF: export the sheet to PDF (signed and stamped where the document needs it) and upload it; the PDF replaces this file.',
+              'ملف Excel. الملف التسجيلي بياخد PDF: صدّر الشيت PDF (موقّع ومختوم لو المستند محتاج) وارفعه؛ الـ PDF بيحل محل الملف ده.'),
+    'powerpoint': ('A PowerPoint file. The dossier takes PDF: export it to PDF and upload it; the PDF replaces this file.',
+                   'ملف PowerPoint. الملف التسجيلي بياخد PDF: صدّره PDF وارفعه؛ الـ PDF بيحل محل الملف ده.'),
+    'text': ('A text or web file, not a PDF. The dossier takes PDF: save it as PDF (signed and stamped where the document needs it) and upload it; the PDF replaces this file.',
+             'ملف نصي أو صفحة ويب، مش PDF. الملف التسجيلي بياخد PDF: احفظه PDF (موقّع ومختوم لو المستند محتاج) وارفعه؛ الـ PDF بيحل محل الملف ده.')}
+
+
 class Store:
     def __init__(self, root):
         self.root = Path(root)
@@ -263,13 +274,10 @@ class Store:
             doc_class, supersede = 'signed_scan', draft['id']
         sha = self.put_blob(data)
         from .. import extract as _extract
-        word = bool(_extract.word_kind(data)) or filename.lower().endswith('.docx')
-        if word:                                        # Word draft (.docx or the old .doc): the PDF copy the user uploads replaces it
-            rep = Report(str(self.blob_path(sha)), [Finding(
-                'DOCX-DRAFT', 'warn',
-                'Word draft. Print it on letterhead, sign, stamp, scan and upload the PDF (or export it to PDF): the PDF replaces this draft.',
-                'مسودة Word. اطبعها على ورق الشركة ووقّعها واختمها وامسحها ضوئياً وارفع الـ PDF (أو صدّرها PDF): نسخة الـ PDF بتحل محل المسودة.',
-                'user_fix', 'NP.CAPP.065 v5 general note 4 (PDF)')])
+        family = _extract.source_family(filename, data) or ('word' if filename.lower().endswith('.docx') else None)
+        if family:                                      # a source file (Word, Excel, PowerPoint, text — old format or new): the PDF the user uploads replaces it
+            en, ar = SOURCE_DRAFT[family]
+            rep = Report(str(self.blob_path(sha)), [Finding('DOCX-DRAFT', 'warn', en, ar, 'user_fix', 'NP.CAPP.065 v5 general note 4 (PDF)')])
         else:
             tmp = self.root / 'blobs' / f'.check-{uuid.uuid4().hex}.pdf'
             shutil.copyfile(self.blob_path(sha), tmp)

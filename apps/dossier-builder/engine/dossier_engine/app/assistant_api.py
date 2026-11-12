@@ -3,7 +3,7 @@ import time
 from fastapi import HTTPException, Request, UploadFile, File, Form
 from pydantic import BaseModel
 from ..assistant import settings as asettings, storage, runner
-from ..extract import word_kind as _word_kind
+from ..officefiles import sniff as _sniff
 
 
 def err(status, code, en, ar, **extra):
@@ -91,8 +91,8 @@ def install(app, st):
             data = await f.read()
             if not data:
                 continue
-            if not (data[:4] == b'%PDF' or _word_kind(data) or f.filename.lower().endswith(('.docx', '.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff'))):
-                err(422, 'E-FILE', f'{f.filename}: PDF, Word or image files only.', f'{f.filename}: ملفات PDF أو Word أو صور بس.')
+            if _sniff(f.filename, data) in ('other', 'archive'):
+                err(422, 'E-FILE', f'{f.filename}: PDF, Office (Word, Excel, PowerPoint), text or image files only.', f'{f.filename}: ملفات PDF أو Office (Word، Excel، PowerPoint) أو نصوص أو صور بس.')
             staged.append(storage.stage_document(st, did, f.filename, data))
         if not (text or '').strip() and not staged:
             err(422, 'E-EMPTY', 'Write a message or attach files.', 'اكتب رسالة أو أرفق ملفات.')

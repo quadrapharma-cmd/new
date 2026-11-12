@@ -8,7 +8,7 @@ document is a scan — against SCHEMA and returns the same shape. Every value is
 used; nothing is written without the user's confirmation."""
 import re
 from io import BytesIO
-from . import arabic, intake_eda, msdoc
+from . import arabic, intake_eda, msdoc, officefiles
 
 KINDS = [  # (kind, keywords in lower-case text or file name); see guess_kind for how a match is chosen
     ('cadc', ['notification letter', 'statement of conformity', 'sample identification code', 'qf:cadc', 'شهادة مطابقة']),
@@ -126,14 +126,13 @@ def _docx_xml_text(data):
 def word_kind(data):
     """'docx' | 'doc' | None — a Word file by what is inside it, whatever its name says: a zip with a Word document part, or the
     Word 97-2003 container."""
-    data = data or b''
-    if data[:2] == b'PK':
-        try:
-            import zipfile
-            return 'docx' if 'word/document.xml' in zipfile.ZipFile(BytesIO(data)).namelist() else None
-        except Exception:
-            return None
-    return 'doc' if msdoc.is_doc(data) else None
+    k = officefiles.sniff('', data or b'')
+    return k if k in ('docx', 'doc') else None
+
+
+def source_family(filename, data):
+    """'word' | 'excel' | 'powerpoint' | 'text' | None — an editable source file (old or new format) rather than the PDF the dossier takes."""
+    return officefiles.FAMILY.get(officefiles.sniff(filename, data or b''))
 
 
 def is_word(filename, data=None):
@@ -145,31 +144,30 @@ def is_word(filename, data=None):
 
 def read_text(name, data, max_pages=12, ocr=True, ocr_pages=4):
     """What one uploaded file says: a PDF's text layer, or OCR of its pages when it is a scan (tesseract ara+eng, local
-    computers only), a Word file's paragraphs and tables (.docx or the old .doc), or OCR of an image. `scanned` = image-only (the AI layer then
-    reads the page images), `ocr` = the text came from OCR, `kind_of_file` = pdf | docx | image | other."""
+    computers only), an office file's text (Word, Excel, PowerPoint, OpenDocument, RTF, HTML, text: old formats and new — officefiles), or OCR of an image. `scanned` = image-only (the AI layer then
+    reads the page images), `ocr` = the text came from OCR, `kind_of_file` = pdf | docx | image | xlsx | xls | pptx | … | other."""
     low = (name or '').lower()
     out = {'pages': 0, 'text': '', 'scanned': False, 'ocr': False, 'kind_of_file': 'other'}
-    img = arabic.image_type(data or b'')
-    if data[:4] == b'%PDF' or low.endswith('.pdf'):
+    data = data or b''
+    what = officefiles.sniff(name, data)                 # what the file is, by its bytes
+    img = arabic.image_type(data)
+    if data[:4] == b'%PDF' or what == 'pdf' or (low.endswith('.pdf') and what in ('other', 'text')):
         pt = pdf_text(data, max_pages)
         out.update(pt, kind_of_file='pdf')
         if pt['scanned'] and ocr:
             txt = arabic.ocr_pdf(data, pages=min(pt['pages'] or 1, ocr_pages))
             if len(re.sub(r'\s', '', txt)) >= 20:
                 out.update(text=txt, ocr=True)
-    elif img:
+    elif img or what == 'image':
         out.update(pages=1, scanned=True, kind_of_file='image')
-        if ocr:
+        if ocr and img:
             txt = arabic.ocr_image_bytes(data, '.' + img.split('/')[-1].replace('jpeg', 'jpg'))
             if len(re.sub(r'\s', '', txt)) >= 20:
                 out.update(text=txt, ocr=True)
-    elif word_kind(data):                              # Word, old (.doc) or new (.docx): its paragraphs and tables
-        out.update(pages=1, text=docx_text(data) if data[:2] == b'PK' else msdoc.doc_text(data), kind_of_file='docx')
-    else:
-        try:
-            out.update(data.decode('utf-8'), pages=1) if False else out.update(text=data.decode('utf-8', 'ignore')[:60000], pages=1)
-        except Exception:
-            pass
+    elif what in ('docx', 'doc'):                        # Word, new or old: its paragraphs and tables
+        out.update(pages=1, text=docx_text(data) if what == 'docx' else msdoc.doc_text(data), kind_of_file='docx')
+    elif what in officefiles.OFFICE:                     # Excel, PowerPoint, OpenDocument, RTF, HTML, plain text — old formats and new
+        out.update(pages=1, text=officefiles.text(what, data, name), kind_of_file=what)
     out['text'] = arabic.prepare(out['text'])
     out['arabic'] = arabic.has_arabic(out['text'])
     return out

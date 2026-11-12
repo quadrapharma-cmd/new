@@ -15,7 +15,7 @@ DIACRITICS = re.compile('[ً-ْٰـ]')
 AR_RUN = re.compile('[٠-٩۰-۹][٠-٩۰-۹/\\-.:]*')
 YEAR = re.compile(r'(19|20)\d\d')
 ARABIC = re.compile('[؀-ۿ]')
-IMAGE_MAGIC = ((b'\x89PNG', 'image/png'), (b'\xff\xd8', 'image/jpeg'), (b'GIF8', 'image/gif'), (b'RIFF', 'image/webp'), (b'II*\x00', 'image/tiff'), (b'MM\x00*', 'image/tiff'))
+IMAGE_MAGIC = ((b'\x89PNG', 'image/png'), (b'\xff\xd8', 'image/jpeg'), (b'GIF8', 'image/gif'), (b'RIFF', 'image/webp'), (b'II*\x00', 'image/tiff'), (b'MM\x00*', 'image/tiff'), (b'BM', 'image/bmp'))
 
 # dosage forms as printed on Egyptian documents → the English form the rules already understand
 FORMS_AR = [('أقراص مغلفة', 'film-coated tablet'), ('اقراص مغلفة', 'film-coated tablet'), ('أقراص فوارة', 'effervescent tablet'), ('أقراص للمضغ', 'chewable tablet'),

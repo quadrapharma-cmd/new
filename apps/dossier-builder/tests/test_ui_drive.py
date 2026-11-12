@@ -28,7 +28,7 @@ def test_wizard_reads_a_drive_folder(server, tmp_path):
     pdf = make_pdf_lines(tmp_path / 'licence.pdf', ['Egyptian Drug Authority', 'Final Registration License for Pharmaceutical Product', 'Trade Name: Dermacure', 'Dosage Form: Topical Powder',
                                                      'Active Ingredient(s) & Strength(s): Each 1g contains:', 'NEOMYCIN SULPHATE 3.500 mg ( 3300 unit )', 'License Holder : EXAMPLE PHARM-EGYPT,EGYPT'], 'Licence').read_bytes()
     listing = {'files': [{'id': 'subfolder_0001', 'name': 'Module 3', 'mimeType': drive.FOLDER}, {'id': 'f1', 'name': 'licence.pdf', 'mimeType': 'application/pdf', 'size': str(len(pdf))},
-                         {'id': 'z1', 'name': 'photo.heic', 'mimeType': 'image/heic', 'size': '9'}]}
+                         {'id': 'z1', 'name': 'movie.mp4', 'mimeType': 'video/mp4', 'size': '9'}]}
 
     def http(method, url, headers, data):
         u = urllib.parse.urlparse(url); q = urllib.parse.parse_qs(u.query)
@@ -58,7 +58,7 @@ def test_wizard_reads_a_drive_folder(server, tmp_path):
             page.click('#drvList')
             page.wait_for_selector('[data-drvsel]')
             rows = page.inner_text('#drvFiles')
-            assert 'Module 3' in rows and 'licence.pdf' in rows and 'photo.heic' in rows
+            assert 'Module 3' in rows and 'licence.pdf' in rows and 'movie.mp4' in rows
             assert page.is_checked('[data-drvsel="1"]') and page.is_disabled('[data-drvsel="2"]')     # the PDF is picked, the HEIC cannot be read
             page.locator('#drawer').screenshot(path=f'{OUT}/drive_picker_ar.png')
             page.click('#drvUse')
@@ -83,7 +83,7 @@ def test_browser_edition_reads_a_link_through_the_viewers_drive_connector(server
     window.__mcpCalls = [];
     const FOLDER = 'application/vnd.google-apps.folder';
     const tree = {'1AbCdEfGhIjKlMnOpQrStUv': [{id:'subfolder_0001', title:'Module 3', mimeType: FOLDER}, {id:'f1', title:'licence.pdf', mimeType:'application/pdf', fileSize:'%d'},
-                                                 {id:'z1', title:'photo.heic', mimeType:'image/heic', fileSize:'9'}, {id:'g1', title:'SmPC draft', mimeType:'application/vnd.google-apps.document'}],
+                                                 {id:'z1', title:'movie.mp4', mimeType:'video/mp4', fileSize:'9'}, {id:'g1', title:'SmPC draft', mimeType:'application/vnd.google-apps.document'}],
                   'subfolder_0001': [{id:'f2', title:'spec.pdf', mimeType:'application/pdf', fileSize:'5'}]};
     const mcp = {
       async listTools(server){ return {servers:[{server:'Google Drive', authStatus:'connected', tools:[{name:'search_files'},{name:'get_file_metadata'},{name:'download_file_content'}]}]}; },
@@ -111,7 +111,7 @@ def test_browser_edition_reads_a_link_through_the_viewers_drive_connector(server
         page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv?usp=sharing')
         page.click('#drvList'); page.wait_for_selector('[data-drvsel]')
         rows = page.inner_text('#drvFiles')
-        assert 'Module 3' in rows and 'licence.pdf' in rows and 'photo.heic' in rows and 'SmPC draft.docx' in rows   # a Google Doc is offered as Word
+        assert 'Module 3' in rows and 'licence.pdf' in rows and 'movie.mp4' in rows and 'SmPC draft.docx' in rows   # a Google Doc is offered as Word
         assert page.is_checked('[data-drvsel="1"]') and page.is_disabled('[data-drvsel="2"]')
         page.click('[data-drvopen="subfolder_0001"]'); page.wait_for_function("() => document.querySelector('#drvFiles').textContent.includes('spec.pdf')")
         page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv'); page.click('#drvList')
@@ -263,5 +263,55 @@ def test_drive_is_offered_on_every_item_of_the_board(server, tmp_path):
         assert page.get_attribute('[data-drvsel="0"]', 'type') == 'radio' and page.locator('#drvAll').count() == 0     # one item, one file
         page.check('[data-drvsel="1"]'); page.click('#drvUse')
         page.wait_for_function("async () => { const r = await fetch('/api/dossiers/%s/board', {headers:{'X-DB':'1'}}); const s = (await r.json()).slots.find(x => x.slot_id === 'M1-05'); return s.documents.length === 1 && s.documents[0].filename === 'scan0007.pdf'; }" % did, timeout=60000)
+        assert not errors, errors
+        b.close()
+
+
+def test_every_document_type_old_and_new_is_offered_and_read_by_its_content(server, tmp_path):
+    """Excel, PowerPoint and RTF files (old formats and new) are ticked like PDFs; a file with no extension and a general type is
+    offered but not ticked, and read by its bytes once fetched; lock files, system files, empty files and archives are left out,
+    each with its reason in the type column."""
+    import gzip
+    office = DATA / 'office'
+    pdf = make_pdf_lines(tmp_path / 'licence.pdf', ['Egyptian Drug Authority', 'Final Registration License for Pharmaceutical Product', 'Trade Name: Dermacure', 'Dosage Form: Topical Powder'], 'Licence').read_bytes()
+    b64 = lambda data: base64.b64encode(data).decode()
+    entries = [
+        {'id': 'x1', 'title': 'pricing.xls', 'mimeType': 'application/vnd.ms-excel', 'fileSize': '7168'},                          # a stability sheet under a misleading name
+        {'id': 'p1', 'title': 'overview.ppt', 'mimeType': 'application/vnd.ms-powerpoint', 'fileSize': '461824'},
+        {'id': 'r1', 'title': 'letter', 'mimeType': 'application/rtf', 'fileSize': '20385'},                                        # no extension: Drive's type names it
+        {'id': 'u1', 'title': 'scan0001', 'mimeType': 'application/octet-stream', 'fileSize': str(len(pdf))},                       # no extension, general type: a PDF inside
+        {'id': 's1', 'title': 'Thumbs.db', 'mimeType': 'application/octet-stream', 'fileSize': '9000'},
+        {'id': 's2', 'title': '~$report.docx', 'mimeType': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'fileSize': '162'},
+        {'id': 'e1', 'title': 'empty.docx', 'mimeType': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'fileSize': '0'},
+        {'id': 'a1', 'title': 'backup.rar', 'mimeType': 'application/rar', 'fileSize': '5000'}]
+    files = json.dumps({'x1': b64((office / 'sheet.xls').read_bytes()), 'p1': b64(gzip.decompress((office / 'slides.ppt.gz').read_bytes())), 'r1': b64((office / 'letter.rtf').read_bytes()), 'u1': b64(pdf)})
+    with pw.sync_playwright() as p:
+        b, page, errors = open_page(p, server, connector_stub(json.dumps({'1AbCdEfGhIjKlMnOpQrStUv': entries}), files))
+        page.wait_for_selector('#intakeDrive'); page.click('#intakeDrive'); page.wait_for_selector('#drvLink')
+        page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv'); page.click('#drvList'); page.wait_for_selector('[data-drvsel]')
+        rows = page.evaluate("() => Object.fromEntries([...document.querySelectorAll('#drvFiles tbody tr')].map(tr => { const c = tr.querySelector('[data-drvsel]'), td = tr.querySelectorAll('td'); return [td[1].innerText.trim(), [c.checked, c.disabled, td[2].innerText.trim()]]; }))")
+        assert rows['pricing.xls'] == [True, False, 'Excel (.xls)'] and rows['overview.ppt'] == [True, False, 'PowerPoint (.ppt)'] and rows['letter.rtf'] == [True, False, 'RTF'], rows
+        assert rows['scan0001'][:2] == [False, False]                                                # offered, not ticked
+        assert rows['Thumbs.db'] == [False, True, 'ملف نظام'] and rows['~$report.docx'] == [False, True, 'ملف نظام'] and rows['empty.docx'] == [False, True, 'ملف فاضي'], rows
+        assert rows['backup.rar'][:2] == [False, True] and 'أرشيف' in rows['backup.rar'][2]
+        page.check('tr:has-text("scan0001") [data-drvsel]'); page.click('#drvUse')
+        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 4 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=180000)
+        kinds = page.evaluate("() => S.wiz.kinds")
+        assert kinds == {'pricing.xls': 'stability', 'overview.ppt': 'stability', 'letter.rtf': 'pricing', 'scan0001': 'licence'}, kinds
+        assert 'Assay of Neomycin sulphate | 90.0% - 110.0% | 99.6' in page.evaluate("() => S.wiz.texts['pricing.xls'].text")
+        assert not errors, errors
+        b.close()
+
+
+def test_an_old_excel_file_from_this_computer_goes_through_the_wizard(server, tmp_path):
+    with pw.sync_playwright() as p:
+        b, page, errors = open_page(p, server, 'window.__none = 1;')
+        page.wait_for_selector('#intakeBtn')
+        assert '.xls' in page.get_attribute('#picker', 'accept') and '.ppt' in page.get_attribute('#picker', 'accept') and '.rtf' in page.get_attribute('#picker', 'accept')
+        with page.expect_file_chooser() as fc:
+            page.click('#intakeBtn')
+        fc.value.set_files([str(DATA / 'office' / 'sheet.xls'), str(DATA / 'office' / 'slides.pptx'), str(DATA / 'office' / 'letter.odt')])
+        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 3 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=180000)
+        assert page.evaluate("() => S.wiz.kinds") == {'sheet.xls': 'stability', 'slides.pptx': 'stability', 'letter.odt': 'pricing'}
         assert not errors, errors
         b.close()

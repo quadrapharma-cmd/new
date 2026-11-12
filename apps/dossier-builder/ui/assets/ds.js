@@ -126,5 +126,13 @@
   const fmtTs = (ts, lang) => new Date(ts*1000).toLocaleString(lang==='ar'?'ar-EG':'en-GB');
   const pct = (a, b) => b ? Math.round(100*a/b) : 0;
 
-  window.DS = { $, $$, esc, bdi, store, icon, api, toast, openDrawer, closeDrawer, wireChrome, theme, ring, meter, fmtDate, fmtTs, pct };
+  /* every document type the engine reads, old formats and new. The bytes decide what a file really is: this list only serves the
+     pickers and the filters, and a name with no extension is let through for the engine to look inside. */
+  const DOC_EXT = ['pdf','docx','docm','dotx','dotm','doc','dot','rtf','odt','xlsx','xlsm','xltx','xls','xlt','ods','csv','tsv','pptx','ppsx','potx','ppt','pps','odp',
+    'txt','md','htm','html','xml','json','jpg','jpeg','png','webp','tif','tiff','bmp','gif','heic','heif'];
+  const DOC_RX = new RegExp('\\.(' + DOC_EXT.join('|') + ')$', 'i');
+  const isDoc = name => DOC_RX.test(name||'') || !/\.[A-Za-z0-9]{1,6}$/.test(name||'');
+  const DOC_ACCEPT = DOC_EXT.map(e => '.' + e).join(',') + ',application/pdf,image/*';
+  document.addEventListener('DOMContentLoaded', () => { const p = document.getElementById('picker'); if(p && !p.accept) p.accept = DOC_ACCEPT; });
+  window.DS = { $, $$, esc, bdi, store, icon, api, toast, DOC_EXT, DOC_RX, DOC_ACCEPT, isDoc, openDrawer, closeDrawer, wireChrome, theme, ring, meter, fmtDate, fmtTs, pct };
 })();

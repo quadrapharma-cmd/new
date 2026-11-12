@@ -93,15 +93,29 @@ browser edition (the `sample` capability receives the rendered pages) or through
 `ANTHROPIC_API_KEY` (PDFs attached as documents, photos as images); the drawer names the scans that were read that way and those
 that were not read on this computer. Tests: `tests/test_intake_eda.py` (a fictional product on the three forms, clean and OCR-noisy).
 
-### Word files, old and new
+### Every document format, old and new
 
-A Word document is recognised by what it is inside, whatever its name: a `.docx` (a zip with a Word document part) or the Word 97-2003
-format (`.doc`), which `engine/dossier_engine/msdoc.py` reads with the standard library only (the OLE2 container, the FIB and the piece
-table), so every edition reads it, the browser one included: paragraphs in their order, a table row as «cell | cell» where the table
-stands, a field as what it shows. Its kind comes from that text like any other document's, it is accepted wherever a document is
-(upload, Drive, the Assistant, bulk placement), and it is stored as a Word draft that the signed PDF replaces. Where LibreOffice is
-installed, `amend_document` converts a `.doc` to `.docx` first, so tracked changes work on it. Word 6/95 and password-protected files
-are not read: they wait for the person like any unread file. Tests: `tests/test_word_files.py` (made-up «Dermacure» fixtures).
+A file is what its bytes say, whatever it is called (`officefiles.sniff`), and every format a company's folders hold is read from the
+inside with the standard library and lxml only, so every edition reads them, the browser one included:
+
+| family | new formats | old formats |
+|---|---|---|
+| Word | `.docx` `.docm` `.dotx` | `.doc` 97-2003 (`msdoc.py`: OLE2 container, FIB, piece table), Word 6/95 when not fast-saved, Word 2003 XML, RTF |
+| Excel | `.xlsx` `.xlsm` `.xltx` (shared strings, dates by cell style) | `.xls` 97-2003 (BIFF8, strings across CONTINUE records) and 5/95, Excel 2003 XML, `.csv` `.tsv` |
+| PowerPoint | `.pptx` `.ppsx` (slides in their order, tables) | `.ppt` 97-2003 (text atoms; masters and notes left out) |
+| OpenDocument | `.odt` `.ods` `.odp` | |
+| text | HTML, plain text, XML, JSON in UTF-8 / UTF-16 / Windows-1256 / 1252 | |
+| images | JPG, PNG, WebP, TIFF, BMP, GIF; HEIC where the browser can decode it (OCR) | |
+
+The text comes out the way the rules read a document: lines in their order, a table or sheet row as «cell | cell», a date as
+`YYYY-MM-DD`, a field as what it shows. The kind comes from that text like any other document's; the file is accepted wherever a
+document is (upload, Drive, the Assistant, bulk placement, the review); in an item it is a **source file** (`DOCX-DRAFT`, with the
+wording of its family) that the PDF replaces, because the dossier takes PDF. Where LibreOffice is installed, `amend_document`
+converts a `.doc` to `.docx` first. Not read: password-protected files, fast-saved Word 6/95 files, archives (`.zip` `.rar` `.7z`:
+unpack first) — they wait for the person like any unread file. In the Drive list lock files (`~$…`), system files (`Thumbs.db`) and
+empty files are left out with their reason, and a file with no extension and a general type is offered (not ticked) and read by its
+bytes once fetched. Tests: `tests/test_office_files.py`, `tests/test_word_files.py`, `tests/test_ui_drive.py` (made-up «Dermacure»
+fixtures converted by LibreOffice; the Excel reader was also compared with openpyxl on two real workbooks: no word missing).
 
 ### The reading rules, reviewed on real layouts (November 2026)
 

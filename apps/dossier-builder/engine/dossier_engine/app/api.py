@@ -9,6 +9,7 @@ from ..profile import Profile, ProfileError
 from ..resolver import resolve
 from .. import arabic as _arabic
 from .. import extract as _extract
+from .. import officefiles as _officefiles
 from ..guard import assert_allowed, LockedError
 from ..assemble import docs_for
 from ..classify import Classifier
@@ -170,10 +171,11 @@ def create_app(workspace, auth_enabled=None):
         d = st.document(doc_id)
         if d['meta'].get('external'):
             err(404, 'E-EXTERNAL', 'This is an external reference; open its link.', 'ده مرجع خارجي؛ افتح الرابط بتاعه.')
-        low = d['filename'].lower()
-        return FileResponse(st.blob_path(d['sha256']), filename=d['filename'],
-                            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document' if low.endswith('.docx')
-                            else 'application/msword' if low.endswith('.doc') else 'application/pdf')
+        path = st.blob_path(d['sha256'])
+        with open(path, 'rb') as fh:
+            head = fh.read(8)
+        mt = 'application/pdf' if head[:5] == b'%PDF-' or d['filename'].lower().endswith('.pdf') else _officefiles.media_type(d['filename'], head)
+        return FileResponse(path, filename=d['filename'], media_type=mt)
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/move')
     def move_document(did: str, doc_id: str, body: dict):
@@ -427,7 +429,7 @@ def create_app(workspace, auth_enabled=None):
     def _dossier_pdfs(did):
         out = []
         for d in st.documents(did):
-            if d['filename'].lower().endswith(('.pdf', '.jpg', '.jpeg', '.png', '.webp', '.tif', '.tiff', '.docx', '.doc')) and not d['meta'].get('external'):
+            if (d['filename'].lower().endswith(_officefiles.EXTENSIONS) or '.' not in d['filename']) and not d['meta'].get('external'):
                 out.append((d['filename'], st.blob_path(d['sha256']).read_bytes(), d['id']))
         return out
 

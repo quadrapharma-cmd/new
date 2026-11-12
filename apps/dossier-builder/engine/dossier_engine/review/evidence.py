@@ -60,26 +60,19 @@ class DocText:
                 data = self.store.blob_path(sha).read_bytes()
             except OSError:
                 data = b''
-            self._cache[sha] = pages_of(data) if doc['filename'].lower().endswith('.pdf') else _docx_pages(data) if doc['filename'].lower().endswith(('.docx', '.doc')) else []
+            self._cache[sha] = pages_of(data) if doc['filename'].lower().endswith('.pdf') or data[:5] == b'%PDF-' else _docx_pages(data, doc['filename'])
         return self._cache[sha]
 
     def scanned(self, doc):
         return doc['filename'].lower().endswith('.pdf') and is_scanned(self.pages(doc))
 
 
-def _docx_pages(data):
-    if data[:2] != b'PK':                               # the old Word format (.doc)
-        from .. import msdoc
-        text = msdoc.doc_text(data)
-        return [(1, text)] if text else []
+def _docx_pages(data, name=''):
+    """The text of a source file (Word, Excel, PowerPoint, OpenDocument, RTF, text — old format or new) as one page."""
     try:
-        import docx
-        d = docx.Document(io.BytesIO(data))
-        text = '\n'.join(p.text for p in d.paragraphs)
-        for t in d.tables:
-            for row in t.rows:
-                text += '\n' + ' | '.join(c.text for c in row.cells)
-        return [(1, text)]
+        from .. import extract
+        text = extract.read_text(name, data, ocr=False)['text'] if extract.source_family(name, data) else ''
+        return [(1, text)] if text else []
     except Exception:
         return []
 
