@@ -168,11 +168,19 @@ draft (it was 60 MB), the wizard's saved state, the files of an archive and thei
 (it was 300), the files taken from a Drive folder at once (it was 40), the request body behind the cloud proxy (it was 500 MB).
 What is left is what the machine itself can hold, and it is never met in silence:
 - **memory** — a file larger than the memory answers `E-MEMORY` (507) in words, in every edition, wherever it runs out: the
-  upload's body, the engine, the page's RAR reader, the browser edition's bridge;
+  upload's body, the engine, the page's RAR reader, the browser edition's bridge; a full disk (desktop, server) answers
+  `E-DISK-FULL` the same way;
+- **the browser edition's memory** — there the engine and its files live in the page's memory. An upload reaches the engine a
+  piece at a time (`web/pybridge.py`), so it is not held several times over; a file sits in one block of memory and the browser
+  gives no block over about 2 GB — asking for one used to end the engine without an answer and is now refused in words, the
+  engine going on (`DB_SAFEFS` in `web/bigfs.js`). Measured in Chromium: 150 MB, 400 MB, 1 GB and 1.5 GB put in a draft, the
+  page closed and opened, read back with the same SHA-256; 2 GB taken and saved (reading the whole of it back needs more memory
+  than the test machine had); 2.3 GB refused in five seconds with the message, the engine alive. Files of that size belong in
+  the desktop edition, which keeps them on the disk;
 - **the browser edition's storage** — the workspace lives in the browser's own storage (IndexedDB). The browser refuses one stored
   value over about 127 MB, and a refused value used to stop every save after it: a large file is now stored as a Blob
-  (`web/bigfs.js`), which has no such ceiling — a 1 GB file was put in a draft, the page closed and opened, and it came back byte
-  for byte. A save is called done only once the large file reads back from the storage. The quota the browser gives the page is the
+  (`web/bigfs.js`), which has no such ceiling — a save is called done only once the large file reads back from the storage, and a browser that
+  keeps no Blobs (some private windows) is found out the first time and gets the bytes as before. The quota the browser gives the page is the
   one ceiling left: when it refuses a save, a note stays on the screen for as long as that is true («the browser refused to save…»,
   with what is used of what is allowed, and «try saving again»), a file the storage has no room for leaves the wizard's draft again
   (said on the document's own line; it stays in the page for that visit) so that everything else keeps being saved, and a file

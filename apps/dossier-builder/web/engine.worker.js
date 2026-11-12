@@ -77,7 +77,7 @@ self.onmessage = async (ev) => {
     try {
       await ready;
       const res = await handle(m.method, m.path, m.query, m.headers, new Uint8Array(m.body || new ArrayBuffer(0)));
-      const out = res[1], buf = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength);
+      const out = res[1], buf = out.byteOffset === 0 && out.byteLength === out.buffer.byteLength ? out.buffer : out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength);      // the answer's own block goes to the page as it is: a large file is not copied once more
       if (m.method !== 'GET' && m.method !== 'HEAD') scheduleSync();
       self.postMessage({ type: 'api', id: m.id, meta: res[0], out: buf }, [buf]);
     } catch (e) {
