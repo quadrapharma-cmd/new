@@ -60,8 +60,11 @@ def test_every_kind_is_read(name):
 def test_a_tiff_is_read_page_by_page_up_to_the_limit():
     r = extract.read_text('scan.tif', fx('pages-g4.tif'))
     assert r['pages'] == 3 and 'Pricing Certificate' in r['text'] and 'Page two' in r['text'] and 'Page three' in r['text']
+    assert 'Page three' in extract.read_text('scan.tif', fx('pages-g4.tif'), ocr_pages=1)['text']      # the reading already made answers a narrower question
+    extract._READ.clear(); extract._KEPT.clear()                                                        # a first reading stops at the limit
     r = extract.read_text('scan.tif', fx('pages-g4.tif'), ocr_pages=1)
     assert 'Pricing Certificate' in r['text'] and 'Page two' not in r['text']
+    assert 'Page three' in extract.read_text('scan.tif', fx('pages-g4.tif'))['text']                    # and the first page is not taken for the whole file
 
 
 @needs_ocr

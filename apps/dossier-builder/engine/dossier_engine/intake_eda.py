@@ -280,6 +280,24 @@ def actives(block_lines):
     return uniq, per_unit
 
 
+def repair_company(value, text):
+    """A company name whose first word the OCR lost («1 8 0 دح International for Pharmaceuticals …»): the same name as it is printed
+    elsewhere in the document (the packager's, the storage site's line), or the name without the noise."""
+    words = (value or '').split()
+    i = 0
+    while i < len(words) and not re.fullmatch(r"[A-Z][A-Za-z&.'-]{2,}[,.]?", words[i]):
+        i += 1
+    if i == 0 or i >= len(words):
+        return value
+    tail = ' '.join(words[i:])
+    core = re.split(r'[,،]', tail)[0].strip()
+    if len(core.split()) < 3:
+        return tail
+    import collections
+    found = collections.Counter(m.group(1) for m in re.finditer(r"(?<![A-Za-z])([A-Z][A-Za-z&'-]{2,})\s+" + re.escape(core), text or ''))
+    return (found.most_common(1)[0][0] + ' ' + tail) if found else tail
+
+
 def split_country(s):
     s = fix_words(re.sub(r'[\s\d|\[\]().,;:-]+$', '', _clean(s)))         # OCR noise after the last word («EGYPT 1 1 1»)
     m = re.search(r'[,،]\s*([^,،]+)$', s)                                     # only the last comma part is the country; «Co.,Ltd» stays as printed
@@ -296,6 +314,7 @@ def api_manufacturers(block_lines, apis):
     supplier, and assigned only when exactly one API still lacks a manufacturer."""
     names = {a['name']: _norm(a['name']) for a in apis}
     pending, assigned, suppliers = [], {}, []
+    extras = []                                             # substances the block names («For X:») that the actives list did not give
     for raw in block_lines:
         for line in ABBR_DOT.split(raw):                   # «…china. Northchina …» (several suppliers on one line)
             line = _clean(line)
@@ -310,6 +329,11 @@ def api_manufacturers(block_lines, apis):
             if hit and not COMPANY.search(line):
                 pending.append(hit)
                 continue
+            mf = None if hit else re.match(r'^\W*for\s+([A-Za-z][A-Za-z \-]{3,60}?)\s*:?[\s\d|]*$', line, re.I)
+            if mf and not COMPANY.search(line) and _active_name(mf.group(1)):
+                extras.append({'name': _active_name(mf.group(1))})
+                pending.append(extras[-1]['name'])
+                continue
             if COMPANY.search(line) or split_country(line)[1]:
                 company, country = split_country(line)
                 if pending:
@@ -321,7 +345,9 @@ def api_manufacturers(block_lines, apis):
     missing = [a['name'] for a in apis if a['name'] not in assigned]
     if len(suppliers) == 1 and len(missing) == 1:
         assigned[missing[0]] = suppliers.pop()
-    return assigned, suppliers
+    for e in extras:
+        e.update(assigned.pop(e['name'], {}))
+    return assigned, suppliers, extras
 
 
 def composition(text):
@@ -407,20 +433,31 @@ def read(text):
         if apis and len(apis) == 1 and apis[0]['strength']:
             P['strength'] = apis[0]['strength']
     if b.get('api_manufacturers'):
-        assigned, suppliers = api_manufacturers(b['api_manufacturers'], out['apis'])
+        assigned, suppliers, extras = api_manufacturers(b['api_manufacturers'], out['apis'])
         for a in out['apis']:
             if a['name'] in assigned:
                 a.update(assigned[a['name']])
+        for e in extras:                                    # an active the form names with its manufacturer, whose own strength line the OCR garbled
+            words = e['name'].lower().split()
+            for k in range(len(words), 0, -1):              # the line's readable tail: «… ACID MONOHYDRATE 12.000 gm»
+                tail = r'\s+'.join(re.escape(w) for w in words[-k:])
+                ms = re.search(r'(?i)(?<![A-Za-z])' + tail + r'\s+(\d+(?:[.,]\d+)?)\s?(' + UNIT + r')(?![A-Za-z])', ' \n '.join(b.get('actives') or [])) if len(words[-k]) >= 4 else None
+                if ms:
+                    e['strength'] = f"{ms.group(1)} {ms.group(2).lower().replace('gm', 'g')}"
+                    break
+            if e.get('strength') or e.get('manufacturer'):
+                out['apis'].append({k: v for k, v in e.items() if v})
         out['suppliers'] = suppliers
     if b.get('manufacturer'):
-        P['manufacturer'], c = split_country(b['manufacturer'][0])
+        P['manufacturer'], c = split_country(repair_company(b['manufacturer'][0], text or ''))
         if c:
             P['manufacturer_country'] = c
     if b.get('holder'):
         h = re.split(r';|[؀-ۿ]', b['holder'][0])[0]
         E['applicant'], _ = split_country(h)
     if b.get('shelf_life'):
-        R['shelf_life'] = _clean(b['shelf_life'][0])
+        ms = re.search(r'\d{1,3}\s?(?:months?|years?|شهر|سنة|سنوات)', b['shelf_life'][0], re.I)
+        R['shelf_life'] = ms.group(0) if ms else _clean(b['shelf_life'][0])
     if b.get('storage'):
         R['storage'] = _clean(b['storage'][0])
     if b.get('pack'):

@@ -6,8 +6,10 @@ batch numbers, CEP numbers… They work everywhere, with no network. The AI laye
 capability in the browser edition, or the API with a key) reads the same text — or the page images when the
 document is a scan — against SCHEMA and returns the same shape. Every value is shown for review before it is
 used; nothing is written without the user's confirmation."""
+import json
 import re
 from io import BytesIO
+from pathlib import Path
 from . import arabic, imagefiles, intake_eda, msdoc, officefiles
 
 KINDS = [  # (kind, keywords in lower-case text or file name); see guess_kind for how a match is chosen
@@ -18,6 +20,7 @@ KINDS = [  # (kind, keywords in lower-case text or file name); see guess_kind fo
     ('coa', ['certificate of analysis', 'analytical report', ' coa', 'c of a', 'شهادة تحليل', 'شهادة التحليل']),
     ('composition', ['composition certificate', 'unit formula', 'quantitative composition', 'شهادة التركيب', 'التركيب']),
     ('pricing', ['pricing certificate', 'price certificate', 'pricing policies', 'pricing', 'تسعير', 'التسعيرة', 'سعر البيع للجمهور', 'لجنة تسعير', 'سعر بيع الجمهور']),
+    ('variation', ['variation approval', 'type of variation', 'variation decision', 'الموافقة المبدئية على تغيير', 'الموافقة النهائية على تغيير', 'موافقة تغيير', 'موافقة المتغيرات']),
     ('licence', ['registration licence', 'registration license', 'marketing authorisation', 'marketing authorization', 'registration notification', 'final registration license', 'final registration licence', 'إخطار التسجيل', 'إخطار تسجيل', 'رخصة التسجيل', 'شهادة تسجيل',
                  'شهادة التسجيل', 'ترخيص تداول', 'ترخيص التداول', 'رخصة تداول', 'إخطار', 'اخطار', 'ترخيص']),
     ('annex1', ['annex i', 'application form', 'نموذج الطلب']),
@@ -25,11 +28,17 @@ KINDS = [  # (kind, keywords in lower-case text or file name); see guess_kind fo
               'package leaflet', 'patient information leaflet', 'النشرة']),
     ('factory', ['factory licence', 'factory license', 'manufacturing licence', 'manufacturing license', 'رخصة المصنع']),
     ('bmr', ['batch manufacturing record', 'executed batch', 'batch record']),
+    ('validation', ['analytical method validation', 'method validation', 'validation protocol', 'validation report', 'validation of analytical', 'stability indicating assay',
+                    'forced degradation', 'chromatogram', 'acq. operator', 'acq. method', 'injection volume', 'inj volume', 'processing method', 'report method', 'peak table',
+                    'system suitability']),
+    ('method', ['method of analysis', 'methods of analysis', 'analytical procedure', 'analytical method', 'test method', 'testing method', 'in-house monograph', 'monograph',
+                'طريقة التحليل', 'طرق التحليل']),
     ('stability', ['stability', 'الثبات', 'للثبات', 'دراسة ثبات', 'دراسات ثبات', 'موافقة ثبات', 'بيانات ثبات']),
     ('spec', ['specification', 'acceptance criteria']),
     ('loa', ['letter of access', 'drug master file', ' dmf']),
     ('poa', ['power of attorney', 'letter of attorney', 'توكيل']),
     ('commercial', ['commercial register', 'register of trade', 'سجل تجاري']),
+    ('receipt', ['payment receipt', 'fees receipt', 'قسيمة', 'إيصال', 'ايصال']),
     ('contract', ['manufacturing agreement', 'toll manufacturing', 'first party', 'second party', 'تم الاتفاق بين', 'الطرف الأول', 'الطرف الاول', 'الطرف الثاني', 'ملحق عقد',
                   'agreement', 'contract', 'اتفاقية', 'عقد']),
 ]
@@ -77,7 +86,10 @@ SCHEMA = {
                    'title': 'document title', 'number': 'certificate / licence number', 'issuer': 'issuing authority or company',
                    'issued': 'YYYY-MM-DD', 'valid_until': 'YYYY-MM-DD or null'}],
 }
-PRIORITY = ['licence', 'annex1', 'cpp', 'smpc', 'composition', 'pricing', 'spec', 'coa', 'cadc', 'cep', 'gmp', 'stability', 'bmr', 'factory', 'other']
+PRIORITY = ['licence', 'annex1', 'variation', 'cpp', 'smpc', 'composition', 'pricing', 'cadc', 'spec', 'coa', 'stability', 'method', 'validation', 'cep', 'gmp',
+            'bmr', 'factory', 'loa', 'contract', 'poa', 'commercial', 'receipt', 'other']
+IDENTITY = ('licence', 'annex1', 'variation', 'cpp', 'smpc', 'composition', 'pricing', 'cadc', 'contract')     # documents that state what the product is
+ABOUT_PRODUCT = ('spec', 'coa', 'stability', 'method', 'validation', 'bmr')                                     # technical documents: they name the product at their top
 
 
 def pdf_text(data, max_pages=12):
@@ -105,7 +117,12 @@ def docx_text(data):
         text = '\n'.join(p.text for p in d.paragraphs)
         for t in d.tables:
             for row in t.rows:
-                text += '\n' + ' | '.join(c.text for c in row.cells)
+                cells = []
+                for c in row.cells:
+                    v = re.sub(r'\s*\n+\s*', ' ', c.text).strip()
+                    if not cells or v != cells[-1]:                 # a merged cell is handed over once per column it spans
+                        cells.append(v)
+                text += '\n' + ' | '.join(cells)
         return text
     except Exception:
         return _docx_xml_text(data)
@@ -142,7 +159,118 @@ def is_word(filename, data=None):
     return (filename or '').lower().endswith(('.docx', '.doc', '.docm', '.dotx', '.dot'))
 
 
+# ---- a file is read once: its reading is kept by the file's SHA-256, in memory and in the workspace's cache folder
+READ_DIR = None            # set by the app (workspace/cache/text): a restart, or the next item's template, does not read the file again
+READ_FORMAT = 2            # the reader's own version: raise it when what a reading holds changes, so that readings kept on disk by an older reader are made again
+_READ = {}                 # (sha, extension, max_pages, ocr, ocr_pages) → the reading
+_READ_MAX = 300
+_KEPT = {}                 # sha → (text, pages it covers | None = the whole file): the text an earlier reading gave a file that has none of its own (an OCR of a scan)
+
+
+def _sha(data):
+    import hashlib
+    return hashlib.sha256(data or b'').hexdigest()
+
+
+def _cache_file(key):
+    return None if READ_DIR is None else Path(READ_DIR) / (f'r{READ_FORMAT}-' + '-'.join(str(k) for k in key) + '.json')
+
+
+def _keep(sha, text, pages=None):
+    if len(_KEPT) >= _READ_MAX and sha not in _KEPT:
+        _KEPT.pop(next(iter(_KEPT)))
+    _KEPT[sha] = (text, pages)
+    if READ_DIR is not None:
+        try:
+            Path(READ_DIR).mkdir(parents=True, exist_ok=True)
+            (Path(READ_DIR) / f'{sha}.kept.json').write_text(json.dumps({'text': text, 'pages': pages}, ensure_ascii=False), encoding='utf-8')
+        except OSError:
+            pass
+
+
+def _kept(sha):
+    if sha in _KEPT:
+        return _KEPT[sha]
+    if READ_DIR is not None:
+        try:
+            f = Path(READ_DIR) / f'{sha}.kept.json'
+            if f.exists():
+                j = json.loads(f.read_text(encoding='utf-8'))
+                if j.get('text'):
+                    _KEPT[sha] = (j['text'], j.get('pages'))
+                    return _KEPT[sha]
+        except (OSError, ValueError):
+            pass
+    return None, None
+
+
+def _forget(sha):
+    """The readings made of a file before its text was known are made again."""
+    for k in [k for k in _READ if k[0] == sha]:
+        _READ.pop(k, None)
+    if READ_DIR is not None:
+        try:
+            for f in Path(READ_DIR).glob(f'r*-{sha}-*.json'):
+                f.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def remember_text(data_or_sha, text):
+    """Keep the reading the page made of a scan (its OCR, the model's transcription) for the file itself: wherever the file's
+    text is needed later — the kind rule, a template's base documents, the Assistant — it is there without another OCR."""
+    text = (text or '').strip()
+    if len(re.sub(r'\s', '', text)) < 20:
+        return
+    sha = data_or_sha if isinstance(data_or_sha, str) else _sha(data_or_sha)
+    _keep(sha, text, None)
+    _forget(sha)
+
+
+def kept_text(sha):
+    return _kept(sha)[0]
+
+
 def read_text(name, data, max_pages=12, ocr=True, ocr_pages=4):
+    """What one uploaded file says — read once: the same bytes asked the same way give the kept reading (see _read_text). The
+    OCR of a scan is kept with the pages it covers: a later question is answered from it when it covers what is asked (a
+    question about fewer pages gets the fuller reading already made), and the file is OCR-ed again only for more pages."""
+    data = data or b''
+    key = (_sha(data), (name or '').lower().rsplit('.', 1)[-1][:6] if '.' in (name or '') else '', max_pages, int(bool(ocr)), ocr_pages)
+    if key in _READ:
+        return dict(_READ[key])
+    f = _cache_file(key)
+    if f is not None:
+        try:
+            if f.exists():
+                _READ[key] = json.loads(f.read_text(encoding='utf-8'))
+                return dict(_READ[key])
+        except (OSError, ValueError):
+            pass
+    kept, covers = _kept(key[0])                                      # the reading already made of this file (the page's OCR, or this engine's own)
+    enough = kept is not None and (covers is None or covers >= (ocr_pages if ocr else 0))
+    out = _read_text(name, data, max_pages, ocr and not enough, ocr_pages)
+    if out.get('scanned') and out.get('ocr'):                         # an OCR done once answers every later question it covers, however it is asked
+        pages = out.get('pages') or 1
+        _keep(key[0], out['text'], None if ocr_pages >= pages else ocr_pages)
+        _forget(key[0])
+    elif out.get('scanned') and kept:
+        out.update(text=arabic.prepare(kept), ocr=True, ocr_where='kept', arabic=arabic.has_arabic(kept))
+    if out.get('scanned') and not out.get('ocr'):                     # a scan nobody could read yet: nothing to keep — the next reader may have OCR
+        return dict(out)
+    if len(_READ) >= _READ_MAX:
+        _READ.pop(next(iter(_READ)))
+    _READ[key] = dict(out)
+    if f is not None and (out.get('ocr') or len(data) > 200000):      # what was costly to get is also kept on disk
+        try:
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text(json.dumps(out, ensure_ascii=False), encoding='utf-8')
+        except OSError:
+            pass
+    return dict(out)
+
+
+def _read_text(name, data, max_pages=12, ocr=True, ocr_pages=4):
     """What one uploaded file says: a PDF's text layer, or OCR of its pages when it is a scan (tesseract ara+eng, local
     computers only), an office file's text (Word, Excel, PowerPoint, OpenDocument, RTF, HTML, text: old formats and new — officefiles), or OCR of an image. `scanned` = image-only (the AI layer then
     reads the page images), `ocr` = the text came from OCR, `kind_of_file` = pdf | docx | image | xlsx | xls | pptx | … | other."""
@@ -234,6 +362,24 @@ def _first_kind(hay, tiers, cited):
     return best[2] if best else None
 
 
+DECISIVE = [  # an authority's own title or department, a document's own heading: it settles the kind wherever it stands in the first pages
+    ('licence', ['final registration license', 'final registration licence', 'إخطار تسجيل نهائي', 'إخطار تسجيل نهائى', 'اخطار تسجيل نهائي', 'اخطار تسجيل نهائى']),
+    ('variation', ['الموافقة المبدئية على تغيير', 'الموافقة النهائية على تغيير', 'variation decision']),
+    ('stability', ['الإدارة العامة للثبات', 'الادارة العامة للثبات', 'موافقة الثبات', 'stability approval']),
+    ('validation', ['analytical method validation', 'method validation protocol', 'stability indicating assay']),
+]
+
+
+def _decisive(t):
+    best = None
+    for kind, phrases in DECISIVE:
+        for p in phrases:
+            i = t.find(p)
+            if i >= 0 and (best is None or i < best[0]):
+                best = (i, kind)
+    return best[1] if best else None
+
+
 def guess_kind(filename, text):
     """The document's kind from what it says about itself: its title (the top lines) before its body, the keyword printed first within
     them («شهادة تسعير» on line 2 beats «رقم إخطار التسجيل» on line 4), a reference to another document by its number («المسجل بإخطار
@@ -242,6 +388,9 @@ def guess_kind(filename, text):
     t = (text or '')[:4000].lower()
     head = _head(t)
     name = ' ' + (filename or '').lower().replace('_', ' ').replace('-', ' ') + ' '
+    k = _decisive(t)
+    if k:
+        return k
     for hay, tiers, cited in ((head, (0, 1), False), (t, (0, 1), False), (head, (0, 1), True), (t, (0, 1), True), (t, (2,), False), (t, (2,), True), (name, (0, 1, 2), False)):
         k = hay.strip() and _first_kind(hay, tiers, cited)
         if k:
@@ -277,11 +426,22 @@ def iso_date(m):
     return f'{y}-{mo:02d}-{d:02d}'
 
 
-def date_after(text, labels, window=90):
+QUALIFIED_DATE = re.compile(r'(?:invalidation|expir\w*|valid\w*|revision|rev\.?|re-?test|analysis|mfg\.?|manufactur\w*|exp\.?|effective|injection|printed|review|انتهاء|الانتهاء)\s*$', re.I)
+BARE_DATE = {'date:', 'date', 'dated', 'التاريخ', 'تاريخ', 'بتاريخ'}
+
+
+def date_after(text, labels, window=90, near=None):
+    """The date printed after one of the labels. A bare «Date:» that belongs to another field («Invalidation Date:», «Analysis
+    Date:») is not the document's date; `near`: the date must start within that many characters of the label (a table cell's own
+    value, not the next cell's)."""
     for lab in labels:
         rx = r'(?<![A-Za-z\u0600-\u06FF])' + (arabic.label_rx(lab) if arabic.has_arabic(lab) else re.escape(lab))
         for m in re.finditer(rx, text, re.I):
+            if lab.lower() in BARE_DATE and QUALIFIED_DATE.search(text[max(0, m.start() - 18):m.start()]):
+                continue
             dm = DATE.search(text, m.end(), m.end() + window)
+            if dm and near is not None and dm.start() - m.end() > near:
+                dm = None
             if dm:
                 v = iso_date(dm)
                 if v:
@@ -363,11 +523,16 @@ def fields_for(kind, filename, text):
         product['name'] = re.sub(r'\s*\(?[A-Za-z][A-Za-z0-9 .,\-/%]{2,80}\)?\s*$', '', product['name']).strip() or product['name']
     if product.get('name') and (len(product['name'].split()) > 8 or re.search('طبقا|المذكور|سيادتكم|بموجب|وافق|اللجنة', product['name'])):
         product['name'] = None                                          # a sentence from the Arabic notes is not a trade name
-    product['dosage_form'] = after(t, ['Dosage form', 'Pharmaceutical form', 'Form', 'الشكل الصيدلي', 'الشكل الدوائي', 'الصورة الصيدلية', 'الشكل الصيدلاني']) \
-        or next((f for f in FORMS if f in low), None) or arabic.form_en(t)
+    ident = kind in IDENTITY
+    from . import vocab as _vocab
+    product['dosage_form'] = after(t, ['Dosage form', 'Pharmaceutical form', 'الشكل الصيدلي', 'الشكل الدوائي', 'الصورة الصيدلية', 'الشكل الصيدلاني']) or label_value(t, ['Form'])
+    if not product['dosage_form'] and (ident or kind in ABOUT_PRODUCT):          # the title names the form («Specifications of X powder for oral solution»)
+        product['dosage_form'] = _form_in_title(_head(t, lines=14, chars=1400))
+    if not product['dosage_form'] and ident:                                     # an identity document may state it in running text
+        product['dosage_form'] = next((f for f in FORMS if f in low), None) or arabic.form_en(t)
     product['dosage_form_en'] = arabic.form_en(product['dosage_form']) if product.get('dosage_form') and arabic.has_arabic(product['dosage_form']) else None
-    st = re.search(r'(?<![\d.,])((?:[1-9]\d*(?:[.,]\d+)?|0[.,]\d+)\s?(?:mg|mcg|µg|g|iu|%|ml))\b(?:\s*/\s*(?:\d+(?:[.,]\d+)?\s?)?(?:ml|tablet|capsule|dose|g))?', t, re.I)
-    product['strength'] = after(t, ['Strength', 'التركيز', 'العيار', 'القوة']) or (st.group(0).strip() if st else None) or arabic.strength_en(t)
+    st = re.search(r'(?<![\d.,])((?:[1-9]\d*(?:[.,]\d+)?|0[.,]\d+)\s?(?:mg|mcg|µg|g|iu|%|ml))\b(?:\s*/\s*(?:\d+(?:[.,]\d+)?\s?)?(?:ml|tablet|capsule|dose|g))?', t, re.I) if ident else None
+    product['strength'] = (after(t, ['Strength', 'التركيز', 'العيار', 'القوة']) if ident else label_value(t, ['Strength'])) or (st.group(0).strip() if st else None) or (arabic.strength_en(t) if ident else None)      # in a technical document only a real field «Strength: …», never the word in a sentence
     if product.get('strength') and arabic.has_arabic(product['strength']):
         product['strength'] = arabic.strength_en(product['strength']) or product['strength']
     if product.get('strength') and not re.search(r'\d', product['strength']):
@@ -394,18 +559,19 @@ def fields_for(kind, filename, text):
                                       'الشركة المالكة', 'الشركة الطالبة', 'اسم الشركة', 'الوكيل', 'المستورد', 'الشركة']),
                 'tracking': (re.search(r'\bP-[A-Z]{2,5}-\d{3,6}\b', t) or [None])[0] if re.search(r'\bP-[A-Z]{2,5}-\d{3,6}\b', t) else None}
     profile = {}
-    if 'toll' in low:
-        profile['licence'] = 'toll'
-    if 'imported' in low or kind == 'cpp' or 'country of import' in low or 'مستورد' in t:
-        profile['origin'] = 'imported'
-    elif re.search(r'\blocal\b', low) or 'محلي' in t:
-        profile['origin'] = 'local'
-    if 'generic' in low or 'مثيل' in t or 'جنيس' in t:
-        profile['dossier_kind'] = 'generic'
-    elif 'innovator' in low or 'مبتكر' in t:
-        profile['dossier_kind'] = 'innovator'
-    if re.search(r're-?registration|renewal', low) or re.search(arabic.label_rx('إعادة تسجيل') + '|' + arabic.label_rx('إعادة التسجيل') + '|تجديد', t):
-        profile['activity'] = 're_registration'
+    if ident:                                              # what kind of licence it is, is said by the documents that state the product — not by a word in a method
+        if re.search(r'(?<![a-z])toll(?![a-z])', low):
+            profile['licence'] = 'toll'
+        if 'imported' in low or kind == 'cpp' or 'country of import' in low or 'مستورد' in t:
+            profile['origin'] = 'imported'
+        elif re.search(r'\blocal\b', low) or 'محلي' in t:
+            profile['origin'] = 'local'
+        if 'generic' in low or 'مثيل' in t or 'جنيس' in t:
+            profile['dossier_kind'] = 'generic'
+        elif 'innovator' in low or 'مبتكر' in t:
+            profile['dossier_kind'] = 'innovator'
+        if re.search(r're-?registration|renewal', low) or re.search(arabic.label_rx('إعادة تسجيل') + '|' + arabic.label_rx('إعادة التسجيل') + '|تجديد', t):
+            profile['activity'] = 're_registration'
     form = (product.get('dosage_form_en') or product.get('dosage_form') or '').lower()
     profile['admin_route'] = next((r for r, ws in ROUTE.items() if any(w in form for w in ws)), None)
     specifics = []
@@ -413,38 +579,55 @@ def fields_for(kind, filename, text):
         specifics.append('coated')
     if 'hard capsule' in form or 'capsule' in form:
         specifics.append('capsule_hard')
-    if 'sterile' in low or 'injection' in form:
+    if 'injection' in form or 'infusion' in form or (ident and re.search(r'(?<![a-z])sterile(?![a-z])', low)):      # «sterile peptone water» in a test is not the product
         specifics.append('sterile')
     if 'powder for injection' in form and 'solvent' in low:
         specifics.append('powder_inj_with_solvent')
     profile['dosage_specifics'] = specifics
-    if re.search(r'\b(BP|USP|Ph\.? ?Eur\.?)\b', t):
+    if ident and re.search(r'\b(BP|USP|Ph\.? ?Eur\.?)\b', t):
         profile['pharmacopoeial'] = True
     batches = []
-    for m in re.finditer(r'\b(?:batch|lot)\s*(?:no\.?|number|#)?\s*[:\-]?\s*([A-Z0-9][A-Z0-9\-/]{2,19})\b', t, re.I):
-        no = m.group(1)
+    for m in re.finditer(r'\b(?:batch|lot)\s*(?:no\.?|number|#)?\s*[:\-]?\s*(?=[A-Z0-9\-/]*\d)([A-Z0-9][A-Z0-9\-/]{2,19})\b', t if kind in ('coa', 'cadc', 'bmr', 'stability') else '', re.I):
+        no = m.group(1)                                     # a batch number has a digit in it: «Batch Weight», «Batch Size» are not numbers
         if no.lower() not in ('no', 'number', 'size') and no not in [b['no'] for b in batches]:
             batches.append({'no': no, 'kind': 'api' if kind in ('coa', 'cep') and apis and kind == 'cep' else 'fpp'})
     size = after(t, ['Batch size', 'Lot size'], r'([\d.,]+\s?(?:units|tablets|capsules|kg|g|l|ml|vials|bottles)?)')
-    mfg = date_after(t, ['Date of manufacture', 'Manufacturing date', 'Mfg. date', 'Mfg date', 'Date of manufacturing'])
+    MFG, EXP = ['Date of manufacture', 'Manufacturing date', 'Mfg. date', 'Mfg date', 'Date of manufacturing'], ['Expiry date', 'Exp. date', 'Exp date', 'Date of expiry']
+    mfg = date_after(t, MFG, near=14) or _month_after(t, MFG)
+    exp = date_after(t, EXP, near=14) or _month_after(t, EXP)
     for b in batches[:1]:
         if size:
             b['size'] = size
         if mfg:
             b['date'] = mfg
+        if exp:
+            b['expiry'] = exp
     results, specs = [], []
     if kind in ('coa', 'spec', 'stability'):
-        for line in t.splitlines():
-            ll = line.lower()
-            test = next((x for x in TESTS if ll.startswith(x) or f' {x} ' in f' {ll} '), None)
-            if not test:
-                continue
-            nums = re.findall(r'(?<![\w.])(\d+(?:[.,]\d+)?\s?%?)(?![\w.])', line)
-            tail = line[ll.index(test) + len(test):].strip(' :\t')
-            if kind == 'coa' and nums:
-                results.append({'batch': batches[0]['no'] if batches else None, 'test': test.title() if test != 'ph' else 'pH', 'value': nums[-1].strip()})
-            elif tail:
-                specs.append({'test': test.title() if test != 'ph' else 'pH', 'limit': tail[:60], 'method': None})
+        for col, rows in spec_tables(t):                    # the document's own tables: test | specification | result | method
+            for rc in rows:
+                test = _cell(rc, col.get('test'))
+                if not test or test.lower() in ('test', 'tests'):
+                    continue
+                limit, value, method = _cell(rc, col.get('limit')), _cell(rc, col.get('result')), _cell(rc, col.get('method'))
+                if 'result' in col and not value and len(rc) >= 2:
+                    value = rc[-1].strip()                  # a row with a merged cell: its result is still its last cell
+                if limit or method:
+                    specs.append({'test': test[:120], 'limit': limit[:400], 'method': method[:120] or None})
+                if kind == 'coa' and value:
+                    results.append({'batch': batches[0]['no'] if batches else None, 'test': test[:120], 'value': value[:120]})
+        if not specs and not results and len(t) < 6000:      # a short sheet printed as lines (a PDF): a known test name at the start of a line
+            for line in t.splitlines():
+                ll = line.lower()
+                test = next((x for x in TESTS if ll.startswith(x)), None)
+                if not test:
+                    continue
+                nums = re.findall(r'(?<![\w.])(\d+(?:[.,]\d+)?\s?%?)(?![\w.])', line)
+                tail = line[len(test):].strip(' :\t')
+                if kind == 'coa' and nums:
+                    results.append({'batch': batches[0]['no'] if batches else None, 'test': test.title() if test != 'ph' else 'pH', 'value': nums[-1].strip()})
+                elif tail and re.search(r'\d|complies|conform|white|clear|nmt|not more|not less', tail, re.I):
+                    specs.append({'test': test.title() if test != 'ph' else 'pH', 'limit': tail[:120], 'method': None})
     registration = {}
     if kind in ('licence', 'pricing', 'annex1'):
         registration = {'reg_no': doc.get('number'), 'reg_date': doc.get('issued'),
@@ -487,14 +670,69 @@ def fields_for(kind, filename, text):
     return out
 
 
+def _form_in_title(head):
+    """The dose form a document's title names: a form of two words or more («powder for oral solution», «film-coated tablet»). A
+    single word at the top of a page is too often something else («Injection date» on a chromatogram, «Solution» in a method)."""
+    from . import vocab
+    low, best = ' ' + re.sub(r'\s+', ' ', (head or '').lower()) + ' ', None
+    for f in vocab.forms():
+        for n in [f['en']] + list(f.get('syn') or []):
+            nn = re.sub(r'\s+', ' ', n.lower()).strip()
+            if len(nn.split()) >= 2 and re.search(r'(?<![a-z])' + re.escape(nn) + r'(?![a-z])', low) and (best is None or len(nn) > best[0]):
+                best = (len(nn), f['en'])
+    return best[1] if best else None
+
+
+def _month_after(text, labels):
+    """«Mfg. date : 06/2023» → «2023-06»: a month printed right after its label."""
+    for lab in labels:
+        m = re.search(r'(?<![A-Za-z])' + re.escape(lab) + r'[^\S\n]*[:.\-]?[^\S\n]*(\d{1,2})[^\S\n]*[/\-.][^\S\n]*(\d{4})(?![\d/\-.])', text or '', re.I)
+        if m and 1 <= int(m.group(1)) <= 12:
+            return f'{m.group(2)}-{int(m.group(1)):02d}'
+    return None
+
+
+def _cell(row, i):
+    return row[i].strip() if i is not None and i < len(row) else ''
+
+
+def spec_tables(text):
+    """The specification / result tables of a document whose table rows are single lines «cell | cell | cell» (Word files):
+    [({column name: index}, [rows of cells])] — a header row names the test and its specification (and its result, its method)."""
+    out, lines, i = [], (text or '').splitlines(), 0
+    while i < len(lines):
+        cells = [c.strip() for c in lines[i].split('|')]
+        low = [re.sub(r'[^a-z ]', '', c.lower()).strip() for c in cells]
+        if len(cells) >= 2 and any(re.fullmatch(r'tests?|test items?|test parameters?|parameters?|items?', c) for c in low) and \
+                any(re.search(r'specification|limit|acceptance|criteria|requirement', c) for c in low):
+            col = {}
+            for k, c in enumerate(low):
+                for name, rx in (('test', r'tests?|test items?|test parameters?|parameters?|items?'), ('limit', r'.*(?:specification|limit|acceptance|criteria|requirement).*'),
+                                 ('result', r'.*results?.*'), ('method', r'.*(?:method|procedure).*'), ('reference', r'.*reference.*')):
+                    if name not in col and re.fullmatch(rx, c):
+                        col[name] = k
+                        break
+            rows, j = [], i + 1
+            while j < len(lines) and '|' in lines[j]:
+                rows.append([c.strip() for c in lines[j].split('|')])
+                j += 1
+            if 'test' in col and rows:
+                out.append((col, rows))
+            i = j
+        else:
+            i += 1
+    return out
+
+
 def _standardise(out):
     """Controlled vocabularies: the dose form → its standard entry (and the route it implies), countries → ISO entries."""
     from . import vocab
     P = out.get('product') or {}
-    std = vocab.match_form(P.get('dosage_form_en') or P.get('dosage_form') or '')
+    printed = re.sub('[\u0600-\u06ff]+', ' ', P.get('dosage_form') or '').strip()     # the form as printed (its Latin part) before a translation of its Arabic
+    std = vocab.match_form(printed) or vocab.match_form(P.get('dosage_form_en') or '') or vocab.match_form(P.get('dosage_form') or '')
     if std:
         P['dosage_form_std'] = std['id']
-        P['dosage_form_en'] = P.get('dosage_form_en') or std['en']
+        P['dosage_form_en'] = std['en'] if vocab.match_form(printed) else (P.get('dosage_form_en') or std['en'])
         out.setdefault('profile', {})
         if not out['profile'].get('admin_route'):
             out['profile']['admin_route'] = std['route']
@@ -548,6 +786,7 @@ def api_key(name):
     """The substance behind a printed name: no salt, no strength, no brackets, lower case — «NEOMYCIN SULPHATE 3.500 mg (3300 unit)» → «neomycin».
     The digits of a name stay («vitamin b1» ≠ «vitamin b12»), and a substance that is itself a salt keeps its words («magnesium hydroxide»)."""
     low = re.sub(r'\(.*?\)', ' ', (name or '').lower())
+    low = low.replace('sulph', 'sulf').replace('aluminium', 'aluminum').replace('oestr', 'estr').replace('haem', 'hem')     # one substance, two spellings
     low = STRENGTH_RX.sub(' ', low)
     low = re.sub(r'[^a-z0-9\u0600-\u06ff ]+', ' ', low)
     toks = [w for w in low.split() if not w.isdigit()]
@@ -647,27 +886,49 @@ def merge(items):
     order = sorted(items, key=lambda it: PRIORITY.index(it['document']['kind']) if it['document']['kind'] in PRIORITY else 99)
     fill = {'product': {}, 'profile': {}, 'envelope': {}, 'registration': {}, 'apis': [], 'batches': [], 'specs': [], 'results': [], 'composition': [], 'documents': []}
     for it in order:
+        ident = it['document']['kind'] in IDENTITY
         for sec in ('product', 'profile', 'envelope', 'registration'):
+            if sec in ('profile', 'registration') and not ident:
+                continue                                     # the product's profile and registration are what the documents that state the product say
             for k, v in it.get(sec, {}).items():
+                if sec == 'product' and k in ('dosage_form_en', 'dosage_form_std'):
+                    continue                                 # they travel with the form they belong to (below)
+                if sec == 'product' and k == 'strength' and not ident:
+                    continue                                 # a strength is stated by the licence / the form, not picked from a method
                 if v not in (None, '', []) and not fill[sec].get(k):
                     fill[sec][k] = v
+                    if sec == 'product' and k == 'dosage_form':
+                        for kk in ('dosage_form_en', 'dosage_form_std'):
+                            if it['product'].get(kk):
+                                fill['product'][kk] = it['product'][kk]
         for a in it.get('apis', []):
             a['name'] = _clean(a.get('name'))
+        stated = bool(fill['apis']) and any(x['document']['kind'] in IDENTITY and x.get('apis') for x in order)
         for a in it.get('apis', []):
-            cur = next((x for x in fill['apis'] if x['name'].lower() == a['name'].lower()), None)
+            cur = next((x for x in fill['apis'] if x['name'].lower() == a['name'].lower() or _same_substance(api_key(x['name']), api_key(a['name']))), None)
             if cur:
                 cur.update({k: v for k, v in a.items() if v and not cur.get(k)})
-            else:
+            elif ident or not stated:                        # the actives are the ones the licence / application states; a method that names a reagent adds nothing
                 fill['apis'].append(dict(a))
         for b in it.get('batches', []):
             if b['no'] not in [x['no'] for x in fill['batches']]:
                 fill['batches'].append(b)
-        for key in ('specs', 'results', 'composition'):
-            for row in it.get(key, []):
-                if row not in fill[key]:
-                    fill[key].append(row)
+        if it.get('specs') and not fill['specs']:            # one specification: the first document (by priority) that holds its table
+            fill['specs'] = list(it['specs'])
+        for row in it.get('results', []):
+            if row not in fill['results']:
+                fill['results'].append(row)
+        if len(it.get('composition') or []) >= 2 and not fill['composition'] and (ident or len(it['composition']) >= 3):      # a composition is a table (one stray row is not one)
+            fill['composition'] = list(it['composition'])
         fill['documents'].append(it['document'])
     fill['apis'] = clean_apis(fill['apis'])
+    if len(fill['apis']) > 1:
+        fill['product'].pop('strength', None)                # a combination: the strengths live on the substances
+    if fill['product'].get('dosage_form_std'):               # the route follows the form the product was read as
+        from . import vocab as _vocab
+        f = next((x for x in _vocab.forms() if x['id'] == fill['product']['dosage_form_std']), None)
+        if f:
+            fill['profile']['admin_route'] = f['route']
     return fill
 
 
@@ -690,19 +951,54 @@ def read_files(files):
 KIND_HOME = {'pricing': ['M1-05'], 'gmp': ['M1-37', 'M1-38'], 'cpp': ['M1-14'], 'cep': ['M1-39', 'S-16'], 'coa': ['M1-35', 'S-10', 'P-11'],
              'licence': ['M1-04', 'M1-28'], 'commercial': ['M1-19'], 'poa': ['M1-02'], 'contract': ['M1-24'], 'smpc': ['M1-09', 'M1-42'],
              'cadc': ['M1-34', 'P-11'], 'composition': ['M1-31', 'P-01'], 'spec': ['M1-36', 'S-08', 'P-09', 'P-08'], 'annex1': ['M1-01'],
-             'loa': ['M1-30'], 'factory': ['M1-18'], 'bmr': ['R-01', 'R-02'], 'stability': ['M1-34', 'S-14', 'P-16']}
+             'loa': ['M1-30'], 'factory': ['M1-18'], 'bmr': ['R-01', 'R-02'], 'stability': ['M1-34', 'P-16', 'S-14'],
+             'method': ['P-10', 'S-09'], 'validation': ['P-10', 'S-09'], 'receipt': ['M1-03'], 'variation': ['M1-07']}
+TECHNICAL = ('spec', 'method', 'validation')        # one document often holds two of them (a specification with its test methods): any of their items takes it
 KIND_NAMES = {'pricing': {'en': 'pricing certificate', 'ar': 'شهادة تسعير'}, 'gmp': {'en': 'GMP certificate', 'ar': 'شهادة GMP'}, 'cpp': {'en': 'CPP', 'ar': 'شهادة CPP'},
               'cep': {'en': 'CEP', 'ar': 'شهادة CEP'}, 'coa': {'en': 'certificate of analysis', 'ar': 'شهادة تحليل'}, 'licence': {'en': 'registration licence / notification', 'ar': 'إخطار / رخصة تسجيل'},
               'commercial': {'en': 'commercial register', 'ar': 'سجل تجاري'}, 'poa': {'en': 'power of attorney', 'ar': 'توكيل'}, 'contract': {'en': 'agreement', 'ar': 'عقد'},
               'smpc': {'en': 'SmPC / leaflet', 'ar': 'نشرة / SmPC'}, 'cadc': {'en': 'CADC conformity letter', 'ar': 'خطاب مطابقة CADC'}, 'composition': {'en': 'composition certificate', 'ar': 'شهادة تركيب'},
               'spec': {'en': 'specification', 'ar': 'مواصفات'}, 'annex1': {'en': 'application form (Annex I)', 'ar': 'نموذج الطلب'}, 'loa': {'en': 'letter of access / DMF', 'ar': 'خطاب سماح / DMF'},
-              'factory': {'en': 'factory licence', 'ar': 'رخصة مصنع'}, 'bmr': {'en': 'batch record', 'ar': 'سجل تشغيلة'}, 'stability': {'en': 'stability document', 'ar': 'مستند ثبات'}}
+              'factory': {'en': 'factory licence', 'ar': 'رخصة مصنع'}, 'bmr': {'en': 'batch record', 'ar': 'سجل تشغيلة'}, 'stability': {'en': 'stability document', 'ar': 'مستند ثبات'},
+              'method': {'en': 'method of analysis', 'ar': 'طريقة تحليل'}, 'validation': {'en': 'method validation / chromatograms', 'ar': 'تحقق من طريقة التحليل / كروماتوجرام'},
+              'receipt': {'en': 'fees receipt', 'ar': 'إيصال رسوم'}, 'variation': {'en': 'variation approval', 'ar': 'موافقة تغيير'}}
 
 
-def kind_homes(kind, pack=None):
-    """The items a document of this kind belongs in. Egypt's table above names its own items; another authority's items say it
-    themselves (`kinds` in the requirement). With a pack: only items that pack has."""
+def names_product(text, product):
+    """Does the document say, at its top or in a «Product name» field, that it is about the product itself (its trade name)?"""
+    word = (re.findall(r'[a-z\u0600-\u06ff]{4,}', (product or '').lower()) or [None])[0]
+    if not word or not text:
+        return False
+    low = text.lower()
+    rx = r'(?<![a-z])' + re.escape(word) + r'(?![a-z])'
+    if re.search(rx, _head(low, lines=14, chars=1400)):
+        return True
+    return bool(re.search(r'(?:product\s*name|name\s*of\s*(?:the\s*)?product|trade\s*name|اسم\s*المستحضر|الاسم\s*التجاري)[^\n]{0,40}' + rx, low))
+
+
+def from_authority(text):
+    """An authority's own letter (its name at the top), not a company's or a laboratory's document."""
+    top = (text or '')[:1500].lower()
+    return any(p in top for p in ('egyptian drug authority', 'هيئة الدواء المصرية', 'ministry of health', 'وزارة الصحة', 'decision letter'))
+
+
+def kind_homes(kind, pack=None, text=None, product=None, substances=()):
+    """The items a document of this kind belongs in, the likeliest first. Egypt's table above names its own items; another
+    authority's items say it themselves (`kinds` in the requirement). With a pack: only items that pack has. With the document's
+    text: a certificate of analysis or a specification that names the product at its top is the finished product's own
+    (3.2.P.5.4, 3.2.P.5.1) and not an active substance's; a stability document under an authority's letterhead is the approval,
+    any other is the study."""
     homes = list(KIND_HOME.get(kind, []))
+    if text is not None:
+        first = None
+        if kind in ('coa', 'spec') and names_product(text, product):
+            first = {'coa': ['P-11'], 'spec': ['P-09']}[kind]
+        elif kind == 'stability' and not from_authority(text):       # the company's or a supplier's study: the substance's own when its title names a substance and not the product
+            head = _head(text.lower(), lines=14, chars=1400)
+            api_first = not names_product(text, product) and any(s and re.search(r'(?<![a-z])' + re.escape(s.lower()) + r'(?![a-z])', head) for s in substances)
+            first = ['S-14', 'P-16'] if api_first else ['P-16', 'S-14']
+        if first:
+            homes = [h for h in first if h in homes] + [h for h in homes if h not in first]
     if pack is None:
         return homes
     own = [r['id'] for r in pack.requirements if kind in (r.get('kinds') or ())]             # the authority's own item first, as Egypt's table has it
@@ -723,8 +1019,9 @@ def kind_check(req_id, filename, data_or_text, known_kind=None, pack=None):
     kind = content_kind(text)
     if kind == 'other' and known_kind in KIND_HOME:
         kind = known_kind                                   # the file says nothing itself (a scan): an earlier reading of it does
-    homes = kind_homes(kind, pack)
-    return {'kind': kind, 'homes': homes, 'ok': kind == 'other' or not homes or req_id in homes, 'kind_name': KIND_NAMES.get(kind),
+    homes = kind_homes(kind, pack, text)
+    family = {h for k in TECHNICAL for h in kind_homes(k, pack)} if kind in TECHNICAL else set()
+    return {'kind': kind, 'homes': homes, 'ok': kind == 'other' or not homes or req_id in homes or req_id in family, 'kind_name': KIND_NAMES.get(kind),
             'unread': kind == 'other' and len(re.sub(r'\s', '', text)) < 20}
 
 

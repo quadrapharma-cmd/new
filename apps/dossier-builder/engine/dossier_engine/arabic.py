@@ -169,7 +169,17 @@ def ocr_pdf(data, pages=4, dpi=200):
         with open(src, 'wb') as f:
             f.write(data)
         try:
-            subprocess.run(['pdftoppm', '-r', str(dpi), '-png', '-f', '1', '-l', str(pages), src, os.path.join(d, 'p')], capture_output=True, timeout=180, check=True)
+            # an ordinary page is rendered at `dpi`; a phone scan saved as a 28 × 42 inch page would come out 5600 × 8400 pixels at 200 dpi
+            # (36 s a page to read): a page larger than about A3 is rendered to fit a box of dpi × 12.5 pixels instead — the same text, a sixth of the time
+            size = ['-r', str(dpi)]
+            try:
+                from pypdf import PdfReader
+                rd = PdfReader(src, strict=False)
+                if max(max(float(pg.mediabox.width), float(pg.mediabox.height)) for pg in rd.pages[:pages]) / 72 * dpi > dpi * 17:
+                    size = ['-scale-to', str(int(dpi * 12.5))]
+            except Exception:
+                pass
+            subprocess.run(['pdftoppm', *size, '-png', '-f', '1', '-l', str(pages), src, os.path.join(d, 'p')], capture_output=True, timeout=180, check=True)
         except Exception:
             return ''
         out = []

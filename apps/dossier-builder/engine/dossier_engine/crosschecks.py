@@ -173,5 +173,8 @@ def run(data, profile):
 
 
 def _qualitative(spec, test):
+    """A test whose result is a word by nature: marked so, or its acceptance criterion carries no number (a description, an
+    identification, «complies with the test») — «Conforms» is then the result, not a missing figure."""
     t = next((x for x in spec if x.get('test') == test), {})
-    return bool(t.get('qualitative'))
+    limit = str(t.get('limit') or t.get('acceptance') or '')
+    return bool(t.get('qualitative')) or (bool(limit) and not re.search(r'\d', limit)) or bool(re.match(r'\s*(?:\d+\s*[-.)]\s*)?(?:description|appearance|identification|identity|odou?r|colou?r)', str(test), re.I))

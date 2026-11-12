@@ -165,7 +165,7 @@ def _clean(raw):
                 state.pop()
         elif all(state):
             out.append(ch)
-    text = ''.join(out)
+    text = _rows(''.join(out))
     text = text.replace('\x07\x07', '\n').replace('\x07', ' | ')        # a row ends with its last cell's mark and the row's own mark
     text = text.replace('\r', '\n').replace('\x0b', '\n').replace('\x0c', '\n').replace('\x1e', '-').replace('\xa0', ' ')
     text = _DROP.sub('', text)
@@ -188,6 +188,25 @@ def _word6(wd, flags):
     if not 0 < fc_min < fc_mac <= len(wd):
         return ''
     return _clean(wd[fc_min:fc_mac].decode(LID_CP.get(lid & 0x3FF, 'cp1252'), 'replace'))
+
+
+def _rows(text):
+    """Word 97 tables in the text stream: a cell ends with \\x07, a row with one more. Each row becomes ONE line «cell | cell | cell»,
+    a cell's own paragraphs joined — the shape a table read from a .docx has. What stands before the first cell's last paragraph in
+    the first row of a table is ordinary text; in a following row (same number of cells) a paragraph mark is inside a cell."""
+    chunks = text.split('\x07\x07')
+    if len(chunks) < 2:
+        return text
+    out, prev = [], None
+    for i, chunk in enumerate(chunks[:-1]):
+        cells = chunk.split('\x07')
+        head = ''
+        if '\r' in cells[0] and not (i > 0 and prev == len(cells) and not cells[0].startswith('\r')):
+            head, cells[0] = cells[0].rsplit('\r', 1)
+            head += '\r'
+        out.append(head + ' | '.join(re.sub(r'\s*[\r\x0b]+\s*', ' ', c).strip() for c in cells) + '\r')
+        prev = len(cells)
+    return ''.join(out) + chunks[-1]
 
 
 def doc_text(data):

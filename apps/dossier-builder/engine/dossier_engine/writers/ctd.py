@@ -27,7 +27,7 @@ def _sec_key(sec):
     return [int(x) if x.isdigit() else x for x in re.split(r'[.\s–-]+', sec)]
 
 
-def write(out_dir, root_name, slots, files, lang_note=None, dry_run=False):
+def write(out_dir, root_name, slots, files, lang_note=None, dry_run=False, working=None):
     """slots: resolver output (all, incl. NR/NA). files: {slot_id: [{file, title?, variation?, date?}]}.
     Returns {path, files, missing}."""
     root = Path(out_dir) / clean(root_name, 60)
@@ -58,11 +58,19 @@ def write(out_dir, root_name, slots, files, lang_note=None, dry_run=False):
             if f.get('variation'):
                 sub = folder / clean(f"{f.get('date', '')} {f['variation']}", 56)
             title = f.get('title') or s.title['en']
-            suffix = (f'-{i + 1}' if len(got) > 1 and not f.get('variation') else '') + '.pdf'
+            suffix = (f'-{i + 1}' if len(got) > 1 and not f.get('variation') else '') + (f.get('ext') or '.pdf')      # a working copy keeps a Word draft as Word
             budget = min(56, MAX_PATH - len(f'{root.name}/{sub}/') - len(suffix))
             if budget < 12:
                 raise WriterError(f'path budget exhausted under {sub}')
-            name = clean(title if named else f'{sec} {title}', budget) + suffix
+            if working and len(got) > 1 and f.get('orig'):       # a working copy keeps each document's own name where an item holds several
+                suffix = f.get('ext') or '.pdf'
+                name = clean(f"{sec} {f['orig']}", budget) + suffix
+                k = 2
+                while str(sub / name) in placed:
+                    name = clean(f"{sec} {f['orig']}", budget - 3) + f'-{k}' + suffix
+                    k += 1
+            else:
+                name = clean(title if named else f'{sec} {title}', budget) + suffix
             rel = sub / name
             if len(f'{root.name}/{rel}') > MAX_PATH:
                 raise WriterError(f'path > {MAX_PATH}: {rel}')
@@ -88,8 +96,18 @@ def write(out_dir, root_name, slots, files, lang_note=None, dry_run=False):
             w.writerow([s.req_id, s.ctd, s.title['en'], s.title['ar'],
                         f"{s.item['name']} / {s.item['manufacturer']}" if s.item else '',
                         s.level, _status(s, placed), ' | '.join(placed), next((r for r in reversed(s.reasons) if not r.get('note')), s.reasons[-1])['en']])
-    (root / '00-navigator.html').write_text(_navigator(root_name, rows, lang_note), encoding='utf-8')
-    return {'path': str(root), 'files': sorted(written) + ['00-checklist.csv', '00-navigator.html'],
+    (root / '00-navigator.html').write_text(_navigator(root_name, rows, lang_note, working), encoding='utf-8')
+    extra = []
+    if working:                                              # the list of what is still needed, as a file of its own to hand around
+        lines = ['WORKING COPY — NOT FOR SUBMISSION / نسخة عمل — ليست للتقديم', '', working.get('en', ''), working.get('ar', ''), '',
+                 'Still missing (required) / المطلوب الناقص:']
+        for s, placed in rows:
+            if _status(s, placed) == 'Missing':
+                item = f" [{s.item['name']} — {s.item['manufacturer']}]" if s.item else ''
+                lines.append(f"- {s.ctd}  {s.title['en']}{item}  /  {s.title['ar']}")
+        (root / '00-MISSING.txt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        extra = ['00-MISSING.txt']
+    return {'path': str(root), 'files': sorted(written) + ['00-checklist.csv', '00-navigator.html'] + extra,
             'missing': missing}
 
 
@@ -103,7 +121,7 @@ _AR = {'Provided': 'مقدَّم', 'Missing': 'ناقص', 'Not required': 'غي�
        'Optional - not provided': 'اختياري - غير مقدَّم'}
 
 
-def _navigator(title, rows, note):
+def _navigator(title, rows, note, working=None):
     e = html.escape
     trs = []
     for s, placed in rows:
@@ -134,6 +152,7 @@ html[lang=en] .ar,html[lang=ar] .en{{display:none}}
 <header><h1>{e(title)} <span class=en>- CTD One Submission</span><span class=ar>- ملف CTD</span></h1>
 <span><span class=en>Provided</span><span class=ar>مقدَّم</span> {n["Provided"]} · <span class=en>Missing</span><span class=ar>ناقص</span> {n["Missing"]} · NR {n["Not required"]} · NA {n["Not applicable"]}</span>
 <button onclick="var h=document.documentElement,a=h.lang==='en';h.lang=a?'ar':'en';h.dir=a?'rtl':'ltr'">EN / عربي</button></header>
+{('<div class=note style="color:var(--bad);font-weight:600"><span class=en>' + e(working.get("en", "")) + '</span><span class=ar>' + e(working.get("ar", "")) + '</span></div>') if working else ''}
 <div class=note><span class=en>{e(note or "Numbering per NP.CAPP.065 v5. Conforms to EDA guidance + ICH; folder naming is the tool's convention (EDA publishes none).")}</span><span class=ar>الترقيم حسب NP.CAPP.065 الإصدار 5. مطابق لإرشادات الهيئة و ICH؛ تسمية المجلدات من الأداة (الهيئة لم تنشر تسمية).</span></div>
 <div class=wrap><table><thead><tr><th>CTD</th><th><span class=en>Document</span><span class=ar>المستند</span></th><th><span class=en>Level</span><span class=ar>المستوى</span></th><th><span class=en>Status</span><span class=ar>الحالة</span></th><th><span class=en>Files</span><span class=ar>الملفات</span></th></tr></thead>
 <tbody>{"".join(trs)}</tbody></table></div></body></html>

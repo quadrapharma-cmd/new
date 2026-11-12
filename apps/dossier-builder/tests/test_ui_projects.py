@@ -76,6 +76,30 @@ def test_leaving_the_wizard_keeps_a_draft_that_is_continued_from_the_list(clean,
     page.close()
 
 
+def test_a_draft_opened_in_a_fresh_page_names_the_form_in_words(clean, browser, tmp_path):
+    """Before: a draft continued right after the page loaded was filled before the vocabulary had arrived, so the form — and the
+    product's name made from it — was the vocabulary's code («powder-oral-sol») instead of its words."""
+    server = clean
+    lic = make_pdf_lines(tmp_path / 'cpp.pdf', ['Certificate of Pharmaceutical Product', 'Certificate No: CPP-2024-0118', 'Trade name: Dermacure',
+                                                'Dosage form: Powder for oral solution', 'Active ingredient: Neomycin sulphate', 'Manufacturer: Example Pharm Co.'], 'WHO Certification Scheme')
+    page = _open(browser, server)
+    _upload(page, '[data-updoc="registration_licence"]', [lic])
+    page.wait_for_selector('#intakeReview', timeout=120000)
+    assert page.evaluate('() => [S.wiz.d.form, S.wiz.d.form_std]') == ['Powder for oral solution', 'powder-oral-sol']
+    page.click('#wizCancel')
+    page.wait_for_selector('#draftBox')
+    page.close()
+    page = _open(browser, server, '#/dossiers', '[data-draft]')                       # a fresh page: straight from the list into the draft
+    page.click('[data-draft]')
+    page.wait_for_selector('#intakeReview', timeout=60000)
+    page.wait_for_function('() => S.wiz && S.wiz.read')
+    d = page.evaluate('() => ({form: S.wiz.d.form, std: S.wiz.d.form_std, name: S.wiz.d.name})')
+    assert d['form'] == 'Powder for oral solution' and d['std'] == 'powder-oral-sol', d
+    assert 'powder-oral-sol' not in d['name'] and 'powder for oral solution' in d['name'].lower(), d
+    assert page.errors == [], page.errors
+    page.close()
+
+
 def test_leaving_by_the_menu_keeps_what_was_just_typed(clean, browser):
     server = clean
     page = _open(browser, server)

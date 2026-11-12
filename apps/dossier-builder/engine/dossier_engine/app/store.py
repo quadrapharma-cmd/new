@@ -103,8 +103,14 @@ SOURCE_DRAFT = {
 
 
 class Store:
+    def claim_readings(self):
+        """The reader's kept readings (extract.read_text) go to this workspace's cache folder."""
+        from .. import extract as _ex
+        _ex.READ_DIR = self.root / 'cache' / 'text'
+
     def __init__(self, root):
         self.root = Path(root)
+        self.claim_readings()                                # a file is read (and OCR-ed) once: its reading is kept by its SHA-256
         (self.root / 'blobs').mkdir(parents=True, exist_ok=True)
         self._local = threading.local()
         self.db.execute('pragma journal_mode=' + ('delete' if sys.platform == 'emscripten' else 'wal'))   # no shared memory in the browser
@@ -373,6 +379,9 @@ class Store:
                 filename = (filename.rsplit('.', 1)[0] if '.' in filename[-6:] else filename) + '.pdf'
                 data = pdf
         sha = self.put_blob(data)
+        if text:                                       # the reading the page made of this file (its OCR of a scan) stays with the file
+            self.claim_readings()
+            _extract.remember_text(sha, text)
         family = _extract.source_family(filename, data) or ('word' if filename.lower().endswith('.docx') else 'image' if _imagefiles.image_format(data) else None)
         if family:                                      # a source file (Word, Excel, PowerPoint, text — old format or new): the PDF the user uploads replaces it
             en, ar = SOURCE_DRAFT[family]
@@ -384,7 +393,15 @@ class Store:
                 rep = pdf_check(str(tmp), doc_class or s.doc_class)
             finally:
                 tmp.unlink(missing_ok=True)
-        if not meta.get('generated') and not meta.get('signed_for') and not meta.get('amended_from'):      # the kind rule: is this file the document the item expects? (PDF, image or Word)
+        if meta.get('fixed_from'):                    # a repaired / readable copy of a stored document: the verdict on the document it was made from stands
+            try:
+                src = self.document(meta['fixed_from'])
+                for f0 in src.get('findings') or []:
+                    if f0.get('rule') == 'DOC-KIND' and src.get('slot_id') == slot_id:
+                        rep.findings.insert(0, Finding('DOC-KIND', f0.get('severity', 'block'), f0.get('en', ''), f0.get('ar', ''), f0.get('action', 'move'), f0.get('source', ''), f0.get('extra') or {}))
+            except Exception:
+                pass
+        elif not meta.get('generated') and not meta.get('signed_for') and not meta.get('amended_from'):      # the kind rule: is this file the document the item expects? (PDF, image or Word)
             try:
                 kc = _extract.kind_check(s.req_id, filename, text or data, known_kind=kind, pack=self.pack(self.dossier(did)['pack']))
             except Exception:

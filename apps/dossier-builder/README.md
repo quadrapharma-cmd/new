@@ -77,6 +77,51 @@ levels where it says otherwise and its regional items under 3.2.R.
   `sources`, `verified`) and `requirements.yaml` (Module 1 only, each item with its source), `classify.yaml`; lint with
   `packs.lint`. Nothing in the engine or the page changes.
 
+## What a real product's trial changed (November 2026)
+
+The owner handed over a real product's folder (ten documents: licence, method of analysis, specifications, a batch certificate,
+validation chromatograms, a RAR of the new method, a stability letter, fee receipts) and asked for it to be taken to an exported
+file. On the version of that day the trial failed: the form was read as «tablet» (a word in a test method), the product as
+sterile («sterile peptone water»), 4 of 13 files landed in their place, two generated tables carried wrong data under a green
+«conforming», «make it for me» took 78 s an item, and nothing could be exported (the gate). What was changed, each with a test on
+fictional documents (`tests/test_trial_fixes.py`, `tests/test_ui_working_copy.py`):
+
+- **A file is read once.** `extract.read_text` keeps each reading by the file's SHA-256 (memory + `workspace/cache/text`), and the
+  reading the page made of a scan (its own OCR) is kept with the file (`remember_text`): the kind rule, a template's base
+  documents and the Assistant get the text without another OCR — and in the browser edition, where the engine has no OCR, they
+  get it at all. An OCR is kept with the pages it covers: the first page read for the kind rule is not taken for the whole
+  file (a question about more pages reads the file once more, a question about fewer is answered from the fuller reading);
+  a scan nobody could read yet is not remembered as empty; a reading kept on disk belongs to the reader that made it
+  (`READ_FORMAT` — raise it when what a reading holds changes); the app that answers a request claims the cache folder of its
+  own workspace. A page larger than about A3 (a phone scan saved as 28 × 42 inches) is rendered to fit 2500 pixels for OCR.
+- **What a document is and where it goes.** Kinds for a method of analysis, a method validation / chromatograms, a fees receipt,
+  a variation approval; phrases that settle the kind wherever they stand (an authority's own title or department); the home of a
+  kind follows what the document is about (a certificate or a specification that names the product at its top is the finished
+  product's: 3.2.P.5.4 / 3.2.P.5.1; an authority's stability letter goes to the approvals item or, where that does not apply,
+  3.2.P.8). Nothing is placed by itself on weak evidence: only the home of a recognised kind or a strong match; a certificate
+  that names none of the actives its kind belongs to is offered, not placed. A readable copy keeps its document's verdict.
+- **What the product is comes from the documents that state it** (licence, application form, CPP, SmPC, pricing, composition,
+  CADC, variation approval) or from a labelled field / the title of a technical document — never from a word in a method. The
+  form is matched against the vocabulary, longest name first, and travels with its standard entry. British and American
+  spellings name one substance. The licence's «Manufacturer of active substance — For X:» block names an active whose strength
+  line the OCR garbled; a company name whose first word the OCR lost is taken as printed elsewhere in the document. «Invalidation
+  date» is not the date of issue; a batch number has a digit; a manufacture date is the one right after its label.
+- **Tables are read as tables.** A table row is one line «cell | cell | cell» in a .docx and in an old .doc alike (a cell's own
+  paragraphs joined); specifications and results come from the rows under a «Test | Specification | Result | Method» header, one
+  specification per dossier (the specification document's), never from sentences of a method.
+- **A working copy at any time.** `POST /api/dossiers/{id}/export {"working": true}` (the export page's «working copy» button):
+  the CTD folders with every document in the dossier now (Word drafts stay Word, each document keeps its own name where an item
+  holds several), `00-navigator.html`, `00-checklist.csv` and `00-MISSING.txt`; marked «not for submission», never recorded as a
+  submission. The gate still guards the real export.
+- Generators' forms prefill who signs (asked once, remembered across forms), the shelf life, the pack and the composition from
+  what the dossier already knows; «Conforms» for a descriptive test is a result, not a missing figure.
+- A draft continued right after the page loads is filled once the vocabulary has arrived: the form — and the product's name
+  made from it — is written in words, never as the vocabulary's code.
+
+Still open after the trial: the Drive connector refuses a file over 10 MB (the page asks for it from the device); a full dossier
+needs documents no reading can supply (third-party certificates, the suppliers' substance files) and the signed copies of what
+the program drafts; OCR of stamped scans stays imperfect — the model's reading (browser edition) is what should check it.
+
 ## Intake — «upload the documents and the forms fill themselves»
 
 **Documents first.** The new-dossier wizard opens with the documents, not with fields: one named upload button per base document the

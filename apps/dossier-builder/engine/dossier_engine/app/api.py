@@ -1,5 +1,5 @@
 """HTTP API on localhost (D1). Errors always carry code + en + ar (+ action)."""
-import errno, json, shutil, sys, tempfile, time, uuid, zipfile
+import errno, json, re, shutil, sys, tempfile, time, uuid, zipfile
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -53,6 +53,7 @@ class NewDossier(BaseModel):
 class ExportReq(BaseModel):
     outputs: list = ['ctd', 'ectd32', 'ectd40']
     acknowledge_provisional: bool = False
+    working: bool = False        # a working copy: what is in the dossier now + the list of what is missing, whatever the gate says
     submission: dict = None      # follow-on sequence: {type, unit, mode, description, activity, tracking}
 
 
@@ -92,11 +93,24 @@ class _OpenRoute(APIRoute):
         return open_handler
 
 
+class _ReadingsOfThisWorkspace:
+    """The reader keeps what it read in the workspace's cache folder (extract.read_text). A process may hold more than one
+    workspace, so the app that answers a request claims the folder first."""
+
+    def __init__(self, app, store):
+        self.app, self.store = app, store
+
+    async def __call__(self, scope, receive, send):
+        self.store.claim_readings()
+        await self.app(scope, receive, send)
+
+
 def create_app(workspace, auth_enabled=None):
     import os
     from .auth import Auth, install
     st = Store(workspace)
     app = FastAPI(title='Dossier Builder', version='0.2', docs_url=None, redoc_url=None, openapi_url=None)
+    app.add_middleware(_ReadingsOfThisWorkspace, store=st)
     app.router.route_class = _OpenRoute                     # before any route is added
     if auth_enabled is None and (os.environ.get('DB_MODE') == 'cloud' or os.environ.get('DB_AUTH') == '1'):
         auth_enabled = True                                  # otherwise None: the workspace's own switch (Users screen) decides, default off
@@ -709,6 +723,27 @@ def create_app(workspace, auth_enabled=None):
                 'sequence': env.get('sequence', '0000'), 'submission_type': env.get('submission_type', 'maa'),
                 'unit': env.get('unit', 'initial'), 'description': env.get('description'),
                 'manufacturer': pr.get('manufacturer'), 'indication': pr.get('indication')}
+        for doc in st.documents(did):                                 # who signs is asked once: any document already generated remembers it
+            data0 = doc['meta'].get('data') or {}
+            for k in ('signatory', 'signatory_title'):
+                if data0.get(k):
+                    base[k] = data0[k]
+        for k in ('signatory', 'signatory_title'):
+            if env.get(k):
+                base[k] = env[k]
+        data, reg = d.get('data') or {}, (d.get('data') or {}).get('registration') or {}
+        if kind == 'stability_commitment':                            # what the licence already said
+            base.update(shelf_life=reg.get('shelf_life'), containers=(reg.get('packs') or [None])[0],
+                        strengths=' + '.join(f"{a.get('name')} {a.get('strength')}" for a in (data.get('apis') or []) if a.get('strength')) or None)
+        if kind == 'composition' and len(data.get('composition') or []) >= 2:
+            def mg(v):
+                m = re.match(r'\s*([\d.,]+)\s*(mg|g|gm|mcg|µg)\b', str(v or ''), re.I)
+                if not m:
+                    return None
+                x = float(m.group(1).replace(',', ''))
+                return round(x * {'mg': 1, 'g': 1000, 'gm': 1000, 'mcg': 0.001, 'µg': 0.001}[m.group(2).lower()], 4)
+            base['components'] = [{'name': c.get('name'), 'function': c.get('function') or c.get('role') or '', 'qty_mg': mg(c.get('amount')), 'standard': c.get('standard') or ''}
+                                  for c in data['composition'] if c.get('name')]
         if kind == 'salt':
             base['apis'] = [{'name_base': n} for n in dict.fromkeys(a['name'] for a in prof.get('apis', []))]
         if kind == 'cep_commitment' and slot_id and '@' in slot_id:
@@ -738,31 +773,34 @@ def create_app(workspace, auth_enabled=None):
         if kind == 'other' and _extract.name_hint(filename):                # nothing inside says what it is: the name only hints where to offer it
             kind, by_name = _extract.name_hint(filename), True
         sugg = clf.suggest(filename, text, slots)
-        homes = _extract.kind_homes(kind, clf.pack)
+        homes = _extract.kind_homes(kind, clf.pack, text, product,      # the likeliest first: by what the document is about, not only its kind
+                                    substances=[_extract.api_key(s.item.get('name') or '') for s in slots if s.item])
         by_id = {s.slot_id: s for s in slots}
-        if homes and not any(x['req_id'] in homes for x in sugg):
-            cands = sorted((s for s in slots if s.active and s.req_id in homes), key=lambda s: homes.index(s.req_id))
-            first = [s for s in cands if s.req_id == cands[0].req_id] if cands else []
-            if len(first) == 1:                                                     # the only item of that kind (the licence item, the one API's CEP item)
-                sugg.insert(0, {'slot_id': first[0].slot_id, 'req_id': first[0].req_id, 'score': 9, 'why': [f'document kind: {kind}']})
+        decided = unsure = False                                         # decided: the document names the active substance its item is for
+        for req in homes:                                                # the kind's own item leads, whatever the keywords say
+            cands = [s for s in slots if s.active and s.req_id == req]
+            if len(cands) > 1:                                           # one item per active substance: the substance the document names
+                named = [s for s in cands if s.item and _extract.api_key(s.item.get('name') or '') and
+                         _extract.api_key(s.item.get('name') or '').lower() in (text or '').lower()]
+                cands, decided = (named, True) if len(named) == 1 else ([], False)
+                unsure = unsure or not cands                             # its likelier home is one of several actives' items and it names none: what follows is a guess
+            if len(cands) == 1:
+                why = next((x['why'] for x in sugg if x['slot_id'] == cands[0].slot_id), [])
+                sugg = [{'slot_id': cands[0].slot_id, 'req_id': req, 'score': 9, 'why': [f'document kind: {kind}'] + why[:3]}] + [x for x in sugg if x['slot_id'] != cands[0].slot_id]
+                break
         if homes:
-            sugg.sort(key=lambda x: (0 if x['req_id'] in homes else 1, -x['score']))
-        if kind == 'coa' and product and not any('substance' in w for x in sugg for w in x['why']):
-            # a certificate of analysis that names the product and none of its actives is the finished product's: its batch analyses item
-            import re as _re
-            word = (_re.findall(r'[a-z\u0600-\u06ff]{4,}', product.lower()) or [None])[0]
-            fp = next((x for x in slots if x.active and x.req_id == 'P-11'), None)
-            if word and fp and _re.search(r'(?<![a-z])' + _re.escape(word) + r'(?![a-z])', (filename + ' ' + text).lower()):
-                sugg = [{'slot_id': fp.slot_id, 'req_id': fp.req_id, 'score': 10, 'why': ['names the product, none of its active substances']}] + \
-                       [x for x in sugg if x['slot_id'] != fp.slot_id]
-        auto = sugg[0]['slot_id'] if sugg else None
-        if len(sugg) > 1:
+            first = sugg[0]['slot_id'] if sugg and sugg[0]['req_id'] in homes and sugg[0]['score'] == 9 else None
+            sugg.sort(key=lambda x: (0 if x['slot_id'] == first else 1 if x['req_id'] in homes else 2, homes.index(x['req_id']) if x['req_id'] in homes else 99, -x['score']))
+        # placed without asking only on real evidence: the home of the kind the document was recognised as, or a strong match (a section
+        # number in the file's name, its keyword in the name and the text); anything weaker is offered in the «not placed yet» box
+        auto = sugg[0]['slot_id'] if sugg and (sugg[0]['req_id'] in homes or sugg[0]['score'] >= 6) else None
+        if len(sugg) > 1 and not decided:
             a, b = by_id.get(sugg[0]['slot_id']), by_id.get(sugg[1]['slot_id'])
             if a and b and a.item and b.item and sugg[0]['score'] == sugg[1]['score'] and \
                     _extract.api_key(a.item.get('name') or '') != _extract.api_key(b.item.get('name') or ''):
                 auto = None                                                         # a tie between two actives: never a guess
-        if by_name or unread:
-            auto = None                                                             # a file that was not read is offered, never placed on its name
+        if by_name or unread or (unsure and not decided):
+            auto = None                                                             # a file that was not read, or that names none of the actives its kind belongs to, is offered — never placed on a guess
         return kind, sugg, auto
 
     @app.post('/api/dossiers/{did}/classify/text')
@@ -867,7 +905,7 @@ def create_app(workspace, auth_enabled=None):
         app.state.p40 = p40
         ig = Path(__file__).resolve().parents[5] / 'docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip'
         try:
-            return exporter.export(st, did, body.outputs, body.acknowledge_provisional, body.submission, p40, ig)
+            return exporter.export(st, did, body.outputs, body.acknowledge_provisional, body.submission, p40, ig, working=body.working)
         except exporter.ExportError as e:
             err(e.status, e.code, e.en, e.ar, **e.extra)
 

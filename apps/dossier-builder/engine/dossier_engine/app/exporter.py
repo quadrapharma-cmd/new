@@ -30,6 +30,44 @@ def _zip(src_root, rel_folder, out):
                 zf.write(f, f.relative_to(src_root))
 
 
+def _working_copy(st, did, g):
+    d = st.dossier(did)
+    slots = st.slots(did)
+    exp_id = time.strftime('%Y%m%d-%H%M%S-') + uuid.uuid4().hex[:6] + '-working'
+    base = st.root / 'exports' / did / exp_id
+    work = base / '_files'
+    work.mkdir(parents=True)
+    files, n_docs = {}, 0
+    for s in slots:
+        for doc in st.documents(did, s.slot_id) if s.active else []:
+            if (doc.get('meta') or {}).get('external'):
+                continue
+            ext = '.' + doc['filename'].rsplit('.', 1)[-1].lower() if '.' in doc['filename'][-6:] else '.pdf'
+            p = work / f"{doc['id']}{ext}"
+            shutil.copyfile(st.blob_path(doc['sha256']), p)
+            orig = doc['filename'].rsplit('.', 1)[0] if '.' in doc['filename'][-6:] else doc['filename']
+            files.setdefault(s.slot_id, []).append({'file': str(p), 'title': doc['title'], **doc['meta'], 'doc_id': doc['id'], 'ext': ext, 'orig': orig})
+            n_docs += 1
+    missing = len(g.get('missing_required') or [])
+    note = {'en': f"WORKING COPY — NOT FOR SUBMISSION. {n_docs} document(s) in place; {missing} required item(s) still missing, "
+                  f"{len(g.get('non_conforming') or [])} to fix, {len(g.get('unsigned') or [])} draft(s) to sign. See 00-MISSING.txt.",
+            'ar': f"نسخة عمل — ليست للتقديم. {n_docs} مستند في مكانه؛ {missing} بند مطلوب لسه ناقص، {len(g.get('non_conforming') or [])} محتاج تصليح، "
+                  f"{len(g.get('unsigned') or [])} مسودة محتاجة توقيع. شوف 00-MISSING.txt."}
+    try:
+        res = ctd.write(base / 'ctd', d['name'] + ' - WORKING COPY', slots, files, working=note)
+        _zip(Path(res['path']).parent, Path(res['path']).name, base / 'ctd-working.zip')
+    except (WriterError, OSError) as ex:
+        shutil.rmtree(base, ignore_errors=True)
+        raise ExportError(422, 'E-WRITER', f'Export failed: {ex}', f'التصدير فشل: {ex}')
+    shutil.rmtree(work, ignore_errors=True)
+    st.db.execute('insert into export values (?,?,?,?,?,?)', (exp_id, did, json.dumps(['ctd-working']), str(base), 0, time.time()))
+    st.db.commit()
+    st.audit(did, 'export.working', id=exp_id, documents=n_docs, missing_required=missing)
+    return {'id': exp_id, 'working': True, 'downloads': {'ctd-working': f'/api/dossiers/{did}/exports/{exp_id}/ctd-working.zip'}, 'documents': n_docs,
+            'missing_required': missing, 'non_conforming': len(g.get('non_conforming') or []), 'unsigned': len(g.get('unsigned') or []),
+            'sequences': {}, 'validation': {}, 'report': None, 'ctd_only': [], 'label': note['en'], 'label_ar': note['ar']}
+
+
 def next_seq(hist, output):
     if not hist:
         return '0000' if output == 'ectd32' else 1
@@ -37,8 +75,12 @@ def next_seq(hist, output):
     return f'{int(last) + 1:04d}' if output == 'ectd32' else int(last) + 1
 
 
-def export(st, did, outputs, ack, sub, p40, ig_zip):
+def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
+    """working: a working copy — the CTD folders with what the dossier holds now and the list of what is missing, whatever the gate
+    says; never an eCTD sequence, never recorded as a submission."""
     g = st.gate(did)
+    if working:
+        return _working_copy(st, did, g)
     if not g['ok']:
         raise ExportError(409, 'E-GATE', 'Export blocked: required documents are missing or non-conforming.',
                           'التصدير متوقف: فيه مستندات مطلوبة ناقصة أو غير مطابقة.', gate=g)
