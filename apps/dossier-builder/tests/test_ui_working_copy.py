@@ -48,6 +48,8 @@ def test_a_working_copy_from_the_export_page(server, tmp_path):
         page.goto(f'{server}/#/d/{did}/export')
         page.wait_for_selector('#wkGo')
         assert page.locator('#go').is_disabled() and 'ليست للتقديم' in page.inner_text('#wkCard')       # the real export waits; the working copy does not
+        gate = page.inner_text('#gateCard')                                                             # what stops the export, in the dossier's own words
+        assert '1.1.1' in gate and 'نموذج الطلب' in gate and 'Neomycin sulphate' in gate and 'M1-01' not in gate and '@' not in gate
         page.click('#wkGo')
         page.wait_for_selector('#wkDl', timeout=60000)
         assert '1 مستند في مكانه' in page.inner_text('#wkRes')
