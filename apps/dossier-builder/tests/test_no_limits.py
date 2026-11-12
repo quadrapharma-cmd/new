@@ -98,5 +98,26 @@ def test_memory_that_runs_out_is_an_answer_in_words(c, monkeypatch):
     r = c.post(f'/api/intake/drafts/{dr}/files', files={'file': ('scans.pdf', io.BytesIO(b'%PDF-1.4 x'), 'application/pdf')}, data={'kind': 'other'}, headers=H)
     assert r.status_code == 507 and r.json()['detail']['code'] == 'E-MEMORY'
     monkeypatch.undo()
+    import errno
+
+    def disk_full(*a, **k):
+        raise OSError(errno.ENOSPC, 'No space left on device')
+    monkeypatch.setattr(store.Store, 'put_blob', disk_full)                                 # a full disk is said as that
+    r = c.post(f'/api/intake/drafts/{dr}/files', files={'file': ('scans.pdf', io.BytesIO(b'%PDF-1.4 x'), 'application/pdf')}, data={'kind': 'other'}, headers=H)
+    assert r.status_code == 507 and r.json()['detail']['code'] == 'E-DISK-FULL' and 'القرص' in r.json()['detail']['ar']
+    monkeypatch.undo()
+
+    def no_block(*a, **k):
+        raise OSError(errno.ENOMEM, 'Cannot allocate memory')
+    monkeypatch.setattr(formparsers.MultiPartParser, 'parse', no_block)                     # the browser edition: the page's memory refused the file while it was being taken
+    r = c.post(f'/api/intake/drafts/{dr}/files', files={'file': ('scans.pdf', io.BytesIO(b'%PDF-1.4 x'), 'application/pdf')}, data={'kind': 'other'}, headers=H)
+    assert r.status_code == 507 and r.json()['detail']['code'] == 'E-MEMORY'
+    monkeypatch.undo()
+
+    def denied(*a, **k):
+        raise PermissionError(errno.EACCES, 'Permission denied')
+    monkeypatch.setattr(store.Store, 'put_blob', denied)                                    # any other fault is still a fault
+    assert c.post(f'/api/intake/drafts/{dr}/files', files={'file': ('scans.pdf', io.BytesIO(b'%PDF-1.4 x'), 'application/pdf')}, data={'kind': 'other'}, headers=H).status_code == 500
+    monkeypatch.undo()
     assert c.get('/api/nothing-here').status_code == 404                                    # other errors answer as they always did
     assert c.get(f'/api/intake/drafts/{dr}/files/none.pdf').json()['detail']['code'] == 'E-FILE'

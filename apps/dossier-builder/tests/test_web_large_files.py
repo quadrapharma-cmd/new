@@ -187,3 +187,44 @@ def test_a_browser_that_keeps_no_blobs_stores_the_bytes_as_before(site, tmp_path
         assert back == {'status': 200, 'size': f.stat().st_size, 'sha': sha}
         assert errors == [], errors
         b.close()
+
+
+SMALL_BLOCKS = """(() => { const U = Uint8Array;                         /* a browser that gives no block of memory over 50 MB (a real one stops near 2 GB) */
+  self.Uint8Array = new Proxy(U, { construct(t, a) { if (a.length === 1 && typeof a[0] === 'number' && a[0] > 50e6) throw new RangeError('Array buffer allocation failed');
+    return new t(...a); } }); })();
+"""
+
+
+def test_a_file_too_large_for_the_pages_memory_is_refused_and_the_engine_goes_on(site, tmp_path):
+    """A file of the engine lives in one block of the page's memory, and the browser gives no block over about 2 GB. Asking for
+    one used to end the engine — the request never answered, nor any after it. It is refused in words and the engine goes on."""
+    big = scan_pdf(tmp_path / 'Dermacure stability scans 2009-2024.pdf', 'Stability Study Report - Dermacure', 70)
+    small = scan_pdf(tmp_path / 'Dermacure pricing.pdf', 'Pricing Certificate - Dermacure', 3)
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        ctx = b.new_context(viewport={'width': 1280, 'height': 800})
+
+        def blocks(route):
+            r = route.fetch()
+            route.fulfill(response=r, body=SMALL_BLOCKS + r.text())
+        ctx.route('**/assets/engine.worker.js', blocks)
+        errors = []
+        page = opener(ctx, site, errors)('#/')
+        page.evaluate("() => { const i = document.createElement('input'); i.type = 'file'; i.id = 'bigin'; i.multiple = true; document.body.appendChild(i); }")
+        page.set_input_files('#bigin', [str(big), str(small)])
+        got = page.evaluate("""async () => {
+          const post = (path, body, json) => fetch(path, {method: 'POST', headers: json ? {'X-DB': '1', 'content-type': 'application/json'} : {'X-DB': '1'}, body});
+          const dr = (await (await post('/api/intake/drafts', JSON.stringify({state: {step: 0}}), true)).json()).id;
+          const send = async f => { const fd = new FormData(); fd.append('file', f); fd.append('kind', 'other');
+            const r = await Promise.race([post('/api/intake/drafts/' + dr + '/files', fd), new Promise(done => setTimeout(() => done(null), 90000))]);
+            return r ? {status: r.status, body: await r.json()} : 'no answer'; };
+          const [a, c] = [...document.querySelector('#bigin').files].sort((x, y) => y.size - x.size);
+          const first = await send(a), second = await send(c);
+          await DBWEB.sync();
+          const d = await (await fetch('/api/intake/drafts/' + dr, {headers: {'X-DB': '1'}})).json();
+          return {first, second: second.status, files: d.files.map(x => x.filename), health: (await (await fetch('/api/health', {headers: {'X-DB': '1'}})).json()).ok}; }""")
+        assert got['first'] != 'no answer', got                                          # an answer, not a page left waiting
+        assert got['first']['status'] == 507 and got['first']['body']['detail']['code'] == 'E-MEMORY' and 'desktop program' in got['first']['body']['detail']['en'], got
+        assert got['second'] == 201 and got['files'] == ['Dermacure pricing.pdf'] and got['health'] is True, got      # the engine is still there for the next file
+        assert errors == [], errors
+        b.close()

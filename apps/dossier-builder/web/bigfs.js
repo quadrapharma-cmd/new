@@ -41,3 +41,30 @@ function DB_BIGFS(IDBFS, limit) {
   return (FS, populate) => new Promise((res, rej) => { waiting = [];
     FS.syncfs(populate, e => e ? rej(e) : Promise.all(waiting.concat(unread.splice(0).map(readBack))).then(() => res(), rej)); });
 }
+
+/* The engine's files live in the page's memory, each in one block, and a browser gives no block over about 2 GB. A file that grew
+   past it ended the engine (a failure it does not come back from: every later request went unanswered). The write is now refused
+   the way a full disk refuses it — the engine answers «out of memory» in words and goes on — and a file that grows asks for the
+   room it needs and no more when the usual margin does not fit.
+   DB_SAFEFS(FS): call once, right after the runtime is loaded. */
+function DB_SAFEFS(FS) {
+  const M = FS.filesystems.MEMFS, ENOMEM = 48;
+  const refuse = () => { const e = FS.ErrnoError ? new FS.ErrnoError(ENOMEM) : new Error('ErrnoError'); e.name = 'ErrnoError'; e.errno = ENOMEM; return e; };
+  const ours = e => e && e.name === 'ErrnoError';
+  const grow = M.expandFileStorage;
+  M.expandFileStorage = (node, need) => {
+    try { return grow(node, need); }
+    catch (e) {
+      if (ours(e)) throw e;
+      try {                                                             // the room asked for, without the margin
+        const used = node.usedBytes || 0, old = node.contents, next = new Uint8Array(need);
+        if (used > 0 && old) next.set(old.subarray(0, used));
+        node.contents = next;
+      } catch (e2) { throw refuse(); }
+    }
+  };
+  const write = M.stream_ops.write;
+  const safe = function () { try { return write.apply(this, arguments); } catch (e) { throw ours(e) ? e : refuse(); } };
+  M.stream_ops.write = safe;
+  if (M.ops_table && M.ops_table.file) M.ops_table.file.stream.write = safe;      // the files that exist already share this table
+}

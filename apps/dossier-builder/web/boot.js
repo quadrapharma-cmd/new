@@ -137,6 +137,7 @@
   async function bootHere() {                                      // the engine on the page's own thread (no worker available)
     say('تحميل محرك الملفات…', 'Loading the dossier engine…', 4);
     const pyodide = await loadPyodide({ indexURL: base + 'assets/pyodide/' });
+    DB_SAFEFS(pyodide.FS);                                          // bigfs.js: a file too large for the page's memory is refused, the engine goes on
     S.pyodide = pyodide;
     say('تحميل المكتبات…', 'Loading libraries…', 45);
     await pyodide.loadPackage(PKGS, { messageCallback: () => {}, errorCallback: m => console.warn(m) });

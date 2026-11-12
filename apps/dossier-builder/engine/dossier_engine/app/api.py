@@ -1,5 +1,5 @@
 """HTTP API on localhost (D1). Errors always carry code + en + ar (+ action)."""
-import json, shutil, sys, tempfile, time, uuid, zipfile
+import errno, json, shutil, sys, tempfile, time, uuid, zipfile
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -133,11 +133,26 @@ def create_app(workspace, auth_enabled=None):
             'code': 'E-FILE-GONE', 'en': 'The file itself is no longer in the storage (it was not saved completely, or was removed from the disk). Upload it again.',
             'ar': 'الملف نفسه مش موجود في التخزين (ما اتحفظش كامل، أو اتشال من القرص). ارفعه تاني.'}})
 
-    @app.exception_handler(_AnyHTTPError)
-    async def _http_err(request, exc):                      # the same when the memory ran out while the upload's body was being read
-        if isinstance(exc.__cause__, MemoryError):
+    def _no_room(exc):
+        """The answer for a write the machine refused for lack of room — memory, or the disk — else None."""
+        if isinstance(exc, MemoryError) or (isinstance(exc, OSError) and exc.errno == errno.ENOMEM):
             return _memory_answer()
-        return await _default_http_error(request, exc)
+        if isinstance(exc, OSError) and exc.errno == errno.ENOSPC:
+            return JSONResponse(status_code=507, content={'detail': {
+                'code': 'E-DISK-FULL', 'en': 'The disk has no room left for this file. Free some space and try again.',
+                'ar': 'القرص مفيهوش مساحة للملف ده. فضّي مساحة وجرّب تاني.'}})
+        return None
+
+    @app.exception_handler(OSError)
+    async def _os_err(request, exc):                        # the disk is full, or (the browser edition) the page's memory is: said in words
+        answer = _no_room(exc)
+        if answer is None:
+            raise exc
+        return answer
+
+    @app.exception_handler(_AnyHTTPError)
+    async def _http_err(request, exc):                      # the same when the room ran out while the upload's body was being read
+        return _no_room(exc.__cause__) or await _default_http_error(request, exc)
 
     @app.exception_handler(ProfileError)
     def _prof_err(_, e):
