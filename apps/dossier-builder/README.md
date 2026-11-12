@@ -139,6 +139,27 @@ The decoders — UTIF.js 3.1.0 (MIT), pako's inflate 2.1.0 (MIT/Zlib), libheif-j
 published on claude.ai carries no copy: it loads the same releases from jsDelivr (unpkg as a second mirror), each checked against its
 SHA-384 (a file that differs is refused and the person is told the image could not be opened). Tests: `tests/test_image_files.py`, `tests/test_ui_images.py`, `tests/test_web_edition.py`.
 
+### Compressed files
+
+A compressed file given anywhere a document is taken (the wizard, «bulk upload», an item, a drop, a Drive folder) is opened and the
+documents inside it take its place (`archives.py`, `POST /api/archives/unpack`, `ui/assets/archive.js`). An archive is told by its
+bytes; a Word, Excel or OpenDocument file is a ZIP inside and is never mistaken for one.
+
+| kind | where it opens |
+|---|---|
+| ZIP, TAR, `.tar.gz` / `.tgz`, `.tar.bz2`, a single `.gz` / `.bz2` | every edition (the standard library), the browser one included |
+| `.xz`, `.tar.xz` | the desktop and server editions (the browser edition's Python has no xz: said, with what to do) |
+| RAR (old and RAR5), 7z | the desktop and server editions, through the unpacker the machine has: `tar` on Windows 10+ and macOS is bsdtar (libarchive), else 7-Zip, unrar or unar. The browser edition has no unpacker: the RAR is refused with that reason («unpack it first, or pack the files as ZIP») |
+
+Names keep their Arabic (UTF-8, or the Windows code pages 1256/720 when the UTF-8 flag is missing); `..`, drive letters and leading
+slashes are dropped, nothing is written outside a private temporary folder; `__MACOSX`, `Thumbs.db`, `~$…` are left out; an archive
+inside the archive is opened too (two levels). Refused with the reason, never half-taken in silence: more than 600 files, more than
+800 MB unpacked (200 MB in the browser edition, where everything is in memory), an archive that expands too much (a «zip bomb»), a
+password. A TAR cut short keeps what was read before the break. More than 40 documents in one archive are not taken whole: the
+person ticks the ones the dossier needs. One item takes one document: an archive with several goes through «bulk upload».
+Tests: `tests/test_archives.py` (the RAR samples are libarchive's public test files, fetched by `web/vendor.sh`, skipped when
+absent), `tests/test_ui_projects.py`, `tests/test_web_edition.py`.
+
 ### The reading rules, reviewed on real layouts (November 2026)
 
 A review of the intake logic (sixteen independent passes, each attacked and revised, then checked against real registration
@@ -168,6 +189,32 @@ notifications, pricing letters, leaflets and certificates) changed how documents
 
 Tests: `tests/test_reading_cases.py`, `tests/test_intake_actives.py`, `tests/test_intake_fixes.py`, `tests/test_ui_reading_cases.py`,
 `tests/test_ui_intake_fixes.py`.
+
+## Leaving, drafts and deleting
+
+**A project that was started is never lost by leaving.** The wizard keeps its work in a draft from the first document or the first
+typed field (`intake_draft` / `intake_file`): the files go into the draft before their reading starts. Leaving — the menu, the
+«Leave (the draft is kept)» button, a closed tab — keeps it; the projects list and the home page show «Projects not finished yet»
+with **Continue** and a delete button, and «New project» starts a new one while the draft stays. A continued draft shows every file it
+holds at once and reads again the ones whose reading was not saved. A draft goes when its project is created (after every file is in
+the dossier: a file that could not be moved keeps the draft) or when the person deletes it (two presses; its files leave the disk
+when nothing else uses them). A draft that was deleted never comes back through a late save: writing to it answers 404
+(`intake_api.py`). In the browser edition the storage is written right after a draft's files are taken, a moment after every other
+write, at the latest 1.5 s into a long run of requests, and when the tab is hidden (`web/engine.worker.js`, `web/boot.js`).
+
+**Deleting.**
+
+| what | where | how |
+|---|---|---|
+| a document of an item | the item's panel and the upload list: «Delete» | two presses; the row is kept as withdrawn (the activity record names it) |
+| a project | the projects list and the home page: the bin on its row | to the **Trash** first: it comes back as it was («Bring back»). From the Trash, «Delete for good» asks for the project's name: documents, data, requests, reviews, conversations and exports go, and the stored files nothing else uses leave the disk (`Store.purge_dossier`, `gc_blobs`) |
+| a draft | «Projects not finished yet»: the bin; in the wizard: «Start over» | two presses |
+| a product of the product file | the product's «Data» tab: «Delete the product» | its name typed; its links to parties and the documents that are only its own go, shared documents stay, a dossier built from it is not touched |
+| a library document | its edit panel: «Delete for good» | two presses («Withdraw» stays for a document that was replaced) |
+
+The activity record is append-only: it keeps its lines and adds one saying who deleted what and when. The Assistant never deletes a
+project, a product or a library document; with sign-in on, an editor uses the Trash and only an administrator deletes for good.
+Tests: `tests/test_delete.py`, `tests/test_ui_projects.py`, `tests/test_suite_ui.py`, `tests/test_web_edition.py`.
 
 ## The Assistant («المساعد») — Claude inside the program
 

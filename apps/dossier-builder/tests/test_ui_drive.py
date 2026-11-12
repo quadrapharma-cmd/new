@@ -180,7 +180,8 @@ def test_old_word_files_are_selectable_and_read_by_what_is_inside_them(server, t
         rows = page.inner_text('#drvFiles')
         assert 'pricing.doc' in rows and 'تعهد.doc' in rows and 'Word (.doc)' in rows
         state = page.evaluate("() => [...document.querySelectorAll('[data-drvsel]')].map(c => [c.closest('tr').innerText.split('\\t')[1] || c.closest('tr').innerText, c.checked, c.disabled])")
-        assert sum(1 for _, checked, disabled in state if checked and not disabled) == 3 and sum(1 for _, c, d in state if d) == 1, state     # only the archive is left out
+        assert sum(1 for _, checked, disabled in state if checked and not disabled) == 3 and not any(d for _, c, d in state), state
+        assert [c for n, c, d in state if 'archive.rar' in n] == [False]                                               # the compressed file is offered, not ticked
         assert '3' in page.inner_text('#drvCount')
         page.click('#drvUse')
         page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 3 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=120000)
@@ -275,8 +276,8 @@ def test_drive_is_offered_on_every_item_of_the_board(server, tmp_path):
 
 def test_every_document_type_old_and_new_is_offered_and_read_by_its_content(server, tmp_path):
     """Excel, PowerPoint and RTF files (old formats and new) are ticked like PDFs; a file with no extension and a general type is
-    offered but not ticked, and read by its bytes once fetched; lock files, system files, empty files and archives are left out,
-    each with its reason in the type column."""
+    offered but not ticked, and read by its bytes once fetched; so is a compressed file; lock files, system files and empty files are
+    left out, each with its reason in the type column."""
     import gzip
     office = DATA / 'office'
     pdf = make_pdf_lines(tmp_path / 'licence.pdf', ['Egyptian Drug Authority', 'Final Registration License for Pharmaceutical Product', 'Trade Name: Dermacure', 'Dosage Form: Topical Powder'], 'Licence').read_bytes()
@@ -299,7 +300,7 @@ def test_every_document_type_old_and_new_is_offered_and_read_by_its_content(serv
         assert rows['pricing.xls'] == [True, False, 'Excel (.xls)'] and rows['overview.ppt'] == [True, False, 'PowerPoint (.ppt)'] and rows['letter.rtf'] == [True, False, 'RTF'], rows
         assert rows['scan0001'][:2] == [False, False]                                                # offered, not ticked
         assert rows['Thumbs.db'] == [False, True, 'ملف نظام'] and rows['~$report.docx'] == [False, True, 'ملف نظام'] and rows['empty.docx'] == [False, True, 'ملف فاضي'], rows
-        assert rows['backup.rar'][:2] == [False, True] and 'أرشيف' in rows['backup.rar'][2]
+        assert rows['backup.rar'][:2] == [False, False] and 'مضغوط' in rows['backup.rar'][2]            # a compressed file: offered, not ticked, opened after it is fetched
         page.check('tr:has-text("scan0001") [data-drvsel]'); page.click('#drvUse')
         page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 4 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=180000)
         kinds = page.evaluate("() => S.wiz.kinds")
@@ -319,5 +320,29 @@ def test_an_old_excel_file_from_this_computer_goes_through_the_wizard(server, tm
         fc.value.set_files([str(DATA / 'office' / 'sheet.xls'), str(DATA / 'office' / 'slides.pptx'), str(DATA / 'office' / 'letter.odt')])
         page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 3 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=180000)
         assert page.evaluate("() => S.wiz.kinds") == {'sheet.xls': 'stability', 'slides.pptx': 'stability', 'letter.odt': 'pricing'}
+        assert not errors, errors
+        b.close()
+
+
+def test_a_compressed_file_in_a_drive_folder_gives_the_documents_inside_it(server, tmp_path):
+    """A ZIP in the folder is offered without being ticked; ticked, it is fetched, opened, and the documents inside it are read."""
+    import io, zipfile
+    pdf = make_pdf_lines(tmp_path / 'licence.pdf', ['Egyptian Drug Authority', 'Final Registration License for Pharmaceutical Product', 'Trade Name: Dermacure', 'Dosage Form: Topical Powder'], 'Licence').read_bytes()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:
+        z.writestr('Dermacure/licence.pdf', pdf)
+        z.writestr('Dermacure/ملاحظات التسعير.txt', 'Pricing Certificate\nProduct: Dermacure\nPrice: EGP 45.00'.encode())
+        z.writestr('__MACOSX/Dermacure/._licence.pdf', b'x')
+    tree = json.dumps({'1AbCdEfGhIjKlMnOpQrStUv': [{'id': 'z1', 'title': 'Dermacure documents.zip', 'mimeType': 'application/zip', 'fileSize': str(len(buf.getvalue()))}]})
+    files = json.dumps({'z1': base64.b64encode(buf.getvalue()).decode()})
+    with pw.sync_playwright() as p:
+        b, page, errors = open_page(p, server, connector_stub(tree, files))
+        page.wait_for_selector('#intakeDrive'); page.click('#intakeDrive'); page.wait_for_selector('#drvLink')
+        page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv'); page.click('#drvList'); page.wait_for_selector('[data-drvsel]')
+        assert not page.is_checked('[data-drvsel]') and not page.is_disabled('[data-drvsel]')                          # offered, the person decides
+        page.check('[data-drvsel]'); page.click('#drvUse')
+        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 2 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=120000)
+        assert page.evaluate("() => Object.keys(S.wiz.kinds).sort()") == ['licence.pdf', 'ملاحظات التسعير.txt']
+        assert page.evaluate("() => S.wiz.kinds['licence.pdf']") == 'licence'
         assert not errors, errors
         b.close()

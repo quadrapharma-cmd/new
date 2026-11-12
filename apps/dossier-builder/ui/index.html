@@ -203,6 +203,7 @@ body[data-role="editor"] .admin-only,body[data-role="viewer"] .admin-only{displa
 <script src="/assets/ds.js"></script>
 <script>window.DB_TESS_BASE=window.DB_TESS_BASE||'/assets/tess/';window.DB_PDFJS_BASE=window.DB_PDFJS_BASE||'/assets/pdfjs/';window.DB_IMG_BASE=window.DB_IMG_BASE||'/assets/img/';</script>
 <script src="/assets/ocr.js"></script>
+<script src="/assets/archive.js"></script>
 <script>
 'use strict';
 const {$, $$, esc, bdi, icon, store, toast, openDrawer, closeDrawer, ring, meter, fmtDate, fmtTs, pct} = DS;
@@ -311,7 +312,7 @@ const T = {
   reviewT:{en:'Review what was read',ar:'راجع اللي اتقرا'}, byAi:{en:'Read by Claude — check each value.',ar:'قراها Claude — راجع كل قيمة.'},
   byRules:{en:'Read by the rules (no AI available here) — check each value.',ar:'قرتها القواعد (الذكاء الاصطناعي مش متاح هنا) — راجع كل قيمة.'},
   aiFailed:{en:'AI reading unavailable:',ar:'القراءة الذكية مش متاحة:'}, fillAll:{en:'Fill the fields',ar:'املأ الخانات'},
-  badFiles:{en:'Choose documents: PDF, Word, Excel, PowerPoint (old or new format), text or images.',ar:'اختار مستندات: PDF أو Word أو Excel أو PowerPoint (صيغة قديمة أو جديدة) أو نصوص أو صور.'}, apiHint:{en:'one row per active substance; a substance without a manufacturer is kept in the form for you to complete',ar:'صف لكل مادة فعالة؛ المادة اللي من غير مصنع بتفضل في النموذج عشان تكمّلها'},
+  badFiles:{en:'Choose documents: PDF, Word, Excel, PowerPoint (old or new format), text or images, or a compressed file that holds them.',ar:'اختار مستندات: PDF أو Word أو Excel أو PowerPoint (صيغة قديمة أو جديدة) أو نصوص أو صور، أو ملف مضغوط فيه مستندات.'}, apiHint:{en:'one row per active substance; a substance without a manufacturer is kept in the form for you to complete',ar:'صف لكل مادة فعالة؛ المادة اللي من غير مصنع بتفضل في النموذج عشان تكمّلها'},
   apiManMissing:{en:'manufacturer not read — type it',ar:'المصنع ما اتقراش — اكتبه'}, compRead:{en:'Composition rows read',ar:'صفوف التركيب اللي اتقرت'}, batchRead:{en:'Batches',ar:'تشغيلات'}, toData:{en:'they go to the product data after the dossier is created',ar:'بتتحط في بيانات المنتج بعد إنشاء الملف'}, pagesN:{en:'p.',ar:'صفحة'}, fText:{en:'text',ar:'نص مقروء'},
   fScan:{en:'scan — no text layer',ar:'سكان بدون نص'}, fVision:{en:'scan read from its page images',ar:'سكان اتقرى من صور صفحاته'}, fOcrBrowser:{en:'scan read by OCR in the browser',ar:'سكان اتقرى بـ OCR في المتصفح'},
   ocrRunning:{en:'Reading the scan (OCR in the browser)…',ar:'بيقرأ السكان (OCR في المتصفح)…'},
@@ -335,7 +336,7 @@ const T = {
   step0:{en:'Documents',ar:'المستندات'}, unplacedT:{en:'Uploaded, not placed yet',ar:'ملفات مرفوعة لسه ما اتحطتش في مكانها'}, unplacedSub:{en:'Pick the item and place it; the suggestion comes from the file\'s content.',ar:'اختار البند وحطّه؛ الاقتراح من محتوى الملف.'},
   putHere:{en:'Place it',ar:'حطّه'}, renamedDup:{en:'another file with this name: kept as',ar:'ملف تاني بنفس الاسم: اتحفظ باسم'}, stagedN:{en:'kept as not placed yet',ar:'اتحفظت كملفات لسه ما اتحطتش'}, placedOne:{en:'Placed.',ar:'اتحط.'}, suggested:{en:'suggested',ar:'مقترح'}, noSuggestion:{en:'no suggestion: choose the item',ar:'مفيش اقتراح: اختار البند'}, notThisDoc:{en:'not this document',ar:'مش المستند ده'}, stText:{en:'reading the text…',ar:'بيقرأ النص…'}, stModel:{en:'the model is reading the pages…',ar:'الموديل بيقرأ الصفحات…'},
   stDone:{en:'read',ar:'اتقرا'}, gotFrom:{en:'It gave us',ar:'خدنا منه'}, gotNothing:{en:'no data came out of it',ar:'ما طلعش منه بيانات'}, moveToIts:{en:'Move it to',ar:'انقله لخانة'}, removeFile:{en:'Remove it',ar:'شيله'},
-  dupFile:{en:'already uploaded',ar:'مرفوع قبل كده'}, wizSaved:{en:'Saved ✓',ar:'محفوظ ✓'}, wizAutosave:{en:'Saved automatically as you go',ar:'بيتحفظ تلقائيًا أول بأول'}, wizRestart:{en:'Start over',ar:'ابدأ من الأول'},
+  dupFile:{en:'already uploaded',ar:'مرفوع قبل كده'}, wizSaved:{en:'Saved as a draft ✓',ar:'محفوظ كمسودة ✓'}, wizAutosave:{en:'Saved automatically as a draft as you go',ar:'بيتحفظ تلقائيًا كمسودة أول بأول'}, wizRestart:{en:'Start over',ar:'ابدأ من الأول'},
   wizRestored:{en:'Your saved work was restored.',ar:'رجّعنا شغلك المحفوظ.'}, wizResume:{en:'Finishing putting your documents into the dossier…',ar:'بنكمّل وضع مستنداتك في الملف…'}, liveT:{en:'Recognised so far',ar:'اللي اتعرفنا عليه لحد دلوقتي'}, act_move:{en:'Move it to its own item.',ar:'انقله لبنده الصح.'}, moveTo:{en:'Move to',ar:'انقله إلى'}, moved:{en:'Moved.',ar:'اتنقل.'}, docsFirst:{en:'Start with the documents you already have: upload each one under its name. The program reads them, fills the product data from them, and in the next steps asks you only for what it could not find.',ar:'ابدأ بالمستندات اللي عندك: ارفع كل مستند تحت اسمه. البرنامج يقرأها ويملي بيانات المنتج منها، وفي الخطوات الجاية يطلب منك بس اللي ما لقاهوش.'},
   intakeAllT:{en:'Or drop everything at once',ar:'أو ارمي كل الملفات مرة واحدة'}, intakeAllSub:{en:'The program tells each document apart by its content and sorts it into its place.',ar:'البرنامج يفرّق المستندات من محتواها ويرتّبها في مكانها.'},
   reviewRead:{en:'Review what was read',ar:'راجع اللي اتقرا'}, missingWrite:{en:'missing — type it',ar:'ناقص — اكتبه'}, readN:{en:'fields recognised from the documents',ar:'بيانات اتعرّفت من المستندات'},
@@ -427,7 +428,7 @@ const T = {
   progress:{en:'Required items ready',ar:'البنود المطلوبة الجاهزة'}, unassigned:{en:'Unassigned documents',ar:'مستندات غير مخصصة'},
   unassignedSub:{en:'Kept after a profile change — nothing is deleted.',ar:'محفوظة بعد تغيير الملف التعريفي — لا شيء يُحذف.'},
   reasons:{en:'Why this item',ar:'سبب البند'}, findings:{en:'Check results',ar:'نتائج الفحص'}, noFind:{en:'No problems found.',ar:'لا توجد مشاكل.'},
-  docs:{en:'Documents',ar:'المستندات'}, version:{en:'v',ar:'إصدار'}, withdraw:{en:'Withdraw',ar:'سحب'}, view:{en:'View',ar:'عرض'},
+  docs:{en:'Documents',ar:'المستندات'}, version:{en:'v',ar:'إصدار'}, withdraw:{en:'Delete',ar:'احذف'}, view:{en:'View',ar:'عرض'},
   required:{en:'Required',ar:'مطلوب'}, optional:{en:'Optional',ar:'اختياري'}, notreq:{en:'Not required',ar:'غير مطلوب'}, na:{en:'Not applicable',ar:'لا ينطبق'},
   not_started:{en:'Not started',ar:'لم يبدأ'}, received:{en:'Received',ar:'مستلم'}, conforming:{en:'Conforming',ar:'مطابق'},
   needs_attention:{en:'Needs attention',ar:'يحتاج مراجعة'}, non_conforming:{en:'Non-conforming',ar:'غير مطابق'}, not_applicable:{en:'Not applicable',ar:'لا ينطبق'},
@@ -435,7 +436,7 @@ const T = {
   lockedNote:{en:'Third-party evidence: read-only. The tool can rename and place it, never change its content.',ar:'مستند جهة خارجية: للقراءة فقط. الأداة تقدر تسميه وتحطه في مكانه بس، ومتغيرش محتواه أبداً.'},
   act_auto_fix:{en:'The tool can fix this automatically.',ar:'الأداة تقدر تصلحه تلقائياً.'}, act_request_data:{en:'Enter the missing data.',ar:'أدخل البيانات الناقصة.'}, act_rebuild:{en:'Rebuild from data.',ar:'يُعاد بناؤه من البيانات.'},
   act_re_obtain:{en:'Re-obtain from the issuer.',ar:'اطلبه من الجهة المصدرة.'}, act_user_fix:{en:'Replace the file.',ar:'استبدل الملف.'}, act_none:{en:'',ar:''},
-  uploading:{en:'Uploading…',ar:'جاري الرفع…'}, uploaded:{en:'Uploaded and checked.',ar:'تم الرفع والفحص.'}, withdrawn:{en:'Withdrawn — still recoverable in the log.',ar:'تم السحب — قابل للاسترجاع من السجل.'},
+  uploading:{en:'Uploading…',ar:'جاري الرفع…'}, uploaded:{en:'Uploaded and checked.',ar:'تم الرفع والفحص.'}, withdrawn:{en:'Deleted from the item — it can be brought back from the log.',ar:'اتحذف من البند — وتقدر ترجّعه من السجل.'},
   piType:{en:'Document type',ar:'نوع المستند'}, piLang:{en:'Language',ar:'اللغة'}, study:{en:'Study ID — title',ar:'رقم الدراسة — العنوان'}, docType:{en:'ICH document type',ar:'نوع المستند (ICH)'},
   choose:{en:'Choose PDF',ar:'اختر ملف PDF'}, extra:{en:'This heading needs a few details for eCTD.',ar:'القسم ده محتاج بيانات إضافية لـ eCTD.'},
   acceptT:{en:'Acceptance criteria — check each before upload',ar:'معايير القبول — راجع كل نقطة قبل الرفع'}, sourcesT:{en:'Sources',ar:'المصادر'}, howT:{en:'How to get it',ar:'تجيبه إزاي'}, byT:{en:'Issued by',ar:'بيصدر من'},
@@ -727,7 +728,7 @@ function profileChips(p){
   const keys=['dossier_kind','origin','licence','activity']; return [...new Set(keys.filter(k=>p[k]).map(k=>t(p[k])))].map(x=>`<span class="tag">${esc(x)}</span>`).join(' ');
 }
 async function home(tok){
-  const [c, list] = await Promise.all([caps(), api('/dossiers')]);
+  const [c, list, drafts] = await Promise.all([caps(), api('/dossiers'), wizDrafts()]);
   const C = (ic, cls, n, unit, title, desc, src, href) => `<a class="card cap" href="${href||'#/new'}"><div class="row"><span class="ic ${cls}">${icon(ic,20)}</span>
      ${n!==null?`<span class="n right">${esc(n)}<small>${esc(unit)}</small></span>`:''}</div><h3>${esc(t(title))}</h3><p>${esc(t(desc))}</p>${src?`<span class="src">${esc(src)}</span>`:''}</a>`;
   const byMod = Object.entries(c.requirements.by_module).map(([m,n])=>`M${m} ${n}`).join(' · ');
@@ -737,7 +738,7 @@ async function home(tok){
     <h1>${esc(t('heroTitle'))}</h1>
     <p class="lead">${esc(t('heroLead'))}</p>
     <div class="badges"><span class="badge">CTD One Submission</span><span class="badge">eCTD 3.2.2</span><span class="badge">eCTD 4.0</span><span class="badge">${esc(c.pack.id)}</span><span class="badge">AR / EN</span></div>
-    <div class="cta"><a class="btn pri lg" href="#/new" id="btnNew">${icon('plus')} ${esc(t('newDossier'))}</a><a class="btn lg" href="#/dossiers">${icon('layers')} ${esc(t('openDossiers'))}${list.length?` <span class="tag">${list.length}</span>`:''}</a><a class="btn lg" href="#/variations">${icon('branch')} ${esc(t('navVars'))}</a></div>
+    <div class="cta"><a class="btn pri lg" href="#/new" id="btnNew">${icon('plus')} ${esc(t('newDossier'))}</a><a class="btn lg" href="#/dossiers">${icon('layers')} ${esc(t('openDossiers'))}${list.length?` <span class="tag">${list.length}</span>`:''}</a>${drafts.length?`<a class="btn lg" href="#/dossiers" id="homeDrafts" data-one="${drafts.length===1?esc(drafts[0].id):''}">${icon('pen')} ${esc(L({ar:'كمّل مسودة',en:'Continue a draft'}))} <span class="tag">${drafts.length}</span></a>`:''}<a class="btn lg" href="#/variations">${icon('branch')} ${esc(t('navVars'))}</a></div>
   </section>
   <section class="card"><div class="hd"><h2>${esc(t('flowT'))}</h2></div><div class="flow pad" style="padding-block:6px 10px">
     ${[1,2,3,4,5,6].map(i=>`<div class="st"><span class="k">${i}</span><b>${esc(t('f'+i))}</b><span>${esc(t('f'+i+'d'))}</span></div>`).join('')}</div></section>
@@ -759,7 +760,11 @@ async function home(tok){
   <section class="card"><div class="hd"><h2>${esc(t('recent'))}</h2>${list.length>6?`<a class="btn sm" href="#/dossiers">${esc(t('allDossiers'))} (${list.length})</a>`:''}</div>
     ${list.length? dossierTable(list.slice(0,6)) : `<div class="empty">${icon('layers',40)}<div>${esc(t('none'))}</div><a class="btn pri" href="#/new">${icon('plus')} ${esc(t('newDossier'))}</a></div>`}
   </section>`;
-  if(show(tok, html)) fillReadiness(list.slice(0,6), tok);
+  if(!show(tok, html)) return;
+  wireDossierDeletes(list, []);
+  $$('#view a[href="#/new"]').forEach(b=>b.addEventListener('click', wizFresh));
+  const hd=$('#homeDrafts'); if(hd&&hd.dataset.one) hd.onclick=e=>{ e.preventDefault(); wizOpen(hd.dataset.one); };      // one draft: straight back into it
+  fillReadiness(list.slice(0,6), tok);
 }
 function dossierTable(list){
   return `<div class="tablewrap"><table><thead><tr><th>${esc(t('name'))}</th><th class="hide-m">${esc(t('type'))}</th><th>${esc(t('readiness'))}</th><th class="hide-m">${esc(t('created'))}</th><th></th></tr></thead><tbody>
@@ -767,7 +772,25 @@ function dossierTable(list){
      <td class="hide-m"><div class="row gap-s">${profileChips(d.profile||{})}</div></td>
      <td><div class="row" data-ready="${d.id}" style="min-width:160px"><div class="meter"><i style="width:0"></i></div><span class="small code muted">…</span></div></td>
      <td class="hide-m code small">${tsL(d.created)}</td>
-     <td class="end"><a class="btn sm" href="#/d/${d.id}/guide">${esc(t('open'))}</a></td></tr>`).join('')}</tbody></table></div>`;
+     <td class="end"><div class="row gap-s" style="justify-content:flex-end"><a class="btn sm" href="#/d/${d.id}/guide">${esc(t('open'))}</a><button class="btn sm ghost" data-deld="${d.id}" title="${esc(L({ar:'احذف المشروع',en:'Delete the project'}))}" aria-label="${esc(L({ar:'احذف المشروع',en:'Delete the project'}))}">${icon('trash',14)}</button></div></td></tr>`).join('')}</tbody></table></div>`;
+}
+/* deleting a project: to the trash first (it comes back from there); from the trash, for good */
+function trashTable(list){
+  return `<div class="tablewrap"><table><thead><tr><th>${esc(t('name'))}</th><th>${esc(L({ar:'المستندات',en:'Documents'}))}</th><th class="hide-m">${esc(L({ar:'اتحذف',en:'Deleted'}))}</th><th></th></tr></thead><tbody>
+   ${list.map(d=>`<tr><td><b>${bdi(d.name)}</b></td><td class="code small">${d.documents}</td><td class="hide-m code small">${tsL(d.deleted)}</td>
+     <td class="end"><div class="row gap-s" style="justify-content:flex-end"><button class="btn sm" data-undel="${d.id}">${icon('undo',14)} ${esc(L({ar:'رجّعه',en:'Bring back'}))}</button><button class="btn sm danger" data-purge="${d.id}">${icon('trash',14)} ${esc(L({ar:'احذف نهائيًا',en:'Delete for good'}))}</button></div></td></tr>`).join('')}</tbody></table></div>`;
+}
+function wireDossierDeletes(list, trash){
+  const nameOf=(id,from)=>((from.find(d=>d.id===id)||{}).name||'');
+  $$('[data-deld]').forEach(b=>b.onclick=async()=>{ const name=nameOf(b.dataset.deld, list);
+    const ok=await DS.confirmBox(L({ar:'احذف المشروع',en:'Delete the project'}), `<p>${L({ar:`المشروع «${esc(name)}» هيتنقل للمحذوفات بكل مستنداته وبياناته. تقدر ترجّعه من «المحذوفات» في أي وقت، أو تحذفه نهائيًا من هناك.`,en:`The project «${esc(name)}» goes to the trash with its documents and data. You can bring it back from «Trash» at any time, or delete it for good from there.`})}</p>`,
+      L({ar:'انقله للمحذوفات',en:'Move to the trash'}), {danger:true, cancel:t('cancel')});
+    if(!ok) return; try{ await api(`/dossiers/${b.dataset.deld}`,{method:'DELETE'}); toast(L({ar:'المشروع في المحذوفات',en:'The project is in the trash'})); S.board=null; route(); }catch(e){ toast(e.message); } });
+  $$('[data-undel]').forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${b.dataset.undel}/restore`,{method:'POST'}); toast(L({ar:'المشروع رجع',en:'The project is back'})); route(); }catch(e){ toast(e.message); } });
+  $$('[data-purge]').forEach(b=>b.onclick=async()=>{ const d=trash.find(x=>x.id===b.dataset.purge)||{};
+    const ok=await DS.confirmBox(L({ar:'حذف نهائي',en:'Delete for good'}), `<p>${L({ar:`المشروع «${esc(d.name||'')}» هيتحذف نهائيًا: ${d.documents||0} مستند، والبيانات والطلبات والمراجعات والتصديرات. الحذف ده مالوش رجوع. سجل النشاط بيفضل فيه سطر بمين حذف وإمتى.`,en:`The project «${esc(d.name||'')}» will be deleted for good: ${d.documents||0} document(s), its data, requests, reviews and exports. This cannot be undone. The activity record keeps a line saying who deleted it and when.`})}</p>`,
+      L({ar:'احذف نهائيًا',en:'Delete for good'}), {danger:true, cancel:t('cancel'), typed:d.name, typedLabel:L({ar:'اكتب اسم المشروع للتأكيد',en:'Type the project\'s name to confirm'})});
+    if(!ok) return; try{ const r=await api(`/dossiers/${b.dataset.purge}?permanent=1`,{method:'DELETE'}); toast(L({ar:`اتحذف نهائيًا (${r.documents} مستند)`,en:`Deleted for good (${r.documents} document(s))`})); route(); }catch(e){ toast(e.message); } });
 }
 async function fillReadiness(list, tok){
   await Promise.all(list.map(async d=>{
@@ -779,10 +802,13 @@ async function fillReadiness(list, tok){
   }));
 }
 async function dossiersView(tok){
-  const list = await api('/dossiers');
+  const [list, trash, drafts] = await Promise.all([api('/dossiers'), api('/dossiers?deleted=1').catch(()=>[]), wizDrafts()]);
   if(!show(tok, `<div class="head"><div class="title"><h1>${esc(t('dossiers'))}</h1><p class="sub">${esc(t('dossiersSub'))}</p></div>
     <a class="btn pri" href="#/new" id="btnNew">${icon('plus')} ${esc(t('newDossier'))}</a></div>
-    <div class="card">${list.length? dossierTable(list) : `<div class="empty">${icon('layers',40)}<div>${esc(t('none'))}</div></div>`}</div>`)) return;
+    ${drafts.length?`<div class="card" id="draftBox"><div class="pad" style="padding-bottom:0"><b>${esc(L({ar:'مشاريع لسه ما اكتملتش',en:'Projects not finished yet'}))}</b> <span class="tag">${drafts.length}</span> <span class="small muted">${esc(L({ar:'اللي بدأته محفوظ: كمّله من مكان ما وقفت',en:'what you started is kept: continue where you stopped'}))}</span></div>${draftTable(drafts)}</div>`:''}
+    <div class="card">${list.length? dossierTable(list) : `<div class="empty">${icon('layers',40)}<div>${esc(t('none'))}</div></div>`}</div>
+    ${trash.length?`<details class="card" id="trashBox" ${list.length?'':'open'}><summary class="pad" style="cursor:pointer"><b>${icon('trash',16)} ${esc(L({ar:'المحذوفات',en:'Trash'}))}</b> <span class="tag">${trash.length}</span> <span class="small muted">${esc(L({ar:'مشاريع اتحذفت: ترجع زي ما كانت، أو تتحذف نهائيًا',en:'deleted projects: bring one back as it was, or delete it for good'}))}</span></summary>${trashTable(trash)}</details>`:''}`)) return;
+  wireDossierDeletes(list, trash); wireDrafts();
   fillReadiness(list, tok);
 }
 
@@ -897,14 +923,18 @@ function docLine(w, name){
   const fix = st.status==='mismatch' ? `<div class="row gap-s" style="margin-top:4px"><button class="btn sm pri" data-mvdoc="${esc(name)}">${esc(t('moveToIts'))} «${esc(L({ar:det.ar,en:det.en}))}»</button><button class="btn sm ghost" data-rmdoc="${esc(name)}">${esc(t('removeFile'))}</button></div>` : '';
   return `<div class="docline" data-docline="${esc(name)}"><div class="small row gap-s" style="flex-wrap:wrap"><b dir="auto">${esc(name)}</b>${stage}</div>${got}${fix}</div>`;
 }
-function wizProg(name, stage, info){ const w=S.wiz; if(!w) return; w.prog=w.prog||{}; w.prog[name]=Object.assign({}, w.prog[name]||{}, {stage}, info||{});
+/* the wizard is redrawn by work that ends later (a reading, an archive being opened) only while it is the page on screen and still the
+   same wizard: a reading that ends after the person left does not paint the wizard over another page */
+function wizShow(w){ if(S.wiz&&(!w||S.wiz===w)&&location.hash==='#/new') wizard(); }
+function wizProg(name, stage, info, ww){ const w=ww||S.wiz; if(!w) return; w.prog=w.prog||{}; w.prog[name]=Object.assign({}, w.prog[name]||{}, {stage}, info||{});
   if(info&&info.found){ w.found=w.found||{}; w.found[name]=info.found; }
+  if(S.wiz!==w||location.hash!=='#/new') return;
   const el=document.querySelector(`[data-docline="${CSS.escape(name)}"]`); if(el){ el.outerHTML=docLine(w, name); wireDocLines($('#view')); } }
 function wireDocLines(root){ if(!root) return;
-  root.querySelectorAll('[data-mvdoc]').forEach(b=>b.onclick=async()=>{ const w=S.wiz, n=b.dataset.mvdoc; w.docs[n]={kind:w.docs[n].detected, status:'ok'}; toast(t('reading')); await refill(w); wizard(); await wizSave(true); });
+  root.querySelectorAll('[data-mvdoc]').forEach(b=>b.onclick=async()=>{ const w=S.wiz, n=b.dataset.mvdoc; w.docs[n]={kind:w.docs[n].detected, status:'ok'}; toast(t('reading')); await refill(w); wizShow(w); await wizWrite(w); });
   root.querySelectorAll('[data-rmdoc]').forEach(b=>b.onclick=async()=>{ const w=S.wiz, n=b.dataset.rmdoc; w.allFiles=(w.allFiles||[]).filter(f=>f.name!==n); delete w.texts[n]; delete w.found[n]; delete w.kinds[n]; delete w.prog[n]; w.docs[n]={status:'removed'};
     w.aiReads=(w.aiReads||[]).filter(b=>!b.files.includes(n));                                      // its model reading goes with it
-    if(w.draftId) api(`/intake/drafts/${w.draftId}/files/${encodeURIComponent(n)}`,{method:'DELETE'}).catch(()=>{}); await refill(w); wizard(); await wizSave(true); }); }
+    if(w.draftId) api(`/intake/drafts/${w.draftId}/files/${encodeURIComponent(n)}`,{method:'DELETE'}).catch(()=>{}); await refill(w); wizShow(w); await wizWrite(w); }); }
 async function refill(w){
   /* the merged reading of every accepted document, from the cached texts — no document is read twice */
   w.texts=w.texts||{}; w.docs=w.docs||{}; w.found=w.found||{};
@@ -922,13 +952,36 @@ async function refill(w){
   w.intakeFiles=accepted; w.intake=names.length?`${names.length} ${t('intakeDone')}`:'';
   const scannedAll=names.filter(n=>w.texts[n].scanned); w.scannedNames=scannedAll; w.makeReadable=scannedAll.length>0;
 }
+/* a list too long to take whole: the person ticks what is needed. Resolves with the chosen items ([] when cancelled). */
+function pickSome(title, note, items, label){ return new Promise(done=>{ const sel=new Set();
+  const paint=()=>{ openDrawer(title, `<div class="stack gap-s"><p class="small muted">${esc(note)}</p>
+    <div class="row gap-s small"><span class="muted" id="psCount"></span><span class="grow"></span><button class="btn sm ghost" id="psAll" type="button">${esc(L({ar:'اختار الكل',en:'Select all'}))}</button><button class="btn sm ghost" id="psNone" type="button">${esc(L({ar:'شيل الكل',en:'Clear'}))}</button></div>
+    <div class="rows tablewrap" style="max-height:52vh;overflow:auto"><table><tbody>${items.map((f,i)=>`<tr><td><input type="checkbox" data-ps="${i}" ${sel.has(i)?'checked':''}></td><td dir="auto">${esc(f.dbPath||f.name)}</td><td class="small muted">${f.size?fmtSize(f.size):''}</td></tr>`).join('')}</tbody></table></div>
+    <div class="row"><button class="btn pri" id="psGo">${icon('check')} ${esc(label||L({ar:'استخدم المختار',en:'Use the selected'}))}</button><button class="btn ghost" id="psCancel">${esc(t('cancel'))}</button></div></div>`, true);
+    const count=()=>{ $('#psCount').textContent=L({ar:`مختار ${sel.size} من ${items.length}`,en:`${sel.size} of ${items.length} selected`}); $('#psGo').disabled=!sel.size; };
+    $$('[data-ps]').forEach(c=>c.onchange=()=>{ c.checked?sel.add(+c.dataset.ps):sel.delete(+c.dataset.ps); count(); });
+    $('#psAll').onclick=()=>{ items.forEach((_,i)=>sel.add(i)); paint(); }; $('#psNone').onclick=()=>{ sel.clear(); paint(); };
+    $('#psGo').onclick=()=>{ closeDrawer(); done(items.filter((_,i)=>sel.has(i))); }; $('#psCancel').onclick=()=>{ closeDrawer(); done([]); }; count(); };
+  paint(); }); }
+/* a compressed file among the given files is opened first (archive.js) and the documents inside it take its place; an archive with many
+   documents is not taken whole: the person ticks what the dossier needs */
+async function withArchives(files){
+  files=[...(files||[])]; withArchives.said=false; if(!window.DBARCH||!files.length) return files;
+  let any=false; for(const f of files){ if(await DBARCH.isArchive(f)){ any=true; break; } }
+  if(!any) return files;
+  const r=await DBARCH.expand(files, {accept:n=>DS.isDoc(n)&&!DBARCH.ARCH_RX.test(n), onStatus:toast});
+  if(r.notes.length){ withArchives.said=true; toast(DBARCH.summary(r.notes), r.notes.some(n=>n.error||!n.taken)?12000:5000); }      // why an archive gave nothing stays long enough to be read
+  const inside=r.files.filter(f=>f.dbPath), others=r.files.filter(f=>!f.dbPath);
+  if(inside.length<=40) return r.files;
+  const picked=await pickSome(L({ar:'ملفات الأرشيف',en:'Files in the archive'}), L({ar:`الأرشيف فيه ${inside.length} مستند: اختار اللي الملف محتاجه.`,en:`The archive holds ${inside.length} documents: tick the ones the dossier needs.`}), inside);
+  return others.concat(picked); }
 /* an image placed in an item becomes a PDF (the dossier takes PDF): a TIFF page by page, a HEIC photo, a BMP… decoded here (ocr.js) and
    wrapped by the engine; anything else goes as it is */
 async function asDossierFile(file){
   const image=file&&(/^image\//.test(file.type||'')||DS.IMG_RX.test(file.name||''));
   return (image&&window.DBOCR&&window.DBOCR.asPdf)?window.DBOCR.asPdf(file, true):file; }
 async function addDocs(kind, files){
-  const w=S.wiz; if(!w) return; files=files.filter(f=>DS.isDoc(f.name)); if(!files.length){ toast(t('badFiles')); return; }
+  const w=S.wiz; if(!w) return; files=(await withArchives(files)).filter(f=>DS.isDoc(f.name)); if(!files.length){ if(!withArchives.said) toast(t('badFiles')); return; }
   w.allFiles=w.allFiles||[]; w.docs=w.docs||{}; w.texts=w.texts||{}; w.prog=w.prog||{}; w.found=w.found||{}; w.kinds=w.kinds||{};
   const taken=n=>w.allFiles.some(x=>x.name===n)||!!w.texts[n]||((w.docs[n]||{}).status&&w.docs[n].status!=='removed');
   const sizeOf=n=>{ const x=w.allFiles.find(y=>y.name===n); return x?x.size:(w.sizes||{})[n]; };
@@ -936,7 +989,7 @@ async function addDocs(kind, files){
       const m=/^(.*?)(\.[^.]*)?$/.exec(f.name); let i=2, n; do{ n=`${m[1]} (${i++})${m[2]||''}`; }while(taken(n)); toast(`${f.name}: ${t('renamedDup')} ${n}`); f=new File([f], n, {type:f.type, lastModified:f.lastModified}); }
     w.allFiles.push(f); fresh.push(f); w.docs[f.name]={kind, status:'reading'}; w.prog[f.name]={stage:'text'}; }
   if(!fresh.length) return;
-  wizard();                                                     // the cards show the new files as «reading…» at once
+  wizShow(w);                                                   // the cards show the new files as «reading…» at once
   await wizDraftFiles(fresh, kind);                             // kept on the server for a refresh (the file first, then its reading)
   await ingest(w, fresh);
 }
@@ -944,16 +997,16 @@ async function ingest(w, fresh){
   /* read these files (text → OCR → model), apply the kind rule to the card they were given, and re-merge everything that is known */
   try{ await vocab();
     const fits=f=>{ const det=cardOfKind(f.kind), exp=(w.docs[f.filename]||{}).kind||'other'; return exp==='other'||det==='other'||det===exp; };
-    const x=await readFiles(fresh,'dossier',(n,st,i)=>wizProg(n,st,i), rf=>rf.filter(fits).map(f=>f.filename));
+    const x=await readFiles(fresh,'dossier',(n,st,i)=>wizProg(n,st,i,w), rf=>rf.filter(fits).map(f=>f.filename));
     for(const f of x.r.files||[]){ w.texts[f.filename]={filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,ocr:f.ocr,ocr_where:f.ocr_where,file:f.file}; w.kinds[f.filename]=f.kind; (w.hints=w.hints||{})[f.filename]=f.kind_hint||null; w.found[f.filename]=f.found||[]; }
     if(x.modelAsked) (w.aiReads=w.aiReads||[]).push({files:x.modelFiles, ai:x.ai}); if(x.note) w.aiNote=x.note;      // the model's reading, remembered with the files it came from
     for(const f of fresh){ const detected=cardOfKind(w.kinds[f.name]); const expected=(w.docs[f.name]||{}).kind||'other';
       if(expected!=='other'&&detected!=='other'&&detected!==expected){ w.docs[f.name]={kind:expected, status:'mismatch', detected}; toast(`${f.name}: ${t('notThisDoc')}`); }
       else w.docs[f.name]={kind:expected==='other'?(detected!=='other'?detected:cardOfKind((w.hints||{})[f.name]||'other')):expected, status:'ok'}; }   // a file that could not be read sits under the card its name hints at; only what is written inside it can refuse it
     await refill(w);
-    toast(`${t('filled')} · ${Object.keys(w.fromDoc||{}).length} ${t('readN')}`); }
+    if(S.wiz===w&&location.hash==='#/new') toast(`${t('filled')} · ${Object.keys(w.fromDoc||{}).length} ${t('readN')}`); }
   catch(e){ toast(e.message); for(const f of fresh) w.docs[f.name]=Object.assign({}, w.docs[f.name], {status:'error'}); }
-  wizard(); await wizSave(true);
+  wizShow(w); if(w.draftId||S.wiz===w) await wizWrite(w);                 // the reading goes to its own draft, wherever the person is by now
 }
 function liveSummary(w){
   const d=w.d, from=w.fromDoc||{}; const items=[['trade','pTrade'],['form','pForm'],['man','pMan'],['applicant','applicant'],['tracking','tracking'],['dossier_kind','kind'],['origin','origin'],['licence','licence']]
@@ -964,7 +1017,7 @@ function liveSummary(w){
 }
 function docsStep(w){
   w.docs=w.docs||{}; w.prog=w.prog||{};
-  const names=[...new Set([...(w.allFiles||[]).map(f=>f.name), ...Object.keys(w.texts||{})])].filter(n=>(w.docs[n]||{}).status!=='removed');
+  const names=[...new Set([...(w.allFiles||[]).map(f=>f.name), ...Object.keys(w.texts||{}), ...Object.keys(w.sizes||{})])].filter(n=>(w.docs[n]||{}).status!=='removed');   // w.sizes: the files a continued draft holds, read or not
   const byCard={}; for(const n of names){ const st=w.docs[n]||{}; const k=st.kind||'other'; (byCard[k]=byCard[k]||[]).push(n); }
   const cards=BASE_DOCS.map(c=>{ const mine=byCard[c.kind]||[]; const ok=mine.some(n=>(w.docs[n]||{}).status==='ok'); const bad=mine.some(n=>(w.docs[n]||{}).status==='mismatch');
     return `<div class="card pad doccard ${ok?'ok':''} ${bad?'bad':''}"><div class="row gap-s"><b>${esc(L({ar:c.ar,en:c.en}))}</b>${ok?`<span class="chip c-ok"><i></i>✓</span>`:''}</div><div class="small muted">${esc(L(c.gives))}</div>${mine.map(n=>docLine(w, n)).join('')}
@@ -982,14 +1035,21 @@ async function wizWrite(w){
   if(wizSaving) await wizSaving.catch(()=>{});
   wizSaving=(async()=>{ if(!w.draftId){ const r=await api('/intake/drafts',{method:'POST',json:{state:wizState(w)}}); w.draftId=r.id; store.set(WIZ_KEY, r.id); } else await api(`/intake/drafts/${w.draftId}`,{method:'PUT',json:{state:wizState(w)}});
     w.savedAt=Date.now(); const el=$('#wizSaved'); if(el) el.textContent=`${t('wizSaved')} ${new Date().toLocaleTimeString(S.lang==='ar'?'ar-EG':'en-GB',{hour:'2-digit',minute:'2-digit'})}`; })();
-  try{ await wizSaving; }catch(e){ console.warn('draft save', e); } wizSaving=null;
+  try{ await wizSaving; }catch(e){ console.warn('draft save', e); wizSaving=null;
+    if(e&&e.status===404&&S.wiz===w&&!w.created&&!w.redraft){ w.redraft=true; w.draftId=null;                   // once: never a loop
+      try{ const r=await api('/intake/drafts',{method:'POST',json:{state:wizState(w)}}); w.draftId=r.id; store.set(WIZ_KEY, r.id);
+        for(const f of w.allFiles||[]){ if(((w.docs||{})[f.name]||{}).status==='removed') continue; const fd=new FormData(); fd.append('file', f); fd.append('kind', ((w.docs||{})[f.name]||{}).kind||'other'); await api(`/intake/drafts/${r.id}/files`,{method:'POST',body:fd}).catch(()=>{}); } }
+      catch(e2){ console.warn('draft', e2); } }
+    return; }
+  wizSaving=null;
 }
 function wizSave(now){ const w=S.wiz; if(!w) return; clearTimeout(wizSaveT); if(now) return wizWrite(w); wizSaveT=setTimeout(()=>{ if(S.wiz===w) wizWrite(w); }, 600); }
 window.addEventListener('pagehide', ()=>{ const w=S.wiz; if(!w||!w.draftId||location.hash!=='#/new') return;        // leaving mid-typing: a last write that outlives the page
   try{ fetch(`/api/intake/drafts/${w.draftId}`,{method:'PUT',keepalive:true,headers:{'X-DB':'1','content-type':'application/json'},body:JSON.stringify({state:wizState(w)})}); }catch(e){} });
 async function wizDraftFiles(files, kind){ const w=S.wiz; if(!w) return;
   if(!w.draftId){ try{ const r=await api('/intake/drafts',{method:'POST',json:{state:wizState(w)}}); w.draftId=r.id; store.set(WIZ_KEY, r.id); }catch(e){ console.warn('draft', e); return; } }
-  for(const f of files){ try{ const fd=new FormData(); fd.append('file', f); fd.append('kind', kind||'other'); await api(`/intake/drafts/${w.draftId}/files`,{method:'POST',body:fd}); }catch(e){ console.warn('draft file', e); } } }
+  for(const f of files){ try{ const fd=new FormData(); fd.append('file', f); fd.append('kind', kind||'other'); await api(`/intake/drafts/${w.draftId}/files`,{method:'POST',body:fd}); }catch(e){ console.warn('draft file', e); } }
+  if(window.DBWEB&&DBWEB.sync) DBWEB.sync().catch(()=>{}); }                 // the browser edition: the files are in the browser's storage before their reading starts
 async function wizRestore(created){ const id=store.get(WIZ_KEY); if(!id) return null;
   try{ const r=await api(`/intake/drafts/${id}`); const st=r.state||{}; if(!st.d||(!!st.created!==!!created)) return null;       // a created dossier is finished by wizResume, never offered again
     const w={step:st.step||0, d:Object.assign({name:'',trade:'',form:'film-coated tablet',man:'',ind:'',applicant:'',tracking:'',portal:'',inn:''}, DEF_PROFILE(), st.d), docs:st.docs||{}, fromDoc:st.fromDoc||{}, texts:st.texts||{}, kinds:st.kinds||{}, found:st.found||{}, typed:st.typed||{},
@@ -1000,17 +1060,41 @@ async function wizRestore(created){ const id=store.get(WIZ_KEY); if(!id) return 
     return w; }
   catch(e){ if(!created) store.set(WIZ_KEY,''); return null; } }
 async function wizReadUnread(w){
-  const files=[]; for(const f of w.unread||[]){ try{ const r=await fetch(`/api/intake/drafts/${w.draftId}/files/${encodeURIComponent(f.filename)}`,{headers:{'X-DB':'1'}}); if(!r.ok) continue; const b=await r.blob();
+  const files=[], lost=[]; for(const f of w.unread||[]){ try{ const r=await fetch(`/api/intake/drafts/${w.draftId}/files/${encodeURIComponent(f.filename)}`,{headers:{'X-DB':'1'}});
+      if(!r.ok){ lost.push(f.filename); w.docs[f.filename]=Object.assign({kind:f.kind||'other'}, w.docs[f.filename]||{}, {status:'error'}); continue; } const b=await r.blob();
       const file=new File([b], f.filename, {type: f.filename.toLowerCase().endsWith('.pdf')?'application/pdf':(b.type||'')}); files.push(file); w.allFiles.push(file); w.docs[f.filename]={kind:f.kind||'other', status:'reading'}; w.prog[f.filename]={stage:'text'}; }catch(e){} }
-  w.unread=[]; if(files.length){ wizard(); await ingest(w, files); } }
+  w.unread=[]; if(lost.length){ toast(L({ar:`${lost.length} مستند من المسودة ما اتفتحش: ارفعه تاني`,en:`${lost.length} document(s) of the draft could not be opened: upload again`}), 9000); if(S.wiz===w&&location.hash==='#/new') wizard(); }
+  if(files.length){ wizShow(w); await ingest(w, files); } }
 async function wizFiles(w){
   /* the File objects for placing after creation: the ones in memory, the rest from the draft on the server */
-  const have=new Set((w.allFiles||[]).map(f=>f.name)); const out=[...(w.allFiles||[])];
-  for(const n of Object.keys(w.texts||{})){ if(have.has(n)||!w.draftId) continue;
-    try{ const r=await fetch(`/api/intake/drafts/${w.draftId}/files/${encodeURIComponent(n)}`,{headers:{'X-DB':'1'}}); if(r.ok){ const b=await r.blob(); out.push(new File([b], n, {type: n.toLowerCase().endsWith('.pdf')?'application/pdf':(b.type||'')})); } }catch(e){} }
+  const have=new Set((w.allFiles||[]).map(f=>f.name)); const out=[...(w.allFiles||[])]; w.missing=[];
+  for(const n of new Set([...Object.keys(w.texts||{}), ...Object.keys(w.sizes||{})])){ if(have.has(n)||!w.draftId||((w.docs||{})[n]||{}).status==='removed') continue;
+    try{ const r=await fetch(`/api/intake/drafts/${w.draftId}/files/${encodeURIComponent(n)}`,{headers:{'X-DB':'1'}}); if(r.ok){ const b=await r.blob(); out.push(new File([b], n, {type: n.toLowerCase().endsWith('.pdf')?'application/pdf':(b.type||'')})); } else w.missing.push(n); }catch(e){ w.missing.push(n); } }
   return out.filter(f=>((w.docs||{})[f.name]||{}).status!=='removed');                                 // the refused ones too: they go to the «not placed yet» box
 }
-function wizReset(){ const w=S.wiz; if(w&&w.draftId) api(`/intake/drafts/${w.draftId}`,{method:'DELETE'}).catch(()=>{}); store.set(WIZ_KEY,''); S.wiz=null; }
+/* does the wizard hold anything worth keeping? */
+function wizHasWork(w){ return !!(w&&(w.draftId||(w.allFiles||[]).length||Object.keys(w.texts||{}).length||Object.keys(w.typed||{}).length)); }
+/* the drafts the projects list shows: started projects that hold a document or a name, not yet created */
+async function wizDrafts(){
+  const w=S.wiz; if(w&&!w.created&&wizHasWork(w)){ try{ await wizSave(true); }catch(e){} }           // the last thing typed reaches the draft before the list is read
+  try{ return (await api('/intake/drafts')).filter(x=>{ const st=x.state||{}, d=st.d||{}; return !st.created&&(x.files>0||d.name||d.trade||d.man); }); }catch(e){ return []; } }
+function draftName(x){ const d=(x.state||{}).d||{}; return d.name||d.trade||L({ar:'مسودة بدون اسم',en:'Untitled draft'}); }
+function draftFiles(x){ const st=x.state||{}, gone=n=>((st.docs||{})[n]||{}).status==='removed'; const names=(st.fileNames&&st.fileNames.length?st.fileNames:Object.keys(st.docs||{})).filter(n=>!gone(n));
+  return names.length?`<div class="small muted" dir="auto">${esc(names.slice(0,3).join(' · '))}${names.length>3?` +${names.length-3}`:''}</div>`:''; }
+function wizFresh(){ store.set(WIZ_KEY,''); S.wiz=null; S.wizLoading=false; }                    // «new project» starts a new one; what was started stays in the list as a draft
+function wizOpen(id){ store.set(WIZ_KEY, id); S.wiz=null; S.wizLoading=false; location.hash='#/new'; }
+function draftTable(list){
+  return `<div class="tablewrap"><table><thead><tr><th>${esc(t('name'))}</th><th>${esc(L({ar:'المستندات',en:'Documents'}))}</th><th class="hide-m">${esc(L({ar:'آخر حفظ',en:'Last saved'}))}</th><th></th></tr></thead><tbody>
+   ${list.map(x=>`<tr><td><span class="chip c-warn"><i></i>${esc(L({ar:'مسودة',en:'Draft'}))}</span> <b>${bdi(draftName(x))}</b>${draftFiles(x)}</td><td class="code small">${x.files}</td><td class="hide-m code small">${tsL(x.updated)}</td>
+     <td class="end"><div class="row gap-s" style="justify-content:flex-end"><button class="btn sm pri" data-draft="${esc(x.id)}">${esc(L({ar:'كمّل',en:'Continue'}))}</button><button class="btn sm ghost" data-deldraft="${esc(x.id)}" title="${esc(L({ar:'احذف المسودة',en:'Delete the draft'}))}" aria-label="${esc(L({ar:'احذف المسودة',en:'Delete the draft'}))}">${icon('trash',14)}</button></div></td></tr>`).join('')}</tbody></table></div>`;
+}
+function wireDrafts(){
+  $$('[data-draft]').forEach(b=>b.onclick=()=>wizOpen(b.dataset.draft));
+  $$('[data-deldraft]').forEach(b=>DS.twoStep(b, L({ar:'متأكد؟',en:'Sure?'}), async()=>{ const id=b.dataset.deldraft; try{ if(S.wiz&&S.wiz.draftId===id){ clearTimeout(wizSaveT); S.wiz=null; } if(store.get(WIZ_KEY)===id) store.set(WIZ_KEY,'');
+      await api(`/intake/drafts/${id}?free=1`,{method:'DELETE'}); toast(L({ar:'اتحذفت المسودة',en:'Draft deleted'})); route(); }catch(e){ toast(e.message); } }));
+  $$('#view a[href="#/new"]').forEach(b=>b.addEventListener('click', wizFresh));
+}
+function wizReset(){ const w=S.wiz; clearTimeout(wizSaveT); if(w&&w.draftId) api(`/intake/drafts/${w.draftId}?free=1`,{method:'DELETE'}).catch(()=>{}); store.set(WIZ_KEY,''); S.wiz=null; }
 function wizard(){
   if(!S.wiz){
     if(!S.wizLoading){ S.wizLoading=true; $('#view').innerHTML=`<div class="skeleton" style="height:240px"></div>`;
@@ -1021,7 +1105,7 @@ function wizard(){
   const txt=(k,lab,ph='',extra='')=>`<label class="f"><span>${esc(t(lab))}${wizMark(w,k)}</span><input type="text" dir="auto" data-in="${k}" value="${esc(d[k])}" placeholder="${esc(ph)}" ${extra}></label>`;
   const prevPv = $('#pvBody') ? $('#pvBody').innerHTML : `<div class="skeleton" style="height:60px"></div>`;   // keep the last preview while the next one loads
   let body='';
-  if(!S.vocab) vocab().then(()=>{ if(S.wiz&&S.wiz.step===1) wizard(); });
+  if(!S.vocab) vocab().then(()=>{ if(S.wiz&&S.wiz.step===1) wizShow(); });
   const formField=S.vocab?`<label class="f"><span>${esc(t('pForm'))}${wizMark(w,'form')}</span>${smartSel('data-in="form" data-wiz="form"', VOC().forms, d.form_std||d.form, {key:'id', otherAttrs:'data-in-other="form"'})}</label>`:txt('form','pForm');
   if(w.step===0) body=docsStep(w);
   if(w.step===1) body=`${readBanner(w)}<div class="form">${txt('name','pName','Examplol 500 mg FCT')}${txt('trade','pTrade')}${formField}${txt('man','pMan','', 'list="dl-man"')}${txt('ind','pInd','pain-and-fever')}</div>${datalists()}`;
@@ -1038,7 +1122,7 @@ function wizard(){
    <div class="row gap-s"><span class="small muted" id="wizSaved">${w.draftId?esc(t('wizSaved')):esc(t('wizAutosave'))}</span><button class="btn sm ghost" id="wizRestart">${esc(t('wizRestart'))}</button></div></div>
    <div class="steps">${steps.map((s,i)=>`<span class="${i===w.step?'on':i<w.step?'done':''}"><span class="n">${i<w.step?'✓':i+1}</span>${esc(t(s))}</span>`).join('')}</div>
    <div class="wiz"><div class="stack">${intakeCard}<div class="card pad" id="wizBody">${body}</div><div id="wizErr"></div>
-   <div class="row"><a class="btn ghost" href="#/" id="wizCancel">${esc(t('cancel'))}</a><span class="grow"></span>
+   <div class="row"><a class="btn ghost" href="#/dossiers" id="wizCancel">${esc(wizHasWork(w)?L({ar:'اخرج (المسودة محفوظة)',en:'Leave (the draft is kept)'}):t('cancel'))}</a><span class="grow"></span>
    ${w.step?`<button class="btn" id="wizBack">${esc(t('back'))}</button>`:''}
    ${w.step<4?`<button class="btn pri" id="wizNext">${esc(t('next'))} <span class="flip">${icon('arrow',16)}</span></button>`:`<button class="btn pri" id="wizCreate">${icon('check')} ${esc(t('create'))}</button>`}</div></div>
    <aside class="card glow pv" id="pv"><div class="hd"><span class="ic-tile">${icon('checklist')}</span><h3>${esc(t('pvT'))}</h3></div><div class="pad" id="pvBody">${prevPv}</div></aside></div>`;
@@ -1046,7 +1130,7 @@ function wizard(){
   const typed=w.typed=w.typed||{}; bindProfileControls(v, d, ()=>{ wizard(); wizSave(); }, k=>{ typed[k]=1; });
   v.addEventListener('input', ()=>wizSave()); v.addEventListener('change', ()=>wizSave());
   wireDocLines(v);
-  $('#wizRestart').onclick=()=>{ wizReset(); wizard(); };
+  DS.twoStep($('#wizRestart'), L({ar:'متأكد؟ المسودة دي هتتمسح',en:'Sure? This draft is deleted'}), ()=>{ wizReset(); wizard(); });
   v.querySelectorAll('[data-in]').forEach(i=>i.oninput=()=>{ typed[i.dataset.in]=1; if(i.dataset.wiz==='form') typed.admin_route=1; if(i.dataset.smart){ const val=smartVal(i); if(i.dataset.wiz==='form'){ d.form=i.value==='__other__'?val:formText(val); d.form_std=i.value==='__other__'?'':i.value; const f=VOC().forms.find(x=>x.id===i.value); if(f) d.admin_route=f.route; } else d[i.dataset.in]=val; } else d[i.dataset.in]=i.value; });
   v.querySelectorAll('[data-in-other]').forEach(i=>i.oninput=()=>{ typed[i.dataset.inOther]=1; d[i.dataset.inOther]=i.value; if(i.dataset.inOther==='form') d.form_std=''; });
   smartWire(v);
@@ -1060,7 +1144,9 @@ function wizard(){
   v.querySelectorAll('#intakeReview, #intakeReview2').forEach(b=>b.onclick=()=>{ if(w.read) reviewIntake(w.read.x, w.read.files); });
   const iz=$('#intake'); if(iz){ iz.ondragover=e=>{ e.preventDefault(); iz.classList.add('drop'); }; iz.ondragleave=()=>iz.classList.remove('drop');
     iz.ondrop=e=>{ e.preventDefault(); iz.classList.remove('drop'); intake([...e.dataTransfer.files]); }; }
-  $('#wizCancel').onclick=()=>{ wizReset(); };
+  $('#wizCancel').onclick=async e=>{ e.preventDefault();                               // leaving is not deleting: the draft stays in the projects list
+    if(wizHasWork(w)){ try{ await wizSave(true); }catch(err){ console.warn('draft', err); } }
+    location.hash='#/dossiers'; };
   if($('#wizBack')) $('#wizBack').onclick=()=>{ w.step--; wizard(); wizSave(true); };
   if($('#wizNext')) $('#wizNext').onclick=()=>{ w.step++; wizard(); wizSave(true); };
   if($('#wizCreate')) $('#wizCreate').onclick=async()=>{
@@ -1103,6 +1189,7 @@ async function wizFinishRun(w0, did){
     try{ const b=await api(`/dossiers/${did}/board`), done=new Set((placeOpts.converted||[]));
       for(const s of b.slots) for(const x of s.documents||[]) if((w0.scannedNames||[]).includes(x.filename)&&!done.has(x.id)&&!((x.meta||{}).fixes||[]).includes('add_ocr_layer')&&!(x.meta||{}).fixed_from){ try{ await makeReadable(did, x.id, x.filename); }catch(e){ toast(e.message); } }
       S.board=null; if(S.dossier&&S.dossier.id===did) await refreshCurrent(); }catch(e){ console.warn('readable', e); } }
+  if((w0.missing||[]).length){ toast(L({ar:`${w0.missing.length} مستند ما اتنقلش من المسودة للملف: المسودة لسه محفوظة، افتح الصفحة تاني وهنكمّل`,en:`${w0.missing.length} document(s) could not be moved from the draft into the dossier: the draft is kept, open the page again and it goes on`}), 12000); return; }   // never delete a draft that still holds a file the dossier did not get
   if(store.get(WIZ_KEY)===draftId) store.set(WIZ_KEY,''); if(draftId) api(`/intake/drafts/${draftId}`,{method:'DELETE'}).catch(()=>{});          // the draft goes only once everything is in the dossier
 }
 async function wizResume(){ const id=store.get(WIZ_KEY); if(!id) return;            // the page was refreshed or closed while the documents were being placed
@@ -1238,7 +1325,7 @@ const driveType=f=>{ if(f.kind==='folder') return L({en:'folder',ar:'فولدر'
   if(/ms-powerpoint$/.test(m)||e==='ppt'||e==='pps') return 'PowerPoint (.ppt)'; if(/presentationml|ms-powerpoint/.test(m)||/^(pptx|ppsx|potx)$/.test(e)) return 'PowerPoint';
   if(/opendocument/.test(m)||/^od[tsp]$/.test(e)) return 'OpenDocument'; if(/rtf/.test(m)||e==='rtf') return 'RTF'; if(/html/.test(m)||/^html?$/.test(e)) return 'HTML';
   if(/^image\//.test(m)||DS.IMG_RX.test('.'+e)) return L({en:'image',ar:'صورة'})+(e&&!/^(jpe?g|png)$/.test(e)?` (.${e})`:''); if(/^text\/|json|xml/.test(m)||/^(txt|md|xml|json)$/.test(e)) return L({en:'text',ar:'نص'});
-  if(/zip|rar|7z|compressed|x-tar|gzip/.test(m)||/^(zip|rar|7z|tar|gz)$/.test(e)) return L({en:'archive (unpack it first)',ar:'أرشيف مضغوط (فكّه الأول)'});
+  if(/zip|rar|7z|compressed|x-tar|gzip/.test(m)||/^(zip|rar|7z|tar|tgz|gz|bz2|xz)$/.test(e)) return L({en:'compressed file (opened after fetching)',ar:'ملف مضغوط (بيتفك بعد الجلب)'});
   if(f.guess) return L({en:'unknown type (read after fetching)',ar:'نوع غير معروف (هيتعرف بعد الجلب)'});
   return m.split('/').pop()||'?'; };
 
@@ -1267,10 +1354,11 @@ const DBDRIVE={
   entry(f, prefix){ const title=String(f.title||f.name||f.id), mime=f.mimeType||'', folder=mime===GD_FOLDER, exp=GD_EXPORT[mime], hasExt=/\.[A-Za-z0-9]{1,6}$/.test(title);
     const name=title+(!folder&&!hasExt?(exp?exp[1]:(GD_EXT[mime]||'')):'');       // a title without an extension gets the one of its Drive type
     const why=folder?null:GD_SYSTEM.test(title)?'system':(f.fileSize==='0'||f.fileSize===0)?'empty':null;
+    const arch=!folder&&(/\.(zip|rar|7z|tar|tgz|gz|bz2|xz)$/i.test(title)||/^application\/(zip|x-zip-compressed|vnd\.rar|x-rar(-compressed)?|rar|x-7z-compressed|gzip|x-gzip|x-tar|x-bzip2|x-xz)$/.test(mime));
     const known=!!exp||GD_READABLE.test(mime)||(hasExt&&DS.DOC_RX.test(title));
     const guess=!folder&&!why&&!known&&!hasExt&&!/^application\/vnd\.google-apps\./.test(mime);    // no extension and a general type: the engine looks inside after the fetch
     return {id:f.id, name, path:(prefix||'')+name, dir:prefix||'', mimeType:mime, kind:folder?'folder':'file', size:f.fileSize?+f.fileSize:null, native:exp?exp[0]:null, export:exp?exp[1]:null,
-      why, guess, usable:!folder&&!why&&(known||guess)}; },
+      why, guess:guess||(arch&&!why), usable:!folder&&!why&&(known||guess||arch)}; },                    // a compressed file is offered, not ticked: the person knows what is in it
   async call(tool, input, again){ const m=await this.mcp(); if(!m) throw new Error(L({ar:'موصّل Google Drive مش متاح هنا',en:'The Google Drive connector is not available here'}));
     try{ return (await m.callTool(GD_SERVER, tool, input)).payload; }
     catch(e){ const code=(e&&e.code)||'';
@@ -1436,7 +1524,7 @@ function aiFillOf(w){
 }
 async function intake(files){
   if(S.wiz){ return addDocs('other', files); }                        // the wizard: read, fill, show on the cards; «review what was read» opens the full review
-  files=files.filter(f=>DS.isDoc(f.name)); if(!files.length){ toast(t('badFiles')); return; }
+  files=(await withArchives(files)).filter(f=>DS.isDoc(f.name)); if(!files.length){ if(!withArchives.said) toast(t('badFiles')); return; }
   toast(t('reading'));
   try{ await vocab(); reviewIntake(await readFiles(files,'dossier'), files); }catch(e){ toast(e.message); }
 }
@@ -1731,7 +1819,7 @@ function renderBoard(){
       <div class="seg" role="group">${[0,1,2,3,4,5].map(k=>`<button data-m="${k}" class="${m===k?'on':''}">${k?'M'+k:esc(t('all'))}</button>`).join('')}</div></div>
     ${(b.unassigned||[]).length?`<div class="card pad stack gap-s" id="unplacedBox"><div class="row gap-s"><b>${icon('alert',16)} ${esc(t('unplacedT'))} <span class="tag">${b.unassigned.length}</span></b><span class="small muted">${esc(t('unplacedSub'))}</span></div>
       ${b.unassigned.map(u=>`<div class="row gap-s" data-unp="${esc(u.id)}" style="flex-wrap:wrap"><b dir="auto">${bdi(u.filename)}</b>${u.meta&&u.meta.previous_slot?`<span class="code" title="${esc(t('unassignedSub'))}">${esc(u.meta.previous_slot)}</span>`:''}<select data-ups="${esc(u.id)}">${slots.filter(x=>x.level==='R'||x.level==='O').map(x=>`<option value="${esc(x.slot_id)}">${esc(x.ctd)} · ${esc(L(x.title))}${x.item?' · '+esc(x.item.manufacturer):''}</option>`).join('')}</select>
-        <button class="btn sm pri" data-upl="${esc(u.id)}">${icon('check',14)} ${esc(t('putHere'))}</button><button class="btn sm ghost" data-updel="${esc(u.id)}">${esc(t('withdraw'))}</button><span class="small muted" data-upwhy="${esc(u.id)}"></span></div>`).join('')}</div>`:''}
+        <button class="btn sm pri" data-upl="${esc(u.id)}">${icon('check',14)} ${esc(t('putHere'))}</button><button class="btn sm ghost" data-updel="${esc(u.id)}">${icon('trash',14)} ${esc(t('withdraw'))}</button><span class="small muted" data-upwhy="${esc(u.id)}"></span></div>`).join('')}</div>`:''}
     <div class="card"><div class="tablewrap"><table><thead><tr><th>${esc(t('colSec'))}</th><th>${esc(t('colDoc'))}</th><th class="hide-m">${esc(t('colLevel'))}</th><th>${esc(t('colStatus'))}</th><th>${esc(t('colFiles'))}</th></tr></thead>
     <tbody>${rows||`<tr><td colspan="5" class="empty">—</td></tr>`}</tbody></table></div></div>
 `;
@@ -1745,13 +1833,14 @@ function renderBoard(){
   if($('#unplacedBox')){ api(`/dossiers/${id}/unplaced`).then(list=>{ for(const u of list){ const sel=v.querySelector(`[data-ups="${u.id}"]`), why=v.querySelector(`[data-upwhy="${u.id}"]`); const best=(u.suggestions||[])[0];
       if(sel&&best&&[...sel.options].some(o=>o.value===best.slot_id)) sel.value=best.slot_id; if(why) why.textContent=best?`${t('suggested')}: ${(best.why||[]).join(' · ')}`:t('noSuggestion'); } }).catch(()=>{});
     v.querySelectorAll('[data-upl]').forEach(x=>x.onclick=async()=>{ const sel=v.querySelector(`[data-ups="${x.dataset.upl}"]`); const meta=await askMeta(slotById(sel.value)); x.disabled=true; try{ await api(`/dossiers/${id}/documents/${x.dataset.upl}/place`,{method:'POST',json:{slot_id:sel.value, meta}}); toast(t('placedOne')); S.board=null; route(); }catch(e){ toast(e.message); x.disabled=false; } });
-    v.querySelectorAll('[data-updel]').forEach(x=>x.onclick=async()=>{ try{ await api(`/dossiers/${id}/documents/${x.dataset.updel}/withdraw`,{method:'POST'}); toast(t('withdrawn')); S.board=null; route(); }catch(e){ toast(e.message); } }); }
+    v.querySelectorAll('[data-updel]').forEach(x=>DS.twoStep(x, L({ar:'متأكد؟ دوس تاني للحذف',en:'Sure? Press again to delete'}), async()=>{ try{ await api(`/dossiers/${id}/documents/${x.dataset.updel}/withdraw`,{method:'POST'}); toast(t('withdrawn')); S.board=null; route(); }catch(e){ toast(e.message); } })); }
   $('#bulkBtn').onclick=()=>{ const p=$('#picker'); p.multiple=true; p.value=''; p.onchange=()=>{ p.multiple=false; bulk([...p.files]); }; p.click(); };
   $('#bulkDrive').onclick=()=>drivePicker(files=>bulk(files), {label:t('drivePlace')});
   v.ondragover=e=>{ if(e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); };
   v.ondrop=e=>{ if(e.dataTransfer && e.dataTransfer.files.length){ e.preventDefault(); bulk([...e.dataTransfer.files]); } };
 }
 async function bulk(files){
+  files=(await withArchives(files)).filter(f=>DS.isDoc(f.name));          // a compressed file gives the documents inside it
   if(!files.length) return;
   const res=[];                                                      // one file at a time: a big selection never becomes one giant request
   for(const [i,f] of files.entries()){ if(files.length>1) toast(`${t('reading')} ${i+1}/${files.length} · ${f.name}`);
@@ -1804,7 +1893,11 @@ function pick(slotId, meta, replaces, from){
     $('#rpAdd').onclick=()=>{ closeDrawer(); pick(slotId, meta, null, from); };
     return;
   }
-  const send=async file=>{ if(!file) return; toast(t('uploading'));
+  const send=async file=>{ if(!file) return;
+    if(window.DBARCH&&await DBARCH.isArchive(file)){ const inside=(await withArchives([file])).filter(f=>DS.isDoc(f.name));      // one item takes one document
+      if(inside.length!==1){ if(inside.length||!withArchives.said) toast(inside.length?L({ar:`الأرشيف فيه ${inside.length} مستند: استخدم «رفع مجمّع» عشان كل واحد يروح بنده.`,en:`The archive holds ${inside.length} documents: use «Bulk upload» so each goes to its item.`}):t('badFiles')); return; }
+      file=inside[0]; }
+    toast(t('uploading'));
     const fd=new FormData(); fd.append('file',await asDossierFile(file)); fd.append('meta',JSON.stringify(meta)); if(replaces) fd.append('replaces', replaces);
     try{ const doc = await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd});
       toast(t('uploaded')+' '+t(doc.check_status)); await refreshCurrent(slotId); if(doc.findings.length) openWhy(slotId); }
@@ -1827,7 +1920,7 @@ function openWhy(slotId, focusTemplate){
      ${d.findings.some(f=>f.action==='auto_fix')?`<button class="btn sm pri" data-fix="${d.id}">${icon('wrench',14)} ${esc(d.findings.some(f=>['EG-BP-E23','NTA065-N4'].includes(f.rule))?t('readableBtn'):t('autofix'))}</button>`:''}
      ${d.meta&&d.meta.draft_unsigned?`<button class="btn sm pri" data-signed="${d.id}">${icon('upload',14)} ${esc(t('uploadSigned'))}</button>`:''}
      ${(()=>{ const mv=(d.findings||[]).find(f=>f.action==='move'&&f.extra&&f.extra.suggested_slot); return mv?`<button class="btn sm pri" data-mvto="${d.id}" data-slot="${esc(mv.extra.suggested_slot)}">${icon('arrow',14)} ${esc(t('moveTo'))} ${esc(L(mv.extra.suggested_title||{en:mv.extra.suggested_slot,ar:mv.extra.suggested_slot}))}</button>`:''; })()}
-     <button class="btn sm ghost" data-wd="${d.id}">${esc(t('withdraw'))}</button></div></div>`).join('');
+     <button class="btn sm ghost" data-wd="${d.id}">${icon('trash',14)} ${esc(t('withdraw'))}</button></div></div>`).join('');
   openDrawer(L(s.title), `<div class="row"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${chip(s.status)}<span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></div>
     ${locked?`<div class="alert">${icon('lock')}<p class="small">${esc(t('lockedNote'))}</p></div>`:''}
     <h3>${esc(t('reasons'))}</h3>${reasons}
@@ -1866,7 +1959,7 @@ function openWhy(slotId, focusTemplate){
   $$('[data-extup]', body).forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, {}, b.dataset.extup); });
   const rq=body.querySelector('[data-req]'); if(rq) rq.onclick=()=>requestForm(s);
   $$('[data-mvto]', body).forEach(b=>b.onclick=async()=>{ const meta=await askMeta(slotById(b.dataset.slot)); try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.mvto}/move`,{method:'POST',json:{slot_id:b.dataset.slot, meta}}); toast(t('moved')); closeDrawer(); S.board=null; route(); }catch(e){ toast(e.message); } });
-  $$('[data-wd]', body).forEach(b=>b.onclick=async()=>{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.wd}/withdraw`,{method:'POST'}); toast(t('withdrawn')); closeDrawer(); refreshCurrent(); });
+  $$('[data-wd]', body).forEach(b=>DS.twoStep(b, L({ar:'متأكد؟ دوس تاني للحذف',en:'Sure? Press again to delete'}), async()=>{ try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.wd}/withdraw`,{method:'POST'}); toast(t('withdrawn')); closeDrawer(); refreshCurrent(); }catch(e){ toast(e.message); } }));
 }
 async function refreshCurrent(selSlot){
   const h=location.hash;
@@ -2099,6 +2192,7 @@ function renderPublisher(){
 }
 async function dropFiles(slotId, list){
   const s = slotById(slotId);
+  if(s && isActive(s)) list = (await withArchives([...list])).filter(f=>DS.isDoc(f.name));
   if(!s || !isActive(s) || !list.length) return;
   if(needsMeta(s)) return startUpload(slotId);
   for(const f of list){ const fd=new FormData(); fd.append('file',await asDossierFile(f)); fd.append('meta','{}');

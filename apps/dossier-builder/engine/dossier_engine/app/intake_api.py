@@ -1,6 +1,7 @@
 """Intake drafts — the new-dossier wizard keeps its work on the server as it goes (fields, the uploaded files, what was read from
 them including OCR text), so a page refresh, a closed tab or another computer picks up where it stopped. One draft per wizard
-run; deleted when the dossier is created or the user starts over."""
+run; it stays (and shows in the projects list as a draft) until the dossier is created or the user deletes it. A draft that was
+deleted never comes back through a late save: writing to it answers 404."""
 import uuid
 
 from fastapi import File, Form, HTTPException, UploadFile
@@ -35,6 +36,8 @@ def install(app, st):
             err(422, 'E-STATE', 'state must be an object.', 'state لازم يكون كائن.')
         if len(str(state)) > 6_000_000:
             err(413, 'E-STATE-SIZE', 'The draft state is too large.', 'حالة المسودة أكبر من اللازم.')
+        if not st.draft_get(draft_id):
+            err(404, 'E-DRAFT', 'No such draft.', 'المسودة دي مش موجودة.')
         return st.draft_save(draft_id, state)
 
     @app.post('/api/intake/drafts/{draft_id}/files', status_code=201)
@@ -42,6 +45,8 @@ def install(app, st):
         data = await file.read()
         if len(data) > 60 * 1024 * 1024:
             err(413, 'E-FILE-SIZE', 'The file is larger than 60 MB.', 'الملف أكبر من 60 ميجا.')
+        if not st.draft_get(draft_id):
+            err(404, 'E-DRAFT', 'No such draft.', 'المسودة دي مش موجودة.')
         return st.draft_add_file(draft_id, file.filename, data, kind)
 
     @app.get('/api/intake/drafts/{draft_id}/files/{filename:path}')
@@ -57,6 +62,7 @@ def install(app, st):
         return {'ok': True}
 
     @app.delete('/api/intake/drafts/{draft_id}')
-    def draft_delete(draft_id: str):
-        st.draft_delete(draft_id)
-        return {'ok': True}
+    def draft_delete(draft_id: str, free: int = 0):
+        """`free=1`: the user discarded the draft, so its files leave the disk too (when nothing else uses them)."""
+        freed = st.draft_delete(draft_id, free=bool(free))
+        return {'ok': True, 'files_removed': freed['files']}

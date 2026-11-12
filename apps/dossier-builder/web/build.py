@@ -39,6 +39,7 @@ def page(src, *, builder):
     html = html.replace('<script src="/assets/ds.js"></script>',
                         f'<script>\n{js}\n</script>\n<script src="assets/pyodide/pyodide.js"></script>\n<script>\n{boot}\n</script>')
     html = html.replace('<script src="/assets/ocr.js"></script>', f'<script>\n{ocr}\n</script>')
+    html = html.replace('<script src="/assets/archive.js"></script>', '<script>\n' + (UI / 'assets' / 'archive.js').read_text(encoding='utf-8') + '\n</script>')
     if builder:
         html = html.replace("'/suite/'", "'suite.html'").replace('<title>Dossier Builder — منشئ ملفات التسجيل</title>', '<title>منشئ ملفات التسجيل</title>')
     else:

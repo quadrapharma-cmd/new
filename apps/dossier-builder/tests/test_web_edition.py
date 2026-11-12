@@ -137,3 +137,58 @@ def test_an_image_put_in_an_item_becomes_a_pdf_inside_the_browser_edition(site):
         assert r['name'] == 'pages-g4.pdf' and r['head'] == '%PDF-' and r['stored'] == 'pages-g4.pdf', r
         assert not errors, errors
         b.close()
+
+
+def test_a_started_project_is_still_there_after_the_page_is_closed(site, tmp_path):
+    """«I started adding a document and left»: the draft and its files are in the browser's storage before their reading ends, so a
+    page closed in the middle opens again with the draft in the projects list. A ZIP is opened inside the browser; a RAR says why not."""
+    import time, zipfile
+    z = tmp_path / 'Dermacure documents.zip'
+    with zipfile.ZipFile(z, 'w', zipfile.ZIP_DEFLATED) as f:
+        f.writestr('Module 1/pricing certificate.txt', 'Pricing Certificate\nProduct: Dermacure 2 % cream\nPrice: EGP 45.00')
+        f.writestr('ثبات.txt', 'Stability Study Report\nProduct: Dermacure\nStorage condition: 30 C / 65 % RH')
+    rar = tmp_path / 'backup.rar'
+    rar.write_bytes(b'Rar!\x1a\x07\x01\x00' + b'\0' * 200)
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        ctx = b.new_context(viewport={'width': 1280, 'height': 800})
+        errors = []
+
+        def open_(hash_):
+            page = ctx.new_page()
+            page.on('pageerror', lambda e: errors.append(str(e)))
+            page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+            page.add_init_script("localStorage.setItem('db.lang','en')")
+            page.goto(site + '/index.local.html' + hash_)
+            page.wait_for_selector('#boot', state='detached', timeout=180000)
+            return page
+
+        def give(page, path):
+            with page.expect_file_chooser() as fc:
+                page.click('#intakeBtn')
+            fc.value.set_files(str(path))
+
+        page = open_('#/new')
+        page.wait_for_selector('#intakeBtn', timeout=120000)
+        give(page, rar)                                                                 # no unpacker inside a browser: said, with what to do
+        page.wait_for_function("() => /RAR/.test(document.querySelector('#toast').textContent)", timeout=60000)
+        assert 'ZIP' in page.inner_text('#toast')
+        give(page, z)
+        end = time.time() + 120
+        while time.time() < end:                                                        # the two documents of the ZIP are in the draft…
+            if page.evaluate("async () => (await (await fetch('/api/intake/drafts', {headers: {'X-DB': '1'}})).json()).some(d => d.files === 2)"):
+                break
+            page.wait_for_timeout(100)
+        else:
+            raise AssertionError('the draft never got its files')
+        page.wait_for_timeout(600)
+        page.close()                                                                    # …and the page goes, with no «leave» pressed
+        page = open_('#/dossiers')
+        page.wait_for_selector('#draftBox', timeout=120000)
+        box = page.inner_text('#draftBox')
+        assert 'pricing certificate.txt' in box and 'ثبات.txt' in box
+        page.click('[data-draft]')
+        page.wait_for_selector('#intakeReview', timeout=120000)                         # continued: the documents are read again from the browser's storage
+        assert page.evaluate("() => Object.keys(S.wiz.texts).sort()") == ['pricing certificate.txt', 'ثبات.txt']
+        assert errors == [], errors
+        b.close()

@@ -42,3 +42,17 @@ cp /tmp/imgjs/utif/package/UTIF.js /tmp/imgjs/pako/package/dist/pako_inflate.min
 cp /tmp/imgjs/utif/package/LICENSE "$I/LICENSE.utif.txt"; cp /tmp/imgjs/pako/package/LICENSE "$I/LICENSE.pako.txt"; cp /tmp/imgjs/heif/package/libheif-wasm/LICENSE "$I/LICENSE.libheif.txt"
 mkdir -p "$I/test" && curl -sS -L -o "$I/test/example.heic" "https://raw.githubusercontent.com/strukturag/libheif/master/examples/example.heic"   # a public sample for the HEIC test (not committed)
 ls -la "$I"
+
+# public RAR samples for the archive tests (not committed): libarchive's own test files, stored there uuencoded
+A="$HERE/vendor/arch/test"; mkdir -p "$A"
+for n in test_read_format_rar_compress_normal test_read_format_rar5_compressed test_read_format_rar5_stored; do
+  curl -sS -L "https://raw.githubusercontent.com/libarchive/libarchive/v3.7.2/libarchive/test/$n.rar.uu" | python3 -c "
+import binascii, sys
+out = b''
+for line in sys.stdin.buffer.read().splitlines()[1:]:
+    if line.strip() in (b'end', b'\`', b''):
+        break
+    out += binascii.a2b_uu(line)
+sys.stdout.buffer.write(out)" > "$A/$n.rar"
+done
+ls -la "$A"

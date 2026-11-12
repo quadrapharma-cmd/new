@@ -70,7 +70,7 @@ def test_refresh_keeps_what_the_user_typed_and_chose(server, browser, tmp_path):
     page.click('#wizBack')
     assert page.input_value('[data-in=trade]') == 'Cardiolol Plus'                      # before the fix: «Cardiolol 10 mg» and «imported» came back
     assert errors == [], errors
-    page.click('#wizRestart')
+    page.click('#wizRestart'); page.click('#wizRestart')                      # «start over» asks once more before it deletes the draft
     page.close()
 
 
@@ -92,7 +92,7 @@ def test_a_file_refused_by_the_kind_rule_never_fills_the_form(server, browser, t
     page.wait_for_function("() => !document.querySelector('[data-rmdoc]')")
     assert 'Wrongol' not in page.inner_text('#wizLive')
     assert errors == [], errors
-    page.click('#wizRestart')
+    page.click('#wizRestart'); page.click('#wizRestart')                      # «start over» asks once more before it deletes the draft
     page.close()
 
 
@@ -112,7 +112,7 @@ def test_another_document_with_the_same_file_name_is_kept(server, browser, tmp_p
     page.wait_for_selector('#toast:has-text("already uploaded")')
     assert page.locator('[data-docline]').count() == 2
     assert errors == [], errors
-    page.click('#wizRestart')
+    page.click('#wizRestart'); page.click('#wizRestart')                      # «start over» asks once more before it deletes the draft
     page.close()
 
 
@@ -288,7 +288,7 @@ def test_a_typed_api_cell_never_stops_later_readings(server, browser, tmp_path):
     assert page.evaluate("() => [...document.querySelectorAll('[data-api][data-f=name]')].map(i => i.value)") == ['Bisoprolol fumarate', 'Neomycin Sulphate']
     assert page.input_value('[data-api="0"][data-f=manufacturer]') == 'Unichem Laboratories'
     assert errors == [], errors
-    page.click('#wizRestart')
+    page.click('#wizRestart'); page.click('#wizRestart')                      # «start over» asks once more before it deletes the draft
     page.close()
 
 
@@ -311,7 +311,7 @@ def test_a_file_moved_to_its_card_gets_its_model_reading(server, browser, tmp_pa
     assert page.evaluate("() => (S.wiz.aiReads||[]).map(b => b.files)") == [['cpp.pdf'], ['price letter.pdf']]
     assert page.evaluate("() => (S.wiz.intakeFill.product||{}).price") == '45.00 EGP'   # before the fix: never read by the model, nothing from it
     assert errors == [], errors
-    page.click('#wizRestart')
+    page.click('#wizRestart'); page.click('#wizRestart')                      # «start over» asks once more before it deletes the draft
     page.close()
 
 

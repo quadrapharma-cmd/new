@@ -13,6 +13,7 @@ import re
 import sys
 import time
 import urllib.parse
+from . import archives as _archives
 from . import officefiles as _of
 
 FILE = 'drive.json'
@@ -24,6 +25,8 @@ EXPORT = {'application/vnd.google-apps.document': ('application/vnd.openxmlforma
           'application/vnd.google-apps.presentation': ('application/pdf', '.pdf')}
 USABLE = set(_of.MIME.values()) | {'text/rtf', 'text/xml'} | set(EXPORT)        # every type the engine reads, old formats and new
 EXT_MIME = dict(_of.MIME)
+ARCHIVE_MIME = {'application/zip', 'application/x-zip-compressed', 'application/vnd.rar', 'application/x-rar-compressed', 'application/x-rar', 'application/rar',
+                'application/x-7z-compressed', 'application/gzip', 'application/x-gzip', 'application/x-tar', 'application/x-bzip2', 'application/x-xz'}
 _SYSTEM = re.compile(r'^(~\$|\.~lock\.|\._)|^(thumbs\.db|desktop\.ini|\.ds_store)$', re.I)        # lock files and system files are never documents
 FIELDS = 'nextPageToken,files(id,name,mimeType,size,modifiedTime,md5Checksum)'
 HTTP = None            # tests inject: (method, url, headers, data) -> (status, content_type, bytes) — sync or async
@@ -191,11 +194,13 @@ class Drive:
 
     @staticmethod
     def _entry(f, prefix=''):
-        mt = f.get('mimeType') or EXT_MIME.get(os.path.splitext(f.get('name', ''))[1].lower(), '')
+        ext = os.path.splitext(f.get('name', ''))[1].lower()
+        mt = f.get('mimeType') or EXT_MIME.get(ext, '')
+        arch = mt in ARCHIVE_MIME or ext in _archives.EXTENSIONS          # a compressed file is offered, not ticked: the page opens it and takes the documents inside
         return {'id': f['id'], 'name': f.get('name', f['id']), 'mimeType': mt, 'size': int(f['size']) if str(f.get('size', '')).isdigit() else None,
                 'modified': f.get('modifiedTime'), 'kind': 'folder' if mt == FOLDER else 'file',
-                'usable': mt != FOLDER and not _SYSTEM.search(f.get('name', '')) and (mt in USABLE or os.path.splitext(f.get('name', ''))[1].lower() in EXT_MIME), 'path': prefix + f.get('name', f['id']),
-                'export': EXPORT.get(mt, (None, None))[1]}
+                'usable': mt != FOLDER and not _SYSTEM.search(f.get('name', '')) and (mt in USABLE or ext in EXT_MIME or arch), 'guess': arch and mt != FOLDER,
+                'path': prefix + f.get('name', f['id']), 'export': EXPORT.get(mt, (None, None))[1]}
 
     async def list_folder(self, folder_id, recursive=False, _prefix='', _depth=0):
         """Entries of a folder (sub-folders first); recursive walks sub-folders (≤ 3 levels) with their path."""

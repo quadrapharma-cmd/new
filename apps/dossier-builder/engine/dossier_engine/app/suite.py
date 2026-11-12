@@ -11,7 +11,7 @@ import json, time, uuid
 from datetime import date
 from pathlib import Path
 import yaml
-from fastapi import UploadFile, File, Form
+from fastapi import UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import FileResponse
 
 TYPES_FILE = Path(__file__).resolve().parents[3] / 'rulepacks' / 'eda.doc-validity.v1' / 'doc_types.yaml'
@@ -222,6 +222,35 @@ class Suite:
         self.db.commit()
         self._audit('document.updated', doc=did, fields=sorted(f))
         return self.doc(did)
+
+    def delete_doc(self, did):
+        """A library document deleted for good (its file too, when nothing else uses it)."""
+        d = self._doc_row(did)
+        self.db.execute('delete from libdoc_link where doc_id=?', (did,))
+        self.db.execute('delete from libdoc where id=?', (did,))
+        self.db.commit()
+        self._audit('document.deleted', doc=did, title=d.get('title'))
+        self.st.gc_blobs()
+
+    def delete_product(self, pid, documents=True):
+        """A product deleted for good, with its links to parties. Its own documents (those attached to nothing else) go with it when
+        `documents` is true; the others stay in the library. A dossier that was built from it is not touched."""
+        p = self._product_row(pid)
+        own = [r[0] for r in self.db.execute(
+            'select doc_id from libdoc_link where product_id=? and doc_id not in '
+            '(select doc_id from libdoc_link where (product_id is not null and product_id<>?) or party_id is not null)', (pid, pid))]
+        self.db.execute('delete from libdoc_link where product_id=?', (pid,))
+        self.db.execute('delete from product_party where product_id=?', (pid,))
+        removed = 0
+        if documents:
+            for did in set(own):
+                self.db.execute('delete from libdoc where id=?', (did,))
+                removed += 1
+        self.db.execute('delete from product where id=?', (pid,))
+        self.db.commit()
+        self._audit('product.deleted', product=pid, name=p.get('name'), documents=removed)
+        self.st.gc_blobs()
+        return {'id': pid, 'name': p.get('name'), 'documents': removed, 'kept_documents': 0 if documents else len(set(own))}
 
     def withdraw_doc(self, did, reason='user'):
         self._doc_row(did)
@@ -516,6 +545,22 @@ def install(app, st, err):
     def put_doc(did: str, body: dict):
         return suite.update_doc(did, **{k: v for k, v in body.items()
                                         if k in ('title', 'number', 'issuer', 'issued', 'valid_until', 'notes', 'doc_type')})
+
+    def _person(request, admin=False):
+        role = getattr(request.state, 'role', None)
+        if role == 'assistant' or (admin and role not in (None, 'admin')):
+            raise HTTPException(403, detail={'code': 'E-ROLE', 'en': 'Only an administrator deletes for good.', 'ar': 'الحذف النهائي للمدير بس.'})
+
+    @app.delete('/api/suite/products/{pid}')
+    def delete_product(pid: str, request: Request, documents: int = 1):
+        _person(request, admin=True)
+        return suite.delete_product(pid, bool(documents))
+
+    @app.delete('/api/suite/documents/{did}')
+    def delete_document(did: str, request: Request):
+        _person(request, admin=True)
+        suite.delete_doc(did)
+        return {'id': did, 'deleted': True}
 
     @app.post('/api/suite/documents/{did}/withdraw')
     def withdraw(did: str, reason: str = 'user'):

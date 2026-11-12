@@ -4,7 +4,7 @@
 <workspace>/blobs/<sha256>    — content-addressed files: never overwritten, never deleted
 Principle 7 «no silent data loss»: a document is withdrawn or superseded, not deleted;
 a profile change moves documents of removed slots to «unassigned»."""
-import contextvars, hashlib, json, shutil, sqlite3, sys, threading, time, uuid
+import contextvars, hashlib, json, re, shutil, sqlite3, sys, threading, time, uuid
 from datetime import date, timedelta
 from pathlib import Path
 from .. import packs
@@ -79,6 +79,7 @@ MIGRATIONS = [
     (3, 'audit is append-only', [
         "create trigger if not exists audit_no_update before update on audit begin select raise(abort, 'audit is append-only'); end",
         "create trigger if not exists audit_no_delete before delete on audit begin select raise(abort, 'audit is append-only'); end"]),
+    (4, 'a project can be put in the trash', ["alter table dossier add column deleted real"]),
 ]
 
 
@@ -209,10 +210,80 @@ class Store:
             d[k] = json.loads(d.get(k) or '{}')
         return d
 
-    def list_dossiers(self):
-        rows = self.db.execute('select id, name, created, profile, product from dossier order by created desc')
-        return [dict(r) | {'profile': json.loads(r['profile'] or '{}'), 'product': json.loads(r['product'] or '{}')}
-                for r in rows]
+    def list_dossiers(self, deleted=False):
+        """The projects in use; `deleted=True` gives the ones in the trash instead (with how many documents each holds)."""
+        rows = self.db.execute('select id, name, created, profile, product, deleted from dossier where deleted is %s order by %s desc'
+                               % (('not null', 'deleted') if deleted else ('null', 'created'))).fetchall()
+        out = [dict(r) | {'profile': json.loads(r['profile'] or '{}'), 'product': json.loads(r['product'] or '{}')} for r in rows]
+        if deleted:
+            for d in out:
+                d['documents'] = self.db.execute("select count(*) from document where dossier_id=? and state='current'", (d['id'],)).fetchone()[0]
+        return out
+
+    # ---------------- deleting a project: to the trash first (it comes back), then for good
+    def trash_dossier(self, did):
+        d = self.dossier(did)
+        if not d.get('deleted'):
+            self.db.execute('update dossier set deleted=? where id=?', (time.time(), did))
+            self.db.commit()
+            self.audit(did, 'dossier.trashed', name=d['name'])
+        return {'id': did, 'name': d['name'], 'deleted': True}
+
+    def restore_dossier(self, did):
+        d = self.dossier(did)
+        if d.get('deleted'):
+            self.db.execute('update dossier set deleted=null where id=?', (did,))
+            self.db.commit()
+            self.audit(did, 'dossier.restored', name=d['name'])
+        return {'id': did, 'name': d['name'], 'deleted': False}
+
+    def purge_dossier(self, did):
+        """Delete a project for good: its documents, data, requests, reviews, conversations and exports. The activity record is
+        append-only and keeps its lines, plus one that says who deleted the project and when. Stored files nothing else refers to
+        are removed from the disk."""
+        d = self.dossier(did)
+        counts = {'documents': self.db.execute('select count(*) from document where dossier_id=?', (did,)).fetchone()[0]}
+        tables = [r[0] for r in self.db.execute("select name from sqlite_master where type='table'")]
+        cols = {t: [c[1] for c in self.db.execute(f'pragma table_info("{t}")')] for t in tables}
+        own = [t for t in tables if t not in ('audit', 'dossier', 'product') and 'dossier_id' in cols[t]]
+        own.sort(key=lambda t: {'review_finding': 0, 'review_run': 2, 'document': 3}.get(t, 1))     # what refers to a row goes before the row
+        try:                                                                       # all of it or none of it
+            if 'review_response' in cols and 'review_run' in cols and 'dossier_id' not in cols['review_response']:
+                self.db.execute('delete from review_response where run_id in (select id from review_run where dossier_id=?)', (did,))
+            if 'product' in cols and 'dossier_id' in cols['product']:              # the product file keeps the product, without its link
+                self.db.execute('update product set dossier_id=null where dossier_id=?', (did,))
+            for t in own:
+                self.db.execute(f'delete from "{t}" where dossier_id=?', (did,))
+            self.db.execute('delete from dossier where id=?', (did,))
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+        for sub in ('exports', 'lifecycle'):
+            shutil.rmtree(self.root / sub / did, ignore_errors=True)
+        freed = self.gc_blobs(min_age=60)
+        self.audit(None, 'dossier.deleted', id=did, name=d['name'], documents=counts['documents'], files_removed=freed['files'])
+        return {'id': did, 'name': d['name'], 'documents': counts['documents'], 'files_removed': freed['files'], 'bytes_freed': freed['bytes']}
+
+    def gc_blobs(self, min_age=600):
+        """Remove stored files that no row refers to any more (the activity record does not count: it only remembers). A file
+        written in the last `min_age` seconds is left alone: an upload may be on its way to its row."""
+        used = set()
+        for (t,) in self.db.execute("select name from sqlite_master where type='table'").fetchall():
+            if t == 'audit':
+                continue
+            for row in self.db.execute(f'select * from "{t}"'):
+                for v in row:
+                    if isinstance(v, str) and len(v) >= 64:
+                        used.update(re.findall(r'(?<![0-9a-f])[0-9a-f]{64}(?![0-9a-f])', v))
+        files = size = 0
+        now = time.time()
+        for p in (self.root / 'blobs').iterdir():
+            if re.fullmatch(r'[0-9a-f]{64}', p.name) and p.name not in used and now - p.stat().st_mtime >= min_age:
+                size += p.stat().st_size
+                p.unlink(missing_ok=True)
+                files += 1
+        return {'files': files, 'bytes': size}
 
     def slots(self, did):
         d = self.dossier(did)
@@ -538,10 +609,14 @@ class Store:
         self.db.execute('delete from intake_file where draft_id=? and filename=?', (draft_id, filename))
         self.db.commit()
 
-    def draft_delete(self, draft_id):
+    def draft_delete(self, draft_id, free=False):
+        """The draft goes. `free` (the user discarded it) also removes its files from the disk when nothing else uses them; a draft
+        that ended in a project needs no clean-up: its files are the project's now."""
+        had = self.db.execute('select count(*) from intake_file where draft_id=?', (draft_id,)).fetchone()[0]
         self.db.execute('delete from intake_file where draft_id=?', (draft_id,))
         self.db.execute('delete from intake_draft where id=?', (draft_id,))
         self.db.commit()
+        return self.gc_blobs(min_age=5) if free and had else {'files': 0, 'bytes': 0}
 
     def restore(self, did, doc_id):
         self.db.execute("update document set state='current' where id=? and dossier_id=?", (doc_id, did))

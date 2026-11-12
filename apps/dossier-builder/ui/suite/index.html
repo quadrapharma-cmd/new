@@ -96,6 +96,7 @@ const T={
  prefilled:{ar:'اتقرا من المستند — راجع الخانات',en:'Read from the document — check the fields'}, thinking:{ar:'Claude بيقرأ المستند…',en:'Claude is reading the document…'},
 };
 const t=k=>(T[k]&&T[k][S.lang])||k;
+const L=x=>typeof x==='string'?t(x):(x&&(x[S.lang]||x.en))||'';            // a text given in both languages on the spot
 const api=(path,opt={},root='/api/suite')=>DS.api(path,opt,root);
 const fmt=d=>fmtDate(d,S.lang);
 const chip=s=>`<span class="chip s-${s}">${esc(t('s_'+s))}</span>`;
@@ -227,7 +228,7 @@ async function productView(id,tab){
   if(tab==='data') body=`<div class="card pad"><div class="form">${[['dosage_form','form'],['admin_route','route'],['strength','strength'],['reg_no','regNo'],['reg_date','regDate'],['licence_type','licence'],['shelf_life','shelf'],['storage','storage'],['price','price']]
       .map(([k,l])=>`<div class="f"><span>${esc(t(l))}</span><div dir="auto" style="color:var(--ink)">${esc(k==='reg_date'?fmt(p[k]):p[k]||'—')}</div></div>`).join('')}
       <div class="f"><span>${esc(t('packs'))}</span><div style="color:var(--ink)">${esc((p.packs||[]).join(' · ')||'—')}</div></div></div>
-      ${p.notes?`<p class="small" dir="auto" style="margin-top:12px">${esc(p.notes)}</p>`:''}<div class="row" style="margin-top:12px"><button class="btn" id="editP">${icon('pen',14)} ${esc(t('tabData'))}</button></div></div>`;
+      ${p.notes?`<p class="small" dir="auto" style="margin-top:12px">${esc(p.notes)}</p>`:''}<div class="row" style="margin-top:12px"><button class="btn" id="editP">${icon('pen',14)} ${esc(t('tabData'))}</button><span class="grow"></span><button class="btn ghost" id="delP">${icon('trash',14)} ${esc(L({ar:'احذف المنتج',en:'Delete the product'}))}</button></div></div>`;
   $('#view').innerHTML=`<div class="head"><div class="prodhead">${ring(p.readiness,'lg')}
       <div class="title"><h1>${bdi(p.name)}${p.name_ar?` <span class="muted" style="font-weight:500">· ${bdi(p.name_ar)}</span>`:''}</h1>
       <p class="sub">${[p.dosage_form,p.reg_no&&('#'+p.reg_no),p.licence_type].filter(Boolean).map(esc).join(' · ')}${p.renewal?` · ${esc(t('renewalDue'))}: <b>${fmt(p.renewal.due)}</b>`:''}</p>
@@ -237,6 +238,10 @@ async function productView(id,tab){
   bindIssueActions($('#view')); bindDocActions();
   $('#pd').onclick=()=>docForm({products:[id]});
   if($('#editP')) $('#editP').onclick=()=>productForm(p);
+  if($('#delP')) $('#delP').onclick=async()=>{                                        // a product nobody wants any more: gone for good, with the documents that are only its own
+    const ok=await DS.confirmBox(L({ar:'احذف المنتج',en:'Delete the product'}), `<p>${L({ar:`المنتج «${esc(p.name)}» هيتحذف نهائيًا مع ربطه بالأطراف ومع مستنداته الخاصة بيه بس. المستندات المشتركة مع منتجات أو أطراف تانية بتفضل في المكتبة، وملف التسجيل المبني منه ما بيتأثرش. الحذف ده مالوش رجوع.`,en:`The product «${esc(p.name)}» will be deleted for good, with its links to parties and the documents that are only its own. Documents shared with other products or parties stay in the library, and a dossier built from it is not touched. This cannot be undone.`})}</p>`,
+      L({ar:'احذف نهائيًا',en:'Delete for good'}), {danger:true, cancel:L({ar:'إلغاء',en:'Cancel'}), typed:p.name, typedLabel:L({ar:'اكتب اسم المنتج للتأكيد',en:'Type the product\'s name to confirm'})});
+    if(!ok) return; try{ const r=await api(`/products/${id}`,{method:'DELETE'}); toast(L({ar:`اتحذف المنتج (${r.documents} مستند)`,en:`Product deleted (${r.documents} document(s))`})); location.hash='#/products'; route(); }catch(e){ toast(e.message); } };
   $$('[data-unlink]').forEach(b=>b.onclick=async()=>{ await api(`/products/${id}/parties/${b.dataset.unlink}`,{method:'DELETE'}); route(); });
   if($('#lpGo')) $('#lpGo').onclick=async()=>{ try{ await api(`/products/${id}/parties`,{method:'POST',json:{party_id:$('#lp-party').value,role:$('#lp-role').value,api_name:$('#lp-api').value||null}}); toast(t('saved')); route(); }catch(e){ toast(e.message); } };
   if($('#lpNew')) $('#lpNew').onclick=()=>partyForm();
@@ -311,9 +316,10 @@ async function editDates(id){
     <label class="f"><span>${esc(t('issued'))}</span><input type="date" id="ed-issued" value="${esc(d.issued||'')}"></label>
     <label class="f"><span>${esc(t('validUntil'))}</span><input type="date" id="ed-valid" value="${esc(d.valid_until||'')}"></label></div>
    <label class="f"><span>${esc(t('notes'))}</span><textarea id="ed-notes" rows="3" dir="auto">${esc(d.notes||'')}</textarea></label>
-   <div class="row"><button class="btn pri" id="edSave">${icon('check')} ${esc(t('save'))}</button><button class="btn ghost" id="edWd">${esc(t('withdraw'))}</button></div>`);
+   <div class="row"><button class="btn pri" id="edSave">${icon('check')} ${esc(t('save'))}</button><button class="btn ghost" id="edWd">${esc(t('withdraw'))}</button><span class="grow"></span><button class="btn ghost" id="edDel">${icon('trash',14)} ${esc(L({ar:'احذف نهائيًا',en:'Delete for good'}))}</button></div>`);
   $('#edSave').onclick=async()=>{ try{ await api('/documents/'+id,{method:'PUT',json:{number:$('#ed-number').value,issuer:$('#ed-issuer').value,issued:$('#ed-issued').value||null,valid_until:$('#ed-valid').value||null,notes:$('#ed-notes').value}}); closeDrawer(); toast(t('saved')); route(); }catch(e){ toast(e.message); } };
   $('#edWd').onclick=async()=>{ await api(`/documents/${id}/withdraw`,{method:'POST'}); closeDrawer(); route(); };
+  DS.twoStep($('#edDel'), L({ar:'متأكد؟ دوس تاني: المستند وملفه هيتحذفوا',en:'Sure? Press again: the document and its file are deleted'}), async()=>{ try{ await api(`/documents/${id}`,{method:'DELETE'}); closeDrawer(); toast(L({ar:'اتحذف المستند',en:'Document deleted'})); route(); }catch(e){ toast(e.message); } });
 }
 
 /* ---------- parties */

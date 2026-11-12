@@ -1,7 +1,7 @@
 """HTTP API on localhost (D1). Errors always carry code + en + ar (+ action)."""
 import json, shutil, tempfile, time, uuid, zipfile
 from pathlib import Path
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -113,8 +113,33 @@ def create_app(workspace, auth_enabled=None):
         return VAR.plan(ids)
 
     @app.get('/api/dossiers')
-    def list_dossiers():
-        return st.list_dossiers()
+    def list_dossiers(deleted: int = 0):
+        return st.list_dossiers(deleted=bool(deleted))
+
+    def _may_delete(request, for_good=False):
+        """The Assistant never deletes a project or a product; with sign-in on, deleting for good is for administrators."""
+        role = getattr(request.state, 'role', None)
+        if role == 'assistant':
+            err(403, 'E-ROLE', 'Deleting a project is for a person, not the Assistant.', 'حذف المشروع لشخص، مش للمساعد.')
+        if for_good and role not in (None, 'admin'):
+            err(403, 'E-ROLE', 'Only an administrator deletes for good.', 'الحذف النهائي للمدير بس.')
+
+    @app.delete('/api/dossiers/{did}')
+    def delete_dossier(did: str, request: Request, permanent: int = 0, confirm: str = ''):
+        """A project goes to the trash (it comes back with /restore). `permanent=1` deletes it for good: from the trash, or straight
+        away when `confirm` repeats its name."""
+        _may_delete(request, bool(permanent))
+        if not permanent:
+            return st.trash_dossier(did)
+        d = st.dossier(did)
+        if not d.get('deleted') and confirm.strip() != d['name'].strip():
+            err(422, 'E-CONFIRM', 'Type the project\'s name to delete it for good.', 'اكتب اسم المشروع عشان يتحذف نهائيًا.')
+        return st.purge_dossier(did)
+
+    @app.post('/api/dossiers/{did}/restore')
+    def restore_dossier(did: str, request: Request):
+        _may_delete(request)
+        return st.restore_dossier(did)
 
     @app.post('/api/dossiers', status_code=201)
     def new_dossier(body: NewDossier):
@@ -477,6 +502,16 @@ def create_app(workspace, auth_enabled=None):
         """Dropdown vocabularies (dose forms with routes, countries, units, API options) and the names this workspace already uses."""
         from .. import vocab as _vocab
         return _vocab.payload(st)
+
+    @app.post('/api/archives/unpack')
+    def archive_unpack(file: UploadFile = File(...)):
+        """A compressed file (ZIP, TAR, GZ everywhere; RAR and 7z where the machine has an unpacker) → the files inside it, in one body
+        the page cuts back into files (`archives.frame`). Nothing is stored."""
+        from .. import archives as _archives
+        try:
+            return Response(_archives.frame(_archives.unpack(file.filename or 'archive', file.file.read())), media_type='application/octet-stream')
+        except _archives.ArchiveError as e:
+            err(422, e.code, e.en, e.ar)
 
     @app.post('/api/images/pdf')
     async def images_pdf(files: list[UploadFile] = File(...), title: str = Form('')):

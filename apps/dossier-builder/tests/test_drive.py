@@ -76,7 +76,8 @@ async def _api_key_lists_and_reads(transport):
     assert d.mode == 'api_key'
     files = await d.list_folder('root1')
     assert [f['name'] for f in files] == ['Module 3', 'licence.pdf', 'Specification', 'backup.rar']
-    assert [f['kind'] for f in files] == ['folder', 'file', 'file', 'file'] and [f['usable'] for f in files] == [False, True, True, False]
+    assert [f['kind'] for f in files] == ['folder', 'file', 'file', 'file'] and [f['usable'] for f in files] == [False, True, True, True]
+    assert [bool(f.get('guess')) for f in files] == [False, False, False, True]              # a compressed file is offered, not ticked
     assert files[1]['size'] == 12345 and files[2]['export'] == '.docx'
     assert all('key=AIzaTESTKEY0000000000' in c[1] for c in transport if 'googleapis' in c[1])
     deep = await d.list_folder('root1', recursive=True)
@@ -147,7 +148,7 @@ def test_endpoints_settings_list_and_file(tmp_path, transport):
     assert c.put('/api/drive/settings', json={'service_account': {'client_email': 'bot@x'}}).status_code == 422          # no private key
     assert c.post('/api/drive/list', json={'link': 'https://example.com/nothing'}).status_code == 422
     r = c.post('/api/drive/list', json={'link': 'https://drive.google.com/drive/folders/root1xxxxxxxxxxxx'})
-    assert r.status_code == 200 and r.json()['usable'] == 2 and r.json()['link']['kind'] == 'folder' and [f['name'] for f in r.json()['files']][1] == 'licence.pdf'
+    assert r.status_code == 200 and r.json()['usable'] == 3 and r.json()['link']['kind'] == 'folder' and [f['name'] for f in r.json()['files']][1] == 'licence.pdf'
     r = c.get('/api/drive/files/f1?name=licence.pdf&mime=application/pdf')
     assert r.status_code == 200 and r.content[:4] == b'%PDF' and 'licence.pdf' in r.headers['content-disposition']
     r = c.get('/api/drive/files/g1?name=Specification&mime=application/vnd.google-apps.document')

@@ -30,7 +30,14 @@ self.fetch = async function (input, init) {
 
 let pyodide = null, handle = null, syncTimer = null;
 const syncfs = (populate) => new Promise((res, rej) => pyodide.FS.syncfs(populate, e => e ? rej(e) : res()));
-function scheduleSync() { clearTimeout(syncTimer); syncTimer = setTimeout(() => syncfs(false).catch(e => console.warn('sync', e)), 600); }
+/* what was written reaches the browser's storage a moment after the request, and never later than a second and a half into a long run
+   of requests (a folder being read): closing the page in the middle loses nothing that was already taken */
+let syncSince = 0;
+function scheduleSync() {
+  const now = Date.now(); if (!syncSince) syncSince = now;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => { syncSince = 0; syncfs(false).catch(e => console.warn('sync', e)); }, now - syncSince > 1500 ? 0 : 250);
+}
 const say = (ar, en, pct) => self.postMessage({ type: 'say', ar, en, pct });
 
 const ready = (async () => {

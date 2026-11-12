@@ -72,6 +72,6 @@ def test_home_opens_product_file_and_migrations_are_recorded(app):
     r = admin.get('/', follow_redirects=False)
     assert r.status_code == 307 and r.headers['location'] == '/suite/'
     ids = [r[0] for r in sqlite3.connect(ws / 'workspace.sqlite').execute('select id from schema_migrations order by id')]
-    assert ids == [1, 2, 3]
+    assert ids == [1, 2, 3, 4]
     create_app(ws, auth_enabled=True)                    # re-open: idempotent
-    assert len(list(sqlite3.connect(ws / 'workspace.sqlite').execute('select id from schema_migrations'))) == 3
+    assert len(list(sqlite3.connect(ws / 'workspace.sqlite').execute('select id from schema_migrations'))) == 4

@@ -4,6 +4,7 @@ The same FastAPI app the desktop and cloud editions run is called here as an ASG
 no threads, no network. boot.js routes every fetch('/api/…') of the interface to `handle`, and the workspace
 lives on /workspace (an IndexedDB-backed file system, synced by boot.js after each change)."""
 import asyncio, json, os, sys, traceback
+from urllib.parse import unquote
 
 sys.path.insert(0, '/app/apps/dossier-builder/engine')
 
@@ -32,7 +33,7 @@ async def handle(method, path, query, headers_json, body):
         body = bytes(body.to_py())
     body = bytes(body or b'')
     scope = {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'method': method,
-             'scheme': 'http', 'path': path, 'raw_path': path.encode(), 'query_string': (query or '').encode(),
+             'scheme': 'http', 'path': unquote(path), 'raw_path': path.encode(), 'query_string': (query or '').encode(),   # as a server does: the path decoded (a file name with a space or in Arabic), the raw one kept
              'root_path': '', 'headers': [(k.lower().encode(), str(v).encode()) for k, v in headers.items()],
              'client': ('127.0.0.1', 0), 'server': ('127.0.0.1', 80), 'state': {}}
     sent = False

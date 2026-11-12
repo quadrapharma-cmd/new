@@ -66,6 +66,8 @@
     pill:'<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
     stamp:'<path d="M5 22h14"/><path d="M19.3 17.6a1 1 0 0 1-1 1.4H5.7a1 1 0 0 1-1-1.4l1.3-4A1 1 0 0 1 7 13h10a1 1 0 0 1 1 .6Z"/><path d="M10 13V8.2A3 3 0 1 1 14 8.2V13"/>',
     bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21h4"/>',
+    trash:'<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m6 6 1 15h10l1-15"/><path d="M10 11v6M14 11v6"/>',
+    undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
     settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
   };
   const icon = (n, s=18, cls='') => `<svg class="ic ${cls}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||P.info}</svg>`;
@@ -102,10 +104,23 @@
   }
 
   /* ---- toast + drawer (elements #toast, #drawer, #dTitle, #dBody, #dClose, #scrim) */
-  function toast(msg){ const el=$('#toast'); if(!el) return; el.textContent=msg; el.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>el.hidden=true, 3800); }
+  function toast(msg, ms){ const el=$('#toast'); if(!el) return; el.textContent=msg; el.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>el.hidden=true, ms||3800); }
   function openDrawer(title, html, wide){ $('#dTitle').textContent=title; $('#dBody').innerHTML=html; $('#drawer').classList.toggle('wide', !!wide);
     $('#drawer').hidden=false; $('#scrim').hidden=false;
     setTimeout(()=>{ const f=$('#dBody').querySelector('input:not([type=checkbox]),select,textarea'); (f||$('#dClose')).focus(); }, 30); }
+  /* a question asked in the page itself (a browser dialog does not open inside an embedded page): resolves true when the person
+     confirms. opts.typed = a text the person must type first (deleting for good). Closing the panel answers nothing. */
+  function confirmBox(title, html, okLabel, opts){ opts=opts||{}; return new Promise(done=>{
+    openDrawer(title, `<div class="stack gap-s">${html}${opts.typed?`<label class="f"><span>${esc(opts.typedLabel||'')}</span><input type="text" id="cfType" dir="auto" autocomplete="off"></label>`:''}
+      <div class="row"><button class="btn ${opts.danger?'danger':'pri'}" id="cfOk" ${opts.typed?'disabled':''}>${esc(okLabel)}</button><button class="btn ghost" id="cfNo">${esc(opts.cancel||'Cancel')}</button></div></div>`);
+    let answered=false; const end=v=>{ if(answered) return; answered=true; closeDrawer(); done(v); };
+    $('#cfOk').onclick=()=>end(true); $('#cfNo').onclick=()=>end(false);
+    if(opts.typed){ const i=$('#cfType'); i.oninput=()=>{ $('#cfOk').disabled=i.value.trim()!==String(opts.typed).trim(); }; }
+  }); }
+  /* a small delete: the button asks once more before it acts */
+  function twoStep(btn, sure, act){ btn.onclick=()=>{ if(btn.dataset.sure){ delete btn.dataset.sure; act(); return; }
+    const old=btn.innerHTML; btn.dataset.sure='1'; btn.classList.add('danger'); btn.textContent=sure;
+    setTimeout(()=>{ if(btn.isConnected&&btn.dataset.sure){ delete btn.dataset.sure; btn.classList.remove('danger'); btn.innerHTML=old; } }, 5000); }; }
   function closeDrawer(){ const d=$('#drawer'); if(!d) return; d.hidden=true; $('#scrim').hidden=true; d.classList.remove('wide'); }
   function wireChrome(){
     const c=$('#dClose'), s=$('#scrim'); if(c) c.onclick=closeDrawer; if(s) s.onclick=closeDrawer;
@@ -135,7 +150,8 @@
   const IMG_RX = new RegExp('\\.(' + IMG_EXT.join('|') + ')$', 'i');
   const DOC_RX = new RegExp('\\.(' + DOC_EXT.join('|') + ')$', 'i');
   const isDoc = name => DOC_RX.test(name||'') || !/\.[A-Za-z0-9]{1,6}$/.test(name||'');
-  const DOC_ACCEPT = DOC_EXT.map(e => '.' + e).join(',') + ',application/pdf,image/*';
+  const ARCH_EXT = ['zip','rar','7z','tar','tgz','gz','bz2','xz'];                   // compressed files: opened, and the documents inside taken
+  const DOC_ACCEPT = DOC_EXT.concat(ARCH_EXT).map(e => '.' + e).join(',') + ',application/pdf,image/*';
   document.addEventListener('DOMContentLoaded', () => { const p = document.getElementById('picker'); if(p && !p.accept) p.accept = DOC_ACCEPT; });
-  window.DS = { $, $$, esc, bdi, store, icon, api, toast, DOC_EXT, DOC_RX, DOC_ACCEPT, IMG_EXT, IMG_RX, isDoc, openDrawer, closeDrawer, wireChrome, theme, ring, meter, fmtDate, fmtTs, pct };
+  window.DS = { $, $$, esc, bdi, store, icon, api, toast, confirmBox, twoStep, DOC_EXT, DOC_RX, DOC_ACCEPT, IMG_EXT, IMG_RX, ARCH_EXT, isDoc, openDrawer, closeDrawer, wireChrome, theme, ring, meter, fmtDate, fmtTs, pct };
 })();

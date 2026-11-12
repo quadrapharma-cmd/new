@@ -28,7 +28,11 @@
   const sub = (ar, en) => { const s = document.getElementById('bootSub'); if (s) s.textContent = AR ? ar : en; };
 
   const syncfs = (populate) => new Promise((res, rej) => S.pyodide.FS.syncfs(populate, e => e ? rej(e) : res()));
-  function scheduleSync() { clearTimeout(S.syncTimer); S.syncTimer = setTimeout(() => syncfs(false).catch(e => console.warn('sync', e)), 600); }
+  function scheduleSync() {                                         // as in the worker: soon after a write, and at the latest 1.5 s into a run of requests
+    const now = Date.now(); if (!S.syncSince) S.syncSince = now;
+    clearTimeout(S.syncTimer);
+    S.syncTimer = setTimeout(() => { S.syncSince = 0; syncfs(false).catch(e => console.warn('sync', e)); }, now - S.syncSince > 1500 ? 0 : 250);
+  }
 
   const nativeFetch = window.fetch.bind(window);
   const B64 = /\/assets\/.+\.(wasm|zip|whl)$/;
@@ -207,6 +211,7 @@
       return await sample.json(prompt, Object.assign({ modelTier: 'default', cache: false }, opts || {}));
     },
   };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && window.DBWEB) window.DBWEB.sync().catch(() => {}); });   // leaving the tab: write the storage now
   window.DBWEB = { sync: () => S.worker ? ask({ type: 'sync' }).then(m => { if (m.error) throw new Error(m.error); }) : syncfs(false), ready: () => S.ready, pyodide: () => S.pyodide,
     engine: () => S.worker ? 'worker' : 'page', save: saveFromApi };
 })();
