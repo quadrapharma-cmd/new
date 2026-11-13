@@ -3,6 +3,19 @@
 #   docker build -f apps/dossier-builder/deploy/Dockerfile -t dossier-builder .
 # (needs the EG provisional profiles + the ICH v4 XSD package from docs/ctd/, kept at the same relative paths)
 ARG BASE=ubuntu:24.04
+
+# PdfCraft — the program's PDF engine (docs/ctd/PDFCRAFT-INTEGRATION.md): built from its pinned release (tools/pdfcraft/PIN) without
+# its MCP server. It needs only libc at run time.
+FROM rust:1-bookworm AS pdfcraft
+RUN apt-get update && apt-get install -y --no-install-recommends cmake clang git python3 && rm -rf /var/lib/apt/lists/*
+COPY apps/dossier-builder/tools/pdfcraft/PIN apps/dossier-builder/tools/pdfcraft/licenses.py /tmp/
+RUN git init -q /src && cd /src && git remote add origin https://github.com/storytold/pdfcraft \
+    && git fetch -q --depth 1 origin "$(cat /tmp/PIN)" && git -c advice.detachedHead=false checkout -q FETCH_HEAD \
+    && test "$(git rev-parse HEAD)" = "$(cat /tmp/PIN)" \
+    && cargo build --release --locked -p pdfcraft-cli --no-default-features \
+    && mkdir /out && cp target/release/pdfcraft-cli LICENSE-MIT LICENSE-APACHE NOTICE ATTRIBUTION.md /out/ && cp -R licenses /out/ \
+    && python3 /tmp/licenses.py /src /out && cp /tmp/PIN /out/PIN
+
 FROM ${BASE}
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -25,10 +38,12 @@ COPY apps/dossier-builder/tools/serve.py apps/dossier-builder/tools/adduser.py a
 COPY docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0 docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0
 COPY docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0 docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0
 COPY docs/ctd/ectd/EU-M1-3.1.1-PROFILE docs/ctd/ectd/EU-M1-3.1.1-PROFILE
+COPY docs/ctd/ectd/GCC-M1-1.5-PROFILE docs/ctd/ectd/GCC-M1-1.5-PROFILE
+COPY --from=pdfcraft /out /opt/pdfcraft
 COPY docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip docs/ctd/sources/ectd/
 RUN useradd --system --uid 10001 --home-dir /data app && mkdir -p /data && chown app /data
 USER app
-ENV DB_MODE=cloud DB_WORKSPACE=/data PORT=8765 HOME=/data
+ENV DB_MODE=cloud DB_WORKSPACE=/data PORT=8765 HOME=/data PDFCRAFT_CLI=/opt/pdfcraft/pdfcraft-cli
 VOLUME ["/data"]
 EXPOSE 8765
 HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8765/api/health')" || exit 1

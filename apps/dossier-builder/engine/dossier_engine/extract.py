@@ -99,7 +99,14 @@ ABOUT_PRODUCT = ('spec', 'coa', 'stability', 'method', 'validation', 'bmr')     
 
 
 def pdf_text(data, max_pages=12):
-    """Text of the first pages; `scanned` when no page has text (an image-only PDF)."""
+    """Text of the first pages; `scanned` when no page has text (an image-only PDF). Read by PdfCraft (the lines in reading order,
+    Arabic in its order); by pypdf where PdfCraft is not (the browser edition)."""
+    from . import pdfcraft
+    got = pdfcraft.pdf_pages(data, max_pages)
+    if got is not None:
+        n, pages = got
+        text = '\n'.join(pages)
+        return {'pages': n, 'text': text, 'scanned': n > 0 and len(re.sub(r'\s', '', text)) < 20, 'reader': 'pdfcraft'}
     from pypdf import PdfReader
     pages = []
     try:
@@ -113,7 +120,7 @@ def pdf_text(data, max_pages=12):
     except Exception:
         n = 0
     text = '\n'.join(pages)
-    return {'pages': n, 'text': text, 'scanned': n > 0 and len(re.sub(r'\s', '', text)) < 20}
+    return {'pages': n, 'text': text, 'scanned': n > 0 and len(re.sub(r'\s', '', text)) < 20, 'reader': 'pypdf'}
 
 
 def docx_text(data):
@@ -167,7 +174,7 @@ def is_word(filename, data=None):
 
 # ---- a file is read once: its reading is kept by the file's SHA-256, in memory and in the workspace's cache folder
 READ_DIR = None            # set by the app (workspace/cache/text): a restart, or the next item's template, does not read the file again
-READ_FORMAT = 3            # the reader's own version: raise it when what a reading holds changes, so that readings kept on disk by an older reader are made again (3: no OCR)
+READ_FORMAT = 4            # the reader's own version: raise it when what a reading holds changes, so that readings kept on disk by an older reader are made again (3: no OCR; 4: PdfCraft reads the PDFs)
 _READ = {}                 # (sha, extension, max_pages) → the reading
 _READ_MAX = 300
 
@@ -184,7 +191,8 @@ def _cache_file(key):
 def read_text(name, data, max_pages=12):
     """What one uploaded file says — read once: the same bytes asked the same way give the kept reading (see _read_text)."""
     data = data or b''
-    key = (_sha(data), (name or '').lower().rsplit('.', 1)[-1][:6] if '.' in (name or '') else '', max_pages)
+    from . import pdfcraft
+    key = (_sha(data), (name or '').lower().rsplit('.', 1)[-1][:6] if '.' in (name or '') else '', max_pages, pdfcraft.reader())
     if key in _READ:
         return dict(_READ[key])
     f = _cache_file(key)

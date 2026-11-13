@@ -22,11 +22,26 @@ jobs:
           - os: macos-15-intel          # GitHub retired the macos-13 image (Dec 2025): a macos-13 job queues forever and blocks the publish
             asset: DossierBuilder-Mac-Intel.zip
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/dossier-builder/.cache
+          key: pdfcraft-${{ matrix.os }}-${{ hashFiles('apps/dossier-builder/tools/pdfcraft/PIN') }}
+      - name: PdfCraft, the PDF engine, from its pinned release (no MCP server)
+        shell: bash
+        env:
+          AWS_LC_SYS_PREBUILT_NASM: ${{ runner.os == 'Windows' && '1' || '' }}
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.os == 'macos-15-intel' && '10.15' || '' }}
+        run: |
+          rustup update stable --no-self-update
+          bash apps/dossier-builder/tools/pdfcraft/build.sh
       - name: Install
         run: python -m pip install -r apps/dossier-builder/desktop/requirements.txt pyinstaller==6.22.3
       - name: Build

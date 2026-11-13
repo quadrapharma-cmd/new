@@ -11,6 +11,10 @@ def pages_of(data, max_pages=MAX_PAGES):
     """[(page_no, text)] of a PDF; [] for non-PDF bytes. Text extraction only — no OCR here."""
     if not data or data[:4] != b'%PDF':
         return []
+    from .. import pdfcraft
+    got = pdfcraft.page_texts(data, max_pages=max_pages)
+    if got is not None:
+        return list(enumerate(got, 1))
     try:
         from pypdf import PdfReader
         r = PdfReader(io.BytesIO(data))

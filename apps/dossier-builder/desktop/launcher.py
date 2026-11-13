@@ -75,7 +75,9 @@ def smoke():
                                                    'apis': [{'name': 'A', 'manufacturer': 'B', 'option': 'CEP'}]}})
     assert call('GET', f"/api/dossiers/{d['id']}/board")['counts'], 'resolver failed'
     from dossier_engine.generate.docx_kit import find_soffice
-    print('SMOKE OK', sys.platform, 'workspace', ws, 'libreoffice', find_soffice() or 'not installed')
+    pe = call('GET', '/api/pdf-engine')                   # PdfCraft is carried in the bundle: the PDFs are read and changed by it
+    assert pe['available'] and pe['engine'] == 'PdfCraft', pe
+    print('SMOKE OK', sys.platform, 'workspace', ws, 'libreoffice', find_soffice() or 'not installed', 'pdf engine', pe['version'], pe['pin'][:7])
     server.should_exit = True
     return 0
 

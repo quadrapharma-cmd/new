@@ -6,13 +6,15 @@ operations are allowed. Every refusal is an audit event."""
 from .checks.pdf import LOCKED
 
 CONTENT_OPS = {'edit_text', 'redact', 'replace_page', 'retype', 'regenerate', 'change_image', 'translate_in_place',
-               'remove_signature', 'flatten_annotations'}
+               'remove_signature', 'flatten_annotations', 'remove_pages', 'move_pages'}
 TECH_OPS = {'rename', 'place', 'split_pages', 'merge_files', 'add_bookmarks', 'set_initial_view', 'linearise',
-            'remove_security', 'pdf_version_normalise', 'remove_javascript', 'show_bookmarks', 'inherit_zoom', 'doc_info'}
-# technical, but only the issuer may do them on evidence (they change how the document behaves)
-COMPANY_ONLY = {'remove_security', 'remove_javascript'}
-# executed records: scan placement only (02-LOGIC §6)
-EXECUTED_OPS = {'rename', 'place', 'add_bookmarks', 'pdf_version_normalise', 'show_bookmarks', 'inherit_zoom', 'doc_info'}   # nothing on a page changes      # the version line alone (fixes.set_version_17: every other byte the same)
+            'remove_security', 'pdf_version_normalise', 'remove_javascript', 'show_bookmarks', 'inherit_zoom', 'doc_info',
+            'repair', 'remove_attachments', 'remove_comments', 'reduce_size', 'rotate_pages'}
+# technical, but only the issuer may do them on evidence (they change how the document behaves, or what is in it)
+COMPANY_ONLY = {'remove_security', 'remove_javascript', 'remove_attachments', 'remove_comments', 'reduce_size'}
+# executed records: scan placement only (02-LOGIC §6); a damaged file's clean copy changes nothing on a page (it is compared page for page)
+EXECUTED_OPS = {'rename', 'place', 'add_bookmarks', 'pdf_version_normalise', 'show_bookmarks', 'inherit_zoom', 'doc_info', 'repair',
+                'rotate_pages'}                       # a scan turned the right way up: placement, not content   # nothing on a page changes      # the version line alone (fixes.set_version_17: every other byte the same)
 
 
 class LockedError(PermissionError):

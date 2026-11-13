@@ -21,16 +21,28 @@ def pattern(q):
     return re.compile(r'\s+'.join(re.escape(w) for w in words), re.I) if words else None
 
 
-def pages_of(name, data):
-    """The text of each page: a PDF page by page (a page number is what a person looks for); any other file as one page."""
+def text_key(sha):
+    """The key a document's pages of text are kept under (doc_text): the engine that read them is part of it, so pages read by pypdf
+    are read again once PdfCraft is here."""
+    from . import pdfcraft
+    return sha if pdfcraft.reader() == 'pypdf' else f'pdfcraft:{sha}'
+
+
+def pages_of(name, data, max_pages=None):
+    """The text of each page: a PDF page by page (a page number is what a person looks for), read by PdfCraft in reading order (by
+    pypdf where PdfCraft is not); any other file as one page."""
     if (data or b'')[:5] == b'%PDF-':
+        from . import pdfcraft
+        got = pdfcraft.page_texts(data, max_pages=max_pages)
+        if got is not None:
+            return got or ['']
         from pypdf import PdfReader
         try:
             rd = PdfReader(BytesIO(data), strict=False)
         except Exception:
             return ['']
         out = []
-        for p in rd.pages:
+        for p in (rd.pages[:max_pages] if max_pages else rd.pages):
             try:
                 out.append(p.extract_text() or '')
             except Exception:

@@ -343,6 +343,17 @@ const T = {
   onePdf:{en:'One PDF to review or print (bookmarks for every item)',ar:'PDF واحد للمراجعة أو الطباعة (bookmark لكل بند)'}, onePdfAll:{en:'The whole dossier',ar:'الملف كله'},
   notesT:{en:'Team notes',ar:'ملاحظات الفريق'}, notePh:{en:'A note for the team (not sent to the authority)',ar:'ملاحظة للفريق (مش بتروح للهيئة)'}, noteResolve:{en:'Resolved',ar:'اتحلّت'},
   noteReopen:{en:'Reopen',ar:'افتحها تاني'}, notesOpenL:{en:'Open team notes (a note, not a stop)',ar:'ملاحظات فريق مفتوحة (تنبيه، مش مانع)'},
+  pcPages:{en:'Pages',ar:'الصفحات'}, pcFind:{en:'Find in this document',ar:'دوّر في المستند ده'}, pcHits:{en:'{n} place(s)',ar:'{n} مكان'},
+  pcTurn:{en:'Turn this page',ar:'لف الصفحة دي'}, pcDel:{en:'Remove this page',ar:'شيل الصفحة دي'}, pcFirst:{en:'Make it the first page',ar:'خليها أول صفحة'},
+  pcNotesPdf:{en:'Notes on the pages (PDF)',ar:'الملاحظات على الصفحات (PDF)'},
+  pcPrev:{en:'Previous page',ar:'الصفحة اللي قبل'}, pcNext:{en:'Next page',ar:'الصفحة اللي بعد'}, pcOf:{en:'of',ar:'من'},
+  pcRedact:{en:'Redact for real',ar:'إخفاء حقيقي'}, pcRedactSub:{en:'The words or phrases you write here are removed from the pages for good (PdfCraft then checks nothing readable is left). The result is a new version; the original is kept.',ar:'الكلمات أو العبارات اللي تكتبها هنا بتتشال من الصفحات نهائي (وبعدها PdfCraft بيتأكد إن مفيش حاجة فاضلة بتتقري). النتيجة نسخة جديدة؛ والأصل محفوظ.'},
+  pcRedactPh:{en:'One word or phrase per line',ar:'كلمة أو عبارة في كل سطر'}, pcRedactGo:{en:'Remove them',ar:'شيلهم'},
+  pcReduce:{en:'Make smaller',ar:'صغّر الملف'}, pcReduced:{en:'Smaller: {a} → {b}',ar:'بقى أصغر: {a} ← {b}'},
+  pcSign:{en:'Sign (EU)',ar:'وقّع (أوروبا)'}, pcSignSub:{en:'Your digital ID (.p12 or .pfx) and its password are used for this one signature and never kept. EU authorities accept eIDAS signatures; the EDA eCTD does not use them (draft guidance 2.10.3).',ar:'التوقيع الرقمي بتاعك (.p12 أو .pfx) وكلمة السر بتاعته بيُستخدموا للتوقيع ده بس ومش بيتحفظوا. الجهات الأوروبية بتقبل توقيعات eIDAS؛ الـ eCTD بتاع الهيئة مش بيستخدمها (المسودة 2.10.3).'},
+  pcSignId:{en:'Digital ID (.p12 / .pfx)',ar:'التوقيع الرقمي (.p12 / .pfx)'}, pcSignPw:{en:'Its password',ar:'كلمة السر بتاعته'}, pcSignWhy:{en:'Reason (optional)',ar:'السبب (اختياري)'}, pcSignGo:{en:'Sign',ar:'وقّع'},
+  pcDone:{en:'Done — a new version',ar:'اتعمل — نسخة جديدة'}, pcMarked:{en:'The new version with the changes marked',ar:'النسخة الجديدة والتغييرات متعلّم عليها'},
+  pcEngine:{en:'PDF engine',ar:'محرك الـ PDF'}, pcWm:{en:'With «reading copy» on every page',ar:'ومكتوب «نسخة للقراءة» على كل صفحة'},
   cmpV:{en:'Compare with the previous version',ar:'قارن بالنسخة اللي قبلها'}, cmpSame:{en:'The text is the same.',ar:'النص زي ما هو.'}, cmpAdd:{en:'added',ar:'اتضاف'}, cmpDel:{en:'removed',ar:'اتشال'},
   copyT:{en:'Copy',ar:'نسخ'}, cloneT:{en:'The same product for another country',ar:'نفس المنتج لدولة تانية'},
   cloneSub:{en:'A new dossier for the country you choose: the product, its answers and data, and Modules 2–5 as they are. Module 1 is the new authority\'s own and is made there.',ar:'ملف جديد للدولة اللي تختارها: المنتج وإجاباته وبياناته، وموديول 2–5 زي ما هم. موديول 1 بتاع الهيئة الجديدة وبيتعمل هناك.'},
@@ -863,7 +874,8 @@ async function asstAsk(text){ const did=S.dossier&&S.dossier.id; if(!did) return
 window.addEventListener('hashchange', route);
 const fresh = tok => tok===undefined || tok===S.rt;
 function show(tok, html){ if(!fresh(tok)) return false; $('#view').innerHTML = html; return true; }
-async function caps(){ if(!S.caps) S.caps = await api('/capabilities'); if(!S.vocab) vocab(); $('#verTag').textContent = `v${S.caps.version} · ${S.caps.pack.id}`; return S.caps; }
+async function caps(){ if(!S.caps) S.caps = await api('/capabilities'); if(!S.vocab) vocab(); $('#verTag').textContent = `v${S.caps.version} · ${S.caps.pack.id}`;
+  const pe=S.caps.pdf_engine; if(pe) $('#verTag').title = `${t('pcEngine')}: ${pe.engine}${pe.pin?' '+pe.pin.slice(0,7):''}`; return S.caps; }
 
 /* ---------------- home: capabilities + journey + dossiers */
 function profileChips(p){
@@ -968,6 +980,31 @@ async function loadAu(){ if(!S.au){ try{ S.au=await api('/authorities'); }catch(
 const AUS = () => (S.au&&S.au.authorities)||[];
 const isEG = () => !S.dossier || !S.dossier.authority || S.dossier.authority.egypt;
 const isEU = () => !!(S.dossier && S.dossier.authority && S.dossier.authority.ectd_region==='eu');
+const pcOn = () => !!(S.caps && S.caps.pdf_engine && S.caps.pdf_engine.available);          // PdfCraft reads and changes the PDFs here
+const markIn = (line, word) => { const i=line.indexOf(word); return i<0?esc(line):esc(line.slice(0,i))+'<mark>'+esc(word)+'</mark>'+esc(line.slice(i+word.length)); };
+async function pageViewer(docId, back, own){
+  /* PdfCraft draws each page; a search lights its places up on the page (rectangles in points from the page's top-left). Turning a
+     page is for every document; removing or moving one, for the company's own. Each makes a new version, and the viewer follows it. */
+  let base=`/dossiers/${S.dossier.id}/documents/${docId}`; const dpi=110; let page=1, pages=null, hits=[];
+  openDrawer(t('pcPages'), `<div class="row gap-s"><input type="search" id="pgQ" dir="auto" class="grow" placeholder="${esc(t('pcFind'))}"><span class="small muted" id="pgHits"></span></div>
+    <div class="row gap-s"><button class="btn sm" id="pgPrev">${esc(t('pcPrev'))}</button><span class="small" id="pgNo"></span><button class="btn sm" id="pgNext">${esc(t('pcNext'))}</button><span class="grow"></span><button class="btn sm ghost" id="pgBack">${esc(t('back'))}</button></div>
+    <div class="row gap-s small"><button class="btn sm ghost" id="pgTurn">${icon('repeat',14)} ${esc(t('pcTurn'))}</button>${own?`<button class="btn sm ghost" id="pgFirst">${icon('arrow',14)} ${esc(t('pcFirst'))}</button><button class="btn sm ghost" id="pgDel">${icon('trash',14)} ${esc(t('pcDel'))}</button>`:''}<a class="btn sm ghost" id="pgNotes" href="/api${base}/notes.pdf" download>${icon('pen',14)} ${esc(t('pcNotesPdf'))}</a></div>
+    <div id="pgWrap" style="position:relative;display:inline-block;max-width:100%;border:1px solid var(--line)"><img id="pgImg" alt="" style="display:block;max-width:100%"></div>`, true);
+  const paint=()=>{ $('#pgNo').textContent=`${page}${pages?' '+t('pcOf')+' '+pages:''}`; const img=$('#pgImg'); img.src=`/api${base}/pages/${page}.png?dpi=${dpi}&v=${Date.now()}`;
+    img.onload=()=>{ $$('.pghit', $('#pgWrap')).forEach(x=>x.remove()); const k=img.clientWidth/img.naturalWidth*dpi/72;
+      hits.filter(h=>h.page===page).forEach(h=>(h.rects||[]).forEach(r=>{ const m=document.createElement('div'); m.className='pghit';
+        Object.assign(m.style,{position:'absolute',left:r[0]*k+'px',top:r[1]*k+'px',width:(r[2]-r[0])*k+'px',height:(r[3]-r[1])*k+'px',background:'rgba(255,214,0,.45)',outline:'1px solid #c90'}); $('#pgWrap').appendChild(m); })); }; };
+  $('#pgPrev').onclick=()=>{ if(page>1){ page--; paint(); } }; $('#pgNext').onclick=()=>{ if(!pages||page<pages){ page++; paint(); } };
+  $('#pgImg').onerror=()=>{ if(page>1){ pages=page-1; page--; paint(); } };
+  $('#pgBack').onclick=back;
+  const pageOp=async(body)=>{ try{ const r=await api(`${base}/pages`,{method:'POST',json:body}); docId=r.document.id; base=`/dossiers/${S.dossier.id}/documents/${docId}`;
+      $('#pgNotes').href=`/api${base}/notes.pdf`; toast(t('pcDone')); S.board=null; await refreshCurrent();
+      if(body.op==='delete'&&pages) pages=pages-1; if(body.op==='move') page=1; paint(); }catch(e){ toast(e.message); } };
+  $('#pgTurn').onclick=()=>pageOp({op:'rotate', pages:[page], degrees:90});
+  if(own){ $('#pgFirst').onclick=()=>pageOp({op:'move', pages:[page], to:1}); $('#pgDel').onclick=()=>pageOp({op:'delete', pages:[page]}); }
+  $('#pgQ').onchange=async()=>{ const q=$('#pgQ').value.trim(); if(q.length<2){ hits=[]; $('#pgHits').textContent=''; paint(); return; }
+    try{ hits=(await api(`${base}/find?q=${encodeURIComponent(q)}`)).matches||[]; $('#pgHits').textContent=t('pcHits').replace('{n}',hits.length); if(hits.length){ page=hits[0].page; } paint(); }catch(e){ toast(e.message); } };
+  paint(); }
 const isGCC = () => !!(S.dossier && S.dossier.authority && S.dossier.authority.ectd_region==='gcc');
 const euV = () => (S.dossier && S.dossier.authority && S.dossier.authority.ectd_values) || {};
 const EU_PI = {spc:'SmPC', annex2:'Annex II', outer:'Outer packaging', interpack:'Intermediate packaging', impack:'Immediate packaging', other:'Other product information', pl:'Package leaflet', combined:'Combined (SmPC + Annex II + labelling + leaflet)'};
@@ -2168,6 +2205,7 @@ function openWhy(slotId, focusTemplate){
      ${d.meta&&d.meta.external?'':`<button class="btn sm ghost" data-mvany="${d.id}">${icon('arrow',14)} ${esc(t('moveAny'))}</button>`}
      ${d.meta&&d.meta.external||!/\.pdf$/i.test(d.filename)?'':`<button class="btn sm ghost" data-split="${d.id}">${icon('scan',14)} ${esc(t('splitBtn'))}</button>`}
      ${d.version>1&&!(d.meta&&d.meta.external)?`<button class="btn sm ghost" data-cmpv="${d.id}">${icon('repeat',14)} ${esc(t('cmpV'))}</button>`:''}
+     ${pcOn()&&!(d.meta&&d.meta.external)&&/\.pdf$/i.test(d.filename)?`<button class="btn sm ghost" data-pgv="${d.id}">${icon('eye',14)} ${esc(t('pcPages'))}</button>${locked?'':`<button class="btn sm ghost" data-red="${d.id}">${icon('shield',14)} ${esc(t('pcRedact'))}</button><button class="btn sm ghost" data-rdc="${d.id}">${icon('download',14)} ${esc(t('pcReduce'))}</button>${isEU()?`<button class="btn sm ghost" data-sig="${d.id}">${icon('stamp',14)} ${esc(t('pcSign'))}</button>`:''}`}`:''}
      <button class="btn sm ghost" data-notes="${d.id}">${icon('pen',14)} ${esc(t('notesT'))}</button><div class="notes" data-noteswrap="${d.id}" hidden></div>
      <button class="btn sm ghost" data-wd="${d.id}">${icon('trash',14)} ${esc(t('withdraw'))}</button></div></div>`).join('')
     + (s.documents.filter(d=>/\.pdf$/i.test(d.filename)&&!(d.meta&&d.meta.external)).length>1?`<div><button class="btn sm" id="mergeBtn">${icon('file',14)} ${esc(t('mergeBtn'))}</button></div>`:'')
@@ -2219,9 +2257,25 @@ function openWhy(slotId, focusTemplate){
   $$('[data-notes]', body).forEach(b=>b.onclick=()=>paintNotes(b.dataset.notes));
   $$('[data-cmpv]', body).forEach(b=>b.onclick=async()=>{ let r; try{ r=await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.cmpv}/compare`); }catch(e){ toast(e.message); return; }
     openDrawer(t('cmpV'), `<p class="small muted">${bdi(r.old.filename)} (${esc(t('version'))} ${r.old.version}) → ${bdi(r.new.filename)} (${esc(t('version'))} ${r.new.version})</p>
-      ${r.same?`<div class="alert ok"><p class="small">${esc(t('cmpSame'))}</p></div>`:`<div class="stack gap-s">${r.changes.map(c=>`<div class="small cmp-${c.op}"><span class="tag">${esc(t(c.op==='added'?'cmpAdd':'cmpDel'))} · ${esc(t('srchPage'))} ${c.page}</span> <span dir="auto">${esc(c.text)}</span></div>`).join('')}</div>`}
-      <div><button class="btn ghost" id="cmpBack">${esc(t('back'))}</button></div>`, true);
+      ${r.same?`<div class="alert ok"><p class="small">${esc(t('cmpSame'))}</p></div>`:`<div class="stack gap-s">${r.changes.map(c=>`<div class="small cmp-${c.op}"><span class="tag">${esc(t(c.op==='added'?'cmpAdd':'cmpDel'))} · ${esc(t('srchPage'))} ${c.page}</span> <span dir="auto">${c.line?markIn(c.line,c.text):`<b>${esc(c.text)}</b>`}</span></div>`).join('')}</div>`}
+      <div class="row gap-s">${r.marked?`<a class="btn" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${b.dataset.cmpv}/compare.pdf">${icon('eye',14)} ${esc(t('pcMarked'))}</a>`:''}<button class="btn ghost" id="cmpBack">${esc(t('back'))}</button></div>`, true);
     $('#cmpBack').onclick=()=>openWhy(slotId); });
+  $$('[data-pgv]', body).forEach(b=>b.onclick=()=>pageViewer(b.dataset.pgv, ()=>openWhy(slotId), !locked));
+  $$('[data-red]', body).forEach(b=>b.onclick=()=>{ openDrawer(t('pcRedact'), `<p class="small muted">${esc(t('pcRedactSub'))}</p><textarea id="redW" rows="5" dir="auto" placeholder="${esc(t('pcRedactPh'))}"></textarea>
+      <div class="row gap-s"><button class="btn pri" id="redGo">${icon('shield',14)} ${esc(t('pcRedactGo'))}</button><button class="btn ghost" id="redBack">${esc(t('back'))}</button></div>`);
+    $('#redBack').onclick=()=>openWhy(slotId);
+    $('#redGo').onclick=async()=>{ const words=$('#redW').value.split('\n').map(x=>x.trim()).filter(Boolean); if(!words.length) return;
+      try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.red}/redact`,{method:'POST',json:{words}}); toast(t('pcDone')); S.board=null; await refreshCurrent(slotId); openWhy(slotId); }catch(e){ toast(e.message); } }; });
+  $$('[data-rdc]', body).forEach(b=>b.onclick=async()=>{ b.disabled=true; try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.rdc}/reduce`,{method:'POST'});
+      const mb=x=>(x/1048576).toFixed(1)+' MB'; toast(t('pcReduced').replace('{a}',mb(r.reduced[0])).replace('{b}',mb(r.reduced[1]))); S.board=null; await refreshCurrent(slotId); openWhy(slotId); }catch(e){ toast(e.message); b.disabled=false; } });
+  $$('[data-sig]', body).forEach(b=>b.onclick=()=>{ openDrawer(t('pcSign'), `<p class="small muted">${esc(t('pcSignSub'))}</p>
+      <label class="f"><span>${esc(t('pcSignId'))}</span><input type="file" id="sigId" accept=".p12,.pfx,application/x-pkcs12"></label>
+      <label class="f"><span>${esc(t('pcSignPw'))}</span><input type="password" id="sigPw" autocomplete="off"></label>
+      <label class="f"><span>${esc(t('pcSignWhy'))}</span><input type="text" id="sigWhy" dir="auto"></label>
+      <div class="row gap-s"><button class="btn pri" id="sigGo">${icon('stamp',14)} ${esc(t('pcSignGo'))}</button><button class="btn ghost" id="sigBack">${esc(t('back'))}</button></div>`);
+    $('#sigBack').onclick=()=>openWhy(slotId);
+    $('#sigGo').onclick=async()=>{ const f=$('#sigId').files[0]; if(!f) return; const fd=new FormData(); fd.append('p12', f); fd.append('password', $('#sigPw').value); fd.append('reason', $('#sigWhy').value);
+      try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.sig}/sign`,{method:'POST',body:fd}); $('#sigPw').value=''; toast(t('pcDone')); S.board=null; await refreshCurrent(slotId); openWhy(slotId); }catch(e){ toast(e.message); } }; });
   const mb=$('#mergeBtn', body); if(mb) mb.onclick=()=>mergeDocs(s);
   const fs=$('#fromSeq', body); if(fs) fs.onclick=async()=>{ let v; try{ v=await api(`/dossiers/${S.dossier.id}/views?output=ectd32`); }catch(e){ toast(e.message); return; }
     const nodes=new Set(s.ectd||[]); const opts=v.sequences.filter(q=>q.frozen).flatMap(q=>q.leaves.filter(x=>nodes.has(x.node)&&x.op!=='delete'&&x.href&&!x.href.startsWith('../')).map(x=>({...x, seq:q.seq})));
@@ -2827,7 +2881,7 @@ async function exportView(tok){
      <div class="row"><a class="btn sm" href="#/d/${id}/board">${esc(t('navBoard'))}</a><a class="btn sm" href="#/d/${id}/checks">${esc(t('navChecks'))}</a></div></div>`}
    <div class="card glow pad stack gap-s" id="wkCard"><div class="row gap-s"><span class="ic-tile accent">${icon('package',16)}</span><div class="grow"><b>${esc(t('wkBtn'))}</b><div class="small muted">${esc(t('wkSub'))}</div></div>
      <button class="btn ${g.ok?'':'pri'}" id="wkGo">${icon('download')} ${esc(t('wkBtn'))}</button></div><div id="wkRes"></div>
-     <div class="row gap-s small" style="flex-wrap:wrap" id="onePdf"><span class="muted">${esc(t('onePdf'))}:</span><a class="btn sm" href="/api/dossiers/${id}/single.pdf" download>${esc(t('onePdfAll'))}</a>${[1,2,3,4,5].map(m=>`<a class="btn sm ghost" href="/api/dossiers/${id}/single.pdf?module=${m}" download>${esc(t('module'))} ${m}</a>`).join('')}</div></div>
+     <div class="row gap-s small" style="flex-wrap:wrap" id="onePdf"><span class="muted">${esc(t('onePdf'))}:</span><a class="btn sm" href="/api/dossiers/${id}/single.pdf" download>${esc(t('onePdfAll'))}</a>${[1,2,3,4,5].map(m=>`<a class="btn sm ghost" href="/api/dossiers/${id}/single.pdf?module=${m}" download>${esc(t('module'))} ${m}</a>`).join('')}${pcOn()?`<a class="btn sm ghost" href="/api/dossiers/${id}/single.pdf?watermark=${encodeURIComponent('Reading copy - not for submission')}" download>${esc(t('pcWm'))}</a>`:''}</div></div>
    <div class="card"><div class="hd"><span class="ic-tile">${icon('package',16)}</span><h2>${esc(t('outputsT'))}</h2></div><div class="pad stack gap-s">
      ${outs.map(([k,l,d,src])=>`<label class="opt"><input type="checkbox" data-out="${k}" checked><span><b>${esc(l)}</b><span>${esc(d)}</span><span class="code muted">${esc(src)}</span></span></label>`).join('')}
      ${eg||eu||isGCC()?'':`<div class="alert info" id="ctdOnly">${icon('info')}<p class="small">${esc(t('auCtdOnly'))}</p></div>`}<div id="ctyRow"></div></div></div>

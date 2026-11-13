@@ -69,6 +69,13 @@ def iq(workspace):
     so = find_soffice()
     _row(rows, 'IQ-07', 'Office converter (Word → PDF), optional', 'present, or the page says Word stays Word', so or 'not installed',
          True, kind='pass' if so else 'info')
+    from . import pdfcraft
+    pe = pdfcraft.status()
+    vendored = APP / 'vendor' / 'pdfcraft' / 'PIN'
+    same = not vendored.exists() or vendored.read_text().strip() == pe['pin']
+    _row(rows, 'IQ-09', 'PDF engine: PdfCraft at its pinned release (tools/pdfcraft/PIN)', f"PdfCraft {(pe['pin'] or '')[:7]}",
+         (f"{pe['version']} · {(pe['pin'] or '')[:7]}" if pe['available'] else f"pypdf — {pe['why']}") + ('' if same else ' · the built program is another commit'),
+         same, kind='pass' if pe['available'] or not same else 'info')
     try:
         probe = Path(workspace) / f'.iq-{os.getpid()}'
         probe.write_text('x')
@@ -77,6 +84,20 @@ def iq(workspace):
     except OSError as e:
         _row(rows, 'IQ-08', 'The workspace can be written', 'write and remove a file', str(e), False)
     return rows
+
+
+def _raw_pdf(stream):
+    """One A4 page in Helvetica with the given content (no library needed)."""
+    objs = [b'<< /Type /Catalog /Pages 2 0 R >>', b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+            b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+            b'<< /Length %d >>\nstream\n' % len(stream) + stream + b'\nendstream', b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>']
+    o, offs = bytearray(b'%PDF-1.4\n'), []
+    for i, x in enumerate(objs, 1):
+        offs.append(len(o))
+        o += b'%d 0 obj\n' % i + x + b'\nendobj\n'
+    xr = len(o)
+    o += b'xref\n0 %d\n0000000000 65535 f \n' % (len(objs) + 1) + b''.join(b'%010d 00000 n \n' % f for f in offs)
+    return bytes(o + b'trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n' % (len(objs) + 1, xr))
 
 
 def _pdf(path, lines):
@@ -158,6 +179,15 @@ def oq():
         g = st.gate(did)
         _row(rows, 'OQ-10', 'The export gate holds a dossier with required documents missing (negative control)', 'blocked',
              f'{"open" if g["ok"] else "blocked"} · {len(g["missing_required"])} required missing', not g['ok'] and bool(g['missing_required']))
+        from . import pdfcraft
+        if pdfcraft.available():                         # the PDF engine: a faux redaction found, and the text read in its order
+            box = tmp / 'faux.pdf'
+            box.write_bytes(_raw_pdf(b'BT /F1 12 Tf 60 780 Td (OQ document of the Dossier Builder) Tj ET\n'
+                                     b'BT /F1 12 Tf 60 700 Td (Confidential price: EGP 45.00 per pack) Tj ET\n0 g 55 695 260 18 re f\n'))
+            rep = pdf_check(str(box), 'company_technical')
+            faux = [f for f in rep.findings if f.rule == 'PDF-REDACT']
+            _row(rows, 'OQ-11', 'PdfCraft finds a faux redaction (a black box over text that can still be read)', 'PDF-REDACT',
+                 f"{len(faux)} found · engine {rep.info.get('engine')}", bool(faux) and rep.info.get('engine') == 'pdfcraft')
     except Exception as e:                                # noqa: BLE001 — a check that cannot run is a failed check, said
         _row(rows, 'OQ-ERR', 'The scripted checks ran to the end', 'no error', f'{type(e).__name__}: {e}', False)
     finally:

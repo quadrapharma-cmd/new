@@ -105,8 +105,25 @@ def relink(base, placed, earlier=None):
         if changed:
             buf = io.BytesIO()
             w.write(buf)
+            if not _opens_with_links(buf.getvalue(), path.read_bytes()):
+                out['unresolved'].append({'file': rel, 'link': '*', 'why': 'PdfCraft could not read the file with its links rewritten; the file is left as it was'})
+                continue
             path.write_bytes(buf.getvalue())
     return out
+
+
+def _opens_with_links(new, old):
+    """PdfCraft (where it is here) reads the rewritten file and finds as many links as before. PdfCraft has no tool that writes a link
+    to another file (a GoToR action), so the link is written as before (pypdf) and PdfCraft checks the result."""
+    from . import pdfcraft
+    if not pdfcraft.available():
+        return True
+    a = pdfcraft.query(new, [('link_list', {})])
+    b = pdfcraft.query(old, [('link_list', {})])
+    if a is None:
+        return False
+    count = lambda q: int(((q or {}).get('link_list') or {}).get('count') or 0)
+    return b is None or count(a) == count(b)
 
 
 def earlier_targets(history, names_of):

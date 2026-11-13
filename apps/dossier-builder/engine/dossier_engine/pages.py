@@ -69,11 +69,21 @@ def ranges_from_starts(starts, n):
     return [(a, (s[k + 1] - 1) if k + 1 < len(s) else n) for k, a in enumerate(s)]
 
 
+def count(data):
+    """The number of pages (PdfCraft; pypdf where it is not)."""
+    from . import pdfcraft
+    n = pdfcraft.page_count(data)
+    if n is not None:
+        return n
+    from pypdf import PdfReader
+    return len(PdfReader(BytesIO(data), strict=False).pages)
+
+
 def split(data, ranges):
-    """The PDF of each page range (1-based, inclusive). Ranges must cover the pages in order without overlap."""
-    from pypdf import PdfReader, PdfWriter
-    rd = PdfReader(BytesIO(data), strict=False)
-    n = len(rd.pages)
+    """The PDF of each page range (1-based, inclusive). Ranges must cover the pages in order without overlap. PdfCraft copies each
+    part with the links, bookmarks and fields of its pages; pypdf, where PdfCraft is not, copies the pages."""
+    from . import pdfcraft
+    n = count(data)
     want = 1
     for a, b in ranges:
         if a != want or b < a or b > n:
@@ -81,6 +91,10 @@ def split(data, ranges):
         want = b + 1
     if want != n + 1:
         raise ValueError(f'pages {want}–{n} are left out')
+    if pdfcraft.available():
+        return pdfcraft.split(data, ranges)
+    from pypdf import PdfReader, PdfWriter
+    rd = PdfReader(BytesIO(data), strict=False)
     out = []
     for a, b in ranges:
         w = PdfWriter()
@@ -97,11 +111,17 @@ def bound(parts, title, left_out=()):
     document a bookmark. parts: [(module_label, item_label, doc_label, pdf_bytes)]."""
     import tempfile
     from pathlib import Path
-    from pypdf import PdfReader, PdfWriter
+    from . import pdfcraft
     from .generate.docx_kit import text_pdf
-    w = PdfWriter()
     tmp = Path(tempfile.mkdtemp()) / 'first.pdf'
     first = Path(text_pdf([title, ''] + ([f'Left out (not PDF): {x}' for x in left_out] or ['Every document is included.']), tmp)).read_bytes()
+    if pdfcraft.available():
+        try:
+            return _bound_pdfcraft(first, parts)
+        except pdfcraft.PdfCraftError:
+            pass                                           # the earlier way below
+    from pypdf import PdfReader, PdfWriter
+    w = PdfWriter()
     for p in PdfReader(BytesIO(first)).pages:
         w.add_page(p)
     marks, cur_mod, cur_item = {}, None, None
@@ -126,8 +146,45 @@ def bound(parts, title, left_out=()):
     return buf.getvalue()
 
 
+def _bound_pdfcraft(first, parts):
+    """The reading copy by PdfCraft: the files combined, each document's own bookmarks kept under its entry, the entries arranged as
+    module ▸ item ▸ document, and the copy opening with its bookmarks."""
+    from . import pdfcraft
+    ok = []
+    for mod, item, doc, data in parts:
+        n = pdfcraft.page_count(data)
+        if n:                                              # a part that cannot be read is left out, as before
+            ok.append((mod, item, doc, data, n))
+    with pdfcraft.Job() as j:
+        names = [j.put('p0000.pdf', first)] + [j.put(f'p{k:04d}.pdf', d[3]) for k, d in enumerate(ok, 1)]
+        j.steps.append({'tool': 'doc_combine', 'args': {'paths': names, 'out': 'combined.pdf', 'open': False}})
+        j.step('doc_open', path='combined.pdf')
+        j.step('bookmark_delete', doc=1, path=[1])           # the first page's own entry
+        page = 1 + pdfcraft.page_count(first)
+        mods, cur_mod, cur_item, items = 0, None, None, 0
+        for mod, item, doc, data, n in ok:
+            if mod != cur_mod:
+                mods += 1
+                j.step('bookmark_add', doc=1, title=mod, page=page, position=mods)
+                cur_mod, cur_item, items = mod, None, 0
+            if item != cur_item:
+                items += 1
+                j.step('bookmark_add', doc=1, title=item, page=page, parent=[mods])
+                cur_item = item
+            j.step('bookmark_rename', doc=1, path=[mods + 1], title=doc)        # this file's entry: the first after the modules
+            j.step('bookmark_move', doc=1, path=[mods + 1], parent=[mods, items])
+            page += n
+        j.step('doc_initial_view', doc=1, navigation='bookmarks')
+        j.step('doc_save', doc=1, path='bound.pdf', full=True)
+        j.run()
+        return j.read('bound.pdf')
+
+
 def merge(datas):
-    """One PDF of all the given PDFs' pages, in the order given."""
+    """One PDF of all the given PDFs' pages, in the order given (PdfCraft keeps each file's bookmarks; pypdf where it is not)."""
+    from . import pdfcraft
+    if pdfcraft.available():
+        return pdfcraft.combine(list(datas))
     from pypdf import PdfReader, PdfWriter
     w = PdfWriter()
     for data in datas:

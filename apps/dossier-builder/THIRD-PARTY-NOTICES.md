@@ -4,7 +4,14 @@ Code in this program that comes from other projects, with each project's licence
 
 ## PdfCraft — https://github.com/storytold/pdfcraft (MIT OR Apache-2.0; used under MIT)
 
-Used in `engine/dossier_engine/validators/ectd32_eu.py` (`permissions`): reading a PDF's `/P` permission flags the way the security
+**The program's PDF engine** (docs/ctd/PDFCRAFT-INTEGRATION.md): the PdfCraft command-line program, release v0.21.1 (commit in
+`tools/pdfcraft/PIN`), built from source without its MCP server by `tools/pdfcraft/build.sh` and carried beside the engine in the desktop
+and company editions (`vendor/pdfcraft/`, never committed). Shipped with it: PdfCraft's `LICENSE-MIT`, `LICENSE-APACHE`, `NOTICE`,
+`ATTRIBUTION.md` and `licenses/`, and `THIRD-PARTY-LICENSES.txt` — every crate compiled into it with its own licence and notice files
+(written at build time by `tools/pdfcraft/licenses.py`; all permissive: MIT, Apache-2.0, BSD, ISC, Zlib, Unicode-3.0, Unlicense, BSL-1.0).
+The ArtCraft name, wordmark and logos are not covered by PdfCraft's licence and are not used.
+
+Also used in `engine/dossier_engine/validators/ectd32_eu.py` (`permissions`): reading a PDF's `/P` permission flags the way the security
 handler's revision reads them (ISO 32000-1:2008 Table 22), ported from Rust (`crates/crypt/src/lib.rs`) to Python and shortened.
 
 ```

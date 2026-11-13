@@ -38,6 +38,13 @@ GEN = {  # kind -> (function, requirement id)
 }
 
 
+
+def _cd(name, inline=False):
+    """Content-Disposition for a file name in any script (Arabic included): an ASCII stand-in and the UTF-8 name (RFC 6266/5987)."""
+    from urllib.parse import quote
+    ascii_name = ''.join(ch if 32 <= ord(ch) < 127 and ch not in '"\\' else '_' for ch in name) or 'file'
+    return f"{'inline' if inline else 'attachment'}; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(name)}"
+
 def err(status, code, en, ar, **extra):
     raise HTTPException(status, detail={'code': code, 'en': en, 'ar': ar, **extra})
 
@@ -513,8 +520,53 @@ def create_app(workspace, auth_enabled=None):
             err(422, 'E-OUTPUT', 'ectd32 or ectd40.', 'ectd32 أو ectd40.')
         return st.views(did, output)
 
+    @app.get('/api/pdf-engine')
+    def pdf_engine():
+        """Which engine reads and changes the PDFs here: PdfCraft (desktop and company editions) or pypdf (the browser edition)."""
+        from .. import pdfcraft as _pdfcraft
+        return _pdfcraft.status()
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/pages/{page}.png')
+    def page_png(did: str, doc_id: str, page: int, dpi: int = 96):
+        """One page of a document drawn as a picture (PdfCraft) — the viewer."""
+        return Response(st.page_image(did, doc_id, page, dpi), media_type='image/png', headers={'Cache-Control': 'private, max-age=3600'})
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/find')
+    def find_in_doc(did: str, doc_id: str, q: str = ''):
+        """Where a phrase is in one document: page and rectangles, to light it up on the page (PdfCraft)."""
+        return st.find_in_document(did, doc_id, q)
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/redact', status_code=201)
+    def redact_doc(did: str, doc_id: str, body: dict):
+        """Real redaction of words or phrases in a company document (PdfCraft removes them for good and checks nothing readable is left):
+        a new version."""
+        return st.pdf_operation(did, doc_id, 'redact', words=list(body.get('words') or []))
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/pages', status_code=201)
+    def pages_op(did: str, doc_id: str, body: dict):
+        """Turn (every document), remove or move (the company's own) pages: {op: rotate|delete|move, pages: [..], degrees, to}."""
+        return st.page_operation(did, doc_id, str(body.get('op') or ''), body.get('pages') or [], body.get('degrees', 90), body.get('to'))
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/notes.pdf')
+    def notes_pdf(did: str, doc_id: str):
+        """The document with the team's notes as PDF comments on their pages — for reading or a review, never filed."""
+        data, name = st.notes_copy(did, doc_id)
+        stem = name.rsplit('.', 1)[0] if '.' in name else name
+        return Response(data, media_type='application/pdf', headers={'Content-Disposition': _cd(f'{stem} (notes).pdf')})
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/reduce', status_code=201)
+    def reduce_doc(did: str, doc_id: str):
+        """A smaller file (PdfCraft: images above 225 ppi brought to 150 ppi): a new version, when it is smaller."""
+        return st.pdf_operation(did, doc_id, 'reduce_size')
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/sign', status_code=201)
+    async def sign_doc(did: str, doc_id: str, p12: UploadFile = File(...), password: str = Form(''), reason: str = Form(''),
+                       location: str = Form('')):
+        """EU only: sign a company document with the person's own digital ID (.p12/.pfx), used for this call and never kept."""
+        return st.pdf_operation(did, doc_id, 'sign', p12=await p12.read(), password=password, reason=reason, location=location)
+
     @app.get('/api/dossiers/{did}/single.pdf')
-    def single_pdf(did: str, module: int = None):
+    def single_pdf(did: str, module: int = None, watermark: str = None):
         """The whole dossier (or one module) as one PDF for a review or for printing, with a bookmark for every module, item and
         document (updates list, item 38)."""
         from .. import pages as _pages
@@ -533,6 +585,10 @@ def create_app(workspace, auth_enabled=None):
             err(404, 'E-EMPTY', 'No PDF documents there yet.', 'مفيش مستندات PDF هنا لسه.')
         title = f"{d['name']} — " + (f'Module {module}' if module else 'the whole dossier')
         out = _pages.bound(parts, title, left)
+        if watermark:                                    # a reading copy that says so on every page (PdfCraft)
+            from .. import pdfcraft as _pdfcraft
+            if _pdfcraft.available():
+                out = _pdfcraft.watermark(out, watermark[:80]) or out
         name = re.sub(r'[^\w.-]+', '_', d['name'])[:60] + (f'-module-{module}' if module else '-dossier') + '.pdf'
         return Response(out, media_type='application/pdf', headers={'Content-Disposition': f'attachment; filename="{name}"'})
 
@@ -556,6 +612,13 @@ def create_app(workspace, auth_enabled=None):
     def compare_versions(did: str, doc_id: str, against: str = None):
         """What changed from the version this document replaced (or `against`): removed and added lines with their pages."""
         return st.compare_versions(did, doc_id, against)
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/compare.pdf')
+    def compare_marked(did: str, doc_id: str, against: str = None):
+        """The newer version with the changes marked on its pages (PdfCraft)."""
+        data, name = st.compare_marked(did, doc_id, against)
+        stem = name.rsplit('.', 1)[0] if '.' in name else name
+        return Response(data, media_type='application/pdf', headers={'Content-Disposition': _cd(f'{stem} (changes).pdf', inline=True)})
 
     @app.get('/api/dossiers/{did}/search')
     def search_docs(did: str, q: str = '', budget: float = 6.0):
@@ -794,7 +857,8 @@ def create_app(workspace, auth_enabled=None):
         doc_types = yload(TYPES_FILE.read_text(encoding='utf-8'))['types']
         from ..assistant import settings as _asettings
         import importlib.util
-        return {'version': app.version, 'workspace': str(st.root), 'assistant': _asettings.status(st.root),
+        from .. import pdfcraft as _pdfcraft
+        return {'version': app.version, 'workspace': str(st.root), 'assistant': _asettings.status(st.root), 'pdf_engine': _pdfcraft.status(),
                 'drive': __import__('dossier_engine.drive', fromlist=['status']).status(st.root),
                 'dossiers': st.db.execute('select count(*) from dossier').fetchone()[0],
                 'pack': {'id': pack.id, 'title': pack.meta['title'], 'status': pack.meta['status'],
@@ -1165,8 +1229,7 @@ def create_app(workspace, auth_enabled=None):
     @app.get('/api/dossiers/{did}/unplaced')
     def unplaced_list(did: str):
         """Uploaded files that are not in an item yet, each with where the program thinks it belongs."""
-        from io import BytesIO
-        from pypdf import PdfReader
+        from .. import search as _search
         d = st.dossier(did)
         clf = Classifier(st.pack(d['pack']))
         slots = st.slots(did)
@@ -1175,8 +1238,8 @@ def create_app(workspace, auth_enabled=None):
             text = ''
             try:
                 data = st.blob_path(doc['sha256']).read_bytes()
-                rd = PdfReader(BytesIO(data), strict=False)
-                text = ' '.join((p.extract_text() or '') for p in rd.pages[:2])
+                if data[:5] == b'%PDF-':
+                    text = ' '.join(_search.pages_of(doc['filename'], data, max_pages=2))
             except Exception:
                 pass
             text = text or (doc.get('meta') or {}).get('text') or ''

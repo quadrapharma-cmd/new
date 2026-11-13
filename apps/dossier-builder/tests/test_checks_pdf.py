@@ -133,7 +133,8 @@ def test_generated_is_editable():
 
 
 def test_pdf_properties_for_an_ectd_and_their_automatic_fix(tmp_path):
-    """Items 26 and 48: a font not embedded (the 14 standard ones need not be), bookmarks without their panel, links with their own
+    """Items 26 and 48: a font not embedded (the 14 standard ones, and fonts every reader has such as Arial, need not be — ICH
+    eCTD specification App. 7), bookmarks without their panel, links with their own
     zoom, no title — all eCTD readiness; what does not change a page is fixed automatically."""
     from pypdf import PdfReader, PdfWriter
     from pypdf.generic import NameObject, DictionaryObject, ArrayObject, NumberObject, FloatObject, TextStringObject
@@ -144,9 +145,9 @@ def test_pdf_properties_for_an_ectd_and_their_automatic_fix(tmp_path):
     pg = w.pages[0]
     font = pg['/Resources']['/Font']
     key = list(font.keys())[0]
-    desc = DictionaryObject({NameObject('/Type'): NameObject('/FontDescriptor'), NameObject('/FontName'): NameObject('/ArialMT'),
+    desc = DictionaryObject({NameObject('/Type'): NameObject('/FontDescriptor'), NameObject('/FontName'): NameObject('/Calibri'),
                              NameObject('/Flags'): NumberObject(32)})
-    font[key].get_object().update({NameObject('/BaseFont'): NameObject('/ArialMT'), NameObject('/Subtype'): NameObject('/TrueType'),
+    font[key].get_object().update({NameObject('/BaseFont'): NameObject('/Calibri'), NameObject('/Subtype'): NameObject('/TrueType'),
                                    NameObject('/FontDescriptor'): w._add_object(desc)})
     w.add_outline_item('1.1 Introduction', 0)
     link = DictionaryObject({NameObject('/Type'): NameObject('/Annot'), NameObject('/Subtype'): NameObject('/Link'),
@@ -158,7 +159,7 @@ def test_pdf_properties_for_an_ectd_and_their_automatic_fix(tmp_path):
     r = check(str(p), 'company_technical')
     got = {f.rule: f for f in r.findings}
     assert {'PDF-FONTS', 'PDF-VIEW', 'PDF-ZOOM', 'PDF-INFO'} <= set(got) and r.status == 'conforming'          # readiness only
-    assert 'ArialMT' in got['PDF-FONTS'].en and got['PDF-FONTS'].action == 'user_fix' and r.info['fonts'] == 'not_embedded'
+    assert 'Calibri' in got['PDF-FONTS'].en and got['PDF-FONTS'].action == 'user_fix' and r.info['fonts'] == 'not_embedded'
     assert all(got[k].scope == 'ectd' for k in ('PDF-FONTS', 'PDF-VIEW', 'PDF-ZOOM', 'PDF-INFO'))
     fixes.DOC_INFO = {'/Title': '3.2.P.8.1 Stability summary', '/Subject': '3.2.P.8.1'}
     out = fixes.apply(p, [f.to_dict() for f in r.findings], 'company_technical')

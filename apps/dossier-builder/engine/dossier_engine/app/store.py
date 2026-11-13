@@ -96,6 +96,20 @@ MIGRATIONS = [
 ]
 
 
+def _line_with(pages, page, text):
+    """The line of `page` that holds `text` (a changed word in its sentence), or None."""
+    try:
+        lines = (pages[int(page) - 1] or '').splitlines()
+    except (TypeError, ValueError, IndexError):
+        return None
+    want = ' '.join(str(text).split())
+    for ln in lines:
+        ln = ' '.join(ln.split())
+        if want and want in ln:
+            return ln[:300]
+    return None
+
+
 class StoreError(ValueError):
     def __init__(self, code, en, ar, **extra):
         self.code, self.en, self.ar, self.extra = code, en, ar, extra
@@ -598,8 +612,9 @@ class Store:
             raise StoreError('E-QUERY', 'Type at least two characters.', 'اكتب حرفين على الأقل.')
         slots = {s.slot_id: s for s in self.slots(did)}
         docs = [x for x in self.documents(did) if not x['meta'].get('external')]
-        known = {r['sha256']: json.loads(r['pages']) for r in self.db.execute(
-            'select sha256, pages from doc_text where sha256 in (%s)' % ','.join('?' * len(docs)), [x['sha256'] for x in docs]).fetchall()} if docs else {}
+        keys = {_search.text_key(x['sha256']): x['sha256'] for x in docs}
+        known = {keys[r['sha256']]: json.loads(r['pages']) for r in self.db.execute(
+            'select sha256, pages from doc_text where sha256 in (%s)' % ','.join('?' * len(keys)), list(keys)).fetchall()} if docs else {}
         t0, pending, hits, n = time.time(), 0, [], 0
         for x in docs:
             pages = known.get(x['sha256'])
@@ -609,7 +624,7 @@ class Store:
                     continue
                 pages = _search.pages_of(x['filename'], self.blob_path(x['sha256']).read_bytes())
                 known[x['sha256']] = pages
-                self.db.execute('insert or replace into doc_text values (?,?,?)', (x['sha256'], json.dumps(pages, ensure_ascii=False), time.time()))
+                self.db.execute('insert or replace into doc_text values (?,?,?)', (_search.text_key(x['sha256']), json.dumps(pages, ensure_ascii=False), time.time()))
                 self.db.commit()
             found = _search.find(pages, rx)
             if found and n < _search.MAX_HITS:
@@ -860,11 +875,12 @@ class Store:
     def text_pages(self, doc):
         """A document's pages of text, read once and kept (the same store the search uses)."""
         from .. import search as _search
-        r = self.db.execute('select pages from doc_text where sha256=?', (doc['sha256'],)).fetchone()
+        key = _search.text_key(doc['sha256'])
+        r = self.db.execute('select pages from doc_text where sha256=?', (key,)).fetchone()
         if r:
             return json.loads(r['pages'])
         pages = _search.pages_of(doc['filename'], self.blob_path(doc['sha256']).read_bytes())
-        self.db.execute('insert or replace into doc_text values (?,?,?)', (doc['sha256'], json.dumps(pages, ensure_ascii=False), time.time()))
+        self.db.execute('insert or replace into doc_text values (?,?,?)', (key, json.dumps(pages, ensure_ascii=False), time.time()))
         self.db.commit()
         return pages
 
@@ -884,9 +900,43 @@ class Store:
             if not r:
                 raise StoreError('E-NO-VERSION', 'This document replaced no earlier version.', 'المستند ده ما حلّش محل نسخة قبله.')
             old = self.document(r['id'])
-        ch = _search.diff(self.text_pages(old), self.text_pages(new))
         brief = lambda d: {k: d[k] for k in ('id', 'filename', 'version', 'created')}
-        return {'old': brief(old), 'new': brief(new), 'changes': ch, 'same': not ch}
+        a, b = self._blob_or_none(old), self._blob_or_none(new)
+        from .. import pdfcraft
+        if a and b and a[:5] == b[:5] == b'%PDF-' and pdfcraft.available():
+            try:                                         # PdfCraft: word by word, each change with its page and its place on it
+                r = pdfcraft.compare(a, b, limit=400)
+                pa, pb = self.text_pages(old), self.text_pages(new)
+                ch = []
+                for c in r.get('changes') or []:
+                    o, n = c.get('old') or {}, c.get('new') or {}
+                    if o.get('text'):
+                        ch.append({'op': 'removed', 'text': o['text'], 'page': o.get('page'), 'rects': o.get('rects') or [],
+                                   'line': _line_with(pa, o.get('page'), o['text'])})
+                    if n.get('text'):
+                        ch.append({'op': 'added', 'text': n['text'], 'page': n.get('page'), 'rects': n.get('rects') or [],
+                                   'line': _line_with(pb, n.get('page'), n['text'])})
+                return {'old': brief(old), 'new': brief(new), 'changes': ch, 'same': not ch, 'engine': 'pdfcraft', 'marked': True}
+            except pdfcraft.PdfCraftError:
+                pass
+        ch = _search.diff(self.text_pages(old), self.text_pages(new))
+        return {'old': brief(old), 'new': brief(new), 'changes': ch, 'same': not ch, 'engine': 'text', 'marked': False}
+
+    def _blob_or_none(self, d):
+        try:
+            return self.blob_path(d['sha256']).read_bytes() if d.get('sha256') else None
+        except OSError:
+            return None
+
+    def compare_marked(self, did, doc_id, against=None):
+        """The newer version with what changed from the older one marked on its pages (PdfCraft: blue replaced, green inserted, red
+        deleted) — a copy to read, never stored as a version."""
+        from .. import pdfcraft
+        info = self.compare_versions(did, doc_id, against)
+        if not info.get('marked'):
+            raise StoreError('E-PDFCRAFT', 'A marked copy needs PdfCraft and two PDF versions.', 'النسخة المتعلّم عليها محتاجة PdfCraft ونسختين PDF.')
+        old, new = self.document(info['old']['id']), self.document(info['new']['id'])
+        return pdfcraft.compare(self._blob_or_none(old), self._blob_or_none(new), marked=True)['marked'], new['filename']
 
     def split_proposal(self, did, doc_id):
         """Where the program would cut a file that holds several documents (the person confirms or moves the cuts)."""
@@ -901,9 +951,7 @@ class Store:
         from ..assistant import storage as _storage
         d = self._current_pdf(did, doc_id)
         data = self.blob_path(d['sha256']).read_bytes()
-        from pypdf import PdfReader
-        from io import BytesIO
-        n = len(PdfReader(BytesIO(data), strict=False).pages)
+        n = _pages.count(data)
         ranges = _pages.ranges_from_starts(starts or [], n)
         if len(ranges) < 2:
             raise StoreError('E-SPLIT', 'Choose where at least one more document starts.', 'اختار صفحة واحدة على الأقل بيبدأ عندها مستند تاني.')
@@ -941,6 +989,146 @@ class Store:
         if self.blob_path(d['sha256']).read_bytes()[:5] != b'%PDF-':
             raise StoreError('E-NOT-PDF', 'Pages are split and joined in PDF files only.', 'التقسيم والدمج بيتعملوا في ملفات PDF بس.')
         return d
+
+    def _pdfcraft(self):
+        from .. import pdfcraft
+        if not pdfcraft.available():
+            raise StoreError('E-PDFCRAFT', 'This needs PdfCraft, the PDF engine of the desktop and company editions (not in the browser edition).',
+                             'دي محتاجة PdfCraft، محرك الـ PDF في نسخة الكمبيوتر ونسخة الشركة (مش موجود في نسخة المتصفح).')
+        return pdfcraft
+
+    def page_image(self, did, doc_id, page, dpi=96):
+        """One page drawn as a PNG (PdfCraft) — the viewer's page."""
+        pc = self._pdfcraft()
+        d = self._current_pdf(did, doc_id)
+        try:
+            png = pc.page_png(self.blob_path(d['sha256']).read_bytes(), int(page), max(24, min(int(dpi), 200)))
+        except pc.PdfCraftError as e:
+            raise StoreError('E-PAGE', f'The page cannot be drawn: {e}'[:300], 'الصفحة ما ينفعش تترسم.')
+        if not png:
+            raise StoreError('E-PAGE', 'The page cannot be drawn.', 'الصفحة ما ينفعش تترسم.')
+        return png
+
+    def find_in_document(self, did, doc_id, q):
+        """Where a phrase is in one document, page by page, with its rectangles (points from the page's top-left) — PdfCraft."""
+        pc = self._pdfcraft()
+        d = self._current_pdf(did, doc_id)
+        if len((q or '').strip()) < 2:
+            raise StoreError('E-QUERY', 'Type at least two characters.', 'اكتب حرفين على الأقل.')
+        return {'matches': pc.find(self.blob_path(d['sha256']).read_bytes(), q.strip(), limit=200)}
+
+    def pdf_operation(self, did, doc_id, op, **kw):
+        """A PdfCraft operation on a company document, stored as a new version (the original kept, superseded):
+        redact (real redaction of words), reduce_size (a smaller file), sign (EU: a digital signature with the person's own ID).
+        Third-party, EDA and executed documents are evidence: only their issuer changes them (E-LOCKED)."""
+        from ..guard import assert_allowed, LockedError
+        pc = self._pdfcraft()
+        d = self._current_pdf(did, doc_id)
+        try:
+            assert_allowed(d['doc_class'], {'redact': 'redact', 'reduce_size': 'reduce_size', 'sign': 'edit_text'}[op])
+        except LockedError:
+            raise StoreError('E-LOCKED', 'Only its issuer may change this document (third-party, EDA or executed) — re-obtain it.',
+                             'المستند ده من حق الجهة اللي أصدرته بس تعدّله (جهة خارجية أو الهيئة أو سجل تشغيل) — اطلبه منها.')
+        data = self.blob_path(d['sha256']).read_bytes()
+        try:
+            if op == 'redact':
+                words = [w.strip() for w in (kw.get('words') or []) if w and w.strip()]
+                if not words:
+                    raise StoreError('E-REDACT', 'Give the words or phrases to remove.', 'اكتب الكلمات أو العبارات اللي هتتشال.')
+                out, rep = pc.redact(data, words=words)
+                note = {'redacted': len(words)}
+            elif op == 'reduce_size':
+                out, rep = pc.reduce(data)
+                if not out or len(out) >= len(data):
+                    raise StoreError('E-REDUCE', 'The file cannot be made smaller (its images are already at 150 ppi or below).',
+                                     'الملف ما ينفعش يصغر أكتر (صوره 150 نقطة/بوصة أو أقل).')
+                note = {'reduced': [len(data), len(out)]}
+            elif op == 'sign':
+                if (self.pack(self.dossier(did)['pack']).ectd_region or '') != 'eu':
+                    raise StoreError('E-SIGN-REGION', 'Electronic signatures are not used in the EDA eCTD (draft guidance 2.10.3); signing is offered for the EU, where eIDAS signatures are accepted.',
+                                     'التوقيع الإلكتروني مش بيُستخدم في الـ eCTD بتاع الهيئة (المسودة 2.10.3)؛ التوقيع متاح لأوروبا بس، اللي بتقبل توقيعات eIDAS.')
+                out = self._sign(pc, data, kw)
+                note = {'signed': True}
+            else:
+                raise StoreError('E-OP', 'Unknown operation.', 'عملية مش معروفة.')
+        except pc.PdfCraftError as e:
+            raise StoreError('E-PDFCRAFT-OP', f'PdfCraft could not do it: {e}'[:400], 'PdfCraft ما قدرش يعملها.')
+        new = self.add_document(did, d['slot_id'], d['filename'], out, d['title'], {**d['meta'], 'pdfcraft': op, 'from': doc_id, **note},
+                                supersede=doc_id, doc_class=d['doc_class'])
+        self.audit(did, f'document.{op}', doc=doc_id, new=new['id'], **note)
+        return {'document': new, **note}
+
+    def page_operation(self, did, doc_id, op, pages, degrees=90, to=None):
+        """Turn, remove or move pages (PdfCraft), as a new version (the original kept, superseded). Turning a page changes how it
+        shows, not what it says: allowed on every document. Removing or moving pages changes the document: the company's own only."""
+        from ..guard import assert_allowed, LockedError
+        pc = self._pdfcraft()
+        d = self._current_pdf(did, doc_id)
+        data = self.blob_path(d['sha256']).read_bytes()
+        n = pc.page_count(data) or 0
+        pages = sorted({int(x) for x in (pages or []) if 1 <= int(x) <= n})
+        if not pages:
+            raise StoreError('E-PAGES', f'Choose pages between 1 and {n}.', f'اختار صفحات من 1 لـ {n}.')
+        try:
+            assert_allowed(d['doc_class'], {'rotate': 'rotate_pages', 'delete': 'remove_pages', 'move': 'move_pages'}[op])
+        except KeyError:
+            raise StoreError('E-OP', 'Unknown operation.', 'عملية مش معروفة.')
+        except LockedError:
+            raise StoreError('E-LOCKED', 'Only its issuer may change this document (third-party, EDA or executed) — re-obtain it.',
+                             'المستند ده من حق الجهة اللي أصدرته بس تعدّله (جهة خارجية أو الهيئة أو سجل تشغيل) — اطلبه منها.')
+        if op == 'delete' and len(pages) >= n:
+            raise StoreError('E-PAGES', 'A document keeps at least one page — withdraw it instead.', 'المستند لازم يفضل فيه صفحة على الأقل — اسحبه بدل كده.')
+        if op == 'rotate' and int(degrees) % 90:
+            raise StoreError('E-PAGES', 'Pages turn by 90, 180 or 270 degrees.', 'الصفحات بتلف 90 أو 180 أو 270 درجة.')
+        step = {'rotate': ('page_rotate', {'doc': 1, 'pages': pages, 'degrees': int(degrees)}),
+                'delete': ('page_delete', {'doc': 1, 'pages': pages}),
+                'move': ('page_move', {'doc': 1, 'pages': pages, 'to': max(1, min(int(to or 1), n))})}[op]
+        try:
+            _res, out = pc.run([('doc_open', {'path': 'in.pdf'}), step, ('doc_save', {'doc': 1, 'path': 'out.pdf', 'full': True})],
+                               {'in.pdf': data}, read=('out.pdf',))
+        except pc.PdfCraftError as e:
+            raise StoreError('E-PDFCRAFT-OP', f'PdfCraft could not do it: {e}'[:400], 'PdfCraft ما قدرش يعملها.')
+        note = {'pages_op': op, 'pages': pages, **({'degrees': int(degrees)} if op == 'rotate' else {}), **({'to': int(to or 1)} if op == 'move' else {})}
+        new = self.add_document(did, d['slot_id'], d['filename'], out['out.pdf'], d['title'], {**d['meta'], 'pdfcraft': f'pages.{op}', 'from': doc_id},
+                                supersede=doc_id, doc_class=d['doc_class'])
+        self.audit(did, f'document.pages.{op}', doc=doc_id, new=new['id'], **note)
+        return {'document': new, **note}
+
+    def notes_copy(self, did, doc_id):
+        """The document with the team's notes on its pages as PDF comments (PdfCraft) — a copy to read or send for review, never a
+        version (an eCTD document carries no comments)."""
+        pc = self._pdfcraft()
+        d = self._current_pdf(did, doc_id)
+        data = self.blob_path(d['sha256']).read_bytes()
+        n = pc.page_count(data) or 1
+        steps, per = [('doc_open', {'path': 'in.pdf'})], {}
+        for c in self.comments(did, doc_id):
+            p = max(1, min(int(c.get('page') or 1), n))
+            k = per[p] = per.get(p, 0) + 1
+            steps.append(('comment_add', {'doc': 1, 'page': p, 'type': 'note', 'at': [18.0, 18.0 + 26 * (k - 1)],
+                                          'contents': c['text'] + (' (resolved)' if c.get('resolved') else ''), 'author': c.get('author') or 'Dossier Builder',
+                                          'color': 'green' if c.get('resolved') else 'yellow'}))
+        if len(steps) == 1:
+            raise StoreError('E-NO-NOTES', 'This document has no notes yet.', 'المستند ده لسه مالوش ملاحظات.')
+        steps.append(('doc_save', {'doc': 1, 'path': 'out.pdf', 'full': True}))
+        try:
+            _res, out = pc.run(steps, {'in.pdf': data}, read=('out.pdf',))
+        except pc.PdfCraftError as e:
+            raise StoreError('E-PDFCRAFT-OP', f'PdfCraft could not do it: {e}'[:400], 'PdfCraft ما قدرش يعملها.')
+        return out['out.pdf'], d['filename']
+
+    def _sign(self, pc, data, kw):
+        """Sign with the person's own digital ID (a .p12/.pfx and its password), used for this one call and never kept."""
+        p12, password = kw.get('p12'), kw.get('password') or ''
+        if not p12:
+            raise StoreError('E-SIGN', 'Choose your digital ID (.p12 or .pfx).', 'اختار التوقيع الرقمي بتاعك (.p12 أو .pfx).')
+        args = {'doc': 1, 'id': 'id.p12', 'password': password, 'out': 'signed.pdf', 'reason': kw.get('reason') or None,
+                'location': kw.get('location') or None}
+        _res, out = pc.run([('doc_open', {'path': 'in.pdf'}), ('sign_document', {k: v for k, v in args.items() if v is not None})],
+                           {'in.pdf': data, 'id.p12': p12}, read=('signed.pdf',))
+        if not out.get('signed.pdf'):
+            raise StoreError('E-SIGN', 'The document could not be signed.', 'المستند ما اتوقّعش.')
+        return out['signed.pdf']
 
     def pdf_of_document(self, did, doc_id):
         """A Word, Excel, PowerPoint or text file turned into its PDF on this machine (LibreOffice): a new version, the source kept

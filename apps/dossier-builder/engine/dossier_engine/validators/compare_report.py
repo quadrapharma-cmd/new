@@ -21,6 +21,10 @@ def text_of(name, data):
     """Their report as lines of text."""
     low = (name or '').lower()
     if low.endswith('.pdf'):
+        from .. import pdfcraft
+        got = pdfcraft.page_texts(data)                  # PdfCraft keeps a report's table rows as lines; pypdf where it is not
+        if got is not None:
+            return '\n'.join(got)
         from pypdf import PdfReader
         return '\n'.join((p.extract_text() or '') for p in PdfReader(io.BytesIO(data)).pages)
     if low.endswith(('.xlsx', '.xlsm')):

@@ -282,7 +282,8 @@ def test_the_same_product_for_another_country_and_documents_from_another_product
 
 
 def test_a_document_is_compared_with_the_version_it_replaced(c, did, tmp_path):
-    """Item 36: what was removed and what was added, with the page."""
+    """Item 36: what was removed and what was added, with the page — word by word with PdfCraft (and a copy with the changes marked),
+    line by line where it is not."""
     from fixtures_pdf import make_pdf_lines
     v1 = make_pdf_lines(tmp_path / 'v1.pdf', ['Stability summary', 'Shelf life: 24 months', 'Store below 30 C'], 'S').read_bytes()
     v2 = make_pdf_lines(tmp_path / 'v2.pdf', ['Stability summary', 'Shelf life: 36 months', 'Store below 30 C'], 'S').read_bytes()
@@ -291,7 +292,14 @@ def test_a_document_is_compared_with_the_version_it_replaced(c, did, tmp_path):
                data={'meta': '{}', 'replaces': a['id']}, headers=H).json()
     r = c.get(f"/api/dossiers/{did}/documents/{b['id']}/compare", headers=H).json()
     assert r['old']['id'] == a['id'] and not r['same']
-    assert [(x['op'], x['text']) for x in r['changes']] == [('removed', 'Shelf life: 24 months'), ('added', 'Shelf life: 36 months')]
+    if r['engine'] == 'pdfcraft':                         # word by word, each change in its line and with its place on the page
+        assert [(x['op'], x['text'], x['line']) for x in r['changes']] == [('removed', '24', 'Shelf life: 24 months'),
+                                                                          ('added', '36', 'Shelf life: 36 months')]
+        assert all(x['rects'] for x in r['changes']) and r['marked']
+        m = c.get(f"/api/dossiers/{did}/documents/{b['id']}/compare.pdf", headers=H)
+        assert m.status_code == 200 and m.content[:5] == b'%PDF-' and 'changes' in m.headers['content-disposition']
+    else:
+        assert [(x['op'], x['text']) for x in r['changes']] == [('removed', 'Shelf life: 24 months'), ('added', 'Shelf life: 36 months')]
     assert all(x['page'] == 1 for x in r['changes'])
     assert c.get(f"/api/dossiers/{did}/documents/{a['id']}/compare", headers=H).json()['detail']['code'] == 'E-NO-VERSION'
 

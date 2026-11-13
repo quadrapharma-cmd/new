@@ -1,3 +1,6 @@
 __pycache__/
 .pytest_cache/
 *.pyc
+# PdfCraft: built from its pinned source by tools/pdfcraft/build.sh, never committed
+vendor/pdfcraft/
+.cache/
