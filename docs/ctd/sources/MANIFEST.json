@@ -210,6 +210,36 @@
   "taken": "2026-11-06"
  },
  {
+  "file": "ectd/FDA_Comprehensive_TOC_Headings_Hierarchy.pdf",
+  "sha256": "04069ba39807b7d534ede9928422d758541aed9f7bc8060a60ae85263e9b34bb",
+  "size": 724500,
+  "taken": null
+ },
+ {
+  "file": "ectd/FDA_Example_Submissions_Module1.pdf",
+  "sha256": "898bab9e3129090fd1f42a35c6df30eeb12cf32f19e601742081a53b13963869",
+  "size": 374083,
+  "taken": null
+ },
+ {
+  "file": "ectd/FDA_Specifications_eCTD_Validation_Criteria.pdf",
+  "sha256": "2b390199bebb1b7cde65926d027120ae576ca304f2628950cc51d2c9e4a3ab8c",
+  "size": 885718,
+  "taken": null
+ },
+ {
+  "file": "ectd/FDA_eCTD_Backbone_Module1_Specification_v2.6.pdf",
+  "sha256": "1adcbc40ad55adc63b3ae0c6ab6428721ccf6c8f3f64a4a1be58b1ee276b87f2",
+  "size": 538853,
+  "taken": null
+ },
+ {
+  "file": "ectd/FDA_eCTD_Technical_Conformance_Guide.pdf",
+  "sha256": "d39c23c6934146d1de687a095fdd5d2f900350b8a53856260b32690f333c8c5c",
+  "size": 558820,
+  "taken": null
+ },
+ {
   "file": "ectd/ICH_M8_Submission-Formats_v1.3.pdf",
   "sha256": "242ba1d67af078f1f883e2a44af2c932327fedc4a7915526d6ed0c96e6f2c68a",
   "size": 808738,
@@ -231,7 +261,7 @@
   "file": "ectd/ICH_eCTD_STF_Specification_v2.6.1_2008.pdf",
   "sha256": "63132c3751682193f6f13db125ee03583b740680851c0f0e6412561438b482da",
   "size": 114803,
-  "taken": null
+  "taken": "2026-11-13"
  },
  {
   "file": "ectd/ICH_eCTD_Specification_v3.2.2_2008.pdf",

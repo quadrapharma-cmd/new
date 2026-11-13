@@ -232,7 +232,7 @@ def test_a_dossier_for_another_country_in_the_browser(site):
         page.keyboard.press('Escape')
         page.click('#navExport')
         page.wait_for_selector('#ctdOnly', timeout=60000)
-        assert page.locator('input[data-out]').count() == 1
+        assert page.locator('input[data-out]').count() == 2 and page.locator('input[data-out="nees"]').count() == 1   # the Gulf: CTD and a NeeS
         b.close()
     assert not errors, errors
 
