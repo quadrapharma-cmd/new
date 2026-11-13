@@ -226,7 +226,7 @@ const T = {
   prepNeedsYou:{en:'Needs you',ar:'محتاج منك'}, prepDone:{en:'Ready',ar:'جاهز'}, prepOcrOn:{en:'OCR here: {l} (Tesseract, through PdfCraft)',ar:'الـ OCR هنا: {l} (Tesseract عن طريق PdfCraft)'},
   prepOcrOff:{en:'No OCR here: scans are kept, and read in the desktop or company edition.',ar:'مفيش OCR هنا: الممسوح بيتحفظ، وبيتقري في نسخة الكمبيوتر أو نسخة الشركة.'},
   prepNone:{en:'Nothing waiting.',ar:'مفيش حاجة مستنية.'},
-  prepSecond:{en:'The second reader put right',ar:'القارئ التاني صحّح'}, prepDoubt:{en:'Numbers to check against the page',ar:'أرقام راجعها على الصفحة'},
+  prepSecond:{en:'The second reader put right',ar:'القارئ التاني صحّح'}, prepImproved:{en:'File improved (PdfCraft\'s optimizer): {a} → {b}, the pages the same',ar:'الملف اتحسّن (PdfCraft): {a} ← {b}، والصفحات زي ما هي'}, prepSplit:{en:'Over 100 MB (the eCTD limit a file): cut into {n} parts that fit, in the same item — the pages unchanged',ar:'أكبر من 100 ميجا (حد الـ eCTD للملف): اتقسم {n} أجزاء كل جزء أقل من الحد، في نفس البند — الصفحات زي ما هي'}, prepDoubt:{en:'Numbers to check against the page',ar:'أرقام راجعها على الصفحة'},
   prepWeak:{en:'Pages hard to read: {p} — if a page is skewed or sideways, turn it in the viewer and prepare it again',ar:'صفحات صعبة القراية: {p} — لو الصفحة مايلة أو بالعرض، لفّها من العارض وجهّزها تاني'}, prepWorking:{en:'Preparing {i} of {n}…',ar:'بيجهّز {i} من {n}…'},
   navPublisher:{en:'Publisher',ar:'الناشر'}, navChecks:{en:'Checks',ar:'الفحوص'}, navSearch:{en:'Search the documents',ar:'بحث في المستندات'},
   srchSub:{en:'The text of every document of this dossier: a batch number, a study, «Table 3». Each file is read once.',ar:'نص كل مستندات الملف ده: رقم تشغيلة، أو دراسة، أو «Table 3». كل ملف بيتقري مرة واحدة.'},
@@ -2723,7 +2723,7 @@ async function paintPrepare(){
       <button class="btn sm pri" data-pgo="${esc(w.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div></div>`).join('');
   const placed=r.placed.map(d=>`<div class="finding ${d.needs_you.length?'block':''}"><div class="row gap-s" style="flex-wrap:wrap"><span class="code">${esc(d.ctd||'')}</span><b>${esc(L(d.item||{en:'',ar:''}))}</b>${chip(d.status)}</div>
       <div class="small"><bdi>${esc(d.original_name)}</bdi> → <b>${esc(t('prepNewName'))}:</b> <bdi>${esc((d.names.ectd32||d.names.ctd||'').split('/').pop()||'—')}</bdi>${d.names.ectd32?` <span class="code muted">${esc(d.names.ectd32)}</span>`:''}</div>
-      ${found(d.extracted)}${qual(d.ocr_quality)}
+      ${found(d.extracted)}${qual(d.ocr_quality)}${d.optimized?`<div class="small" style="color:var(--ok)">${esc(t('prepImproved').replace('{a}', mbs(d.optimized.before)).replace('{b}', mbs(d.optimized.after)))}</div>`:''}
       ${d.fixable.length?`<div class="row gap-s"><span class="small">${esc(t('prepFixN').replace('{n}', d.fixable.length))}</span><button class="btn sm pri" data-pgo="${esc(d.id)}">${icon('wrench',14)} ${esc(t('autofix'))}</button></div>`:''}
       ${d.needs_you.map(f=>`<div class="small" style="color:var(--bad)">● ${esc(f[S.lang]||f.en)} <span class="code muted">${esc(f.rule)}</span></div>`).join('')}
       ${!d.fixable.length&&!d.needs_you.length?`<div class="small" style="color:var(--ok)">✓ ${esc(t('prepDone'))}</div>`:''}</div>`).join('');
@@ -2733,15 +2733,18 @@ async function paintPrepare(){
     <section class="card pad"><div class="hd"><h3>${esc(t('prepAsked'))} <span class="tag">${r.requested.length}</span></h3></div><div class="row gap-s" style="flex-wrap:wrap">${asked}</div></section>`;
   $$('[data-pgo]', out).forEach(b=>b.onclick=async()=>{ b.disabled=true; await prepOne(b.dataset.pgo); paintPrepare(); });
 }
+function mbs(n){ return n>=1048576?(n/1048576).toFixed(n>=10485760?0:1)+' MB':Math.max(1,Math.round(n/1024))+' KB'; }
 async function prepOne(id){
   const sel=$(`[data-pslot="${CSS.escape(id)}"]`); const body=sel&&sel.value?{slot_id:sel.value}:{};
   try{ const r=await api(`/dossiers/${S.dossier.id}/prepare/${id}`,{method:'POST',json:body});
     if((r.steps||[])[0]==='needs_item') toast(t('prepPick'));
     const no=(r.steps||[]).flatMap(s=>(s&&s.refused)||[]); if(no.length) toast(no.map(x=>x[S.lang]||x.en).join(' · '));   // a fix it could not make, and why
+    const imp=(r.steps||[]).find(s=>s&&s.improved); if(imp&&!no.length) toast(t('prepImproved').replace('{a}', mbs(imp.improved.before)).replace('{b}', mbs(imp.improved.after)));
+    const cut=(r.steps||[]).find(s=>s&&s.split); if(cut) toast(t('prepSplit').replace('{n}', cut.split.parts), 8000);
     S.board=null; return r; }catch(e){ toast(e.message); }
 }
 async function prepAll(){
-  const r=S.prep||await api(`/dossiers/${S.dossier.id}/prepare`); const todo=[...r.waiting.filter(w=>w.auto||($(`[data-pslot="${CSS.escape(w.id)}"]`)||{}).value).map(w=>w.id), ...r.placed.filter(d=>d.fixable.length).map(d=>d.id)];
+  const r=S.prep||await api(`/dossiers/${S.dossier.id}/prepare`); const todo=[...r.waiting.filter(w=>w.auto||($(`[data-pslot="${CSS.escape(w.id)}"]`)||{}).value).map(w=>w.id), ...r.placed.filter(d=>d.fixable.length||d.improvable).map(d=>d.id)];
   let i=0; for(const id of todo){ i++; $('#prepMsg').textContent=t('prepWorking').replace('{i}',i).replace('{n}',todo.length); await prepOne(id); }
   $('#prepMsg').textContent=''; paintPrepare();
 }

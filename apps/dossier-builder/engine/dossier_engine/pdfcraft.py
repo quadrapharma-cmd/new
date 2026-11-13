@@ -19,7 +19,7 @@ Where each stage uses it (docs/ctd/PDFCRAFT-INTEGRATION.md):
 
 When the program is not there — the browser edition, or a machine it was not built on — `available()` is False and each stage keeps
 its earlier reading (pypdf), so the program still works and says which engine read the file."""
-import json, os, shutil, signal, subprocess, sys, tempfile
+import json, os, re, shutil, signal, subprocess, sys, tempfile
 from pathlib import Path
 
 APP = Path(__file__).resolve().parents[2]            # apps/dossier-builder
@@ -469,6 +469,44 @@ def reduce(data):
     """A smaller copy (images above 225 ppi brought to 150 ppi and recompressed, as Acrobat's Reduce File Size): (bytes, report)."""
     res, out = run([('doc_open', {'path': 'in.pdf'}), ('doc_reduce', {'doc': 1, 'path': 'out.pdf'})], {'in.pdf': data}, read=('out.pdf',))
     return out.get('out.pdf'), first(res[1]) or {}
+
+
+OPT_CLEAN = {'discard_thumbnails': True, 'discard_alternate_images': True, 'discard_search_index': True, 'flate_unencoded': True,
+             'lzw_to_flate': True, 'remove_unreferenced_dests': True, 'object_streams': False}
+OPT_KEEP = {'downsample': False, 'compression': 'retain'}                                      # every picture as it is
+OPT_GENTLE = {'downsample': True, 'ppi': 300, 'above_ppi': 450, 'compression': 'jpeg', 'quality': 80}   # a scan stays 300 ppi: read and OCR'd as well
+
+
+def optimize(data, lossless=True, links=False, pdf20=False):
+    """«Improve the file» — PdfCraft's PDF Optimizer (Acrobat's): thumbnails, alternate pictures, search indexes and destinations nothing
+    points to dropped, uncompressed and LZW streams compressed (Flate). lossless: every picture kept as it is, so the pages are the same
+    pixel for pixel (a third party's document); otherwise pictures above 450 ppi brought to 300 ppi (JPEG quality 80; black-and-white
+    stays lossless) — a scan is still read and OCR'd as well. links: links that go nowhere removed (a company's own document).
+    pdf20: a PDF 2.0 written as 1.7 (eCTD takes 1.4–1.7). → (bytes, report)."""
+    pics = OPT_KEEP if lossless else OPT_GENTLE
+    mono = OPT_KEEP if lossless else {'downsample': True, 'ppi': 300, 'above_ppi': 450}
+    args = {'doc': 1, 'path': 'out.pdf', 'preset': 'standard', 'merge_fragments': not lossless, 'color': pics, 'gray': pics, 'mono': mono,
+            'remove_invalid_links': bool(links), 'compatibility': '1.7' if pdf20 else 'retain', **OPT_CLEAN}
+    res, out = run([('doc_open', {'path': 'in.pdf'}), ('doc_optimize', args)], {'in.pdf': data}, read=('out.pdf',))
+    return out.get('out.pdf'), first(res[1]) or {}
+
+
+def split_by_size(data, limit_mb=95.0):
+    """A file too large for an eCTD (100 MB a file) cut into parts that each fit: at its top-level bookmarks when every part then
+    fits (each part one of its chapters), otherwise by size (PdfCraft's doc_split; pages unchanged, each part with its own pages'
+    links and bookmarks). → [(bytes, first page, last page or None)], in order."""
+    def cut(args):
+        with Job() as j:
+            j.put('in.pdf', data)
+            j.step('doc_open', path='in.pdf')
+            j.step('doc_split', {'doc': 1, 'out_dir': 'parts', **args})
+            res = j.run()
+            files = sorted((j.dir / 'parts').glob('*.pdf'), key=lambda f: [int(x) if x.isdigit() else x for x in re.split(r'(\d+)', f.name)])
+            return [f.read_bytes() for f in files], first(res[1]) or {}
+    parts, rep = cut({'bookmarks': True})
+    if len(parts) < 2 or any(len(x) > limit_mb * 1e6 for x in parts):
+        parts, rep = cut({'max_mb': limit_mb})
+    return parts, rep
 
 
 def watermark(data, text, opacity=0.25, color='#b00020'):

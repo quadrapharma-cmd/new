@@ -636,6 +636,16 @@ def create_app(workspace, auth_enabled=None):
         """Apply the allowed automatic fixes; the result is a new version, the original is kept (superseded)."""
         return st.fix_document(did, doc_id)
 
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/split-size')
+    def split_size(did: str, doc_id: str):
+        """A file over 100 MB cut into parts that fit, in the same item (the original withdrawn, kept in the history)."""
+        return st.split_large(did, doc_id)
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/improve')
+    def improve(did: str, doc_id: str):
+        """«Improve the file» (PdfCraft's optimizer): a smaller, cleaner new version when it clearly is, the pages the same."""
+        return st.improve_document(did, doc_id)
+
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/request', status_code=201)
     def request_reobtain(did: str, slot_id: str, body: ReqReq):
         """Letter to the issuer + «waiting on third party» status with a due date (02-LOGIC §5.2 🟣)."""
@@ -1396,7 +1406,10 @@ def create_app(workspace, auth_enabled=None):
                                'original_name': (doc.get('meta') or {}).get('original_name') or doc['filename'], 'version': doc.get('version'),
                                'status': doc.get('check_status'), 'fixable': fx, 'needs_you': left, 'names': names.get(doc['id'], {}),
                                'extracted': (doc.get('meta') or {}).get('extracted', {}).get('found', []),
-                               'ocr_quality': (doc.get('meta') or {}).get('extracted', {}).get('ocr_quality')})
+                               'ocr_quality': (doc.get('meta') or {}).get('extracted', {}).get('ocr_quality'),
+                               'optimized': (doc.get('meta') or {}).get('optimized'),
+                               'improvable': bool(_pc.available() and doc['filename'].lower().endswith('.pdf')
+                                                  and not (doc.get('meta') or {}).get('optimized'))})
         return {'requested': requested, 'waiting': waiting, 'placed': placed, 'engine': _pc.status(), 'ocr': _pc.ocr_info()}
 
     @app.post('/api/dossiers/{did}/prepare/{doc_id}')
@@ -1430,6 +1443,18 @@ def create_app(workspace, auth_enabled=None):
                 doc = st.keep_reading(did, r['document']['id'], keep)
             doc = st.keep_fix_refused(did, doc['id'], r['refused'])      # what could not be fixed, with why: asked of the user, not offered again
             steps.append({'fixed': [x['op'] for x in r['done']], 'refused': [{'op': x['op'], 'en': x['en'], 'ar': x['ar']} for x in r['refused']]})
+        if body.get('improve', True) and not (doc.get('meta') or {}).get('optimized'):
+            imp = st.improve_document(did, doc['id'])                     # «improve the file»: smaller and cleaner, the same pages
+            if imp.get('document'):
+                doc = st.keep_reading(did, imp['document']['id'], keep)
+                steps.append({'improved': {'before': imp['before'], 'after': imp['after']}})
+        if body.get('split', True):
+            cut = st.split_large(did, doc['id'])                          # over 100 MB still: cut into parts that fit, in the same item
+            if cut['parts']:
+                steps.append({'split': {'parts': len(cut['parts'])}})
+                return {'document': cut['parts'][0], 'parts': cut['parts'], 'steps': steps,
+                        'reading': {k: v for k, v in rd.items() if k != 'rules'}, 'names': _names(did).get(cut['parts'][0]['id'], {}),
+                        'fixable': [], 'needs_you': []}
         fixable, left = _prep_left(doc)
         return {'document': doc, 'steps': steps, 'reading': {k: v for k, v in rd.items() if k != 'rules'}, 'names': _names(did).get(doc['id'], {}),
                 'fixable': fixable, 'needs_you': left}

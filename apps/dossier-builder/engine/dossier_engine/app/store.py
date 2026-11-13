@@ -1351,6 +1351,70 @@ class Store:
                                  'بند 1.3.1 الأوروبي: نوع النشرة من ' + '، '.join(v['pi_types']) + ' واللغة كود أوروبي (en، de، fr…).',
                                  missing=['pi_type', 'lang'])
 
+    def split_large(self, did, doc_id):
+        """A file over the eCTD's 100 MB a file (ICH eCTD specification App. 7) cut into parts that fit (pdfcraft.split_by_size: at its
+        chapters' bookmarks when they fit, otherwise by size), each part a document of the same item, «part k of n», the file they came
+        from withdrawn (kept in the history). The pages are not changed, so a third party's document is cut too.
+        → {parts: [documents]} or {parts: [], why}."""
+        from .. import pdfcraft
+        from ..checks.pdf import SIZE_LIMIT
+        d = self._current_pdf(did, doc_id)
+        data = self.blob_path(d['sha256']).read_bytes()
+        if len(data) <= SIZE_LIMIT or not pdfcraft.available() or not d.get('slot_id'):
+            return {'parts': [], 'why': 'fits'}
+        try:
+            parts, rep = pdfcraft.split_by_size(data, limit_mb=SIZE_LIMIT * 0.95 / 1e6)
+        except pdfcraft.PdfCraftError as e:
+            return {'parts': [], 'why': str(e)[:200]}
+        if len(parts) < 2:
+            return {'parts': [], 'why': 'cannot be cut'}
+        stem = d['filename'].rsplit('.', 1)[0] if '.' in d['filename'] else d['filename']
+        out = []
+        for k, blob in enumerate(parts, 1):
+            title = f"{d['title'] or stem} (part {k} of {len(parts)})"
+            out.append(self.add_document(did, d['slot_id'], f'{stem}-part{k}.pdf', blob, title,
+                                         {**{x: v for x, v in d['meta'].items() if x not in ('fixed_from', 'optimized')},
+                                          'split_from': doc_id, 'part': [k, len(parts)], 'staged_by': 'size'},
+                                         doc_class=d['doc_class']))
+        self.db.execute("update document set state='withdrawn' where id=?", (doc_id,))
+        self.db.commit()
+        self.audit(did, 'document.split_size', doc=doc_id, parts=[x['id'] for x in out], sizes=[len(b) for b in parts])
+        return {'parts': out}
+
+    def improve_document(self, did, doc_id):
+        """«Improve the file» (the owner, 13/11/2026: «PdfCraft has file improvement… use it»): PdfCraft's optimizer on a stored PDF
+        (pdfcraft.optimize). A third party's document only losslessly, and kept only when its pages are the same pixel for pixel; a
+        company's own document also with its pictures above 450 ppi brought to 300 ppi and its links that go nowhere removed. A new
+        version only when the file is clearly smaller (5 % and 4 KB, pdfcraft.smaller_enough). → {document, before, after} or
+        {document: None, why}."""
+        from .. import fixes, pdfcraft
+        from ..checks.pdf import LOCKED
+        d = self.document(doc_id)
+        if d['dossier_id'] != did or d['state'] != 'current':
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        if d['meta'].get('external') or not d['filename'].lower().endswith('.pdf') or not pdfcraft.available():
+            return {'document': None, 'why': 'not here'}
+        path = self.blob_path(d['sha256'])
+        if fixes.is_signed(path):
+            return {'document': None, 'why': 'signed'}
+        data = path.read_bytes()
+        locked = d['doc_class'] in LOCKED
+        try:
+            new, rep = pdfcraft.optimize(data, lossless=locked, links=not locked, pdf20=data[:16].startswith(b'%PDF-2'))
+        except pdfcraft.PdfCraftError as e:
+            return {'document': None, 'why': str(e)[:200]}
+        if not pdfcraft.smaller_enough(data, new):
+            return {'document': None, 'why': 'already small', 'before': len(data)}
+        if locked and not pdfcraft.same_pixels(data, new):
+            return {'document': None, 'why': 'pages would change', 'before': len(data)}
+        doc = self.add_document(did, d['slot_id'], d['filename'], new, d['title'],
+                                {**d['meta'], 'fixed_from': doc_id, 'fixes': list(d['meta'].get('fixes') or []) + ['optimize'],
+                                 'optimized': {'before': len(data), 'after': len(new), 'resampled': rep.get('images_resampled') or 0,
+                                               'links_removed': rep.get('invalid_links') or 0}},
+                                supersede=doc_id, doc_class=d['doc_class'])
+        self.audit(did, 'document.optimized', doc=doc_id, new=doc['id'], before=len(data), after=len(new))
+        return {'document': doc, 'before': len(data), 'after': len(new)}
+
     def keep_reading(self, did, doc_id, extracted):
         """What the program read from a document — the information it found (a scan read by OCR) — kept with it (meta «extracted»); the
         file is not touched."""
