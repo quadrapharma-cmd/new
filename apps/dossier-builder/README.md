@@ -110,7 +110,45 @@ An EU dossier exports an **eCTD 3.2.2 sequence** beside its CTD folders, on the 
 - Tests: `tests/test_ectd32_eu.py` (9: DTD validity for the three procedures, what the writer refuses, the validator's pass,
   its catches, a follow-on replace, the API export, the leaflet item), `tests/test_ui_eu_ectd.py`.
 
+## Claude reads the scans again; each document held to its item's conditions (13/11/2026) — «البرنامج رجع ذكي»
+
+The owner, 13/11/2026: the program had become a page that took scans, acted as if it was reading, and showed nothing — the
+12-page licence of a real product took **14 minutes** of in-page OCR (9 of its 12 pages still hard to read), its upload waited for
+it, and the card only said «reading the text…». The cause: on 12/11 the page pictures stopped going to the model (the commit «no
+OCR anywhere»), and when scans were allowed back their reading was left to OCR. Now:
+
+- **Claude reads a scan from its page pictures.** Browser edition: `ocr.js pageImages` draws the first pages (pdf.js, no reader
+  to load: half a second for that licence) as **two halves each**, overlapping by a tenth — the platform brings every picture to
+  about 1.2 megapixels, and a whole page would reach the model at about 110 dpi, too little for the small Arabic print of an EDA
+  licence's tables; a half reaches it at about 150 dpi. `DBAI.extract` sends them with the prompt (`sample`, declared with
+  `images: true`), says which picture is which half of which page, and that any OCR text given is only a help. Server editions:
+  `/api/extract/ai` sends the PDF itself (the API reads every page as a picture too); a PDF over 24 MB goes as its first 20 pages.
+  The wizard reads the files with text together and **each scan alone** (two readings at a time); a scan the model read is
+  accepted (its kind from what the model read, so «not this document» still works) — «no text» is said only when nothing could
+  read it. The product-data page and the Regulatory Reviewer send the pictures of the scanned documents they ask about.
+- **No upload waits for OCR where the model is.** The page's own OCR runs before an upload only where there is no model — the
+  first two pages, quickly — and whole documents are read only to write the text layer when a scan is prepared, `quick`: Tesseract
+  alone, two or three pages at a time, a page turned only when it is most likely sideways. Every stage shows on the file itself
+  (the wizard's card: «drawing its pages for Claude», «Claude is reading it», «reading the scan · 3 / 12 pages»; the preparation
+  page: «making it searchable · 5 of 12 pages»), not in a toast another toast covers (the `db-ocr` event).
+- **The key in the Assistant's settings is the key.** On a computer or a company server the intake, the review and the
+  preparation stage read with the key saved in the Assistant's settings (mode 0600), not only with `ANTHROPIC_API_KEY`.
+- **The preparation stage holds each document to its item's conditions** (`engine/dossier_engine/prepare.py`, one source for the
+  page, the item and the Assistant). For every document: read (a scan by Claude) → placed in its item → each condition of that
+  item (`conditions.py`, NP.CAPP.065 v5) read against the document — the **form** (a searchable PDF; every PDF rule PdfCraft
+  checks: version, security, JavaScript, bookmarks, attachments, size…) and the **content** (dated; valid on the day of submission
+  — the date read from it, by Claude or by its text; on letterhead, signed and stamped; legalised; a CoA's batch, manufacturing
+  and expiry dates; a translation for another language; the production lines) → fixed where the program can (PdfCraft; the text
+  layer under a scan) → each condition shown as **met** (and how the program knows: its text, Claude saw it, you confirmed it),
+  **fixed**, **the program fixes it**, **needs you** (why and what to do), or **check it** (one click: «yes» / «not yet»; a date
+  field for a validity nobody could read). What Claude read on a document's pages is kept with it (`meta.model`:
+  `POST …/documents/{id}/model-reading` from the page, `…/read-by-model` with the key); its kind suggests a waiting scan's item;
+  a validity date it read becomes the document's (so the board turns it red the day it expires). The person's answers are kept
+  per document (`POST …/documents/{id}/confirm`), the signed / stamped / legalised question per item as before.
+
 ## No OCR — the upload gate (November 2026) — «مفيش OCR: الملف لازم يكون فيه نص»
+
+(Superseded on 13/11/2026 — see the section above; kept for the history.)
 
 Two trials on real products showed the reading of scans as the program's weakest step (about 11 minutes of OCR for 26 files, a
 licence nobody recognised, a second pass of «readable copies» that wrote PDF 1.3). The program now does **no OCR anywhere** — not

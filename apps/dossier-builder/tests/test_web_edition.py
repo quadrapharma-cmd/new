@@ -308,6 +308,47 @@ def test_a_scanned_notice_is_read_in_the_browser_and_its_data_taken(site, notice
         b.close()
 
 
+MOCK_SAMPLE = """window.__calls = []; window.claude = { use: async n => { if (n !== 'sample') return null;
+  const s = async () => ({ text: '{}' });
+  s.limits = async () => ({ maxPromptBytes: 262144, images: { maxCount: 8, maxInputBytes: 20000000, mediaTypes: ['image/jpeg', 'image/png'] } });
+  s.json = async (prompt, o) => { const im = o && o.images ? [].concat(o.images) : [];
+    window.__calls.push({ images: im.length, kinds: im.map(b => b.type), prompt: prompt.slice(-900) });
+    const name = ((prompt.match(/Document 1: (.*?) \\(kind guess/) || [])[1]) || '';
+    return { product: { name: 'Examplol 500 mg' }, registration: { reg_no: '34567/2025', valid_until: '2030-03-14' },
+             documents: [{ filename: name, kind: 'licence', valid_until: '2030-03-14', stamped: true }] }; };
+  return s; } };"""
+
+
+def test_with_claude_a_scan_goes_as_its_page_pictures_and_no_upload_waits_for_ocr(site, notice_scan):
+    """With claude.ai's model (the sample capability — stood in here by a mock that records what it is sent): the wizard sends a scan
+    as its page pictures, two halves a page, says which is which, and never runs the page's own OCR before the upload; the card says
+    Claude read it and what it gave, and the data fills from it (the owner, 13/11/2026: «the program used to be smart»)."""
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1280, 'height': 800}).new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script("localStorage.setItem('db.lang','en')")
+        page.add_init_script(MOCK_SAMPLE)
+        page.goto(site + '/index.local.html#/')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.click('#btnNew'); page.wait_for_selector('.doccards')
+        with page.expect_file_chooser() as fc:
+            page.locator('[data-updoc=registration_licence]').first.click()
+        fc.value.set_files(str(notice_scan))
+        page.wait_for_function("() => { const l = document.querySelector('[data-docline]'); return l && /read by Claude/.test(l.textContent); }", timeout=120000)
+        calls = page.evaluate('window.__calls')
+        assert len(calls) == 1 and calls[0]['images'] == 2 and set(calls[0]['kinds']) == {'image/jpeg'}, calls
+        assert 'the top half of page 1 of 1' in calls[0]['prompt'] and 'read it from its pictures' in calls[0]['prompt']
+        assert not page.evaluate('() => !!window.Tesseract')                                       # the page's own reader never ran
+        line = page.locator('[data-docline]').first.inner_text()
+        assert 'trade name' in line or 'registration no.' in line, line                              # what Claude gave, on the card
+        assert 'Examplol' in page.inner_text('#wizLive')
+        assert not errors, errors
+        b.close()
+
+
 def test_a_scan_is_made_searchable_inside_the_browser(site, notice_scan):
     """The preparation stage in the browser edition: the scan placed in its item and fixed — its words, read in the page, written
     invisibly under its image (textlayer) — so the stored copy has text of its own: the engine reads its number and date from it."""

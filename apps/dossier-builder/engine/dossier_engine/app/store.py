@@ -1427,6 +1427,60 @@ class Store:
         self.audit(did, 'document.read', doc=doc_id, reader=extracted.get('reader'), found=len(extracted.get('found') or []))
         return self.document(doc_id)
 
+    def keep_model_reading(self, did, doc_id, ai, by):
+        """What Claude read on a document's pages (claude.ai's model in the browser edition, or the API with the key) — its entry in the
+        reading's «documents» (kind, dates, signed, stamped, letterhead, legalised, language…) and the fields it found — kept with it
+        (meta «model»); the file is not touched. Its kind becomes the document's kind where its own words gave none (the item it is
+        suggested for), and a validity date it read becomes the document's, unless one is set already."""
+        d = self.document(doc_id)
+        if d['dossier_id'] != did:
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        ai = ai if isinstance(ai, dict) else {}
+        docs = [x for x in ai.get('documents') or [] if isinstance(x, dict)]
+        base = lambda n: str(n or '').replace('\\', '/').split('/')[-1].lower()
+        mine = next((x for x in docs if base(x.get('filename')) in (base(d['filename']), base(d['meta'].get('original_name')))), None)
+        if mine is None and len(docs) == 1:
+            mine = docs[0]
+        keep = {k: v for k, v in (mine or {}).items() if k != 'filename' and v not in (None, '', [])}
+        fields = {k: ai[k] for k in ('product', 'profile', 'apis', 'envelope', 'batches', 'specs', 'results', 'registration', 'composition')
+                  if ai.get(k) not in (None, '', [], {})}
+        meta = dict(d['meta'], model={'doc': keep, 'fields': fields, 'by': str(by or 'model')[:40], 'at': time.time(), 'sha256': d['sha256']})
+        if keep.get('kind') and keep['kind'] != 'other' and not d['meta'].get('kind'):
+            meta['kind'] = keep['kind']
+        vu = str(keep.get('valid_until') or '')[:10]
+        if vu and not d['meta'].get('valid_until'):
+            try:
+                date.fromisoformat(vu)
+                meta['valid_until'] = vu
+                meta['validity_note'] = 'read by Claude'
+                if keep.get('issued'):
+                    meta.setdefault('issued', str(keep['issued'])[:10])
+            except ValueError:
+                pass
+        self.db.execute('update document set meta=? where id=?', (json.dumps(meta, ensure_ascii=False), doc_id))
+        self.db.commit()
+        self.audit(did, 'document.read_by_model', doc=doc_id, by=meta['model']['by'], kind=keep.get('kind'))
+        return self.document(doc_id)
+
+    def confirm_condition(self, did, doc_id, cond, answer):
+        """The person's answer to one condition the program could not see on a document (dated, the production lines, a CoA's data…):
+        'yes' it is met, 'no' not yet, None to take the answer back (meta «confirmed»)."""
+        d = self.document(doc_id)
+        if d['dossier_id'] != did:
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        if answer not in ('yes', 'no', None) or not isinstance(cond, str) or not cond or len(cond) > 60:
+            raise StoreError('E-ANSWER', "The answer is 'yes' or 'no'.", "الإجابة «yes» أو «no».")
+        conf = dict(d['meta'].get('confirmed') or {})
+        if answer is None:
+            conf.pop(cond, None)
+        else:
+            conf[cond] = answer
+        meta = dict(d['meta'], confirmed=conf)
+        self.db.execute('update document set meta=? where id=?', (json.dumps(meta, ensure_ascii=False), doc_id))
+        self.db.commit()
+        self.audit(did, 'document.condition_confirmed', doc=doc_id, cond=cond, answer=answer)
+        return self.document(doc_id)
+
     def keep_fix_refused(self, did, doc_id, refused):
         """The fixes the program tried on a document and could not make, with why (meta «fix_refused»): the preparation stage then shows
         them as needing the user instead of offering the same fix again. An empty list clears them; the file is not touched (the attempt

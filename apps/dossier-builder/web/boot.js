@@ -104,35 +104,39 @@
     catch (e) { if (e && e.status) return new Response(null, { status: e.status }); throw e; }
     return new Response(bytes, { status: 200, headers: { 'content-type': MIME[u.pathname.split('.').pop()], 'content-length': String(bytes.length) } });
   }
-  // ---- scans read in the page before the engine takes them: the engine here (Pyodide) has no OCR of its own. Every file sent to the
-  // engine that is a scan or an image (it says so: /api/ocr/check) is read by ui/assets/ocr.js — the desktop's reading, in the browser —
-  // and the reading is kept by the engine for the file's bytes (/api/ocr/browser); the request then goes on, and the engine reads the
-  // file with it. A failed reading is said and the file goes on unread, as before.
-  const READABLE = /\.(pdf|png|jpe?g|tiff?|gif|bmp|webp)$/i;
+  // ---- scans: who reads them. Where claude.ai's model is (the sample capability), the model reads a scan from its page pictures
+  // (DBAI.extract — the wizard, «upload and fill», the preparation stage) and no upload waits for the page's own reading (Tesseract
+  // took 14 minutes on a real 12-page licence, and read it worse than the model). Without the model, the first two pages are read
+  // (carefully: its information comes from them) before the engine takes the file — the wizard's /api/extract, the preparation stage's waiting files, the board's
+  // classify — so its kind and information are known (/api/ocr/check says which files are scans; /api/ocr/browser keeps the
+  // reading for the file's bytes). Every page of a scan is read only when it is made searchable (readWholeScan), quickly, page by page
+  // in view. Progress is an event the page shows where the file is («db-ocr»: {name, sha256, stage, page, pages}), a toast otherwise.
+  const READABLE = /\.(pdf|png|jpe?g|tiff?|gif|bmp|webp)$/i, READS = /^\/api\/(?:extract|dossiers\/[^/]+\/(?:unplaced|classify))$/, FIRST = 2;
   async function readScansFirst(path, fd) {
-    if (!window.DBOCR || !window.DBOCR.available() || path.startsWith('/api/ocr/')) return;
+    if (!READS.test(path) || !window.DBOCR || !window.DBOCR.available()) return;
+    if (await window.DBAI.available()) return;                       // the model reads the pictures: nothing to wait for here
     const files = [];
     fd.forEach(v => { if (v instanceof File && v.size && (READABLE.test(v.name) || /^(application\/pdf|image\/)/.test(v.type))) files.push(v); });
-    const want = path.startsWith('/api/extract') ? 12 : 3;          // the wizard reads up to 12 pages; a document's kind and data, the first pages
     for (const f of files) {
       let c;
       try { const one = new FormData(); one.append('file', f); const r = await window.fetch('/api/ocr/check', { method: 'POST', body: one }); if (!r.ok) continue; c = await r.json(); }
       catch (e) { continue; }
       if (!c.why || c.here) continue;
-      const need = Math.max(1, Math.min(want, c.pages || want));
+      const need = Math.max(1, Math.min(FIRST, c.pages || FIRST));
       if (c.read >= need) continue;
-      await readAndKeep(f, c.sha256, need);
+      await readAndKeep(f, c.sha256, need, false);                     // its information: the careful reading (the second reader on doubtful numbers)
     }
   }
-  async function readAndKeep(f, sha, pages) {                         // read in the page; the engine keeps the reading with the words' places
+  async function readAndKeep(f, sha, pages, quick) {                  // read in the page; the engine keeps the reading with the words' places
     try {
-      const got = await window.DBOCR.read(f, { maxPages: pages, onProgress: d => ocrSay(f.name, d) });
-      await window.fetch('/api/ocr/browser', { method: 'POST', headers: { 'content-type': 'application/json' },
+      const got = await window.DBOCR.read(f, { maxPages: pages, quick: !!quick, onProgress: d => ocrSay(f.name, sha, d) });
+      const r = await window.fetch('/api/ocr/browser', { method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ sha256: sha, texts: got.pages.map(p => p.text || ''), rep: got.rep, tag: got.tag,
           layout: got.pages.map(p => ({ words: p.words.map(w => [w.text, ...w.box, w.line]), rotated: p.rotated || 0, deskew: p.deskew || 0 })) }) });
-    } catch (e) { console.warn('browser OCR', e); ocrSay(f.name, { stage: 'error', message: String(e && e.message || e) }); }
+      return r.ok;
+    } catch (e) { console.warn('browser OCR', e); ocrSay(f.name, sha, { stage: 'error', message: String(e && e.message || e) }); return false; }
   }
-  // before a stored scan is prepared or fixed: every page read, so «make searchable» can write each page's words under it
+  // before a stored scan is prepared or fixed: every page read (quickly), so «make searchable» can write each page's words under it
   const FIXING = /^\/api\/dossiers\/([^/]+)\/(?:prepare\/([^/]+)|documents\/([^/]+)\/fix)$/, WHOLE = 150;
   async function readWholeScan(path) {
     const m = FIXING.exec(path);
@@ -140,16 +144,18 @@
     let c;
     try { const r = await window.fetch(`/api/ocr/document/${m[1]}/${m[2] || m[3]}`); if (!r.ok) return; c = await r.json(); } catch (e) { return; }
     if (!c.why || c.here || !c.pages || (c.read >= c.pages && c.layout)) return;
-    if (c.pages > WHOLE) { ocrSay(c.filename, { stage: 'error', message: (document.documentElement.lang === 'en' ? `${c.pages} pages: more than this page reads at once (${WHOLE})` : `${c.pages} صفحة: أكتر من اللي الصفحة بتقراه مرة واحدة (${WHOLE})`) }); return; }
+    if (c.pages > WHOLE) { ocrSay(c.filename, c.sha256, { stage: 'error', message: (document.documentElement.lang === 'en' ? `${c.pages} pages: more than this page reads at once (${WHOLE})` : `${c.pages} صفحة: أكتر من اللي الصفحة بتقراه مرة واحدة (${WHOLE})`) }); return; }
     try {
       const blob = await (await window.fetch(c.url)).blob();
-      await readAndKeep(new File([blob], c.filename, { type: blob.type || 'application/pdf' }), c.sha256, c.pages);
+      await readAndKeep(new File([blob], c.filename, { type: blob.type || 'application/pdf' }), c.sha256, c.pages, true);
     } catch (e) { console.warn('browser OCR', e); }
   }
-  function ocrSay(name, d) {
+  function ocrSay(name, sha, d) {
+    const ev = new CustomEvent('db-ocr', { cancelable: true, detail: Object.assign({ name, sha256: sha }, d) });
+    if (!window.dispatchEvent(ev)) return;                             // the page shows it where the file is
     const ar = (document.documentElement.lang || 'ar') !== 'en', T = window.DS && window.DS.toast;
     if (!T) return;
-    const pg = d.pages ? (ar ? ` · صفحة ${d.page} من ${d.pages}` : ` · page ${d.page} of ${d.pages}`) : '';
+    const pg = d.pages ? (ar ? ` · ${d.page} من ${d.pages} صفحة` : ` · ${d.page} of ${d.pages} pages`) : '';
     const msg = {
       load: ar ? 'بيجهّز قارئ الممسوح (أول مرة بس، وبعدها بيفضل على الجهاز)…' : 'Getting the scan reader ready (the first time only; then it stays on this device)…',
       read: ar ? 'بيقرا الممسوح' : 'Reading the scan', check: ar ? 'بيراجع الكلمات المش أكيدة' : 'Checking the doubtful words',
@@ -275,14 +281,51 @@
   }, true);
   const nativeOpen = window.open;
   window.open = function (u) { if (typeof u === 'string' && u.startsWith('/api/')) { saveFromApi(u); return null; } return nativeOpen.apply(window, arguments); };
-  // ---- AI intake (claude.ai only): Claude reads the documents' own text, sent in the prompt — no OCR and no page images
-  // (a file without text is refused at the upload gate: NP.CAPP.065 v5 general note 4 wants every document searchable)
+  // ---- AI intake (claude.ai only): Claude reads each document the way a person does — a file with text from its text, sent in the
+  // prompt; a scan or a photo from its page pictures (ocr.js pageImages: the first pages, each in two halves so small Arabic print
+  // stays legible), with the page's own OCR, where there is one, given only as a help the model checks against the pictures.
+  const FINAL = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed', 'rate_limited', 'session_expired', 'cancelled', 'images_unavailable'];
+  const DRAWN = /\.(pdf|png|jpe?g|tiff?|gif|bmp|webp)$/i;
+  async function pictures(files, meta, budget, say, all) {
+    const images = [], notes = [];
+    if (!window.DBOCR || !window.DBOCR.pageImages || budget < 1) return { images, notes };
+    for (let i = 0; i < files.length && images.length < budget; i++) {
+      const f = files[i], m = meta && meta[i];
+      if (!f || !m || !(m.scanned || (all && DRAWN.test(f.name || '')))) continue;
+      say(f.name, 'pictures');
+      let got = [];
+      // a scan: its first pages, where its information is; a document whose signature and stamp are looked for: its first pages and its last
+      try { got = await window.DBOCR.pageImages(f, { max: 3, pick: all ? [1, 2, -1] : [1, 2, 3], budget: budget - images.length }); } catch (e) { console.warn('page pictures', f.name, e); continue; }
+      for (const g of got) {
+        images.push(g.blob);
+        notes.push(`Image ${images.length}: the ${g.part} half of page ${g.page} of ${g.pages} of document "${f.name}".`);
+      }
+      if (got.length) notes.push(m.scanned ? `Document "${f.name}" is a scan: read it from its pictures (pages ${[...new Set(got.map(g => g.page))].join(', ')} of ${got[0].pages}). ` +
+        'Any text given for it above was read by OCR and may be wrong — trust the pictures.' :
+        `Document "${f.name}": its text is given above; the pictures (pages ${[...new Set(got.map(g => g.page))].join(', ')} of ${got[0].pages}) show what text cannot — letterhead, signature, stamp, legalisation.`);
+    }
+    return { images, notes };
+  }
   window.DBAI = {
     async available() { try { return !!(window.claude && typeof window.claude.use === 'function' && await window.claude.use('sample')); } catch (e) { return false; } },
-    async extract(prompt, files, meta, target) {
+    /* the model's reading of these files for the engine's prompt: the scans among them (meta[i].scanned) go as their page pictures.
+       opts.onStage(name, 'pictures' | 'model') tells the page where each file is. */
+    async extract(prompt, files, meta, target, opts) {
+      opts = opts || {};
+      const say = (n, st) => { try { if (opts.onStage) opts.onStage(n, st); } catch (e) {} };
       const sample = await window.claude.use('sample');
       if (!sample) throw { code: 'unavailable', message: 'sample unavailable' };
-      return await sample.json(prompt, { modelTier: target === 'document' ? 'quick' : 'default', cache: false });
+      const lim = await sample.limits().catch(() => null);
+      const budget = lim && lim.images ? Math.max(0, Math.min(lim.images.maxCount || 0, 8)) : 0;
+      const { images, notes } = await pictures(files || [], meta || [], budget, say, opts.pictures === 'all');
+      const ask = { modelTier: target === 'document' && !images.length ? 'quick' : 'default', cache: false };
+      if (images.length) { ask.images = images; prompt += '\n\nPAGE PICTURES (attached images, in this order):\n' + notes.join('\n'); }
+      (files || []).forEach(f => f && say(f.name, 'model'));
+      try { return await sample.json(prompt, ask); }
+      catch (e) {                                                      // the pictures may be what failed: once more with the text alone — never when the viewer said no or cannot
+        if (images.length && !(e && FINAL.includes(e.code))) { delete ask.images; return await sample.json(prompt, ask); }
+        throw e;
+      }
     },
     /* one JSON answer from claude.ai's model for a prompt the engine wrote (drafting a document, filling a template) */
     async ask(prompt, opts) {

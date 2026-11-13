@@ -34,8 +34,8 @@ AUTO_ITEMS = {'M1-44'}                         # the tracking table: rebuilt by 
 VALIDITY_KINDS = ('gmp', 'pricing', 'commercial', 'cpp', 'factory', 'licence')     # the ones EDA asks to be valid at submission
 
 
-def _c(kind, text, source):
-    return {'kind': kind, 'en': text['en'], 'ar': text['ar'], 'source': source}
+def _c(kind, text, source, cid):
+    return {'id': cid, 'kind': kind, 'en': text['en'], 'ar': text['ar'], 'source': source}
 
 
 def for_requirement(req, pack):
@@ -43,31 +43,31 @@ def for_requirement(req, pack):
     rid, cls, eg = req['id'], req.get('doc_class'), pack.egypt
     out = []
     if eg and rid == 'M1-09':
-        out.append(_c('form', FORM_WORD, 'NP.CAPP.065 v5 1.1.9'))
+        out.append(_c('form', FORM_WORD, 'NP.CAPP.065 v5 1.1.9', 'word'))
     elif eg and rid == 'M1-11':
-        out.append(_c('form', FORM_ART, 'NP.CAPP.065 v5 1.1.10'))
+        out.append(_c('form', FORM_ART, 'NP.CAPP.065 v5 1.1.10', 'art'))
     else:
-        out.append(_c('form', FORM_PDF, N4 if eg else "the authority's electronic submission rules"))
+        out.append(_c('form', FORM_PDF, N4 if eg else "the authority's electronic submission rules", 'pdf'))
     letter = cls == 'company_letter' or (cls == 'generated' and req.get('module') == 1 and rid not in AUTO_ITEMS)
     if letter:                                     # a letter the company signs (Module 1); Module 2–5 technical text is not a letter
-        out.append(_c('content', LETTERHEAD, 'NP.CAPP.065 v5' if eg else 'general practice'))
+        out.append(_c('content', LETTERHEAD, 'NP.CAPP.065 v5' if eg else 'general practice', 'letterhead'))
         if eg and (rid in DATED_ITEMS or any(w in req['title']['en'].lower() for w in DATED_WORDS)):
-            out.append(_c('content', DATED, 'NP.CAPP.065 v5'))
+            out.append(_c('content', DATED, 'NP.CAPP.065 v5', 'dated'))
     homes = {k for k in VALIDITY_KINDS if rid in extract.kind_homes(k, pack)}
     if homes:
-        out.append(_c('content', VALID, 'NP.CAPP.065 v5' if eg else "the authority's requirement"))
+        out.append(_c('content', VALID, 'NP.CAPP.065 v5' if eg else "the authority's requirement", 'valid'))
     if eg and rid == 'M1-05':
-        out.append(_c('content', PRICE_EXC, 'NP.CAPP.065 v5 1.1.5'))
+        out.append(_c('content', PRICE_EXC, 'NP.CAPP.065 v5 1.1.5', 'price_exc'))
     if eg and rid == 'M1-37':
-        out.append(_c('content', LINES, 'NP.CAPP.065 v5 1.2.4.1'))
+        out.append(_c('content', LINES, 'NP.CAPP.065 v5 1.2.4.1', 'lines'))
     if eg and rid in LEGALIZE:
-        out.append(_c('content', LEGALIZE[rid], 'NP.CAPP.065 v5'))
+        out.append(_c('content', LEGALIZE[rid], 'NP.CAPP.065 v5', 'legalized'))
     if eg and rid == 'M1-35':
-        out.append(_c('content', COA, 'NP.CAPP.065 v5 1.2.3.1'))
+        out.append(_c('content', COA, 'NP.CAPP.065 v5 1.2.3.1', 'coa'))
     if cls == 'third_party_certificate':          # issued abroad (an EDA document is Arabic already)
-        out.append(_c('content', TRANSLATION, 'NP.CAPP.065 v5' if eg else 'general practice'))
+        out.append(_c('content', TRANSLATION, 'NP.CAPP.065 v5' if eg else 'general practice', 'translation'))
     if req.get('acceptance_text'):                  # the source's own wording (English), shown as written
-        out.append({'kind': 'source', 'en': req['acceptance_text'], 'ar': req['acceptance_text'], 'source': '; '.join(req.get('sources') or [])})
+        out.append({'id': 'source', 'kind': 'source', 'en': req['acceptance_text'], 'ar': req['acceptance_text'], 'source': '; '.join(req.get('sources') or [])})
     return out
 
 
@@ -77,4 +77,4 @@ def for_kinds(pack, kinds):
         for rid in extract.kind_homes(k, pack):
             if rid in pack.by_id:
                 return for_requirement(pack.by_id[rid], pack)
-    return [_c('form', FORM_PDF, N4 if pack.egypt else "the authority's electronic submission rules")]
+    return [_c('form', FORM_PDF, N4 if pack.egypt else "the authority's electronic submission rules", 'pdf')]

@@ -1,5 +1,6 @@
 """Regulatory Reviewer endpoints: /api/dossiers/{did}/review/… and /api/review/pack."""
 import shutil
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -291,10 +292,12 @@ def install(app, st):
             d = st.document(dmeta['doc_id'])
             if d['filename'].lower().endswith('.pdf'):
                 pairs.append((d['filename'], st.blob_path(d['sha256']).read_bytes()))
+        from ..assistant import settings as _aset
         try:
-            text = aimod.assess_server(p['prompt'], pairs)
+            text = aimod.assess_server(p['prompt'], pairs, key=None if sys.platform == 'emscripten' else _aset.api_key(st.root),
+                                       model=_aset.load(st.root).get('model'))
         except RuntimeError as e:
             if str(e) == 'E-NO-AI':
-                err(501, 'E-NO-AI', 'Set ANTHROPIC_API_KEY on this computer to let Claude assess the documents.', 'اضبط ANTHROPIC_API_KEY على الجهاز ده عشان Claude يقيّم المستندات.')
+                err(501, 'E-NO-AI', "Save the Anthropic API key (the Assistant's settings) to let Claude assess the documents.", 'سجّل مفتاح Anthropic (من إعدادات المساعد) عشان Claude يقيّم المستندات.')
             err(422, 'E-AI-REFUSED', 'Claude declined to assess these documents.', 'Claude اعتذر عن تقييم المستندات دي.')
         return ai_apply(did, rid, AiAnswers(answers=text))

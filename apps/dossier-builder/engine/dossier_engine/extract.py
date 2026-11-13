@@ -90,7 +90,15 @@ SCHEMA = {
                      'equivalent': 'e.g. equivalent to 3300 units/g'}],
     'documents': [{'filename': 'as given', 'kind': 'cpp | gmp | cep | coa | cadc | composition | licence | pricing | annex1 | smpc | factory | bmr | stability | spec | loa | poa | commercial | contract | other',
                    'title': 'document title', 'number': 'certificate / licence number', 'issuer': 'issuing authority or company',
-                   'issued': 'YYYY-MM-DD', 'valid_until': 'YYYY-MM-DD or null'}],
+                   'issued': 'YYYY-MM-DD', 'valid_until': 'YYYY-MM-DD or null', 'product_name': 'the product name as printed in it, if any',
+                   'language': 'ar | en | ar+en | the other language it is written in',
+                   'letterhead': 'true / false: on the issuing company\'s letterhead (only when you can see the page)',
+                   'signed': 'true / false: a handwritten or electronic signature is on it (only when you can see the page)',
+                   'stamped': 'true / false: an official stamp or seal is on it (only when you can see the page)',
+                   'legalized': 'true / false: an embassy or consulate legalisation stamp, or an apostille, is on it (only when you can see the page)',
+                   'production_lines': 'the production lines it names, if any', 'batch': 'batch number, for a CoA',
+                   'manufactured': 'YYYY-MM-DD, for a CoA', 'expiry': 'YYYY-MM-DD expiry or retest date, for a CoA',
+                   'one_document': 'false when the file holds several separate documents'}],
 }
 PRIORITY = ['licence', 'annex1', 'variation', 'cpp', 'smpc', 'composition', 'pricing', 'cadc', 'spec', 'coa', 'stability', 'method', 'validation', 'cep', 'gmp',
             'bmr', 'factory', 'loa', 'contract', 'poa', 'commercial', 'receipt', 'other']
@@ -1279,7 +1287,7 @@ def read_texts(files):
         kind = content_kind(text)
         items.append(fields_for(kind, name, text))
         texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': int(f.get('pages') or 0), 'scanned': bool(f.get('scanned')),
-                      'file': f.get('file') or ('pdf' if name.lower().endswith('.pdf') else 'other'), 'arabic': arabic.has_arabic(text),
+                      'ocr': bool(f.get('ocr')), 'file': f.get('file') or ('pdf' if name.lower().endswith('.pdf') else 'other'), 'arabic': arabic.has_arabic(text),
                       'chars': len(re.sub(r'\s', '', text)), 'text': text[:TEXT_BACK], 'found': found_fields(items[-1])})
     return {'files': texts, 'rules': merge(items)}
 

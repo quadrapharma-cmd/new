@@ -116,17 +116,19 @@ def confirm(storage, st, finding, by):
     return storage.finding(st, finding['id'])
 
 
-def assess_server(prompt, pdf_pairs):
-    """Server-side reading with the Anthropic SDK: the PDFs are attached as documents so scans are read too."""
-    if not os.environ.get('ANTHROPIC_API_KEY'):
+def assess_server(prompt, pdf_pairs, key=None, model=None):
+    """Server-side reading with the Anthropic SDK: the PDFs are attached as documents so scans are read too. The key: the one given
+    (the Assistant's settings), else the environment's."""
+    key = key or os.environ.get('ANTHROPIC_API_KEY')
+    if not key:
         raise RuntimeError('E-NO-AI')
     import base64
     import anthropic
     content = [{'type': 'document', 'title': name, 'source': {'type': 'base64', 'media_type': 'application/pdf', 'data': base64.standard_b64encode(data).decode()}}
                for name, data in pdf_pairs if data[:4] == b'%PDF']
     content.append({'type': 'text', 'text': prompt})
-    client = anthropic.Anthropic()
-    with client.beta.messages.stream(model='claude-opus-5-5', max_tokens=16000, output_config={'effort': 'medium'},
+    client = anthropic.Anthropic(api_key=key)
+    with client.beta.messages.stream(model=model or 'claude-opus-5-5', max_tokens=16000, output_config={'effort': 'medium'},
                                      betas=['server-side-fallback-2026-07-01'], fallbacks='default', messages=[{'role': 'user', 'content': content}]) as stream:
         msg = stream.get_final_message()
     if msg.stop_reason == 'refusal':

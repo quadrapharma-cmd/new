@@ -216,8 +216,20 @@ const T = {
   navHome:{en:'Home',ar:'الرئيسية'}, navDossiers:{en:'Dossiers',ar:'الملفات'}, navVars:{en:'Variations',ar:'التغييرات'}, navSuite:{en:'Product file',ar:'ملف المنتجات'},
   navCurrent:{en:'Current dossier',ar:'الملف الحالي'}, navGuide:{en:'Guide',ar:'الدليل'}, navBoard:{en:'Requirements',ar:'المتطلبات'}, navData:{en:'Product data',ar:'بيانات المنتج'},
   navPrepare:{en:'Prepare the documents',ar:'تجهيز المستندات'},
-  prepSub:{en:'Put all the files here at once. Each one is read (a scan by OCR, Arabic and English) and what it says is kept; it goes to its item under the name the dossier gives it; it is checked, and fixed where the program can.',
-           ar:'حط كل الملفات هنا مرة واحدة. كل ملف بيتقري (والممسوح بالـ OCR عربي وإنجليزي) واللي فيه بيتحفظ؛ وبيروح بنده بالاسم اللي الملف بيدّيه له؛ وبيتفحص، وبيتصلّح لو البرنامج يقدر.'},
+  prepSub:{en:'Every file, one by one: read (a scan by Claude from its page pictures), put in its item, held to that item\'s conditions — its form (a searchable PDF and the PDF rules) and its content (dated, valid, signed and stamped, legalised…) — and fixed where the program can. Each condition shows ✓ or what is needed.',
+           ar:'كل ملف لوحده: بيتقري (والممسوح Claude بيقراه من صور صفحاته)، وبيتحط في بنده، وبيتقاس على شروط البند ده — شكله (PDF قابل للبحث وقواعد الـ PDF) ومحتواه (عليه تاريخ، ساري، موقّع ومختوم، موثّق…) — وبيتصلّح لو البرنامج يقدر. قدام كل شرط ✓ أو المطلوب.'},
+  prepByPage:{en:'Scans are read by Claude from their page pictures (claude.ai).',ar:'الممسوح بيقراه Claude من صور صفحاته (claude.ai).'},
+  prepByServer:{en:'Scans are read by Claude from their pages (your key); OCR writes the text layer.',ar:'الممسوح بيقراه Claude من صفحاته (بمفتاحك)، والـ OCR بيكتب طبقة النص.'},
+  prepNoModel:{en:'No Claude here: scans are read by OCR only, and the conditions only eyes can check are asked of you.',ar:'مفيش Claude هنا: الممسوح بيتقري بالـ OCR بس، والشروط اللي محتاجة عين بتتسأل عليها انت.'},
+  prepForm:{en:'Form',ar:'الشكل'}, prepContent:{en:'Content',ar:'المحتوى'},
+  cond_ok:{en:'met',ar:'تمام'}, cond_fixed:{en:'fixed',ar:'اتصلّح'}, cond_fix:{en:'the program fixes it',ar:'البرنامج هيصلّحه'}, cond_needs_you:{en:'needs you',ar:'محتاج منك'}, cond_check:{en:'check it',ar:'اتأكد منه'},
+  how_text:{en:'from its text',ar:'من نصه'}, how_model:{en:'Claude saw it',ar:'Claude شافه'}, how_person:{en:'you confirmed it',ar:'انت أكدته'},
+  prepYes:{en:'Yes, it is',ar:'أيوه، موجود'}, prepNo:{en:'Not yet',ar:'لأ، لسه'}, prepSetDate:{en:'Save the date',ar:'سجّل التاريخ'},
+  prepReady:{en:'Ready ✓',ar:'جاهز ✓'}, prepNeedsN:{en:'{n} need you',ar:'{n} محتاج منك'}, prepFixesN:{en:'{n} the program fixes',ar:'{n} البرنامج هيصلّحه'}, prepChecksN:{en:'{n} to check',ar:'{n} اتأكد منه'},
+  prepNotYet:{en:'not prepared yet',ar:'لسه ما اتجهزش'}, prepStepPictures:{en:'drawing its pages for Claude…',ar:'بيحضّر صور صفحاته لـ Claude…'},
+  prepStepModel:{en:'Claude is reading its pages…',ar:'Claude بيقرا صفحاته…'}, prepStepPrep:{en:'reading, fixing and checking it…',ar:'بيقراه ويصلّحه ويفحصه…'},
+  prepStepOcr:{en:'making it searchable · {a} of {b} pages',ar:'بيعمله قابل للبحث · {a} من {b} صفحة'}, prepStepLoad:{en:'getting the scan reader ready (the first time only)…',ar:'بيجهّز قارئ الممسوح (أول مرة بس)…'},
+  prepModelSaw:{en:'Claude read it as',ar:'Claude قراه'}, prepModelFailed:{en:'Claude could not read it',ar:'Claude ما قدرش يقراه'},
   prepDrop:{en:'Choose the files (or drop them here)',ar:'اختار الملفات (أو اسحبها هنا)'}, prepAll:{en:'Prepare them all',ar:'جهّز الكل'},
   prepAsked:{en:'Still asked for',ar:'لسه مطلوب'}, prepWaiting:{en:'Waiting to be placed',ar:'مستني يتحط'}, prepPlaced:{en:'In their items',ar:'في بنودها'},
   prepRead:{en:'read',ar:'اتقرى'}, prepReadOcr:{en:'read by OCR',ar:'اتقرى بالـ OCR'}, prepReadNone:{en:'nothing read',ar:'ما اتقراش'},
@@ -468,7 +480,7 @@ const T = {
   auCtdD:{en:"Folders in the order of the authority's Module 1 and the common CTD, with a navigator and a checklist.",ar:'مجلدات بترتيب موديول ١ بتاع الهيئة والـ CTD المشترك، مع فهرس وقائمة.'}, auExportSub:{en:'One dossier, as CTD folders.',ar:'ملف واحد بمجلدات CTD.'},
   auT:{en:'Countries and authorities',ar:'الدول والهيئات'}, auItems:{en:'items',ar:'بند'}, auAny:{en:'any other country',ar:'أي دولة تانية'},
   step0:{en:'Documents',ar:'المستندات'}, unplacedT:{en:'Uploaded, not placed yet',ar:'ملفات مرفوعة لسه ما اتحطتش في مكانها'}, unplacedSub:{en:'Pick the item and place it; the suggestion comes from the file\'s content.',ar:'اختار البند وحطّه؛ الاقتراح من محتوى الملف.'}, pickItem:{en:'— choose the item —',ar:'— اختار البند —'},
-  putHere:{en:'Place it',ar:'حطّه'}, renamedDup:{en:'another file with this name: kept as',ar:'ملف تاني بنفس الاسم: اتحفظ باسم'}, stagedN:{en:'kept as not placed yet',ar:'اتحفظت كملفات لسه ما اتحطتش'}, placedOne:{en:'Placed.',ar:'اتحط.'}, suggested:{en:'suggested',ar:'مقترح'}, noSuggestion:{en:'no suggestion: choose the item',ar:'مفيش اقتراح: اختار البند'}, notThisDoc:{en:'not this document',ar:'مش المستند ده'}, stText:{en:'reading the text…',ar:'بيقرأ النص…'}, stModel:{en:'the model is reading the pages…',ar:'الموديل بيقرأ الصفحات…'},
+  putHere:{en:'Place it',ar:'حطّه'}, renamedDup:{en:'another file with this name: kept as',ar:'ملف تاني بنفس الاسم: اتحفظ باسم'}, stagedN:{en:'kept as not placed yet',ar:'اتحفظت كملفات لسه ما اتحطتش'}, placedOne:{en:'Placed.',ar:'اتحط.'}, suggested:{en:'suggested',ar:'مقترح'}, noSuggestion:{en:'no suggestion: choose the item',ar:'مفيش اقتراح: اختار البند'}, notThisDoc:{en:'not this document',ar:'مش المستند ده'}, stText:{en:'reading the text…',ar:'بيقرأ النص…'}, stModel:{en:'Claude is reading it…',ar:'Claude بيقراه…'}, stPictures:{en:'drawing its pages for Claude…',ar:'بيحضّر صور صفحاته لـ Claude…'}, stOcr:{en:'reading the scan',ar:'بيقرا الممسوح'}, readByModel:{en:'read by Claude from its pages',ar:'Claude قراه من صور صفحاته'},
   stDone:{en:'read',ar:'اتقرا'}, gotFrom:{en:'It gave us',ar:'خدنا منه'}, gotNothing:{en:'no data came out of it',ar:'ما طلعش منه بيانات'}, moveToIts:{en:'Move it to',ar:'انقله لخانة'}, removeFile:{en:'Remove it',ar:'شيله'},
   dupFile:{en:'already uploaded',ar:'مرفوع قبل كده'}, wizSaved:{en:'Saved as a draft ✓',ar:'محفوظ كمسودة ✓'}, wizAutosave:{en:'Saved automatically as a draft as you go',ar:'بيتحفظ تلقائيًا كمسودة أول بأول'}, wizRestart:{en:'Start over',ar:'ابدأ من الأول'},
   wizRestored:{en:'Your saved work was restored.',ar:'رجّعنا شغلك المحفوظ.'}, wizResume:{en:'Finishing putting your documents into the dossier…',ar:'بنكمّل وضع مستنداتك في الملف…'}, liveT:{en:'Recognised so far',ar:'اللي اتعرفنا عليه لحد دلوقتي'}, act_move:{en:'Move it to its own item.',ar:'انقله لبنده الصح.'}, attestQ:{en:'Before submission',ar:'قبل التقديم'}, ectdReady:{en:'eCTD readiness — the draft eCTD rules; not required for the One Submission in force',ar:'جاهزية الـ eCTD — قواعد مسودة الـ eCTD؛ مش مطلوبة في الـ One Submission الساري'},
@@ -1176,8 +1188,10 @@ function docLine(w, name){
     : st.status==='notext' ? `<span class="chip c-bad" data-notext><i></i>${esc(t('noTextChip'))}</span>`
     : st.status==='error' ? `<span class="chip c-bad"><i></i>${esc(t('err'))}</span>`
     : pr.stage==='text' ? `<span class="chip c-wait"><i></i>${esc(t('stText'))}</span>`
+    : pr.stage==='pictures' ? `<span class="chip c-wait"><i></i>${esc(t('stPictures'))}</span>`
     : pr.stage==='model' ? `<span class="chip c-wait"><i></i>${esc(t('stModel'))}</span>`
-    : pr.stage ? `<span class="chip c-ok"><i></i>${esc(t('stDone'))}${pr.pages?` · ${pr.pages} ${esc(t('pagesN'))}`:''}${(w.ocrRead||{})[name]?` · ${esc(t((w.ocrRead||{})[name]==='browser'?'ocrBrowser':'ocrRead'))}`:''}</span>` : '';
+    : pr.stage==='ocr' ? `<span class="chip c-wait"><i></i>${esc(t('stOcr'))}${pr.of?` · ${pr.at} / ${pr.of} ${esc(t('pagesN'))}`:''}</span>`
+    : pr.stage ? `<span class="chip c-ok"><i></i>${esc(t('stDone'))}${pr.pages?` · ${pr.pages} ${esc(t('pagesN'))}`:''}${(w.ocrRead||{})[name]?` · ${esc(t({model:'readByModel',browser:'ocrBrowser'}[(w.ocrRead||{})[name]]||'ocrRead'))}`:''}</span>` : '';
   const got = st.status==='notext' ? `<div class="small" data-notext-why style="color:var(--bad)">${esc(t(st.why==='image'?'noTextImage':'noTextScan'))}</div>`
     : found.length ? `<div class="small" style="color:var(--ok)">${esc(t('gotFrom'))}: ${esc(foundNames(found).join('، '))}</div>` : ((pr.stage==='done'||pr.stage==='read')&&st.status!=='mismatch'?`<div class="small muted">${esc(t('gotNothing'))}</div>`:'');
   const fix = st.status==='mismatch' ? `<div class="row gap-s" style="margin-top:4px"><button class="btn sm pri" data-mvdoc="${esc(name)}">${esc(t('moveToIts'))} «${esc(L({ar:det.ar,en:det.en}))}»</button><button class="btn sm ghost" data-rmdoc="${esc(name)}">${esc(t('removeFile'))}</button></div>`
@@ -1192,6 +1206,10 @@ function wizProg(name, stage, info, ww){ const w=ww||S.wiz; if(!w) return; w.pro
   if(info&&info.found){ w.found=w.found||{}; w.found[name]=info.found; }
   if(S.wiz!==w||location.hash!=='#/new') return;
   const el=document.querySelector(`[data-docline="${CSS.escape(name)}"]`); if(el){ el.outerHTML=docLine(w, name); wireDocLines($('#view')); } }
+/* the page's own reading of a scan (boot.js, where there is no model): its pages counted on the file's line, not in a toast */
+window.addEventListener('db-ocr', e=>{ const d=e.detail||{}, w=S.wiz;
+  if(w&&location.hash==='#/new'&&(w.docs||{})[d.name]&&['load','read','check','straighten'].includes(d.stage)){ wizProg(d.name,'ocr',{at:d.page||0, of:d.pages||0},w); e.preventDefault(); return; }
+  if(location.hash.endsWith('/prepare')&&prepOcr(d)) e.preventDefault(); });
 function wireDocLines(root){ if(!root) return;
   root.querySelectorAll('[data-mvdoc]').forEach(b=>b.onclick=async()=>{ const w=S.wiz, n=b.dataset.mvdoc; w.docs[n]={kind:w.docs[n].detected, status:'ok'}; toast(t('reading')); await refill(w); wizShow(w); await wizWrite(w); });
   root.querySelectorAll('[data-rmdoc]').forEach(b=>b.onclick=async()=>{ const w=S.wiz, n=b.dataset.rmdoc; w.allFiles=(w.allFiles||[]).filter(f=>f.name!==n); delete w.texts[n]; delete w.found[n]; delete w.kinds[n]; delete w.prog[n]; w.docs[n]={status:'removed'};
@@ -1204,7 +1222,7 @@ async function refill(w){
   const names=Object.keys(w.texts).filter(n=>!['mismatch','removed','notext'].includes((w.docs[n]||{}).status));
   let r={files:[],rules:{},prompt:''};
   if(names.length) r=await api('/extract/text?target=dossier',{method:'POST',json:{files:names.map(n=>w.texts[n])}});
-  for(const f of r.files||[]) w.found[f.filename]=f.found||w.found[f.filename]||[];
+  for(const f of r.files||[]) w.found[f.filename]=(f.found&&f.found.length)?f.found:(w.found[f.filename]||[]);      // a scan's own words give nothing: what the model gave stays
   const unread=names.filter(n=>!(w.aiReads||[]).some(b=>b.files.includes(n)));                       // accepted but never shown to the model (moved to its card after a refusal)
   if(unread.length){ try{ await modelRead(w, unread); }catch(e){ console.warn('model', e); } }
   w.aiFill=aiFillOf(w);
@@ -1259,10 +1277,12 @@ async function ingest(w, fresh){
     const fits=f=>{ const det=cardOfKind(f.kind), exp=(w.docs[f.filename]||{}).kind||'other'; return exp==='other'||det==='other'||det===exp; };
     const x=await readFiles(fresh,'dossier',(n,st,i)=>wizProg(n,st,i,w), rf=>rf.filter(fits).map(f=>f.filename));
     for(const f of x.r.files||[]){ w.texts[f.filename]={filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,file:f.file,ocr:!!f.ocr,reader:f.reader||null,chars:f.chars||0}; w.kinds[f.filename]=f.kind; (w.hints=w.hints||{})[f.filename]=f.kind_hint||null; w.found[f.filename]=f.found||[]; }
-    if(x.modelAsked) (w.aiReads=w.aiReads||[]).push({files:x.modelFiles, ai:x.ai}); if(x.note) w.aiNote=x.note;      // the model's reading, remembered with the files it came from
+    for(const b of x.reads||[]) (w.aiReads=w.aiReads||[]).push({files:b.files, ai:b.ai}); if(x.note) w.aiNote=x.note;      // each model reading, remembered with the files it came from
+    const byModel=new Set((x.reads||[]).filter(b=>b.ai).flatMap(b=>b.files));
     for(const f of fresh){ const detected=cardOfKind(w.kinds[f.name]); const expected=(w.docs[f.name]||{}).kind||'other', tx=w.texts[f.name]||{};
-      if(tx.scanned&&!(tx.ocr&&tx.chars>=20)){ w.docs[f.name]={kind:expected, status:'notext', why:tx.file==='image'?'image':'scan'}; toast(`${f.name}: ${t('noTextChip')}`, 8000); continue; }   // nothing could be read from it (no OCR here, or a blank or unreadable scan): its line says why and what to do
-      if(tx.scanned) (w.ocrRead=w.ocrRead||{})[f.name]=tx.reader==='browser-ocr'?'browser':true;   // a scan read by OCR (PdfCraft, or this browser): it goes on — made searchable in its item where PdfCraft is
+      if(tx.scanned&&!(tx.ocr&&tx.chars>=20)&&!byModel.has(f.name)){ w.docs[f.name]={kind:expected, status:'notext', why:tx.file==='image'?'image':'scan'}; toast(`${f.name}: ${t('noTextChip')}`, 8000); continue; }   // nothing read it: no model here and no OCR, or a blank or unreadable scan — its line says why and what to do
+      if(tx.scanned) (w.ocrRead=w.ocrRead||{})[f.name]=byModel.has(f.name)?'model':tx.reader==='browser-ocr'?'browser':true;   // a scan read by the model from its pictures, or by OCR: it goes on — made searchable in its item
+      if(byModel.has(f.name)&&!(w.found[f.name]||[]).length){ const b=(x.reads||[]).find(y=>y.ai&&y.files.length===1&&y.files[0]===f.name); if(b) w.found[f.name]=aiFound(b.ai); }   // what the model gave from it
       if(expected!=='other'&&detected!=='other'&&detected!==expected){ w.docs[f.name]={kind:expected, status:'mismatch', detected}; toast(`${f.name}: ${t('notThisDoc')}`); }
       else w.docs[f.name]={kind:expected==='other'?(detected!=='other'?detected:cardOfKind((w.hints||{})[f.name]||'other')):expected, status:'ok'}; }   // a file that could not be read sits under the card its name hints at; only what is written inside it can refuse it
     await refill(w);
@@ -1757,44 +1777,62 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
       d.got=d.got.filter(x=>x.f.local); fetchAll(p); };
     status(); count(); };
   paint(); }
+async function askModel(files, metas, target, ev, prompt0){
+  /* the model's reading of these files: the ones with text together, from their text; each scan or photo alone, from its page
+     pictures (claude.ai's model in the browser edition, ocr.js pageImages; Claude through the key on a computer or a company server,
+     which reads the PDF's pages itself) with the OCR's text, where there is one, as a help. Two readings at a time.
+     metas: [{filename, text, pages, scanned, file, ocr}] → [{files, ai, note}] */
+  const inPage=!!(window.DBAI && await window.DBAI.available()), onServer=!inPage&&!!((S.caps||await caps()).ai_server);
+  if((!inPage&&!onServer)||!metas.length) return [];
+  const groups=[metas.filter(m=>!m.scanned), ...metas.filter(m=>m.scanned).map(m=>[m])].filter(g=>g.length);
+  const out=[]; toast(t('thinking'));
+  const one=async g=>{ const names=g.map(m=>m.filename), fs=g.map(m=>files.find(f=>f.name===m.filename)).filter(Boolean);
+    let ai=null, note='';
+    try{ const prompt=(prompt0&&g.length===metas.length)?prompt0:(await api(`/extract/text?target=${target}`,{method:'POST',json:{files:g}})).prompt;
+      if(inPage) ai=await window.DBAI.extract(prompt, fs, g, target, {onStage:(n,st)=>ev(n, st)});
+      else{ names.forEach(n=>ev(n,'model')); const fd=new FormData(); fs.forEach(f=>fd.append('files',f)); ai=(await api(`/extract/ai?target=${target}`,{method:'POST',body:fd})).ai; } }
+    catch(e){ note=(e&&(e.code||e.message))||'error'; console.warn('model', names, e); }
+    out.push({files:names, ai, note}); };
+  let k=0; await Promise.all(Array.from({length:Math.min(2,groups.length)}, async()=>{ while(k<groups.length) await one(groups[k++]); }));
+  return out;
+}
+/* what the model gave from a file, in the names the cards use (product.name, registration.reg_no, apis×3…): a scan's own words give none */
+function aiFound(ai){ if(!ai||typeof ai!=='object') return []; const out=[];
+  for(const sec of ['product','registration','envelope','profile']) for(const [k,v] of Object.entries(ai[sec]||{})) if(v!==null&&v!==''&&!(Array.isArray(v)&&!v.length)) out.push(`${sec}.${k}`);
+  for(const sec of ['apis','batches','specs','results','composition']) if(Array.isArray(ai[sec])&&ai[sec].length) out.push(`${sec}×${ai[sec].length}`);
+  return out; }
+/* the kind the model gave a file (its «documents» list), when the file's own words gave none */
+function aiKindOf(ai, name){ const d=((ai&&ai.documents)||[]).find(x=>x&&(x.filename===name||String(x.filename||'').split('/').pop()===name)); return d&&d.kind&&d.kind!=='other'?d.kind:null; }
 async function readFiles(files, target, onEvent, keep){
-  /* what the files say — their own text only: the program does no OCR, a file without text is marked `scanned` (and refused at the gate);
-     the model reads the files with text, of those the caller keeps (the kind rule) */
+  /* what the files say: a file with text from its text (the rules, then the model); a scan or a photo from its page pictures — the
+     model reads them (askModel), and the page's own quick OCR only where there is no model. A scan nothing could read is marked. */
   const ev=(n,st,i)=>{ try{ if(onEvent) onEvent(n,st,i||{}); }catch(e){ console.warn('progress', e); } };
   files.forEach(f=>ev(f.name,'text'));
   const readOne=async f=>{ const fd=new FormData(); fd.append('files',f); return api(`/extract?target=${target}`,{method:'POST',body:fd}); };
   const said=f=>ev(f.filename,'read',{pages:f.pages,chars:f.chars,kind:f.kind,found:f.found});
-  const asText=f=>({filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,file:f.file});
+  const asText=f=>({filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,file:f.file,ocr:!!f.ocr});
   let r;
   if(files.length===1){ r=await readOne(files[0]); (r.files||[]).forEach(said); }
   else{ const metas=[];                                              // file by file: the page keeps answering and the memory stays that of one file
     for(const f of files){ let m; try{ m=((await readOne(f)).files||[])[0]; }catch(e){ console.warn('read', f.name, e); }
       m=m||{filename:f.name,text:'',pages:0,scanned:false,chars:0,kind:'other',found:[]}; m.filename=f.name; metas.push(m); said(m); }
     r=await api(`/extract/text?target=${target}`,{method:'POST',json:{files:metas.map(asText)}}); }
-  let ai=null, note='';
-  const withText=(r.files||[]).filter(f=>!f.scanned);
-  const ok=new Set(keep?keep(withText):withText.map(f=>f.filename));
-  const mFiles=files.filter(f=>ok.has(f.name)), mMeta=(r.files||[]).filter(f=>ok.has(f.filename));
-  const mPrompt=mFiles.length===files.length?r.prompt:(mFiles.length?(await api(`/extract/text?target=${target}`,{method:'POST',json:{files:mMeta.map(asText)}})).prompt:'');
-  if(!mFiles.length){}
-  else if(window.DBAI && await window.DBAI.available()){ toast(t('thinking')); try{ ai=await window.DBAI.extract(mPrompt, mFiles, mMeta, target); }catch(e){ note=(e&&(e.code||e.message))||'error'; } }
-  else if(r.ai_server){ toast(t('thinking')); try{ const fd2=new FormData(); mFiles.forEach(f=>fd2.append('files',f)); ai=(await api(`/extract/ai?target=${target}`,{method:'POST',body:fd2})).ai; }catch(e){ note=e.message; } }
-  (r.files||[]).forEach(f=>ev(f.filename,'done',{pages:f.pages,chars:f.chars,kind:f.kind,found:f.found}));
-  return {r, ai, note, fill:mergeFill(r.rules, ai), modelFiles:mFiles.map(f=>f.name), modelAsked:!!mFiles.length&&(ai!==null||!!note)};
+  const all=r.files||[], ok=new Set(keep?keep(all):all.map(f=>f.filename));
+  const mine=all.filter(f=>ok.has(f.filename));
+  const reads=await askModel(files, mine.map(asText), target, (n,st)=>ev(n,st), mine.length===all.length?r.prompt:null);
+  const ai=reads.reduce((acc,b)=>mergeAi(acc, b.ai), null), note=(reads.find(b=>b.note)||{}).note||'';
+  for(const f of all){ const k=f.kind==='other'?aiKindOf(ai, f.filename):null; if(k) f.kind=k; }      // a scan's kind, from what the model read on its pages
+  all.forEach(f=>ev(f.filename,'done',{pages:f.pages,chars:f.chars,kind:f.kind,found:f.found}));
+  return {r, ai, note, reads, fill:mergeFill(r.rules, ai), modelFiles:mine.map(f=>f.filename), modelAsked:reads.length>0};
 }
 async function modelRead(w, names){
-  /* the model's reading of these accepted files (their cached texts; the files themselves for the server's model): one entry in w.aiReads */
+  /* the model's reading of these accepted files (their cached texts; a scan's pictures drawn from the file): entries in w.aiReads */
   const files=[]; for(const n of names){ let f=(w.allFiles||[]).find(x=>x.name===n);
     if(!f&&w.draftId){ try{ const r=await fetch(`/api/intake/drafts/${w.draftId}/files/${encodeURIComponent(n)}`,{headers:{'X-DB':'1'}}); if(r.ok){ const b=await r.blob(); f=new File([b], n, {type:n.toLowerCase().endsWith('.pdf')?'application/pdf':(b.type||'')}); } }catch(e){} }
     if(f) files.push(f); }
   if(!files.length) return;
-  const inPage=!!(window.DBAI && await window.DBAI.available()), onServer=!!((S.caps||await caps()).ai_server); if(!inPage&&!onServer) return;   // no model here: nothing to ask
-  const meta=files.map(f=>w.texts[f.name]); let ai=null, note='';
-  const r=await api('/extract/text?target=dossier',{method:'POST',json:{files:meta}});
-  toast(t('thinking'));
-  if(inPage){ try{ ai=await window.DBAI.extract(r.prompt, files, meta, 'dossier'); }catch(e){ note=(e&&(e.code||e.message))||'error'; } }
-  else{ try{ const fd=new FormData(); files.forEach(f=>fd.append('files',f)); ai=(await api('/extract/ai?target=dossier',{method:'POST',body:fd})).ai; }catch(e){ note=e.message; } }
-  (w.aiReads=w.aiReads||[]).push({files:files.map(f=>f.name), ai}); if(note) w.aiNote=note;
+  const reads=await askModel(files, files.map(f=>w.texts[f.name]).filter(Boolean), 'dossier', (n,st)=>wizProg(n,st,{},w));
+  for(const b of reads){ (w.aiReads=w.aiReads||[]).push({files:b.files, ai:b.ai}); if(b.note) w.aiNote=b.note; }
 }
 function aiFillOf(w){
   /* the model's readings of the files that are still accepted: an entry whose file was removed or refused is left out */
@@ -1900,7 +1938,10 @@ async function dataExtract(){
     if(!r.files.length) return toast(t('noDocsYet'));
     let ai=null, note='';
     if(window.DBAI && await window.DBAI.available()){ toast(t('thinking'));
-      try{ ai=await window.DBAI.extract(r.prompt, [], r.files, 'dossier'); }catch(e){ note=(e&&(e.code||e.message))||'error'; } }
+      const files=[], meta=[];                                         // a stored scan: Claude reads it from its pages
+      for(const f of r.files.filter(x=>x.scanned).slice(0,3)){ try{ const x=await fetch(`/api/dossiers/${id}/documents/${f.doc_id}/file`,{headers:{'X-DB':'1'}});
+          if(x.ok){ const b=await x.blob(); files.push(new File([b], f.filename, {type:f.filename.toLowerCase().endsWith('.pdf')?'application/pdf':(b.type||'')})); meta.push(f); } }catch(e){} }
+      try{ ai=await window.DBAI.extract(r.prompt, files, meta, 'dossier'); }catch(e){ note=(e&&(e.code||e.message))||'error'; } }
     else if(r.ai_server){ toast(t('thinking')); try{ ai=(await api(`/dossiers/${id}/extract/ai?target=dossier`,{method:'POST'})).ai; }catch(e){ note=e.message; } }
     reviewData({fill:mergeFill(r.rules, ai), ai, note});
   }catch(e){ toast(e.message); }
@@ -2698,61 +2739,138 @@ async function dropFiles(slotId, list){
 }
 
 /* ---------------- checks */
-/* ---------------- the preparation stage: the documents asked for; each file read (a scan by OCR) and what it says kept; placed in its
-   item under the name the dossier gives it; checked; fixed where the program can (the owner, 13/11/2026) */
+/* ---------------- the preparation stage (the owner, 13/11/2026): every file, one by one — read (a scan by Claude from its page pictures:
+   claude.ai's model in the browser edition, the key on a computer or a company server), placed in its item, held to that item's
+   conditions (prepare.py: the form — a searchable PDF, the PDF rules PdfCraft checks — and the content — dated, valid, signed and
+   stamped, legalised, a CoA's data, a translation), fixed where the program can (PdfCraft; the text layer written under a scan), and
+   shown condition by condition: met, fixed, the program fixes it, needs you (why and what to do), or check it (one look answers it).
+   Where the work is — Claude reading, the pages read for the text layer — shows on the document itself. */
 function prepareView(tok){
   if(!fresh(tok)) return;
   $('#view').innerHTML=`<div class="head"><div class="title"><h1>${esc(t('navPrepare'))}</h1><p class="sub">${esc(t('prepSub'))}</p></div></div>
     <section class="card pad stack gap-s" id="prepDrop"><div class="row gap-s" style="flex-wrap:wrap"><label class="btn pri">${icon('upload',16)} ${esc(t('prepDrop'))}<input type="file" id="prepFiles" multiple hidden></label>
-      <button class="btn" id="prepAll">${icon('zap',16)} ${esc(t('prepAll'))}</button><span class="small muted grow" id="prepMsg"></span></div><div class="small muted" id="prepOcr"></div></section>
+      <button class="btn" id="prepAll">${icon('zap',16)} ${esc(t('prepAll'))}</button><span class="small muted grow" id="prepMsg" aria-live="polite"></span></div><div class="small muted" id="prepOcr"></div></section>
     <div id="prepOut" class="stack" style="margin-top:12px"></div>`;
   const send=async files=>{ if(!files.length) return; const fd=new FormData(); for(const f of files) fd.append('files', f); fd.append('meta','{}');
-    $('#prepMsg').textContent=t('srchRead'); try{ await api(`/dossiers/${S.dossier.id}/unplaced`,{method:'POST',body:fd}); }catch(e){ toast(e.message); } S.board=null; paintPrepare(); };
+    $('#prepMsg').textContent=t('srchRead'); try{ await api(`/dossiers/${S.dossier.id}/unplaced`,{method:'POST',body:fd}); }catch(e){ toast(e.message); } S.board=null; await paintPrepare(); S.prepWaitP=prepModelWaiting(); };
   $('#prepFiles').onchange=e=>send([...e.target.files]);
   const dz=$('#prepDrop'); dz.ondragover=e=>{ e.preventDefault(); }; dz.ondrop=e=>{ e.preventDefault(); send([...(e.dataTransfer.files||[])]); };
   $('#prepAll').onclick=prepAll;
   paintPrepare();
 }
+const PREP_ICON={ok:'✓', fixed:'✓', fix:'⚙', needs_you:'✗', check:'?'};
+const PREP_COLOR={ok:'var(--ok)', fixed:'var(--accent)', fix:'var(--warn)', needs_you:'var(--bad)', check:'var(--warn)'};
+function prepCond(d, x){
+  const how=x.how?` <span class="muted">· ${esc(t('how_'+x.how))}</span>`:'';
+  const btns=x.status==='check'&&['attest'].includes(x.action)?(['letterhead','legalized'].includes(x.id)
+      ?`<button class="btn sm" data-pslotans="${esc(d.slot_id)}" data-ans="yes">${esc(t('prepYes'))}</button><button class="btn sm ghost" data-pslotans="${esc(d.slot_id)}" data-ans="no">${esc(t('prepNo'))}</button>`
+      :`<button class="btn sm" data-pconf="${esc(d.id)}" data-cond="${esc(x.id)}" data-ans="yes">${esc(t('prepYes'))}</button><button class="btn sm ghost" data-pconf="${esc(d.id)}" data-cond="${esc(x.id)}" data-ans="no">${esc(t('prepNo'))}</button>`)
+    : x.action==='set_validity'&&x.status!=='ok'?`<input type="date" data-pdate="${esc(d.id)}" style="max-width:11em"><button class="btn sm" data-pdatego="${esc(d.id)}">${esc(t('prepSetDate'))}</button>`:'';
+  return `<div class="prepcond" data-st="${esc(x.status)}" style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;border-top:1px dashed var(--line)">
+    <b style="color:${PREP_COLOR[x.status]||'inherit'};min-width:1.2em;text-align:center" aria-hidden="true">${PREP_ICON[x.status]||'·'}</b>
+    <div class="grow" style="min-width:0"><div class="small"><b>${esc(L(x.label))}</b> <span class="chip ${x.status==='needs_you'?'c-bad':x.status==='ok'||x.status==='fixed'?'c-ok':'c-warn'}" style="vertical-align:middle"><i></i>${esc(t('cond_'+x.status))}</span></div>
+    <div class="small" style="color:${x.status==='needs_you'?'var(--bad)':'var(--muted)'}" dir="auto">${esc(L(x.why))}${how}</div>
+    ${btns?`<div class="row gap-s" style="margin-top:4px;flex-wrap:wrap">${btns}</div>`:''}</div></div>`; }
+function prepState(d){
+  if(!d.prepared) return `<span class="chip c-na"><i></i>${esc(t('prepNotYet'))}</span>`;
+  const st=d.state||{}; if(st.ready) return `<span class="chip c-ok"><i></i>${esc(t('prepReady'))}</span>`;
+  return [st.needs_you?`<span class="chip c-bad"><i></i>${esc(t('prepNeedsN').replace('{n}',st.needs_you))}</span>`:'', st.fix?`<span class="chip c-warn"><i></i>${esc(t('prepFixesN').replace('{n}',st.fix))}</span>`:'',
+    st.check?`<span class="chip c-warn"><i></i>${esc(t('prepChecksN').replace('{n}',st.check))}</span>`:''].join(''); }
+function prepCard(d){
+  const form=(d.conditions||[]).filter(x=>x.kind==='form'), content=(d.conditions||[]).filter(x=>x.kind==='content');
+  const md=d.model; const saw=md?`<div class="small" style="color:var(--ok)">${esc(t('prepModelSaw'))}: ${esc([md.kind, md.title, md.number, md.issuer, md.valid_until?('→ '+md.valid_until):''].filter(Boolean).join(' · '))}</div>`:'';
+  const qual=q=>!q?'':[(q.changed||[]).length?`<div class="small" style="color:var(--ok)">${esc(t('prepSecond'))}: ${q.changed.slice(0,4).map(c=>`<bdi>${esc(c.was)}</bdi> ← <bdi><b>${esc(c.now)}</b></bdi>`).join('، ')}</div>`:''].join('');
+  return `<div class="finding ${(d.state||{}).needs_you?'block':''}" data-pdoc="${esc(d.id)}"><div class="row gap-s" style="flex-wrap:wrap"><span class="code">${esc(d.ctd||'')}</span><b>${esc(L(d.item||{en:'',ar:''}))}</b>${prepState(d)}</div>
+    <div class="small"><bdi>${esc(d.original_name)}</bdi> → <b>${esc(t('prepNewName'))}:</b> <bdi>${esc((d.names.ectd32||d.names.ctd||'').split('/').pop()||'—')}</bdi></div>
+    <div class="small" data-pnow="${esc(d.id)}" style="color:var(--accent)" aria-live="polite"></div>
+    ${saw}${d.extracted&&d.extracted.length?`<div class="small" style="color:var(--ok)">${esc(t('prepFound'))}: ${esc(foundNames(d.extracted).join('، '))}</div>`:''}${qual(d.ocr_quality)}
+    ${form.length?`<div class="small muted" style="margin-top:6px"><b>${esc(t('prepForm'))}</b></div>${form.map(x=>prepCond(d,x)).join('')}`:''}
+    ${content.length?`<div class="small muted" style="margin-top:6px"><b>${esc(t('prepContent'))}</b></div>${content.map(x=>prepCond(d,x)).join('')}`:''}
+    ${!d.prepared||(d.state||{}).fix||d.model_wanted?`<div class="row gap-s" style="margin-top:6px"><button class="btn sm pri" data-pgo="${esc(d.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div>`:''}</div>`; }
 async function paintPrepare(){
   const out=$('#prepOut'); if(!out) return; let r;
   try{ r=await api(`/dossiers/${S.dossier.id}/prepare`); }catch(e){ out.innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
-  S.prep=r; $('#prepMsg').textContent='';
-  $('#prepOcr').textContent=r.ocr?t('prepOcrOn').replace('{l}', r.ocr.language==='ar+en'?L({en:'Arabic and English',ar:'عربي وإنجليزي'}):r.ocr.language):t('prepOcrOff');
+  S.prep=r; if(!S.prepBusy) $('#prepMsg').textContent='';
+  const inPage=!!(window.DBAI&&await window.DBAI.available()); S.prepModel=inPage?'page':r.model;
+  $('#prepOcr').textContent=t(inPage?'prepByPage':r.model==='server'?'prepByServer':'prepNoModel')+' '+(r.ocr?t('prepOcrOn').replace('{l}', r.ocr.language==='ar+en'?L({en:'Arabic and English',ar:'عربي وإنجليزي'}):r.ocr.language):window.DBOCR?'':t('prepOcrOff'));
   const rdChip=x=>x.reader==='ocr'?`<span class="chip c-rec"><i></i>${esc(t('prepReadOcr'))}</span>`:x.reader==='text'?`<span class="chip c-ok"><i></i>${esc(t('prepRead'))}</span>`:`<span class="chip c-bad"><i></i>${esc(t('prepReadNone'))}</span>`;
-  const found=f=>f&&f.length?`<div class="small" style="color:var(--ok)">${esc(t('prepFound'))}: ${esc(foundNames(f).join('، '))}</div>`:'';
-  const qual=q=>!q?'':[(q.changed||[]).length?`<div class="small" style="color:var(--ok)">${esc(t('prepSecond'))}: ${q.changed.slice(0,4).map(c=>`<bdi>${esc(c.was)}</bdi> ← <bdi><b>${esc(c.now)}</b></bdi>`).join('، ')}</div>`:'',
-    (q.doubtful||[]).length?`<div class="small" style="color:var(--warn)">${esc(t('prepDoubt'))}: ${q.doubtful.slice(0,6).map(d=>`<bdi>${esc(d.text)}</bdi> (${esc(String(d.page))})`).join('، ')}</div>`:'',
-    (q.weak||[]).length?`<div class="small" style="color:var(--bad)">${esc(t('prepWeak').replace('{p}', q.weak.join('، ')))}</div>`:''].join('');
-  const waiting=r.waiting.map(w=>`<div class="finding" data-pw="${esc(w.id)}"><div class="row gap-s" style="flex-wrap:wrap"><b>${bdi(w.filename)}</b>${rdChip(w.reading)}<span class="small muted">${w.reading.pages||0} ${esc(t('pagesN'))}</span></div>
-      ${found(w.reading.found)}${qual(w.reading.ocr_quality)}
+  const waiting=r.waiting.map(w=>`<div class="finding" data-pw="${esc(w.id)}" data-pdoc="${esc(w.id)}"><div class="row gap-s" style="flex-wrap:wrap"><b>${bdi(w.filename)}</b>${w.model?`<span class="chip c-ok"><i></i>${esc(t('readByModel'))}</span>`:rdChip(w.reading)}<span class="small muted">${w.reading.pages||0} ${esc(t('pagesN'))}</span></div>
+      <div class="small" data-pnow="${esc(w.id)}" style="color:var(--accent)" aria-live="polite"></div>
+      ${w.model?`<div class="small" style="color:var(--ok)">${esc(t('prepModelSaw'))}: ${esc([w.model.kind, w.model.title, w.model.issuer].filter(Boolean).join(' · '))}</div>`:''}
+      ${w.reading.found&&w.reading.found.length?`<div class="small" style="color:var(--ok)">${esc(t('prepFound'))}: ${esc(foundNames(w.reading.found).join('، '))}</div>`:''}
       <div class="row gap-s" style="flex-wrap:wrap;margin-top:4px"><label class="small">${esc(t('prepItem'))} <select data-pslot="${esc(w.id)}"><option value="">${esc(t('prepPick'))}</option>${(w.suggestions||[]).map(x=>`<option value="${esc(x.slot_id)}" ${x.slot_id===w.auto?'selected':''}>${esc(x.ctd||'')} ${esc(L(x.title||{en:x.slot_id,ar:x.slot_id}))}</option>`).join('')}</select></label>
       <button class="btn sm pri" data-pgo="${esc(w.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div></div>`).join('');
-  const placed=r.placed.map(d=>`<div class="finding ${d.needs_you.length?'block':''}"><div class="row gap-s" style="flex-wrap:wrap"><span class="code">${esc(d.ctd||'')}</span><b>${esc(L(d.item||{en:'',ar:''}))}</b>${chip(d.status)}</div>
-      <div class="small"><bdi>${esc(d.original_name)}</bdi> → <b>${esc(t('prepNewName'))}:</b> <bdi>${esc((d.names.ectd32||d.names.ctd||'').split('/').pop()||'—')}</bdi>${d.names.ectd32?` <span class="code muted">${esc(d.names.ectd32)}</span>`:''}</div>
-      ${found(d.extracted)}${qual(d.ocr_quality)}${d.optimized?`<div class="small" style="color:var(--ok)">${esc(t('prepImproved').replace('{a}', mbs(d.optimized.before)).replace('{b}', mbs(d.optimized.after)))}</div>`:''}
-      ${d.fixable.length?`<div class="row gap-s"><span class="small">${esc(t('prepFixN').replace('{n}', d.fixable.length))}</span><button class="btn sm pri" data-pgo="${esc(d.id)}">${icon('wrench',14)} ${esc(t('autofix'))}</button></div>`:''}
-      ${d.needs_you.map(f=>`<div class="small" style="color:var(--bad)">● ${esc(f[S.lang]||f.en)} <span class="code muted">${esc(f.rule)}</span></div>`).join('')}
-      ${!d.fixable.length&&!d.needs_you.length?`<div class="small" style="color:var(--ok)">✓ ${esc(t('prepDone'))}</div>`:''}</div>`).join('');
   const asked=r.requested.map(x=>`<span class="tag" title="${esc(L(x.title||{en:'',ar:''}))}">${esc(x.ctd||x.slot_id)}</span>`).join(' ');
   out.innerHTML=`<section class="card pad"><div class="hd"><h3>${esc(t('prepWaiting'))} <span class="tag">${r.waiting.length}</span></h3></div>${waiting||`<p class="small muted">${esc(t('prepNone'))}</p>`}</section>
-    <section class="card pad"><div class="hd"><h3>${esc(t('prepPlaced'))} <span class="tag">${r.placed.length}</span></h3></div>${placed}</section>
+    <section class="card pad"><div class="hd"><h3>${esc(t('prepPlaced'))} <span class="tag">${r.placed.length}</span></h3></div>${r.placed.map(prepCard).join('')}</section>
     <section class="card pad"><div class="hd"><h3>${esc(t('prepAsked'))} <span class="tag">${r.requested.length}</span></h3></div><div class="row gap-s" style="flex-wrap:wrap">${asked}</div></section>`;
-  $$('[data-pgo]', out).forEach(b=>b.onclick=async()=>{ b.disabled=true; await prepOne(b.dataset.pgo); paintPrepare(); });
+  prepWire(out);
+}
+function prepWire(out){
+  $$('[data-pgo]', out).forEach(b=>b.onclick=async()=>{ b.disabled=true; await prepOne(b.dataset.pgo); await paintPrepare(); });
+  $$('[data-pconf]', out).forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.pconf}/confirm`,{method:'POST',json:{cond:b.dataset.cond, answer:b.dataset.ans}}); }catch(e){ toast(e.message); } paintPrepare(); });
+  $$('[data-pslotans]', out).forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(b.dataset.pslotans)}/attest`,{method:'POST',json:{answer:b.dataset.ans}}); toast(t('attestSaved')); S.board=null; }catch(e){ toast(e.message); } paintPrepare(); });
+  $$('[data-pdatego]', out).forEach(b=>b.onclick=async()=>{ const v=($(`[data-pdate="${CSS.escape(b.dataset.pdatego)}"]`)||{}).value; if(!v) return;
+    try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.pdatego}/validity`,{method:'PUT',json:{valid_until:v}}); }catch(e){ toast(e.message); } paintPrepare(); });
 }
 function mbs(n){ return n>=1048576?(n/1048576).toFixed(n>=10485760?0:1)+' MB':Math.max(1,Math.round(n/1024))+' KB'; }
+/* where one document's work is, on the document itself (and in the line at the top while «Prepare them all» runs) */
+function prepNow(id, text){ const el=$(`[data-pnow="${CSS.escape(id)}"]`); if(el) el.textContent=text||''; if(S.prepBusy&&text) $('#prepMsg').textContent=`${S.prepBusy} — ${text}`; }
+/* the page's own reading of a scan for its text layer (boot.js): pages counted on the document being prepared */
+function prepOcr(d){ const now=S.prepDoing; if(!now||(d.name!==now.name&&d.sha256!==now.sha256)) return false;
+  if(d.stage==='load') prepNow(now.id, t('prepStepLoad'));
+  else if(d.stage==='read'||d.stage==='straighten'||d.stage==='check') prepNow(now.id, t('prepStepOcr').replace('{a}', d.page||0).replace('{b}', d.pages||'?'));
+  else if(d.stage==='error') prepNow(now.id, (d.message||''));
+  return true; }
+/* Claude reads one document's pages in the page (browser edition): its kind, its dates, what is on it (signed, stamped, letterhead,
+   legalised), kept with the document — before the engine prepares it */
+async function prepModelRead(id, name, scanned){
+  const r=await fetch(`/api/dossiers/${S.dossier.id}/documents/${id}/file`,{headers:{'X-DB':'1'}}); if(!r.ok) throw new Error(r.statusText);
+  const b=await r.blob(); const file=new File([b], name, {type:name.toLowerCase().endsWith('.pdf')?'application/pdf':(b.type||'')});
+  const meta=[{filename:name, text:'', pages:0, scanned:true, file:'pdf'}];                    // the pictures are what it is read from here
+  const p=(await api('/extract/text?target=document',{method:'POST',json:{files:meta}})).prompt;
+  const ai=await window.DBAI.extract(p, [file], meta, 'document', {pictures:'all', onStage:(n,st)=>prepNow(id, t(st==='pictures'?'prepStepPictures':'prepStepModel'))});
+  await api(`/dossiers/${S.dossier.id}/documents/${id}/model-reading`,{method:'POST',json:{ai, by:'claude.ai'}});
+}
+/* the waiting scans: Claude reads them as soon as they are added, so each is suggested its item */
+async function prepModelWaiting(){
+  if(S.prepModel!=='page'||!S.prep) return;
+  for(const w of S.prep.waiting.filter(x=>x.model_wanted)){ try{ await prepModelRead(w.id, w.filename, true); }catch(e){ console.warn('model', w.filename, e); prepNow(w.id, t('prepModelFailed')+': '+((e&&(e.code||e.message))||'')); } }
+  await paintPrepare();
+}
 async function prepOne(id){
+  const r0=S.prep||{waiting:[],placed:[]}; const w=r0.waiting.find(x=>x.id===id), d=r0.placed.find(x=>x.id===id), name=(w||d||{}).filename||'';
   const sel=$(`[data-pslot="${CSS.escape(id)}"]`); const body=sel&&sel.value?{slot_id:sel.value}:{};
-  try{ const r=await api(`/dossiers/${S.dossier.id}/prepare/${id}`,{method:'POST',json:body});
+  S.prepDoing={id, name};
+  try{
+    if(S.prepModel==='page'&&((w&&w.model_wanted)||(d&&d.model_wanted))){                    // Claude looks at its pages first
+      try{ await prepModelRead(id, name, w?true:!!(d&&(d.conditions||[]).some(x=>x.id==='pdf'&&x.status!=='ok'))); }
+      catch(e){ console.warn('model', name, e); prepNow(id, t('prepModelFailed')+': '+((e&&(e.code||e.message))||'')); }
+    }
+    prepNow(id, t('prepStepPrep'));
+    const r=await api(`/dossiers/${S.dossier.id}/prepare/${id}`,{method:'POST',json:body});
+    const doc=r.document||{}, eyes=(r.conditions||[]).some(x=>x.status==='check'&&['letterhead','legalized','coa','translation'].includes(x.id));
+    if(S.prepModel==='page'&&doc.id&&doc.slot_id&&!(doc.meta||{}).model&&(((r.reading||{}).scanned&&!(r.reading||{}).chars)||eyes)){   // what only eyes see: Claude looks now
+      S.prepDoing={id:doc.id, name:doc.filename};
+      try{ await prepModelRead(doc.id, doc.filename, true); }catch(e){ console.warn('model', doc.filename, e); toast(t('prepModelFailed')+': '+((e&&(e.code||e.message))||'')); } }
     if((r.steps||[])[0]==='needs_item') toast(t('prepPick'));
-    const no=(r.steps||[]).flatMap(s=>(s&&s.refused)||[]); if(no.length) toast(no.map(x=>x[S.lang]||x.en).join(' · '));   // a fix it could not make, and why
-    const imp=(r.steps||[]).find(s=>s&&s.improved); if(imp&&!no.length) toast(t('prepImproved').replace('{a}', mbs(imp.improved.before)).replace('{b}', mbs(imp.improved.after)));
-    const cut=(r.steps||[]).find(s=>s&&s.split); if(cut) toast(t('prepSplit').replace('{n}', cut.split.parts), 8000);
-    S.board=null; return r; }catch(e){ toast(e.message); }
+    const said=(r.steps||[]).filter(s=>s&&typeof s==='object');                                    // the steps that carry news (a string step is only its name)
+    const no=said.flatMap(s=>s.refused||[]); if(no.length) toast(no.map(x=>x[S.lang]||x.en).join(' · '));   // a fix it could not make, and why
+    const cut=said.find(s=>s.split); if(cut) toast(t('prepSplit').replace('{n}', cut.split.parts), 8000);
+    S.board=null; return r; }
+  catch(e){ toast(e.message); }
+  finally{ const was=S.prepDoing; S.prepDoing=null; prepNow(id, ''); if(was&&was.id!==id) prepNow(was.id, ''); }
 }
 async function prepAll(){
-  const r=S.prep||await api(`/dossiers/${S.dossier.id}/prepare`); const todo=[...r.waiting.filter(w=>w.auto||($(`[data-pslot="${CSS.escape(w.id)}"]`)||{}).value).map(w=>w.id), ...r.placed.filter(d=>d.fixable.length||d.improvable).map(d=>d.id)];
-  let i=0; for(const id of todo){ i++; $('#prepMsg').textContent=t('prepWorking').replace('{i}',i).replace('{n}',todo.length); await prepOne(id); }
-  $('#prepMsg').textContent=''; paintPrepare();
+  if(S.prepWaitP){ $('#prepMsg').textContent=t('prepStepModel'); await S.prepWaitP.catch(()=>{}); S.prepWaitP=null; }   // Claude is still reading the files just added: their items come from it
+  const r=S.prep||await api(`/dossiers/${S.dossier.id}/prepare`);
+  const todo=[...r.waiting.filter(w=>w.auto||($(`[data-pslot="${CSS.escape(w.id)}"]`)||{}).value).map(w=>w.id),
+              ...r.placed.filter(d=>!d.prepared||(d.state||{}).fix||d.model_wanted||d.improvable).map(d=>d.id)];
+  let i=0;
+  for(const id of todo){ i++; const x=r.waiting.find(y=>y.id===id)||r.placed.find(y=>y.id===id)||{};
+    S.prepBusy=t('prepWorking').replace('{i}',i).replace('{n}',todo.length)+` ${x.filename||''}`; $('#prepMsg').textContent=S.prepBusy;
+    await prepOne(id); }
+  S.prepBusy=null; $('#prepMsg').textContent=''; await paintPrepare();
 }
 /* ---------------- search the text of every document (each file read once, page by page, and kept) */
 function searchView(tok){
@@ -3275,7 +3393,10 @@ async function rAskAI(ids, dept, sec){
   const p = await api(`/dossiers/${id}/review/${rid}/ai?${q}`);
   toast(rt('aiReading'));
   if(window.DBAI && await window.DBAI.available()){
-    const answers = await window.DBAI.extract(p.prompt, [], [], 'review');          // the documents' own text is in the prompt: no page images
+    const files=[], meta=[];                                          // the documents' own text is in the prompt; a scanned one, Claude reads from its pages
+    for(const d of (p.documents||[]).filter(x=>x.scanned).slice(0,3)){ try{ const r=await fetch(`/api/dossiers/${id}/documents/${d.doc_id}/file`,{headers:{'X-DB':'1'}});
+        if(r.ok){ const b=await r.blob(), n=d.filename||d.title||'document.pdf'; files.push(new File([b], n, {type:'application/pdf'})); meta.push({filename:n, scanned:true}); } }catch(e){} }
+    const answers = await window.DBAI.extract(p.prompt, files, meta, 'review');
     const r = await api(`/dossiers/${id}/review/${rid}/ai`, {method:'POST', json:{answers}}); S.review.run = r.run; await rLoad(); toast(rt('aiDone')); return;
   }
   try{ const r = await api(`/dossiers/${id}/review/${rid}/ai/server?${q}`, {method:'POST'}); S.review.run = r.run; await rLoad(); toast(rt('aiDone')); }

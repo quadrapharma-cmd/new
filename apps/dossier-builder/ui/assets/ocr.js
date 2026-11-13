@@ -9,9 +9,12 @@
         of the two readings kept. A page far harder (more than 25 % doubtful: most likely turned) is straightened before step 2, and
         the second reader reads the upright page — the desktop reads such a page again too, but its second reader does not.
    Nothing leaves the browser. The files (assets/ocr/, web/ocr_assets.py) are fetched the first time a scan is read and kept on
-   the device. window.DBOCR = {
+   the device. Where claude.ai's model is there (the sample capability), the model reads a scan from its page pictures
+   (pageImages) and this reading only writes the invisible text layer, quickly: `quick` reads the pages two or three at a time with
+   Tesseract alone, and turns a page only when it is most likely sideways. window.DBOCR = {
      available(), sha256(blob) → hex,
-     read(file, {maxPages = 12, onProgress({stage: load|read|check|straighten|done, page, pages, part})}) →
+     pageImages(file, {max = 3, pick: [1, 2, -1], budget, quality = 0.85}) → [{blob: JPEG, page, pages, part}] — pages as pictures for the model,
+     read(file, {maxPages = 12, quick = false, onProgress({stage: load|read|check|straighten|done, page, pages, part})}) →
        {pages: [{page, text, words: [{text, conf, box: [x, y, w, h] in points from the top left}], read, rotated?}],
         rep: {words, pages, quality: {page: {words, low, mean, numbers, read, second?}}, second_reader, weak, models}, tag} } */
 (function () {
@@ -139,7 +142,8 @@
       const opts = { workerPath: base + 'worker.boot.js', corePath: base + (simd() ? 'tesseract-core-simd-lstm.wasm.js' : 'tesseract-core-lstm.wasm.js'),
         langPath: base.replace(/\/$/, ''), gzip: true, workerBlobURL: false, cachePath: 'dbocr-' + TAG(),
         logger: m => { if (tessTell && m && /loading|initializ/i.test(m.status || '')) tessTell(m.progress || 0); } };
-      const n = (navigator.hardwareConcurrency || 2) >= 6 ? 2 : 1, sched = T.createScheduler();
+      const n = Math.min(3, Math.max(1, Math.floor((navigator.hardwareConcurrency || 2) / 2))), sched = T.createScheduler();   // a page each, at once
+      sched.size = n;
       for (let i = 0; i < n; i++) {
         const w = await T.createWorker(LANGS, 1, opts);
         await w.setParameters({ tessedit_pageseg_mode: '3', user_defined_dpi: String(DPI) });   // automatic page layout, as the tesseract command
@@ -382,26 +386,32 @@
   }
   async function readNow(file, opts) {
     const tell = (stage, page, pages, part) => { try { if (opts.onProgress) opts.onProgress({ stage, page, pages, part }); } catch (e) {} };
+    const quick = !!opts.quick;
     tell('load', 0, 0, 0);
     tessTell = p => tell('load', 0, 0, p);
-    try { await tesseract(); } finally { tessTell = null; }
+    let sched;
+    try { sched = await tesseract(); } finally { tessTell = null; }
     let pd = null;
-    try { pd = await paddle(() => tell('load', 0, 0, 0.5)); } catch (e) { console.warn('second reader', e); }
+    if (!quick) { try { pd = await paddle(() => tell('load', 0, 0, 0.5)); } catch (e) { console.warn('second reader', e); } }
     const doc = await open(file, opts.maxPages || 12);
     try {
-      const pages = [];
-      for (let i = 1; i <= doc.count; i++) {                      // 1) read as scanned
-        tell('read', i, doc.count, (i - 1) / doc.count);
+      const pages = new Array(doc.count);
+      let next = 1, done = 0;
+      const one = async i => {                                    // 1) read as scanned
         const pic = await doc.draw(i, DPI, 0), { ws } = await tess(pic, false);
         const pg = { page: i, pic, rot: 0, angle: 0, words: inPoints(ws, pic.dpi || DPI), fixes: [] };
         pg.q = Object.assign(quality(pg.words), { read: 'as scanned' });
         if (pg.q.low <= HARD) await check(pg, doc, pd, tell);       // a page this hard is most likely turned: straightened first
-        if (!weak(pg.q)) pg.pic = null;
-        pages.push(pg);
+        if (!weak(pg.q) || (quick && pg.q.low <= HARD)) pg.pic = null;
+        pages[i - 1] = pg;
+        tell('read', ++done, doc.count, done / doc.count);
         await yieldNow();
-      }
+      };
+      const lanes = quick ? Math.max(1, sched.size || 1) : 1;     // quick: as many pages at once as Tesseract has workers
+      tell('read', 0, doc.count, 0);
+      await Promise.all(Array.from({ length: Math.min(lanes, doc.count) }, async () => { while (next <= doc.count) await one(next++); }));
       for (const pg of pages) {                                   // 3) the pages still weak, turned upright and straightened
-        if (!weak(pg.q)) continue;
+        if (!weak(pg.q) || (quick && pg.q.low <= HARD)) continue; // quick: only a page most likely turned
         tell('straighten', pg.page, doc.count, pg.page / doc.count);
         let best = null;
         for (const rot of [90, 270, 180]) {                       // which way up: a quick reading of each turn at 150 dpi
@@ -425,11 +435,55 @@
       const quality_ = {};
       for (const pg of pages) quality_[pg.page] = pg.q;
       return { pages: pages.map(pg => Object.assign({ page: pg.page, text: pg.text, words: pg.words, read: pg.q.read }, pg.rot ? { rotated: pg.rot } : {}, pg.angle ? { deskew: pg.angle } : {})),
-        tag: LANGS.join('+') + '+best' + (pd ? '+paddle' : ''),
+        tag: LANGS.join('+') + '+best' + (pd ? '+paddle' : '') + (quick ? '+quick' : ''),
         rep: { words: pages.reduce((a, pg) => a + pg.q.words, 0), pages: pages.map(pg => ({ page: pg.page, words: pg.q.words })), quality: quality_,
                second_reader: pages.reduce((a, pg) => a + pg.fixes.length, 0), weak: pages.filter(pg => weak(pg.q)).map(pg => pg.page), models: 'best 4.1.0' } };
     } finally { doc.close(); }
   }
 
-  window.DBOCR = { available, read, sha256, _toLogical: toLogical, _vote: vote, _spans: spans, _resize: resize, _pyRound: pyRound };
+  /* the first pages of a scan or an image as JPEG pictures for claude.ai's model (boot.js DBAI.extract). The platform brings every
+     picture down to about 1.2 megapixels, so a whole A4 page would reach the model at about 110 dpi — small Arabic print in a licence's
+     tables is lost at that. Each page goes as two halves, top and bottom, overlapping by a tenth so no line is cut: about 160 dpi each.
+     pdf.js and the image decoders only — no reader to load. → [{blob, page, pages, part: 'top' | 'bottom'}] */
+  async function pageImages(file, o) {
+    o = o || {};
+    const max = o.max || 3, budget = o.budget || 2 * max, quality = o.quality || 0.85, MP = 1.2e6, OVER = 0.1;
+    const which = n => [...new Set((o.pick || Array.from({ length: max }, (_, i) => i + 1)).map(k => k < 0 ? n + 1 + k : k).filter(k => k >= 1 && k <= n))].sort((a, b) => a - b);   // pick: page numbers, -1 the last
+    const jpeg = c => new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('the page could not be drawn')), 'image/jpeg', quality));
+    const halves = async (src, page, pages, out) => {
+      const h = Math.round(src.height * (0.5 + OVER / 2));
+      for (const [part, y] of [['top', 0], ['bottom', src.height - h]]) {
+        if (out.length >= budget) return;
+        const k = Math.min(1, Math.sqrt(MP / (src.width * h)));
+        const c = document.createElement('canvas'); c.width = Math.round(src.width * k); c.height = Math.round(h * k);
+        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+        g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+        g.drawImage(src, 0, y, src.width, h, 0, 0, c.width, c.height);
+        out.push({ blob: await jpeg(c), page, pages, part });
+      }
+    };
+    const out = [];
+    if (!isPdf(file)) {
+      const pics = await images(file);
+      for (const k of which(pics.length)) { if (out.length >= budget) break; await halves(pics[k - 1], k, pics.length, out); }
+      return out;
+    }
+    const lib = await pdfjs();
+    const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+    try {
+      for (const i of which(doc.numPages)) {
+        if (out.length >= budget) break;
+        const p = await doc.getPage(i), v1 = p.getViewport({ scale: 1 });
+        const vp = p.getViewport({ scale: Math.min(4, Math.sqrt(2.2 * MP / (v1.width * v1.height))) });   // enough pixels for two halves
+        const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+        await p.render({ canvasContext: g, viewport: vp }).promise;
+        p.cleanup();
+        await halves(c, i, doc.numPages, out);
+      }
+      return out;
+    } finally { try { doc.destroy(); } catch (e) {} }
+  }
+
+  window.DBOCR = { available, read, pageImages, sha256, _toLogical: toLogical, _vote: vote, _spans: spans, _resize: resize, _pyRound: pyRound };
 })();

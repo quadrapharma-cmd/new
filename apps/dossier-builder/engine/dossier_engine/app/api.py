@@ -909,7 +909,7 @@ def create_app(workspace, auth_enabled=None):
                                              'profile': 'EU Module 1 v3.1.1 + EU eCTD validation criteria v8.2'},
                                'ectd40': {'rules': rules40, 'profile': 'EG eCTD 4.0 provisional v0'}},
                 'doc_types': len(doc_types), 'outputs': ['ctd', 'ectd32', 'ectd40'], 'office_pdf': bool(find_soffice()),
-                'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
+                'ai_server': bool(_ai_key())}
 
     from .. import extract as _extract
 
@@ -919,7 +919,7 @@ def create_app(workspace, auth_enabled=None):
         pairs = [(f.filename, await f.read()) for f in files]
         r = _extract.read_files(pairs)
         return {'files': [dict(f) for f in r['files']], 'rules': r['rules'],
-                'prompt': _extract.ai_prompt(r['files'], target), 'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
+                'prompt': _extract.ai_prompt(r['files'], target), 'ai_server': bool(_ai_key())}
 
     @app.post('/api/ocr/check')
     async def ocr_check(file: UploadFile = File(...)):
@@ -977,27 +977,55 @@ def create_app(workspace, auth_enabled=None):
         r = _extract.read_files([(n, b) for n, b, _ in docs])
         files = [dict({k: v for k, v in f.items() if k != 'text'}, doc_id=d[2]) for f, d in zip(r['files'], docs)]
         return {'files': files, 'rules': r['rules'], 'prompt': _extract.ai_prompt(r['files'], target),
-                'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
+                'ai_server': bool(_ai_key())}
+
+    def _ai_key():
+        """The Anthropic key this edition reads with: the environment's, or the one saved in the Assistant's settings (on this
+        computer, mode 0600). None in the browser edition, where claude.ai's own model reads in the page (DBAI)."""
+        if sys.platform == 'emscripten':
+            return None
+        from ..assistant import settings as _aset
+        return _aset.api_key(st.root)
+
+    def _for_model(name, data):
+        """A PDF as the model takes it: whole up to 24 MB (the API takes 32 MB a request, base64 included); a larger one — a long
+        scan — its first 20 pages, where a document's kind and its information are."""
+        if len(data) <= 24_000_000:
+            return data
+        try:
+            from .. import pdfcraft as _pc
+            return _pc.split(data, [(1, min(20, max(1, _pc.page_count(data))))])[0]
+        except Exception:
+            return None
 
     def _ai_read(pairs, target):
-        """Claude reads the PDFs themselves (scans included) against the intake schema — the API edition of the
-        browser's «sample» layer. Needs ANTHROPIC_API_KEY on this computer."""
-        if not os.environ.get('ANTHROPIC_API_KEY'):
-            err(501, 'E-NO-AI', 'Set ANTHROPIC_API_KEY on this computer to let Claude read the documents.',
-                'اضبط ANTHROPIC_API_KEY على الجهاز ده عشان Claude يقرأ المستندات.')
+        """Claude reads the PDFs themselves (scans included: the API reads each page as an image too) against the intake schema —
+        the server editions' side of the browser's «sample» layer. Needs an Anthropic key on this computer (the environment, or the
+        Assistant's settings)."""
+        key = _ai_key()
+        if not key:
+            err(501, 'E-NO-AI', "Save the Anthropic API key (the Assistant's settings) to let Claude read the documents.",
+                'سجّل مفتاح Anthropic (من إعدادات المساعد) عشان Claude يقرأ المستندات.')
         import base64
         import anthropic
+        from ..assistant import settings as _aset
         r = _extract.read_files(pairs)
-        content = [{'type': 'document', 'title': name, 'source': {'type': 'base64', 'media_type': 'application/pdf',
-                    'data': base64.standard_b64encode(data).decode()}} for name, data in pairs if data[:4] == b'%PDF']
+        content = []
+        for name, data in pairs:
+            if data[:4] != b'%PDF':
+                continue
+            pdf = _for_model(name, data)
+            if pdf:
+                content.append({'type': 'document', 'title': name, 'source': {'type': 'base64', 'media_type': 'application/pdf',
+                                'data': base64.standard_b64encode(pdf).decode()}})
         for name, data in pairs:                      # photos / scans uploaded as images
             im = _imagefiles.for_model(data)
             if im:
                 content.append({'type': 'image', 'source': {'type': 'base64', 'media_type': im[0], 'data': base64.standard_b64encode(im[1]).decode()}})
         content.append({'type': 'text', 'text': _extract.ai_prompt([dict(f, text='(the PDF is attached above)') for f in r['files']], target)})
-        client = anthropic.Anthropic()
-        with client.beta.messages.stream(model='claude-opus-5-5', max_tokens=16000, output_config={'effort': 'medium'},
-                                         betas=['server-side-fallback-2026-07-01'], fallbacks='default',
+        client = anthropic.Anthropic(api_key=key)
+        with client.beta.messages.stream(model=_aset.load(st.root).get('model') or 'claude-opus-5-5', max_tokens=16000,
+                                         output_config={'effort': 'medium'}, betas=['server-side-fallback-2026-07-01'], fallbacks='default',
                                          messages=[{'role': 'user', 'content': content}]) as stream:
             msg = stream.get_final_message()
         if msg.stop_reason == 'refusal':
@@ -1034,7 +1062,7 @@ def create_app(workspace, auth_enabled=None):
             err(422, 'E-FILES', 'files must be a list of at most 300 items.', 'files لازم تكون قائمة بحد أقصى 300 عنصر.')
         r = _extract.read_texts([f for f in files if isinstance(f, dict)])
         return {'files': [{k: v for k, v in f.items() if k != 'text'} | {'text': f['text']} for f in r['files']], 'rules': r['rules'],
-                'prompt': _extract.ai_prompt(r['files'], target), 'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
+                'prompt': _extract.ai_prompt(r['files'], target), 'ai_server': bool(_ai_key())}
 
     @app.post('/api/extract/ai')
     async def extract_ai(files: list[UploadFile] = File(...), target: str = 'dossier'):
@@ -1404,7 +1432,88 @@ def create_app(workspace, auth_enabled=None):
         f = r['files'][0]
         return {'reader': 'ocr' if f.get('ocr') else ('text' if f.get('chars') else 'none'), 'pages': f.get('pages'), 'chars': f.get('chars'),
                 'scanned': bool(f.get('scanned')), 'ocr_language': f.get('ocr_language'), 'ocr_quality': f.get('ocr_quality'), 'kind': f.get('kind'),
-                'found': f.get('found') or [], 'rules': r['rules']}
+                'found': f.get('found') or [], 'arabic': bool(f.get('arabic')), 'text': (f.get('text') or '')[:4000], 'rules': r['rules']}
+
+    def _prep_ctx(did):
+        """What every document's verdict in one dossier needs, read once: the dossier, its pack, its items by id."""
+        d = st.dossier(did)
+        return d, st.pack(d['pack']), {x.slot_id: x for x in st.slots(did)}
+
+    def _req_of(did, doc, slot_id=None, ctx=None):
+        """The requirement a placed document answers, its pack, and the person's answer to its item's question."""
+        slot_id = slot_id or doc.get('slot_id')
+        if not slot_id:
+            return None, None, None
+        d, pk, slots = ctx or _prep_ctx(did)
+        slot = slots.get(slot_id)
+        req = pk.by_id.get(slot.req_id) if slot else None
+        attest = ((d.get('data') or {}).get('attest') or {}).get(slot_id)
+        return req, pk, attest
+
+    def _verdict(did, doc, reading=None, slot_id=None, ctx=None):
+        """The document against its item's conditions (prepare.py): [lines], {counts, ready}."""
+        from .. import prepare as _prep
+        req, pk, attest = _req_of(did, doc, slot_id, ctx)
+        if pk is None:
+            return [], {}
+        lines = _prep.verdict(doc, req, pk, reading=reading if reading is not None else (doc.get('meta') or {}).get('extracted') or {},
+                              attest=attest, today=st.today())
+        return lines, _prep.summary(lines)
+
+    def _wants_model(did, doc, reading=None, slot_id=None, ctx=None):
+        """Whether Claude should look at this document's pages: a scan with no text of its own, or an item whose conditions only eyes
+        can check (letterhead, signed, stamped, legalised, a CoA's data) — and it has not looked yet, and its class may be sent."""
+        meta = doc.get('meta') or {}
+        if meta.get('model'):
+            return False
+        from ..assistant import settings as _aset
+        if doc.get('doc_class') and doc['doc_class'] in (_aset.load(st.root).get('never_send') or []):
+            return False
+        rd = reading if reading is not None else meta.get('extracted') or {}
+        if (rd.get('scanned') and not rd.get('chars')) or doc['filename'].lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff', '.gif', '.bmp', '.webp')):
+            return True
+        req, pk, _ = _req_of(did, doc, slot_id, ctx)
+        ids = {c.get('id') for c in (_conditions.for_requirement(req, pk) if req else [])}
+        return bool(ids & {'letterhead', 'legalized', 'coa', 'translation'})
+
+    def _read_by_model(did, doc):
+        """Claude reads this document's pages through the key (server editions) and the reading is kept with it."""
+        data = st.blob_path(doc['sha256']).read_bytes()
+        ai = _ai_read([(doc['filename'], data)], 'document')['ai']
+        return st.keep_model_reading(did, doc['id'], ai, 'api')
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/model-reading')
+    def keep_model_reading(did: str, doc_id: str, body: dict):
+        """What claude.ai's model read on this document's pages in the browser edition (DBAI.extract, target «document»), kept with it."""
+        ai = (body or {}).get('ai')
+        if not isinstance(ai, dict):
+            err(422, 'E-AI', 'The reading must be a JSON object.', 'القراءة لازم تكون JSON.')
+        try:
+            doc = st.keep_model_reading(did, doc_id, ai, (body or {}).get('by') or 'claude.ai')
+        except StoreError as e:
+            err(404, e.code, e.en, e.ar)
+        lines, state = _verdict(did, doc)
+        return {'document': doc, 'conditions': lines, 'state': state}
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/confirm')
+    def confirm_condition(did: str, doc_id: str, body: dict):
+        """The person's answer to a condition the program could not see on this document → its conditions again."""
+        try:
+            doc = st.confirm_condition(did, doc_id, (body or {}).get('cond'), (body or {}).get('answer'))
+        except StoreError as e:
+            err(422 if e.code == 'E-ANSWER' else 404, e.code, e.en, e.ar)
+        lines, state = _verdict(did, doc)
+        return {'document': doc, 'conditions': lines, 'state': state}
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/read-by-model')
+    def read_by_model(did: str, doc_id: str):
+        """Claude reads this document's pages now (server editions, with the key)."""
+        doc = st.document(doc_id)
+        if doc['dossier_id'] != did:
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        doc = _read_by_model(did, doc)
+        lines, state = _verdict(did, doc)
+        return {'document': doc, 'conditions': lines, 'state': state}
 
     @app.get('/api/dossiers/{did}/prepare')
     def prepare_overview(did: str):
@@ -1419,14 +1528,19 @@ def create_app(workspace, auth_enabled=None):
         for u in unplaced_list(did):
             doc = st.document(u['id'])
             rd = _reading(doc['filename'], st.blob_path(doc['sha256']).read_bytes())
-            waiting.append({**u, 'reading': {k: v for k, v in rd.items() if k != 'rules'}})
-        placed = []
+            md = ((doc.get('meta') or {}).get('model') or {}).get('doc') or {}
+            waiting.append({**u, 'reading': {k: v for k, v in rd.items() if k not in ('rules', 'text')}, 'model': md or None,
+                            'model_wanted': not md and bool(rd.get('scanned') and not rd.get('chars'))})
+        placed, ctx = [], _prep_ctx(did)
         for s in board['slots']:
             for doc in s.get('documents') or []:
                 if (doc.get('meta') or {}).get('external'):
                     continue
                 fx, left = _prep_left(doc)
+                lines, state = _verdict(did, doc, slot_id=s['slot_id'], ctx=ctx)
                 placed.append({'id': doc['id'], 'slot_id': s['slot_id'], 'ctd': s.get('ctd'), 'item': s.get('title'), 'filename': doc['filename'],
+                               'conditions': lines, 'state': state, 'prepared': bool(((doc.get('meta') or {}).get('extracted') or {}).get('reader')),
+                               'model': ((doc.get('meta') or {}).get('model') or {}).get('doc') or None, 'model_wanted': _wants_model(did, doc, slot_id=s['slot_id'], ctx=ctx),
                                'original_name': (doc.get('meta') or {}).get('original_name') or doc['filename'], 'version': doc.get('version'),
                                'status': doc.get('check_status'), 'fixable': fx, 'needs_you': left, 'names': names.get(doc['id'], {}),
                                'extracted': (doc.get('meta') or {}).get('extracted', {}).get('found', []),
@@ -1434,7 +1548,8 @@ def create_app(workspace, auth_enabled=None):
                                'optimized': (doc.get('meta') or {}).get('optimized'),
                                'improvable': bool(_pc.available() and doc['filename'].lower().endswith('.pdf')
                                                   and not (doc.get('meta') or {}).get('optimized'))})
-        return {'requested': requested, 'waiting': waiting, 'placed': placed, 'engine': _pc.status(), 'ocr': _pc.ocr_info()}
+        return {'requested': requested, 'waiting': waiting, 'placed': placed, 'engine': _pc.status(), 'ocr': _pc.ocr_info(),
+                'model': 'server' if _ai_key() else None}
 
     @app.post('/api/dossiers/{did}/prepare/{doc_id}')
     def prepare_one(did: str, doc_id: str, body: dict = None):
@@ -1458,9 +1573,17 @@ def create_app(workspace, auth_enabled=None):
         data = st.blob_path(doc['sha256']).read_bytes()
         rd = _reading(doc['filename'], data)
         keep = {'found': rd['found'], 'reader': rd['reader'], 'ocr_language': rd['ocr_language'], 'ocr_quality': rd['ocr_quality'],
-                'fields': rd['rules']}
+                'fields': rd['rules'], 'chars': rd['chars'], 'scanned': rd['scanned'], 'arabic': rd['arabic'], 'text': rd['text']}
         doc = st.keep_reading(did, doc['id'], keep)
         steps.append('read_ocr' if rd['reader'] == 'ocr' else 'read')
+        if body.get('model', True) and _ai_key() and _wants_model(did, doc, keep):       # Claude looks at its pages (server editions)
+            try:
+                doc = _read_by_model(did, doc)
+                steps.append('read_model')
+            except HTTPException as e:
+                steps.append({'model_failed': (e.detail or {}).get('en') if isinstance(e.detail, dict) else str(e.detail)})
+            except Exception as e:                       # no network, a refusal: the rest of the preparation goes on
+                steps.append({'model_failed': str(e)[:200]})
         if body.get('fix', True) and any(f.get('action') == 'auto_fix' for f in doc.get('findings') or []):
             r = st.fix_document(did, doc['id'])
             if r.get('document'):
@@ -1476,12 +1599,14 @@ def create_app(workspace, auth_enabled=None):
             cut = st.split_large(did, doc['id'])                          # over 100 MB still: cut into parts that fit, in the same item
             if cut['parts']:
                 steps.append({'split': {'parts': len(cut['parts'])}})
+                lines, state = _verdict(did, cut['parts'][0], keep)
                 return {'document': cut['parts'][0], 'parts': cut['parts'], 'steps': steps,
-                        'reading': {k: v for k, v in rd.items() if k != 'rules'}, 'names': _names(did).get(cut['parts'][0]['id'], {}),
-                        'fixable': [], 'needs_you': []}
+                        'reading': {k: v for k, v in rd.items() if k not in ('rules', 'text')}, 'names': _names(did).get(cut['parts'][0]['id'], {}),
+                        'fixable': [], 'needs_you': [], 'conditions': lines, 'state': state}
         fixable, left = _prep_left(doc)
-        return {'document': doc, 'steps': steps, 'reading': {k: v for k, v in rd.items() if k != 'rules'}, 'names': _names(did).get(doc['id'], {}),
-                'fixable': fixable, 'needs_you': left}
+        lines, state = _verdict(did, doc, keep)
+        return {'document': doc, 'steps': steps, 'reading': {k: v for k, v in rd.items() if k not in ('rules', 'text')}, 'names': _names(did).get(doc['id'], {}),
+                'fixable': fixable, 'needs_you': left, 'conditions': lines, 'state': state}
 
     @app.post('/api/dossiers/{did}/classify')
     async def classify(did: str, files: list[UploadFile] = File(...)):
