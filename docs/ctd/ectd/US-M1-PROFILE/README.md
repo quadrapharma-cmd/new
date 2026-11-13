@@ -14,7 +14,10 @@
 **Missing — and why the US eCTD is not written yet:** the coded values the us-regional.xml must carry (application type,
 submission type and sub-type, contact and telephone types, form types…) are kept by the FDA in separate files
 (`application-type.xml`, `submission-type.xml`, `submission-sub-type.xml`, `applicant-contact-type.xml`,
-`telephone-number-type.xml`, `form-type.xml`, …) on `www.accessdata.fda.gov/static/eCTD/`, which this environment cannot reach.
+`telephone-number-type.xml`, `form-type.xml`, …) on `www.accessdata.fda.gov/static/eCTD/`. The host is allowed now (13/11/2026), but
+the FDA's abuse detection answers an automated download with its «excessive requests» page — the program does not get around
+that. **A person downloads them in a browser** — `us-regional-v3-3.zip`, `us-regional.zip` and the ten code lists linked from
+fda.gov «eCTD Submission Standards for eCTD v3.2.2 and Regional M1» — and puts them in this folder; the US writer is built on them.
 The specification shows codes in its examples (fdaat1, fdast1, fdasst4 …) but not their full lists or meanings; a writer built on
 guessed meanings would file wrong codes. With the lists, the US writer follows the EU one: the admin block (D-U-N-S® id, company,
 contacts, application and submission information), the m1-regional headings of the DTD, the study tagging files

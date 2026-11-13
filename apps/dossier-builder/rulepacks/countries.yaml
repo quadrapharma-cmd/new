@@ -89,7 +89,7 @@ countries:
     formats: {ctd: 'yes', ectd32: unknown, ectd40: 'no', nees: unknown, actd: 'no'}
     module1: Jordanian Module 1
     criteria: unknown
-    note: The JFDA site is not reachable from here; its own text decides.
+    note: The JFDA site resets the connection from here (13/11/2026); its own text decides — a person can download its eCTD guidance.
     source: docs/ctd/COMPETITORS.md
     evidence: secondary
   - code: ASEAN
