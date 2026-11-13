@@ -1292,6 +1292,43 @@ def read_texts(files):
     return {'files': texts, 'rules': merge(items)}
 
 
+SPLIT_KINDS = ('licence', 'pricing', 'cpp', 'gmp', 'cep', 'coa', 'cadc', 'composition', 'annex1', 'smpc', 'factory', 'bmr', 'stability', 'spec',
+               'loa', 'poa', 'commercial', 'contract', 'variation', 'import', 'method', 'validation', 'receipt', 'other')
+
+
+def split_prompt(pages, pictures=False):
+    """The instruction for finding the separate documents of one combined file (a licence, a pricing certificate and two certificates
+    of analysis scanned into one PDF): the parts, consecutive, covering every page."""
+    seen = ('The pictures attached are the pages of ONE uploaded file, in order; each small page is labelled with its page number. '
+            if pictures else 'The PDF attached is ONE uploaded file. ')
+    return (seen + f'It has {pages} pages. A company often scans several separate documents into one file — a registration licence, a '
+            'pricing certificate, certificates of analysis, a GMP certificate, letters. Say where each separate document starts and ends. '
+            'A document\'s own continuation pages (page 2 of 3, annexes, tables, the signature page) belong to it; a new letterhead, a new '
+            'title or a new «page 1 of …» starts the next one. Two certificates of analysis of different batches are two documents. '
+            'Reply with ONLY one JSON object: {"parts": [{"from": 1, "to": 3, "kind": "<' + ' | '.join(SPLIT_KINDS) + '>", '
+            '"title": "the document\'s title as printed"}]} — consecutive, starting at page 1 and ending at page ' + str(pages) +
+            '; a single part when the file is one document. Never guess a kind: use other.')
+
+
+def parse_split(answer, pages):
+    """The model's parts made sound: integers, consecutive from page 1 to the last, known kinds; anything else → one part."""
+    out, want = [], 1
+    for p in (answer or {}).get('parts') or []:
+        try:
+            a, b = int(p.get('from')), int(p.get('to'))
+        except (TypeError, ValueError):
+            continue
+        if a != want or b < a or b > pages:
+            continue
+        kind = str(p.get('kind') or 'other').strip().lower()
+        out.append({'from': a, 'to': b, 'kind': kind if kind in SPLIT_KINDS else 'other', 'title': str(p.get('title') or '')[:120],
+                    'kind_name': KIND_NAMES.get(kind)})
+        want = b + 1
+    if not out or want != pages + 1:
+        return [{'from': 1, 'to': pages, 'kind': 'other', 'title': '', 'kind_name': None}]
+    return out
+
+
 def ai_prompt(texts, target='dossier'):
     """The instruction the AI layer reads, in the browser (sample) or through the API: the schema + the document texts.
     Images, when a document is scanned, are described by the caller. Output must be one JSON object."""

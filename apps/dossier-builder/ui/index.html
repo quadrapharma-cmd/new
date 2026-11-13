@@ -230,6 +230,11 @@ const T = {
   prepStepModel:{en:'Claude is reading its pages…',ar:'Claude بيقرا صفحاته…'}, prepStepPrep:{en:'reading, fixing and checking it…',ar:'بيقراه ويصلّحه ويفحصه…'},
   prepStepOcr:{en:'making it searchable · {a} of {b} pages',ar:'بيعمله قابل للبحث · {a} من {b} صفحة'}, prepStepLoad:{en:'getting the scan reader ready (the first time only)…',ar:'بيجهّز قارئ الممسوح (أول مرة بس)…'},
   prepModelSaw:{en:'Claude read it as',ar:'Claude قراه'}, prepModelFailed:{en:'Claude could not read it',ar:'Claude ما قدرش يقراه'},
+  prepStepBundle:{en:'looking whether the file holds more than one document…',ar:'بيشوف الملف فيه أكتر من مستند ولا لأ…'},
+  prepBundleFound:{en:'The file held {n} documents: cut, and each part prepared in its item',ar:'الملف كان فيه {n} مستندات: اتقطع، وكل جزء اتجهّز في بنده'},
+  prepPartOf:{en:'Part of {f} · pages {a}–{b}',ar:'جزء من {f} · صفحات {a}–{b}'},
+  prepKept:{en:'Kept in its place',ar:'اتحفظ في مكانه'}, prepDiff:{en:'The data says «{have}» — this document says «{read}»',ar:'البيانات فيها «{have}» — المستند ده بيقول «{read}»'},
+  prepKeepHave:{en:'Keep what is written',ar:'خلّي المكتوب'}, prepTakeRead:{en:'Take the document’s',ar:'خد اللي في المستند'}, prepDiffsT:{en:'Differences to choose',ar:'اختلافات محتاجة تختار'},
   prepDrop:{en:'Choose the files (or drop them here)',ar:'اختار الملفات (أو اسحبها هنا)'}, prepAll:{en:'Prepare them all',ar:'جهّز الكل'},
   prepAsked:{en:'Still asked for',ar:'لسه مطلوب'}, prepWaiting:{en:'Waiting to be placed',ar:'مستني يتحط'}, prepPlaced:{en:'In their items',ar:'في بنودها'},
   prepRead:{en:'read',ar:'اتقرى'}, prepReadOcr:{en:'read by OCR',ar:'اتقرى بالـ OCR'}, prepReadNone:{en:'nothing read',ar:'ما اتقراش'},
@@ -2776,6 +2781,40 @@ function prepState(d){
   const st=d.state||{}; if(st.ready) return `<span class="chip c-ok"><i></i>${esc(t('prepReady'))}</span>`;
   return [st.needs_you?`<span class="chip c-bad"><i></i>${esc(t('prepNeedsN').replace('{n}',st.needs_you))}</span>`:'', st.fix?`<span class="chip c-warn"><i></i>${esc(t('prepFixesN').replace('{n}',st.fix))}</span>`:'',
     st.check?`<span class="chip c-warn"><i></i>${esc(t('prepChecksN').replace('{n}',st.check))}</span>`:''].join(''); }
+/* PdfCraft's tools on one document, where it is being prepared — grouped as a person looks for them. Third-party and authority
+   documents (LOCKED) are never changed in their content: they get the view, the turn of a page, the Word copy and the comparison. */
+function prepTools(d){
+  if(!pcOn()||!/\.pdf$/i.test(d.filename||'')) return '';
+  const locked=LOCKED.includes(d.doc_class), id=esc(d.id);
+  const b=(attr, ic, label, why)=>`<button class="btn sm ghost" ${attr}="${id}" title="${esc(why||label)}">${icon(ic,13)} ${esc(label)}</button>`;
+  const grp=(name, items)=>items.filter(Boolean).length?`<span class="small muted" style="margin-inline-start:6px">${esc(name)}:</span>${items.filter(Boolean).join('')}`:'';
+  return `<div class="row gap-s prep-tools" style="flex-wrap:wrap;align-items:center;margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">
+    <span class="small"><b>${esc(L({ar:'أدوات PdfCraft',en:'PdfCraft tools'}))}</b></span>
+    ${grp(L({ar:'عرض',en:'View'}), [b('data-ptview','eye',t('pcPages'),t('pcFind')), `<a class="btn sm ghost" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${id}/file">${icon('external',13)} ${esc(t('view'))}</a>`])}
+    ${grp(L({ar:'صفحات',en:'Pages'}), [b('data-ptsplit','scan',t('splitBtn'),t('splitT')), b('data-ptview','repeat',L({ar:'لف / حذف صفحة',en:'Turn / remove a page'}))])}
+    ${grp(L({ar:'جودة الملف',en:'File quality'}), [d.improved?'':b('data-ptimp','zap',L({ar:'حسّن الملف',en:'Improve the file'}),t('prepImproved').replace('{a}','').replace('{b}','')), locked?'':b('data-ptred','download',t('pcReduce'))])}
+    ${grp(L({ar:'حماية',en:'Protect'}), [locked?'':b('data-ptredact','shield',t('pcRedact'),t('pcRedactSub')), `<a class="btn sm ghost" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${id}/notes.pdf">${icon('pen',13)} ${esc(t('notesT'))}</a>`])}
+    ${grp(L({ar:'تحويل',en:'Convert'}), [`<a class="btn sm ghost" href="/api/dossiers/${S.dossier.id}/documents/${id}/export.docx" download title="${esc(t('pcWordWhy'))}">${icon('file',13)} ${esc(t('pcWord'))}</a>`])}
+    ${(d.version||1)>1?grp(L({ar:'مقارنة',en:'Compare'}), [b('data-ptcmp','repeat',t('cmpV'))]):''}</div>`; }
+function prepToolsWire(out){
+  const back=()=>{ closeDrawer(); paintPrepare(); };
+  $$('[data-ptview]', out).forEach(x=>x.onclick=()=>{ const d=(S.prep.placed||[]).find(y=>y.id===x.dataset.ptview)||{}; pageViewer(x.dataset.ptview, back, !LOCKED.includes(d.doc_class)); });
+  $$('[data-ptsplit]', out).forEach(x=>x.onclick=()=>splitDoc(x.dataset.ptsplit));
+  $$('[data-ptimp]', out).forEach(x=>x.onclick=async()=>{ x.disabled=true; try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${x.dataset.ptimp}/improve`,{method:'POST'});
+      toast(r.document?t('prepImproved').replace('{a}', mbs(r.before)).replace('{b}', mbs(r.after)):L({ar:'الملف متحسّن من قبل: مفيش حاجة تتصغّر من غير ما الصفحات تتغيّر',en:'Already at its best: nothing to make smaller without changing the pages'})); }catch(e){ toast(e.message); } paintPrepare(); });
+  $$('[data-ptred]', out).forEach(x=>x.onclick=async()=>{ x.disabled=true; try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${x.dataset.ptred}/reduce`,{method:'POST'});
+      toast(t('pcReduced').replace('{a}', mbs(r.reduced[0])).replace('{b}', mbs(r.reduced[1]))); }catch(e){ toast(e.message); } paintPrepare(); });
+  $$('[data-ptredact]', out).forEach(x=>x.onclick=()=>{ openDrawer(t('pcRedact'), `<p class="small muted">${esc(t('pcRedactSub'))}</p><textarea id="redW" rows="5" dir="auto" placeholder="${esc(t('pcRedactPh'))}"></textarea>
+      <div class="row gap-s"><button class="btn pri" id="redGo">${icon('shield',14)} ${esc(t('pcRedactGo'))}</button><button class="btn ghost" id="redBack">${esc(t('back'))}</button></div>`);
+    $('#redBack').onclick=back;
+    $('#redGo').onclick=async()=>{ const words=$('#redW').value.split('\n').map(w=>w.trim()).filter(Boolean); if(!words.length) return;
+      try{ await api(`/dossiers/${S.dossier.id}/documents/${x.dataset.ptredact}/redact`,{method:'POST',json:{words}}); toast(t('pcDone')); S.board=null; back(); }catch(e){ toast(e.message); } }; });
+  $$('[data-ptcmp]', out).forEach(x=>x.onclick=async()=>{ let r; try{ r=await api(`/dossiers/${S.dossier.id}/documents/${x.dataset.ptcmp}/compare`); }catch(e){ toast(e.message); return; }
+    openDrawer(t('cmpV'), `<p class="small muted">${bdi(r.old.filename)} (${esc(t('version'))} ${r.old.version}) → ${bdi(r.new.filename)} (${esc(t('version'))} ${r.new.version})</p>
+      ${r.same?`<div class="alert ok"><p class="small">${esc(t('cmpSame'))}</p></div>`:`<div class="stack gap-s">${r.changes.map(c=>`<div class="small cmp-${c.op}"><span class="tag">${esc(t(c.op==='added'?'cmpAdd':'cmpDel'))} · ${esc(t('srchPage'))} ${c.page}</span> <span dir="auto">${c.line?markIn(c.line,c.text):`<b>${esc(c.text)}</b>`}</span></div>`).join('')}</div>`}
+      <div class="row gap-s">${r.marked?`<a class="btn" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${x.dataset.ptcmp}/compare.pdf">${icon('eye',14)} ${esc(t('pcMarked'))}</a>`:''}<button class="btn ghost" id="cmpBack">${esc(t('back'))}</button></div>`, true);
+    $('#cmpBack').onclick=back; });
+}
 function prepCard(d){
   const form=(d.conditions||[]).filter(x=>x.kind==='form'), content=(d.conditions||[]).filter(x=>x.kind==='content');
   const md=d.model; const saw=md?`<div class="small" style="color:var(--ok)">${esc(t('prepModelSaw'))}: ${esc([md.kind, md.title, md.number, md.issuer, md.valid_until?('→ '+md.valid_until):''].filter(Boolean).join(' · '))}</div>`:'';
@@ -2784,9 +2823,10 @@ function prepCard(d){
     <div class="small"><bdi>${esc(d.original_name)}</bdi> → <b>${esc(t('prepNewName'))}:</b> <bdi>${esc((d.names.ectd32||d.names.ctd||'').split('/').pop()||'—')}</bdi></div>
     <div class="small" data-pnow="${esc(d.id)}" style="color:var(--accent)" aria-live="polite"></div>
     ${saw}${d.extracted&&d.extracted.length?`<div class="small" style="color:var(--ok)">${esc(t('prepFound'))}: ${esc(foundNames(d.extracted).join('، '))}</div>`:''}${qual(d.ocr_quality)}
+    ${d.absorbed&&(d.absorbed.added||[]).length?`<div class="small" style="color:var(--ok)">${icon('check',12)} ${esc(t('prepKept'))}: ${esc([...new Set(d.absorbed.added.map(a=>L({en:a.en,ar:a.ar})))].slice(0,10).join('، '))}</div>`:''}
     ${form.length?`<div class="small muted" style="margin-top:6px"><b>${esc(t('prepForm'))}</b></div>${form.map(x=>prepCond(d,x)).join('')}`:''}
     ${content.length?`<div class="small muted" style="margin-top:6px"><b>${esc(t('prepContent'))}</b></div>${content.map(x=>prepCond(d,x)).join('')}`:''}
-    ${!d.prepared||(d.state||{}).fix||d.model_wanted?`<div class="row gap-s" style="margin-top:6px"><button class="btn sm pri" data-pgo="${esc(d.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div>`:''}</div>`; }
+    ${!d.prepared||(d.state||{}).fix||d.model_wanted?`<div class="row gap-s" style="margin-top:6px"><button class="btn sm pri" data-pgo="${esc(d.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div>`:''}${prepTools(d)}</div>`; }
 async function paintPrepare(){
   const out=$('#prepOut'); if(!out) return; let r;
   try{ r=await api(`/dossiers/${S.dossier.id}/prepare`); }catch(e){ out.innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
@@ -2795,19 +2835,26 @@ async function paintPrepare(){
   $('#prepOcr').textContent=t(inPage?'prepByPage':r.model==='server'?'prepByServer':'prepNoModel')+' '+(r.ocr?t('prepOcrOn').replace('{l}', r.ocr.language==='ar+en'?L({en:'Arabic and English',ar:'عربي وإنجليزي'}):r.ocr.language):window.DBOCR?'':t('prepOcrOff'));
   const rdChip=x=>x.reader==='ocr'?`<span class="chip c-rec"><i></i>${esc(t('prepReadOcr'))}</span>`:x.reader==='text'?`<span class="chip c-ok"><i></i>${esc(t('prepRead'))}</span>`:`<span class="chip c-bad"><i></i>${esc(t('prepReadNone'))}</span>`;
   const waiting=r.waiting.map(w=>`<div class="finding" data-pw="${esc(w.id)}" data-pdoc="${esc(w.id)}"><div class="row gap-s" style="flex-wrap:wrap"><b>${bdi(w.filename)}</b>${w.model?`<span class="chip c-ok"><i></i>${esc(t('readByModel'))}</span>`:rdChip(w.reading)}<span class="small muted">${w.reading.pages||0} ${esc(t('pagesN'))}</span></div>
+      ${w.split_from&&w.pages_of?`<div class="small muted">${esc(t('prepPartOf').replace('{f}', (w.split_title||'')).replace('{a}', w.pages_of[0]).replace('{b}', w.pages_of[1]))}</div>`:''}
       <div class="small" data-pnow="${esc(w.id)}" style="color:var(--accent)" aria-live="polite"></div>
       ${w.model?`<div class="small" style="color:var(--ok)">${esc(t('prepModelSaw'))}: ${esc([w.model.kind, w.model.title, w.model.issuer].filter(Boolean).join(' · '))}</div>`:''}
       ${w.reading.found&&w.reading.found.length?`<div class="small" style="color:var(--ok)">${esc(t('prepFound'))}: ${esc(foundNames(w.reading.found).join('، '))}</div>`:''}
       <div class="row gap-s" style="flex-wrap:wrap;margin-top:4px"><label class="small">${esc(t('prepItem'))} <select data-pslot="${esc(w.id)}"><option value="">${esc(t('prepPick'))}</option>${(w.suggestions||[]).map(x=>`<option value="${esc(x.slot_id)}" ${x.slot_id===w.auto?'selected':''}>${esc(x.ctd||'')} ${esc(L(x.title||{en:x.slot_id,ar:x.slot_id}))}</option>`).join('')}</select></label>
       <button class="btn sm pri" data-pgo="${esc(w.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div></div>`).join('');
   const asked=r.requested.map(x=>`<span class="tag" title="${esc(L(x.title||{en:'',ar:''}))}">${esc(x.ctd||x.slot_id)}</span>`).join(' ');
-  out.innerHTML=`<section class="card pad"><div class="hd"><h3>${esc(t('prepWaiting'))} <span class="tag">${r.waiting.length}</span></h3></div>${waiting||`<p class="small muted">${esc(t('prepNone'))}</p>`}</section>
+  const diffs=(r.conflicts||[]).map((c,i)=>`<div class="finding" data-pdiff="${i}"><div class="small"><b>${esc(L(FOUND_NAMES[c.field]||{en:c.field,ar:c.field}))}</b> <span class="muted">· ${bdi(c.filename||'')}</span></div>
+      <div class="small" dir="auto">${esc(t('prepDiff').replace('{have}', String(c.have)).replace('{read}', String(c.read)))}</div>
+      <div class="row gap-s" style="margin-top:4px"><button class="btn sm" data-pchoose="${i}" data-use="have">${esc(t('prepKeepHave'))}</button><button class="btn sm pri" data-pchoose="${i}" data-use="read">${esc(t('prepTakeRead'))}</button></div></div>`).join('');
+  out.innerHTML=(diffs?`<section class="card pad" id="prepDiffs"><div class="hd"><h3>${esc(t('prepDiffsT'))} <span class="tag">${r.conflicts.length}</span></h3></div>${diffs}</section>`:'')+`<section class="card pad"><div class="hd"><h3>${esc(t('prepWaiting'))} <span class="tag">${r.waiting.length}</span></h3></div>${waiting||`<p class="small muted">${esc(t('prepNone'))}</p>`}</section>
     <section class="card pad"><div class="hd"><h3>${esc(t('prepPlaced'))} <span class="tag">${r.placed.length}</span></h3></div>${r.placed.map(prepCard).join('')}</section>
     <section class="card pad"><div class="hd"><h3>${esc(t('prepAsked'))} <span class="tag">${r.requested.length}</span></h3></div><div class="row gap-s" style="flex-wrap:wrap">${asked}</div></section>`;
   prepWire(out);
 }
 function prepWire(out){
+  prepToolsWire(out);
   $$('[data-pgo]', out).forEach(b=>b.onclick=async()=>{ b.disabled=true; await prepOne(b.dataset.pgo); await paintPrepare(); });
+  $$('[data-pchoose]', out).forEach(b=>b.onclick=async()=>{ const c=(S.prep.conflicts||[])[+b.dataset.pchoose]; if(!c) return;
+    try{ await api(`/dossiers/${S.dossier.id}/data/choose`,{method:'POST',json:{field:c.field, value:b.dataset.use==='read'?c.read:c.have, doc_id:b.dataset.use==='read'?c.doc_id:null}}); }catch(e){ toast(e.message); } paintPrepare(); });
   $$('[data-pconf]', out).forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.pconf}/confirm`,{method:'POST',json:{cond:b.dataset.cond, answer:b.dataset.ans}}); }catch(e){ toast(e.message); } paintPrepare(); });
   $$('[data-pslotans]', out).forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(b.dataset.pslotans)}/attest`,{method:'POST',json:{answer:b.dataset.ans}}); toast(t('attestSaved')); S.board=null; }catch(e){ toast(e.message); } paintPrepare(); });
   $$('[data-pdatego]', out).forEach(b=>b.onclick=async()=>{ const v=($(`[data-pdate="${CSS.escape(b.dataset.pdatego)}"]`)||{}).value; if(!v) return;
@@ -2832,16 +2879,61 @@ async function prepModelRead(id, name, scanned){
   const ai=await window.DBAI.extract(p, [file], meta, 'document', {pictures:'all', onStage:(n,st)=>prepNow(id, t(st==='pictures'?'prepStepPictures':'prepStepModel'))});
   await api(`/dossiers/${S.dossier.id}/documents/${id}/model-reading`,{method:'POST',json:{ai, by:'claude.ai'}});
 }
-/* the waiting scans: Claude reads them as soon as they are added, so each is suggested its item */
+/* files just added: a combined one is cut first, where its documents start (each part then waits with its kind); then Claude reads
+   the waiting scans, so each is suggested its item */
 async function prepModelWaiting(){
-  if(S.prepModel!=='page'||!S.prep) return;
+  if(!S.prep) return;
+  let cut=0;
+  for(const w of S.prep.waiting.filter(x=>!x.split_from&&(x.reading.pages||0)>1)){
+    S.prepDoing={id:w.id, name:w.filename};
+    const b=await prepBundle(w);
+    if(b&&b.parts.length>1&&b.sure){ try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${w.id}/split`,{method:'POST',json:{starts:b.parts.map(x=>x.from), kinds:b.parts.map(x=>x.kind), titles:b.parts.map(x=>x.title||''), by:b.by}});
+        cut++; toast(t('prepBundleFound').replace('{n}', r.parts.length), 9000); }catch(e){ toast(e.message); } }
+    S.prepDoing=null; prepNow(w.id, '');
+  }
+  if(cut) await paintPrepare();
+  if(S.prepModel!=='page') return;
   for(const w of S.prep.waiting.filter(x=>x.model_wanted)){ try{ await prepModelRead(w.id, w.filename, true); }catch(e){ console.warn('model', w.filename, e); prepNow(w.id, t('prepModelFailed')+': '+((e&&(e.code||e.message))||'')); } }
   await paintPrepare();
 }
-async function prepOne(id){
+/* a file of several pages waiting to be placed: does it hold several documents? Its words first (each page's kind, «page 1 of …»);
+   where they cannot tell (a scan), Claude looks at all its pages, small and numbered. → {parts, by, sure} or null */
+async function prepBundle(w){
+  const did=S.dossier.id; let p=null;
+  try{ p=await api(`/dossiers/${did}/documents/${w.id}/split`); }catch(e){ return null; }
+  if(!p||p.pages<2) return null;
+  if(p.parts.length>1&&p.parts.every(x=>x.kind!=='other')) return {parts:p.parts, by:'rules', sure:true};
+  if(p.parts.length===1&&p.parts[0].kind!=='other') return null;                     // one document, told by its own words
+  try{
+    if(S.prepModel==='page'){ prepNow(w.id, t('prepStepBundle'));
+      const q=await api(`/dossiers/${did}/documents/${w.id}/split-prompt`);
+      const f=await fetch(`/api/dossiers/${did}/documents/${w.id}/file`,{headers:{'X-DB':'1'}}); if(!f.ok) throw new Error(f.statusText);
+      const ans=await window.DBAI.bundle(new File([await f.blob()], w.filename, {type:'application/pdf'}), q.prompt, {onStage:(n,st)=>prepNow(w.id, t(st==='pictures'?'prepStepPictures':'prepStepBundle'))});
+      const c=await api(`/dossiers/${did}/documents/${w.id}/split-check`,{method:'POST',json:{answer:ans}});
+      return c.parts.length>1?{parts:c.parts, by:'model', sure:c.parts.every(x=>x.kind!=='other')}:null; }
+    if(S.prepModel==='server'){ prepNow(w.id, t('prepStepBundle'));
+      const c=await api(`/dossiers/${did}/documents/${w.id}/split-by-model`,{method:'POST'});
+      return c.parts.length>1?{parts:c.parts, by:'model', sure:c.parts.every(x=>x.kind!=='other')}:null; }
+  }catch(e){ console.warn('bundle', w.filename, e); }
+  return p.parts.length>1?{parts:p.parts, by:'rules', sure:false}:null;
+}
+async function prepOne(id, opt){
+  opt=opt||{};
   const r0=S.prep||{waiting:[],placed:[]}; const w=r0.waiting.find(x=>x.id===id), d=r0.placed.find(x=>x.id===id), name=(w||d||{}).filename||'';
   const sel=$(`[data-pslot="${CSS.escape(id)}"]`); const body=sel&&sel.value?{slot_id:sel.value}:{};
   S.prepDoing={id, name};
+  if(w&&!w.split_from&&!opt.part&&!body.slot_id&&(w.reading.pages||0)>1){                // a combined file: cut, and each part prepared in its item
+    const b=await prepBundle(w);
+    if(b&&b.parts.length>1){
+      if(!b.sure){ S.prepDoing=null; prepNow(id, ''); await splitDoc(id); return null; }   // where the kinds are not all known, the person confirms the cuts
+      try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${id}/split`,{method:'POST',json:{starts:b.parts.map(x=>x.from), kinds:b.parts.map(x=>x.kind), titles:b.parts.map(x=>x.title||''), by:b.by}});
+        toast(t('prepBundleFound').replace('{n}', r.parts.length), 9000);
+        S.prep=await api(`/dossiers/${S.dossier.id}/prepare`);
+        for(const part of r.parts) await prepOne(part.id, {part:true});
+        return {split:r.parts}; }
+      catch(e){ toast(e.message); }
+    }
+  }
   try{
     if(S.prepModel==='page'&&((w&&w.model_wanted)||(d&&d.model_wanted))){                    // Claude looks at its pages first
       try{ await prepModelRead(id, name, w?true:!!(d&&(d.conditions||[]).some(x=>x.id==='pdf'&&x.status!=='ok'))); }
@@ -2864,7 +2956,7 @@ async function prepOne(id){
 async function prepAll(){
   if(S.prepWaitP){ $('#prepMsg').textContent=t('prepStepModel'); await S.prepWaitP.catch(()=>{}); S.prepWaitP=null; }   // Claude is still reading the files just added: their items come from it
   const r=S.prep||await api(`/dossiers/${S.dossier.id}/prepare`);
-  const todo=[...r.waiting.filter(w=>w.auto||($(`[data-pslot="${CSS.escape(w.id)}"]`)||{}).value).map(w=>w.id),
+  const todo=[...r.waiting.filter(w=>w.auto||($(`[data-pslot="${CSS.escape(w.id)}"]`)||{}).value||(!w.split_from&&(w.reading.pages||0)>1)).map(w=>w.id),   // a file of several pages without an item: maybe a combined one
               ...r.placed.filter(d=>!d.prepared||(d.state||{}).fix||d.model_wanted||d.improvable).map(d=>d.id)];
   let i=0;
   for(const id of todo){ i++; const x=r.waiting.find(y=>y.id===id)||r.placed.find(y=>y.id===id)||{};

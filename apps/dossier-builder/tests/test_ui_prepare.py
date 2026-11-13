@@ -45,3 +45,34 @@ def test_files_are_read_placed_fixed_and_named(server, tmp_path):
         assert r['requested']                                                                       # what is still asked for
         b.close()
     assert not errors, errors
+
+
+def test_each_prepared_document_shows_its_pdfcraft_tools_and_what_it_said_is_kept(server, tmp_path):
+    """PdfCraft's tools sit on each document where it is prepared (view, pages, quality, protect, convert); what a document said goes
+    to its place in the data and the card says so (the owner, 13/11/2026)."""
+    did = dossier(server)
+    spec = make_pdf_lines(tmp_path / 'spec2.pdf', SPEC + ['Batch No: B2401', 'Assay: 99.6 %'], 'Specification')
+    errors = []
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = page_of(b, server, 'en')
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(f'{server}/#/d/{did}/prepare')
+        page.wait_for_selector('#prepFiles', state='attached')
+        page.set_input_files('#prepFiles', [str(spec)])
+        page.wait_for_function("() => document.querySelectorAll('[data-pw]').length === 1", timeout=120000)
+        page.click('#prepAll')
+        page.wait_for_function("() => S.prep && S.prep.waiting.length === 0 && S.prep.placed.length >= 1 && document.querySelector('.prep-tools')", timeout=300000)
+        tools = page.inner_text('.prep-tools')
+        for word in ('PdfCraft tools', 'Pages', 'Split it', 'As Word', 'Redact for real'):
+            assert word in tools, (word, tools)
+        doc = page.evaluate('S.prep.placed[0]')
+        assert doc['conditions'] and doc['prepared']
+        if (doc.get('absorbed') or {}).get('added'):
+            assert 'Kept in its place' in page.inner_text('#prepOut')
+        page.click('.prep-tools [data-ptview]')
+        page.wait_for_selector('#pgImg', timeout=60000)                                          # PdfCraft draws its pages
+        page.click('#pgBack')
+        page.wait_for_selector('.prep-tools', timeout=60000)
+        b.close()
+    assert not errors, errors

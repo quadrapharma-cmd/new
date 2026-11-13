@@ -15,6 +15,7 @@ from datetime import date, timedelta
 from . import conditions as _cond, fixes as _fixes
 
 WARN_DAYS = 90
+FORM_RULES = ('EG-PF-', 'EG-BP-', 'PDF-', 'NTA065-', 'ICH-NAME')      # the PDF rules: the document's form; any other finding is about its content
 NOT_FORM = {'DOC-EXPIRED', 'DOC-EXPIRING',            # validity is a content condition here
             'NTA065-N4'}                               # «searchable» is the item's first form condition (_searchable)
 SAY = {
@@ -67,8 +68,8 @@ def _form_lines(doc):
         if f.get('rule') in NOT_FORM or f.get('scope') == 'ectd':
             continue
         op = _fixes.RULE_TO_OP.get(f.get('rule'))
-        c = {'id': 'rule:' + str(f.get('rule')), 'kind': 'form', 'en': f.get('en') or '', 'ar': f.get('ar') or f.get('en') or '',
-             'source': f.get('source') or f.get('rule')}
+        c = {'id': 'rule:' + str(f.get('rule')), 'kind': 'form' if str(f.get('rule') or '').startswith(FORM_RULES) else 'content',
+             'en': f.get('en') or '', 'ar': f.get('ar') or f.get('en') or '', 'source': f.get('source') or f.get('rule')}
         if f.get('action') == 'auto_fix' and op and op not in refused:
             out.append(_line(c, 'fix', 'The program fixes this (PdfCraft).', 'البرنامج بيصلّح ده (PdfCraft).', action='fix'))
         elif op in refused:
@@ -214,7 +215,8 @@ def verdict(doc, req, pack, reading=None, attest=None, today=None):
         form.append(_line({'id': 'one', 'kind': 'form', 'en': 'One document per file.', 'ar': 'مستند واحد في كل ملف.', 'source': _cond.N4},
                           'needs_you', 'Claude saw more than one document in this file: split it, one document per file, each in its item.',
                           'Claude شاف أكتر من مستند في الملف ده: قسّمه، كل مستند في ملف وفي بنده.', how='model', action='split'))
-    out = form + _form_lines(doc) + content
+    found = _form_lines(doc)
+    out = form + [x for x in found if x['kind'] == 'form'] + content + [x for x in found if x['kind'] != 'form']
     confirmed = (doc.get('meta') or {}).get('confirmed') or {}
     for i, x in enumerate(out):                         # what the person looked at and answered, for this document
         a = confirmed.get(x['id'])

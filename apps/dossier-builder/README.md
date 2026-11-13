@@ -146,6 +146,33 @@ OCR anywhere»), and when scans were allowed back their reading was left to OCR.
   a validity date it read becomes the document's (so the board turns it red the day it expires). The person's answers are kept
   per document (`POST …/documents/{id}/confirm`), the signed / stamped / legalised question per item as before.
 
+## Every value in its place, combined files cut, PdfCraft's tools on each document (13/11/2026) — «عايز الأبلكيشن ذكي»
+
+The owner: «show PdfCraft's tools where they are used; any information it reads it stores and puts in its place; a combined file —
+cut it and make from it the papers each item asks for».
+
+- **Every value kept in its place** (`engine/dossier_engine/absorb.py`). After a document is read — its own words through the
+  rules, and what Claude read on its pages — every value goes into the dossier's data in the shape the wizard writes: the
+  registration (number, dates, validity, shelf life, storage, prices, packs), the product, the active substances (strength,
+  manufacturer, country), the composition, the batches, the specification tests and the results. A place that is empty is filled;
+  a place already written is never written over — the document's value is kept as a **difference to choose** (data
+  «conflicts», with the document it came from), shown at the top of the preparation page with «keep what is written» / «take the
+  document's» (`POST …/data/choose`). Where each value came from is kept (data «sources»), and each card says what it gave
+  («kept in its place: registration no., shelf life, 3 active substances»). It runs in the preparation stage and whenever
+  claude.ai's model reads a placed document.
+- **A combined file is cut into its documents** and each part goes to its item. A waiting file of several pages is looked at
+  first by its own words (each page's kind, «page 1 of …», a new batch's certificate — `pages.propose`); where they cannot tell
+  (a scan), Claude looks at **every page at once**, small and numbered, several to a picture (`ocr.js contactSheets`, `DBAI.bundle`;
+  on a computer or a company server, `…/split-by-model` sends the PDF with the key) and says where each document starts and what
+  it is (`extract.split_prompt` / `parse_split`: consecutive parts from page 1 to the last, known kinds — anything else is one
+  part). When every part's kind is known, «Prepare» cuts the file with PdfCraft (`…/split` with each part's kind and title), each
+  part is suggested its item from its kind and prepared there in the same run; otherwise the person confirms the cuts.
+- **PdfCraft's tools on each document where it is prepared**, grouped as a person looks for them: view (the pages, find in the
+  document, open the file), pages (split it, turn or remove a page), file quality (improve the file, make it smaller), protect
+  (redact for real, a copy with the team's notes), convert (as Word), compare (with the previous version). Third-party and
+  authority documents are never changed in their content: they keep the view, the turn of a page, Word and the comparison. The
+  item's drawer keeps the same tools.
+
 ## No OCR — the upload gate (November 2026) — «مفيش OCR: الملف لازم يكون فيه نص»
 
 (Superseded on 13/11/2026 — see the section above; kept for the history.)

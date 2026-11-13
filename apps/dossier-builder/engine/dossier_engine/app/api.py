@@ -484,6 +484,9 @@ def create_app(workspace, auth_enabled=None):
 
     class SplitReq(BaseModel):
         starts: list[int]
+        kinds: list[str] = []          # what each part is, where it is known (the reading of its pages): its item is suggested from it
+        titles: list[str] = []
+        by: str = 'person'             # who found the cuts: the person, the rules, the model
 
     class MergeReq(BaseModel):
         doc_ids: list[str]
@@ -495,8 +498,66 @@ def create_app(workspace, auth_enabled=None):
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/split', status_code=201)
     def split_doc(did: str, doc_id: str, body: SplitReq):
-        """Cut the file at the pages where documents start: the parts go to the unplaced box, each with its own reading."""
-        return st.split_document(did, doc_id, body.starts)
+        """Cut the file at the pages where documents start: the parts go to the unplaced box, each with its own reading (and its kind,
+        where the cuts came with one)."""
+        return st.split_document(did, doc_id, body.starts, body.kinds, body.titles, body.by)
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/split-prompt')
+    def split_prompt(did: str, doc_id: str):
+        """What the page asks claude.ai's model when it shows it a combined file's pages (DBAI.bundle): {pages, prompt}."""
+        from .. import pages as _pages
+        doc = st.document(doc_id)
+        if doc['dossier_id'] != did:
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        n = _pages.count(st.blob_path(doc['sha256']).read_bytes())
+        return {'pages': n, 'prompt': _extract.split_prompt(n, pictures=True)}
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/split-check')
+    def split_check(did: str, doc_id: str, body: dict):
+        """The model's answer made sound (consecutive parts from page 1 to the last, known kinds): {pages, parts, by: 'model'}."""
+        from .. import pages as _pages
+        doc = st.document(doc_id)
+        if doc['dossier_id'] != did:
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        n = _pages.count(st.blob_path(doc['sha256']).read_bytes())
+        return {'pages': n, 'parts': _extract.parse_split((body or {}).get('answer') or {}, n), 'by': 'model'}
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/split-by-model')
+    def split_by_model(did: str, doc_id: str):
+        """Where the documents of a combined file start, as Claude reads its pages (server editions, with the key): the parts proposed,
+        nothing cut. → {pages, parts: [{from, to, kind, title}], by: 'model'}"""
+        key = _ai_key()
+        if not key:
+            err(501, 'E-NO-AI', "Save the Anthropic API key (the Assistant's settings) to let Claude read the documents.",
+                'سجّل مفتاح Anthropic (من إعدادات المساعد) عشان Claude يقرأ المستندات.')
+        doc = st.document(doc_id)
+        if doc['dossier_id'] != did:
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        import base64
+        import anthropic
+        from ..assistant import settings as _aset
+        from .. import pages as _pages
+        data = st.blob_path(doc['sha256']).read_bytes()
+        n = _pages.count(data)
+        pdf = data if len(data) <= 24_000_000 else None
+        if pdf is None:
+            err(413, 'E-TOO-BIG', 'Too large to send whole to the model: cut it by hand.', 'كبير قوي إنه يتبعت كله للموديل: قسّمه بإيدك.')
+        client = anthropic.Anthropic(api_key=key)
+        with client.beta.messages.stream(model=_aset.load(st.root).get('model') or 'claude-opus-5-5', max_tokens=8000, output_config={'effort': 'medium'},
+                                         betas=['server-side-fallback-2026-07-01'], fallbacks='default',
+                                         messages=[{'role': 'user', 'content': [
+                                             {'type': 'document', 'title': doc['filename'], 'source': {'type': 'base64', 'media_type': 'application/pdf',
+                                                                                                     'data': base64.standard_b64encode(pdf).decode()}},
+                                             {'type': 'text', 'text': _extract.split_prompt(n)}]}]) as stream:
+            msg = stream.get_final_message()
+        if msg.stop_reason == 'refusal':
+            err(422, 'E-AI-REFUSED', 'Claude declined to read this file.', 'Claude اعتذر عن قراءة الملف ده.')
+        text = ''.join(b.text for b in msg.content if b.type == 'text')
+        try:
+            parts = _extract.parse_split(json.loads(text[text.index('{'):text.rindex('}') + 1]), n)
+        except ValueError:
+            err(502, 'E-AI-JSON', 'Claude did not return the expected JSON.', 'Claude ما رجّعش البيانات بالشكل المتوقع.')
+        return {'pages': n, 'parts': parts, 'by': 'model'}
 
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/merge', status_code=201)
     def merge_docs(did: str, slot_id: str, body: MergeReq):
@@ -1492,8 +1553,18 @@ def create_app(workspace, auth_enabled=None):
             doc = st.keep_model_reading(did, doc_id, ai, (body or {}).get('by') or 'claude.ai')
         except StoreError as e:
             err(404, e.code, e.en, e.ar)
+        got = st.absorb_document(did, doc_id) if doc.get('slot_id') else {'added': [], 'conflicts': []}   # placed: what it says goes to its place
+        doc = st.document(doc_id)
         lines, state = _verdict(did, doc)
-        return {'document': doc, 'conditions': lines, 'state': state}
+        return {'document': doc, 'conditions': lines, 'state': state, 'absorbed': got}
+
+    @app.post('/api/dossiers/{did}/data/choose')
+    def choose_value(did: str, body: dict):
+        """Where a document says something else than the data: the value the person keeps."""
+        try:
+            return st.choose_value(did, (body or {}).get('field'), (body or {}).get('value'), (body or {}).get('doc_id'))
+        except StoreError as e:
+            err(422, e.code, e.en, e.ar)
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/confirm')
     def confirm_condition(did: str, doc_id: str, body: dict):
@@ -1530,7 +1601,9 @@ def create_app(workspace, auth_enabled=None):
             rd = _reading(doc['filename'], st.blob_path(doc['sha256']).read_bytes())
             md = ((doc.get('meta') or {}).get('model') or {}).get('doc') or {}
             waiting.append({**u, 'reading': {k: v for k, v in rd.items() if k not in ('rules', 'text')}, 'model': md or None,
-                            'model_wanted': not md and bool(rd.get('scanned') and not rd.get('chars'))})
+                            'model_wanted': not md and bool(rd.get('scanned') and not rd.get('chars')),
+                            'split_from': (doc.get('meta') or {}).get('split_from'), 'pages_of': (doc.get('meta') or {}).get('pages'),
+                            'split_title': (doc.get('meta') or {}).get('split_title')})
         placed, ctx = [], _prep_ctx(did)
         for s in board['slots']:
             for doc in s.get('documents') or []:
@@ -1541,6 +1614,8 @@ def create_app(workspace, auth_enabled=None):
                 placed.append({'id': doc['id'], 'slot_id': s['slot_id'], 'ctd': s.get('ctd'), 'item': s.get('title'), 'filename': doc['filename'],
                                'conditions': lines, 'state': state, 'prepared': bool(((doc.get('meta') or {}).get('extracted') or {}).get('reader')),
                                'model': ((doc.get('meta') or {}).get('model') or {}).get('doc') or None, 'model_wanted': _wants_model(did, doc, slot_id=s['slot_id'], ctx=ctx),
+                               'absorbed': (doc.get('meta') or {}).get('absorbed') or None, 'doc_class': s.get('doc_class'),
+                               'version': doc.get('version'), 'improved': bool((doc.get('meta') or {}).get('optimized')),
                                'original_name': (doc.get('meta') or {}).get('original_name') or doc['filename'], 'version': doc.get('version'),
                                'status': doc.get('check_status'), 'fixable': fx, 'needs_you': left, 'names': names.get(doc['id'], {}),
                                'extracted': (doc.get('meta') or {}).get('extracted', {}).get('found', []),
@@ -1548,8 +1623,9 @@ def create_app(workspace, auth_enabled=None):
                                'optimized': (doc.get('meta') or {}).get('optimized'),
                                'improvable': bool(_pc.available() and doc['filename'].lower().endswith('.pdf')
                                                   and not (doc.get('meta') or {}).get('optimized'))})
+        open_conf = [c for c in ((ctx[0].get('data') or {}).get('conflicts') or []) if isinstance(c, dict)]
         return {'requested': requested, 'waiting': waiting, 'placed': placed, 'engine': _pc.status(), 'ocr': _pc.ocr_info(),
-                'model': 'server' if _ai_key() else None}
+                'model': 'server' if _ai_key() else None, 'conflicts': open_conf}
 
     @app.post('/api/dossiers/{did}/prepare/{doc_id}')
     def prepare_one(did: str, doc_id: str, body: dict = None):
@@ -1584,6 +1660,10 @@ def create_app(workspace, auth_enabled=None):
                 steps.append({'model_failed': (e.detail or {}).get('en') if isinstance(e.detail, dict) else str(e.detail)})
             except Exception as e:                       # no network, a refusal: the rest of the preparation goes on
                 steps.append({'model_failed': str(e)[:200]})
+        absorbed = st.absorb_document(did, doc['id'])                     # every value it gave, kept in its place in the data
+        doc = st.document(doc['id'])
+        if absorbed['added'] or absorbed['conflicts']:
+            steps.append({'absorbed': {'added': len(absorbed['added']), 'conflicts': len(absorbed['conflicts'])}})
         if body.get('fix', True) and any(f.get('action') == 'auto_fix' for f in doc.get('findings') or []):
             r = st.fix_document(did, doc['id'])
             if r.get('document'):
@@ -1606,7 +1686,7 @@ def create_app(workspace, auth_enabled=None):
         fixable, left = _prep_left(doc)
         lines, state = _verdict(did, doc, keep)
         return {'document': doc, 'steps': steps, 'reading': {k: v for k, v in rd.items() if k not in ('rules', 'text')}, 'names': _names(did).get(doc['id'], {}),
-                'fixable': fixable, 'needs_you': left, 'conditions': lines, 'state': state}
+                'fixable': fixable, 'needs_you': left, 'conditions': lines, 'state': state, 'absorbed': absorbed}
 
     @app.post('/api/dossiers/{did}/classify')
     async def classify(did: str, files: list[UploadFile] = File(...)):

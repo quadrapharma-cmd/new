@@ -50,7 +50,7 @@ def test_a_scan_is_read_placed_kept_fixed_and_named(c, tmp_path):
     slot = w['auto'] or w['suggestions'][0]['slot_id']
     r = c.post(f"/api/dossiers/{did}/prepare/{doc['id']}", json={'slot_id': slot}).json()
     assert r['steps'][0] == 'placed' and r['steps'][1] == 'read_ocr'
-    fixed = next(x for x in r['steps'] if isinstance(x, dict))
+    fixed = next(x for x in r['steps'] if isinstance(x, dict) and 'fixed' in x)               # (after what it said was kept in its place)
     assert 'make_searchable' in fixed['fixed'], fixed                                           # the scan made searchable …
     new = r['document']
     assert new['meta']['extracted']['reader'] == 'ocr' and 'NTA065-N4' not in {f['rule'] for f in new['findings']}

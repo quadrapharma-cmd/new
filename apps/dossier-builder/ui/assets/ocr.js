@@ -485,5 +485,34 @@
     } finally { try { doc.destroy(); } catch (e) {} }
   }
 
-  window.DBOCR = { available, read, pageImages, sha256, _toLogical: toLogical, _vote: vote, _spans: spans, _resize: resize, _pyRound: pyRound };
+  /* every page of a PDF as small numbered pictures, several to a sheet: what claude.ai's model looks at to find where the separate
+     documents of a combined file start (boot.js DBAI.bundle) — titles, letterheads and «page 1 of …» read at that size. At most
+     `budget` sheets (the model takes that many pictures a call); 4 to 12 pages a sheet. → [{blob, from, to, pages}] */
+  async function contactSheets(file, o) {
+    o = o || {};
+    const budget = Math.max(1, o.budget || 8), TW = 400, TH = 566, PAD = 8, HEAD = 30;
+    const lib = await pdfjs();
+    const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+    try {
+      const n = doc.numPages, per = Math.min(12, Math.max(4, Math.ceil(n / budget))), cols = per <= 6 ? 2 : 3, out = [];
+      for (let from = 1; from <= n && out.length < budget; from += per) {
+        const to = Math.min(n, from + per - 1), rows = Math.ceil((to - from + 1) / cols);
+        const c = document.createElement('canvas'); c.width = cols * (TW + PAD) + PAD; c.height = rows * (TH + PAD + HEAD) + PAD;
+        const g = c.getContext('2d'); g.fillStyle = '#c8c8c8'; g.fillRect(0, 0, c.width, c.height);
+        for (let i = from; i <= to; i++) {
+          const k = i - from, x = PAD + (k % cols) * (TW + PAD), y = PAD + Math.floor(k / cols) * (TH + PAD + HEAD);
+          const p = await doc.getPage(i), v1 = p.getViewport({ scale: 1 }), sc = Math.min(TW / v1.width, TH / v1.height), vp = p.getViewport({ scale: sc });
+          const pc = document.createElement('canvas'); pc.width = Math.round(vp.width); pc.height = Math.round(vp.height);
+          const pg = pc.getContext('2d'); pg.fillStyle = '#fff'; pg.fillRect(0, 0, pc.width, pc.height);
+          await p.render({ canvasContext: pg, viewport: vp }).promise; p.cleanup();
+          g.fillStyle = '#fff'; g.fillRect(x, y + HEAD, TW, TH); g.drawImage(pc, x + Math.round((TW - pc.width) / 2), y + HEAD);
+          g.fillStyle = '#000'; g.font = 'bold 24px sans-serif'; g.fillText('Page ' + i, x + 4, y + 24);
+        }
+        out.push({ blob: await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('the pages could not be drawn')), 'image/jpeg', 0.85)), from, to, pages: n });
+      }
+      return out;
+    } finally { try { doc.destroy(); } catch (e) {} }
+  }
+
+  window.DBOCR = { available, read, pageImages, contactSheets, sha256, _toLogical: toLogical, _vote: vote, _spans: spans, _resize: resize, _pyRound: pyRound };
 })();

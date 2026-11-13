@@ -327,6 +327,22 @@
         throw e;
       }
     },
+    /* where the separate documents of one combined file start, as claude.ai's model reads its pages (small, numbered, several to a
+       picture: ocr.js contactSheets). prompt: the engine's (/split-prompt). → the model's JSON ({parts: [...]}) */
+    async bundle(file, prompt, opts) {
+      opts = opts || {};
+      const say = st => { try { if (opts.onStage) opts.onStage(file.name, st); } catch (e) {} };
+      const sample = await window.claude.use('sample');
+      if (!sample) throw { code: 'unavailable', message: 'sample unavailable' };
+      const lim = await sample.limits().catch(() => null);
+      const max = lim && lim.images ? Math.max(0, Math.min(lim.images.maxCount || 0, 8)) : 0;
+      if (!max || !window.DBOCR || !window.DBOCR.contactSheets) throw { code: 'images_unavailable', message: 'no pictures here' };
+      say('pictures');
+      const sheets = await window.DBOCR.contactSheets(file, { budget: max });
+      const notes = sheets.map((sh, i) => `Image ${i + 1}: pages ${sh.from}–${sh.to} of ${sh.pages}.`).join('\n');
+      say('model');
+      return await sample.json(prompt + '\n\nPICTURES (attached, in this order):\n' + notes, { images: sheets.map(sh => sh.blob), modelTier: 'default', cache: false });
+    },
     /* one JSON answer from claude.ai's model for a prompt the engine wrote (drafting a document, filling a template) */
     async ask(prompt, opts) {
       const sample = await window.claude.use('sample');

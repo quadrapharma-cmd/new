@@ -966,9 +966,10 @@ class Store:
         d = self._current_pdf(did, doc_id)
         return _pages.propose(self.blob_path(d['sha256']).read_bytes(), self.pack(self.dossier(did)['pack']))
 
-    def split_document(self, did, doc_id, starts):
-        """Cut a file where documents start (pages, 1-based): each part goes to the unplaced box with its own reading, the file it came
-        from is withdrawn (kept in the history)."""
+    def split_document(self, did, doc_id, starts, kinds=None, titles=None, by='person'):
+        """Cut a file where documents start (pages, 1-based): each part goes to the unplaced box with its own reading — and with its
+        kind and title where the cuts came with them (Claude read the pages, or the rules did), so its item is suggested from what it
+        is — the file it came from is withdrawn (kept in the history)."""
         from .. import pages as _pages
         from ..assistant import storage as _storage
         d = self._current_pdf(did, doc_id)
@@ -979,9 +980,15 @@ class Store:
             raise StoreError('E-SPLIT', 'Choose where at least one more document starts.', 'اختار صفحة واحدة على الأقل بيبدأ عندها مستند تاني.')
         stem = d['filename'].rsplit('.', 1)[0] if '.' in d['filename'] else d['filename']
         parts = []
-        for (a, b), blob in zip(ranges, _pages.split(data, ranges)):
+        kinds, titles = list(kinds or []), list(titles or [])
+        for k, ((a, b), blob) in enumerate(zip(ranges, _pages.split(data, ranges))):
             name = f'{stem} (p{a}-{b}).pdf' if a != b else f'{stem} (p{a}).pdf'
-            parts.append(_storage.stage_document(self, did, name, blob, meta={'split_from': doc_id, 'pages': [a, b], 'staged_by': 'split'}))
+            m = {'split_from': doc_id, 'pages': [a, b], 'staged_by': 'split', 'split_by': str(by or 'person')[:20]}
+            if k < len(kinds) and kinds[k] and kinds[k] != 'other':
+                m['kind'] = str(kinds[k])[:30]
+            if k < len(titles) and titles[k]:
+                m['split_title'] = str(titles[k])[:120]
+            parts.append(_storage.stage_document(self, did, name, blob, meta=m))
         self.db.execute("update document set state='withdrawn' where id=?", (doc_id,))
         self.db.commit()
         self.audit(did, 'document.split', doc=doc_id, parts=[p['id'] for p in parts], ranges=ranges)
@@ -1426,6 +1433,40 @@ class Store:
         self.db.commit()
         self.audit(did, 'document.read', doc=doc_id, reader=extracted.get('reader'), found=len(extracted.get('found') or []))
         return self.document(doc_id)
+
+    def absorb_document(self, did, doc_id):
+        """What a document says, kept in its place in the dossier's data (absorb.py): empty places filled, a different value kept as a
+        difference to choose. The summary is kept on the document too (meta «absorbed»), for its card. → {added, conflicts}."""
+        from .. import absorb as _absorb
+        d = self.document(doc_id)
+        if d['dossier_id'] != did:
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        data = dict(self.dossier(did)['data'] or {})
+        got = _absorb.absorb(data, d, (d.get('meta') or {}).get('original_name') or d['filename'])
+        if got['added'] or got['conflicts']:
+            self.db.execute('update dossier set data=? where id=?', (json.dumps(data, ensure_ascii=False), did))
+            self.audit(did, 'data.read_from_document', doc=doc_id, added=len(got['added']), conflicts=len(got['conflicts']))
+        prev = (d.get('meta') or {}).get('absorbed') or {}
+        keep = {'added': (prev.get('added') or []) + got['added'], 'conflicts': (prev.get('conflicts') or []) + got['conflicts']}
+        meta = dict(d['meta'], absorbed=keep)
+        self.db.execute('update document set meta=? where id=?', (json.dumps(meta, ensure_ascii=False), doc_id))
+        self.db.commit()
+        return got
+
+    def choose_value(self, did, field, value, doc_id=None):
+        """The person's choice where a document says something else than the data (data «conflicts»): the value kept, the difference closed."""
+        if not isinstance(field, str) or '.' not in field or field.split('.', 1)[0] not in ('registration', 'product'):
+            raise StoreError('E-FIELD', 'Not a field of the product or registration data.', 'ده مش حقل من بيانات المنتج أو التسجيل.')
+        data = dict(self.dossier(did)['data'] or {})
+        sec, key = field.split('.', 1)
+        data.setdefault(sec, {})[key] = value
+        if doc_id:
+            data.setdefault('sources', {})[field] = {'doc_id': doc_id, 'chosen': True}
+        data['conflicts'] = [c for c in data.get('conflicts') or [] if c.get('field') != field]
+        self.db.execute('update dossier set data=? where id=?', (json.dumps(data, ensure_ascii=False), did))
+        self.db.commit()
+        self.audit(did, 'data.chosen', field=field, doc=doc_id)
+        return {'field': field, 'value': value, 'conflicts': data['conflicts']}
 
     def keep_model_reading(self, did, doc_id, ai, by):
         """What Claude read on a document's pages (claude.ai's model in the browser edition, or the API with the key) — its entry in the
