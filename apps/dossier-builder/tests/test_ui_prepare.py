@@ -30,6 +30,7 @@ def test_files_are_read_placed_fixed_and_named(server, tmp_path):
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto(f'{server}/#/d/{did}/prepare')
         page.wait_for_selector('#prepFiles', state='attached')
+        page.wait_for_function("() => document.querySelector('#prepOcr') && document.querySelector('#prepOcr').textContent.trim()")   # the stage says how it reads once it has asked the engine
         assert 'Tesseract' in page.inner_text('#prepOcr')
         page.set_input_files('#prepFiles', [str(scan), str(stab)])
         page.wait_for_function("() => document.querySelectorAll('[data-pw]').length === 2", timeout=120000)

@@ -2829,10 +2829,12 @@ function prepCard(d){
     ${!d.prepared||(d.state||{}).fix||d.model_wanted?`<div class="row gap-s" style="margin-top:6px"><button class="btn sm pri" data-pgo="${esc(d.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div>`:''}${prepTools(d)}</div>`; }
 async function paintPrepare(){
   const out=$('#prepOut'); if(!out) return; let r;
+  const capsP=S.caps?null:caps().catch(()=>null);                                     // opened straight from a link: PdfCraft's tools need to know it is here (asked alongside, not before)
   try{ r=await api(`/dossiers/${S.dossier.id}/prepare`); }catch(e){ out.innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
   S.prep=r; if(!S.prepBusy) $('#prepMsg').textContent='';
   const inPage=!!(window.DBAI&&await window.DBAI.available()); S.prepModel=inPage?'page':r.model;
   $('#prepOcr').textContent=t(inPage?'prepByPage':r.model==='server'?'prepByServer':'prepNoModel')+' '+(r.ocr?t('prepOcrOn').replace('{l}', r.ocr.language==='ar+en'?L({en:'Arabic and English',ar:'عربي وإنجليزي'}):r.ocr.language):window.DBOCR?'':t('prepOcrOff'));
+  if(capsP) await capsP;
   const rdChip=x=>x.reader==='ocr'?`<span class="chip c-rec"><i></i>${esc(t('prepReadOcr'))}</span>`:x.reader==='text'?`<span class="chip c-ok"><i></i>${esc(t('prepRead'))}</span>`:`<span class="chip c-bad"><i></i>${esc(t('prepReadNone'))}</span>`;
   const waiting=r.waiting.map(w=>`<div class="finding" data-pw="${esc(w.id)}" data-pdoc="${esc(w.id)}"><div class="row gap-s" style="flex-wrap:wrap"><b>${bdi(w.filename)}</b>${w.model?`<span class="chip c-ok"><i></i>${esc(t('readByModel'))}</span>`:rdChip(w.reading)}<span class="small muted">${w.reading.pages||0} ${esc(t('pagesN'))}</span></div>
       ${w.split_from&&w.pages_of?`<div class="small muted">${esc(t('prepPartOf').replace('{f}', (w.split_title||'')).replace('{a}', w.pages_of[0]).replace('{b}', w.pages_of[1]))}</div>`:''}

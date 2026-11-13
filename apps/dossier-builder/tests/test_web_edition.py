@@ -382,7 +382,7 @@ def test_a_scan_is_made_searchable_inside_the_browser(site, notice_scan):
             return {steps: r.steps, needs: r.needs_you, reading: w.reading, findings: (r.document.findings || []).map(f => f.rule), f: ex.files[0], rules: ex.rules}; }""",
             base64.b64encode(notice_scan.read_bytes()).decode())
         assert r['reading']['reader'] == 'ocr' and r['reading']['ocr_quality']['corrected'] >= 2, r['reading']
-        fixed = next((x for x in r['steps'] if isinstance(x, dict)), {})
+        fixed = next((x for x in r['steps'] if isinstance(x, dict) and 'fixed' in x), {})            # after what it read was kept in its place
         assert 'make_searchable' in fixed.get('fixed', []), r
         assert 'NTA065-N4' not in r['findings'] and not any(x['rule'] == 'NTA065-N4' for x in r['needs'])
         assert not r['f']['scanned'] and r['f']['chars'] > 300 and r['f']['kind'] == 'licence'      # text of its own now
