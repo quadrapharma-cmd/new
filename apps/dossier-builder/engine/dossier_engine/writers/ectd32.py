@@ -65,6 +65,7 @@ class Doc:
     leaf_id: str = None          # keep a stable leaf ID (lifecycle history)
     doc_id: str = None           # dossier document id (lifecycle history)
     cou_replaces: str = None     # 4.0 replace: id of the context of use being replaced
+    country: str = None          # EU M1: the country folder and specific/@country of 1.0, 1.2, 1.3.1–1.3.5, responses, additional data
 
 
 @dataclass
@@ -107,6 +108,9 @@ class Profile32:
     def ich_element(self, node):
         stem = 'm' + node.lower().replace('.', '-') + '-'
         hits = [e for e in self.ich_children if e.startswith(stem) and not e[len(stem)].isdigit()]
+        if len(hits) > 1:                        # 2.3 is m2-3-quality-overall-summary, not one of its parts: App. 4 names it by its number
+            exact = {r['element'] for r in self.app4 if r['ctd'] == node and r['kind'] == 'D'} & set(hits)
+            hits = sorted(exact) if len(exact) == 1 else hits
         if len(hits) != 1:
             raise WriterError(f'no unique ICH element for {node}: {hits}')
         return hits[0]
@@ -185,6 +189,11 @@ def rel_path(d, product, profile):
             directory = f'{directory}/{d.lang}'
             stem = d.name or d.pi_type
         return f'{directory}/{stem}.pdf'
+    return ich_rel_path(d, product, profile)
+
+
+def ich_rel_path(d, product, profile):
+    """Modules 2–5: the ICH App. 4 folders and names, the same in every region."""
     el = profile.ich_element(d.node)
     directory, default = profile.ich_location(el)
     if d.node.startswith(('3.2.S', '2.3.S')) and 'substance-1-manufacturer-1' in directory:
@@ -206,48 +215,9 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
     base = Path(out_dir) / seq
     if base.exists():
         raise WriterError(f'{base} exists — a sequence is never overwritten')
-    problems, placed, used = [], [], set()
-
-    for d in docs:
-        if d.operation not in ('new', 'replace', 'delete'):
-            raise WriterError(f'operation {d.operation!r} not supported (append is not used in EG: EG-BP-E06)')
-        if d.operation in ('replace', 'delete') and not d.modified_file:
-            raise WriterError(f'{d.node}: {d.operation} needs modified_file (ICH SPEC Table 6-3)')
-        if d.operation == 'delete':
-            placed.append((d, None))
-            continue
-        if not Path(d.file).is_file():
-            raise WriterError(f'missing file {d.file}')
-        rel = rel_path(d, product, profile)
-        n, k = rel, 2
-        while n in used:                          # second document in the same heading
-            n = rel[:-4] + f'-{k}.pdf'
-            k += 1
-        used.add(n)
-        placed.append((d, n))
-
-    # limits (EG-PF-15.3/15.4/15.5)
-    for d, rel in placed:
-        if rel is None:
-            continue
-        parts = rel.split('/')
-        if len(parts[-1]) > MAX_NAME:
-            problems.append(('EG-PF-15.4', rel, f'file name {len(parts[-1])} > {MAX_NAME}'))
-        for p in parts[:-1]:
-            if len(p) > MAX_NAME:
-                problems.append(('EG-PF-15.5', rel, f'folder {p!r} > {MAX_NAME}'))
-        if len(f'{seq}/{rel}') > MAX_PATH:
-            problems.append(('EG-PF-15.3', rel, f'path {len(seq + "/" + rel)} > {MAX_PATH}'))
-    if problems:
-        raise WriterError('; '.join(f'{c} {r}: {m}' for c, r, m in problems))
-
-    # copy files
-    for d, rel in placed:
-        if rel is None:
-            continue
-        dst = base / rel
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(d.file, dst)
+    placed = place(docs, lambda d: rel_path(d, product, profile), seq, 'EG-PF',
+                   'append is not used in EG: EG-BP-E06')
+    copy_files(base, placed)
 
     # ---- eg-regional.xml ----
     history = []
@@ -302,14 +272,63 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
     reg_path.parent.mkdir(parents=True, exist_ok=True)
     reg_path.write_text(regional, encoding='utf-8')
 
-    # ---- index.xml ----
+    write_index(base, seq, [(d, rel) for d, rel in placed if not d.node.startswith('1.')], product, profile,
+                'm1/eg/eg-regional.xml', 'EG Module 1', history)
+    return finish(base, profile, placed, history)
+
+
+def place(docs, rel_of, seq, prefix, append_note):
+    """Each document's path in the sequence (None for a delete). A second document under the same heading takes -2, -3 (the optional
+    variable part of the name); the limits of names and paths are checked here (<prefix>-15.3/15.4/15.5)."""
+    problems, placed, used = [], [], set()
+    for d in docs:
+        if d.operation not in ('new', 'replace', 'delete'):
+            raise WriterError(f'operation {d.operation!r} not supported ({append_note})')
+        if d.operation in ('replace', 'delete') and not d.modified_file:
+            raise WriterError(f'{d.node}: {d.operation} needs modified_file (ICH SPEC Table 6-3)')
+        if d.operation == 'delete':
+            placed.append((d, None))
+            continue
+        if not Path(d.file).is_file():
+            raise WriterError(f'missing file {d.file}')
+        rel = rel_of(d)
+        n, k = rel, 2
+        while n in used:                          # second document in the same heading
+            n = rel[:-4] + f'-{k}.pdf'
+            k += 1
+        used.add(n)
+        placed.append((d, n))
+    for d, rel in placed:
+        if rel is None:
+            continue
+        parts = rel.split('/')
+        if len(parts[-1]) > MAX_NAME:
+            problems.append((f'{prefix}-15.4', rel, f'file name {len(parts[-1])} > {MAX_NAME}'))
+        for p in parts[:-1]:
+            if len(p) > MAX_NAME:
+                problems.append((f'{prefix}-15.5', rel, f'folder {p!r} > {MAX_NAME}'))
+        if len(f'{seq}/{rel}') > MAX_PATH:
+            problems.append((f'{prefix}-15.3', rel, f'path {len(seq + "/" + rel)} > {MAX_PATH}'))
+    if problems:
+        raise WriterError('; '.join(f'{c} {r}: {m}' for c, r, m in problems))
+    return placed
+
+
+def copy_files(base, placed):
+    for d, rel in placed:
+        if rel is None:
+            continue
+        dst = base / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(d.file, dst)
+
+
+def write_index(base, seq, placed, product, profile, m1_href, m1_title, history):
+    """index.xml (ICH DTD 3.2): one m1 leaf to the regional XML, then the Modules 2–5 documents in DTD order; index-md5.txt."""
     root = _Node('ectd:ectd')
     m1 = root.child('m1-administrative-information-and-prescribing-information', {}, profile.ich_children['ectd:ectd'])
-    m1.leaves.append(dict(id=_leaf_id(seq, 'm1/eg/eg-regional.xml'), op='new', md5=md5(reg_path),
-                          href='m1/eg/eg-regional.xml', title='EG Module 1'))
+    m1.leaves.append(dict(id=_leaf_id(seq, m1_href), op='new', md5=md5(base / m1_href), href=m1_href, title=m1_title))
     for d, rel in placed:
-        if d.node.startswith('1.'):
-            continue
         el = profile.ich_element(d.node)
         chain = [el]
         while profile.ich_parents.get(chain[-1]) not in (None, 'ectd:ectd'):
@@ -341,7 +360,9 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
     (base / 'index.xml').write_text(index, encoding='utf-8')
     (base / 'index-md5.txt').write_text(md5(base / 'index.xml'), encoding='ascii')
 
-    # ---- util ----
+
+def finish(base, profile, placed, history):
+    """util/ copied whole from the profile; the report."""
     for sub in ('dtd', 'style'):
         shutil.copytree(profile.root / 'util' / sub, base / 'util' / sub)
     files = sorted(str(p.relative_to(base)) for p in base.rglob('*') if p.is_file())

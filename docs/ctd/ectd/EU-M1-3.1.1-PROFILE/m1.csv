@@ -1,0 +1,27 @@
+node,element,directory,stem,country,language,source
+1.0,m1-0-cover,m1/eu/10-cover/{cc},{cc}-cover|{cc}-tracking,Y,,EU M1 SPEC 3.1.1 App. 2 rows m1/eu/10-cover/CC/CC-cover-VAR.EXT and CC-tracking-VAR.EXT
+1.2,m1-2-form,m1/eu/12-form/{cc},{cc}-form-eaf|{cc}-form-annex,Y,,EU M1 SPEC 3.1.1 App. 2 rows m1/eu/12-form/CC/CC-form-eaf-VAR.EXT and CC-form-annex-VAR.EXT
+1.3.1,m1-3-1-spc-label-pl,m1/eu/13-pi/131-spclabelpl/{cc}/{ll},{cc}-{pidoc},Y,Y,EU M1 SPEC 3.1.1 App. 2 row m1/eu/13-pi/131-spclabelpl/CC/LL/CC-PIDOC-VAR.EXT
+1.3.2,m1-3-2-mockup,m1/eu/13-pi/132-mockup/{cc},{cc}-mockup,Y,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/13-pi/132-mockup/CC/CC-mockup-VAR.EXT
+1.3.3,m1-3-3-specimen,m1/eu/13-pi/133-specimen/{cc},{cc}-specimen,Y,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/13-pi/133-specimen/CC/CC-specimen-VAR.EXT
+1.3.4,m1-3-4-consultation,m1/eu/13-pi/134-consultation/{cc},{cc}-consultation,Y,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/13-pi/134-consultation/CC/CC-consultation-VAR.EXT
+1.3.5,m1-3-5-approved,m1/eu/13-pi/135-approved/{cc},{cc}-approved,Y,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/13-pi/135-approved/CC/CC-approved-VAR.EXT
+1.3.6,m1-3-6-braille,m1/eu/13-pi/136-braille,braille,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/13-pi/136-braille/braille-VAR.EXT
+1.4.1,m1-4-1-quality,m1/eu/14-expert/141-quality,quality,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/14-expert/141-quality/quality-VAR.EXT
+1.4.2,m1-4-2-non-clinical,m1/eu/14-expert/142-nonclinical,nonclinical,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/14-expert/142-nonclinical/nonclinical-VAR.EXT
+1.4.3,m1-4-3-clinical,m1/eu/14-expert/143-clinical,clinical,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/14-expert/143-clinical/clinical-VAR.EXT
+1.5.1,m1-5-1-bibliographic,m1/eu/15-specific/151-bibliographic,bibliographic,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/15-specific/151-bibliographic/bibliographic-VAR.EXT
+1.5.2,m1-5-2-generic-hybrid-bio-similar,m1/eu/15-specific/152-generic-hybrid-bio-similar,{basis},,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/15-specific/152-generic-hybrid-bio-similar/generic|hybrid|biosimilar-VAR.EXT
+1.5.3,m1-5-3-data-market-exclusivity,m1/eu/15-specific/153-data-market-exclusivity,datamarketexclusivity,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/15-specific/153-data-market-exclusivity/datamarketexclusivity-VAR.EXT
+1.5.4,m1-5-4-exceptional-circumstances,m1/eu/15-specific/154-exceptional,exceptional,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/15-specific/154-exceptional/exceptional-VAR.EXT
+1.5.5,m1-5-5-conditional-ma,m1/eu/15-specific/155-conditional-ma,conditionalma,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/15-specific/155-conditional-ma/conditionalma-VAR.EXT
+1.6.1,m1-6-1-non-gmo,m1/eu/16-environrisk/161-nongmo,nongmo,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/16-environrisk/161-nongmo/nongmo-VAR.EXT
+1.6.2,m1-6-2-gmo,m1/eu/16-environrisk/162-gmo,gmo,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/16-environrisk/162-gmo/gmo-VAR.EXT
+1.7.1,m1-7-1-similarity,m1/eu/17-orphan/171-similarity,similarity,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/17-orphan/171-similarity/similarity-VAR.EXT
+1.7.2,m1-7-2-market-exclusivity,m1/eu/17-orphan/172-market-exclusivity,marketexclusivity,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/17-orphan/172-market-exclusivity/marketexclusivity-VAR.EXT
+1.8.1,m1-8-1-pharmacovigilance-system,m1/eu/18-pharmacovigilance/181-phvig-system,phvigsystem,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/18-pharmacovigilance/181-phvig-system/phvigsystem-VAR.EXT
+1.8.2,m1-8-2-risk-management-system,m1/eu/18-pharmacovigilance/182-riskmgt-system,riskmgtsystem,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/18-pharmacovigilance/182-riskmgt-system/riskmgtsystem-VAR.EXT
+1.9,m1-9-clinical-trials,m1/eu/19-clinical-trials,clinicaltrials,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/19-clinical-trials/clinicaltrials-VAR.EXT
+1.10,m1-10-paediatrics,m1/eu/110-paediatrics,paediatrics,,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/110-paediatrics/paediatrics-VAR.EXT
+responses,m1-responses,m1/eu/responses/{cc},{cc}-responses,Y,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/responses/CC/CC-responses-VAR.EXT
+additional-data,m1-additional-data,m1/eu/additional-data/{cc},{cc}-additionaldata,Y,,EU M1 SPEC 3.1.1 App. 2 row m1/eu/additional-data/CC/CC-additionaldata-VAR.EXT

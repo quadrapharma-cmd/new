@@ -28,6 +28,8 @@ def docs_for(slots, profile, files):
                 kw = dict(substance=s.item['name'], manufacturer=s.item['manufacturer'])
             extra = {k: f[k] for k in ('pi_type', 'lang', 'study', 'doc_type', 'control', 'indication', 'excipient', 'uuid', 'name', 'doc_id')
                      if f.get(k)}
+            if f.get('eu_country'):
+                extra['country'] = f['eu_country']              # EU M1: the country folder / specific@country it is filed under
             if s.req_id == 'M1-44':
                 extra.setdefault('name', 'tracking')          # EG-PF-15.12: tracking.pdf / tracking-<var>.pdf
             out.append(Doc(node=node, file=f['file'], title=f.get('title') or s.title['en'][:120], **extra, **kw))

@@ -49,7 +49,7 @@
 | الدولة | Freyr | Mono | eCTD Editor | RATools | eCTD Indexer (مجاني) | برنامجنا |
 |---|---|---|---|---|---|---|
 | مصر (EDA) | — | — | — | — | — | eCTD 3.2.2 و4.0 على مواصفة افترضناها، وملف CTD الـ One Submission |
-| أوروبا (EMA والهيئات الوطنية) | ✓ | ✓ (و4.0) | ✓ | ✓ (مش مفعّل رسميًا) | ✓ (موديول 1 إصدار 3.1.1) | قايمة المتطلبات + فولدرات CTD |
+| أوروبا (EMA والهيئات الوطنية) | ✓ | ✓ (و4.0) | ✓ | ✓ (مش مفعّل رسميًا) | ✓ (موديول 1 إصدار 3.1.1) | **eCTD 3.2.2 على موديول 1 الأوروبي 3.1.1** (من 13/11/2026)، وفاحص بيشغّل 108 من 111 معيار، + فولدرات CTD |
 | أمريكا (FDA) | ✓ | ✓ (و4.0) | ✓ | ✓ | — | قايمة المتطلبات + فولدرات CTD |
 | الخليج (GCC) | ✓ (موديول 1 إصدار 1.5) | ✓ (وNeeS) | ✓ | — | ✓ (موديول 1 إصدار 1.1 من 2019) | قايمة المتطلبات + فولدرات CTD |
 | الأردن (JFDA) | ✓ | ✓ | — | — | — | فولدرات CTD (القايمة العامة) |
@@ -92,6 +92,7 @@
 | **SandipKurmi/ectd-pdf-validator**، و**sushilh/eCTDValidator**، و**ocowala/ectd_saas**، و**Lewis-Teoh/dotnet-ectd-validator** | فحص ملفات PDF للـ eCTD، وبعضهم خدمات FastAPI زي برنامجنا | Python، وC# | من غير رخصة | 2025–2026 | أفكار بس (كل الحقوق محفوظة) |
 | **itznishant/ECTD-Document-Classification…** | تصنيف المستندات لأقسام الـ CTD بالـ machine learning | Python | من غير رخصة | 2019 | أفكار |
 | **RConsortium/submissions-pilot1…5-to-fda** | ملفات eCTD حقيقية الشكل اتقدّمت لـ FDA في تجارب (موديول 5) | XSLT، وR | GPL-3.0 أو من غير رخصة | 2023–2026 | نختبر عليها المستورد والفاحص (ننزّلها وقت الاختبار، وما نحطهاش في الكود بتاعنا) |
+| **storytold/pdfcraft** (PdfCraft) | قارئ ومحرر PDF كامل: ترتيب الصفحات، والدمج والتقسيم من غير ما الروابط تضيع، والتشفير كله (من RC4 لـ AES-256) وصلاحياته، والنماذج، والتوقيع، والإخفاء (redaction)، ومقارنة نسختين، وفحوصات PDF/A، وخصائص المستند. فيه CLI وسيرفر MCP للوكلاء. الـ linearization (Fast Web View) لسه في الخطة (M11) | Rust | **MIT أو Apache-2.0** | 12/11/2026 | **كود:** صلاحيات الـ PDF (اتاخدت في فحص أوروبا 16.4)، والمقارنة، والدمج، والحفظ التزايدي. فيه OCR بس مش هناخده (قرارنا: مفيش OCR) |
 | **HL7/FHIR-us-pq-cmc-fda** | مواصفة FDA لبيانات موديول 3 (الجودة) كبيانات منظّمة | مواصفة | (ما اتأكدناش) | 08/07/2025 | أفكار لبيانات المنتج المنظّمة |
 
 **مكتبات نقدر نستخدمها في الكود:** qpdf (Apache-2.0) أو pikepdf (MPL-2.0) عشان Fast Web View وخصائص الـ PDF. وxmlschema (MIT) للتحقق بالـ XSD. وlxml (BSD) وpypdf (BSD) بنستخدمهم أصلًا.
@@ -149,4 +150,5 @@
 - Mono eCTD Viewer: https://ectdviewer.pro/ · Mono eCTD Office: https://ectdoffice.com/
 - eCTD Editor: https://apps.microsoft.com/detail/9mvwhq8rs0hd · المميزات: https://ectdeditor.com/en-us/Features · الطلب والأسعار: https://ectdeditor.com/en-us/Order
 - eCTD Indexer: https://ectd.is/ · الكود: https://github.com/dayzero/ectd_indexer · صفحة SourceForge القديمة: https://sourceforge.net/projects/ectdindexer/
+- PdfCraft: https://github.com/storytold/pdfcraft (MIT أو Apache-2.0)
 - Comparisons: https://intuitionlabs.ai/articles/ectd-publishing-software-comparison · https://intuitionlabs.ai/articles/ectd-software-small-pharma

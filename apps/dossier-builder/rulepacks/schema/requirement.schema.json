@@ -128,7 +128,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "^[1-5](\\.[0-9A-Z]+)*$"
+            "pattern": "^([1-5](\\.[0-9A-Z]+)*|responses|additional-data)$"
           }
         },
         "source": {

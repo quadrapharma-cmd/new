@@ -27,7 +27,9 @@ def md5(p):
 
 
 class Ctx:
-    def __init__(self, seq_dir, profile_root, previous=None):
+    def __init__(self, seq_dir, profile_root, previous=None, regional='m1/eg/eg-regional.xml'):
+        self.regional = regional                       # the region's Module 1 XML: m1/eg/eg-regional.xml, m1/eu/eu-regional.xml
+        self.reg_dir, self.reg_name = regional.rsplit('/', 1)
         self.previous = {Path(p).name: Path(p) for p in (previous or [])}
         self._prev_xml = {}
         self.base = Path(seq_dir)
@@ -36,7 +38,7 @@ class Ctx:
         self.files = sorted(p.relative_to(self.base).as_posix() for p in self.base.rglob('*') if p.is_file())
         self.dirs = sorted(p.relative_to(self.base).as_posix() for p in self.base.rglob('*') if p.is_dir())
         self.index, self.index_err = self._parse('index.xml')
-        self.reg, self.reg_err = self._parse('m1/eg/eg-regional.xml')
+        self.reg, self.reg_err = self._parse(regional)
         self.leaves = []                     # (xml, element, resolved path from sequence root)
         if self.index is not None:
             for lf in self.index.iter('leaf'):
@@ -44,7 +46,7 @@ class Ctx:
         if self.reg is not None:
             for lf in self.reg.iter('leaf'):
                 h = lf.get(XLINK) or ''
-                self.leaves.append(('eg-regional.xml', lf, ('m1/eg/' + h) if h else ''))
+                self.leaves.append((self.reg_name, lf, f'{self.reg_dir}/{h}' if h else ''))
         self._pdf = {}
 
     def _parse(self, rel):
@@ -76,7 +78,7 @@ class Ctx:
         k = (seq, which)
         if k not in self._prev_xml:
             p = self.previous.get(seq)
-            f = p / ('index.xml' if which == 'index' else 'm1/eg/eg-regional.xml') if p else None
+            f = p / ('index.xml' if which == 'index' else self.regional) if p else None
             self._prev_xml[k] = etree.parse(str(f)).getroot() if f and f.exists() else None
         return self._prev_xml[k]
 
@@ -183,32 +185,32 @@ def r_md5(ctx, rid):
 
 @rule('EG-PF-9.1', 'EG-PF-9.2')
 def r_reg_present(ctx, rid):
-    return _exists(ctx, 'm1/eg/eg-regional.xml')
+    return _exists(ctx, ctx.regional)
 
 
 @rule('EG-PF-9.3')
 def r_reg_wf(ctx, rid):
-    return [] if ctx.reg is not None else [f'eg-regional.xml {ctx.reg_err}']
+    return [] if ctx.reg is not None else [f'{ctx.reg_name} {ctx.reg_err}']
 
 
 @rule('EG-PF-9.4')
 def r_reg_valid(ctx, rid):
-    return ['eg-regional.xml missing'] if ctx.reg is None else list(ctx.reg_err or [])
+    return [f'{ctx.reg_name} missing'] if ctx.reg is None else list(ctx.reg_err or [])
 
 
 @rule('EG-PF-9.5')
 def r_reg_doctype(ctx, rid):
     if ctx.reg is None:
-        return ['eg-regional.xml missing']
-    s = ctx.reg.getroottree().docinfo.system_url
-    return [] if s == '../../util/dtd/eg-regional.dtd' else [f'DOCTYPE points to {s!r}']
+        return [f'{ctx.reg_name} missing']
+    s, want = ctx.reg.getroottree().docinfo.system_url, '../../util/dtd/' + ctx.reg_name[:-4] + '.dtd'
+    return [] if s == want else [f'DOCTYPE points to {s!r}']
 
 
 @rule('EG-PF-9.6')
 def r_reg_xsl(ctx, rid):
-    p = ctx.base / 'm1/eg/eg-regional.xml'
+    p, xsl = ctx.base / ctx.regional, ctx.reg_name[:-4] + '.xsl'
     txt = p.read_text(encoding='utf-8', errors='replace') if p.exists() else ''
-    return [] if 'href="../../util/style/eg-regional.xsl"' in txt else ['xml-stylesheet does not point to util/style/eg-regional.xsl']
+    return [] if f'href="../../util/style/{xsl}"' in txt else [f'xml-stylesheet does not point to util/style/{xsl}']
 
 
 @rule('EG-PF-9.7', 'EG-BP-E15')
@@ -233,11 +235,11 @@ def r_uuid_same(ctx, rid):
 @rule('EG-PF-10.1')
 def r_empty_headings(ctx, rid):
     out = []
-    for name, root in (('index.xml', ctx.index), ('eg-regional.xml', ctx.reg)):
+    for name, root in (('index.xml', ctx.index), (ctx.reg_name, ctx.reg)):
         if root is None:
             continue
         for el in root.iter():
-            if not isinstance(el.tag, str) or el.tag in ('leaf', 'title', 'link-text', 'eg-envelope', 'envelope') or \
+            if not isinstance(el.tag, str) or el.tag in ('leaf', 'title', 'link-text', 'eg-envelope', 'eu-envelope', 'envelope') or \
                     el.getparent() is not None and el.getparent().tag in ('envelope', 'submission', 'procedure-tracking'):
                 continue
             if el.tag.startswith('m') and len(el) == 0:
@@ -251,13 +253,13 @@ def r_cktype(ctx, rid):
             if lf.get('operation') != 'delete' and (lf.get('checksum-type') or '').lower() != 'md5']
 
 
-MOD_RE = re.compile(r'^(?:\.\./)+(\d{4})/(index\.xml|m1/eg/eg-regional\.xml)#(.+)$')
+MOD_RE = re.compile(r'^(?:\.\./)+(\d{4})/(index\.xml|m1/(?:eg|eu)/(?:eg|eu)-regional\.xml)#(.+)$')
 
 
 def _target(ctx, lf):
     m = MOD_RE.match(lf.get('modified-file') or '')
     if not m:
-        return None, 'modified-file is not ../SSSS/index.xml#ID or ../../../SSSS/m1/eg/eg-regional.xml#ID'
+        return None, f'modified-file is not ../SSSS/index.xml#ID or ../../../SSSS/{ctx.regional}#ID'
     seq, f, lid = m.groups()
     if seq not in ctx.previous:
         return None, f'sequence {seq} not available'
@@ -455,7 +457,7 @@ def r_dirchars(ctx, rid):
 
 @rule('EG-PF-15.8')
 def r_unreferenced(ctx, rid):
-    refs = {rel for _, _, rel in ctx.leaves} | {'m1/eg/eg-regional.xml'}
+    refs = {rel for _, _, rel in ctx.leaves} | {ctx.regional}
     return [f for f in ctx.content_files() if f not in refs]
 
 

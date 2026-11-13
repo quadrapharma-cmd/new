@@ -150,7 +150,14 @@ def create_app(workspace, auth_enabled=None):
         name = next(({'en': c['en'], 'ar': c['ar']} for c in _vocab.countries() if c['code'] == code), None) if code else None
         return {'pack': pk.id, 'id': au['id'], 'name': au['name'], 'egypt': pk.egypt, 'verified': pk.meta.get('verified', pk.egypt), 'country': code, 'country_name': name,
                 'questions': pk.questions, 'note': pk.meta.get('note'), 'matrix': pk.matrix_name(), 'columns': pk.meta.get('columns') or {},
-                'title': pk.meta.get('title'), 'sources': pk.meta.get('sources') or [], 'outputs': ['ctd', 'ectd32', 'ectd40'] if pk.egypt else ['ctd']}
+                'title': pk.meta.get('title'), 'sources': pk.meta.get('sources') or [], 'outputs': pk.outputs, 'ectd_region': pk.ectd_region,
+                'ectd_values': _eu_values() if pk.ectd_region == 'eu' else None}
+
+    def _eu_values():
+        """What the page offers for an EU dossier, read from the EMA's DTD: countries, languages, PI types, submission and unit types."""
+        from ..writers.ectd32_eu import default_profile
+        v = default_profile().values
+        return {k: v[k] for k in ('countries', 'env_countries', 'languages', 'pi_types', 'submission_types', 'units', 'modes')}
 
     @app.exception_handler(StoreError)
     def _store_err(_, e):
@@ -453,9 +460,11 @@ def create_app(workspace, auth_enabled=None):
         if output not in ('ctd', 'ectd32', 'ectd40'):
             err(422, 'E-OUTPUT', 'Unknown output.', 'مخرج غير معروف.')
         d = st.dossier(did)
-        if output != 'ctd' and not st.pack(d['pack']).egypt:
-            err(422, 'E-OUTPUT-AUTHORITY', "The eCTD package is written for Egypt's regional Module 1 only; this dossier exports as CTD folders.",
-                'حزمة الـ eCTD مكتوبة لموديول ١ المصري بس؛ الملف ده بيتصدّر كمجلدات CTD.')
+        pk = st.pack(d['pack'])
+        if output not in pk.outputs:
+            err(422, 'E-OUTPUT-AUTHORITY', "The eCTD package is written for Egypt's and the EU's Module 1 (eCTD 4.0 for Egypt only); "
+                "this dossier exports as " + ' and '.join(pk.outputs) + '.',
+                'حزمة الـ eCTD مكتوبة لموديول ١ المصري والأوروبي بس (والـ 4.0 لمصر بس)؛ الملف ده بيتصدّر كـ ' + ' و'.join(pk.outputs) + '.')
         slots = st.slots(did)
         by_slot = {s.slot_id: s for s in slots}
         files, docmeta = {}, {}
@@ -475,6 +484,15 @@ def create_app(workspace, auth_enabled=None):
             pr = d['product']
             product = ectd32.Product(pr['name'], pr['dosageform'], pr['manufacturer'], pr.get('indication'))
             p32 = app.state.p32 = getattr(app.state, 'p32', None) or ectd32.Profile32()
+            eu = None
+            if pk.ectd_region == 'eu':
+                from ..writers import ectd32_eu
+                from .exporter import eu_countries
+                proc, cs = eu_countries(d, prof, None, st.history(did, 'ectd32'))
+                peu = ectd32_eu.default_profile()
+                eu = (ectd32_eu, peu, ectd32_eu.EnvelopeEU(identifier='', procedure=proc, countries=cs or ['common'], submission_type='maa',
+                                                          unit='initial', applicant='', invented_names=[''],
+                                                          legal_basis=(prof.extra or {}).get('eu_legal_basis')))
             p40 = getattr(app.state, 'p40', None)
             if output == 'ectd40' and p40 is None:
                 p40 = app.state.p40 = ectd40.Profile40(v32=p32)
@@ -490,7 +508,14 @@ def create_app(workspace, auth_enabled=None):
                         continue
                     doc = one[0]
                     try:
-                        if output == 'ectd32':
+                        if output == 'ectd32' and eu:
+                            mod, peu, e = eu
+                            doc = mod.resolve([doc], e, peu)[0]
+                            if doc.node in peu.m1:
+                                rel, target = mod.m1_rel_path(doc, e, peu), peu.m1[doc.node]['element']
+                            else:
+                                rel, target = mod.m25_rel_path(doc, product, peu), peu.ich_element(doc.node)
+                        elif output == 'ectd32':
                             rel = ectd32.rel_path(doc, product, p32)
                             target = p32.m1[doc.node]['element'] if doc.node.startswith('1.') else p32.ich_element(doc.node)
                         else:
@@ -523,6 +548,7 @@ def create_app(workspace, auth_enabled=None):
 
     @app.get('/api/capabilities')
     def capabilities():
+        from ..validators import ectd32_eu as _v32eu
         """What the program can do, counted from the engine itself (rule packs, generators, checks, validators)."""
         import inspect, re
         from .. import crosschecks, fixes
@@ -552,6 +578,8 @@ def create_app(workspace, auth_enabled=None):
                            'pdf': ['EG-PF-16.1', 'EG-PF-16.2', 'EG-PF-16.3', 'EG-PF-16.5', 'EG-PF-15.4', 'EG-BP-E23',
                                    'EG-BP-16.BP1', 'PDF-JS', 'NTA065-N4', 'NTA065-BM', 'ICH-NAME']},
                 'validators': {'ectd32': {'automated': len(v32.RULES), 'profile': 'EG eCTD 3.2.2 provisional v0'},
+                               'ectd32_eu': {'automated': len(_v32eu.RULES) + len(_v32eu.SAME), 'criteria': 111,
+                                             'profile': 'EU Module 1 v3.1.1 + EU eCTD validation criteria v8.2'},
                                'ectd40': {'rules': rules40, 'profile': 'EG eCTD 4.0 provisional v0'}},
                 'doc_types': len(doc_types), 'outputs': ['ctd', 'ectd32', 'ectd40'],
                 'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}

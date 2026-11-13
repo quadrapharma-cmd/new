@@ -24,6 +24,7 @@ COPY apps/dossier-builder/ui apps/dossier-builder/ui
 COPY apps/dossier-builder/tools/serve.py apps/dossier-builder/tools/adduser.py apps/dossier-builder/tools/
 COPY docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0 docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0
 COPY docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0 docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0
+COPY docs/ctd/ectd/EU-M1-3.1.1-PROFILE docs/ctd/ectd/EU-M1-3.1.1-PROFILE
 COPY docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip docs/ctd/sources/ectd/
 RUN useradd --system --uid 10001 --home-dir /data app && mkdir -p /data && chown app /data
 USER app

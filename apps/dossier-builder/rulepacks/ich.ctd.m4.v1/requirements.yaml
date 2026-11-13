@@ -4,9 +4,8 @@
   ctd:
     number: '2.1'
   ectd:
-    nodes:
-    - '2.1'
-    source: ICH M4(R4) granularity / eCTD 3.2.2 Appendix 4 (the same number as the CTD section)
+    nodes: []
+    source: ICH eCTD Specification v3.2.2 — the XML backbone is the table of contents, so no document goes into an eCTD for it (a CTD-folder item only)
     provenance: ICH
   title:
     en: Table of contents of Modules 2 to 5
@@ -187,9 +186,8 @@
   ctd:
     number: '3.1'
   ectd:
-    nodes:
-    - '3.1'
-    source: ICH M4(R4) granularity / eCTD 3.2.2 Appendix 4 (the same number as the CTD section)
+    nodes: []
+    source: ICH eCTD Specification v3.2.2 — the XML backbone is the table of contents, so no document goes into an eCTD for it (a CTD-folder item only)
     provenance: ICH
   title:
     en: Table of contents of Module 3
@@ -1200,9 +1198,8 @@
   ctd:
     number: '4.1'
   ectd:
-    nodes:
-    - '4.1'
-    source: ICH M4(R4) granularity / eCTD 3.2.2 Appendix 4 (the same number as the CTD section)
+    nodes: []
+    source: ICH eCTD Specification v3.2.2 — the XML backbone is the table of contents, so no document goes into an eCTD for it (a CTD-folder item only)
     provenance: ICH
   title:
     en: Table of contents of Module 4

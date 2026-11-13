@@ -45,7 +45,7 @@ levels where it says otherwise and its regional items under 3.2.R.
 |---|---|---|---|
 | Egypt | `eda.ctd.nta065.v5` | NP.CAPP.065 v5 and the EDA guidelines (as before, untouched) | CTD · eCTD 3.2.2 · eCTD 4.0 |
 | Saudi Arabia, UAE, Kuwait, Bahrain, Oman, Qatar, Yemen | `gcc.ctd.m1.v1` | GCC Module 1 Specifications v1.5 (structure, common to the seven) + SFDA «Data Requirements for Human Drugs Submission» v4.0, 3 Aug 2025 (contents, levels) | CTD folders |
-| EU / EEA (30 countries) | `eu.ctd.m1.v1` | EU Module 1 eCTD Specification v3.1.1, June 2025 (structure); levels: the general rule of Directive 2001/83/EC and the Notice to Applicants | CTD folders |
+| EU / EEA (30 countries) | `eu.ctd.m1.v1` | EU Module 1 eCTD Specification v3.1.1, June 2025 (structure); levels: the general rule of Directive 2001/83/EC and the Notice to Applicants | CTD · **eCTD 3.2.2** (EU M1 3.1.1) |
 | United States | `us.ctd.m1.v1` | FDA «The Comprehensive Table of Contents Headings and Hierarchy» v2.3.3 (headings and numbers) | CTD folders |
 | Any other country | `intl.ctd.m1.v1` | a **general** Module 1 (marked so on the card and on every item) to be matched to the country's own checklist | CTD folders |
 
@@ -68,14 +68,47 @@ levels where it says otherwise and its regional items under 3.2.R.
   authority's), the home of each document kind (`kinds` on a requirement: a GMP certificate goes to 1.7.1 in the Gulf, to
   the application form's annexes in the EU), the kind check, the board, the templates and «make it for me» (an item the
   template library does not describe gets its template from the requirement's own words; the model is told which authority
-  the document is for), the Assistant's context, the CTD folders. Egypt-only parts are not offered to other dossiers: the
-  regional eCTD package, the review desk (EDA assessor rules), NP.CAPP.040's deficiency checks, the Egyptian generators.
+  the document is for), the Assistant's context, the CTD folders. Egypt-only parts are not offered to other dossiers: eCTD 4.0, the review desk (EDA
+  assessor rules), NP.CAPP.040's deficiency checks, the Egyptian generators. The regional eCTD 3.2.2 is written for Egypt and
+  for the EU (below); every other authority gets the CTD folders (`Pack.ectd_region`, `Pack.outputs`).
 - API: `GET /api/authorities` (authorities, their questions and sources, the country list), `country` or `pack` in
   `POST /api/dossiers`, `?country=` / `?pack=` on `POST /api/profile/preview`, `authority` on `GET /api/dossiers/{id}` and in
   the projects list. Tests: `tests/test_authorities.py` (21), `tests/test_ui_country.py` (3).
 - **Adding a country**: write `rulepacks/<id>/pack.yaml` (`extends`, `authority {id, countries, name}`, `questions`,
   `sources`, `verified`) and `requirements.yaml` (Module 1 only, each item with its source), `classify.yaml`; lint with
   `packs.lint`. Nothing in the engine or the page changes.
+
+## EU eCTD 3.2.2 — EU Module 1 v3.1.1 (November 2026) — «ملف eCTD لأوروبا»
+
+An EU dossier exports an **eCTD 3.2.2 sequence** beside its CTD folders, on the EMA's own files — nothing provisional:
+
+- **The profile** `docs/ctd/ectd/EU-M1-3.1.1-PROFILE` (built by `tools/build_eu_profile.py`): the util files of the EMA's
+  EU M1 3.1 package byte for byte (their MD5 are the published values the criteria quote), all 111 EU validation criteria v8.2
+  word for word, and `m1.csv` — each Module 1 section's element, folder and fixed file name from SPEC 3.1.1 Appendix 2.
+- **The writer** `writers/ectd32_eu.py`: `m1/eu/eu-regional.xml` (`eu:eu-backbone`, `dtd-version="3.1"`) in the DTD's order;
+  **envelopes per procedure** — centralised: one `ema` envelope (agency EU-EMA); decentralised / mutual recognition: one per
+  country of the procedure (named on the export page, kept for the follow-ons); national: one, for the country — one UUID in all;
+  «to be advised» until the procedure number is given; `related-sequence` the sequence itself for initial / reformat, else the
+  one that started the activity. **Country folders**: `ema` (CP), `common` for what the DCP/MRP countries share, the country
+  (NP), or the country a document names (`eu_country`: a German SmPC goes to `131-spclabelpl/de/de/de-spc.pdf`); 1.3.1 adds the
+  language folder and `pi-doc` (the EU's eight PI types, its 26 languages). Names `cc-fixed[-var].pdf`; the tracking table
+  `cc-tracking.pdf`; 2.3 as `qos.pdf`; a 5.3 study in a folder of its own (App. 4 and the EU Q&A on additional folders).
+  Modules 2–5 are the ICH App. 4 placement shared with Egypt's writer (`ectd32.place`, `ich_rel_path`, `write_index`, `finish`).
+- **The lifecycle** keys a document by its country as well (EU HTG 2.9.6): a German SmPC never replaces the common one; a
+  delete reaches the country it was filed for. Egyptian keys are unchanged.
+- **The validator** `validators/ectd32_eu.py` reads the sequence back and runs 108 of the 111 criteria (the EG checks that read
+  any 3.2.2 sequence, and the EU's own: the published checksums, the DTD order across sequences, the envelopes 14.x, the tracking
+  table, the folder and name conventions, the country codes against the folders, the PDF permissions of 1.0/1.2 (revision-aware,
+  after PdfCraft — `THIRD-PARTY-NOTICES.md`), Fast Web View, initial view, bookmarks pane, link zoom and targets, CP PI
+  properties). 16.6, 16.7 (which eAF a file is) and 16.BP10 are listed as not run, with the reason. The label says it plainly:
+  **not an EMA-accepted validator — run one before submission**; the report's header says the same.
+- No provisional acknowledgement for the EU (the profile is the EMA's own); eCTD 4.0 stays Egypt's. The page asks the EU 1.3.1
+  item for its PI type, language and country, the additional-data item for its country, and the export page for the countries
+  of the procedure and its number; follow-ons offer the EU's own submission and unit types (read from the DTD).
+- Found on the way: the common CTD mapped its tables of contents (2.1, 3.1, 4.1) to eCTD nodes the ICH DTD does not have — in
+  eCTD the backbone is the table of contents, so they are CTD-folder items; and 2.3 is the QOS element itself (App. 4 says so).
+- Tests: `tests/test_ectd32_eu.py` (9: DTD validity for the three procedures, what the writer refuses, the validator's pass,
+  its catches, a follow-on replace, the API export, the leaflet item), `tests/test_ui_eu_ectd.py`.
 
 ## No OCR — the upload gate (November 2026) — «مفيش OCR: الملف لازم يكون فيه نص»
 

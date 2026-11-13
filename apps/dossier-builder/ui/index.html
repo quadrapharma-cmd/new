@@ -336,7 +336,11 @@ const T = {
   country:{en:'Country of registration',ar:'دولة التسجيل'}, countryQ:{en:'Where will this dossier be submitted?',ar:'الملف ده هيتقدّم في أنهي دولة؟'},
   countrySub:{en:"Module 1 is built for the country's authority; Modules 2 to 5 are the common CTD, the same everywhere.",ar:'موديول ١ بيتبني على هيئة الدولة؛ والموديولات ٢–٥ هي الـ CTD المشترك زي أي مكان.'},
   auOwn:{en:"Module 1 from the authority's published text",ar:'موديول ١ من النص المنشور للهيئة'}, auGeneral:{en:"General Module 1 — match it to the authority's checklist",ar:'موديول ١ عام — طابقه على قائمة الهيئة'},
-  auSources:{en:'Written from',ar:'مكتوب من'}, auOutCtd:{en:'Output: CTD folders',ar:'المخرجات: مجلدات CTD'}, auOutAll:{en:'Output: CTD folders · eCTD 3.2.2 · eCTD 4.0',ar:'المخرجات: مجلدات CTD · eCTD 3.2.2 · eCTD 4.0'},
+  auSources:{en:'Written from',ar:'مكتوب من'}, auOutCtd:{en:'Output: CTD folders',ar:'المخرجات: مجلدات CTD'}, auOutAll:{en:'Output: CTD folders · eCTD 3.2.2 · eCTD 4.0',ar:'المخرجات: مجلدات CTD · eCTD 3.2.2 · eCTD 4.0'}, auOutEU:{en:'Output: CTD folders · eCTD 3.2.2 (EU Module 1 v3.1.1)',ar:'المخرجات: مجلدات CTD · eCTD 3.2.2 (موديول ١ الأوروبي 3.1.1)'},
+  outE3EU:{en:"index.xml + eu-regional.xml on the EMA's own DTD, the folders and names of EU Module 1 v3.1.1, checked against the EU validation criteria v8.2.",ar:'index.xml + eu-regional.xml على الـ DTD بتاع الوكالة نفسها، وفولدرات وأسامي موديول ١ الأوروبي 3.1.1، ومتفحوص على معايير التحقق الأوروبية 8.2.'},
+  euExportSub:{en:'One dossier: CTD folders and the EU eCTD sequence.',ar:'ملف واحد: مجلدات CTD وتسلسل eCTD الأوروبي.'}, euShared:{en:'Every country of the procedure (shared)',ar:'كل دول الإجراء (مشترك)'},
+  euCountry:{en:'For which country',ar:'لأنهي دولة'}, euEnvT:{en:'The EU envelope',ar:'الـ envelope الأوروبي'}, euCountries:{en:'Countries of the procedure — one envelope each',ar:'دول الإجراء — envelope لكل دولة'},
+  euTrack:{en:'Procedure number (blank: «to be advised» until the agency gives it)',ar:'رقم الإجراء (فاضي: «to be advised» لحد ما الهيئة تديه)'}, euCheck:{en:'Run an EMA-accepted validator on the sequence before you submit it.',ar:'شغّل فاحص معتمد من الوكالة على التسلسل قبل ما تقدّمه.'},
   auChange:{en:'Change',ar:'تغيير'}, auWith:{en:'Countries with their own Module 1',ar:'دول ليها موديول ١ خاص'}, auRest:{en:'Other countries — general Module 1',ar:'باقي الدول — موديول ١ عام'},
   originX:{en:'Made in the country of registration, or imported into it?',ar:'مصنّع في دولة التسجيل ولا مستورد ليها؟'}, auQT:{en:'What this authority asks',ar:'أسئلة الهيئة دي'},
   auCtdOnly:{en:"This authority gets the dossier as CTD folders. The program's eCTD package is written for Egypt's regional Module 1.",ar:'الهيئة دي بتاخد الملف كمجلدات CTD. حزمة الـ eCTD في البرنامج مكتوبة لموديول ١ المصري.'},
@@ -755,11 +759,11 @@ async function home(tok){
   <section class="card"><div class="hd"><h2>${esc(t('flowT'))}</h2></div><div class="flow pad" style="padding-block:6px 10px">
     ${[1,2,3,4,5,6].map(i=>`<div class="st"><span class="k">${i}</span><b>${esc(t('f'+i))}</b><span>${esc(t('f'+i+'d'))}</span></div>`).join('')}</div></section>
   ${(c.authorities||[]).length>1?`<section class="card" id="homeAu"><div class="hd"><span class="ic-tile accent">${icon('globe',16)}</span><h2>${esc(t('auT'))}</h2></div><div class="pad stack gap-s"><p class="small muted">${esc(t('countrySub'))}</p>
-    <div class="grid2">${c.authorities.map(a=>`<div class="row gap-s" style="align-items:flex-start"><span class="chip ${a.verified?'c-ok':'c-wait'}"><i></i>${esc(a.countries.includes('*')?t('auAny'):a.id)}</span><span class="small"><b>${esc(L(a.name))}</b><br><span class="muted">${esc(t('module'))} 1: ${a.requirements.by_module['1']||0} ${esc(t('auItems'))} · ${esc(t(a.outputs.length>1?'auOutAll':'auOutCtd'))}</span></span></div>`).join('')}</div></div></section>`:''}
+    <div class="grid2">${c.authorities.map(a=>`<div class="row gap-s" style="align-items:flex-start"><span class="chip ${a.verified?'c-ok':'c-wait'}"><i></i>${esc(a.countries.includes('*')?t('auAny'):a.id)}</span><span class="small"><b>${esc(L(a.name))}</b><br><span class="muted">${esc(t('module'))} 1: ${a.requirements.by_module['1']||0} ${esc(t('auItems'))} · ${esc(t(a.outputs.length>2?'auOutAll':a.outputs.length>1?'auOutEU':'auOutCtd'))}</span></span></div>`).join('')}</div></div></section>`:''}
   <section class="stack gap-s"><div class="head"><div class="title"><h2>${esc(t('capsT'))}</h2><p class="sub small">${esc(t('capsSub'))}</p></div></div>
    <div class="caps">
     ${C('cpu','',c.requirements.total,t('u_req'),'cap1','cap1d',`NP.CAPP.065 v5 · ${byMod}`)}
-    ${C('target','accent',c.outputs.length,t('u_out'),'cap2','cap2d','ICH eCTD 3.2.2 · 4.0 · EG M1 (draft)','#/dossiers')}
+    ${C('target','accent',c.outputs.length,t('u_out'),'cap2','cap2d','ICH eCTD 3.2.2 · 4.0 · EG M1 (draft) · EU M1 3.1.1','#/dossiers')}
     ${C('branch','info',c.variations.total,t('u_var'),'cap3','cap3d','GL.CAPP.026 v6 · PAC-N / A / B / II','#/variations')}
     ${C('sparkles','',c.generators.length,t('u_gen'),'cap4','cap4d',c.generators.map(g=>L(g.title)).slice(0,6).join(' · ')+' …')}
     ${C('scan','warn',`${c.checks.pdf.length}`,`${t('u_chk')} · ${c.checks.fixes.length} ${t('u_fix')}`,'cap5','cap5d','EG-PF-16 · EG-BP-E23 · NTA065 N4')}
@@ -837,6 +841,12 @@ function normSpecs(v){ if(Array.isArray(v)) return v.map(x=>String(x).replace(/[
 async function loadAu(){ if(!S.au){ try{ S.au=await api('/authorities'); }catch(e){ S.au={authorities:[],countries:[],default:null}; } } return S.au; }
 const AUS = () => (S.au&&S.au.authorities)||[];
 const isEG = () => !S.dossier || !S.dossier.authority || S.dossier.authority.egypt;
+const isEU = () => !!(S.dossier && S.dossier.authority && S.dossier.authority.ectd_region==='eu');
+const euV = () => (S.dossier && S.dossier.authority && S.dossier.authority.ectd_values) || {};
+const EU_PI = {spc:'SmPC', annex2:'Annex II', outer:'Outer packaging', interpack:'Intermediate packaging', impack:'Immediate packaging', other:'Other product information', pl:'Package leaflet', combined:'Combined (SmPC + Annex II + labelling + leaflet)'};
+const EU_LANG = {bg:'Български',cs:'Čeština',da:'Dansk',de:'Deutsch',el:'Ελληνικά',en:'English',es:'Español',et:'Eesti',fi:'Suomi',fr:'Français',ga:'Gaeilge',hr:'Hrvatski',hu:'Magyar',is:'Íslenska',it:'Italiano',lt:'Lietuvių',lv:'Latviešu',mt:'Malti',nl:'Nederlands',no:'Norsk',pl:'Polski',pt:'Português',ro:'Română',sk:'Slovenčina',sl:'Slovenščina',sv:'Svenska'};
+const euCountries = () => (euV().countries||[]).filter(c=>!['common','ema','edqm'].includes(c));
+const euCode = c => { c=(c||'').toLowerCase(); return c==='gr'?'el':c==='gb'?'uk':c; };
 function auOf(code){ const A=AUS(); return A.find(a=>a.countries.includes(code)) || A.find(a=>a.countries.includes('*')) || null; }
 const countryName = code => { const c=((S.au&&S.au.countries)||[]).find(x=>x.code===code); return c?L({ar:c.ar,en:c.en}):(code||''); };
 /* the answers to the authority's own questions: what was chosen, else what the country itself says (the receiving Gulf authority), else the default */
@@ -1805,8 +1815,8 @@ async function guideView(tok){
     <section class="card pad"><div class="journey">${J.stages.map((s,i)=>stage(s,i,bodies[s.key](s))).join('')}</div></section>
     <aside class="stack">
       <section class="card"><div class="hd"><h3>${esc(t('outputsT'))}</h3></div><div class="pad stack gap-s">
-        ${(isEG()?[['CTD One Submission','outCtdD','NP.CAPP.065 v5'],['eCTD 3.2.2','outE3D','EG provisional v0'],['eCTD 4.0','outE4D','EG provisional v0 · ICH IG 1.7']]:[['CTD','auCtdD',L((S.dossier.authority||{}).matrix||{})]]).map(([n,d,src])=>`<div class="outcard"><span class="ic-tile">${icon('package',16)}</span><div><b>${esc(n)}</b><div class="small muted">${esc(t(d))}</div><div class="code muted" style="margin-top:3px">${esc(src)}</div></div></div>`).join('')}</div></section>
-      <section class="card" ${isEG()?'':'hidden'}><div class="hd"><h3>${esc(t('history'))}</h3></div>${hist.ectd32.length||hist.ectd40.length?`<div class="tablewrap"><table><thead><tr><th>eCTD</th><th>${esc(t('seqDone'))}</th><th>${esc(t('subType'))}</th><th>${esc(t('when'))}</th></tr></thead><tbody>
+        ${(isEG()?[['CTD One Submission','outCtdD','NP.CAPP.065 v5'],['eCTD 3.2.2','outE3D','EG provisional v0'],['eCTD 4.0','outE4D','EG provisional v0 · ICH IG 1.7']]:[['CTD','auCtdD',L((S.dossier.authority||{}).matrix||{})]].concat(isEU()?[['eCTD 3.2.2','outE3EU','EU M1 3.1.1 · VC 8.2']]:[])).map(([n,d,src])=>`<div class="outcard"><span class="ic-tile">${icon('package',16)}</span><div><b>${esc(n)}</b><div class="small muted">${esc(t(d))}</div><div class="code muted" style="margin-top:3px">${esc(src)}</div></div></div>`).join('')}</div></section>
+      <section class="card" ${isEG()||isEU()?'':'hidden'}><div class="hd"><h3>${esc(t('history'))}</h3></div>${hist.ectd32.length||hist.ectd40.length?`<div class="tablewrap"><table><thead><tr><th>eCTD</th><th>${esc(t('seqDone'))}</th><th>${esc(t('subType'))}</th><th>${esc(t('when'))}</th></tr></thead><tbody>
         ${[['3.2.2',hist.ectd32],['4.0',hist.ectd40]].flatMap(([k,a])=>a.map(h=>`<tr><td>${k}</td><td class="code">${esc(h.seq)}</td><td class="code">${esc(h.envelope.type||'')}</td><td class="small">${tsL(h.created)}</td></tr>`)).join('')}</tbody></table></div>`:`<div class="empty small">${esc(t('none'))}</div>`}</section>
     </aside></div>`;
   if(!show(tok, html)) return;
@@ -1913,9 +1923,12 @@ async function bulk(files){
   };
 }
 function slotById(id){ return S.board.slots.find(s=>s.slot_id===id); }
-function needsMeta(s){ return s.req_id==='M1-09' ? 'pi' : (s.module===5 ? 'study' : null); }
-const metaOf=kind=>{ const meta=kind==='pi'?{pi_type:$('#mType').value,lang:$('#mLang').value}:{study:$('#mStudy').value.trim(),doc_type:$('#mDocType').value};
+function needsMeta(s){ return (s.req_id==='M1-09'||s.req_id==='EU-1.3.1') ? 'pi' : s.req_id==='EU-ADD' ? 'country' : (s.module===5 ? 'study' : null); }
+const metaOf=kind=>{ const cc=$('#mCountry')&&$('#mCountry').value;
+  const meta=kind==='pi'?{pi_type:$('#mType').value,lang:$('#mLang').value}:kind==='country'?{}:{study:$('#mStudy').value.trim(),doc_type:$('#mDocType').value};
+  if(cc) meta.eu_country=cc;                                   // EU: the country folder it is filed under (blank: shared by the procedure)
   if(kind==='study'&&!meta.study){ $('#mStudy').focus(); return null; } return meta; };
+const euCountryField = () => `<label class="f"><span>${esc(t('euCountry'))}</span><select id="mCountry"><option value="">${esc(t('euShared'))}</option>${euCountries().map(c=>`<option value="${c}">${c.toUpperCase()}</option>`).join('')}</select></label>`;
 function askMeta(s){ const kind=s&&needsMeta(s); if(!kind) return Promise.resolve({});              // an existing file going into such an item
   return new Promise(res=>{ openDrawer(L(s.title), `<p class="muted">${esc(t('extra'))}</p>${metaFields(kind)}<div><button class="btn pri" id="mGo">${icon('check')} ${esc(t('putHere'))}</button></div>`);
     $('#mGo').onclick=()=>{ const meta=metaOf(kind); if(!meta) return; closeDrawer(); res(meta); }; }); }
@@ -1926,7 +1939,11 @@ function startUpload(slotId, from){                               // from: 'driv
     <div><button class="btn pri" id="mGo">${icon('upload')} ${esc(t('choose'))}</button></div>`);
   $('#mGo').onclick=()=>{ const meta=metaOf(kind); if(!meta) return; closeDrawer(); pick(slotId, meta, undefined, from); };
 }
-function metaFields(kind){ return kind==='pi'?
+function metaFields(kind){
+  if(kind==='country') return euCountryField();
+  if(kind==='pi'&&isEU()) return `<label class="f"><span>${esc(t('piType'))}</span><select id="mType">${(euV().pi_types||Object.keys(EU_PI)).map(k=>`<option value="${k}">${esc(EU_PI[k]||k)}</option>`).join('')}</select></label>
+     <label class="f"><span>${esc(t('piLang'))}</span><select id="mLang">${(euV().languages||['en']).map(k=>`<option value="${k}" ${k==='en'?'selected':''}>${esc(EU_LANG[k]||k)} (${k})</option>`).join('')}</select></label>${euCountryField()}`;
+  return kind==='pi'?
     `<label class="f"><span>${esc(t('piType'))}</span><select id="mType"><option value="spc">SmPC</option><option value="pl">PIL / Leaflet</option><option value="outer">Outer label</option><option value="interpack">Inner label</option></select></label>
      <label class="f"><span>${esc(t('piLang'))}</span><select id="mLang"><option value="en">English</option><option value="ar">العربية</option></select></label>`:
     `<label class="f"><span>${esc(t('study'))}</span><input type="text" id="mStudy" placeholder="EXM-BE-01 — Bioequivalence of …"></label>
@@ -2413,21 +2430,28 @@ async function exportView(tok){
   const gateName=sid=>{ const s=slotOf[sid]; if(!s) return esc(sid); return `<span title="${esc(sid)}"><span class="code">${esc(s.ctd||'')}</span> ${esc(L(s.title||{}))}${s.item&&s.item.name?` <span class="muted">— ${esc(s.item.name)}</span>`:''}</span>`; };
   const list=(k,arr)=>arr.length?`<div><b>${esc(t(k))} (${arr.length})</b><div class="small" style="max-height:236px;overflow:auto;margin-top:4px">${arr.map(sid=>`<div style="padding:1px 0">${gateName(sid)}</div>`).join('')}</div></div>`:'';
   const eg=isEG(), au=S.dossier.authority||{};
-  const outs=[['ctd',eg?'CTD One Submission':'CTD',t(eg?'outCtdD':'auCtdD'),eg?'NP.CAPP.065 v5':L(au.matrix||{})],['ectd32',`eCTD 3.2.2 — ${t('seqDone')} ${n32}`,t('outE3D'),'EG provisional v0'],['ectd40',`eCTD 4.0 — ${t('seqDone')} ${n40}`,t('outE4D'),'EG provisional v0 · ICH IG 1.7']].filter(([k])=>auOuts().includes(k));
-  $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('export'))}</h1><p class="sub">${esc(t(eg?'exportSub':'auExportSub'))}</p></div><a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a></div>
+  const eu=isEU(), euProc=((S.dossier.profile||{}).extra||{}).eu_procedure||'dcp';
+  const lastEnv=hist.ectd32.length?hist.ectd32[hist.ectd32.length-1].envelope||{}:{};
+  const euPicked=lastEnv.countries||[euCode(au.country)];
+  const outs=[['ctd',eg?'CTD One Submission':'CTD',t(eg?'outCtdD':'auCtdD'),eg?'NP.CAPP.065 v5':L(au.matrix||{})],['ectd32',`eCTD 3.2.2${eu?' — EU M1 3.1.1':''} — ${t('seqDone')} ${n32}`,t(eu?'outE3EU':'outE3D'),eu?'EU M1 3.1.1 · EU VC 8.2':'EG provisional v0'],['ectd40',`eCTD 4.0 — ${t('seqDone')} ${n40}`,t('outE4D'),'EG provisional v0 · ICH IG 1.7']].filter(([k])=>auOuts().includes(k));
+  $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('export'))}</h1><p class="sub">${esc(t(eg?'exportSub':eu?'euExportSub':'auExportSub'))}</p></div><a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a></div>
    ${g.ok?`<div class="alert ok">${icon('check')}<p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad">${icon('alert')}<p>${esc(t('gateBad'))}</p></div><div class="card pad stack gap-s" id="gateCard">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}${list('unsignedL',g.unsigned||[])}${list('extL',g.external_only||[])}${(g.cross_blocking||[]).length?`<div><b>${esc(t('crossT'))} (${g.cross_blocking.length})</b>${g.cross_blocking.map(f=>`<div class="small">● ${esc(f[S.lang])}</div>`).join('')}</div>`:''}
      <div class="row"><a class="btn sm" href="#/d/${id}/board">${esc(t('navBoard'))}</a><a class="btn sm" href="#/d/${id}/checks">${esc(t('navChecks'))}</a></div></div>`}
    <div class="card glow pad stack gap-s" id="wkCard"><div class="row gap-s"><span class="ic-tile accent">${icon('package',16)}</span><div class="grow"><b>${esc(t('wkBtn'))}</b><div class="small muted">${esc(t('wkSub'))}</div></div>
      <button class="btn ${g.ok?'':'pri'}" id="wkGo">${icon('download')} ${esc(t('wkBtn'))}</button></div><div id="wkRes"></div></div>
    <div class="card"><div class="hd"><span class="ic-tile">${icon('package',16)}</span><h2>${esc(t('outputsT'))}</h2></div><div class="pad stack gap-s">
      ${outs.map(([k,l,d,src])=>`<label class="opt"><input type="checkbox" data-out="${k}" checked><span><b>${esc(l)}</b><span>${esc(d)}</span><span class="code muted">${esc(src)}</span></span></label>`).join('')}
-     ${eg?'':`<div class="alert info" id="ctdOnly">${icon('info')}<p class="small">${esc(t('auCtdOnly'))}</p></div>`}</div></div>
+     ${eg||eu?'':`<div class="alert info" id="ctdOnly">${icon('info')}<p class="small">${esc(t('auCtdOnly'))}</p></div>`}</div></div>
+     ${eu?`<div class="card" id="euEnv"><div class="hd"><span class="ic-tile">${icon('globe',16)}</span><h2>${esc(t('euEnvT'))}</h2></div><div class="pad stack gap-s">
+       ${['dcp','mrp'].includes(euProc)?`<div><b class="small">${esc(t('euCountries'))}</b><div class="row gap-s" style="flex-wrap:wrap;margin-top:6px" id="euCs">${euCountries().map(c=>`<label class="small" style="display:inline-flex;align-items:center;gap:4px;min-width:58px;cursor:pointer"><input type="checkbox" value="${c}" ${euPicked.includes(c)?'checked':''}> <span class="code">${c.toUpperCase()}</span></label>`).join('')}</div></div>`:''}
+       ${follow?'':`<label class="f"><span>${esc(t('euTrack'))}</span><input type="text" dir="ltr" id="euTrack" placeholder="${euProc==='cp'?'EMEA/H/C/000123':euProc==='np'?'2131577':'DE/H/0126/001/DC'}"></label>`}
+       <p class="small muted">${esc(t('euCheck'))}</p></div></div>`:''}
      ${follow?`<div class="card"><div class="hd"><span class="ic-tile accent">${icon('repeat',16)}</span><h2>${esc(t('nextSeq'))}</h2></div><div class="pad stack">
        <p class="small muted">${esc(t('onlyChanges'))}${pl?' '+esc(t('fromPlan')):''}</p><div class="form">
-       <label class="f"><span>${esc(t('subType'))}</span><select id="sqType">${['var-pac-n','var-pac-a','var-pac-b','var-pac-ii','renewal','5yr','pacstab','paccadc','withdrawal','none'].map(o=>`<option ${pl&&pl.submission_type===o?'selected':''}>${o}</option>`).join('')}</select></label>
-       <label class="f"><span>${esc(t('unit'))}</span><select id="sqUnit">${['initial','response','validation-response','additional-info','corrigendum','reformat'].map(o=>`<option>${o}</option>`).join('')}</select></label>
-       <label class="f"><span>${esc(t('mode'))}</span><select id="sqMode">${['single','grouping','parallel-single','parallel-grouping'].map(o=>`<option ${pl&&pl.mode===o?'selected':''}>${o}</option>`).join('')}</select></label>
-       <label class="f"><span>${esc(t('trackNo'))}</span><input type="text" dir="auto" id="sqTrack" placeholder="P-VAR-PAC-B-0001"></label>
+       <label class="f"><span>${esc(t('subType'))}</span><select id="sqType">${(eu?euV().submission_types||[]:['var-pac-n','var-pac-a','var-pac-b','var-pac-ii','renewal','5yr','pacstab','paccadc','withdrawal','none']).map(o=>`<option ${pl&&pl.submission_type===o?'selected':''}>${o}</option>`).join('')}</select></label>
+       <label class="f"><span>${esc(t('unit'))}</span><select id="sqUnit">${(eu?euV().units||[]:['initial','response','validation-response','additional-info','corrigendum','reformat']).map(o=>`<option>${o}</option>`).join('')}</select></label>
+       <label class="f"><span>${esc(t('mode'))}</span><select id="sqMode">${(eu?euV().modes||[]:['single','grouping','parallel-single','parallel-grouping']).map(o=>`<option ${pl&&pl.mode===o?'selected':''}>${o}</option>`).join('')}</select></label>
+       <label class="f"><span>${esc(t(eu?'euTrack':'trackNo'))}</span><input type="text" dir="auto" id="sqTrack" placeholder="${eu?'EMA/VR/0000123456':'P-VAR-PAC-B-0001'}"></label>
        <label class="f"><span>${esc(t('descr'))}</span><input type="text" dir="auto" id="sqDesc" value="${esc(pl?pl.items.map(i=>i.request).join('; ').slice(0,200):'')}"></label></div></div></div>
      <div class="card"><div class="hd"><h2>${esc(t('history'))}</h2></div><div class="tablewrap"><table><thead><tr><th>eCTD</th><th>${esc(t('seqDone'))}</th><th>${esc(t('subType'))}</th><th>${esc(t('unit'))}</th><th>${esc(t('descr'))}</th></tr></thead><tbody>
        ${[['3.2.2',hist.ectd32],['4.0',hist.ectd40]].flatMap(([k,a])=>a.map(h=>`<tr><td>${k}</td><td class="code">${esc(h.seq)}</td><td class="code">${esc(h.envelope.type)}</td><td>${esc(h.envelope.unit)}</td><td>${bdi(h.envelope.description||'')}</td></tr>`)).join('')}</tbody></table></div></div>`:''}
@@ -2442,8 +2466,11 @@ async function exportView(tok){
     finally{ b.disabled=false; b.innerHTML=`${icon('download')} ${esc(t('wkBtn'))}`; } };
   $('#go').onclick=async()=>{ const outsSel=$$('[data-out]:checked').map(c=>c.dataset.out);
     $('#go').disabled=true; $('#go').textContent=t('exporting');
+    const sub = follow? {type:$('#sqType').value, unit:$('#sqUnit').value, mode:$('#sqMode').value, tracking:$('#sqTrack').value.trim()||null, description:$('#sqDesc').value.trim()||null} : {};
+    if(eu){ const cs=$$('#euCs input:checked').map(i=>i.value); if(cs.length) sub.countries=cs;
+      if(!follow&&$('#euTrack')&&$('#euTrack').value.trim()) sub.tracking=$('#euTrack').value.trim(); }
     try{ const r=await api(`/dossiers/${S.dossier.id}/export`,{method:'POST',json:{outputs:outsSel,acknowledge_provisional:$('#ack').checked,
-        submission: follow? {type:$('#sqType').value, unit:$('#sqUnit').value, mode:$('#sqMode').value, tracking:$('#sqTrack').value.trim()||null, description:$('#sqDesc').value.trim()||null} : null}});
+        submission: Object.keys(sub).length? sub : null}});
       const val = Object.entries(r.validation||{}).map(([k,v])=>`<div class="alert ${v.ok?'ok':'bad'}"><p><b>${esc(k)}</b> — ${esc(v.label)}<br><span class="small">${esc(t('vPass'))} ${v.counts.pass} · ${esc(t('vFail'))} ${v.counts.fail} · ${esc(t('vWarn'))} ${v.counts.warning} · ${esc(t('vNotRun'))} ${v.counts.not_run}</span></p></div>`).join('');
       const sq = Object.entries(r.sequences||{}).map(([k,v])=>`<div class="small"><b>${k==='ectd32'?'eCTD 3.2.2':'eCTD 4.0'}</b> · ${esc(t('seqDone'))} <span class="code">${esc(v.sequence)}</span> · ${esc(t('opsL'))}: ${v.operations.new} / ${v.operations.replace} / ${v.operations.delete}</div>`).join('');
       $('#res').innerHTML=`<div class="card glow pad stack"><h2>${esc(t('downloads'))}</h2>${sq}<div class="dl">${Object.entries(r.downloads).map(([k,u])=>`<a class="btn" href="${esc(u)}" download>${icon('download')} ${esc(k)}.zip</a>`).join('')}

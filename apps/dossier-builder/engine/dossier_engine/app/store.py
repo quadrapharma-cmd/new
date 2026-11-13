@@ -572,18 +572,26 @@ class Store:
         self.audit(did, 'document.withdrawn', doc=doc_id, reason=reason)   # blob kept: undo is possible
         return self.document(doc_id)
 
-    ITEM_META = ('pi_type', 'lang', 'study', 'doc_type')
+    ITEM_META = ('pi_type', 'lang', 'study', 'doc_type', 'eu_country')
+    PI_ITEMS = ('M1-09', 'EU-1.3.1')
 
     def check_item_meta(self, did, slot_id, meta):
         """A document placed or moved into the leaflet item (1.3.1) or a Module 5 item carries what the eCTD writers need — the PI type and
         language, the study — as an upload there does; without them the gate says «ready» and the export fails."""
         s = next((x for x in self.slots(did) if x.slot_id == slot_id), None)
-        need = ('pi_type', 'lang') if s and s.req_id == 'M1-09' else ('study', 'doc_type') if s and s.module == 5 else ()
+        need = ('pi_type', 'lang') if s and s.req_id in self.PI_ITEMS else ('study', 'doc_type') if s and s.module == 5 else ()
         missing = [k for k in need if not (meta or {}).get(k)]
         if missing:
             raise StoreError('E-META', f"This item needs the document's details first: {', '.join(missing)}.",
-                             'البند ده محتاج تفاصيل المستند الأول: ' + ('نوع النشرة ولغتها' if s.req_id == 'M1-09' else 'اسم الدراسة ونوع المستند') + '.',
+                             'البند ده محتاج تفاصيل المستند الأول: ' + ('نوع النشرة ولغتها' if s.req_id in self.PI_ITEMS else 'اسم الدراسة ونوع المستند') + '.',
                              missing=missing)
+        if s and s.req_id == 'EU-1.3.1':
+            from ..writers.ectd32_eu import default_profile
+            v = default_profile().values
+            if meta['pi_type'] not in v['pi_types'] or meta['lang'] not in v['languages']:
+                raise StoreError('E-META', f"EU 1.3.1: the PI type is one of {', '.join(v['pi_types'])} and the language an EU code (en, de, fr…).",
+                                 'بند 1.3.1 الأوروبي: نوع النشرة من ' + '، '.join(v['pi_types']) + ' واللغة كود أوروبي (en، de، fr…).',
+                                 missing=['pi_type', 'lang'])
 
     def move_document(self, did, doc_id, slot_id, extra_meta=None):
         """A misfiled document goes to its own item: a new version there (checked again), the old one withdrawn; blob kept once."""

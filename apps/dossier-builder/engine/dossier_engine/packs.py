@@ -48,6 +48,16 @@ class Pack:
         return self.authority.get('id') == 'EG-EDA'
 
     @property
+    def ectd_region(self):
+        """The regional eCTD 3.2.2 Module 1 the program writes for this authority: 'eg' (the provisional EG profile), 'eu' (EU Module 1
+        v3.1.1, the EMA's own DTD and validation criteria v8.2), or None (CTD folders only)."""
+        return {'EG-EDA': 'eg', 'EU': 'eu'}.get(self.authority.get('id'))
+
+    @property
+    def outputs(self):
+        return {'eg': ['ctd', 'ectd32', 'ectd40'], 'eu': ['ctd', 'ectd32']}.get(self.ectd_region, ['ctd'])
+
+    @property
     def questions(self):
         """What this authority asks beyond the common profile: [{id, title, options: [{id, en, ar}], default}]."""
         return self.meta.get('questions') or []
@@ -111,7 +121,7 @@ def authorities(packs_dir=PACKS_DIR):
                     'columns': m.get('columns') or {}, 'note': m.get('note'), 'valid_from': m.get('valid_from'),
                     'sources': [{k: s.get(k) for k in ('code', 'title', 'version', 'date', 'url', 'gives') if s.get(k)} for s in m.get('sources') or []],
                     'requirements': {'total': len(pk.requirements), 'by_module': by_module},
-                    'outputs': ['ctd', 'ectd32', 'ectd40'] if au['id'] == 'EG-EDA' else ['ctd']})
+                    'outputs': pk.outputs})
     return out
 
 

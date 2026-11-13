@@ -8,7 +8,7 @@ APP = os.path.join(REPO, 'apps', 'dossier-builder')
 
 datas, binaries, hidden = [], [], []
 for rel in ['apps/dossier-builder/engine/dossier_engine', 'apps/dossier-builder/rulepacks', 'apps/dossier-builder/ui',
-            'docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0', 'docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0']:
+            'docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0', 'docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0', 'docs/ctd/ectd/EU-M1-3.1.1-PROFILE']:
     datas.append((os.path.join(REPO, rel), rel))
 datas.append((os.path.join(REPO, 'docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip'), 'docs/ctd/sources/ectd'))
 

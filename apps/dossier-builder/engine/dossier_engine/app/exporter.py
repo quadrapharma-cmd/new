@@ -11,11 +11,11 @@ from pathlib import Path
 from ..assemble import docs_for
 from ..lifecycle import plan, to_ectd32, to_ectd40
 from ..profile import Profile
-from ..writers import ctd, ectd32, ectd40
+from ..writers import ctd, ectd32, ectd32_eu, ectd40
 from ..writers.ectd32 import WriterError
 from ..generate import letters
 from ..generate.docx_kit import to_pdf, basic_pdf
-from ..validators import ectd32 as v32, ectd40 as v40, report as vreport
+from ..validators import ectd32 as v32, ectd32_eu as v32eu, ectd40 as v40, report as vreport
 
 
 class ExportError(Exception):
@@ -75,6 +75,54 @@ def next_seq(hist, output):
     return f'{int(last) + 1:04d}' if output == 'ectd32' else int(last) + 1
 
 
+def eu_countries(d, prof, sub=None, hist=None):
+    """(procedure, envelope countries) of an EU dossier: 'ema' in the centralised procedure; otherwise the countries named for this
+    sequence, else those of the last one, else the dossier's own country (a national procedure keeps one)."""
+    env = d['envelope']
+    proc = ectd32_eu.PROCEDURE.get((prof.extra or {}).get('eu_procedure') or 'dcp', 'decentralised')
+    if proc == 'centralised':
+        return proc, ['ema']
+    named = (sub or {}).get('countries') or (hist[-1]['envelope'].get('countries') if hist else None) or env.get('eu_countries') \
+        or [env.get('country')]
+    out = []
+    for c in named:
+        c = ectd32_eu.code(c)
+        if c and c not in out:
+            out.append(c)
+    return proc, out[:1] if proc == 'national' else out
+
+
+def eu_envelope(d, prof, sub, hist, seq, stype, unit, activity, desc, tracking):
+    """The EU envelope(s) of a sequence from the dossier, its answers and the follow-on's details (SPEC 3.1.1 §Envelope)."""
+    env, pr = d['envelope'], d['product']
+    proc, countries = eu_countries(d, prof, sub, hist)
+    values = ectd32_eu.default_profile().values
+    if not countries:
+        raise ExportError(422, 'E-ENVELOPE', 'Name the countries of the procedure (the EU envelopes).', 'حدّد دول الإجراء (الـ envelope الأوروبي).')
+    bad = [c for c in countries if c not in values['env_countries']]
+    if bad:
+        raise ExportError(422, 'E-ENVELOPE', f'Not an EU M1 destination: {bad}.', f'دي مش دولة في موديول ١ الأوروبي: {bad}.')
+    if stype not in values['submission_types']:
+        raise ExportError(422, 'E-SUBMISSION', f'An EU submission type is one of: {", ".join(values["submission_types"])}.',
+                          'نوع التقديم الأوروبي واحد من: ' + '، '.join(values['submission_types']) + '.')
+    if unit not in values['units']:
+        raise ExportError(422, 'E-SUBMISSION', f'An EU submission unit is one of: {", ".join(values["units"])}.',
+                          'نوع الوحدة الأوروبي واحد من: ' + '، '.join(values['units']) + '.')
+    applicant = env.get('applicant') or pr.get('manufacturer')
+    if not applicant:
+        raise ExportError(422, 'E-ENVELOPE', "The envelope needs the applicant's name.", 'الـ envelope محتاج اسم مقدّم الطلب.')
+    mode = (sub or {}).get('mode') or 'single' if stype.startswith('var-') or stype == 'extension' else None
+    if not desc:                                       # mandatory in the EU envelope; said plainly when the dossier gives none
+        desc = ('Initial marketing authorisation application' if stype == 'maa' and unit == 'initial' else
+                f"{stype.replace('-', ' ')} — {unit.replace('-', ' ')}")
+    return ectd32_eu.EnvelopeEU(identifier=env['application_uuid'], procedure=proc, countries=countries, submission_type=stype, unit=unit,
+                                applicant=applicant, invented_names=[env.get('invented_name') or d['name']],
+                                inn=env.get('inn') or [a.name for a in prof.apis if a.name], tracking=tracking, sequence=seq,
+                                related_sequence=[activity], description=desc, mode=mode, number=(sub or {}).get('number'),
+                                agencies={ectd32_eu.code(k): v for k, v in (env.get('eu_agencies') or {}).items()},
+                                legal_basis=(prof.extra or {}).get('eu_legal_basis'))
+
+
 def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
     """working: a working copy — the CTD folders with what the dossier holds now and the list of what is missing, whatever the gate
     says; never an eCTD sequence, never recorded as a submission."""
@@ -84,14 +132,17 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
     if not g['ok']:
         raise ExportError(409, 'E-GATE', 'Export blocked: required documents are missing or non-conforming.',
                           'التصدير متوقف: فيه مستندات مطلوبة ناقصة أو غير مطابقة.', gate=g)
-    egypt = st.pack(st.dossier(did)['pack']).egypt
-    if not egypt:                                        # the regional eCTD backbone is written for Egypt; every other authority gets the CTD folders
-        if list(outputs) == ['ctd', 'ectd32', 'ectd40']:                     # nothing was asked: what this authority has
-            outputs = ['ctd']
-        elif {'ectd32', 'ectd40'} & set(outputs):
-            raise ExportError(422, 'E-OUTPUT-AUTHORITY', "The eCTD package is written for Egypt's regional Module 1 only; this dossier exports as CTD folders.",
-                              'حزمة الـ eCTD مكتوبة لموديول ١ المصري بس؛ الملف ده بيتصدّر كمجلدات CTD.', gate=g)
-    if {'ectd32', 'ectd40'} & set(outputs) and not ack:
+    pk = st.pack(st.dossier(did)['pack'])
+    egypt, region = pk.egypt, pk.ectd_region      # the regional eCTD backbone: Egypt's (provisional) and the EU's; others get the CTD folders
+    if list(outputs) == ['ctd', 'ectd32', 'ectd40']:                         # nothing was asked: what this authority has
+        outputs = list(pk.outputs)
+    elif set(outputs) - set(pk.outputs):
+        if region == 'eu':
+            raise ExportError(422, 'E-OUTPUT-AUTHORITY', 'eCTD 4.0 is written for Egypt only; an EU dossier exports as CTD folders and eCTD 3.2.2 '
+                              '(EU Module 1 v3.1.1).', 'الـ eCTD 4.0 مكتوب لمصر بس؛ الملف الأوروبي بيتصدّر كمجلدات CTD و eCTD 3.2.2 (موديول ١ الأوروبي 3.1.1).', gate=g)
+        raise ExportError(422, 'E-OUTPUT-AUTHORITY', "The eCTD package is written for Egypt's and the EU's Module 1; this dossier exports as CTD folders.",
+                          'حزمة الـ eCTD مكتوبة لموديول ١ المصري والأوروبي بس؛ الملف ده بيتصدّر كمجلدات CTD.', gate=g)
+    if {'ectd32', 'ectd40'} & set(outputs) and not ack and egypt:            # the EG profiles are provisional; the EU's is the EMA's own
         raise ExportError(409, 'E-PROVISIONAL-ACK', 'eCTD outputs use the provisional EG profiles; acknowledge before export.',
                           'مخرجات eCTD مبنية على ملف تعريف مصري مؤقت؛ لازم توافق قبل التصدير.', gate=g)
     sub = sub or {}
@@ -110,10 +161,10 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
             p = work / f"{doc['id']}.pdf"
             shutil.copyfile(st.blob_path(doc['sha256']), p)
             files.setdefault(s.slot_id, []).append({'file': str(p), 'title': doc['title'], **doc['meta'], 'doc_id': doc['id']})
-    docs_all, ctd_only = docs_for(slots, prof, files) if egypt else ([], [])
+    docs_all, ctd_only = docs_for(slots, prof, files) if region else ([], [])
     current_ids = {x.doc_id for x in docs_all}
     eff = {k: v for k, v in files.items() if not k.startswith('M1-44')}
-    docs_ectd = [x for x in docs_for(slots, prof, eff)[0]] if egypt else []
+    docs_ectd = [x for x in docs_for(slots, prof, eff)[0]] if region else []
     results, reports, zips, seqinfo, done = {}, {}, {}, {}, []
     lc = st.root / 'lifecycle' / did
     try:
@@ -135,8 +186,10 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
                     raise ExportError(409, 'E-COVER', f'Generate the cover letter for sequence {seq} first (a new cover letter goes in every sequence).',
                                       f'ولّد خطاب التغطية للتسلسل {seq} الأول (كل تسلسل له خطاب تغطية جديد).')
             stype = sub.get('type') or env.get('submission_type', 'maa')
+            if region == 'eu' and not follow and stype not in ectd32_eu.default_profile().values['submission_types']:
+                stype = 'maa'                             # the dossier's first sequence: a marketing authorisation application
             unit = sub.get('unit') or 'initial'
-            activity = seq if unit == 'initial' else sub.get('activity') or (hist[-1].get('activity') if hist else seq)
+            activity = seq if unit in ('initial', 'reformat') else sub.get('activity') or (hist[-1].get('activity') if hist else seq)
             act_row = next((h for h in hist if h['seq'] == activity), None)
             # tracking table rebuilt from the history (M1-44, tool-generated)
             rows = [{'sequence': str(h['seq']), 'related': str(h.get('activity') or ''), 'description': h['envelope'].get('description', ''),
@@ -155,9 +208,20 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
                 tpdf = basic_pdf(tdir / 'tracking.docx')
             tdoc = ectd32.Doc('1.0', str(tpdf), f'Tracking table — sequence {seq}', name='tracking', doc_id=f'tracking-{out}-{seq}')
             docs = docs_ectd + [tdoc]
+            if region == 'eu':
+                tracking = [sub.get('tracking') or env.get('tracking') or 'to be advised']
+                e = eu_envelope(d, prof, sub, hist, seq, stype, unit, activity, desc, tracking)
+                docs = ectd32_eu.resolve(docs, e)            # each document's country before the plan: one location per document
             steps = plan(hist, docs, current_ids | {tdoc.doc_id})
-            tracking = [sub.get('tracking') or env['tracking']]
-            if out == 'ectd32':
+            if region != 'eu':
+                tracking = [sub.get('tracking') or env['tracking']]
+            if out == 'ectd32' and region == 'eu':
+                root = lc / 'ectd-3.2.2'
+                r = ectd32_eu.write(root, e, product, to_ectd32(steps))
+                prev = sorted(p for p in root.iterdir() if p.is_dir() and p.name != seq)
+                reports['eCTD 3.2.2 (EU M1 3.1.1)'] = v32eu.validate(r['path'], ectd32_eu.DEFAULT_PROFILE, previous=prev)
+                _zip(root, seq, base / 'ectd32.zip')
+            elif out == 'ectd32':
                 root = lc / 'ectd-3.2.2'
                 e = ectd32.Envelope(identifier=env['application_uuid'], submission_type=stype, tracking=tracking, unit=unit,
                                     applicant=env['applicant'], invented_name=env.get('invented_name', d['name']),
@@ -185,8 +249,10 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
             results[out] = r['path']
             zips[out] = f'/api/dossiers/{did}/exports/{exp_id}/{out}.zip'
             seqinfo[out] = {'sequence': seq, 'operations': {k: sum(1 for s_ in steps if s_.op == k) for k in ('new', 'replace', 'delete')}}
-            done.append((out, seq, activity, getattr(e, 'submission_uuid', None),
-                         {'type': stype, 'unit': unit, 'description': desc, 'tracking': tracking[0]}, r['history'], r['path']))
+            envj = {'type': stype, 'unit': unit, 'description': desc, 'tracking': tracking[0]}
+            if region == 'eu':
+                envj |= {'procedure': e.procedure, 'countries': e.countries}
+            done.append((out, seq, activity, getattr(e, 'submission_uuid', None), envj, r['history'], r['path']))
     except WriterError as ex:
         shutil.rmtree(base, ignore_errors=True)
         for out, seq, *_rest, path in done:
@@ -202,7 +268,8 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
     shutil.rmtree(work, ignore_errors=True)
     if reports:
         (base / 'validation-report.json').write_text(json.dumps(reports, ensure_ascii=False, indent=1), encoding='utf-8')
-        (base / 'validation-report.html').write_text(vreport.render(d['name'], reports), encoding='utf-8')
+        (base / 'validation-report.html').write_text(vreport.render(d['name'], reports, vreport.EU_NOTE if region == 'eu' else vreport.EG_NOTE),
+                                                     encoding='utf-8')
     st.db.execute('insert into export values (?,?,?,?,?,?)', (exp_id, did, json.dumps(outputs), str(base), int(ack), time.time()))
     st.db.commit()
     st.audit(did, 'export', id=exp_id, outputs=outputs, acknowledged=ack, sequences=seqinfo,
@@ -212,4 +279,6 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
                            for k, r in reports.items()},
             'report': f'/api/dossiers/{did}/exports/{exp_id}/validation-report.html' if reports else None,
             'label': 'Conforms to EDA drafts + ICH (provisional EG profiles) — not «EDA-valid».' if egypt else
+                     'eCTD 3.2.2 with EU Module 1 v3.1.1 (the EMA\'s DTD), checked here against the EU validation criteria v8.2 — run an '
+                     'EMA-accepted validator before submission; and the CTD folders.' if region == 'eu' and 'ectd32' in outputs else
                      f"CTD folders in the order of {st.pack(d['pack']).authority['name']['en']}'s Module 1 and the common CTD — the authority's own submission rules (portal, file naming, eCTD) still apply."}

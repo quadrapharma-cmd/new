@@ -14,8 +14,11 @@ from dataclasses import dataclass
 
 
 def location_key(doc):
-    """Section-defining attributes (EU HTG 2.9.6 Table 5 / ICH SPEC): node + substance/manufacturer/pi-doc."""
-    return (doc.node, doc.substance or '', doc.manufacturer or '', doc.pi_type or '', doc.lang or '')
+    """Section-defining attributes (EU HTG 2.9.6 Table 5 / ICH SPEC): node + substance/manufacturer/pi-doc, and in the EU Module 1
+    the country (specific/@country, pi-doc/@country): a German SmPC never replaces the common one. Only an EU document has one, so
+    every other key is what it always was."""
+    key = (doc.node, doc.substance or '', doc.manufacturer or '', doc.pi_type or '', doc.lang or '')
+    return key + (doc.country,) if getattr(doc, 'country', None) else key
 
 
 @dataclass
@@ -76,10 +79,10 @@ def to_ectd32(steps):
         elif st.op == 'replace':
             out.append(dc_replace(st.doc, operation='replace', modified_file=f"{st.prior['seq']}#{st.prior['leaf_id']}"))
         else:
-            node, sub, man, pi, lang = (list(st.prior['key']) + [''] * 5)[:5]
+            node, sub, man, pi, lang, country = (list(st.prior['key']) + [''] * 6)[:6]
             out.append(Doc(node=node, file='', title=st.prior.get('title') or node, substance=sub or None,
                            manufacturer=man or None, pi_type=pi or None, lang=lang or None, operation='delete',
-                           modified_file=f"{st.prior['seq']}#{st.prior['leaf_id']}"))
+                           modified_file=f"{st.prior['seq']}#{st.prior['leaf_id']}", country=country or None))
     return out
 
 

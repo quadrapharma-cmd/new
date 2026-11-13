@@ -618,7 +618,7 @@
     number: Responses to questions
   ectd:
     nodes:
-    - '1'
+    - responses
     source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
     provenance: EU-IN-FORCE
   title:
@@ -643,7 +643,7 @@
     number: Additional data
   ectd:
     nodes:
-    - '1'
+    - additional-data
     source: EU Module 1 eCTD Specification v3.1.1 (June 2025) Appendix 2
     provenance: EU-IN-FORCE
   title:

@@ -7,5 +7,6 @@
 !apps/dossier-builder/tools/adduser.py
 !docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0/**
 !docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0/**
+!docs/ctd/ectd/EU-M1-3.1.1-PROFILE/**
 !docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip
 **/__pycache__

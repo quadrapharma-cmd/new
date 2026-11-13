@@ -4,7 +4,14 @@ import html, time
 AR = {'pass': 'ناجح', 'fail': 'فشل', 'warning': 'تحذير', 'not_run': 'لم يُشغَّل'}
 
 
-def render(title, reports):
+EG_NOTE = ('Provisional EG profiles — reports say «conforms to EDA drafts + ICH», never «EDA-valid».',
+           'ملفات التعريف المصرية مؤقتة — التقرير يقول «مطابق لمسودات الهيئة و ICH» وليس «معتمد من الهيئة».')
+EU_NOTE = ('EU Module 1 v3.1.1 (the EMA\'s DTD) and the EU eCTD validation criteria v8.2 — checked here; this is not an EMA-accepted '
+           'validation tool: run one before submission.',
+           'موديول ١ الأوروبي 3.1.1 (الـ DTD بتاع الوكالة) ومعايير التحقق الأوروبية 8.2 — اتفحصوا هنا؛ ده مش فاحص معتمد من الوكالة: شغّل واحد معتمد قبل التقديم.')
+
+
+def render(title, reports, note=EG_NOTE):
     e = html.escape
     secs = []
     for name, r in reports.items():
@@ -26,5 +33,5 @@ body{{margin:0;padding:16px;background:var(--bg);color:var(--fg);font:14px/1.5 s
 .w{{overflow-x:auto}} table{{border-collapse:collapse;width:100%;min-width:560px}} td,th{{text-align:start;padding:6px 8px;border-bottom:1px solid var(--l);vertical-align:top}}
 .m{{color:var(--m);font-size:12px}} .f{{font-size:12.5px}} .ok{{color:var(--ok)}} .bad{{color:var(--bad)}}
 tr.fail td:nth-child(2){{color:var(--bad);font-weight:600}} tr.warning td:nth-child(2){{color:var(--w)}} tr.not_run td{{color:var(--m)}}
-</style></head><body><h1>{e(title)}</h1><p class=m>{time.strftime('%Y-%m-%d %H:%M')} · Provisional EG profiles — reports say «conforms to EDA drafts + ICH», never «EDA-valid».
- / ملفات التعريف المصرية مؤقتة — التقرير يقول «مطابق لمسودات الهيئة و ICH» وليس «معتمد من الهيئة».</p>{''.join(secs)}</body></html>"""
+</style></head><body><h1>{e(title)}</h1><p class=m>{time.strftime('%Y-%m-%d %H:%M')} · {e(note[0])}
+ / {e(note[1])}</p>{''.join(secs)}</body></html>"""

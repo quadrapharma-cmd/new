@@ -1,0 +1,6 @@
+cf059a8f48c68fe4ce9ad2947ab854ca  util/dtd/eu-envelope.mod
+23b854174e61c68044b9f53c0009af95  util/dtd/eu-leaf.mod
+f8e473246d58499f9ffff8e51a32380d  util/dtd/eu-regional.dtd
+1d6f631cc6b6357f0f4fe378e5f79a27  util/dtd/ich-ectd-3-2.dtd
+3a07a202455e954a2eb203c5bb443f77  util/style/ectd-2-0.xsl
+474f3fe1fdadb31c74477793e060383d  util/style/eu-regional.xsl
