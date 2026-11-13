@@ -887,6 +887,33 @@ def create_app(workspace, auth_enabled=None):
         return {'files': [dict(f) for f in r['files']], 'rules': r['rules'],
                 'prompt': _extract.ai_prompt(r['files'], target), 'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
 
+    @app.post('/api/ocr/check')
+    async def ocr_check(file: UploadFile = File(...)):
+        """For the browser edition's scan reader (ui/assets/ocr.js, called by web/boot.js before a file reaches the engine): whether the
+        file is a scan or an image (why), whether this engine reads scans itself (here), its pages, and how many pages of it the page
+        has read already. Nothing is stored."""
+        from .. import pdfcraft as _pc
+        data = await file.read()
+        why = _extract.has_text(file.filename, data)
+        sha = _extract._sha(data)
+        rec = _extract.browser_reading(sha)
+        return {'sha256': sha, 'why': why, 'here': bool(_pc.ocr_info()), 'read': len(rec['texts']) if rec else 0,
+                'pages': _extract.read_text(file.filename, data).get('pages') or 0}
+
+    @app.post('/api/ocr/browser')
+    def ocr_browser(body: dict = None):
+        """What the page read from a scan (the browser edition: the same reading as the desktop's, in the browser), kept for the file's
+        SHA-256: {sha256, texts: [one per page], rep: as pdfcraft.ocr's report, tag}. Refused where this engine reads scans itself."""
+        from .. import pdfcraft as _pc
+        if _pc.ocr_info():
+            err(409, 'E-OCR-HERE', 'This program reads scans itself.', 'البرنامج ده بيقرا الملفات الممسوحة بنفسه.')
+        body = body or {}
+        try:
+            rec = _extract.keep_browser_reading(str(body.get('sha256') or '').lower(), body.get('texts'), body.get('rep'), body.get('tag'))
+        except ValueError as e:
+            err(422, 'E-OCR-READING', f'Not a reading of a scan: {e}.', f'دي مش قراية ملف ممسوح: {e}.')
+        return {'kept': True, 'pages': len(rec['texts']), 'tag': rec['tag']}
+
     def _dossier_pdfs(did):
         out = []
         for d in st.documents(did):

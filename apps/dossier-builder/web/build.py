@@ -10,6 +10,7 @@ Output: apps/dossier-builder/web/dist/
   assets/pyodide/   the Pyodide runtime + wasm wheels (see vendor.sh)
   assets/wheels/    the pure-Python wheels (fastapi, starlette, pypdf, python-docx, …)
   assets/engine.zip the engine, rule packs, EG profiles and the ICH XSD, unpacked to /app in the browser
+  assets/ocr/       the scan reader's files (web/ocr_assets.py): Tesseract, pdf.js, onnxruntime-web and the models
 Binary files (.wasm .zip .whl) are written as base64 text (<name>.b64.txt): the artifact host serves text, not
 archives, and boot.js decodes them when Pyodide fetches them.
 """
@@ -34,7 +35,7 @@ def page(src, *, builder):
     boot = SHARED() + (HERE / 'boot.js').read_text(encoding='utf-8')      # large files as Blobs, the runtime kept on the device: used by the page and by the worker
     html = html.replace('<link rel="stylesheet" href="/assets/ds.css">', f'<style>\n{css}\n</style>')
     html = html.replace('<script src="/assets/ds.js"></script>',
-                        f'<script>\n{js}\n</script>\n<script src="assets/pyodide/pyodide.js"></script>\n<script>\n{boot}\n</script>')
+                        f'<script>\n{js}\n</script>\n{ocr_script()}<script src="assets/pyodide/pyodide.js"></script>\n<script>\n{boot}\n</script>')
     html = html.replace('<script src="/assets/rar.js"></script>', '<script>\n' + (UI / 'assets' / 'rar.js').read_text(encoding='utf-8') + '\n</script>')      # the page's own RAR reader
     html = html.replace('<script src="/assets/archive.js"></script>', '<script>\n' + (UI / 'assets' / 'archive.js').read_text(encoding='utf-8') + '\n</script>')
     if builder:
@@ -49,6 +50,26 @@ def page(src, *, builder):
     head = re.sub(r'(</title>)', lambda m: m.group(1) + '\n' + FIRST_SCREEN, head, count=1)
     content = head.strip() + '\n' + body.strip() + '\n'
     return content, SKELETON + content + '</body></html>\n'
+
+
+OCR = HERE / 'vendor' / 'ocr'          # the scan reader's files (web/ocr_assets.py): published under assets/ocr/, fetched the first time a scan is read
+
+
+def ocr_tag():
+    """The reader's files' own tag: what the device kept from an older build with other files is fetched again."""
+    import hashlib
+    h = hashlib.sha256()
+    for f in sorted(x for x in OCR.rglob('*') if x.is_file()):
+        h.update(f.relative_to(OCR).as_posix().encode() + b'\0' + hashlib.sha256(f.read_bytes()).digest())
+    return h.hexdigest()[:16]
+
+
+def ocr_script():
+    """The scan reader (ui/assets/ocr.js) in the page, with where its files are; nothing when they were not fetched (no OCR then)."""
+    if not OCR.is_dir():
+        return ''
+    js = (UI / 'assets' / 'ocr.js').read_text(encoding='utf-8')
+    return f"<script>window.DB_OCR_BASE='assets/ocr/';window.DB_OCR_TAG='{ocr_tag()}';\n{js}\n</script>\n"
 
 
 # the first screen, in the page's first bytes: shown before anything loads; boot.js replaces it with its progress screen
@@ -145,6 +166,11 @@ def main():
         for f in sorted(src.iterdir()):
             if f.is_file():
                 put(DIST / 'assets' / sub / f.name, f.read_bytes())
+    if OCR.is_dir():                                                     # the scan reader's files, as web/ocr_assets.py wrote them
+        for f in sorted(x for x in OCR.rglob('*') if x.is_file()):
+            put(DIST / 'assets' / 'ocr' / f.relative_to(OCR), f.read_bytes())
+    else:
+        print(f'(no scan reader at {OCR}: run web/ocr_assets.py; scans are not read in this build)')
     manifest(DIST)
     total = sum(f.stat().st_size for f in DIST.rglob('*') if f.is_file())
     print(f'dist: {DIST}\nengine.zip {n/1e6:.1f} MB · total {total/1e6:.1f} MB · files {sum(1 for f in DIST.rglob("*") if f.is_file())}')

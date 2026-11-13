@@ -104,6 +104,41 @@
     catch (e) { if (e && e.status) return new Response(null, { status: e.status }); throw e; }
     return new Response(bytes, { status: 200, headers: { 'content-type': MIME[u.pathname.split('.').pop()], 'content-length': String(bytes.length) } });
   }
+  // ---- scans read in the page before the engine takes them: the engine here (Pyodide) has no OCR of its own. Every file sent to the
+  // engine that is a scan or an image (it says so: /api/ocr/check) is read by ui/assets/ocr.js — the desktop's reading, in the browser —
+  // and the reading is kept by the engine for the file's bytes (/api/ocr/browser); the request then goes on, and the engine reads the
+  // file with it. A failed reading is said and the file goes on unread, as before.
+  const READABLE = /\.(pdf|png|jpe?g|tiff?|gif|bmp|webp)$/i;
+  async function readScansFirst(path, fd) {
+    if (!window.DBOCR || !window.DBOCR.available() || path.startsWith('/api/ocr/')) return;
+    const files = [];
+    fd.forEach(v => { if (v instanceof File && v.size && (READABLE.test(v.name) || /^(application\/pdf|image\/)/.test(v.type))) files.push(v); });
+    const want = path.startsWith('/api/extract') ? 12 : 3;          // the wizard reads up to 12 pages; a document's kind and data, the first pages
+    for (const f of files) {
+      let c;
+      try { const one = new FormData(); one.append('file', f); const r = await window.fetch('/api/ocr/check', { method: 'POST', body: one }); if (!r.ok) continue; c = await r.json(); }
+      catch (e) { continue; }
+      if (!c.why || c.here) continue;
+      const need = Math.max(1, Math.min(want, c.pages || want));
+      if (c.read >= need) continue;
+      try {
+        const got = await window.DBOCR.read(f, { maxPages: need, onProgress: d => ocrSay(f.name, d) });
+        await window.fetch('/api/ocr/browser', { method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ sha256: c.sha256, texts: got.pages.map(p => p.text || ''), rep: got.rep, tag: got.tag }) });
+      } catch (e) { console.warn('browser OCR', e); ocrSay(f.name, { stage: 'error', message: String(e && e.message || e) }); }
+    }
+  }
+  function ocrSay(name, d) {
+    const ar = (document.documentElement.lang || 'ar') !== 'en', T = window.DS && window.DS.toast;
+    if (!T) return;
+    const pg = d.pages ? (ar ? ` · صفحة ${d.page} من ${d.pages}` : ` · page ${d.page} of ${d.pages}`) : '';
+    const msg = {
+      load: ar ? 'بيجهّز قارئ الممسوح (أول مرة بس، وبعدها بيفضل على الجهاز)…' : 'Getting the scan reader ready (the first time only; then it stays on this device)…',
+      read: ar ? 'بيقرا الممسوح' : 'Reading the scan', check: ar ? 'بيراجع الكلمات المش أكيدة' : 'Checking the doubtful words',
+      straighten: ar ? 'بيعدّل صفحة مايلة أو مقلوبة' : 'Turning a skewed or sideways page upright',
+      done: ar ? 'اتقرا ✓' : 'Read ✓', error: (ar ? 'ما اتقراش: ' : 'Not read: ') + (d.message || '') }[d.stage] || '';
+    T(`${name}: ${msg}${d.stage === 'load' || d.stage === 'done' || d.stage === 'error' ? '' : pg}`, d.stage === 'error' ? 9000 : d.stage === 'done' ? 4000 : 60000);
+  }
   window.fetch = async function (input, init) {
     init = init || {};
     const url = typeof input === 'string' ? input : (input && input.url) || String(input);
@@ -112,6 +147,7 @@
     const method = (init.method || (input && input.method) || 'GET').toUpperCase();
     const q = url.indexOf('?');
     const path = q < 0 ? url : url.slice(0, q), query = q < 0 ? '' : url.slice(q + 1);
+    if (init.body instanceof FormData && method !== 'GET') await readScansFirst(path, init.body);
     const headers = {};
     new Headers(init.headers || {}).forEach((v, k) => { headers[k] = v; });
     let body = new Uint8Array(0);

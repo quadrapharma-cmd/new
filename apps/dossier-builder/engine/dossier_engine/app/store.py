@@ -464,6 +464,7 @@ class Store:
             doc_class, supersede = 'signed_scan', draft['id']
         from .. import extract as _extract, fixes as _fixes
         self.claim_readings()
+        given_sha = _extract._sha(data)
         if not meta.get('fixed_from') and not meta.get('external') and not meta.get('imported'):
             given = filename
             filename, data, made = self.as_pdf(filename, data)              # a photo or an image file: a PDF page (PdfCraft)
@@ -475,6 +476,8 @@ class Store:
             meta['converted'] = list(meta.get('converted') or []) + ['pdf_version_1.7']
             data = v17
         sha = self.put_blob(data)
+        if sha != given_sha:                          # the same pages under a new version line: the page's reading of a scan goes with them
+            _extract.carry_browser_reading(given_sha, data)
         family = _extract.source_family(filename, data) or ('word' if filename.lower().endswith('.docx') else None)
         if family == 'word' and s.req_id in WORD_ITEMS:  # the format the item asks: the document itself
             rep = Report(str(self.blob_path(sha)), [Finding(
@@ -613,6 +616,8 @@ class Store:
         r = fixes.apply(self.blob_path(d['sha256']), d['findings'], d['doc_class'])
         new = None
         if r['data']:
+            from .. import extract as _extract
+            _extract.carry_browser_reading(d['sha256'], r['data'])      # a fix keeps the pages: the page's reading of a scan goes with them
             new = self.add_document(did, d['slot_id'], d['filename'], r['data'], d['title'],
                                     {**d['meta'], 'fixed_from': doc_id, 'fixes': [x['op'] for x in r['done']]},
                                     supersede=doc_id, doc_class=d['doc_class'])

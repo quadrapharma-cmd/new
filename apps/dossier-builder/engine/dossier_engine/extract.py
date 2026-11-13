@@ -192,8 +192,10 @@ def read_text(name, data, max_pages=12):
     """What one uploaded file says — read once: the same bytes asked the same way give the kept reading (see _read_text)."""
     data = data or b''
     from . import pdfcraft
-    key = (_sha(data), (name or '').lower().rsplit('.', 1)[-1][:6] if '.' in (name or '') else '', max_pages, pdfcraft.reader(),
-           _ocr_tag())
+    sha, tag = _sha(data), _ocr_tag()
+    if tag == 'no-ocr' and browser_reading(sha):                  # read in the page (the browser edition): a reading of its own
+        tag = 'browser-' + str(browser_reading(sha).get('tag') or 'ocr')
+    key = (sha, (name or '').lower().rsplit('.', 1)[-1][:6] if '.' in (name or '') else '', max_pages, pdfcraft.reader(), tag)
     if key in _READ:
         return dict(_READ[key])
     f = _cache_file(key)
@@ -241,8 +243,10 @@ def _read_text(name, data, max_pages=12):
     img = arabic.image_type(data)
     if data[:4] == b'%PDF' or what == 'pdf' or (low.endswith('.pdf') and what in ('other', 'text')):
         out.update(pdf_text(data, max_pages), kind_of_file='pdf')
-        if out.get('scanned'):                           # pages that are images: PdfCraft reads them (OCR, Arabic and English) where it can
-            _ocr_into(out, data, max_pages)
+        if out.get('scanned'):                           # pages that are images: PdfCraft reads them (OCR, Arabic and English) where it can,
+            _ocr_into(out, data, max_pages)              # the page itself in the browser edition (_browser_into)
+            if not out.get('ocr'):
+                _browser_into(out, data, max_pages)
     elif img or what == 'image':                         # an image of any kind (imagefiles): no text of its own
         fmt = imagefiles.image_format(data)
         out.update(pages=imagefiles.tiff_pages(data) if fmt == 'tiff' else 1, scanned=True, kind_of_file='image')
@@ -250,6 +254,8 @@ def _read_text(name, data, max_pages=12):
         page = pdfcraft.image_to_pdf(data, name or 'image.png') if pdfcraft.ocr_info() else None
         if page:
             _ocr_into(out, page, max_pages)
+        if not out.get('ocr'):
+            _browser_into(out, data, max_pages)
     elif what in ('docx', 'doc'):                        # Word, new or old: its paragraphs and tables
         out.update(pages=1, text=docx_text(data) if what == 'docx' else msdoc.doc_text(data), kind_of_file='docx')
     elif what in officefiles.OFFICE:                     # Excel, PowerPoint, OpenDocument, RTF, HTML, plain text — old formats and new
@@ -302,6 +308,97 @@ def _ocr_into(out, pdf, max_pages):
 
 
 _OCR_READ = {}
+
+
+# ---- scans read in the page (the browser edition, ui/assets/ocr.js): the same reading as pdfcraft.ocr — Tesseract with the accurate
+# models, the second reader (PaddleOCR) for the words it is unsure of, pages turned upright — done by the browser, where this engine
+# (Pyodide) has no PdfCraft. The page sends what it read with the file's SHA-256; the reading is kept beside the other readings
+# (READ_DIR/browser/<sha>.json) and read_text takes it as it takes PdfCraft's.
+BROWSER = {}
+BROWSER_MAX_PAGES, BROWSER_MAX_CHARS = 200, 400000
+
+
+def _browser_file(sha):
+    return None if READ_DIR is None else Path(READ_DIR) / 'browser' / f'{sha}.json'
+
+
+def browser_reading(sha):
+    """The page's reading of the file with this SHA-256 ({'texts', 'rep', 'tag'}), or None."""
+    if not re.fullmatch(r'[0-9a-f]{64}', sha or ''):
+        return None
+    key = (str(READ_DIR), sha)
+    if key not in BROWSER:
+        f = _browser_file(sha)
+        try:
+            BROWSER[key] = json.loads(f.read_text(encoding='utf-8')) if f is not None and f.exists() else None
+        except (OSError, ValueError):
+            BROWSER[key] = None
+        if len(BROWSER) > 512:
+            BROWSER.pop(next(iter(BROWSER)))
+    return BROWSER[key]
+
+
+def keep_browser_reading(sha, texts, rep, tag):
+    """Keep what the page read from a scan (ui/assets/ocr.js), checked for shape and size: texts — one per page, in order; rep — as
+    pdfcraft.ocr's report (words, pages, quality by page, second_reader, weak, models); tag — what read it ('ara+eng+best+paddle').
+    The readings made before for the same bytes are made again on their next use."""
+    if not re.fullmatch(r'[0-9a-f]{64}', sha or ''):
+        raise ValueError('sha256: 64 hexadecimal characters')
+    if not isinstance(texts, list) or not texts or len(texts) > BROWSER_MAX_PAGES or not all(isinstance(t, str) for t in texts):
+        raise ValueError(f'texts: 1–{BROWSER_MAX_PAGES} pages of text')
+    if sum(len(t) for t in texts) > BROWSER_MAX_CHARS:
+        raise ValueError(f'texts: at most {BROWSER_MAX_CHARS} characters')
+    rep = rep if isinstance(rep, dict) else {}
+    quality = {}
+    for k, v in ((rep.get('quality') or {}).items() if isinstance(rep.get('quality'), dict) else []):
+        if str(k).isdigit() and isinstance(v, dict):
+            q = {'words': int(v.get('words') or 0), 'low': float(v.get('low') or 0), 'mean': float(v.get('mean') or 0),
+                 'numbers': [str(x)[:40] for x in (v.get('numbers') or [])][:20], 'read': str(v.get('read') or 'as scanned')[:20]}
+            second = v.get('second') if isinstance(v.get('second'), dict) else None
+            if second:
+                q['second'] = {'read': int(second.get('read') or 0),
+                               'changed': [{'was': str(c.get('was') or '')[:80], 'now': str(c.get('now') or '')[:80]}
+                                           for c in (second.get('changed') or []) if isinstance(c, dict)][:30]}
+            quality[int(k)] = q
+    clean = {'words': int(rep.get('words') or 0), 'pages': [{'page': p, 'words': q['words']} for p, q in sorted(quality.items())],
+             'quality': quality, 'second_reader': int(rep.get('second_reader') or 0),
+             'weak': sorted(int(p) for p in (rep.get('weak') or []) if str(p).isdigit()), 'models': str(rep.get('models') or '')[:40]}
+    rec = {'texts': texts, 'rep': clean, 'tag': re.sub(r'[^a-z0-9+]', '', str(tag or 'ocr').lower())[:40] or 'ocr'}
+    BROWSER[(str(READ_DIR), sha)] = rec
+    f = _browser_file(sha)
+    if f is not None:
+        try:
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text(json.dumps(rec, ensure_ascii=False), encoding='utf-8')
+        except OSError:
+            pass
+    for k in [k for k in _READ if k[0] == sha]:
+        _READ.pop(k, None)
+    return rec
+
+
+def carry_browser_reading(old_sha, new_data):
+    """The page's reading of a file kept for a copy of it with the same pages (its version line set to 1.7, a fix): the copy is
+    not read again."""
+    rec = browser_reading(old_sha)
+    new_sha = _sha(new_data)
+    if rec and new_sha != old_sha and not browser_reading(new_sha):
+        keep_browser_reading(new_sha, rec['texts'], rec['rep'], rec['tag'])
+
+
+def _browser_into(out, data, max_pages):
+    """The page's reading of this file, where it has one: as a reading by PdfCraft (text, ocr, how sure it is), said to be the
+    browser's (reader 'browser-ocr')."""
+    rec = browser_reading(_sha(data))
+    if not rec:
+        return
+    texts = rec['texts'][:max_pages] if max_pages else rec['texts']
+    if any(t.strip() for t in texts):
+        rep = dict(rec['rep'])                           # kept as JSON: the pages' numbers come back as text
+        rep['quality'] = {int(p): q for p, q in (rep.get('quality') or {}).items() if not max_pages or int(p) <= max_pages}
+        rep['weak'] = [int(p) for p in rep.get('weak') or [] if not max_pages or int(p) <= max_pages]
+        out.update(text='\n'.join(texts), ocr=True, reader='browser-ocr', ocr_language='ara+eng', ocr_quality=ocr_summary(rep),
+                   ocr_pages=len(rec['texts']))
 
 
 AR_CLITIC = '(?:ال|وال|بال|فال|لل|و|ب|ل|ف)?'
@@ -989,7 +1086,7 @@ def read_files(files):
         items.append(fields_for(kind, name, pt['text']))
         texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': pt['pages'], 'scanned': pt['scanned'], 'file': pt['kind_of_file'],
                       'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:TEXT_BACK], 'found': found_fields(items[-1]),
-                      **({'ocr': True, 'ocr_language': pt.get('ocr_language'), 'ocr_quality': pt.get('ocr_quality')} if pt.get('ocr') else {})})
+                      **({'ocr': True, 'ocr_language': pt.get('ocr_language'), 'ocr_quality': pt.get('ocr_quality'), 'reader': pt.get('reader')} if pt.get('ocr') else {})})
     return {'files': texts, 'rules': merge(items)}
 
 

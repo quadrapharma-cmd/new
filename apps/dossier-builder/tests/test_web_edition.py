@@ -243,3 +243,66 @@ def test_a_dossier_for_another_country_in_the_browser(site):
         b.close()
     assert not errors, errors
 
+
+
+@pytest.fixture(scope='module')
+def notice_scan(tmp_path_factory):
+    """The fictional Arabic registration notice (test_extract_arabic.LINES) as a scanner gives it: 200 dpi, pages that are images only."""
+    import shutil, subprocess
+    if not shutil.which('soffice') or not shutil.which('pdftoppm'):
+        pytest.skip('LibreOffice and pdftoppm make the fixture')
+    Image = pytest.importorskip('PIL.Image')
+    import docx
+    from test_extract_arabic import LINES
+    d = tmp_path_factory.mktemp('notice')
+    doc = docx.Document()
+    for line in LINES:
+        doc.add_paragraph(line).alignment = 2
+    doc.save(d / 'ekhtar.docx')
+    subprocess.run(['soffice', '--headless', '--convert-to', 'pdf', '--outdir', str(d), str(d / 'ekhtar.docx')], capture_output=True, timeout=240)
+    if not (d / 'ekhtar.pdf').exists():
+        pytest.skip('LibreOffice could not convert')
+    subprocess.run(['pdftoppm', '-r', '200', '-png', '-f', '1', '-l', '1', str(d / 'ekhtar.pdf'), str(d / 'p')], capture_output=True, timeout=120, check=True)
+    Image.open(next(d.glob('p*.png'))).convert('L').save(d / 'scan.pdf', 'PDF', resolution=200.0)
+    return d / 'scan.pdf'
+
+
+def test_a_scanned_notice_is_read_in_the_browser_and_its_data_taken(site, notice_scan):
+    """The browser edition reads scans in the page (ui/assets/ocr.js — the desktop's reading: Tesseract with the accurate Arabic
+    model, PaddleOCR's second reader) before the engine takes the file (web/boot.js): the notice's Arabic-Indic number and date come
+    back right, its information is taken as from a text PDF, and the same file is not read twice."""
+    import base64, time
+    if not (DIST / 'assets' / 'ocr' / 'tess' / 'ara.traineddata.gz.b64.txt').exists():
+        pytest.skip('the scan reader was not fetched (web/ocr_assets.py)')
+    b64 = base64.b64encode(notice_scan.read_bytes()).decode()
+    send = """async b64 => {
+        const t = document.getElementById('toast'), seen = [];
+        const mo = new MutationObserver(() => seen.push(t.textContent)); mo.observe(t, {childList: true, characterData: true, subtree: true});
+        const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+        const fd = new FormData(); fd.append('files', new File([u], 'scan0001.pdf', {type: 'application/pdf'}));
+        const t0 = performance.now();
+        const r = await fetch('/api/extract?target=dossier', {method: 'POST', body: fd, headers: {'X-DB': '1'}}).then(r => r.json());
+        mo.disconnect();
+        return {f: r.files[0], rules: r.rules, seen, ms: performance.now() - t0}; }"""
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1280, 'height': 800}).new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script("localStorage.setItem('db.lang','en')")
+        page.goto(site + '/index.local.html#/')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.wait_for_selector('.caps .cap', timeout=120000)
+        r = page.evaluate(send, b64)
+        f, reg = r['f'], r['rules'].get('registration') or {}
+        assert f['scanned'] and f['ocr'] and f['reader'] == 'browser-ocr' and f['kind'] == 'licence', f
+        assert reg.get('reg_no') == '34567/2025' and reg.get('reg_date') == '2025-03-15', reg            # the date in Arabic-Indic digits
+        assert r['rules']['product']['name'].startswith('إكزامبلول') and r['rules']['documents'][0]['valid_until'] == '2030-03-14'
+        q = f['ocr_quality']
+        assert {'page': 1, 'now': '١٢٣٤٥/٢٠٢٥'}.items() <= next(c for c in q['changed'] if c['now'] == '١٢٣٤٥/٢٠٢٥').items() and not q['weak']
+        assert any('Reading the scan' in s for s in r['seen']) and any('Read ✓' in s for s in r['seen'])
+        again = page.evaluate(send, b64)                                                                # kept by its SHA-256: not read again
+        assert again['f']['reader'] == 'browser-ocr' and not any('Reading the scan' in s for s in again['seen']) and again['ms'] < 5000
+        assert not errors, errors
+        b.close()
