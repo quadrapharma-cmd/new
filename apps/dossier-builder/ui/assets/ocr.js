@@ -344,22 +344,23 @@
      as the desktop's text comes from the words written on the page: a line with Arabic words reads right to left, a run of numbers or
      Latin words inside it left to right («التاريخ: ١٥/٠٣/٢٠٢٥», never the date first when Tesseract took the line for left-to-right). */
   const arabicLetter = /(?=\p{Script=Arabic})\p{L}/u;
-  function lineText(ws) {
+  function inReadingOrder(ws) {                                   // one line's words
     const mid = w => w.box[0] + w.box[2] / 2;
-    if (!ws.some(w => arabicLetter.test(w.text))) return ws.slice().sort((a, b) => mid(a) - mid(b)).map(w => w.text).join(' ');
+    if (!ws.some(w => arabicLetter.test(w.text))) return ws.slice().sort((a, b) => mid(a) - mid(b));
     const rtl = ws.slice().sort((a, b) => mid(b) - mid(a)), out = [];
     for (let i = 0; i < rtl.length;) {
-      if (arabicLetter.test(rtl[i].text)) { out.push(rtl[i].text); i++; continue; }
+      if (arabicLetter.test(rtl[i].text)) { out.push(rtl[i]); i++; continue; }
       let k = i; while (k < rtl.length && !arabicLetter.test(rtl[k].text)) k++;
-      out.push(...rtl.slice(i, k).reverse().map(w => w.text)); i = k;
+      out.push(...rtl.slice(i, k).reverse()); i = k;
     }
-    return out.join(' ');
+    return out;
   }
-  function pageText(ws) {
-    const lines = [], at = new Map();
-    for (const w of ws) { if (!w.text) continue; if (!at.has(w.line)) { at.set(w.line, lines.length); lines.push([]); } lines[at.get(w.line)].push(w); }
-    return lines.map(lineText).join('\n');
+  function lines(ws) {                                            // the page's lines as Tesseract found them, each in reading order
+    const out = [], at = new Map();
+    for (const w of ws) { if (!w.text) continue; if (!at.has(w.line)) { at.set(w.line, out.length); out.push([]); } out[at.get(w.line)].push(w); }
+    return out.map(inReadingOrder);
   }
+  const pageText = ws => lines(ws).map(l => l.map(w => w.text).join(' ')).join('\n');
   let queue = Promise.resolve();
   function read(file, opts) {                                     // one file at a time: two readings at once only share the processor
     const run = queue.then(() => readNow(file, opts || {}));
@@ -417,7 +418,7 @@
       }
       for (const pg of pages) {                                   // the second reader's words written in
         for (const f of pg.fixes) Object.assign(pg.words[f.word - 1], f.box ? { text: f.text, box: f.box } : { text: f.text });
-        pg.words = pg.words.filter(w => w.text);
+        pg.words = lines(pg.words).flatMap((l, i) => l.map(w => Object.assign(w, { line: i })));       // in reading order, numbered by line
         pg.text = pageText(pg.words);
       }
       tell('done', doc.count, doc.count, 1);

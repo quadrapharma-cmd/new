@@ -121,12 +121,30 @@
       if (!c.why || c.here) continue;
       const need = Math.max(1, Math.min(want, c.pages || want));
       if (c.read >= need) continue;
-      try {
-        const got = await window.DBOCR.read(f, { maxPages: need, onProgress: d => ocrSay(f.name, d) });
-        await window.fetch('/api/ocr/browser', { method: 'POST', headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ sha256: c.sha256, texts: got.pages.map(p => p.text || ''), rep: got.rep, tag: got.tag }) });
-      } catch (e) { console.warn('browser OCR', e); ocrSay(f.name, { stage: 'error', message: String(e && e.message || e) }); }
+      await readAndKeep(f, c.sha256, need);
     }
+  }
+  async function readAndKeep(f, sha, pages) {                         // read in the page; the engine keeps the reading with the words' places
+    try {
+      const got = await window.DBOCR.read(f, { maxPages: pages, onProgress: d => ocrSay(f.name, d) });
+      await window.fetch('/api/ocr/browser', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ sha256: sha, texts: got.pages.map(p => p.text || ''), rep: got.rep, tag: got.tag,
+          layout: got.pages.map(p => ({ words: p.words.map(w => [w.text, ...w.box, w.line]), rotated: p.rotated || 0, deskew: p.deskew || 0 })) }) });
+    } catch (e) { console.warn('browser OCR', e); ocrSay(f.name, { stage: 'error', message: String(e && e.message || e) }); }
+  }
+  // before a stored scan is prepared or fixed: every page read, so «make searchable» can write each page's words under it
+  const FIXING = /^\/api\/dossiers\/([^/]+)\/(?:prepare\/([^/]+)|documents\/([^/]+)\/fix)$/, WHOLE = 150;
+  async function readWholeScan(path) {
+    const m = FIXING.exec(path);
+    if (!m || !window.DBOCR || !window.DBOCR.available()) return;
+    let c;
+    try { const r = await window.fetch(`/api/ocr/document/${m[1]}/${m[2] || m[3]}`); if (!r.ok) return; c = await r.json(); } catch (e) { return; }
+    if (!c.why || c.here || !c.pages || (c.read >= c.pages && c.layout)) return;
+    if (c.pages > WHOLE) { ocrSay(c.filename, { stage: 'error', message: (document.documentElement.lang === 'en' ? `${c.pages} pages: more than this page reads at once (${WHOLE})` : `${c.pages} صفحة: أكتر من اللي الصفحة بتقراه مرة واحدة (${WHOLE})`) }); return; }
+    try {
+      const blob = await (await window.fetch(c.url)).blob();
+      await readAndKeep(new File([blob], c.filename, { type: blob.type || 'application/pdf' }), c.sha256, c.pages);
+    } catch (e) { console.warn('browser OCR', e); }
   }
   function ocrSay(name, d) {
     const ar = (document.documentElement.lang || 'ar') !== 'en', T = window.DS && window.DS.toast;
@@ -148,6 +166,7 @@
     const q = url.indexOf('?');
     const path = q < 0 ? url : url.slice(0, q), query = q < 0 ? '' : url.slice(q + 1);
     if (init.body instanceof FormData && method !== 'GET') await readScansFirst(path, init.body);
+    else if (method === 'POST') await readWholeScan(path);
     const headers = {};
     new Headers(init.headers || {}).forEach((v, k) => { headers[k] = v; });
     let body = new Uint8Array(0);

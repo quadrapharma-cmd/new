@@ -306,3 +306,46 @@ def test_a_scanned_notice_is_read_in_the_browser_and_its_data_taken(site, notice
         assert again['f']['reader'] == 'browser-ocr' and not any('Reading the scan' in s for s in again['seen']) and again['ms'] < 5000
         assert not errors, errors
         b.close()
+
+
+def test_a_scan_is_made_searchable_inside_the_browser(site, notice_scan):
+    """The preparation stage in the browser edition: the scan placed in its item and fixed — its words, read in the page, written
+    invisibly under its image (textlayer) — so the stored copy has text of its own: the engine reads its number and date from it."""
+    import base64
+    if not (DIST / 'assets' / 'ocr' / 'tess' / 'ara.traineddata.gz.b64.txt').exists():
+        pytest.skip('the scan reader was not fetched (web/ocr_assets.py)')
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1280, 'height': 800}).new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script("localStorage.setItem('db.lang','en')")
+        page.goto(site + '/index.local.html#/')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.wait_for_selector('.caps .cap', timeout=120000)
+        r = page.evaluate("""async b64 => {
+            const j = (u, o) => fetch(u, Object.assign({headers: {'X-DB': '1', 'content-type': 'application/json'}}, o)).then(r => r.json());
+            const d = await j('/api/dossiers', {method: 'POST', body: JSON.stringify({name: 'Examplol', product: {name: 'Examplol 500 mg', dosageform: 'film-coated tablet', manufacturer: 'Example Pharma'},
+                profile: {dossier_kind: 'generic', origin: 'local', licence: 'own', activity: 'new', apis: [{name: 'Paracetamol', manufacturer: 'Example API Co.', option: 'CEP'}]},
+                envelope: {tracking: 'T-0001', applicant: 'Example Pharma', invented_name: 'Examplol', inn: ['paracetamol']}})});
+            const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+            const fd = new FormData(); fd.append('files', new File([u], 'scan0001.pdf', {type: 'application/pdf'})); fd.append('meta', '{}');
+            const up = await fetch('/api/dossiers/' + d.id + '/unplaced', {method: 'POST', body: fd, headers: {'X-DB': '1'}}).then(r => r.json());
+            const w = (await j('/api/dossiers/' + d.id + '/prepare')).waiting.find(x => x.id === up[0].id);
+            const slot = w.auto || (w.suggestions[0] || {}).slot_id;
+            const r = await j('/api/dossiers/' + d.id + '/prepare/' + up[0].id, {method: 'POST', body: JSON.stringify({slot_id: slot})});
+            const file = await fetch('/api/dossiers/' + d.id + '/documents/' + r.document.id + '/file').then(r => r.blob());
+            const fd2 = new FormData(); fd2.append('files', new File([file], 'stored.pdf', {type: 'application/pdf'}));
+            const ex = await fetch('/api/extract', {method: 'POST', body: fd2, headers: {'X-DB': '1'}}).then(r => r.json());
+            return {steps: r.steps, needs: r.needs_you, reading: w.reading, findings: (r.document.findings || []).map(f => f.rule), f: ex.files[0], rules: ex.rules}; }""",
+            base64.b64encode(notice_scan.read_bytes()).decode())
+        assert r['reading']['reader'] == 'ocr' and r['reading']['ocr_quality']['corrected'] >= 2, r['reading']
+        fixed = next((x for x in r['steps'] if isinstance(x, dict)), {})
+        assert 'make_searchable' in fixed.get('fixed', []), r
+        assert 'NTA065-N4' not in r['findings'] and not any(x['rule'] == 'NTA065-N4' for x in r['needs'])
+        assert not r['f']['scanned'] and r['f']['chars'] > 300 and r['f']['kind'] == 'licence'      # text of its own now
+        reg = r['rules'].get('registration') or {}
+        assert reg.get('reg_no') == '34567/2025' and reg.get('reg_date') == '2025-03-15', reg
+        assert not errors, errors
+        b.close()

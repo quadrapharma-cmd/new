@@ -36,7 +36,20 @@ RapidOCR's library, OpenCV and python-bidi are not used.
 
 ## ONNX Runtime — https://github.com/microsoft/onnxruntime (MIT) · NumPy — https://numpy.org (BSD-3-Clause)
 
-Run the second reader's model (Python packages, unchanged).
+Run the second reader's model (Python packages, unchanged). In the browser edition, onnxruntime-web 1.31.1 (MIT) runs it.
+
+## The browser edition's scan reader (web/ocr_assets.py → assets/ocr/, each file with its licence beside it)
+
+- **tesseract.js 7.0.0** — https://github.com/naptha/tesseract.js (Apache-2.0) and **tesseract.js-core 6.1.2** —
+  https://github.com/naptha/tesseract.js-core (Apache-2.0): Tesseract 5 in WebAssembly, unchanged.
+- **pdf.js 4.10.38** — https://github.com/mozilla/pdf.js (Apache-2.0): draws the pages to be read, unchanged.
+- **onnxruntime-web 1.31.1** — https://github.com/microsoft/onnxruntime (MIT): runs PaddleOCR's model, unchanged.
+- **UTIF.js 3.1.0** — https://github.com/photopea/UTIF.js (MIT) and **pako 2.1.0** — https://github.com/nodeca/pako (MIT and Zlib):
+  the pages of a TIFF scan, unchanged.
+- The models: tessdata_best 4.1.0 Arabic and tessdata_fast 4.1.0 English (Apache-2.0), PaddleOCR's Arabic model (Apache-2.0, as above).
+
+Fetched at these versions and checked (npm's integrity, SHA-256 for the models). The reader itself (`ui/assets/ocr.js`) and the text
+layer it leads to (`engine/dossier_engine/textlayer.py`, its Type 3 font included) are the program's own code.
 
 Also used in `engine/dossier_engine/validators/ectd32_eu.py` (`permissions`): reading a PDF's `/P` permission flags the way the security
 handler's revision reads them (ISO 32000-1:2008 Table 22), ported from Rust (`crates/crypt/src/lib.rs`) to Python and shortened.

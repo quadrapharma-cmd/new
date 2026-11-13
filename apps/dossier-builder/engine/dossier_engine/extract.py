@@ -219,6 +219,11 @@ def read_text(name, data, max_pages=12):
     return dict(out)
 
 
+def page_count(name, data):
+    """A file's pages, as the reader counts them (a PDF's pages, a TIFF's, 1 for another image or a Word file)."""
+    return int(read_text(name, data).get('pages') or 0)
+
+
 def has_text(name, data):
     """The upload gate's question — NP.CAPP.065 v5 general note 4: «All submitted documents should be scanned and searchable PDF
     files». None when the file has text of its own (a PDF with a text layer, Word, Excel…); else why not: 'image' (a photo or an
@@ -338,7 +343,41 @@ def browser_reading(sha):
     return BROWSER[key]
 
 
-def keep_browser_reading(sha, texts, rep, tag):
+def _layout(layout, pages):
+    """The words' places the page read (ui/assets/ocr.js), checked: per page {'words': [[text, x, y, w, h, line], …] in points, in
+    reading order; 'rotated': 0/90/180/270; 'deskew': radians}. None when not given."""
+    import math
+    if layout is None:
+        return None
+    if not isinstance(layout, list) or len(layout) != pages:
+        raise ValueError('layout: one entry per page read')
+    out = []
+    for pg in layout:
+        if not isinstance(pg, dict) or not isinstance(pg.get('words') or [], list) or len(pg.get('words') or []) > 6000:
+            raise ValueError('layout: a page is {words, rotated, deskew}, at most 6000 words')
+        words = []
+        for wd in pg.get('words') or []:
+            if not isinstance(wd, list) or len(wd) < 5 or not isinstance(wd[0], str) or len(wd[0]) > 200:
+                raise ValueError('layout: a word is [text, x, y, w, h, line]')
+            nums = [float(v) for v in wd[1:5]]
+            if not all(math.isfinite(v) and abs(v) < 1e6 for v in nums):
+                raise ValueError('layout: a word\'s place is four numbers')
+            words.append([wd[0], *nums, int(wd[5]) if len(wd) > 5 and str(wd[5]).lstrip('-').isdigit() else 0])
+        rot, sk = int(pg.get('rotated') or 0), float(pg.get('deskew') or 0)
+        if rot not in (0, 90, 180, 270) or not math.isfinite(sk) or abs(sk) > 0.8:
+            raise ValueError('layout: rotated is 0, 90, 180 or 270; deskew a small angle')
+        out.append({'words': words, 'rotated': rot, 'deskew': sk})
+    return out
+
+
+def reads_in_browser():
+    """The browser edition with its scan reader: the engine runs in the page (Pyodide) and the build carries ui/assets/ocr.js and its
+    files (web/build.py leaves the BROWSER_OCR mark beside this module)."""
+    import sys
+    return sys.platform == 'emscripten' and (Path(__file__).parent / 'BROWSER_OCR').exists()
+
+
+def keep_browser_reading(sha, texts, rep, tag, layout=None):
     """Keep what the page read from a scan (ui/assets/ocr.js), checked for shape and size: texts — one per page, in order; rep — as
     pdfcraft.ocr's report (words, pages, quality by page, second_reader, weak, models); tag — what read it ('ara+eng+best+paddle').
     The readings made before for the same bytes are made again on their next use."""
@@ -364,6 +403,9 @@ def keep_browser_reading(sha, texts, rep, tag):
              'quality': quality, 'second_reader': int(rep.get('second_reader') or 0),
              'weak': sorted(int(p) for p in (rep.get('weak') or []) if str(p).isdigit()), 'models': str(rep.get('models') or '')[:40]}
     rec = {'texts': texts, 'rep': clean, 'tag': re.sub(r'[^a-z0-9+]', '', str(tag or 'ocr').lower())[:40] or 'ocr'}
+    lay = _layout(layout, len(texts))
+    if lay is not None:
+        rec['layout'] = lay
     BROWSER[(str(READ_DIR), sha)] = rec
     f = _browser_file(sha)
     if f is not None:
@@ -383,7 +425,7 @@ def carry_browser_reading(old_sha, new_data):
     rec = browser_reading(old_sha)
     new_sha = _sha(new_data)
     if rec and new_sha != old_sha and not browser_reading(new_sha):
-        keep_browser_reading(new_sha, rec['texts'], rec['rep'], rec['tag'])
+        keep_browser_reading(new_sha, rec['texts'], rec['rep'], rec['tag'], rec.get('layout'))
 
 
 def _browser_into(out, data, max_pages):

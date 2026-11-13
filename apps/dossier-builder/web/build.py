@@ -141,6 +141,9 @@ def engine_zip(out):
             files = [p] if p.is_file() else sorted(x for x in p.rglob('*') if x.is_file() and '__pycache__' not in x.parts)
             for f in files:
                 z.write(f, str(f.relative_to(REPO)))
+        if OCR.is_dir():                                 # the engine offers the scan reader's fixes only where the page has it (extract.reads_in_browser)
+            z.writestr(zipfile.ZipInfo('apps/dossier-builder/engine/dossier_engine/BROWSER_OCR', (2026, 1, 1, 0, 0, 0)),
+                       'This build reads scans in the page: ui/assets/ocr.js, assets/ocr/.\n')
     put(out, buf.getvalue())
     return len(buf.getvalue())
 

@@ -20,6 +20,11 @@ NO_TEXT_AR = ('الملف ده من غير نص: صفحاته صور بس. ال�
 OCR_FIX_EN = ('No text layer: the pages are images. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). '
               'PdfCraft reads the pages (OCR, Arabic and English) and adds their text under the image — the page looks the same, and the '
               'document becomes searchable: «Fix» does it.')
+OCR_BROWSER_EN = ('No text layer: the pages are images. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). '
+                  'The program reads the pages in this browser (OCR, Arabic and English) and writes their text under the image — the page '
+                  'looks the same, and the document becomes searchable: «Fix» does it.')
+OCR_BROWSER_AR = ('الملف ده مالوش طبقة نص: صفحاته صور. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). '
+                  'البرنامج بيقرا الصفحات في المتصفح ده (OCR عربي وإنجليزي) ويكتب نصها تحت الصورة — شكل الصفحة ما بيتغيرش والمستند بيبقى قابل للبحث: «صلّح» بيعملها.')
 OCR_FIX_AR = ('الملف ده مالوش طبقة نص: صفحاته صور. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). '
               'PdfCraft بيقرا الصفحات (OCR عربي وإنجليزي) ويحط نصها تحت الصورة — شكل الصفحة ما بيتغيرش والمستند بيبقى قابل للبحث: «صلّح» بيعملها.')
 NO_TEXT_IMAGE_EN = ('An image, not a PDF. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). The desktop and '
@@ -280,8 +285,12 @@ def check(path, doc_class='company_technical', ectd_name=False):
                 break
         r.info['searchable'] = chars >= 20
         if pages and chars < 20:
-            add(Finding('NTA065-N4', 'block', NO_TEXT_EN, NO_TEXT_AR,
-                        'rebuild' if doc_class in ('generated', 'company_letter') else 'user_fix', 'NP.CAPP.065 v5 general note 4'))
+            from .. import extract
+            if extract.reads_in_browser():               # the browser edition reads the scan in the page and writes its text under the image
+                add(Finding('NTA065-N4', 'block', OCR_BROWSER_EN, OCR_BROWSER_AR, 'auto_fix', 'NP.CAPP.065 v5 general note 4; OCR in the browser'))
+            else:
+                add(Finding('NTA065-N4', 'block', NO_TEXT_EN, NO_TEXT_AR,
+                            'rebuild' if doc_class in ('generated', 'company_letter') else 'user_fix', 'NP.CAPP.065 v5 general note 4'))
     except Exception as e:  # pypdf could not parse
         add(Finding('EG-PF-16.5', 'block', f'The PDF cannot be read ({type(e).__name__}).', 'الملف مش بيتقري (تالف).',
                     're_obtain' if doc_class in LOCKED else 'user_fix', 'EU VC 16.5'))

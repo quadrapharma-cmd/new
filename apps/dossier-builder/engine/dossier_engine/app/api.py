@@ -909,10 +909,25 @@ def create_app(workspace, auth_enabled=None):
             err(409, 'E-OCR-HERE', 'This program reads scans itself.', 'البرنامج ده بيقرا الملفات الممسوحة بنفسه.')
         body = body or {}
         try:
-            rec = _extract.keep_browser_reading(str(body.get('sha256') or '').lower(), body.get('texts'), body.get('rep'), body.get('tag'))
+            rec = _extract.keep_browser_reading(str(body.get('sha256') or '').lower(), body.get('texts'), body.get('rep'), body.get('tag'),
+                                                body.get('layout'))
         except ValueError as e:
             err(422, 'E-OCR-READING', f'Not a reading of a scan: {e}.', f'دي مش قراية ملف ممسوح: {e}.')
         return {'kept': True, 'pages': len(rec['texts']), 'tag': rec['tag']}
+
+    @app.get('/api/ocr/document/{did}/{doc_id}')
+    def ocr_document(did: str, doc_id: str):
+        """Before a fix in the browser edition (web/boot.js): whether a stored document is a scan, how many pages it has and how many
+        of them the page has read with their words' places (the «make searchable» fix writes those words under the pages)."""
+        from .. import pdfcraft as _pc
+        d = st.document(doc_id)
+        if d['dossier_id'] != did or d['meta'].get('external'):
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        data = st.blob_path(d['sha256']).read_bytes()
+        rec = _extract.browser_reading(d['sha256'])
+        return {'sha256': d['sha256'], 'why': _extract.has_text(d['filename'], data), 'here': bool(_pc.ocr_info()),
+                'pages': _extract.page_count(d['filename'], data), 'read': len(rec['texts']) if rec else 0,
+                'layout': bool(rec and rec.get('layout')), 'filename': d['filename'], 'url': f'/api/dossiers/{did}/documents/{doc_id}/file'}
 
     def _dossier_pdfs(did):
         out = []

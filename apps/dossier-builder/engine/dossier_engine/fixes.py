@@ -347,6 +347,30 @@ class Refused(Exception):
 PDFCRAFT_ONLY = {'repair', 'remove_attachments', 'remove_comments', 'apply_redaction', 'reduce_size', 'make_searchable'}
 
 
+def _browser_searchable(cur, nxt, origin):
+    """«Make searchable» where PdfCraft does not read scans (the browser edition): the words the page read (ui/assets/ocr.js — the
+    desktop's reading, in the browser), each at its place, written invisibly under the page images (textlayer). The reading is the
+    one kept for this file, or for the file the fixes started from (the fixes before this one leave the pages as they are)."""
+    from . import extract, textlayer
+    data = Path(cur).read_bytes()
+    rec = extract.browser_reading(extract._sha(data)) or extract.browser_reading(origin)
+    if not rec or not rec.get('layout'):
+        raise Refused('Its pages have not been read on this device yet: the page reads them when the file is prepared or fixed — try again.',
+                      'صفحاته لسه ما اتقرتش على الجهاز ده: الصفحة بتقراها لما الملف يتجهّز أو يتصلّح — جرّب تاني.')
+    n = extract.page_count('scan.pdf', data)
+    if len(rec['layout']) < n:
+        raise Refused(f'Only {len(rec["layout"])} of its {n} pages were read here; a searchable copy needs every page read.',
+                      f'اتقرى {len(rec["layout"])} صفحة بس من {n}؛ النسخة القابلة للبحث محتاجة كل صفحاته تتقري.')
+    if not any(t.strip() for t in rec['texts']):
+        raise Refused('No text could be read on the pages (a blank or unreadable scan): scan it again.',
+                      'مفيش أي كلام اتقرى من الصفحات (المسح فاضي أو مش واضح): امسحه تاني.')
+    try:
+        Path(nxt).write_bytes(textlayer.write(data, {i + 1: pg for i, pg in enumerate(rec['layout'])}))
+    except ValueError:
+        raise Refused('No text could be read on the pages (a blank or unreadable scan): scan it again.',
+                      'مفيش أي كلام اتقرى من الصفحات (المسح فاضي أو مش واضح): امسحه تاني.')
+
+
 def apply(path, findings, doc_class):
     """Returns {'data': bytes|None, 'done': [...], 'refused': [...], 'report': check Report of the result}."""
     from . import pdfcraft
@@ -360,7 +384,10 @@ def apply(path, findings, doc_class):
     with tempfile.TemporaryDirectory() as d:
         cur = Path(d) / 'v0.pdf'
         shutil.copyfile(path, cur)
+        from . import extract as _extract
+        origin = _extract._sha(cur.read_bytes())
         for i, op in enumerate(ops, 1):
+            layered = False
             try:
                 assert_allowed(doc_class, GUARD_OP.get(op, op))
             except LockedError:
@@ -382,7 +409,10 @@ def apply(path, findings, doc_class):
                 done.append({'op': op, 'en': LABEL[op][0], 'ar': LABEL[op][1]})
                 continue
             try:
-                if not (pdfcraft.available() and _pc_op(cur, nxt, op, findings)):
+                if op == 'make_searchable' and not pdfcraft.ocr_info() and _extract.reads_in_browser():
+                    _browser_searchable(cur, nxt, origin)          # the browser edition: the page's reading, written invisibly
+                    layered = True
+                elif not (pdfcraft.available() and _pc_op(cur, nxt, op, findings)):
                     if op in PDFCRAFT_ONLY:
                         raise Refused('This needs PdfCraft, which is not on this machine (the desktop and company editions have it).',
                                       'ده محتاج PdfCraft، وهو مش موجود هنا (موجود في نسخة الكمبيوتر ونسخة الشركة).')
@@ -393,7 +423,13 @@ def apply(path, findings, doc_class):
             except Exception as e:                         # not foreseen: what went wrong, as it is, in both languages
                 refused.append({'op': op, 'en': f'Could not apply: {type(e).__name__}: {e}'[:300], 'ar': f'تعذّر التطبيق: {e}'[:300]})
                 continue
-            if doc_class in LOCKED:
+            if layered:                                    # proved by the file's structure, on every kind of document: the pages' own content
+                from . import textlayer                    # byte for byte, nothing added but text drawn invisibly
+                if not textlayer.invisible_only(cur.read_bytes(), nxt.read_bytes()):
+                    refused.append({'op': op, 'en': 'The text layer would have changed the page; discarded.',
+                                    'ar': 'طبقة النص كانت هتغيّر شكل الصفحة؛ اتلغت.'})
+                    continue
+            elif doc_class in LOCKED:
                 try:
                     identical = pdfcraft.same_pixels(cur.read_bytes(), nxt.read_bytes()) if pdfcraft.available() else None
                     if identical is None:

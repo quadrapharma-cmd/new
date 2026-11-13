@@ -109,3 +109,62 @@ def test_where_the_engine_reads_scans_itself_the_pages_reading_is_refused(tmp_pa
     c = TestClient(create_app(tmp_path / 'ws', auth_enabled=False))
     r = c.post('/api/ocr/browser', json={'sha256': extract._sha(scan()), 'texts': ['x'], 'rep': REP, 'tag': TAG})
     assert r.status_code == 409 and r.json()['detail']['code'] == 'E-OCR-HERE'
+
+
+LAYOUT = [{'words': [['رقم', 400, 80, 30, 20, 0], ['التسجيل:', 330, 80, 60, 20, 0], ['34567/2025', 240, 80, 80, 20, 0]], 'rotated': 0, 'deskew': 0}]
+
+
+def test_in_the_browser_a_scan_is_made_searchable_from_the_pages_reading(browser, tmp_path, monkeypatch):
+    """«Make searchable» in the browser edition: the page's reading, each word at its place, written invisibly under the image — on a
+    third party's document too, proved unchanged by the file's structure (no page can be drawn there to compare)."""
+    from io import BytesIO
+    from pypdf import PdfReader
+    from dossier_engine import fixes, textlayer
+    monkeypatch.setattr(extract, 'reads_in_browser', lambda: True)
+    extract.READ_DIR = tmp_path / 'text'
+    data = scan(seed=3)
+    path = tmp_path / 'scan.pdf'
+    path.write_bytes(data)
+    findings = [{'rule': 'NTA065-N4', 'action': 'auto_fix'}]
+    r = fixes.apply(path, findings, 'third_party_certificate')
+    assert r['data'] is None and 'not been read' in r['refused'][0]['en'] and r['refused'][0]['ar']      # not read yet: why, not a guess
+    extract.keep_browser_reading(extract._sha(data), ['رقم التسجيل: 34567/2025'], REP, TAG, LAYOUT)
+    r = fixes.apply(path, findings, 'third_party_certificate')
+    assert [x['op'] for x in r['done']] == ['make_searchable'] and not r['refused'], r
+    assert textlayer.invisible_only(data, r['data']) and '34567/2025' in PdfReader(BytesIO(r['data'])).pages[0].extract_text()
+    if pdfcraft.available():
+        assert pdfcraft.same_pixels(data, r['data'])
+    assert 'NTA065-N4' not in {f.rule for f in r['report'].findings}
+
+
+def test_a_scan_read_only_in_part_is_not_made_searchable(browser, tmp_path, monkeypatch):
+    from PIL import Image
+    from dossier_engine import fixes
+    monkeypatch.setattr(extract, 'reads_in_browser', lambda: True)
+    extract.READ_DIR = tmp_path / 'text'
+    buf = io.BytesIO()
+    Image.new('L', (850, 1100), 255).save(buf, 'PDF', resolution=100, save_all=True, append_images=[Image.new('L', (850, 1100), 200)])
+    path = tmp_path / 'two.pdf'
+    path.write_bytes(buf.getvalue())
+    extract.keep_browser_reading(extract._sha(buf.getvalue()), ['رقم التسجيل: 34567/2025'], REP, TAG, LAYOUT)
+    r = fixes.apply(path, [{'rule': 'NTA065-N4', 'action': 'auto_fix'}], 'eda_document')
+    assert r['data'] is None and 'Only 1 of its 2 pages' in r['refused'][0]['en']
+
+
+def test_the_page_learns_what_to_read_before_a_fix_api(browser, tmp_path, monkeypatch):
+    c = TestClient(create_app(tmp_path / 'ws', auth_enabled=False))
+    data = scan(seed=4)
+    did = c.post('/api/dossiers', json=dict(name='Examplol', profile=dict(dossier_kind='generic', origin='local', licence='own', activity='new',
+                 apis=[dict(name='Paracetamol', manufacturer='Example API Co.', option='CEP')]),
+                 product=dict(name='Examplol 500 mg', dosageform='film-coated tablet', manufacturer='Example Pharm Co.', indication='pain'),
+                 envelope=dict(tracking='T-0001', applicant='Example Pharm Co.', invented_name='Examplol', inn=['paracetamol']))).json()['id']
+    doc = c.post(f'/api/dossiers/{did}/unplaced', files=[('files', ('scan0003.pdf', io.BytesIO(data), 'application/pdf'))], data={'meta': '{}'}).json()[0]
+    info = c.get(f"/api/ocr/document/{did}/{doc['id']}").json()
+    assert info == {'sha256': extract._sha(data), 'why': 'scan', 'here': False, 'pages': 1, 'read': 0, 'layout': False,
+                    'filename': 'scan0003.pdf', 'url': f"/api/dossiers/{did}/documents/{doc['id']}/file"}
+    assert c.post('/api/ocr/browser', json={'sha256': info['sha256'], 'texts': ['x y'], 'rep': REP, 'tag': TAG, 'layout': LAYOUT}).status_code == 200
+    info = c.get(f"/api/ocr/document/{did}/{doc['id']}").json()
+    assert info['read'] == 1 and info['layout']
+    bad = c.post('/api/ocr/browser', json={'sha256': info['sha256'], 'texts': ['x'], 'layout': [{'words': [['w', 'x', 0, 1, 1]]}]})
+    assert bad.status_code == 422                                                       # a place that is not numbers
+    assert c.get(f"/api/ocr/document/nope/{doc['id']}").status_code == 404
