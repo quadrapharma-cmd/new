@@ -36,10 +36,10 @@ jobs:
           key: pdfcraft-${{ matrix.os }}-${{ hashFiles('apps/dossier-builder/tools/pdfcraft/PIN') }}
       - name: PdfCraft, the PDF engine, from its pinned release (no MCP server)
         shell: bash
-        env:
-          AWS_LC_SYS_PREBUILT_NASM: ${{ runner.os == 'Windows' && '1' || '' }}
-          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.os == 'macos-15-intel' && '10.15' || '' }}
         run: |
+          # set only where they mean something: rustc refuses an empty MACOSX_DEPLOYMENT_TARGET
+          if [ "${{ matrix.os }}" = "macos-15-intel" ]; then export MACOSX_DEPLOYMENT_TARGET=10.15; fi
+          if [ "${{ runner.os }}" = "Windows" ]; then export AWS_LC_SYS_PREBUILT_NASM=1; fi
           rustup update stable --no-self-update
           bash apps/dossier-builder/tools/pdfcraft/build.sh
       - name: Install

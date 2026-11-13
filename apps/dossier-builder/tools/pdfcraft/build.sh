@@ -33,7 +33,7 @@ mkdir -p "$out"
 cp "$target/release/pdfcraft-cli$exe" "$out/"
 for f in LICENSE-MIT LICENSE-APACHE NOTICE ATTRIBUTION.md; do cp "$src/$f" "$out/"; done
 rm -rf "$out/licenses" && cp -R "$src/licenses" "$out/licenses"
-py="$(command -v python3 || command -v python)"
+py="$(command -v python || command -v python3)"        # «python» first: on Windows «python3» can be the Store's stub
 "$py" "$here/licenses.py" "$src" "$out"            # every crate compiled in, with its licence and notice files
 echo "$pin" > "$out/PIN"
 "$out/pdfcraft-cli$exe" --version

@@ -200,6 +200,13 @@ def _pages(spec, n):
 
 
 def _subpdf(data, a, b):
+    """Pages a–b of a PDF: PdfCraft copies them with their links and bookmarks; pypdf where it is not (the browser edition)."""
+    from .. import pdfcraft
+    if pdfcraft.available():
+        try:
+            return pdfcraft.split(data, [(a, b)])[0]
+        except pdfcraft.PdfCraftError:
+            pass
     from pypdf import PdfReader, PdfWriter
     rd = PdfReader(io.BytesIO(data), strict=False)
     w = PdfWriter()
@@ -328,9 +335,9 @@ def t_read_document(ctx, doc_id, pages=None):
     attach, text = [], ''
     low = name.lower()
     if data[:4] == b'%PDF':
-        from pypdf import PdfReader
+        from .. import pages as _pages_mod
         try:
-            n = len(PdfReader(io.BytesIO(data), strict=False).pages)
+            n = _pages_mod.count(data)
         except Exception:
             n = 1
         a, b = _pages(pages, n)
@@ -376,7 +383,7 @@ def t_get_readings(ctx, doc_id=None):
 
 def t_classify_unassigned(ctx):
     from ..classify import Classifier
-    from pypdf import PdfReader
+    from .. import search as _search
     d = ctx.st.dossier(ctx.did)
     clf = Classifier(ctx.st.pack(d['pack']))
     slots = ctx.st.slots(ctx.did)
@@ -385,8 +392,8 @@ def t_classify_unassigned(ctx):
         data = ctx.st.blob_path(doc['sha256']).read_bytes()
         text = ''
         try:
-            rd = PdfReader(io.BytesIO(data), strict=False)
-            text = ' '.join((p.extract_text() or '') for p in rd.pages[:1])
+            if data[:5] == b'%PDF-':
+                text = ' '.join(_search.pages_of(doc['filename'], data, max_pages=1))      # PdfCraft's reading; pypdf where it is not
         except Exception:
             pass
         out.append({'doc_id': doc['id'], 'filename': doc['filename'], 'suggestions': clf.suggest(doc['filename'], text, slots)[:5]})
