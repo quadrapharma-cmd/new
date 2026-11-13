@@ -192,7 +192,14 @@ def test_a_started_project_is_still_there_after_the_page_is_closed(site, tmp_pat
         box = page.inner_text('#draftBox')
         assert 'pricing certificate.txt' in box and 'ثبات.txt' in box
         page.click('[data-draft]')
-        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && Object.keys(S.wiz.texts || {}).length === 6", timeout=180000)      # continued: the documents are read again from the browser's storage
+        try:                                                                                # continued: the documents are read again from the browser's storage
+            page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && Object.keys(S.wiz.texts || {}).length === 6", timeout=180000)
+        except Exception as e:                                                              # it failed in 2 of 4 runs of the whole suite (13/11/2026), never alone: say where it stood
+            st = page.evaluate("async () => ({texts: Object.keys((S.wiz||{}).texts||{}), files: ((S.wiz||{}).allFiles||[]).map(f => f.name), "
+                               "docs: (S.wiz||{}).docs || null, unread: ((S.wiz||{}).unread||[]).map(f => f.filename || f.name), "
+                               "missing: (S.wiz||{}).missing || null, toast: (document.querySelector('#toast')||{}).textContent, "
+                               "drafts: (await (await fetch('/api/intake/drafts', {headers: {'X-DB': '1'}})).json()).map(d => d.files)})")
+            raise AssertionError(f'the continued draft did not read its six documents again: {st}; page errors {errors}') from e
         assert page.evaluate("() => Object.keys(S.wiz.texts).sort()") == ['licence.pdf', 'notes.txt', 'pricing certificate (2).txt', 'pricing certificate.txt', 'تقرير الثبات.txt', 'ثبات.txt']
         assert errors == [], errors
         b.close()
