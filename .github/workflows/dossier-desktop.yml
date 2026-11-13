@@ -1,12 +1,15 @@
 # Desktop builds of the Dossier Builder for Windows and macOS (no Docker needed on the user's computer).
-# Each build is self-tested on its own OS (launcher --smoke) before it is published.
+# Each build is self-tested on its own OS (launcher --smoke). It runs ONLY when started by hand (the owner's rule, 13/11/2026: the
+# program is tested and said finished first): without «publish» the zips stay on the run as files to try; with it, after the try is
+# approved, they replace the ones on the «desktop-latest» release.
 name: dossier-desktop
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'apps/dossier-builder/**'
-      - '.github/workflows/dossier-desktop.yml'
+    inputs:
+      publish:
+        description: 'Publish to the «desktop-latest» release (only after the build was tried and approved)'
+        type: boolean
+        default: false
 permissions:
   contents: write
 jobs:
@@ -80,6 +83,7 @@ jobs:
         with: { name: '${{ matrix.asset }}', path: '${{ matrix.asset }}', retention-days: 30 }
   publish:
     needs: build
+    if: ${{ inputs.publish }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
