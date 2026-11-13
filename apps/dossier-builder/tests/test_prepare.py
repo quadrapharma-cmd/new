@@ -62,6 +62,37 @@ def test_a_scan_is_read_placed_kept_fixed_and_named(c, tmp_path):
     assert placed['original_name'] == 'scan0001.pdf' and placed['names']['ctd'] == r['names']['ctd'] and not placed['fixable']
 
 
+@pytest.mark.skipif(not OCR, reason='needs PdfCraft with Tesseract (Arabic and English)')
+def test_a_fix_the_program_cannot_make_is_asked_of_the_user_with_why(c, tmp_path):
+    """A blank or unreadable scan: «make searchable» is tried once and refused (no words to read). The page then shows it as needing the
+    user, with why — not as a fix to offer again — and «prepare them all» leaves it alone; a new scan of it starts afresh."""
+    PIL = pytest.importorskip('PIL.Image')
+    from PIL import ImageDraw
+    did = c.post('/api/dossiers', json=dict(name='Examplol', profile=GENERIC, product=PRODUCT, envelope=ENV)).json()['id']
+    img = PIL.new('RGB', (1240, 1754), 'white')
+    ImageDraw.Draw(img).rectangle([100, 100, 600, 160], fill='black')                # a black bar, as a picture: no words
+    buf = io.BytesIO()
+    img.save(buf, 'PDF', resolution=150)
+    over = c.get(f'/api/dossiers/{did}/prepare').json()
+    slot = next((x['slot_id'] for x in over['requested'] if x['ctd'] == '3.2.P.5.1'), 'P-09')
+    doc = stage(c, did, 'scan0002.pdf', buf.getvalue())
+    r = c.post(f"/api/dossiers/{did}/prepare/{doc['id']}", json={'slot_id': slot}).json()
+    tried = next(x for x in r['steps'] if isinstance(x, dict))
+    assert 'make_searchable' not in tried['fixed'] and any(x['op'] == 'make_searchable' and 'no text could be read' in x['en'].lower()
+                                                          for x in tried['refused']), tried
+    assert 'NTA065-N4' not in r['fixable'] and any(n['rule'] == 'NTA065-N4' and n['action'] == 'refused' for n in r['needs_you'])
+    placed = next(x for x in c.get(f'/api/dossiers/{did}/prepare').json()['placed'] if x['id'] == r['document']['id'])
+    assert 'NTA065-N4' not in placed['fixable']                                                 # not offered again …
+    why = next(n for n in placed['needs_you'] if n['rule'] == 'NTA065-N4')
+    assert 'no text could be read' in why['en'].lower() and 'امسحه تاني' in why['ar']           # … asked of the user, with why
+    text = make_pdf_lines(tmp_path / 'spec.pdf', SPEC, 'Specification').read_bytes()             # a new scan of it, readable this time
+    new = c.post(f"/api/dossiers/{did}/slots/{slot}/documents", files=[('file', ('scan0003.pdf', io.BytesIO(scan_of(text)), 'application/pdf'))],
+                 data={'meta': '{}', 'replaces': r['document']['id']})
+    assert new.status_code in (200, 201), new.text
+    again = next(x for x in c.get(f'/api/dossiers/{did}/prepare').json()['placed'] if x['id'] == new.json()['id'])
+    assert 'NTA065-N4' in again['fixable'] and not any(n['rule'] == 'NTA065-N4' for n in again['needs_you'])
+
+
 def test_a_file_the_program_cannot_place_asks_for_its_item(c, tmp_path):
     did = c.post('/api/dossiers', json=dict(name='Examplol', profile=GENERIC, product=PRODUCT, envelope=ENV)).json()['id']
     vague = make_pdf_lines(tmp_path / 'x.pdf', ['Lorem ipsum dolor sit amet', 'consectetur adipiscing elit, sed do eiusmod tempor'], 'Notes').read_bytes()

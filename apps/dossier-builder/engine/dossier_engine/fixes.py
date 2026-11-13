@@ -306,7 +306,7 @@ def _pc_op(cur, nxt, op, findings):
         q = pdfcraft.query(Path(cur).read_bytes(), [('doc_audit_redactions', {})]) or {}
         marks = [f for f in ((q.get('doc_audit_redactions') or {}).get('findings') or []) if f.get('rect') and f.get('page')]
         if not marks:
-            raise RuntimeError('no faux redaction found to redact')
+            raise Refused('No faux redaction was found to redact.', 'مفيش إخفاء مزيّف في الملف علشان يتشال.')
         _pc_job(cur, nxt, [('redact_mark', {'doc': 1, 'page': int(f['page']), 'rect': [float(v) for v in f['rect']]}) for f in marks]
                 + [('redact_apply', {'doc': 1})])
     elif op == 'add_bookmarks':
@@ -319,18 +319,28 @@ def _pc_op(cur, nxt, op, findings):
     elif op == 'make_searchable':
         got = pdfcraft.ocr(Path(cur).read_bytes())
         if not got or not got[0]:
-            raise RuntimeError('text recognition (Tesseract with Arabic and English) is not on this machine')
+            raise Refused('Text recognition (Tesseract with Arabic and English) is not on this machine: install it, or make the text layer when scanning.',
+                          'قراءة النص (Tesseract بالعربي والإنجليزي) مش متسطّبة على الجهاز ده: سطّبها، أو اعمل طبقة النص وقت المسح.')
         if not any(t.strip() for t in got[1]):
-            raise RuntimeError('no text could be read on the pages (a blank or unreadable scan): scan it again')
+            raise Refused('No text could be read on the pages (a blank or unreadable scan): scan it again.',
+                          'مفيش أي كلام اتقرى من الصفحات (المسح فاضي أو مش واضح): امسحه تاني.')
         Path(nxt).write_bytes(got[0])
     elif op == 'reduce_size':
         small, rep = pdfcraft.reduce(Path(cur).read_bytes())
         if not small or len(small) >= Path(cur).stat().st_size:
-            raise RuntimeError('the file cannot be made smaller (its images are already at 150 ppi or below)')
+            raise Refused('The file cannot be made smaller (its images are already at 150 ppi or below).',
+                          'الملف مش هيصغر أكتر من كده (صوره أصلًا 150 نقطة/بوصة أو أقل).')
         Path(nxt).write_bytes(small)
     else:
         return False                                       # inherit_zoom: PdfCraft's link tool would drop the place the link goes to
     return True
+
+
+class Refused(Exception):
+    """A fix the program will not make, and why, in English and Arabic: the user reads it as it is (no exception's name)."""
+    def __init__(self, en, ar):
+        super().__init__(en)
+        self.en, self.ar = en, ar
 
 
 PDFCRAFT_ONLY = {'repair', 'remove_attachments', 'remove_comments', 'apply_redaction', 'reduce_size', 'make_searchable'}
@@ -373,10 +383,14 @@ def apply(path, findings, doc_class):
             try:
                 if not (pdfcraft.available() and _pc_op(cur, nxt, op, findings)):
                     if op in PDFCRAFT_ONLY:
-                        raise RuntimeError('this needs PdfCraft, which is not on this machine')
+                        raise Refused('This needs PdfCraft, which is not on this machine (the desktop and company editions have it).',
+                                      'ده محتاج PdfCraft، وهو مش موجود هنا (موجود في نسخة الكمبيوتر ونسخة الشركة).')
                     {'add_bookmarks': lambda: _bookmarks(cur, nxt)}.get(op, lambda: _rewrite(cur, nxt, op))()
-            except Exception as e:
-                refused.append({'op': op, 'en': f'Could not apply: {type(e).__name__}: {e}'[:300], 'ar': 'تعذّر التطبيق.'})
+            except Refused as e:
+                refused.append({'op': op, 'en': e.en, 'ar': e.ar})
+                continue
+            except Exception as e:                         # not foreseen: what went wrong, as it is, in both languages
+                refused.append({'op': op, 'en': f'Could not apply: {type(e).__name__}: {e}'[:300], 'ar': f'تعذّر التطبيق: {e}'[:300]})
                 continue
             if doc_class in LOCKED:
                 try:

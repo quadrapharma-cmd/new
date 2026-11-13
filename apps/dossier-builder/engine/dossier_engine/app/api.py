@@ -1304,6 +1304,24 @@ def create_app(workspace, auth_enabled=None):
                 pass
         return out
 
+    def _prep_left(doc):
+        """What is left on a placed document: the fixes the program can still make (by rule), and what needs the user — the blocking
+        findings it has no fix for, and the blocking ones whose fix it tried and could not make (with why: a blank scan has no words to
+        read), so the same fix is not offered again until a new version comes."""
+        from .. import fixes as _fixes
+        refused = {x['op']: x for x in (doc.get('meta') or {}).get('fix_refused') or []}
+        fixable, left = [], []
+        for f in doc.get('findings') or []:
+            if f.get('action') == 'auto_fix':
+                why = refused.get(_fixes.RULE_TO_OP.get(f['rule']))
+                if not why:
+                    fixable.append(f['rule'])
+                elif f.get('severity') == 'block':
+                    left.append({'rule': f['rule'], 'en': why.get('en') or f.get('en'), 'ar': why.get('ar') or f.get('ar'), 'action': 'refused'})
+            elif f.get('severity') == 'block' and f.get('scope') != 'ectd':
+                left.append({'rule': f['rule'], 'en': f.get('en'), 'ar': f.get('ar'), 'action': f.get('action')})
+        return fixable, left
+
     def _reading(name, data):
         """What the program read from a file: the reader (PdfCraft, its OCR, pypdf), pages, and the information it found in it."""
         r = _extract.read_files([(name, data)])
@@ -1331,9 +1349,7 @@ def create_app(workspace, auth_enabled=None):
             for doc in s.get('documents') or []:
                 if (doc.get('meta') or {}).get('external'):
                     continue
-                fx = [f['rule'] for f in doc.get('findings') or [] if f.get('action') == 'auto_fix']
-                left = [{'rule': f['rule'], 'en': f.get('en'), 'ar': f.get('ar'), 'action': f.get('action')}
-                        for f in doc.get('findings') or [] if f.get('severity') == 'block' and f.get('action') != 'auto_fix' and f.get('scope') != 'ectd']
+                fx, left = _prep_left(doc)
                 placed.append({'id': doc['id'], 'slot_id': s['slot_id'], 'ctd': s.get('ctd'), 'item': s.get('title'), 'filename': doc['filename'],
                                'original_name': (doc.get('meta') or {}).get('original_name') or doc['filename'], 'version': doc.get('version'),
                                'status': doc.get('check_status'), 'fixable': fx, 'needs_you': left, 'names': names.get(doc['id'], {}),
@@ -1351,12 +1367,11 @@ def create_app(workspace, auth_enabled=None):
             err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
         steps, doc = [], d0
         if not d0.get('slot_id'):                            # a file waiting to be placed
-            slot_id = body.get('slot_id')
-            if not slot_id:
-                u = next((x for x in unplaced_list(did) if x['id'] == doc_id), None)
-                slot_id = u and u.get('auto')
+            slot_id, u = body.get('slot_id'), {}
             if not slot_id:
                 u = next((x for x in unplaced_list(did) if x['id'] == doc_id), None) or {}
+                slot_id = u.get('auto')
+            if not slot_id:
                 return {'document': d0, 'steps': ['needs_item'], 'suggestions': u.get('suggestions') or []}
             doc = place_document(did, doc_id, {'slot_id': slot_id})
             steps.append('placed')
@@ -1369,11 +1384,11 @@ def create_app(workspace, auth_enabled=None):
             r = st.fix_document(did, doc['id'])
             if r.get('document'):
                 doc = st.keep_reading(did, r['document']['id'], keep)
+            doc = st.keep_fix_refused(did, doc['id'], r['refused'])      # what could not be fixed, with why: asked of the user, not offered again
             steps.append({'fixed': [x['op'] for x in r['done']], 'refused': [{'op': x['op'], 'en': x['en'], 'ar': x['ar']} for x in r['refused']]})
-        left = [{'rule': f['rule'], 'en': f.get('en'), 'ar': f.get('ar'), 'action': f.get('action')}
-                for f in doc.get('findings') or [] if f.get('severity') == 'block' and f.get('scope') != 'ectd']
+        fixable, left = _prep_left(doc)
         return {'document': doc, 'steps': steps, 'reading': {k: v for k, v in rd.items() if k != 'rules'}, 'names': _names(did).get(doc['id'], {}),
-                'needs_you': left}
+                'fixable': fixable, 'needs_you': left}
 
     @app.post('/api/dossiers/{did}/classify')
     async def classify(did: str, files: list[UploadFile] = File(...)):

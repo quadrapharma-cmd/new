@@ -2731,7 +2731,9 @@ async function paintPrepare(){
 async function prepOne(id){
   const sel=$(`[data-pslot="${CSS.escape(id)}"]`); const body=sel&&sel.value?{slot_id:sel.value}:{};
   try{ const r=await api(`/dossiers/${S.dossier.id}/prepare/${id}`,{method:'POST',json:body});
-    if((r.steps||[])[0]==='needs_item') toast(t('prepPick')); S.board=null; return r; }catch(e){ toast(e.message); }
+    if((r.steps||[])[0]==='needs_item') toast(t('prepPick'));
+    const no=(r.steps||[]).flatMap(s=>(s&&s.refused)||[]); if(no.length) toast(no.map(x=>x[S.lang]||x.en).join(' · '));   // a fix it could not make, and why
+    S.board=null; return r; }catch(e){ toast(e.message); }
 }
 async function prepAll(){
   const r=S.prep||await api(`/dossiers/${S.dossier.id}/prepare`); const todo=[...r.waiting.filter(w=>w.auto||($(`[data-pslot="${CSS.escape(w.id)}"]`)||{}).value).map(w=>w.id), ...r.placed.filter(d=>d.fixable.length).map(d=>d.id)];

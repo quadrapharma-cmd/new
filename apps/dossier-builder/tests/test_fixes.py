@@ -97,7 +97,7 @@ def test_a_scan_is_made_searchable_where_pdfcraft_reads_scans(tmp_path):
         assert n4[0]['action'] == ('auto_fix' if ocr else 'user_fix') and (('make_searchable' in ops_for(f)) == ocr)
         if ocr:
             out = apply(p, f, cls)
-            assert out['data'] is None and any(r['op'] == 'make_searchable' and 'no text could be read' in r['en'] for r in out['refused'])
+            assert out['data'] is None and any(r['op'] == 'make_searchable' and 'no text could be read' in r['en'].lower() and 'امسحه' in r['ar'] for r in out['refused'])
 
 
 def test_signed_pdf_never_rewritten(pdf13):

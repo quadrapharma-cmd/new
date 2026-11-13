@@ -1358,6 +1358,18 @@ class Store:
         self.audit(did, 'document.read', doc=doc_id, reader=extracted.get('reader'), found=len(extracted.get('found') or []))
         return self.document(doc_id)
 
+    def keep_fix_refused(self, did, doc_id, refused):
+        """The fixes the program tried on a document and could not make, with why (meta «fix_refused»): the preparation stage then shows
+        them as needing the user instead of offering the same fix again. An empty list clears them; the file is not touched (the attempt
+        itself is in the audit trail, «document.fix_refused»)."""
+        d = self.document(doc_id)
+        if d['dossier_id'] != did:
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        meta = dict(d['meta'], fix_refused=[{'op': x['op'], 'en': x.get('en'), 'ar': x.get('ar')} for x in refused or []])
+        self.db.execute('update document set meta=? where id=?', (json.dumps(meta, ensure_ascii=False), doc_id))
+        self.db.commit()
+        return self.document(doc_id)
+
     def set_document_details(self, did, doc_id, meta=None, title=None):
         """A document's title and its eCTD attributes (leaflet type, language, study, document type, EU country) changed where it is —
         the file itself is not touched, so it stays the same version (the sheet of updates list item 47, a corrected title)."""
