@@ -209,7 +209,7 @@ def _envelopes(e, seq):
     return out
 
 
-def write(out_dir, envelope: EnvelopeEU, product: Product, docs, profile: ProfileEU = None):
+def write(out_dir, envelope: EnvelopeEU, product: Product, docs, profile: ProfileEU = None, links=None):
     """Writes the sequence; returns {path, files, leaves, problems, history} like the EG writer. Documents should come through
     resolve() first (the exporter does); a country section's document without a country is refused."""
     profile = profile or default_profile()
@@ -233,6 +233,10 @@ def write(out_dir, envelope: EnvelopeEU, product: Product, docs, profile: Profil
     placed = place(docs, lambda d: m1_rel_path(d, e, profile) if d.node in profile.m1 else m25_rel_path(d, product, profile),
                    seq, 'EU', 'the program writes new, replace and delete')
     copy_files(base, placed)
+    linked = None
+    if links is not None:                       # links between documents made relative before the checksums (links.relink)
+        from ..links import relink
+        linked = relink(base, placed, links)
 
     # ---- eu-regional.xml ----
     history, root = [], _Node('m1-eu')
@@ -277,4 +281,4 @@ def write(out_dir, envelope: EnvelopeEU, product: Product, docs, profile: Profil
 
     write_index(base, seq, [(d, rel) for d, rel in placed if d.node not in profile.m1], product, profile, REGIONAL, 'EU Module 1',
                 history)
-    return finish(base, profile, placed, history)
+    return dict(finish(base, profile, placed, history), links=linked)

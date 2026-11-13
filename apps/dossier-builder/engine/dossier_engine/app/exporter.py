@@ -159,6 +159,13 @@ def eu_envelope(d, prof, sub, hist, seq, stype, unit, activity, desc, tracking):
                                 legal_basis=(prof.extra or {}).get('eu_legal_basis'))
 
 
+def _earlier(st, did, hist):
+    """Where the documents of the earlier sequences are, by the names a link may use for them (links.earlier_targets)."""
+    from .. import links
+    names_of = {d['id']: [d['filename'], d['title']] for d in st.documents(did)}       # current documents: a replaced one is in this sequence
+    return links.earlier_targets(hist, names_of)
+
+
 def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=False):
     """working: a working copy — the CTD folders with what the dossier holds now and the list of what is missing, whatever the gate
     says; never an eCTD sequence, never recorded as a submission."""
@@ -206,6 +213,7 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
             shutil.copyfile(st.blob_path(doc['sha256']), p)
             ref = (doc['meta'].get('reference') or {})
             files.setdefault(s.slot_id, []).append({'file': str(p), 'title': doc['title'], **doc['meta'], 'doc_id': doc['id'], 'ext': ext,
+                                                    'orig': doc['filename'],
                                                     **({'ref': f"../{ref['seq']}/{ref['href']}"} if ref.get('output') == 'ectd32' else {})})
     try:
         files_e = ectd_files(files) if region and {'ectd32', 'ectd40'} & set(outputs) else files      # an eCTD takes PDF only
@@ -287,7 +295,7 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
                 tracking = [sub.get('tracking') or last_tracking(hist) or env['tracking']]
             if out == 'ectd32' and region == 'eu':
                 root = lc / 'ectd-3.2.2'
-                r = ectd32_eu.write(root, e, product, to_ectd32(steps))
+                r = ectd32_eu.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
                 prev = sorted(p for p in root.iterdir() if p.is_dir() and p.name != seq)
                 reports['eCTD 3.2.2 (EU M1 3.1.1)'] = v32eu.validate(r['path'], ectd32_eu.DEFAULT_PROFILE, previous=prev)
                 _zip(root, seq, base / 'ectd32.zip')
@@ -298,7 +306,7 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
                                     registration=ectd32.REG_TYPE[prof.licence], marketing=env.get('marketing', 'local'),
                                     inn=env.get('inn', []), sequence=seq, related_sequence=[activity],
                                     description=desc, mode=sub.get('mode') if stype.startswith('var-') else None)
-                r = ectd32.write(root, e, product, to_ectd32(steps))
+                r = ectd32.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
                 prev = sorted(p for p in root.iterdir() if p.is_dir() and p.name != seq)
                 reports['eCTD 3.2.2'] = v32.validate(r['path'], ectd32.DEFAULT_PROFILE, previous=prev)
                 _zip(root, seq, base / 'ectd32.zip')
@@ -319,6 +327,8 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
             results[out] = r['path']
             zips[out] = f'/api/dossiers/{did}/exports/{exp_id}/{out}.zip'
             seqinfo[out] = {'sequence': seq, 'operations': {k: sum(1 for s_ in steps if s_.op == k) for k in ('new', 'replace', 'delete')}}
+            if r.get('links') and (r['links']['rewritten'] or r['links']['unresolved']):
+                seqinfo[out]['links'] = r['links']        # links made relative, and the file links no document of the dossier answers
             envj = {'type': stype, 'unit': unit, 'description': desc, 'tracking': tracking[0]}
             if region == 'eu':
                 envj |= {'procedure': e.procedure, 'countries': e.countries}

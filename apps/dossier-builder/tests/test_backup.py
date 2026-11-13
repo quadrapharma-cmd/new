@@ -87,3 +87,18 @@ def test_the_automatic_backup_runs_on_its_own_thread(tmp_path):
             break
         time.sleep(0.1)
     assert len(backup.listing(ws)) == 1
+
+
+def test_the_qualification_package_runs_iq_and_oq_here(tmp_path):
+    ws, c = dossier_with_a_document(tmp_path)
+    r = c.post('/api/qualification', headers=H)
+    assert r.status_code == 201, r.text
+    j = r.json()
+    assert j['summary']['oq']['fail'] == 0 and j['summary']['oq']['pass'] >= 10, [x for x in j['oq'] if x['result'] != 'pass']
+    assert j['summary']['iq']['fail'] == 0, [x for x in j['iq'] if x['result'] == 'fail']
+    d = c.get(f"/api/qualification/{j['docx']}")
+    assert d.status_code == 200 and d.content[:2] == b'PK'
+    import docx
+    text = '\n'.join(p.text for p in docx.Document(io.BytesIO(d.content)).paragraphs)
+    assert 'Performance qualification' in text and 'Approved by (head of quality)' in text
+    assert c.get('/api/qualification/../workspace.sqlite').status_code == 404

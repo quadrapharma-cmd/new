@@ -34,5 +34,6 @@ def docs_for(slots, profile, files):
                 extra['ref'] = f['ref']                       # submitted before: the leaf points there
             if s.req_id == 'M1-44':
                 extra.setdefault('name', 'tracking')          # EG-PF-15.12: tracking.pdf / tracking-<var>.pdf
-            out.append(Doc(node=node, file=f['file'], title=f.get('title') or s.title['en'][:120], **extra, **kw))
+            aliases = tuple(x for x in (f.get('orig'), f.get('title')) if x)            # the names a link may use for it
+            out.append(Doc(node=node, file=f['file'], title=f.get('title') or s.title['en'][:120], aliases=aliases, **extra, **kw))
     return out, unplaced

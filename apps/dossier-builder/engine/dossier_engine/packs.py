@@ -55,15 +55,27 @@ class Pack:
 
     @property
     def outputs(self):
-        cs = set(self.authority.get('countries') or [])
-        asean = bool(cs & ASEAN) or '*' in cs                 # the ASEAN CTD for a member state (or a dossier for «any country»)
-        nees = self.authority.get('id') != 'US-FDA'           # the FDA takes eCTD only; the Gulf and others still take a NeeS
-        return {'eg': ['ctd', 'ectd32', 'ectd40'], 'eu': ['ctd', 'ectd32']}.get(self.ectd_region,
-                                                                              ['ctd'] + (['nees'] if nees else []) + (['actd'] if asean else []))
+        """What the program writes for this authority: its eCTD where it has one; otherwise the CTD folders, a NeeS where the countries
+        table does not say «no», the ACTD where it says «yes» (rulepacks/countries.yaml)."""
+        if self.ectd_region:
+            return {'eg': ['ctd', 'ectd32', 'ectd40'], 'eu': ['ctd', 'ectd32']}[self.ectd_region]
+        cs = [c for c in (self.authority.get('countries') or []) if c]
+        if '*' in cs:
+            return ['ctd', 'nees', 'actd']                    # «any country»: the dossier's own country decides (outputs_for)
+        rows = [formats_for(c) for c in cs]
+        nees = not rows or any(f.get('nees', 'unknown') != 'no' for f in rows)
+        actd = any(f.get('actd') == 'yes' for f in rows)
+        return ['ctd'] + (['nees'] if nees else []) + (['actd'] if actd else [])
 
     def outputs_for(self, country=None):
-        """The outputs of a dossier for `country`: the ACTD only for an ASEAN member state."""
-        return [o for o in self.outputs if o != 'actd' or (country or '').upper() in ASEAN or (self.authority.get('countries') or [''])[0] in ASEAN]
+        """The outputs of a dossier for `country`, as the countries table says that country takes them."""
+        outs = self.outputs
+        if self.ectd_region:
+            return outs
+        f = formats_for(country) if country else {}
+        if not country and '*' in (self.authority.get('countries') or []):
+            return [o for o in outs if o != 'actd']           # a country not named yet: no ACTD
+        return [o for o in outs if not (o == 'nees' and f.get('nees') == 'no') and not (o == 'actd' and country and f.get('actd') != 'yes')]
 
     @property
     def questions(self):
@@ -75,6 +87,30 @@ class Pack:
 
 
 ASEAN = {'BN', 'KH', 'ID', 'LA', 'MY', 'MM', 'PH', 'SG', 'TH', 'VN'}       # the member states that take the ACTD
+_COUNTRIES = None
+
+
+def countries_table():
+    """The countries table (rulepacks/countries.yaml, updates list item 41): what each authority takes, with its source."""
+    global _COUNTRIES
+    if _COUNTRIES is None:
+        _COUNTRIES = yaml.safe_load((PACKS_DIR / 'countries.yaml').read_text(encoding='utf-8'))
+    return _COUNTRIES
+
+
+def country_row(code):
+    """The table's row for a country (by its code, or as one of a group's countries), or None."""
+    code = (code or '').upper()
+    for r in countries_table()['countries']:
+        if r['code'] == code or code in (r.get('countries') or []):
+            return r
+    return None
+
+
+def formats_for(code):
+    """{ctd, ectd32, ectd40, nees, actd: yes|no|optional|planned|unknown} for a country; {} when the table does not have it."""
+    r = country_row(code)
+    return dict(r['formats']) if r else {}
 
 
 def load(pack_id, packs_dir=PACKS_DIR):

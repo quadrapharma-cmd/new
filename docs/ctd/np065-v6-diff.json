@@ -1,0 +1,3818 @@
+{
+ "matched": [
+  {
+   "v6": "1.0",
+   "v6_title": "Cover Letter Cover Letter",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-43",
+   "v5_ctd": "1.0 (eCTD)",
+   "title": "Cover letter (+ statement 'true, complete and correct')",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.0",
+   "v6_title": "Cover Letter Cover Letter",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-44",
+   "v5_ctd": "1.0 (eCTD)",
+   "title": "Tracking table (tracking-var.pdf in m1/eg/10-cover)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.1",
+   "v6_title": "Application Form",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-01",
+   "v5_ctd": "1.1.1",
+   "title": "Application form (Annex I) + Arabic undertaking",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.2.1",
+   "v6_title": "Letter of Attorney for Company Representative",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-02",
+   "v5_ctd": "1.1.2",
+   "title": "Letter of Attorney for company representative",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.2.2",
+   "v6_title": "Manufacturing License and IDA License",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-18",
+   "v5_ctd": "1.1.17.1",
+   "title": "Factory licence of manufacturer & IDA licence",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.2.3",
+   "v6_title": "GMP Certificate(s) / Alternative Documents",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-37",
+   "v5_ctd": "1.2.4.1",
+   "title": "GMP certificate(s) of FPP manufacturer(s)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.2.3",
+   "v6_title": "GMP Certificate(s) / Alternative Documents",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-38",
+   "v5_ctd": "1.2.4.2",
+   "title": "GMP certificate(s) of API manufacturer(s)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.2.4",
+   "v6_title": "The Register of Trade",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-19",
+   "v5_ctd": "1.1.17.2",
+   "title": "Register of trade (valid)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.2.5",
+   "v6_title": "Toll Manufacturer License",
+   "v6_levels": [
+    "NR",
+    "NR",
+    "R"
+   ],
+   "req": "M1-20",
+   "v5_ctd": "1.1.17.3",
+   "title": "Toll manufacturer licence",
+   "v5_levels": [
+    "NR",
+    "NR",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.2.6",
+   "v6_title": "Scientific Office License",
+   "v6_levels": [
+    "R",
+    "R",
+    "NR"
+   ],
+   "req": "M1-21",
+   "v5_ctd": "1.1.17.4",
+   "title": "Scientific office licence",
+   "v5_levels": [
+    "R",
+    "R",
+    "NR"
+   ]
+  },
+  {
+   "v6": "1.2.2.7",
+   "v6_title": "Importers Register License",
+   "v6_levels": [
+    "R",
+    "R",
+    "NR"
+   ],
+   "req": "M1-22",
+   "v5_ctd": "1.1.17.5",
+   "title": "Importers register licence",
+   "v5_levels": [
+    "R",
+    "R",
+    "NR"
+   ]
+  },
+  {
+   "v6": "1.2.2.8",
+   "v6_title": "Store License",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-23",
+   "v5_ctd": "1.1.17.6",
+   "title": "Store licence (if different from factory)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.2.9",
+   "v6_title": "Authorisation Letter / Agency Agreement",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-24",
+   "v5_ctd": "1.1.17.7",
+   "title": "Agreements: manufacturing / storage / packaging (imported bulk) / authorisation-agency",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.2.10",
+   "v6_title": "Manufacturing Agreement",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-24",
+   "v5_ctd": "1.1.17.7",
+   "title": "Agreements: manufacturing / storage / packaging (imported bulk) / authorisation-agency",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.2.11",
+   "v6_title": "Packaging Agreement",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-24",
+   "v5_ctd": "1.1.17.7",
+   "title": "Agreements: manufacturing / storage / packaging (imported bulk) / authorisation-agency",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.2.12",
+   "v6_title": "Storage Agreement",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-24",
+   "v5_ctd": "1.1.17.7",
+   "title": "Agreements: manufacturing / storage / packaging (imported bulk) / authorisation-agency",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.3",
+   "v6_title": "Name Approval",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-04",
+   "v5_ctd": "1.1.4",
+   "title": "Action Letter & Name Approval (new) / Registration Licence & Preliminary Approval (re-reg)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.4",
+   "v6_title": "Registration License",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-04",
+   "v5_ctd": "1.1.4",
+   "title": "Action Letter & Name Approval (new) / Registration Licence & Preliminary Approval (re-reg)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.5",
+   "v6_title": "Preliminary Approval",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-04",
+   "v5_ctd": "1.1.4",
+   "title": "Action Letter & Name Approval (new) / Registration Licence & Preliminary Approval (re-reg)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.8",
+   "v6_title": "Pricing Certificate",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-05",
+   "v5_ctd": "1.1.5",
+   "title": "Pricing Certificate",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.9",
+   "v6_title": "Pharmacovigilance Approval",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-08",
+   "v5_ctd": "1.1.8",
+   "title": "Pharmacovigilance approval",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.10",
+   "v6_title": "Inspection Report",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-12",
+   "v5_ctd": "1.1.11",
+   "title": "Inspection report — pilot/production batches (new) / valid marketed batch (re-reg)",
+   "v5_levels": [
+    "{'cases': [{'when': \"activity == 're_registration'\", 'level': 'R'}, {'level': 'NR'}]}",
+    "{'cases': [{'when': \"activity == 're_registration'\", 'level': 'R'}, {'level': 'NR'}]}",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.11",
+   "v6_title": "Importation Approval for each API",
+   "v6_levels": [
+    "NR",
+    "NR",
+    "R"
+   ],
+   "req": "M1-13",
+   "v5_ctd": "1.1.12",
+   "title": "Importation approval for each API",
+   "v5_levels": [
+    "NR",
+    "NR",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.12",
+   "v6_title": "CADC Report",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-34",
+   "v5_ctd": "1.2.2.1–4",
+   "title": "CADC certificate, stability approval, BE approval, Technical Affairs approval",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.13",
+   "v6_title": "Stability Study Approval",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-34",
+   "v5_ctd": "1.2.2.1–4",
+   "title": "CADC certificate, stability approval, BE approval, Technical Affairs approval",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.15",
+   "v6_title": "Module 3 Approval",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-34",
+   "v5_ctd": "1.2.2.1–4",
+   "title": "CADC certificate, stability approval, BE approval, Technical Affairs approval",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.16",
+   "v6_title": "Module 5 Approval",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-34",
+   "v5_ctd": "1.2.2.1–4",
+   "title": "CADC certificate, stability approval, BE approval, Technical Affairs approval",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.17",
+   "v6_title": "Pre-approved letters from EDA concerning the product",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-06",
+   "v5_ctd": "1.1.6",
+   "title": "Pre-approved EDA letters (Technical Committee decisions, extensions…)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.18",
+   "v6_title": "Variation Approvals",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-07",
+   "v5_ctd": "1.1.7",
+   "title": "Variation approvals",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.20",
+   "v6_title": "Registration License for the Solvent",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-28",
+   "v5_ctd": "1.1.18",
+   "title": "Registration licence of the solvent",
+   "v5_levels": [
+    "NR",
+    "NR",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.4.1",
+   "v6_title": "Declaration Letter stating the list of Registered & Under-Registration Products owned by the Toll Company",
+   "v6_levels": [
+    "NR",
+    "NR",
+    "R"
+   ],
+   "req": "M1-25",
+   "v5_ctd": "1.1.17.8",
+   "title": "Declaration: registered & under-registration products owned by toll company",
+   "v5_levels": [
+    "NR",
+    "NR",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.4.2",
+   "v6_title": "Declaration Letter from the License Holder specifying the API Manufacturers",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-26",
+   "v5_ctd": "1.1.17.9",
+   "title": "Licence-holder declaration specifying API manufacturers",
+   "v5_levels": [
+    "NR",
+    "NR",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.4.2",
+   "v6_title": "Declaration Letter from the License Holder specifying the API Manufacturers",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-27",
+   "v5_ctd": "1.1.17.10",
+   "title": "Licence-holder declaration of API manufacturers (name & address) + Module 3",
+   "v5_levels": [
+    "O",
+    "O",
+    "O"
+   ]
+  },
+  {
+   "v6": "1.2.4.4",
+   "v6_title": "Declaration Letter from the License Holder stating the Form of Bulk (Strips, Capsules, etc.)",
+   "v6_levels": [
+    "R",
+    "R",
+    "NR"
+   ],
+   "req": "M1-27b",
+   "v5_ctd": "1.1.17.11",
+   "title": "Licence-holder declaration of form of bulk",
+   "v5_levels": [
+    "R",
+    "R",
+    "NR"
+   ]
+  },
+  {
+   "v6": "1.2.4.9",
+   "v6_title": "Other declarations requested by Egyptian Drug Authority",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-10",
+   "v5_ctd": "1.1.9",
+   "title": "Leaflet translation declaration (non-English leaflets)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.4.9",
+   "v6_title": "Other declarations requested by Egyptian Drug Authority",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-30",
+   "v5_ctd": "1.1.20",
+   "title": "Letter of Access (API master file)",
+   "v5_levels": [
+    "NR",
+    "NR",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.4.10",
+   "v6_title": "List of the Countries where the Product is registered & marketed",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-15",
+   "v5_ctd": "1.1.14",
+   "title": "List of countries where registered & marketed",
+   "v5_levels": [
+    "R",
+    "R",
+    "NR"
+   ]
+  },
+  {
+   "v6": "1.2.5.1",
+   "v6_title": "The Reference Product Documents",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-41",
+   "v5_ctd": "1.2.5.1",
+   "title": "Reference (online/textbook) OR Non-Reference Approval",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.5.1",
+   "v6_title": "The Reference Product Documents",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-42",
+   "v5_ctd": "1.2.5.2",
+   "title": "Leaflet of the reference product",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.5.4",
+   "v6_title": "The latest recent Pharmacopeia",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-29",
+   "v5_ctd": "1.1.19",
+   "title": "Latest pharmacopoeia monograph for the FPP",
+   "v5_levels": [
+    "NR",
+    "NR",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.6.1",
+   "v6_title": "Certificate of Pharmaceutical Product (CPP)",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-14",
+   "v5_ctd": "1.1.13",
+   "title": "CPP / eCPP from competent authority in COO",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.7.1",
+   "v6_title": "Sameness Letter",
+   "v6_levels": [
+    "R",
+    "R",
+    "NR"
+   ],
+   "req": "M1-16",
+   "v5_ctd": "1.1.15",
+   "title": "Sameness letter",
+   "v5_levels": [
+    "R",
+    "R",
+    "NR"
+   ]
+  },
+  {
+   "v6": "1.2.7.2",
+   "v6_title": "Unredacted Assessment Report",
+   "v6_levels": [
+    "R",
+    "R",
+    "NR"
+   ],
+   "req": "M1-17",
+   "v5_ctd": "1.1.16",
+   "title": "Unredacted assessment report",
+   "v5_levels": [
+    "O",
+    "O",
+    "NR"
+   ]
+  },
+  {
+   "v6": "1.2.8.1",
+   "v6_title": "Composition Certificate",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-31",
+   "v5_ctd": "1.2.1",
+   "title": "Composition certificate",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.8.2",
+   "v6_title": "Specifications",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-36",
+   "v5_ctd": "1.2.3.2",
+   "title": "Specifications (all actives; in-house specs of all inactives)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.8.3",
+   "v6_title": "Any Composition Calculations",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-32",
+   "v5_ctd": "1.2.1",
+   "title": "Equivalence (salt) calculation",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.8.4",
+   "v6_title": "Pellets / Premix Composition and Certificates",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-33",
+   "v5_ctd": "1.2.1",
+   "title": "Coating premix (e.g. Opadry) / capsule shell / pellets / premix composition on SUPPLIER letterhead",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.8.5",
+   "v6_title": "Opadry / Coating Premix Composition",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-33",
+   "v5_ctd": "1.2.1",
+   "title": "Coating premix (e.g. Opadry) / capsule shell / pellets / premix composition on SUPPLIER letterhead",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.8.6",
+   "v6_title": "Capsule Shell Composition",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-33",
+   "v5_ctd": "1.2.1",
+   "title": "Coating premix (e.g. Opadry) / capsule shell / pellets / premix composition on SUPPLIER letterhead",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.9",
+   "v6_title": "Certificate of Analysis",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-35",
+   "v5_ctd": "1.2.3.1",
+   "title": "API certificate of analysis (supplier)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.11",
+   "v6_title": "Proof of Payment",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-03",
+   "v5_ctd": "1.1.3",
+   "title": "Fees payment receipt(s)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.3.1",
+   "v6_title": "SPC, Labelling and Package Leaflet",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-09",
+   "v5_ctd": "1.1.9",
+   "title": "Leaflet — One Submission: proposed SmPC & PIL (EN + AR, Word) + most updated reference SmPC & PIL",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.3.2",
+   "v6_title": "Mock up",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-11",
+   "v5_ctd": "1.1.10",
+   "title": "Layout — coloured stamped outer & inner (editable PDF preferred) + monograph (compendial) + image of original pack (imported/UL)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "2.2",
+   "v6_title": "Introduction",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M2-01",
+   "v5_ctd": "2.1–2.2",
+   "title": "CTD TOC (M2–5) + Introduction",
+   "v5_levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "v6": "2.4",
+   "v6_title": "Non-Clinical Overview",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M2-03",
+   "v5_ctd": "2.4–2.7",
+   "title": "Non-clinical & clinical overviews and summaries",
+   "v5_levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "v6": "3.2.S.1.1",
+   "v6_title": "Nomenclature",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-01",
+   "v5_ctd": "3.2.S.1.1",
+   "title": "Nomenclature",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.1.2",
+   "v6_title": "Structure",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-02",
+   "v5_ctd": "3.2.S.1.2",
+   "title": "Structure",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.1.3",
+   "v6_title": "General Properties",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-03",
+   "v5_ctd": "3.2.S.1.3",
+   "title": "General properties",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.2.1",
+   "v6_title": "Manufacturer(s)",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-04",
+   "v5_ctd": "3.2.S.2.1",
+   "title": "Manufacturer(s)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.2.2",
+   "v6_title": "Description of Manufacturing Process and Process Controls",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-05",
+   "v5_ctd": "3.2.S.2.2–2.6",
+   "title": "Manufacture (process, materials, critical steps, validation, development)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.2.3",
+   "v6_title": "Control of Materials",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-05",
+   "v5_ctd": "3.2.S.2.2–2.6",
+   "title": "Manufacture (process, materials, critical steps, validation, development)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.2.4",
+   "v6_title": "Control of Critical Steps and Intermediates",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-05",
+   "v5_ctd": "3.2.S.2.2–2.6",
+   "title": "Manufacture (process, materials, critical steps, validation, development)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.2.5",
+   "v6_title": "Process Validation and/or Evaluation",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-05",
+   "v5_ctd": "3.2.S.2.2–2.6",
+   "title": "Manufacture (process, materials, critical steps, validation, development)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.2.6",
+   "v6_title": "Manufacturing Process Development",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-05",
+   "v5_ctd": "3.2.S.2.2–2.6",
+   "title": "Manufacture (process, materials, critical steps, validation, development)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.3.1",
+   "v6_title": "Elucidation of Structure and Other Characteristics",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-06",
+   "v5_ctd": "3.2.S.3.1",
+   "title": "Elucidation of structure",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.3.2",
+   "v6_title": "Impurities",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-07",
+   "v5_ctd": "3.2.S.3.2",
+   "title": "Impurities",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.4.1",
+   "v6_title": "Specifications",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-08",
+   "v5_ctd": "3.2.S.4.1",
+   "title": "Specification (FPP manufacturer's)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.4.2",
+   "v6_title": "Analytical Procedures",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-09",
+   "v5_ctd": "3.2.S.4.2–4.3",
+   "title": "Analytical procedures & validation",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.4.3",
+   "v6_title": "Validation of Analytical Procedures",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-09",
+   "v5_ctd": "3.2.S.4.2–4.3",
+   "title": "Analytical procedures & validation",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.4.4",
+   "v6_title": "Batch Analyses",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-10",
+   "v5_ctd": "3.2.S.4.4",
+   "title": "Batch analyses",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.4.5",
+   "v6_title": "Justification of Specification",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-11",
+   "v5_ctd": "3.2.S.4.5",
+   "title": "Justification of specification",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.5",
+   "v6_title": "Reference Standards or Materials",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-12",
+   "v5_ctd": "3.2.S.5",
+   "title": "Reference standards",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.S.6",
+   "v6_title": "Container/Closure Systems",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "S-13",
+   "v5_ctd": "3.2.S.6",
+   "title": "Container closure (API)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.1",
+   "v6_title": "Description and Composition of the FPP",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-01",
+   "v5_ctd": "3.2.P.1",
+   "title": "Description & composition",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.3.1",
+   "v6_title": "Manufacturer(s)",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-03",
+   "v5_ctd": "3.2.P.3.1",
+   "title": "Manufacturer(s)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.3.2",
+   "v6_title": "Batch Formula",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-04",
+   "v5_ctd": "3.2.P.3.2",
+   "title": "Batch formula",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.3.3",
+   "v6_title": "Description of Manufacturing Process and Process Controls",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-05",
+   "v5_ctd": "3.2.P.3.3",
+   "title": "Manufacturing process & controls",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.3.4",
+   "v6_title": "Controls of Critical Steps and Intermediates",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-06",
+   "v5_ctd": "3.2.P.3.4",
+   "title": "Controls of critical steps",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.3.5",
+   "v6_title": "Process Validation and/or Evaluation",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-07",
+   "v5_ctd": "3.2.P.3.5",
+   "title": "Process validation",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.5.1",
+   "v6_title": "Specifications",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-09",
+   "v5_ctd": "3.2.P.5.1",
+   "title": "Specification(s)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.5.2",
+   "v6_title": "Analytical Procedures",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-10",
+   "v5_ctd": "3.2.P.5.2–5.3",
+   "title": "Analytical procedures & validation",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.5.3",
+   "v6_title": "Validation of Analytical Procedures",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-10",
+   "v5_ctd": "3.2.P.5.2–5.3",
+   "title": "Analytical procedures & validation",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.5.4",
+   "v6_title": "Batch Analyses",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-11",
+   "v5_ctd": "3.2.P.5.4",
+   "title": "Batch analyses",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.5.5",
+   "v6_title": "Characterization of Impurities",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-12",
+   "v5_ctd": "3.2.P.5.5",
+   "title": "Characterisation of impurities",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.5.6",
+   "v6_title": "Justification of Specifications",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-13",
+   "v5_ctd": "3.2.P.5.6",
+   "title": "Justification of specification(s)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.6",
+   "v6_title": "Reference Standards or Materials",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-14",
+   "v5_ctd": "3.2.P.6",
+   "title": "Reference standards",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.P.7",
+   "v6_title": "Container/Closure System.",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "P-15",
+   "v5_ctd": "3.2.P.7",
+   "title": "Container closure",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.A.1",
+   "v6_title": "Facilities and Equipment",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "A-01",
+   "v5_ctd": "3.2.A.1",
+   "title": "Facilities & equipment",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.A.2",
+   "v6_title": "Adventitious Agents Safety Evaluation",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "A-02",
+   "v5_ctd": "3.2.A.2",
+   "title": "Adventitious agents safety evaluation",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.A.3",
+   "v6_title": "Excipients",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "A-03",
+   "v5_ctd": "3.2.A.3",
+   "title": "Excipients (novel / non-compendial, large data)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.R.1.1",
+   "v6_title": "Executed production documents",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "R-01",
+   "v5_ctd": "3.2.R.1.1",
+   "title": "Executed production documents (BE batch + pilot/primary batches)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.R.1.2",
+   "v6_title": "Master production documents",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "R-02",
+   "v5_ctd": "3.2.R.1.2",
+   "title": "Master production documents (each strength, commercial batch size, site)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.2.R.2",
+   "v6_title": "Analytical procedures and validation information",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "R-03",
+   "v5_ctd": "3.2.R.2",
+   "title": "Analytical procedures & validation — tabular summaries",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "3.3",
+   "v6_title": "Literature References",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "R-04",
+   "v5_ctd": "3.3",
+   "title": "Literature references (one file per reference)",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "4.3",
+   "v6_title": "Literature References",
+   "v6_levels": [
+    "R",
+    "O",
+    "O"
+   ],
+   "req": "M4-02",
+   "v5_ctd": "4.3",
+   "title": "Literature references",
+   "v5_levels": [
+    "R",
+    "O",
+    "O"
+   ]
+  },
+  {
+   "v6": "5.1",
+   "v6_title": "Table of Contents of Module 5",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M5-01",
+   "v5_ctd": "5.1",
+   "title": "Table of contents of Module 5",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "5.2",
+   "v6_title": "Tabular Listing of All Clinical Studies",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M5-02",
+   "v5_ctd": "5.2",
+   "title": "Tabular listing of all clinical studies",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.1.1",
+   "v6_title": "Bioavailability (BA) Study Reports",
+   "v6_levels": [
+    "R",
+    "O",
+    "O"
+   ],
+   "req": "M5-03",
+   "v5_ctd": "5.3.1.1",
+   "title": "BA study reports",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'O'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'O'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.1.2",
+   "v6_title": "Comparative BA & BE Study Reports",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M5-04",
+   "v5_ctd": "5.3.1.2",
+   "title": "Comparative BA & BE study reports",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'R', 'reason': {'en': 'No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.', 'ar': 'مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز، ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'when': 'local_equivalence', 'level': 'R', 'reason': {'en': 'Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical, pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic risk.', 'ar': 'مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §3.13 p.111-112'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'R', 'reason': {'en': 'No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.', 'ar': 'مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز، ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'when': 'local_equivalence', 'level': 'R', 'reason': {'en': 'Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical, pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic risk.', 'ar': 'مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §3.13 p.111-112'}, {'level': 'R'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.1.3",
+   "v6_title": "In vitro/In vivo Correlation (IV/IVC) study reports",
+   "v6_levels": [
+    "R",
+    "O",
+    "O"
+   ],
+   "req": "M5-05",
+   "v5_ctd": "5.3.1.3",
+   "title": "IVIVC study reports",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'O'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'O'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.1.4",
+   "v6_title": "Reports of Bioanalytical and Analytical Methods for Human Studies",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M5-06",
+   "v5_ctd": "5.3.1.4",
+   "title": "Bioanalytical & analytical methods for human studies",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.2.2",
+   "v6_title": "Reports of Hepatic Metabolism and Drug Interaction Studies",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-07",
+   "v5_ctd": "5.3.2.1–2",
+   "title": "Plasma protein binding; hepatic metabolism & interaction",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.2.3",
+   "v6_title": "Reports of Studies Using other Human Biomaterials",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-12",
+   "v5_ctd": "5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6",
+   "title": "Other clinical sections",
+   "v5_levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "v6": "5.3.3.1",
+   "v6_title": "Healthy Subject PK and Initial Tolerability study report",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-08",
+   "v5_ctd": "5.3.3.1",
+   "title": "Healthy subject PK & initial tolerability",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.3.2",
+   "v6_title": "Patient PK and Initial Tolerability study report",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-12",
+   "v5_ctd": "5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6",
+   "title": "Other clinical sections",
+   "v5_levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "v6": "5.3.3.3",
+   "v6_title": "Intrinsic Factor PK Study Reports",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-12",
+   "v5_ctd": "5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6",
+   "title": "Other clinical sections",
+   "v5_levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "v6": "5.3.3.4",
+   "v6_title": "Extrinsic Factor PK Study Reports",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-12",
+   "v5_ctd": "5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6",
+   "title": "Other clinical sections",
+   "v5_levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "v6": "5.3.3.5",
+   "v6_title": "Population PK Study Reports",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-12",
+   "v5_ctd": "5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6",
+   "title": "Other clinical sections",
+   "v5_levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "v6": "5.3.5.1",
+   "v6_title": "Study Reports of Controlled Clinical Studies pertinent to the claimed Indication",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-12",
+   "v5_ctd": "5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6",
+   "title": "Other clinical sections",
+   "v5_levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "v6": "5.3.5.2",
+   "v6_title": "Study Reports of Uncontrolled Clinical Studies",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-12",
+   "v5_ctd": "5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6",
+   "title": "Other clinical sections",
+   "v5_levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "v6": "5.3.5.3",
+   "v6_title": "Reports of Analyses of Data from More than One Study",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-12",
+   "v5_ctd": "5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6",
+   "title": "Other clinical sections",
+   "v5_levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "v6": "5.3.5.4",
+   "v6_title": "Other Study Reports",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-09",
+   "v5_ctd": "5.3.5.4",
+   "title": "Other study reports",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "5.3.6",
+   "v6_title": "Reports of Post-Marketing Experience",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-12",
+   "v5_ctd": "5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6",
+   "title": "Other clinical sections",
+   "v5_levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "v6": "5.3.7",
+   "v6_title": "Case Report Forms and Individual Listings",
+   "v6_levels": [
+    "R",
+    "O",
+    "O"
+   ],
+   "req": "M5-10",
+   "v5_ctd": "5.3.7",
+   "title": "Case report forms & individual listings",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}"
+   ]
+  },
+  {
+   "v6": "5.4",
+   "v6_title": "Literature References",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M5-11",
+   "v5_ctd": "5.4",
+   "title": "Literature references",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  }
+ ],
+ "new_in_v6": [
+  {
+   "num": "1.2.2.13",
+   "title": "Other Agreements",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.2.14",
+   "title": "Termination / Waiver",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.3.1",
+   "title": "Registration Request Approval",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.3.6",
+   "title": "Non-Reference Approval",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.4.3",
+   "title": "Declaration letter from the license holder specifying approved pack in Egypt",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.4.5",
+   "title": "Declaration Letter from the Manufacturer of the active substance to inform the applicant in case of modification of the manufacturing Process or Specifications",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.4.6",
+   "title": "Declaration Letter from API Supplier",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.4.7",
+   "title": "Declaration Letter for Site Addition",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.4.8",
+   "title": "Declaration Letter Form LH stating all Variations & Justification for the Change",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.6.2",
+   "title": "List of Affiliates / Subsidiaries",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.7.3",
+   "title": "RRA Variation Application with Annexes",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.8.7",
+   "title": "Synonyms Evidence",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.10.1",
+   "title": "PAC Approval from the COO (Imported Products)",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.10.2",
+   "title": "Summary of Change for Variation",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.10.3",
+   "title": "Justification of the proposed Post Approval Change",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.2.10.4",
+   "title": "Any additional Documents relevant to Variations",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "1.3.5",
+   "title": "Product Information already approved in the member states",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "2.1",
+   "title": "Table of contents of Module 2-5",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.S.1",
+   "title": "General Information",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.S.2",
+   "title": "Manufacture",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.S.3",
+   "title": "Characterization",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.S.4",
+   "title": "Control of Drug Substance",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.S.5",
+   "title": "Reference standards or Materials",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.S.6",
+   "title": "Container/Closure System",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.S.7",
+   "title": "Stability",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.P.1",
+   "title": "Description and Composition of the FPP",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.P.2",
+   "title": "Pharmaceutical Development",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.P.3",
+   "title": "Manufacture",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.P.4",
+   "title": "Control of Excipients",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.P.5",
+   "title": "Control of FPP",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.P.6",
+   "title": "Reference Standards or Materials",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.P.7",
+   "title": "Container/Closure System",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.P.8",
+   "title": "Stability",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.A.1",
+   "title": "Facilities and Equipment",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.A.2",
+   "title": "Adventitious Agents Safety Evaluation",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.A.3",
+   "title": "Excipients",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.R.1",
+   "title": "Production documentation",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.R.1.1",
+   "title": "Executed production documents",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.R.1.2",
+   "title": "Master production documents",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.3.R.2",
+   "title": "Analytical procedures and validation information",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.5.1",
+   "title": "Product Development Rational",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.5.2",
+   "title": "Overview of Biopharmaceutics",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.5.3",
+   "title": "Overview of Clinical Pharmacology",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.5.4",
+   "title": "Overview of Efficacy",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.5.5",
+   "title": "Overview of Safety",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.5.6",
+   "title": "Benefits and Risks Conclusions",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.5.7",
+   "title": "References",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.1",
+   "title": "Introduction",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.2.1",
+   "title": "Brief Summary",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.2.2",
+   "title": "Primary Pharmacodynamics",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.2.3",
+   "title": "Secondary Pharmacodynamics",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.2.4",
+   "title": "Safety Pharmacology",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.2.5",
+   "title": "Pharmacodynamic Drug Interactions",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.2.6",
+   "title": "Discussion and Conclusions",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.2.7",
+   "title": "Tables and Figures",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.3",
+   "title": "Pharmacology Tabulated Summary",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.4.1",
+   "title": "Brief Summary",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.4.2",
+   "title": "Methods of Analysis",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.4.3",
+   "title": "Absorption",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.4.4",
+   "title": "Distribution",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.4.5",
+   "title": "Metabolism (interspecies comparison)",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.4.6",
+   "title": "Excretion",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.4.7",
+   "title": "Pharmacokinetic Drug Interactions",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.4.8",
+   "title": "Other Pharmacokinetic Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.4.9",
+   "title": "Discussion and Conclusion",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.4.10",
+   "title": "Tables and Figures",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.5",
+   "title": "Pharmacokinetics Tabulated Summary",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.6.1",
+   "title": "Brief Summary",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.6.2",
+   "title": "Single-Dose Toxicity",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.6.3",
+   "title": "Repeat-Dose Toxicity",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.6.4",
+   "title": "Genotoxicity",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.6.5",
+   "title": "Carcinogenicity",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.6.6",
+   "title": "Reproductive and Developmental Toxicity",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.6.7",
+   "title": "Local Tolerance",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.6.8",
+   "title": "Other Toxicity Studies (if available)",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.6.9",
+   "title": "Discussion and Conclusion",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.6.10",
+   "title": "References",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.6.7",
+   "title": "Toxicology Tabulated Summary",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.1.1",
+   "title": "Background and Overview",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.1.2",
+   "title": "Summary of Results of Individual Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.1.3",
+   "title": "Comparison and Analyses of Results Across Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.1.4",
+   "title": "Appendix",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.2.1",
+   "title": "Background and Overview",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.2.2",
+   "title": "Summary of Results of Individual Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.2.3",
+   "title": "Comparison and Analyses of Results Across Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.2.4",
+   "title": "Special Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.2.5",
+   "title": "Appendix",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.3.1",
+   "title": "Background and Overview of Clinical Efficacy",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.3.2",
+   "title": "Summary of Results of Individual Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.3.3",
+   "title": "Comparison and Analyses of Results Across Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.3.3.1",
+   "title": "Study Populations",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.3.3.2",
+   "title": "Comparison of Efficacy Results Across All Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.3.3.3",
+   "title": "Comparison of Results in Sub- Populations",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.3.4",
+   "title": "Analysis of Clinical Information Relevant to Dosing Recommendations",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.3.5",
+   "title": "Persistence of Efficacy and/ or Tolerance Effects",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.3.6",
+   "title": "Appendix",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.1.1",
+   "title": "Overall Safety Evaluation Plan and Narratives of Safety Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.1.2",
+   "title": "Overall Extent of Exposure",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.1.3",
+   "title": "Demographic and Other Characteristics of Study Population",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.2.1",
+   "title": "Analysis of Adverse Events by Organ System or Syndrome",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.2.2",
+   "title": "Narratives",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.3",
+   "title": "Clinical Laboratory Evaluations",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.4",
+   "title": "Vital Signs, Physical Findings, Observations Related to Safety",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.5.1",
+   "title": "Intrinsic Factors",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.5.2",
+   "title": "Extrinsic Factors",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.5.3",
+   "title": "Drug Interactions",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.5.4",
+   "title": "Use in Pregnancy and Lactation",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.5.5",
+   "title": "Overdose",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.5.6",
+   "title": "Drug Abuse",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.5.7",
+   "title": "Withdrawal and Rebound",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.5.8",
+   "title": "Effects on Ability to Drive or Operate Machinery or Impairment of Mental Ability",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.6",
+   "title": "Post-Marketing Data",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.4.7",
+   "title": "Appendix",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.5",
+   "title": "References",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "2.7.6",
+   "title": "Synopses of Individual Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "3.1",
+   "title": "Table of contents of Module 3",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.S.7.1",
+   "title": "Stability Summary and Conclusions",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.S.7.2",
+   "title": "Post -approval Stability Protocol and Stability Commitment",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.S.7.3",
+   "title": "Stability Data",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.2.1.1",
+   "title": "Active pharmaceutical Ingredients",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.2.1.2",
+   "title": "Excipients",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.2.2.1",
+   "title": "Formulation Development",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.2.2.2",
+   "title": "Overages",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.2.2.3",
+   "title": "Physiochemical and Biological Properties",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.2.3",
+   "title": "Manufacturing Process Development",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.2.4",
+   "title": "Container Closure System",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.2.5",
+   "title": "Microbiological Attributes",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.2.6",
+   "title": "Compatibility",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.4.1",
+   "title": "Specifications",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.4.2",
+   "title": "Analytical Procedures",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.4.3",
+   "title": "Validation of Analytical Procedures",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.4.4",
+   "title": "Justification of Specifications",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.4.5",
+   "title": "Excipients of Human or Animal Origin",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.4.6",
+   "title": "Novel Excipients",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.8.1",
+   "title": "Stability Summary and Conclusions",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.8.2",
+   "title": "Post-Approval Stability Protocol and Stability Commitments",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.P.8.3",
+   "title": "Stability Data",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "3.2.R.1",
+   "title": "Production documentation",
+   "levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "num": "4.1",
+   "title": "Table of Contents of Module 4",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.1.1",
+   "title": "Primary Pharmacodynamics",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.1.2",
+   "title": "Secondary Pharmacodynamics",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.1.3",
+   "title": "Safety Pharmacology",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.1.4",
+   "title": "Pharmacodynamics Drug Interactions",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.2.1",
+   "title": "Analytical Methods and Validation Reports",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.2.2",
+   "title": "Absorption",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.2.3",
+   "title": "Distribution",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.2.4",
+   "title": "Metabolism",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.2.5",
+   "title": "Excretion",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.2.6",
+   "title": "Pharmacokinetic Drug Interactions",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.2.7",
+   "title": "Other Pharmacokinetic Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.1",
+   "title": "Single-Dose Toxicity",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.2",
+   "title": "Repeat-Dose Toxicity",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.3",
+   "title": "Genotoxicity",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.3.1",
+   "title": "In vitro Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.3.2",
+   "title": "In vivo Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.4.1",
+   "title": "Long Term Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.4.2",
+   "title": "Short- or medium-term studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.4.3",
+   "title": "Other Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.5.1",
+   "title": "Fertility and Embryonic Development",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.5.2",
+   "title": "Embryo- Fetal Development",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.5.3",
+   "title": "Pre- and Post-natal Development & Maternal Function",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.5.4",
+   "title": "Offspring, Juvenile, Second and Third- Generation Studies",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.6",
+   "title": "Local Tolerance",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.7.1",
+   "title": "Antigenicity",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.7.2",
+   "title": "Immunogenicity",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.7.3",
+   "title": "Mechanistic Studies (not included elsewhere)",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.7.4",
+   "title": "Dependence",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.7.5",
+   "title": "Metabolites",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.7.6",
+   "title": "Impurities",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "4.2.3.7.7",
+   "title": "Other",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "5.3.4.1",
+   "title": "Healthy Subject PD and PK/PD Study Reports",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  },
+  {
+   "num": "5.3.4.2",
+   "title": "Patient PD and PK/PD Study Reports",
+   "levels": [
+    "R",
+    "NR",
+    "NR"
+   ]
+  }
+ ],
+ "level_changes": [
+  {
+   "v6": "1.2.3.10",
+   "v6_title": "Inspection Report",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-12",
+   "v5_ctd": "1.1.11",
+   "title": "Inspection report — pilot/production batches (new) / valid marketed batch (re-reg)",
+   "v5_levels": [
+    "{'cases': [{'when': \"activity == 're_registration'\", 'level': 'R'}, {'level': 'NR'}]}",
+    "{'cases': [{'when': \"activity == 're_registration'\", 'level': 'R'}, {'level': 'NR'}]}",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.3.20",
+   "v6_title": "Registration License for the Solvent",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-28",
+   "v5_ctd": "1.1.18",
+   "title": "Registration licence of the solvent",
+   "v5_levels": [
+    "NR",
+    "NR",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.4.2",
+   "v6_title": "Declaration Letter from the License Holder specifying the API Manufacturers",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-26",
+   "v5_ctd": "1.1.17.9",
+   "title": "Licence-holder declaration specifying API manufacturers",
+   "v5_levels": [
+    "NR",
+    "NR",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.4.2",
+   "v6_title": "Declaration Letter from the License Holder specifying the API Manufacturers",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-27",
+   "v5_ctd": "1.1.17.10",
+   "title": "Licence-holder declaration of API manufacturers (name & address) + Module 3",
+   "v5_levels": [
+    "O",
+    "O",
+    "O"
+   ]
+  },
+  {
+   "v6": "1.2.4.9",
+   "v6_title": "Other declarations requested by Egyptian Drug Authority",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-30",
+   "v5_ctd": "1.1.20",
+   "title": "Letter of Access (API master file)",
+   "v5_levels": [
+    "NR",
+    "NR",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.4.10",
+   "v6_title": "List of the Countries where the Product is registered & marketed",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-15",
+   "v5_ctd": "1.1.14",
+   "title": "List of countries where registered & marketed",
+   "v5_levels": [
+    "R",
+    "R",
+    "NR"
+   ]
+  },
+  {
+   "v6": "1.2.5.4",
+   "v6_title": "The latest recent Pharmacopeia",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M1-29",
+   "v5_ctd": "1.1.19",
+   "title": "Latest pharmacopoeia monograph for the FPP",
+   "v5_levels": [
+    "NR",
+    "NR",
+    "R"
+   ]
+  },
+  {
+   "v6": "1.2.7.2",
+   "v6_title": "Unredacted Assessment Report",
+   "v6_levels": [
+    "R",
+    "R",
+    "NR"
+   ],
+   "req": "M1-17",
+   "v5_ctd": "1.1.16",
+   "title": "Unredacted assessment report",
+   "v5_levels": [
+    "O",
+    "O",
+    "NR"
+   ]
+  },
+  {
+   "v6": "5.2",
+   "v6_title": "Tabular Listing of All Clinical Studies",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M5-02",
+   "v5_ctd": "5.2",
+   "title": "Tabular listing of all clinical studies",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.1.1",
+   "v6_title": "Bioavailability (BA) Study Reports",
+   "v6_levels": [
+    "R",
+    "O",
+    "O"
+   ],
+   "req": "M5-03",
+   "v5_ctd": "5.3.1.1",
+   "title": "BA study reports",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'O'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'O'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.1.2",
+   "v6_title": "Comparative BA & BE Study Reports",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M5-04",
+   "v5_ctd": "5.3.1.2",
+   "title": "Comparative BA & BE study reports",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'R', 'reason': {'en': 'No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.', 'ar': 'مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز، ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'when': 'local_equivalence', 'level': 'R', 'reason': {'en': 'Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical, pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic risk.', 'ar': 'مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §3.13 p.111-112'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'R', 'reason': {'en': 'No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.', 'ar': 'مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز، ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'when': 'local_equivalence', 'level': 'R', 'reason': {'en': 'Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical, pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic risk.', 'ar': 'مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §3.13 p.111-112'}, {'level': 'R'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.1.3",
+   "v6_title": "In vitro/In vivo Correlation (IV/IVC) study reports",
+   "v6_levels": [
+    "R",
+    "O",
+    "O"
+   ],
+   "req": "M5-05",
+   "v5_ctd": "5.3.1.3",
+   "title": "IVIVC study reports",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'O'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'O'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.1.4",
+   "v6_title": "Reports of Bioanalytical and Analytical Methods for Human Studies",
+   "v6_levels": [
+    "R",
+    "R",
+    "R"
+   ],
+   "req": "M5-06",
+   "v5_ctd": "5.3.1.4",
+   "title": "Bioanalytical & analytical methods for human studies",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.2.2",
+   "v6_title": "Reports of Hepatic Metabolism and Drug Interaction Studies",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-07",
+   "v5_ctd": "5.3.2.1–2",
+   "title": "Plasma protein binding; hepatic metabolism & interaction",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.3.1",
+   "v6_title": "Healthy Subject PK and Initial Tolerability study report",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-08",
+   "v5_ctd": "5.3.3.1",
+   "title": "Healthy subject PK & initial tolerability",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}"
+   ]
+  },
+  {
+   "v6": "5.3.5.4",
+   "v6_title": "Other Study Reports",
+   "v6_levels": [
+    "R",
+    "NR",
+    "NR"
+   ],
+   "req": "M5-09",
+   "v5_ctd": "5.3.5.4",
+   "title": "Other study reports",
+   "v5_levels": [
+    "R",
+    "R",
+    "R"
+   ]
+  },
+  {
+   "v6": "5.3.7",
+   "v6_title": "Case Report Forms and Individual Listings",
+   "v6_levels": [
+    "R",
+    "O",
+    "O"
+   ],
+   "req": "M5-10",
+   "v5_ctd": "5.3.7",
+   "title": "Case report forms & individual listings",
+   "v5_levels": [
+    "R",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}",
+    "{'cases': [{'when': \"biowaiver != ''\", 'level': 'NR', 'reason': {'en': 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).', 'ar': 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'}, 'provenance': 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'}, {'level': 'R'}]}"
+   ]
+  }
+ ],
+ "not_in_v6": [
+  {
+   "req": "M1-39",
+   "v5_ctd": "1.2.4.3",
+   "title": "CEP incl. all annexes",
+   "nodes": [
+    "3.2.R"
+   ]
+  },
+  {
+   "req": "M1-40",
+   "v5_ctd": "1.2.4.3",
+   "title": "Written commitment: inform EDA if CEP revised/renewed/withdrawn",
+   "nodes": [
+    "3.2.R"
+   ]
+  }
+ ]
+}

@@ -254,11 +254,37 @@ def create_app(workspace, auth_enabled=None):
         st.audit(None, 'backup.drill', name=name, ok=r['ok'], documents=r['documents'])
         return r
 
+    QUAL = re.compile(r'^qualification-\d{8}-\d{6}\.(docx|json)$')
+
+    @app.post('/api/qualification', status_code=201)
+    def qualification_run(request: Request):
+        """IQ and OQ run here and now (the OQ in a workspace of its own), with the PQ protocol: the package for the quality unit
+        (updates list, item 33)."""
+        _backups_admin(request)
+        from .. import qualification as _q
+        r = _q.package(st, st.root / 'qualification')
+        st.audit(None, 'qualification.run', docx=r['docx'], iq=r['summary']['iq'], oq=r['summary']['oq'])
+        return r
+
+    @app.get('/api/qualification/{name}')
+    def qualification_file(name: str, request: Request):
+        _backups_admin(request)
+        p = st.root / 'qualification' / name
+        if not QUAL.match(name) or not p.is_file():
+            err(404, 'E-NOT-FOUND', 'No qualification package with this name.', 'مفيش حزمة تأهيل بالاسم ده.')
+        return FileResponse(p, filename=name)
+
     @app.get('/api/health')
     def health():
         return {'ok': True, 'workspace': str(st.root)}
 
     VAR = Variations()
+
+    @app.get('/api/countries')
+    def countries():
+        """The countries table: what each authority takes (CTD, eCTD 3.2.2 / 4.0, NeeS, ACTD), its Module 1 and criteria, and the source
+        (updates list, knowledge item 41)."""
+        return _packs.countries_table()
 
     @app.get('/api/variations')
     def var_search(q: str = '', group: str = None, pac: str = None):
@@ -1246,6 +1272,25 @@ def create_app(workspace, auth_enabled=None):
         if '/' in name or not p.is_file():
             err(404, 'E-NOT-FOUND', 'Export not found.', 'التصدير غير موجود.')
         return FileResponse(p, filename=name)
+
+    @app.post('/api/dossiers/{did}/exports/{exp_id}/compare-report')
+    async def compare_report(did: str, exp_id: str, file: UploadFile = File(...), output: str = 'eCTD 3.2.2'):
+        """Another validator's report of this export's sequence beside ours: where both agree, and why they differ (updates list, item 27)."""
+        from ..validators import compare_report as _cr
+        from ..writers.ectd32 import DEFAULT_PROFILE
+        row = st.db.execute('select path from export where id=? and dossier_id=?', (exp_id, did)).fetchone()
+        if not row:
+            err(404, 'E-NOT-FOUND', 'Export not found.', 'التصدير غير موجود.')
+        ours = _cr.ours_of(row['path'], output)
+        if not ours:
+            err(422, 'E-NO-REPORT', 'This export has no validation report of its own (CTD folders only): export the eCTD first.',
+                'التصدير ده مفيهوش تقرير تحقق خاص بيه (مجلدات CTD بس): صدّر الـ eCTD الأول.')
+        theirs = _cr.read(file.filename, await file.read())
+        if not theirs:
+            err(422, 'E-REPORT-UNREAD', 'No validation criterion with a result was found in this report (a line naming a criterion such as 14.5 '
+                'and saying failed / passed). Export their report as PDF, Excel, CSV or HTML.',
+                'ملقيناش في التقرير ده قاعدة تحقق ومعاها نتيجتها (سطر فيه رقم القاعدة زي 14.5 وجنبه failed أو passed). صدّر تقريرهم PDF أو Excel أو CSV أو HTML.')
+        return _cr.compare(theirs, ours, _cr.eg_refs(DEFAULT_PROFILE))
 
     @app.get('/api/dossiers/{did}/audit')
     def audit(did: str):

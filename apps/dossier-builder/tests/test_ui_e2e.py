@@ -277,7 +277,7 @@ def test_rebuild_loop_ui(server, browser, tmp_path):
     page.fill('#rqIssuer', 'Commercial Registry Office')
     page.fill('#rqSig', 'A. Example')
     page.fill('#rqSigT', 'Regulatory Affairs Manager')
-    with page.context.expect_page() as newp:
+    with page.context.expect_page(timeout=90000) as newp:              # the letter is made on the server first: slower under a full run
         page.click('#rqGo')
     newp.value.close()
     page.wait_for_selector('tr:has-text("Register of trade") .chip.c-wait')

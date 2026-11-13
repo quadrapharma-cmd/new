@@ -311,12 +311,20 @@ const T = {
   condAllSub:{en:'Every item of this dossier: what its file must be (form) and what it must hold (content) — before anything is uploaded.',ar:'كل بند في الملف ده: الملف لازم يكون إيه (الشكل) ولازم يكون فيه إيه (المحتوى) — قبل ما ترفع أي حاجة.'},
   condForm:{en:'Form',ar:'الشكل'}, condContent:{en:'Content',ar:'المحتوى'}, condSrc:{en:'As written in the source',ar:'نص المرجع'},
   findSee:{en:'notes — open the item to see them',ar:'ملاحظة — افتح البند تشوفها'},
+  ctyT:{en:'What this country takes',ar:'الدولة دي بتقبل إيه'}, ctySrc:{en:'Source',ar:'المصدر'},
+  ev_official:{en:'the authority\'s own text',ar:'نص الهيئة نفسها'}, 'ev_official-draft':{en:'the authority\'s draft',ar:'مسودة الهيئة'}, ev_secondary:{en:'a secondary source — check the authority\'s text',ar:'مصدر ثانوي — راجعه على نص الهيئة'},
+  crT:{en:'Another validator\'s report',ar:'تقرير مدقق تاني'}, crSub:{en:'EXTEDO, LORENZ, a consultant\'s or the authority\'s portal: the program sets it beside its own, rule by rule, and says why they differ.',ar:'EXTEDO أو LORENZ أو استشاري أو بوابة الهيئة: البرنامج بيحطه جنب تقريره قاعدة قاعدة، وبيقول ليه بيختلفوا.'},
+  crAgree:{en:'agree',ar:'متفقين'}, crDiffer:{en:'differ',ar:'مختلفين'}, crRule:{en:'Criterion',ar:'القاعدة'}, crTheirs:{en:'Theirs',ar:'تقريرهم'}, crOurs:{en:'Ours',ar:'تقريرنا'}, crWhy:{en:'Why',ar:'ليه'},
+  lnkDone:{en:'Links between documents made relative: {n}',ar:'روابط بين المستندات اتظبطت نسبية: {n}'}, lnkBad:{en:'These links name no document of the dossier (or several): correct them in the document, or upload the file they point to.',ar:'الروابط دي مش لاقية مستند في الملف بالاسم ده (أو لاقية أكتر من واحد): صحّحها في المستند، أو ارفع الملف اللي بتشاور عليه.'},
   sheetT:{en:'Sheet (Excel / CSV)',ar:'شيت (Excel / CSV)'}, sheetSub:{en:'Every document, its item, title and attributes in one sheet: download it with the dossier\'s documents, fill or correct it in Excel, upload it. The program shows what it will do with every row before it does anything.',ar:'كل مستند ومكانه وعنوانه وسماته في شيت واحد: نزّله بمستندات الملف، املاه أو صحّحه في Excel، وارفعه. البرنامج بيعرض هيعمل إيه في كل صف قبل ما ينفّذ أي حاجة.'},
   sheetGet:{en:'Download the sheet',ar:'نزّل الشيت'}, sheetPut:{en:'Upload it filled — see the plan, then apply',ar:'ارفعه بعد ما تملاه — شوف الخطة وبعدين نفّذ'},
   sheetCols:{en:'Columns: file · item (its id, or its CTD number when only one item has it) · title · pi_type · lang · study · doc_type · eu_country. A file in the unplaced box is placed by its row.',ar:'الأعمدة: file · item (رقم البند، أو رقم الـ CTD لو بند واحد بس بيه) · title · pi_type · lang · study · doc_type · eu_country. الملف اللي في صندوق «لسه ما اتحطش» بيتحط حسب الصف بتاعه.'},
   sheetFile:{en:'File',ar:'الملف'}, sheetDo:{en:'What it will do',ar:'هيعمل إيه'}, sheetWhere:{en:'Item and changes',ar:'البند والتغيير'},
   sheet_place:{en:'place',ar:'يتحط'}, sheet_move:{en:'move',ar:'يتنقل'}, sheet_update:{en:'update',ar:'يتعدّل'}, sheet_none:{en:'no change',ar:'من غير تغيير'}, sheet_error:{en:'cannot',ar:'مينفعش'},
   sheetApply:{en:'Apply {n} change(s)',ar:'نفّذ {n} تغيير'}, sheetDone:{en:'{n} row(s) done.',ar:'اتنفّذ {n} صف.'},
+  qT:{en:'Program qualification (IQ / OQ / PQ)',ar:'تأهيل البرنامج (IQ / OQ / PQ)'}, qRun:{en:'Run and make the package',ar:'شغّل واعمل الحزمة'},
+  qSub:{en:'For the quality unit: what is installed here (IQ), checks run now in a workspace of their own with positive and negative controls (OQ), and the protocol to run on one of the company\'s products (PQ), in one Word file with the sign-off blocks.',ar:'لقسم الجودة: اللي متثبّت هنا (IQ)، وفحوص بتشتغل دلوقتي في مساحة شغل لوحدها بضوابط إيجابية وسلبية (OQ)، والبروتوكول اللي يتعمل على منتج من منتجات الشركة (PQ)، في ملف Word واحد بخانات التوقيع.'},
+  qBusy:{en:'Running the checks…',ar:'بيشغّل الفحوص…'}, qGet:{en:'The package (Word)',ar:'الحزمة (Word)'}, qOk:{en:'Every IQ and OQ check passed on this machine.',ar:'كل فحوص الـ IQ والـ OQ عدّت على الجهاز ده.'},
   bkT:{en:'Backups',ar:'النسخ الاحتياطية'}, bkMake:{en:'Make a backup now',ar:'اعمل نسخة دلوقتي'}, bkName:{en:'Backup',ar:'النسخة'}, bkSize:{en:'Size',ar:'الحجم'},
   bkSubAuto:{en:'The program makes one by itself every {h} hours when the newest is a day old, and keeps the last {k}: the database, every stored file and the submitted sequences. Passwords and keys are not in it (set them again after a restore). «Check» opens a backup in a fresh folder exactly as a restore would and verifies it.',ar:'البرنامج بيعمل نسخة لوحده كل يوم، وبيحتفظ بآخر {k}: قاعدة البيانات وكل الملفات المتخزنة والتسلسلات اللي اتقدّمت. كلمات السر والمفاتيح مش فيها (بتتحط تاني بعد الاسترجاع). «جرّب الاسترجاع» بيفتح النسخة في فولدر جديد زي الاسترجاع بالظبط ويتأكد منها.'},
   bkSubManual:{en:'Make a backup and save it outside this browser: the database, every stored file and the submitted sequences, in one ZIP. «Check» opens it as a restore would and verifies it.',ar:'اعمل نسخة واحفظها برّه المتصفح ده: قاعدة البيانات وكل الملفات المتخزنة والتسلسلات اللي اتقدّمت، في ملف ZIP واحد. «جرّب الاسترجاع» بيفتحها زي الاسترجاع ويتأكد منها.'},
@@ -712,6 +720,16 @@ async function wireBackups(){ const box=$('#bkList'); if(!box) return; let r;
     catch(e){ $('#bkOut').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; } finally{ b.disabled=false; } });
   const mk=$('#bkMake'); if(mk) mk.onclick=async()=>{ mk.disabled=true; try{ const n=await api('/backups',{method:'POST'}); toast(t('bkMade').replace('{n}', n.name)); await wireBackups(); }catch(e){ toast(e.message); } finally{ mk.disabled=false; } }; }
 
+/* the program's qualification (updates list, item 33): IQ and OQ run here, the PQ protocol to run on a product of the company */
+const qualCard=()=>`<section class="card pad stack gap-s" id="qCard" style="max-width:820px"><div class="row gap-s" style="flex-wrap:wrap"><b>${esc(t('qT'))}</b><span class="grow"></span><button class="btn sm" id="qRun">${icon('shield',14)} ${esc(t('qRun'))}</button></div>
+  <p class="small muted">${esc(t('qSub'))}</p><div id="qOut"></div></section>`;
+function wireQual(){ const b=$('#qRun'); if(!b) return; b.onclick=async()=>{ b.disabled=true; $('#qOut').innerHTML=`<p class="small muted">${esc(t('qBusy'))}</p>`;
+  try{ const r=await api('/qualification',{method:'POST'}); const bad=[...r.iq,...r.oq].filter(x=>x.result==='fail');
+    $('#qOut').innerHTML=`<div class="row gap-s small" style="flex-wrap:wrap"><span class="chip ${r.summary.iq.fail?'c-bad':'c-ok'}"><i></i>IQ ${r.summary.iq.pass}/${r.summary.iq.pass+r.summary.iq.fail}</span><span class="chip ${r.summary.oq.fail?'c-bad':'c-ok'}"><i></i>OQ ${r.summary.oq.pass}/${r.summary.oq.pass+r.summary.oq.fail}</span>
+      <a class="btn sm pri" href="/api/qualification/${encodeURIComponent(r.docx)}" download="${esc(r.docx)}">${icon('download',14)} ${esc(t('qGet'))}</a></div>
+      ${bad.length?`<div class="alert bad">${icon('alert')}<div>${bad.map(x=>`<div class="small"><b class="code">${esc(x.id)}</b> ${esc(x.requirement)} — ${esc(x.actual)}</div>`).join('')}</div></div>`:`<div class="alert ok">${icon('check')}<p class="small">${esc(t('qOk'))}</p></div>`}`; }
+  catch(e){ $('#qOut').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; } finally{ b.disabled=false; } }; }
+
 async function usersView(tok){
   const [a, me] = await Promise.all([api('/auth'), api('/me')]); S.auth=a; S.me=me; paintMe(); paintNav(); nav('users');   // the screen depends on who is asking: never on a stale or not-yet-loaded /me
   const head=`<div class="head"><div class="title"><h1>${esc(t('users'))}</h1><p class="sub">${esc(t('usersSub'))}</p></div></div>`;
@@ -719,15 +737,15 @@ async function usersView(tok){
   const myPw=cls=>`<section class="card pad stack gap-s" style="max-width:520px"><b>${esc(t('myPw'))}</b>${pwForm('mp',true)}<div class="acts"><button class="btn ${cls}" id="mpGo">${icon('key',14)} ${esc(t('resetPw'))}</button></div></section>`;
   const wireMyPw=()=>{ const b=$('#mpGo'); if(b) b.onclick=async()=>{ if(await changeMyPw('mp')) $('#mpOld').value=$('#mpNew').value=$('#mpNew2').value=''; }; };
   if(!a.enabled){
-    if(!a.switchable){ if(show(tok, head+`<div class="alert info">${icon('info')}<p>${esc(t('usersNoSwitch'))}</p></div>`+backupCard())) wireBackups(); return; }
+    if(!a.switchable){ if(show(tok, head+`<div class="alert info">${icon('info')}<p>${esc(t('usersNoSwitch'))}</p></div>`+backupCard()+qualCard())){ wireBackups(); wireQual(); } return; }
     const first=!a.users;
     if(!show(tok, head+`<section class="card pad stack gap-s" style="max-width:620px"><div class="alert info">${icon('lock')}<p>${esc(t(first?'usersOffFirst':'usersOffAgain'))}</p></div>
       <div class="form"><label class="f"><span>${esc(t('username'))}</span><input id="enUser" dir="ltr" autocomplete="username"></label>
       <label class="f"><span>${esc(t('password'))}</span><input id="enPw" type="password" dir="ltr" autocomplete="${first?'new-password':'current-password'}"></label>
       ${first?`<label class="f"><span>${esc(t('password2'))}</span><input id="enPw2" type="password" dir="ltr" autocomplete="new-password"></label>`:''}</div>
       ${first?`<p class="small muted">${esc(t('pwRule'))}</p>`:''}
-      <div class="acts"><button class="btn pri" id="enGo">${icon('lock')} ${esc(t('enableLogin'))}</button></div></section>${backupCard()}${legend}`)) return;
-    wireBackups();
+      <div class="acts"><button class="btn pri" id="enGo">${icon('lock')} ${esc(t('enableLogin'))}</button></div></section>${backupCard()}${qualCard()}${legend}`)) return;
+    wireBackups(); wireQual();
     $('#enGo').onclick=async()=>{ const u=$('#enUser').value.trim(), p=$('#enPw').value; if(!u){ $('#enUser').focus(); return; }
       if(first){ if(p.length<10){ toast(t('pwRule')); $('#enPw').focus(); return; } if(p!==$('#enPw2').value){ toast(t('pwMismatch')); $('#enPw2').focus(); return; } }
       try{ await api('/auth/enable',{method:'POST',json:{username:u,password:p}}); await refreshMe(); toast(t('loginEnabled')); route(); }catch(e){ toast(e.message); } };
@@ -744,9 +762,9 @@ async function usersView(tok){
       <label class="f"><span>${esc(t('password'))}</span><input id="nuPw" type="password" dir="ltr" autocomplete="new-password"></label>
       <label class="f"><span>${esc(t('role'))}</span><select id="nuRole">${['editor','viewer','admin'].map(r=>`<option value="${r}">${esc(t('role_'+r))}</option>`).join('')}</select></label></div>
       <div class="row gap-s"><button class="btn pri sm" id="nuAdd">${icon('plus',14)} ${esc(t('addUser'))}</button><span class="small muted">${esc(t('pwRule'))}</span></div></div></section>
-    ${myPw('sm')}${backupCard()}${legend}`;
+    ${myPw('sm')}${backupCard()}${qualCard()}${legend}`;
   if(!show(tok, html)) return;
-  wireMyPw(); wireBackups();
+  wireMyPw(); wireBackups(); wireQual();
   $$('[data-role-of]').forEach(s=>s.onchange=async()=>{ try{ await api(`/users/${encodeURIComponent(s.dataset.roleOf)}`,{method:'PUT',json:{role:s.value}}); toast(t('roleSaved')); }catch(e){ toast(e.message); route(); } });
   $$('[data-reset]').forEach(b=>b.onclick=()=>{ const u=b.dataset.reset; openDrawer(`${t('resetPw')} · ${u}`, `${pwForm('rp',false)}<div class="acts"><button class="btn pri" id="rpGo">${icon('key',14)} ${esc(t('resetPw'))}</button></div>`);
     $('#rpGo').onclick=async()=>{ const p=pwCheck('rp'); if(!p) return; try{ await api(`/users/${encodeURIComponent(u)}`,{method:'PUT',json:{password:p}}); closeDrawer(); toast(t('pwSet')); }catch(e){ toast(e.message); } }; });
@@ -2810,7 +2828,7 @@ async function exportView(tok){
      <div class="row gap-s small" style="flex-wrap:wrap" id="onePdf"><span class="muted">${esc(t('onePdf'))}:</span><a class="btn sm" href="/api/dossiers/${id}/single.pdf" download>${esc(t('onePdfAll'))}</a>${[1,2,3,4,5].map(m=>`<a class="btn sm ghost" href="/api/dossiers/${id}/single.pdf?module=${m}" download>${esc(t('module'))} ${m}</a>`).join('')}</div></div>
    <div class="card"><div class="hd"><span class="ic-tile">${icon('package',16)}</span><h2>${esc(t('outputsT'))}</h2></div><div class="pad stack gap-s">
      ${outs.map(([k,l,d,src])=>`<label class="opt"><input type="checkbox" data-out="${k}" checked><span><b>${esc(l)}</b><span>${esc(d)}</span><span class="code muted">${esc(src)}</span></span></label>`).join('')}
-     ${eg||eu?'':`<div class="alert info" id="ctdOnly">${icon('info')}<p class="small">${esc(t('auCtdOnly'))}</p></div>`}</div></div>
+     ${eg||eu?'':`<div class="alert info" id="ctdOnly">${icon('info')}<p class="small">${esc(t('auCtdOnly'))}</p></div>`}<div id="ctyRow"></div></div></div>
      ${eu?`<div class="card" id="euEnv"><div class="hd"><span class="ic-tile">${icon('globe',16)}</span><h2>${esc(t('euEnvT'))}</h2></div><div class="pad stack gap-s">
        ${['dcp','mrp'].includes(euProc)?`<div><b class="small">${esc(t('euCountries'))}</b><div class="row gap-s" style="flex-wrap:wrap;margin-top:6px" id="euCs">${euCountries().map(c=>`<label class="small" style="display:inline-flex;align-items:center;gap:4px;min-width:58px;cursor:pointer"><input type="checkbox" value="${c}" ${euPicked.includes(c)?'checked':''}> <span class="code">${c.toUpperCase()}</span></label>`).join('')}</div></div>`:''}
        ${follow?'':`<label class="f"><span>${esc(t('euTrack'))}</span><input type="text" dir="ltr" id="euTrack" placeholder="${euProc==='cp'?'EMEA/H/C/000123':euProc==='np'?'2131577':'DE/H/0126/001/DC'}"></label>`}
@@ -2838,6 +2856,10 @@ async function exportView(tok){
     }catch(e){ $('#wkRes').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; }
     finally{ b.disabled=false; b.innerHTML=`${icon('download')} ${esc(t('wkBtn'))}`; } };
   const vb=$('#viewsBtn'); if(vb) vb.onclick=()=>openViews(hist.ectd32.length?'ectd32':'ectd40');
+  (async()=>{ if(!$('#ctyRow')) return; let tb; try{ tb=await api('/countries'); }catch(e){ return; }      /* what this country takes: the countries table */
+    const cc=((S.dossier.envelope||{}).country||(au.country||'')).toUpperCase(), row=tb.countries.find(r=>r.code===cc||(r.countries||[]).includes(cc));
+    if(!row||!$('#ctyRow')) return;
+    $('#ctyRow').innerHTML=`<div class="small stack gap-s" style="margin-top:8px"><b>${esc(t('ctyT'))} · ${esc(row.authority)}</b><div class="row gap-s" style="flex-wrap:wrap">${Object.entries(row.formats).map(([k,v])=>`<span class="tag">${esc(k)}: ${esc(v)}</span>`).join('')}</div>${row.note?`<span class="muted">${esc(row.note)}</span>`:''}<span class="muted">${esc(t('ctySrc'))}: <span class="code">${esc(row.source)}</span> · ${esc(t('ev_'+row.evidence)||row.evidence)}</span></div>`; })();
   const ib=$('#importSeq'); if(ib) ib.onclick=()=>{ const p=$('#picker'); p.multiple=false; p.value=''; p.onchange=async()=>{ const f=p.files[0]; if(!f) return;
       const fd=new FormData(); fd.append('file', f); toast(t('impBusy'));
       try{ const r=await api(`/dossiers/${id}/import-ectd`,{method:'POST',body:fd}); toast(t('impDone').replace('{s}', r.sequences.map(x=>x.sequence).join('، ')).replace('{n}', r.placed).replace('{u}', r.unplaced.length)); route(); }
@@ -2864,9 +2886,15 @@ async function exportView(tok){
     try{ const r=await api(`/dossiers/${S.dossier.id}/export`,{method:'POST',json:{outputs:outsSel,acknowledge_provisional:$('#ack').checked,
         submission: Object.keys(sub).length? sub : null, replace_last: !!($('#replLast')&&$('#replLast').checked)}});
       const val = Object.entries(r.validation||{}).map(([k,v])=>`<div class="alert ${v.ok?'ok':'bad'}"><p><b>${esc(k)}</b> — ${esc(v.label)}<br><span class="small">${esc(t('vPass'))} ${v.counts.pass} · ${esc(t('vFail'))} ${v.counts.fail} · ${esc(t('vWarn'))} ${v.counts.warning} · ${esc(t('vNotRun'))} ${v.counts.not_run}</span></p></div>`).join('');
-      const sq = Object.entries(r.sequences||{}).map(([k,v])=>`<div class="small"><b>${k==='ectd32'?'eCTD 3.2.2':'eCTD 4.0'}</b> · ${esc(t('seqDone'))} <span class="code">${esc(v.sequence)}</span> · ${esc(t('opsL'))}: ${v.operations.new} / ${v.operations.replace} / ${v.operations.delete}</div>`).join('');
+      const sq = Object.entries(r.sequences||{}).map(([k,v])=>`<div class="small"><b>${k==='ectd32'?'eCTD 3.2.2':'eCTD 4.0'}</b> · ${esc(t('seqDone'))} <span class="code">${esc(v.sequence)}</span> · ${esc(t('opsL'))}: ${v.operations.new} / ${v.operations.replace} / ${v.operations.delete}</div>${v.links?`<div class="small" data-links="${k}">${esc(t('lnkDone').replace('{n}', v.links.rewritten))}${v.links.unresolved.length?`<div class="alert" style="margin-top:4px">${icon('alert')}<div><b>${esc(t('lnkBad'))}</b>${v.links.unresolved.map(u=>`<div class="code small" dir="ltr">${esc(u.file.split('/').pop())} → ${esc(u.link)}</div>`).join('')}</div></div>`:''}</div>`:''}`).join('');
       $('#res').innerHTML=`<div class="card glow pad stack"><h2>${esc(t('downloads'))}</h2>${sq}<div class="dl">${Object.entries(r.downloads).map(([k,u])=>`<a class="btn" href="${esc(u)}" download>${icon('download')} ${esc(k)}.zip</a>`).join('')}
-        ${r.report?`<a class="btn soft" href="${esc(r.report)}" target="_blank" rel="noopener">${icon('shield')} ${esc(t('vReport'))}</a>`:''}</div>${val}<p class="small muted">${esc(r.label)}</p></div>`;
+        ${r.report?`<a class="btn soft" href="${esc(r.report)}" target="_blank" rel="noopener">${icon('shield')} ${esc(t('vReport'))}</a>`:''}</div>${val}<p class="small muted">${esc(r.label)}</p>
+        ${r.report?`<div class="stack gap-s" id="crBox"><label class="small row gap-s" style="flex-wrap:wrap"><b>${esc(t('crT'))}</b><span class="muted">${esc(t('crSub'))}</span></label><input type="file" id="crFile" accept=".pdf,.xlsx,.csv,.html,.htm,.xml,.txt"><div id="crOut"></div></div>`:''}</div>`;
+      const cr=$('#crFile'); if(cr) cr.onchange=async()=>{ const f=cr.files[0]; if(!f) return; const fd=new FormData(); fd.append('file', f); $('#crOut').innerHTML=`<p class="small muted">…</p>`;
+        try{ const d=await api(`/dossiers/${id}/exports/${r.id}/compare-report`,{method:'POST',body:fd});
+          $('#crOut').innerHTML=`<div class="row gap-s small"><span class="chip c-ok"><i></i>${esc(t('crAgree'))}: ${d.counts.agree}</span><span class="chip ${d.counts.differ?'c-bad':''}"><i></i>${esc(t('crDiffer'))}: ${d.counts.differ}</span></div>
+            <div class="tablewrap"><table id="crTable"><thead><tr><th>${esc(t('crRule'))}</th><th>${esc(t('crTheirs'))}</th><th>${esc(t('crOurs'))}</th><th>${esc(t('crWhy'))}</th></tr></thead><tbody>${d.rows.filter(x=>!x.agree).map(x=>`<tr><td class="code">${esc(x.rule)}</td><td>${esc(x.theirs||'—')}</td><td>${esc(x.ours||'—')}</td><td class="small">${esc(x.why)}${x.their_line?`<div class="muted" dir="ltr">${esc(x.their_line)}</div>`:''}</td></tr>`).join('')}</tbody></table></div>`; }
+        catch(e){ $('#crOut').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; } };
     }catch(e){ $('#res').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; }
     finally{ $('#go').disabled=false; $('#go').innerHTML=`${icon('package')} ${esc(t('doExport'))}`; } };
 }

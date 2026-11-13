@@ -9,6 +9,7 @@ values (substance, manufacturer, product, …) are declared once as keyword
 definitions on the application. Every EG OID is a PLACEHOLDER until EDA
 registers real ones — the output is labelled provisional.
 """
+from dataclasses import replace as dc_replace
 import csv, hashlib, os, re, shutil, uuid as _uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -150,8 +151,8 @@ def write(out_dir, env: Envelope4, product: Product, docs, profile: Profile40 = 
             if d.node == '1.3.1':
                 stem = f'{d.pi_type}-{d.lang}'
             rel = f'm1/{stem}.pdf'
-        else:
-            rel = rel_path(d, product, p.v32)
+        else:                                     # v4 names a study by its keyword, not a folder (a node-extension is 3.2.2's)
+            rel = rel_path(dc_replace(d, study=None), product, p.v32)
         n, k = rel, 2
         while n in used:
             n = rel[:-4] + f'-{k}.pdf'

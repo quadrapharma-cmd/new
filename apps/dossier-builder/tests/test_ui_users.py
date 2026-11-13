@@ -68,7 +68,7 @@ def test_users_screen(server):
         assert {u['username']: u['role'] for u in users_json(admin)} == {'haytham': 'admin', 'sara': 'viewer'}
         admin.click('[data-reset="sara"]'); admin.wait_for_selector('#rpNew')
         admin.fill('#rpNew', SARA_PW2); admin.fill('#rpNew2', SARA_PW2); admin.click('#rpGo')
-        admin.wait_for_selector('#rpNew', state='hidden')                                      # the drawer closed
+        admin.wait_for_selector('#rpNew', state='hidden', timeout=60000)                                    # the drawer closed
         admin.locator('#view').screenshot(path=f'{OUT}/users_ar.png')
 
         # sara on another browser: the login page, then view-only

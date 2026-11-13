@@ -72,6 +72,9 @@ def read_sequence(seq, maps):
             while el is not None:
                 name = _local(el.tag)
                 node = node or table.get(name)
+                if name == 'node-extension' and 'study' not in attrs:     # a study's own node: its title is the study identifier
+                    t = next((c for c in el if _local(c.tag) == 'title'), None)
+                    attrs['study'] = (t.text or '').strip() if t is not None else None
                 if name in ('m3-2-s-drug-substance', 'm2-3-s-drug-substance'):
                     attrs.setdefault('substance', el.get('substance'))
                     attrs.setdefault('manufacturer', el.get('manufacturer'))

@@ -68,6 +68,7 @@ class Doc:
     cou_replaces: str = None     # 4.0 replace: id of the context of use being replaced
     country: str = None          # EU M1: the country folder and specific/@country of 1.0, 1.2, 1.3.1–1.3.5, responses, additional data
     ref: str = None              # a file of an earlier sequence of the same application ('../0000/m3/…'): referred to, never copied
+    aliases: tuple = ()          # the names a link may call it by (its uploaded file name, its title): links.relink
 
 
 @dataclass
@@ -163,6 +164,13 @@ def _modified(d, xml):
 
 
 def _render(node, children, ind='  '):
+    if node.name == 'node-extension':             # its title is an element (ICH DTD: node-extension (title, (leaf | node-extension)+))
+        out = f'{ind}<node-extension>\n{ind}  <title>{escape(node.attrs["title"])}</title>\n'
+        for lf in node.leaves:
+            out += _leaf_xml(lf, ind + '  ')
+        for k in node.kids:
+            out += _render(k, children, ind + '  ')
+        return out + f'{ind}</node-extension>\n'
     attrs = ''.join(f' {k}={quoteattr(v)}' for k, v in node.attrs.items())
     out = f'{ind}<{node.name}{attrs}>\n'
     for lf in node.leaves:
@@ -194,10 +202,24 @@ def rel_path(d, product, profile):
     return ich_rel_path(d, product, profile)
 
 
+def study_of(d, profile):
+    """The study a Module 4/5 study report belongs to, when it gets its own node-extension and folder: the study's documents grouped
+    under its identifier, at the lowest heading only (5.3.5.1, not 5.3), kept so over the lifecycle — EDA's EG Module 1 eCTD
+    specification draft v1.0 (2026) p. 9 and eCTD technical guidance draft §2.9.8; the EU harmonised guidance v6.0.1 §2.9.8 / §3.6.2
+    (where it replaces the FDA's study tagging files). → the study identifier, or None."""
+    if not d.study or not d.node.startswith(('5.3.', '4.2.')):
+        return None
+    el = profile.ich_element(d.node)
+    return None if set(profile.ich_children.get(el, [])) - {'leaf', 'node-extension'} else d.study.strip() or None
+
+
 def ich_rel_path(d, product, profile):
-    """Modules 2–5: the ICH App. 4 folders and names, the same in every region."""
+    """Modules 2–5: the ICH App. 4 folders and names, the same in every region (a study's documents in the study's own folder)."""
     el = profile.ich_element(d.node)
     directory, default = profile.ich_location(el)
+    st = study_of(d, profile)
+    if st:
+        directory = f'{directory}/{slug(st, 40)}'
     if d.node.startswith(('3.2.S', '2.3.S')) and 'substance-1-manufacturer-1' in directory:
         if not (d.substance and d.manufacturer):
             raise WriterError(f'{d.node} needs substance and manufacturer')
@@ -208,8 +230,9 @@ def ich_rel_path(d, product, profile):
     return f'{directory}/{stem}.pdf'
 
 
-def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile32 = None):
-    """Writes the sequence; returns a report dict {path, files, problems}."""
+def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile32 = None, links=None):
+    """Writes the sequence; returns a report dict {path, files, problems}. links: {alias key: path} of the documents sent in earlier
+    sequences — when given, the links between documents are made relative (links.relink) before the checksums are taken."""
     profile = profile or Profile32()
     seq = envelope.sequence
     if not re.fullmatch(r'\d{4}', seq):
@@ -220,6 +243,10 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
     placed = place(docs, lambda d: rel_path(d, product, profile), seq, 'EG-PF',
                    'append is not used in EG: EG-BP-E06')
     copy_files(base, placed)
+    linked = None
+    if links is not None:
+        from ..links import relink
+        linked = relink(base, placed, links)
 
     # ---- eg-regional.xml ----
     history = []
@@ -276,7 +303,7 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
 
     write_index(base, seq, [(d, rel) for d, rel in placed if not d.node.startswith('1.')], product, profile,
                 'm1/eg/eg-regional.xml', 'EG Module 1', history)
-    return finish(base, profile, placed, history)
+    return dict(finish(base, profile, placed, history), links=linked)
 
 
 def place(docs, rel_of, seq, prefix, append_note):
@@ -352,6 +379,9 @@ def write_index(base, seq, placed, product, profile, m1_href, m1_title, history)
                     raise WriterError(f'{d.node} needs an indication (ICH DTD #REQUIRED)')
                 attrs = {'indication': ind}
             cur = cur.child(name, attrs, profile.ich_children.get(cur.name, []))
+        st = study_of(d, profile)
+        if st:                                    # the study's node-extension: its identifier as the title, the same in every sequence
+            cur = cur.child('node-extension', {'title': st}, profile.ich_children.get(cur.name, []))
         leaf = dict(id=d.leaf_id or _leaf_id(seq, rel or d.modified_file), op=d.operation,
                     md5=md5(base / rel) if rel else '', href=rel, title=d.title, modified=_modified(d, 'index'))
         cur.leaves.append(leaf)

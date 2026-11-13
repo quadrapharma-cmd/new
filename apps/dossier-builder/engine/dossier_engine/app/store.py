@@ -735,7 +735,7 @@ class Store:
                     if not f.is_file():
                         report['unplaced'].append({'sequence': s.name, 'href': lf['href'], 'why': 'missing file'})
                         continue
-                    meta = {k: lf[k] for k in ('pi_type', 'lang') if lf.get(k)}
+                    meta = {k: lf[k] for k in ('pi_type', 'lang', 'study') if lf.get(k)}
                     if lf.get('country'):
                         meta['eu_country'] = lf['country']
                     meta['imported'] = {'seq': s.name, 'leaf_id': lf['leaf_id']}

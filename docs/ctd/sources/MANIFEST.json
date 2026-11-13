@@ -228,6 +228,12 @@
   "taken": "2026-11-06"
  },
  {
+  "file": "ectd/ICH_eCTD_STF_Specification_v2.6.1_2008.pdf",
+  "sha256": "63132c3751682193f6f13db125ee03583b740680851c0f0e6412561438b482da",
+  "size": 114803,
+  "taken": null
+ },
+ {
   "file": "ectd/ICH_eCTD_Specification_v3.2.2_2008.pdf",
   "sha256": "d8273833eac401ff3c094d782863b078110e33a7f358438d3f7a0dad277fc2b0",
   "size": 742989,

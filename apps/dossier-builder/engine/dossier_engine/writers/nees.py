@@ -72,54 +72,67 @@ def _ascii(s):
     return (s or '').encode('latin-1', 'replace').decode('latin-1')
 
 
-def _toc_pdf(title, entries, here):
-    """A table of contents as PDF bytes: `entries` [(level, text, target path or None)]; each line with a target is a link to it,
-    relative to the folder `here` of the table. Bookmarks follow the lines of level 0."""
-    from reportlab.lib.pagesizes import A4
-    from reportlab.pdfgen import canvas
-    from pypdf import PdfReader, PdfWriter
-    from pypdf.generic import ArrayObject, BooleanObject, DictionaryObject, FloatObject, NameObject, NumberObject, TextStringObject
-    buf = io.BytesIO()
-    c = canvas.Canvas(buf, pagesize=A4, pageCompression=1)
-    c.setTitle(_ascii(title))
-    w, h = A4
-    links, marks, page, y = [], [], 0, h - 60
+def _pdf_str(s):
+    b = _ascii(s).encode('latin-1', 'replace')
+    return b.replace(b'\\', b'\\\\').replace(b'(', b'\\(').replace(b')', b'\\)')
 
-    def head():
-        c.setFont('Helvetica-Bold', 13)
-        c.drawString(50, h - 40, _ascii(title))
-    head()
+
+def _toc_pdf(title, entries, here):
+    """A table of contents as PDF bytes (A4, Helvetica — no other library than pypdf, so the browser edition makes it too):
+    `entries` [(level, text, target path or None)]; each line with a target is a link to it, relative to the table's folder
+    `here` (GoToR, the first page, whole); the section lines are the bookmarks."""
+    from pypdf import PdfWriter
+    from pypdf.generic import (ArrayObject, BooleanObject, DecodedStreamObject, DictionaryObject, FloatObject, NameObject,
+                               NumberObject, TextStringObject)
+    W, H, TOP, BOTTOM, LEFT = 595.0, 842.0, 790.0, 50.0, 50.0
+    pages, cur, y = [], [], TOP - 26
     for level, text, target in entries:
-        if y < 50:
-            c.showPage(); page += 1; head(); y = h - 60
-        size = 11 if level == 0 else 9.5
-        c.setFont('Helvetica-Bold' if level == 0 else 'Helvetica', size)
-        x = 50 + 14 * level
-        s = _ascii(text)
-        while c.stringWidth(s, 'Helvetica-Bold' if level == 0 else 'Helvetica', size) > w - x - 50 and len(s) > 8:
-            s = s[:-4] + '...'
-        c.setFillColorRGB(0, 0, 0.55) if target else c.setFillColorRGB(0, 0, 0)
-        c.drawString(x, y, s)
-        if target:
-            tw = c.stringWidth(s, 'Helvetica-Bold' if level == 0 else 'Helvetica', size)
-            links.append((page, (x, y - 2, x + tw, y + size), posixpath.relpath(target, here) if here else target))
-        if level == 0:
-            marks.append((page, s))
-        y -= 16 if level == 0 else 13
-    c.save()
-    r = PdfReader(io.BytesIO(buf.getvalue()))
-    wr = PdfWriter(clone_from=r)
-    for p, rect, rel in links:
-        act = DictionaryObject({NameObject('/S'): NameObject('/GoToR'), NameObject('/F'): TextStringObject(rel),
-                                NameObject('/D'): ArrayObject([NumberObject(0), NameObject('/Fit')]), NameObject('/NewWindow'): BooleanObject(True)})
-        wr.add_annotation(page_number=p, annotation=DictionaryObject({
-            NameObject('/Type'): NameObject('/Annot'), NameObject('/Subtype'): NameObject('/Link'),
-            NameObject('/Rect'): ArrayObject([FloatObject(v) for v in rect]), NameObject('/Border'): ArrayObject([NumberObject(0)] * 3), NameObject('/A'): act}))
-    for p, s in marks:
-        wr.add_outline_item(s, p)
-    wr.page_mode = '/UseOutlines'
+        size, step = (11, 16) if level == 0 else (9.5, 13)
+        if y - step < BOTTOM:
+            pages.append(cur); cur, y = [], TOP - 26
+        cur.append((level, text, target, y, size))
+        y -= step
+    pages.append(cur)
+    w = PdfWriter()
+    f1 = w._add_object(DictionaryObject({NameObject('/Type'): NameObject('/Font'), NameObject('/Subtype'): NameObject('/Type1'),
+                                         NameObject('/BaseFont'): NameObject('/Helvetica'), NameObject('/Encoding'): NameObject('/WinAnsiEncoding')}))
+    f2 = w._add_object(DictionaryObject({NameObject('/Type'): NameObject('/Font'), NameObject('/Subtype'): NameObject('/Type1'),
+                                         NameObject('/BaseFont'): NameObject('/Helvetica-Bold'), NameObject('/Encoding'): NameObject('/WinAnsiEncoding')}))
+    marks = []
+    for pi, lines in enumerate(pages):
+        page = w.add_blank_page(W, H)
+        ops = [b'BT /F2 13 Tf %.1f %.1f Td (' % (LEFT, TOP) + _pdf_str(title)[:110] + b') Tj ET']
+        annots = ArrayObject()
+        for level, text, target, ly, size in lines:
+            x = LEFT + 14 * level
+            room = int((W - x - LEFT) / (size * 0.52))       # Helvetica's average width: keep the line on the page
+            s = text if len(text) <= room else text[:max(room - 3, 8)] + '...'
+            ops.append(b'BT %s %.1f Tf %s rg %.1f %.1f Td (' % (b'/F2' if level == 0 else b'/F1', size, b'0 0 0.55' if target else b'0 0 0', x, ly)
+                       + _pdf_str(s) + b') Tj ET')
+            if target:
+                rel = posixpath.relpath(target, here) if here else target
+                annots.append(w._add_object(DictionaryObject({
+                    NameObject('/Type'): NameObject('/Annot'), NameObject('/Subtype'): NameObject('/Link'),
+                    NameObject('/Rect'): ArrayObject([FloatObject(x), FloatObject(ly - 2), FloatObject(min(W - LEFT, x + len(s) * size * 0.52)), FloatObject(ly + size)]),
+                    NameObject('/Border'): ArrayObject([NumberObject(0)] * 3),
+                    NameObject('/A'): DictionaryObject({NameObject('/S'): NameObject('/GoToR'), NameObject('/F'): TextStringObject(rel),
+                                                        NameObject('/D'): ArrayObject([NumberObject(0), NameObject('/Fit')]),
+                                                        NameObject('/NewWindow'): BooleanObject(True)})})))
+            if level == 0:
+                marks.append((pi, s))
+        content = DecodedStreamObject()
+        content.set_data(b'\n'.join(ops))
+        page[NameObject('/Contents')] = w._add_object(content)
+        page[NameObject('/Resources')] = DictionaryObject({NameObject('/Font'): DictionaryObject({NameObject('/F1'): f1, NameObject('/F2'): f2})})
+        if annots:
+            page[NameObject('/Annots')] = annots
+    for pi, s in marks:
+        w.add_outline_item(_ascii(s), pi)
+    w.add_metadata({'/Title': _ascii(title)})
+    w.page_mode = '/UseOutlines'
+    w.pdf_header = '%PDF-1.7'                            # PDF 1.4–1.7, as the eCTD's files (pypdf would write 1.3)
     out = io.BytesIO()
-    wr.write(out)
+    w.write(out)
     return out.getvalue()
 
 

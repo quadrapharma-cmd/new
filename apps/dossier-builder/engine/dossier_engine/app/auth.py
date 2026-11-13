@@ -191,7 +191,7 @@ def install(app, auth, store):
             if write and request.state.role == 'viewer' and path not in ('/api/logout', '/api/me/password'):
                 return JSONResponse({'detail': {'code': 'E-ROLE', 'en': 'Your role can view only.',
                                                 'ar': 'صلاحيتك مشاهدة بس.'}}, status_code=403)
-            admin_only = path.startswith('/api/users') or path == '/api/auth/disable' or path.startswith('/api/backups') or \
+            admin_only = path.startswith('/api/users') or path == '/api/auth/disable' or path.startswith('/api/backups') or path.startswith('/api/qualification') or \
                 (write and (path.startswith('/api/assistant/settings') or path.startswith('/api/drive/settings')))
             if admin_only and request.state.role != 'admin':
                 return JSONResponse({'detail': {'code': 'E-ROLE', 'en': 'Administrators only: users, sign-in and the keys.',

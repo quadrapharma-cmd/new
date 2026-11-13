@@ -1,0 +1,110 @@
+# The countries table (updates list, knowledge item 41): what each authority takes — the CTD as folders, eCTD 3.2.2 or 4.0, a NeeS,
+# the ASEAN ACTD — with its Module 1 and validation criteria, and where that is written. The program reads it to offer the outputs a
+# dossier for that country can be filed in (packs.outputs_for).
+#
+# evidence:  official        the authority's own text, kept in docs/ctd/sources (or its page, read on the day below)
+#            official-draft  the authority's own draft, not in force yet
+#            secondary       a reliable secondary source (named); to be checked against the authority's text before it decides anything
+# formats:   yes | no | optional | planned | unknown
+reviewed: 2026-11-13
+countries:
+  - code: EG
+    authority: EDA (Egyptian Drug Authority)
+    formats: {ctd: 'yes', ectd32: planned, ectd40: planned, nees: 'no', actd: 'no'}
+    module1: CTD per NP.CAPP.065 v5 (in force); EG eCTD Module 1 specification draft v1.0 (2026)
+    criteria: none published — the program's provisional EG profile
+    note: >-
+      The draft eCTD technical guidance makes eCTD mandatory for all submissions, through the EDA portal, with a baseline when a
+      product moves from paper or a non-eCTD submission. No date in the drafts; the CTD One Submission is what is filed today.
+      NP.CAPP.065 v6 (draft 2026) renumbers Module 1 as the eCTD does (docs/ctd/NP065-v6-REVIEW.md).
+    source: docs/ctd/sources/EDA_eCTD-technical-guidance_DRAFT_v1_2026.pdf (l. 165–166, 241–243, 597); EDA_NP.CAPP.065_v5_2025
+    evidence: official-draft
+  - code: EU
+    countries: [AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE, IS, LI, 'NO']
+    authority: EMA and the national competent authorities (EU/EEA)
+    formats: {ctd: 'no', ectd32: 'yes', ectd40: optional, nees: 'no', actd: 'no'}
+    module1: EU Module 1 v3.1.1
+    criteria: EU eCTD validation criteria v8.2 (June 2025)
+    note: >-
+      eCTD is mandatory for all regulatory submissions in all procedure types; a dossier handled before as paper or NeeS moves to
+      eCTD at its next submission. eCTD 4.0 is optional for new centralised applications (EMA roadmap).
+    source: docs/ctd/sources/ectd/EU_Harmonised_Technical_Guidance_eCTD_v6.0.1.pdf (p. 6, 9); EU_M1_Specification_v3.1.1_2025.pdf
+    evidence: official
+  - code: US
+    authority: FDA (CDER, CBER)
+    formats: {ctd: 'no', ectd32: 'yes', ectd40: optional, nees: 'no', actd: 'no'}
+    module1: US Module 1 (eCTD Backbone Files Specification for Module 1 v2.6, us-regional DTD 3.3)
+    criteria: FDA Specifications for eCTD Validation Criteria
+    note: >-
+      Study tagging files are required for the studies of Modules 4 and 5. eCTD 4.0 accepted for new applications (FDA eCTD v4.0
+      page); no mandatory date for it.
+    source: fda.gov — eCTD Submission Standards for eCTD v3.2.2 and Regional M1 (read 13/11/2026); ICH STF specification v2.6.1 p. 3
+    evidence: official
+  - code: JP
+    authority: PMDA / MHLW
+    formats: {ctd: 'no', ectd32: 'no', ectd40: 'yes', nees: 'no', actd: 'no'}
+    module1: Japanese regional (eCTD 4.0)
+    criteria: PMDA
+    note: eCTD 4.0 mandatory for new applications from 1 April 2026; study tagging files not allowed (ICH STF specification p. 3).
+    source: ectd-dossier-builder data (ectd-status.json, reviewed 2026-11-08) citing PMDA guidance
+    evidence: secondary
+  - code: CH
+    authority: Swissmedic
+    formats: {ctd: 'no', ectd32: 'yes', ectd40: planned, nees: unknown, actd: 'no'}
+    module1: Swiss Module 1
+    criteria: Swissmedic
+    note: eCTD 4.0 technical implementation planned by the end of 2026.
+    source: ectd-dossier-builder data (ectd-status.json) citing gmp-compliance.org
+    evidence: secondary
+  - code: CA
+    authority: Health Canada
+    formats: {ctd: 'no', ectd32: 'yes', ectd40: planned, nees: unknown, actd: 'no'}
+    module1: Canadian Module 1
+    criteria: Health Canada
+    note: eCTD 4.0 voluntary adoption planned from 2026.
+    source: ectd-dossier-builder data (ectd-status.json)
+    evidence: secondary
+  - code: AU
+    authority: TGA
+    formats: {ctd: 'no', ectd32: 'yes', ectd40: planned, nees: unknown, actd: 'no'}
+    module1: Australian Module 1
+    criteria: TGA
+    note: eCTD 4.0 voluntary adoption planned from 2026.
+    source: ectd-dossier-builder data (ectd-status.json)
+    evidence: secondary
+  - code: GCC
+    countries: [SA, AE, KW, BH, OM, QA]
+    authority: GCC / SFDA and the Gulf authorities
+    formats: {ctd: 'yes', ectd32: 'yes', ectd40: 'no', nees: 'yes', actd: 'no'}
+    module1: GCC Module 1 (eCTD v1.5; NeeS)
+    criteria: GCC / SFDA
+    note: >-
+      eCTD on the GCC Module 1, and NeeS still taken (COMPETITORS.md research). The program writes the CTD folders and a NeeS; the
+      GCC eCTD needs the SFDA's Module 1 specification (sfda.gov.sa is not reachable from here).
+    source: docs/ctd/COMPETITORS.md (country table) — the SFDA's own text to be read
+    evidence: secondary
+  - code: JO
+    authority: JFDA
+    formats: {ctd: 'yes', ectd32: unknown, ectd40: 'no', nees: unknown, actd: 'no'}
+    module1: Jordanian Module 1
+    criteria: unknown
+    note: The JFDA site is not reachable from here; its own text decides.
+    source: docs/ctd/COMPETITORS.md
+    evidence: secondary
+  - code: ASEAN
+    countries: [BN, KH, ID, LA, MY, MM, PH, SG, TH, VN]
+    authority: the ASEAN member states' authorities
+    formats: {ctd: 'no', ectd32: unknown, ectd40: 'no', nees: unknown, actd: 'yes'}
+    module1: ACTD Part I (each member state's administrative data)
+    criteria: none (ACTD is a paper or PDF format)
+    note: ACTD, Organization of the Dossier, Revision 1; Singapore and Thailand also take eCTD (COMPETITORS.md) — check each authority.
+    source: ectd-dossier-builder data (compare.json «actd», Apache-2.0); docs/ctd/COMPETITORS.md
+    evidence: secondary
+  - code: IN
+    authority: CDSCO
+    formats: {ctd: 'yes', ectd32: unknown, ectd40: 'no', nees: unknown, actd: 'no'}
+    module1: Indian Module 1 (SUGAM portal)
+    criteria: unknown
+    note: CTD dossiers through the SUGAM portal; no confirmed eCTD mandate found.
+    source: ectd-dossier-builder data (ectd-status.json)
+    evidence: secondary

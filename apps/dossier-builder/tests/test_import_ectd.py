@@ -28,6 +28,10 @@ def test_sequences_made_elsewhere_become_this_dossiers_history(tmp_path):
     fill_all(c, src, pdf)
     assert c.post(f'/api/dossiers/{src}/export', json={'acknowledge_provisional': True, 'outputs': ['ectd32']}).status_code == 201
     made = tmp_path / 'ws' / 'lifecycle' / src / 'ectd-3.2.2'                    # «elsewhere»: the folder another program would deliver
+    index = (made / '0000' / 'index.xml').read_text(encoding='utf-8')
+    assert '<node-extension>' in index and '<title>EXM-BE-01</title>' in index                 # a study's documents under its own node (EDA M1 spec p. 9)
+    assert any('/exm-be-01/' in p.as_posix() for p in (made / '0000' / 'm5').rglob('*.pdf'))   # and in its own folder
+    assert '<node-extension>' not in index.split('m5-2-tabular-listing')[0]                     # never above the lowest heading, never in m1–m4 here
     did = new(c)
     r = c.post(f'/api/dossiers/{did}/import-ectd', files={'file': ('app.zip', zipped(made), 'application/zip')})
     assert r.status_code == 201, r.text
@@ -43,6 +47,8 @@ def test_sequences_made_elsewhere_become_this_dossiers_history(tmp_path):
     assert placed['M1-38@Paracetamol|Granules India'] == 'gmpcert-2.pdf' and placed['M1-37'] == 'gmpcert.pdf'        # one place, two items: by the title
     assert placed['R-02'].startswith('master-production') and not rep['unplaced'] and not rep['check'], rep
     assert 'tracking.pdf' not in placed.values()                                       # the tracking table is made again, not imported
+    be = next(s for s in board['slots'] if s['slot_id'] == 'M5-04')['documents'][0]
+    assert be['meta'].get('study') == 'EXM-BE-01'                                       # the study comes back from its node-extension
     # an item eCTD does not carry (the Module 5 table of contents: CTD only) is the person's to add
     c.post(f'/api/dossiers/{did}/slots/M5-01/documents', files={'file': ('m5-toc.pdf', io.BytesIO(pdf), 'application/pdf')}, data={'meta': '{}'})
     again = c.post(f'/api/dossiers/{did}/import-ectd', files={'file': ('app.zip', zipped(made), 'application/zip')})
