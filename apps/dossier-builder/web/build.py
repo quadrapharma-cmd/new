@@ -52,7 +52,21 @@ def page(src, *, builder):
     return content, SKELETON + content + '</body></html>\n'
 
 
+PDFCRAFT_WASM = HERE / 'vendor' / 'pdfcraft'   # PdfCraft's program for WebAssembly and the WASI shim (tools/pdfcraft/build-wasm.sh)
 OCR = HERE / 'vendor' / 'ocr'          # the scan reader's files (web/ocr_assets.py): published under assets/ocr/, fetched the first time a scan is read
+
+
+def pdfcraft_parts(gz, out, part=12 * 1000 * 1000):
+    """PdfCraft's program for the browser as gzip in base64 text, in parts of at most 12 MB (a file of the page holds 16 MB), and
+    pdfcraft-cli.json saying how many parts, the program's size and its SHA-256 (web/pdfcraft.wasi.js rejoins and checks them)."""
+    import gzip, hashlib
+    out.mkdir(parents=True, exist_ok=True)
+    text = base64.b64encode(gz.read_bytes()).decode('ascii')
+    parts = [text[i:i + part] for i in range(0, len(text), part)]
+    for k, chunk in enumerate(parts, 1):
+        (out / f'pdfcraft-cli.wasm.gz.b64.{k}.txt').write_text(chunk)
+    raw = gzip.decompress(gz.read_bytes())
+    (out / 'pdfcraft-cli.json').write_text(json.dumps({'parts': len(parts), 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}))
 
 
 def ocr_tag():
@@ -161,7 +175,8 @@ def main():
     (DIST / 'index.local.html').write_text(full, encoding='utf-8')
     (DIST / 'suite.html').write_text(page(UI / 'suite' / 'index.html', builder=False)[1], encoding='utf-8')
     n = engine_zip(DIST / 'assets' / 'engine.zip')
-    put(DIST / 'assets' / 'engine.worker.js', SHARED().encode('utf-8') + (HERE / 'engine.worker.js').read_bytes())      # the engine's own thread (boot.js starts it)
+    put(DIST / 'assets' / 'engine.worker.js', SHARED().encode('utf-8') + (HERE / 'pdfcraft.wasi.js').read_bytes() + b'\n'
+        + (HERE / 'engine.worker.js').read_bytes())      # the engine's own thread (boot.js starts it), with PdfCraft for WebAssembly beside it
     for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels')):
         if not src.is_dir():
             print(f'(no {sub} assets at {src}; skipped)')
@@ -169,6 +184,14 @@ def main():
         for f in sorted(src.iterdir()):
             if f.is_file():
                 put(DIST / 'assets' / sub / f.name, f.read_bytes())
+    if PDFCRAFT_WASM.is_dir():                                           # PdfCraft for WebAssembly (tools/pdfcraft/build-wasm.sh)
+        for f in sorted(x for x in PDFCRAFT_WASM.rglob('*') if x.is_file()):
+            if f.name == 'pdfcraft-cli.wasm.gz':
+                pdfcraft_parts(f, DIST / 'assets' / 'pdfcraft')
+            else:
+                put(DIST / 'assets' / 'pdfcraft' / f.relative_to(PDFCRAFT_WASM), f.read_bytes())
+    else:
+        print(f'(no PdfCraft for WebAssembly at {PDFCRAFT_WASM}: run tools/pdfcraft/build-wasm.sh; this build has no PdfCraft)')
     if OCR.is_dir():                                                     # the scan reader's files, as web/ocr_assets.py wrote them
         for f in sorted(x for x in OCR.rglob('*') if x.is_file()):
             put(DIST / 'assets' / 'ocr' / f.relative_to(OCR), f.read_bytes())

@@ -61,8 +61,21 @@ def binary():
     return hit
 
 
+def browser():
+    """The browser edition's PdfCraft — the same program built for WebAssembly, run in the engine's thread (web/pdfcraft.wasi.js) —
+    once it is loaded; None elsewhere, before it is, or when PDFCRAFT=0."""
+    if sys.platform != 'emscripten' or os.environ.get('PDFCRAFT') == '0':
+        return None
+    try:
+        import js
+        b = getattr(js, 'DB_PDFCRAFT', None)
+        return b if b is not None and bool(b.ready) else None
+    except Exception:                                    # noqa: BLE001 — no page, no PdfCraft
+        return None
+
+
 def available():
-    return binary() is not None
+    return binary() is not None or browser() is not None
 
 
 TESSERACT_PLACES = ('C:/Program Files/Tesseract-OCR/tesseract.exe', 'C:/Program Files (x86)/Tesseract-OCR/tesseract.exe',
@@ -118,11 +131,14 @@ def version():
 
 def status():
     """What the interface shows: which engine reads the PDFs here."""
-    b = binary()
+    b, web = binary(), browser()
+    if web is not None:
+        return {'available': True, 'version': f'pdfcraft-cli {pin() or ""} (WebAssembly)'.strip(), 'pin': pin(), 'engine': 'PdfCraft',
+                'where': 'browser', 'why': None}
     return {'available': bool(b), 'version': version() if b else None, 'pin': pin(),
             'engine': 'PdfCraft' if b else 'pypdf',
-            'why': None if b else ('the browser edition reads PDFs with pypdf' if sys.platform == 'emscripten'
-                                   else 'PdfCraft is not built on this machine (tools/pdfcraft/build.sh)')}
+            'why': None if b else ('PdfCraft is still loading in this browser, or this browser cannot run it: pypdf reads the PDFs meanwhile'
+                                   if sys.platform == 'emscripten' else 'PdfCraft is not built on this machine (tools/pdfcraft/build.sh)')}
 
 
 class Job:
@@ -169,6 +185,8 @@ class Job:
         """Each step's result: the list of values its tool returned. Raises PdfCraftError on the first step that failed."""
         b = binary()
         if not b:
+            if browser() is not None:
+                return self._report(self._run_in_browser())
             raise PdfCraftError('PdfCraft is not available on this machine')
         script = self.dir / '.steps.json'
         script.write_text(json.dumps(self.steps))
@@ -184,6 +202,30 @@ class Job:
             raise PdfCraftError(f'PdfCraft took longer than {self.timeout} s')
         except OSError as e:
             raise PdfCraftError(f'PdfCraft could not start: {e}')
+        return self._report(r)
+
+    def _run_in_browser(self):
+        """The same run in the browser edition: the job's files lent to PdfCraft's WebAssembly program (web/pdfcraft.wasi.js) and
+        what it wrote put back in the job's folder, so read() and the folder's files work as on a computer."""
+        import js
+        from pyodide.ffi import to_js
+        files = js.Map.new()
+        for f in self.dir.rglob('*'):
+            if f.is_file() and f.name != '.steps.json':
+                files.set(f.relative_to(self.dir).as_posix(), to_js(f.read_bytes()))
+        try:
+            r = browser().run(json.dumps(self.steps), files)
+        except Exception as e:                           # noqa: BLE001 — what the browser said, as PdfCraft's own failure
+            raise PdfCraftError(f'PdfCraft (browser): {e}'[:500])
+        for pair in r.files:                             # [[name, bytes], …]
+            name, data = str(pair[0]), pair[1]
+            dest = self.path(name)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(data.to_bytes())
+        return subprocess.CompletedProcess(['pdfcraft-cli'], int(r.code), r.stdout.to_bytes().decode('utf-8', 'replace'),
+                                           r.stderr.to_bytes().decode('utf-8', 'replace'))
+
+    def _report(self, r):
         try:
             rep = json.loads(r.stdout)
         except ValueError:

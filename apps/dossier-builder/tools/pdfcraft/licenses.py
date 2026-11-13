@@ -1,12 +1,13 @@
 """THIRD-PARTY-LICENSES.txt for the PdfCraft program the Dossier Builder carries: every crate compiled into pdfcraft-cli (built without
 its MCP server), with its version, licence, source and its own licence and notice files, read from the build's Cargo metadata.
-    python3 licenses.py <pdfcraft source> <output folder>"""
+    python3 licenses.py <pdfcraft source> <output folder> [target]"""
 import json, re, subprocess, sys
 from pathlib import Path
 
 src, out = Path(sys.argv[1]), Path(sys.argv[2])
+target = ['--target', sys.argv[3]] if len(sys.argv) > 3 else []          # e.g. wasm32-wasip1: the browser edition's build
 tree = subprocess.run(['cargo', 'tree', '--locked', '-p', 'pdfcraft-cli', '--no-default-features', '-e', 'normal', '--prefix', 'none',
-                       '--format', '{p}|{l}'], cwd=src, capture_output=True, text=True, check=True).stdout
+                       '--format', '{p}|{l}', *target], cwd=src, capture_output=True, text=True, check=True).stdout
 want = set()
 for line in tree.splitlines():
     p = line.split('|')[0].replace('(*)', '').strip()

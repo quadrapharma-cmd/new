@@ -402,9 +402,11 @@ def _pdfcraft_checks(r, add, path, q, ver, doc_class):
     chars = len(re.sub(r'\s', '', ''.join(q.get('texts') or [])))
     r.info['searchable'] = chars >= 20
     if pages and chars < 20:
-        from .. import pdfcraft
+        from .. import extract, pdfcraft
         if pdfcraft.ocr_info():                          # PdfCraft reads the scan and adds its text layer: a fix, on every kind of document
             add(Finding('NTA065-N4', 'block', OCR_FIX_EN, OCR_FIX_AR, 'auto_fix', 'NP.CAPP.065 v5 general note 4; PdfCraft OCR'))
+        elif extract.reads_in_browser():                 # the browser edition (PdfCraft there too): the page reads the scan, its text goes under the image
+            add(Finding('NTA065-N4', 'block', OCR_BROWSER_EN, OCR_BROWSER_AR, 'auto_fix', 'NP.CAPP.065 v5 general note 4; OCR in the browser'))
         else:
             add(Finding('NTA065-N4', 'block', NO_TEXT_EN, NO_TEXT_AR,
                         'rebuild' if doc_class in ('generated', 'company_letter') else 'user_fix', 'NP.CAPP.065 v5 general note 4'))

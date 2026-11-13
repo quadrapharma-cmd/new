@@ -38,6 +38,14 @@ RapidOCR's library, OpenCV and python-bidi are not used.
 
 Run the second reader's model (Python packages, unchanged). In the browser edition, onnxruntime-web 1.31.1 (MIT) runs it.
 
+## PdfCraft in the browser edition (tools/pdfcraft/build-wasm.sh → assets/pdfcraft/)
+
+The same PdfCraft program (MIT OR Apache-2.0, used under MIT; the same pinned commit and patches as above), built for WebAssembly
+with a file system of its own (WASI), with its LICENSE-MIT, LICENSE-APACHE, NOTICE and THIRD-PARTY-LICENSES.txt (every crate of
+that build, from its Cargo metadata) beside it. It runs over an in-memory folder lent by **@bjorn3/browser_wasi_shim 0.4.2** —
+https://github.com/bjorn3/browser_wasi_shim (MIT OR Apache-2.0, used under MIT), unchanged, fetched and checked against npm's
+integrity; its licence files beside it.
+
 ## The browser edition's scan reader (web/ocr_assets.py → assets/ocr/, each file with its licence beside it)
 
 - **tesseract.js 7.0.0** — https://github.com/naptha/tesseract.js (Apache-2.0) and **tesseract.js-core 6.1.2** —

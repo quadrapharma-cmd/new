@@ -1,6 +1,6 @@
 """The browser edition (web/dist): the same engine runs inside Chromium through Pyodide, with no server.
 Needs `python3 web/build.py` first (vendor.sh fetches the runtime once); skipped when dist is absent."""
-import functools, http.server, pathlib, socket, threading
+import functools, http.server, io, pathlib, socket, threading
 import pytest
 from fixtures_pdf import make_pdf
 
@@ -347,5 +347,53 @@ def test_a_scan_is_made_searchable_inside_the_browser(site, notice_scan):
         assert not r['f']['scanned'] and r['f']['chars'] > 300 and r['f']['kind'] == 'licence'      # text of its own now
         reg = r['rules'].get('registration') or {}
         assert reg.get('reg_no') == '34567/2025' and reg.get('reg_date') == '2025-03-15', reg
+        assert not errors, errors
+        b.close()
+
+
+def test_pdfcraft_runs_inside_the_browser(site, tmp_path):
+    """The browser edition runs PdfCraft itself — its program built for WebAssembly, in the engine's thread over an in-memory folder
+    (web/pdfcraft.wasi.js) — so the browser makes the fixes the desktop makes: here a document's JavaScript removed, its pages
+    drawn for the viewer and its file improved, by the same tool steps as on a computer."""
+    import base64
+    from pypdf import PdfReader, PdfWriter
+    if not (DIST / 'assets' / 'pdfcraft' / 'pdfcraft-cli.json').exists():
+        pytest.skip('PdfCraft for WebAssembly was not built (tools/pdfcraft/build-wasm.sh)')
+    w = PdfWriter(clone_from=str(make_pdf(tmp_path / 's.pdf', 'Composition certificate')))
+    w.add_js('app.alert(1)')
+    w.write(open(tmp_path / 'js.pdf', 'wb'))
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1280, 'height': 800}).new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script("localStorage.setItem('db.lang','en')")
+        page.goto(site + '/index.local.html#/')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.wait_for_function("""async () => { const r = await fetch('/api/capabilities', {headers: {'X-DB': '1'}}).then(r => r.json());
+            return r.pdf_engine && r.pdf_engine.engine === 'PdfCraft'; }""", timeout=120000, polling=1000)
+        r = page.evaluate("""async b64 => {
+            const j = (u, o) => fetch(u, Object.assign({headers: {'X-DB': '1', 'content-type': 'application/json'}}, o)).then(r => r.json());
+            const caps = await j('/api/capabilities');
+            const d = await j('/api/dossiers', {method: 'POST', body: JSON.stringify({name: 'Dermacure', product: {name: 'Dermacure', dosageform: 'tablet', manufacturer: 'Example Pharma'},
+                profile: {dossier_kind: 'generic', origin: 'local', licence: 'own', activity: 'new', apis: [{name: 'Paracetamol', manufacturer: 'Granules', option: 'CEP'}]}})});
+            const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+            const fd = new FormData(); fd.append('file', new File([u], 'composition.pdf', {type: 'application/pdf'})); fd.append('meta', '{}');
+            const doc = await fetch('/api/dossiers/' + d.id + '/slots/M1-31/documents', {method: 'POST', body: fd, headers: {'X-DB': '1'}}).then(r => r.json());
+            const t0 = performance.now();
+            const fix = await j('/api/dossiers/' + d.id + '/documents/' + doc.id + '/fix', {method: 'POST'});
+            const ms = performance.now() - t0;
+            const png = await fetch('/api/dossiers/' + d.id + '/documents/' + fix.document.id + '/pages/1.png');
+            const file = new Uint8Array(await (await fetch('/api/dossiers/' + d.id + '/documents/' + fix.document.id + '/file')).arrayBuffer());
+            let s = ''; for (let i = 0; i < file.length; i += 8192) s += String.fromCharCode.apply(null, file.subarray(i, i + 8192));
+            return {engine: caps.pdf_engine, before: (doc.findings || []).map(f => f.rule), done: fix.done.map(x => x.op), refused: fix.refused,
+                    after: (fix.document.findings || []).map(f => f.rule), png: png.status + ' ' + png.headers.get('content-type'), ms, out: btoa(s)}; }""",
+            base64.b64encode((tmp_path / 'js.pdf').read_bytes()).decode())
+        assert r['engine']['where'] == 'browser' and 'WebAssembly' in r['engine']['version'], r['engine']
+        assert 'PDF-JS' in r['before'] and 'remove_javascript' in r['done'] and 'PDF-JS' not in r['after'], r
+        assert r['png'] == '200 image/png'                                              # the viewer's page, drawn by PdfCraft here
+        out = PdfReader(io.BytesIO(base64.b64decode(r['out'])))
+        assert '/JavaScript' not in str(out.trailer['/Root'].get('/Names', {}))
         assert not errors, errors
         b.close()

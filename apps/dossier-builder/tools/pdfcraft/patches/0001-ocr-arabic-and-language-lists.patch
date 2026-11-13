@@ -53,15 +53,19 @@ diff --git a/crates/engine/src/ocr.rs b/crates/engine/src/ocr.rs
 index b2a4717..07c1835 100644
 --- a/crates/engine/src/ocr.rs
 +++ b/crates/engine/src/ocr.rs
-@@ -14,6 +14,7 @@ use std::time::{Duration, Instant};
+@@ -14,6 +14,11 @@ use std::time::{Duration, Instant};
  use pdfcraft_render::text::TextFilter;
  use pdfcraft_render::{PageInfo, PageRenderer, RenderConfig, RenderRequest, RequestKind};
  
++#[cfg(not(target_arch = "wasm32"))]
 +pub use pdfcraft_ocr::tesseract::{LANGUAGE_CODES as TESSERACT_LANGUAGES, languages_code as tesseract_languages};
++/// A WebAssembly build runs no Tesseract (it is a program of its own): no languages of its own.
++#[cfg(target_arch = "wasm32")]
++pub const TESSERACT_LANGUAGES: &[(&str, &str)] = &[];
  pub use pdfcraft_ocr::{
      ConfidenceBand, DETECTION_MODEL, LANGUAGES, Line, MergeStrategy, Models, Ocr, OcrError, OcrImage, PlacedWord, RECOGNITION_MODEL, Recognizer,
      StrategyOutcome, Word, band_for, is_suspect, lines_from_json, low_confidence,
-@@ -912,7 +913,29 @@ impl OcrShot {
+@@ -912,7 +917,29 @@ impl OcrShot {
          };
          // Validate recognition geometry and compare against existing text in view space,
          // undoing preprocessing and region offsets before testing overlap.

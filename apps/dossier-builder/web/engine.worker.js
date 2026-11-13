@@ -51,6 +51,7 @@ const say = (ar, en, pct) => self.postMessage({ type: 'say', ar, en, pct });
 
 const ready = (async () => {
   say('تحميل محرك الملفات…', 'Loading the dossier engine…', 4);
+  if (self.DB_PDFCRAFT) self.DB_PDFCRAFT.load(base, realFetch);     // PdfCraft for WebAssembly (pdfcraft.wasi.js): beside the engine, used once ready
   importScripts(base + 'assets/pyodide/pyodide.js');
   pyodide = await loadPyodide({ indexURL: base + 'assets/pyodide/' });
   DB_SAFEFS(pyodide.FS);                                            // bigfs.js: a file too large for the page's memory is refused, the engine goes on
