@@ -18,6 +18,11 @@ NO_TEXT_IMAGE_AR = ('ده صورة مش مستند. الهيئة طالبة كل
                     'أو صوّره بتطبيق بيحفظ PDF قابل للبحث، وارفع الـ PDF.')
 
 
+ECTD_DRAFT = {'EG-PF-15.4', 'ICH-NAME', 'EG-PF-16.3', 'EG-BP-E23', 'PDF-JS', 'EG-PF-16.1', 'EG-BP-16.BP1', 'NTA065-BM', 'ECTD-WORD'}
+# the draft eCTD guidance's rules (EDA eCTD technical guidance v1.0/2026, not in force) and ICH's: they decide eCTD readiness, not
+# whether a document conforms for the One Submission in force (NP.CAPP.065 v5 asks a searchable PDF that opens)
+
+
 @dataclass
 class Finding:
     rule: str
@@ -27,6 +32,11 @@ class Finding:
     action: str          # auto_fix | rebuild | re_obtain | user_fix | move | none
     source: str
     extra: dict = field(default_factory=dict)      # e.g. the item a misfiled document belongs to
+    scope: str = 'all'   # 'ectd': an eCTD-readiness finding — it stops only an eCTD export
+
+    def __post_init__(self):
+        if self.rule in ECTD_DRAFT:
+            self.scope = 'ectd'
 
     def to_dict(self):
         return self.__dict__.copy()
@@ -40,9 +50,17 @@ class Report:
 
     @property
     def status(self):
-        if any(f.severity == 'block' for f in self.findings):
-            return 'non_conforming'
-        return 'needs_attention' if self.findings else 'conforming'
+        """Conformity for the submission in force: eCTD-readiness findings do not count here."""
+        return status_of(self.findings)
+
+
+def status_of(findings):
+    """findings: Finding objects or their dicts. eCTD-readiness ones (scope 'ectd') leave the status alone."""
+    own = [f for f in findings if (f.get('scope') if isinstance(f, dict) else f.scope) != 'ectd'
+           and (f.get('rule') if isinstance(f, dict) else f.rule) not in ECTD_DRAFT]
+    if any((f.get('severity') if isinstance(f, dict) else f.severity) == 'block' for f in own):
+        return 'non_conforming'
+    return 'needs_attention' if own else 'conforming'
 
 
 def check(path, doc_class='company_technical', ectd_name=False):
@@ -55,8 +73,8 @@ def check(path, doc_class='company_technical', ectd_name=False):
                     're_obtain' if doc_class in LOCKED else 'user_fix', 'EU VC 16.5 via EG provisional profile'))
         return r
     if len(name) > 64:
-        add(Finding('EG-PF-15.4', 'block', f'File name has {len(name)} characters (max 64).',
-                    f'اسم الملف {len(name)} حرف (الحد 64).', 'auto_fix', 'EG eCTD TG draft p.12 l.275'))
+        add(Finding('EG-PF-15.4', 'warn', f'File name has {len(name)} characters; an eCTD name has at most 64 — the export gives the file its eCTD name.',
+                    f'اسم الملف {len(name)} حرف؛ اسم الـ eCTD بالكتير 64 — التصدير بيدّي الملف اسمه في الـ eCTD.', 'none', 'EG eCTD TG draft p.12 l.275'))
     if ectd_name and not NAME_OK.match(name):
         add(Finding('ICH-NAME', 'warn', 'eCTD file names use only a-z, 0-9 and "-" (the tool renames on export).',
                     'أسماء ملفات eCTD حروف صغيرة وأرقام و"-" فقط (الأداة بتعيد التسمية عند التصدير).',

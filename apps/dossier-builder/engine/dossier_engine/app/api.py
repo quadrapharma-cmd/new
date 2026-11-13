@@ -13,6 +13,7 @@ from ..resolver import resolve
 from .. import arabic as _arabic
 from .. import packs as _packs
 from .. import extract as _extract
+from .. import conditions as _conditions
 from .. import officefiles as _officefiles, imagefiles as _imagefiles
 from ..guard import assert_allowed, LockedError
 from ..assemble import docs_for
@@ -338,6 +339,16 @@ def create_app(workspace, auth_enabled=None):
             err(422, 'E-SLOT', 'slot_id is required.', 'لازم تحدد البند.')
         return st.move_document(did, doc_id, slot_id, (body or {}).get('meta'))
 
+    @app.post('/api/dossiers/{did}/slots/{slot_id}/attest')
+    def attest(did: str, slot_id: str, body: dict):
+        """The item's one question — signed and stamped / legalised: {answer: 'yes' | 'no'}."""
+        return st.attest(did, slot_id, (body or {}).get('answer'))
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/confirm-kind')
+    def confirm_kind(did: str, doc_id: str):
+        """«It is in the right place»: the kind rule's objection to this file is set aside (recorded in the audit)."""
+        return st.confirm_kind(did, doc_id)
+
     @app.post('/api/dossiers/{did}/documents/{doc_id}/withdraw')
     def withdraw(did: str, doc_id: str, reason: str = 'user'):
         return st.withdraw(did, doc_id, reason)
@@ -345,6 +356,38 @@ def create_app(workspace, auth_enabled=None):
     @app.post('/api/dossiers/{did}/documents/{doc_id}/restore')
     def restore(did: str, doc_id: str):
         return st.restore(did, doc_id)
+
+    class SplitReq(BaseModel):
+        starts: list[int]
+
+    class MergeReq(BaseModel):
+        doc_ids: list[str]
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/split')
+    def split_proposal(did: str, doc_id: str):
+        """Where a file that holds several documents would be cut: each page's kind and title, the parts proposed."""
+        return st.split_proposal(did, doc_id)
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/split', status_code=201)
+    def split_doc(did: str, doc_id: str, body: SplitReq):
+        """Cut the file at the pages where documents start: the parts go to the unplaced box, each with its own reading."""
+        return st.split_document(did, doc_id, body.starts)
+
+    @app.post('/api/dossiers/{did}/slots/{slot_id:path}/merge', status_code=201)
+    def merge_docs(did: str, slot_id: str, body: MergeReq):
+        """Join the item's PDFs into one document, in the order given."""
+        return st.merge_documents(did, slot_id, body.doc_ids)
+
+    @app.get('/api/dossiers/{did}/search')
+    def search_docs(did: str, q: str = '', budget: float = 6.0):
+        """Search the text of every document of the dossier (a batch number, a study, «Table 3»): the item, the file, the page."""
+        st.dossier(did)
+        return st.search(did, q, max(0.5, min(budget, 20.0)))
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/pdf', status_code=201)
+    def to_pdf_doc(did: str, doc_id: str):
+        """Word / Excel / PowerPoint / text → its PDF, on a computer with LibreOffice (a new version; 1.1.9's leaflet gets it beside)."""
+        return st.pdf_of_document(did, doc_id)
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/fix')
     def fix(did: str, doc_id: str):
@@ -581,7 +624,7 @@ def create_app(workspace, auth_enabled=None):
                                'ectd32_eu': {'automated': len(_v32eu.RULES) + len(_v32eu.SAME), 'criteria': 111,
                                              'profile': 'EU Module 1 v3.1.1 + EU eCTD validation criteria v8.2'},
                                'ectd40': {'rules': rules40, 'profile': 'EG eCTD 4.0 provisional v0'}},
-                'doc_types': len(doc_types), 'outputs': ['ctd', 'ectd32', 'ectd40'],
+                'doc_types': len(doc_types), 'outputs': ['ctd', 'ectd32', 'ectd40'], 'office_pdf': bool(find_soffice()),
                 'ai_server': bool(os.environ.get('ANTHROPIC_API_KEY'))}
 
     from .. import extract as _extract
@@ -706,6 +749,47 @@ def create_app(workspace, auth_enabled=None):
                 'third_party': [s['slot_id'] for s in slots if s['level'] in ('R', 'O') and
                                 s['doc_class'] in ('third_party_certificate', 'eda_document')]}
 
+    def _package_files(name, data):
+        from .. import archives as _arch
+        from ..validators.package import PackageError
+        try:
+            return _arch.unpack(name, data, depth=2)['files']
+        except _arch.ArchiveError as e:
+            raise PackageError(e.code, e.en, e.ar)
+
+    @app.exception_handler(__import__('dossier_engine.validators.package', fromlist=['PackageError']).PackageError)
+    def _package_err(_, e):
+        return JSONResponse(status_code=422, content={'detail': {'code': e.code, 'en': e.en, 'ar': e.ar}})
+
+    @app.post('/api/package/validate')
+    async def package_validate(file: UploadFile = File(...)):
+        """Check an eCTD package made anywhere (a ZIP of one sequence or several): each sequence by its region's validator, or the ICH
+        checks where the program has no region criteria (updates list, item 18)."""
+        from ..validators import package as _pkg
+        data = await file.read()
+        return _pkg.validate_files(_package_files(file.filename, data), file.filename)
+
+    @app.post('/api/package/compare')
+    async def package_compare(a: UploadFile = File(...), b: UploadFile = File(...)):
+        """What changed from package A to package B (e.g. what we made and what the consultant delivered), sequence by sequence."""
+        from ..validators import package as _pkg
+        return _pkg.compare_files(_package_files(a.filename, await a.read()), _package_files(b.filename, await b.read()))
+
+    @app.get('/api/rules')
+    def rules():
+        """Every rule the program checks — its source, version and status (in force / draft / policy) and where it runs — and the
+        official texts behind them with their SHA-256 (updates list, item 20)."""
+        from .. import rules_catalogue
+        return rules_catalogue.catalogue()
+
+    @app.get('/api/conditions')
+    def conditions(pack: str = None, country: str = None):
+        """What each document must be before it is uploaded — its form and its content — for every item of the authority's pack
+        (`items`), and for the item each kind of base document goes to (`kinds`, the wizard's document cards)."""
+        pk = st.pack(_pack_of(pack, country))
+        return {'pack': pk.id, 'items': {r['id']: _conditions.for_requirement(r, pk) for r in pk.requirements},
+                'kinds': {k: _conditions.for_kinds(pk, [k]) for k in _extract.KIND_HOME}}
+
     @app.get('/api/dossiers/{did}/generate/{kind}/prefill')
     def prefill(did: str, kind: str, slot_id: str = None):
         """What the dossier already knows for this generator — the UI asks only for the rest."""
@@ -744,7 +828,7 @@ def create_app(workspace, auth_enabled=None):
             base['components'] = [{'name': c.get('name'), 'function': c.get('function') or c.get('role') or '', 'qty_mg': mg(c.get('amount')), 'standard': c.get('standard') or ''}
                                   for c in data['composition'] if c.get('name')]
         if kind == 'salt':
-            base['apis'] = [{'name_base': n} for n in dict.fromkeys(a['name'] for a in prof.get('apis', []))]
+            base['apis'] = salt_rows(prof.get('apis', []), data)
         if kind == 'cep_commitment' and slot_id and '@' in slot_id:
             name, man = slot_id.split('@', 1)[1].split('|', 1)
             base.update(api=name, cep_holder=man)
@@ -761,7 +845,32 @@ def create_app(workspace, auth_enabled=None):
         keys = {f['key'] for f in letters.SCHEMAS[kind]['fields']}
         return {k: v for k, v in out.items() if k in keys}
 
-    def _suggest_with_kind(clf, slots, filename, text, kind=None, product=None):
+    def salt_rows(apis, data):
+        """One row per substance declared as a salt or hydrate (neomycin sulphate, bacitracin zinc, cysteine hydrochloride) — not for a
+        substance that is not one (glycine), nor for one that is itself a salt with no base (sodium chloride): its full name, its base
+        and the strength the dossier's data gives (mg)."""
+        salt_words = {w for w in _extract.API_SALTS if w not in ('usp', 'bp', 'ep', 'ph', 'eur', 'micronized', 'micronised', 'base', 'anhydrous')}
+        strength = {}
+        for a in (data.get('apis') or []):
+            if a.get('name') and a.get('strength'):
+                strength[_extract.api_key(a['name'])] = a['strength']
+        for c in (data.get('composition') or []):
+            if c.get('name') and (c.get('amount') or c.get('qty')):
+                strength.setdefault(_extract.api_key(c['name']), c.get('amount') or c.get('qty'))
+        rows = []
+        for name in dict.fromkeys(a['name'] for a in apis if a.get('name')):
+            words = re.findall(r'[a-z]+', name.lower())
+            if not set(words) & salt_words or _extract._salt_substance([w for w in words if w not in _extract.API_STOP]):
+                continue
+            row = {'name_salt': name, 'name_base': _extract.api_key(name).title()}
+            m = re.match(r'\s*([\d.,]+)\s*(mg|g|gm|mcg|µg)\b', str(strength.get(_extract.api_key(name)) or ''), re.I)
+            if m:
+                x = float(m.group(1).replace(',', ''))
+                row['label_claim_mg'] = round(x * {'mg': 1, 'g': 1000, 'gm': 1000, 'mcg': 0.001, 'µg': 0.001}[m.group(2).lower()], 4)
+            rows.append(row)
+        return rows
+
+    def _suggest_with_kind(clf, slots, filename, text, kind=None, product=None, fpp=None):
         """The classifier's suggestions, with the document kind's home item first (a licence goes to the licence item whatever the keywords say),
         and `auto`: the one item the file may go into without asking. Among the per-API items (CEP, CoA, GMP of each active) the substance
         the document names decides; when two items of different actives tie — the document names neither — nothing is automatic:
@@ -772,20 +881,39 @@ def create_app(workspace, auth_enabled=None):
         if kind == 'other' and _extract.name_hint(filename):                # nothing inside says what it is: the name only hints where to offer it
             kind, by_name = _extract.name_hint(filename), True
         sugg = clf.suggest(filename, text, slots)
+        makers = [s.item.get('manufacturer') for s in slots if s.item and s.item.get('manufacturer')]
         homes = _extract.kind_homes(kind, clf.pack, text, product,      # the likeliest first: by what the document is about, not only its kind
-                                    substances=[_extract.api_key(s.item.get('name') or '') for s in slots if s.item])
+                                    substances=[_extract.api_key(s.item.get('name') or '') for s in slots if s.item], fpp=fpp, makers=makers)
+        kn = _extract.KIND_NAMES.get(kind) or {'en': kind, 'ar': kind}
+        said = {'en': f"it reads as a {kn['en']}", 'ar': f"شكله {kn['ar']}"}
         by_id = {s.slot_id: s for s in slots}
+        if kind in _extract.KIND_HOME and not any(s.active and s.req_id in homes for s in slots):
+            return kind, [], None          # recognised, and this dossier has no item for it (a sampling form; a variation approval in a new
+                                           # registration): nothing else is offered in its place — the user decides, or removes it
         decided = unsure = False                                         # decided: the document names the active substance its item is for
+        if kind == 'gmp' and (fpp or makers) and _extract.gmp_whose(text, fpp, makers) is None:
+            unsure = True                                                # it names neither the product's manufacturer nor an API's: offered, never placed
         for req in homes:                                                # the kind's own item leads, whatever the keywords say
             cands = [s for s in slots if s.active and s.req_id == req]
-            if len(cands) > 1:                                           # one item per active substance: the substance the document names
+            if not cands:
+                continue
+            if len(cands) > 1:                                           # one item per active substance: the substance the document names, else its manufacturer
                 named = [s for s in cands if s.item and _extract.api_key(s.item.get('name') or '') and
                          _extract.api_key(s.item.get('name') or '').lower() in (text or '').lower()]
+                if len(named) != 1:
+                    by_maker = [s for s in cands if s.item and _extract.names_org(text, s.item.get('manufacturer'))]
+                    named = by_maker if len(by_maker) == 1 else named
+                    if len(named) != 1 and (by_maker or req in _extract.PER_API_ONLY):
+                        pool = by_maker or named or cands               # several actives' items and nothing singles one out: offer them, place nothing
+                        ids = {s.slot_id for s in pool}
+                        sugg = [{'slot_id': s.slot_id, 'req_id': req, 'score': 8, 'why': [said]} for s in pool] + [x for x in sugg if x['slot_id'] not in ids]
+                        unsure = True
+                        break
                 cands, decided = (named, True) if len(named) == 1 else ([], False)
                 unsure = unsure or not cands                             # its likelier home is one of several actives' items and it names none: what follows is a guess
             if len(cands) == 1:
                 why = next((x['why'] for x in sugg if x['slot_id'] == cands[0].slot_id), [])
-                sugg = [{'slot_id': cands[0].slot_id, 'req_id': req, 'score': 9, 'why': [f'document kind: {kind}'] + why[:3]}] + [x for x in sugg if x['slot_id'] != cands[0].slot_id]
+                sugg = [{'slot_id': cands[0].slot_id, 'req_id': req, 'score': 9, 'why': [said] + why[:3]}] + [x for x in sugg if x['slot_id'] != cands[0].slot_id]
                 break
         if homes:
             first = sugg[0]['slot_id'] if sugg and sugg[0]['req_id'] in homes and sugg[0]['score'] == 9 else None
@@ -812,7 +940,8 @@ def create_app(workspace, auth_enabled=None):
         for f in (body or {}).get('files') or []:
             if not isinstance(f, dict):
                 continue
-            kind, sugg, auto = _suggest_with_kind(clf, slots, f.get('filename') or 'document', f.get('text') or '', f.get('kind'), (d.get('product') or {}).get('name'))
+            kind, sugg, auto = _suggest_with_kind(clf, slots, f.get('filename') or 'document', f.get('text') or '', f.get('kind'), (d.get('product') or {}).get('name'),
+                                                  (d.get('product') or {}).get('manufacturer'))
             out.append({'filename': f.get('filename'), 'kind': kind, 'suggestions': sugg, 'auto': auto})
         return out
 
@@ -834,7 +963,8 @@ def create_app(workspace, auth_enabled=None):
             except Exception:
                 pass
             text = text or (doc.get('meta') or {}).get('text') or ''
-            kind, sugg, auto = _suggest_with_kind(clf, slots, doc['filename'], text, (doc.get('meta') or {}).get('kind'), (d.get('product') or {}).get('name'))
+            kind, sugg, auto = _suggest_with_kind(clf, slots, doc['filename'], text, (doc.get('meta') or {}).get('kind'), (d.get('product') or {}).get('name'),
+                                                  (d.get('product') or {}).get('manufacturer'))
             out.append({'id': doc['id'], 'filename': doc['filename'], 'kind': kind, 'suggestions': sugg, 'auto': auto, 'created': doc.get('created')})
         return out
 
@@ -890,7 +1020,8 @@ def create_app(workspace, auth_enabled=None):
                 text = _extract.read_text(f.filename, data, max_pages=2)['text']
             except Exception:
                 text = ''
-            kind, sugg, auto = _suggest_with_kind(clf, slots, f.filename, text, None, (d.get('product') or {}).get('name'))
+            kind, sugg, auto = _suggest_with_kind(clf, slots, f.filename, text, None, (d.get('product') or {}).get('name'),
+                                                  (d.get('product') or {}).get('manufacturer'))
             out.append({'filename': f.filename, 'size': len(data), 'kind': kind, 'suggestions': sugg, 'auto': auto})
         return out
 
@@ -927,6 +1058,8 @@ def create_app(workspace, auth_enabled=None):
 
     from . import suite as _suite
     _suite.install(app, st, err)
+    from . import suite_m2 as _m2                       # the authority's letters, questions, commitments and deadlines
+    _m2.install(app, st, err)
 
     @app.get('/api/activity')
     def activity(limit: int = 300):

@@ -25,14 +25,14 @@ def test_ctd_numbers():
     assert '1.1.13' in _ctd_tokens('1.1.13 CPP.pdf')
 
 
-@pytest.mark.parametrize('name,text,expected', [
-    ('GMP certificate Example Pharma.pdf', '', 'M1-37'),
-    ('Pricing certificate.pdf', '', 'M1-05'),
+@pytest.mark.parametrize('name,text,expected', [          # a file is what its text says: the name is never read
+    ('scan_0007.pdf', 'GMP certificate Example Pharma', 'M1-37'),
+    ('scan_0008.pdf', 'Pricing certificate', 'M1-05'),
     ('scan_0001.pdf', 'CERTIFICATE OF ANALYSIS Paracetamol batch 123 Granules India', 'M1-35@Paracetamol|Granules India'),
-    ('3.2.P.5.1 Specification.pdf', '', 'P-09'),
-    ('Composition certificate signed.pdf', '', 'M1-31'),
-    ('cover letter seq 0000.pdf', '', 'M1-43'),
-    ('شهادة التسعير.pdf', '', 'M1-05'),
+    ('scan_0009.pdf', '3.2.P.5.1 Specification of the finished product', 'P-09'),
+    ('scan_0010.pdf', 'Composition certificate signed', 'M1-31'),
+    ('scan_0011.pdf', 'cover letter sequence 0000', 'M1-43'),
+    ('scan_0012.pdf', 'شهادة التسعير', 'M1-05'),
     ('BE study report EXM-BE-01.pdf', 'bioequivalence study of paracetamol', 'M5-04'),
     # real-dossier regressions (a local toll product, 11/2026): reference leaflets in German, committee letters
     ('7-9451__DOTC_FACH_INFO.pdf', 'Fachinformation reference SmPC', 'M1-42'),
@@ -43,8 +43,12 @@ def test_suggestions(ctx, name, text, expected):
     assert top(ctx, name, text) == expected
 
 
+def test_the_file_name_is_never_read(ctx):
+    assert ctx[0].suggest('3.2.P.5.1 Specification GMP pricing certificate.pdf', '', ctx[1]) == []
+
+
 def test_inactive_slots_never_suggested(ctx):
-    s = ctx[0].suggest('CPP certificate of pharmaceutical product.pdf', '', ctx[1])
+    s = ctx[0].suggest('scan.pdf', 'CPP certificate of pharmaceutical product', ctx[1])
     assert all(x['req_id'] != 'M1-14' for x in s)       # CPP not applicable to a local own product
 
 

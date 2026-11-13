@@ -10,7 +10,7 @@ from pathlib import Path
 from .. import packs
 from ..profile import Profile
 from ..resolver import resolve, diff
-from ..checks.pdf import check as pdf_check, Finding, Report
+from ..checks.pdf import check as pdf_check, Finding, Report, status_of
 from .. import crosschecks
 
 SCHEMA = '''
@@ -32,6 +32,7 @@ create table if not exists submission(id text primary key, dossier_id text not n
 create table if not exists export(id text primary key, dossier_id text not null, outputs text not null,
   path text not null, acknowledged integer not null, created real not null);
 create table if not exists intake_draft(id text primary key, state text not null default '{}', created real not null, updated real not null);
+create table if not exists doc_text(sha256 text primary key, pages text not null, read real not null);
 create table if not exists intake_file(draft_id text not null, filename text not null, sha256 text not null, kind text, size integer not null default 0,
   added real not null, primary key(draft_id, filename));
 '''
@@ -62,6 +63,15 @@ def _validity(d, today):
             d['check_status'] = 'needs_attention'
 
 
+from ..conditions import VALIDITY_KINDS, LEGALIZE      # the ones EDA asks to be valid at submission; the legalised items
+ATTEST_LEGALIZE = set(LEGALIZE)   # legalised: the CPP (Egyptian embassy; an eCPP is exempt), the licence holder's
+                                                          # declarations (under licence), storage contract + agency (imported) — NP.CAPP.065 v5
+RENEWAL_RX = re.compile(r'(?:تجديد|تحديث|renew|updat)', re.I)
+REQUEST_RX = re.compile(r'(?:request|application|receipt|طلب|إيصال|ايصال)', re.I)
+PRICE_CERT_RX = re.compile(r'(?:pricing certificate|price certificate|شهادة\s*(?:ال)?تسعير|سعر\s*البيع\s*للجمهور)', re.I)
+RETEST_RX = re.compile(r'(?:re-?test|إعادة\s*(?:ال)?(?:تحليل|اختبار))[^\n]{0,30}\d', re.I)
+
+
 STATUS_ORDER = ['not_started', 'received', 'conforming', 'needs_attention', 'non_conforming', 'not_applicable']
 SIGN_KINDS = {'annex1', 'cover', 'composition', 'salt', 'cep_commitment', 'translation', 'stability_commitment', 'justification',
               'reobtain'}
@@ -89,6 +99,7 @@ class StoreError(ValueError):
         super().__init__(f'{code}: {en}')
 
 
+WORD_ITEMS = {'M1-09'}        # NP.CAPP.065 v5 1.1.9: the proposed SmPC and PIL, Arabic and English, in Word
 SOURCE_DRAFT = {
     'word': ('Word draft. Print it on letterhead, sign, stamp, scan and upload the PDF (or export it to PDF): the PDF replaces this draft.',
              'مسودة Word. اطبعها على ورق الشركة ووقّعها واختمها وامسحها ضوئياً وارفع الـ PDF (أو صدّرها PDF): نسخة الـ PDF بتحل محل المسودة.'),
@@ -330,6 +341,20 @@ class Store:
         self.audit(did, 'profile.changed', diff=change, moved_to_unassigned=moved)
         return {**change, 'moved_to_unassigned': moved}
 
+    def attest(self, did, slot_id, answer):
+        """The answer to the item's one question (signed and stamped / legalised): 'yes', or 'no' — «not yet», which blocks the export."""
+        if answer not in ('yes', 'no'):
+            raise StoreError('E-ATTEST', 'The answer is yes or no.', 'الإجابة نعم أو لأ.')
+        if slot_id not in {s.slot_id for s in self.slots(did)}:
+            raise StoreError('E-SLOT', f'Unknown requirement slot {slot_id}.', 'بند غير معروف.')
+        d = self.dossier(did)
+        data = d.get('data') or {}
+        data.setdefault('attest', {})[slot_id] = {'answer': answer, 'at': time.time(), 'by': ACTOR.get()}
+        self.db.execute('update dossier set data=? where id=?', (json.dumps(data, ensure_ascii=False), did))
+        self.db.commit()
+        self.audit(did, 'item.attested', slot=slot_id, answer=answer)
+        return data['attest'][slot_id]
+
     def set_data(self, did, data):
         self.dossier(did)
         self.db.execute('update dossier set data=? where id=?', (json.dumps(data, ensure_ascii=False), did))
@@ -351,6 +376,35 @@ class Store:
             v for v in names.values() if v)) > 1) else []
         if not self.pack(d['pack']).egypt:               # Egypt's own deficiency list (NP.CAPP.040) is Egypt's; consistency across the dossier is everyone's
             out = [dict(f, source='Consistency across the dossier (general practice)') for f in out if not f['id'].startswith('NP040')]
+        return out + self.duplicates(did, d)
+
+    def duplicates(self, did, d=None):
+        """The same file (same SHA-256) in more than one item: for an imported product in Egypt, in two modules, it stops the
+        submission (NP.CAPP.065 v5 general note 3); otherwise a note."""
+        d = d or self.dossier(did)
+        egypt = self.pack(d['pack']).egypt
+        imported = egypt and (d['profile'] or {}).get('origin') == 'imported'
+        slots = {s.slot_id: s for s in self.slots(did) if s.active}
+        by_sha = {}
+        for doc in self.documents(did):
+            if doc['slot_id'] in slots and not doc['meta'].get('external'):
+                by_sha.setdefault(doc['sha256'], []).append(doc)
+        out = []
+        for docs in by_sha.values():
+            sids = sorted({x['slot_id'] for x in docs}, key=lambda s: (slots[s].module, s))
+            if len({slots[s].req_id for s in sids}) < 2:
+                continue                                 # one requirement per active substance: the same certificate for two substances
+            where = ', '.join(slots[s].ctd for s in sids)
+            block = imported and len({slots[s].module for s in sids}) > 1
+            name = docs[0]['filename']
+            out.append({'id': 'XC-DUP', 'severity': 'block' if block else 'warn', 'slots': sids, 'action': 'move' if block else 'none', 'needs': [],
+                        'en': f'The same file («{name}») is in {len(sids)} items: {where}.' + (
+                            ' An imported product does not submit a document already given in another module: keep it in one item and withdraw it from the others.'
+                            if block else ' Fine if it serves each of them; otherwise keep it in one.'),
+                        'ar': f'نفس الملف («{name}») موجود في {len(sids)} بنود: {where}.' + (
+                            ' المنتج المستورد ما يقدّمش مستند متقدّم في موديول تاني: سيبه في بند واحد واسحبه من الباقي.'
+                            if block else ' مفيش مشكلة لو بيخدم كل بند فيهم؛ وإلا سيبه في بند واحد.'),
+                        'source': 'NP.CAPP.065 v5 general note 3' if egypt else 'Consistency across the dossier (general practice)'})
         return out
 
     # ---------------- documents
@@ -392,7 +446,13 @@ class Store:
             data = v17
         sha = self.put_blob(data)
         family = _extract.source_family(filename, data) or ('word' if filename.lower().endswith('.docx') else None)
-        if family:                                      # a source file (Word, Excel, PowerPoint, text — old format or new): the PDF the user uploads replaces it
+        if family == 'word' and s.req_id in WORD_ITEMS:  # the format the item asks: the document itself
+            rep = Report(str(self.blob_path(sha)), [Finding(
+                'ECTD-WORD', 'warn', 'The One Submission takes the proposed leaflet in Word (NP.CAPP.065 v5 1.1.9); an eCTD takes it as PDF — '
+                'the export converts it, or add its PDF to this item.',
+                'الـ One Submission بياخد النشرة المقترحة Word (NP.CAPP.065 v5 بند 1.1.9)؛ الـ eCTD بياخدها PDF — التصدير بيحوّلها، أو ضيف الـ PDF '
+                'بتاعها في البند ده.', 'none', 'NP.CAPP.065 v5 1.1.9; EG eCTD TG draft')])
+        elif family:                                      # a source file (Word, Excel, PowerPoint, text — old format or new): the PDF the user uploads replaces it
             en, ar = SOURCE_DRAFT[family]
             rep = Report(str(self.blob_path(sha)), [Finding('DOCX-DRAFT', 'warn', en, ar, 'user_fix', 'NP.CAPP.065 v5 general note 4 (PDF)')])
         else:
@@ -410,6 +470,21 @@ class Store:
                         rep.findings.insert(0, Finding('DOC-KIND', f0.get('severity', 'block'), f0.get('en', ''), f0.get('ar', ''), f0.get('action', 'move'), f0.get('source', ''), f0.get('extra') or {}))
             except Exception:
                 pass
+        txt = ''
+        if not meta.get('generated') and not meta.get('external'):
+            try:
+                txt = _extract.read_text(filename, data, max_pages=3)['text']      # read once: the reading is kept by the file's SHA-256
+            except Exception:
+                txt = ''
+        txt_kind = _extract.content_kind(txt) if txt else 'other'
+        renewal = (s.req_id == 'M1-05' and bool(RENEWAL_RX.search(txt)) and bool(REQUEST_RX.search(txt[:1500]))
+                   and not PRICE_CERT_RX.search(txt))          # a request (or its receipt) for renewing the price — not the certificate itself
+        if renewal:                                    # the request for updating an expired pricing certificate (NP.CAPP.065 v5 1.1.5)
+            meta['renewal_request'] = True
+        if meta.get('fixed_from'):
+            pass
+        elif renewal:
+            pass
         elif not meta.get('generated') and not meta.get('signed_for') and not meta.get('amended_from'):      # the kind rule: is this file the document the item expects? (PDF, image or Word)
             try:
                 kc = _extract.kind_check(s.req_id, filename, data, known_kind=kind or meta.get('kind'), pack=self.pack(self.dossier(did)['pack']))
@@ -425,6 +500,24 @@ class Store:
                     f"الملف ده شكله {kn['ar']}، مش المستند المطلوب في البند ده" + (f"؛ مكانه «{home_title['ar']}»." if home_title else '.'),
                     'move' if home else 'user_fix', 'intake kind rule (classify keywords)',
                     {'kind': kc['kind'], 'suggested_slot': home, 'suggested_title': home_title}))
+        if txt and txt_kind in VALIDITY_KINDS and not meta.get('valid_until'):
+            vu = ((_extract.fields_for(txt_kind, filename, txt).get('document') or {}).get('valid_until'))
+            try:
+                date.fromisoformat(vu or '')
+                meta['valid_until'], meta['valid_until_read'] = vu, True        # read from the document; the expiry rule does the rest
+            except ValueError:
+                pass
+        if txt and txt_kind == 'coa' and s.req_id == 'M1-35':                     # an API's CoA: batch, manufacture, expiry (or retest)
+            b = (_extract.fields_for('coa', filename, txt).get('batches') or [{}])[0]
+            gaps = [(en, ar) for en, ar, ok in (('batch number', 'رقم التشغيلة', b.get('no')), ('manufacturing date', 'تاريخ التصنيع', b.get('date')),
+                                                ('expiry or retest date', 'تاريخ الانتهاء أو إعادة التحليل', b.get('expiry') or RETEST_RX.search(txt)))
+                    if not ok]
+            if gaps:
+                rep.findings.append(Finding('COA-DATA', 'warn',
+                                            'This CoA does not show: ' + ', '.join(g[0] for g in gaps) + ' — EDA asks for the batch number, the '
+                                            'manufacturing and the expiry dates (NP.CAPP.065 v5 1.2.3.1).',
+                                            'شهادة التحليل مش ظاهر فيها: ' + '، '.join(g[1] for g in gaps) + ' — الهيئة طالبة رقم التشغيلة وتاريخ '
+                                            'التصنيع والانتهاء (NP.CAPP.065 v5 بند 1.2.3.1).', 'user_fix', 'NP.CAPP.065 v5 1.2.3.1'))
         version = 1 + (self.db.execute('select coalesce(max(version),0) from document where dossier_id=? and slot_id=?',
                                        (did, slot_id)).fetchone()[0])
         doc_id = str(uuid.uuid4())
@@ -488,6 +581,127 @@ class Store:
         self.audit(did, 'document.fixed' if new else 'document.fix_refused', doc=doc_id, new=new and new['id'],
                    done=[x['op'] for x in r['done']], refused=[x['op'] for x in r['refused']])
         return {'document': new, 'done': r['done'], 'refused': r['refused']}
+
+    def search(self, did, q, budget=6.0):
+        """Where the dossier's documents say q: [{doc, item, matches: [{page, snippet, start, length}]}]. Each file's pages are read once
+        and kept (doc_text); files not read yet are read within `budget` seconds — `pending` says how many are left for the next call."""
+        from .. import search as _search
+        rx = _search.pattern(q)
+        if rx is None or len(q.strip()) < 2:
+            raise StoreError('E-QUERY', 'Type at least two characters.', 'اكتب حرفين على الأقل.')
+        slots = {s.slot_id: s for s in self.slots(did)}
+        docs = [x for x in self.documents(did) if not x['meta'].get('external')]
+        known = {r['sha256']: json.loads(r['pages']) for r in self.db.execute(
+            'select sha256, pages from doc_text where sha256 in (%s)' % ','.join('?' * len(docs)), [x['sha256'] for x in docs]).fetchall()} if docs else {}
+        t0, pending, hits, n = time.time(), 0, [], 0
+        for x in docs:
+            pages = known.get(x['sha256'])
+            if pages is None:
+                if time.time() - t0 > budget:
+                    pending += 1
+                    continue
+                pages = _search.pages_of(x['filename'], self.blob_path(x['sha256']).read_bytes())
+                known[x['sha256']] = pages
+                self.db.execute('insert or replace into doc_text values (?,?,?)', (x['sha256'], json.dumps(pages, ensure_ascii=False), time.time()))
+                self.db.commit()
+            found = _search.find(pages, rx)
+            if found and n < _search.MAX_HITS:
+                s = slots.get(x['slot_id'])
+                hits.append({'doc_id': x['id'], 'filename': x['filename'], 'version': x['version'], 'slot_id': x['slot_id'],
+                             'ctd': s.ctd if s else '', 'title': s.title if s else {'en': x['title'], 'ar': x['title']},
+                             'pages': len(pages), 'matches': found})
+                n += len(found)
+        return {'q': q, 'hits': hits, 'matches': n, 'searched': len(docs) - pending, 'pending': pending, 'total': len(docs)}
+
+    def split_proposal(self, did, doc_id):
+        """Where the program would cut a file that holds several documents (the person confirms or moves the cuts)."""
+        from .. import pages as _pages
+        d = self._current_pdf(did, doc_id)
+        return _pages.propose(self.blob_path(d['sha256']).read_bytes(), self.pack(self.dossier(did)['pack']))
+
+    def split_document(self, did, doc_id, starts):
+        """Cut a file where documents start (pages, 1-based): each part goes to the unplaced box with its own reading, the file it came
+        from is withdrawn (kept in the history)."""
+        from .. import pages as _pages
+        from ..assistant import storage as _storage
+        d = self._current_pdf(did, doc_id)
+        data = self.blob_path(d['sha256']).read_bytes()
+        from pypdf import PdfReader
+        from io import BytesIO
+        n = len(PdfReader(BytesIO(data), strict=False).pages)
+        ranges = _pages.ranges_from_starts(starts or [], n)
+        if len(ranges) < 2:
+            raise StoreError('E-SPLIT', 'Choose where at least one more document starts.', 'اختار صفحة واحدة على الأقل بيبدأ عندها مستند تاني.')
+        stem = d['filename'].rsplit('.', 1)[0] if '.' in d['filename'] else d['filename']
+        parts = []
+        for (a, b), blob in zip(ranges, _pages.split(data, ranges)):
+            name = f'{stem} (p{a}-{b}).pdf' if a != b else f'{stem} (p{a}).pdf'
+            parts.append(_storage.stage_document(self, did, name, blob, meta={'split_from': doc_id, 'pages': [a, b], 'staged_by': 'split'}))
+        self.db.execute("update document set state='withdrawn' where id=?", (doc_id,))
+        self.db.commit()
+        self.audit(did, 'document.split', doc=doc_id, parts=[p['id'] for p in parts], ranges=ranges)
+        return {'parts': parts}
+
+    def merge_documents(self, did, slot_id, doc_ids):
+        """One document of the item's PDFs, in the order given (a document scanned as separate files); the merged ones are withdrawn."""
+        from .. import pages as _pages
+        if len(doc_ids) < 2 or len(set(doc_ids)) != len(doc_ids):
+            raise StoreError('E-MERGE', 'Choose two documents or more of this item.', 'اختار مستندين أو أكتر من البند ده.')
+        docs = [self._current_pdf(did, x) for x in doc_ids]
+        if any(x['slot_id'] != slot_id for x in docs):
+            raise StoreError('E-MERGE', 'The documents to join must all be in this item.', 'المستندات اللي هتتدمج لازم تكون كلها في البند ده.')
+        blob = _pages.merge([self.blob_path(x['sha256']).read_bytes() for x in docs])
+        first = docs[0]
+        new = self.add_document(did, slot_id, first['filename'], blob, first['title'],
+                                {**first['meta'], 'merged_from': doc_ids}, doc_class=first['doc_class'])
+        self.db.execute('update document set state=\'withdrawn\' where id in (%s)' % ','.join('?' * len(doc_ids)), doc_ids)
+        self.db.commit()
+        self.audit(did, 'document.merged', docs=doc_ids, new=new['id'])
+        return {'document': new}
+
+    def _current_pdf(self, did, doc_id):
+        d = self.document(doc_id)
+        if d['dossier_id'] != did or d['state'] != 'current':
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        if self.blob_path(d['sha256']).read_bytes()[:5] != b'%PDF-':
+            raise StoreError('E-NOT-PDF', 'Pages are split and joined in PDF files only.', 'التقسيم والدمج بيتعملوا في ملفات PDF بس.')
+        return d
+
+    def pdf_of_document(self, did, doc_id):
+        """A Word, Excel, PowerPoint or text file turned into its PDF on this machine (LibreOffice): a new version, the source kept
+        (superseded) — or, for the proposed leaflet that 1.1.9 asks in Word, its PDF added beside it (the copy an eCTD takes)."""
+        import tempfile
+        from .. import extract as _extract
+        from ..generate.docx_kit import to_pdf, find_soffice
+        d = self.document(doc_id)
+        if d['dossier_id'] != did or d['state'] != 'current':
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        ext = d['filename'].rsplit('.', 1)[-1].lower() if '.' in d['filename'] else ''
+        family = _extract.source_family(d['filename'], self.blob_path(d['sha256']).read_bytes()[:8192]) or ('word' if ext == 'docx' else None)
+        if d['meta'].get('external') or family not in ('word', 'excel', 'powerpoint', 'text'):
+            raise StoreError('E-NOT-SOURCE', 'This document is not a Word, Excel, PowerPoint or text file.', 'المستند ده مش ملف Word أو Excel أو PowerPoint أو نص.')
+        if not find_soffice():
+            raise StoreError('E-NO-OFFICE', 'This computer has no LibreOffice to turn it into a PDF. In Word: File → Save As → PDF (tick «Create bookmarks '
+                             'using headings»), then upload the PDF to this item: it replaces this file.',
+                             'الجهاز ده مفيهوش LibreOffice يحوّله PDF. من Word: ملف ← حفظ باسم ← PDF (علّم «إنشاء إشارات مرجعية باستخدام العناوين»)، '
+                             'وبعدين ارفع الـ PDF في البند ده: هيحل محل الملف ده.')
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            src = tmp / ('source.' + (ext or 'docx'))
+            shutil.copyfile(self.blob_path(d['sha256']), src)
+            try:
+                pdf = to_pdf(src).read_bytes()
+            except Exception:
+                raise StoreError('E-PDF-FAILED', 'LibreOffice could not turn this file into a PDF. Save it as PDF from its own program and upload it.',
+                                 'LibreOffice ما قدرش يحوّل الملف ده PDF. احفظه PDF من البرنامج بتاعه وارفعه.')
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+        beside = next((s.req_id for s in self.slots(did) if s.slot_id == d['slot_id']), '') in WORD_ITEMS                 # 1.1.9 keeps its Word: the PDF goes in next to it
+        name = (d['filename'].rsplit('.', 1)[0] if '.' in d['filename'] else d['filename']) + '.pdf'
+        new = self.add_document(did, d['slot_id'], name, pdf, d['title'], {**d['meta'], 'converted_from': d['filename']},
+                                supersede=None if beside else doc_id, doc_class=d['doc_class'])
+        self.audit(did, 'document.to_pdf', doc=doc_id, new=new['id'], beside=beside)
+        return {'document': new, 'beside': beside}
 
     # ---------------- submission history (lifecycle, P3)
     def record_submission(self, did, output, seq, activity, suuid, envelope, history, path):
@@ -561,7 +775,16 @@ class Store:
         if not include_withdrawn:
             q += " and state='current'"
         ids = [r['id'] for r in self.db.execute(q + ' order by created', args).fetchall()]
-        return [self.document(i) for i in ids]
+        docs = [self.document(i) for i in ids]
+        if slot_id is not None and any(d['meta'].get('renewal_request') for d in docs):
+            for d in docs:                                # an expired pricing certificate with its request for updating: accepted
+                if any(f.get('rule') == 'DOC-EXPIRED' for f in d['findings']):
+                    d['findings'] = [dict(f, rule='DOC-EXPIRED-RENEWAL', severity='warn', action='none',
+                                          en=f['en'].split(' Obtain')[0] + ' Accepted with the request for updating in this item (NP.CAPP.065 v5 1.1.5).',
+                                          ar=f['ar'].split(' لازم')[0] + ' مقبول ومعاه طلب التحديث في نفس البند (NP.CAPP.065 v5 بند 1.1.5).')
+                                     if f.get('rule') == 'DOC-EXPIRED' else f for f in d['findings']]
+                    d['check_status'] = status_of(d['findings']) if d['findings'] else 'conforming'
+        return docs
 
     def withdraw(self, did, doc_id, reason):
         d = self.document(doc_id)
@@ -592,6 +815,25 @@ class Store:
                 raise StoreError('E-META', f"EU 1.3.1: the PI type is one of {', '.join(v['pi_types'])} and the language an EU code (en, de, fr…).",
                                  'بند 1.3.1 الأوروبي: نوع النشرة من ' + '، '.join(v['pi_types']) + ' واللغة كود أوروبي (en، de، fr…).',
                                  missing=['pi_type', 'lang'])
+
+    def confirm_kind(self, did, doc_id):
+        """«It is in the right place»: the person overrules the kind rule for this file. Its DOC-KIND objection goes; every other finding
+        stays and the status follows them; the meta and the audit keep what the rule took the file for."""
+        d = self.document(doc_id)
+        if d['dossier_id'] != did:
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        gone = [f for f in d['findings'] if f.get('rule') == 'DOC-KIND']
+        if not gone:
+            return d
+        kept = [f for f in d['findings'] if f.get('rule') != 'DOC-KIND']
+        status = status_of(kept)
+        said = (gone[0].get('extra') or {}).get('kind')
+        meta = d['meta'] | {'kind_confirmed': {'at': time.time(), 'rule_said': said}}
+        self.db.execute('update document set findings=?, check_status=?, meta=? where id=?',
+                        (json.dumps(kept, ensure_ascii=False), status, json.dumps(meta, ensure_ascii=False), doc_id))
+        self.db.commit()
+        self.audit(did, 'document.kind_confirmed', doc=doc_id, slot=d['slot_id'], rule_said=said)
+        return self.document(doc_id)
 
     def move_document(self, did, doc_id, slot_id, extra_meta=None):
         """A misfiled document goes to its own item: a new version there (checked again), the old one withdrawn; blob kept once."""
@@ -707,10 +949,18 @@ class Store:
         for x in out:
             if x['unsigned'] and x['status'] == 'conforming':
                 x['status'] = 'needs_attention'
-            if x['request'] and x['status'] in ('not_started', 'non_conforming', 'needs_attention', 'received'):
-                x['status'] = 'waiting'
+            ectd_issue = any(f.get('scope') == 'ectd' and f.get('severity') == 'block' for d in x['documents'] for f in d['findings'])
+            if x['request'] and (x['status'] in ('not_started', 'non_conforming', 'needs_attention', 'received') or ectd_issue):
+                x['status'] = 'waiting'                    # a new copy asked from the issuer (for the One Submission or for eCTD readiness)
             if x['req_id'] == 'M1-44' and x['status'] == 'not_started':
                 x['status'] = 'auto'              # tracking table: rebuilt from the history at every eCTD export
+        attest = (self.dossier(did).get('data') or {}).get('attest') or {}
+        for x in out:                                   # what no reading can see, asked once per item
+            need = (['signed', 'stamped'] if x.get('doc_class') == 'company_letter' else []) + (['legalized'] if x['req_id'] in ATTEST_LEGALIZE else [])
+            x['attest_need'] = need if x['documents'] and not all(d['meta'].get('generated') for d in x['documents']) else []
+            x['attest'] = attest.get(x['slot_id']) if x['attest_need'] else None
+            if x['attest'] and x['attest'].get('answer') == 'no' and x['status'] not in ('not_applicable', 'not_started'):
+                x['status'] = 'non_conforming'                       # «not yet»: signed / stamped / legalised still to come
         unassigned = [d for d in self.documents(did) if d['slot_id'] is None]
         counts = {}
         for x in out:
@@ -727,7 +977,11 @@ class Store:
         unsigned = [s['slot_id'] for s in b['slots'] if s['unsigned']]
         external = [s['slot_id'] for s in b['slots'] if s['external']]
         xb = [f for f in b['cross'] if f['severity'] == 'block']
-        return {'ok': not missing and not blocking and not xb and not unsigned and not external, 'unsigned': unsigned,
+        to_confirm = [s['slot_id'] for s in b['slots'] if s.get('attest_need') and not s.get('attest')]
+        ectd_blocking = [s['slot_id'] for s in b['slots'] if any(f.get('scope') == 'ectd' and f.get('severity') == 'block'
+                                                                for d in s['documents'] for f in d['findings'])]
+        return {'ok': not missing and not blocking and not xb and not unsigned and not external, 'unsigned': unsigned, 'to_confirm': to_confirm,
+                'ectd_blocking': ectd_blocking,
                 'external_only': external, 'missing_required': missing, 'non_conforming': blocking,
                 'cross_blocking': [{'id': f['id'], 'en': f['en'], 'ar': f['ar']} for f in xb],
                 'provisional_profiles': ['EG eCTD 3.2.2 provisional v0', 'EG eCTD 4.0 provisional v0']}

@@ -17,7 +17,7 @@ class Site:
 
     def __init__(self):
         site = self
-        self.seen, self.hold = [], None
+        self.seen, self.hold, self.block = [], None, None      # hold: a large file stops midway; block: a file does not start
 
         class Quiet(http.server.SimpleHTTPRequestHandler):
             protocol_version = 'HTTP/1.1'
@@ -34,6 +34,8 @@ class Site:
 
             def copyfile(self, source, out):
                 site.seen.append(self.path.split('?')[0])
+                while site.block and site.block in self.path:
+                    time.sleep(0.1)
                 n = 0
                 while True:
                     buf = source.read(16384)
@@ -57,7 +59,7 @@ class Site:
 def site():
     s = Site()
     yield s
-    s.hold = None
+    s.hold = s.block = None
     s.srv.shutdown()
 
 
@@ -155,4 +157,23 @@ def test_a_dead_line_is_said_with_a_way_to_try_again(site):
         page.click('#bootHelp button')
         opened(page)
         assert errors == [], errors
+        b.close()
+
+
+def test_the_first_moment_already_says_what_is_happening(site):
+    """Item 15: even while the runtime's own script is still on its way (held back here), the page is not blank: its first bytes
+    say that the program is opening and why the first time takes a minute; the progress screen takes over once it runs."""
+    site.block = 'pyodide/pyodide.js'
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        errors = []
+        page = new_page(b.new_context(viewport={'width': 390, 'height': 800}), errors)
+        page.goto(site.url + '/index.local.html#/', wait_until='commit')
+        page.wait_for_selector('#boot0', state='visible', timeout=20000)
+        first = page.inner_text('#boot0')
+        assert 'بيفتح منشئ ملفات التسجيل' in first and 'Opening Dossier Builder' in first and not page.locator('#boot').count()
+        site.block = None
+        page.wait_for_selector('#boot', timeout=60000)
+        assert page.locator('#boot0').count() == 0                                          # the progress screen replaced it
+        opened(page)
         b.close()

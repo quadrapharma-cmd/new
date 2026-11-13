@@ -57,7 +57,7 @@ def test_templates_and_make_it_for_me(server):
         page.click(f'[data-tpl="{p01["slot_id"]}"]')
         page.wait_for_selector('#tplPanel .docprev')
         panel = page.inner_text('#tplPanel')
-        assert 'البرنامج يعمل المستند ده كامل' in panel and 'التركيب (تركيبة الوحدة)' in panel and 'مفيش موديل هنا' in panel
+        assert 'البرنامج بيكتب مسودة المستند ده' in panel and 'راجعها قبل' in panel and 'التركيب (تركيبة الوحدة)' in panel and 'مفيش موديل هنا' in panel
         assert 'Neomycin sulphate' in panel and 'Ph. Eur.' in panel                         # the live page already carries the product's own data
         assert page.locator('#tplPanel .docprev .ex').count() >= 1                           # and grey examples where nothing is known yet
         page.locator('#drawer').screenshot(path=f'{OUT}/template_live_ar.png')

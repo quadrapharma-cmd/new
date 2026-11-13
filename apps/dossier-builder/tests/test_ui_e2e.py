@@ -73,6 +73,10 @@ def test_journey(server, browser, tmp_path):
     with page.expect_file_chooser() as fc:
         page.locator('tr', has_text='GMP certificate(s) of FPP').locator('[data-up]').first.click()
     fc.value.set_files(str(old))
+    page.wait_for_selector('#toast:not([hidden])')
+    page.wait_for_timeout(400)
+    assert page.is_hidden('#drawer')                                                                # never opened by itself
+    page.locator('tr', has_text='GMP certificate(s) of FPP').locator('[data-why]').first.click()     # the person opens the item
     page.wait_for_selector('#drawer:not([hidden])')
     body = page.inner_text('#dBody')
     assert 'reads as' in body and 'read-only' in body and 'PDF version' not in body
@@ -132,7 +136,7 @@ def test_publisher_view(server, browser, tmp_path):
         const dt = new DataTransfer(); dt.items.add(new File([bin], 'loa.pdf', {type: 'application/pdf'}));
         const n = document.querySelector('[data-node="M1-02"]');
         n.dispatchEvent(new DragEvent('drop', {dataTransfer: dt, bubbles: true, cancelable: true}));
-    }""", __import__('base64').b64encode(pdf).decode())
+    }""", __import__('base64').b64encode(make_pdf(tmp_path / 'loa.pdf', 'Power of attorney').read_bytes()).decode())   # its own file: the same one twice is a duplicate
     page.wait_for_selector('[data-node="M1-02"].sel')
     page.wait_for_selector('#leafPane tr.leaf')
     assert page.locator('[data-node="M1-02"] .dot.d-conforming').count() == 1
@@ -252,16 +256,19 @@ def test_rebuild_loop_ui(server, browser, tmp_path):
     with open(js, 'wb') as f:
         w.write(f)                                                                          # a company document with JavaScript: an auto-fix
     r = httpx.post(f'{server}/api/dossiers/{did}/slots/M1-11/documents', files={'file': ('layout.pdf', js.read_bytes(), 'application/pdf')}, data={'meta': '{}'})
-    assert r.status_code == 201 and r.json()['check_status'] == 'non_conforming', r.text
+    assert r.status_code == 201 and r.json()['check_status'] == 'conforming', r.text                  # JavaScript: an eCTD-readiness rule
+    assert any(f['rule'] == 'PDF-JS' and f['scope'] == 'ectd' for f in r.json()['findings'])
     page = browser.new_page(viewport={'width': 1440, 'height': 900})
     page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
     page.add_init_script("localStorage.setItem('db.lang','en')")
     page.goto(f'{server}/#/d/{did}/board')
     page.wait_for_selector('tbody tr')
+    page.click('[data-f=all]')                                                                  # conforming for the One Submission: under «all»
     page.locator('tr', has_text='coloured stamped outer').locator('[data-why]').click()
+    page.wait_for_selector('#dBody details summary:has-text("eCTD readiness")')                  # shown under eCTD readiness, fixable
     page.click('[data-fix]')
     page.wait_for_function("document.querySelector('#dBody').innerText.includes('v 2')", timeout=60000)
-    assert 'Non-conforming' not in page.inner_text('#dBody')
+    assert 'Non-conforming' not in page.inner_text('#dBody') and 'eCTD readiness' not in page.inner_text('#dBody')
     page.keyboard.press('Escape')
     # request from issuer for a missing third-party document
     page.click('[data-f=all]')

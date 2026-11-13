@@ -126,7 +126,7 @@ def test_a_documents_kind_finds_its_place_in_each_authority():
     slots = list(slots_of('gcc.ctd.m1.v1').values())
     c = Classifier(gcc)
     top = lambda name, text='': c.suggest(name, text, slots)[0]['slot_id']
-    assert top('alcohol free declaration.pdf') == 'GCC-1.7.5' and top('1.3.1 SPC.pdf') == 'GCC-1.3.1'
+    assert top('x.pdf', 'alcohol free declaration') == 'GCC-1.7.5' and top('y.pdf', '1.3.1 SPC summary of product characteristics') == 'GCC-1.3.1'
     assert top('report.pdf', 'stability study protocol and report') == 'P-16'                       # the common CTD's keywords come along
 
 

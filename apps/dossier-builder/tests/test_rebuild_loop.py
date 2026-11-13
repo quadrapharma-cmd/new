@@ -24,17 +24,24 @@ def status(c, did, sid):
 
 
 @SOFFICE
+def did_block_ectd(c, did, sid):
+    return sid in c.get(f'/api/dossiers/{did}/gate').json()['ectd_blocking']
+
+
 def test_auto_fix_makes_new_conforming_version(c, tmp_path):
     from pypdf import PdfWriter
     w = PdfWriter(clone_from=str(make_pdf(tmp_path / 's.pdf', 'Appendix 4'))); w.add_js('app.alert(1);')
     p = tmp_path / 'js.pdf'; w.write(open(p, 'wb'))
     did = new(c)
     doc = up(c, did, 'M1-11', p.read_bytes()).json()                # a company document with JavaScript (written as PDF 1.3: its version line changed at upload)
-    assert doc['meta']['converted'] == ['pdf_version_1.7'] and status(c, did, 'M1-11')['status'] == 'non_conforming'
+    assert doc['meta']['converted'] == ['pdf_version_1.7'] and status(c, did, 'M1-11')['status'] == 'conforming'      # JavaScript: eCTD readiness
+    assert any(f['rule'] == 'PDF-JS' and f['scope'] == 'ectd' for f in doc['findings'])
+    assert did_block_ectd(c, did, 'M1-11')
     r = c.post(f"/api/dossiers/{did}/documents/{doc['id']}/fix").json()
     assert [x['op'] for x in r['done']] == ['remove_javascript'] and r['document']['check_status'] == 'conforming'
     s = status(c, did, 'M1-11')
     assert s['status'] == 'conforming' and [d['version'] for d in s['documents']] == [2]   # original superseded, kept
+    assert not did_block_ectd(c, did, 'M1-11')
     assert c.get(f"/api/dossiers/{did}/documents/{doc['id']}/file").status_code == 200
 
 

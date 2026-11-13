@@ -17,7 +17,8 @@
 .jbar a.warn{color:var(--warn)} .jbar a.warn .k{background:var(--warn-soft);color:var(--warn)}
 .jbar .arrow{color:var(--faint);flex:none}
 .wiz{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:18px;align-items:start}
-@media (max-width:1000px){.wiz{grid-template-columns:1fr}}
+@media (max-width:1000px){.wiz{grid-template-columns:minmax(0,1fr)}}
+.wiz>*{min-width:0}
 .pv .n{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;color:var(--brand)}
 .pv .mods{display:flex;flex-direction:column;gap:6px}
 .pv .mod{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:12.5px}
@@ -159,6 +160,8 @@ html[lang="ar"] .vstrip .vlabel{letter-spacing:0;text-transform:none}
 @media (max-width:900px){.ws{grid-template-columns:1fr} .ws .tree{max-height:260px} .vstrip{grid-template-columns:1fr} .vstrip .acts{flex-direction:row;flex-wrap:wrap} .vbar{grid-template-columns:110px minmax(0,1fr) auto} .letter{padding:18px 16px} .tl .ti{grid-template-columns:86px 18px minmax(0,1fr)} .tl .ti::before{inset-inline-start:94px}}
 
 .rolebar{margin:10px 20px 0}
+@keyframes flash{0%,40%{background:color-mix(in srgb,var(--accent) 22%,transparent)}100%{background:transparent}}.flash,.flash>td{animation:flash 2.2s ease}
+ul.cond{margin:6px 0 0;padding-inline-start:18px;display:grid;gap:3px}ul.cond li.src{list-style:none;margin-inline-start:-18px;color:var(--muted)}details.cond>summary{cursor:pointer;color:var(--accent)}
 .doccards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}.doccard{border:1px solid var(--line)}.doccard.ok{border-color:var(--ok)}.doccard.bad{border-color:var(--bad)}
 .docline{margin-top:4px;padding:4px 6px;border-radius:6px;background:var(--surface-2)}
 .docprev{background:#fff;color:#111;border:1px solid var(--line);border-radius:6px;padding:22px 26px;margin:8px 0;font:14px/1.6 Arial,"Noto Naskh Arabic",sans-serif;box-shadow:var(--shadow-sm)}
@@ -211,8 +214,12 @@ const T = {
   appName:{en:'Dossier Builder',ar:'منشئ ملفات التسجيل'},
   navHome:{en:'Home',ar:'الرئيسية'}, navDossiers:{en:'Dossiers',ar:'الملفات'}, navVars:{en:'Variations',ar:'التغييرات'}, navSuite:{en:'Product file',ar:'ملف المنتجات'},
   navCurrent:{en:'Current dossier',ar:'الملف الحالي'}, navGuide:{en:'Guide',ar:'الدليل'}, navBoard:{en:'Requirements',ar:'المتطلبات'}, navData:{en:'Product data',ar:'بيانات المنتج'},
-  navPublisher:{en:'Publisher',ar:'الناشر'}, navChecks:{en:'Checks',ar:'الفحوص'}, navExport:{en:'Export',ar:'التصدير'}, navAudit:{en:'Activity log',ar:'سجل النشاط'},
-  localNote:{en:'Local workspace — files stay on this computer.',ar:'مساحة عمل محلية — الملفات لا تغادر هذا الجهاز.'},
+  navPublisher:{en:'Publisher',ar:'الناشر'}, navChecks:{en:'Checks',ar:'الفحوص'}, navSearch:{en:'Search the documents',ar:'بحث في المستندات'},
+  srchSub:{en:'The text of every document of this dossier: a batch number, a study, «Table 3». Each file is read once.',ar:'نص كل مستندات الملف ده: رقم تشغيلة، أو دراسة، أو «Table 3». كل ملف بيتقري مرة واحدة.'},
+  srchPh:{en:'What are you looking for?',ar:'بتدوّر على إيه؟'}, srchGo:{en:'Search',ar:'ابحث'}, srchNone:{en:'Not found in any document.',ar:'مش موجود في أي مستند.'},
+  srchPage:{en:'page',ar:'صفحة'}, srchRead:{en:'Reading the documents…',ar:'بيقرا المستندات…'},
+  srchCount:{en:'{m} matches in {d} documents',ar:'{m} نتيجة في {d} مستند'}, srchLeft:{en:'{n} documents still being read',ar:'{n} مستند لسه بيتقري'}, navExport:{en:'Export',ar:'التصدير'}, navAudit:{en:'Activity log',ar:'سجل النشاط'},
+  localNote:{en:'Local workspace — the files are kept on this computer; one goes out only when you ask the model (Claude) to read it.',ar:'مساحة عمل محلية — الملفات متخزّنة على الجهاز ده، والملف بيخرج بس لما تطلب من الموديل (Claude) يقراه.'},
   logout:{en:'Sign out',ar:'خروج'}, role_admin:{en:'Administrator',ar:'مدير'}, role_editor:{en:'Editor',ar:'محرّر'}, role_viewer:{en:'Viewer',ar:'مشاهد'},
   role_disabled:{en:'Disabled',ar:'موقوف'}, navUsers:{en:'Users',ar:'المستخدمون'},
   users:{en:'Users & sign-in',ar:'المستخدمون وتسجيل الدخول'}, usersSub:{en:'Who may open the program and what each may do.',ar:'مين يفتح البرنامج، وكل واحد يقدر يعمل إيه.'},
@@ -239,7 +246,7 @@ const T = {
   viewerNote:{en:'Your role can view only: saving and uploading are refused.',ar:'صلاحيتك مشاهدة بس: الحفظ والرفع مرفوضين.'},
   /* home */
   heroEyebrow:{en:'Egyptian Drug Authority · NP.CAPP.065 v5 · eCTD 3.2.2 / 4.0',ar:'هيئة الدواء المصرية · NP.CAPP.065 الإصدار 5 · eCTD 3.2.2 / 4.0'},
-  heroTitle:{en:'The regulatory dossier, built right the first time.',ar:'ملف التسجيل — مطابق من أول مرة.'},
+  heroTitle:{en:'The registration dossier, item by item — each requirement with its source, checked before export.',ar:'ملف التسجيل بند بند — كل شرط بمصدره، ومتفحوص قبل التصدير.'},
   heroLead:{en:'From product facts and company documents to a complete CTD / eCTD dossier for the EDA. The requirements are fixed before the first upload, every document is checked before the Authority sees it, and every rule shows its source.',
             ar:'من بيانات المنتج ومستندات الشركة إلى ملف CTD / eCTD كامل لهيئة الدواء. المتطلبات بتتحدد قبل أول رفع، وكل مستند بيتفحص قبل ما الهيئة تشوفه، وكل قاعدة جنبها مصدرها.'},
   newDossier:{en:'New dossier',ar:'ملف جديد'}, openDossiers:{en:'Open a dossier',ar:'افتح ملف'}, capsT:{en:'What the program does',ar:'قدرات البرنامج'},
@@ -253,7 +260,7 @@ const T = {
   f6:{en:'Export & submit',ar:'صدّر وقدّم'}, f6d:{en:'CTD · eCTD 3.2.2 · eCTD 4.0 + report',ar:'CTD · eCTD 3.2.2 · eCTD 4.0 + تقرير'},
   recent:{en:'Dossiers in progress',ar:'الملفات الجارية'}, allDossiers:{en:'All dossiers',ar:'كل الملفات'},
   cap1:{en:'Requirements engine',ar:'محرك المتطلبات'}, cap1d:{en:'Fixes exactly what your dossier needs — local/imported, generic/innovator, licence type, new/re-registration — each item with its reason and source.',ar:'بيحدد بالظبط المطلوب لملفك: محلي/مستورد، مثيل/مبتكر، نوع الترخيص، تسجيل/إعادة تسجيل — وكل بند بسببه ومصدره.'},
-  cap2:{en:'Three outputs, one dossier',ar:'ثلاث صيغ من نفس الملف'}, cap2d:{en:'CTD One Submission for today, eCTD 3.2.2 and eCTD 4.0 when they apply — no rework.',ar:'CTD One Submission للتقديم النهارده، وeCTD 3.2.2 وeCTD 4.0 لما يتطبّقوا — من غير إعادة شغل.'},
+  cap2:{en:'The outputs of one dossier',ar:'مخرجات الملف الواحد'}, cap2d:{en:'Egypt: CTD One Submission, and eCTD 3.2.2 / 4.0 on a provisional profile (EDA has not published its own). EU: eCTD 3.2.2 on EU Module 1 v3.1.1. Other countries: CTD folders.',ar:'مصر: CTD One Submission، وeCTD 3.2.2 و4.0 على ملف تعريف مؤقت (الهيئة لسه ما نشرتش بتاعها). أوروبا: eCTD 3.2.2 على موديول ١ الأوروبي 3.1.1. باقي الدول: مجلدات CTD.'},
   cap3:{en:'Variation classifier',ar:'مصنّف التغييرات'}, cap3d:{en:'Pick the change → PAC class, eCTD submission type, conditions and requirements, with the source row.',ar:'اختار التغيير → الفئة PAC ونوع تقديم eCTD والشروط والمتطلبات، مع سطر المصدر.'},
   cap4:{en:'Document generators',ar:'مولّدات المستندات'}, cap4d:{en:'Annex I with the Arabic undertaking, composition certificate, salt calculation, CEP and stability commitments, translation declaration, cover letter, tracking table, Module 3 tables.',ar:'نموذج الطلب Annex I بالتعهد العربي، شهادة التركيب، حساب الملح، تعهدات CEP والثبات، إقرار الترجمة، خطاب التغطية، جدول التتبع، جداول Module 3.'},
   cap5:{en:'PDF checks & auto-fix',ar:'فحص PDF والإصلاح التلقائي'}, cap5d:{en:'PDF version, security, JavaScript, searchable text (a file without text is refused at upload), bookmarks, file names. Third-party evidence is locked: its content never changes.',ar:'إصدار PDF، الحماية، JavaScript، النص القابل للبحث (الملف اللي من غير نص بيترفض وقت الرفع)، الـ bookmarks، أسماء الملفات. مستندات الجهات الخارجية مقفولة: محتواها لا يتغيّر أبداً.'},
@@ -299,6 +306,39 @@ const T = {
   pvGen:{en:'we can generate for you',ar:'نقدر نولّدها لك'}, pvThird:{en:'from third parties (GMP, CPP, CEP…)',ar:'من جهات خارجية (GMP, CPP, CEP…)'},
   pvCol:{en:'NP.CAPP.065 matrix column',ar:'عمود مصفوفة NP.CAPP.065'}, pvAssumed:{en:'Local innovator is not in the source matrix — the innovator column is assumed; confirm with EDA.',ar:'المبتكر المحلي مش في مصفوفة المصدر — بنفترض عمود المبتكر؛ أكّد مع الهيئة.'},
   pvApis:{en:'Add the active substances (step 3) to see the 3.2.S items per manufacturer.',ar:'أضف المواد الفعالة (الخطوة 3) لتظهر بنود 3.2.S لكل مصنّع.'},
+  condT:{en:'Its conditions before upload',ar:'شروطه قبل الرفع'}, condAll:{en:"Each document's conditions before upload",ar:'شروط كل مستند قبل الرفع'},
+  condAllSub:{en:'Every item of this dossier: what its file must be (form) and what it must hold (content) — before anything is uploaded.',ar:'كل بند في الملف ده: الملف لازم يكون إيه (الشكل) ولازم يكون فيه إيه (المحتوى) — قبل ما ترفع أي حاجة.'},
+  condForm:{en:'Form',ar:'الشكل'}, condContent:{en:'Content',ar:'المحتوى'}, condSrc:{en:'As written in the source',ar:'نص المرجع'},
+  findSee:{en:'notes — open the item to see them',ar:'ملاحظة — افتح البند تشوفها'},
+  navPkg:{en:'Check an eCTD package',ar:'فحص ملف eCTD'}, pkgSub:{en:'Any eCTD 3.2.2 package, made by any program or consultant: checked by its region\'s criteria (Egypt\'s provisional profile, the EU\'s 8.2), or by the ICH checks every eCTD must pass. Not an authority\'s validator.',ar:'أي ملف eCTD 3.2.2، معمول بأي برنامج أو عند أي استشاري: بيتفحص بمعايير منطقته (الملف المؤقت لمصر، ومعايير أوروبا 8.2)، أو بفحوص ICH اللي لازم أي eCTD يعدّيها. ده مش فاحص الهيئة.'},
+  pkgCheck:{en:'Check a package',ar:'افحص ملف'}, pkgCheckSub:{en:'A ZIP of one sequence (0000) or several (0000, 0001…).',ar:'ملف ZIP فيه تسلسل واحد (0000) أو أكتر (0000، 0001…).'}, pkgGo:{en:'Check',ar:'افحص'},
+  pkgCmp:{en:'Compare two packages',ar:'قارن ملفين'}, pkgCmpSub:{en:'What changed from A to B — e.g. the package made here and the one the consultant delivered.',ar:'إيه اللي اتغيّر من A لـ B — زي الملف اللي اتعمل هنا واللي سلّمه الاستشاري.'}, pkgCmpGo:{en:'Compare',ar:'قارن'},
+  pkgBusy:{en:'Working…',ar:'شغال…'}, pkgOk:{en:'Every sequence conforms to the criteria checked below.',ar:'كل التسلسلات مطابقة للمعايير اللي اتفحصت تحت.'}, pkgBad:{en:'Some sequences do not conform: see the report.',ar:'فيه تسلسلات مش مطابقة: شوف التقرير.'},
+  pkgSeq:{en:'Sequence',ar:'التسلسل'}, pkgRegion:{en:'Criteria',ar:'المعايير'}, pkgRes:{en:'Result',ar:'النتيجة'}, pkgR_eu:{en:'EU Module 1 3.1.1 · criteria 8.2',ar:'موديول 1 أوروبا 3.1.1 · معايير 8.2'},
+  pkgR_eg:{en:'Egypt · provisional profile',ar:'مصر · ملف مؤقت'}, pkgR_ich:{en:'ICH only (no region criteria here)',ar:'ICH بس (مفيش معايير للمنطقة دي هنا)'},
+  pkgCounts:{en:'pass {p} · fail {f} · warning {w} · not run {n}',ar:'نجح {p} · فشل {f} · تنبيه {w} · ما اتفحصش {n}'}, pkgSame:{en:'The two packages are the same.',ar:'الملفين زي بعض.'},
+  pkgOnly:{en:'only in {x}',ar:'موجود في {x} بس'}, pkgNoCh:{en:'no change',ar:'مفيش تغيير'}, pkgC_added:{en:'added',ar:'اتضاف'}, pkgC_removed:{en:'removed',ar:'اتشال'}, pkgC_changed:{en:'changed',ar:'اتغيّر'},
+  pkgC_retitled:{en:'new title',ar:'عنوان جديد'}, pkgC_operation:{en:'other operation',ar:'عملية تانية'},
+  rulesT:{en:'The rules checked',ar:'القواعد اللي بتتفحص'}, rulesSub:{en:'Every rule the program checks, where it runs, its status and its source. «In force»: the authority\'s rule today; «draft»: a draft guidance (it decides eCTD readiness only); «policy»: the program\'s own practice.',ar:'كل قاعدة البرنامج بيفحصها، وبتشتغل فين، وحالتها ومصدرها. «ساري»: قاعدة الهيئة النهارده؛ «مسودة»: إرشادات لسه مسودة (بتحدد جاهزية الـ eCTD بس)؛ «سياسة البرنامج»: طريقة البرنامج نفسه.'},
+  rulesUp:{en:'At upload',ar:'وقت الرفع'}, rulesCross:{en:'Across the documents',ar:'بين المستندات'}, rulesEG:{en:'eCTD validator — Egypt (provisional profile)',ar:'فاحص الـ eCTD — مصر (ملف مؤقت)'},
+  rulesEU:{en:'eCTD validator — EU (criteria 8.2)',ar:'فاحص الـ eCTD — أوروبا (معايير 8.2)'}, rulesNotRun:{en:'not run',ar:'ما بيتفحصش'}, rulesSrc:{en:'The official texts (SHA-256)',ar:'النصوص الرسمية (SHA-256)'},
+  rs_in_force:{en:'in force',ar:'ساري'}, rs_draft:{en:'draft',ar:'مسودة'}, rs_policy:{en:'policy',ar:'سياسة البرنامج'},
+  splitBtn:{en:'Split it',ar:'قسّمه'}, splitT:{en:'Split the file into its documents',ar:'قسّم الملف لمستنداته'},
+  splitSub:{en:'Tick the pages where a new document starts. The program ticked where it reads another kind of document or «page 1 of …»; move the ticks if it is wrong. Each part goes to the unplaced box with its own reading.',ar:'علّم الصفحات اللي بيبدأ عندها مستند جديد. البرنامج علّم المكان اللي قرا فيه نوع مستند تاني أو «صفحة 1 من …»؛ غيّر العلامات لو غلط. كل جزء بيروح صندوق «لسه ما اتحطش» بقرايته.'},
+  splitStarts:{en:'A document starts',ar:'بيبدأ مستند'}, splitWhat:{en:'What the page reads as',ar:'الصفحة شكلها إيه'}, splitUnknown:{en:'not recognised',ar:'مش متعرّف'},
+  splitN:{en:'{n} documents',ar:'{n} مستند'}, splitGo:{en:'Split',ar:'قسّم'}, splitDone:{en:'Split into {n} documents: place each from the unplaced box.',ar:'اتقسم {n} مستند: حط كل واحد من صندوق «لسه ما اتحطش».'},
+  mergeBtn:{en:'Join them into one file',ar:'ادمجهم في ملف واحد'}, mergeQ:{en:'The item\'s PDFs become one document, in this order (the files are kept in the history):',ar:'ملفات الـ PDF في البند هتبقى مستند واحد بالترتيب ده (والملفات محفوظة في السجل):'},
+  mergeGo:{en:'Join',ar:'ادمج'}, mergeDone:{en:'Joined into one document.',ar:'اتدمجوا في مستند واحد.'},
+  driveLinks:{en:'https://drive.google.com/drive/folders/… — one link, or several separated by spaces',ar:'https://drive.google.com/drive/folders/… — لينك واحد أو أكتر بينهم مسافة'},
+  draftAll:{en:'Draft them all',ar:'اعملهم كلهم'}, draftAllNone:{en:'Every item the program drafts has a document already.',ar:'كل البنود اللي البرنامج بيكتبها فيها مستندات خلاص.'},
+  draftAllQ:{en:'Write the Word draft of {n} items that have no document yet? Each one is a draft to review, sign and stamp before it is used.',ar:'أكتب مسودة Word لـ {n} بند لسه مفيهمش مستند؟ كل واحدة مسودة تراجعها وتوقّعها وتختمها قبل ما تستخدمها.'},
+  draftAllModel:{en:'The model fills each one from the uploaded documents and the product data.',ar:'الموديل بيملا كل واحدة من المستندات المرفوعة وبيانات المنتج.'},
+  draftAllData:{en:'No model here: each one is filled from the product data and the documents the program read; the rest stays marked to complete.',ar:'مفيش موديل هنا: كل واحدة بتتملا من بيانات المنتج والمستندات اللي البرنامج قراها؛ والباقي بيفضل متعلّم عليه تكمّله.'},
+  draftAllGo:{en:'Draft them',ar:'اعملهم'}, draftAllNow:{en:'Drafting {i} of {n}',ar:'بيكتب {i} من {n}'}, stop:{en:'Stop',ar:'وقّف'},
+  draftAllEnd:{en:'{d} drafts written · {f} not',ar:'اتكتب {d} مسودة · {f} ما اتكتبوش'},
+  toPdf:{en:'Turn it into PDF',ar:'حوّله PDF'}, toPdfDoing:{en:'Turning into PDF…',ar:'بيتحوّل PDF…'}, toPdfDone:{en:'Its PDF is the current version now (the source is kept).',ar:'الـ PDF بقى النسخة الحالية (والأصل محفوظ).'},
+  toPdfBeside:{en:'Its PDF is added beside the Word file: the One Submission takes the Word, the eCTD the PDF.',ar:'الـ PDF اتضاف جنب ملف الـ Word: الـ One Submission بياخد الـ Word والـ eCTD بياخد الـ PDF.'},
+  toPdfHand:{en:'To PDF: in Word, File → Save As → PDF (tick «Create bookmarks using headings»), then upload the PDF here.',ar:'عشان يبقى PDF: من Word، ملف ← حفظ باسم ← PDF (علّم «إنشاء إشارات مرجعية باستخدام العناوين»)، وارفع الـ PDF هنا.'},
   pvShow:{en:'Show the full list',ar:'اعرض القائمة كاملة'}, pvHide:{en:'Hide the list',ar:'اخفِ القائمة'}, pvFull:{en:'This is the file you will need',ar:'ده الملف اللي هتحتاجه'},
   pvLoading:{en:'Computing…',ar:'بيحسب…'}, pvBad:{en:'The profile contradicts itself:',ar:'الملف التعريفي فيه تعارض:'}, printList:{en:'Print the list',ar:'اطبع القائمة'},
   lvl_R:{en:'Required',ar:'مطلوب'}, lvl_O:{en:'Optional',ar:'اختياري'}, lvl_NR:{en:'Not required',ar:'غير مطلوب'}, lvl_NA:{en:'Not applicable',ar:'لا ينطبق'},
@@ -321,7 +361,7 @@ const T = {
   driveMode_connector:{en:'your Google Drive through Claude (no key)',ar:'Google Drive بتاعك عبر Claude (من غير مفتاح)'},
   tplT:{en:'Template & example',ar:'النموذج والمثال'}, tplBtn:{en:'Template',ar:'النموذج'}, draftBtn:{en:'Make it for me',ar:'اعمله لي'},
   draftBtnLong:{en:'Make it for me from the documents',ar:'اعمله لي من المستندات'}, draftAgain:{en:'Make it again',ar:'اعمله تاني'},
-  tpl_full:{en:'The program drafts this document from the uploaded documents and the product data.',ar:'البرنامج يعمل المستند ده كامل من المستندات المرفوعة وبيانات المنتج.'},
+  tpl_full:{en:'The program drafts this document from the uploaded documents and the product data — review the draft before you use it.',ar:'البرنامج بيكتب مسودة المستند ده من المستندات المرفوعة وبيانات المنتج — راجعها قبل ما تعتمدها.'},
   tpl_partial:{en:'The program builds the structure and the tables; the company adds the scientific content and reviews.',ar:'البرنامج يبني الهيكل والجداول؛ الشركة تضيف المحتوى العلمي وتراجع.'},
   tpl_generator:{en:'Made by a ready generator (the «Generate» button).',ar:'بيتولّد بمولّد جاهز (زرار «ولّد»).'},
   tpl_none:{en:'Issued by a third party or EDA: uploaded as issued, never re-typed. Below, what an acceptable copy shows.',ar:'صادر من جهة خارجية أو من الهيئة: يُرفع كما صدر ولا يُعاد كتابته. تحت، شكل النسخة المقبولة.'},
@@ -352,12 +392,17 @@ const T = {
   wkDone:{en:'Working copy',ar:'نسخة العمل'}, wkDocs:{en:'documents in place',ar:'مستند في مكانه'}, wkMiss:{en:'required still missing',ar:'مطلوب لسه ناقص'},
   auCtdD:{en:"Folders in the order of the authority's Module 1 and the common CTD, with a navigator and a checklist.",ar:'مجلدات بترتيب موديول ١ بتاع الهيئة والـ CTD المشترك، مع فهرس وقائمة.'}, auExportSub:{en:'One dossier, as CTD folders.',ar:'ملف واحد بمجلدات CTD.'},
   auT:{en:'Countries and authorities',ar:'الدول والهيئات'}, auItems:{en:'items',ar:'بند'}, auAny:{en:'any other country',ar:'أي دولة تانية'},
-  step0:{en:'Documents',ar:'المستندات'}, unplacedT:{en:'Uploaded, not placed yet',ar:'ملفات مرفوعة لسه ما اتحطتش في مكانها'}, unplacedSub:{en:'Pick the item and place it; the suggestion comes from the file\'s content.',ar:'اختار البند وحطّه؛ الاقتراح من محتوى الملف.'},
+  step0:{en:'Documents',ar:'المستندات'}, unplacedT:{en:'Uploaded, not placed yet',ar:'ملفات مرفوعة لسه ما اتحطتش في مكانها'}, unplacedSub:{en:'Pick the item and place it; the suggestion comes from the file\'s content.',ar:'اختار البند وحطّه؛ الاقتراح من محتوى الملف.'}, pickItem:{en:'— choose the item —',ar:'— اختار البند —'},
   putHere:{en:'Place it',ar:'حطّه'}, renamedDup:{en:'another file with this name: kept as',ar:'ملف تاني بنفس الاسم: اتحفظ باسم'}, stagedN:{en:'kept as not placed yet',ar:'اتحفظت كملفات لسه ما اتحطتش'}, placedOne:{en:'Placed.',ar:'اتحط.'}, suggested:{en:'suggested',ar:'مقترح'}, noSuggestion:{en:'no suggestion: choose the item',ar:'مفيش اقتراح: اختار البند'}, notThisDoc:{en:'not this document',ar:'مش المستند ده'}, stText:{en:'reading the text…',ar:'بيقرأ النص…'}, stModel:{en:'the model is reading the pages…',ar:'الموديل بيقرأ الصفحات…'},
   stDone:{en:'read',ar:'اتقرا'}, gotFrom:{en:'It gave us',ar:'خدنا منه'}, gotNothing:{en:'no data came out of it',ar:'ما طلعش منه بيانات'}, moveToIts:{en:'Move it to',ar:'انقله لخانة'}, removeFile:{en:'Remove it',ar:'شيله'},
   dupFile:{en:'already uploaded',ar:'مرفوع قبل كده'}, wizSaved:{en:'Saved as a draft ✓',ar:'محفوظ كمسودة ✓'}, wizAutosave:{en:'Saved automatically as a draft as you go',ar:'بيتحفظ تلقائيًا كمسودة أول بأول'}, wizRestart:{en:'Start over',ar:'ابدأ من الأول'},
-  wizRestored:{en:'Your saved work was restored.',ar:'رجّعنا شغلك المحفوظ.'}, wizResume:{en:'Finishing putting your documents into the dossier…',ar:'بنكمّل وضع مستنداتك في الملف…'}, liveT:{en:'Recognised so far',ar:'اللي اتعرفنا عليه لحد دلوقتي'}, act_move:{en:'Move it to its own item.',ar:'انقله لبنده الصح.'}, moveTo:{en:'Move to',ar:'انقله إلى'}, moved:{en:'Moved.',ar:'اتنقل.'}, docsFirst:{en:'Start with the documents you already have: upload each one under its name. The program reads them, fills the product data from them, and in the next steps asks you only for what it could not find.',ar:'ابدأ بالمستندات اللي عندك: ارفع كل مستند تحت اسمه. البرنامج يقرأها ويملي بيانات المنتج منها، وفي الخطوات الجاية يطلب منك بس اللي ما لقاهوش.'},
-  intakeAllT:{en:'Or drop everything at once',ar:'أو ارمي كل الملفات مرة واحدة'}, intakeAllSub:{en:'The program tells each document apart by its content and sorts it into its place.',ar:'البرنامج يفرّق المستندات من محتواها ويرتّبها في مكانها.'},
+  wizRestored:{en:'Your saved work was restored.',ar:'رجّعنا شغلك المحفوظ.'}, wizResume:{en:'Finishing putting your documents into the dossier…',ar:'بنكمّل وضع مستنداتك في الملف…'}, liveT:{en:'Recognised so far',ar:'اللي اتعرفنا عليه لحد دلوقتي'}, act_move:{en:'Move it to its own item.',ar:'انقله لبنده الصح.'}, attestQ:{en:'Before submission',ar:'قبل التقديم'}, ectdReady:{en:'eCTD readiness — the draft eCTD rules; not required for the One Submission in force',ar:'جاهزية الـ eCTD — قواعد مسودة الـ eCTD؛ مش مطلوبة في الـ One Submission الساري'},
+  ectdBlockL:{en:'eCTD readiness (stops only an eCTD export)',ar:'جاهزية الـ eCTD (بتوقف تصدير الـ eCTD بس)'}, attestYes:{en:'Yes',ar:'أيوه'}, attestNo:{en:'Not yet',ar:'لسه'},
+  att_signed:{en:'signed',ar:'موقّعة'}, att_stamped:{en:'stamped by the company',ar:'مختومة بختم الشركة'}, att_legalized:{en:'legalised (Egyptian embassy; an electronic CPP is exempt)',ar:'موثّقة (السفارة المصرية؛ الـ CPP الإلكتروني معفي)'},
+  attestAsk:{en:'Are the documents in this item {what}?',ar:'المستندات اللي في البند ده {what}؟'}, attestSaved:{en:'Answer saved.',ar:'الإجابة اتسجلت.'},
+  attestNoNote:{en:'«Not yet» stops the export until it is done.',ar:'«لسه» بيوقف التصدير لحد ما يتعمل.'}, toConfirm:{en:'To confirm (signature, stamp, legalisation)',ar:'محتاج تأكيد (توقيع وختم وتوثيق)'}, rightPlace:{en:'It is in the right place',ar:'ده مكانه الصح'}, rightKept:{en:'Kept here — the kind rule\'s objection is set aside and recorded.',ar:'اتساب هنا — اعتراض قاعدة النوع اتشال واتسجّل.'},
+  moveAny:{en:'Move to another item',ar:'انقله لبند تاني'}, moveGo:{en:'Move',ar:'انقل'}, moveTo:{en:'Move to',ar:'انقله إلى'}, moved:{en:'Moved.',ar:'اتنقل.'}, docsFirst:{en:'Start with the documents you already have: upload each one under its name. The program reads them, fills the product data from them, and in the next steps asks you only for what it could not find.',ar:'ابدأ بالمستندات اللي عندك: ارفع كل مستند تحت اسمه. البرنامج يقرأها ويملي بيانات المنتج منها، وفي الخطوات الجاية يطلب منك بس اللي ما لقاهوش.'},
+  intakeAllT:{en:'Or drop everything at once',ar:'أو ارمي كل الملفات مرة واحدة'}, intakeAllSub:{en:'The program reads each file\'s text and suggests its item; you confirm each placement.',ar:'البرنامج بيقرا نص كل ملف وبيقترح البند بتاعه، وإنت بتأكد مكان كل واحد.'},
   reviewRead:{en:'Review what was read',ar:'راجع اللي اتقرا'}, missingWrite:{en:'missing — type it',ar:'ناقص — اكتبه'}, readN:{en:'fields recognised from the documents',ar:'بيانات اتعرّفت من المستندات'},
   youWrite:{en:'Still needed from you',ar:'المطلوب منك'}, allRead:{en:'Every main field was recognised; check them and continue.',ar:'كل البيانات الأساسية اتعرّفت؛ راجعها وكمّل.'}, addMore:{en:'Add more',ar:'ضيف كمان'},
   dpLetterhead:{en:'[ company letterhead ]',ar:'[ ورق الشركة ]'}, dpSign:{en:'Signature of the authorised person · title · company stamp · date',ar:'توقيع المفوَّض · الوظيفة · ختم الشركة · التاريخ'},
@@ -532,11 +577,11 @@ const prov = p => p ? `<span class="prov ${esc(p)}">${esc(t('prov_'+p.replace(/-
 const dateL = d => fmtDate(d, S.lang), tsL = ts => fmtTs(ts, S.lang);
 
 /* ---------------- chrome */
-const NAV_BASE = [['home','#/','home','navHome'],['dossiers','#/dossiers','layers','navDossiers'],['variations','#/variations','branch','navVars'],['suite','/suite/','folder','navSuite']];
+const NAV_BASE = [['home','#/','home','navHome'],['dossiers','#/dossiers','layers','navDossiers'],['variations','#/variations','branch','navVars'],['package','#/package','shield','navPkg'],['suite','/suite/','folder','navSuite']];
 const NAV_USERS = ['users','#/users','users','navUsers'];
 /* the Users entry: when sign-in can be turned on here, or for a signed-in administrator */
 const navItems = () => (S.auth && (S.auth.can_enable || (S.me && S.me.auth && S.me.role==='admin'))) ? NAV_BASE.concat([NAV_USERS]) : NAV_BASE;
-const DNAV = [['guide','compass','navGuide'],['board','checklist','navBoard'],['data','database','navData'],['publisher','tree','navPublisher'],['checks','shield','navChecks'],['review','stamp','navReview'],['export','package','navExport'],['audit','history','navAudit']];
+const DNAV = [['guide','compass','navGuide'],['board','checklist','navBoard'],['data','database','navData'],['publisher','tree','navPublisher'],['checks','shield','navChecks'],['search','search','navSearch'],['review','stamp','navReview'],['export','package','navExport'],['audit','history','navAudit']];
 function paintNav(){ $('#nav').innerHTML = navItems().map(([r,h,i,k])=>`<a href="${h}" data-r="${r}">${icon(i)}<span data-t="${k}"></span></a>`).join('')
   + `<div class="grp" data-t="navCurrent"></div>` + DNAV.map(([r,i,k])=>`<a href="#" data-r="${r}" id="nav${r[0].toUpperCase()+r.slice(1)}" aria-disabled="true">${icon(i)}<span data-t="${k}"></span></a>`).join(''); paintT(); }
 function paintT(){ $$('[data-t]').forEach(e=>e.textContent=t(e.dataset.t)); }
@@ -570,11 +615,12 @@ function nav(r){
 async function route(){
   const tok = ++S.rt;
   const h = location.hash.replace(/^#/,'') || '/';
-  const m = h.match(/^\/d\/([^/]+)\/(guide|board|data|publisher|checks|export|audit|review)(?:\/([a-z]+))?$/);
+  const m = h.match(/^\/d\/([^/]+)\/(guide|board|data|publisher|checks|search|export|audit|review)(?:\/([a-z]+))?$/);
   asstFab(m?m[1]:null);
   try{
     if(h==='/new'){ S.dossier=null; nav('dossiers'); return wizard(); }
     if(h==='/variations'){ S.dossier=null; nav('variations'); return varsView(tok); }
+    if(h==='/package'){ S.dossier=null; nav('package'); return packageView(tok); }
     if(h==='/dossiers'){ S.dossier=null; nav('dossiers'); return dossiersView(tok); }
     if(h==='/users'){ S.dossier=null; nav('users'); return usersView(tok); }
     if(!m){ S.dossier=null; nav('home'); return home(tok); }
@@ -587,6 +633,7 @@ async function route(){
     if(m[2]==='publisher') return publisherView(tok);
     if(m[2]==='data') return dataView(tok);
     if(m[2]==='checks') return checksView(tok);
+    if(m[2]==='search') return searchView(tok);
     if(m[2]==='review') return reviewView(tok, m[3]||'desk');
     return auditView(tok);
   }catch(e){ if(tok===S.rt) $('#view').innerHTML = `<div class="alert bad">${icon('alert')}<p><b>${esc(t('err'))}:</b> ${esc(e.message)}</p></div>`; }
@@ -910,6 +957,25 @@ const BASE_DOCS=[
   {kind:'commercial_register', eg:true, ar:'السجل التجاري', en:'Commercial register', gives:{ar:'اسم مقدم الطلب القانوني وعنوانه', en:'applicant legal name and address'}, kinds:['commercial']},
   {kind:'other', ar:'مستندات أخرى', en:'Other documents', gives:{ar:'أي مستند تاني هيتقرأ ويتصنّف ويتحط في مكانه', en:'anything else: read, classified and placed'}, kinds:[]}];
 const docCard = k => BASE_DOCS.find(c=>c.kind===k) || BASE_DOCS[BASE_DOCS.length-1];
+/* ---------------- each document's conditions (form and content) before it is uploaded: GET /api/conditions, once per authority */
+const COND={}, CONDV={};
+function condFor(q){ if(!COND[q]) COND[q]=api('/conditions?'+q).then(v=>(CONDV[q]=v)).catch(e=>{ delete COND[q]; throw e; }); return COND[q]; }
+const condKeyW = w => 'country='+encodeURIComponent((w&&w.d&&w.d.country)||'EG');
+const condKeyD = () => S.dossier&&S.dossier.pack ? 'pack='+encodeURIComponent(S.dossier.pack) : 'country=EG';
+function condHtml(list, src){
+  const rows=(list||[]).filter(c=>src||c.kind!=='source');
+  return rows.length?`<ul class="cond small">${rows.map(c=>c.kind==='source'
+    ? `<li class="src">${esc(t('condSrc'))}: <span dir="ltr">${esc(c.en)}</span> <span class="code">${esc(c.source)}</span></li>`
+    : `<li><b>${esc(t(c.kind==='form'?'condForm':'condContent'))}:</b> ${esc(L(c))}${c.source?` <span class="code muted">${esc(c.source)}</span>`:''}</li>`).join('')}</ul>`:'';
+}
+function cardCond(c, cv){ const k=(c.kinds||[]).find(k=>(cv.kinds[k]||[]).length>1)||(c.kinds||[])[0]; const list=k?cv.kinds[k]:(cv.kinds.sampling||[]).filter(x=>x.kind==='form');
+  return list&&list.length?`<details class="cond small"><summary>${esc(t('condT'))}</summary>${condHtml(list)}</details>`:''; }
+function openCondAll(slots, q){
+  condFor(q).then(cv=>{ const act=slots.filter(s=>s.level==='R'||s.level==='O');
+    openDrawer(t('condAll'), `<p class="small muted">${esc(t('condAllSub'))}</p>${[1,2,3,4,5].map(m=>{ const rows=act.filter(s=>s.module===m); if(!rows.length) return '';
+      return `<details ${m===1?'open':''}><summary><b>${esc(t('module'))} ${m}</b> <span class="tag">${rows.length}</span></summary>${rows.map(s=>`<div class="finding"><div><span class="code">${esc(s.ctd)}</span> <b>${esc(L(s.title))}</b>${s.item?` <span class="muted">· ${bdi(s.item.name||'')}${s.item.manufacturer?' — '+bdi(s.item.manufacturer):''}</span>`:''}</div>${condHtml(cv.items[s.req_id], true)}</div>`).join('')}</details>`; }).join('')}`);
+  }).catch(e=>toast(e.message||String(e)));
+}
 function docsOfFile(w, name){ const f=(w.intakeFill&&w.intakeFill.documents||[]).find(d=>d.filename===name); const k=f&&f.kind; const card=BASE_DOCS.find(c=>c.kinds.includes(k)); return card?card.kind:'other'; }
 function applyFillData(w, f){
   /* the recognised values into the wizard's fields, remembering where each came from; nothing typed by the user is overwritten by an empty reading */
@@ -1077,8 +1143,9 @@ function docsStep(w, au){
   const eg=!au||au.egypt;
   const names=[...new Set([...(w.allFiles||[]).map(f=>f.name), ...Object.keys(w.texts||{}), ...Object.keys(w.sizes||{})])].filter(n=>(w.docs[n]||{}).status!=='removed');   // w.sizes: the files a continued draft holds, read or not
   const byCard={}; for(const n of names){ const st=w.docs[n]||{}; const k=st.kind||'other'; (byCard[k]=byCard[k]||[]).push(n); }
+  const cv=CONDV[condKeyW(w)]; if(!cv) condFor(condKeyW(w)).then(()=>{ if(S.wiz===w&&w.step===0) wizShow(w); }).catch(()=>{});
   const cards=BASE_DOCS.filter(c=>eg||!c.eg||(byCard[c.kind]||[]).length).map(c=>{ const mine=byCard[c.kind]||[]; const ok=mine.some(n=>(w.docs[n]||{}).status==='ok'); const bad=mine.some(n=>['mismatch','notext'].includes((w.docs[n]||{}).status));
-    return `<div class="card pad doccard ${ok?'ok':''} ${bad?'bad':''}"><div class="row gap-s"><b>${esc(L({ar:c.ar,en:c.en}))}</b>${ok?`<span class="chip c-ok"><i></i>✓</span>`:''}</div><div class="small muted">${esc(L(c.gives))}</div>${mine.map(n=>docLine(w, n)).join('')}
+    return `<div class="card pad doccard ${ok?'ok':''} ${bad?'bad':''}"><div class="row gap-s"><b>${esc(L({ar:c.ar,en:c.en}))}</b>${ok?`<span class="chip c-ok"><i></i>✓</span>`:''}</div><div class="small muted">${esc(L(c.gives))}</div>${cv?cardCond(c, cv):''}${mine.map(n=>docLine(w, n)).join('')}
       <div class="row gap-s" style="margin-top:6px"><button class="btn sm ${ok?'':'pri'}" data-updoc="${c.kind}">${icon('upload',14)} ${esc(ok?t('addMore'):t('upload'))}</button><button class="btn sm ghost" data-drvdoc="${c.kind}">${icon('link',14)} Drive</button></div></div>`; }).join('');
   return `<div class="alert info">${icon('info')}<p class="small">${esc(t('docsFirst'))}</p></div><div class="doccards">${cards}</div>
     <div class="card glow pad" id="intake" style="margin-top:10px"><div class="row"><span class="ic-tile accent">${icon('sparkles')}</span><div class="grow"><b>${esc(t('intakeAllT'))}</b><div class="small muted">${esc(t('intakeAllSub'))}</div></div>
@@ -1181,6 +1248,7 @@ function wizard(){
   if(w.step>0) body=countryLine(w)+body;
   if(w.step===3) body=`<div class="stack">${readBanner(w)}<p class="small muted">${esc(t('apiHint'))}</p>${d.apis.map((a,i)=>`<div class="form card flat pad">
      <label class="f"><span>${esc(t('apiName'))}</span><input type="text" dir="auto" data-api="${i}" data-f="name" value="${esc(a.name)}"></label>
+     <label class="f"><span>${esc(L({en:'Strength',ar:'التركيز'}))}</span><input type="text" dir="auto" data-api="${i}" data-f="strength" value="${esc(a.strength||'')}" placeholder="3.5 mg / 1 g"></label>
      <label class="f"><span>${esc(t('apiMan'))}</span><input type="text" dir="auto" data-api="${i}" data-f="manufacturer" value="${esc(a.manufacturer)}"></label>
      <label class="f"><span>${esc(t('apiOpt'))}</span><select data-api="${i}" data-f="option">${['CEP','DMF','PQ','FULL'].map(o=>`<option ${a.option===o?'selected':''}>${o}</option>`).join('')}</select></label>
      ${d.apis.length>1?`<div style="align-self:end"><button class="btn sm ghost" data-rmapi="${i}">${icon('x',14)} ${esc(t('remove'))}</button></div>`:''}</div>`).join('')}
@@ -1249,7 +1317,7 @@ async function wizFinishRun(w0, did){
   const placeOpts={texts:w0.texts||{}, kinds:w0.kinds||{}, stage:refused, noText:Object.keys(w0.docs||{}).filter(n=>w0.docs[n].status==='notext')};
   if(fill&&!w0.dataWritten){ try{ const data={apis:(d.apis||[]).filter(a=>a.name).map(a=>({name:a.name,manufacturer:a.manufacturer||'',option:a.option||'FULL',strength:a.strength||'',country:a.country||''})),
       composition:(fill.composition||[]).map(c=>({name:c.name,amount:c.amount||'',standard:c.standard||'',function:c.role==='active'?'active':(c.role||''),equivalent:c.equivalent||''})),
-      batches:(fill.batches||[]).map(b=>({no:b.no,kind:b.kind||'fpp',size:b.size||'',date:b.date||'',site:b.site||'',expiry:b.expiry||'',conformity:b.conformity||''})),
+      batches:(fill.batches||[]).map(b=>({no:b.no,kind:b.kind||'fpp',api:b.api||'',size:b.size||'',date:b.date||'',site:b.site||'',expiry:b.expiry||'',conformity:b.conformity||''})),
       specs:{product:(fill.specs||[]).map(s=>({test:s.test,limit:s.limit||'',method:s.method||''}))}, results:{}, registration:fill.registration||{}, product:{name_ar:(fill.product||{}).name_ar||''}};
       for(const r0 of (fill.results||[])){ if(r0.batch&&r0.test){ (data.results[r0.batch]=data.results[r0.batch]||{})[r0.test]=r0.value; } }
       await api(`/dossiers/${did}/data`,{method:'PUT',json:data}); w0.dataWritten=true; await wizWrite(w0); }catch(e){ console.warn('intake data', e); } }   // written once: a resumed run never overwrites what was edited on the board
@@ -1283,18 +1351,20 @@ function renderPreview(p, prof, full){
   const maxR = Math.max(1, ...mods.map(([m,x])=>x.R+x.O));
   const listHtml = `<div class="reqlist">${[1,2,3,4,5].map(m=>{ const rows=act.filter(s=>s.module===m); if(!rows.length) return '';
      return `<details ${full?'open':''}><summary>${esc(t('module'))} ${m} <span class="tag">${rows.length}</span></summary>
-       ${rows.map(s=>`<div class="r"><span class="code">${esc(s.ctd)}</span><span>${esc(L(s.title))}${s.item?` <span class="api">· ${bdi(s.item.manufacturer)}</span>`:''}</span>
+       ${rows.map(s=>`<div class="r"><span class="code">${esc(s.ctd)}</span><span>${esc(L(s.title))}${s.item?` <span class="api">· ${bdi(s.item.name||'')}${s.item.manufacturer?' — '+bdi(s.item.manufacturer):''}</span>`:''}</span>
          <span class="row gap-s nowrap">${gens.has(s.slot_id)?`<span class="tag brand" title="${esc(t('generable'))}">✦</span>`:''}${third.has(s.slot_id)?`<span class="tag" title="${esc(t('thirdParty'))}">${icon('lock',11)}</span>`:''}<span class="chip ${s.level==='R'?'c-rec':'c-na'}">${esc(t(LEVEL[s.level]))}</span></span></div>`).join('')}</details>`; }).join('')}</div>`;
   const pa=p.authority||{};
   $('#pvBody').innerHTML = `<div class="stack">
     ${pa.name?`<div class="small" id="pvAu"><b>${esc(L(pa.name))}</b>${pa.country_name&&!pa.egypt?` · ${esc(L(pa.country_name))}`:''}${pa.verified===false?`<div class="muted">${esc(t('auGeneral'))}</div>`:''}</div>`:''}
     <div><div class="n">${p.counts.R}</div><div class="muted">${esc(t('pvNeed'))}${p.counts.O?` · <b>${p.counts.O}</b> ${esc(t('pvOpt'))}`:''}</div></div>
     <div class="statline"><span>✦ <b>${p.generable.length}</b> ${esc(t('pvGen'))}</span><span>${icon('lock',12)} <b>${p.third_party.length}</b> ${esc(t('pvThird'))}</span></div>
+    <div><button class="btn sm" id="condAllBtn">${icon('check',14)} ${esc(t('condAll'))}</button></div>
     <div class="mods">${mods.map(([m,x])=>`<div class="mod"><span class="code">M${m}</span>${meter(100*(x.R+x.O)/maxR)}<span class="code">${x.R}${x.O?`+${x.O}`:''}</span></div>`).join('')}</div>
     <div class="small muted">${pa.egypt===false?`${esc(L(pa.matrix||{}))}: <b>${esc(L((pa.columns||{})[p.column]||{})||p.column)}</b>`:`${esc(t('pvCol'))}: <span class="code">${esc(p.column)}</span>`}${p.column_assumed?`<div class="alert" style="margin-top:8px"><p class="small">${esc(t('pvAssumed'))}</p></div>`:''}</div>
     ${!prof.apis.length?`<div class="alert info">${icon('info')}<p class="small">${esc(t('pvApis'))}</p></div>`:''}
     ${full?`<div class="divider"></div><div class="row"><h3>${esc(t('pvFull'))}</h3><button class="btn sm ghost right" onclick="window.print()">${icon('file',14)} ${esc(t('printList'))}</button></div>${listHtml}`
           :`<details><summary class="btn sm ghost" style="display:inline-flex">${esc(t('pvShow'))}</summary>${listHtml}</details>`}</div>`;
+  const cb=$('#condAllBtn'); if(cb) cb.onclick=()=>openCondAll(p.slots, condKeyW(S.wiz));
 }
 
 /* ---------------- intake: upload the documents, the forms fill themselves (rules + Claude, every value reviewed) */
@@ -1379,6 +1449,7 @@ const fmtSize=n=>n>1e6?`${(n/1e6).toFixed(1)} MB`:n>1e3?`${Math.round(n/1e3)} KB
 /* the Drive connection of claude.ai does not download a file over 10 MB (its own limit): such a file is opened in Drive, downloaded, and
    uploaded from the computer. The limit is the connector's, so a file over it is offered and marked, not blocked. */
 const DRIVE_CONN_MAX=10*1024*1024, DRIVE_BIG_RX=/too large|over limit|exceeds? the|size limit/i;
+const driveKeySet=()=>!!(S.caps&&S.caps.drive&&S.caps.drive.mode==='api_key');      // a Google API key: a large shared file comes through it
 const DRIVE_BIG_WHY={ar:'أكبر من 10 ميجا: وصلة Google Drive هنا ما بتنزّلش ملف بالحجم ده. افتحه في Drive ونزّله، وبعدين ارفعه من جهازك.',en:'over 10 MB: the Google Drive connection here does not download a file that large. Open it in Drive, download it, then upload it from this computer.'};
 const driveLink=id=>`https://drive.google.com/file/d/${encodeURIComponent(id)}/view`;
 const driveType=f=>{ if(f.kind==='folder') return L({en:'folder',ar:'فولدر'}); const m=f.mimeType||'', e=((/\.([A-Za-z0-9]{1,6})$/.exec(f.name||'')||[])[1]||'').toLowerCase();
@@ -1491,7 +1562,7 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
       toast(say({ar:'اتضاف {n} ملف من الجهاز',en:'{n} file(s) added from this computer'},{n:files.length}));
       if(opts.single||(!d.fails.length&&(d.fetched||!picked().length))) return finish();          // nothing else is waiting: straight on to reading
       paint(); }); };
-  const getOne=async f=>{ if(conn) return DBDRIVE.fetch(f);
+  const getOne=async f=>{ if(conn&&!(driveKeySet()&&f.size>DRIVE_CONN_MAX&&!f.native)) return DBDRIVE.fetch(f);      // a large file: through the key, past the connector's 10 MB
     const r=await fetch(`/api/drive/files/${encodeURIComponent(f.id)}?name=${encodeURIComponent(f.name)}&mime=${encodeURIComponent(f.mimeType||'')}`,{headers:{'X-DB':'1'}}); if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error((j.detail&&(j.detail[S.lang]||j.detail.en))||r.statusText); }
     const blob=await r.blob(); const hx=r.headers.get('x-filename'); let name=f.name; if(hx){ try{ name=new TextDecoder().decode(new Uint8Array(hx.match(/../g).map(h=>parseInt(h,16)))); }catch(e){} }
     return new File([blob], name, {type: blob.type||f.mimeType||''}); };
@@ -1508,7 +1579,7 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
   const paint=()=>{ openDrawer(t('driveT'), `<div class="stack gap-s">
     <div class="row gap-s small muted"><span class="chip ${ds.mode==='public'&&ds.browser?'c-warn':'c-ok'}"><i></i>${esc(t('driveMode_'+ds.mode))}</span>${conn?`<span>${esc(t('driveConnHint'))}</span>`:''}${ds.service_account_email?`<span class="code">${esc(ds.service_account_email)}</span>`:''}<span class="grow"></span><button class="btn sm ghost admin-only" id="drvGear" title="${esc(t('driveSet'))}">⚙</button></div>
     <div id="drvSet">${(isAdmin()&&(d.gear||(ds.browser&&ds.mode==='public'&&!conn)))?driveSettingsForm(ds):''}</div>
-    <div class="row gap-s"><input type="text" id="drvLink" dir="ltr" placeholder="https://drive.google.com/drive/folders/…" value="${esc(d.link)}" style="flex:1"><button class="btn pri" id="drvList">${esc(t('driveList'))}</button></div>
+    <div class="row gap-s"><input type="text" id="drvLink" dir="ltr" placeholder="${esc(t('driveLinks'))}" title="${esc(t('driveLinks'))}" value="${esc(d.link)}" style="flex:1;min-width:0"><button class="btn pri" id="drvList">${esc(t('driveList'))}</button></div>
     <label class="small row gap-s"><input type="checkbox" id="drvRec" ${d.recursive?'checked':''}> ${esc(t('driveRec'))}</label>
     <div id="drvStatus"></div>
     <div id="drvFiles">${fileList(d.files)}</div>
@@ -1518,11 +1589,18 @@ async function drivePicker(onFiles, opts){ opts=opts||{}; let ds; try{ ds=await 
       sv.disabled=true; try{ ds=await api('/drive/settings',{method:'PUT',json:body}); d.gear=false; S.caps=null; paint(); }catch(e){ $('#drvSetMsg').textContent=e.message; sv.disabled=false; } };
     const list=async link=>{ d.link=link; try{ localStorage.setItem('db.drive.link', link); }catch(e){} d.recursive=$('#drvRec').checked; d.note=''; d.fails=[]; d.got=[]; d.warned=false; d.fetched=false;
       d.busy={title:L({ar:'بيقرا الفولدر من Drive…',en:'Reading the folder from Drive…'}), done:0, total:0, now:''}; lock(true); status();
-      try{ if(conn){ const p=DBDRIVE.parseLink(link); if(!p) throw new Error(t('driveBadLink'));
-          d.files=p.kind==='folder'?await DBDRIVE.list(p.id, d.recursive, (n,fo)=>{ if(d.busy){ d.busy.now=say({ar:'لقى {n} ملف في {f} فولدر…',en:'{n} files found in {f} folder(s)…'},{n,f:fo}); status(); } }):[await DBDRIVE.one(p.id)]; ds.mode='connector';
-          if(d.files.skipped&&d.files.skipped.length) d.note=say({ar:'{n} فولدر فرعي ما اتقراش: افتحه لوحده بالسهم اللي جنبه.',en:'{n} sub-folder(s) could not be read: open each with its arrow.'},{n:d.files.skipped.length});
-          d.files.forEach(f=>{ if(f.kind==='file'&&f.usable&&!f.native&&f.size>DRIVE_CONN_MAX){ f.big=true; f.guess=true; } }); }      // over the connector's limit: offered, not ticked
-        else{ const r=await api('/drive/list',{method:'POST',json:{link, recursive:d.recursive}}); d.files=r.files; ds.mode=r.mode; }
+      try{ const links=link.split(/[\s,،]+/).filter(Boolean), many=links.length>1, all=[], seen=new Set(); let skipped=0;      // one link or several (a folder per part of the product)
+        for(const [k, one] of links.entries()){ let files, name='';
+          if(conn){ const p=DBDRIVE.parseLink(one); if(!p) throw new Error(t('driveBadLink')+(many?` (${one})`:''));
+            files=p.kind==='folder'?await DBDRIVE.list(p.id, d.recursive, (n,fo)=>{ if(d.busy){ d.busy.now=say({ar:'لقى {n} ملف في {f} فولدر…',en:'{n} files found in {f} folder(s)…'},{n:all.length+n,f:fo}); status(); } }):[await DBDRIVE.one(p.id)]; ds.mode='connector';
+            if(many&&p.kind==='folder'){ try{ name=(await DBDRIVE.one(p.id)).name; }catch(e){} }
+            skipped+=(files.skipped||[]).length; }
+          else{ const r=await api('/drive/list',{method:'POST',json:{link:one, recursive:d.recursive}}); files=r.files; name=r.name||''; ds.mode=r.mode; }
+          const tag=many?`${name||L({ar:'فولدر',en:'Folder'})+' '+(k+1)}/`:'';
+          for(const f of files){ if(seen.has(f.id)) continue; seen.add(f.id); if(tag){ f.dir=tag+(f.dir||''); f.path=tag+(f.path||f.name); } all.push(f); } }   // a file in two folders: once
+        d.files=all;
+        if(skipped) d.note=say({ar:'{n} فولدر فرعي ما اتقراش: افتحه لوحده بالسهم اللي جنبه.',en:'{n} sub-folder(s) could not be read: open each with its arrow.'},{n:skipped});
+        if(conn&&!driveKeySet()) d.files.forEach(f=>{ if(f.kind==='file'&&f.usable&&!f.native&&f.size>DRIVE_CONN_MAX){ f.big=true; f.guess=true; } });      // over the connector's limit: offered, not ticked
         const us=usable(); d.sel={};
         if(!opts.single&&us.length<=40) us.filter(f=>!f.guess).forEach(f=>{ d.sel[f.id]=true; });      // a file of unknown type is offered, not ticked
         else if(!opts.single) d.note=(d.note?d.note+' ':'')+say({ar:'الفولدر فيه {n} ملف مقروء: اختار المستندات اللي محتاجها، أو «اختار الكل».',en:'The folder has {n} readable files: tick the documents you need, or «Select all».'},{n:us.length});
@@ -1764,7 +1842,17 @@ function stripHtml(J){
   return `<nav class="card jbar" aria-label="journey">${J.stages.map((s,i)=>`<a class="${s.state}" href="#/d/${id}/${s.to}"><span class="k">${s.state==='done'?'✓':i+1}</span>${esc(t(names[s.key]))}${s.total!==undefined?` <span class="code">${s.done}/${s.total}</span>`:''}</a>${i<J.stages.length-1?`<span class="arrow flip">${icon('chevron',14)}</span>`:''}`).join('')}</nav>`;
 }
 async function loadJourney(){ const [b, data, hist] = await Promise.all([api(`/dossiers/${S.dossier.id}/board`), api(`/dossiers/${S.dossier.id}/data`), api(`/dossiers/${S.dossier.id}/submissions`)]); S.board=b; return {b, data, hist, J: journey(b, data, hist)}; }
+function flashSlot(sid){ const b=document.querySelector(`#view [data-why="${CSS.escape(sid)}"]`); const row=b&&(b.closest('tr')||b.closest('.card')); if(!row) return;
+  row.scrollIntoView({block:'center', behavior:'smooth'}); row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash'); }
+async function fixDoc(b){                         // the auto-fix itself, wherever its button is (the item drawer, the checks page)
+  b.disabled=true; const was=b.innerHTML; b.textContent=t('fixing');
+  try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.fix||b.dataset.cfix}/fix`,{method:'POST'});
+    if(r.document) toast(t('fixedNew')+' '+r.done.map(x=>x[S.lang]).join(' · '));
+    if(r.refused.length) toast(t('fixRefused')+' '+r.refused.map(x=>x[S.lang]).join(' · '));
+    return r; }
+  catch(e){ toast(e.message); b.disabled=false; b.innerHTML=was; return null; } }
 function bindNext(root){
+  root.querySelectorAll('[data-cfix]').forEach(x=>x.onclick=async()=>{ const r=await fixDoc(x); if(r){ await refreshCurrent(); flashSlot(x.dataset.slot); } });
   root.querySelectorAll('[data-go]').forEach(a=>a.onclick=e=>{ e.preventDefault(); location.hash=`#/d/${S.dossier.id}/${a.dataset.go}`; });
   root.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up)); root.querySelectorAll('[data-updrv]').forEach(x=>x.onclick=()=>startUpload(x.dataset.updrv,'drive'));
   root.querySelectorAll('[data-why]').forEach(x=>x.onclick=()=>openWhy(x.dataset.why));
@@ -1786,7 +1874,7 @@ async function guideView(tok){
   const {b, data, hist, J} = await loadJourney();
   const na = nextAction(J, b), id=S.dossier.id, p=S.dossier.profile||{}, prod=S.dossier.product||{};
   const req=b.slots.filter(s=>s.level==='R'), ok=req.filter(isReady).length, overall=pct(ok, req.length);
-  const todoList = (st, n=3) => st.todo.slice(0,n).map(s=>`<div class="jitem"><div class="t"><span><span class="code muted">${esc(s.ctd)}</span> ${esc(L(s.title))}${s.item?` <span class="api">· ${bdi(s.item.manufacturer)}</span>`:''}</span>
+  const todoList = (st, n=3) => st.todo.slice(0,n).map(s=>`<div class="jitem"><div class="t"><span><span class="code muted">${esc(s.ctd)}</span> ${esc(L(s.title))}${s.item?` <span class="api">· ${bdi(s.item.name||'')}${s.item.manufacturer?' — '+bdi(s.item.manufacturer):''}</span>`:''}</span>
       <span class="row gap-s">${chip(s.status)}${LOCKED.includes(s.doc_class)?`<span class="tag">${icon('lock',11)} ${esc(t('thirdParty'))}</span>`:''}${genFor(s)?`<span class="tag brand">✦ ${esc(t('generable'))}</span>`:''}</span></div>
       <div class="row gap-s">${genFor(s)&&s.status==='not_started'?`<button class="btn sm pri" data-ggen="${genFor(s)}" data-slot="${esc(s.slot_id)}">${icon('sparkles',14)} ${esc(t('generate'))}</button>`:''}
       ${s.status==='not_started'||s.status==='non_conforming'?`<button class="btn sm" data-up="${esc(s.slot_id)}">${icon('upload',14)} ${esc(t('upload'))}</button><button class="btn sm ghost" data-updrv="${esc(s.slot_id)}" title="${esc(t('driveT'))}" aria-label="${esc(t('driveT'))}">${icon('link',14)}</button>`:''}<button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></div>`).join('')
@@ -1794,7 +1882,7 @@ async function guideView(tok){
   const stage = (s, i, body) => `<div class="jstep ${s.state}"><div class="jdot">${s.state==='done'?'✓':s.state==='bad'?'!':i+1}</div><div class="jbody">${body}</div></div>`;
   const names={profile:'st_profile',data:'st_data',m1:'st_m1',m25:'st_m25',checks:'st_checks',export:'st_export'};
   const bodies = {
-    profile: s => `<div class="jt"><h3>${esc(t(names.profile))}</h3><div class="row gap-s">${profileChips(p)}${(p.apis||[]).map(a=>`<span class="tag">${bdi(a.name)} · ${bdi(a.manufacturer)} · ${esc(a.option)}</span>`).join('')}</div></div>
+    profile: s => `<div class="jt"><h3>${esc(t(names.profile))}</h3><div class="row gap-s">${profileChips(p)}${(p.apis||[]).map(a=>`<span class="tag" style="white-space:normal;flex-wrap:wrap" title="${esc(a.name+' · '+a.manufacturer)}">${bdi(a.name)} · ${bdi(a.manufacturer)} · ${esc(a.option)}</span>`).join('')}</div></div>
       <div class="jd">${esc(t('stProfileD'))}</div><div><button class="btn sm" id="editProf">${icon('pen',14)} ${esc(t('editProfile'))}</button></div>`,
     data: s => `<div class="jt"><h3>${esc(t(names.data))}</h3>${s.nB||s.nS||s.nA?`<span class="statline"><span><b>${s.nA}</b> ${esc(t('apiRows'))}</span><span><b>${s.nB}</b> ${esc(t('batches'))}</span><span><b>${s.nS}</b> ${esc(t('specTests'))}</span></span>`:`<span class="muted small">${esc(t('nothingEntered'))}</span>`}</div>
       <div class="jd">${esc(t('stDataD'))}</div>${J.xb.length?`<div class="jitems">${J.xb.map(f=>`<div class="finding block"><div>${esc(f[S.lang])} <span class="code muted">${esc(f.id)}</span></div></div>`).join('')}</div>`:''}
@@ -1863,7 +1951,7 @@ function renderBoard(){
       <button class="btn sm ghost" data-tpl="${esc(s.slot_id)}">${icon('file',14)} ${esc(t('tplBtn'))}</button><button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></td></tr>`;
   });
   $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('board'))}</h1><p class="sub">${esc(t(isEG()?'boardSub':'auBoardSub'))}</p></div>
-    <div class="row"><button class="btn" id="bulkBtn">${icon('upload')} ${esc(t('bulk'))}</button><button class="btn" id="bulkDrive">${icon('link')} ${esc(t('driveT'))}</button><span class="modeswitch"><a class="on" href="#/d/${id}/board">${esc(t('guided'))}</a><a href="#/d/${id}/publisher">${esc(t('navPublisher'))}</a></span>
+    <div class="row"><button class="btn" id="bulkBtn">${icon('upload')} ${esc(t('bulk'))}</button>${b.slots.some(s=>draftable(s)&&!genFor(s)&&s.status==='not_started')?`<button class="btn" id="draftAllBtn">${icon('sparkles')} ${esc(t('draftAll'))}</button>`:''}<button class="btn" id="bulkDrive">${icon('link')} ${esc(t('driveT'))}</button><span class="modeswitch"><a class="on" href="#/d/${id}/board">${esc(t('guided'))}</a><a href="#/d/${id}/publisher">${esc(t('navPublisher'))}</a></span>
     <a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a><a class="btn pri" href="#/d/${id}/export">${esc(t('navExport'))} <span class="flip">${icon('arrow',16)}</span></a></div></div>
     <div class="kpis">
       <div class="card kpi br"><span class="n">${p}%</span><span class="l">${esc(t('progress'))} (${ready}/${req.length})</span></div>
@@ -1875,8 +1963,8 @@ function renderBoard(){
     <div class="row"><div class="seg" role="group">${['todo','problems','all','hidden'].map(k=>`<button data-f="${k}" class="${f===k?'on':''}">${esc(t(k))}</button>`).join('')}</div>
       <div class="seg" role="group">${[0,1,2,3,4,5].map(k=>`<button data-m="${k}" class="${m===k?'on':''}">${k?'M'+k:esc(t('all'))}</button>`).join('')}</div></div>
     ${(b.unassigned||[]).length?`<div class="card pad stack gap-s" id="unplacedBox"><div class="row gap-s"><b>${icon('alert',16)} ${esc(t('unplacedT'))} <span class="tag">${b.unassigned.length}</span></b><span class="small muted">${esc(t('unplacedSub'))}</span></div>
-      ${b.unassigned.map(u=>`<div class="row gap-s" data-unp="${esc(u.id)}" style="flex-wrap:wrap"><b dir="auto">${bdi(u.filename)}</b>${u.meta&&u.meta.previous_slot?`<span class="code" title="${esc(t('unassignedSub'))}">${esc(u.meta.previous_slot)}</span>`:''}<select data-ups="${esc(u.id)}">${slots.filter(x=>x.level==='R'||x.level==='O').map(x=>`<option value="${esc(x.slot_id)}">${esc(x.ctd)} · ${esc(L(x.title))}${x.item?' · '+esc(x.item.manufacturer):''}</option>`).join('')}</select>
-        <button class="btn sm pri" data-upl="${esc(u.id)}">${icon('check',14)} ${esc(t('putHere'))}</button><button class="btn sm ghost" data-updel="${esc(u.id)}">${icon('trash',14)} ${esc(t('withdraw'))}</button><span class="small muted" data-upwhy="${esc(u.id)}"></span></div>`).join('')}</div>`:''}
+      ${b.unassigned.map(u=>`<div class="row gap-s" data-unp="${esc(u.id)}" style="flex-wrap:wrap"><b dir="auto">${bdi(u.filename)}</b>${u.meta&&u.meta.previous_slot?`<span class="code" title="${esc(t('unassignedSub'))}">${esc(u.meta.previous_slot)}</span>`:''}<select data-ups="${esc(u.id)}"><option value="" selected disabled>${esc(t('pickItem'))}</option>${slots.filter(x=>x.level==='R'||x.level==='O').map(x=>`<option value="${esc(x.slot_id)}">${esc(x.ctd)} · ${esc(L(x.title))}${itemLabel(x)}</option>`).join('')}</select>
+        <button class="btn sm pri" data-upl="${esc(u.id)}" disabled title="${esc(t('pickItem'))}">${icon('check',14)} ${esc(t('putHere'))}</button><button class="btn sm ghost" data-updel="${esc(u.id)}">${icon('trash',14)} ${esc(t('withdraw'))}</button>${/\.pdf$/i.test(u.filename)?`<button class="btn sm ghost" data-split="${esc(u.id)}">${icon('scan',14)} ${esc(t('splitBtn'))}</button>`:''}<span class="small muted" data-upwhy="${esc(u.id)}"></span></div>`).join('')}</div>`:''}
     <div class="card"><div class="tablewrap"><table><thead><tr><th>${esc(t('colSec'))}</th><th>${esc(t('colDoc'))}</th><th class="hide-m">${esc(t('colLevel'))}</th><th>${esc(t('colStatus'))}</th><th>${esc(t('colFiles'))}</th></tr></thead>
     <tbody>${rows||`<tr><td colspan="5" class="empty">—</td></tr>`}</tbody></table></div></div>
 `;
@@ -1888,9 +1976,13 @@ function renderBoard(){
   v.querySelectorAll('[data-tpl]').forEach(x=>x.onclick=()=>openWhy(x.dataset.tpl, true));
   v.querySelectorAll('[data-draft]').forEach(x=>x.onclick=()=>draftIt(x.dataset.draft));
   if($('#unplacedBox')){ api(`/dossiers/${id}/unplaced`).then(list=>{ for(const u of list){ const sel=v.querySelector(`[data-ups="${u.id}"]`), why=v.querySelector(`[data-upwhy="${u.id}"]`); const best=(u.suggestions||[])[0];
-      if(sel&&best&&[...sel.options].some(o=>o.value===best.slot_id)) sel.value=best.slot_id; if(why) why.textContent=best?`${t('suggested')}: ${(best.why||[]).join(' · ')}`:t('noSuggestion'); } }).catch(()=>{});
-    v.querySelectorAll('[data-upl]').forEach(x=>x.onclick=async()=>{ const sel=v.querySelector(`[data-ups="${x.dataset.upl}"]`); const meta=await askMeta(slotById(sel.value)); x.disabled=true; try{ await api(`/dossiers/${id}/documents/${x.dataset.upl}/place`,{method:'POST',json:{slot_id:sel.value, meta}}); toast(t('placedOne')); S.board=null; route(); }catch(e){ toast(e.message); x.disabled=false; } });
+      if(sel&&best&&!sel.value&&[...sel.options].some(o=>o.value===best.slot_id)){ sel.value=best.slot_id; const btn=v.querySelector(`[data-upl="${u.id}"]`); if(btn) btn.disabled=false; }
+      if(why) why.textContent=best?`${t('suggested')}: ${whyText(best.why)}`:t('noSuggestion'); } }).catch(()=>{});
+    v.querySelectorAll('#unplacedBox [data-split]').forEach(b=>b.onclick=()=>splitDoc(b.dataset.split));
+    v.querySelectorAll('[data-ups]').forEach(s=>s.onchange=()=>{ const btn=v.querySelector(`[data-upl="${s.dataset.ups}"]`); if(btn) btn.disabled=!s.value; });   // a choice, never a default
+    v.querySelectorAll('[data-upl]').forEach(x=>x.onclick=async()=>{ const sel=v.querySelector(`[data-ups="${x.dataset.upl}"]`); if(!sel.value){ sel.focus(); return; } const meta=await askMeta(slotById(sel.value)); x.disabled=true; try{ await api(`/dossiers/${id}/documents/${x.dataset.upl}/place`,{method:'POST',json:{slot_id:sel.value, meta}}); toast(t('placedOne')); S.board=null; route(); }catch(e){ toast(e.message); x.disabled=false; } });
     v.querySelectorAll('[data-updel]').forEach(x=>DS.twoStep(x, L({ar:'متأكد؟ دوس تاني للحذف',en:'Sure? Press again to delete'}), async()=>{ try{ await api(`/dossiers/${id}/documents/${x.dataset.updel}/withdraw`,{method:'POST'}); toast(t('withdrawn')); S.board=null; route(); }catch(e){ toast(e.message); } })); }
+  if($('#draftAllBtn')) $('#draftAllBtn').onclick=()=>draftAll();
   $('#bulkBtn').onclick=()=>{ const p=$('#picker'); p.multiple=true; p.value=''; p.onchange=()=>{ p.multiple=false; bulk([...p.files]); }; p.click(); };
   $('#bulkDrive').onclick=()=>drivePicker(files=>bulk(files), {label:t('drivePlace')});
   v.ondragover=e=>{ if(e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); };
@@ -1904,9 +1996,9 @@ async function bulk(files){
     const fd=new FormData(); fd.append('files',f);
     try{ res.push(...await api(`/dossiers/${S.dossier.id}/classify`,{method:'POST',body:fd})); }catch(e){ toast(`${f.name}: ${e.message}`); return; } }
   const act = S.board.slots.filter(s=>s.level==='R'||s.level==='O');
-  const opt = s => `${esc(s.ctd)} ${esc(L(s.title)).slice(0,70)}${s.item?' · '+esc(s.item.manufacturer):''}`;
+  const opt = s => `${esc(s.ctd)} ${esc(L(s.title)).slice(0,70)}${itemLabel(s)}`;
   openDrawer(t('bulk'), `<p class="small muted">${esc(t('bulkSub'))}</p><div class="tablewrap"><table><thead><tr><th>${esc(t('pFile'))}</th><th>${esc(t('colSec'))}</th></tr></thead><tbody>
-    ${res.map((r,i)=>{ const best=r.suggestions[0]; return `<tr><td>${bdi(r.filename)}${best?`<div class="small muted">${esc(best.why.join(' · '))}</div>`:''}</td>
+    ${res.map((r,i)=>{ const best=r.suggestions[0]; return `<tr><td>${bdi(r.filename)}${best?`<div class="small muted">${esc(whyText(best.why))}</div>`:''}</td>
       <td><select data-bulk="${i}"><option value="">${esc(t('noSuggest'))}</option>
       ${r.suggestions.map(x=>`<option value="${esc(x.slot_id)}" ${best&&x.slot_id===best.slot_id?'selected':''}>★ ${opt(slotById(x.slot_id))}</option>`).join('')}
       <option disabled>────────</option>${act.map(s=>`<option value="${esc(s.slot_id)}">${opt(s)}</option>`).join('')}</select></td></tr>`; }).join('')}
@@ -1923,6 +2015,8 @@ async function bulk(files){
   };
 }
 function slotById(id){ return S.board.slots.find(s=>s.slot_id===id); }
+const whyText = arr => (arr||[]).map(w=>typeof w==='string'?w:L(w)).join(' · ');
+const itemLabel = x => x&&x.item ? ' · '+esc(x.item.name||'')+(x.item.manufacturer?' — '+esc(x.item.manufacturer):'') : '';
 function needsMeta(s){ return (s.req_id==='M1-09'||s.req_id==='EU-1.3.1') ? 'pi' : s.req_id==='EU-ADD' ? 'country' : (s.module===5 ? 'study' : null); }
 const metaOf=kind=>{ const cc=$('#mCountry')&&$('#mCountry').value;
   const meta=kind==='pi'?{pi_type:$('#mType').value,lang:$('#mLang').value}:kind==='country'?{}:{study:$('#mStudy').value.trim(),doc_type:$('#mDocType').value};
@@ -1964,7 +2058,9 @@ function pick(slotId, meta, replaces, from){
     toast(t('uploading'));
     const fd=new FormData(); fd.append('file',file); fd.append('meta',JSON.stringify(meta)); if(replaces) fd.append('replaces', replaces);
     try{ const doc = await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd});
-      toast(t('uploaded')+' '+t(doc.check_status)); await refreshCurrent(slotId); if(doc.findings.length) openWhy(slotId); }
+      const wasOpen=!$('#drawer').hidden, nf=(doc.findings||[]).filter(f=>f.scope!=='ectd').length;
+      toast(t('uploaded')+' '+t(doc.check_status)+(nf?` · ${nf} ${t('findSee')}`:'')); await refreshCurrent(slotId);
+      if(wasOpen) openWhy(slotId); else flashSlot(slotId); }                  // the drawer opens when the person opens it, never by itself
     catch(e){ upErr(e); } };
   if(from==='drive') return drivePicker(files=>send(files[0]), {single:true, label:t('drivePlace')});
   const p=$('#picker'); p.value=''; p.onchange=()=>send(p.files[0]); p.click();
@@ -1975,7 +2071,8 @@ function openWhy(slotId, focusTemplate){
   const reasons = s.reasons.map(r=>r.note?`<div class="alert" data-levelnote>${icon('info')}<p class="small">${esc(r[S.lang]||r.en)}</p></div>`:`<div class="finding"><div>${esc(r[S.lang]||r.en)}</div><div class="code small muted">${esc(r.source||'')}</div></div>`).join('');
   const docs = s.documents.map(d=>`<div class="finding ${d.check_status==='non_conforming'?'block':''}">
      <div class="row"><b><span class="muted">${esc(t('version'))} ${d.version}</span> · ${bdi(d.filename)}</b> ${chip(d.check_status)}</div>
-     ${d.findings.length? d.findings.map(f=>`<div class="small">● ${esc(f[S.lang])} <span class="code muted">${esc(f.rule)}</span><br><span class="muted">${esc(t('act_'+f.action))}</span></div>`).join('') : (d.meta&&d.meta.external?'':`<div class="small muted">${esc(t('noFind'))}</div>`)}
+     ${d.findings.filter(f=>f.scope!=='ectd').length? d.findings.filter(f=>f.scope!=='ectd').map(f=>`<div class="small">● ${esc(f[S.lang])} <span class="code muted">${esc(f.rule)}</span><br><span class="muted">${esc(t('act_'+f.action))}</span></div>`).join('') : (d.meta&&d.meta.external?'':`<div class="small muted">${esc(t('noFind'))}</div>`)}
+     ${d.findings.some(f=>f.scope==='ectd')?`<details class="small"><summary class="muted">${esc(t('ectdReady'))} (${d.findings.filter(f=>f.scope==='ectd').length})</summary>${d.findings.filter(f=>f.scope==='ectd').map(f=>`<div>● ${esc(f[S.lang])} <span class="code muted">${esc(f.rule)}</span></div>`).join('')}</details>`:''}
      ${d.meta&&d.meta.external?'':`<div class="docrev" data-docrev="${d.id}"></div>`}
      ${['third_party_certificate','eda_document'].includes(s.doc_class)||(d.meta&&d.meta.valid_until)?`<div class="row"><label class="small row gap-s">${esc(t('validUntil'))} <input type="date" data-vu="${d.id}" value="${esc((d.meta&&d.meta.valid_until)||'')}" style="width:auto"></label><button class="btn sm" data-vusave="${d.id}">${esc(t('saveDate'))}</button></div>`:''}
      ${d.meta&&d.meta.draft_unsigned?`<div class="alert"><p class="small"><b>${esc(t('unsignedDraft'))}</b> — ${esc(t('signHint'))}</p></div>`:''}
@@ -1984,9 +2081,19 @@ function openWhy(slotId, focusTemplate){
      ${d.findings.some(f=>f.action==='auto_fix')?`<button class="btn sm pri" data-fix="${d.id}">${icon('wrench',14)} ${esc(t('autofix'))}</button>`:''}
      ${d.meta&&d.meta.draft_unsigned?`<button class="btn sm pri" data-signed="${d.id}">${icon('upload',14)} ${esc(t('uploadSigned'))}</button>`:''}
      ${(()=>{ const mv=(d.findings||[]).find(f=>f.action==='move'&&f.extra&&f.extra.suggested_slot); return mv?`<button class="btn sm pri" data-mvto="${d.id}" data-slot="${esc(mv.extra.suggested_slot)}">${icon('arrow',14)} ${esc(t('moveTo'))} ${esc(L(mv.extra.suggested_title||{en:mv.extra.suggested_slot,ar:mv.extra.suggested_slot}))}</button>`:''; })()}
-     <button class="btn sm ghost" data-wd="${d.id}">${icon('trash',14)} ${esc(t('withdraw'))}</button></div></div>`).join('');
+     ${(d.findings||[]).some(f=>['DOCX-DRAFT','ECTD-WORD'].includes(f.rule))&&!(d.meta&&d.meta.external)?(S.caps&&S.caps.office_pdf?`<button class="btn sm pri" data-topdf="${d.id}">${icon('file',14)} ${esc(t('toPdf'))}</button>`:`<span class="small muted">${esc(t('toPdfHand'))}</span>`):''}
+     ${(d.findings||[]).some(f=>f.rule==='DOC-KIND')?`<button class="btn sm" data-kindok="${d.id}">${icon('check',14)} ${esc(t('rightPlace'))}</button>`:''}
+     ${d.meta&&d.meta.external?'':`<button class="btn sm ghost" data-mvany="${d.id}">${icon('arrow',14)} ${esc(t('moveAny'))}</button>`}
+     ${d.meta&&d.meta.external||!/\.pdf$/i.test(d.filename)?'':`<button class="btn sm ghost" data-split="${d.id}">${icon('scan',14)} ${esc(t('splitBtn'))}</button>`}
+     <button class="btn sm ghost" data-wd="${d.id}">${icon('trash',14)} ${esc(t('withdraw'))}</button></div></div>`).join('')
+    + (s.documents.filter(d=>/\.pdf$/i.test(d.filename)&&!(d.meta&&d.meta.external)).length>1?`<div><button class="btn sm" id="mergeBtn">${icon('file',14)} ${esc(t('mergeBtn'))}</button></div>`:'');
+  const attestBox = (s.attest_need||[]).length ? `<div class="alert ${s.attest&&s.attest.answer==='no'?'bad':''}" id="attestBox"><p class="small"><b>${esc(t('attestQ'))}:</b> ${esc(t('attestAsk').replace('{what}', s.attest_need.map(w=>t('att_'+w)).join(L({en:' and ',ar:' و'}))))}
+      ${s.attest?` <span class="tag">${esc(t(s.attest.answer==='yes'?'attestYes':'attestNo'))}</span>`:''}<br><span class="muted">${esc(t('attestNoNote'))}</span></p>
+      <div class="row gap-s"><button class="btn sm ${s.attest&&s.attest.answer==='yes'?'pri':''}" data-attest="yes">${esc(t('attestYes'))}</button><button class="btn sm ${s.attest&&s.attest.answer==='no'?'pri':''}" data-attest="no">${esc(t('attestNo'))}</button></div></div>` : '';
   openDrawer(L(s.title), `<div class="row"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${chip(s.status)}<span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></div>
     ${locked?`<div class="alert">${icon('lock')}<p class="small">${esc(t('lockedNote'))}</p></div>`:''}
+    ${attestBox}
+    <details class="cond" id="itemCond" open><summary><b>${esc(t('condT'))}</b></summary><div class="skeleton" style="height:40px"></div></details>
     <h3>${esc(t('reasons'))}</h3>${reasons}
     ${s.acceptance?`<h3>${esc(t('acceptT'))}</h3><div class="finding">${s.acceptance.split(/;\s+|\.\s+(?=[A-Z])/).filter(x=>x.trim()).map(x=>`<label class="small row gap-s" style="align-items:flex-start;flex-wrap:nowrap"><input type="checkbox"><span dir="auto" style="flex:1;min-width:0">${esc(x.trim().replace(/\.$/,''))}</span></label>`).join('')}</div>`:''}
     ${s.how||s.produced_by?`<div class="small">${s.produced_by?`<b>${esc(t('byT'))}:</b> ${bdi(s.produced_by)}`:''}${s.how?`<br><b>${esc(t('howT'))}:</b> <span dir="auto">${esc(s.how)}</span>`:''}</div>`:''}
@@ -2002,23 +2109,32 @@ function openWhy(slotId, focusTemplate){
       <button class="btn" data-gen="justification">${esc(t('justify'))}</button></div>`:''}`);
   const body=$('#dBody');
   loadDocReviews(s, body);
+  condFor(condKeyD()).then(cv=>{ const el=$('#itemCond', body); if(el) el.innerHTML=`<summary><b>${esc(t('condT'))}</b></summary>${condHtml(cv.items[s.req_id])||`<p class="small muted">—</p>`}`; })
+    .catch(()=>{ const el=$('#itemCond', body); if(el) el.remove(); });
   loadTpl().then(()=>loadTemplatePanel(s, body)).then(()=>{ if(focusTemplate){ const p=body.querySelector('#tplPanel'); if(p) p.scrollIntoView({block:'start'}); } });
   body.querySelectorAll('.row > [data-draft]').forEach(b=>b.onclick=()=>draftIt(s.slot_id));
   $$('[data-gen]', body).forEach(b=>b.onclick=()=>S.gens[b.dataset.gen].source==='data'? genDirect(b.dataset.gen, s) : genForm(b.dataset.gen, s));
   $$('[data-upw]', body).forEach(b=>b.onclick=()=>{ closeDrawer(); startUpload(b.dataset.upw); });
-  $$('[data-fix]', body).forEach(b=>b.onclick=async()=>{
-    b.disabled=true; b.textContent=t('fixing');
-    try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.fix}/fix`,{method:'POST'});
-      if(r.document) toast(t('fixedNew')+' '+r.done.map(x=>x[S.lang]).join(' · '));
-      if(r.refused.length) toast(t('fixRefused')+' '+r.refused.map(x=>x[S.lang]).join(' · '));
-      await refreshCurrent(); openWhy(slotId);
-    }catch(e){ toast(e.message); } });
+  $$('[data-fix]', body).forEach(b=>b.onclick=async()=>{ if(await fixDoc(b)){ await refreshCurrent(); openWhy(slotId); } });
   $$('[data-signed]', body).forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, {signed_for:b.dataset.signed}); });
   $$('[data-vusave]', body).forEach(b=>b.onclick=async()=>{ const v=body.querySelector(`[data-vu="${b.dataset.vusave}"]`).value;
     try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.vusave}/validity`,{method:'PUT',json:{valid_until:v}});
       toast(t('dateSaved')); await refreshCurrent(); openWhy(slotId); }catch(e){ toast(e.message); } });
   $$('[data-extup]', body).forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, {}, b.dataset.extup); });
   const rq=body.querySelector('[data-req]'); if(rq) rq.onclick=()=>requestForm(s);
+  $$('[data-attest]', body).forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/slots/${s.slot_id}/attest`,{method:'POST',json:{answer:b.dataset.attest}}); toast(t('attestSaved')); S.board=null; await refreshCurrent(s.slot_id); }catch(e){ toast(e.message); } });
+  $$('[data-split]', body).forEach(b=>b.onclick=()=>splitDoc(b.dataset.split));
+  const mb=$('#mergeBtn', body); if(mb) mb.onclick=()=>mergeDocs(s);
+  $$('[data-topdf]', body).forEach(b=>b.onclick=async()=>{ b.disabled=true; b.textContent=t('toPdfDoing');
+    try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.topdf}/pdf`,{method:'POST'}); toast(t(r.beside?'toPdfBeside':'toPdfDone')); await refreshCurrent(); openWhy(slotId); }
+    catch(e){ toast(e.message); b.disabled=false; b.textContent=t('toPdf'); } });
+  $$('[data-kindok]', body).forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.kindok}/confirm-kind`,{method:'POST'}); toast(t('rightKept')); closeDrawer(); S.board=null; route(); }catch(e){ toast(e.message); } });
+  $$('[data-mvany]', body).forEach(b=>b.onclick=()=>{ const docId=b.dataset.mvany, cur=s.slot_id;
+    openDrawer(t('moveAny'), `<label class="f"><span>${esc(t('pickItem'))}</span><select id="mvSel"><option value="" selected disabled>${esc(t('pickItem'))}</option>${S.board.slots.filter(x=>x.status!=='not_applicable'&&x.slot_id!==cur&&(x.level==='R'||x.level==='O')).map(x=>`<option value="${esc(x.slot_id)}">${esc(x.ctd)} · ${esc(L(x.title))}${itemLabel(x)}</option>`).join('')}</select></label>
+      <div><button class="btn pri" id="mvGo" disabled>${icon('arrow',14)} ${esc(t('moveGo'))}</button></div>`);
+    $('#mvSel').onchange=()=>{ $('#mvGo').disabled=!$('#mvSel').value; };
+    $('#mvGo').onclick=async()=>{ const to=$('#mvSel').value; if(!to) return; const meta=await askMeta(slotById(to));
+      try{ await api(`/dossiers/${S.dossier.id}/documents/${docId}/move`,{method:'POST',json:{slot_id:to, meta}}); toast(t('moved')); closeDrawer(); S.board=null; route(); }catch(e){ toast(e.message); } }; });
   $$('[data-mvto]', body).forEach(b=>b.onclick=async()=>{ const meta=await askMeta(slotById(b.dataset.slot)); try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.mvto}/move`,{method:'POST',json:{slot_id:b.dataset.slot, meta}}); toast(t('moved')); closeDrawer(); S.board=null; route(); }catch(e){ toast(e.message); } });
   $$('[data-wd]', body).forEach(b=>DS.twoStep(b, L({ar:'متأكد؟ دوس تاني للحذف',en:'Sure? Press again to delete'}), async()=>{ try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.wd}/withdraw`,{method:'POST'}); toast(t('withdrawn')); closeDrawer(); refreshCurrent(); }catch(e){ toast(e.message); } }));
 }
@@ -2170,6 +2286,52 @@ async function loadTemplatePanel(s, body){
 function docTypeName(id){ const m={registration_licence:{ar:'إخطار/رخصة التسجيل',en:'registration licence'},pricing_certificate:{ar:'شهادة التسعير',en:'pricing certificate'},leaflet:{ar:'النشرة المرجعية',en:'reference leaflet'},api_coa:{ar:'شهادة تحليل المادة الفعالة',en:'API CoA'},
     analysis_conformity:{ar:'شهادة التحليل/المطابقة',en:'analysis / conformity'},gmp_certificate:{ar:'شهادة GMP',en:'GMP certificate'},dmf_cep:{ar:'DMF / CEP',en:'DMF / CEP'},specification:{ar:'المواصفات',en:'specifications'},stability_data:{ar:'بيانات الثبات',en:'stability data'},
     stability_approval:{ar:'موافقة الثبات',en:'stability approval'},manufacturing_contract:{ar:'عقد التصنيع',en:'manufacturing contract'},toll_card:{ar:'بطاقة الـ toll',en:'toll card'},commercial_register:{ar:'السجل التجاري',en:'commercial register'}}; return L(m[id]||{ar:id,en:id}); }
+async function splitDoc(docId){
+  /* the cuts the program proposes, as ticks on the pages; the person confirms or moves them, then each part goes to the unplaced box */
+  let p; try{ p=await api(`/dossiers/${S.dossier.id}/documents/${docId}/split`); }catch(e){ toast(e.message); return; }
+  const kn=x=>x.kind_name?L(x.kind_name):t('splitUnknown');
+  openDrawer(t('splitT'), `<p class="small muted">${esc(t('splitSub'))}</p><div class="tablewrap" style="max-height:52vh;overflow:auto"><table><thead><tr><th>${esc(t('splitStarts'))}</th><th>${esc(t('srchPage'))}</th><th>${esc(t('splitWhat'))}</th></tr></thead><tbody>
+    ${p.page_info.map(x=>`<tr><td><input type="checkbox" data-start="${x.page}" ${x.starts?'checked':''} ${x.page===1?'disabled':''} aria-label="${esc(t('splitStarts'))} ${x.page}"></td><td class="code">${x.page}</td><td><b class="small">${esc(kn(x))}</b><div class="small muted" dir="auto">${esc(x.title||'—')}</div></td></tr>`).join('')}</tbody></table></div>
+    <div class="small" id="splitSum"></div><div class="row"><button class="btn pri" id="splitGo">${icon('check',14)} ${esc(t('splitGo'))}</button><button class="btn ghost" onclick="DS.closeDrawer()">${esc(t('cancel'))}</button></div>`, true);
+  const starts=()=>[1, ...$$('[data-start]:checked', $('#dBody')).map(c=>+c.dataset.start).filter(n=>n>1)];
+  const sum=()=>{ const n=starts().length; $('#splitSum').textContent=t('splitN').replace('{n}', n); $('#splitGo').disabled=n<2; };
+  $$('[data-start]', $('#dBody')).forEach(c=>c.onchange=sum); sum();
+  $('#splitGo').onclick=async()=>{ $('#splitGo').disabled=true;
+    try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${docId}/split`,{method:'POST',json:{starts:starts()}});
+      closeDrawer(); toast(t('splitDone').replace('{n}', r.parts.length)); S.board=null; await route();
+      const box=$('#unplacedBox'); if(box) box.scrollIntoView({block:'start', behavior:'smooth'}); }
+    catch(e){ toast(e.message); $('#splitGo').disabled=false; } };
+}
+async function mergeDocs(s){
+  const docs=s.documents.filter(d=>/\.pdf$/i.test(d.filename)&&!(d.meta&&d.meta.external));
+  if(!await DS.confirmBox(t('mergeBtn'), `<p>${esc(t('mergeQ'))}</p><ol class="small">${docs.map(d=>`<li>${bdi(d.filename)} <span class="muted">· ${esc(t('version'))} ${d.version}</span></li>`).join('')}</ol>`, t('mergeGo'), {cancel:t('cancel')})) return openWhy(s.slot_id);
+  try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(s.slot_id)}/merge`,{method:'POST',json:{doc_ids:docs.map(d=>d.id)}}); toast(t('mergeDone')); await refreshCurrent(); openWhy(s.slot_id); }
+  catch(e){ toast(e.message); }
+}
+async function draftAll(){
+  /* «Draft them all»: every item the program drafts and that has no document yet, one after the other; the person can stop it */
+  const todo=(S.board&&S.board.slots||[]).filter(s=>draftable(s)&&!genFor(s)&&s.status==='not_started');
+  if(!todo.length){ toast(t('draftAllNone')); return; }
+  const mode=await aiMode();
+  if(!await DS.confirmBox(t('draftAll'), `<p>${esc(t('draftAllQ').replace('{n}', todo.length))}</p><p class="small muted">${esc(t(mode&&mode!=='none'?'draftAllModel':'draftAllData'))}</p>`, t('draftAllGo'), {cancel:t('cancel')})) return;
+  const run=S.draftRun={stop:false, done:0, failed:[]};
+  const box=document.createElement('div'); box.className='card pad row gap-s'; box.id='draftAllBox'; box.style.margin='10px 0';
+  const head=$('#view .head'); if(head) head.after(box);
+  const paint=(s)=>{ if(!box.isConnected) return; box.innerHTML=`<span class="ic-tile accent">${icon('sparkles',16)}</span><div class="grow"><b>${esc(t('draftAllNow').replace('{i}', run.done+run.failed.length+1).replace('{n}', todo.length))}</b><div class="small muted">${s?`${esc(s.ctd)} · ${esc(L(s.title))}`:''}</div>${meter(100*(run.done+run.failed.length)/todo.length)}</div><button class="btn sm" id="draftAllStop">${esc(t('stop'))}</button>`;
+    const st=$('#draftAllStop'); if(st) st.onclick=()=>{ run.stop=true; st.disabled=true; }; };
+  for(const s of todo){
+    if(run.stop) break;
+    paint(s);
+    try{ const v=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(s.slot_id)}/template`);
+      const f=await fetchAnswers(v);
+      await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(s.slot_id)}/draft`,{method:'POST',json:{answers:f.answers, lang:S.lang}});
+      run.done++; }
+    catch(e){ run.failed.push(`${s.ctd}: ${e.message}`); }
+  }
+  S.draftRun=null; S.board=null; await route();
+  toast(t('draftAllEnd').replace('{d}', run.done).replace('{f}', run.failed.length));
+  if(run.failed.length) console.warn('draft all', run.failed);
+}
 async function draftIt(slotId){
   /* one click from the row: the program fills the template from the documents and stores the Word draft at once */
   const s=slotById(slotId); if(!s) return;
@@ -2192,7 +2354,7 @@ async function genForm(kind, s, missing){
   const lab = f => esc(f[S.lang]||f.en) + (f.required===false?` <span class="muted">(${esc(t('optional'))})</span>`:'');
   const input = (f, v, path) => f.type==='textarea' ? `<textarea dir="auto" data-p="${path}">${esc(v??'')}</textarea>`
      : f.type==='choice' ? `<select data-p="${path}"><option value=""></option>${f.choices.map(c=>`<option ${v===c?'selected':''}>${esc(c)}</option>`).join('')}</select>`
-     : `<input type="text" dir="auto" inputmode="${f.type==='number'?'decimal':'text'}" data-p="${path}" value="${esc(v??'')}">`;
+     : `<input type="text" dir="auto" inputmode="${f.type==='number'?'decimal':'text'}" data-p="${path}" value="${esc(v??'')}" title="${esc(v??'')}">`;
   const html = sch.fields.map(f=>{
     if(f.type!=='list') return `<label class="f ${miss.has(f.key)?'miss':''}"><span>${lab(f)}</span>${input(f, data[f.key], f.key)}</label>`;
     const rows = (data[f.key] && data[f.key].length) ? data[f.key] : (data[f.key]=[{}]);
@@ -2242,7 +2404,7 @@ function renderPublisher(){
   const id=S.dossier.id, act=S.board.slots.filter(isActive), J=journey(S.board, S.bdata||{}, null);
   if(S.sel && !act.find(s=>s.slot_id===S.sel)) S.sel=null;
   const mods=[1,2,3,4,5].map(m=>[m, act.filter(s=>s.module===m)]).filter(x=>x[1].length);
-  const label = s => `<span class="code">${esc(s.ctd)}</span> ${esc(L(s.title)).slice(0,60)}${s.item?` · ${bdi(s.item.manufacturer)}`:''}`;
+  const label = s => `<span class="code">${esc(s.ctd)}</span> ${esc(L(s.title)).slice(0,60)}${s.item?` · ${bdi(s.item.name||'')}${s.item.manufacturer?' — '+bdi(s.item.manufacturer):''}`:''}`;
   const tree = mods.map(([m,list])=>`<details open><summary>${esc(t('module'))} ${m}<span class="cnt">${list.filter(isReady).length}/${list.length}</span></summary>${list.map(s=>`<div class="node ${s.slot_id===S.sel?'sel':''}" data-node="${esc(s.slot_id)}" tabindex="0" role="button"><span class="dot d-${s.status}"></span><span>${label(s)}</span></div>`).join('')}</details>`).join('');
   const sel = S.sel && act.find(s=>s.slot_id===S.sel);
   const rows = sel ? S.pv.filter(r=>r.slot_id===sel.slot_id) : [];
@@ -2296,6 +2458,68 @@ async function dropFiles(slotId, list){
 }
 
 /* ---------------- checks */
+/* ---------------- search the text of every document (each file read once, page by page, and kept) */
+function searchView(tok){
+  if(!fresh(tok)) return;
+  const q0=S.srchQ&&S.srchQ.did===S.dossier.id?S.srchQ.q:'';
+  $('#view').innerHTML=`<div class="head"><div class="title"><h1>${esc(t('navSearch'))}</h1><p class="sub">${esc(t('srchSub'))}</p></div></div>
+    <form class="card pad row gap-s" id="srchForm" style="flex-wrap:wrap"><input type="search" id="srchQ" dir="auto" class="grow" style="min-width:12ch" placeholder="${esc(t('srchPh'))}" value="${esc(q0)}">
+    <button class="btn pri" type="submit">${icon('search',14)} ${esc(t('srchGo'))}</button></form><div id="srchOut" class="stack" style="margin-top:12px"></div>`;
+  $('#srchForm').onsubmit=e=>{ e.preventDefault(); runSearch($('#srchQ').value.trim()); };
+  if(q0) runSearch(q0);
+}
+async function runSearch(q){
+  const out=$('#srchOut'); if(!out||q.length<2) return; S.srchQ={did:S.dossier.id, q}; const my=(S.srchSeq=(S.srchSeq||0)+1);
+  out.innerHTML=`<div class="small muted">${esc(t('srchRead'))}</div>`;
+  let r; for(let i=0;i<40;i++){ try{ r=await api(`/dossiers/${S.dossier.id}/search?q=${encodeURIComponent(q)}`); }catch(e){ if(my===S.srchSeq) out.innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
+    if(my!==S.srchSeq) return; paintSearch(r); if(!r.pending) break; }
+}
+function paintSearch(r){
+  const out=$('#srchOut'); if(!out) return;
+  const mark=x=>`${esc(x.snippet.slice(0,x.start))}<mark>${esc(x.snippet.slice(x.start,x.start+x.length))}</mark>${esc(x.snippet.slice(x.start+x.length))}`;
+  out.innerHTML=`<div class="small muted">${esc(t('srchCount').replace('{m}',r.matches).replace('{d}',r.hits.length))}${r.pending?` · ${esc(t('srchLeft').replace('{n}',r.pending))}`:''}</div>
+    ${r.hits.length?r.hits.map(h=>`<div class="card pad"><div class="row gap-s" style="flex-wrap:wrap"><span class="code">${esc(h.ctd)}</span><b>${esc(L(h.title))}</b><span class="small muted">${bdi(h.filename)} · ${esc(t('version'))} ${h.version}</span>
+      <button class="btn sm ghost right" data-why="${esc(h.slot_id)}">${esc(t('view'))}</button></div>
+      ${h.matches.map(x=>`<div class="small" style="margin-top:6px"><span class="tag">${esc(t('srchPage'))} ${x.page}</span> <span dir="auto">${mark(x)}</span></div>`).join('')}</div>`).join('')
+      :(r.pending?'':`<div class="empty">${icon('search',36)}<div>${esc(t('srchNone'))}</div></div>`)}`;
+  bindNext(out);
+}
+async function openRules(){
+  let c; try{ c=await api('/rules'); }catch(e){ toast(e.message); return; }
+  const stages=[['upload','rulesUp'],['cross','rulesCross'],['ectd32','rulesEG'],['ectd32_eu','rulesEU']];
+  const chipS=s=>`<span class="chip ${s==='in_force'?'c-ok':s==='draft'?'c-warn':'c-na'}"><i></i>${esc(t('rs_'+s))}</span>`;
+  openDrawer(t('rulesT'), `<p class="small muted">${esc(t('rulesSub'))}</p>${stages.map(([k,lab])=>{ const rs=c.rules.filter(r=>r.stage===k); if(!rs.length) return ''; const n=c.counts[k]||{};
+    return `<details><summary><b>${esc(t(lab))}</b> <span class="tag">${rs.length}</span> ${['in_force','draft','policy'].filter(s=>n[s]).map(s=>`<span class="small muted">${esc(t('rs_'+s))} ${n[s]}</span>`).join(' · ')}${n.not_run?` · <span class="small muted">${esc(t('rulesNotRun'))} ${n.not_run}</span>`:''}</summary>
+      ${rs.map(r=>`<div class="finding"><div class="row gap-s" style="flex-wrap:wrap"><span class="code">${esc(r.id)}</span>${chipS(r.status)}${r.run==='not_run'?`<span class="tag">${esc(t('rulesNotRun'))}</span>`:''}</div><div class="small" dir="auto">${esc(r[S.lang]||r.en)}</div><div class="small muted">${esc(r.source)}${r.why_not?` — ${esc(r.why_not)}`:''}</div></div>`).join('')}</details>`; }).join('')}
+    ${c.sources.length?`<details><summary><b>${esc(t('rulesSrc'))}</b> <span class="tag">${c.sources.length}</span></summary>${c.sources.map(s=>`<div class="small"><bdi>${esc(s.file)}</bdi> <span class="muted">· ${esc(s.taken||'')} · </span><span class="code" title="SHA-256 ${esc(s.sha256)}">${esc(s.sha256.slice(0,12))}…</span></div>`).join('')}</details>`:''}`, true);
+}
+/* ---------------- any eCTD package, made anywhere: checked by its region's criteria, and two packages compared */
+function packageView(tok){
+  if(!fresh(tok)) return;
+  $('#view').innerHTML=`<div class="head"><div class="title"><h1>${esc(t('navPkg'))}</h1><p class="sub">${esc(t('pkgSub'))}</p></div></div>
+    <div class="grid2"><section class="card pad stack gap-s"><h2>${esc(t('pkgCheck'))}</h2><p class="small muted">${esc(t('pkgCheckSub'))}</p>
+      <input type="file" id="pkgFile" accept=".zip,.tar,.tgz,.gz,.7z,.rar"><div><button class="btn pri" id="pkgGo" disabled>${icon('shield',14)} ${esc(t('pkgGo'))}</button></div><div id="pkgOut"></div></section>
+    <section class="card pad stack gap-s"><h2>${esc(t('pkgCmp'))}</h2><p class="small muted">${esc(t('pkgCmpSub'))}</p>
+      <label class="f"><span>A</span><input type="file" id="pkgA" accept=".zip,.tar,.tgz,.gz,.7z,.rar"></label><label class="f"><span>B</span><input type="file" id="pkgB" accept=".zip,.tar,.tgz,.gz,.7z,.rar"></label>
+      <div><button class="btn" id="cmpGo" disabled>${icon('repeat',14)} ${esc(t('pkgCmpGo'))}</button></div><div id="cmpOut"></div></section></div>`;
+  $('#pkgFile').onchange=()=>{ $('#pkgGo').disabled=!$('#pkgFile').files.length; };
+  const both=()=>{ $('#cmpGo').disabled=!($('#pkgA').files.length&&$('#pkgB').files.length); }; $('#pkgA').onchange=both; $('#pkgB').onchange=both;
+  $('#pkgGo').onclick=async()=>{ const fd=new FormData(); fd.append('file', $('#pkgFile').files[0]); $('#pkgGo').disabled=true; $('#pkgOut').innerHTML=`<div class="small muted">${esc(t('pkgBusy'))}</div>`;
+    try{ const r=await api('/package/validate',{method:'POST',body:fd});
+      $('#pkgOut').innerHTML=`<div class="alert ${r.ok?'ok':'bad'}"><p class="small"><b>${esc(t(r.ok?'pkgOk':'pkgBad'))}</b></p></div>
+        <div class="tablewrap"><table><thead><tr><th>${esc(t('pkgSeq'))}</th><th>${esc(t('pkgRegion'))}</th><th>${esc(t('pkgRes'))}</th></tr></thead><tbody>${r.sequences.map(s=>`<tr><td class="code">${esc(s.sequence)}</td><td>${esc(t('pkgR_'+s.region))}</td>
+        <td class="small">${s.ok?'✓':'✗'} ${esc(t('pkgCounts').replace('{p}',s.counts.pass).replace('{f}',s.counts.fail).replace('{w}',s.counts.warning).replace('{n}',s.counts.not_run))} · ${esc(s.coverage)}</td></tr>`).join('')}</tbody></table></div>
+        <iframe id="pkgRep" title="report" style="width:100%;height:52vh;border:1px solid var(--line);border-radius:10px;background:#fff"></iframe>`;
+      $('#pkgRep').srcdoc=r.html; }
+    catch(e){ $('#pkgOut').innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; }
+    $('#pkgGo').disabled=false; };
+  $('#cmpGo').onclick=async()=>{ const fd=new FormData(); fd.append('a', $('#pkgA').files[0]); fd.append('b', $('#pkgB').files[0]); $('#cmpGo').disabled=true; $('#cmpOut').innerHTML=`<div class="small muted">${esc(t('pkgBusy'))}</div>`;
+    try{ const r=await api('/package/compare',{method:'POST',body:fd});
+      $('#cmpOut').innerHTML=r.same?`<div class="alert ok"><p class="small">${esc(t('pkgSame'))}</p></div>`:r.sequences.map(s=>`<div class="finding"><b class="code">${esc(s.sequence)}</b>
+        ${s.only_in?` <span class="tag">${esc(t('pkgOnly').replace('{x}', s.only_in.toUpperCase()))}</span>`:s.changes.length?`<div class="small">${s.changes.map(c=>`<div><span class="tag">${esc(t('pkgC_'+c.change))}</span> <bdi>${esc(c.href)}</bdi>${c.title?` <span class="muted" dir="auto">· ${esc(c.title)}</span>`:''}</div>`).join('')}</div>`:` <span class="small muted">${esc(t('pkgNoCh'))}</span>`}</div>`).join(''); }
+    catch(e){ $('#cmpOut').innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; }
+    both(); };
+}
 async function checksView(tok){
   await loadGens();
   const {b, data, J} = await loadJourney();
@@ -2305,12 +2529,12 @@ async function checksView(tok){
   const tech = rows.length ? `<div class="tablewrap"><table><thead><tr><th>${esc(t('colSec'))}</th><th>${esc(t('colDoc'))}</th><th>${esc(t('findings'))}</th><th>${esc(t('action'))}</th></tr></thead><tbody>
     ${rows.map(({s,d})=>`<tr><td><span class="code">${esc(s.ctd)}</span><div class="small">${esc(L(s.title))}</div></td><td>${bdi(d.filename)}<div class="small muted">${esc(t('version'))} ${d.version} · ${chip(d.check_status)}</div></td>
       <td>${d.findings.map(f=>`<div class="small">${f.severity==='block'?'●':'○'} ${esc(f[S.lang])} <span class="code muted">${esc(f.rule)}</span></div>`).join('')}</td>
-      <td><div class="row gap-s">${d.findings.some(f=>f.action==='auto_fix')?`<button class="btn sm pri" data-why="${esc(s.slot_id)}">${icon('wrench',14)} ${esc(t('autofix'))}</button>`:`<button class="btn sm" data-why="${esc(s.slot_id)}">${esc(t('view'))}</button>`}</div></td></tr>`).join('')}</tbody></table></div>`
+      <td><div class="row gap-s">${d.findings.some(f=>f.action==='auto_fix')?`<button class="btn sm pri" data-cfix="${esc(d.id)}" data-slot="${esc(s.slot_id)}">${icon('wrench',14)} ${esc(t('autofix'))}</button><button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('view'))}</button>`:`<button class="btn sm" data-why="${esc(s.slot_id)}">${esc(t('view'))}</button>`}</div></td></tr>`).join('')}</tbody></table></div>`
     : `<div class="empty">${icon('check',36)}<div>${esc(t('noTech'))}</div></div>`;
   const cross = (b.cross||[]).length ? b.cross.map(f=>`<div class="finding ${f.severity==='block'?'block':''}"><div>${f.severity==='block'?'●':'○'} ${esc(f[S.lang])} <span class="code muted">${esc(f.id)}</span></div><div class="small muted">${esc(f.source)} · ${esc(t('act_'+f.action)||'')}</div></div>`).join('')
     : `<p class="small muted">✓ ${esc(t('crossNone'))}</p>`;
   const list = (title, arr, cls, extra) => arr.length ? `<div class="card"><div class="hd"><span class="chip ${cls}"><i></i>${arr.length}</span><h3>${esc(title)}</h3></div><div class="pad stack gap-s">${arr.map(s=>`<div class="jitem"><div class="t"><span><span class="code muted">${esc(s.ctd)}</span> ${esc(L(s.title))}</span>${extra?`<span class="small muted">${extra(s)}</span>`:''}</div><button class="btn sm" data-why="${esc(s.slot_id)}">${esc(t('view'))}</button></div>`).join('')}</div></div>` : '';
-  const html = `${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('navChecks'))}</h1><p class="sub">${esc(t('checksSub'))}</p></div><a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a></div>
+  const html = `${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('navChecks'))}</h1><p class="sub">${esc(t('checksSub'))}</p></div><div class="row"><button class="btn" id="rulesBtn">${icon('book')} ${esc(t('rulesT'))}</button><a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a></div></div>
    <div class="kpis">
      <div class="card kpi bad"><span class="n">${st.nonconf.length}</span><span class="l">${esc(t('k_block'))}</span></div>
      <div class="card kpi warn"><span class="n">${st.attn.length}</span><span class="l">${esc(t('k_warn'))}</span></div>
@@ -2322,7 +2546,7 @@ async function checksView(tok){
    <div class="grid2"><section class="card"><div class="hd"><span class="ic-tile ok">${icon('link',16)}</span><h2>${esc(t('crossT'))}</h2><a class="btn sm" href="#/d/${id}/data">${esc(t('navData'))}</a></div><div class="pad stack gap-s">${cross}</div></section>
    <div class="stack">${list(t('k_wait'), st.waiting, 'c-wait', s=>s.request?`${esc(t('reqOpen'))} ${esc(s.request.issuer)}`:'')}${list(t('k_unsigned'), st.unsigned, 'c-warn')}${list(t('k_ext'), st.external, 'c-rec')}</div></div>`;
   if(!show(tok, html)) return;
-  bindNext($('#view'));
+  bindNext($('#view')); const rb=$('#rulesBtn'); if(rb) rb.onclick=openRules;
 }
 
 /* ---------------- structured product data */
@@ -2435,7 +2659,7 @@ async function exportView(tok){
   const euPicked=lastEnv.countries||[euCode(au.country)];
   const outs=[['ctd',eg?'CTD One Submission':'CTD',t(eg?'outCtdD':'auCtdD'),eg?'NP.CAPP.065 v5':L(au.matrix||{})],['ectd32',`eCTD 3.2.2${eu?' — EU M1 3.1.1':''} — ${t('seqDone')} ${n32}`,t(eu?'outE3EU':'outE3D'),eu?'EU M1 3.1.1 · EU VC 8.2':'EG provisional v0'],['ectd40',`eCTD 4.0 — ${t('seqDone')} ${n40}`,t('outE4D'),'EG provisional v0 · ICH IG 1.7']].filter(([k])=>auOuts().includes(k));
   $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('export'))}</h1><p class="sub">${esc(t(eg?'exportSub':eu?'euExportSub':'auExportSub'))}</p></div><a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a></div>
-   ${g.ok?`<div class="alert ok">${icon('check')}<p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad">${icon('alert')}<p>${esc(t('gateBad'))}</p></div><div class="card pad stack gap-s" id="gateCard">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}${list('unsignedL',g.unsigned||[])}${list('extL',g.external_only||[])}${(g.cross_blocking||[]).length?`<div><b>${esc(t('crossT'))} (${g.cross_blocking.length})</b>${g.cross_blocking.map(f=>`<div class="small">● ${esc(f[S.lang])}</div>`).join('')}</div>`:''}
+   ${g.ok?`<div class="alert ok">${icon('check')}<p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad">${icon('alert')}<p>${esc(t('gateBad'))}</p></div><div class="card pad stack gap-s" id="gateCard">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}${list('unsignedL',g.unsigned||[])}${list('extL',g.external_only||[])}${list('toConfirm',g.to_confirm||[])}${list('ectdBlockL',g.ectd_blocking||[])}${(g.cross_blocking||[]).length?`<div><b>${esc(t('crossT'))} (${g.cross_blocking.length})</b>${g.cross_blocking.map(f=>`<div class="small">● ${esc(f[S.lang])}</div>`).join('')}</div>`:''}
      <div class="row"><a class="btn sm" href="#/d/${id}/board">${esc(t('navBoard'))}</a><a class="btn sm" href="#/d/${id}/checks">${esc(t('navChecks'))}</a></div></div>`}
    <div class="card glow pad stack gap-s" id="wkCard"><div class="row gap-s"><span class="ic-tile accent">${icon('package',16)}</span><div class="grow"><b>${esc(t('wkBtn'))}</b><div class="small muted">${esc(t('wkSub'))}</div></div>
      <button class="btn ${g.ok?'':'pri'}" id="wkGo">${icon('download')} ${esc(t('wkBtn'))}</button></div><div id="wkRes"></div></div>

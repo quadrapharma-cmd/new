@@ -45,7 +45,20 @@ const {$, $$, esc, bdi, icon, store, toast, openDrawer, closeDrawer, ring, meter
 const S={lang: store.get('db.lang') || store.get('rs.lang') || 'ar', types:null};
 const T={
  appName:{ar:'ملف المنتجات',en:'Product file'}, navHome:{ar:'لوحة القيادة',en:'Dashboard'}, navProducts:{ar:'المنتجات',en:'Products'},
- navDocs:{ar:'مكتبة المستندات',en:'Document library'}, navParties:{ar:'الأطراف',en:'Parties'}, navRef:{ar:'مرجع',en:'Reference'},
+ navDocs:{ar:'مكتبة المستندات',en:'Document library'}, navParties:{ar:'الأطراف',en:'Parties'},
+ navLetters:{ar:'مراسلات الهيئة',en:'Authority letters'}, navCommit:{ar:'الالتزامات',en:'Commitments'},
+ lettersSub:{ar:'كل خطاب من الهيئة وليها: الأسئلة اللي فيه وردودها ومواعيدها. الخطاب الوارد بيتقري: أسئلته المترقّمة والمدة اللي بيديها بيبقوا أسئلة بميعاد تراجعها.',en:'Every letter from and to the authority: its questions, their answers and deadlines. A letter received is read: its numbered questions and the time it gives become questions with a due date for you to review.'},
+ addLetter:{ar:'خطاب جديد',en:'New letter'}, dirIn:{ar:'وارد من الهيئة',en:'From the authority'}, dirOut:{ar:'صادر للهيئة',en:'To the authority'},
+ subject:{ar:'الموضوع',en:'Subject'}, refNo:{ar:'رقم الخطاب',en:'Reference'}, dated:{ar:'تاريخ الخطاب',en:'Dated'}, received:{ar:'تاريخ الاستلام',en:'Received'},
+ due:{ar:'آخر ميعاد',en:'Due'}, letterFile:{ar:'ملف الخطاب (PDF)',en:'The letter (PDF)'}, questions:{ar:'الأسئلة',en:'Questions'}, answer:{ar:'الرد',en:'Answer'},
+ qOpen:{ar:'مفتوح',en:'open'}, qDrafted:{ar:'متكتب له رد',en:'drafted'}, qAnswered:{ar:'اتردّ',en:'answered'}, markAnswered:{ar:'اتردّ',en:'Answered'},
+ addQ:{ar:'سؤال جديد',en:'Add a question'}, replyDoc:{ar:'خطاب الرد (Word)',en:'Reply letter (Word)'}, readGot:{ar:'اتقرا من الخطاب: {q} سؤال{due}',en:'Read from the letter: {q} question(s){due}'},
+ noLetters:{ar:'مفيش مراسلات لسه.',en:'No letters yet.'}, deadlines:{ar:'المواعيد',en:'Deadlines'}, deadlinesSub:{ar:'أسئلة الهيئة والخطابات والالتزامات اللي ليها ميعاد — المتأخر الأول.',en:'Authority questions, letters and commitments with a due date — the overdue first.'},
+ noDeadlines:{ar:'مفيش مواعيد مفتوحة.',en:'No open deadlines.'}, overdue:{ar:'متأخر',en:'overdue'}, soon:{ar:'قريب',en:'soon'}, later:{ar:'بعدين',en:'later'},
+ daysLeft:{ar:'باقي {n} يوم',en:'{n} days left'}, daysLate:{ar:'متأخر {n} يوم',en:'{n} days late'},
+ commitSub:{ar:'التزامات الشركة قدام الهيئة (بيانات ثبات، إبلاغ بتجديد، تشغيلات أولى…) ومواعيدها.',en:'The company\'s commitments to the authority (stability data, renewals to report, first batches…) and their deadlines.'},
+ addCommit:{ar:'التزام جديد',en:'New commitment'}, commitText:{ar:'الالتزام',en:'Commitment'}, done:{ar:'اتنفّذ',en:'Done'}, evidence:{ar:'الدليل',en:'Evidence'},
+ noCommit:{ar:'مفيش التزامات لسه.',en:'No commitments yet.'}, product:{ar:'المنتج',en:'Product'}, navRef:{ar:'مرجع',en:'Reference'},
  navRules:{ar:'أنواع المستندات والصلاحية',en:'Document types & validity'},
  navActivity:{ar:'سجل النشاط',en:'Activity log'}, navUsers:{ar:'المستخدمون',en:'Users'}, logout:{ar:'خروج',en:'Sign out'}, chpw:{ar:'كلمة السر',en:'Password'},
  role_admin:{ar:'مدير',en:'Administrator'}, role_editor:{ar:'محرّر',en:'Editor'}, role_viewer:{ar:'مشاهد',en:'Viewer'}, role_disabled:{ar:'موقوف',en:'Disabled'},
@@ -106,7 +119,7 @@ const basis=b=>{ if(!b) return ''; if(b==='printed') return S.lang==='ar'?'ال�
   const m=b.match(/^(issued|reg_date)\+(\d+)$/); if(!m) return b;
   return S.lang==='ar'?`${m[1]==='issued'?'تاريخ الإصدار':'تاريخ التسجيل'} + ${m[2]} شهر`:`${m[1]==='issued'?'issue date':'registration date'} + ${m[2]} months`; };
 function drawer(title,html){ openDrawer(title, html); }
-const NAV=[['home','#/','grid','navHome'],['products','#/products','pill','navProducts'],['docs','#/docs','file','navDocs'],['parties','#/parties','building','navParties']];
+const NAV=[['home','#/','grid','navHome'],['products','#/products','pill','navProducts'],['docs','#/docs','file','navDocs'],['parties','#/parties','building','navParties'],['letters','#/letters','mail','navLetters'],['commit','#/commitments','target','navCommit']];
 const REF=[['rules','#/rules','book','navRules'],['activity','#/activity','history','navActivity'],['users','#/users','users','navUsers']];
 $('#nav').innerHTML = NAV.map(([r,h,i,k])=>`<a href="${h}" data-nav="${r}">${icon(i)}<span data-t="${k}"></span>${r==='home'?'<span class="cnt" id="navCnt" hidden></span>':''}</a>`).join('')
   + `<div class="grp" data-t="navRef"></div>` + REF.map(([r,h,i,k])=>`<a href="${h}" data-nav="${r}" ${r==='users'?'id="navUsers" hidden':''}>${icon(i)}<span data-t="${k}"></span></a>`).join('')
@@ -130,6 +143,9 @@ async function route(){
     if((m=h.match(/^\/p\/([^/]+)(?:\/(need|parties|docs|data))?$/))) return await productView(m[1],m[2]||'need');
     if(h==='/docs') return await docsView();
     if(h==='/parties') return await partiesView();
+    if(h==='/letters') return await lettersView();
+    if((m=h.match(/^\/letters\/([^/]+)$/))) return await letterView(m[1]);
+    if(h==='/commitments') return await commitView();
     if(h==='/rules') return await rulesView();
     if(h==='/activity') return await activityView();
     if(h==='/users') return await usersView();
@@ -141,7 +157,7 @@ window.addEventListener('hashchange',route);
 /* ---------- dashboard */
 async function home(){
   nav('home',t('navHome'));
-  const d=await api('/dashboard'); const c=d.counts;
+  const [d, dl]=await Promise.all([api('/dashboard'), api('/deadlines').catch(()=>null)]); const c=d.counts;
   const urgent=c.expired+c.missing; const cnt=$('#navCnt'); cnt.hidden=!urgent; cnt.textContent=urgent;
   const kpi=(k,cls)=>`<div class="card kpi ${cls}"><span class="n">${c[k]}</span><span class="l">${esc(t('k_'+k))}</span></div>`;
   $('#view').innerHTML=`<div class="head"><div class="title"><div class="eyebrow">${fmt(d.today)}</div><h1>${esc(t('navHome'))}</h1><p class="sub">${esc(t('homeSub'))}</p></div>
@@ -156,7 +172,7 @@ async function home(){
         <td><div class="row" style="min-width:150px">${meter(p.readiness, p.readiness===100?'ok':'')}<span class="small code">${p.readiness}%</span></div>
           <div class="small row gap-s" style="margin-top:4px">${['expired','missing','needs_date','expiring'].filter(k=>p.counts[k]).map(k=>`<span class="chip s-${k}">${p.counts[k]} ${esc(t('s_'+k))}</span>`).join('')}</div></td>
         <td class="small">${p.renewal?fmt(p.renewal.due):'—'}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">${icon('pill',36)}<div>${esc(t('noProducts'))}</div><a class="btn pri" href="#/products">${icon('plus')} ${esc(t('newProduct'))}</a></div>`}
-    </section></div>`;
+    </section></div>${dl?deadlinesHtml(dl):''}`;
   bindIssueActions(); $('[data-newdoc]').onclick=()=>docForm({});
 }
 function issueRow(i){
@@ -323,6 +339,81 @@ async function editDates(id){
 }
 
 /* ---------- parties */
+/* ---------- module 2: the authority's letters, its questions, the company's commitments, one list of deadlines */
+const dueTxt=x=>x.days<0?t('daysLate').replace('{n}',-x.days):t('daysLeft').replace('{n}',x.days);
+const dueChip=x=>`<span class="chip ${x.state==='overdue'?'s-expired':x.state==='soon'?'s-expiring':'s-valid'}"><i></i>${esc(t(x.state))} · ${esc(dueTxt(x))}</span>`;
+function deadlinesHtml(d){
+  return `<section class="card" id="deadlines" style="margin-top:12px"><div class="hd"><span class="ic-tile ${d.some(x=>x.state==='overdue')?'bad':'ok'}">${icon('clock',16)}</span><div class="grow"><h2>${esc(t('deadlines'))}</h2><p class="sub small">${esc(t('deadlinesSub'))}</p></div></div>
+    ${d.length?`<div class="tbl"><table><tbody>${d.slice(0,12).map(x=>`<tr><td>${dueChip(x)}</td><td><a href="${x.kind==='commitment'?'#/commitments':'#/letters/'+(x.letter_id||x.id)}" dir="auto">${esc(x.title)}</a>${x.product?`<div class="small muted">${bdi(x.product)}</div>`:''}</td><td class="small">${fmt(x.due)}</td></tr>`).join('')}</tbody></table></div>`
+      :`<div class="empty">${icon('check',36)}<div>${esc(t('noDeadlines'))}</div></div>`}</section>`;
+}
+async function lettersView(){
+  if(location.hash!=='#/letters') return;                // a late re-render after the person left: nothing
+  nav('letters',t('navLetters')); const at=location.hash;
+  const [ls, prods]=await Promise.all([api('/letters'), api('/products')]); if(location.hash!==at) return;      // left meanwhile: never paint over the next page
+  $('#view').innerHTML=`<div class="head"><div class="title"><h1>${esc(t('navLetters'))}</h1><p class="sub">${esc(t('lettersSub'))}</p></div><div class="row"><button class="btn pri" id="newLetter">${icon('plus')} ${esc(t('addLetter'))}</button></div></div>
+    <section class="card">${ls.length?`<div class="tbl"><table><thead><tr><th>${esc(t('subject'))}</th><th>${esc(t('product'))}</th><th>${esc(t('questions'))}</th><th>${esc(t('due'))}</th></tr></thead><tbody>
+    ${ls.map(l=>`<tr><td><a href="#/letters/${l.id}"><b dir="auto">${esc(l.subject)}</b></a><div class="small muted">${esc(t(l.direction==='in'?'dirIn':'dirOut'))}${l.ref_no?` · <span class="code">${esc(l.ref_no)}</span>`:''}${l.received||l.dated?` · ${fmt(l.received||l.dated)}`:''}</div></td>
+      <td class="small">${l.product?bdi(l.product):'—'}</td><td class="small">${l.questions.length?`${l.questions.length-l.open_questions}/${l.questions.length}`:'—'}</td><td class="small">${l.due&&l.status==='open'?fmt(l.due):'—'}</td></tr>`).join('')}</tbody></table></div>`
+      :`<div class="empty">${icon('mail',36)}<div>${esc(t('noLetters'))}</div></div>`}</section>`;
+  $('#newLetter').onclick=()=>letterForm(prods);
+}
+function letterForm(prods, pre){
+  pre=pre||{};
+  drawer(t('addLetter'), `<div class="stack gap-s"><div class="form">
+    <label class="f"><span>${esc(t('dirIn'))} / ${esc(t('dirOut'))}</span><select id="lfDir"><option value="in">${esc(t('dirIn'))}</option><option value="out" ${pre.direction==='out'?'selected':''}>${esc(t('dirOut'))}</option></select></label>
+    <label class="f"><span>${esc(t('product'))}</span><select id="lfProd"><option value="">—</option>${prods.map(p=>`<option value="${esc(p.id)}" ${pre.product_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></label>
+    <label class="f" style="grid-column:1/-1"><span>${esc(t('letterFile'))}</span><input type="file" id="lfFile" accept=".pdf,.docx,.doc"></label>
+    <label class="f" style="grid-column:1/-1"><span>${esc(t('subject'))}</span><input type="text" id="lfSubj" dir="auto" value="${esc(pre.subject||'')}"></label>
+    <label class="f"><span>${esc(t('refNo'))}</span><input type="text" id="lfRef" dir="ltr"></label>
+    <label class="f"><span>${esc(t('received'))}</span><input type="date" id="lfRec" value="${new Date().toISOString().slice(0,10)}"></label>
+    <label class="f"><span>${esc(t('dated'))}</span><input type="date" id="lfDated"></label>
+    <label class="f"><span>${esc(t('due'))}</span><input type="date" id="lfDue"></label></div><div id="lfErr"></div>
+    <div class="row"><button class="btn pri" id="lfGo">${icon('check',14)} ${esc(t('save'))}</button></div></div>`);
+  $('#lfGo').onclick=async()=>{ const fd=new FormData(); const f=$('#lfFile').files[0];
+    fd.append('meta', JSON.stringify({direction:$('#lfDir').value, product_id:$('#lfProd').value||null, subject:$('#lfSubj').value.trim(), ref_no:$('#lfRef').value.trim()||null,
+      received:$('#lfRec').value||null, dated:$('#lfDated').value||null, due:$('#lfDue').value||null, reply_to:pre.reply_to||null}));
+    if(f) fd.append('file', f);
+    $('#lfGo').disabled=true;
+    try{ const r=await api('/letters',{method:'POST',body:fd}); closeDrawer();
+      if(r.read&&(r.read.questions||r.read.due)) toast(t('readGot').replace('{q}', r.read.questions).replace('{due}', r.read.due?` · ${t('due')} ${fmt(r.read.due)}`:''));
+      location.hash='#/letters/'+r.id; }
+    catch(e){ $('#lfErr').innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; $('#lfGo').disabled=false; } };
+}
+async function letterView(id){
+  if(location.hash!=='#/letters/'+id) return;
+  nav('letters',t('navLetters')); const at=location.hash;
+  const [l, prods]=await Promise.all([api('/letters/'+id), api('/products')]); if(location.hash!==at) return;
+  const st=q=>`<span class="chip ${q.status==='answered'?'s-valid':q.status==='drafted'?'s-expiring':'s-missing'}"><i></i>${esc(t(q.status==='answered'?'qAnswered':q.status==='drafted'?'qDrafted':'qOpen'))}</span>`;
+  $('#view').innerHTML=`<div class="head"><div class="title"><div class="eyebrow">${esc(t(l.direction==='in'?'dirIn':'dirOut'))}${l.ref_no?` · ${esc(l.ref_no)}`:''}</div><h1 dir="auto">${esc(l.subject)}</h1>
+     <p class="sub">${l.product?`${bdi(l.product)} · `:''}${l.received?`${esc(t('received'))} ${fmt(l.received)}`:''}${l.due?` · ${esc(t('due'))} ${fmt(l.due)}`:''}</p></div>
+     <div class="row">${l.sha256?`<a class="btn" href="/api/suite/letters/${l.id}/file" target="_blank" rel="noopener">${icon('file')} PDF</a>`:''}${l.direction==='in'&&l.questions.length?`<a class="btn ${l.questions.every(q=>(q.answer||'').trim())?'':'disabled'}" id="replyDoc" href="/api/suite/letters/${l.id}/reply.docx?lang=${S.lang}" download="reply.docx">${icon('download')} ${esc(t('replyDoc'))}</a>`:''}</div></div>
+    <section class="card"><div class="hd"><span class="ic-tile">${icon('checklist',16)}</span><h2>${esc(t('questions'))} <span class="tag">${l.questions.length}</span></h2></div>
+     <div class="pad stack gap-s">${l.questions.map(q=>`<div class="card flat pad stack gap-s" data-q="${q.id}"><div class="row gap-s" style="align-items:flex-start"><b class="code">${q.n}</b><div class="grow" dir="auto">${esc(q.text)}</div>${st(q)}</div>
+       <textarea rows="2" dir="auto" data-qa="${q.id}" placeholder="${esc(t('answer'))}">${esc(q.answer||'')}</textarea>
+       <div class="row gap-s small"><label class="row gap-s">${esc(t('due'))} <input type="date" data-qdue="${q.id}" value="${esc(q.due||'')}"></label><span class="grow"></span>
+         <button class="btn sm ${q.status==='answered'?'':'pri'}" data-qdone="${q.id}" ${q.status==='answered'?'disabled':''}>${icon('check',14)} ${esc(t('markAnswered'))}</button></div></div>`).join('')}
+      <div class="row gap-s"><input type="text" id="newQ" dir="auto" class="grow" placeholder="${esc(t('addQ'))}"><button class="btn" id="addQ">${icon('plus',14)} ${esc(t('addQ'))}</button></div></div></section>`;
+  const save=async(qid, body)=>{ try{ await api('/questions/'+qid,{method:'PUT',json:body}); }catch(e){ toast(e.message); } };
+  $$('[data-qa]').forEach(a=>a.onchange=()=>save(a.dataset.qa,{answer:a.value}));
+  $$('[data-qdue]').forEach(a=>a.onchange=()=>save(a.dataset.qdue,{due:a.value||null}));
+  $$('[data-qdone]').forEach(b=>b.onclick=async()=>{ const a=$(`[data-qa="${b.dataset.qdone}"]`); await save(b.dataset.qdone,{answer:a.value, status:'answered'}); letterView(id); });
+  $('#addQ').onclick=async()=>{ const v=$('#newQ').value.trim(); if(!v) return; try{ await api(`/letters/${id}/questions`,{method:'POST',json:{text:v}}); letterView(id); }catch(e){ toast(e.message); } };
+}
+async function commitView(){
+  if(location.hash!=='#/commitments') return;
+  nav('commit',t('navCommit')); const at=location.hash;
+  const [cs, prods]=await Promise.all([api('/commitments'), api('/products')]); if(location.hash!==at) return;
+  $('#view').innerHTML=`<div class="head"><div class="title"><h1>${esc(t('navCommit'))}</h1><p class="sub">${esc(t('commitSub'))}</p></div></div>
+    <form class="card pad stack gap-s" id="cForm"><div class="form"><label class="f" style="grid-column:1/-1"><span>${esc(t('commitText'))}</span><input type="text" id="cText" dir="auto" required></label>
+      <label class="f"><span>${esc(t('product'))}</span><select id="cProd"><option value="">—</option>${prods.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></label>
+      <label class="f"><span>${esc(t('due'))}</span><input type="date" id="cDue"></label></div><div><button class="btn pri" type="submit">${icon('plus',14)} ${esc(t('addCommit'))}</button></div></form>
+    <section class="card" style="margin-top:12px">${cs.length?`<div class="tbl"><table><tbody>${cs.map(c=>`<tr><td dir="auto"><b>${esc(c.text)}</b>${c.product?`<div class="small muted">${bdi(c.product)}</div>`:''}${c.evidence?`<div class="small">${esc(t('evidence'))}: <span dir="auto">${esc(c.evidence)}</span></div>`:''}</td>
+      <td class="small">${c.due?fmt(c.due):'—'}</td><td>${c.status==='done'?`<span class="chip s-valid"><i></i>${esc(t('done'))}</span>`:`<button class="btn sm" data-cdone="${c.id}">${icon('check',14)} ${esc(t('done'))}</button>`}</td></tr>`).join('')}</tbody></table></div>`
+      :`<div class="empty">${icon('target',36)}<div>${esc(t('noCommit'))}</div></div>`}</section>`;
+  $('#cForm').onsubmit=async e=>{ e.preventDefault(); try{ await api('/commitments',{method:'POST',json:{text:$('#cText').value.trim(), product_id:$('#cProd').value||null, due:$('#cDue').value||null}}); commitView(); }catch(err){ toast(err.message); } };
+  $$('[data-cdone]').forEach(b=>b.onclick=async()=>{ try{ await api('/commitments/'+b.dataset.cdone,{method:'PUT',json:{status:'done'}}); commitView(); }catch(e){ toast(e.message); } });
+}
 async function partiesView(){
   nav('parties',t('navParties'));
   const ps=await api('/parties');

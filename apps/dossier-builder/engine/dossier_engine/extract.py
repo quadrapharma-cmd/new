@@ -19,8 +19,12 @@ KINDS = [  # (kind, keywords in lower-case text or file name); see guess_kind fo
     ('gmp', ['good manufacturing practice', 'gmp certificate', 'certificate of gmp', 'gmp compliance', 'gmp', 'التصنيع الجيد']),
     ('coa', ['certificate of analysis', 'analytical report', ' coa', 'c of a', 'شهادة تحليل', 'شهادة التحليل']),
     ('composition', ['composition certificate', 'unit formula', 'quantitative composition', 'شهادة التركيب', 'التركيب']),
+    ('import', ['import approval', 'annual import approval', 'importation approval', 'import permit', 'customs release', 'موافقة استيرادية',
+                'الموافقة الاستيرادية', 'موافقة استيراد', 'إذن استيراد', 'الإفراج الجمركي']),
     ('pricing', ['pricing certificate', 'price certificate', 'pricing policies', 'pricing', 'تسعير', 'التسعيرة', 'سعر البيع للجمهور', 'لجنة تسعير', 'سعر بيع الجمهور']),
-    ('variation', ['variation approval', 'type of variation', 'variation decision', 'الموافقة المبدئية على تغيير', 'الموافقة النهائية على تغيير', 'موافقة تغيير', 'موافقة المتغيرات']),
+    ('variation', ['variation approval', 'type of variation', 'variation decision', 'variation committee', 'variations unit', 'pack addition',
+                   'الموافقة المبدئية على تغيير', 'الموافقة النهائية على تغيير', 'موافقة تغيير', 'موافقة المتغيرات', 'لجنة المتغيرات', 'إدارة المتغيرات',
+                   'إضافة عبوة']),
     ('licence', ['registration licence', 'registration license', 'marketing authorisation', 'marketing authorization', 'registration notification', 'final registration license', 'final registration licence', 'إخطار التسجيل', 'إخطار تسجيل', 'رخصة التسجيل', 'شهادة تسجيل',
                  'شهادة التسجيل', 'ترخيص تداول', 'ترخيص التداول', 'رخصة تداول', 'إخطار', 'اخطار', 'ترخيص']),
     ('annex1', ['annex i', 'application form', 'نموذج الطلب']),
@@ -39,6 +43,8 @@ KINDS = [  # (kind, keywords in lower-case text or file name); see guess_kind fo
     ('poa', ['power of attorney', 'letter of attorney', 'توكيل']),
     ('commercial', ['commercial register', 'register of trade', 'سجل تجاري']),
     ('receipt', ['payment receipt', 'fees receipt', 'قسيمة', 'إيصال', 'ايصال']),
+    ('refstd', ['working standard', 'reference standard', 'secondary standard', 'primary standard', 'مادة مرجعية', 'المواد المرجعية', 'مواد مرجعية']),
+    ('sampling', ['sampling form', 'sample sending form', 'sample-sending form', 'استمارة سحب', 'سحب عينة', 'سحب عينات', 'استمارة إرسال عينة']),
     ('contract', ['manufacturing agreement', 'toll manufacturing', 'first party', 'second party', 'تم الاتفاق بين', 'الطرف الأول', 'الطرف الاول', 'الطرف الثاني', 'ملحق عقد',
                   'agreement', 'contract', 'اتفاقية', 'عقد']),
 ]
@@ -300,15 +306,24 @@ def _first_kind(hay, tiers, cited):
 
 DECISIVE = [  # an authority's own title or department, a document's own heading: it settles the kind wherever it stands in the first pages
     ('licence', ['final registration license', 'final registration licence', 'إخطار تسجيل نهائي', 'إخطار تسجيل نهائى', 'اخطار تسجيل نهائي', 'اخطار تسجيل نهائى']),
-    ('variation', ['الموافقة المبدئية على تغيير', 'الموافقة النهائية على تغيير', 'variation decision']),
+    ('variation', ['الموافقة المبدئية على تغيير', 'الموافقة النهائية على تغيير', 'variation decision', 'variation committee', 'variations unit',
+                   'لجنة المتغيرات', 'pack addition']),
+    ('import', ['import & customs release', 'import and customs release', 'annual import approval', 'موافقة استيرادية', 'الموافقة الاستيرادية',
+                'الإفراج الجمركي']),
     ('stability', ['الإدارة العامة للثبات', 'الادارة العامة للثبات', 'موافقة الثبات', 'stability approval']),
     ('validation', ['analytical method validation', 'method validation protocol', 'stability indicating assay']),
 ]
 
 
-def _decisive(t):
+HEAD_DECISIVE = [  # a title that settles the kind only at the top of the document: a CoA's body may well name a reference standard
+    ('refstd', ['working standard', 'reference standard', 'secondary standard', 'مادة مرجعية', 'المواد المرجعية']),
+    ('sampling', ['sampling form', 'sample sending form', 'استمارة سحب', 'استمارة إرسال عينة']),
+]
+
+
+def _decisive(t, table=None):
     best = None
-    for kind, phrases in DECISIVE:
+    for kind, phrases in table or DECISIVE:
         for p in phrases:
             i = t.find(p)
             if i >= 0 and (best is None or i < best[0]):
@@ -324,7 +339,7 @@ def guess_kind(filename, text):
     t = (text or '')[:4000].lower()
     head = _head(t)
     name = ' ' + (filename or '').lower().replace('_', ' ').replace('-', ' ') + ' '
-    k = _decisive(t)
+    k = _decisive(t) or _decisive(head, HEAD_DECISIVE)
     if k:
         return k
     for hay, tiers, cited in ((head, (0, 1), False), (t, (0, 1), False), (head, (0, 1), True), (t, (0, 1), True), (t, (2,), False), (t, (2,), True), (name, (0, 1, 2), False)):
@@ -428,6 +443,33 @@ def _clean(s):
     return re.sub(r'\s+', ' ', arabic.BIDI.sub('', s or '')).strip(' .,;:-')
 
 
+FPP_TESTS = ('uniformity of dosage units', 'content uniformity', 'dissolution', 'average weight', 'disintegration', 'friability', 'hardness',
+             'fill weight', 'uniformity of mass', 'deliverable volume', 'weight variation', 'minimum fill')
+API_TESTS = ('retest date', 're-test date', 'retest', 'specific rotation', 'specific optical rotation', 'residue on ignition', 'sulphated ash',
+             'sulfated ash', 'heavy metals', 'on dried basis', 'on the dried basis', 'on anhydrous basis')
+FPP_FORMS = tuple(f for f in FORMS if f not in ('powder', 'solution', 'drops', 'spray', 'emulsion', 'foam', 'granules', 'patch', 'lotion', 'shampoo', 'gel'))
+
+
+def coa_whose(kind, text, product=None):
+    """A certificate of analysis is the finished product's ('fpp': a dosage form, its own tests) or a raw material's ('api': a supplier's
+    material tests — retest date, specific rotation, residue on ignition — and nothing of a dosage form); None when it shows neither."""
+    if kind != 'coa':
+        return None
+    low = (text or '').lower()
+    head = _head(low, lines=14, chars=1400)
+    fpp = bool((product or {}).get('dosage_form')) or any(w in low for w in FPP_TESTS) or any(f in head for f in FPP_FORMS)
+    api = any(w in low for w in API_TESTS)
+    return 'api' if api and not fpp else 'fpp' if fpp else None
+
+
+def _material_name(name):
+    """«Glycine BP 2018» → «Glycine»: the substance a supplier's CoA is about, without its monograph."""
+    if not name:
+        return None
+    n = re.sub(r'\b(?:BP|USP|EP|Ph\.?\s?Eur\.?|JP)\b.*$', '', name, flags=re.I).strip(' -–,')
+    return n or None
+
+
 def fields_for(kind, filename, text):
     """The rules' reading of one document; keys follow SCHEMA, values are strings or lists."""
     t = text or ''
@@ -523,10 +565,15 @@ def fields_for(kind, filename, text):
     if ident and re.search(r'\b(BP|USP|Ph\.? ?Eur\.?)\b', t):
         profile['pharmacopoeial'] = True
     batches = []
+    whose = coa_whose(kind, t, product) if kind == 'coa' else None          # a supplier's CoA of a raw material, or the finished product's
+    material = None
+    if whose == 'api':
+        material = _material_name(product.get('name')) or next((_material_name(a) for a in apis if a), None)
     for m in re.finditer(r'\b(?:batch|lot)\s*(?:no\.?|number|#)?\s*[:\-]?\s*(?=[A-Z0-9\-/]*\d)([A-Z0-9][A-Z0-9\-/]{2,19})\b', t if kind in ('coa', 'cadc', 'bmr', 'stability') else '', re.I):
         no = m.group(1)                                     # a batch number has a digit in it: «Batch Weight», «Batch Size» are not numbers
         if no.lower() not in ('no', 'number', 'size') and no not in [b['no'] for b in batches]:
-            batches.append({'no': no, 'kind': 'api' if kind in ('coa', 'cep') and apis and kind == 'cep' else 'fpp'})
+            api_batch = (kind == 'cep' and apis) or whose == 'api'
+            batches.append({'no': no, 'kind': 'api' if api_batch else 'fpp', **({'api': material} if api_batch and material else {})})
     size = after(t, ['Batch size', 'Lot size'], r'([\d.,]+\s?(?:units|tablets|capsules|kg|g|l|ml|vials|bottles)?)')
     MFG, EXP = ['Date of manufacture', 'Manufacturing date', 'Mfg. date', 'Mfg date', 'Date of manufacturing'], ['Expiry date', 'Exp. date', 'Exp date', 'Date of expiry']
     mfg = date_after(t, MFG, near=14) or _month_after(t, MFG)
@@ -594,6 +641,8 @@ def fields_for(kind, filename, text):
                 g = next((b for b in batches if b['no'] == eb['no']), None)
                 merged.append({**g, **{k: v for k, v in eb.items() if v}} if g else eb)
             out['batches'] = merged + [b for b in batches if b['no'] not in {x['no'] for x in merged}]
+            if whose == 'api':                                   # a supplier's CoA: every batch it lists is the substance's, whichever reader found it
+                out['batches'] = [dict(b, kind='api', **({'api': b.get('api') or material} if (b.get('api') or material) else {})) for b in out['batches']]
         if eda.get('composition'):
             out['composition'] = eda['composition']
         for k, v in eda.get('document', {}).items():
@@ -888,7 +937,9 @@ KIND_HOME = {'pricing': ['M1-05'], 'gmp': ['M1-37', 'M1-38'], 'cpp': ['M1-14'], 
              'licence': ['M1-04', 'M1-28'], 'commercial': ['M1-19'], 'poa': ['M1-02'], 'contract': ['M1-24'], 'smpc': ['M1-09', 'M1-42'],
              'cadc': ['M1-34', 'P-11'], 'composition': ['M1-31', 'P-01'], 'spec': ['M1-36', 'S-08', 'P-09', 'P-08'], 'annex1': ['M1-01'],
              'loa': ['M1-30'], 'factory': ['M1-18'], 'bmr': ['R-01', 'R-02'], 'stability': ['M1-34', 'P-16', 'S-14'],
-             'method': ['P-10', 'S-09'], 'validation': ['P-10', 'S-09'], 'receipt': ['M1-03'], 'variation': ['M1-07']}
+             'method': ['P-10', 'S-09'], 'validation': ['P-10', 'S-09'], 'receipt': ['M1-03'], 'variation': ['M1-07'],
+             'import': ['M1-13'], 'refstd': ['S-12', 'P-14'], 'sampling': []}
+PER_API_ONLY = ('M1-38', 'M1-13', 'S-12')      # items kept one per active substance: an unresolved document is offered among them, not elsewhere
 TECHNICAL = ('spec', 'method', 'validation')        # one document often holds two of them (a specification with its test methods): any of their items takes it
 KIND_NAMES = {'pricing': {'en': 'pricing certificate', 'ar': 'شهادة تسعير'}, 'gmp': {'en': 'GMP certificate', 'ar': 'شهادة GMP'}, 'cpp': {'en': 'CPP', 'ar': 'شهادة CPP'},
               'cep': {'en': 'CEP', 'ar': 'شهادة CEP'}, 'coa': {'en': 'certificate of analysis', 'ar': 'شهادة تحليل'}, 'licence': {'en': 'registration licence / notification', 'ar': 'إخطار / رخصة تسجيل'},
@@ -897,7 +948,38 @@ KIND_NAMES = {'pricing': {'en': 'pricing certificate', 'ar': 'شهادة تسع�
               'spec': {'en': 'specification', 'ar': 'مواصفات'}, 'annex1': {'en': 'application form (Annex I)', 'ar': 'نموذج الطلب'}, 'loa': {'en': 'letter of access / DMF', 'ar': 'خطاب سماح / DMF'},
               'factory': {'en': 'factory licence', 'ar': 'رخصة مصنع'}, 'bmr': {'en': 'batch record', 'ar': 'سجل تشغيلة'}, 'stability': {'en': 'stability document', 'ar': 'مستند ثبات'},
               'method': {'en': 'method of analysis', 'ar': 'طريقة تحليل'}, 'validation': {'en': 'method validation / chromatograms', 'ar': 'تحقق من طريقة التحليل / كروماتوجرام'},
-              'receipt': {'en': 'fees receipt', 'ar': 'إيصال رسوم'}, 'variation': {'en': 'variation approval', 'ar': 'موافقة تغيير'}}
+              'receipt': {'en': 'fees receipt', 'ar': 'إيصال رسوم'}, 'variation': {'en': 'variation approval', 'ar': 'موافقة تغيير'},
+              'import': {'en': 'import approval', 'ar': 'موافقة استيرادية'}, 'refstd': {'en': 'reference / working standard certificate', 'ar': 'شهادة مادة مرجعية'},
+              'sampling': {'en': 'sampling form (not a dossier document)', 'ar': 'استمارة سحب عينة (مش مستند في الملف)'}}
+ORG_STOP = {'pharmaceutical', 'pharmaceuticals', 'pharma', 'pharm', 'company', 'co', 'ltd', 'limited', 'inc', 'corp', 'corporation', 'group',
+            'industries', 'industry', 'industrial', 'for', 'the', 'and', 'of', 'gmbh', 'sae', 'laboratories', 'laboratory', 'labs', 'chemical',
+            'chemicals', 'biochemical', 'biochemistry', 'biotech', 'international', 'egypt', 'china', 'india', 'plc', 'llc', 'spa', 'srl',
+            'pvt', 'private', 'factory', 'works', 'شركة', 'للصناعات', 'الدوائية', 'للأدوية', 'للادوية', 'مصنع'}
+
+
+def org_key(name):
+    """The words that tell a company apart: «Tianjin Tianyao Pharmaceutical Co., Ltd» → [tianjin, tianyao]; «Badr Pharma» → [badr].
+    An address after the name is not the name: «Medis S.A., Nabeul, Tunisia» → [medis] (the first comma, «-» or bracket ends it)."""
+    def key(s):
+        return [w for w in re.findall(r'[a-z\u0600-\u06ff]{3,}', (s or '').lower()) if w not in ORG_STOP][:2]
+    head = re.split(r'[,،;(]|\s[-–—]\s', name or '', maxsplit=1)[0]
+    return key(head) or key(name)
+
+
+def names_org(text, name):
+    """Does the text name this company (every word that tells it apart)?"""
+    key = org_key(name)
+    low = (text or '').lower()
+    return bool(key) and all(re.search(r'(?<![a-z\u0600-\u06ff])' + re.escape(w) + r'(?![a-z\u0600-\u06ff])', low) for w in key)
+
+
+def gmp_whose(text, fpp, makers):
+    """A GMP certificate is the finished product's manufacturer's ('fpp') or an active substance's ('api'), by the company it names;
+    None when it names both or neither — then nothing is placed on a guess."""
+    top = (text or '')[:6000]
+    fpp_hit = names_org(top, fpp)
+    api_hit = any(names_org(top, m) for m in makers if m and org_key(m) != org_key(fpp))
+    return 'fpp' if fpp_hit and not api_hit else 'api' if api_hit and not fpp_hit else None
 
 
 def names_product(text, product):
@@ -918,7 +1000,7 @@ def from_authority(text):
     return any(p in top for p in ('egyptian drug authority', 'هيئة الدواء المصرية', 'ministry of health', 'وزارة الصحة', 'decision letter'))
 
 
-def kind_homes(kind, pack=None, text=None, product=None, substances=()):
+def kind_homes(kind, pack=None, text=None, product=None, substances=(), fpp=None, makers=()):
     """The items a document of this kind belongs in, the likeliest first. Egypt's table above names its own items; another
     authority's items say it themselves (`kinds` in the requirement). With a pack: only items that pack has. With the document's
     text: a certificate of analysis or a specification that names the product at its top is the finished product's own
@@ -933,6 +1015,10 @@ def kind_homes(kind, pack=None, text=None, product=None, substances=()):
             head = _head(text.lower(), lines=14, chars=1400)
             api_first = not names_product(text, product) and any(s and re.search(r'(?<![a-z])' + re.escape(s.lower()) + r'(?![a-z])', head) for s in substances)
             first = ['S-14', 'P-16'] if api_first else ['P-16', 'S-14']
+        elif kind == 'gmp' and (fpp or makers):                     # whose certificate: the company it names
+            first = {'api': ['M1-38', 'M1-37'], 'fpp': ['M1-37', 'M1-38']}.get(gmp_whose(text, fpp, makers))
+        elif kind == 'refstd' and names_product(text, product):
+            first = ['P-14', 'S-12']
         if first:
             homes = [h for h in first if h in homes] + [h for h in homes if h not in first]
     if pack is None:

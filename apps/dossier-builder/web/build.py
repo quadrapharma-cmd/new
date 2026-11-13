@@ -44,8 +44,23 @@ def page(src, *, builder):
     head = re.search(r'<head>(.*?)</head>', html, re.S).group(1)
     body = re.search(r'<body>(.*?)</body>', html, re.S).group(1)
     head = re.sub(r'<meta charset="utf-8">\s*|<meta name="viewport"[^>]*>\s*', '', head)
+    head = re.sub(r'<link href="(https://fonts\.googleapis\.com/[^"]+)" rel="stylesheet">',
+                  r'<link href="\1" rel="stylesheet" media="print" onload="this.media=\'all\'">', head)      # the fonts load beside the page, never before it
+    head = re.sub(r'(</title>)', lambda m: m.group(1) + '\n' + FIRST_SCREEN, head, count=1)
     content = head.strip() + '\n' + body.strip() + '\n'
     return content, SKELETON + content + '</body></html>\n'
+
+
+# the first screen, in the page's first bytes: shown before anything loads; boot.js replaces it with its progress screen
+FIRST_SCREEN = ('<div id="boot0" role="status" style="position:fixed;inset:0;z-index:999;display:grid;place-items:center;background:#070B12;'
+                'color:#E9EFF7;font:15px/1.7 system-ui,-apple-system,Segoe UI,sans-serif;text-align:center;padding:0 16px">'
+                '<div style="display:flex;flex-direction:column;gap:10px;align-items:center;max-width:440px">'
+                '<div style="width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#22D3EE,#A78BFA);display:grid;place-items:center;'
+                'font-family:ui-monospace,monospace;font-weight:600;color:#04161B">DB</div>'
+                '<b dir="rtl">بيفتح منشئ ملفات التسجيل…</b>'
+                '<span dir="rtl" style="font-size:13px;color:#8C9BB0">أول مرة بينزّل البرنامج نفسه على جهازك (دقيقة تقريبًا على خط عادي)؛ بعدها بيفتح في ثواني.</span>'
+                '<span dir="ltr" style="font-size:12.5px;color:#8C9BB0">Opening Dossier Builder… The first time, the program itself is downloaded to this device '
+                '(about a minute on an ordinary line); after that it opens in seconds.</span></div></div>')
 
 
 MARK = '/*DB_MANIFEST*/{}'

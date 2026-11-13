@@ -17,10 +17,27 @@ MAX_PATH = 180
 _BAD = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
 
+_CLAUSE = re.compile(r'\s+[-+/&]\s+|[:;,]\s+|\s+(?=\()')
+_DANGLING = re.compile(r'(?:\s+(?:of|the|for|and|or|in|on|to|a|an|with|by|from|at|per|if|as|&|-))+\s*$', re.I)
+
+
 def clean(s, n=48):
-    s = _BAD.sub(' ', s or '').replace('—', '-').replace('–', '-')
-    s = re.sub(r'\s+', ' ', s).strip().rstrip('.')
-    return s[:n].rstrip(' -.') or 'x'
+    """A Windows-safe name of at most n characters that never ends inside a word or an open bracket: a long title keeps its first
+    whole clauses («Leaflet - One Submission», not «Leaflet - One Submission: proposed S»). The clauses are read before the
+    characters Windows refuses (: / …) become spaces."""
+    s = re.sub(r'\s+', ' ', (s or '').replace('—', '-').replace('–', '-')).strip().rstrip('.')
+    if len(s) > n:
+        cuts = [m.start() for m in _CLAUSE.finditer(s) if m.start() <= n]
+        if cuts and cuts[-1] >= n * 0.4:
+            s = s[:cuts[-1]]
+        else:
+            cut = s[:n]
+            s = cut[:cut.rfind(' ')] if s[n] != ' ' and cut.rfind(' ') >= n * 0.4 else cut
+        if s.count('(') > s.count(')'):
+            s = s[:s.rfind('(')]
+        s = _DANGLING.sub('', s)                     # «… declaration of» → «… declaration»
+    s = re.sub(r'\s+', ' ', _BAD.sub(' ', s)).strip()
+    return s.rstrip(' -.,:;+/&') or 'x'
 
 
 def _sec_key(sec):

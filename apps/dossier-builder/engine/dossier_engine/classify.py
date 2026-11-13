@@ -1,8 +1,8 @@
 """Suggest the requirement slot for an uploaded file (P1 «auto-classify»).
-Signals: CTD/eCTD number in the file name (e.g. 3.2.P.5.1, 32p51, 1.1.13), the
-pack's keyword list (classify.yaml) and the requirement titles, matched in the
-file name and in the first page's text. Output is a ranked suggestion list; the
-user always confirms."""
+Signals, all from what is written inside the file — never from the name it was given (a document is what its text says it is):
+the CTD/eCTD number in its heading (e.g. 3.2.P.5.1, 32p51, 1.1.13), the pack's keyword list (classify.yaml) and the requirement
+titles, the substance and the manufacturer it names. Output is a ranked suggestion list with each reason in Arabic and English;
+the user always confirms."""
 import re
 import yaml
 from dossier_engine.yamlfast import load as yload
@@ -46,8 +46,9 @@ class Classifier:
             self.reqs[r['id']] = {'phrases': [_norm(p) for p in kw.get(r['id'], [])], 'words': words, 'secs': secs}
 
     def suggest(self, filename, text, slots, top=3):
-        fn, tx = _norm(filename), _norm(text)[:6000]
-        nums = _ctd_tokens(filename.lower())
+        """`filename` stays in the signature for the callers; it is not read."""
+        tx = _norm(text)[:6000]
+        nums = _ctd_tokens(tx[:400])                     # the section number a document prints in its heading
         scored = []
         for s in slots:
             if not s.active:
@@ -59,26 +60,24 @@ class Classifier:
             for sec in r['secs']:
                 if sec in nums:
                     score += 6
-                    why.append(f'section {sec} in file name')
+                    why.append({'en': f'section {sec} in its heading', 'ar': f'رقم البند {sec} في عنوانه'})
             for p in r['phrases']:
-                if re.search(r'(?<![a-z])' + re.escape(p) + r'(?![a-z])', fn):
-                    score += 4
-                    why.append(f'«{p}» in file name')
-                elif p and re.search(r'(?<![a-z])' + re.escape(p) + r'(?![a-z])', tx):
+                if p and re.search(r'(?<![a-z])' + re.escape(p) + r'(?![a-z])', tx):
                     score += 3
-                    why.append(f'«{p}» in text')
-            hits = [w for w in r['words'] if w in fn or w in tx]
+                    why.append({'en': f'«{p}» in its text', 'ar': f'«{p}» في نصه'})
+            hits = [w for w in r['words'] if w in tx]
             score += min(len(hits), 3)
-            if s.item:     # per-API slot: prefer the item whose substance, then whose manufacturer, the document names
+            if s.item and score > 0:     # per-API slot the keywords matched: prefer the item whose substance, then whose manufacturer,
+                                         # the document names (it picks among an item's substances; it never makes an item by itself)
                 from .extract import api_key
                 sub = _norm(api_key(s.item.get('name') or ''))
-                if sub and re.search(r'(?<![a-z])' + re.escape(sub) + r'(?![a-z])', fn + ' ' + tx):
+                if sub and re.search(r'(?<![a-z])' + re.escape(sub) + r'(?![a-z])', tx):
                     score += 3
-                    why.append(f"substance «{s.item['name']}»")
+                    why.append({'en': f"names {s.item['name']}", 'ar': f"بيذكر {s.item['name']}"})
                 man = _norm(s.item['manufacturer'])
-                if man and (man in fn or man in tx):
+                if man and man in tx:
                     score += 3
-                    why.append(f"manufacturer «{s.item['manufacturer']}»")
+                    why.append({'en': f"names {s.item['manufacturer']}", 'ar': f"بيذكر {s.item['manufacturer']}"})
             if score >= 3:
                 scored.append({'slot_id': s.slot_id, 'req_id': s.req_id, 'score': score, 'why': why[:4]})
         scored.sort(key=lambda x: (-x['score'], x['slot_id']))

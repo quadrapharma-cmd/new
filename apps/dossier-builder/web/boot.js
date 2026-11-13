@@ -23,8 +23,9 @@
     '<div id="bootTime" style="font-size:12px;color:var(--muted,#8C9BB0);font-variant-numeric:tabular-nums;min-height:1.4em"></div>' +
     '<div id="bootHelp" hidden style="font-size:13px;line-height:1.7;display:flex;flex-direction:column;gap:10px;align-items:center"><span></span>' +
     '<button type="button" style="font:inherit;padding:7px 18px;border-radius:9px;border:1px solid var(--line,rgba(128,128,128,.45));background:transparent;color:inherit;cursor:pointer"></button></div></div>';
-  document.addEventListener('DOMContentLoaded', () => document.body.appendChild(ov));
-  if (document.body) document.body.appendChild(ov);
+  const show = () => { document.body.appendChild(ov); const b0 = document.getElementById('boot0'); if (b0) b0.remove(); };    // the still first screen gives way to the progress
+  document.addEventListener('DOMContentLoaded', show);
+  if (document.body) show();
   /* the loading screen says what is happening, how far it is and for how long — and, when nothing has moved for a while, that it
      is the line that is slow, with a way to try again: an opening that is slow never looks like one that is stuck */
   const L0 = { started: Date.now(), moved: Date.now(), bar: 3, done: false, failed: false, loaded: 0, total: 0, net: 0 };

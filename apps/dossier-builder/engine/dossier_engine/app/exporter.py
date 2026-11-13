@@ -68,6 +68,32 @@ def _working_copy(st, did, g):
             'sequences': {}, 'validation': {}, 'report': None, 'ctd_only': [], 'label': note['en'], 'label_ar': note['ar']}
 
 
+def ectd_files(files):
+    """The files an eCTD takes: PDF. A Word document (the proposed leaflet, asked in Word for the One Submission) goes in as its PDF —
+    the one the item holds beside it with the same language and type, else converted here (LibreOffice); without either the eCTD
+    export stops and says so (it never writes a Word file under a .pdf name)."""
+    out = {}
+    for sid, fs in files.items():
+        keep = []
+        for f in fs:
+            if f.get('ext', '.pdf') == '.pdf':
+                keep.append(f)
+                continue
+            twin = next((g for g in fs if g.get('ext', '.pdf') == '.pdf' and g.get('pi_type') == f.get('pi_type') and g.get('lang') == f.get('lang')), None)
+            if twin:
+                continue                                  # its PDF is in the item: that one goes in
+            try:
+                pdf = to_pdf(Path(f['file']))
+            except Exception:                             # no LibreOffice here, or it failed on this file
+                raise ExportError(422, 'E-WORD-PDF', f"«{f.get('title')}» is a Word file and an eCTD takes PDF: add its PDF to the item "
+                                  '(save it as PDF from Word), or export on a machine with LibreOffice.',
+                                  f"«{f.get('title')}» ملف Word والـ eCTD بياخد PDF: ضيف الـ PDF بتاعه في البند (احفظه PDF من Word)، "
+                                  'أو صدّر من جهاز عليه LibreOffice.')
+            keep.append(dict(f, file=str(pdf), ext='.pdf'))
+        out[sid] = keep
+    return out
+
+
 def next_seq(hist, output):
     if not hist:
         return '0000' if output == 'ectd32' else 1
@@ -142,6 +168,11 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
                               '(EU Module 1 v3.1.1).', 'الـ eCTD 4.0 مكتوب لمصر بس؛ الملف الأوروبي بيتصدّر كمجلدات CTD و eCTD 3.2.2 (موديول ١ الأوروبي 3.1.1).', gate=g)
         raise ExportError(422, 'E-OUTPUT-AUTHORITY', "The eCTD package is written for Egypt's and the EU's Module 1; this dossier exports as CTD folders.",
                           'حزمة الـ eCTD مكتوبة لموديول ١ المصري والأوروبي بس؛ الملف ده بيتصدّر كمجلدات CTD.', gate=g)
+    if {'ectd32', 'ectd40'} & set(outputs) and g.get('ectd_blocking'):
+        raise ExportError(409, 'E-GATE-ECTD', 'eCTD readiness: some documents carry restrictions, a Portfolio or JavaScript (the eCTD rules). '
+                          'Fix them (auto-fix for company documents, a new copy from the issuer otherwise), or export the CTD folders only.',
+                          'جاهزية الـ eCTD: فيه مستندات عليها قيود أو Portfolio أو JavaScript (قواعد الـ eCTD). صلّحها (إصلاح تلقائي لمستندات الشركة، '
+                          'ونسخة جديدة من الجهة لغيرها)، أو صدّر مجلدات CTD بس.', gate=g)
     if {'ectd32', 'ectd40'} & set(outputs) and not ack and egypt:            # the EG profiles are provisional; the EU's is the EMA's own
         raise ExportError(409, 'E-PROVISIONAL-ACK', 'eCTD outputs use the provisional EG profiles; acknowledge before export.',
                           'مخرجات eCTD مبنية على ملف تعريف مصري مؤقت؛ لازم توافق قبل التصدير.', gate=g)
@@ -158,12 +189,19 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
     files = {}
     for s in slots:
         for doc in st.documents(did, s.slot_id) if s.active else []:
-            p = work / f"{doc['id']}.pdf"
+            ext = '.' + doc['filename'].rsplit('.', 1)[-1].lower() if '.' in doc['filename'][-6:] else '.pdf'
+            ext = ext if ext in ('.pdf', '.docx', '.doc', '.rtf', '.odt') else '.pdf'
+            p = work / f"{doc['id']}{ext}"
             shutil.copyfile(st.blob_path(doc['sha256']), p)
-            files.setdefault(s.slot_id, []).append({'file': str(p), 'title': doc['title'], **doc['meta'], 'doc_id': doc['id']})
-    docs_all, ctd_only = docs_for(slots, prof, files) if region else ([], [])
+            files.setdefault(s.slot_id, []).append({'file': str(p), 'title': doc['title'], **doc['meta'], 'doc_id': doc['id'], 'ext': ext})
+    try:
+        files_e = ectd_files(files) if region and {'ectd32', 'ectd40'} & set(outputs) else files      # an eCTD takes PDF only
+    except ExportError:
+        shutil.rmtree(base, ignore_errors=True)
+        raise
+    docs_all, ctd_only = docs_for(slots, prof, files_e) if region else ([], [])
     current_ids = {x.doc_id for x in docs_all}
-    eff = {k: v for k, v in files.items() if not k.startswith('M1-44')}
+    eff = {k: v for k, v in files_e.items() if not k.startswith('M1-44')}
     docs_ectd = [x for x in docs_for(slots, prof, eff)[0]] if region else []
     results, reports, zips, seqinfo, done = {}, {}, {}, {}, []
     lc = st.root / 'lifecycle' / did

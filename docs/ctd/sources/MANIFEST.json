@@ -1,0 +1,266 @@
+[
+ {
+  "file": "EDA_CADC_Guidelines-File-Assessment-FPP_DRAFT.pdf",
+  "sha256": "ea3ab2bf2ee3dc9c47e3fea5c0f1b4566d0e8d677e8d1759f910186d5e1513e3",
+  "size": 1242438,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_CPD_eCTD-webinar-agenda_2026-09-24.pdf",
+  "sha256": "6ed8a9c132e410edf0d167bc16cdd976e0a061c898f50c89797edcfb43a6d0e7",
+  "size": 118705,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_CTD-Quality-Module-guideline_v2_2023.pdf",
+  "sha256": "3e5693702e1a76ee3945b390dfb878b3d6b5b54a5ea442792f101938f6e48d8f",
+  "size": 501311,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_EG-Human-Pharma-Module1-Submission-Guidance_DRAFT_2026.pdf",
+  "sha256": "636ea7521328cb976f953715fc79dcf188f0cab35430ac42924616d704686433",
+  "size": 1134980,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_EG-Module1-eCTD-Specification_DRAFT_v1.0_2026.pdf",
+  "sha256": "71845bcb359f1306b58892e413b729c38cc14aabc0334e51dfb8a9a17f00a7de",
+  "size": 954223,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_GL.Bioinn.004_v5_2026_biologics-file-content-M1-eCTD-aligned.pdf",
+  "sha256": "d2ac5c391f80fbc23686ff89d7a3280dd7385948a68f48a387279208b7f592e9",
+  "size": 512588,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_GL.CADC.002_v02_2024_CADC-file-assessment_IN-FORCE.pdf",
+  "sha256": "21a6f890f088e552ff096f3977b7f58a322644cf58bc216126eca14c087218d1",
+  "size": 931515,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_GL.CAP.Care-CAPP.002_v4_2023_dossier-requirements.pdf",
+  "sha256": "943d85b8f7518e57f7082deebef160b8c9136d657587c40f57788e47974b3af4",
+  "size": 1337896,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_GL.CAPP.024_v4_2026_BE-guideline.pdf",
+  "sha256": "85079db5db88ac08b0984a971a29a197ba759526daea6727a839dae5c6b5f370",
+  "size": 1263117,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_GL.CAPP.026_v6_2025_variations-6th-ed.pdf",
+  "sha256": "e4524c7d94139d3e4e0e99d72ba301078f9a30ffe945e33fd227944f0f213e8a",
+  "size": 360301,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_GL.CAPP.027_v5_2025_guide-decree-450.pdf",
+  "sha256": "b6c3b4e237e2d0109965ccc4906bea666dc308807ef449e0d95c0232e18d894a",
+  "size": 2104377,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_GL.CAPP.039_v1_2025_QM-re-registration.pdf",
+  "sha256": "8bdfd867a3cb678b083b13d69ce37664e9ef1c1b582883ac62ec96019e5dae08",
+  "size": 233827,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_NP.CAPP.040_v1_2022_QM-common-deficiencies.pdf",
+  "sha256": "3bdbc0594062e0c3f61f7e15ae2f59b8660084afc893fae299c4c38cedf09114",
+  "size": 125904,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_NP.CAPP.065_v5_2025_CTD-submission-guidance.pdf",
+  "sha256": "e5daa0edd6c12aa4adfcdbc2d4dd088881bbd6f90104fe408b968a37adfb397e",
+  "size": 539004,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_NP.CAPP.065_v6_DRAFT_2026_CTD-submission-guidance.pdf",
+  "sha256": "e5a1d7232a9e411c475a995214ff7d1c85cb0136c4e7398e6ce4b2ad1581db69",
+  "size": 445969,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_NP.CAPP.090_v2_2026_stability-dossier-content.pdf",
+  "sha256": "b4976d0e6be57c3852f055e49bf2bb06f9251e1f239edc4f9b8ed069b1cc2070",
+  "size": 360591,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_NP.CAPP.112_v1_2026_variations-CTD-sections.pdf",
+  "sha256": "994e6fbf7ab7a5d2d8ea1bf425150659bd6b86b321caeb5c87eab06cd8325170",
+  "size": 108412,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_Submission-Guidance-Module-I_old-draft.pdf",
+  "sha256": "14a266e04bb772f9a3d9906239268b93c81fd7cef51907f3bcbcdeee076e9441",
+  "size": 178406,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_Submission-Procedures-Registration-Dossiers_GoogleForms_step-by-step.pdf",
+  "sha256": "77a526894727cff06fc18b7c6b3520aabf9c7d0e54b4835dc3f606803fef8b95",
+  "size": 2854637,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_eCTD-technical-guidance_DRAFT_v1_2026.pdf",
+  "sha256": "16810f9c2668f82c7c365a56a41cbb5ee07d925a86b59d3b37166d341e7da254",
+  "size": 967152,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_guide-decree-150_v7_2025.pdf",
+  "sha256": "f3ae065ce02ca3d3fa51612e135fd73be68032e097997bc1af96a387e122e73e",
+  "size": 132675,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ICH_M4Q_R1.pdf",
+  "sha256": "c3edcf44203ad72b9eb0e01bfa3cfbcb6ab4ad6e78304bc985e3a1a03bedff58",
+  "size": 273075,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ICH_M4_R4_organisation-granularity.pdf",
+  "sha256": "b35e3fec556bb73222e207243fa7253c29d2c26b4e14b6726472c346ac684df7",
+  "size": 268130,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "WHO_PQ_BTIF_Jan2023.docx",
+  "sha256": "f3f3e9d3d191285360775371ea2a5a9a663259a36c2fe18b08da058c0fe75bc3",
+  "size": 158085,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "WHO_PQ_QIS_template_Jan2025.docx",
+  "sha256": "368872130272d0b7a9de0ef79d85d36a4dc5817dfabb89b5f1b948d5cdc1c81b",
+  "size": 157868,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "WHO_PQ_QOS-PD_template_Jan2025.docx",
+  "sha256": "84495cb8a91688732045b8c2acf43b55c61927207d38da3c6c0009c503a70ce5",
+  "size": 125479,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "WHO_PQ_screening-checklist_May2021.doc",
+  "sha256": "bf59a8dbdb3052e2f33092d526ac03386e2fb1e5321eda3f9dcd3d0b04e6042c",
+  "size": 173056,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "WHO_TRS986_Annex6_generic-FPP-quality.pdf",
+  "sha256": "1d0acc3aa924fd0d974eaaaf4f98996f375af61d4c34f119f5a9272ce6676f30",
+  "size": 344134,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/EU_Accepted_File_Formats_2024-06.pdf",
+  "sha256": "9dc7d4d130e30b210db2be975d9ce575c6dd2acf35dca5a8742b2c78735d9572",
+  "size": 82066,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/EU_CorrectedExamples_2009.zip",
+  "sha256": "759ee235ad547e55d4cd9cb8944e944bdeb81a326a1fcca51fda7860d2c525e1",
+  "size": 4014708,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/EU_Harmonised_Technical_Guidance_eCTD_v6.0.1.pdf",
+  "sha256": "049ffdf9130c07e32363db12cb22b4f869940375ca176de39a52aa9220a94249",
+  "size": 1090327,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/EU_M1_Specification_v3.1.1_2025.pdf",
+  "sha256": "ae27b9a2258ac396071234539f2bbd88491dec03521c1b12ded135bdf49b2492",
+  "size": 1002589,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/EU_M1_Validation_Criteria_v8.2.xlsx",
+  "sha256": "0f64339496564d89abe9e96376f29805dce2302a56f54ce12858d083315d1fd9",
+  "size": 71307,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/EU_M1_util_v3.1.zip",
+  "sha256": "1938d04486ea07018972bf0e4e4fbb2f5f302d0becdbebff652f14c4441031ba",
+  "size": 14828,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/EU_eCTD_v4.0_IG_draft_1.2_2024.docx",
+  "sha256": "f4f2e4832c90555700b7bd1dc0ea690aeef6803258dbe60f4fc3e9fcf29c851e",
+  "size": 1215010,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/ICH_M8_Submission-Formats_v1.3.pdf",
+  "sha256": "242ba1d67af078f1f883e2a44af2c932327fedc4a7915526d6ed0c96e6f2c68a",
+  "size": 808738,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/ICH_M8_VendorGroup_Minutes_2026-09-30.pdf",
+  "sha256": "03b453726dafe34430c1ed2a4286fb478cf9eda6c3a7bca6620a09aea985842a",
+  "size": 301302,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/ICH_eCTD_Empty_Folder_Template_v3.02.zip",
+  "sha256": "e1329a62d122507c60c9d4babe34963e3d8d3faf3ff351e1851794e9fe2957e5",
+  "size": 325218,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/ICH_eCTD_Specification_v3.2.2_2008.pdf",
+  "sha256": "d8273833eac401ff3c094d782863b078110e33a7f358438d3f7a0dad277fc2b0",
+  "size": 742989,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/ICH_eCTD_v3.2_QA_v1.33.zip",
+  "sha256": "6c2fc32f3abea2d51c7a82e8d1f76b3228672dfd0968f1b9f912d43bb2454fdb",
+  "size": 563835,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/ICH_eCTD_v4.0_CV_Package_v1.0.3.zip",
+  "sha256": "bdc39e678bac43385fb4f39343f92fba0e27650ee498bfc8e92aeaf978796f44",
+  "size": 361532,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip",
+  "sha256": "37c35e3bcd72f2cc69b603794bb2add48cf53d65e71ca4c87bf400848999e13f",
+  "size": 1653137,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/ICH_eCTD_v4.0_QA_v1.10.zip",
+  "sha256": "45774d0adb1db779dcaa2ae49b6f03b995dc1321a0346541d5bb7dfa2c455781",
+  "size": 460014,
+  "taken": "2026-11-06"
+ },
+ {
+  "file": "ectd/ICH_ich-ectd-3-2_dtd.zip",
+  "sha256": "e8676fc1229842ac5565b77f5309183a3957fae55c2c7256620ecae46cbe27bb",
+  "size": 7076,
+  "taken": "2026-11-06"
+ }
+]

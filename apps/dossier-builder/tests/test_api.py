@@ -170,7 +170,7 @@ def test_generator_schemas_and_prefill(c):
     assert pf['company'] == 'Example Pharma S.A.E.' and 'signatory' not in pf          # never guessed
     pf = c.get(f'/api/dossiers/{did}/generate/cep_commitment/prefill?slot_id=M1-40@Paracetamol|Granules India').json()
     assert pf['api'] == 'Paracetamol' and pf['cep_holder'] == 'Granules India'
-    assert c.get(f'/api/dossiers/{did}/generate/salt/prefill').json()['apis'] == [{'name_base': 'Paracetamol'}]
+    assert 'apis' not in c.get(f'/api/dossiers/{did}/generate/salt/prefill').json()      # paracetamol is no salt: no row offered
 
 
 @pytest.mark.skipif(not __import__('shutil').which('soffice'), reason='LibreOffice not installed')

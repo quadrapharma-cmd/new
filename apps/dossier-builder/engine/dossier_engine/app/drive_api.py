@@ -70,7 +70,13 @@ def install(app, st):
                                         'size': None, 'modified': None, 'kind': 'file', 'usable': True, 'path': link['id'], 'export': None}]
         except _drive.DriveError as e:
             _raise(e)
-        return {'link': link, 'mode': d.mode, 'files': files, 'usable': sum(1 for f in files if f['usable'])}
+        name = None
+        if link['kind'] == 'folder':                       # the folder's own name: several folders are listed each under its name
+            try:
+                name = ((await d.meta(link['id'])) or {}).get('name')
+            except Exception:
+                name = None
+        return {'link': link, 'mode': d.mode, 'name': name, 'files': files, 'usable': sum(1 for f in files if f['usable'])}
 
     @app.get('/api/drive/files/{file_id}')
     async def get_file(file_id: str, name: str = None, mime: str = None):

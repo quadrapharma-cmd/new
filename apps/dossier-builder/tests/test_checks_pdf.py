@@ -53,7 +53,8 @@ def test_pdf_13(tmp_path, clean):
     p = tmp_path / 'old.pdf'
     p.write_bytes(clean.read_bytes().replace(b'%PDF-1.4', b'%PDF-1.3', 1))
     r = check(str(p))
-    assert 'EG-PF-16.1' in rules(r) and r.status == 'non_conforming'
+    assert 'EG-PF-16.1' in rules(r) and r.status == 'conforming'                 # an eCTD-readiness rule: not the One Submission's
+    assert next(f for f in r.findings if f.rule == 'EG-PF-16.1').scope == 'ectd'
 
 
 def test_password_to_open(tmp_path, clean):
@@ -96,11 +97,12 @@ def test_javascript(tmp_path, clean):
 def test_long_and_unicode_names(tmp_path, clean):
     p = tmp_path / ('a' * 70 + '.pdf')
     p.write_bytes(clean.read_bytes())
-    assert 'EG-PF-15.4' in rules(check(str(p)))
+    long_name = check(str(p))
+    assert 'EG-PF-15.4' in rules(long_name) and long_name.status == 'conforming'       # the export gives the file its eCTD name
     q = tmp_path / 'شهادة GMP.pdf'
     q.write_bytes(clean.read_bytes())
     r = check(str(q), ectd_name=True)
-    assert 'ICH-NAME' in rules(r) and r.status == 'needs_attention'
+    assert 'ICH-NAME' in rules(r) and r.status == 'conforming'
 
 
 # ---- read-only evidence (PLAN principle 3; negative test of P1 acceptance) ----
