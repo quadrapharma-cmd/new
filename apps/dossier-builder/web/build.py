@@ -21,7 +21,7 @@ REPO = APP.parents[1]
 UI = APP / 'ui'
 DIST = HERE / 'dist'
 BUNDLE = ['apps/dossier-builder/engine/dossier_engine', 'apps/dossier-builder/rulepacks', 'apps/dossier-builder/web/pybridge.py',
-          'docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0', 'docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0', 'docs/ctd/ectd/EU-M1-3.1.1-PROFILE',
+          'docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0', 'docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0', 'docs/ctd/ectd/EU-M1-3.1.1-PROFILE', 'docs/ctd/ectd/GCC-M1-1.5-PROFILE',
           'docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip']
 SKELETON = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>')
