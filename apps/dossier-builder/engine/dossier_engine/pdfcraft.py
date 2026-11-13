@@ -80,6 +80,31 @@ def tesseract():
     return hit
 
 
+def tessdata():
+    """The accurate («best») Arabic and English models the program ships (tools/tesseract/fetch.py — Apache-2.0): DOSSIER_TESSDATA,
+    the desktop bundle's «tessdata», or vendor/tessdata beside the program; a folder holding ara and eng and the «tsv» setting
+    PdfCraft's reading asks for. None when the program has none of its own: Tesseract then reads with the models its installer
+    brought (the «fast» ones read Arabic less well)."""
+    if 'tessdata' in _found:
+        return _found['tessdata']
+    places = [os.environ.get('DOSSIER_TESSDATA')]
+    base = getattr(sys, '_MEIPASS', None)
+    if base:
+        places.append(str(Path(base) / 'tessdata'))
+    places.append(str(APP / 'vendor' / 'tessdata'))
+    need = ('ara.traineddata', 'eng.traineddata', os.path.join('configs', 'tsv'))
+    hit = next((d for d in places if d and all(os.path.isfile(os.path.join(d, f)) for f in need)), None)
+    _found['tessdata'] = hit
+    return hit
+
+
+def _tess_env(env):
+    """Tesseract reads with the program's own models unless TESSDATA_PREFIX says otherwise."""
+    if 'TESSDATA_PREFIX' not in env and tessdata():
+        env['TESSDATA_PREFIX'] = os.path.join(tessdata(), '')
+    return env
+
+
 def version():
     b = binary()
     if not b:
@@ -152,6 +177,7 @@ class Job:
         tess = tesseract()
         if tess and 'PDFCRAFT_TESSERACT' not in env:
             env['PDFCRAFT_TESSERACT'] = tess                 # Tesseract where its installer puts it, when it is not on the PATH
+        _tess_env(env)                                       # and its models: the program's accurate ones, where it ships them
         try:
             r = _run_tree([b, 'run', '--script', str(script), '--root', str(self.dir), '--report'], self.dir, env, self.timeout)
         except subprocess.TimeoutExpired:
@@ -478,36 +504,140 @@ def ocr_info():
         st = first(res[0]) or {}
         tess = next((e for e in st.get('engines') or [] if e.get('id') == 'tesseract' and e.get('available')), None)
         if tess and tess.get('path'):
-            r = subprocess.run([tess['path'], '--list-langs'], capture_output=True, text=True, timeout=30)
+            r = subprocess.run([tess['path'], '--list-langs'], capture_output=True, text=True, timeout=30, env=_tess_env(dict(os.environ)))
             langs = set((r.stdout + '\n' + r.stderr).split())
             lang = 'ar+en' if {'ara', 'eng'} <= langs else 'ar' if 'ara' in langs else 'en' if 'eng' in langs else None
             if lang:
+                own = tessdata() and 'TESSDATA_PREFIX' not in os.environ
                 info = {'available': True, 'language': lang, 'engine': 'tesseract', 'version': tess.get('version'),
-                        'arabic': 'ara' in langs}
+                        'arabic': 'ara' in langs, 'models': 'best 4.1.0' if own else 'installed'}
     except (PdfCraftError, OSError, subprocess.SubprocessError, ValueError):
         info = None
     _OCR['info'] = (time.time(), info)
     return info
 
 
+WEAK = 3.0                     # % of a page's words read with low confidence (< 70) past which the page is read again
+STRAIGHTEN = {'deskew': True, 'auto_rotate': True}
+
+
+def _quality(result):
+    """Per page, from ocr_words: {page: {words, low (% of words under 70), mean, numbers (low-confidence words with digits)}}."""
+    out = {}
+    for p in (result or {}).get('pages') or []:
+        words = p.get('words') or []
+        low = [w for w in words if (w.get('confidence') or 0) < 70]
+        out[int(p.get('page') or 0)] = {
+            'words': len(words), 'low': round(100.0 * len(low) / len(words), 1) if words else 0.0,
+            'mean': round(float(p.get('mean_confidence') or 0), 1),
+            'numbers': [w.get('text') for w in low if any(ch.isdigit() for ch in (w.get('text') or ''))][:20]}
+    return out
+
+
+def _weak(q):
+    return q['words'] == 0 or q['low'] > WEAK
+
+
+def _better(new, old):
+    """The reading with fewer low-confidence words; at about the same, the one with the higher mean confidence."""
+    if not new or not new['words']:
+        return False
+    if not old['words']:
+        return True
+    if abs(new['low'] - old['low']) > 0.5:
+        return new['low'] < old['low']
+    return new['mean'] > old['mean'] + 1.0
+
+
 def ocr(data, pages=None, timeout=None):
-    """Text recognition by PdfCraft (Tesseract, Arabic and English): the pages are read and their words added as invisible text over
-    the page image — the page looks the same, the document becomes searchable. → (searchable PDF bytes, [text of each page in
-    reading order], {'words', 'pages': [{page, words, skipped?}]}). Pages that already have text are left as they are. None when
-    recognition is not available here."""
+    """Text recognition by PdfCraft (Tesseract, Arabic and English), checked as it goes: the pages are read as scanned and that
+    reading is written over the page image (the page looks the same, the document becomes searchable). A page read with many
+    low-confidence words — skewed, sideways, upside down — is read again straightened and turned upright, and the better of the two
+    readings is kept, page by page (as scanned, a straight Arabic notice: 0.5 % of its characters wrong; «straightened»: 14.7 %;
+    sideways the other way round — docs/ctd/PDFCRAFT-INTEGRATION.md). Then the words Tesseract is still unsure of are read again by
+    PaddleOCR (paddle_rec), and its reading written where it is sure: the Arabic-Indic number and date of a notice come back right.
+    → (searchable PDF bytes, [text of each page in reading order], {'words', 'pages': [{page, words}], 'quality': {page: {words,
+    low, mean, numbers (still doubtful), read, second?}}, 'weak': [pages still hard to read], 'second_reader': words corrected}).
+    Pages that already have text are left as they are. None when recognition is not available here."""
     info = ocr_info()
     if not info:
         return None
     n = page_count(data) or 0
     want = sorted({int(p) for p in pages if 1 <= int(p) <= n}) if pages else None
-    args = {'doc': 1, 'engine': 'tesseract', 'language': info['language'], 'deskew': True, 'auto_rotate': True}
-    if want:
-        args['pages'] = want
-    t = timeout or min(1800, 60 + 15 * (len(want) if want else max(n, 1)))
-    res, out = run([('doc_open', {'path': 'in.pdf'}), ('ocr_recognize', args), ('doc_save', {'doc': 1, 'path': 'out.pdf', 'full': True})],
-                   {'in.pdf': data}, timeout=t, read=('out.pdf',))
-    rep = first(res[1]) or {}
-    made = out.get('out.pdf')
+    base = {'doc': 1, 'engine': 'tesseract', 'language': info['language']}
+    sel = {'pages': want} if want else {}
+    count = len(want) if want else max(n, 1)
+    t = timeout or min(1800, 60 + 15 * count)
+    save = ('doc_save', {'doc': 1, 'path': 'out.pdf', 'full': True})
+    # 1) read as scanned, and that same reading written over the pages (one pass)
+    try:
+        res, out = run([('doc_open', {'path': 'in.pdf'}), ('ocr_words', {**base, **sel, 'retain_review': True}),
+                        ('ocr_review_apply', {'doc': 1, 'review': 1}), save], {'in.pdf': data}, timeout=t, read=('out.pdf',))
+        made, words = out.get('out.pdf'), first(res[1])
+    except PdfCraftError as e:                                 # no word on any page (a blank scan): nothing to write, the file as it was
+        if e.tool != 'ocr_review_apply' or len(e.steps) < 2 or e.steps[1].get('status') == 'error':
+            raise
+        made, words = data, first(e.steps[1].get('result') or [])
+    quality = _quality(words)
+    for q in quality.values():
+        q['read'] = 'as scanned'
+    # 2) the second reader first: on each page, the runs of words Tesseract is unsure of read again by PaddleOCR from the page image
+    #    (paddle_rec); where it is sure, its reading will be written instead — the Arabic-Indic numbers above all. A page whose
+    #    doubtful words it settles is no longer weak, so it is not «straightened» for them.
+    from . import paddle_rec
+    on_page = {int(x.get('page') or 0): x.get('words') or [] for x in (words or {}).get('pages') or []}
+    fixes = {}
+    if paddle_rec.available():
+        for p, q in sorted(quality.items()):
+            ws = on_page.get(p) or []
+            if not q['words'] or not any((w.get('confidence') or 0) < 70 for w in ws):
+                continue
+            try:
+                found, seen = paddle_rec.second_reading({300: page_png(data, p, 300), 400: page_png(data, p, 400)}, ws)
+            except Exception as e:                             # noqa: BLE001 — a help, never a failure: Tesseract's reading stands
+                q['second'] = {'error': str(e)[:200]}
+                continue
+            if found:
+                fixes[p] = found
+            settled = {f['word'] for f in found}
+            still = [i for i, w in enumerate(ws, 1) if (w.get('confidence') or 0) < 70 and i not in settled]
+            q.update(low=round(100.0 * len(still) / len(ws), 1),
+                     numbers=[ws[i - 1].get('text') for i in still if any(c.isdigit() for c in ws[i - 1].get('text') or '')][:20],
+                     second={'read': len(seen), 'changed': [{'was': x['tesseract'], 'now': x['paddle']} for x in seen
+                                                            if x['paddle'] and x['paddle'] != x['tesseract'] and x['confidence'] >= 0.8]})
+    weak = sorted(p for p, q in quality.items() if _weak(q))
+    straight = []
+    if weak:
+        # 3) the pages still weak read again, straightened and turned upright; the better reading kept, page by page
+        res2, _ = run([('doc_open', {'path': 'in.pdf'}), ('ocr_words', {**base, **STRAIGHTEN, 'pages': weak})], {'in.pdf': data},
+                      timeout=min(1800, 60 + 15 * len(weak)))
+        again = _quality(first(res2[1]))
+        straight = [p for p in weak if _better(again.get(p), quality[p])]
+        for p in straight:
+            quality[p] = {**again[p], 'read': 'straightened'}
+            fixes.pop(p, None)                                 # its words are not the ones the second reader read
+    if fixes or straight:
+        # 4) written again: each page with its own reading — as scanned with the second reader's words, or straightened
+        plain = [p for p in sorted(quality) if p not in straight]
+        steps = [('doc_open', {'path': 'in.pdf'})]
+        if plain:
+            steps += [('ocr_words', {**base, 'pages': plain, 'retain_review': True}),
+                      ('ocr_review_apply', {'doc': 1, 'review': 1, 'corrections': [{'page': p, **f} for p in plain for f in fixes.get(p, [])]})]
+        if straight:
+            steps.append(('ocr_recognize', {**base, **STRAIGHTEN, 'pages': straight}))
+        try:
+            _, out4 = run(steps + [save], {'in.pdf': data}, timeout=t, read=('out.pdf',))
+            made = out4.get('out.pdf') or made
+        except PdfCraftError as e:                             # the plain pages had no word to write: the straightened ones alone
+            if e.tool != 'ocr_review_apply' or not straight:
+                raise
+            _, out4 = run([('doc_open', {'path': 'in.pdf'}), ('ocr_recognize', {**base, **STRAIGHTEN, 'pages': straight}), save],
+                          {'in.pdf': data}, timeout=t, read=('out.pdf',))
+            made = out4.get('out.pdf') or made
+    fixes = [f for fs in fixes.values() for f in fs]
+    pages_rep = [{'page': p, 'words': q['words']} for p, q in sorted(quality.items())]
+    rep = {'words': sum(q['words'] for q in quality.values()), 'pages': pages_rep, 'quality': quality, 'second_reader': len(fixes),
+           'weak': sorted(p for p, q in quality.items() if _weak(q)), 'models': info.get('models')}
     texts = page_texts(made, max_pages=max(want) if want else None) if made else None
     return made, texts or [], rep
 

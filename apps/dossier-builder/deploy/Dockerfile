@@ -43,10 +43,15 @@ COPY docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0 docs/ctd/ectd/EG-PROVISIONAL-PRO
 COPY docs/ctd/ectd/EU-M1-3.1.1-PROFILE docs/ctd/ectd/EU-M1-3.1.1-PROFILE
 COPY docs/ctd/ectd/GCC-M1-1.5-PROFILE docs/ctd/ectd/GCC-M1-1.5-PROFILE
 COPY --from=pdfcraft /out /opt/pdfcraft
+# the text-recognition models, pinned and checked (tools/ocr/fetch.py): Tesseract's accurate Arabic and English models, and PaddleOCR's
+# Arabic model — the second reader for the words Tesseract is unsure of (Apache-2.0, their licences beside them)
+COPY apps/dossier-builder/tools/ocr/fetch.py /tmp/ocr-fetch.py
+RUN python3 /tmp/ocr-fetch.py --out /opt/ocr && rm /tmp/ocr-fetch.py
 COPY docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip docs/ctd/sources/ectd/
 RUN useradd --system --uid 10001 --home-dir /data app && mkdir -p /data && chown app /data
 USER app
-ENV DB_MODE=cloud DB_WORKSPACE=/data PORT=8765 HOME=/data PDFCRAFT_CLI=/opt/pdfcraft/pdfcraft-cli
+ENV DB_MODE=cloud DB_WORKSPACE=/data PORT=8765 HOME=/data PDFCRAFT_CLI=/opt/pdfcraft/pdfcraft-cli \
+    DOSSIER_TESSDATA=/opt/ocr/tessdata DOSSIER_PADDLE_REC=/opt/ocr/paddle/arabic_PP-OCRv5_rec_mobile.onnx
 VOLUME ["/data"]
 EXPOSE 8765
 HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8765/api/health')" || exit 1

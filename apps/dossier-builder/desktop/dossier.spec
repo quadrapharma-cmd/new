@@ -22,11 +22,17 @@ binaries.append((PC_EXE, 'pdfcraft'))
 for f in ('LICENSE-MIT', 'LICENSE-APACHE', 'NOTICE', 'ATTRIBUTION.md', 'THIRD-PARTY-LICENSES.txt', 'PIN', 'licenses'):
     datas.append((os.path.join(PC, f), 'pdfcraft' + ('/licenses' if f == 'licenses' else '')))
 datas.append((os.path.join(APP, 'tools', 'pdfcraft', 'PIN'), 'apps/dossier-builder/tools/pdfcraft'))
+# the text-recognition models (tools/ocr/fetch.py — the workflow runs it first): Tesseract's accurate Arabic and English models
+# (pdfcraft.tessdata() looks in <bundle>/tessdata) and PaddleOCR's Arabic model, the second reader (<bundle>/paddle), with their licences
+for folder, need in (('tessdata', 'ara.traineddata'), ('paddle', 'arabic_PP-OCRv5_rec_mobile.onnx')):
+    if not os.path.exists(os.path.join(APP, 'vendor', folder, need)):
+        raise SystemExit(f'The {folder} models are not here: run python apps/dossier-builder/tools/ocr/fetch.py first')
+    datas.append((os.path.join(APP, 'vendor', folder), folder))
 
 # libraries the engine imports at run time (it is not analysed, so collect them explicitly)
 for pkg in ['fastapi', 'starlette', 'uvicorn', 'pydantic', 'pydantic_core', 'anyio', 'h11', 'multipart', 'python_multipart',
             'yaml', 'jsonschema', 'jsonschema_specifications', 'referencing', 'rpds', 'docx', 'pypdf', 'lxml', 'PIL',
-            'annotated_types', 'typing_extensions', 'idna', 'sniffio', 'click', 'attrs']:
+            'annotated_types', 'typing_extensions', 'idna', 'sniffio', 'click', 'attrs', 'onnxruntime', 'numpy']:
     try:
         d, b, h = collect_all(pkg)
         datas += d; binaries += b; hidden += h
@@ -35,7 +41,7 @@ for pkg in ['fastapi', 'starlette', 'uvicorn', 'pydantic', 'pydantic_core', 'any
 
 a = Analysis([os.path.join(APP, 'desktop', 'launcher.py')], pathex=[], binaries=binaries, datas=datas,
              hiddenimports=hidden + ['tkinter', 'sqlite3', 'email.mime.multipart', 'xml.etree.ElementTree'],
-             excludes=['ocrmypdf', 'matplotlib', 'numpy', 'pandas', 'pytest', 'playwright'], noarchive=False)
+             excludes=['ocrmypdf', 'matplotlib', 'pandas', 'pytest', 'playwright'], noarchive=False)
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='DossierBuilder', console=(sys.platform == 'win32'),
           disable_windowed_traceback=False)

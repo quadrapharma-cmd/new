@@ -1327,8 +1327,8 @@ def create_app(workspace, auth_enabled=None):
         r = _extract.read_files([(name, data)])
         f = r['files'][0]
         return {'reader': 'ocr' if f.get('ocr') else ('text' if f.get('chars') else 'none'), 'pages': f.get('pages'), 'chars': f.get('chars'),
-                'scanned': bool(f.get('scanned')), 'ocr_language': f.get('ocr_language'), 'kind': f.get('kind'), 'found': f.get('found') or [],
-                'rules': r['rules']}
+                'scanned': bool(f.get('scanned')), 'ocr_language': f.get('ocr_language'), 'ocr_quality': f.get('ocr_quality'), 'kind': f.get('kind'),
+                'found': f.get('found') or [], 'rules': r['rules']}
 
     @app.get('/api/dossiers/{did}/prepare')
     def prepare_overview(did: str):
@@ -1353,7 +1353,8 @@ def create_app(workspace, auth_enabled=None):
                 placed.append({'id': doc['id'], 'slot_id': s['slot_id'], 'ctd': s.get('ctd'), 'item': s.get('title'), 'filename': doc['filename'],
                                'original_name': (doc.get('meta') or {}).get('original_name') or doc['filename'], 'version': doc.get('version'),
                                'status': doc.get('check_status'), 'fixable': fx, 'needs_you': left, 'names': names.get(doc['id'], {}),
-                               'extracted': (doc.get('meta') or {}).get('extracted', {}).get('found', [])})
+                               'extracted': (doc.get('meta') or {}).get('extracted', {}).get('found', []),
+                               'ocr_quality': (doc.get('meta') or {}).get('extracted', {}).get('ocr_quality')})
         return {'requested': requested, 'waiting': waiting, 'placed': placed, 'engine': _pc.status(), 'ocr': _pc.ocr_info()}
 
     @app.post('/api/dossiers/{did}/prepare/{doc_id}')
@@ -1377,7 +1378,8 @@ def create_app(workspace, auth_enabled=None):
             steps.append('placed')
         data = st.blob_path(doc['sha256']).read_bytes()
         rd = _reading(doc['filename'], data)
-        keep = {'found': rd['found'], 'reader': rd['reader'], 'ocr_language': rd['ocr_language'], 'fields': rd['rules']}
+        keep = {'found': rd['found'], 'reader': rd['reader'], 'ocr_language': rd['ocr_language'], 'ocr_quality': rd['ocr_quality'],
+                'fields': rd['rules']}
         doc = st.keep_reading(did, doc['id'], keep)
         steps.append('read_ocr' if rd['reader'] == 'ocr' else 'read')
         if body.get('fix', True) and any(f.get('action') == 'auto_fix' for f in doc.get('findings') or []):

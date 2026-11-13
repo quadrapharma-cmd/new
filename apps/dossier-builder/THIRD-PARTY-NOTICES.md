@@ -23,6 +23,21 @@ The text recognition PdfCraft drives for scans (Arabic and English). Installed i
 (`tesseract-ocr`, `tesseract-ocr-ara`, `tesseract-ocr-eng`, the tessdata models under Apache-2.0); on a desktop, the copy installed on
 that computer is used (not bundled).
 
+**tessdata_best 4.1.0** — https://github.com/tesseract-ocr/tessdata_best (Apache-2.0): the accurate Arabic and English models
+(`ara.traineddata`, `eng.traineddata`), shipped in `vendor/tessdata` with their LICENSE; fetched and checked against their SHA-256 by
+`tools/ocr/fetch.py`.
+
+## PaddleOCR — https://github.com/PaddlePaddle/PaddleOCR (Apache-2.0); ONNX conversion by RapidOCR — https://github.com/RapidAI/RapidOCR (Apache-2.0)
+
+The second reader of scans: PaddleOCR's Arabic text-recognition model, PP-OCRv5 mobile (`arabic_PP-OCRv5_rec_mobile.onnx`, as RapidOCR
+v3.10.0 publishes it), shipped in `vendor/paddle` with both licences (`LICENSE-PaddleOCR`, `LICENSE-RapidOCR`); fetched and checked against
+its SHA-256 by `tools/ocr/fetch.py`. The model is used unchanged; the program's own code (`engine/dossier_engine/paddle_rec.py`) runs it.
+RapidOCR's library, OpenCV and python-bidi are not used.
+
+## ONNX Runtime — https://github.com/microsoft/onnxruntime (MIT) · NumPy — https://numpy.org (BSD-3-Clause)
+
+Run the second reader's model (Python packages, unchanged).
+
 Also used in `engine/dossier_engine/validators/ectd32_eu.py` (`permissions`): reading a PDF's `/P` permission flags the way the security
 handler's revision reads them (ISO 32000-1:2008 Table 22), ported from Rust (`crates/crypt/src/lib.rs`) to Python and shortened.
 

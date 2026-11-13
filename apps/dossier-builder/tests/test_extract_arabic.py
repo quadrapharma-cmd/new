@@ -88,8 +88,11 @@ def test_a_scanned_notice_is_read_by_ocr_where_pdfcraft_reads_scans(notice_scan)
         assert f['product']['name'].startswith('إكزامبلول') and f['registration']['reg_no'] == '34567/2025'
         assert f['documents'][0]['kind'] == 'licence' and f['documents'][0]['valid_until'] == '2030-03-14'
         assert f['registration']['shelf_life'] == '36 شهر' and f['registration']['price'] == '45 جنيه'
-        # Known limit: Tesseract's Arabic model installed here (tessdata «fast», 4.1.0) misreads Arabic-Indic digits («١٥/٠٣/٢٠٢٥»):
-        # the notice's own date is not taken from the scan (the more accurate «best» model reads them).
+        # Tesseract misreads Arabic-Indic digits («١٥/٠٣/٢٠٢٥») with both its «fast» and its «best» models (measured 13/11/2026);
+        # the second reader (PaddleOCR's Arabic model, paddle_rec) reads them, and the notice's own date is then taken from the scan
+        from dossier_engine import paddle_rec
+        if paddle_rec.available():
+            assert f['registration']['reg_date'] == '2025-03-15'
         assert 'SCANNED — read by OCR' in extract.ai_prompt(r['files'])
     else:
         assert a['chars'] == 0 and b['chars'] == 0 and 'ocr' not in a and r['rules']['product'] == {}      # nothing is guessed from pictures

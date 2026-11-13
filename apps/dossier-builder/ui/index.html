@@ -225,7 +225,9 @@ const T = {
   prepNewName:{en:'Its name in the dossier',ar:'اسمه في الملف'}, prepFound:{en:'Kept from it',ar:'اتحفظ منه'}, prepFixN:{en:'{n} fix(es) the program can make',ar:'{n} تصليح البرنامج يقدر يعمله'},
   prepNeedsYou:{en:'Needs you',ar:'محتاج منك'}, prepDone:{en:'Ready',ar:'جاهز'}, prepOcrOn:{en:'OCR here: {l} (Tesseract, through PdfCraft)',ar:'الـ OCR هنا: {l} (Tesseract عن طريق PdfCraft)'},
   prepOcrOff:{en:'No OCR here: scans are kept, and read in the desktop or company edition.',ar:'مفيش OCR هنا: الممسوح بيتحفظ، وبيتقري في نسخة الكمبيوتر أو نسخة الشركة.'},
-  prepNone:{en:'Nothing waiting.',ar:'مفيش حاجة مستنية.'}, prepWorking:{en:'Preparing {i} of {n}…',ar:'بيجهّز {i} من {n}…'},
+  prepNone:{en:'Nothing waiting.',ar:'مفيش حاجة مستنية.'},
+  prepSecond:{en:'The second reader put right',ar:'القارئ التاني صحّح'}, prepDoubt:{en:'Numbers to check against the page',ar:'أرقام راجعها على الصفحة'},
+  prepWeak:{en:'Pages hard to read: {p} — if a page is skewed or sideways, turn it in the viewer and prepare it again',ar:'صفحات صعبة القراية: {p} — لو الصفحة مايلة أو بالعرض، لفّها من العارض وجهّزها تاني'}, prepWorking:{en:'Preparing {i} of {n}…',ar:'بيجهّز {i} من {n}…'},
   navPublisher:{en:'Publisher',ar:'الناشر'}, navChecks:{en:'Checks',ar:'الفحوص'}, navSearch:{en:'Search the documents',ar:'بحث في المستندات'},
   srchSub:{en:'The text of every document of this dossier: a batch number, a study, «Table 3». Each file is read once.',ar:'نص كل مستندات الملف ده: رقم تشغيلة، أو دراسة، أو «Table 3». كل ملف بيتقري مرة واحدة.'},
   srchPh:{en:'What are you looking for?',ar:'بتدوّر على إيه؟'}, srchGo:{en:'Search',ar:'ابحث'}, srchNone:{en:'Not found in any document.',ar:'مش موجود في أي مستند.'},
@@ -2712,13 +2714,16 @@ async function paintPrepare(){
   $('#prepOcr').textContent=r.ocr?t('prepOcrOn').replace('{l}', r.ocr.language==='ar+en'?L({en:'Arabic and English',ar:'عربي وإنجليزي'}):r.ocr.language):t('prepOcrOff');
   const rdChip=x=>x.reader==='ocr'?`<span class="chip c-rec"><i></i>${esc(t('prepReadOcr'))}</span>`:x.reader==='text'?`<span class="chip c-ok"><i></i>${esc(t('prepRead'))}</span>`:`<span class="chip c-bad"><i></i>${esc(t('prepReadNone'))}</span>`;
   const found=f=>f&&f.length?`<div class="small" style="color:var(--ok)">${esc(t('prepFound'))}: ${esc(foundNames(f).join('، '))}</div>`:'';
+  const qual=q=>!q?'':[(q.changed||[]).length?`<div class="small" style="color:var(--ok)">${esc(t('prepSecond'))}: ${q.changed.slice(0,4).map(c=>`<bdi>${esc(c.was)}</bdi> ← <bdi><b>${esc(c.now)}</b></bdi>`).join('، ')}</div>`:'',
+    (q.doubtful||[]).length?`<div class="small" style="color:var(--warn)">${esc(t('prepDoubt'))}: ${q.doubtful.slice(0,6).map(d=>`<bdi>${esc(d.text)}</bdi> (${esc(String(d.page))})`).join('، ')}</div>`:'',
+    (q.weak||[]).length?`<div class="small" style="color:var(--bad)">${esc(t('prepWeak').replace('{p}', q.weak.join('، ')))}</div>`:''].join('');
   const waiting=r.waiting.map(w=>`<div class="finding" data-pw="${esc(w.id)}"><div class="row gap-s" style="flex-wrap:wrap"><b>${bdi(w.filename)}</b>${rdChip(w.reading)}<span class="small muted">${w.reading.pages||0} ${esc(t('pagesN'))}</span></div>
-      ${found(w.reading.found)}
+      ${found(w.reading.found)}${qual(w.reading.ocr_quality)}
       <div class="row gap-s" style="flex-wrap:wrap;margin-top:4px"><label class="small">${esc(t('prepItem'))} <select data-pslot="${esc(w.id)}"><option value="">${esc(t('prepPick'))}</option>${(w.suggestions||[]).map(x=>`<option value="${esc(x.slot_id)}" ${x.slot_id===w.auto?'selected':''}>${esc(x.ctd||'')} ${esc(L(x.title||{en:x.slot_id,ar:x.slot_id}))}</option>`).join('')}</select></label>
       <button class="btn sm pri" data-pgo="${esc(w.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div></div>`).join('');
   const placed=r.placed.map(d=>`<div class="finding ${d.needs_you.length?'block':''}"><div class="row gap-s" style="flex-wrap:wrap"><span class="code">${esc(d.ctd||'')}</span><b>${esc(L(d.item||{en:'',ar:''}))}</b>${chip(d.status)}</div>
       <div class="small"><bdi>${esc(d.original_name)}</bdi> → <b>${esc(t('prepNewName'))}:</b> <bdi>${esc((d.names.ectd32||d.names.ctd||'').split('/').pop()||'—')}</bdi>${d.names.ectd32?` <span class="code muted">${esc(d.names.ectd32)}</span>`:''}</div>
-      ${found(d.extracted)}
+      ${found(d.extracted)}${qual(d.ocr_quality)}
       ${d.fixable.length?`<div class="row gap-s"><span class="small">${esc(t('prepFixN').replace('{n}', d.fixable.length))}</span><button class="btn sm pri" data-pgo="${esc(d.id)}">${icon('wrench',14)} ${esc(t('autofix'))}</button></div>`:''}
       ${d.needs_you.map(f=>`<div class="small" style="color:var(--bad)">● ${esc(f[S.lang]||f.en)} <span class="code muted">${esc(f.rule)}</span></div>`).join('')}
       ${!d.fixable.length&&!d.needs_you.length?`<div class="small" style="color:var(--ok)">✓ ${esc(t('prepDone'))}</div>`:''}</div>`).join('');

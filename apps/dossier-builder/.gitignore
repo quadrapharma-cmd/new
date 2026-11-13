@@ -4,3 +4,5 @@ __pycache__/
 # PdfCraft: built from its pinned source by tools/pdfcraft/build.sh, never committed
 vendor/pdfcraft/
 .cache/
+vendor/tessdata/
+vendor/paddle/

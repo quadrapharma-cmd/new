@@ -174,7 +174,7 @@ def is_word(filename, data=None):
 
 # ---- a file is read once: its reading is kept by the file's SHA-256, in memory and in the workspace's cache folder
 READ_DIR = None            # set by the app (workspace/cache/text): a restart, or the next item's template, does not read the file again
-READ_FORMAT = 5            # the reader's own version: raise it when what a reading holds changes, so that readings kept on disk by an older reader are made again (3: no OCR; 4: PdfCraft reads the PDFs; 5: PdfCraft reads scans too)
+READ_FORMAT = 6            # the reader's own version: raise it when what a reading holds changes, so that readings kept on disk by an older reader are made again (3: no OCR; 4: PdfCraft reads the PDFs; 5: PdfCraft reads scans too; 6: the reading of a scan checks itself — accurate models, a second reader for the words Tesseract is unsure of — and says how sure it is)
 _READ = {}                 # (sha, extension, max_pages) → the reading
 _READ_MAX = 300
 
@@ -192,9 +192,8 @@ def read_text(name, data, max_pages=12):
     """What one uploaded file says — read once: the same bytes asked the same way give the kept reading (see _read_text)."""
     data = data or b''
     from . import pdfcraft
-    ocr = pdfcraft.ocr_info()
     key = (_sha(data), (name or '').lower().rsplit('.', 1)[-1][:6] if '.' in (name or '') else '', max_pages, pdfcraft.reader(),
-           (ocr or {}).get('language') or 'no-ocr')
+           _ocr_tag())
     if key in _READ:
         return dict(_READ[key])
     f = _cache_file(key)
@@ -260,14 +259,35 @@ def _read_text(name, data, max_pages=12):
     return out
 
 
+def _ocr_tag():
+    """Which recognition reads scans here — its languages, the accurate models, the second reader — so that a reading kept by
+    another one is made again: 'ar+en+best+paddle', or 'no-ocr'."""
+    from . import paddle_rec, pdfcraft
+    info = pdfcraft.ocr_info()
+    if not info:
+        return 'no-ocr'
+    return info['language'] + ('+best' if info.get('models') == 'best 4.1.0' else '') + ('+paddle' if paddle_rec.available() else '')
+
+
+def ocr_summary(rep):
+    """How sure a recognition is, for the people who check it: the pages still hard to read, the words the second reader put
+    right (was → now), and the numbers still read with low confidence (page, text)."""
+    q = (rep or {}).get('quality') or {}
+    return {'weak': list((rep or {}).get('weak') or []), 'corrected': (rep or {}).get('second_reader') or 0,
+            'changed': [{'page': p, **c} for p, v in sorted(q.items()) for c in (v.get('second') or {}).get('changed') or []][:30],
+            'doubtful': [{'page': p, 'text': t} for p, v in sorted(q.items()) for t in v.get('numbers') or []][:30],
+            'straightened': [p for p, v in sorted(q.items()) if v.get('read') == 'straightened']}
+
+
 def _ocr_into(out, pdf, max_pages):
-    """The text PdfCraft's recognition reads from a PDF whose pages are images (Tesseract: Arabic and English): the reading of a scan
-    for its information. The file itself is not changed here — making it searchable is a fix (fixes «make_searchable»)."""
+    """The text PdfCraft's recognition reads from a PDF whose pages are images (Tesseract: Arabic and English, checked by the
+    second reader): the reading of a scan for its information, and how sure it is (ocr_quality). The file itself is not changed
+    here — making it searchable is a fix (fixes «make_searchable»)."""
     from . import pdfcraft
     info = pdfcraft.ocr_info()
     if not info:
         return
-    key = (_sha(pdf), max_pages, info['language'])     # one recognition per file, whatever name it comes under
+    key = (_sha(pdf), max_pages, _ocr_tag())               # one recognition per file, whatever name it comes under
     if key not in _OCR_READ:
         try:
             got = pdfcraft.ocr(pdf, pages=list(range(1, max_pages + 1)) if max_pages else None)
@@ -275,10 +295,10 @@ def _ocr_into(out, pdf, max_pages):
             got = None
         if len(_OCR_READ) >= 64:
             _OCR_READ.pop(next(iter(_OCR_READ)))
-        _OCR_READ[key] = got[1] if got else None
-    texts = _OCR_READ[key]
+        _OCR_READ[key] = (got[1], ocr_summary(got[2])) if got else None
+    texts, quality = _OCR_READ[key] or (None, None)
     if texts and any(t.strip() for t in texts):
-        out.update(text='\n'.join(texts), ocr=True, reader='pdfcraft-ocr', ocr_language=info['language'])
+        out.update(text='\n'.join(texts), ocr=True, reader='pdfcraft-ocr', ocr_language=info['language'], ocr_quality=quality)
 
 
 _OCR_READ = {}
@@ -969,7 +989,7 @@ def read_files(files):
         items.append(fields_for(kind, name, pt['text']))
         texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': pt['pages'], 'scanned': pt['scanned'], 'file': pt['kind_of_file'],
                       'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:TEXT_BACK], 'found': found_fields(items[-1]),
-                      **({'ocr': True, 'ocr_language': pt.get('ocr_language')} if pt.get('ocr') else {})})
+                      **({'ocr': True, 'ocr_language': pt.get('ocr_language'), 'ocr_quality': pt.get('ocr_quality')} if pt.get('ocr') else {})})
     return {'files': texts, 'rules': merge(items)}
 
 
