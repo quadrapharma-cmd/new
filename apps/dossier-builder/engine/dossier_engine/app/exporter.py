@@ -128,6 +128,36 @@ def eu_countries(d, prof, sub=None, hist=None):
     return proc, out[:1] if proc == 'national' else out
 
 
+def gcc_envelope(d, sub, seq, stype, unit, activity, desc, hist):
+    """The GCC envelopes (App. 1): one per destination — the ones asked for, else the dossier's country — with the application
+    number(s) the GCC issued, the submission and unit types of App. 5, and the procedure (gcc for several states, national for one)."""
+    from ..writers import ectd32_gcc
+    env = d['envelope'] or {}
+    values = ectd32_gcc.default_profile().values
+    cs = [c.lower() for c in (sub.get('countries') or [env.get('country') or 'sa'])]
+    cs = [c for c in cs if c in ectd32_gcc.AGENCY] or ['sa']
+    if stype not in values['submission_types']:
+        stype = 'new-gen' if not hist else 'var-type1'
+    if unit not in values['units']:
+        unit = 'initial'
+    number = sub.get('tracking') or last_tracking(hist) or env.get('tracking')
+    return ectd32_gcc.EnvelopeGCC(countries=cs, application=[number] if number and number != 'to be advised' else [],
+                                  applicant=env.get('applicant') or d['name'], submission_type=stype, unit=unit,
+                                  procedure=sub.get('procedure') or ('gcc' if len(cs) > 1 else 'national'),
+                                  invented_names=[env.get('invented_name') or d['name']], inn=env.get('inn') or [], atc=env.get('atc') or [],
+                                  sequence=seq, related_sequence=[activity] if hist else None, description=desc)
+
+
+def gcc_docs(docs, files, slots):
+    """The leaflet's language from its item (1.3.3.1 Arabic, 1.3.3.2 English) where the document does not say it."""
+    from dataclasses import replace
+    lang = {}
+    for s in slots:
+        for f in files.get(s.slot_id, []):
+            lang[f.get('doc_id')] = 'ar' if s.req_id.endswith('1.3.3.1') else 'en'
+    return [replace(x, lang=x.lang or lang.get(x.doc_id)) if x.node in ('1.3.1', '1.3.2', '1.3.3') else x for x in docs]
+
+
 def eu_envelope(d, prof, sub, hist, seq, stype, unit, activity, desc, tracking):
     """The EU envelope(s) of a sequence from the dossier, its answers and the follow-on's details (SPEC 3.1.1 §Envelope)."""
     env, pr = d['envelope'], d['product']
@@ -290,10 +320,20 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
                 tracking = [sub.get('tracking') or last_tracking(hist) or env.get('tracking') or 'to be advised']
                 e = eu_envelope(d, prof, sub, hist, seq, stype, unit, activity, desc, tracking)
                 docs = ectd32_eu.resolve(docs, e)            # each document's country before the plan: one location per document
+            if region == 'gcc':
+                e = gcc_envelope(d, sub, seq, stype, unit, activity, desc, hist)
+                docs = gcc_docs(docs, files_e, slots)
             steps = plan(hist, docs, current_ids | {tdoc.doc_id})
             if region != 'eu':
-                tracking = [sub.get('tracking') or last_tracking(hist) or env['tracking']]
-            if out == 'ectd32' and region == 'eu':
+                tracking = [sub.get('tracking') or last_tracking(hist) or env.get('tracking') or 'to be advised']
+            if out == 'ectd32' and region == 'gcc':           # the Gulf: GCC Module 1 v1.5 (SFDA), its DTD and structure
+                from ..writers import ectd32_gcc
+                from ..validators import ectd32_gcc as v32gcc
+                root = lc / 'ectd-3.2.2'
+                r = ectd32_gcc.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
+                reports['eCTD 3.2.2 (GCC M1 1.5)'] = v32gcc.validate(r['path'])
+                _zip(root, seq, base / 'ectd32.zip')
+            elif out == 'ectd32' and region == 'eu':
                 root = lc / 'ectd-3.2.2'
                 r = ectd32_eu.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
                 prev = sorted(p for p in root.iterdir() if p.is_dir() and p.name != seq)

@@ -153,7 +153,14 @@ def create_app(workspace, auth_enabled=None):
         return {'pack': pk.id, 'id': au['id'], 'name': au['name'], 'egypt': pk.egypt, 'verified': pk.meta.get('verified', pk.egypt), 'country': code, 'country_name': name,
                 'questions': pk.questions, 'note': pk.meta.get('note'), 'matrix': pk.matrix_name(), 'columns': pk.meta.get('columns') or {},
                 'title': pk.meta.get('title'), 'sources': pk.meta.get('sources') or [], 'outputs': pk.outputs_for(code), 'ectd_region': pk.ectd_region,
-                'ectd_values': _eu_values() if pk.ectd_region == 'eu' else None}
+                'ectd_values': _eu_values() if pk.ectd_region == 'eu' else _gcc_values() if pk.ectd_region == 'gcc' else None}
+
+    def _gcc_values():
+        """What the page offers for a Gulf dossier, read from the GCC Module 1 v1.5 DTD: destinations, submission and unit types."""
+        from ..writers.ectd32_gcc import default_profile
+        v = default_profile().values
+        return {'countries': [c for c in v['env_countries'] if c != 'common'], 'submission_types': v['submission_types'], 'units': v['units'],
+                'procedures': v['procedures'], 'languages': v['languages']}
 
     def _eu_values():
         """What the page offers for an EU dossier, read from the EMA's DTD: countries, languages, PI types, submission and unit types."""
@@ -723,7 +730,14 @@ def create_app(workspace, auth_enabled=None):
                         continue
                     doc = one[0]
                     try:
-                        if output == 'ectd32' and eu:
+                        if output == 'ectd32' and pk.ectd_region == 'gcc':      # the Gulf: GCC Module 1 v1.5 folders and names
+                            from ..writers import ectd32_gcc as _g
+                            pg = _g.default_profile()
+                            eg_ = _g.EnvelopeGCC(countries=[((d.get('envelope') or {}).get('country') or 'sa').lower()], application=[], applicant='',
+                                                 submission_type='new-gen', unit='initial', procedure='national', invented_names=[''])
+                            rel = _g.rel_path(doc, eg_, product, pg)
+                            target = pg.m1[doc.node]['element'] if doc.node in pg.m1 else pg.ich_element(doc.node)
+                        elif output == 'ectd32' and eu:
                             mod, peu, e = eu
                             doc = mod.resolve([doc], e, peu)[0]
                             if doc.node in peu.m1:

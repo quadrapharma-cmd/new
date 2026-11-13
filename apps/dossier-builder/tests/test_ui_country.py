@@ -87,17 +87,16 @@ def test_the_wizard_starts_with_the_country_and_builds_for_its_authority(server)
         assert 'pork' in page.inner_text('#tplPanel')
         page.click('#dClose')
         assert 'موديول ١ بتاع الهيئة' in page.inner_text('.head .sub')
-        # the guide speaks of CTD folders, not of Egypt's eCTD
+        # the guide and the publisher: the Gulf's own eCTD (GCC Module 1 v1.5) beside the CTD folders, never Egypt's
         page.goto(f'{server}/#/d/{did}/guide')
         page.wait_for_selector('.outcard')
-        assert page.locator('.outcard').count() == 1 and 'eCTD 3.2.2' not in page.inner_text('#view')
-        # publisher and export: CTD folders only
+        assert 'EG provisional' not in page.inner_text('#view')
         page.goto(f'{server}/#/d/{did}/publisher')
-        page.wait_for_selector('[data-out="ctd"]')
-        assert page.locator('[data-out="ectd32"]').count() == 0
+        page.wait_for_selector('[data-out="ectd32"]')
+        assert page.locator('[data-out="ectd40"]').count() == 0
         page.goto(f'{server}/#/d/{did}/export')
-        page.wait_for_selector('#ctdOnly')
-        assert page.locator('input[data-out]').count() == 2 and page.locator('input[data-out="ctd"]').count() == 1 and page.locator('input[data-out="nees"]').count() == 1
+        page.wait_for_selector('input[data-out="ectd32"]')                                     # the Gulf: its own eCTD (GCC M1 v1.5), CTD and NeeS
+        assert page.locator('input[data-out]').count() == 3 and page.locator('#ctdOnly').count() == 0 and 'GCC M1 1.5' in page.inner_text('#view')
         page.screenshot(path=f'{OUT}/country-export.png')
         # the projects list names the country
         page.goto(f'{server}/#/dossiers')

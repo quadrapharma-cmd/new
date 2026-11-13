@@ -1,0 +1,29 @@
+node,element,directory,stem,kind,source
+1.0,m1-0-cover,m1/gc/10-cover/{cc},{cc}-cover,specific,GCC M1 SPEC v1.5 App. 2 rows 3-4 (m1/gc/10-cover/CC-cover-VAR.EXT)
+1.2,m1-2-form,m1/gc/12-form/{cc},{cc}-form,specific,GCC M1 SPEC v1.5 App. 2 row 6
+1.3.1,m1-3-1-spc,m1/gc/13-pi/131-spc/{cc}/{ll},{cc}-spc,pi,GCC M1 SPEC v1.5 App. 2 row 8
+1.3.2,m1-3-2-label,m1/gc/13-pi/132-labeling/{cc}/{ll},{cc}-label,pi,GCC M1 SPEC v1.5 App. 2 row 9
+1.3.3,m1-3-3-pil,m1/gc/13-pi/133-leaflet/{cc}/{ll},{cc}-leaflet,pi,GCC M1 SPEC v1.5 App. 2 rows 10-12
+1.3.4,m1-3-4-mockup,m1/gc/13-pi/134-artwork/{cc}/{ll},{cc}-artwork,specific,GCC M1 SPEC v1.5 App. 2 row 13
+1.3.5,m1-3-5-samples,m1/gc/13-pi/135-samples/{cc}/{ll},{cc}-samples,specific,GCC M1 SPEC v1.5 App. 2 row 14
+1.4.1,m1-4-1-quality,m1/gc/14-expert/141-quality,quality,plain,GCC M1 SPEC v1.5 App. 2 row 16
+1.4.2,m1-4-2-non-clinical,m1/gc/14-expert/142-nonclinical,nonclinical,plain,GCC M1 SPEC v1.5 App. 2 row 17
+1.4.3,m1-4-3-clinical,m1/gc/14-expert/143-clinical,clinical,plain,GCC M1 SPEC v1.5 App. 2 row 18
+1.5.1,m1-5-1-non-gmo,m1/gc/15-environrisk/151-nongmo,nongmo,plain,GCC M1 SPEC v1.5 App. 2 row 20
+1.5.2,m1-5-2-gmo,m1/gc/15-environrisk/152-gmo,gmo,plain,GCC M1 SPEC v1.5 App. 2 row 21
+1.6.1,m1-6-1-pharmacovigilance-system,m1/gc/16-pharmacovigilance/161-phvig-system,phvigsystem,plain,GCC M1 SPEC v1.5 App. 2 row 23 (element as the DTD names it)
+1.6.2,m1-6-2-risk-management-system,m1/gc/16-pharmacovigilance/162-riskmgt-system,riskmgtsystem,plain,GCC M1 SPEC v1.5 App. 2 row 24
+1.7.1,m1-7-1-gmp,m1/gc/17-certificates/171-gmp,{cc}-gmp,plain,GCC M1 SPEC v1.5 App. 2 row 26
+1.7.2,m1-7-2-cpp,m1/gc/17-certificates/172-cpp,{cc}-cpp,plain,GCC M1 SPEC v1.5 App. 2 row 27
+1.7.3,m1-7-3-analysis-substance,m1/gc/17-certificates/173-analysis-substance,{cc}-drugsubstance,plain,GCC M1 SPEC v1.5 App. 2 row 28
+1.7.4,m1-7-4-analysis-excipients,m1/gc/17-certificates/174-analysis-excipients,{cc}-excipients,plain,GCC M1 SPEC v1.5 App. 2 row 29
+1.7.5,m1-7-5-alcohol-content,m1/gc/17-certificates/175-alcohol-content,{cc}-alcoholcontent,plain,GCC M1 SPEC v1.5 App. 2 row 30
+1.7.6,m1-7-6-pork-content,m1/gc/17-certificates/176-pork-content,{cc}-porkcontent,plain,GCC M1 SPEC v1.5 App. 2 row 31
+1.7.7,m1-7-7-certificate-tse,m1/gc/17-certificates/177-certificate-tse,{cc}-tse,plain,GCC M1 SPEC v1.5 App. 2 row 32
+1.7.8,m1-7-8-diluent-coloring-agents,m1/gc/17-certificates/178-diluent-coloring-agents,{cc}-diluent,plain,GCC M1 SPEC v1.5 App. 2 row 33
+1.7.9,m1-7-9-patent-information,m1/gc/17-certificates/179-patent-information,{cc}-patent,plain,GCC M1 SPEC v1.5 App. 2 row 34
+1.7.10,m1-7-10-letter-access-dmf,m1/gc/17-certificates/1710-letter-access-dmf,{cc}-accessdmf,plain,GCC M1 SPEC v1.5 App. 2 row 35
+1.8.1,m1-8-1-price-list,m1/gc/18-pricing/181-price-list,{cc}-price,plain,GCC M1 SPEC v1.5 App. 2 row 37
+1.8.2,m1-8-2-other-document,m1/gc/18-pricing/182-other-doc,{cc}-others,plain,GCC M1 SPEC v1.5 App. 2 row 38
+1.9,m1-9-responses,m1/gc/19-responses/{cc},{cc}-responses,specific,GCC M1 SPEC v1.5 App. 2 row 39
+1,m1-additional-data,m1/gc/additional-data/{cc},{cc}-additionaldata,specific,GCC M1 SPEC v1.5 App. 2 row 39

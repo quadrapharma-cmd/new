@@ -20,4 +20,4 @@ guessed meanings would file wrong codes. With the lists, the US writer follows t
 contacts, application and submission information), the m1-regional headings of the DTD, the study tagging files
 (`engine/dossier_engine/writers/stf.py`, required by the FDA), and the FDA validation criteria.
 
-The Gulf (SFDA, `www.sfda.gov.sa`) and Jordan (JFDA, `www.jfda.jo`) Module 1 specifications are not reachable from here either.
+The Gulf's eCTD is written (GCC Module 1 v1.5, `docs/ctd/ectd/GCC-M1-1.5-PROFILE`); Jordan's (JFDA, `www.jfda.jo`) specification is not reachable from here.

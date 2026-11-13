@@ -146,7 +146,7 @@ def test_the_authorities_are_listed_for_the_wizard(c):
     r = c.get('/api/authorities').json()
     by = {a['id']: a for a in r['authorities']}
     assert list(by) == ['EG-EDA', 'GCC', 'EU', 'US-FDA', 'OTHER'] and r['default'] == 'intl.ctd.m1.v1'
-    assert by['GCC']['verified'] and not by['OTHER']['verified'] and by['EG-EDA']['outputs'] == ['ctd', 'ectd32', 'ectd40'] and by['GCC']['outputs'] == ['ctd', 'nees']
+    assert by['GCC']['verified'] and not by['OTHER']['verified'] and by['EG-EDA']['outputs'] == ['ctd', 'ectd32', 'ectd40'] and by['GCC']['outputs'] == ['ctd', 'ectd32', 'nees']
     assert [q['id'] for q in by['EU']['questions']] == ['eu_legal_basis', 'eu_procedure'] and by['US-FDA']['questions'][0]['default'] == 'anda'
     assert by['GCC']['sources'][1]['version'] == '4.0' and by['GCC']['requirements']['by_module']['1'] == 30
     assert {x['code'] for x in r['countries']} >= {'EG', 'SA', 'DE', 'US', 'JO'}
@@ -159,7 +159,7 @@ def test_a_dossier_is_created_for_its_country(c):
     assert sa['pack'] == 'gcc.ctd.m1.v1'
     d = c.get(f"/api/dossiers/{sa['id']}").json()
     assert d['authority']['id'] == 'GCC' and d['authority']['country'] == 'SA' and d['authority']['country_name']['en'] == 'Saudi Arabia'
-    assert d['authority']['outputs'] == ['ctd', 'nees'] and not d['authority']['egypt'] and d['envelope']['country'] == 'SA'
+    assert d['authority']['outputs'] == ['ctd', 'ectd32', 'nees'] and not d['authority']['egypt'] and d['envelope']['country'] == 'SA'
     board = {s['slot_id']: s for s in c.get(f"/api/dossiers/{sa['id']}/board").json()['slots']}
     assert board['GCC-1.0']['ctd'] == '1.0' and board['GCC-1.7.6']['level'] == 'R' and 'M1-01' not in board and 'P-01' in board
     assert board['GCC-1.4.2']['note']['ar'] and any(r.get('note') for r in board['GCC-1.4.2']['reasons'])        # where the level comes from, said with the item

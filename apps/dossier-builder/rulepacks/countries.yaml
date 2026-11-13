@@ -76,13 +76,14 @@ countries:
     countries: [SA, AE, KW, BH, OM, QA]
     authority: GCC / SFDA and the Gulf authorities
     formats: {ctd: 'yes', ectd32: 'yes', ectd40: 'no', nees: 'yes', actd: 'no'}
-    module1: GCC Module 1 (eCTD v1.5; NeeS)
-    criteria: GCC / SFDA
+    module1: GCC Module 1 Specifications v1.5 (SFDA, November 2015), DTD gc-regional 1.1
+    criteria: none published with the specification — the program checks its DTD and structure
     note: >-
-      eCTD on the GCC Module 1, and NeeS still taken (COMPETITORS.md research). The program writes the CTD folders and a NeeS; the
-      GCC eCTD needs the SFDA's Module 1 specification (sfda.gov.sa is not reachable from here).
-    source: docs/ctd/COMPETITORS.md (country table) — the SFDA's own text to be read
-    evidence: secondary
+      The program writes the GCC eCTD (gc-regional.xml, one envelope per state with its agency, the folders and names of the
+      specification's Appendix 2), the CTD folders and a NeeS. A newer SFDA specification (2.x, 2025) is reported by secondary
+      sources; the one read here is v1.5.
+    source: docs/ctd/sources/ectd/SFDA_GCC_Module1_Specifications_v1.5_2015.pdf (Appendices 1, 2, 5, 6)
+    evidence: official
   - code: JO
     authority: JFDA
     formats: {ctd: 'yes', ectd32: unknown, ectd40: 'no', nees: unknown, actd: 'no'}

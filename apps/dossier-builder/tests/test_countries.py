@@ -23,7 +23,7 @@ def test_every_row_says_what_it_takes_and_where_that_is_written():
 
 def test_the_outputs_follow_the_table():
     gcc, us, intl = packs.load('gcc.ctd.m1.v1'), packs.load('us.ctd.m1.v1'), packs.load('intl.ctd.m1.v1')
-    assert gcc.outputs_for('SA') == ['ctd', 'nees'] and us.outputs_for('US') == ['ctd']
+    assert gcc.outputs_for('SA') == ['ctd', 'ectd32', 'nees'] and us.outputs_for('US') == ['ctd']
     assert intl.outputs_for('TH') == ['ctd', 'nees', 'actd'] and intl.outputs_for('JO') == ['ctd', 'nees'] and intl.outputs_for(None) == ['ctd', 'nees']
     assert packs.load('eda.ctd.nta065.v5').outputs_for('EG') == ['ctd', 'ectd32', 'ectd40']
 

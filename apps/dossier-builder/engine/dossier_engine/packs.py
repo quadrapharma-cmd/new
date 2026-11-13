@@ -51,14 +51,14 @@ class Pack:
     def ectd_region(self):
         """The regional eCTD 3.2.2 Module 1 the program writes for this authority: 'eg' (the provisional EG profile), 'eu' (EU Module 1
         v3.1.1, the EMA's own DTD and validation criteria v8.2), or None (CTD folders only)."""
-        return {'EG-EDA': 'eg', 'EU': 'eu'}.get(self.authority.get('id'))
+        return {'EG-EDA': 'eg', 'EU': 'eu', 'GCC': 'gcc'}.get(self.authority.get('id'))
 
     @property
     def outputs(self):
         """What the program writes for this authority: its eCTD where it has one; otherwise the CTD folders, a NeeS where the countries
         table does not say «no», the ACTD where it says «yes» (rulepacks/countries.yaml)."""
         if self.ectd_region:
-            return {'eg': ['ctd', 'ectd32', 'ectd40'], 'eu': ['ctd', 'ectd32']}[self.ectd_region]
+            return {'eg': ['ctd', 'ectd32', 'ectd40'], 'eu': ['ctd', 'ectd32'], 'gcc': ['ctd', 'ectd32', 'nees']}[self.ectd_region]
         cs = [c for c in (self.authority.get('countries') or []) if c]
         if '*' in cs:
             return ['ctd', 'nees', 'actd']                    # «any country»: the dossier's own country decides (outputs_for)

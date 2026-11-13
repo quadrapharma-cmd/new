@@ -55,7 +55,7 @@ def test_the_eu_leaflet_details_and_the_eu_export(server):
         page.goto(f'{server}/#/d/{did}/export')
         page.wait_for_selector('#euEnv')
         outs = page.inner_text('#view')
-        assert 'EU M1 3.1.1' in outs and 'eCTD 4.0' not in outs
+        assert 'EU M1 3.1.1' in outs and page.locator('input[data-out="ectd40"]').count() == 0   # no eCTD 4.0 output for the EU (the countries note may name it)
         assert page.locator('#ctdOnly').count() == 0 and not page.is_visible('#ack')
         checked = page.eval_on_selector_all('#euCs input:checked', 'xs => xs.map(x => x.value)')
         assert checked == ['de']                                          # the dossier's own country, the others ticked by the user
