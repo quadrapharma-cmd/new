@@ -30,6 +30,8 @@ def docs_for(slots, profile, files):
                      if f.get(k)}
             if f.get('eu_country'):
                 extra['country'] = f['eu_country']              # EU M1: the country folder / specific@country it is filed under
+            if f.get('ref'):
+                extra['ref'] = f['ref']                       # submitted before: the leaf points there
             if s.req_id == 'M1-44':
                 extra.setdefault('name', 'tracking')          # EG-PF-15.12: tracking.pdf / tracking-<var>.pdf
             out.append(Doc(node=node, file=f['file'], title=f.get('title') or s.title['en'][:120], **extra, **kw))

@@ -92,6 +92,40 @@ def split(data, ranges):
     return out
 
 
+def bound(parts, title, left_out=()):
+    """One PDF for reading: a first page with the title and what was left out, then each part's pages, every module, item and
+    document a bookmark. parts: [(module_label, item_label, doc_label, pdf_bytes)]."""
+    import tempfile
+    from pathlib import Path
+    from pypdf import PdfReader, PdfWriter
+    from .generate.docx_kit import text_pdf
+    w = PdfWriter()
+    tmp = Path(tempfile.mkdtemp()) / 'first.pdf'
+    first = Path(text_pdf([title, ''] + ([f'Left out (not PDF): {x}' for x in left_out] or ['Every document is included.']), tmp)).read_bytes()
+    for p in PdfReader(BytesIO(first)).pages:
+        w.add_page(p)
+    marks, cur_mod, cur_item = {}, None, None
+    for mod, item, doc, data in parts:
+        try:
+            rd = PdfReader(BytesIO(data), strict=False)
+            start = len(w.pages)
+            for p in rd.pages:
+                w.add_page(p)
+        except Exception:
+            continue
+        if mod != cur_mod:
+            marks['mod'] = w.add_outline_item(mod, start)
+            cur_mod, cur_item = mod, None
+        if item != cur_item:
+            marks['item'] = w.add_outline_item(item, start, parent=marks['mod'])
+            cur_item = item
+        w.add_outline_item(doc, start, parent=marks['item'])
+    w.page_mode = '/UseOutlines'
+    buf = BytesIO()
+    w.write(buf)
+    return buf.getvalue()
+
+
 def merge(datas):
     """One PDF of all the given PDFs' pages, in the order given."""
     from pypdf import PdfReader, PdfWriter

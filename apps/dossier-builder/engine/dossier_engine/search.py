@@ -39,6 +39,31 @@ def pages_of(name, data):
     return [extract.read_text(name, data, max_pages=1).get('text') or '']
 
 
+def diff(pages_a, pages_b, limit=400):
+    """What changed from A to B, line by line: [{'op': 'removed'|'added', 'text', 'page'}] (the page in A for a removed line, in B for an
+    added one). Spacing and line breaks inside a line do not count."""
+    import difflib
+    def lines(pages):
+        out = []
+        for i, p in enumerate(pages, 1):
+            for ln in (p or '').splitlines():
+                ln = ' '.join(ln.split())
+                if ln:
+                    out.append((ln, i))
+        return out
+    a, b = lines(pages_a), lines(pages_b)
+    sm = difflib.SequenceMatcher(None, [x[0] for x in a], [x[0] for x in b], autojunk=False)
+    out = []
+    for op, i1, i2, j1, j2 in sm.get_opcodes():
+        if op in ('replace', 'delete'):
+            out += [{'op': 'removed', 'text': t, 'page': pg} for t, pg in a[i1:i2]]
+        if op in ('replace', 'insert'):
+            out += [{'op': 'added', 'text': t, 'page': pg} for t, pg in b[j1:j2]]
+        if len(out) >= limit:
+            break
+    return out[:limit]
+
+
 def find(pages, rx, limit=PER_DOC):
     """[{page, snippet, start, length}] — `start`/`length` mark the match inside the snippet."""
     hits = []

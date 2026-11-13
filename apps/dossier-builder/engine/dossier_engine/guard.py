@@ -8,11 +8,11 @@ from .checks.pdf import LOCKED
 CONTENT_OPS = {'edit_text', 'redact', 'replace_page', 'retype', 'regenerate', 'change_image', 'translate_in_place',
                'remove_signature', 'flatten_annotations'}
 TECH_OPS = {'rename', 'place', 'split_pages', 'merge_files', 'add_bookmarks', 'set_initial_view', 'linearise',
-            'remove_security', 'pdf_version_normalise', 'remove_javascript'}
+            'remove_security', 'pdf_version_normalise', 'remove_javascript', 'show_bookmarks', 'inherit_zoom', 'doc_info'}
 # technical, but only the issuer may do them on evidence (they change how the document behaves)
 COMPANY_ONLY = {'remove_security', 'remove_javascript'}
 # executed records: scan placement only (02-LOGIC §6)
-EXECUTED_OPS = {'rename', 'place', 'add_bookmarks', 'pdf_version_normalise'}      # the version line alone (fixes.set_version_17: every other byte the same)
+EXECUTED_OPS = {'rename', 'place', 'add_bookmarks', 'pdf_version_normalise', 'show_bookmarks', 'inherit_zoom', 'doc_info'}   # nothing on a page changes      # the version line alone (fixes.set_version_17: every other byte the same)
 
 
 class LockedError(PermissionError):

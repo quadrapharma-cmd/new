@@ -26,7 +26,8 @@ def _rewrite(src, dst, fn):
 
 def test_clean_passes(clean):
     r = check(str(clean), 'company_letter')
-    assert r.findings == [] and r.status == 'conforming'
+    assert [f.rule for f in r.findings] == ['PDF-INFO'] and r.findings[0].scope == 'ectd' and r.status == 'conforming'   # its title: offered for an eCTD
+    assert check(str(clean), 'third_party_certificate').findings == []                                  # another's document: as its issuer made it
     assert r.info['version'] == '1.4'
 
 
@@ -79,7 +80,7 @@ def test_scan_without_text(tmp_path):
     assert check(str(p), 'third_party_certificate').status == 'non_conforming'    # a scanned certificate too: every document searchable (note 4)
     r = check(str(p), 'company_technical')
     assert 'NTA065-N4' in rules(r) and r.status == 'non_conforming'
-    assert check(str(p), 'generated').findings[0].action == 'rebuild'
+    assert next(f for f in check(str(p), 'generated').findings if f.rule == 'NTA065-N4').action == 'rebuild'
 
 
 def test_portfolio(tmp_path, clean):
@@ -129,3 +130,42 @@ def test_locked_allows_placement():
 
 def test_generated_is_editable():
     assert assert_allowed('generated', 'regenerate') and assert_allowed('company_letter', 'edit_text')
+
+
+def test_pdf_properties_for_an_ectd_and_their_automatic_fix(tmp_path):
+    """Items 26 and 48: a font not embedded (the 14 standard ones need not be), bookmarks without their panel, links with their own
+    zoom, no title — all eCTD readiness; what does not change a page is fixed automatically."""
+    from pypdf import PdfReader, PdfWriter
+    from pypdf.generic import NameObject, DictionaryObject, ArrayObject, NumberObject, FloatObject, TextStringObject
+    from fixtures_pdf import make_pdf_lines
+    from dossier_engine import fixes
+    src = make_pdf_lines(tmp_path / 'a.pdf', ['1.1 Introduction', 'Text of the document', '1.2 Results'], 'Doc')
+    w = PdfWriter(clone_from=str(src))
+    pg = w.pages[0]
+    font = pg['/Resources']['/Font']
+    key = list(font.keys())[0]
+    desc = DictionaryObject({NameObject('/Type'): NameObject('/FontDescriptor'), NameObject('/FontName'): NameObject('/ArialMT'),
+                             NameObject('/Flags'): NumberObject(32)})
+    font[key].get_object().update({NameObject('/BaseFont'): NameObject('/ArialMT'), NameObject('/Subtype'): NameObject('/TrueType'),
+                                   NameObject('/FontDescriptor'): w._add_object(desc)})
+    w.add_outline_item('1.1 Introduction', 0)
+    link = DictionaryObject({NameObject('/Type'): NameObject('/Annot'), NameObject('/Subtype'): NameObject('/Link'),
+                             NameObject('/Rect'): ArrayObject([FloatObject(0), FloatObject(0), FloatObject(50), FloatObject(50)]),
+                             NameObject('/Dest'): ArrayObject([pg.indirect_reference, NameObject('/XYZ'), NumberObject(0), NumberObject(800), FloatObject(2.0)])})
+    pg[NameObject('/Annots')] = ArrayObject([w._add_object(link)])
+    p = tmp_path / 'props.pdf'
+    w.write(open(p, 'wb'))
+    r = check(str(p), 'company_technical')
+    got = {f.rule: f for f in r.findings}
+    assert {'PDF-FONTS', 'PDF-VIEW', 'PDF-ZOOM', 'PDF-INFO'} <= set(got) and r.status == 'conforming'          # readiness only
+    assert 'ArialMT' in got['PDF-FONTS'].en and got['PDF-FONTS'].action == 'user_fix' and r.info['fonts'] == 'not_embedded'
+    assert all(got[k].scope == 'ectd' for k in ('PDF-FONTS', 'PDF-VIEW', 'PDF-ZOOM', 'PDF-INFO'))
+    fixes.DOC_INFO = {'/Title': '3.2.P.8.1 Stability summary', '/Subject': '3.2.P.8.1'}
+    out = fixes.apply(p, [f.to_dict() for f in r.findings], 'company_technical')
+    assert [d['op'] for d in out['done']] == ['pdf_version_normalise', 'show_bookmarks', 'inherit_zoom', 'doc_info']   # pypdf wrote 1.3
+    fixed = tmp_path / 'fixed.pdf'
+    fixed.write_bytes(out['data'])
+    after = {f.rule for f in check(str(fixed), 'company_technical').findings}
+    assert after == {'PDF-FONTS'}                                                           # only the fonts need the PDF made again
+    rd = PdfReader(str(fixed))
+    assert rd.metadata.title == '3.2.P.8.1 Stability summary' and str(rd.trailer['/Root']['/PageMode']) == '/UseOutlines'

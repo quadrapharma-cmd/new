@@ -30,3 +30,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## eCTD Dossier Builder — https://github.com/randomthingsonlineatsk-cloud/ectd-dossier-builder (Apache-2.0)
+
+Used as **data**, not code: the map from the ICH CTD to the ASEAN Common Technical Dossier's parts and sections
+(`src/data/compare.json`, «actd»), which `engine/dossier_engine/writers/actd.py` follows. The project's NOTICE, kept as
+section 4(d) of the Apache License 2.0 asks:
+
+> eCTD Dossier Builder
+> Copyright 2026 Khan Gulrez Shagufa Fazal Ahmed
+>
+> This product includes software developed by Khan Gulrez Shagufa Fazal Ahmed
+> (ORCID 0009-0009-6195-0329, https://github.com/randomthingsonlineatsk-cloud).
+>
+> Licensed under the Apache License, Version 2.0.
+>
+> Canada, Switzerland and ASEAN ACTD headings in the region comparison come from Health Canada, Swissmedic and ASEAN public guidance.
+
+Its author notes that its output is not for a real submission: the map is checked against the ASEAN text (Organization of the
+Dossier, Revision 1) and each member state's guidance before a filing.

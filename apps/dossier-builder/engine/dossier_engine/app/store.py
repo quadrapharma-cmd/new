@@ -33,6 +33,8 @@ create table if not exists export(id text primary key, dossier_id text not null,
   path text not null, acknowledged integer not null, created real not null);
 create table if not exists intake_draft(id text primary key, state text not null default '{}', created real not null, updated real not null);
 create table if not exists doc_text(sha256 text primary key, pages text not null, read real not null);
+create table if not exists doc_comment(id text primary key, dossier_id text not null, doc_id text not null, page integer,
+  text text not null, author text, created real not null, resolved real, resolved_by text);
 create table if not exists intake_file(draft_id text not null, filename text not null, sha256 text not null, kind text, size integer not null default 0,
   added real not null, primary key(draft_id, filename));
 '''
@@ -90,6 +92,7 @@ MIGRATIONS = [
         "create trigger if not exists audit_no_update before update on audit begin select raise(abort, 'audit is append-only'); end",
         "create trigger if not exists audit_no_delete before delete on audit begin select raise(abort, 'audit is append-only'); end"]),
     (4, 'a project can be put in the trash', ["alter table dossier add column deleted real"]),
+    (5, 'a sequence keeps its receipt once submitted', ["alter table submission add column receipt text not null default '{}'"]),
 ]
 
 
@@ -438,7 +441,7 @@ class Store:
             doc_class, supersede = 'signed_scan', draft['id']
         from .. import extract as _extract, fixes as _fixes
         self.claim_readings()
-        if not meta.get('fixed_from') and not meta.get('external'):      # the upload gate (a fixed copy of a stored document passed it already)
+        if not meta.get('fixed_from') and not meta.get('external') and not meta.get('imported'):   # the upload gate (a fixed copy passed it; an imported one was submitted)
             self.refuse_without_text(filename, data)
         v17 = _fixes.set_version_17(data) if data[:1024].find(b'%PDF-1.') >= 0 else None
         if v17:                                       # PDF 1.0–1.3: only the version line changes (eCTD takes 1.4–1.7)
@@ -572,6 +575,10 @@ class Store:
         if d['meta'].get('external'):
             raise StoreError('E-EXTERNAL', 'Upload the file first: an external reference has nothing to fix.',
                              'ارفع الملف الأول: المرجع الخارجي مفيهوش ملف يتصلّح.')
+        s = next((x for x in self.slots(did) if x.slot_id == d['slot_id']), None)
+        dz = self.dossier(did)
+        fixes.DOC_INFO = {'/Title': d['title'] or (s.title['en'] if s else d['filename']), '/Subject': f"{s.ctd} {s.title['en']}" if s else '',
+                          '/Author': (dz['envelope'] or {}).get('applicant') or '', '/Keywords': (dz['product'] or {}).get('name') or ''}
         r = fixes.apply(self.blob_path(d['sha256']), d['findings'], d['doc_class'])
         new = None
         if r['data']:
@@ -612,6 +619,274 @@ class Store:
                              'pages': len(pages), 'matches': found})
                 n += len(found)
         return {'q': q, 'hits': hits, 'matches': n, 'searched': len(docs) - pending, 'pending': pending, 'total': len(docs)}
+
+    def copy_documents(self, did, src, scope='m2-5'):
+        """The current documents of dossier `src` into this dossier's matching items: 'm2-5' (Modules 2–5 — the same in every country),
+        'api' (only the active substances' own sections, 3.2.S, matched by substance and manufacturer). Module 1 is never copied: it
+        belongs to its authority. An item that has a document already keeps it (nothing is overwritten); each copy is checked again."""
+        if scope not in ('m2-5', 'api'):
+            raise StoreError('E-SCOPE', 'Copy Modules 2–5, or the active substances\' sections.', 'انسخ موديول 2–5، أو أقسام المواد الفعالة.')
+        if src == did:
+            raise StoreError('E-SAME', 'Choose another dossier to copy from.', 'اختار ملف تاني تنسخ منه.')
+        self.dossier(src)
+        mine = {s.slot_id: s for s in self.slots(did) if s.active}
+        theirs = [s for s in self.slots(src) if s.active and s.module != 1]
+        key = lambda s: (s.req_id, (s.item or {}).get('name', '').lower(), (s.item or {}).get('manufacturer', '').lower())
+        mine_by = {key(s): s for s in mine.values() if s.module != 1}
+        copied, kept, skipped = [], [], []
+        for s in theirs:
+            if scope == 'api' and not s.slot_id.startswith('S-'):
+                continue
+            t = mine.get(s.slot_id) or mine_by.get(key(s))
+            docs = self.documents(src, s.slot_id)
+            if not docs:
+                continue
+            if not t:
+                skipped.extend(d['filename'] for d in docs)
+                continue
+            if self.documents(did, t.slot_id):
+                kept.append(t.slot_id)
+                continue
+            for d in docs:
+                if d['meta'].get('external'):
+                    continue
+                meta = {k: v for k, v in d['meta'].items() if k in self.ITEM_META or k in ('generated', 'draft_unsigned')}
+                new = self.add_document(did, t.slot_id, d['filename'], self.blob_path(d['sha256']).read_bytes(), d['title'],
+                                        dict(meta, copied_from={'dossier': src, 'doc': d['id']}), doc_class=d['doc_class'])
+                copied.append({'slot_id': t.slot_id, 'doc_id': new['id'], 'filename': new['filename']})
+        self.audit(did, 'documents.copied', source=src, scope=scope, copied=len(copied), kept=kept)
+        return {'copied': copied, 'kept': kept, 'not_here': skipped}
+
+    def import_ectd(self, did, files):
+        """An application's eCTD 3.2.2 sequences into this dossier (updates list, item 24): documents into their items, the sequences
+        into the submitted history (frozen), their folders kept for the lifecycle. A leaf whose item this dossier does not have goes to
+        the unplaced box."""
+        import posixpath, tempfile
+        from .. import importer
+        from ..assistant import storage as _storage
+        from ..validators.package import write_files, sequences
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            write_files(files, tmp)
+            seqs = sequences(tmp)
+            if not seqs:
+                raise StoreError('E-NO-SEQUENCE', 'No eCTD sequence in the file: a four-digit folder holding its index.xml.',
+                                 'مفيش تسلسل eCTD في الملف: فولدر من 4 أرقام جواه index.xml.')
+            hist = self.history(did, 'ectd32')
+            clash = sorted({s.name for s in seqs} & {str(h['seq']) for h in hist})
+            if clash:
+                raise StoreError('E-SEQ-EXISTS', f'This dossier has sequence(s) {", ".join(clash)} already.', f'الملف ده فيه التسلسل {"، ".join(clash)} أصلًا.')
+            maps = importer.Maps()
+            slots = [s for s in self.slots(did) if s.active]
+            leafdoc = {(str(h['seq']), lf['leaf_id']): lf['doc_id'] for h in hist for lf in h['leaves']}
+            lc = self.root / 'lifecycle' / did / 'ectd-3.2.2'
+            reads = [(s, importer.read_sequence(s, maps)) for s in seqs]
+            ids = {r['envelope'].get('identifier') for _, r in reads} - {None}
+            mine = (self.dossier(did).get('envelope') or {}).get('application_uuid')
+            if len(ids) > 1 or (hist and ids and mine not in ids):
+                raise StoreError('E-UUID', f'These sequences belong to another application (UUID {", ".join(sorted(ids))}); this dossier\'s is {mine}.',
+                                 f'التسلسلات دي لطلب تاني (UUID {"، ".join(sorted(ids))})، والملف ده رقمه {mine}.')
+            if ids and mine not in ids:                  # the application's own UUID from now on: the next sequence carries it, character for character
+                env0 = dict(self.dossier(did).get('envelope') or {}, application_uuid=ids.pop())
+                self.db.execute('update dossier set envelope=? where id=?', (json.dumps(env0, ensure_ascii=False), did))
+                self.db.commit()
+            report = {'sequences': [], 'placed': 0, 'unplaced': [], 'check': []}
+            used = set()
+            for s, r in reads:
+                rows = []
+                for lf in r['leaves']:
+                    node = lf['node'] or ''
+                    seqr, lid = importer.replaced_leaf(lf.get('modified'))
+                    if (lf.get('href') or '').lower().endswith('.xml'):
+                        continue                         # the regional index itself (m1/eg/eg-regional.xml): not a document
+                    if node == '1.0' and (posixpath.basename(lf['href'] or '').lower().startswith('tracking') or (lf['title'] or '').lower().startswith('tracking table')):
+                        rows.append({'doc_id': None, 'key': [node, '', '', '', '', 'tracking'], 'leaf_id': lf['leaf_id'], 'href': lf['href'], 'xml': lf['xml'],
+                                     'op': lf['op'], 'replaces': lid, 'node': node, 'title': lf['title']})
+                        continue                         # the tracking table: the program makes it again for every sequence
+                    cands = [x for x in slots if node and node in (x.ectd or [])]
+                    for attr, field in (('substance', 'name'), ('manufacturer', 'manufacturer')):
+                        if lf.get(attr) and len(cands) > 1:
+                            v = lf[attr].lower()
+                            cands = [x for x in cands if (x.item or {}).get(field, '').lower() in (v, *v.split())] or cands
+                    if len(cands) > 1:                   # several items share this place: the leaf's title names the item, else the next free one
+                        tl = (lf['title'] or '').strip().lower()
+                        named = [x for x in cands if tl and tl in ((x.title or {}).get('en', '').strip().lower(), (x.title or {}).get('ar', '').strip())]
+                        if named:
+                            cands = named
+                        else:
+                            cands = [x for x in cands if x.slot_id not in used] or cands
+                            report['check'].append({'sequence': s.name, 'href': lf['href'], 'slot_id': cands[0].slot_id,
+                                                    'why': f'{node} holds several items: placed by order — check'})
+                    slot = cands[0] if cands else None
+                    key = [node, (slot.item or {}).get('name', '') if slot and slot.item else lf.get('substance', '') or '',
+                           (slot.item or {}).get('manufacturer', '') if slot and slot.item else lf.get('manufacturer', '') or '',
+                           lf.get('pi_type', ''), lf.get('lang', '')] + ([lf['country']] if lf.get('country') else [])
+                    if lf['op'] == 'delete':
+                        old = leafdoc.get((seqr, lid))
+                        if old:
+                            try:
+                                self.withdraw(did, old, 'deleted in sequence ' + s.name)
+                            except StoreError:
+                                pass
+                        rows.append({'doc_id': old, 'key': key, 'leaf_id': lf['leaf_id'], 'href': None, 'xml': lf['xml'], 'op': 'delete',
+                                     'replaces': lid, 'node': node, 'title': lf['title']})
+                        continue
+                    f = s / lf['href']
+                    if not f.is_file():
+                        report['unplaced'].append({'sequence': s.name, 'href': lf['href'], 'why': 'missing file'})
+                        continue
+                    meta = {k: lf[k] for k in ('pi_type', 'lang') if lf.get(k)}
+                    if lf.get('country'):
+                        meta['eu_country'] = lf['country']
+                    meta['imported'] = {'seq': s.name, 'leaf_id': lf['leaf_id']}
+                    if slot:
+                        prev = leafdoc.get((seqr, lid)) if lf['op'] == 'replace' else None
+                        sup = prev if prev and self.document(prev)['state'] == 'current' else None
+                        doc = self.add_document(did, slot.slot_id, f.name, f.read_bytes(), lf['title'] or None, meta, supersede=sup)
+                        report['placed'] += 1
+                        used.add(slot.slot_id)
+                    else:
+                        try:
+                            doc = _storage.stage_document(self, did, f.name, f.read_bytes(), lf['title'] or None, meta={**meta, 'staged_by': 'import'})
+                            why = f'no item for {node or "this place"}'
+                        except StoreError as e:          # e.g. a scan without text: the leaf stays in the history, the file is not kept
+                            doc, why = {'id': None}, e.en
+                        report['unplaced'].append({'sequence': s.name, 'href': lf['href'], 'why': why})
+                    leafdoc[(s.name, lf['leaf_id'])] = doc['id']
+                    rows.append({'doc_id': doc['id'], 'key': key, 'leaf_id': lf['leaf_id'], 'href': lf['href'], 'xml': lf['xml'], 'op': lf['op'],
+                                 'replaces': lid, 'node': node, 'title': lf['title']})
+                dest = lc / s.name
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(s, dest)
+                e = r['envelope']
+                env = {'type': e.get('type') or 'imported', 'unit': e.get('unit') or '', 'description': e.get('description') or 'Imported sequence',
+                       'tracking': e.get('tracking') or ''}
+                self.record_submission(did, 'ectd32', s.name, e.get('related') or s.name, None, env, rows, str(dest))
+                self.mark_submitted(did, 'ectd32', s.name, {'note': 'imported'})
+                report['sequences'].append({'sequence': s.name, 'region': r['region'], 'leaves': len(rows)})
+            self.audit(did, 'ectd.imported', sequences=[x['sequence'] for x in report['sequences']], placed=report['placed'],
+                       unplaced=len(report['unplaced']))
+            return report
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def reference_document(self, did, slot_id, output, seq, href):
+        """An item's document taken from an earlier sequence of this application: the file it was sent as is kept for the checks and
+        the search, and the next sequence refers to it there instead of sending it again."""
+        h = next((x for x in self.history(did, output) if str(x['seq']) == str(seq)), None)
+        if not h or not h['frozen']:
+            raise StoreError('E-REF', 'Refer only to a sequence that was submitted.', 'الإحالة بتبقى لتسلسل اتقدّم بس.')
+        if not any(lf.get('href') == href for lf in h['leaves']):
+            raise StoreError('E-REF', 'That file is not a leaf of that sequence.', 'الملف ده مش من مستندات التسلسل ده.')
+        f = Path(h['path']) / href
+        if not f.is_file():
+            raise StoreError('E-REF', 'The sequence\'s file is not in this workspace.', 'ملف التسلسل مش موجود في مساحة العمل دي.')
+        slot = next((s for s in self.slots(did) if s.slot_id == slot_id), None)
+        if not slot or not slot.active:
+            raise StoreError('E-SLOT-INACTIVE', 'This item is not required for this product.', 'البند ده مش مطلوب للمنتج ده.')
+        old = next((lf for lf in h['leaves'] if lf.get('href') == href), {})
+        title = None
+        try:
+            title = self.document(old['doc_id'])['title'] if old.get('doc_id') else None
+        except StoreError:
+            pass
+        doc = self.add_document(did, slot_id, f.name, f.read_bytes(), title,
+                                {'reference': {'output': output, 'seq': str(seq), 'href': href}})
+        self.audit(did, 'document.referenced', slot=slot_id, output=output, seq=str(seq), href=href, doc=doc['id'])
+        return doc
+
+    def views(self, did, output='ectd32'):
+        """The submitted dossier four ways: cumulative, by sequence, by activity, by study."""
+        from ..lifecycle import current_view
+        hist = self.history(did, output)
+        docs = {}
+
+        def leaf(lf, seq):
+            if lf['doc_id'] not in docs:
+                try:
+                    docs[lf['doc_id']] = self.document(lf['doc_id'])
+                except StoreError:
+                    docs[lf['doc_id']] = None
+            d = docs[lf['doc_id']] or {}
+            key = list(lf.get('key') or [])
+            return {'seq': str(seq), 'op': lf.get('op'), 'node': key[0] if key else '', 'href': lf.get('href'), 'title': d.get('title') or lf.get('href'),
+                    'filename': d.get('filename'), 'study': (d.get('meta') or {}).get('study'), 'doc_id': lf['doc_id']}
+        cumulative = sorted((leaf(lf, lf['seq']) for lf in current_view(hist).values()), key=lambda x: (x['node'], x['seq']))
+        by_seq = [{'seq': str(h['seq']), 'type': h['envelope'].get('type'), 'unit': h['envelope'].get('unit'), 'description': h['envelope'].get('description'),
+                   'frozen': h['frozen'], 'leaves': [leaf(lf, h['seq']) for lf in h['leaves']]} for h in hist]
+        acts = {}
+        for h in hist:
+            a = str(h.get('activity') or h['seq'])
+            g = acts.setdefault(a, {'activity': a, 'type': h['envelope'].get('type'), 'description': h['envelope'].get('description'), 'sequences': []})
+            g['sequences'].append({'seq': str(h['seq']), 'unit': h['envelope'].get('unit'), 'frozen': h['frozen'], 'documents': len(h['leaves'])})
+        studies = {}
+        for x in cumulative:
+            if x['node'][:1] in ('4', '5'):
+                studies.setdefault(x['study'] or '', []).append(x)
+        return {'output': output, 'cumulative': cumulative, 'sequences': by_seq, 'activities': list(acts.values()),
+                'studies': [{'study': k, 'leaves': v} for k, v in sorted(studies.items())]}
+
+    def comments(self, did, doc_id=None, open_only=False):
+        q, args = 'select * from doc_comment where dossier_id=?', [did]
+        if doc_id:
+            q, args = q + ' and doc_id=?', args + [doc_id]
+        if open_only:
+            q += ' and resolved is null'
+        return [dict(r) for r in self.db.execute(q + ' order by created', args).fetchall()]
+
+    def add_comment(self, did, doc_id, text, page=None):
+        d = self.document(doc_id)
+        if d['dossier_id'] != did:
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        if not text or not text.strip():
+            raise StoreError('E-TEXT', 'Write the note.', 'اكتب الملاحظة.')
+        cid = str(uuid.uuid4())
+        self.db.execute('insert into doc_comment(id, dossier_id, doc_id, page, text, author, created) values (?,?,?,?,?,?,?)',
+                        (cid, did, doc_id, int(page) if page else None, text.strip()[:4000], ACTOR.get(), time.time()))
+        self.db.commit()
+        self.audit(did, 'comment.added', doc=doc_id, comment=cid)
+        return dict(self.db.execute('select * from doc_comment where id=?', (cid,)).fetchone())
+
+    def resolve_comment(self, did, cid, resolved=True):
+        r = self.db.execute('select * from doc_comment where id=? and dossier_id=?', (cid, did)).fetchone()
+        if not r:
+            raise StoreError('E-NOT-FOUND', 'Note not found.', 'الملاحظة مش موجودة.')
+        self.db.execute('update doc_comment set resolved=?, resolved_by=? where id=?',
+                        (time.time() if resolved else None, ACTOR.get() if resolved else None, cid))
+        self.db.commit()
+        self.audit(did, 'comment.resolved' if resolved else 'comment.reopened', comment=cid)
+        return dict(self.db.execute('select * from doc_comment where id=?', (cid,)).fetchone())
+
+    def text_pages(self, doc):
+        """A document's pages of text, read once and kept (the same store the search uses)."""
+        from .. import search as _search
+        r = self.db.execute('select pages from doc_text where sha256=?', (doc['sha256'],)).fetchone()
+        if r:
+            return json.loads(r['pages'])
+        pages = _search.pages_of(doc['filename'], self.blob_path(doc['sha256']).read_bytes())
+        self.db.execute('insert or replace into doc_text values (?,?,?)', (doc['sha256'], json.dumps(pages, ensure_ascii=False), time.time()))
+        self.db.commit()
+        return pages
+
+    def compare_versions(self, did, doc_id, against=None):
+        """A document against the version it replaced (or `against`): {old, new, changes: [{op, text, page}]}."""
+        from .. import search as _search
+        new = self.document(doc_id)
+        if new['dossier_id'] != did:
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        if against:
+            old = self.document(against)
+            if old['dossier_id'] != did:
+                raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        else:
+            r = self.db.execute("select id from document where dossier_id=? and slot_id=? and version<? and state='superseded' "
+                                'order by version desc limit 1', (did, new['slot_id'], new['version'])).fetchone()
+            if not r:
+                raise StoreError('E-NO-VERSION', 'This document replaced no earlier version.', 'المستند ده ما حلّش محل نسخة قبله.')
+            old = self.document(r['id'])
+        ch = _search.diff(self.text_pages(old), self.text_pages(new))
+        brief = lambda d: {k: d[k] for k in ('id', 'filename', 'version', 'created')}
+        return {'old': brief(old), 'new': brief(new), 'changes': ch, 'same': not ch}
 
     def split_proposal(self, did, doc_id):
         """Where the program would cut a file that holds several documents (the person confirms or moves the cuts)."""
@@ -705,7 +980,8 @@ class Store:
 
     # ---------------- submission history (lifecycle, P3)
     def record_submission(self, did, output, seq, activity, suuid, envelope, history, path):
-        self.db.execute('insert into submission values (?,?,?,?,?,?,?,?,?,?)',
+        self.db.execute('insert into submission(id, dossier_id, output, seq, activity, submission_uuid, envelope, history, path, created) '
+                        'values (?,?,?,?,?,?,?,?,?,?)',
                         (str(uuid.uuid4()), did, output, str(seq), str(activity), suuid, json.dumps(envelope, ensure_ascii=False),
                          json.dumps(history, ensure_ascii=False), str(path), time.time()))
         self.db.commit()
@@ -716,9 +992,58 @@ class Store:
         for r in rows:
             seq = r['seq'] if output == 'ectd32' else int(r['seq'])
             act = r['activity'] if output == 'ectd32' else int(r['activity'])
+            rc = json.loads(r['receipt'] or '{}') if 'receipt' in r.keys() else {}
             out.append({'seq': seq, 'activity': act, 'submission_uuid': r['submission_uuid'], 'created': r['created'],
-                        'envelope': json.loads(r['envelope']), 'leaves': json.loads(r['history']), 'path': r['path']})
+                        'envelope': json.loads(r['envelope']), 'leaves': json.loads(r['history']), 'path': r['path'],
+                        'receipt': rc, 'frozen': bool(rc.get('submitted'))})
         return out
+
+    def _seq_row(self, did, output, seq):
+        r = self.db.execute('select * from submission where dossier_id=? and output=? and seq=?', (did, output, str(seq))).fetchone()
+        if not r:
+            raise StoreError('E-NOT-FOUND', 'Sequence not found.', 'التسلسل مش موجود.')
+        return r
+
+    def mark_submitted(self, did, output, seq, info, receipt=None, filename=None):
+        """The sequence went to the authority: its receipt is kept with it and it is frozen (never replaced, never discarded)."""
+        from datetime import date as _d
+        r = self._seq_row(did, output, seq)
+        rc = json.loads(r['receipt'] or '{}')
+        day = info.get('submitted') or _d.today().isoformat()
+        for k in ('submitted', 'ack', 'decided'):
+            v = info.get(k) if k != 'submitted' else day
+            if v:
+                try:
+                    _d.fromisoformat(v)
+                except ValueError:
+                    raise StoreError('E-DATE', f'{k}: use a date like 2026-11-13.', f'{k}: اكتب التاريخ بالشكل 2026-11-13.')
+        rc.update({k: v for k, v in info.items() if k in ('tracking', 'ack', 'decision', 'decided', 'note') and v not in (None, '')}, submitted=day)
+        if receipt:
+            rc.update(receipt_sha=self.put_blob(receipt), receipt_name=filename or 'receipt.pdf')
+        self.db.execute('update submission set receipt=? where id=?', (json.dumps(rc, ensure_ascii=False), r['id']))
+        self.db.commit()
+        self.audit(did, 'submission.submitted', output=output, seq=str(seq), **{k: rc.get(k) for k in ('submitted', 'tracking')})
+        return rc
+
+    def discard_sequence(self, did, output, seq):
+        """An exported sequence that was not submitted, the last one: taken off the history (the next export takes its number)."""
+        r = self._seq_row(did, output, seq)
+        if json.loads(r['receipt'] or '{}').get('submitted'):
+            raise StoreError('E-FROZEN', 'This sequence was submitted: it is frozen. A change goes in a new sequence.',
+                             'التسلسل ده اتقدّم: متجمّد. أي تعديل بيبقى في تسلسل جديد.')
+        last = self.db.execute('select seq from submission where dossier_id=? and output=? order by created desc limit 1', (did, output)).fetchone()
+        if last['seq'] != r['seq']:
+            raise StoreError('E-NOT-LAST', 'Only the last sequence can be discarded.', 'التسلسل الأخير بس هو اللي ينفع يتشال.')
+        self.db.execute('delete from submission where id=?', (r['id'],))
+        self.db.commit()
+        folder = Path(r['path'] or '')                  # its folder in the dossier's lifecycle store goes too: the number is free again
+        try:
+            inside = folder.resolve().is_relative_to((self.root / 'lifecycle' / did).resolve())
+        except (OSError, ValueError):
+            inside = False
+        if inside and folder.is_dir():
+            shutil.rmtree(folder, ignore_errors=True)
+        self.audit(did, 'submission.discarded', output=output, seq=str(seq))
 
     # ---------------- requests to issuers (re-obtain)
     def open_request(self, did, slot_id, issuer, lang, due_days, letter_sha, reason):
@@ -815,6 +1140,22 @@ class Store:
                 raise StoreError('E-META', f"EU 1.3.1: the PI type is one of {', '.join(v['pi_types'])} and the language an EU code (en, de, fr…).",
                                  'بند 1.3.1 الأوروبي: نوع النشرة من ' + '، '.join(v['pi_types']) + ' واللغة كود أوروبي (en، de، fr…).',
                                  missing=['pi_type', 'lang'])
+
+    def set_document_details(self, did, doc_id, meta=None, title=None):
+        """A document's title and its eCTD attributes (leaflet type, language, study, document type, EU country) changed where it is —
+        the file itself is not touched, so it stays the same version (the sheet of updates list item 47, a corrected title)."""
+        d = self.document(doc_id)
+        if d['dossier_id'] != did or d['state'] != 'current':
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        new = dict(d['meta'], **{k: v for k, v in (meta or {}).items() if k in self.ITEM_META and v})
+        if d['slot_id']:
+            self.check_item_meta(did, d['slot_id'], new)
+        title = (title or '').strip() or d['title']
+        self.db.execute('update document set meta=?, title=? where id=?', (json.dumps(new, ensure_ascii=False), title, doc_id))
+        self.db.commit()
+        changed = {k: new[k] for k in self.ITEM_META if new.get(k) != d['meta'].get(k)}
+        self.audit(did, 'document.details', doc=doc_id, **changed, **({'title': title} if title != d['title'] else {}))
+        return self.document(doc_id)
 
     def confirm_kind(self, did, doc_id):
         """«It is in the right place»: the person overrules the kind rule for this file. Its DOC-KIND objection goes; every other finding
@@ -954,6 +1295,11 @@ class Store:
                 x['status'] = 'waiting'                    # a new copy asked from the issuer (for the One Submission or for eCTD readiness)
             if x['req_id'] == 'M1-44' and x['status'] == 'not_started':
                 x['status'] = 'auto'              # tracking table: rebuilt from the history at every eCTD export
+        open_notes = {}
+        for cm in self.comments(did, open_only=True):
+            open_notes[cm['doc_id']] = open_notes.get(cm['doc_id'], 0) + 1
+        for x in out:                                   # the team's own open notes on the item's documents (a note, never a stop)
+            x['notes_open'] = sum(open_notes.get(d['id'], 0) for d in x['documents'])
         attest = (self.dossier(did).get('data') or {}).get('attest') or {}
         for x in out:                                   # what no reading can see, asked once per item
             need = (['signed', 'stamped'] if x.get('doc_class') == 'company_letter' else []) + (['legalized'] if x['req_id'] in ATTEST_LEGALIZE else [])
@@ -978,10 +1324,11 @@ class Store:
         external = [s['slot_id'] for s in b['slots'] if s['external']]
         xb = [f for f in b['cross'] if f['severity'] == 'block']
         to_confirm = [s['slot_id'] for s in b['slots'] if s.get('attest_need') and not s.get('attest')]
+        notes_open = [s['slot_id'] for s in b['slots'] if s.get('notes_open')]
         ectd_blocking = [s['slot_id'] for s in b['slots'] if any(f.get('scope') == 'ectd' and f.get('severity') == 'block'
                                                                 for d in s['documents'] for f in d['findings'])]
         return {'ok': not missing and not blocking and not xb and not unsigned and not external, 'unsigned': unsigned, 'to_confirm': to_confirm,
-                'ectd_blocking': ectd_blocking,
+                'ectd_blocking': ectd_blocking, 'notes_open': notes_open,
                 'external_only': external, 'missing_required': missing, 'non_conforming': blocking,
                 'cross_blocking': [{'id': f['id'], 'en': f['en'], 'ar': f['ar']} for f in xb],
                 'provisional_profiles': ['EG eCTD 3.2.2 provisional v0', 'EG eCTD 4.0 provisional v0']}

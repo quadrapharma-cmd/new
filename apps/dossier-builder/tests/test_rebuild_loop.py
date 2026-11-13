@@ -38,7 +38,7 @@ def test_auto_fix_makes_new_conforming_version(c, tmp_path):
     assert any(f['rule'] == 'PDF-JS' and f['scope'] == 'ectd' for f in doc['findings'])
     assert did_block_ectd(c, did, 'M1-11')
     r = c.post(f"/api/dossiers/{did}/documents/{doc['id']}/fix").json()
-    assert [x['op'] for x in r['done']] == ['remove_javascript'] and r['document']['check_status'] == 'conforming'
+    assert [x['op'] for x in r['done']] == ['remove_javascript', 'doc_info'] and r['document']['check_status'] == 'conforming'   # and its title set
     s = status(c, did, 'M1-11')
     assert s['status'] == 'conforming' and [d['version'] for d in s['documents']] == [2]   # original superseded, kept
     assert not did_block_ectd(c, did, 'M1-11')

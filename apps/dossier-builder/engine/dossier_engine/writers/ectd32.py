@@ -8,6 +8,7 @@ Rules applied here (others live in the validator):
   * file name <= 64, folder name <= 64, path from DDDD <= 180 (EG-PF-15.3/4/5)
   * MD5 for each leaf and for index.xml (ICH SPEC p.5-2)
 """
+import posixpath
 import csv, hashlib, os, re, shutil, uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -66,6 +67,7 @@ class Doc:
     doc_id: str = None           # dossier document id (lifecycle history)
     cou_replaces: str = None     # 4.0 replace: id of the context of use being replaced
     country: str = None          # EU M1: the country folder and specific/@country of 1.0, 1.2, 1.3.1–1.3.5, responses, additional data
+    ref: str = None              # a file of an earlier sequence of the same application ('../0000/m3/…'): referred to, never copied
 
 
 @dataclass
@@ -232,7 +234,7 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
         cur = eg_root
         for name in reversed(chain):
             cur = cur.child(name, {}, profile.eg_children.get(cur.name, []))
-        href = rel[len('m1/eg/'):] if rel else None
+        href = (posixpath.relpath(rel, 'm1/eg') if d.ref else rel[len('m1/eg/'):]) if rel else None      # a reference: relative to the regional XML
         leaf = dict(id=d.leaf_id or _leaf_id(seq, rel or d.modified_file), op=d.operation,
                     md5=md5(base / rel) if rel else '', href=href, title=d.title, modified=_modified(d, 'regional'))
         history.append(_hist(d, leaf, rel, 'regional'))
@@ -261,7 +263,7 @@ def write(out_dir, envelope: Envelope, product: Product, docs, profile: Profile3
           [f'      <inn>{escape(i)}</inn>' for i in e.inn] + \
           [f'      <sequence>{seq}</sequence>'] + \
           [f'      <related-sequence>{r}</related-sequence>' for r in rel_seqs] + \
-          [f'      <submission-description>{escape(e.description)}</submission-description>', '    </envelope>']
+          [f'      <submission-description>{escape(e.description or "")}</submission-description>', '    </envelope>']
     regional = ('<?xml version="1.0" encoding="UTF-8"?>\n'
                 '<!DOCTYPE eg-backbone SYSTEM "../../util/dtd/eg-regional.dtd">\n'
                 '<?xml-stylesheet type="text/xsl" href="../../util/style/eg-regional.xsl"?>\n'
@@ -289,6 +291,9 @@ def place(docs, rel_of, seq, prefix, append_note):
         if d.operation == 'delete':
             placed.append((d, None))
             continue
+        if d.ref:                                 # already in an earlier sequence: its href reaches there (checked when it was sent)
+            placed.append((d, d.ref))
+            continue
         if not Path(d.file).is_file():
             raise WriterError(f'missing file {d.file}')
         rel = rel_of(d)
@@ -299,7 +304,7 @@ def place(docs, rel_of, seq, prefix, append_note):
         used.add(n)
         placed.append((d, n))
     for d, rel in placed:
-        if rel is None:
+        if rel is None or d.ref:
             continue
         parts = rel.split('/')
         if len(parts[-1]) > MAX_NAME:
@@ -316,7 +321,7 @@ def place(docs, rel_of, seq, prefix, append_note):
 
 def copy_files(base, placed):
     for d, rel in placed:
-        if rel is None:
+        if rel is None or d.ref:
             continue
         dst = base / rel
         dst.parent.mkdir(parents=True, exist_ok=True)

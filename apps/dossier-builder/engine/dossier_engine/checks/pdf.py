@@ -18,7 +18,8 @@ NO_TEXT_IMAGE_AR = ('ده صورة مش مستند. الهيئة طالبة كل
                     'أو صوّره بتطبيق بيحفظ PDF قابل للبحث، وارفع الـ PDF.')
 
 
-ECTD_DRAFT = {'EG-PF-15.4', 'ICH-NAME', 'EG-PF-16.3', 'EG-BP-E23', 'PDF-JS', 'EG-PF-16.1', 'EG-BP-16.BP1', 'NTA065-BM', 'ECTD-WORD'}
+ECTD_DRAFT = {'EG-PF-15.4', 'ICH-NAME', 'EG-PF-16.3', 'EG-BP-E23', 'PDF-JS', 'EG-PF-16.1', 'EG-BP-16.BP1', 'NTA065-BM', 'ECTD-WORD',
+              'PDF-FONTS', 'PDF-VIEW', 'PDF-ZOOM', 'PDF-INFO'}
 # the draft eCTD guidance's rules (EDA eCTD technical guidance v1.0/2026, not in force) and ICH's: they decide eCTD readiness, not
 # whether a document conforms for the One Submission in force (NP.CAPP.065 v5 asks a searchable PDF that opens)
 
@@ -61,6 +62,102 @@ def status_of(findings):
     if any((f.get('severity') if isinstance(f, dict) else f.severity) == 'block' for f in own):
         return 'non_conforming'
     return 'needs_attention' if own else 'conforming'
+
+
+BASE14 = {'Times-Roman', 'Times-Bold', 'Times-Italic', 'Times-BoldItalic', 'Helvetica', 'Helvetica-Bold', 'Helvetica-Oblique',
+          'Helvetica-BoldOblique', 'Courier', 'Courier-Bold', 'Courier-Oblique', 'Courier-BoldOblique', 'Symbol', 'ZapfDingbats'}
+
+
+def fonts_state(rd, max_pages=50):
+    """'embedded' | 'not_embedded' | 'unknown' — every font of the first pages carries its font file, one does not, or it could not
+    be told (an unusual font dictionary). The 14 standard PDF fonts (Times, Helvetica, Courier, Symbol, ZapfDingbats) every reader
+    has need no embedding."""
+    seen_any, missing = False, []
+    try:
+        for pg in rd.pages[:max_pages]:
+            res = pg.get('/Resources')
+            fonts = res.get_object().get('/Font') if res is not None else None
+            if fonts is None:
+                continue
+            for _, ref in fonts.get_object().items():
+                f = ref.get_object()
+                seen_any = True
+                desc = f.get('/FontDescriptor')
+                if desc is None and f.get('/DescendantFonts') is not None:
+                    desc = f['/DescendantFonts'].get_object()[0].get_object().get('/FontDescriptor')
+                if f.get('/Subtype') == '/Type3':
+                    continue                              # drawn with the page's own glyph procedures: nothing to embed
+                base = str(f.get('/BaseFont', '?')).lstrip('/').split('+')[-1]
+                if base.split(',')[0] in BASE14:
+                    continue
+                if desc is None or not any(k in desc.get_object() for k in ('/FontFile', '/FontFile2', '/FontFile3')):
+                    missing.append(base)
+    except Exception:
+        return 'unknown', []
+    return ('not_embedded' if missing else 'embedded') if seen_any else 'embedded', sorted(set(missing))[:8]
+
+
+def _fixed_zoom(rd, max_pages=200):
+    """Links or bookmarks that set their own zoom (/XYZ with a zoom) instead of keeping the reader's."""
+    def fixed(dest):
+        try:
+            d = dest.get_object() if hasattr(dest, 'get_object') else dest
+            if isinstance(d, dict):
+                d = d.get('/D') or d.get('/Dest')
+            if isinstance(d, list) and len(d) >= 5 and str(d[1]) == '/XYZ':
+                z = d[4]
+                return z is not None and str(z) not in ('null', '0', 'None') and float(z) != 0
+        except Exception:
+            return False
+        return False
+    n = 0
+    try:
+        for pg in rd.pages[:max_pages]:
+            for a in (pg.get('/Annots') or []):
+                a = a.get_object()
+                if a.get('/Subtype') == '/Link':
+                    act = a.get('/A')
+                    dest = a.get('/Dest') or (act.get_object().get('/D') if act is not None else None)
+                    n += bool(dest is not None and fixed(dest))
+    except Exception:
+        pass
+    return n
+
+
+def props(rd, r, add, has_outline, doc_class='company_technical'):
+    """The PDF properties an eCTD looks at (ICH eCTD Specification, Appendix 7; EU eCTD guidance): all eCTD readiness."""
+    src = 'ICH eCTD SPEC App. 7 (PDF properties); EU harmonised eCTD guidance'
+    state, missing = fonts_state(rd)
+    r.info['fonts'] = state
+    try:
+        r.info['fast_web_view'] = b'/Linearized' in open(r.path, 'rb').read(2048)   # said, not fixed: linearising needs a tool this program does not carry
+    except OSError:
+        pass
+    if state == 'not_embedded':
+        add(Finding('PDF-FONTS', 'warn', f"Fonts not embedded: {', '.join(missing)}. Make the PDF again with all fonts embedded (it cannot be done without redrawing the pages).",
+                    f"خطوط مش مدمجة: {', '.join(missing)}. اعمل الـ PDF تاني والخطوط كلها مدمجة (ما ينفعش يتعمل من غير ما الصفحات تترسم تاني).", 'user_fix', src))
+    elif state == 'unknown':
+        add(Finding('PDF-FONTS', 'warn', 'Whether the fonts are embedded could not be told from this file.', 'مش قادرين نعرف من الملف ده إذا كانت الخطوط مدمجة.', 'none', src))
+    try:
+        mode = str(rd.trailer['/Root'].get('/PageMode') or '')
+    except Exception:
+        mode = ''
+    if has_outline and mode != '/UseOutlines':
+        add(Finding('PDF-VIEW', 'warn', 'It has bookmarks but does not open with the bookmarks panel.', 'فيه bookmarks بس مش بيفتح ولوحة الـ bookmarks ظاهرة.', 'auto_fix', src))
+    z = _fixed_zoom(rd)
+    r.info['fixed_zoom_links'] = z
+    if z:
+        add(Finding('PDF-ZOOM', 'warn', f'{z} link(s) set their own zoom; links keep the reader\'s zoom («inherit zoom»).',
+                    f'{z} رابط بيغيّر الزووم؛ الروابط المفروض تسيب زووم القارئ («inherit zoom»).', 'auto_fix', src))
+    try:
+        info = rd.metadata or {}
+        title = str(info.get('/Title') or '').strip()
+    except Exception:
+        title = ''
+    r.info['title'] = title
+    if not title and doc_class not in LOCKED:            # the company's own documents: offered (another's are as their issuer made them)
+        add(Finding('PDF-INFO', 'warn', 'The document has no title in its properties (File → Properties).', 'المستند مالوش عنوان في خصائصه (File ← Properties).', 'auto_fix',
+                    src + '; EU VC 8.2 16.BP11 (1.3.1, centralised procedure)'))
 
 
 def check(path, doc_class='company_technical', ectd_name=False):
@@ -144,6 +241,7 @@ def check(path, doc_class='company_technical', ectd_name=False):
         except Exception:
             has_outline = False
         r.info['bookmarks'] = has_outline
+        props(rd, r, add, has_outline, doc_class)
         if pages >= 10 and not has_outline:
             add(Finding('NTA065-BM', 'warn', f'{pages} pages and no bookmarks; long documents need bookmarks to navigate.',
                         f'{pages} صفحة من غير bookmarks؛ المستندات الطويلة لازم يبقى فيها bookmarks.',

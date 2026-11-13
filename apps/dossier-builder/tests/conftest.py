@@ -5,7 +5,10 @@ REPO = ROOT.parents[1]
 CHECKLIST = REPO / 'docs' / 'ctd' / 'checklist' / 'EDA-eCTD-Company-Checklist.xlsx'
 
 
+import os
 import pytest
+
+os.environ.setdefault('DB_BACKUP', '0')         # no automatic backup thread in the tests' many short-lived workspaces (tested on its own)
 
 
 @pytest.fixture(autouse=True)

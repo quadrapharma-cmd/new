@@ -33,6 +33,10 @@ UPLOAD = {
     'NTA065-BM': ('Bookmarks for a long document with a table of contents (eCTD readiness).', 'Bookmarks للمستند الطويل اللي له فهرس (جاهزية eCTD).', 'EG eCTD TG draft; ICH eCTD SPEC App. 7', 'draft', 'upload'),
     'EG-PF-15.4': ('A file name of at most 64 characters — the export gives each file its eCTD name.', 'اسم الملف 64 حرف بالكتير — التصدير بيدّي كل ملف اسمه في الـ eCTD.', 'EG eCTD TG draft p.12 l.275', 'draft', 'upload'),
     'ICH-NAME': ('ICH file naming — the export gives each file its eCTD name.', 'أسماء الملفات حسب ICH — التصدير بيدّي كل ملف اسمه.', 'ICH eCTD SPEC 3.2.2 p.2-3', 'draft', 'upload'),
+    'PDF-FONTS': ('Fonts embedded (the 14 standard PDF fonts need not be); three answers: embedded, not embedded, could not be told.', 'الخطوط مدمجة (الـ 14 خط القياسيين مش لازم)؛ تلات نتايج: مدمجة، مش مدمجة، مش قادرين نعرف.', 'ICH eCTD SPEC App. 7 (PDF properties)', 'draft', 'upload'),
+    'PDF-VIEW': ('A document with bookmarks opens with the bookmarks panel (fixed automatically).', 'المستند اللي فيه bookmarks بيفتح ولوحتها ظاهرة (بيتصلّح لوحده).', 'ICH eCTD SPEC App. 7; EU harmonised eCTD guidance', 'draft', 'upload'),
+    'PDF-ZOOM': ('Links and bookmarks keep the reader\'s zoom — «inherit zoom» (fixed automatically).', 'الروابط والـ bookmarks بتسيب زووم القارئ — «inherit zoom» (بيتصلّح لوحده).', 'ICH eCTD SPEC App. 7', 'draft', 'upload'),
+    'PDF-INFO': ('The company\'s document has a title and subject in its properties (filled automatically).', 'مستند الشركة له عنوان وموضوع في خصائصه (بيتملوا لوحدهم).', 'EU VC 8.2 16.BP11; ICH eCTD SPEC App. 7', 'draft', 'upload'),
 }
 CROSS_SOURCE = {'XC': ('Consistency across the dossier (WHO QOS-PD; NP.CAPP.040)', 'in_force'), 'NP040': ('NP.CAPP.040 v1 (common deficiencies of the quality module)', 'in_force')}
 

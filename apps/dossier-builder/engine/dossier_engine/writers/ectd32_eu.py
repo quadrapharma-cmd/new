@@ -7,6 +7,7 @@ What is applied here (the validator reads all of it back from disk):
   * the envelopes: one 'ema' for the centralised procedure, one per country otherwise, one UUID in all (VC 9.9, 14.1–14.3, 14.5)
   * the folders and names of SPEC 3.1.1 App. 2 (the profile's m1.csv) and ICH App. 4 for Modules 2–5; lower case a-z 0-9 '-'
   * file name <= 64, folder name <= 64, path from XXXX <= 180 (VC 15.3–15.5); MD5 for each leaf and for index.xml"""
+import posixpath
 import csv, re
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -256,7 +257,7 @@ def write(out_dir, envelope: EnvelopeEU, product: Product, docs, profile: Profil
             s, lid = d.modified_file.split('#', 1)
             modified = f'../../../{s}/{REGIONAL}#{lid}'
         leaf = dict(id=d.leaf_id or _leaf_id(seq, rel or d.modified_file), op=d.operation, md5=md5(base / rel) if rel else '',
-                    href=rel[len('m1/eu/'):] if rel else None, title=d.title, modified=modified)
+                    href=(posixpath.relpath(rel, 'm1/eu') if d.ref else rel[len('m1/eu/'):]) if rel else None, title=d.title, modified=modified)
         cur.leaves.append(leaf)
         history.append(_hist(d, leaf, rel, 'regional'))
     if not any(k.name == 'm1-0-cover' for k in root.kids):

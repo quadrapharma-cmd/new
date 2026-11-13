@@ -55,7 +55,15 @@ class Pack:
 
     @property
     def outputs(self):
-        return {'eg': ['ctd', 'ectd32', 'ectd40'], 'eu': ['ctd', 'ectd32']}.get(self.ectd_region, ['ctd'])
+        cs = set(self.authority.get('countries') or [])
+        asean = bool(cs & ASEAN) or '*' in cs                 # the ASEAN CTD for a member state (or a dossier for «any country»)
+        nees = self.authority.get('id') != 'US-FDA'           # the FDA takes eCTD only; the Gulf and others still take a NeeS
+        return {'eg': ['ctd', 'ectd32', 'ectd40'], 'eu': ['ctd', 'ectd32']}.get(self.ectd_region,
+                                                                              ['ctd'] + (['nees'] if nees else []) + (['actd'] if asean else []))
+
+    def outputs_for(self, country=None):
+        """The outputs of a dossier for `country`: the ACTD only for an ASEAN member state."""
+        return [o for o in self.outputs if o != 'actd' or (country or '').upper() in ASEAN or (self.authority.get('countries') or [''])[0] in ASEAN]
 
     @property
     def questions(self):
@@ -64,6 +72,9 @@ class Pack:
 
     def matrix_name(self):
         return self.meta.get('matrix') or {'en': 'NP.CAPP.065 matrix', 'ar': 'مصفوفة NP.CAPP.065'}
+
+
+ASEAN = {'BN', 'KH', 'ID', 'LA', 'MY', 'MM', 'PH', 'SG', 'TH', 'VN'}       # the member states that take the ACTD
 
 
 def load(pack_id, packs_dir=PACKS_DIR):

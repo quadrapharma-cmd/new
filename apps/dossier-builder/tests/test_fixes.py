@@ -121,7 +121,7 @@ def test_bookmarks_added_from_headings(tmp_path):
     p = _long_doc(tmp_path)
     assert 'NTA065-BM' in {f['rule'] for f in findings(p, 'company_technical')}
     r = fix(p, 'company_technical', tmp_path)
-    assert [d['op'] for d in r['done']] == ['add_bookmarks']
+    assert [d['op'] for d in r['done']] == ['add_bookmarks', 'doc_info']
     from pypdf import PdfReader
     titles = [o.title for o in PdfReader(str(r['path'])).outline if not isinstance(o, list)]
     assert titles[0].startswith('3.2.P.1.1') and len(titles) >= 6

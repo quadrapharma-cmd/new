@@ -63,8 +63,8 @@ def test_checks_autofix_fixes_and_search_finds_the_page(server, tmp_path):
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto(f'{server}/#/d/{did}/checks')
         page.wait_for_selector('[data-cfix]')
-        page.click('[data-cfix]')
-        page.wait_for_function("() => !document.querySelector('[data-cfix]')", timeout=60000)    # fixed: the row has nothing left to fix
+        page.click('[data-cfix][data-slot="M1-11"]')
+        page.wait_for_function("() => !document.querySelector('[data-cfix][data-slot=\"M1-11\"]')", timeout=60000)   # fixed: the row has nothing left to fix
         assert page.is_hidden('#drawer')                                                            # and no drawer was opened for it
         page.goto(f'{server}/#/d/{did}/search')
         page.fill('#srchQ', 'aybge211102')
@@ -255,5 +255,53 @@ def test_the_package_page_checks_an_ectd_zip_made_anywhere(server, tmp_path):
         page.click('#cmpGo')
         page.wait_for_selector('#cmpOut .alert')
         assert 'زي بعض' in page.inner_text('#cmpOut')
+        b.close()
+    assert not errors, errors
+
+
+@pytest.mark.skipif(not find_soffice(), reason='needs LibreOffice (tracking table)')
+def test_a_sequence_is_recorded_as_submitted_and_frozen_from_the_export_page(server, tmp_path):
+    import httpx
+    did = dossier(server)
+    pdf = make_pdf(tmp_path / 'd.pdf', 'doc').read_bytes()
+    for s in httpx.get(f'{server}/api/dossiers/{did}/board').json()['slots']:
+        if s['level'] in ('R', 'O') and s['status'] == 'not_started':
+            meta = {'pi_type': 'spc', 'lang': 'en'} if s['req_id'] == 'M1-09' else ({'study': 'EXM-BE-01', 'doc_type': 'ich_document_type_2'} if s['module'] == 5 else {})
+            httpx.post(f'{server}/api/dossiers/{did}/slots/{s["slot_id"]}/documents', files={'file': ('d.pdf', pdf, 'application/pdf')}, data={'meta': json.dumps(meta)})
+    r = httpx.post(f'{server}/api/dossiers/{did}/export', json={'acknowledge_provisional': True, 'outputs': ['ectd32']}, timeout=120)
+    assert r.status_code == 201, r.text
+    errors = []
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = page_of(b, server, 'ar')
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(f'{server}/#/d/{did}/export')
+        page.wait_for_selector('[data-frz="ectd32|0000"]')
+        assert page.is_checked('#replLast')                                                       # the last one never went: replaced by default
+        page.click('[data-frz="ectd32|0000"]')
+        page.fill('#frzTrack', 'P-MAA-0001')
+        page.click('#frzGo')
+        page.wait_for_selector('text=P-MAA-0001')
+        assert page.locator('[data-frz]').count() == 0 and page.locator('#replLast').count() == 0   # frozen: nothing to replace
+        b.close()
+    assert not errors, errors
+
+
+def test_copy_to_another_country_from_the_board(server, tmp_path):
+    did = dossier(server)
+    upload(server, did, 'P-16', 'stability.pdf', make_pdf_lines(tmp_path / 's.pdf', ['Stability summary and conclusion', 'three batches'], 'S').read_bytes())
+    errors = []
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = page_of(b, server, 'ar')
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(f'{server}/#/d/{did}/board')
+        page.wait_for_selector('#copyBtn')
+        page.click('#copyBtn')
+        page.wait_for_selector('#clCountry')
+        page.select_option('#clCountry', 'SA')
+        page.click('#clGo')
+        page.wait_for_function(f"() => !location.hash.includes('{did}') && location.hash.endsWith('/board')", timeout=30000)
+        page.wait_for_function("() => typeof S !== 'undefined' && S.board && S.board.slots.some(s => s.documents.some(d => d.filename === 'stability.pdf'))", timeout=30000)
         b.close()
     assert not errors, errors

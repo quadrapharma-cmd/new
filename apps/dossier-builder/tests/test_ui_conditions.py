@@ -46,7 +46,13 @@ def test_conditions_before_upload(server, lang):
         page.wait_for_selector('.doccard details.cond')
         cards = page.locator('.doccard details.cond').count()
         assert cards >= 10
-        page.locator('.doccard details.cond summary').first.click()
+        for _ in range(3):                                   # the wizard may paint its cards again just after the first paint: click the card that stays
+            page.locator('.doccard details.cond summary').first.click()
+            try:
+                page.wait_for_selector('.doccard details.cond[open]', timeout=3000)
+                break
+            except pw.TimeoutError:
+                pass
         first = page.inner_text('.doccard details.cond >> nth=0')
         assert ('PDF' in first) and (('شروطه' in first) if lang == 'ar' else ('conditions' in first))
         page.evaluate("s => openCondAll(s, 'country=EG')", preview['slots'])

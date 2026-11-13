@@ -238,3 +238,89 @@ def test_split_sends_each_part_to_the_unplaced_box_and_merge_joins_pages(c, did,
     pdf = c.get(f'/api/dossiers/{did}/documents/{now[0]["id"]}/file', headers=H).content
     assert len(PdfReader(io.BytesIO(pdf)).pages) == 2
     assert c.post(f'/api/dossiers/{did}/slots/P-16/merge', json={'doc_ids': [now[0]['id']]}, headers=H).json()['detail']['code'] == 'E-MERGE'
+
+
+def test_a_new_version_keeps_the_attributes_of_the_one_it_replaces_and_an_item_closes_at_once(c, did, tmp_path):
+    """Item 42: a «replace» never loses the leaflet's type and language; «close the item» withdraws all its documents."""
+    from fixtures_pdf import make_pdf_lines
+    pdf1 = make_pdf_lines(tmp_path / 'spc1.pdf', ['Summary of Product Characteristics', 'Dermacure'], 'SmPC').read_bytes()
+    first = c.post(f'/api/dossiers/{did}/slots/M1-09/documents', files={'file': ('smpc.pdf', pdf1, 'application/pdf')},
+                   data={'meta': json.dumps({'pi_type': 'spc', 'lang': 'ar'}), 'title': 'Arabic SmPC'}, headers=H).json()
+    pdf2 = make_pdf_lines(tmp_path / 'spc2.pdf', ['Summary of Product Characteristics', 'Dermacure, updated'], 'SmPC').read_bytes()
+    new = c.post(f'/api/dossiers/{did}/slots/M1-09/documents', files={'file': ('smpc-v2.pdf', pdf2, 'application/pdf')},
+                 data={'meta': '{}', 'replaces': first['id']}, headers=H).json()
+    assert new['meta']['pi_type'] == 'spc' and new['meta']['lang'] == 'ar' and new['title'] == 'Arabic SmPC' and new['version'] == 2
+    pdf_up(c, did, 'P-16', make_pdf_lines(tmp_path / 's.pdf', ['Stability summary, batch one'], 'S').read_bytes(), 's1.pdf')
+    pdf_up(c, did, 'P-16', make_pdf_lines(tmp_path / 't.pdf', ['Stability summary, batch two'], 'S').read_bytes(), 's2.pdf')
+    assert c.post(f'/api/dossiers/{did}/slots/P-16/withdraw-all', headers=H).json() == {'withdrawn': 2}
+    assert current(c, did, 'P-16') == []
+
+
+def test_the_same_product_for_another_country_and_documents_from_another_product(c, did, tmp_path):
+    """Items 21 and 43: a dossier copied to another country takes Modules 2–5 as they are (not Module 1); another product's
+    dossier gives its active substance's sections where substance and manufacturer match; nothing is overwritten."""
+    from fixtures_pdf import make_pdf_lines
+    stab = make_pdf_lines(tmp_path / 'st.pdf', ['Stability summary and conclusion', 'Dermacure, 3 batches'], 'S').read_bytes()
+    spec = make_pdf_lines(tmp_path / 'sp.pdf', ['Specification of Neomycin sulphate', 'Assay 95-105 %'], 'S').read_bytes()
+    comp = make_pdf_lines(tmp_path / 'co.pdf', ['Composition certificate', 'Dermacure per 1 g'], 'S').read_bytes()
+    pdf_up(c, did, slot_of(c, did, 'P-16')['slot_id'], stab, 'stability.pdf')
+    s_spec = slot_of(c, did, 'S-08')['slot_id']
+    pdf_up(c, did, s_spec, spec, 'api-spec.pdf')
+    pdf_up(c, did, slot_of(c, did, 'M1-31')['slot_id'], comp, 'composition.pdf')
+    r = c.post(f'/api/dossiers/{did}/clone', json={'country': 'SA'}, headers=H)
+    assert r.status_code == 201, r.text
+    new = r.json()['id']
+    assert r.json()['pack'] != c.get(f'/api/dossiers/{did}', headers=H).json()['pack'] and r.json()['copied'] == 2
+    names = {d['filename'] for s in c.get(f'/api/dossiers/{new}/board', headers=H).json()['slots'] for d in s['documents']}
+    assert names == {'stability.pdf', 'api-spec.pdf'}                                          # Module 1 stays behind
+    other = c.post('/api/dossiers', json=dict(name='Dermacure cream', profile=PROFILE, product=dict(PRODUCT, dosageform='cream'), envelope={}), headers=H).json()['id']
+    got = c.post(f'/api/dossiers/{other}/copy-from', json={'source': did, 'scope': 'api'}, headers=H).json()
+    assert [x['filename'] for x in got['copied']] == ['api-spec.pdf']                          # only the substance's own sections
+    again = c.post(f'/api/dossiers/{other}/copy-from', json={'source': did, 'scope': 'api'}, headers=H).json()
+    assert again['copied'] == [] and again['kept']                                             # nothing overwritten
+    assert c.post(f'/api/dossiers/{other}/copy-from', json={'source': other}, headers=H).json()['detail']['code'] == 'E-SAME'
+
+
+def test_a_document_is_compared_with_the_version_it_replaced(c, did, tmp_path):
+    """Item 36: what was removed and what was added, with the page."""
+    from fixtures_pdf import make_pdf_lines
+    v1 = make_pdf_lines(tmp_path / 'v1.pdf', ['Stability summary', 'Shelf life: 24 months', 'Store below 30 C'], 'S').read_bytes()
+    v2 = make_pdf_lines(tmp_path / 'v2.pdf', ['Stability summary', 'Shelf life: 36 months', 'Store below 30 C'], 'S').read_bytes()
+    a = pdf_up(c, did, 'P-16', v1, 'stab.pdf')
+    b = c.post(f'/api/dossiers/{did}/slots/P-16/documents', files={'file': ('stab-v2.pdf', v2, 'application/pdf')},
+               data={'meta': '{}', 'replaces': a['id']}, headers=H).json()
+    r = c.get(f"/api/dossiers/{did}/documents/{b['id']}/compare", headers=H).json()
+    assert r['old']['id'] == a['id'] and not r['same']
+    assert [(x['op'], x['text']) for x in r['changes']] == [('removed', 'Shelf life: 24 months'), ('added', 'Shelf life: 36 months')]
+    assert all(x['page'] == 1 for x in r['changes'])
+    assert c.get(f"/api/dossiers/{did}/documents/{a['id']}/compare", headers=H).json()['detail']['code'] == 'E-NO-VERSION'
+
+
+def test_team_notes_on_a_document_are_counted_until_resolved(c, did, tmp_path):
+    """Item 37: a note for the team on a document (with its page), counted on the item and listed by the gate until resolved."""
+    from fixtures_pdf import make_pdf_lines
+    d = pdf_up(c, did, 'P-16', make_pdf_lines(tmp_path / 's.pdf', ['Stability summary and conclusion', 'three batches'], 'S').read_bytes(), 's.pdf')
+    n = c.post(f"/api/dossiers/{did}/documents/{d['id']}/comments", json={'text': 'Check the 6-month data of batch 2', 'page': 3}, headers=H).json()
+    assert n['page'] == 3 and not n['resolved']
+    assert slot_of(c, did, 'P-16')['notes_open'] == 1 and 'P-16' in c.get(f'/api/dossiers/{did}/gate', headers=H).json()['notes_open']
+    c.put(f"/api/dossiers/{did}/comments/{n['id']}", json={'resolved': True}, headers=H)
+    assert slot_of(c, did, 'P-16')['notes_open'] == 0 and c.get(f'/api/dossiers/{did}/gate', headers=H).json()['notes_open'] == []
+    assert c.post(f"/api/dossiers/{did}/documents/{d['id']}/comments", json={'text': ' '}, headers=H).json()['detail']['code'] == 'E-TEXT'
+
+
+def test_a_module_or_the_whole_dossier_as_one_pdf_with_bookmarks(c, did, tmp_path):
+    """Item 38: one PDF for a review or for printing; a bookmark for each module, item and document."""
+    from fixtures_pdf import make_pdf_lines
+    from pypdf import PdfReader
+    pdf_up(c, did, 'P-16', make_pdf_lines(tmp_path / 's.pdf', ['Stability summary and conclusion', 'three batches'], 'S').read_bytes(), 'stab.pdf')
+    pdf_up(c, did, slot_of(c, did, 'M1-31')['slot_id'], make_pdf_lines(tmp_path / 'c.pdf', ['Composition certificate', 'per 1 g'], 'S').read_bytes(), 'comp.pdf')
+    up(c, did, 'P-01', word('Description and composition', 'Dermacure topical powder'), 'p1.docx')
+    r = c.get(f'/api/dossiers/{did}/single.pdf', headers=H)
+    assert r.status_code == 200 and r.content[:5] == b'%PDF-'
+    rd = PdfReader(io.BytesIO(r.content))
+    assert len(rd.pages) == 3 and 'Left out (not PDF)' in rd.pages[0].extract_text() and 'p1.docx' in rd.pages[0].extract_text()
+    top = [o.title for o in rd.outline if not isinstance(o, list)]
+    assert top == ['Module 1', 'Module 3']
+    m3 = c.get(f'/api/dossiers/{did}/single.pdf', params={'module': 3}, headers=H)
+    assert len(PdfReader(io.BytesIO(m3.content)).pages) == 2
+    assert c.get(f'/api/dossiers/{did}/single.pdf', params={'module': 5}, headers=H).status_code == 404

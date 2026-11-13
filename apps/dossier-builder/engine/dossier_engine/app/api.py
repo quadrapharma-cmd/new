@@ -52,10 +52,11 @@ class NewDossier(BaseModel):
 
 
 class ExportReq(BaseModel):
-    outputs: list = ['ctd', 'ectd32', 'ectd40']
+    outputs: list = ['ctd', 'ectd32', 'ectd40']           # this default means «what the authority has»; 'nees' is asked by name
     acknowledge_provisional: bool = False
     working: bool = False        # a working copy: what is in the dossier now + the list of what is missing, whatever the gate says
     submission: dict = None      # follow-on sequence: {type, unit, mode, description, activity, tracking}
+    replace_last: bool = False   # the last sequence was not submitted: this export takes its number (a submitted one never)
 
 
 class GenReq(BaseModel):
@@ -151,7 +152,7 @@ def create_app(workspace, auth_enabled=None):
         name = next(({'en': c['en'], 'ar': c['ar']} for c in _vocab.countries() if c['code'] == code), None) if code else None
         return {'pack': pk.id, 'id': au['id'], 'name': au['name'], 'egypt': pk.egypt, 'verified': pk.meta.get('verified', pk.egypt), 'country': code, 'country_name': name,
                 'questions': pk.questions, 'note': pk.meta.get('note'), 'matrix': pk.matrix_name(), 'columns': pk.meta.get('columns') or {},
-                'title': pk.meta.get('title'), 'sources': pk.meta.get('sources') or [], 'outputs': pk.outputs, 'ectd_region': pk.ectd_region,
+                'title': pk.meta.get('title'), 'sources': pk.meta.get('sources') or [], 'outputs': pk.outputs_for(code), 'ectd_region': pk.ectd_region,
                 'ectd_values': _eu_values() if pk.ectd_region == 'eu' else None}
 
     def _eu_values():
@@ -211,6 +212,48 @@ def create_app(workspace, auth_enabled=None):
         return JSONResponse(status_code=422, content={'detail': {'code': 'E-PROFILE', 'problems': e.problems,
                                                                  'en': str(e), 'ar': '؛ '.join(p['ar'] for p in e.problems)}})
 
+    from .. import backup as _backup
+    app.state.auto_backup = sys.platform != 'emscripten' and os.environ.get('DB_BACKUP', '1') != '0'
+    if app.state.auto_backup:                            # a backup of its own every day, the last seven kept (updates list, item 28)
+        _backup.start_auto(st.root, lambda: bool(st.list_dossiers()))
+
+    def _backups_admin(request):
+        if getattr(request.state, 'role', None) not in (None, 'admin'):
+            err(403, 'E-ROLE', 'Backups are for an administrator.', 'النسخ الاحتياطية للمدير بس.')
+
+    def _backup_named(name):
+        p = _backup.path_of(st.root, name)
+        if not p:
+            err(404, 'E-NOT-FOUND', 'No backup with this name.', 'مفيش نسخة احتياطية بالاسم ده.')
+        return p
+
+    @app.get('/api/backups')
+    def backups(request: Request):
+        """The workspace's backups, newest first, and how the automatic one runs."""
+        _backups_admin(request)
+        return {'items': _backup.listing(st.root), 'auto': app.state.auto_backup, 'every_hours': _backup.EVERY // 3600, 'keep': _backup.KEEP}
+
+    @app.post('/api/backups', status_code=201)
+    def backup_now(request: Request):
+        _backups_admin(request)
+        p = _backup.make(st.root)
+        _backup.prune(st.root)
+        st.audit(None, 'backup.made', name=p.name, size=p.stat().st_size)
+        return {'name': p.name, 'size': p.stat().st_size}
+
+    @app.get('/api/backups/{name}')
+    def backup_file(name: str, request: Request):
+        _backups_admin(request)
+        return FileResponse(_backup_named(name), media_type='application/zip', filename=name)
+
+    @app.post('/api/backups/{name}/drill')
+    def backup_drill(name: str, request: Request):
+        """The restore drill: the backup opened in a fresh folder as a restore would, and checked."""
+        _backups_admin(request)
+        r = _backup.drill(_backup_named(name))
+        st.audit(None, 'backup.drill', name=name, ok=r['ok'], documents=r['documents'])
+        return r
+
     @app.get('/api/health')
     def health():
         return {'ok': True, 'workspace': str(st.root)}
@@ -263,6 +306,34 @@ def create_app(workspace, auth_enabled=None):
         did = st.create_dossier(body.name, body.profile, body.product, env, pack=pack)
         return {'id': did, 'pack': st.dossier(did)['pack'], **st.board(did)['counts']}
 
+    class CloneReq(BaseModel):
+        country: str
+        name: str = None
+
+    @app.post('/api/dossiers/{did}/clone', status_code=201)
+    def clone(did: str, body: CloneReq):
+        """The same product for another country (updates list, item 21): its profile, product and data, and Modules 2–5 as they are;
+        Module 1 is the new authority's own, made in the new dossier."""
+        d = st.dossier(did)
+        pack = _pack_of(None, body.country)
+        env = {k: v for k, v in (d['envelope'] or {}).items() if k in ('applicant', 'invented_name', 'inn')}
+        env['country'] = body.country.strip().upper()
+        new = st.create_dossier(body.name or f"{d['name']} — {env['country']}", d['profile'], d['product'], env, pack=pack)
+        if d['data']:
+            st.set_data(new, d['data'])
+        r = st.copy_documents(new, did, 'm2-5')
+        st.audit(new, 'dossier.cloned', source=did, country=env['country'])
+        return {'id': new, 'pack': st.dossier(new)['pack'], 'copied': len(r['copied']), 'not_here': r['not_here']}
+
+    class CopyReq(BaseModel):
+        source: str
+        scope: str = 'm2-5'
+
+    @app.post('/api/dossiers/{did}/copy-from')
+    def copy_from(did: str, body: CopyReq):
+        """Documents from another product's dossier (updates list, item 43): Modules 2–5, or only the active substances' sections."""
+        return st.copy_documents(did, body.source, body.scope)
+
     @app.get('/api/dossiers/{did}')
     def get_dossier(did: str):
         d = st.dossier(did)
@@ -307,7 +378,21 @@ def create_app(workspace, auth_enabled=None):
         m = json.loads(meta or '{}')
         if isinstance(m, dict):
             m.pop('text', None)                         # an older page sent its reading along: the file's own text is what counts
+        if replaces and isinstance(m, dict):            # the new version keeps what the old one was (a «replace» keeps its attributes)
+            for k in st.ITEM_META:
+                if not m.get(k) and old['meta'].get(k):
+                    m[k] = old['meta'][k]
+            title = title or old['title']
         return st.add_document(did, slot_id, file.filename, data, title, m, supersede=replaces or None)
+
+    @app.post('/api/dossiers/{did}/slots/{slot_id:path}/withdraw-all')
+    def withdraw_all(did: str, slot_id: str):
+        """«Close the item»: every current document of it withdrawn at once (a «delete» each in the next sequence)."""
+        docs = st.documents(did, slot_id)
+        for x in docs:
+            st.withdraw(did, x['id'], 'item closed')
+        st.audit(did, 'slot.closed', slot=slot_id, documents=[x['id'] for x in docs])
+        return {'withdrawn': len(docs)}
 
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/references', status_code=201)
     def add_reference(did: str, slot_id: str, body: dict):
@@ -377,6 +462,67 @@ def create_app(workspace, auth_enabled=None):
     def merge_docs(did: str, slot_id: str, body: MergeReq):
         """Join the item's PDFs into one document, in the order given."""
         return st.merge_documents(did, slot_id, body.doc_ids)
+
+    class RefReq(BaseModel):
+        seq: str
+        href: str
+        output: str = 'ectd32'
+
+    @app.post('/api/dossiers/{did}/slots/{slot_id:path}/reference', status_code=201)
+    def reference(did: str, slot_id: str, body: RefReq):
+        """The item's document from an earlier submitted sequence: referred to there, not sent again (updates list, item 22)."""
+        return st.reference_document(did, slot_id, body.output, body.seq, body.href)
+
+    @app.get('/api/dossiers/{did}/views')
+    def views(did: str, output: str = 'ectd32'):
+        """The submitted dossier four ways: cumulative, by sequence, by activity, by study (updates list, item 23)."""
+        if output not in ('ectd32', 'ectd40'):
+            err(422, 'E-OUTPUT', 'ectd32 or ectd40.', 'ectd32 أو ectd40.')
+        return st.views(did, output)
+
+    @app.get('/api/dossiers/{did}/single.pdf')
+    def single_pdf(did: str, module: int = None):
+        """The whole dossier (or one module) as one PDF for a review or for printing, with a bookmark for every module, item and
+        document (updates list, item 38)."""
+        from .. import pages as _pages
+        d = st.dossier(did)
+        parts, left = [], []
+        for s in sorted((x for x in st.slots(did) if x.active and (module is None or x.module == module)), key=lambda x: (x.module, _sec_key(x.ctd))):
+            for doc in st.documents(did, s.slot_id):
+                if doc['meta'].get('external'):
+                    continue
+                data = st.blob_path(doc['sha256']).read_bytes()
+                if data[:5] != b'%PDF-':
+                    left.append(f"{s.ctd} {doc['filename']}")
+                    continue
+                parts.append((f'Module {s.module}', f"{s.ctd} {s.title['en']}"[:120], doc['title'] or doc['filename'], data))
+        if not parts:
+            err(404, 'E-EMPTY', 'No PDF documents there yet.', 'مفيش مستندات PDF هنا لسه.')
+        title = f"{d['name']} — " + (f'Module {module}' if module else 'the whole dossier')
+        out = _pages.bound(parts, title, left)
+        name = re.sub(r'[^\w.-]+', '_', d['name'])[:60] + (f'-module-{module}' if module else '-dossier') + '.pdf'
+        return Response(out, media_type='application/pdf', headers={'Content-Disposition': f'attachment; filename="{name}"'})
+
+    def _sec_key(sec):
+        return [int(x) if x.isdigit() else x for x in re.split(r'[.\s–-]+', str(sec).split(' (')[0]) if x]
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/comments')
+    def comments(did: str, doc_id: str):
+        return st.comments(did, doc_id)
+
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/comments', status_code=201)
+    def add_comment(did: str, doc_id: str, body: dict):
+        """A note on the document for the team's own review (its page when given)."""
+        return st.add_comment(did, doc_id, body.get('text'), body.get('page'))
+
+    @app.put('/api/dossiers/{did}/comments/{cid}')
+    def resolve_comment(did: str, cid: str, body: dict):
+        return st.resolve_comment(did, cid, bool(body.get('resolved', True)))
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/compare')
+    def compare_versions(did: str, doc_id: str, against: str = None):
+        """What changed from the version this document replaced (or `against`): removed and added lines with their pages."""
+        return st.compare_versions(did, doc_id, against)
 
     @app.get('/api/dossiers/{did}/search')
     def search_docs(did: str, q: str = '', budget: float = 6.0):
@@ -769,6 +915,37 @@ def create_app(workspace, auth_enabled=None):
         data = await file.read()
         return _pkg.validate_files(_package_files(file.filename, data), file.filename)
 
+    @app.get('/api/dossiers/{did}/metadata-sheet.csv')
+    def metadata_sheet(did: str):
+        """The sheet of the dossier's documents (file, item, title, attributes) to fill in Excel and upload again (updates list, item 47)."""
+        from .. import sheet as _sheet
+        st.dossier(did)
+        return Response(('\ufeff' + _sheet.template(st, did)).encode('utf-8'), media_type='text/csv; charset=utf-8',
+                        headers={'Content-Disposition': 'attachment; filename="documents-sheet.csv"'})
+
+    @app.post('/api/dossiers/{did}/metadata-sheet')
+    async def metadata_sheet_apply(did: str, file: UploadFile = File(...), apply: int = 0):
+        """What the filled sheet would do, row by row; with apply=1 it is done (the rows that cannot be done are left as they are)."""
+        from .. import sheet as _sheet
+        st.dossier(did)
+        rows = _sheet.parse(file.filename, await file.read())
+        if not rows:
+            err(422, 'E-SHEET', 'The sheet has no rows under its header (file, item, title, pi_type, lang, study, doc_type, eu_country).',
+                'الشيت مفيهوش صفوف تحت العناوين (file، item، title، pi_type، lang، study، doc_type، eu_country).')
+        steps = _sheet.plan(st, did, rows)
+        out = {'plan': steps, 'counts': {a: sum(1 for p in steps if p['action'] == a) for a in ('place', 'move', 'update', 'none', 'error')}}
+        if apply:
+            out['done'] = _sheet.apply(st, did, steps)
+            st.audit(did, 'sheet.applied', rows=len(rows), done=len(out['done']))
+        return out
+
+    @app.post('/api/dossiers/{did}/import-ectd', status_code=201)
+    async def import_ectd(did: str, file: UploadFile = File(...)):
+        """An application's earlier eCTD sequences (a ZIP) into this dossier: documents into their items, the sequences into its
+        submitted history, so the next sequence continues the lifecycle (updates list, item 24)."""
+        st.dossier(did)
+        return st.import_ectd(did, _package_files(file.filename, await file.read()))
+
     @app.post('/api/package/compare')
     async def package_compare(a: UploadFile = File(...), b: UploadFile = File(...)):
         """What changed from package A to package B (e.g. what we made and what the consultant delivered), sequence by sequence."""
@@ -1035,14 +1212,33 @@ def create_app(workspace, auth_enabled=None):
         app.state.p40 = p40
         ig = Path(__file__).resolve().parents[5] / 'docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip'
         try:
-            return exporter.export(st, did, body.outputs, body.acknowledge_provisional, body.submission, p40, ig, working=body.working)
+            return exporter.export(st, did, body.outputs, body.acknowledge_provisional, body.submission, p40, ig, working=body.working,
+                                   replace_last=body.replace_last)
         except exporter.ExportError as e:
             err(e.status, e.code, e.en, e.ar, **e.extra)
 
     @app.get('/api/dossiers/{did}/submissions')
     def submissions(did: str):
-        return {o: [{k: h[k] for k in ('seq', 'activity', 'envelope', 'created')} | {'documents': len(h['leaves'])}
+        return {o: [{k: h[k] for k in ('seq', 'activity', 'envelope', 'created', 'receipt', 'frozen')} | {'documents': len(h['leaves'])}
                     for h in st.history(did, o)] for o in ('ectd32', 'ectd40')}
+
+    @app.post('/api/dossiers/{did}/submissions/{output}/{seq}/submitted')
+    async def submitted(did: str, output: str, seq: str, meta: str = Form('{}'), file: UploadFile = File(None)):
+        """The sequence went to the authority: the day, the tracking number, the technical acceptance, the decision, the receipt file.
+        From now on it is frozen."""
+        return st.mark_submitted(did, output, seq, json.loads(meta or '{}'), await file.read() if file else None, file.filename if file else None)
+
+    @app.delete('/api/dossiers/{did}/submissions/{output}/{seq}')
+    def discard_seq(did: str, output: str, seq: str):
+        st.discard_sequence(did, output, seq)
+        return {'ok': True}
+
+    @app.get('/api/dossiers/{did}/submissions/{output}/{seq}/receipt')
+    def receipt(did: str, output: str, seq: str):
+        h = next((x for x in st.history(did, output) if str(x['seq']) == seq), None)
+        if not h or not h['receipt'].get('receipt_sha'):
+            err(404, 'E-NO-FILE', 'No receipt file for this sequence.', 'مفيش ملف إيصال للتسلسل ده.')
+        return FileResponse(st.blob_path(h['receipt']['receipt_sha']), filename=h['receipt'].get('receipt_name') or 'receipt.pdf')
 
     @app.get('/api/dossiers/{did}/exports/{exp_id}/{name}')
     def download(did: str, exp_id: str, name: str):

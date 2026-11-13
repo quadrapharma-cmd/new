@@ -16,15 +16,19 @@ from .guard import assert_allowed, LockedError
 from .checks.pdf import LOCKED, check
 
 RULE_TO_OP = {'EG-PF-16.1': 'pdf_version_normalise', 'EG-PF-16.3': 'remove_security', 'PDF-JS': 'remove_javascript',
-              'NTA065-BM': 'add_bookmarks'}
-ORDER = ['remove_security', 'remove_javascript', 'pdf_version_normalise', 'add_bookmarks']
+              'NTA065-BM': 'add_bookmarks', 'PDF-VIEW': 'show_bookmarks', 'PDF-ZOOM': 'inherit_zoom', 'PDF-INFO': 'doc_info'}
+ORDER = ['remove_security', 'remove_javascript', 'pdf_version_normalise', 'add_bookmarks', 'show_bookmarks', 'inherit_zoom', 'doc_info']
 HEADER = re.compile(rb'%PDF-1\.[0-3]')
 HEADING = re.compile(r'^\s*((?:\d{1,2}|[A-Z])(?:\.(?:\d{1,2}|[A-Z])){1,7}\.?|\d{1,2}[.)]|[IVX]{1,4}\.)\s+(\S.{2,90})$')
 LABEL = {'remove_security': ('Security restrictions removed', 'تمت إزالة قيود الحماية'),
          'remove_javascript': ('JavaScript removed', 'تمت إزالة JavaScript'),
          'pdf_version_normalise': ('Version line set to PDF 1.7 (nothing else in the file changed)',
                                    'رقم الإصدار في أول سطر بقى 1.7 (ولا حاجة تانية في الملف اتغيّرت)'),
-         'add_bookmarks': ('Bookmarks added from the document headings', 'تمت إضافة bookmarks من عناوين المستند')}
+         'add_bookmarks': ('Bookmarks added from the document headings', 'تمت إضافة bookmarks من عناوين المستند'),
+         'show_bookmarks': ('Opens with the bookmarks panel', 'بيفتح ولوحة الـ bookmarks ظاهرة'),
+         'inherit_zoom': ('Links keep the reader\'s zoom', 'الروابط بتسيب زووم القارئ'),
+         'doc_info': ('Title and subject set in the document\'s properties', 'العنوان والموضوع اتكتبوا في خصائص المستند')}
+DOC_INFO = {}                                         # the title and subject an apply() call gives the document (set by the caller)
 
 
 def set_version_17(data):
@@ -71,6 +75,24 @@ def _rewrite(src, dst, op):
             del root[NameObject('/OpenAction')]
         if '/AA' in root:
             del root[NameObject('/AA')]
+    if op == 'show_bookmarks':
+        w.page_mode = '/UseOutlines'
+    if op == 'inherit_zoom':
+        from pypdf.generic import NullObject, ArrayObject
+        for pg in w.pages:
+            for a in (pg.get('/Annots') or []):
+                a = a.get_object()
+                if a.get('/Subtype') != '/Link':
+                    continue
+                act = a.get('/A')
+                dest = a.get('/Dest') if a.get('/Dest') is not None else (act.get_object().get('/D') if act is not None else None)
+                d = dest.get_object() if dest is not None and hasattr(dest, 'get_object') else dest
+                if isinstance(d, ArrayObject) and len(d) >= 5 and str(d[1]) == '/XYZ':
+                    d[4] = NullObject()
+    if op == 'doc_info':
+        info = {k: v for k, v in DOC_INFO.items() if v}
+        if info:
+            w.add_metadata(info)
     w.pdf_header = '%PDF-1.7'
     with open(dst, 'wb') as f:
         w.write(f)

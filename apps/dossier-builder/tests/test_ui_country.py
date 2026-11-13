@@ -97,7 +97,7 @@ def test_the_wizard_starts_with_the_country_and_builds_for_its_authority(server)
         assert page.locator('[data-out="ectd32"]').count() == 0
         page.goto(f'{server}/#/d/{did}/export')
         page.wait_for_selector('#ctdOnly')
-        assert page.locator('input[data-out]').count() == 1 and page.locator('input[data-out="ctd"]').count() == 1
+        assert page.locator('input[data-out]').count() == 2 and page.locator('input[data-out="ctd"]').count() == 1 and page.locator('input[data-out="nees"]').count() == 1
         page.screenshot(path=f'{OUT}/country-export.png')
         # the projects list names the country
         page.goto(f'{server}/#/dossiers')

@@ -94,6 +94,16 @@ def ectd_files(files):
     return out
 
 
+def last_tracking(hist):
+    """The envelope fills itself from the sequence before it (updates list, item 44): the same application keeps its tracking /
+    procedure number unless this sequence names another."""
+    for h in reversed(hist or []):
+        tr = (h.get('envelope') or {}).get('tracking')
+        if tr and tr != 'to be advised':
+            return tr
+    return None
+
+
 def next_seq(hist, output):
     if not hist:
         return '0000' if output == 'ectd32' else 1
@@ -149,7 +159,7 @@ def eu_envelope(d, prof, sub, hist, seq, stype, unit, activity, desc, tracking):
                                 legal_basis=(prof.extra or {}).get('eu_legal_basis'))
 
 
-def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
+def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=False):
     """working: a working copy — the CTD folders with what the dossier holds now and the list of what is missing, whatever the gate
     says; never an eCTD sequence, never recorded as a submission."""
     g = st.gate(did)
@@ -160,8 +170,9 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
                           'التصدير متوقف: فيه مستندات مطلوبة ناقصة أو غير مطابقة.', gate=g)
     pk = st.pack(st.dossier(did)['pack'])
     egypt, region = pk.egypt, pk.ectd_region      # the regional eCTD backbone: Egypt's (provisional) and the EU's; others get the CTD folders
+    country = (st.dossier(did).get('envelope') or {}).get('country')
     if list(outputs) == ['ctd', 'ectd32', 'ectd40']:                         # nothing was asked: what this authority has
-        outputs = list(pk.outputs)
+        outputs = list(pk.outputs_for(country))
     elif set(outputs) - set(pk.outputs):
         if region == 'eu':
             raise ExportError(422, 'E-OUTPUT-AUTHORITY', 'eCTD 4.0 is written for Egypt only; an EU dossier exports as CTD folders and eCTD 3.2.2 '
@@ -193,7 +204,9 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
             ext = ext if ext in ('.pdf', '.docx', '.doc', '.rtf', '.odt') else '.pdf'
             p = work / f"{doc['id']}{ext}"
             shutil.copyfile(st.blob_path(doc['sha256']), p)
-            files.setdefault(s.slot_id, []).append({'file': str(p), 'title': doc['title'], **doc['meta'], 'doc_id': doc['id'], 'ext': ext})
+            ref = (doc['meta'].get('reference') or {})
+            files.setdefault(s.slot_id, []).append({'file': str(p), 'title': doc['title'], **doc['meta'], 'doc_id': doc['id'], 'ext': ext,
+                                                    **({'ref': f"../{ref['seq']}/{ref['href']}"} if ref.get('output') == 'ectd32' else {})})
     try:
         files_e = ectd_files(files) if region and {'ectd32', 'ectd40'} & set(outputs) else files      # an eCTD takes PDF only
     except ExportError:
@@ -206,12 +219,30 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
     results, reports, zips, seqinfo, done = {}, {}, {}, {}, []
     lc = st.root / 'lifecycle' / did
     try:
+        if 'nees' in outputs:                           # the eCTD's folders and names with PDF tables of contents (updates list, item 40)
+            from ..writers import nees
+            cc = (env.get('country') or (pk.authority.get('countries') or ['xx'])[0]).lower().replace('*', 'xx')
+            rn = nees.write(base / 'nees', str(sub.get('nees_sequence') or '0000'), slots, files, pr.get('name') or d['name'], cc,
+                            env.get('invented_name') or d['name'])
+            reports['NeeS'] = nees.check(rn['path'])
+            reports['NeeS']['left_out'] = rn['left_out']
+            _zip(Path(rn['path']).parent, Path(rn['path']).name, base / 'nees.zip')
+            results['nees'] = rn['path']
+            zips['nees'] = f'/api/dossiers/{did}/exports/{exp_id}/nees.zip'
+        if 'actd' in outputs:                           # the same content in the ASEAN CTD's four parts (updates list, item 45)
+            from ..writers import actd
+            results['actd'] = actd.write(base / 'actd', d['name'], slots, files)['path']
+            _zip(Path(results['actd']).parent, Path(results['actd']).name, base / 'actd.zip')
+            zips['actd'] = f'/api/dossiers/{did}/exports/{exp_id}/actd.zip'
         if 'ctd' in outputs:
             results['ctd'] = ctd.write(base / 'ctd', d['name'], slots, files)['path']
             _zip(Path(results['ctd']).parent, Path(results['ctd']).name, base / 'ctd.zip')
             zips['ctd'] = f'/api/dossiers/{did}/exports/{exp_id}/ctd.zip'
         for out in [o for o in ('ectd32', 'ectd40') if o in outputs]:
             hist = st.history(did, out)
+            if replace_last and hist and not hist[-1]['frozen']:       # the last one never went: this export takes its number
+                st.discard_sequence(did, out, hist[-1]['seq'])
+                hist = st.history(did, out)
             seq = next_seq(hist, out)
             follow = bool(hist)
             if follow:
@@ -232,11 +263,12 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
             # tracking table rebuilt from the history (M1-44, tool-generated)
             rows = [{'sequence': str(h['seq']), 'related': str(h.get('activity') or ''), 'description': h['envelope'].get('description', ''),
                      'type': h['envelope'].get('type', ''), 'unit': h['envelope'].get('unit', ''),
-                     'date': time.strftime('%Y-%m-%d', time.localtime(h['created'])), 'tracking': env.get('tracking', ''),
+                     'date': time.strftime('%Y-%m-%d', time.localtime(h['created'])), 'tracking': h['envelope'].get('tracking') or env.get('tracking', ''),
                      'status': 'Submitted'} for h in hist]
-            desc = sub.get('description') or (env.get('description') if not follow else stype)
+            desc = sub.get('description') or (env.get('description') if not follow else stype) or (
+                'Initial marketing authorisation application' if not follow else stype)          # the envelope never goes without its description
             rows.append({'sequence': str(seq), 'related': str(activity), 'description': desc, 'type': stype, 'unit': unit,
-                         'date': time.strftime('%Y-%m-%d'), 'tracking': sub.get('tracking') or env.get('tracking', ''),
+                         'date': time.strftime('%Y-%m-%d'), 'tracking': sub.get('tracking') or last_tracking(hist) or env.get('tracking', ''),
                          'status': 'This sequence'})
             tdir = Path(tempfile.mkdtemp())
             letters.tracking_table({'trade_name': env.get('invented_name') or d['name'], 'sequences': rows}, tdir / 'tracking.docx')
@@ -247,12 +279,12 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False):
             tdoc = ectd32.Doc('1.0', str(tpdf), f'Tracking table — sequence {seq}', name='tracking', doc_id=f'tracking-{out}-{seq}')
             docs = docs_ectd + [tdoc]
             if region == 'eu':
-                tracking = [sub.get('tracking') or env.get('tracking') or 'to be advised']
+                tracking = [sub.get('tracking') or last_tracking(hist) or env.get('tracking') or 'to be advised']
                 e = eu_envelope(d, prof, sub, hist, seq, stype, unit, activity, desc, tracking)
                 docs = ectd32_eu.resolve(docs, e)            # each document's country before the plan: one location per document
             steps = plan(hist, docs, current_ids | {tdoc.doc_id})
             if region != 'eu':
-                tracking = [sub.get('tracking') or env['tracking']]
+                tracking = [sub.get('tracking') or last_tracking(hist) or env['tracking']]
             if out == 'ectd32' and region == 'eu':
                 root = lc / 'ectd-3.2.2'
                 r = ectd32_eu.write(root, e, product, to_ectd32(steps))
