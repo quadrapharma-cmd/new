@@ -11,9 +11,11 @@ and company editions (`vendor/pdfcraft/`, never committed). Shipped with it: Pdf
 (written at build time by `tools/pdfcraft/licenses.py`; all permissive: MIT, Apache-2.0, BSD, ISC, Zlib, Unicode-3.0, Unlicense, BSL-1.0).
 The ArtCraft name, wordmark and logos are not covered by PdfCraft's licence and are not used.
 
-**Modified:** the program builds PdfCraft with one change of its own, `tools/pdfcraft/patches/0001-ocr-arabic-and-language-lists.patch`
-(shipped beside the program): its OCR tools accept Tesseract's languages and lists of them («ar+en»); an Arabic or Hebrew word is
-written right to left in the searchable text layer; the words of a right-to-left line share one baseline.
+**Modified:** the program builds PdfCraft with two changes of its own, in `tools/pdfcraft/patches/` (shipped beside the program):
+`0001-ocr-arabic-and-language-lists.patch` — its OCR tools accept Tesseract's languages and lists of them («ar+en»); an Arabic or
+Hebrew word is written right to left in the searchable text layer; the words of a right-to-left line share one baseline.
+`0002-ocr-tesseract-one-thread.patch` — Tesseract reads on one thread unless the caller sets `OMP_THREAD_LIMIT`, which is passed
+through to it (several readings at once no longer slow each other to a standstill).
 
 ## Tesseract OCR — https://github.com/tesseract-ocr/tesseract (Apache-2.0)
 

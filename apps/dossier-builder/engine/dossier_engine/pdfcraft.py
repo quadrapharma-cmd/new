@@ -19,7 +19,7 @@ Where each stage uses it (docs/ctd/PDFCRAFT-INTEGRATION.md):
 
 When the program is not there — the browser edition, or a machine it was not built on — `available()` is False and each stage keeps
 its earlier reading (pypdf), so the program still works and says which engine read the file."""
-import json, os, shutil, subprocess, sys, tempfile
+import json, os, shutil, signal, subprocess, sys, tempfile
 from pathlib import Path
 
 APP = Path(__file__).resolve().parents[2]            # apps/dossier-builder
@@ -148,13 +148,12 @@ class Job:
         script = self.dir / '.steps.json'
         script.write_text(json.dumps(self.steps))
         env = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'USERPROFILE', 'SYSTEMROOT', 'TEMP', 'TMP', 'LANG', 'LC_ALL',
-                                                            'PDFCRAFT_TESSERACT', 'TESSDATA_PREFIX', 'PDFCRAFT_MODELS')}
+                                                            'PDFCRAFT_TESSERACT', 'TESSDATA_PREFIX', 'PDFCRAFT_MODELS', 'OMP_THREAD_LIMIT')}
         tess = tesseract()
         if tess and 'PDFCRAFT_TESSERACT' not in env:
             env['PDFCRAFT_TESSERACT'] = tess                 # Tesseract where its installer puts it, when it is not on the PATH
         try:
-            r = subprocess.run([b, 'run', '--script', str(script), '--root', str(self.dir), '--report'], cwd=self.dir, env=env,
-                               capture_output=True, text=True, timeout=self.timeout)
+            r = _run_tree([b, 'run', '--script', str(script), '--root', str(self.dir), '--report'], self.dir, env, self.timeout)
         except subprocess.TimeoutExpired:
             raise PdfCraftError(f'PdfCraft took longer than {self.timeout} s')
         except OSError as e:
@@ -172,6 +171,28 @@ class Job:
 
     def read(self, name):
         return self.path(name).read_bytes()
+
+
+def _run_tree(cmd, cwd, env, timeout):
+    """Run PdfCraft as the head of its own process group, so a run that takes too long is stopped with every program it started
+    (Tesseract reading a page): killing PdfCraft alone would leave those running on, each taking the processor for nothing."""
+    win = sys.platform == 'win32'
+    p = subprocess.Popen(cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8',
+                         errors='replace', **({'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP | 0x08000000} if win    # no console window
+                                              else {'start_new_session': True}))
+    try:
+        out, err = p.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        try:
+            if win:
+                subprocess.run(['taskkill', '/T', '/F', '/PID', str(p.pid)], capture_output=True, timeout=30, creationflags=0x08000000)
+            else:
+                os.killpg(p.pid, signal.SIGKILL)
+        except (OSError, subprocess.SubprocessError):
+            p.kill()
+        p.communicate()
+        raise
+    return subprocess.CompletedProcess(cmd, p.returncode, out, err)
 
 
 def run(steps, files=None, timeout=TIMEOUT, read=()):

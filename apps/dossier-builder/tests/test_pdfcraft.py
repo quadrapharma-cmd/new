@@ -351,3 +351,25 @@ def test_the_assistant_finds_and_runs_pdfcraft_tools_within_the_rules(client):
     with pytest.raises(T.ToolError):                                                    # another's document: only what keeps its pages as they are
         T.run_tool(ctx, 'pdf_run', {'doc_id': cert['id'], 'steps': [{'tool': 'redact_mark', 'args': {'find': 'EGP'}}, {'tool': 'redact_apply', 'args': {}}],
                                     'save': True, 'rationale': 'test'})
+
+
+@pytest.mark.skipif(not hasattr(__import__('os'), 'killpg'), reason='process groups as on Linux and macOS (Windows: taskkill /T)')
+def test_a_run_that_takes_too_long_is_stopped_with_every_program_it_started(tmp_path):
+    """PdfCraft starts Tesseract for each page. A run stopped for taking too long stops them too: left running on, they took the
+    processor from everything else (13/11/2026)."""
+    import os, subprocess, sys, time
+    pid = tmp_path / 'child.pid'
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):                 # a stand-in for PdfCraft: it starts a long program and waits
+        pdfcraft._run_tree([sys.executable, '-c', 'import subprocess, sys, pathlib; c = subprocess.Popen(["sleep", "60"]); '
+                            f'pathlib.Path({str(pid)!r}).write_text(str(c.pid)); c.wait()'], tmp_path, dict(os.environ), 3)
+    assert time.monotonic() - started < 30
+    child = int(pid.read_text())
+    for _ in range(50):
+        try:
+            os.kill(child, 0)
+        except ProcessLookupError:
+            break
+        time.sleep(0.1)
+    else:
+        pytest.fail(f'the program it started ({child}) is still running')
