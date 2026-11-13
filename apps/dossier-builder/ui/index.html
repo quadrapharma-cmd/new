@@ -362,6 +362,7 @@ const T = {
   pcPrev:{en:'Previous page',ar:'الصفحة اللي قبل'}, pcNext:{en:'Next page',ar:'الصفحة اللي بعد'}, pcOf:{en:'of',ar:'من'},
   pcRedact:{en:'Redact for real',ar:'إخفاء حقيقي'}, pcRedactSub:{en:'The words or phrases you write here are removed from the pages for good (PdfCraft then checks nothing readable is left). The result is a new version; the original is kept.',ar:'الكلمات أو العبارات اللي تكتبها هنا بتتشال من الصفحات نهائي (وبعدها PdfCraft بيتأكد إن مفيش حاجة فاضلة بتتقري). النتيجة نسخة جديدة؛ والأصل محفوظ.'},
   pcRedactPh:{en:'One word or phrase per line',ar:'كلمة أو عبارة في كل سطر'}, pcRedactGo:{en:'Remove them',ar:'شيلهم'},
+  pcWord:{en:'As Word',ar:'حوّله لـ Word'}, pcWordWhy:{en:'An editable Word copy of this PDF, to amend it (the document itself stays as it is)',ar:'نسخة Word تتعدّل من الـ PDF ده، علشان تعدّله (المستند نفسه زي ما هو)'},
   pcReduce:{en:'Make smaller',ar:'صغّر الملف'}, pcReduced:{en:'Smaller: {a} → {b}',ar:'بقى أصغر: {a} ← {b}'},
   pcSign:{en:'Sign (EU)',ar:'وقّع (أوروبا)'}, pcSignSub:{en:'Your digital ID (.p12 or .pfx) and its password are used for this one signature and never kept. EU authorities accept eIDAS signatures; the EDA eCTD does not use them (draft guidance 2.10.3).',ar:'التوقيع الرقمي بتاعك (.p12 أو .pfx) وكلمة السر بتاعته بيُستخدموا للتوقيع ده بس ومش بيتحفظوا. الجهات الأوروبية بتقبل توقيعات eIDAS؛ الـ eCTD بتاع الهيئة مش بيستخدمها (المسودة 2.10.3).'},
   pcSignId:{en:'Digital ID (.p12 / .pfx)',ar:'التوقيع الرقمي (.p12 / .pfx)'}, pcSignPw:{en:'Its password',ar:'كلمة السر بتاعته'}, pcSignWhy:{en:'Reason (optional)',ar:'السبب (اختياري)'}, pcSignGo:{en:'Sign',ar:'وقّع'},
@@ -889,7 +890,12 @@ async function asstAsk(text){ const did=S.dossier&&S.dossier.id; if(!did) return
 window.addEventListener('hashchange', route);
 const fresh = tok => tok===undefined || tok===S.rt;
 function show(tok, html){ if(!fresh(tok)) return false; $('#view').innerHTML = html; return true; }
-async function caps(){ if(!S.caps) S.caps = await api('/capabilities'); if(!S.vocab) vocab(); $('#verTag').textContent = `v${S.caps.version} · ${S.caps.pack.id}`;
+function pcLater(){ /* the browser edition loads PdfCraft beside the engine: its buttons appear when it is ready, without a reload */
+  if(!window.DBWEB||pcLater.on||(S.caps&&S.caps.pdf_engine&&S.caps.pdf_engine.available)) return; pcLater.on=true; let n=0;
+  const tick=async()=>{ n++; try{ const c=await api('/capabilities'); if(c.pdf_engine&&c.pdf_engine.available){ S.caps=c; pcLater.on=false; return; } }catch(e){}
+    if(n<40) setTimeout(tick, 3000); else pcLater.on=false; };
+  setTimeout(tick, 3000); }
+async function caps(){ if(!S.caps){ S.caps = await api('/capabilities'); pcLater(); } if(!S.vocab) vocab(); $('#verTag').textContent = `v${S.caps.version} · ${S.caps.pack.id}`;
   const pe=S.caps.pdf_engine; if(pe) $('#verTag').title = `${t('pcEngine')}: ${pe.engine}${pe.pin?' '+pe.pin.slice(0,7):''}`; return S.caps; }
 
 /* ---------------- home: capabilities + journey + dossiers */
@@ -2221,7 +2227,7 @@ function openWhy(slotId, focusTemplate){
      ${d.meta&&d.meta.external?'':`<button class="btn sm ghost" data-mvany="${d.id}">${icon('arrow',14)} ${esc(t('moveAny'))}</button>`}
      ${d.meta&&d.meta.external||!/\.pdf$/i.test(d.filename)?'':`<button class="btn sm ghost" data-split="${d.id}">${icon('scan',14)} ${esc(t('splitBtn'))}</button>`}
      ${d.version>1&&!(d.meta&&d.meta.external)?`<button class="btn sm ghost" data-cmpv="${d.id}">${icon('repeat',14)} ${esc(t('cmpV'))}</button>`:''}
-     ${pcOn()&&!(d.meta&&d.meta.external)&&/\.pdf$/i.test(d.filename)?`<button class="btn sm ghost" data-pgv="${d.id}">${icon('eye',14)} ${esc(t('pcPages'))}</button>${locked?'':`<button class="btn sm ghost" data-red="${d.id}">${icon('shield',14)} ${esc(t('pcRedact'))}</button><button class="btn sm ghost" data-rdc="${d.id}">${icon('download',14)} ${esc(t('pcReduce'))}</button>${isEU()?`<button class="btn sm ghost" data-sig="${d.id}">${icon('stamp',14)} ${esc(t('pcSign'))}</button>`:''}`}`:''}
+     ${pcOn()&&!(d.meta&&d.meta.external)&&/\.pdf$/i.test(d.filename)?`<button class="btn sm ghost" data-pgv="${d.id}">${icon('eye',14)} ${esc(t('pcPages'))}</button><a class="btn sm ghost" href="/api/dossiers/${S.dossier.id}/documents/${d.id}/export.docx" download title="${esc(t('pcWordWhy'))}">${icon('file',14)} ${esc(t('pcWord'))}</a>${locked?'':`<button class="btn sm ghost" data-red="${d.id}">${icon('shield',14)} ${esc(t('pcRedact'))}</button><button class="btn sm ghost" data-rdc="${d.id}">${icon('download',14)} ${esc(t('pcReduce'))}</button>${isEU()?`<button class="btn sm ghost" data-sig="${d.id}">${icon('stamp',14)} ${esc(t('pcSign'))}</button>`:''}`}`:''}
      <button class="btn sm ghost" data-notes="${d.id}">${icon('pen',14)} ${esc(t('notesT'))}</button><div class="notes" data-noteswrap="${d.id}" hidden></div>
      <button class="btn sm ghost" data-wd="${d.id}">${icon('trash',14)} ${esc(t('withdraw'))}</button></div></div>`).join('')
     + (s.documents.filter(d=>/\.pdf$/i.test(d.filename)&&!(d.meta&&d.meta.external)).length>1?`<div><button class="btn sm" id="mergeBtn">${icon('file',14)} ${esc(t('mergeBtn'))}</button></div>`:'')

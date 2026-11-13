@@ -636,6 +636,30 @@ def create_app(workspace, auth_enabled=None):
         """Apply the allowed automatic fixes; the result is a new version, the original is kept (superseded)."""
         return st.fix_document(did, doc_id)
 
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/export.docx')
+    def export_word(did: str, doc_id: str):
+        """«As Word»: an editable Word copy of a stored PDF (PdfCraft's PDF → Word), to amend a document that exists only as a PDF;
+        the stored document is not changed."""
+        from .. import pdfcraft as _pc
+        d = st.document(doc_id)
+        if d['dossier_id'] != did or d['meta'].get('external'):
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        if not _pc.available():
+            err(409, 'E-PDFCRAFT', 'This needs PdfCraft, which is not ready here yet.', 'ده محتاج PdfCraft، ولسه مش جاهز هنا.')
+        data = st.blob_path(d['sha256']).read_bytes()
+        if data[:5] != b'%PDF-':
+            err(422, 'E-NOT-PDF', 'Only a PDF is turned into Word.', 'الـ PDF بس هو اللي بيتحوّل لـ Word.')
+        try:
+            docx = _pc.to_word(data)
+        except _pc.PdfCraftError as e:
+            err(422, 'E-WORD', f'It could not be turned into Word: {e}'[:300], 'ما اتحوّلش لـ Word.')
+        if not docx:
+            err(422, 'E-WORD', 'It could not be turned into Word.', 'ما اتحوّلش لـ Word.')
+        stem = d['filename'].rsplit('.', 1)[0] if '.' in d['filename'] else d['filename']
+        from urllib.parse import quote
+        return Response(docx, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        headers={'Content-Disposition': f"attachment; filename*=UTF-8''{quote(stem)}.docx"})
+
     @app.post('/api/dossiers/{did}/documents/{doc_id}/split-size')
     def split_size(did: str, doc_id: str):
         """A file over 100 MB cut into parts that fit, in the same item (the original withdrawn, kept in the history)."""

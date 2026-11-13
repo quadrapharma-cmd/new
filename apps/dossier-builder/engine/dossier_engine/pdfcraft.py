@@ -551,6 +551,13 @@ def split_by_size(data, limit_mb=95.0):
     return parts, rep
 
 
+def to_word(data):
+    """An editable Word copy of a PDF (PdfCraft's Export a PDF ▸ Word: its text, headings, bold and italic, tables), for amending a
+    document that exists only as a PDF. The PDF itself is not changed. → .docx bytes, or None."""
+    res, out = run([('doc_open', {'path': 'in.pdf'}), ('doc_export_office', {'doc': 1, 'path': 'out.docx'})], {'in.pdf': data}, read=('out.docx',))
+    return out.get('out.docx')
+
+
 def watermark(data, text, opacity=0.25, color='#b00020'):
     res, out = run([('doc_open', {'path': 'in.pdf'}), ('doc_watermark', {'doc': 1, 'text': text, 'opacity': opacity, 'color': color}),
                     ('doc_save', {'doc': 1, 'path': 'out.pdf'})], {'in.pdf': data}, read=('out.pdf',))

@@ -139,3 +139,17 @@ def test_a_file_over_the_limit_is_cut_into_parts_that_fit(env, monkeypatch, limi
     assert st.document(doc['id'])['state'] == 'withdrawn'
     if parts == 2:                                                                       # cut at the chapters
         assert len(PdfReader(io.BytesIO(got[0])).pages) == 3
+
+
+def test_a_pdf_is_turned_into_an_editable_word_copy(env, tmp_path):
+    """«As Word» (PdfCraft's PDF → Word): an editable copy of a document that exists only as a PDF; the document stays as it is."""
+    from fixtures_pdf import make_pdf_lines
+    c, st, did = env
+    pdf = make_pdf_lines(tmp_path / 'letter.pdf', ['Commitment letter', 'We commit to submit the stability data of batch 23A114.'], 'Letter').read_bytes()
+    doc = st.add_document(did, st.slots(did)[0].slot_id, 'letter.pdf', pdf, doc_class='company_letter')
+    r = c.get(f"/api/dossiers/{did}/documents/{doc['id']}/export.docx")
+    assert r.status_code == 200 and r.content[:2] == b'PK' and 'letter.docx' in r.headers['content-disposition']
+    import docx
+    text = '\n'.join(p.text for p in docx.Document(io.BytesIO(r.content)).paragraphs)
+    assert 'stability data of batch 23A114' in text
+    assert c.get(f"/api/dossiers/{did}/documents/{doc['id']}/file").content == st.blob_path(doc['sha256']).read_bytes()   # unchanged
