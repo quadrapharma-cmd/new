@@ -459,6 +459,12 @@ def page_png(data, page, dpi=96):
     return out.get('page.png')
 
 
+def smaller_enough(old, new):
+    """A copy is kept as «smaller» only when it clearly is: at least 5 % and 4 KB less. Writing a file again changes a few bytes by
+    itself (its dates, its ID) — a copy a few bytes shorter is not a smaller file, and it would only make a needless new version."""
+    return bool(new) and len(new) <= 0.95 * len(old) and len(old) - len(new) >= 4096
+
+
 def reduce(data):
     """A smaller copy (images above 225 ppi brought to 150 ppi and recompressed, as Acrobat's Reduce File Size): (bytes, report)."""
     res, out = run([('doc_open', {'path': 'in.pdf'}), ('doc_reduce', {'doc': 1, 'path': 'out.pdf'})], {'in.pdf': data}, read=('out.pdf',))

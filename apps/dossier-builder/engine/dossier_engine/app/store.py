@@ -1056,7 +1056,7 @@ class Store:
                 note = {'redacted': len(words)}
             elif op == 'reduce_size':
                 out, rep = pc.reduce(data)
-                if not out or len(out) >= len(data):
+                if not pc.smaller_enough(data, out):
                     raise StoreError('E-REDUCE', 'The file cannot be made smaller (its images are already at 150 ppi or below).',
                                      'الملف ما ينفعش يصغر أكتر (صوره 150 نقطة/بوصة أو أقل).')
                 note = {'reduced': [len(data), len(out)]}

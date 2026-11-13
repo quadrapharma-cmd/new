@@ -326,8 +326,9 @@ def _pc_op(cur, nxt, op, findings):
                           'مفيش أي كلام اتقرى من الصفحات (المسح فاضي أو مش واضح): امسحه تاني.')
         Path(nxt).write_bytes(got[0])
     elif op == 'reduce_size':
-        small, rep = pdfcraft.reduce(Path(cur).read_bytes())
-        if not small or len(small) >= Path(cur).stat().st_size:
+        before = Path(cur).read_bytes()
+        small, rep = pdfcraft.reduce(before)
+        if not pdfcraft.smaller_enough(before, small):
             raise Refused('The file cannot be made smaller (its images are already at 150 ppi or below).',
                           'الملف مش هيصغر أكتر من كده (صوره أصلًا 150 نقطة/بوصة أو أقل).')
         Path(nxt).write_bytes(small)
