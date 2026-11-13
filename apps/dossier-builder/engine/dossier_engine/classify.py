@@ -58,8 +58,8 @@ class Classifier:
                 continue
             score, why = 0, []
             for sec in r['secs']:
-                if sec in nums:
-                    score += 6
+                if sec in nums:                          # the section a document prints in its heading decides over the words
+                    score += 10                          # it shares with other items («specification» is said by 1.2.3.2 too)
                     why.append({'en': f'section {sec} in its heading', 'ar': f'رقم البند {sec} في عنوانه'})
             for p in r['phrases']:
                 if p and re.search(r'(?<![a-z])' + re.escape(p) + r'(?![a-z])', tx):

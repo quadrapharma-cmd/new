@@ -9,12 +9,14 @@ ARG BASE=ubuntu:24.04
 FROM rust:1-bookworm AS pdfcraft
 RUN apt-get update && apt-get install -y --no-install-recommends cmake clang git python3 && rm -rf /var/lib/apt/lists/*
 COPY apps/dossier-builder/tools/pdfcraft/PIN apps/dossier-builder/tools/pdfcraft/licenses.py /tmp/
+COPY apps/dossier-builder/tools/pdfcraft/patches /tmp/patches
 RUN git init -q /src && cd /src && git remote add origin https://github.com/storytold/pdfcraft \
     && git fetch -q --depth 1 origin "$(cat /tmp/PIN)" && git -c advice.detachedHead=false checkout -q FETCH_HEAD \
     && test "$(git rev-parse HEAD)" = "$(cat /tmp/PIN)" \
+    && for p in /tmp/patches/*.patch; do git apply --whitespace=nowarn "$p"; done \
     && cargo build --release --locked -p pdfcraft-cli --no-default-features \
     && mkdir /out && cp target/release/pdfcraft-cli LICENSE-MIT LICENSE-APACHE NOTICE ATTRIBUTION.md /out/ && cp -R licenses /out/ \
-    && python3 /tmp/licenses.py /src /out && cp /tmp/PIN /out/PIN
+    && python3 /tmp/licenses.py /src /out && cp /tmp/PIN /out/PIN && cp /tmp/patches/*.patch /out/
 
 FROM ${BASE}
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 DEBIAN_FRONTEND=noninteractive
@@ -22,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       python3 python3-venv ca-certificates \
       libreoffice-writer-nogui fonts-noto-core fonts-dejavu-core \
       ghostscript libxml2-utils pngquant \
+      tesseract-ocr tesseract-ocr-ara tesseract-ocr-eng \
     && rm -rf /var/lib/apt/lists/*
 RUN python3 -m venv /opt/venv
 ENV PATH=/opt/venv/bin:$PATH

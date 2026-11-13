@@ -79,18 +79,25 @@ def test_javascript_removed(tmp_path):
     assert 'PDF-JS' not in {f.rule for f in r['report'].findings}
 
 
-def test_a_scan_is_not_fixed_here(tmp_path):
+def test_a_scan_is_made_searchable_where_pdfcraft_reads_scans(tmp_path):
+    """A scan blocks (NP.CAPP.065 v5 note 4). Where PdfCraft reads scans (OCR) «make searchable» is its fix — and a scan with no words on
+    it is not «fixed»: the fix says so and the document stays as it was. Elsewhere the text layer is made when scanning."""
+    from dossier_engine import pdfcraft
     PIL = pytest.importorskip('PIL.Image')
     from PIL import ImageDraw
     img = PIL.new('RGB', (1240, 1754), 'white')
-    ImageDraw.Draw(img).rectangle([100, 100, 600, 160], fill='black')                # a printed line, as a picture
+    ImageDraw.Draw(img).rectangle([100, 100, 600, 160], fill='black')                # a black bar, as a picture: no words
     p = tmp_path / 'scan.pdf'
     img.save(p, 'PDF', resolution=150)
+    ocr = bool(pdfcraft.ocr_info())
     for cls in ('company_technical', 'third_party_certificate'):
         f = findings(p, cls)
         n4 = [x for x in f if x['rule'] == 'NTA065-N4']
-        assert n4 and n4[0]['severity'] == 'block' and n4[0]['action'] == 'user_fix' and 'searchable' in n4[0]['en'], cls   # the text layer is made when scanning
-        assert 'add_ocr_layer' not in ops_for(f)
+        assert n4 and n4[0]['severity'] == 'block' and 'searchable' in n4[0]['en'], cls
+        assert n4[0]['action'] == ('auto_fix' if ocr else 'user_fix') and (('make_searchable' in ops_for(f)) == ocr)
+        if ocr:
+            out = apply(p, f, cls)
+            assert out['data'] is None and any(r['op'] == 'make_searchable' and 'no text could be read' in r['en'] for r in out['refused'])
 
 
 def test_signed_pdf_never_rewritten(pdf13):

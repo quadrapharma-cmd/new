@@ -1,0 +1,226 @@
+diff --git a/crates/automation/src/a11y/ocr.rs b/crates/automation/src/a11y/ocr.rs
+index 9f21fc2..f96ace1 100644
+--- a/crates/automation/src/a11y/ocr.rs
++++ b/crates/automation/src/a11y/ocr.rs
+@@ -12,13 +12,17 @@ impl Automation {
+             settings.dpi = d.clamp(72.0, 600.0) as f32;
+         }
+         if let Some(l) = a.opt_str("language")? {
+-            if !pdfcraft_engine::ocr::LANGUAGES.iter().any(|x| x.0 == l) {
+-                return Err(ToolError::InvalidArgs(format!(
+-                    "unsupported language {l:?} (supported: {})",
+-                    pdfcraft_engine::ocr::LANGUAGES.iter().map(|(c, _)| *c).collect::<Vec<_>>().join(", ")
+-                )));
++            // A language ocrs reads, or Tesseract's (alone, or several joined by «+», as «ar+en»): every part must be known.
++            let known = |c: &str| {
++                let c = c.trim().to_ascii_lowercase();
++                pdfcraft_engine::ocr::LANGUAGES.iter().any(|x| x.0 == c) || pdfcraft_engine::ocr::TESSERACT_LANGUAGES.iter().any(|x| x.0 == c)
++            };
++            if l.trim().is_empty() || !l.split('+').all(known) {
++                let mut codes: Vec<&str> = pdfcraft_engine::ocr::LANGUAGES.iter().map(|(c, _)| *c).collect();
++                codes.extend(pdfcraft_engine::ocr::TESSERACT_LANGUAGES.iter().map(|(c, _)| *c).filter(|c| *c != "en"));
++                return Err(ToolError::InvalidArgs(format!("unsupported language {l:?} (supported: {}, or several joined by +)", codes.join(", "))));
+             }
+-            settings.language = l.into();
++            settings.language = l.trim().to_ascii_lowercase();
+         }
+         if let Some(e) = a.opt_str("engine")? {
+             settings.engine = match e.trim().to_ascii_lowercase().as_str() {
+diff --git a/crates/automation/src/tools.rs b/crates/automation/src/tools.rs
+index fa29d07..d9313ae 100644
+--- a/crates/automation/src/tools.rs
++++ b/crates/automation/src/tools.rs
+@@ -88,7 +88,17 @@ fn schema(props: Value, required: &[&str]) -> Value {
+ /// The language codes the engines read, as the `language` enum — from the engine's own table,
+ /// so the schema and the validator can never disagree.
+ fn language_enum() -> Value {
+-    Value::Array(pdfcraft_engine::ocr::LANGUAGES.iter().map(|(code, _)| json!(code)).collect())
++    // ocrs reads English; Tesseract (an installed program) the languages of its allow-list, alone or with English («ar+en»)
++    let mut codes: Vec<String> = pdfcraft_engine::ocr::LANGUAGES.iter().map(|(code, _)| (*code).to_string()).collect();
++    for (code, _) in pdfcraft_engine::ocr::TESSERACT_LANGUAGES.iter() {
++        if !codes.iter().any(|c| c == code) {
++            codes.push((*code).to_string());
++        }
++        if *code != "en" {
++            codes.push(format!("{code}+en"));
++        }
++    }
++    Value::Array(codes.into_iter().map(Value::String).collect())
+ }
+ 
+ struct T {
+diff --git a/crates/engine/src/ocr.rs b/crates/engine/src/ocr.rs
+index b2a4717..07c1835 100644
+--- a/crates/engine/src/ocr.rs
++++ b/crates/engine/src/ocr.rs
+@@ -14,6 +14,7 @@ use std::time::{Duration, Instant};
+ use pdfcraft_render::text::TextFilter;
+ use pdfcraft_render::{PageInfo, PageRenderer, RenderConfig, RenderRequest, RequestKind};
+ 
++pub use pdfcraft_ocr::tesseract::{LANGUAGE_CODES as TESSERACT_LANGUAGES, languages_code as tesseract_languages};
+ pub use pdfcraft_ocr::{
+     ConfidenceBand, DETECTION_MODEL, LANGUAGES, Line, MergeStrategy, Models, Ocr, OcrError, OcrImage, PlacedWord, RECOGNITION_MODEL, Recognizer,
+     StrategyOutcome, Word, band_for, is_suspect, lines_from_json, low_confidence,
+@@ -912,7 +913,29 @@ impl OcrShot {
+         };
+         // Validate recognition geometry and compare against existing text in view space,
+         // undoing preprocessing and region offsets before testing overlap.
+-        let (fresh, already): (Vec<_>, Vec<_>) = outcome.lines.iter().flat_map(|l| &l.words).filter(|w| box_writable(w)).partition(|w| {
++        // A right-to-left line keeps one baseline: its words share the line's top and bottom (an Arabic word's box is only as
++        // tall as its ink, and words at different heights would be read back as different lines). Other lines are as read.
++        let rtl = |c: char| matches!(c as u32, 0x0590..=0x08FF | 0xFB1D..=0xFDFF | 0xFE70..=0xFEFF);
++        let lines: Vec<pdfcraft_ocr::Line> = outcome
++            .lines
++            .iter()
++            .map(|l| {
++                if !l.words.iter().any(|w| w.text.chars().any(rtl)) {
++                    return l.clone();
++                }
++                let top = l.words.iter().map(|w| w.rect[1]).fold(f32::INFINITY, f32::min);
++                let bottom = l.words.iter().map(|w| w.rect[3]).fold(f32::NEG_INFINITY, f32::max);
++                let mut line = l.clone();
++                if top.is_finite() && bottom.is_finite() && bottom > top {
++                    for w in &mut line.words {
++                        w.rect[1] = top;
++                        w.rect[3] = bottom;
++                    }
++                }
++                line
++            })
++            .collect();
++        let (fresh, already): (Vec<_>, Vec<_>) = lines.iter().flat_map(|l| &l.words).filter(|w| box_writable(w)).partition(|w| {
+             let [l, t, r, b] = w.rect;
+             let bounds = [(l, t), (r, t), (r, b), (l, b)].into_iter().fold(
+                 [f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY],
+diff --git a/crates/engine/src/ocr/layer.rs b/crates/engine/src/ocr/layer.rs
+index ec2bac5..29a1a3b 100644
+--- a/crates/engine/src/ocr/layer.rs
++++ b/crates/engine/src/ocr/layer.rs
+@@ -30,6 +30,34 @@ pub(crate) fn validate_words<'a>(words: impl IntoIterator<Item = &'a PlacedWord>
+     Ok(count)
+ }
+ 
++/// A right-to-left letter: Hebrew, Arabic (with Syriac, Thaana, NKo, Samaritan, Mandaic and the Arabic extensions) and their
++/// presentation forms.
++fn is_rtl(c: char) -> bool {
++    matches!(c as u32, 0x0590..=0x08FF | 0xFB1D..=0xFDFF | 0xFE70..=0xFEFF)
++}
++
++/// The characters of one recognised word in the order they stand on the page, left to right. A word with a right-to-left letter
++/// is written right to left: its pieces in reverse, each Arabic or Hebrew piece reversed, its numbers and Latin letters left to
++/// right inside it (as the Unicode bidirectional algorithm lays out a word). Any other word is as it was read.
++fn visual_order(text: &str) -> Vec<char> {
++    let chars: Vec<char> = text.chars().collect();
++    if !chars.iter().any(|&c| is_rtl(c)) {
++        return chars;
++    }
++    let ltr = |c: char| c.is_ascii_alphanumeric() || matches!(c as u32, 0x0660..=0x0669 | 0x06F0..=0x06F9);
++    let mut runs: Vec<(bool, Vec<char>)> = Vec::new();
++    for c in chars {
++        let l = ltr(c);
++        let neutral = !l && !is_rtl(c);
++        match runs.last_mut() {
++            Some((kind, run)) if *kind == l || neutral => run.push(c),
++            _ => runs.push((l, vec![c])),
++        }
++    }
++    runs.reverse();
++    runs.into_iter().flat_map(|(l, run)| if l { run } else { run.into_iter().rev().collect() }).collect()
++}
++
+ pub(crate) fn add_text(doc: &mut Document, page: usize, words: &[PlacedWord]) -> Result<(), EditError> {
+     validate_words(words)?;
+     // Keep the existing Latin layout, including Helvetica's proportional advance widths.
+@@ -123,7 +151,7 @@ pub(crate) fn add_text(doc: &mut Document, page: usize, words: &[PlacedWord]) ->
+                 w.origin[1] + at * w.across[1] + 0.2 * w.up[1]
+             ));
+         };
+-        for (i, ch) in w.text.chars().enumerate() {
++        for (i, ch) in visual_order(&w.text).into_iter().enumerate() {
+             let Some(&(font, code)) = codes.get(&ch) else { continue };
+             if let Some(previous) = font_index
+                 && previous != font
+@@ -143,3 +171,18 @@ pub(crate) fn add_text(doc: &mut Document, page: usize, words: &[PlacedWord]) ->
+     pdfcraft_edit::stamp(doc, page, "OCR", content.into_bytes())?;
+     Ok(())
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::visual_order;
++
++    #[test]
++    fn a_right_to_left_word_is_laid_out_as_it_stands_on_the_page() {
++        let v = |s: &str| visual_order(s).into_iter().collect::<String>();
++        assert_eq!(v("Examplol"), "Examplol", "a Latin word stays as it was read");
++        assert_eq!(v("إخطار"), "راطخإ", "an Arabic word right to left");
++        assert_eq!(v("المستحضر:"), ":رضحتسملا", "its colon on its left");
++        assert_eq!(v("34567/2025"), "34567/2025", "a number stays left to right");
++        assert_eq!(v("رقم12"), "12مقر", "a number inside an Arabic word keeps its order");
++    }
++}
+diff --git a/crates/ocr/src/tesseract.rs b/crates/ocr/src/tesseract.rs
+index a4e1407..7b97923 100644
+--- a/crates/ocr/src/tesseract.rs
++++ b/crates/ocr/src/tesseract.rs
+@@ -67,6 +67,22 @@ pub fn language_code(code: &str) -> &'static str {
+     LANGUAGE_CODES.iter().find(|(k, _)| *k == c).map(|(_, v)| *v).unwrap_or("eng")
+ }
+ 
++/// A language list for Tesseract: codes joined by `+` («ar+en», read as Arabic and English together), each one mapped by
++/// [`language_code`]'s allow-list; a part it does not know is dropped (never passed on), repeats are read once, and an empty
++/// result is `"eng"`. Only allow-listed names ever reach the process.
++pub fn languages_code(code: &str) -> String {
++    let mut out: Vec<&'static str> = Vec::new();
++    for part in code.split('+') {
++        let c = part.trim().to_ascii_lowercase();
++        if let Some((_, v)) = LANGUAGE_CODES.iter().find(|(k, _)| *k == c) {
++            if !out.contains(v) {
++                out.push(v);
++            }
++        }
++    }
++    if out.is_empty() { "eng".to_string() } else { out.join("+") }
++}
++
+ /// The user-configured program location, when valid: `$PDFCRAFT_TESSERACT` (a user
+ /// preference, never taken from document data). An invalid value — relative, missing, a
+ /// directory, not executable — means unavailable: an explicit setting is never silently
+@@ -471,7 +487,7 @@ impl Recognizer for TesseractCli {
+ 
+     /// Write the page as a PNG and read it back as TSV.
+     fn recognize(&self, image: &OcrImage, options: &RecognizeOptions) -> Result<Vec<Line>, OcrError> {
+-        let lang = language_code(&options.language);
++        let lang = languages_code(&options.language);
+         let png = encode_png(image)?;
+         let dir = TempDir::create()?;
+         let png_path = dir.path.join("page.png");
+@@ -481,7 +497,7 @@ impl Recognizer for TesseractCli {
+             f.write_all(&png).map_err(|e| OcrError::Process(format!("writing the image failed: {e}")))?;
+         }
+         // Fixed argv, no shell: tesseract <png> stdout -l <lang> tsv.
+-        let tsv = self.run(&[&png_path.to_string_lossy(), "stdout", "-l", lang, "tsv"], self.timeout, self.max_output)?;
++        let tsv = self.run(&[&png_path.to_string_lossy(), "stdout", "-l", &lang, "tsv"], self.timeout, self.max_output)?;
+         let (lines, truncated) = parse_tsv_bounded(&tsv);
+         if truncated {
+             return Err(OcrError::Recognize(format!("the {MAX_WORDS}-word limit was exceeded; the incomplete reading was rejected")));
+@@ -695,6 +711,19 @@ mod tests {
+         }
+     }
+ 
++    #[test]
++    fn language_lists_map_each_part_through_the_allow_list() {
++        assert_eq!(languages_code("ar+en"), "ara+eng");
++        assert_eq!(languages_code(" AR + en + ar "), "ara+eng", "trimmed, case-insensitive, read once");
++        assert_eq!(languages_code("ar"), "ara");
++        assert_eq!(languages_code("ar+klingon"), "ara", "an unknown part is dropped");
++        assert_eq!(languages_code("klingon+;rm"), "eng", "nothing known → eng");
++        assert_eq!(languages_code(""), "eng");
++        for part in languages_code("ar+en+de+;rm -rf+EN/x").split('+') {
++            assert!(LANGUAGE_CODES.iter().any(|(_, v)| *v == part), "{part:?} is not allow-listed");
++        }
++    }
++
+     #[test]
+     fn list_langs_come_from_stderr_when_stdout_has_none() {
+         let listing = "List of available languages in \"/usr/share/tessdata/\" (2):\neng\nosd\n";

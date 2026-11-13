@@ -1238,8 +1238,7 @@ def create_app(workspace, auth_enabled=None):
             text = ''
             try:
                 data = st.blob_path(doc['sha256']).read_bytes()
-                if data[:5] == b'%PDF-':
-                    text = ' '.join(_search.pages_of(doc['filename'], data, max_pages=2))
+                text = _extract.read_text(doc['filename'], data, max_pages=2)['text']      # PdfCraft's reading; a scan read by OCR
             except Exception:
                 pass
             text = text or (doc.get('meta') or {}).get('text') or ''
@@ -1286,6 +1285,95 @@ def create_app(workspace, auth_enabled=None):
         if d0['state'] == 'current':
             st.withdraw(did, doc_id, 'placed')
         return new
+
+    # ---------------- the preparation stage (the owner, 13/11/2026): the documents asked for, each file read (a scan by OCR), its
+    # information kept, placed in its item under the name the dossier gives it, checked, and fixed where it can be
+    def _names(did):
+        """Each placed document's name and place in the dossier: the CTD folders and, where the authority takes one, the eCTD."""
+        d = st.dossier(did)
+        pk = st.pack(d['pack'])
+        out = {}
+        for o in ('ctd', 'ectd32'):
+            if o not in pk.outputs:
+                continue
+            try:
+                for r in preview(did, o)['rows']:
+                    if r.get('path'):
+                        out.setdefault(r['doc_id'], {})[o] = r['path']
+            except Exception:                                  # noqa: BLE001 — a name that cannot be made yet is said by the preview itself
+                pass
+        return out
+
+    def _reading(name, data):
+        """What the program read from a file: the reader (PdfCraft, its OCR, pypdf), pages, and the information it found in it."""
+        r = _extract.read_files([(name, data)])
+        f = r['files'][0]
+        return {'reader': 'ocr' if f.get('ocr') else ('text' if f.get('chars') else 'none'), 'pages': f.get('pages'), 'chars': f.get('chars'),
+                'scanned': bool(f.get('scanned')), 'ocr_language': f.get('ocr_language'), 'kind': f.get('kind'), 'found': f.get('found') or [],
+                'rules': r['rules']}
+
+    @app.get('/api/dossiers/{did}/prepare')
+    def prepare_overview(did: str):
+        """The preparation stage at a glance: the items still asking for a document, the files waiting to be placed (each read — a scan
+        by OCR — with the item it belongs to), and every placed document with what can still be fixed and its name in the dossier."""
+        from .. import pdfcraft as _pc
+        board = st.board(did)
+        names = _names(did)
+        requested = [{'slot_id': s['slot_id'], 'ctd': s.get('ctd'), 'title': s.get('title'), 'level': s.get('level'), 'doc_class': s.get('doc_class')}
+                     for s in board['slots'] if s.get('level') == 'R' and not s.get('documents') and s.get('status') not in ('not_applicable',)]
+        waiting = []
+        for u in unplaced_list(did):
+            doc = st.document(u['id'])
+            rd = _reading(doc['filename'], st.blob_path(doc['sha256']).read_bytes())
+            waiting.append({**u, 'reading': {k: v for k, v in rd.items() if k != 'rules'}})
+        placed = []
+        for s in board['slots']:
+            for doc in s.get('documents') or []:
+                if (doc.get('meta') or {}).get('external'):
+                    continue
+                fx = [f['rule'] for f in doc.get('findings') or [] if f.get('action') == 'auto_fix']
+                left = [{'rule': f['rule'], 'en': f.get('en'), 'ar': f.get('ar'), 'action': f.get('action')}
+                        for f in doc.get('findings') or [] if f.get('severity') == 'block' and f.get('action') != 'auto_fix' and f.get('scope') != 'ectd']
+                placed.append({'id': doc['id'], 'slot_id': s['slot_id'], 'ctd': s.get('ctd'), 'item': s.get('title'), 'filename': doc['filename'],
+                               'original_name': (doc.get('meta') or {}).get('original_name') or doc['filename'], 'version': doc.get('version'),
+                               'status': doc.get('check_status'), 'fixable': fx, 'needs_you': left, 'names': names.get(doc['id'], {}),
+                               'extracted': (doc.get('meta') or {}).get('extracted', {}).get('found', [])})
+        return {'requested': requested, 'waiting': waiting, 'placed': placed, 'engine': _pc.status(), 'ocr': _pc.ocr_info()}
+
+    @app.post('/api/dossiers/{did}/prepare/{doc_id}')
+    def prepare_one(did: str, doc_id: str, body: dict = None):
+        """One file through the preparation stage: placed in its item (the one given, or the one the program is sure of), its information
+        read and kept with it (a scan read by OCR), checked, fixed where the program can (a new version; evidence only where its pages
+        stay the same), and named as the dossier names it. → {document, steps, reading, names, needs_you}."""
+        body = body or {}
+        d0 = st.document(doc_id)
+        if d0['dossier_id'] != did or d0['state'] != 'current':
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        steps, doc = [], d0
+        if not d0.get('slot_id'):                            # a file waiting to be placed
+            slot_id = body.get('slot_id')
+            if not slot_id:
+                u = next((x for x in unplaced_list(did) if x['id'] == doc_id), None)
+                slot_id = u and u.get('auto')
+            if not slot_id:
+                u = next((x for x in unplaced_list(did) if x['id'] == doc_id), None) or {}
+                return {'document': d0, 'steps': ['needs_item'], 'suggestions': u.get('suggestions') or []}
+            doc = place_document(did, doc_id, {'slot_id': slot_id})
+            steps.append('placed')
+        data = st.blob_path(doc['sha256']).read_bytes()
+        rd = _reading(doc['filename'], data)
+        keep = {'found': rd['found'], 'reader': rd['reader'], 'ocr_language': rd['ocr_language'], 'fields': rd['rules']}
+        doc = st.keep_reading(did, doc['id'], keep)
+        steps.append('read_ocr' if rd['reader'] == 'ocr' else 'read')
+        if body.get('fix', True) and any(f.get('action') == 'auto_fix' for f in doc.get('findings') or []):
+            r = st.fix_document(did, doc['id'])
+            if r.get('document'):
+                doc = st.keep_reading(did, r['document']['id'], keep)
+            steps.append({'fixed': [x['op'] for x in r['done']], 'refused': [{'op': x['op'], 'en': x['en'], 'ar': x['ar']} for x in r['refused']]})
+        left = [{'rule': f['rule'], 'en': f.get('en'), 'ar': f.get('ar'), 'action': f.get('action')}
+                for f in doc.get('findings') or [] if f.get('severity') == 'block' and f.get('scope') != 'ectd']
+        return {'document': doc, 'steps': steps, 'reading': {k: v for k, v in rd.items() if k != 'rules'}, 'names': _names(did).get(doc['id'], {}),
+                'needs_you': left}
 
     @app.post('/api/dossiers/{did}/classify')
     async def classify(did: str, files: list[UploadFile] = File(...)):

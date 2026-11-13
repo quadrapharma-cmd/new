@@ -25,8 +25,8 @@ from .checks.pdf import LOCKED, check
 RULE_TO_OP = {'EG-PF-16.1': 'pdf_version_normalise', 'EG-PF-16.3': 'remove_security', 'PDF-JS': 'remove_javascript',
               'NTA065-BM': 'add_bookmarks', 'PDF-VIEW': 'show_bookmarks', 'PDF-ZOOM': 'inherit_zoom', 'PDF-INFO': 'doc_info',
               'PDF-REPAIR': 'repair', 'PDF-ATTACH': 'remove_attachments', 'PDF-ANNOT': 'remove_comments', 'PDF-REDACT': 'apply_redaction',
-              'PDF-SIZE': 'reduce_size'}
-ORDER = ['repair', 'remove_security', 'remove_javascript', 'remove_attachments', 'remove_comments', 'apply_redaction', 'pdf_version_normalise',
+              'PDF-SIZE': 'reduce_size', 'NTA065-N4': 'make_searchable'}
+ORDER = ['repair', 'remove_security', 'make_searchable', 'remove_javascript', 'remove_attachments', 'remove_comments', 'apply_redaction', 'pdf_version_normalise',
          'add_bookmarks', 'show_bookmarks', 'inherit_zoom', 'doc_info', 'reduce_size']
 GUARD_OP = {'apply_redaction': 'redact'}             # the guard's name for an operation, where it differs
 HEADER = re.compile(rb'%PDF-1\.[0-3]')
@@ -44,7 +44,9 @@ LABEL = {'remove_security': ('Security restrictions removed', 'تمت إزالة
          'remove_comments': ('Comments and mark-ups removed', 'التعليقات والعلامات اتشالت'),
          'apply_redaction': ('Redacted for real: the text under the boxes removed for good (PdfCraft checked nothing readable is left)',
                              'إخفاء حقيقي: النص اللي تحت المستطيلات اتشال نهائي (PdfCraft اتأكد إن مفيش حاجة فاضلة بتتقري)'),
-         'reduce_size': ('A smaller file: images above 225 ppi brought to 150 ppi', 'الملف بقى أصغر: الصور اللي فوق 225 نقطة/بوصة بقت 150')}
+         'reduce_size': ('A smaller file: images above 225 ppi brought to 150 ppi', 'الملف بقى أصغر: الصور اللي فوق 225 نقطة/بوصة بقت 150'),
+         'make_searchable': ('Searchable: the pages read (OCR, Arabic and English) and their text added under the image — the page looks the same',
+                             'بقى قابل للبحث: الصفحات اتقرت (OCR عربي وإنجليزي) ونصها اتحط تحت الصورة — شكل الصفحة زي ما هو')}
 DOC_INFO = {}                                         # the title and subject an apply() call gives the document (set by the caller)
 
 
@@ -314,6 +316,13 @@ def _pc_op(cur, nxt, op, findings):
     elif op == 'doc_info':
         info = {k: v for k, v in DOC_INFO.items() if v}
         _pc_job(cur, nxt, [('doc_set_info', {'doc': 1, 'key': k.lstrip('/'), 'value': str(v)}) for k, v in info.items()])
+    elif op == 'make_searchable':
+        got = pdfcraft.ocr(Path(cur).read_bytes())
+        if not got or not got[0]:
+            raise RuntimeError('text recognition (Tesseract with Arabic and English) is not on this machine')
+        if not any(t.strip() for t in got[1]):
+            raise RuntimeError('no text could be read on the pages (a blank or unreadable scan): scan it again')
+        Path(nxt).write_bytes(got[0])
     elif op == 'reduce_size':
         small, rep = pdfcraft.reduce(Path(cur).read_bytes())
         if not small or len(small) >= Path(cur).stat().st_size:
@@ -324,7 +333,7 @@ def _pc_op(cur, nxt, op, findings):
     return True
 
 
-PDFCRAFT_ONLY = {'repair', 'remove_attachments', 'remove_comments', 'apply_redaction', 'reduce_size'}
+PDFCRAFT_ONLY = {'repair', 'remove_attachments', 'remove_comments', 'apply_redaction', 'reduce_size', 'make_searchable'}
 
 
 def apply(path, findings, doc_class):

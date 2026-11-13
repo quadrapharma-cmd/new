@@ -80,7 +80,8 @@ def test_scan_without_text(tmp_path):
     assert check(str(p), 'third_party_certificate').status == 'non_conforming'    # a scanned certificate too: every document searchable (note 4)
     r = check(str(p), 'company_technical')
     assert 'NTA065-N4' in rules(r) and r.status == 'non_conforming'
-    assert next(f for f in check(str(p), 'generated').findings if f.rule == 'NTA065-N4').action == 'rebuild'
+    from dossier_engine import pdfcraft                 # PdfCraft reads scans (OCR): a fix on every kind; elsewhere a generated one is made again
+    assert next(f for f in check(str(p), 'generated').findings if f.rule == 'NTA065-N4').action == ('auto_fix' if pdfcraft.ocr_info() else 'rebuild')
 
 
 def test_portfolio(tmp_path, clean):

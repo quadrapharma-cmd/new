@@ -65,6 +65,21 @@ def available():
     return binary() is not None
 
 
+TESSERACT_PLACES = ('C:/Program Files/Tesseract-OCR/tesseract.exe', 'C:/Program Files (x86)/Tesseract-OCR/tesseract.exe',
+                    '/opt/homebrew/bin/tesseract', '/usr/local/bin/tesseract', '/usr/bin/tesseract')
+
+
+def tesseract():
+    """The Tesseract program PdfCraft's text recognition drives: PDFCRAFT_TESSERACT, the PATH, or where its installers put it
+    (Windows: the UB Mannheim installer; macOS: Homebrew). None when it is not on this machine."""
+    if 'tess' in _found:
+        return _found['tess']
+    env = os.environ.get('PDFCRAFT_TESSERACT')
+    hit = next((c for c in [env, shutil.which('tesseract'), *TESSERACT_PLACES] if c and os.path.isfile(c) and os.access(c, os.X_OK)), None)
+    _found['tess'] = hit
+    return hit
+
+
 def version():
     b = binary()
     if not b:
@@ -132,7 +147,11 @@ class Job:
             raise PdfCraftError('PdfCraft is not available on this machine')
         script = self.dir / '.steps.json'
         script.write_text(json.dumps(self.steps))
-        env = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'USERPROFILE', 'SYSTEMROOT', 'TEMP', 'TMP', 'LANG', 'LC_ALL')}
+        env = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'USERPROFILE', 'SYSTEMROOT', 'TEMP', 'TMP', 'LANG', 'LC_ALL',
+                                                            'PDFCRAFT_TESSERACT', 'TESSDATA_PREFIX', 'PDFCRAFT_MODELS')}
+        tess = tesseract()
+        if tess and 'PDFCRAFT_TESSERACT' not in env:
+            env['PDFCRAFT_TESSERACT'] = tess                 # Tesseract where its installer puts it, when it is not on the PATH
         try:
             r = subprocess.run([b, 'run', '--script', str(script), '--root', str(self.dir), '--report'], cwd=self.dir, env=env,
                                capture_output=True, text=True, timeout=self.timeout)
@@ -417,3 +436,74 @@ def redact(data, words=None, rects=None):
     steps += [('redact_apply', {'doc': 1}), ('doc_save', {'doc': 1, 'path': 'out.pdf', 'full': True})]
     res, out = run(steps, {'in.pdf': data}, read=('out.pdf',))
     return out.get('out.pdf'), {'marks': len(steps) - 3, 'applied': first(res[-2]) or {}}
+
+
+_OCR = {}
+
+
+def ocr_info():
+    """What PdfCraft's text recognition reads here: {'available', 'language' ('ar+en' when Tesseract has Arabic and English,
+    'en' with English alone), 'engine': 'tesseract', 'version'} — or None (no PdfCraft, or no Tesseract). Tesseract is an installed
+    program PdfCraft drives as a separate process (its own fenced runner); the answer is kept for a minute."""
+    import time
+    if not available():
+        return None
+    hit = _OCR.get('info')
+    if hit and time.time() - hit[0] < 60:
+        return hit[1]
+    info = None
+    try:
+        res, _ = run([('ocr_status', {})], timeout=60)
+        st = first(res[0]) or {}
+        tess = next((e for e in st.get('engines') or [] if e.get('id') == 'tesseract' and e.get('available')), None)
+        if tess and tess.get('path'):
+            r = subprocess.run([tess['path'], '--list-langs'], capture_output=True, text=True, timeout=30)
+            langs = set((r.stdout + '\n' + r.stderr).split())
+            lang = 'ar+en' if {'ara', 'eng'} <= langs else 'ar' if 'ara' in langs else 'en' if 'eng' in langs else None
+            if lang:
+                info = {'available': True, 'language': lang, 'engine': 'tesseract', 'version': tess.get('version'),
+                        'arabic': 'ara' in langs}
+    except (PdfCraftError, OSError, subprocess.SubprocessError, ValueError):
+        info = None
+    _OCR['info'] = (time.time(), info)
+    return info
+
+
+def ocr(data, pages=None, timeout=None):
+    """Text recognition by PdfCraft (Tesseract, Arabic and English): the pages are read and their words added as invisible text over
+    the page image — the page looks the same, the document becomes searchable. → (searchable PDF bytes, [text of each page in
+    reading order], {'words', 'pages': [{page, words, skipped?}]}). Pages that already have text are left as they are. None when
+    recognition is not available here."""
+    info = ocr_info()
+    if not info:
+        return None
+    n = page_count(data) or 0
+    want = sorted({int(p) for p in pages if 1 <= int(p) <= n}) if pages else None
+    args = {'doc': 1, 'engine': 'tesseract', 'language': info['language'], 'deskew': True, 'auto_rotate': True}
+    if want:
+        args['pages'] = want
+    t = timeout or min(1800, 60 + 15 * (len(want) if want else max(n, 1)))
+    res, out = run([('doc_open', {'path': 'in.pdf'}), ('ocr_recognize', args), ('doc_save', {'doc': 1, 'path': 'out.pdf', 'full': True})],
+                   {'in.pdf': data}, timeout=t, read=('out.pdf',))
+    rep = first(res[1]) or {}
+    made = out.get('out.pdf')
+    texts = page_texts(made, max_pages=max(want) if want else None) if made else None
+    return made, texts or [], rep
+
+
+def image_to_pdf(data, name='image'):
+    """An image (PNG, JPEG, TIFF, GIF, BMP, JPEG 2000) made into a PDF page by PdfCraft. None when it cannot be."""
+    if not available():
+        return None
+    ext = (name.rsplit('.', 1)[-1].lower() if '.' in name else 'png')[:5]
+    try:
+        with Job() as j:
+            j.put(f'in.{ext}', data)                         # doc_combine takes two or more inputs: the image twice, then one page off
+            j.steps.append({'tool': 'doc_combine', 'args': {'paths': [f'in.{ext}', f'in.{ext}'], 'out': 'two.pdf', 'open': False}})
+            j.step('doc_open', path='two.pdf')
+            j.step('page_delete', doc=1, pages=[2])
+            j.step('doc_save', doc=1, path='out.pdf', full=True)
+            j.run()
+            return j.read('out.pdf')
+    except (PdfCraftError, OSError):
+        return None

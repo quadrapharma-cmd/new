@@ -9,12 +9,12 @@ CONTENT_OPS = {'edit_text', 'redact', 'replace_page', 'retype', 'regenerate', 'c
                'remove_signature', 'flatten_annotations', 'remove_pages', 'move_pages'}
 TECH_OPS = {'rename', 'place', 'split_pages', 'merge_files', 'add_bookmarks', 'set_initial_view', 'linearise',
             'remove_security', 'pdf_version_normalise', 'remove_javascript', 'show_bookmarks', 'inherit_zoom', 'doc_info',
-            'repair', 'remove_attachments', 'remove_comments', 'reduce_size', 'rotate_pages'}
+            'repair', 'remove_attachments', 'remove_comments', 'reduce_size', 'rotate_pages', 'make_searchable'}
 # technical, but only the issuer may do them on evidence (they change how the document behaves, or what is in it)
 COMPANY_ONLY = {'remove_security', 'remove_javascript', 'remove_attachments', 'remove_comments', 'reduce_size'}
 # executed records: scan placement only (02-LOGIC §6); a damaged file's clean copy changes nothing on a page (it is compared page for page)
 EXECUTED_OPS = {'rename', 'place', 'add_bookmarks', 'pdf_version_normalise', 'show_bookmarks', 'inherit_zoom', 'doc_info', 'repair',
-                'rotate_pages'}                       # a scan turned the right way up: placement, not content   # nothing on a page changes      # the version line alone (fixes.set_version_17: every other byte the same)
+                'rotate_pages', 'make_searchable'}            # an invisible text layer: the page itself is compared to look the same                       # a scan turned the right way up: placement, not content   # nothing on a page changes      # the version line alone (fixes.set_version_17: every other byte the same)
 
 
 class LockedError(PermissionError):

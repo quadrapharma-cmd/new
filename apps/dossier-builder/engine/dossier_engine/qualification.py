@@ -100,6 +100,20 @@ def _raw_pdf(stream):
     return bytes(o + b'trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n' % (len(objs) + 1, xr))
 
 
+def _scan_of(pdf_path):
+    """The first page of a PDF as a scan would be: drawn by PdfCraft at 200 dpi and saved as an image-only PDF."""
+    from . import pdfcraft
+    try:
+        from PIL import Image
+        import io as _io
+        png = pdfcraft.page_png(Path(pdf_path).read_bytes(), 1, 200)
+        buf = _io.BytesIO()
+        Image.open(_io.BytesIO(png)).convert('L').save(buf, 'PDF', resolution=200)
+        return buf.getvalue()
+    except Exception:                                    # noqa: BLE001
+        return None
+
+
 def _pdf(path, lines):
     from .generate.docx_kit import text_pdf
     text_pdf(lines, path)
@@ -124,14 +138,23 @@ def oq():
         doc = st.add_document(did, 'P-16', 'stability.pdf', good.read_bytes(), None, {})
         same = st.blob_path(doc['sha256']).read_bytes() == good.read_bytes() or hashlib.sha256(st.blob_path(doc['sha256']).read_bytes()).hexdigest() == doc['sha256']
         _row(rows, 'OQ-02', 'A document is stored whole, under the SHA-256 of what is kept', 'file kept, fingerprint matches', f'{doc["filename"]} · {doc["sha256"][:16]}…', same)
-        blank = tmp / 'blank.pdf'
         from pypdf import PdfWriter
-        w = PdfWriter(); w.add_blank_page(595, 842); w.write(str(blank))
-        try:
-            st.add_document(did, 'P-15', 'scan.pdf', blank.read_bytes(), None, {})
-            _row(rows, 'OQ-03', 'A PDF without text is refused at upload (negative control)', 'refused (E-NOTEXT)', 'accepted', False)
-        except StoreError as e:
-            _row(rows, 'OQ-03', 'A PDF without text is refused at upload (negative control)', 'refused (E-NOTEXT)', e.code, e.code == 'E-NOTEXT')
+        from . import pdfcraft
+        scan = _scan_of(good) if pdfcraft.available() else None
+        if scan is None:                                  # no PdfCraft here: a page without text, which no edition here can read
+            blank = tmp / 'blank.pdf'
+            w = PdfWriter(); w.add_blank_page(595, 842); w.write(str(blank))
+            scan = blank.read_bytes()
+        d3 = st.add_document(did, 'P-15', 'scan.pdf', scan, None, {})
+        n4 = next((f for f in d3['findings'] if f['rule'] == 'NTA065-N4'), None)
+        if pdfcraft.ocr_info():                           # kept, flagged, read and made searchable by the fix (OCR, Arabic and English)
+            fixed = st.fix_document(did, d3['id'])
+            ok = bool(n4) and n4['action'] == 'auto_fix' and bool(fixed['document']) and 'NTA065-N4' not in {f['rule'] for f in fixed['document']['findings']}
+            _row(rows, 'OQ-03', 'A scanned PDF (no text layer) is kept, flagged, and made searchable by its fix (PdfCraft OCR)',
+                 'NTA065-N4 then searchable', f"{n4 and n4['action']} · fixed: {[x['op'] for x in fixed['done']]}", ok)
+        else:
+            _row(rows, 'OQ-03', 'A PDF without text is kept and flagged (no OCR on this machine)', 'NTA065-N4 block',
+                 n4 and f"{n4['severity']} · {n4['action']}" or 'not flagged', bool(n4) and n4['severity'] == 'block')
         js = tmp / 'js.pdf'
         from pypdf import PdfReader
         w = PdfWriter(clone_from=PdfReader(str(good))); w.add_js('app.alert(1);'); w.write(str(js))

@@ -16,7 +16,7 @@ from . import storage
 APPROVAL = {'export_dossier', 'sign_review', 'withdraw_document'}
 WRITES = APPROVAL | {'draft_document', 'put_data', 'set_profile', 'place_document', 'generate_document', 'run_review', 'act_on_finding',
                      'add_response', 'reassess_finding', 'make_review_letter', 'request_reissue', 'save_reading',
-                     'record_document_review', 'amend_document', 'amendment_memo', 'drive_fetch'}
+                     'record_document_review', 'amend_document', 'amendment_memo', 'drive_fetch', 'pdf_run'}
 MAX_TEXT = 60_000          # characters of document text returned per call
 MAX_PAGES = 20             # pages attached per call
 MAX_ATTACH = 24_000_000    # bytes of PDF attached per call
@@ -180,7 +180,62 @@ SPECS = [
     {'name': 'withdraw_document', 'description': 'Withdraw a document from its item (kept in history, can be restored). REQUIRES THE USER\'S APPROVAL.',
      'input_schema': _obj('withdrawal', {'doc_id': S('document id'), 'reason': S('why')}, ['doc_id', 'reason'])},
 ]
+SPECS += [
+    {'name': 'pdf_tools', 'description': "PdfCraft, the program's PDF engine: find its tools for a task (about 200: reading text in order, finding "
+                                         "phrases with their places, page images, fonts, bookmarks, links, comments, signatures, redaction, OCR, page "
+                                         "operations, optimisation…). Returns each tool's name, what it does, whether it only reads, and its arguments. "
+                                         "Then run them on a document with pdf_run.",
+     'input_schema': _obj('what to do', {'query': S('words for the task, e.g. "find text", "bookmarks", "fonts", "ocr", "rotate"'),
+                                         'limit': I('how many tools, at most 15 (default 8)')}, ['query'])},
+    {'name': 'pdf_run', 'description': "Run PdfCraft tools on one stored document (it is opened as document 1: pass \"doc\": 1). Tools that only read "
+                                       "(text_extract, text_find, doc_info, link_list, comment_list, sign_list, doc_audit_redactions, …) return their "
+                                       "results. Tools that change the document are applied only with save: true, and only on the company's own "
+                                       "documents — the result is stored as a new version (the original kept); third-party, EDA and executed documents "
+                                       "take only changes that leave their pages looking the same (OCR text layer, bookmarks, how it opens, a page "
+                                       "turned). JavaScript, printing, signing and file paths are not available here.",
+     'input_schema': _obj('document and steps', {
+         'doc_id': S('document id from get_board / get_slot'),
+         'steps': {'type': 'array', 'description': 'tools in order: [{"tool": "<name>", "args": {"doc": 1, ...}}] (at most 40)',
+                   'items': {'type': 'object', 'properties': {'tool': {'type': 'string'}, 'args': {'type': 'object', 'additionalProperties': True}},
+                             'required': ['tool'], 'additionalProperties': False}},
+         'save': B('true → store the changed document as a new version'),
+         'rationale': S('why (kept in the audit trail)')}, ['doc_id', 'steps'])},
+]
 BY_NAME = {t['name']: t for t in SPECS}
+
+# PdfCraft for the Assistant: what it may run. Reading tools, except the ones that run a document's JavaScript; changing tools from this
+# list only, on the company's own documents; on evidence, only those that leave the pages looking the same.
+PDF_DENY = ('js_', 'print', 'printer', 'sign_', 'doc_open', 'doc_close', 'doc_save', 'doc_combine', 'doc_create', 'doc_export', 'doc_print',
+            'page_insert_file', 'attachment_add', 'image_save', 'measure_export', 'bookmark_export', 'bookmark_import', 'ocr_dictionary',
+            'ocr_recognize_files', 'text_font_import', 'model_add', 'command_', 'action_run', 'ui', 'doc_batch', 'doc_bates_multi')
+PDF_CHANGE = {'page_rotate', 'page_delete', 'page_move', 'page_number', 'bookmark_add', 'bookmark_delete', 'bookmark_rename', 'bookmark_move',
+              'bookmark_set_page', 'bookmark_set_style', 'bookmark_from_structure', 'bookmark_from_text_styles', 'doc_set_info', 'doc_initial_view',
+              'link_add', 'link_edit', 'link_delete', 'redact_mark', 'redact_apply', 'redact_clear', 'doc_remove_hidden', 'doc_unprotect',
+              'ocr_recognize', 'page_enhance_scan', 'text_replace', 'text_edit', 'doc_header_footer', 'form_fill', 'doc_flatten'}
+PDF_EVIDENCE_OK = {'ocr_recognize', 'bookmark_add', 'bookmark_delete', 'bookmark_rename', 'bookmark_move', 'bookmark_set_page',
+                   'bookmark_set_style', 'bookmark_from_structure', 'bookmark_from_text_styles', 'doc_initial_view', 'page_rotate'}
+_PDF_CATALOGUE = {}
+
+
+def _pdf_catalogue():
+    from .. import pdfcraft
+    if 'tools' not in _PDF_CATALOGUE:
+        import subprocess
+        b = pdfcraft.binary()
+        if not b:
+            raise ToolError('PdfCraft is not on this machine (the browser edition reads PDFs another way): use read_document.')
+        r = subprocess.run([b, 'tools'], capture_output=True, text=True, timeout=60)
+        _PDF_CATALOGUE['tools'] = {t['name']: t for t in json.loads(r.stdout)}
+    return _PDF_CATALOGUE['tools']
+
+
+def _pdf_allowed(name):
+    t = _pdf_catalogue().get(name)
+    if t is None or name.startswith(PDF_DENY) or name in PDF_DENY:
+        return None
+    if not t.get('read_only') and name not in PDF_CHANGE:
+        return None
+    return t
 
 
 # ---------------- helpers
@@ -244,6 +299,74 @@ def _merge(base, patch):
         else:
             out[k] = v
     return out
+
+
+# ---------------- PdfCraft
+def t_pdf_tools(ctx, query, limit=8):
+    words = [w for w in re.findall(r'[a-z0-9]+', (query or '').lower()) if len(w) > 1]
+    scored = []
+    for name, t in _pdf_catalogue().items():
+        if not _pdf_allowed(name):
+            continue
+        hay = (name + ' ' + (t.get('description') or '')).lower()
+        sc = sum(3 if w in name else 1 for w in words if w in hay)
+        if sc:
+            scored.append((sc, name, t))
+    scored.sort(key=lambda x: (-x[0], x[1]))
+    out = []
+    for _, name, t in scored[:max(1, min(int(limit or 8), 15))]:
+        props = (t.get('input_schema') or {}).get('properties') or {}
+        out.append({'name': name, 'reads_only': bool(t.get('read_only')), 'does': (t.get('description') or '')[:600],
+                    'args': {k: (v.get('description') or v.get('type') or '')[:160] if isinstance(v, dict) else '' for k, v in props.items()},
+                    'required': (t.get('input_schema') or {}).get('required') or []})
+    return {'tools': out, 'note': 'Run them with pdf_run on a document (doc 1).'}
+
+
+def t_pdf_run(ctx, doc_id, steps, save=False, rationale=None):
+    from .. import pdfcraft
+    from ..checks.pdf import LOCKED
+    d = ctx.st.document(doc_id)
+    if d['dossier_id'] != ctx.did or d['state'] != 'current':
+        raise ToolError('document not found in this dossier')
+    data = ctx.st.blob_path(d['sha256']).read_bytes()
+    if data[:5] != b'%PDF-':
+        raise ToolError('PdfCraft works on PDF documents; this one is not a PDF')
+    steps = list(steps or [])[:40]
+    run, changing = [('doc_open', {'path': 'in.pdf'})], []
+    for st_ in steps:
+        name = str((st_ or {}).get('tool') or '')
+        if not _pdf_allowed(name):
+            raise ToolError(f'{name}: not a PdfCraft tool the Assistant may run here (see pdf_tools)')
+        args = dict((st_ or {}).get('args') or {})
+        args['doc'] = 1
+        if any(isinstance(v, str) and ('/' in v or '\\' in v) and k in ('path', 'out', 'file', 'out_dir', 'folder') for k, v in args.items()):
+            raise ToolError(f'{name}: file paths are not available here')
+        if not _pdf_catalogue()[name].get('read_only'):
+            changing.append(name)
+        run.append((name, args))
+    locked = d['doc_class'] in LOCKED
+    if changing and save:
+        if locked and set(changing) - PDF_EVIDENCE_OK:
+            raise ToolError('only its issuer may change this document (third-party, EDA or executed): ' + ', '.join(sorted(set(changing) - PDF_EVIDENCE_OK)))
+        run.append(('doc_save', {'doc': 1, 'path': 'out.pdf', 'full': True}))
+    try:
+        res, out = pdfcraft.run(run, {'in.pdf': data}, read=('out.pdf',) if changing and save else ())
+    except pdfcraft.PdfCraftError as e:
+        raise ToolError(f'PdfCraft: {e}'[:900])
+    results = [{'tool': n, 'result': r} for (n, _), r in zip(run[1:], res[1:])]
+    text = json.dumps(results, ensure_ascii=False)
+    reply = {'results': json.loads(text) if len(text) <= 40000 else text[:40000] + ' …(cut)'}
+    if changing and not save:
+        reply['note'] = 'Nothing was kept: run again with save: true to store the changed document as a new version.'
+    if changing and save:
+        new = out.get('out.pdf')
+        if locked and 'page_rotate' not in changing and pdfcraft.same_pixels(data, new) is not True:
+            raise ToolError('the pages would not look the same as the original: nothing was kept')
+        doc = ctx.st.add_document(ctx.did, d['slot_id'], d['filename'], new, d['title'], {**d['meta'], 'pdfcraft': 'assistant', 'from': doc_id,
+                                                                                            'tools': changing}, supersede=doc_id, doc_class=d['doc_class'])
+        ctx.st.audit(ctx.did, 'document.pdfcraft', doc=doc_id, new=doc['id'], tools=changing, rationale=rationale)
+        reply['saved'] = {'doc_id': doc['id'], 'version': doc['version'], 'status': doc['check_status']}
+    return reply
 
 
 # ---------------- executors

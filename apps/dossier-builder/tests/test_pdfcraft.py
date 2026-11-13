@@ -326,3 +326,28 @@ def test_the_teams_notes_go_on_the_pages_of_a_copy(client):
     assert (1, 'Check the assay limits') in found and (2, 'Price must not be here') in found
     kept = client.get(f"/api/dossiers/{did}/documents/{doc['id']}/file").content       # the filed document carries no comments
     assert not (pdfcraft.query(kept, [('comment_list', {})])['comment_list'].get('comments') or [])
+
+
+@pc
+def test_the_assistant_finds_and_runs_pdfcraft_tools_within_the_rules(client):
+    from types import SimpleNamespace
+    from dossier_engine.assistant import tools as T
+    did = client.post('/api/dossiers', json=dict(name='Dermacure', profile=GENERIC, product=PRODUCT, envelope=ENV)).json()['id']
+    doc = upload(client, did, raw_pdf(BODY + SECRET))
+    ctx = SimpleNamespace(st=client.app.state.store, did=did)
+    found = T.run_tool(ctx, 'pdf_tools', {'query': 'find text'})
+    names = [t['name'] for t in json.loads(found['content'])['tools']]
+    assert 'text_find' in names and not any(n.startswith('js_') for n in names)
+    r = T.run_tool(ctx, 'pdf_run', {'doc_id': doc['id'], 'steps': [{'tool': 'text_find', 'args': {'query': 'confidential price'}}]})
+    body = json.loads(r['content'])
+    assert body['results'][0]['result'][0]['count'] == 1
+    r = T.run_tool(ctx, 'pdf_run', {'doc_id': doc['id'], 'steps': [{'tool': 'page_rotate', 'args': {'degrees': 90}}], 'save': True, 'rationale': 'test'})
+    body = json.loads(r['content'])
+    assert body['saved']['version'] == doc['version'] + 1
+    with pytest.raises(T.ToolError):
+        T.run_tool(ctx, 'pdf_run', {'doc_id': body['saved']['doc_id'], 'steps': [{'tool': 'js_run', 'args': {'script': 'app.alert(1)'}}]})
+    tp = next(s['slot_id'] for s in client.get(f'/api/dossiers/{did}/board').json()['slots'] if s['doc_class'] == 'third_party_certificate')
+    cert = upload(client, did, raw_pdf(BODY + SECRET), 'gmp.pdf', tp)
+    with pytest.raises(T.ToolError):                                                    # another's document: only what keeps its pages as they are
+        T.run_tool(ctx, 'pdf_run', {'doc_id': cert['id'], 'steps': [{'tool': 'redact_mark', 'args': {'find': 'EGP'}}, {'tool': 'redact_apply', 'args': {}}],
+                                    'save': True, 'rationale': 'test'})

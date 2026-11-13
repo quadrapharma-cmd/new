@@ -174,7 +174,7 @@ def is_word(filename, data=None):
 
 # ---- a file is read once: its reading is kept by the file's SHA-256, in memory and in the workspace's cache folder
 READ_DIR = None            # set by the app (workspace/cache/text): a restart, or the next item's template, does not read the file again
-READ_FORMAT = 4            # the reader's own version: raise it when what a reading holds changes, so that readings kept on disk by an older reader are made again (3: no OCR; 4: PdfCraft reads the PDFs)
+READ_FORMAT = 5            # the reader's own version: raise it when what a reading holds changes, so that readings kept on disk by an older reader are made again (3: no OCR; 4: PdfCraft reads the PDFs; 5: PdfCraft reads scans too)
 _READ = {}                 # (sha, extension, max_pages) → the reading
 _READ_MAX = 300
 
@@ -192,7 +192,9 @@ def read_text(name, data, max_pages=12):
     """What one uploaded file says — read once: the same bytes asked the same way give the kept reading (see _read_text)."""
     data = data or b''
     from . import pdfcraft
-    key = (_sha(data), (name or '').lower().rsplit('.', 1)[-1][:6] if '.' in (name or '') else '', max_pages, pdfcraft.reader())
+    ocr = pdfcraft.ocr_info()
+    key = (_sha(data), (name or '').lower().rsplit('.', 1)[-1][:6] if '.' in (name or '') else '', max_pages, pdfcraft.reader(),
+           (ocr or {}).get('language') or 'no-ocr')
     if key in _READ:
         return dict(_READ[key])
     f = _cache_file(key)
@@ -219,8 +221,8 @@ def read_text(name, data, max_pages=12):
 def has_text(name, data):
     """The upload gate's question — NP.CAPP.065 v5 general note 4: «All submitted documents should be scanned and searchable PDF
     files». None when the file has text of its own (a PDF with a text layer, Word, Excel…); else why not: 'image' (a photo or an
-    image file) or 'scan' (a PDF whose pages are images only). The program does no OCR: the text layer is made when the paper is
-    scanned (the scanner's software, Acrobat, a phone app that saves searchable PDFs)."""
+    image file) or 'scan' (a PDF whose pages are images only). Such a file is kept, not refused: PdfCraft reads it (OCR, Arabic and
+    English) and the «make searchable» fix adds its text layer; where PdfCraft is not (the browser edition) the item says what to do."""
     r = read_text(name, data)
     if r['kind_of_file'] == 'image':
         return 'image'
@@ -240,9 +242,15 @@ def _read_text(name, data, max_pages=12):
     img = arabic.image_type(data)
     if data[:4] == b'%PDF' or what == 'pdf' or (low.endswith('.pdf') and what in ('other', 'text')):
         out.update(pdf_text(data, max_pages), kind_of_file='pdf')
+        if out.get('scanned'):                           # pages that are images: PdfCraft reads them (OCR, Arabic and English) where it can
+            _ocr_into(out, data, max_pages)
     elif img or what == 'image':                         # an image of any kind (imagefiles): no text of its own
         fmt = imagefiles.image_format(data)
         out.update(pages=imagefiles.tiff_pages(data) if fmt == 'tiff' else 1, scanned=True, kind_of_file='image')
+        from . import pdfcraft
+        page = pdfcraft.image_to_pdf(data, name or 'image.png') if pdfcraft.ocr_info() else None
+        if page:
+            _ocr_into(out, page, max_pages)
     elif what in ('docx', 'doc'):                        # Word, new or old: its paragraphs and tables
         out.update(pages=1, text=docx_text(data) if what == 'docx' else msdoc.doc_text(data), kind_of_file='docx')
     elif what in officefiles.OFFICE:                     # Excel, PowerPoint, OpenDocument, RTF, HTML, plain text — old formats and new
@@ -250,6 +258,30 @@ def _read_text(name, data, max_pages=12):
     out['text'] = arabic.prepare(out['text'])
     out['arabic'] = arabic.has_arabic(out['text'])
     return out
+
+
+def _ocr_into(out, pdf, max_pages):
+    """The text PdfCraft's recognition reads from a PDF whose pages are images (Tesseract: Arabic and English): the reading of a scan
+    for its information. The file itself is not changed here — making it searchable is a fix (fixes «make_searchable»)."""
+    from . import pdfcraft
+    info = pdfcraft.ocr_info()
+    if not info:
+        return
+    key = (_sha(pdf), max_pages, info['language'])     # one recognition per file, whatever name it comes under
+    if key not in _OCR_READ:
+        try:
+            got = pdfcraft.ocr(pdf, pages=list(range(1, max_pages + 1)) if max_pages else None)
+        except pdfcraft.PdfCraftError:
+            got = None
+        if len(_OCR_READ) >= 64:
+            _OCR_READ.pop(next(iter(_OCR_READ)))
+        _OCR_READ[key] = got[1] if got else None
+    texts = _OCR_READ[key]
+    if texts and any(t.strip() for t in texts):
+        out.update(text='\n'.join(texts), ocr=True, reader='pdfcraft-ocr', ocr_language=info['language'])
+
+
+_OCR_READ = {}
 
 
 AR_CLITIC = '(?:ال|وال|بال|فال|لل|و|ب|ل|ف)?'
@@ -936,7 +968,8 @@ def read_files(files):
         kind = content_kind(pt['text'])
         items.append(fields_for(kind, name, pt['text']))
         texts.append({'filename': name, 'kind': kind, 'kind_hint': name_hint(name) if kind == 'other' else None, 'pages': pt['pages'], 'scanned': pt['scanned'], 'file': pt['kind_of_file'],
-                      'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:TEXT_BACK], 'found': found_fields(items[-1])})
+                      'arabic': pt['arabic'], 'chars': len(re.sub(r'\s', '', pt['text'])), 'text': pt['text'][:TEXT_BACK], 'found': found_fields(items[-1]),
+                      **({'ocr': True, 'ocr_language': pt.get('ocr_language')} if pt.get('ocr') else {})})
     return {'files': texts, 'rules': merge(items)}
 
 
@@ -1029,6 +1062,14 @@ def kind_homes(kind, pack=None, text=None, product=None, substances=(), fpp=None
             first = ['P-14', 'S-12']
         if first:
             homes = [h for h in first if h in homes] + [h for h in homes if h not in first]
+        if pack is not None:                                         # the section a document prints in its heading decides among the kind's items
+            from .classify import _ctd_tokens, _norm
+            from .resolver import number
+            nums = _ctd_tokens(_norm(text)[:400])
+            printed = [h for h in homes if h in pack.by_id and ({number(pack.by_id[h]).split(' ')[0].lower()} |
+                                                                {x.lower() for x in (pack.by_id[h].get('ectd') or {}).get('nodes') or []}) & nums]
+            if printed:
+                homes = printed + [h for h in homes if h not in printed]
     if pack is None:
         return homes
     own = [r['id'] for r in pack.requirements if kind in (r.get('kinds') or ())]             # the authority's own item first, as Egypt's table has it
@@ -1107,6 +1148,7 @@ def ai_prompt(texts, target='dossier'):
             + '\nAlso add "sources": {"<key>": "<filename>"} naming the document each top-level section came from.\n\nDOCUMENTS:\n')
     body = ''
     for i, f in enumerate(texts, 1):
-        body += f"\n=== Document {i}: {f['filename']} (kind guess: {f['kind']}, {f['pages']} pages{', SCANNED — no text layer' if f.get('scanned') else ''}) ===\n"
+        note = (', SCANNED — read by OCR: check names, numbers and dates against the page' if f.get('ocr') else ', SCANNED — no text layer') if f.get('scanned') else ''
+        body += f"\n=== Document {i}: {f['filename']} (kind guess: {f['kind']}, {f['pages']} pages{note}) ===\n"
         body += (f.get('text') or '(no text layer)')[:14000] + '\n'
     return head + body

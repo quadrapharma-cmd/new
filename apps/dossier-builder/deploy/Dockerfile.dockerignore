@@ -7,6 +7,7 @@
 !apps/dossier-builder/tools/adduser.py
 !apps/dossier-builder/tools/pdfcraft/PIN
 !apps/dossier-builder/tools/pdfcraft/licenses.py
+!apps/dossier-builder/tools/pdfcraft/patches/**
 !docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0/**
 !docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v4-v0/**
 !docs/ctd/ectd/EU-M1-3.1.1-PROFILE/**

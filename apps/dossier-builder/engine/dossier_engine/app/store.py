@@ -426,18 +426,27 @@ class Store:
 
     # ---------------- documents
     def refuse_without_text(self, filename, data):
-        """The upload gate — NP.CAPP.065 v5 general note 4: every document a scanned and searchable PDF. A file without text of its own
-        (a PDF whose pages are images only, an image) is not stored: the program does no OCR, the text layer is made when scanning."""
-        from .. import extract as _extract
-        from ..checks.pdf import NO_TEXT_EN, NO_TEXT_AR, NO_TEXT_IMAGE_EN, NO_TEXT_IMAGE_AR
-        why = _extract.has_text(filename, data)
-        if why:
-            en, ar = (NO_TEXT_IMAGE_EN, NO_TEXT_IMAGE_AR) if why == 'image' else (NO_TEXT_EN, NO_TEXT_AR)
-            raise StoreError('E-NOTEXT', f'{filename}: {en}', f'{filename}: {ar}', why=why, filename=filename)
+        """NP.CAPP.065 v5 general note 4 asks every document as a scanned and searchable PDF. A file without text of its own (a PDF whose
+        pages are images only, an image) is no longer refused (the owner, 13/11/2026): it is kept, PdfCraft reads it (OCR, Arabic and
+        English) and makes it searchable as a fix; its finding (NTA065-N4) says so, or — where PdfCraft is not — what to do. Kept as a
+        no-op so the callers stay as they were."""
+        return None
+
+    def as_pdf(self, filename, data):
+        """An image uploaded as a document becomes a PDF page here (PdfCraft), so the checks, the reading and the fixes take it like
+        any scan: (filename, data, converted?)."""
+        from .. import extract as _extract, pdfcraft as _pc
+        if data[:5] == b'%PDF-' or _extract.has_text(filename, data) != 'image' or not _pc.available():
+            return filename, data, False
+        pdf = _pc.image_to_pdf(data, filename)
+        if not pdf:
+            return filename, data, False
+        stem = filename.rsplit('.', 1)[0] if '.' in filename else filename
+        return f'{stem}.pdf', pdf, True
 
     def add_document(self, did, slot_id, filename, data, title=None, meta=None, supersede=None, doc_class=None, kind=None):
         """kind: the kind an earlier reading gave this file (the wizard's) — the kind rule uses it when the file's own words say nothing.
-        A file without text is refused (refuse_without_text); a PDF 1.0–1.3 is stored with its version line set to 1.7 (fixes.set_version_17:
+        A file without text is kept (its finding says how it becomes searchable); an image becomes a PDF page; a PDF 1.0–1.3 is stored with its version line set to 1.7 (fixes.set_version_17:
         every other byte the same; not for a digitally signed file) and says so in meta['converted']."""
         slots = {s.slot_id: s for s in self.slots(did)}
         if slot_id not in slots:
@@ -455,8 +464,12 @@ class Store:
             doc_class, supersede = 'signed_scan', draft['id']
         from .. import extract as _extract, fixes as _fixes
         self.claim_readings()
-        if not meta.get('fixed_from') and not meta.get('external') and not meta.get('imported'):   # the upload gate (a fixed copy passed it; an imported one was submitted)
-            self.refuse_without_text(filename, data)
+        if not meta.get('fixed_from') and not meta.get('external') and not meta.get('imported'):
+            given = filename
+            filename, data, made = self.as_pdf(filename, data)              # a photo or an image file: a PDF page (PdfCraft)
+            if made:
+                meta['converted'] = list(meta.get('converted') or []) + ['image_to_pdf']
+                meta.setdefault('original_name', given)
         v17 = _fixes.set_version_17(data) if data[:1024].find(b'%PDF-1.') >= 0 else None
         if v17:                                       # PDF 1.0–1.3: only the version line changes (eCTD takes 1.4–1.7)
             meta['converted'] = list(meta.get('converted') or []) + ['pdf_version_1.7']
@@ -472,6 +485,10 @@ class Store:
         elif family:                                      # a source file (Word, Excel, PowerPoint, text — old format or new): the PDF the user uploads replaces it
             en, ar = SOURCE_DRAFT[family]
             rep = Report(str(self.blob_path(sha)), [Finding('DOCX-DRAFT', 'warn', en, ar, 'user_fix', 'NP.CAPP.065 v5 general note 4 (PDF)')])
+        elif data[:5] != b'%PDF-' and _extract.has_text(filename, data) == 'image':   # an image PdfCraft could not make a PDF page here
+            from ..checks.pdf import NO_TEXT_IMAGE_EN, NO_TEXT_IMAGE_AR
+            rep = Report(str(self.blob_path(sha)), [Finding('NTA065-N4', 'block', NO_TEXT_IMAGE_EN, NO_TEXT_IMAGE_AR, 'user_fix',
+                                                            'NP.CAPP.065 v5 general note 4')])
         else:
             tmp = self.root / 'blobs' / f'.check-{uuid.uuid4().hex}.pdf'
             shutil.copyfile(self.blob_path(sha), tmp)
@@ -1328,6 +1345,18 @@ class Store:
                 raise StoreError('E-META', f"EU 1.3.1: the PI type is one of {', '.join(v['pi_types'])} and the language an EU code (en, de, fr…).",
                                  'بند 1.3.1 الأوروبي: نوع النشرة من ' + '، '.join(v['pi_types']) + ' واللغة كود أوروبي (en، de، fr…).',
                                  missing=['pi_type', 'lang'])
+
+    def keep_reading(self, did, doc_id, extracted):
+        """What the program read from a document — the information it found (a scan read by OCR) — kept with it (meta «extracted»); the
+        file is not touched."""
+        d = self.document(doc_id)
+        if d['dossier_id'] != did:
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        meta = dict(d['meta'], extracted=extracted)
+        self.db.execute('update document set meta=? where id=?', (json.dumps(meta, ensure_ascii=False), doc_id))
+        self.db.commit()
+        self.audit(did, 'document.read', doc=doc_id, reader=extracted.get('reader'), found=len(extracted.get('found') or []))
+        return self.document(doc_id)
 
     def set_document_details(self, did, doc_id, meta=None, title=None):
         """A document's title and its eCTD attributes (leaflet type, language, study, document type, EU country) changed where it is —

@@ -215,6 +215,17 @@ const T = {
   appName:{en:'Dossier Builder',ar:'منشئ ملفات التسجيل'},
   navHome:{en:'Home',ar:'الرئيسية'}, navDossiers:{en:'Dossiers',ar:'الملفات'}, navVars:{en:'Variations',ar:'التغييرات'}, navSuite:{en:'Product file',ar:'ملف المنتجات'},
   navCurrent:{en:'Current dossier',ar:'الملف الحالي'}, navGuide:{en:'Guide',ar:'الدليل'}, navBoard:{en:'Requirements',ar:'المتطلبات'}, navData:{en:'Product data',ar:'بيانات المنتج'},
+  navPrepare:{en:'Prepare the documents',ar:'تجهيز المستندات'},
+  prepSub:{en:'Put all the files here at once. Each one is read (a scan by OCR, Arabic and English) and what it says is kept; it goes to its item under the name the dossier gives it; it is checked, and fixed where the program can.',
+           ar:'حط كل الملفات هنا مرة واحدة. كل ملف بيتقري (والممسوح بالـ OCR عربي وإنجليزي) واللي فيه بيتحفظ؛ وبيروح بنده بالاسم اللي الملف بيدّيه له؛ وبيتفحص، وبيتصلّح لو البرنامج يقدر.'},
+  prepDrop:{en:'Choose the files (or drop them here)',ar:'اختار الملفات (أو اسحبها هنا)'}, prepAll:{en:'Prepare them all',ar:'جهّز الكل'},
+  prepAsked:{en:'Still asked for',ar:'لسه مطلوب'}, prepWaiting:{en:'Waiting to be placed',ar:'مستني يتحط'}, prepPlaced:{en:'In their items',ar:'في بنودها'},
+  prepRead:{en:'read',ar:'اتقرى'}, prepReadOcr:{en:'read by OCR',ar:'اتقرى بالـ OCR'}, prepReadNone:{en:'nothing read',ar:'ما اتقراش'},
+  prepGo:{en:'Prepare',ar:'جهّز'}, prepItem:{en:'Its item',ar:'بنده'}, prepPick:{en:'— choose its item —',ar:'— اختار بنده —'},
+  prepNewName:{en:'Its name in the dossier',ar:'اسمه في الملف'}, prepFound:{en:'Kept from it',ar:'اتحفظ منه'}, prepFixN:{en:'{n} fix(es) the program can make',ar:'{n} تصليح البرنامج يقدر يعمله'},
+  prepNeedsYou:{en:'Needs you',ar:'محتاج منك'}, prepDone:{en:'Ready',ar:'جاهز'}, prepOcrOn:{en:'OCR here: {l} (Tesseract, through PdfCraft)',ar:'الـ OCR هنا: {l} (Tesseract عن طريق PdfCraft)'},
+  prepOcrOff:{en:'No OCR here: scans are kept, and read in the desktop or company edition.',ar:'مفيش OCR هنا: الممسوح بيتحفظ، وبيتقري في نسخة الكمبيوتر أو نسخة الشركة.'},
+  prepNone:{en:'Nothing waiting.',ar:'مفيش حاجة مستنية.'}, prepWorking:{en:'Preparing {i} of {n}…',ar:'بيجهّز {i} من {n}…'},
   navPublisher:{en:'Publisher',ar:'الناشر'}, navChecks:{en:'Checks',ar:'الفحوص'}, navSearch:{en:'Search the documents',ar:'بحث في المستندات'},
   srchSub:{en:'The text of every document of this dossier: a batch number, a study, «Table 3». Each file is read once.',ar:'نص كل مستندات الملف ده: رقم تشغيلة، أو دراسة، أو «Table 3». كل ملف بيتقري مرة واحدة.'},
   srchPh:{en:'What are you looking for?',ar:'بتدوّر على إيه؟'}, srchGo:{en:'Search',ar:'ابحث'}, srchNone:{en:'Not found in any document.',ar:'مش موجود في أي مستند.'},
@@ -413,11 +424,12 @@ const T = {
   aiFailed:{en:'AI reading unavailable:',ar:'القراءة الذكية مش متاحة:'}, fillAll:{en:'Fill the fields',ar:'املأ الخانات'},
   badFiles:{en:'Choose documents: PDF, Word, Excel, PowerPoint (old or new format) or text, or a compressed file that holds them.',ar:'اختار مستندات: PDF أو Word أو Excel أو PowerPoint (صيغة قديمة أو جديدة) أو نصوص، أو ملف مضغوط فيه مستندات.'}, apiHint:{en:'one row per active substance; a substance without a manufacturer is kept in the form for you to complete',ar:'صف لكل مادة فعالة؛ المادة اللي من غير مصنع بتفضل في النموذج عشان تكمّلها'},
   apiManMissing:{en:'manufacturer not read — type it',ar:'المصنع ما اتقراش — اكتبه'}, compRead:{en:'Composition rows read',ar:'صفوف التركيب اللي اتقرت'}, batchRead:{en:'Batches',ar:'تشغيلات'}, toData:{en:'they go to the product data after the dossier is created',ar:'بتتحط في بيانات المنتج بعد إنشاء الملف'}, pagesN:{en:'p.',ar:'صفحة'}, fText:{en:'text',ar:'نص مقروء'},
+  ocrRead:{en:'read by OCR — made searchable in its item',ar:'اتقرى بالـ OCR — وهيبقى قابل للبحث في بنده'},
   noTextChip:{en:'no text — not accepted',ar:'من غير نص — مرفوض'}, noTextLeftOut:{en:'not accepted (no text)',ar:'مرفوض (من غير نص)'},
-  noTextScan:{en:'Its pages are images only. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). Make the text layer when scanning — the scanner\'s software, Acrobat, or a phone app that saves searchable PDFs — then add it again.',
-              ar:'صفحاته صور بس. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). اعمل النص وقت المسح — من برنامج السكانر أو Acrobat أو تطبيق موبايل بيحفظ PDF قابل للبحث — وضيفه تاني.'},
-  noTextImage:{en:'An image, not a document. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4): scan it, or photograph it with an app that saves searchable PDFs, then add the PDF.',
-               ar:'ده صورة مش مستند. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4): امسحه بالسكانر، أو صوّره بتطبيق بيحفظ PDF قابل للبحث، وضيف الـ PDF.'},
+  noTextScan:{en:'Nothing could be read from its pages: they are images, and EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). The desktop and company editions read scans (OCR, Arabic and English) and make them searchable themselves; here, or for a blank or blurred scan, make the text layer when scanning — the scanner\'s software, Acrobat, or a phone app that saves searchable PDFs — then add it again.',
+              ar:'مفيش حاجة اتقرت من صفحاته: صفحاته صور، والهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). نسخة الكمبيوتر ونسخة الشركة بيقروا الممسوح (OCR عربي وإنجليزي) ويخلّوه قابل للبحث لوحدهم؛ هنا، أو لو المسح فاضي أو مش واضح، اعمل النص وقت المسح — من برنامج السكانر أو Acrobat أو تطبيق موبايل بيحفظ PDF قابل للبحث — وارفعه تاني.'},
+  noTextImage:{en:'An image nothing could be read from. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). The desktop and company editions turn a PNG, JPEG, TIFF, GIF or BMP into a searchable PDF themselves; here, scan it as a PDF or photograph it with an app that saves searchable PDFs, then add the PDF.',
+              ar:'صورة مفيش حاجة اتقرت منها. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). نسخة الكمبيوتر ونسخة الشركة بيحوّلوا صورة PNG أو JPEG أو TIFF أو GIF أو BMP لـ PDF قابل للبحث لوحدهم؛ هنا امسحه PDF أو صوّره بتطبيق بيحفظ PDF قابل للبحث، وضيف الـ PDF.'},
   driveMode_connector:{en:'your Google Drive through Claude (no key)',ar:'Google Drive بتاعك عبر Claude (من غير مفتاح)'},
   tplT:{en:'Template & example',ar:'النموذج والمثال'}, tplBtn:{en:'Template',ar:'النموذج'}, draftBtn:{en:'Make it for me',ar:'اعمله لي'},
   draftBtnLong:{en:'Make it for me from the documents',ar:'اعمله لي من المستندات'}, draftAgain:{en:'Make it again',ar:'اعمله تاني'},
@@ -644,7 +656,7 @@ const NAV_BASE = [['home','#/','home','navHome'],['dossiers','#/dossiers','layer
 const NAV_USERS = ['users','#/users','users','navUsers'];
 /* the Users entry: when sign-in can be turned on here, or for a signed-in administrator */
 const navItems = () => (S.auth && (S.auth.can_enable || (S.me && S.me.auth && S.me.role==='admin'))) ? NAV_BASE.concat([NAV_USERS]) : NAV_BASE;
-const DNAV = [['guide','compass','navGuide'],['board','checklist','navBoard'],['data','database','navData'],['publisher','tree','navPublisher'],['checks','shield','navChecks'],['search','search','navSearch'],['review','stamp','navReview'],['export','package','navExport'],['audit','history','navAudit']];
+const DNAV = [['guide','compass','navGuide'],['prepare','scan','navPrepare'],['board','checklist','navBoard'],['data','database','navData'],['publisher','tree','navPublisher'],['checks','shield','navChecks'],['search','search','navSearch'],['review','stamp','navReview'],['export','package','navExport'],['audit','history','navAudit']];
 function paintNav(){ $('#nav').innerHTML = navItems().map(([r,h,i,k])=>`<a href="${h}" data-r="${r}">${icon(i)}<span data-t="${k}"></span></a>`).join('')
   + `<div class="grp" data-t="navCurrent"></div>` + DNAV.map(([r,i,k])=>`<a href="#" data-r="${r}" id="nav${r[0].toUpperCase()+r.slice(1)}" aria-disabled="true">${icon(i)}<span data-t="${k}"></span></a>`).join(''); paintT(); }
 function paintT(){ $$('[data-t]').forEach(e=>e.textContent=t(e.dataset.t)); }
@@ -678,7 +690,7 @@ function nav(r){
 async function route(){
   const tok = ++S.rt;
   const h = location.hash.replace(/^#/,'') || '/';
-  const m = h.match(/^\/d\/([^/]+)\/(guide|board|data|publisher|checks|search|export|audit|review)(?:\/([a-z]+))?$/);
+  const m = h.match(/^\/d\/([^/]+)\/(guide|prepare|board|data|publisher|checks|search|export|audit|review)(?:\/([a-z]+))?$/);
   asstFab(m?m[1]:null);
   try{
     if(h==='/new'){ S.dossier=null; nav('dossiers'); return wizard(); }
@@ -697,6 +709,7 @@ async function route(){
     if(m[2]==='data') return dataView(tok);
     if(m[2]==='checks') return checksView(tok);
     if(m[2]==='search') return searchView(tok);
+    if(m[2]==='prepare') return prepareView(tok);
     if(m[2]==='review') return reviewView(tok, m[3]||'desk');
     return auditView(tok);
   }catch(e){ if(tok===S.rt) $('#view').innerHTML = `<div class="alert bad">${icon('alert')}<p><b>${esc(t('err'))}:</b> ${esc(e.message)}</p></div>`; }
@@ -1156,7 +1169,7 @@ function docLine(w, name){
     : st.status==='error' ? `<span class="chip c-bad"><i></i>${esc(t('err'))}</span>`
     : pr.stage==='text' ? `<span class="chip c-wait"><i></i>${esc(t('stText'))}</span>`
     : pr.stage==='model' ? `<span class="chip c-wait"><i></i>${esc(t('stModel'))}</span>`
-    : pr.stage ? `<span class="chip c-ok"><i></i>${esc(t('stDone'))}${pr.pages?` · ${pr.pages} ${esc(t('pagesN'))}`:''}</span>` : '';
+    : pr.stage ? `<span class="chip c-ok"><i></i>${esc(t('stDone'))}${pr.pages?` · ${pr.pages} ${esc(t('pagesN'))}`:''}${(w.ocrRead||{})[name]?` · ${esc(t('ocrRead'))}`:''}</span>` : '';
   const got = st.status==='notext' ? `<div class="small" data-notext-why style="color:var(--bad)">${esc(t(st.why==='image'?'noTextImage':'noTextScan'))}</div>`
     : found.length ? `<div class="small" style="color:var(--ok)">${esc(t('gotFrom'))}: ${esc(foundNames(found).join('، '))}</div>` : ((pr.stage==='done'||pr.stage==='read')&&st.status!=='mismatch'?`<div class="small muted">${esc(t('gotNothing'))}</div>`:'');
   const fix = st.status==='mismatch' ? `<div class="row gap-s" style="margin-top:4px"><button class="btn sm pri" data-mvdoc="${esc(name)}">${esc(t('moveToIts'))} «${esc(L({ar:det.ar,en:det.en}))}»</button><button class="btn sm ghost" data-rmdoc="${esc(name)}">${esc(t('removeFile'))}</button></div>`
@@ -1237,10 +1250,11 @@ async function ingest(w, fresh){
   try{ await vocab();
     const fits=f=>{ const det=cardOfKind(f.kind), exp=(w.docs[f.filename]||{}).kind||'other'; return exp==='other'||det==='other'||det===exp; };
     const x=await readFiles(fresh,'dossier',(n,st,i)=>wizProg(n,st,i,w), rf=>rf.filter(fits).map(f=>f.filename));
-    for(const f of x.r.files||[]){ w.texts[f.filename]={filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,file:f.file}; w.kinds[f.filename]=f.kind; (w.hints=w.hints||{})[f.filename]=f.kind_hint||null; w.found[f.filename]=f.found||[]; }
+    for(const f of x.r.files||[]){ w.texts[f.filename]={filename:f.filename,text:f.text||'',pages:f.pages,scanned:f.scanned,file:f.file,ocr:!!f.ocr,chars:f.chars||0}; w.kinds[f.filename]=f.kind; (w.hints=w.hints||{})[f.filename]=f.kind_hint||null; w.found[f.filename]=f.found||[]; }
     if(x.modelAsked) (w.aiReads=w.aiReads||[]).push({files:x.modelFiles, ai:x.ai}); if(x.note) w.aiNote=x.note;      // the model's reading, remembered with the files it came from
     for(const f of fresh){ const detected=cardOfKind(w.kinds[f.name]); const expected=(w.docs[f.name]||{}).kind||'other', tx=w.texts[f.name]||{};
-      if(tx.scanned){ w.docs[f.name]={kind:expected, status:'notext', why:tx.file==='image'?'image':'scan'}; toast(`${f.name}: ${t('noTextChip')}`, 8000); continue; }   // no text of its own: refused (the program does no OCR); its line says why and what to do
+      if(tx.scanned&&!(tx.ocr&&tx.chars>=20)){ w.docs[f.name]={kind:expected, status:'notext', why:tx.file==='image'?'image':'scan'}; toast(`${f.name}: ${t('noTextChip')}`, 8000); continue; }   // nothing could be read from it (no OCR here, or a blank or unreadable scan): its line says why and what to do
+      if(tx.scanned) (w.ocrRead=w.ocrRead||{})[f.name]=true;                       // a scan PdfCraft read (OCR): it goes on, and is made searchable in its item
       if(expected!=='other'&&detected!=='other'&&detected!==expected){ w.docs[f.name]={kind:expected, status:'mismatch', detected}; toast(`${f.name}: ${t('notThisDoc')}`); }
       else w.docs[f.name]={kind:expected==='other'?(detected!=='other'?detected:cardOfKind((w.hints||{})[f.name]||'other')):expected, status:'ok'}; }   // a file that could not be read sits under the card its name hints at; only what is written inside it can refuse it
     await refill(w);
@@ -2676,6 +2690,54 @@ async function dropFiles(slotId, list){
 }
 
 /* ---------------- checks */
+/* ---------------- the preparation stage: the documents asked for; each file read (a scan by OCR) and what it says kept; placed in its
+   item under the name the dossier gives it; checked; fixed where the program can (the owner, 13/11/2026) */
+function prepareView(tok){
+  if(!fresh(tok)) return;
+  $('#view').innerHTML=`<div class="head"><div class="title"><h1>${esc(t('navPrepare'))}</h1><p class="sub">${esc(t('prepSub'))}</p></div></div>
+    <section class="card pad stack gap-s" id="prepDrop"><div class="row gap-s" style="flex-wrap:wrap"><label class="btn pri">${icon('upload',16)} ${esc(t('prepDrop'))}<input type="file" id="prepFiles" multiple hidden></label>
+      <button class="btn" id="prepAll">${icon('zap',16)} ${esc(t('prepAll'))}</button><span class="small muted grow" id="prepMsg"></span></div><div class="small muted" id="prepOcr"></div></section>
+    <div id="prepOut" class="stack" style="margin-top:12px"></div>`;
+  const send=async files=>{ if(!files.length) return; const fd=new FormData(); for(const f of files) fd.append('files', f); fd.append('meta','{}');
+    $('#prepMsg').textContent=t('srchRead'); try{ await api(`/dossiers/${S.dossier.id}/unplaced`,{method:'POST',body:fd}); }catch(e){ toast(e.message); } S.board=null; paintPrepare(); };
+  $('#prepFiles').onchange=e=>send([...e.target.files]);
+  const dz=$('#prepDrop'); dz.ondragover=e=>{ e.preventDefault(); }; dz.ondrop=e=>{ e.preventDefault(); send([...(e.dataTransfer.files||[])]); };
+  $('#prepAll').onclick=prepAll;
+  paintPrepare();
+}
+async function paintPrepare(){
+  const out=$('#prepOut'); if(!out) return; let r;
+  try{ r=await api(`/dossiers/${S.dossier.id}/prepare`); }catch(e){ out.innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
+  S.prep=r; $('#prepMsg').textContent='';
+  $('#prepOcr').textContent=r.ocr?t('prepOcrOn').replace('{l}', r.ocr.language==='ar+en'?L({en:'Arabic and English',ar:'عربي وإنجليزي'}):r.ocr.language):t('prepOcrOff');
+  const rdChip=x=>x.reader==='ocr'?`<span class="chip c-rec"><i></i>${esc(t('prepReadOcr'))}</span>`:x.reader==='text'?`<span class="chip c-ok"><i></i>${esc(t('prepRead'))}</span>`:`<span class="chip c-bad"><i></i>${esc(t('prepReadNone'))}</span>`;
+  const found=f=>f&&f.length?`<div class="small" style="color:var(--ok)">${esc(t('prepFound'))}: ${esc(foundNames(f).join('، '))}</div>`:'';
+  const waiting=r.waiting.map(w=>`<div class="finding" data-pw="${esc(w.id)}"><div class="row gap-s" style="flex-wrap:wrap"><b>${bdi(w.filename)}</b>${rdChip(w.reading)}<span class="small muted">${w.reading.pages||0} ${esc(t('pagesN'))}</span></div>
+      ${found(w.reading.found)}
+      <div class="row gap-s" style="flex-wrap:wrap;margin-top:4px"><label class="small">${esc(t('prepItem'))} <select data-pslot="${esc(w.id)}"><option value="">${esc(t('prepPick'))}</option>${(w.suggestions||[]).map(x=>`<option value="${esc(x.slot_id)}" ${x.slot_id===w.auto?'selected':''}>${esc(x.ctd||'')} ${esc(L(x.title||{en:x.slot_id,ar:x.slot_id}))}</option>`).join('')}</select></label>
+      <button class="btn sm pri" data-pgo="${esc(w.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div></div>`).join('');
+  const placed=r.placed.map(d=>`<div class="finding ${d.needs_you.length?'block':''}"><div class="row gap-s" style="flex-wrap:wrap"><span class="code">${esc(d.ctd||'')}</span><b>${esc(L(d.item||{en:'',ar:''}))}</b>${chip(d.status)}</div>
+      <div class="small"><bdi>${esc(d.original_name)}</bdi> → <b>${esc(t('prepNewName'))}:</b> <bdi>${esc((d.names.ectd32||d.names.ctd||'').split('/').pop()||'—')}</bdi>${d.names.ectd32?` <span class="code muted">${esc(d.names.ectd32)}</span>`:''}</div>
+      ${found(d.extracted)}
+      ${d.fixable.length?`<div class="row gap-s"><span class="small">${esc(t('prepFixN').replace('{n}', d.fixable.length))}</span><button class="btn sm pri" data-pgo="${esc(d.id)}">${icon('wrench',14)} ${esc(t('autofix'))}</button></div>`:''}
+      ${d.needs_you.map(f=>`<div class="small" style="color:var(--bad)">● ${esc(f[S.lang]||f.en)} <span class="code muted">${esc(f.rule)}</span></div>`).join('')}
+      ${!d.fixable.length&&!d.needs_you.length?`<div class="small" style="color:var(--ok)">✓ ${esc(t('prepDone'))}</div>`:''}</div>`).join('');
+  const asked=r.requested.map(x=>`<span class="tag" title="${esc(L(x.title||{en:'',ar:''}))}">${esc(x.ctd||x.slot_id)}</span>`).join(' ');
+  out.innerHTML=`<section class="card pad"><div class="hd"><h3>${esc(t('prepWaiting'))} <span class="tag">${r.waiting.length}</span></h3></div>${waiting||`<p class="small muted">${esc(t('prepNone'))}</p>`}</section>
+    <section class="card pad"><div class="hd"><h3>${esc(t('prepPlaced'))} <span class="tag">${r.placed.length}</span></h3></div>${placed}</section>
+    <section class="card pad"><div class="hd"><h3>${esc(t('prepAsked'))} <span class="tag">${r.requested.length}</span></h3></div><div class="row gap-s" style="flex-wrap:wrap">${asked}</div></section>`;
+  $$('[data-pgo]', out).forEach(b=>b.onclick=async()=>{ b.disabled=true; await prepOne(b.dataset.pgo); paintPrepare(); });
+}
+async function prepOne(id){
+  const sel=$(`[data-pslot="${CSS.escape(id)}"]`); const body=sel&&sel.value?{slot_id:sel.value}:{};
+  try{ const r=await api(`/dossiers/${S.dossier.id}/prepare/${id}`,{method:'POST',json:body});
+    if((r.steps||[])[0]==='needs_item') toast(t('prepPick')); S.board=null; return r; }catch(e){ toast(e.message); }
+}
+async function prepAll(){
+  const r=S.prep||await api(`/dossiers/${S.dossier.id}/prepare`); const todo=[...r.waiting.filter(w=>w.auto||($(`[data-pslot="${CSS.escape(w.id)}"]`)||{}).value).map(w=>w.id), ...r.placed.filter(d=>d.fixable.length).map(d=>d.id)];
+  let i=0; for(const id of todo){ i++; $('#prepMsg').textContent=t('prepWorking').replace('{i}',i).replace('{n}',todo.length); await prepOne(id); }
+  $('#prepMsg').textContent=''; paintPrepare();
+}
 /* ---------------- search the text of every document (each file read once, page by page, and kept) */
 function searchView(tok){
   if(!fresh(tok)) return;

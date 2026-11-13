@@ -11,6 +11,16 @@ and company editions (`vendor/pdfcraft/`, never committed). Shipped with it: Pdf
 (written at build time by `tools/pdfcraft/licenses.py`; all permissive: MIT, Apache-2.0, BSD, ISC, Zlib, Unicode-3.0, Unlicense, BSL-1.0).
 The ArtCraft name, wordmark and logos are not covered by PdfCraft's licence and are not used.
 
+**Modified:** the program builds PdfCraft with one change of its own, `tools/pdfcraft/patches/0001-ocr-arabic-and-language-lists.patch`
+(shipped beside the program): its OCR tools accept Tesseract's languages and lists of them («ar+en»); an Arabic or Hebrew word is
+written right to left in the searchable text layer; the words of a right-to-left line share one baseline.
+
+## Tesseract OCR — https://github.com/tesseract-ocr/tesseract (Apache-2.0)
+
+The text recognition PdfCraft drives for scans (Arabic and English). Installed in the company edition's image from Ubuntu's packages
+(`tesseract-ocr`, `tesseract-ocr-ara`, `tesseract-ocr-eng`, the tessdata models under Apache-2.0); on a desktop, the copy installed on
+that computer is used (not bundled).
+
 Also used in `engine/dossier_engine/validators/ectd32_eu.py` (`permissions`): reading a PDF's `/P` permission flags the way the security
 handler's revision reads them (ISO 32000-1:2008 Table 22), ported from Rust (`crates/crypt/src/lib.rs`) to Python and shortened.
 

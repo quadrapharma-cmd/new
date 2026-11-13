@@ -81,7 +81,7 @@ def test_journey(server, browser, tmp_path):
     body = page.inner_text('#dBody')
     assert 'reads as' in body and 'read-only' in body and 'PDF version' not in body
     page.keyboard.press('Escape')
-    # a scan without text is refused at upload, with the reason and what to do; nothing is stored
+    # a scan without text is kept (nothing uploaded is lost) and blocks its item; its finding says how it becomes searchable
     from pypdf import PdfWriter
     w = PdfWriter(); w.add_blank_page(595, 842)
     scan = tmp_path / 'scan.pdf'
@@ -90,7 +90,10 @@ def test_journey(server, browser, tmp_path):
     with page.expect_file_chooser() as fc:
         page.locator('tbody tr', has_text='Toll manufacturer licence').locator('[data-up]').first.click()
     fc.value.set_files(str(scan))
-    page.wait_for_function("document.querySelector('#toast') && !document.querySelector('#toast').hidden && document.querySelector('#toast').innerText.includes('searchable PDF')")
+    page.wait_for_function("() => S.board && S.board.slots.some(s => (s.documents||[]).some(d => (d.findings||[]).some(f => f.rule === 'NTA065-N4')))",
+                           timeout=120000)
+    n4 = page.evaluate("S.board.slots.flatMap(s => s.documents || []).flatMap(d => d.findings || []).find(f => f.rule === 'NTA065-N4')")
+    assert n4['severity'] == 'block' and 'searchable PDF' in n4['en']                         # the reason and what to do
     assert page.locator('tbody tr', has_text='Toll manufacturer licence').count() == 1          # still to do
     # export gate blocked
     page.click('#navExport')

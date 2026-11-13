@@ -2,7 +2,9 @@
 (en/ar), action, source. A PDF without text blocks whatever the document is:
 NP.CAPP.065 v5 general note 4 wants every submitted document a scanned and
 searchable PDF (the eCTD draft's list of scans accepted without OCR is not in
-force). The program does no OCR; the text layer is made when scanning."""
+force). Where PdfCraft reads scans (OCR, Arabic and English) the fix «make
+searchable» adds the text layer under the page image; elsewhere the text layer
+is made when scanning."""
 import os, re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -10,13 +12,21 @@ from pathlib import Path
 LOCKED = {'third_party_certificate', 'eda_document', 'executed_record', 'signed_scan'}
 NAME_OK = re.compile(r'^[a-z0-9][a-z0-9-]*\.pdf$')
 NO_TEXT_EN = ('No text: the pages are images only. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). '
-              'Make the text layer when scanning — the scanner\'s software, Acrobat, or a phone app that saves searchable PDFs — and upload it again.')
+              'The desktop and company editions read it (OCR, Arabic and English) and make it searchable themselves (PdfCraft); here, make the '
+              'text layer when scanning — the scanner\'s software, Acrobat, or a phone app that saves searchable PDFs.')
 NO_TEXT_AR = ('الملف ده من غير نص: صفحاته صور بس. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). '
-              'اعمل النص وقت المسح — من برنامج السكانر أو Acrobat أو تطبيق موبايل بيحفظ PDF قابل للبحث — وارفعه تاني.')
-NO_TEXT_IMAGE_EN = ('An image, not a document. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4): scan it, '
-                    'or photograph it with an app that saves searchable PDFs, and upload the PDF.')
-NO_TEXT_IMAGE_AR = ('ده صورة مش مستند. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4): امسحه بالسكانر، '
-                    'أو صوّره بتطبيق بيحفظ PDF قابل للبحث، وارفع الـ PDF.')
+              'نسخة الكمبيوتر ونسخة الشركة بيقروه (OCR عربي وإنجليزي) ويخلّوه قابل للبحث لوحدهم (PdfCraft)؛ هنا اعمل النص وقت المسح — '
+              'من برنامج السكانر أو Acrobat أو تطبيق موبايل بيحفظ PDF قابل للبحث.')
+OCR_FIX_EN = ('No text layer: the pages are images. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). '
+              'PdfCraft reads the pages (OCR, Arabic and English) and adds their text under the image — the page looks the same, and the '
+              'document becomes searchable: «Fix» does it.')
+OCR_FIX_AR = ('الملف ده مالوش طبقة نص: صفحاته صور. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). '
+              'PdfCraft بيقرا الصفحات (OCR عربي وإنجليزي) ويحط نصها تحت الصورة — شكل الصفحة ما بيتغيرش والمستند بيبقى قابل للبحث: «صلّح» بيعملها.')
+NO_TEXT_IMAGE_EN = ('An image, not a PDF. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). The desktop and '
+                    'company editions turn a PNG, JPEG, TIFF, GIF or BMP into a searchable PDF themselves (PdfCraft); here, scan it as a PDF, '
+                    'or save the photo as JPEG or PNG, and upload it again.')
+NO_TEXT_IMAGE_AR = ('ده صورة مش PDF. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). نسخة الكمبيوتر ونسخة الشركة '
+                    'بيحوّلوا صورة PNG أو JPEG أو TIFF أو GIF أو BMP لـ PDF قابل للبحث لوحدهم (PdfCraft)؛ هنا امسحه PDF، أو احفظ الصورة JPEG أو PNG وارفعها تاني.')
 
 
 ECTD_DRAFT = {'EG-PF-15.4', 'ICH-NAME', 'EG-PF-16.3', 'EG-BP-E23', 'PDF-JS', 'EG-PF-16.1', 'EG-BP-16.BP1', 'NTA065-BM', 'ECTD-WORD',
@@ -383,5 +393,9 @@ def _pdfcraft_checks(r, add, path, q, ver, doc_class):
     chars = len(re.sub(r'\s', '', ''.join(q.get('texts') or [])))
     r.info['searchable'] = chars >= 20
     if pages and chars < 20:
-        add(Finding('NTA065-N4', 'block', NO_TEXT_EN, NO_TEXT_AR,
-                    'rebuild' if doc_class in ('generated', 'company_letter') else 'user_fix', 'NP.CAPP.065 v5 general note 4'))
+        from .. import pdfcraft
+        if pdfcraft.ocr_info():                          # PdfCraft reads the scan and adds its text layer: a fix, on every kind of document
+            add(Finding('NTA065-N4', 'block', OCR_FIX_EN, OCR_FIX_AR, 'auto_fix', 'NP.CAPP.065 v5 general note 4; PdfCraft OCR'))
+        else:
+            add(Finding('NTA065-N4', 'block', NO_TEXT_EN, NO_TEXT_AR,
+                        'rebuild' if doc_class in ('generated', 'company_letter') else 'user_fix', 'NP.CAPP.065 v5 general note 4'))

@@ -1,5 +1,5 @@
 """Intake on Arabic EDA documents: a registration notification («إخطار تسجيل») as a text PDF is read; as a scan or a photo it is said
-to have no text (no OCR: such a file is refused at the upload gate). The fixture is made with python-docx + LibreOffice (skipped where
+to have no text where PdfCraft does not read scans, and is read by OCR where it does. The fixture is made with python-docx + LibreOffice (skipped where
 soffice is missing)."""
 import io, shutil, subprocess
 import pytest
@@ -73,14 +73,27 @@ def notice_scan(notice_pdf, tmp_path_factory):
     return d / 'scan.pdf', png
 
 
-def test_a_scanned_notice_is_said_to_have_no_text(notice_scan):
+def test_a_scanned_notice_is_read_by_ocr_where_pdfcraft_reads_scans(notice_scan):
+    """The scan of the Arabic registration notice: PdfCraft reads it (Tesseract, Arabic and English) and the rules take its
+    information as from the PDF itself; where it cannot (the browser edition) the file is said to have no text."""
+    from dossier_engine import pdfcraft
     scan_pdf, png = notice_scan
     r = extract.read_files([('scan.pdf', scan_pdf.read_bytes()), ('photo.png', png.read_bytes())])
     a, b = r['files']
     assert a['scanned'] and a['file'] == 'pdf' and b['scanned'] and b['file'] == 'image' and b['pages'] == 1
-    assert a['chars'] == 0 and b['chars'] == 0 and 'ocr' not in a and r['rules']['product'] == {}         # no OCR: nothing is guessed from pictures
     assert extract.has_text('scan.pdf', scan_pdf.read_bytes()) == 'scan' and extract.has_text('photo.png', png.read_bytes()) == 'image'
-    assert 'SCANNED — no text layer' in extract.ai_prompt(r['files'])
+    if pdfcraft.ocr_info() and pdfcraft.ocr_info()['arabic']:
+        assert a['ocr'] and b['ocr'] and a['chars'] > 200 and a['arabic']
+        f = r['rules']
+        assert f['product']['name'].startswith('إكزامبلول') and f['registration']['reg_no'] == '34567/2025'
+        assert f['documents'][0]['kind'] == 'licence' and f['documents'][0]['valid_until'] == '2030-03-14'
+        assert f['registration']['shelf_life'] == '36 شهر' and f['registration']['price'] == '45 جنيه'
+        # Known limit: Tesseract's Arabic model installed here (tessdata «fast», 4.1.0) misreads Arabic-Indic digits («١٥/٠٣/٢٠٢٥»):
+        # the notice's own date is not taken from the scan (the more accurate «best» model reads them).
+        assert 'SCANNED — read by OCR' in extract.ai_prompt(r['files'])
+    else:
+        assert a['chars'] == 0 and b['chars'] == 0 and 'ocr' not in a and r['rules']['product'] == {}      # nothing is guessed from pictures
+        assert 'SCANNED — no text layer' in extract.ai_prompt(r['files'])
 
 
 def test_extract_endpoint_accepts_images_and_reports_what_was_read(tmp_path):
