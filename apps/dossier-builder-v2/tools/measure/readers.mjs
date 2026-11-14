@@ -1,7 +1,8 @@
 // Measures the text readers on the made-up scanned pages (tools/measure/pages.mjs): for every page and reader, the share of
 // the page's facts the reading holds (tools/measure/score.mjs) and the seconds it took. Run it on an idle machine: the times
 // are part of the measure.
-//   node tools/measure/readers.mjs [reader…]      readers: tesseract-fast, tesseract-best, tesseract-best-osd, qwen3vl
+//   node tools/measure/readers.mjs [reader…]      readers: tesseract-fast, tesseract-best, tesseract-best-osd, paddle-lines,
+//                                                 tesseract+paddle, qwen3vl
 // Writes .cache/measure/readers.json and prints a table. Claude is measured where it runs for the user — inside claude.ai,
 // on the user's own account — by the measuring page (tools/measure/claude-page), never by the session that wrote the pages.
 import fs from 'node:fs';
@@ -15,6 +16,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const PAGES = path.join(ROOT, '.cache', 'measure', 'pages');
 const BEST = path.join(ROOT, 'vendor', 'ocr', 'tessdata');
 const SYSTEM = '/usr/share/tesseract-ocr/5/tessdata';
+const PADDLE = path.join(ROOT, 'tools', 'measure', 'paddle_reader.py');
 
 // A tessdata folder with the «best» models and the system's orientation model (osd), for the reading that turns the page.
 function bestWithOsd() {
@@ -36,6 +38,11 @@ export const READERS = {
   'tesseract-fast': { what: 'Tesseract 5 with the fast models a Tesseract installer brings', args: f => [f, 'stdout', '-l', 'ara+eng'] },
   'tesseract-best': { what: 'Tesseract 5 with the «best» models the program carries', args: f => [f, 'stdout', '--tessdata-dir', BEST, '-l', 'ara+eng'] },
   'tesseract-best-osd': { what: 'the same, turning the page first (orientation detection)', args: (f, osd) => [f, 'stdout', '--tessdata-dir', osd, '-l', 'ara+eng', '--psm', '1'] },
+  // PaddleOCR's Arabic model (PP-OCRv5, Apache-2.0) through onnxruntime, Tesseract finding the lines (tools/measure/paddle_reader.py)
+  'paddle-lines': { what: 'PaddleOCR Arabic (PP-OCRv5) reads the lines with Arabic (numbers and dates again on their own), Tesseract the rest', cmd: () => 'python3',
+                    args: f => ['-I', PADDLE, 'lines', f] },
+  'tesseract+paddle': { what: 'Tesseract, its unsure words read again by PaddleOCR (the old program\'s way)', cmd: () => 'python3',
+                        args: f => ['-I', PADDLE, 'second', f] },
   // fed the page at about 1.2 megapixels (pages-1mp), as claude.ai feeds Claude: the full scan does not fit the memory beside a build
   'qwen3vl': { what: 'Qwen3-VL (Apache-2.0) on this machine through llama.cpp, no internet', cmd: () => process.env.LLAMA_MTMD_CLI,
                args: f => qwen(f.replace(`${path.sep}pages${path.sep}`, `${path.sep}pages-1mp${path.sep}`)) },
