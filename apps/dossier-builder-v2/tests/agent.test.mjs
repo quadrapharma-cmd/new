@@ -78,6 +78,10 @@ test('a file\'s kind comes from its content, never from its name', async () => {
   assert.equal(kindOf(new Uint8Array([0x50, 0x4b, 0x03, 0x04, ...enc('....xl/workbook.xml')])), 'xlsx');
   assert.equal(kindOf(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])), 'png');
   assert.equal(kindOf(enc('Rar!\x1a\x07\x01\x00')), 'rar');
+  const ole = (...names) => new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0, ...names.flatMap(n => [...n].flatMap(c => [c.charCodeAt(0), 0]))]);
+  assert.equal(kindOf(ole('Root Entry', 'WordDocument')), 'doc');
+  assert.equal(kindOf(ole('Root Entry', 'Workbook')), 'xls');
+  assert.equal(kindOf(ole('Root Entry')), 'office-old');
   assert.equal(kindOf(enc('plain words')), 'text');
 });
 

@@ -2,7 +2,15 @@
 // words on its page that hold it), and the log of every tool call. The same code in the browser and on the desktop: nothing here
 // touches a disk or the network — the page or the bridge hands the files in, either their bytes or, for a folder on a computer, a
 // way to read them when a tool needs them (a dossier folder can hold gigabytes) with a sample of their first and last bytes.
-export const KINDS = ['pdf', 'docx', 'xlsx', 'pptx', 'zip', 'rar', '7z', 'png', 'jpeg', 'tiff', 'gif', 'webp', 'heic', 'text', 'unknown'];
+export const KINDS = ['pdf', 'docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt', 'office-old', 'zip', 'rar', '7z', 'png', 'jpeg', 'tiff', 'gif', 'webp', 'heic', 'text', 'unknown'];
+const utf16 = s => [...s].flatMap(c => [c.charCodeAt(0), 0]);
+function hasBytes(b, seq) {
+  outer: for (let i = 0, n = b.length - seq.length; i <= n; i++) {
+    for (let k = 0; k < seq.length; k++) if (b[i + k] !== seq[k]) continue outer;
+    return true;
+  }
+  return false;
+}
 
 const starts = (b, ...sig) => sig.every((v, i) => b[i] === v);
 const ascii = s => [...s].map(c => c.charCodeAt(0));
@@ -24,6 +32,13 @@ export function kindOf(bytes) {
     if (has(b, 'xl/')) return 'xlsx';
     if (has(b, 'ppt/')) return 'pptx';
     return 'zip';
+  }
+  // the Office files before 2007 (.doc .xls .ppt): one compound file whose parts are named inside it in UTF-16
+  if (starts(b, 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1)) {
+    if (hasBytes(b, utf16('WordDocument'))) return 'doc';
+    if (hasBytes(b, utf16('Workbook')) || hasBytes(b, utf16('Book'))) return 'xls';
+    if (hasBytes(b, utf16('PowerPoint Document'))) return 'ppt';
+    return 'office-old';
   }
   if (starts(b, ...ascii('Rar!\x1a\x07'))) return 'rar';
   if (starts(b, 0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c)) return '7z';
