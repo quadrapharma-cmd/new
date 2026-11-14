@@ -50,8 +50,9 @@ export async function build({ quiet = false } = {}) {
     `<script type="application/json" id="kdata">${safeJson}</script>`,
     `<script>${js}</script>`,
   ].join('\n');
-  // The artifact wraps the page in its own document shell; the desktop page carries one.
-  fs.writeFileSync(path.join(dist, 'library-artifact.html'), `${head}\n${body}\n`);
+  // The artifact wraps the page in its own document shell; the desktop page carries one. The artifact serves PDF and CSV
+  // files only, so its page opens only those; the desktop folder holds every copy.
+  fs.writeFileSync(path.join(dist, 'library-artifact.html'), `${head}\n<script>window.DBK_OPEN=['pdf','csv']</script>\n${body}\n`);
   const page = `<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -61,6 +62,7 @@ export async function build({ quiet = false } = {}) {
 ${head}
 </head>
 <body>
+<script>window.DBK_OPEN=['pdf','csv','doc','docx','xlsx','zip','md']</script>
 ${body}
 </body>
 </html>
@@ -75,7 +77,7 @@ ${body}
   for (const s of held) {
     const name = path.basename(s.file);
     fs.copyFileSync(path.join(REPO, s.file), path.join(libDir, 'sources', name));
-    files[`sources/${name}`] = path.relative(ROOT, path.join(REPO, s.file));
+    if (/\.(pdf|csv)$/i.test(name)) files[`sources/${name}`] = path.relative(REPO, path.join(REPO, s.file));
   }
   fs.writeFileSync(path.join(dist, 'artifact-files.json'), JSON.stringify(files, null, 1));
   const zip = path.join(dist, 'Dossier-Builder-Library.zip');

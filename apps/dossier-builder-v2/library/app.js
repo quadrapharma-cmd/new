@@ -21,7 +21,12 @@ for (const r of [...data.requirements, ...data.rules, ...data.variations.items, 
 }
 const recHref = id => '#' + slugOf.get(id);
 // The copy of a source published beside the page (sources/<file>), opened at a page when one is known.
-const fileHref = (s, page) => (s?.held && s.file ? `sources/${encodeURIComponent(s.file.split('/').pop())}${page ? `#page=${page}` : ''}` : null);
+// The kinds of file each edition carries: the claude.ai artifact serves PDF and CSV only; the desktop folder holds them all.
+const OPENABLE = new Set((window.DBK_OPEN || ['pdf', 'csv']).map(x => x.toLowerCase()));
+const fileHref = (s, page) => {
+  if (!s?.held || !s.file || !OPENABLE.has(s.file.split('.').pop().toLowerCase())) return null;
+  return `sources/${encodeURIComponent(s.file.split('/').pop())}${page && /\.pdf$/i.test(s.file) ? `#page=${page}` : ''}`;
+};
 const pageOf = (c, check) => check?.pages?.[0] || (/\bp\.?\s*(\d+)/.exec(c.at || '') || [])[1] || null;
 const srcHref = id => '#s-' + id;
 
