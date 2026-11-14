@@ -80,9 +80,16 @@ def easyocr():
 
 
 def doctr():
-    from doctr.io import DocumentFile
-    from doctr.models import ocr_predictor
-    engine = ocr_predictor(pretrained=True, assume_straight_pages=False, detect_orientation=True)
+    # docTR's own models through OnnxTR (the same models as ONNX, by a docTR maintainer, Apache-2.0): docTR's model host
+    # (doctr-static.mindee.com) is not reachable from here. Its pretrained reader knows the French alphabet, not Arabic.
+    try:
+        from onnxtr.io import DocumentFile
+        from onnxtr.models import ocr_predictor
+        engine = ocr_predictor(det_arch='fast_base', reco_arch='parseq', assume_straight_pages=False, detect_orientation=True)
+    except ImportError:
+        from doctr.io import DocumentFile
+        from doctr.models import ocr_predictor
+        engine = ocr_predictor(pretrained=True, assume_straight_pages=False, detect_orientation=True)
     def read(path):
         page = engine(DocumentFile.from_images(str(path))).export()['pages'][0]
         h, w = page['dimensions']
@@ -98,14 +105,22 @@ def doctr():
 
 
 def surya():
+    # Surya 0.24 (Apache-2.0 code) reads a page with its own vision-language model (datalab-to/surya-ocr-2.5, under Datalab's
+    # modified OpenRAIL-M licence) served by llama.cpp's llama-server on this machine: LLAMA_CPP_BINARY,
+    # SURYA_GGUF_LOCAL_MODEL_PATH and SURYA_GGUF_LOCAL_MMPROJ_PATH name them. Full-page mode: the layout and the text in one go,
+    # the blocks in Surya's own reading order.
+    import html as h
     from PIL import Image
-    from surya.foundation import FoundationPredictor
+    from surya.inference import SuryaInferenceManager
     from surya.recognition import RecognitionPredictor
-    from surya.detection import DetectionPredictor
-    rec, det = RecognitionPredictor(FoundationPredictor()), DetectionPredictor()
+    rec = RecognitionPredictor(SuryaInferenceManager())
+    def plain(block):
+        t = re.sub(r'</(td|th)>', ' ', block)
+        t = re.sub(r'<br\s*/?>|</(p|tr|li|h[1-6]|div)>', '\n', t)
+        return h.unescape(re.sub(r'<[^>]+>', '', t)).strip()
     def read(path):
-        page = rec([Image.open(path).convert('RGB')], det_predictor=det)[0]
-        return lines_of([(*l.bbox, l.text) for l in page.text_lines])
+        page = rec([Image.open(path).convert('RGB')], full_page=True)[0]
+        return '\n'.join(plain(b.html) for b in sorted(page.blocks, key=lambda b: b.reading_order) if not b.skipped and b.html)
     return read
 
 
