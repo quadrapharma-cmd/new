@@ -261,9 +261,13 @@ def _pc_bookmarks(src, dst):
         heads = [x for x in styles if float(x.get('size') or 0) > float(body.get('size') or 0) + 0.5 and (x.get('lines') or 0) <= max(2, (body.get('lines') or 0) // 3)]
         heads = sorted(heads, key=lambda x: -float(x['size']))[:3]
         if heads and sum(x.get('lines') or 0 for x in heads) >= 2:
-            _pc_job(src, dst, [('bookmark_from_text_styles', {'doc': 1, 'levels': [{'font': x['font'], 'size': x['size'], 'bold': bool(x.get('bold'))} for x in heads]})] + view)
-            return 'heading styles'
-    raise RuntimeError('no headings found (tagged, numbered or set in a heading style) — add bookmarks in the source document')
+            try:
+                _pc_job(src, dst, [('bookmark_from_text_styles', {'doc': 1, 'levels': [{'font': x['font'], 'size': x['size'], 'bold': bool(x.get('bold'))} for x in heads]})] + view)
+                return 'heading styles'
+            except pdfcraft.PdfCraftError:
+                pass                                       # the styles could not be named back to PdfCraft: as if there were none
+    raise Refused('The document has no headings to make bookmarks from (tagged, numbered or in a heading style): add them in its source if it is long.',
+                  'المستند مفيهوش عناوين يتعمل منها bookmarks (مرقّمة أو بخط العناوين): لو طويل ضيفها في الأصل بتاعه.')
 
 
 def _pc_remove_javascript(src, dst):

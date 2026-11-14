@@ -1365,6 +1365,9 @@ class Store:
         → {parts: [documents]} or {parts: [], why}."""
         from .. import pdfcraft
         from ..checks.pdf import SIZE_LIMIT
+        d0 = self.document(doc_id)
+        if not d0['filename'].lower().endswith('.pdf'):          # a Word or Excel source is not cut (its PDF is)
+            return {'parts': [], 'why': 'not a pdf'}
         d = self._current_pdf(did, doc_id)
         data = self.blob_path(d['sha256']).read_bytes()
         if len(data) <= SIZE_LIMIT or not pdfcraft.available() or not d.get('slot_id'):
@@ -1387,6 +1390,13 @@ class Store:
         self.db.commit()
         self.audit(did, 'document.split_size', doc=doc_id, parts=[x['id'] for x in out], sizes=[len(b) for b in parts])
         return {'parts': out}
+
+    def _optimize_tried(self, doc_id, why):
+        """«Improve the file» found nothing to gain on this version: remembered, so it is not tried again on the same file."""
+        d = self.document(doc_id)
+        meta = dict(d['meta'], optimize_tried=why)
+        self.db.execute('update document set meta=? where id=?', (json.dumps(meta, ensure_ascii=False), doc_id))
+        self.db.commit()
 
     def improve_document(self, did, doc_id):
         """«Improve the file» (the owner, 13/11/2026: «PdfCraft has file improvement… use it»): PdfCraft's optimizer on a stored PDF
@@ -1411,8 +1421,10 @@ class Store:
         except pdfcraft.PdfCraftError as e:
             return {'document': None, 'why': str(e)[:200]}
         if not pdfcraft.smaller_enough(data, new):
+            self._optimize_tried(doc_id, 'already small')
             return {'document': None, 'why': 'already small', 'before': len(data)}
         if locked and not pdfcraft.same_pixels(data, new):
+            self._optimize_tried(doc_id, 'pages would change')
             return {'document': None, 'why': 'pages would change', 'before': len(data)}
         doc = self.add_document(did, d['slot_id'], d['filename'], new, d['title'],
                                 {**d['meta'], 'fixed_from': doc_id, 'fixes': list(d['meta'].get('fixes') or []) + ['optimize'],
@@ -1441,7 +1453,14 @@ class Store:
         d = self.document(doc_id)
         if d['dossier_id'] != did:
             raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
-        data = dict(self.dossier(did)['data'] or {})
+        dos = self.dossier(did)
+        data = dict(dos['data'] or {})
+        prod = dict(data.get('product') or {})
+        for k, v in (('name', (dos.get('product') or {}).get('name')), ('dosage_form', (dos.get('product') or {}).get('dosageform')),
+                     ('manufacturer', (dos.get('product') or {}).get('manufacturer'))):
+            if v and not prod.get(k):                     # the product as the dossier was made: written already, a document fills around it
+                prod[k] = v
+        data['product'] = prod
         got = _absorb.absorb(data, d, (d.get('meta') or {}).get('original_name') or d['filename'])
         if got['added'] or got['conflicts']:
             self.db.execute('update dossier set data=? where id=?', (json.dumps(data, ensure_ascii=False), did))

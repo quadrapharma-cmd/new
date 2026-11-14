@@ -88,7 +88,7 @@ SCHEMA = {
                      'licence_type': 'toll | own | under_licence', 'marketing': 'local | export'},
     'composition': [{'name': 'ingredient as printed', 'amount': 'per unit, e.g. 3.5 mg', 'standard': 'BP 2018 | USP | Ph. Eur. | in-house', 'role': 'active | excipient',
                      'equivalent': 'e.g. equivalent to 3300 units/g'}],
-    'documents': [{'filename': 'as given', 'kind': 'cpp | gmp | cep | coa | cadc | composition | licence | pricing | annex1 | smpc | factory | bmr | stability | spec | loa | poa | commercial | contract | other',
+    'documents': [{'filename': 'as given', 'kind': 'cpp | gmp | cep | coa | cadc | composition | licence | pricing | annex1 | smpc | factory | bmr | stability | spec | method | validation | refstd | loa | poa | commercial | contract | variation | import | receipt | layout | other',
                    'title': 'document title', 'number': 'certificate / licence number', 'issuer': 'issuing authority or company',
                    'issued': 'YYYY-MM-DD', 'valid_until': 'YYYY-MM-DD or null', 'product_name': 'the product name as printed in it, if any',
                    'language': 'ar | en | ar+en | the other language it is written in',
@@ -1026,7 +1026,7 @@ def plausible_api(name, dosed=False):
     low = [w.lower() for w in words]
     if ' '.join(low) in intake_eda.COUNTRIES:                                       # «India» after «…, manufactured by X, India»
         return False
-    if ' '.join(low).strip('.:') in API_HEADERS or low[0] in API_LEAD or API_SENTENCE.search(stripped):
+    if ' '.join(low).strip('.:') in API_HEADERS or low[0] in API_LEAD or API_SENTENCE.search(stripped) or all(w.strip('.:') in API_HEADERS for w in low):
         return False                                                                # a heading, the tail of a sentence, a sentence
     if all(w.strip('.,') in API_LOOKS or w in API_STOP for w in low):               # «White homogenous powder», «Transparent pale pink solution»
         return False
@@ -1146,7 +1146,7 @@ KIND_HOME = {'pricing': ['M1-05'], 'gmp': ['M1-37', 'M1-38'], 'cpp': ['M1-14'], 
              'cadc': ['M1-34', 'P-11'], 'composition': ['M1-31', 'P-01'], 'spec': ['M1-36', 'S-08', 'P-09', 'P-08'], 'annex1': ['M1-01'],
              'loa': ['M1-30'], 'factory': ['M1-18'], 'bmr': ['R-01', 'R-02'], 'stability': ['M1-34', 'P-16', 'S-14'],
              'method': ['P-10', 'S-09'], 'validation': ['P-10', 'S-09'], 'receipt': ['M1-03'], 'variation': ['M1-07'],
-             'import': ['M1-13'], 'refstd': ['S-12', 'P-14'], 'sampling': []}
+             'import': ['M1-13'], 'refstd': ['S-12', 'P-14'], 'sampling': [], 'layout': ['M1-11']}
 PER_API_ONLY = ('M1-38', 'M1-13', 'S-12')      # items kept one per active substance: an unresolved document is offered among them, not elsewhere
 TECHNICAL = ('spec', 'method', 'validation')        # one document often holds two of them (a specification with its test methods): any of their items takes it
 KIND_NAMES = {'pricing': {'en': 'pricing certificate', 'ar': 'شهادة تسعير'}, 'gmp': {'en': 'GMP certificate', 'ar': 'شهادة GMP'}, 'cpp': {'en': 'CPP', 'ar': 'شهادة CPP'},
@@ -1158,6 +1158,7 @@ KIND_NAMES = {'pricing': {'en': 'pricing certificate', 'ar': 'شهادة تسع�
               'method': {'en': 'method of analysis', 'ar': 'طريقة تحليل'}, 'validation': {'en': 'method validation / chromatograms', 'ar': 'تحقق من طريقة التحليل / كروماتوجرام'},
               'receipt': {'en': 'fees receipt', 'ar': 'إيصال رسوم'}, 'variation': {'en': 'variation approval', 'ar': 'موافقة تغيير'},
               'import': {'en': 'import approval', 'ar': 'موافقة استيرادية'}, 'refstd': {'en': 'reference / working standard certificate', 'ar': 'شهادة مادة مرجعية'},
+              'layout': {'en': 'carton / label artwork (layout)', 'ar': 'تصميم العبوة / الليبل (layout)'},
               'sampling': {'en': 'sampling form (not a dossier document)', 'ar': 'استمارة سحب عينة (مش مستند في الملف)'}}
 ORG_STOP = {'pharmaceutical', 'pharmaceuticals', 'pharma', 'pharm', 'company', 'co', 'ltd', 'limited', 'inc', 'corp', 'corporation', 'group',
             'industries', 'industry', 'industrial', 'for', 'the', 'and', 'of', 'gmbh', 'sae', 'laboratories', 'laboratory', 'labs', 'chemical',
@@ -1293,7 +1294,7 @@ def read_texts(files):
 
 
 SPLIT_KINDS = ('licence', 'pricing', 'cpp', 'gmp', 'cep', 'coa', 'cadc', 'composition', 'annex1', 'smpc', 'factory', 'bmr', 'stability', 'spec',
-               'loa', 'poa', 'commercial', 'contract', 'variation', 'import', 'method', 'validation', 'receipt', 'other')
+               'loa', 'poa', 'commercial', 'contract', 'variation', 'import', 'method', 'validation', 'receipt', 'refstd', 'layout', 'other')
 
 
 def split_prompt(pages, pictures=False):

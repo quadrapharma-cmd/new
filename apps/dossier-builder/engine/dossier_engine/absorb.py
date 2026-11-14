@@ -20,13 +20,39 @@ NAMES = {'registration.reg_no': ('registration no.', 'رقم التسجيل'), '
          'results': ('result', 'نتيجة'), 'composition': ('composition row', 'مكوّن في التركيب'), 'packs': ('pack', 'عبوة')}
 
 
+CURRENCY = re.compile(r'(?<![a-z])(?:l\.?\s?e\.?|egp|e\.g\.p\.?|pounds?|جنيه(?:ا|اً)?|ج\.?\s?م\.?)(?![a-z])', re.I)
+IDENTITY = ('licence', 'annex1', 'variation', 'cpp', 'smpc', 'composition', 'pricing', 'cadc', 'contract')   # extract.IDENTITY: the documents that say what the product is
+
+
 def _norm(v):
-    return re.sub(r'[\s\-_.,:;()/]+', '', str(v or '')).lower()
+    return re.sub(r'[\s\-_.,:;()/]+', '', CURRENCY.sub('egp', str(v or ''))).lower()   # 18 L.E. = 18 EGP = ١٨ جنيه
+
+
+def _clean(v):
+    """A value as a scan's reading gives it, without the stray quotes and marks at its ends («‘Powder for oral solution»); a final dot
+    stays («Example Pharm Co.»)."""
+    if not isinstance(v, str):
+        return v
+    v = v.strip(' \t\u2018\u2019\u201c\u201d"\'`\u00b4')
+    return v.lstrip(':;,-\u2013').rstrip(':;,').strip()
+
+
+def _words(v):
+    return [w for w in re.sub(r'[^a-z0-9\u0600-\u06ff]+', ' ', CURRENCY.sub('egp', str(v or '')).lower().replace('&', ' and ')).split()
+            if len(w) >= 3 and not w.isdigit()]
 
 
 def _same(a, b):
-    a, b = _norm(a), _norm(b)
-    return bool(a) and bool(b) and (a == b or a in b or b in a)
+    """One value in two spellings: equal once marks and currencies are set aside, or every word of the shorter in the longer
+    («Nerhadou … Pharmaceuticals and Nutraceuticals» / «5294 (Nerhadou … Pharmaceuticals & Nutraceuticals …»)."""
+    na, nb = _norm(a), _norm(b)
+    if not (na and nb):
+        return False
+    if na == nb or na in nb or nb in na:
+        return True
+    wa, wb = _words(a), _words(b)
+    small, big = (wa, wb) if len(wa) <= len(wb) else (wb, wa)
+    return len(small) >= 2 and all(w in big for w in small)
 
 
 def _fields(meta):
@@ -46,12 +72,19 @@ def _fields(meta):
 def absorb(data, doc, label=None):
     """Put what `doc` says into `data` (changed in place). → {added: [{field, value, en, ar}], conflicts: [{field, have, read}]}."""
     f = _fields(doc.get('meta'))
+    meta = doc.get('meta') or {}
+    kind = meta.get('kind') or ((meta.get('model') or {}).get('doc') or {}).get('kind') or (meta.get('extracted') or {}).get('kind')
+    if not kind and (meta.get('extracted') or {}).get('text'):
+        from . import extract as _extract
+        kind = _extract.content_kind(meta['extracted']['text'])          # what its own words say it is
+    says_what_it_is = kind in IDENTITY                 # a method, a validation or a CoA names the product at its top: it fills, it does not contradict
     src = {'doc_id': doc.get('id'), 'filename': label or doc.get('filename')}
     sources = data.setdefault('sources', {})
     conflicts = data.setdefault('conflicts', [])
     added, clashes = [], []
 
     def put(path, value):
+        value = _clean(value)
         if value in (None, '', [], {}):
             return
         sec, key = path.split('.', 1)
@@ -61,7 +94,7 @@ def absorb(data, doc, label=None):
             box[key] = value
             sources[path] = src
             added.append({'field': path, 'value': value})
-        elif not _same(have, value):
+        elif not _same(have, value) and (sec != 'product' or says_what_it_is):
             c = {'field': path, 'have': have, 'read': value, **src}
             if not any(x.get('field') == path and _norm(x.get('read')) == _norm(value) for x in conflicts):
                 conflicts.append(c)
@@ -83,12 +116,26 @@ def absorb(data, doc, label=None):
             packs.append(pk)
             added.append({'field': 'packs', 'value': pk})
 
+    from . import extract as _x
+
+    def one(name, a, b):
+        if name == 'apis':                             # one substance in other words: salt, hydrate, spelling
+            return _x._same_substance(_x.api_key(a), _x.api_key(b))
+        return _same(a, b)
+
     def rows(name, items, key, shape):
         cur = data.setdefault(name, [])
+        had = any(isinstance(x, dict) and x.get(key) for x in cur)
         for it in items or []:
             if not isinstance(it, dict) or not it.get(key):
                 continue
-            row = next((x for x in cur if isinstance(x, dict) and _same(x.get(key), it.get(key))), None)
+            if name == 'batches' and not re.search(r'\d', str(it.get(key))):
+                continue                               # a batch number has digits: «SYYOFYNOA» is a misreading
+            if name == 'apis' and not _x.plausible_api(str(it.get(key)), bool(it.get('strength'))):
+                continue                               # a table's heading, a sentence, a company
+            row = next((x for x in cur if isinstance(x, dict) and one(name, x.get(key), it.get(key))), None)
+            if row is None and name == 'apis' and had and not says_what_it_is:
+                continue                               # a method or a CoA names the substances; the licence and the composition say which they are
             if row is None:
                 cur.append(shape(it))
                 sources[f'{name}:{it[key]}'] = src

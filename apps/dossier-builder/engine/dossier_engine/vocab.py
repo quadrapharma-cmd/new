@@ -117,5 +117,5 @@ def known_names(st):
 
 
 def payload(st=None):
-    return {'forms': [{k: f[k] for k in ('id', 'en', 'ar', 'route')} for f in forms()], 'routes': ROUTES, 'countries': countries(), 'units': UNITS,
+    return {'forms': [{**{k: f[k] for k in ('id', 'en', 'ar', 'route')}, 'syn': list(f.get('syn') or [])} for f in forms()], 'routes': ROUTES, 'countries': countries(), 'units': UNITS,
             'api_options': API_OPTIONS, 'known': known_names(st) if st is not None else {}}

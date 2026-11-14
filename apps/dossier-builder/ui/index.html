@@ -1141,7 +1141,8 @@ function applyFillData(w, f){
   const formStd=P.dosage_form_std, formKnown=formStd&&VOC().forms.some(x=>x.id===formStd), formTxt=formKnown?formText(formStd):(P.dosage_form_en||P.dosage_form||'');
   if(formTxt&&!mine('form')){ set('form', formTxt, 'product'); d.form_std=formStd||''; } if(P.admin_route) set('admin_route', P.admin_route, 'product');
   set('man', P.manufacturer, 'product'); set('ind', P.indication, 'product');
-  if(P.name) set('name', [P.name, P.strength&&!P.name.includes(P.strength)?P.strength:'', formTxt&&!P.name.toLowerCase().includes(String(formTxt).toLowerCase())?String(formTxt).toLowerCase():''].filter(Boolean).join(' '), 'product');
+  const oneActive=(f.apis||[]).filter(a=>a&&a.name).length<=1;                                 // «Wouncure 3.5mg»: one active's strength is not a five-active product's
+  if(P.name) set('name', [P.name, oneActive&&P.strength&&!P.name.includes(P.strength)?P.strength:'', formTxt&&!P.name.toLowerCase().includes(String(formTxt).toLowerCase())?String(formTxt).toLowerCase():''].filter(Boolean).join(' '), 'product');
   for(const k of ['dossier_kind','origin','licence','activity','admin_route','leaflet']) if(R[k]) set(k, R[k], 'profile');
   const specs=normSpecs(R.dosage_specifics); if(specs.length) set('dosage_specifics', specs, 'profile');
   if(d.origin==='imported'&&!['imported','imported_bulk'].includes(d.licence)) d.licence='imported';
@@ -1161,18 +1162,42 @@ function applyFillData(w, f){
 function wizMissing(w){ const d=w.d, m=[]; const need=[['trade','pTrade'],['form','pForm'],['man','pMan'],['applicant','applicant'],['tracking','tracking']];
   for(const [k,lab] of need) if(!d[k]) m.push(t(lab)); if(!(d.apis||[]).some(a=>a.name)) m.push(t('apiName')); else if((d.apis||[]).some(a=>a.name&&!a.manufacturer)) m.push(t('apiMan')); return m; }
 function wizMark(w, k){ if(w.fromDoc&&w.fromDoc[k]) return ` <span class="tag" style="color:var(--ok)">${icon('check',11)} ${esc(String(w.fromDoc[k]).slice(0,28))}</span>`; if(w.read&&!w.d[k]) return ` <span class="tag" style="color:var(--warn)">${esc(t('missingWrite'))}</span>`; return ''; }
+const DIFF_FIELD={'product.name':'trade','product.dosage_form':'form','product.manufacturer':'man','product.indication':'ind','envelope.applicant':'applicant','envelope.tracking':'tracking'};
+function wizDiffs(w){ return ((w.aiFill&&w.aiFill._diffs)||[]).filter(x=>DIFF_FIELD[x.field]&&!sameWords(w.d[DIFF_FIELD[x.field]], x.other)); }
+function diffBanner(w){ const ds=wizDiffs(w); if(!ds.length) return '';
+  return `<div class="alert warn" id="wizDiffs">${icon('alert')}<div class="small grow"><b>${esc(L({ar:'المستندات مختلفة في دول — اختار',en:'The documents disagree here — choose'}))}</b>
+    ${ds.map((x,i)=>`<div class="row gap-s" style="flex-wrap:wrap;margin-top:6px"><b>${esc(L(FOUND_NAMES[x.field]||{en:x.field,ar:x.field}))}:</b>
+      <span>${bdi(w.d[DIFF_FIELD[x.field]]||x.keep)} <span class="muted">(${bdi(x.keep_from||'')})</span></span><span class="muted">${esc(L({ar:'ولا',en:'or'}))}</span>
+      <span>${bdi(x.other)} <span class="muted">(${bdi(x.other_from)})</span></span><button class="btn sm" data-wdiff="${i}">${esc(L({ar:'استخدم ده',en:'Use this'}))}</button></div>`).join('')}</div></div>`; }
 function readBanner(w){ if(!w.read) return ''; const n=Object.keys(w.fromDoc||{}).length, miss=wizMissing(w);
-  return `<div class="alert ${miss.length?'info':'ok'}">${icon(miss.length?'info':'check')}<p class="small"><b>${n} ${esc(t('readN'))}</b> — ${miss.length?`${esc(t('youWrite'))}: ${miss.map(esc).join('، ')}`:esc(t('allRead'))} <button class="btn sm ghost" id="intakeReview2">${esc(t('reviewRead'))}</button></p></div>`; }
+  return diffBanner(w)+`<div class="alert ${miss.length?'info':'ok'}">${icon(miss.length?'info':'check')}<p class="small"><b>${n} ${esc(t('readN'))}</b> — ${miss.length?`${esc(t('youWrite'))}: ${miss.map(esc).join('، ')}`:esc(t('allRead'))} <button class="btn sm ghost" id="intakeReview2">${esc(t('reviewRead'))}</button></p></div>`; }
 const cardOfKind = kind => { const c=BASE_DOCS.find(c=>c.kinds.includes(kind)); return c?c.kind:'other'; };
-function mergeAi(a, b){
-  /* the model's readings of successive uploads, kept together: objects merge key by key (non-empty wins), lists add new items by name / number */
-  if(!b||typeof b!=='object') return a||null; if(!a) return JSON.parse(JSON.stringify(b)); const out=JSON.parse(JSON.stringify(a));
+function mergeAi(a, b, files){
+  /* the model's readings of several uploads, kept together: lists add new items by name / number; in an object, a field already given
+     by a document read before (the more authoritative one: mergeReads) keeps its value, and a different value from this one is kept
+     beside it in _diffs, with the documents each came from, for the person to choose (wizDiffs) */
+  if(!b||typeof b!=='object') return a||null;
+  const from=(files||[]).join(', ');
+  const out=a?JSON.parse(JSON.stringify(a)):{}; out._from=out._from||{}; out._diffs=out._diffs||[];
   for(const [k,v] of Object.entries(b)){
+    if(k==='_from'||k==='_diffs') continue;
     if(Array.isArray(v)){ const cur=Array.isArray(out[k])?out[k]:[]; for(const it of v){ const key=it&&(it.name||it.no||it.test||it.filename); if(key&&cur.some(x=>x&&(x.name||x.no||x.test||x.filename)===key)) continue; cur.push(it); } out[k]=cur; }
-    else if(v&&typeof v==='object'){ out[k]=Object.assign({}, out[k]||{}, Object.fromEntries(Object.entries(v).filter(([kk,vv])=>vv!==null&&vv!==''&&!(Array.isArray(vv)&&!vv.length)))); }
-    else if(v!==null&&v!==''&&v!==undefined) out[k]=v; }
+    else if(v&&typeof v==='object'){ const cur=out[k]=Object.assign({}, out[k]||{});
+      for(const [kk,vv] of Object.entries(v)){ if(vv===null||vv===''||(Array.isArray(vv)&&!vv.length)) continue; const f=k+'.'+kk;
+        if(cur[kk]===undefined||cur[kk]===null||cur[kk]===''){ cur[kk]=vv; out._from[f]=from; continue; }
+        if(typeof vv==='string'&&typeof cur[kk]==='string'&&!sameWords(cur[kk], vv)&&!out._diffs.some(d=>d.field===f&&sameWords(d.other, vv)))
+          out._diffs.push({field:f, keep:cur[kk], keep_from:out._from[f]||'', other:vv, other_from:from}); } }
+    else if(v!==null&&v!==''&&v!==undefined&&(out[k]===undefined||out[k]===null||out[k]==='')) out[k]=v; }
   return out;
 }
+/* two spellings of one value (letter case, punctuation, «Pharma» / «PHARM-EGYPT»): every word of the shorter is in the longer */
+function sameWords(a, b){ const w=x=>String(x||'').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g,' ').split(' ').filter(y=>y.length>=3);
+  const [x,y]=[w(a),w(b)].sort((p,q)=>p.length-q.length); if(!x.length) return String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase();
+  return x.every(t=>y.some(u=>u.startsWith(t)||t.startsWith(u))); }
+/* the documents' order of authority for what the product is (the engine's extract.PRIORITY): the licence speaks first */
+const DOC_RANK=['licence','annex1','variation','cpp','smpc','composition','pricing','cadc','spec','coa','stability','method','validation','cep','gmp','bmr','factory','loa','contract','poa','commercial','receipt','other'];
+function readRank(b){ const r=((b&&b.ai&&b.ai.documents)||[]).map(d=>DOC_RANK.indexOf(d&&d.kind)).map(i=>i<0?DOC_RANK.length:i); return r.length?Math.min(...r):DOC_RANK.length; }
+function mergeReads(reads){ return [...(reads||[])].map((b,i)=>[b,i]).sort((p,q)=>readRank(p[0])-readRank(q[0])||p[1]-q[1]).reduce((acc,[b])=>mergeAi(acc, b.ai, b.files), null); }
 const FOUND_NAMES={'product.name':{ar:'الاسم التجاري',en:'trade name'},'product.dosage_form':{ar:'الشكل الصيدلي',en:'form'},'product.dosage_form_std':{ar:'الشكل الصيدلي',en:'form'},'product.dosage_form_en':{ar:'الشكل الصيدلي',en:'form'},'product.strength':{ar:'التركيز',en:'strength'},
   'product.manufacturer':{ar:'المصنّع',en:'manufacturer'},'product.manufacturer_country':{ar:'بلد المصنّع',en:'manufacturer country'},'product.applicant':{ar:'مقدم الطلب',en:'applicant'},'envelope.applicant':{ar:'مقدم الطلب',en:'applicant'},'product.indication':{ar:'دواعي الاستعمال',en:'indication'},
   'product.price':{ar:'السعر',en:'price'},'product.pack':{ar:'العبوة',en:'pack'},'product.shelf_life':{ar:'الصلاحية',en:'shelf life'},'registration.shelf_life':{ar:'الصلاحية',en:'shelf life'},'product.storage':{ar:'التخزين',en:'storage'},'product.admin_route':{ar:'طريقة الاستخدام',en:'route'},
@@ -1445,6 +1470,8 @@ function wizard(){
   v.querySelectorAll('[data-updoc]').forEach(b=>b.onclick=()=>pickFiles(files=>addDocs(b.dataset.updoc, files)));
   v.querySelectorAll('[data-drvdoc]').forEach(b=>b.onclick=()=>drivePicker(files=>addDocs(b.dataset.drvdoc, files)));
   v.querySelectorAll('#intakeReview, #intakeReview2').forEach(b=>b.onclick=()=>{ if(w.read) reviewIntake(w.read.x, w.read.files); });
+  v.querySelectorAll('[data-wdiff]').forEach(b=>b.onclick=()=>{ const x=wizDiffs(w)[+b.dataset.wdiff]; if(!x) return; const k=DIFF_FIELD[x.field];
+    w.d[k]=x.other; w.typed=w.typed||{}; w.typed[k]=true; w.fromDoc=w.fromDoc||{}; w.fromDoc[k]=x.other_from; wizShow(w); });
   const iz=$('#intake'); if(iz){ iz.ondragover=e=>{ e.preventDefault(); iz.classList.add('drop'); }; iz.ondragleave=()=>iz.classList.remove('drop');
     iz.ondrop=e=>{ e.preventDefault(); iz.classList.remove('drop'); intake([...e.dataTransfer.files]); }; }
   $('#wizCancel').onclick=async e=>{ e.preventDefault();                               // leaving is not deleting: the draft stays in the projects list
@@ -1477,12 +1504,14 @@ async function wizFinishRun(w0, did){
   if(draftId){ try{ const r=await api(`/intake/drafts/${draftId}`); if((r.state||{}).dataWritten) w0.dataWritten=true; }   // the draft as it is now: another tab may have gone further
     catch(e){ if(e&&e.status===404){ if(store.get(WIZ_KEY)===draftId) store.set(WIZ_KEY,''); return; } } }                    // gone: another tab finished everything
   const all=await wizFiles(w0), fill=w0.intakeFill;
-  const refused=all.filter(f=>((w0.docs||{})[f.name]||{}).status==='mismatch').map(f=>f.name);
-  const placeOpts={texts:w0.texts||{}, kinds:w0.kinds||{}, stage:refused, noText:Object.keys(w0.docs||{}).filter(n=>w0.docs[n].status==='notext')};
+  const several=new Set(((aiFillOf(w0)||{}).documents||[]).filter(x=>x&&x.one_document===false).map(x=>x.filename));   // Claude saw several documents in one file: it waits to be cut in the preparation stage, never placed whole
+  const refused=all.filter(f=>((w0.docs||{})[f.name]||{}).status==='mismatch'||several.has(f.name)).map(f=>f.name);
+  if(several.size) toast(L({ar:`${several.size} ملف فيه أكتر من مستند: مستني في «تجهيز المستندات» عشان يتقطّع وكل جزء يروح بنده`,en:`${several.size} file(s) hold several documents: waiting in «Prepare documents» to be cut, each part to its item`}), 9000);
+  const placeOpts={texts:w0.texts||{}, kinds:w0.kinds||{}, stage:refused, noText:Object.keys(w0.docs||{}).filter(n=>w0.docs[n].status==='notext'), read:((aiFillOf(w0)||{}).documents||[])};
   if(fill&&!w0.dataWritten){ try{ const data={apis:(d.apis||[]).filter(a=>a.name).map(a=>({name:a.name,manufacturer:a.manufacturer||'',option:a.option||'FULL',strength:a.strength||'',country:a.country||''})),
       composition:(fill.composition||[]).map(c=>({name:c.name,amount:c.amount||'',standard:c.standard||'',function:c.role==='active'?'active':(c.role||''),equivalent:c.equivalent||''})),
       batches:(fill.batches||[]).map(b=>({no:b.no,kind:b.kind||'fpp',api:b.api||'',size:b.size||'',date:b.date||'',site:b.site||'',expiry:b.expiry||'',conformity:b.conformity||''})),
-      specs:{product:(fill.specs||[]).map(s=>({test:s.test,limit:s.limit||'',method:s.method||''}))}, results:{}, registration:fill.registration||{}, product:{name_ar:(fill.product||{}).name_ar||''}};
+      specs:{product:(fill.specs||[]).map(s=>({test:s.test,limit:s.limit||'',method:s.method||''}))}, results:{}, registration:fill.registration||{}, product:{name_ar:(fill.product||{}).name_ar||'', name:d.trade||'', dosage_form:d.form||'', manufacturer:d.man||'', indication:d.ind||''}};
       for(const r0 of (fill.results||[])){ if(r0.batch&&r0.test){ (data.results[r0.batch]=data.results[r0.batch]||{})[r0.test]=r0.value; } }
       await api(`/dossiers/${did}/data`,{method:'PUT',json:data}); w0.dataWritten=true; await wizWrite(w0); }catch(e){ console.warn('intake data', e); } }   // written once: a resumed run never overwrites what was edited on the board
   const have=new Set(); try{ const b=await api(`/dossiers/${did}/board`); b.slots.forEach(s=>s.documents.forEach(x=>have.add(x.filename))); (b.unassigned||[]).forEach(x=>have.add(x.filename)); }catch(e){}
@@ -1545,7 +1574,7 @@ const saltSubstance=ws=>ws.some(w=>API_CATIONS.has(w))&&ws.some(w=>API_ANIONS.ha
 const STRENGTH_RX=/(\d+(?:[.,]\d+)?\s*(?:mg|g|mcg|µg|iu|i\.u\.|ml|%|units?|ملجم|مجم|جم|مل|وحدة)(?:\s*\([^)]*\))?(?:\s*\/\s*\d*\s*(?:g|ml|mg|جم|مل))?)/i;
 const AR_SENT=new Set(['في','من','على','إلى','الى','التي','الذي','يحتوي','تحتوي','كل','مع','عن','هذا','هذه','يكون','تكون','أو','او','ثم','لكل']);
 const hasAr=s=>/[\u0600-\u06ff]/.test(s), hasLat=s=>/[A-Za-z]/.test(s);
-function apiKey(name){ const STR=new RegExp(STRENGTH_RX.source,'gi'); const low=String(name||'').toLowerCase().replace(/\(.*?\)/g,' ').replace(STR,' ').replace(/[^a-z0-9\u0600-\u06ff ]+/g,' ');
+function apiKey(name){ const STR=new RegExp(STRENGTH_RX.source,'gi'); const low=String(name||'').toLowerCase().replace(/sulph/g,'sulf').replace(/aluminium/g,'aluminum').replace(/oestr/g,'estr').replace(/haem/g,'hem').replace(/\(.*?\)/g,' ').replace(STR,' ').replace(/[^a-z0-9\u0600-\u06ff ]+/g,' ');
   const toks=low.split(/\s+/).filter(w=>w&&!/^\d+$/.test(w)), named=toks.filter(w=>!API_STOP.has(w)); if(saltSubstance(named)) return named.join(' ');
   const words=named.filter(w=>!API_SALTS.has(w)); return words.join(' ')||toks.join(' '); }
 const API_HEADERS=new Set(['quantity','quantities','specification','specifications','description','appearance','reference','function','standard','amount','item','items','posology','indications','contraindications','overdose','overdosage','management','none','nil','n/a','not relevant','not applicable','no data','none known','method of administration','pregnancy and lactation','symptoms and signs','generic name','trade name','physical character','shelf life']);
@@ -1576,7 +1605,7 @@ function cleanApis(apis){ const out=[], flat=[]; const ROMAN=/\((I{1,3}|IV|V|VI)
     if(!plausibleApi(name, !!(m||a.strength))) continue;
     if(name===name.toUpperCase()&&name.length>3) name=name.toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
     const key=apiKey(name); const cur=out.find(x=>sameSubstance(x._k, key));
-    if(cur){ for(const [k,v] of Object.entries(a)) if(v&&!cur[k]&&k!=='name') cur[k]=v; if(name.length>cur.name.length&&cur._k.split(' ').every(w=>key.split(' ').includes(w))){ cur.name=name; cur._k=key; } }
+    if(cur){ for(const [k,v] of Object.entries(a)) if(v&&!cur[k]&&k!=='name') cur[k]=v; if(name.length>cur.name.length&&key!==cur._k&&cur._k.split(' ').every(w=>key.split(' ').includes(w))){ cur.name=name; cur._k=key; } }   // a fuller name (cysteine → cysteine hydrochloride), never another spelling of the same one
     else out.push(Object.assign({}, a, {name, _k:key})); }
   out.forEach(x=>delete x._k); return out.slice(0,40); }
 function mergeFill(rules, ai){
@@ -1595,7 +1624,8 @@ const EMPTY_VOC={forms:[],routes:[],countries:[],units:[],api_options:[],known:{
 async function vocab(){ if(!S.vocab){ try{ S.vocab=await api('/vocab'); }catch(e){ S.vocab=EMPTY_VOC; } } return S.vocab; }
 const VOC=()=>S.vocab||EMPTY_VOC;
 function vocFind(items, key, value){ if(value===undefined||value===null||value==='') return null; const v=String(value).trim(), lv=v.toLowerCase();
-  return items.find(it=>String(it[key]).toLowerCase()===lv)||items.find(it=>(it.en||'').toLowerCase()===lv||it.ar===v)||null; }
+  return items.find(it=>String(it[key]).toLowerCase()===lv)||items.find(it=>(it.en||'').toLowerCase()===lv||it.ar===v)
+    ||items.find(it=>(it.syn||[]).some(s=>String(s).toLowerCase()===lv||s===v))||null; }                 // «Topical Powder» is the list's «Cutaneous powder»
 function formText(id){ const f=VOC().forms.find(x=>x.id===id); return f?f.en:(id||''); }
 function countryText(code){ const c=VOC().countries.find(x=>x.code===code); return c?c.en:(code||''); }
 function smartSel(attrs, items, value, opts){ opts=opts||{}; const key=opts.key||'id'; const std=vocFind(items, key, value); const custom=value&&!std?String(value):'';
@@ -1825,7 +1855,7 @@ async function readFiles(files, target, onEvent, keep){
   const all=r.files||[], ok=new Set(keep?keep(all):all.map(f=>f.filename));
   const mine=all.filter(f=>ok.has(f.filename));
   const reads=await askModel(files, mine.map(asText), target, (n,st)=>ev(n,st), mine.length===all.length?r.prompt:null);
-  const ai=reads.reduce((acc,b)=>mergeAi(acc, b.ai), null), note=(reads.find(b=>b.note)||{}).note||'';
+  const ai=mergeReads(reads), note=(reads.find(b=>b.note)||{}).note||'';
   for(const f of all){ const k=f.kind==='other'?aiKindOf(ai, f.filename):null; if(k) f.kind=k; }      // a scan's kind, from what the model read on its pages
   all.forEach(f=>ev(f.filename,'done',{pages:f.pages,chars:f.chars,kind:f.kind,found:f.found}));
   return {r, ai, note, reads, fill:mergeFill(r.rules, ai), modelFiles:mine.map(f=>f.filename), modelAsked:reads.length>0};
@@ -1842,7 +1872,7 @@ async function modelRead(w, names){
 function aiFillOf(w){
   /* the model's readings of the files that are still accepted: an entry whose file was removed or refused is left out */
   const ok=n=>!['mismatch','removed','notext'].includes(((w.docs||{})[n]||{}).status)&&!!(w.texts||{})[n];
-  return (w.aiReads||[]).filter(b=>b.files.every(ok)).reduce((acc,b)=>mergeAi(acc, b.ai), null);
+  return mergeReads((w.aiReads||[]).filter(b=>b.files.every(ok)));
 }
 async function intake(files){
   if(S.wiz){ return addDocs('other', files); }                        // the wizard: read, fill, show on the cards; «review what was read» opens the full review
@@ -1924,12 +1954,16 @@ async function placeFiles(did, files, opts){
     const best=r.suggestions[0], auto=('auto' in r)?r.auto:(best&&best.slot_id), slot=auto&&slotById(auto);     // auto null: the items of two actives tie, the user decides from the box
     if(!best||!slot||needsMeta(slot)){ left.push(r.filename); leftFiles.push(files[i]); continue; }
     const f=new FormData(); f.append('file',files[i]); f.append('meta',JSON.stringify(kinds[files[i].name]?{kind:kinds[files[i].name]}:{}));   // the kind the reading gave goes with the file
-    try{ await api(`/dossiers/${did}/slots/${encodeURIComponent(slot.slot_id)}/documents`,{method:'POST',body:f}); n++; }
+    try{ const up=await api(`/dossiers/${did}/slots/${encodeURIComponent(slot.slot_id)}/documents`,{method:'POST',body:f}); n++;
+      const seen=(opts.read||[]).find(x=>x&&x.filename===files[i].name);                       // what Claude read on it in the wizard: its kind, number, dates, signature, stamp
+      if(seen&&up&&up.id){ try{ await api(`/dossiers/${did}/documents/${up.id}/model-reading`,{method:'POST',json:{ai:{documents:[seen]}, by:'claude.ai'}}); }catch(e){ console.warn('reading', e); } } }
     catch(e){ if(e&&e.detail&&e.detail.code==='E-NOTEXT') noText.push(files[i].name); else { left.push(r.filename); leftFiles.push(files[i]); } }      // no text of its own: refused at the gate
   }
   if(leftFiles.length){                                                            // nothing uploaded is lost: kept as «not placed yet», the user puts it in its item
     for(const f of leftFiles){ const fd=new FormData(); fd.append('files',f); const meta={}; if(kinds[f.name]||texts[f.name]) meta[f.name]={kind:kinds[f.name]||null, text:(texts[f.name]&&texts[f.name].text||'').slice(0,6000)};      // one file a request, each with its own reading
-      fd.append('meta', JSON.stringify(meta)); try{ await api(`/dossiers/${did}/unplaced`,{method:'POST',body:fd}); staged++; }
+      fd.append('meta', JSON.stringify(meta)); try{ const kept=await api(`/dossiers/${did}/unplaced`,{method:'POST',body:fd}); staged++;
+        const seen=(opts.read||[]).find(x=>x&&x.filename===f.name), one=Array.isArray(kept)?kept[0]:kept;    // what Claude read on it waits with it: its item is chosen from it
+        if(seen&&one&&one.id){ try{ await api(`/dossiers/${did}/documents/${one.id}/model-reading`,{method:'POST',json:{ai:{documents:[seen]}, by:'claude.ai'}}); }catch(e){ console.warn('reading', e); } } }
       catch(e){ if(e&&e.detail&&e.detail.code==='E-NOTEXT'){ noText.push(f.name); continue; } console.warn('unplaced', e); lost.push(`${f.name}: ${e&&e.message||e}`); } } }
   S.board=null; opts.lost=lost; opts.noText=noText;
   toast(`${n} ${t('placed')}${staged?` · ${staged} ${t('stagedN')}`:''}`+(lost.length?L({ar:` · ${lost.length} ما اتحفظش: ${lost.slice(0,3).join(' · ')}`,en:` · ${lost.length} not kept: ${lost.slice(0,3).join(' · ')}`}):'')
@@ -2516,18 +2550,24 @@ async function loadTemplatePanel(s, body){
 function docTypeName(id){ const m={registration_licence:{ar:'إخطار/رخصة التسجيل',en:'registration licence'},pricing_certificate:{ar:'شهادة التسعير',en:'pricing certificate'},leaflet:{ar:'النشرة المرجعية',en:'reference leaflet'},api_coa:{ar:'شهادة تحليل المادة الفعالة',en:'API CoA'},
     analysis_conformity:{ar:'شهادة التحليل/المطابقة',en:'analysis / conformity'},gmp_certificate:{ar:'شهادة GMP',en:'GMP certificate'},dmf_cep:{ar:'DMF / CEP',en:'DMF / CEP'},specification:{ar:'المواصفات',en:'specifications'},stability_data:{ar:'بيانات الثبات',en:'stability data'},
     stability_approval:{ar:'موافقة الثبات',en:'stability approval'},manufacturing_contract:{ar:'عقد التصنيع',en:'manufacturing contract'},toll_card:{ar:'بطاقة الـ toll',en:'toll card'},commercial_register:{ar:'السجل التجاري',en:'commercial register'}}; return L(m[id]||{ar:id,en:id}); }
-async function splitDoc(docId){
-  /* the cuts the program proposes, as ticks on the pages; the person confirms or moves them, then each part goes to the unplaced box */
+async function splitDoc(docId, seen){
+  /* the cuts the program proposes, as ticks on the pages; the person confirms or moves them, then each part goes to the unplaced box.
+     seen: Claude's reading of the pages ({parts:[{from,to,kind,title,kind_name}], by}) — the ticks start from it, and a confirmed
+     start keeps the kind and title Claude gave its part */
   let p; try{ p=await api(`/dossiers/${S.dossier.id}/documents/${docId}/split`); }catch(e){ toast(e.message); return; }
+  const parts=(seen&&seen.parts)||[], at=n=>parts.find(x=>x.from===n);
+  if(parts.length) p.page_info.forEach(x=>{ const q=at(x.page); x.starts=!!q; if(q){ x.kind_name=q.kind_name||x.kind_name; x.claude=(q.kind_name?L(q.kind_name):(q.kind==='other'?L({ar:'نوعه مش معروف',en:'kind not known'}):q.kind))+(q.title?' — '+q.title:''); } });
   const kn=x=>x.kind_name?L(x.kind_name):t('splitUnknown');
   openDrawer(t('splitT'), `<p class="small muted">${esc(t('splitSub'))}</p><div class="tablewrap" style="max-height:52vh;overflow:auto"><table><thead><tr><th>${esc(t('splitStarts'))}</th><th>${esc(t('srchPage'))}</th><th>${esc(t('splitWhat'))}</th></tr></thead><tbody>
-    ${p.page_info.map(x=>`<tr><td><input type="checkbox" data-start="${x.page}" ${x.starts?'checked':''} ${x.page===1?'disabled':''} aria-label="${esc(t('splitStarts'))} ${x.page}"></td><td class="code">${x.page}</td><td><b class="small">${esc(kn(x))}</b><div class="small muted" dir="auto">${esc(x.title||'—')}</div></td></tr>`).join('')}</tbody></table></div>
+    ${p.page_info.map(x=>`<tr><td><input type="checkbox" data-start="${x.page}" ${x.starts?'checked':''} ${x.page===1?'disabled':''} aria-label="${esc(t('splitStarts'))} ${x.page}"></td><td class="code">${x.page}</td><td><b class="small">${esc(kn(x))}</b><div class="small muted" dir="auto">${esc(x.title||'—')}</div>${x.claude?`<div class="small" style="color:var(--accent)">${icon('sparkles',12)} Claude: ${esc(x.claude)}</div>`:''}</td></tr>`).join('')}</tbody></table></div>
     <div class="small" id="splitSum"></div><div class="row"><button class="btn pri" id="splitGo">${icon('check',14)} ${esc(t('splitGo'))}</button><button class="btn ghost" onclick="DS.closeDrawer()">${esc(t('cancel'))}</button></div>`, true);
   const starts=()=>[1, ...$$('[data-start]:checked', $('#dBody')).map(c=>+c.dataset.start).filter(n=>n>1)];
   const sum=()=>{ const n=starts().length; $('#splitSum').textContent=t('splitN').replace('{n}', n); $('#splitGo').disabled=n<2; };
   $$('[data-start]', $('#dBody')).forEach(c=>c.onchange=sum); sum();
   $('#splitGo').onclick=async()=>{ $('#splitGo').disabled=true;
-    try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${docId}/split`,{method:'POST',json:{starts:starts()}});
+    try{ const ss=starts(), kept=ss.map(n=>at(n)), json={starts:ss};
+      if(parts.length){ json.kinds=kept.map(q=>q?q.kind:'other'); json.titles=kept.map(q=>q&&q.title||''); json.by=seen.by||'model'; }
+      const r=await api(`/dossiers/${S.dossier.id}/documents/${docId}/split`,{method:'POST',json});
       closeDrawer(); toast(t('splitDone').replace('{n}', r.parts.length)); S.board=null; await route();
       const box=$('#unplacedBox'); if(box) box.scrollIntoView({block:'start', behavior:'smooth'}); }
     catch(e){ toast(e.message); $('#splitGo').disabled=false; } };
@@ -2858,6 +2898,7 @@ function prepWire(out){
   $$('[data-pchoose]', out).forEach(b=>b.onclick=async()=>{ const c=(S.prep.conflicts||[])[+b.dataset.pchoose]; if(!c) return;
     try{ await api(`/dossiers/${S.dossier.id}/data/choose`,{method:'POST',json:{field:c.field, value:b.dataset.use==='read'?c.read:c.have, doc_id:b.dataset.use==='read'?c.doc_id:null}}); }catch(e){ toast(e.message); } paintPrepare(); });
   $$('[data-pconf]', out).forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.pconf}/confirm`,{method:'POST',json:{cond:b.dataset.cond, answer:b.dataset.ans}}); }catch(e){ toast(e.message); } paintPrepare(); });
+  $$('[data-pslot]', out).forEach(x=>x.addEventListener('change', ()=>{ x.dataset.touched='1'; }));
   $$('[data-pslotans]', out).forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(b.dataset.pslotans)}/attest`,{method:'POST',json:{answer:b.dataset.ans}}); toast(t('attestSaved')); S.board=null; }catch(e){ toast(e.message); } paintPrepare(); });
   $$('[data-pdatego]', out).forEach(b=>b.onclick=async()=>{ const v=($(`[data-pdate="${CSS.escape(b.dataset.pdatego)}"]`)||{}).value; if(!v) return;
     try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.pdatego}/validity`,{method:'PUT',json:{valid_until:v}}); }catch(e){ toast(e.message); } paintPrepare(); });
@@ -2923,14 +2964,15 @@ async function prepOne(id, opt){
   opt=opt||{};
   const r0=S.prep||{waiting:[],placed:[]}; const w=r0.waiting.find(x=>x.id===id), d=r0.placed.find(x=>x.id===id), name=(w||d||{}).filename||'';
   const sel=$(`[data-pslot="${CSS.escape(id)}"]`); const body=sel&&sel.value?{slot_id:sel.value}:{};
+  const picked=!!(sel&&sel.dataset.touched);                                                   // the person chose the item (the list only showing its own suggestion is not a choice)
   S.prepDoing={id, name};
-  if(w&&!w.split_from&&!opt.part&&!body.slot_id&&(w.reading.pages||0)>1){                // a combined file: cut, and each part prepared in its item
+  if(w&&!w.split_from&&!opt.part&&!picked&&(w.reading.pages||0)>1){                       // a combined file: cut, and each part prepared in its item
     const b=await prepBundle(w);
     if(b&&b.parts.length>1){
-      if(!b.sure){ S.prepDoing=null; prepNow(id, ''); await splitDoc(id); return null; }   // where the kinds are not all known, the person confirms the cuts
+      if(!b.sure){ S.prepDoing=null; prepNow(id, ''); await splitDoc(id, b); return null; }   // where the kinds are not all known, the person confirms the cuts (starting from Claude's)
       try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${id}/split`,{method:'POST',json:{starts:b.parts.map(x=>x.from), kinds:b.parts.map(x=>x.kind), titles:b.parts.map(x=>x.title||''), by:b.by}});
         toast(t('prepBundleFound').replace('{n}', r.parts.length), 9000);
-        S.prep=await api(`/dossiers/${S.dossier.id}/prepare`);
+        prepNow(id, ''); S.prepDoing=null; await paintPrepare();                                   // the parts as their own cards, each with its own progress
         for(const part of r.parts) await prepOne(part.id, {part:true});
         return {split:r.parts}; }
       catch(e){ toast(e.message); }
@@ -2949,7 +2991,7 @@ async function prepOne(id, opt){
       try{ await prepModelRead(doc.id, doc.filename, true); }catch(e){ console.warn('model', doc.filename, e); toast(t('prepModelFailed')+': '+((e&&(e.code||e.message))||'')); } }
     if((r.steps||[])[0]==='needs_item') toast(t('prepPick'));
     const said=(r.steps||[]).filter(s=>s&&typeof s==='object');                                    // the steps that carry news (a string step is only its name)
-    const no=said.flatMap(s=>s.refused||[]); if(no.length) toast(no.map(x=>x[S.lang]||x.en).join(' · '));   // a fix it could not make, and why
+    const no=said.flatMap(s=>s.refused||[]); if(no.length&&!S.prepBusy) toast(no.map(x=>x[S.lang]||x.en).join(' · '));   // a fix it could not make, and why (in «Prepare them all», each card says it)
     const cut=said.find(s=>s.split); if(cut) toast(t('prepSplit').replace('{n}', cut.split.parts), 8000);
     S.board=null; return r; }
   catch(e){ toast(e.message); }

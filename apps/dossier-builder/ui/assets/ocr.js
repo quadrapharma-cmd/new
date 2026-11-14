@@ -490,11 +490,12 @@
      `budget` sheets (the model takes that many pictures a call); 4 to 12 pages a sheet. → [{blob, from, to, pages}] */
   async function contactSheets(file, o) {
     o = o || {};
-    const budget = Math.max(1, o.budget || 8), TW = 400, TH = 566, PAD = 8, HEAD = 30;
+    const budget = Math.max(1, o.budget || 8), PAD = 8, HEAD = 30;
     const lib = await pdfjs();
     const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
     try {
-      const n = doc.numPages, per = Math.min(12, Math.max(4, Math.ceil(n / budget))), cols = per <= 6 ? 2 : 3, out = [];
+      const n = doc.numPages, per = Math.min(30, Math.max(4, Math.ceil(n / budget))), cols = per <= 6 ? 2 : per <= 12 ? 3 : per <= 20 ? 4 : 5, out = [];
+      const sc = per > 12 ? Math.sqrt(12 / per) : 1, TW = Math.round(400 * sc), TH = Math.round(566 * sc);     // a long file: more, smaller pages to a picture, so every page is seen
       for (let from = 1; from <= n && out.length < budget; from += per) {
         const to = Math.min(n, from + per - 1), rows = Math.ceil((to - from + 1) / cols);
         const c = document.createElement('canvas'); c.width = cols * (TW + PAD) + PAD; c.height = rows * (TH + PAD + HEAD) + PAD;

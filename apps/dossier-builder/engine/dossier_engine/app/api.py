@@ -1407,6 +1407,10 @@ def create_app(workspace, auth_enabled=None):
             except Exception:
                 pass
             text = text or (doc.get('meta') or {}).get('text') or ''
+            seen = ((doc.get('meta') or {}).get('model') or {}).get('doc') or {}            # what Claude read on it: its title, product, issuer
+            said = ' '.join(str(seen.get(k) or '') for k in ('title', 'product_name', 'issuer', 'batch')).strip()
+            if said:
+                text = f'{text}\n{said}'
             kind, sugg, auto = _suggest_with_kind(clf, slots, doc['filename'], text, (doc.get('meta') or {}).get('kind'), (d.get('product') or {}).get('name'),
                                                   (d.get('product') or {}).get('manufacturer'))
             out.append({'id': doc['id'], 'filename': doc['filename'], 'kind': kind, 'suggestions': sugg, 'auto': auto, 'created': doc.get('created')})
@@ -1622,7 +1626,7 @@ def create_app(workspace, auth_enabled=None):
                                'ocr_quality': (doc.get('meta') or {}).get('extracted', {}).get('ocr_quality'),
                                'optimized': (doc.get('meta') or {}).get('optimized'),
                                'improvable': bool(_pc.available() and doc['filename'].lower().endswith('.pdf')
-                                                  and not (doc.get('meta') or {}).get('optimized'))})
+                                                  and not (doc.get('meta') or {}).get('optimized') and not (doc.get('meta') or {}).get('optimize_tried'))})
         open_conf = [c for c in ((ctx[0].get('data') or {}).get('conflicts') or []) if isinstance(c, dict)]
         return {'requested': requested, 'waiting': waiting, 'placed': placed, 'engine': _pc.status(), 'ocr': _pc.ocr_info(),
                 'model': 'server' if _ai_key() else None, 'conflicts': open_conf}
@@ -1670,7 +1674,7 @@ def create_app(workspace, auth_enabled=None):
                 doc = st.keep_reading(did, r['document']['id'], keep)
             doc = st.keep_fix_refused(did, doc['id'], r['refused'])      # what could not be fixed, with why: asked of the user, not offered again
             steps.append({'fixed': [x['op'] for x in r['done']], 'refused': [{'op': x['op'], 'en': x['en'], 'ar': x['ar']} for x in r['refused']]})
-        if body.get('improve', True) and not (doc.get('meta') or {}).get('optimized'):
+        if body.get('improve', True) and not (doc.get('meta') or {}).get('optimized') and not (doc.get('meta') or {}).get('optimize_tried'):
             imp = st.improve_document(did, doc['id'])                     # «improve the file»: smaller and cleaner, the same pages
             if imp.get('document'):
                 doc = st.keep_reading(did, imp['document']['id'], keep)

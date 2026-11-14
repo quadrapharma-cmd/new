@@ -403,6 +403,11 @@ def _date(s):
     return f'{y}-{mo:02d}-{d:02d}' if 1 <= d <= 31 and 1 <= mo <= 12 else None
 
 
+AR_FORM_WORDS = set('بودرة بودره مسحوق أقراص اقراص قرص كبسولات كبسولة كبسول شراب محلول معلق مستحلب كريم مرهم جل حقن أمبول امبول فيال نقط قطرة قطرات '
+                    'بخاخ لبوس لبوسات تحاميل أكياس اكياس كيس فوار فوارة للتناول عن طريق فم الفم بالفم موضعي موضعية جلدي جلدية لعمل للحقن للاستعمال '
+                    'خارجي الخارجي مغلفة مغلف ممتد المفعول مفعول للشرب للرش مرطب سائل معقم'.split())
+
+
 def read(text):
     """The EDA-form reading of one document in the intake's shape (only what the form states)."""
     b = blocks(text)
@@ -414,8 +419,13 @@ def read(text):
         ar = re.search('[؀-ۿ][؀-ۿ ]{1,60}', v)
         if lat:
             P['name'] = _clean(re.sub(r'\s+[a-z]{1,2}\s+\d+\s*$', '', lat.group(0)))     # «Wouncure ‘a 07» (OCR of the stamp)
-        if ar:
-            P['name_ar'] = _clean(ar.group(0))
+        ars = []
+        for run in re.findall('[؀-ۿ][؀-ۿ ]{1,80}', v):                # the Arabic dosage form on the same line is not the name: its words are taken out
+            words = [w for w in run.split() if (w[2:] if w.startswith('ال') and len(w) > 3 else w) not in AR_FORM_WORDS and w not in AR_FORM_WORDS]
+            if 1 <= len(words) <= 4:
+                ars.append(_clean(' '.join(words)))
+        if ars and ars[0]:
+            P['name_ar'] = ars[0]
     if not P.get('name') and re.search('اسم المستحضر', text or ''):                      # pricing letter: Arabic header, Latin name below
         tail = text[re.search('اسم المستحضر', text).end():]
         ml = re.search(r'\n[^\n]*?([A-Z][A-Za-z0-9]+(?:\s+[A-Za-z0-9]+){0,5})', tail)

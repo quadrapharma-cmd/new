@@ -110,6 +110,31 @@ An EU dossier exports an **eCTD 3.2.2 sequence** beside its CTD folders, on the 
 - Tests: `tests/test_ectd32_eu.py` (9: DTD validity for the three procedures, what the writer refuses, the validator's pass,
   its catches, a follow-on replace, the API export, the leaflet item), `tests/test_ui_eu_ectd.py`.
 
+## What a person's run on two real products changed (14/11/2026) — «نفذ بنفسك بمستوي انسان»
+
+The owner asked for the whole program to be run as a person would, on the real files of two products (kept on this machine only):
+Dramrin (9 files, 13 documents with an archive, one 12-page file holding five documents) and Wouncure (26 files, mostly scans, seven
+of them combined). The browser edition was opened fresh, the files given to the wizard in one go, the dossier made, «Prepare them all»
+pressed, the export page read. claude.ai's model was stood in by a reading of every page written beforehand from looking at the pages
+(the program still drew and sent its own pictures, so its times are its own). Every fault the run met is fixed and held by
+`tests/test_trial_human.py`:
+
+- **The wizard merges by authority**: the licence's values come first, not the last answer to arrive; where another document says
+  something else (the stability letter's manufacturer after a site transfer) the wizard shows both with their documents — «use this».
+  One substance in two spellings (picosulphate / picosulfate) is one substance, the licence's spelling kept. A combination product's
+  name carries no one active's strength. A read dose form matches the list's synonyms («Topical Powder» is «Cutaneous powder»).
+- **What Claude read goes with each file**: its kind, number, dates, signature and stamp, placed or waiting — so the preparation stage
+  does not ask again (the licence's validity), and a scanned certificate is put in its own active substance's item from its title.
+- **A combined file is never placed whole**: one Claude saw as several documents waits to be cut; when one part's kind is unknown
+  the cut dialog opens on Claude's cuts with each part's kind and title; a carton artwork (layout) and a working standard (refstd) are
+  kinds Claude can name; a long file (up to 240 pages) is shown to Claude whole; after a cut the parts show at once with their progress.
+- **The data keeps only what is true**: a technical document (method, validation, CoA) fills the product's empty places but never
+  contradicts it and adds no active substance once the dossier has its substances; the same price in two currencies, one company in
+  two spellings and a scan's stray quotes are not differences; a batch number has digits; a table heading is not a substance; the
+  licence's Arabic name is not the Arabic dose form beside it; the wizard's product is what is written.
+- **Preparation without noise**: a Word document is prepared (no «PDF files only» stop), a document without headings is told so
+  plainly, «Prepare them all» does not toast each fix it could not make, and «improve the file» that found nothing is tried once.
+
 ## Claude reads the scans again; each document held to its item's conditions (13/11/2026) — «البرنامج رجع ذكي»
 
 The owner, 13/11/2026: the program had become a page that took scans, acted as if it was reading, and showed nothing — the
