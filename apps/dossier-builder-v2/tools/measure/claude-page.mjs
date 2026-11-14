@@ -64,7 +64,8 @@ const ASK_HALVES='The two images are the two halves of ONE scanned page of a pha
 const $=s=>document.querySelector(s);
 const results=[]; let sample=null, db=null, stopper=null, startedAt=null, tier=null;
 const cls=p=>p>=90?'good':p>=60?'warn':'bad';
-function blobOf(src){return fetch(src).then(r=>r.blob())}
+function blobOf(src){return new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;
+  c.getContext('2d').drawImage(im,0,0);c.toBlob(b=>b?ok(b):no(new Error('the page could not be drawn')),'image/png')};im.onerror=no;im.src=src})}
 function halves(src){return new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const w=im.naturalWidth,h=im.naturalHeight,wide=w>h;const out=[];
   for(const part of [0,1]){const c=document.createElement('canvas');const keep=0.55;
     if(wide){c.width=Math.round(w*keep);c.height=h;c.getContext('2d').drawImage(im,part?w-c.width:0,0,c.width,h,0,0,c.width,h)}
@@ -96,11 +97,11 @@ async function run(){
       if(!r){r={page:p.page,variant:p.variant};results.push(r)}
       if(!r.whole||r.whole.error){$('#status').textContent='صفحة '+(i+1)+' من '+PAGES.length+': الصفحة كلها…';
         try{const one=await readOnce([await blobOf(p.src)],ASK_WHOLE,stopper.signal);r.whole={...score(TRUTH[p.page],one.text),seconds:one.seconds,truncated:one.truncated,text:one.text}}
-        catch(e){if(e.code==='cancelled')throw e;r.whole={error:e.code||'error'};if(['rate_limited','not_granted','sampling_disabled','images_unavailable'].includes(e.code))throw e}
+        catch(e){if(e.code==='cancelled')throw e;r.whole={error:e.code||'error',message:String(e.message||e).slice(0,200)};if(['rate_limited','not_granted','sampling_disabled','images_unavailable'].includes(e.code))throw e}
         draw();await save()}
       if(caps.images.maxCount>=2&&(!r.halves||r.halves.error)){$('#status').textContent='صفحة '+(i+1)+' من '+PAGES.length+': نصّين…';
         try{const two=await readOnce(await halves(p.src),ASK_HALVES,stopper.signal);r.halves={...score(TRUTH[p.page],two.text),seconds:two.seconds,truncated:two.truncated,text:two.text}}
-        catch(e){if(e.code==='cancelled')throw e;r.halves={error:e.code||'error'};if(['rate_limited','not_granted','sampling_disabled'].includes(e.code))throw e}
+        catch(e){if(e.code==='cancelled')throw e;r.halves={error:e.code||'error',message:String(e.message||e).slice(0,200)};if(['rate_limited','not_granted','sampling_disabled'].includes(e.code))throw e}
         draw();await save()}}
     $('#status').textContent='خلص القياس، والنتيجة اتحفظت.'}
   catch(e){const why={rate_limited:'حدّ الاستخدام في حسابك خلص دلوقتي. اللي اتقاس اتحفظ، ودوس «كمّل» بعدين.',not_granted:'Claude مش مسموح للصفحة دي.',cancelled:'وقفت. اللي اتقاس اتحفظ.'}[e.code];
