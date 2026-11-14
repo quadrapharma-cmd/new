@@ -33,6 +33,23 @@ export function ensureSource(app) {
   return src;
 }
 
+// The font collection the programs' releases build with: their web builds embed its Arabic face (Noto Sans Arabic, OFL-1.1),
+// the fallback for Arabic text; without it the browser builds draw Arabic as boxes.
+export function ensureFonts() {
+  const pin = PINS.fonts;
+  const dir = path.join(CACHE, 'craft-fonts');
+  if (!fs.existsSync(path.join(dir, '.git'))) {
+    fs.mkdirSync(dir, { recursive: true });
+    run('git', ['-C', dir, 'init', '-q']);
+    run('git', ['-C', dir, 'remote', 'add', 'origin', pin.repo]);
+    run('git', ['-C', dir, 'fetch', '-q', '--depth', '1', 'origin', pin.commit]);
+    run('git', ['-C', dir, 'checkout', '-q', 'FETCH_HEAD']);
+  }
+  const head = run('git', ['-C', dir, 'rev-parse', 'HEAD']);
+  if (head !== pin.commit) throw new Error(`craft-fonts: the checkout is at ${head}, the pin says ${pin.commit}`);
+  return dir;
+}
+
 export function applyPatches(app, src) {
   const dir = path.join(HERE, 'patches', app);
   if (!fs.existsSync(dir)) return [];
@@ -73,7 +90,8 @@ export function build(app, kind, { keep = false } = {}) {
   const out = path.join(VENDOR, `${app}-${kind}`);
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(out, { recursive: true });
-  const env = { ...process.env, CARGO_TARGET_DIR: target, TRUNK_SKIP_VERSION_CHECK: 'true' };
+  const fonts = ensureFonts();
+  const env = { ...process.env, CARGO_TARGET_DIR: target, TRUNK_SKIP_VERSION_CHECK: 'true', CRAFT_FONTS_DIR: fonts };
   const t0 = Date.now();
   let r;
   if (kind === 'web') {
@@ -98,6 +116,14 @@ export function build(app, kind, { keep = false } = {}) {
   const seconds = Math.round((Date.now() - t0) / 1000);
   if (r.status !== 0) throw new Error(`${app} ${kind}: the build failed after ${seconds} s (exit ${r.status})`);
   copyLicences(src, out);
+  // the embedded faces' licences (the web builds keep the Arabic and Georgian interface faces)
+  for (const line of fs.readFileSync(path.join(fonts, 'fonts', 'manifest.txt'), 'utf8').split('\n')) {
+    const f = line.split(' | ').map(x => x.trim());
+    if (f.length < 6 || line.startsWith('#') || (kind === 'web' && !/\b(Arab|Geor)\b/.test(f[3]))) continue;
+    const dest = path.join(out, 'licenses', 'fonts', path.basename(path.dirname(f[5])) + '-' + path.basename(f[5]));
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(path.join(fonts, f[5]), dest);
+  }
   const files = listFiles(out).filter(f => !f.name.startsWith('licenses'));
   const info = { app, kind, tag: pin.tag, commit: pin.commit, patches, built_on: new Date().toISOString().slice(0, 10), seconds,
                  total_bytes: files.reduce((s, f) => s + f.bytes, 0), files };
