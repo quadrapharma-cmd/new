@@ -1,7 +1,7 @@
 // Measures the text readers on the made-up scanned pages (tools/measure/pages.mjs): for every page and reader, the share of
 // the page's facts the reading holds (tools/measure/score.mjs) and the seconds it took. Run it on an idle machine: the times
 // are part of the measure.
-//   node tools/measure/readers.mjs [reader…]      readers: tesseract-fast, tesseract-best, tesseract-best-osd
+//   node tools/measure/readers.mjs [reader…]      readers: tesseract-fast, tesseract-best, tesseract-best-osd, qwen3vl
 // Writes .cache/measure/readers.json and prints a table. Claude is measured where it runs for the user — inside claude.ai,
 // on the user's own account — by the measuring page (tools/measure/claude-page), never by the session that wrote the pages.
 import fs from 'node:fs';
@@ -24,10 +24,18 @@ function bestWithOsd() {
   return dir;
 }
 
+// The same instruction Claude gets on the measuring page (tools/measure/claude-page.mjs).
+const ASK = 'The image is a scanned page of a pharmaceutical regulatory document. It may be rotated, skewed or faint. Read it in its correct orientation and transcribe every word on it exactly as written, in reading order: Arabic as Arabic, English as English, and every digit as it is drawn (keep Arabic-Indic digits as they are). Include headings, table cells and the text of stamps. Output only the transcription.';
+// A vision-language model on this machine through llama.cpp's multimodal command line (LLAMA_MTMD_CLI), the model and its
+// image part named by QWEN3VL_MODEL and QWEN3VL_MMPROJ.
+const qwen = f => ['-m', process.env.QWEN3VL_MODEL, '--mmproj', process.env.QWEN3VL_MMPROJ, '--image', f, '-p', ASK,
+                   '--temp', '0', '-n', '1200', '-t', String(Math.max(1, os.cpus().length)), '--no-warmup'];
+
 export const READERS = {
   'tesseract-fast': { what: 'Tesseract 5 with the fast models a Tesseract installer brings', args: f => [f, 'stdout', '-l', 'ara+eng'] },
   'tesseract-best': { what: 'Tesseract 5 with the «best» models the program carries', args: f => [f, 'stdout', '--tessdata-dir', BEST, '-l', 'ara+eng'] },
   'tesseract-best-osd': { what: 'the same, turning the page first (orientation detection)', args: (f, osd) => [f, 'stdout', '--tessdata-dir', osd, '-l', 'ara+eng', '--psm', '1'] },
+  'qwen3vl': { what: 'Qwen3-VL (Apache-2.0) on this machine through llama.cpp, no internet', cmd: () => process.env.LLAMA_MTMD_CLI, args: qwen },
 };
 
 export function measure(names = Object.keys(READERS)) {
@@ -40,7 +48,8 @@ export function measure(names = Object.keys(READERS)) {
     for (const name of names) {
       const t0 = process.hrtime.bigint();
       let text = '', error = null;
-      try { text = execFileSync('tesseract', READERS[name].args(path.join(PAGES, file), osd), { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, OMP_THREAD_LIMIT: '1' } }); }
+      const cmd = READERS[name].cmd ? READERS[name].cmd() : 'tesseract';
+      try { text = execFileSync(cmd, READERS[name].args(path.join(PAGES, file), osd), { encoding: 'utf8', maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, OMP_THREAD_LIMIT: READERS[name].cmd ? '' : '1' } }); }
       catch (e) { error = String(e.stderr || e.message).split('\n')[0]; }
       const seconds = Number(process.hrtime.bigint() - t0) / 1e9;
       rows.push({ reader: name, page, variant, seconds: Math.round(seconds * 10) / 10, error, ...score(truth[page], text) });
