@@ -1,37 +1,46 @@
 # The authorities whose knowledge the program holds. Every source and every record names one of these ids.
 - id: EG-EDA
+  short: {en: EDA (Egypt), ar: هيئة الدواء المصرية}
   name: {en: Egyptian Drug Authority (EDA), ar: هيئة الدواء المصرية}
   countries: [EG]
   site: https://www.edaegypt.gov.eg
 - id: EG-GOV
+  short: {en: Egyptian laws, ar: قوانين وقرارات مصرية}
   name: {en: Egyptian laws and ministerial decrees (outside EDA), ar: القوانين والقرارات الوزارية المصرية (من خارج الهيئة)}
   countries: [EG]
   site: null
 - id: EU
+  short: {en: European Union, ar: الاتحاد الأوروبي}
   name: {en: European Medicines Agency and the EU/EEA national authorities, ar: وكالة الأدوية الأوروبية والهيئات الوطنية في الاتحاد الأوروبي}
   countries: [AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE, IS, LI, NO]
   site: https://www.ema.europa.eu
 - id: GCC
+  short: {en: GCC, ar: دول الخليج}
   name: {en: Gulf Health Council and the GCC authorities (SFDA and others), ar: مجلس الصحة الخليجي وهيئات الخليج (هيئة الغذاء والدواء السعودية وغيرها)}
   countries: [SA, AE, BH, KW, OM, QA, YE]
   site: https://www.sfda.gov.sa
 - id: US-FDA
+  short: {en: US FDA, ar: أمريكا (FDA)}
   name: {en: U.S. Food and Drug Administration (FDA), ar: هيئة الغذاء والدواء الأمريكية}
   countries: [US]
   site: https://www.fda.gov
 - id: ICH
+  short: {en: ICH, ar: ICH}
   name: {en: International Council for Harmonisation (ICH), ar: المجلس الدولي للتنسيق (ICH)}
   countries: []
   site: https://www.ich.org
 - id: WHO
+  short: {en: WHO, ar: الصحة العالمية}
   name: {en: World Health Organization — Prequalification (WHO), ar: منظمة الصحة العالمية — التأهيل المسبق}
   countries: []
   site: https://extranet.who.int/prequal
 - id: OTHER
+  short: {en: General and other, ar: عام ومصادر تانية}
   name: {en: Any other authority (general CTD practice), ar: أي هيئة تانية (الممارسة العامة لملف CTD)}
   countries: []
   site: null
 - id: STANDARDS
+  short: {en: Pharmacopoeias and standards, ar: الدساتير والمعايير}
   name: {en: Pharmacopoeias and other international standards (USP, OECD), ar: الدساتير الدوائية والمعايير الدولية التانية (USP وOECD)}
   countries: []
   site: null

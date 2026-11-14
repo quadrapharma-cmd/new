@@ -1,5 +1,6 @@
 # The sets of knowledge records and where each lives (made by tools/port-v1.mjs, kept up to date by hand).
 - id: eg-eda-ctd
+  short: {en: EDA — NP.CAPP.065 v5, ar: هيئة الدواء — NP.CAPP.065 v5}
   kind: requirements
   authority: EG-EDA
   title:
@@ -26,6 +27,7 @@
     - src: eda-eg-m1-ectd-spec-draft-v1
     - src: eda-ectd-technical-guidance-draft-v1
 - id: ich-m4-ctd
+  short: {en: ICH — Modules 2–5, ar: ICH — الموديولات 2–5}
   kind: requirements
   authority: ICH
   title:
@@ -51,6 +53,7 @@
     - src: ich-m4s-r2
     - src: ich-m4e-r2
 - id: eu-m1
+  short: {en: EU — Module 1, ar: الاتحاد الأوروبي — موديول 1}
   kind: requirements
   authority: EU
   title:
@@ -74,6 +77,7 @@
     - src: eu-m1-spec-v311
     - src: eu-nta-vol2b
 - id: gcc-m1
+  short: {en: GCC — Module 1, ar: الخليج — موديول 1}
   kind: requirements
   authority: GCC
   title:
@@ -97,6 +101,7 @@
     - src: gcc-m1-spec-v15
     - src: sfda-data-requirements-v4
 - id: us-fda-m1
+  short: {en: US FDA — Module 1, ar: أمريكا — موديول 1}
   kind: requirements
   authority: US-FDA
   title:
@@ -119,6 +124,7 @@
   cite:
     - src: fda-comprehensive-toc-v233
 - id: intl-m1
+  short: {en: Any other country — Module 1, ar: أي دولة تانية — موديول 1}
   kind: requirements
   authority: OTHER
   title:
@@ -141,6 +147,7 @@
   cite:
     - src: general-practice
 - id: eg-eda-review
+  short: {en: EDA review questions, ar: أسئلة مراجعة الهيئة}
   kind: rules
   authority: EG-EDA
   title:
@@ -164,6 +171,7 @@
     - src: who-trs992-annex9
     - src: who-trs1033-annex10
 - id: eg-eda-variations
+  short: {en: EDA variations, ar: تغييرات الهيئة}
   kind: variations
   authority: EG-EDA
   title:
@@ -179,6 +187,7 @@
     - src: eda-ectd-technical-guidance-draft-v1
       at: Annex 6
 - id: eg-eda-doctypes
+  short: {en: EDA documents and validity, ar: مستندات الهيئة وصلاحيتها}
   kind: doctypes
   authority: EG-EDA
   title:
