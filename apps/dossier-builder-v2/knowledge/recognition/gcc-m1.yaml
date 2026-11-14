@@ -1,0 +1,109 @@
+# How the program recognises the documents of «gcc-m1» (keywords, the program's own rule — source: program).
+# Ported from rulepacks/gcc.ctd.m1.v1/classify.yaml.
+GCC-1.0:
+  - cover letter
+  - cover
+  - خطاب التقديم
+GCC-1.2:
+  - application form
+  - sdr
+  - نموذج الطلب
+GCC-1.3.1:
+  - spc
+  - smpc
+  - summary of product characteristics
+GCC-1.3.2:
+  - labeling
+  - labelling
+  - label text
+GCC-1.3.3.1:
+  - arabic leaflet
+  - arabic pil
+  - النشرة
+  - نشرة
+GCC-1.3.3.2:
+  - english leaflet
+  - english pil
+  - patient information leaflet
+  - pil
+GCC-1.3.4:
+  - artwork
+  - mock-up
+  - mockup
+  - mock ups
+  - carton
+GCC-1.3.5:
+  - samples
+  - sample
+GCC-1.4.1:
+  - quality expert
+  - expert report quality
+GCC-1.4.2:
+  - non-clinical expert
+  - nonclinical expert
+GCC-1.4.3:
+  - clinical expert
+GCC-1.5.1:
+  - environmental risk assessment
+  - era
+GCC-1.6.1:
+  - pharmacovigilance system
+  - psmf
+  - pharmacovigilance
+GCC-1.6.2:
+  - risk management plan
+  - rmp
+GCC-1.7.1:
+  - gmp certificate
+  - good manufacturing practice
+  - gmp
+GCC-1.7.2:
+  - certificate of pharmaceutical product
+  - cpp
+  - free sale
+  - free sales
+GCC-1.7.3:
+  - certificate of analysis
+  - coa
+  - c of a
+GCC-1.7.4:
+  - excipient coa
+  - excipients certificate
+GCC-1.7.5:
+  - alcohol
+  - alcohol free
+  - alcohol content
+GCC-1.7.6:
+  - pork
+  - porcine
+  - pork free
+GCC-1.7.7:
+  - tse
+  - bse
+  - certificate of suitability for tse
+GCC-1.7.8:
+  - diluents
+  - colouring agents
+  - coloring agents
+  - colorants
+GCC-1.7.9:
+  - patent
+GCC-1.7.10:
+  - letter of access
+  - loa
+  - dmf
+  - asmf
+  - cep
+  - certificate of suitability
+GCC-1.8.1:
+  - price list
+  - price certificate
+  - form 16
+  - pricing
+GCC-1.8.2:
+  - pricing application
+  - economic study
+GCC-1.9:
+  - responses to questions
+  - response to queries
+  - deficiency response

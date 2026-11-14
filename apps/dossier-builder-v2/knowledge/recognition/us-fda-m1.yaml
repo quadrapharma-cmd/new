@@ -1,0 +1,85 @@
+# How the program recognises the documents of «us-fda-m1» (keywords, the program's own rule — source: program).
+# Ported from rulepacks/us.ctd.m1.v1/classify.yaml.
+US-1.1.1:
+  - form 1571
+  - fda 1571
+US-1.1.2:
+  - form 356h
+  - fda 356h
+  - 356h
+US-1.1.3:
+  - user fee
+  - form 3397
+  - gdufa
+  - pdufa
+US-1.2:
+  - cover letter
+  - cover
+US-1.3.2:
+  - field copy certification
+US-1.3.3:
+  - debarment certification
+  - debarment
+US-1.3.4:
+  - financial certification
+  - financial disclosure
+  - form 3454
+  - form 3455
+US-1.3.5.1:
+  - patent information
+  - form 3542
+US-1.3.5.2:
+  - patent certification
+  - paragraph iv
+  - paragraph iii
+US-1.3.5.3:
+  - exclusivity
+US-1.4.1:
+  - letter of authorization
+  - loa
+  - dmf
+US-1.4.2:
+  - right of reference
+US-1.12.11:
+  - basis for submission
+US-1.12.12:
+  - comparison of generic drug and reference listed drug
+  - comparison with rld
+US-1.12.14:
+  - environmental analysis
+  - environmental assessment
+  - categorical exclusion
+US-1.12.15:
+  - waiver of in vivo
+  - biowaiver
+US-1.14.1.1:
+  - carton
+  - container label
+US-1.14.1.2:
+  - annotated draft labeling
+US-1.14.1.3:
+  - draft labeling
+  - prescribing information
+  - package insert
+US-1.14.3.1:
+  - side-by-side
+  - annotated comparison
+US-1.14.3.3:
+  - reference listed drug labeling
+  - rld labeling
+US-1.14.4.1:
+  - investigational brochure
+  - investigator brochure
+US-1.16.2:
+  - rems
+US-1.18:
+  - proprietary name
+US-3.2.R-EBR:
+  - executed batch record
+  - executed bmr
+  - batch manufacturing record
+  - bmr
+US-3.2.R-MVP:
+  - method validation package
+US-3.2.R-CP:
+  - comparability protocol

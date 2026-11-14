@@ -1,0 +1,57 @@
+# The eCTD tables the program holds, as published, with their sources.
+- id: table/ich-322-app4.csv
+  kind: table
+  file: ectd/ich-322-app4.csv
+  title:
+    en: Appendix 4 — the CTD/eCTD headings, folders and file names
+    ar: null
+  cite:
+    - src: ich-ectd-v322
+- id: table/ich-40-context-of-use.csv
+  kind: table
+  file: ectd/ich-40-context-of-use.csv
+  title:
+    en: Context of use codes
+    ar: null
+  cite:
+    - src: ich-ectd-v40-cv-v103
+- id: table/ich-40-document-type.csv
+  kind: table
+  file: ectd/ich-40-document-type.csv
+  title:
+    en: Document type codes
+    ar: null
+  cite:
+    - src: ich-ectd-v40-cv-v103
+- id: table/ich-40-keyword-definition-type.csv
+  kind: table
+  file: ectd/ich-40-keyword-definition-type.csv
+  title:
+    en: Keyword definition types
+    ar: null
+  cite:
+    - src: ich-ectd-v40-cv-v103
+- id: table/ich-40-type-of-control.csv
+  kind: table
+  file: ectd/ich-40-type-of-control.csv
+  title:
+    en: Types of control
+    ar: null
+  cite:
+    - src: ich-ectd-v40-cv-v103
+- id: table/ich-40-oids.txt
+  kind: table
+  file: ectd/ich-40-oids.txt
+  title:
+    en: The OIDs of the code systems
+    ar: null
+  cite:
+    - src: ich-ectd-v40-cv-v103
+- id: table/ich-stf
+  kind: table
+  file: ectd/ich-stf/
+  title:
+    en: Study tagging file vocabularies
+    ar: null
+  cite:
+    - src: ich-ectd-stf-v261

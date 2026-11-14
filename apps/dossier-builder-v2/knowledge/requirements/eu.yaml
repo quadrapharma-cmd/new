@@ -1,0 +1,1033 @@
+# EU CTD dossier — EU Module 1 (eCTD specification v3.1.1)
+# ملف CTD للاتحاد الأوروبي — موديول ١ الأوروبي (مواصفة 3.1.1)
+# Ported from the old program (rulepacks/eu.ctd.m1.v1); edit here from now on.
+- id: EU/EU-1.0
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: '1.0'
+  ectd:
+    - '1.0'
+  title:
+    en: Cover letter
+    ar: خطاب التقديم
+  status: in-force
+  acceptance: One per submission; for MRP / DCP one for each Member State concerned (with the tracking table where the procedure asks for it).
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.2
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: '1.2'
+  ectd:
+    - '1.2'
+  title:
+    en: Application form
+    ar: نموذج الطلب
+  status: in-force
+  acceptance: >-
+    The electronic application form (eAF) for the type of application, with its annexes (proof of payment, manufacturing authorisations, GMP
+    certificates, QP declaration, letters of access, CEPs, flow-chart of sites…).
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  kinds:
+    - gmp
+    - loa
+    - factory
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.3.1
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.3.1
+  ectd:
+    - 1.3.1
+  title:
+    en: SmPC, labelling and package leaflet
+    ar: ملخص خصائص المستحضر وبيانات العبوة والنشرة
+  status: in-force
+  acceptance: The proposed SmPC, labelling and package leaflet, per language and Member State, on the QRD templates.
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  kinds:
+    - smpc
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.3.2
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.3.2
+  ectd:
+    - 1.3.2
+  title:
+    en: Mock-up
+    ar: تصميم العبوة (Mock-up)
+  status: in-force
+  acceptance: Mock-ups of the outer and immediate packaging and of the package leaflet.
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.3.3
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.3.3
+  ectd:
+    - 1.3.3
+  title:
+    en: Specimen
+    ar: عينة العبوة (Specimen)
+  status: in-force
+  acceptance: Specimens of the sales presentation, where the competent authority asks for them (list of the specimens sent).
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.3.4
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.3.4
+  ectd:
+    - 1.3.4
+  title:
+    en: Consultation with target patient groups
+    ar: اختبار النشرة مع مجموعات المرضى
+  status: in-force
+  acceptance: >-
+    The results of the consultation with target patient groups on the package leaflet (user testing), or the justification for not carrying
+    one out (bridging).
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.3.5
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.3.5
+  ectd:
+    - 1.3.5
+  title:
+    en: Product information already approved in the Member States
+    ar: بيانات المستحضر المعتمدة بالفعل في الدول الأعضاء
+  status: in-force
+  acceptance: SmPC, labelling and leaflet already approved in the Member States, where the product is authorised there.
+  note: Mutual recognition, decentralised and national procedures.
+  applies: eu_procedure != 'cp'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.3.6
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.3.6
+  ectd:
+    - 1.3.6
+  title:
+    en: Braille
+    ar: برايل
+  status: in-force
+  acceptance: The name of the product in Braille as it will appear on the packaging, or the justification for its absence.
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.4.1
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.4.1
+  ectd:
+    - 1.4.1
+  title:
+    en: Information about the expert — Quality
+    ar: بيانات الخبير — الجودة
+  status: in-force
+  acceptance: The signed expert statement with brief information on the education, training and occupational experience of the expert (CV).
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.4.2
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.4.2
+  ectd:
+    - 1.4.2
+  title:
+    en: Information about the expert — Non-clinical
+    ar: بيانات الخبير — غير الإكلينيكي
+  status: in-force
+  acceptance: The signed expert statement with brief information on the education, training and occupational experience of the expert (CV).
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.4.3
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.4.3
+  ectd:
+    - 1.4.3
+  title:
+    en: Information about the expert — Clinical
+    ar: بيانات الخبير — الإكلينيكي
+  status: in-force
+  acceptance: The signed expert statement with brief information on the education, training and occupational experience of the expert (CV).
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.5.1
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.5.1
+  ectd:
+    - 1.5.1
+  title:
+    en: Information for bibliographical applications
+    ar: بيانات طلبات الاستخدام الطبي الراسخ (Bibliographical)
+  status: in-force
+  acceptance: >-
+    The demonstration of well-established medicinal use (ten years of use in the Union, the extent and coherence of the scientific
+    literature).
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: eu_legal_basis == 'weu'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.5.2
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.5.2
+  ectd:
+    - 1.5.2
+  title:
+    en: Information for generic, hybrid or bio-similar applications
+    ar: بيانات طلبات المثيل / الهجين / المثيل الحيوي
+  status: in-force
+  acceptance: >-
+    The reference medicinal product (name, strength, form, holder, date and number of first authorisation, Member State), the differences
+    from it, and the evidence that the data exclusivity period has expired.
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: eu_legal_basis in ('generic', 'hybrid', 'biosimilar')
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.5.3
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.5.3
+  ectd:
+    - 1.5.3
+  title:
+    en: (Extended) data / market exclusivity
+    ar: حصرية البيانات / السوق (الممتدة)
+  status: in-force
+  acceptance: The request for (an extended period of) data or market exclusivity, with its justification.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.5.4
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.5.4
+  ectd:
+    - 1.5.4
+  title:
+    en: Exceptional circumstances
+    ar: الظروف الاستثنائية
+  status: in-force
+  acceptance: The justification for an authorisation under exceptional circumstances.
+  applies: eu_legal_basis == 'full'
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.5.5
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.5.5
+  ectd:
+    - 1.5.5
+  title:
+    en: Conditional marketing authorisation
+    ar: الترخيص المشروط
+  status: in-force
+  acceptance: The request for a conditional marketing authorisation, with its justification.
+  applies: eu_legal_basis == 'full' and eu_procedure == 'cp'
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.6.1
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.6.1
+  ectd:
+    - 1.6.1
+  title:
+    en: Environmental risk assessment — non-GMO
+    ar: تقييم المخاطر البيئية — غير معدّل وراثياً
+  status: in-force
+  acceptance: >-
+    The environmental risk assessment, or the justification for its absence (for a generic: that no increase of the environmental exposure
+    is expected).
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.6.2
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.6.2
+  ectd:
+    - 1.6.2
+  title:
+    en: Environmental risk assessment — GMO
+    ar: تقييم المخاطر البيئية — كائن معدّل وراثياً
+  status: in-force
+  acceptance: For a product that contains or consists of genetically modified organisms.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.7.1
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.7.1
+  ectd:
+    - 1.7.1
+  title:
+    en: Orphan market exclusivity — similarity
+    ar: حصرية المستحضر اليتيم — التشابه
+  status: in-force
+  acceptance: The report on similarity with authorised orphan medicinal products for the same indication.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.7.2
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.7.2
+  ectd:
+    - 1.7.2
+  title:
+    en: Orphan market exclusivity — market exclusivity
+    ar: حصرية المستحضر اليتيم — حصرية السوق
+  status: in-force
+  acceptance: The claim for a derogation from the market exclusivity of an authorised orphan product.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.8.1
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.8.1
+  ectd:
+    - 1.8.1
+  title:
+    en: Pharmacovigilance system
+    ar: نظام اليقظة الدوائية
+  status: in-force
+  acceptance: The summary of the applicant's pharmacovigilance system (the summary of the pharmacovigilance system master file).
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.8.2
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: 1.8.2
+  ectd:
+    - 1.8.2
+  title:
+    en: Risk-management system
+    ar: نظام إدارة المخاطر (RMP)
+  status: in-force
+  acceptance: The risk management plan.
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.9
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: '1.9'
+  ectd:
+    - '1.9'
+  title:
+    en: Information relating to clinical trials
+    ar: بيانات الدراسات الإكلينيكية
+  status: in-force
+  acceptance: >-
+    The statement that the clinical trials carried out outside the Union (bioequivalence studies included) meet the ethical requirements of
+    Directive 2001/20/EC.
+  note: Where a trial was carried out outside the Union.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-1.10
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: '1.10'
+  ectd:
+    - '1.10'
+  title:
+    en: Information relating to paediatrics
+    ar: البيانات الخاصة بالأطفال
+  status: in-force
+  acceptance: The paediatric investigation plan decision with the compliance check, or the waiver / deferral.
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: eu_legal_basis in ('full', 'fixed', 'informed')
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-RESP
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: Responses to questions
+  ectd:
+    - responses
+  title:
+    en: Responses to questions
+    ar: الرد على الاستفسارات
+  status: in-force
+  acceptance: The answers to the questions raised during the procedure.
+  note: Not part of the first submission.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-ADD
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 1
+  group: MODULE 1 — Administrative information (EU)
+  ctd: Additional data
+  ectd:
+    - additional-data
+  title:
+    en: Additional data
+    ar: بيانات إضافية
+  status: in-force
+  acceptance: National requirements of the Member State concerned that have no heading of their own.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+    - src: eu-nta-vol2b
+      at: Module 1
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-3.2.R-PV
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.R
+  ectd:
+    - 3.2.R
+  title:
+    en: Process validation scheme for the drug product
+    ar: مخطط التحقق من صحة عملية التصنيع
+  status: in-force
+  acceptance: 'Where validation is still to be completed: a summary of the studies intended to be conducted.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: ich-m4q-r1
+      at: §3.2.R (the examples marked «EU only»)
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-3.2.R-DEV
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.R
+  ectd:
+    - 3.2.R
+  title:
+    en: Medical device
+    ar: الجهاز الطبي
+  status: in-force
+  acceptance: The documents of a device supplied with or integral to the product.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: ich-m4q-r1
+      at: §3.2.R (the examples marked «EU only»)
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-3.2.R-CEP
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.R
+  ectd:
+    - 3.2.R
+  title:
+    en: Certificate(s) of suitability
+    ar: شهادة / شهادات الملاءمة (CEP)
+  status: in-force
+  acceptance: The complete copy of the CEP with its annexes, and the declaration of access.
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  per:
+    over: apis
+    where: option == 'CEP'
+  kinds:
+    - cep
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-nta-vol2b
+      at: Module 3, 3.2.R Regional information
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force
+- id: EU/EU-3.2.R-TSE
+  kind: requirement
+  authority: EU
+  set: eu-m1
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.R
+  ectd:
+    - 3.2.R
+  title:
+    en: Materials of animal and / or human origin (TSE)
+    ar: المواد من أصل حيواني / بشري (TSE)
+  status: in-force
+  acceptance: The TSE tables and the certificates of suitability for the materials concerned.
+  note:
+    en: >-
+      The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to
+      Applicants, which were not re-read line by line for this pack — confirm for your procedure and Member State.
+    ar: >-
+      البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر
+      للملف ده — راجعه حسب الإجراء والدولة العضو.
+  applies: biological_origin_materials
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eu-nta-vol2b
+      at: Module 3, 3.2.R Regional information
+  ectd_cite:
+    - src: eu-m1-spec-v311
+      at: Appendix 2
+      status: in-force

@@ -1,0 +1,14 @@
+code,description,status
+ich_keyword_type_1,indication,Active
+ich_keyword_type_2,substance,Active
+ich_keyword_type_3,manufacturer,Active
+ich_keyword_type_4,product,Active
+ich_keyword_type_5,dosage form,Active
+ich_keyword_type_6,excipient,Active
+ich_keyword_type_7,container,Active
+ich_keyword_type_8,study id_study title,Active
+ich_keyword_type_10,site id,Active
+ich_keyword_type_11,group title,Active
+ich_keyword_type_12,facility,Active
+ich_keyword_type_13,component,Active
+ich_keyword_type_14,descriptor,Active

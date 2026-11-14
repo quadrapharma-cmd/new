@@ -1,0 +1,2011 @@
+# EDA human variations — classes, conditions, requirements
+# Ported from the old program (rulepacks/eda.variations.gl026.v6); edit here from now on.
+class_order:
+  - PAC-N
+  - PAC-A
+  - PAC-B
+  - PAC-II
+ectd_submission_type:
+  PAC-N: var-pac-n
+  PAC-A: var-pac-a
+  PAC-B: var-pac-b
+  PAC-II: var-pac-ii
+grouping_rule:
+  en: A group of variations is classified by its highest class.
+  ar: مجموعة التغييرات بتتصنف بأعلى فئة فيها.
+  cite:
+    - src: eda-gl-capp-026-v6
+variations:
+  - id: EG-EDA/var/H-01
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in the name and/or address of Manufacturer of the active substance (API).
+      ar: null
+    group: Drug Substance
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - The manufacturing site and all manufacturing operations must remain the same.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 1
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-02
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Change in the name and/or address of Manufacturer of starting material, reagent or intermediate used in the manufacture of the
+        active substance.
+      ar: null
+    group: Drug Substance
+    type: Administrative
+    pac: PAC-A
+    conditions:
+      - The manufacturing site and all manufacturing operations must remain the same.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 2
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-03
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Deletion of manufacturing sites for an active substance.
+      ar: null
+    group: Drug Substance
+    type: Administrative
+    pac: PAC-A
+    conditions:
+      - >-
+        There should at least remain one site/manufacturer, as previously authorized, performing the same function as the one(s) concerned
+        by the deletion.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 3
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-04
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Introduction of a new manufacturer for Starting material/reagent/intermediate used in the manufacturing process of the active
+        substance.
+      ar: null
+    group: Drug Substance
+    type: Manufacturing site
+    pac: PAC-A
+    conditions:
+      - No adverse change in qualitative and quantitative impurity profile or in physico-chemical properties
+      - The specifications of the active substance are unchanged.
+      - The particle size specification of the active substance and the corresponding analytical method remain the same.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 4
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-05
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Introduction of a new manufacturer for Active Substance.
+      ar: null
+    group: Drug Substance
+    type: Manufacturing site
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products
+      - Analysis of the first production batch of Finished Pharmaceutical product manufactured from the API manufacturer at CADC labs.
+      - >-
+        Results of stability testing generated with a minimum of 6 months Accelerated testing, and to be released to the market by Central
+        Administration of Operation (Inspection Department) after evaluating the results of a minimum of 3 months of the first production
+        batch of Finished Pharmaceutical product manufactured with the new API manufacturer.
+      - >-
+        Comparative in-vitro dissolution study at most suitable medium on first production batch of Finished Pharmaceutical product
+        manufactured from the new API manufacturer against the innovator product. (Or may be changed to 3 different PH media in addition to
+        the most suitable medium or Bioequivalence study according to category of API & its BCs Class).
+    cite:
+      - src: eda-variation-tool
+        at: row 5
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-06
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Changes to quality control testing arrangements / replacement or addition of a new site where batch control/testing takes place for
+        an active substance.
+      ar: null
+    group: Drug Substance
+    type: Manufacturing site
+    pac: PAC-A
+    conditions:
+      - No adverse change in qualitative and quantitative impurity profile or in physico-chemical properties
+      - The specifications of the active substance are unchange
+      - |-
+        The particle size specification of the active substance and the corresponding analytical method remain
+         the same.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 6
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-07
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Introduction of a new site of micronization for an active substance.
+      ar: null
+    group: Drug Substance
+    type: Manufacturing site
+    pac: PAC-A
+    conditions:
+      - The specifications of the active substance are unchanged.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 7
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-08
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Changes in the manufacturing process of an active substance.
+      ar: null
+    group: Drug Substance
+    type: Manufacturing process
+    pac: PAC-A
+    conditions:
+      - No adverse change in qualitative and quantitative impurity profile or in physico-chemical properties.
+      - The specifications of the active substance are unchanged.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 8
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-09
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in batch size of active substance.
+      ar: null
+    group: Drug Substance
+    type: Batch size
+    pac: PAC-A
+    conditions:
+      - >-
+        Any changes to the manufacturing methods are only those necessitated by scale-up or downscaling, e.g. use of different-sized
+        equipment.
+      - Test results of at least two batches according to the specifications should be available for the proposed batch size.
+      - The change does not adversely affect the reproducibility of the process.
+      - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
+      - The specifications of the active substance remain the same.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 9
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-10
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change to in-process tests or limits applied during the manufacture of an active substance
+      ar: null
+    group: Drug Substance
+    type: Manufacturing process
+    pac: PAC-A
+    conditions:
+      - >-
+        The change does not result from unexpected events arising during manufacture, e.g. new unqualified impurity; change in total
+        impurity limits
+      - Any change should be within the range of currently approved limits.
+      - The test procedure remains the same, or changes in the test procedure are minor.
+      - >-
+        The specification parameter does not concern a critical parameter for example any of the following: assay, impurities (unless a
+        particular solvent is definitely not used in the manufacture of the active substance), any critical physical characteristics, e.g.
+        particle size, bulk or tapped density, identity test, water, any request for changing the frequency of testing (In case of deletion
+        of any in-process tests).
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 10
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-11
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Tightening of specification limits for an Active substance.
+      ar: null
+    group: Drug Substance
+    type: Specification
+    pac: PAC-A
+    conditions:
+      - >-
+        The change does not result from unexpected events arising during manufacture, e.g. new unqualified impurity; change in total
+        impurity limits.
+      - Any change should be within the range of currently approved limits.
+      - The test procedure remains the same, or changes in the test procedure are minor.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 11
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-12
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Addition of a new specification parameter to the specification with its corresponding test method for an Active substance.
+      ar: null
+    group: Drug Substance
+    type: Specification
+    pac: PAC-N
+    conditions:
+      - >-
+        The change does not result from unexpected events arising during manufacture, e.g. new unqualified impurity; change in total
+        impurity limits.
+      - >-
+        For any material, the change does not concern a genotoxic impurity. If it involves the final active substance, other than for
+        residual solvents which must be in line with ICH limits, any new impurity control should be in line with the Ph. Eur. or National
+        Pharmacopoeia.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 12
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-13
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Deletion of a non-significant specification parameter (e.g. deletion of an obsolete parameter) For an Active substance.
+      ar: null
+    group: Drug Substance
+    type: Specification
+    pac: PAC-A
+    conditions:
+      - >-
+        The change does not result from unexpected events arising during manufacture, e.g. new unqualified impurity; change in total
+        impurity limits.
+      - Any change should be within the range of currently approved limits.
+      - >-
+        The specification parameter does not concern a critical parameter, for example any of the following: assay, impurities (unless a
+        particular solvent is definitely not used in the manufacture of the active substance), any critical physical characteristics, e.g.
+        particle size, bulk or tapped density, identity test, water, any request for skip testing.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 13
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-14
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Deletion of a specification parameter which may have a significant effect on the overall quality of the active substance and/or the
+        Finished Pharmaceutical product for an Active substance.
+      ar: null
+    group: Drug Substance
+    type: Specification
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products
+      - Analysis of the first production batch of Finished Pharmaceutical product manufactured from the API manufacturer at CADC labs.
+      - >-
+        Results of stability testing generated with a minimum of 6 months Accelerated testing, and to be released to the market by Central
+        Administration of Operation (Inspection Department) after evaluating the results of a minimum of 3 months of the first production
+        batch of Finished Pharmaceutical product manufactured with the new API manufacturer.
+      - >-
+        Comparative in-vitro dissolution study at most suitable medium on first production batch of Finished Pharmaceutical product
+        manufactured from the new specification against the innovator product. (Or may be changed to 3 different PH media in addition to the
+        most suitable medium according to category of API & & its BCs Class), If the change affect dissolution.
+    cite:
+      - src: eda-variation-tool
+        at: row 14
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-15
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change outside the approved specifications limits range for an Active substance.
+      ar: null
+    group: Drug Substance
+    type: Specification
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products
+      - Analysis of the first production batch of Finished Pharmaceutical product manufactured from the API manufacturer at CADC labs.
+      - >-
+        Results of stability testing generated with a minimum of 6 months Accelerated testing, and to be released to the market by Central
+        Administration of Operation (Inspection Department) after evaluating the results of a minimum of 3 months of the first production
+        batch of Finished Pharmaceutical product manufactured with the new API manufacturer.
+      - >-
+        Comparative in-vitro dissolution study at most suitable medium on first production batch of Finished Pharmaceutical product
+        manufactured from the new specification against the innovator product. (Or may be changed to 3 different PH media in addition to the
+        most suitable medium according to category of API & & its BCs Class), If the change affect dissolution.
+    cite:
+      - src: eda-variation-tool
+        at: row 15
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-16
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Widening of the approved specifications limits for starting materials/intermediates, which may have a significant effect on the
+        overall quality of the active substance and/or the Finished Pharmaceutical product.
+      ar: null
+    group: Drug Substance
+    type: Specification
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products
+      - Analysis of the first production batch of Finished Pharmaceutical product manufactured from the API manufacturer at CADC labs.
+      - >-
+        Results of stability testing generated with a minimum of 6 months Accelerated testing, and to be released to the market by Central
+        Administration of Operation (Inspection Department) after evaluating the results of a minimum of 3 months of the first production
+        batch of Finished Pharmaceutical product manufactured with the new API manufacturer.
+      - >-
+        Comparative in-vitro dissolution study at most suitable medium on first production batch of Finished Pharmaceutical product
+        manufactured from the new specification against the innovator product. (Or may be changed to 3 different PH media in addition to the
+        most suitable medium according to category of API & & its BCs Class), If the change affect dissolution.
+    cite:
+      - src: eda-variation-tool
+        at: row 16
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-17
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Addition or replacement of a specification parameter with its corresponding test method as a result of a safety or quality issue for
+        an Active substance.
+      ar: null
+    group: Drug Substance
+    type: Specification
+    pac: PAC-B
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products
+      - Analysis of the first production batch of Finished Pharmaceutical product manufactured from the API manufacturer at CADC labs.
+      - >-
+        Results of stability testing generated with a minimum of 6 months Accelerated testing, and to be released to the market by Central
+        Administration of Operation (Inspection Department) after evaluating the results of a minimum of 3 months of the first production
+        batch of Finished Pharmaceutical product manufactured with the new API manufacturer.
+      - >-
+        Comparative in-vitro dissolution study at most suitable medium on first production batch of Finished Pharmaceutical product
+        manufactured from the new specification against the innovator product. (Or may be changed to 3 different PH media in addition to the
+        most suitable medium according to category of API & & its BCs Class), If the change affect dissolution.
+    cite:
+      - src: eda-variation-tool
+        at: row 17
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-18
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: A change in specification of active ingredient from Pharmacopeia to in-house( Tighten of Specification).
+      ar: null
+    group: Drug Substance
+    type: Specification
+    pac: PAC-N
+    conditions:
+      - >-
+        The change does not result from unexpected events arising during manufacture, e.g. new unqualified impurity; change in total
+        impurity limits.
+      - Any change should be within the range of currently approved limits.
+      - The test procedure remains the same, or changes in the test procedure are minor.
+      - >-
+        For any material, the change does not concern a genotoxic impurity. If it involves the final active substance, other than for
+        residual solvents which must be in line with ICH limits, any new impurity control should be in line with the Ph. Eur. or National
+        Pharmacopoeia.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 18
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-19
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in test procedure for active substance.
+      ar: null
+    group: Drug Substance
+    type: Test procedure
+    pac: PAC-A
+    conditions:
+      - There have been no changes of the total impurity limits; no new unqualified impurities are detected.
+      - Notification/Approval from CADC for new test procedure.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 19
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-20
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in Qualitative &/or Quantitative Composition of Primary packaging of the active Substance.
+      ar: null
+    group: Drug Substance
+    type: Container closure system
+    pac: PAC-A
+    conditions:
+      - The proposed packaging material must be at least equivalent to the approved material in respect of its relevant properties.
+      - Approval on stability study for new packaging material from API Manufacturer(s).
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 20
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-21
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Reduction of Retest period/storage period for an active substance.
+      ar: null
+    group: Drug Substance
+    type: Shelf-life / Storage condition
+    pac: PAC-N
+    conditions:
+      - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 21
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-22
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Extension or introduction of a retest period / storage period supported by real time data.
+      ar: null
+    group: Drug Substance
+    type: Shelf-life / Storage condition
+    pac: PAC-N
+    conditions:
+      - Approval on stability study from API Manufacturer(s).
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 22
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-23
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change to more restrictive storage conditions of the active substance.
+      ar: null
+    group: Drug Substance
+    type: Storage condition
+    pac: PAC-N
+    conditions:
+      - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
+      - Approval on stability study from API Manufacturer(s).
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 23
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-24
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in storage conditions of the active substance.
+      ar: null
+    group: Drug Substance
+    type: Storage condition
+    pac: PAC-N
+    conditions:
+      - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
+      - Approval on stability study from API Manufacturer(s).
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 24
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-25
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: New CEP certificate from an approved manufacturer.
+      ar: null
+    group: Drug Substance
+    type: Administrative
+    pac: PAC-A
+    conditions:
+      - New / Updated CEP.
+      - No adverse change in qualitative and quantitative impurity profile or in physico-chemical properties.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 25
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-26
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Updated  CEP certificate from an already approved manufacturer.
+      ar: null
+    group: Drug Substance
+    type: Administrative
+    pac: PAC-A
+    conditions:
+      - New / Updated CEP.
+      - No adverse change in qualitative and quantitative impurity profile or in physico-chemical properties.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 26
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-27
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        New CEP certificate for a non-sterile active substance that is to be used in a sterile medicinal product, where water is used in the
+        last steps of the synthesis and the material is not claimed to be endotoxin free.
+      ar: null
+    group: Drug Substance
+    type: Administrative
+    pac: PAC-A
+    conditions:
+      - New / Updated CEP.
+      - No adverse change in qualitative and quantitative impurity profile or in physico-chemical properties.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 27
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-28
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in Name ‎/Address of Licence Holder For Local Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - Finished pharmaceutical product Licence Holder must remain the same legal entity.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new name/Address of the LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up
+        by Central Administration of Operation (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 28
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-29
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in Name ‎/Address of Licence Holder / Marketing Authorizatin Holder For Imported Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - Finished pharmaceutical product Licence Holder/ Marketing Authorizatin Holder must remain the same legal entity.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new name/Address of the LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up
+        by Central Administration of Operation (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 29
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-30
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Change in Name / ‎Address of Manufacturing ‎sites (including bulk ‎manufacturer, packager & ‎batch releaser)‎ For Local Finished
+        pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - The physical location of the manufacturing site and all manufacturing operations must remain the same.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new name/Address of Manufacturing ‎sites information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be
+        followed up by Central Administration of Operation (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 30
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-31
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Change in Name / ‎Address of Manufacturing ‎sites (including bulk ‎manufacturer, packager & ‎batch releaser)‎ For Imported Finished
+        pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - The physical location of the manufacturing site and all manufacturing operations must remain the same.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new name/Address of Manufacturing ‎sites information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be
+        followed up by Central Administration of Operation (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 31
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-32
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in Applicant ‎For Imported Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - The applicant shall be authorized for registration.‎
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 32
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-33
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Modification of ‎Registration license ‎‎(including but not limited to ‎trade name, shelf life, ‎storage conditions, price, ‎storage
+        site)‎
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-A
+    conditions:
+      - Approval of EDA relevant department(s) on related modification.‎
+    requirements:
+      - NA
+    cite:
+      - src: eda-variation-tool
+        at: row 33
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-34
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: License Holder Transfer For local Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - The new FPP LH/MAH is a different legal entity.‎
+      - A Pharmaceutical FPP shall undergo a LH transfer for all its strengths. ‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central
+        Administration of Operation (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 34
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-35
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: License Holder Transfer For Bulk or Under license Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - The new FPP LH/MAH is a different legal entity.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central
+        Administration of Operation (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 35
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-36
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: License Holder Transfer For Imported Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - The new FPP LH/MAH is a different legal entity.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central
+        Administration of Operation (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 36
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-37
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Marketing Authorization Holder Transfer For Bulk or Under license Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - The new FPP LH/MAH is a different legal entity.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central
+        Administration of Operation (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 37
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-38
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Marketing Authorization Holder Transfer For Imported Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - The new FPP LH/MAH is a different legal entity.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central
+        Administration of Operation (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 38
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-39
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Addition/Change of ‎Finished pharmaceutical product Marketing Authorization Holder in Egypt
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - >-
+        FPP MAH in Egypt must comply with all FPP specifications, composition and all ‎manufacturing operations as mentioned in the FPP CPP
+        from NRA in the country of ‎origin.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP information if reflected (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central Administration of
+        Operation (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 39
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-40
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change/addition ‎Supplier of Lidocaine solvent for a ‎Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Solvent / diluent
+    pac: PAC-B
+    conditions:
+      - Solvent from new supplier must be registered.‎
+      - Shelf life of solvent from new supplier must comply with shelf life of the FPP.‎
+      - Pack of solvent from new supplier must comply with previously approved pack.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP information if reflected (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central Administration of
+        Operation (Inspection Department).
+      - In use stability study on one production batch.‎
+    cite:
+      - src: eda-variation-tool
+        at: row 40
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-41
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change/addition ‎Supplier of Water for injection solvent/diluent for a ‎Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Solvent / diluent
+    pac: PAC-N
+    conditions:
+      - Solvent from new supplier must be registered.‎
+      - Shelf life of solvent from new supplier must comply with shelf life of the FPP.‎
+      - Pack of solvent from new supplier must comply with previously approved pack.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP information if reflected (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central Administration of
+        Operation (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 41
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-42
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Replacement or ‎addition of a ‎manufacturing ‎site  where any manufacturing ‎operation(s) take place ‎except batch ‎control and/or
+        release testing and Primary/secondary packaging for Finished pharmaceutical product
+      ar: null
+    group: Drug Product
+    type: Manufacturing site
+    pac: PAC-B
+    conditions:
+      - >-
+        No change in batch formula, description of manufacturing process, equipment class, process ‎controls, control of critical steps &
+        intermediates or FPP specifications. ‎
+      - The proposed site appropriately authorized (To perform the specified operation for the ‎concerned FPP)‎
+      - No change in FPP container closure system.
+      - Manufacturing at the new site shall be in a compliance with cGMP if available.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new manufacturer / packager /Batch release site if reflected information (i.e. Inner leaflet‏ ‏and ‎Mock
+        up) that will be followed up by Central Administration of Operation (Inspection ‎Department). ‎
+      - Batch analysis for first three consecutive production batches manufactured/packed at the new ‎site at CADC labs.‎
+      - >-
+        Comparative in-vitro dissolution tests at 3 different PH media (1.2, 4.5, 6.8) & most suitable ‎medium on one production batch
+        manufactured/packed at the new site against a batch ‎manufactured/packed at the old site (must be previously validated if not
+        available, tests ‎must be done against the innovator product). (Or Bioequivalence study according to ‎category of API).‎
+      - Process validation reports for three batches from the proposed manufacturing site.‎
+    cite:
+      - src: eda-variation-tool
+        at: row 42
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-43
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Replacement or ‎addition for  Primary ‎packaging site for Finished pharmaceutical product
+      ar: null
+    group: Drug Product
+    type: Manufacturing site
+    pac: PAC-B
+    conditions:
+      - >-
+        No change in batch formula, description of manufacturing process, equipment class, process ‎controls, control of critical steps &
+        intermediates or FPP specifications. ‎
+      - The proposed site appropriately authorized (To perform the specified operation for the ‎concerned FPP)‎
+      - The change does not concern a sterile FPP.‎
+      - No change in FPP container closure system.
+      - Manufacturing at the new site shall be in a compliance with cGMP if available.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new manufacturer / packager /Batch release site if reflected information (i.e. Inner leaflet‏ ‏and ‎Mock
+        up) that will be followed up by Central Administration of Operation (Inspection ‎Department). ‎
+      - Batch analysis for first three consecutive production batches manufactured/packed at the new ‎site at CADC labs.‎
+      - >-
+        Comparative in-vitro dissolution tests at 3 different PH media (1.2, 4.5, 6.8) & most suitable ‎medium on one production batch
+        manufactured/packed at the new site against a batch ‎manufactured/packed at the old site (must be previously validated if not
+        available, tests ‎must be done against the innovator product). (Or Bioequivalence study according to ‎category of API).‎
+      - Process validation reports for three batches from the proposed manufacturing site.‎
+    cite:
+      - src: eda-variation-tool
+        at: row 43
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-44
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: |-
+        Replacement or ‎addition for Secondary packaging site (If Non-Functional)
+        for Finished pharmaceutical product
+      ar: null
+    group: Drug Product
+    type: Manufacturing site
+    pac: PAC-N
+    conditions:
+      - The proposed site appropriately authorized (To perform the specified operation for the ‎concerned FPP)‎
+      - No change in FPP container closure system.
+      - Manufacturing at the new site shall be in a compliance with cGMP if available.‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new manufacturer / packager /Batch release site if reflected information (i.e. Inner leaflet‏ ‏and ‎Mock
+        up) that will be followed up by Central Administration of Operation (Inspection ‎Department). ‎
+    cite:
+      - src: eda-variation-tool
+        at: row 44
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-45
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Replacement or ‎addition for‎ Batch release ‎site for Finished pharmaceutical product
+      ar: null
+    group: Drug Product
+    type: Manufacturing site
+    pac: PAC-N
+    conditions:
+      - The proposed site appropriately authorized (To perform the specified operation for the ‎concerned FPP)‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new manufacturer / packager /Batch release site if reflected information (i.e. Inner leaflet‏ ‏and ‎Mock
+        up) that will be followed up by Central Administration of Operation (Inspection ‎Department). ‎
+    cite:
+      - src: eda-variation-tool
+        at: row 45
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-46
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Replacement or ‎addition for Storage site for Finished pharmaceutical product
+      ar: null
+    group: Drug Product
+    type: Manufacturing site
+    pac: PAC-N
+    conditions:
+      - The proposed site appropriately authorized (To perform the specified operation for the ‎concerned FPP)‎
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of FPP with the new manufacturer / packager /Batch release site if reflected information (i.e. Inner leaflet‏ ‏and ‎Mock
+        up) that will be followed up by Central Administration of Operation (Inspection ‎Department). ‎
+    cite:
+      - src: eda-variation-tool
+        at: row 46
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-47
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Change Finished pharmaceutical product ‎production ‎batch size (Scaling ‎up/down ‎to a ‎factor of ‎‎10 folds) ‎for ‎Immediate
+        ‎Release products ‎‎(IR)
+      ar: null
+    group: Drug Product
+    type: Batch size
+    pac: PAC-B
+    conditions:
+      - The change does not affect the reproducibility and/or consistency of the product.‎
+      - >-
+        Changes to the manufacturing method and/or to the in-process controls are ONLY those ‎necessitated by the change in batch size,
+        e.g., use of different-sized equipment
+      - The change is not necessitated by unexpected events arising during manufacture or because of ‎stability concerns.‎
+      - API BCs Class is not classified as category IV, otherwise justified.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Process validation reports for three batches of the proposed batch size.‎
+    cite:
+      - src: eda-variation-tool
+        at: row 47
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-48
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Change Finished pharmaceutical product ‎production ‎batch size (Scaling ‎up/down ‎to a ‎factor of ‎‎10 folds) ‎for ‎Modified 
+        ‎Release products (MR)
+      ar: null
+    group: Drug Product
+    type: Batch size
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Comparative in-vitro dissolution study at 3 different PH media (1.2, 4.5, 6.8) & most suitable ‎medium on one production batch
+        manufactured with the new batch size against a batch ‎manufactured with the old batch size or against the innovator product. (Or
+        Bioequivalence ‎study according to category of API)‎
+      - Process validation reports for three batches of the proposed batch size.‎
+    cite:
+      - src: eda-variation-tool
+        at: row 48
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-49
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Change Finished pharmaceutical product ‎production ‎batch size (Scaling ‎up more than ‎factor of ‎‎10 folds) ‎for ‎Immediate
+        ‎Release products ‎‎(IR)
+      ar: null
+    group: Drug Product
+    type: Batch size
+    pac: PAC-B
+    conditions:
+      - The change does not affect the reproducibility and/or consistency of the product.‎
+      - >-
+        Changes to the manufacturing method and/or to the in-process controls are ONLY those ‎necessitated by the change in batch size,
+        e.g., use of different-sized equipment
+      - API BCs Class is not classified as category IV, otherwise justified.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch analysis for first three consecutive production batches manufactured with the new batch ‎size at CADC labs.‎
+      - >-
+        Results of stability testing generated with a minimum of 6 months Accelerated testing, and to be released to the market by Central
+        Administration of Operation (Inspection Department) after evaluating the results of a minimum of 3 months of the first production
+        batch of Finished Pharmaceutical product manufactured with the new batch size.
+      - Process validation reports for three batches of the proposed batch size.‎
+    cite:
+      - src: eda-variation-tool
+        at: row 49
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-50
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Change Finished pharmaceutical product ‎production ‎batch size (Scaling ‎up more than ‎factor of ‎‎10 folds) ‎for ‎Modified ‎Release
+        products ‎‎(MR)
+      ar: null
+    group: Drug Product
+    type: Batch size
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch analysis for first three consecutive production batches manufactured with the new batch ‎size at CADC labs.‎
+      - >-
+        Results of stability testing generated with a minimum of 6 months Accelerated testing, and to be released to the market by Central
+        Administration of Operation (Inspection Department) after evaluating the results of a minimum of 3 months of the first production
+        batch of Finished Pharmaceutical product manufactured with the new batch size.
+      - >-
+        Comparative in-vitro dissolution study at 3 different PH media (1.2, 4.5, 6.8) & most suitable ‎medium on one production batch
+        manufactured with the new batch size against a batch ‎manufactured with the old batch size or against the innovator product. (Or
+        Bioequivalence ‎study according to category of API)‎
+      - Process validation reports for three batches of the proposed batch size.‎
+    cite:
+      - src: eda-variation-tool
+        at: row 50
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-51
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in name of the Active substance
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - The active substance must remain the same.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 51
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-52
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in name of an Excipient
+      ar: null
+    group: Drug Product
+    type: Administrative
+    pac: PAC-N
+    conditions:
+      - The excipient must remain the same.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 52
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-53
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change or addition of imprints, embossing or other markings
+      ar: null
+    group: Drug Product
+    type: Score line, markings
+    pac: PAC-N
+    conditions:
+      - The change does not affect the stability or performance characteristics (e.g. release rate) of the FPP.
+      - Changes to the FPP specifications are those necessitated only by the change to the appearance or to the scoring.
+      - Any product markings used to differentiate strengths should not be completely deleted.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 53
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-54
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Deletion of a Score line
+      ar: null
+    group: Drug Product
+    type: Score line, markings
+    pac: PAC-N
+    conditions:
+      - Changes to the FPP specifications are those necessitated only by the change to the appearance or to the scoring.
+      - The scoring is not intended to divide the FPP into equal doses.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 54
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-55
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Addition of a Score line (Functional score)
+      ar: null
+    group: Drug Product
+    type: Score line, markings
+    pac: PAC-B
+    conditions:
+      - The change does not affect the stability or performance characteristics (e.g. release rate) of the FPP.
+      - Changes to the FPP specifications are those necessitated only by the change to the appearance or to the scoring.
+      - Addition of a score line from a product is consistent with a similar change in the competitor product from any reference country.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs.
+      - >-
+        Amendment of Product Information (i.e. Inner leaflet and Mock up) that will be followed up by Central Administration of operation
+        (Inspection Department).
+    cite:
+      - src: eda-variation-tool
+        at: row 55
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-56
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Addition of a score line (Non-functional score)
+      ar: null
+    group: Drug Product
+    type: Score line, markings
+    pac: PAC-B
+    conditions:
+      - The change does not affect the stability or performance characteristics (e.g. release rate) of the FPP.
+      - Changes to the FPP specifications are those necessitated only by the change to the appearance or to the scoring.
+      - Addition of a score line from a product is consistent with a similar change in the competitor product from any reference country.
+      - The scoring is not intended to divide the FPP into equal doses.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 56
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-57
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in the shape or dimensions of a Non-scored Tablets.
+      ar: null
+    group: Drug Product
+    type: Dimension, shape
+    pac: PAC-B
+    conditions:
+      - End of shelf-life specifications of the product have not been changed except for dimensions.
+      - The qualitative or quantitative composition and mean mass remain unchanged.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Comparative in-vitro dissolution study at most suitable medium on first production batch of Finished Pharmaceutical product
+        manufactured from the new shape/dimension against the innovator product. (Or may be changed to 3 different PH media in addition to
+        the most suitable medium or Bioequivalence study according to category of API & its BCs Class).
+    cite:
+      - src: eda-variation-tool
+        at: row 57
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-58
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in the shape or dimensions of a scored Tablets
+      ar: null
+    group: Drug Product
+    type: Dimension, shape
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs.
+      - >-
+        Comparative in-vitro dissolution study at most suitable medium on first production batch of Finished Pharmaceutical product
+        manufactured from the new shape/dimension against the innovator product. (Or may be changed to 3 different PH media in addition to
+        the most suitable medium or Bioequivalence study according to category of API & its BCs Class).
+    cite:
+      - src: eda-variation-tool
+        at: row 58
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-59
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Addition, deletion or replacement in components of the flavoring or coloring system For Finished Pharmaceutical Product
+      ar: null
+    group: Drug Product
+    type: Formulation
+    pac: PAC-B
+    conditions:
+      - No change in functional characteristics of the pharmaceutical form, e.g. disintegration time, dissolution profile.
+      - >-
+        Any minor adjustment to the formulation to maintain the total weight should be made by an excipient which currently makes up a major
+        part of the Finished Pharmaceutical product formulation.
+      - >-
+        The Finished Pharmaceutical product specification has only been updated in respect of appearance/odor/taste and if relevant,
+        deletion of an identification test.
+      - >-
+        Any new component does not include the use of materials of animal origin for which assessment is required of viral safety data or
+        compliance with the current Note for Guidance on Minimizing the Risk of Transmitting Animal Spongiform Encephalopathy Agents via
+        Human Medicinal Products.
+      - >-
+        Where applicable, the change does not affect the differentiation between strengths and does not have a negative impact on taste
+        acceptability for pediatric formulations.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs.
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+    cite:
+      - src: eda-variation-tool
+        at: row 59
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-60
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Increase or reduction in components of the flavoring or coloring system
+      ar: null
+    group: Drug Product
+    type: Formulation
+    pac: PAC-B
+    conditions:
+      - No change in functional characteristics of the pharmaceutical form, e.g. disintegration time, dissolution profile.
+      - >-
+        Any minor adjustment to the formulation to maintain the total weight should be made by an excipient which currently makes up a major
+        part of the Finished Pharmaceutical product formulation.
+      - >-
+        The Finished Pharmaceutical product specification has only been updated in respect of appearance/odor/taste and if relevant,
+        deletion of an identification test.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs.
+    cite:
+      - src: eda-variation-tool
+        at: row 60
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-61
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Any minor adjustment of the quantitative composition of the Finished Pharmaceutical product with respect to excipients For Finished
+        Pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Formulation
+    pac: PAC-B
+    conditions:
+      - No change in functional characteristics of the pharmaceutical form, e.g. disintegration time, dissolution profile.
+      - >-
+        Any minor adjustment to the formulation to maintain the total weight should be made by an excipient which currently makes up a major
+        part of the Finished Pharmaceutical product formulation.
+      - >-
+        The Finished Pharmaceutical product specification has only been updated in respect of appearance/odor/taste and if relevant,
+        deletion of an identification test.
+      - >-
+        The change is not the result of stability issues and/or should not result in potential safety concerns, i.e. differentiation between
+        strengths.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+    cite:
+      - src: eda-variation-tool
+        at: row 61
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-62
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Qualitative or quantitative changes in one or more excipients that may have a significant impact on the safety, quality or efficacy
+        of the medicinal product For Finished Pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Formulation
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs.
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+      - >-
+        Comparative in-vitro dissolution study at 3 different PH media (1.2,4.5,6.8) & most suitable medium (D3/4) on one production batch
+        against the innovator product. (Or Bioequivalence study according to category of API).
+    cite:
+      - src: eda-variation-tool
+        at: row 62
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-63
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Any new excipient that includes the use of materials of animal origin for which assessment is required of viral safety data or TSE
+        risk For Finished Pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Formulation
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs.
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+      - >-
+        Comparative in-vitro dissolution study at 3 different PH media (1.2,4.5,6.8) & most suitable medium (D3/4) on one production batch
+        against the innovator product. (Or Bioequivalence study according to category of API).
+    cite:
+      - src: eda-variation-tool
+        at: row 63
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-64
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Replacement of a single excipient with a comparable excipient with the same functional characteristics and same quantity at a
+        similar level For Finished Pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Formulation
+    pac: PAC-B
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+      - >-
+        Comparative in-vitro dissolution study at 3 different PH media (1.2,4.5,6.8) & most suitable medium (D3/4) on one production batch
+        against the innovator product. (Or Bioequivalence study according to category of API).
+    cite:
+      - src: eda-variation-tool
+        at: row 64
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-65
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Change in coating weight of Solid oral pharmaceutical forms or change in weight of capsule shell For Finished Pharmaceutical
+        product.
+      ar: null
+    group: Drug Product
+    type: Formulation
+    pac: PAC-B
+    conditions:
+      - The coating is not a critical factor for the release mechanism.
+      - The Finished Pharmaceutical product specification has only been updated in respect of weight and dimensions, if applicable.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs.
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+    cite:
+      - src: eda-variation-tool
+        at: row 65
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-66
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Change in coating weight of Gastro-resistant, modified or prolonged release pharmaceutical forms (where the coating is a critical
+        factor for the release mechanism)
+      ar: null
+    group: Drug Product
+    type: Formulation
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs.
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+      - >-
+        Comparative in-vitro dissolution study at 3 different PH media (1.2,4.5,6.8) & most suitable medium (D3/4) on one production batch
+        against the innovator product. (Or Bioequivalence study according to category of API).
+    cite:
+      - src: eda-variation-tool
+        at: row 66
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-67
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Tightening of specification limits for the Finished Pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Specification
+    pac: PAC-A
+    conditions:
+      - >-
+        The change does not result from unexpected events arising during manufacture, e.g. new unqualified impurity; change in total
+        impurity limits.
+      - Any change should be within the range of currently approved limits.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 67
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-68
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Addition of a new specification parameter to the specification of the Finished Pharmaceutical product with its corresponding test
+        method.
+      ar: null
+    group: Drug Product
+    type: Specification
+    pac: PAC-B
+    conditions:
+      - >-
+        The change does not result from unexpected events arising during manufacture, e.g. new unqualified impurity; change in total
+        impurity limits.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs.
+      - >-
+        Comparative in-vitro dissolution study at 3 different PH media (1.2,4.5,6.8) & most suitable medium (D3/4) on one production batch
+        against the innovator product. (Or Bioequivalence study according to API category), If the added test affect dissolution.
+    cite:
+      - src: eda-variation-tool
+        at: row 68
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-69
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Deletion of a non-significant specification parameter for the Finished Pharmaceutical product (e.g., deletion of an obsolete
+        parameter such as odor and taste or identification test for a coloring or flavoring material).
+      ar: null
+    group: Drug Product
+    type: Specification
+    pac: PAC-N
+    conditions:
+      - >-
+        The change does not result from unexpected events arising during manufacture, e.g. new unqualified impurity; change in total
+        impurity limits.
+      - >-
+        The specification parameter or proposal for the specific dosage form does not concern a critical parameter for example: assay,
+        impurities or critical physical characteristics .
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 69
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-70
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Reduction of the shelf life of the Finished Pharmaceutical product As packaged for sale.
+      ar: null
+    group: Drug Product
+    type: Shelf-life
+    pac: PAC-N
+    conditions:
+      - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 70
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-71
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Reduction of the shelf life of the Finished Pharmaceutical product After first opening.
+      ar: null
+    group: Drug Product
+    type: Shelf-life
+    pac: PAC-N
+    conditions:
+      - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 71
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-72
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Reduction of the shelf life of the Finished Pharmaceutical product After dilution or reconstitution.
+      ar: null
+    group: Drug Product
+    type: Shelf-life
+    pac: PAC-N
+    conditions:
+      - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 72
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-73
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Extension of the shelf life of the Finished Pharmaceutical product As packaged for sale (supported by real time data).
+      ar: null
+    group: Drug Product
+    type: Shelf-life
+    pac: PAC-N
+    conditions:
+      - Approval from Stability Administration for proposed Change.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 73
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-74
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Extension of the shelf life of the Finished Pharmaceutical product After first opening (supported by real time data).
+      ar: null
+    group: Drug Product
+    type: Shelf-life
+    pac: PAC-N
+    conditions:
+      - Approval from Stability Administration for proposed Change.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 74
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-75
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Extension of the shelf life of the Finished Pharmaceutical product After dilution or reconstitution (supported by real time data).
+      ar: null
+    group: Drug Product
+    type: Shelf-life
+    pac: PAC-N
+    conditions:
+      - Approval from Stability Administration for proposed Change.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 75
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-76
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in storage conditions of the Finished Pharmaceutical product or the diluted/reconstituted product.
+      ar: null
+    group: Drug Product
+    type: Shelf-life / Storage condition
+    pac: PAC-N
+    conditions:
+      - Approval from Stability Administration for proposed Change.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 76
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-77
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in test procedure for the Finished Pharmaceutical product
+      ar: null
+    group: Drug Product
+    type: Test procedure
+    pac: PAC-N
+    conditions:
+      - Notification/Approval from CADC for new test procedure.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 77
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-78
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Qualitative and quantitative Change in Primary packaging of Finished Pharmaceutical product  For (Solid & Semi-solid and non-sterile
+        liquid dosage forms) within the same packaging type.
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-B
+    conditions:
+      - The change only concerns the same packaging container type (e.g. blister to blister).
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+    cite:
+      - src: eda-variation-tool
+        at: row 78
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-79
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Qualitative and quantitative Change in Primary packaging of Finished Pharmaceutical product For (Sterile dosage forms) within the
+        same packaging type.
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+    cite:
+      - src: eda-variation-tool
+        at: row 79
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-80
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change to a new type of Packaging container of Finished Pharmaceutical product. (Such as glass to plastic, or strip to jar,etc….)
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+    cite:
+      - src: eda-variation-tool
+        at: row 80
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-81
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in shape of the container for Non-sterile Finished Pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-N
+    conditions:
+      - No change in the qualitative or quantitative composition of the container.
+      - >-
+        The change does not concern a fundamental part of the packaging material, which affects the delivery, use, safety or stability of
+        the Finished Pharmaceutical product.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products
+    cite:
+      - src: eda-variation-tool
+        at: row 81
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-82
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in shape of the container for sterile Finished Pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-II
+    conditions: []
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - Batch Analysis for first production batch at CADC labs
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+    cite:
+      - src: eda-variation-tool
+        at: row 82
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-83
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change in the number of units (e.g., tablets, ampoules, etc.) in the pack of Finished Pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-B
+    conditions:
+      - >-
+        New pack size should be consistent with the posology and treatment duration & similar change in the competitor product from any
+        reference country.
+      - The primary packaging material remains the same.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of Product Information (i.e., Inner leaflet and mock up) that will be followed up by Central Administration of operation
+        (Inspection Department).
+      - Pricing
+    cite:
+      - src: eda-variation-tool
+        at: row 83
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-84
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Deletion of pack size(s) for Finished Pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-A
+    conditions:
+      - >-
+        The remaining product presentation(s) must be adequate for the dosing instructions and treatment duration as mentioned in the
+        product information leaflet.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 84
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-85
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change/Addition in the fill weight/fill volume of sterile multidose Finished Pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-II
+    conditions:
+      - >-
+        New pack size should be consistent with the posology and treatment duration & similar change in the competitor product from any
+        reference country.
+      - The primary packaging material remains the same.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of Product Information (i.e., Inner leaflet and mock up) that will be followed up by Central Administration of operation
+        (Inspection Department).
+      - Pricing
+      - Batch Analysis for first production batch at CADC labs.
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
+    cite:
+      - src: eda-variation-tool
+        at: row 85
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-86
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Change/Addition in the fill weight/fill volume of non- sterile multi-dose Finished Pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-B
+    conditions:
+      - >-
+        New pack size should be consistent with the posology and treatment duration & similar change in the competitor product from any
+        reference country.
+      - The primary packaging material remains the same.
+    requirements:
+      - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
+      - >-
+        Amendment of Product Information (i.e., Inner leaflet and mock up) that will be followed up by Central Administration of operation
+        (Inspection Department).
+      - Pricing
+      - >-
+        Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
+        the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months
+    cite:
+      - src: eda-variation-tool
+        at: row 86
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-87
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Change in any part of the (primary) packaging material not in contact with the Finished Pharmaceutical product formulation (such as
+        color of flip-off caps, color code rings on ampoules, change of needle shield (different plastic used) that affects the pro
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-N
+    conditions:
+      - >-
+        The change does not concern a part of the packaging material, which affects the delivery, use, safety or stability of the Finished
+        Pharmaceutical product
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 87
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-88
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: >-
+        Change in any part of the (primary) packaging material not in contact with the Finished Pharmaceutical product formulation (such as
+        color of flip-off caps, color code rings on ampoules, change of needle shield (different plastic used) that does not affect
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-A
+    conditions:
+      - >-
+        The change does not concern a part of the packaging material, which affects the delivery, use, safety or stability of the Finished
+        Pharmaceutical product
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 88
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-89
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Deletion of a supplier of packaging components or devices for Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-A
+    conditions:
+      - No deletion of packaging component or device.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 89
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/var/H-90
+    kind: variation
+    authority: EG-EDA
+    set: eg-eda-variations
+    title:
+      en: Replacement or addition  of a supplier of packaging components or devices for Finished pharmaceutical product.
+      ar: null
+    group: Drug Product
+    type: Container closure system
+    pac: PAC-N
+    conditions:
+      - No deletion of packaging component or device.
+      - The qualitative and quantitative composition of the packaging components/device and design specifications remain the same.
+      - The specifications and quality control method are at least equivalent.
+      - The sterilization method and conditions remain the same, if applicable.
+    requirements: []
+    cite:
+      - src: eda-variation-tool
+        at: row 90
+      - src: eda-gl-capp-026-v6

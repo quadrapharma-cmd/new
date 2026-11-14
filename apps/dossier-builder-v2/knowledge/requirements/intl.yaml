@@ -1,0 +1,608 @@
+# CTD dossier for any other country — general Module 1
+# ملف CTD لأي دولة تانية — موديول ١ عام
+# Ported from the old program (rulepacks/intl.ctd.m1.v1); edit here from now on.
+- id: OTHER/X-1.0
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: '1.0'
+  ectd:
+    - '1.0'
+  title:
+    en: Cover letter
+    ar: خطاب التقديم
+  status: general
+  acceptance: 'On the company letterhead: the product, the type of application, what is enclosed; signed.'
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.1
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: '1.1'
+  ectd:
+    - '1.1'
+  title:
+    en: Table of contents of the dossier
+    ar: فهرس الملف
+  status: general
+  acceptance: Every document of the dossier with its location.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.2
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: '1.2'
+  ectd:
+    - '1.2'
+  title:
+    en: Application form
+    ar: نموذج الطلب
+  status: general
+  acceptance: The authority's own application form, completed and signed.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.3.1
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: 1.3.1
+  ectd:
+    - 1.3.1
+  title:
+    en: Summary of product characteristics
+    ar: ملخص خصائص المستحضر
+  status: general
+  acceptance: The proposed SmPC.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  kinds:
+    - smpc
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.3.2
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: 1.3.2
+  ectd:
+    - 1.3.2
+  title:
+    en: Labelling
+    ar: بيانات العبوة
+  status: general
+  acceptance: The text of the outer and immediate labelling, in the language(s) the country asks for.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.3.3
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: 1.3.3
+  ectd:
+    - 1.3.3
+  title:
+    en: Package leaflet
+    ar: النشرة الداخلية
+  status: general
+  acceptance: The proposed leaflet, in the language(s) the country asks for.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.3.4
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: 1.3.4
+  ectd:
+    - 1.3.4
+  title:
+    en: Artwork / mock-ups
+    ar: تصميم العبوة (Mock-ups)
+  status: general
+  acceptance: Full-colour artwork of the outer and immediate packaging.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.4.1
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: 1.4.1
+  ectd:
+    - 1.4.1
+  title:
+    en: Manufacturing licence / GMP certificate
+    ar: ترخيص التصنيع / شهادة GMP
+  status: general
+  acceptance: A valid GMP certificate (or manufacturing licence) of each manufacturing site, legalised where the country asks.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  kinds:
+    - gmp
+    - factory
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.4.2
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: 1.4.2
+  ectd:
+    - 1.4.2
+  title:
+    en: Certificate of pharmaceutical product (CPP) or free-sale certificate
+    ar: شهادة المستحضر الصيدلي (CPP) أو البيع الحر
+  status: general
+  acceptance: CPP in the WHO format from the country of origin, legalised where the country asks.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  kinds:
+    - cpp
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.4.3
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: 1.4.3
+  ectd:
+    - 1.4.3
+  title:
+    en: Certificates of analysis
+    ar: شهادات التحليل
+  status: general
+  acceptance: Certificates of analysis of the active substance and of the finished product.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  kinds:
+    - coa
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.4.4
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: 1.4.4
+  ectd:
+    - 1.4.4
+  title:
+    en: Letter of authorisation / agency agreement
+    ar: خطاب التفويض / عقد الوكالة
+  status: general
+  acceptance: The manufacturer's authorisation of the local applicant or agent, where the country asks for one.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  kinds:
+    - poa
+    - contract
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.5
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: '1.5'
+  ectd:
+    - '1.5'
+  title:
+    en: Information on the experts
+    ar: بيانات الخبراء
+  status: general
+  acceptance: The signed expert statements with the CVs (quality, non-clinical, clinical).
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.6
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: '1.6'
+  ectd:
+    - '1.6'
+  title:
+    en: Pharmacovigilance
+    ar: اليقظة الدوائية
+  status: general
+  acceptance: The summary of the pharmacovigilance system and the risk management plan, where the country asks for them.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.7
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: '1.7'
+  ectd:
+    - '1.7'
+  title:
+    en: Declarations asked by the country
+    ar: الإقرارات اللي بتطلبها الدولة
+  status: general
+  acceptance: Such as origin of materials (TSE / BSE), alcohol or porcine content, patent status — as the country lists them.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.8
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: '1.8'
+  ectd:
+    - '1.8'
+  title:
+    en: Pricing
+    ar: التسعير
+  status: general
+  acceptance: The price documents, where registration and pricing go together.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  kinds:
+    - pricing
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-1.9
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: '1.9'
+  ectd:
+    - '1.9'
+  title:
+    en: Samples and reference standards
+    ar: العينات والمواد المرجعية
+  status: general
+  acceptance: The note that goes with the samples handed over.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-RESP
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: Responses to questions
+  ectd:
+    - '1'
+  title:
+    en: Responses to questions
+    ar: الرد على الاستفسارات
+  status: general
+  acceptance: The answers to the authority, question by question.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-ADD
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 1
+  group: MODULE 1 — Administrative information (general layout)
+  ctd: Additional data
+  ectd:
+    - '1'
+  title:
+    en: Other documents the country asks for
+    ar: مستندات تانية بتطلبها الدولة
+  status: general
+  acceptance: What has no heading above.
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general
+- id: OTHER/X-3.2.R
+  kind: requirement
+  authority: OTHER
+  set: intl-m1
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.R
+  ectd:
+    - 3.2.R
+  title:
+    en: Regional information
+    ar: المعلومات الإقليمية (3.2.R)
+  status: general
+  acceptance: What the country asks for under 3.2.R (executed batch records, process validation scheme, certificates of suitability…).
+  note:
+    en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
+    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  kinds:
+    - bmr
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: general-practice
+      at: (WHO, ICH regions) — the country's own checklist decides
+  ectd_cite:
+    - src: general-practice
+      at: match it to the country's own checklist
+      status: general

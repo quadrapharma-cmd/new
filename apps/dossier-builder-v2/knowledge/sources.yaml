@@ -1,0 +1,1188 @@
+# Every source the program's knowledge comes from. A record cites a source by its id (cite: [{src: <id>, at: <where>}]).
+#   status:  in-force · draft (never cited as a requirement) · superseded (kept for comparison) · reference (a model or
+#            an aid, not a rule) · data (a table published by the authority) · general (no published source: practice)
+#   file:    the copy kept in this repository (path from the repository root); held: false when no copy is kept
+#   checked: when the version and dates were last confirmed, and how («cover» = read on the document's own cover)
+#   aliases: the ways older records write this source; a citation is matched by its beginning (case ignored)
+
+# ---------------------------------------------------------------- Egyptian Drug Authority — in force
+- id: eda-np-capp-065-v5
+  authority: EG-EDA
+  code: NP.CAPP.065
+  version: '5'
+  title: {en: Submission Guidance for the CTD — Notice to Applicants, ar: دليل تقديم ملف الـ CTD — إشعار لمقدمي الطلبات}
+  status: in-force
+  issued: '2025-11-01'
+  effective: '2025-11-01'
+  file: docs/ctd/sources/EDA_NP.CAPP.065_v5_2025_CTD-submission-guidance.pdf
+  held: true
+  supersedes: NP.CAPP.065 v4 (2024-07-23)
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['NP.CAPP.065 v5/2025', 'NP.CAPP.065 v5', 'NP.CAPP.065']
+- id: eda-ctd-qm-v2
+  authority: EG-EDA
+  code: Egyptian Guidelines on CTD Quality Module
+  version: '2'
+  title: {en: Egyptian Guidelines on the CTD Quality Module, ar: الإرشادات المصرية لموديول الجودة في ملف الـ CTD}
+  status: in-force
+  issued: '2023-03-12'
+  file: docs/ctd/sources/EDA_CTD-Quality-Module-guideline_v2_2023.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['CTD QM v2', 'CTD QM guideline v2', 'CTD Quality Module guideline', 'EDA Quality Module guideline v2/2023', 'EDA Quality Module guideline v2', 'EDA Quality Module guideline']
+- id: eda-gl-capp-002-v4
+  authority: EG-EDA
+  code: GL.CAP.Care/CAPP.002
+  version: '4'
+  title: {en: Dossier Requirements — Registration and Re-registration, ar: متطلبات الملف — التسجيل وإعادة التسجيل}
+  status: in-force
+  issued: '2023-12-14'
+  effective: '2023-12-14'
+  file: docs/ctd/sources/EDA_GL.CAP.Care-CAPP.002_v4_2023_dossier-requirements.pdf
+  held: true
+  supersedes: v3 (2023-08-14)
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['GL.CAP.Care/CAPP.002', 'GL.CAPP.002 v4', 'GL.CAPP.002']
+- id: eda-gl-capp-024-v4
+  authority: EG-EDA
+  code: GL.CAPP.024
+  version: '4'
+  title: {en: Bioequivalence Guideline (generic marketing authorisation), ar: دليل التكافؤ الحيوي (تسجيل المثائل)}
+  status: in-force
+  issued: '2026-06-23'
+  effective: '2026-07-01'
+  file: docs/ctd/sources/EDA_GL.CAPP.024_v4_2026_BE-guideline.pdf
+  held: true
+  supersedes: v3 (2023-07-17)
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['GL.CAPP.024 v4/2026', 'GL.CAPP.024 v4', 'GL.CAPP.024']
+- id: eda-gl-capp-026-v6
+  authority: EG-EDA
+  code: GL.CAPP.026
+  version: '6'
+  title: {en: Human Pharmaceuticals Variations (6th edition), ar: متغيرات المستحضرات البشرية (الإصدار السادس)}
+  status: in-force
+  issued: '2025-12-01'
+  effective: '2026-01-01'
+  file: docs/ctd/sources/EDA_GL.CAPP.026_v6_2025_variations-6th-ed.pdf
+  held: true
+  supersedes: v4 (2023-11-15), v5 (2024)
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['GL.CAPP.026 v6', 'GL.CAPP.026', 'EDA GL.CAPP.026']
+- id: eda-gl-capp-027-v5
+  authority: EG-EDA
+  code: GL.CAPP.027
+  version: '5'
+  title: {en: Regulatory guide to Decree 450/2023, ar: الدليل الإرشادي للقرار 450 لسنة 2023}
+  status: in-force
+  issued: '2025-10-30'
+  effective: '2025-11-01'
+  file: docs/ctd/sources/EDA_GL.CAPP.027_v5_2025_guide-decree-450.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['GL.CAPP.027']
+- id: eda-decree-150-guide-v7
+  authority: EG-EDA
+  code: Regulatory guide to Decree 150/2022 (re-registration)
+  version: '7'
+  title: {en: Regulatory guide to Decree 150/2022 — re-registration, ar: الدليل الإرشادي للقرار 150 لسنة 2022 — إعادة التسجيل}
+  status: in-force
+  issued: '2025-12-30'
+  effective: '2026-01-01'
+  file: docs/ctd/sources/EDA_guide-decree-150_v7_2025.pdf
+  held: true
+  supersedes: GL.CAPP.030 v5 (2023-11-30)
+  checked: {on: '2026-11-06', how: cover}
+  note: The cover carries no EDREX code; older records call it GL.CAPP.030.
+  aliases: ['EDA GL.CAPP.030', 'GL.CAPP.030', 'Decree 150']
+- id: eda-gl-capp-039-v1
+  authority: EG-EDA
+  code: GL.CAPP.039
+  version: '1'
+  title: {en: Quality Module for products for re-registration, ar: موديول الجودة للمستحضرات المقدمة لإعادة التسجيل}
+  status: in-force
+  issued: '2025-04-30'
+  effective: '2026-01-01'
+  file: docs/ctd/sources/EDA_GL.CAPP.039_v1_2025_QM-re-registration.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['GL.CAPP.039 v1/2025', 'GL.CAPP.039 v1', 'GL.CAPP.039']
+- id: eda-np-capp-040-v1
+  authority: EG-EDA
+  code: NP.CAPP.040
+  version: '1'
+  title: {en: Quality Module file — most common deficiencies (Notice to Applicants), ar: ملف موديول الجودة — أشهر النواقص (إشعار لمقدمي الطلبات)}
+  status: in-force
+  issued: '2022-03-09'
+  file: docs/ctd/sources/EDA_NP.CAPP.040_v1_2022_QM-common-deficiencies.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['NP.CAPP.040 v1/2022', 'NP.CAPP.040 v1', 'NP.CAPP.040']
+- id: eda-np-capp-090-v2
+  authority: EG-EDA
+  code: NP.CAPP.090
+  version: '2'
+  title: {en: File content of the stability study dossier (Notice to Applicants), ar: محتوى ملف دراسة الثبات (إشعار لمقدمي الطلبات)}
+  status: in-force
+  issued: '2026-08-06'
+  file: docs/ctd/sources/EDA_NP.CAPP.090_v2_2026_stability-dossier-content.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['NP.CAPP.090 v2/2026', 'NP.CAPP.090 v2', 'NP.CAPP.090', 'EDA stability guidelines']
+- id: eda-np-capp-112-v1
+  authority: EG-EDA
+  code: NP.CAPP.112
+  version: '1'
+  title: {en: Relevant sections of the CTD for human variations (Notice to Applicants), ar: أقسام الـ CTD المطلوبة لمتغيرات المستحضرات البشرية (إشعار لمقدمي الطلبات)}
+  status: in-force
+  issued: '2026-07-01'
+  file: docs/ctd/sources/EDA_NP.CAPP.112_v1_2026_variations-CTD-sections.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['NP.CAPP.112']
+- id: eda-gl-cadc-002-v2
+  authority: EG-EDA
+  code: GL.CADC.002
+  version: '02'
+  title: {en: Guidelines for file assessment of pharmaceutical products for human use (CADC), ar: إرشادات تقييم ملفات التحليل للمستحضرات البشرية (الإدارة المركزية للرقابة الدوائية)}
+  status: in-force
+  issued: '2024-05-23'
+  effective: '2024-06-01'
+  file: docs/ctd/sources/EDA_GL.CADC.002_v02_2024_CADC-file-assessment_IN-FORCE.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['GL.CADC.002 v02/2024', 'GL.CADC.002 v02', 'GL.CADC.002']
+- id: eda-gl-bioinn-004-v5
+  authority: EG-EDA
+  code: GL.Bioinn.004
+  version: '5'
+  title: {en: Biological products — file content (aligned with Module 1 eCTD), ar: المستحضرات الحيوية — محتوى الملف (متوافق مع الموديول الأول للـ eCTD)}
+  status: in-force
+  issued: '2026-05-25'
+  file: docs/ctd/sources/EDA_GL.Bioinn.004_v5_2026_biologics-file-content-M1-eCTD-aligned.pdf
+  held: true
+  checked: {on: '2026-11-06', how: index}
+  aliases: ['GL.Bioinn.004', 'GL.BioInn.004']
+- id: eda-gl-cap-care-032-v4
+  authority: EG-EDA
+  code: GL.CAP.Care.032
+  version: '4'
+  title: {en: Egyptian guidelines for medical leaflets, ar: الإرشادات المصرية للنشرات الطبية}
+  status: in-force
+  issued: '2024'
+  held: false
+  checked: {on: '2026-11-06', how: index}
+  aliases: ['EDA GL.CAP.Care.032', 'GL.CAP.Care.032']
+- id: eda-gl-ppma-004-v5
+  authority: EG-EDA
+  code: GL.PPMA.004
+  version: '5'
+  title: {en: EDA guideline GL.PPMA.004 — import approvals (Pharmaceutical Policies and Market Access), ar: دليل الهيئة GL.PPMA.004 — الموافقات الاستيرادية (السياسات الدوائية ودعم الأسواق)}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  confirm: the exact title, from the official copy
+  aliases: ['EDA GL.PPMA.004', 'GL.PPMA.004']
+- id: eda-pricing-decision-480-2026
+  authority: EG-EDA
+  code: EDA decision 480/2026
+  version: '2026'
+  title: {en: EDA decision 480/2026 on value-based pricing, ar: قرار الهيئة 480/2026 بشأن التسعير على أساس القيمة}
+  status: in-force
+  issued: '2026'
+  held: false
+  checked: {on: '2026-10-21', how: news}
+  aliases: ['EDA pricing decision 480/2026', 'decision 480/2026']
+- id: eda-gl-cao-005-v3
+  authority: EG-EDA
+  code: GL.CAO.005
+  version: '3'
+  title: {en: Central Administration of Operations guideline (licences of sites and stores), ar: دليل الإدارة المركزية للعمليات (تراخيص المواقع والمخازن)}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  aliases: ['EDA GL.CAO.005', 'GL.CAO.005']
+- id: eda-np-capp-093-v1
+  authority: EG-EDA
+  code: NP.CAPP.093
+  version: '1'
+  title: {en: Fifth-year report after registration (Notice to Applicants), ar: تقرير السنة الخامسة بعد التسجيل (إشعار لمقدمي الطلبات)}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  aliases: ['NP.CAPP.093']
+- id: eda-np-capp-109-v2
+  authority: EG-EDA
+  code: NP.CAPP.109
+  version: '2'
+  title: {en: Notice to Applicants NP.CAPP.109, ar: إشعار لمقدمي الطلبات NP.CAPP.109}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  aliases: ['NP.CAPP.109']
+- id: eda-submission-procedures
+  authority: EG-EDA
+  code: Submission Procedures for Registration Dossiers — a step-by-step overview
+  version: '—'
+  title: {en: Submission procedures for registration dossiers (the Google Forms links), ar: إجراءات تقديم ملفات التسجيل (روابط Google Forms)}
+  status: in-force
+  file: docs/ctd/sources/EDA_Submission-Procedures-Registration-Dossiers_GoogleForms_step-by-step.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['EDA submission procedures']
+- id: eda-variation-tool
+  authority: EG-EDA
+  code: EDA Variation Self-Guided Tool
+  version: snapshot 2026-11-06
+  title: {en: EDA Variation Self-Guided Tool (every variation, its PAC category, conditions and documents), ar: أداة الهيئة الإرشادية للمتغيرات (كل تغيير وفئته وشروطه ومستنداته)}
+  status: data
+  url: https://eservices.edaegypt.gov.eg/EDAVariationTool/
+  file: docs/ctd/data/EDA_VariationTool_2026-11-06.csv
+  held: true
+  checked: {on: '2026-11-06', how: download}
+  aliases: ['EDA Variation Self-Guided Tool']
+
+# ---------------------------------------------------------------- Egyptian Drug Authority — drafts (never cited as a requirement)
+- id: eda-np-capp-065-v6-draft
+  authority: EG-EDA
+  code: NP.CAPP.065
+  version: 6 (draft)
+  title: {en: Submission Guidance for the CTD — version 6 (draft for consultation), ar: دليل تقديم ملف الـ CTD — الإصدار 6 (مسودة للاستشارة)}
+  status: draft
+  issued: '2026-10-15'
+  file: docs/ctd/sources/EDA_NP.CAPP.065_v6_DRAFT_2026_CTD-submission-guidance.pdf
+  held: true
+  note: Consultation 15/10–29/10/2026. Renumbers Module 1 as the eCTD does.
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['NP.CAPP.065 v6']
+- id: eda-eg-m1-ectd-spec-draft-v1
+  authority: EG-EDA
+  code: EG Module 1 eCTD Specification
+  version: 1.0 (draft)
+  title: {en: EG Module 1 eCTD Specification (draft), ar: مواصفة الموديول الأول للـ eCTD المصري (مسودة)}
+  status: draft
+  issued: '2026-09-02'
+  file: docs/ctd/sources/EDA_EG-Module1-eCTD-Specification_DRAFT_v1.0_2026.pdf
+  held: true
+  note: Consultation 02/09–14/10/2026. Annex 1 the Module 1 XML, Annex 2 the folders and files.
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['EG M1 eCTD Spec draft v1.0', 'EG draft', 'EG M1 eCTD Spec draft', 'EG M1 eCTD Spec', 'EG eCTD Technical Guidance / M1 spec', 'EG Module 1 eCTD']
+- id: eda-eg-m1-submission-guidance-draft
+  authority: EG-EDA
+  code: EG Human Pharmaceutical Module 1 Submission Guidance
+  version: draft 2026
+  title: {en: EG Human Pharmaceutical Module 1 Submission Guidance (draft), ar: إرشادات تقديم الموديول الأول للمستحضرات البشرية (مسودة)}
+  status: draft
+  issued: '2026-10-15'
+  file: docs/ctd/sources/EDA_EG-Human-Pharma-Module1-Submission-Guidance_DRAFT_2026.pdf
+  held: true
+  note: Consultation 15/10–29/10/2026.
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['EG M1 Submission Guidance draft 2026', 'EG Module 1 submission guidance', 'EG M1 Submission Guidance']
+- id: eda-ectd-technical-guidance-draft-v1
+  authority: EG-EDA
+  code: Technical Guidance for eCTD Submissions in Egypt
+  version: 1/2026 (draft)
+  title: {en: Technical Guidance for eCTD Submissions in Egypt (draft), ar: الإرشادات الفنية لتقديم ملفات الـ eCTD في مصر (مسودة)}
+  status: draft
+  file: docs/ctd/sources/EDA_eCTD-technical-guidance_DRAFT_v1_2026.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['EG eCTD TG draft', 'EG eCTD TG', 'EG eCTD Technical Guidance']
+- id: eda-gl-cadc-002-v3-draft
+  authority: EG-EDA
+  code: GL.CADC.002
+  version: 3/2025 (draft)
+  title: {en: CADC file assessment guidelines — finished products (draft), ar: إرشادات تقييم ملفات التحليل — المستحضرات النهائية (مسودة)}
+  status: draft
+  file: docs/ctd/sources/EDA_CADC_Guidelines-File-Assessment-FPP_DRAFT.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['GL.CADC.002 v3']
+- id: eda-module1-guidance-old-draft
+  authority: EG-EDA
+  code: Submission Guidance for Module I
+  version: old draft
+  title: {en: Submission Guidance for Module I (old draft), ar: إرشادات تقديم الموديول الأول (مسودة قديمة)}
+  status: superseded
+  file: docs/ctd/sources/EDA_Submission-Guidance-Module-I_old-draft.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: []
+- id: eda-ectd-webinar-2026
+  authority: EG-EDA
+  code: EDA eCTD webinar (CPD)
+  version: '2026-09-24'
+  title: {en: EDA webinar — a comprehensive overview of the eCTD modules (agenda), ar: ويبينار الهيئة — نظرة شاملة على موديولات الـ eCTD (البرنامج)}
+  status: reference
+  file: docs/ctd/sources/EDA_CPD_eCTD-webinar-agenda_2026-09-24.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: []
+
+# ---------------------------------------------------------------- ICH
+- id: ich-m4-r4
+  authority: ICH
+  code: ICH M4(R4)
+  version: R4
+  title: {en: Organisation of the Common Technical Document (with the granularity annex), ar: تنظيم ملف الـ CTD (مع ملحق التقسيم)}
+  status: in-force
+  issued: '2016-06-15'
+  file: docs/ctd/sources/ICH_M4_R4_organisation-granularity.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['ICH M4(R4) granularity', 'ICH M4(R4)', 'ICH M4 Granularity', 'ICH M4']
+- id: ich-m4q-r1
+  authority: ICH
+  code: ICH M4Q(R1)
+  version: R1
+  title: {en: The CTD — Quality (Module 2.3 and Module 3), ar: ملف الـ CTD — الجودة (الموديول 2.3 والموديول 3)}
+  status: in-force
+  issued: '2002-09-12'
+  file: docs/ctd/sources/ICH_M4Q_R1.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['ICH M4Q(R1)', 'ICH M4Q']
+- id: ich-m4s-r2
+  authority: ICH
+  code: ICH M4S(R2)
+  version: R2
+  title: {en: The CTD — Safety (Module 2.4, 2.6 and Module 4), ar: ملف الـ CTD — السلامة (الموديول 2.4 و2.6 والموديول 4)}
+  status: in-force
+  issued: '2002-12-20'
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  aliases: ['ICH M4S(R2)', 'ICH M4S']
+- id: ich-m4e-r2
+  authority: ICH
+  code: ICH M4E(R2)
+  version: R2
+  title: {en: The CTD — Efficacy (Module 2.5, 2.7 and Module 5), ar: ملف الـ CTD — الفعالية (الموديول 2.5 و2.7 والموديول 5)}
+  status: in-force
+  issued: '2016-06-15'
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  aliases: ['ICH M4E(R2)', 'ICH M4E']
+- id: ich-q1a-r2
+  authority: ICH
+  code: ICH Q1A(R2)
+  version: R2
+  title: {en: Stability testing of new drug substances and products, ar: اختبارات الثبات للمواد الفعالة والمستحضرات الجديدة}
+  status: in-force
+  issued: '2003-02-06'
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  note: "ICH is consolidating Q1A–Q1F and Q5C into one Q1 guideline (a draft reached Step 2 in April 2025) — check its step in the review of sources"
+  aliases: ['ICH Q1A(R2)', 'ICH Q1A']
+- id: ich-ectd-v322
+  authority: ICH
+  code: ICH eCTD Specification
+  version: 3.2.2
+  title: {en: ICH eCTD Specification v3.2.2 (with the DTD and the empty folder template), ar: مواصفة الـ eCTD من ICH الإصدار 3.2.2 (مع الـ DTD وقالب الفولدرات)}
+  status: in-force
+  issued: '2008-07-16'
+  file: docs/ctd/sources/ectd/ICH_eCTD_Specification_v3.2.2_2008.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['ICH eCTD Specification v3.2.2', 'ICH eCTD 3.2.2', 'eCTD v3.2.2', 'eCTD 3.2.2', 'ICH eCTD']
+- id: ich-ectd-stf-v261
+  authority: ICH
+  code: ICH eCTD STF Specification
+  version: 2.6.1
+  title: {en: ICH eCTD Study Tagging File specification, ar: مواصفة ملفات تعريف الدراسات (STF) من ICH}
+  status: in-force
+  issued: '2008-06-03'
+  file: docs/ctd/sources/ectd/ICH_eCTD_STF_Specification_v2.6.1_2008.pdf
+  held: true
+  checked: {on: '2026-11-13', how: cover}
+  aliases: ['ICH STF', 'ICH eCTD STF']
+- id: ich-ectd-qa-v133
+  authority: ICH
+  code: ICH eCTD v3.2 Q&A
+  version: '1.33'
+  title: {en: ICH eCTD v3.2 Questions and Answers, ar: أسئلة وأجوبة ICH عن الـ eCTD 3.2}
+  status: in-force
+  issued: '2024-05'
+  file: docs/ctd/sources/ectd/ICH_eCTD_v3.2_QA_v1.33.zip
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['ICH Q&A', 'ICH eCTD Q&A']
+- id: ich-ectd-v40-ig-v17
+  authority: ICH
+  code: ICH eCTD v4.0 Implementation Guide
+  version: '1.7'
+  title: {en: ICH eCTD v4.0 Implementation Guide (with the XSD), ar: دليل تطبيق الـ eCTD 4.0 من ICH (مع الـ XSD)}
+  status: in-force
+  issued: '2026-07'
+  file: docs/ctd/sources/ectd/ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['ICH eCTD v4.0 IG', 'ICH eCTD 4.0']
+- id: ich-ectd-v40-cv-v103
+  authority: ICH
+  code: ICH eCTD v4.0 Controlled Vocabulary package
+  version: 1.0.3
+  title: {en: ICH eCTD v4.0 controlled vocabularies, ar: القيم المعتمدة لـ eCTD 4.0 من ICH}
+  status: in-force
+  file: docs/ctd/sources/ectd/ICH_eCTD_v4.0_CV_Package_v1.0.3.zip
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['ICH eCTD v4.0 CV']
+- id: ich-m8-v13
+  authority: ICH
+  code: ICH M8 Specification for Submission Formats for eCTD
+  version: '1.3'
+  title: {en: ICH M8 — submission formats for the eCTD, ar: ICH M8 — صيغ الملفات المقبولة في الـ eCTD}
+  status: in-force
+  file: docs/ctd/sources/ectd/ICH_M8_Submission-Formats_v1.3.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['ICH M8']
+
+# ---------------------------------------------------------------- WHO
+- id: who-trs986-annex6
+  authority: WHO
+  code: WHO TRS 986 Annex 6
+  version: '2014'
+  title: {en: Guidelines on submission of documentation for a multisource (generic) finished product — quality part, ar: إرشادات تقديم ملف جودة المستحضر المثيل (منظمة الصحة العالمية)}
+  status: reference
+  issued: '2014'
+  file: docs/ctd/sources/WHO_TRS986_Annex6_generic-FPP-quality.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['WHO TRS 986 Annex 6', 'WHO TRS 986']
+- id: who-trs992-annex9
+  authority: WHO
+  code: WHO TRS 992 Annex 9
+  version: '2015'
+  title: {en: WHO TRS 992 Annex 9 (2015), ar: منظمة الصحة العالمية — التقرير الفني 992 الملحق 9 (2015)}
+  status: reference
+  issued: '2015'
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  aliases: ['WHO TRS 992']
+- id: who-pq-qos-pd
+  authority: WHO
+  code: WHO PQ QOS-PD template
+  version: 2025-01
+  title: {en: WHO PQ Quality Overall Summary — Product Dossier template, ar: قالب ملخص الجودة الشامل للمستحضر (التأهيل المسبق)}
+  status: reference
+  issued: '2025-01'
+  file: docs/ctd/sources/WHO_PQ_QOS-PD_template_Jan2025.docx
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['WHO QOS-PD', 'WHO PQ QOS']
+- id: who-pq-screening
+  authority: WHO
+  code: WHO PQ screening checklist
+  version: 2021-05
+  title: {en: WHO PQ dossier screening checklist, ar: قائمة الفحص الأولي للملف (التأهيل المسبق)}
+  status: reference
+  issued: '2021-05'
+  file: docs/ctd/sources/WHO_PQ_screening-checklist_May2021.doc
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['WHO screening', 'WHO PQ screening checklist']
+- id: who-pq-qis
+  authority: WHO
+  code: WHO PQ QIS template
+  version: 2025-01
+  title: {en: WHO PQ Quality Information Summary template, ar: قالب ملخص معلومات الجودة (التأهيل المسبق)}
+  status: reference
+  issued: '2025-01'
+  file: docs/ctd/sources/WHO_PQ_QIS_template_Jan2025.docx
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['WHO PQ QIS']
+- id: who-pq-btif
+  authority: WHO
+  code: WHO PQ BTIF template
+  version: 2023-01
+  title: {en: WHO PQ Bioequivalence Trial Information Form, ar: نموذج معلومات دراسة التكافؤ الحيوي (التأهيل المسبق)}
+  status: reference
+  issued: '2023-01'
+  file: docs/ctd/sources/WHO_PQ_BTIF_Jan2023.docx
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['WHO PQ BTIF', 'WHO BTIF']
+
+# ---------------------------------------------------------------- EU
+- id: eu-m1-spec-v311
+  authority: EU
+  code: EU Module 1 eCTD Specification
+  version: 3.1.1
+  title: {en: EU Module 1 eCTD Specification, ar: مواصفة الموديول الأول الأوروبي للـ eCTD}
+  status: in-force
+  issued: '2025-06'
+  url: https://esubmission.ema.europa.eu/eumodule1/
+  file: docs/ctd/sources/ectd/EU_M1_Specification_v3.1.1_2025.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['EU Module 1 eCTD Specification v3.1.1 (June 2025)', 'EU Module 1 eCTD Specification v3.1.1', 'EU Module 1', 'EU Module', 'EU M1']
+- id: eu-nta-vol2b
+  authority: EU
+  code: Notice to Applicants, Volume 2B
+  version: in force
+  title: {en: Notice to Applicants Volume 2B — presentation and content of the dossier, ar: إشعار مقدمي الطلبات المجلد 2B — عرض الملف ومحتواه}
+  status: in-force
+  url: https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-2_en
+  held: false
+  checked: {on: '2026-11-13', how: record}
+  aliases: ['Notice to Applicants Volume 2B', 'Notice to Applicants Volume', 'Notice to Applicants']
+- id: eu-vc-v82
+  authority: EU
+  code: EU eCTD Validation Criteria
+  version: '8.2'
+  title: {en: EU eCTD validation criteria, ar: معايير التحقق الأوروبية للـ eCTD}
+  status: in-force
+  issued: '2025-06'
+  file: docs/ctd/sources/ectd/EU_M1_Validation_Criteria_v8.2.xlsx
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['EU VC', 'EU eCTD validation criteria']
+- id: eu-htg-v601
+  authority: EU
+  code: EU Harmonised Technical Guidance for eCTD
+  version: 6.0.1
+  title: {en: EU Harmonised Technical Guidance for eCTD submissions, ar: الإرشادات الفنية الأوروبية الموحّدة لتقديم الـ eCTD}
+  status: in-force
+  file: docs/ctd/sources/ectd/EU_Harmonised_Technical_Guidance_eCTD_v6.0.1.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['EU Harmonised Technical Guidance', 'EU HTG']
+- id: eu-aff-2024
+  authority: EU
+  code: EU accepted file formats
+  version: 2024-06
+  title: {en: EU — accepted file formats in eCTD submissions, ar: الصيغ المقبولة في ملفات الـ eCTD الأوروبية}
+  status: in-force
+  issued: '2024-06'
+  file: docs/ctd/sources/ectd/EU_Accepted_File_Formats_2024-06.pdf
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['EU Accepted File Formats']
+- id: eu-ectd40-ig-draft
+  authority: EU
+  code: EU eCTD v4.0 Implementation Guide
+  version: 1.2 (draft)
+  title: {en: EU eCTD v4.0 Implementation Guide (draft), ar: دليل تطبيق الـ eCTD 4.0 الأوروبي (مسودة)}
+  status: draft
+  issued: '2024'
+  file: docs/ctd/sources/ectd/EU_eCTD_v4.0_IG_draft_1.2_2024.docx
+  held: true
+  checked: {on: '2026-11-06', how: cover}
+  aliases: ['EU eCTD v4.0 IG']
+
+# ---------------------------------------------------------------- GCC
+- id: gcc-m1-spec-v15
+  authority: GCC
+  code: GCC Module 1 Specifications
+  version: '1.5'
+  title: {en: GCC Module 1 Specifications, ar: مواصفات الموديول الأول الخليجي}
+  status: in-force
+  issued: '2015-11'
+  url: https://sfda.gov.sa/sites/default/files/2021-03/GCC%20Module%201%20Specifications_v1.5-EN.pdf
+  file: docs/ctd/sources/ectd/SFDA_GCC_Module1_Specifications_v1.5_2015.pdf
+  held: true
+  checked: {on: '2026-11-13', how: cover}
+  aliases: ['GCC Module 1 Specifications v1.5 (2015-11)', 'GCC Module 1 Specifications v1.5', 'GCC Module 1', 'GCC Module']
+- id: sfda-data-requirements-v4
+  authority: GCC
+  code: SFDA — Data Requirements for Human Drugs Submission (content of the dossier)
+  version: '4.0'
+  title: {en: SFDA data requirements for human drug submissions, ar: متطلبات البيانات لتسجيل الأدوية البشرية — هيئة الغذاء والدواء السعودية}
+  status: in-force
+  issued: '2025-08-03'
+  url: https://sfda.gov.sa/sites/default/files/2025-08/Data-Human-Drugs-SubV4.pdf
+  held: false
+  checked: {on: '2026-11-13', how: record}
+  aliases: ['SFDA Data Requirements for Human Drugs Submission v4.0 (2025-08-03)', 'SFDA Data Requirements for Human Drugs Submission v4.0', 'SFDA Data Requirements', 'SFDA — Data Requirements']
+
+# ---------------------------------------------------------------- United States
+- id: fda-comprehensive-toc-v233
+  authority: US-FDA
+  code: FDA — The Comprehensive Table of Contents Headings and Hierarchy
+  version: 2.3.3
+  title: {en: FDA — the comprehensive table of contents headings and hierarchy, ar: هيئة الغذاء والدواء الأمريكية — جدول العناوين الشامل وترتيبها}
+  status: in-force
+  issued: '2020-11-09'
+  url: https://www.fda.gov/media/76444/download
+  file: docs/ctd/sources/ectd/FDA_Comprehensive_TOC_Headings_Hierarchy.pdf
+  held: true
+  checked: {on: '2026-11-13', how: cover}
+  aliases: ['FDA — The Comprehensive Table of Contents Headings and Hierarchy v2.3.3 (2020-11-09)', 'FDA — The Comprehensive Table of Contents', 'FDA Comprehensive Table of Contents', 'FDA Comprehensive']
+- id: fda-m1-backbone-v26
+  authority: US-FDA
+  code: FDA eCTD Backbone Files Specification for Module 1
+  version: '2.6'
+  title: {en: FDA eCTD backbone files specification for Module 1, ar: مواصفة ملفات الهيكل للموديول الأول الأمريكي}
+  status: in-force
+  file: docs/ctd/sources/ectd/FDA_eCTD_Backbone_Module1_Specification_v2.6.pdf
+  held: true
+  checked: {on: '2026-11-13', how: cover}
+  aliases: ['FDA M1 v2.6', 'FDA eCTD Backbone']
+- id: fda-ectd-validation-criteria
+  authority: US-FDA
+  code: FDA Specifications for eCTD Validation Criteria
+  version: current
+  title: {en: FDA specifications for eCTD validation criteria, ar: معايير التحقق الأمريكية للـ eCTD}
+  status: in-force
+  file: docs/ctd/sources/ectd/FDA_Specifications_eCTD_Validation_Criteria.pdf
+  held: true
+  checked: {on: '2026-11-13', how: cover}
+  aliases: ['FDA Specifications for eCTD Validation Criteria', 'FDA validation criteria']
+- id: fda-ectd-submission-standards
+  authority: US-FDA
+  code: eCTD Submission Standards for eCTD v3.2.2 and Regional M1
+  version: web page
+  title: {en: FDA — eCTD Submission Standards for eCTD v3.2.2 and Regional M1 (which versions FDA accepts and from when), ar: هيئة الغذاء والدواء الأمريكية — معايير تقديم الـ eCTD 3.2.2 والموديول الأول الإقليمي (الإصدارات المقبولة ومن إمتى)}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-13', how: web}
+  aliases: ['fda.gov — eCTD Submission Standards']
+- id: fda-ectd-tcg
+  authority: US-FDA
+  code: FDA eCTD Technical Conformance Guide
+  version: current
+  title: {en: FDA eCTD technical conformance guide, ar: دليل المطابقة الفنية للـ eCTD الأمريكي}
+  status: in-force
+  file: docs/ctd/sources/ectd/FDA_eCTD_Technical_Conformance_Guide.pdf
+  held: true
+  checked: {on: '2026-11-13', how: cover}
+  aliases: ['FDA eCTD Technical Conformance Guide', 'FDA TCG']
+
+# ---------------------------------------------------------------- ICH — quality, safety and efficacy guidelines the review rules lean on (versions to confirm in the review of sources)
+- id: ich-q1b
+  authority: ICH
+  code: 'ICH Q1B'
+  version: '—'
+  title: {en: "Stability testing: photostability testing of new drug substances and products", ar: "اختبار الثبات: الثبات الضوئي للمواد الفعالة والمستحضرات الجديدة"}
+  status: in-force
+  issued: '1996-11'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q1B']
+- id: ich-q1d
+  authority: ICH
+  code: 'ICH Q1D'
+  version: '—'
+  title: {en: "Bracketing and matrixing designs for stability testing of new drug substances and products", ar: "تصميمات الـ bracketing والـ matrixing في دراسات الثبات"}
+  status: in-force
+  issued: '2002-02'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q1D']
+- id: ich-q1e
+  authority: ICH
+  code: 'ICH Q1E'
+  version: '—'
+  title: {en: "Evaluation for stability data", ar: "تقييم بيانات الثبات"}
+  status: in-force
+  issued: '2003-02'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q1E']
+- id: ich-q2-r2
+  authority: ICH
+  code: 'ICH Q2(R2)'
+  version: 'R2'
+  title: {en: "Validation of analytical procedures", ar: "التحقق من صحة طرق التحليل"}
+  status: in-force
+  issued: '2023-11-01'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q2(R2)', 'ICH Q2']
+- id: ich-q14
+  authority: ICH
+  code: 'ICH Q14'
+  version: '—'
+  title: {en: "Analytical procedure development", ar: "تطوير طرق التحليل"}
+  status: in-force
+  issued: '2023-11-01'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q14']
+- id: ich-q3a-r2
+  authority: ICH
+  code: 'ICH Q3A(R2)'
+  version: 'R2'
+  title: {en: "Impurities in new drug substances", ar: "الشوائب في المواد الفعالة الجديدة"}
+  status: in-force
+  issued: '2006-10-25'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q3A(R2)', 'ICH Q3A']
+- id: ich-q3b-r2
+  authority: ICH
+  code: 'ICH Q3B(R2)'
+  version: 'R2'
+  title: {en: "Impurities in new drug products", ar: "الشوائب في المستحضرات الجديدة"}
+  status: in-force
+  issued: '2006-06-02'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q3B(R2)', 'ICH Q3B']
+- id: ich-q3c
+  authority: ICH
+  code: 'ICH Q3C'
+  version: 'R8 (as cited)'
+  title: {en: "Impurities: guideline for residual solvents", ar: "الشوائب: المذيبات المتبقية"}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  confirm: the latest revision
+  aliases: ['ICH Q3C(R8)', 'ICH Q3C']
+- id: ich-q3d-r2
+  authority: ICH
+  code: 'ICH Q3D(R2)'
+  version: 'R2'
+  title: {en: "Guideline for elemental impurities", ar: "الشوائب العنصرية"}
+  status: in-force
+  issued: '2022-04-26'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q3D(R2)', 'ICH Q3D']
+- id: ich-q6a
+  authority: ICH
+  code: 'ICH Q6A'
+  version: '—'
+  title: {en: "Specifications: test procedures and acceptance criteria for new drug substances and new drug products — chemical substances", ar: "المواصفات: طرق الاختبار وحدود القبول للمواد الفعالة والمستحضرات الجديدة — المواد الكيميائية"}
+  status: in-force
+  issued: '1999-10-06'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q6A']
+- id: ich-q8-r2
+  authority: ICH
+  code: 'ICH Q8(R2)'
+  version: 'R2'
+  title: {en: "Pharmaceutical development", ar: "التطوير الصيدلاني"}
+  status: in-force
+  issued: '2009-08'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q8(R2)', 'ICH Q8']
+- id: ich-q9-r1
+  authority: ICH
+  code: 'ICH Q9(R1)'
+  version: 'R1'
+  title: {en: "Quality risk management", ar: "إدارة مخاطر الجودة"}
+  status: in-force
+  issued: '2023-01-18'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q9(R1)', 'ICH Q9']
+- id: ich-q11
+  authority: ICH
+  code: 'ICH Q11'
+  version: '—'
+  title: {en: "Development and manufacture of drug substances", ar: "تطوير وتصنيع المواد الفعالة"}
+  status: in-force
+  issued: '2012-05-01'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH Q11']
+- id: ich-m7-r2
+  authority: ICH
+  code: 'ICH M7(R2)'
+  version: 'R2'
+  title: {en: "Assessment and control of DNA-reactive (mutagenic) impurities in pharmaceuticals", ar: "تقييم والتحكم في الشوائب المسببة للطفرات"}
+  status: in-force
+  issued: '2023-04-03'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH M7(R2)', 'ICH M7']
+- id: ich-m9
+  authority: ICH
+  code: 'ICH M9'
+  version: '—'
+  title: {en: "Biopharmaceutics classification system-based biowaivers", ar: "الإعفاء من دراسات التكافؤ الحيوي على أساس تصنيف BCS"}
+  status: in-force
+  issued: '2019-11-20'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH M9']
+- id: ich-m10
+  authority: ICH
+  code: 'ICH M10'
+  version: '—'
+  title: {en: "Bioanalytical method validation and study sample analysis", ar: "التحقق من طرق التحليل الحيوي وتحليل عينات الدراسة"}
+  status: in-force
+  issued: '2022-05-24'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH M10 (2022)', 'ICH M10']
+- id: ich-m13a
+  authority: ICH
+  code: 'ICH M13A'
+  version: '—'
+  title: {en: "Bioequivalence for immediate-release solid oral dosage forms", ar: "التكافؤ الحيوي للأشكال الصلبة الفموية فورية الإطلاق"}
+  status: in-force
+  issued: '2024-07-23'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH M13A (2024)', 'ICH M13A']
+- id: ich-e3
+  authority: ICH
+  code: 'ICH E3'
+  version: '—'
+  title: {en: "Structure and content of clinical study reports", ar: "هيكل ومحتوى تقارير الدراسات الإكلينيكية"}
+  status: in-force
+  issued: '1995-11-30'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH E3']
+- id: ich-e9-r1
+  authority: ICH
+  code: 'ICH E9(R1)'
+  version: 'R1'
+  title: {en: "Statistical principles for clinical trials — addendum on estimands and sensitivity analysis", ar: "المبادئ الإحصائية للتجارب الإكلينيكية — ملحق الـ estimands"}
+  status: in-force
+  issued: '2019-11-20'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH E9(R1)', 'ICH E9']
+- id: ich-e6-r3
+  authority: ICH
+  code: 'ICH E6(R3)'
+  version: 'R3'
+  title: {en: "Good clinical practice", ar: "الممارسة الإكلينيكية الجيدة"}
+  status: in-force
+  issued: '2025-01-06'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH E6(R3)', 'ICH E6']
+- id: ich-e2e
+  authority: ICH
+  code: 'ICH E2E'
+  version: '—'
+  title: {en: "Pharmacovigilance planning", ar: "تخطيط اليقظة الدوائية"}
+  status: in-force
+  issued: '2004-11-18'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH E2E']
+- id: ich-e11-r1
+  authority: ICH
+  code: 'ICH E11(R1)'
+  version: 'R1'
+  title: {en: "Clinical investigation of medicinal products in the paediatric population (addendum)", ar: "الدراسات الإكلينيكية على الأطفال (ملحق)"}
+  status: in-force
+  issued: '2017-08-18'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH E11(R1)', 'ICH E11']
+- id: ich-e7
+  authority: ICH
+  code: 'ICH E7'
+  version: '—'
+  title: {en: "Studies in support of special populations: geriatrics", ar: "دراسات الفئات الخاصة: كبار السن"}
+  status: in-force
+  issued: '1993-06-24'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ICH E7']
+
+# ---------------------------------------------------------------- WHO — further references
+- id: who-trs929-annex5
+  authority: WHO
+  code: 'WHO TRS 929 Annex 5'
+  version: '2005'
+  title: {en: "Guidelines for registration of fixed-dose combination medicinal products", ar: "إرشادات تسجيل المستحضرات ذات التركيبة الثابتة"}
+  status: reference
+  issued: '2005'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['WHO TRS 929 Annex 5', 'WHO TRS 929']
+- id: who-trs1003-annex6
+  authority: WHO
+  code: 'WHO TRS 1003 Annex 6'
+  version: '2017'
+  title: {en: "Multisource (generic) pharmaceutical products: guidelines on registration requirements to establish interchangeability", ar: "المستحضرات متعددة المصادر (الجنيسة): متطلبات التسجيل لإثبات قابلية التبادل"}
+  status: reference
+  issued: '2017'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['WHO TRS 1003 Annex 6', 'WHO TRS 1003']
+- id: who-trs1033-annex10
+  authority: WHO
+  code: 'WHO TRS 1033 Annex 10'
+  version: '2021'
+  title: {en: "Good reliance practices in the regulation of medical products", ar: "الممارسات الجيدة للاعتماد على قرارات الهيئات الأخرى"}
+  status: reference
+  issued: '2021'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['WHO TRS 1033 Annex 10', 'WHO TRS 1033']
+
+# ---------------------------------------------------------------- EU — EMA guidelines the review rules lean on
+- id: ema-nitrosamines-qa
+  authority: EU
+  code: 'EMA/409815/2020'
+  version: 'revised regularly (rev. 2024 cited)'
+  title: {en: "Questions and answers on nitrosamine impurities in human medicinal products (Article 5(3) referral)", ar: "أسئلة وأجوبة الوكالة الأوروبية عن شوائب النيتروزامين"}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  confirm: the current revision
+  aliases: ['EMA/409815/2020']
+- id: ema-process-validation
+  authority: EU
+  code: 'EMA/CHMP/CVMP/QWP/BWP/70278/2012-Rev1'
+  version: 'Rev. 1'
+  title: {en: "Guideline on process validation for finished products — information and data to be provided in regulatory submissions", ar: "إرشادات التحقق من عملية تصنيع المستحضر النهائي"}
+  status: in-force
+  issued: '2016-11'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['EMA/CHMP/CVMP/QWP/BWP/70278/2012']
+- id: ema-manufacture-fdf
+  authority: EU
+  code: 'EMA/CHMP/QWP/245074/2015'
+  version: '—'
+  title: {en: "Guideline on manufacture of the finished dosage form", ar: "إرشادات تصنيع الشكل الصيدلي النهائي"}
+  status: in-force
+  issued: '2017-07'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['EMA/CHMP/QWP/245074/2015']
+- id: ema-plastic-packaging
+  authority: EU
+  code: 'CPMP/QWP/4359/03'
+  version: '—'
+  title: {en: "Guideline on plastic immediate packaging materials", ar: "إرشادات مواد التعبئة الأولية البلاستيكية"}
+  status: in-force
+  issued: '2005-05'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['EMA CPMP/QWP/4359/03', 'CPMP/QWP/4359/03']
+- id: ema-sterilisation
+  authority: EU
+  code: 'EMA/CHMP/CVMP/QWP/850374/2015'
+  version: '—'
+  title: {en: "Guideline on the sterilisation of the medicinal product, active substance, excipient and primary container", ar: "إرشادات تعقيم المستحضر والمادة الفعالة والسواغ والعبوة الأولية"}
+  status: in-force
+  issued: '2019-03'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['EMA guideline on sterilisation']
+- id: eu-gmp-annex1
+  authority: EU
+  code: 'EU GMP Annex 1'
+  version: '2022'
+  title: {en: "EU GMP Annex 1 — Manufacture of sterile medicinal products", ar: "الملحق الأول لممارسات التصنيع الجيد الأوروبية — تصنيع المستحضرات المعقمة"}
+  status: in-force
+  issued: '2022-08-22'
+  effective: '2023-08-25'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['EU GMP Annex 1']
+- id: ema-in-use-stability
+  authority: EU
+  code: 'CPMP/QWP/2934/99'
+  version: '—'
+  title: {en: "Note for guidance on in-use stability testing of human medicinal products", ar: "إرشادات ثبات المستحضر أثناء الاستخدام"}
+  status: in-force
+  issued: '2001-03'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['EMA CPMP/QWP/2934/99', 'CPMP/QWP/2934/99']
+- id: ema-dissolution-reflection
+  authority: EU
+  code: 'EMA/CHMP/CVMP/QWP/336031/2017'
+  version: '—'
+  title: {en: "Reflection paper on the dissolution specification for generic solid oral immediate-release products with systemic action", ar: "ورقة الوكالة الأوروبية عن مواصفة الذوبان للمستحضرات الجنيسة الصلبة الفموية"}
+  status: in-force
+  issued: '2017-08'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['EMA reflection paper on dissolution specification']
+- id: ema-qrd-template
+  authority: EU
+  code: 'EMA QRD product-information templates'
+  version: '10.x (as cited)'
+  title: {en: "QRD product-information templates for human medicines (SmPC, labelling, leaflet)", ar: "قوالب QRD لمعلومات المستحضر (الملخص والعبوة والنشرة)"}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  confirm: the current version
+  aliases: ['EMA QRD']
+- id: ema-gvp-module-v
+  authority: EU
+  code: 'EMA GVP Module V'
+  version: 'Rev. 2'
+  title: {en: "Good pharmacovigilance practices — Module V: risk management systems", ar: "الممارسات الجيدة لليقظة الدوائية — الموديول الخامس: خطط إدارة المخاطر"}
+  status: in-force
+  issued: '2017-03'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['EMA GVP Module V']
+
+# ---------------------------------------------------------------- US — FDA guidances the review rules lean on
+- id: fda-dissolution-ir-1997
+  authority: US-FDA
+  code: 'FDA guidance — Dissolution testing of immediate release solid oral dosage forms'
+  version: '1997'
+  title: {en: "Dissolution testing of immediate release solid oral dosage forms", ar: "اختبار الذوبان للأشكال الصلبة الفموية فورية الإطلاق"}
+  status: in-force
+  issued: '1997-08'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  confirm: whether the 2018 guidance on high-solubility drug substances is the one to cite
+  aliases: ['FDA guidance «Dissolution testing of IR solid oral dosage forms»', 'FDA dissolution guidance']
+- id: fda-nitrosamines
+  authority: US-FDA
+  code: 'FDA guidance — Control of nitrosamine impurities in human drugs'
+  version: 'Rev. 2'
+  title: {en: "Control of nitrosamine impurities in human drugs", ar: "التحكم في شوائب النيتروزامين في الأدوية"}
+  status: in-force
+  issued: '2024-09'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  confirm: the current revision
+  aliases: ['FDA guidance «Control of nitrosamine impurities»', 'FDA guidance on nitrosamine impurities']
+- id: fda-process-validation-2011
+  authority: US-FDA
+  code: 'FDA guidance — Process validation: general principles and practices'
+  version: 'Rev. 1'
+  title: {en: "Process validation: general principles and practices", ar: "التحقق من عمليات التصنيع: المبادئ والممارسات العامة"}
+  status: in-force
+  issued: '2011-01'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['FDA «Process validation: general principles and practices»', 'FDA «Process validation']
+
+# ---------------------------------------------------------------- pharmacopoeias and other international standards
+- id: usp-905
+  authority: STANDARDS
+  code: 'USP <905>'
+  version: 'current USP–NF'
+  title: {en: "General chapter <905> Uniformity of dosage units", ar: "الفصل <905> تجانس وحدات الجرعة"}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['USP <905>']
+- id: usp-1226
+  authority: STANDARDS
+  code: 'USP <1226>'
+  version: 'current USP–NF'
+  title: {en: "General chapter <1226> Verification of compendial procedures", ar: "الفصل <1226> التحقق من طرق الدساتير"}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['USP <1226>']
+- id: usp-1207
+  authority: STANDARDS
+  code: 'USP <1207>'
+  version: 'current USP–NF'
+  title: {en: "General chapter <1207> Package integrity evaluation — sterile products", ar: "الفصل <1207> تقييم سلامة العبوة — المستحضرات المعقمة"}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['USP <1207>']
+- id: usp-1663-1664
+  authority: STANDARDS
+  code: 'USP <1663>/<1664>'
+  version: 'current USP–NF'
+  title: {en: "General chapters <1663> extractables and <1664> leachables", ar: "الفصلين <1663> المواد المستخلصة و<1664> المواد المتسربة"}
+  status: in-force
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['USP <1663>', 'USP <1664>']
+- id: oecd-glp
+  authority: STANDARDS
+  code: 'OECD principles of good laboratory practice'
+  version: '1998'
+  title: {en: "OECD principles of good laboratory practice (GLP)", ar: "مبادئ منظمة OECD للممارسة المعملية الجيدة"}
+  status: in-force
+  issued: '1998'
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['OECD GLP']
+
+# ---------------------------------------------------------------- Egyptian laws and ministerial decrees (outside EDA)
+- id: eg-md-499-2012
+  authority: EG-GOV
+  code: Ministerial decree 499/2012
+  version: '2012'
+  title: {en: Minister of Health decree 499/2012 on the pricing of medicines, ar: قرار وزير الصحة 499 لسنة 2012 بشأن تسعير الأدوية}
+  status: in-force
+  issued: '2012'
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  aliases: ['Ministerial decree 499/2012', 'Decree 499/2012']
+- id: eg-law-34-1976
+  authority: EG-GOV
+  code: Law 34/1976
+  version: as amended
+  title: {en: Law 34/1976 on the commercial register, ar: القانون 34 لسنة 1976 بشأن السجل التجاري}
+  status: in-force
+  issued: '1976'
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  confirm: the renewal term in force (the old record says 5 years)
+  aliases: ['Law 34/1976']
+
+# ---------------------------------------------------------------- European Union law
+- id: eu-dir-2011-62
+  authority: EU
+  code: Directive 2011/62/EU
+  version: '2011'
+  title: {en: Directive 2011/62/EU on falsified medicines (amending Directive 2001/83/EC), ar: التوجيه الأوروبي 2011/62 بشأن الأدوية المغشوشة (معدّل للتوجيه 2001/83)}
+  status: in-force
+  issued: '2011-06-08'
+  url: https://eur-lex.europa.eu/eli/dir/2011/62/oj
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  aliases: ['Directive 2011/62/EU']
+
+# ---------------------------------------------------------------- secondary (compiled by others — to be checked against each authority)
+- id: secondary-ectd-status
+  authority: OTHER
+  code: ectd-dossier-builder data
+  version: reviewed 2026-11-08
+  title: {en: An open-source project's table of eCTD status by country (Apache-2.0) — secondary, to be checked against each authority, ar: جدول من مشروع مفتوح المصدر بحالة الـ eCTD في كل دولة — مصدر ثانوي لازم يتراجع على كل هيئة}
+  status: secondary
+  held: false
+  checked: {on: '2026-11-08', how: record}
+  aliases: ['ectd-dossier-builder data']
+- id: secondary-market-notes
+  authority: OTHER
+  code: docs/ctd/COMPETITORS.md
+  version: '2026'
+  title: {en: The project's own notes on other tools and markets — secondary, to be checked against each authority, ar: ملاحظات المشروع عن الأدوات والأسواق التانية — مصدر ثانوي لازم يتراجع على كل هيئة}
+  status: secondary
+  file: docs/ctd/COMPETITORS.md
+  held: true
+  checked: {on: '2026-11-08', how: record}
+  aliases: ['docs/ctd/COMPETITORS.md']
+
+# ---------------------------------------------------------------- no published source
+- id: general-practice
+  authority: OTHER
+  code: General practice
+  version: '—'
+  title: {en: General CTD practice (a starting layout only — the country's own guideline is the rule), ar: الممارسة العامة لملف الـ CTD (بداية بس — إرشادات الدولة نفسها هي الحكم)}
+  status: general
+  held: false
+  checked: {on: '2026-11-13', how: record}
+  aliases: ['General practice', 'Company document', 'General layout of a regional Module 1']
+- id: program-assumption
+  authority: OTHER
+  code: The program's assumption
+  version: '—'
+  title: {en: An assumption of the program where no guideline speaks (to be confirmed with the authority), ar: افتراض من البرنامج في مكان مفيهوش نص (لازم يتأكد مع الهيئة)}
+  status: assumption
+  held: false
+  checked: {on: '2026-11-14', how: record}
+  aliases: ['ASSUMPTION']
+- id: edqm-cep-database
+  authority: OTHER
+  code: EDQM certificates database
+  version: live
+  title: {en: EDQM database of certificates of suitability (CEP status), ar: قاعدة بيانات EDQM لشهادات الملاءمة (حالة الـ CEP)}
+  status: reference
+  url: https://extranet.edqm.eu/publications/recherches_CEP.shtml
+  held: false
+  checked: {on: '2026-11-06', how: record}
+  aliases: ['CEP status on the EDQM database', 'EDQM']

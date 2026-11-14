@@ -1,0 +1,4313 @@
+# EDA CTD dossier requirements — NP.CAPP.065 v5 (in force)
+# متطلبات ملف CTD لهيئة الدواء المصرية — NP.CAPP.065 الإصدار 5 (سارٍ)
+# Ported from the old program (rulepacks/eda.ctd.nta065.v5); edit here from now on.
+- id: EG-EDA/M1-01
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.1
+  numbers:
+    nta065_v5: 1.1.1
+  ectd:
+    - 1.2.1
+  title:
+    en: Application form (Annex I) + Arabic undertaking
+    ar: نموذج الطلب + التعهد
+  status: in-force
+  acceptance: >-
+    All Annex I fields filled; one API box per API; manufacturer address as on GMP; variations table (re-reg); signed by
+    chairman/MD/authorised signatory; company stamp; dated. eCTD: file form-af.pdf, operation 'new'.
+  note: Annex I fields; undertaking per decree case (3-year/5-year transfer clause)
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: >-
+      Product/Application/Parties sheets + APIs sheet + list of variations (re-reg) + signatory. Output: print on company letterhead → sign
+      → stamp → scan.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: Annex I
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.2.4.1
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-02
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.2
+  numbers:
+    nta065_v5: 1.1.2
+  ectd:
+    - 1.2.2.1
+  title:
+    en: Letter of Attorney for company representative
+    ar: توكيل ممثل الشركة
+  status: in-force
+  acceptance: Valid; names the representative; notarised as issued.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: 'Original/copy from issuer. Tool: rename/place only.'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.2
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-03
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.3
+  numbers:
+    nta065_v5: 1.1.3
+  ectd:
+    - 1.2.11
+  title:
+    en: Fees payment receipt(s)
+    ar: إيصالات الرسوم
+  status: in-force
+  acceptance: Legible; product details & purpose written on it.
+  note: >-
+    Each relevant service (leaflet, BE, dossier). 10,000 LE service fee only for line-extension/non-routine requests above the monthly
+    allowance
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: Receipt from EDA finance.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.3
+    - src: eda-gl-capp-002-v4
+      at: v4
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-04
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.4
+  numbers:
+    nta065_v5: 1.1.4
+  ectd:
+    - 1.2.3.3
+    - 1.2.3.4
+    - 1.2.3.5
+  title:
+    en: Action Letter & Name Approval (new) / Registration Licence & Preliminary Approval (re-reg)
+    ar: خطاب القرار وموافقة الاسم / الترخيص والموافقة المبدئية
+  status: in-force
+  acceptance: Matches product name/strength/form.
+  note: Variant by new vs re-registration
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.4
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: 'App. 2 — writer picks: name approval (new) / registration licence + preliminary approval (re-reg)'
+      status: draft
+- id: EG-EDA/M1-05
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.5
+  numbers:
+    nta065_v5: 1.1.5
+  ectd:
+    - 1.2.3.8
+  title:
+    en: Pricing Certificate
+    ar: شهادة التسعير
+  status: in-force
+  acceptance: Valid; pack units match Annex I.
+  note: 'If expired: evidence of pricing-update request (screenshot); re-evaluation if required'
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.5
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-06
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.6
+  numbers:
+    nta065_v5: 1.1.6
+  ectd:
+    - 1.2.3.17
+  title:
+    en: Pre-approved EDA letters (Technical Committee decisions, extensions…)
+    ar: خطابات الهيئة السابقة
+  status: in-force
+  acceptance: All letters concerning the product.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.6
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-07
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.7
+  numbers:
+    nta065_v5: 1.1.7
+  ectd:
+    - 1.2.3.18
+  title:
+    en: Variation approvals
+    ar: موافقات التغييرات
+  status: in-force
+  acceptance: Arranged by date; sub-folder per variation named with type.
+  note: Re-registration only. Each variation in its own sub-folder named by variation type, in date order, with all studies
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: activity == 're_registration'
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: Partly
+    needs: Approvals from EDA; tool builds the sub-folder structure, names and order from a list (variation type, date, approval no.).
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.7
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-08
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.8
+  numbers:
+    nta065_v5: 1.1.8
+  ectd:
+    - 1.2.3.9
+  title:
+    en: Pharmacovigilance approval
+    ar: موافقة اليقظة الدوائية
+  status: in-force
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.8
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-09
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.9
+  numbers:
+    nta065_v5: 1.1.9
+  ectd:
+    - 1.3.1
+  title:
+    en: 'Leaflet — One Submission: proposed SmPC & PIL (EN + AR, Word) + most updated reference SmPC & PIL'
+    ar: النشرة المقترحة عربي وإنجليزي Word + المرجع
+  status: in-force
+  acceptance: >-
+    Word files EN & AR (SmPC & PIL); PDF copy in eCTD + Word in xxxx-workingdocuments; aligned with reference; warnings per pharmacology
+    guidelines.
+  note: >-
+    Rolling: approved valid leaflet. PIL-only imported/innovator: legalised COO letter. Non-English: translation declaration.
+    Non-referenced: committee approval
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: >-
+      Reference SmPC/PIL text + product data → tool drafts EN/AR SmPC & PIL in standard section order; medical translation review by company
+      required.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.9
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §2.9.10, §3.2.5
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-10
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.9
+  numbers:
+    nta065_v5: 1.1.9
+  ectd:
+    - 1.2.4.9
+  title:
+    en: Leaflet translation declaration (non-English leaflets)
+    ar: إقرار ترجمة النشرة
+  status: in-force
+  acceptance: Signed & stamped; states authorised medical translation.
+  note: >-
+    Only if leaflet non-English: licence-holder declaration OR legalised head-office letter + scientific-office declaration (legalise within
+    6 months)
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: leaflet == 'non_english'
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Signatory + product names + version of leaflet. Output: print on company letterhead → sign → stamp → scan.'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.9
+  ectd_cite:
+    - src: eda-eg-m1-submission-guidance-draft
+      at: 'p.36 (1.2.4.9 "may be but not limited to: Letter of access; SmPC/PIL declarations")'
+      status: draft
+- id: EG-EDA/M1-11
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.10
+  numbers:
+    nta065_v5: 1.1.10
+  ectd:
+    - 1.3.2
+  title:
+    en: Layout — coloured stamped outer & inner (editable PDF preferred) + monograph (compendial) + image of original pack (imported/UL)
+    ar: التصميم الملون + المونوجراف + صورة العبوة
+  status: in-force
+  acceptance: Coloured; stamped; matches name/strength/pack; hard copy to unit administrator if soft accepted.
+  note: 'Rolling: approved layout'
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Artwork files from company design; tool checks text vs Annex I data and assembles PDF. Stamps must be original.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.10
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-12
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.11
+  numbers:
+    nta065_v5: 1.1.11
+  ectd:
+    - 1.2.3.10
+  title:
+    en: Inspection report — pilot/production batches (new) / valid marketed batch (re-reg)
+    ar: تقرير التفتيش
+  status: in-force
+  matrix:
+    I: NR (new) / R (re-reg)
+    G_IMP: NR (new) / R (re-reg)
+    G_LOC: R
+  applies: 'true'
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA (CIP).
+  required:
+    I:
+      cases:
+        - when: activity == 're_registration'
+          level: R
+        - level: NR
+    G_IMP:
+      cases:
+        - when: activity == 're_registration'
+          level: R
+        - level: NR
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.11
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-13
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.12
+  numbers:
+    nta065_v5: 1.1.12
+  ectd:
+    - 1.2.3.11
+  title:
+    en: Importation approval for each API
+    ar: موافقة استيراد كل مادة فعالة
+  status: in-force
+  acceptance: One per API source.
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: column == 'G_LOC'
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  per:
+    over: apis
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.12
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-14
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.13
+  numbers:
+    nta065_v5: 1.1.13
+  ectd:
+    - 1.2.6.1
+  title:
+    en: CPP / eCPP from competent authority in COO
+    ar: شهادة CPP
+  status: in-force
+  acceptance: >-
+    Valid; COO; Egypt named as importing country; date; trade name; forms & strengths; licence holder address; marketed ≥1 year in COO (or
+    explained); actives as salt/hydrate with qty; inactives with qty; capsule shell for capsules; Egyptian name noted or separate legalised
+    declaration; signed/stamped by chamber/notary/foreign affairs + legalised by Egyptian Embassy (eCPP exempt).
+  note: 'Local: only under-licence products. eCPP accepted without legalisation if company provides a verification method'
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: column != 'G_LOC' or licence == 'under_licence'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: 'Re-obtain from competent authority. Tool: placement only. (Hard copy also required — EG draft §2.7.)'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.13
+    - src: eda-gl-capp-002-v4
+      at: v4 item 6
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-15
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.14
+  numbers:
+    nta065_v5: 1.1.14
+  ectd:
+    - 1.2.4.10
+  title:
+    en: List of countries where registered & marketed
+    ar: قائمة الدول
+  status: in-force
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Country list with status. Output: print on company letterhead → sign → stamp → scan.'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.14
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-16
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.15
+  numbers:
+    nta065_v5: 1.1.15
+  ectd:
+    - 1.2.7.1
+  title:
+    en: Sameness letter
+    ar: خطاب التطابق
+  status: in-force
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: From licence holder.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.15
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-17
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.16
+  numbers:
+    nta065_v5: 1.1.16
+  ectd:
+    - 1.2.7.2
+  title:
+    en: Unredacted assessment report
+    ar: تقرير التقييم غير المحجوب
+  status: in-force
+  matrix:
+    I: O
+    G_IMP: O
+    G_LOC: NR
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: From reference authority/holder.
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: NR
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.16
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-18
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.17.1
+  numbers:
+    nta065_v5: 1.1.17.1
+  ectd:
+    - 1.2.2.2
+  title:
+    en: Factory licence of manufacturer & IDA licence
+    ar: رخصة المصنع وIDA
+  status: in-force
+  acceptance: Valid.
+  note: '*Imported: imported bulk only'
+  matrix:
+    I: R*
+    G_IMP: R*
+    G_LOC: R
+  applies: column == 'G_LOC' or licence == 'imported_bulk'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.17.1
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-19
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.17.2
+  numbers:
+    nta065_v5: 1.1.17.2
+  ectd:
+    - 1.2.2.4
+  title:
+    en: Register of trade (valid)
+    ar: السجل التجاري
+  status: in-force
+  acceptance: Valid.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.17.2
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-20
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.17.3
+  numbers:
+    nta065_v5: 1.1.17.3
+  ectd:
+    - 1.2.2.5
+  title:
+    en: Toll manufacturer licence
+    ar: رخصة التصنيع لدى الغير
+  status: in-force
+  acceptance: Valid.
+  note: Toll products only
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: licence in ['toll', 'f_toll']
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.17.3
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-21
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.17.4
+  numbers:
+    nta065_v5: 1.1.17.4
+  ectd:
+    - 1.2.2.6
+  title:
+    en: Scientific office licence
+    ar: رخصة المكتب العلمي
+  status: in-force
+  acceptance: Valid.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.17.4
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-22
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.17.5
+  numbers:
+    nta065_v5: 1.1.17.5
+  ectd:
+    - 1.2.2.7
+  title:
+    en: Importers register licence
+    ar: سجل المستوردين
+  status: in-force
+  acceptance: Valid.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.17.5
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-23
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.17.6
+  numbers:
+    nta065_v5: 1.1.17.6
+  ectd:
+    - 1.2.2.8
+  title:
+    en: Store licence (if different from factory)
+    ar: رخصة المخزن
+  status: in-force
+  acceptance: Valid.
+  note: Only if store ≠ factory
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: store_separate_from_factory
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.17.6
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-24
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.17.7
+  numbers:
+    nta065_v5: 1.1.17.7
+  ectd:
+    - 1.2.2.10
+    - 1.2.2.12
+    - 1.2.2.11
+    - 1.2.2.9
+  title:
+    en: 'Agreements: manufacturing / storage / packaging (imported bulk) / authorisation-agency'
+    ar: العقود
+  status: in-force
+  acceptance: Authenticated/legalised as stated per agreement type.
+  note: >-
+    Manufacturing: imported exempt. Storage: bank or EDA legal; imported legalised (chamber + embassy). Packaging: bank & EDA legal. Agency:
+    legalised (chamber + embassy)
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Original authenticated agreements. Tool can draft an unsigned template only for negotiation — authentication must be redone.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.17.7
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2 — one node per agreement type (manufacturing / storage / packaging / authorisation-agency)
+      status: draft
+- id: EG-EDA/M1-25
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.17.8
+  numbers:
+    nta065_v5: 1.1.17.8
+  ectd:
+    - 1.2.4.1
+  title:
+    en: 'Declaration: registered & under-registration products owned by toll company'
+    ar: إقرار منتجات شركة الـ toll
+  status: in-force
+  acceptance: Letterhead, signed, stamped, dated.
+  note: Toll products
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: licence in ['toll', 'f_toll']
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Product list of toll company. Output: print on company letterhead → sign → stamp → scan.'
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.17.8
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-26
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.17.9
+  numbers:
+    nta065_v5: 1.1.17.9
+  ectd:
+    - 1.2.4.2
+  title:
+    en: Licence-holder declaration specifying API manufacturers
+    ar: إقرار مصنّعي المادة الفعالة
+  status: in-force
+  acceptance: Names & addresses match 3.2.S.2.1 and GMP.
+  note: Under-licence products; legalised if different entity
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: licence == 'under_licence'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Tool drafts text from APIs sheet; signature by licence holder + legalisation needed.
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.17.9
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-27
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.17.10
+  numbers:
+    nta065_v5: 1.1.17.10
+  ectd:
+    - 1.2.4.2
+  title:
+    en: Licence-holder declaration of API manufacturers (name & address) + Module 3
+    ar: إقرار مصنّعي المادة الفعالة (إعادة تسجيل)
+  status: in-force
+  note: Re-registration; legalised for under-licence
+  matrix:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  applies: activity == 're_registration'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: As M1-26.
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.17.10
+  ectd_cite:
+    - src: program-assumption
+      at: re-registration variant of the same declaration
+      status: assumption
+- id: EG-EDA/M1-27b
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.17.11
+  numbers:
+    nta065_v5: 1.1.17.11
+  ectd:
+    - 1.2.4.4
+  title:
+    en: Licence-holder declaration of form of bulk
+    ar: إقرار شكل الـ bulk
+  status: in-force
+  note: Imported bulk; legalised
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  applies: licence == 'imported_bulk'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Tool drafts; holder signs; legalisation.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: NR
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.17.11
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-28
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.18
+  numbers:
+    nta065_v5: 1.1.18
+  ectd:
+    - 1.2.3.20
+  title:
+    en: Registration licence of the solvent
+    ar: ترخيص المذيب
+  status: in-force
+  note: Powder for injection with attached solvent
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: '''powder_inj_with_solvent'' in dosage_specifics'
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.18
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-29
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.19
+  numbers:
+    nta065_v5: 1.1.19
+  ectd:
+    - 1.2.5.4
+  title:
+    en: Latest pharmacopoeia monograph for the FPP
+    ar: المونوجراف الدستوري
+  status: in-force
+  acceptance: Latest edition; edition stated.
+  note: Pharmacopoeial products
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: pharmacopoeial
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Copy from current pharmacopoeia (company licence).
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.19
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-30
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.1.20
+  numbers:
+    nta065_v5: 1.1.20
+  ectd:
+    - 1.2.4.9
+  title:
+    en: Letter of Access (API master file)
+    ar: خطاب السماح بالاطلاع على الـ DMF
+  status: in-force
+  acceptance: Addressed to EDA; names applicant, product, DMF version.
+  note: API via DMF/ASMF
+  matrix:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  applies: '''DMF'' in api_options'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: From DMF holder.
+  per:
+    over: apis
+    where: option == 'DMF'
+  required:
+    I: NR
+    G_IMP: NR
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.1.20
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §4.4
+  ectd_cite:
+    - src: eda-eg-m1-submission-guidance-draft
+      at: 'p.36 (1.2.4.9 "may be but not limited to: Letter of access; SmPC/PIL declarations")'
+      status: draft
+- id: EG-EDA/M1-31
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.1
+  numbers:
+    nta065_v5: 1.2.1
+  ectd:
+    - 1.2.8.1
+  title:
+    en: Composition certificate
+    ar: شهادة التركيب
+  status: in-force
+  acceptance: >-
+    Trade name; dosage form; actives as hydrate/salt with qty per unit identical to supplier CoA (else synonyms); inactives separate;
+    overage stated; coated tablet: core & coat separate + tablet weight; capsule: body & cap + size; pellets/premix calculation; signed &
+    stamped.
+  note: 'Local: manufacturer/applicant letterhead. UL: applicant letterhead if composition in CPP, else legalised from LH/manufacturer'
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: >-
+      Unit formula (each component, qty/unit, function, standard/grade), salt factor & MW reference, tablet weight/capsule size. Output:
+      print on company letterhead → sign → stamp → scan.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.1
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-32
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.1
+  numbers:
+    nta065_v5: 1.2.1
+  ectd:
+    - 1.2.8.3
+  title:
+    en: Equivalence (salt) calculation
+    ar: حساب الملح المكافئ
+  status: in-force
+  acceptance: MW reference cited; signed & stamped.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Salt & base MW with reference; label claim. Output: print on company letterhead → sign → stamp → scan.'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.1 N.B. 2
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-33
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.1
+  numbers:
+    nta065_v5: 1.2.1
+  ectd:
+    - 1.2.8.5
+    - 1.2.8.6
+    - 1.2.8.4
+  title:
+    en: Coating premix (e.g. Opadry) / capsule shell / pellets / premix composition on SUPPLIER letterhead
+    ar: تركيب الغلاف/الكبسولة/البيليتس من المورد
+  status: in-force
+  acceptance: On supplier letterhead.
+  note: Only for coated tablets / hard capsules / pellets / premix
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: '''coated'' in dosage_specifics or ''capsule_hard'' in dosage_specifics or ''pellets'' in dosage_specifics or ''premix'' in dosage_specifics'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Request from supplier.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.1 N.B. 5–8
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2 — coating premix / capsule shell / pellets-premix
+      status: draft
+- id: EG-EDA/M1-34
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.2.1–4
+  numbers:
+    nta065_v5: 1.2.2.1–4
+  ectd:
+    - 1.2.3.12
+    - 1.2.3.13
+    - 1.2.3.14
+    - 1.2.3.15
+    - 1.2.3.16
+  title:
+    en: CADC certificate, stability approval, BE approval, Technical Affairs approval
+    ar: موافقات CADC والثبات والتكافؤ والشؤون الفنية
+  status: in-force
+  acceptance: Trade name & strength, FPP manufacturer & LH, API manufacturer, batch no., purpose specified.
+  note: Rolling Submission ONLY (not One Submission)
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: route == 'rolling'
+  doc_class: eda_document
+  produced_by: EDA
+  rebuild:
+    verdict: No — re-obtain
+    needs: From EDA.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.2
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2 (Rolling legacy approvals)
+      status: draft
+- id: EG-EDA/M1-35
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.3.1
+  numbers:
+    nta065_v5: 1.2.3.1
+  ectd:
+    - 1.2.9
+  title:
+    en: API certificate of analysis (supplier)
+    ar: شهادة تحليل المادة الفعالة
+  status: in-force
+  acceptance: Supplier letterhead; signed & stamped; manufacture & expiry dates; batch no.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: From supplier.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.3.1
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-36
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.3.2
+  numbers:
+    nta065_v5: 1.2.3.2
+  ectd:
+    - 1.2.8.2
+  title:
+    en: Specifications (all actives; in-house specs of all inactives)
+    ar: المواصفات
+  status: in-force
+  acceptance: Recent pharmacopoeial edition and/or in-house; inactives on company letterhead signed & stamped.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Spec tables (test, limit, method, reference with general-chapter no.). Output: print on company letterhead → sign → stamp → scan.'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.3.2
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-37
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.4.1
+  numbers:
+    nta065_v5: 1.2.4.1
+  ectd:
+    - 1.2.2.3
+  title:
+    en: GMP certificate(s) of FPP manufacturer(s)
+    ar: شهادة GMP للمصنع
+  status: in-force
+  acceptance: Valid; production lines specified.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain from authority.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.4.1
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-38
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.4.2
+  numbers:
+    nta065_v5: 1.2.4.2
+  ectd:
+    - 1.2.2.3
+  title:
+    en: GMP certificate(s) of API manufacturer(s)
+    ar: شهادة GMP لمصنّع المادة الفعالة
+  status: in-force
+  acceptance: Valid; address matches APIs sheet.
+  note: Every API source
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Re-obtain.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.4.2
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2 — 1.2.2.3 covers FPP and API GMP (M1 guidance p.13); 1.2.2.21 overlaps, not used
+      status: draft
+- id: EG-EDA/M1-39
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.4.3
+  numbers:
+    nta065_v5: 1.2.4.3
+  ectd:
+    - 3.2.R
+  title:
+    en: CEP incl. all annexes
+    ar: شهادة الـ CEP بملحقاتها
+  status: in-force
+  acceptance: Current version on EDQM website; all annexes; declaration-of-access box filled & signed by CEP holder.
+  note: API via CEP
+  matrix:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  applies: '''CEP'' in api_options'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: Current CEP from holder.
+  per:
+    over: apis
+    where: option == 'CEP'
+  required:
+    I:
+      cases:
+        - when: '''CEP'' in api_options'
+          level: R
+        - level: O
+    G_IMP:
+      cases:
+        - when: '''CEP'' in api_options'
+          level: R
+        - level: O
+    G_LOC:
+      cases:
+        - when: '''CEP'' in api_options'
+          level: R
+        - level: O
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.4.3
+    - src: eda-np-capp-040-v1
+    - src: who-pq-screening
+      at: '#6'
+  ectd_cite:
+    - src: eda-ectd-technical-guidance-draft-v1
+      at: §3.4.1.1.1 (CEP copy in 3.2.R) — same document as S-16, one leaf
+      status: draft
+- id: EG-EDA/M1-40
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.4.3
+  numbers:
+    nta065_v5: 1.2.4.3
+  ectd:
+    - 3.2.R
+  title:
+    en: 'Written commitment: inform EDA if CEP revised/renewed/withdrawn'
+    ar: تعهد الـ CEP
+  status: in-force
+  acceptance: Acknowledges that withdrawal requires full 3.2.S data.
+  note: API via CEP
+  matrix:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  applies: '''CEP'' in api_options'
+  doc_class: company_letter
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'CEP no., holder, API. Output: print on company letterhead → sign → stamp → scan.'
+  per:
+    over: apis
+    where: option == 'CEP'
+  required:
+    I:
+      cases:
+        - when: '''CEP'' in api_options'
+          level: R
+        - level: O
+    G_IMP:
+      cases:
+        - when: '''CEP'' in api_options'
+          level: R
+        - level: O
+    G_LOC:
+      cases:
+        - when: '''CEP'' in api_options'
+          level: R
+        - level: O
+  logic_note: checklist condition column
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.4.3
+    - src: eda-ctd-qm-v2
+  ectd_cite:
+    - src: program-assumption
+      at: CEP commitment placed with the CEP in 3.2.R (M1 guidance drops it as a separate item)
+      status: assumption
+- id: EG-EDA/M1-41
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.5.1
+  numbers:
+    nta065_v5: 1.2.5.1
+  ectd:
+    - 1.2.5.1
+    - 1.2.5.2
+  title:
+    en: Reference (online/textbook) OR Non-Reference Approval
+    ar: المرجع العلمي أو موافقة عدم المرجعية
+  status: in-force
+  acceptance: >-
+    Reference registered & marketed; identical API, strength, form; latest edition / recent online (FDA, MHRA, EMA, ANSM, Swissmedic, TGA,
+    PMDA…).
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Tool captures the web reference to PDF with URL & date; Non-Reference Approval comes from EDA.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.5.1
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-42
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.2.5.2
+  numbers:
+    nta065_v5: 1.2.5.2
+  ectd:
+    - 1.2.5.1
+  title:
+    en: Leaflet of the reference product
+    ar: نشرة المرجعي
+  status: in-force
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Tool captures from reference source with URL & date.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: 1.2.5.2
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2
+      status: draft
+- id: EG-EDA/M1-43
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.0 (eCTD)
+  numbers:
+    nta065_v5: 1.0 (eCTD)
+  ectd:
+    - '1.0'
+  title:
+    en: Cover letter (+ statement 'true, complete and correct')
+    ar: خطاب التغطية
+  status: draft
+  acceptance: Sequence no. matches folder & envelope.
+  note: 'eCTD: always ''new''; leaf title e.g. ''Cover Letter for Sequence 0000''; baseline letter states content unchanged'
+  matrix:
+    I: —
+    G_IMP: —
+    G_LOC: —
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: 'Product, sequence, submission type/unit, description. Output: print on company letterhead → sign → stamp → scan.'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.2.3.1, §2.11
+    - src: who-pq-screening
+      at: '#2'
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2 row 4 (cover-VAR.pdf)
+      status: draft
+- id: EG-EDA/M1-44
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 1
+  group: MODULE 1 — Administrative (NP.CAPP.065 v5, 01/11/2025)
+  ctd: 1.0 (eCTD)
+  numbers:
+    nta065_v5: 1.0 (eCTD)
+  ectd:
+    - '1.0'
+  title:
+    en: Tracking table (tracking-var.pdf in m1/eg/10-cover)
+    ar: جدول التتبع
+  status: draft
+  acceptance: 'Columns: sequence, description, type, date.'
+  note: Every submission
+  matrix:
+    I: —
+    G_IMP: —
+    G_LOC: —
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Sequence history.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.2.3.2, Annex 2
+  ectd_cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: App. 2 row 4 (tracking-VAR.pdf)
+      status: draft
+- id: EG-EDA/M2-01
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 2
+  group: 'MODULE 2 — Summaries (Innovators only; generics: ''incorporated in Modules 3, 4 & 5'')'
+  ctd: 2.1–2.2
+  numbers:
+    nta065_v5: 2.1–2.2
+  ectd:
+    - '2.2'
+  title:
+    en: CTD TOC (M2–5) + Introduction
+    ar: فهرس + مقدمة
+  status: in-force
+  matrix:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Generated from dossier structure + product data.
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M2
+    - src: ich-m4-r4
+  ectd_cite:
+    - src: ich-ectd-v322
+      at: App. 4 — 2.1 TOC is replaced by the backbone; 2.2 introduction only
+      status: in-force
+- id: EG-EDA/M2-02
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 2
+  group: 'MODULE 2 — Summaries (Innovators only; generics: ''incorporated in Modules 3, 4 & 5'')'
+  ctd: '2.3'
+  numbers:
+    nta065_v5: '2.3'
+  ectd:
+    - '2.3'
+  title:
+    en: Quality Overall Summary (QOS)
+    ar: ملخص الجودة الشامل
+  status: in-force
+  acceptance: Follows M3; cross-references to M3; WHO QOS-PD tables are the model.
+  note: One QOS per ASMF (applicant part) with front page version/date
+  matrix:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Built from M3 data (spec tables, batch, stability, composition) — narrative reviewed by company.
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  cite:
+    - src: eda-np-capp-065-v5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.3.2
+    - src: who-pq-qos-pd
+      at: 01/2025
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M2-03
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 2
+  group: 'MODULE 2 — Summaries (Innovators only; generics: ''incorporated in Modules 3, 4 & 5'')'
+  ctd: 2.4–2.7
+  numbers:
+    nta065_v5: 2.4–2.7
+  ectd:
+    - '2.4'
+    - '2.5'
+    - '2.6'
+    - '2.7'
+  title:
+    en: Non-clinical & clinical overviews and summaries
+    ar: الملخصات قبل السريرية والسريرية
+  status: in-force
+  acceptance: ICH M4S/M4E headings; one 2.7.3 per indication.
+  matrix:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Tool structures/tabulates; scientific text from company.
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  cite:
+    - src: eda-np-capp-065-v5
+    - src: ich-m4-r4
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: Appendix 4
+      status: in-force
+- id: EG-EDA/S-01
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.1.1
+  numbers:
+    nta065_v5: 3.2.S.1.1
+  ectd:
+    - 3.2.S.1.1
+  title:
+    en: Nomenclature
+    ar: التسمية
+  status: in-force
+  acceptance: INN, compendial, chemical & IUPAC name, company code, USAN/BAN, correct CAS no.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: API identity data.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-02
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.1.2
+  numbers:
+    nta065_v5: 3.2.S.1.2
+  ectd:
+    - 3.2.S.1.2
+  title:
+    en: Structure
+    ar: التركيب الكيميائي
+  status: in-force
+  acceptance: Structure showing chiral centres; molecular formula; relative molecular mass incl. hydrate.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Structure file + formula + MW.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-03
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.1.3
+  numbers:
+    nta065_v5: 3.2.S.1.3
+  ectd:
+    - 3.2.S.1.3
+  title:
+    en: General properties
+    ar: الخصائص العامة
+  status: in-force
+  acceptance: >-
+    Solubility pH 1.2–6.8 (37 °C) & organic solvents; PSD & polymorphism for low-solubility API; hygroscopicity. With CEP: only properties
+    not controlled by CEP/monograph.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Measured data from company/supplier.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-04
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.2.1
+  numbers:
+    nta065_v5: 3.2.S.2.1
+  ectd:
+    - 3.2.S.2.1
+  title:
+    en: Manufacturer(s)
+    ar: المصنّعون
+  status: in-force
+  acceptance: Name, address, responsibility of every site incl. contractors & testing.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: APIs sheet.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-05
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.2.2–2.6
+  numbers:
+    nta065_v5: 3.2.S.2.2–2.6
+  ectd:
+    - 3.2.S.2.2
+    - 3.2.S.2.3
+    - 3.2.S.2.4
+    - 3.2.S.2.5
+    - 3.2.S.2.6
+  title:
+    en: Manufacture (process, materials, critical steps, validation, development)
+    ar: التصنيع
+  status: in-force
+  acceptance: >-
+    Flow diagram with all steps & CPPs; starting-material details & specs; sterile API: process validation. (From DMF AP/RP or CEP — not
+    required for CEP route).
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: DMF holder's documents (applicant's part); tool places & indexes.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  item_cases:
+    - when: option == 'CEP'
+      level: NR
+      reason:
+        en: Covered by the CEP (manufacture is assessed by EDQM).
+        ar: مغطى بشهادة الـ CEP (التصنيع مُقيَّم من EDQM).
+      cite:
+        - src: program-assumption
+  logic_note: CTD Quality guideline v2 (CEP route) — ASSUMPTION for NR
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-06
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.3.1
+  numbers:
+    nta065_v5: 3.2.S.3.1
+  ectd:
+    - 3.2.S.3.1
+  title:
+    en: Elucidation of structure
+    ar: إثبات التركيب
+  status: in-force
+  acceptance: 'All essential techniques; legible spectra; interpretation table; enumerated & zoomed NMR. CEP: polymorph & PSD studies.'
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Spectra & data; tool builds interpretation tables.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-07
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.3.2
+  numbers:
+    nta065_v5: 3.2.S.3.2
+  ectd:
+    - 3.2.S.3.2
+  title:
+    en: Impurities
+    ar: الشوائب
+  status: in-force
+  acceptance: >-
+    Potential impurities; compendial specified impurities justified; ICH Q3A limits; carry-over; Q3D & M7 risk assessment; residual solvents
+    RA incl. benzene; nitrosamine RA.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Impurity list, origin, limits, RA reports (company/supplier).
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  item_cases:
+    - when: option == 'CEP'
+      level: NR
+      reason:
+        en: Impurity profile covered by the CEP; add only impurities not controlled by it under S.4.1.
+        ar: الشوائب مغطاة بالـ CEP؛ أضف فقط ما لا تضبطه الشهادة في S.4.1.
+      cite:
+        - src: program-assumption
+  logic_note: CTD Quality guideline v2 (CEP route) — ASSUMPTION for NR
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-08
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.4.1
+  numbers:
+    nta065_v5: 3.2.S.4.1
+  ectd:
+    - 3.2.S.4.1
+  title:
+    en: Specification (FPP manufacturer's)
+    ar: المواصفات
+  status: in-force
+  acceptance: >-
+    Universal tests (description, ID, assay, impurities); reference column with general-chapter numbers; ID not by single RT; CEP route: all
+    CEP + monograph tests + extra (PSD, polymorph).
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Spec table data (test, limit, method ref, chapter).
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-09
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.4.2–4.3
+  numbers:
+    nta065_v5: 3.2.S.4.2–4.3
+  ectd:
+    - 3.2.S.4.2
+    - 3.2.S.4.3
+  title:
+    en: Analytical procedures & validation
+    ar: الطرق والتحقق
+  status: in-force
+  acceptance: Procedure for every test; validation for in-house; verification for compendial; chromatograms (specificity, forced degradation, SST).
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Methods & validation raw data/reports; tool builds 3.2.R.2 summary tables.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-10
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.4.4
+  numbers:
+    nta065_v5: 3.2.S.4.4
+  ectd:
+    - 3.2.S.4.4
+  title:
+    en: Batch analyses
+    ar: تحليل التشغيلات
+  status: in-force
+  acceptance: '≥2 recent batches (CEP route: 2 pilot-scale) with no., size, date, type, site; numeric results; consistent with S.4.1.'
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Batches sheet + numeric results per test.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-11
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.4.5
+  numbers:
+    nta065_v5: 3.2.S.4.5
+  ectd:
+    - 3.2.S.4.5
+  title:
+    en: Justification of specification
+    ar: تبرير المواصفات
+  status: in-force
+  acceptance: Justify impurity & solvent limits and non-routine tests.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Rationale inputs per test.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-12
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.5
+  numbers:
+    nta065_v5: 3.2.S.5
+  ectd:
+    - 3.2.S.5
+  title:
+    en: Reference standards
+    ar: المواد المرجعية
+  status: in-force
+  acceptance: Primary RS source & lot; working standard CoA; concomitant IR primary vs secondary; impurity standards.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: RS CoAs & IR spectra.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-13
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.6
+  numbers:
+    nta065_v5: 3.2.S.6
+  ectd:
+    - 3.2.S.6
+  title:
+    en: Container closure (API)
+    ar: عبوة المادة الفعالة
+  status: in-force
+  acceptance: 'Description & specs; IR of reference vs test material; suitability; packaging CoA. CEP: exempt if CEP specifies & same used.'
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Supplier specs, CoA, IR.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-14
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S.7
+  numbers:
+    nta065_v5: 3.2.S.7
+  ectd:
+    - 3.2.S.7
+  title:
+    en: Stability (summary, protocol & commitment, data)
+    ar: الثبات
+  status: in-force
+  acceptance: >-
+    Conditions & conclusion; protocol data (batch type/size, container, start date, period); results summary; signed commitment letters;
+    ongoing batches; forced degradation with chromatograms. CEP: exempt if CEP retest period ≥ proposed & conditions ≥.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Stability raw data; tool builds summary tables & commitment letter.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/S-15
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.S (front)
+  numbers:
+    nta065_v5: 3.2.S (front)
+  ectd:
+    - 3.2.S
+  title:
+    en: Statement of S-part option per API manufacturer + DMF applicant's-part cover page (version/date)
+    ar: بيان طريقة تقديم المادة الفعالة
+  status: in-force
+  acceptance: Option 1–4 stated at start of 3.2.S; AP front page in 3.2.S.1.1 ('nomenclature-cover page applicant's part').
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: APIs sheet.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.4.1.1
+  ectd_cite:
+    - src: eda-ectd-technical-guidance-draft-v1
+      at: §3.4.1.1 (statement at start of 3.2.S)
+      status: draft
+- id: EG-EDA/S-16
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S (per API and per API manufacturer) — required for all dossier types
+  ctd: 3.2.R (CEP)
+  numbers:
+    nta065_v5: 3.2.R (CEP)
+  ectd:
+    - 3.2.R
+  title:
+    en: CEP copy placed in 3.2.R regional information (eCTD)
+    ar: نسخة الـ CEP في 3.2.R
+  status: draft
+  note: API via CEP
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: '''CEP'' in api_options'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: From holder (same as M1-39).
+  per:
+    over: apis
+    where: option == 'CEP'
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.4.1.1.1
+  ectd_cite:
+    - src: eda-ectd-technical-guidance-draft-v1
+      at: §3.4.1.1.1
+      status: draft
+- id: EG-EDA/P-01
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.1
+  numbers:
+    nta065_v5: 3.2.P.1
+  ectd:
+    - 3.2.P.1
+  title:
+    en: Description & composition
+    ar: الوصف والتركيب
+  status: in-force
+  acceptance: >-
+    API standard consistent with S-part; excipient grades; salt equivalence; potency note; overage; removed ingredients noted; shell/coating
+    composition; identical to CPP & approvals.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Composition data (same as M1-31).
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-02
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.2
+  numbers:
+    nta065_v5: 3.2.P.2
+  ectd:
+    - 3.2.P.2
+  title:
+    en: Pharmaceutical development
+    ar: التطوير الصيدلي
+  status: in-force
+  acceptance: >-
+    Reference product named; QTPP, CQAs, CPPs; compatibility if excipients differ from reference; formulation comparison; overage justified
+    step by step; sterilisation choice; compatibility with diluent/device; multipoint dissolution in 3 BCS media.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Development data & study reports; tool builds comparison & batch tables.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-03
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.3.1
+  numbers:
+    nta065_v5: 3.2.P.3.1
+  ectd:
+    - 3.2.P.3.1
+  title:
+    en: Manufacturer(s)
+    ar: المصنعون
+  status: in-force
+  acceptance: 'Responsibility of each site; imported: same sites as CPP.'
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Parties sheet.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-04
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.3.2
+  numbers:
+    nta065_v5: 3.2.P.3.2
+  ectd:
+    - 3.2.P.3.2
+  title:
+    en: Batch formula
+    ar: تركيبة التشغيلة
+  status: in-force
+  acceptance: Every commercial batch size; overage/overfill; potency calculation.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Batch sizes + unit formula.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-05
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.3.3
+  numbers:
+    nta065_v5: 3.2.P.3.3
+  ectd:
+    - 3.2.P.3.3
+  title:
+    en: Manufacturing process & controls
+    ar: خطوات التصنيع
+  status: in-force
+  acceptance: >-
+    Flow diagram with all steps & CPPs; narrative incl. packaging; equipment type & capacity; parameter ranges; hold times with supporting
+    stability; transfer precautions.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Master BMR content; tool drafts flow diagram & narrative tables.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-06
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.3.4
+  numbers:
+    nta065_v5: 3.2.P.3.4
+  ectd:
+    - 3.2.P.3.4
+  title:
+    en: Controls of critical steps
+    ar: ضبط الخطوات الحرجة
+  status: in-force
+  acceptance: CPPs discussed; IPC tests & limits with justification.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: IPC table.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-07
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.3.5
+  numbers:
+    nta065_v5: 3.2.P.3.5
+  ectd:
+    - 3.2.P.3.5
+  title:
+    en: Process validation
+    ar: التحقق من العملية
+  status: in-force
+  acceptance: 3 batches (if applicable) for all batch sizes, or protocol; each API source in ≥1 batch.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Validation protocol/report from company.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-08
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.4
+  numbers:
+    nta065_v5: 3.2.P.4
+  ectd:
+    - 3.2.P.4
+  title:
+    en: Control of excipients (+ 4.5 human/animal origin, 4.6 novel)
+    ar: ضبط السواغات
+  status: in-force
+  acceptance: In-house excipient specs; TSE/BSE certificates for animal/human origin.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Specs (tool) + TSE certificates (supplier).
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-09
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.5.1
+  numbers:
+    nta065_v5: 3.2.P.5.1
+  ectd:
+    - 3.2.P.5.1
+  title:
+    en: Specification(s)
+    ar: مواصفات المنتج
+  status: in-force
+  acceptance: Universal tests; general-chapter reference column; ID not single RT; dissolution Q stated; release & shelf-life limits.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Spec table data.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-10
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.5.2–5.3
+  numbers:
+    nta065_v5: 3.2.P.5.2–5.3
+  ectd:
+    - 3.2.P.5.2
+    - 3.2.P.5.3
+  title:
+    en: Analytical procedures & validation
+    ar: الطرق والتحقق
+  status: in-force
+  acceptance: In-house methods + validation + chromatograms; compendial verification.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Method & validation reports.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-11
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.5.4
+  numbers:
+    nta065_v5: 3.2.P.5.4
+  ectd:
+    - 3.2.P.5.4
+  title:
+    en: Batch analyses
+    ar: تحليل التشغيلات
+  status: in-force
+  acceptance: ≥2 batches; size, strength, no., date, site, type; numeric results (not 'conform'); recent; consistent with P.5.1.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Batches sheet + numeric results.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-12
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.5.5
+  numbers:
+    nta065_v5: 3.2.P.5.5
+  ectd:
+    - 3.2.P.5.5
+  title:
+    en: Characterisation of impurities
+    ar: توصيف الشوائب
+  status: in-force
+  acceptance: Degradation & synthetic impurities (source, structure, limit); Q3D RA; nitrosamine RA.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: RA reports & impurity data.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-13
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.5.6
+  numbers:
+    nta065_v5: 3.2.P.5.6
+  ectd:
+    - 3.2.P.5.6
+  title:
+    en: Justification of specification(s)
+    ar: تبرير المواصفات
+  status: in-force
+  acceptance: Justify impurity limits & non-routine tests.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Rationale inputs.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-14
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.6
+  numbers:
+    nta065_v5: 3.2.P.6
+  ectd:
+    - 3.2.P.6
+  title:
+    en: Reference standards
+    ar: المواد المرجعية
+  status: in-force
+  acceptance: Primary RS lot; working RS CoA; primary lot used for standardisation; concomitant IR.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: RS CoAs & IR.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-15
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.7
+  numbers:
+    nta065_v5: 3.2.P.7
+  ectd:
+    - 3.2.P.7
+  title:
+    en: Container closure
+    ar: العبوة
+  status: in-force
+  acceptance: Description & specs per component; IR reference vs test; suitability; CoA.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Supplier specs & CoA & IR.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/P-16
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product (one m32p for all FPP manufacturers)
+  ctd: 3.2.P.8
+  numbers:
+    nta065_v5: 3.2.P.8
+  ectd:
+    - 3.2.P.8
+  title:
+    en: Stability (summary, protocol & commitment, data)
+    ar: الثبات
+  status: in-force
+  acceptance: >-
+    Summary & storage conclusion; complete protocol data; photostability; in-use stability; signed commitment letters; up-to-date data;
+    ongoing batches.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Stability raw data; tool builds tables, conclusions & commitment letters.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/A-01
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd: 3.2.A.1
+  numbers:
+    nta065_v5: 3.2.A.1
+  ectd:
+    - 3.2.A.1
+  title:
+    en: Facilities & equipment
+    ar: المنشآت والمعدات
+  status: in-force
+  note: 'Guideline v2: ''Not Applicable'' for these files'
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Statement.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/A-02
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd: 3.2.A.2
+  numbers:
+    nta065_v5: 3.2.A.2
+  ectd:
+    - 3.2.A.2
+  title:
+    en: Adventitious agents safety evaluation
+    ar: تقييم العوامل العارضة
+  status: in-force
+  acceptance: Risk assessment; certificates.
+  note: Where materials of biological origin
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: biological_origin_materials
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Certificates from suppliers.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-ctd-qm-v2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/A-03
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd: 3.2.A.3
+  numbers:
+    nta065_v5: 3.2.A.3
+  ectd:
+    - 3.2.A.3
+  title:
+    en: Excipients (novel / non-compendial, large data)
+    ar: السواغات الجديدة
+  status: in-force
+  note: Only one novel excipient fits in 3.2.A.3 in eCTD v3.2.2
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: novel_excipient
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Supplier data.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  logic_note: checklist condition column
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: ich-ectd-qa-v133
+      at: '12'
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/R-01
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd: 3.2.R.1.1
+  numbers:
+    nta065_v5: 3.2.R.1.1
+  ectd:
+    - 3.2.R
+  title:
+    en: Executed production documents (BE batch + pilot/primary batches)
+    ar: سجلات التشغيلات المنفّذة
+  status: in-force
+  acceptance: >-
+    Batches used in BE/biowaiver; fully representative of production; legible operator notes; English translation where relevant;
+    NP.CAPP.040: records of the three manufactured batches.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: executed_record
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Original executed records — scan only; never re-typed.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: eda-np-capp-040-v1
+    - src: who-trs986-annex6
+      at: A6
+  ectd_cite:
+    - src: eda-ectd-technical-guidance-draft-v1
+      at: §3.4
+      status: in-force
+    - src: eda-ctd-qm-v2
+      at: 3.2.R.1.1
+      status: in-force
+- id: EG-EDA/R-02
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd: 3.2.R.1.2
+  numbers:
+    nta065_v5: 3.2.R.1.2
+  ectd:
+    - 3.2.R
+  title:
+    en: Master production documents (each strength, commercial batch size, site)
+    ar: سجلات التشغيل الرئيسية
+  status: in-force
+  acceptance: >-
+    (a) master formula (b) dispensing/processing/packaging (c) calculations (d) equipment type, capacity, make/model (e) parameters target &
+    range (f) IPCs (g) sampling plan (h) precautions & hold times (i) sterile: SOP list (j) theoretical & actual yield.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: >-
+      Company master BMR; tool can rebuild a blank master record template from process data, but the approved master record must be the
+      company's controlled document.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+      at: §3.2.R.1.2
+  ectd_cite:
+    - src: eda-ctd-qm-v2
+      at: 3.2.R.1.2
+      status: in-force
+- id: EG-EDA/R-03
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd: 3.2.R.2
+  numbers:
+    nta065_v5: 3.2.R.2
+  ectd:
+    - 3.2.R
+  title:
+    en: Analytical procedures & validation — tabular summaries
+    ar: ملخص جداول الطرق والتحقق
+  status: in-force
+  acceptance: Tables from S.4.2/4.3/4.4/7.3, P.5.2/5.3.
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Method parameters & validation results (WHO HPLC-method & validation summary template).
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-ctd-qm-v2
+    - src: who-pq-qos-pd
+      at: 2.3.R.2
+  ectd_cite:
+    - src: eda-ctd-qm-v2
+      at: 3.2.R.2
+      status: in-force
+- id: EG-EDA/R-04
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 3
+  group: MODULE 3 — 3.2.A / 3.2.R / 3.3
+  ctd: '3.3'
+  numbers:
+    nta065_v5: '3.3'
+  ectd:
+    - '3.3'
+  title:
+    en: Literature references (one file per reference)
+    ar: المراجع العلمية
+  status: draft
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Source articles; tool splits one file per reference.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4-r4
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M4-01
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 4
+  group: 'MODULE 4 — Non-clinical (Innovators; generics: 4.3 literature optional)'
+  ctd: 4.2.x
+  numbers:
+    nta065_v5: 4.2.x
+  ectd:
+    - '4.2'
+  title:
+    en: Non-clinical study reports (pharmacology, PK, toxicology)
+    ar: تقارير الدراسات قبل السريرية
+  status: in-force
+  matrix:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Study reports from sponsor; tool places with node extensions.
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M4
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M4-02
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 4
+  group: 'MODULE 4 — Non-clinical (Innovators; generics: 4.3 literature optional)'
+  ctd: '4.3'
+  numbers:
+    nta065_v5: '4.3'
+  ectd:
+    - '4.3'
+  title:
+    en: Literature references
+    ar: المراجع
+  status: in-force
+  matrix:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Articles; one file per reference.
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M4
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M5-01
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: '5.1'
+  numbers:
+    nta065_v5: '5.1'
+  ectd: []
+  title:
+    en: Table of contents of Module 5
+    ar: فهرس Module 5
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Generated.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-ectd-v322
+      at: no 5.1 node — the TOC is replaced by the backbone (CTD output only)
+      status: in-force
+- id: EG-EDA/M5-02
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: '5.2'
+  numbers:
+    nta065_v5: '5.2'
+  ectd:
+    - '5.2'
+  title:
+    en: Tabular listing of all clinical studies
+    ar: قائمة الدراسات
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Study list (incl. pilot & failed BE studies — WHO screening 12e/f).
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M5-03
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: 5.3.1.1
+  numbers:
+    nta065_v5: 5.3.1.1
+  ectd:
+    - 5.3.1.1
+  title:
+    en: BA study reports
+    ar: دراسات الإتاحة الحيوية
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Study report.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: O
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: O
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M5-04
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: 5.3.1.2
+  numbers:
+    nta065_v5: 5.3.1.2
+  ectd:
+    - 5.3.1.2
+  title:
+    en: Comparative BA & BE study reports
+    ar: تقرير دراسة التكافؤ الحيوي
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: CRO report per GL.CAPP.024 v4 (effective 01/07/2026); node extension per study.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: R
+          reason:
+            en: >-
+              No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API
+              and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.
+            ar: >-
+              مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز،
+              ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - when: local_equivalence
+          level: R
+          reason:
+            en: >-
+              Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical,
+              pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic
+              risk.
+            ar: >-
+              مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد،
+              أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §3.13 p.111-112
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: R
+          reason:
+            en: >-
+              No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API
+              and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.
+            ar: >-
+              مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز،
+              ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - when: local_equivalence
+          level: R
+          reason:
+            en: >-
+              Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical,
+              pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic
+              risk.
+            ar: >-
+              مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد،
+              أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §3.13 p.111-112
+        - level: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M5-05
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: 5.3.1.3
+  numbers:
+    nta065_v5: 5.3.1.3
+  ectd:
+    - 5.3.1.3
+  title:
+    en: IVIVC study reports
+    ar: IVIVC
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Study report.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: O
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: O
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M5-06
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: 5.3.1.4
+  numbers:
+    nta065_v5: 5.3.1.4
+  ectd:
+    - 5.3.1.4
+  title:
+    en: Bioanalytical & analytical methods for human studies
+    ar: الطرق التحليلية الحيوية
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Validation reports.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M5-07
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: 5.3.2.1–2
+  numbers:
+    nta065_v5: 5.3.2.1–2
+  ectd:
+    - 5.3.2.1
+    - 5.3.2.2
+  title:
+    en: Plasma protein binding; hepatic metabolism & interaction
+    ar: ارتباط البروتين/الأيض
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: R if applicable
+    G_LOC: R if applicable
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Reports/literature.
+  confirm_applicability: true
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M5-08
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: 5.3.3.1
+  numbers:
+    nta065_v5: 5.3.3.1
+  ectd:
+    - 5.3.3.1
+  title:
+    en: Healthy subject PK & initial tolerability
+    ar: حرائك صحية
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Reports.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M5-09
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: 5.3.5.4
+  numbers:
+    nta065_v5: 5.3.5.4
+  ectd:
+    - 5.3.5.4
+  title:
+    en: Other study reports
+    ar: تقارير أخرى
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Reports (e.g. comparative in-vitro dissolution).
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M5-10
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: 5.3.7
+  numbers:
+    nta065_v5: 5.3.7
+  ectd:
+    - 5.3.7
+  title:
+    en: Case report forms & individual listings
+    ar: نماذج الحالات
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Indexed by study, same order as 5.3.5; no bookmarks needed.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies (GL.CAPP.024 §2.2 / §4.5.1).'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
+          cite:
+            - src: eda-gl-capp-024-v4
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+        - level: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M5-11
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: '5.4'
+  numbers:
+    nta065_v5: '5.4'
+  ectd:
+    - '5.4'
+  title:
+    en: Literature references
+    ar: المراجع
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Articles; one file per reference.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: EG-EDA/M5-12
+  kind: requirement
+  authority: EG-EDA
+  set: eg-eda-ctd
+  module: 5
+  group: 'MODULE 5 — Clinical (generics: partial)'
+  ctd: 5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6
+  numbers:
+    nta065_v5: 5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6
+  ectd:
+    - 5.3.2.3
+    - 5.3.3.2
+    - 5.3.3.3
+    - 5.3.3.4
+    - 5.3.3.5
+    - 5.3.4
+    - 5.3.5.1
+    - 5.3.5.2
+    - 5.3.5.3
+    - 5.3.6
+  title:
+    en: Other clinical sections
+    ar: باقي الأقسام السريرية
+  status: in-force
+  acceptance: PDF searchable; node extension per study (EG draft §3.6.2).
+  matrix:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Innovator study reports.
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  cite:
+    - src: eda-np-capp-065-v5
+      at: M5
+    - src: eda-eg-m1-ectd-spec-draft-v1
+      at: §3.6
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: Appendix 4
+      status: in-force

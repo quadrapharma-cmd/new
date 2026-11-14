@@ -1,0 +1,364 @@
+# Document types and validity rules
+# أنواع المستندات وقواعد صلاحيتها
+# Ported from the old program (rulepacks/eda.doc-validity.v1); edit here from now on.
+warn_days_default: 90
+required:
+  product:
+    - registration_licence
+    - pricing_certificate
+    - leaflet
+    - artwork
+    - stability_approval
+  api_supplier:
+    - - gmp_certificate
+      - written_confirmation
+    - api_coa
+    - import_approval
+  manufacturer:
+    - gmp_certificate
+    - factory_licence
+  holder:
+    - commercial_register
+  toll:
+    - toll_card
+types:
+  - id: EG-EDA/doc/registration_licence
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Registration licence / marketing authorisation
+      ar: إخطار / رخصة التسجيل
+    scope: product
+    issuer_kind: authority
+    validity_months: 120
+    warn_days: 365
+    status: in-force
+    note_source: >-
+      EDA GL.CAPP.030 v7 p.3-4 (re-registered every 10 years; apply in the last year; up to 4 years' grace with a preliminary approval);
+      5th-year report within the last 3 months of year 5 (NP.CAPP.093 v1 p.3)
+    cite:
+      - src: eda-decree-150-guide-v7
+        at: p.3-4
+      - src: eda-np-capp-093-v1
+        at: p.3
+  - id: EG-EDA/doc/variation_approval
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Variation approval
+      ar: موافقة تغيير
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    status: in-force
+    note_source: EDA GL.CAPP.026 v6
+    cite:
+      - src: eda-gl-capp-026-v6
+  - id: EG-EDA/doc/pricing_certificate
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Pricing certificate
+      ar: شهادة التسعير
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    status: in-force
+    note_source: Ministerial decree 499/2012; EDA pricing decision 480/2026 (review after 6 months)
+    cite:
+      - src: eg-md-499-2012
+      - src: eda-pricing-decision-480-2026
+  - id: EG-EDA/doc/stability_approval
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Stability committee approval
+      ar: موافقة لجنة الثبات
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    status: in-force
+    note_source: EDA stability guidelines (zone IVa)
+    cite:
+      - src: eda-np-capp-090-v2
+        at: zone IVa
+  - id: EG-EDA/doc/eda_letter
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: EDA letter / committee decision
+      ar: خطاب / قرار من الهيئة
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    status: in-force
+    note_source: NP.CAPP.065 v5 §1.1.6
+    cite:
+      - src: eda-np-capp-065-v5
+        at: §1.1.6
+  - id: EG-EDA/doc/analysis_conformity
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: NODCAR / CADC analysis or conformity
+      ar: تحليل / مطابقة من الرقابة الدوائية
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    status: in-force
+    note_source: NP.CAPP.065 v5 §1.1.11
+    cite:
+      - src: eda-np-capp-065-v5
+        at: §1.1.11
+  - id: EG-EDA/doc/import_approval
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Importation approval (API)
+      ar: موافقة استيرادية (مادة فعالة)
+    scope: product_party
+    issuer_kind: authority
+    validity_months: 12
+    warn_days: 120
+    status: in-force
+    note_source: >-
+      EDA GL.PPMA.004 v5 p.3, p.5 (valid one year from issue; apply for the next annual approval at least 4 months before expiry; 6 months
+      for unregistered products from a reference country, p.22-23)
+    cite:
+      - src: eda-gl-ppma-004-v5
+        at: p.3, p.5, p.22-23
+  - id: EG-EDA/doc/gmp_certificate
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: GMP certificate
+      ar: شهادة GMP
+    scope: party
+    issuer_kind: authority
+    validity_months: 36
+    warn_days: 120
+    status: derived
+    note_source: >-
+      EDA requires a «valid GMP» with production lines specified, no fixed term (NP.CAPP.065 v5 p.12; draft EG M1 NtA p.13). End date
+      printed on the certificate prevails; 3 years when none is printed is EU practice (EudraGMDP), not an EDA rule
+    cite:
+      - src: eda-np-capp-065-v5
+        at: p.12
+      - src: eda-eg-m1-submission-guidance-draft
+        at: p.13
+  - id: EG-EDA/doc/written_confirmation
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Written confirmation (API exported to the EU)
+      ar: Written Confirmation للمادة الفعالة
+    scope: party
+    issuer_kind: authority
+    validity_months: 36
+    warn_days: 120
+    status: derived
+    note_source: >-
+      Accepted by EDA as API-manufacturer evidence with GMP / CPP / ISO 9001 (NP.CAPP.109 v2 p.8-10). End date printed on the WC prevails
+      (Directive 2011/62/EU Art. 46b); EDA states no term
+    cite:
+      - src: eda-np-capp-109-v2
+        at: p.8-10
+      - src: eu-dir-2011-62
+        at: Art. 46b
+  - id: EG-EDA/doc/api_coa
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: API certificate of analysis
+      ar: شهادة تحليل المادة الفعالة
+    scope: product_party
+    issuer_kind: supplier
+    validity_months: null
+    status: in-force
+    note_source: Valid until the retest / expiry date of the batch printed on the CoA
+    cite:
+      - src: general-practice
+        at: the retest / expiry date of the batch printed on the CoA
+  - id: EG-EDA/doc/dmf_cep
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: DMF / CEP
+      ar: DMF / CEP
+    scope: party
+    issuer_kind: supplier
+    validity_months: null
+    status: derived
+    note_source: CEP status on the EDQM database; DMF version
+    cite:
+      - src: edqm-cep-database
+  - id: EG-EDA/doc/factory_licence
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Factory licence (manufacturer)
+      ar: ترخيص المصنع
+    scope: party
+    issuer_kind: authority
+    validity_months: null
+    status: in-force
+    note_source: NP.CAPP.065 v5 §1.1.17.1
+    cite:
+      - src: eda-np-capp-065-v5
+        at: §1.1.17.1
+  - id: EG-EDA/doc/toll_card
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Toll manufacturer card / register
+      ar: كارت / سجل التصنيع لدى الغير
+    scope: party
+    issuer_kind: authority
+    validity_months: 120
+    warn_days: 90
+    status: in-force
+    note_source: EDA GL.CAO.005 v3 p.5 (toll register entry updated every 10 calendar years; request within the last 3 months)
+    cite:
+      - src: eda-gl-cao-005-v3
+        at: p.5, p.11
+  - id: EG-EDA/doc/commercial_register
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Commercial register
+      ar: السجل التجاري
+    scope: party
+    issuer_kind: authority
+    validity_months: 60
+    warn_days: 90
+    status: assumption
+    note_source: >-
+      EDA asks for the «last updated» commercial register / «valid register of trade», no term (NP.CAPP.109 v2 p.5, 7; NP.CAPP.065 v5
+      §1.1.17.2). 5 years is the commercial-registry renewal term (Law 34/1976 as amended) — confirm; changes must be notified to the toll
+      register within 18 months (GL.CAO.005 p.11)
+    cite:
+      - src: eda-np-capp-109-v2
+        at: p.5, 7
+      - src: eda-np-capp-065-v5
+        at: §1.1.17.2
+      - src: eg-law-34-1976
+      - src: eda-gl-cao-005-v3
+        at: p.11
+  - id: EG-EDA/doc/tax_card
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Tax card
+      ar: البطاقة الضريبية
+    scope: party
+    issuer_kind: authority
+    validity_months: null
+    status: assumption
+    note_source: Company document
+    cite:
+      - src: general-practice
+        at: a company document
+  - id: EG-EDA/doc/manufacturing_contract
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Manufacturing / storage contract
+      ar: عقد تصنيع / تخزين
+    scope: product_party
+    issuer_kind: company
+    validity_months: null
+    status: in-force
+    note_source: End date stated in the contract; NP.CAPP.065 v5 §1.1.17.7
+    cite:
+      - src: eda-np-capp-065-v5
+        at: §1.1.17.7
+  - id: EG-EDA/doc/leaflet
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Approved leaflet (SmPC / PIL)
+      ar: النشرة المعتمدة
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    status: in-force
+    note_source: EDA GL.CAP.Care.032 v4
+    cite:
+      - src: eda-gl-cap-care-032-v4
+  - id: EG-EDA/doc/artwork
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Approved layout / artwork
+      ar: العبوة المعتمدة (Layout)
+    scope: product
+    issuer_kind: authority
+    validity_months: null
+    status: in-force
+    note_source: NP.CAPP.065 v5 §1.1.10
+    cite:
+      - src: eda-np-capp-065-v5
+        at: §1.1.10
+  - id: EG-EDA/doc/stability_data
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Stability study data / report
+      ar: بيانات / تقرير دراسة الثبات
+    scope: product
+    issuer_kind: company
+    validity_months: null
+    status: in-force
+    note_source: ICH Q1A(R2); 3.2.P.8
+    cite:
+      - src: ich-q1a-r2
+      - src: ich-m4q-r1
+        at: 3.2.P.8
+  - id: EG-EDA/doc/specification
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Specification / method / validation
+      ar: مواصفات / طريقة تحليل / تحقق
+    scope: product
+    issuer_kind: company
+    validity_months: null
+    status: in-force
+    note_source: 3.2.P.5 / 3.2.S.4
+    cite:
+      - src: ich-m4q-r1
+        at: 3.2.P.5 / 3.2.S.4
+  - id: EG-EDA/doc/other
+    kind: doctype
+    authority: EG-EDA
+    set: eg-eda-doctypes
+    title:
+      en: Other document
+      ar: مستند آخر
+    scope: product
+    issuer_kind: other
+    validity_months: null
+    status: assumption
+    note_source: —
+    cite:
+      - src: general-practice

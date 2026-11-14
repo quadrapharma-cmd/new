@@ -1,0 +1,2994 @@
+# US CTD dossier — FDA Module 1 (table of contents headings v2.3.3)
+# ملف CTD للولايات المتحدة — موديول ١ لـ FDA (جدول العناوين 2.3.3)
+# Ported from the old program (rulepacks/us.ctd.m1.v1); edit here from now on.
+- id: US-FDA/US-1.1.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd: 1.1.1
+  ectd:
+    - 1.1.1
+  title:
+    en: 'Application form: FDA form 1571'
+    ar: 'نموذج الطلب: FDA form 1571'
+  status: in-force
+  acceptance: FDA heading 1.1.1 under 1.1 Forms.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.1.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd: 1.1.2
+  ectd:
+    - 1.1.2
+  title:
+    en: 'Application form: FDA form 356h'
+    ar: 'نموذج الطلب: FDA form 356h'
+  status: in-force
+  acceptance: FDA heading 1.1.2 under 1.1 Forms.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.1.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd: 1.1.3
+  ectd:
+    - 1.1.3
+  title:
+    en: 'User fee cover sheet: FDA form 3397'
+    ar: 'صفحة رسوم المستخدم: FDA form 3397'
+  status: in-force
+  acceptance: FDA heading 1.1.3 under 1.1 Forms.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.1.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd: 1.1.4
+  ectd:
+    - 1.1.4
+  title:
+    en: 'Annual report transmittal: FDA form 2252'
+    ar: 'Annual report transmittal: FDA form 2252'
+  status: in-force
+  acceptance: FDA heading 1.1.4 under 1.1 Forms.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.1.5
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd: 1.1.5
+  ectd:
+    - 1.1.5
+  title:
+    en: 'Advertisements and promotional labeling transmittal: FDA form 2253'
+    ar: 'Advertisements and promotional labeling transmittal: FDA form 2253'
+  status: in-force
+  acceptance: FDA heading 1.1.5 under 1.1 Forms.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.1.6
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.1 Forms (US FDA)
+  ctd: 1.1.6
+  ectd:
+    - 1.1.6
+  title:
+    en: 'Transmittal of Labels and Circulars: FDA form 2567'
+    ar: 'Transmittal of Labels and Circulars: FDA form 2567'
+  status: in-force
+  acceptance: FDA heading 1.1.6 under 1.1 Forms.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.2 Cover letters (US FDA)
+  ctd: '1.2'
+  ectd:
+    - '1.2'
+  title:
+    en: Cover letters
+    ar: خطابات التقديم
+  status: in-force
+  acceptance: FDA heading 1.2 under 1.2 Cover letters.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.1.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.1.1
+  ectd:
+    - 1.3.1.1
+  title:
+    en: Change of address or corporate name
+    ar: Change of address or corporate name
+  status: in-force
+  acceptance: FDA heading 1.3.1.1 under 1.3 Administrative information.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.1.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.1.2
+  ectd:
+    - 1.3.1.2
+  title:
+    en: Change in contact / agent
+    ar: Change in contact / agent
+  status: in-force
+  acceptance: FDA heading 1.3.1.2 under 1.3 Administrative information.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.1.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.1.3
+  ectd:
+    - 1.3.1.3
+  title:
+    en: Change in sponsor
+    ar: Change in sponsor
+  status: in-force
+  acceptance: FDA heading 1.3.1.3 under 1.3 Administrative information.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.1.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.1.4
+  ectd:
+    - 1.3.1.4
+  title:
+    en: Transfer of obligation
+    ar: Transfer of obligation
+  status: in-force
+  acceptance: FDA heading 1.3.1.4 under 1.3 Administrative information.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.1.5
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.1.5
+  ectd:
+    - 1.3.1.5
+  title:
+    en: Change in ownership of an application or reissuance of license
+    ar: Change in ownership of an application or reissuance of license
+  status: in-force
+  acceptance: FDA heading 1.3.1.5 under 1.3 Administrative information.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.2
+  ectd:
+    - 1.3.2
+  title:
+    en: Field copy certification
+    ar: إقرار نسخة المكتب الميداني
+  status: in-force
+  acceptance: FDA heading 1.3.2 under 1.3 Administrative information.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.3
+  ectd:
+    - 1.3.3
+  title:
+    en: Debarment certification
+    ar: إقرار عدم الحرمان (Debarment)
+  status: in-force
+  acceptance: FDA heading 1.3.3 under 1.3 Administrative information.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.4
+  ectd:
+    - 1.3.4
+  title:
+    en: Financial certification and disclosure
+    ar: الإقرار والإفصاح المالي
+  status: in-force
+  acceptance: FDA heading 1.3.4 under 1.3 Administrative information.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.5.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.5.1
+  ectd:
+    - 1.3.5.1
+  title:
+    en: Patent information
+    ar: بيانات البراءات
+  status: in-force
+  acceptance: FDA heading 1.3.5.1 under 1.3 Administrative information.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.5.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.5.2
+  ectd:
+    - 1.3.5.2
+  title:
+    en: Patent certification
+    ar: إقرار البراءات (Patent certification)
+  status: in-force
+  acceptance: FDA heading 1.3.5.2 under 1.3 Administrative information.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.5.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.5.3
+  ectd:
+    - 1.3.5.3
+  title:
+    en: Exclusivity claim
+    ar: طلب الحصرية
+  status: in-force
+  acceptance: FDA heading 1.3.5.3 under 1.3 Administrative information.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.3.6
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.3 Administrative information (US FDA)
+  ctd: 1.3.6
+  ectd:
+    - 1.3.6
+  title:
+    en: Tropical disease priority review voucher
+    ar: Tropical disease priority review voucher
+  status: in-force
+  acceptance: FDA heading 1.3.6 under 1.3 Administrative information.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.4.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.4 References (US FDA)
+  ctd: 1.4.1
+  ectd:
+    - 1.4.1
+  title:
+    en: Letter of authorization
+    ar: خطاب التفويض (Letter of authorization)
+  status: in-force
+  acceptance: FDA heading 1.4.1 under 1.4 References. Letter of authorization from the holder of each master file the application refers to.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  per:
+    over: apis
+    where: option == 'DMF'
+  kinds:
+    - loa
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.4.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.4 References (US FDA)
+  ctd: 1.4.2
+  ectd:
+    - 1.4.2
+  title:
+    en: Statement of right of reference
+    ar: Statement of right of reference
+  status: in-force
+  acceptance: FDA heading 1.4.2 under 1.4 References.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.4.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.4 References (US FDA)
+  ctd: 1.4.3
+  ectd:
+    - 1.4.3
+  title:
+    en: List of authorized persons to incorporate by reference
+    ar: List of authorized persons to incorporate by reference
+  status: in-force
+  acceptance: FDA heading 1.4.3 under 1.4 References.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.4.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.4 References (US FDA)
+  ctd: 1.4.4
+  ectd:
+    - 1.4.4
+  title:
+    en: Cross-reference to previously submitted information
+    ar: Cross-reference to previously submitted information
+  status: in-force
+  acceptance: FDA heading 1.4.4 under 1.4 References.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.5.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd: 1.5.1
+  ectd:
+    - 1.5.1
+  title:
+    en: Withdrawal of an IND
+    ar: Withdrawal of an IND
+  status: in-force
+  acceptance: FDA heading 1.5.1 under 1.5 Application status.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.5.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd: 1.5.2
+  ectd:
+    - 1.5.2
+  title:
+    en: Inactivation request
+    ar: Inactivation request
+  status: in-force
+  acceptance: FDA heading 1.5.2 under 1.5 Application status.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.5.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd: 1.5.3
+  ectd:
+    - 1.5.3
+  title:
+    en: Reactivation request
+    ar: Reactivation request
+  status: in-force
+  acceptance: FDA heading 1.5.3 under 1.5 Application status.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.5.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd: 1.5.4
+  ectd:
+    - 1.5.4
+  title:
+    en: Reinstatement request
+    ar: Reinstatement request
+  status: in-force
+  acceptance: FDA heading 1.5.4 under 1.5 Application status.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.5.5
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd: 1.5.5
+  ectd:
+    - 1.5.5
+  title:
+    en: Withdrawal of an unapproved BLA, NDA, ANDA, or supplement
+    ar: Withdrawal of an unapproved BLA, NDA, ANDA, or supplement
+  status: in-force
+  acceptance: FDA heading 1.5.5 under 1.5 Application status.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.5.6
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd: 1.5.6
+  ectd:
+    - 1.5.6
+  title:
+    en: Withdrawal of listed drug
+    ar: Withdrawal of listed drug
+  status: in-force
+  acceptance: FDA heading 1.5.6 under 1.5 Application status.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.5.7
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.5 Application status (US FDA)
+  ctd: 1.5.7
+  ectd:
+    - 1.5.7
+  title:
+    en: Withdrawal of approval of an application or revocation of license
+    ar: Withdrawal of approval of an application or revocation of license
+  status: in-force
+  acceptance: FDA heading 1.5.7 under 1.5 Application status.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.6.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.6 Meetings (US FDA)
+  ctd: 1.6.1
+  ectd:
+    - 1.6.1
+  title:
+    en: Meeting request
+    ar: Meeting request
+  status: in-force
+  acceptance: FDA heading 1.6.1 under 1.6 Meetings.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.6.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.6 Meetings (US FDA)
+  ctd: 1.6.2
+  ectd:
+    - 1.6.2
+  title:
+    en: Meeting background materials
+    ar: Meeting background materials
+  status: in-force
+  acceptance: FDA heading 1.6.2 under 1.6 Meetings.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.6.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.6 Meetings (US FDA)
+  ctd: 1.6.3
+  ectd:
+    - 1.6.3
+  title:
+    en: Correspondence regarding meetings
+    ar: Correspondence regarding meetings
+  status: in-force
+  acceptance: FDA heading 1.6.3 under 1.6 Meetings.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.7.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.7 Fast track (US FDA)
+  ctd: 1.7.1
+  ectd:
+    - 1.7.1
+  title:
+    en: Fast track designation request
+    ar: Fast track designation request
+  status: in-force
+  acceptance: FDA heading 1.7.1 under 1.7 Fast track.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.7.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.7 Fast track (US FDA)
+  ctd: 1.7.2
+  ectd:
+    - 1.7.2
+  title:
+    en: Fast track designation withdrawal request
+    ar: Fast track designation withdrawal request
+  status: in-force
+  acceptance: FDA heading 1.7.2 under 1.7 Fast track.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.7.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.7 Fast track (US FDA)
+  ctd: 1.7.3
+  ectd:
+    - 1.7.3
+  title:
+    en: Rolling review request
+    ar: Rolling review request
+  status: in-force
+  acceptance: FDA heading 1.7.3 under 1.7 Fast track.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.7.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.7 Fast track (US FDA)
+  ctd: 1.7.4
+  ectd:
+    - 1.7.4
+  title:
+    en: Correspondence regarding fast track / rolling review
+    ar: Correspondence regarding fast track / rolling review
+  status: in-force
+  acceptance: FDA heading 1.7.4 under 1.7 Fast track.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.8.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.8 Special protocol assessment request (US FDA)
+  ctd: 1.8.1
+  ectd:
+    - 1.8.1
+  title:
+    en: Special protocol assessment request — clinical study
+    ar: Special protocol assessment request — clinical study
+  status: in-force
+  acceptance: FDA heading 1.8.1 under 1.8 Special protocol assessment request.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.8.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.8 Special protocol assessment request (US FDA)
+  ctd: 1.8.2
+  ectd:
+    - 1.8.2
+  title:
+    en: Special protocol assessment request — carcinogenicity study
+    ar: Special protocol assessment request — carcinogenicity study
+  status: in-force
+  acceptance: FDA heading 1.8.2 under 1.8 Special protocol assessment request.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.8.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.8 Special protocol assessment request (US FDA)
+  ctd: 1.8.3
+  ectd:
+    - 1.8.3
+  title:
+    en: Special protocol assessment request — stability study
+    ar: Special protocol assessment request — stability study
+  status: in-force
+  acceptance: FDA heading 1.8.3 under 1.8 Special protocol assessment request.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.8.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.8 Special protocol assessment request (US FDA)
+  ctd: 1.8.4
+  ectd:
+    - 1.8.4
+  title:
+    en: Special protocol assessment request — animal efficacy study for approval under the animal rule
+    ar: Special protocol assessment request — animal efficacy study for approval under the animal rule
+  status: in-force
+  acceptance: FDA heading 1.8.4 under 1.8 Special protocol assessment request.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.9.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.9 Pediatric administrative information (US FDA)
+  ctd: 1.9.1
+  ectd:
+    - 1.9.1
+  title:
+    en: Request for waiver of pediatric studies
+    ar: Request for waiver of pediatric studies
+  status: in-force
+  acceptance: FDA heading 1.9.1 under 1.9 Pediatric administrative information.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.9.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.9 Pediatric administrative information (US FDA)
+  ctd: 1.9.2
+  ectd:
+    - 1.9.2
+  title:
+    en: Request for deferral of pediatric studies
+    ar: Request for deferral of pediatric studies
+  status: in-force
+  acceptance: FDA heading 1.9.2 under 1.9 Pediatric administrative information.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.9.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.9 Pediatric administrative information (US FDA)
+  ctd: 1.9.3
+  ectd:
+    - 1.9.3
+  title:
+    en: Request for pediatric exclusivity determination
+    ar: Request for pediatric exclusivity determination
+  status: in-force
+  acceptance: FDA heading 1.9.3 under 1.9 Pediatric administrative information.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.9.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.9 Pediatric administrative information (US FDA)
+  ctd: 1.9.4
+  ectd:
+    - 1.9.4
+  title:
+    en: Proposed pediatric study request and amendments
+    ar: Proposed pediatric study request and amendments
+  status: in-force
+  acceptance: FDA heading 1.9.4 under 1.9 Pediatric administrative information.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.9.6
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.9 Pediatric administrative information (US FDA)
+  ctd: 1.9.6
+  ectd:
+    - 1.9.6
+  title:
+    en: Other correspondence regarding pediatric exclusivity or study plans
+    ar: Other correspondence regarding pediatric exclusivity or study plans
+  status: in-force
+  acceptance: FDA heading 1.9.6 under 1.9 Pediatric administrative information.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.10.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.10 Dispute resolution (US FDA)
+  ctd: 1.10.1
+  ectd:
+    - 1.10.1
+  title:
+    en: Request for dispute resolution
+    ar: Request for dispute resolution
+  status: in-force
+  acceptance: FDA heading 1.10.1 under 1.10 Dispute resolution.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.10.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.10 Dispute resolution (US FDA)
+  ctd: 1.10.2
+  ectd:
+    - 1.10.2
+  title:
+    en: Correspondence related to dispute resolution
+    ar: Correspondence related to dispute resolution
+  status: in-force
+  acceptance: FDA heading 1.10.2 under 1.10 Dispute resolution.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.11.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: 'MODULE 1 — 1.11 Information amendment: information not covered under Modules 2 to 5 (US FDA)'
+  ctd: 1.11.1
+  ectd:
+    - 1.11.1
+  title:
+    en: Quality information amendment
+    ar: Quality information amendment
+  status: in-force
+  acceptance: 'FDA heading 1.11.1 under 1.11 Information amendment: information not covered under Modules 2 to 5.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.11.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: 'MODULE 1 — 1.11 Information amendment: information not covered under Modules 2 to 5 (US FDA)'
+  ctd: 1.11.2
+  ectd:
+    - 1.11.2
+  title:
+    en: Nonclinical information amendment
+    ar: Nonclinical information amendment
+  status: in-force
+  acceptance: 'FDA heading 1.11.2 under 1.11 Information amendment: information not covered under Modules 2 to 5.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.11.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: 'MODULE 1 — 1.11 Information amendment: information not covered under Modules 2 to 5 (US FDA)'
+  ctd: 1.11.3
+  ectd:
+    - 1.11.3
+  title:
+    en: Clinical information amendment
+    ar: Clinical information amendment
+  status: in-force
+  acceptance: 'FDA heading 1.11.3 under 1.11 Information amendment: information not covered under Modules 2 to 5.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.11.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: 'MODULE 1 — 1.11 Information amendment: information not covered under Modules 2 to 5 (US FDA)'
+  ctd: 1.11.4
+  ectd:
+    - 1.11.4
+  title:
+    en: Multiple module information amendment
+    ar: Multiple module information amendment
+  status: in-force
+  acceptance: 'FDA heading 1.11.4 under 1.11 Information amendment: information not covered under Modules 2 to 5.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.1
+  ectd:
+    - 1.12.1
+  title:
+    en: Pre IND correspondence
+    ar: Pre IND correspondence
+  status: in-force
+  acceptance: FDA heading 1.12.1 under 1.12 Other correspondence.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.2
+  ectd:
+    - 1.12.2
+  title:
+    en: Request to charge for clinical trial
+    ar: Request to charge for clinical trial
+  status: in-force
+  acceptance: FDA heading 1.12.2 under 1.12 Other correspondence.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.3
+  ectd:
+    - 1.12.3
+  title:
+    en: Request to charge for expanded access
+    ar: Request to charge for expanded access
+  status: in-force
+  acceptance: FDA heading 1.12.3 under 1.12 Other correspondence.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.4
+  ectd:
+    - 1.12.4
+  title:
+    en: Request for comments and advice
+    ar: Request for comments and advice
+  status: in-force
+  acceptance: FDA heading 1.12.4 under 1.12 Other correspondence.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.5
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.5
+  ectd:
+    - 1.12.5
+  title:
+    en: Request for a waiver
+    ar: Request for a waiver
+  status: in-force
+  acceptance: FDA heading 1.12.5 under 1.12 Other correspondence.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.6
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.6
+  ectd:
+    - 1.12.6
+  title:
+    en: Exception from informed consent for emergency research
+    ar: Exception from informed consent for emergency research
+  status: in-force
+  acceptance: FDA heading 1.12.6 under 1.12 Other correspondence.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.7
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.7
+  ectd:
+    - 1.12.7
+  title:
+    en: Public disclosure statement for exception from informed consent for emergency research
+    ar: Public disclosure statement for exception from informed consent for emergency research
+  status: in-force
+  acceptance: FDA heading 1.12.7 under 1.12 Other correspondence.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.8
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.8
+  ectd:
+    - 1.12.8
+  title:
+    en: Correspondence regarding exception from informed consent for emergency research
+    ar: Correspondence regarding exception from informed consent for emergency research
+  status: in-force
+  acceptance: FDA heading 1.12.8 under 1.12 Other correspondence.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.9
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.9
+  ectd:
+    - 1.12.9
+  title:
+    en: Notification of discontinuation of clinical trial
+    ar: Notification of discontinuation of clinical trial
+  status: in-force
+  acceptance: FDA heading 1.12.9 under 1.12 Other correspondence.
+  applies: us_application == 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.10
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.10
+  ectd:
+    - 1.12.10
+  title:
+    en: Generic drug enforcement act statement
+    ar: Generic drug enforcement act statement
+  status: in-force
+  acceptance: FDA heading 1.12.10 under 1.12 Other correspondence.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.11
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.11
+  ectd:
+    - 1.12.11
+  title:
+    en: ANDA basis for submission statement
+    ar: بيان أساس التقديم للـ ANDA
+  status: in-force
+  acceptance: FDA heading 1.12.11 under 1.12 Other correspondence.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application == 'anda'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.12
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.12
+  ectd:
+    - 1.12.12
+  title:
+    en: Comparison of generic drug and reference listed drug
+    ar: مقارنة المثيل بالمستحضر المرجعي (RLD)
+  status: in-force
+  acceptance: FDA heading 1.12.12 under 1.12 Other correspondence.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application == 'anda'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.13
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.13
+  ectd:
+    - 1.12.13
+  title:
+    en: Request for waiver for in vivo studies
+    ar: Request for waiver for in vivo studies
+  status: in-force
+  acceptance: FDA heading 1.12.13 under 1.12 Other correspondence.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.14
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.14
+  ectd:
+    - 1.12.14
+  title:
+    en: Environmental analysis
+    ar: التحليل البيئي
+  status: in-force
+  acceptance: FDA heading 1.12.14 under 1.12 Other correspondence.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.15
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.15
+  ectd:
+    - 1.12.15
+  title:
+    en: Request for waiver of in vivo bioavailability studies
+    ar: طلب الإعفاء من دراسات التوافر الحيوي
+  status: in-force
+  acceptance: FDA heading 1.12.15 under 1.12 Other correspondence.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.16
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.16
+  ectd:
+    - 1.12.16
+  title:
+    en: Field alert reports
+    ar: Field alert reports
+  status: in-force
+  acceptance: FDA heading 1.12.16 under 1.12 Other correspondence.
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.12.17
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.12 Other correspondence (US FDA)
+  ctd: 1.12.17
+  ectd:
+    - 1.12.17
+  title:
+    en: Orphan drug designation
+    ar: Orphan drug designation
+  status: in-force
+  acceptance: FDA heading 1.12.17 under 1.12 Other correspondence.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.1
+  ectd:
+    - 1.13.1
+  title:
+    en: Annual report — summary for nonclinical studies
+    ar: Annual report — summary for nonclinical studies
+  status: in-force
+  acceptance: FDA heading 1.13.1 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.2
+  ectd:
+    - 1.13.2
+  title:
+    en: Annual report — summary of clinical pharmacology information
+    ar: Annual report — summary of clinical pharmacology information
+  status: in-force
+  acceptance: FDA heading 1.13.2 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.3
+  ectd:
+    - 1.13.3
+  title:
+    en: Annual report — summary of safety information
+    ar: Annual report — summary of safety information
+  status: in-force
+  acceptance: FDA heading 1.13.3 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.4
+  ectd:
+    - 1.13.4
+  title:
+    en: Annual report — summary of labeling changes
+    ar: Annual report — summary of labeling changes
+  status: in-force
+  acceptance: FDA heading 1.13.4 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.5
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.5
+  ectd:
+    - 1.13.5
+  title:
+    en: Annual report — summary of manufacturing changes
+    ar: Annual report — summary of manufacturing changes
+  status: in-force
+  acceptance: FDA heading 1.13.5 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.6
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.6
+  ectd:
+    - 1.13.6
+  title:
+    en: Annual report — summary of microbiological changes
+    ar: Annual report — summary of microbiological changes
+  status: in-force
+  acceptance: FDA heading 1.13.6 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.7
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.7
+  ectd:
+    - 1.13.7
+  title:
+    en: Annual report — summary of other significant new information
+    ar: Annual report — summary of other significant new information
+  status: in-force
+  acceptance: FDA heading 1.13.7 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.8
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.8
+  ectd:
+    - 1.13.8
+  title:
+    en: Annual report — individual study information
+    ar: Annual report — individual study information
+  status: in-force
+  acceptance: FDA heading 1.13.8 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.9
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.9
+  ectd:
+    - 1.13.9
+  title:
+    en: Annual report — general investigational plan
+    ar: Annual report — general investigational plan
+  status: in-force
+  acceptance: FDA heading 1.13.9 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.10
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.10
+  ectd:
+    - 1.13.10
+  title:
+    en: Annual report — foreign marketing
+    ar: Annual report — foreign marketing
+  status: in-force
+  acceptance: FDA heading 1.13.10 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.11
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.11
+  ectd:
+    - 1.13.11
+  title:
+    en: Annual report — distribution data
+    ar: Annual report — distribution data
+  status: in-force
+  acceptance: FDA heading 1.13.11 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.12
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.12
+  ectd:
+    - 1.13.12
+  title:
+    en: Annual report — status of postmarketing study commitments and requirements
+    ar: Annual report — status of postmarketing study commitments and requirements
+  status: in-force
+  acceptance: FDA heading 1.13.12 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.13
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.13
+  ectd:
+    - 1.13.13
+  title:
+    en: Annual report — status of other postmarketing studies and requirements
+    ar: Annual report — status of other postmarketing studies and requirements
+  status: in-force
+  acceptance: FDA heading 1.13.13 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.14
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.14
+  ectd:
+    - 1.13.14
+  title:
+    en: Annual report — log of outstanding regulatory business
+    ar: Annual report — log of outstanding regulatory business
+  status: in-force
+  acceptance: FDA heading 1.13.14 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.13.15
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.13 Annual report (US FDA)
+  ctd: 1.13.15
+  ectd:
+    - 1.13.15
+  title:
+    en: Annual report — development safety update report (DSUR)
+    ar: Annual report — development safety update report (DSUR)
+  status: in-force
+  acceptance: FDA heading 1.13.15 under 1.13 Annual report.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.1.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.1.1
+  ectd:
+    - 1.14.1.1
+  title:
+    en: Draft carton and container labels
+    ar: مسودة ملصقات العلبة والعبوة
+  status: in-force
+  acceptance: FDA heading 1.14.1.1 under 1.14 Labeling.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.1.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.1.2
+  ectd:
+    - 1.14.1.2
+  title:
+    en: Annotated draft labeling text
+    ar: مسودة نص الملصق مع الشرح
+  status: in-force
+  acceptance: FDA heading 1.14.1.2 under 1.14 Labeling.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.1.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.1.3
+  ectd:
+    - 1.14.1.3
+  title:
+    en: Draft labeling text
+    ar: مسودة نص الملصق
+  status: in-force
+  acceptance: FDA heading 1.14.1.3 under 1.14 Labeling.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  kinds:
+    - smpc
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.1.4
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.1.4
+  ectd:
+    - 1.14.1.4
+  title:
+    en: Label comprehension studies
+    ar: Label comprehension studies
+  status: in-force
+  acceptance: FDA heading 1.14.1.4 under 1.14 Labeling.
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.1.5
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.1.5
+  ectd:
+    - 1.14.1.5
+  title:
+    en: Labeling history
+    ar: Labeling history
+  status: in-force
+  acceptance: FDA heading 1.14.1.5 under 1.14 Labeling.
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.2.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.2.1
+  ectd:
+    - 1.14.2.1
+  title:
+    en: Final carton or container labels
+    ar: Final carton or container labels
+  status: in-force
+  acceptance: FDA heading 1.14.2.1 under 1.14 Labeling.
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.2.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.2.2
+  ectd:
+    - 1.14.2.2
+  title:
+    en: Final package insert (package inserts, patient information, medication guides)
+    ar: Final package insert (package inserts, patient information, medication guides)
+  status: in-force
+  acceptance: FDA heading 1.14.2.2 under 1.14 Labeling.
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.2.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.2.3
+  ectd:
+    - 1.14.2.3
+  title:
+    en: Final labeling text
+    ar: Final labeling text
+  status: in-force
+  acceptance: FDA heading 1.14.2.3 under 1.14 Labeling.
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.3.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.3.1
+  ectd:
+    - 1.14.3.1
+  title:
+    en: Annotated comparison with listed drug
+    ar: المقارنة المشروحة مع المستحضر المرجعي
+  status: in-force
+  acceptance: FDA heading 1.14.3.1 under 1.14 Labeling.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application in ('anda', 'nda_b2')
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.3.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.3.2
+  ectd:
+    - 1.14.3.2
+  title:
+    en: Approved labeling text for listed drug
+    ar: Approved labeling text for listed drug
+  status: in-force
+  acceptance: FDA heading 1.14.3.2 under 1.14 Labeling.
+  applies: us_application in ('anda', 'nda_b2')
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.3.3
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.3.3
+  ectd:
+    - 1.14.3.3
+  title:
+    en: Labeling text for reference listed drug
+    ar: نص ملصق المستحضر المرجعي (RLD)
+  status: in-force
+  acceptance: FDA heading 1.14.3.3 under 1.14 Labeling.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application in ('anda', 'nda_b2')
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.4.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.4.1
+  ectd:
+    - 1.14.4.1
+  title:
+    en: Investigational brochure
+    ar: كتيّب الباحث
+  status: in-force
+  acceptance: FDA heading 1.14.4.1 under 1.14 Labeling.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application == 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.4.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.4.2
+  ectd:
+    - 1.14.4.2
+  title:
+    en: Investigational drug labeling
+    ar: Investigational drug labeling
+  status: in-force
+  acceptance: FDA heading 1.14.4.2 under 1.14 Labeling.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application == 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.5
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.5
+  ectd:
+    - 1.14.5
+  title:
+    en: Foreign labeling
+    ar: Foreign labeling
+  status: in-force
+  acceptance: FDA heading 1.14.5 under 1.14 Labeling.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.14.6
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.14 Labeling (US FDA)
+  ctd: 1.14.6
+  ectd:
+    - 1.14.6
+  title:
+    en: Product labeling for 2253 submissions
+    ar: Product labeling for 2253 submissions
+  status: in-force
+  acceptance: FDA heading 1.14.6 under 1.14 Labeling.
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.15.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.15 Promotional material (US FDA)
+  ctd: 1.15.1
+  ectd:
+    - 1.15.1
+  title:
+    en: Promotional material — correspondence relating to promotional materials
+    ar: Promotional material — correspondence relating to promotional materials
+  status: in-force
+  acceptance: FDA heading 1.15.1 under 1.15 Promotional material.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.15.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.15 Promotional material (US FDA)
+  ctd: 1.15.2
+  ectd:
+    - 1.15.2
+  title:
+    en: Promotional material — materials
+    ar: Promotional material — materials
+  status: in-force
+  acceptance: FDA heading 1.15.2 under 1.15 Promotional material.
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.16.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.16 Risk management plan (US FDA)
+  ctd: 1.16.1
+  ectd:
+    - 1.16.1
+  title:
+    en: Risk management (non-REMS)
+    ar: Risk management (non-REMS)
+  status: in-force
+  acceptance: FDA heading 1.16.1 under 1.16 Risk management plan.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.16.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.16 Risk management plan (US FDA)
+  ctd: 1.16.2
+  ectd:
+    - 1.16.2
+  title:
+    en: Risk evaluation and mitigation strategy (REMS)
+    ar: استراتيجية تقييم وتخفيف المخاطر (REMS)
+  status: in-force
+  acceptance: FDA heading 1.16.2 under 1.16 Risk management plan.
+  applies: us_application != 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.17.1
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.17 Postmarketing studies (US FDA)
+  ctd: 1.17.1
+  ectd:
+    - 1.17.1
+  title:
+    en: Correspondence regarding postmarketing commitments
+    ar: Correspondence regarding postmarketing commitments
+  status: in-force
+  acceptance: FDA heading 1.17.1 under 1.17 Postmarketing studies.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.17.2
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.17 Postmarketing studies (US FDA)
+  ctd: 1.17.2
+  ectd:
+    - 1.17.2
+  title:
+    en: Correspondence regarding postmarketing requirements
+    ar: Correspondence regarding postmarketing requirements
+  status: in-force
+  acceptance: FDA heading 1.17.2 under 1.17 Postmarketing studies.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.18
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.18 Proprietary names (US FDA)
+  ctd: '1.18'
+  ectd:
+    - '1.18'
+  title:
+    en: Proprietary names
+    ar: الأسماء التجارية
+  status: in-force
+  acceptance: FDA heading 1.18 under 1.18 Proprietary names.
+  applies: us_application != 'ind'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.19
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.19 Pre-EUA and EUA (US FDA)
+  ctd: '1.19'
+  ectd:
+    - '1.19'
+  title:
+    en: Pre-EUA and EUA
+    ar: Pre-EUA and EUA
+  status: in-force
+  acceptance: FDA heading 1.19 under 1.19 Pre-EUA and EUA.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-1.20
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 1
+  group: MODULE 1 — 1.20 General investigational plan for initial IND (US FDA)
+  ctd: '1.20'
+  ectd:
+    - '1.20'
+  title:
+    en: General investigational plan for initial IND
+    ar: الخطة البحثية العامة لأول IND
+  status: in-force
+  acceptance: FDA heading 1.20 under 1.20 General investigational plan for initial IND.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: us_application == 'ind'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-3.2.R-EBR
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.R
+  ectd:
+    - 3.2.R
+  title:
+    en: Executed batch records
+    ar: سجلات التشغيلات المنفذة
+  status: in-force
+  acceptance: The executed batch records of the batches the application relies on.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  kinds:
+    - bmr
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+      at: §3.2.R (the examples marked «USA only»)
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-3.2.R-MVP
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.R
+  ectd:
+    - 3.2.R
+  title:
+    en: Method validation package
+    ar: حزمة التحقق من صحة الطرق
+  status: in-force
+  acceptance: The method validation package.
+  note:
+    en: >-
+      Which headings an application needs is set by FDA's own forms and filing checklists, not by the table of headings: the level here
+      marks the usual case — confirm it.
+    ar: 'العناوين المطلوبة لكل طلب بتحددها نماذج FDA وقوائم الفحص بتاعتها مش جدول العناوين: المستوى هنا للحالة المعتادة — راجعه.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+      at: §3.2.R (the examples marked «USA only»)
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force
+- id: US-FDA/US-3.2.R-CP
+  kind: requirement
+  authority: US-FDA
+  set: us-fda-m1
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.R
+  ectd:
+    - 3.2.R
+  title:
+    en: Comparability protocols
+    ar: بروتوكولات المقارنة
+  status: in-force
+  acceptance: Comparability protocols for planned post-approval changes.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: ich-m4q-r1
+      at: §3.2.R (the examples marked «USA only»)
+    - src: fda-comprehensive-toc-v233
+  ectd_cite:
+    - src: fda-comprehensive-toc-v233
+      status: in-force

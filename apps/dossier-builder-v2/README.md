@@ -11,7 +11,15 @@
 
 | # | الجزء | الحالة |
 |---|---|---|
-| — | (مستنيين الخطة) | — |
+| 1a | المعرفة في الكود: كل الهيئات، وكل سجل مربوط بمصدره (`knowledge/`) | اتعمل واتجرّب |
+| 1b | المكتبة: تصفّح وبحث بالعربي والإنجليزي، في المتصفح وعلى الكمبيوتر | جاري |
+| 1c | مراجعة كل سجل على مصدره الرسمي (النص، والإصدار الأحدث) | بعده |
+
+```
+npm install        # once
+npm run build      # checks every record and writes dist/knowledge.json
+npm test           # the knowledge tests
+```
 
 ---
 
@@ -23,3 +31,10 @@ The new workspace. The old program stays as it is in `apps/dossier-builder/`, un
 - **One part at a time**, following the owner's plan.
 - Each part is built and tested. The next part starts only after the current one is confirmed working.
 - Nothing is carried over from the old program unless the plan asks for it.
+
+## Parts
+| # | Part | State |
+|---|---|---|
+| 1a | Knowledge in code: every authority, every record tied to its source (`knowledge/`) | built and tested |
+| 1b | The library: browse and search in Arabic and English, in the browser and on the desktop | in progress |
+| 1c | Review every record against its official source (the text, and the latest version) | next |

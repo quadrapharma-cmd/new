@@ -1,0 +1,191 @@
+# The sets of knowledge records and where each lives (made by tools/port-v1.mjs, kept up to date by hand).
+- id: eg-eda-ctd
+  kind: requirements
+  authority: EG-EDA
+  title:
+    en: EDA CTD dossier requirements — NP.CAPP.065 v5 (in force)
+    ar: متطلبات ملف CTD لهيئة الدواء المصرية — NP.CAPP.065 الإصدار 5 (سارٍ)
+  status: in-force
+  file: requirements/eg-eda.yaml
+  columns:
+    I:
+      en: Imported innovator
+      ar: مبتكر مستورد
+    G_IMP:
+      en: Imported generic
+      ar: مثيل مستورد
+    G_LOC:
+      en: Local generic
+      ar: مثيل محلي
+  valid_from: '2025-11-01'
+  count: 101
+  cite:
+    - src: eda-np-capp-065-v5
+    - src: eda-ctd-qm-v2
+    - src: eda-gl-capp-039-v1
+    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
+- id: ich-m4-ctd
+  kind: requirements
+  authority: ICH
+  title:
+    en: ICH Common Technical Document — Modules 2 to 5 (the same for every authority)
+    ar: الملف الفني المشترك (ICH CTD) — الموديولات من ٢ إلى ٥ (واحدة لكل الهيئات)
+  status: in-force
+  file: requirements/ich-m4.yaml
+  columns:
+    I:
+      en: New active substance / innovator
+      ar: مادة فعالة جديدة / مبتكر
+    G_IMP:
+      en: Generic — imported into the country
+      ar: مثيل — مستورد للدولة
+    G_LOC:
+      en: Generic — made in the country
+      ar: مثيل — مصنّع في الدولة
+  valid_from: '2016-06-15'
+  count: 57
+  cite:
+    - src: ich-m4-r4
+    - src: ich-m4q-r1
+    - src: ich-m4s-r2
+    - src: ich-m4e-r2
+- id: eu-m1
+  kind: requirements
+  authority: EU
+  title:
+    en: EU CTD dossier — EU Module 1 (eCTD specification v3.1.1)
+    ar: ملف CTD للاتحاد الأوروبي — موديول ١ الأوروبي (مواصفة 3.1.1)
+  status: in-force
+  file: requirements/eu.yaml
+  columns:
+    I:
+      en: New active substance
+      ar: مادة فعالة جديدة
+    G_IMP:
+      en: Generic / abridged — made outside the EEA
+      ar: مثيل — مصنّع خارج المنطقة
+    G_LOC:
+      en: Generic / abridged — made in the EEA
+      ar: مثيل — مصنّع داخل المنطقة
+  valid_from: '2025-06-01'
+  count: 30
+  cite:
+    - src: eu-m1-spec-v311
+    - src: eu-nta-vol2b
+- id: gcc-m1
+  kind: requirements
+  authority: GCC
+  title:
+    en: GCC CTD dossier — GCC Module 1 (specification v1.5) with the SFDA data requirements v4.0
+    ar: ملف CTD لدول الخليج — موديول ١ الخليجي (مواصفة 1.5) مع متطلبات SFDA الإصدار 4.0
+  status: in-force
+  file: requirements/gcc.yaml
+  columns:
+    I:
+      en: New chemical entity / biological
+      ar: مادة جديدة / بيولوجي
+    G_IMP:
+      en: Generic — imported
+      ar: مثيل — مستورد
+    G_LOC:
+      en: Generic — made in the country
+      ar: مثيل — مصنّع في الدولة
+  valid_from: '2025-08-03'
+  count: 31
+  cite:
+    - src: gcc-m1-spec-v15
+    - src: sfda-data-requirements-v4
+- id: us-fda-m1
+  kind: requirements
+  authority: US-FDA
+  title:
+    en: US CTD dossier — FDA Module 1 (table of contents headings v2.3.3)
+    ar: ملف CTD للولايات المتحدة — موديول ١ لـ FDA (جدول العناوين 2.3.3)
+  status: in-force
+  file: requirements/us-fda.yaml
+  columns:
+    I:
+      en: New drug / biological
+      ar: دواء جديد / بيولوجي
+    G_IMP:
+      en: Generic (ANDA) — made outside the US
+      ar: مثيل (ANDA) — مصنّع خارج أمريكا
+    G_LOC:
+      en: Generic (ANDA) — made in the US
+      ar: مثيل (ANDA) — مصنّع في أمريكا
+  valid_from: '2020-11-09'
+  count: 111
+  cite:
+    - src: fda-comprehensive-toc-v233
+- id: intl-m1
+  kind: requirements
+  authority: OTHER
+  title:
+    en: CTD dossier for any other country — general Module 1
+    ar: ملف CTD لأي دولة تانية — موديول ١ عام
+  status: general
+  file: requirements/intl.yaml
+  columns:
+    I:
+      en: New active substance
+      ar: مادة فعالة جديدة
+    G_IMP:
+      en: Generic — imported into the country
+      ar: مثيل — مستورد للدولة
+    G_LOC:
+      en: Generic — made in the country
+      ar: مثيل — مصنّع في الدولة
+  valid_from: null
+  count: 19
+  cite:
+    - src: general-practice
+- id: eg-eda-review
+  kind: rules
+  authority: EG-EDA
+  title:
+    en: Assessor knowledge pack — EDA departments plus the international layer
+    ar: حزمة معرفة المُقيِّم — إدارات هيئة الدواء المصرية + الطبقة الدولية
+  status: provisional
+  file: review/eg-eda.yaml
+  count: 226
+  cite:
+    - src: eda-np-capp-065-v5
+    - src: eda-np-capp-040-v1
+    - src: eda-gl-cadc-002-v2
+    - src: eda-np-capp-090-v2
+    - src: eda-gl-capp-024-v4
+    - src: eda-gl-capp-039-v1
+    - src: eda-ctd-qm-v2
+    - src: eda-submission-procedures
+    - src: who-pq-screening
+    - src: who-trs986-annex6
+    - src: ich-m4q-r1
+    - src: who-trs992-annex9
+    - src: who-trs1033-annex10
+- id: eg-eda-variations
+  kind: variations
+  authority: EG-EDA
+  title:
+    en: EDA human variations — classes, conditions, requirements
+    ar: تغييرات المستحضرات البشرية — التصنيف والشروط والمتطلبات
+  status: in-force
+  file: variations/eg-eda.yaml
+  count: 90
+  cite:
+    - src: eda-gl-capp-026-v6
+    - src: eda-variation-tool
+    - src: eda-np-capp-112-v1
+    - src: eda-ectd-technical-guidance-draft-v1
+      at: Annex 6
+- id: eg-eda-doctypes
+  kind: doctypes
+  authority: EG-EDA
+  title:
+    en: Document types and validity rules
+    ar: أنواع المستندات وقواعد صلاحيتها
+  status: in-force
+  file: documents/eg-eda-validity.yaml
+  count: 21
+  cite:
+    - src: eda-np-capp-065-v5

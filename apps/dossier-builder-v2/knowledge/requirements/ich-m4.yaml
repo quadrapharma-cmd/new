@@ -1,0 +1,2185 @@
+# ICH Common Technical Document — Modules 2 to 5 (the same for every authority)
+# الملف الفني المشترك (ICH CTD) — الموديولات من ٢ إلى ٥ (واحدة لكل الهيئات)
+# Ported from the old program (rulepacks/ich.ctd.m4.v1); edit here from now on.
+- id: ICH/M2-TOC
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 2
+  group: MODULE 2 — CTD summaries
+  ctd: '2.1'
+  ectd: []
+  title:
+    en: Table of contents of Modules 2 to 5
+    ar: فهرس الموديولات من ٢ إلى ٥
+  status: in-force
+  acceptance: Lists every document of Modules 2 to 5 with its location.
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4-r4
+    - src: ich-m4q-r1
+    - src: ich-m4s-r2
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-ectd-v322
+      at: the XML backbone is the table of contents, so no document goes into an eCTD for it (a CTD-folder item only)
+      status: in-force
+- id: ICH/M2-INTRO
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 2
+  group: MODULE 2 — CTD summaries
+  ctd: '2.2'
+  ectd:
+    - '2.2'
+  title:
+    en: Introduction
+    ar: المقدمة
+  status: in-force
+  acceptance: Pharmacological class, mode of action and proposed clinical use of the product; about one page.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4-r4
+    - src: ich-m4q-r1
+    - src: ich-m4s-r2
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: Appendix 4 (the same number as the CTD section)
+      status: in-force
+- id: ICH/M2-02
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 2
+  group: MODULE 2 — CTD summaries
+  ctd: '2.3'
+  ectd:
+    - '2.3'
+  title:
+    en: Quality Overall Summary (QOS)
+    ar: ملخص الجودة الشامل
+  status: in-force
+  acceptance: >-
+    Follows the scope and outline of Module 3 (2.3.S, 2.3.P, 2.3.A, 2.3.R) and reflects the information given there; no data that is not in
+    Module 3.
+  note: One QOS per ASMF (applicant part) with front page version/date
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Built from M3 data (spec tables, batch, stability, composition) — narrative reviewed by company.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4-r4
+    - src: ich-m4q-r1
+    - src: ich-m4s-r2
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M2-NCO
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 2
+  group: MODULE 2 — CTD summaries
+  ctd: '2.4'
+  ectd:
+    - '2.4'
+  title:
+    en: Non-clinical overview
+    ar: النظرة العامة غير الإكلينيكية
+  status: in-force
+  acceptance: >-
+    Integrated, critical assessment of the pharmacological, pharmacokinetic and toxicological evaluation. For a generic: usually a
+    literature-based overview, where the authority asks for one.
+  note:
+    en: >-
+      Which Module 2 sections a generic needs differs between authorities: the level here is the general practice — confirm it with the
+      authority.
+    ar: 'أقسام موديول ٢ المطلوبة من المثيل بتختلف من هيئة للتانية: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: ich-m4-r4
+    - src: ich-m4q-r1
+    - src: ich-m4s-r2
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: Appendix 4 (the same number as the CTD section)
+      status: in-force
+- id: ICH/M2-CO
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 2
+  group: MODULE 2 — CTD summaries
+  ctd: '2.5'
+  ectd:
+    - '2.5'
+  title:
+    en: Clinical overview
+    ar: النظرة العامة الإكلينيكية
+  status: in-force
+  acceptance: >-
+    Critical analysis of the clinical data (2.5.1–2.5.7). For a generic: the summary and discussion of the comparative bioavailability /
+    bioequivalence study goes under 2.5.2 Overview of Biopharmaceutics.
+  note:
+    en: >-
+      Which Module 2 sections a generic needs differs between authorities: the level here is the general practice — confirm it with the
+      authority.
+    ar: 'أقسام موديول ٢ المطلوبة من المثيل بتختلف من هيئة للتانية: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4-r4
+    - src: ich-m4q-r1
+    - src: ich-m4s-r2
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: Appendix 4 (the same number as the CTD section)
+      status: in-force
+- id: ICH/M2-NCS
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 2
+  group: MODULE 2 — CTD summaries
+  ctd: '2.6'
+  ectd:
+    - '2.6'
+  title:
+    en: Non-clinical written and tabulated summaries
+    ar: الملخصات غير الإكلينيكية المكتوبة والجدولية
+  status: in-force
+  acceptance: 'Pharmacology, pharmacokinetics and toxicology: written summaries with their tabulated summaries (2.6.1–2.6.7).'
+  note:
+    en: >-
+      Which Module 2 sections a generic needs differs between authorities: the level here is the general practice — confirm it with the
+      authority.
+    ar: 'أقسام موديول ٢ المطلوبة من المثيل بتختلف من هيئة للتانية: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  cite:
+    - src: ich-m4-r4
+    - src: ich-m4q-r1
+    - src: ich-m4s-r2
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: Appendix 4 (the same number as the CTD section)
+      status: in-force
+- id: ICH/M2-CS
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 2
+  group: MODULE 2 — CTD summaries
+  ctd: '2.7'
+  ectd:
+    - '2.7'
+  title:
+    en: Clinical summary
+    ar: الملخص الإكلينيكي
+  status: in-force
+  acceptance: >-
+    Biopharmaceutics, clinical pharmacology, efficacy, safety, literature references and synopses of the studies (2.7.1–2.7.6). For a
+    generic: 2.7.1 where the authority asks for the bioequivalence summary there.
+  note:
+    en: >-
+      Which Module 2 sections a generic needs differs between authorities: the level here is the general practice — confirm it with the
+      authority.
+    ar: 'أقسام موديول ٢ المطلوبة من المثيل بتختلف من هيئة للتانية: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: ich-m4-r4
+    - src: ich-m4q-r1
+    - src: ich-m4s-r2
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: Appendix 4 (the same number as the CTD section)
+      status: in-force
+- id: ICH/M3-TOC
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: '3.1'
+  ectd: []
+  title:
+    en: Table of contents of Module 3
+    ar: فهرس الموديول ٣
+  status: in-force
+  acceptance: Lists every document of Module 3 with its location. Not a document of its own in an eCTD (the backbone is the table of contents).
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-ectd-v322
+      at: the XML backbone is the table of contents, so no document goes into an eCTD for it (a CTD-folder item only)
+      status: in-force
+- id: ICH/S-01
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.1.1
+  ectd:
+    - 3.2.S.1.1
+  title:
+    en: Nomenclature
+    ar: التسمية
+  status: in-force
+  acceptance: INN, compendial, chemical & IUPAC name, company code, USAN/BAN, correct CAS no.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: API identity data.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-02
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.1.2
+  ectd:
+    - 3.2.S.1.2
+  title:
+    en: Structure
+    ar: التركيب الكيميائي
+  status: in-force
+  acceptance: Structure showing chiral centres; molecular formula; relative molecular mass incl. hydrate.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Structure file + formula + MW.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-03
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.1.3
+  ectd:
+    - 3.2.S.1.3
+  title:
+    en: General properties
+    ar: الخصائص العامة
+  status: in-force
+  acceptance: >-
+    Solubility pH 1.2–6.8 (37 °C) & organic solvents; PSD & polymorphism for low-solubility API; hygroscopicity. With CEP: only properties
+    not controlled by CEP/monograph.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Measured data from company/supplier.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-04
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.2.1
+  ectd:
+    - 3.2.S.2.1
+  title:
+    en: Manufacturer(s)
+    ar: المصنّعون
+  status: in-force
+  acceptance: Name, address, responsibility of every site incl. contractors & testing.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: APIs sheet.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-05
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.2.2–2.6
+  ectd:
+    - 3.2.S.2.2
+    - 3.2.S.2.3
+    - 3.2.S.2.4
+    - 3.2.S.2.5
+    - 3.2.S.2.6
+  title:
+    en: Manufacture (process, materials, critical steps, validation, development)
+    ar: التصنيع
+  status: in-force
+  acceptance: >-
+    Flow diagram with all steps & CPPs; starting-material details & specs; sterile API: process validation. (From DMF AP/RP or CEP — not
+    required for CEP route).
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: No — re-obtain
+    needs: DMF holder's documents (applicant's part); tool places & indexes.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  item_cases:
+    - when: option == 'CEP'
+      level: NR
+      reason:
+        en: Covered by the CEP (manufacture is assessed by EDQM).
+        ar: مغطى بشهادة الـ CEP (التصنيع مُقيَّم من EDQM).
+      cite:
+        - src: program-assumption
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-06
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.3.1
+  ectd:
+    - 3.2.S.3.1
+  title:
+    en: Elucidation of structure
+    ar: إثبات التركيب
+  status: in-force
+  acceptance: 'All essential techniques; legible spectra; interpretation table; enumerated & zoomed NMR. CEP: polymorph & PSD studies.'
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Spectra & data; tool builds interpretation tables.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-07
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.3.2
+  ectd:
+    - 3.2.S.3.2
+  title:
+    en: Impurities
+    ar: الشوائب
+  status: in-force
+  acceptance: >-
+    Potential impurities; compendial specified impurities justified; ICH Q3A limits; carry-over; Q3D & M7 risk assessment; residual solvents
+    RA incl. benzene; nitrosamine RA.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Impurity list, origin, limits, RA reports (company/supplier).
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  item_cases:
+    - when: option == 'CEP'
+      level: NR
+      reason:
+        en: Impurity profile covered by the CEP; add only impurities not controlled by it under S.4.1.
+        ar: الشوائب مغطاة بالـ CEP؛ أضف فقط ما لا تضبطه الشهادة في S.4.1.
+      cite:
+        - src: program-assumption
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-08
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.4.1
+  ectd:
+    - 3.2.S.4.1
+  title:
+    en: Specification (FPP manufacturer's)
+    ar: المواصفات
+  status: in-force
+  acceptance: >-
+    Universal tests (description, ID, assay, impurities); reference column with general-chapter numbers; ID not by single RT; CEP route: all
+    CEP + monograph tests + extra (PSD, polymorph).
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Spec table data (test, limit, method ref, chapter).
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-09
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.4.2–4.3
+  ectd:
+    - 3.2.S.4.2
+    - 3.2.S.4.3
+  title:
+    en: Analytical procedures & validation
+    ar: الطرق والتحقق
+  status: in-force
+  acceptance: Procedure for every test; validation for in-house; verification for compendial; chromatograms (specificity, forced degradation, SST).
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Methods & validation raw data/reports; tool builds 3.2.R.2 summary tables.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-10
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.4.4
+  ectd:
+    - 3.2.S.4.4
+  title:
+    en: Batch analyses
+    ar: تحليل التشغيلات
+  status: in-force
+  acceptance: '≥2 recent batches (CEP route: 2 pilot-scale) with no., size, date, type, site; numeric results; consistent with S.4.1.'
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Batches sheet + numeric results per test.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-11
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.4.5
+  ectd:
+    - 3.2.S.4.5
+  title:
+    en: Justification of specification
+    ar: تبرير المواصفات
+  status: in-force
+  acceptance: Justify impurity & solvent limits and non-routine tests.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Rationale inputs per test.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-12
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.5
+  ectd:
+    - 3.2.S.5
+  title:
+    en: Reference standards
+    ar: المواد المرجعية
+  status: in-force
+  acceptance: Primary RS source & lot; working standard CoA; concomitant IR primary vs secondary; impurity standards.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: RS CoAs & IR spectra.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-13
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.6
+  ectd:
+    - 3.2.S.6
+  title:
+    en: Container closure (API)
+    ar: عبوة المادة الفعالة
+  status: in-force
+  acceptance: 'Description & specs; IR of reference vs test material; suitability; packaging CoA. CEP: exempt if CEP specifies & same used.'
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Supplier specs, CoA, IR.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/S-14
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — Quality · 3.2.S Drug substance (per active substance and per its manufacturer)
+  ctd: 3.2.S.7
+  ectd:
+    - 3.2.S.7
+  title:
+    en: Stability (summary, protocol & commitment, data)
+    ar: الثبات
+  status: in-force
+  acceptance: >-
+    Conditions & conclusion; protocol data (batch type/size, container, start date, period); results summary; signed commitment letters;
+    ongoing batches; forced degradation with chromatograms. CEP: exempt if CEP retest period ≥ proposed & conditions ≥.
+  note: Per API manufacturer; CEP/DMF variants in acceptance criteria
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Stability raw data; tool builds summary tables & commitment letter.
+  per:
+    over: apis
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-01
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.1
+  ectd:
+    - 3.2.P.1
+  title:
+    en: Description & composition
+    ar: الوصف والتركيب
+  status: in-force
+  acceptance: >-
+    API standard consistent with S-part; excipient grades; salt equivalence; potency note; overage; removed ingredients noted; shell/coating
+    composition; identical to CPP & approvals.
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Composition data.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-02
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.2
+  ectd:
+    - 3.2.P.2
+  title:
+    en: Pharmaceutical development
+    ar: التطوير الصيدلي
+  status: in-force
+  acceptance: >-
+    Reference product named; QTPP, CQAs, CPPs; compatibility if excipients differ from reference; formulation comparison; overage justified
+    step by step; sterilisation choice; compatibility with diluent/device; multipoint dissolution in 3 BCS media.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Development data & study reports; tool builds comparison & batch tables.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-03
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.3.1
+  ectd:
+    - 3.2.P.3.1
+  title:
+    en: Manufacturer(s)
+    ar: المصنعون
+  status: in-force
+  acceptance: 'Responsibility of each site; imported: same sites as CPP.'
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Parties sheet.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-04
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.3.2
+  ectd:
+    - 3.2.P.3.2
+  title:
+    en: Batch formula
+    ar: تركيبة التشغيلة
+  status: in-force
+  acceptance: Every commercial batch size; overage/overfill; potency calculation.
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Batch sizes + unit formula.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-05
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.3.3
+  ectd:
+    - 3.2.P.3.3
+  title:
+    en: Manufacturing process & controls
+    ar: خطوات التصنيع
+  status: in-force
+  acceptance: >-
+    Flow diagram with all steps & CPPs; narrative incl. packaging; equipment type & capacity; parameter ranges; hold times with supporting
+    stability; transfer precautions.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Master BMR content; tool drafts flow diagram & narrative tables.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-06
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.3.4
+  ectd:
+    - 3.2.P.3.4
+  title:
+    en: Controls of critical steps
+    ar: ضبط الخطوات الحرجة
+  status: in-force
+  acceptance: CPPs discussed; IPC tests & limits with justification.
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: IPC table.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-07
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.3.5
+  ectd:
+    - 3.2.P.3.5
+  title:
+    en: Process validation
+    ar: التحقق من العملية
+  status: in-force
+  acceptance: 3 batches (if applicable) for all batch sizes, or protocol; each API source in ≥1 batch.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Validation protocol/report from company.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-08
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.4
+  ectd:
+    - 3.2.P.4
+  title:
+    en: Control of excipients (+ 4.5 human/animal origin, 4.6 novel)
+    ar: ضبط السواغات
+  status: in-force
+  acceptance: In-house excipient specs; TSE/BSE certificates for animal/human origin.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Specs (tool) + TSE certificates (supplier).
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-09
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.5.1
+  ectd:
+    - 3.2.P.5.1
+  title:
+    en: Specification(s)
+    ar: مواصفات المنتج
+  status: in-force
+  acceptance: Universal tests; general-chapter reference column; ID not single RT; dissolution Q stated; release & shelf-life limits.
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Spec table data.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-10
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.5.2–5.3
+  ectd:
+    - 3.2.P.5.2
+    - 3.2.P.5.3
+  title:
+    en: Analytical procedures & validation
+    ar: الطرق والتحقق
+  status: in-force
+  acceptance: In-house methods + validation + chromatograms; compendial verification.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Method & validation reports.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-11
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.5.4
+  ectd:
+    - 3.2.P.5.4
+  title:
+    en: Batch analyses
+    ar: تحليل التشغيلات
+  status: in-force
+  acceptance: ≥2 batches; size, strength, no., date, site, type; numeric results (not 'conform'); recent; consistent with P.5.1.
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Batches sheet + numeric results.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-12
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.5.5
+  ectd:
+    - 3.2.P.5.5
+  title:
+    en: Characterisation of impurities
+    ar: توصيف الشوائب
+  status: in-force
+  acceptance: Degradation & synthetic impurities (source, structure, limit); Q3D RA; nitrosamine RA.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: RA reports & impurity data.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-13
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.5.6
+  ectd:
+    - 3.2.P.5.6
+  title:
+    en: Justification of specification(s)
+    ar: تبرير المواصفات
+  status: in-force
+  acceptance: Justify impurity limits & non-routine tests.
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Rationale inputs.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-14
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.6
+  ectd:
+    - 3.2.P.6
+  title:
+    en: Reference standards
+    ar: المواد المرجعية
+  status: in-force
+  acceptance: Primary RS lot; working RS CoA; primary lot used for standardisation; concomitant IR.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: RS CoAs & IR.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-15
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.7
+  ectd:
+    - 3.2.P.7
+  title:
+    en: Container closure
+    ar: العبوة
+  status: in-force
+  acceptance: Description & specs per component; IR reference vs test; suitability; CoA.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Supplier specs & CoA & IR.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/P-16
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.P Drug product
+  ctd: 3.2.P.8
+  ectd:
+    - 3.2.P.8
+  title:
+    en: Stability (summary, protocol & commitment, data)
+    ar: الثبات
+  status: in-force
+  acceptance: >-
+    Summary & storage conclusion; complete protocol data; photostability; in-use stability; signed commitment letters; up-to-date data;
+    ongoing batches.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Stability raw data; tool builds tables, conclusions & commitment letters.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/A-01
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.A.1
+  ectd:
+    - 3.2.A.1
+  title:
+    en: Facilities & equipment
+    ar: المنشآت والمعدات
+  status: in-force
+  note: 'Guideline v2: ''Not Applicable'' for these files'
+  applies: 'true'
+  doc_class: generated
+  produced_by: Company
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Statement.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/A-02
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.A.2
+  ectd:
+    - 3.2.A.2
+  title:
+    en: Adventitious agents safety evaluation
+    ar: تقييم العوامل العارضة
+  status: in-force
+  acceptance: Risk assessment; certificates.
+  note: Where materials of biological origin
+  applies: biological_origin_materials
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Certificates from suppliers.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/A-03
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.A.3
+  ectd:
+    - 3.2.A.3
+  title:
+    en: Excipients (novel / non-compendial, large data)
+    ar: السواغات الجديدة
+  status: in-force
+  note: Only one novel excipient fits in 3.2.A.3 in eCTD v3.2.2
+  applies: novel_excipient
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: Partly
+    needs: Supplier data.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/R-04
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: '3.3'
+  ectd:
+    - '3.3'
+  title:
+    en: Literature references (one file per reference)
+    ar: المراجع العلمية
+  status: in-force
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Source articles; tool splits one file per reference.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4q-r1
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M4-TOC
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 4
+  group: MODULE 4 — Non-clinical study reports
+  ctd: '4.1'
+  ectd: []
+  title:
+    en: Table of contents of Module 4
+    ar: فهرس الموديول ٤
+  status: in-force
+  acceptance: Lists every non-clinical study report with its location.
+  note:
+    en: >-
+      Which Module 2 sections a generic needs differs between authorities: the level here is the general practice — confirm it with the
+      authority.
+    ar: 'أقسام موديول ٢ المطلوبة من المثيل بتختلف من هيئة للتانية: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  cite:
+    - src: ich-m4s-r2
+  ectd_cite:
+    - src: ich-ectd-v322
+      at: the XML backbone is the table of contents, so no document goes into an eCTD for it (a CTD-folder item only)
+      status: in-force
+- id: ICH/M4-01
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 4
+  group: MODULE 4 — Non-clinical study reports
+  ctd: 4.2.x
+  ectd:
+    - '4.2'
+  title:
+    en: Non-clinical study reports (pharmacology, PK, toxicology)
+    ar: تقارير الدراسات قبل السريرية
+  status: in-force
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Study reports from sponsor; tool places with node extensions.
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  cite:
+    - src: ich-m4s-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M4-02
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 4
+  group: MODULE 4 — Non-clinical study reports
+  ctd: '4.3'
+  ectd:
+    - '4.3'
+  title:
+    en: Literature references
+    ar: المراجع
+  status: in-force
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Articles; one file per reference.
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: ich-m4s-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M5-01
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: '5.1'
+  ectd: []
+  title:
+    en: Table of contents of Module 5
+    ar: فهرس Module 5
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Generated.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-ectd-v322
+      at: no 5.1 node — the TOC is replaced by the backbone (CTD output only)
+      status: in-force
+- id: ICH/M5-02
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: '5.2'
+  ectd:
+    - '5.2'
+  title:
+    en: Tabular listing of all clinical studies
+    ar: قائمة الدراسات
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  rebuild:
+    verdict: Yes — rebuild
+    needs: Study list (incl. pilot & failed BE studies — WHO screening 12e/f).
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M5-03
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: 5.3.1.1
+  ectd:
+    - 5.3.1.1
+  title:
+    en: BA study reports
+    ar: دراسات الإتاحة الحيوية
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Study report.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: O
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: O
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M5-04
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: 5.3.1.2
+  ectd:
+    - 5.3.1.2
+  title:
+    en: Comparative BA & BE study reports
+    ar: تقرير دراسة التكافؤ الحيوي
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: The CRO's study report, under the authority's bioequivalence guideline.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: R
+          reason:
+            en: >-
+              No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API
+              and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.
+            ar: >-
+              مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز،
+              ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - when: local_equivalence
+          level: R
+          reason:
+            en: >-
+              Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical,
+              pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic
+              risk.
+            ar: >-
+              مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد،
+              أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: R
+          reason:
+            en: >-
+              No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API
+              and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.
+            ar: >-
+              مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز،
+              ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - when: local_equivalence
+          level: R
+          reason:
+            en: >-
+              Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical,
+              pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic
+              risk.
+            ar: >-
+              مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد،
+              أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M5-05
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: 5.3.1.3
+  ectd:
+    - 5.3.1.3
+  title:
+    en: IVIVC study reports
+    ar: IVIVC
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Study report.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: O
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: O
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M5-06
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: 5.3.1.4
+  ectd:
+    - 5.3.1.4
+  title:
+    en: Bioanalytical & analytical methods for human studies
+    ar: الطرق التحليلية الحيوية
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Validation reports.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M5-07
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: 5.3.2.1–2
+  ectd:
+    - 5.3.2.1
+    - 5.3.2.2
+  title:
+    en: Plasma protein binding; hepatic metabolism & interaction
+    ar: ارتباط البروتين/الأيض
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Reports/literature.
+  confirm_applicability: true
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M5-08
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: 5.3.3.1
+  ectd:
+    - 5.3.3.1
+  title:
+    en: Healthy subject PK & initial tolerability
+    ar: حرائك صحية
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Reports.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M5-09
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: 5.3.5.4
+  ectd:
+    - 5.3.5.4
+  title:
+    en: Other study reports
+    ar: تقارير أخرى
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Reports (e.g. comparative in-vitro dissolution).
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M5-10
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: 5.3.7
+  ectd:
+    - 5.3.7
+  title:
+    en: Case report forms & individual listings
+    ar: نماذج الحالات
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Indexed by study, same order as 5.3.5; no bookmarks needed.
+  required:
+    I: R
+    G_IMP:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+    G_LOC:
+      cases:
+        - when: biowaiver != ''
+          level: NR
+          reason:
+            en: 'Not required: the product is exempt from equivalence studies.'
+            ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ.'
+          cite:
+            - src: general-practice
+              at: the authority's own bioequivalence guideline decides the exemption
+            - src: ich-m4e-r2
+            - src: who-trs1003-annex6
+              at: the exemptions
+        - level: R
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M5-11
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: '5.4'
+  ectd:
+    - '5.4'
+  title:
+    en: Literature references
+    ar: المراجع
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  rebuild:
+    verdict: Partly
+    needs: Articles; one file per reference.
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: App. 4 (same number as the CTD section)
+      status: in-force
+- id: ICH/M5-12
+  kind: requirement
+  authority: ICH
+  set: ich-m4-ctd
+  module: 5
+  group: MODULE 5 — Clinical study reports
+  ctd: 5.3.2.3 · 5.3.3.2–5 · 5.3.4 · 5.3.5.1–3 · 5.3.6
+  ectd:
+    - 5.3.2.3
+    - 5.3.3.2
+    - 5.3.3.3
+    - 5.3.3.4
+    - 5.3.3.5
+    - 5.3.4
+    - 5.3.5.1
+    - 5.3.5.2
+    - 5.3.5.3
+    - 5.3.6
+  title:
+    en: Other clinical sections
+    ar: باقي الأقسام السريرية
+  status: in-force
+  acceptance: Searchable PDF; one report per study.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  rebuild:
+    verdict: No — re-obtain
+    needs: Innovator study reports.
+  required:
+    I: R
+    G_IMP: NR
+    G_LOC: NR
+  cite:
+    - src: ich-m4e-r2
+  ectd_cite:
+    - src: ich-m4-r4
+      status: in-force
+    - src: ich-ectd-v322
+      at: Appendix 4
+      status: in-force

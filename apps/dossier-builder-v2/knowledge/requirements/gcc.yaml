@@ -1,0 +1,1010 @@
+# GCC CTD dossier — GCC Module 1 (specification v1.5) with the SFDA data requirements v4.0
+# ملف CTD لدول الخليج — موديول ١ الخليجي (مواصفة 1.5) مع متطلبات SFDA الإصدار 4.0
+# Ported from the old program (rulepacks/gcc.ctd.m1.v1); edit here from now on.
+- id: GCC/GCC-1.0
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: '1.0'
+  ectd:
+    - '1.0'
+  title:
+    en: Cover letter
+    ar: خطاب التقديم
+  status: in-force
+  acceptance: >-
+    One for each submission; it outlines the product's worldwide registration status. A template is in the SFDA Guidance for Submission. One
+    cover letter per receiving authority (the file name starts with the country code).
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.1
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: '1.1'
+  ectd:
+    - '1.1'
+  title:
+    en: Module 1 table of contents
+    ar: فهرس الموديول ١
+  status: in-force
+  acceptance: Named in the GCC Module 1 specification; not a document of its own in an eCTD, where the backbone is the table of contents.
+  applies: 'true'
+  doc_class: generated
+  produced_by: Tool (generated)
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.2
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: '1.2'
+  ectd:
+    - '1.2'
+  title:
+    en: Application form
+    ar: نموذج الطلب
+  status: in-force
+  acceptance: >-
+    The completed application form. Saudi Arabia: printed out from the Saudi Drug Registration (SDR) system (esdr.sfda.gov.sa). Other GCC
+    authorities: the authority's own form.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.2
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.3.1
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.3.1
+  ectd:
+    - 1.3.1
+  title:
+    en: Summary of Product Characteristics (SPC)
+    ar: ملخص خصائص المستحضر (SPC)
+  status: in-force
+  acceptance: >-
+    Name of the product, strength, pharmaceutical form, quantity of active ingredients, posology, method of administration, indications,
+    contraindications, excipients, shelf-life, special warnings and precautions for use. Per the GCC Guidance for Presenting the SPC, PIL
+    and Labeling Information.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  kinds:
+    - smpc
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.3.1
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.3.2
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.3.2
+  ectd:
+    - 1.3.2
+  title:
+    en: Labeling
+    ar: بيانات العبوة (Labeling)
+  status: in-force
+  acceptance: >-
+    The text of the labeling, in compliance with the SPC; it forms part of the authorization and must be approved. Per the GCC Guidance for
+    Presenting the SPC, PIL and Labeling Information.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.3.2
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.3.3.1
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.3.3.1
+  ectd:
+    - 1.3.3
+  title:
+    en: Patient information leaflet — Arabic
+    ar: النشرة الداخلية — عربي
+  status: in-force
+  acceptance: Draft Arabic leaflet; its text in compliance with the SPC. Per the GCC Guidance for Presenting the SPC, PIL and Labeling Information.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.3.3
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.3.3.2
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.3.3.2
+  ectd:
+    - 1.3.3
+  title:
+    en: Patient information leaflet — English
+    ar: النشرة الداخلية — إنجليزي
+  status: in-force
+  acceptance: Draft English leaflet; its text in compliance with the SPC.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.3.3
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.3.4
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.3.4
+  ectd:
+    - 1.3.4
+  title:
+    en: Artwork (mock-ups)
+    ar: تصميم العبوة (Mock-ups)
+  status: in-force
+  acceptance: >-
+    Flat full-colour artwork giving a full-size replica of the outer and immediate packaging. Four mock-ups: (1) the non-contrast photo of
+    the flat outer pack, (2) the on-shelf photo of the outer pack, (3) the photo of the internal product, (4) the photo of the dosage form.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.3.4
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.3.5
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.3.5
+  ectd:
+    - 1.3.5
+  title:
+    en: Samples
+    ar: العينات
+  status: in-force
+  acceptance: >-
+    Samples representing the final finished product to be marketed, in the quantities set in the SFDA Guidance for Submission (enough for
+    complete testing). The section holds the note that goes with them.
+  note: The samples themselves are handed over physically.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.3.5
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.4.1
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.4.1
+  ectd:
+    - 1.4.1
+  title:
+    en: Information on the expert — Quality
+    ar: بيانات الخبير — الجودة
+  status: in-force
+  acceptance: >-
+    The expert report: an abbreviated product profile; a critical evaluation of the dossier; the expert's opinion on whether sufficient
+    guarantees are given for the proposed use; a summary of the important data; the expert's signature, place and date; the expert's CV and
+    a declaration of the professional relationship to the applicant.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.4
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.4.2
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.4.2
+  ectd:
+    - 1.4.2
+  title:
+    en: Information on the expert — Non-clinical
+    ar: بيانات الخبير — غير الإكلينيكي
+  status: in-force
+  acceptance: >-
+    The expert report: an abbreviated product profile; a critical evaluation of the dossier; the expert's opinion on whether sufficient
+    guarantees are given for the proposed use; a summary of the important data; the expert's signature, place and date; the expert's CV and
+    a declaration of the professional relationship to the applicant.
+  note:
+    en: >-
+      The source names this section without saying which kinds of application need it: the level here is the general practice — confirm it
+      with the authority.
+    ar: 'المصدر بيسمّي البند من غير ما يقول أنهي نوع طلب محتاجه: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.4
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.4.3
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.4.3
+  ectd:
+    - 1.4.3
+  title:
+    en: Information on the expert — Clinical
+    ar: بيانات الخبير — الإكلينيكي
+  status: in-force
+  acceptance: >-
+    The expert report: an abbreviated product profile; a critical evaluation of the dossier; the expert's opinion on whether sufficient
+    guarantees are given for the proposed use; a summary of the important data; the expert's signature, place and date; the expert's CV and
+    a declaration of the professional relationship to the applicant.
+  note:
+    en: >-
+      The source names this section without saying which kinds of application need it: the level here is the general practice — confirm it
+      with the authority.
+    ar: 'المصدر بيسمّي البند من غير ما يقول أنهي نوع طلب محتاجه: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.4
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.5.1
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.5.1
+  ectd:
+    - 1.5.1
+  title:
+    en: Environmental risk assessment — non-GMO
+    ar: تقييم المخاطر البيئية — غير معدّل وراثياً
+  status: in-force
+  acceptance: >-
+    Evaluation of the potential risks of the product to the environment arising from its use, storage and disposal (not from its synthesis
+    or manufacture).
+  note:
+    en: >-
+      The source names this section without saying which kinds of application need it: the level here is the general practice — confirm it
+      with the authority.
+    ar: 'المصدر بيسمّي البند من غير ما يقول أنهي نوع طلب محتاجه: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.5
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.5.2
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.5.2
+  ectd:
+    - 1.5.2
+  title:
+    en: Environmental risk assessment — GMO
+    ar: تقييم المخاطر البيئية — كائن معدّل وراثياً
+  status: in-force
+  acceptance: As 1.5.1, for a product that contains or consists of genetically modified organisms.
+  note: Only where the product contains a genetically modified organism.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  confirm_applicability: true
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.5
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.6.1
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.6.1
+  ectd:
+    - 1.6.1
+  title:
+    en: Pharmacovigilance system
+    ar: نظام اليقظة الدوائية
+  status: in-force
+  acceptance: >-
+    Summary description of the pharmacovigilance system of the marketing authorization holder, per the Guideline on Good Pharmacovigilance
+    Practices.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.6.1
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.6.2
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.6.2
+  ectd:
+    - 1.6.2
+  title:
+    en: Risk management plan
+    ar: خطة إدارة المخاطر (RMP)
+  status: in-force
+  acceptance: >-
+    Detailed description of the risk management system: the safety profile, how it will be characterized further, the measures to prevent or
+    minimize the risks with an assessment of their effectiveness, and the post-authorization obligations.
+  note:
+    en: >-
+      The source names this section without saying which kinds of application need it: the level here is the general practice — confirm it
+      with the authority.
+    ar: 'المصدر بيسمّي البند من غير ما يقول أنهي نوع طلب محتاجه: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.6.2
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.7.1
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.7.1
+  ectd:
+    - 1.7.1
+  title:
+    en: GMP certificate
+    ar: شهادة GMP
+  status: in-force
+  acceptance: A valid GMP certificate.
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  kinds:
+    - gmp
+    - factory
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.7.1
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.7.2
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.7.2
+  ectd:
+    - 1.7.2
+  title:
+    en: CPP or free-sales certificate
+    ar: شهادة المستحضر الصيدلي (CPP) أو البيع الحر
+  status: in-force
+  acceptance: >-
+    CPP per the WHO format. If there is none: a marketing authorization or free-sales certificate from the country of origin giving the
+    trade name there, the number and date of the authorization, the active and inactive substances with their concentrations, a statement
+    that the product is marketed there (or the reason it is not, with an authorization from a reference country), proof of at least one year
+    of registration there, the SPC and the leaflet.
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  kinds:
+    - cpp
+  required:
+    I:
+      cases:
+        - when: gcc_agency == 'SA'
+          level: O
+          reason:
+            en: >-
+              SFDA: the CPP / free-sales certificate is optional and no longer required for new marketing authorization applications in any
+              pathway; SFDA may still ask for it at any time.
+            ar: 'السعودية: شهادة الـ CPP / البيع الحر اختيارية ومش مطلوبة لطلبات التسجيل الجديدة في أي مسار؛ والهيئة ممكن تطلبها في أي وقت.'
+          cite:
+            - src: sfda-data-requirements-v4
+              at: §1.7.2
+        - level: R
+          note:
+            en: >-
+              Outside Saudi Arabia the certificate is taken as required for an imported product: the other GCC authorities' own texts were
+              not read for this pack — confirm with the authority.
+            ar: 'برّه السعودية الشهادة محسوبة مطلوبة للمستحضر المستورد: نصوص باقي هيئات الخليج ما اتقرتش للملف ده — راجع مع الهيئة.'
+    G_IMP:
+      cases:
+        - when: gcc_agency == 'SA'
+          level: O
+          reason:
+            en: >-
+              SFDA: the CPP / free-sales certificate is optional and no longer required for new marketing authorization applications in any
+              pathway; SFDA may still ask for it at any time.
+            ar: 'السعودية: شهادة الـ CPP / البيع الحر اختيارية ومش مطلوبة لطلبات التسجيل الجديدة في أي مسار؛ والهيئة ممكن تطلبها في أي وقت.'
+          cite:
+            - src: sfda-data-requirements-v4
+              at: §1.7.2
+        - level: R
+          note:
+            en: >-
+              Outside Saudi Arabia the certificate is taken as required for an imported product: the other GCC authorities' own texts were
+              not read for this pack — confirm with the authority.
+            ar: 'برّه السعودية الشهادة محسوبة مطلوبة للمستحضر المستورد: نصوص باقي هيئات الخليج ما اتقرتش للملف ده — راجع مع الهيئة.'
+    G_LOC: NR
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.7.2
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.7.3
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.7.3
+  ectd:
+    - 1.7.3
+  title:
+    en: Certificates of analysis — drug substance and finished product
+    ar: شهادات التحليل — المادة الفعالة والمستحضر النهائي
+  status: in-force
+  acceptance: >-
+    Certificates of analysis for more than one batch of the drug substance from its manufacturer; for the drug substance from the
+    finished-product manufacturer; for more than one batch of the finished product. Batch number, size and type, sites and dates of
+    manufacture and analysis are tabulated as in the source.
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  kinds:
+    - coa
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.7.3
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.7.4
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.7.4
+  ectd:
+    - 1.7.4
+  title:
+    en: Certificates of analysis — excipients
+    ar: شهادات التحليل — المواد غير الفعالة
+  status: in-force
+  acceptance: Certificates of analysis for more than one batch of the excipients may be submitted to support the application.
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.7.4
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.7.5
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.7.5
+  ectd:
+    - 1.7.5
+  title:
+    en: Alcohol-content declaration
+    ar: إقرار محتوى الكحول
+  status: in-force
+  acceptance: >-
+    Declaration on the company letterhead that the finished product is free from alcohol. Where alcohol is present: a pre-approval from the
+    authority, with the justification.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.7.5
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.7.6
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.7.6
+  ectd:
+    - 1.7.6
+  title:
+    en: Pork-content declaration
+    ar: إقرار الخلو من مشتقات الخنزير
+  status: in-force
+  acceptance: Declaration on the company letterhead that the product is free from any material of pork / porcine source.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.7.6
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.7.7
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.7.7
+  ectd:
+    - 1.7.7
+  title:
+    en: Certificate of suitability for TSE
+    ar: شهادة الملاءمة لـ TSE
+  status: in-force
+  acceptance: >-
+    A valid TSE certificate of suitability issued by the EDQM, confirming compliance of the substance with the relevant monograph of the
+    European Pharmacopoeia.
+  note: Where a material of animal origin is used.
+  applies: biological_origin_materials
+  doc_class: third_party_certificate
+  produced_by: Third party
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.7.7
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.7.8
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.7.8
+  ectd:
+    - 1.7.8
+  title:
+    en: Diluents and colouring agents in the product formula
+    ar: المذيبات والمواد الملوّنة في تركيبة المستحضر
+  status: in-force
+  acceptance: Declaration on the company letterhead stating the diluents and colouring agents used in the product formula.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.7.8
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.7.9
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.7.9
+  ectd:
+    - 1.7.9
+  title:
+    en: Patent information
+    ar: بيانات براءة الاختراع
+  status: in-force
+  acceptance: >-
+    Declaration on the company letterhead stating the patent status of the product (SFDA: «Approach of Dealing with Patents when Register
+    Generic Drugs in SFDA»).
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.7.9
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.7.10
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.7.10
+  ectd:
+    - 1.7.10
+  title:
+    en: Letter of access or acknowledgment to the DMF / CEP
+    ar: خطاب الإتاحة لملف المادة الفعالة (DMF) / شهادة الـ CEP
+  status: in-force
+  acceptance: >-
+    DMF: a letter from the DMF owner or authorized agent permitting the authority to refer to the DMF for the applicant — name of the
+    holder; version number and date of the applicant's part and of the restricted part; a letter that the DMF remains current if unchanged
+    for five years; whether the restricted part was sent to the authority. CEP: the valid certificate with its annexes, the declaration of
+    access filled in by the holder, and a written assurance that no significant change in the manufacturing method took place since it was
+    granted or last revised.
+  note: One per active substance filed through a DMF or a CEP.
+  applies: 'true'
+  doc_class: third_party_certificate
+  produced_by: Third party
+  per:
+    over: apis
+    where: option == 'DMF' or option == 'CEP'
+  kinds:
+    - loa
+    - cep
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.7.10
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.8.1
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.8.1
+  ectd:
+    - 1.8.1
+  title:
+    en: Price list
+    ar: قائمة الأسعار
+  status: in-force
+  acceptance: >-
+    The price of the product in the countries listed in the SFDA Guidance for Submission: the price list (Form 16) of all the countries
+    where the product is marketed, as in the pharmaceutical pricing rules.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  kinds:
+    - pricing
+  required:
+    I: R
+    G_IMP: R
+    G_LOC: R
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.8.1
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.8.2
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: 1.8.2
+  ectd:
+    - 1.8.2
+  title:
+    en: Other documents related to pricing
+    ar: مستندات أخرى خاصة بالتسعير
+  status: in-force
+  acceptance: >-
+    The pricing application form (in the pharmaceutical pricing rules); a clinical studies overview (approved indication, guidelines,
+    comparative safety and efficacy studies); summaries of economic studies.
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.8.2
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-1.9
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: '1.9'
+  ectd:
+    - '1.9'
+  title:
+    en: Responses to questions
+    ar: الرد على الاستفسارات
+  status: in-force
+  acceptance: >-
+    A document listing the questions, each with its narrative response, the name of the section, the page number and a hyperlink to where
+    the answer is in the Module concerned. The supporting technical documents go to their own Modules.
+  note: 'Not part of the first submission: used when the authority asks.'
+  applies: 'true'
+  doc_class: company_letter
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §1.9
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-ADD
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 1
+  group: MODULE 1 — Regional administrative information (GCC)
+  ctd: Additional data
+  ectd:
+    - '1'
+  title:
+    en: Additional data
+    ar: بيانات إضافية
+  status: in-force
+  acceptance: >-
+    What fits no other section (GCC: transfer agreement, declaration of conformity of a translation…). SFDA: the bioequivalence study
+    summary template; the Excel file of the tabulated plasma concentrations of the test and reference products with the randomization plan;
+    documents of the abridged / verification pathways; any SFDA exemption, advice or prior communication; for ATMPs, the
+    out-of-specification release protocol.
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: sfda-data-requirements-v4
+      at: «Additional data»
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
+- id: GCC/GCC-3.2.R
+  kind: requirement
+  authority: GCC
+  set: gcc-m1
+  module: 3
+  group: MODULE 3 — 3.2.A Appendices · 3.3 Literature references
+  ctd: 3.2.R
+  ectd:
+    - 3.2.R
+  title:
+    en: Regional information
+    ar: المعلومات الإقليمية (3.2.R)
+  status: in-force
+  acceptance: >-
+    Any additional information. Biosimilars: the comparative quality exercise against the reference product. Advanced therapy medicinal
+    products: shipping validation studies, as applicable. (SFDA: the requirements of this section are still being developed.)
+  applies: 'true'
+  doc_class: company_technical
+  produced_by: Company
+  required:
+    I: O
+    G_IMP: O
+    G_LOC: O
+  cite:
+    - src: sfda-data-requirements-v4
+      at: §3.2.R
+  ectd_cite:
+    - src: gcc-m1-spec-v15
+      at: Appendix 2
+      status: in-force
