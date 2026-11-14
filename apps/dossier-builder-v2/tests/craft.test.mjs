@@ -118,7 +118,25 @@ test('WordCraft opens a Word letter in Arabic and English and exports it as a PD
   });
 });
 
-for (const app of ['pdfcraft', 'photocraft', 'designcraft']) {
+// PhotoCraft v0.23.1's and DesignCraft v0.20.1's browser apps have no host bridge and no command API yet: each is checked to
+// start the way a person opens it (its loading notice goes away); the program brings files in and out of them in step 2.7.
+for (const app of ['photocraft', 'designcraft']) {
+  test(`${app} starts in the browser`, { skip: !built(app) && `${app} is not built here`, timeout: 600000 }, async () => {
+    const { chromium } = require('playwright');
+    const server = await serve(app, null);
+    const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+    try {
+      const page = await browser.newPage({ viewport: { width: 1220, height: 880 } });
+      const errors = [];
+      page.on('pageerror', e => errors.push(e.message));
+      await page.goto(`http://127.0.0.1:${server.address().port}/${app}/index.html?webgl`);
+      await page.waitForFunction(a => !document.getElementById(`${a}_loading`), app, { timeout: 240000 });
+      assert.deepEqual(errors, []);
+    } finally { await browser.close(); server.close(); }
+  });
+}
+
+for (const app of ['pdfcraft']) {
   test(`${app} starts in the browser, says it is ready and answers its command API`, { skip: !built(app) && `${app} is not built here`, timeout: 600000 }, async () => {
     await hosted(app, null, async ({ frame, errors }) => {
       const api = await frame.evaluate(a => ['request', 'execute', 'commands', 'docInspect', 'uiInspect', 'screenshot'].filter(f => typeof window[a]?.[f] === 'function'), app);
